@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.26 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.27 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.26 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.27 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -64,6 +64,7 @@ smtpinit(m, mci, e)
 	register int r;
 	register char *p;
 	extern STAB *stab();
+	extern void helo_options();
 
 	if (tTd(17, 1))
 	{
@@ -111,7 +112,7 @@ smtpinit(m, mci, e)
 
 	SmtpPhase = mci->mci_phase = "greeting wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, TimeOuts.to_initial);
+	r = reply(m, mci, e, TimeOuts.to_initial, NULL);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		goto tempfail1;
 
@@ -120,14 +121,34 @@ smtpinit(m, mci, e)
 	**	My mother taught me to always introduce myself.
 	*/
 
-	smtpmessage("HELO %s", m, mci, MyHostName);
-	SmtpPhase = mci->mci_phase = "HELO wait";
+	if (bitnset(M_ESMTP, m->m_flags))
+		mci->mci_flags |= MCIF_ESMTP;
+
+tryhelo:
+	if (bitset(MCIF_ESMTP, mci->mci_flags))
+	{
+		smtpmessage("EHLO %s", m, mci, MyHostName);
+		SmtpPhase = mci->mci_phase = "EHLO wait";
+	}
+	else
+	{
+		smtpmessage("HELO %s", m, mci, MyHostName);
+		SmtpPhase = mci->mci_phase = "HELO wait";
+	}
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, TimeOuts.to_helo);
+	r = reply(m, mci, e, TimeOuts.to_helo, helo_options);
 	if (r < 0)
 		goto tempfail1;
 	else if (REPLYTYPE(r) == 5)
+	{
+		if (bitset(MCIF_ESMTP, mci->mci_flags))
+		{
+			/* try old SMTP instead */
+			mci->mci_flags &= ~MCIF_ESMTP;
+			goto tryhelo;
+		}
 		goto unavailable;
+	}
 	else if (REPLYTYPE(r) != 2)
 		goto tempfail1;
 
@@ -159,7 +180,7 @@ smtpinit(m, mci, e)
 	{
 		/* tell it to be verbose */
 		smtpmessage("VERB", m, mci);
-		r = reply(m, mci, e, TimeOuts.to_miscshort);
+		r = reply(m, mci, e, TimeOuts.to_miscshort, NULL);
 		if (r < 0)
 			goto tempfail2;
 	}
@@ -182,6 +203,53 @@ smtpinit(m, mci, e)
 	smtpquit(m, mci, e);
 	return;
 }
+/*
+**  HELO_OPTIONS -- process the options on a HELO line.
+**
+**	Parameters:
+**		line -- the response line.
+**		m -- the mailer.
+**		mci -- the mailer connection info.
+**		e -- the envelope.
+**
+**	Returns:
+**		none.
+*/
+
+void
+helo_options(line, m, mci, e)
+	char *line;
+	MAILER *m;
+	register MCI *mci;
+	ENVELOPE *e;
+{
+	register char *p;
+
+	if (strlen(line) < 5)
+		return;
+	line += 4;
+	p = strchr(line, ' ');
+	if (p != NULL)
+		*p++ = '\0';
+	if (strcasecmp(line, "size") == 0)
+	{
+		mci->mci_flags |= MCIF_SIZE;
+		if (p != NULL)
+			mci->mci_maxsize = atol(p);
+	}
+	else if (strcasecmp(line, "8bitmime") == 0)
+		mci->mci_flags |= MCIF_8BITMIME;
+	else if (strcasecmp(line, "expn") == 0)
+		mci->mci_flags |= MCIF_EXPN;
+}
+/*
+**  SMTPMAILFROM -- send MAIL command
+**
+**	Parameters:
+**		m -- the mailer.
+**		mci -- the mailer connection structure.
+**		e -- the envelope (including the sender to specify).
+*/
 
 smtpmailfrom(m, mci, e)
 	struct mailer *m;
@@ -190,9 +258,16 @@ smtpmailfrom(m, mci, e)
 {
 	int r;
 	char buf[MAXNAME];
+	char optbuf[MAXLINE];
 
 	if (tTd(17, 2))
 		printf("smtpmailfrom: CurHost=%s\n", CurHostName);
+
+	/* set up appropriate options to include */
+	if (bitset(MCIF_SIZE, mci->mci_flags))
+		sprintf(optbuf, " SIZE=%ld", e->e_msgsize);
+	else
+		strcpy(optbuf, "");
 
 	/*
 	**  Send the HOPS command.
@@ -216,16 +291,16 @@ smtpmailfrom(m, mci, e)
 	if (e->e_from.q_mailer == LocalMailer ||
 	    !bitnset(M_FROMPATH, m->m_flags))
 	{
-		smtpmessage("MAIL From:<%s>", m, mci, buf);
+		smtpmessage("MAIL From:<%s>%s", m, mci, buf, optbuf);
 	}
 	else
 	{
-		smtpmessage("MAIL From:<@%s%c%s>", m, mci, MyHostName,
-			buf[0] == '@' ? ',' : ':', buf);
+		smtpmessage("MAIL From:<@%s%c%s>%s", m, mci, MyHostName,
+			buf[0] == '@' ? ',' : ':', buf, optbuf);
 	}
 	SmtpPhase = mci->mci_phase = "MAIL wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, TimeOuts.to_mail);
+	r = reply(m, mci, e, TimeOuts.to_mail, NULL);
 	if (r < 0 || REPLYTYPE(r) == 4)
 	{
 		mci->mci_exitstat = EX_TEMPFAIL;
@@ -287,7 +362,7 @@ smtprcpt(to, m, mci, e)
 
 	SmtpPhase = mci->mci_phase = "RCPT wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, TimeOuts.to_rcpt);
+	r = reply(m, mci, e, TimeOuts.to_rcpt, NULL);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (REPLYTYPE(r) == 2)
@@ -340,7 +415,7 @@ smtpdata(m, mci, e)
 	smtpmessage("DATA", m, mci);
 	SmtpPhase = mci->mci_phase = "DATA wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, TimeOuts.to_datainit);
+	r = reply(m, mci, e, TimeOuts.to_datainit, NULL);
 	if (r < 0 || REPLYTYPE(r) == 4)
 	{
 		smtpquit(m, mci, e);
@@ -377,7 +452,7 @@ smtpdata(m, mci, e)
 	/* check for the results of the transaction */
 	SmtpPhase = mci->mci_phase = "result wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, TimeOuts.to_datafinal);
+	r = reply(m, mci, e, TimeOuts.to_datafinal, NULL);
 	if (r < 0)
 	{
 		smtpquit(m, mci, e);
@@ -424,7 +499,7 @@ smtpquit(m, mci, e)
 	if (mci->mci_state != MCIS_ERROR)
 	{
 		smtpmessage("QUIT", m, mci);
-		(void) reply(m, mci, e, TimeOuts.to_quit);
+		(void) reply(m, mci, e, TimeOuts.to_quit, NULL);
 		if (mci->mci_state == MCIS_CLOSED)
 			return;
 	}
@@ -446,7 +521,7 @@ smtprset(m, mci, e)
 	int r;
 
 	smtpmessage("RSET", m, mci);
-	r = reply(m, mci, e, TimeOuts.to_rset);
+	r = reply(m, mci, e, TimeOuts.to_rset, NULL);
 	if (r < 0)
 		mci->mci_state = MCIS_ERROR;
 	else if (REPLYTYPE(r) == 2)
@@ -469,7 +544,7 @@ smtpprobe(mci)
 	ENVELOPE *e = &BlankEnvelope;
 
 	smtpmessage("RSET", m, mci);
-	r = reply(m, mci, e, TimeOuts.to_miscshort);
+	r = reply(m, mci, e, TimeOuts.to_miscshort, NULL);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		smtpquit(m, mci, e);
 	return r;
@@ -482,6 +557,9 @@ smtpprobe(mci)
 **		mci -- the mailer connection info structure.
 **		e -- the current envelope.
 **		timeout -- the timeout for reads.
+**		pfunc -- processing function for second and subsequent
+**			lines of response -- if null, no special
+**			processing is done.
 **
 **	Returns:
 **		reply code it reads.
@@ -490,13 +568,16 @@ smtpprobe(mci)
 **		flushes the mail file.
 */
 
-reply(m, mci, e, timeout)
+reply(m, mci, e, timeout, pfunc)
 	MAILER *m;
 	MCI *mci;
 	ENVELOPE *e;
+	time_t timeout;
+	void (*pfunc)();
 {
 	register char *bufp;
 	register int r;
+	bool firstline = TRUE;
 	char junkbuf[MAXLINE];
 
 	if (mci->mci_out != NULL)
@@ -573,6 +654,12 @@ reply(m, mci, e, timeout)
 		/* display the input for verbose mode */
 		if (Verbose)
 			nmessage("%s", bufp);
+
+		/* process the line */
+		if (pfunc != NULL && !firstline)
+			(*pfunc)(bufp, m, mci, e);
+
+		firstline = FALSE;
 
 		/* if continuation is required, we can go on */
 		if (bufp[3] == '-')
