@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	1.1 (Berkeley) %G%
+ *	@(#)union_subr.c	1.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
