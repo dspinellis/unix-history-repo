@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	7.15 (Berkeley) %G%
+ *	@(#)namei.h	7.16 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_H_
@@ -90,7 +90,7 @@ struct nameidata {
  * buffer and for vrele'ing ni_startdir.
  */
 #define	NOCROSSMOUNT	0x0100	/* do not cross mount points */
-#define	REMOTE		0x0200	/* lookup for remote filesystem servers */
+#define	RDONLY		0x0200	/* lookup with read-only semantics */
 #define	HASBUF		0x0400	/* has allocated pathname buffer */
 #define	SAVENAME	0x0800	/* save pathanme buffer */
 #define	SAVESTART	0x1000	/* save starting directory */
