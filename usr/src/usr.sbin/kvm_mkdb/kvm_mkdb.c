@@ -1,34 +1,20 @@
-/*
- * Copyright (c) 1989 The Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms is permitted
- * provided that all copyright information, including this notice,
- * is retained in all such forms, and that any documentation,
- * advertising or other materials related to such distribution and
- * use acknowledge that the software was
- * developed by the University of California, Berkeley.  The name
- * of the University may not be used to endorse or promote products
- * derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
-/*
- * kvm_mkdb -- Create kernel information database for running kernel.
- */
-
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
+
 #include <sys/param.h>
 #include <sys/file.h>
 #include <ndbm.h>
