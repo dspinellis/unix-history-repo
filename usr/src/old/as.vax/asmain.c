@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asmain.c 4.3 %G%";
+static	char sccsid[] = "@(#)asmain.c 4.4 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -34,6 +34,7 @@ int	anyerrs = 0;	/*no errors yet*/
 int	orgwarn = 0;	/*Bad origins*/
 int	passno = 1;	/* current pass*/
 int	jxxxJUMP = 0;	/* in jxxxes that branch too far, use jmp instead of brw */
+int	readonlydata = 0;	/* initialzed data -> text space */
 
 #ifdef DEBUG
 int 	debug = 0;
@@ -54,7 +55,7 @@ char	*endcore;	/*where to get more symbol space*/
  *	Managers of the a.out file.
  */
 struct	exec	hdr;
-#define	MAGIC	0410
+#define	MAGIC	0407
 u_long	tsize;		/* total text size */
 u_long	dsize;		/* total data size */
 u_long	datbase;	/* base of the data segment */
@@ -281,6 +282,9 @@ argprocess(argc, argv)
 					toktrace = 1;
 					break;
 #endif
+				 case 'R':
+					readonlydata = 1;
+					break;
 				}	/*end of the switch*/
 			}	/*end of pulling out all arguments*/
 		}	/*end of a flag argument*/
@@ -451,7 +455,7 @@ roundsegments()
 	/*
 	 *		Round and assign data segment origins.
 	 */
-	datbase = round(tsize, PAGRND);
+	datbase = round(tsize, FW);
 	for (locindex=0; locindex<NLOC; locindex++) {
 		v = round(usedot[NLOC+locindex].e_xvalue, FW);
 		usedot[NLOC+locindex].e_xvalue = datbase + dsize;
@@ -563,6 +567,12 @@ reloc_syms()
 
 	hdr.a_trsize = trsize;
 	hdr.a_drsize = drsize;
+	if (readonlydata) {
+		hdr.a_text += hdr.a_data;
+		hdr.a_data = 0;
+		hdr.a_trsize += hdr.a_drsize;
+		hdr.a_drsize = 0;
+	}
 	/*
 	 *	Output the symbol table
 	 *	and if FLEXNAMES is set, the string pool
