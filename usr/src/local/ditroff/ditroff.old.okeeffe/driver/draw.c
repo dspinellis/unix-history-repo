@@ -1,4 +1,4 @@
-/*	draw.c	1.8	84/05/09
+/*	draw.c	1.9	84/11/27
  *
  *	This file contains the functions for producing the graphics
  *   images in the canon/imagen driver for ditroff.
@@ -184,9 +184,10 @@ register int pdv;
  |
  | Results:	Given the starting position, the motion list in buf, and any
  |		extra characters from fp (terminated by a \n), drawwig sets
- |		up a point list to make a spline from.  If "pic" is set picurve
- |		is called to draw the curve in pic style; else it calls HGCurve
- |		for the gremlin-style curve.
+ |		up a point list to make a spline or polygon from.  If "pic" is
+ |		zero, a gremlin curve is drawn with HGCurve; if less than zero
+ |		a polygon is drawn, else (pic > 0) a pic style spline is drawn
+ |		using picurve.
  |
  | Side Efct:	Resulting position is reached from adding successive motions
  |		to the current position.
@@ -285,9 +286,9 @@ int s;
  |
  | Bugs:	If the path is not closed, polygon will NOT close it.
  |		(or is that a feature?)
- |		polygons are affected by line thickness, but NOT line style.
+ |		self-interseting polygons can choke the Imagen - tough luck
  |		if the path is "counterclockwise", it'll slow down the
- |		Imagen's rendering.  This is not checked for here.
+ |		rendering.  This is not checked for here.
  *----------------------------------------------------------------------------*/
 
 extern int laststipmem;		/* this is set, before this routine, to the */
@@ -300,13 +301,17 @@ int npts;
 {
 	register int i;
 
+	if (polyborder && linmod != SOLID) {	/* if the border isn't solid */
+		for (i = 2; i <= npts; i++)	/*    have HGtline draw it */
+			HGtline(x[i-1], y[i-1], x[i], y[i]);
+	}
 	byte(ASPATH);		/* set up to send the path */
 	word(npts);
 	for (i = 1; i <= npts; i++) {	/* send the path */
 		word(xbound(x[i]));
 		word(ybound(y[i]));
 	}
-	if (polyborder) {
+	if (polyborder && linmod == SOLID) {
 		byte(ADRAW);	/* draw the border, if requested */
 		byte(15);
 	}
@@ -740,7 +745,7 @@ int x0, y0, x1, y1;
     register int yinc;
 
 
-    if (linmod == -1) {
+    if (linmod == SOLID) {
 	line(x0, y0, x1, y1);
 	return;
     }
