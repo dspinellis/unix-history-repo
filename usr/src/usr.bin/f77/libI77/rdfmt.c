@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.3";
+char id_rdfmt[] = "@(#)rdfmt.c	1.4";
  *
  * formatted read routines
  */
@@ -74,6 +74,7 @@ rd_ned(p,ptr) char *ptr; struct syl *p;
 		return(OK);
 	case TL:
 		cursor -= p->p1;
+		if ((recpos + cursor) < 0) cursor = -recpos;	/* ANSI req'd */
 		tab = YES;
 		return(OK);
 	default:
