@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufsmount.h	7.7 (Berkeley) %G%
+ *	@(#)ufsmount.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -35,3 +35,45 @@ struct	ufsmount {
  */
 #define VFSTOUFS(mp)	((struct ufsmount *)((mp)->mnt_data))
 #endif /* KERNEL */
+
+/*
+ * Prototypes for UFS mount operations
+ */
+int	ufs_mount __P((
+		struct mount *mp,
+		char *path,
+		caddr_t data,
+		struct nameidata *ndp,
+		struct proc *p));
+int	ufs_start __P((
+		struct mount *mp,
+		int flags,
+		struct proc *p));
+int	ufs_unmount __P((
+		struct mount *mp,
+		int mntflags,
+		struct proc *p));
+int	ufs_root __P((
+		struct mount *mp,
+		struct vnode **vpp));
+int	ufs_quotactl __P((
+		struct mount *mp,
+		int cmds,
+		int uid,	/* should be uid_t */
+		caddr_t arg,
+		struct proc *p));
+int	ufs_statfs __P((
+		struct mount *mp,
+		struct statfs *sbp,
+		struct proc *p));
+int	ufs_sync __P((
+		struct mount *mp,
+		int waitfor));
+int	ufs_fhtovp __P((
+		struct mount *mp,
+		struct fid *fhp,
+		struct vnode **vpp));
+int	ufs_vptofh __P((
+		struct vnode *vp,
+		struct fid *fhp));
+int	ufs_init __P(());
