@@ -1,13 +1,13 @@
 .\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)getfsstat.2	6.5 (Berkeley) %G%
+.\"	@(#)getfsstat.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETFSSTAT 2
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm getfsstat
 .Nd get list of all mounted filesystems
@@ -94,7 +94,9 @@ fails if one or more of the following are true:
 .Fa Buf
 points to an invalid address.
 .It EIO
-An I/O error occurred while reading from or writing to the filesystem.
+An
+.Tn I/O
+error occurred while reading from or writing to the filesystem.
 .El
 .Sh SEE ALSO
 .Xr statfs 2 ,
@@ -102,5 +104,6 @@ An I/O error occurred while reading from or writing to the filesystem.
 .Xr mount 8
 .Sh HISTORY
 The
-.Nm
-function call is currently under development.
+.Nm getfsstat
+function call is
+.Ud .

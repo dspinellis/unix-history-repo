@@ -1,13 +1,13 @@
 .\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)sigprocmask.2	6.3 (Berkeley) %G%
+.\"	@(#)sigprocmask.2	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGPROCMASK 2
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm sigprocmask
 .Nd manipulate current signal mask
@@ -88,7 +88,7 @@ has a value other than those listed here.
 .Xr sigsuspend 2
 .Sh STANDARDS
 The
-.Fn sigprocmask
+.Nm sigprocmask
 function call is expected to
-conform to IEEE Std 1003.1-1988
-.Pq Dq Tn POSIX .
+conform to
+.St -p1003.1-88 .

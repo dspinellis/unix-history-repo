@@ -1,13 +1,13 @@
 .\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)getdirentries.2	6.4 (Berkeley) %G%
+.\"	@(#)getdirentries.2	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETDIRENTRIES 2
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm getdirentries
 .Nd "get directory entries in a filesystem independent format"
@@ -113,12 +113,15 @@ or
 .Fa basep
 point outside the allocated address space.
 .It EIO
-An I/O error occurred while reading from or writing to the file system.
+An
+.Tn I/O
+error occurred while reading from or writing to the file system.
 .El
 .Sh SEE ALSO
 .Xr open 2 ,
 .Xr lseek 2
 .Sh HISTORY
 The
-.Nm
-function call is currently under development.
+.Nm getdirentries
+function call is
+.Ud .
