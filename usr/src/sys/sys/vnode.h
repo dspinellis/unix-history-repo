@@ -57,7 +57,8 @@ struct vnode {
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
-	long		v_spare[14];		/* round to 128 bytes */
+	struct nqlease	*v_lease;		/* Soft reference to lease */
+	long		v_spare[13];		/* round to 128 bytes */
 	enum vtagtype	v_tag;			/* type of underlying data */
 	void 		*v_data;		/* private data for fs */
 };
@@ -317,4 +318,21 @@ void 	vgoneall __P((struct vnode *vp));/* recycle vnode and all its aliases */
 extern	struct vnode *rootdir;		/* root (i.e. "/") vnode */
 extern	int desiredvnodes;		/* number of vnodes desired */
 extern	struct vattr va_null;		/* predefined null vattr structure */
+
+/*
+ * Macro/function to check for client cache inconsistency w.r.t. leasing.
+ */
+#define	LEASE_READ	0x1		/* Check lease for readers */
+#define	LEASE_WRITE	0x2		/* Check lease for modifiers */
+
+#ifdef NFS
+void	lease_check __P((struct vnode *vp, struct proc *p,
+		struct ucred *ucred, int flag));
+void	lease_updatetime __P((int deltat));
+#define	LEASE_CHECK(vp, p, cred, flag)	lease_check((vp), (p), (cred), (flag))
+#define	LEASE_UPDATETIME(dt)		lease_updatetime(dt)
+#else
+#define	LEASE_CHECK(vp, p, cred, flag)
+#define	LEASE_UPDATETIME(dt)
+#endif /* NFS */
 #endif
