@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ad.c	7.5 (Berkeley) %G%
+ *	@(#)ad.c	7.6 (Berkeley) %G%
  */
 
 #include "ad.h"
@@ -15,7 +15,6 @@
 
 #include "param.h"
 #include "ioctl.h"
-#include "dir.h"
 #include "user.h"
 #include "buf.h"
 #include "systm.h"

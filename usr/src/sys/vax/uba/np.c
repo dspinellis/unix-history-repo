@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)np.c	7.4 (Berkeley) %G%
+ *	@(#)np.c	7.5 (Berkeley) %G%
  *
  * From:
  *	np.c version 1.5
@@ -47,7 +47,6 @@
 #include "ubavar.h"
 #include "signal.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "uio.h"

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)qv.c	1.11 (Berkeley) %G%
+ *	@(#)qv.c	1.12 (Berkeley) %G%
  */
 
 /*
@@ -111,7 +111,6 @@
 
 #include "param.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "qvioctl.h"
 #include "tty.h"

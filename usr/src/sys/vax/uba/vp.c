@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vp.c	7.2 (Berkeley) %G%
+ *	@(#)vp.c	7.3 (Berkeley) %G%
  */
 
 #include "vp.h"
@@ -21,7 +21,6 @@
 #include "machine/pte.h"
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "buf.h"
 #include "systm.h"

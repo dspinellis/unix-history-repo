@@ -3,14 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lpa.c	7.2 (Berkeley) %G%
+ *	@(#)lpa.c	7.3 (Berkeley) %G%
  */
 
 #include "lpa.h"
 #if NLPA > 0
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "buf.h"
 #include "proc.h"

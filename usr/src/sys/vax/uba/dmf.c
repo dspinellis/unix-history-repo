@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	7.9 (Berkeley) %G%
+ *	@(#)dmf.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,6 @@
 #include "uba.h"
 #include "param.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "ioctl.h"
