@@ -96,17 +96,17 @@ sourcelist:	${ALLSOURCE}
 		do (echo ${DIRPATH}$$i); done
 
 astosc.out:	../ctlr/function.h ../ctlr/hostctlr.h ../ctlr/$(KBD)
-	(cd ../tools; make mkastosc )
+	(cd ../tools; make mkastosc$X )
 	${RM} $@
 	../tools/mkastosc < ../ctlr/$(KBD) > $@
 
 asc_disp.out:	ebc_disp$O
-	(cd ../tools; make mkastods )
+	(cd ../tools; make mkastods$X )
 	${RM} $@
 	../tools/mkastods > $@
 
 disp_asc.out:	ebc_disp$O
-	(cd ../tools; make mkdstoas )
+	(cd ../tools; make mkdstoas$X )
 	${RM} $@
 	../tools/mkdstoas > $@
 
