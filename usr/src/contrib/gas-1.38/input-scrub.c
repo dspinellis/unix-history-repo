@@ -1,3 +1,7 @@
+/*	@(#)input-scrub.c	6.2 (Berkeley) %G%
+
+Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+
 /* input_scrub.c - layer between app and the rest of the world
    Copyright (C) 1987 Free Software Foundation, Inc.
 
@@ -299,9 +303,54 @@ as_where()
 #endif
     }
 }
+
+/*
+ * linestab() -- generate a line number stab for the current source line.
+ * If the filename has changed, generate a file stab first.
+ */
+void
+linestab()
+{
+  static char *saved_file;
+  static int saved_len;
+  static line_numberT saved_line;
+  char *file;
+  line_numberT line;
+  int len;
 
+  if (!flagseen['g'] ||
+      !physical_input_file ||
+      !input_file_is_open() ||
+      now_seg != SEG_TEXT)
+    return;
 
+  file = logical_input_file ? logical_input_file : physical_input_file;
+  line = logical_input_line ? logical_input_line : physical_input_line;
 
+  if (saved_file == 0 || strcmp(file, saved_file) != 0)
+    {
+      stabs(file);
+      len = strlen(file) + 1;
+      if (len > saved_len)
+	{
+	  if (saved_file == 0)
+	    saved_file = xmalloc(len);
+	  else
+	    saved_file = xrealloc(saved_file, len);
+	  memcpy(saved_file, file, len);
+	  saved_len = len;
+	}
+      else
+	strcpy(saved_file, file);
+      saved_line = 0;
+    }
+
+  if (saved_line == 0 || line != saved_line)
+    {
+      stabd(line);
+      saved_line = line;
+    }
+}
 
 /*
  *			a s _ h o w m u c h ( )
