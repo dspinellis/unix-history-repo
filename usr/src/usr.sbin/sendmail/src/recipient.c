@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)recipient.c	3.1	%G%";
+static char SccsId[] = "@(#)recipient.c	3.2	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -157,7 +157,9 @@ recipient(a)
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
 			a->q_flags |= QDONTSEND;
-			include(&a->q_user[9]);
+			if (Verbose)
+				message(Arpa_Info, "including file %s", &a->q_user[9]);
+			include(&a->q_user[9], " sending");
 		}
 		else
 			alias(a);
@@ -211,6 +213,7 @@ recipient(a)
 **
 **	Parameters:
 **		fname -- filename to include.
+**		msg -- message to print in verbose mode.
 **
 **	Returns:
 **		none.
@@ -220,14 +223,13 @@ recipient(a)
 **		listed in that file.
 */
 
-include(fname)
+include(fname, msg)
 	char *fname;
+	char *msg;
 {
 	char buf[MAXLINE];
 	register FILE *fp;
 
-	if (Verbose)
-		message(Arpa_Info, "Including file %s", fname);
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 	{
@@ -246,8 +248,10 @@ include(fname)
 			continue;
 		To = fname;
 		if (Verbose)
-			message(Arpa_Info, " >> %s", buf);
+			message(Arpa_Info, "%s to %s", msg, buf);
+		AliasLevel++;
 		sendto(buf, 1);
+		AliasLevel--;
 	}
 
 	fclose(fp);

@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.14	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.15	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.14	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.15	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -347,22 +347,10 @@ forward(user)
 	/* good address -- look for .forward file in home */
 	define('z', user->q_home);
 	(void) expand("$z/.forward", buf, &buf[sizeof buf - 1]);
-	fp = fopen(buf, "r");
-	if (fp == NULL)
+	if (access(buf, 4) < 0)
 		return;
 
 	/* we do have an address to forward to -- do it */
 	user->q_flags |= QDONTSEND;
-	(void) fgets(buf, sizeof buf, fp);
-	if ((p = index(buf, '\n')) != NULL)
-		*p = '\0';
-	(void) fclose(fp);
-	if (buf[0] == '\0')
-		return;
-	if (Verbose)
-		message(Arpa_Info, "forwarded to %s", buf);
-	AliasLevel++;
-	sendto(buf, 1);
-	AliasLevel--;
-	return;
+	include(buf, "forwarding");
 }
