@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.4 (Berkeley) %G%
+ *	@(#)boot.c	7.5 (Berkeley) %G%
  */
 
-#include <sys/param.h>
-#include <sys/reboot.h>
+#include "sys/param.h"
+#include "sys/reboot.h"
 #include <a.out.h>
 #include "saio.h"
 
@@ -16,114 +16,77 @@
 #include "sys/stat.h"
 struct stat sb;
 #endif
-					/* XXX -- see sys/reboot.h */
-#define B_MAKEDEV(a,u,p,t) \
-	(((a) << B_ADAPTORSHIFT) | ((u) << B_UNITSHIFT) | \
-	 ((p) << B_PARTITIONSHIFT) | ((t) << B_TYPESHIFT))
+
+#define	PRTCPU		/* print out cpu type */
 
 /*
- * Boot program... arguments in `devtype' and `howto' determine
- * whether boot stops to ask for system name and which device
- * boot comes from.
+ * Boot program... bits in `howto' determine whether boot stops to
+ * ask for system name.  Boot device is derived from ROM provided
+ * information.
  */
-
-/* Types in `devtype' specifying major device */
-char	devname[][2] = {
-	'\0', '\0',	/* 0 = ct */
-	'\0', '\0',	/* 1 = fd */
-	 'r',  'd',	/* 2 = rd */
-	'\0', '\0',	/* 3 = sw */
-	 's',  'd',	/* 4 = sd */
-};
-#define	MAXTYPE	(sizeof(devname) / sizeof(devname[0]))
 
 char line[100];
 
-int	retry = 0;
+extern	unsigned opendev;
 extern	char *lowram;
 extern	int noconsole;
-extern	int howto, devtype;
+extern	int howto, bootdev;
 
-#define	MSUS (0xfffffedc)
-
-char rom2mdev[] = {
-	0,	/*  0 - none */
-	0,	/*  1 - none */
-	0,	/*  2 - none */
-	0,	/*  3 - none */
-	0,	/*  4 - none */
-	0,	/*  5 - none */
-	0,	/*  6 - none */
-	0,	/*  7 - none */
-	0,	/*  8 - none */
-	0,	/*  9 - none */
-	0,	/* 10 - none */
-	0,	/* 11 - none */
-	0,	/* 12 - none */
-	0,	/* 13 - none */
-	4,	/* 14 - SCSI disk */
-	0,	/* 15 - none */
-	2,	/* 16 - CS/80 device on HPIB */
-	2,	/* 17 - CS/80 device on HPIB */
-	0,	/* 18 - none */
-	0,	/* 19 - none */
-	0,	/* 20 - none */
-	0,	/* 21 - none */
-	0,	/* 22 - none */
-	0,	/* 23 - none */
-	0,	/* 24 - none */
-	0,	/* 25 - none */
-	0,	/* 26 - none */
-	0,	/* 27 - none */
-	0,	/* 28 - none */
-	0,	/* 29 - none */
-	0,	/* 30 - none */
-	0,	/* 31 - none */
-};
+#ifdef PRTCPU
+#include "samachdep.h"
+#endif
 
 main()
 {
-	register type, part, unit, io;
 	register char *cp;
+	int io, retry, type;
+#ifdef PRTCPU
+	extern int machineid;
 
+	printf("\nHP");
+	switch (machineid) {
+	case HP_320:
+		cp = "320"; break;
+	case HP_330:
+		cp = "318/319/330"; break;
+	case HP_340:
+		cp = "340"; break;
+	case HP_350:
+		cp = "350"; break;
+	case HP_360:
+		cp = "360"; break;
+	case HP_370:
+		cp = "370"; break;
+	case HP_375:
+		cp = "345/375/400"; break;
+	case HP_380:
+		cp = "380/425"; break;
+	default:
+		cp = "???"; break;
+	}
+	printf("%s CPU\nBoot\n", cp);
+#else
 	printf("\nBoot\n");
+#endif
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
 #else
-	type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
-	unit = (devtype >> B_UNITSHIFT) & B_UNITMASK;
-	unit += 8 * ((devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK);
-	part = (devtype >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	if ((howto & RB_ASKNAME) == 0) {
-		if ((devtype & B_MAGICMASK) != B_DEVMAGIC) {
-			/*
-			 * we have to map the ROM device type codes
-			 * to Unix major device numbers.
-			 */
-			type = rom2mdev[*(char *)MSUS & 0x1f];
-			devtype = (devtype &~ (B_TYPEMASK << B_TYPESHIFT))
-				  | (type << B_TYPESHIFT);
-		}
-		if (type >= 0 && type <= MAXTYPE && devname[type][0]) {
-			cp = line;
-			*cp++ = devname[type][0];
-			*cp++ = devname[type][1];
-			*cp++ = '(';
-			if (unit >= 10)
-				*cp++ = unit / 10 + '0';
-			*cp++ = unit % 10 + '0';
-			*cp++ = ',';
-			*cp++ = part + '0';
-			*cp++ = ')';
-			strcpy(cp, UNIX);
-		} else
-			howto = RB_SINGLE|RB_ASKNAME;
+		type = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
+		if ((unsigned)type < ndevs && devsw[type].dv_name)
+			strcpy(line, UNIX);
+		else
+			howto |= RB_SINGLE|RB_ASKNAME;
 	}
 #endif
-	for (;;) {
+	for (retry = 0;;) {
 		if (!noconsole && (howto & RB_ASKNAME)) {
 			printf(": ");
 			gets(line);
+			if (line[0] == 0) {
+				strcpy(line, UNIX);
+				printf(": %s\n", line);
+			}
 		} else
 			printf(": %s\n", line);
 		io = open(line, 0);
@@ -132,64 +95,45 @@ main()
 			(void) fstat(io, &sb);
 			if (sb.st_uid || (sb.st_mode & 2)) {
 				printf("non-secure file, will not load\n");
+				close(io);
 				howto = RB_SINGLE|RB_ASKNAME;
 				continue;
 			}
 #endif
-			if (howto & RB_ASKNAME) {
-				/*
-				 * Build up devtype register to pass on to
-				 * booted program.
-				 */ 
-				cp = line;
-				for (type = 0; type <= MAXTYPE; type++)
-					if ((devname[type][0] == cp[0]) && 
-					    (devname[type][1] == cp[1]))
-					    	break;
-				if (type <= MAXTYPE) {
-					cp += 3;
-					unit = *cp++ - '0';
-					if (*cp >= '0' && *cp <= '9')
-						unit = unit * 10 + *cp++ - '0';
-					cp++;
-					part = atol(cp);
-					devtype = B_MAKEDEV(unit >> 3, unit & 7, part, type);
-				}
-			}
-			devtype |= B_DEVMAGIC;
-			copyunix(howto, devtype, io);
+			copyunix(howto, opendev, io);
 			close(io);
-			howto = RB_SINGLE|RB_ASKNAME;
+			howto |= RB_SINGLE|RB_ASKNAME;
 		}
-	bad:
 		if (++retry > 2)
-			howto = RB_SINGLE|RB_ASKNAME;
+			howto |= RB_SINGLE|RB_ASKNAME;
 	}
 }
 
 /*ARGSUSED*/
 copyunix(howto, devtype, io)
-	register howto;		/* d7 contains boot flags */
-	register devtype;	/* d6 contains boot device */
-	register io;
+	register int howto;	/* d7 contains boot flags */
+	register u_int devtype;	/* d6 contains boot device */
+	register int io;
 {
 	struct exec x;
 	register int i;
 	register char *load;	/* a5 contains load addr for unix */
 	register char *addr;
 
-	i = read(io, (char *)&x, sizeof x);
-	if (i != sizeof x ||
-	    (x.a_magic != 0407 && x.a_magic != 0413 && x.a_magic != 0410))
-		_stop("Bad format\n");
+	i = read(io, (char *)&x, sizeof(x));
+	if (i != sizeof(x) ||
+	    (x.a_magic != OMAGIC && x.a_magic != ZMAGIC && x.a_magic != NMAGIC)) {
+		printf("Bad format\n");
+		return;
+	}
 	printf("%d", x.a_text);
-	if (x.a_magic == 0413 && lseek(io, 0x400, 0) == -1)
+	if (x.a_magic == ZMAGIC && lseek(io, 0x400, L_SET) == -1)
 		goto shread;
 	load = addr = lowram;
 	if (read(io, (char *)addr, x.a_text) != x.a_text)
 		goto shread;
 	addr += x.a_text;
-	if (x.a_magic == 0413 || x.a_magic == 0410)
+	if (x.a_magic == ZMAGIC || x.a_magic == NMAGIC)
 		while ((int)addr & CLOFSET)
 			*addr++ = 0;
 	printf("+%d", x.a_data);
@@ -208,7 +152,8 @@ copyunix(howto, devtype, io)
 	asm("	movl %0,a5" : : "a" (load));
 #endif
 	(*((int (*)()) x.a_entry))();
-	exit();
+	return;
 shread:
-	_stop("Short read\n");
+	printf("Short read\n");
+	return;
 }

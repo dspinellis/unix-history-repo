@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboot.c	7.2 (Berkeley) %G%
+ *	@(#)mkboot.c	7.3 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -14,13 +14,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkboot.c	7.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkboot.c	7.2 (Berkeley) 12/16/90";
 #endif /* not lint */
 
-#include "../include/param.h"
+#include "sys/param.h"
+#include "sys/exec.h"
+#include "sys/file.h"
 #include "volhdr.h"
-#include <sys/exec.h>
-#include <sys/file.h>
+
 #include <stdio.h>
 #include <ctype.h>
 
@@ -106,6 +107,7 @@ main(argc, argv)
 	lifd[0].dir_type = DIR_TYPE;
 	lifd[0].dir_addr = 3;
 	lifd[0].dir_length = n;
+	bcddate(from1, lifd[0].dir_toc);
 	lifd[0].dir_flag = DIR_FLAG;
 	lifd[0].dir_exec = lpflag? loadpoint + ex.a_entry : ex.a_entry;
 	lifv.vol_length = lifd[0].dir_addr + lifd[0].dir_length;
@@ -118,6 +120,7 @@ main(argc, argv)
 		lifd[1].dir_type = DIR_TYPE;
 		lifd[1].dir_addr = 3 + lifd[0].dir_length;
 		lifd[1].dir_length = n;
+		bcddate(from2, lifd[1].dir_toc);
 		lifd[1].dir_flag = DIR_FLAG;
 		lifd[1].dir_exec = lpflag? loadpoint + ex.a_entry : ex.a_entry;
 		lifv.vol_length = lifd[1].dir_addr + lifd[1].dir_length;
@@ -220,4 +223,30 @@ lifname(str)
 	for ( ; i < 10; i++)
 		lname[i] = '\0';
 	return(lname);
+}
+
+#include "sys/stat.h"
+#include "/usr/include/time.h"	/* XXX */
+
+bcddate(fd, toc)
+	int fd;
+	char *toc;
+{
+	struct stat statb;
+	struct tm *tm;
+
+	fstat(fd, &statb);
+	tm = localtime(&statb.st_ctime);
+	*toc = ((tm->tm_mon+1) / 10) << 4;
+	*toc++ |= (tm->tm_mon+1) % 10;
+	*toc = (tm->tm_mday / 10) << 4;
+	*toc++ |= tm->tm_mday % 10;
+	*toc = (tm->tm_year / 10) << 4;
+	*toc++ |= tm->tm_year % 10;
+	*toc = (tm->tm_hour / 10) << 4;
+	*toc++ |= tm->tm_hour % 10;
+	*toc = (tm->tm_min / 10) << 4;
+	*toc++ |= tm->tm_min % 10;
+	*toc = (tm->tm_sec / 10) << 4;
+	*toc |= tm->tm_sec % 10;
 }

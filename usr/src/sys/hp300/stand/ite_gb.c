@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_gb.c 1.8 89/02/23$
+ * from: Utah $Hdr: ite_gb.c 1.9 92/01/20$
  *
- *	@(#)ite_gb.c	7.2 (Berkeley) %G%
+ *	@(#)ite_gb.c	7.3 (Berkeley) %G%
  */
 
 #include "samachdep.h"
@@ -20,15 +20,14 @@
 
 #include "sys/param.h"
 
-#include "../dev/itevar.h"
-#include "../dev/itereg.h"
-#include "../dev/grfvar.h"
+#include "hp/dev/itevar.h"
+#include "hp/dev/itereg.h"
 #include "../dev/grf_gbreg.h"
 
 #define REGBASE     	((struct gboxfb *)(ip->regbase))
-#define WINDOWMOVER 	gatorbox_windowmove
+#define WINDOWMOVER 	gbox_windowmove
 
-gatorbox_init(ip)
+gbox_init(ip)
 	register struct ite_softc *ip;
 {
 	REGBASE->write_protect = 0x0;
@@ -48,51 +47,51 @@ gatorbox_init(ip)
 	REGBASE->cmap_grn    = 0x00;
 	REGBASE->cmap_blu    = 0x00;
 	REGBASE->cmap_write  = 0x00;
-	gbcm_waitbusy(REGADDR);
+	gbcm_waitbusy(ip->regbase);
 	
 	REGBASE->creg_select = 0x01;
 	REGBASE->cmap_red    = 0xFF;
 	REGBASE->cmap_grn    = 0xFF;
 	REGBASE->cmap_blu    = 0xFF;
 	REGBASE->cmap_write  = 0x01;
-	gbcm_waitbusy(REGADDR);
+	gbcm_waitbusy(ip->regbase);
 
 	REGBASE->creg_select = 0xFF;
 	REGBASE->cmap_red    = 0xFF;
 	REGBASE->cmap_grn    = 0xFF;
 	REGBASE->cmap_blu    = 0xFF;
 	REGBASE->cmap_write  = 0x01;
-	gbcm_waitbusy(REGADDR);
+	gbcm_waitbusy(ip->regbase);
 
-	ite_devinfo(ip);
+	ite_fontinfo(ip);
 	ite_fontinit(ip);
 
 	/*
 	 * Clear the display. This used to be before the font unpacking
 	 * but it crashes. Figure it out later.
 	 */
-	gatorbox_windowmove(ip, 0, 0, 0, 0, ip->dheight, ip->dwidth, RR_CLEAR);
-	tile_mover_waitbusy(REGADDR);
+	gbox_windowmove(ip, 0, 0, 0, 0, ip->dheight, ip->dwidth, RR_CLEAR);
+	tile_mover_waitbusy(ip->regbase);
 
 	/*
 	 * Stash the inverted cursor.
 	 */
-	gatorbox_windowmove(ip, charY(ip, ' '), charX(ip, ' '),
-			    ip->cblanky, ip->cblankx, ip->ftheight,
-			    ip->ftwidth, RR_COPYINVERTED);
+	gbox_windowmove(ip, charY(ip, ' '), charX(ip, ' '),
+			ip->cblanky, ip->cblankx, ip->ftheight,
+			ip->ftwidth, RR_COPYINVERTED);
 }
 
-gatorbox_putc(ip, c, dy, dx, mode)
+gbox_putc(ip, c, dy, dx, mode)
 	register struct ite_softc *ip;
         register int dy, dx;
 	int c, mode;
 {
-	gatorbox_windowmove(ip, charY(ip, c), charX(ip, c),
-			    dy * ip->ftheight, dx * ip->ftwidth,
-			    ip->ftheight, ip->ftwidth, RR_COPY);
+	gbox_windowmove(ip, charY(ip, c), charX(ip, c),
+			dy * ip->ftheight, dx * ip->ftwidth,
+			ip->ftheight, ip->ftwidth, RR_COPY);
 }
 
-gatorbox_cursor(ip, flag)
+gbox_cursor(ip, flag)
 	register struct ite_softc *ip;
         register int flag;
 {
@@ -106,45 +105,45 @@ gatorbox_cursor(ip, flag)
 		erase_cursor(ip)
 }
 
-gatorbox_clear(ip, sy, sx, h, w)
+gbox_clear(ip, sy, sx, h, w)
 	struct ite_softc *ip;
 	register int sy, sx, h, w;
 {
-	gatorbox_windowmove(ip, sy * ip->ftheight, sx * ip->ftwidth,
-			    sy * ip->ftheight, sx * ip->ftwidth, 
-			    h  * ip->ftheight, w  * ip->ftwidth,
-			    RR_CLEAR);
+	gbox_windowmove(ip, sy * ip->ftheight, sx * ip->ftwidth,
+			sy * ip->ftheight, sx * ip->ftwidth, 
+			h  * ip->ftheight, w  * ip->ftwidth,
+			RR_CLEAR);
 }
 
-#define	gatorbox_blockmove(ip, sy, sx, dy, dx, h, w) \
-	gatorbox_windowmove((ip), \
-			    (sy) * ip->ftheight, \
-			    (sx) * ip->ftwidth, \
-			    (dy) * ip->ftheight, \
-			    (dx) * ip->ftwidth, \
-			    (h)  * ip->ftheight, \
-			    (w)  * ip->ftwidth, \
-			    RR_COPY)
+#define	gbox_blockmove(ip, sy, sx, dy, dx, h, w) \
+	gbox_windowmove((ip), \
+			(sy) * ip->ftheight, \
+			(sx) * ip->ftwidth, \
+			(dy) * ip->ftheight, \
+			(dx) * ip->ftwidth, \
+			(h)  * ip->ftheight, \
+			(w)  * ip->ftwidth, \
+			RR_COPY)
 
-gatorbox_scroll(ip, sy, sx, count, dir)
+gbox_scroll(ip, sy, sx, count, dir)
         register struct ite_softc *ip;
         register int sy;
         int dir, sx, count;
 {
 	register int height, dy, i;
 	
-	tile_mover_waitbusy(REGADDR);
+	tile_mover_waitbusy(ip->regbase);
 	REGBASE->write_protect = 0x0;
 
-	gatorbox_cursor(ip, ERASE_CURSOR);
+	gbox_cursor(ip, ERASE_CURSOR);
 
 	dy = sy - count;
 	height = ip->rows - sy;
 	for (i = 0; i < height; i++)
-		gatorbox_blockmove(ip, sy + i, sx, dy + i, 0, 1, ip->cols);
+		gbox_blockmove(ip, sy + i, sx, dy + i, 0, 1, ip->cols);
 }
 
-gatorbox_windowmove(ip, sy, sx, dy, dx, h, w, mask)
+gbox_windowmove(ip, sy, sx, dy, dx, h, w, mask)
      register struct ite_softc *ip;
      int sy, sx, dy, dx, mask;
      register int h, w;
@@ -154,7 +153,7 @@ gatorbox_windowmove(ip, sy, sx, dy, dx, h, w, mask)
 	src  = (sy * 1024) + sx;	/* upper left corner in pixels */
 	dest = (dy * 1024) + dx;
 
-	tile_mover_waitbusy(REGADDR);
+	tile_mover_waitbusy(ip->regbase);
 	REGBASE->width = -(w / 4);
 	REGBASE->height = -(h / 4);
 	if (src < dest)

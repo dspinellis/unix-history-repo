@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: machdep.c 1.6 88/05/24$
+ * from: Utah $Hdr: machdep.c 1.10 92/06/18
  *
- *	@(#)machdep.c	7.4 (Berkeley) %G%
+ *	@(#)machdep.c	7.5 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -45,30 +45,41 @@ bcmp(s1, s2, len)
 	return (0);
 }
 
+#ifdef ROMPRF
+int userom;
+#endif
+
 trap(fp)
- struct frame {
-	 int dregs[8];
-	 int aregs[8];
-	 int whoknows;
-	 short sr;
-	 int pc;
-	 short frame;
- } *fp;
+	struct frame {
+		int dregs[8];
+		int aregs[8];
+		int whoknows;
+		short sr;
+		int pc;
+		short frame;
+	} *fp;
 {
 	static int intrap = 0;
 
 	if (intrap)
-		return;
+		return(0);
 	intrap = 1;
-	printf("Got unexpected trap, vector = %x, ps = %x, pc = %x\n",
-	       fp->frame&0xFFF, fp->sr, fp->pc);
+#ifdef ROMPRF
+	userom = 1;
+#endif
+	printf("Got unexpected trap: format=%x vector=%x ps=%x pc=%x\n",
+		  (fp->frame>>12)&0xF, fp->frame&0xFFF, fp->sr, fp->pc);
 	printf("dregs: %x %x %x %x %x %x %x %x\n",
 	       fp->dregs[0], fp->dregs[1], fp->dregs[2], fp->dregs[3], 
 	       fp->dregs[4], fp->dregs[5], fp->dregs[6], fp->dregs[7]);
 	printf("aregs: %x %x %x %x %x %x %x %x\n",
 	       fp->aregs[0], fp->aregs[1], fp->aregs[2], fp->aregs[3], 
 	       fp->aregs[4], fp->aregs[5], fp->aregs[6], fp->aregs[7]);
+#ifdef ROMPRF
+	userom = 0;
+#endif
 	intrap = 0;
+	return(0);
 }
 
 #ifdef ROMPRF
@@ -76,7 +87,7 @@ trap(fp)
 #define COLS	128
 
 romputchar(c)
- register int c;
+	register int c;
 {
 	static char buf[COLS];
 	static int col = 0, row = 0;
@@ -86,6 +97,7 @@ romputchar(c)
 	case '\0':
 		break;
 	case '\r':
+		break;	/* ignore */
 	case '\n':
 		for (i = col; i < COLS-1; i++)
 			buf[i] = ' ';

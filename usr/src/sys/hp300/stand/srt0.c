@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: srt0.c 1.12 91/04/25$
+ * from: Utah $Hdr: srt0.c 1.15 92/06/18$
  *
- *	@(#)srt0.c	7.5 (Berkeley) %G%
+ *	@(#)srt0.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -23,10 +23,10 @@
 	.globl	_edata
 	.globl	_main
 	.globl	_configure
-	.globl	_bootdev
 	.globl	_firstopen
 	.globl	__rtt
-	.globl	_lowram,_howto,_devtype,_internalhpib,_machineid
+	.globl	_bootdev,_howto,_lowram,_machineid
+	.globl	_internalhpib
 
 	STACK =    0xfffff000	| below the ROM page
 	BOOTTYPE = 0xfffffdc0
@@ -42,8 +42,6 @@
 
 	.data
 _bootdev:
-	.long	0
-_devtype:
 	.long	0
 _howto:
 	.long	0
@@ -74,9 +72,10 @@ vecloop:
 	movc	d0,cacr		|   only exists on 68030
 	movc	cacr,d0		| read it back
 	tstl	d0		| zero?
-	jeq	is68020		| yes, we have 68020
+	jeq	not68030	| yes, we have 68020/68040
 	movl	#0x808,d0
 	movc	d0,cacr		| clear data freeze bit again
+
 	movl	#0x80,MMUCMD	| set magic cookie
 	movl	MMUCMD,d0	| read it back
 	btst	#7,d0		| cookie still on?
@@ -96,6 +95,20 @@ not370:
 	jeq	ihpibcheck	| no, a 360
 	movl	#6,a0@		| yes, must be a 345/375/400
 	jra	ihpibcheck
+not68030:
+	bset	#31,d0		| data cache enable bit
+	movc	d0,cacr		|   only exists on 68040
+	movc	cacr,d0		| read it back
+	tstl	d0		| zero?
+	beq	is68020		| yes, we have 68020
+	moveq	#0,d0		| now turn it back off
+	movec	d0,cacr		|   before we access any data
+	.long	0x4e7b0004	| movc d0,itt0
+	.long	0x4e7b0005	| movc d0,itt1
+	.long	0x4e7b0006	| movc d0,dtt0
+	.long	0x4e7b0007	| movc d0,dtt1
+	movl	#7,a0@		| we have a 380
+	jra	ihpibcheck
 is68020:
 	movl	#1,a0@		| consider a 330 for now
 	movl	#1,MMUCMD	| a 68020, write HP MMU location
@@ -114,39 +127,30 @@ ihpibcheck:
 	jeq	boottype	| yes, continue
 	clrl	_internalhpib	| no, clear the internal address
 /*
- * If this is a reboot, extract howto/devtype stored by kernel
+ * If this is a reboot, extract howto/bootdev stored by kernel
  */
 boottype:
 	cmpw	#12,BOOTTYPE	| is this a reboot (REQ_REBOOT)?
 	jne	notreboot	| no, skip
-	movl	#MAXADDR,a0	| find last page
-	movl	a0@+,d7		| and extract howto, devtype
+	lea	MAXADDR,a0	| find last page
+	movl	a0@+,d7		| and extract howto, bootdev
 	movl	a0@+,d6		|   from where doboot() left them
 	jra	boot1
 /*
- * At this point we do not know which logical hpib the given select
- * code refers to.  So we just put the select code in the adaptor field
- * where hpibinit() can replace it with the logical hpib number.
- * Note that this may clobber the B_DEVMAGIC field but that isn't set
- * til later anyway.
+ * At this point we do not know which logical device the MSUS select
+ * code refers to so we cannot construct bootdev.  So we just punt
+ * and let configure() construct it.
  */
 notreboot:
+	moveq	#0,d6		| make sure bootdev is invalid
 	cmpw	#18,BOOTTYPE	| does the user want to interact?
 	jeq	askme		| yes, go to it
-	movl	MSUS,d1		| no, get rom info
-	movw	d1,d6		| MSUS comes with SC in upper, unit in lower
-	swap	d6		| put in place
-	movw	#2,d6		| assume 'a' partition of rd disk
 	moveq	#0,d7		| default to RB_AUTOBOOT
 	jra	boot1
 askme:
-	moveq	#7,d6		| default to HP-IB at sc7
-	lslw	#8,d6		| position as adaptor number
-	swap	d6		| put in place (note implied unit 0)
-	movw	#2,d6		| assume 'a' partition of rd disk
 	moveq	#3,d7		| default to RB_SINGLE|RB_ASKNAME
 boot1:
-	movl	d6,_devtype	| save devtype and howto
+	movl	d6,_bootdev	| save bootdev and howto
 	movl	d7,_howto	|   globally so all can access
 	movl	LOWRAM,d0	| read lowram value from bootrom
 	addl	#NBPG,d0	| must preserve this for bootrom to reboot
@@ -176,7 +180,7 @@ _badaddr:
 	movl	#catchbad,BUSERR| plug in our handler
 	movl	sp@(4),a0	| address to probe
 	movw	a0@,d1		| do it
-	movl	__bsave,BUSERR	| if we got here, it didn''t fault /* XXX cpp */
+	movl	__bsave,BUSERR	| if we got here, it did not fault
 	clrl	d0		| return that this was not a bad addr
 	rts
 
@@ -196,6 +200,13 @@ trap:
 	moveml	#0xFFFF,sp@-	| save registers
 	movl	sp,sp@-		| push pointer to frame
 	jsr	_trap		| call C routine to deal with it
+	tstl	d0
+	jeq	Lstop
+	addql	#4,sp
+	moveml	sp@+,#0x7FFF
+	addql	#8,sp
+	rte
+Lstop:
 	stop	#0x2700		| stop cold
 
 nmi:

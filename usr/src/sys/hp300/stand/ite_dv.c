@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_dv.c 1.1 89/02/28$
+ * from: Utah $Hdr: ite_dv.c 1.2 92/01/20$
  *
- *	@(#)ite_dv.c	7.2 (Berkeley) %G%
+ *	@(#)ite_dv.c	7.3 (Berkeley) %G%
  */
 
 #include "samachdep.h"
@@ -19,9 +19,8 @@
 #ifdef ITECONSOLE
 
 #include "sys/param.h"
-#include "../dev/itevar.h"
-#include "../dev/itereg.h"
-#include "../dev/grfvar.h"
+#include "hp/dev/itevar.h"
+#include "hp/dev/itereg.h"
 #include "../dev/grf_dvreg.h"
 
 #define REGBASE		((struct dvboxfb *)(ip->regbase))
@@ -32,7 +31,7 @@ dvbox_init(ip)
 {
 	int i;
 	
-	dv_reset(REGADDR);
+	dv_reset(ip->regbase);
 	DELAY(4000);
 
 	/*
@@ -82,16 +81,16 @@ dvbox_init(ip)
 	}
 	REGBASE->cmapbank = 0;
 	
-	db_waitbusy(REGADDR);
+	db_waitbusy(ip->regbase);
 
-	ite_devinfo(ip);
+	ite_fontinfo(ip);
 	ite_fontinit(ip);
 
 	/*
 	 * Clear the (visible) framebuffer.
 	 */
 	dvbox_windowmove(ip, 0, 0, 0, 0, ip->dheight, ip->dwidth, RR_CLEAR);
-	db_waitbusy(REGADDR);
+	db_waitbusy(ip->regbase);
 
 	/*
 	 * Stash the inverted cursor.
@@ -99,7 +98,7 @@ dvbox_init(ip)
 	dvbox_windowmove(ip, charY(ip, ' '), charX(ip, ' '),
 			 ip->cblanky, ip->cblankx, ip->ftheight,
 			 ip->ftwidth, RR_COPYINVERTED);
-	db_waitbusy(REGADDR);
+	db_waitbusy(ip->regbase);
 }
 
 dvbox_putc(ip, c, dy, dx, mode)
@@ -160,7 +159,7 @@ dvbox_windowmove(ip, sy, sx, dy, dx, h, w, func)
 	if (h == 0 || w == 0)
 		return;
 	
-	db_waitbusy(REGADDR);
+	db_waitbusy(ip->regbase);
 	dp->rep_rule = func << 4 | func;
 	dp->source_y = sy;
 	dp->source_x = sx;

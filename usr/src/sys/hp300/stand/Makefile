@@ -1,11 +1,11 @@
-#	@(#)Makefile	7.9 (Berkeley) %G%
+#	@(#)Makefile	7.10 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
-INCPATH=-I. -I${STAND} -I../../sys -I..
+INCPATH=-I. -I${STAND} -I../.. -I../../sys -I..
 VPATH=	${STAND}
 
-CC=	cc -fpcc-struct-return
+CC=cc
 AS=as
 
 # RELOC=FFF80000 allows for boot prog up to 7F000 (520192) bytes long
@@ -16,7 +16,7 @@ DEFS= -DSTANDALONE ${CONS} # -DROMPRF
 CFLAGS=	-O ${INCPATH} ${DEFS}
 
 DRIVERS=autoconf.c cons.c ct.c dca.c dcm.c fhpib.c hil.c hpib.c ite.c \
-	ite_dv.c ite_gb.c ite_rb.c ite_subr.c ite_tc.c nhpib.c rd.c \
+	ite_dv.c ite_gb.c ite_hy.c ite_rb.c ite_subr.c ite_tc.c nhpib.c rd.c \
 	scsi.c sd.c
 SRCS=	conf.c machdep.c prf.c ${DRIVERS}
 LIBS=	libsa/libsa.a libdrive.a ${DESTDIR}/usr/lib/libgnulib.a \
@@ -37,6 +37,12 @@ libdrive.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o}
 
 ${DRIVERS}: samachdep.h
 
+# depend on DEFS
+
+machdep.o srt0.o: Makefile
+cons.o dca.o hil.o: Makefile
+ite.o ite_subr.o ite_dv.o ite_gb.o ite_hy.o ite_rb.o ite_tc.o: Makefile
+
 # startups
 
 srt0.o: srt0.c
@@ -54,7 +60,7 @@ tboot:	tboot.o srt0.o ${LIBS}
 
 tboot.o: boot.o
 	cp boot.c tboot.c; chmod +w tboot.c
-	${CC} -c -O ${INCPATH} -DJUSTASK tboot.c
+	${CC} -c ${CFLAGS} -DJUSTASK tboot.c
 	rm -f tboot.c
 
 tcopy:	copy.o tpsrt0.o ${LIBS}
@@ -73,10 +79,10 @@ dboot:	boot.o srt0.o bootconf.o ${LIBS}
 bootconf.o: conf.o
 	rm -f bootconf.c
 	ln -s conf.c bootconf.c
-	${CC} -c ${INCPATH} -DBOOT bootconf.c
+	${CC} -c ${CFLAGS} -DBOOT bootconf.c
 	rm -f bootconf.c
 
-# non-secure boot
+# non-secure boot (allows booting non-root owned or world writable kernels)
 
 nboot:	nboot.o srt0.o bootconf.o ${LIBS}
 	ld -N -T ${RELOC} -e begin -o nboot srt0.o nboot.o bootconf.o ${LIBS}
@@ -87,10 +93,10 @@ nboot:	nboot.o srt0.o bootconf.o ${LIBS}
 nboot.o: boot.o
 	rm -f nboot.c
 	ln -s boot.c nboot.c
-	${CC} -c -O ${INCPATH} -DINSECURE ${DEFS} nboot.c
+	${CC} -c ${CFLAGS} -DINSECURE nboot.c
 	rm -f nboot.c
 
-dcopy: copy.o srt0.o conf.o ${LIBS}
+dcopy:	copy.o srt0.o conf.o ${LIBS}
 	ld -N -T ${RELOC} -e begin -o dcopy srt0.o copy.o conf.o ${LIBS}
 
 mkboot: mkboot.c
@@ -123,7 +129,8 @@ install: mkboot installboot ${ALL}
 	rm -f ${DESTDIR}/usr/mdec/bootsd
 	ln ${DESTDIR}/usr/mdec/bootrd ${DESTDIR}/usr/mdec/bootsd
 	install -c -m 644 tapeboot.lif ${DESTDIR}/usr/mdec/bootct
-	mv diskboot.lif ndiskboot.lif tapeboot.lif ${DESTDIR}/sys/hpdist/tp
+#	mv diskboot.lif ndiskboot.lif tapeboot.lif ${DESTDIR}/sys/hpdist/tp
 
 depend: ${SRCS}
-	mkdep ${INCPATH} -DSTANDALONE ${SRCS}
+	mkdep ${INCPATH} ${DEFS} ${SRCS} mkboot.c installboot.c
+	mkdep -a -p ${INCPATH} ${DEFS} mkboot.c installboot.c
