@@ -1,8 +1,24 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmisc.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwmisc.c	3.2 83/09/02";
 #endif
 
 #include "ww.h"
+
+/*
+ * Sufficient but necessary test for total visibility.
+ */
+wwvisible(w)
+register struct ww *w;
+{
+	register i;
+	register nvis = 0;
+
+	for (i = 0; i < w->ww_w.nr; i++)
+		nvis += w->ww_nvis[i];
+	if (w->ww_hascursor && wwsmap[wwcurrow(w)][wwcurcol(w)] == w->ww_index)
+		nvis++;
+	return nvis == w->ww_w.nr * w->ww_w.nc;
+}
 
 char *
 unctrl(c)
