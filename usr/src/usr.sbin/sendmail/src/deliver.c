@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	2.2	%G%";
+static char SccsId[] = "@(#)deliver.c	2.3	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -71,6 +71,7 @@ deliver(to, editfcn)
 	extern putheader();
 	extern pipesig();
 	extern bool GotHdr;
+	extern char *index();
 
 	/*
 	**  Compute receiving mailer, host, and to addreses.
@@ -159,7 +160,7 @@ deliver(to, editfcn)
 	**  If the mailer wants a From line, insert a new editfcn.
 	*/
 
-	if (flagset(M_HDR, m->m_flags) && editfcn == NULL && !GotHdr)
+	if (flagset(M_HDR, m->m_flags) && editfcn == NULL && (!GotHdr || flagset(M_FHDR, m->m_flags)))
 		editfcn = putheader;
 
 	/*
@@ -386,17 +387,23 @@ putheader(fp)
 	char buf[MAXLINE + 1];
 	long tim;
 	extern char *ctime();
+	register char *p;
+	extern char *index();
 	extern char SentDate[];
 
-	fprintf(fp, "From %s ", From.q_paddr);
-	if (SentDate[0] == '\0')
+	/* output the header part */
+	fgets(buf, sizeof buf, stdin);
+	if (strncmp(buf, "From ", 5) != 0 || (p = index(&buf[5], ' ')) == NULL)
 	{
 		time(&tim);
-		fprintf(fp, "%s", ctime(&tim));
+		fprintf(fp, "From %s %s", From.q_paddr, ctime(&tim));
+		fputs(buf, fp);
 	}
 	else
-		fprintf(fp, "%s", SentDate);
-	while (fgets(buf, sizeof buf, stdin) != NULL && !ferror(fp))
+		fprintf(fp, "From %s %s", From.q_paddr, &p[1]);
+
+	/* output the body */
+	while (!ferror(fp) && fgets(buf, sizeof buf, stdin) != NULL)
 		fputs(buf, fp);
 	if (ferror(fp))
 	{

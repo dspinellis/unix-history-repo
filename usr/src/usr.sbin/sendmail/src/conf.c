@@ -61,6 +61,11 @@
 **			   M_HDR -- if set, the mailer wants us to
 **				insert a UNIX "From" line before
 **				outputing.
+**			   M_FHDR -- if set, the header that we
+**				generate will be used literally, so
+**				we must force it to be correct.  The
+**				effect is that we generate a header
+**				even if one exists.
 **			   M_NOHOST -- if set, this mailer doesn't care
 **				about the host part (e.g., the local
 **				mailer).
@@ -103,7 +108,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	2.1	%G%";
+static char SccsId[] = "@(#)conf.c	2.2	%G%";
 
 
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
@@ -191,7 +196,7 @@ struct mailer Mailer[] =
 	/* pipes through programs -- must be #1 */
 	{
 		"/bin/csh",
-		M_HDR|M_NOHOST,			EX_UNAVAILABLE,	NULL,
+		M_HDR|M_FHDR|M_NOHOST,		EX_UNAVAILABLE,	NULL,
 		{ "...prog%mail", "-fc", "$u", NULL }
 	},
 	/* local berkeley mail */
