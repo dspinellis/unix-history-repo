@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kill.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)kill.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -48,14 +48,13 @@ main(argc, argv)
 		if (isalpha(**argv)) {
 			if (!strncasecmp(*argv, "sig", 3))
 				*argv += 3;
-			for (p = sys_signame;; ++p) {
-				if (!*p)
-					nosig(*argv);
+			for (numsig = NSIG, p = sys_signame + 1; --numsig; ++p)
 				if (!strcasecmp(*p, *argv)) {
 					numsig = p - sys_signame;
 					break;
 				}
-			}
+			if (!numsig)
+				nosig(*argv);
 		} else if (isdigit(**argv)) {
 			numsig = strtol(*argv, &ep, 10);
 			if (!*argv || *ep) {
