@@ -17,7 +17,7 @@
 # @(#)Makefile	5.2 (Berkeley) 5/11/89
 #
 
-CFLAGS=	-O -DKERBEROS
+CFLAGS=	-O -DKERBEROS -I/usr/include/kerberosIV
 LIBC=	/lib/libc.a
 SRCS=	rlogin.c kcmd/krcmd.c kcmd/kcmd.c des/des_rw.c
 OBJS=	krcmd.o kcmd.o des_rw.o
