@@ -1,8 +1,12 @@
-#! /bin/csh -f
+#!/bin/sh -
 #
-#	sendbug.sh	4.3	84/03/26
+# Copyright (c) 1983 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)sendbug.sh	5.1 (Berkeley) %G%
+#
 # Create a bug report and mail to '4bsd-bugs'.
-#
 
 onintr clean
 /bin/cp /usr/ucb/bugformat /tmp/bug$$
