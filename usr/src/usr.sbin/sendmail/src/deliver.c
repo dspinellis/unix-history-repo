@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.11	%G%";
+static char SccsId[] = "@(#)deliver.c	3.12	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -273,6 +273,8 @@ deliver(to, editfcn)
 **		none.
 */
 
+#define NFORKTRIES	5
+
 sendoff(m, pvp, editfcn)
 	struct mailer *m;
 	char **pvp;
@@ -303,11 +305,17 @@ sendoff(m, pvp, editfcn)
 		syserr("pipe");
 		return (-1);
 	}
+	for (i = NFORKTRIES; i-- > 0; )
+	{
 # ifdef VFORK
-	pid = vfork();
+		pid = vfork();
 # else
-	pid = fork();
+		pid = fork();
 # endif
+		if (pid >= 0)
+			break;
+		sleep(NFORKTRIES - i);
+	}
 	if (pid < 0)
 	{
 		syserr("Cannot fork");
