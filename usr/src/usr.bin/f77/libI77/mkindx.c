@@ -1,4 +1,10 @@
 /*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+/*
  *  mkindx.c - utility to format a nice index to source files, etc.
  *
  *  usage:  mkindx "title string" [file_name] [filename] .....
@@ -6,7 +12,7 @@
 
 # include	<stdio.h>
 
-char id_mkindx[] = "@(#)mkindx.c	1.1";
+char id_mkindx[] = "@(#)mkindx.c	5.1 %G%";
 
 char list[10000] = "pwd >>index; echo \" \" >>index; ls -l ";
 char *apndx = ">>index";

@@ -1,5 +1,12 @@
 /*
-char id_getcwd[] = "@(#)getcwd_.c	1.5";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)getcwd_.c	5.1	%G%
+ */
+
+/*
  * Get pathname of current working directory.
  *
  * calling sequence:

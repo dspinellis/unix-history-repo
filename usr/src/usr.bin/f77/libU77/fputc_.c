@@ -1,6 +1,12 @@
 /*
-char id_fputc[] = @(#)fputc_.c	1.4";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)fputc_.c	5.1	%G%
+ */
+
+/*
  * write a character to a logical unit bypassing formatted I/O
  *
  * calling sequence:

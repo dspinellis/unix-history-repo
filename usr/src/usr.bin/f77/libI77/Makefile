@@ -1,6 +1,12 @@
-# Makefile for f77 I/O lib, libI77.a
 #
-# @(#)Makefile	1.3 (Berkeley) %G%
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.1 (Berkeley) %G%
+#
+
+# Makefile for f77 I/O lib, libI77.a
 
 CFLAGS	      = -O
 

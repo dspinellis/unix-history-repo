@@ -1,6 +1,12 @@
 /*
-char id_malloc[] = "@(#)malloc_.c	1.1";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)malloc_.c	5.1	%G%
+ */
+
+/*
  *	allows f77 programs to dynamicly allocate space
  *	three routines:
  *		call malloc(need, addr)

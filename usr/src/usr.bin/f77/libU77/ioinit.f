@@ -1,6 +1,13 @@
 C
+C Copyright (c) 1980 Regents of the University of California.
+C All rights reserved.  The Berkeley software License Agreement
+C specifies the terms and conditions for redistribution.
+C
+C	@(#)ioinit.f	5.1 (Berkeley) %G%
+C
+C
 C ioinit - initialize the I/O system
-C		@(#)ioinit.f	1.5
+C
 C synopsis:
 C	logical function ioinit (cctl, bzro, apnd, prefix, vrbose)
 C	logical cctl, bzro, apnd, vrbose
