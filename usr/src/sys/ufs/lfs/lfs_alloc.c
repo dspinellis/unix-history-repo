@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.10	82/08/03	*/
+/*	lfs_alloc.c	2.11	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,7 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/quota.h"
+#include "../h/kernel.h"
 
 extern u_long		hashalloc();
 extern ino_t		ialloccg();
@@ -363,7 +364,7 @@ fragextend(ip, cg, bprev, osize, nsize)
 		brelse(bp);
 		return (NULL);
 	}
-	cgp->cg_time = time;
+	cgp->cg_time = time.tv_sec;
 	bno = dtogd(fs, bprev);
 	for (i = numfrags(fs, osize); i < frags; i++)
 		if (isclr(cgp->cg_free, bno + i)) {
@@ -422,7 +423,7 @@ alloccg(ip, cg, bpref, size)
 		brelse(bp);
 		return (NULL);
 	}
-	cgp->cg_time = time;
+	cgp->cg_time = time.tv_sec;
 	if (size == fs->fs_bsize) {
 		bno = alloccgblk(fs, cgp, bpref);
 		bdwrite(bp);
@@ -632,7 +633,7 @@ ialloccg(ip, cg, ipref, mode)
 		brelse(bp);
 		return (NULL);
 	}
-	cgp->cg_time = time;
+	cgp->cg_time = time.tv_sec;
 	if (ipref) {
 		ipref %= fs->fs_ipg;
 		if (isclr(cgp->cg_iused, ipref))
@@ -700,7 +701,7 @@ fre(ip, bno, size)
 		brelse(bp);
 		return;
 	}
-	cgp->cg_time = time;
+	cgp->cg_time = time.tv_sec;
 	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
 		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag)) {
@@ -789,7 +790,7 @@ ifree(ip, ino, mode)
 		brelse(bp);
 		return;
 	}
-	cgp->cg_time = time;
+	cgp->cg_time = time.tv_sec;
 	ino %= fs->fs_ipg;
 	if (isclr(cgp->cg_iused, ino)) {
 		printf("dev = 0x%x, ino = %d, fs = %s\n",
@@ -1026,7 +1027,7 @@ update(flag)
 			panic("update: rofs mod");
 		}
 		fs->fs_fmod = 0;
-		fs->fs_time = time;
+		fs->fs_time = time.tv_sec;
 		sbupdate(mp);
 	}
 	/*
@@ -1037,7 +1038,7 @@ update(flag)
 			continue;
 		ip->i_flag |= ILOCK;
 		ip->i_count++;
-		iupdat(ip, &time, &time, 0);
+		iupdat(ip, &time.tv_sec, &time.tv_sec, 0);
 		iput(ip);
 	}
 	updlock = 0;
