@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.5 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.6 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.5 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.6 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -378,7 +378,9 @@ smtp(e)
 						code = "250-";
 					else
 						code = "250";
-					if (vrfyqueue->q_fullname == NULL)
+					if (strchr(vrfyqueue->q_paddr, '<') != NULL)
+						message(code, "%s", vrfyqueue->q_paddr);
+					else if (vrfyqueue->q_fullname == NULL)
 						message(code, "<%s>", vrfyqueue->q_paddr);
 					else
 						message(code, "%s <%s>",

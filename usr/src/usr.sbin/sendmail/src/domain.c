@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.3 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.4 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.3 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.4 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -33,6 +33,10 @@ static char	hostbuf[MAXMXHOSTS*PACKETSZ];
 
 #ifndef MAXDNSRCH
 #define MAXDNSRCH	6	/* number of possible domains to search */
+#endif
+
+#ifndef MAX
+#define MAX(a, b)	((a) > (b) ? (a) : (b))
 #endif
 
 getmxrr(host, mxhosts, localhost, rcode)
@@ -278,7 +282,7 @@ getcanonname(host, hbsize)
 	char **dp;
 	char *mxmatch;
 	bool amatch;
-	char nbuf[PACKETSZ];
+	char nbuf[MAX(PACKETSZ, MAXDNAME*2+2)];
 	char *searchlist[MAXDNSRCH+1];
 
 	if (tTd(8, 2))
@@ -320,12 +324,10 @@ getcanonname(host, hbsize)
 
 	for (dp = searchlist; *dp != NULL; dp++)
 	{
-		(void) sprintf(nbuf, "%.*s%s%.*s", MAXDNAME, host,
-				**dp == '\0' ? "" : ".",
-				MAXDNAME, *dp);
 		if (tTd(8, 5))
-			printf("getcanonname: trying %s\n", nbuf);
-		ret = res_query(nbuf, C_IN, T_ANY, &answer, sizeof(answer));
+			printf("getcanonname: trying %s.%s\n", host, *dp);
+		ret = res_querydomain(host, *dp, C_IN, T_ANY,
+				      &answer, sizeof(answer));
 		if (ret <= 0)
 		{
 			if (tTd(8, 8))
