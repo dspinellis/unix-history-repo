@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dirent.h	5.4 (Berkeley) %G%
+ *	@(#)dirent.h	5.5 (Berkeley) %G%
  */
 
 #ifndef _DIRENT_
@@ -43,9 +43,6 @@ struct	dirent {
  */
 #define	DIRBLKSIZ	1024
 
-#define	NDIRHASH	8	/* Num of hash lists, must be a power of 2 */
-#define	LOCHASH(i)	((i)&(NDIRHASH-1))
-
 /*
  * This structure describes an open directory.
  */
@@ -56,24 +53,9 @@ typedef struct _dirdesc {
 	char	*dd_buf;	/* data buffer */
 	int	dd_len;		/* size of data buffer */
 	long	dd_seek;	/* magic cookie returned by getdirentries */
-	long	dd_loccnt;	/* next magic cookie for seekdir */
-	struct	ddloc *dd_hash[NDIRHASH];   /* hash list heads for ddlocs */
 } DIR;
 
 #define dirfd(dirp)	((dirp)->dd_fd)
-
-/*
- * One of these structures is malloced to describe the current directory
- * position each time telldir is called. It records the current magic 
- * cookie returned by getdirentries and the offset within the buffer
- * associated with that return value.
- */
-struct ddloc {
-	struct	ddloc *loc_next;/* next structure in list */
-	long	loc_index;	/* key associated with structure */
-	long	loc_seek;	/* magic cookie returned by getdirentries */
-	long	loc_loc;	/* offset of entry in buffer */
-};
 
 #ifndef NULL
 #define NULL 0
