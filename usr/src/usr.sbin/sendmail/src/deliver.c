@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -388,8 +388,8 @@ deliver(firstto, editfcn)
 				}
 				else
 				{
-					strcat(tobuf, ",");
-					strcat(tobuf, to->q_paddr);
+					(void) strcat(tobuf, ",");
+					(void) strcat(tobuf, to->q_paddr);
 				}
 			}
 
@@ -1147,7 +1147,7 @@ mailfile(filename, ctladdr)
 		(void) signal(SIGINT, SIG_DFL);
 		(void) signal(SIGHUP, SIG_DFL);
 		(void) signal(SIGTERM, SIG_DFL);
-		umask(OldUmask);
+		(void) umask(OldUmask);
 		if (stat(filename, &stb) < 0)
 		{
 			errno = 0;
