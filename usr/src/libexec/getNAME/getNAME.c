@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getNAME.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getNAME.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -45,7 +45,7 @@ getfrom(name)
 
 	if (freopen(name, "r", stdin) == 0) {
 		perror(name);
-		exit(1);
+		return;
 	}
 	for (;;) {
 		if (fgets(headbuf, sizeof headbuf, stdin) == NULL)
