@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.48 (Berkeley) %G%
+ *	@(#)init_main.c	7.49 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -58,7 +58,6 @@ extern	struct user *proc0paddr;
  */
 main()
 {
-	USES_VOP_UNLOCK;
 	register int i;
 	register struct proc *p;
 	register struct filedesc0 *fdp;

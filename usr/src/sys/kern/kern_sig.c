@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.47 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.48 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -1053,9 +1053,6 @@ sigexit(p, sig)
 coredump(p)
 	register struct proc *p;
 {
-	USES_VOP_GETATTR;
-	USES_VOP_SETATTR;
-	USES_VOP_UNLOCK;
 	register struct inode *ip;
 	register struct pcred *pcred = p->p_cred;
 	register struct ucred *cred = pcred->pc_ucred;
