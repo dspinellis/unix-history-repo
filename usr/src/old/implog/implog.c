@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implog.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)implog.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -23,7 +23,10 @@ static char sccsid[] = "@(#)implog.c	5.6 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/socket.h>
 
+#include <net/if.h>
+
 #include <netinet/in.h>
+#define	IMPMESSAGES
 #define	IMPLEADERS
 #include <netimp/if_imp.h>
 
@@ -289,23 +292,17 @@ impbadleader(ip)
 		printf("%s\n", badleader[ip->il_subtype]);
 }
 
-char *down[] = {
-	"in 30 secs",
-	"for hardware pm",
-	"for software reload",
-	"for emergency restart"
-};
-
 impdown(ip)
 	register struct imp_leader *ip;
 {
 	int tdown, tbackup;
 
-	printf("imp going down %s", down[ip->il_link & IMP_DMASK]);
-	tdown = ((ip->il_link >> 2) & 0xf) * 5;
-	if (ip->il_link & IMP_DMASK)
+	printf("imp going down %s", impmessage[ip->il_link & IMP_DMASK]);
+	tdown = ((ip->il_link >> IMPDOWN_WHENSHIFT) & IMPDOWN_WHENMASK) *
+	    IMPDOWN_WHENUNIT;
+	if ((ip->il_link & IMP_DMASK) != IMPDOWN_GOING)
 		printf(" in %d minutes", tdown);
-	tbackup = ip->il_subtype * 5;
+	tbackup = ip->il_subtype * IMPDOWN_WHENUNIT;
 	printf(": back up ");
 	if (tbackup)
 		printf("%d minutes\n", tbackup);
@@ -356,7 +353,7 @@ imphostdead(ip)
 {
 	printf("host %d/%d dead: ", ip->il_host, ip->il_imp);
 	if (ip->il_link & IMP_DMASK)
-		printf("down %s, ", down[ip->il_link & IMP_DMASK]);
+		printf("down %s, ", impmessage[ip->il_link & IMP_DMASK]);
 	if (ip->il_subtype <= IMPHOST_COMINGUP)
 		printf("%s\n", hostdead[ip->il_subtype]);
 	else

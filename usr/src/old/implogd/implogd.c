@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implogd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)implogd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sgtty.h>
@@ -21,6 +21,8 @@ static char sccsid[] = "@(#)implogd.c	5.3 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/file.h>
+
+#include <net/if.h>
 
 #include <netinet/in.h>
 #include <netimp/if_imp.h>
