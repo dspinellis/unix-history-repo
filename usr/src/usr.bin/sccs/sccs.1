@@ -64,11 +64,20 @@ Perform a delta on the named files
 and then get new versions.
 The new versions will have id keywords expanded,
 and will not be editable.
+The \-m, \-p, \-r, \-s, and \-y flags
+will be passed to delta,
+and the \-b, \-c, \-e, \-i, \-k, \-l, \-s, and \-x flags
+will be passed to get.
 .IP deledit
 Equivalent to ``delget'' except that the
 ``get'' phase includes the ``\-e'' flag.
 This option is useful for making a ``checkpoint''
 of your current editing phase.
+The same flags will be passed to delta
+as described above,
+and all the flags listed for ``get''
+above except \-e and \-k
+are passed to ``edit''.
 .IP fix
 Must be followed by a
 .B \-r
