@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	4.30 (Berkeley) %G%
+#	@(#)Makefile	4.31 (Berkeley) %G%
 #
 # Compatibility routines are kept in directories with a prefixing
 # ``compat'' (so they all sort together).
@@ -50,6 +50,10 @@ ALL=	compat-4.1 compat-4.1/compat-4.1.${MACHINE} compat-4.3 \
 	net/${HOSTLOOKUP} ns stdio stdio/stdio.${MACHINE} \
 	${MACHINE}/csu ${MACHINE}/sys
 SUBDIR=	${ALL} net/hosttable net/named
+ONE=	compat-4.1 compat-4.3 compat-sys5 gen inet net ns stdio
+TWO=	compat-4.1/compat-4.1.${MACHINE} gen/gen.${MACHINE} \
+	net/net.${MACHINE} net/${HOSTLOOKUP} stdio/stdio.${MACHINE} \
+	${MACHINE}/csu ${MACHINE}/sys
 TAGSFILE=tags
 
 libc.a libc_p.a: mkdir ${ALL}
@@ -78,8 +82,11 @@ install:
 	cd ${MACHINE}/csu; make DESTDIR=${DESTDIR} install
 
 tags:
-	for i in ${ALL}; do \
-		(cd $$i; make ${MFLAGS} TAGSFILE=`pwd`/${TAGSFILE} tags); \
+	for i in ${ONE}; do \
+		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
+	done
+	for i in ${TWO}; do \
+		(cd $$i; make ${MFLAGS} TAGSFILE=../../${TAGSFILE} tags); \
 	done
 	/usr/bin/sort -o ${TAGSFILE} ${TAGSFILE}
 
