@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,7 +45,7 @@ main(argc, argv)
 {
 	int cc, count, bits;
 	struct sockaddr from;
-	int fromlen = sizeof(from);
+	int fromlen = sizeof(from), size = 32*1024;
 	struct timeval shorttime;
 	
 	if (argc < 2) {
@@ -58,6 +58,8 @@ usage:
 		perror("socket");
 		exit(2);
 	}
+	if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size)) < 0)
+		perror("setsockopt SO_RCVBUF");
 
 	argv++, argc--;
 	if (*argv[0] == '-') {
@@ -102,6 +104,7 @@ usage:
 		rip_input(&from, cc);
 		count--;
 	}
+	exit (count > 0 ? count : 0);
 }
 
 query(host)
@@ -209,10 +212,10 @@ rip_input(from, size)
 				if (hp)
 					name = hp->h_name;
 			}
-			printf("\t%s(%s), metric %d\n", name,
-				inet_ntoa(sin->sin_addr), n->rip_metric);
+			printf("\t%-17s metric %2d name %s\n",
+				inet_ntoa(sin->sin_addr), n->rip_metric, name);
 		} else
-			printf("\t%s, metric %d\n",
+			printf("\t%-17s metric %2d\n",
 				inet_ntoa(sin->sin_addr), n->rip_metric);
 		break;
 		}
