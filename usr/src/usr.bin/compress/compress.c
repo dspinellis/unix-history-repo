@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #define	min(a,b)	((a>b) ? b : a)
@@ -257,7 +257,7 @@ char_type magic_header[] = { "\037\235" };	/* 1F 9D */
  *
  */
 #ifndef lint
-static char rcs_ident[] = "$Header: compress.c,v 3.1 85/05/12 18:56:13 jaw Exp $";
+static char rcs_ident[] = "$Header: compress.c,v 3.2 85/05/12 18:56:13 jaw Exp $";
 #endif !lint
 
 #include <stdio.h>
@@ -1407,7 +1407,7 @@ cl_hash(hsize)		/* clear hash cache, re-init code table */
 	register count_int hsize;
 {
 	register count_int *htab_p = htab+hsize;
-	register count_int i;
+	register long i;
 	register long m1 = -1;
 
 	cl_cache( min((count_int)hsize, MAX_CACHE) );
