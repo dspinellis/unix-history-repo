@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)symlink.7	8.2 (Berkeley) %G%
+.\"	@(#)symlink.7	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SYMLINK 7
@@ -34,7 +34,7 @@ following conventions in a somewhat ad-hoc fashion.
 Rules for more a uniform approach, as they are implemented in this system,
 are outlined here.
 It is important that local applications conform to these rules, too,
-so that the user interface is as consistent as possible.
+so that the user interface can be as consistent as possible.
 .Pp
 Symbolic links are handled either by operating on the link itself,
 or by operating on the object referenced by the link.
@@ -284,9 +284,9 @@ flag.
 The
 .Fl H
 flag causes symbolic links specified on the command line to be
-dereferenced for the purposes of the tree walk, and it is as if the
-user had specified the name of the file to which the symbolic link
-pointed.
+dereferenced both for the purposes of the action to be performed
+and the tree walk, and it is as if the user had specified the
+name of the file to which the symbolic link pointed.
 .Pp
 As consistently as possible, you can make commands doing a file tree
 walk follow any symbolic links named on the command line, as well as
@@ -336,15 +336,15 @@ and
 flags are ignored if the
 .Fl R
 flag is not also specified.
-In addition, the last one
+In addition, you may specify the
 .Fl H ,
 .Fl L
 and
 .Fl P
-specified determines the command's behavior.
+options more than once; the last one specified determines the
+command's behavior.
 This is intended to permit you to alias commands to behave one way
-or the other, and then specify or override that behavior on the
-command line.
+or the other, and then override that behavior on the command line.
 .Pp
 The
 .Xr ls 1
