@@ -1,0 +1,4 @@
+gethostnamadr.o
+res_query.o
+res_mkquery.o
+res_send.o
