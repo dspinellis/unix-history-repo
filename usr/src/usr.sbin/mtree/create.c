@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -162,7 +162,7 @@ statd(t, parent, puid, pgid, pmode)
 	mode_t savemode;
 	u_short maxgid, maxuid, maxmode, g[MAXGID], u[MAXUID], m[MAXMODE];
 
-	if ((p = fts_children(t)) == NULL) {
+	if ((p = fts_children(t, 0)) == NULL) {
 		if (errno)
 			err("%s: %s", RP(parent), strerror(errno));
 		return (1);
