@@ -1,0 +1,461 @@
+BABYL OPTIONS:
+Version: 5
+Labels:
+Note:   This is the header of an rmail file.
+Note:   If you are seeing it in rmail,
+Note:    it means the file has no messages in it.
+
+1,,
+Received: from ATHENA (ATHENA.MIT.EDU) by prep; Thu, 19 Dec 85 23:09:34 est
+Received: from PARIS (PARIS.MIT.EDU) by ATHENA (4.12/4.7)
+	id AA02786; Thu, 19 Dec 85 23:07:35 est
+From: martillo@ATHENA.MIT.EDU (Yakim Martillo)
+Received: by PARIS (5.15/4.7)
+	id AA24170; Thu, 19 Dec 85 23:07:36 EST
+Date: Thu, 19 Dec 85 23:07:36 EST
+Message-Id: <8512200407.AA24170@PARIS>
+To: rms@prep
+Cc: lbm
+Subject: Gnu Emacs + X documentation
+
+*** EOOH ***
+From: martillo@ATHENA.MIT.EDU (Yakim Martillo)
+Date: Thu, 19 Dec 85 23:07:36 EST
+To: rms@prep
+Cc: lbm
+Subject: Gnu Emacs + X documentation
+
+
+This is the start of my X documentation.
+
+I have not finished the last five sections yet.  Please give me some
+suggestions.
+
+Joachim
+
+
+Special Terminal Interfaces
+
+Some terminals provide special capabilities which can be more
+effectively used via specially written C functions rather than normal
+termcap processing.  To ease the use of these capabilities and aid the
+integration of these C functions, special terminal hooks are provided.
+
+The hooks are all externed in the source header file termhooks.h.
+To determine the arguments, the interested user who wishes to develop
+a special terminal interface should consult term.c.
+For proper functioning of the user defined C termhook functions, the
+user should make certain that the terminal characteristics as externed
+in termchar.h are properly set.  
+
+Examples of how to use the termhooks can be found in xterm.c which
+contains the Gnu Emacs to X interface.
+
+Gnu Emacs to X Interface
+
+The termhooks feature has enough power that termhooks need not be
+restricted merely to the employment of special terminal capabilities.
+Termhooks can be used to interface Gnu Emacs to special graphics
+devices or window systems.  Gnu Emacs interfaces with not a great deal
+of difficulty to the MIT/Project Athena X Window system.  With not too
+much effort, a competent hacker should be able to interface Gnu Emacs
+to the Sun, Apollo, or Blit Window systems.
+
+What is X?
+
+X is a network transparent window system developed at MIT by Bob
+Scheiffler, Jim Gettys, Tony della Fera, Ron Newman and others.  X is
+a descendent of the Stanford V kernal system and Gosling's rectangle
+management system.  X has a standard protocol for communication with
+an X server which talks to the high resolution graphics device driver.
+The X developers have supplied a library libX.a which provides library
+routines to handle typical graphics/window system commands.  X is
+network transparent in that a process running on a machine which wants
+to make use of a high resolution graphics device will establish a
+network connection to the X server which talks to the driver for that
+device.  The process will be a client of the X server.  Since LAN's
+typically can move data at megabit rates, running a window system in
+this fashion has many advantages.  For more information about X,
+hackers are directed to "Xlib - C Language X Interface Version (?)"
+written by Jim Gettys (DEC/MIT) and Ron Newman (MIT).
+
+New Functionality of Gnu Emacs + X
+
+Gnu Emacs running as a client of X provides very rapid line insertion
+and deletion because bit blit commands are sent to the server and the
+driver simply tells the device to move the pixels on the screen
+directly.  In fact, Gnu Emacs running under the xterm terminal
+emulator can also cause bit blts to take place but bit blits via the
+terminal emulator are rather slow because of escape sequence parsing
+overhead in the terminal emulator and because of context switching
+overhead as the bits take a merry trip through the pty interfaces and
+drivers. 
+
+Gnu Emacs runs in its own X window and therefore no information is
+lost from the xterm session from which the user invoked Gnu Emacs.
+Gnu Emacs should probably be run in background from the parent X
+session because then the user may continue to do more work in the
+parent xterm session.  As Gnu Emacs should be run in background, the
+lisp form 
+              (put 'suspend-emacs 'disabled t)
+is passed to the Gnu Emacs lisp interpreter when Gnu Emacs is invoked
+from an xterm terminal emulator.  Should the user accidently type the
+key sequence for suspend-emacs (initially C-z or C-XC-z), he will be
+queried whether he truly wishes to suspend emacs.  Unless the user is
+confident he should reply n (= no).
+
+If the user has an X window manager running, the user can resize the
+Gnu Emacs window using the usual mouse sequences which have been
+grabbed by the window manager.  Gnu Emacs then automatically resizes
+itself and updates the display.  
+
+By using the mouse window manager commands, the user can cause
+formerly obscured sections of the Gnu Emacs window to be uncovered.
+These sections have to be repainted.  Since Gnu Emacs creates the Gnu
+Emacs window by its lonesome, Gnu Emacs must repaint these sections of
+the window all by itself.  If Gnu Emacs is chugging away on some
+global regexp replacement, Gnu Emacs may take its time in repainting
+the display. (Similar repainting may take place on bit blits.)
+
+With the Gnu Emacs to X interface the mouse becomes even more
+powerful.  Some mouse events (basically the ones not grabbed by the
+window manager) are passed to Gnu Emacs.  Gnu Emacs is informed of the
+reception of such events because it receives the key sequence C-cC-m.
+Therefore a user who wishes to use the Gnu Emacs to X interface should
+not rebind this key sequence to any function.
+
+This key sequence is bound to the lisp function x-mouse-mode which
+goes and checks the special X Mouse Queue for mouse events.  Each
+control/shift/meta-mouse button sequence is associated with a defined
+constant in the lisp file x-mouse.el.  The constants are defined as
+follows:
+
+	(defconst x-button-right (char-to-string 0))
+	(defconst x-button-middle (char-to-string 1))
+	(defconst x-button-left (char-to-string 2))
+
+	(defconst x-button-s-right (char-to-string 16))
+	(defconst x-button-s-middle (char-to-string 17))
+	(defconst x-button-s-left (char-to-string 18))
+
+	(defconst x-button-m-right (char-to-string 32))
+	(defconst x-button-m-middle (char-to-string 33))
+	(defconst x-button-m-left (char-to-string 34))
+
+	(defconst x-button-c-right (char-to-string 64))
+	(defconst x-button-c-middle (char-to-string 65))
+	(defconst x-button-c-left (char-to-string 66))
+
+	(defconst x-button-m-s-right (char-to-string 48))
+	(defconst x-button-m-s-middle (char-to-string 49))
+	(defconst x-button-m-s-left (char-to-string 50))
+
+	(defconst x-button-c-s-right (char-to-string 80))
+	(defconst x-button-c-s-middle (char-to-string 81))
+	(defconst x-button-c-s-left (char-to-string 82))
+
+	(defconst x-button-c-m-right (char-to-string 96))
+	(defconst x-button-c-m-middle (char-to-string 97))
+	(defconst x-button-c-m-left (char-to-string 98))
+
+	(defconst x-button-c-m-s-right (char-to-string 112))
+	(defconst x-button-c-m-s-middle (char-to-string 113))
+	(defconst x-button-c-m-s-left (char-to-string 114)).
+
+To understand why these constants are so defined, the user should
+check out the (C) definition of the lisp function x-mouse-mode in the
+src file xfns.c.  (I, Joachim Martillo not RMS, do not claim 
+this code handles mouse events in the best way possible, and all
+involved with maintaining the Gnu Emacs to X interface would be open
+to suggestions for improvement.)
+
+Anyway, using these defined constants, the user may bind his own
+defined functions to mouse sequences using the define-key command as
+below:
+
+	(define-key mouse-map x-button-right 'x-mouse-select).
+
+Mouse functions are defined like any of the other lisp functions in
+Gnu Emacs.
+
+Here, exempli gratia, is the lisp definition of x-mouse-select:
+
+	(defun x-mouse-select (arg)
+	  "Select Emacs window the mouse is on."
+	  (let ((start-w (selected-window))
+		(done nil)
+		(w (selected-window))
+		(rel-coordinate nil))
+	    (while (and (not done)
+			(null (setq rel-coordinate
+				    (coordinates-in-window-p arg w))))
+	      (setq w (next-window w))
+	      (if (eq w start-w)
+		  (setq done t)))
+	    (select-window w)
+	    rel-coordinate)).
+
+When the mouse sequence is received, x-mouse-mode checks out the mouse
+queue, sees the defined constant associated with that button event,
+looks up that defined constants binding in the mouse-map and then
+invokes this lisp function with arg which is a list of the x and y
+coordinates of the mouse when the mouse event under question took
+place.  The lisp symbol arg is bound to (x-coordinate y-coordinate).
+
+The supplied mouse-functions and bindings are:
+
+	x-cut-and-wipe-text	      
+	  Function: Kill text between point and mouse; also copy to
+		    window system cut buffer.  
+	  Binding:  C-Middle Button.
+
+	x-cut-text
+	  Function: Copy text between point and mouse position into
+		    window system cut buffer.
+	  Binding:  S-Middle Button (i.e. Shift-Middle Button).
+
+	x-mouse-keep-one-window	      
+	  Function: Select Emacs window mouse is on, then kill all other Emacs
+		    windows.
+	  Binding:  C-S-Right Button.
+
+	x-mouse-select		      
+	  Function: Select Emacs window the mouse is on.
+	  Binding:  Right Button.
+
+	x-mouse-select-and-split      
+	  Function: Select Emacs window mouse is on, then split it vertically
+		    in half.
+	  Binding:  C-Right Button.
+
+	x-mouse-set-mark	      
+	  Function: Select Emacs window mouse is on, and set mark at mouse
+	            position.
+	  Binding:  Left Button.
+	x-mouse-set-point	      
+	  Function: Select Emacs window mouse is on, and move point to mouse
+		    position.
+	  Binding:  Middle Button.
+
+	x-paste-text		      
+	  Function: Move point to mouse position and insert window system cut
+	            buffer contents.
+	  Binding:  S-Right Button.
+
+These functions are invoked simply by positioning the mouse and then
+pressing the correct key/button combination.
+
+The cut and paste functions deserve special remark.  The X server
+maintains special buffers where data may be salted away.  One client
+may salt data away in a cut buffer.  Then another client could request
+this data.  In emacs, data is salted away, by setting the point (you
+could use the mouse to set the point) then moving the mouse to the end
+(or beginning) of the text to be salted away and pressing shift
+middle.  If the text should be wiped out of the buffer as well as
+salted away, C-Middle Button should be used instead of S-Middle
+Button.  To get the text back into this emacs or another emacs, move
+the mouse to where the text should be inserted and invoke x-paste-text
+via S-Right Button.  The text can be pasted into any client of the
+current X server from the current cut buffer using that client's paste
+command.  For xterm the paste command is also S-Right Button.
+
+Other Gnu Emacs Lisp Functions
+
+Command Line Arguments
+
+.emacs File
+
+x-switches
+
+.Xdefaults
+
+
+1,,
+Summary-line: 19-Dec         lbm@ATHENA.MIT.EDU  #GNU Emacs under X Writeup for Manual
+Received: from ATHENA (ATHENA.MIT.EDU) by prep; Thu, 19 Dec 85 15:57:34 est
+Received: from JASON (JASON.MIT.EDU) by ATHENA (4.12/4.7)
+	id AA12646; Thu, 19 Dec 85 15:55:53 est
+Received: by JASON (5.15/4.7)
+	id AA20416; Thu, 19 Dec 85 15:55:40 EST
+Message-Id: <8512192055.AA20416@JASON>
+To: rms@prep
+Cc: tower@prep
+Subject: GNU Emacs under X Writeup for Manual
+Date: 19 Dec 85 15:55:33 EST (Thu)
+From: Linda B. Merims <lbm@ATHENA.MIT.EDU>
+
+*** EOOH ***
+To: rms@prep
+Cc: tower@prep
+Subject: GNU Emacs under X Writeup for Manual
+Date: 19 Dec 85 15:55:33 EST (Thu)
+From: Linda B. Merims <lbm@ATHENA.MIT.EDU>
+
+
+Here's something you can put in the V17 manual to describe GNU Emacs under
+X.  I've added a couple of notes to you about things that didn't work
+when I tried them.  It has no formatting commands in it.  I
+don't know if we followed your naming conventions.  It is important
+for us to distinguish between "gnuemacs" and "emacs" for the next
+six months while we convert our 2000+ users over from CCA, so I mention
+that at MIT's Project Athena, things are a little different for
+a short while.
+
+I didn't put in anything about X-specific variables.  I don't know
+anything about them.  I'm also a bit colloquial in places, to make
+my point better with novices (who, for example, understand "cursor" better
+than "point".)  I also didn't document the -d display command option.
+Nor are there any credits to, for example, Joachim Martillo.  Up to you.
+
+Hope this does you good.
+
+                              Linda Merims
+
+
+----------------------------------------------------------------
+GNU Emacs on X Window System Displays
+
+
+GNU Emacs works with the X window system.  It starts
+by "popping up" a new window on the screen.  This can be a bit
+disconcerting if you're not used to it.  If you're on one of these
+terminals, the easiest way to start up GNU Emacs is to type the same command
+you would before, but to follow it with a &, as in:
+
+emacs  paper.mss &
+
+The "&" runs GNU Emacs in the "background," freeing your original
+window for other uses.  (There are X-specific options to the Gnuemacs
+commands that will be listed later.)
+
+NOTE:  GNU Emacs may be invoked by 
+different names at different sites.  It is sometimes known
+as xemacs.  At MIT's Project Athena where GNU Emacs was first
+adapted to X, the correct command is:  gnuemacs  until summer
+1986, when it will become just:  emacs.
+
+Soon, you will see a small black box in the upper left hand corner of your
+screen that reads, "emacs: 10 x 10".  (This number represents
+columns x rows.)  You'll also see a small outline of a window with
+a cross in the upper left hand corner of it.  This is where the upper
+left hand corner of your window will be.  You can move this cross with
+the mouse to any spot on the screen.   You can then do one of three
+things:
+
+make an 80 column by 24 row emacs window -- click the left mouse button
+
+make an 80 column by 65 row emacs window -- click the right mouse button
+  (the length will actually be however many lines long your screen
+   can hold.  80 by 66 is about the size of an 8 1/2 x 11 piece of paper.)
+
+make any size emacs window you want -- hold down the middle mouse button
+  and move the mouse to create a window of any size.  As you move the
+  mouse, the numbers in the upper left hand corner of the screen and
+  the rubber-band outline will expand or contract.  Just release the
+  button when the window is the size you want.
+
+Unless you make the window in any area that does not overlap any other
+windows, you may have problems when you want to get back to a window
+obscured by the GNU Emacs window.  You need to know how to use the X
+window manager, xwm, to move and shuffle these windows around. For
+more information on the window manager, you can type  man xwm, on
+any Berkeley 4.3 Unix system with this user-contributed (/usr/new)
+utility available.
+
+Note that you cannot suspend (C-Z) a GNU emacs X window.
+
+
+
+GNU Emacs and the X Mouse
+
+When using GNU Emacs on an X terminal, you can take advantage of the
+convenient, quick commands for moving point, setting the mark, and
+cutting and pasting text.  You issue these commands by pressing
+the mouse's buttons alone or in concert with the SHIFT, CTRL, or
+SHIFT-CTRL keys as follows:
+
+left     set mark ('x-mouse-set-mark) (RMS, this blinked cursor but didn't
+                                       actually set anything...lbm)
+
+middle   move the cursor (point) to where the mouse is.  This is
+         like moving the cursor with C-F or C-N or the arrow keys,
+         only immediate.  ('x-mouse-set-point)
+
+right    move to the window where the mouse is.  Point is in the same
+         place as it was the last time you were in the window.
+         ('x-mouse-select)
+
+
+SHIFT-left
+         undefined
+
+SHIFT-middle
+         take the text between point and mark and put it into the
+         X cut buffer.  The text does NOT disappear from the screen.
+         It does NOT go into the emacs kill right.  Used for copying
+         text.  Recall text with SHIFT-right below.  ('x-cut-text)
+
+SHIFT-right
+         paste text from the X cut buffer to before point. ('x-paste-text)
+
+
+CTRL-left
+         undefined
+
+CTRL-middle
+         take the text between point and mark and put it into the
+         X cut buffer, AND the emacs kill ring.  Text is deleted
+         from the screen.  Used for moving text.  Recall text with
+         SHIFT-right above, or any emacs kill ring command. 
+         ('x-cut-and-wipe-text)
+
+CTRL-right
+         divide current window in two.  ('x-mouse-select-and-split)
+
+
+CTRL-SHIFT-middle
+         return to one-window mode, keeping the window the mouse is
+         in.   ('x-mouse-keep-one-window)(RMS, this didn't always work...lbm)
+
+
+
+Emacs Command X Window Options
+
+These command options have meaning to the X window system:
+
+-r    use reverse video (white characters on black background)
+
+-i    use GNU emacs's bitmap icon (a kitchen sink) if the emacs
+      window is iconized instead of the xwm window manager default.
+
+-font fontname
+      use fontname instead of the default vtsingle
+
+-b borderwidth
+      make the window border borderwidth pixels wide.  Default is 1.
+
+-w windowsize
+      instead of relying on the mouse buttons to determine size and
+      placement of the GNU emacs window, make it this size.  Size
+      is specified as:
+    
+         =[WIDTH][xHEIGHT][{+-}XOFF[{+-}YOFF]]
+
+      The []'s denote optional stuff, the {}'s surround
+      alternatives.  WIDTH and HEIGHT are in number of
+      characters, XOFF and YOFF are in pixels.  X and YOFF are
+      the xy offsets from the upper left corner origin for the
+      upper left corner of the window.
+
+
+GNU Emacs will check in the .Xdefaults file for default values for
+these variables.  (RMS, we're not sure what program name it's
+going to be looking for...lbm)
+
+
+GNU Emacs under X Variables
+
+I don't know what these are.  Sorry.
+
+
+
