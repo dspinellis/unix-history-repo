@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	1.4 83/07/22";
+static	char *sccsid = "@(#)cmd2.c	1.5 83/07/26";
 #endif
 
 #include "defs.h"
@@ -18,22 +18,27 @@ dohelp()
 	}
 	wwprintf(w, "The escape character is ^P, which gets you into command mode.\r\n");
 	wwprintf(w, "The commands are:\r\n");
-	wwprintf(w, "[1-9]   Select window [1-9] and exit command mode\r\n");
-	wwprintf(w, "%%[1-9]  Select window [1-9]\r\n");
-	wwprintf(w, "c[1-9]  Close window [1-9]\r\n");
-	wwprintf(w, "C       Close all empty windows\r\n");
-	wwprintf(w, "Z       Close all windows\r\n");
-	wwprintf(w, "Q       Show all windows in sequence\r\n");
-	wwprintf(w, "R       Force refresh after every newline in current window\r\n");
-	wwprintf(w, "r       Don't refresh every line\r\n");
-	wwprintf(w, "w       Open a new window\r\n");
-	wwprintf(w, "s       Print IO statistics\r\n");
-	wwprintf(w, "t       Print resource usage of this program\r\n");
-	wwprintf(w, "T       Print resource usage of children\r\n");
-	wwprintf(w, "escape  Exit command mode\r\n");
-	wwprintf(w, "^L      Redraw screen\r\n");
-	wwprintf(w, "^Z      Suspend\r\n");
-	wwprintf(w, ".       Quit\r\n");
+	wwprintf(w, "[1-9]   Select window [1-9] and exit command mode.\r\n");
+	wwprintf(w, "%%[1-9]  Select window [1-9].\r\n");
+	wwprintf(w, "c[1-9]  Close window [1-9].\r\n");
+	wwprintf(w, "C       Close all empty windows.\r\n");
+	wwprintf(w, "Z       Close all windows.\r\n");
+	wwprintf(w, "Q       Show all windows in sequence.\r\n");
+	wwprintf(w, "R       Force refresh after every newline (current window only).\r\n");
+	wwprintf(w, "r       Don't refresh every line.\r\n");
+	wwprintf(w, "w       Open a new window.\r\n");
+	wwprintf(w, "^U      Scroll up.\r\n");
+	wwprintf(w, "^D      Scroll down.\r\n");
+	wwprintf(w, "[hjkl]  Move cursor [left, down, up, right].\r\n");
+	/*
+	wwprintf(w, "s       Print IO statistics.\r\n");
+	wwprintf(w, "t       Print resource usage of this program.\r\n");
+	wwprintf(w, "T       Print resource usage of children.\r\n");
+	*/
+	wwprintf(w, "escape  Exit command mode.\r\n");
+	wwprintf(w, "^L      Redraw screen.\r\n");
+	wwprintf(w, "^Z      Suspend.\r\n");
+	wwprintf(w, ".       Quit.\r\n");
 	waitnl(w);
 	closewin(w);
 }
@@ -119,7 +124,7 @@ dostat()
 
 doquit()
 {
-	wwputs("Really quit? ", cmdwin);
+	wwputs("Really quit [yn]? ", cmdwin);
 	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
 	while (bpeekc() < 0)
 		bread();
