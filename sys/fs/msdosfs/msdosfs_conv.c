@@ -14,7 +14,7 @@
  * October 1992
  * 
  *	from NetBSD:	msdosfs_conv.c,v 1.2 1993/12/18 00:50:38 mycroft Exp
- *	$Id$
+ *	$Id: msdosfs_conv.c,v 1.1 1994/01/24 06:04:52 rgrimes Exp $
  */
 
 /*
@@ -27,7 +27,7 @@
 /*
  * MSDOSFS include files.
  */
-#include <msdosfs/direntry.h>
+#include <fs/msdosfs/direntry.h>
 
 /*
  * Days in each month in a regular year.

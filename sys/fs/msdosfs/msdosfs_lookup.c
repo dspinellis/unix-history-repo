@@ -14,7 +14,7 @@
  * October 1992
  * 
  *	from NetBSD:	msdosfs_lookup.c,v 1.5 1993/12/18 00:51:09 mycroft Exp
- *	$Id$
+ *	$Id: msdosfs_lookup.c,v 1.1 1994/01/24 06:04:55 rgrimes Exp $
  */
 
 #include <sys/param.h>
@@ -23,11 +23,11 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 
-#include <msdosfs/bpb.h>
-#include <msdosfs/direntry.h>
-#include <msdosfs/denode.h>
-#include <msdosfs/msdosfsmount.h>
-#include <msdosfs/fat.h>
+#include <fs/msdosfs/bpb.h>
+#include <fs/msdosfs/direntry.h>
+#include <fs/msdosfs/denode.h>
+#include <fs/msdosfs/msdosfsmount.h>
+#include <fs/msdosfs/fat.h>
 
 /*
  * When we search a directory the blocks containing directory entries are

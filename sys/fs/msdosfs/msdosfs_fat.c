@@ -14,7 +14,7 @@
  * October 1992
  * 
  *	from NetBSD:	msdosfs_fat.c,v 1.2 1993/12/18 00:51:02 mycroft Exp
- *	$Id$
+ *	$Id: msdosfs_fat.c,v 1.1 1994/01/24 06:04:54 rgrimes Exp $
  */
 
 /*
@@ -32,11 +32,11 @@
 /*
  * msdosfs include files.
  */
-#include <msdosfs/bpb.h>
-#include <msdosfs/msdosfsmount.h>
-#include <msdosfs/direntry.h>
-#include <msdosfs/denode.h>
-#include <msdosfs/fat.h>
+#include <fs/msdosfs/bpb.h>
+#include <fs/msdosfs/msdosfsmount.h>
+#include <fs/msdosfs/direntry.h>
+#include <fs/msdosfs/denode.h>
+#include <fs/msdosfs/fat.h>
 
 /*
  * Fat cache stats.

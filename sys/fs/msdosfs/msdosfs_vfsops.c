@@ -14,7 +14,7 @@
  * October 1992
  * 
  *	from NetBSD:	msdosfs_vfsops.c,v 1.7 1994/01/20 09:46:40 pk Exp
- *	$Id$
+ *	$Id: msdosfs_vfsops.c,v 1.1 1994/01/24 06:04:56 rgrimes Exp $
  */
 
 #include <sys/param.h>
@@ -23,18 +23,18 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/vnode.h>
-#include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
+#include <fs/specfs/specdev.h>	/* XXX */	/* defines v_rdev */
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/file.h>
 #include <sys/malloc.h>
 
-#include <msdosfs/bpb.h>
-#include <msdosfs/bootsect.h>
-#include <msdosfs/direntry.h>
-#include <msdosfs/denode.h>
-#include <msdosfs/msdosfsmount.h>
-#include <msdosfs/fat.h>
+#include <fs/msdosfs/bpb.h>
+#include <fs/msdosfs/bootsect.h>
+#include <fs/msdosfs/direntry.h>
+#include <fs/msdosfs/denode.h>
+#include <fs/msdosfs/msdosfsmount.h>
+#include <fs/msdosfs/fat.h>
 
 int msdosfsdoforce = 0;		/* 1 = force unmount */
 

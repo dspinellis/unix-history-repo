@@ -14,7 +14,7 @@
  * October 1992
  * 
  *	from NetBSD:	msdosfs_vnops.c,v 1.1 1993/08/13 11:35:40 cgd Exp
- *	$Id$
+ *	$Id: msdosfs_vnops.c,v 1.1 1994/01/24 06:04:57 rgrimes Exp $
  */
 
 #include <sys/param.h>
@@ -28,15 +28,15 @@
 #include <sys/proc.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
-#include <miscfs/specfs/specdev.h> /* XXX */	/* defines v_rdev */
+#include <fs/specfs/specdev.h>	/* XXX */	/* defines v_rdev */
 #include <sys/malloc.h>
 #include <sys/dir.h>		/* defines dirent structure */
 
-#include <msdosfs/bpb.h>
-#include <msdosfs/direntry.h>
-#include <msdosfs/denode.h>
-#include <msdosfs/msdosfsmount.h>
-#include <msdosfs/fat.h>
+#include <fs/msdosfs/bpb.h>
+#include <fs/msdosfs/direntry.h>
+#include <fs/msdosfs/denode.h>
+#include <fs/msdosfs/msdosfsmount.h>
+#include <fs/msdosfs/fat.h>
 /*
  * Some general notes:
  * 
