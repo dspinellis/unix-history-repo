@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.13 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -222,8 +222,11 @@ ufs_getattr(vp, vap, cred)
 	vap->va_size = ip->i_ic.ic_size.val[0];
 	vap->va_size1 = ip->i_ic.ic_size.val[1];
 	vap->va_atime.tv_sec = ip->i_atime;
+	vap->va_atime.tv_usec = 0;
 	vap->va_mtime.tv_sec = ip->i_mtime;
+	vap->va_mtime.tv_usec = 0;
 	vap->va_ctime.tv_sec = ip->i_ctime;
+	vap->va_ctime.tv_usec = 0;
 	vap->va_flags = ip->i_flags;
 	vap->va_gen = ip->i_gen;
 	/* this doesn't belong here */
