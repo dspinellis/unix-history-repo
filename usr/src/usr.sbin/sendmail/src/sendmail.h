@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.56 (Berkeley) %G%
+ *	@(#)sendmail.h	6.57 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.56		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.57		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -351,6 +351,9 @@ struct metamac
 	char	metaname;	/* external code (after $) */
 	char	metaval;	/* internal code (as above) */
 };
+
+
+#define ALIASCLASS	struct _aliasclass
 /*
 **  Symbol table definitions
 */
@@ -528,7 +531,6 @@ union bigsockaddr
 */
 
 EXTERN bool	FromFlag;	/* if set, "From" person is explicit */
-EXTERN bool	NoAlias;	/* if set, don't do any aliasing */
 EXTERN bool	MeToo;		/* send to the sender also */
 EXTERN bool	IgnrDot;	/* don't let dot end messages */
 EXTERN bool	SaveFrom;	/* save leading "From" lines */
@@ -559,7 +561,6 @@ EXTERN int	LineNumber;	/* line number in current input */
 EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN int	FileMode;	/* mode on files */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
-EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
 EXTERN char	*ErrMsgFile;	/* file to prepend to all error messages */
 EXTERN char	*StatFile;	/* location of statistics summary */
