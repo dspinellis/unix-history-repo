@@ -1,9 +1,9 @@
-.\"     @(#)Infoletter	1.5 (Berkeley) %G%
+.\"     @(#)Infoletter	1.6 (Berkeley) %G%
 .\" use -ms
 .nr PS 10
 .ps 10
-.nr VS 12
-.vs 11p
+.nr VS 11
+.vs 11
 .nr LL 6.5i
 .ll 6.5i
 .so HEADERS
@@ -12,10 +12,9 @@
 .in 4.1i
 April 30, 1991
 .in
-.sp 2
+.sp
 .LP
 Dear Colleague:
-.sp
 .PP
 We are happy to send you information about our April,
 1991 update to our 1988 networking release.
@@ -142,11 +141,11 @@ in released products.
 However, you are strongly encouraged to upgrade any code
 that you use from this distribution to the similarly-licensed
 distribution of the 4.4BSD code within one year of its release.
-We regret that changes documents are not available;
-some of the major changes are outlined in the next section.
 .SH
 Summary of changes since the first networking distribution
 .PP
+We regret that changes documents are not available;
+this section outlines the major changes.
 In addition to the inclusion of a much larger portion of the BSD system,
 there are four major new kernel facilities available in this release.
 They are ISO/OSI networking support,
@@ -262,7 +261,7 @@ to support the arbitrary levels of routing found in the ISO protocols.
 The routing table also stores and caches route characteristics
 to speed the adaptation of the throughput and congestion avoidance
 algorithms.
-.PP
+.LP
 The hardware supported is:
 .IP \(bu
 HP 9000/300 series
@@ -271,7 +270,7 @@ Intel 386/486-based PCs with AT-bus peripherals
 (IDE-compatible disks are supported, but SCSI disks are not yet supported)
 .IP \(bu
 Sample drivers for the Tahoe and the VAX, but no complete machine support
-.PP
+.LP
 The reason that this distribution is not considered an alpha release of 4.4BSD
 is because it does not contain several major interfaces that we 
 plan to have available for that distribution.
@@ -283,7 +282,7 @@ A new internal network layering (``bstreams'') combining features
 of the current socket layering and of Streams.
 .IP \(bu
 Fixes, tuning, fixes, documentation, and fixes.
-.PP
+.LP
 This release does include several important structural kernel changes.
 The kernel uses a new internal system call convention;
 the use of global (``u-dot'') variables for parameters and error returns
@@ -296,7 +295,7 @@ which is used by the ps(1) program.
 .PP
 Many data structures that were previously statically allocated
 are now allocated dynamically.
-These structures include proc structure entries,
+These structures include process structure entries,
 user file tables, the mount table,
 the vnode table, the name cache, and the quota structures.
 .SH
@@ -306,7 +305,7 @@ The following procedure is necessary to obtain this software
 and license from Berkeley.
 As the software is freely distributable, you may also obtain part or all
 of this release from other sites.
-.PP
+.LP
 Before the distribution can be sent, we require:
 .IP \(bu
 Execution of the included Berkeley License Agreement.
@@ -333,7 +332,7 @@ the availability of future BSD distributions.
 Please note that we cannot ship to post office boxes;
 therefore, please have the technical contact's
 address supplied without use of a post office box.
-.PP
+.LP
 All the above material must be sent to:
 .DS
 Pauline Schwartz, Distribution Coordinator
