@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)as.h 4.7 %G%" */
+/* "@(#)as.h 4.8 %G%" */
 #ifdef VMS
 # define	vax	1
 # define	VAX	1
@@ -12,7 +12,8 @@
 #  include <a.out.h>
 #  include <stab.h>
 #else not FLEXNAMES
-#  include <olda.out.h>
+#  define ONLIST
+#  include "a.out.h"
 #  include <stab.h>
 #endif FLEXNAMES
 
@@ -247,6 +248,7 @@ struct symtab{
 struct	instab{
 	struct	nlist	s_nm;		/* instruction name, type (opcode) */
 	u_char	s_tag;			
+	char	s_pad[3];		/* round to 20 bytes */
 };
 /*
  *	The fields nm.n_desc and nm.n_value total 6 bytes; this is
@@ -255,7 +257,7 @@ struct	instab{
  *	they are allocated adjacently.
  *	IF THE FORMAT OF STRUCT nlist CHANGES, THESE MAY HAVE TO BE CHANGED.
  *
- *	Instab is cleverly declared to look very much the combination of
+ *	Instab is cleverly declared to look very much like the combination of
  *	a struct symtab and a struct nlist.
  */
 struct	Instab{
@@ -268,6 +270,7 @@ struct	Instab{
 	char	I_nargs;
 	char	I_args[6];
 	u_char	I_s_tag;
+	char	I_pad[3];		/* round to 20 bytes */
 };
 /*
  *	Redefinitions of fields in the struct nlist for instructions so that
