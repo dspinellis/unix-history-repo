@@ -1,113 +1,124 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getnetent.3	6.5 (Berkeley) %G%
+.\"     @(#)getnetent.3	6.6 (Berkeley) %G%
 .\"
-.TH GETNETENT 3 ""
-.UC 5
-.SH NAME
-getnetent, getnetbyaddr, getnetbyname, setnetent, endnetent \- get network entry
-.SH SYNOPSIS
-.nf
-.ft B
-#include <netdb.h>
-.PP
-.ft B
-struct netent *getnetent()
-.PP
-.ft B
-struct netent *getnetbyname(name)
-char *name;
-.PP
-.ft B
-struct netent *getnetbyaddr(net, type)
-long net;
-int type;
-.PP
-.ft B
-setnetent(stayopen)
-int stayopen;
-.PP
-.ft B
-endnetent()
-.fi
-.SH DESCRIPTION
-.IR Getnetent ,
-.IR getnetbyname ,
+.Dd 
+.Dt GETNETENT 3
+.Os BSD 4.2
+.Sh NAME
+.Nm getnetent ,
+.Nm getnetbyaddr ,
+.Nm getnetbyname ,
+.Nm setnetent ,
+.Nm endnetent
+.Nd get network entry
+.Sh SYNOPSIS
+.Fd #include <netdb.h>
+.Ft struct netent *
+.Fn getnetent 
+.Ft struct netent *
+.Fn getnetbyname "char *name"
+.Ft struct netent *
+.Fn getnetbyaddr "long net" "int type"
+.Fn setnetent "int stayopen"
+.Fn endnetent 
+.Sh DESCRIPTION
+The
+.Fn getnetent ,
+.Fn getnetbyname ,
 and
-.I getnetbyaddr
+.Fn getnetbyaddr
+functions
 each return a pointer to an object with the
 following structure
 containing the broken-out
 fields of a line in the network data base,
-.IR /etc/networks .
-.RS
-.PP
-.nf
+.Pa /etc/networks .
+.Bd -literal -offset indent
 struct	netent {
 	char		*n_name;	/* official name of net */
 	char		**n_aliases;	/* alias list */
 	int		n_addrtype;	/* net number type */
 	unsigned long	n_net;		/* net number */
 };
-.ft R
-.ad
-.fi
-.RE
-.PP
+.Ed
+.Pp
 The members of this structure are:
-.TP \w'n_addrtype'u+2n
-n_name
+.Bl -tag -width n_addrtype
+.It Fa n_name
 The official name of the network.
-.TP \w'n_addrtype'u+2n
-n_aliases
+.It Fa n_aliases
 A zero terminated list of alternate names for the network.
-.TP \w'n_addrtype'u+2n
-n_addrtype
+.It Fa n_addrtype
 The type of the network number returned; currently only AF_INET.
-.TP \w'n_addrtype'u+2n
-n_net
+.It Fa n_net
 The network number.  Network numbers are returned in machine byte
 order.
-.PP
-.I Getnetent
+.El
+.Pp
+The
+.Fn getnetent
+function
 reads the next line of the file, opening the file if necessary.
-.PP
-.I Setnetent
+.Pp
+The
+.Fn setnetent
+function
 opens and rewinds the file.  If the
-.I stayopen
+.Fa stayopen
 flag is non-zero,
 the net data base will not be closed after each call to 
-.I getnetbyname
+.Fn getnetbyname
 or
-.IR getnetbyaddr .
-.PP
-.I Endnetent
+.Fn getnetbyaddr .
+.Pp
+The
+.Fn endnetent
+function
 closes the file.
-.PP
-.I Getnetbyname
+.Pp
+The
+.Fn getnetbyname
+function
 and
-.I getnetbyaddr
+.Fn getnetbyaddr
 sequentially search from the beginning
 of the file until a matching
 net name or
 net address and type is found,
-or until EOF is encountered.
+or until
+.Dv EOF
+is encountered.
 Network numbers are supplied in host order.
-.SH FILES
-/etc/networks
-.SH "SEE ALSO"
-networks(5)
-.SH DIAGNOSTICS
+.Sh FILES
+.Bl -tag -width /etc/networks -compact
+.It Pa /etc/networks
+.El
+.Sh DIAGNOSTICS
 Null pointer
-(0) returned on EOF or error.
-.SH BUGS
-All information
-is contained in a static area
-so it must be copied if it is
-to be saved.  Only Internet network
+(0) returned on
+.Dv EOF
+or error.
+.Sh SEE ALSO
+.Xr networks 5
+.Sh HISTORY
+The
+.Fn getnetent ,
+.Fn getnetbyaddr ,
+.Fn getnetbyname ,
+.Fn setnetent ,
+and
+.Fn endnetent
+functions appeared in 
+.Bx 4.2 .
+.Sh BUGS
+The data space used by
+these functions is static; if future use requires the data, it should be
+copied before any subsequent calls to these functions overwrite it.
+Only Internet network
 numbers are currently understood.
 Expecting network numbers to fit
 in no more than 32 bits is probably

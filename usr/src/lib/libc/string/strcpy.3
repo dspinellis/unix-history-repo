@@ -1,78 +1,93 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strcpy.3	5.2 (Berkeley) %G%
+.\"     @(#)strcpy.3	5.3 (Berkeley) %G%
 .\"
-.TH STRCPY 3 ""
-.UC 4
-.SH NAME
-strcpy \- copy strings
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-char *
-strcpy(char *dst, const char *src);
-
-char *
-strncpy(char *dst, const char *src, size_t len);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Strcpy
+.Dd 
+.Dt STRCPY 3
+.Os BSD 4
+.Sh NAME
+.Nm strcpy
+.Nd copy strings
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strcpy "char *dst" "const char *src"
+.Ft char *
+.Fn strncpy "char *dst" "const char *src" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn strcpy
 and
-.B strncpy
-copy string
-.I src
+.Fn strncpy
+functions
+copy the string
+.Fa src
 to
-.IR dst ,
-stopping after the terminating '\e0' has been moved.
-.PP
-.B Strncpy
-writes exactly
-.I len
+.Fa dst
+(including the terminating
+.Ql \e0
+character).
+.Pp
+The
+.Fn strncpy
+copies not more than
+.Fa len
 characters into
-.IR dst ,
-appending '\e0' characters if
-.I src
+.Fa dst ,
+appending
+.Ql \e0
+characters if
+.Fa src
 is less than
-.I len
+.Fa len
 characters long, and
-.I not
+.Em not
 terminating
-.I dst
+.Fa dst
 if
-.I src
+.Fa src
 is more than
-.I len
+.Fa len
 characters long.
-.PP
-.B Strcpy
+.Sh RETURN VALUES
+The
+.Fn strcpy
 and
-.B strncpy
+.Fn strncpy
+functions
 return
-.IR dst .
-.SH EXAMPLES
-The following sets ``chararray'' to ``abc\e0\e0\e0'':
-.sp
-.ti +0.5i
+.Fa dst .
+.Sh EXAMPLES
+The following sets
+.Dq Li chararray
+to
+.Dq Li abc\e0\e0\e0 :
+.Bd -literal -offset indent
 (void)strncpy(chararray, "abc", 6).
-.PP
-The following sets ``chararray'' to ``abcdef'':
-.sp
-.RS
+.Ed
+.Pp
+The following sets
+.Dq Li chararray
+to
+.Dq Li abcdef :
+.Bd -literal -offset indent
 (void)strncpy(chararray, "abcdefgh", 6);
-.RE
-.SH SEE ALSO
-bcopy(3), memccpy(3), memcpy(3), memmove(3)
-.SH STANDARDS
-.B Strcpy
+.Ed
+.Sh SEE ALSO
+.Xr bcopy 3 ,
+.Xr memccpy 3 ,
+.Xr memcpy 3 ,
+.Xr memmove 3
+.Sh STANDARDS
+The
+.Fn strcpy
 and
-.B strncpy
-conform to ANSI X3.159-1989 (``ANSI C'').
+.Fn strncpy
+functions
+conform to
+.St -ansiC .

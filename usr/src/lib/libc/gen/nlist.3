@@ -1,43 +1,52 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)nlist.3	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH NLIST 3  ""
-.UC 4
-.SH NAME
-nlist \- get entries from name list
-.SH SYNOPSIS
-.nf
-.B #include <nlist.h>
-.PP
-.B nlist(filename, nl)
-.B char *filename;
-.B struct nlist nl[];
-.fi
-.SH DESCRIPTION
-.I Nlist
-examines the name list in the given executable output file
-and selectively extracts a list of values.
-The name list consists of an array of structures containing names,
-types and values.
-The list is terminated with a null name.
-Each name is looked up in the name list of the file.
-If the name is found, the type and value of the
-name are inserted in the next two fields.
-If the name is not found, both entries are set to 0.
-See
-.IR a.out (5)
-for the structure declaration.
-.PP
-This subroutine is useful for examining the system name list kept in the file
-.BR /vmunix .
-In this way programs can obtain system addresses that are up to date.
-.SH "SEE ALSO"
-a.out(5)
-.SH DIAGNOSTICS
-If the file cannot be found or if it is not a valid namelist \-1 is returned;
-otherwise, the number of unfound namelist entries is returned.
-.PP
-The type entry is set to 0 if the symbol is not found.
+.\"     @(#)nlist.3	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NLIST 3
+.Os BSD 4
+.Sh NAME
+.Nm nlist
+.Nd retrieve symbol table name list from an executable file
+.Sh SYNOPSIS
+.Fd #include <nlist.h>
+.Ft int
+.Fn nlist "const char *filename" "struct nlist *nl"
+.Sh DESCRIPTION
+The
+.Fn nlist
+function
+retrieves name list entries from the symbol table of an
+exectutable file. (See
+.Xr a.out 5 . )
+The argument
+.Fa \&nl
+is set to reference the
+beginning of the list.
+The list is preened of binary and invalid data;
+if an entry in the
+name list is valid, the
+.Fa n_type
+and
+.Fa n_value
+for the entry are copied into the list
+referenced by
+.Fa \&nl .
+No other data is copied.
+The last entry in the list is always
+.Dv NULL .
+.Sh RETURN VALUES
+The number of invalid entries is returned if successful; otherwise,
+if the file
+.Fa filename
+does not exist or is not exectuable, the returned value is \-1.
+.Sh SEE ALSO
+.Xr a.out 5
+.Sh HISTORY
+A
+.Fn nlist
+function appeared in
+.At v6 .

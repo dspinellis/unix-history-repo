@@ -1,51 +1,67 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ctermid.3	5.1 (Berkeley) %G%
+.\"     @(#)ctermid.3	5.2 (Berkeley) %G%
 .\"
-.TH CTERMID 3 ""
-.UC 7
-.SH NAME
-ctermid \- generate terminal pathname
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-.sp
-char *ctermid(char *buf);
-.ft R
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt CTERMID 3
+.Os
+.Sh NAME
+.Nm ctermid
+.Nd generate terminal pathname
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft char *
+.Fn ctermid "char *buf"
+.Sh DESCRIPTION
 The
-.I ctermid
+.Fn ctermid
 function generates a string, that, when used as a pathname, refers to
-the current controlling terminal for the current process.
-.PP
+the current controlling terminal of the calling process.
+.Pp
 If
-.I buf
-is a NULL pointer, a pointer to a static area is returned.
+.Ar buf
+is the
+.Dv NULL
+pointer, a pointer to a static area is returned.
 Otherwise, the pathname is copied into the memory referenced by
-.IR buf .
-.I Buf
-is assumed to be at least L_ctermid (as defined in the include
-file <stdio.h>) bytes long.
-.PP
-The current implementation simply returns ``/dev/tty''.
-.SH RETURN
-Upon successful completion, a non-NULL pointer is returned.
-Otherwise, a NULL pointer is returned and
-.I errno
+.Ar buf .
+The argument
+.Ar buf
+is assumed to be at least
+.Dv L_ctermid
+(as defined in the include
+file
+.Aq Pa stdio.h )
+bytes long.
+.Pp
+The current implementation simply returns
+.Ql /dev/tty .
+.Sh RETURN VALUES
+Upon successful completion, a
+.Pf non- Dv NULL
+pointer is returned.
+Otherwise, a
+.Dv NULL
+pointer is returned and the global variable
+.Va errno
 is set to indicate the error.
-.SH ERRORS
+.Sh ERRORS
 The current implementation detects no error conditions.
-.SH "SEE ALSO"
-ttyname(3)
-.SH STANDARDS
-.I Ctermid
-conforms to IEEE Std 1003.1-1988 (``POSIX'').
-.SH BUGS
-By default, all information is contained in a static buffer which is
-overwritten by each new call.
-It must be copied elsewhere to be retained.
+.Sh SEE ALSO
+.Xr ttyname 3
+.Sh STANDARDS
+The
+.Xr ctermid
+function conforms to
+.St -p1003.1-88 .
+.Sh BUGS
+By default the
+.Fn ctermid
+function
+writes all information to an internal static object.
+Subsequent calls to
+.Fn ctermid
+will modify the same object.

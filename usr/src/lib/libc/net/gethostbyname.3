@@ -1,55 +1,49 @@
-.\" Copyright (c) 1983, 1987 The Regents of the University of California.
+.\" Copyright (c) 1983, 1987, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)gethostbyname.3	6.12 (Berkeley) %G%
+.\"     @(#)gethostbyname.3	6.13 (Berkeley) %G%
 .\"
-.TH GETHOSTBYNAME 3 ""
-.UC 5
-.SH NAME
-gethostbyname, gethostbyaddr, gethostent, sethostent, endhostent, herror \- get network host entry
-.SH SYNOPSIS
-.B "#include <netdb.h>
-.PP
-.B "extern int h_errno;
-.PP
-.B "struct hostent *gethostbyname(name)
-.br
-.B "char *name;
-.PP
-.B "struct hostent *gethostbyaddr(addr, len, type)
-.br
-.B "char *addr; int len, type;
-.PP
-.B "struct hostent *gethostent()
-.PP
-.B "sethostent(stayopen)
-.br
-.B "int stayopen;
-.PP
-.B "endhostent()
-.PP
-.B "herror(string)
-.br
-.B "char *string;
-.PP
-.SH DESCRIPTION
-.I Gethostbyname
+.Dd 
+.Dt GETHOSTBYNAME 3
+.Os BSD 4.2
+.Sh NAME
+.Nm gethostbyname ,
+.Nm gethostbyaddr ,
+.Nm gethostent ,
+.Nm sethostent ,
+.Nm endhostent ,
+.Nm herror
+.Nd get network host entry
+.Sh SYNOPSIS
+.Fd #include <netdb.h>
+.Fd extern struct h_errno;
+.Ft struct hostent *
+.Fn gethostbyname "char *name"
+.Ft struct hostent *
+.Fn gethostbyaddr "char *addr" "int len" "int type"
+.Ft struct hostent *
+.Fn gethostent void
+.Fn sethostent "int stayopen"
+.Fn endhostent void
+.Fn herror "char *string"
+.Sh DESCRIPTION
+The
+.Fn gethostbyname
 and
-.I gethostbyaddr
+.Fn gethostbyaddr
+functions
 each return a pointer to an object with the
 following structure describing an internet host
 referenced by name or by address, respectively.
 This structure contains either the information obtained from the name server,
-.IR named (8),
+.Xr named 8 ,
 or broken-out fields from a line in 
-.IR /etc/hosts .
+.Pa /etc/hosts .
 If the local name server is not running these routines do a lookup in
-.IR /etc/hosts .
-.RS
-.PP
-.nf
+.Pa /etc/hosts .
+.Bd -literal -offset indent
 struct	hostent {
 	char	*h_name;	/* official name of host */
 	char	**h_aliases;	/* alias list */
@@ -58,90 +52,103 @@ struct	hostent {
 	char	**h_addr_list;	/* list of addresses from name server */
 };
 #define	h_addr  h_addr_list[0]	/* address, for backward compatibility */
-.ft R
-.ad
-.fi
-.RE
-.PP
+.Ed
+.Pp
 The members of this structure are:
-.TP \w'h_addr_list'u+2n
-h_name
+.Bl -tag -width h_addr_list
+.It Fa h_name
 Official name of the host.
-.TP \w'h_addr_list'u+2n
-h_aliases
+.It Fa h_aliases
 A zero terminated array of alternate names for the host.
-.TP \w'h_addr_list'u+2n
-h_addrtype
-The type of address being returned; currently always AF_INET.
-.TP \w'h_addr_list'u+2n
-h_length
+.It Fa h_addrtype
+The type of address being returned; currently always
+.Dv AF_INET .
+.It Fa h_length
 The length, in bytes, of the address.
-.TP \w'h_addr_list'u+2n
-h_addr_list
+.It Fa h_addr_list
 A zero terminated array of network addresses for the host.
 Host addresses are returned in network byte order.
-.TP \w'h_addr_list'u+2n
-h_addr
-The first address in h_addr_list; this is for backward compatiblity.
-.PP
+.It Fa h_addr
+The first address in
+.Fa h_addr_list ;
+this is for backward compatiblity.
+.Pp
 When using the nameserver,
-.I gethostbyname
+.Fn gethostbyname
 will search for the named host in the current domain and its parents
 unless the name ends in a dot.
-If the name contains no dot, and if the environment variable ``HOSTALAIASES''
+If the name contains no dot, and if the environment variable
+.Dq Ev HOSTALIASES
 contains the name of an alias file, the alias file will first be searched
 for an alias matching the input name.
 See
-.IR hostname (7)
+.Xr hostname 7
 for the domain search procedure and the alias file format.
-.PP
-.I Sethostent
-may be used to request the use of a connected TCP socket for queries.
+.Pp
+The
+.Fn sethostent
+function
+may be used to request the use of a connected
+.Tn TCP
+socket for queries.
 If the
-.I stayopen
+.Fa stayopen
 flag is non-zero,
-this sets the option to send all queries to the name server using TCP
+this sets the option to send all queries to the name server using
+.Tn TCP
 and to retain the connection after each call to 
-.I gethostbyname
+.Fn gethostbyname
 or
-.IR gethostbyaddr .
-Otherwise, queries are performed using UDP datagrams.
-.PP
-.I Endhostent
-closes the TCP connection.
-.SH DIAGNOSTICS
-.PP
+.Fn gethostbyaddr .
+Otherwise, queries are performed using
+.Tn UDP
+datagrams.
+.Pp
+The
+.Fn endhostent
+function
+closes the
+.Tn TCP
+connection.
+.Sh FILES
+.Bl -tag -width /etc/hosts -compact
+.It Pa /etc/hosts
+.El
+.Sh DIAGNOSTICS
 Error return status from 
-.I gethostbyname
+.Fn gethostbyname
 and
-.I gethostbyaddr
+.Fn gethostbyaddr
 is indicated by return of a null pointer.
 The external integer
-.IR h_errno
+.Va h_errno
 may then be checked to see whether this is a temporary failure
 or an invalid or unknown host.
 The routine
-.I herror
+.Fn herror
 can be used to print an error message describing the failure.
 If its argument
-.I string
-is non-NULL, it is printed, followed by a colon and a space.
+.Fa string
+is
+.Pf non Dv -NULL ,
+it is printed, followed by a colon and a space.
 The error message is printed with a trailing newline.
-.PP
-.IR h_errno
+.Pp
+The variable
+.Va h_errno
 can have the following values:
-.RS
-.IP HOST_NOT_FOUND \w'HOST_NOT_FOUND'u+2n
+.Bl -tag -width HOST_NOT_FOUND
+.It Dv HOST_NOT_FOUND
 No such host is known.
-.IP TRY_AGAIN \w'HOST_NOT_FOUND'u+2n
+.It Dv TRY_AGAIN
 This is usually a temporary error
 and means that the local server did not receive
 a response from an authoritative server.
 A retry at some later time may succeed.
-.IP NO_RECOVERY \w'HOST_NOT_FOUND'u+2n
+.It Dv NO_RECOVERY
 Some unexpected server failure was encountered.
 This is a non-recoverable error.
-.IP NO_DATA \w'HOST_NOT_FOUND'u+2n
+.It Dv NO_DATA
 The requested name is valid but does not have an IP address; 
 this is not a temporary error.  
 This means that the name is known to the name server but there is no address
@@ -149,43 +156,65 @@ associated with this name.
 Another type of request to the name server using this domain name
 will result in an answer;
 for example, a mail-forwarder may be registered for this domain.
-.RE
-.SH FILES
-/etc/hosts
-.SH "SEE ALSO"
-resolver(3), hosts(5), hostname(7), named(8)
-.SH CAVEAT
-.PP
-.I Gethostent
+.El
+.Sh SEE ALSO
+.Xr resolver 3 ,
+.Xr hosts 5 ,
+.Xr hostname 7 ,
+.Xr named 8
+.Sh CAVEAT
+The
+.Fn gethostent
+function
 is defined, and
-.I sethostent
+.Fn sethostent
 and
-.I endhostent
+.Fn endhostent
 are redefined,
 when
-.IR libc
+.Xr libc 3
 is built to use only the routines to lookup in
-.IR /etc/hosts 
+.Pa /etc/hosts
 and not the name server.
-.PP
-.I Gethostent
+.Pp
+The
+.Fn gethostent
+function
 reads the next line of
-.IR /etc/hosts ,
+.Pa /etc/hosts ,
 opening the file if necessary.
-.PP
-.I Sethostent 
+.Pp
+The
+.Fn sethostent
+function
 is redefined to open and rewind the file.  If the
-.I stayopen
+.Fa stayopen
 argument is non-zero,
 the hosts data base will not be closed after each call to
-.I gethostbyname
+.Fn gethostbyname
 or
-.IR gethostbyaddr .
-.I Endhostent
+.Fn gethostbyaddr .
+The
+.Fn endhostent
+function
 is redefined to close the file.
-.SH BUGS
-All information
-is contained in a static area
-so it must be copied if it is
-to be saved.  Only the Internet
+.Sh HISTORY
+The
+.Fn herror
+function appeared in 
+.Bx 4.3 .
+The
+.Fn endhostent ,
+.Fn gethostbyaddr ,
+.Fn gethostbyname ,
+.Fn gethostent ,
+and
+.Fn sethostent
+functions appeared in
+.Bx 4.2 .
+.Sh BUGS
+These functions use static data storage;
+if the data is needed for future use, it should be
+copied before any subsequent calls overwrite it.
+Only the Internet
 address format is currently understood.

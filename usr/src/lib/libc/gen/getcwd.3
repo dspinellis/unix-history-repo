@@ -3,100 +3,126 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getcwd.3	6.3 (Berkeley) %G%
+.\"     @(#)getcwd.3	6.4 (Berkeley) %G%
 .\"
-.TH GETWD 3 ""
-.UC 5
-.SH NAME
-getwd \- get working directory pathname
-.SH SYNOPSIS
-.nf
-.ft B
-char *getcwd(char *buf, size_t size);
-char *getwd(char *buf);
-.ft R
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt GETCWD 3
+.Os BSD 4.2
+.Sh NAME
+.Nm getwd
+.Nd get working directory pathname
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft char *
+.Fn getcwd "char *buf" "size_t size"
+.Ft char *
+.Fn getwd "char *buf"
+.Sh DESCRIPTION
 The
-.I getcwd
+.Fn getcwd
 function copies the absolute pathname of the current working directory
 into the memory referenced by
-.I buf
+.Fa buf
 and returns a pointer to
-.IR buf .
+.Fa buf .
 The
-.I size
+.Fa size
 argument is the size, in bytes, of the array referenced by
-.IR buf .
-.PP
+.Fa buf .
+.Pp
 If
-.I buf
-is NULL, space is allocated as necessary to store the pathname.
+.Fa buf
+is
+.Dv NULL ,
+space is allocated as necessary to store the pathname.
 This space may later be
-.IR free 'd.
-.PP
+.Xr free 3 Ns 'd.
+.Pp
 The function
-.I getwd
+.Fn getwd
 is a compatibility routine which calls
-.I getcwd
+.Fn getcwd
 with its
-.I buf
-argument and a size of MAXPATHLEN (as defined in the include
-file <sys/param.h>).
+.Fa buf
+argument and a size of
+.Dv MAXPATHLEN
+(as defined in the include
+file
+.Aq Pa sys/param.h ) .
 Obviously,
-.I buf
-should be at least MAXPATHLEN bytes in length.
-.PP
+.Fa buf
+should be at least
+.Dv MAXPATHLEN
+bytes in length.
+.Pp
 These routines have traditionally been used by programs to save the
 name of a working directory for the purpose of returning to it.
 A much faster and less error-prone method of accomplishing this is to
-open the current directory (``.'') and use the
-.IR fchdir (2)
+open the current directory
+.Pq Ql \&.
+and use the
+.Xr fchdir 2
 function to return.
-.SH RETURN VALUES
+.Sh RETURN VALUES
 Upon successful completion, a pointer to the pathname is returned.
-Otherwise a NULL pointer is returned and
-.I errno
+Otherwise a
+.Dv NULL
+pointer is returned and the global variable
+.Va errno
 is set to indicate the error.
 In addition,
-.I getwd
+.Fn getwd
 copies the error message associated with
-.I errno
+.Va errno
 into the memory referenced by
-.IR buf .
-.SH ERRORS
-.I Getcwd
+.Fa buf .
+.Sh ERRORS
+The
+.Fn getcwd
+function
 will fail if:
-.TP 15
-[EACCESS]
+.Bl -tag -width [EACCESS]
+.It Bq Er EACCESS
 Read or search permission was denied for a component of the pathname.
-.TP 15
-[EINVAL]
+.It Bq Er EINVAL
 The
-.I size
+.Fa size
 argument is zero.
-.TP 15
-[ENOENT]
+.It Bq Er ENOENT
 A component of the pathname no longer exists.
-.TP 15
-[ENOMEM]
+.It Bq Er ENOMEM
 Insufficient memory is available.
-.TP 15
-[ERANGE]
+.It Bq Er ERANGE
 The
-.I size 
+.Fa size
 argument is greater than zero but smaller than the length of the pathname
 plus 1.
-.SH BUGS
-.I Getwd
+.El
+.Sh SEE ALSO
+.Xr chdir 2 ,
+.Xr fchdir 2 ,
+.Xr malloc 3 ,
+.Xr strerror 3
+.Sh STANDARDS
+The
+.Fn getcwd
+function
+conforms to
+.St -ansiC .
+The ability to specify a
+.Dv NULL
+pointer and have
+.Fn getcwd
+allocate memory as necessary is an extension.
+.Sh HISTORY
+The
+.Fn getwd
+function appeared in 
+.Bx 4.0 .
+.Sh BUGS
+The
+.Fn getwd
+function
 does not do sufficient error checking and is not able to return very
 long, but valid, paths.
 It is provided for compatibility.
-.SH SEE ALSO
-chdir(2), fchdir(2), malloc(3), strerror(3)
-.SH STANDARDS
-.I Getcwd
-conforms to IEEE Std 1003.1-1988 (``POSIX'').
-The ability to specify a NULL pointer and have
-.I getcwd
-allocate memory as necessary is an extension.

@@ -1,43 +1,49 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)atexit.3	5.1 (Berkeley) %G%
+.\"     @(#)atexit.3	5.2 (Berkeley) %G%
 .\"
-.TH ATEXIT 3 ""
-.UC 7
-.SH NAME
-atexit \- register a function to be called on exit
-.SH SYNOPSIS
-.B #include <stdlib.h>
-.PP
-.B "atexit(void (*function)())
-.SH DESCRIPTION
-.B Atexit
+.Dd 
+.Dt ATEXIT 3
+.Os
+.Sh NAME
+.Nm atexit
+.Nd register a function to be called on exit
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft int
+.Fn atexit "void (*function)(void)"
+.Sh DESCRIPTION
+The
+.Fn atexit
+function
 registers the given
-.I function
+.Ar function
 to be called at program exit, whether via
-.IR exit (3)
+.Xr exit 3
 or via return from the program's
-.BR main .
+.Em main .
 Functions so registered are called in reverse order;
 no arguments are passed.
 At least 32 functions can always be registered,
 and more are allowed as long as sufficient memory can be allocated.
-.SH RETURN VALUE
-.B Atexit
-returns 0 on success, \-1 on error.
-.SH ERRORS
-.TP
-[ENOMEM]
+.Sh RETURN VALUES
+.Rv -std atexit
+.Sh ERRORS
+.Bl -tag -width [ENOMEM]
+.It Bq Er ENOMEM
 No memory was available to add the function to the list.
 The existing list of functions is unmodified.
-.SH SEE ALSO
-exit(3)
-.SH STANDARDS
-.B Atexit
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.El
+.Sh SEE ALSO
+.Xr exit 3
+.Sh STANDARDS
+The
+.Fn atexit
+function
+conforms to
+.St -ansiC .

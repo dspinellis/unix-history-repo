@@ -1,44 +1,58 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)initgroups.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH INITGROUPS 3 ""
-.UC 5
-.SH NAME
-initgroups \- initialize group access list
-.SH SYNOPSIS
-.B initgroups(name, basegid)
-.br
-.B char *name;
-.br
-.B int basegid;
-.SH DESCRIPTION
-.I Initgroups
+.\"     @(#)initgroups.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INITGROUPS 3
+.Os BSD 4.2
+.Sh NAME
+.Nm initgroups
+.Nd initialize group access list
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn initgroups "const char *name" "int basegid"
+.Sh DESCRIPTION
+The
+.Fn initgroups
+function
 reads through the group file and sets up,
 using the
-.IR setgroups (2)
+.Xr setgroups 2
 call, the group access list for the user
 specified in
-.IR name .
+.Fa name .
 The
-.I basegid
+.Fa basegid
 is automatically included in the groups list.
 Typically this value is given as
 the group number from the password file.
-.SH FILES
-/etc/group
-.SH SEE ALSO
-setgroups(2)
-.SH DIAGNOSTICS
-.I Initgroups
+.Sh RETURN VALUES
+The
+.Fn initgroups
+function
 returns \-1 if it was not invoked by the super-user.
-.SH BUGS
-.I Initgroups
+.Sh FILES
+.Bl -tag -width /etc/group -compact
+.It Pa /etc/group
+.El
+.Sh SEE ALSO
+.Xr setgroups 2 ,
+.Sh HISTORY
+The
+.Nm
+function appeared in 
+.Bx 4.2 .
+.Sh BUGS
+The
+.Fn initgroups
+function
 uses the routines based on
-.IR getgrent (3).
+.Xr getgrent 3 .
 If the invoking program uses any of these routines,
 the group structure will
 be overwritten in the call to
-.IR initgroups .
+.Fn initgroups .

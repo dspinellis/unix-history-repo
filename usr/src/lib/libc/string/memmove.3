@@ -1,40 +1,47 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)memmove.3	5.2 (Berkeley) %G%
+.\"     @(#)memmove.3	5.4 (Berkeley) %G%
 .\"
-.TH MEMMOVE 3 ""
-.UC 7
-.SH NAME
-memmove \- copy byte string
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-void *
-memmove(void *dst, const void *src, size_t len);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Memmove
+.Dd 
+.Dt MEMMOVE 3
+.Os
+.Sh NAME
+.Nm memmove
+.Nd copy byte string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft void *
+.Fn memmove "void *dst" "const void *src" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn memmove
+function
 copies
-.I len
+.Fa len
 bytes from string
-.I src
+.Fa src
 to string
-.I dst
-and returns the original value of
-.IR dst .
+.Fa dst .
 The two strings may overlap;
 the copy is always done in a non-destructive manner.
-.SH SEE ALSO
-bcopy(3), memccpy(3), memcpy(3), strcpy(3)
-.SH STANDARDS
-.IR Memmove
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Sh RETURN VALUES
+The
+.Fn memmove
+function returns the original value of
+.Fa dst .
+.Sh SEE ALSO
+.Xr bcopy 3 ,
+.Xr memccpy 3 ,
+.Xr memcpy 3 ,
+.Xr strcpy 3
+.Sh STANDARDS
+The
+.Fn memmove
+function
+conforms to
+.St -ansiC .

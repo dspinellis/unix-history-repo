@@ -1,65 +1,79 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)setmode.3	5.3 (Berkeley) %G%
+.\"     @(#)setmode.3	5.4 (Berkeley) %G%
 .\"
-.TH SETMODE 3 ""
-.UC 7
-.SH NAME
-getmode, setmode \- modify mode bits
-.SH SYNOPSIS
-.nf
-.ft B
-getmode(set, mode)
-mode_t *set, mode;
-
-set = setmode(mode_str)
-mode_t *set;
-char *mode_str;
-.ft R
-.fi
-.SH DESCRIPTION
-.I Getmode
+.Dd 
+.Dt SETMODE 3
+.Os
+.Sh NAME
+.Nm getmode ,
+.Nm setmode
+.Nd modify mode bits
+.Sh SYNOPSIS
+.Ft mode_t
+.Fn getmode "const void *set" "mode_t mode"
+.Ft void
+.Fn setmode "const char *mode_str"
+.Sh DESCRIPTION
+The
+.Fn getmode
+function
 returns a copy of the file permission bits
-.I mode
+.Fa mode
 as altered by the values pointed to by
-.IR set .
+.Fa set .
 While only the mode bits are altered, other parts of the file mode
 may be examined.
-.PP
-.I Setmode
+.Pp
+The
+.Fn setmode
+function
 takes an absolute (octal) or symbolic value, as described in
-.IR chmod (1),
+.Xr chmod 1 ,
 as an argument
 and returns a pointer to mode values to be supplied to
-.IR getmode .
+.Fn getmode .
 Because some of the symbolic values are relative to the file
 creation mask,
-.I setmode
+.Fn setmode
 may call
-.IR umask (2).
+.Xr umask 2 .
 If this occurs, the file creation mask will be restored before
-.I setmode
+.Fn setmode
 returns.
 If the calling program changes the value of its file creation mask
 after calling
-.IR setmode ,
-.I setmode
+.Fn setmode ,
+.Fn setmode
 must be called again if
-.I getmode
+.Fn getmode
 is to modify future file modes correctly.
-.PP
+.Pp
 If the mode passed to
-.I setmode
+.Fn setmode
 is invalid,
-.I setmode
-returns NULL.
-.SH ERRORS
-.I Setmode
+.Fn setmode
+returns
+.Dv NULL . 
+.Sh ERRORS
+The
+.Fn setmode
+function
 may fail and set errno for any of the errors specified for the library
 routine
-.IR malloc (3).
-.SH SEE ALSO
-chmod(1), stat(2), umask(2), malloc(3)
+.Xr malloc 3 .
+.Sh SEE ALSO
+.Xr chmod 1 ,
+.Xr stat 2 ,
+.Xr umask 2 ,
+.Xr malloc 3
+.Sh HISTORY
+The
+.Fn getmode
+and
+.Fn setmode
+functions are
+.Ud .

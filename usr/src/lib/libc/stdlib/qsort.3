@@ -1,78 +1,93 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)qsort.3	6.4 (Berkeley) %G%
+.\"     @(#)qsort.3	6.5 (Berkeley) %G%
 .\"
-.TH QSORT 3  ""
-.UC 4
-.SH NAME
-qsort \- quicker sort
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdlib.h>
-
-void
-qsort(void *base, size_t nmemb, size_t size,
-.RS
-.\" have to reset bold font
-.ft B
-int (*compar)(const void *, const void *));
-.RE
-.ft R
-.fi
-.SH DESCRIPTION
-.I Qsort
-is a modified partition-exchange sort, or quicksort.
-.PP
+.Dd 
+.Dt QSORT 3
+.Os
+.Sh NAME
+.Nm qsort
+.Nd quicker sort
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void
+.Fn qsort "void *base" "size_t nmemb" "size_t size" "int (*compar)(const void *, const void *)"
+.Sh DESCRIPTION
 The
-.I qsort 
+.Fn qsort
+function
+is a modified partition-exchange sort, or quicksort.
+.Pp
+The
+.Fn qsort
 function sorts an array of
-.I nmemb
+.Fa nmemb
 objects, the initial member of which is pointed to by
-.IR base .
+.Fa base .
 The size of each object is specified by
-.IR size .
-.PP
+.Fa size .
+.Pp
 The contents of the array are sorted in ascending order according to
 a comparison function pointed to by
-.IR compar ,
+.Fa compar ,
 which is called with two arguments that point to the objects being
 compared.
-.PP
+.Pp
 The comparison function must return an integer less than, equal to, or
 greater than zero if the first argument is considered to be respectively
 less than, equal to, or greater than the second.
-.PP
-.I Qsort
+.Pp
+The
+.Fn qsort
+function
 is
-.B not
+.Em not
 stable, that is, if two members compare as equal, their order in
 the sorted array is undefined.
-.PP
-.I Qsort
+.Pp
+The
+.Fn qsort
+function
 is an implementation of C.A.R. Hoare's ``quicksort'' algorithm, a variant
 of partition-exchange sorting; in particular, see D.E. Knuth's Algorithm Q.
-.I Qsort
+.Fn Qsort
 takes O N lg N average time.
-.SH "RETURN VALUES"
-.I Qsort 
+.Sh RETURN VALUES
+The
+.Fn qsort
+function
 returns no value.
-.SH COMPATIBILITY
+.Sh COMPATIBILITY
 Previous versions of
-.I qsort
+.Fn qsort
 did not permit the comparison routine to itself call
-.IR qsort (3).
+.Fn qsort 3 .
 This is no longer true.
-.SH "SEE ALSO"
-sort(1), radixsort(3)
-.sp
-Hoare, C.A.R. [1962]. "Quicksort", The Computer Journal, 5:1, pp. 10-15.
-.br
-Knuth, D.E. [1968]. "The Art of Computer Programming Vol. 3: Sorting and
-Searching", pp. 114-123.
-.SH STANDARDS
-.I Qsort
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Sh SEE ALSO
+.Xr sort 1 ,
+.Xr radixsort 3
+.Rs
+.%A Hoare, C.A.R.
+.%D 1962
+.%T "Quicksort"
+.%J "The Computer Journal"
+.%V 5:1
+.%P pp. 10-15
+.Re
+.Rs
+.%A Knuth, D.E.
+.%D 1968
+.%B "The Art of Computer Programming"
+.%V Vol. 3
+.%T "Sorting and Searching"
+.%P pp. 114-123
+.Re
+.Sh STANDARDS
+The
+.Fn qsort
+function
+conforms to
+.St -ansiC .

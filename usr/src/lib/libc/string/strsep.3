@@ -1,61 +1,65 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strsep.3	5.1 (Berkeley) %G%
+.\"     @(#)strsep.3	5.3 (Berkeley) %G%
 .\"
-.TH STRSEP 3 ""
-.UC 7
-.SH NAME
-strsep \- separate strings
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-char *
-strsep(char **stringp, char *delim);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Strsep
+.Dd 
+.Dt STRSEP 3
+.Os
+.Sh NAME
+.Nm strsep
+.Nd separate strings
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strsep "char **stringp" "char *delim"
+.Sh DESCRIPTION
+The
+.Fn strsep
 locates in the null-terminated string at
-.I *stringp
+.Fa *stringp
 the first occurence of any character in
-.I delim
-and replaces this with a '\e0',
+.Fa delim
+and replaces this with a
+.Ql \e0 ,
 records the location of the immediate following character in
-.IR *stringp ,
+.Fa *stringp ,
 then returns the original value of
-.IR *stringp .
+.Fa *stringp .
 If no delimiter characters are found,
-.B strsep
+.Fn strsep
 sets
-.I *stringp
-to NULL;
+.Fa *stringp
+to
+.Dv NULL ;
 if
-.I *stringp
-is initially NULL,
-.B strsep
-returns NULL.
-.SH EXAMPLES
+.Fa *stringp
+is initially
+.Dv NULL ,
+.Fn strsep
+returns
+.Dv NULL .
+.Sh EXAMPLES
 The following uses
-.I strsep
+.Fn strsep
 to parse strings containing runs of white space,
 making up an argument vector:
-.sp
-.nf
-.RS
+.Bd -literal -offset indent
 char inputstring[100];
 char **argv[51], **ap = argv, *p, *val;
-.I "/* set up inputstring */"
+/* set up inputstring */
 for (p = inputstring; p != NULL; ) {
-    while ((val = strsep(&p, " \et")) != NULL && *val == '\e0');
-    *ap++ = val;
+	while ((val = strsep(&p, " \et")) != NULL && *val == '\e0');
+	*ap++ = val;
 }
 *ap = 0;
-.RE
+.Ed
+.Sh HISTORY
+The
+.Fn strsep
+function is
+.Ud .

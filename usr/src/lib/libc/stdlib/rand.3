@@ -1,50 +1,54 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)rand.3	6.5 (Berkeley) %G%
+.\"     @(#)rand.3	6.6 (Berkeley) %G%
 .\"
-.TH RAND 3 ""
-.AT 3
-.SH NAME
-rand, srand \- bad random number generator
-.SH SYNOPSIS
-.nf
-.ft B
-void
-srand(seed)
-unsigned int seed;
-
-rand()
-.fi
-.SH DESCRIPTION
-.ft B
+.Dd 
+.Dt RAND 3
+.Os
+.Sh NAME
+.Nm rand ,
+.Nm srand
+.Nd bad random number generator
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void
+.Fn srand "unsigned seed"
+.Ft int
+.Fn rand void
+.Sh DESCRIPTION
+.Bf -symbolic
 These interfaces are obsoleted by random(3).
-.ft R
-.PP
+.Ef
+.Pp
 The
-.I rand
+.Fn rand
 function computes a sequence of pseudo-random integers in the range
 of 0 to
-.I RAND_MAX
-(as defined by the header file <stdlib.h>).
-.PP
+.Dv RAND_MAX
+(as defined by the header file
+.Aq Pa stdlib.h ) .
+.Pp
 The
-.I srand
+.Fn srand
 function sets its argument as the seed for a new sequence of
 pseudo-random numbers to be returned by
-.IR rand .
+.Fn rand .
 These sequences are repeatable by calling
-.I srand
+.Fn srand
 with the same seed value.
-.PP
+.Pp
 If no seed value is provided, the functions are automatically
 seeded with a value of 1.
-.SH STANDARDS
-.B Rand
+.Sh SEE ALSO
+.Xr random 3
+.Sh STANDARDS
+The
+.Fn rand
 and
-.B srand
-conform to ANSI X3.159-1989 (``ANSI C'').
-.SH "SEE ALSO"
-random(3)
+.Fn srand
+functions
+conform to
+.St -ansiC .

@@ -3,184 +3,230 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)exec.3	6.3 (Berkeley) %G%
+.\"     @(#)exec.3	6.4 (Berkeley) %G%
 .\"
-.TH EXEC 3 ""
-.UC 5
-.SH NAME
-execl, execlp, execle, exect, execv, execvp \- execute a file
-.SH SYNOPSIS
-.nf
-.ft B
-extern char **environ;
-.sp
-execl(const char *path, const char *arg, ...);
-execlp(const char *file, const char *arg, ...);
-execle(const char *path, const char *arg, ...,
-.ti +5
-char *const envp[]);
-exect(const char *path, char *const argv[],
-.ti +5
-char *const envp[]);
-execv(const char *path, char *const argv[]);
-execvp(const char *file, char *const argv[]);
-.ft R
-.fi
-.SH DESCRIPTION
-The exec family of functions replaces the current process image with a
+.Dd 
+.Dt EXEC 3
+.Os
+.Sh NAME
+.Nm execl ,
+.Nm execlp ,
+.Nm execle ,
+.Nm exect ,
+.Nm execv ,
+.Nm execvp
+.Nd execute a file
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Vt extern char **environ;
+.Ft int
+.Fn execl "const char *path" "const char *arg" ...
+.Ft int
+.Fn execlp "const char *file" "const char *arg" ...
+.Ft int
+.Fn execle "const char *path" "const char *arg" ... "char *const envp[]"
+.Ft int
+.Fn exect "const char *path" "char *const argv[]" 
+.Ft int
+.Fn execv "const char *path" "char *const argv[]"
+.Ft int
+.Fn execvp "const char *file" "char *const argv[]"
+.Sh DESCRIPTION
+The
+.Nm exec
+family of functions replaces the current process image with a
 new process image.
 The functions described in this manual page are front-ends for the function
-.IR execve (2).
+.Xr execve 2 .
 (See the manual page for
-.I execve
+.Xr execve
 for detailed information about the replacement of the current process.)
-.PP
+.Pp
 The initial argument for these functions is the pathname of a file which
 is to be executed.
-.PP
-The ``const char *arg'' and subsequent ellipses in the
-.IR execl ,
-.IR execlp ,
+.Pp
+The
+.Fa "const char *arg"
+and subsequent ellipses in the
+.Fn execl ,
+.Fn execlp ,
 and
-.I execle
+.Fn execle
 functions can be thought of as
-.IR arg0 ,
-.IR arg1 ,
+.Em arg0 ,
+.Em arg1 ,
 \&...,
-.IR argn .
+.Em argn .
 Together they describe a list of one or more pointers to null-terminated
 strings that represent the argument list available to the executed program.
 The first argument, by convention, should point to the file name associated
 with the file being executed.
 The list of arguments
-.B must
-be terminated by a NULL pointer.
-.PP
+.Em must
+be terminated by a
+.Dv NULL
+pointer.
+.Pp
 The
-.IR exect ,
-.IR execv ,
+.Fn exect ,
+.Fn execv ,
 and
-.I execvp
+.Fn execvp
 functions provide an array of pointers to null-terminated strings that
 represent the argument list available to the new program.
 The first argument, by convention, should point to the file name associated
 with the file begin executed.
 The array of pointers
-.B must
-be terminated by a NULL pointer.
-.PP
+.Sy must
+be terminated by a
+.Dv NULL
+pointer.
+.Pp
 The
-.I execle
+.Fn execle
 and
-.I exect
+.Fn exect
 functions also specify the environment of the executed process by following
-the NULL pointer that terminates the list of arguments in the parameter list
+the
+.Dv NULL
+pointer that terminates the list of arguments in the parameter list
 or the pointer to the argv array with an additional parameter.
 This additional parameter is an array of pointers to null-terminated strings
 and
-.B must
-be terminated by a NULL pointer.
+.Em must
+be terminated by a
+.Dv NULL
+pointer.
 The other functions take the environment for the new process image from the
 external variable
-.I environ
+.Va environ
 in the current process.
-.PP
+.Pp
 Some of these functions have special semantics.
-.PP
+.Pp
 The functions
-.I execlp
+.Fn execlp
 and
-.I execvp
+.Fn execvp
 will duplicate the actions of the shell in searching for an executable file
-if the specified file name does not contain a slash (``/'') character.
-The search path is the path specified in the environment by ``PATH'' variable.
-If this variable isn't specified, the default path ``/bin:/usr/bin:'' is
+if the specified file name does not contain a slash
+.Dq Li /
+character.
+The search path is the path specified in the environment by
+.Dq Ev PATH
+variable.
+If this variable isn't specified, the default path
+.Dq Ev /bin:/usr/bin:
+is
 used.
 In addtion, certain errors are treated specially.
-.PP
+.Pp
 If permission is denied for a file (the attempted
-.I execve
-returned EACCES), these functions will continue searching the rest of
+.Xr execve
+returned
+.Er EACCES ) ,
+these functions will continue searching the rest of
 the search path.
-If no other file is found, however, they will return with
-.I errno
-set to EACCES.
-.PP
+If no other file is found, however, they will return with the global variable
+.Va errno
+set to
+.Er EACCES .
+.Pp
 If the header of a file isn't recognized (the attempted
-.I execve
-returned ENOEXEC), these functions will execute the shell with the path of
+.Xr execve
+returned
+.Er ENOEXEC ) ,
+these functions will execute the shell with the path of
 the file as its first argument.
 (If this attempt fails, no further searching is done.)
-.PP
+.Pp
 If the file is currently busy (the attempted
-.I execve
-returned ETXTBUSY), these functions will sleep for several seconds,
+.Xr execve
+returned
+.Er ETXTBUSY ) ,
+these functions will sleep for several seconds,
 periodically re-attempting to execute the file.
-.PP
+.Pp
 The function
-.I exect
+.Fn exect
 executes a file with the program tracing facilities enabled (see
-.IR ptrace (2)).
-.SH "RETURN VALUE"
+.Xr ptrace 2 ) .
+.Sh RETURN VALUES
 If any of the
-.I exec
+.Xr exec
 functions returns, an error will have occurred.
-The return value is -1, and
-.I errno
+The return value is \-1, and the global variable
+.Va errno
 will be set to indicate the error.
-.SH ERRORS
-.IR Execl ,
-.IR execle ,
-.I execlp
+.Sh FILES
+.Bl -tag -width /bin/sh - compact
+.It Pa /bin/sh
+The shell.
+.El
+.Sh ERRORS
+.Fn Execl ,
+.Fn execle ,
+.Fn execlp
 and
-.I execvp
+.Fn execvp
 may fail and set
-.I errno
+.Va errno
 for any of the errors specified for the library functions
-.IR execve (2)
+.Xr execve 2
 and
-.IR malloc (3).
-.PP
-.I Exect
+.Xr malloc 3 .
+.Pp
+.Fn Exect
 and
-.I execv
+.Fn execv
 may fail and set
-.I errno
+.Va errno
 for any of the errors specified for the library function
-.IR execve (2).
-.SH FILES
-/bin/sh		The shell.
-.SH "SEE ALSO"
-sh(1), execve(2), fork(2),  ptrace(2), environ(7),
-.SH COMPATIBILITY
+.Xr execve 2 .
+.Sh SEE ALSO
+.Xr sh 1 ,
+.Xr execve 2 ,
+.Xr fork 2 ,
+.Xr trace 2 ,
+.Xr environ 7 ,
+.Xr ptrace 2 ,
+.Xr environ 7 ,
+.Sh COMPATIBILITY
 Historically, the default path for the
-.I execlp
+.Fn execlp
 and
-.I execvp
-functions was ``:/bin:/usr/bin''.
+.Fn execvp
+functions was
+.Dq Pa :/bin:/usr/bin .
 This was changed to place the current directory last to enhance system
 security.
-.PP
+.Pp
 The behavior of
-.I execlp
+.Fn execlp
 and
-.I execvp
+.Fn execvp
 when errors occur while attempting to execute the file is historic
 practice, but has not traditionally been documented and is not specified
-by the POSIX standard.
-.PP
+by the
+.Tn POSIX
+standard.
+.Pp
 Traditionally, the functions
-.I execlp
+.Fn execlp
 and
-.I execvp
-ignored all errors except for the ones described above and ENOMEM and
-E2BIG, upon which they returned.
+.Fn execvp
+ignored all errors except for the ones described above and
+.Er ENOMEM
+and
+.Er E2BIG ,
+upon which they returned.
 They now return if any error other than the ones described above occurs.
-.SH STANDARDS
-.IR Execl ,
-.IR execv ,
-.IR execle ,
-.IR execlp
+.Sh STANDARDS
+.Fn Execl ,
+.Fn execv ,
+.Fn execle ,
+.Fn execlp
 and
-.I execvp
-conform to IEEE Std 1003.1-1988 (``POSIX'').
+.Fn execvp
+conform to
+.St -p1003.1-88 .

@@ -1,118 +1,142 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)funopen.3	5.1 (Berkeley) %G%
+.\"     @(#)funopen.3	5.3 (Berkeley) %G%
 .\"
-.TH FUNOPEN 3 ""
-.UC 7
-.SH NAME
-funopen, fropen, fwopen \- open a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-FILE *
-funopen(void *cookie, int (*readfn)(void *, char *, int),
-.RS
-.\" old man macros need the reset of bold mode
-.ft B
-int (*writefn)(void *, char *, int),
-fpos_t (*seekfn)(void *, off_t, int), int (*closefn)(void *));
-.RE
-.\" old man macros need the reset of bold mode
-.ft B
-
-FILE *
-fropen(void *cookie, int (*readfn)(void *, char *, int));
-
-FILE *
-fwopen(void *cookie, int (*writefn)(void *, char *, int));
-.ft R
-.fi
-.SH DESCRIPTION
-.I Funopen
-associates a stream with up to four ``I/O functions''.
+.Dd 
+.Dt FUNOPEN 3
+.Os
+.Sh NAME
+.Nm funopen ,
+.Nm fropen ,
+.Nm fwopen
+.Nd open a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft FILE *
+.Fn funopen "void  *cookie" "int  (*readfn)(void *, char *, int)" "int (writefn*)(void *, const char *, int)" "fpos_t (seekfn*)(void *, fpos_t, int)" "int (closefn*)(void *)"
+.Ft FILE *
+.Fn fropen "void  *cookie" "int  (*readfn)(void *, char *, int)"
+.Ft FILE *
+.Fn fwopen "void  *cookie" "int  (*writefn)(void *, char *, int)"
+.Sh DESCRIPTION
+The
+.Fn funopen
+function
+associates a stream with up to four
+.Dq Tn I/O No functions .
 Either 
-.I readfn
+.Fa readfn
 or
-.I writefn
+.Fa writefn
 must be specified;
-the others can be given as an appropriately-typed NULL pointer.
-These I/O functions will be used to read, write, seek and
+the others can be given as an appropriately-typed
+.Dv NULL
+pointer.
+These
+.Tn I/O
+functions will be used to read, write, seek and
 close the new stream.
-.PP
+.Pp
 In general, omitting a function means that any attempt to perform the
 associated operation on the resulting stream will fail.
 If the close function is omitted, closing the stream will flush 
 any buffered output and then succeed.
-.PP
+.Pp
 The calling conventions of
-.IR readfn ,
-.IR writefn ,
-.I seekfn 
+.Fa readfn ,
+.Fa writefn ,
+.Fa seekfn
 and
-.I closefn
+.Fa closefn
 must match those, respectively, of
-.IR read (2),
-.IR write (2),
-.IR seek (2),
+.Xr read 2 ,
+.Xr write 2 ,
+.Xr seek 2 ,
 and
-.IR close (2)
+.Xr close 2
 with the single exception that they are passed the
-.I cookie
+.Fa cookie
 argument specified to 
-.I funopen
+.Fn funopen
 in place of the traditional file descriptor argument.
-.PP
-Read and write I/O functions are allowed to change the underlying buffer
+.Pp
+Read and write
+.Tn I/O
+functions are allowed to change the underlying buffer
 on fully buffered or line buffered streams by calling
-.IR setvbuf .
+.Xr setvbuf 3 .
 They are also not required to completely fill or empty the buffer.
 They are not, however, allowed to change streams from unbuffered to buffered
 or to change the state of the line buffering flag.
 They must also be prepared to have read or write calls occur on buffers other
 than the one most recently specified.
-.PP
-All user I/O functions can report an error by returning \-1.
+.Pp
+All user
+.Tn I/O
+functions can report an error by returning \-1.
 Additionally, all of the functions should set the external variable
-.I errno
+.Va errno
 appropriately if an error occurs.
-.PP
+.Pp
 An error on 
-.I closefn
+.Fn closefn
 does not keep the stream open.
-.PP
-As a convenience, the include file ``<stdio.h>'' defines the macros
-.I fropen
+.Pp
+As a convenience, the include file
+.Aq Pa stdio.h
+defines the macros
+.Fn fropen
 and
-.I fwopen
+.Fn fwopen
 as calls to
-.I funopen
+.Fn funopen
 with only a read or write function specified.
-.SH "SEE ALSO"
-fcntl(2), open(2), fclose(3), fopen(3), fseek(3), setbuf(3)
-.SH "RETURN VALUES"
+.Sh RETURN VALUES
 Upon successful completion, 
-.I funopen
-returns a FILE pointer.
-Otherwise, NULL is returned and the global variable
-.I errno
+.Fn funopen
+returns a
+.Dv FILE
+pointer.
+Otherwise,
+.Dv NULL
+is returned and the global variable
+.Va errno
 is set to indicate the error.
-.SH ERRORS
-.TP 15
-[EINVAL]
-.I Funopen
+.Sh ERRORS
+.Bl -tag -width [EINVAL]
+.It Bq Er EINVAL
+The
+.Fn funopen
+function
 was called without either a read or write function.
-.I Funopen
-may also fail and set errno for any of the errors
+The
+.Fn funopen
+function
+may also fail and set
+.Va errno
+for any of the errors
 specified for the routine
-.IR malloc (3).
-.SH BUGS
-.I Funopen
-may not be portable to systems other than BSD.
+.Xr malloc 3 .
+.El
+.Sh SEE ALSO
+.Xr fcntl 2 ,
+.Xr open 2 ,
+.Xr fclose 3 ,
+.Xr fopen 3 ,
+.Xr fseek 3 ,
+.Xr setbuf 3
+.Sh HISTORY
+These
+functions are
+.Ud .
+.Sh BUGS
+The
+.Fn funopen
+function
+may not be portable to systems other than
+.Bx .

@@ -1,31 +1,40 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strxfrm.3	5.2 (Berkeley) %G%
+.\"     @(#)strxfrm.3	5.3 (Berkeley) %G%
 .\"
-.TH STRXFRM 3 ""
-.UC 7
-strxfrm \- transform a string under locale
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-size_t
-strxfrm(char *dst, const char *src, size_t n);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Strxfrm
-does something horrible (see ANSI standard).
+.Dd 
+.Dt STRXFRM 3
+.Os
+.Sh NAME
+.Nm strxfrm
+.Nd transform a string under locale
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft size_t
+.Fn strxfrm "char *dst" "const char *src" "size_t n"
+.Sh DESCRIPTION
+The
+.Fn strxfrm
+function
+does something horrible (see
+.Tn ANSI
+standard).
 In this implementation it just copies.
-.SH SEE ALSO
-bcmp(3), memcmp(3), setlocale(3), strcasecmp(3), strcmp(3), strcoll(3)
-.SH STANDARDS
-.B Strxfrm
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Sh SEE ALSO
+.Xr bcmp 3 ,
+.Xr memcmp 3 ,
+.\" .Xr setlocale 3 ,
+.Xr strcasecmp 3 ,
+.Xr strcmp 3 ,
+.Xr strcoll 3
+.Sh STANDARDS
+The
+.Fn strxfrm
+function
+conforms to
+.St -ansiC .

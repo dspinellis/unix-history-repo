@@ -1,31 +1,62 @@
-.\"	@(#)getpass.3	6.2 (Berkeley) %G%
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH GETPASS 3  ""
-.AT 3
-.SH NAME
-getpass \- read a password
-.SH SYNOPSIS
-.nf
-.B char *getpass(prompt)
-.B char *prompt;
-.fi
-.SH DESCRIPTION
-.I Getpass
-reads a password from the file
-.IR /dev/tty ,
-or if that cannot be opened, from the standard input,
-after prompting with the null-terminated string
-.I prompt
-and disabling echoing.
-A pointer is returned to a null-terminated string
-of at most 8 characters.
-A calling process should zero the password as soon
-as possible to avoid leaving the cleartext password
-visible in the process' address space.
-.SH FILES
-/dev/tty
-.SH "SEE ALSO"
-crypt(3)
-.SH BUGS
-The return value points to static data
-whose content is overwritten by each call.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getpass.3	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETPASS 3
+.Os
+.Sh NAME
+.Nm getpass
+.Nd get a password
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft char *
+.Fn getpass "const char *prompt"
+.Sh DESCRIPTION
+The
+.Fn getpass
+function prompts for a password
+from
+.Pa /dev/tty .
+If the file
+.Pa /dev/tty is not accessible,
+.Fn getpass
+reads from the
+.Em stdin .
+The prompt string must be
+.Dv NUL Ns -terminated
+and after it is written
+to the output,
+.Fn getpass
+turns off character echoing.
+.Pp
+.Sh RETURN VALUES
+If successful,
+.Fn getpass
+returns a pointer to the
+password. The password may be up to 128
+characters long and is null terminated.
+The calling process should zero the password as soon as possible
+to avoid leaving the cleartext password visible in the process's
+address space.
+.Sh FILES
+.Bl -tag -width /dev/tty - compact
+.It Pa /dev/tty
+.El
+.Sh SEE ALSO
+.Xr crypt 3
+.Sh HISTORY
+A
+.Fn getpass
+function appeared in
+.At v7 .
+.Sh BUGS
+The
+.Fn getpass
+function leaves its result in an internal static object and returns
+a pointer to that object. Subsequent calls to
+.Fn getpass
+will modify the same object.

@@ -1,36 +1,41 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)bzero.3	5.1 (Berkeley) %G%
+.\"     @(#)bzero.3	5.3 (Berkeley) %G%
 .\"
-.TH BZERO 3 ""
-.UC 7
-.SH NAME
-bzero \- write zeroes to a byte string
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-void
-bzero(char *b, size_t len);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Bzero
+.Dd 
+.Dt BZERO 3
+.Os BDS 4.3
+.Sh NAME
+.Nm bzero
+.Nd write zeroes to a byte string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft void
+.Fn bzero "void *b" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn bzero
+function
 writes
-.I len
+.Fa len
 zero bytes to the string
-.IR b .
+.Fa b .
 If
-.I len
+.Fa len
 is zero,
-.B bzero
+.Fn bzero
 does nothing.
-.SH SEE ALSO
-memset(3), swab(3)
+.Sh SEE ALSO
+.Xr memset 3 ,
+.Xr swab 3
+.Sh HISTORY
+A
+.Fn bzero
+function
+appeared in 
+.Bx 4.3 .

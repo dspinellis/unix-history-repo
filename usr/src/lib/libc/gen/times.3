@@ -1,100 +1,110 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)times.3	6.3 (Berkeley) %G%
+.\"     @(#)times.3	6.4 (Berkeley) %G%
 .\"
-.TH TIMES 3 ""
-.UC 4
-.SH NAME
-times \- process times
-.SH SYNOPSIS
-.nf
-.ft B
-#include <sys/times.h>
-
-clock_t times(struct tms *tp);
-.ft R
-.fi
-.SH DESCRIPTION
-.ft B
-This interface is obsoleted by getrusage(2) and gettimeofday(3).
-.ft R
-.PP
+.Dd 
+.Dt TIMES 3
+.Os BSD 4
+.Sh NAME
+.Nm times
+.Nd process times
+.Sh SYNOPSIS
+.Fd #include <sys/times.h>
+.Ft clock_t 
+.Fn times "struct tms *tp"
+.Sh DESCRIPTION
+.Bf -symbolic
+This interface is obsoleted by getrusage(2)
+and gettimeofday(3).
+.Ef
+.Pp
 The
-.I times
-function returns the value of time in CLK_TCK's of a second since
+.Fn times
+function returns the value of time in
+.Dv CLK_TCK Ns 's
+of a second since
 0 hours, 0 minutes, 0 seconds, January 1, 1970, Coordinated Universal
 Time.
-.PP
+.Pp
 It also fills in the structure pointed to by
-.I tp
+.Fa tp
 with time-accounting information.
-.PP
+.Pp
 The
-.I tms
+.Fa tms
 structure is defined as follows:
-.sp
+.Bd -literal -offset indent
 typedef struct {
-.RS
-clock_t tms_utime;
-.br
-clock_t tms_stime;
-.br
-clock_t tms_cutime;
-.br
-clock_t tms_cstime;
-.br
-.RE
+	clock_t tms_utime;
+	clock_t tms_stime;
+	clock_t tms_cutime;
+	clock_t tms_cstime;
 }
-.PP
+.Ed
+.Pp
 The elements of this structure are defined as follows:
-.TP
-tms_utime
-The CPU time charged for the execution of user instructions.
-.TP
-tms_stime
-The CPU time charged for execution by the system on behalf of
+.Bl -tag -width tms_cutime
+.It Fa tms_utime
+The
+.Tn CPU
+time charged for the execution of user instructions.
+.It Fa tms_stime
+The
+.Tn CPU
+time charged for execution by the system on behalf of
 the process.
-.TP
-tms_cutime
+.It Fa tms_cutime
 The sum of the
-.IR tms_utime s
+.Fa tms_utime  s
 and
-.IR tms_cutime s
+.Fa tms_cutime  s
 of the child processes.
-.TP
-tms_cstime
+.It Fa tms_cstime
 The sum of the
-.IR tms_stime s
+.Fa tms_stime Ns s
 and
-.IR tms_cstime s
+.Fa tms_cstime Ns s
 of the child processes.
-.PP
-All times are in CLK_TCK's of a second.
-.PP
+.El
+.Pp
+All times are in
+.Dv CLK_TCK Ns 's
+of a second.
+.Pp
 The times of a terminated child process are included in the
-.I tms_cutime
+.Fa tms_cutime
 and
-.I tms_cstime
+.Fa tms_cstime
 elements of the parent when one of the
-.IR wait ()
-functions returns the process ID of the terminated child to the parent
-(see
-.IR wait (2)).
+.Xr wait 2
+functions returns the process ID of the terminated child to the parent.
 If an error occurs,
-.I times
-returns ((clock_t)-1), and sets errno to indicate the error.
-.SH ERRORS
-.I Times
-may fail and set errno for any of the errors specified for the library
+.Fn times
+returns the value
+.Pq (clock_t)\-1 ,
+and sets errno to indicate the error.
+.Sh ERRORS
+The
+.Fn times
+function
+may fail and set the global variable
+.Va errno
+for any of the errors specified for the library
 routines
-.IR getrusage (2)
+.Xr getrusage 2
 and
-.IR gettimeofday (2).
-.SH "SEE ALSO"
-time(1), getrusage(2), gettimeofday(2), wait(2)
-.SH STANDARDS
-.B Times
-conforms to POSIX Std 1003.1-1988.
+.Xr gettimeofday 2 .
+.Sh SEE ALSO
+.Xr time 1 ,
+.Xr getrusage 2 ,
+.Xr gettimeofday 2 ,
+.Xr wait 2
+.Sh STANDARDS
+The
+.Fn times
+function
+conforms to
+.St -p1003.1-88 .

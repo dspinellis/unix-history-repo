@@ -1,114 +1,133 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)setjmp.3	6.4 (Berkeley) %G%
+.\"     @(#)setjmp.3	6.5 (Berkeley) %G%
 .\"
-.TH SETJMP 3 ""
-.UC 4
-.SH NAME
-sigsetjmp, siglongjmp, setjmp, longjmp, _setjmp, _longjmp longjmperror \-
-non-local jumps
-.SH SYNOPSIS
-.nf
-.ft B
-#include <setjmp.h>
-
-sigsetjmp(sigjmp_buf env, int savemask);
-
-void
-siglongjmp(sigjmp_buf env, int val);
-
-setjmp(jmp_buf env);
-
-void
-longjmp(jmp_buf env, int val);
-
-_setjmp(jmp_buf env);
-
-void
-_longjmp(jmp_buf env, int val);
-
-void
-longjmperror();
-.ft R
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt SETJMP 3
+.Os BSD 4
+.Sh NAME
+.Nm sigsetjmp ,
+.Nm siglongjmp ,
+.Nm setjmp ,
+.Nm longjmp ,
+.Nm _setjmp ,
+.Nm _longjmp longjmperror
+.Nd non-local jumps
+.Sh SYNOPSIS
+.Fd #include <setjmp.h>
+.Ft int
+.Fn sigsetjmp "sigjmp_buf env" "int savemask"
+.Ft void
+.Fn siglongjmp "sigjmp_buf env" "int val"
+.Ft int
+.Fn setjmp "jmp_buf env"
+.Ft void
+.Fn longjmp "jmp_buf env" "int val"
+.Ft int
+.Fn _setjmp "jmp_buf env"
+.Ft void
+.Fn _longjmp "jmp_buf env" "int val"
+.Ft void
+.Fn longjmperror void
+.Sh DESCRIPTION
 The
-.IR sigsetjmp ,
-.IR setjmp ,
+.Fn sigsetjmp ,
+.Fn setjmp ,
 and
-.IR _setjmp
+.Fn _setjmp
 functions save their calling environment in
-.IR env . 
+.Fa env .
 Each of these functions returns 0.
-.PP
+.Pp
 The corresponding 
-.I longjmp
-functions restore the environment saved by their respective versions
+.Fn longjmp
+functions restore the environment saved by their most recent respective
+invocations
 of the
-.I setjmp
+.Fn setjmp
 function.
-They then return so that program execution continues as if the
-.I setjmp
-call had returned 
-.IR val ,
+They then return so that program execution continues as if the corresponding
+invocation of the
+.Fn setjmp
+call had just returned  the value specified by
+.Fa val ,
 instead of 0.
-.PP
+.Pp
 Pairs of calls may be intermixed, i.e. both 
-.I sigsetjmp
+.Fn sigsetjmp
 and
-.I siglongjmp
+.Fn siglongjmp
 and
-.I setjmp
+.Fn setjmp
 and
-.I longjmp
+.Fn longjmp
 combinations may be used in the same program, however, individual
 calls may not, i.e. the 
-.I env
+.Fa env
 argument to 
-.I sigsetjmp
+.Fn sigsetjmp
 may not be passed to
-.IR longjmp .
-.PP
+.Fn longjmp .
+.Pp
 The
-.I longjmp
+.Fn longjmp
 routines may not be called after the routine which called the
-.I setjmp
+.Fn setjmp
 routines returns.
-.PP
-All accessible data have values as of the time the
-.I longjmp
-routine was called.
-.PP
-.I Setjmp/longjmp
-pairs save and restore the signal mask (see 
-.IR sigmask (2)),
-while
-.I _setjmp/_longjmp
+.Pp
+All accessible objects have values as of the time
+.Fn longjmp
+routine was called, except that the values of objects of automatic storage
+invocation duration that do not have the
+.Em volatile
+type and have been changed between the
+.Fn setjmp
+invocation and
+.Fn longjmp
+call are indeterminate.
+.Pp
+The
+.Pa setjmp/longjmp
+pairs save and restore the signal mask while
+.Pa _setjmp/_longjmp
 pairs save and restore only the register set and the stack.
-.PP
-.I Sigsetjmp/siglongjmp
+(See 
+.Fn sigmask 2 . )
+.Pp
+The
+.Pa sigsetjmp/siglongjmp
+function
 pairs save and restore the signal mask if the argument
-.I savemask
+.Fa savemask
 is non-zero, otherwise only the register set and the stack are saved.
-.SH ERRORS
+.Sh ERRORS
 If the contents of the
-.I env
+.Fa env
 are corrupted, or correspond to an environment that has already returned,
 the 
-.I longjmp
+.Fn longjmp
 routine calls the routine
-.IR longjmperror (3).
+.Fn longjmperror 3 .
 If
-.I longjmperror
-returns the program is aborted (see abort(2)).
+.Fn longjmperror
+returns the program is aborted (see
+.Xr abort 2 ) .
 The default version of 
-.I longjmperror
-prints the message ``longjmp botch'' to standard error and returns.
+.Fn longjmperror
+prints the message
+.Dq Li longjmp botch
+to standard error and returns.
 User programs wishing to exit more gracefully should write their own
 versions of 
-.IR longjmperror .
-.SH "SEE ALSO"
-sigvec(2), sigstack(2), signal(3)
+.Fn longjmperror .
+.Sh SEE ALSO
+.Xr sigaction 2 ,
+.Xr sigstack 2 ,
+.Xr signal 3
+.\" .Sh HISTORY
+.\ The
+.\ .Nm
+.\ function appeared in Version 7 AT&T UNIX.

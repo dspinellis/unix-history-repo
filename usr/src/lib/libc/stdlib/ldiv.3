@@ -1,40 +1,42 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ldiv.3	5.1 (Berkeley) %G%
+.\"     @(#)ldiv.3	5.2 (Berkeley) %G%
 .\"
-.TH LDIV 3 ""
-.UC 7
-.SH NAME
-ldiv \- return quotient and remainder from division
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdlib.h>
-
-ldiv_t
-ldiv(int num, int denom)
-.ft R
-.fi
-.SH DESCRIPTION
-.B Ldiv
+.Dd 
+.Dt LDIV 3
+.Os
+.Sh NAME
+.Nm ldiv
+.Nd return quotient and remainder from division
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft ldiv_t
+.Fn ldiv "int num" "int denom"
+.Sh DESCRIPTION
+The
+.Fn ldiv
+function
 computes the value
-.I num/denom
+.Ar num/denom
 and returns the quotient and remainder in a structure named
-.B ldiv_t
+.Ar ldiv_t
 that contains two
-.B "long integer"
+.Em long integer
 members named
-.B quot
+.Ar quot
 and
-.BR rem .
-.SH SEE ALSO
-div(3)
-.SH STANDARDS
-.B Ldiv
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Ar rem .
+.Sh SEE ALSO
+.Xr div 3 ,
+.Xr math 3
+.Sh STANDARDS
+The
+.Fn ldiv
+function
+conforms to
+.St -ansiC .

@@ -1,47 +1,63 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)system.3	6.3 (Berkeley) %G%
+.\"     @(#)system.3	6.4 (Berkeley) %G%
 .\"
-.TH SYSTEM 3 ""
-.AT 3
-.SH NAME
-system \- issue a shell command
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdlib.h>
-
-system(const char *string);
-.ft R
-.fi
-.SH DESCRIPTION
-.I System
-hands
-.I string
+.Dd 
+.Dt SYSTEM 3
+.Os
+.Sh NAME
+.Nm system
+.Nd pass a command to the shell
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft int
+.Fn system "const char *string"
+.Sh DESCRIPTION
+The
+.Fn system
+function
+hands the argument
+.Fa string
 to the command interpreter
-.IR sh (1).
-The calling process waits until the shell has completed,
-ignoring SIGINT and SIGQUIT, and blocking SIGCHLD.
-.PP
+.Xr sh 1 .
+The calling process waits for the shell
+to finish executing the command,
+ignoring
+.Dv SIGINT
+and
+.Dv SIGQUIT ,
+and blocking
+.Dv SIGCHLD .
+.Pp
 If
-.I string
-is a NULL pointer,
-.I system
+.Fa string
+is a
+.Dv NULL
+pointer,
+.Fn system
 will return non-zero if the command interpreter
-.IR sh (1)
+.Xr sh 1
 is available, and zero if it is not.
-.PP
-.I System
+.Pp
+The
+.Fn system
+function
 returns the exit status of the shell, or \-1 if the
-.IR wait (3)
+.Xr wait 3
 for the shell failed.
-A return status of 127 indicates that the execution of the shell
+A return value of 127 means the execution of the shell
 failed.
-.SH "SEE ALSO"
-sh(1), execve(2), wait(2), popen(3)
-.SH STANDARDS
-.B System
-conforms to ANSI X3.159-1989 (``ANSI C'').
+.Sh SEE ALSO
+.Xr sh 1 ,
+.Xr execve 2 ,
+.Xr wait 2 ,
+.Xr popen 3
+.Sh STANDARDS
+The
+.Fn system
+function
+conforms to
+.St -ansiC .

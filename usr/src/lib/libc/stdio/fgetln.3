@@ -1,75 +1,98 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fgetln.3	5.3 (Berkeley) %G%
+.\"     @(#)fgetln.3	5.4 (Berkeley) %G%
 .\"
-.TH FGETLINE 3 ""
-.UC 7
-.SH NAME
-fgetline \- get a line from a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-char *
-fgetline(FILE *stream, size_t *len);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fgetline
-returns a pointer to the next line from the stream pointed to by
-.IR stream .
-The newline character at the end of the line is replaced by a NUL.
-.PP
+.Dd 
+.Dt FGETLINE 3
+.Os
+.Sh NAME
+.Nm fgetline
+.Nd get a line from a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft char *
+.Fn fgetline "FILE *stream" "size_t *len"
+.Sh DESCRIPTION
+The
+.Fn fgetline
+function
+returns a pointer to the next line from the stream referenced by
+.Fa stream .
+The newline character at the end of the line is replaced by a
+.Dv NUL .
+.Pp
 If
-.I len
+.Fa len
 is non-NULL, the length of the line, not counting the terminating
-NUL, is stored in the memory location it references.
-.SH "RETURN VALUE"
+.Dv NUL ,
+is stored in the memory location it references.
+.Sh RETURN VALUES
 Upon successful completion a pointer is returned;
-this pointer becomes invalid after the next I/O operation on
-.I stream
+this pointer becomes invalid after the next
+.Tn I/O
+operation on
+.Fa stream
 (whether successful or not)
 or as soon as the stream is closed.
-Otherwise, NULL is returned.
-.I Fgetline
-does not distinguish between end-of-file and error, and callers must use
-.IR feof (3)
+Otherwise,
+.Dv NULL
+is returned.
+The
+.Fn fgetline
+function
+does not distinguish between end-of-file and error; the routines
+.Xr feof 3
 and
-.IR ferror (3)
+.Xr ferror 3
+must be used
 to determine which occurred.
 If an error occurrs, the global variable
-.I errno
+.Va errno
 is set to indicate the error.
 The end-of-file condition is remembered, even on a terminal, and all
-subsequent attempts to read will return NULL until the condition is
+subsequent attempts to read will return
+.Dv NULL
+until the condition is
 cleared with
-.IR clearerr (3).
-.PP
+.Xr clearerr 3 .
+.Pp
 The text to which the returned pointer points may be modified,
-provided that no changes are made beyond the terminating NUL.
+provided that no changes are made beyond the terminating
+.Dv NUL .
 These changes are lost as soon as the pointer becomes invalid.
-.SH ERRORS
-.TP 15
-[EBADF]
-.I Stream
+.Sh ERRORS
+.Bl -tag -width [EBADF]
+.It Bq Er EBADF
+The argument
+.Fa stream
 is not a stream open for reading.
-.PP
-.I Fgetline
+.El
+.Pp
+The
+.Fn fgetline
+function
 may also fail and set
-.I errno
+.Va errno
 for any of the errors specified for the routines
-.IR fflush (3),
-.IR malloc (3),
-.IR read (2),
-.IR stat (2),
+.Xr fflush 3 ,
+.Xr malloc 3 ,
+.Xr read 2 ,
+.Xr stat 2 ,
 or
-.IR realloc (3).
-.SH "SEE ALSO"
-ferror(3), fgets(3), fopen(3), putc(3)
-.SH BUGS
+.Xr realloc 3 .
+.Sh SEE ALSO
+.Xr ferror 3 ,
+.Xr fgets 3 ,
+.Xr fopen 3 ,
+.Xr putc 3
+.Sh HISTORY
+The
+.Fn fgetline
+function is
+.Ud .
+.Sh BUGS
 It is not possible to tell whether the final line of an input file
 was terminated with a newline.

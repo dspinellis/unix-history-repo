@@ -1,173 +1,209 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fopen.3	6.6 (Berkeley) %G%
+.\"     @(#)fopen.3	6.7 (Berkeley) %G%
 .\"
-.TH FOPEN 3 ""
-.UC 7
-.SH NAME
-fopen, fdopen, freopen \- open a stream
-.SH SYNOPSIS
-.nf
-.ft B
-#include <stdio.h>
-
-FILE *
-fopen(char *path, char *type);
-
-FILE *
-fdopen(int fildes, char *type);
-
-FILE *
-freopen(char *path, char *type, FILE *stream);
-.ft R
-.fi
-.SH DESCRIPTION
-.I Fopen
-opens the file named by
-.I path
-and associates a stream with it, returning a pointer for identifying
-the stream in subsequent operations.
-.PP
-.I Type
-is one of the following character strings:
-.TP
-``r''
-Open for reading.
-The stream is positioned at the beginning of the file.
-.TP
-``r+''
-Open for reading and writing.
-The stream is positioned at the beginning of the file.
-.TP
-``w''
-Open for writing.
-The file is created if it does not exist, otherwise it is truncated.
-The stream is positioned at the beginning of the file.
-.TP
-``w+''
-Open for reading and writing.
-The file is created if it does not exist, otherwise it is truncated.
-The stream is positioned at the beginning of the file.
-.TP
-``a''
-Open for writing.
-The file is created if it does not exist.
-The stream is positioned at the end of the file.
-.TP
-``a+''
-Open for reading and writing.
-The file is created if it does not exist.
-The stream is positioned at the end of the file.
-.PP
+.Dd 
+.Dt FOPEN 3
+.Os
+.Sh NAME
+.Nm fopen ,
+.Nm fdopen ,
+.Nm freopen
+.Nd stream open functions
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft FILE *
+.Fn fopen "char *path" "char *mode"
+.Ft FILE *
+.Fn fdopen "int fildes" "char *mode"
+.Ft FILE *
+.Fn freopen "char *path" "char *mode" "FILE *stream"
+.Sh DESCRIPTION
 The
-.I type
+.Fn fopen
+function
+opens the file whose name is the string pointed to by
+.Fa path
+and associates a stream with it.
+.Pp
+The argument
+.Fa mode
+points to a string beginning with one of the following
+sequences (Additional characters may follow these sequences.):
+.Bl -tag -width indent
+.It Dq Li r
+Open text file for reading.
+The stream is positioned at the beginning of the file.
+.It Dq Li r+
+Open for reading and writing.
+The stream is positioned at the beginning of the file.
+.It Dq Li w
+Truncate file to zero length or create text file for writing.
+The stream is positioned at the beginning of the file.
+.No It Dq Li w+
+Open for reading and writing.
+The file is created if it does not exist, otherwise it is truncated.
+The stream is positioned at the beginning of the file.
+.It Dq Li a
+Open for writing.
+The file is created if it does not exist.
+The stream is positioned at the end of the file.
+.It Dq Li a+
+Open for reading and writing.
+The file is created if it does not exist.
+The stream is positioned at the end of the file.
+.El
+.Pp
+The
+.Fa mode
 string can also include the letter ``b'' either as a third character or
 as a character between the characters in any of the two-character strings
 described above.
-This is strictly for compatibility with ANSI X3.159-1989 (``ANSI C'')
+This is strictly for compatibility with
+.St -ansiC
 and has no effect; the ``b'' is ignored.
-.PP
-Any created files will have mode ``S_IRUSR  |  S_IWUSR | S_IRGRP | 
-S_IWGRP | S_IROTH | S_IWOTH'' (0666), as modified by the process'
+.Pp
+Any created files will have mode
+.Pf \\*q Dv S_IRUSR
+\&|
+.Dv S_IWUSR
+\&|
+.Dv S_IRGRP
+\&|
+.Dv S_IWGRP
+\&|
+.Dv S_IROTH
+\&|
+.Dv S_IWOTH Ns \\*q
+.Pq Li 0666 ,
+as modified by the process'
 umask value (see
-.IR umask (2)).
-.PP
+.Xr umask 2 ) .
+.Pp
 Reads and writes may be intermixed on read/write streams in any order,
-and do not require an intermediate seek as in previous versions of 
-stdio.
-This is not portable to other systems, however; ANSI C requires that
+and do not require an intermediate seek as in previous versions of
+.Em stdio .
+This is not portable to other systems, however;
+.Tn ANSI C
+requires that
 a file positioning function intervene between output and input, unless
 an input operation encounters end-of-file.
-.PP
-.I Fdopen
-associates a stream with a file descriptor obtained from
-.IR creat (2),
-.IR dup (2),
-.IR open (2),
-or
-.IR pipe (2).
+.Pp
 The
-.I type
+.Fn fdopen
+function associates a stream with the existing file descriptor,
+.Fa fildes .
+The
+.Fa mode
 of the stream must be compatible with the mode of the file descriptor.
-.PP
-.I Freopen
-substitutes the named file in place of the open
-.IR stream 
-and returns a pointer to it.
-The original stream is closed.
-.I Freopen
-is typically used to attach the preopened constant names,
-.IR stdin ,
-.IR stdout ,
-and
-.I stderr
-to files.
-.SH "SEE ALSO"
-open(2), fclose(3), fseek(3), funopen(3)
-.SH "RETURN VALUES"
-Upon successful completion 
-.IR fopen ,
-.I fdopen
-and
-.I freopen
-return a FILE pointer.
-Otherwise, NULL is returned and the global variable
-.I errno
-is set to indicate the error.
-.SH ERRORS
-.TP 15 
-[EINVAL]
-The 
-.I type
-provided to 
-.IR fopen ,
-.IR fdopen ,
+.Pp
+The
+.Fn freopen
+function
+opens the file whose name is the string pointed to by
+.Fa path
+and associates the stream pointed to by
+.Fa stream
+with it.
+The original stream (if it exists) is closed.
+The
+.Fa mode
+argument is used just as in the
+.Xr fopen
+function.
+The primary use of the
+.Fn freopen
+function
+is to change the file associated with a
+standard text stream
+.Pf ( Em stderr ,
+.Em stdin ,
 or
-.IR freopen 
+.Em stdout ) .
+.Sh RETURN VALUES
+Upon successful completion
+.Fn fopen ,
+.Fn fdopen
+and
+.Fn freopen
+return a
+.Tn FILE
+pointer.
+Otherwise,
+.Dv NULL
+is returned and the global variable
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+.Bl -tag -width [EINVAL]
+.It Bq Er EINVAL
+The
+.Fa mode
+provided to
+.Fn fopen ,
+.Fn fdopen ,
+or
+.Fn freopen
 was invalid.
-.PP
-.IR Fopen ,
-.I fdopen
+.El
+.Pp
+The
+.Fn fopen ,
+.Fn fdopen
 and
-.I freopen
+.Fn freopen
+functions
 may also fail and set
-.IR errno
+.Va errno
 for any of the errors specified for the routine
-.IR malloc (3).
-.PP
-.I Fopen
+.Xr malloc 3 .
+.Pp
+The
+.Fn fopen
+function
 may also fail and set
-.IR errno
+.Va errno
 for any of the errors specified for the routine
-.IR open (2).
-.PP
-.I Fdopen
+.Xr open 2 .
+.Pp
+The
+.Fn fdopen
+function
 may also fail and set
-.IR errno
+.Va errno
 for any of the errors specified for the routine
-.IR fcntl (2).
-.PP
-.I Freopen
+.Xr fcntl 2 .
+.Pp
+The
+.Fn freopen
+function
 may also fail and set
-.IR errno
+.Va errno
 for any of the errors specified for the routines
-.IR open (2), 
-.IR fclose (3)
+.Xr open 2 ,
+.Xr fclose 3
 and
-.IR fflush (3).
-.SH STANDARDS
-.I Fopen
+.Xr fflush 3 .
+.Sh SEE ALSO
+.Xr open 2 ,
+.Xr fclose 3 ,
+.Xr fseek 3 ,
+.Xr funopen 3
+.Sh STANDARDS
+The
+.Fn fopen
 and
-.I freopen
-conform to ANSI X3.159-1989 (``ANSI C'').
-.I Fdopen
-conforms to IEEE Std 1003.1-1988 (``POSIX'').
-.SH BUGS
-.I Fdopen
-may not be portable to systems other than UNIX.
+.Fn freopen
+functions
+conform to
+.St -ansiC .
+The
+.Fn fdopen
+function
+conforms to
+.St -p1003.1-88 .

@@ -1,43 +1,54 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Chris Torek.
-.\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)rindex.3	5.1 (Berkeley) %G%
+.\"     @(#)rindex.3	5.2 (Berkeley) %G%
 .\"
-.TH RINDEX 3 ""
-.AT
-.SH NAME
-rindex \- locate character in string
-.SH SYNOPSIS
-.nf
-.ft B
-#include <string.h>
-
-char *
-rindex(const char *s, int c);
-.ft R
-.fi
-.SH DESCRIPTION
-.B Rindex
-returns a pointer to the last occurrence of character 
-.I c
+.Dd 
+.Dt RINDEX 3
+.Os
+.Sh NAME
+.Nm rindex
+.Nd locate character in string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn rindex "const char *s" "int c"
+.Sh DESCRIPTION
+The
+.Fn rindex
+function
+locates the last character
+matching
+.Fa c
 (converted to a
-.BR char )
+.Em char )
 in the null-terminated string
-.IR s ,
-or NULL if
-.I c
-does not occur anywhere in
-.IR s .
+.Fa s .
+The character c is returned if it is found; otherwise NULL is returned.
 If
-.I c
-is '\e0',
-.B rindex
-locates the terminating '\e0'.
-.SH SEE ALSO
-index(3), memchr(3), strchr(3), strcspn(3), strpbrk(3), strrchr(3),
-strsep(3), strspn(3), strstr(3), strtok(3)
+.Fa c
+is
+.Ql \e0 ,
+.Fn rindex
+locates the terminating
+.Ql \e0 .
+.Sh SEE ALSO
+.Xr index 3 ,
+.Xr memchr 3 ,
+.Xr strchr 3 ,
+.Xr strcspn 3 ,
+.Xr strpbrk 3 ,
+.Xr strrchr 3 ,
+.Xr strsep 3 ,
+.Xr strspn 3 ,
+.Xr strstr 3 ,
+.Xr strtok 3
+.Sh HISTORY
+A
+.Fn rindex
+function appeared in 
+.At v6 .
