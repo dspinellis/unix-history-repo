@@ -14,12 +14,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
+SUBDIR=	f77.${MACHINE}/f77 f77.${MACHINE}/f77pass1
 MAN=	f77.0
-SUBDIR=	f77.${MACHINE}/f77 f77.${MACHINE}/f77pass1 fpr fsplit
 
-all f77 clean lint tags: FRC
+all depend clean lint tags: FRC
 	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
 
