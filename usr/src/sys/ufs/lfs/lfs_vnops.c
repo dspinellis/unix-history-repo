@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.39	82/10/17	*/
+/*	lfs_vnops.c	4.40	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,6 +15,7 @@
 #include "../h/descrip.h"
 #include "../h/uio.h"
 #include "../h/socket.h"
+#include "../h/socketvar.h"
 
 chdir()
 {
@@ -233,7 +234,7 @@ link()
 	}
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
-	iupdat(ip, &time.tv_sec, &time.tv_sec, 1);
+	iupdat(ip, time, time, 1);
 	iunlock(ip);
 	u.u_dirp = (caddr_t)uap->linkname;
 	xp = namei(uchar, 1, 0);
@@ -480,7 +481,7 @@ stat1(ip, ub)
 {
 	struct stat ds;
 
-	IUPDAT(ip, &time.tv_sec, &time.tv_sec, 0);
+	IUPDAT(ip, time, time, 0);
 	/*
 	 * Copy from inode table
 	 */
@@ -712,6 +713,7 @@ outime()
 	} *uap;
 	register struct inode *ip;
 	time_t tv[2];
+	struct timeval tv0, tv1;
 
 	uap = (struct a *)u.u_ap;
 	if ((ip = owner(1)) == NULL)
@@ -720,7 +722,9 @@ outime()
 		u.u_error = EFAULT;
 	} else {
 		ip->i_flag |= IACC|IUPD|ICHG;
-		iupdat(ip, &tv[0], &tv[1], 0);
+		tv0.tv_sec = tv[0]; tv0.tv_usec = 0;
+		tv1.tv_sec = tv[1]; tv1.tv_usec = 0;
+		iupdat(ip, &tv0, &tv1, 0);
 	}
 	iput(ip);
 }
@@ -865,7 +869,7 @@ maknode(mode)
 	/*
 	 * Make sure inode goes to disk before directory entry.
 	 */
-	iupdat(ip, &time.tv_sec, &time.tv_sec, 1);
+	iupdat(ip, time, time, 1);
 	direnter(ip);
 	if (u.u_error) {
 		/*

@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.17	82/10/17	*/
+/*	sys_generic.c	5.18	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -275,6 +275,7 @@ rwip(ip, uio, rw)
 			ip->i_lastr = lbn;
 		} else {
 			int i, count;
+			extern struct cmap *mfind();
 
 			count = howmany(size, DEV_BSIZE);
 			for (i = 0; i < count; i += CLSIZE)
@@ -292,7 +293,7 @@ rwip(ip, uio, rw)
 			goto bad;
 		}
 		u.u_error =
-		    uiomove(bp->b_un.b_addr+on, (u_int)n, rw, uio);
+		    uiomove(bp->b_un.b_addr+on, n, rw, uio);
 		if (rw == UIO_READ) {
 			if (n + on == bsize || uio->uio_offset == ip->i_size)
 				bp->b_flags |= B_AGE;

@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.25	82/10/09	*/
+/*	uipc_proto.c	4.26	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -204,7 +204,7 @@ pfslowtimo()
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_slowtimo)
 			(*pr->pr_slowtimo)();
-	timeout(pfslowtimo, 0, hz / PR_SLOWHZ);
+	timeout(pfslowtimo, (caddr_t)0, hz / PR_SLOWHZ);
 }
 
 pffasttimo()
@@ -214,5 +214,5 @@ pffasttimo()
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_fasttimo)
 			(*pr->pr_fasttimo)();
-	timeout(pffasttimo, 0, hz / PR_FASTHZ);
+	timeout(pffasttimo, (caddr_t)0, hz / PR_FASTHZ);
 }

@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.12	82/10/17	*/
+/*	kern_descrip.c	5.13	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -233,17 +233,17 @@ retry:
 	if (uap->tv) {
 		lqsave = u.u_qsave;
 		if (setjmp(&u.u_qsave)) {
-			untimeout(unselect, u.u_procp);
+			untimeout(unselect, (caddr_t)u.u_procp);
 			u.u_error = EINTR;
 			splx(s);
 			return;
 		}
-		timeout(unselect, u.u_procp, hzto(&atv));
+		timeout(unselect, (caddr_t)u.u_procp, hzto(&atv));
 	}
 	sleep((caddr_t)&selwait, PZERO+1);
 	if (uap->tv) {
 		u.u_qsave = lqsave;
-		untimeout(unselect, u.u_procp);
+		untimeout(unselect, (caddr_t)u.u_procp);
 	}
 	splx(s);
 	goto retry;

@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.40	82/10/10	*/
+/*	kern_proc.c	4.41	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -540,7 +540,7 @@ exit(rv)
 	p->p_pctcpu = 0;
 	for (i=0; i<NSIG; i++)
 		u.u_signal[i] = SIG_IGN;
-	untimeout(realitexpire, p);
+	untimeout(realitexpire, (caddr_t)p);
 	/*
 	 * Release virtual memory.  If we resulted from
 	 * a vfork(), instead give the resources back to

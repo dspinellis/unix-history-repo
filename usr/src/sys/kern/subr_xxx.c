@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.18	82/10/17	*/
+/*	subr_xxx.c	4.19	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -47,7 +47,7 @@ imax(a, b)
 
 unsigned
 min(a, b)
-	unsigned int a, b;
+	u_int a, b;
 {
 
 	return (a < b ? a : b);
@@ -55,11 +55,12 @@ min(a, b)
 
 unsigned
 max(a, b)
-	unsigned int a, b;
+	u_int a, b;
 {
 
 	return (a > b ? a : b);
 }
+
 extern	cabase, calimit;
 extern	struct pte camap[];
 
