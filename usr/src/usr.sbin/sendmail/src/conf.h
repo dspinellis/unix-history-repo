@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.4 (Berkeley) %G%
+ *	@(#)conf.h	8.5 (Berkeley) %G%
  */
 
 /*
@@ -16,10 +16,10 @@
 # include <sys/stat.h>
 # include <fcntl.h>
 
-/*
+/**********************************************************************
 **  Table sizes, etc....
 **	There shouldn't be much need to change these....
-*/
+**********************************************************************/
 
 # define MAXLINE	2048		/* max line length */
 # define MAXNAME	256		/* max length of a name */
@@ -41,11 +41,11 @@
 # define QUEUESIZE	1000		/* max # of jobs per queue run */
 # endif
 
-/*
+/**********************************************************************
 **  Compilation options.
 **
 **	#define these if they are available; comment them out otherwise.
-*/
+**********************************************************************/
 
 # define LOG		1	/* enable logging */
 # define UGLYUUCP	1	/* output ugly UUCP From lines */
@@ -59,12 +59,12 @@
 # define USERDB		1	/* look in user database (requires NEWDB) */
 # endif
 
-/*
+/**********************************************************************
 **  Operating system configuration.
 **
 **	Unless you are porting to a new OS, you shouldn't have to
 **	change these.
-*/
+**********************************************************************/
 
 /* general "standard C" defines */
 #ifdef __STDC__
@@ -80,18 +80,24 @@
 **  Per-Operating System defines
 */
 
-/* HP-UX -- tested for 8.07 */
+/*
+**  HP-UX -- tested for 8.07
+*/
+
 # ifdef __hpux
 # define SYSTEM5	1	/* include all the System V defines */
 # define UNSETENV	1	/* need unsetenv(3) support */
-# define HASSETEUID	1	/* we have seteuid call */
-# define seteuid(uid)	setresuid(-1, uid, -1)	
+# define HASSETREUID	1	/* have setreuid(2) call */
+# define setreuid(r, e)		setresuid(r, e, -1)	
 # ifndef __STDC__
 #  define HASSETVBUF	1	/* we have setvbuf in libc (but not __STDC__) */
 # endif
 # endif
 
-/* IBM AIX 3.x -- actually tested for 3.2.3 */
+/*
+**  IBM AIX 3.x -- actually tested for 3.2.3
+*/
+
 # ifdef _AIX3
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define FORK		fork	/* no vfork primitive available */
@@ -99,20 +105,29 @@
 # define SYS5TZ		1	/* use System V style timezones */
 # endif
 
-/* Silicon Graphics IRIX */
+/*
+**  Silicon Graphics IRIX
+**
+**	I haven't tested this yet myself.
+*/
+
 # ifdef IRIX
 # define FORK		fork	/* no vfork primitive available */
 # define UNSETENV	1	/* need unsetenv(3) support */
 # define setpgrp	BSDsetpgrp
 # endif
 
-/* various systems from Sun Microsystems */
+
+/*
+**  SunOS
+*/
+
 #if defined(sun) && !defined(BSD)
 
 # define UNSETENV	1	/* need unsetenv(3) support */
 
 # ifdef SOLARIS
-			/* Solaris 2.x */
+			/* Solaris 2.x (a.k.a. SunOS 5.x) */
 #  define LOCKF		1	/* use System V lockf instead of flock */
 #  define HASUSTAT	1	/* has the ustat(2) syscall */
 #  define bcopy(s, d, l)	(memmove((d), (s), (l)))
@@ -123,31 +138,43 @@
 # else
 			/* SunOS 4.1.x */
 #  define HASSTATFS	1	/* has the statfs(2) syscall */
-#  define HASSETEUID	1	/* we have seteuid call */
+#  define HASSETREUID	1	/* have setreuid(2) call */
 #  include <vfork.h>
 
 # endif
 #endif
 
-/* Digital Ultrix 4.2A or 4.3 */
+/*
+**  Digital Ultrix 4.2A or 4.3
+*/
+
 #ifdef ultrix
 # define HASSTATFS	1	/* has the statfs(2) syscall */
-# define HASSETEUID	1	/* we have seteuid call */
+# define HASSETREUID	1	/* have setreuid(2) call */
 #endif
 
-/* OSF/1 (tested on Alpha) */
+/*
+**  OSF/1 (tested on Alpha)
+*/
+
 #ifdef __osf__
-# define HASSETEUID	1	/* we have seteuid call */
+# define HASSETREUID	1	/* have setreuid(2) call */
 # define seteuid(uid)	setreuid(-1, uid)
 #endif
 
-/* NeXTstep */
+/*
+**  NeXTstep
+*/
+
 #ifdef __NeXT__
 # define sleep		sleepX
 # define UNSETENV	1	/* need unsetenv(3) support */
 #endif
 
-/* various flavors of BSD */
+/*
+**  BSD
+*/
+
 #ifdef BSD
 # define HASGETDTABLESIZE 1	/* we have getdtablesize(2) call */
 #endif
@@ -155,11 +182,14 @@
 /* 4.4BSD */
 #ifdef BSD4_4
 # include <sys/cdefs.h>
-# define HASSETEUID	1	/* we have seteuid(2) call */
+# define HASSETREUID	1	/* have setreuid(2) call */
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 #endif
 
-/* SCO Unix */
+/*
+**  SCO Unix
+*/
+
 #ifdef _SCO_unix_
 # define SYSTEM5	1	/* include all the System V defines */
 # define UNSETENV	1	/* need unsetenv(3) support */
@@ -167,9 +197,9 @@
 # define MAXPATHLEN	PATHSIZE
 #endif
 
-/*
+/**********************************************************************
 **  End of Per-Operating System defines
-*/
+**********************************************************************/
 
 /* general System V defines */
 # ifdef SYSTEM5

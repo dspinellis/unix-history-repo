@@ -11,7 +11,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -670,7 +670,7 @@ forward(user, sendq, e)
 {
 	char *pp;
 	char *ep;
-#ifdef HASSETEUID
+#ifdef HASSETREUID
 	register ADDRESS *ca;
 	uid_t saveduid, uid;
 #endif
@@ -693,7 +693,7 @@ forward(user, sendq, e)
 	if (ForwardPath == NULL)
 		ForwardPath = newstr("\201z/.forward");
 
-#ifdef HASSETEUID
+#ifdef HASSETREUID
 	ca = getctladdr(user);
 	if (ca != NULL)
 		uid = ca->q_uid;
@@ -718,10 +718,10 @@ forward(user, sendq, e)
 		if (tTd(27, 9))
 			printf("forward: old uid = %d/%d\n", getuid(), geteuid());
 
-#ifdef HASSETEUID
+#ifdef HASSETREUID
 		saveduid = geteuid();
 		if (saveduid == 0 && uid != 0)
-			(void) seteuid(uid);
+			(void) setreuid(0, uid);
 #endif                   
 
 		if (tTd(27, 9))
@@ -729,11 +729,11 @@ forward(user, sendq, e)
 
 		err = include(buf, TRUE, user, sendq, e);
 
-#ifdef HASSETEUID
+#ifdef HASSETREUID
 		if (saveduid == 0 && uid != 0)
-			if (seteuid(saveduid) < 0)
-				syserr("seteuid(%d) failure (real=%d, eff=%d)",
-					saveduid, getuid(), geteuid());
+			if (setreuid(-1, 0) < 0 || setreuid(RealUid, 0) < 0)
+				syserr("setreuid(%d, 0) failure (real=%d, eff=%d)",
+					RealUid, getuid(), geteuid());
 #endif
 
 		if (tTd(27, 9))

@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -209,9 +209,6 @@ main(argc, argv, envp)
 		(void) strcpy(RealUserName, pw->pw_name);
 	else
 		(void) sprintf(RealUserName, "Unknown UID %d", RealUid);
-
-	/* our real uid will have to be root -- we will trash this later */
-	setuid((uid_t) 0);
 
 	/* save command line arguments */
 	i = 0;
