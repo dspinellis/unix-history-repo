@@ -1,4 +1,4 @@
-/*	if_uba.c	4.8	81/12/23	*/
+/*	if_uba.c	4.9	82/02/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -64,8 +64,8 @@ bad:
 
 /*
  * Setup either a ifrw structure by allocating UNIBUS map registers,
- * a buffered data path, and initializing the fields of the ifrw structure
- * to minimize run-time overhead.
+ * possibly a buffered data path, and initializing the fields of
+ * the ifrw structure to minimize run-time overhead.
  */
 static
 if_ubaalloc(ifu, ifrw, nmr)
@@ -78,7 +78,7 @@ if_ubaalloc(ifu, ifrw, nmr)
 COUNT(IF_UBAALLOC);
 	info =
 	    uballoc(ifu->ifu_uban, ifrw->ifrw_addr, nmr*NBPG + ifu->ifu_hlen,
-	        UBA_NEED16|UBA_NEEDBDP);
+	        ifu->ifu_flags);
 	if (info == 0)
 		return (0);
 	ifrw->ifrw_info = info;
