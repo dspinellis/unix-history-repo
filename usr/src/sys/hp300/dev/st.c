@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.11 92/01/21$
  *
- *      @(#)st.c	8.4 (Berkeley) %G%
+ *      @(#)st.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -695,6 +695,7 @@ stclose(dev, flag)
 	return(0);	/* XXX */
 }
 
+void
 ststrategy(bp)
 	register struct buf *bp;
 {
@@ -861,7 +862,7 @@ stdump(dev)
 /*ARGSUSED*/
 stioctl(dev, cmd, data, flag)
 	dev_t dev;
-	int cmd;
+	u_long cmd;
 	caddr_t data; 
 	int flag;
 {
