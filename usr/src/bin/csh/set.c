@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)set.c 4.1 %G%";
+static	char *sccsid = "@(#)set.c 4.2 %G%";
 
 #include "sh.h"
 
@@ -25,7 +25,7 @@ doset(v)
 		hadsub = 0;
 		for (vp = p; alnum(*p); p++)
 			continue;
-		if (vp == p)
+		if (vp == p || !letter(*vp))
 			goto setsyn;
 		if (*p == '[') {
 			hadsub++;
@@ -139,9 +139,9 @@ dolet(v)
 	}
 	do {
 		hadsub = 0;
-		for (vp = p; letter(*p); p++)
+		for (vp = p; alnum(*p); p++)
 			continue;
-		if (vp == p)
+		if (vp == p || !letter(*vp))
 			goto letsyn;
 		if (*p == '[') {
 			hadsub++;
