@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -112,7 +112,14 @@ rtadd(dst, gate, metric, state)
 	if (af >= af_max)
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
-	flags = (*afswitch[af].af_ishost)(dst) ? RTF_HOST : 0;
+	flags = (*afswitch[af].af_rtflags)(dst);
+	/*
+	 * Subnet flag isn't visible to kernel, move to state.	XXX
+	 */
+	if (flags & RTF_SUBNET) {
+		state |= RTS_SUBNET;
+		flags &= ~RTF_SUBNET;
+	}
 	if (flags & RTF_HOST) {
 		hash = h.afh_hosthash;
 		rh = &hosthash[hash & ROUTEHASHMASK];
@@ -130,7 +137,9 @@ rtadd(dst, gate, metric, state)
 	rt->rt_timer = 0;
 	rt->rt_flags = RTF_UP | flags;
 	rt->rt_state = state | RTS_CHANGED;
-	rt->rt_ifp = if_ifwithnet(&rt->rt_router);
+	rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
+	if (rt->rt_ifp == 0)
+		rt->rt_ifp = if_ifwithnet(&rt->rt_router);
 	if (metric)
 		rt->rt_flags |= RTF_GATEWAY;
 	insque(rt, rh);
@@ -140,7 +149,8 @@ rtadd(dst, gate, metric, state)
 	 * from this host, discard the entry.  This should only
 	 * occur because of an incorrect entry in /etc/gateways.
 	 */
-	if (install && ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
+	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
+	    ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
 		perror("SIOCADDRT");
 		if (errno == ENETUNREACH) {
 			TRACE_ACTION(DELETE, rt);
@@ -158,7 +168,7 @@ rtchange(rt, gate, metric)
 	int doioctl = 0, metricchanged = 0;
 	struct rtentry oldroute;
 
-	if (!equal(&rt->rt_router, gate))
+	if (!equal(&rt->rt_router, gate) && (rt->rt_state & RTS_INTERNAL) == 0)
 		doioctl++;
 	if (metric != rt->rt_metric)
 		metricchanged++;
@@ -167,6 +177,9 @@ rtchange(rt, gate, metric)
 		if (doioctl) {
 			oldroute = rt->rt_rt;
 			rt->rt_router = *gate;
+			rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
+			if (rt->rt_ifp == 0)
+				rt->rt_ifp = if_ifwithnet(&rt->rt_router);
 		}
 		rt->rt_metric = metric;
 		if ((rt->rt_state & RTS_INTERFACE) && metric) {
@@ -198,7 +211,8 @@ rtdelete(rt)
 		syslog(LOG_ERR, "deleting route to interface %s (timed out)",
 			rt->rt_ifp->int_name);
 	TRACE_ACTION(DELETE, rt);
-	if (install && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
+	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL) == 0) &&
+	    ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
 		perror("SIOCDELRT");
 	remque(rt);
 	free((char *)rt);
@@ -213,26 +227,10 @@ rtdelete(rt)
  */
 rtdefault()
 {
-	struct afhash h;
-	register struct rt_entry *rt;
-	struct rthash *rh;
 	extern struct sockaddr inet_default;
 
-	rt = (struct rt_entry *)malloc(sizeof (*rt));
-	if (rt == 0)
-		return;
-	rt->rt_dst = inet_default;
-	rt->rt_router = rt->rt_dst;
-	(*afswitch[AF_INET].af_hash)(&rt->rt_dst, &h);
-	rh = &nethash[h.afh_nethash & ROUTEHASHMASK];
-	rt->rt_hash = h.afh_nethash;
-	rt->rt_metric = 0;
-	rt->rt_timer = 0;
-	rt->rt_flags = RTF_UP | RTF_GATEWAY;
-	rt->rt_state = RTS_CHANGED | RTS_PASSIVE;
-	rt->rt_ifp = 0;
-	insque(rt, rh);
-	TRACE_ACTION(ADD, rt);
+	rtadd(&inet_default, &inet_default, 0,
+		RTS_CHANGED | RTS_PASSIVE | RTS_INTERNAL);
 }
 
 rtinit()

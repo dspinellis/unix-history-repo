@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -14,12 +14,10 @@ static char sccsid[] = "@(#)startup.c	5.3 (Berkeley) %G%";
 #include "defs.h"
 #include <sys/ioctl.h>
 #include <net/if.h>
-#include <nlist.h>
 #include <syslog.h>
 
 struct	interface *ifnet;
 int	lookforinterfaces = 1;
-int	performnlist = 1;
 int	externalinterfaces = 0;		/* # of remote and local interfaces */
 
 /*
@@ -108,6 +106,8 @@ ifinit()
 			ifs.int_netmask = IN_CLASSC_NET;
 		ifs.int_net = i & ifs.int_netmask;
 		ifs.int_subnet = i & ifs.int_subnetmask;
+		if (ifs.int_subnetmask != ifs.int_netmask)
+			ifs.int_flags |= IFF_SUBNET;
 		ifp = (struct interface *)malloc(sizeof (struct interface));
 		if (ifp == 0) {
 			printf("routed: out of memory\n");
@@ -153,6 +153,12 @@ bad:
 	_exit(0177);
 }
 
+/*
+ * Add route for interface if not currently installed.
+ * Create route to other end if a point-to-point link,
+ * otherwise a route to this (sub)network.
+ * INTERNET SPECIFIC.
+ */
 addrouteforif(ifp)
 	struct interface *ifp;
 {
@@ -177,7 +183,22 @@ addrouteforif(ifp)
 	if (ifp->int_transitions++ > 0)
 		syslog(LOG_ERR, "re-installing interface %s", ifp->int_name);
 	rtadd(dst, &ifp->int_addr, ifp->int_metric,
-		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
+	    ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE|IFF_SUBNET));
+
+	/*
+	 * If interface on subnetted network,
+	 * install route to network as well.
+	 * This is meant for external viewers.
+	 */
+	if ((ifp->int_flags & (IFF_SUBNET|IFF_POINTOPOINT)) == IFF_SUBNET) {
+		net.sin_addr = inet_makeaddr(ifp->int_net, INADDR_ANY);
+		rt = rtfind(dst);
+		if (rt && (rt->rt_state & RTS_INTERFACE))
+			return;
+		rtadd(dst, &ifp->int_addr, ifp->int_metric,
+		    (ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE) |
+			RTS_INTERNAL));
+	}
 }
 
 /*
@@ -240,6 +261,16 @@ gwkludge()
 				route.rt_flags |= RTF_GATEWAY;
 			(void) ioctl(s, SIOCADDRT, (char *)&route.rt_rt);
 			continue;
+		}
+		if (strcmp(qual, "external") == 0) {
+			/*
+			 * Entries marked external are handled
+			 * by other means, e.g. EGP,
+			 * and are placed in our tables only
+			 * to prevent overriding them
+			 * with something else.
+			 */
+			rtadd(&dst, &gate, metric, RTS_EXTERNAL|RTS_PASSIVE);
 		}
 		/* assume no duplicate entries */
 		externalinterfaces++;

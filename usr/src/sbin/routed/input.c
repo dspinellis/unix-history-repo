@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -63,7 +63,7 @@ rip_input(from, size)
 			if (n->rip_dst.sa_family == AF_UNSPEC &&
 			    n->rip_metric == HOPCNT_INFINITY && size == 0) {
 			    	if (supplier || (*afp->af_portmatch)(from) == 0)
-					supply(from, 0, ifp);
+					supply(from, 0, 0);
 				return;
 			}
 			if (n->rip_dst.sa_family < af_max &&

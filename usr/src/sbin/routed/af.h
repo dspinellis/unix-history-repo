@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)af.h	5.2 (Berkeley) %G%
+ *	@(#)af.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -19,8 +19,9 @@ struct afswitch {
 	int	(*af_output)();		/* interprets address for sending */
 	int	(*af_portmatch)();	/* packet from some other router? */
 	int	(*af_portcheck)();	/* packet from privileged peer? */
-	int	(*af_checkhost)();	/* tells if address for host or net */
-	int	(*af_ishost)();		/* tells if address is valid */
+	int	(*af_checkhost)();	/* tells if address is valid */
+	int	(*af_rtflags)();	/* get flags for route (host or net) */
+	int	(*af_sendsubnet)();	/* check bounds of subnet broadcast */
 	int	(*af_canon)();		/* canonicalize address for compares */
 	char	*(*af_format)();	/* convert address to string */
 };

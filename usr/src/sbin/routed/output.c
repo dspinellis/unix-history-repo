@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -68,12 +68,33 @@ supply(dst, flags, ifp)
 	struct rthash *base = hosthash;
 	int doinghost = 1, size;
 	int (*output)() = afswitch[dst->sa_family].af_output;
+	int (*sendsubnet)() = afswitch[dst->sa_family].af_sendsubnet;
 
 	msg->rip_cmd = RIPCMD_RESPONSE;
 	msg->rip_vers = RIPVERSION;
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
+		/*
+		 * Don't resend the information
+		 * on the network from which it was received.
+		 */
+		if (ifp && rt->rt_ifp == ifp)
+			continue;
+		if (rt->rt_state & RTS_EXTERNAL)
+			continue;
+		/*
+		 * Limit the spread of subnet information
+		 * to those who are interested.
+		 */
+		if (doinghost == 0 && rt->rt_state & RTS_SUBNET) {
+			if (ifp && (ifp->int_flags & IFF_SUBNET) == 0)
+				continue;
+			if (rt->rt_dst.sa_family != dst->sa_family)
+				continue;
+			if ((*sendsubnet)(&rt->rt_dst, dst) == 0)
+				continue;
+		}
 		size = (char *)n - packet;
 		if (size > MAXPACKETSIZE - sizeof (struct netinfo)) {
 			(*output)(s, flags, dst, size);

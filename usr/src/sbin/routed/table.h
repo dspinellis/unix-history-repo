@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)table.h	5.1 (Berkeley) %G%
+ *	@(#)table.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -56,9 +56,17 @@ struct rt_entry {
  * "State" of routing table entry.
  */
 #define	RTS_CHANGED	0x1		/* route has been altered recently */
+#define	RTS_EXTERNAL	0x2		/* extern info, not installed or sent */
+#define	RTS_INTERNAL	0x4		/* internal route, not installed */
 #define	RTS_PASSIVE	IFF_PASSIVE	/* don't time out route */
 #define	RTS_INTERFACE	IFF_INTERFACE	/* route is for network interface */
 #define	RTS_REMOTE	IFF_REMOTE	/* route is for ``remote'' entity */
+#define	RTS_SUBNET	IFF_SUBNET	/* route is for network subnet */
+
+/*
+ * Flags are same as kernel, with this addition for af_rtflags:
+ */
+#define	RTF_SUBNET	0x8000		/* pseudo: route to subnet */
 
 struct	rthash nethash[ROUTEHASHSIZ];
 struct	rthash hosthash[ROUTEHASHSIZ];

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "defs.h"
@@ -15,16 +15,22 @@ static char sccsid[] = "@(#)af.c	5.3 (Berkeley) %G%";
  */
 int	inet_hash(), inet_netmatch(), inet_output(),
 	inet_portmatch(), inet_portcheck(),
-	inet_checkhost(), inet_ishost(), inet_canon();
+	inet_checkhost(), inet_rtflags(), inet_sendsubnet(), inet_canon();
 char	*inet_format();
+
 #define NIL	{ 0 }
 #define	INET \
 	{ inet_hash,		inet_netmatch,		inet_output, \
 	  inet_portmatch,	inet_portcheck,		inet_checkhost, \
-	  inet_ishost,		inet_canon, 		inet_format }
+	  inet_rtflags,		inet_sendsubnet,	inet_canon, \
+	  inet_format \
+	}
 
-struct afswitch afswitch[AF_MAX] =
-	{ NIL, NIL, INET, };
+struct afswitch afswitch[AF_MAX] = {
+	NIL,		/* 0- unused */
+	NIL,		/* 1- Unix domain, unused */
+	INET,		/* Internet */
+};
 
 int af_max = sizeof(afswitch) / sizeof(afswitch[0]);
 
@@ -109,17 +115,6 @@ inet_checkhost(sin)
 		if (sin->sin_zero[i])
 			return (0);
 	return (1);
-}
-
-/*
- * Return 1 if the address is
- * for an Internet host, 0 for a network.
- */
-inet_ishost(sin)
-	struct sockaddr_in *sin;
-{
-
-	return (inet_lnaof(sin->sin_addr) != 0);
 }
 
 inet_canon(sin)
