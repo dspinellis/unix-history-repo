@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.1	83/08/20	*/
+/*	uipc_socket.c	4.78	83/08/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -486,8 +486,10 @@ restart:
 				if (*rightsp)
 					(*rightsp)->m_len = 0;
 			}
+#ifdef notdef
 			if (*rightsp == NULL)
 				panic("receive 2b");
+#endif
 		}
 		if (flags & MSG_PEEK)
 			m = m->m_next;
