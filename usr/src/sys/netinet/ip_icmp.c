@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.10	81/12/03	*/
+/*	ip_icmp.c	4.11	81/12/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -175,13 +175,9 @@ COUNT(ICMP_REFLECT);
 icmp_send(ip)
 	struct ip *ip;
 {
-	struct icmp *icp = 0;					/* XXX */
 COUNT(ICMP_SEND);
 
-	icp->icmp_cksum = 0;
-	icp->icmp_cksum = in_cksum(dtom(ip), 0);		/* XXX */
-	ip->ip_ttl = MAXTTL;
-	(void) ip_output(dtom(ip), (struct mbuf *)0);
+	m_freem(dtom(ip));
 }
 
 icmp_ctlinput(m)
