@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.98 (Berkeley) %G%
+ *	@(#)conf.h	8.99 (Berkeley) %G%
  */
 
 /*
@@ -797,6 +797,34 @@ typedef int		pid_t;
 
 
 /*
+**  UnixWare
+**
+**	From Evan Champion <evanc@spatial.synapse.org>.
+*/
+
+#ifdef UNIXWARE
+# define SYSTEM5		1
+# ifndef HASGETUSERSHELL
+#  define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
+# endif
+# define GIDSET_T		int
+# define SLEEP_T		int
+# define SFS_TYPE		SFS_STATVFS
+# define LA_TYPE		LA_ZERO
+# undef WIFEXITED
+# undef WEXITSTATUS
+# define _PATH_UNIX		"/unix"
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/ucblib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/usr/ucblib/sendmail.pid"
+# endif
+# define SYSLOG_BUFSIZE	128
+#endif
+
+
+/*
 **  Intergraph CLIX 3.1
 **
 **	From Paul Southworth <pauls@locust.cic.net>
@@ -804,6 +832,9 @@ typedef int		pid_t;
 
 #ifdef CLIX
 # define SYSTEM5	1	/* looks like System V */
+# ifndef HASGETUSERSHELL
+#  define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
+# endif
 # define DEV_BSIZE	512	/* device block size not defined */
 # define GIDSET_T	gid_t
 # undef LOG			/* syslog not available */

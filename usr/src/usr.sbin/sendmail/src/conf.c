@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.84 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.85 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1587,6 +1587,7 @@ usershellok(shell)
 #define SFS_VFS		3	/* use <sys/vfs.h> implementation */
 #define SFS_MOUNT	4	/* use <sys/mount.h> implementation */
 #define SFS_STATFS	5	/* use <sys/statfs.h> implementation */
+#define SFS_STATVFS	6	/* use <sys/statvfs.h> implementation */
 
 #ifndef SFS_TYPE
 # define SFS_TYPE	SFS_NONE
@@ -1603,6 +1604,9 @@ usershellok(shell)
 #endif
 #if SFS_TYPE == SFS_MOUNT
 # include <sys/mount.h>
+#endif
+#if SFS_TYPE == SFS_STATVFS
+# include <sys/statvfs.h>
 #endif
 
 long
@@ -1622,10 +1626,14 @@ freespace(dir, bsize)
 #   define f_bavail	fd_bfreen
 #   define FSBLOCKSIZE	fs.fd_bsize
 #  else
+#   if SFS_TYPE == SFS_STATVFS
+	struct statvfs fs;
+#   else
 	struct statfs fs;
-#   define FSBLOCKSIZE	fs.f_bsize
-#   if defined(_SCO_unix_) || defined(IRIX) || defined(apollo)
-#    define f_bavail f_bfree
+#    define FSBLOCKSIZE	fs.f_bsize
+#    if defined(_SCO_unix_) || defined(IRIX) || defined(apollo)
+#     define f_bavail f_bfree
+#    endif
 #   endif
 #  endif
 # endif
