@@ -1,4 +1,4 @@
-.\"	@(#)HP.06.91	1.2	91/06/19
+.\"	@(#)HP.06.91	1.3	91/06/19
 .if n \{\
 .ND
 .rm CH
@@ -45,7 +45,7 @@ We are very excited by the new HP700 ``Snake'' workstations.
 In the coming year, we plan to work with the people in the systems
 group at the University of Utah to get Berkeley UNIX fully supported
 on that platform.
-We hope leverage off their 4.3BSD port to bring 4.4BSD to the Snake.
+We hope to leverage off their 4.3BSD port to bring 4.4BSD to the Snake.
 .PP
 To support the 4.4BSD development on the HP700 platform
 we anticipate the need for six machines consisting of
