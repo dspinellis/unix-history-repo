@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortune.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortune.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -211,6 +211,7 @@ char	*av[];
 		fputs(line, stdout);
 	(void) fflush(stdout);
 
+#ifdef	OK_TO_WRITE_DISK
 	if ((fd = creat(Fortfile->posfile, 0666)) < 0) {
 		perror(Fortfile->posfile);
 		exit(1);
@@ -229,6 +230,7 @@ char	*av[];
 #ifdef	LOCK_EX
 	(void) flock(fd, LOCK_UN);
 #endif	/* LOCK_EX */
+#endif	/* OK_TO_WRITE_DISK */
 	if (Wait) {
 		if (Fort_len == 0)
 			(void) fortlen();
@@ -565,7 +567,9 @@ over:
 		fp->next = *head;
 		*head = fp;
 	}
+#ifdef	OK_TO_WRITE_DISK
 	fp->was_pos_file = (access(fp->posfile, W_OK) >= 0);
+#endif	/* OK_TO_WRITE_DISK */
 
 	return TRUE;
 }
@@ -667,7 +671,9 @@ char			*offensive;
 	obscene->datfile = datfile;
 	obscene->posfile = posfile;
 	obscene->read_tbl = FALSE;
+#ifdef	OK_TO_WRITE_DISK
 	obscene->was_pos_file = (access(obscene->posfile, W_OK) >= 0);
+#endif	/* OK_TO_WRITE_DISK */
 }
 
 /*
@@ -787,10 +793,12 @@ int	check_for_offend;
 		*datp = datfile;
 	else
 		free(datfile);
+#ifdef	OK_TO_WRITE_DISK
 	if (posp != NULL) {
 		*posp = copy(file, (unsigned int) (strlen(file) + 4)); /* +4 for ".dat" */
 		(void) strcat(*posp, ".pos");
 	}
+#endif	/* OK_TO_WRITE_DISK */
 	DPRINTF(2, (stderr, "TRUE\n"));
 	return TRUE;
 }
@@ -1075,6 +1083,7 @@ FILEDESC	*fp;
 
 	assert(fp->read_tbl);
 	if (fp->pos == POS_UNKNOWN) {
+#ifdef	OK_TO_WRITE_DISK
 		if ((fd = open(fp->posfile, 0)) < 0 ||
 		    read(fd, &fp->pos, sizeof fp->pos) != sizeof fp->pos)
 			fp->pos = random() % fp->tbl.str_numstr;
@@ -1082,6 +1091,9 @@ FILEDESC	*fp;
 			fp->pos %= fp->tbl.str_numstr;
 		if (fd >= 0)
 			(void) close(fd);
+#else
+		fp->pos = random() % fp->tbl.str_numstr;
+#endif /* OK_TO_WRITE_DISK */
 	}
 	if (++(fp->pos) >= fp->tbl.str_numstr)
 		fp->pos -= fp->tbl.str_numstr;
