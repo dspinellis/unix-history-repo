@@ -1,6 +1,6 @@
 model|mod|m:\
 	:pb=\p\dis\dbeginproc:bb=\dbeginproc\d:be=\dendproc\d|;:\
-	:cb=\$:ce=\$|$:sb=":se=":lb=':le=':\
+	:cb=\$:ce=\$|$:sb=":se=":lb=':le=\a|$:\
 	:kw=abs and array beginproc boolean by case cdnl char copied dispose\
 	div do dynamic else elsif end endproc entry external f FALSE false\
 	fi file for formal fortran global if in integer include inline is lbnd\
