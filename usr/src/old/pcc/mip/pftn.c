@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.18 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.19 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -84,9 +84,7 @@ defid( q, class ) register NODE *q; register int class; {
 # endif
 
 	if( stp == FTN && p->sclass == SNULL )goto enter;
-		/* name encountered as function, not yet defined */
-	if( stp == UNDEF|| stp == FARG ){
-		if( blevel==1 && stp!=FARG ) switch( class ){
+	if( blevel==1 && stp!=FARG ) switch( class ){
 
 		default:
 #ifndef FLEXNAMES
@@ -103,8 +101,7 @@ defid( q, class ) register NODE *q; register int class; {
 		case TYPEDEF:
 			;
 			}
-		goto enter;
-		}
+	if( stp == UNDEF|| stp == FARG ) goto enter;
 
 	if( type != stp ) goto mismatch;
 	/* test (and possibly adjust) dimensions */
@@ -257,11 +254,11 @@ defid( q, class ) register NODE *q; register int class; {
 			/* while */ *memp>=0 && stab[*memp].sclass != STNAME
 				&& stab[*memp].sclass != UNAME;
 			/* iterate */ --memp){ char *cname, *oname;
-			if( stab[*memp].sflags & SNONUNIQ ){int k;
+			if( stab[*memp].sflags & SNONUNIQ ){
 				cname=p->sname;
 				oname=stab[*memp].sname;
 #ifndef FLEXNAMES
-				for(k=1; k<=NCHNAM; ++k){
+				for(temp=1; temp<=NCHNAM; ++temp){
 					if(*cname++ != *oname)goto diff;
 					if(!*oname++)break;
 					}
@@ -326,13 +323,13 @@ defid( q, class ) register NODE *q; register int class; {
 
 	/* allocate offsets */
 	if( class&FIELD ){
-		falloc( p, class&FLDSIZ, 0, NIL );  /* new entry */
+		(void) falloc( p, class&FLDSIZ, 0, NIL );  /* new entry */
 		psave( idp );
 		}
 	else switch( class ){
 
 	case AUTO:
-		oalloc( p, &autooff );
+		(void) oalloc( p, &autooff );
 		break;
 	case STATIC:
 	case EXTDEF:
@@ -344,7 +341,7 @@ defid( q, class ) register NODE *q; register int class; {
 		p->offset = getlab();
 		p->slevel = 2;
 		if( class == LABEL ){
-			locctr( PROG );
+			(void) locctr( PROG );
 			deflab( p->offset );
 			}
 		break;
@@ -357,7 +354,7 @@ defid( q, class ) register NODE *q; register int class; {
 		break;
 	case MOU:
 	case MOS:
-		oalloc( p, &strucoff );
+		(void) oalloc( p, &strucoff );
 		if( class == MOU ) strucoff = 0;
 		psave( idp );
 		break;
@@ -424,7 +421,7 @@ ftnend(){ /* end of function */
 	reached = 1;
 	swx = 0;
 	swp = swtab;
-	locctr(DATA);
+	(void) locctr(DATA);
 	}
 
 dclargs(){
@@ -454,7 +451,7 @@ dclargs(){
 		oalloc( p, &argoff );  /* always set aside space, even for register arguments */
 		}
 	cendarg();
-	locctr(PROG);
+	(void) locctr(PROG);
 	defalign(ALINT);
 	ftnno = getlab();
 	bfcode( paramstk, paramno );
@@ -539,9 +536,9 @@ dclstruct( oparam ){
 	register TWORD temp;
 	register high, low;
 
-	/* paramstack contains:
-		paramstack[ oparam ] = previous instruct
-		paramstack[ oparam+1 ] = previous class
+	/* paramstk contains:
+		paramstk[ oparam ] = previous instruct
+		paramstk[ oparam+1 ] = previous class
 		paramstk[ oparam+2 ] = previous strucoff
 		paramstk[ oparam+3 ] = structure name
 
@@ -859,7 +856,7 @@ beginit(curid){
 	case STATIC:
 		ilocctr = ISARY(p->stype)?ADATA:DATA;
 		if( nerrors == 0 ){
-			locctr( ilocctr );
+			(void) locctr( ilocctr );
 			defalign( talign( p->stype, p->sizoff ) );
 			defnam( p );
 			}
@@ -967,7 +964,7 @@ getstr(){ /* decide if the string is external or an initializer, and get the con
 		deflab( l = getlab() );
 		strflg = 0;
 		lxstr(0); /* get the contents */
-		locctr( blevel==0?ilocctr:temp );
+		(void) locctr( blevel==0?ilocctr:temp );
 		p = buildtree( STRING, NIL, NIL );
 		p->tn.rval = -l;
 		return(p);
@@ -1382,7 +1379,7 @@ nidcl( p ) NODE *p; { /* handle unitialized declarations */
 			}
 		}
 #ifdef LCOMM
-	/* hack so stab will come at as LCSYM rather than STSYM */
+	/* hack so stab will come out as LCSYM rather than STSYM */
 	if (class == STATIC) {
 		extern int stabLCSYM;
 		stabLCSYM = 1;
@@ -1713,7 +1710,7 @@ mknonuniq(idindex) int *idindex; {/* locate a symbol table entry for */
 	/* or field */
 	register i;
 	register struct symtab * sp;
-	char *p,*q;
+	char *q;
 
 	sp = & stab[ i= *idindex ]; /* position search at old entry */
 	while( sp->stype != TNULL ){ /* locate unused entry */
@@ -1725,7 +1722,6 @@ mknonuniq(idindex) int *idindex; {/* locate a symbol table entry for */
 		if( i == *idindex ) cerror("Symbol table full");
 		}
 	sp->sflags = SNONUNIQ | SMOS;
-	p = sp->sname;
 	q = stab[*idindex].sname; /* old entry name */
 #ifdef FLEXNAMES
 	sp->sname = stab[*idindex].sname;
@@ -1738,8 +1734,10 @@ mknonuniq(idindex) int *idindex; {/* locate a symbol table entry for */
 # endif
 	*idindex = i;
 #ifndef FLEXNAMES
-	for( i=1; i<=NCHNAM; ++i ){ /* copy name */
-		if( *p++ = *q /* assign */ ) ++q;
+	{
+		char *p = sp->sname;
+		for( i=1; i<=NCHNAM; ++i ) /* copy name */
+			if( *p++ = *q /* assign */ ) ++q;
 		}
 #endif
 	return ( sp );
@@ -1749,7 +1747,10 @@ lookup( name, s) char *name; {
 	/* look up name: must agree with s w.r.t. STAG, SMOS and SHIDDEN */
 
 	register char *p, *q;
-	int i, j, ii;
+	int i, ii;
+#ifndef FLEXNAMES
+	int j;
+#endif
 	register struct symtab *sp;
 
 	/* compute initial hash index */
@@ -1866,13 +1867,10 @@ clearst( lev ) register int lev; {
 
 	/* step 1: remove entries */
 	while( chaintop-1 > lev ){
-		register int type;
-
 		p = schain[--chaintop];
 		schain[chaintop] = 0;
 		for( ; p; p = q ){
 			q = p->snext;
-			type = p->stype;
 			if( p->stype == TNULL || p->slevel <= lev )
 				cerror( "schain botch" );
 			lineno = p->suse < 0 ? -p->suse : p->suse;
@@ -1948,7 +1946,7 @@ hide( p ) register struct symtab *p; {
 
 unhide( p ) register struct symtab *p; {
 	register struct symtab *q;
-	register s, j;
+	register s;
 
 	s = p->sflags & (SMOS|STAG);
 	q = p;
@@ -1962,6 +1960,7 @@ unhide( p ) register struct symtab *p; {
 
 		if( (q->sflags&(SMOS|STAG)) == s ){
 #ifndef FLEXNAMES
+			register j;
 			for( j =0; j<NCHNAM; ++j ) if( p->sname[j] != q->sname[j] ) break;
 			if( j == NCHNAM ){ /* found the name */
 #else
