@@ -63,11 +63,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00007
+ * CURRENT PATCH LEVEL:         1       00137
  * --------------------         -----   ----------------------
  *
  * 20 Aug 92	David Greenman		Removed un-necessary call to
  *					swapout_thread
+ * 08 Aug 93	Paul Kranenburg		Add counters for vmstat
  */
 
 /*
@@ -79,11 +80,14 @@
 #include "vm.h"
 #include "vm_page.h"
 #include "vm_pageout.h"
+#include "vmmeter.h"
 
 int	vm_pages_needed;		/* Event on which pageout daemon sleeps */
 int	vm_pageout_free_min = 0;	/* Stop pageout to wait for pagers at this free level */
 
 int	vm_page_free_min_sanity = 40;
+
+int	vm_page_pagesfreed;		/* Pages freed by page daemon */
 
 /*
  *	vm_pageout_scan does the dirty work for the pageout daemon.
@@ -335,6 +339,7 @@ vm_pageout_scan()
 		page_shortage--;
 	}
 
+	vm_page_pagesfreed += pages_freed;
 	vm_page_unlock_queues();
 }
 
@@ -389,6 +394,7 @@ void vm_pageout()
 	while (TRUE) {
 		thread_sleep((int) &vm_pages_needed, &vm_pages_needed_lock,
 			     FALSE);
+		cnt.v_scan++;
 		vm_pageout_scan();
 		vm_pager_sync();
 		simple_lock(&vm_pages_needed_lock);

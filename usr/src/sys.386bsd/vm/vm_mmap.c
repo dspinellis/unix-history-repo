@@ -38,6 +38,13 @@
  * from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *
  *	@(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00137
+ * --------------------         -----   ----------------------
+ *
+ * 08 Apr 93	Yuval Yarom		Several VM system fixes
  */
 
 /*
@@ -149,6 +156,8 @@ smmap(p, uap, retval)
 	if ((uap->flags & MAP_FIXED) && (addr & page_mask) || uap->len < 0)
 		return(EINVAL);
 	size = (vm_size_t) round_page(uap->len);
+	if ((uap->flags & MAP_FIXED) && (addr + size > VM_MAXUSER_ADDRESS))
+		return(EINVAL);
 	/*
 	 * XXX if no hint provided for a non-fixed mapping place it after
 	 * the end of the largest possible heap.
@@ -306,6 +315,8 @@ munmap(p, uap, retval)
 	size = (vm_size_t) round_page(uap->len);
 	if (size == 0)
 		return(0);
+	if (addr + size >= VM_MAXUSER_ADDRESS)
+		return(EINVAL);
 	if (!vm_map_is_allocated(&p->p_vmspace->vm_map, addr, addr+size,
 	    FALSE))
 		return(EINVAL);
@@ -473,6 +484,13 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 				vm_object_deallocate(object);
 			goto out;
 		}
+		/*
+		 * The object of unnamed anonymous regions was just created
+		 * find it for pager_cache.
+		 */
+		if (handle == NULL)
+			object = vm_object_lookup(pager);
+
 		/*
 		 * Don't cache anonymous objects.
 		 * Loses the reference gained by vm_pager_allocate.

@@ -52,7 +52,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00069
+ * CURRENT PATCH LEVEL:         4       00137
  * --------------------         -----   ----------------------
  *
  * 05 Aug 92	Paul Kranenburg		Fixed #! as a magic number
@@ -60,6 +60,7 @@
  * 15 Aug 92    Terry Lambert           Fixed CMOS RAM size bug
  * 12 Dec 92	Julians Elischer	Place argc into user address space
  *					correctly
+ * 10 Aug 93	Yoval Yarom		Fix for busy text on executables
  */
 
 #include "param.h"
@@ -473,6 +474,8 @@ dont_bother:
 	/* setup initial register state */
 	p->p_regs[SP] = (unsigned) (argbuf - 1);
 	setregs(p, exdata.ex_hdr.a_entry);
+
+ 	ndp->ni_vp->v_flag |= VTEXT;		/* mark vnode pure text */
 
 	vput(ndp->ni_vp);
 	FREE(ndp->ni_pnbuf, M_NAMEI);

@@ -58,6 +58,13 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00137
+ * --------------------         -----   ----------------------
+ *
+ * 08 Apr 93	Bruce Evans		Several VM system fixes
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/vm/RCS/vm_glue.c,v 1.2 92/01/21 21:58:21 william Exp $";
 
@@ -108,6 +115,22 @@ useracc(addr, len, rw)
 {
 	boolean_t rv;
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
+
+	/*
+	 * XXX - specially disallow access to user page tables - they are
+	 * in the map.
+	 *
+	 * XXX - don't specially disallow access to the user area - treat
+	 * it as incorrectly as elsewhere.
+	 *
+	 * XXX - VM_MAXUSER_ADDRESS is an end address, not a max.  It was
+	 * only used (as an end address) in trap.c.  Use it as an end
+	 * address here too.
+	 */
+	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS + UPAGES * NBPG
+	    || (vm_offset_t) addr + len > VM_MAXUSER_ADDRESS + UPAGES * NBPG
+	    || (vm_offset_t) addr + len <= (vm_offset_t) addr)
+		return (FALSE);
 
 	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map,
 	    trunc_page(addr), round_page(addr+len-1), prot);
