@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.1	83/12/05	*/
+/*	gethostnamadr.c	4.2	83/12/21	*/
 
 #include <stdio.h>
 #include <netdb.h>
@@ -12,6 +12,7 @@ static DBM *db = (DBM *)NULL;
 static datum curkey;
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
+extern int _stayopen;	/* set by sethostent(), cleared by endhostent() */
 
 static struct hostent *
 fetchhost(key)
@@ -51,12 +52,15 @@ gethostbyname(nam)
         datum key;
 	register struct hostent *hp;
 
-        if ((db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)0)
+	if (db == (DBM *)0 && (db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)0)
                 return ((struct hostent *)NULL);
         key.dptr = nam;
         key.dsize = strlen(nam);
 	hp = fetchhost(key);
-	ndbmclose(db);
+	if (!_stayopen) {
+		ndbmclose(db);
+		db = (DBM *)NULL;
+	}
         return (hp);
 }
 
@@ -68,11 +72,14 @@ gethostbyaddr(addr, length)
         datum key;
 	register struct hostent *hp;
 
-        if ((db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)0)
+	if (db == (DBM *)0 && (db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)0)
                 return ((struct hostent *)NULL);
         key.dptr = addr;
         key.dsize = length;
 	hp = fetchhost(key);
-	ndbmclose(db);
+	if (!_stayopen) {
+		ndbmclose(db);
+		db = (DBM *)NULL;
+	}
         return (hp);
 }
