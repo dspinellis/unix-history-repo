@@ -12,18 +12,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mt.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mt.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * mt --
  *   magnetic tape manipulation program
  */
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/mtio.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/types.h>
-#include <sys/mtio.h>
-#include <sys/ioctl.h>
 
 #define	equal(s1,s2)	(strcmp(s1, s2) == 0)
 
@@ -118,7 +118,7 @@ main(argc, argv)
 #endif
 
 #ifdef tahoe
-#include <tahoevba/cyreg.h>
+#include <tahoe/vba/cyreg.h>
 #endif
 
 struct tape_desc {
