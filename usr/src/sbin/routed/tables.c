@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -174,6 +174,12 @@ rtchange(rt, gate, metric)
 		metricchanged++;
 	if (doioctl || metricchanged) {
 		TRACE_ACTION(CHANGE FROM, rt);
+		if ((rt->rt_state & RTS_INTERFACE) && metric) {
+			rt->rt_state &= ~RTS_INTERFACE;
+			syslog(LOG_ERR,
+				"changing route from interface %s (timed out)",
+				rt->rt_ifp->int_name);
+		}
 		if (doioctl) {
 			oldroute = rt->rt_rt;
 			rt->rt_router = *gate;
@@ -182,12 +188,6 @@ rtchange(rt, gate, metric)
 				rt->rt_ifp = if_ifwithnet(&rt->rt_router);
 		}
 		rt->rt_metric = metric;
-		if ((rt->rt_state & RTS_INTERFACE) && metric) {
-			rt->rt_state &= ~RTS_INTERFACE;
-			syslog(LOG_ERR,
-				"changing route from interface %s (timed out)",
-				rt->rt_ifp->int_name);
-		}
 		if (metric)
 			rt->rt_flags |= RTF_GATEWAY;
 		else
