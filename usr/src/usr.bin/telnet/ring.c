@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ring.c	1.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ring.c	1.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,7 +50,7 @@ static char sccsid[] = "@(#)ring.c	1.10 (Berkeley) %G%";
 #define	MIN(a,b)	(((a)<(b))? (a):(b))
 #endif	/* !defined(MIN) */
 
-#define	ring_subtract(d,a,b)	((((int)(a))-((int)(b)) >= 0)? \
+#define	ring_subtract(d,a,b)	(((a)-(b) >= 0)? \
 					(a)-(b): (((a)-(b))+(d)->size))
 
 #define	ring_increment(d,a,c)	(((a)+(c) < (d)->top)? \
