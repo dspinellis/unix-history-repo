@@ -1,30 +1,32 @@
-/*	param.h	4.22	82/10/10	*/
+/*	param.h	4.23	82/10/31	*/
 
 /*
- * Tunable variables which do not usually vary per system.
- *
- * The sizes of most system tables are configured
- * into each system description.  The file system buffer
- * cache size is assigned based on available memory.
- * The tables whose sizes don't vary often are given here.
+ * Macine type dependent parameters.
  */
+#if vax
+#include "../vax/param.h"
+#endif
+#if sun
+#include "../sun/param.h"
+#endif
 
+#define	NPTEPG		(NBPG/(sizeof (struct pte)))
+
+/*
+ * Machine-independent constants
+ */
 #define	NMOUNT	15		/* number of mountable file systems */
 #define	MSWAPX	15		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	25		/* max processes per user */
-#define	SSIZE	4		/* initial stack size (*512 bytes) */
-#define	SINCR	4		/* increment of stack (*512 bytes) */
 #define	NOFILE	20		/* max open files per process */
 /* NOFILE MUST NOT BE >= 31; SEE pte.h */
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	NCARGS	10240		/* # characters in exec arglist */
+#define	NGROUPS	8		/* max number groups */
 
 /*
- * priorities
- * probably should not be
- * altered too much
+ * Priorities
  */
-
 #define	PSWP	0
 #define	PINOD	10
 #define	PRIBIO	20
@@ -39,10 +41,8 @@
 #define	NZERO	20
 
 /*
- * signals
- * dont change
+ * Signals
  */
-
 #ifndef	NSIG
 #include <signal.h>
 #endif
@@ -51,28 +51,14 @@
 	((p)->p_flag&STRC || ((p)->p_sig &~ (p)->p_ignsig)) && issig())
 
 /*
- * Return values from tsleep().
+ * Fundamental constants of the implementation.
  */
-#define	TS_OK	0	/* normal wakeup */
-#define	TS_TIME	1	/* timed-out wakeup */
-#define	TS_SIG	2	/* asynchronous signal wakeup */
-
-/*
- * fundamental constants of the implementation--
- * cannot be changed easily.
- */
-
 #define	NBBY		8		/* number of bits in a byte */
 #define	NBPW		sizeof(int)	/* number of bytes in an integer */
-#define	NBPG		512
-#define	PGOFSET		(NBPG-1)	/* byte offset into page */
-#define	PGSHIFT		9		/* LOG2(NBPG) */
 
-#define	UPAGES	8		/* pages of u-area */
 #define	NULL	0
 #define	CMASK	0		/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
-#define	NGROUPS	8		/* max number groups */
 
 /*
  * Clustering of hardware pages on machines with ridiculously small
@@ -83,18 +69,21 @@
  *
  * NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE
  */
-#define	CLSIZE		2
 #define	CLBYTES		(CLSIZE*NBPG)
 #define	CLOFSET		(CLSIZE*NBPG-1)	/* for clusters, like PGOFSET */
 #define	claligned(x)	((((int)(x))&CLOFSET)==0)
 #define	CLOFF		CLOFSET
-#define	CLSHIFT		(PGSHIFT+1)
+#define	CLSHIFT		(PGSHIFT+CLSIZELOG2)
 
+#if CLSIZE==1
+#define	clbase(i)	(i)
+#define	clrnd(i)	(i)
+#else
 /* give the base virtual address (first of CLSIZE) */
 #define	clbase(i)	((i) &~ (CLSIZE-1))
-
 /* round a number of clicks up to a whole cluster */
 #define	clrnd(i)	(((i) + (CLSIZE-1)) &~ (CLSIZE-1))
+#endif
 
 #ifndef INTRLVE
 /* macros replacing interleaving functions */
@@ -105,35 +94,11 @@
 #define	CBSIZE	28		/* number of chars in a clist block */
 #define	CROUND	0x1F		/* clist rounding; sizeof(int *) + CBSIZE -1*/
 
-/*
- * Some macros for units conversion
- */
-/* Core clicks (512 bytes) to segments and vice versa */
-#define	ctos(x)	(x)
-#define	stoc(x)	(x)
-
-/* Core clicks (512 bytes) to disk blocks */
-#define	ctod(x)	(x)
-
-/* clicks to bytes */
-#define	ctob(x)	((x)<<9)
-
-/* bytes to clicks */
-#define	btoc(x)	((((unsigned)(x)+511)>>9))
-
 #ifndef KERNEL
 #include	<sys/types.h>
 #else
 #include	"../h/types.h"
 #endif
-
-/*
- * Machine-dependent bits and macros
- */
-#define	UMODE	PSL_CURMOD		/* usermode bits */
-#define	USERMODE(ps)	(((ps) & UMODE) == UMODE)
-
-#define	BASEPRI(ps)	(((ps) & PSL_IPL) != 0)
 
 /*
  * File system parameters and macros.
@@ -165,7 +130,7 @@
  * add an entry to cdevsw for that purpose.  For now though
  * just use DEV_BSIZE.
  */
-#define	bdbtofsb(bn)	((bn) / CLSIZE)
+#define	bdbtofsb(bn)	((bn) / (BLKDEV_IOSIZE/DEV_BSIZE))
 
 /*
  * MAXPATHLEN defines the longest permissable path length
