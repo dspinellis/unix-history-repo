@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)proc.c	4.16 (Berkeley) %G%";
+static	char *sccsid = "@(#)proc.c	4.17 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -834,7 +834,11 @@ pkill(v, signum)
 					goto cont;
 				}
 			}
-			(void) killpg(pp->p_jobid, signum);
+			if (killpg(pp->p_jobid, signum) < 0) {
+				printf("%s: ", cp);
+				printf("%s\n", sys_errlist[errno]);
+				err++;
+			}
 			if (signum == SIGTERM || signum == SIGHUP)
 				(void) killpg(pp->p_jobid, SIGCONT);
 		} else if (!digit(*cp))
