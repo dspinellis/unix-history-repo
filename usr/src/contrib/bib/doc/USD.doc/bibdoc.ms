@@ -1,9 +1,9 @@
-.\" Copyright (c) 1993 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)bibdoc.ms	6.4 (Berkeley) %G%
+.\"	@(#)bibdoc.ms	8.1 (Berkeley) %G%
 .\"
 .EH 'USD:28-%''BIB \- A Program for Formatting Bibliographies'
 .OH 'BIB \- A Program for Formatting Bibliographies''USD:28-%'
