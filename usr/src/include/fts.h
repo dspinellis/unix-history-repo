@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.6 (Berkeley) %G%
+ *	@(#)fts.h	5.7 (Berkeley) %G%
  */
 
 typedef struct fts {
@@ -20,12 +20,11 @@ typedef struct fts {
 	int (*fts_compar)();		/* compare function */
 #define	FTS__STOP	0x001		/* private: unrecoverable error */
 #define	FTS_LOGICAL	0x002		/* user: use stat(2) */
-#define	FTS_MULTIPLE	0x004		/* user: multiple args */
-#define	FTS_NOCHDIR	0x008		/* user: don't use chdir(2) */
-#define	FTS_NOSTAT	0x010		/* user: don't require stat info */
-#define	FTS_PHYSICAL	0x020		/* user: use lstat(2) */
-#define	FTS_SEEDOT	0x040		/* user: return dot and dot-dot */
-#define	FTS_XDEV	0x080		/* user: don't cross devices */
+#define	FTS_NOCHDIR	0x004		/* user: don't use chdir(2) */
+#define	FTS_NOSTAT	0x008		/* user: don't require stat info */
+#define	FTS_PHYSICAL	0x010		/* user: use lstat(2) */
+#define	FTS_SEEDOT	0x020		/* user: return dot and dot-dot */
+#define	FTS_XDEV	0x040		/* user: don't cross devices */
 	int fts_options;		/* openfts() options */
 } FTS;
 
