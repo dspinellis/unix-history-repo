@@ -63,6 +63,34 @@ SCONV,	INTAREG|FORCC,
 		NAREG|NASL,	RESC1|RESCC,
 		"	movzZLl	AL,A1\n	cvtld	A1,A1\n",
 
+/* char -> ushort, result in reg (forced to int type by reclaim()) */
+SCONV,	INTAREG|INAREG,
+	SAREG|AWD,	TCHAR,
+	SANY,	TUSHORT,
+		NAREG|NASL,	RESC1,
+		"	cvtbw	AL,A1\n	movzwl	A1,A1\n",
+
+/* uchar, ushort -> wider */
+SCONV,	INTAREG|INAREG,
+	SAREG|AWD,	TUCHAR|TUSHORT,
+	SANY,	TSHORT|TUSHORT|TINT|TUNSIGNED|TLONG|TULONG,
+		NAREG|NASL,	RESC1,
+		"	movzZLl	AL,A1\n",
+
+/* char, short -> wider */
+SCONV,	INTAREG|INAREG,
+	SAREG|AWD,	TCHAR|TSHORT,
+	SANY,	TSHORT|TUSHORT|TINT|TUNSIGNED|TLONG|TULONG,
+		NAREG|NASL,	RESC1,
+		"	cvtZLl	AL,A1\n",
+
+/* take care of redundant conversions introduced by reclaim() */
+SCONV,	INTAREG,
+	STAREG,	TWORD,
+	SANY,	TWORD,
+		0,	RLEFT,
+		"",
+
 SCONV,	INTAREG|FORCC,
 	SAREG|AWD,	TANY,
 	SANY,	TANY,
@@ -163,14 +191,26 @@ OPLOG,	FORCC,
 		"	cmpl	AL,AR\nZP",
 
 OPLOG,	FORCC,
-	SAREG|AWD,	TSHORT|TUSHORT,
-	SAREG|AWD,	TSHORT|TUSHORT,
+	SAREG|AWD,	TSHORT,
+	SAREG|AWD,	TSHORT,
 		0,	RESCC,
 		"	cmpw	AL,AR\nZP",
 
 OPLOG,	FORCC,
-	SAREG|AWD,	TCHAR|TUCHAR,
-	SAREG|AWD,	TCHAR|TUCHAR,
+	SAREG|AWD,	TUSHORT,
+	SAREG|AWD,	TUSHORT,
+		0,	RESCC,
+		"	cmpw	AL,AR\nZP",
+
+OPLOG,	FORCC,
+	SAREG|AWD,	TCHAR,
+	SAREG|AWD,	TCHAR,
+		0,	RESCC,
+		"	cmpb	AL,AR\nZP",
+
+OPLOG,	FORCC,
+	SAREG|AWD,	TUCHAR,
+	SAREG|AWD,	TUCHAR,
 		0,	RESCC,
 		"	cmpb	AL,AR\nZP",
 

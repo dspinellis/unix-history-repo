@@ -971,7 +971,7 @@ optim2( p ) register NODE *p; {
 	switch( p->in.op ) {
 
 	case AND:
-		/* commute L and R to eliminate compliments and constants */
+		/* commute L and R to eliminate complements and constants */
 		if( (l = p->in.left)->in.op == ICON && l->in.name[0] == 0 ||
 		    l->in.op == COMPL ) {
 			p->in.left = p->in.right;
@@ -980,7 +980,7 @@ optim2( p ) register NODE *p; {
 	case ASG AND:
 		/* change meaning of AND to ~R&L - bic on pdp11 */
 		r = p->in.right;
-		if( r->in.op==ICON && r->in.name[0]==0 ) { /* compliment constant */
+		if( r->in.op==ICON && r->in.name[0]==0 ) { /* complement constant */
 			r->tn.lval = ~r->tn.lval;
 			}
 		else if( r->in.op==COMPL ) { /* ~~A => A */
@@ -998,33 +998,24 @@ optim2( p ) register NODE *p; {
 		break;
 
 	case SCONV:
+		l = p->in.left;
 #if defined(FORT) || defined(SPRECC)
 		if( p->in.type == FLOAT || p->in.type == DOUBLE ||
-		    (l = p->in.left)->in.type == FLOAT || l->in.type == DOUBLE )
-			break;
+		    l->in.type == FLOAT || l->in.type == DOUBLE )
+			return;
 #else
-		m = (p->in.type == FLOAT || p->in.type == DOUBLE);
-		ml = ((l = p->in.left)->in.type == FLOAT || l->in.type == DOUBLE);
-		if( m != ml ) break;
+		if( mixtypes(p, l) ) return;
 #endif
-		m = p->in.type;
-		ml = l->in.type;
-		/* meaningful ones are conversion of int to char, int to short,
-		   and short to char, and unsigned version of them */
-		if( m==CHAR || m==UCHAR ){
-			if( ml!=CHAR && ml!= UCHAR )
-				break;
-			}
-		else if( m==SHORT || m==USHORT ){
-			if( ml!=CHAR && ml!=UCHAR && ml!=SHORT && ml!=USHORT )
-				break;
-			}
+		/* Only trust it to get it right if the size is the same */
+		if( tlen(p) != tlen(l) )
+			return;
 
 		/* clobber conversion */
-		if( tlen( p ) == tlen( l ) && l->in.op != FLD )
+		if( l->in.op != FLD )
 			l->in.type = p->in.type;
 		ncopy( p, l );
 		l->in.op = FREE;
+
 		break;
 
 		}
