@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.9	83/03/01	*/
+/*	lpr.c	4.9	83/03/07	*/
 /*
  *      lpr -- off line print
  *
@@ -107,6 +107,7 @@ char	*pgetstr();
 char	*malloc();
 char	*getenv();
 char	*rindex();
+char	*linked();
 
 /*ARGSUSED*/
 main(argc, argv)
@@ -117,7 +118,7 @@ main(argc, argv)
 	extern struct passwd *getpwuid(), *getpwnam();
 	struct passwd *pw;
 	extern char *itoa();
-	register char *arg;
+	register char *arg, *cp;
 	int i, f, out();
 	char *printer = NULL;
 	struct stat stb;
@@ -233,15 +234,15 @@ main(argc, argv)
 			indent = arg[2] ? atoi(&arg[2]) : 8;
 			break;
 
-		default:		/* n copies ? */
-			if (isdigit(arg[1]))
-				ncopies = atoi(&arg[1]);
+		case '#':		/* n copies */
+			if (isdigit(arg[2]))
+				ncopies = atoi(&arg[2]);
 		}
 	}
 	if (printer == NULL && (printer = getenv("PRINTER")) == NULL)
 		printer = DEFLP;
 	if (!chkprinter(printer)) {
-		printf("%s: unknown printer\n", name, printer);
+		printf("%s: unknown printer %s\n", name, printer);
 		exit(2);
 	}
 	/*
@@ -263,7 +264,7 @@ main(argc, argv)
 	if (hdr) {
 		if (jobname == NULL) {
 			if (argc == 1)
-				jobname = &cfname[inchar-2];
+				jobname = "stdin";
 			else
 				jobname = argv[1];
 		}
@@ -279,43 +280,34 @@ main(argc, argv)
 		for (i = 0; i < 4; i++)
 			if (fonts[i] != NULL)
 				card('1'+i, fonts[i]);
-	else if ((format == 'f' || format == 'l' || format == 'p') && width)
+	if (width != NULL)
 		card('W', width);
 
 	if (argc == 1)
 		copy(0, " ");
 	else while (--argc) {
-		if ((i = test(arg = *++argv)) < 0)
+		if ((f = test(arg = *++argv)) < 0)
 			continue;	/* file unreasonable */
 
-		if (i && lflag && linked(arg)) {
+		if ((f & 1) && (cp = linked(arg)) != NULL) {
 			if (format == 'p')
 				card('T', title ? title : arg);
 			for (i = 0; i < ncopies; i++)
 				card(format, &dfname[inchar-2]);
 			card('U', &dfname[inchar-2]);
+			if (f & 2)
+				card('U', cp);
 			card('N', arg);
 			dfname[inchar]++;
 			nact++;
 		} else {
-			if ((f = open(arg, 0)) < 0) {
+			if ((i = open(arg, 0)) < 0) {
 				printf("%s: cannot open %s\n", name, arg);
 				continue;
 			}
-			copy(f, arg);
-			(void) close(f);
-		}
-		if (rflag) {
-			register char *cp;
-
-			if ((cp = rindex(arg, '/')) == NULL)
-				f = access(".", 2);
-			else {
-				*cp = '\0';
-				f = access(arg, 2);
-				*cp = '/';
-			}
-			if (f || unlink(arg))
+			copy(i, arg);
+			(void) close(i);
+			if ((f & 2) && unlink(arg))
 				printf("%s: cannot remove %s\n", name, arg);
 		}
 	}
@@ -334,7 +326,7 @@ main(argc, argv)
 			printf("jobs queued, but line printer is down.\n");
 			exit(0);
 		}
-		execl(DN, arg = rindex(DN, "/") ? arg+1 : DN, printer, 0);
+		execl(DN, (arg = rindex(DN, '/')) ? arg+1 : DN, printer, 0);
 		printf("jobs queued, but cannot start daemon.\n");
 		exit(0);
 	}
@@ -379,19 +371,19 @@ copy(f, n)
 }
 
 /*
- * Try and link the file to dfname. Return true if successful.
+ * Try and link the file to dfname. Return a pointer to the full
+ * path name if successful.
  */
+char *
 linked(file)
 	register char *file;
 {
 	register char *cp;
 	char buf[BUFSIZ];
 
-	if (link(file, dfname) == 0)
-		return(1);
 	if (*file != '/') {
 		if (getwd(buf) == NULL)
-			return(0);
+			return(NULL);
 		while (file[0] == '.') {
 			switch (file[1]) {
 			case '/':
@@ -411,7 +403,7 @@ linked(file)
 		strcat(buf, file);
 		file = buf;
 	}
-	return(symlink(file, dfname) == 0);
+	return(symlink(file, dfname) ? NULL : file);
 }
 
 /*
@@ -449,7 +441,11 @@ nfile(n)
 		printf("%s: cannot create %s\n", name, n);
 		out();
 	}
+#ifdef BSD41C
 	if (chown(n, userid, -1) < 0) {
+#else
+	if (chown(n, userid, getegid()) < 0) {
+#endif
 		unlink(n);
 		printf("%s: cannot chown %s\n", name, n);
 		out();
@@ -490,14 +486,16 @@ out()
 
 /*
  * Test to see if this is a printable file.
- * Return -1 if it is not, 1 if it's publically readable, else 0
+ * Return -1 if it is not, 1 if we should try to link and or in 2 if
+ * we should remove it after printing.
  */
 test(file)
 	char *file;
 {
 	struct exec execb;
 	struct stat statb;
-	int fd;
+	register int fd;
+	register char *cp;
 
 	if (access(file, 4) < 0) {
 		printf("%s: cannot access %s\n", name, file);
@@ -531,24 +529,21 @@ test(file)
 			goto error1;
 		}
 	(void) close(fd);
-	if (rflag) {	/* check to make sure user can delete this file */
-		register char	*cp = rindex(file, '/');
-
-		if (cp == NULL)
-			fd = access(".", 2);
-		else {
+	fd = 0;
+	if (lflag && (statb.st_mode & 04))
+		fd |= 1;
+	if (rflag) {
+		if ((cp = rindex(file, '/')) == NULL) {
+			if (access(".", 2) == 0)
+				fd |= 2;
+		} else {
 			*cp = '\0';
-			fd = access(file, 2);
+			if (access(file, 2) == 0)
+				fd |= 2;
 			*cp = '/';
 		}
-		if (fd < 0) {
-			printf("%s: cannot remove %s\n", name, file);
-			return(-1);
-		}
 	}
-	if (statb.st_mode & 04)
-		return(1);
-	return(0);
+	return(fd);
 
 error1:
 	printf(" and is unprintable\n");
