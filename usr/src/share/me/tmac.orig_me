@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 304				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.16	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.17	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.16	%G%
+.\"	@(#)tmac.orig_me	2.17	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -288,6 +288,7 @@
 .fi
 .if \n@>2 .tm @o triggered @r (?o) = \\n(?o
 .if \\n(?o \
+\{\
 .	di			\" just in case triggered @r
 .	if \\n(dn=0 \
 \{\
