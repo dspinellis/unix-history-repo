@@ -1,4 +1,4 @@
-/*	main.c	1.19	(Berkeley)	84/10/08
+/*	main.c	1.20	(Berkeley)	84/12/29
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -89,16 +89,24 @@ extern POINT *PTInit(), *PTMakePoint();
 #define GREMLIB		"/usr/local/gremlib/"
 #endif
 
+#define SUN_SCALEFACTOR 0.70
+
 #ifndef DEVDIR
 #define DEVDIR		"/usr/lib/font"
 #endif
 #define DEFAULTDEV	"va"
+#define DEFSTIPPLE	"cf"
 
 #define MAXINLINE	100		/* input line length */
 #define DEFTHICK	3		/* default thicknes */
 #define DEFSTYLE	SOLID		/* default line style */
 
+#ifdef oldversion
 #define SCREENtoINCH	0.02		/* scaling factor, screen to inches */
+#endif
+
+double SCREENtoINCH;			/* scaling factor, screen to inches */
+
 #define BIG	999999999999.0		/* unweildly large floating number */
 
 
@@ -422,6 +430,13 @@ int baseline;
 		    return;		/* if a request is made to make the */
 					/* picture fit into a specific area, */
 					/* set the scale to do that. */
+
+		SCREENtoINCH = (SUNFILE) ? 0.014 : 0.02;
+
+		if (stipple == (char *) NULL)	/* if user forgot stipple */
+		    if (has_polygon(PICTURE))	/* and picture has a polygon */
+			stipple = DEFSTIPPLE;	/* then set the default */
+
 		if ((temp = bottompoint - toppoint) < 0.1) temp = 0.1;
 		temp = (height != 0.0) ? height / (temp * SCREENtoINCH)  : BIG;
 		if ((troffscale = rightpoint - leftpoint) < 0.1) troffscale=0.1;
@@ -436,8 +451,10 @@ int baseline;
 		if (pointscale) {
 		    register int i;		/* do pointscaling here, when */
 					     /* scale is known, before output */
+
 		    for (i = 0; i < SIZES; i++)
 			tsize[i] = (int) (troffscale * (double) tsize[i] + 0.5);
+
 		}
 						   /* change to device units */
 		troffscale *= SCREENtoINCH * res;	/* from screen units */
@@ -689,4 +706,21 @@ char *line;
 	    exit(8);
 	    break;
     };
+}
+
+
+/*
+ * return TRUE if picture contains a polygon
+ * otherwise FALSE
+ */
+has_polygon(elist)
+register ELT *elist;
+{
+    while (!DBNullelt(elist)) {
+	if (elist->type == POLYGON)
+	    return(1);
+	elist = DBNextElt(elist);
+    }
+
+    return(0);
 }
