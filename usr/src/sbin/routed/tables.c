@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -205,8 +205,9 @@ rtchange(rt, gate, metric)
 				"changing route from interface %s (timed out)",
 				rt->rt_ifp->int_name);
 		}
-		if (doioctl || delete) {
+		if (doioctl || delete)
 			oldroute = rt->rt_rt;
+		if (doioctl) {
 			rt->rt_router = *gate;
 			rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
 			if (rt->rt_ifp == 0)

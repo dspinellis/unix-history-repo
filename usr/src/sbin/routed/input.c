@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -183,7 +183,7 @@ rip_input(from, size)
 			    (RTS_INTERNAL|RTS_INTERFACE)) {
 				rt = rtfind(&n->rip_dst);
 				if (rt && equal(from, &rt->rt_router) &&
-				    rt->rt_metric == n->rip_metric)
+				    rt->rt_metric <= n->rip_metric)
 					continue;
 				if (n->rip_metric < HOPCNT_INFINITY)
 				    rtadd(&n->rip_dst, from, n->rip_metric, 0);
