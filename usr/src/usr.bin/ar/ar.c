@@ -1,12 +1,15 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ar.c 4.3 %G%";
+static	char sccsid[] = "@(#)ar.c 4.4 %G%";
 #endif
+
 /*
  * ar - portable (ascii) format version
  */
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+
+#include <stdio.h>
 #include <ar.h>
 #include <signal.h>
 
@@ -60,7 +63,6 @@ int	tf2;
 int	qf;
 int	bastate;
 char	buf[BUFSIZ];
-time_t	timep[2];
 
 char	*trim();
 char	*mktemp();
@@ -217,6 +219,7 @@ dcmd()
 xcmd()
 {
 	register f;
+	struct timeval tv[2];
 
 	if(getaf())
 		noar();
@@ -231,8 +234,9 @@ xcmd()
 			copyfil(af, f, IODD);
 			close(f);
 			if (flg['o'-'a']) {
-				timep[0] = timep[1] = (time_t) larbuf.lar_date;
-				utime(file, timep);
+				tv[0].tv_sec = tv[1].tv_sec = larbuf.lar_date;
+				tv[0].tv_usec = tv[1].tv_usec = 0;
+				utimes(file, tv);
 			}
 			continue;
 		}

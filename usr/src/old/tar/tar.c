@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tar.c	4.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)tar.c	4.16 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,6 +11,7 @@ static	char *sccsid = "@(#)tar.c	4.15 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <errno.h>
 
@@ -627,11 +628,13 @@ gotit:
 			/* ignore alien orders */
 			chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
 			if (mflag == 0) {
-				time_t timep[2];
+				struct timeval tv[2];
 
-				timep[0] = time(0);
-				timep[1] = stbuf.st_mtime;
-				utime(dblock.dbuf.name, timep);
+				tv[0].tv_sec = time(0);
+				tv[0].tv_usec = 0;
+				tv[1].tv_sec = stbuf.st_mtime;
+				tv[1].tv_usec = 0;
+				utimes(dblock.dbuf.name, tv);
 			}
 			if (pflag)
 				chmod(dblock.dbuf.name, stbuf.st_mode & 07777);
@@ -681,11 +684,13 @@ gotit:
 		}
 		close(ofile);
 		if (mflag == 0) {
-			time_t timep[2];
+			struct timeval tv[2];
 
-			timep[0] = time(NULL);
-			timep[1] = stbuf.st_mtime;
-			utime(dblock.dbuf.name, timep);
+			tv[0].tv_sec = time(0);
+			tv[0].tv_usec = 0;
+			tv[1].tv_sec = stbuf.st_mtime;
+			tv[1].tv_usec = 0;
+			utimes(dblock.dbuf.name, tv);
 		}
 		if (pflag)
 			chmod(dblock.dbuf.name, stbuf.st_mode & 07777);
