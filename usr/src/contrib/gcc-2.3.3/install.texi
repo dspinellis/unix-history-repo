@@ -1,0 +1,1374 @@
+@c Copyright (C) 1988, 1989, 1992 Free Software Foundation, Inc.
+@c This is part of the GCC manual.
+@c For copying conditions, see the file gcc.texi.
+
+@c The text of this file appears in the file INSTALL
+@c in the GCC distribution, as well as in the GCC manual.
+
+@ifclear INSTALLONLY
+@node Installation
+@chapter Installing GNU CC
+@end ifclear
+@cindex installing GNU CC
+
+Here is the procedure for installing GNU CC on a Unix system.
+
+@menu
+* Other Dir::     Compiling in a separate directory (not where the source is).
+* Cross-Compiler::   Building and installing a cross-compiler.
+* PA Install::    See below for installation on the HP Precision Architecture.
+* Sun Install::   See below for installation on the Sun.
+* 3b1 Install::   See below for installation on the 3b1.
+* Unos Install::  See below for installation on Unos (from CRDS).
+* VMS Install::   See below for installation on VMS.
+* WE32K Install:: See below for installation on the 3b* aside from the 3b1.
+* MIPS Install::  See below for installation on the MIPS Architecture.
+@end menu
+@iftex
+See below for VMS systems, and modified procedures needed on other
+systems including HP, Sun, 3b1, SCO Unix and Unos.  The following section
+says how to compile in a separate directory on Unix; here we assume you
+compile in the same directory that contains the source files.
+@end iftex
+
+@enumerate
+@item
+If you have built GNU CC previously in the same directory for a
+different target machine, do @samp{make distclean} to delete all files
+that might be invalid.  One of the files this deletes is
+@file{Makefile}; if @samp{make distclean} complains that @file{Makefile}
+does not exist, it probably means that the directory is already suitably
+clean.
+
+@item
+On a System V release 4 system, make sure @file{/usr/bin} precedes
+@file{/usr/ucb} in @code{PATH}.  The @code{cc} command in
+@file{/usr/ucb} uses libraries which have bugs.
+
+@item
+Specify the host and target machine configurations.  You do this by
+running the file @file{configure} with appropriate arguments.
+
+If you are building a compiler to produce code for the machine it runs
+on, specify just one machine type.  Use the @samp{--target} option; the
+host type will default to be the same as the target.  (For information
+on building a cross-compiler, see @ref{Cross-Compiler}.)  The command
+looks like this:
+
+@example
+configure --target=sparc-sun-sunos4.1
+@end example
+
+A configuration name may be canonical or it may be more or less
+abbreviated.
+
+A canonical configuration name has three parts, separated by dashes.
+It looks like this: @samp{@var{cpu}-@var{company}-@var{system}}.
+(The three parts may themselves contain dashes; @file{configure}
+can figure out which dashes serve which purpose.)  For example,
+@samp{m68k-sun-sunos4.1} specifies a Sun 3.
+
+You can also replace parts of the configuration by nicknames or aliases.
+For example, @samp{sun3} stands for @samp{m68k-sun}, so
+@samp{sun3-sunos4.1} is another way to specify a Sun 3.  You can also
+use simply @samp{sun3-sunos}, since the version of SunOS is assumed by
+default to be version 4.  @samp{sun3-bsd} also works, since
+@file{configure} knows that the only BSD variant on a Sun 3 is SunOS.
+
+You can specify a version number after any of the system types, and some
+of the CPU types.  In most cases, the version is irrelevant, and will be
+ignored.  So you might as well specify the version if you know it.
+
+Here are the possible CPU types:
+
+@quotation
+@c gmicro, alliant, spur and tahoe omitted since they don't work.
+a29k, alpha, arm, c@var{n}, elxsi, hppa1.0, hppa1.1,
+i386, i860, i960, m68000, m68k, m88k, mips,
+ns32k, pyramid, romp, rs6000, sparc, vax, we32k.
+@end quotation
+
+Here are the recognized company names.  As you can see, customary
+abbreviations are used rather than the longer official names.
+
+@quotation
+alliant, altos, apollo, att,
+cbm, convergent, convex, crds, dec, dg,
+encore, harris, hp, ibm, mips,
+motorola, ncr, next, ns, omron,
+sequent, sgi, sony, sun, tti, unicom.
+@end quotation
+
+The company name is meaningful only to disambiguate when the rest of
+the information supplied is insufficient.  You can omit it, writing
+just @samp{@var{cpu}-@var{system}}, if it is not needed.  For example,
+@samp{vax-ultrix4.2} is equivalent to @samp{vax-dec-ultrix4.2}.
+
+Here is a list of system types:
+
+@quotation
+aix, aos, bsd, ctix, dgux, dynix,
+genix, hpux, isc, linux, luna, mach,
+minix, newsos, osf, osfrose, riscos,
+sco, sunos, sysv, ultrix, unos, vms.
+@end quotation
+
+@noindent
+You can omit the system type; then @file{configure} guesses the
+operating system from the CPU and company.
+
+You can add a version number to the system type; this may or may not
+make a difference.  For example, you can write @samp{bsd4.3} or
+@samp{bsd4.4} to distinguish versions of BSD.  In practice, the version
+number is most needed for @samp{sysv3} and @samp{sysv4}, which are often
+treated differently.
+
+If you specify an impossible combination such as @samp{i860-dg-vms},
+then you may get an error message from @file{configure}, or it may
+ignore part of the information and do the best it can with the rest.
+@file{configure} always prints the canonical name for the alternative
+that it used.
+
+Often a particular model of machine has a name.  Many machine names are
+recognized as aliases for CPU/company combinations.  Thus, the machine
+name @samp{sun3}, mentioned above, is an alias for @samp{m68k-sun}.
+Sometimes we accept a company name as a machine name, when the name is
+popularly used for a particular machine.  Here is a table of the known
+machine names:
+
+@quotation
+3300, 3b1, 3b@var{n}, 7300, altos3068, altos,
+apollo68, att-7300, balance,
+convex-c@var{n}, crds, decstation-3100,
+decstation, delta, encore,
+fx2800, gmicro, hp7@var{nn}, hp8@var{nn},
+hp9k2@var{nn}, hp9k3@var{nn}, hp9k7@var{nn},
+hp9k8@var{nn}, iris4d, iris, isi68,
+m3230, magnum, merlin, miniframe,
+mmax, news-3600, news800, news, next,
+pbd, pc532, pmax, ps2, risc-news,
+rtpc, sun2, sun386i, sun386, sun3,
+sun4, symmetry, tower-32, tower.
+@end quotation 
+
+@noindent
+Remember that a machine name specifies both the cpu type and the company
+name.
+
+There are four additional options you can specify independently to 
+describe variant hardware and software configurations.  These are
+@samp{--with-gnu-as}, @samp{--with-gnu-ld}, @samp{--with-stabs} and
+@samp{--nfp}.
+
+@table @samp
+@item --with-gnu-as
+On certain systems, you must specify whether you want GNU CC to work
+with the usual compilation tools or with the GNU compilation tools
+(including GAS).  Use the @samp{--with-gnu-as} argument when you run
+@file{configure}, if you want to use the GNU tools.  (Specify
+@samp{--with-gnu-ld} as well, since on these systems GAS works only with
+the GNU linker.)  The systems where this makes a difference are
+@samp{i386-@var{anything}-sysv}, @samp{i860-@var{anything}-bsd},
+@samp{m68k-hp-hpux}, @samp{m68k-sony-bsd}, @samp{m68k-altos-sysv},
+@samp{m68000-hp-hpux}, and @samp{m68000-att-sysv}.  On any other system,
+@samp{--with-gnu-as} has no effect.
+
+@item --with-gnu-ld
+Specify the option @samp{--with-gnu-ld} if you plan to use the GNU
+linker.  This inhibits the installation of @code{collect2}, a program
+which otherwise serves as a front-end for the system's linker on most
+configurations.
+
+@item --with-stabs
+On MIPS based systems, you must specify whether you want GNU CC to
+create the normal ECOFF debugging format, or to use BSD-style stabs
+passed through the ECOFF symbol table.  The normal ECOFF debug format
+cannot fully handle languages other than C.  BSD stabs format can handle
+other languages, but it only works with the GNU debugger GDB.
+
+Normally, GNU CC uses the ECOFF debugging format by default; if you
+prefer BSD stabs, specify @samp{--with-stabs} when you configure GNU
+CC.
+
+No matter which default you choose when you configure GNU CC, the user
+can use the @samp{-gcoff} and @samp{-gstabs+} options to specify explicitly
+the debug format for a particular compilation.
+
+@item --nfp
+On certain systems, you must specify whether the machine has a floating
+point unit.  These systems are @samp{m68k-sun-sunos@var{n}} and
+@samp{m68k-isi-bsd}.  On any other system, @samp{--nfp} currently has no
+effect, though perhaps there are other systems where it could usefully
+make a difference.
+@end table
+
+If you want to install your own homemade configuration files, you can
+use @samp{local} as the company name to access them.  If you use 
+configuration @samp{@var{cpu}-local}, the entire configuration name
+is used to form the configuration file names.
+
+Thus, if you specify @samp{m68k-local}, then the files used are
+@file{m68k-local.md}, @file{m68k-local.h}, @file{m68k-local.c},
+@file{xm-m68k-local.h}, @file{t-m68k-local}, and @file{x-m68k-local}.
+
+Here is a list of configurations that have special treatment or special
+things you must know:
+
+@table @samp
+@item alpha-*-osf1
+Systems using processors that implement the DEC Alpha architecture and
+are running the OSF/1 operating system. (VMS on the Alpha is not
+currently supported by GNU CC.)  As of this writing, the only Alpha-based
+product currently available from DEC is the 21064 (EV4) processor chip;
+no system-level products can be ordered.  This port is provided for
+those developers who might have early Alpha hardware from DEC or other
+vendors and run the OSF/1 operating system.  It has not been extensively
+tested and both the C++ and Objective-C languages may not work, except
+in a cross-compilation environment.
+
+The @code{ASSEMBLE_FILE_START} macro writes a @code{.verstamp} directive
+containing the version of the calling sequence.  Currently, we use
+@samp{9 0}, which we believe will work until the official release by DEC
+of their system, at which point @samp{3 11} is the correct value.  If
+you get a mismatch error from the assembler on a @code{.verstamp} line,
+consult the file @file{/usr/include/stamp.h} for the present value.  GNU
+C on the Alpha does not support versions of DEC's OSF/1 earlier than
+BL9; if you are running an older version, we suggest you ask your DEC
+contact for an update.
+
+Note that since the Alpha is a 64-bit architecture, cross-compilers
+from 32-bit machines will not generate as efficient code as that
+generated when the compiler is running on a 64-bit machine because many
+optimizations that depend on being able to represent a word on the
+target in an integral value on the host cannot be performed.
+
+@item a29k
+AMD Am29K-family processors.  These are normally used in embedded
+applications.  There are no standard Unix configurations.
+This configuration
+corresponds to AMD's standard calling sequence and binary interface
+and is compatible with other 29K tools.  
+
+You may need to make a variant of the file @file{a29k.h} for your
+particular configuration.
+
+@item a29k-*-bsd
+AMD Am29050 used in a system running a variant of BSD Unix.
+
+@item elxsi-elxsi-bsd
+The Elxsi's C compiler has known limitations that prevent it from
+compiling GNU C.  Please contact @code{mrs@@cygnus.com} for more details.
+
+@ignore
+@item fx80
+Alliant FX/8 computer.  Note that the standard installed C compiler in
+Concentrix 5.0 has a bug which prevent it from compiling GNU CC
+correctly.  You can patch the compiler bug as follows:
+
+@example
+cp /bin/pcc ./pcc
+adb -w ./pcc - << EOF
+15f6?w 6610
+EOF
+@end example
+
+Then you must use the @samp{-ip12} option when compiling GNU CC
+with the patched compiler, as shown here:
+
+@example
+make CC="./pcc -ip12" CFLAGS=-w
+@end example
+
+Note also that Alliant's version of DBX does not manage to work with the
+output from GNU CC.
+@end ignore
+
+@item i386-*-sco
+Compilation with RCC is recommended.
+
+@item i386-ibm-aix
+You need a version of GAS that you can get from @code{tranle@@intellicorp.com}.
+
+@item i386-sequent
+Go to the Berkeley universe before compiling.  In addition, you probably
+need to create a file named @file{string.h} containing just one line:
+@samp{#include <strings.h>}.
+
+@item i386-sun-sunos4
+You may find that you need another version of GNU CC to begin
+bootstrapping with, since the current version when built with the
+system's own compiler seems to get an infinite loop compiling part of
+@file{libgcc2.c}.  GNU CC version 2 compiled with GNU CC (any version)
+seems not to have this problem.
+
+@item m68000-att
+AT&T 3b1, a.k.a. 7300 PC.  Special procedures are needed to compile GNU
+CC with this machine's standard C compiler, due to bugs in that
+compiler.  @xref{3b1 Install}.  You can bootstrap it more easily with
+previous versions of GNU CC if you have them.
+
+@item m68000-hp-bsd
+HP 9000 series 200 running BSD.  Note that the C compiler that comes
+with this system cannot compile GNU CC; contact @code{law@@cs.utah.edu}
+to get binaries of GNU CC for bootstrapping.
+
+@item m68k-altos
+Altos 3068.  You must use the GNU assembler, linker and debugger, with
+COFF-encapsulation.  Also, you must fix a kernel bug.  Details in the
+file @file{README.ALTOS}.
+
+@item m68k-hp-hpux
+HP 9000 series 300 or 400 running HP-UX.  HP-UX version 8.0 has a bug in
+the assembler that prevents compilation of GNU CC.  To fix it, get patch
+PHCO_0800 from HP.
+
+In addition, @samp{--gas} does not currently work with this
+configuration.  Changes in HP-UX have broken the library conversion tool
+and the linker.
+
+@item m68k-sun
+Sun 3.  We do not provide a configuration file to use the Sun FPA by
+default, because programs that establish signal handlers for floating
+point traps inherently cannot work with the FPA.
+
+@item m88k-svr3
+Motorola m88k running the AT&T/Unisoft/Motorola V.3 reference port.
+These systems tend to use the Green Hills C, revision 1.8.5, as the
+standard C compiler.  There are apparently bugs in this compiler that
+result in object files differences between stage 2 and stage 3.  If this
+happens, make the stage 4 compiler and compare it to the stage 3
+compiler.  If the stage 3 and stage 4 object files are identical, this
+suggests a problem with the standard C compiler.  It is best, however,
+to use an older version of GNU CC for bootstrapping.
+
+@item m88k-dgux
+Motorola m88k running DG/UX.  To build native or cross compilers on
+DG/UX, you must first change to the 88open BCS software development
+environment.  This is done by issuing this command:
+
+@example
+eval `sde-target m88kbcs`
+@end example
+
+@item mips-mips-bsd
+MIPS machines running the MIPS operating system in BSD mode.  It's
+possible that some old versions of the system lack the functions
+@code{memcpy}, @code{memcmp}, and @code{memset}.  If your system lacks
+these, you must remove or undo the definition of
+@code{TARGET_MEM_FUNCTIONS} in @file{mips-bsd.h}.
+
+@item mips-sony-sysv
+Sony MIPS NEWS.  This works in NEWSOS 5.0.1, but not in 5.0.2 (which
+uses ELF instead of COFF).  Support for 5.0.2 will probably be provided
+soon by volunteers.
+
+@item ns32k-encore
+Encore ns32000 system.  Encore systems are supported only under BSD.
+
+@item ns32k-*-genix
+National Semiconductor ns32000 system.  Genix has bugs in @code{alloca}
+and @code{malloc}; you must get the compiled versions of these from GNU
+Emacs.
+
+@item ns32k-sequent
+Go to the Berkeley universe before compiling.  In addition, you probably
+need to create a file named @file{string.h} containing just one line:
+@samp{#include <strings.h>}.
+
+@item ns32k-utek
+UTEK ns32000 system (``merlin'').  The C compiler that comes with this
+system cannot compile GNU CC; contact @samp{tektronix!reed!mason} to get
+binaries of GNU CC for bootstrapping.
+
+@item romp-*-aos
+@itemx romp-*-mach
+The only operating systems supported for the IBM RT PC are AOS and
+MACH.  GNU CC does not support AIX running on the RT.  We recommend you
+compile GNU CC with an earlier version of itself; if you compile GNU CC
+with @code{hc}, the Metaware compiler, it will work, but you will get
+mismatches between the stage 2 and stage 3 compilers in various files.
+These errors are minor differences in some floating-point constants and
+can be safely ignored; the stage 3 compiler is correct.
+
+@item rs6000-*-aix
+@strong{Read the file @file{README.RS6000} for information on how to get
+a fix for a problem in the IBM assembler that prevents use of GNU CC.}
+You must either obtain the new assembler or avoid using the @samp{-g}
+switch.  Note that @file{Makefile.in} uses @samp{-g} by default when
+compiling @file{libgcc2.c}.
+
+@item vax-dec-ultrix
+Don't try compiling with Vax C (@code{vcc}).  It produces incorrect code
+in some cases (for example, when @code{alloca} is used).
+
+Meanwhile, compiling @file{cp-parse.c} with pcc does not work because of
+an internal table size limitation in that compiler.  To avoid this
+problem, compile just the GNU C compiler first, and use it to recompile 
+building all the languages that you want to run.
+@end table
+
+Here we spell out what files will be set up by @code{configure}.  Normally
+you need not be concerned with these files.
+
+@itemize @bullet
+@item
+@ifset INTERNALS
+A symbolic link named @file{config.h} is made to the top-level config
+file for the machine you will run the compiler on (@pxref{Config}).
+This file is responsible for defining information about the host
+machine.  It includes @file{tm.h}.
+@end ifset
+@ifclear INTERNALS
+A symbolic link named @file{config.h} is made to the top-level config
+file for the machine you plan to run the compiler on (@pxref{Config,,The
+Configuration File, gcc.info, Using and Porting GCC}).  This file is
+responsible for defining information about the host machine.  It
+includes @file{tm.h}.
+@end ifclear
+
+The top-level config file is located in the subdirectory @file{config}.
+Its name is always @file{xm-@var{something}.h}; usually
+@file{xm-@var{machine}.h}, but there are some exceptions.
+
+If your system does not support symbolic links, you might want to
+set up @file{config.h} to contain a @samp{#include} command which
+refers to the appropriate file.
+
+@item
+A symbolic link named @file{tconfig.h} is made to the top-level config
+file for your target machine.  This is used for compiling certain
+programs to run on that machine.
+
+@item
+A symbolic link named @file{tm.h} is made to the machine-description
+macro file for your target machine.  It should be in the subdirectory
+@file{config} and its name is often @file{@var{machine}.h}.
+
+@item
+A symbolic link named @file{md} will be made to the machine description
+pattern file.  It should be in the @file{config} subdirectory and its
+name should be @file{@var{machine}.md}; but @var{machine} is often not
+the same as the name used in the @file{tm.h} file because the
+@file{md} files are more general.
+
+@item
+A symbolic link named @file{aux-output.c} will be made to the output
+subroutine file for your machine.  It should be in the @file{config}
+subdirectory and its name should be @file{@var{machine}.c}.
+
+@item
+The command file @file{configure} also constructs @file{Makefile} by
+adding some text to the template file @file{Makefile.in}.  The
+additional text comes from files in the @file{config} directory, named
+@file{t-@var{target}} and @file{h-@var{host}}.  If these files do not
+exist, it means nothing needs to be added for a given target or host.
+@end itemize
+
+@cindex Bison parser generator
+@cindex parser generator, Bison
+@item
+Make sure the Bison parser generator is installed.  (This is
+unnecessary if the Bison output files @file{c-parse.c} and
+@file{cexp.c} are more recent than @file{c-parse.y} and @file{cexp.y}
+and you do not plan to change the @samp{.y} files.)
+
+Bison versions older than Sept 8, 1988 will produce incorrect output
+for @file{c-parse.c}.
+
+@item
+Build the compiler.  Just type @samp{make LANGUAGES=c} in the compiler
+directory.
+
+@samp{LANGUAGES=c} specifies that only the C compiler should be
+compiled.  The makefile normally builds compilers for all the supported
+languages; currently, C, C++ and Objective C.  However, C is the only
+language that is sure to work when you build with other non-GNU C
+compilers.  In addition, building anything but C at this stage is a
+waste of time.
+
+In general, you can specify the languages to build by typing the
+argument @samp{LANGUAGES="@var{list}"}, where @var{list} is one or more
+words from the list @samp{c}, @samp{c++}, and @samp{objective-c}.
+
+Ignore any warnings you may see about ``statement not reached'' in
+@file{insn-emit.c}; they are normal.  Any other compilation errors may
+represent bugs in the port to your machine or operating system, and
+@ifclear INSTALLONLY
+should be investigated and reported (@pxref{Bugs}).
+@end ifclear
+@ifset INSTALLONLY
+should be investigated and reported.
+@end ifset
+
+Some commercial compilers fail to compile GNU CC because they have bugs
+or limitations.  For example, the Microsoft compiler is said to run out
+of macro space.  Some Ultrix compilers run out of expression space; then
+you need to break up the statement where the problem happens.
+
+If you are building with a previous GNU C compiler, do not
+use @samp{CC=gcc} on the make command or by editing the Makefile.
+Instead, use a full pathname to specify the compiler, such as
+@samp{CC=/usr/local/bin/gcc}.  This is because make might execute
+the @file{gcc} in the current directory before all of the
+compiler components have been built.
+
+@item
+If you are using COFF-encapsulation, you must convert @file{libgcc.a} to
+a GNU-format library at this point.  See the file @file{README.ENCAP}
+in the directory containing the GNU binary file utilities, for
+directions.
+
+@item
+If you are building a cross-compiler, stop here.  @xref{Cross-Compiler}.
+
+@cindex stage1
+@item
+Move the first-stage object files and executables into a subdirectory
+with this command:
+
+@example
+make stage1
+@end example
+
+The files are moved into a subdirectory named @file{stage1}.
+Once installation is complete, you may wish to delete these files
+with @code{rm -r stage1}.
+
+@item
+Recompile the compiler with itself, with this command:
+
+@example
+make CC="stage1/xgcc -Bstage1/" CFLAGS="-g -O"
+@end example
+
+This is called making the stage 2 compiler.
+
+The command shown above builds compilers for all the supported
+languages.  If you don't want them all, you can specify the languages to
+build by typing the argument @samp{LANGUAGES="@var{list}"}.  @var{list}
+should contain one or more words from the list @samp{c}, @samp{c++},
+@samp{objective-c}, and @samp{proto}.  Separate the words with spaces.
+@samp{proto} stands for the programs @code{protoize} and
+@code{unprotoize}; they are not a separate language, but you use
+@code{LANGUAGES} to enable or disable their installation.
+
+If you are going to build the stage 3 compiler, then you might want to
+build only the C language in stage 2.
+
+Once you have built the stage 2 compiler, if you are short of disk
+space, you can delete the subdirectory @file{stage1}.
+
+On a 68000 or 68020 system lacking floating point hardware,
+unless you have selected a @file{tm.h} file that expects by default
+that there is no such hardware, do this instead:
+
+@example
+make CC="stage1/xgcc -Bstage1/" CFLAGS="-g -O -msoft-float"
+@end example
+
+@item
+If you wish to test the compiler by compiling it with itself one more
+time, do this:
+
+@example
+make stage2
+make CC="stage2/xgcc -Bstage2/" CFLAGS="-g -O" 
+@end example
+
+@noindent
+This is called making the stage 3 compiler.  Aside from the @samp{-B}
+option, the compiler options should be the same as when you made the
+stage 2 compiler.  But the @code{LANGUAGES} option need not be the
+same.  The command shown above builds compilers for all the supported
+languages; if you don't want them all, you can specify the languages to
+build by typing the argument @samp{LANGUAGES="@var{list}"}, as described
+above.
+
+Then compare the latest object files with the stage 2 object
+files---they ought to be identical, unless they contain time stamps.
+You can compare the files, disregarding the time stamps if any, like
+this:
+
+@example
+make compare
+@end example
+
+This will mention any object files that differ between stage 2 and stage
+3.  Any difference, no matter how innocuous, indicates that the stage 2
+compiler has compiled GNU CC incorrectly, and is therefore a potentially
+@ifclear INSTALLONLY
+serious bug which you should investigate and report (@pxref{Bugs}).
+@end ifclear
+@ifset INSTALLONLY
+serious bug which you should investigate and report.
+@end ifset
+
+If your system does not put time stamps in the object files, then this
+is a faster way to compare them (using the Bourne shell):
+
+@example
+for file in *.o; do
+cmp $file stage2/$file
+done
+@end example
+
+If you have built the compiler with the @samp{-mno-mips-tfile} option on
+MIPS machines, you will not be able to compare the files.
+
+@item
+Install the compiler driver, the compiler's passes and run-time support.
+You can use the following command:
+
+@example
+make install CC="stage2/xgcc -Bstage2/" CFLAGS="-g -O" LANGUAGES="@var{list}"
+@end example
+
+@noindent
+(Use the same value for @code{CC}, @code{CFLAGS} and @code{LANGUAGES}
+that you used when compiling the files that are being installed.  One
+reason this is necessary is that some versions of Make have bugs and
+recompile files gratuitously when you do this step.  If you use the same
+variable values, those files will be recompiled properly.
+
+This copies the files @file{cc1}, @file{cpp} and @file{libgcc.a} to files
+@file{cc1}, @file{cpp} and @file{libgcc.a} in directory
+@file{/usr/local/lib/gcc-lib/@var{target}/@var{version}}, which is where the
+compiler driver program looks for them.  Here @var{target} is the target
+machine type specified when you ran @file{configure}, and @var{version}
+is the version number of GNU CC.  This naming scheme permits various
+versions and/or cross-compilers to coexist.
+
+It also copies the driver program @file{gcc} into the directory
+@file{/usr/local/bin}, so that it appears in typical execution search
+paths.@refill
+
+On some systems, this command will cause recompilation of some files.
+This is usually due to bugs in @code{make}.  You should either ignore
+this problem, or use GNU Make.
+
+@cindex @code{alloca} and SunOs
+@strong{Warning: there is a bug in @code{alloca} in the Sun library.  To
+avoid this bug, be sure to install the executables of GNU CC that were
+compiled by GNU CC.  (That is, the executables from stage 2 or 3, not
+stage 1.)  They use @code{alloca} as a built-in function and never the
+one in the library.}
+
+(It is usually better to install GNU CC executables from stage 2 or 3,
+since they usually run faster than the ones compiled with some other
+compiler.)
+
+@item
+Install the Objective C library (if you have built the Objective C
+compiler).  Here is the command to do this:
+
+@example
+make install-libobjc CC="stage2/xgcc -Bstage2/" CFLAGS="-g -O"
+@end example
+
+@item
+Correct errors in the header files on your machine.
+
+Various system header files often contain constructs which are
+erroneous, incompatible with ANSI C or otherwise unsuitable, and they
+will not work when you compile programs with GNU CC.
+
+The most common erroneous construct is found in @file{ioctl.h}, where a
+macro expects argument values to be substituted for argument names
+inside of character constants---something not done in ANSI C.  This
+particular problem can be prevented by using @samp{-traditional}.  Other
+problems are not so easy to work around.
+
+GNU CC comes with shell scripts to fix known header file problems.  They
+install corrected copies of various header files in a special directory
+where only GNU CC will normally look for them.  The scripts adapt to
+various systems by searching all the system header files for the problem
+cases that we know about.
+
+Use the following command to do this:
+
+@example
+make install-fixincludes
+@end example
+
+@noindent
+If you selected a different directory for GNU CC installation when you
+installed it, by specifying the Make variable @code{prefix} or
+@code{libdir}, specify it the same way in this command.
+
+Note that some systems are starting to come with ANSI C system header
+files.  On these systems, don't run @code{install-fixincludes}; it may
+not work, and is certainly not necessary.  One exception: there are is a
+special script for System V release 4, which you should run.
+
+It is not the purpose of @code{install-fixincludes} to add prototypes to
+the system header files.  We support headers with ANSI C prototypes in
+the GNU C Library, and we have no time to support adding them to other
+systems' header files.
+
+@item
+If you're going to use C++, it's likely that you need to also install
+the @code{libg++} distribution.  It should be available from the same
+place where you got the GCC distribution.  Just as GCC does not
+distribute a C runtime library, it also does not include a C++ run-time
+library.  All I/O functionality, special class libraries, etc., are
+available in the @code{libg++} distribution.
+@end enumerate
+
+If you cannot install the compiler's passes and run-time support in
+@file{/usr/local/lib}, you can alternatively use the @samp{-B} option to
+specify a prefix by which they may be found.  The compiler concatenates
+the prefix with the names  @file{cpp}, @file{cc1} and @file{libgcc.a}.
+Thus, you can put the files in a directory @file{/usr/foo/gcc} and
+specify @samp{-B/usr/foo/gcc/} when you run GNU CC.
+
+Also, you can specify an alternative default directory for these files
+by setting the Make variable @code{libdir} when you make GNU CC.
+
+@node Other Dir
+@section Compilation in a Separate Directory
+@cindex other directory, compilation in
+@cindex compilation in a separate directory
+@cindex separate directory, compilation in
+
+If you wish to build the object files and executables in a directory
+other than the one containing the source files, here is what you must
+do differently:
+
+@enumerate
+@item
+Make sure you have a version of Make that supports the @code{VPATH}
+feature.  (GNU Make supports it, as do Make versions on most BSD
+systems.)
+
+@item
+If you have ever run @file{configure} in the source directory, you must undo
+the configuration.  Do this by running:
+
+@example
+make distclean
+@end example
+
+@item
+Go to the directory in which you want to build the compiler before
+running @file{configure}:
+
+@example
+mkdir gcc-sun3
+cd gcc-sun3
+@end example
+
+On systems that do not support symbolic links, this directory must be
+on the same file system as the source code directory.
+
+@item
+Specify where to find @file{configure} when you run it:
+
+@example
+../gcc/configure @dots{}
+@end example
+
+This also tells @code{configure} where to find the compiler sources;
+@code{configure} takes the directory from the file name that was used to
+invoke it.  But if you want to be sure, you can specify the source
+directory with the @samp{--srcdir} option, like this:
+
+@example
+../gcc/configure --srcdir=../gcc sun3
+@end example
+
+The directory you specify with @samp{--srcdir} need not be the same
+as the one that @code{configure} is found in.
+@end enumerate
+
+Now, you can run @code{make} in that directory.  You need not repeat the
+configuration steps shown above, when ordinary source files change.  You
+must, however, run @code{configure} again when the configuration files
+change, if your system does not support symbolic links.
+
+@node Cross-Compiler
+@section Building and Installing a Cross-Compiler
+@cindex cross-compiler, installation
+
+GNU CC can function as a cross-compiler for many machines, but not all.
+
+@itemize @bullet
+@item
+Cross-compilers for the Mips as target do not work because the auxiliary
+programs @file{mips-tdump.c} and @file{mips-tfile.c} can't be compiled
+on anything but a Mips.
+
+@item
+Cross-compilers to or from the Vax probably don't work completely
+because the Vax uses an incompatible floating point format (not IEEE
+format).
+@end itemize
+
+Since GNU CC generates assembler code, you probably need a
+cross-assembler that GNU CC can run, in order to produce object files.
+If you want to link on other than the target machine, you need a
+cross-linker as well.  You also need header files and libraries suitable
+for the target machine that you can install on the host machine.
+
+To build GNU CC as a cross-compiler, you start out by running
+@code{configure}.  You must specify two different configurations, the
+host and the target.  Use the @samp{--host=@var{host}} option for the
+host and @samp{--target=@var{target}} to specify the target type.  For
+example, here is how to configure for a cross-compiler that runs on a
+hypothetical Intel 386 system and produces code for an HP 68030 system
+running BSD:
+
+@example
+configure --target=m68k-hp-bsd4.3 --host=i386-bozotheclone-bsd4.3
+@end example
+
+Next you should install the cross-assembler and cross-linker (and
+@code{ar} and @code{ranlib}).  Put them in the directory
+@file{/usr/local/@var{target}/bin}.  The installation of GNU CC will find
+them there and copy or link them to the proper place to find them when
+you run the cross-compiler later.
+
+If you want to install any additional libraries to use with the
+cross-compiler, put them in the directory
+@file{/usr/local/@var{target}/lib}; all files in that subdirectory will
+be installed in the proper place when you install the cross-compiler.
+Likewise, put the header files for the target machine in
+@file{/usr/local/@var{target}/include}.
+
+You must now produce a substitute for @file{libgcc1.a}.  Normally this
+file is compiled with the ``native compiler'' for the target machine;
+compiling it with GNU CC does not work.  But compiling it with the host
+machine's compiler also doesn't work---that produces a file that would
+run on the host, and you need it to run on the target.
+
+We can't give you any automatic way to produce this substitute.  For
+some targets, the subroutines in @file{libgcc1.c} are not actually used.
+You need not provide the ones that won't be used.  The ones that most
+commonly are used are the multiplication, division and remainder
+routines---many RISC machines rely on the library for this.  One way to
+make them work is to define the appropriate @code{perform_@dots{}}
+macros for the subroutines that you need.  If these definitions do not
+use the C arithmetic operators that they are meant to implement, you
+might be able to compile them with the cross-compiler you are building.
+To do this, specify @samp{LIBGCC1=libgcc1.a OLDCC=./xgcc} when building
+the compiler.
+
+Now you can proceed just as for compiling a single-machine compiler
+through the step of building stage 1.  If you have not provided some
+sort of @file{libgcc1.a}, then compilation will give up at the point
+where it needs that file, printing a suitable error message.  If you
+do provide @file{libgcc1.a}, then building the compiler will automatically
+compile and link a test program called @file{cross-test}; if you get
+errors in the linking, it means that not all of the necessary routines
+in @file{libgcc1.a} are available.
+
+When you are using a cross-compiler configuration, building stage 1
+does not compile all of GNU CC.  This is because one part of building,
+the compilation of @file{libgcc2.c}, requires use of the cross-compiler.
+
+However, when you type @samp{make install} to install the bulk of the
+cross-compiler, that will also compile @file{libgcc2.c} and install the
+resulting @file{libgcc.a}.
+
+Do not try to build stage 2 for a cross-compiler.  It doesn't work to
+rebuild GNU CC as a cross-compiler using the cross-compiler, because
+that would produce a program that runs on the target machine, not on the
+host.  For example, if you compile a 386-to-68030 cross-compiler with
+itself, the result will not be right either for the 386 (because it was
+compiled into 68030 code) or for the 68030 (because it was configured
+for a 386 as the host).  If you want to compile GNU CC into 68030 code,
+whether you compile it on a 68030 or with a cross-compiler on a 386, you
+must specify a 68030 as the host when you configure it.
+
+@node PA Install
+@section Installing GNU CC on the HP Precision Architecture
+
+There are two variants of this CPU, called 1.0 and 1.1, which have
+different machine descriptions.  You must use the right one for your
+machine.  All 7@var{nn} machines and 8@var{n}7 machines use 1.1, while
+all other 8@var{nn} machines use 1.0.
+
+The easiest way to handle this problem is to use @samp{configure
+hp@var{nnn}} or @samp{configure hp@var{nnn}-hpux}, where @var{nnn} is
+the model number of the machine.  Then @file{configure} will figure out
+if the machine is a 1.0 or 1.1.  Use @samp{uname -a} to find out the
+model number of your machine.
+
+@samp{-g} does not work on HP-UX, since that system uses a peculiar
+debugging format which GNU CC does not know about.  There are preliminary
+versions of GAS and GDB for the HP-PA which do work with GNU CC for 
+debugging.  You can get them by anonymous ftp from @code{jaguar.cs.utah.edu}
+@samp{dist} subdirectory.  You would need to install GAS in the file
+
+@example
+/usr/local/lib/gcc-lib/@var{configuration}/@var{gccversion}/as
+@end example
+
+@noindent
+where @var{configuration} is the configuration name (perhaps
+@samp{hp@var{nnn}-hpux}) and @var{gccversion} is the GNU CC version
+number.  Do this @emph{before} starting the build process, otherwise you will
+get errors from the HPUX assembler while building @file{libgcc2.a}.  The
+command 
+
+@example
+make install-dir
+@end example
+
+@noindent
+will create the necessary directory hierarchy so you can install GAS before
+building GCC.
+
+If you obtained GAS before October 6, 1992 it is highly recommended you
+get a new one to avoid several bugs which have been discovered
+recently.
+
+To enable debugging, configure GNU CC with the @samp{--gas} option before
+building.
+
+@node Sun Install
+@section Installing GNU CC on the Sun
+@cindex Sun installation
+@cindex installing GNU CC on the Sun
+
+Make sure the environment variable @code{FLOAT_OPTION} is not set when
+you compile @file{libgcc.a}.  If this option were set to @code{f68881}
+when @file{libgcc.a} is compiled, the resulting code would demand to be
+linked with a special startup file and would not link properly without
+special pains.
+
+@cindex @code{alloca}, for SunOs
+There is a bug in @code{alloca} in certain versions of the Sun library.
+To avoid this bug, install the binaries of GNU CC that were compiled by
+GNU CC.  They use @code{alloca} as a built-in function and never the one
+in the library.
+
+Some versions of the Sun compiler crash when compiling GNU CC.  The
+problem is a segmentation fault in cpp.  This problem seems to be due to
+the bulk of data in the environment variables.  You may be able to avoid
+it by using the following command to compile GNU CC with Sun CC:
+
+@example
+make CC="TERMCAP=x OBJS=x LIBFUNCS=x STAGESTUFF=x cc"
+@end example
+
+@node 3b1 Install
+@section Installing GNU CC on the 3b1
+@cindex 3b1 installation
+@cindex installing GNU CC on the 3b1
+
+Installing GNU CC on the 3b1 is difficult if you do not already have
+GNU CC running, due to bugs in the installed C compiler.  However,
+the following procedure might work.  We are unable to test it.
+
+@enumerate
+@item
+Comment out the @samp{#include "config.h"} line on line 37 of
+@file{cccp.c} and do @samp{make cpp}.  This makes a preliminary version
+of GNU cpp.
+
+@item
+Save the old @file{/lib/cpp} and copy the preliminary GNU cpp to that
+file name.
+
+@item
+Undo your change in @file{cccp.c}, or reinstall the original version,
+and do @samp{make cpp} again.
+
+@item
+Copy this final version of GNU cpp into @file{/lib/cpp}.
+
+@findex obstack_free
+@item
+Replace every occurrence of @code{obstack_free} in the file
+@file{tree.c} with @code{_obstack_free}.
+
+@item
+Run @code{make} to get the first-stage GNU CC.
+
+@item
+Reinstall the original version of @file{/lib/cpp}.
+
+@item
+Now you can compile GNU CC with itself and install it in the normal
+fashion.
+@end enumerate
+
+@node Unos Install
+@section Installing GNU CC on Unos
+@cindex Unos installation
+@cindex installing GNU CC on Unos
+
+Use @samp{configure unos} for building on Unos.
+
+The Unos assembler is named @code{casm} instead of @code{as}.  For some
+strange reason linking @file{/bin/as} to @file{/bin/casm} changes the
+behavior, and does not work.  So, when installing GNU CC, you should
+install the following script as @file{as} in the subdirectory where
+the passes of GCC are installed:
+
+@example
+#!/bin/sh
+casm $*
+@end example
+
+The default Unos library is named @file{libunos.a} instead of
+@file{libc.a}.  To allow GNU CC to function, either change all
+references to @samp{-lc} in @file{gcc.c} to @samp{-lunos} or link
+@file{/lib/libc.a} to @file{/lib/libunos.a}.
+
+@cindex @code{alloca}, for Unos
+When compiling GNU CC with the standard compiler, to overcome bugs in
+the support of @code{alloca}, do not use @samp{-O} when making stage 2.
+Then use the stage 2 compiler with @samp{-O} to make the stage 3
+compiler.  This compiler will have the same characteristics as the usual
+stage 2 compiler on other systems.  Use it to make a stage 4 compiler
+and compare that with stage 3 to verify proper compilation.
+
+(Perhaps simply defining @code{ALLOCA} in @file{x-crds} as described in
+the comments there will make the above paragraph superfluous.  Please
+inform us of whether this works.)
+
+Unos uses memory segmentation instead of demand paging, so you will need
+a lot of memory.  5 Mb is barely enough if no other tasks are running.
+If linking @file{cc1} fails, try putting the object files into a library
+and linking from that library.
+
+@node VMS Install
+@section Installing GNU CC on VMS
+@cindex VMS installation
+@cindex installing GNU CC on VMS
+
+The VMS version of GNU CC is distributed in a backup saveset containing
+both source code and precompiled binaries.
+
+To install the @file{gcc} command so you can use the compiler easily, in
+the same manner as you use the VMS C compiler, you must install the VMS CLD
+file for GNU CC as follows:
+
+@enumerate
+@item
+Define the VMS logical names @samp{GNU_CC} and @samp{GNU_CC_INCLUDE}
+to point to the directories where the GNU CC executables
+(@file{gcc-cpp.exe}, @file{gcc-cc1.exe}, etc.) and the C include files are
+kept respectively.  This should be done with the commands:@refill
+
+@smallexample
+$ assign /system /translation=concealed -
+  disk:[gcc.] gnu_cc
+$ assign /system /translation=concealed -
+  disk:[gcc.include.] gnu_cc_include
+@end smallexample
+
+@noindent
+with the appropriate disk and directory names.  These commands can be
+placed in your system startup file so they will be executed whenever
+the machine is rebooted.  You may, if you choose, do this via the
+@file{GCC_INSTALL.COM} script in the @file{[GCC]} directory.
+
+@item
+Install the @file{GCC} command with the command line:
+
+@smallexample
+$ set command /table=sys$common:[syslib]dcltables -
+  /output=sys$common:[syslib]dcltables gnu_cc:[000000]gcc
+$ install replace sys$common:[syslib]dcltables
+@end smallexample
+
+@item
+To install the help file, do the following:
+
+@smallexample
+$ library/help sys$library:helplib.hlb gcc.hlp
+@end smallexample
+
+@noindent
+Now you can invoke the compiler with a command like @samp{gcc /verbose
+file.c}, which is equivalent to the command @samp{gcc -v -c file.c} in
+Unix.
+@end enumerate
+
+If you wish to use GNU C++ you must first install GNU CC, and then
+perform the following steps:
+
+@enumerate
+@item
+Define the VMS logical name @samp{GNU_GXX_INCLUDE} to point to the
+directory where the preprocessor will search for the C++ header files.
+This can be done with the command:@refill
+
+@smallexample
+$ assign /system /translation=concealed -
+  disk:[gcc.gxx_include.] gnu_gxx_include
+@end smallexample
+
+@noindent
+with the appropriate disk and directory name.  If you are going to be
+using libg++, this is where the libg++ install procedure will install
+the libg++ header files.
+
+@item
+Obtain the file @file{gcc-cc1plus.exe}, and place this in the same
+directory that @file{gcc-cc1.exe} is kept.
+
+The GNU C++ compiler can be invoked with a command like @samp{gcc /plus
+/verbose file.cc}, which is equivalent to the command @samp{g++ -v -c
+file.cc} in Unix.
+@end enumerate
+
+We try to put corresponding binaries and sources on the VMS distribution
+tape.  But sometimes the binaries will be from an older version than the
+sources, because we don't always have time to update them.  (Use the
+@samp{/version} option to determine the version number of the binaries and
+compare it with the source file @file{version.c} to tell whether this is
+so.)  In this case, you should use the binaries you get to recompile the
+sources.  If you must recompile, here is how:
+
+@enumerate
+@item
+Execute the command procedure @file{vmsconfig.com} to copy files
+@file{vax-vms.h}, @file{xm-vax-vms.h}, @file{vax.c} and @file{vax.md} to
+@file{tm.h}, @file{config.h}, @file{aux-output.c}, and @file{md.}
+respectively, and to create files @file{tconfig.h} and
+@file{hconfig.h}.  This procedure also creates several linker option
+files used by @file{make-cc1.com} and a data file used by
+@file{make-l2.com}.@refill
+
+@smallexample
+$ @@vmsconfig.com
+@end smallexample
+
+@item
+Setup the logical names and command tables as defined above.  In
+addition, define the VMS logical name @samp{GNU_BISON} to point at the
+to the directories where the Bison executable is kept.  This should be
+done with the command:@refill
+
+@smallexample
+$ assign /system /translation=concealed -
+  disk:[bison.] gnu_bison
+@end smallexample
+
+You may, if you choose, use the @file{INSTALL_BISON.COM} script in the
+@file{[BISON]} directory.
+
+@item
+Install the @samp{BISON} command with the command line:@refill
+
+@smallexample
+$ set command /table=sys$common:[syslib]dcltables -
+  /output=sys$common:[syslib]dcltables -
+  gnu_bison:[000000]bison
+$ install replace sys$common:[syslib]dcltables
+@end smallexample
+
+@item
+Type @samp{@@make-gcc} to recompile everything (alternatively, you may
+submit the file @file{make-gcc.com} to a batch queue).  If you wish to
+build the GNU C++ compiler as well as the GNU CC compiler, you must
+first edit @file{make-gcc.com} and follow the instructions that appear
+in the comments.@refill
+
+@item
+In order to use GCC, you need a library of functions which GCC compiled code
+will call to perform certain tasks, and these functions are defined in the
+file @file{libgcc2.c}.  To compile this you should use the command procedure
+@file{make-l2.com}, which will generate the library @file{libgcc2.olb}.
+@file{libgcc2.olb} should be built using the compiler built from
+the same distribution that @file{libgcc2.c} came from, and
+@file{make-gcc.com} will automatically do all of this for you.
+
+To install the library, use the following commands:@refill
+
+@smallexample
+$ library gnu_cc:[000000]gcclib/delete=(new,eprintf)
+$ library libgcc2/extract=*/output=libgcc2.obj
+$ library gnu_cc:[000000]gcclib libgcc2.obj
+@end smallexample
+
+The first command simply removes old modules that will be replaced with modules
+from libgcc2.  If the VMS librarian complains about those modules not being
+present, simply ignore the message and continue on with the next command.
+
+Whenever you update the compiler on your system, you should also update the
+library with the above procedure.
+
+@item
+You may wish to build GCC in such a way that no files are written to the
+directory where the source files reside.  An example would be the when
+the source files are on a read-only disk.  In these cases, execute the
+following DCL commands (substituting your actual path names):
+
+@smallexample
+$ assign dua0:[gcc.build_dir.]/translation=concealed, -
+         dua1:[gcc.source_dir.]/translation=concealed  gcc_build
+$ set default gcc_build:[000000]
+@end smallexample
+
+where @file{dua1:[gcc.source_dir]}
+contains the source code, and
+@file{dua0:[gcc.build_dir]} is meant to contain all of the generated object
+files and executables.  Once you have done this, you can proceed building GCC
+as described above.  (Keep in mind that @file{gcc_build} is a rooted logical
+name, and thus the device names in each element of the search list must be an
+actual physical device name rather than another rooted logical name).
+
+@item
+@strong{If you are building GNU CC with a previous version of GNU CC,
+you also should check to see that you have the newest version of the
+assembler}.  In particular, GNU CC version 2 treats global constant
+variables slightly differently from GNU CC version 1, and GAS version
+1.38.1 does not have the patches required to work with GCC version 2.
+If you use GAS 1.38.1, then @code{extern const} variables will not have
+the read-only bit set, and the linker will generate warning messages
+about mismatched psect attributes for these variables.  These warning
+messages are merely a nuisance, and can safely be ignored.
+
+If you are compiling with a version of GNU CC older than 1.33, specify
+@samp{/DEFINE=("inline=")} as an option in all the compilations.  This
+requires editing all the @code{gcc} commands in @file{make-cc1.com}.
+(The older versions had problems supporting @code{inline}.)  Once you
+have a working 1.33 or newer GNU CC, you can change this file back.
+
+@item
+If you want to build GNU CC with the VAX C compiler, you will need to
+make minor changes in @file{make-cccp.com} and @file{make-cc1.com}
+to choose alternate definitions of @code{CC}, @code{CFLAGS}, and
+@code{LIBS}.  See comments in those files.  However, you must
+also have a working version of the GNU assembler (GNU as, aka GAS) as
+it is used as the back-end for GNU CC to produce binary object modules
+and is not included in the GNU CC sources.  GAS is also needed to
+compile @file{libgcc2} in order to build @file{gcclib} (see above);
+@file{make-l2.com} expects to be able to find it operational in
+@file{gnu_cc:[000000]gnu-as.exe}.
+
+To use GNU CC on VMS, you need the VMS driver programs
+@file{gcc.exe}, @file{gcc.com}, and @file{gcc.cld}.  They are
+distributed with the VMS binaries (@file{gcc-vms}) rather than the
+GNU CC sources.  GAS is also included in @file{gcc-vms}, as is Bison.
+
+Once you have successfully built GNU CC with VAX C, you should use the
+resulting compiler to rebuild itself.  Before doing this, be sure to
+restore the @code{CC}, @code{CFLAGS}, and @code{LIBS} definitions in
+@file{make-cccp.com} and @file{make-cc1.com}.  The second generation
+compiler will be able to take advantage of many optimizations that must
+be suppressed when building with other compilers.
+@end enumerate
+
+Under previous versions of GNU CC, the generated code would occasionally
+give strange results when linked with the sharable @file{VAXCRTL} library.
+Now this should work.
+
+Even with this version, however, GNU CC itself should not be linked with
+the sharable @file{VAXCRTL}.  The version of @code{qsort} in
+@file{VAXCRTL} has a bug (known to be present in VMS versions V4.6
+through V5.5) which causes the compiler to fail.
+
+The executables that are generated by @file{make-cc1.com} and
+@file{make-cccp.com} use the object library version of @file{VAXCRTL} in
+order to make use of the @code{qsort} routine in @file{gcclib.olb}.  If
+you wish to link the compiler executables with the shareable image
+version of @file{VAXCRTL}, you should edit the file @file{tm.h} (created
+by @file{vmsconfig.com}) to define the macro @code{QSORT_WORKAROUND}.
+
+@code{QSORT_WORKAROUND} is always defined when GNU CC is compiled with
+VAX C, to avoid a problem in case @file{gcclib.olb} is not yet
+available.
+
+
+@node WE32K Install
+@section Installing GNU CC on the WE32K
+
+These computers are also known as the 3b2, 3b5, 3b20 and other similar
+names.  (However, the 3b1 is actually a 68000; see @ref{3b1 Install}.)
+
+Don't use @samp{-g} when compiling with the system's compiler.  The
+system's linker seems to be unable to handle such a large program with
+debugging information.
+
+The system's compiler runs out of capacity when compiling @file{stmt.c}
+in GNU CC.  You can work around this by building @file{cpp} in GNU CC
+first, then use that instead of the system's preprocessor with the
+system's C compiler to compile @file{stmt.c}.  Here is how:
+
+@example
+mv /lib/cpp /lib/cpp.att
+cp cpp /lib/cpp.gnu
+echo "/lib/cpp.gnu -traditional $*" > /lib/cpp
+chmod +x /lib/cpp
+@end example
+
+The system's compiler produces bad code for some of the GNU CC
+optimization files.  So you must build the stage 2 compiler without
+optimization.  Then build a stage 3 compiler with optimization.
+That executable should work.  Here are the necessary commands:
+
+@example
+make LANGUAGES=c CC=stage1/xgcc CFLAGS="-Bstage1/ -g"
+make stage2
+make CC=stage2/xgcc CFLAGS="-Bstage2/ -g -O"
+@end example
+
+You may need to raise the ULIMIT setting to build a C++ compiler,
+as the file @file{cc1plus} is larger than one megabyte.
+
+
+@node MIPS Install
+@section Installing GNU CC on the MIPS
+See @ref{Installation} about whether to use @samp{--with-stabs} or
+not.
+
+The MIPS C compiler needs to be told to increase its table size
+for switch statements with the @samp{-Wf,-XNg1500} option in
+order to compile @file{cp-parse.c}.  If you use the @samp{-O2}
+optimization option, you also need to use @samp{-Olimit 3000}.
+Both of these options are automatically generated in the
+@file{Makefile} that the shell script @file{configure} builds.
+If you override the @code{CC} make variable and use the MIPS
+compilers, you may need to add @samp{-Wf,-XNg1500 -Olimit 3000}.
+
+MIPS computers running RISC-OS can support four different
+personalities: default, BSD 4.3, System V.3, and System V.4
+(older versions of RISC-OS don't support V.4).  To configure GCC
+for these platforms use the following configurations:
+
+@table @samp
+@item mips-mips-riscos@code{rev}
+Default configuration for RISC-OS, revision @code{rev}.
+
+@item mips-mips-riscos@code{rev}bsd
+BSD 4.3 configuration for RISC-OS, revision @code{rev}.
+
+@item mips-mips-riscos@code{rev}sysv4
+System V.4 configuration for RISC-OS, revision @code{rev}.
+
+@item mips-mips-riscos@code{rev}sysv
+System V.3 configuration for RISC-OS, revision @code{rev}.
+@end table
+
+The revision @code{rev} mentioned above is the revision of
+RISC-OS to use.  You must reconfigure GCC when going from a
+RISC-OS revision 4 to RISC-OS revision 5.  This has the effect of
+avoiding a linker
+@ifclear INSTALLONLY
+bug (see @ref{Installation Problems} for more details).
+@end ifclear
+@ifset INSTALLONLY
+bug.
+@end ifset
+
+DECstations can support three different personalities: Ultrix,
+DEC OSF/1, and OSF/rose.  To configure GCC for these platforms
+use the following configurations:
+
+@table @samp
+@item decstation-ultrix
+Ultrix configuration.
+
+@item decstation-osf1
+Dec's version of OSF/1.
+
+@item decstation-osfrose
+Open Software Foundation reference port of OSF/1 which uses the
+OSF/rose object file format instead of ECOFF.  Normally, you
+would not select this configuration.
+@end table
