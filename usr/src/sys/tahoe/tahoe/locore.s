@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.16 (Berkeley) %G%
+ *	@(#)locore.s	7.17 (Berkeley) %G%
  */
 
 #include "tahoe/include/mtpr.h"
@@ -871,6 +871,7 @@ sigcode:
 	.globl	_icode
 	.globl	_initflags
 	.globl	_szicode
+	.data
 /*
  * Icode is copied out to process 1 to exec /etc/init.
  * If the exec fails, process 1 exits.
@@ -908,6 +909,7 @@ argv2:	.long	init2+5-_icode
 	.long	0
 _szicode:
 	.long	_szicode-_icode
+	.text
 
 /*
  * Primitives

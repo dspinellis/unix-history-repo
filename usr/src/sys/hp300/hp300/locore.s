@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.2 90/07/14$
  *
- *	@(#)locore.s	7.5 (Berkeley) %G%
+ *	@(#)locore.s	7.6 (Berkeley) %G%
  */
 
 #define MMUADDR(ar)	movl	_MMUbase,ar
@@ -1096,6 +1096,7 @@ Lesigcode:
  * If the exec fails, process 1 exits.
  */
 	.globl	_icode,_initflags,_szicode
+	.data
 _icode:
 	pea	pc@(argv-.-2)
 	pea	pc@(init-.-2)
@@ -1115,6 +1116,7 @@ argv:
 	.long	0
 _szicode:
 	.long	_szicode-_icode
+	.text
 
 /*
  * Primitives
