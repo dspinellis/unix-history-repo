@@ -62,6 +62,7 @@ ports/kermit            Scott Mace              smace@freefall.cdrom.com
 ports/ksh               Sean Vickery            seanv@cs.uq.edu.au
 ports/lynx              Serge V.Vakulenko       vak@cronyx.msk.su
 ports/mprof		Jeffrey Hsu		hsu@freefall.cdrom.com
+ports/mtools		Steven Wallace		swallace@freefall.cdrom.com
 ports/netaudio		Jeffrey Hsu		hsu@freefall.cdrom.com
 ports/pcvt              J"org Wunsch            joerg_wunsch@uriah.sax.de
 ports/pkg_install       Jordan Hubbard          jkh@freefall.cdrom.com
@@ -81,6 +82,7 @@ ports/vile              Jordan Hubbard          jkh@freefall.cdrom.com
 ports/vim               Jordan Hubbard          jkh@freefall.cdrom.com
 ports/wine		Jeffrey Hsu		hsu@freefall.cdrom.com
 ports/wu-ftpd           Justin T. Gibbs         gibbs@freefall.cdrom.com
+ports/xcdplayer		Steven Wallace		swallace@freefall.cdrom.com
 ports/xjewel		Jeffrey Hsu		hsu@freefall.cdrom.com
 ports/xlock             Scott Mace              smace@freefall.cdrom.com
 ports/xv                Scott Mace              smace@freefall.cdrom.com
@@ -94,6 +96,7 @@ prog/man                Jordan Hubbard          jkh@freefall.cdrom.com
 prog/telnet		Garrett Wollman		wollman@lcs.mit.edu
 sys/fd                  Serge V.Vakulenko       vak@cronyx.msk.su
 sys/i386                David Greenman          davidg@root.com
+sys/i386/isa/sound	Steven Wallace		swallace@freefall.cdrom.com
 sys/kern                David Greenman          davidg@root.com
 sys/kern/ntp	        Garrett Wollman         wollman@lcs.mit.edu
 sys/lpt                 Geoff Rehmet            csgr@cs.ru.ac.za
