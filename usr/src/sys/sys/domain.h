@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)domain.h	7.6 (Berkeley) %G%
+ *	@(#)domain.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,7 @@ struct	mbuf;
 struct	domain {
 	int	dom_family;		/* AF_xxx */
 	char	*dom_name;
-	int	(*dom_init)		/* initialize domain data structures */
+	void	(*dom_init)		/* initialize domain data structures */
 		__P((void));
 	int	(*dom_externalize)	/* externalize access rights */
 		__P((struct mbuf *));
