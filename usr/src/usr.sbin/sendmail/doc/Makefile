@@ -1,16 +1,5 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
-ALL=	op.ps intro.ps usenix.ps
+SUBDIR=	op intro usenix
 
-all: ${ALL}
-
-op.ps: op.me
-	${PIC} op.me | ${EQN} | ${ROFF} -me > ${.TARGET}
-
-intro.ps: intro.me
-	${PIC} intro.me | ${ROFF} -me > ${.TARGET}
-
-usenix.ps: usenix.me
-	${ROFF} -me usenix.me > ${.TARGET}
-
-.include <bsd.doc.mk>
+.include <bsd.subdir.mk>
