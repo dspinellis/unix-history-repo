@@ -1,6 +1,7 @@
-/*	scope.h	1.2	86/01/05	*/
+/*	scope.h	1.3	86/01/12	*/
 
-/*  Some I/O addresses used to generate pulses for scopes */
+#ifdef DOSCOPE
+/*  some i/o addresses used to generate pulses for scopes */
 #define	OUT1	0xffffb034
 #define	OUT2	0xffffb018
 #define	OUT3	0xffffb020
@@ -11,7 +12,11 @@
 
 #define	IOaddr(off)	(caddr_t)(&vmem[(off) & 0x0fffff])
 
-extern char vmem[];
-int	iospace_mapped;
-#define	scope_out(x)	if(iospace_mapped) movob(IOaddr(OUT/**/x),0)
-#define	scope_in(x)	if(iospace_mapped) dummy =  *IOaddr(IN/**/x)
+extern	char vmem[];
+extern	int cold;
+#define	scope_out(x)	if (!cold) movob(IOaddr(OUT/**/x),0)
+#define	scope_in(x)	if( !cold) dummy =  *IOaddr(IN/**/x)
+#else
+#define	scope_out(x)
+#define	scope_in(x)
+#endif

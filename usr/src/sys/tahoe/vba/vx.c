@@ -1,30 +1,32 @@
-/*	vx.c	1.4	86/01/12	*/
+/*	vx.c	1.5	86/01/12	*/
 
 #include "vx.h"
 #if NVX > 0
 /*
  * VIOC-X driver
  */
+#ifdef VXPERF
+#define	DOSCOPE
+#endif
+
 #include "../tahoe/pte.h"
 
-#include "../h/param.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/file.h"
-#include "../h/uio.h"
-#include "../h/proc.h"
-#include "../h/vm.h"
+#include "param.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "dir.h"
+#include "user.h"
+#include "map.h"
+#include "buf.h"
+#include "conf.h"
+#include "file.h"
+#include "uio.h"
+#include "proc.h"
+#include "vm.h"
 
 #include "../tahoevba/vbavar.h"
 #include "../tahoevba/vioc.h"
-#ifdef VXPERF
 #include "../tahoevba/scope.h"
-#endif VXPERF
 #include "vbsc.h"
 #if NVBSC > 0
 #include "../tahoebsc/bscio.h"
@@ -522,9 +524,7 @@ register struct tty *tp;
 			splx(s);
 			return(0);
 		}
-#ifdef VXPERF
-	scope_out(3);
-#endif VXPERF
+		scope_out(3);
 		if(!(tp->t_flags&(RAW|LITOUT)))  
 			full = 0200;
 		if((n = ndqb(&tp->t_outq, full)) == 0)   {
