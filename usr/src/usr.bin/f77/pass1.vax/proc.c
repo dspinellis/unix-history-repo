@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,16 @@ static char sccsid[] = "@(#)proc.c	5.5 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	proc.c,v $
+ * Revision 5.8  86/01/10  19:02:19  donn
+ * More dbx hacking -- filter out incomplete declarations (with bogus types).
+ * 
+ * Revision 5.7  86/01/10  13:53:02  donn
+ * Since we now postpone determination of the type of an argument, we must
+ * make sure to emit stab information at the end of the routine when we
+ * definitely have the type.  Notice some care was taken to make sure that
+ * arguments appear in order in the output file since that's how dbx wants
+ * them.  Also a minor change for dummy procedures.
+ * 
  * Revision 5.6  86/01/06  16:28:06  donn
  * Sigh.  We can't commit to defining a symbol as a variable instead of a
  * function based only on what we have seen through the declaration section;
@@ -589,11 +599,6 @@ for(p = ep->arglist ; p ; p = p->nextp)
 			}
 		else if(q->vclass==CLPROC && nentry==1)
 			nextarg(TYLENG) ;
-#ifdef SDB
-		if(sdbflag) {
-			namestab(q);
-		}
-#endif
 		}
 
 if (optimflag)
@@ -691,12 +696,25 @@ for (i = 0 ; i < nequiv ; ++i)
   outlocvars();
 #ifdef SDB
     if(sdbflag) {
-      for(p = hashtab ; p<lasthash ; ++p) if(q = p->varp) {
-	  qstg = q->vstg;
-	  qclass = q->vclass;
-          if( ONEOF(qclass, M(CLVAR))) {
-	     if (! ONEOF(qstg,M(STGCOMMON)|M(STGARG) ) ) namestab(q);
-	  } 
+      register struct Entrypoint *ep;
+      register chainp cp;
+
+      for (ep = entries; ep; ep = ep->entnextp)
+	for (cp = ep->arglist ; cp ; cp = cp->nextp)
+	  if ((q = (Namep) cp->datap) && q->vstg == STGARG) {
+	    q->vdcldone = YES;
+	    namestab(q);
+	  }
+      for (p = hashtab ; p<lasthash ; ++p) if(q = p->varp) {
+	if (q->vtype == TYUNKNOWN || q->vtype == TYERROR)
+	  continue;
+	qstg = q->vstg;
+	qclass = q->vclass;
+	q->vdcldone = YES;
+	if ( ONEOF(qclass, M(CLVAR)|M(CLPARAM)|M(CLPROC)) ) {
+	  if (! ONEOF(qstg,M(STGCOMMON)|M(STGARG) ) )
+	    namestab(q);
+	} 
       }
     }
 #endif
