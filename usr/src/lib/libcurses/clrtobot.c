@@ -7,20 +7,20 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)clrtobot.c	5.6 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
 
-# include	"curses.ext"
+#include <curses.h>
 
 /*
- *	This routine erases everything on the window.
- *
+ * wclrtobot --
+ *	Erase everything on the window.
  */
+int
 wclrtobot(win)
-reg WINDOW	*win; {
-
-	reg int		y;
-	reg char	*sp, *end, *maxx;
-	reg int		startx, minx;
+	register WINDOW *win;
+{
+	register int minx, startx, y;
+	register char *sp, *end, *maxx;
 
 	startx = win->_curx;
 	for (y = win->_cury; y < win->_maxy; y++) {
@@ -37,4 +37,5 @@ reg WINDOW	*win; {
 			touchline(win, y, minx, maxx - &win->_y[y][0]);
 		startx = 0;
 	}
+	return (OK);
 }
