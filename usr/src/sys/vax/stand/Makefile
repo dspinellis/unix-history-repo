@@ -9,16 +9,18 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	7.11 (Berkeley) %G%
+#	@(#)Makefile	7.12 (Berkeley) %G%
 #
 DESTDIR=
 STAND=/stand
 INCPATH=-I. -I../stand -I../h
 VPATH=	../stand:../vax
-COPTS=	${INCPATH} -DSTANDALONE -DCOMPAT_42 \
-	-DVAX8600 -DVAX780 -DVAX750 -DVAX730 -DVAX630
-730OPTS=-O ${INCPATH} -DSTANDALONE -DCOMPAT_42 -DVAX730
-CFLAGS=	-O ${COPTS} 
+DEFS=	${INCPATH} -DSTANDALONE -DCOMPAT_42
+MACH=	-DVAX8600 -DVAX780 -DVAX750 -DVAX730 -DVAX630
+COPTS=	${DEFS} ${MACH}
+CFLAGS=	-O ${DEFS} ${MACH}
+730OPTS=-O ${DEFS} -DVAX730
+SMOPTS=	-O ${DEFS} -DVAX750 -DVAX630
 RELOC=	150000
 LIBSA=	libsa.a
 
@@ -146,32 +148,32 @@ drtest: drtest.o srt0.o confhpup.o ${LIBSA}
 
 # getting booted from disc
 
-boothk: relsrt0.o bootxx.o confrk.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confrk.o sm_sys.o ${LIBSA} -lc
+boothk: relsrt0.o bootxx.o confrk.o sm_sys.o sm_autoconf.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confrk.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=boothk ibs=32 skip=1;rm -f a.out
 	ls -l boothk
 
-boothp: relsrt0.o bootxx.o confhp.o sm_hp.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confhp.o sm_hp.o sm_sys.o ${LIBSA} -lc
+boothp: relsrt0.o bootxx.o confhp.o sm_hp.o sm_sys.o sm_autoconf.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confhp.o sm_hp.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=boothp ibs=32 skip=1;rm -f a.out
 	ls -l boothp
 
-bootup: relsrt0.o bootxx.o confup.o sm_up.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confup.o sm_up.o sm_sys.o ${LIBSA} -lc
+bootup: relsrt0.o bootxx.o confup.o sm_up.o sm_sys.o sm_autoconf.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confup.o sm_up.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=bootup ibs=32 skip=1;rm -f a.out
 	ls -l bootup
 
-bootra: relsrt0.o bootxx.o confra.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confra.o sm_sys.o ${LIBSA} -lc
+bootra: relsrt0.o bootxx.o confra.o sm_sys.o sm_autoconf.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confra.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=bootra ibs=32 skip=1;rm -f a.out
 	ls -l bootra
 
-bootrl: relsrt0.o bootxx.o confrl.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confrl.o sm_sys.o ${LIBSA} -lc
+bootrl: relsrt0.o bootxx.o confrl.o sm_sys.o sm_autoconf.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confrl.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=bootrl ibs=32 skip=1;rm -f a.out
 	ls -l bootrl
@@ -195,6 +197,12 @@ sm_sys.o: sys.o
 	-ln -s sys.c sm_sys.c
 	${CC} -c -DSMALL ${CFLAGS} sm_sys.c
 	rm -f sm_sys.c
+
+sm_autoconf.o: autoconf.o
+	rm -f sm_autoconf.c
+	-ln -s autoconf.c sm_autoconf.c
+	${CC} -c -DSMALL ${CFLAGS} sm_autoconf.c
+	rm -f sm_autoconf.c
 
 confrk.o: confrk.c confxx.o
 confhp.o: confhp.c confxx.o

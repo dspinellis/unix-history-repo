@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.7 (Berkeley) %G%
+ *	@(#)autoconf.c	7.8 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -95,6 +95,11 @@ caddr_t	uioaddr730[] = { UMA };
 struct	uba_regs *ubaddr630[] =
 	{ (struct uba_regs *)((caddr_t)QBAMAP630 - 0x800) };
 caddr_t	uioaddr630[] = { (caddr_t)QIOPAGE630 };
+
+int (*v_getc)()=0,
+    (*v_putc)()=0;
+
+#ifndef SMALL
 /*
  * Virtual console configuration tables.
  */
@@ -105,8 +110,7 @@ int (*vcons_init[])() = {
 	qv_init,
 	0
 };
-int (*v_getc)()=0,
-    (*v_putc)()=0;
+#endif
 #endif
 
 int cpuspeed = 1;
@@ -246,7 +250,8 @@ configure()
 	/* give unibus devices a chance to recover... */
 	if (nuba > 0)
 		DELAY(2000000);
-#if VAX630
+
+#if defined(VAX630) && !defined(SMALL)
 	/*
 	 * configure the console
 	 */
