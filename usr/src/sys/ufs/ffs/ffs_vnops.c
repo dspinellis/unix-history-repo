@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.98 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.99 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -178,6 +178,12 @@ struct vnodeopv_desc ffs_fifoop_opv_desc =
 	{ &ffs_fifoop_p, ffs_fifoop_entries };
 #endif /* FIFO */
 
+/*
+ * Enabling cluster read/write operations.
+ * Default is off until we trust them.
+ */
+int doclusterread = 0;
+int doclusterwrite = 0;
 
 /*
  * Vnode op for reading.
@@ -226,10 +232,16 @@ ffs_read(ap)
 		if (diff < n)
 			n = diff;
 		size = blksize(fs, ip, lbn);
-		if (lblktosize(fs, (lbn + 1)) <= ip->i_size)
+		rablock = lbn + 1;
+		if (doclusterread && lblktosize(fs, rablock) <= ip->i_size) {
 			error = cluster_read(vp, ip->i_size, lbn, size,
 			    NOCRED, &bp);
-		else
+		} else if (vp->v_lastr + 1 == lbn &&
+		    lblktosize(fs, rablock) < ip->i_size) {
+			rasize = blksize(fs, ip, rablock);
+			error = breadn(vp, lbn, size, &rablock,
+				&rasize, 1, NOCRED, &bp);
+		} else
 			error = bread(vp, lbn, size, NOCRED, &bp);
 		vp->v_lastr = lbn;
 		n = min(n, size - bp->b_resid);
@@ -333,7 +345,12 @@ ffs_write(ap)
 		if (ioflag & IO_SYNC)
 			(void) bwrite(bp);
 		else if (n + on == fs->fs_bsize) {
-			cluster_write(bp, ip->i_size);
+			if (doclusterwrite) {
+				cluster_write(bp, ip->i_size);
+			} else {
+				bp->b_flags |= B_AGE;
+				bawrite(bp);
+			}
 		} else
 			bdwrite(bp);
 		ip->i_flag |= IUPD|ICHG;
