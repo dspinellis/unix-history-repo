@@ -1,0 +1,74 @@
+.nr in 5
+.de i0
+.in \n(in
+..
+.de lp
+.i0
+.ta \\$2+1
+.in \\$1
+.ti -\\$2
+..
+.de s1
+.sp 1
+.ne 4
+..
+.de s2
+.sp 1
+..
+.de s3
+.sp 1
+..
+.de fo
+'sp 2
+'tl ''- % -''
+'bp
+..
+.de th
+.de x1
+'sp 2
+'tl '\\$1(\\$2)'\\$3'\\$1(\\$2)'
+'sp 2
+\\..
+.wh -5  fo
+.wh 0 x1
+.in \n(in
+..
+.de sh
+.s1
+.ne 5
+.ti 0
+\\$1
+.br
+..
+.de bd
+.tr __
+.ul
+\\$1
+..
+.de bn
+.tr __
+.ul
+\\$1\\t
+..
+.de it
+.tr __
+.ul
+.li
+\\$1
+..
+.de dt
+.ta 8 16 24 32 40 48 56 64
+..
+.ds b B
+.ds G G
+.ds a '
+.ds - -
+.ds _ _
+.ds v |
+.ds p J
+.ds r
+.ds g `
+.ds X X
+.ds u u
+.ds > ->
+.ds | 
