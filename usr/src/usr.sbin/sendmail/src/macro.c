@@ -1,6 +1,6 @@
 # include "useful.h"
 
-static char SccsId[] = "@(#)macro.c	3.5	%G%";
+static char SccsId[] = "@(#)macro.c	3.6	%G%";
 
 char	*Macro[128];
 extern int	Debug;
@@ -124,6 +124,7 @@ expand(s, buf, buflim)
 **		$f   raw from address
 **		$g   translated from address
 **		$h   to host
+**		$i   official SMTP hostname, used in messages+
 **		$l   UNIX-style from line+
 **		$n   name of sendmail ("MAILER-DAEMON" on local
 **		     net typically)+

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.2	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.3	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -59,28 +59,23 @@ smtp()
 	bool hasmail;			/* mail command received */
 	bool hasmrcp;			/* has a recipient */
 	bool hasdata;			/* has mail data */
+	int baseerrs;
 
-	/*%%%*/	HostName = "XYZZY";
 	hasmail = hasmrcp = hasdata = FALSE;
 	message("220", "%s Sendmail at your service", HostName);
 	for (;;)
 	{
 		To = NULL;
-		Errors = 0;
+		baseerrs = Errors;
 		if (fgets(inp, sizeof inp, InChannel) == NULL)
 		{
 			/* end of file, just die */
-			message("421", "Lost input channel");
+			message("421", "%s Lost input channel", HostName);
 			finis();
 		}
 
 		/* clean up end of line */
-		p = index(inp, '\n');
-		if (p != NULL)
-			*p = '\0';
-		p = index(inp, '\r');
-		if (p != NULL)
-			*p = '\0';
+		fixcrlf(inp, TRUE);
 
 		/* break off command */
 		for (p = inp; isspace(*p); p++)
@@ -102,6 +97,11 @@ smtp()
 		switch (c->cmdcode)
 		{
 		  case CMDMAIL:		/* mail -- designate sender */
+			if (hasmail)
+			{
+				message("503", "Sender already specified");
+				break;
+			}
 			p = skipword(p, "from");
 			if (p == NULL)
 				break;
@@ -112,7 +112,7 @@ smtp()
 				break;
 			}
 			setsender(p);
-			if (Errors == 0)
+			if (Errors == baseerrs)
 			{
 				message("250", "Sender ok");
 				hasmail = TRUE;
@@ -130,7 +130,7 @@ smtp()
 				break;
 			}
 			sendto(p, 1, NULL);
-			if (Errors == 0)
+			if (Errors == baseerrs)
 			{
 				message("250", "Recipient ok");
 				hasmrcp = TRUE;
@@ -140,7 +140,7 @@ smtp()
 		  case CMDDATA:		/* data -- text of mail */
 			message("354", "Enter mail, end with dot");
 			collect();
-			if (Errors == 0)
+			if (Errors == baseerrs)
 			{
 				message("250", "Message stored");
 				hasdata = TRUE;
@@ -157,7 +157,7 @@ smtp()
 			else
 			{
 				sendall(FALSE);
-				if (Errors == 0)
+				if (Errors == baseerrs)
 					message("250", "Sent");
 			}
 			break;
@@ -168,7 +168,7 @@ smtp()
 
 		  case CMDVRFY:		/* vrfy -- verify address */
 			sendto(p, 1, NULL);
-			if (Errors == 0)
+			if (Errors == baseerrs)
 				message("250", "user ok");
 			break;
 

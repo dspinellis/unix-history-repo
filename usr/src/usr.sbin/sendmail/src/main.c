@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.43	%G%";
+static char	SccsId[] = "@(#)main.c	3.44	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -136,6 +136,7 @@ main(argc, argv)
 	char cbuf[5];			/* holds hop count */
 	char dbuf[30];			/* holds ctime(tbuf) */
 	char ybuf[10];			/* holds tty id */
+	char ibuf[30];			/* holds HostName */
 	bool aliasinit = FALSE;
 	extern char *ttyname();
 	extern bool safefile();
@@ -399,6 +400,8 @@ main(argc, argv)
 	*/
 
 	readcf(ConfFile, safecf);
+	(void) expand("$i", ibuf, &ibuf[sizeof ibuf - 1]);
+	HostName = ibuf;
 
 	/*
 	**  Initialize aliases.
