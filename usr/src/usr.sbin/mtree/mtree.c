@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mtree.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mtree.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -99,7 +99,7 @@ main(argc, argv)
 		pwalk(root, 0);
 	} else {
 		if (xflag) {
-			if (stat(".", &sbuf)) {
+			if (lstat(".", &sbuf)) {
 				(void)fprintf(stderr, "mtree: root: %s\n",
 				    strerror(errno));
 				exit(1);
@@ -139,7 +139,7 @@ vwalk(level, tail)
 			ep->flags |= F_VISIT;
 			continue;
 		}
-		if (stat(dp->d_name, &sbuf)) {
+		if (lstat(dp->d_name, &sbuf)) {
 			(void)fprintf(stderr, "mtree: %s: %s\n",
 			    path + 2, strerror(errno));
 			exit(1);
