@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_en.c	6.11 (Berkeley) %G%
+ *	@(#)if_en.c	6.12 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -41,6 +41,11 @@
 #ifdef PUP
 #include "../netpup/pup.h"
 #include "../netpup/ether.h"
+#endif
+
+#ifdef NS
+#include "../netns/ns.h"
+#include "../netns/ns_if.h"
 #endif
 
 #include "../vax/cpu.h"
@@ -92,6 +97,7 @@ struct	en_softc {
 	short	es_lastx;		/* host last transmitted to */
 	short	es_oactive;		/* is output active? */
 	short	es_olen;		/* length of last output */
+	short	es_nsactive;		/* is interface enabled for ns? */
 } en_softc[NEN];
 
 /*
@@ -458,6 +464,18 @@ enrint(unit)
 		rpup_input(m);
 		goto setup;
 #endif
+#ifdef NS
+	case ETHERTYPE_NS:
+		if (es->es_nsactive) {
+			schednetisr(NETISR_NS);
+			inq = &nsintrq;
+		} else {
+			m_freem(m);
+			goto setup;
+		}
+		break;
+#endif
+
 	default:
 #ifdef notdef
 		enproto.sp_protocol = en->en_type;
@@ -541,6 +559,22 @@ enoutput(ifp, m0, dst)
 		type = ENTYPE_IP;
 		off = 0;
 		goto gottype;
+#endif
+#ifdef NS
+	case AF_NS:
+	{
+		u_char *up;
+
+		type = ETHERTYPE_NS;
+		up = ((struct sockaddr_ns *)dst)->sns_addr.x_host.c_host;
+		if (*up & 1)
+			dest = EN_BROADCAST;
+		else
+			dest = up[5];
+
+		off = 0;
+		goto gottype;
+	}
 #endif
 #ifdef PUP
 	case AF_PUP:
@@ -651,6 +685,14 @@ enioctl(ifp, cmd, data)
 			if (in_lnaof(IA_SIN(ifa)->sin_addr) != es->es_host)
 				return (EADDRNOTAVAIL);
 			break;
+#ifdef NS
+		case AF_NS:
+			if (IA_SNS(ifa)->sns_addr.x_host.c_host[5]
+							!= es->es_host)
+				return (EADDRNOTAVAIL);
+			es->es_nsactive = 1;
+			break;
+#endif
 		}
 		ifp->if_flags |= IFF_UP;
 		if ((ifp->if_flags & IFF_RUNNING) == 0)
