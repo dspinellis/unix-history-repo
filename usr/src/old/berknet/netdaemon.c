@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)netdaemon.c	4.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)netdaemon.c	4.5	(Berkeley)	%G%";
 
 /* sccs id variable */
 static char *netdaemon_sid = "@(#)netdaemon.c	1.10";
