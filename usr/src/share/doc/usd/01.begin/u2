@@ -1,4 +1,4 @@
-.\"	@(#)u2	5.1 (Berkeley) %G%
+.\"	@(#)u2	6.1 (Berkeley) %G%
 .\"
 .SH
 II.  DAY-TO-DAY USE
@@ -364,7 +364,10 @@ So far we have used filenames without ever saying what's
 a legal name,
 so it's time for a couple of rules.
 First, filenames are limited to 14 characters,
-which is enough to be descriptive.
+which is enough to be descriptive.\(dg
+.FS
+\(dg In  4.2 BSD the limit was extended to 255 characters.
+.FE
 Second, although you can use almost any character
 in a filename,
 common sense says you should stick to ones that are visible,
@@ -609,7 +612,7 @@ called by convention just
 .UL /usr
 on your system,
 you will get something analogous.
-Make the corresponding changes and read on.)
+Make the corresponding mental adjustment and read on.)
 .PP
 If you now type
 .P1
@@ -1032,7 +1035,11 @@ The Shell
 We have already mentioned once or twice the mysterious
 ``shell,''
 which is in fact
-.UL sh (1).
+.UL sh (1).\(dg
+.FS
+\(dg On Berkeley Unix systems, the usual shell for interactive use is the c shell, 
+.UL csh(1).
+.FE
 The shell is the program that interprets what you type as
 commands and arguments.
 It also looks after translating
@@ -1177,6 +1184,11 @@ and place in it the line
 When the shell first gains control when you log in,
 it looks for the 
 .UL .profile
-file and does whatever commands it finds in it.
+file and does whatever commands it finds in it.\(dg
+.FS
+\(dg The c shell instead reads a file called 
+.UL .login
+.
+.FE
 We'll get back to the shell in the section
 on programming.
