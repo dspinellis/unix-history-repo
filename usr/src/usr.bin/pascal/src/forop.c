@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)forop.c 1.1 %G%";
+static	char sccsid[] = "@(#)forop.c 1.2 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -275,6 +275,7 @@ forop( arg )
 		 * updating the index variable, and returning to the top
 		 * of the loop.
 		 */
+	    putline();
 	    put(2, O_RV4 | cbn<<8+INDX, termoff);
 	    lvalue(lhs, MOD, LREQ);
 	    put(4, (arg[0] == T_FORU ? O_FOR1U : O_FOR1D) + (width(fortype)>>1),
