@@ -14,16 +14,16 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
 #include <paths.h>
 
 #define	_PATH_DEFDEVLP		"/dev/lp"
-#define	_PATH_DEFSPOOL		"/var/spool/lpd"
+#define	_PATH_DEFSPOOL		"/var/spool/output/lpd"
 #define	_PATH_HOSTSEQUIV	"/etc/hosts.equiv"
 #define	_PATH_HOSTSLPD		"/etc/hosts.lpd"
-#define	_PATH_MASTERLOCK	"/var/spool/lpd.lock"
+#define	_PATH_MASTERLOCK	"/var/spool/output/lpd.lock"
 #define	_PATH_PR		"/usr/bin/pr"
 #define	_PATH_PRINTCAP		"/etc/printcap"
 #define	_PATH_SOCKETNAME	"/var/run/printer"
