@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -14,31 +14,73 @@ static char sccsid[] = "@(#)printw.c	5.5 (Berkeley) %G%";
  *
  */
 
+# include	<varargs.h>
 # include	"curses.ext"
 
 /*
  *	This routine implements a printf on the standard screen.
  */
-printw(fmt, args)
-char	*fmt;
-int	args; {
+printw(va_alist)
+va_dcl {
 
-	char	buf[512];
+	va_list	ap;
+	int	ret;
 
-	(void) vsprintf(buf, fmt, &args);
-	return waddstr(stdscr, buf);
+	va_start(ap);
+	ret = _sprintw(stdscr, ap);
+	va_end(ap);
+	return (ret);
 }
 
 /*
  *	This routine implements a printf on the given window.
  */
-wprintw(win, fmt, args)
+wprintw(va_alist)
+va_dcl {
+
+	va_list	ap;
+	WINDOW	*win;
+	int	ret;
+
+	win = va_arg(ap, WINDOW *);
+	ret = _sprintw(win, ap);
+	va_end(ap);
+	return (ret);
+}
+
+/*
+ *	Internal write-buffer-to-window function.
+ */
+static int
+_winwrite(cookie, buf, n)
+void	*cookie;
+reg char *buf;
+int	n; {
+
+	reg WINDOW *win = (WINDOW *)cookie;
+	reg int c = n;
+
+	while (--c >= 0) {
+		if (waddch(win, *buf++) == ERR)
+			return (-1);
+	}
+	return n;
+}
+
+/*
+ *	This routine actually executes the printf and adds it to the window.
+ *	It must not be declared static as it is used in mvprintw.c.
+ */
+_sprintw(win, ap)
 WINDOW	*win;
-char	*fmt;
-int	args; {
+va_list	ap; {
 
-	char	buf[512];
+	FILE	*f;
+	char	*fmt;
 
-	(void) vsprintf(buf, fmt, &args);
-	return waddstr(win, buf);
+	if ((f = fwopen((void *)win, _winwrite)) == NULL)
+		return ERR;
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(f, fmt, ap);
+	return fclose(f) ? ERR : OK;
 }
