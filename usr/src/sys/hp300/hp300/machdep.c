@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.7 (Berkeley) %G%
+ *	@(#)machdep.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -743,6 +743,13 @@ sendsig(catcher, sig, mask, code)
 	 * Build the argument list for the signal handler.
 	 */
 	kfp->sf_signum = sig;
+	/*
+	 * If sendsig call was delayed due to process being traced,
+	 * code will always be zero.  Look in ps_code to see if trapsignal
+	 * stashed something there.
+	 */
+	if (code == 0 && (code = psp->ps_code))
+		psp->ps_code = 0;
 	kfp->sf_code = code;
 	kfp->sf_scp = &fp->sf_sc;
 	kfp->sf_handler = catcher;
