@@ -1,4 +1,4 @@
-/*	locore.s	1.6	86/01/23	*/
+/*	locore.s	1.7	86/01/29	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -1268,8 +1268,7 @@ sw3:
 	clrl	_noproc
 	tstl	P_WCHAN(r2)		## firewalls
 	bneq	sw1b			##
-	movzbl	P_STAT(r2),r3		##
-	cmpl	$SRUN,r3		##
+	cmpb	P_STAT(r2),$SRUN	##
 	bneq	sw1b			##
 	clrl	P_RLINK(r2)		##
 	movl	*P_ADDR(r2),r0
@@ -1306,22 +1305,21 @@ swresume:
 	movl	_u+PCB_CMAP2,_CMAP2	# yech
 	mtpr	$_CADDR2,$TBIS
 res0:
-	PUSHR;
 	movl	_u+U_PROCP,r2		# r2 = u.u_procp
 	tstl	P_CKEY(r2)		# does proc have code key?
 	bneq	1f
 	callf	$4,_getcodekey		# no, give him one
+	movl	_u+U_PROCP,r2		# r2 = u.u_procp
 	movl	r0,P_CKEY(r2)
 1:
-	movl	_u+U_PROCP,r2		# r2 = u.u_procp
 	tstl	P_DKEY(r2)		# does proc have data key?
 	bneq	1f
 	callf	$4,_getdatakey		# no, give him one
+	movl	_u+U_PROCP,r2		# r2 = u.u_procp
 	movl	r0,P_DKEY(r2)
 1:
 	mtpr	P_CKEY(r2),$CCK		# set code cache key
 	mtpr	P_DKEY(r2),$DCK		# set data cache key
-	POPR
 	tstl	_u+PCB_SSWAP
 	bneq	res1
 	rei
