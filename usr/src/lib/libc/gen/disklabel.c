@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.6 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -382,35 +382,6 @@ ustrcmp(s1, s2)
 		return (*s2 - *s1);
 	}
 	return (0);
-}
-
-/*
- * Swab disk label if needed.
- */
-#if ENDIAN != BIG
-/* ARGSUSED */
-#endif
-swablabel(lp)
-	register struct disklabel *lp;
-{
-#if ENDIAN != BIG
-	register u_long *p;
-	register struct partition *pp;
-	int npart;
-
-	lp->d_magic = ntohl(lp->d_magic);
-	lp->d_type = ntohs(lp->d_type);
-	lp->d_subtype = ntohs(lp->d_subtype);
-	for (p = &lp->d_swabfirst; p <= &lp->d_swablast; p++)
-		*p = ntohl(*p);
-	npart = lp->d_npartitions;
-	for (pp = lp->d_partitions; pp < &lp->d_partitions[npart]; pp++) {
-		pp->p_size = ntohl(pp->p_size);
-		pp->p_offset = ntohl(pp->p_offset);
-		pp->p_fsize = ntohl(pp->p_fsize);
-		pp->p_cpg = ntohs(pp->p_cpg);
-	}
-#endif
 }
 
 dkcksum(lp)
