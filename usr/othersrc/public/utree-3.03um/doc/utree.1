@@ -1,0 +1,1650 @@
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+NNAAMMEE
+       uuttrreeee - Screen oriented filesystem browser and utility
+
+SSYYNNOOPPSSIISS
+       utree [options] [rootdirectory]
+
+DDEESSCCRRIIPPTTIIOONN
+       The  screen  oriented filesystem browser and utility uuttrreeee
+       descends the  directory  hierarchy  rooted  in  your  home
+       directory, defined in a tree list file if given, or rooted
+       in rroooottddiirreeccttoorryy if given, and displays the directory tree
+       on  the  so  called _t_r_e_e _s_c_r_e_e_n.  On the _t_r_e_e _s_c_r_e_e_n uuttrreeee
+       lets you walk thru the tree, execute some default and user
+       defined  commands on it and change to any directory in the
+       tree.
+       If you have changed to  a  directory  uuttrreeee  displays  all
+       files  in this directory on the so called _f_i_l_e _s_c_r_e_e_n.  On
+       the _f_i_l_e _s_c_r_e_e_n uuttrreeee lets you walk thru the file list and
+       execute some default and user defined commands on files.
+
+OOPPTTIIOONNSS
+       The  following  command  line  options  are interpreted by
+       uuttrreeee:
+
+
+       --LL              Follow symbolic links to directories
+
+       --SS              Ignore default minimal screen size  of  80
+                       columns and 24 lines
+
+       --VV              Display uuttrreeee version and copyright notice
+
+       --aa              Read in all directories,  including  those
+                       that  begin with a dot (.), which are nor-
+                       mally skipped
+
+       --bb              Suppress ringing of the bell  (useful  for
+                       visual bells)
+
+       --cc              Don't  display  and  update  a clock every
+                       second
+
+       --dd vvaarr==[[vvaall]]    Set the variable vvaarr to value vvaall or unset
+                       the variable vvaarr
+
+       --dd ttyypp::[[ccmmdd]]    Define  the  command  ccmmdd for the filetype
+                       ttyypp or undefine any command for the  file-
+                       type ttyypp
+
+       --ff llsstt          Build directory tree from list file llsstt
+
+       --gg              Don't use graphical characters
+
+       --hh              Display usage and some help about options
+
+
+
+April 2 1992          UTREE Version 3.03-um                     1
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       --ii iinndd          Set   the  tree  level  indention  to  iinndd
+                       columns (3..9)
+
+       --nn              Avoid scanning the tree for  changes  i.e.
+                       after shell escape
+
+       --ll lleevv          Build the tree up to level lleevv for quicker
+                       startup
+
+       --oo              Omit saving changes in variables and file-
+                       type  command definitions, command history
+                       and key bindings
+
+       --pp lliinn          Use lliinn lines for displaying filenames  of
+                       the  current  directory on the _t_r_e_e _s_c_r_e_e_n
+                       (default: 3)
+
+       --qq              Build the tree up to level 2 (like -l 2)
+
+       --rr              Build the tree scanning  and  reading  the
+                       file system instead of reading a tree list
+                       file
+
+       --ss              Don't use hardware scrolling
+
+       --uu              Read  and  update  all  file  lists  after
+                       building the tree from a tree list file
+
+       --vv mmoodd          Set  using  video  attributes to mode mmoodd.
+                       mmoodd may be 22 for all possible, 11 for  bold
+                       and   underline   and  00  for  none  video
+                       attributes.
+
+       --ww              Suppress warnings about unreadable  direc-
+                       tories
+
+       --xx ccmmdd          Use  and execute the string ccmmdd as initial
+                       input at startup.  The  string  ccmmdd  is  a
+                       simple sequence of uuttrreeee commands
+
+       The  boolean options bbccggnnoossww and the numerical options iippvv
+       may also be pre-set in  the  environment  variable  UUTTRREEEE.
+       E.g.  if you want to suppress ringing of the bell and dis-
+       playing and updating the clock and if you  prefer  a  tree
+       indention  of 4 columns set the environment variable UUTTRREEEE
+       to 'bbccii44' for this reason.
+       Most of the options  correspond  to  uuttrreeee  variables  and
+       therefore  they may also be set or unset with the variable
+       command (==).  See the sections _g_l_o_b_a_l _c_o_m_m_a_n_d_s  and  _v_a_r_i_-
+       _a_b_l_e_s below.
+
+UUTTRREEEE SSTTAARRTTUUPP
+       If  uuttrreeee  is  called  without  the  optional command line
+       parameter rroooottddiirreeccttoorryy or this  directory  is  rooted  in
+
+
+
+April 2 1992          UTREE Version 3.03-um                     2
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       your  home directory uuttrreeee tries to build up the directory
+       tree reading a file ..uuttrreeeelliisstt  in  your  home  directory,
+       which  contains a list of your directory tree created by a
+       previous uuttrreeee session or by the additional  shell  script
+       uuttrreeee..mmkklliisstt called before.  If the command line option --ff
+       llsstt is given uuttrreeee builds up the tree from this list  file
+       llsstt  which  may  be  created with the denoted shell script
+       uuttrreeee..mmkklliisstt or a command like ffiinndd.  Entries in such list
+       files have to start with the directory separator / (slash)
+       in the first column of the line.  All  other  entries  are
+       ignored and skipped.
+
+       If  building  the  tree from a list file the file lists of
+       directories are created and read in on demand only,  which
+       means  when  a  directory becomes the current directory by
+       moving the cursor to this directory.  This speeds  up  the
+       start  of  uuttrreeee because there is no need for scanning and
+       reading the filesystem for subdirectories  what  may  take
+       some time for larger filesystems.
+
+       In  all  others  cases,  if no list file is given with the
+       command line option --ff llsstt,  rroooottddiirreeccttoorryy  is  rooted  in
+       your  home directory and the file ..uuttrreeeelliisstt is not found,
+       or the command line option --rr is given uuttrreeee builds up the
+       tree  by  scanning and reading the filesystem recursively.
+       You can speed up the start with the commandline option  --ll
+       lleevv which causes uuttrreeee to build the initial directory tree
+       only up to level lleevv similar to the option --ll of the  well
+       known  ffiinndd  command.   At  runtime  some commands let you
+       expand the directory tree later  and  inspect  directories
+       and subtrees not visible at startup (see below).
+
+SSCCRREEEENN LLAAYYOOUUTT
+       The  screen is divided into three regions.  The top screen
+       line, the so called _e_c_h_o _l_i_n_e is for  displaying  messages
+       and entering input.  The second screen line, the so called
+       _h_e_l_p _l_i_n_e is for displaying help messages  and  the  uuttrreeee
+       default or user defined menu lines.
+       The  rest  of  the  screen forms a window on the directory
+       tree on the _t_r_e_e _s_c_r_e_e_n or on the file list of the current
+       directory  on the _f_i_l_e _s_c_r_e_e_n.  Or he is used for display-
+       ing variable or filetype commands settings, for displaying
+       help pages and displaying command outputs.
+
+UUTTRREEEE SSCCRREEEENNSS AANNDD MMEENNUUSS
+       UUttrreeee knows the following screens and menus:
+
+
+       ttrreeee ssccrreeeenn         This  is  the initial screen displayed
+                           when uuttrreeee is started and has built up
+                           the  directory  tree.  The _t_r_e_e _s_c_r_e_e_n
+                           forms a window on the directory  tree.
+                           The  current  directory  on which most
+                           commands are  working  is  highlighted
+
+
+
+April 2 1992          UTREE Version 3.03-um                     3
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           and  the last screen lines are used to
+                           display the first files  of  the  file
+                           list  of  the  current directory.  You
+                           may move the window over the directory
+                           tree,  enlarge or shrink the directory
+                           tree window or walk thru the directory
+                           tree  and  execute  default  and  user
+                           defined commands  on  directories  and
+                           subtrees.   On  the help line the most
+                           important   commands   available   for
+                           directories  or  subtrees  on the _t_r_e_e
+                           _s_c_r_e_e_n are shown in the  default  _t_r_e_e
+                           _m_e_n_u.   The  tree menu shows the names
+                           of the the _t_r_e_e _s_c_r_e_e_n  commands,  the
+                           keystrokes  to  invoke  a  command are
+                           marked with  uppercase  letters.   You
+                           may  switch the menu to a user defined
+                           menu line displaying user defined com-
+                           mands  for  the _t_r_e_e _s_c_r_e_e_n.  For fur-
+                           ther information about all _t_r_e_e _s_c_r_e_e_n
+                           commands  see the sections _g_l_o_b_a_l _c_o_m_-
+                           _m_a_n_d_s, _t_r_e_e _s_c_r_e_e_n _c_o_m_m_a_n_d_s and  _v_a_r_i_-
+                           _a_b_l_e_s of this manual page.
+
+
+       ffiillee ssccrreeeenn         The  _f_i_l_e _s_c_r_e_e_n forms a window on all
+                           files of the current  directory.   The
+                           current  file  on  which most commands
+                           are working is highlighted.   Yoy  may
+                           move  the window over the file list or
+                           walk thru the file  list  and  execute
+                           default  and  user defined commands on
+                           files.  On  the  help  line  the  most
+                           important commands for files available
+                           on the _f_i_l_e _s_c_r_e_e_n are  shown  in  the
+                           default _f_i_l_e _m_e_n_u.  The file menu dis-
+                           plays the names of the the _f_i_l_e _s_c_r_e_e_n
+                           commands,  the  keystrokes to invoke a
+                           command are marked with uppercase let-
+                           ters.   You  may  switch the menu to a
+                           user define menu line displaying  user
+                           defined  commands for the _f_i_l_e _s_c_r_e_e_n.
+                           For further information about all _f_i_l_e
+                           _s_c_r_e_e_n   commands   see  the  sections
+                           _g_l_o_b_a_l _c_o_m_m_a_n_d_s, _f_i_l_e _s_c_r_e_e_n  _c_o_m_m_a_n_d_s
+                           and _v_a_r_i_a_b_l_e_s of this manual page.
+
+
+       hheellpp ssccrreeeenn         If  you  have  switched  to  the  _h_e_l_p
+                           _s_c_r_e_e_n with the help  command  (hh)  on
+                           the  help  line  the _h_e_l_p _m_e_n_u is dis-
+                           played and you may select  help  about
+                           interesting  topics.   The  help  menu
+                           displays the names  of  all  available
+
+
+
+April 2 1992          UTREE Version 3.03-um                     4
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           help  topics, the keystrokes to select
+                           help about a  topic  are  marked  with
+                           uppercase  letters.  For more informa-
+                           tion see the section _h_e_l_p _p_a_g_e_s below.
+
+
+       vvaarriiaabblleess ssccrreeeenn    If  you have switched to the _v_a_r_i_a_b_l_e_s
+                           screen with the variables command  (==)
+                           all  variables  and their settings are
+                           displayed and you may set or unset any
+                           of the variables.  On the help line is
+                           shown how to set or unset  a  variable
+                           in a short form.  All changes in vari-
+                           ables definitions  are  saved  to  the
+                           file  ..uuttrreeee in your home directory if
+                           the variable  AAUUTTOOSSAAVVEE  is  set.   For
+                           more information see the section _v_a_r_i_-
+                           _a_b_l_e_s below.
+
+
+       ccoommmmaannddss ssccrreeeenn     If you have switched to  the  filetype
+                           _c_o_m_m_a_n_d_s _s_c_r_e_e_n with the filetype com-
+                           mands command (::)  all  filetype  com-
+                           mands and their settings are displayed
+                           and you may set or unset  any  of  the
+                           filetype  commands.   On the help line
+                           is shown how to set or unset  a  file-
+                           type  command  in  a  short form.  All
+                           changes in  filetype  command  defini-
+                           tions  are saved to the file ..uuttrreeee in
+                           your home directory  if  the  variable
+                           AAUUTTOOSSAAVVEE is set.  For more information
+                           see  the  section  _f_i_l_e_t_y_p_e   _c_o_m_m_a_n_d_s
+                           below.
+
+
+       sshheellll ssccrreeeenn        If  you  have  switched  to  the _s_h_e_l_l
+                           _s_c_r_e_e_n with the shell command (!!)  for
+                           executing   commands   not   supported
+                           directly  by  uuttrreeee   all   previously
+                           entered  commands saved in a so called
+                           history  list  are  displayed  on  the
+                           _s_h_e_l_l  _s_c_r_e_e_n.  The last executed com-
+                           mand is marked with -->>.  You  may  get
+                           any command from the history list into
+                           the line editor for editing and execu-
+                           tion  or  enter and execute a new com-
+                           mand.  To get a command from the  his-
+                           tory list into the line editor you can
+                           use the keys CC--pp for the previous com-
+                           mand  or  CC--nn  for the next command in
+                           the history list.  To get a command by
+                           number enter _!_n_u_m_b_e_r, to get a command
+                           by a search  pattern  enter  _!_p_a_t_t_e_r_n.
+
+
+
+April 2 1992          UTREE Version 3.03-um                     5
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           All  commands  up  to a maximal number
+                           defined in the variable  HHIISSTTSSIIZZEE  are
+                           saved  in  the  history  list.  Before
+                           leaving uuttrreeee all  saved  commands  in
+                           the  history  list are saved to a his-
+                           tory  file  ..uuttrreeeehhiisstt  in  your  home
+                           directory  if the variable AAUUTTOOSSAAVVEE is
+                           set.  At startup this file is searched
+                           for  and  read  in if found.  For more
+                           information see also the section _v_a_r_i_-
+                           _a_b_l_e_s below.
+
+
+       bbiinnddiinnggss ssccrreeeenn     If  you  have switched to the _b_i_n_d_i_n_g_s
+                           _s_c_r_e_e_n with the bindings  command  (||)
+                           all currently defined key bindings and
+                           their meaning are  displayed  and  you
+                           may  bind  any  key  to an appropriate
+                           utree command or to  insert  a  string
+                           into  the  input buffer.  At startup a
+                           file ..uuttrreeee--TTEERRMM in your  home  direc-
+                           tory  or a file uuttrreeee--TTEERRMM in a global
+                           startup directory is read in if  found
+                           containing key bindings for the termi-
+                           nal type defined  in  the  environment
+                           variable  TTEERRMM.   All  changes  in key
+                           bindings you have done on the _b_i_n_d_i_n_g_s
+                           _s_c_r_e_e_n at runtime are saved to ..uuttrreeee--
+                           TTEERRMM if the variable AAUUTTOOSSAAVVEE is  set.
+                           For more information see also the sec-
+                           tion kkeeyy bbiinnddiinnggss below.
+
+
+       ssttaattuuss ssccrreeeenn       The status command  (ss)  displays  all
+                           information  available about a file or
+                           directory on the _s_t_a_t_u_s _s_c_r_e_e_n.   Here
+                           you  may  change  the ownership, group
+                           membership or access rights of a  file
+                           or  directory.  On BSD systems not all
+                           of the denoted changes may be  allowed
+                           for normal users.
+
+KKEEYY NNAAMMIINNGG CCOONNVVEENNTTIIOONNSS AANNDD DDEEFFAAUULLTT KKEEYY BBIINNDDIINNGGSS
+       All  uuttrreeee  commands  are simple single letter commands or
+       control sequences.  The default or user  defined  commands
+       therefore  are invoked with a single keystroke or a combi-
+       nation of the <_C_O_N_T_R_O_L> key with another key.  The  naming
+       conventions  in  the  following  manual sections for uuttrreeee
+       commands invoked by a keystroke are:
+
+
+       kkeeyy                 means hit this <_k_e_y> only
+
+       CC--kkeeyy               means hold down the <_C_O_N_T_R_O_L>-key  and
+
+
+
+April 2 1992          UTREE Version 3.03-um                     6
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           hit <_k_e_y>
+
+       To  permit  rebinding of pre-defined keys or binding func-
+       tions keys to uuttrreeee commands all  control  sequences  have
+       special  names.   All  key  or  functions  names and their
+       default bindings are list in the table below
+
+       SSEELLEECCTT              CR, NL
+
+       FFOORRWWAARRDD             C-f
+
+       BBAACCKKWWAARRDD            C-b
+
+       NNEEXXTT                C-n
+
+       PPRREEVVIIOOUUSS            C-p
+
+       NNEEXXTTPPAAGGEE            C-v
+
+       PPRREEVVPPAAGGEE            C-w
+
+       BBEEGGIINN               C-a
+
+       EENNDD                 C-e
+
+       UUPP                  C-u
+
+       DDOOWWNN                C-d
+
+       IINNSSEERRTT              C-o
+
+       DDEELLEETTEE              BS
+
+       KKIILLLL                C-k
+
+       SSEETTMMAARRKK             C-@
+
+       GGOOTTOOMMAARRKK            C-g
+
+       GGOOTTOOTTAAGG             C-t,TAB
+
+       HHEELLPP                C-r
+
+       RREEFFRREESSHH             C-l
+
+       CCAANNCCEELL              C-x
+
+       BBRREEAAKK               C-c,C-y
+
+       EEXXIITT                C-z
+
+       In the following sections of this manual page the  default
+       key bindings are used instead of the names or functions.
+
+
+
+
+April 2 1992          UTREE Version 3.03-um                     7
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       Some  function  keys are supported by uuttrreeee, i.e. the four
+       arrow or cursor keys, and are bound to  appropriate  func-
+       tions.   See  the  sections _k_e_y _b_i_n_d_i_n_g_s and _f_u_n_c_t_i_o_n _k_e_y_s
+       below for more details.
+
+HHEELLPP PPAAGGEESS
+       If the uuttrreeee help pages contained in the  file  uuttrreeee..hheellpp
+       are  accessible  in a directory defined at compile time or
+       defined in the environment variable UUTTLLIIBB you can get help
+       on  all  screens  or  from within the line editor with the
+       help command (hh or ??) or the help key (CC--rr).   After  dis-
+       playing  help  about your current context, i.e. help about
+       tree commands if you are  on  the  _t_r_e_e  _s_c_r_e_e_n,  you  can
+       switch  to  the help menu and select help about all topics
+       with a single keystroke.  All _h_e_l_p  _s_c_r_e_e_n  commmands  and
+       the menu items of the help menu displayed on the help line
+       are:
+
+
+       hh               (Help) About the help pages and  the  help
+                       menu
+
+       aa               (About)  Information  about  uuttrreeee and key
+                       naming conventions
+
+       uu               (Usage) Description  of  uuttrreeee  usage  and
+                       commandline options
+
+       gg               (Global)  Global  commands  common for the
+                       _t_r_e_e and the _f_i_l_e _s_c_r_e_e_n
+
+       tt               (Tree) Commands for the _t_r_e_e _s_c_r_e_e_n
+
+       ff               (File) Commands for the _f_i_l_e _s_c_r_e_e_n
+
+       ee               (Edit) Commands of the builtin line editor
+
+       vv               (Vars)  UUttrreeee variables and variable defi-
+                       nition
+
+       cc               (Cmds) Filetype commands and filetype com-
+                       mand definition
+
+       ll               (Line)  Line format for user defined tree,
+                       file and filetype commands.
+
+       kk               (Keys) Function keys used by uuttrreeee
+
+       pp               (Patterns) File  pattern  matching,  file-
+                       name, modification time and file size pat-
+                       terns
+
+       qq               (Quit) Leave _h_e_l_p _s_c_r_e_e_n
+
+
+
+
+April 2 1992          UTREE Version 3.03-um                     8
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       The help pages contain  in  short  form  most  information
+       given in the sections of this manual page.
+
+GGLLOOBBAALL CCOOMMMMAANNDDSS
+       The  following  commands  are common for the _t_r_e_e and _f_i_l_e
+       _s_c_r_e_e_n They can be given in lowercase  or  uppercase  let-
+       ters:
+
+
+       CC--zz                 Exit uuttrreeee from all screens
+
+       CC--cc,,CC--yy             Cancel  or  break  current  command or
+                           input
+
+       CC--ll                 Redisplay the current  screen  or  the
+                           input line
+
+       TTAABB,,CC--tt             Move  to  the  next tagged file or the
+                           next directory containing tagged files
+
+       hh,,??,,CC--rr             Display  help  pages and switch to the
+                           _h_e_l_p _s_c_r_e_e_n and the help menu
+
+       @@,,CC--@@               Mark the current directory or file
+
+       ##,,CC--gg               Goto to a previously marked  directory
+                           or file
+
+       aa                   Display  uuttrreeee  version  and copyright
+                           notice
+
+       dd                   Display current date and time
+
+       jj                   Move to the  next  directory  or  file
+                           (for vi fans)
+
+       kk                   Move to the previous directory or file
+                           (for vi fans)
+
+       nn                   Change  sort  criteria  from   lexical
+                           order  to  modification  time order or
+                           vice versa and  resort  files  in  the
+                           file list
+
+       tt                   Tag  files matching a file pattern for
+                           further processing
+
+       uu                   Untag files
+
+       ww                   Display full pathname of  the  current
+                           directory
+
+       zz                   Zoom  files  from  filelist matching a
+                           file pattern
+
+
+
+April 2 1992          UTREE Version 3.03-um                     9
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       ==                   Switch to the _v_a_r_i_a_b_l_e_s  _s_c_r_e_e_n,  dis-
+                           play and set or unset variables
+
+       ::                   Switch to the _c_o_m_m_a_n_d_s _s_c_r_e_e_n, display
+                           and set or unset filetype commands
+
+       ||                   Switch to the _b_i_n_d_i_n_g_s _s_c_r_e_e_n, display
+                           all  key  bindings  and bind or rebind
+                           keys
+
+       !!                   Switch to the  _s_h_e_l_l  _s_c_r_e_e_n,  display
+                           all  commands  from  the shell command
+                           history list, enter and  execute  com-
+                           mands   not  supported  directly  from
+                           uuttrreeee.  Before a given command is exe-
+                           cuted the command line is searched for
+                           some sprintf  like  format  characters
+                           lead  in  by  a percent sign (%) which
+                           are expanded.  See  the  section  _l_i_n_e
+                           _f_o_r_m_a_t_s for more information
+
+       $$                   Escape to an interactive shell
+
+TTRREEEE SSCCRREEEENN CCOOMMMMAANNDDSS
+       All  commands on the _t_r_e_e _s_c_r_e_e_n can be given in lowercase
+       or uppercase letters with the meaning denoted below.  Com-
+       mands given in lowercase letters affect the current direc-
+       tory only.  Commands given in uppercase letters  indicated
+       by  an uppercase letter in the table below affect the sub-
+       tree rooted in the current directory or all  tagged  files
+       in  the subtree rooted in the current directory.  The _t_r_e_e
+       _s_c_r_e_e_n commmands and the menu items of  the  default  tree
+       menu displayed on the help line are:
+
+
+       >>,,CCRR,,NNLL,,SSPP,,>>        Change  to the _f_i_l_e _s_c_r_e_e_n of the cur-
+                           rent directory
+
+       <<                   Change to the _f_i_l_e _s_c_r_e_e_n of the  par-
+                           ent directory
+
+       CC--nn                 Move to the next directory
+
+       CC--pp                 Move to the previous directory
+
+       CC--ff                 Move  to  the  next  directory on same
+                           level as the current directory
+
+       CC--bb                 Move to the previous directory on same
+                           level as the current directory
+
+       CC--vv                 Move one page forward
+
+       CC--ww                 Move one page backward
+
+
+
+April 2 1992          UTREE Version 3.03-um                    10
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       CC--aa                 Move to the beginning of the directory
+                           tree
+
+       CC--ee                 Move to the end of the directory tree
+
+       TTAABB,,CC--tt             Move to next the directory  containing
+                           tagged files
+
+       CC--uu                 Scroll up one line the directory tree
+
+       CC--dd                 Scroll  down  one  line  the directory
+                           tree
+
+       @@,,CC--@@               Mark the current directory
+
+       ##,,CC--gg               Move to a previously marked directory
+
+       hh,,??                 (Help) Help about _t_r_e_e _s_c_r_e_e_n commands
+
+       bb,,BB                 (Backup)  Backup the current directory
+                           or tree or backup all tagged files  in
+                           the subtree
+
+       cc,,CC                 (Chdir)  Move  to  a directory or copy
+                           all  tagged  files  in  the   subtree.
+                           Before you move to a directory you are
+                           requested for the name of this  direc-
+                           tory  before.  Instead entering a name
+                           you can select a  directory  from  the
+                           tree  with  C-n  and  C-p.  Instead of
+                           entering a name of a  directory  where
+                           to  copy  the  tagged  files  you  can
+                           select a directory from the tree  with
+                           C-n  and  C-p  or  directly  from _t_r_e_e
+                           _s_c_r_e_e_n using CR.
+
+       ff,,FF                 (Find)  Find  files  in  the   current
+                           directory  or  subtree matching a file
+                           pattern you have to enter before.   If
+                           a  file  matching the given pattern is
+                           found you may tag this file, change to
+                           the  directory  containing  the  found
+                           file or continue find
+
+       gg,,GG                 (Grep) Search for pattern in files  in
+                           the current directory or subtree.  You
+                           are requested for a file and a  search
+                           pattern.    If  a  file  matching  the
+                           search pattern is found  you  may  tag
+                           this  file,  change  to  the directory
+                           containing the found file or  continue
+                           search
+
+       ii                   (Info)  Display some short information
+
+
+
+April 2 1992          UTREE Version 3.03-um                    11
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           about  the  current  directory.   Dis-
+                           played are access rights, modification
+                           time and the disk usage of the current
+                           directory or subtree
+
+       ll,,LL                 (List)   List  files  in  the  current
+                           directory or subtree matching  a  file
+                           pattern  you  are  requested before or
+                           list all tagged files in the subtree
+
+       mm,,MM                 (Mkdir) Create a new directory  rooted
+                           in  the  current directory or move all
+                           tagged files to a  destination  direc-
+                           tory.   Instead of entering the direc-
+                           tory name you  can  select  this  name
+                           from  the  directory tree with C-n and
+                           C-p or directly from _t_r_e_e _s_c_r_e_e_n using
+                           CR.
+
+       nn,,NN                 Change  the sort criteria from lexical
+                           order to modification  time  order  or
+                           vice versa and resort the file list of
+                           the current directory or subtree
+
+       oo                   (Out) Write  a  list  of  directories,
+                           files,  tagged files, files matching a
+                           file pattern or a formatted tree  list
+                           to a list file.  A formatted tree list
+                           file can later  be  displayed  on  the
+                           screen  or send to a printer using the
+                           additional filter command uuttrreeee..pprrlliisstt
+
+       qq                   (Quit)  Leave the _t_r_e_e _s_c_r_e_e_n and exit
+                           uuttrreeee
+
+       rr,,RR                 (Rmdir) Remove the  current  directory
+                           or all tagged files in the subtree.  A
+                           directory to be removed may  not  con-
+                           tain any subdirectories.
+
+       ss                   (Stat)  Switch  to  the _s_t_a_t_u_s _s_c_r_e_e_n,
+                           display all status information of  the
+                           current  directory  and  change owner,
+                           group and access rights of the current
+                           directory
+
+       tt,,TT                 (Tag)  Tag files in the current direc-
+                           tory or subtree matching a  file  pat-
+                           tern you are requested before
+
+       uu,,UU                 (Untag)  Untag  files  in  the current
+                           directory or subtree
+
+       zz,,ZZ                 Zoom files matching a file pattern  in
+
+
+
+April 2 1992          UTREE Version 3.03-um                    12
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           the   current  directory  or  subtree.
+                           Zooming means that  only  those  files
+                           matching  the  file  pattern  are dis-
+                           played and visible  for  further  pro-
+                           cessing.
+
+       ++                   Enlarge  the  tree  window, shrink the
+                           file window one line
+
+       --                   Shrink the tree  window,  enlarge  the
+                           file window one line
+
+       //                   Scan the current directory or tree and
+                           rebuild  directories  if   they   need
+                           rebuilding  (i.e.  if they are not yet
+                           read in or have changed)
+
+       \\                   Scan the current directory for  subdi-
+                           rectories  and build up and insert the
+                           subtree into the directory tree.   You
+                           are  requested  for  the  maximal tree
+                           level to build up
+
+       00                   Switch  the  tree  menuline  from  the
+                           default  to the user defined tree com-
+                           mands or vice versa
+
+       11....99                Execute the user defined tree  command
+                           1 .. 9
+
+       For  further  information about file patterns for the com-
+       mands find, grep, list, tag and untag see the section _f_i_l_e
+       _p_a_t_t_e_r_n_s  below.   For  user defined tree commands see the
+       section _v_a_r_i_a_b_l_e_s.
+
+FFIILLEE SSCCRREEEENN CCOOMMMMAANNDDSS
+       All commands on the _f_i_l_e _s_c_r_e_e_n can be given in  lowercase
+       or uppercase letters with the meaning denoted below.  Com-
+       mands given in lowercase letters  affect the current  file
+       only.  Commands given in uppercase letters indicated by an
+       uppercase letter in the  table  below  affect  all  tagged
+       (selected)  files  if files are tagged or the current file
+       if no files are tagged.  The file _s_c_r_e_e_n _c_o_m_m_m_a_n_d_s and the
+       menu  items of the default file menu displayed on the help
+       line are:
+
+
+       qq,,CCRR,,NNLL,,SSPP          (Quit)  Leave  the  _f_i_l_e  _s_c_r_e_e_n   and
+                           change back to the _t_r_e_e _s_c_r_e_e_n
+
+       CC--ff                 Move to the next file
+
+       CC--bb                 Move to the previous file
+
+
+
+
+April 2 1992          UTREE Version 3.03-um                    13
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       CC--nn                 Move to the file on the next line
+
+       CC--pp                 Move to the file on the previous line
+
+       CC--vv                 Move one page forward
+
+       CC--ww                 Move one page backward
+
+       CC--aa                 Move to the beginning of the file list
+
+       CC--ee                 Move to the end of the file list
+
+       TTAABB,,CC--tt             Move to the next tagged file
+
+       CC--uu                 Scroll up one line the _f_i_l_e _s_c_r_e_e_n
+
+       CC--dd                 Scroll down one line the _f_i_l_e _s_c_r_e_e_n
+
+       @@,,CC--@@               Mark the current file
+
+       ##,,CC--gg               Move to a previously marked file
+
+       hh,,??                 (Help) Help about _f_i_l_e _s_c_r_e_e_n commands
+                           and switch to the _h_e_l_p _s_c_r_e_e_n
+
+       cc,,CC                 (Copy) Copy the current file or tagged
+                           files.  You are requested for a desti-
+                           nation file or directory where to copy
+                           the file or tagged files.  Instead  of
+                           entering  a  directory  name  you  can
+                           select a destination  directory  using
+                           C-n  and C-p or select directly on the
+                           _t_r_e_e _s_c_r_e_e_n with CR
+
+       ee,,EE                 (Edit) Edit the current file or tagged
+                           files
+
+       ff                   (Find) Find files matching a file pat-
+                           tern you are requested before
+
+       gg,,GG                 (Grep) Search for  a  pattern  in  the
+                           current  file or tagged files.  Before
+                           search you are requested  for  a  file
+                           pattern  and  the  search  pattern  to
+                           search for
+
+       ii,,II                 Display some short  information  about
+                           the  current  file  or  tagged  files.
+                           Displayed are the access  rights,  the
+                           size  and the modification time of the
+                           current file or tagged files
+
+       ll,,LL                 (List) List files matching a file pat-
+                           tern  you  are requested before or all
+
+
+
+April 2 1992          UTREE Version 3.03-um                    14
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           tagged files
+
+       mm,,MM                 (Move) Move or rename the current file
+                           or  tagged  files.   You are requested
+                           for the new file name or a destination
+                           directory  where  to  move the current
+                           file or tagged files Instead of enter-
+                           ing  the  name of a destination direc-
+                           tory you can select a directory  using
+                           C-n  and  C-p  or directly on the _t_r_e_e
+                           _s_c_r_e_e_n with CR
+
+       nn                   Change the sort criteria from  lexical
+                           order  to  modification  time order or
+                           vice versa and resort the file list
+
+       pp,,PP                 (Print) Print out the current file  or
+                           tagged files
+
+       rr,,RR                 (Remove)  Remove  the  current file or
+                           tagged files.  Before removing you are
+                           asked if you really want to remove the
+                           current file or tagged files
+
+       ss,,SS                 (Stat) Switch  to  the  _s_t_a_t_u_s  _s_c_r_e_e_n
+                           display  all status information of the
+                           current or  tagged  files  and  change
+                           owner,  group and access rights of the
+                           current file or tagged files
+
+       tt,,TT                 (Tag) Tag  the current file  or  files
+                           matching   a   file  pattern  you  are
+                           requested before for further  process-
+                           ing
+
+       uu,,UU                 (Untag)  Untag  the  current  file  or
+                           files matching a file pattern you  are
+                           requested before
+
+       vv,,VV                 (View) View the current file or tagged
+                           files
+
+       xx,,XX                 Execute the  current  file  or  tagged
+                           files.    If  a  filetype  command  is
+                           defined for this file you can  execute
+                           this  filetype  command, otherwise you
+                           are requested for  a  command  or  for
+                           parameters to execute
+
+       zz                   Zoom files matching a file pattern
+
+       >>                   If  the  current  file  is a directory
+                           change to  the  _f_i_l_e  _s_c_r_e_e_n  of  this
+                           directory
+
+
+
+April 2 1992          UTREE Version 3.03-um                    15
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       <<                   Change  back to the _f_i_l_e _s_c_r_e_e_n of the
+                           parent directory
+
+       //                   Rebuild  the  file  list  (i.e.  after
+                           shell escape)
+
+       00                   Switch  the  menuline from the default
+                           to the user defined file  commands  or
+                           vice versa
+
+       11....99                Execute the user defined file commands
+                           1 .. 9
+
+       For further information about file patterns for  the  com-
+       mands find, grep, list, tag and untag see the section _f_i_l_e
+       _p_a_t_t_e_r_n_s below.  For user defined file  commands  see  the
+       section _v_a_r_i_a_b_l_e_s.  For filetype command execution invoked
+       with the command  xx  see  the  section  _f_i_l_e_t_y_p_e  _c_o_m_m_a_n_d_s
+       below.
+
+LLIINNEE EEDDIITTOORR CCOOMMMMAANNDDSS
+       Many  uuttrreeee commands need some user input for further pro-
+       cessing which is done with a builtin simple  line  editor.
+       Many  commands  pre-set  the  input  buffer with a default
+       input line if this default is known.   For  some  commands
+       you  can  use  the  keys  C-n and C-p to scroll in already
+       existing input lists and select an input line for  editing
+       or  processing  without entering the line completely.  The
+       line editor knows about the following functions:
+
+
+       CCRR,,NNLL               Accept and send the input line
+
+       CC--cc,,CC--yy             Cancel input and leave the line editor
+
+       CC--oo                 Switch  from overwrite-mode to insert-
+                           mode or vice versa
+
+       CC--ll                 Redisplay the input line
+
+       CC--ff                 Move the cursor one character forward
+
+       CC--bb                 Move the cursor one character backward
+
+       CC--aa                 Move  the  cursor  to the beginning of
+                           the input line
+
+       CC--ee                 Move the cursor  to  the  end  of  the
+                           input line
+
+       CC--vv                 Scroll  horizontally forward the input
+                           line
+
+       CC--ww                 Scroll horizontally backward the input
+
+
+
+April 2 1992          UTREE Version 3.03-um                    16
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           line
+
+       CC--dd                 Delete one character under the cursor
+
+       CC--hh,,DDEELL             Delete  one  character  left  from the
+                           cursor
+
+       CC--xx                 Delete the input line completely
+
+       CC--kk                 Delete the input line from the  cursor
+                           position to the end
+
+       CC--tt                 Transpose  two  characters  under  and
+                           left from the cursor
+
+       CC--rr                 Display help pages and switch  to  the
+                           _h_e_l_p _s_c_r_e_e_n
+
+       CC--@@                 Set a mark at the current cursor posi-
+                           tion
+
+       CC--gg                 Move  the  cursor  to  the  previously
+                           marked position
+
+       CC--nn                 Get  the next entry into the line edi-
+                           tor
+
+       CC--pp                 Get the previous entry into  the  line
+                           editor
+
+       All  other printable characters are appended at the end of
+       input line, inserted in insert-mode or overwrite the char-
+       acter  under  the  cursor  in overwrite-mode.  The current
+       mode is displayed at the end of the help line.  Most  line
+       editor commands are also available with function keys, see
+       the section _f_u_n_c_t_i_o_n _k_e_y_s below.
+
+VVAARRIIAABBLLEESS
+       Utree knows about and uses the following  variables  which
+       may  be  set  or  unset  at  startup  in  the  startupfile
+       $$HHOOMMEE//..uuttrreeee, with some commandline options  (see  _o_p_t_i_o_n_s
+       above),  or  the  variables  command  (==) on the _v_a_r_i_a_b_l_e_s
+       _s_c_r_e_e_n:
+
+
+       BBEELLLL                or BBLL: Allow ringing of  the  bell  if
+                           set
+
+       CCLLOOCCKK               or  CCLL:  Show  and  update clock every
+                           second if set
+
+       GGRRAAPPHHCCHHAARRSS          or GGCC: Use the graphical character set
+                           if  set.   Not  all  terminal database
+                           termcap or terminfo definitions of the
+
+
+
+April 2 1992          UTREE Version 3.03-um                    17
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           graphical character set are correct
+
+       TTEERRMMSSCCRROOLLLL          or TTSS: Use hardware terminal scrolling
+                           if set.  On some  terminals  (i.e.  on
+                           the X terminal emulator xterm) redraw-
+                           ing the  screen  may  be  faster  than
+                           scrolling
+
+       SSCCAANNTTRREEEE            or  SSTT:  Allow  scanning  the tree for
+                           changes if set.   Many  commands  scan
+                           the  directory  tree  after  execution
+                           what may take some time.   Prohibiting
+                           tree  scanning  therefore may speed up
+                           uuttrreeee a little bit
+
+       WWAARRNNDDIIRRSS            or WWDD:  Allow  warnings  and  requests
+                           about unreadable directories if set
+
+       LLEEXXSSOORRTT             or LLSS: Sort filenames in lexical order
+                           if set, in order of modification times
+                           if not set.
+
+       AAUUTTOOSSAAVVEE            or  AASS:  Save  changes in variables or
+                           filetype  commands  definitions,   key
+                           bindings and history list to appropri-
+                           ate files in the home directory
+
+       TTRREEEEIINNDDEENNTT          or TTII: Set the  tree  level  indention
+                           column (3 .. 9) if possible.  Normally
+                           the tree  level  indention  column  is
+                           calculated  dependent on the number of
+                           screen   columns   and   the   maximal
+                           filesystem depth automatically
+
+       VVIIDDEEOOMMOODDEE           or  VVMM: Set using of video attributes.
+                           2 means use  all  possible  attributes
+                           and  their  combinations.  1 means use
+                           the attributes reverse  and  underline
+                           only.   0  means  don't  use any video
+                           attribute.
+
+       FFIILLEELLIINNEESS           or FFLL: Number of  lines  of  the  file
+                           window  on  the  _t_r_e_e  _s_c_r_e_e_n (1 .. 9,
+                           default 3)
+
+       HHIISSTTSSIIZZEE            or HHSS: Maximal number  of  shell  com-
+                           mands which are hold in the shell com-
+                           mands history list (6 .. 99,  default:
+                           22)
+
+       EEDDIITTOORR              or  EEDD:  Program  for  editing  files.
+                           When redefining  the  editor  variable
+                           don't forget to check and set or unset
+                           the  editopts  variable   for   editor
+
+
+
+April 2 1992          UTREE Version 3.03-um                    18
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+                           options
+
+       EEDDIITTOOPPTTSS            or EEOO: File editor options
+
+       PPAAGGEERR               or  PPGG:  Program  for  viewing  files.
+                           When  redefining  the  pager  variable
+                           don't forget to check and set or unset
+                           the  pageopts   variable   for   pager
+                           options
+
+       PPAAGGEEOOPPTTSS            or PPOO: File pager options
+
+       XXDDUUMMPPEERR             or  XXDD:  Program for hexdumping files.
+                           When redefining the hexdumper variable
+                           don't forget to check and set or unset
+                           the xdumpopts variable  for  hexdumper
+                           options
+
+       XXDDUUMMPPOOPPTTSS           or XXOO: File hexdumper options
+
+       LLPPRRIINNTTEERR            or  LLPP:  Program for printing files or
+                           sending files to the printer  spooling
+                           system.      When    redefining    the
+                           lineprinter variable don't  forget  to
+                           check  and set or unset the lprintopts
+                           variable for lineprinter options
+
+       LLPPRRIINNTTOOPPTTSS          or LLOO: Printer options
+
+       BBAACCKKUUPP              or BBKK: Program  or  shell  script  for
+                           backing up a directory or tree
+
+       BBAACCKKUUPPOOPPTTSS          or BBOO: Backup options
+
+       SSHHEELLLL               or  SSHH:  Interactive  shell  for shell
+                           escape
+
+       TTRREEEECCMMDD11....99         or TT11....99:  User  defined  _t_r_e_e  _s_c_r_e_e_n
+                           commands 1 .. 9
+
+       FFIILLEECCMMDD11....99         or  FF11....99:  User  defined  _f_i_l_e _s_c_r_e_e_n
+                           commands 1 .. 9
+
+       Variables are set with a line 'vvaarriiaabbllee==vvaalluuee' or  'sshhoorrtt--
+       hhaanndd==vvaalluuee'  (i.e.  'ttrreeeeccmmdd11==ppss  --eeff' or 'tt11==ppss --eeff') and
+       unset  with  a  line  'vvaarriiaabbllee=='  or  'sshhoorrtthhaanndd=='  (i.e.
+       'tt11==').   When  defining  user  tree or file commands some
+       sprintf like format characters lead in by a  percent  sign
+       (%%)  have  a  special  meaning and are expanded before the
+       command is executed.  For further  information  about  the
+       command line format see the section _l_i_n_e _f_o_r_m_a_t_s below.
+       The  last  sharp sign (##) in a variable definition is used
+       as leadin for a menu item of the defined user file or tree
+       command.   Example:  the variable definition 'ffcc11==wwcc --ll %%FF
+
+
+
+April 2 1992          UTREE Version 3.03-um                    19
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       ##CCoouunntt' for the user defined file command 1 is expanded to
+       'wwcc --ll ffiilleennaammee' and in the user command file menu 'CCoouunntt'
+       is displayed behind menu item 1.
+
+FFIILLEETTYYPPEE CCOOMMMMAANNDDSS
+       On _f_i_l_e _s_c_r_e_e_n you can execute a file or a command  on  it
+       with the uuttrreeee execute command (xx).  You are requested for
+       parameters if the current file is executable, for  a  com-
+       mand  to  execute  on  the  current file if it is not exe-
+       cutable.  For a type of file  you  can  define  so  called
+       _f_i_l_e_t_y_p_e  _c_o_m_m_a_n_d_s  which  are  called if the current file
+       matches a given file pattern.
+       Filetype commands can be set and unset at startup  in  the
+       startupfile  $$HHOOMMEE//..uuttrreeee,  with the commandline option --dd
+       or the filetype command (::) similar to setting and  unset-
+       ting  variables.   Filetype  commands  are set with a line
+       like 'ffiilleettyyppee::ccoommmmaanndd' (i.e. '**..cc::cccc --cc --OO').   The  com-
+       mand  (i.e.  'cccc  --cc  --OO') is then executed if the current
+       file matches the given file pattern (i.e. '**..cc'  for  a  C
+       source  file  ending  with  '..cc').   Filetype commands are
+       unset with a line 'ffiilleettyyppee::' (i.e. '**..cc::').
+       When defining filetype commands some sprintf  like  format
+       characters  lead  in  by a percent sign (%%) have a special
+       meaning and are expanded before the command  is  executed.
+       For further information about file patterns and the format
+       line characters and her meaning see the sections _f_i_l_e _p_a_t_-
+       _t_e_r_n_s and _l_i_n_e _f_o_r_m_a_t_s below.
+
+LLIINNEE FFOORRMMAATTSS
+       When  defining  a  user tree or file command or a filetype
+       command some sprintf like format line characters are known
+       and expanded before the command is executed.  These format
+       line characters and their meaning are:
+
+
+       %%BB or %%bb            is expanded to the basename  (filename
+                           without extension) of the current file
+                           or directory
+
+       %%DD or %%dd            is expanded to the  full  pathname  of
+                           the current directory
+
+       %%FF or %%ff            is  expanded  to  the  filename of the
+                           current file or directory
+
+       %%HH or %%hh            is expanded to the  pathname  of  your
+                           home directory
+
+       %%PP or %%pp            is  expanded  to  the full pathname of
+                           the current file or directory
+
+       %%RR or %%rr            is expanded to  the  pathname  of  the
+                           root  directory  from  where uuttrreeee was
+                           started
+
+
+
+April 2 1992          UTREE Version 3.03-um                    20
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       %%SS or %%ss            is expanded to additional parameter(s)
+                           for  a  command  which  are  requested
+                           before the command is executed
+
+       The command line 'ccoommmmaanndd %%ss %%ff >>%%bb..oouutt' i.e. is  expanded
+       before  execution  to  'ccoommmmaanndd ppaarraammeetteerrss ffiilleennaammee >>bbaassee--
+       nnaammee..oouutt' with filename of the current file  or  directory
+       (%%ff),  basename.out  of  the  current  file  or  directory
+       (%%bb..oouutt)  and  additional  parameters   (%%ss)   which   are
+       requested before command execution.
+       For further information about tree, file and filetype com-
+       mands see the sections _v_a_r_i_a_b_l_e_s and _f_i_l_e_t_y_p_e _c_o_m_m_a_n_d_s.
+
+FFIILLEE PPAATTTTEERRNNSS
+       Some commands (list, find, grep,  tag  or  untag)  require
+       file  patterns  for  matching files using some special (or
+       meta) characters.
+       Shell like filename pattern matching interprets  the  fol-
+       lowing meta characters:
+
+
+       **                   matches all characters in a filename
+
+       ??                   matches one character in a filename
+
+       [[ccllaassss]]             matches one character from a character
+                           class.  A character class includes all
+                           characters  enclosed between the open-
+                           ing and closing brackets  ([[  and  ]]).
+                           If  in a class definition a minus sign
+                           (--) is found between two other charac-
+                           ters  this  means  the  range from the
+                           character  before  and  the  character
+                           behind  the  minus sign.  If the first
+                           character of a class definition  is  a
+                           exclamation mark (!!) this means match-
+                           ing of all characters  excluded  those
+                           defined in the class, i.e.
+
+       [abc]               matches  the  characters  'a', 'b' and
+                           'c'
+
+       [a-z_]              matches the  characters  from  'a'  to
+                           'z' and '_'
+
+       [!a-z_]             matches  all  characters except 'a' to
+                           'z' and '_'
+
+       File size pattern matching interprets the  following  meta
+       characters:
+
+
+       ==ssiizzee               matches all files of size ssiizzee
+
+
+
+
+April 2 1992          UTREE Version 3.03-um                    21
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       !!ssiizzee               matches all files not of size ssiizzee
+
+       >>ssiizzee               matches all files larger than ssiizzee
+
+       <<ssiizzee               matches all files smaller than ssiizzee
+
+       Size  may  be  specified in bytes (bb, default), kilo bytes
+       (kk) or mega bytes (mm), i.e. '>>22kk' matches all files larger
+       than 2 kilo bytes or 2048 bytes.
+
+
+       The  additional  file time pattern matching interprets the
+       following meta characters:
+
+
+       ))ttiimmee               matches all files modified within ttiimmee
+
+       ((ttiimmee               matches  all files not modified within
+                           ttiimmee
+
+       Time may be specified in minutes (mm), hours (hh,  default),
+       days  (dd) or weeks (ww), i.e. '))22dd' matches all files modi-
+       fied within last 2 days.
+
+       To combine shell like filename patterns and/or  additional
+       file size and modification time patterns use
+
+
+       &&                   for AANNDDing of patterns
+
+       ||                   for OORRing of patterns
+
+       If  a character is preceeded by a backslash or enclosed in
+       quotes his interpretation is suppressed and he is used  as
+       he is.
+
+KKEEYY BBIINNDDIINNGGSS
+       All  defaults  key  bindings are listed in the section _k_e_y
+       _n_a_m_i_n_g _c_o_n_v_e_n_t_i_o_n_s _a_n_d _d_e_f_a_u_l_t _k_e_y  _b_i_n_d_i_n_g_s  above.   All
+       supported  function keys if defined in the termcap or ter-
+       minfo terminal database and  their  default  bindings  are
+       listed in the next section.  Rebindings of default keys or
+       additional bindings of other keys may be done in  terminal
+       dependent  startupfiles  uuttrreeee--TTEERRMM  in a global directory
+       containing uuttrreeee startupfiles or in files  ..uuttrreeee--TTEERRMM  in
+       your  home  directory where TTEERRMM denotes the terminal type
+       as  defined  in  the  environment  variable  TTEERRMM.   These
+       startup     files    are    built    from    lines    like
+       ''kkeeyy__sseeqquueennccee==uuttrreeee__kkeeyy''    or    ''kkeeyy__sseeqquueennccee==""ssttrriinngg""''.
+       Key_sequence  describes the function key string, utree_key
+       the uuttrreeee key or  function  name,  a  string  enclosed  in
+       braces  a  string to insert into the input buffer.  A com-
+       ment lead in by a sharp sign (#) should contain  the  name
+       of  the bound key.  For defining key sequences of function
+
+
+
+April 2 1992          UTREE Version 3.03-um                    22
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       keys control keys are defined with  a  leading  caret  (^,
+       i.e.  ^x,  ^? means DEL) and some other special characters
+       may be defined lead in by a backslash (\).  These  escaped
+       characters  and  their  meaning  are: b backspace (^h),  f
+       formfeed (^l), n newline (^j), r return (^m), t tab  (^i),
+       e  or E escape (^[ or ESC) and s space.  If a backslash is
+       followed by up to three digits this defines an octal given
+       character.   I.e.  the definition '\e^O\003=END' binds the
+       keystring <ESCAPE> <CONTROL-O> <ASCII-3> to the uuttrreeee  key
+       or function END.
+
+       The  simplest way to define keys is to switch to the _b_i_n_d_-
+       _i_n_g_s _s_c_r_e_e_n and there to do all bindings.  You  have  only
+       to hit the key to bind and terminate the key sequence with
+       CR or NL.  Therefore CR or NL or key sequences  containing
+       CR or NL cannot be bound on the _b_i_n_d_i_n_g_s _s_c_r_e_e_n.  Then you
+       have to enter the uuttrreeee name where the key is to bind  to.
+       You  can  use  C-n  and C-p to select the wanted name.  At
+       last you should give a short comment to the bound key(i.e.
+       the  key  name)  for documentation.  If you want to bind a
+       key for insertion of a string (and  so  to  bind  function
+       keys  to  simple  letter  commands)  you have to enter the
+       string  enclosed  in  double  quotes.   I.e.  the  binding
+       ''\\eehh==""hh""'' binds the key <ESCAPE> <h> to the string <h> and
+       the so called help.  Any bindings you  have  done  on  the
+       _b_i_n_d_i_n_g_s  _s_c_r_e_e_n are saved to a file ..uuttrreeee--TTEERRMM into your
+       home directory if the variable AUTOSAVE is set.
+
+FFUUNNCCTTIIOONN KKEEYYSS
+       The following function keys are  supported  by  uuttrreeee  and
+       pre-bound  at startup to appropriate functions if they are
+       defined in your system's termcap or terminfo database:
+
+
+       CCuurrssoorrRRiigghhtt         Move forward (FORWARD, CC--ff)
+
+       CCuurrssoorrLLeefftt          Move backward (BACKWARD, CC--bb)
+
+       CCuurrssoorrUUpp            Move up (PREVIOUS, CC--pp)
+
+       CCuurrssoorrDDoowwnn          Move down (NEXT, CC--nn)
+
+       HHoommee//BBeeggiinn          Move to beginning (BEGIN, CC--aa)
+
+       EEnndd                 Move to end (END, CC--ee)
+
+       NNeexxttPPaaggee//PPaaggeeDDoowwnn   Move one page down (NEXTPAGE, CC--vv)
+
+       PPrreevvPPaaggee//PPaaggeeUUpp     Move one page up (PREVPAGE, CC--ww)
+
+       SSccrroollllUUpp            Scroll one line up (UP, CC--uu)
+
+       SSccrroollllDDoowwnn          Scroll one line down or delecte  char-
+                           acter (DOWN, CC--dd)
+
+
+
+April 2 1992          UTREE Version 3.03-um                    23
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       IInnsseerrtt              Change  to  directory  (>>)  or  switch
+                           insert/overwrite mode (INSERT, CC--oo)
+
+       DDeelleettee              Change  to  parent  directory  (<<)  or
+                           delete  character  under  cursor  like
+                           (DELETE, CC--hh)
+
+       CClleeaarr               Refresh screen or input line (REFRESH,
+                           CC--ll)
+
+       HHeellpp                Call the help menu (HELP, CC--rr)
+
+       SSeelleecctt              Select and/or accept (SELECT, CCRR,,NNLL)
+
+       DDoo//CCoommmmaanndd          Select and/or accept (SELECT, CCRR,,NNLL)
+
+       MMaarrkk                Set a mark (SETMARK, CC--@@)
+
+       EEnntteerr               Select and/or accept (SELECT, CCRR,,NNLL)
+
+       This  function  keys may be rebound or other function keys
+       may be bound on the _b_i_n_d_i_n_g_s _s_c_r_e_e_n.  For more information
+       about key bindings see the section kkeeyy bbiinnddiinnggss above.
+
+EENNVVIIRROONNMMEENNTT
+       UUTTRREEEE               Some  boolean  and  numerical settings
+                           for uuttrreeee
+
+       UUTTLLIIBB               Directory for  uuttrreeee  help  pages  and
+                           startup files
+
+       HHOOMMEE                User's home directory
+
+       TTEERRMM                Terminal type
+
+       EEDDIITTOORR              File editor
+
+       PPAAGGEERR               File pager/viewer
+
+       SSHHEELLLL               Interactive shell for shell escape
+
+
+FFIILLEESS
+       HHOOMMEE//..uuttrreeeelliisstt     Tree list file of user's filesystem
+
+       HHOOMMEE//..uuttrreeeehhiisstt     History list of shell commands
+
+       HHOOMMEE//..uuttrreeee         User's  uuttrreeee  startup file containing
+                           variables and filetype commands  defi-
+                           nitions
+
+       UUTTLLIIBB//uuttrreeee         Global  uuttrreeee  startup file containing
+                           variables and filetype commands  defi-
+                           nitions
+
+
+
+April 2 1992          UTREE Version 3.03-um                    24
+
+
+
+
+
+UTREE(1L)                                               UTREE(1L)
+
+
+       UUTTLLIIBB//uuttrreeee--TTEERRMM    Global  key bindings for terminal type
+                           TERM
+
+       HHOOMMEE//..uuttrreeee--TTEERRMM    User's key bindings for terminal  type
+                           TERM
+
+       UUTTLLIIBB//uuttrreeee..hheellpp    UUttrreeee help pages
+
+       BBIINN//uuttrreeee..bbaacckkuupp    Backup shell script or program
+
+       BBIINN//uuttrreeee..mmkklliisstt    Create   directory   tree  list  shell
+                           script
+
+       BBIINN//uuttrreeee..pprrlliisstt    Display or print a formatted tree list
+                           file
+
+       UUTTLLIIBB can be a system default directory containing library
+       files (i.e. /usr/local/lib) defined at compile time  or  a
+       directory  defined in the environment variable UUTTLLIIBB.  BBIINN
+       is a public directory containing  executable  files  (i.e.
+       /usr/local/bin)  and  should  be  included  in the command
+       search path environment variable PPAATTHH.
+
+SSEEEE AALLSSOO
+       utree.prlist(1L)
+       cp(1) grep(1) ls(1) mv(1) rm(1)
+       du(1) mkdir(1) rmdir(1)
+       find(1) sh(1)
+
+BBUUGGSS
+       Changes in filesystem after shell escape or editor session
+       are not always detected.
+       Directory tree depth >32 may be confusing.
+       Screen sizes smaller than 80x24 may be confusing.
+       Symbolic links to directories may be confusing.
+       On  most  BSD systems changing owner and/or group of files
+       for normal users is not allowed.
+
+AAUUTTHHOORR
+       Peter Klingebiel
+
+CCOOPPYYRRIIGGHHTT
+       (C) 1991/1992 Peter Klingebiel & UNIX Magazin Munich
+
+       Permission is granted to copy and distribute uuttrreeee in mod-
+       ified  or unmodified form, for noncommercial use, provided
+       (a) this copyright notice is preserved, (b) no attempt  is
+       made to restrict redistribution of this file, and (c) this
+       file is not distributed as part of  any  collection  whose
+       redistribution is restricted by a compilation copyright.
+
+
+
+
+
+
+
+April 2 1992          UTREE Version 3.03-um                    25
+
+

@@ -1,0 +1,252 @@
+CUR	file.c	/^#define CUR(c)  ((c) >= 'a')    \/* Command works o/
+DTSTR	bind.c	/^#define DTSTR(n)        (defkeys[n].string)$/
+DTSYM	bind.c	/^#define DTSYM(n)        (defkeys[n].symbol)$/
+EOL	bind.c	/^#define EOL(c)          (c==' ' || c=='\\t' || c=='/
+FTNAM	bind.c	/^#define FTNAM(n)        (funkeys[n].name)$/
+FTSTR	bind.c	/^#define FTSTR(n)        (funkeys[n].string)$/
+FTSYM	bind.c	/^#define FTSYM(n)        (funkeys[n].symbol)$/
+Mmain	main.c	/^GLOBL VOID main(argc, argv)$/
+ONTG	tree.c	/^#define ONTG(c) ((c) < 'a')     \/* Command works o/
+ONTR	tree.c	/^#define ONTR(c) ((c) < 'a')     \/* Command works o/
+TRASH	util.c	/^#define TRASH(c) ((c) == ' ' || (c) == '\\t' || (c)/
+_backglitch	term.c	/^LOCAL VOID _backglitch(j)$/
+_putch	term.c	/^LOCAL int _putch(c)$/
+alignbsiz	list.c	/^LOCAL unsigned alignbsiz(s, n)$/
+alignnfils	list.c	/^LOCAL int alignnfils(n)$/
+backspace	term.c	/^GLOBL VOID backspace()$/
+backupdir	tree.c	/^LOCAL int backupdir(t)$/
+backuplist	tree.c	/^LOCAL int backuplist(name, t)$/
+basename	util.c	/^GLOBL char *basename(s)$/
+begline	term.c	/^GLOBL VOID begline()$/
+bell	term.c	/^GLOBL VOID bell(f)$/
+bindings	bind.c	/^GLOBL int bindings()$/
+buildlist	list.c	/^GLOBL int buildlist(rn, cwd, lfn)$/
+buildread	list.c	/^GLOBL int buildread(pn, levl, last, intr)$/
+buildtree	tree.c	/^LOCAL int buildtree()$/
+calculatelines	vars.c	/^GLOBL int calculatelines()$/
+calculatetree	tree.c	/^GLOBL VOID calculatetree(n)$/
+callcommand	hist.c	/^LOCAL int callcommand(w)$/
+callshell	hist.c	/^LOCAL int callshell()$/
+callsystem	hist.c	/^GLOBL int callsystem(cmd, c, s)$/
+changedir	tree.c	/^LOCAL int changedir()$/
+changedlist	list.c	/^GLOBL int changedlist(dp)$/
+changelist	comm.c	/^GLOBL int changelist(dp, who)$/
+charback	edit.c	/^LOCAL VOID charback()$/
+charforw	edit.c	/^LOCAL VOID charforw()$/
+checkdlist	list.c	/^GLOBL VOID checkdlist(name)$/
+checkindent	vars.c	/^GLOBL VOID checkindent()$/
+checklines	vars.c	/^GLOBL VOID checklines(f)$/
+checktagged	tree.c	/^LOCAL int checktagged()$/
+checktree	tree.c	/^LOCAL int checktree(msg)$/
+clearline	term.c	/^GLOBL VOID clearline()$/
+clearscreen	term.c	/^GLOBL VOID clearscreen()$/
+cleartoend	term.c	/^GLOBL int cleartoend()$/
+clearwindow	term.c	/^GLOBL VOID clearwindow(f, t)$/
+clockoff	comm.c	/^GLOBL VOID clockoff()$/
+clockon	comm.c	/^GLOBL int clockon()$/
+colorset	term.c	/^GLOBL VOID colorset(f)$/
+commands	vars.c	/^GLOBL int commands()$/
+copy	file.c	/^LOCAL int copy(one)$/
+copyfile	comm.c	/^GLOBL int copyfile(dp, f, to, req)$/
+copytagged	tree.c	/^GLOBL int copytagged()$/
+countlevl	list.c	/^LOCAL int countlevl(name)$/
+currentperms	stat.c	/^LOCAL char *currentperms(m)$/
+cursorpos	term.c	/^GLOBL VOID cursorpos(x, y)$/
+cursorset	term.c	/^GLOBL VOID cursorset(c)$/
+cursorxy	term.c	/^GLOBL int cursorxy(x, y)$/
+deletechar	term.c	/^GLOBL int deletechar()$/
+deletedlist	list.c	/^GLOBL VOID deletedlist(rp)$/
+deleteflist	list.c	/^GLOBL VOID deleteflist(dp, f)$/
+deleteline	term.c	/^GLOBL int deleteline(y, n)$/
+devicename	stat.c	/^LOCAL char *devicename(r)$/
+dirselect	tree.c	/^LOCAL char *dirselect(what)$/
+disablesignals	term.c	/^GLOBL VOID disablesignals()$/
+dlistcmp	list.c	/^LOCAL int dlistcmp(d1, d2)$/
+doselect	file.c	/^LOCAL char *doselect(what)$/
+edit	file.c	/^LOCAL int edit(one)$/
+editfile	file.c	/^LOCAL int editfile(name, mode, req)$/
+editline	edit.c	/^GLOBL int editline(buf, max, cur, xm, xp)$/
+enablesignals	term.c	/^GLOBL VOID enablesignals()$/
+errequest	echo.c	/^GLOBL int errequest(fn, s)$/
+execfile	file.c	/^LOCAL int execfile(f, m)$/
+execute	file.c	/^LOCAL int execute(one)$/
+exitscreen	term.c	/^GLOBL int exitscreen(rval)$/
+fileaccess	stat.c	/^GLOBL char *fileaccess(st)$/
+filemenu	file.c	/^GLOBL int filemenu(f, r)$/
+filemissing	file.c	/^LOCAL int filemissing(s)$/
+filestatus	stat.c	/^LOCAL struct stat *filestatus(pn)$/
+filetype	stat.c	/^LOCAL char *filetype(st)$/
+find	file.c	/^LOCAL int find(one)$/
+findfile	comm.c	/^GLOBL int findfile(dp, f)$/
+findtree	tree.c	/^LOCAL int findtree(t)$/
+flistcmp	list.c	/^LOCAL int flistcmp(f1, f2)$/
+flushout	term.c	/^GLOBL VOID flushout()$/
+getchar	term.c	/^GLOBL int getchar()$/
+getkey	term.c	/^GLOBL int getkey()$/
+getkeystring	bind.c	/^LOCAL kchar *getkeystring(s)$/
+getkeysymbol	bind.c	/^LOCAL ksym getkeysymbol(s)$/
+getline	echo.c	/^GLOBL int getline(buf, max, cur, hk, pre, rp, f)$/
+getpattern	comm.c	/^GLOBL int getpattern(p, m)$/
+getversion	vers.c	/^GLOBL char *getversion()$/
+gobegend	tree.c	/^LOCAL int gobegend(dir)$/
+gofile	file.c	/^GLOBL int gofile(dp, dir)$/
+golevel	tree.c	/^LOCAL int golevel(dir)$/
+gomarkdir	tree.c	/^LOCAL int gomarkdir()$/
+gopage	tree.c	/^LOCAL int gopage(dir)$/
+goparent	tree.c	/^LOCAL int goparent()$/
+gotagged	tree.c	/^LOCAL int gotagged()$/
+gotodirectory	file.c	/^LOCAL int gotodirectory()$/
+gotoparent	file.c	/^LOCAL int gotoparent()$/
+gotree	tree.c	/^GLOBL int gotree(dir)$/
+graphicset	term.c	/^GLOBL VOID graphicset(f)$/
+grep	file.c	/^LOCAL int grep(one)$/
+grepfile	comm.c	/^GLOBL int grepfile(dp, f)$/
+greptree	tree.c	/^LOCAL int greptree(t)$/
+history	hist.c	/^GLOBL int history(c, w)$/
+hitakey	echo.c	/^GLOBL int hitakey(s, l, v)$/
+imatch	comm.c	/^LOCAL int imatch(dp, f)$/
+infodir	tree.c	/^LOCAL int infodir()$/
+infodlist	list.c	/^GLOBL VOID infodlist()$/
+infofile	file.c	/^LOCAL int infofile(f, h)$/
+initbindings	bind.c	/^GLOBL VOID initbindings(term, cp)$/
+initgraphics	term.c	/^GLOBL VOID initgraphics(f)$/
+inithelp	help.c	/^GLOBL VOID inithelp()$/
+inithistory	hist.c	/^GLOBL VOID inithistory()$/
+initscreen	term.c	/^GLOBL char *initscreen(term)$/
+initvariables	vars.c	/^GLOBL VOID initvariables()$/
+insertbinding	bind.c	/^LOCAL int insertbinding(str, sym, nam, ins, usr)$/
+insertchar	term.c	/^GLOBL int insertchar()$/
+insertdlist	list.c	/^LOCAL dlist *insertdlist(dname, nfils, fvec)$/
+insertflist	list.c	/^LOCAL VOID insertflist(dp, f)$/
+inserthelp	help.c	/^LOCAL VOID inserthelp(s, fp)$/
+inserthistory	hist.c	/^LOCAL clist *inserthistory(cmd, f)$/
+insertline	term.c	/^GLOBL int insertline(y, n)$/
+isallowed	comm.c	/^GLOBL int isallowed(fn, m)$/
+istextfile	file.c	/^LOCAL int istextfile(s, n)$/
+keymeaning	bind.c	/^LOCAL char *keymeaning(k)$/
+keypadxmit	term.c	/^GLOBL VOID keypadxmit(f)$/
+keypressed	term.c	/^GLOBL int keypressed()$/
+keystring	bind.c	/^LOCAL char *keystring(s, buf)$/
+keysymbol	bind.c	/^LOCAL char *keysymbol(k)$/
+list	file.c	/^LOCAL int list(t)$/
+listtree	tree.c	/^LOCAL int listtree(t)$/
+major	stat.c	/^# define major(x)       ((x >> 8) & 0377)$/
+makedir	tree.c	/^LOCAL int makedir()$/
+markdir	tree.c	/^LOCAL VOID markdir(f)$/
+match	util.c	/^GLOBL int match(s, p)$/
+minor	stat.c	/^# define minor(x)       (x & 0377)$/
+move	file.c	/^LOCAL int move(one)$/
+movefile	comm.c	/^GLOBL int movefile(dp, f, to, req)$/
+movetagged	tree.c	/^GLOBL int movetagged()$/
+newdlist	list.c	/^GLOBL dlist *newdlist(name, flag)$/
+newflist	list.c	/^GLOBL int newflist(dp)$/
+newline	term.c	/^GLOBL VOID newline()$/
+oninterrupt	hist.c	/^LOCAL int oninterrupt()$/
+parseperms	stat.c	/^LOCAL int parseperms(s)$/
+pathname	util.c	/^GLOBL char *pathname(fn, cwd)$/
+print	file.c	/^LOCAL int print(one)$/
+printcwd	comm.c	/^GLOBL int printcwd()$/
+printdate	comm.c	/^GLOBL int printdate()$/
+printfile	file.c	/^LOCAL int printfile(f, req)$/
+putchar	term.c	/^GLOBL int putchar(c)$/
+putcxy	echo.c	/^GLOBL VOID putcxy(x, y, c)$/
+putecho	echo.c	/^GLOBL int putecho(va_alist)$/
+putfile	echo.c	/^GLOBL VOID putfile(dp, f, fs)$/
+putfxy	echo.c	/^GLOBL int putfxy(x, y, c, va_alist)$/
+puthelp	echo.c	/^GLOBL VOID puthelp(va_alist)$/
+putline	edit.c	/^LOCAL VOID putline(from, to, clear)$/
+putmenu	echo.c	/^GLOBL VOID putmenu(t, s)$/
+putsxy	echo.c	/^GLOBL int putsxy(x, y, s)$/
+putversion	vers.c	/^GLOBL int putversion(l, s)$/
+readdname	util.c	/^GLOBL char *readdname(dp)$/
+refreshfile	file.c	/^GLOBL int refreshfile(f)$/
+refreshtree	tree.c	/^GLOBL int refreshtree(f)$/
+remove	file.c	/^LOCAL int remove(one)$/
+removedir	tree.c	/^LOCAL int removedir()$/
+removefile	comm.c	/^GLOBL int removefile(dp, f, req)$/
+removetagged	tree.c	/^GLOBL int removetagged()$/
+resizetree	tree.c	/^LOCAL int resizetree(dir)$/
+savebindings	bind.c	/^GLOBL VOID savebindings(term)$/
+savehistory	hist.c	/^GLOBL VOID savehistory()$/
+savevariables	vars.c	/^GLOBL VOID savevariables()$/
+scandlist	list.c	/^GLOBL int scandlist(rp)$/
+scantree	tree.c	/^LOCAL int scantree(f)$/
+scrollback	edit.c	/^LOCAL VOID scrollback(to)$/
+scrollfile	file.c	/^LOCAL int scrollfile(dir)$/
+scrollforw	edit.c	/^LOCAL VOID scrollforw(to)$/
+scrolltree	tree.c	/^LOCAL int scrolltree(dir)$/
+selectdir	tree.c	/^GLOBL char *selectdir(what)$/
+setbinding	bind.c	/^LOCAL int setbinding(s)$/
+setcolorflag	vars.c	/^LOCAL VOID setcolorflag(f)$/
+setcommand	vars.c	/^GLOBL xlist *setcommand(type, f)$/
+setfilelines	vars.c	/^LOCAL int setfilelines(n)$/
+setgraphic	echo.c	/^GLOBL int setgraphic(f)$/
+sethistorysize	hist.c	/^GLOBL int sethistorysize(n)$/
+setindent	vars.c	/^LOCAL int setindent(i)$/
+setmark	file.c	/^LOCAL VOID setmark(f, w)$/
+setsortflag	vars.c	/^LOCAL VOID setsortflag(f)$/
+setupscreen	main.c	/^LOCAL int setupscreen(sig)$/
+setvariable	vars.c	/^GLOBL int setvariable(line, f)$/
+setvideo	echo.c	/^GLOBL VOID setvideo(f)$/
+setvideomode	vars.c	/^GLOBL int setvideomode(i)$/
+showallcmds	vars.c	/^LOCAL int showallcmds()$/
+showallvars	vars.c	/^LOCAL int showallvars()$/
+showbindings	bind.c	/^LOCAL int showbindings()$/
+showdline	tree.c	/^LOCAL VOID showdline(dp)$/
+showdlist	tree.c	/^LOCAL VOID showdlist(dp, f)$/
+showdtree	tree.c	/^LOCAL VOID showdtree(f, t, c)$/
+showfiles	file.c	/^LOCAL VOID showfiles(f, t, c)$/
+showflist	tree.c	/^LOCAL VOID showflist(l)$/
+showhelp	help.c	/^GLOBL int showhelp(k)$/
+showhelppage	help.c	/^LOCAL int showhelppage(hp, fp)$/
+showhistory	hist.c	/^LOCAL int showhistory()$/
+showmode	edit.c	/^LOCAL VOID showmode()$/
+showsline	tree.c	/^LOCAL VOID showsline()$/
+showtbar	tree.c	/^LOCAL VOID showtbar()$/
+sortflist	list.c	/^GLOBL VOID sortflist(dp)$/
+sortlist	comm.c	/^GLOBL int sortlist(dp, f)$/
+sorttree	tree.c	/^LOCAL int sorttree(t)$/
+startup	main.c	/^GLOBL int startup(b, f)$/
+status	file.c	/^LOCAL int status(one, s)$/
+statusdir	tree.c	/^LOCAL int statusdir()$/
+statusfile	stat.c	/^GLOBL int statusfile(fn, f)$/
+strclean	util.c	/^GLOBL char *strclean(s)$/
+strsav	util.c	/^GLOBL char *strsav(s)$/
+strupper	util.c	/^GLOBL VOID strupper(s)$/
+tag	file.c	/^LOCAL int tag(one)$/
+tagfile	file.c	/^LOCAL VOID tagfile(f)$/
+tagtree	tree.c	/^LOCAL int tagtree(t)$/
+terminalraw	term.c	/^GLOBL VOID terminalraw(f)$/
+terminalreset	term.c	/^GLOBL VOID terminalreset(f)$/
+token	comm.c	/^LOCAL int token(wp)$/
+treemenu	tree.c	/^GLOBL int treemenu(update)$/
+ualloc	main.c	/^GLOBL char *ualloc(n, s)$/
+uerror	main.c	/^LOCAL VOID uerror(err)$/
+ufree	main.c	/^GLOBL VOID ufree(p)$/
+umatch	comm.c	/^GLOBL int umatch(dp, f, p)$/
+ungetkey	term.c	/^GLOBL VOID ungetkey(c)$/
+ungetstring	term.c	/^GLOBL int ungetstring(s)$/
+unsetmark	file.c	/^LOCAL VOID unsetmark(f)$/
+untag	file.c	/^LOCAL int untag(one)$/
+untagfile	file.c	/^LOCAL VOID untagfile(f)$/
+untagtree	tree.c	/^LOCAL int untagtree(t)$/
+updatedlist	list.c	/^GLOBL int updatedlist()$/
+updatefiles	file.c	/^LOCAL VOID updatefiles()$/
+updatetree	tree.c	/^LOCAL int updatetree(f)$/
+usage	main.c	/^LOCAL VOID usage(f)$/
+usercommand	vars.c	/^GLOBL int usercommand(v)$/
+userformat	vars.c	/^GLOBL int userformat(s, p, v, w)$/
+utreeversion	vers.c	/^GLOBL VOID utreeversion()$/
+variables	vars.c	/^GLOBL int variables()$/
+videoset	term.c	/^GLOBL VOID videoset(v)$/
+view	file.c	/^LOCAL int view(one)$/
+viewfile	file.c	/^LOCAL int viewfile(f, one)$/
+windowdown	term.c	/^GLOBL int windowdown(f, t, n)$/
+windowset	term.c	/^GLOBL int windowset(f, t)$/
+windowup	term.c	/^GLOBL int windowup(f, t, n)$/
+writedlist	list.c	/^GLOBL char *writedlist(name, rp, what, w)$/
+writetreelist	tree.c	/^LOCAL int writetreelist()$/
+zoomfile	file.c	/^LOCAL int zoomfile()$/
+zoomflist	list.c	/^GLOBL VOID zoomflist(dp)$/
+zoomlist	comm.c	/^GLOBL int zoomlist(dp, pat)$/
+zoomtree	tree.c	/^LOCAL int zoomtree(t)$/

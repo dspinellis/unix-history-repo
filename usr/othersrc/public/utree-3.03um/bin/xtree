@@ -1,0 +1,16 @@
+:
+#
+#       XTREE.SH
+#       Start utree on x terminal if possible
+#       3.03-um klin, Sun Feb 16 16:08:16 1992
+#       Usage:          like utree
+#       Options:        like utree
+#       Directory:      /usr/local/bin
+#
+#       SCCSID = @(#) utree 3.03-um (klin) Feb 16 1992 bin/xtree.sh
+#       USAGE  = @(#) Usage: xtree [utree_options]
+
+if test ! -z "$DISPLAY" -a -x /usr/bin/X11/xterm
+then exec /usr/bin/X11/xterm -g 80x24 -bw 2 -n "utree" -e utree $@ &
+else exec utree $@
+fi

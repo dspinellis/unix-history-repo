@@ -1,0 +1,27 @@
+#
+#       $HOME/.utree-$TERM or $UTLIB/utree-$TERM
+#       Example keybinding file for terminal type $TERM=xterm
+#       klin, Sun Feb 23 23:31:11 1992
+#       Directory:      user's home directory  ($HOME)
+#                       or a library directory ($UTLIB)
+#
+#       SCCSID = @(#) utree 3.03-um (klin) Feb 23 1992 lib/utree.binding
+#
+
+# Key bindings: key_sequence=utree_key_name     #Keyname
+#               key_sequence="string_to_insert" #Keyname
+
+# Example bindings for keypad keys (xterm)
+\eOp=DOWN                               #Keypad-0
+\eOn=INSERT                             #Keypad-.
+\eOo=PREVPAGE                           #Keypad-/
+\eOx=NEXTPAGE                           #Keypad-8
+\eOj=UP                                 #Keypad-*
+\eOy=DOWN                               #Keypad-9
+
+# Example bindings for functions keys (xterm)
+\e[21~=EXIT                             #FunctionKey 10
+
+# Example bindings for inserting strings (xterm)
+\e[11~="/y"                             #FunctionKey 1
+\e[12~="!ps -ef|more\n"                 #FunctionKey 2

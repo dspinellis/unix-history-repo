@@ -1,0 +1,115 @@
+
+	UTREE - screen oriented filesystem utility
+	CHANGES, klin, Sat Apr 11 11:20:18 1992
+
+------------------------------------------------------------------------------
+
+utree 3.00-um
+      - Apr 20 1991, klin
+	Initial version 3.00-um for distribution
+      - May  5 1991, klin
+	Minor bug fixes and extensions
+
+utree 3.01-um
+      - Jun  4 1991, klin
+	Z-command for zooming filelist/files in/out added
+      - Oct  7 1991, klin
+	File size patterns =!<> added, time patterns changed to from <> to ()
+	Bug in putchar() deleted
+	Minor changes in screen handling
+      - Oct 15 1991, klin
+	Handling of symbolic links changed
+	Option -L for following symbolic links added
+	Option -f lst for building the tree from list file lst added
+      - Oct 26 1991, klin
+	Marking directories changed
+	Sorting/zooming filelists on tree screen changed
+	Copying and moving files changed (select directory)
+	Select directory added
+	Some more minor changes in functions
+	Print formatted tree list added
+	Filter utree.prlist for printing formatted tree list files created
+
+utree 3.02-um
+      - Nov  1 1991, klin
+	Screen layout changed
+	Goto parent directory on tree screen (<-command) added
+	Option -u changed to -n (no scan tree)
+	Option -u added (update file lists in tree)
+	Stuff for APOLLO node names added
+	Bug in calling editor in empty directory deleted
+	Other minor changes
+      - Nov 10 1991, klin
+	Functions key handling changed (typedef kchar and ksymbol)
+	Reading list files changed for handling relative given pathnames
+	Postscript driver for utree.prlist
+	Utree.backup.sh and utree.mklist.sh extended
+      - Nov 24 1991, klin
+	Some error fixes and extensions for XENIX reported and done by
+	Rolf Gebhardt (Nov 22 1991)
+	Change to current directory list for some commands on tree screen
+	Video attributes changed
+
+utree 3.03-um
+      - Feb 11 1992, klin
+	Shell screen put into own module hist.[ch] and command history added
+	Status screen put into own module stat.c
+	Generic list type glist for using from within line editor added
+	Most list types changed for using of the generic list type glist
+	Lineeditor extended for using of generic lists
+	Handling of variables and filetype command changed
+      - Feb 15 1992, klin
+	Video handling and meaning of option -v changed
+	Display attributes and user customizable video mode flag added
+	Partinioning of directory and file window on tree screen changed
+	Option -p for tree screen partitioning added
+	Variables VIDEOMODE and FILELINES added
+      - Feb 22 1992, klin
+	Some commands on tree changed to work on current directory or subtree
+	or tagged files dependent on command letter entered in lowercase or
+	uppercase letter. The commands working on current directory/subtree
+	are: f/F=find, g/G=grep, n/N=sort, t/T=tag, u/U=untag, z/Z=zoom.
+	The commands working on current directory/tagged files are:
+	b/B=backup, c/C=change/copy, l,L=list, m/M=mkdir/move, r/R=remove.
+	Formatcharacters %H and %R for home and root directory added
+      - Feb 22 1992, klin
+	Many commands on tree changed to handle current directory or subtree
+	(find, grep, sort, tag, untag, zoom) or tagged files in subtree
+	(backup, copy, list, move, remove) dependent if command letter is
+	entered in upper or lower case (like commands on file screen)
+      - Feb 23 1992, klin
+	Key handling changed. Bindings screen and user customizable and
+	definable key bindings added. Key bindings from statically defined
+	bindings to default bindings changed which are bound at startup.
+	User defined key bindings can be done at startup in terminal
+	dependent binding files or at run time on the bindings screen.
+	Variable HISTSIZE (settable at startup only) added.
+	Save variables, commands, history and key bindings if there were
+	any changes and if the new variable AUTOSAVE is set to ON.
+	Command line option -o for omitting saving changes added
+      - Mar  6 1992, klin
+	Some minor changes before distribution
+
+utree 3.03a-um (patchlevel a)
+      - Mar 15 1992, klin
+	Some bug fixes in keys.h, bind.c, term.c, tree.c and vars.c.
+	On shell screen search in history list for commands given by
+	command number (!number) or a search pattern (!pattern).
+	Includefile patchlevel.h added
+utree 3.03b-um (patchlevel b)
+      - Mar 22 1992, klin
+	Bug fixes in edit.c (catch unhandled key symbols) and vars.c
+	(don't free empty string) and minor changes
+utree 3.03c-um (patchlevel c)
+      - Mar 30 1992, klin
+	Bug fixes in echo.c (handle key sumbols correctly), hist.c (correct
+	handling of history list) and stat.c (correct permissions string)
+utree 3.03d-um (patchlevel d)
+      - Apr  2 1992, klin
+	Bug fixes and updates in manual and help pages.
+	Time stamps for history commands added
+utree 3.03e-um (patchlevel e)
+      - Apr 11 1992, klin
+	Minor bug in handling of not readable directories fixed (list.c)
+	Use colors for video attributes (define USEANSICOLORS).
+	Only ANSI compatible color settings may be used!

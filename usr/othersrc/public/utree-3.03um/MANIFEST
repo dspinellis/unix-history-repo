@@ -1,0 +1,115 @@
+
+	  UTREE 3.03e-um - screen oriented filesystem utility
+	     MANIFEST, klin, Mon Apr 13 15:34:52 1992
+
+------------------------------------------------------------------------------
+
+	bin                     - Utree executable directory
+	doc                     - Utree manual and documentation
+	lib                     - Utree library files
+	src                     - Utree source directory
+	sup                     - Additional support routines from PD
+	sys                     - Some system dependent make and conf files
+	tst                     - Some simple test programs for configuration
+
+	README                  - Readme first
+	MANIFEST                - This file
+	COPYRIGHT               - Copyright and distribution notice
+	CHANGES                 - Changes since utree version 3.00-um
+	TODO                    - Ideas for further extensions
+	Makefile                - Makefile for exes, manual and installation
+
+	src/Makefile            - Makefile for utree executable
+	src/cmds.h              - Command definitions
+	src/conf.h              - System dependent definitions
+	src/defs.h              - General definitions
+	src/help.h              - Help page definitions
+	src/hist.h              - Shell execution and history definitions
+	src/keys.h              - Keyboard and key definitions
+	src/list.h              - Tree and file list definitions
+	src/term.h              - Terminal and screen definitions
+	src/vars.h              - Variable definitions
+	src/bind.c              - Key binding routines
+	src/comm.c              - Common commands for tree and file screen
+	src/echo.c              - Utree input and output routines
+	src/edit.c              - Line editor
+	src/file.c              - File screen menu and functions
+	src/help.c              - Help page menu and functions
+	src/hist.c              - Shell execution and command history
+	src/list.c              - Directory and file list handling
+	src/main.c              - Main routine
+	src/stat.c              - File status functions
+	src/term.c              - Tty and screen handling
+	src/tree.c              - Directory tree screen menu and functions
+	src/util.c              - Utility routines
+	src/vars.c              - Utree variable routines
+	src/vers.c              - Utree version and history
+	src/utree.prlist.c      - Filter for formatted tree list files
+	src/patchlevel.h        - Containing current patch level
+
+	bin/utree.backup        - Example backup shell script (SYSV)
+	bin/utree.mklist        - Example create tree list shell script
+	bin/utree.mklist2       - Alternate utree.mklist from R. Gebhardt
+	bin/qtree               - Shell script for quick startup
+	bin/xtree               - Shell script for running utree in xterm
+
+	lib/utree.help          - Utree help pages
+	lib/utree.binding       - Example keybinding file ($HOME/.utree-term)
+	lib/utree.startup       - Example startup file ($HOME/.utree)
+
+	doc/utree.m             - Utree manual page in nroff format
+	doc/utree.1             - Formatted manual page
+	doc/utree.p             - Postscript manual page
+	doc/utree.prlist.m      - Utree.prlist manual page in nroff format
+	doc/utree.prlist.1      - Formatted manual page
+	doc/utree.prlist.p      - Postscript manula page
+
+	sup/README              - Readme for varargs v[fs]printf
+	sup/getopt.c            - PD command line option parser getopt(3)
+	sup/vsprintf.c          - PD varargs sprintf(3)
+	sup/vfprintf.c          - PD varargs fprintf(3) (not used by utree)
+
+	sys/Makefile.286        - UNIX V/286 compatible (MSC on SCO UNIX/386)
+	sys/conf.h.286
+	sys/Makefile.AIX        - AIX 3.1 (IBM RS/6000)
+	sys/conf.h.AIX
+	sys/Makefile.APP        - DomainIX 9.5 (BSD4.2 and SystemV)
+	sys/conf.h.APP            Siemens WS30/360, Apollo Domain DN4500
+	sys/Makefile.BSD        - BSD 4.2/4.3 (Generic)
+	sys/conf.h.BSD
+	sys/Makefile.CON        - ConvexOS 8.1 (Convex C120)
+	sys/conf.h.CON
+	sys/Makefile.M16        - MUNIX V2/07 (PCS Cadmus 9230, MC68010)
+	sys/conf.h.M16
+	sys/Makefile.M32        - MUNIX V3M3.2 (PCS Cadmus 9600, MC68020)
+	sys/conf.h.M32
+	sys/Makefile.MIPS       - RISC/os 4.51 (MIPS RC3230, R3000)
+	sys/conf.h.MIPS
+	sys/Makefile.RCU        - MUNIX V3R3.2 (PCS Cadmus 9900, MIPS R[23]000)
+	sys/conf.h.RCU            derived from MIPS RISC/os 4.00
+	sys/Makefile.SCO        - SCO UNIX System V/386 3.2
+	sys/conf.h.SCO
+	sys/Makefile.SEQ        - Dynix i386 (Sequent Symmetrie)
+	sys/conf.h.SEQ
+	sys/Makefile.SGI        - IRIX V.3.2 (Silicon Graphics)
+	sys/conf.h.SGI
+	sys/Makefile.SUN        - SunOS 4.1.x (SUN4, SPARC)
+	sys/conf.h.SUN
+	sys/Makefile.ULT        - Ultrix-32 3.1 (DECstation, VAXstation)
+	sys/conf.h.ULT
+	sys/Makefile.V.2        - System V.2 (Generic)
+	sys/conf.h.V.2
+	sys/Makefile.V.3        - System V.3 (Generic)
+	sys/conf.h.V.3
+	sys/Makefile.V.4        - System V.4 (UNIX/386)
+	sys/conf.h.V.4
+	sys/Makefile.VAX        - 4.3 BSD UNIX (DEC VAX/750)
+	sys/conf.h.VAX
+	sys/Makefile.X23        - SCO XENIX SysV 2.3.2 386GT
+	sys/conf.h.X23
+
+	tst/fionread.c          - Test ioctl(FIONREAD)
+	tst/sigwinch.c          - Test signal SIGWINCH and ioctl(TIOCGWINSZ)
+				  after resizing a terminal window under X.
+
+------------------------------------------------------------------------------
