@@ -1,35 +1,8 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	4.26	(Berkeley)	%G%
-#
-DESTDIR=
-CFLAGS=	-O
-LIBC=	/lib/libc.a
+#	@(#)Makefile	4.27 (Berkeley) %G%
 
-# Programs that live in subdirectories, and have makefiles of their own.
-#
-# emacs doesn't work anymore
-SUBDIR=	ansi bib jove kermit mh patch rcs X X/X.local
+# all of these compile, but only ansi, patch, and vmsprep have been
+# converted to the BSD style obj directories and installation paths.
+#SUBDIR=	ansi bib emacs jove kermit mh patch rcs vmsprep
+SUBDIR=	ansi patch vmsprep
 
-all: ${SUBDIR}
-
-${SUBDIR}: FRC
-	cd $@; make ${MFLAGS}
-
-install:
-	@-for i in ${SUBDIR}; do \
-		(echo "==> $$i"; \
-		    cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	for file in `find /usr/new/man -type f -name '*.0' -print`; do \
-		sed -n -f /usr/man/makewhatis.sed $$file; \
-	done | sort -u > whatis.db
-	install -o bin -g bin -m 444 whatis.db ${DESTDIR}/usr/new/man/whatis
-
-cleandir clean:
-	@-for i in ${SUBDIR}; do \
-		(echo "==> $$i"; cd $$i; make ${MFLAGS} clean); done
-
-depend FRC:
+.include <bsd.subdir.mk>
