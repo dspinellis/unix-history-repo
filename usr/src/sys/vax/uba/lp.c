@@ -1,4 +1,4 @@
-/*	lp.c	4.7	81/02/27	*/
+/*	lp.c	4.8	81/03/02	*/
 
 #include "lp.h"
 #if NLP11 > 0
@@ -108,7 +108,6 @@ register c;
 {
 	register int logcol, physcol;
 
-#ifdef HALFASCII
 	if (lp11.flags&CAP) {
 		register c2;
 
@@ -141,7 +140,6 @@ register c;
 			c = '-';
 		}
 	}
-#endif HALFASCII
 	logcol = lp11.logcol;
 	physcol = lp11.physcol;
 	if (c == ' ')
