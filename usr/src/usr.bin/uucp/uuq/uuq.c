@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuq.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuq.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -193,7 +193,7 @@ gather()
 	 * Find all the spool files in the spooling directory
 	 */
 	if ((df = opendir(subdir(Spool, CMDPRE))) == NULL) {
-		fprintf(stderr, "can't examine spooling area");
+		fprintf(stderr, "can't examine spooling area\n");
 		exit(1);
 	}
 	for (;;) {
