@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.11 %G%";
+static char *SccsId = "@(#)collect.c	2.12 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -473,13 +473,13 @@ mesedit(ibuf, obuf, c)
 	int pid, s;
 	FILE *fbuf;
 	register int t;
-	int (*sig)(), (*scont)(), foonly();
+	int (*sig)(), (*scont)(), signull();
 	struct stat sbuf;
 	extern char tempMail[], tempEdit[];
 	register char *edit;
 
 	sig = sigset(SIGINT, SIG_IGN);
-	scont = sigset(SIGCONT, foonly);
+	scont = sigset(SIGCONT, signull);
 	if (stat(tempEdit, &sbuf) >= 0) {
 		printf("%s: file exists\n", tempEdit);
 		goto out;
@@ -555,13 +555,6 @@ out:
 	newi = ibuf;
 	return(obuf);
 }
-
-/*
- * Currently, Berkeley virtual VAX/UNIX will not let you change the
- * disposition of SIGCONT, except to trap it somewhere new.
- * Hence, sigset(SIGCONT, foonly) is used to ignore continue signals.
- */
-foonly() {}
 
 /*
  * Pipe the message through the command.
@@ -679,7 +672,7 @@ forward(ms, obuf, f)
 		touch(*ip);
 		printf(" %d", *ip);
 		if (f == 'm') {
-			if (transmit(&message[*ip-1], obuf) < 0) {
+			if (transmit(&message[*ip-1], obuf) < 0L) {
 				perror(tempMail);
 				return(-1);
 			}
@@ -700,28 +693,30 @@ forward(ms, obuf, f)
  * on error.
  */
 
+long
 transmit(mailp, obuf)
 	struct message *mailp;
 	FILE *obuf;
 {
 	register struct message *mp;
-	register int c, ch;
-	int n, bol;
+	register int ch;
+	long c, n;
+	int bol;
 	FILE *ibuf;
 
 	mp = mailp;
 	ibuf = setinput(mp);
-	c = msize(mp);
+	c = mp->m_size;
 	n = c;
 	bol = 1;
-	while (c-- > 0) {
+	while (c-- > 0L) {
 		if (bol) {
 			bol = 0;
 			putc('\t', obuf);
 			n++;
 			if (ferror(obuf)) {
 				perror("/tmp");
-				return(-1);
+				return(-1L);
 			}
 		}
 		ch = getc(ibuf);
@@ -730,7 +725,7 @@ transmit(mailp, obuf)
 		putc(ch, obuf);
 		if (ferror(obuf)) {
 			perror("/tmp");
-			return(-1);
+			return(-1L);
 		}
 	}
 	return(n);
