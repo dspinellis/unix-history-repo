@@ -92,7 +92,7 @@ int	strfilepos = 0;			/* position within the string file */
  *	It is opened by stdio, but is filled with the parallel
  *	block I/O library
  */
-char	*outfile;
+char	*outfile = "a.out";
 FILE	*a_out_file;			
 off_t	a_out_off;			/* cumulative offsets for segments */
 /*
@@ -223,7 +223,6 @@ argprocess(argc, argv)
 #ifdef DEBUG
 	debug = 0;
 #endif
-	outfile = (char *)genbuildname("a.out");
 	innames = (char **)ClearCalloc(argc+1, sizeof (innames[0]));
 	dotsname = "<argv error>";
 	while (argc > 1) {
@@ -262,7 +261,7 @@ argprocess(argc, argv)
 						yyerror("-o what???");
 						exit(1);
 					}
-					outfile = (char *)genbuildname(argv[2]);
+					outfile = argv[2];
 				   bumpone:
 					argc -= 2;
 					argv += 2;
