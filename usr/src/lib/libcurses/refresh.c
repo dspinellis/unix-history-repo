@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -162,7 +162,7 @@ makech(win, wy)
 	register WINDOW *win;
 	int wy;
 {
-	register int nlsp, clsp;		/* Last space in lines. */
+	register int nlsp;		/* Last space in lines. */
 	register short wx, lch, y;
 	register __LDATA *nsp, *csp, *cp;
 	u_int force;
