@@ -1,4 +1,4 @@
-/*	ctype.h	4.2	85/09/04	*/
+/*	ctype.h	4.3	87/04/11	*/
 
 #define	_U	01
 #define	_L	02
