@@ -5,18 +5,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.7 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <arpa/nameser.h>
 
 
 /*
  * Expand compressed domain name 'comp_dn' to full domain name.
- * Expanded names are converted to lower case.
  * 'msg' is a pointer to the begining of the message,
  * 'eomorig' points to the first location after the message,
  * 'exp_dn' is a pointer to a buffer of size 'length' for the result.
@@ -51,16 +49,12 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 			if (dn+n >= eom)
 				return (-1);
 			while (--n >= 0) {
-				if (isupper(c = *cp++))
-					*dn++ = tolower(c);
-				else {
-					if (c == '.') {
-						if (dn+n+1 >= eom)
-							return (-1);
-						*dn++ = '\\';
-					}
-					*dn++ = c;
+				if ((c = *cp++) == '.') {
+					if (dn+n+1 >= eom)
+						return (-1);
+					*dn++ = '\\';
 				}
+				*dn++ = c;
 				if (cp >= eomorig)	/* out of range */
 					return(-1);
 			}
