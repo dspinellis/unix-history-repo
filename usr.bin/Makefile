@@ -21,7 +21,7 @@ SUBDIR=	ar awk bc biff basename cal calendar \
 	login logname look lorder m4 machine mail make man mesg mkdep mkfifo \
 	mkstr more msgs mt netstat nfsstat nice nm nohup pagesize \
 	passwd paste pr printenv printf quota ranlib rcs \
-	rdist renice rlogin rsh ruptime rwho sccs script sed \
+	rdist renice ref rlogin rsh ruptime rwho sccs script sed \
 	shar showmount size soelim sort split strings \
 	strip su symorder tail talk tar tcopy tee telnet tftp time \
 	tip touch tput tr true tset tsort tty ul unexpand unifdef uniq \
