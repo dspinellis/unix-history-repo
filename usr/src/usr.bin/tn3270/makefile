@@ -79,16 +79,16 @@ LIBCURSES	= -lcurses
 LIBTERM		= -ltermlib
 
 # The source files...
-ALLH =	general.h
+ALLH =
 
 TNMAIN = ../telnet.c
 TNMAIN = telnet.c
-MSMAIN = keyboard/mset.c
+MSMAIN = ascii/mset.c
 
 # The places where the various components live...
-SUBDIR =	ascii ctlr keyboard screen system
-SUBLIB =	ascii/asciilib ctlr/ctlrlib keyboard/keyboardlib \
-			screen/screenlib system/systemlib
+SUBDIR =	ascii ctlr sys general api
+SUBLIB =	ascii/ascii.lib ctlr/ctlr.lib \
+			sys/sys.lib general/general.lib api/api.lib
 
 
 ALLC = ${TNMAIN} ${MSMAIN}
@@ -102,12 +102,12 @@ all:	${SUBDIR} tn3270.a tn3270 mset
 
 tn3270.a: ${SUBLIB}
 	-mkdir tmp
-	for i in ${SUBDIR}; do (cd tmp; ar x ../$$i/$${i}lib); done
+	for i in ${SUBDIR}; do (cd tmp; ar x ../$$i/$${i}.lib); done
 	ls tmp/*.o | sort -t/ +1 > t1
 	ar cr tn3270.a `lorder \`cat t1\` | tsort`
 	rm -f t1 tmp/*
 	ranlib tn3270.a
-#	for i in ${SUBDIR}; do (cd tmp; ar x ../$$i/$${i}lib_p); done
+#	for i in ${SUBDIR}; do (cd tmp; ar x ../$$i/$${i}.lib_p); done
 #	ls tmp/*.o | sort -t/ +1 > t1
 #	ar cr tn3270_p.a `lorder \`cat t1\` | tsort`
 #	rm -rf t1 tmp
@@ -120,8 +120,8 @@ FRC:
 tn3270:	telnet.o tn3270.a
 	${CC} ${CFLAGS} -o tn3270 telnet.o tn3270.a $(LIBCURSES) $(LIBTERM)
 
-mset:	mset.o keyboard/map3270.o
-	${CC} ${CFLAGS} -o mset mset.o keyboard/map3270.o
+mset:	mset.o ascii/map3270.o
+	${CC} ${CFLAGS} -o mset mset.o ascii/map3270.o
 
 telnet.o:	$(TNMAIN)
 	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
@@ -189,7 +189,6 @@ thisdepend:
 
 # DO NOT DELETE THIS LINE
 
-telnet.o: ctlr/screen.h system/globals.h telnet.ext ctlr/options.ext
-telnet.o: ctlr/outbound.ext keyboard/termin.ext
-keyboard/mset.o: keyboard/state.h keyboard/m4.out ../system/globals.h
-keyboard/mset.o: keyboard/map3270.ext
+telnet.o: ctlr/screen.h general/globals.h telnet.ext ctlr/options.ext
+telnet.o: ctlr/outbound.ext ascii/termin.ext general/general.h
+ascii/mset.o: state.h m4.out ../general/globals.h map3270.ext

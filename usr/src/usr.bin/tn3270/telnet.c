@@ -117,13 +117,13 @@ extern char	*inet_ntoa();
 
 #if	defined(TN3270)
 #include "ctlr/screen.h"
-#include "system/globals.h"
+#include "general/globals.h"
 #include "telnet.ext"
 #include "ctlr/options.ext"
 #include "ctlr/outbound.ext"
-#include "keyboard/termin.ext"
+#include "ascii/termin.ext"
 #endif	/* defined(TN3270) */
-#include "general.h"
+#include "general/general.h"
 
 
 
