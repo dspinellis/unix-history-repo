@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.32 (Berkeley) %G%
+ *	@(#)route.c	7.33 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -72,8 +72,7 @@ rtalloc1(dst, report)
 	struct rt_addrinfo info;
 	int  s = splnet(), err = 0, msgtype = RTM_MISS;
 
-	if (rnh && rnh->rnh_treetop &&
-	    (rn = rnh->rnh_match((caddr_t)dst, rnh->rnh_treetop)) &&
+	if (rnh && (rn = rnh->rnh_matchaddr((caddr_t)dst, rnh)) &&
 	    ((rn->rn_flags & RNF_ROOT) == 0)) {
 		newrt = rt = (struct rtentry *)rn;
 		if (report && (rt->rt_flags & RTF_CLONING)) {
@@ -160,9 +159,10 @@ rtredirect(dst, gateway, netmask, flags, src, rtp)
 	int error = 0;
 	short *stat = 0;
 	struct rt_addrinfo info;
+	struct ifaddr *ifa;
 
 	/* verify the gateway is directly reachable */
-	if (ifa_ifwithnet(gateway) == 0) {
+	if ((ifa = ifa_ifwithnet(gateway)) == 0) {
 		error = ENETUNREACH;
 		goto out;
 	}
@@ -174,7 +174,8 @@ rtredirect(dst, gateway, netmask, flags, src, rtp)
 	 * going down recently.
 	 */
 #define	equal(a1, a2) (bcmp((caddr_t)(a1), (caddr_t)(a2), (a1)->sa_len) == 0)
-	if (!(flags & RTF_DONE) && rt && !equal(src, rt->rt_gateway))
+	if (!(flags & RTF_DONE) && rt &&
+	     (!equal(src, rt->rt_gateway) || rt->rt_ifa != ifa))
 		error = EINVAL;
 	else if (ifa_ifwithaddr(gateway))
 		error = EHOSTUNREACH;
@@ -201,7 +202,7 @@ rtredirect(dst, gateway, netmask, flags, src, rtp)
 		create:
 			flags |=  RTF_GATEWAY | RTF_DYNAMIC;
 			error = rtrequest((int)RTM_ADD, dst, gateway,
-				    SA(0), flags,
+				    netmask, flags,
 				    (struct rtentry **)0);
 			stat = &rtstat.rts_dynamic;
 		} else {
@@ -244,66 +245,7 @@ rtioctl(req, data, p)
 	caddr_t data;
 	struct proc *p;
 {
-#ifndef COMPAT_43
 	return (EOPNOTSUPP);
-#else
-	register struct ortentry *entry = (struct ortentry *)data;
-	int error;
-	struct sockaddr *netmask = 0;
-
-	if (req == SIOCADDRT)
-		req = RTM_ADD;
-	else if (req == SIOCDELRT)
-		req = RTM_DELETE;
-	else
-		return (EINVAL);
-
-	if (error = suser(p->p_ucred, &p->p_acflag))
-		return (error);
-#if BYTE_ORDER != BIG_ENDIAN
-	if (entry->rt_dst.sa_family == 0 && entry->rt_dst.sa_len < 16) {
-		entry->rt_dst.sa_family = entry->rt_dst.sa_len;
-		entry->rt_dst.sa_len = 16;
-	}
-	if (entry->rt_gateway.sa_family == 0 && entry->rt_gateway.sa_len < 16) {
-		entry->rt_gateway.sa_family = entry->rt_gateway.sa_len;
-		entry->rt_gateway.sa_len = 16;
-	}
-#else
-	if (entry->rt_dst.sa_len == 0)
-		entry->rt_dst.sa_len = 16;
-	if (entry->rt_gateway.sa_len == 0)
-		entry->rt_gateway.sa_len = 16;
-#endif
-	if ((entry->rt_flags & RTF_HOST) == 0)
-		switch (entry->rt_dst.sa_family) {
-#ifdef INET
-		case AF_INET:
-			{
-				extern struct sockaddr_in icmpmask;
-				struct sockaddr_in *dst_in = 
-					(struct sockaddr_in *)&entry->rt_dst;
-
-				in_sockmaskof(dst_in->sin_addr, &icmpmask);
-				netmask = (struct sockaddr *)&icmpmask;
-			}
-			break;
-#endif
-#ifdef NS
-		case AF_NS:
-			{
-				extern struct sockaddr_ns ns_netmask;
-				netmask = (struct sockaddr *)&ns_netmask;
-			}
-#endif
-		}
-	error =  rtrequest(req, &(entry->rt_dst), &(entry->rt_gateway), netmask,
-				entry->rt_flags, (struct rtentry **)0);
-	/* rt_missmsg((req == RTM_ADD ? RTM_OLDADD : RTM_OLDDEL),
-		   &(entry->rt_dst), &(entry->rt_gateway),
-		   netmask, SA(0), entry->rt_flags, error); */
-	return (error);
-#endif
 }
 
 struct ifaddr *
@@ -373,8 +315,8 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		netmask = 0;
 	switch (req) {
 	case RTM_DELETE:
-		if ((rn = rnh->rnh_delete((caddr_t)dst, (caddr_t)netmask, 
-					rnh->rnh_treetop)) == 0)
+		if ((rn = rnh->rnh_deladdr((caddr_t)dst, (caddr_t)netmask, 
+					rnh)) == 0)
 			senderr(ESRCH);
 		if (rn->rn_flags & (RNF_ACTIVE | RNF_ROOT))
 			panic ("rtrequest delete");
@@ -423,8 +365,8 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 			rt_maskedcopy(dst, ndst, netmask);
 		} else
 			Bcopy(dst, ndst, dst->sa_len);
-		rn = rnh->rnh_add((caddr_t)ndst, (caddr_t)netmask,
-					rnh->rnh_treetop, rt->rt_nodes);
+		rn = rnh->rnh_addaddr((caddr_t)ndst, (caddr_t)netmask,
+					rnh, rt->rt_nodes);
 		if (rn == 0) {
 			if (rt->rt_gwroute)
 				rtfree(rt->rt_gwroute);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.35 (Berkeley) %G%
+ *	@(#)rtsock.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -176,7 +176,7 @@ route_output(m, so)
 			if (Bcmp(dst, rt_key(rt), dst->sa_len) != 0)
 				senderr(ESRCH);
 			if (netmask && (rn = rn_search(netmask,
-					    mask_rnhead->rnh_treetop)))
+					    mask_rnhead)))
 				netmask = (struct sockaddr *)rn->rn_key;
 			for (rn = rt->rt_nodes; rn; rn = rn->rn_dupedkey)
 				if (netmask == (struct sockaddr *)rn->rn_mask)
@@ -758,8 +758,8 @@ sysctl_rtable(name, namelen, where, given, new, newlen)
 	case NET_RT_FLAGS:
 		for (i = 1; i <= AF_MAX; i++)
 			if ((rnh = rt_tables[i]) && (af == 0 || af == i) &&
-			    (error = rnh->rnh_walk(rnh->rnh_treetop,
-						  sysctl_dumpentry, &w)))
+			    (error = rnh->rnh_walktree(rnh,
+							sysctl_dumpentry, &w)))
 				break;
 		break;
 
