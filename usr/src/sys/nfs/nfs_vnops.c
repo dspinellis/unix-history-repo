@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.22 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -86,7 +86,8 @@ int	nfs_lookup(),
 	nfs_fsync(),
 	nfs_inactive(),
 	nfs_reclaim(),
-	nfs_print();
+	nfs_print(),
+	nfs_islocked();
 
 struct vnodeops nfsv2_vnodeops = {
 	nfs_lookup,		/* lookup */
@@ -120,6 +121,7 @@ struct vnodeops nfsv2_vnodeops = {
 	nfs_bmap,		/* bmap */
 	nfs_strategy,		/* strategy */
 	nfs_print,		/* print */
+	nfs_islocked,		/* islocked */
 };
 
 /* Special device vnode ops */
@@ -167,6 +169,7 @@ struct vnodeops spec_nfsv2nodeops = {
 	spec_bmap,		/* bmap */
 	spec_strategy,		/* strategy */
 	nfs_print,		/* print */
+	nfs_islocked,		/* islocked */
 };
 
 extern u_long nfs_procids[NFS_NPROCS];
