@@ -1,4 +1,4 @@
-/*	pte.h	4.8	81/03/09	*/
+/*	pte.h	4.9	81/05/14	*/
 
 /*
  * VAX page table entry
@@ -42,6 +42,7 @@ unsigned int	pg_blkno:20,		/* file system block number */
 #define	PG_V		0x80000000
 #define	PG_PROT		0x78000000
 #define	PG_M		0x04000000
+#define	PG_FOD		0x02000000
 #define	PG_VREADM	0x00800000
 #define	PG_PFNUM	0x001fffff
 
