@@ -1,18 +1,29 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983, 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
+static char sccsid[] = "@(#)newfs.c	6.19 (Berkeley) %G%";
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.18 (Berkeley) %G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1983, 1989 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
 
 /*
  * newfs: friendly front end to mkfs
@@ -24,6 +35,7 @@ static char sccsid[] = "@(#)newfs.c	6.18 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
 #include <sys/file.h>
+#include <sys/mount.h>
 
 #include <stdio.h>
 #include <ctype.h>
@@ -87,10 +99,10 @@ static char sccsid[] = "@(#)newfs.c	6.18 (Berkeley) %G%";
 
 /*
  * Each file system has a number of inodes statically allocated.
- * We allocate one inode slot per NBPI bytes, expecting this
+ * We allocate one inode slot per NFPI fragments, expecting this
  * to be far more than we will ever need.
  */
-#define	NBPI		2048
+#define	NFPI		4
 
 /*
  * For each cylinder we keep track of the availability of blocks at different
@@ -102,6 +114,7 @@ static char sccsid[] = "@(#)newfs.c	6.18 (Berkeley) %G%";
 #define	NRPOS		8	/* number distinct rotational positions */
 
 
+int	memfs;			/* run as the memory based filesystem */
 int	Nflag;			/* run without writing file system */
 int	fssize;			/* file system size */
 int	ntracks;		/* # tracks/cylinder */
@@ -125,18 +138,21 @@ int	cpg = DESCPG;		/* cylinders/cylinder group */
 int	cpgflg;			/* cylinders/cylinder group flag was given */
 int	minfree = MINFREE;	/* free space threshold */
 int	opt = DEFAULTOPT;	/* optimization preference (space or time) */
-int	density = NBPI;		/* number of bytes per inode */
+int	density;		/* number of bytes per inode */
 int	maxcontig = MAXCONTIG;	/* max contiguous blocks to allocate */
 int	rotdelay = ROTDELAY;	/* rotational delay between blocks */
 int	maxbpg;			/* maximum blocks per file in a cyl group */
 int	nrpos = NRPOS;		/* # of distinguished rotational positions */
 int	bbsize = BBSIZE;	/* boot block size */
 int	sbsize = SBSIZE;	/* superblock size */
+u_long	memleft;		/* virtual memory available */
+caddr_t	membase;		/* start address of memory based filesystem */
 #ifdef COMPAT
 int	unlabelled;
 #endif
 
 char	device[MAXPATHLEN];
+char	*progname;
 
 extern	int errno;
 char	*index();
@@ -146,16 +162,24 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	char *cp, *special;
+	char *cp, *special, *rindex();
 	register struct partition *pp;
 	register struct disklabel *lp;
 	struct disklabel *getdisklabel();
 	struct partition oldpartition;
+	struct mfs_args args;
 	struct stat st;
 	int fsi, fso;
 	register int i;
 	int status;
+	char buf[BUFSIZ];
 
+	if ((progname = rindex(*argv, '/') + 1) == (char *)1)
+		progname = *argv;
+	if (!strcmp(progname, "memfs")) {
+		Nflag++;
+		memfs++;
+	}
 	argc--, argv++;
 	while (argc > 0 && argv[0][0] == '-') {
 		for (cp = &argv[0][1]; *cp; cp++)
@@ -356,11 +380,17 @@ next:
 		argc--, argv++;
 	}
 	if (argc < 1) {
+		if (memfs)
+			fprintf(stderr,
+			    "usage: memfs [ fsoptions ] special-device %s\n",
+			    "mount-point");
+		else
 #ifdef COMPAT
-		fprintf(stderr,
-		"usage: newfs [ fsoptions ] special-device [device-type]\n");
+			fprintf(stderr, "usage: %s\n",
+			    "newfs [ fsoptions ] special-device [device-type]");
 #else
-		fprintf(stderr, "usage: newfs [ fsoptions ] special-device\n");
+			fprintf(stderr,
+			    "usage: newfs [ fsoptions ] special-device\n");
 #endif
 		fprintf(stderr, "where fsoptions are:\n");
 		fprintf(stderr, "\t-N do not create file system, %s\n",
@@ -402,18 +432,18 @@ next:
 		fso = open(special, O_WRONLY);
 		if (fso < 0) {
 			perror(special);
-			exit(1);
+			exit(2);
 		}
 	} else
 		fso = -1;
 	fsi = open(special, O_RDONLY);
 	if (fsi < 0) {
 		perror(special);
-		exit(1);
+		exit(3);
 	}
 	if (fstat(fsi, &st) < 0) {
-		fprintf(stderr, "newfs: "); perror(special);
-		exit(2);
+		fprintf(stderr, "%s: ", progname); perror(special);
+		exit(4);
 	}
 	if ((st.st_mode & S_IFMT) != S_IFCHR)
 		fatal("%s: not a character device", special);
@@ -433,7 +463,7 @@ next:
 		fatal("%s: `%c' partition is unavailable", argv[0], *cp);
 	if (fssize == 0)
 		fssize = pp->p_size;
-	if (fssize > pp->p_size)
+	if (fssize > pp->p_size && !memfs)
 	       fatal("%s: maximum file system size on the `%c' partition is %d",
 			argv[0], *cp, pp->p_size);
 	if (rpm == 0) {
@@ -476,6 +506,8 @@ next:
 		if (bsize <= 0)
 			bsize = MIN(DFL_BLKSIZE, 8 * fsize);
 	}
+	if (density == 0)
+		density = NFPI * fsize;
 	if (minfree < 10 && opt != FS_OPTSPACE) {
 		fprintf(stderr, "Warning: changing optimization to space ");
 		fprintf(stderr, "because minfree is less than 10%%\n");
@@ -524,6 +556,19 @@ next:
 #endif
 	if (!Nflag && bcmp(pp, &oldpartition, sizeof(oldpartition)))
 		rewritelabel(special, fso, lp);
+	if (!Nflag)
+		close(fso);
+	close(fsi);
+	if (memfs) {
+		sprintf(buf, "memfs:%d", getpid());
+		args.name = buf;
+		args.base = membase;
+		args.size = fssize * sectorsize;
+		if (mount(MOUNT_MFS, argv[1], 0, &args) < 0) {
+			perror("memfs: mount");
+			exit(5);
+		}
+	}
 	exit(0);
 }
 
@@ -598,7 +643,7 @@ rewritelabel(s, fd, lp)
 		cfd = open(specname, O_WRONLY);
 		if (cfd < 0) {
 			perror(specname);
-			exit(2);
+			exit(6);
 		}
 		bzero(blk, sizeof(blk));
 		*(struct disklabel *)(blk + LABELOFFSET) = *lp;
@@ -606,7 +651,7 @@ rewritelabel(s, fd, lp)
 		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
 			if (lseek(cfd, (off_t)(alt + i) * lp->d_secsize, L_SET) == -1) {
 				perror("lseek to badsector area");
-				exit(30);
+				exit(7);
 			}
 			if (write(cfd, blk, lp->d_secsize) < lp->d_secsize) {
 				int oerrno = errno;
@@ -615,6 +660,7 @@ rewritelabel(s, fd, lp)
 				perror("write");
 			}
 		}
+		close(cfd);
 	}
 #endif
 }
@@ -624,8 +670,8 @@ fatal(fmt, arg1, arg2)
 	char *fmt;
 {
 
-	fprintf(stderr, "newfs: ");
+	fprintf(stderr, "%s: ", progname);
 	fprintf(stderr, fmt, arg1, arg2);
 	putc('\n', stderr);
-	exit(10);
+	exit(8);
 }
