@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dump.h	5.18 (Berkeley) %G%
+ *	@(#)dump.h	5.19 (Berkeley) %G%
  */
 
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -52,16 +52,16 @@ int	notify;		/* notify operator flag */
 int	blockswritten;	/* number of blocks written on current tape */
 int	tapeno;		/* current tape number */
 time_t	tstart_writing;	/* when started writing the first tape block */
-char	*processname;
 struct	fs *sblock;	/* the file system super block */
-char	buf[MAXBSIZE];
+char	sblock_buf[MAXBSIZE];
 long	dev_bsize;	/* block size of underlying disk device */
 int	dev_bshift;	/* log2(dev_bsize) */
 int	tp_bshift;	/* log2(TP_BSIZE) */
 
 /* operator interface functions */
-void	broadcast();
-void	lastdump();
+void	broadcast __P((char *message));
+void	lastdump __P((int arg));	/* int should be char */
+time_t	unctime __P((char *str));
 #if __STDC__
 void	msg(const char *fmt, ...);
 void	msgtail(const char *fmt, ...);
@@ -71,51 +71,56 @@ void	msg();
 void	msgtail();
 void	quit();
 #endif
-int	query();
-void	set_operators();
-void	timeest();
+int	query __P((char *question));
+void	set_operators __P(());
+void	timeest __P(());
 
 /* mapping rouintes */
-long	blockest();
-int	mapfiles();
-int	mapdirs();
+struct	dinode;
+long	blockest __P((struct dinode *dp));
+int	mapfiles __P((ino_t maxino, long *tapesize));
+int	mapdirs __P((ino_t maxino, long *tapesize));
 
 /* file dumping routines */
-void	dirdump();
-void	blksout();
-void	dumpmap();
-void	writeheader();
-void	bread();
+void	dumpino __P((struct dinode *dp, ino_t ino));
+void	blksout __P((daddr_t *blkp, int frags, ino_t ino));
+void	dumpmap __P((char *map, int type, ino_t ino));
+void	writeheader __P((ino_t ino));
+void	bread __P((daddr_t blkno, char *buf, int size));	
 
 /* tape writing routines */
-int	alloctape();
-void	writerec();
-void	dumpblock();
-void	flushtape();
-void	trewind();
-void	close_rewind();
-void	startnewtape();
+int	alloctape __P(());
+void	writerec __P((char *dp));
+void	dumpblock __P((daddr_t blkno, int size));
+void	flushtape __P(());
+void	trewind __P(());
+void	close_rewind __P(());
+void	startnewtape __P(());
 
-void	dumpabort();
-void	Exit();
-void	getfstab();
+void	dumpabort __P(());
+void	Exit __P((int status));
+void	getfstab __P(());
 
-char	*rawname();
-struct dinode *getino();
+char	*rawname __P((char *cp));
+struct	dinode *getino __P((ino_t inum));
 
-void	interrupt();		/* in case operator bangs on console */
+void	interrupt __P(());	/* in case operator bangs on console */
 
 /*
  *	Exit status codes
  */
 #define	X_FINOK		0	/* normal exit */
 #define	X_REWRITE	2	/* restart writing from the check point */
-#define	X_ABORT		3	/* abort all of dump; don't attempt checkpointing*/
+#define	X_ABORT		3	/* abort dump; don't attempt checkpointing */
 
 #define	OPGRENT	"operator"		/* group entry to notify */
 #define DIALUP	"ttyd"			/* prefix for dialups */
 
-struct	fstab	*fstabsearch();	/* search in fs_file and fs_spec */
+struct	fstab *fstabsearch __P((char *key));	/* search fs_file and fs_spec */
+
+#ifndef NAME_MAX
+#define NAME_MAX 255
+#endif
 
 /*
  *	The contents of the file _PATH_DUMPDATES is maintained both on
@@ -134,26 +139,22 @@ struct	dumptime *dthead;	/* head of the list version */
 int	nddates;		/* number of records (might be zero) */
 int	ddates_in;		/* we have read the increment file */
 struct	dumpdates **ddatev;	/* the arrayfied version */
-void	initdumptimes();
-void	getdumptime();
-void	putdumptime();
+void	initdumptimes __P(());
+void	getdumptime __P(());
+void	putdumptime __P(());
 #define	ITITERATE(i, ddp) \
 	for (ddp = ddatev[i = 0]; i < nddates; ddp = ddatev[++i])
 
 /*
  *	We catch these interrupts
  */
-void	sighup();
-void	sigquit();
-void	sigill();
-void	sigtrap();
-void	sigfpe();
-void	sigkill();
-void	sigbus();
-void	sigsegv();
-void	sigsys();
-void	sigalrm();
-void	sigterm();
+void	sighup __P(());
+void	sigtrap __P(());
+void	sigfpe __P(());
+void	sigbus __P(());
+void	sigsegv __P(());
+void	sigalrm __P(());
+void	sigterm __P(());
 
 /*
  * Compatibility with old systems.
@@ -164,4 +165,18 @@ void	sigterm();
 extern char *index(), *strdup();
 extern char *ctime();
 extern int errno;
+#endif
+
+#ifdef sunos
+extern char *calloc();
+extern char *malloc();
+extern long atol();
+extern char *strcpy();
+extern char *strncpy();
+extern char *strcat();
+extern time_t time();
+extern void endgrent();
+extern void exit();
+extern off_t lseek();
+extern char *strerror();
 #endif
