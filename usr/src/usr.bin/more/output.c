@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,9 +40,7 @@ extern int screen_trashed;
 extern int any_display;
 extern char *line;
 
-/*
- * Display the line which is in the line buffer.
- */
+/* display the line which is in the line buffer. */
 put_line()
 {
 	register char *p;
@@ -155,16 +153,18 @@ putstr(s)
 		putchr(*s++);
 }
 
+int cmdstack;
+static char return_to_continue[] = "  (press RETURN)";
+
 /*
  * Output a message in the lower left corner of the screen
  * and wait for carriage return.
  */
-
-static char return_to_continue[] = "  (press RETURN)";
-
 error(s)
 	char *s;
 {
+	int ch;
+
 	++errmsgs;
 	if (!any_display) {
 		/*
@@ -192,7 +192,8 @@ error(s)
 	putstr(return_to_continue);
 	so_exit();
 
-	(void)getchr();
+	if ((ch = getchr()) != '\n')
+		cmdstack = ch;
 	lower_left();
 
 	if (strlen(s) + sizeof(return_to_continue) + 
