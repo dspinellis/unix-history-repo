@@ -316,7 +316,7 @@ Version:	$(SRCS) mkvers
 mkvers:		mkvers.c
 		@$(CC) mkvers.c -o mkvers
 
-clean:;		@rm -f $(OBJS) profiled/*.o $(LIBRARY) $(LIBRARY_P) Usef mkvers
+clean:;		@rm -f $(OBJS) Usef profiled/*.o $(LIBRARY) $(LIBRARY_P) Usef mkvers
 
 depend:;	@echo Construct dependencies manually
 
