@@ -1,12 +1,12 @@
-;	@(#)doctor.l	4.1	(Berkeley)	82/11/22
+;	@(#)doctor.l	4.3	(Berkeley) %G%
 ;
 (eval-when (eval) (cvttomaclisp))
 ; these functions are franz only.
 ; to make doctor:
-;   liszt -mr doctor.l
-;   mv doctor.o doctor
+;   liszt -mr -o doctor doctor.l
 
-(declare (special endtime starttime ticks float-format user topipe))
+(declare (special endtime starttime ticks float-format user topipe
+		  user-top-level))
 
 (defun mailbill ()
   (setq endtime (ptime)
