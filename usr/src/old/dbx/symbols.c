@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.14 %G%";
+static char sccsid[] = "@(#)symbols.c 1.15 %G%";
 /*
  * Symbol management.
  */
@@ -394,7 +394,6 @@ Symbol s;
 #define isglobal(s)		(s->level == 1 or s->level == 2)
 #define islocaloff(s)		(s->level >= 3 and s->symvalue.offset < 0)
 #define isparamoff(s)		(s->level >= 3 and s->symvalue.offset >= 0)
-#define isreg(s)		(s->level < 0)
 
 public Address address(s, frame)
 Symbol s;
