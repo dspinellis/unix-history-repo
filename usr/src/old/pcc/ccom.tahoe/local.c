@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local.c	1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)local.c	1.9 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -84,7 +84,6 @@ clocal(p) register NODE *p; {
 
 		/* pointers all have the same representation; the type is inherited */
 
-	inherit:
 		p->in.left->in.type = p->in.type;
 		p->in.left->fn.cdim = p->fn.cdim;
 		p->in.left->fn.csiz = p->fn.csiz;
@@ -94,30 +93,46 @@ clocal(p) register NODE *p; {
 	case SCONV:
 		m = p->in.type;
 		ml = p->in.left->in.type;
+		if(m == ml)
+			goto clobber;
+		o = p->in.left->in.op;
 		if(m == FLOAT || m == DOUBLE) {
-			if(p->in.left->in.op==SCONV &&
+			if(o==SCONV &&
 			 ml == DOUBLE &&
 			 p->in.left->in.left->in.type==m) {
 				p->in.op = p->in.left->in.op = FREE;
 				return(p->in.left->in.left);
-			}
-			if(p->in.left->in.op==FCON)
-				goto inherit;
+				}
+#ifndef SPRECC
+			if(m == DOUBLE && ml == FLOAT)
+				goto clobber;
+#endif
+			/* see makety() for constant conversions */
 			break;
-		}
+			}
 		if(ml == FLOAT || ml == DOUBLE){
-			if (p->in.left->in.op == FCON){
-				p->in.left->in.op = FREE;
-				p->in.op = ICON;
-				p->tn.lval = p->in.left->fpn.fval;
-				p->tn.rval = NONAME;
-				return(p);
+			if(o != FCON && o != DCON)
+				break;
+			ml = ISUNSIGNED(m) ? UNSIGNED : INT; /* LONG? */
+			r = block( ICON, (NODE *)NULL, (NODE *)NULL, ml, 0, 0 );
+			if( o == FCON )
+				r->tn.lval = ml == INT ?
+					(int) p->in.left->fpn.fval :
+					(unsigned) p->in.left->fpn.fval;
+			else
+				r->tn.lval = ml == INT ?
+					(int) p->in.left->dpn.dval :
+					(unsigned) p->in.left->dpn.dval;
+			r->tn.rval = NONAME;
+			p->in.left->in.op = FREE;
+			p->in.left = r;
+			o = ICON;
+			if( m == ml )
+				goto clobber;
 			}
-			break;
-		}
 		/* now, look for conversions downwards */
 
-		if( p->in.left->in.op == ICON ){	/* simulate the conversion here */
+		if( o == ICON ){ /* simulate the conversion here */
 			CONSZ val;
 			val = p->in.left->tn.lval;
 			switch( m ){
@@ -141,26 +156,13 @@ clocal(p) register NODE *p; {
 				break;
 				}
 			p->in.left->in.type = m;
-		}
-#ifdef notdef
-		else if (tlen(p) == tlen(p->in.left))
-			goto inherit;
-#else
-		else break;
-#endif
-		/* clobber conversion */
+			}
+		else
+			break;
+
+	clobber:
 		p->in.op = FREE;
 		return( p->in.left );  /* conversion gets clobbered */
-		break;
-
-	case QUEST:	/* the right side should be COLON */
-		if((r = p->in.right)->in.op == SCONV) {
-			p->in.right = r->in.left;
-			p->in.type = r->in.left->in.type;
-			r->in.left = p;
-			return(r);
-		}
-		return(p);
 
 	case PVCONV:
 	case PMCONV:
@@ -188,42 +190,8 @@ clocal(p) register NODE *p; {
 		return(p);
 	}
 
-	/* if both sides are FLOAT, so is the op */
-	if(optype(o)!=LTYPE && p->in.left->in.type==DOUBLE &&
-	 (o==UNARY MINUS || optype(o)==BITYPE && p->in.right->in.type==DOUBLE)) {
-		r = p->in.left;
-		if(r->in.op==SCONV && r->in.left->in.type==FLOAT) {
-			if(optype(o)==BITYPE) {
-				r = p->in.right;
-				if(r->in.op==SCONV && r->in.left->in.type==FLOAT) {
-					r->in.op = FREE;
-					p->in.right = r->in.left;
-				} else if(r->in.op==FCON)
-					r->in.type = FLOAT;
-				else
-					return(p);
-			}
-			r = p->in.left;
-			p->in.left = r->in.left;
-		} else if(optype(o)==BITYPE && r->in.op==FCON) {
-			r = p->in.right;
-			if(!(r->in.op==SCONV && r->in.left->in.type==FLOAT))
-				return(p);
-			p->in.right = r->in.left;
-			p->in.left->in.type = FLOAT;
-		} else
-			return(p);
-		if(p->in.type==DOUBLE) {
-			p->in.type = FLOAT;
-			r->in.left = p;
-			return(r);
-		} else {	/* usually logop */
-			r->in.op = FREE;
-			return(p);
-		}
-	}
 	return(p);
-}
+	}
 
 /*ARGSUSED*/
 andable( p ) NODE *p; {
@@ -281,7 +249,7 @@ incode( p, sz ) register NODE *p; {
 	word |= (p->tn.lval&((1L<<sz)-1)) << (SZINT-inwd);
 	inoff += sz;
 	if(inoff%SZINT == 0) {
-		printf( "	.long	0x%X\n", word);
+		printf( "	.long	0x%lx\n", word);
 		word = inwd = 0;
 		}
 	}
@@ -321,7 +289,7 @@ cinit( p, sz ) NODE *p; {
 	 * as a favor (?) to people who want to write
 	 *     int i = 9600/134.5;
 	 * we will, under the proper circumstances, do
-	 * a coersion here.
+	 * a coercion here.
 	 */
 	switch (p->in.type) {
 	case INT:
@@ -340,8 +308,7 @@ cinit( p, sz ) NODE *p; {
 		p->in.left = l;
 		break;
 	}
-	/* arrange for the initialization of p into a space of
-	size sz */
+	/* arrange for the initialization of p into a space of size sz */
 	/* the proper alignment has been opbtained */
 	/* inoff is updated to have the proper final value */
 	ecode( p );
@@ -352,10 +319,11 @@ vfdzero( n ){ /* define n bits of zeros in a vfd */
 
 	if( n <= 0 ) return;
 
+	if (nerrors) return;
 	inwd += n;
 	inoff += n;
 	if( inoff%ALINT ==0 ) {
-		printf( "	.long	0x%X\n", word );
+		printf( "	.long	0x%lx\n", word );
 		word = inwd = 0;
 		}
 	}
@@ -388,7 +356,8 @@ exname( p ) char *p; {
 	return( text );
 	}
 
-ctype( type )TWORD type;{ /* map types which are not defined on the local machine */
+ctype( type ) TWORD type;
+	{ /* map types which are not defined on the local machine */
 	switch( BTYPE(type) ){
 
 	case LONG:
@@ -486,13 +455,13 @@ tlen(p) NODE *p;
 			
 		case SHORT:
 		case USHORT:
-			return(2);
+			return(SZSHORT/SZCHAR);
 			
 		case DOUBLE:
-			return(8);
+			return(SZDOUBLE/SZCHAR);
 			
 		default:
-			return(4);
+			return(SZINT/SZCHAR);
 		}
 	}
 #endif
