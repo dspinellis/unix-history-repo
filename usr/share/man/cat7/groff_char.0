@@ -1,0 +1,594 @@
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+NNAAMMEE
+       groff_char - groff character names
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  lists the standard ggrrooffff input charac-
+       ters.  Only the characters  that  are  available  for  the
+       device  that  is being used to print this manual page will
+       be displayed.  The _I_n_p_u_t _c_o_d_e column applies to characters
+       which  can be input with a single character, and gives the
+       ISO Latin-1 code of that input character.  The  _P_o_s_t_S_c_r_i_p_t
+       _n_a_m_e  column gives the usual PostScript name of the output
+       character.
+
+       The ISO Latin-1 no-break space (code 0240 octal) is equiv-
+       alent to \\(space).  All other ISO Latin-1 characters print
+       as themselves with the following exceptions: ``  prints  as
+       `, '' prints as '; the corresponding ISO Latin-1 characters
+       can be  obtained  with  \\``  and  \\((aaqq.   The  ISO  Latin-1
+       `Hyphen, Minus Sign' (code 45) prints as a hyphen; a minus
+       sign can be obtained with \\--.   The  ISO  Latin-1  `Tilde'
+       (code  126)  prints as ~; the larger glyph can be obtained
+       with \\((ttii.  The ISO Latin-1 `Circumflex Accent' (code  94)
+       prints as ^; a larger glyph can be obtained with \\((hhaa.
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       !        !!       33      exclam
+       "        ""       34      quotedbl
+       #        ##       35      numbersign
+       $        $$       36      dollar
+       %        %%       37      percent
+       &        &&       38      ampersand
+       '        ''       39      quoteright
+       (        ((       40      parenleft
+       )        ))       41      parenright
+       *        **       42      asterisk
+       +        ++       43      plus
+       ,        ,,       44      comma
+       -        --       45      hyphen
+       .        ..       46      period
+       /        //       47      slash
+       :        ::       58      colon
+       ;        ;;       59      semicolon
+       <        <<       60      less
+       =        ==       61      equal
+       >        >>       62      greater
+       ?        ??       63      question
+       @        @@       64      at
+       [        [[       91      bracketleft
+
+
+
+
+Groff Version 1.08        19 August 1992                        1
+
+
+
+
+
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       \        \\       92      backslash
+       ]        ]]       93      bracketright
+       ^        ^^       94      circumflex       circumflex accent
+       _        __       95      underscore
+       `        ``       96      quoteleft
+       {        {{       123     braceleft
+       |        ||       124     bar
+       }        }}       125     braceright
+       ~        ~~       126     tilde            tilde accent
+       ,i        ,,ii       161     exclamdown
+       /c        //cc       162     cent
+       -L        --LL       163     sterling
+       ox        ooxx       164     currency
+       =Y        ==YY       165     yen
+       |        ||       166     brokenbar
+       S        SS       167     section
+       "        ""       168     dieresis
+       (C)      ((CC))     169     copyright
+       _a        __aa       170     ordfeminine
+       <<       <<<<      171     guillemotleft
+       ~        ~~       172     logicalnot
+       -        --       173     hyphen
+       (_R)      ((__RR))     174     registered
+                        175     macron
+       o        oo       176     degree
+       +-       ++--      177     plusminus
+       2        22       178     twosuperior
+       3        33       179     threesuperior
+       '        ''       180     acute            acute accent
+       ,u        ,,uu       181     mu
+       9|       99||      182     paragraph
+       .        ..       183     periodcentered
+       ,        ,,       184     cedilla
+       1        11       185     onesuperior
+       _o        __oo       186     ordmasculine
+       >>       >>>>      187     guillemotright
+       1/4      11//44     188     onequarter
+       1/2      11//22     189     onehalf
+       3/4      33//44     190     threequarters
+       'c        ''cc       191     questiondown
+       `A        ``AA       192     Agrave
+       'A        ''AA       193     Aacute
+       ^A        ^^AA       194     Acircumflex
+       ~A        ~~AA       195     Atilde
+       "A        ""AA       196     Adieresis
+       oA        ooAA       197     Aring
+       AE       AAEE      198     AE
+
+
+
+
+Groff Version 1.08        19 August 1992                        2
+
+
+
+
+
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       ,C        ,,CC       199     Ccedilla
+       `E        ``EE       200     Egrave
+       'E        ''EE       201     Eacute
+       ^E        ^^EE       202     Ecircumflex
+       "E        ""EE       203     Edieresis
+       `I        ``II       204     Igrave
+       'I        ''II       205     Iacute
+       ^I        ^^II       206     Icircumflex
+       "I        ""II       207     Idieresis
+       -D        --DD       208     Eth
+       ~N        ~~NN       209     Ntilde
+       `O        ``OO       210     Ograve
+       'O        ''OO       211     Oacute
+       ^O        ^^OO       212     Ocircumflex
+       ~O        ~~OO       213     Otilde
+       "O        ""OO       214     Odieresis
+       x        xx       215     multiply
+       /O        //OO       216     Oslash
+       `U        ``UU       217     Ugrave
+       'U        ''UU       218     Uacute
+       ^U        ^^UU       219     Ucircumflex
+       "U        ""UU       220     Udieresis
+       'Y        ''YY       221     Yacute
+       Ib        IIbb       222     Thorn
+       B        BB       223     germandbls
+       `a        ``aa       224     agrave
+       'a        ''aa       225     aacute
+       ^a        ^^aa       226     acircumflex
+       ~a        ~~aa       227     atilde
+       "a        ""aa       228     adieresis
+       oa        ooaa       229     aring
+       ae       aaee      230     ae
+       ,c        ,,cc       231     ccedilla
+       `e        ``ee       232     egrave
+       'e        ''ee       233     eacute
+       ^e        ^^ee       234     ecircumflex
+       "e        ""ee       235     edieresis
+       `i        ``ii       236     igrave
+       'i        ''ii       237     iacute
+       ^i        ^^ii       238     icircumflex
+       "i        ""ii       239     idieresis
+       `'o        ``''oo       240     eth
+       ~n        ~~nn       241     ntilde
+       `o        ``oo       242     ograve
+       'o        ''oo       243     oacute
+       ^o        ^^oo       244     ocircumflex
+       ~o        ~~oo       245     otilde
+
+
+
+
+Groff Version 1.08        19 August 1992                        3
+
+
+
+
+
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       "o        ""oo       246     odieresis
+       -:-      --::--     247     divide
+       /o        //oo       248     oslash
+       `u        ``uu       249     ugrave
+       'u        ''uu       250     uacute
+       ^u        ^^uu       251     ucircumflex
+       "u        ""uu       252     udieresis
+       'y        ''yy       253     yacute
+       pb        ppbb       254     thorn
+       "y        ""yy       255     ydieresis
+       -D        \\((--DD            Eth              Icelandic uppercase eth
+       `'o        \\((SSdd            eth              Icelandic lowercase eth
+       Ib        \\((TTPP            Thorn            Icelandic uppercase thorn
+       pb        \\((TTpp            thorn            Icelandic lowercase thorn
+       AE       \\((AAEE            AE
+       ae       \\((aaee            ae
+       OE       \\((OOEE            OE
+       oe       \\((ooee            oe
+       B        \\((ssss            germandbls
+       'A        \\((''AA            Aacute
+       'E        \\((''EE            Eacute
+       'I        \\((''II            Iacute
+       'O        \\((''OO            Oacute
+       'U        \\((''UU            Uacute
+       'a        \\((''aa            aacute
+       'e        \\((''ee            eacute
+       'i        \\((''ii            iacute
+       'o        \\((''oo            oacute
+       'u        \\((''uu            uacute
+       "A        \\((::AA            Adieresis
+       "E        \\((::EE            Edieresis
+       "I        \\((::II            Idieresis
+       "O        \\((::OO            Odieresis
+       "U        \\((::UU            Udieresis
+       "a        \\((::aa            adieresis
+       "e        \\((::ee            edieresis
+       "i        \\((::ii            idieresis
+       "o        \\((::oo            odieresis
+       "u        \\((::uu            udieresis
+       "y        \\((::yy            ydieresis
+       ^A        \\((^^AA            Acircumflex
+       ^E        \\((^^EE            Ecircumflex
+       ^I        \\((^^II            Icircumflex
+       ^O        \\((^^OO            Ocircumflex
+       ^U        \\((^^UU            Ucircumflex
+       ^a        \\((^^aa            acircumflex
+       ^e        \\((^^ee            ecircumflex
+
+
+
+
+Groff Version 1.08        19 August 1992                        4
+
+
+
+
+
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       ^i        \\((^^ii            icircumflex
+       ^o        \\((^^oo            ocircumflex
+       ^u        \\((^^uu            ucircumflex
+       `A        \\((``AA            Agrave
+       `E        \\((``EE            Egrave
+       `I        \\((``II            Igrave
+       `O        \\((``OO            Ograve
+       `U        \\((``UU            Ugrave
+       `a        \\((``aa            agrave
+       `e        \\((``ee            egrave
+       `i        \\((``ii            igrave
+       `o        \\((``oo            ograve
+       `u        \\((``uu            ugrave
+       ~A        \\((~~AA            Atilde
+       ~N        \\((~~NN            Ntilde
+       ~O        \\((~~OO            Otilde
+       ~a        \\((~~aa            atilde
+       ~n        \\((~~nn            ntilde
+       ~o        \\((~~oo            otilde
+       ,C        \\((,,CC            Ccedilla
+       ,c        \\((,,cc            ccedilla
+       /L        \\((//LL            Lslash           Polish L with a slash
+       /l        \\((//ll            lslash           Polish l with a slash
+       /O        \\((//OO            Oslash
+       /o        \\((//oo            oslash
+       oA        \\((ooAA            Aring
+       oa        \\((ooaa            aring
+       "_        \\((aa""            hungarumlaut     Hungarian umlaut
+                \\((aa--            macron           macron or bar accent
+       ^        \\((aa^^            circumflex       circumflex accent
+       '        \\((aaaa            acute            acute accent
+       `        \\((ggaa            grave            grave accent
+       ,        \\((aacc            cedilla          cedilla accent
+       "        \\((aadd            dieresis         umlaut or dieresis
+       v        \\((aahh            caron            h'acvek accent
+       o        \\((aaoo            ring             ring or circle accent
+       ~        \\((aa~~            tilde            tilde accent
+       ,        \\((hhoo            ogonek           hook or ogonek accent
+       i        \\((..ii            dotlessi         i without a dot
+       ox        \\((CCss            currency         Scandinavian currency sign
+       $        \\((DDoo            dollar
+       -L        \\((PPoo            sterling
+       =Y        \\((YYee            yen
+       ,f        \\((FFnn            florin
+       /c        \\((cctt            cent
+       <<       \\((FFoo            guillemotleft
+       >>       \\((FFcc            guillemotright
+
+
+
+
+Groff Version 1.08        19 August 1992                        5
+
+
+
+
+
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       <        \\((ffoo            guilsinglleft
+       >        \\((ffcc            guilsinglright
+       ,i        \\((rr!!            exclamdown
+       'c        \\((rr??            questiondown
+       ff       \\((ffff            ff               ff ligature
+       fi       \\((ffii            fi               fi ligature
+       fl       \\((ffll            fl               fl ligature
+       ffi      \\((FFii            ffi              ffi ligature
+       ffl      \\((FFll            ffl              ffl ligature
+       _a        \\((OOff            ordfeminine
+       _o        \\((OOmm            ordmasculine
+       1        \\((SS11            onesuperior
+       2        \\((SS22            twosuperior
+       3        \\((SS33            threesuperior
+       <-       \\((<<--            arrowleft
+       ->       \\((-->>            arrowright
+       <->      \\((<<>>            arrowboth        horizontal double-headed arrow
+       |v        \\((ddaa            arrowdown
+       |^        \\((uuaa            arrowup
+       <=       \\((llAA            arrowdblleft
+       =>       \\((rrAA            arrowdblright
+       <=>      \\((hhAA            arrowdblboth     horizontal double-headed double arrow
+       =v        \\((ddAA            arrowdbldown
+       =^        \\((uuAA            arrowdblup
+       |        \\((bbaa            bar
+       |        \\((bbbb            brokenbar
+       |        \\((bbrr            br               box rule with traditional troff metrics
+       _        \\((rruu            ru               baseline rule
+       _        \\((uull            ul               underline with traditional troff metrics
+       |        \\((bbvv            bv               bold vertical
+       O        \\((ccii            circle
+       +o        \\((bbuu            bullet
+       (C)      \\((ccoo            copyright
+       (R)      \\((rrgg            registered
+       tm       \\((ttmm            trademark
+       |=        \\((dddd            daggerdbl        double dagger sign
+       |-        \\((ddgg            dagger
+       9|       \\((ppss            paragraph
+       S        \\((sscc            section
+       o        \\((ddee            degree
+       --       \\((eemm            emdash           em dash
+       -        \\((eenn            endash           en dash
+       %o       \\((%%00            perthousand      per thousand, per mille sign
+       1/2      \\((1122            onehalf
+       1/4      \\((1144            onequarter
+       3/4      \\((3344            threequarters
+       /        \\((ff//            fraction         bar for fractions
+
+
+
+
+Groff Version 1.08        19 August 1992                        6
+
+
+
+
+
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       '        \\((ffmm            minute           footmark, prime
+       ''       \\((ssdd            second
+       ^        \\((hhaa            asciicircum      ASCII circumflex, hat, caret
+       ~        \\((ttii            asciitilde       ASCII tilde, large tilde
+       -        \\((hhyy            hyphen
+       [        \\((llBB            bracketleft
+       ]        \\((rrBB            bracketright
+       {        \\((llCC            braceleft
+       }        \\((rrCC            braceright
+       <        \\((llaa            angleleft        left angle bracket
+       >        \\((rraa            angleright       right angle bracket
+       <=       \\((llhh            handleft
+       =>       \\((rrhh            handright
+       ,,       \\((BBqq            quotedblbase     low double comma quote
+       ,        \\((bbqq            quotesinglbase   low single comma quote
+       "        \\((llqq            quotedblleft
+       "        \\((rrqq            quotedblright
+       `        \\((ooqq            quoteleft        single open quote
+       '        \\((aaqq            quotesingle      apostrophe quote
+       |        \\((oorr            bar
+       @        \\((aatt            at
+       -        \\--              minus            minus sign from current font
+       #        \\((sshh            numbersign
+       /        \\((ssll            slash
+       \        \\((rrss            backslash
+       []       \\((ssqq            square
+       .:.      \\((ttff            therefore
+       A        \\((**AA            Alpha
+       B        \\((**BB            Beta
+       _H        \\((**CC            Xi
+       _/_\       \\((**DD            Delta
+       E        \\((**EE            Epsilon
+       IO_       \\((**FF            Phi
+       |        \\((**GG            Gamma
+       -O        \\((**HH            Theta
+       I        \\((**II            Iota
+       K        \\((**KK            Kappa
+       /\       \\((**LL            Lambda
+       M        \\((**MM            Mu
+       N        \\((**NN            Nu
+       O        \\((**OO            Omicron
+       TT       \\((**PP            Pi
+       IY        \\((**QQ            Psi
+       P_        \\((**RR            Rho
+       _>        \\((**SS            Sigma
+       T        \\((**TT            Tau
+       Y        \\((**UU            Upsilon
+
+
+
+
+Groff Version 1.08        19 August 1992                        7
+
+
+
+
+
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       _O        \\((**WW            Omega
+       X        \\((**XX            Chi
+       H        \\((**YY            Eta
+       Z        \\((**ZZ            Zeta
+       a        \\((**aa            alpha
+       B        \\((**bb            beta
+       ,E        \\((**cc            xi
+       d        \\((**dd            delta
+       e        \\((**ee            epsilon
+       |o        \\((**ff            phi
+       |o        \\((++ff            phi1             variant phi
+       y        \\((**gg            gamma
+       -0        \\((**hh            theta
+       -0        \\((++hh            theta1           variant theta
+       i        \\((**ii            iota
+       k        \\((**kk            kappa
+       >\        \\((**ll            lambda
+       ,u        \\((**mm            mu
+       v        \\((**nn            nu
+       o        \\((**oo            omicron
+       -n        \\((**pp            pi
+       -w        \\((++pp            omega1           variant pi, looking like omega
+       |u        \\((**qq            psi
+       p        \\((**rr            rho
+       -o        \\((**ss            sigma
+       ~t        \\((**tt            tau
+       u        \\((**uu            upsilon
+       w        \\((**ww            omega
+       x        \\((**xx            chi
+       n        \\((**yy            eta
+       ,C        \\((**zz            zeta
+       s        \\((ttss            sigma1           terminal sigma
+       ~~       \\((~~~~            approxequal
+       ~=       \\((~~==            approxequal
+       !=       \\((!!==            notequal
+       *        \\((****            asteriskmath
+       +-       \\((++--            plusminus
+       <=       \\((<<==            lessequal
+       ==       \\((====            equivalence
+       =~       \\((==~~            congruent
+       >=       \\((>>==            greaterequal
+       ^        \\((AANN            logicaland
+       v        \\((OORR            logicalor
+       ~        \\((nnoo            logicalnot
+       3        \\((ttee            existential      there exists, existential quantifier
+       -V        \\((ffaa            universal        for all, universal quantifier
+       N        \\((AAhh            aleph
+
+
+
+
+Groff Version 1.08        19 August 1992                        8
+
+
+
+
+
+
+
+
+GROFF_CHAR(7)          BSD Reference Manual         GROFF_CHAR(7)
+
+
+       _O_u_t_p_u_t   _I_n_p_u_t   _I_n_p_u_t   _P_o_s_t_S_c_r_i_p_t       _N_o_t_e_s
+                _n_a_m_e    _c_o_d_e    _n_a_m_e
+
+       I        \\((IImm            Ifraktur         Fraktur I, imaginary
+       R        \\((RRee            Rfraktur         Fraktur R, real
+       oo       \\((iiff            infinity
+       .        \\((mmdd            dotmath
+       E        \\((mmoo            element
+       x        \\((mmuu            multiply
+       /E        \\((nnmm            notelement
+       +        \\((ppll            plusmath         plus sign in special font
+       =        \\((eeqq            equalmath        equals sign in special font
+       oc       \\((pptt            proportional
+       _|        \\((pppp            perpendicular
+       (=       \\((ssbb            propersubset
+       =)       \\((sspp            propersuperset
+       (=_       \\((iibb            reflexsubset
+       =_)       \\((iipp            reflexsuperset
+       ~        \\((aapp            similar
+       a        \\((ppdd            partialdiff      partial differentiation sign
+       Ox        \\((cc**            circlemultiply   multiply sign in a circle
+       O+        \\((cc++            circleplus       plus sign in a circle
+       (^)      \\((ccaa            intersection     intersection, cap
+       U        \\((ccuu            union            union, cup
+       -_:-      \\((ddii            divide           division sign
+       V        \\((ggrr            gradient
+       {}       \\((eess            emptyset
+       _|       \\((CCRR            carriagereturn   carriage return symbol
+       -)       \\((sstt            suchthat
+       _/        \\((//__            angle
+       p        \\((wwpp            weierstrass      Weierstrass p
+       <>       \\((llzz            lozenge
+       -        \\((aann            arrowhorizex     horizontal arrow extension
+
+SSEEEE AALLSSOO
+       ggrrooffff(1)
+       _A_n  _e_x_t_e_n_s_i_o_n  _t_o _t_h_e _t_r_o_f_f _c_h_a_r_a_c_t_e_r _s_e_t _f_o_r _E_u_r_o_p_e, E.G.
+       Keizer, K.J. Simonsen, J. Akkerhuis, EUUG Newsletter, Vol-
+       ume 9, No. 2, Summer 1989
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        19 August 1992                        9
+
+
+
+
+

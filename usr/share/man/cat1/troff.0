@@ -1,0 +1,1584 @@
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+NNAAMMEE
+       troff - format documents
+
+SSYYNNOOPPSSIISS
+       ttrrooffff [ --aabbiivvzzCCEERR ] [ --ww_n_a_m_e ] [ --WW_n_a_m_e ] [ --dd_c_s ]
+             [ --ff_f_a_m ] [ --mm_n_a_m_e ] [ --nn_n_u_m ] [ --oo_l_i_s_t ] [ --rr_c_n ]
+             [ --TT_n_a_m_e ] [ --FF_d_i_r ] [ --MM_d_i_r ] [ _f_i_l_e_s_._._. ]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page describes the GNU version of ttrrooffff, which
+       is part of the groff document formatting  system.   It  is
+       highly  compatible  with Unix troff.  Usually it should be
+       invoked using the groff command, which will also run  pre-
+       processors and postprocessors in the appropriate order and
+       with the appropriate options.
+
+OOPPTTIIOONNSS
+       --aa        Generate an ASCII approximation of  the  typeset
+                 output.
+
+       --bb        Print  a  backtrace  with  each warning or error
+                 message.  This backtrace should help track  down
+                 the  cause of the error.  The line numbers given
+                 in the backtrace may not always correct: troff's
+                 idea  of  line numbers gets confused by aass or aamm
+                 requests.
+
+       --ii        Read the standard  input  after  all  the  named
+                 input files have been processed.
+
+       --vv        Print the version number.
+
+       --ww_n_a_m_e    Enable  warning  _n_a_m_e.   Available  warnings are
+                 described  in  the  Warnings  subsection  below.
+                 Multiple --ww options are allowed.
+
+       --WW_n_a_m_e    Inhibit  warning  _n_a_m_e.  Multiple --WW options are
+                 allowed.
+
+       --EE        Inhibit all error messages.
+
+       --zz        Suppress formatted output.
+
+       --CC        Enable compatibility mode.
+
+       --dd_c_s
+       --dd_n_a_m_e==_s  Define _c or _n_a_m_e to be a string _s; _c must  be  a
+                 one letter name.
+
+       --ff_f_a_m     Use _f_a_m as the default font family.
+
+
+
+
+Groff Version 1.08         1 April 1993                         1
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       --mm_n_a_m_e    Read  in the file ttmmaacc.._n_a_m_e.  Normally this will
+                 be searched for in /usr/share/tmac.
+
+       --RR        Don't load ttrrooffffrrcc.
+
+       --nn_n_u_m     Number the first page _n_u_m.
+
+       --oo_l_i_s_t    Output only pages in _l_i_s_t,  which  is  a  comma-
+                 separated  list  of  page  ranges; _n means print
+                 page _n, _m--_n means print every page between _m and
+                 _n,  --_n  means print every page up to _n, _n-- means
+                 print every page from _n.
+
+       --rr_c_n
+       --rr_n_a_m_e==_n  Set number register _c or _n_a_m_e to _n; _c must be  a
+                 one  character  name; _n can be any troff numeric
+                 expression.
+
+       --TT_n_a_m_e    Prepare output for device _n_a_m_e, rather than  the
+                 default ppss.
+
+       --FF_d_i_r     Search  _d_i_r  for subdirectories ddeevv_n_a_m_e (_n_a_m_e is
+                 the name of the device) for the  DDEESSCC  file  and
+                 font      files      before      the      normal
+                 //uussrr//sshhaarree//ggrrooffff__ffoonntt.
+
+       --MM_d_i_r     Search directory _d_i_r for macro files before  the
+                 normal //uussrr//sshhaarree//ttmmaacc.
+
+UUSSAAGGEE
+       Only the features not in Unix troff are described here.
+
+   LLoonngg nnaammeess
+       The      names     of     number     registers,     fonts,
+       strings/macros/diversions, special characters  can  be  of
+       any length. In escape sequences, where you can use ((_x_x for
+       a two character name, you can use  [[_x_x_x]]  for  a  name  of
+       arbitrary length:
+
+       \\[[_x_x_x]] Print the special character called _x_x_x.
+
+       \\ff[[_x_x_x]]
+              Set font _x_x_x.
+
+       \\**[[_x_x_x]]
+              Interpolate string _x_x_x.
+
+       \\nn[[_x_x_x]]
+              Interpolate number register _x_x_x.
+
+
+
+
+
+Groff Version 1.08         1 April 1993                         2
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+   FFrraaccttiioonnaall ppooiinnttssiizzeess
+       A  _s_c_a_l_e_d  _p_o_i_n_t  is  equal  to  1/sizescale points, where
+       sizescale is specified in the DDEESSCC file  (1  by  default.)
+       There  is  a new scale indicator zz which has the effect of
+       multiplying by sizescale.  Requests and  escape  sequences
+       in troff interpret arguments that represent a pointsize as
+       being in units of scaled points, but  they  evaluate  each
+       such argument using a default scale indicator of zz.  Argu-
+       ments treated in this way  are  the  argument  to  the  ppss
+       request,  the third argument to the ccss request, the second
+       and fourth arguments to the ttkkff request, the  argument  to
+       the  \\HH  escape  sequence,  and  those  variants of the \\ss
+       escape sequence that take a numeric  expression  as  their
+       argument.
+
+       For  example,  suppose  sizescale  is  1000; then a scaled
+       point will be equivalent to a millipoint; the request  ..ppss
+       1100..2255  is  equivalent to ..ppss 1100..2255zz and so sets the point-
+       size to 10250 scaled  points,  which  is  equal  to  10.25
+       points.
+
+       The  number register \\nn((..ss returns the pointsize in points
+       as decimal fraction.  There is also a new number  register
+       \\nn[[..ppss]] that returns the pointsize in scaled points.
+
+       It  would  make no sense to use the zz scale indicator in a
+       numeric expression whose default scale indicator was  nei-
+       ther  uu nor zz, and so ttrrooffff disallows this.  Similarily it
+       would make no sense to use a scaling indicator other  than
+       zz or uu in a numeric expression whose default scale indica-
+       tor was zz, and so ttrrooffff disallows this as well.
+
+       There is also new scale indicator ss  which  multiplies  by
+       the  number  of units in a scaled point.  So, for example,
+       \\nn[[..ppss]]ss is equal to 11mm.  Be sure not to confuse the ss and
+       zz scale indicators.
+
+   NNuummeerriicc eexxpprreessssiioonnss
+       Spaces  are permitted in a number expression within paren-
+       theses.
+
+       MM indicates a scale of 100ths of an em.
+
+       _e_1>>??_e_2 The maximum of _e_1 and _e_2.
+
+       _e_1<<??_e_2 The minimum of _e_1 and _e_2.
+
+       ((_c;;_e))  Evaluate _e using _c as the default  scaling  indica-
+              tor.  If _c is missing, ignore scaling indicators in
+              the evaluation of _e.
+
+
+
+
+Groff Version 1.08         1 April 1993                         3
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+   NNeeww eessccaappee sseeqquueenncceess
+       \\AA''_a_n_y_t_h_i_n_g''
+              This expands to 11 or 00 according as _a_n_y_t_h_i_n_g is  or
+              is  not  acceptable as the name of a string, macro,
+              diversion, number register,  environment  or  font.
+              It  will  return  00  if _a_n_y_t_h_i_n_g is empty.  This is
+              useful if you want to lookup  user  input  in  some
+              sort of associative table.
+
+       \\CC''_x_x_x''
+              Typeset  character  named _x_x_x.  Normally it is more
+              convenient to use \\[[_x_x_x]].  But \\CC has the advantage
+              that  it is compatible with recent versions of UNIX
+              and is available in compatibility mode.
+
+       \\EE     This is equivalent to an escape character, but it's
+              not interpreted in copy-mode.  For example, strings
+              to start and end superscripting  could  be  defined
+              like this:
+
+                     .ds { \v'-.3m'\s'\En[.s]*6u/10u'
+                     .ds } \s0\v'.3m'
+
+              The  use  of \\EE ensures that these definitions will
+              work even if \\**{{ gets interpreted in copy-mode (for
+              example, by being used in a macro argument.)
+
+       \\NN''_n''  Typeset  the  character  with code _n in the current
+              font.  _n can be any  integer.   Most  devices  only
+              have  characters  with codes between 0 and 255.  If
+              the current font does not contain a character  with
+              that code, special fonts will _n_o_t be searched.  The
+              \\NN escape sequence can be conveniently used on con-
+              junction with the cchhaarr request:
+
+                     ..cchhaarr \\[[pphhoonnee]] \\ff((ZZDD\\NN''3377''
+
+              The  code  of each character is given in the fourth
+              column in  the  font  description  file  after  the
+              cchhaarrsseett command.  It is possible to include unnamed
+              characters in the font description file by using  a
+              name of ------; the \\NN escape sequence is the only way
+              to use these.
+
+       \\RR''_n_a_m_e _+_-_n''
+              This has the same effect as
+
+                     ..nnrr _n_a_m_e _+_-_n
+
+       \\ss((_n_n
+
+
+
+
+Groff Version 1.08         1 April 1993                         4
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       \\ss++--((_n_n
+              Set the point size to _n_n points; _n_n must be exactly
+              two digits.
+
+       \\ss[[++--_n]]
+       \\ss++--[[_n]]
+       \\ss''++--_n''
+       \\ss++--''_n''
+              Set  the  point  size  to  _n  scaled points; _n is a
+              numeric expression with a default  scale  indicator
+              of zz.
+
+       \\VV_x
+       \\VV((_x_x
+       \\VV[[_x_x_x]]
+              Interpolate  the  contents of the environment vari-
+              able _x_x_x _, as returned by ggeetteennvv(3).  \\VV is  inter-
+              preted in copy-mode.
+
+       \\YY_x
+       \\YY((_x_x
+       \\YY[[_x_x_x]]
+              This  is  approximately  equivalent to \\XX''\\**[[_x_x_x]]''.
+              However the contents of the string or macro _x_x_x are
+              not  interpreted;  also  it is permitted for _x_x_x to
+              have been defined as a macro and thus contain  new-
+              lines  (it  is not permitted for the argument to \\XX
+              to contain newlines).  The  inclusion  of  newlines
+              requires an extension to the Unix troff output for-
+              mat, and will confuse  drivers  that  do  not  know
+              about this extension.
+
+       \\ZZ''_a_n_y_t_h_i_n_g''
+              Print  anything and then restore the horizontal and
+              vertical position; _a_n_y_t_h_i_n_g may not contain tabs or
+              leaders.
+
+       \\$$00    The  name  by  which the current macro was invoked.
+              The aallss request can make a macro have more than one
+              name.
+
+       \\$$**    In  a macro, the concatenation of all the arguments
+              separated by spaces.
+
+       \\$$@@    In a macro, the concatenation of all the  arguments
+              with  each  surrounded  by double quotes, and sepa-
+              rated by spaces.
+
+       \\$$((_n_n
+       \\$$[[_n_n_n]]
+              In  a  macro,  this  gives  the  _n_n-th  or   _n_n_n-th
+
+
+
+Groff Version 1.08         1 April 1993                         5
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+              argument.   Macros  can  have a unlimited number of
+              arguments.
+
+       \\??_a_n_y_t_h_i_n_g\\??
+              When used in a diversion, this  will  transparently
+              embed  _a_n_y_t_h_i_n_g in the diversion.  _a_n_y_t_h_i_n_g is read
+              in copy mode.  When the diversion is  reread,  _a_n_y_-
+              _t_h_i_n_g  will  be interpreted.  _a_n_y_t_h_i_n_g may not con-
+              tain newlines; use \\!!  if you want  to  embed  new-
+              lines  in  a diversion.  The escape sequence \\??  is
+              also recognised in copy mode and turned into a sin-
+              gle  internal code; it is this code that terminates
+              _a_n_y_t_h_i_n_g.  Thus
+                     ..nnrr xx 11
+                     ..nnff
+                     ..ddii dd
+                     \\??\\\\??\\\\\\\\??\\\\\\\\\\\\\\\\nnxx\\\\\\\\??\\\\??\\??
+                     ..ddii
+                     ..nnrr xx 22
+                     ..ddii ee
+                     ..dd
+                     ..ddii
+                     ..nnrr xx 33
+                     ..ddii ff
+                     ..ee
+                     ..ddii
+                     ..nnrr xx 44
+                     ..ff
+
+              will print 44.
+
+       \\//     This increases the width of the preceding character
+              so  that the spacing between that character and the
+              following character will be correct if the  follow-
+              ing  character  is a roman character.  For example,
+              if an italic f is immediately followed by  a  roman
+              right parenthesis, then in many fonts the top right
+              portion of the f will overlap the top left  of  the
+              right  parenthesis  producing  _f),  which  is ugly.
+              Inserting \\// produces _f) and avoids  this  problem.
+              It is a good idea to use this escape sequence when-
+              ever an italic character is immediately followed by
+              a roman character without any intervening space.
+
+       \\,,     This  modifies the spacing of the following charac-
+              ter so that the spacing between that character  and
+              the preceding character will correct if the preced-
+              ing character is a roman character.   For  example,
+              inserting  \\,,  between  the  parenthesis  and the f
+              changes (_f to (_f.  It is a good idea  to  use  this
+              escape  sequence  whenever  a  roman  character  is
+
+
+
+Groff Version 1.08         1 April 1993                         6
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+              immediately followed by an italic character without
+              any intervening space.
+
+       \\))     Like  \\&&  except  that  it behaves like a character
+              declared with the ccffllaaggss request to be  transparent
+              for the purposes of end of sentence recognition.
+
+       \\~~     This  produces  an unbreakable space that stretches
+              like a normal  inter-word  space  when  a  line  is
+              adjusted.
+
+       \\##     Everything  up to and including the next newline is
+              ignored.  This is interpreted in copy  mode.   This
+              is  like \\%% except that \\%% does not ignore the ter-
+              minating newline.
+
+   NNeeww rreeqquueessttss
+       ..aallnn _x_x _y_y
+              Create an alias _x_x for number register object named
+              _y_y.   The new name and the old name will be exactly
+              equivalent.  If _y_y is undefined, a warning of  type
+              rreegg  will  be  generated,  and  the request will be
+              ignored.
+
+       ..aallss _x_x _y_y
+              Create an alias _x_x for request, string,  macro,  or
+              diversion  object  named  _y_y.  The new name and the
+              old name will be exactly equivalent (it is  similar
+              to a hard rather than a soft link).  If _y_y is unde-
+              fined, a warning of type mmaacc will be generated, and
+              the  request  will be ignored.  The ddee, aamm, ddii, ddaa,
+              ddss, and aass requests only create a new object if the
+              name of the macro, diversion or string diversion is
+              currently undefined or if it is  defined  to  be  a
+              request;  normally  they  modify  the  value  of an
+              existing object.
+
+       ..aasscciiiiffyy _x_x
+              This request only exists in order to make it possi-
+              ble  to  make  certain  gross  hacks  work with GNU
+              troff.  It `unformats' the diversion _x_x in  such  a
+              way  that  ASCII characters that were formatted and
+              diverted into _x_x  will  be  treated  like  ordinary
+              input  characters  when _x_x is reread.  For example,
+              this
+
+
+
+
+
+
+
+
+
+Groff Version 1.08         1 April 1993                         7
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+                     ..ttrr  @@..
+                     ..ddii  xx
+                     @@nnrr\\  nn\\  11
+                     ..bbrr
+                     ..ddii
+                     ..ttrr  @@@@
+                     ..aasscciiiiffyy  xx
+                     ..xx
+
+              will set register nn to 1.
+
+       ..bbaacckkttrraaccee
+              Print a backtrace of the input stack on stderr.
+
+       ..bbrreeaakk Break out of a while loop.  See also the wwhhiillee  and
+              ccoonnttiinnuuee  requests.   Be  sure  not to confuse this
+              with the bbrr request.
+
+       ..ccffllaaggss _n _c_1 _c_2_._._.
+              Characters _c_1, _c_2,...  have  properties  determined
+              by _n, which is ORed from the following:
+
+              1      the   character  ends  sentences  (initially
+                     characters ..??!!  have this property);
+
+              2      lines can be  broken  before  the  character
+                     (initially  no  characters  have  this prop-
+                     erty);
+
+              4      lines can  be  broken  after  the  character
+                     (initially  characters  --\\((hhyy\\((eemm  have this
+                     property);
+
+              8      the character  overlaps  horizontally  (ini-
+                     tially  characters  \\((uull\\((rrnn\\((rruu  have  this
+                     property);
+
+              16     the character overlaps vertically (initially
+                     character \\((bbrr has this property);
+
+              32     an end of sentence character followed by any
+                     number of characters with this property will
+                     be  treated as the end of a sentence if fol-
+                     lowed by a newline or two spaces;  in  other
+                     words  the  character is transparent for the
+                     purposes of  end  of  sentence  recognition;
+                     this is the same as having a zero space fac-
+                     tor    in    TeX    (initially    characters
+                     ""''))]]**\\((ddgg\\((rrqq have this property).
+
+
+
+
+
+Groff Version 1.08         1 April 1993                         8
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       ..cchhaarr _c _s_t_r_i_n_g
+              Define  character _c to be _s_t_r_i_n_g.  Every time char-
+              acter _c needs to be printed, _s_t_r_i_n_g  will  be  pro-
+              cessed  in  a  temporary environment and the result
+              will be wrapped up into a single object.   Compati-
+              bility mode will be turned off and the escape char-
+              acter will be set to \\ while _s_t_r_i_n_g is  being  pro-
+              cessed.  Any emboldening, constant spacing or track
+              kerning will be applied to this object rather  than
+              to  individual  characters  in _s_t_r_i_n_g.  A character
+              defined by this request can be  used  just  like  a
+              normal character provided by the output device.  In
+              particular other characters can be translated to it
+              with  the  ttrr  request;  it  can be made the leader
+              character by the llcc request; repeated patterns  can
+              be  drawn  with  the  character using the \\ll and \\LL
+              escape sequences; words  containing  the  character
+              can  be  hyphenated correctly, if the hhccooddee request
+              is used to give the character a  hyphenation  code.
+              There  is  a special anti-recursion feature: use of
+              character within the character's definition will be
+              handled  like  normal  characters  not defined with
+              cchhaarr.  A character definition can be  removed  with
+              the rrcchhaarr request.
+
+       ..cchhoopp _x_x
+              Chop  the  last  character  off  macro,  string, or
+              diversion _x_x.  This is useful for removing the new-
+              line  from  the  end  of  diversions that are to be
+              interpolated as strings.
+
+       ..cclloossee _s_t_r_e_a_m
+              Close the  stream  named  _s_t_r_e_a_m;  _s_t_r_e_a_m  will  no
+              longer  be  an  acceptable  argument  to  the wwrriittee
+              request.  See the ooppeenn request.
+
+       ..ccoonnttiinnuuee
+              Finish the current iteration of a while loop.   See
+              also the wwhhiillee and bbrreeaakk requests.
+
+       ..ccpp _n  If  _n  is non-zero or missing, enable compatibility
+              mode, otherwise disable it.  In compatibility mode,
+              long  names  are not recognised, and the incompati-
+              bilities caused by long names do not arise.
+
+       ..ddoo _x_x_x
+              Interpret _._x_x_x with  compatibility  mode  disabled.
+              For example,
+
+                     ..ddoo ffaamm TT
+
+
+
+
+Groff Version 1.08         1 April 1993                         9
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+              would have the same effect as
+
+                     ..ffaamm TT
+
+              except  that  it  would  work even if compatibility
+              mode had been enabled.  Note that the previous com-
+              patibility   mode  is  restored  before  any  files
+              sourced by _x_x_x are interpreted.
+
+       ..ffaamm _x_x
+              Set the current font family  to  _x_x.   The  current
+              font  family  is  part  of the current environment.
+              See the description of the  ssttyy  request  for  more
+              information on font families.
+
+       ..ffssppeecciiaall _f _s_1 _s_2_._._.
+              When  the current font is _f, fonts _s_1, _s_2,...  will
+              be special, that is, they will searched for charac-
+              ters  not in the current font.  Any fonts specified
+              in the ssppeecciiaall  request  will  be  searched  before
+              fonts specified in the ffssppeecciiaall request.
+
+       ..ffttrr _f _g
+              Translate  font _f to _g.  Whenever a font named _f is
+              referred to in \\ff escape sequence, or  in  the  fftt,
+              uull,  bbdd,  ccss,  ttkkff,  ssppeecciiaall,  ffssppeecciiaall, ffpp, or ssttyy
+              requests, font _g will be used.  If _g is missing, or
+              equal to _f then font _f will not be translated.
+
+       ..hhccooddee _c_1 _c_o_d_e_1 _c_2 _c_o_d_e_2_._._.
+              Set  the  hyphenation code of character _c_1 to _c_o_d_e_1
+              and that of _c_2 to _c_o_d_e_2.  A hyphenation  code  must
+              be  a single input character (not a special charac-
+              ter) other than a digit or a space.  Initially each
+              lower-case  letter has a hyphenation code, which is
+              itself, and each upper-case letter  has  a  hyphen-
+              ation  code  which  is  the  lower  case version of
+              itself.  See also the hhppff request.
+
+       ..hhllaa _l_a_n_g
+              Set  the  current  hyphenation  language  to  _l_a_n_g.
+              Hyphenation   exceptions   specified  with  the  hhww
+              request and hyphenation patterns specified with the
+              hhppff  request  are  both associated with the current
+              hyphenation language.  The hhllaa request  is  usually
+              invoked by the ttrrooffffrrcc file.
+
+       ..hhllmm _n Set  the  maximum  number of consecutive hyphenated
+              lines to _n.  If _n is negative, there is no maximum.
+              The  default value is -1.  This value is associated
+              with the current environment.   Only  lines  output
+
+
+
+Groff Version 1.08         1 April 1993                        10
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+              from an environment count towards the maximum asso-
+              ciated with that  environment.   Hyphens  resulting
+              from \\%% are counted; explicit hyphens are not.
+
+       ..hhppff _f_i_l_e
+              Read  hyphenation  patterns from _f_i_l_e; this will be
+              searched for in the  same  way  that  ttmmaacc.._n_a_m_e  is
+              searched  for  when the --mm_n_a_m_e option is specified.
+              It should have the same format as the  argument  to
+              the \patterns primitive in TeX; the letters appear-
+              ing in this file  are  interpreted  as  hyphenation
+              codes.   A  %% character in the patterns file intro-
+              duces a comment that continues to the  end  of  the
+              line.   The  set of hyphenation patterns is associ-
+              ated with the  current  language  set  by  the  hhllaa
+              request.  The hhppff request is usually invoked by the
+              ttrrooffffrrcc file.
+
+       ..hhyymm _n Set the _h_y_p_h_e_n_a_t_i_o_n _m_a_r_g_i_n to _n: when  the  current
+              adjustment  mode  is  not  bb,  the line will not be
+              hyphenated if the line is no  more  than  _n  short.
+              The  default  hyphenation margin is 0.  The default
+              scaling indicator  for  this  request  is  _m.   The
+              hyphenation  margin  is associated with the current
+              environment.  The  current  hyphenation  margin  is
+              available in the \\nn[[..hhyymm]] register.
+
+       ..hhyyss _n Set  the  _h_y_p_h_e_n_a_t_i_o_n  _s_p_a_c_e to _n: when the current
+              adjustment mode is bb don't hyphenate  the  line  if
+              the  line can be justified by adding no more than _n
+              extra  space  to  each  word  space.   The  default
+              hyphenation  space is 0.  The default scaling indi-
+              cator for this request is mm.  The hyphenation space
+              is  associated  with  the current environment.  The
+              current  hyphenation  space  is  available  in  the
+              \\nn[[..hhyyss]] register.
+
+       ..kkeerrnn _n
+              If  _n is non-zero or missing, enable pairwise kern-
+              ing, otherwise disable it.
+
+       ..mmssoo _f_i_l_e
+              The same as the ssoo  request  except  that  _f_i_l_e  is
+              searched  for  in  the  same  way that ttmmaacc.._n_a_m_e is
+              searched for when the --mm_n_a_m_e option is specified.
+
+       ..nnrrooffff Make the nn built-in condition true and the tt built-
+              in condition false.  This can be reversed using the
+              ttrrooffff request.
+
+
+
+
+
+Groff Version 1.08         1 April 1993                        11
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       ..ooppeenn _s_t_r_e_a_m _f_i_l_e_n_a_m_e
+              Open _f_i_l_e_n_a_m_e for writing and associate the  stream
+              named _s_t_r_e_a_m with it.  See also the cclloossee and wwrriittee
+              requests.
+
+       ..ooppeennaa _s_t_r_e_a_m _f_i_l_e_n_a_m_e
+              Like ooppeenn, but if _f_i_l_e_n_a_m_e  exists,  append  to  it
+              instead of truncating it.
+
+       ..ppnnrr   Print  the  names  and  contents  of  all currently
+              defined number registers on stderr.
+
+       ..ppttrr   Print the names and positions  of  all  traps  (not
+              including  input line traps and diversion traps) on
+              stderr.  Empty slots in  the  page  trap  list  are
+              printed as well, because they can affect the prior-
+              ity of subsequently planted traps.
+
+       ..rrcchhaarr _c_1 _c_2_._._.
+              Remove the definitions  of  characters  _c_1,  _c_2,...
+              This undoes the effect of a cchhaarr request.
+
+       ..rrjj
+       ..rrjj _n  Right  justify  the next _n input lines.  Without an
+              argument right justify the next  input  line.   The
+              number  of  lines to be right justifed is available
+              in the  \\nn[[..rrjj]]  register.   This  implicitly  does
+              ..ccee 00.  The ccee request implicitly does ..rrjj 00.
+
+       ..rrnnnn _x_x _y_y
+              Rename number register _x_x to _y_y.
+
+       ..sshhcc _c Set  the soft hyphen character to _c.  If _c is omit-
+              ted, the soft hyphen character will be set  to  the
+              default  \\((hhyy.   The  soft  hyphen character is the
+              character which will be inserted  when  a  word  is
+              hyphenated  at  a  line  break.  If the soft hyphen
+              character does not exist in the font of the charac-
+              ter  immediately preceding a potential break point,
+              then the line will not be  broken  at  that  point.
+              Neither   definitions   (specified  with  the  cchhaarr
+              request) nor translations (specified  with  the  ttrr
+              request)  are  considered  when  finding  the  soft
+              hyphen character.
+
+       ..sshhiifftt _n
+              In a macro, shift the  arguments  by  _n  positions:
+              argument  _i  becomes argument _i-_n; arguments 1 to _n
+              will no longer be  available.   If  _n  is  missing,
+              arguments  will be shifted by 1.  Shifting by nega-
+              tive amounts is currently undefined.
+
+
+
+Groff Version 1.08         1 April 1993                        12
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       ..ssppeecciiaall _s_1 _s_2_._._.
+              Fonts _s_1, _s_2, are special and will be searched  for
+              characters not in the current font.
+
+       ..ssttyy _n _f
+              Associate  style  _f  with  font position _n.  A font
+              position can be associated either with  a  font  or
+              with  a  style.  The current font is the index of a
+              font position and so is also either  a  font  or  a
+              style.   When it is a style, the font that is actu-
+              ally used is the font the name of which is the con-
+              catenation  of  the  name of the current family and
+              the name of the current style.  For example, if the
+              current font is 1 and font position 1 is associated
+              with style RR and the current font family is TT, then
+              font TTRR will be used.  If the current font is not a
+              style, then the current family  is  ignored.   When
+              the  requests  ccss,  bbdd,  ttkkff,  uuff,  or ffssppeecciiaall are
+              applied to a  style,  then  they  will  instead  be
+              applied  to the member of the current family corre-
+              sponding to that style.  The default family can  be
+              set  with the --ff option.  The styles command in the
+              DESC file controls which font  positions  (if  any)
+              are  initially  associated  with styles rather than
+              fonts.
+
+       ..ttkkff _f _s_1 _n_1 _s_2 _n_2
+              Enable track kerning for font _f.  When the  current
+              font  is  _f  the  width  of every character will be
+              increased by an amount between _n_1 and _n_2; when  the
+              current  point size is less than or equal to _s_1 the
+              width will be increased by _n_1; when it  is  greater
+              than  or equal to _s_2 the width will be increased by
+              _n_2; when the point size is greater than or equal to
+              _s_1  and  less  than  or equal to _s_2 the increase in
+              width is a linear function of the point size.
+
+       ..ttrrff _f_i_l_e_n_a_m_e
+              Transparently output the contents of file _f_i_l_e_n_a_m_e.
+              Each line is output as it would be were it preceded
+              by \\!!; however, the lines are not subject to  copy-
+              mode interpretation.  If the file does not end with
+              a newline, then a newline will be added.  For exam-
+              ple,  you  can define a macro _x containing the con-
+              tents of file _f, using
+
+                     ..ddii _x
+                     ..ttrrff _f
+                     ..ddii
+
+              Unlike with the ccff request, the file cannot contain
+
+
+
+Groff Version 1.08         1 April 1993                        13
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+              characters  such  as  NUL  that are not legal troff
+              input characters.
+
+       ..ttrrnntt aabbccdd
+              This is the same as the ttrr request except that  the
+              translations do not apply to text that is transpar-
+              ently throughput into a  diversion  with  \\!!.   For
+              example,
+
+              ..ttrr aabb
+              ..ddii xx
+              \\!!..ttmm aa
+              ..ddii
+              ..xx
+
+              will print bb; if ttrrnntt is used instead of ttrr it will
+              print aa.
+
+       ..ttrrooffff Make the nn built-in  condition  false,  and  the  tt
+              built-in condition true.  This undoes the effect of
+              the nnrrooffff request.
+
+       ..vvpptt _n Enable vertical position traps if  _n  is  non-zero,
+              disable  them  otherwise.   Vertical position traps
+              are traps set by the wwhh or ddtt requests.  Traps  set
+              by  the iitt request are not vertical position traps.
+              The parameter that controls whether vertical  posi-
+              tion traps are enabled is global.  Initially verti-
+              cal position traps are enabled.
+
+       ..wwaarrnn _n
+              Control warnings.  _n is  the  sum  of  the  numbers
+              associated with each warning that is to be enabled;
+              all other warnings will be  disabled.   The  number
+              associated  with  each  warning  is  listed  in the
+              `Warnings' section.  For example, ..wwaarrnn 00 will dis-
+              able  all  warnings,  and  ..wwaarrnn 11 will disable all
+              warnings except that about missing characters.   If
+              _n is not given, all warnings will be enabled.
+
+       ..wwhhiillee _c _a_n_y_t_h_i_n_g
+              While  condition  _c  is  true,  accept  _a_n_y_t_h_i_n_g as
+              input; _c can be any condition acceptable to  an  iiff
+              request;  _a_n_y_t_h_i_n_g  can  comprise multiple lines if
+              the first line starts with \\{{  and  the  last  line
+              ends  with  \\}}.   See  also  the bbrreeaakk and ccoonnttiinnuuee
+              requests.
+
+       ..wwrriittee _s_t_r_e_a_m _a_n_y_t_h_i_n_g
+              Write _a_n_y_t_h_i_n_g to the stream named _s_t_r_e_a_m.   _s_t_r_e_a_m
+              must  previously  have  been the subject of an ooppeenn
+
+
+
+Groff Version 1.08         1 April 1993                        14
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+              request.  _a_n_y_t_h_i_n_g is read in copy mode; a  leading
+              "" will be stripped.
+
+   EExxtteennddeedd rreeqquueessttss
+       ..ccff _f_i_l_e_n_a_m_e
+              When  used  in  a diversion, this will embed in the
+              diversion an object which, when reread, will  cause
+              the contents of _f_i_l_e_n_a_m_e to be transparently copied
+              through to the output.  In Unix troff, the contents
+              of  _f_i_l_e_n_a_m_e  is  immediately copied through to the
+              output regardless of whether  there  is  a  current
+              diversion;  this  behaviour is so anomalous that it
+              must be considered a bug.
+
+       ..eevv _x_x If _x_x is not a number, this will switch to a  named
+              environment  called  _x_x.  The environment should be
+              popped with a matching eevv request without any argu-
+              ments, just as for numbered environments.  There is
+              no limit on the number of named environments;  they
+              will be created the first time that they are refer-
+              enced.
+
+       ..ffpp _n _f_1 _f_2
+              The ffpp request  has  an  optional  third  argument.
+              This  argument gives the external name of the font,
+              which is used  for  finding  the  font  description
+              file.   The second argument gives the internal name
+              of the font which is used to refer to the  font  in
+              troff  after  it  has been mounted.  If there is no
+              third argument then the internal name will be  used
+              as  the  external name.  This feature allows you to
+              use fonts with long names in compatibility mode.
+
+       ..ssss _m _n
+              When two arguments are given to the ssss request, the
+              second  argument gives the _s_e_n_t_e_n_c_e _s_p_a_c_e _s_i_z_e.  If
+              the second argument  is  not  given,  the  sentence
+              space size will be the same as the word space size.
+              Like the word space size, the sentence space is  in
+              units  of  one  twelfth of the spacewidth parameter
+              for the current  font.   Initially  both  the  word
+              space size and the sentence space size are 12.  The
+              sentence space size is used in  two  circumstances:
+              if  the  end  of  a sentence occurs at the end of a
+              line in fill mode, then both  an  inter-word  space
+              and  a  sentence space will be added; if two spaces
+              follow the end of a sentence in  the  middle  of  a
+              line,  then  the  second  space  will be a sentence
+              space.  Note that the behaviour of Unix troff  will
+              be  exactly that exhibited by GNU troff if a second
+              argument is never given to the ssss request.  In  GNU
+
+
+
+Groff Version 1.08         1 April 1993                        15
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+              troff, as in Unix troff, you should always follow a
+              sentence with either a newline or two spaces.
+
+       ..ttaa _n_1 _n_2_._._._n_n TT _r_1 _r_2_._._._r_n
+              Set tabs at positions _n_1, _n_2,..., _n_n and  then  set
+              tabs  at  _n_n+_r_1,  _n_n+_r_2,....,  _n_n+_r_n  and  then  at
+              _n_n+_r_n+_r_1, _n_n+_r_n+_r_2,..., _n_n+_r_n+_r_n, and so  on.   For
+              example,
+
+                     ..ttaa TT ..55ii
+
+              will set tabs every half an inch.
+
+   NNeeww nnuummbbeerr rreeggiisstteerrss
+       The following read-only registers are available:
+
+       \\nn[[..CC]] 1  if compatibility mode is in effect, 0 otherwise.
+
+       \\nn[[..ccddpp]]
+              The depth of the last character added to  the  cur-
+              rent  environment.  It is positive if the character
+              extends below the baseline.
+
+       \\nn[[..ccee]]
+              The number of lines remaining to  be  centered,  as
+              set by the ccee request.
+
+       \\nn[[..cchhtt]]
+              The  height of the last character added to the cur-
+              rent environment.  It is positive if the  character
+              extends above the baseline.
+
+       \\nn[[..ccsskk]]
+              The skew of the last character added to the current
+              environment.  The _s_k_e_w of a character is how far to
+              the  right  of the center of a character the center
+              of an accent over that character should be  placed.
+
+       \\nn[[..eevv]]
+              The  name  or  number  of  the current environment.
+              This is a string-valued register.
+
+       \\nn[[..ffaamm]]
+              The current font family.  This is  a  string-valued
+              register.
+
+       \\nn[[..ffpp]]
+              The number of the next free font position.
+
+       \\nn[[..gg]] Always  1.   Macros  should  use  this to determine
+              whether they are running under GNU troff.
+
+
+
+Groff Version 1.08         1 April 1993                        16
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       \\nn[[..hhllaa]]
+              The current hyphenation language as set by the  hhllaa
+              request.
+
+       \\nn[[..hhllcc]]
+              The  number  of  immediately  preceding consecutive
+              hyphenated lines.
+
+       \\nn[[..hhllmm]]
+              The maximum allowed number of  consecutive  hyphen-
+              ated lines, as set by the hhllmm request.
+
+       \\nn[[..hhyy]]
+              The  current  hyphenation  flags  (as set by the hhyy
+              request.)
+
+       \\nn[[..hhyymm]]
+              The current hyphenation margin (as set by  the  hhyymm
+              request.)
+
+       \\nn[[..hhyyss]]
+              The  current  hyphenation  space (as set by the hhyyss
+              request.)
+
+       \\nn[[..iinn]]
+              The indent that applies to the current output line.
+
+       \\nn[[..kkeerrnn]]
+              11 if pairwise kerning is enabled, 00 otherwise.
+
+       \\nn[[..llgg]]
+              The  current  ligature  mode  (as  set  by  the  llgg
+              request.)
+
+       \\nn[[..llll]]
+              The line length that applies to the current  output
+              line.
+
+       \\nn[[..lltt]]
+              The title length as set by the lltt request.
+
+       \\nn[[..nnee]]
+              The  amount of space that was needed in the last nnee
+              request that caused a trap to be sprung.  Useful in
+              conjunction with the \\nn[[..ttrruunncc]] register.
+
+       \\nn[[..ppnn]]
+              The  number  of the next page: either the value set
+              by a ppnn request, or the number of the current  page
+              plus 1.
+
+
+
+
+Groff Version 1.08         1 April 1993                        17
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       \\nn[[..ppss]]
+              The current pointsize in scaled points.
+
+       \\nn[[..ppssrr]]
+              The last-requested pointsize in scaled points.
+
+       \\nn[[..rrjj]]
+              The number of lines to be right-justified as set by
+              the rrjj request.
+
+       \\nn[[..ssrr]]
+              The last requested pointsize in points as a decimal
+              fraction.  This is a string-valued register.
+
+       \\nn[[..ttaabbss]]
+              A string representation of the current tab settings
+              suitable for use as an argument to the ttaa  request.
+
+       \\nn[[..ttrruunncc]]
+              The  amount of vertical space truncated by the most
+              recently sprung vertical position trap, or, if  the
+              trap  was  sprung by a nnee request, minus the amount
+              of vertical motion produced by the nnee request.   In
+              other words, at the point a trap is sprung, it rep-
+              resents the difference of what the  vertical  posi-
+              tion would have been but for the trap, and what the
+              vertical position actually is.  Useful in  conjunc-
+              tion with the \\nn[[..nnee]] register.
+
+       \\nn[[..ssss]]
+       \\nn[[..ssssss]]
+              These  give the values of the parameters set by the
+              first and second arguments of the ssss request.
+
+       \\nn[[..vvpptt]]
+              1 if vertical position traps are enabled, 0  other-
+              wise.
+
+       \\nn[[..wwaarrnn]]
+              The  sum of the numbers associated with each of the
+              currently enabled warnings.  The number  associated
+              with  each warning is listed in the `Warnings' sub-
+              section.
+
+       \\nn((..xx  The major version number.  For example, if the ver-
+              sion number is 11..0033 then \\nn((..xx will contain 11.
+
+       \\nn((..yy  The minor version number.  For example, if the ver-
+              sion number is 11..0033 then \\nn((..yy will contain 0033.
+
+       The following registers are set by the \\ww escape sequence:
+
+
+
+Groff Version 1.08         1 April 1993                        18
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       \\nn[[rrsstt]]
+       \\nn[[rrssbb]]
+              Like  the sstt and ssbb registers, but takes account of
+              the heights and depths of characters.
+
+       \\nn[[sssscc]]
+              The amount of horizontal space (possibly  negative)
+              that should be added to the last character before a
+              subscript.
+
+       \\nn[[sskkww]]
+              How far to right of the center of the last  charac-
+              ter  in  the  \\ww  argument, the center of an accent
+              from a roman font should be placed over that  char-
+              acter.
+
+       The following read/write number registers are available:
+
+       \\nn[[ssyyssttaatt]]
+              The  return value of the system() function executed
+              by the last ssyy request.
+
+       \\nn[[sslliimmiitt]]
+              If greater than 0, the maximum number of objects on
+              the input stack.  If less than or equal to 0, there
+              is no limit on the number of objects on  the  input
+              stack.  With no limit, recursion can continue until
+              virtual memory is exhausted.
+
+   MMiisscceellllaanneeoouuss
+       Fonts not  listed  in  the  DESC  file  are  automatically
+       mounted  on the next available font position when they are
+       referenced.  If a font is to be  mounted  explicitly  with
+       the  ffpp  request  on an unused font position, it should be
+       mounted on the first unused font position,  which  can  be
+       found  in  the  \\nn[[..ffpp]]  register; although ttrrooffff does not
+       enforce this strictly, it will not  allow  a  font  to  be
+       mounted  at  a  position whose number is much greater than
+       that of any currently used position.
+
+       Interpolating a string does not hide existing macro  argu-
+       ments.  Thus in a macro, a more efficient way of doing
+
+              .._x_x \\\\$$@@
+
+       is
+
+              \\\\**[[_x_x]]\\\\
+
+       If  the  font  description  file contains pairwise kerning
+       information, characters from that  font  will  be  kerned.
+
+
+
+Groff Version 1.08         1 April 1993                        19
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       Kerning between two characters can be inhibited by placing
+       a \\&& between them.
+
+       In a string comparison in  a  condition,  characters  that
+       appear  at  different  input levels to the first delimiter
+       character will not be recognised as the  second  or  third
+       delimiters.  This applies also to the ttll request.  In a \\ww
+       escape sequence, a character that appears at  a  different
+       input  level  to the starting delimiter character will not
+       be recognised as the closing  delimiter  character.   When
+       decoding  a  macro  argument  that  is delimited by double
+       quotes, a character that  appears  at  a  different  input
+       level  to  the  starting  delimiter  character will not be
+       recognised as the closing delimiter character.  The imple-
+       mentation  of \\$$@@ ensures that the double quotes surround-
+       ing an argument will appear the same  input  level,  which
+       will  be  different  to  the  input  level of the argument
+       itself.  In a long escape name ]] will not be recognized as
+       a  closing  delimiter  except  when  it occurs at the same
+       input level as the opening ]].  In compatibility  mode,  no
+       attention is paid to the input-level.
+
+       There are some new types of condition:
+
+       ..iiff rr_x_x_x
+              True if there is a number register named _x_x_x.
+
+       ..iiff dd_x_x_x
+              True  if  there  is  a string, macro, diversion, or
+              request named _x_x_x.
+
+       ..iiff cc_c_h
+              True if there is a character _c_h  available;  _c_h  is
+              either  an  ASCII  character or a special character
+              \\((_x_x or \\[[_x_x_x]]; the condition will also be true  if
+              _c_h has been defined by the cchhaarr request.
+
+   WWaarrnniinnggss
+       The  warnings  that can be given by ttrrooffff are divided into
+       the following categories.  The name associated  with  each
+       warning  is  used  by the --ww and --WW options; the number is
+       used by the wwaarrnn request, and by the ..wwaarrnn register.
+
+       cchhaarr           1   Non-existent   characters.    This   is
+                          enabled by default.
+
+       nnuummbbeerr         2   Invalid  numeric  expressions.  This is
+                          enabled by default.
+
+       bbrreeaakk          4   In fill mode, lines which could not  be
+                          broken  so  that  their length was less
+
+
+
+Groff Version 1.08         1 April 1993                        20
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+                          than the line length.  This is  enabled
+                          by default.
+
+       ddeelliimm          8   Missing  or  mismatched  closing delim-
+                          iters.
+
+       eell            16   Use of the eell request with no  matching
+                          iiee request.
+
+       ssccaallee         32   Meaningless scaling indicators.
+
+       rraannggee         64   Out of range arguments.
+
+       ssyynnttaaxx       128   Dubious  syntax in numeric expressions.
+
+       ddii           256   Use of ddii or  ddaa  without  an  argument
+                          when there is no current diversion.
+
+       mmaacc          512   Use  of  undefined  strings, macros and
+                          diversions.  When an undefined  string,
+                          macro or diversion is used, that string
+                          is automatically defined as empty.  So,
+                          in most cases, at most one warning will
+                          be given for each name.
+
+       rreegg         1024   Use  of  undefined  number   registers.
+                          When  an  undefined  number register is
+                          used, that  register  is  automatically
+                          defined  to have a value of 0.  a defi-
+                          nition is  automatically  made  with  a
+                          value of 0.  So, in most cases, at most
+                          one warning will be given for use of  a
+                          particular name.
+
+       ttaabb         2048   Use  of  a tab character where a number
+                          was expected.
+
+       rriigghhtt--bbrraaccee 4096   Use of \\}} where a number was  expected.
+
+       mmiissssiinngg     8192   Requests  that are missing non-optional
+                          arguments.
+
+       iinnppuutt      16384   Illegal input characters.
+
+       eessccaappee     32768   Unrecognized escape sequences.  When an
+                          unrecognized escape sequence is encoun-
+                          tered, the escape character is ignored.
+
+       ssppaaccee      65536   Missing  space  between  a  request  or
+                          macro and its argument.   This  warning
+                          will  be  given  when an undefined name
+
+
+
+Groff Version 1.08         1 April 1993                        21
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+                          longer than two characters  is  encoun-
+                          tered,  and the first two characters of
+                          the name  make  a  defined  name.   The
+                          request  or  macro will not be invoked.
+                          When this warning is given, no macro is
+                          automatically defined.  This is enabled
+                          by default.  This  warning  will  never
+                          occur in compatibility mode.
+
+       ffoonntt      131072   Non-existent fonts.  This is enabled by
+                          default.
+
+       There are also names that can be used to refer  to  groups
+       of warnings:
+
+       aallll    All  warnings  except  ddii,  mmaacc  and  rreegg.   It  is
+              intended that this covers  all  warnings  that  are
+              useful with traditional macro packages.
+
+       ww      All warnings.
+
+   IInnccoommppaattiibbiilliittiieess
+       Long  names cause some incompatibilities.  Unix troff will
+       interpret
+
+              ..ddssaabbccdd
+
+       as defining a string aabb with contents ccdd.   Normally,  GNU
+       troff  will  interpret  this  as  a  call of a macro named
+       ddssaabbccdd.  Also Unix troff will interpret \\**[[ or \\nn[[ as ref-
+       erences  to  a string or number register called [[.  In GNU
+       troff, however, this will normally be interpreted  as  the
+       start  of  a  long  name.  In _c_o_m_p_a_t_i_b_i_l_i_t_y _m_o_d_e GNU troff
+       will interpret these things in the  traditional  way.   In
+       compatibility  mode,  however,  long  names are not recog-
+       nised.  Compatibility mode can be turned on  with  the  --CC
+       command  line  option,  and  turned  on or off with the ccpp
+       request.  The number register \\nn((..CC is 1 if  compatibility
+       mode is on, 0 otherwise.
+
+       GNU  troff  does not allow the use of the escape sequences
+       \\\\||\\^^\\&&\\}}\\{{\\(space)\\''\\``\\--\\__\\!!\\%%\\cc  in  names  of  strings,
+       macros,  diversions,  number  registers, fonts or environ-
+       ments; Unix troff does.  The \\AA  escape  sequence  may  be
+       helpful  in  avoiding  use  of  these  escape sequences in
+       names.
+
+       Fractional pointsizes cause one  noteworthy  incompatibil-
+       ity.   In  Unix troff the ppss request ignores scale indica-
+       tors and so
+
+
+
+
+Groff Version 1.08         1 April 1993                        22
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+              ..ppss 1100uu
+
+       will set the pointsize to 10 points, whereas in GNU  troff
+       it will set the pointsize to 10 scaled points.
+
+       In  GNU  troff  there  is a fundamental difference between
+       unformatted, input characters, and formatted, output char-
+       acters.   Everything  that affects how an output character
+       will be output is stored with the character; once an  out-
+       put character has been constructed it is unaffected by any
+       subsequent requests that are executed, including  bbdd,  ccss,
+       ttkkff,  ttrr,  or ffpp requests.  Normally output characters are
+       constructed from input characters at  the  moment  immedi-
+       ately  before the character is added to the current output
+       line.  Macros, diversions and strings are  all,  in  fact,
+       the same type of object; they contain lists of input char-
+       acters and output characters in any combination.  An  out-
+       put  character does not behave like an input character for
+       the purposes of macro processing; it does not inherit  any
+       of  the  special  properties that the input character from
+       which it was constructed might have had.  For example,
+
+              ..ddii xx
+              \\\\\\\\
+              ..bbrr
+              ..ddii
+              ..xx
+
+       will print \\\\ in GNU troff;  each  pair  of  input  \\s  is
+       turned  into  one output \\ and the resulting output \\s are
+       not interpreted as escape characters when they are reread.
+       Unix  troff would interpret them as escape characters when
+       they were reread and would end up  printing  one  \\.   The
+       correct  way  to  obtain  a  printable  \\ is to use the \\ee
+       escape sequence: this will always print a single  instance
+       of  the current escape character, regardless of whether or
+       not it is used in a diversion; it will also work  in  both
+       GNU  troff and Unix troff.  If you wish for some reason to
+       store in a diversion  an  escape  sequence  that  will  be
+       interpreted  when  the diversion is reread, you can either
+       use the traditional \\!!  transparent output  facility,  or,
+       if this is unsuitable, the new \\??  escape sequence.
+
+EENNVVIIRROONNMMEENNTT
+       GGRROOFFFF__TTMMAACC__PPAATTHH
+              A  colon  separated list of directories in which to
+              search for macro files.
+
+       GGRROOFFFF__TTYYPPEESSEETTTTEERR
+              Default device.
+
+
+
+
+Groff Version 1.08         1 April 1993                        23
+
+
+
+
+
+
+
+
+TROFF(1)               BSD Reference Manual              TROFF(1)
+
+
+       GGRROOFFFF__FFOONNTT__PPAATTHH
+              A colon separated list of directories in  which  to
+              search  for  the  ddeevv_n_a_m_e  directory.   ttrrooffff  will
+              search in directories given in the --FF option before
+              these,      and     in     standard     directories
+              (..:://uussrr//sshhaarree//ggrrooffff__ffoonntt:://uussrr//sshhaarree//ggrrooffff__ffoonntt:://uussrr//sshhaarree//ggrrooffff__ffoonntt)
+              after these.
+
+FFIILLEESS
+       //uussrr//sshhaarree//ttmmaacc//ttrrooffffrrcc
+              Initialization file
+
+       //uussrr//sshhaarree//ttmmaacc//ttmmaacc.._n_a_m_e
+              Macro files
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevv_n_a_m_e//DDEESSCC
+              Device description file for device _n_a_m_e.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevv_n_a_m_e//_F
+              Font file for font _F of device _n_a_m_e.
+
+SSEEEE AALLSSOO
+       ggrrooffff(1)  ttbbll(1),  ppiicc(1),  eeqqnn(1),  ggrrooppss(1),  ggrrooddvvii(1),
+       ggrroottttyy(1), ggrrooffff__ffoonntt(5), ggrrooffff__oouutt(5), ggrrooffff__cchhaarr(7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08         1 April 1993                        24
+
+
+
+
+

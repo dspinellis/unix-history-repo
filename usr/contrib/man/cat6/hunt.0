@@ -1,0 +1,330 @@
+
+
+
+HUNT(6)                BSD Reference Manual               HUNT(6)
+
+
+NNAAMMEE
+       hunt - a multi-player multi-terminal game
+
+SSYYNNOOPPSSIISS
+       //uussrr//ggaammeess//hhuunntt  [ --qqmmccssffbbSS ] [ --nn name ] [ --tt team ] [ --pp
+       port ] [ --ww message ] [ host ]
+
+DDEESSCCRRIIPPTTIIOONN
+       The object of the game _h_u_n_t is to kill off the other play-
+       ers.   There  are no rooms, no treasures, and no monsters.
+       Instead, you wander around a  maze,  find  grenades,  trip
+       mines, and shoot down walls and players.  The more players
+       you kill before you die, the better your score is.  If the
+       --mm flag is given, you enter the game as a monitor (you can
+       see the action but you cannot play).
+
+       _H_u_n_t normally looks for an active game on the  local  net-
+       work;  if  none  is  found,  it starts one up on the local
+       host.  The location of the game may be specified by giving
+       the  _h_o_s_t  argument.  This presupposes that a hunt game is
+       already running on that host, see _h_u_n_t_d(6) for details  on
+       how  to setup a game on a specific host.  If more than one
+       game if found, you may pick which game to play in.
+
+       If the --qq flag is given, _h_u_n_t queries  the  local  network
+       (or  specific host) and reports on all active games found.
+       This is useful  for  shell  startup  scripts,  _e_._g_.  csh's
+       .login.
+
+       The  player  name  may be specified on the command line by
+       using the --nn option.
+
+       The --cc, --ss, and --ff  options  are  for  entering  the  game
+       cloaked, scanning, or flying respectively.
+
+       The  --bb option turns off beeping when you reach the typea-
+       head limit.
+
+       The --tt option aids team playing by making everyone else on
+       one's team appear as the team name.  A team name is a sin-
+       gle digit to avoid conflicting with other characters  used
+       in the game.
+
+       The --pp _p_o_r_t option allows the rendezvous port number to be
+       set.  This is a useful way for people  playing  on  dialup
+       lines to avoid playing with people on 9600 baud terminals.
+
+       The --ww _m_e_s_s_a_g_e option is the only way to send a message to
+       everyone  else's  screen  when  you  start up.  It is most
+       often used to say ``eat slime death - NickD's coming in''.
+
+
+
+
+4th Berkeley Distribution 21 August 1986                        1
+
+
+
+
+
+
+
+
+HUNT(6)                BSD Reference Manual               HUNT(6)
+
+
+       When  you  die  and  are asked if you wish to re-enter the
+       game, there are other answers than just yes  or  no.   You
+       can also reply with a ww for write a message before contin-
+       uing or oo to change how you enter the game (cloaked, scan-
+       ning, or flying).
+
+       To  be  notified  automatically when a _h_u_n_t starts up, add
+       your  login  to  the  _h_u_n_t_-_p_l_a_y_e_r_s   mailing   list   (see
+       _h_u_n_t_d(6)).
+
+PPLLAAYYIINNGG HHIINNTTSS
+       _H_u_n_t  only  works  on crt (vdt) terminals with at least 24
+       lines, 80 columns, and cursor addressing.  The  screen  is
+       divided in to 3 areas.  On the right hand side is the sta-
+       tus area.  It shows damage sustained,  charges  remaining,
+       who's  in  the game, who's scanning (the ````**'''' in front of
+       the name), who's cloaked (the ````++'''' in front of the name),
+       and  other  players'  scores.   The  rest of the screen is
+       taken up by your map of the maze.  The 24th line  is  used
+       for longer messages that don't fit in the status area.
+
+       _H_u_n_t uses the same keys to move as _v_i(1) does, _i_._e_., hh, jj,
+       kk, and ll for  left,  down,  up,  right  respectively.   To
+       change  which direction you're facing in the maze, use the
+       upper case version of the movement key (_i_._e_., HHJJKKLL).   You
+       can only fire or throw things in the direction you're fac-
+       ing.
+
+       Other commands are:
+
+              f or 1- Fire a bullet (Takes 1 charge)
+              g or 2- Throw grenade (Takes 9 charges)
+              F or 3- Throw satchel charge (Takes 25 charges)
+              G or 4- Throw bomb (Takes 49 charges)
+              5     - Throw big bomb (Takes 81 charges)
+              6     - Throw even bigger bomb (Takes 121 charges)
+              7     - Throw even more big bomb (Takes 169 charges)
+              8     - Throw even more bigger bomb (Takes 225 charges)
+              9     - Throw very big bomb (Takes 289 charges)
+              0     - Throw very, very big bomb (Takes 361 charges)
+              @     - Throw biggest bomb (Takes 441 charges)
+              o     - Throw small slime (Takes 15 charges)
+              O     - Throw big slime (Takes 30 charges)
+              p     - Throw bigger slime (Takes 45 charges)
+              P     - Throw biggest slime (Takes 60 charges)
+              s     - Scan (show where other players are) (Takes 1 charge)
+              c     - Cloak (hide from scanners) (Takes 1 charge)
+
+              ^L    - Redraw screen
+              q     - Quit
+
+
+
+
+4th Berkeley Distribution 21 August 1986                        2
+
+
+
+
+
+
+
+
+HUNT(6)                BSD Reference Manual               HUNT(6)
+
+
+       The symbols on the screen are:
+
+              -|+   - walls
+              /\    - diagonal (deflecting) walls
+              #     - doors (dispersion walls)
+              ;     - small mine
+              g     - large mine
+              :     - bullet
+              o     - grenade
+              O     - satchel charge
+              @     - bomb
+              s     - small slime
+              $     - big slime
+              ><^v  - you facing right, left, up, or down
+              }{i!  - other players facing right, left, up, or down
+              *     - explosion
+              \|/
+              _-_*_-   - grenade and large mine explosion
+              /|\
+
+       Other helpful hints:
+
+       [] You can only fire in the direction you are facing.
+       [] You can only fire three shots in a row,  then  the  gun
+          must cool off.
+       [] Shots move 5 times faster than you do.
+       [] To stab someone, you face that player and move at them.
+       [] Stabbing does 2 points worth  of  damage  and  shooting
+          does 5 points.
+       [] Slime does 5 points of damage each time it hits.
+       [] You  start  with 15 charges and get 5 more every time a
+          player enters or re-enters.
+       [] Grenade explosions cover a 3 by  3  area,  each  larger
+          bomb  cover a correspondingly larger area (ranging from
+          5 by 5 to 21  by  21).   All  explosions  are  centered
+          around  the square the shot hits and do the most damage
+          in the center.
+       [] Slime affects all squares it oozes over.  The number of
+          squares is equal to the number of charges used.
+       [] One small mine and one large mine is placed in the maze
+          for every new player.  A mine has a 2%  probability  of
+          tripping when you walk forward on to it; 50% when going
+          sideways; 95% when backing up.  Tripping a  mine  costs
+          you  5  points  or  10 points respectively.  Defusing a
+          mine is worth 1 charge or 9 charges respectively.
+       [] You cannot see behind you.
+       [] Cloaking consumes 1 ammo charge per 20 of your moves.
+       [] Scanning consumes 1 ammo charge per (20 x the number of
+          players) of other player moves.
+       [] Turning  on  cloaking  turns off scanning -- turning on
+          scanning turns off cloaking.
+
+
+
+4th Berkeley Distribution 21 August 1986                        3
+
+
+
+
+
+
+
+
+HUNT(6)                BSD Reference Manual               HUNT(6)
+
+
+       [] When you kill someone, you get 2 more  damage  capacity
+          points and 2 damage points get taken away.
+       [] Maximum typeahead is 5 characters.
+       [] A  shot  destroys normal (_i_._e_._, non-diagonal, non-door)
+          walls.
+       [] Diagonal walls deflect shots and change orientation.
+       [] Doors disperse shots in random  directions  (up,  down,
+          left, right).
+       [] Diagonal  walls and doors cannot be destroyed by direct
+          shots but may  be  destroyed  by  an  adjacent  grenade
+          explosion.
+       [] Slime goes around walls, not through them.
+       [] Walls  regenerate,  reappearing  in the order they were
+          destroyed.  One percent of the regenerated  walls  will
+          be  diagonal  walls or doors.  When a wall is generated
+          directly beneath a player, he is  thrown  in  a  random
+          direction  for a random period of time.  When he lands,
+          he sustains damage (up to 20 percent of the  amount  of
+          damage  already  sustained);  _i_._e_.,  the less damage he
+          had, the more nimble he is and therefore less likely to
+          hurt himself on landing.
+       [] Every  30  deaths or so, a ````??''''  will appear.  It is a
+          wandering bomb which will explode when it hits someone,
+          or when it is slimed.
+       [] If no one moves, everything stands still.
+       [] The  environment  variable  HHUUNNTT  is checked to get the
+          player name.  If you don't have this variable set, _h_u_n_t
+          will  ask you what name you want to play under.  If you
+          wish to set other options than just your name, you  can
+          enumerate the options as follows:
+                    setenv                                   HUNT
+          "name=Sneaky,team=1,cloak,mapkey=zoFfGg1f2g3F4G"
+          sets the player name to Sneaky, sets the team  to  one,
+          sets  the enter game attribute to cloaked, and the maps
+          zz to oo, FF to ff, GG to gg, 11 to ff, 22 to gg, 33 to FF,  and  44
+          to  GG.   The _m_a_p_k_e_y option must be last.  Other options
+          are: scan, fly, nobeep, port=string,  host=string,  and
+          message=string  -- which correspond to the command line
+          options.  String options cannot  contain  commas  since
+          commas are used to separate options.
+       [] It's a boring game if you're the only one playing.
+
+       Your  score  is the decayed average of the ratio of number
+       of kills to number of times you entered the  game  and  is
+       only kept for the duration of a single session of _h_u_n_t.
+
+       _H_u_n_t  normally  drives  up the load average to be approxi-
+       mately (number_of_players + 0.5) greater than it would  be
+       without a _h_u_n_t game executing.
+
+
+
+
+
+4th Berkeley Distribution 21 August 1986                        4
+
+
+
+
+
+
+
+
+HUNT(6)                BSD Reference Manual               HUNT(6)
+
+
+SSTTAATTIISSTTIICCSS
+       The  --SS  option  fetches the current game statistics.  The
+       meaning of the column headings are as  follows:  _s_c_o_r_e  --
+       the player's last score; _d_u_c_k_e_d -- how many shots a player
+       ducked; _a_b_s_o_r_b -- how many shots a player absorbed;  _f_a_c_e_d
+       -- how many shots were fired at player's face; _s_h_o_t -- how
+       many shots were fired at player; _r_o_b_b_e_d  --  how  many  of
+       player's  shots  were  absorbed;  _m_i_s_s_e_d  --  how  many of
+       player's shots were ducked; _s_l_i_m_e_K -- how many slime kills
+       player  had; _e_n_e_m_y -- how many enemies were killed; _f_r_i_e_n_d
+       -- how many friends were  killed  (self  and  same  team);
+       _d_e_a_t_h_s  --  how  many times player died; _s_t_i_l_l -- how many
+       times player died without typing in any commands; _s_a_v_e_d --
+       how  many times a shot/bomb would have killed player if he
+       hadn't ducked or absorbed it.
+
+FFIILLEESS
+       /usr/games/lib/huntd   game coordinator
+
+SSEEEE AALLSSOO
+       huntd(6)
+
+AAUUTTHHOORRSS
+       Conrad Huang, Ken Arnold, and Greg Couch;
+       University of California, San Francisco, Computer Graphics
+       Lab
+
+AACCKKNNOOWWLLEEDDGGEEMMEENNTTSS
+       We  thank Don Kneller, John Thomason, Eric Pettersen, Mark
+       Day, and Scott Weiner for providing endless hours of play-
+       testing  to  improve  the  character of the game.  We hope
+       their significant others will forgive them;  we  certainly
+       don't.
+
+BBUUGGSS
+       To  keep  up  the  pace, not everything is as realistic as
+       possible.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4th Berkeley Distribution 21 August 1986                        5
+
+
+
+
+

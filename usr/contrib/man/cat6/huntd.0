@@ -1,0 +1,132 @@
+
+
+
+HUNTD(6)               BSD Reference Manual              HUNTD(6)
+
+
+NNAAMMEE
+       huntd - hunt daemon, back-end for hunt game
+
+SSYYNNOOPPSSIISS
+       //uussrr//ggaammeess//lliibb//hhuunnttdd [ --ss ] [ --pp port ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _h_u_n_t_d  controls  the  multi-player  _h_u_n_t(6) game.  When it
+       starts up, it tries to notify all  members  of  the  _h_u_n_t_-
+       _p_l_a_y_e_r_s mailing list (see _s_e_n_d_m_a_i_l(8)) by faking a _t_a_l_k(1)
+       request from user ``Hunt Game''.
+
+       The --ss option is for running _h_u_n_t_d forever (server  mode).
+       This  is  similar to running it under the control of _i_n_e_t_d
+       (see below), but it consumes a process table entry when no
+       one is playing.
+
+       The  --pp  option  changes  the udp port number used to ren-
+       dezvous with the player process and thus allows  for  pri-
+       vate  games  of hunt.  This option turns off the notifica-
+       tion of players on the _h_u_n_t_-_p_l_a_y_e_r_s mailing list.
+
+IINNEETTDD
+       To run _h_u_n_t_d from _i_n_e_t_d, you'll need to put the _h_u_n_t  ser-
+       vice in //eettcc//sseerrvviicceess:
+
+              hunt 26740/udp      # multi-player/multi-host maze-
+              wars
+
+       and add a line in //eettcc//iinneettdd..ccoonnff:
+
+              hunt dgram  udp  wait  nobody  /usr/games/lib/huntd
+              HUNT
+
+       except for Suns which use //eettcc//sseerrvveerrss:
+
+              hunt udp /usr/games/lib/huntd
+
+       Do  not use any of the command line options -- if you want
+       _i_n_e_t_d to start up _h_u_n_t_d on a private port, change the port
+       listed in //eettcc//sseerrvviicceess.
+
+NNEETTWWOORRKK RREENNDDEEZZVVOOUUSS
+       When  _h_u_n_t(6)  starts  up, it broadcasts on the local area
+       net (using the broadcast address for  each  interface)  to
+       find  a  _h_u_n_t  game  in  progress.   If  a _h_u_n_t_d hears the
+       request, it sends back the port number for the  _h_u_n_t  pro-
+       cess to connect to.  Otherwise, the _h_u_n_t process starts up
+       a _h_u_n_t_d on the local machine and trys to  rendezvous  with
+       it.
+
+
+
+
+4th Berkeley Distribution 21 August 1986                        1
+
+
+
+
+
+
+
+
+HUNTD(6)               BSD Reference Manual              HUNTD(6)
+
+
+SSEEEE AALLSSOO
+       hunt(6), talk(1), sendmail(8)
+
+AAUUTTHHOORRSS
+       Conrad Huang, Ken Arnold, and Greg Couch;
+       University of California, San Francisco, Computer Graphics
+       Lab
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4th Berkeley Distribution 21 August 1986                        2
+
+
+
+
+
