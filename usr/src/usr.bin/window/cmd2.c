@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	1.9 83/07/28";
+static	char *sccsid = "@(#)cmd2.c	1.10 83/07/29";
 #endif
 
 #include "defs.h"
@@ -42,10 +42,11 @@ dohelp()
 	wwprintf(w, ":refresh {1-9} [off]    Turn on (or off) refresh after every newline\r\n");
 	wwprintf(w, "                        for window {1-9}.\r\n");
 	wwprintf(w, ":label {1-9} string     Label window {1-9}.\r\n");
-	wwprintf(w, ":escape c               Set escape character to c.\r\n");
+	wwprintf(w, ":escape C               Set escape character to C.\r\n");
 	wwprintf(w, ":%%{1-9}                 Select window {1-9}.\r\n");
 	wwprintf(w, ":window r c nr nc       Open a window at row r column c\r\n");
 	wwprintf(w, "                        with nr rows and nc colomns\r\n");
+	wwprintf(w, ":source filename        Execute the commands in `filename'.\r\n");
 	waitnl(w);
 	closewin(w);
 }
