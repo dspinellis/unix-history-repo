@@ -70,6 +70,15 @@
    imaginable: internal/external, physical/virtual, writeback/writethrough)
    See, for example, Wheeler and Bershad in ASPLOS 92.
 
+9. Sort the free page list.
+   The DMA hardware on the 300 cannot do scatter/gather IO.  For example,
+   if an 8k system buffer consists of two non-contiguous physical pages
+   it will require two DMA transfers (and hence two interrupts) to do the
+   operation.  It would take only one transfer if they were physically
+   contiguous.  By keeping the free list ordered we could potentially
+   allocate contiguous pages and reduce the number of interrupts.  We can
+   consider doing this since pages in the free list are not reclaimed and
+   thus we don't have to worry about distorting any LRU behavior.
 ----
 Mike Hibler
 University of Utah CSS group
