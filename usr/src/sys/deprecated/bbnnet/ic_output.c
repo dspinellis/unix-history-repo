@@ -38,9 +38,7 @@ struct ip	*ip;
 {
     struct in_ifaddr *ia;
 
-/*
 #ifdef bsd42
-*/
     /* don't want broadcasts to match */
     if (! (ia = in_iawithaddr(ip->ip_dst, FALSE)))
     {
@@ -58,10 +56,36 @@ struct ip	*ip;
 	    return (l);
 	}
     }
-/*
 #endif
     ia = in_iafromif(inetifp);
-*/
+    return (IA_INADDR(ia));
+}
+
+
+
+
+struct in_addr ping_addr (ip)
+struct ip	*ip;
+{
+    struct in_ifaddr *ia;
+
+    /* don't want broadcasts to match */
+    if (! (ia = in_iawithaddr(ip->ip_dst, FALSE)))
+    {
+	/* hmm, try for the net... */
+	if ((ia = in_iawithnet(ip->ip_dst)) == NULL)
+	{
+	    struct in_addr l;
+
+	    /*
+	     * The message will be sent by ip_send() who will
+	     * route the message and discover that a local address
+	     * should be set on the basis of the route used.
+	     */
+	    l.s_addr = INADDR_ANY;
+	    return (l);
+	}
+    }
     return (IA_INADDR(ia));
 }
 
@@ -86,6 +110,7 @@ struct ip	*ip;
 	l.s_addr = INADDR_ANY;
 	return (l);
     }
+#endif
     ia = in_iafromif(inetifp);
     return (IA_INADDR(ia));
 }
@@ -233,7 +258,7 @@ struct in_addr gwaddr;
 	ip->ip_p	= IPPROTO_ICMP;
 	ip->ip_tos	= 0;
 	ip->ip_dst	= gwaddr;
-	ip->ip_src	= icmp_addr (ip);
+	ip->ip_src	= ping_addr (ip);
     }
 
     {
