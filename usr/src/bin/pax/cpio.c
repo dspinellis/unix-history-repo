@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cpio.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cpio.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)cpio.c	1.1 (Berkeley) %G%";
 #include "pax.h"
 #include "cpio.h"
 #include "extern.h"
+
 static int rd_nm __P((register ARCHD *, int));
 static int rd_ln_nm __P((register ARCHD *));
 static int com_rd __P((register ARCHD *));
@@ -327,7 +328,7 @@ cpio_rd(arcn, buf)
 	arcn->sb.st_rdev = (dev_t)asc_ul(hd->c_rdev, sizeof(hd->c_rdev), OCT);
 	arcn->sb.st_mtime = (time_t)asc_ul(hd->c_mtime, sizeof(hd->c_mtime),
 	    OCT);
-	arcn->sb.st_atime = arcn->sb.st_mtime;
+	arcn->sb.st_ctime = arcn->sb.st_atime = arcn->sb.st_mtime;
 #	ifdef NET2_STAT
 	arcn->sb.st_size = (off_t)asc_ul(hd->c_filesize,sizeof(hd->c_filesize),
 	    OCT);
@@ -654,7 +655,7 @@ vcpio_rd(arcn, buf)
 	arcn->sb.st_uid = (uid_t)asc_ul(hd->c_uid, sizeof(hd->c_uid), HEX);
 	arcn->sb.st_gid = (gid_t)asc_ul(hd->c_gid, sizeof(hd->c_gid), HEX);
 	arcn->sb.st_mtime = (time_t)asc_ul(hd->c_mtime,sizeof(hd->c_mtime),HEX);
-	arcn->sb.st_atime = arcn->sb.st_mtime;
+	arcn->sb.st_ctime = arcn->sb.st_atime = arcn->sb.st_mtime;
 #	ifdef NET2_STAT
 	arcn->sb.st_size = (off_t)asc_ul(hd->c_filesize,
 	    sizeof(hd->c_filesize), HEX);
@@ -758,9 +759,8 @@ crc_stwr()
  *	copy the data in the ARCHD to buffer in system VR4 cpio
  *	(with/without crc) format.
  * Return
- *      0 if file has data to be written after the header, 1 if file has
- *	NO data
- *      to write after the header, -1 if archive write failed
+ *	0 if file has data to be written after the header, 1 if file has
+ *	NO data to write after the header, -1 if archive write failed
  */
 
 #if __STDC__
@@ -1016,7 +1016,7 @@ bcpio_rd(arcn, buf)
 			((off_t)(SHRT_EXT(hd->h_filesize_2)));
 		nsz = (int)(SHRT_EXT(hd->h_namesize));
 	}
-	arcn->sb.st_atime = arcn->sb.st_mtime;
+	arcn->sb.st_ctime = arcn->sb.st_atime = arcn->sb.st_mtime;
 
 	/*
 	 * check the file name size, if bogus give up. otherwise read the file
