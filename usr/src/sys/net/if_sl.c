@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.26 (Berkeley) %G%
+ *	@(#)if_sl.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -253,7 +253,9 @@ slclose(tp)
 /* ARGSUSED */
 sltioctl(tp, cmd, data, flag)
 	struct tty *tp;
+	int cmd;
 	caddr_t data;
+	int flag;
 {
 	struct sl_softc *sc = (struct sl_softc *)tp->t_sc;
 	int s;
@@ -304,13 +306,13 @@ sloutput(ifp, m, dst)
 		return (EHOSTUNREACH);
 	}
 	ifq = &sc->sc_if.if_snd;
+	ip = mtod(m, struct ip *);
 	if (ip->ip_tos & IPTOS_LOWDELAY) {
 		ifq = &sc->sc_fastq;
 		p = 1;
 	} else
 		p = 0;
-
-	if ((ip = mtod(m, struct ip *))->ip_p == IPPROTO_TCP) {
+	if (ip->ip_p == IPPROTO_TCP) {
 		if (sc->sc_if.if_flags & SC_COMPRESS) {
 			/*
 			 * The last parameter turns off connection id
