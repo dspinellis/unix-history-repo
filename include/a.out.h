@@ -47,6 +47,9 @@
 
 #define N_GETMAGIC(ex) \
 	( (((ex).a_midmag)&0xffff0000) ? (ntohl(((ex).a_midmag))&0xffff) : ((ex).a_midmag))
+#define N_GETMAGIC2(ex) \
+	( (((ex).a_midmag)&0xffff0000) ? (ntohl(((ex).a_midmag))&0xffff) : \
+	(((ex).a_midmag) | 0x10000) )
 #define N_GETMID(ex) \
 	( (((ex).a_midmag)&0xffff0000) ? ((ntohl(((ex).a_midmag))>>16)&0x03ff) : MID_ZERO )
 #define N_GETFLAG(ex) \
@@ -66,7 +69,7 @@
 
 
 /* Address of the bottom of the text segment. */
-#define N_TXTADDR(ex)	(N_GETMAGIC(ex) == QMAGIC ? __LDPGSZ : 0)
+#define N_TXTADDR(ex)   (N_GETMAGIC2(ex) == (ZMAGIC|0x10000) ? 0 : __LDPGSZ)
 
 /* Address of the bottom of the data segment. */
 #define N_DATADDR(ex) \
@@ -74,8 +77,9 @@
 
 /* Text segment offset. */
 #define	N_TXTOFF(ex) \
-	(N_GETMAGIC(ex) == ZMAGIC ? __LDPGSZ \
-	 : (N_GETMAGIC(ex) == QMAGIC ? 0 : sizeof(struct exec)))
+	( N_GETMAGIC2(ex)==ZMAGIC || N_GETMAGIC2(ex)==(QMAGIC|0x10000) ? \
+	0 : (N_GETMAGIC2(ex)==(ZMAGIC|0x10000) ? __LDPGSZ : sizeof(struct exec)) ) 
+
 
 /* Data segment offset. */
 #define	N_DATOFF(ex) \
