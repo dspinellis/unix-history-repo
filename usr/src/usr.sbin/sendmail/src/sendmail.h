@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.32 (Berkeley) %G%
+ *	@(#)sendmail.h	5.30.1.2 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.32		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.30.1.2		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -378,6 +378,12 @@ MCONINFO
 
 /* flag bits */
 #define MCIF_VALID	00001		/* this entry is valid */
+#define MCIF_TEMP	00002		/* don't cache this connection */
+
+/* states */
+#define MCIS_CLOSED	0		/* no traffic on this connection */
+#define MCIS_OPEN	1		/* open, no protocol sent */
+#define MCIS_SSD	2		/* service shutting down */
 /*
 **  Mapping functions
 **

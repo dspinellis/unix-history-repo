@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.54.1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -402,19 +402,23 @@ deliver(e, firstto)
 		{
 			message(Arpa_Info, "Connecting to %s (%s)...",
 			    MxHosts[0], m->m_name);
-			if ((rcode = smtpinit(m, pv)) == EX_OK) {
+			if ((rcode = smtpinit(m, mci, pv)) == EX_OK)
+			{
 				register char *t = tobuf;
 				register int i;
 
 				/* send the recipient list */
 				tobuf[0] = '\0';
-				for (to = tochain; to; to = to->q_tchain) {
+				for (to = tochain; to != NULL; to = to->q_tchain)
+				{
 					e->e_to = to->q_paddr;
-					if ((i = smtprcpt(to, m)) != EX_OK) {
+					if ((i = smtprcpt(to, m, mci)) != EX_OK)
+					{
 						markfailure(e, to, i);
 						giveresponse(i, m, e);
 					}
-					else {
+					else
+					{
 						*t++ = ',';
 						for (p = to->q_paddr; *p; *t++ = *p++);
 					}
@@ -423,9 +427,10 @@ deliver(e, firstto)
 				/* now send the data */
 				if (tobuf[0] == '\0')
 					e->e_to = NULL;
-				else {
+				else
+				{
 					e->e_to = tobuf + 1;
-					rcode = smtpdata(m, e);
+					rcode = smtpdata(m, mci, e);
 				}
 
 				/* now close the connection */
@@ -599,6 +604,8 @@ sendoff(e, m, pvp, ctladdr)
 	ADDRESS *ctladdr;
 {
 	register int i;
+	register MCONINFO *mci;
+	extern MCONINFO *openmailer();
 
 	/*
 	**  Create connection to mailer.
@@ -664,11 +671,11 @@ endmailer(mci, name)
 		xfree(mci);
 
 	/* in the IPC case there is nothing to wait for */
-	if (pid == 0)
+	if (mci->mci_pid == 0)
 		return (EX_OK);
 
 	/* wait for the mailer process to die and collect status */
-	st = waitfor(pid);
+	st = waitfor(mci->mci_pid);
 	if (st == -1)
 	{
 		syserr("endmailer %s: wait", name);
@@ -712,6 +719,7 @@ openmailer(m, pvp, ctladdr, clever)
 	bool clever;
 {
 	int pid;
+	register MCONINFO *mci;
 	int mpvect[2];
 	int rpvect[2];
 	extern FILE *fdopen();
@@ -737,7 +745,7 @@ openmailer(m, pvp, ctladdr, clever)
 	/* check for Local Person Communication -- not for mortals!!! */
 	if (strcmp(m->m_mailer, "[LPC]") == 0)
 	{
-		mci = xalloc(sizeof *mci);
+		mci = (MCONINFO *) xalloc(sizeof *mci);
 		mci->mci_in = stdin;
 		mci->mci_out = stdout;
 		mci->mci_pid = 0;
@@ -783,8 +791,8 @@ openmailer(m, pvp, ctladdr, clever)
 			}
 			else
 			{
-				i = st->s_host.ho_exitstat;
-				errno = st->s_host.ho_errno;
+				i = mci->mci_exitstat;
+				errno = mci->mci_errno;
 			}
 			if (i == EX_OK)
 				return mci;
@@ -932,7 +940,7 @@ openmailer(m, pvp, ctladdr, clever)
 	**  Set up return value.
 	*/
 
-	mci = xalloc(sizeof *mci);
+	mci = (MCONINFO *) xalloc(sizeof *mci);
 	(void) close(mpvect[0]);
 	mci->mci_out = fdopen(mpvect[1], "w");
 	if (clever)
