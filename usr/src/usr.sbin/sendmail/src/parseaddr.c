@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.62 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1089,8 +1089,21 @@ rewrite(pvp, ruleset, reclevel, e)
 						stat);
 
 				/* should recover if stat == EX_TEMPFAIL */
-				if (stat == EX_TEMPFAIL)
-					rstat = stat;
+				if (stat == EX_TEMPFAIL || stat == EX_UNAVAILABLE)
+				{
+					rstat = EX_TEMPFAIL;
+					if (tTd(50, 1)
+						printf("map_lookup(%s, %s) failed (stat = %d)\n",
+							mapname, buf, stat);
+					if (e->e_message == NULL)
+					{
+						char mbuf[300];
+
+						sprintf(mbuf, "map %s: lookup (%s) failed",
+							mapname, buf);
+						e->e_message = newstr(mbuf);
+					}
+				}
 			}
 			else
 				replac = NULL;

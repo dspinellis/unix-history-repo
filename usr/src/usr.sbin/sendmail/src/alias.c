@@ -9,7 +9,7 @@
 # include "sendmail.h"
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -50,6 +50,7 @@ alias(a, sendq, aliaslevel, e)
 	register char *p;
 	int naliases;
 	char *owner;
+	auto int stat = EX_OK;
 	char obuf[MAXNAME + 6];
 	extern char *aliaslookup();
 
@@ -68,7 +69,11 @@ alias(a, sendq, aliaslevel, e)
 	e->e_to = a->q_paddr;
 
 	/*
-	**  Look up this name
+	**  Look up this name.
+	**
+	**	If the map was unavailable, we will queue this message
+	**	until the map becomes available; otherwise, we could
+	**	bounce messages inappropriately.
 	*/
 
 	p = aliaslookup(a->q_user);
@@ -118,7 +123,7 @@ alias(a, sendq, aliaslevel, e)
 		(void) strcat(obuf, a->q_user);
 	if (!bitnset(M_USR_UPPER, a->q_mailer->m_flags))
 		makelower(obuf);
-	owner = aliaslookup(obuf, e);
+	owner = aliaslookup(obuf, &stat, e);
 	if (owner == NULL)
 		return;
 
@@ -139,6 +144,8 @@ alias(a, sendq, aliaslevel, e)
 **
 **	Parameters:
 **		name -- the name to look up.
+**		pstat -- a pointer to a place to put the status.
+**		e -- the current envelope.
 **
 **	Returns:
 **		the value of name.
@@ -152,8 +159,9 @@ alias(a, sendq, aliaslevel, e)
 */
 
 char *
-aliaslookup(name, e)
+aliaslookup(name, pstat, e)
 	char *name;
+	int *pstat;
 	ENVELOPE *e;
 {
 	register int dbno;
@@ -167,7 +175,7 @@ aliaslookup(name, e)
 		map = AliasDB[dbno];
 		if (!bitset(MF_OPEN, map->map_mflags))
 			continue;
-		p = (*map->map_class->map_lookup)(map, name, NULL, &stat);
+		p = (*map->map_class->map_lookup)(map, name, NULL, pstat);
 		if (p != NULL)
 			return p;
 	}

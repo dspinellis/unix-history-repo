@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.141 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.142 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1809,7 +1809,7 @@ logdelivery(m, mci, stat, ctladdr, xstart, e)
 		
 	l = SYSLOG_BUFSIZE - 100 - strlen(buf);
 	p = e->e_to;
-	while (strlen(p) >= l)
+	while (strlen(p) >= (SIZE_T) l)
 	{
 		register char *q = strchr(p + l, ',');
 
