@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	1.3 (Berkeley) %G%";
 #endif
 
 #include "../tahoe/pte.h"
+#include "../tahoe/scb.h"
 
 #include "param.h"
 #include "vmmeter.h"
@@ -23,6 +24,7 @@ main()
 	register struct proc *p = (struct proc *)0;
 	register struct vmmeter *vm = (struct vmmeter *)0;
 	register struct pcb *pcb = (struct pcb *)0;
+	register struct scb *scb = (struct scb *)0;
 
 	printf("#ifdef LOCORE\n");
 	printf("#define\tU_PROCP %d\n", &u->u_procp);
@@ -47,6 +49,7 @@ main()
 	printf("#define\tV_TRAP %d\n", &vm->v_trap);
 	printf("#define\tV_SYSCALL %d\n", &vm->v_syscall);
 	printf("#define\tV_INTR %d\n", &vm->v_intr);
+	printf("#define\tV_SOFT %d\n", &vm->v_soft);
 	printf("#define\tNBPG %d\n", NBPG);
 	printf("#define\tPGSHIFT %d\n", PGSHIFT);
 	printf("#define\tUPAGES %d\n", UPAGES);
@@ -92,5 +95,9 @@ main()
 	printf("#define\tPCB_CMAP2 %d\n", &pcb->pcb_cmap2);
 	printf("#define\tPCB_SSWAP %d\n", &pcb->pcb_sswap);
 	printf("#define\tPCB_SIGC %d\n", pcb->pcb_sigc);
+	printf("#define\tSCB_DOADUMP %d\n", &scb->scb_doadump);
+	printf("#define\tSCB_BUSERR %d\n", &scb->scb_buserr);
+#define	SCB_DEVBASE	(((int)((struct scb *)0)->scb_devint)/sizeof (int))
+	printf("#define\tSCB_DEVBASE %d\n", SCB_DEVBASE);
 	printf("#endif\n");
 }

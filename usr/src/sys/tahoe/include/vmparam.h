@@ -1,4 +1,4 @@
-/*	vmparam.h	1.2	86/01/05	*/
+/*	vmparam.h	1.3	86/01/12	*/
 
 /*
  * Machine dependent constants for TAHOE
@@ -18,17 +18,17 @@
 #define	HIGHPAGES	UPAGES
 
 /*
- * Virtual memory related constants, all in clicks
+ * Virtual memory related constants, all in bytes
  */
-#define	MAXTSIZ		(6*CLSIZE*1024)		/* max text size */
+#define	MAXTSIZ		(6*1024*1024)		/* max text size */
 #ifndef DFLDSIZ
-#define	DFLDSIZ		(6*1024*1024/NBPG)	/* initial data size limit */
+#define	DFLDSIZ		(6*1024*1024)		/* initial data size limit */
 #endif
 #ifndef MAXDSIZ
-#define	MAXDSIZ		(19*1024*1024/NBPG)	/* max data size */
+#define	MAXDSIZ		(16*1024*1024)		/* max data size */
 #endif
 #ifndef	DFLSSIZ
-#define	DFLSSIZ		(512*1024/NBPG)		/* initial stack size limit */
+#define	DFLSSIZ		(512*1024)		/* initial stack size limit */
 #endif
 #ifndef	MAXSSIZ
 #define	MAXSSIZ		MAXDSIZ			/* max stack size */
