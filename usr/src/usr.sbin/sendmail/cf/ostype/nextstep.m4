@@ -8,9 +8,9 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)nextstep.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)nextstep.m4	8.3 (Berkeley) %G%')
 define(`ALIAS_FILE', /etc/sendmail/aliases)dnl
-define(`HELP_FILE', /etc/sendmail/sendmail.hf)dnl
+define(`HELP_FILE', /usr/lib/sendmail.hf)dnl
 define(`STATUS_FILE', /etc/sendmail/sendmail.st)dnl
-define(`UUCP_MAILER_PATH', /usr/local/lib/uucp/uux)dnl
+define(`UUCP_MAILER_PATH', /usr/bin/uux)dnl
 define(`QUEUE_DIR', /usr/spool/mqueue)dnl
