@@ -1,4 +1,4 @@
-/*	main.c	1.6	82/10/24	*/
+/*	main.c	1.7	82/10/25	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -64,7 +64,7 @@ get_word(fp)
 		if (ch != ' ' && ch != '\t')
 			break;
 	if (ch == EOF)
-		return (EOF);
+		return ((char *)EOF);
 	if (ch == '\n')
 		return (NULL);
 	cp = line;
@@ -76,23 +76,24 @@ get_word(fp)
 	}
 	*cp = 0;
 	if (ch == EOF)
-		return (EOF);
-	ungetc(ch, fp);
+		return ((char *)EOF);
+	(void) ungetc(ch, fp);
 	return (line);
 }
 
 /*
  * prepend the path to a filename
  */
+char *
 path(file)
 	char *file;
 {
 	register char *cp;
 
-	cp = malloc(strlen(PREFIX)+strlen(file)+5);
-	strcpy(cp, "../");
-	strcat(cp, PREFIX);
-	strcat(cp, "/");
-	strcat(cp, file);
+	cp = malloc((unsigned)(strlen(PREFIX)+strlen(file)+5));
+	(void) strcpy(cp, "../");
+	(void) strcat(cp, PREFIX);
+	(void) strcat(cp, "/");
+	(void) strcat(cp, file);
 	return (cp);
 }

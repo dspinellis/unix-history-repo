@@ -1,17 +1,8 @@
-/*	config.h	1.9	82/10/24	*/
-
-#define	machinename	machname
+/*	config.h	1.10	82/10/25	*/
 
 /*
- * Definitions for config.
+ * Config.
  */
-
-/*
- * Structures representing objects in config's world.
- */
-
-#define TO_NEXUS	-1
-
 struct file_list {
 	char	*f_fn;			/* the name */
 	int	f_type;			/* see below */
@@ -32,7 +23,7 @@ struct device {
 	int	d_type;			/* CONTROLLER, DEVICE, UBA or MBA */
 	struct	device *d_conn;		/* what it is connected to */
 	char	*d_name;		/* name of device (e.g. rk11) */
-	struct	idlist *d_vec;		/* interrupt vectors */
+	struct	idlst *d_vec;		/* interrupt vectors */
 	int	d_pri;			/* interrupt priority */
 	int	d_addr;			/* address of csr */
 	int	d_unit;			/* unit number */
@@ -44,6 +35,7 @@ struct device {
 	int	d_flags;		/* nlags for device init */
 	struct	device *d_next;		/* Next one in list */
 };
+#define TO_NEXUS	(struct device *)-1
 
 struct config {
 	char	*c_dev;
@@ -78,11 +70,25 @@ struct cputype {
 struct opt {
 	char	*op_name;
 	char	*op_value;
-	struct	cputype *op_next;
+	struct	opt *op_next;
 } *opt;
 
-char	*ident, *ns(), *malloc(), *tc(), *qu();
+char	*ident;
+char	*ns();
+char	*tc();
+char	*qu();
+char	*get_word();
+char	*path();
+char	*raise();
+
 int	do_trace;
+
+char	*index();
+char	*rindex();
+char	*malloc();
+char	*strcpy();
+char	*strcat();
+char	*sprintf();
 
 #if MACHINE_VAX
 int	seen_mba, seen_uba;
@@ -97,7 +103,7 @@ int	yyline;
 struct	file_list *ftab, *conf_list, *confp;
 char	*PREFIX;
 
-int	hz, timezone, hadtz;
+int	timezone, hadtz;
 int	dst;
 int	profiling;
 

@@ -1,13 +1,11 @@
 %{
-/*	lang.l	1.11	82/10/24	*/
+/*	lang.l	1.12	82/10/25	*/
 
 #include <ctype.h>
 #include "y.tab.h"
 #include "config.h"
 
 #define tprintf if (do_trace) printf
-
-int yylval;
 
 /*
  * Key word table
@@ -35,7 +33,7 @@ WORD	[A-Za-z_][-A-Za-z_]*
 
 			if ((i = kw_lookup(yytext)) == -1)
 			{
-				yylval = (int) yytext;
+				yylval.str = yytext;
 				tprintf("id(%s) ", yytext);
 				return ID;
 			}
@@ -44,34 +42,34 @@ WORD	[A-Za-z_][-A-Za-z_]*
 		}
 \"[^"]+\"	{
 			yytext[strlen(yytext)-1] = '\0';
-			yylval = (int) yytext + 1;
+			yylval.val = yytext + 1;
 			return ID;
 		}
 0[0-7]*		{
-			yylval = octal(yytext);
-			tprintf("#O:%o ", yylval);
+			yylval.val = octal(yytext);
+			tprintf("#O:%o ", yylval.val);
 			return NUMBER;
 		}
 0x[0-9a-f]+	{
-			yylval = hex(yytext);
-			tprintf("#X:%x ", yylval);
+			yylval.val = hex(yytext);
+			tprintf("#X:%x ", yylval.val);
 			return NUMBER;
 		}
 [1-9][0-9]*	{
-			yylval = atoi(yytext);
-			tprintf("#D:%d ", yylval);
+			yylval.val = atoi(yytext);
+			tprintf("#D:%d ", yylval.val);
 			return NUMBER;
 		}
 [0-9]"."[0-9]*	{
-			float atof();
-			yylval = (int) (60 * atof(yytext) + 0.5);
+			double atof();
+			yylval.val = (int) (60 * atof(yytext) + 0.5);
 			return FPNUMBER;
 		}
 "-"		{
 			return MINUS;
 		}
 "?"		{
-			yylval = -1;
+			yylval.val = -1;
 			tprintf("? ");
 			return NUMBER;
 		}
@@ -119,7 +117,7 @@ char *str;
 {
 	int num;
 
-	sscanf(str, "%o", &num);
+	(void) sscanf(str, "%o", &num);
 	return num;
 }
 
@@ -128,6 +126,6 @@ char *str;
 {
 	int num;
 
-	sscanf(str+2, "%x", &num);
+	(void) sscanf(str+2, "%x", &num);
 	return num;
 }

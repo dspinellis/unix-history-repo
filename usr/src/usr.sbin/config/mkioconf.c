@@ -1,4 +1,4 @@
-/*	mkioconf.c	2.4	82/10/24	*/
+/*	mkioconf.c	2.5	82/10/25	*/
 
 #include <stdio.h>
 #include "y.tab.h"
@@ -18,7 +18,7 @@ vax_ioconf()
 	FILE *fp;
 
 	fp = fopen(path("ioconf.c"), "w");
-	if (fp == NULL) {
+	if (fp == 0) {
 		perror(path("ioconf.c"));
 		exit(1);
 	}
@@ -36,9 +36,9 @@ vax_ioconf()
 	 * First print the mba initialization structures
 	 */
 	if (seen_mba) {
-		for (dp = dtab; dp != NULL; dp = dp->d_next) {
+		for (dp = dtab; dp != 0; dp = dp->d_next) {
 			mp = dp->d_conn;
-			if (mp == NULL || mp == TO_NEXUS ||
+			if (mp == 0 || mp == TO_NEXUS ||
 			    !eq(mp->d_name, "mba"))
 				continue;
 			fprintf(fp, "extern struct mba_driver %sdriver;\n",
@@ -46,9 +46,9 @@ vax_ioconf()
 		}
 		fprintf(fp, "\nstruct mba_device mbdinit[] = {\n");
 		fprintf(fp, "\t/* Device,  Unit, Mba, Drive, Dk */\n");
-		for (dp = dtab; dp != NULL; dp = dp->d_next) {
+		for (dp = dtab; dp != 0; dp = dp->d_next) {
 			mp = dp->d_conn;
-			if (dp->d_unit == QUES || mp == NULL ||
+			if (dp->d_unit == QUES || mp == 0 ||
 			    mp == TO_NEXUS || !eq(mp->d_name, "mba"))
 				continue;
 			if (dp->d_addr) {
@@ -56,7 +56,7 @@ vax_ioconf()
 				    dp->d_name, dp->d_unit);
 				continue;
 			}
-			if (dp->d_vec != NULL) {
+			if (dp->d_vec != 0) {
 				printf("can't specify vector for %s%d on mba\n",
 				    dp->d_name, dp->d_unit);
 				continue;
@@ -83,15 +83,15 @@ vax_ioconf()
 		 */
 		fprintf(fp, "struct mba_slave mbsinit [] = {\n");
 		fprintf(fp, "\t/* Driver,  Ctlr, Unit, Slave */\n");
-		for (dp = dtab; dp != NULL; dp = dp->d_next) {
+		for (dp = dtab; dp != 0; dp = dp->d_next) {
 			/*
 			 * All slaves are connected to something which
 			 * is connected to the massbus.
 			 */
-			if ((mp = dp->d_conn) == NULL || mp == TO_NEXUS)
+			if ((mp = dp->d_conn) == 0 || mp == TO_NEXUS)
 				continue;
 			np = mp->d_conn;
-			if (np == NULL || np == TO_NEXUS ||
+			if (np == 0 || np == TO_NEXUS ||
 			    !eq(np->d_name, "mba"))
 				continue;
 			fprintf(fp,
@@ -104,11 +104,11 @@ vax_ioconf()
 	/*
 	 * Now generate interrupt vectors for the unibus
 	 */
-	for (dp = dtab; dp != NULL; dp = dp->d_next) {
-		if (dp->d_vec != NULL) {
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		if (dp->d_vec != 0) {
 			struct idlst *ip;
 			mp = dp->d_conn;
-			if (mp == NULL || mp == TO_NEXUS ||
+			if (mp == 0 || mp == TO_NEXUS ||
 			    !eq(mp->d_name, "uba"))
 				continue;
 			fprintf(fp,
@@ -139,9 +139,9 @@ vax_ioconf()
 	}
 	fprintf(fp, "\nstruct uba_ctlr ubminit[] = {\n");
 	fprintf(fp, "/*\t driver,\tctlr,\tubanum,\talive,\tintr,\taddr */\n");
-	for (dp = dtab; dp != NULL; dp = dp->d_next) {
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
 		mp = dp->d_conn;
-		if (dp->d_type != CONTROLLER || mp == TO_NEXUS || mp == NULL ||
+		if (dp->d_type != CONTROLLER || mp == TO_NEXUS || mp == 0 ||
 		    !eq(mp->d_name, "uba"))
 			continue;
 		if (dp->d_vec == 0) {
@@ -176,16 +176,16 @@ vax_ioconf()
 	fprintf(fp, "\nstruct uba_device ubdinit[] = {\n");
 	fprintf(fp,
 "\t/* driver,  unit, ctlr,  ubanum, slave,   intr,    addr,    dk, flags*/\n");
-	for (dp = dtab; dp != NULL; dp = dp->d_next) {
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
 		mp = dp->d_conn;
-		if (dp->d_unit == QUES || dp->d_type != DEVICE || mp == NULL ||
+		if (dp->d_unit == QUES || dp->d_type != DEVICE || mp == 0 ||
 		    mp == TO_NEXUS || mp->d_type == MASTER ||
 		    eq(mp->d_name, "mba"))
 			continue;
 		np = mp->d_conn;
-		if (np != NULL && np != TO_NEXUS && eq(np->d_name, "mba"))
+		if (np != 0 && np != TO_NEXUS && eq(np->d_name, "mba"))
 			continue;
-		np = NULL;
+		np = 0;
 		if (eq(mp->d_name, "uba")) {
 			if (dp->d_vec == 0) {
 				printf("must specify vector for device %s%d\n",
@@ -207,7 +207,7 @@ vax_ioconf()
 			uba_n = mp->d_unit;
 			slave = QUES;
 		} else {
-			if ((np = mp->d_conn) == NULL) {
+			if ((np = mp->d_conn) == 0) {
 				printf("%s%d isn't connected to anything ",
 				    mp->d_name, mp->d_unit);
 				printf(", so %s%d is unattached\n",
@@ -249,19 +249,19 @@ vax_ioconf()
 		    slave, intv(dp), dp->d_addr, dp->d_dk, dp->d_flags);
 	}
 	fprintf(fp, "\t0\n};\n");
-	fclose(fp);
+	(void) fclose(fp);
 }
 #endif
 
 #if MACHINE_SUN
 sun_ioconf()
 {
-	register struct device *dp, *mp, *np;
-	register int uba_n, slave;
+	register struct device *dp, *mp;
+	register int slave;
 	FILE *fp;
 
 	fp = fopen(path("ioconf.c"), "w");
-	if (fp == NULL) {
+	if (fp == 0) {
 		perror(path("ioconf.c"));
 		exit(1);
 	}
@@ -277,10 +277,10 @@ sun_ioconf()
 	/*
 	 * Now generate interrupt vectors for the Multibus
 	 */
-	for (dp = dtab; dp != NULL; dp = dp->d_next) {
-		if (dp->d_pri != NULL) {
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		if (dp->d_pri != 0) {
 			mp = dp->d_conn;
-			if (mp == NULL || mp == TO_NEXUS ||
+			if (mp == 0 || mp == TO_NEXUS ||
 			    !eq(mp->d_name, "mb"))
 				continue;
 			fprintf(fp, "extern struct mb_driver %sdriver;\n",
@@ -292,9 +292,9 @@ sun_ioconf()
 	 */
 	fprintf(fp, "\nstruct mb_ctlr mbcinit[] = {\n");
 	fprintf(fp, "/*\t driver,\tctlr,\talive,\taddr,\tintpri */\n");
-	for (dp = dtab; dp != NULL; dp = dp->d_next) {
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
 		mp = dp->d_conn;
-		if (dp->d_type != CONTROLLER || mp == TO_NEXUS || mp == NULL ||
+		if (dp->d_type != CONTROLLER || mp == TO_NEXUS || mp == 0 ||
 		    !eq(mp->d_name, "mb"))
 			continue;
 		if (dp->d_pri == 0) {
@@ -329,13 +329,12 @@ sun_ioconf()
 	fprintf(fp, "\nstruct mb_device mbdinit[] = {\n");
 	fprintf(fp,
 "\t/* driver,  unit, ctlr,  slave,   addr,    pri,    dk, flags*/\n");
-	for (dp = dtab; dp != NULL; dp = dp->d_next) {
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
 		mp = dp->d_conn;
-		if (dp->d_unit == QUES || dp->d_type != DEVICE || mp == NULL ||
+		if (dp->d_unit == QUES || dp->d_type != DEVICE || mp == 0 ||
 		    mp == TO_NEXUS || mp->d_type == MASTER ||
 		    eq(mp->d_name, "mba"))
 			continue;
-		np = NULL;
 		if (eq(mp->d_name, "mb")) {
 			if (dp->d_pri == 0) {
 				printf("must specify vector for device %s%d\n",
@@ -355,7 +354,7 @@ sun_ioconf()
 			}
 			slave = QUES;
 		} else {
-			if ((np = mp->d_conn) == NULL) {
+			if (mp->d_conn == 0) {
 				printf("%s%d isn't connected to anything, ",
 				    mp->d_name, mp->d_unit);
 				printf("so %s%d is unattached\n",
@@ -396,7 +395,7 @@ sun_ioconf()
 		    slave, dp->d_addr, dp->d_pri, dp->d_dk, dp->d_flags);
 	}
 	fprintf(fp, "\t0\n};\n");
-	fclose(fp);
+	(void) fclose(fp);
 }
 #endif
 
@@ -407,8 +406,7 @@ char *intv(dev)
 
 	if (dev->d_vec == 0)
 		return ("     0");
-	else
-		return (sprintf(buf, "%sint%d", dev->d_name, dev->d_unit));
+	return (sprintf(buf, "%sint%d", dev->d_name, dev->d_unit));
 }
 
 char *
@@ -417,8 +415,7 @@ qu(num)
 
 	if (num == QUES)
 		return ("'?'");
-	else if (num == UNKNOWN)
+	if (num == UNKNOWN)
 		return (" -1");
-	else
-		return (ns(sprintf(errbuf, "%3d", num)));
+	return (sprintf(errbuf, "%3d", num));
 }

@@ -1,4 +1,4 @@
-/*	mkheaders.c	1.11	82/10/24	*/
+/*	mkheaders.c	1.12	82/10/25	*/
 
 /*
  * Make all the .h files for the optional entries
@@ -45,7 +45,8 @@ do_count(dev, hname, search)
 				count = dp->d_unit + 1;
 			if (search) {
 				mp = dp->d_conn;
-				if (mp != 0 && mp != -1 && mp->d_conn != -1) {
+				if (mp != 0 && mp != (struct device *)-1 &&
+				    mp->d_conn != (struct device *)-1) {
 					do_count(mp->d_name, hname, 0);
 					search = 0;
 				}
@@ -74,19 +75,19 @@ do_header(dev, hname, count)
 			exit(1);
 		}
 		fprintf(outf, "#define %s %d\n", name, count);
-		fclose(outf);
+		(void) fclose(outf);
 		return;
 	}
 	fl_head = 0;
 	for (;;) {
 		char *cp;
-		if ((inw = get_word(inf)) == 0 || inw == EOF)
+		if ((inw = get_word(inf)) == 0 || inw == (char *)EOF)
 			break;
-		if ((inw = get_word(inf)) == 0 || inw == EOF)
+		if ((inw = get_word(inf)) == 0 || inw == (char *)EOF)
 			break;
 		inw = ns(inw);
 		cp = get_word(inf);
-		if (cp == 0 || cp == EOF)
+		if (cp == 0 || cp == (char *)EOF)
 			break;
 		inc = atoi(cp);
 		if (eq(inw, name)) {
@@ -94,7 +95,7 @@ do_header(dev, hname, count)
 			inc = count;
 		}
 		cp = get_word(inf);
-		if (cp == 0 || cp == EOF)
+		if (cp == 0 || cp == (char *)EOF)
 			break;
 		fl = (struct file_list *) malloc(sizeof *fl);
 		fl->f_fn = inw;
@@ -102,10 +103,10 @@ do_header(dev, hname, count)
 		fl->f_next = fl_head;
 		fl_head = fl;
 	}
-	fclose(inf);
+	(void) fclose(inf);
 	if (count == oldcount) {
 		for (fl = fl_head; fl != 0; fl = fl->f_next)
-			free(fl);
+			free((char *)fl);
 		return;
 	}
 	if (oldcount == -1) {
@@ -123,9 +124,9 @@ do_header(dev, hname, count)
 	for (fl = fl_head; fl != 0; fl = fl->f_next) {
 		fprintf(outf, "#define %s %d\n",
 		    fl->f_fn, count ? fl->f_type : 0);
-		free(fl);
+		free((char *)fl);
 	}
-	fclose(outf);
+	(void) fclose(outf);
 }
 
 /*
@@ -137,8 +138,8 @@ toheader(dev)
 {
 	static char hbuf[80];
 
-	strcpy(hbuf, path(dev));
-	strcat(hbuf, ".h");
+	(void) strcpy(hbuf, path(dev));
+	(void) strcat(hbuf, ".h");
 	return (hbuf);
 }
 

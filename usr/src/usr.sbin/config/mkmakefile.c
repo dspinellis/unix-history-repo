@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.20	82/10/24	*/
+/*	mkmakefile.c	1.21	82/10/25	*/
 
 /*
  * Build the makefile for the system, from
@@ -13,8 +13,8 @@
 
 #define next_word(fp, wd) \
 	{ register char *word = get_word(fp); \
-	  if (word == EOF) \
-		return (EOF); \
+	  if (word == (char *)EOF) \
+		return; \
 	  else \
 		wd = word; \
 	}
@@ -30,7 +30,7 @@ fl_lookup(file)
 {
 	register struct file_list *fp;
 
-	for (fp = ftab ; fp != NULL; fp = fp->f_next) {
+	for (fp = ftab ; fp != 0; fp = fp->f_next) {
 		if (eq(fp->f_fn, file))
 			return (fp);
 	}
@@ -46,8 +46,9 @@ new_fent()
 	register struct file_list *fp;
 
 	fp = (struct file_list *) malloc(sizeof *fp);
-	fp->f_needs = fp->f_next = NULL;
-	if (fcur == NULL)
+	fp->f_needs = 0;
+	fp->f_next = 0;
+	if (fcur == 0)
 		fcur = ftab = fp;
 	else
 		fcur->f_next = fp;
@@ -68,14 +69,14 @@ makefile()
 
 	read_files();
 	strcpy(line, "../conf/makefile.");
-	strcat(line, machinename);
+	(void) strcat(line, machinename);
 	ifp = fopen(line, "r");
-	if (ifp == NULL) {
+	if (ifp == 0) {
 		perror(line);
 		exit(1);
 	}
 	ofp = fopen(path("makefile"), "w");
-	if (ofp == NULL) {
+	if (ofp == 0) {
 		perror(path("makefile"));
 		exit(1);
 	}
@@ -110,7 +111,7 @@ makefile()
 	}
 	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
 	    timezone, dst, maxusers);
-	while (fgets(line, BUFSIZ, ifp) != NULL) {
+	while (fgets(line, BUFSIZ, ifp) != 0) {
 		if (*line == '%')
 			goto percent;
 		if (profiling && strncmp(line, "COPTS=", 6) == 0) {
@@ -123,7 +124,7 @@ makefile()
 			cp = line + 6;
 			while (*cp && (*cp == ' ' || *cp == '\t'))
 				cp++;
-			COPTS = malloc(strlen(cp) + 1);
+			COPTS = malloc((unsigned)(strlen(cp) + 1));
 			if (COPTS == 0) {
 				printf("config: out of memory\n");
 				exit(1);
@@ -147,8 +148,8 @@ makefile()
 			fprintf(stderr,
 			    "Unknown %% construct in generic makefile: %s",
 			    line);
-		fclose(ifp);
-		fclose(ofp);
+		(void) fclose(ifp);
+		(void) fclose(ofp);
 	}
 }
 
@@ -166,31 +167,31 @@ read_files()
 	int nreqs;
 	int first = 1;
 
-	ftab = NULL;
-	strcpy(fname, "files");
+	ftab = 0;
+	(void) strcpy(fname, "files");
 openit:
 	fp = fopen(fname, "r");
-	if (fp == NULL) {
+	if (fp == 0) {
 		perror("../conf/files");
 		exit(1);
 	}
 next:
 	/* filename	[ standard | optional dev* ] [ device-driver ] */
 	wd = get_word(fp);
-	if (wd == EOF) {
-		fclose(fp);
+	if (wd == (char *)EOF) {
+		(void) fclose(fp);
 		if (first) {
-			sprintf(fname, "files.%s", machinename);
+			(void) sprintf(fname, "files.%s", machinename);
 			first = 0;
 			goto openit;
 		}
 		return;
 	}
-	if (wd == NULL)
+	if (wd == 0)
 		goto next;
 	this = ns(wd);
 	next_word(fp, wd);
-	if (wd == NULL) {
+	if (wd == 0) {
 		printf("%s: No type for %s.\n",
 		    fname, this);
 		exit(1);
@@ -212,7 +213,7 @@ next:
 	}
 nextopt:
 	next_word(fp, wd);
-	if (wd == NULL)
+	if (wd == 0)
 		goto doneopt;
 	devorprof = wd;
 	if (eq(wd, "device-driver") || eq(wd, "profiling-routine"))
@@ -220,10 +221,10 @@ nextopt:
 	nreqs++;
 	if (needs == 0)
 		needs = ns(wd);
-	for (dp = dtab; dp != NULL; dp = dp->d_next)
+	for (dp = dtab; dp != 0; dp = dp->d_next)
 		if (eq(dp->d_name, wd))
 			goto nextopt;
-	while ((wd = get_word(fp)) != NULL)
+	while ((wd = get_word(fp)) != 0)
 		;
 	tp = new_fent();
 	tp->f_fn = this;
@@ -239,13 +240,13 @@ doneopt:
 checkdev:
 	if (wd) {
 		next_word(fp, wd);
-		if (wd != NULL) {
+		if (wd != 0) {
 			devorprof = wd;
 			next_word(fp, wd);
 		}
 	}
 save:
-	if (wd != NULL) {
+	if (wd != 0) {
 		printf("%s: syntax error describing %s\n",
 		    fname, this);
 		exit(1);
@@ -272,7 +273,7 @@ do_objs(fp)
 
 	fprintf(fp, "OBJS=");
 	lpos = 6;
-	for (tp = ftab; tp != NULL; tp = tp->f_next) {
+	for (tp = ftab; tp != 0; tp = tp->f_next) {
 		if (tp->f_type == INVISIBLE)
 			continue;
 		sp = tail(tp->f_fn);
@@ -299,7 +300,7 @@ do_cfiles(fp)
 
 	fprintf(fp, "CFILES=");
 	lpos = 8;
-	for (tp = ftab; tp != NULL; tp = tp->f_next) {
+	for (tp = ftab; tp != 0; tp = tp->f_next) {
 		if (tp->f_type == INVISIBLE)
 			continue;
 		if (tp->f_fn[strlen(tp->f_fn)-1] != 'c')
@@ -338,7 +339,7 @@ do_rules(f)
 	register char *cp, *np, och, *tp;
 	register struct file_list *ftp;
 
-for (ftp = ftab; ftp != NULL; ftp = ftp->f_next) {
+for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 	if (ftp->f_type == INVISIBLE)
 		continue;
 	cp = (np = ftp->f_fn) + strlen(ftp->f_fn) - 1;
@@ -427,7 +428,7 @@ do_load(f)
 	register struct file_list *fl;
 	int first = 1;
 
-	for (fl = conf_list; fl != NULL; fl = fl->f_next) {
+	for (fl = conf_list; fl != 0; fl = fl->f_next) {
 		fprintf(f, "%s: makefile locore.o ${OBJS} param.o",
 		    fl->f_needs);
 		fprintf(f, " ioconf.o swap%s.o\n", fl->f_fn);
@@ -460,7 +461,7 @@ do_load(f)
 		fprintf(f, "\t@size %s\n", fl->f_needs);
 		fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
 	}
-	for (fl = conf_list; fl != NULL; fl = fl->f_next) {
+	for (fl = conf_list; fl != 0; fl = fl->f_next) {
 		fprintf(f, "swap%s.o: ../%s/swap%s.c\n",
 		    fl->f_fn, machinename, fl->f_fn);
 		switch (machine) {
@@ -482,11 +483,12 @@ do_load(f)
 		}
 	}
 	fprintf(f, "all:");
-	for (fl = conf_list; fl != NULL; fl = fl->f_next)
+	for (fl = conf_list; fl != 0; fl = fl->f_next)
 		fprintf(f, " %s", fl->f_needs);
 	fprintf(f, "\n");
 }
 
+char *
 raise(str)
 	register char *str;
 {
