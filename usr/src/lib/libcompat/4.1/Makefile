@@ -1,10 +1,10 @@
-#	Makefile	4.1	83/07/04
+#	Makefile	4.2	83/07/05
 #
 CFLAGS=	-O
 STD=	ftime.o gtty.o nice.o pause.o rand.o stty.o tell.o \
 	times.o utime.o vlimit.o vtimes.o
 # these should just be pitched, but in the interest of compatibility...
-TRASH=	getpw.o reset.o
+TRASH=	getpw.o 
 OBJS=	${STD} ${TRASH}
 
 .c.o:
