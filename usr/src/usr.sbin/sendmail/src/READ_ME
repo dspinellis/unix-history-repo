@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.38 (Berkeley) %G%
+#	@(#)READ_ME	8.39 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -24,6 +24,7 @@ the old traditional make.  You can use this using:
 
 	make -f Makefile.dist
 
+     <<<<<<<<<<<<<<<<<<<<  IMPORTANT  >>>>>>>>>>>>>>>>>>>>
 There are a bunch of other Makefiles for other systems -- these are
 the ones that I use, they have "Berkeley quirks" in them, and I don't
 guarantee that they will work unmodified in your environment.  However,
@@ -32,6 +33,9 @@ started.  They have names like "Makefile.HPUX".  Many of them include
 -I/usr/sww/include/db and -L/usr/sww/lib -- this is Berkeley's
 location for the new database libraries, described below.  You don't
 have to remove these definitions if you don't have these directories.
+Please look for an appropriate Makefile before you start trying to
+compile with Makefile or Makefile.dist.
+     <<<<<<<<<<<<<<<<<<<<<<<<<<*>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 There is also a shell script (makesendmail) that tries to be clever
 about using object subdirectories.  It's pretty straightforward, and
@@ -119,7 +123,7 @@ probably won't have to touch these.  But if you are porting, you may
 have to tweak the following compilation flags in conf.h in order to
 get it to compile and link properly:
 
-SYSTEM5		Adjust for System V.
+SYSTEM5		Adjust for System V (not necessarily Release 4).
 SYS5SIGNALS	Use System V signal semantics -- the signal handler
 		is automatically dropped when the signal is caught.
 		If this is not set, use POSIX/BSD semantics, where the
@@ -474,6 +478,15 @@ DG/UX
 	DG/UX -- the person who has this working, Douglas Anderson
 	<dlander@afterlife.ncsc.mil>, used procmail instead.
 
+System V Release 4 Based Systems
+	There is a single Makefile that is intended for all SVR4-based
+	systems (called Makefile.SVR4).  It defines __svr4__, which is
+	predefined by some compilers.  If your compiler already defines
+	this compile variable, you can delete the definition from the
+	Makefile.
+
+	It's been tested on Dell Issue 2.2.
+
 DELL SVR4
 	Date:      Mon, 06 Dec 1993 10:42:29 EST
 	From: "Kimmo Suominen" <kim@grendel.lut.fi>
@@ -521,10 +534,6 @@ DELL SVR4
 	 *  Kimmo.Suominen@lut.fi  *  SysVr4 enthusiast at GRENDEL.LUT.FI  *
 	*    KIM@FINFILES.BITNET   *  Postmaster and Hostmaster at LUT.FI   *
 	 *    + 358 200 865 718    *  Unix area moderator at NIC.FUNET.FI  *
-
-	---------------
-	Since this is an SVR4-based system, you may need to set
-	SYSLOG_BUFSIZE to something low.
 
 
 Non-DNS based sites
@@ -651,4 +660,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.38, last update %G% 10:52:41)
+(Version 8.39, last update %G% 05:24:20)
