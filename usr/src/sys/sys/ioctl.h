@@ -1,4 +1,4 @@
-/*	ioctl.h	4.26	82/12/17	*/
+/*	ioctl.h	4.27	83/03/15	*/
 /*
  * Ioctl definitions
  */
@@ -192,16 +192,16 @@ struct ltchars {
 #define	FIOASYNC	_IOW(f, 125, int)	/* set/clear async i/o */
 
 /* socket i/o controls */
-#define	SIOCDONE	_IOW(s, 0, int)		/* shutdown read/write */
-#define	SIOCSKEEP	_IOW(s, 1, int)		/* set keep alive */
-#define	SIOCGKEEP	_IOR(s, 2, int)		/* inspect keep alive */
-#define	SIOCSLINGER	_IOW(s, 3, int)		/* set linger time */
-#define	SIOCGLINGER	_IOR(s, 4, int)		/* get linger time */
-#define	SIOCSENDOOB	_IOW(s, 5, char)	/* send oob data */
-#define	SIOCRCVOOB	_IOR(s, 6, char)	/* recv oob data */
 #define	SIOCATMARK	_IOR(s, 7, int)		/* at out of band mark? */
 #define	SIOCSPGRP	_IOW(s, 8, int)		/* set process group */
 #define	SIOCGPGRP	_IOR(s, 9, int)		/* get process group */
 #define	SIOCADDRT	_IOW(s,10, struct rtentry)/* add route */
 #define	SIOCDELRT	_IOW(s,11, struct rtentry)/* delete route */
+#define	SIOCSIFADDR	_IOW(s,12, struct ifreq)/* set interface address */
+#define	SIOCGIFADDR	_IOR(s,13, struct ifreq)/* get interface address */
+#define	SIOCSIFDSTADDR	_IOW(s,14, struct ifreq)/* set point-point address */
+#define	SIOCGIFDSTADDR	_IOR(s,15, struct ifreq)/* get point-point address */
+#define	SIOCSIFFLAGS	_IOW(s,16, struct ifreq)/* set interface flags */
+#define	SIOCGIFFLAGS	_IOR(s,17, struct ifreq)/* get interface flags */
+#define	SIOCGIFCONF	_IOR(s,20, struct ifconf)/* get interface list */
 #endif

@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.71	83/01/22	*/
+/*	uipc_socket.c	4.72	83/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,7 @@
 #include "../h/ioctl.h"
 #include "../h/uio.h"
 #include "../net/route.h"
+#include "../net/if.h"
 
 /*
  * Socket operation routines.
@@ -682,6 +683,20 @@ soioctl(so, cmd, data)
 		if (!suser())
 			return (u.u_error);
 		return (rtrequest(cmd, (struct rtentry *)data));
+
+	/* interface parameter requests */
+	case SIOCSIFADDR:
+	case SIOCSIFFLAGS:
+		if (!suser())
+			return (u.u_error);
+		return (ifrequest(cmd, data));
+
+	case SIOCGIFADDR:
+	case SIOCGIFFLAGS:
+		return (ifrequest(cmd, data));
+
+	case SIOCGIFCONF:
+		return (ifconf(cmd, data));
 
 	/* type/protocol specific ioctls */
 	default:
