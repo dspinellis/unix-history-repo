@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -533,14 +533,14 @@ getnfsargs(spec)
 {
 	register CLIENT *clp;
 	struct hostent *hp;
-	struct sockaddr_in saddr;
+	static struct sockaddr_in saddr;
 	struct timeval pertry, try;
 	enum clnt_stat clnt_stat;
 	int so = RPC_ANYSOCK;
 	char *hostp, *delimp;
 	u_short tport;
-	struct nfhret nfhret;
-	char nam[MNAMELEN + 1];
+	static struct nfhret nfhret;
+	static char nam[MNAMELEN + 1];
 
 	strncpy(nam, spec, MNAMELEN);
 	nam[MNAMELEN] = '\0';
