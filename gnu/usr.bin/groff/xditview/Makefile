@@ -1,7 +1,7 @@
 .if exists(/usr/X386)
 
 BINDIR=		/usr/X386/bin
-MANDIR=		/usr/X386/man/cat
+MANDIR=		/usr/X386/man/man
 
 PROG=		gxditview
 CFLAGS+=	-I/usr/X386/include -DFONTPATH=\"/usr/share/groff_font\"
@@ -11,7 +11,7 @@ LDADD+=		-L/usr/X386/lib -lXaw -lXmu -lXt -lXext -lX11 -lm
 
 afterinstall:
 		install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/GXditview.ad \
-			$(DESTDIR)/usr/X386/lib/X11/app-defaults
+			$(DESTDIR)/usr/X386/lib/X11/app-defaults/GXditview
 .endif
 
 .include <bsd.prog.mk>
