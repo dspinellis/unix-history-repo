@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.11 %G%";
+static char *SccsId = "@(#)lex.c	1.12 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -86,7 +86,6 @@ setfile(name, isedit)
 	fclose(ibuf);
 	for (i = SIGINT; i <= SIGQUIT; i++)
 		signal(i, sigs[i - SIGINT]);
-	printf("%s: ", name);
 	shudann = 1;
 	sawcom = 0;
 	return(0);
@@ -498,8 +497,26 @@ announce(pr)
 {
 	int vec[2], mdot;
 	extern char *version;
+
+	mdot = newfileinfo();
+	vec[0] = mdot;
+	vec[1] = 0;
+	if (pr && value("quiet") == NOSTR)
+		printf(greeting, version);
+	dot = &message[mdot - 1];
+	if (msgCount > 0)
+		headers(vec);
+}
+
+/*
+ * Announce information about the file we are editing.
+ * Return a likely place to set dot.
+ */
+
+newfileinfo()
+{
 	register struct message *mp;
-	register int u, n;
+	register int u, n, mdot;
 
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & MNEW)
@@ -512,30 +529,25 @@ announce(pr)
 		mdot = mp - &message[0] + 1;
 	else
 		mdot = 1;
-	vec[0] = mdot;
-	vec[1] = 0;
-	if (pr && value("quiet") == NOSTR)
-		printf(greeting, version);
-	if (msgCount == 1)
-		printf("1 message");
-	else
-		printf("%d messages", msgCount);
-	if (readonly)
-		printf(" [Read only]");
 	for (mp = &message[0], n = 0, u = 0; mp < &message[msgCount]; mp++) {
 		if (mp->m_flag & MNEW)
 			n++;
 		if ((mp->m_flag & MREAD) == 0)
 			u++;
 	}
+	printf("\"%s\": ", mailname);
+	if (msgCount == 1)
+		printf("1 message");
+	else
+		printf("%d messages", msgCount);
 	if (n > 0)
 		printf(" %d new", n);
 	if (u-n > 0)
 		printf(" %d unread", u);
+	if (readonly)
+		printf(" [Read only]");
 	printf("\n");
-	if (msgCount > 0)
-		headers(vec);
-	dot = &message[mdot - 1];
+	return(mdot);
 }
 
 strace() {}
