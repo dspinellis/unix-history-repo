@@ -5,7 +5,10 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.20 1994/04/24 01:01:39 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.21 1994/05/02 23:23:20 jkh Exp $
+
+All entries marked <CURRENT> are for FreeBSD-current.  All other entries
+are for both.
 
 
 Table of Contents
@@ -104,6 +107,7 @@ developers.  For more information, send to
 <majordomo@freefall.cdrom.com> and include a single line saying
 ``help'' in the body of your message.
 
+FreeBSD-announce:  For announcements about or on FreeBSD.
 FreeBSD-hackers:   Useful for persons wishing to work on the internals. 
 FreeBSD-questions: General questions on FreeBSD. 
 FreeBSD-bugs:      Where bugs should be sent.
@@ -182,6 +186,9 @@ if you have documentation for your drive, you may want to see if this
 feature has been disabled on your drive.  However, ESDI, RLL, and
 ST-506 drives normally do not do this.
 
+<CURRENT>
+FreeBSD-current has better bad block handling due to improvments made
+to the wd driver.
 
 1.5:  I have 32MB of memory, should I expect any special problems?
 
@@ -193,7 +200,9 @@ certainly have problems with the upper 16MB of memory due to the ISA
 24 bit DMA limitation (which ISA cards in EISA systems will also
 exhibit).  If you have a local bus disk controller, then you should be
 OK, UNLESS it's a Buslogic Bt445S with a revision less than `D' (BIOS
-3.36 or earlier).  Never fear, however, as all is not lost.
+3.36 or earlier).
+
+<CURRENT>
 FreeBSD-current (and the upcoming FreeBSD 1.2) have bounce-buffer
 support that make all of the above scenarios work with a full 32MB of
 memory or more.  You are therefore advised to simply pull 16MB of
@@ -470,6 +479,11 @@ Follow the instructions supplied.
 This is a port of an older Linux math-emulator.  At some point,
 FreeBSD's default math emulator will be good enough that you can
 forget about having to do this.
+
+<CURRENT>  
+For current you may add the following to your kernel config file and
+it  will be compiled in.
+options                         GPL_MATH_EMULATE
 
 
 4.2:  If I want something like seyon, term, Kermit, emacs or any one of
