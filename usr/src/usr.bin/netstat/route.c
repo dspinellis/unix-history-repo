@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -418,7 +418,7 @@ p_rtentry(rt)
 	static char name[16];
 
 	p_sockaddr(kgetsa(rt_key(rt)), rt->rt_flags, WID_DST);
-	p_sockaddr(kgetsa(rt->rt_gateway), 0, WID_GW);
+	p_sockaddr(kgetsa(rt->rt_gateway), RTF_HOST, WID_GW);
 	p_flags(rt->rt_flags, "%-6.6s ");
 	printf("%6d %8d ", rt->rt_refcnt, rt->rt_use);
 	if (rt->rt_ifp) {
