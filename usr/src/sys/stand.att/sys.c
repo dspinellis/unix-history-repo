@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	6.4 (Berkeley) %G%
+ *	@(#)sys.c	6.5 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -62,6 +62,7 @@ find(path, file)
 			q++;
 		c = *q;
 		*q = '\0';
+		if (q == path) path = "." ;	/* "/" means "/." */
 
 		if ((n = dlook(path, file)) != 0) {
 			if (c == '\0')
@@ -72,7 +73,7 @@ find(path, file)
 			path = q;
 			continue;
 		} else {
-			printf("%s not found\n", path);
+			printf("%s: not found\n", path);
 			return (0);
 		}
 	}
@@ -171,10 +172,11 @@ dlook(s, io)
 	ip = &io->i_ino;
 	if ((ip->i_mode&IFMT) != IFDIR) {
 		printf("not a directory\n");
+		printf("%s: not a directory\n", s);
 		return (0);
 	}
 	if (ip->i_size == 0) {
-		printf("zero length directory\n");
+		printf("%s: zero length directory\n", s);
 		return (0);
 	}
 	len = strlen(s);
@@ -216,7 +218,8 @@ readdir(dirp)
 			io->i_cc = blksize(&io->i_fs, &io->i_ino, lbn);
 			if (devread(io) < 0) {
 				errno = io->i_error;
-				printf("bn %D: read error\n", io->i_bn);
+				printf("bn %D: directory read error\n",
+					io->i_bn);
 				return (NULL);
 			}
 		}
@@ -331,8 +334,10 @@ read(fdesc, buf, count)
 	int fdesc, count;
 	char *buf;
 {
-	register i;
+	register i, size;
 	register struct iob *file;
+	register struct fs *fs;
+	int lbn, off;
 
 	errno = 0;
 	if (fdesc >= 0 & fdesc <= 2) {
@@ -361,16 +366,44 @@ read(fdesc, buf, count)
 		if (i < 0)
 			errno = file->i_error;
 		return (i);
-	} else {
-		if (file->i_offset+count > file->i_ino.i_size)
-			count = file->i_ino.i_size - file->i_offset;
-		if ((i = count) <= 0)
-			return (0);
-		do {
-			*buf++ = getc(fdesc+3);
-		} while (--i);
-		return (count);
 	}
+	if (file->i_offset+count > file->i_ino.i_size)
+		count = file->i_ino.i_size - file->i_offset;
+	if ((i = count) <= 0)
+		return (0);
+	/*
+	 * While reading full blocks, do I/O into user buffer.
+	 * Anything else uses getc().
+	 */
+	fs = &file->i_fs;
+	while (i) {
+		off = blkoff(fs, file->i_offset);
+		lbn = lblkno(fs, file->i_offset);
+		size = blksize(fs, &file->i_ino, lbn);
+		if (off == 0 && size <= i) {
+			file->i_bn = fsbtodb(fs, sbmap(file, lbn)) +
+			    file->i_boff;
+			file->i_cc = size;
+			file->i_ma = buf;
+			if (devread(file) < 0) {
+				errno = file->i_error;
+				return (-1);
+			}
+			file->i_offset += size;
+			file->i_cc = 0;
+			buf += size;
+			i -= size;
+		} else {
+			size -= off;
+			if (size > i)
+				size = i;
+			i -= size;
+			do {
+				*buf++ = getc(fdesc+3);
+			} while (--size);
+		}
+	}
+	return (count);
 }
 
 write(fdesc, buf, count)
@@ -408,6 +441,10 @@ write(fdesc, buf, count)
 }
 
 int	openfirst = 1;
+#ifdef notyet
+int	opendev;	/* last device opened; for boot to set bootdev */
+extern	int bootdev;
+#endif notyet
 
 open(str, how)
 	char *str;
@@ -433,6 +470,66 @@ open(str, how)
 gotfile:
 	(file = &iob[fdesc])->i_flgs |= F_ALLOC;
 
+#ifdef notyet
+	for (cp = str; *cp && *cp != '/' && *cp != ':'; cp++)
+			;
+	if (*cp != ':') {
+		/* default bootstrap unit and device */
+		file->i_ino.i_dev = bootdev;
+		cp = str;
+	} else {
+# define isdigit(n)	((n>='0') && (n<='9'))
+		/*
+	 	 * syntax for possible device name:
+	 	 *	<alpha-string><digit-string><letter>:
+	 	 */
+		for (cp = str; *cp != ':' && !isdigit(*cp); cp++)
+			;
+		for (dp = devsw; dp->dv_name; dp++) {
+			if (!strncmp(str, dp->dv_name,cp-str))
+				goto gotdev;
+		}
+		printf("unknown device\n");
+		file->i_flgs = 0;
+		errno = EDEV;
+		return (-1);
+	gotdev:
+		i = 0;
+		while (*cp >= '0' && *cp <= '9')
+			i = i * 10 + *cp++ - '0';
+		if (i < 0 || i > 255) {
+			printf("minor device number out of range (0-255)\n");
+			file->i_flgs = 0;
+			errno = EUNIT;
+			return (-1);
+		}
+		if (*cp >= 'a' && *cp <= 'h') {
+			if (i > 31) {
+				printf("unit number out of range (0-31)\n");
+				file->i_flgs = 0;
+				errno = EUNIT;
+				return (-1);
+			}
+			i = make_minor(i, *cp++ - 'a');
+		}
+
+		if (*cp++ != ':') {
+			printf("incorrect device specification\n");
+			file->i_flgs = 0;
+			errno = EOFFSET;
+			return (-1);
+		}
+		opendev = file->i_ino.i_dev = makedev(dp-devsw, i);
+	}
+	file->i_boff = 0;
+	devopen(file);
+	if (cp != str && *cp == '\0') {
+		file->i_flgs |= how+1;
+		file->i_cc = 0;
+		file->i_offset = 0;
+		return (fdesc+3);
+	}
+#else notyet
 	for (cp = str; *cp && *cp != '('; cp++)
 			;
 	if (*cp != '(') {
@@ -484,6 +581,7 @@ badoff:
 		file->i_offset = 0;
 		return (fdesc+3);
 	}
+#endif notyet
 	file->i_ma = (char *)(&file->i_fs);
 	file->i_cc = SBSIZE;
 	file->i_bn = SBLOCK + file->i_boff;
