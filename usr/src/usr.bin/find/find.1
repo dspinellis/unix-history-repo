@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)find.1	6.8 (Berkeley) %G%
+.\"	@(#)find.1	6.9 (Berkeley) %G%
 .\"
 .TH FIND 1 ""
 .AT 3
@@ -305,7 +305,8 @@ find  /  \e(  \-newer  ttt  \-o  \-user wnj  \e)  \-print
 Print out a list of all the files that are either owned by ``wnj'' or
 that are newer than ``ttt''.
 .SH "SEE ALSO"
-chmod(1), sh(1), test(1), stat(2), umask(2), getpwent(3), getgrent(3)
+chmod(1), sh(1), test(1), stat(2), umask(2),
+getpwent(3), getgrent(3), strmode(3)
 .SH STANDARDS
 The
 .I find
