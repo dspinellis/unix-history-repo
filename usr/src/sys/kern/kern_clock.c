@@ -1,4 +1,4 @@
-/*	%H%	3.20	kern_clock.c	*/
+/*	%H%	3.21	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,7 +22,7 @@
 /*
  * Constant for decay filter for cpu usage.
  */
-double	ccpu = 0.93550698503161773774;		/* exp(-1/15) */
+double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
 
 /*
  * Clock is called straight from
@@ -54,7 +54,7 @@ caddr_t pc;
 	register struct callo *p1, *p2;
 	register struct proc *pp;
 	register int s;
-	int a, cpstate;
+	int a, cpstate, i;
 
 	/*
 	 * reprime clock
@@ -151,7 +151,10 @@ out:
 		else
 			u.u_vm.vm_stime++;
 	}
-	dk_time[cpstate][dk_busy&(DK_NSTATES-1)]++;
+	cp_time[cpstate]++;
+	for (i = 0; i < DK_NDRIVE; i++)
+		if (dk_busy&(1<<i))
+			dk_time[i]++;
 	if (!noproc) {
 		pp = u.u_procp;
 		pp->p_cpticks++;
