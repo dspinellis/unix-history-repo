@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	5.4 (Berkeley) %G% */
+/*	@(#)tmscp.c	5.5 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -678,7 +678,6 @@ tmscpopen(dev, flag)
 	register struct uba_ctlr *um;
 	struct tmscpdevice *tmscpaddr;
 	int s,i;
-	extern quota;
 	
 	unit = TMSUNIT(dev);
 #	ifdef DEBUG

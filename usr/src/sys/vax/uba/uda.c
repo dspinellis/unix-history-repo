@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.19 (Berkeley) %G%
+ *	@(#)uda.c	6.20 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -337,7 +337,6 @@ udopen(dev, flag)
 	register struct uba_ctlr *um;
 	struct udadevice *udaddr;
 	int s,i;
-	extern quota;
 	
 	unit = udunit(dev);
 	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
