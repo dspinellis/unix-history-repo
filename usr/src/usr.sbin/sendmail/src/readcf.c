@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -301,7 +301,10 @@ fileclass(class, filename, fmt)
 	FILE *f;
 	char buf[MAXLINE];
 
-	f = fopen(filename, "r");
+	if (filename[0] == '|')
+		f = popen(filename + 1, "r");
+	else
+		f = fopen(filename, "r");
 	if (f == NULL)
 	{
 		syserr("cannot open %s", filename);
@@ -349,7 +352,10 @@ fileclass(class, filename, fmt)
 		}
 	}
 
-	(void) fclose(f);
+	if (filename[0] == '|')
+		(void) pclose(f);
+	else
+		(void) fclose(f);
 }
 /*
 **  MAKEMAILER -- define a new mailer.
