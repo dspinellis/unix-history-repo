@@ -1,4 +1,4 @@
-/*	hp.c	4.57	82/10/31	*/
+/*	hp.c	4.58	82/11/13	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -149,6 +149,15 @@ struct	size {
 	125440,	778,
 	181760,	668,		/* G=cyl 668 thru 1022 */
 	291346,	98,		/* H=cyl 98 thru 667 */
+}, hpfj_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 18 */
+	33440,	19,		/* B=cyl 19 thru 58 */
+	723991,	0,		/* C=cyl 0 thru 841 */
+	0, 0,
+	0, 0,
+	0, 0,
+	381711, 398,		/* G=cyl 398 thru 841 */
+	291346, 59,		/* H=cyl 59 thru 397 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -187,8 +196,10 @@ short	hptypes[] = {
 	-1,
 #define	HPDT_CAPRICORN	10
 	-1,
-#define	HPDT_RM02	11
-	MBDT_RM02,		/* beware, actually capricorn */
+#define HPDT_EAGLE	11
+	-1,
+#define HPDT_RM02	12
+	MBDT_RM02,		/* beware, actually capricorn or eagle */
 	0
 };
 struct	mba_device *hpinfo[NHP];
@@ -215,6 +226,7 @@ struct hpst {
 	32,	40,	32*40,	843,	si9775_sizes,	/* 9775 */
 	32,	10,	32*10,	823,	si9730_sizes,	/* 9730 */
 	32,	16,	32*16,	1024,	hpam_sizes,	/* AMPEX capricorn */
+	43,	20,	43*20,	843,	hpfj_sizes,	/* Fujitsu EAGLE */
 };
 
 u_char	hp_offset[16] = {
@@ -303,8 +315,8 @@ hpattach(mi, slave)
 
 	/*
 	 * CAPRICORN KLUDGE...poke the holding register
-	 * to find out the number of tracks.  If it's 15
-	 * we believe it's a Capricorn.
+	 * we believe it's a Capricorn.  Otherwise assume
+	 * its an Eagle.
 	 */
 	case HPDT_RM02:
 		hpaddr->hpcs1 = HP_NOP;
@@ -312,6 +324,9 @@ hpattach(mi, slave)
 		if ((hpaddr->hphr&0xffff) == 15) {
 			printf("hp%d: capricorn\n", mi->mi_unit);
 			mi->mi_type = HPDT_CAPRICORN;
+		} else {
+			printf("hp%d: eagle\n", mi->mi_unit);
+			mi->mi_type = HPDT_EAGLE;
 		}
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		break;
