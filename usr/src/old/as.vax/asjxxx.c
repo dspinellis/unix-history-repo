@@ -1,18 +1,24 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asjxxx.c 4.2 %G%";
+static	char sccsid[] = "@(#)asjxxx.c 4.3 %G%";
 #include	<stdio.h>
 #include	"as.h"
 #include	"assyms.h"
 
-#define JBR 0x11
-#define BRW 0x31
+#define	JBR	0x11
+#define	BRW	0x31
+#define	JMP	0x17
 
 /*
  *	The number of bytes to add if the jxxx must be "exploded"
  *	into the long form
  */
-#define	JBRFSIZE	1	/*goes to brw*/
-#define JXXXFSIZE	3	/*goes to brb, brw <byte> <byte> */
+#define	JBRDELTA	1	/* brb <byte> ==> brw <byte> <byte> */
+#define	JXXXDELTA	3	/* brb <byte> ==> brb <byte> brw <byte> <byte> */
+#define	JBRJDELTA	d124	/* brb <byte> ==> jmp L^(pc) <byte>*d124 */
+#define	JXXXJDELTA	d124+2	/* brb <byte> ==> brb <byte> jmp L^(pc) <byte>*d124 */
+
+int	jbrfsize = JBRDELTA;
+int	jxxxfsize = JXXXDELTA;
 
 /*
  *	These variables are filled by asscan.c with the
@@ -22,6 +28,17 @@ static	char sccsid[] = "@(#)asjxxx.c 4.2 %G%";
 struct 	symtab	*lastnam;
 struct	symtab	*lastjxxx;
 
+initijxxx()
+{
+	jbrfsize = jxxxJUMP ? JBRJDELTA : JBRDELTA;
+	jxxxfsize = jxxxJUMP ? JXXXJDELTA : JXXXDELTA;
+	/*
+	 *	Note: ifjxxxJUMP is set, then we do NOT do any tunnelling;
+	 *	this was too complicated to figure out, and in the first
+	 *	version of the assembler, tunnelling proved to be the hardest
+	 *	to get to work!
+	 */
+}
 /*
  *	Handle jxxx instructions
  */
@@ -44,9 +61,9 @@ ijxout(op,ap,nact)
 		jumpfrom->s_tag = JXACTIVE;
 		jumpfrom->s_jxbump = 0;
 		if (op == JBR)
-			jumpfrom->s_jxfear = JBRFSIZE;
+			jumpfrom->s_jxfear = jbrfsize;
 		else
-			jumpfrom->s_jxfear = JXXXFSIZE;
+			jumpfrom->s_jxfear = jxxxfsize;
 		if (lastnam == 0)
 			yyerror("jxxx destination not a label");
 		jumpfrom->s_dest = lastnam;
@@ -75,7 +92,7 @@ ijxout(op,ap,nact)
 			tunnel = lastjxxx->s_dest;
 			xp->e_xvalue = tunnel->s_value	/*index of instruction following*/
 				    - 3			/* size of brw + word*/
-				    + ( ( (tunnel->s_jxfear == JBRFSIZE) &&
+				    + ( ( (tunnel->s_jxfear == jbrfsize) &&
 					  (tunnel->s_jxbump == 0))?1:0);
 							/*non bumped branch byteis only 2 back*/
 		}
@@ -89,7 +106,7 @@ ijxout(op,ap,nact)
 				putins(op^1, ap, nact);
 				xp->e_xvalue = oxvalue;
 			}
-			putins(BRW, aplast, 1);
+			putins(jxxxJUMP ? JMP : BRW, aplast, 1);
 		}
 	}
 }	/*end of ijxout*/
@@ -195,7 +212,7 @@ jxxxfix()
 				tunnel = 0;	/*avoid tunneling across a flex alocation*/
 				continue;	/*we take care of these later*/
 			}
-			if (   jumpfrom->s_jxfear == JBRFSIZE	/*unconditional*/
+			if (   jumpfrom->s_jxfear == jbrfsize	/*unconditional*/
 			    || (   tag == JXINACTIVE		/*inactive bumped*/
 				&& (jumpfrom->s_jxbump != 0)
 			       )
@@ -220,13 +237,16 @@ jxxxfix()
 				 *	to the tunnel is less than zero, and
 				 *	its relative position will be unaffected
 				 *	by future jxxx expansions.
+				 *
+				 *	No tunnels if doing jumps...
 				 */
-				if (    (jumpfrom->s_jxfear > JBRFSIZE)
+				if (    (!jxxxJUMP)
+				     && (jumpfrom->s_jxfear > jbrfsize)
 				     && (tunnel) 
 				     && (tunnel->s_dest == jumpfrom->s_dest)	
 				     && (tunnel->s_index == jumpfrom->s_index)
 				     && (tunnel->s_value - jumpfrom->s_value >=
-						MINBYTE + JXXXFSIZE)
+						MINBYTE + jxxxfsize)
 				   ) {
 						/*
 						 *	tunnelling is OK

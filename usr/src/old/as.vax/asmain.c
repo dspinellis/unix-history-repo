@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asmain.c 4.2 %G%";
+static	char sccsid[] = "@(#)asmain.c 4.3 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -33,6 +33,7 @@ int 	d124 = 4;	/*default allocate 4 bytes for unknown pointers*/
 int	anyerrs = 0;	/*no errors yet*/
 int	orgwarn = 0;	/*Bad origins*/
 int	passno = 1;	/* current pass*/
+int	jxxxJUMP = 0;	/* in jxxxes that branch too far, use jmp instead of brw */
 
 #ifdef DEBUG
 int 	debug = 0;
@@ -269,6 +270,9 @@ argprocess(argc, argv)
 				 case 'L':
 					savelabels = 1;
 					break;
+				 case 'J':
+					jxxxJUMP = 1;
+					break;
 #ifdef DEBUG
 				 case 'D':
 					debug = 1;
@@ -348,6 +352,7 @@ i_pass1()
 	}
 
 	inittmpfile();
+	initijxxx();
 }
 
 pass1()
