@@ -1,9 +1,9 @@
-/* in_cksum.c 1.6 81/10/28 */
+/* in_cksum.c 1.7 81/10/29 */
 
 #include <sys/types.h>
-#include "../bbnnet/net.h"
-#include "../bbnnet/mbuf.h"
-#include "../bbnnet/count.h"
+#include "../h/mbuf.h"
+#include "../inet/inet.h"
+#include "../inet/inet_systm.h"
 
 /*
  * Network primitives; this file varies per-cpu,

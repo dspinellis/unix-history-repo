@@ -1,18 +1,16 @@
-/* tcp_input.c 1.6 81/10/29 */
+/* tcp_input.c 1.7 81/10/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../bbnnet/net.h"
-#include "../bbnnet/mbuf.h"
-#include "../bbnnet/host.h"
-#include "../bbnnet/imp.h"
-#include "../bbnnet/ucb.h"
-#include "../bbnnet/tcp.h"
-#include "../bbnnet/ip.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/inode.h"
-#include "../bbnnet/fsm.h"
+#include "../h/mbuf.h"
+#include "../h/socket.h"
+#include "../inet/inet.h"
+#include "../inet/inet_systm.h"
+#include "../inet/imp.h"
+#include "../inet/inet_host.h"
+#include "../inet/ip.h"
+#include "../inet/tcp.h"
+#include "../inet/tcp_fsm.h"
 
 extern int nosum;
 
@@ -62,11 +60,11 @@ COUNT(TCP_INPUT);
 	/*
 	 * Find tcb for message (SHOULDN'T USE LINEAR SEARCH!)
 	 */
-	for (tp = netcb.n_tcb_head; tp != 0; tp = tp->t_tcb_next)
+	for (tp = tcb_head; tp != 0; tp = tp->t_tcb_next)
 		if (tp->t_lport == lport && tp->t_fport == fport &&
 		    tp->t_ucb->uc_host->h_addr.s_addr == n->t_s.s_addr)
 			goto found;
-	for (tp = netcb.n_tcb_head; tp != 0; tp = tp->t_tcb_next)
+	for (tp = tcb_head; tp != 0; tp = tp->t_tcb_next)
 		if (tp->t_lport == lport &&
 		    (tp->t_fport==fport || tp->t_fport==0) &&
 		    (tp->t_ucb->uc_host->h_addr.s_addr == n->t_s.s_addr ||
@@ -159,7 +157,7 @@ goodseg:
 	 */
 	up = tp->t_ucb;
 	if (up->uc_rcc > up->uc_rhiwat && 
-	     && n->t_len != 0 && netcb.n_bufs < netcb.n_lowat) {
+	     && n->t_len != 0 && mbstat.m_bufs < mbstat.m_lowat) {
 		mp->m_act = (struct mbuf *)0;
 		if ((m = tp->t_rcv_unack) != NULL) {
 			while (m->m_act != NULL)

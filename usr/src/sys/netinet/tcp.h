@@ -1,7 +1,9 @@
-/* tcp.h 1.8 81/10/29 */
+/* tcp.h 1.9 81/10/29 */
 
 /*
- * Tcp header (fits over ip header).
+ * Tcp header.  Fits over the ip header after option removed.
+ *
+ * SHOULD MAKE A CLEAN HEADER FOR USE BY USERS.
  */
 struct th {
 	struct	th *t_next;		/* -> next tcp on rcv chain */
@@ -103,6 +105,15 @@ struct tcb {
 };
 
 /*
+ * TCP timers.
+ */
+#define	TINIT		1
+#define	TREXMT		2
+#define	TREXMTTL	3
+#define	TPERSIST	4
+#define	TFINACK		5
+
+/*
  * Tcp machine predicates
  */
 #define	ack_ok(x, y) \
@@ -119,6 +130,9 @@ struct tcb {
     (((x)->tc_flags&TC_USR_ABORT) || \
       ((x)->t_ucb->uc_rbuf == NULL && (x)->t_rcv_next == (x)->t_rcv_prev))
 
+/*
+ * THESE NEED TO BE JUSTIFIED!
+ */
 #define	ISSINCR		128		/* increment for iss each second */
 #define	TCPROTO		6		/* TCP-4 protocol number */
 #define	TCPSIZE		20		/* size of TCP leader (bytes) */
@@ -149,11 +163,17 @@ struct tcp_debug {
 	u_short	td_lno;			/* length */
 	u_char	td_flg;			/* message flags */
 };
-#ifdef KERNEL
-int	tcpconsdebug;		/* set to 1 traces on console */
-struct	tcp_debug tcp_debug[TDBSIZE];
-int	tdbx;			/* rotating index into tcp_debug */
 #endif
+
+#ifdef KERNEL
+struct	tcb *tcb_head, *tcb_tail;	/* tcp tcb list */
+seq_t	tcp_iss;			/* tcp initial send seq # */
+int	tcpconsdebug;			/* set to 1 traces on console */
+#ifdef TCPDEBUG
+struct	tcp_debug tcp_debug[TDBSIZE];
+#endif
+int	tdbx;			/* rotating index into tcp_debug */
+struct	th *tcp_template();
 #endif
 
 #define	SEQ_LT(a,b)	((int)((a)-(b)) < 0)
