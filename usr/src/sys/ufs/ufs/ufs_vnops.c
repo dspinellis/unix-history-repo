@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.15 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1275,6 +1275,8 @@ bad:
 		vput(ITOV(xp));
 	vput(ITOV(dp));
 out:
+	if (doingdirectory)
+		ip->i_flag &= ~IN_RENAME;
 	if (VOP_LOCK(fvp) == 0) {
 		ip->i_nlink--;
 		ip->i_flag |= IN_CHANGE;
