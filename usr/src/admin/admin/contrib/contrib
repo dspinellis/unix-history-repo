@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.27 (Berkeley) %G%
+.\"	@(#)contrib	5.28 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -45,7 +45,7 @@ HP300 support	Jeff Forys, Mike Hibler, Jay Lepreau, Donn Seeley and the
 ISODE	Marshall Rose
 Job control	Jim Kulp
 Kerberos	Project Athena and MIT
-Math library (libm)	K.C. Ng, Z-S. Alex Liu, S. McDonald P. Tang and W. Kahan
+Math library (libm)	K.C. Ng, Z-S. Alex Liu, S. McDonald, P. Tang and W. Kahan
 NFS	Rick Macklem
 NFS automounter	Jan Pendry
 Network device drivers	Micom-Interlan and Excelan
@@ -116,6 +116,7 @@ des(1)	Phil Karn, Jim Gillogly
 disklabel(8)	Symmetric Computer Systems
 du(1)	Chris Newcomb
 emacs(1)	Richard Stallman
+erf(3)	Peter McIlroy, K.C. Ng
 factor(6)	Landon Curt Noll
 find(1)	Cimarron Taylor
 finger(1)	Tony Nardo
@@ -135,19 +136,26 @@ hangman(6)	Ken Arnold
 hunt(6)	Greg Couch and Conrad Huang
 indent(1)	David Willcox, Eric Schmidt,
 	 James Gosling and Sun Microsystems
+j0(3)	Sun Microsystems, Inc.
+j1(3)	Sun Microsystems, Inc.
+jn(3)	Sun Microsystems, Inc.
 join(1)	Steve Hayman, Michiro Hikida and David Goodenough
 jove(1)	Jonathon Payne
 kvm(3)	Peter Shipley
 larn(6)	Noah Morgan
 lex(1)	Vern Paxson
+libm(3)	Peter McIlroy, funded by
+	UUNET Communications Services
 locate(1)	James A. Woods
 lock(1)	Bob Toxen
+log(3)	Peter McIlroy
 look(1)	David Hitz
 ls(1)	Michael Fischbein
 lsearch(3)	Roger L. Snyder
 m4(1)	Ozan Yigit
 mail(1)	Kurt Schoens
 make(1)	Adam de Boor
+mergesort(3)	Peter McIlroy
 mh(1)	Rand Corporation
 mille(6)	Ken Arnold
 mknod(8)	Kevin Fall
@@ -162,8 +170,9 @@ phantasia(6)	Edward A. Estes and C. Robertson
 ping(8)	Mike Muuss
 pom(6)	Keith E. Brandt
 primes(6)	Landon Curt Noll
+qsort(3)	Jon Bentley, Doug McIlroy
 quiz(6)	Jim R. Oldroyd and Keith Gabryelski
-radixsort(3)	Dan Bernstein
+radixsort(3)	Dan Bernstein, Peter McIlroy
 ranlib(1)	Hugh A. Smith
 rcs(1)	Walter F. Tichy
 regexp(3)	Henry Spencer
