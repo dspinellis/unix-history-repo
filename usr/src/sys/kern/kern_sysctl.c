@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	8.5 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	8.6 (Berkeley) %G%
  */
 
 /*
@@ -80,7 +80,7 @@ __sysctl(p, uap, retval)
 	switch (name[0]) {
 	case CTL_KERN:
 		fn = kern_sysctl;
-		if (name[2] != KERN_VNODE)	/* XXX */
+		if (name[2] == KERN_VNODE)	/* XXX */
 			dolock = 0;
 		break;
 	case CTL_HW:
