@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,12 +37,13 @@ static char sccsid[] = "@(#)finger.c	5.23 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <db.h>
 #include "finger.h"
 
+DB *db;
 time_t now;
 int entries, lflag, mflag, pplan, sflag;
 char tbuf[1024];
-PERSON *phead, *ptail, *htab[HSIZE];
 
 static void loginlist __P((void));
 static void userlist __P((int, char **));
@@ -99,12 +100,11 @@ main(argc, argv)
 		if (!sflag)
 			lflag = 1;	/* if -s not explicit, force -l */
 	}
-	if (entries != 0) {
+	if (entries)
 		if (lflag)
 			lflag_print();
 		else
 			sflag_print();
-	}
 	exit(0);
 }
 
@@ -112,8 +112,10 @@ static void
 loginlist()
 {
 	register PERSON *pn;
+	DBT data, key;
 	struct passwd *pw;
 	struct utmp user;
+	int r, sflag;
 	char name[UT_NAMESIZE + 1];
 
 	if (!freopen(_PATH_UTMP, "r", stdin))
@@ -130,8 +132,15 @@ loginlist()
 		}
 		enter_where(&user, pn);
 	}
-	for (pn = phead; lflag && pn != NULL; pn = pn->next)
-		enter_lastlog(pn);
+	if (db && lflag)
+		for (sflag = R_FIRST;; sflag = R_NEXT) {
+			r = (*db->seq)(db, &key, &data, sflag);
+			if (r == -1)
+				err("db seq: %s", strerror(errno));
+			if (r == 1)
+				break;
+			enter_lastlog(*(PERSON **)data.data);
+		}
 }
 
 static void
@@ -139,64 +148,58 @@ userlist(argc, argv)
 	register int argc;
 	register char **argv;
 {
-	register int i;
 	register PERSON *pn;
-	PERSON *nethead, **nettail;
+	DBT data, key;
 	struct utmp user;
 	struct passwd *pw;
-	int dolocal, *used;
+	int r, sflag, *used, *ip;
+	char **ap, **nargv, **np, **p;
 
-	if (!(used = calloc((u_int)argc, (u_int)sizeof(int))))
+	if ((nargv = malloc(argc * sizeof(char *))) == NULL ||
+	    (used = calloc(argc, sizeof(int))) == NULL)
 		err("%s", strerror(errno));
 
-	/* pull out all network requests */
-	for (i = 0, dolocal = 0, nettail = &nethead; i < argc; i++) {
-		if (!index(argv[i], '@')) {
-			dolocal = 1;
-			continue;
-		}
-		pn = palloc();
-		*nettail = pn;
-		nettail = &pn->next;
-		pn->name = argv[i];
-		used[i] = -1;
-	}
-	*nettail = NULL;
+	/* Pull out all network requests. */
+	for (ap = p = argv, np = nargv; *p; ++p)
+		if (index(*p, '@'))
+			*np++ = *p;
+		else
+			*ap++ = *p;
 
-	if (!dolocal)
+	*np++ = NULL;
+	*ap++ = NULL;
+
+	if (!*argv)
 		goto net;
 
 	/*
-	 * traverse the list of possible login names and check the login name
+	 * Traverse the list of possible login names and check the login name
 	 * and real name against the name specified by the user.
 	 */
-	if (mflag) {
-		for (i = 0; i < argc; i++)
-			if (used[i] >= 0 && (pw = getpwnam(argv[i]))) {
+	if (mflag)
+		for (p = argv; *p; ++p)
+			if (pw = getpwnam(*p))
 				enter_person(pw);
-				used[i] = 1;
-			}
-	} else while (pw = getpwent())
-		for (i = 0; i < argc; i++)
-			if (used[i] >= 0 &&
-			    (!strcasecmp(pw->pw_name, argv[i]) ||
-			    match(pw, argv[i]))) {
-				enter_person(pw);
-				used[i] = 1;
-			}
-
-	/* list errors */
-	for (i = 0; i < argc; i++)
-		if (!used[i])
-			(void)fprintf(stderr,
-			    "finger: %s: no such user.\n", argv[i]);
-
-	/* handle network requests */
-net:	for (pn = nethead; pn; pn = pn->next) {
-		netfinger(pn->name);
-		if (pn->next || entries)
-			putchar('\n');
+			else
+				(void)fprintf(stderr,
+				    "finger: %s: no such user\n", *p);
+	else {
+		while (pw = getpwent())
+			for (p = argv, ip = used; *p; ++p, ++ip)
+				if (!*ip && (!strcasecmp(pw->pw_name, *p) ||
+				    match(pw, *p))) {
+					enter_person(pw);
+					*ip = 1;
+				}
+		for (p = argv, ip = used; *p; ++p, ++ip)
+			if (!*ip)
+				(void)fprintf(stderr,
+				    "finger: %s: no such user\n", *p);
 	}
+
+	/* Handle network requests. */
+net:	for (p = nargv; *p;)
+		netfinger(*p++);
 
 	if (entries == 0)
 		return;
@@ -214,6 +217,13 @@ net:	for (pn = nethead; pn; pn = pn->next) {
 			continue;
 		enter_where(&user, pn);
 	}
-	for (pn = phead; pn != NULL; pn = pn->next)
-		enter_lastlog(pn);
+	if (db)
+		for (sflag = R_FIRST;; sflag = R_NEXT) {
+			r = (*db->seq)(db, &key, &data, sflag);
+			if (r == -1)
+				err("db seq: %s", strerror(errno));
+			if (r == 1)
+				break;
+			enter_lastlog(*(PERSON **)data.data);
+		}
 }

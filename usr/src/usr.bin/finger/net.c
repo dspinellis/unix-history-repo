@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)net.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)net.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)net.c	5.6 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <db.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <utmp.h>
@@ -113,5 +114,6 @@ netfinger(name)
 		}
 	if (lastc != '\n')
 		putchar('\n');
+	putchar('\n');
 	(void)fclose(fp);
 }

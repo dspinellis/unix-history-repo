@@ -6,12 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <db.h>
 #include <pwd.h>
 #include <utmp.h>
 #include <errno.h>
@@ -24,69 +25,8 @@ static char sccsid[] = "@(#)util.c	5.15 (Berkeley) %G%";
 #include "finger.h"
 
 static void	 find_idle_and_ttywrite __P((WHERE *));
-static int	 hash __P((char *));
 static void	 userinfo __P((PERSON *, struct passwd *));
 static WHERE	*walloc __P((PERSON *));
-
-static void
-find_idle_and_ttywrite(w)
-	register WHERE *w;
-{
-	extern time_t now;
-	struct stat sb;
-
-	(void)snprintf(tbuf, sizeof(tbuf), "%s/%s", _PATH_DEV, w->tty);
-	if (stat(tbuf, &sb) < 0) {
-		(void)fprintf(stderr,
-		    "finger: %s: %s\n", tbuf, strerror(errno));
-		return;
-	}
-	w->idletime = now < sb.st_atime ? 0 : now - sb.st_atime;
-
-#define	TALKABLE	0220		/* tty is writable if 220 mode */
-	w->writable = ((sb.st_mode & TALKABLE) == TALKABLE);
-}
-
-static void
-userinfo(pn, pw)
-	register PERSON *pn;
-	register struct passwd *pw;
-{
-	register char *p, *t;
-	char *bp, name[1024];
-
-	pn->realname = pn->office = pn->officephone = pn->homephone = NULL;
-
-	pn->uid = pw->pw_uid;
-	pn->name = strdup(pw->pw_name);
-	pn->dir = strdup(pw->pw_dir);
-	pn->shell = strdup(pw->pw_shell);
-
-	/* why do we skip asterisks!?!? */
-	(void)strcpy(bp = tbuf, pw->pw_gecos);
-	if (*bp == '*')
-		++bp;
-
-	/* ampersands get replaced by the login name */
-	if (!(p = strsep(&bp, ",")))
-		return;
-	for (t = name; *t = *p; ++p)
-		if (*t == '&') {
-			(void)strcpy(t, pw->pw_name);
-			if (islower(*t))
-				*t = toupper(*t);
-			while (*++t);
-		}
-		else
-			++t;
-	pn->realname = strdup(name);
-	pn->office = ((p = strsep(&bp, ",")) && *p) ?
-	    strdup(p) : NULL;
-	pn->officephone = ((p = strsep(&bp, ",")) && *p) ?
-	    strdup(p) : NULL;
-	pn->homephone = ((p = strsep(&bp, ",")) && *p) ?
-	    strdup(p) : NULL;
-}
 
 match(pw, user)
 	struct passwd *pw;
@@ -187,55 +127,55 @@ PERSON *
 enter_person(pw)
 	register struct passwd *pw;
 {
-	register PERSON *pn, **pp;
+	PERSON *pn;
+	DBT data, key;
 
-	for (pp = htab + hash(pw->pw_name);
-	     *pp != NULL && strcmp((*pp)->name, pw->pw_name) != 0;
-	     pp = &(*pp)->hlink)
-		;
-	if ((pn = *pp) == NULL) {
+	if (db == NULL && (db = hash_open(NULL, O_RDWR, 0, NULL)) == NULL)
+		err("%s", strerror(errno));
+
+	key.data = pw->pw_name;
+	key.size = strlen(pw->pw_name);
+
+	switch((*db->get)(db, &key, &data, 0)) {
+	case 0:
+		return(*(PERSON **)data.data);
+	default:
+	case -1:
+		err("db get: %s", strerror(errno));
+		/* NOTREACHED */
+	case 1:
+		++entries;
 		pn = palloc();
-		entries++;
-		if (phead == NULL)
-			phead = ptail = pn;
-		else {
-			ptail->next = pn;
-			ptail = pn;
-		}
-		pn->next = NULL;
-		pn->hlink = NULL;
-		*pp = pn;
 		userinfo(pn, pw);
 		pn->whead = NULL;
+
+		data.size = sizeof(PERSON *);
+		data.data = &pn;
+		if ((*db->put)(db, &key, &data, R_PUT))
+			err("%s", strerror(errno));
+		return(pn);
 	}
-	return(pn);
 }
 
 PERSON *
 find_person(name)
 	char *name;
 {
-	register PERSON *pn;
+	register int cnt;
+	DBT data, key;
+	char buf[UT_NAMESIZE + 1];
 
-	/* name may be only UT_NAMESIZE long and not terminated */
-	for (pn = htab[hash(name)];
-	     pn != NULL && strncmp(pn->name, name, UT_NAMESIZE) != 0;
-	     pn = pn->hlink)
-		;
-	return(pn);
-}
+	if (!db)
+		return(NULL);
 
-static
-hash(name)
-	register char *name;
-{
-	register int h, i;
+	/* Name may be only UT_NAMESIZE long and not NUL terminated. */
+	for (cnt = 0; cnt < UT_NAMESIZE && *name; ++name, ++cnt)
+		buf[cnt] = *name;
+	buf[cnt] = '\0';
+	key.data = buf;
+	key.size = cnt;
 
-	h = 0;
-	/* name may be only UT_NAMESIZE long and not terminated */
-	for (i = UT_NAMESIZE; --i >= 0 && *name;)
-		h = ((h << 2 | h >> HBITS - 2) ^ *name++) & HMASK;
-	return(h);
+	return((*db->get)(db, &key, &data, 0) ? NULL : *(PERSON **)data.data);
 }
 
 PERSON *
@@ -254,10 +194,8 @@ walloc(pn)
 {
 	register WHERE *w;
 
-	if ((w = (WHERE *)malloc((u_int) sizeof(WHERE))) == NULL) {
-		(void)fprintf(stderr, "finger: out of space.\n");
-		exit(1);
-	}
+	if ((w = malloc((u_int) sizeof(WHERE))) == NULL)
+		err("%s", strerror(errno));
 	if (pn->whead == NULL)
 		pn->whead = pn->wtail = w;
 	else {
@@ -313,6 +251,66 @@ prphone(num)
 	*p++ = *num++;
 	*p = '\0';
 	return(pbuf);
+}
+
+static void
+find_idle_and_ttywrite(w)
+	register WHERE *w;
+{
+	extern time_t now;
+	struct stat sb;
+
+	(void)snprintf(tbuf, sizeof(tbuf), "%s/%s", _PATH_DEV, w->tty);
+	if (stat(tbuf, &sb) < 0) {
+		(void)fprintf(stderr,
+		    "finger: %s: %s\n", tbuf, strerror(errno));
+		return;
+	}
+	w->idletime = now < sb.st_atime ? 0 : now - sb.st_atime;
+
+#define	TALKABLE	0220		/* tty is writable if 220 mode */
+	w->writable = ((sb.st_mode & TALKABLE) == TALKABLE);
+}
+
+static void
+userinfo(pn, pw)
+	register PERSON *pn;
+	register struct passwd *pw;
+{
+	register char *p, *t;
+	char *bp, name[1024];
+
+	pn->realname = pn->office = pn->officephone = pn->homephone = NULL;
+
+	pn->uid = pw->pw_uid;
+	pn->name = strdup(pw->pw_name);
+	pn->dir = strdup(pw->pw_dir);
+	pn->shell = strdup(pw->pw_shell);
+
+	/* why do we skip asterisks!?!? */
+	(void)strcpy(bp = tbuf, pw->pw_gecos);
+	if (*bp == '*')
+		++bp;
+
+	/* ampersands get replaced by the login name */
+	if (!(p = strsep(&bp, ",")))
+		return;
+	for (t = name; *t = *p; ++p)
+		if (*t == '&') {
+			(void)strcpy(t, pw->pw_name);
+			if (islower(*t))
+				*t = toupper(*t);
+			while (*++t);
+		}
+		else
+			++t;
+	pn->realname = strdup(name);
+	pn->office = ((p = strsep(&bp, ",")) && *p) ?
+	    strdup(p) : NULL;
+	pn->officephone = ((p = strsep(&bp, ",")) && *p) ?
+	    strdup(p) : NULL;
+	pn->homephone = ((p = strsep(&bp, ",")) && *p) ?
+	    strdup(p) : NULL;
 }
 
 #if __STDC__
