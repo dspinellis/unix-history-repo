@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.3	6.1 (Berkeley) %G%
+.\"	@(#)termcap.3	6.2 (Berkeley) %G%
 .\"
 .TH TERMCAP 3X ""
 .UC 4
@@ -38,8 +38,8 @@ tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs \- terminal independent operat
 .B int (*outc)();
 .fi
 .SH DESCRIPTION
-These functions extract and use capabilities from the terminal capability data
-base
+These functions extract and use capabilities from a terminal capability data
+base, usually /etc/termcap, the format of which is described in
 .IR termcap (5).
 These are low level routines;
 see
@@ -53,30 +53,40 @@ into the buffer at
 .I bp.
 .I Bp
 should be a character buffer of size
-1024 and must be retained through all subsequent calls
-to
+1024 and must be retained through all subsequent calls to
 .I tgetnum,
 .I tgetflag,
 and
 .I tgetstr.
 .I Tgetent
-returns \-1 if it cannot open the
-.I termcap
-file, 0 if the terminal name given does not have an entry,
+returns \-1 if none of the termcap
+data base files could be opened,
+0 if the terminal name given does not have an entry,
 and 1 if all goes well.
 It will look in the environment for a TERMCAP variable.
 If found, and the value does not begin with a slash,
 and the terminal type
-.B name
+.I name
 is the same as the environment string TERM,
-the TERMCAP string is used instead of reading the termcap file.
-If it does begin with a slash, the string is used as a path name rather than
-.I /etc/termcap.
+the TERMCAP string is used instead of reading a termcap file.
+If it does begin with a slash, the string is used as a path name
+of the termcap file to search.
+If TERMCAP does not begin with a slash and
+.I name
+is different from TERM,
+.I tgetent
+searches the files $HOME/.termcap and /etc/termcap,
+in that order, unless the environment variable TERMPATH exists,
+in which case it specifies a list of file pathnames
+(separated by spaces or colons) to be searched instead.
+Whenever multiple files are searched and a
+.B tc
+field occurs in the requested entry, the entry it names must be found
+in the same file or one of the succeeding files.
 This can speed up entry into programs that call
 .IR tgetent ,
-as well as to help debug new terminal descriptions
-or to make one for your terminal if you can't write the file
-.I /etc/termcap.
+as well as help debug new terminal descriptions
+or make one for your terminal if you can't write the file /etc/termcap.
 .PP
 .I Tgetnum
 gets the numeric value of capability
@@ -119,7 +129,7 @@ since
 .I tgoto
 may now output a tab.
 Note that programs using termcap should in general turn off XTABS
-anyway since some terminals use control I for other functions,
+anyway since some terminals use control-I for other functions,
 such as nondestructive space.)
 If a \fB%\fR sequence is given which is not understood, then
 .I tgoto
@@ -143,9 +153,11 @@ should contain a pad character to be used (from the \fBpc\fR capability)
 if a null (\fB^@\fR) is inappropriate.
 .SH FILES
 .ta \w'/usr/lib/libtermcap.a  'u
-/usr/lib/libtermcap.a	\-ltermcap library
+/usr/lib/libtermcap.a	\-ltermcap library (also known as \-ltermlib)
 .br
-/etc/termcap	data base
+/etc/termcap	standard terminal capability data base
+.br
+$HOME/.termcap	user's terminal capability data base
 .DT
 .SH SEE ALSO
 ex(1), curses(3X), termcap(5)
