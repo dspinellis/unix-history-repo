@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,14 +30,10 @@ static char sccsid[] = "@(#)comsat.c	5.20 (Berkeley) %G%";
 #include <errno.h>
 #include <netdb.h>
 #include <syslog.h>
-#include <string.h>
 #include <ctype.h>
+#include <string.h>
+#include <paths.h>
 
-#include "pathnames.h"
-
-/*
- * comsat
- */
 int	debug = 0;
 #define	dsyslog	if (debug) syslog
 
