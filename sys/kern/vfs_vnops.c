@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_vnops.c	7.33 (Berkeley) 6/27/91
- *	$Id: vfs_vnops.c,v 1.4 1993/12/12 12:23:22 davidg Exp $
+ *	$Id: vfs_vnops.c,v 1.5 1994/03/07 11:38:54 davidg Exp $
  */
 
 #include "param.h"
@@ -386,7 +386,7 @@ vn_ioctl(fp, com, data, p)
 	case VCHR:
 	case VBLK:
 		error = VOP_IOCTL(vp, com, data, fp->f_flag, p->p_ucred, p);
-		if (error == 0 && com == TIOCSCTTY) {
+		if (error == 0 && com == TIOCSCTTY && (p->p_session->s_ttyvp != vp)) {
 			p->p_session->s_ttyvp = vp;
 			VREF(vp);
 		}
