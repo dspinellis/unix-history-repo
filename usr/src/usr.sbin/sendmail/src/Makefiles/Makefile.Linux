@@ -11,7 +11,7 @@
 #  Makefile is likely to require a lot of customization.  Read it over
 #  carefully before proceeding.
 #
-#	@(#)Makefile.Linux	8.9 (Berkeley) %G%
+#	@(#)Makefile.Linux	8.10 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -38,7 +38,7 @@ INCDIRS=-I/usr/local/include
 LIBDIRS=-L/usr/local/lib
 
 # libraries required on your system
-LIBS=	-ldbm
+LIBS=	-lgdbm
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/sbin
