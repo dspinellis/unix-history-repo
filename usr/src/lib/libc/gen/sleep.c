@@ -1,11 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)sleep.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)sleep.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <sys/time.h>
 #include <signal.h>
 
-#define	mask(s)	(1<<((s)-1))
 #define	setvec(vec, a) \
 	vec.sv_handler = a; vec.sv_mask = vec.sv_onstack = 0
 
@@ -25,8 +24,6 @@ sleep(n)
 	timerclear(&itp->it_value);
 	if (setitimer(ITIMER_REAL, itp, &oitv) < 0)
 		return;
-	setvec(ovec, SIG_DFL);
-	omask = sigblock(0);
 	itp->it_value.tv_sec = n;
 	if (timerisset(&oitv.it_value)) {
 		if (timercmp(&oitv.it_value, &itp->it_value, >))
@@ -45,11 +42,13 @@ sleep(n)
 	}
 	setvec(vec, sleepx);
 	(void) sigvec(SIGALRM, &vec, &ovec);
+	omask = sigblock(sigmask(SIGALRM));
 	ringring = 0;
 	(void) setitimer(ITIMER_REAL, itp, (struct itimerval *)0);
 	while (!ringring)
-		sigpause(omask &~ mask(SIGALRM));
+		sigpause(omask &~ sigmask(SIGALRM));
 	(void) sigvec(SIGALRM, &ovec, (struct sigvec *)0);
+	(void) sigsetmask(omask);
 	(void) setitimer(ITIMER_REAL, &oitv, (struct itimerval *)0);
 }
 
