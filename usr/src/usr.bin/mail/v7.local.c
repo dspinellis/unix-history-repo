@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)v7.local.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)v7.local.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,43 +33,33 @@ static char sccsid[] = "@(#)v7.local.c	5.6 (Berkeley) %G%";
  * Locate the user's mailbox file (ie, the place where new, unread
  * mail is queued).
  */
-char *
-findmail(user)
+findmail(user, buf)
 	char *user;
+	char *buf;
 {
-	static char buf[PATHSIZE];
 
 	strcpy(copy("/usr/spool/mail/", buf), user);
-	return buf;
 }
 
 /*
  * Get rid of the queued mail.
  */
-
 demail()
 {
 
-	if (value("keep") != NOSTR)
-		close(creat(mailname, 0666));
-	else {
-		if (remove(mailname) < 0)
-			close(creat(mailname, 0666));
-	}
+	if (value("keep") != NOSTR || remove(mailname) < 0)
+		close(creat(mailname, 0600));
 }
 
 /*
  * Discover user login name.
  */
-
-username(uid, namebuf)
-	char namebuf[];
+char*
+username()
 {
-	register char *np;
+	char *np;
 
-	if (uid == getuid() && (np = getenv("USER")) != NOSTR) {
-		strncpy(namebuf, np, PATHSIZE);
-		return(0);
-	}
-	return(getname(uid, namebuf));
+	if ((np = getenv("USER")) != NOSTR)
+		return np;
+	return getname(getuid());
 }
