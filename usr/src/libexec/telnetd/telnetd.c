@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1044,21 +1044,41 @@ int option;
     nfrontp += sizeof (wont) - 2;
 }
 
-char *ttyspeeds[] = {
-	"0", "50", "75", "110", "134", "150", "200", "300",
-	"600", "1200", "1800", "2400", "4800", "9600", "19200", "38400" };
-#define NUMSPEEDS sizeof ttyspeeds/sizeof ttyspeeds[0]
+/*
+ * Given a string, assign the "best" speed which we support.
+ *
+ * "Best" is defined as rounding up, unless what is presented is
+ * higher than the highest.
+ */
 
 string2speed(s)
   char *s;
 {
-  int i;
+	/*
+	 * The order here is important.  The index of each speed needs to
+	 * correspond with the sgtty structure value for that speed.
+	 *
+	 * Additionally, the search algorithm assumes the table is in
+	 * ascending sequence.
+	 */
+	static int ttyspeeds[] = {
+		0, 50, 75, 110, 134, 150, 200, 300,
+		600, 1200, 1800, 2400, 4800, 9600, 19200, 38400 };
+#define NUMSPEEDS sizeof ttyspeeds/sizeof ttyspeeds[0]
+	int i;
+	int theirspeed = atoi(s);
 
-  for (i = 0; i < NUMSPEEDS; i++)
-    if (strcmp(s, ttyspeeds[i]) == 0)
-      return(i);
-
-  return(0);
+	for (i = 0; i < NUMSPEEDS; i++) {
+		if (ttyspeeds[i] == theirspeed) {	/* Exact match */
+			return(i);
+		} else if (ttyspeeds[i] > theirspeed) {
+			if (i > 0) {
+				return i-1;
+			}
+		}
+	}
+	/* Their number is greater than any of our numbers */
+	return(NUMSPEEDS-1);
 }
 
 /*
