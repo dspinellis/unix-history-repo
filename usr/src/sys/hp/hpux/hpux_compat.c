@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.3 90/09/17$
  *
- *	@(#)hpux_compat.c	7.11 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -24,6 +24,7 @@
 #include "sys/systm.h"
 #include "sys/user.h"
 #include "sys/kernel.h"
+#include "sys/filedesc.h"
 #include "sys/proc.h"
 #include "sys/buf.h"
 #include "sys/wait.h"
@@ -295,7 +296,7 @@ hpuxread(p, uap, retval)
 
 	error = read(p, uap, retval);
 	if (error == EWOULDBLOCK &&
-	    u.u_ofile[uap->fd]->f_type == DTYPE_VNODE) {
+	    (OFILE(p->p_fd, uap->fd))->f_type == DTYPE_VNODE) {
 		error = 0;
 		*retval = 0;
 	}
@@ -313,7 +314,7 @@ hpuxwrite(p, uap, retval)
 
 	error = write(p, uap, retval);
 	if (error == EWOULDBLOCK &&
-	    u.u_ofile[uap->fd]->f_type == DTYPE_VNODE) {
+	    (OFILE(p->p_fd, uap->fd))->f_type == DTYPE_VNODE) {
 		error = 0;
 		*retval = 0;
 	}
@@ -331,7 +332,7 @@ hpuxreadv(p, uap, retval)
 
 	error = readv(p, uap, retval);
 	if (error == EWOULDBLOCK &&
-	    u.u_ofile[uap->fd]->f_type == DTYPE_VNODE) {
+	    (OFILE(p->p_fd, uap->fd))->f_type == DTYPE_VNODE) {
 		error = 0;
 		*retval = 0;
 	}
@@ -349,7 +350,7 @@ hpuxwritev(p, uap, retval)
 
 	error = writev(p, uap, retval);
 	if (error == EWOULDBLOCK &&
-	    u.u_ofile[uap->fd]->f_type == DTYPE_VNODE) {
+	    (OFILE(p->p_fd, uap->fd))->f_type == DTYPE_VNODE) {
 		error = 0;
 		*retval = 0;
 	}
@@ -367,19 +368,21 @@ hpuxdup(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	struct file *fp;
 	int fd, error;
 
-	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
+	if (((unsigned)uap->i) >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->i)) == NULL)
 		return (EBADF);
-	if (error = ufalloc(0, &fd))
+	if (error = ufalloc(fdp, 0, &fd))
 		return (error);
-	*retval = fd;
-	u.u_ofile[fd] = fp;
-	u.u_pofile[fd] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
+	OFILE(fdp, fd) = fp;
+	OFILEFLAGS(fdp, fd) = OFILEFLAGS(fdp, uap->i) &~ UF_EXCLOSE;
 	fp->f_count++;
-	if (fd > u.u_lastfile)
-		u.u_lastfile = fd;
+	if (fd > fdp->fd_lastfile)
+		fdp->fd_lastfile = fd;
+	*retval = fd;
 	return (0);
 }
 
@@ -482,12 +485,13 @@ hpuxfstat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	struct stat sb;
 	int error;
 
-	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL)
+	if (((unsigned)uap->fdes) >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->fdes)) == NULL)
 		return (EBADF);
 
 	switch (fp->f_type) {
@@ -851,6 +855,7 @@ hpuxioctl(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	register int com, error;
 	register u_int size;
@@ -863,10 +868,10 @@ hpuxioctl(p, uap, retval)
 
 	/* XXX */
 	if (com == HPUXTIOCGETP || com == HPUXTIOCSETP)
-		return (getsettty(uap->fdes, com, uap->cmarg));
+		return (getsettty(p, uap->fdes, com, uap->cmarg));
 
-	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL)
+	if (((unsigned)uap->fdes) >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->fdes)) == NULL)
 		return (EBADF);
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
 		return (EBADF);
@@ -1562,9 +1567,11 @@ ohpuxfstat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	struct file *fp;
 
-	if ((unsigned)uap->fd >= NOFILE || (fp = u.u_ofile[uap->fd]) == NULL)
+	if (((unsigned)uap->fd) >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->fd)) == NULL)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		return (EINVAL);
