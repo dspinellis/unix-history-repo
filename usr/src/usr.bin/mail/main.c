@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -159,7 +159,7 @@ main(argc, argv)
 			 * getopt() can't handle optional arguments, so here
 			 * is an ugly hack to get around it.
 			 */
-			if ((argv[optind]) && (argv[optind][0] != '-')) 
+			if ((argv[optind]) && (argv[optind][0] != '-'))
 				ef = argv[optind++];
 			else
 				ef = mbox;
@@ -174,7 +174,7 @@ main(argc, argv)
 			/*
 			 * Avoid initial header printing.
 			 */
-			noheader++;
+			assign("noheader", "");
 			break;
 		case 'v':
 			/*
@@ -212,7 +212,7 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 			exit(1);
 		}
 	}
-	for (i = optind; (argv[i]) && (*argv[i] != '-'); i++) 
+	for (i = optind; (argv[i]) && (*argv[i] != '-'); i++)
 		to = cat(to, nalloc(argv[i]));
 	for (; argv[i]; i++)
 		smopts = cat(smopts, nalloc(argv[i]));
@@ -273,14 +273,12 @@ Usage: mail [-iInv] [-s subject] [-c cc-addr] [-b bcc-addr] to-addr ...\n\
 			fprintf(stderr, "No mail for %s\n", myname);
 		exit(1);
 	}
-	if (!noheader && value("noheader") == NOSTR) {
-		if (setjmp(hdrjmp) == 0) {
-			if ((prevint = signal(SIGINT, SIG_IGN)) != SIG_IGN)
-				signal(SIGINT, hdrstop);
-			announce(!0);
-			fflush(stdout);
-			signal(SIGINT, prevint);
-		}
+	if (setjmp(hdrjmp) == 0) {
+		if ((prevint = signal(SIGINT, SIG_IGN)) != SIG_IGN)
+			signal(SIGINT, hdrstop);
+		announce(!0);
+		fflush(stdout);
+		signal(SIGINT, prevint);
 	}
 	if (!edit && msgCount == 0) {
 		printf("No mail\n");
