@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)killpg.2	6.2 (Berkeley) %G%
+.\"	@(#)killpg.2	6.3 (Berkeley) %G%
 .\"
 .TH KILLPG 2 ""
 .UC 4
@@ -25,8 +25,8 @@ See
 for a list of signals.
 .PP
 The sending process and members of the process group must
-have the same effective user ID, otherwise
-this call is restricted to the super-user.
+have the same effective user ID, or
+the sender must be the super-user.
 As a single special case the continue signal SIGCONT may be sent
 to any process that is a descendant of the current process.
 .SH "RETURN VALUE
@@ -41,7 +41,11 @@ following occur:
 \fISig\fP is not a valid signal number.
 .TP 15
 [ESRCH]
-No process can be found corresponding to that specified by \fIpid\fP.
+No process can be found in the process group specified by \fIpgrp\fP.
+.TP 15
+[ESRCH]
+The process group was given as 0
+but the sending process does not have a process group.
 .TP 15
 [EPERM]
 The sending process is not the super-user and one or more

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)listen.2	6.1 (Berkeley) %G%
+.\"	@(#)listen.2	6.2 (Berkeley) %G%
 .\"
 .TH LISTEN 2 ""
 .UC 5
@@ -18,8 +18,9 @@ int s, backlog;
 To accept connections, a socket
 is first created with
 .IR socket (2),
-a backlog for incoming connections is specified with
-.IR listen (2)
+a willingness to accept incoming connections and
+a queue limit for incoming connections are specified with
+.IR listen (2),
 and then the connections are
 accepted with
 .IR accept (2).
@@ -28,15 +29,17 @@ The
 call applies only to sockets of type
 SOCK_STREAM
 or
-SOCK_PKTSTREAM.
+SOCK_SEQPACKET.
 .PP
 The
 .I backlog
 parameter defines the maximum length the queue of
 pending connections may grow to.
 If a connection
-request arrives with the queue full the client will
-receive an error with an indication of ECONNREFUSED.
+request arrives with the queue full the client may
+receive an error with an indication of ECONNREFUSED,
+or, if the underlying protocol supports retransmission,
+the request may be ignored so that retries may succeed.
 .SH "RETURN VALUE
 A 0 return value indicates success; \-1 indicates an error.
 .SH "ERRORS
