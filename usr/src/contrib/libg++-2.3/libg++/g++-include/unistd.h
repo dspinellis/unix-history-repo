@@ -128,7 +128,7 @@ extern char*    ttyname _G_ARGS((int));
 extern int      ttyslot _G_ARGS((void));
 //extern int   umask _G_ARGS((int)); /* commented out for now; wrong for SunOs4.1 */
 extern int      unlink _G_ARGS((const char*));
-extern int 	vfork _G_ARGS((void));
+extern _G_pid_t vfork _G_ARGS((void));
 extern int      vadvise _G_ARGS((int));
 extern int      vhangup _G_ARGS((void));
 extern _G_off_t lseek _G_ARGS((int, long long, int));
