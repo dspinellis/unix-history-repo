@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.17 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROGS=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
 	hpplot hp7221plot implot atoplot plottoa grnplot
