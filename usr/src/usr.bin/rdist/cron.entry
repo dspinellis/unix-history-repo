@@ -1,1 +1,1 @@
-30 3 * * * /usr/local/rdist -f /usr/local/Distfile >& /usr/src/local/rdist/Errs 2>&1
+30 3 * * * /usr/bin/rdist -f /etc/Distfile >& /var/log/rdist/rdist.err 2>&1
