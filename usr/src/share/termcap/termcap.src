@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.81 (Berkeley) %G%
+#	@(#)termcap.src	5.82 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -3312,13 +3312,12 @@ K6|msk22714|mskermit22714|UCB MS-DOS Kermit 2.27 UCB 227.14 IBM PC:\
 # MS-Kermit with Heath-19 emulation mode enabled
 Kh|h19k|h19kermit|heathkit emulation provided by Kermit (no auto margin):\
 	:am@:ta@:pt@:xt:da:db:tc=h19-u:
-# Amiga termcap by Kent Polk, kent@swrinde.nde.swri.edu
+# Amiga termcap by Kent Polk, kent@swrinde.nde.swri.edu (30 May 90)
 # Added a few more entries, converted caret-type control sequence (^x) entries
 # to '\0xx' entries since a couple of people mentioned loosing '^x' sequences.
 #
 # :as, :ae			Support for alternate character sets.
 # :ve=\E[\040p:vi=\E[\060\040p	cursor visible/invisible.
-# :nl=\E[B			Old versions of Jove and vi need this.
 # :xn:  vt100 kludginess at column 80/NEWLINE ignore after 80 cols(Concept)
 #     This one appears to fix a problem I always had with a line ending
 #     at 'width+1' (I think) followed by a blank line in vi. The blank
@@ -3328,19 +3327,17 @@ Kh|h19k|h19kermit|heathkit emulation provided by Kermit (no auto margin):\
 #     dimension larger than 80 columns.
 # :k0=\E9~	map F10 to k0 - could have F0-9 -> k0-9, but ... F10 was 'k;'
 # :F1-FA			removed F11 through F20. 
-#
-# From PT Sim:  commented out :nl to make 'talk' work better.
 AA|amiga|Amiga ANSI:\
 	:co#80:li#24:am:bs:bw:\
 	:AL=\E[%dL:DC=\E[%dP:DL=\E[%dM:DO=\E[%dB:\
-	:LE=\E[%dD:RI=\E[%dC:SF=\E[%dS:SR=\E[%dT:UP=\E[%dA:\
+	:LE=\E[%dD:RI=\E[%dC:SF=\E[%dS:SR=\E[%dT:UP=\E[%dA:IC=\E[%d@:\
 	:ae=\017:al=\E[L:as=\016:bl=\007:bt=\E[Z:cd=\E[J:ce=\E[K:cl=\E[H\E[J:\
 	:cm=\E[%i%d;%dH:dc=\E[P:dl=\E[M:do=\E[B:ho=\E[H:ic=\E[@:is=\E[20l:\
 	:k1=\E0~:k2=\E1~:k3=\E2~:k4=\E3~:k5=\E4~:k6=\E5~:k7=\E6~:k8=\E7~:\
-	:k9=\E8~:k0=\E9~:kb=^H:kd=\EB:kl=\ED:kr=\EC:ku=\EA:le=\E[D:\
+	:k9=\E8~:k0=\E9~:kn#10:kb=^H:kd=\EB:kl=\ED:kr=\EC:ku=\EA:le=\E[D:\
 	:mb=\E[7;2m:md=\E[1m:me=\E[0m:mh=\E[2m:mk=\E[8m:mr=\E[7m:nd=\E[C:\
-	:.nl=\E[B:rs=\Ec:se=\E[0m:sf=\E[S:so=\E[7m:sr=\E[T:ue=\E[0m:up=\E[A:\
-	:us=\E[4m:ve=\E[\040p:vi=\E[\060\040p:xn:
+	:rs=\Ec:se=\E[0m:sf=\E[S:so=\E[7m:sr=\E[T:ue=\E[0m:up=\E[A:us=\E[4m:\
+	:vb=\007:ve=\E[\040p:vi=\E[\060\040p:xn:
 # The pcplot IBM-PC terminal emulation program is really messed up. It is
 # supposed to emulate a vt-100, but emulates the wraparound bug incorrectly,
 # doesn't support scrolling regions, ignores add line commands, and ignores
