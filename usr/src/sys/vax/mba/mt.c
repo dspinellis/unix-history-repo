@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.7 (Berkeley) %G%
+ *	@(#)mt.c	7.8 (Berkeley) %G%
  */
 
 #include "mu.h"
@@ -778,7 +778,7 @@ mtioctl(dev, cmd, data, flag)
 	register struct buf *bp = &cmtbuf[MTUNIT(dev)];
 	register struct mtop *mtop;
 	register struct mtget *mtget;
-	int callcount, fcount;
+	int callcount, fcount, error = 0;
 	int op;
 
 	/* We depend on the values and order of the MT codes here. */
@@ -875,7 +875,10 @@ mtioctl(dev, cmd, data, flag)
 			if (bp->b_flags & B_ERROR)
 				break;
 		}
-		return (geterror(bp));
+		if (bp->b_flags&B_ERROR)
+			if ((error = bp->b_error)==0)
+				return (EIO);
+		return (error);
 
 	/* tape status */
 	case MTIOCGET:
