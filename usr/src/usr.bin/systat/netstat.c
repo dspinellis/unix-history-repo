@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netstat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)netstat.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -72,6 +72,7 @@ static struct {
 static	int aflag = 0;
 static	int nflag = 0;
 static	int lastrow = 1;
+static	void enter(), inetprint();
 static	char *inetname();
 
 closenetstat(w)
@@ -129,12 +130,14 @@ fetchnetstat()
 		return;
 	for (p = netcb.ni_forw; p != (struct netinfo *)&netcb; p = p->ni_forw)
 		p->ni_seen = 0;
-	if (protos == 0)
-		error("No protocols to display");
 	if (protos&TCP)
 		off = nlst[X_TCB].n_value, istcp = 1;
 	else if (protos&UDP)
 		off = nlst[X_UDB].n_value, istcp = 0;
+	else {
+		error("No protocols to display");
+		return;
+	}
 again:
 	lseek(kmem, off, L_SET);
 	read(kmem, &inpcb, sizeof (struct inpcb));
@@ -172,7 +175,7 @@ again:
 	}
 }
 
-static
+static void
 enter(inp, so, state, proto)
 	register struct inpcb *inp;
 	register struct socket *so;
@@ -314,7 +317,7 @@ shownetstat()
  * Pretty print an Internet address (net address + port).
  * If the nflag was specified, use numbers instead of names.
  */
-static
+static void
 inetprint(in, port, proto)
 	register struct in_addr *in;
 	int port;
