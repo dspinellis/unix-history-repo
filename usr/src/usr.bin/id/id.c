@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)id.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)id.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -162,7 +162,7 @@ current()
 {
 	struct group *gr;
 	struct passwd *pw;
-	int id, eid, lastid, ngroups, groups[NGROUPS];
+	int cnt, id, eid, lastid, ngroups, groups[NGROUPS];
 	char *fmt;
 
 	id = getuid();
@@ -184,9 +184,9 @@ current()
 			(void)printf("(%s)", gr->gr_name);
 	}
 	if (ngroups = getgroups(NGROUPS, groups)) {
-		for (fmt = " groups=%u", lastid = -1; --ngroups >= 0;
+		for (fmt = " groups=%u", lastid = -1, cnt = 0; cnt < ngroups;
 		    fmt = ", %u", lastid = id) {
-			id = groups[ngroups];
+			id = groups[cnt++];
 			if (lastid == id)
 				continue;
 			(void)printf(fmt, id);
@@ -202,24 +202,25 @@ user(pw)
 	register struct passwd *pw;
 {
 	register struct group *gr;
-	register int id, lastid;
 	register char *fmt, **p;
+	int cnt, id, lastid, ngroups, groups[NGROUPS + 1];
 
 	id = pw->pw_uid;
 	(void)printf("uid=%u(%s)", id, pw->pw_name);
 	(void)printf(" gid=%u", pw->pw_gid);
 	if (gr = getgrgid(id))
 		(void)printf("(%s)", gr->gr_name);
-	for (fmt = " groups=%u(%s)", lastid = -1; gr = getgrent();
-	    lastid = id) {
-		if (pw->pw_gid == gr->gr_gid)
+	ngroups = NGROUPS + 1;
+	(void) getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
+	fmt = " groups=%u";
+	for (lastid = -1, cnt = 0; cnt < ngroups; ++cnt) {
+		if (lastid == (id = groups[cnt]))
 			continue;
-		for (p = gr->gr_mem; p && *p; p++)
-			if (!strcmp(*p, pw->pw_name)) {
-				(void)printf(fmt, gr->gr_gid, gr->gr_name);
-				fmt = ", %u(%s)";
-				break;
-			}
+		(void)printf(fmt, id);
+		fmt = " %u";
+		if (gr = getgrgid(id))
+			(void)printf("(%s)", gr->gr_name);
+		lastid = id;
 	}
 	(void)printf("\n");
 }
@@ -231,43 +232,31 @@ group(pw, nflag)
 {
 	struct group *gr;
 	int cnt, id, lastid, ngroups, groups[NGROUPS + 1];
-	char *fmt, *name, **p;
+	char *fmt;
 
-	fmt = nflag ? "%s" : "%u";
 	if (pw) {
-		name = pw->pw_name;
-		while (gr = getgrent()) {
-			for (p = gr->gr_mem; p && *p; p++)
-				if (!strcmp(*p, name)) {
-					if (nflag) {
-						(void)printf(fmt, gr->gr_name);
-						fmt = " %s";
-					} else {
-						(void)printf(fmt, gr->gr_gid);
-						fmt = " %u";
-					}
-					break;
-				}
-		}
+		ngroups = NGROUPS + 1;
+		(void) getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
 	} else {
 		groups[0] = getgid();
 		ngroups = getgroups(NGROUPS, groups + 1) + 1;
-		for (lastid = -1, cnt = 0; cnt < ngroups; ++cnt) {
-			if (lastid == (id = groups[cnt]))
-				continue;
-			if (nflag) {
-				if (gr = getgrgid(id))
-					(void)printf(fmt, gr->gr_name);
-				else
-					(void)printf(*fmt == ' ' ? " %u" : "%u",
-					    id);
-				fmt = " %s";
-			} else {
-				(void)printf(fmt, id);
-				fmt = " %u";
-			}
-			lastid = id;
+	}
+	fmt = nflag ? "%s" : "%u";
+	for (lastid = -1, cnt = 0; cnt < ngroups; ++cnt) {
+		if (lastid == (id = groups[cnt]))
+			continue;
+		if (nflag) {
+			if (gr = getgrgid(id))
+				(void)printf(fmt, gr->gr_name);
+			else
+				(void)printf(*fmt == ' ' ? " %u" : "%u",
+				    id);
+			fmt = " %s";
+		} else {
+			(void)printf(fmt, id);
+			fmt = " %u";
 		}
+		lastid = id;
 	}
 	(void)printf("\n");
 }
