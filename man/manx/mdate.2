@@ -1,0 +1,40 @@
+.pa 1
+.he 'MDATE (II)'3/15/72'MDATE (II)'
+.ti 0
+NAME		mdate  --  set modified date on file
+.s3
+.ti 0
+SYNOPSIS	(time to r0-r1)
+.br
+.nf
+sys mdate; file  / mdate = 30.
+.s3
+.nf
+mdate(file, time)
+char *file;
+int time[2];
+.fi
+.fi
+.s3
+.ti 0
+DESCRIPTION	File____
+is the address of a null-terminated string giving the
+name of a file.
+The modified time of the file is set to the time given in
+the r0-r1 registers
+(resp. in the vector which is the second argument).
+.s3
+This call is allowed only to the super-user
+or to the owner of the file.
+.s3
+.ti 0
+SEE ALSO	--
+.s3
+.ti 0
+DIAGNOSTICS	Error bit
+is set if the user is neither the owner nor the super-user or if the file cannot be found.
+From C, a negative return indicates an error,
+a 0 return indicates success.
+.s3
+.ti 0
+BUGS		--
