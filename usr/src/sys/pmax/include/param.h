@@ -11,14 +11,13 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.8 (Berkeley) %G%
+ *	@(#)param.h	7.9 (Berkeley) %G%
  */
 
 /*
  * Machine dependent constants for DEC Station 3100.
  */
 #define	MACHINE	"mips"
-#define COFF
 
 /*
  * Round p (pointer or byte index) up to a correctly-aligned value for all
