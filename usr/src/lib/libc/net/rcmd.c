@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -124,15 +124,17 @@ rresvport(alport)
 	int s;
 
 	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = 0;
-	s = socket(AF_INET, SOCK_STREAM, 0, 0);
+	sin.sin_addr.s_addr = INADDR_ANY;
+	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
 		return (-1);
 	for (;;) {
 		sin.sin_port = htons((u_short)*alport);
 		if (bind(s, (caddr_t)&sin, sizeof (sin), 0) >= 0)
 			return (s);
-		if (errno != EADDRINUSE && errno != EADDRNOTAVAIL) {
+		if (errno == EADDRNOTAVAIL)
+			return (-1);
+		if (errno != EADDRINUSE) {
 			perror("socket");
 			(void) close(s);
 			return (-1);
