@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -102,7 +102,6 @@ main(argc, argv, envp)
 	char *argv0 = argv[0];
 	char jbuf[60];			/* holds MyHostName */
 	extern int DtableSize;
-	extern bool safefile();
 	extern time_t convtime();
 
 #ifndef SYS5TZ
@@ -151,6 +150,9 @@ main(argc, argv, envp)
 	BlankEnvelope.e_xfp = NULL;
 	CurEnv = &BlankEnvelope;
 
+	RealUid = getuid();
+	RealGid = getgid();
+
 	/*
 	**  Do a quick prescan of the argument list.
 	**	We do this to find out if we can potentially thaw the
@@ -189,8 +191,12 @@ main(argc, argv, envp)
 	InChannel = stdin;
 	OutChannel = stdout;
 
+# ifdef FROZENCONFIG
 	if (!nothaw)
 		readconfig = !thaw(FreezeFile, argv0);
+# else
+	readconfig = TRUE;
+# endif
 
 # ifdef SETPROCTITLE
 	/*
@@ -327,9 +333,18 @@ main(argc, argv, envp)
 			  case MD_TEST:
 			  case MD_INITALIAS:
 			  case MD_PRINT:
+#ifdef FROZENCONFIG
 			  case MD_FREEZE:
+#endif
 				OpMode = p[2];
 				break;
+
+#ifndef FROZENCONFIG
+			  case MD_FREEZE:
+				usrerr("Frozen configurations unsupported");
+				ExitStat = EX_USAGE;
+				break;
+#endif
 
 			  default:
 				usrerr("Invalid operation mode %c", p[2]);
@@ -508,6 +523,7 @@ main(argc, argv, envp)
 # endif /* QUEUE */
 	switch (OpMode)
 	{
+# ifdef FROZENCONFIG
 	  case MD_FREEZE:
 		/* this is critical to avoid forgeries of the frozen config */
 		(void) setgid(getgid());
@@ -516,6 +532,7 @@ main(argc, argv, envp)
 		/* freeze the configuration */
 		freeze(FreezeFile);
 		exit(EX_OK);
+# endif
 
 	  case MD_INITALIAS:
 		Verbose = TRUE;
