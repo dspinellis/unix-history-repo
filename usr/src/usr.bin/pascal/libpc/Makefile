@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.4 %G%"
+SCCSID = "@(#)Makefile 1.5 %G%"
 CFLAGS = -O
 LIB = ${DESTDIR}/usr/lib
 LD= ld
