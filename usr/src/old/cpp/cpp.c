@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.20 %G%";
+static char sccsid[] = "@(#)cpp.c	1.21 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -187,7 +187,7 @@ static jmp_buf env;
 extern FILE *_f[];
 # define symsiz 500
 # else
-# define symsiz 2000		/* std = 500, wnj aug 1979 */
+# define symsiz 5000		/* std = 500, wnj aug 1979 */
 # endif
 STATIC	struct symtab stab[symsiz];
 
