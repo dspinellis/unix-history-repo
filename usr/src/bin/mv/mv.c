@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mv.c	4.8 (Berkeley) 83/01/03";
+static	char *sccsid = "@(#)mv.c	4.9 (Berkeley) 83/01/05";
 #endif
 
 /*
@@ -177,15 +177,21 @@ move(source, target)
 		goto cleanup;
 	}
 	if (ISDEV(s1)) {
+		time_t tv[2];
+
 		if (mknod(target, s1.st_mode, s1.st_rdev) < 0) {
 			Perror(target);
 			return (1);
 		}
-		(void) utime(target, &s1.st_atime);
+		/* kludge prior to utimes */
+		tv[0] = s1.st_atime;
+		tv[1] = s1.st_mtime;
+		(void) utime(target, tv);
 		goto cleanup;
 	}
 	if (ISREG(s1)) {
 		int i, c, status;
+		time_t tv[2];
 
 		i = fork();
 		if (i == -1) {
@@ -201,7 +207,10 @@ move(source, target)
 			;
 		if (status != 0)
 			return (1);
-		(void) utime(target, &s1.st_atime);
+		/* kludge prior to utimes */
+		tv[0] = s1.st_atime;
+		tv[1] = s1.st_mtime;
+		(void) utime(target, tv);
 		goto cleanup;
 	}
 	error("%s: unknown file type %o", source, s1.st_mode);
