@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,13 +16,14 @@ static char sccsid[] = "@(#)dmesg.c	5.5 (Berkeley) %G%";
  *		print and update incremental history
  */
 
-#include <stdio.h>
 #include <sys/param.h>
-#include <nlist.h>
-#include <signal.h>
+#include <sys/signal.h>
 #include <sys/file.h>
 #include <sys/vm.h>
 #include <sys/msgbuf.h>
+#include <nlist.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 struct	msgbuf msgbuf;
 char	*msgbufp;
@@ -48,17 +49,17 @@ char **argv;
 		argv++;
 	}
 	if (sflg) {
-		of = open("/usr/adm/msgbuf", O_RDWR | O_CREAT, 0644);
+		of = open(_PATH_MSGBUF, O_RDWR | O_CREAT, 0644);
 		if (of < 0)
-			done("Can't open /usr/adm/msgbuf\n");
+			done("Can't open msgbuf file\n");
 		read(of, (char *)&omesg, sizeof(omesg));
 		lseek(of, 0L, 0);
 	}
 	sflg = 0;
-	nlist(argc>2? argv[2]:"/vmunix", nl);
+	nlist(argc>2? argv[2]:_PATH_VMUNIX, nl);
 	if (nl[0].n_type==0)
 		done("Can't get kernel namelist\n");
-	if ((mem = open((argc>1? argv[1]: "/dev/kmem"), 0)) < 0)
+	if ((mem = open((argc>1? argv[1]: _PATH_KMEM), 0)) < 0)
 		done("Can't read kernel memory\n");
 	lseek(mem, (long)nl[0].n_value, 0);
 	read(mem, &msgbuf, sizeof (msgbuf));
