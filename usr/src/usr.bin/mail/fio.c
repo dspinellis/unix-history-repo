@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)fio.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)fio.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -46,19 +46,7 @@ setptr(ibuf)
 	maybe = 1;
 	flag = MUSED|MNEW;
 	for (;;) {
-		cp = linebuf;
-		c = getc(ibuf);
-		while (c != EOF && c != '\n') {
-			if (cp - linebuf >= LINESIZE - 1) {
-				ungetc(c, ibuf);
-				*cp = 0;
-				break;
-			}
-			*cp++ = c;
-			c = getc(ibuf);
-		}
-		*cp = 0;
-		if (cp == linebuf && c == EOF) {
+		if (fgets(linebuf, LINESIZE, ibuf) == NULL) {
 			this.m_flag = flag;
 			flag = MUSED|MNEW;
 			this.m_offset = offsetof(offset);
@@ -74,10 +62,11 @@ setptr(ibuf)
 			close(mestmp);
 			return;
 		}
-		count = cp - linebuf + 1;
-		for (cp = linebuf; *cp;)
-			putc(*cp++, otf);
-		putc('\n', otf);
+		count = strlen(linebuf);
+		fputs(linebuf, otf);
+		cp = linebuf + (count - 1);
+		if (*cp == '\n')
+			*cp = 0;
 		if (ferror(otf)) {
 			perror("/tmp");
 			exit(1);
@@ -100,14 +89,10 @@ setptr(ibuf)
 		}
 		if (linebuf[0] == 0)
 			inhead = 0;
-		if (inhead && index(linebuf, ':')) {
-			cp = linebuf;
-			cp2 = wbuf;
-			while (isalpha(*cp))
-				*cp2++ = *cp++;
-			*cp2 = 0;
-			if (icequal(wbuf, "status")) {
-				cp = index(linebuf, ':');
+		if (inhead && (cp = index(linebuf, ':'))) {
+			*cp = 0;
+			if (icequal(linebuf, "status")) {
+				++cp;
 				if (index(cp, 'R'))
 					flag |= MREAD;
 				if (index(cp, 'O'))
@@ -145,38 +130,6 @@ putline(obuf, linebuf)
 }
 
 /*
- * Quickly read a line from the specified input into the line
- * buffer; return characters read.
- */
-
-freadline(ibuf, linebuf)
-	register FILE *ibuf;
-	register char *linebuf;
-{
-	register int c;
-	register char *cp;
-
-	c = getc(ibuf);
-	cp = linebuf;
-	while (c != '\n' && c != EOF) {
-		if (c == 0) {
-			c = getc(ibuf);
-			continue;
-		}
-		if (cp - linebuf >= BUFSIZ-1) {
-			*cp = 0;
-			return(cp - linebuf + 1);
-		}
-		*cp++ = c;
-		c = getc(ibuf);
-	}
-	if (c == EOF && cp == linebuf)
-		return(0);
-	*cp = 0;
-	return(cp - linebuf + 1);
-}
-
-/*
  * Read up a line from the specified input into the line
  * buffer.  Return the number of characters read.  Do not
  * include the newline at the end.
@@ -186,23 +139,15 @@ readline(ibuf, linebuf)
 	FILE *ibuf;
 	char *linebuf;
 {
-	register char *cp;
-	register int c;
+	register int n;
 
-	do {
-		clearerr(ibuf);
-		c = getc(ibuf);
-		for (cp = linebuf; c != '\n' && c != EOF; c = getc(ibuf)) {
-			if (c == 0)
-				continue;
-			if (cp - linebuf < LINESIZE-2)
-				*cp++ = c;
-		}
-	} while (ferror(ibuf) && ibuf == stdin);
-	*cp = 0;
-	if (c == EOF && cp == linebuf)
+	clearerr(ibuf);
+	if (fgets(linebuf, LINESIZE, ibuf) == NULL)
 		return(0);
-	return(cp - linebuf + 1);
+	n = strlen(linebuf);
+	if (n >= 1 && linebuf[n-1] == '\n')
+		linebuf[n-1] = '\0';
+	return(n);
 }
 
 /*
