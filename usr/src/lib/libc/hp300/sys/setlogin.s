@@ -1,12 +1,12 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)setlogin.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)setlogin.s	8.1 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "SYS.h"

@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)ptrace.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)ptrace.s	8.1 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "SYS.h"
