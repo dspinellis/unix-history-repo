@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	2.6 %G%";
+static char *SccsId = "@(#)main.c	2.7 %G%";
 
 jmp_buf	hdrjmp;
 
@@ -253,7 +253,8 @@ main(argc, argv)
 			ef = (char *) calloc(1, strlen(ename) + 1);
 			strcpy(ef, ename);
 		}
-		editfile = mailname = ef;
+		editfile = ef;
+		strcpy(mailname, ef);
 	}
 	if (setfile(mailname, edit) < 0)
 		exit(1);
