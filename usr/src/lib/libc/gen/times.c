@@ -1,4 +1,4 @@
-/*	times.c	4.1	83/05/31	*/
+/*	times.c	4.2	83/06/02	*/
 
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -14,13 +14,13 @@ struct tms {
 };
 
 times(tmsp)
-	register struct times *tmsp;
+	register struct tms *tmsp;
 {
 	struct rusage ru;
 
 	if (getrusage(RUSAGE_SELF, &ru) < 0)
 		return (-1);
-	tmsp->tms_utime = scale60(&ru.ru_time);
+	tmsp->tms_utime = scale60(&ru.ru_utime);
 	tmsp->tms_stime = scale60(&ru.ru_stime);
 	if (getrusage(RUSAGE_CHILDREN, &ru) < 0)
 		return (-1);
