@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.8 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -130,6 +130,16 @@ tlen(p) NODE *p;
 		default:
 			return(4);
 		}
+}
+
+anyfloat(p, q)
+	NODE *p, *q;
+{
+	register TWORD tp, tq;
+
+	tp = p->in.type;
+	tq = q->in.type;
+	return (tp == FLOAT || tp == DOUBLE || tq == FLOAT || tq == DOUBLE);
 }
 
 prtype(n) NODE *n;
@@ -331,8 +341,7 @@ zzzcode( p, c ) register NODE *p; {
 		return;
 		}
 
-	case 'M':  /* initiate ediv for mod and unsigned div */
-		{
+	case 'M': {  /* initiate ediv for mod and unsigned div */
 		register char *r;
 		m = getlr(p, '1')->tn.rval;
 		r = rname(m);
@@ -344,42 +353,15 @@ zzzcode( p, c ) register NODE *p; {
 			printf("\tjgeq\tL%d\n\tmnegl\t$1,%s\n", m, r);
 			deflab(m);
 		}
-		}
 		return;
+	}
 
-	case 'U':
-		/* Truncate int for type conversions:
-		    LONG|ULONG -> CHAR|UCHAR|SHORT|USHORT
-		    SHORT|USHORT -> CHAR|UCHAR
-		   increment offset to correct byte */
-		{
-		register NODE *p1;
-		int dif;
-
-		p1 = p->in.left;
-		switch( p1->in.op ){
-		case NAME:
-		case OREG:
-			dif = tlen(p1)-tlen(p);
-			p1->tn.lval += dif;
-			adrput(p1);
-			p1->tn.lval -= dif;
-			return;
-		default:
-			cerror( "Illegal ZU type conversion" );
-			return;
-			}
-		}
-
-	case 'T':	/* rounded structure length for arguments */
-		{
-		int size;
-
-		size = p->stn.stsize;
+	case 'T': {	/* rounded structure length for arguments */
+		int size = p->stn.stsize;
 		SETOFF( size, 4);
 		printf("movab	-%d(sp),sp", size);
 		return;
-		}
+	}
 
 	case 'S':  /* structure assignment */
 		stasg(p);
@@ -408,10 +390,32 @@ zzzcode( p, c ) register NODE *p; {
 		printf("\n");
 		return;
 
+	case 'U':		/* SCONV */
+	case 'V':		/* SCONV with FORCC */
+		sconv(p, c == 'V');
+		break;
+
+	case 'Z':
+		p = p->in.right;
+		switch (p->in.type) {
+		case SHORT: {
+			short w = p->tn.lval;
+			p->tn.lval = w;
+			break;
+		}
+		case CHAR: {
+			char c = p->tn.lval;
+			p->tn.lval = c;
+			break;
+		}
+		}
+		printf("$%d", p->tn.lval);
+		break;
+
 	default:
 		cerror( "illegal zzzcode" );
-		}
 	}
+}
 
 #define	MOVB(dst, src, off) { \
 	putstr("\tmovb\t"); upput(src, off); putchar(','); \
@@ -573,6 +577,121 @@ upput(p, size)
 		    opst[p->tn.op], size);
 		/*NOTREACHED*/
 	}
+}
+
+/*
+ * Generate code for storage conversions.
+ */
+sconv(p, forcc)
+	NODE *p;
+{
+	register NODE *l, *r;
+	register wfrom, wto;
+	int oltype;
+
+	l = getlr(p, '1');
+	oltype = l->in.type, l->in.type = r->in.type;
+	r = getlr(p, 'L');
+	wfrom = tlen(r), wto = tlen(l);
+	if (wfrom == wto)		/* e.g. int -> unsigned */
+		goto done;
+	/*
+	 * Conversion in registers requires care
+	 * as cvt and movz instruction don't work
+	 * as expected (they end up as plain mov's).
+	 */
+	if (l->in.op == REG && r->in.op == REG) {
+		if (ISUNSIGNED(r->in.type)) {		/* unsigned, mask */
+			if (r->tn.lval != l->tn.lval) {
+				printf("\tandl3\t$%d,", (1<<(wto*SZCHAR))-1);
+				adrput(r);
+				putchar(',');
+			} else
+				printf("\tandl2\t$%d,", (1<<(wto*SZCHAR))-1);
+			adrput(l);
+		} else {				/* effect sign-extend */
+			int shift = (sizeof (int)-wto)*SZCHAR;
+			printf("\tshll\t$%d,", shift);
+			adrput(r); putchar(','); adrput(l);
+			printf("\n\tshar\t$%d,", shift);
+			adrput(l); putchar(','); adrput(l);
+			if (wfrom != sizeof (int)) {
+				/*
+				 * Must mask if result is shorter than
+				 * the width of a register (to account
+				 * for register treatment).
+				 */
+				printf("\n\tandl2\t$%d,",(1<<(wfrom*SZCHAR))-1);
+				adrput(l);
+			} else
+				forcc = 0;
+		}
+		/*
+		 * If condition codes are required and the last thing
+		 * we did was mask the result, then we must generate a
+		 * test of the appropriate type.
+		 */
+		if (forcc) {
+			printf("\n\tcmp");
+			prtype(l);
+			putchar('\t');
+			printf("$0,");
+			adrput(l);
+		}
+	} else {
+		/*
+		 * Conversion with at least one parameter in memory.
+		 */
+		if (wfrom < wto) {		/* expanding datum */
+			if (ISUNSIGNED(r->in.type)) {
+				printf("\tmovz");
+				prtype(r);
+				/*
+				 * If target is a register, generate
+				 * movz?l so optimizer can compress
+				 * argument pushes.
+				 */
+				if (l->in.op == REG)
+					putchar('l');
+				else
+					prtype(l);
+			} else {
+				printf("\tcvt");
+				prtype(r), prtype(l);
+			}
+			putchar('\t');
+			adrput(r);
+		} else {			/* shrinking dataum */
+			int off = wfrom - wto;
+			if (l->in.op == REG) {
+				printf("\tmovz");
+				prtype(l);
+				putchar('l');
+			} else {
+				printf("\tcvt");
+				prtype(l), prtype(r);
+			}
+			putchar('\t');
+			switch (r->in.op) {
+			case NAME: case OREG:
+				r->tn.lval += off;
+				adrput(r);
+				r->tn.lval -= off;
+				break;
+			case REG: case ICON: case UNARY MUL:
+				adrput(r);
+				break;
+			default:
+				cerror("sconv: bad shrink op");
+				/*NOTREACHED*/
+			}
+		}
+		putchar(',');
+		adrput(l);
+	}
+	putchar('\n');
+done:
+	l->in.type = oltype;
 }
 
 rmove( rt, rs, t ) TWORD t;{
@@ -967,28 +1086,65 @@ optim2( p ) register NODE *p; {
 	/* do local tree transformations and optimizations */
 # define RV(p) p->in.right->tn.lval
 # define nncon(p)	((p)->in.op == ICON && (p)->in.name[0] == 0)
-	register int o = p->in.op;
-	register int i;
+	register int o, i;
+	register NODE *l, *r;
 
-	/* change unsigned mods and divs to logicals (mul is done in mip & c2) */
-	if(optype(o) == BITYPE && ISUNSIGNED(p->in.left->in.type)
-	 && nncon(p->in.right) && (i=ispow2(RV(p)))>=0){
-		switch(o) {
-		case DIV:
-		case ASG DIV:
-			p->in.op = RS;
-			RV(p) = i;
-			break;
-		case MOD:
-		case ASG MOD:
-			p->in.op = AND;
-			RV(p)--;
-			break;
-		default:
-			return;
+	switch (o = p->in.op) {
+
+	case DIV: case ASG DIV:
+	case MOD: case ASG MOD:
+		/*
+		 * Change unsigned mods and divs to
+		 * logicals (mul is done in mip & c2)
+		 */
+		if (ISUNSIGNED(p->in.left->in.type) && nncon(p->in.right) &&
+		    (i = ispow2(RV(p))) >= 0) {
+			if (o == DIV || o == ASG DIV) {
+				p->in.op = RS;
+				RV(p) = i;
+			} else {
+				p->in.op = AND;
+				RV(p)--;
+			}
+			if (asgop(o))
+				p->in.op = ASG p->in.op;
 		}
-		if(asgop(o))
-			p->in.op = ASG p->in.op;
+		return;
+
+	case SCONV:
+		l = p->in.left;
+		/* clobber conversions w/o side effects */
+		if (!anyfloat(p, l) && l->in.op != PCONV &&
+		    tlen(p) == tlen(l)) {
+			if (l->in.op != FLD)
+				l->in.type = p->in.type;
+			ncopy(p, l);
+			l->in.op = FREE;
+		}
+		return;
+
+	case ASSIGN:
+		/*
+		 * Try to zap storage conversions of non-float items.
+		 */
+		r = p->in.right;
+		if (r->in.op == SCONV && !anyfloat(r->in.left, r)) {
+			int wdest, wconv, wsrc;
+			wdest = tlen(p->in.left);
+			wconv = tlen(r);
+			/*
+			 * If size doesn't change across assignment or
+			 * conversion expands src before shrinking again
+			 * due to the assignment, delete conversion so
+			 * code generator can create optimal code.
+			 */
+			if (wdest == wconv ||
+			 (wdest == (wsrc = tlen(r->in.left)) && wconv > wsrc)) {
+				p->in.right = r->in.left;
+				r->in.op = FREE;
+			}
+		}
+		return;
 	}
 # endif
 }
@@ -1151,7 +1307,26 @@ main( argc, argv ) char *argv[]; {
 	}
 # endif
 
+strip(p) register NODE *p; {
+	NODE *q;
+
+	/* strip nodes off the top when no side effects occur */
+	for( ; ; ) {
+		switch( p->in.op ) {
+		case SCONV:			/* remove lint tidbits */
+			q = p->in.left;
+			ncopy( p, q );
+			q->in.op = FREE;
+			break;
+		/* could probably add a few more here */
+		default:
+			return;
+			}
+		}
+	}
+
 myreader(p) register NODE *p; {
+	strip( p );		/* strip off operations with no side effects */
 	walkf( p, hardops );	/* convert ops to function calls */
 	canon( p );		/* expands r-vals for fileds */
 	walkf( p, optim2 );
