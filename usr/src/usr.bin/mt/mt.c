@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mt.c	4.4 (Berkeley) 82/12/19";
+static	char *sccsid = "@(#)mt.c	4.5 (Berkeley) 83/01/02";
 /*
  * mt --
  *   magnetic tape manipulation program
@@ -10,7 +10,6 @@ static	char *sccsid = "@(#)mt.c	4.4 (Berkeley) 82/12/19";
 #include <sys/ioctl.h>
 
 #define	equal(s1,s2)	(strcmp(s1, s2) == 0)
-#define	DEFTAPE		"/dev/rmt12"
 
 struct commands {
 	char *c_name;
@@ -27,6 +26,10 @@ struct commands {
 	{ "offline",	MTOFFL,	1 },
 	{ "rewoffl",	MTOFFL,	1 },
 	{ "status",	MTNOP,	1 },
+	{ "tense",	MTTENSE,1 },
+	{ "tension",	MTTENSE,1 },
+	{ "retension",	MTTENSE,1 },
+	{ "erase",	MTERASE,1 },
 	{ 0 }
 };
 
@@ -73,7 +76,7 @@ main(argc, argv)
 			exit(1);
 		}
 		if (ioctl(mtfd, MTIOCTOP, &mt_com) < 0) {
-			fprintf(stderr, "%s %d ", comp->c_name,
+			fprintf(stderr, "%s %s %d ", tape, comp->c_name,
 				mt_com.mt_count);
 			perror("failed");
 			exit(2);
@@ -97,6 +100,11 @@ main(argc, argv)
 #include <vaxuba/tsreg.h>
 #endif
 
+#ifdef sun
+#include <sys/tmreg.h>
+#include <sys/arreg.h>
+#endif
+
 struct tape_desc {
 	short	t_type;		/* type of magtape device */
 	char	*t_name;	/* printing name */
@@ -109,6 +117,10 @@ struct tape_desc {
 	{ MT_ISTM,	"tm11",		0,		TMER_BITS },
 	{ MT_ISMT,	"tu78",		MTDS_BITS,	0 },
 	{ MT_ISUT,	"tu45",		UTDS_BITS,	UTER_BITS },
+#endif
+#ifdef sun
+	{ MT_ISCPC,	"TapeMaster",	TMS_BITS,	0 },
+	{ MT_ISARCH,	"Archive",	ARCH_CTRL_BITS,	ARCH_BITS },
 #endif
 	{ 0 }
 };
@@ -128,23 +140,28 @@ status(bp)
 		printf("unknown tape drive type (%d)\n", bp->mt_type);
 		return;
 	}
-	printf("%s tape drive\n", mt->t_name);
+	printf("%s tape drive, residual=%d\n", mt->t_name, bp->mt_resid);
 	printreg("ds", bp->mt_dsreg, mt->t_dsbits);
-	printreg(" er", bp->mt_erreg, mt->t_erbits);
-	printf("\nresidual=%d\n", bp->mt_resid);
+	printreg("\ner", bp->mt_erreg, mt->t_erbits);
+	putchar('\n');
 }
 
 /*
  * Print a register a la the %b format of the kernel's printf
  */
 printreg(s, v, bits)
-	char *s, *bits;
-	unsigned short v;
+	char *s;
+	register char *bits;
+	register unsigned short v;
 {
 	register int i, any = 0;
 	register char c;
 
-	printf("%s=%o", s, v);
+	if (bits && *bits == 8)
+		printf("%s=%o", s, v);
+	else
+		printf("%s=%x", s, v);
+	bits++;
 	if (v && bits) {
 		putchar('<');
 		while (i = *bits++) {
@@ -158,7 +175,6 @@ printreg(s, v, bits)
 				for (; *bits > 32; bits++)
 					;
 		}
-		if (any)
-			putchar('>');
+		putchar('>');
 	}
 }
