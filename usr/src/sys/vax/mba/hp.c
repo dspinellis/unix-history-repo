@@ -1,4 +1,4 @@
-/*	hp.c	4.66	83/02/10	*/
+/*	hp.c	4.67	83/02/11	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -462,7 +462,7 @@ hpustart(mi)
 	sn = bn%st->nspc;
 	sn = (sn+st->nsect-hpSDIST)%st->nsect;
 	if (bp->b_cylin == (hpaddr->hpdc & 0xffff)) {
-		if (sc->sc_seek)
+		if (sc->sc_doseeks)
 			return (MBU_DODATA);
 		dist = ((hpaddr->hpla & 0xffff)>>6) - st->nsect + 1;
 		if (dist < 0)
@@ -471,7 +471,7 @@ hpustart(mi)
 			return (MBU_DODATA);
 	} else
 		hpaddr->hpdc = bp->b_cylin;
-	if (sc->sc_seek)
+	if (sc->sc_doseeks)
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
 	else {
 		hpaddr->hpda = sn;
