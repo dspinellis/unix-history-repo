@@ -1,4 +1,4 @@
-/*	mbareg.h	4.15	81/05/03	*/
+/*	mbareg.h	4.16	82/02/08	*/
 
 /*
  * VAX MASSBUS adapter registers
@@ -117,10 +117,12 @@ extern	char	mbsr_bits[];
 #define	MBDT_RM03	024
 #define	MBDT_RM05	027
 #define	MBDT_RM80	026
+#define	MBDT_ML11A	0110
+#define	MBDT_ML11B	0111
 
 /* type codes for tape drives */
 #define	MBDT_TM03	050
 #define	MBDT_TE16	051
 #define	MBDT_TU45	052
 #define	MBDT_TU77	054
-#define	MBDT_TU78	0101		/* can't handle these (yet) */
+#define	MBDT_TU78	0101
