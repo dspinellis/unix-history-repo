@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7recover.c	7.5	%G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.6	%G%";
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
 #undef	BUFSIZ		/* mjm: BUFSIZ different */
 #undef	EOF		/* mjm: EOF and NULL effectively the same */
