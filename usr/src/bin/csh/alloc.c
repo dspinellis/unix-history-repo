@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alloc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)alloc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)alloc.c	5.6 (Berkeley) %G%";
  * but bombs when it runs out.
  */
 
-#include "sh.h"
+#include "csh.h"
 
 char   *memtop = NULL;		/* PWP: top of current memory */
 char   *membot = NULL;		/* PWP: bottom of allocatable memory */

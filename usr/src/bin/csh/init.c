@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.h"
-#include "sh.local.h"
+#include "csh.h"
+#include "local.h"
+#include "extern.h"
 
 #define	INF	1000
 
@@ -40,9 +41,7 @@ struct biltins bfunc[] =
     "foreach", 	doforeach, 	3, INF,
     "glob", 	doglob, 	0, INF,
     "goto", 	dogoto, 	1, 1,
-#ifdef VFORK
     "hashstat", hashstat, 	0, 0,
-#endif
     "history", 	dohist, 	0, 2,
     "if", 	doif, 		1, INF,
     "jobs", 	dojobs, 	0, 1,

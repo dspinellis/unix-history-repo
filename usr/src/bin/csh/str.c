@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -15,7 +15,8 @@ static char sccsid[] = "@(#)str.c	5.1 (Berkeley) %G%";
  */
 #ifdef SHORT_STRINGS
 
-#include "sh.h"
+#include "csh.h"
+#include "extern.h"
 
 Char  **
 blk2short(src)

@@ -6,24 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sem.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)sem.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.h"
-#include "sh.dir.h"
-#include "sh.proc.h"
+#include "csh.h"
+#include "dir.h"
+#include "proc.h"
+#include "extern.h"
 
-#ifdef VFORK
 static void vffree();
-
-#endif
 static void doio();
 static void chkclob();
 
-/*
- * C shell
- */
-/*VARARGS 1*/
 void
 execute(t, wanttty, pipein, pipeout)
     register struct command *t;
@@ -36,10 +30,7 @@ execute(t, wanttty, pipein, pipeout)
 
     static sigmask_t csigmask;
 
-#ifdef VFORK
     static sigmask_t ocsigmask;
-
-#endif				/* VFORK */
     static int onosigchld = 0;
     static int nosigchld = 0;
 
@@ -153,11 +144,8 @@ execute(t, wanttty, pipein, pipeout)
 	 */
 	    (bifunc && (t->t_dflg & F_PIPEIN) != 0 &&
 	     bifunc->bfunct == doeval))
-#ifdef VFORK
 	    if (t->t_dtyp == NODE_PAREN ||
-		t->t_dflg & (F_REPEAT | F_AMPERSAND) || bifunc)
-#endif
-	    {
+		t->t_dflg & (F_REPEAT | F_AMPERSAND) || bifunc) {
 		forked++;
 		/*
 		 * We need to block SIGCHLD here, so that if the process does
@@ -174,8 +162,6 @@ execute(t, wanttty, pipein, pipeout)
 		    nosigchld = 0;
 		}
 	    }
-
-#ifdef VFORK
 	    else {
 		int     ochild, osetintr, ohaderr, odidfds;
 		int     oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
@@ -290,7 +276,6 @@ execute(t, wanttty, pipein, pipeout)
 		}
 
 	    }
-#endif				/* VFORK */
 	if (pid != 0) {
 	    /*
 	     * It would be better if we could wait for the whole job when we
@@ -401,7 +386,6 @@ execute(t, wanttty, pipein, pipeout)
 	donefds();
 }
 
-#ifdef VFORK
 static void
 vffree()
 {
@@ -417,8 +401,6 @@ vffree()
     }
     _exit(1);
 }
-
-#endif
 
 /*
  * Perform io redirection.

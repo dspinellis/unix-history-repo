@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "sh.h"
-#include "sh.dir.h"
+#include "csh.h"
+#include "dir.h"
+#include "extern.h"
 
 extern bool MapsAreInited;
 extern bool NLSMapsAreInited;
@@ -29,6 +30,9 @@ extern bool NLSMapsAreInited;
  *
  * Jim Kulp, IIASA, Laxenburg, Austria
  * April 1980
+ *
+ * Christos Zoulas, Cornell University
+ * June, 1991
  */
 
 Char   *dumphist[] = {STRhistory, STRmh, 0, 0};
@@ -766,8 +770,10 @@ Char   *jobargv[2] = {STRjobs, 0};
  * and finally go through the normal error mechanism, which
  * gets a chance to make the shell go away.
  */
+/* ARGSUSED */
 void
-pintr()
+pintr(notused)
+	int notused;
 {
     pintr1(1);
 }
@@ -947,7 +953,7 @@ process(catch)
 	if (seterr)
 	    stderror(ERR_OLD);
 
-	execute(t, (tpgrp > 0 ? tpgrp : -1));
+	execute(t, (tpgrp > 0 ? tpgrp : -1), NULL, NULL);
 
 	/*
 	 * Made it!

@@ -4,8 +4,30 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.12 (Berkeley) %G%
+ *	@(#)csh.h	5.13 (Berkeley) %G%
  */
+
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+
+#ifdef NLS
+#include <locale.h>
+#endif
+#include <time.h>
+#include <limits.h>
+#include <termios.h>
+#include <errno.h>
+#include <setjmp.h>
+#include <dirent.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include "pathnames.h"
 
 #ifdef SHORT_STRINGS
 typedef short Char;
@@ -20,65 +42,29 @@ typedef char Char;
 typedef void *ioctl_t;		/* Third arg of ioctl */
 typedef long sigmask_t;		/* What a signal mask is */
 
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/ioctl.h>
-#include <sys/file.h>
-
-#ifdef NLS
-#include <locale.h>
-#endif
-#include <time.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <termios.h>
-#include <errno.h>
-#include <setjmp.h>
-#include <dirent.h>
-#include <pwd.h>
-#include <string.h>
-
 typedef void *ptr_t;
 
+#include "tc.const.h"
+#include "local.h"
+#include "char.h"
+#include "err.h"
+
 #ifdef SYSMALLOC
-#define xmalloc(i)  	Malloc(i)
+#define xmalloc(i)	Malloc(i)
 #define xrealloc(p, i)	Realloc(p, i)
 #define xcalloc(n, s)	Calloc(n, s)
-#define xfree(p)    	Free(p)
+#define xfree(p)	Free(p)
 #else
-#define xmalloc(i)  	malloc(i)
+#define xmalloc(i)	malloc(i)
 #define xrealloc(p, i)	realloc(p, i)
 #define xcalloc(n, s)	calloc(n, s)
-#define xfree(p)    	free(p)
+#define xfree(p)	free(p)
 #endif				/* SYSMALLOC */
-
-#include "tc.const.h"
-
-#include "sh.local.h"
-#include "sh.char.h"
-#include "sh.err.h"
-#include "pathnames.h"
-
-
-/*
- * C shell
- *
- * Bill Joy, UC Berkeley
- * October, 1978; May 1980
- *
- * Jim Kulp, IIASA, Laxenburg Austria
- * April, 1980
- */
 
 #define	isdir(d)	((d.st_mode & S_IFMT) == S_IFDIR)
 
 #define SIGN_EXTEND_CHAR(a) \
 	((a) & 0x80 ? ((int) (a)) | 0xffffff00 : ((int) a) & 0x000000ff)
-
 
 
 typedef int bool;
@@ -87,8 +73,8 @@ typedef int bool;
 
 /* globone() flags */
 #define G_ERROR		0	/* default action: error if multiple words */
-#define G_IGNORE	1	/* ignore the rest of the words		   */
-#define G_APPEND	2	/* make a sentence by cat'ing the words    */
+#define G_IGNORE	1	/* ignore the rest of the words */
+#define G_APPEND	2	/* make a sentence by cat'ing the words */
 
 /*
  * Global flags
@@ -165,7 +151,7 @@ extern int nsrchn;
  * Ideally these should be in units which are closed across exec's
  * (this saves work) but for version 6, this is not usually possible.
  * The desired initial values for these descriptors are defined in
- * sh.local.h.
+ * local.h.
  */
 short   SHIN;			/* Current shell input (script) */
 short   SHOUT;			/* Shell output */
@@ -234,8 +220,6 @@ struct Bin {
 #define	feobp	B.Bfeobp
 #define	fblocks	B.Bfblocks
 #define	fbuf	B.Bfbuf
-
-#define btell()	fseekp
 
 /*
  * The shell finds commands in loops by reseeking the input
@@ -445,11 +429,11 @@ Char    HISTSUB;		/* auto-substitute character */
  * strings.h:
  */
 #ifndef SHORT_STRINGS
-#define Strchr(a, b)  		strchr(a, b)
-#define Strrchr(a, b)  	strrchr(a, b)
-#define Strcat(a, b)  		strcat(a, b)
+#define Strchr(a, b)		strchr(a, b)
+#define Strrchr(a, b)		strrchr(a, b)
+#define Strcat(a, b)		strcat(a, b)
 #define Strncat(a, b, c) 	strncat(a, b, c)
-#define Strcpy(a, b)  		strcpy(a, b)
+#define Strcpy(a, b)		strcpy(a, b)
 #define Strncpy(a, b, c) 	strncpy(a, b, c)
 #define Strlen(a)		strlen(a)
 #define Strcmp(a, b)		strcmp(a, b)
@@ -466,11 +450,11 @@ Char    HISTSUB;		/* auto-substitute character */
 #define short2str(a) 		(a)
 #define short2qstr(a)		(a)
 #else
-#define Strchr(a, b)   	s_strchr(a, b)
+#define Strchr(a, b)		s_strchr(a, b)
 #define Strrchr(a, b) 		s_strrchr(a, b)
-#define Strcat(a, b)  		s_strcat(a, b)
+#define Strcat(a, b)		s_strcat(a, b)
 #define Strncat(a, b, c) 	s_strncat(a, b, c)
-#define Strcpy(a, b)  		s_strcpy(a, b)
+#define Strcpy(a, b)		s_strcpy(a, b)
 #define Strncpy(a, b, c)	s_strncpy(a, b, c)
 #define Strlen(a)		s_strlen(a)
 #define Strcmp(a, b)		s_strcmp(a, b)
@@ -489,13 +473,10 @@ char   *bname;
 
 #define	setname(a)	(bname = (a))
 
-#ifdef VFORK
 Char   *Vsav;
 Char   *Vdp;
 Char   *Vexpath;
 char  **Vt;
-
-#endif				/* VFORK */
 
 Char  **evalvec;
 Char   *evalp;
@@ -520,7 +501,3 @@ Char   *STR_BSHELL;
 #endif
 Char   *STR_WORD_CHARS;
 Char  **STR_environ;
-
-#include "sh.decls.h"
-
-extern char *getwd();
