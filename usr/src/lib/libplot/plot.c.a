@@ -1,0 +1,132 @@
+!<arch>
+arc.c           287602852   10    1     100664  136       `
+#include <stdio.h>
+arc(xi,yi,x0,y0,x1,y1){
+	putc('a',stdout);
+	putsi(xi);
+	putsi(yi);
+	putsi(x0);
+	putsi(y0);
+	putsi(x1);
+	putsi(y1);
+}
+box.c           287602853   10    1     100664  114       `
+box(x0, y0, x1, y1)
+{
+	move(x0, y0);
+	cont(x0, y1);
+	cont(x1, y1);
+	cont(x1, y0);
+	cont(x0, y0);
+	move(x1, y1);
+}
+circle.c        287602852   10    1     100664  88        `
+#include <stdio.h>
+circle(x,y,r){
+	putc('c',stdout);
+	putsi(x);
+	putsi(y);
+	putsi(r);
+}
+close.c         287602853   10    1     100664  79        `
+#include <stdio.h>
+closevt(){
+	fflush(stdout);
+}
+closepl(){
+	fflush(stdout);
+}
+
+cont.c          287602853   10    1     100664  77        `
+#include <stdio.h>
+cont(xi,yi){
+	putc('n',stdout);
+	putsi(xi);
+	putsi(yi);
+}
+
+dot.c           287602853   10    1     100664  163       `
+#include <stdio.h>
+dot(xi,yi,dx,n,pat)
+int  pat[];
+{
+	int i;
+	putc('d',stdout);
+	putsi(xi);
+	putsi(yi);
+	putsi(dx);
+	putsi(n);
+	for(i=0; i<n; i++)putsi(pat[i]);
+}
+
+erase.c         287602853   10    1     100664  49        `
+#include <stdio.h>
+erase(){
+	putc('e',stdout);
+}
+
+label.c         287602853   10    1     100664  124       `
+#include <stdio.h>
+label(s)
+char *s;
+{
+	int i;
+	putc('t',stdout);
+	for(i=0;s[i];)putc(s[i++],stdout);
+	putc('\n',stdout);
+}
+line.c          287602853   10    1     100664  107       `
+#include <stdio.h>
+line(x0,y0,x1,y1){
+	putc('l',stdout);
+	putsi(x0);
+	putsi(y0);
+	putsi(x1);
+	putsi(y1);
+}
+
+linmod.c        287602853   10    1     100664  126       `
+#include <stdio.h>
+linemod(s)
+char *s;
+{
+	int i;
+	putc('f',stdout);
+	for(i=0;s[i];)putc(s[i++],stdout);
+	putc('\n',stdout);
+}
+move.c          287602853   10    1     100664  77        `
+#include <stdio.h>
+move(xi,yi){
+	putc('m',stdout);
+	putsi(xi);
+	putsi(yi);
+}
+
+open.c          287602853   10    1     100664  24        `
+openvt(){
+}
+openpl(){
+}
+point.c         287602853   10    1     100664  78        `
+#include <stdio.h>
+point(xi,yi){
+	putc('p',stdout);
+	putsi(xi);
+	putsi(yi);
+}
+putsi.c         287602853   10    1     100664  82        `
+#include <stdio.h>
+putsi(a){
+	putc((char)a,stdout);
+	putc((char)(a>>8),stdout);
+}
+space.c         287602853   10    1     100664  108       `
+#include <stdio.h>
+space(x0,y0,x1,y1){
+	putc('s',stdout);
+	putsi(x0);
+	putsi(y0);
+	putsi(x1);
+	putsi(y1);
+}
