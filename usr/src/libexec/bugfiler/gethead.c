@@ -6,13 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethead.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethead.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <bug.h>
+#include <sys/param.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "pathnames.h"
+#include "bug.h"
 
 static int	chk1(), pbuf();
 
@@ -43,7 +48,6 @@ gethead(redist)
 	int	redist;
 {
 	register HEADER	*hp;		/* mail header pointer */
-	char	*strcpy(), *malloc();
 
 	if (redist) {
 		int	fd;

@@ -6,12 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)error.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)error.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <bug.h>
+#include <sys/param.h>
+#include <dirent.h>
 #include <syslog.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include "bug.h"
 
 static short	err_redir;			/* stderr redirected */
 

@@ -6,14 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <bug.h>
-#include <sys/file.h>
+#include <sys/param.h>
 #include <sys/time.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include "bug.h"
 
 char	pfile[MAXPATHLEN];			/* permanent file name */
 
@@ -27,7 +31,7 @@ process()
 	register int	rval;			/* read return value */
 	struct timeval	tp;			/* time of day */
 	int	lfd;				/* lock file descriptor */
-	char	*ctime();
+	static int getnext();
 
 	if (access(LOCK_FILE, R_OK) || (lfd = open(LOCK_FILE, O_RDONLY, 0)) < 0)
 		error("can't find lock file %s.", LOCK_FILE);
@@ -57,10 +61,10 @@ process()
  * getnext --
  *	get next file name (number)
  */
-static
+static int
 getnext()
 {
-	register struct direct *d;		/* directory structure */
+	register struct dirent *d;		/* directory structure */
 	register DIR *dirp;			/* directory pointer */
 	register int highval, newval;
 	register char *p;

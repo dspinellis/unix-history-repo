@@ -12,18 +12,23 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Bug report processing program, designed to be invoked
  * through aliases(5).
  */
-#include <bug.h>
+#include <sys/param.h>
 #include <sys/time.h>
-#include <sys/file.h>
+#include <sys/stat.h>
+#include <dirent.h>
 #include <pwd.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "bug.h"
 
 char	bfr[MAXBSIZE],			/* general I/O buffer */
 	tmpname[sizeof(TMP_BUG) + 5];	/* temp bug file */
@@ -37,9 +42,8 @@ main(argc, argv)
 	register int	ch;		/* getopts char */
 	int	do_ack,			/* acknowledge bug report */
 		do_redist;		/* redistribut BR */
-	char	*argversion,		/* folder name provided */
-		*strcpy();
-	struct passwd	*getpwnam();
+	char	*argversion;		/* folder name provided */
+	static void logit(), make_copy();
 
 	do_ack = do_redist = YES;
 	argversion = NULL;
@@ -80,7 +84,7 @@ main(argc, argv)
 
 	process();
 
-	if (setuid(0, 0))
+	if (setuid(0))
 		error("can't set id to root.", CHN);
 	if (do_ack)
 		reply();
@@ -94,17 +98,15 @@ main(argc, argv)
  * make_copy --
  *	make a copy of bug report in error folder
  */
-static
+static void
 make_copy()
 {
 	register int	cnt,			/* read return value */
 			tfd;			/* temp file descriptor */
 	char	*strcpy();
 
-	if (access(TMP_DIR, F_OK)) {
-		(void)mkdir(TMP_DIR);
-		(void)chmod(TMP_DIR, 0775);
-	}
+	if (access(TMP_DIR, F_OK))
+		(void)mkdir(TMP_DIR, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH);
 	(void)strcpy(tmpname, TMP_BUG);
 	if (tfd = mkstemp(tmpname)) {
 		while ((cnt = read(fileno(stdin), bfr, sizeof(bfr))) != ERR && cnt)
@@ -119,7 +121,7 @@ make_copy()
  * logit --
  *	log this run of the bugfiler
  */
-static
+static void
 logit()
 {
 	struct timeval	tp;
