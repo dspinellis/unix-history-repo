@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.31 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.32 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -52,25 +52,29 @@ static daddr_t	ffs_mapsearch __P((struct fs *, struct cg *, daddr_t, int));
  *   2) quadradically rehash into other cylinder groups, until an
  *      available block is located.
  */
-ffs_alloc(ip, lbn, bpref, size, bnp)
+ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	register struct inode *ip;
 	daddr_t lbn, bpref;
 	int size;
+	struct ucred *cred;
 	daddr_t *bnp;
 {
 	daddr_t bno;
 	register struct fs *fs;
 	register struct buf *bp;
 	int cg, error;
-	struct ucred *cred = curproc->p_ucred;		/* XXX */
 	
 	*bnp = 0;
 	fs = ip->i_fs;
+#ifdef DIAGNOSTIC
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
 		printf("dev = 0x%x, bsize = %d, size = %d, fs = %s\n",
 		    ip->i_dev, fs->fs_bsize, size, fs->fs_fsmnt);
 		panic("ffs_alloc: bad size");
 	}
+	if (cred == NOCRED)
+		panic("ffs_alloc: missing credential\n");
+#endif /* DIAGNOSTIC */
 	if (size == fs->fs_bsize && fs->fs_cstotal.cs_nbfree == 0)
 		goto nospace;
 	if (cred->cr_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
@@ -113,21 +117,22 @@ nospace:
  * the original block. Failing that, the regular block allocator is
  * invoked to get an appropriate block.
  */
-ffs_realloccg(ip, lbprev, bpref, osize, nsize, bpp)
+ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	register struct inode *ip;
 	daddr_t lbprev;
 	daddr_t bpref;
 	int osize, nsize;
+	struct ucred *cred;
 	struct buf **bpp;
 {
 	register struct fs *fs;
 	struct buf *bp, *obp;
 	int cg, request, error;
 	daddr_t bprev, bno;
-	struct ucred *cred = curproc->p_ucred;		/* XXX */
 	
 	*bpp = 0;
 	fs = ip->i_fs;
+#ifdef DIAGNOSTIC
 	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
 	    (unsigned)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0) {
 		printf(
@@ -135,6 +140,9 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 		    ip->i_dev, fs->fs_bsize, osize, nsize, fs->fs_fsmnt);
 		panic("ffs_realloccg: bad size");
 	}
+	if (cred == NOCRED)
+		panic("ffs_realloccg: missing credential\n");
+#endif /* DIAGNOSTIC */
 	if (cred->cr_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
 	if ((bprev = ip->i_db[lbprev]) == 0) {
@@ -886,7 +894,6 @@ ffs_blkfree(ip, bno, size)
 	struct buf *bp;
 	int error, cg, blk, frags, bbase;
 	register int i;
-	struct ucred *cred = curproc->p_ucred;	/* XXX */
 
 	fs = ip->i_fs;
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
@@ -897,7 +904,7 @@ ffs_blkfree(ip, bno, size)
 	cg = dtog(fs, bno);
 	if ((unsigned)bno >= fs->fs_size) {
 		printf("bad block %d, ino %d\n", bno, ip->i_number);
-		ffs_fserr(fs, cred->cr_uid, "bad block");
+		ffs_fserr(fs, ip->i_uid, "bad block");
 		return;
 	}
 #ifdef SECSIZE
