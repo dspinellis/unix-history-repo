@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.16 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,8 +40,8 @@
 #include "machine/psl.h"
 #include "machine/mtpr.h"
 
-#define	stopsigmask	(sigmask(SIGSTOP)|sigmask(SIGTSTP)| \
-			sigmask(SIGTTIN)|sigmask(SIGTTOU))
+#define	ttystopsigmask	(sigmask(SIGTSTP)|sigmask(SIGTTIN)|sigmask(SIGTTOU))
+#define	stopsigmask	(sigmask(SIGSTOP)|ttystopsigmask)
 #define defaultignmask	(sigmask(SIGCONT)|sigmask(SIGIO)|sigmask(SIGURG)| \
 			sigmask(SIGCHLD)|sigmask(SIGWINCH)|sigmask(SIGINFO))
 
@@ -543,12 +543,8 @@ psignal(p, sig)
 			action = SIG_HOLD;
 		else if (p->p_sigcatch & mask)
 			action = SIG_CATCH;
-		else {
-			if (p->p_pgrp->pg_jobc == 0 && (sig == SIGTTIN || 
-			    sig == SIGTTOU || sig == SIGTSTP))
-				return;
+		else
 			action = SIG_DFL;
-		}
 	}
 	switch (sig) {
 
@@ -797,10 +793,14 @@ issig()
 			/*
 			 * If there is a pending stop signal to process
 			 * with default action, stop here,
-			 * then clear the signal.
+			 * then clear the signal.  However,
+			 * if process is member of an orphaned
+			 * process group, ignore tty stop signals.
 			 */
 			if (mask & stopsigmask) {
-				if (p->p_flag&STRC)
+				if (p->p_flag&STRC ||
+		    		    (p->p_pgrp->pg_jobc == 0 &&
+				    mask & ttystopsigmask))
 					break;	/* == ignore */
 				p->p_cursig = sig;
 				stop(p);
