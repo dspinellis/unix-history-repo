@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.50 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -222,9 +222,11 @@ allocaddr(a, copyf, paddr, delimptr)
 	{
 		char savec = *delimptr;
 
-		*delimptr = '\0';
+		if (savec != '\0')
+			*delimptr = '\0';
 		a->q_paddr = newstr(paddr);
-		*delimptr = savec;
+		if (savec != '\0')
+			*delimptr = savec;
 	}
 	else
 		a->q_paddr = paddr;
@@ -316,6 +318,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 	char *tok;
 	int state;
 	int newstate;
+	char *saveto = CurEnv->e_to;
 	static char *av[MAXATOM+1];
 	extern int errno;
 
@@ -330,6 +333,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 	state = ATM;
 	c = NOCHAR;
 	p = addr;
+	CurEnv->e_to = p;
 	if (tTd(22, 11))
 	{
 		printf("prescan: ");
@@ -352,6 +356,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 					usrerr("553 Address too long");
 					if (delimptr != NULL)
 						*delimptr = p;
+					CurEnv->e_to = saveto;
 					return (NULL);
 				}
 
@@ -422,6 +427,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 					usrerr("553 Unbalanced ')'");
 					if (delimptr != NULL)
 						*delimptr = p;
+					CurEnv->e_to = saveto;
 					return (NULL);
 				}
 				else
@@ -438,6 +444,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 					usrerr("553 Unbalanced '>'");
 					if (delimptr != NULL)
 						*delimptr = p;
+					CurEnv->e_to = saveto;
 					return (NULL);
 				}
 				anglecnt--;
@@ -488,6 +495,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 				syserr("553 prescan: too many tokens");
 				if (delimptr != NULL)
 					*delimptr = p;
+				CurEnv->e_to = saveto;
 				return (NULL);
 			}
 			*avp++ = tok;
@@ -502,6 +510,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 		printf("prescan==>");
 		printav(av);
 	}
+	CurEnv->e_to = saveto;
 	if (av[0] == NULL)
 		return (NULL);
 	return (av);
