@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	6.14	84/08/29	*/
+/*	lfs_vnops.c	6.15	85/01/21	*/
 
 #include "param.h"
 #include "systm.h"
@@ -976,7 +976,10 @@ rename()
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->from;
 	xp = namei(ndp);
-	dp = ndp->ni_pdir;
+	if (xp != NULL)
+		dp = ndp->ni_pdir;
+	else
+		dp = NULL;
 	/*
 	 * Insure that the directory entry still exists and has not
 	 * changed while the new name has been entered. If the source is
@@ -987,9 +990,9 @@ rename()
 	 * The IRENAME flag insures that it cannot be moved by another
 	 * rename.
 	 */
-	if (dp == NULL || xp != ip) {
+	if (xp != ip) {
 		if (doingdirectory)
-			panic("rename: lost entry");
+			panic("rename: lost dir entry");
 	} else {
 		/*
 		 * If the source is a directory with a
