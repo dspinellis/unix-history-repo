@@ -9,13 +9,19 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)dev.c	7.1 (Berkeley) %G%
+ *	@(#)dev.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
 #include "saio.h"
+
+/*
+ * NB: the value "io->i_ino.i_dev", used to offset the devsw[] array
+ * in the routines below, is munged by the vaxstand Makefile to work
+ * for certain boots.
+ */
 
 devread(io)
 	register struct iob *io;
@@ -44,7 +50,36 @@ devwrite(io)
 devopen(io)
 	register struct iob *io;
 {
-	return (*devsw[io->i_ino.i_dev].dv_open)(io);
+	int ret;
+
+	if (!(ret = (*devsw[io->i_ino.i_dev].dv_open)(io)))
+		return (0);
+	printf("%s(%d,%d,%d,%d): ", devsw[io->i_ino.i_dev].dv_name,
+		io->i_adapt, io->i_ctlr, io->i_unit, io->i_part);
+	switch(ret) {
+	case EADAPT:
+		printf("bad adaptor\n");
+		break;
+	case ECTLR:
+		printf("bad controller\n");
+		break;
+	case EUNIT:
+		printf("bad drive\n");
+		break;
+	case EPART:
+		printf("bad partition\n");
+		break;
+	case ERDLAB:
+		printf("can't read disk label\n");
+		break;
+	case EUNLAB:
+		printf("unlabeled\n");
+		break;
+	case ENXIO:
+	default:
+		printf("bad device specification\n");
+	}
+	return (ret);
 }
 
 devclose(io)
