@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -30,6 +30,7 @@ static char sccsid[] = "@(#)if.c	5.6 (Berkeley) %G%";
 
 extern	int kmem;
 extern	int tflag;
+extern	int dflag;
 extern	int nflag;
 extern	char *interface;
 extern	int unit;
@@ -66,6 +67,8 @@ intpr(interval, ifnetaddr)
 	printf(" %5s", "Coll");
 	if (tflag)
 		printf(" %s", "Time");
+	if (dflag)
+		printf(" %s", "Drop");
 	putchar('\n');
 	ifaddraddr = 0;
 	while (ifnetaddr || ifaddraddr) {
@@ -161,6 +164,8 @@ intpr(interval, ifnetaddr)
 		    ifnet.if_collisions);
 		if (tflag)
 			printf(" %3d", ifnet.if_timer);
+		if (dflag)
+			printf(" %3d", ifnet.if_snd.ifq_drops);
 		putchar('\n');
 	}
 }
@@ -173,6 +178,7 @@ struct	iftot {
 	int	ift_op;			/* output packets */
 	int	ift_oe;			/* output errors */
 	int	ift_co;			/* collisions */
+	int	ift_dr;			/* drops */
 } iftot[MAXIF];
 
 u_char	signalled;			/* set if alarm goes off "early" */
@@ -226,22 +232,30 @@ sidewaysintpr(interval, off)
 	signalled = NO;
 	(void)alarm(interval);
 banner:
-	printf("    input   %-6.6s    output       ", interesting->ift_name);
-	if (lastif - iftot > 0)
-		printf("     input  (Total)    output");
+	printf("   input    %-6.6s    output       ", interesting->ift_name);
+	if (lastif - iftot > 0) {
+		if (dflag)
+			printf("      ");
+		printf("     input   (Total)    output");
+	}
 	for (ip = iftot; ip < iftot + MAXIF; ip++) {
 		ip->ift_ip = 0;
 		ip->ift_ie = 0;
 		ip->ift_op = 0;
 		ip->ift_oe = 0;
 		ip->ift_co = 0;
+		ip->ift_dr = 0;
 	}
 	putchar('\n');
 	printf("%8.8s %5.5s %8.8s %5.5s %5.5s ",
 		"packets", "errs", "packets", "errs", "colls");
+	if (dflag)
+		printf("%5.5s ", "drops");
 	if (lastif - iftot > 0)
-		printf("%8.8s %5.5s %8.8s %5.5s %5.5s ",
+		printf(" %8.8s %5.5s %8.8s %5.5s %5.5s",
 			"packets", "errs", "packets", "errs", "colls");
+	if (dflag)
+		printf(" %5.5s", "drops");
 	putchar('\n');
 	fflush(stdout);
 	line = 0;
@@ -251,35 +265,45 @@ loop:
 	sum->ift_op = 0;
 	sum->ift_oe = 0;
 	sum->ift_co = 0;
+	sum->ift_dr = 0;
 	for (off = firstifnet, ip = iftot; off && ip < lastif; ip++) {
 		klseek(kmem, off, 0);
 		read(kmem, (char *)&ifnet, sizeof ifnet);
-		if (ip == interesting)
-			printf("%8d %5d %8d %5d %5d ",
+		if (ip == interesting) {
+			printf("%8d %5d %8d %5d %5d",
 				ifnet.if_ipackets - ip->ift_ip,
 				ifnet.if_ierrors - ip->ift_ie,
 				ifnet.if_opackets - ip->ift_op,
 				ifnet.if_oerrors - ip->ift_oe,
 				ifnet.if_collisions - ip->ift_co);
+			if (dflag)
+				printf(" %5d",
+				    ifnet.if_snd.ifq_drops - ip->ift_dr);
+		}
 		ip->ift_ip = ifnet.if_ipackets;
 		ip->ift_ie = ifnet.if_ierrors;
 		ip->ift_op = ifnet.if_opackets;
 		ip->ift_oe = ifnet.if_oerrors;
 		ip->ift_co = ifnet.if_collisions;
+		ip->ift_dr = ifnet.if_snd.ifq_drops;
 		sum->ift_ip += ip->ift_ip;
 		sum->ift_ie += ip->ift_ie;
 		sum->ift_op += ip->ift_op;
 		sum->ift_oe += ip->ift_oe;
 		sum->ift_co += ip->ift_co;
+		sum->ift_dr += ip->ift_dr;
 		off = (off_t) ifnet.if_next;
 	}
-	if (lastif - iftot > 0)
-		printf("%8d %5d %8d %5d %5d ",
+	if (lastif - iftot > 0) {
+		printf("  %8d %5d %8d %5d %5d",
 			sum->ift_ip - total->ift_ip,
 			sum->ift_ie - total->ift_ie,
 			sum->ift_op - total->ift_op,
 			sum->ift_oe - total->ift_oe,
 			sum->ift_co - total->ift_co);
+		if (dflag)
+			printf(" %5d", sum->ift_dr - total->ift_dr);
+	}
 	*total = *sum;
 	putchar('\n');
 	fflush(stdout);
