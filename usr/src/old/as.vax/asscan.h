@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asscan.h 4.8 %G%
+ *	@(#)asscan.h 4.9 %G%
  */
 /*
  *	The character scanner is called to fill up one token buffer
@@ -84,11 +84,3 @@ typedef u_short lgtype;			/*for storing length of strings or skiping*/
 
 extern	ptrall tokptr;	/*the next token to consume, call by copy*/
 extern	ptrall tokub;	/*current upper bound in the current buffer*/
-/*
- *	Strings are stored in the string pool; see strsave(str, length)
- *	Strings are known by their length and values.
- *	A string pointer points to the beginning of the value bytes;
- *	the preceding two bytes are the length.
- */
-#define	STRLEN(str)	(((lgtype *)str)[-1])
-char *savestr();

@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)ascode.c 4.9 %G%";
+static char sccsid[] = "@(#)ascode.c 4.10 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -253,10 +253,10 @@ PASS2:
 					xp->e_xvalue - (dotp->e_xvalue + 1);
 				if (xp->e_xtype & XXTRN)
 					yywarning("%s: destination label is external",
-						ITABFETCH(opcode)->s_name);
+						FETCHNAME(ITABFETCH(opcode)));
 				if (!ISBYTE(argtype))
 					yyerror("%s: Branch too far(%db): try -J flag",
-						ITABFETCH(opcode)->s_name,
+						FETCHNAME(ITABFETCH(opcode)),
 						argtype);
 				break;
 			}
@@ -265,11 +265,11 @@ PASS2:
 					-= dotp->e_xvalue + 2;
 				if (xp->e_xtype & XXTRN)
 					yywarning("%s: destination label is external",
-						ITABFETCH(opcode)->s_name);
+						FETCHNAME(ITABFETCH(opcode)));
 				xp->e_xtype = XABS;
 				if (!ISWORD(argtype))
 					yyerror("%s: Branch too far(%db): try -J flag",
-						ITABFETCH(opcode)->s_name,
+						FETCHNAME(ITABFETCH(opcode)),
 						argtype);
 				xp->e_xvalue = argtype>>8;
 				reloc_how = TYPB;

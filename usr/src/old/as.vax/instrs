@@ -1,6 +1,6 @@
 ##
 ##	Copyright (c) 1982 Regents of the University of California
-##	@(#)instrs 4.8 %G%
+##	@(#)instrs 4.9 %G%
 ##
 ##	Robert R. Henry
 ##	University of California, Berkeley
@@ -113,6 +113,13 @@
 
 BEGIN{
 	flavor = AS;
+	##
+	##	magic padding before the string for AS
+	##	4 bytes of 0's: seek position of the string
+	##	2 bytes, value 2, indicating core resident
+	##	2 bytes, value 0, length
+	##
+	ASpad = "\\0\\0\\0\\0" "\\2\\0";
 }
 {
 	if (NF == 0){
@@ -137,7 +144,8 @@ BEGIN{
 		if (flavor == "AS"){
 			if ($4 == "CBR")
 				$4 = "IJXXX";
-			printf("PSEUDO(\"%s\", %s, %s),\n", $3, $7, $4);
+			printf("PSEUDO(\"%s\\0%o\\0%s\",", ASpad,length($3),$3);
+			printf("%s, %s),\n", $7, $4);
 			next;
 		}
 		if (flavor == "C2"){
@@ -182,8 +190,13 @@ BEGIN{
 		printf("T(%s,%s),\n", $4, $5);	# special value
 		next;
 	}
-	if (flavor == "AS" || flavor == "ADB"){
+	if (flavor == "AS"){
+		printf("OP(\"%s\\0%o\\0%s\", ", ASpad, length($3), $3);
+		printf("%s, %s, %d", $6, $7, $8);
+	} else {
 		printf("OP(\"%s\", %s, %s, %d", $3, $6, $7, $8);
+	}
+	if (flavor == "AS" || flavor == "ADB"){
 		for (i = 9; i+1 <= NF; i = i + 2){
 			printf(", A_%s%s", $i, $(i+1));
 		}

@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.14 %G%
+ *	@(#)as.h 4.15 %G%
  */
 #ifdef VMS
 # define	vax	1
@@ -249,10 +249,16 @@ struct symtab{
  *	with the old naming conventions.
  */
 #ifdef	FLEXNAMES
-#define	s_name	s_nm.n_un.n_name	/* name pointer */
+#define	s_name	s_nm.n_un.n_name
+#define	i_name	s_name
+#define	FETCHNAME(sp)	(((struct strdesc *)(sp)->s_name)->sd_string)
+#define	STRLEN(sp)	(((struct strdesc *)(sp)->s_name)->sd_strlen)
+#define	STROFF(sp)	(((struct strdesc *)(sp)->s_name)->sd_stroff)
 #define	s_nmx	s_nm.n_un.n_strx	/* string table index */
 #else 	not FLEXNAMES
 #define	s_name	s_nm.n_name
+#define	i_name	s_name
+#define	FETCHNAME(sp)	((sp)->s_name)
 #endif
 #define	s_type	s_nm.n_type		/* type of the symbol */
 #define	s_other	s_nm.n_other		/* other information for sdb */
@@ -381,7 +387,33 @@ struct	exp {
 #define		ISUBYTE(x)	(((x) >= MINUBYTE) && ((x) <= MAXUBYTE))
 #define		ISWORD(x)	(((x) >= MINWORD) && ((x) <= MAXWORD))
 #define		ISUWORD(x)	(((x) >= MINUWORD) && ((x) <= MAXUWORD))
+/*
+ *	Definitions for strings.
+ *
+ *	Strings are stored in the string pool; see strsave(str, length)
+ *	Strings are known by their length and values.
+ *	A string pointer points to the beginning of the value bytes;
+ *
+ *	If this structure is changed, change insts also.
+ */
+struct	strdesc{
+	int	sd_stroff;	/* offset into string file */
+	short	sd_place;	/* where string is */
+	u_short	sd_strlen;	/* string length */
+	char	sd_string[1];	/* the string itself, flexible length */
+};
+/*
+ *	Where a string can be.  If these are changed, also change instrs.
+ */
+#define	STR_FILE	0x1
+#define	STR_CORE	0x2
+#define	STR_BOTH	0x3
 
+struct strdesc *savestr();
+
+/*
+ *	Global variables
+ */
 	extern	struct	arg	arglist[NARG];	/*building operands in instructions*/
 	extern	struct	exp	explist[NEXP];	/*building up a list of expressions*/
 	extern	struct	exp	*xp;		/*current free expression*/
@@ -412,7 +444,6 @@ struct	exp {
 	extern	int	lgensym[10];
 	extern	char	genref[10];
 
-	extern	char	tmpn1[TNAMESIZE];	/* Interpass temporary */
 	extern	struct	exp	*dotp;		/* the current dot location */
 	extern	int	loctr;
 
@@ -440,7 +471,11 @@ struct	exp {
 	extern	int	lineno;			/*the line number*/
 	extern	char	*dotsname;		/*the name of the as source*/
 
-	extern	FILE	*tmpfil;		/* interpass communication*/
+	extern	FILE	*tokfile;		/* temp token communication*/
+	extern	FILE	*strfile;		/* temp string file*/
+	extern	char	tokfilename[TNAMESIZE];	/* token file name */
+	extern	char	strfilename[TNAMESIZE];	/* string file name */
+	extern	int	strfilepos;		/* position in string file */
 
 	extern	int	passno;			/* 1 or 2 */
 

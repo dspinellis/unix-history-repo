@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.13 %G%";
+static char sccsid[] = "@(#)asparse.c 4.14 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -44,7 +44,7 @@ struct	arg	arglist[NARG];	/*building up operands in instructions*/
  */
 char	tokensets[(LASTTOKEN) - (FIRSTTOKEN) + 1];
 
-static	char	UDotsname[32];	/*name of the assembly source*/
+static	char	UDotsname[64];	/*name of the assembly source*/
 
 yyparse()
 {
@@ -68,7 +68,7 @@ yyparse()
 	reg	struct	symtab	*p;
 	reg	struct	symtab	*stpt;
 
-		char	*stringp;	/*handles string lists*/
+		struct	strdesc *stringp;	/*handles string lists*/
 
 		int	regno;		/*handles arguments*/
 		int	*ptrregno = &regno;
@@ -137,7 +137,7 @@ yyparse()
 				yyerror("\"%.*s\" is not followed by a ':' for a label definition",
 					NCPName,
 #endif not FLEXNAMES
-					np->s_name);
+					FETCHNAME(np));
 				goto  errorfix;
 			}
 restlab:
@@ -151,7 +151,7 @@ restlab:
 				      )
 				  ){
 #ifndef DEBUG
-					if (np->s_name[0] != 'L')
+					if (FETCHNAME(np)[0] != 'L')
 #endif not DEBUG
 					{
 						if (passno == 1)
@@ -161,7 +161,7 @@ restlab:
 						  yyerror("%.*s redefined",
 							NCPName,
 #endif not FLEXNAMES 
-							np->s_name);
+							FETCHNAME(np));
 						else
 #ifdef FLEXNAMES
 						  yyerror("%s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
@@ -169,7 +169,7 @@ restlab:
 						  yyerror("%.*s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
 							NCPName,
 #endif not FLEXNAMES
-							np->s_name,
+							FETCHNAME(np),
 							np->s_value,
 							dotp->e_xvalue);
 					}
@@ -180,7 +180,7 @@ restlab:
 			np->s_value = dotp->e_xvalue;
 			if (passno == 1){
 				np->s_index = dotp-usedot;
-				if (np->s_name[0] == 'L'){
+				if (FETCHNAME(np)[0] == 'L'){
 					nlabels++;
 				}
 				np->s_tag = LABELID;
@@ -214,10 +214,11 @@ restlab:
 
    case IFILE:
 	shift;
-	stringp = (char *)yylval;
+	stringp = (struct strdesc *)yylval;
 	shiftover(STRING);
 	dotsname = &UDotsname[0];
-	movestr(dotsname, stringp, min(STRLEN(stringp), sizeof(dotsname)));
+	movestr(dotsname, stringp->sd_string,
+		min(stringp->sd_strlen, sizeof(UDotsname)));
 	break;
 
    case ILINENO:
@@ -259,7 +260,7 @@ restlab:
 #ifdef FLEXNAMES
 		stpt->s_name = np->s_name;
 #else
-		movestr(stpt->s_name, np->s_name, NCPName);
+		movestr(FETCHNAME(stpt), FETCHNAME(np), NCPName);
 #endif
 		np->s_tag = OBSOLETE;	/*invalidate original */
 		nforgotten++;
@@ -487,18 +488,36 @@ restlab:
 	 *	stringlist: empty | STRING | stringlist STRING
 	 */
 	while (val == STRING){
+		int	mystrlen;
 		flushfield(NBPW/4);
 		if (bitoff)
 			dotp->e_xvalue++;
-		stringp = (char *)yylval;
+		stringp = (struct strdesc *)yylval;
 		/*
-		 *	utilize the string scanner cheat,
-		 *	where it appended a null byte on the string,
-		 *	but didn't charge it to STRLEN
+		 *	utilize the string scanner cheat;
+		 *	the scanner appended a null byte on the string,
+		 *	but didn't charge it to sd_strlen
 		 */
-		STRLEN(stringp) += (auxval == IASCIZ) ? 1 : 0;
+		mystrlen = stringp->sd_strlen;
+		mystrlen += (auxval == IASCIZ) ? 1 : 0;
 #ifdef UNIX
-		outs(stringp, STRLEN(stringp));
+		if (passno == 2){
+			if (stringp->sd_place & STR_CORE){
+				outs(stringp->sd_string, mystrlen);
+			} else {
+				int	i, nread;
+				fseek(strfile, stringp->sd_stroff, 0);
+				for (i = 0; i < mystrlen;/*VOID*/){
+					nread = fread(yytext, 1,
+						min(mystrlen - i,
+						  sizeof(yytext)), strfile);
+					outs(yytext, nread);
+					i += nread;
+				}
+			}
+		} else {
+			dotp->e_xvalue += mystrlen;
+		}
 #endif UNIX
 #ifdef VMS
 		{
@@ -581,7 +600,7 @@ restlab:
 	shift;
 	for (argcnt = 0; argcnt < NCPName; argcnt++){
 		expr(locxp, val);
-		stpt->s_name[argcnt] = locxp->e_xvalue;
+		FETCHNAME(stpt)[argcnt] = locxp->e_xvalue;
 		xp = explist;
 		shiftover(CM);
 	}
@@ -724,27 +743,32 @@ restlab:
 	(bytetoktype *)stabstart -= sizeof(bytetoktype);
 	shift;
 	if (auxval == ISTABSTR){
-		stringp = (char *)yylval;
+		stringp = (struct strdesc *)yylval;
 		shiftover(STRING);
 #ifndef FLEXNAMES
-		movestr(stpt->s_name, stringp, min(STRLEN(stringp), NCPName));
+		movestr(FETCHNAME(stpt), stringp,
+			min(stringp->sd_strlen, NCPName));
 #else
-		stpt->s_name = stringp;
+		stpt->s_name = (char *)stringp;
 		/*
 		 *	We want the trailing null included in this string.
 		 *	We utilize the cheat the string scanner used,
 		 *	and merely increment the string length
 		 */
-		STRLEN(stringp) += 1;
+		stringp->sd_strlen += 1;
 #endif
 		shiftover(CM);
 	} else {
 #ifndef FLEXNAMES
 		static char nullstr[NCPName];
-		movestr(stpt->s_name, nullstr, NCPName);
+		movestr(FETCHNAME(stpt), nullstr, NCPName);
 #else
 		static char nullstr[1];
-		stpt->s_name = savestr(nullstr, 1);
+		static	struct	strdesc strdp;
+		strdp.sd_stroff = strfilepos;
+		strdp.sd_strlen = 0;
+		strdp.sd_place = STR_BOTH;
+		stpt->s_name = (char *)savestr(nullstr, &strdp);
 #endif
 	}
 	goto tailstab;
@@ -768,7 +792,7 @@ restlab:
 		yyerror("Redefinition of %.*s",
 			NCPName,
 #endif not FLEXNAMES
-			np->s_name);
+			FETCHNAME(np));
 	if (passno==1) {
 		np->s_value = locxp->e_xvalue;
 		if (auxval == ICOMM)

@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asjxxx.c 4.6 %G%";
+static char sccsid[] = "@(#)asjxxx.c 4.7 %G%";
 #endif not lint
 
 #include	<stdio.h>
@@ -301,7 +301,8 @@ jxxxfix()
 #ifdef DEBUG
 						if(debug)
 						printf("Tunnel from %s from line %d\n",
-							jumpfrom->s_name, lineno);
+							FETCHNAME(jumpfrom),
+							lineno);
 #endif
 						continue;
 				} else {	/*tunneling not possible*/
@@ -476,7 +477,7 @@ jxxxbump(segno, starthint)
 			if (debug){
 			if (sp->s_dest != 0)
 				printf("Explode jump to %s on line %d\n",
-					sp->s_dest->s_name, lineno);
+					FETCHNAME(sp->s_dest), lineno);
 			else
 				printf("Explode an align!\n");
 			}

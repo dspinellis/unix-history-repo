@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asmain.c 4.10 %G%";
+static char sccsid[] = "@(#)asmain.c 4.11 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)asmain.c 4.10 %G%";
 #include "asexpr.h"
 
 #ifdef UNIX
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.10"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.11"
 #endif
 
 #ifdef VMS
@@ -82,11 +82,19 @@ u_long	drsize;		/* total data relocation size */
 struct	exp	usedot[NLOC+NLOC];	/* info about all segments */
 struct	exp	*dotp;			/* data/text location pointer */
 /*
- *	The inter pass temporary file is opened and closed by stdio, but
+ *	The inter pass temporary token file is opened and closed by stdio, but
  *	is written to using direct read/write, as the temporary file
  *	is composed of buffers exactly BUFSIZ long.
  */
-FILE	*tmpfil;			/* interpass communication file */
+FILE	*tokfile;			/* interpass communication file */
+char	tokfilename[TNAMESIZE];
+/*
+ *	The string file is the string table
+ *	cat'ed to the end of the built up a.out file
+ */
+FILE	*strfile;			/* interpass string file */
+char	strfilename[TNAMESIZE];
+int	strfilepos = 0;			/* position within the string file */
 /*
  *	a.out is created during the second pass.
  *	It is opened by stdio, but is filled with the parallel
@@ -171,8 +179,6 @@ char	*tmpdirprefix =
 			"/usr/tmp/";
 #endif
 
-#define		TMP_SUFFIX	"asXXXXXX"
-char		tmpn1[TNAMESIZE];
 
 int delexit();
 
@@ -182,7 +188,8 @@ main(argc, argv)
 {
 	char	*sbrk();
 
-	tmpn1[0] = 0;
+	tokfilename[0] = 0;
+	strfilename[0] = 0;
 	endcore = sbrk(0);
 
 	argprocess(argc, argv);		/* process argument lists */
@@ -394,21 +401,38 @@ zerolocals()
 
 i_pass1()
 {
-	if (useVM == 0){
-		strcat(tmpn1, tmpdirprefix);
-		if (tmpdirprefix[strlen(tmpdirprefix)-1] != '/')
-			strcat(tmpn1, "/");
-		(void)strcat(tmpn1, TMP_SUFFIX);
-		(void)mktemp(tmpn1);
-		tmpfil = fopen(tmpn1, "w");
-		if (tmpfil==NULL) {
-		  yyerror("Bad pass 1 temporary file for writing %s", tmpn1);
-		  delexit();
-		}
-	}
+	FILE	*tempopen();
+	if (useVM == 0)
+		tokfile = tempopen(tokfilename, "T");
+	strfile = tempopen(strfilename, "S");
+	/*
+	 *	write out the string length.
+	 *	This will be overwritten when the
+	 *	strings are tacked onto the growing a.out file
+	 */
+	strfilepos = sizeof(int);
+	fwrite(&strfilepos, sizeof(int), 1, strfile);
 
-	inittmpfile();
+	inittokfile();
 	initijxxx();
+}
+
+FILE *tempopen(tname, part)
+	char	*tname;
+	char	*part;
+{
+	FILE	*file;
+	sprintf(tname, "%s%sas%s%05d",
+		tmpdirprefix,
+		(tmpdirprefix[strlen(tmpdirprefix)-1] != '/') ? "/" : 0,
+		part,
+		getpid());
+	file = fopen(tname, "w");
+	if (file == NULL) {
+		yyerror("Bad pass 1 temporary file for writing %s", tname);
+		delexit();
+	}
+	return(file);
 }
 
 pass1()
@@ -439,7 +463,7 @@ pass1()
 		}
 	}
 
-	closetmpfile();		/*kick out the last buffered intermediate text*/
+	closetokfile();		/*kick out the last buffered intermediate text*/
 }
 
 testlocals()
@@ -560,13 +584,15 @@ build_hdr()
 i_pass2()
 {
 	if (useVM == 0) {
-		fclose(tmpfil);
-		tmpfil = fopen(tmpn1, "r");
-		if (tmpfil==NULL) {
-		   yyerror("Bad pass 2 temporary file for reading %s", tmpn1);
+		fclose(tokfile);
+		tokfile = fopen(tokfilename, "r");
+		if (tokfile==NULL) {
+		   yyerror("Bad pass 2 temporary file for reading %s", tokfilename);
 		   delexit();
 		}
 	}
+	fclose(strfile);
+	strfile = fopen(strfilename, "r");
 }
 
 pass2()
@@ -582,11 +608,11 @@ pass2()
 	relfil = 0;		/* outrel takes care of the rest */
 	initoutrel();
 
-	inittmpfile();
+	inittokfile();
 
 	yyparse();
 
-	closetmpfile();
+	closetokfile();
 }
 
 fillsegments()
@@ -628,7 +654,12 @@ reloc_syms()
 	/*
 	 *	Output the symbol table
 	 *	and if FLEXNAMES is set, the string pool
+	 *
+	 *	We must first rewind the string pool file to its beginning,
+	 *	in case it was seek'ed into for fetching ascii and asciz
+	 *	strings.
 	 */
+	fseek(strfile, 0, 0);
 	symwrite(relocfile);
 }
 
@@ -651,8 +682,10 @@ delexit()
 
 delete()
 {
-	if (useVM == 0 || tmpn1[0])
-		unlink(tmpn1);
+	if (useVM == 0 || tokfilename[0])
+		unlink(tokfilename);
+	if (strfilename[0])
+		unlink(strfilename);
 }
 
 sawabort()
