@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prim.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)prim.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -418,7 +418,7 @@ jump_back(n)
 			if (c == EOI)
 			{
 				char message[40];
-				sprintf(message, "File has only %d lines", 
+				(void)sprintf(message, "File has only %d lines",
 					nlines-1);
 				error(message);
 				return;
@@ -658,6 +658,7 @@ search(search_forward, pattern, n, wantmatch)
 #else
 	static char lpbuf[100];
 	static char *last_pattern = NULL;
+	char *strcpy();
 #endif
 #endif
 
@@ -724,7 +725,7 @@ search(search_forward, pattern, n, wantmatch)
 		pattern = last_pattern;
 	} else
 	{
-		strcpy(lpbuf, pattern);
+		(void)strcpy(lpbuf, pattern);
 		last_pattern = lpbuf;
 	}
 #endif
