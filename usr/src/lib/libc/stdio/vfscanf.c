@@ -9,13 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfscanf.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfscanf.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/cdefs.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <stdlib.h>
+#include <ctype.h>
 #if __STDC__
 #include <stdarg.h>
 #else

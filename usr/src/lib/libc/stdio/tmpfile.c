@@ -9,11 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)tmpfile.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tmpfile.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <signal.h>
+#include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
 #include <paths.h>

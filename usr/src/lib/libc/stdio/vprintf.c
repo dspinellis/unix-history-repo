@@ -9,10 +9,9 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vprintf.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vprintf.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/cdefs.h>
 #include <stdio.h>
 
 vprintf(fmt, ap)

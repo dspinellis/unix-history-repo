@@ -9,11 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fpurge.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fpurge.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "local.h"
 
 /*
