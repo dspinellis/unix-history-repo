@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.6 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -122,9 +122,7 @@ int	blk_open(),
 	blk_read(),
 	blk_write(),
 	blk_ioctl(),
-	blk_select(),
-	ufs_bmap(),
-	blk_strategy();
+	blk_select();
 
 struct vnodeops nfsv2chr_vnodeops = {
 	vfs_noop,
@@ -154,8 +152,8 @@ struct vnodeops nfsv2chr_vnodeops = {
 	nfs_inactive,
 	nfs_lock,
 	nfs_unlock,
-	ufs_bmap,
-	blk_strategy,
+	vfs_noop,
+	vfs_noop,
 };
 
 extern u_long nfs_procids[NFS_NPROCS];
@@ -323,6 +321,7 @@ nfs_setattr(vp, vap, cred)
 {
 	register struct nfsv2_sattr *sp;
 	nfsm_vars;
+	struct nfsnode *np;
 
 	nfsstats.rpccnt[NFSPROC_SETATTR]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_SETATTR], cred, NFSX_FH+NFSX_SATTR);
@@ -341,8 +340,13 @@ nfs_setattr(vp, vap, cred)
 	else
 		sp->sa_gid = txdr_unsigned(vap->va_gid);
 	sp->sa_size = txdr_unsigned(vap->va_size);
-	if (vap->va_size != VNOVAL)
-		VTONFS(vp)->n_size = vap->va_size;
+	if (vap->va_size != VNOVAL) {
+		np = VTONFS(vp);
+		if (np->n_flag & NMODIFIED) {
+			np->n_flag &= ~NMODIFIED;
+			nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+		}
+	}
 	txdr_time(&vap->va_atime, &sp->sa_atime);
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);
 	nfsm_request(vp);
@@ -377,7 +381,6 @@ nfs_lookup(vp, ndp)
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	flag = ndp->ni_nameiop & OPFLAG;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
-#ifndef notyet
 	if ((error = cache_lookup(ndp)) && error != ENOENT) {
 		struct vattr vattr;
 		int vpid;
@@ -403,10 +406,6 @@ nfs_lookup(vp, ndp)
 		if (vpid == vdp->v_id &&
 		   !nfs_getattr(vdp, &vattr, ndp->ni_cred)) {
 			nfsstats.lookupcache_hits++;
-			if (vdp->v_type == VNON) {
-				vdp->v_type = vattr.va_type;
-				VTONFS(vdp)->n_mtime = vattr.va_mtime.tv_sec;
-			}
 			return (0);
 		}
 		nfs_nput(vdp);
@@ -415,7 +414,6 @@ nfs_lookup(vp, ndp)
 	}
 	error = 0;
 	nfsstats.lookupcache_misses++;
-#endif
 	nfsstats.rpccnt[NFSPROC_LOOKUP]++;
 	len = ndp->ni_namelen;
 	nfsm_reqhead(nfs_procids[NFSPROC_LOOKUP], ndp->ni_cred, NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
@@ -455,10 +453,6 @@ nfsmout:
 				vrele(vp);
 			m_freem(mrep);
 			return (error);
-		}
-		if (newvp->v_type == VNON) {
-			newvp->v_type = np->n_vattr.va_type;
-			np->n_mtime = np->n_vattr.va_mtime.tv_sec;
 		}
 		ndp->ni_vp = newvp;
 		if (!lockparent)
@@ -517,28 +511,12 @@ nfsmout:
 		return (error);
 	}
 	m_freem(mrep);
-	if (newvp->v_type == VNON) {
-		newvp->v_type = np->n_vattr.va_type;
-		np->n_mtime = np->n_vattr.va_mtime.tv_sec;
-	}
 
-	/*
-	 * Handling special files...
-	 * For VCHR, use the nfs_node, but with the nfsv2chr_vnodeops
-	 * that are a mix of nfs and blk vnode ops.
-	 * Also, returns right away to avoid loading the name cache
-	 */
-	if (newvp->v_type == VCHR) {
-		newvp->v_rdev = np->n_vattr.va_rdev;
-		newvp->v_op = &nfsv2chr_vnodeops;
-	}
 	if (vp != newvp && (!lockparent || *ndp->ni_next != '\0'))
 		nfs_unlock(vp);
 	ndp->ni_vp = newvp;
-#ifndef notyet
 	if (error == 0 && ndp->ni_makeentry)
 		cache_enter(ndp);
-#endif
 	return (error);
 }
 
@@ -756,13 +734,11 @@ nfs_rename(sndp, tndp)
 	nfsm_strtom(tndp->ni_dent.d_name,tndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
 	nfsm_request(sndp->ni_dvp);
 	nfsm_reqdone;
-#ifndef notyet
 	if (sndp->ni_vp->v_type == VDIR) {
 		if (tndp->ni_vp != NULL && tndp->ni_vp->v_type == VDIR)
 			cache_purge(tndp->ni_dvp);
 		cache_purge(sndp->ni_dvp);
 	}
-#endif
 	nfs_abortop(sndp);
 	nfs_abortop(tndp);
 	return (error);
@@ -893,10 +869,8 @@ nfs_rmdir(ndp)
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
 	nfsm_request(ndp->ni_dvp);
 	nfsm_reqdone;
-#ifndef notyet
 	cache_purge(ndp->ni_dvp);
 	cache_purge(ndp->ni_vp);
-#endif
 	nfs_nput(ndp->ni_vp);
 	nfs_nput(ndp->ni_dvp);
 	return (error);

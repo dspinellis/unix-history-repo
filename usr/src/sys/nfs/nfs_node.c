@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -181,9 +181,7 @@ loop:
 	np->n_flag = NLOCKED;
 	insque(np, nh);
 	bcopy((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH);
-#ifndef notyet
 	cache_purge(vp);
-#endif
 	np->n_attrstamp = 0;
 	np->n_sillyrename = (struct sillyrename *)0;
 	np->n_id = ++nextnfsnodeid;
@@ -341,9 +339,6 @@ nfs_lock(vp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 
-	if (np->n_flag & NLOCKED)
-		printf("pid %d hit locked nfsnode=0x%x\n",
-		    u.u_procp->p_pid, np);
 	while (np->n_flag & NLOCKED) {
 		np->n_flag |= NWANT;
 		sleep((caddr_t)np, PINOD);
@@ -359,15 +354,6 @@ nfs_unlock(vp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 
-	if ((np->n_flag & NLOCKED) == 0) {
-		printf("pid %d unlocking unlocked nfsnode=0x%x ",
-		    u.u_procp->p_pid, np);
-		printf("fh0=0x%x fh1=0x%x fh2=0x%x fh3=0x%x fh4=0x%x fh5=0x%x fh6=0x%x fh7=0x%x\n",
-			np->n_fh.fh_bytes[0],np->n_fh.fh_bytes[1],
-			np->n_fh.fh_bytes[2],np->n_fh.fh_bytes[3],
-			np->n_fh.fh_bytes[4],np->n_fh.fh_bytes[5],
-			np->n_fh.fh_bytes[6],np->n_fh.fh_bytes[7]);
-	}
 	np->n_flag &= ~NLOCKED;
 	if (np->n_flag & NWANT) {
 		np->n_flag &= ~NWANT;
