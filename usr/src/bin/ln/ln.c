@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1987, 1993
+ * Copyright (c) 1987, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1987, 1993\n\
+"@(#) Copyright (c) 1987, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ln.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ln.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,13 +25,14 @@ static char sccsid[] = "@(#)ln.c	8.1 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
-int	dirflag,			/* Undocumented force flag. */
-	sflag,				/* Symbolic, not hard, link. */
+int	dirflag;			/* Undocumented directory flag. */
+int	fflag;				/* Unlink existing files. */
+int	sflag;				/* Symbolic, not hard, link. */
 					/* System link call. */
-	(*linkf) __P((const char *, const char *));
+int (*linkf) __P((const char *, const char *));
 
-static int	linkit __P((char *, char *, int));
-static void	usage __P((void));
+int	linkit __P((char *, char *, int));
+void	usage __P((void));
 
 int
 main(argc, argv)
@@ -43,10 +44,13 @@ main(argc, argv)
 	int ch, exitval;
 	char *sourcedir;
 
-	while ((ch = getopt(argc, argv, "Fs")) != EOF)
-		switch((char)ch) {
+	while ((ch = getopt(argc, argv, "Ffs")) != EOF)
+		switch (ch) {
 		case 'F':
-			dirflag = 1;
+			dirflag = 1;	/* XXX: deliberately undocumented. */
+			break;
+		case 'f':
+			fflag = 1;
 			break;
 		case 's':
 			sflag = 1;
@@ -80,48 +84,55 @@ main(argc, argv)
 	exit(exitval);
 }
 
-static int
+int
 linkit(target, source, isdir)
 	char *target, *source;
 	int isdir;
 {
 	struct stat sb;
-	char path[MAXPATHLEN], *p;
+	int exists;
+	char *p, path[MAXPATHLEN];
 
 	if (!sflag) {
-		/* if target doesn't exist, quit now */
+		/* If target doesn't exist, quit now. */
 		if (stat(target, &sb)) {
 			warn("%s", target);
 			return (1);
 		}
-		/* only symbolic links to directories, unless -F option used */
+		/* Only symbolic links to directories, unless -F option used. */
 		if (!dirflag && (sb.st_mode & S_IFMT) == S_IFDIR) {
 			warnx("%s: is a directory", target);
 			return (1);
 		}
 	}
 
-	/* if the source is a directory, append the target's name */
-	if (isdir || !stat(source, &sb) && (sb.st_mode & S_IFMT) == S_IFDIR) {
-		if (!(p = strrchr(target, '/')))
+	/* If the source is a directory, append the target's name. */
+	if (isdir || (exists = !stat(source, &sb)) && S_ISDIR(sb.st_mode)) {
+		if ((p = strrchr(target, '/')) == NULL)
 			p = target;
 		else
 			++p;
 		(void)snprintf(path, sizeof(path), "%s/%s", source, p);
 		source = path;
-	}
+		exists = !stat(source, &sb);
+	} else
+		exists = !stat(source, &sb);
 
-	if ((*linkf)(target, source)) {
+	/*
+	 * If the file exists, and -f was specified, unlink it.
+	 * Attempt the link.
+	 */
+	if (fflag && exists && unlink(source) || (*linkf)(target, source)) {
 		warn("%s", source);
 		return (1);
 	}
 	return (0);
 }
 
-static void
+void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage:\tln [-s] file1 file2\n\tln [-s] file ... directory\n");
+	    "usage:\tln [-fs] file1 file2\n\tln [-fs] file ... directory\n");
 	exit(1);
 }
