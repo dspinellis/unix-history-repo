@@ -1,0 +1,41 @@
+     I am sending the following note to you because you all had expressed
+interest at one time or another in either running, beta testing, or
+somethin-elsing the remote netnews software which I have been working
+on here at Berkeley.  This is basically a status report of where I
+am in the project, and what remains to be done.  If you'd like to help
+work on the project, or make suggestions or flames, those are welcome.
+My apologies for not doing this sooner.
+
+     The status of the server is as follows: I have modified
+"rn" to run with it, and it works quite well.  It's very fast (although
+long net.sources articles tend to drag over the net), and it is a full
+implementation of "rn", except for the fact that you cannot post news.
+I intend to correct this by hacking at inews, so it knows how to forward
+to the server machine over the net when a newsgroup isn't local.
+
+     The problem here, is, as usual, time.  For one thing, the daemon runs
+under inetd, which is a recent Berkeley development, and I'm not sure it
+exists elsewhere.  So, the daemon needs to be rewritten to stand on its
+own.  Second, the daemon currently forks off one copy of itself per
+request; this could quickly drive a machine into the groud.  It
+needs to be modified such that one server can handle about 10 users, and
+then fork off a copy.  Finally, inews needs to be patched as I've mentioned
+above.
+
+     Of course, none of this is necessarilly conforming to the info-lan
+discussion group which Chuq has been running.  So I have no idea how
+compatible this will be when all is said and done.
+
+     On top of all this, school starts tomorrow and it will be a hectic
+semester.  Since the only time I have for this is my own, and that's
+precious little, I don't know when I will get around to doing the stuff
+that needs be done.
+
+     So, the end result is that you're welcome to a copy of the modified
+"rn" software (it's about a meg, and it's all #ifdef'd, so you simply
+define SERVER and compile it).  If you wish to do this, let me know.
+And offers to help will be greatly appreciated.
+
+						Phil Lapsley
+						(phil@ucb-vax.ARPA)
+						(...!ucbvax!phil)

@@ -1,0 +1,176 @@
+     This directory contains lotsa good stuff common to both
+the news server, support, and client programs.  The short of it is:
+
+conf.h		Configuration information for NNTP server,
+		support, and client programs.
+
+response_codes.h  These are the #define's of the numeric response
+		codes in NNTP.  This shouldn't change.
+
+clientlib.c	This file is a collection of routines which clients
+		can use to talk to the NNTP server.  The code is
+		well documented, but briefly, the functions are
+
+			server_init	Open connection to server
+			getsocket	Get a stream socket
+			get_server	Get line from server
+			put_server	Send line to server
+			close_server	Close connection
+
+		It is worth noting that these routines use
+		buffered I/O, and leave the external variables
+		"ser_rd_fp" and "ser_wr_fp" (server read/write
+		file pointers, respectively) floating around
+		for use by programs which need them.
+
+		In any event, you shouldn't need to screw with
+		these routines.
+
+conf.h
+======
+
+     Unfortunately, you will need to screw with this to get both
+the server, support, and client programs running.  More unfortunately,
+"rrn" has its own ideas of where to look for config information,
+so there is some duplication of effort here.  With luck, it won't
+be too great.
+
+     This is sort of a walk through conf.h, and what parameters
+need to be changed.  The #defines's default value is listed in
+parenthesis after it's name.  Manual entries mentioned here are
+in the "doc" directory of the NNTP distribution.
+
+     First are some compile-time type options, for compiling in
+certain code.  The options should be "#undef"ed if you don't want
+them, and "#defined" if you do.
+
+ALONE		(undefined)
+
+     Defines whether we're a stand alone version of the server, or
+whether we're running under inetd.  I suggest you run under inetd.
+
+FASTFORK	(undefined)
+
+     If we're ALONE, then this option tells us not to read the
+active file when we fork, but rather for the parent daemon to re-read
+it every READINTVL (below) seconds.  This should make forking off children
+a little bit faster.
+
+LOG		(undefined)
+
+     When LOG is defined, we log copious amounts of information via
+syslog to a special file.  One a busy system like ucbvax, this produces
+about 100K of log information per day.  Look in ../src/SYSLOG to
+get an idea of what will be logged.  You can use the scripts
+provided in ../support to produce statistics on your NNTP server if
+you run with LOG.
+
+BSD_42		(undefined)
+
+     If you have a 4.2 BSD system (as opposed to a 4.3 BSD system),
+this needs to be defined.  Really it does only two things: changes
+the log level to be compatible with 4.2, and automatically defines
+DBM (below).  If, somehow, you already have ndbm, then you should
+kill the lines which auto-define it.
+
+DBM		(undefined)
+
+     If you don't have the ndbm routines in your standard library (i.e.,
+if you're not running 4.3 BSD), you'll have to define this; all it
+does is replace the ndbm calls with the earlier, unwieldy dbm calls.
+
+DOMAIN		(undefined)
+
+     If domain is defined, it specifies that whatever it is defined
+as will be appended to host names; this is for posting news when
+your hostname() doesn't return your fully-qualified domain name.
+If your hostname system call does return a fully-qualified name,
+simply undef DOMAIN.
+
+SERVER_HOST	("foo")		<- you better change this!
+
+     ... is the machine which various programs (mini-inews, rrn,
+getactive, etc.) should connect to for news; that is, it is the machine
+which will be running the news server.
+
+POSTER		("nobody")
+
+     If your nntpd is run as root, nntpd will attempt to setuid()
+and setgid() to the uid and gid of whoever POSTER is defined as.
+If your nntpd isn't running as root (i.e., it might run as "usenet"),
+either undefine this, or define it to be a user which exists but
+is not used -- the setuid will fail in any event.
+
+LOG_FACILITY	(LOG_DAEMON)
+
+     This is of concern only if you have 4.3 syslog.  If you do,
+and you have LOG defined above (which produces huge amounts of
+log info), you may want to define this to be something which can
+be redirected in /etc/syslog.conf to a special file -- LOG_LOCAL7
+is what we use on ucbvax.
+
+BUGS_TO		("Phil Lapsley (phil@berkeley.edu, ...!ucbvax!phil)")
+
+     This person is mentioned in the output of the HELP command.
+It should probably be left to me, unless you hack on the server.
+
+Next, we have some common files:
+
+ACTIVE_FILE	("/usr/spool/news/lib/active")
+
+     Specifies the location of the "active" file.
+
+ACCESS_FILE	("/usr/spool/news/lib/nntp_access")
+
+     Specifies the location of the remote access file.
+     See the manual entry, nntpd.8c, for a better explanation.
+     A sample access file is in ../support/access_file.
+
+HISTORY_FILE	("/usr/spool/news/lib/history")
+
+     Specifies the location of the "history" file.
+     This is used with NEWNEWS and ARTICLE/HEAD/BODY/STAT when
+     given an message-id argument.
+
+SPOOLDIR	("/usr/spool/news/")
+
+     This is the directory where news is stored.  Note that
+     the trailing / is important.
+
+INEWS		("/usr/spool/news/lib/inews")
+
+     Specifies the location of inews, for posting.  Note that this
+     is not the same as the pseudo-inews in the inews directory
+     supplied with the NNTP distribution.  Your inews may be
+     in a different place, such as /usr/bin/inews.
+
+RNEWS		("/usr/bin/rnews")
+
+     Specifies the location of the rnews program which is used
+     for dealing with news received from other systems via the
+     IHAVE command; it is often a link to inews.
+
+STAT_FILE	("/usr/spool/news/lib/mgdstats")
+
+     When the support program "mkgrdates" is run, it keep stats
+     in a file to tell whether or not to rebuild its database
+     the next time it is run; this is the file the stats are kept
+     in.  Needless to say, it must be writable by whatever user-id
+     runs "mkgrdates".  See the manual entry "mkgrdates.8c" for
+     more info.
+
+NGDATE_FILE	("/usr/spool/news/lib/groupdates")
+
+     Specifies the location of the newsgroup creation date file.
+     See the manual entry for both nntpd.8c and mkgrdates.8c for
+     more info.
+
+READINTVL	(600 seconds)
+
+     If the server is compiled with FASTFORK and ALONE, then this number
+     tells how often to check if the active file has changed (and to
+     read it in if it has changed since the last time).  See README
+     in the "server" directory of the NNTP distribution.  If you are
+     not compiled with FASTFORK and ALONE (hint: you're not going to),
+     don't worry about this.
+
