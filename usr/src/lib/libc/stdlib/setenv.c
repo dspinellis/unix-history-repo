@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setenv.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)setenv.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stddef.h>
@@ -34,13 +34,12 @@ setenv(name, value, rewrite)
 	l_value = strlen(value);
 	if ((C = _findenv(name, &offset))) {	/* find if already exists */
 		if (!rewrite)
-			return(0);
+			return (0);
 		if (strlen(C) >= l_value) {	/* old larger; copy over */
 			while (*C++ = *value++);
-			return(0);
+			return (0);
 		}
-	}
-	else {					/* create new slot */
+	} else {					/* create new slot */
 		register int	cnt;
 		register char	**P;
 
@@ -49,14 +48,14 @@ setenv(name, value, rewrite)
 			environ = (char **)realloc((char *)environ,
 			    (size_t)(sizeof(char *) * (cnt + 2)));
 			if (!environ)
-				return(-1);
+				return (-1);
 		}
 		else {				/* get new space */
 			alloced = 1;		/* copy old entries into it */
 			P = (char **)malloc((size_t)(sizeof(char *) *
 			    (cnt + 2)));
 			if (!P)
-				return(-1);
+				return (-1);
 			bcopy(environ, P, cnt * sizeof(char *));
 			environ = P;
 		}
@@ -66,10 +65,12 @@ setenv(name, value, rewrite)
 	for (C = (char *)name; *C && *C != '='; ++C);	/* no `=' in name */
 	if (!(environ[offset] =			/* name + `=' + value */
 	    malloc((size_t)((int)(C - name) + l_value + 2))))
-		return(-1);
-	for (C = environ[offset]; (*C = *name++) && *C != '='; ++C);
-	for (*C++ = '='; *C++ = *value++;);
-	return(0);
+		return (-1);
+	for (C = environ[offset]; (*C = *name++) && *C != '='; ++C)
+		;
+	for (*C++ = '='; *C++ = *value++; )
+		;
+	return (0);
 }
 
 /*
