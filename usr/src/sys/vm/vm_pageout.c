@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	7.7 (Berkeley) %G%
+ *	@(#)vm_pageout.c	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -241,6 +241,7 @@ vm_pageout_scan()
 					pmap_clear_modify(VM_PAGE_TO_PHYS(m));
 					break;
 				case VM_PAGER_FAIL:
+				case VM_PAGER_ERROR:
 					/*
 					 * If page couldn't be paged out, then
 					 * reactivate the page so it doesn't
