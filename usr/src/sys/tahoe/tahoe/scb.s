@@ -1,4 +1,4 @@
-/*	scb.s	1.2	86/01/12	*/
+/*	scb.s	1.3	86/11/25	*/
 
 /*
  * System control block
@@ -13,7 +13,7 @@ _scb:	.globl	_scb
 /* 004 */	STRAY;		STRAY;		STRAY;		IS(hardclock);
 /* 008 */	STRAY;		STRAY;		IS(cnrint);	IS(cnxint);
 /* 00c */	IS(rmtrint);	IS(rmtxint);	STRAY;		STRAY;
-/* 010 */	STRAY;		STRAY;		STRAY;		IS(netintr);
+/* 010 */	IS(kdbintr);	STRAY;		STRAY;		IS(netintr);
 /* 014 */	STRAY;		STRAY;		STRAY;		IS(softclock);
 /* 018 */	STRAY; 		STRAY;		STRAY;		STRAY;
 /* 01c */	STRAY;		STRAY;		STRAY;		STRAY;
