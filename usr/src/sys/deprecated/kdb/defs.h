@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	7.9 (Berkeley) %G%
+ *	@(#)defs.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,6 @@
 
 struct	pcb kdbpcb;		/* must go before redef.h */
 
-#include "redef.h"
 #include "machine/kdbparam.h"
 
 /* access modes */
@@ -90,26 +89,26 @@ typedef	struct {
 	int	*rkern;
 } REGLIST, *REGPTR;
 
-ADDR	maxoff;
-ADDR	localval;
-int	mkfault;
-long	var[36];
-char	*errflg;
-long	dot;
-int	dotinc;
-long	adrval;
-int	adrflg;
-long	cntval;
-int	cntflg;
+ADDR	kdbmaxoff;
+ADDR	kdblocalval;
+int	kdbmkfault;
+long	kdbvar[36];
+char	*kdberrflg;
+long	kdbdot;
+int	kdbdotinc;
+long	kdbadrval;
+int	kdbadrflg;
+long	kdbcntval;
+int	kdbcntflg;
 
 /* result type declarations */
-long	inkdot();
-u_int	get();
-u_int	chkget();
-u_int	bchkget();
-char	*exform();
-BKPTR	scanbkpt();
+long	kdbinkdot();
+u_int	kdbget();
+u_int	kdbchkget();
+u_int	kdbbchkget();
+char	*kdbexform();
+BKPTR	kdbscanbkpt();
 
-struct	nlist *symtab, *esymtab;
-struct	nlist *cursym;
-struct	nlist *lookup();
+struct	nlist *kdbsymtab, *kdbesymtab;
+struct	nlist *kdbcursym;
+struct	nlist *kdblookup();
