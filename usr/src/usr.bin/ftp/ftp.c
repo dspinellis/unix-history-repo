@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -524,7 +524,7 @@ sendrequest(cmd, local, remote, printnames)
 		goto abort;
 	(void) gettimeofday(&start, (struct timezone *)0);
 	oldintp = signal(SIGPIPE, SIG_IGN);
-	switch (type) {
+	switch (curtype) {
 
 	case TYPE_I:
 	case TYPE_L:
