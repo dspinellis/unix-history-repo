@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)buf.h	6.7 (Berkeley) %G%
+ *	@(#)buf.h	6.8 (Berkeley) %G%
  */
 
 /*
@@ -172,7 +172,7 @@ unsigned minphys();
  * mark it as being use (B_BUSY) by a device.
  */
 #define	notavail(bp) { \
-	int x = spl6(); \
+	int x = splbio(); \
 	bremfree(bp); \
 	(bp)->b_flags |= B_BUSY; \
 	splx(x); \
