@@ -16,6 +16,90 @@
 #include <sys/mount.h>
 #include <sys/trace.h>
 #include <sys/resourcevar.h>
+#include <sys/malloc.h>
+#include <libkern/libkern.h>
+
+/*
+ * Definitions for the buffer hash lists.
+ */
+#define	BUFHASH(dvp, lbn)	\
+	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & bufhash])
+struct	buf **bufhashtbl, *invalhash;
+u_long	bufhash;
+
+/*
+ * Insq/Remq for the buffer hash lists.
+ */
+#define	bremhash(bp) { \
+	struct buf *bq; \
+	if (bq = (bp)->b_forw) \
+		bq->b_back = (bp)->b_back; \
+	*(bp)->b_back = bq; \
+}
+#define	binshash(bp, dp) { \
+	struct buf *bq; \
+	if (bq = *(dp)) \
+		bq->b_back = &(bp)->b_forw; \
+	(bp)->b_forw = bq; \
+	(bp)->b_back = (dp); \
+	*(dp) = (bp); \
+}
+
+/*
+ * Definitions for the buffer free lists.
+ */
+#define	BQUEUES		4		/* number of free buffer queues */
+
+#define	BQ_LOCKED	0		/* super-blocks &c */
+#define	BQ_LRU		1		/* lru, useful buffers */
+#define	BQ_AGE		2		/* rubbish */
+#define	BQ_EMPTY	3		/* buffer headers with no memory */
+
+struct bufqueue {
+	struct	buf *buffreehead;	/* head of available list */
+	struct	buf **buffreetail;	/* tail of available list */
+} bufqueues[BQUEUES];
+int needbuffer;
+
+/*
+ * Insq/Remq for the buffer free lists.
+ */
+void
+bremfree(bp)
+	struct buf *bp;
+{
+	struct buf *bq;
+	struct bufqueue *dp;
+
+	if (bq = bp->b_actf) {
+		bq->b_actb = bp->b_actb;
+	} else {
+		for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++)
+			if (dp->buffreetail == &bp->b_actf)
+				break;
+		if (dp == &bufqueues[BQUEUES])
+			panic("bremfree: lost tail");
+		dp->buffreetail = bp->b_actb;
+	}
+	*bp->b_actb = bq;
+}
+
+#define	binsheadfree(bp, dp) { \
+	struct buf *bq; \
+	if (bq = (dp)->buffreehead) \
+		bq->b_actb = &(bp)->b_actf; \
+	else \
+		(dp)->buffreetail = &(bp)->b_actf; \
+	(dp)->buffreehead = (bp); \
+	(bp)->b_actf = bq; \
+	(bp)->b_actb = &(dp)->buffreehead; \
+}
+#define	binstailfree(bp, dp) { \
+	(bp)->b_actf = NULL; \
+	(bp)->b_actb = (dp)->buffreetail; \
+	*(dp)->buffreetail = (bp); \
+	(dp)->buffreetail = &(bp)->b_actf; \
+}
 
 /*
  * Initialize buffers and hash links for buffers.
@@ -23,39 +107,31 @@
 void
 bufinit()
 {
+	register struct buf *bp;
+	struct bufqueue *dp;
 	register int i;
-	register struct buf *bp, *dp;
-	register struct bufhd *hp;
 	int base, residual;
 
-	for (hp = bufhash, i = 0; i < BUFHSZ; i++, hp++)
-		hp->b_forw = hp->b_back = (struct buf *)hp;
-
-	for (dp = bfreelist; dp < &bfreelist[BQUEUES]; dp++) {
-		dp->b_forw = dp->b_back = dp->av_forw = dp->av_back = dp;
-		dp->b_flags = B_HEAD;
-	}
+	for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++)
+		dp->buffreetail = &dp->buffreehead;
+	bufhashtbl = (struct buf **)hashinit(nbuf, M_CACHE, &bufhash);
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
 	for (i = 0; i < nbuf; i++) {
 		bp = &buf[i];
+		bzero((char *)bp, sizeof *bp);
 		bp->b_dev = NODEV;
-		bp->b_bcount = 0;
 		bp->b_rcred = NOCRED;
 		bp->b_wcred = NOCRED;
-		bp->b_dirtyoff = 0;
-		bp->b_dirtyend = 0;
-		bp->b_validoff = 0;
-		bp->b_validend = 0;
 		bp->b_un.b_addr = buffers + i * MAXBSIZE;
 		if (i < residual)
 			bp->b_bufsize = (base + 1) * CLBYTES;
 		else
 			bp->b_bufsize = base * CLBYTES;
-		binshash(bp, &bfreelist[BQ_AGE]);
 		bp->b_flags = B_INVAL;
-		dp = bp->b_bufsize ? &bfreelist[BQ_AGE] : &bfreelist[BQ_EMPTY];
+		dp = bp->b_bufsize ? &bufqueues[BQ_AGE] : &bufqueues[BQ_EMPTY];
 		binsheadfree(bp, dp);
+		binshash(bp, &invalhash);
 	}
 }
 
@@ -234,7 +310,7 @@ int
 vn_bwrite(ap)
 	struct vop_bwrite_args *ap;
 {
-	return bwrite (ap->a_bp);
+	return (bwrite(ap->a_bp));
 }
 
 
@@ -294,7 +370,7 @@ bawrite(bp)
 brelse(bp)
 	register struct buf *bp;
 {
-	register struct buf *flist;
+	register struct bufqueue *flist;
 	int s;
 
 	trace(TR_BRELSE, pack(bp->b_vp, bp->b_bufsize), bp->b_lblkno);
@@ -304,9 +380,9 @@ brelse(bp)
 	 */
 	if (bp->b_flags & B_WANTED)
 		wakeup((caddr_t)bp);
-	if (bfreelist[0].b_flags & B_WANTED) {
-		bfreelist[0].b_flags &= ~B_WANTED;
-		wakeup((caddr_t)bfreelist);
+	if (needbuffer) {
+		needbuffer = 0;
+		wakeup((caddr_t)&needbuffer);
 	}
 	/*
 	 * Retry I/O for locked buffers rather than invalidating them.
@@ -329,19 +405,19 @@ brelse(bp)
 	 */
 	if (bp->b_bufsize <= 0) {
 		/* block has no buffer ... put at front of unused buffer list */
-		flist = &bfreelist[BQ_EMPTY];
+		flist = &bufqueues[BQ_EMPTY];
 		binsheadfree(bp, flist);
 	} else if (bp->b_flags & (B_ERROR | B_INVAL)) {
 		/* block has no info ... put at front of most free list */
-		flist = &bfreelist[BQ_AGE];
+		flist = &bufqueues[BQ_AGE];
 		binsheadfree(bp, flist);
 	} else {
 		if (bp->b_flags & B_LOCKED)
-			flist = &bfreelist[BQ_LOCKED];
+			flist = &bufqueues[BQ_LOCKED];
 		else if (bp->b_flags & B_AGE)
-			flist = &bfreelist[BQ_AGE];
+			flist = &bufqueues[BQ_AGE];
 		else
-			flist = &bfreelist[BQ_LRU];
+			flist = &bufqueues[BQ_LRU];
 		binstailfree(bp, flist);
 	}
 	bp->b_flags &= ~(B_WANTED | B_BUSY | B_ASYNC | B_AGE | B_NOCACHE);
@@ -356,10 +432,8 @@ incore(vp, blkno)
 	daddr_t blkno;
 {
 	register struct buf *bp;
-	register struct buf *dp;
 
-	dp = BUFHASH(vp, blkno);
-	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
+	for (bp = *BUFHASH(vp, blkno); bp; bp = bp->b_forw)
 		if (bp->b_lblkno == blkno && bp->b_vp == vp &&
 		    (bp->b_flags & B_INVAL) == 0)
 			return (1);
@@ -383,7 +457,7 @@ getblk(vp, blkno, size)
 	long secsize;
 #endif SECSIZE
 {
-	register struct buf *bp, *dp;
+	register struct buf *bp, **dp;
 	int s;
 
 	if (size > MAXBSIZE)
@@ -395,7 +469,7 @@ getblk(vp, blkno, size)
 	 */
 	dp = BUFHASH(vp, blkno);
 loop:
-	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
+	for (bp = *dp; bp; bp = bp->b_forw) {
 		if (bp->b_lblkno != blkno || bp->b_vp != vp ||
 		    (bp->b_flags & B_INVAL))
 			continue;
@@ -442,21 +516,20 @@ struct buf *
 geteblk(size)
 	int size;
 {
-	register struct buf *bp, *flist;
+	register struct buf *bp;
 
 	if (size > MAXBSIZE)
 		panic("geteblk: size too big");
 	bp = getnewbuf();
 	bp->b_flags |= B_INVAL;
 	bremhash(bp);
-	flist = &bfreelist[BQ_AGE];
+	binshash(bp, &invalhash);
 	bp->b_bcount = 0;
 #ifdef SECSIZE
 	bp->b_blksize = DEV_BSIZE;
 #endif SECSIZE
 	bp->b_error = 0;
 	bp->b_resid = 0;
-	binshash(bp, flist);
 	allocbuf(bp, size);
 	return (bp);
 }
@@ -486,8 +559,7 @@ allocbuf(tp, size)
 	 * extra space in the present buffer.
 	 */
 	if (sizealloc < tp->b_bufsize) {
-		ep = bfreelist[BQ_EMPTY].av_forw;
-		if (ep == &bfreelist[BQ_EMPTY])
+		if ((ep = bufqueues[BQ_EMPTY].buffreehead) == NULL)
 			goto out;
 		s = splbio();
 		bremfree(ep);
@@ -520,7 +592,7 @@ allocbuf(tp, size)
 			bp->b_bcount = bp->b_bufsize;
 		if (bp->b_bufsize <= 0) {
 			bremhash(bp);
-			binshash(bp, &bfreelist[BQ_EMPTY]);
+			binshash(bp, &invalhash);
 			bp->b_dev = NODEV;
 			bp->b_error = 0;
 			bp->b_flags |= B_INVAL;
@@ -540,22 +612,23 @@ out:
 struct buf *
 getnewbuf()
 {
-	register struct buf *bp, *dp;
+	register struct buf *bp;
+	register struct bufqueue *dp;
 	register struct ucred *cred;
 	int s;
 
 loop:
 	s = splbio();
-	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
-		if (dp->av_forw != dp)
+	for (dp = &bufqueues[BQ_AGE]; dp > bufqueues; dp--)
+		if (dp->buffreehead)
 			break;
-	if (dp == bfreelist) {		/* no free blocks */
-		dp->b_flags |= B_WANTED;
-		sleep((caddr_t)dp, PRIBIO + 1);
+	if (dp == bufqueues) {		/* no free blocks */
+		needbuffer = 1;
+		sleep((caddr_t)&needbuffer, PRIBIO + 1);
 		splx(s);
 		goto loop;
 	}
-	bp = dp->av_forw;
+	bp = dp->buffreehead;
 	bremfree(bp);
 	bp->b_flags |= B_BUSY;
 	splx(s);
@@ -644,16 +717,17 @@ void
 vfs_bufstats()
 {
 	int s, i, j, count;
-	register struct buf *dp, *bp;
+	register struct buf *bp;
+	register struct bufqueue *dp;
 	int counts[MAXBSIZE/CLBYTES+1];
 	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
 
-	for (dp = bfreelist, i = 0; dp < &bfreelist[BQUEUES]; dp++, i++) {
+	for (dp = bufqueues, i = 0; dp < &bufqueues[BQUEUES]; dp++, i++) {
 		count = 0;
 		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
 			counts[j] = 0;
 		s = splbio();
-		for (bp = dp->av_forw; dp != bp; bp = bp->av_forw) {
+		for (bp = dp->buffreehead; bp; bp = bp->b_actf) {
 			counts[bp->b_bufsize/CLBYTES]++;
 			count++;
 		}
