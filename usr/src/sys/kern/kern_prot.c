@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.20 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -175,16 +175,16 @@ setsid(p, uap, retval)
 setpgid(curp, uap, retval)
 	struct proc *curp;
 	register struct args {
-		int	targpid;	/* target process id */
-		int	targpgid;	/* target pgrp id */
+		int	pid;	/* target process id */
+		int	pgid;	/* target pgrp id */
 	} *uap;
 	int *retval;
 {
 	register struct proc *targp;		/* target process */
-	register struct pgrp *targpgrp;		/* target pgrp */
+	register struct pgrp *pgrp;		/* target pgrp */
 
-	if (uap->targpid && uap->targpid != curp->p_pid) {
-		if ((targp = pfind(uap->targpid)) == 0 || !inferior(targp))
+	if (uap->pid != 0 && uap->pid != curp->p_pid) {
+		if ((targp = pfind(uap->pid)) == 0 || !inferior(targp))
 			return (ESRCH);
 		if (targp->p_session != curp->p_session)
 			return (EPERM);
@@ -194,14 +194,13 @@ setpgid(curp, uap, retval)
 		targp = curp;
 	if (SESS_LEADER(targp))
 		return (EPERM);
-	if (uap->targpgid == 0)
-		uap->targpgid = curp->p_pid;
-	else if (uap->targpgid != curp->p_pid)
-		if ((targpgrp = pgfind(uap->targpgid)) == 0 ||
-		    targpgrp->pg_mem == NULL ||
-	            targpgrp->pg_session != curp->p_session)
+	if (uap->pgid == 0)
+		uap->pgid = targp->p_pid;
+	else if (uap->pgid != targp->p_pid)
+		if ((pgrp = pgfind(uap->pgid)) == 0 ||
+	            pgrp->pg_session != curp->p_session)
 			return (EPERM);
-	enterpgrp(targp, uap->targpgid, 0);
+	enterpgrp(targp, uap->pgid, 0);
 	return (0);
 }
 
