@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.30	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.31	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -571,15 +571,17 @@ M0|sun-48|Sun 48-line window:\
 	:li#48:co#80:tc=sun:
 M1|sun-34|Sun 34-line window:\
 	:li#34:co#80:tc=sun:
-M1|sun-24|Sun 24-line window:\
+M2|sun-24|Sun 24-line window:\
 	:li#24:co#80:tc=sun:
-M2|sun-17|Sun 17-line window:\
+M3|sun-17|Sun 17-line window:\
 	:li#17:co#80:tc=sun:
-M3|sun-12|Sun 12-line window:\
+M4|sun-12|Sun 12-line window:\
 	:li#12:co#80:tc=sun:
-M4|sun-1|Sun 1-line window for sysline:\
+M5|sun-1|Sun 1-line window for sysline:\
 	:li#1:co#80:\
 	:es:hs:ts=\r:fs=\E[K:ds=^L:tc=sun:
+M6|sun-nic|sune|Sun Microsystems Workstation console without insert character:\
+	:ic@:im@:ei@:tc=sun:
 Mv|virtual|VIRTUAL|cb unix virtual terminal:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:co#80:li#24:am:cl=\E\112:le=^H:bs:cm=\E\107%r%.%.:nd=\E\103:\
@@ -1587,6 +1589,9 @@ hb|2640b|hp2640b|2644a|hp2644a|hp 264x series:\
 # 2621 using all 48 lines of memory, only 24 visible at any time.  Untested.
 hl|2621-48|48 line 2621:\
 	:li#48:ho=\EH:cm=\E&a%r%dc%dR:tc=2621:
+# Hp 110 computer is the same as 2621 except has 16 lines
+hm|hp110|110|hp 110 computer:\
+	:li#16:tc=2621:
 # 2621 with no labels ever.  Also prevents vi delays on escape.
 hn|2621-nl|hp2621nl|2621nl|hp2621-nl|hp 2621 with no labels:\
 	:ks@:ke@:kh@:ku@:kl@:kr@:kd@:tc=hp2621-fl:
@@ -2220,6 +2225,14 @@ zn|trs100|Radio Shack Model 100:\
 	:so=\Ep:se=\Eq:al=\EL:dl=\EM:
 zt|mac|macintosh|Macintosh with MacTerminal:\
 	:al=20\E[L:dl=20\E[M:ip=7:dc=7\E[P:ic=9\E[@:xn:dN#30:tc=vt100:
+zs|zen50|z50:zephyr:\
+        :cm=\E=%+ %+ :cd=\EY:co#80:li#24:\
+        :am:al=\EE:ce=\ET:dc=\EW:dl=\ER:ic=\EQ:im=:ei=:\
+        :cl=\E+:bs:ma=^Hh^Ll^Jj^Kk:\
+        :sg#1:se=\EGO:so=\EG4:\
+        :kl=^H:kr=^L:ku=^K:kd=^J:kh=\036:\
+        :up=^K:\
+        :BS=^U:CL=^V:CR=^B:RK=^L:UK=^K:LK=^H:DK=^J:HM=\036:
 # KERMIT standard all versions.  (gts 9-25-84)
 # Straight ascii keyboard. :sr=\EI: not avail. many versions + bug prone in vi.
 K0|kermit|standard kermit:\
