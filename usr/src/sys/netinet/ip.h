@@ -3,29 +3,19 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip.h	7.6.1.3 (Berkeley) %G%
+ *	@(#)ip.h	7.9 (Berkeley) %G%
  */
-#ifndef BYTE_ORDER
-/*
- * Definitions for byte order,
- * according to byte significance from low address to high.
- */
-#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
-#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
-#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
-
-#ifdef vax
-#define	BYTE_ORDER	LITTLE_ENDIAN
-#else
-#define	BYTE_ORDER	BIG_ENDIAN	/* mc68000, tahoe, most others */
-#endif
-#endif BYTE_ORDER
 
 /*
  * Definitions for internet protocol version 4.
@@ -62,6 +52,25 @@ struct ip {
 };
 
 #define	IP_MAXPACKET	65535		/* maximum packet size */
+
+/*
+ * Definitions for IP type of service (ip_tos)
+ */
+#define	IPTOS_LOWDELAY		0x10
+#define	IPTOS_THROUGHPUT	0x08
+#define	IPTOS_RELIABILITY	0x04
+
+/*
+ * Definitions for IP precedence (also in ip_tos) (hopefully unused)
+ */
+#define	IPTOS_PREC_NETCONTROL		0xe0
+#define	IPTOS_PREC_INTERNETCONTROL	0xc0
+#define	IPTOS_PREC_CRITIC_ECP		0xa0
+#define	IPTOS_PREC_FLASHOVERRIDE	0x80
+#define	IPTOS_PREC_FLASH		0x60
+#define	IPTOS_PREC_IMMEDIATE		0x40
+#define	IPTOS_PREC_PRIORITY		0x20
+#define	IPTOS_PREC_ROUTINE		0x10
 
 /*
  * Definitions for options.
@@ -120,7 +129,7 @@ struct	ip_timestamp {
 /* flag bits for ipt_flg */
 #define	IPOPT_TS_TSONLY		0		/* timestamps only */
 #define	IPOPT_TS_TSANDADDR	1		/* timestamps and addresses */
-#define	IPOPT_TS_PRESPEC	2		/* specified modules only */
+#define	IPOPT_TS_PRESPEC	3		/* specified modules only */
 
 /* bits for security (not byte swapped) */
 #define	IPOPT_SECUR_UNCLASS	0x0000
