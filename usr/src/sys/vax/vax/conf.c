@@ -1,4 +1,4 @@
-/*	conf.c	4.7	%G%	*/
+/*	conf.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,7 +18,7 @@
 int	nulldev();
 int	nodev();
 
-#include "../conf/hp.h"
+#include "hp.h"
 #if NHP > 0
 int	hpstrategy(),hpread(),hpwrite(),hpintr();
 struct	buf	hptab;
@@ -31,7 +31,7 @@ struct	buf	hptab;
 #define	HPTAB		0
 #endif
  
-#include "../conf/ht.h"
+#include "ht.h"
 #if NHT > 0
 int	htopen(),htclose(),htstrategy(),htread(),htwrite();
 struct	buf	httab;
@@ -45,7 +45,7 @@ struct	buf	httab;
 #define	HTTAB		0
 #endif
 
-#include "../conf/rk.h"
+#include "rk.h"
 #if NRK > 0
 int	rkstrategy(),rkread(),rkwrite(),rkintr();
 struct	buf	rktab;
@@ -58,7 +58,7 @@ struct	buf	rktab;
 #define	RKTAB		0
 #endif
 
-#include "../conf/tm.h"
+#include "tm.h"
 #if NTM > 0
 int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite();
 struct	buf	tmtab;
@@ -72,7 +72,7 @@ struct	buf	tmtab;
 #define	TMTAB		0
 #endif
 
-#include "../conf/ts.h"
+#include "ts.h"
 #if NTS > 0
 int	tsopen(),tsclose(),tsstrategy(),tsread(),tswrite();
 struct	buf	tstab;
@@ -84,8 +84,9 @@ struct	buf	tstab;
 #define	tsread		nodev
 #define	tswrite		nodev
 #define	TSTAB		0
+#endif
 
-#include "../conf/lp.h"
+#include "lp.h"
 #if NLP > 0
 int	lpopen(),lpclose(),lpwrite(),lpioctl(),lpreset();
 #else
@@ -96,7 +97,7 @@ int	lpopen(),lpclose(),lpwrite(),lpioctl(),lpreset();
 #define	lpreset		nulldev
 #endif
 
-#include "../conf/up.h"
+#include "up.h"
 #if NUP > 0
 int	upstrategy(),upread(),upwrite(),upreset();
 struct	buf	uptab;
@@ -126,7 +127,7 @@ struct bdevsw	bdevsw[] =
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 struct tty cons;
 
-#include "../conf/ct.h"
+#include "ct.h"
 #if NCT > 0
 int	ctopen(),ctclose(),ctwrite();
 #else
@@ -135,7 +136,7 @@ int	ctopen(),ctclose(),ctwrite();
 #define	ctwrite	nulldev
 #endif
 
-#include "../conf/dh.h"
+#include "dh.h"
 #if NDH11 == 0
 #define	dhopen	nodev
 #define	dhclose	nodev
@@ -154,7 +155,7 @@ struct	tty dh11[];
 int	flopen(),flclose(),flread(),flwrite();
 #endif
 
-#include "../conf/dk.h"
+#include "dk.h"
 #if NDK == 0
 #define	dkopen	nodev
 #define	dkclose	nodev
@@ -169,7 +170,7 @@ int	dkopen(),dkclose(),dkread(),dkwrite(),dkioctl(),dkstop(),dkreset();
 struct	tty	dkchans[];
 #endif
 
-#include "../conf/dz.h"
+#include "dz.h"
 #if NDZ11 == 0
 #define	dzopen	nodev
 #define	dzclose	nodev
@@ -184,7 +185,7 @@ int	dzopen(),dzclose(),dzread(),dzwrite(),dzioctl(),dzstop(),dzreset();
 struct	tty dz_tty[];
 #endif
 
-#include "../conf/pk.h"
+#include "pk.h"
 #if NPK == 0
 #define	pkopen	nodev
 #define	pkclose	nodev
@@ -201,7 +202,7 @@ int	pkrint(),pkrend(),pkxint(),pkmodem();
 char	*pkwrite();
 #endif
 
-#include "../conf/tr.h"
+#include "tr.h"
 #if HAVTR==0
 #define	tropen	nodev
 #define	trclose	nodev
@@ -219,7 +220,7 @@ int	trrend(), trmeta(), trxint(), trmodem();
 char	*trwrite();
 #endif
 
-#include "../conf/tdk.h"
+#include "tdk.h"
 #if NTDK == 0
 #define	dt_lopen	nodev
 #define	dt_lclose	nodev
@@ -239,7 +240,7 @@ int	syopen(),syread(),sywrite(),syioctl();
 
 int 	mmread(),mmwrite();
 
-#include "../conf/va.h"
+#include "va.h"
 #if NVA > 0
 int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset();
 #else
@@ -251,7 +252,7 @@ int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset();
 #define	vareset	nulldev
 #endif
 
-#include "../conf/vp.h"
+#include "vp.h"
 #if NVP > 0
 int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset();
 #else
