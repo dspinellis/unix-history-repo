@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -54,6 +54,7 @@ main(argc, argv)
 	bool notrunc = FALSE;
 	bool allowreplace = FALSE;
 	bool verbose = FALSE;
+	bool foldcase = FALSE;
 	int exitstat;
 	int opt;
 	char *typename;
@@ -79,12 +80,16 @@ main(argc, argv)
 
 	progname = argv[0];
 
-	while ((opt = getopt(argc, argv, "Norv")) != EOF)
+	while ((opt = getopt(argc, argv, "Nforv")) != EOF)
 	{
 		switch (opt)
 		{
 		  case 'N':
 			inclnull = TRUE;
+			break;
+
+		  case 'f':
+			foldcase = TRUE;
 			break;
 
 		  case 'o':
@@ -217,7 +222,10 @@ main(argc, argv)
 		}
 		key.xx.data = ibuf;
 		for (p = ibuf; *p != '\0' && !isspace(*p); p++)
-			continue;
+		{
+			if (foldcase && isupper(*p))
+				*p = tolower(*p);
+		}
 		key.xx.size = p - key.xx.data;
 		if (inclnull)
 			key.xx.size++;
