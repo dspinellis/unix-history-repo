@@ -4,35 +4,29 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.24 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "user.h"
 #include "filedesc.h"
 #include "kernel.h"
+#include "malloc.h"
 #include "proc.h"
+#include "resourcevar.h"
 #include "vnode.h"
 #include "seg.h"
 #include "file.h"
 #include "acct.h"
 #include "ktrace.h"
 
-#include "machine/reg.h"
-#include "machine/psl.h"
-
-/*
- * fork system call.
- */
 /* ARGSUSED */
 fork(p, uap, retval)
 	struct proc *p;
 	struct args *uap;
 	int retval[];
 {
-	int error;
 
 	return (fork1(p, 0, retval));
 }
@@ -47,234 +41,220 @@ vfork(p, uap, retval)
 	return (fork1(p, 1, retval));
 }
 
+int	nprocs = 1;		/* process 0 */
+
 fork1(p1, isvfork, retval)
 	register struct proc *p1;
 	int isvfork, retval[];
 {
 	register struct proc *p2;
-	register int a;
+	register int count, uid;
+	static int nextpid, pidchecked = 0;
 
-	a = 0;
-	if (p1->p_uid != 0) {
+	count = 0;
+	if ((uid = p1->p_ucred->cr_uid) != 0) {
 		for (p2 = allproc; p2; p2 = p2->p_nxt)
-			if (p2->p_uid == p1->p_uid)
-				a++;
+			if (p2->p_ucred->cr_uid == uid)
+				count++;
 		for (p2 = zombproc; p2; p2 = p2->p_nxt)
-			if (p2->p_uid == p1->p_uid)
-				a++;
+			if (p2->p_ucred->cr_uid == uid)
+				count++;
 	}
 	/*
-	 * Disallow if
-	 *  No processes at all;
-	 *  not su and too many procs owned; or
-	 *  not su and would take last slot.
+	 * Although process entries are dynamically entries,
+	 * we still keep a global limit on the maximum number
+	 * we will create.  Don't allow a nonprivileged user
+	 * to exceed its current limit or to bring us within one
+	 * of the global limit; don't let root exceed the limit.
+	 * nprocs is the current number of processes,
+	 * maxproc is the limit.
 	 */
-	p2 = freeproc;
-	if (p2==NULL)
+	retval[1] = 0;
+	if (nprocs >= maxproc || uid == 0 && nprocs >= maxproc + 1) {
 		tablefull("proc");
-	if (p2 == NULL ||
-	    (p1->p_uid != 0 && (p2->p_nxt == NULL || a > MAXUPRC))) {
-		retval[1] = 0;
 		return (EAGAIN);
 	}
-	if (newproc(isvfork)) {
-		retval[0] = p1->p_pid;
-		retval[1] = 1;  /* child */
-		u.u_acflag = AFORK;
-		return (0);
-	}
-	retval[0] = p2->p_pid;
-	retval[1] = 0;
-	return (0);
-}
-
-/*
- * Create a new process-- the internal version of
- * sys fork.
- * It returns 1 in the new process, 0 in the old.
- */
-newproc(isvfork)
-	int isvfork;
-{
-	register struct proc *rpp, *rip;
-	register struct file *fp;
-	static int pidchecked = 0;
+	if (count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur)
+		return (EAGAIN);
 
 	/*
-	 * First, just locate a slot for a process
-	 * and copy the useful info from this process into it.
-	 * The panic "cannot happen" because fork has already
-	 * checked for the existence of a slot.
+	 * Find an unused process ID.
+	 * We remember a range of unused IDs ready to use
+	 * (from nextpid+1 through pidchecked-1).
 	 */
-	mpid++;
+	nextpid++;
 retry:
-	if (mpid >= PID_MAX) {
-		mpid = 100;
+	/*
+	 * If the process ID prototype has wrapped around,
+	 * restart somewhat above 0, as the low-numbered procs
+	 * tend to include daemons that don't exit.
+	 */
+	if (nextpid >= PID_MAX) {
+		nextpid = 100;
 		pidchecked = 0;
 	}
-	if (mpid >= pidchecked) {
+	if (nextpid >= pidchecked) {
 		int doingzomb = 0;
 
 		pidchecked = PID_MAX;
 		/*
-		 * Scan the proc table to check whether this pid
+		 * Scan the active and zombie procs to check whether this pid
 		 * is in use.  Remember the lowest pid that's greater
-		 * than mpid, so we can avoid checking for a while.
+		 * than nextpid, so we can avoid checking for a while.
 		 */
-		rpp = allproc;
+		p2 = allproc;
 again:
-		for (; rpp != NULL; rpp = rpp->p_nxt) {
-			if (rpp->p_pid == mpid || rpp->p_pgrp->pg_id == mpid) {
-				mpid++;
-				if (mpid >= pidchecked)
+		for (; p2 != NULL; p2 = p2->p_nxt) {
+			if (p2->p_pid == nextpid ||
+			    p2->p_pgrp->pg_id == nextpid) {
+				nextpid++;
+				if (nextpid >= pidchecked)
 					goto retry;
 			}
-			if (rpp->p_pid > mpid && pidchecked > rpp->p_pid)
-				pidchecked = rpp->p_pid;
-			if (rpp->p_pgrp->pg_id > mpid && 
-			    pidchecked > rpp->p_pgrp->pg_id)
-				pidchecked = rpp->p_pgrp->pg_id;
+			if (p2->p_pid > nextpid && pidchecked > p2->p_pid)
+				pidchecked = p2->p_pid;
+			if (p2->p_pgrp->pg_id > nextpid && 
+			    pidchecked > p2->p_pgrp->pg_id)
+				pidchecked = p2->p_pgrp->pg_id;
 		}
 		if (!doingzomb) {
 			doingzomb = 1;
-			rpp = zombproc;
+			p2 = zombproc;
 			goto again;
 		}
 	}
-	if ((rpp = freeproc) == NULL)
-		panic("no procs");
 
-	freeproc = rpp->p_nxt;			/* off freeproc */
-	rpp->p_nxt = allproc;			/* onto allproc */
-	rpp->p_nxt->p_prev = &rpp->p_nxt;	/*   (allproc is never NULL) */
-	rpp->p_prev = &allproc;
-	allproc = rpp;
+
+	/*
+	 * Allocate new proc.
+	 * Link onto allproc (this should probably be delayed).
+	 */
+	MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
+	nprocs++;
+	p2->p_nxt = allproc;
+	p2->p_nxt->p_prev = &p2->p_nxt;		/* allproc is never NULL */
+	p2->p_prev = &allproc;
+	allproc = p2;
+	p2->p_link = NULL;			/* shouldn't be necessary */
+	p2->p_rlink = NULL;			/* shouldn't be necessary */
 
 	/*
 	 * Make a proc table entry for the new process.
+	 * Start by zeroing the section of proc that is zero-initialized,
+	 * then copy the section that is copied directly from the parent.
 	 */
-	rip = u.u_procp;
-#if defined(tahoe)
-	rpp->p_ckey = rip->p_ckey;
-	rpp->p_dkey = 0;
-#endif
-	rpp->p_stat = SIDL;
-	timerclear(&rpp->p_realtimer.it_value);
-	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGV|SHPUX));
-	if (rip->p_session->s_ttyvp != NULL && rip->p_flag & SCTTY)
-		rpp->p_flag |= SCTTY;
-	if (isvfork)
-		rpp->p_flag |= SVFORK;
-	rpp->p_ndx = rpp - proc;
-	bcopy(rip->p_comm, rpp->p_comm, MAXCOMLEN+1);
-	bcopy(rip->p_logname, rpp->p_logname, MAXLOGNAME);
-	rpp->p_uid = rip->p_uid;
-	rpp->p_ruid = rip->p_ruid;
-	rpp->p_svuid = rip->p_svuid;
-	rpp->p_rgid = rip->p_rgid;
-	rpp->p_svgid = rip->p_svgid;
-	rpp->p_pgrp = rip->p_pgrp;
-	rpp->p_pgrpnxt = rip->p_pgrpnxt;
-	rip->p_pgrpnxt = rpp;
-	rpp->p_nice = rip->p_nice;
-	rpp->p_pid = mpid;
-	rpp->p_ppid = rip->p_pid;
-	rpp->p_pptr = rip;
-	rpp->p_osptr = rip->p_cptr;
-	if (rip->p_cptr)
-		rip->p_cptr->p_ysptr = rpp;
-	rpp->p_ysptr = NULL;
-	rpp->p_cptr = NULL;
-	rip->p_cptr = rpp;
-	rpp->p_time = 0;
-	bzero((caddr_t)&rpp->p_utime, sizeof (struct timeval));
-	bzero((caddr_t)&rpp->p_stime, sizeof (struct timeval));
-	rpp->p_cpu = 0;
-	rpp->p_sigmask = rip->p_sigmask;
-	rpp->p_sigcatch = rip->p_sigcatch;
-	rpp->p_sigignore = rip->p_sigignore;
-#ifdef KTRACE
-	if (rip->p_traceflag&KTRFAC_INHERIT) {
-		rpp->p_traceflag = rip->p_traceflag;
-		if ((rpp->p_tracep = rip->p_tracep) != NULL)
-			VREF(rpp->p_tracep);
-	} else {
-		rpp->p_tracep = NULL;
-		rpp->p_traceflag = 0;
-	}
-#endif
-	rpp->p_rssize = 0;
-	rpp->p_maxrss = rip->p_maxrss;
-	rpp->p_wchan = 0;
-	rpp->p_slptime = 0;
-	rpp->p_pctcpu = 0;
-	rpp->p_cpticks = 0;
-	{
-	struct proc **hash = &pidhash[PIDHASH(rpp->p_pid)];
-
-	rpp->p_hash = *hash;
-	*hash = rpp;
-	}
+	bzero(&p2->p_startzero,
+	    (unsigned) ((caddr_t)&p2->p_endzero - (caddr_t)&p2->p_startzero));
+	bcopy(&p1->p_startcopy, &p2->p_startcopy,
+	    (unsigned) ((caddr_t)&p2->p_endcopy - (caddr_t)&p2->p_startcopy));
 
 	/*
+	 * Duplicate sub-structures as needed.
 	 * Increase reference counts on shared objects.
 	 */
-	rpp->p_fd = fddup(rip->p_fd, 0);
-#ifdef SYSVSHM
-	if (rip->p_shm)
-		shmfork(rip, rpp, isvfork);
+	MALLOC(p2->p_cred, struct pcred *, sizeof(struct pcred),
+	    M_SUBPROC, M_WAITOK);
+	bcopy(p1->p_cred, p2->p_cred, sizeof(*p2->p_cred));
+	crhold(p1->p_ucred);
+
+	p2->p_fd = fdcopy(p1);
+	p2->p_stats = p1->p_stats;		/* XXX move; in u. */
+	/*
+	 * If p_limit is still copy-on-write, bump refcnt,
+	 * otherwise get a copy that won't be modified.
+	 * (If PL_SHAREMOD is clear, the structure is shared
+	 * copy-on-write.)
+	 */
+	if (p1->p_limit->p_lflags & PL_SHAREMOD)
+		p2->p_limit = limcopy(p1->p_limit);
+	else {
+		p2->p_limit = p1->p_limit;
+		p2->p_limit->p_refcnt++;
+	}
+	p2->p_sigacts = p1->p_sigacts;		/* XXX move; in u. */
+
+	p2->p_flag = SLOAD | (p1->p_flag & (SPAGV|SHPUX));
+	if (p1->p_session->s_ttyvp != NULL && p1->p_flag & SCTTY)
+		p2->p_flag |= SCTTY;
+	if (isvfork)
+		p2->p_flag |= SPPWAIT;
+	p2->p_stat = SIDL;
+	p2->p_pid = nextpid;
+	{
+	struct proc **hash = &pidhash[PIDHASH(p2->p_pid)];
+
+	p2->p_hash = *hash;
+	*hash = p2;
+	}
+	p2->p_pgrpnxt = p1->p_pgrpnxt;
+	p1->p_pgrpnxt = p2;
+	p2->p_pptr = p1;
+	p2->p_osptr = p1->p_cptr;
+	if (p1->p_cptr)
+		p1->p_cptr->p_ysptr = p2;
+	p1->p_cptr = p2;
+#ifdef KTRACE
+	/*
+	 * Copy traceflag and tracefile if enabled.
+	 * If not inherited, these were zeroed above.
+	 */
+	if (p1->p_traceflag&KTRFAC_INHERIT) {
+		p2->p_traceflag = p1->p_traceflag;
+		if ((p2->p_tracep = p1->p_tracep) != NULL)
+			VREF(p2->p_tracep);
+	}
 #endif
-	crhold(u.u_cred);
+
+	p2->p_regs = p1->p_regs;		 /* XXX move this */
+#if defined(tahoe)
+	p2->p_vmspace->p_ckey = p1->p_vmspace->p_ckey; /* XXX move this */
+#endif
 
 	/*
 	 * This begins the section where we must prevent the parent
 	 * from being swapped.
 	 */
-	rip->p_flag |= SKEEP;
-	if (procdup(rpp, isvfork)) {
+	p1->p_flag |= SKEEP;
+	if (vm_fork(p1, p2, isvfork)) {
+		/*
+		 * Child process.  Set start time, return parent pid,
+		 * and mark as child in retval[1].
+		 */
 		(void) splclock();
-		u.u_start = time;
+		p2->p_stats->p_start = time;
 		(void) spl0();
-		return (1);
+		retval[0] = p1->p_pid;
+		retval[1] = 1;
+		p2->p_acflag = AFORK;
+		return (0);
 	}
 
 	/*
 	 * Make child runnable and add to run queue.
 	 */
-	(void) splclock();
-	rpp->p_stat = SRUN;
-	setrq(rpp);
+	(void) splhigh();
+	p2->p_stat = SRUN;
+	setrq(p2);
 	(void) spl0();
-
-	/*
-	 * Cause child to take a non-local goto as soon as it runs.
-	 * On older systems this was done with SSWAP bit in proc
-	 * table; on VAX we use u.u_pcb.pcb_sswap so don't need
-	 * to do rpp->p_flag |= SSWAP.  Actually do nothing here.
-	 */
-	/* rpp->p_flag |= SSWAP; */
 
 	/*
 	 * Now can be swapped.
 	 */
-	rip->p_flag &= ~SKEEP;
+	p1->p_flag &= ~SKEEP;
 
 	/*
 	 * XXX preserve synchronization semantics of vfork
+	 * If waiting for child to exec or exit, set SPPWAIT
+	 * on child, and sleep on our proc (in case of exit).
 	 */
-	if (isvfork) {
-		u.u_procp->p_flag |= SNOVM;
-		while (rpp->p_flag & SVFORK)
-			sleep((caddr_t)rpp, PZERO - 1);
-		if ((rpp->p_flag & SLOAD) == 0)
-			panic("newproc vfork");
-		u.u_procp->p_flag &= ~SNOVM;
-		rpp->p_flag |= SVFDONE;
-		wakeup((caddr_t)rpp);
-	}
+	if (isvfork)
+		while (p2->p_flag & SPPWAIT)
+			sleep((caddr_t)p1, PZERO - 1);
 
 	/*
-	 * 0 return means parent.
+	 * Return child pid to parent process.
+	 * retval[1] was set above.
 	 */
+	retval[0] = p2->p_pid;
 	return (0);
 }
