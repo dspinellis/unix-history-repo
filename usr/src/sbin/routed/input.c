@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -93,7 +93,8 @@ rip_input(from, size)
 		/* verify message came from a privileged port */
 		if ((*afp->af_portcheck)(from) == 0)
 			return;
-		if (if_iflookup(from) == 0) {
+		if ((ifp = if_iflookup(from)) == 0 || (ifp->int_flags &
+		    (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0) {
 			syslog(LOG_ERR, "trace command from unknown router, %s",
 			    (*afswitch[from->sa_family].af_format)(from));
 			return;
@@ -130,7 +131,14 @@ rip_input(from, size)
 			rt->rt_timer = 0;
 		else if (ifp = if_ifwithdstaddr(from))
 			addrouteforif(ifp);
-		else if (if_iflookup(from) == 0) {
+		/*
+		 * "Authenticate" router from which message originated.
+		 * We accept routing packets from routers directly connected
+		 * via broadcast or point-to-point networks,
+		 * and from those listed in /etc/gateways.
+		 */
+		if ((ifp = if_iflookup(from)) == 0 || (ifp->int_flags &
+		    (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0) {
 			if (bcmp((char *)from, (char *)&badfrom,
 			    sizeof(badfrom)) != 0) {
 				syslog(LOG_ERR,
