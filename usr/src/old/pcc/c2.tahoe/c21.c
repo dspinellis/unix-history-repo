@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c21.c	1.8 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c21.c	1.9 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -292,6 +292,7 @@ bmove() {
 			case 1:	pf->subop = WORD; break;
 			case 2:	pf->subop = LONG; break;
 			}
+			pf->pop = 0;
 			redunm++; nsaddr++;
 		}
 		goto std;
@@ -790,6 +791,7 @@ bflow(p)
 					uses[r]=p;
 					regs[r][0] =
 					    (*--cp2=='[' ? OPX<<4 : OPB<<4);
+					regs[r][1] = '\0';
 				}
 				*cp1=t;
 			}
@@ -842,7 +844,7 @@ register struct node *q;
 			case ATANF: case LOGF: case SQRTF: case EXPF:
 				return(q);
 			}
-		
+	again:
 		if(q->subop == p->subop)
 			switch(p->op) {	/* do it in the accumulator */
 			case LDF:	/* redundant load */
@@ -918,6 +920,19 @@ register struct node *q;
 		uses[r] = 0;
 		if(q->subop == DOUBLE)
 			uses[r+1] = 0;
+		for(p = p->back; p != q && (!uses[r] || !uses[r+1]); p = p->back) {
+			int xr;
+
+			splitrand(p);
+			if((xr=isreg(regs[RT1])) < 0)
+				continue;
+			if(!uses[r] && xr == r)
+				uses[r] = p;
+			else if(q->subop == DOUBLE && !uses[r+1] && xr == r+1)
+				uses[r+1] = p;
+		}
+		if(p = uses[r])
+			goto again;
 		return(q->forw); /* DON'T re-scan code with dated uses[] */
 	}
 	/* it's a store to reg which isnt used elsewhere */
