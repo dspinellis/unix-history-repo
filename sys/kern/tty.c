@@ -32,33 +32,16 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.29 1994/03/31 00:51:01 ache Exp $
+ *	$Id: tty.c,v 1.30 1994/05/07 14:51:20 ache Exp $
  */
 
 /*-
  * TODO:
- *    o Fix or remove TS_WOPEN.  It's only used for forcing a HUPCL
- *      when a port is closed without being fully opened (this is
- *      better decided by noticing if the close is a device close)
- *      and for distinguishing the first CD change from later ones
- *      for MDMBUF handling.  TS_WOPEN is broken for multiple opens
- *      and for non-blocking opens.
  *    o Fix races in ttnread().
- *    o Do ttymodem() and nullmodem() in the same order and with
- *      early returns instead of inconsistent elses.
- *    o Some or all of the t_out wakeups need to do a selwakeup()
- *      since ttselect() now blocks when ttwrite() would be blocked
- *      by lack of carrier.
- *    o Fix various flags races in sio.  E.g., the CLOCAL locking is
- *      harmed by the wakeups for delta-CLOCAL, the carrier wait loop
- *      needs to start nearer the top of sioopen(), and the there may
- *      need to be a wakeup on t_raw in comhardclose() to kick other
- *      processes out of the wait loop.  "take it from the top" code
- *      gives DTR glitch in usual case (!com->active).  bidir open
- *      doesn't set TS_WOPEN and triggers ttymodem() warning.  com->
- *      active may help recover.  bidir open doesn't set CLOCAL early
- *      enough.
- *    o Call suser() to log privileged CLOCAL changes.
+ *	o Fix races for sending the start char in ttyflush().
+ *	o Handle inter-byte timeout for "MIN > 0, TIME > 0" in ttselect().
+ *	  With luck, there will be MIN chars before select() returns().
+ *	o Handle CLOCAL consistently for ptys.  Perhaps disallow setting it.
  */
 
 #include "param.h"
@@ -105,14 +88,6 @@ static void ttyretype __P((struct tty *tp));
 static void ttyrub __P((int c, struct tty *tp));
 static void ttyrubo __P((struct tty *tp, int cnt));
 static void ttyunblock __P((struct tty *tp));
-
-/* symbolic sleep message strings */
-const char ttyin[] = "ttyin";
-const char ttyout[] = "ttyout";
-const char ttopen[] = "ttyopn";
-const char ttclos[] = "ttycls";
-const char ttybg[] = "ttybg";
-const char ttybuf[] = "ttybuf";
 
 /*
  * Table giving parity for characters and indicating
@@ -199,11 +174,19 @@ extern int nldisp;
 	(c) == cc[VEOL] || (c) == cc[VEOL2]) && (c) != _POSIX_VDISABLE)
 
 void
+termioschars(t)
+	struct termios *t;
+{
+
+	bcopy(ttydefchars, t->c_cc, sizeof t->c_cc);
+}
+
+void
 ttychars(tp)
 	struct tty *tp;
 {
 
-	bcopy(ttydefchars, tp->t_cc, sizeof(ttydefchars));
+	termioschars(&tp->t_termios);
 }
 
 /*
@@ -231,33 +214,16 @@ ttywait(tp)
 
 	while ((RB_LEN(tp->t_out) || tp->t_state&TS_BUSY) &&
 	       CAN_DO_IO(tp) && tp->t_oproc) {
-		/*
-		 * XXX temporary fix for deadlock.
-		 *
-		 * If two processes wait for output to drain from the same
-		 * tty, and the amount of output to drain is > 0 and
-		 * <= tp->t_lowat, then the processes will take turns
-		 * uselessly waking each other up until the output drains,
-		 * with cpl higher than spltty() throughout.
-		 *
-		 * The sleep address and TS_ASLEEP flag ought to be different
-		 * for the different events (output done) and (output almost
-		 * done).
-		 */
-		tp->t_lowat = 0;
-
 		(*tp->t_oproc)(tp);
 		if ((RB_LEN(tp->t_out) || tp->t_state&TS_BUSY) &&
 		    CAN_DO_IO(tp)) {
-			tp->t_state |= TS_ASLEEP;
-			if (error = ttysleep(tp, (caddr_t)tp->t_out,
+			tp->t_state |= TS_SO_OCOMPLETE;
+			if (error = ttysleep(tp, TSA_OCOMPLETE(tp),
 			    TTOPRI | PCATCH, "ttywai", 0))
 				break;
 		} else
 			break;
 	}
-	if (tp->t_lowat == 0)
-		ttsetwater(tp);
 	splx(s);
 	return (error);
 }
@@ -292,12 +258,7 @@ ttyflush(tp, rw)
 	}
 	if (rw & FWRITE) {
 		flushq(tp->t_out);
-		wakeup((caddr_t)tp->t_out);
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
+		ttwwakeup(tp);
 	}
 	if (rw & FREAD) {
 		if (tp->t_state & (TS_TBLOCK | TS_HW_IFLOW)
@@ -316,12 +277,15 @@ ttyflush(tp, rw)
 			t_state = tp->t_state;
 			ttyunblock(tp);
 			tp->t_state &= ~TS_TBLOCK;
-			if (t_state & TS_TBLOCK && RB_LEN(tp->t_out) != 0)
-				ttysleep(tp, (caddr_t)tp->t_out, TTIPRI,
+			if (t_state & TS_TBLOCK && RB_LEN(tp->t_out) != 0) {
+				tp->t_state |= TS_SO_OCOMPLETE;
+				ttysleep(tp, TSA_OCOMPLETE(tp), TTIPRI,
 					 "ttyfls", hz / 10);
-			if (out_cc == 0 && RB_LEN(tp->t_out) != 0) {
+			}
+			if (out_cc != 0 && RB_LEN(tp->t_out) != 0) {
 				(*cdevsw[major(tp->t_dev)].d_stop)(tp, FWRITE);
 				flushq(tp->t_out);
+				ttwwakeup(tp);
 			}
 		}
 	}
@@ -439,7 +403,7 @@ ttioctl(tp, com, data, flag)
 		   (p->p_sigmask & sigmask(SIGTTOU)) == 0) {
 			pgsignal(p->p_pgrp, SIGTTOU, 1);
 			if (error = ttysleep(tp, (caddr_t)&lbolt, 
-			    TTOPRI | PCATCH, ttybg, 0)) 
+					     TTOPRI | PCATCH, "ttybg1", 0))
 				return (error);
 		}
 		break;
@@ -589,23 +553,22 @@ ttioctl(tp, com, data, flag)
 			tp->t_ispeed = t->c_ispeed;
 			tp->t_ospeed = t->c_ospeed;
 			ttsetwater(tp);
-			if (tp->t_cflag & CLOCAL)
-				tp->t_state &= ~TS_ZOMBIE;
-			if ((tp->t_cflag ^ old_cflag) & CLOCAL) {
+			if (tp->t_cflag & CLOCAL && !(old_cflag & CLOCAL)) {
+				wakeup(TSA_CARR_ON(tp));
+				ttwwakeup(tp);
 				ttwakeup(tp);
-				wakeup((caddr_t)tp->t_out);
 			}
 		}
 		if (com != TIOCSETAF) {
-			if ((t->c_lflag&ICANON) != (tp->t_lflag&ICANON))
-				if (t->c_lflag&ICANON) {	
+			if ((t->c_lflag&ICANON) != (tp->t_lflag&ICANON)) {
+				if (t->c_lflag&ICANON)
 					tp->t_lflag |= PENDIN;
-					ttwakeup(tp);
-				}
 				else {
 					catb(tp->t_raw, tp->t_can);
 					catb(tp->t_can, tp->t_raw);
 				}
+				ttwakeup(tp);
+			}
 		}
 		tp->t_iflag = t->c_iflag;
 		tp->t_oflag = t->c_oflag;
@@ -617,6 +580,8 @@ ttioctl(tp, com, data, flag)
 		else
 			t->c_lflag &= ~EXTPROC;
 		tp->t_lflag = t->c_lflag;
+		if (t->c_cc[VMIN] != tp->t_cc[VMIN] || t->c_cc[VTIME] != tp->t_cc[VTIME])
+			ttwakeup(tp);
 		bcopy(t->c_cc, tp->t_cc, sizeof(t->c_cc));
 		splx(s);
 		break;
@@ -651,9 +616,13 @@ ttioctl(tp, com, data, flag)
 	case TIOCSPGRP: {
 		register struct pgrp *pgrp = pgfind(*(int *)data);
 
+#ifdef broken_for_F_SETOWN
 		if (!suser(p->p_ucred, &p->p_acflag))
 			;
 		else if (!isctty(p, tp))
+#else
+		if (!isctty(p, tp))
+#endif
 			return (ENOTTY);
 		else if (pgrp == NULL || pgrp->pg_session != p->p_session)
 			return (EPERM);
@@ -775,7 +744,6 @@ ttyopen(dev, tp, dummy)
 
 	tp->t_dev = dev;
 
-	tp->t_state &= ~TS_WOPEN;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_ISOPEN;
 		initrb(tp->t_raw);
@@ -830,11 +798,7 @@ ttymodem(tp, flag)
 	int flag;
 {
 
-#ifdef DIAGNOSTIC
-	if ((tp->t_state & (TS_ISOPEN | TS_WOPEN)) == 0)
-		printf("ttymodem: not open\n");
-#endif
-	if ((tp->t_state&TS_WOPEN) == 0 && (tp->t_lflag&MDMBUF)) {
+	if (tp->t_state & TS_CARR_ON && tp->t_lflag & MDMBUF) {
 		/*
 		 * MDMBUF: do flow control according to carrier flag
 		 */
@@ -856,45 +820,15 @@ ttymodem(tp, flag)
 				psignal(tp->t_session->s_leader, SIGHUP);
 			ttyflush(tp, FREAD|FWRITE);
 			return (0);
-		} else {
-			wakeup((caddr_t)tp->t_raw);
-			wakeup((caddr_t)tp->t_out);
 		}
 	} else {
 		/*
 		 * Carrier now on.
 		 */
 		tp->t_state |= TS_CARR_ON;
+		wakeup(TSA_CARR_ON(tp));
 		ttwakeup(tp);
-		wakeup((caddr_t)tp->t_out);
-	}
-	return (1);
-}
-
-/*
- * Default modem control routine (for other line disciplines).
- * Return argument flag, to turn off device on carrier drop.
- */
-int
-nullmodem(tp, flag)
-	register struct tty *tp;
-	int flag;
-{
-
-#ifdef DIAGNOSTIC
-	if ((tp->t_state & (TS_ISOPEN | TS_WOPEN)) == 0)
-		printf("nullmodem: not open\n");
-#endif
-	if (flag)
-		tp->t_state |= TS_CARR_ON;
-	else {
-		tp->t_state &= ~TS_CARR_ON;
-		if (tp->t_state&TS_ISOPEN && (tp->t_cflag&CLOCAL) == 0) {
-			tp->t_state |= TS_ZOMBIE;
-			if (tp->t_session && tp->t_session->s_leader)
-				psignal(tp->t_session->s_leader, SIGHUP);
-			return (0);
-		}
+		ttwwakeup(tp);
 	}
 	return (1);
 }
@@ -1364,8 +1298,8 @@ ttread(tp, uio, flag)
 	long slp = 0;		/* XXX this should be renamed `timo'. */
 
 loop:
-	lflag = tp->t_lflag;
 	s = spltty();
+	lflag = tp->t_lflag;
 	/*
 	 * take pending input first 
 	 */
@@ -1373,6 +1307,7 @@ loop:
 		ttypend(tp);
 		splx(s);	/* reduce latency */
 		s = spltty();
+		lflag = tp->t_lflag;
 	}
 
 	/*
@@ -1386,7 +1321,7 @@ loop:
 			return (EIO);
 		pgsignal(p->p_pgrp, SIGTTIN, 1);
 		if (error = ttysleep(tp, (caddr_t)&lbolt, TTIPRI | PCATCH, 
-		    ttybg, 0)) 
+				     "ttybg2", 0))
 			return (error);
 		goto loop;
 	}
@@ -1482,45 +1417,42 @@ loop:
 		goto sleep;
 	}
 	if (rblen <= 0) {
-		int carrier;
-
 sleep:
+		/*
+		 * There is no input, or not enough input.
+		 * XXX throw away input when TS_ZOMBIE is set?  A process
+		 * can now receive it by waiting until there is enough.
+		 */
 		if (tp->t_state & TS_ZOMBIE) {
 			splx(s);
 			return (0);     /* EOF */
 		}
-		/*
-		 * If there is no input, sleep on rawq
-		 * awaiting hardware receipt and notification.
-		 * If we have data, we don't need to check for carrier.
-		 */
-		carrier = CAN_DO_IO(tp);
 		if (flag & IO_NDELAY) {
+			if (lflag & ICANON) {
 			splx(s);
 			return (EWOULDBLOCK);
 		}
-		if (slp) {
-			/*
-			 * Use plain wakeup() not ttwakeup().
-			 * XXX why not use the timeout built into tsleep?
-			 */
-			timeout((timeout_func_t)wakeup, (caddr_t)qp, (int)slp);
+			else if (rblen > 0)
+				goto read;
+			else {
+				splx(s);
+				return (cc[VMIN] == 0 ? 0 : EWOULDBLOCK);
 		}
-		error = ttysleep(tp, (caddr_t)tp->t_raw, TTIPRI | PCATCH,
-		    carrier ? ttyin : ttopen, 0);
-		if (slp) {
-			slp = 0;
-			untimeout((timeout_func_t)wakeup, (caddr_t)qp);
 		}
+		error = ttysleep(tp, TSA_HUP_OR_INPUT(tp), TTIPRI | PCATCH,
+				 CAN_DO_IO(tp) ? "ttyin" : "ttyhup", (int)slp);
 		splx(s);
-		if (error)
+		if (error == EWOULDBLOCK)
+			error = 0;
+		else if (error)
 			return (error);
 		/*
-		 * XXX what happens if ICANON, MIN or TIME changes or
-		 * another process eats some input while we are asleep
-		 * (not just here)?  It would be safest to detect changes
-		 * and reset our state variables (has_stime and last_cc).
+		 * XXX what happens if another process eats some input
+		 * while we are asleep (not just here)?  It would be
+		 * safest to detect changes and reset our state variables
+		 * (has_stime and last_cc).
 		 */
+		slp = 0;
 		goto loop;
 	}
 
@@ -1570,7 +1502,8 @@ slowcase:
 			pgsignal(tp->t_pgrp, SIGTSTP, 1);
 			if (first) {
 				if (error = ttysleep(tp, (caddr_t)&lbolt,
-				    TTIPRI | PCATCH, ttybg, 0))
+						     TTIPRI | PCATCH, "ttybg3",
+						     0))
 					break;
 				goto loop;
 			}
@@ -1637,14 +1570,14 @@ ttycheckoutq(tp, wait)
 	if (RB_LEN(tp->t_out) > hiwat + 200)
 		while (RB_LEN(tp->t_out) > hiwat) {
 			ttstart(tp);
+			if (RB_LEN(tp->t_out) <= hiwat)
+				break;
 			if (wait == 0 || (curproc && curproc->p_sig != oldsig)) {
 				splx(s);
 				return (0);
 			}
-			timeout((timeout_func_t)wakeup, (caddr_t)tp->t_out,
-				hz); /* XXX */
-			tp->t_state |= TS_ASLEEP;
-			tsleep((caddr_t)tp->t_out, PZERO - 1, "ttchout", 0);
+			tp->t_state |= TS_SO_OLOWAT;
+			tsleep(TSA_OLOWAT(tp), PZERO - 1, "ttchout", hz);
 		}
 	splx(s);
 	return (1);
@@ -1672,6 +1605,8 @@ loop:
 	s = spltty();
 	if (tp->t_state & TS_ZOMBIE) {
 		splx(s);
+		if (uio->uio_resid == cnt)
+			error = EIO;
 		goto out;
 	}
 	if (!CAN_DO_IO(tp)) {
@@ -1680,11 +1615,8 @@ loop:
 			error = EWOULDBLOCK;
 			goto out;
 		} else {
-			/*
-			 * sleep awaiting carrier
-			 */
-			error = ttysleep(tp, (caddr_t)tp->t_raw, 
-					TTIPRI | PCATCH,ttopen, 0);
+			error = ttysleep(tp, TSA_CARR_ON(tp), TTIPRI | PCATCH,
+					 "ttydcd", 0);
 			splx(s);
 			if (error)
 				goto out;
@@ -1702,7 +1634,7 @@ loop:
 	     p->p_pgrp->pg_jobc) {
 		pgsignal(p->p_pgrp, SIGTTOU, 1);
 		if (error = ttysleep(tp, (caddr_t)&lbolt, TTIPRI | PCATCH, 
-		    ttybg, 0))
+				     "ttybg4", 0))
 			goto out;
 		goto loop;
 	}
@@ -1771,7 +1703,7 @@ loop:
 					    ttstart(tp);
 					    if (error = ttysleep(tp, 
 						(caddr_t)&lbolt,
-						 TTOPRI | PCATCH, ttybuf, 0))
+						TTOPRI | PCATCH, "ttybf1", 0))
 						    break;
 					    goto loop;
 					}
@@ -1829,9 +1761,10 @@ loop:
 					goto loop;	/* synchronous/fast */
 				}
 				/* out of space, wait a bit */
-				tp->t_state |= TS_ASLEEP;
-				if (error = ttysleep(tp, (caddr_t)tp->t_out,
-					    TTOPRI | PCATCH, ttybuf, 0)) {
+				tp->t_state |= TS_SO_OLOWAT;
+				if (error = ttysleep(tp, TSA_OLOWAT(tp),
+						     TTOPRI | PCATCH, "ttybf2",
+						     0)) {
 					splx(s);
 					break;
 				}
@@ -1875,8 +1808,8 @@ ovhiwat:
 			return (EWOULDBLOCK);
 		return (0);
 	}
-	tp->t_state |= TS_ASLEEP;
-	error = ttysleep(tp, (caddr_t)tp->t_out, TTOPRI | PCATCH, ttyout, 0);
+	tp->t_state |= TS_SO_OLOWAT;
+	error = ttysleep(tp, TSA_OLOWAT(tp), TTOPRI | PCATCH, "ttyout", 0);
 	splx(s);
 	if (error)
 		goto out;
@@ -2072,7 +2005,31 @@ ttwakeup(tp)
 	}
 	if (tp->t_state & TS_ASYNC)
 		pgsignal(tp->t_pgrp, SIGIO, 1); 
-	wakeup((caddr_t)tp->t_raw);
+	wakeup(TSA_HUP_OR_INPUT(tp));
+}
+
+/*
+ * Wake up any writers on a tty.
+ */
+void
+ttwwakeup(tp)
+	register struct tty *tp;
+{
+	if (RB_LEN(tp->t_out) <= tp->t_lowat) {
+		if (tp->t_state & TS_SO_OCOMPLETE && RB_LEN(tp->t_out) == 0) {
+			tp->t_state &= ~TS_SO_OCOMPLETE;
+			wakeup(TSA_OCOMPLETE(tp));
+		}
+		if (tp->t_state & TS_SO_OLOWAT) {
+			tp->t_state &= ~TS_SO_OLOWAT;
+			wakeup(TSA_OLOWAT(tp));
+		}
+		if (tp->t_wsel) {
+			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
+			tp->t_wsel = 0;
+			tp->t_state &= ~TS_WCOLL;
+		}
+	}
 }
 
 /*
@@ -2122,7 +2079,7 @@ ttyinfo(tp)
 {
 	register struct proc *p, *pick;
 	struct timeval utime, stime;
-	int loadtmp, tmp = 0;
+	int loadtmp, tmp;
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
@@ -2175,6 +2132,7 @@ ttyinfo(tp)
 		 * Lock out clock if process is running; get user/system
 		 * cpu time.
 		 */
+		tmp = 0;
 		if (curproc == pick)
 			tmp = splclock();
 		utime = pick->p_utime;
@@ -2320,7 +2278,6 @@ ttysleep(tp, chan, pri, wmesg, timo)
 		return (ERESTART);
 	return (0);
 }
-
 
 /*
  * Allocate a tty structure and its associated buffers.
