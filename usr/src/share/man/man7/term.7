@@ -2,18 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)term.7	4.1 (Berkeley) %G%
+.\"	@(#)term.7	5.1 (Berkeley) %G%
 .\"
-.TH TERM 7 
+.TH TERM 7 "1 February 1983"
 .UC 4
 .SH NAME
-terminals \- conventional names
+term \- conventional names for terminals
 .SH DESCRIPTION
-These names
-are used by certain commands and are maintained 
-as part of the shell environment
-(see
-.IR sh (1), environ (5)).
+Certain commands use these terminal names. They are maintained 
+as part of the shell environment (see
+.IR sh (1), environ (7)).
 .LP
 .nf
 .ta \w'450\-12\-8  'u
@@ -31,31 +29,39 @@ mime	Microterm mime in enhanced ACT IV mode
 735	Texas Instruments TI735 (and TI725)
 745	Texas Instruments TI745
 dumb	terminals with no special features
+dialup	a terminal on a phone line with no known characteristics
+network	a terminal on a network connection with no known characteristics
 4014	Tektronix 4014
 vt52	Digital Equipment Corp. VT52
 .fi
 .PP
 The list goes on and on.
-Consult /etc/termcap
-(see
+Consult /etc/termcap (see
 .IR termcap (5))
 for an up-to-date and locally correct list.
 .PP
-Commands whose behavior may depend on the terminal
-either consult TERM in the environment,
-or accept arguments of the form
+Commands whose behavior may depend on the terminal either consult TERM in
+the environment, or accept arguments of the form
 .BR \-Tterm,
 where
 .I term
 is one of the names given above.
 .SH SEE ALSO
-stty(1), tabs(1), plot(1),
-sh(1), environ(5)
-ex(1), clear(1), more(1), ul(1), tset(1),
-termcap(5), termlib(3), ttytype(5)
+stty(1),
+tabs(1),
+plot(1G),
+sh(1),
+environ(7)
+ex(1),
+clear(1),
+more(1),
+ul(1),
+tset(1),
+termcap(5),
+termcap(3X),
+ttytype(5)
 .br
 troff(1) for
 .I nroff
 .SH BUGS
-The programs that ought to adhere to this nomenclature
-do so only fitfully.
+The programs that ought to adhere to this nomenclature do so only fitfully.
