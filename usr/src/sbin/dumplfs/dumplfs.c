@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -39,7 +39,7 @@ static void	dump_ifile __P((int, struct lfs *, int));
 static int	dump_ipage_ifile __P((int, IFILE *, int));
 static int	dump_ipage_segusage __P((struct lfs *, int, IFILE *, int));
 static void	dump_segment __P((int, int, daddr_t, struct lfs *, int));
-static int	dump_sum __P((struct lfs *, SEGSUM *, int, daddr_t));
+static int	dump_sum __P((int, struct lfs *, SEGSUM *, int, daddr_t));
 static void	dump_super __P((struct lfs *));
 static void	usage __P((void));
 
@@ -345,10 +345,10 @@ dump_dinode(dip)
 }
 
 static int
-dump_sum(lfsp, sp, segnum, addr)
+dump_sum(fd, lfsp, sp, segnum, addr)
 	struct lfs *lfsp;
 	SEGSUM *sp;
-	int segnum;
+	int fd, segnum;
 	daddr_t addr;
 {
 	FINFO *fp;
@@ -356,6 +356,7 @@ dump_sum(lfsp, sp, segnum, addr)
 	int i, j;
 	int ck;
 	int numblocks;
+	struct dinode *inop;
 
 	if (sp->ss_sumsum != (ck = cksum(&sp->ss_datasum, 
 	    LFS_SUMMARY_SIZE - sizeof(sp->ss_sumsum))))
@@ -376,9 +377,22 @@ dump_sum(lfsp, sp, segnum, addr)
 	/* Dump out inode disk addresses */
 	dp = (daddr_t *)sp;
 	dp += LFS_SUMMARY_SIZE / sizeof(daddr_t);
+	inop = malloc(1 << lfsp->lfs_bshift);
 	printf("\tInode addresses:");
-	for (dp--, i = 0; i < numblocks; i += INOPB(lfsp))
-		printf("\t%X", *dp--);
+	for (dp--, i = 0; i < sp->ss_ninos; dp--) {
+		printf("\t%X {", *dp);
+		get(fd, *dp << (lfsp->lfs_bshift - lfsp->lfs_fsbtodb), inop, 
+		    (1 << lfsp->lfs_bshift));
+		for (j = 0; i < sp->ss_ninos && j < INOPB(lfsp); j++, i++) {
+			if (j > 0) 
+				(void)printf(", ");
+			(void)printf("%d", inop[j].di_inum);
+		}
+		(void)printf("}");
+		if (((i/INOPB(lfsp)) % 4) == 3)
+			(void)printf("\n");
+	}
+	free(inop);
 
 	printf("\n");
 	for (fp = (FINFO *)(sp + 1), i = 0; i < sp->ss_nfinfo; i++) {
@@ -433,9 +447,10 @@ dump_segment(fd, segnum, addr, lfsp, dump_sb)
 				break;
 			}
 		} else {
-			nblocks = dump_sum(lfsp, sump, segnum, addr);
+			nblocks = dump_sum(fd, lfsp, sump, segnum, addr);
 			if (nblocks)
-				sum_offset += (nblocks << lfsp->lfs_bshift);
+				sum_offset += LFS_SUMMARY_SIZE + 
+					(nblocks << lfsp->lfs_bshift);
 			else
 				sum_offset = 0;
 			did_one = 1;
