@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)map.h	7.3 (Berkeley) %G%
+ *	@(#)map.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -31,16 +31,17 @@
  * as it is used internally by the resource map routines.
  */
 struct map {
-	struct mapent *m_limit;	/* address of last slot in map */
-	char *m_name;		/* name of resource, for messages */
+	struct	mapent *m_limit;	/* address of last slot in map */
+	char	*m_name;		/* name of resource, for messages */
 };
+
 struct mapent {
-	int m_size;		/* size of this segment of the map */
-	int m_addr;		/* resource-space addr of start of segment */
+	int	m_size;			/* size of this segment of the map */
+	int	m_addr;			/* start of segment */
 };
 
 #ifdef KERNEL
 #define	ARGMAPSIZE	16
-struct map *argmap, *kernelmap, *kmemmap, *mbmap, *swapmap;
-int nswapmap;
+struct	map *kernelmap, *kmemmap, *mbmap, *swapmap;
+int	nswapmap;
 #endif
