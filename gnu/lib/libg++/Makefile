@@ -1,4 +1,4 @@
-SUBDIR= libg++
+SUBDIR= libg++ genclass
 
 INCLUDEDIRS=	iostream libg++ g++-include
 
