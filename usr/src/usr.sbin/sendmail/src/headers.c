@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.29		%G%);
+SCCSID(@(#)headers.c	3.30		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -621,7 +621,7 @@ crackaddr(addr)
 	}
 
 	/*
-	**  Now parse the real address part.  from points to the (null
+	**  Now parse the real address part.  "addr" points to the (null
 	**  terminated) version of what we are inerested in; rhs points
 	**  to the extra stuff at the end of the line, if any.
 	*/
@@ -671,11 +671,14 @@ crackaddr(addr)
 		}
 	}
 
-	/*
-	**  If there is a tag at the end, insert it.
-	*/
+	/* hack, hack.... strip trailing blanks */
+	do
+	{
+		*bp-- = '\0';
+	} while (isspace(*bp));
+	bp++;
 
-	*bp = '\0';
+	/* put any right hand side back on */
 	if (rhs != NULL)
 	{
 		*rhs = '>';
@@ -684,7 +687,7 @@ crackaddr(addr)
 
 # ifdef DEBUG
 	if (tTd(33, 1))
-		printf("crackaddr=>%s\n", buf);
+		printf("crackaddr=>`%s'\n", buf);
 # endif DEBUG
 
 	return (buf);
