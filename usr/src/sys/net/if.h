@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	8.2 (Berkeley) %G%
+ *	@(#)if.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -98,7 +98,7 @@ struct ifnet {
 	int	(*if_done)		/* output complete routine */
 		__P((struct ifnet *));	/* (XXX not used; fake prototype) */
 	int	(*if_ioctl)		/* ioctl routine */
-		__P((struct ifnet *, int, caddr_t));
+		__P((struct ifnet *, u_long, caddr_t));
 	int	(*if_reset)	
 		__P((int));		/* new autoconfig will permit removal */
 	int	(*if_watchdog)		/* timer routine */
