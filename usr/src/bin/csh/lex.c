@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1519,7 +1519,12 @@ void
 btoeof()
 {
     (void) lseek(SHIN, (off_t) 0, L_XTND);
+    aret = F_SEEK;
     fseekp = feobp;
+    alvec = NULL;
+    alvecp = NULL;
+    evalvec = NULL;
+    evalp = NULL;
     wfree();
     bfree();
 }
