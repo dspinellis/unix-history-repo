@@ -32,16 +32,22 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.30 1994/05/07 14:51:20 ache Exp $
+ *	$Id: tty.c,v 1.31 1994/05/30 03:20:48 ache Exp $
  */
 
 /*-
  * TODO:
- *    o Fix races in ttnread().
  *	o Fix races for sending the start char in ttyflush().
  *	o Handle inter-byte timeout for "MIN > 0, TIME > 0" in ttselect().
  *	  With luck, there will be MIN chars before select() returns().
  *	o Handle CLOCAL consistently for ptys.  Perhaps disallow setting it.
+ *	o Don't allow input in TS_ZOMBIE case.  It would be visible through
+ *	  FIONREAD.
+ *	o Do the new sio locking stuff here and use it to avoid special
+ *	  case for EXTPROC?
+ *	o Lock PENDIN too?
+ *	o Move EXTPROC and/or PENDIN to t_state?
+ *	o Wrap most of ttioctl in spltty/splx.
  */
 
 #include "param.h"
@@ -79,6 +85,7 @@
 #define	MAX_INPUT	TTYHOG
 
 static int proc_compare __P((struct proc *p1, struct proc *p2));
+static int ttnread(struct tty *tp);
 static void ttyblock __P((struct tty *tp));
 static void ttyecho __P((int c, struct tty *tp));
 static int ttyoutput __P((int c, register struct tty *tp));
@@ -251,6 +258,7 @@ ttyflush(tp, rw)
 	if (rw & FREAD) {
 		flushq(tp->t_can);
 		flushq(tp->t_raw);
+		tp->t_lflag &= ~PENDIN;
 		tp->t_rocount = 0;
 		tp->t_rocol = 0;
 		tp->t_state &= ~TS_LOCAL;
@@ -480,11 +488,15 @@ ttioctl(tp, com, data, flag)
 
 	/* return number of characters immediately available */
 	case FIONREAD:
+		s = spltty();
 		*(off_t *)data = ttnread(tp);
+		splx(s);
 		break;
 
 	case TIOCOUTQ:
+		s = spltty();
 		*(int *)data = RB_LEN(tp->t_out);
+		splx(s);
 		break;
 
 	case TIOCSTOP:
@@ -539,8 +551,6 @@ ttioctl(tp, com, data, flag)
 				ttyflush(tp, FREAD);
 		}
 		if ((t->c_cflag&CIGNORE) == 0) {
-			tcflag_t old_cflag;
-
 			/*
 			 * set device hardware
 			 */
@@ -548,28 +558,26 @@ ttioctl(tp, com, data, flag)
 				splx(s);
 				return (error);
 			}
-			old_cflag = tp->t_cflag;
+			if (t->c_cflag & CLOCAL && !(tp->t_cflag & CLOCAL)) {
+				wakeup(TSA_CARR_ON(tp));
+				ttwakeup(tp);
+				ttwwakeup(tp);
+			}
 			tp->t_cflag = t->c_cflag;
 			tp->t_ispeed = t->c_ispeed;
 			tp->t_ospeed = t->c_ospeed;
 			ttsetwater(tp);
-			if (tp->t_cflag & CLOCAL && !(old_cflag & CLOCAL)) {
-				wakeup(TSA_CARR_ON(tp));
-				ttwwakeup(tp);
-				ttwakeup(tp);
-			}
 		}
-		if (com != TIOCSETAF) {
-			if ((t->c_lflag&ICANON) != (tp->t_lflag&ICANON)) {
+		if ((t->c_lflag&ICANON) != (tp->t_lflag&ICANON) &&
+		    com != TIOCSETAF) {
 				if (t->c_lflag&ICANON)
-					tp->t_lflag |= PENDIN;
+				t->c_lflag |= PENDIN;
 				else {
 					catb(tp->t_raw, tp->t_can);
 					catb(tp->t_can, tp->t_raw);
 				}
 				ttwakeup(tp);
 			}
-		}
 		tp->t_iflag = t->c_iflag;
 		tp->t_oflag = t->c_oflag;
 		/*
@@ -580,7 +588,8 @@ ttioctl(tp, com, data, flag)
 		else
 			t->c_lflag &= ~EXTPROC;
 		tp->t_lflag = t->c_lflag;
-		if (t->c_cc[VMIN] != tp->t_cc[VMIN] || t->c_cc[VTIME] != tp->t_cc[VTIME])
+		if (t->c_cc[VMIN] != tp->t_cc[VMIN] ||
+		    t->c_cc[VTIME] != tp->t_cc[VTIME])
 			ttwakeup(tp);
 		bcopy(t->c_cc, tp->t_cc, sizeof(t->c_cc));
 		splx(s);
@@ -676,13 +685,15 @@ ttioctl(tp, com, data, flag)
 	return (0);
 }
 
-int
+/*
+ * Call at spltty().
+ */
+static int
 ttnread(tp)
 	struct tty *tp;
 {
 	int nread = 0;
 
-	/* XXX races. */
 	if (tp->t_lflag & PENDIN)
 		ttypend(tp);
 	nread = RB_LEN(tp->t_can);
@@ -1307,7 +1318,7 @@ loop:
 		ttypend(tp);
 		splx(s);	/* reduce latency */
 		s = spltty();
-		lflag = tp->t_lflag;
+		lflag = tp->t_lflag;	/* XXX ttypend() clobbers it */
 	}
 
 	/*
@@ -1326,13 +1337,27 @@ loop:
 		goto loop;
 	}
 
+	if (tp->t_state & TS_ZOMBIE) {
+		splx(s);
+		return (0);	/* EOF */
+	}
+
 	/*
 	 * If canonical, use the canonical queue,
 	 * else use the raw queue.
 	 */
 	qp = lflag&ICANON ? tp->t_can : tp->t_raw;
 	rblen = RB_LEN(qp);
-
+	if (flag & IO_NDELAY) {
+		if (rblen > 0)
+			goto read;
+		if ((lflag & ICANON) == 0 && cc[VMIN] == 0) {
+			splx(s);
+			return (0);
+		}
+		splx(s);
+		return (EWOULDBLOCK);
+	}
 	if ((lflag & ICANON) == 0) {
 		int m = cc[VMIN];
 		long t = cc[VTIME];
@@ -1419,26 +1444,8 @@ loop:
 	if (rblen <= 0) {
 sleep:
 		/*
-		 * There is no input, or not enough input.
-		 * XXX throw away input when TS_ZOMBIE is set?  A process
-		 * can now receive it by waiting until there is enough.
+		 * There is no input, or not enough input and we can block.
 		 */
-		if (tp->t_state & TS_ZOMBIE) {
-			splx(s);
-			return (0);     /* EOF */
-		}
-		if (flag & IO_NDELAY) {
-			if (lflag & ICANON) {
-			splx(s);
-			return (EWOULDBLOCK);
-		}
-			else if (rblen > 0)
-				goto read;
-			else {
-				splx(s);
-				return (cc[VMIN] == 0 ? 0 : EWOULDBLOCK);
-		}
-		}
 		error = ttysleep(tp, TSA_HUP_OR_INPUT(tp), TTIPRI | PCATCH,
 				 CAN_DO_IO(tp) ? "ttyin" : "ttyhup", (int)slp);
 		splx(s);
