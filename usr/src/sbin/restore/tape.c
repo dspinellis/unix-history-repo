@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -418,6 +418,10 @@ extractfile(name)
 	case IFCHR:
 	case IFBLK:
 		vprintf(stdout, "extract special file %s\n", name);
+		if (Nflag) {
+			skipfile();
+			return (GOOD);
+		}
 		if (mknod(name, mode, (int)curfile.dip->di_rdev) < 0) {
 			fprintf(stderr, "%s: ", name);
 			(void) fflush(stderr);
@@ -433,6 +437,10 @@ extractfile(name)
 
 	case IFREG:
 		vprintf(stdout, "extract file %s\n", name);
+		if (Nflag) {
+			skipfile();
+			return (GOOD);
+		}
 		if ((ofile = creat(name, 0666)) < 0) {
 			fprintf(stderr, "%s: ", name);
 			(void) fflush(stderr);
@@ -541,6 +549,8 @@ xtrfile(buf, size)
 	long	size;
 {
 
+	if (Nflag)
+		return;
 	if (write(ofile, buf, (int) size) == -1) {
 		fprintf(stderr, "write error extracting inode %d, name %s\n",
 			curfile.ino, curfile.name);

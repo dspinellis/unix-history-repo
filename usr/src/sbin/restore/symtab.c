@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)symtab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -408,6 +408,8 @@ dumpsymtable(filename, checkpt)
 	struct symtableheader hdr;
 
 	vprintf(stdout, "Check pointing the restore\n");
+	if (Nflag)
+		return;
 	if ((fd = fopen(filename, "w")) == NULL) {
 		perror("fopen");
 		panic("cannot create save file %s for symbol table\n",
