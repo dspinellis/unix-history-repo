@@ -1,4 +1,4 @@
-/*		lpf.c	4.5	83/02/10
+/*		lpf.c	4.6	83/03/01
  * 	filter which reads the output of nroff and converts lines
  *	with ^H's to overwritten lines.  Thus this works like 'ul'
  *	but is much better: it can handle more than 2 overwrites
@@ -37,11 +37,6 @@ main()
 				ch = '\n';
 				break;
 
-			case '\031':
-				fflush(stdout);
-				kill(getpid(), SIGSTOP);
-				break;
-
 			case '\f':
 			case '\n':
 				linedone = 1;
@@ -59,6 +54,23 @@ main()
 			case '\t':
 				col = (col | 07) + 1;
 				break;
+
+#ifdef WAITCHAR
+			case '\031':
+				/*
+				 * lpd needs to use a different filter to
+				 * print data so stop what we are doing and
+				 * wait for lpd to restart us.
+				 */
+				if ((ch = getchar()) == '\1') {
+					fflush(stdout);
+					kill(getpid(), SIGSTOP);
+					break;
+				} else {
+					ungetc(ch, stdin);
+					ch = '\031';
+				}
+#endif
 
 			default:
 				if (col >= MAXWIDTH)
