@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.9 89/10/07$
  *
- *	@(#)autoconf.c	7.2 (Berkeley) %G%
+ *	@(#)autoconf.c	7.3 (Berkeley) %G%
  */
 
 #include "samachdep.h"
@@ -50,19 +50,21 @@ configure()
 sctoaddr(sc)
 	int sc;
 {
-	if (sc == -2)
-		return(0x1000000);
 	if (sc == -1)
 		return(GRFIADDR);
 	if (sc == 7 && internalhpib)
 		return(internalhpib);
 	if (sc < 32)
 		return(0x600000+(0x10000*sc));
+	if (sc >= 132 && sc < 134)
+		return(0x1000000+((sc-132)*0x400000));
 	return(sc);
 }
 
 /*
- * Probe all select codes (0 - 32) and internal display address.
+ * Probe all DIO select codes (0 - 32), the internal display address,.
+ * and DIO-II select codes 132 (hack) and 133 (hack).
+ *
  * Note that we only care about displays, SCSIs and HP-IBs.
  */
 find_devs()
@@ -73,7 +75,7 @@ find_devs()
 	register struct hp_hw *hw;
 
 	hw = sc_table;
-	for (sc = -2; sc < 32; sc++) {
+	for (sc = -1; sc < 32; sc++) {
 		addr = sctoaddr(sc);
 		if (badaddr(addr))
 			continue;
@@ -120,6 +122,36 @@ find_devs()
 		case 71:
 		case 103:
 			hw->hw_type = SCSI;
+			break;
+		default:	/* who cares */
+			hw->hw_type = MISC;
+			break;
+		}
+		hw++;
+	}
+	/*
+	 * Look for displays in DIO-II space
+	 */
+	for (sc = 132; sc < 134; sc++) {
+		addr = sctoaddr(sc);
+		if (badaddr(addr))
+			continue;
+
+		id_reg = (u_char *) addr;
+		hw->hw_addr = (char *) addr;
+		hw->hw_id = id_reg[1] & 0xff;
+		hw->hw_sc = sc;
+
+		switch (hw->hw_id) {
+		case 57:	/* Displays */
+			hw->hw_type = BITMAP;
+			hw->hw_id2 = id_reg[0x15];
+			switch (hw->hw_id2) {
+			case 4:	/* renaissance */
+			case 8: /* davinci */
+				sc++;		/* occupy 2 select codes */
+				break;
+			}
 			break;
 		default:	/* who cares */
 			hw->hw_type = MISC;
