@@ -47,12 +47,12 @@ ALLO	= globals.o ${SUBSO}
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-systemlib:	${ALLO}
-	ar cr systemlib ${ALLO}
-	ranlib systemlib
+general.lib:	${ALLO}
+	ar cr general.lib ${ALLO}
+	ranlib general.lib
 
 clean:
-	rm -f $(ALLO) errs makefile.bak systemlib
+	rm -f $(ALLO) errs makefile.bak general.lib
 
 print:
 	${PRINT} ${ALLH} ${ALLC}
@@ -88,4 +88,5 @@ depend:
 # DO NOT DELETE THIS LINE
 
 globals.o: ../ctlr/hostctlr.h ../ascii/ascebc.h ../ctlr/dctype.h
-globals.o: ../ctlr/options.h ../ctlr/screen.h ../keyboard/state.h globals.h
+globals.o: ../ctlr/options.h ../ctlr/screen.h ../ascii/state.h globals.h
+globals.o: ../general/general.h
