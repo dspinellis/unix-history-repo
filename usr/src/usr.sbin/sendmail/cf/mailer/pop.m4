@@ -17,9 +17,9 @@ POPDIVERT
 ###   POP Mailer specification   ###
 ####################################
 
-VERSIONID(`@(#)pop.m4	8.4 (Berkeley) %G%')
+VERSIONID(`@(#)pop.m4	8.5 (Berkeley) %G%')
 
-Mpop,		P=POP_MAILER_PATH, F=CONCAT(`lsDFM', POP_MAILER_FLAGS), S=10, R=20/40,
+Mpop,		P=POP_MAILER_PATH, F=CONCAT(`lsDFM', POP_MAILER_FLAGS), S=10, R=20/40, T=DNS/RFC822/X-Unix,
 		A=POP_MAILER_ARGS
 
 LOCAL_CONFIG
