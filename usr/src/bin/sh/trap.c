@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trap.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)trap.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -152,7 +152,7 @@ setsignal(signo) {
 #if JOBS
 		case SIGTSTP:
 		case SIGTTOU:
-			if (jflag)
+			if (mflag)
 				action = S_IGN;
 			break;
 #endif
@@ -165,7 +165,7 @@ setsignal(signo) {
 		 */
 		sigact = getsigaction(signo);
 		if (sigact == SIG_IGN) {
-			if (jflag && (signo == SIGTSTP || 
+			if (mflag && (signo == SIGTSTP || 
 			     signo == SIGTTIN || signo == SIGTTOU)) {
 				*t = S_IGN;	/* don't hard ignore these */
 			} else
@@ -277,10 +277,11 @@ done:
  * Controls whether the shell is interactive or not.
  */
 
-int is_interactive;
 
 void
 setinteractive(on) {
+	static int is_interactive;
+
 	if (on == is_interactive)
 		return;
 	setsignal(SIGINT);
@@ -301,8 +302,12 @@ exitshell(status) {
 	char *p;
 
 	TRACE(("exitshell(%d) pid=%d\n", status, getpid()));
-	if (setjmp(loc1.loc))  goto l1;
-	if (setjmp(loc2.loc))  goto l2;
+	if (setjmp(loc1.loc)) {
+		goto l1;
+	}
+	if (setjmp(loc2.loc)) {
+		goto l2;
+	}
 	handler = &loc1;
 	if ((p = trap[0]) != NULL && *p != '\0') {
 		trap[0] = NULL;
