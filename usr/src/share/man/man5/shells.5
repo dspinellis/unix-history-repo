@@ -1,23 +1,36 @@
-.\" Copyright (c) 1986 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)shells.5	5.1 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH SHELLS 5  "November 25, 1986"
+.\"	@(#)shells.5	5.2 (Berkeley) %G%
+.\"
+.TH SHELLS 5 ""
 .UC 5
 .SH NAME
 shells \- shell database
 .SH DESCRIPTION
-The \fIshells\fP file contains a list of the shells
-on the system.  For each shell a single line should be
-present consisting of the shell's path, relative to root.
+The
+.I shells
+file contains a list of the shells on the system.
+For each shell a single line should be present, consisting of the
+shell's path, relative to root.
 .PP
-A ``#'' indicates the beginning of a comment; subsequent
-characters up to the end of the line are not interpreted
-by the routines which search the file.  Blank lines are also
-ignored.
+A hash mark (``#'') indicates the beginning of a comment; subsequent
+characters up to the end of the line are not interpreted by the
+routines which search the file.
+Blank lines are also ignored.
 .SH FILES
 /etc/shells
 .SH "SEE ALSO"
-passwd(1), getusershell(3)
+getusershell(3)
