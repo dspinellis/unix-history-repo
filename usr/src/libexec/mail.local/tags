@@ -1,0 +1,6 @@
+Mmail.local	mail.local.c	/^main(argc, argv)$/
+deliver	mail.local.c	/^deliver(fd, name)$/
+err	mail.local.c	/^err(isfatal, fmt)$/
+notifybiff	mail.local.c	/^notifybiff(msg)$/
+store	mail.local.c	/^store(from)$/
+usage	mail.local.c	/^usage()$/

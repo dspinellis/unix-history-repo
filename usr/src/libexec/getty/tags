@@ -1,0 +1,31 @@
+Mmain	main.c	/^main(argc, argv)$/
+adelay	subr.c	/^adelay(ms, dp)$/
+autobaud	subr.c	/^autobaud()$/
+decode	gettytab.c	/^decode(str, area)$/
+delaybits	subr.c	/^delaybits()$/
+dingdong	main.c	/^dingdong()$/
+edithost	subr.c	/^edithost(pat)$/
+gendefaults	subr.c	/^gendefaults()$/
+getent	gettytab.c	/^getent(bp, name)$/
+getflag	gettytab.c	/^getflag(id)$/
+getname	main.c	/^getname()$/
+getnum	gettytab.c	/^getnum(id)$/
+getstr	gettytab.c	/^getstr(id, area)$/
+gettable	subr.c	/^gettable(name, buf, area)$/
+interrupt	main.c	/^interrupt()$/
+makeenv	subr.c	/^makeenv(env)$/
+namatch	gettytab.c	/^namatch(np)$/
+nchktc	gettytab.c	/^nchktc()$/
+oflush	main.c	/^oflush()$/
+portselector	subr.c	/^portselector()$/
+prompt	main.c	/^prompt()$/
+putchr	main.c	/^putchr(cc)$/
+putf	main.c	/^putf(cp)$/
+putpad	main.c	/^putpad(s)$/
+puts	main.c	/^puts(s)$/
+set_ttydefaults	ttydefaults.c	/^set_ttydefaults(fd)$/
+setchars	subr.c	/^setchars()$/
+setdefaults	subr.c	/^setdefaults()$/
+setflags	subr.c	/^setflags(n)$/
+skip	gettytab.c	/^skip(bp)$/
+speed	subr.c	/^speed(val)$/
