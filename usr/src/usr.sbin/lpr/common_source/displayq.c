@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)displayq.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)displayq.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -130,7 +130,7 @@ displayq(format)
 			cp++;
 		*cp = '\0';
 		i = atoi(current);
-		if (kill(i, 0) < 0)
+		if (i <= 0 || kill(i, 0) < 0)
 			warn();
 		else {
 			/* read current file name */
@@ -175,12 +175,21 @@ displayq(format)
 warn()
 {
 	struct stat statb;
+	int i, fd;
 
 	if (sendtorem)
 		printf("\n%s: ", host);
-	if (stat(LO, &statb) >= 0 && (statb.st_mode & 0100))
-		printf("Warning: %s is down\n", printer);
-	else
+	if (stat(LO, &statb) >= 0 && (statb.st_mode & 0100)) {
+		printf("Warning: %s is down: ", printer);
+		fd = open(ST, O_RDONLY);
+		if (fd >= 0) {
+			(void) flock(fd, LOCK_SH);
+			while ((i = read(fd, line, sizeof(line))) > 0)
+				(void) fwrite(line, 1, i, stdout);
+			(void) close(fd);	/* unlocks as well */
+		} else
+			putchar('\n');
+	} else
 		printf("Warning: no daemon present\n");
 	current[0] = '\0';
 }

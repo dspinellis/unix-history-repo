@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -367,6 +367,105 @@ disablepr()
 		return;
 	} else
 		printf("\tcannot stat lock file\n");
+}
+
+/*
+ * Disable queuing and printing and put a message into the status file
+ * (reason for being down).
+ */
+down(argc, argv)
+	char *argv[];
+{
+	register int c, status;
+	register char *cp1, *cp2;
+	char prbuf[100];
+
+	if (argc == 1) {
+		printf("Usage: disable {all | printer} [message ...]\n");
+		return;
+	}
+	if (!strcmp(argv[1], "all")) {
+		printer = prbuf;
+		while (getprent(line) > 0) {
+			cp1 = prbuf;
+			cp2 = line;
+			while ((c = *cp2++) && c != '|' && c != ':')
+				*cp1++ = c;
+			*cp1 = '\0';
+			putmsg(argc - 2, argv + 2);
+		}
+		return;
+	}
+	printer = argv[1];
+	if ((status = pgetent(line, printer)) < 0) {
+		printf("cannot open printer description file\n");
+		return;
+	} else if (status == 0) {
+		printf("unknown printer %s\n", printer);
+		return;
+	}
+	putmsg(argc - 2, argv + 2);
+}
+
+putmsg(argc, argv)
+	char **argv;
+{
+	register int fd;
+	register char *cp1, *cp2;
+	char buf[1024];
+	struct stat stbuf;
+
+	bp = pbuf;
+	if ((SD = pgetstr("sd", &bp)) == NULL)
+		SD = DEFSPOOL;
+	if ((LO = pgetstr("lo", &bp)) == NULL)
+		LO = DEFLOCK;
+	if ((ST = pgetstr("st", &bp)) == NULL)
+		ST = DEFSTAT;
+	printf("%s:\n", printer);
+	/*
+	 * Turn on the group execute bit of the lock file to disable queuing and
+	 * turn on the owner execute bit of the lock file to disable printing.
+	 */
+	(void) sprintf(line, "%s/%s", SD, LO);
+	if (stat(line, &stbuf) >= 0) {
+		if (chmod(line, (stbuf.st_mode & 0777) | 0110) < 0)
+			printf("\tcannot disable queuing\n");
+		else
+			printf("\tprinter and queuing disabled\n");
+	} else if (errno == ENOENT) {
+		if ((fd = open(line, O_WRONLY|O_CREAT, 0770)) < 0)
+			printf("\tcannot create lock file\n");
+		else {
+			(void) close(fd);
+			printf("\tprinter and queuing disabled\n");
+		}
+		return;
+	} else
+		printf("\tcannot stat lock file\n");
+	/*
+	 * Write the message into the status file.
+	 */
+	if (argc <= 0)
+		return;
+	(void) sprintf(line, "%s/%s", SD, ST);
+	fd = open(line, O_WRONLY|O_CREAT, 0664);
+	if (fd < 0 || flock(fd, LOCK_EX) < 0) {
+		printf("\tcannot create status file\n");
+		return;
+	}
+	(void) ftruncate(fd, 0);
+	cp1 = buf;
+	while (--argc >= 0) {
+		cp2 = *argv++;
+		while (*cp1++ = *cp2++)
+			;
+		cp1[-1] = ' ';
+	}
+	cp1[-1] = '\n';
+	*cp1 = '\0';
+	(void) write(fd, buf, strlen(buf));
+	(void) close(fd);
 }
 
 /*
