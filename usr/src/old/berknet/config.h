@@ -1,4 +1,4 @@
-/*	@(#)config.h	4.2	(Berkeley)	%G%	*/
+/*	@(#)config.h	4.3	(Berkeley)	%G%	*/
 
 /*
 	These are machine-configuration dependent
