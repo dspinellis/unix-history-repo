@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.7 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.8 (Berkeley) %G%
  */
 
 #ifdef GPROF
@@ -91,7 +91,7 @@ kmstartup()
 /*
  * Special, non-profiled versions
  */
-#if defined(hp300)
+#if defined(hp300) && !defined(__GNUC__)
 #define splhigh	_splhigh
 #define splx	_splx
 #endif
@@ -168,7 +168,12 @@ mcount()
 	 * this requires that splhigh() and splx() below
 	 * do NOT call mcount!
 	 */
+#if defined(hp300) && defined(__GNUC__)
+	asm("movw	sr,%0" : "=g" (s));
+	asm("movw	#0x2700,sr");
+#else
 	s = splhigh();
+#endif
 	/*
 	 * Check that frompcindex is a reasonable pc value.
 	 * For example:	signal catchers get called from the stack,
@@ -246,7 +251,11 @@ mcount()
 
 	}
 done:
+#if defined(hp300) && defined(__GNUC__)
+	asm("movw	%0,sr" : : "g" (s));
+#else
 	splx(s);
+#endif
 	/* and fall through */
 out:
 #if defined(vax)
