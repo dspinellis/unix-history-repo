@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mt.c	4.6 (Berkeley) 83/02/08";
+static	char *sccsid = "@(#)mt.c	4.7 (Berkeley) 83/02/09";
 /*
  * mt --
  *   magnetic tape manipulation program
@@ -97,8 +97,8 @@ main(argc, argv)
 #endif
 
 #ifdef sun
-#include <sys/tmreg.h>
-#include <sys/arreg.h>
+#include <sundev/tmreg.h>
+#include <sundev/arreg.h>
 #endif
 
 struct tape_desc {
@@ -116,7 +116,7 @@ struct tape_desc {
 #endif
 #ifdef sun
 	{ MT_ISCPC,	"TapeMaster",	TMS_BITS,	0 },
-	{ MT_ISARCH,	"Archive",	ARCH_CTRL_BITS,	ARCH_BITS },
+	{ MT_ISAR,	"Archive",	ARCH_CTRL_BITS,	ARCH_BITS },
 #endif
 	{ 0 }
 };
