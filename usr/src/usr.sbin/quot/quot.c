@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quot.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)quot.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -239,11 +239,11 @@ qacct(ip)
 	}
 	dp->blocks += size;
 #define	DAY (60 * 60 * 24)	/* seconds per day */
-	if (now.tv_sec - ip->di_atime.tv_sec > 30 * DAY)
+	if (now.tv_sec - ip->di_atime.ts_sec > 30 * DAY)
 		dp->blocks30 += size;
-	if (now.tv_sec - ip->di_atime.tv_sec > 60 * DAY)
+	if (now.tv_sec - ip->di_atime.ts_sec > 60 * DAY)
 		dp->blocks60 += size;
-	if (now.tv_sec - ip->di_atime.tv_sec > 90 * DAY)
+	if (now.tv_sec - ip->di_atime.ts_sec > 90 * DAY)
 		dp->blocks90 += size;
 	dp->nfiles++;
 	while (nflg) {
