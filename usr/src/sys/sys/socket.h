@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.20 (Berkeley) %G%
+ *	@(#)socket.h	7.21 (Berkeley) %G%
  */
 
 /*
@@ -155,28 +155,32 @@ struct sockproto {
 #define NET_MAXID	AF_MAX
 
 #define CTL_NET_NAMES { \
-	"unspec", \
-	"unix", \
-	"inet", \
-	"implink", \
-	"pup", \
-	"chaos", \
-	"xerox_ns", \
-	"iso", \
-	"emca", \
-	"datakit", \
-	"ccitt", \
-	"ibm_sna", \
-	"decnet", \
-	"dec_dli", \
-	"lat", \
-	"hylink", \
-	"appletalk", \
-	"route", \
-	"link_layer", \
-	"xtp", \
-	"coip", \
-	"cnt", \
+	{ 0, 0 }, \
+	{ "unix", CTLTYPE_NODE }, \
+	{ "inet", CTLTYPE_NODE }, \
+	{ "implink", CTLTYPE_NODE }, \
+	{ "pup", CTLTYPE_NODE }, \
+	{ "chaos", CTLTYPE_NODE }, \
+	{ "xerox_ns", CTLTYPE_NODE }, \
+	{ "iso", CTLTYPE_NODE }, \
+	{ "emca", CTLTYPE_NODE }, \
+	{ "datakit", CTLTYPE_NODE }, \
+	{ "ccitt", CTLTYPE_NODE }, \
+	{ "ibm_sna", CTLTYPE_NODE }, \
+	{ "decnet", CTLTYPE_NODE }, \
+	{ "dec_dli", CTLTYPE_NODE }, \
+	{ "lat", CTLTYPE_NODE }, \
+	{ "hylink", CTLTYPE_NODE }, \
+	{ "appletalk", CTLTYPE_NODE }, \
+	{ "route", CTLTYPE_NODE }, \
+	{ "link_layer", CTLTYPE_NODE }, \
+	{ "xtp", CTLTYPE_NODE }, \
+	{ "coip", CTLTYPE_NODE }, \
+	{ "cnt", CTLTYPE_NODE }, \
+	{ "rtip", CTLTYPE_NODE }, \
+	{ "ipx", CTLTYPE_NODE }, \
+	{ "sip", CTLTYPE_NODE }, \
+	{ "pip", CTLTYPE_NODE }, \
 }
 
 /*
@@ -190,12 +194,13 @@ struct sockproto {
 #define NET_RT_DUMP	1		/* dump; may limit to a.f. */
 #define NET_RT_FLAGS	2		/* by flags, e.g. RESOLVING */
 #define NET_RT_IFLIST	3		/* survey interface list */
+#define	NET_RT_MAXID	4
 
 #define CTL_NET_RT_NAMES { \
-	"unspec", \
-	"dump", \
-	"flags", \
-	"iflist", \
+	{ 0, 0 }, \
+	{ "dump", CTLTYPE_STRUCT }, \
+	{ "flags", CTLTYPE_STRUCT }, \
+	{ "iflist", CTLTYPE_STRUCT }, \
 }
 
 /*
