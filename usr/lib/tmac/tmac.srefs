@@ -1,0 +1,137 @@
+.\" REFER macros .... citations
+.de []
+.][ \\$1
+..
+.de ][
+.if \\$1>5 .tm Bad arg to []
+.[\\$1
+..
+.if n .ds [. [
+.if t .ds [. \s-2\v'-.4m'\f1
+.if n .ds .] ]
+.if t .ds .] \v'.4m'\s+2\fP
+.if n .ds [o ""
+.if n .ds [c ""
+.if t .ds [o ``
+.if t .ds [c ''
+.\" the next lines deal with the problem of .[1] or [1].
+.\" refer will write "linexxx\*(<.[1]\*(>.
+.\" and either "<." or ">." should produce the .;
+.\" similarly for ,
+.if n .ds >. .
+.if t .ds <. .
+.if n .ds >, ,
+.if t .ds <, ,
+.de [5 \" tm style
+.FS
+.IP "\\*([F.\0"
+\\*([A, \\f2\\*([T\\f1,
+.ie \\n(TN \\*([M.
+.el Bell Laboratories internal memorandum (\\*([D).
+.RT
+.FE
+..
+.de [0 \" other
+.FS
+.IP "\\*([F.\0"
+.if !"\\*([A"" \\*([A,
+.if !"\\*([T"" \\f2\\*([T\\f1\c
+.if !"\\*([T"" .if !"\\*([O"" ,\ 
+.ie !"\\*([O"" \\*([O
+.el .if !"\\*([T"" \&.
+.if !"\\*([D"" \\*([D.
+.RT
+.FE
+..
+.de [1 \" journal article
+.FS
+.IP "\\*([F.\0"
+\\*([A,
+.if !"\\*([T"" \\*([o\\*([T,\\*([c
+.if !"\\*([V"" .if t \\f2\\*([J\\f1
+.if "\\*([V"" .if t \\f2\\*([J\\f1,
+.if n \\f2\\*([J\\f1,
+.el \\f2\\*([J\\f1,
+.if !"\\*([V"" \{.if n Vol.\&
+\\f3\\*([V\\f1\c
+.if n ,\}
+.if !"\\*([N"" (\\*([N)\c
+.if !"\\*([P"" \{\
+.ie \\n([P>0 \ pp.\&
+.el \ p.\&
+\\*([P\}
+.if !"\\*([I"" .if "\\*([R"" \\*([I,
+(\\*([D).
+.if !"\\*([O"" \\*([O
+.RT
+.FE
+..
+.de [2 \" book
+.FS
+.IP "\\*([F.\0"
+\\*([A, \\f2\\*([T,\\f1
+\\*([I\c
+.if !"\\*([C"" , \\*([C\c
+ (\\*([D).
+.if !"\\*([G"" Gov't. ordering no. \\*([G
+.if !"\\*([O"" \\*([O
+.RT
+.FE
+..
+.de [4 \" report
+.FS
+.IP "\\*([F.\0"
+\\*([A, \\*([o\\*([T,\\*([c
+\\*([R\c
+.if !"\\*([G"" \& (\\*([G)\c
+.if !"\\*([I"" ,  \\*([I\c
+.if !"\\*([C"" ,  \\*([C\c
+ (\\*([D).
+.if !"\\*([O"" \\*([O
+.RT
+.FE
+..
+.de [3 \" article in book
+.FS
+.IP "\\*([F.\0"
+\\*([A, \\*([o\\*([T,\\*([c
+.if !"\\*([P"" pp. \\*([P
+in \\f2\\*([B\\f1, \c
+.if !"\\*([E"" ed. \\*([E, \c
+.if !"\\*([I"" \\*([I\c
+.if !"\\*([C"" ,  \\*([C\c
+ (\\*([D).
+.if !"\\*([O"" \\*([O
+.RT
+.FE
+..
+.de ]<
+.[<
+..
+.de [<
+.SH
+References
+.LP
+.rm FS FE
+..
+.de [>
+.]>
+..
+.de ]>
+.sp
+..
+.de ]-
+.[-
+..
+.de [-
+.rm [V [P [A [T
+.rm [N [C [B [O
+.rm [R [I [E [D
+..
+.de ]]
+this is never
+executed
+and just
+uses up an end-of-file
+bug.
+..
