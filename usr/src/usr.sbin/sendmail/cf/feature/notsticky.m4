@@ -8,7 +8,9 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)notsticky.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)notsticky.m4	8.2 (Berkeley) %G%')
+#
+#  This is now the default.  Use FEATURE(stickydomain) if you want
+#  the old default behaviour.
+#
 divert(-1)
-
-define(`_LOCAL_NOT_STICKY_', 1)
