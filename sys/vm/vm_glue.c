@@ -1,6 +1,8 @@
 /* 
  * Copyright (c) 1991 Regents of the University of California.
  * All rights reserved.
+ * Copyright (c) John S. Dyson
+ * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * The Mach Operating System project at Carnegie-Mellon University.
@@ -33,11 +35,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
- *	$Id: vm_glue.c,v 1.13 1993/12/12 12:27:23 davidg Exp $
- */
-
-/*
+ *	@(#)vm_glue.c	7.8 (Berkeley) 5/15/91
+ *
+ *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  * 
@@ -69,17 +69,19 @@
 #include "resourcevar.h"
 #include "buf.h"
 #include "user.h"
+#include "kernel.h"
 
 #include "vm.h"
 #include "vm_page.h"
 #include "vm_kern.h"
 #include "machine/stdarg.h"
 
-static void swapout(struct proc *);
-
+extern char kstack[];
 int	avefree = 0;		/* XXX */
 int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
+/* vm_map_t upages_map; */
 
+void swapout(struct proc *p);
 int
 kernacc(addr, len, rw)
 	caddr_t addr;
@@ -101,9 +103,6 @@ kernacc(addr, len, rw)
 	 * or worse, inconsistencies at the pmap level.  We only worry
 	 * about the buffer cache for now.
 	 */
-	if (!readbuffers && rv && (eaddr > (vm_offset_t)buffers &&
-		   saddr < (vm_offset_t)buffers + MAXBSIZE * nbuf))
-		rv = FALSE;
 	return(rv == TRUE);
 }
 
@@ -126,10 +125,12 @@ useracc(addr, len, rw)
 	 * only used (as an end address) in trap.c.  Use it as an end
 	 * address here too.
 	 */
-	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS
+	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS 
 	    || (vm_offset_t) addr + len > VM_MAXUSER_ADDRESS
-	    || (vm_offset_t) addr + len <= (vm_offset_t) addr)
+	    || (vm_offset_t) addr + len <= (vm_offset_t) addr) {
+		printf("address wrap\n");
 		return (FALSE);
+	}
 
 	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map,
 	    trunc_page(addr), round_page(addr+len), prot);
@@ -152,13 +153,13 @@ chgkprot(addr, len, rw)
 		       round_page(addr+len), prot, FALSE);
 }
 #endif
-
 void
 vslock(addr, len)
 	caddr_t	addr;
 	u_int	len;
 {
 	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
+			/* round_page(addr+len-1), FALSE); */
 			round_page(addr+len), FALSE);
 }
 
@@ -171,7 +172,7 @@ vsunlock(addr, len, dirtied)
 #ifdef	lint
 	dirtied++;
 #endif	lint
-	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
+		vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
 			round_page(addr+len), TRUE);
 }
 
@@ -192,16 +193,16 @@ vm_fork(p1, p2, isvfork)
 	int isvfork;
 {
 	register struct user *up;
-	vm_offset_t addr;
+	vm_offset_t addr, ptaddr;
+	int i;
+	struct vm_map *vp;
 
-#ifdef i386
 	/*
 	 * avoid copying any of the parent's pagetables or other per-process
 	 * objects that reside in the map by marking all of them non-inheritable
 	 */
 	(void)vm_map_inherit(&p1->p_vmspace->vm_map,
-		UPT_MIN_ADDRESS-UPAGES*NBPG, VM_MAX_ADDRESS, VM_INHERIT_NONE);
-#endif
+		UPT_MIN_ADDRESS - UPAGES * NBPG, VM_MAX_ADDRESS, VM_INHERIT_NONE);
 	p2->p_vmspace = vmspace_fork(p1->p_vmspace);
 
 #ifdef SYSVSHM
@@ -212,15 +213,38 @@ vm_fork(p1, p2, isvfork)
 	/*
 	 * Allocate a wired-down (for now) pcb and kernel stack for the process
 	 */
-#ifdef notyet
-	addr = kmem_alloc_pageable(kernel_map, ctob(UPAGES));
-	vm_map_pageable(kernel_map, addr, addr + ctob(UPAGES), FALSE);
-#else
-	addr = kmem_alloc(kernel_map, ctob(UPAGES));
-	if (!addr)
-		panic("vm_fork: failed to allocate UPAGES");
-#endif
-	up = (struct user *)addr;
+
+	/* addr = UPT_MIN_ADDRESS - UPAGES*NBPG; */
+	addr = (vm_offset_t) kstack;
+
+	vp = &p2->p_vmspace->vm_map;
+
+	/* ream out old pagetables and kernel stack */
+	(void)vm_deallocate(vp, addr, UPT_MAX_ADDRESS - addr);
+
+	/* get new pagetables and kernel stack */
+	(void)vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
+
+	/* force in the page table encompassing the UPAGES */
+	ptaddr = trunc_page((u_int)vtopte(addr));
+	vm_map_pageable(vp, ptaddr, ptaddr + NBPG, FALSE);
+
+	/* and force in (demand-zero) the UPAGES */
+	vm_map_pageable(vp, addr, addr + UPAGES * NBPG, FALSE);
+
+	/* get a kernel virtual address for the UPAGES for this proc */
+	up = (struct user *)kmem_alloc_pageable(kernel_map, UPAGES * NBPG);
+
+	/* and force-map the upages into the kernel pmap */
+	for (i = 0; i < UPAGES; i++)
+		pmap_enter(vm_map_pmap(kernel_map),
+			((vm_offset_t) up) + NBPG * i,
+			pmap_extract(vp->pmap, addr + NBPG * i),
+			VM_PROT_READ|VM_PROT_WRITE, 1);
+
+	/* and allow the UPAGES page table entry to be paged (at the vm system level) */
+	vm_map_pageable(vp, ptaddr, ptaddr + NBPG, TRUE);
+
 	p2->p_addr = up;
 
 	/*
@@ -239,16 +263,7 @@ vm_fork(p1, p2, isvfork)
 	    ((caddr_t)&up->u_stats.pstat_endcopy -
 	     (caddr_t)&up->u_stats.pstat_startcopy));
 
-#ifdef i386
-	{ u_int addr = UPT_MIN_ADDRESS - UPAGES*NBPG; struct vm_map *vp;
-
-	vp = &p2->p_vmspace->vm_map;
-
-	/* ream out old pagetables and kernel stack */
-	(void)vm_deallocate(vp, addr, UPT_MAX_ADDRESS - addr);
-	(void)vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
-	}
-#endif
+	
 	/*
 	 * cpu_fork will copy and update the kernel stack and pcb,
 	 * and make the child ready to run.  It marks the child
@@ -267,6 +282,7 @@ void
 vm_init_limits(p)
 	register struct proc *p;
 {
+	int tmp;
 
 	/*
 	 * Set up the initial limits on process VM.
@@ -279,8 +295,11 @@ vm_init_limits(p)
         p->p_rlimit[RLIMIT_STACK].rlim_max = MAXSSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_cur = DFLDSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_max = MAXDSIZ;
+	tmp = ((2 * vm_page_free_count) / 3) - 32;
+	if (vm_page_free_count < 512)
+		tmp = vm_page_free_count;
 	p->p_rlimit[RLIMIT_RSS].rlim_cur = p->p_rlimit[RLIMIT_RSS].rlim_max =
-		ptoa(vm_page_free_count);
+		ptoa(tmp);
 }
 
 #include "../vm/vm_pageout.h"
@@ -293,6 +312,64 @@ int	swapdebug = 0;
 #define SDB_SWAPOUT	4
 #endif
 
+void
+faultin(p)
+struct proc *p;
+{
+	vm_offset_t i;
+	vm_offset_t vaddr, ptaddr;
+	vm_offset_t v, v1;
+	struct user *up;
+	int s;
+	int opflag;
+
+	if ((p->p_flag & SLOAD) == 0) {
+		int rv0, rv1;
+		vm_map_t map;
+
+		opflag = p->p_flag;
+		p->p_flag |= SLOCK;
+
+		map = &p->p_vmspace->vm_map;
+		/* force the page table encompassing the kernel stack (upages) */
+		ptaddr = trunc_page((u_int)vtopte(kstack));
+		vm_map_pageable(map, ptaddr, ptaddr + NBPG, FALSE);
+
+		/* wire in the UPAGES */
+		vm_map_pageable(map, (vm_offset_t) kstack,
+			(vm_offset_t) kstack + UPAGES * NBPG, FALSE);
+
+		/* and map them nicely into the kernel pmap */
+		for (i = 0; i < UPAGES; i++) {
+			vm_offset_t off = i * NBPG;
+			vm_offset_t pa = (vm_offset_t)
+				pmap_extract(&p->p_vmspace->vm_pmap, 
+				(vm_offset_t) kstack + off);
+			pmap_enter(vm_map_pmap(kernel_map),
+				((vm_offset_t)p->p_addr) + off,
+					pa, VM_PROT_READ|VM_PROT_WRITE, 1);
+		}
+
+		/* and let the page table pages go (at least above pmap level) */
+		vm_map_pageable(map, ptaddr, ptaddr + NBPG, TRUE);
+
+		s = splhigh();
+
+		if (p->p_stat == SRUN)
+			setrq(p);
+
+		p->p_flag |= SLOAD; 
+
+		/* undo the effect of setting SLOCK above */
+		p->p_flag &= ~SLOCK;
+		p->p_flag |= opflag & SLOCK;
+		splx(s);
+
+	}
+
+}
+	
+int swapinreq;
 /*
  * Brutally simple:
  *	1. Attempt to swapin every swaped-out, runnable process in
@@ -300,7 +377,7 @@ int	swapdebug = 0;
  *	2. If not enough memory, wake the pageout daemon and let it
  *	   clear some space.
  */
-void				/* XXX should be __dead, too */
+void
 sched()
 {
 	register struct proc *p;
@@ -308,9 +385,10 @@ sched()
 	struct proc *pp;
 	int ppri;
 	vm_offset_t addr;
-	vm_size_t size;
 
+	/* printf("vm_page_free_count: %d\n", vm_page_free_count); */
 loop:
+	vmmeter();
 #ifdef DEBUG
 	if (!enableswap) {
 		pp = NULL;
@@ -336,8 +414,8 @@ noswap:
 	 * Nothing to do, back to sleep
 	 */
 	if ((p = pp) == NULL) {
-	  tsleep((caddr_t)&proc0, PVM, "sched", 0);
-	  goto loop;
+		sleep((caddr_t)&proc0, PVM);
+		goto loop;
 	}
 
 	/*
@@ -345,24 +423,16 @@ noswap:
 	 * This part is really bogus cuz we could deadlock on memory
 	 * despite our feeble check.
 	 */
-	size = round_page(ctob(UPAGES));
-	addr = (vm_offset_t) p->p_addr;
-	if (vm_page_free_count > atop(size)) {
-#ifdef DEBUG
-		if (swapdebug & SDB_SWAPIN)
-			printf("swapin: pid %d(%s)@%x, pri %d free %d\n",
-			       p->p_pid, p->p_comm, p->p_addr,
-			       ppri, vm_page_free_count);
-#endif
-		vm_map_pageable(kernel_map, addr, addr+size, FALSE);
-		(void) splclock();
-		if (p->p_stat == SRUN)
-			setrq(p);
-		p->p_flag |= SLOAD;
-		(void) spl0();
+	(void) splhigh();
+	if (((vm_page_free_count + vm_page_inactive_count) >=
+	    (vm_page_inactive_target + vm_page_free_reserved)) ||
+	    (vm_page_free_count >= vm_page_free_min)) {
+		spl0();
+		faultin(p);
 		p->p_time = 0;
 		goto loop;
-	}
+	} 
+	++swapinreq; 
 	/*
 	 * Not enough memory, jab the pageout daemon and wait til the
 	 * coast is clear.
@@ -372,7 +442,6 @@ noswap:
 		printf("sched: no room for pid %d(%s), free %d\n",
 		       p->p_pid, p->p_comm, vm_page_free_count);
 #endif
-	(void) splhigh();
 	VM_WAIT;
 	(void) spl0();
 #ifdef DEBUG
@@ -383,8 +452,9 @@ noswap:
 }
 
 #define	swappable(p) \
-	(((p)->p_flag & (SSYS|SLOAD|SKEEP|SWEXIT|SPHYSIO)) == SLOAD)
+	(((p)->p_flag & (STRC|SSYS|SLOAD|SLOCK|SKEEP|SWEXIT|SPHYSIO)) == SLOAD)
 
+extern int vm_pageout_free_min;
 /*
  * Swapout is driven by the pageout daemon.  Very simple, we find eligible
  * procs and unwire their u-areas.  We try to always "swap" at least one
@@ -399,34 +469,41 @@ swapout_threads()
 	register struct proc *p;
 	struct proc *outp, *outp2;
 	int outpri, outpri2;
+	int tpri;
 	int didswap = 0;
 	extern int maxslp;
+	int s;
 
 #ifdef DEBUG
 	if (!enableswap)
 		return;
 #endif
+		
 	outp = outp2 = NULL;
-	outpri = outpri2 = 0;
+	outpri = outpri2 = INT_MIN;
 	for (p = allproc; p != NULL; p = p->p_nxt) {
 		if (!swappable(p))
 			continue;
 		switch (p->p_stat) {
 		case SRUN:
-			if (p->p_time > outpri2) {
+			if (p->p_pri <= PUSER) /* possible deadlock unless this check */
+				continue;
+			if ((tpri = p->p_time + p->p_nice * 8) > outpri2) {
 				outp2 = p;
-				outpri2 = p->p_time;
+				outpri2 = tpri;
 			}
 			continue;
 			
 		case SSLEEP:
 		case SSTOP:
-			if (p->p_slptime > maxslp) {
+			if (p->p_pri <= PRIBIO) /* possible deadlock unless this check */
+				continue;
+			if (p->p_slptime > maxslp || p->p_pri == PWAIT) {
 				swapout(p);
 				didswap++;
-			} else if (p->p_slptime > outpri) {
+			} else if ((tpri = p->p_slptime + p->p_nice * 8) > outpri) {
 				outp = p;
-				outpri = p->p_slptime;
+				outpri = tpri ;
 			}
 			continue;
 		}
@@ -437,25 +514,36 @@ swapout_threads()
 	 * if we are real low on memory since we don't gain much by doing
 	 * it (UPAGES pages).
 	 */
-	if (didswap == 0 &&
-	    vm_page_free_count <= atop(round_page(ctob(UPAGES)))) {
-		if ((p = outp) == 0)
+	if (didswap == 0 && (swapinreq && 
+			vm_page_free_count < vm_page_free_min)) {
+		if ((p = outp) == 0 &&
+			(vm_page_free_count < vm_page_free_reserved ))
 			p = outp2;
 #ifdef DEBUG
 		if (swapdebug & SDB_SWAPOUT)
 			printf("swapout_threads: no duds, try procp %x\n", p);
 #endif
-		if (p)
+		if (p) {
 			swapout(p);
+			didswap = 1;
+		}
+	}
+	if (didswap) {
+		if (swapinreq)
+			wakeup((caddr_t)&proc0);
+		swapinreq = 0;
 	}
 }
 
-static void
+void
 swapout(p)
 	register struct proc *p;
 {
 	vm_offset_t addr;
-	vm_size_t size;
+	struct pmap *pmap = &p->p_vmspace->vm_pmap;
+	vm_map_t map = &p->p_vmspace->vm_map;
+	vm_offset_t ptaddr;
+	int i;
 
 #ifdef DEBUG
 	if (swapdebug & SDB_SWAPOUT)
@@ -463,38 +551,23 @@ swapout(p)
 		       p->p_pid, p->p_comm, p->p_addr, p->p_stat,
 		       p->p_slptime, vm_page_free_count);
 #endif
-	size = round_page(ctob(UPAGES));
-	addr = (vm_offset_t) p->p_addr;
-	p->p_stats->p_ru.ru_nswap++ ;		/* record in resource stats */
-#ifdef notyet
-#ifdef hp300
-	/*
-	 * Ugh!  u-area is double mapped to a fixed address behind the
-	 * back of the VM system and accesses are usually through that
-	 * address rather than the per-process address.  Hence reference
-	 * and modify information are recorded at the fixed address and
-	 * lost at context switch time.  We assume the u-struct and
-	 * kernel stack are always accessed/modified and force it to be so.
-	 */
-	{
-		register int i;
-		volatile long tmp;
 
-		for (i = 0; i < UPAGES; i++) {
-			tmp = *(long *)addr; *(long *)addr = tmp;
-			addr += NBPG;
-		}
-		addr = (vm_offset_t) p->p_addr;
-	}
-#endif
-	vm_map_pageable(kernel_map, addr, addr+size, TRUE);
-	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
-#endif
+
 	(void) splhigh();
 	p->p_flag &= ~SLOAD;
 	if (p->p_stat == SRUN)
 		remrq(p);
 	(void) spl0();
+
+	p->p_flag |= SLOCK;
+/* let the upages be paged */
+	pmap_remove(vm_map_pmap(kernel_map),
+		(vm_offset_t) p->p_addr, ((vm_offset_t) p->p_addr) + UPAGES * NBPG);
+
+	vm_map_pageable(map, (vm_offset_t) kstack,
+		(vm_offset_t) kstack + UPAGES * NBPG, TRUE);
+
+	p->p_flag &= ~SLOCK;
 	p->p_time = 0;
 }
 
@@ -513,18 +586,15 @@ assert_wait(event, ruptible)
 #endif
 	curproc->p_thread = event;
 }
-#endif /* assert_wait */
+#endif
 
 void
-thread_block(const char *wmesg)
+thread_block(const char *msg)
 {
-	int s = splhigh();
-
-	if (curproc->p_thread) {
-		tsleep((caddr_t)curproc->p_thread, PVM, wmesg, 0);
-	}
-	splx(s);
+	if (curproc->p_thread)
+		tsleep((caddr_t)curproc->p_thread, PVM, msg, 0);
 }
+
 
 void
 thread_sleep_(event, lock, wmesg)
@@ -532,14 +602,12 @@ thread_sleep_(event, lock, wmesg)
 	simple_lock_t lock;
 	const char *wmesg;
 {
-	int s = splhigh();
 
 	curproc->p_thread = event;
 	simple_unlock(lock);
 	if (curproc->p_thread) {
 		tsleep((caddr_t)event, PVM, wmesg, 0);
 	}
-	splx(s);
 }
 
 #ifndef thread_wakeup
@@ -547,16 +615,14 @@ void
 thread_wakeup(event)
 	int event;
 {
-#if 0
-	int s = splhigh();	/* XXX is this really necessary??? */
+	wakeup((caddr_t)event);
+}
 #endif
 
-	wakeup((caddr_t)event);
-#if 0
-	splx(s);
-#endif
-}
-#endif /* thread_wakeup */
+/*
+ * DEBUG stuff
+ */
+
 
 /*
  * DEBUG stuff

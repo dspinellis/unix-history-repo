@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *	$Id: vm_mmap.c,v 1.18 1993/12/24 10:31:55 davidg Exp $
+ *	$Id: vm_mmap.c,v 1.19 1993/12/24 10:37:31 davidg Exp $
  */
 
 /*
@@ -709,7 +709,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	 * We only need to set max_protection in case it's
 	 * unequal to its default, which is VM_PROT_DEFAULT.
 	 */
-	if(maxprot != VM_PROT_DEFAULT) {
+	if (maxprot != VM_PROT_DEFAULT) {
 		rv = vm_map_protect(map, *addr, *addr+size, maxprot, TRUE);
 		if (rv != KERN_SUCCESS) {
 			(void) vm_deallocate(map, *addr, size);

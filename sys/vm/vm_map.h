@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_map.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_map.h,v 1.2 1993/10/16 16:20:36 rgrimes Exp $
+ *	$Id: vm_map.h,v 1.3 1993/12/19 00:56:05 wollman Exp $
  */
 
 /*
@@ -231,10 +231,6 @@ extern void vm_fault_copy_entry(vm_map_t, vm_map_t, vm_map_entry_t,
 /* XXX: number of kernel maps and entries to statically allocate */
 #define MAX_KMAP	10
 
-#ifdef OMIT
-#define MAX_KMAPENT     500
-#else   /* !OMIT*/
-#define MAX_KMAPENT     1000	/* 15 Aug 92*/
-#endif  /* !OMIT*/
+#define MAX_KMAPENT	128
 
 #endif	_VM_MAP_

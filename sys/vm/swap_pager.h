@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)swap_pager.h	7.1 (Berkeley) 12/5/90
- *	$Id: swap_pager.h,v 1.2 1993/10/16 16:20:21 rgrimes Exp $
+ *	$Id: swap_pager.h,v 1.5 1993/12/22 12:51:57 davidg Exp $
  */
 
 /*
@@ -52,8 +52,10 @@
  * however, due to the allocation spilling into non-swap pager backed memory,
  * suggest keeping SWB_NPAGES small (1-4).  If high performance is manditory
  * perhaps up to 8 pages might be in order????
+ * Above problem has been fixed, now we support 16 pages per block.  Unused
+ * space is recovered by the swap pager now...
  */
-#define SWB_NPAGES 1
+#define SWB_NPAGES 8
 struct	swblock {
 	unsigned int swb_valid;		/* bitmask for valid pages */
 	int	 swb_block[SWB_NPAGES];	/* unfortunately int instead of daddr_t */
@@ -69,6 +71,7 @@ struct swpager {
 	sw_blk_t     sw_blocks;	/* pointer to list of swap blocks */
 	short	     sw_flags;	/* flags */
 	short	     sw_poip;	/* pageouts in progress */
+	short	     sw_piip;	/* pageins in progress */
 };
 typedef struct swpager	*sw_pager_t;
 

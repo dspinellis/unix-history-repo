@@ -35,9 +35,8 @@
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
  *	$Id: vm_object.c,v 1.13 1993/12/22 12:51:59 davidg Exp $
- */
-
-/*
+ *
+ *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
@@ -65,24 +64,21 @@
  */
 
 /*
- * Significant modifications to vm_object_collapse fixing the growing
- * swap space allocation by John S. Dyson, 18 Dec 93.
- */
-
-/*
  *	Virtual memory object module.
  */
 
+#include "ddb.h"
 #include "param.h"
-#include "systm.h"
 #include "malloc.h"
+#include "systm.h"
 
 #include "vm.h"
 #include "vm_page.h"
-#include "ddb.h"
+#include "proc.h"
+
 
 static void _vm_object_allocate(vm_size_t, vm_object_t);
-static void vm_object_deactivate_pages(vm_object_t);
+void vm_object_deactivate_pages(vm_object_t);
 static void vm_object_cache_trim(void);
 static void vm_object_remove(vm_pager_t);
 
@@ -112,6 +108,7 @@ static void vm_object_remove(vm_pager_t);
  *
  */
 
+
 queue_head_t	vm_object_cached_list;	/* list of objects persisting */
 int		vm_object_cached;	/* size of cached list */
 simple_lock_data_t	vm_cache_lock;	/* lock for object cache */
@@ -122,65 +119,28 @@ simple_lock_data_t	vm_object_list_lock;
 					/* lock for object list and count */
 
 vm_object_t	kernel_object;		/* the single kernel object */
-vm_object_t	kmem_object;
-
+vm_object_t	kmem_object;		/* the kernel malloc object */
 struct vm_object	kernel_object_store;
 struct vm_object	kmem_object_store;
 
-#define	VM_OBJECT_HASH_COUNT	157
 
-int		vm_cache_max = 100;	/* can patch if necessary */
+#ifdef VSMALL
+#define	VM_OBJECT_HASH_COUNT	127	
+int		vm_cache_max = 256;	/* can patch if necessary */
+#else
+#define	VM_OBJECT_HASH_COUNT	521
+int		vm_cache_max = 2048;	/* can patch if necessary */
+#endif
+
 queue_head_t	vm_object_hashtable[VM_OBJECT_HASH_COUNT];
 
 long	object_collapses = 0;
 long	object_bypasses  = 0;
 
 /*
- *	vm_object_init:
- *
- *	Initialize the VM objects module.
+ * internal version of vm_object_allocate
  */
-void vm_object_init()
-{
-	register int	i;
-
-	queue_init(&vm_object_cached_list);
-	queue_init(&vm_object_list);
-	vm_object_count = 0;
-	simple_lock_init(&vm_cache_lock);
-	simple_lock_init(&vm_object_list_lock);
-
-	for (i = 0; i < VM_OBJECT_HASH_COUNT; i++)
-		queue_init(&vm_object_hashtable[i]);
-
-	kernel_object = &kernel_object_store;
-	_vm_object_allocate(VM_MAX_KERNEL_ADDRESS - VM_MIN_KERNEL_ADDRESS,
-			kernel_object);
-
-	kmem_object = &kmem_object_store;
-	_vm_object_allocate(VM_KMEM_SIZE + VM_MBUF_SIZE, kmem_object);
-}
-
-/*
- *	vm_object_allocate:
- *
- *	Returns a new object with the given size.
- */
-
-vm_object_t vm_object_allocate(size)
-	vm_size_t	size;
-{
-	register vm_object_t	result;
-
-	result = (vm_object_t)
-		malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
-
-	_vm_object_allocate(size, result);
-
-	return(result);
-}
-
-static void
+static inline void
 _vm_object_allocate(size, object)
 	vm_size_t		size;
 	register vm_object_t	object;
@@ -199,7 +159,6 @@ _vm_object_allocate(size, object)
 	 */
 
 	object->pager = NULL;
-	object->pager_ready = FALSE;
 	object->internal = TRUE;	/* vm_allocate_with_pager will reset */
 	object->paging_offset = 0;
 	object->shadow = NULL;
@@ -212,11 +171,72 @@ _vm_object_allocate(size, object)
 }
 
 /*
+ *	vm_object_init:
+ *
+ *	Initialize the VM objects module.
+ */
+void
+vm_object_init()
+{
+	register int	i;
+
+	queue_init(&vm_object_cached_list);
+	queue_init(&vm_object_list);
+	vm_object_count = 0;
+	simple_lock_init(&vm_cache_lock);
+	simple_lock_init(&vm_object_list_lock);
+
+	for (i = 0; i < VM_OBJECT_HASH_COUNT; i++)
+		queue_init(&vm_object_hashtable[i]);
+
+	kernel_object = &kernel_object_store;
+	_vm_object_allocate(VM_MAX_KERNEL_ADDRESS - VM_MIN_KERNEL_ADDRESS,
+			kernel_object);
+
+	kmem_object = &kmem_object_store;
+	_vm_object_allocate(VM_MAX_KERNEL_ADDRESS - VM_MIN_KERNEL_ADDRESS,
+			kmem_object);
+}
+
+/*
+ *	vm_object_allocate:
+ *
+ *	Returns a new object with the given size.
+ */
+
+static struct vm_object *objpool;
+static int objpoolcnt;
+
+vm_object_t
+vm_object_allocate(size)
+	vm_size_t	size;
+{
+	register vm_object_t	result;
+	int s;
+
+	if (objpool) {
+		result = objpool;
+		objpool = result->copy;
+		--objpoolcnt;
+	} else {
+		result = (vm_object_t)
+			malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
+	}
+		
+
+	_vm_object_allocate(size, result);
+
+	return(result);
+}
+
+
+/*
  *	vm_object_reference:
  *
  *	Gets another reference to the given object.
  */
-void vm_object_reference(object)
+inline void
+vm_object_reference(object)
 	register vm_object_t	object;
 {
 	if (object == NULL)
@@ -238,8 +258,9 @@ void vm_object_reference(object)
  *
  *	No object may be locked.
  */
-void vm_object_deallocate(object)
-	register vm_object_t	object;
+void
+vm_object_deallocate(object)
+	vm_object_t	object;
 {
 	vm_object_t	temp;
 
@@ -259,11 +280,11 @@ void vm_object_deallocate(object)
 		vm_object_lock(object);
 		if (--(object->ref_count) != 0) {
 
+			vm_object_unlock(object);
 			/*
 			 *	If there are still references, then
 			 *	we are done.
 			 */
-			vm_object_unlock(object);
 			vm_object_cache_unlock();
 			return;
 		}
@@ -275,48 +296,25 @@ void vm_object_deallocate(object)
 		 */
 
 		if (object->can_persist) {
-#ifdef	DIAGNOSTIC
-			register vm_page_t	p;
-
-			/*
-			 * Check for dirty pages in object
-			 * Print warning as this may signify kernel bugs
-			 * pk@cs.few.eur.nl	- 4/15/93
-			 */
-			p = (vm_page_t) queue_first(&object->memq);
-			while (!queue_end(&object->memq, (queue_entry_t) p)) {
-				VM_PAGE_CHECK(p);
-
-				if (pmap_is_modified(VM_PAGE_TO_PHYS(p)) ||
-								!(p->flags & PG_CLEAN)) {
-
-					printf("vm_object_dealloc: persistent object %x isn't clean\n", object);
-					goto cant_persist;
-				}
-
-				p = (vm_page_t) queue_next(&p->listq);
-			}
-#endif	/* DIAGNOSTIC */
 
 			queue_enter(&vm_object_cached_list, object,
 				vm_object_t, cached_list);
 			vm_object_cached++;
 			vm_object_cache_unlock();
 
-			vm_object_deactivate_pages(object);
+			/* vm_object_deactivate_pages(object); */
 			vm_object_unlock(object);
 
 			vm_object_cache_trim();
 			return;
 		}
-	cant_persist:;
 
 		/*
 		 *	Make sure no one can look us up now.
 		 */
 		vm_object_remove(object->pager);
 		vm_object_cache_unlock();
-
+	
 		temp = object->shadow;
 		vm_object_terminate(object);
 			/* unlocks and deallocates object */
@@ -324,18 +322,19 @@ void vm_object_deallocate(object)
 	}
 }
 
-
 /*
  *	vm_object_terminate actually destroys the specified object, freeing
  *	up all previously used resources.
  *
  *	The object must be locked.
  */
-void vm_object_terminate(object)
+void
+vm_object_terminate(object)
 	register vm_object_t	object;
 {
 	register vm_page_t	p;
 	vm_object_t		shadow_object;
+	int s;
 
 	/*
 	 *	Detach the object from its shadow if we are the shadow's
@@ -345,10 +344,10 @@ void vm_object_terminate(object)
 		vm_object_lock(shadow_object);
 		if (shadow_object->copy == object)
 			shadow_object->copy = NULL;
-#if 0
+/*
 		else if (shadow_object->copy != NULL)
 			panic("vm_object_terminate: copy/shadow inconsistency");
-#endif
+*/
 		vm_object_unlock(shadow_object);
 	}
 
@@ -357,10 +356,12 @@ void vm_object_terminate(object)
 	 *	with the object.
 	 */
 
+	s = splhigh();
 	while (object->paging_in_progress != 0) {
-		vm_object_sleep((int)object, object, FALSE);
+		vm_object_sleep(object, object, FALSE);
 		vm_object_lock(object);
 	}
+	splx(s);
 
 
 	/*
@@ -380,6 +381,7 @@ void vm_object_terminate(object)
 		VM_PAGE_CHECK(p);
 
 		vm_page_lock_queues();
+		s = vm_disable_intr();
 		if (p->flags & PG_ACTIVE) {
 			queue_remove(&vm_page_queue_active, p, vm_page_t,
 						pageq);
@@ -393,6 +395,7 @@ void vm_object_terminate(object)
 			p->flags &= ~PG_INACTIVE;
 			vm_page_inactive_count--;
 		}
+		vm_set_intr(s);
 		vm_page_unlock_queues();
 		p = (vm_page_t) queue_next(&p->listq);
 	}
@@ -413,6 +416,7 @@ void vm_object_terminate(object)
 		vm_object_page_clean(object, 0, 0);
 		vm_object_unlock(object);
 	}
+
 	while (!queue_empty(&object->memq)) {
 		p = (vm_page_t) queue_first(&object->memq);
 
@@ -427,8 +431,9 @@ void vm_object_terminate(object)
 	 *	Let the pager know object is dead.
 	 */
 
-	if (object->pager != NULL)
+	if (object->pager != NULL) {
 		vm_pager_deallocate(object->pager);
+	}
 
 
 	simple_lock(&vm_object_list_lock);
@@ -440,7 +445,13 @@ void vm_object_terminate(object)
 	 *	Free the space for the object.
 	 */
 
-	free((caddr_t)object, M_VMOBJ);
+	if (objpoolcnt < 64) {
+		object->copy = objpool;
+		objpool = object;
+		++objpoolcnt;
+		return;
+	} else
+		free((caddr_t)object, M_VMOBJ);
 }
 
 /*
@@ -460,32 +471,55 @@ vm_object_page_clean(object, start, end)
 	register vm_offset_t	end;
 {
 	register vm_page_t	p;
+	int s;
+	int size;
 
 	if (object->pager == NULL)
 		return;
 
+	if (start != end) {
+		start = trunc_page(start);
+		end = round_page(end);
+	}
+	size = end - start;
+
 again:
+	s = splimp();
 	p = (vm_page_t) queue_first(&object->memq);
-	while (!queue_end(&object->memq, (queue_entry_t) p)) {
-		if (start == end ||
-		    p->offset >= start && p->offset < end) {
-			if ((p->flags & PG_CLEAN) && pmap_is_modified(VM_PAGE_TO_PHYS(p)))
+	while (!queue_end(&object->memq, (queue_entry_t) p) && ((start == end) || (size != 0) ) ) {
+		if (start == end || (p->offset >= start && p->offset < end)) {
+			if (pmap_is_wired(VM_PAGE_TO_PHYS(p)) ||
+				p->flags & PG_BUSY)
+				goto next;
+
+			size -= PAGE_SIZE;
+
+			if ((p->flags & PG_CLEAN)
+				 && pmap_is_modified(VM_PAGE_TO_PHYS(p)))
 				p->flags &= ~PG_CLEAN;
+
+			if (p->flags & PG_ACTIVE)
+				vm_page_deactivate(p);
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
-			if (!(p->flags & PG_CLEAN)) {
+			if ((p->flags & PG_CLEAN) == 0) {
 				p->flags |= PG_BUSY;
 				object->paging_in_progress++;
 				vm_object_unlock(object);
 				(void) vm_pager_put(object->pager, p, TRUE);
 				vm_object_lock(object);
 				object->paging_in_progress--;
-				p->flags &= ~PG_BUSY;
+				if (object->paging_in_progress == 0)
+					wakeup((caddr_t) object);
 				PAGE_WAKEUP(p);
+				splx(s);
 				goto again;
 			}
 		}
+next:
 		p = (vm_page_t) queue_next(&p->listq);
 	}
+	splx(s);
+	wakeup((caddr_t)object);
 }
 
 /*
@@ -496,17 +530,20 @@ again:
  *
  *	The object must be locked.
  */
-static void
+void
 vm_object_deactivate_pages(object)
 	register vm_object_t	object;
 {
 	register vm_page_t	p, next;
 
+	int s = splimp();
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		next = (vm_page_t) queue_next(&p->listq);
 		vm_page_lock_queues();
-		if (!(p->flags & PG_BUSY))
+		if ((p->flags & (PG_INACTIVE|PG_BUSY)) == 0 &&
+			p->wire_count == 0 &&
+			(object->can_persist || !pmap_is_wired(VM_PAGE_TO_PHYS(p))))
 			vm_page_deactivate(p);	/* optimisation from mach 3.0 -
 						 * andrew@werple.apana.org.au,
 						 * Feb '93
@@ -514,12 +551,13 @@ vm_object_deactivate_pages(object)
 		vm_page_unlock_queues();
 		p = next;
 	}
+	splx(s);
 }
 
 /*
  *	Trim the object cache to size.
  */
-static void
+void
 vm_object_cache_trim()
 {
 	register vm_object_t	object;
@@ -539,7 +577,6 @@ vm_object_cache_trim()
 	vm_object_cache_unlock();
 }
 
-
 /*
  *	vm_object_shutdown()
  *
@@ -552,7 +589,9 @@ vm_object_cache_trim()
  *	race conditions!
  */
 
-void vm_object_shutdown()
+#if 0
+void
+vm_object_shutdown()
 {
 	register vm_object_t	object;
 
@@ -563,7 +602,6 @@ void vm_object_shutdown()
 
 	vm_object_cache_clear();
 
-	printf("free paging spaces: ");
 
 	/*
 	 *	First we gain a reference to each object so that
@@ -594,7 +632,7 @@ void vm_object_shutdown()
 	}
 	printf("done.\n");
 }
-
+#endif
 /*
  *	vm_object_pmap_copy:
  *
@@ -604,12 +642,19 @@ void vm_object_shutdown()
  *
  *	The object must *not* be locked.
  */
-void vm_object_pmap_copy(object, start, end)
+void
+vm_object_pmap_copy(object, start, end)
 	register vm_object_t	object;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 {
 	register vm_page_t	p;
+	vm_offset_t amount;
+
+	start = trunc_page(start);
+	end = round_page(end);
+
+	amount = ((end - start) + PAGE_SIZE - 1) / PAGE_SIZE;
 
 	if (object == NULL)
 		return;
@@ -620,6 +665,9 @@ void vm_object_pmap_copy(object, start, end)
 		if ((start <= p->offset) && (p->offset < end)) {
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_READ);
 			p->flags |= PG_COPY_ON_WRITE;
+			amount -= 1;
+			if (amount <= 0)
+				break;
 		}
 		p = (vm_page_t) queue_next(&p->listq);
 	}
@@ -634,12 +682,14 @@ void vm_object_pmap_copy(object, start, end)
  *
  *	The object must *not* be locked.
  */
-void vm_object_pmap_remove(object, start, end)
+void
+vm_object_pmap_remove(object, start, end)
 	register vm_object_t	object;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 {
 	register vm_page_t	p;
+	vm_offset_t size = ((end - start) + PAGE_SIZE - 1) / PAGE_SIZE;
 
 	if (object == NULL)
 		return;
@@ -647,11 +697,48 @@ void vm_object_pmap_remove(object, start, end)
 	vm_object_lock(object);
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
-		if ((start <= p->offset) && (p->offset < end))
+		if ((start <= p->offset) && (p->offset < end)) {
+			if ((p->flags & PG_CLEAN) 
+				 && pmap_is_modified(VM_PAGE_TO_PHYS(p))) {
+				p->flags &= ~PG_CLEAN;
+			}
+			if ((p->flags & PG_CLEAN) == 0)
+				p->flags |= PG_LAUNDRY;
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
+			if (--size <= 0) break;
+		}
 		p = (vm_page_t) queue_next(&p->listq);
 	}
 	vm_object_unlock(object);
+}
+
+void
+vm_object_save_pmap_attributes(vm_object_t object,
+	vm_offset_t start, vm_offset_t end) {
+
+	vm_page_t p;
+
+	if (!object)
+		return;
+
+	if (object->shadow) {
+		vm_object_save_pmap_attributes(object->shadow,
+			object->shadow_offset + start,
+			object->shadow_offset + end);
+	}
+
+	p = (vm_page_t) queue_first(&object->memq);
+	while (!queue_end(&object->memq, (queue_entry_t) p)) {
+		if ((start <= p->offset) && (p->offset < end)) {
+			if ((p->flags & PG_CLEAN) 
+				 && pmap_is_modified(VM_PAGE_TO_PHYS(p))) {
+				p->flags &= ~PG_CLEAN;
+			}
+			if ((p->flags & PG_CLEAN) == 0)
+				p->flags |= PG_LAUNDRY;
+		}
+		p = (vm_page_t) queue_next(&p->listq);
+	}
 }
 
 /*
@@ -665,8 +752,8 @@ void vm_object_pmap_remove(object, start, end)
  *	May defer the copy until later if the object is not backed
  *	up by a non-default pager.
  */
-void vm_object_copy(src_object, src_offset, size,
-		    dst_object, dst_offset, src_needs_copy)
+void
+vm_object_copy(src_object, src_offset, size, dst_object, dst_offset, src_needs_copy)
 	register vm_object_t	src_object;
 	vm_offset_t		src_offset;
 	vm_size_t		size;
@@ -677,6 +764,8 @@ void vm_object_copy(src_object, src_offset, size,
 	register vm_object_t	new_copy;
 	register vm_object_t	old_copy;
 	vm_offset_t		new_start, new_end;
+	vm_offset_t		src_offset_end;
+	vm_offset_t		tmpsize;
 
 	register vm_page_t	p;
 
@@ -695,6 +784,7 @@ void vm_object_copy(src_object, src_offset, size,
 	 *	default pager, we don't have to make a copy
 	 *	of it.  Instead, we set the needs copy flag and
 	 *	make a shadow later.
+	 *	DYSON: check for swap(default) pager too....
 	 */
 
 	vm_object_lock(src_object);
@@ -702,18 +792,12 @@ void vm_object_copy(src_object, src_offset, size,
 	/*
 	 *	Try to collapse the object before copying it.
 	 */
+
 	vm_object_collapse(src_object);
 
-
-/*
- * we can simply add a reference to the object if we have no
- * pager or are using the swap pager or we have an internal object
- *
- * John Dyson 24 Nov 93
- */
 	if (src_object->pager == NULL ||
-	    (src_object->pager->pg_type == PG_SWAP) ||
-	    	src_object->internal) {
+	    src_object->pager->pg_type == PG_SWAP ||  
+	    src_object->internal) {
 
 		/*
 		 *	Make another reference to the object
@@ -723,12 +807,16 @@ void vm_object_copy(src_object, src_offset, size,
 		/*
 		 *	Mark all of the pages copy-on-write.
 		 */
+		tmpsize = size;
+		src_offset_end = src_offset + size;
 		for (p = (vm_page_t) queue_first(&src_object->memq);
-		     !queue_end(&src_object->memq, (queue_entry_t)p);
+		     !queue_end(&src_object->memq, (queue_entry_t)p) && tmpsize > 0;
 		     p = (vm_page_t) queue_next(&p->listq)) {
 			if (src_offset <= p->offset &&
-			    p->offset < src_offset + size)
+			    p->offset < src_offset_end) {
 				p->flags |= PG_COPY_ON_WRITE;
+				tmpsize -= PAGE_SIZE;
+			    }
 		}
 		vm_object_unlock(src_object);
 
@@ -849,10 +937,13 @@ void vm_object_copy(src_object, src_offset, size,
 	 *	Mark all the affected pages of the existing object
 	 *	copy-on-write.
 	 */
+	tmpsize = size;
 	p = (vm_page_t) queue_first(&src_object->memq);
-	while (!queue_end(&src_object->memq, (queue_entry_t) p)) {
-		if ((new_start <= p->offset) && (p->offset < new_end))
+	while (!queue_end(&src_object->memq, (queue_entry_t) p) && tmpsize > 0) {
+		if ((new_start <= p->offset) && (p->offset < new_end)) {
 			p->flags |= PG_COPY_ON_WRITE;
+			tmpsize -= PAGE_SIZE;
+		}
 		p = (vm_page_t) queue_next(&p->listq);
 	}
 
@@ -874,7 +965,8 @@ void vm_object_copy(src_object, src_offset, size,
  *	are returned in the source parameters.
  */
 
-void vm_object_shadow(object, offset, length)
+void
+vm_object_shadow(object, offset, length)
 	vm_object_t	*object;	/* IN/OUT */
 	vm_offset_t	*offset;	/* IN/OUT */
 	vm_size_t	length;
@@ -919,7 +1011,8 @@ void vm_object_shadow(object, offset, length)
  *	Set the specified object's pager to the specified pager.
  */
 
-void vm_object_setpager(object, pager, paging_offset,
+void
+vm_object_setpager(object, pager, paging_offset,
 			read_only)
 	vm_object_t	object;
 	vm_pager_t	pager;
@@ -931,6 +1024,9 @@ void vm_object_setpager(object, pager, paging_offset,
 #endif	lint
 
 	vm_object_lock(object);			/* XXX ? */
+	if (object->pager && object->pager != pager) {
+		panic("!!!pager already allocated!!!\n");
+	}
 	object->pager = pager;
 	object->paging_offset = paging_offset;
 	vm_object_unlock(object);			/* XXX ? */
@@ -941,14 +1037,15 @@ void vm_object_setpager(object, pager, paging_offset,
  */
 
 #define vm_object_hash(pager) \
-	(((unsigned)pager)%VM_OBJECT_HASH_COUNT)
+	((((unsigned)pager) >> 5)%VM_OBJECT_HASH_COUNT)
 
 /*
  *	vm_object_lookup looks in the object cache for an object with the
  *	specified pager and paging id.
  */
 
-vm_object_t vm_object_lookup(pager)
+vm_object_t
+vm_object_lookup(pager)
 	vm_pager_t	pager;
 {
 	register queue_t		bucket;
@@ -986,7 +1083,8 @@ vm_object_t vm_object_lookup(pager)
  *	the hash table.
  */
 
-void vm_object_enter(object, pager)
+void
+vm_object_enter(object, pager)
 	vm_object_t	object;
 	vm_pager_t	pager;
 {
@@ -1022,7 +1120,7 @@ void vm_object_enter(object, pager)
  *	is locked.  XXX this should be fixed
  *	by reorganizing vm_object_deallocate.
  */
-static void
+void
 vm_object_remove(pager)
 	register vm_pager_t	pager;
 {
@@ -1049,8 +1147,8 @@ vm_object_remove(pager)
  *	vm_object_cache_clear removes all objects from the cache.
  *
  */
-
-void vm_object_cache_clear()
+void
+vm_object_cache_clear()
 {
 	register vm_object_t	object;
 
@@ -1089,18 +1187,12 @@ boolean_t	vm_object_collapse_allowed = TRUE;
  *	Requires that the object be locked and the page
  *	queues be unlocked.
  *
- *	This routine substantially modified by John S. Dyson
- *	Dec 18,1993.  Many restrictions have been removed from
- *	this routine including:
- *
- *	1)	The object CAN now have a pager
- *	2)	Backing object pager space is now removed if not needed
- *	3)	Bypasses now check for existance of pages on paging space
+ *	This routine has significant changes by John S. Dyson
+ *	to fix some swap memory leaks.  18 Dec 93
  *
  */
-
-
-void vm_object_collapse(object)
+void
+vm_object_collapse(object)
 	register vm_object_t	object;
 
 {
@@ -1165,7 +1257,7 @@ void vm_object_collapse(object)
 		/*
 		 * we can deal only with the swap pager
 		 */
-		if( (object->pager && 
+		if ((object->pager && 
 		    	object->pager->pg_type != PG_SWAP) ||
 		    (backing_object->pager && 
 		    	backing_object->pager->pg_type != PG_SWAP)) {
@@ -1222,17 +1314,12 @@ void vm_object_collapse(object)
 					vm_page_unlock_queues();
 				} else {
 				    pp = vm_page_lookup(object, new_offset);
-				    if (pp != NULL) {
+				    if (pp != NULL || (object->pager && vm_pager_has_page(object->pager,
+						object->paging_offset + new_offset))) {
 					vm_page_lock_queues();
 					vm_page_free(p);
 					vm_page_unlock_queues();
-				    }
-				    else {
-					/*
-					 *	Parent now has no page.
-					 *	Move the backing object's page
-					 *	up.
-					 */
+				    } else {
 					vm_page_rename(p, object, new_offset);
 				    }
 				}
@@ -1242,39 +1329,47 @@ void vm_object_collapse(object)
 			 *	Move the pager from backing_object to object.
 			 */
 
-			if( backing_object->pager) {
-				if( object->pager) {
+			if (backing_object->pager) {
+				backing_object->paging_in_progress++;
+				if (object->pager) {
+					vm_pager_t bopager;
 					object->paging_in_progress++;
-					backing_object->paging_in_progress++;
 					/*
 					 * copy shadow object pages into ours
 					 * and destroy unneeded pages in shadow object.
 					 */
+					bopager = backing_object->pager;
+					backing_object->pager = NULL;
+					vm_object_remove(backing_object->pager);
 					swap_pager_copy(
-						backing_object->pager, backing_object->paging_offset,
+						bopager, backing_object->paging_offset,
 						object->pager, object->paging_offset,
 						object->shadow_offset);
 					object->paging_in_progress--;
-					if( object->paging_in_progress == 0)
+					if (object->paging_in_progress == 0)
 						wakeup((caddr_t)object);
-					backing_object->paging_in_progress--;
-					if( backing_object->paging_in_progress == 0)
-						wakeup((caddr_t)backing_object);
 				} else {
+					object->paging_in_progress++;
 					/*
 					 * grab the shadow objects pager
 					 */
 					object->pager = backing_object->pager;
 					object->paging_offset = backing_object->paging_offset + backing_offset;
+					vm_object_remove(backing_object->pager);
+					backing_object->pager = NULL;
 					/*
 					 * free unnecessary blocks
 					 */
-					swap_pager_freespace( object->pager, 0, object->paging_offset);
+					swap_pager_freespace(object->pager, 0, object->paging_offset);
+					object->paging_in_progress--;
+					if (object->paging_in_progress == 0)
+						wakeup((caddr_t)object);
 				}
-				vm_object_remove( backing_object->pager);
+				backing_object->paging_in_progress--;
+				if (backing_object->paging_in_progress == 0)
+					wakeup((caddr_t)backing_object);
 			}
 
-			backing_object->pager = NULL;
 
 			/*
 			 *	Object now shadows whatever backing_object did.
@@ -1348,10 +1443,8 @@ void vm_object_collapse(object)
 
 				if (p->offset >= backing_offset &&
 				    new_offset <= size &&
-				    ((pp = vm_page_lookup(object, new_offset)) == NULL ||
-					(pp->flags & PG_FAKE)) &&
-					(!object->pager ||
-					!vm_pager_has_page( object->pager, object->paging_offset+new_offset))) {
+				    ((pp = vm_page_lookup(object, new_offset)) == NULL || (pp->flags & PG_FAKE)) &&
+					(!object->pager || !vm_pager_has_page(object->pager, object->paging_offset+new_offset))) {
 					/*
 					 *	Page still needed.
 					 *	Can't go any further.
@@ -1389,7 +1482,7 @@ void vm_object_collapse(object)
 			 *	will not vanish; so we don't need to call
 			 *	vm_object_deallocate.
 			 */
-			if( backing_object->ref_count == 1)
+			if (backing_object->ref_count == 1)
 				printf("should have called obj deallocate\n");
 			backing_object->ref_count--;
 			vm_object_unlock(backing_object);
@@ -1404,7 +1497,6 @@ void vm_object_collapse(object)
 	}
 }
 
-
 /*
  *	vm_object_page_remove: [internal]
  *
@@ -1413,26 +1505,47 @@ void vm_object_collapse(object)
  *
  *	The object must be locked.
  */
-void vm_object_page_remove(object, start, end)
+void
+vm_object_page_remove(object, start, end)
 	register vm_object_t	object;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 {
 	register vm_page_t	p, next;
+	vm_offset_t size;
+	int cnt;
+	int s;
 
 	if (object == NULL)
 		return;
 
-	p = (vm_page_t) queue_first(&object->memq);
-	while (!queue_end(&object->memq, (queue_entry_t) p)) {
-		next = (vm_page_t) queue_next(&p->listq);
-		if ((start <= p->offset) && (p->offset < end)) {
-			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
-			vm_page_lock_queues();
-			vm_page_free(p);
-			vm_page_unlock_queues();
+	start = trunc_page(start);
+	end = round_page(end);
+	size = end-start;
+	if (size > 4*PAGE_SIZE || size >= object->size/4) {
+		p = (vm_page_t) queue_first(&object->memq);
+		while (!queue_end(&object->memq, (queue_entry_t) p) && size > 0) {
+			next = (vm_page_t) queue_next(&p->listq);
+			if ((start <= p->offset) && (p->offset < end)) {
+				pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
+				vm_page_lock_queues();
+				vm_page_free(p);
+				vm_page_unlock_queues();
+				size -= PAGE_SIZE;
+			}
+			p = next;
 		}
-		p = next;
+	} else {
+		while (size > 0) {
+			while (p = vm_page_lookup(object, start)) {
+				pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
+				vm_page_lock_queues();
+				vm_page_free(p);
+				vm_page_unlock_queues();
+			}
+			start += PAGE_SIZE;
+			size -= PAGE_SIZE;
+		}
 	}
 }
 
@@ -1458,10 +1571,8 @@ void vm_object_page_remove(object, start, end)
  *	Conditions:
  *	The object must *not* be locked.
  */
-boolean_t vm_object_coalesce(prev_object, next_object,
-			prev_offset, next_offset,
-			prev_size, next_size)
-
+boolean_t
+vm_object_coalesce(prev_object, next_object, prev_offset, next_offset, prev_size, next_size)
 	register vm_object_t	prev_object;
 	vm_object_t	next_object;
 	vm_offset_t	prev_offset, next_offset;
@@ -1511,9 +1622,11 @@ boolean_t vm_object_coalesce(prev_object, next_object,
 	 *	a previous deallocation.
 	 */
 
+/*
 	vm_object_page_remove(prev_object,
 			prev_offset + prev_size,
 			prev_offset + prev_size + next_size);
+*/
 
 	/*
 	 *	Extend the object if necessary.
@@ -1526,11 +1639,31 @@ boolean_t vm_object_coalesce(prev_object, next_object,
 	return(TRUE);
 }
 
+/*
+ * returns page after looking up in shadow chain
+ */
+ 
+vm_page_t
+vm_object_page_lookup(object, offset)
+	vm_object_t object;
+	vm_offset_t offset;
+{
+	vm_page_t m;
+	if (!(m=vm_page_lookup(object, offset))) {
+		if (!object->shadow)
+			return 0;
+		else
+			return vm_object_page_lookup(object->shadow, offset + object->shadow_offset);
+	}
+	return m;
+}
+
 #if defined(DEBUG) || (NDDB > 0)
 /*
  *	vm_object_print:	[ debug ]
  */
-void vm_object_print(object, full)
+void
+vm_object_print(object, full)
 	vm_object_t	object;
 	boolean_t	full;
 {

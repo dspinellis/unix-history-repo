@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.5 1993/12/19 00:56:11 wollman Exp $
+ *	$Id: vm_page.h,v 1.6 1993/12/21 05:51:05 davidg Exp $
  */
 
 /*
@@ -120,7 +120,8 @@ struct vm_page {
 	vm_offset_t	offset;		/* offset into that object (O,P) */
 
 	unsigned int	wire_count;	/* how many wired down maps use me? */
-	unsigned int	flags;		/* bit encoded flags */
+	unsigned short	flags;		/* bit encoded flags */
+	unsigned short	deact;		/* deactivation count */
 
 	vm_offset_t	phys_addr;	/* physical address of page */
 };
@@ -129,7 +130,7 @@ typedef struct vm_page	*vm_page_t;
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { \
-		if ( (((unsigned int) mem) < ((unsigned int) &vm_page_array[0])) || \
+		if ((((unsigned int) mem) < ((unsigned int) &vm_page_array[0])) || \
 		     (((unsigned int) mem) > ((unsigned int) &vm_page_array[last_page-first_page])) || \
 		     ((mem->flags & PG_ACTIVE) && (mem->flags & PG_INACTIVE)) \
 		    ) panic("vm_page_check: not valid!"); \
@@ -266,6 +267,15 @@ extern boolean_t pmap_is_modified(vm_offset_t);
 extern vm_offset_t pmap_phys_ddress(int);
 extern boolean_t pmap_testbit(vm_offset_t, int);
 extern void pmap_changebit(vm_offset_t, int, boolean_t);
+
+
+/*
+ * these macros are *MUCH* faster on a 386/486 type machine
+ * eventually they need to be implemented correctly and put
+ * somewhere in the machine dependant stuff.
+ */
+#define vm_disable_intr() (disable_intr(), 0)
+#define vm_set_intr(spl) enable_intr()
 
 #endif /* KERNEL */
 #endif /* _VM_PAGE_ */

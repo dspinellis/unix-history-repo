@@ -33,11 +33,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)vm_pageout.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_pageout.h,v 1.2 1993/10/16 16:20:49 rgrimes Exp $
- */
-
-/*
+ *	@(#)vm_pageout.h	7.3 (Berkeley) 4/21/91
+ *
+ *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
@@ -63,9 +61,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  */
-
-#ifndef _VM_VM_PAGEOUT_H_
-#define _VM_VM_PAGEOUT_H_ 1
+#include <sys/systm.h>
 
 /*
  *	Header file for pageout daemon.
@@ -76,7 +72,7 @@
  */
 
 extern int	vm_pages_needed;	/* should be some "event" structure */
-extern simple_lock_data_t	vm_pages_needed_lock;
+simple_lock_data_t	vm_pages_needed_lock;
 
 
 /*
@@ -86,11 +82,21 @@ extern simple_lock_data_t	vm_pages_needed_lock;
 /*
  *	Signal pageout-daemon and wait for it.
  */
+#define VM_WAIT vm_wait()
+inline static void vm_wait() {
+	extern struct proc *curproc, *pageproc;
+	extern int vm_pageout_pages_needed;
+	int s;
+	s = splhigh();
+	if (curproc == pageproc) {
+		vm_pageout_pages_needed = 1;
+		tsleep((caddr_t) &vm_pageout_pages_needed, PSWP, "vmwait", 0);
+		vm_pageout_pages_needed = 0;
+	} else {
+		wakeup((caddr_t) &vm_pages_needed);
+		tsleep((caddr_t) &vm_page_free_count, PVM, "vmwait", 0);
+	}
+	splx(s);
+}
 
-#define	VM_WAIT		{ \
-			simple_lock(&vm_pages_needed_lock); \
-			thread_wakeup((int)&vm_pages_needed); \
-			thread_sleep((int)&vm_page_free_count, \
-				&vm_pages_needed_lock, FALSE); \
-			}
-#endif /* _VM_VM_PAGEOUT_H_ */
+

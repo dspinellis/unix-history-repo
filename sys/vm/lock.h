@@ -176,10 +176,10 @@ void		lock_clear_recursive();
  * Try to get semi-meaningful wait messages into thread_sleep...
  */
 extern void thread_sleep_(int, simple_lock_t, const char *);
-#if __GNUC__ > 2
-#  define thread_sleep(a,b,c) thread_sleep_((a), (b), __FUNCTION__)
+#if __GNUC__ >= 2
+#define thread_sleep(a,b,c) thread_sleep_((a), (b), __FUNCTION__)
 #else
-#  define thread_sleep(a,b,c) thread_sleep_((a), (b), "vmsleep")
+#define thread_sleep(a,b,c) thread_sleep_((a), (b), "vmslp")
 #endif
 #define thread_sleep_new thread_sleep_
 extern void thread_wakeup(int);

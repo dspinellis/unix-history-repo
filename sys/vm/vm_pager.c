@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_pager.c,v 1.7 1993/12/19 23:24:17 wollman Exp $
+ *	$Id: vm_pager.c,v 1.8 1993/12/21 05:51:06 davidg Exp $
  */
 
 /*
@@ -94,7 +94,7 @@ struct pagerops *dfltpagerops = NULL;	/* default pager */
  * Kernel address space for mapping pages.
  * Used by pagers where KVAs are needed for IO.
  */
-#define PAGER_MAP_SIZE	(256 * PAGE_SIZE)
+#define PAGER_MAP_SIZE	(1024 * PAGE_SIZE)
 vm_map_t pager_map;
 vm_offset_t pager_sva, pager_eva;
 
@@ -144,6 +144,26 @@ vm_pager_deallocate(pager)
 		panic("vm_pager_deallocate: null pager");
 
 	VM_PAGER_DEALLOC(pager);
+}
+
+int
+vm_pager_getmulti(pager, m, count, reqpage, sync)
+	vm_pager_t	pager;
+	vm_page_t	m;
+	int		count;
+	int		reqpage;
+	boolean_t	sync;
+{
+	extern boolean_t vm_page_zero_fill();
+	extern int vm_pageout_count;
+	int i;
+
+	if (pager == NULL) {
+		for (i=0;i<count;i++)
+			vm_page_zero_fill(m+i);
+		return VM_PAGER_OK;
+	}
+	return(VM_PAGER_GET_MULTI(pager, m, count, reqpage, sync));
 }
 
 int

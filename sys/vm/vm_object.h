@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_object.h,v 1.4 1993/11/25 01:39:11 wollman Exp $
+ *	$Id: vm_object.h,v 1.5 1993/12/19 00:56:09 wollman Exp $
  */
 
 /*
@@ -158,16 +158,16 @@ void		vm_object_print();
 #define	vm_object_lock_init(object)	{ simple_lock_init(&(object)->Lock); (object)->LockHolder = 0; }
 #define	vm_object_lock(object)		{ simple_lock(&(object)->Lock); (object)->LockHolder = (int) current_thread(); }
 #define	vm_object_unlock(object)	{ (object)->LockHolder = 0; simple_unlock(&(object)->Lock); }
-#define	vm_object_lock_try(object)	(simple_lock_try(&(object)->Lock) ? ( ((object)->LockHolder = (int) current_thread()) , TRUE) : FALSE)
+#define	vm_object_lock_try(object)	(simple_lock_try(&(object)->Lock) ? (((object)->LockHolder = (int) current_thread()) , TRUE) : FALSE)
 #define	vm_object_sleep(event, object, interruptible) \
-					{ (object)->LockHolder = 0; thread_sleep((event), &(object)->Lock, (interruptible)); }
+					{ (object)->LockHolder = 0; thread_sleep((int)(event), &(object)->Lock, (interruptible)); }
 #else  /* VM_OBJECT_DEBUG */
 #define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock)
 #define	vm_object_lock(object)		simple_lock(&(object)->Lock)
 #define	vm_object_unlock(object)	simple_unlock(&(object)->Lock)
 #define	vm_object_lock_try(object)	simple_lock_try(&(object)->Lock)
 #define	vm_object_sleep(event, object, interruptible) \
-					thread_sleep((event), &(object)->Lock, (interruptible))
+					thread_sleep((int)(event), &(object)->Lock, (interruptible))
 #endif /* VM_OBJECT_DEBUG */
 
 extern void vm_object_page_clean(vm_object_t, vm_offset_t, vm_offset_t);

@@ -84,6 +84,7 @@ struct pagerops devicepagerops = {
 	dev_pager_alloc,
 	dev_pager_dealloc,
 	dev_pager_getpage,
+	0,
 	dev_pager_putpage,
 	dev_pager_haspage
 };
@@ -137,7 +138,7 @@ dev_pager_alloc(handle, size, prot, foff)
 	/*
 	 * Offset should be page aligned.
 	 */
-	if (foff & (NBPG-1))
+	if (foff & (PAGE_SIZE-1))
 		return(NULL);
 
 	/*
@@ -258,6 +259,7 @@ dev_pager_getpage(pager, m, sync)
 	vm_offset_t offset, paddr;
 	vm_page_t page;
 	dev_t dev;
+	int s;
 	int (*mapfunc)(), prot;
 
 #ifdef DEBUG
@@ -290,7 +292,9 @@ dev_pager_getpage(pager, m, sync)
 	vm_page_lock_queues();
 	vm_page_free(m);
 	vm_page_unlock_queues();
+	s = splhigh();
 	vm_page_insert(page, object, offset);
+	splx(s);
 	PAGE_WAKEUP(m);
 	if (offset + PAGE_SIZE > object->size)
 		object->size = offset + PAGE_SIZE;	/* XXX anal */

@@ -34,10 +34,9 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_map.c	7.3 (Berkeley) 4/21/91
- *	$Id: vm_map.c,v 1.8 1993/11/25 01:39:04 wollman Exp $
- */
-
-/*
+ *	$Id: vm_map.c,v 1.9 1993/12/19 00:56:03 wollman Exp $
+ *
+ *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
@@ -67,14 +66,13 @@
 /*
  *	Virtual memory mapping module.
  */
-
 #include "ddb.h"
 #include "param.h"
-#include "systm.h"
 #include "malloc.h"
 #include "vm.h"
 #include "vm_page.h"
 #include "vm_object.h"
+#include "systm.h"
 
 /*
  *	Virtual memory maps provide for the mapping, protection,
@@ -137,9 +135,16 @@
 vm_offset_t	kentry_data;
 vm_size_t	kentry_data_size;
 vm_map_entry_t	kentry_free;
+int kentry_count;
 vm_map_t	kmap_free;
+static vm_offset_t mapvm=0;
+static int mapvmpgcnt=0;
+extern vm_map_t		kernel_map, kmem_map, pager_map;
+extern int vm_page_count;
+void vm_map_save_pmap(vm_map_t map, vm_map_entry_t entry) ;
 
-void vm_map_startup()
+void
+vm_map_startup()
 {
 	register int i;
 	register vm_map_entry_t mep;
@@ -161,11 +166,13 @@ void vm_map_startup()
 	 * Form a free list of statically allocated kernel map entries
 	 * with the rest.
 	 */
+	kentry_count = 0;
 	kentry_free = mep = (vm_map_entry_t) mp;
 	i = (kentry_data_size - MAX_KMAP * sizeof *mp) / sizeof *mep;
 	while (--i > 0) {
 		mep->next = mep + 1;
 		mep++;
+		kentry_count++;
 	}
 	mep->next = NULL;
 }
@@ -181,6 +188,16 @@ vmspace_alloc(min, max, pageable)
 	int pageable;
 {
 	register struct vmspace *vm;
+	int s;
+
+	if (mapvmpgcnt == 0 && mapvm == 0) {
+		mapvmpgcnt = (vm_page_count * sizeof(struct vm_map_entry) + NBPG - 1) / NBPG;
+		s = splhigh();
+		mapvm = kmem_alloc_pageable(kmem_map, mapvmpgcnt * NBPG);
+		splx(s);
+		if (!mapvm)
+			mapvmpgcnt = 0;
+	}
 
 	MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
 	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
@@ -192,22 +209,20 @@ vmspace_alloc(min, max, pageable)
 }
 
 void
-vmspace_free(vm)
+_vmspace_free(vm)
 	register struct vmspace *vm;
 {
 
-	if (--vm->vm_refcnt == 0) {
-		/*
-		 * Lock the map, to wait out all other references to it.
-		 * Delete all of the mappings and pages they hold,
-		 * then call the pmap module to reclaim anything left.
-		 */
-		vm_map_lock(&vm->vm_map);
-		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset,
-		    vm->vm_map.max_offset);
-		pmap_release(&vm->vm_pmap);
-		FREE(vm, M_VMMAP);
-	}
+	/*
+	 * Lock the map, to wait out all other references to it.
+	 * Delete all of the mappings and pages they hold,
+	 * then call the pmap module to reclaim anything left.
+	 */
+	vm_map_lock(&vm->vm_map);
+	(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset,
+	    vm->vm_map.max_offset);
+	pmap_release(&vm->vm_pmap);
+	FREE(vm, M_VMMAP);
 }
 
 /*
@@ -217,13 +232,13 @@ vmspace_free(vm)
  *	the given physical map structure, and having
  *	the given lower and upper address bounds.
  */
-vm_map_t vm_map_create(pmap, min, max, pageable)
+vm_map_t
+vm_map_create(pmap, min, max, pageable)
 	pmap_t		pmap;
 	vm_offset_t	min, max;
 	boolean_t	pageable;
 {
 	register vm_map_t	result;
-	extern vm_map_t		kernel_map, kmem_map;
 
 	if (kmem_map == NULL) {
 		result = kmap_free;
@@ -272,19 +287,71 @@ vm_map_init(map, min, max, pageable)
  *	Allocates a VM map entry for insertion.
  *	No entry fields are filled in.  This routine is
  */
-vm_map_entry_t vm_map_entry_create(map)
+static struct vm_map_entry *mappool;
+static int mappoolcnt;
+void vm_map_entry_dispose(vm_map_t map, vm_map_entry_t entry);
+
+vm_map_entry_t
+vm_map_entry_create(map)
 	vm_map_t	map;
 {
 	vm_map_entry_t	entry;
-	extern vm_map_t		kernel_map, kmem_map, mb_map, buffer_map, pager_map;
+	int s;
+	int i;
+#define KENTRY_LOW_WATER 64
+#define MAPENTRY_LOW_WATER 64
 
-	if (map == kernel_map || map == kmem_map || map == mb_map
-		|| map == buffer_map || map == pager_map) {
-		if (entry = kentry_free)
-			kentry_free = kentry_free->next;
-	} else
+	/*
+	 * This is a *very* nasty (and sort of incomplete) hack!!!!
+	 */
+	if (kentry_count < KENTRY_LOW_WATER) {
+		if (mapvmpgcnt && mapvm) {
+			vm_page_t m;
+			if (m = vm_page_alloc(kmem_object, mapvm-vm_map_min(kmem_map))) {
+				int newentries;
+				newentries = (NBPG/sizeof (struct vm_map_entry));
+				vm_page_wire(m);
+				m->flags &= ~PG_BUSY;
+				pmap_enter(vm_map_pmap(kmem_map), mapvm,
+					VM_PAGE_TO_PHYS(m), VM_PROT_DEFAULT, 1);
+
+				entry = (vm_map_entry_t) mapvm;
+				mapvm += NBPG;
+				--mapvmpgcnt;
+
+				for (i = 0; i < newentries; i++) {
+					vm_map_entry_dispose(kernel_map, entry);
+					entry++;
+				}
+			}
+		}
+	}
+
+	if (map == kernel_map || map == kmem_map || map == pager_map) {
+
+		if (entry = kentry_free) {
+			kentry_free = entry->next;
+			--kentry_count;
+			return entry;
+		}
+
+		if (entry = mappool) {
+			mappool = entry->next;
+			--mappoolcnt;
+			return entry;
+		}
+
+	} else {
+		if (entry = mappool) {
+			mappool = entry->next;
+			--mappoolcnt;
+			return entry;
+		}
+			
 		MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry),
 		       M_VMMAPENT, M_WAITOK);
+	}
+dopanic:
 	if (entry == NULL)
 		panic("vm_map_entry_create: out of map entries");
 
@@ -296,18 +363,29 @@ vm_map_entry_t vm_map_entry_create(map)
  *
  *	Inverse of vm_map_entry_create.
  */
-void vm_map_entry_dispose(map, entry)
+void
+vm_map_entry_dispose(map, entry)
 	vm_map_t	map;
 	vm_map_entry_t	entry;
 {
-	extern vm_map_t		kernel_map, kmem_map, mb_map, buffer_map, pager_map;
+	extern vm_map_t		kernel_map, kmem_map, pager_map;
+	int s;
 
-	if (map == kernel_map || map == kmem_map || map == mb_map
-		|| map == buffer_map || map == pager_map) {
+	if (map == kernel_map || map == kmem_map || map == pager_map ||
+		kentry_count < KENTRY_LOW_WATER) {
 		entry->next = kentry_free;
 		kentry_free = entry;
-	} else
+		++kentry_count;
+	} else {
+		if (mappoolcnt < MAPENTRY_LOW_WATER) {
+			entry->next = mappool;
+			mappool = entry;
+			++mappoolcnt;
+			return;
+		}
+			
 		FREE(entry, M_VMMAPENT);
+	}
 }
 
 /*
@@ -336,7 +414,8 @@ void vm_map_entry_dispose(map, entry)
  *	Creates another valid reference to the given map.
  *
  */
-void vm_map_reference(map)
+inline void
+vm_map_reference(map)
 	register vm_map_t	map;
 {
 	if (map == NULL)
@@ -354,7 +433,8 @@ void vm_map_reference(map)
  *	destroying it if no references remain.
  *	The map should not be locked.
  */
-void vm_map_deallocate(map)
+void
+vm_map_deallocate(map)
 	register vm_map_t	map;
 {
 	register int		c;
@@ -419,8 +499,9 @@ vm_map_insert(map, object, offset, start, end)
 	 *	existing entry, this range is bogus.
 	 */
 
-	if (vm_map_lookup_entry(map, start, &temp_entry))
+	if (vm_map_lookup_entry(map, start, &temp_entry)) {
 		return(KERN_NO_SPACE);
+	}
 
 	prev_entry = temp_entry;
 
@@ -430,8 +511,9 @@ vm_map_insert(map, object, offset, start, end)
 	 */
 
 	if ((prev_entry->next != &map->header) &&
-			(prev_entry->next->start < end))
+			(prev_entry->next->start < end)) {
 		return(KERN_NO_SPACE);
+	}
 
 	/*
 	 *	See if we can avoid creating a new entry by
@@ -529,7 +611,8 @@ vm_map_insert(map, object, offset, start, end)
  *	result indicates whether the address is
  *	actually contained in the map.
  */
-boolean_t vm_map_lookup_entry(map, address, entry)
+boolean_t
+vm_map_lookup_entry(map, address, entry)
 	register vm_map_t	map;
 	register vm_offset_t	address;
 	vm_map_entry_t		*entry;		/* OUT */
@@ -621,9 +704,9 @@ vm_map_find(map, object, offset, addr, length, find_space)
 	register vm_offset_t	end;
 	int			result;
 
-	start = *addr;
-
 	vm_map_lock(map);
+
+	start = *addr;
 
 	if (find_space) {
 		/*
@@ -716,7 +799,8 @@ vm_map_find(map, object, offset, addr, length, find_space)
  *		removing extra sharing maps
  *		[XXX maybe later] merging with a neighbor
  */
-void vm_map_simplify_entry(map, entry)
+void
+vm_map_simplify_entry(map, entry)
 	vm_map_t	map;
 	vm_map_entry_t	entry;
 {
@@ -790,8 +874,8 @@ void vm_map_simplify_entry(map, entry)
  *	This routine is called only when it is known that
  *	the entry must be split.
  */
-static
-void _vm_map_clip_start(map, entry, start)
+void
+_vm_map_clip_start(map, entry, start)
 	register vm_map_t	map;
 	register vm_map_entry_t	entry;
 	register vm_offset_t	start;
@@ -802,7 +886,7 @@ void _vm_map_clip_start(map, entry, start)
 	 *	See if we can simplify this entry first
 	 */
 		 
-	vm_map_simplify_entry(map, entry);
+	/* vm_map_simplify_entry(map, entry); */
 
 	/*
 	 *	Split off the front portion --
@@ -835,6 +919,7 @@ void _vm_map_clip_start(map, entry, start)
  *	it splits the entry into two.
  */
 
+void _vm_map_clip_end();
 #define vm_map_clip_end(map, entry, endaddr) \
 { \
 	if (endaddr < entry->end) \
@@ -845,8 +930,8 @@ void _vm_map_clip_start(map, entry, start)
  *	This routine is called only when it is known that
  *	the entry must be split.
  */
-static
-void _vm_map_clip_end(map, entry, end)
+inline void
+_vm_map_clip_end(map, entry, end)
 	register vm_map_t	map;
 	register vm_map_entry_t	entry;
 	register vm_offset_t	end;
@@ -1134,6 +1219,7 @@ vm_map_pageable(map, start, end, new_pageable)
 {
 	register vm_map_entry_t	entry;
 	vm_map_entry_t		temp_entry;
+	extern vm_map_t kernel_map;
 
 	vm_map_lock(map);
 
@@ -1315,7 +1401,8 @@ vm_map_pageable(map, start, end, new_pageable)
  *	The map in question should be locked.
  *	[This is the reason for this routine's existence.]
  */
-void vm_map_entry_unwire(map, entry)
+void
+vm_map_entry_unwire(map, entry)
 	vm_map_t		map;
 	register vm_map_entry_t	entry;
 {
@@ -1328,20 +1415,23 @@ void vm_map_entry_unwire(map, entry)
  *
  *	Deallocate the given entry from the target map.
  */		
-void vm_map_entry_delete(map, entry)
+void
+vm_map_entry_delete(map, entry)
 	register vm_map_t	map;
 	register vm_map_entry_t	entry;
 {
+	int prev_ref_count;
 	if (entry->wired_count != 0)
 		vm_map_entry_unwire(map, entry);
 		
 	vm_map_entry_unlink(map, entry);
 	map->size -= entry->end - entry->start;
 
-	if (entry->is_a_map || entry->is_sub_map)
+	if (entry->is_a_map || entry->is_sub_map) {
 		vm_map_deallocate(entry->object.share_map);
-	else
+	} else {
 	 	vm_object_deallocate(entry->object.vm_object);
+	}
 
 	vm_map_entry_dispose(map, entry);
 }
@@ -1363,6 +1453,7 @@ vm_map_delete(map, start, end)
 {
 	register vm_map_entry_t	entry;
 	vm_map_entry_t		first_entry;
+
 
 	/*
 	 *	Find the start of the region, and clip it
@@ -1421,15 +1512,20 @@ vm_map_delete(map, start, end)
 		 *	it.
 		 */
 
-		if (object == kernel_object || object == kmem_object)
+		if (object == kernel_object || object == kmem_object) {
 			vm_object_page_remove(object, entry->offset,
 					entry->offset + (e - s));
-		else if (!map->is_main_map)
+		} else if (!map->is_main_map) {
 			vm_object_pmap_remove(object,
 					 entry->offset,
 					 entry->offset + (e - s));
-		else
+		} else {
+		/*
+		 * save the pmap info
+	 	 */
+			vm_map_save_pmap(map, entry);
 			pmap_remove(map->pmap, s, e);
+		}
 
 		/*
 		 *	Delete the entry (which may delete the object)
@@ -1445,6 +1541,36 @@ vm_map_delete(map, start, end)
 	return(KERN_SUCCESS);
 }
 
+/*
+ * 	vm_map_save_pmap
+ *	
+ *	Save the recorded pmap information into the vm_page_t
+ *	data structures.
+ *
+ */
+void
+vm_map_save_pmap(map, entry)
+	vm_map_t map;
+	vm_map_entry_t entry;
+{
+	vm_map_t tmpm;
+	vm_map_entry_t tmpe;
+	if (entry == 0) {
+		return;
+	} else if (entry->is_sub_map || entry->is_a_map) {
+		tmpm = entry->object.share_map;
+		tmpe = tmpm->header.next;
+		while (tmpe != &tmpm->header) {
+			vm_map_save_pmap(tmpm, tmpe);
+			tmpe = tmpe->next;
+		};
+			
+	} else if (entry->object.vm_object) {
+		vm_object_save_pmap_attributes(entry->object.vm_object,
+			entry->offset, entry->offset + (entry->end - entry->start));
+	}
+}
+	
 /*
  *	vm_map_remove:
  *
@@ -1474,7 +1600,8 @@ vm_map_remove(map, start, end)
  *	privilege on the entire address region given.
  *	The entire region must be allocated.
  */
-boolean_t vm_map_check_protection(map, start, end, protection)
+boolean_t
+vm_map_check_protection(map, start, end, protection)
 	register vm_map_t	map;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
@@ -1524,7 +1651,8 @@ boolean_t vm_map_check_protection(map, start, end, protection)
  *	Copies the contents of the source entry to the destination
  *	entry.  The entries *must* be aligned properly.
  */
-void vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
+void
+vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
 	vm_map_t		src_map, dst_map;
 	register vm_map_entry_t	src_entry, dst_entry;
 {
@@ -1552,13 +1680,15 @@ void vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
 	 *	this sharing map belongs in).
 	 */
 
-	if (dst_map->is_main_map)
+	if (dst_map->is_main_map) {
+		vm_map_save_pmap(dst_map, dst_entry);
 		pmap_remove(dst_map->pmap, dst_entry->start, dst_entry->end);
-	else
+	} else {
 		vm_object_pmap_remove(dst_entry->object.vm_object,
 			dst_entry->offset,
 			dst_entry->offset +
 				(dst_entry->end - dst_entry->start));
+	}
 
 	if (src_entry->wired_count == 0) {
 
@@ -1662,9 +1792,7 @@ void vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
  *	fragmentation.]
  */
 int
-vm_map_copy(dst_map, src_map,
-			  dst_addr, len, src_addr,
-			  dst_alloc, src_destroy)
+vm_map_copy(dst_map, src_map, dst_addr, len, src_addr, dst_alloc, src_destroy)
 	vm_map_t	dst_map;
 	vm_map_t	src_map;
 	vm_offset_t	dst_addr;
@@ -1691,14 +1819,12 @@ vm_map_copy(dst_map, src_map,
 	 *	XXX While we figure out why src_destroy screws up,
 	 *	we'll do it by explicitly vm_map_delete'ing at the end.
 	 */
-
 	old_src_destroy = src_destroy;
 	src_destroy = FALSE;
 
 	/*
 	 *	Compute start and end of region in both maps
 	 */
-
 	src_start = src_addr;
 	src_end = src_start + len;
 	dst_start = dst_addr;
@@ -1708,7 +1834,6 @@ vm_map_copy(dst_map, src_map,
 	 *	Check that the region can exist in both source
 	 *	and destination.
 	 */
-
 	if ((dst_end < dst_start) || (src_end < src_start))
 		return(KERN_NO_SPACE);
 
@@ -1716,7 +1841,6 @@ vm_map_copy(dst_map, src_map,
 	 *	Lock the maps in question -- we avoid deadlock
 	 *	by ordering lock acquisition by map value
 	 */
-
 	if (src_map == dst_map) {
 		vm_map_lock(src_map);
 	}
@@ -1737,7 +1861,6 @@ vm_map_copy(dst_map, src_map,
 	 *	about protection, but instead about whether the region
 	 *	exists.]
 	 */
-
 	if (src_map->is_main_map && dst_map->is_main_map) {
 		if (!vm_map_check_protection(src_map, src_start, src_end,
 					VM_PROT_READ)) {
@@ -1768,7 +1891,6 @@ vm_map_copy(dst_map, src_map,
 	 *	until we have done the first clip, as the clip
 	 *	may affect which entry we get!
 	 */
-
 	(void) vm_map_lookup_entry(src_map, src_addr, &tmp_entry);
 	src_entry = tmp_entry;
 	vm_map_clip_start(src_map, src_entry, src_start);
@@ -1781,7 +1903,6 @@ vm_map_copy(dst_map, src_map,
 	 *	If both source and destination entries are the same,
 	 *	retry the first lookup, as it may have changed.
 	 */
-
 	if (src_entry == dst_entry) {
 		(void) vm_map_lookup_entry(src_map, src_addr, &tmp_entry);
 		src_entry = tmp_entry;
@@ -1791,7 +1912,6 @@ vm_map_copy(dst_map, src_map,
 	 *	If source and destination entries are still the same,
 	 *	a null copy is being performed.
 	 */
-
 	if (src_entry == dst_entry)
 		goto Return;
 
@@ -1799,19 +1919,16 @@ vm_map_copy(dst_map, src_map,
 	 *	Go through entries until we get to the end of the
 	 *	region.
 	 */
-
 	while (src_start < src_end) {
 		/*
 		 *	Clip the entries to the endpoint of the entire region.
 		 */
-
 		vm_map_clip_end(src_map, src_entry, src_end);
 		vm_map_clip_end(dst_map, dst_entry, dst_end);
 
 		/*
 		 *	Clip each entry to the endpoint of the other entry.
 		 */
-
 		src_clip = src_entry->start + (dst_entry->end - dst_entry->start);
 		vm_map_clip_end(src_map, src_entry, src_clip);
 
@@ -1824,7 +1941,6 @@ vm_map_copy(dst_map, src_map,
 		 *	If both entries refer to a VM object, we can
 		 *	deal with them now.
 		 */
-
 		if (!src_entry->is_a_map && !dst_entry->is_a_map) {
 			vm_map_copy_entry(src_map, dst_map, src_entry,
 						dst_entry);
@@ -1839,7 +1955,6 @@ vm_map_copy(dst_map, src_map,
 			/*
 			 *	We have to follow at least one sharing map.
 			 */
-
 			new_size = (dst_entry->end - dst_entry->start);
 
 			if (src_entry->is_a_map) {
@@ -1868,7 +1983,6 @@ vm_map_copy(dst_map, src_map,
 				 *	Note that we can only do so if the
 				 *	source and destination do not overlap.
 				 */
-
 				new_dst_end = new_dst_start + new_size;
 
 				if (new_dst_map != new_src_map) {
@@ -1893,7 +2007,6 @@ vm_map_copy(dst_map, src_map,
 			/*
 			 *	Recursively copy the sharing map.
 			 */
-
 			(void) vm_map_copy(new_dst_map, new_src_map,
 				new_dst_start, new_size, new_src_start,
 				FALSE, FALSE);
@@ -1907,7 +2020,6 @@ vm_map_copy(dst_map, src_map,
 		/*
 		 *	Update variables for next pass through the loop.
 		 */
-
 		src_start = src_entry->end;
 		src_entry = src_entry->next;
 		dst_start = dst_entry->end;
@@ -1917,7 +2029,6 @@ vm_map_copy(dst_map, src_map,
 		 *	If the source is to be destroyed, here is the
 		 *	place to do it.
 		 */
-
 		if (src_destroy && src_map->is_main_map &&
 						dst_map->is_main_map)
 			vm_map_entry_delete(src_map, src_entry->prev);
@@ -1926,10 +2037,11 @@ vm_map_copy(dst_map, src_map,
 	/*
 	 *	Update the physical maps as appropriate
 	 */
-
 	if (src_map->is_main_map && dst_map->is_main_map) {
-		if (src_destroy)
+		if (src_destroy) {
+			vm_map_save_pmap(src_map, src_entry);
 			pmap_remove(src_map->pmap, src_addr, src_addr + len);
+		}
 	}
 
 	/*
@@ -1937,9 +2049,10 @@ vm_map_copy(dst_map, src_map,
 	 */
 
 	Return: ;
-
-	if (old_src_destroy)
+	
+	if (old_src_destroy) {
 		vm_map_delete(src_map, src_addr, src_addr + len);
+	}
 
 	vm_map_unlock(src_map);
 	if (src_map != dst_map)
@@ -2102,6 +2215,23 @@ vmspace_fork(vm1)
 }
 
 /*
+ *	vmspace_deallocate
+ *
+ *	clean up old parent vmspace references
+ *
+ */
+
+void
+vmspace_free(struct vmspace *vm) {
+
+	if (vm == 0 || --vm->vm_refcnt != 0) {
+		return;
+	}
+	_vmspace_free(vm);
+}
+
+
+/*
  *	vm_map_lookup:
  *
  *	Finds the VM object, offset, and
@@ -2124,8 +2254,7 @@ vmspace_fork(vm1)
  *	remain the same.
  */
 int
-vm_map_lookup(var_map, vaddr, fault_type, out_entry,
-				object, offset, out_prot, wired, single_use)
+vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, wired, single_use)
 	vm_map_t		*var_map;	/* IN/OUT */
 	register vm_offset_t	vaddr;
 	register vm_prot_t	fault_type;
@@ -2177,8 +2306,9 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 		 *	Entry was either not a valid hint, or the vaddr
 		 *	was not contained in the entry, so do a full lookup.
 		 */
-		if (!vm_map_lookup_entry(map, vaddr, &tmp_entry))
+		if (!vm_map_lookup_entry(map, vaddr, &tmp_entry)) {
 			RETURN(KERN_INVALID_ADDRESS);
+		}
 
 		entry = tmp_entry;
 		*out_entry = entry;
@@ -2343,7 +2473,8 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
  *	(according to the handle returned by that lookup).
  */
 
-void vm_map_lookup_done(map, entry)
+void
+vm_map_lookup_done(map, entry)
 	register vm_map_t	map;
 	vm_map_entry_t		entry;
 {
@@ -2373,7 +2504,8 @@ void vm_map_lookup_done(map, entry)
  *		at allocation time because the adjacent entry
  *		is often wired down.
  */
-void vm_map_simplify(map, start)
+void
+vm_map_simplify(map, start)
 	vm_map_t	map;
 	vm_offset_t	start;
 {
@@ -2409,11 +2541,13 @@ void vm_map_simplify(map, start)
 		if (map->first_free == this_entry)
 			map->first_free = prev_entry;
 
-		SAVE_HINT(map, prev_entry);
-		vm_map_entry_unlink(map, this_entry);
-		prev_entry->end = this_entry->end;
-	 	vm_object_deallocate(this_entry->object.vm_object);
-		vm_map_entry_dispose(map, this_entry);
+		if (!this_entry->object.vm_object->paging_in_progress) {
+			SAVE_HINT(map, prev_entry);
+			vm_map_entry_unlink(map, this_entry);
+			prev_entry->end = this_entry->end;
+		 	vm_object_deallocate(this_entry->object.vm_object);
+			vm_map_entry_dispose(map, this_entry);
+		}
 	}
 	vm_map_unlock(map);
 }
@@ -2422,24 +2556,32 @@ void vm_map_simplify(map, start)
 /*
  *	vm_map_print:	[ debug ]
  */
-void vm_map_print(map, full)
+void
+vm_map_print(map, full)
 	register vm_map_t	map;
 	boolean_t		full;
 {
 	register vm_map_entry_t	entry;
 	extern int indent;
+	static int nmaps;
 
+	if (indent == 0)
+		nmaps = 0;
 	iprintf("%s map 0x%x: pmap=0x%x,ref=%d,nentries=%d,version=%d\n",
 		(map->is_main_map ? "Task" : "Share"),
  		(int) map, (int) (map->pmap), map->ref_count, map->nentries,
 		map->timestamp);
 
+/*
 	if (!full && indent)
 		return;
+*/
 
 	indent += 2;
 	for (entry = map->header.next; entry != &map->header;
 				entry = entry->next) {
+		nmaps++;
+		if (full || indent == 2) {
 		iprintf("map entry 0x%x: start=0x%x, end=0x%x, ",
 			(int) entry, (int) entry->start, (int) entry->end);
 		if (map->is_main_map) {
@@ -2452,8 +2594,10 @@ void vm_map_print(map, full)
 			if (entry->wired_count != 0)
 				printf("wired, ");
 		}
+		}
 
 		if (entry->is_a_map || entry->is_sub_map) {
+		if (full || indent == 2)
 		 	printf("share=0x%x, offset=0x%x\n",
 				(int) entry->object.share_map,
 				(int) entry->offset);
@@ -2467,7 +2611,8 @@ void vm_map_print(map, full)
 			}
 				
 		}
-		else {
+		else if (full || indent == 2) {
+			
 			printf("object=0x%x, offset=0x%x",
 				(int) entry->object.vm_object,
 				(int) entry->offset);
@@ -2487,5 +2632,8 @@ void vm_map_print(map, full)
 		}
 	}
 	indent -= 2;
+
+	if (indent == 0)
+		printf("nmaps=%d\n", nmaps);
 }
-#endif /* defined(DEBUG) || (NDDB > 0) */
+#endif

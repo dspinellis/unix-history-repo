@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pager.h	7.2 (Berkeley) 4/20/91
- *	$Id: vm_pager.h,v 1.2 1993/10/16 16:20:51 rgrimes Exp $
+ *	$Id: vm_pager.h,v 1.3 1993/12/19 00:56:14 wollman Exp $
  */
 
 /*
@@ -67,6 +67,7 @@ struct	pagerops {
 	vm_pager_t	(*pgo_alloc)();		/* allocate pager */
 	void		(*pgo_dealloc)();	/* disassociate */
 	int		(*pgo_getpage)();	/* get (read) page */
+	int		(*pgo_getmulti)();	/* get (read) multiple pages */
 	int		(*pgo_putpage)();	/* put (write) page */
 	boolean_t  	(*pgo_haspage)();	/* does pager have page? */
 };
@@ -77,15 +78,18 @@ struct	pagerops {
  * BAD	specified data was out of the accepted range
  * FAIL	specified data was in range, but doesn't exist
  * PEND	operations was initiated but not completed
+ * TRYAGAIN operation will be successful in the future
  */
 #define	VM_PAGER_OK	0
 #define	VM_PAGER_BAD	1
 #define	VM_PAGER_FAIL	2
 #define	VM_PAGER_PEND	3
+#define	VM_PAGER_TRYAGAIN 4
 
 #define	VM_PAGER_ALLOC(h, s, p)		(*(pg)->pg_ops->pgo_alloc)(h, s, p)
 #define	VM_PAGER_DEALLOC(pg)		(*(pg)->pg_ops->pgo_dealloc)(pg)
 #define	VM_PAGER_GET(pg, m, s)		(*(pg)->pg_ops->pgo_getpage)(pg, m, s)
+#define	VM_PAGER_GET_MULTI(pg, m, c, r, s)	(*(pg)->pg_ops->pgo_getmulti)(pg, m, c, r, s)
 #define	VM_PAGER_PUT(pg, m, s)		(*(pg)->pg_ops->pgo_putpage)(pg, m, s)
 #define	VM_PAGER_HASPAGE(pg, o)		(*(pg)->pg_ops->pgo_haspage)(pg, o)
 
