@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)weekly	5.10 (Berkeley) %G%
+#	@(#)weekly	5.11 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
@@ -56,4 +56,4 @@ cd /
 
 echo ""
 echo "Rebuilding locate database:"
-echo locate.updatedb | nice -5 su -m nobody 2>/dev/null
+echo /usr/libexec/locate.updatedb | nice -5 su -m nobody 2>/dev/null
