@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.h	8.2 (Berkeley) %G%
+ *	@(#)vm_object.h	8.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -127,8 +127,8 @@ void		 vm_object_deallocate __P((vm_object_t));
 void		 vm_object_enter __P((vm_object_t, vm_pager_t));
 void		 vm_object_init __P((vm_size_t));
 vm_object_t	 vm_object_lookup __P((vm_pager_t));
-void		 vm_object_page_clean __P((vm_object_t,
-		    vm_offset_t, vm_offset_t, boolean_t));
+boolean_t	 vm_object_page_clean __P((vm_object_t,
+		    vm_offset_t, vm_offset_t, boolean_t, boolean_t));
 void		 vm_object_page_remove __P((vm_object_t,
 		    vm_offset_t, vm_offset_t));
 void		 vm_object_pmap_copy __P((vm_object_t,
@@ -142,7 +142,6 @@ void		 vm_object_setpager __P((vm_object_t,
 		    vm_pager_t, vm_offset_t, boolean_t));
 void		 vm_object_shadow __P((vm_object_t *,
 		    vm_offset_t *, vm_size_t));
-void		 vm_object_shutdown __P((void));
 void		 vm_object_terminate __P((vm_object_t));
 #endif
 #endif /* _VM_OBJECT_ */
