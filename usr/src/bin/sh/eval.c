@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -647,7 +647,7 @@ evalcommand(cmd, flags, backcmd)
 	} else {
 		find_command(argv[0], &cmdentry, 1);
 		if (cmdentry.cmdtype == CMDUNKNOWN) {	/* command not found */
-			exitstatus = 2;
+			exitstatus = 1;
 			flushout(&errout);
 			return;
 		}
@@ -659,7 +659,7 @@ evalcommand(cmd, flags, backcmd)
 					break;
 				if ((cmdentry.u.index = find_builtin(*argv)) < 0) {
 					outfmt(&errout, "%s: not found\n", *argv);
-					exitstatus = 2;
+					exitstatus = 1;
 					flushout(&errout);
 					return;
 				}
