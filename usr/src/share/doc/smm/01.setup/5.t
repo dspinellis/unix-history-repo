@@ -3,15 +3,14 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	6.11 (Berkeley) %G%
+.\"	@(#)5.t	6.12 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
 .ds LH "Installing/Operating \*(4B
 .ds RH Network setup
 .ds CF \*(Dy
-.NH 1
-Network Setup
+.Sh 1 "Network setup"
 .PP
 \*(4B provides support for the standard Internet
 protocols IP, ICMP, TCP, and UDP.  These protocols may be used
@@ -27,8 +26,7 @@ and other protocols such as Courier run at the user level.
 \*(4B provides some support for the ISO OSI protocols CLNP
 TP4, and ESIS.  User level process
 complete the application protocols such as X.400 and X.500.
-.NH 2
-System configuration
+.Sh 2 "System configuration"
 .PP
 To configure the kernel to include the Internet communication
 protocols, define the INET option.
@@ -116,8 +114,7 @@ be sure to install them in the
 file (with a `none' in the second column so no
 .Xr getty
 is started).
-.NH 2
-Local subnets
+.Sh 2 "Local subnets"
 .PP
 In \*(4B the Internet support
 includes the notion of ``subnets''.  This is a mechanism
@@ -188,8 +185,7 @@ For hosts with multiple interfaces, the network mask should
 be set for each interface,
 although in practice only the mask of the first interface on each network
 is really used.
-.NH 2
-Internet broadcast addresses
+.Sh 2 "Internet broadcast addresses"
 .PP
 The address defined as the broadcast address for Internet networks
 according to RFC-919 is the address with a host part of all 1's.
@@ -207,8 +203,7 @@ as for normal host addresses, with the remaining host part set to 1's
 sent to the logical-network broadcast address as well as those sent
 to the subnet broadcast address, and when using an all-1's broadcast,
 also recognize and receive packets sent to host 0 as a broadcast.
-.NH 2
-Routing
+.Sh 2 "Routing"
 .PP
 If your environment allows access to networks not directly
 attached to your host you will need to set up routing information
@@ -296,8 +291,7 @@ will display the contents of the routing tables, while
 .DE
 will show the number of routing table entries dynamically
 created as a result of routing redirect messages, etc.
-.NH 2
-Use of \*(4B machines as gateways
+.Sh 2 "Use of \*(4B machines as gateways"
 .PP
 Several changes have been made in \*(4B in the area of gateway support
 (or packet forwarding, if one prefers).
@@ -322,8 +316,7 @@ IPSENDREDIRECTS=0 or while the system is running by using the command:
 sysctl -w net.inet.ip.redirect=0
 .DE
 in environments where it may cause difficulties.
-.NH 2
-Network databases
+.Sh 2 "Network databases"
 .PP
 Several data files are used by the network library routines
 and server programs.  Most of these files are host independent
@@ -360,8 +353,7 @@ these could be chosen more or less arbitrarily,
 but it is generally better to request official numbers
 to avoid conversion if a connection to the Internet (or others on the Internet)
 is ever established.
-.NH 3
-Network servers
+.Sh 3 "Network servers"
 .PP
 Most network servers are automatically started up at boot time
 by the command file
@@ -425,8 +417,7 @@ if [ -f /usr/sbin/timed ]; then
 	/usr/sbin/timed & echo -n ' timed'			>/dev/console
 f\&i
 .DE
-.NH 3
-Internet daemon
+.Sh 3 "Internet daemon"
 .PP
 In \*(4B most of the servers for user-visible services are started up by a
 ``super server'', the Internet daemon.  The Internet
@@ -461,8 +452,7 @@ Consult
 .Xr inetd (8)
 for more detail on the format of the configuration file
 and the operation of the Internet daemon.
-.NH 3
-.Pn /etc/hosts.equiv
+.Sh 3 "The \f(CW/etc/hosts.equiv\fP file"
 .PP
 The remote login and shell servers use an
 authentication scheme based on trusted hosts.  The
@@ -501,8 +491,7 @@ vangogh.CS.Berkeley.EDU
 picasso.CS.Berkeley.EDU
 okeeffe.CS.Berkeley.EDU
 .DE
-.NH 3
-.Pn /etc/ftpusers
+.Sh 3 "The \f(CW/etc/ftpusers\fP file"
 .PP
 The FTP server included in the system provides support for an
 anonymous FTP account.  Because of the inherent security problems
