@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -378,27 +378,6 @@ readcf(cfname)
 			break;
 
 		  case 'C':		/* word class */
-		  case 'F':		/* word class from file */
-			/* read list of words from argument or file */
-			if (bp[0] == 'F')
-			{
-				/* read from file */
-				for (p = &bp[2];
-				     *p != '\0' && !(isascii(*p) && isspace(*p));
-				     p++)
-					continue;
-				if (*p == '\0')
-					p = "%s";
-				else
-				{
-					*p = '\0';
-					while (isascii(*++p) && isspace(*p))
-						continue;
-				}
-				fileclass(bp[1], &bp[2], p, safe);
-				break;
-			}
-
 			/* scan the list of words and set class for all */
 			for (p = &bp[2]; *p != '\0'; )
 			{
@@ -421,6 +400,24 @@ readcf(cfname)
 				}
 				*p = delim;
 			}
+			break;
+
+		  case 'F':		/* word class from file */
+			/* read list of words from argument or file */
+			/* read from file */
+			for (p = &bp[2];
+			     *p != '\0' && !(isascii(*p) && isspace(*p));
+			     p++)
+				continue;
+			if (*p == '\0')
+				p = "%s";
+			else
+			{
+				*p = '\0';
+				while (isascii(*++p) && isspace(*p))
+					continue;
+			}
+			fileclass(bp[1], &bp[2], p, safe);
 			break;
 
 #ifdef XLA
