@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.1 (Berkeley) %G%
+ *	@(#)locore.s	7.2 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -789,8 +789,10 @@ start:
 	movl	r10,_bootdev
 /* save reboot flags in global _boothowto */
 	movl	r11,_boothowto
+#ifdef KADB
 /* save end of symbol & string table in global _bootesym */
 	subl3	$NBPG-1,r9,_bootesym
+#endif
 /* calculate firstaddr, and call main() */
 	andl3	$~SYSTEM,r9,r0
 	shrl	$PGSHIFT,r0,-(sp)
