@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.16.1.1 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)var.c 2.2 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -12,6 +14,7 @@ static char sccsid[] = "@(#)var.c 1.16.1.1 %G%";
 #   include	"pcops.h"
 #endif PC
 #include "tmps.h"
+#include "tree_ty.h"
 
 /*
  * Declare variables of a var part.  DPOFF1 is
@@ -20,6 +23,7 @@ static char sccsid[] = "@(#)var.c 1.16.1.1 %G%";
  * of all the local variables is entered into the
  * size array.
  */
+/*ARGSUSED*/
 varbeg( lineofyvar , r )
     int	lineofyvar;
 {
@@ -76,35 +80,38 @@ varbeg( lineofyvar , r )
 
 var(vline, vidl, vtype)
 #ifdef PI0
-	int vline, *vidl, *vtype;
+	int vline;
+	struct tnode *vidl, *vtype;
 {
 	register struct nl *np;
-	register int *vl;
+	register struct tnode *vl;
 
 	np = gtype(vtype);
 	line = vline;
-	for (vl = vidl; vl != NIL; vl = vl[2]) {
+	/* why is this here? */
+	for (vl = vidl; vl != TR_NIL; vl = vl->list_node.next) {
 		}
 	}
 	send(REVVAR, vline, vidl, vtype);
 }
 #else
 	int vline;
-	register int *vidl;
-	int *vtype;
+	register struct tnode *vidl;
+	struct tnode *vtype;
 {
 	register struct nl *np;
 	register struct om *op;
 	long w;
 	int o2;
-	int *ovidl = vidl;
+#ifdef PC
 	struct nl	*vp;
+#endif
 
 	np = gtype(vtype);
 	line = vline;
 	w = lwidth(np);
 	op = &sizes[cbn];
-	for (; vidl != NIL; vidl = vidl[2]) {
+	for (; vidl != TR_NIL; vidl = vidl->list_node.next) {
 #		ifdef OBJ
 		    op->curtmps.om_off =
 			roundup((int)(op->curtmps.om_off-w), (long)align(np));
@@ -127,7 +134,11 @@ var(vline, vidl, vtype)
 			    o2 = op -> curtmps.om_off;
 		    }
 #		endif PC
-		vp = enter(defnl(vidl[1], VAR, np, o2));
+#		ifdef PC
+		vp = enter(defnl((char *) vidl->list_node.list, VAR, np, o2));
+#		else
+		(void) enter(defnl((char *) vidl->list_node.list, VAR, np, o2));
+#		endif
 		if ( np -> nl_flags & NFILES ) {
 		    dfiles[ cbn ] = TRUE;
 		}
@@ -136,10 +147,10 @@ var(vline, vidl, vtype)
 			putprintf( "	.data" , 0 );
 			aligndot(align(np));
 			putprintf( "	.comm	" , 1 );
-			putprintf( EXTFORMAT , 1 , vidl[1] );
-			putprintf( ",%d" , 0 , w );
+			putprintf( EXTFORMAT , 1 , (int) vidl->list_node.list );
+			putprintf( ",%d" , 0 , (int) w );
 			putprintf( "	.text" , 0 );
-			stabgvar(vp, w, line);
+			stabgvar( vp , w , line );
 			vp -> extra_flags |= NGLOBAL;
 		    } else {
 			vp -> extra_flags |= NLOCAL;
@@ -183,12 +194,14 @@ leven(w)
 	return ((w+1) & 0xfffffffe);
 }
 
+#ifndef PC
 int
 even(w)
 	register int w;
 {
 	return leven((long)w);
 }
+#endif
 
 /*
  * Find the width of a type in bytes.
@@ -205,13 +218,14 @@ lwidth(np)
 	struct nl *np;
 {
 	register struct nl *p;
-	long w;
 
 	p = np;
 	if (p == NIL)
 		return (0);
 loop:
 	switch (p->class) {
+		default:
+			panic("wclass");
 		case TYPE:
 			switch (nloff(p)) {
 				case TNIL:
@@ -229,6 +243,9 @@ loop:
 			return ( sizeof ( int * ) );
 		case FILET:
 			return ( sizeof(struct iorec) + lwidth( p -> type ) );
+		case CRANGE:
+			p = p->type;
+			goto loop;
 		case RANGE:
 			if (p->type == nl+TDOUBLE)
 #ifdef DEBUG
@@ -248,8 +265,6 @@ loop:
 		case STR:
 		case RECORD:
 			return ( p->value[NL_OFFS] );
-		default:
-			panic("wclass");
 	}
 }
 
@@ -291,6 +306,8 @@ align( np )
 	}
 alignit:
 	switch ( p -> class ) {
+	    default:
+		    panic( "align" );
 	    case TYPE:
 		    switch ( nloff( p ) ) {
 			case TNIL:
@@ -315,6 +332,7 @@ alignit:
 		    return A_POINT;
 	    case FILET:
 		    return A_FILET;
+	    case CRANGE:
 	    case RANGE:
 		    if ( p -> type == nl+TDOUBLE ) {
 			return A_DOUBLE;
@@ -344,8 +362,6 @@ alignit:
 			 * why don't we use this for the rest of the namelist?
 			 */
 		    return p -> align_info;
-	    default:
-		    panic( "align" );
 	}
     }
 
@@ -398,6 +414,12 @@ long aryconst(np, n)
 		return (NIL);
 	if (p->class != ARRAY)
 		panic("ary");
+	/*
+	 * If it is a conformant array, we cannot find the width from
+	 * the type.
+	 */
+	if (p->chain->class == CRANGE)
+		return (NIL);
 	s = lwidth(p->type);
 	/*
 	 * Arrays of anything but characters are word aligned.
@@ -436,7 +458,7 @@ setran(q)
 
 	p = q;
 	if (p == NIL)
-		return (NIL);
+		return;
 	lb = p->range[0];
 	ub = p->range[1];
 	if (p->class != RANGE && p->class != SCAL)
