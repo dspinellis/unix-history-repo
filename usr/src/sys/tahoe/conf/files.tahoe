@@ -14,6 +14,7 @@ tahoe/trap.c		standard
 tahoe/ufs_machdep.c	standard
 tahoe/vm_machdep.c	standard
 tahoe/udiv.s		standard
+tahoe/urem.s		standard
 tahoealign/align.c	optional align
 tahoealign/exception.c	optional align
 tahoealign/table.c	optional align
