@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)init.c	4.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.15 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -10,32 +10,32 @@ static	char *sccsid = "@(#)init.c	4.14 (Berkeley) %G%";
 #include <errno.h>
 #include <sys/file.h>
 #include <ttyent.h>
+#include <syslog.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
-#define	TTYSIZ	16
+#define	CMDSIZ	70	/* max string length for getty or window command*/
 #define	TABSIZ	100
 #define	ALL	p = &itab[0]; p < &itab[TABSIZ]; p++
 #define	EVER	;;
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
-#define	mask(s)	(1 << ((s)-1))
 
 char	shell[]	= "/bin/sh";
-char	getty[]	 = "/etc/getty";
 char	minus[]	= "-";
 char	runc[]	= "/etc/rc";
 char	utmp[]	= "/etc/utmp";
 char	wtmpf[]	= "/usr/adm/wtmp";
 char	ctty[]	= "/dev/console";
-char	dev[]	= "/dev/";
 
 struct utmp wtmp;
 struct	tab
 {
 	char	line[LINSIZ];
-	char	comn[TTYSIZ];
+	char	comn[CMDSIZ];
 	char	xflag;
 	int	pid;
+	int	wpid;		/* window system pid for SIGHUP	*/
+	char	wcmd[CMDSIZ];	/* command to start window system process */
 	time_t	gettytime;
 	int	gettycnt;
 } itab[TABSIZ];
@@ -51,7 +51,7 @@ int	idle();
 char	*strcpy(), *strcat();
 long	lseek();
 
-struct	sigvec rvec = { reset, mask(SIGHUP), 0 };
+struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
 
 #ifdef vax
 main()
@@ -85,6 +85,7 @@ main(argc, argv)
 		howto = RB_SINGLE;
 	}
 #endif
+	openlog("init", LOG_CONS|LOG_ODELAY, 0);
 	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
 	signal(SIGTSTP, idle);
 	signal(SIGSTOP, SIG_IGN);
@@ -227,7 +228,7 @@ runcom(oldhowto)
 	return (1);
 }
 
-struct	sigvec	mvec = { merge, mask(SIGTERM), 0 };
+struct	sigvec	mvec = { merge, sigmask(SIGTERM), 0 };
 /*
  * Multi-user.  Listen for users leaving, SIGHUP's
  * which indicate ttys has changed, and SIGTERM's which
@@ -243,11 +244,18 @@ multiple()
 		pid = wait((int *)0);
 		if (pid == -1)
 			return;
-		for (ALL)
+		for (ALL) {
+			/* must restart window system BEFORE emulator */
+			if (p->wpid == pid || p->wpid == -1)
+				wstart(p);
 			if (p->pid == pid || p->pid == -1) {
+				/* disown the window system */
+				if (p->wpid)
+					kill(p->wpid, SIGHUP);
 				rmut(p);
 				dfork(p);
 			}
+		}
 	}
 }
 
@@ -258,6 +266,7 @@ multiple()
  */
 #define	FOUND	1
 #define	CHANGE	2
+#define WCHANGE 4
 
 merge()
 {
@@ -270,10 +279,6 @@ merge()
 	while (t = getttyent()) {
 		if ((t->ty_status & TTY_ON) == 0)
 			continue;
-		strcpy(tty, dev);
-		strcat(tty, t->ty_name);
-		if (access(tty, R_OK|W_OK) < 0)
-			continue;
 		for (ALL) {
 			if (SCMPN(p->line, t->ty_name))
 				continue;
@@ -282,14 +287,23 @@ merge()
 				p->xflag |= CHANGE;
 				SCPYN(p->comn, t->ty_getty);
 			}
+			if (SCMPN(p->wcmd, t->ty_window)) {
+				p->xflag |= WCHANGE|CHANGE;
+				SCPYN(p->wcmd, t->ty_window);
+			}
 			goto contin1;
 		}
+
 		for (ALL) {
 			if (p->line[0] != 0)
 				continue;
 			SCPYN(p->line, t->ty_name);
 			p->xflag |= FOUND|CHANGE;
 			SCPYN(p->comn, t->ty_getty);
+			if (strcmp(t->ty_window, "") != 0) {
+				p->xflag |= WCHANGE;
+				SCPYN(p->wcmd, t->ty_window);
+			}
 			goto contin1;
 		}
 	contin1:
@@ -300,6 +314,12 @@ merge()
 		if ((p->xflag&FOUND) == 0) {
 			term(p);
 			p->line[0] = 0;
+			wterm(p);
+		}
+		/* window system should be started first */
+		if (p->xflag&WCHANGE) {
+			wterm(p);
+			wstart(p);
 		}
 		if (p->xflag&CHANGE) {
 			term(p);
@@ -317,6 +337,9 @@ term(p)
 		kill(p->pid, SIGKILL);
 	}
 	p->pid = 0;
+	/* send SIGHUP to get rid of connections */
+	if (p->wpid > 0)
+		kill(p->wpid, SIGHUP);
 }
 
 #include <sys/ioctl.h>
@@ -327,80 +350,27 @@ dfork(p)
 	register pid;
 	time_t t;
 	int dowait = 0;
-	extern char *sys_errlist[];
 
 	time(&t);
 	p->gettycnt++;
 	if ((t - p->gettytime) >= 60) {
 		p->gettytime = t;
 		p->gettycnt = 1;
-	} else {
-		if (p->gettycnt >= 5) {
-			dowait = 1;
-			p->gettytime = t;
-			p->gettycnt = 1;
-		}
+	} else if (p->gettycnt >= 5) {
+		dowait = 1;
+		p->gettytime = t;
+		p->gettycnt = 1;
 	}
 	pid = fork();
 	if (pid == 0) {
-		int oerrno, f;
-		extern int errno;
-
 		signal(SIGTERM, SIG_DFL);
 		signal(SIGHUP, SIG_IGN);
-		strcpy(tty, dev);
-		strncat(tty, p->line, LINSIZ);
 		if (dowait) {
-			f = open("/dev/console", O_WRONLY);
-			write(f, "init: ", 6);
-			write(f, tty, strlen(tty));
-			write(f, ": getty failing, sleeping\n\r", 27);
-			close(f);
+			syslog(LOG_ERR, "'%s %s' failing, sleeping", p->comn, p->line);
+			closelog();
 			sleep(30);
-			if ((f = open("/dev/tty", O_RDWR)) >= 0) {
-				ioctl(f, TIOCNOTTY, 0);
-				close(f);
-			}
 		}
-		chown(tty, 0, 0);
-		chmod(tty, 0622);
-		/*
-		 * Give port selectors an opportunity
-		 * to see DTR transition.
-		 */
-		sleep(1);
-		if (open(tty, O_RDWR) < 0) {
-			int repcnt = 0;
-			do {
-				oerrno = errno;
-				if (repcnt % 10 == 0) {
-					f = open("/dev/console", O_WRONLY);
-					write(f, "init: ", 6);
-					write(f, tty, strlen(tty));
-					write(f, ": ", 2);
-					write(f, sys_errlist[oerrno],
-						strlen(sys_errlist[oerrno]));
-					write(f, "\n", 1);
-					close(f);
-					if ((f = open("/dev/tty", 2)) >= 0) {
-						ioctl(f, TIOCNOTTY, 0);
-						close(f);
-					}
-				}
-				repcnt++;
-				sleep(60);
-			} while (open(tty, O_RDWR) < 0);
-			exit(0);	/* have wrong control tty, start over */
-		}
-		vhangup();
-		signal(SIGHUP, SIG_DFL);
-		(void) open(tty, O_RDWR);
-		close(0);
-		dup(1);
-		dup(0);
-		strncpy(tty, p->comn, sizeof(p->comn));
-		tty[sizeof(p->comn)] = 0;
-		execl(getty, minus, tty, (char *)0);
+		execit(p->comn, p->line);
 		exit(0);
 	}
 	p->pid = pid;
@@ -467,7 +437,7 @@ idle()
 	register pid;
 
 	signal(SIGHUP, idlehup);
-	for (;;) {
+	for (EVER) {
 		if (setjmp(idlebuf))
 			return;
 		pid = wait((int *) 0);
@@ -475,10 +445,89 @@ idle()
 			sigpause(0);
 			continue;
 		}
-		for (ALL)
+		for (ALL) {
+			/* if window system dies, mark it for restart */
+			if (p->wpid == pid)
+				p->wpid = -1;
 			if (p->pid == pid) {
 				rmut(p);
 				p->pid = -1;
 			}
+		}
 	}
+}
+
+wterm(p)
+	register struct tab *p;
+{
+	if (p->wpid != 0) {
+		kill(p->wpid, SIGKILL);
+	}
+	p->wpid = 0;
+}
+
+wstart(p)
+	register struct tab *p;
+{
+	int npid = fork();
+
+	if (npid == 0) {
+/*
+		signal(SIGTERM, SIG_DFL);
+		signal(SIGHUP,  SIG_DFL);
+		signal(SIGALRM, SIG_DFL);
+		signal(SIGTSTP, SIG_IGN);
+*/
+		execit(p->wcmd, p->line);
+		exit(0);
+	}
+	p->wpid = npid;
+}
+
+#define NARGS	20	/* must be at lease 4 */
+#define ARGLEN	512	/* total size for all the argument strings */
+
+execit(s, arg)
+	char *s;
+	char *arg;	/* last argument on line */
+{
+	char *argv[NARGS], args[ARGLEN], *envp[1];
+	register char *sp = s;
+	register char *ap = args;
+	register char c;
+	register int i;
+
+	/*
+	 * First we have to set up the argument vector.
+	 * "prog arg1 arg2" maps to exec("prog", "-", "arg1", "arg2"). 
+	 */
+	for (i = 1; i < NARGS - 2; i++) {
+		argv[i] = ap;
+		for (EVER) {
+			if ((c = *sp++) == '\0' || ap >= &args[ARGLEN-1]) {
+				*ap = '\0';
+				goto done;
+			}
+			if (c == ' ') {
+				*ap++ = '\0';
+				while (*sp == ' ')
+					sp++;
+				if (*sp == '\0')
+					goto done;
+				break;
+			}
+			*ap++ = c;
+		}
+	}
+done:
+	argv[0] = argv[1];
+	argv[1] = "-";
+	argv[i+1] = arg;
+	argv[i+2] = 0;
+	envp[0] = 0;
+	execve(argv[0], &argv[1], envp);
+	/* report failure of exec */
+	syslog(LOG_ERR, "%s: %m", argv[0]);
+	closelog();
+	sleep(10);	/* prevent failures from eating machine */
 }
