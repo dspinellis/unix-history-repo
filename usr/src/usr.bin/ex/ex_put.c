@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	7.2	%G%";
+static char *sccsid = "@(#)ex_put.c	7.3	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -863,7 +863,7 @@ ostart()
 	tty = normf;
 	tty.c_iflag &= ~ICRNL;
 	tty.c_lflag &= ~(ECHO|ICANON);
-	tty.c_oflag &= ~TAB3;
+	tty.c_oflag &= ~(TAB3|ONLCR);
 	tty.c_cc[VMIN] = 1;
 	tty.c_cc[VTIME] = 1;
 	ttcharoff();
