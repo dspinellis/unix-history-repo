@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)order.c	1.18 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.19 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -288,11 +288,17 @@ offstar( p ) register NODE *p; {
 			return;
 		}
 		if( p->in.type == (PTR|CHAR) || p->in.type == (PTR|UCHAR) ) {
-			if( p->in.left->in.op!=REG || tlen(p->in.left)!=SZINT/SZCHAR ) {
+			if( (p->in.left->in.op == ICON ||
+			     p->in.left->in.op == NAME) &&
+			    p->in.right->in.op != REG ) {
+				order(p->in.right, INTAREG|INAREG);
+				return;
+			}
+			if( p->in.left->in.op!=REG ) {
 				order( p->in.left, INTAREG|INAREG );
 				return;
 			}
-			else if( p->in.right->in.op!=REG || tlen(p->in.right)!=SZINT/SZCHAR ) {
+			if( p->in.right->in.op!=REG ) {
 				order(p->in.right, INTAREG|INAREG);
 				return;
 			}
