@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fstab.h	5.6 (Berkeley) %G%
+ *	@(#)fstab.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -22,8 +22,8 @@
  *
  * Used by dump, mount, umount, swapon, fsck, df, ...
  *
- * The fs_spec field is the block special name.  Programs that want to use
- * the character special name must create that name by prepending a 'r'
+ * For ufs fs_spec field is the block special name.  Programs that want to
+ * use the character special name must create that name by prepending a 'r'
  * after the right most slash.  Quota files are always named "quotas", so
  * if type is "rq", then use concatenation of fs_file and "quotas" to locate
  * quota file.
@@ -40,11 +40,11 @@
 struct fstab {
 	char	*fs_spec;		/* block special device name */
 	char	*fs_file;		/* file system path prefix */
-	char	*fs_type;		/* FSTAB_* */
-	int	fs_freq;		/* dump frequency, in days */
-	int	fs_passno;		/* pass number on parallel dump */
 	char	*fs_vfstype;		/* File system type, ufs, nfs */
 	char	*fs_mntops;		/* Mount options ala -o */
+	char	*fs_type;		/* FSTAB_* from fs_mntops */
+	int	fs_freq;		/* dump frequency, in days */
+	int	fs_passno;		/* pass number on parallel dump */
 };
 
 struct	fstab *getfsent();
