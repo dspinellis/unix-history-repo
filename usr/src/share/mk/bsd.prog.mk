@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.18 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.19 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -35,6 +35,7 @@ LIBTERM?=	/usr/lib/libterm.a
 LIBUTIL?=	/usr/lib/libutil.a
 
 .if defined(SHAREDSTRINGS)
+CLEANFILES+=strings
 .c.o:
 	${CC} -E ${CFLAGS} ${.IMPSRC} | xstr -c -
 	@${CC} ${CFLAGS} -c x.c -o ${.TARGET}
