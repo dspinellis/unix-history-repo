@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.7	%G%	*/
+/*	kern_physio.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -435,7 +435,6 @@ loop:
 	dp->b_forw->b_back = bp;
 	dp->b_forw = bp;
 	bp->b_dev = (dev_t)NODEV;
-	bp->b_hlink = -1;
 	return(bp);
 }
 
