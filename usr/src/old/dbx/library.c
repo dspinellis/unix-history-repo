@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -477,7 +477,6 @@ public String sys_siglist[] = {
     "exceeded file size limit"
 };
 public int sys_nsig = sizeof sys_siglist / sizeof sys_siglist[0];
-#endif
 
 public psignal(s, n)
 String s;
@@ -500,6 +499,7 @@ integer n;
     write(2, msg, strlen(msg));
     write(2, "\n", 1);
 }
+#endif
 
 /*
  * Standard error handling routines.
