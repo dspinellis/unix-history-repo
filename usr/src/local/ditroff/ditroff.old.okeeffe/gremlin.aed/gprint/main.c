@@ -13,15 +13,6 @@
 #include <vfont.h>
 
 #define LPR "/usr/ucb/lpr"
-#define VAX
-
-#ifdef VAX
-#define NB	1024		/* Number of blocks in virtual memory */
-#else
-#define NB	88		/* Number of blocks kept in memory */
-#endif
-#define BSIZ	512		/* Size of blocks */
-#define LOGBSIZ	9		/* log base 2 of BSIZ */
 
 extern char *mktemp();
 extern char *malloc();
@@ -39,9 +30,10 @@ extern ELT *DBInit(), *DBRead();
 extern POINT *PTInit(), *PTMakePoint();
 
 int	linethickness = 0;	/* brush styles */
-int	linmod	= SOLID;
+int	linmod = SOLID;
 char	chrtab[][16];
-char	blocks[NB][BSIZ];
+char	*obuf;		/* output buffer DevRange x DevRange/8 */
+int	bufsize;	/* output buffer size */
 int	lastx;
 int	lasty;
 int	angle, startx, starty, endx, endy;
@@ -56,19 +48,11 @@ double	delx;
 double	dely;
 double	del;
 
-#ifdef VAX
-char	dirty[NB];		/* marks if a block has been written into */
-#else
-struct	buf {
-	int	bno;
-	char	*block;
-} bufs[NB];
-#endif
-
-int	fd;			/* file descriptor of current picture */
+FILE	*pfp = stdout;		/* file descriptor of current picture */
 char	picture[] = "/usr/tmp/rastAXXXXXX";
 int	run = 13;		/* index of 'a' in picture[] */
-int	DevRange = 1536;	/* Bits per line for output device */
+int	DevRange = 1536;	/* Bits per line for output array */
+int	DevRange8 = 1536/8;	/* Bytes per line for output array */
 int	BytesPerLine = 264;	/* Bytes per raster line (different from range
 				   due to non-square paper). */
 char	device = 'V';		/* default device */
@@ -98,7 +82,8 @@ char *argv[];
 	extern int cleanup();
 	float mult;
 	int WriteRaster = FALSE;
-	register int i, j, k;
+	register char *cp1, *cp2;
+	register int i, k;
 	int brsh, gfil = 0;
 
 	/* Parse the command line. */
@@ -111,13 +96,15 @@ char *argv[];
 		else switch (*++arg) {
 		case 'W':	/* Print to wide (versatec) device */
 			device = 'W';
-			DevRange = 2047;
+			DevRange = 2048;
+			DevRange8 = 2048/8;
 			BytesPerLine = 880;
 			lpargs[1] = "-Pversatec";
 			break;
 		case 'V':	/* Print to narrow (varian) device */
 			device = 'V';
 			DevRange = 1536;
+			DevRange8 = 1536/8;
 			BytesPerLine = 264;
 			lpargs[1] = "-Pvarian";
 			break;
@@ -233,7 +220,7 @@ char *argv[];
 			}
 			break;
 		default:
-			(void) printf("unknown switch: %c", *arg);
+			fprintf(stderr, "unknown switch: %c", *arg);
 		}
 	}
 
@@ -247,6 +234,10 @@ char *argv[];
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, cleanup);
 	mktemp(picture);
+	if ((obuf = malloc(bufsize = DevRange * DevRange8)) == NULL) {
+		fprintf(stderr, "gprint: ran out of memory for output buffer\n");
+		exit(1);
+	}
 	if (gfil == 0) {	/* no filename, use standard input */
 		file[0] = NULL;
 		gfil++;
@@ -270,20 +261,17 @@ char *argv[];
 		}
 		/* read picture file */
 		PICTURE = DBRead(fp, &Orientation, &pos);
+		fclose(fp);
 		if (DBNullelt(PICTURE))
 			continue;
 
-		if ((fd = creat(picture, 0666)) < 0) {
-			fprintf(stderr, "gprint: can't create %s\n", picture);
-			cleanup();
+		if (!WriteRaster) {
+			umask(0);
+			if ((pfp = fopen(picture, "w")) == NULL) {
+				fprintf(stderr, "gprint: can't create %s\n", picture);
+				cleanup();
+			}
 		}
-#ifndef VAX
-		close(fd);
-		if ((fd = open(picture, 2)) < 0) {
-			fprintf(stderr, "gprint: can't reopen %s\n", picture);
-			cleanup();
-		}
-#endif
 		i = strlen(picture) + 1;
 		if ((arg = malloc(i)) == NULL) {
 			fprintf(stderr, "gprint: ran out of memory\n");
@@ -292,49 +280,22 @@ char *argv[];
 		strcpy(arg, picture);
 		lpargs[lparg++] = arg;
 		picture[run]++;
-		for (i=0; i<NB; i++) {
-#ifdef VAX
-			dirty[i] = FALSE;
-			for (j=0; j<BSIZ; ++j)
-				blocks[i][j] = 0;
-#else
-			bufs[i].bno = -1;
-			bufs[i].block = blocks[i];
-#endif
-		}
-#ifdef NOHOLES
-		/* clear the entire file */
-		for (i=0; i<BSIZ; i++)
-			blocks[0][i] = '\0';
-		for (i=0; i<1024; i++)
-			write(fd, blocks[0], BSIZ);
-#endif
-
+		cp2 = &obuf[bufsize];
+		for (cp1 = obuf; cp1 < cp2; )
+			*cp1++ = 0;
 		e = PICTURE;
 		while (!DBNullelt(e)) {
 			HGPrintElt(e);	/* traverse picture, printing elements */
 			e = DBNextElt(e);
 		}
-
-		for (i=0; i<NB; i++) {
-			if (WriteRaster) {
-				fwrite(blocks[i], sizeof(char), BSIZ, stdout);
-				continue;
-			}
-#ifdef VAX
-			if (dirty[i]) {	/* write out non-zero blocks */
-				zseek(fd, i);
-				write(fd, blocks[i], BSIZ);
-			}
-#else
-			if (bufs[i].bno != -1) {
-				zseek(fd, bufs[i].bno);
-				write(fd, bufs[i].blocks[i], BSIZ);
-			}
-#endif
+		for (cp1 = obuf; cp1 < cp2; cp1 += DevRange8) {
+			fwrite(cp1, sizeof(char), DevRange8, pfp);
+			if (fseek(pfp, (long) BytesPerLine - DevRange8, 1) < 0)
+				for (i = BytesPerLine - DevRange8; i--; )
+					putc('\0', pfp);
 		}
-		fclose(fp);
-		close(fd);
+		if (!WriteRaster)
+			fclose(pfp);
 	}
 	if (!WriteRaster) {
 		lpargs[lparg] = 0;
@@ -344,40 +305,6 @@ char *argv[];
 	}
 	exit(0);
 }
-
-#ifndef VAX
-getblk(b)
-register b;
-{
-	register struct buf *bp1;
-	register char *tp;
-
-	if (b < 0 || b >= NB) {		/* bad block number */
-		fprintf(stderr, "gprint: internal error, b out of range in getblk\n");
-		cleanup();
-	}
-loop:
-	for (bp1 = bufs; bp1 < &bufs[NB]; bp1++) {
-		if (bp1->bno == b || bp1->bno == -1) {
-			tp = bp1->block;
-			while (bp1 > bufs) {
-				bp1->bno = (bp1-1)->bno;
-				bp1->block = (bp1-1)->block;
-				bp1--;
-			}
-			bp1->bno = b;
-			bp1->block = tp;
-			return;
-		}
-	}
-	zseek(fd, bufs[NB-1].bno);
-	write(fd, bufs[NB-1].block, BSIZ);
-	zseek(fd, b);
-	read(fd, bufs[NB-1].block, BSIZ);
-	bufs[NB-1].bno = b;
-	goto loop;
-}
-#endif
 
 cleanup()
 {
@@ -392,28 +319,14 @@ cleanup()
  * Points should be in the range 0 <= x (or y) <= DevRange.
  * The origin is the top left-hand corner with increasing x towards the
  * right and increasing y going down.
+ * The output array is DevRange x DevRange pixels.
  */
 point(x, y)
 register int x, y;
 {
-	register unsigned bno, byte;
+	register unsigned byte;
 
-	byte = y * BytesPerLine + (x >> 3);
-	bno = byte >> LOGBSIZ;
-	byte &= BSIZ - 1;
-	if (bno >= 1024)
-		return;
-#ifndef VAX
-	if (bno != bufs[0].bno)
-		getblk(bno);
-	bufs[0].block[byte] |= 1 << (7 - (x & 07));
-#else
-	blocks[bno][byte] |= 1 << (7 - (x & 07));
-	dirty[bno] = TRUE;
-#endif
-}
-
-zseek(a, b)
-{
-	return(lseek(a, (long)b*BSIZ, 0));
+	byte = y * DevRange8 + (x >> 3);
+	if (byte < bufsize)
+		obuf[byte] |= 1 << (7 - (x & 07));
 }
