@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.36 (Berkeley) %G%
+ *	@(#)mount.h	7.37 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -59,7 +59,24 @@ struct statfs {
 #define	MOUNT_LOFS	6
 #define	MOUNT_FDESC	7
 #define	MOUNT_PORTAL	8
-#define	MOUNT_MAXTYPE	8
+#define MOUNT_NULL	9
+#define MOUNT_UMAP	10
+#define	MOUNT_MAXTYPE	10
+
+#define INITMOUNTNAMES { \
+	"none",		/*  0 MOUNT_NONE */ \
+	"ufs",		/*  1 MOUNT_UFS */ \
+	"nfs",		/*  2 MOUNT_NFS */ \
+	"mfs",		/*  3 MOUNT_MFS */ \
+	"pc",		/*  4 MOUNT_PC */ \
+	"lfs",		/*  5 MOUNT_LFS */ \
+	"lofs",		/*  6 MOUNT_LOFS */ \
+	"fdesc",	/*  7 MOUNT_FDESC */ \
+	"portal",	/*  8 MOUNT_PORTAL */ \
+	"null",		/*  9 MOUNT_NULL */ \
+	"umap",		/* 10 MOUNT_UMAP */ \
+	0,		/* 11 MOUNT_SPARE */ \
+}
 
 /*
  * Structure per mounted file system.  Each mounted file system has an
