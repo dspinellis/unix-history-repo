@@ -1,0 +1,5 @@
+Mcompress	compress.c	/^main(argc, argv)$/
+codetabof	compress.c	/^#define codetabof(i)	codetab[i]$/
+compress	compress.c	/^compress()$/
+htabof	compress.c	/^#define htabof(i)	htab[i]$/
+tab_prefixof	compress.c	/^#define tab_prefixof(i)	codetabof(i)$/

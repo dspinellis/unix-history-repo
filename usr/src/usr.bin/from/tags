@@ -1,0 +1,2 @@
+Mfrom	from.c	/^main(argc, argv)$/
+match	from.c	/^match(line, sender)$/
