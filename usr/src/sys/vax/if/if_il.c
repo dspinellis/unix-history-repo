@@ -1,4 +1,4 @@
-/*	if_il.c	4.13	82/10/31	*/
+/*	if_il.c	4.14	82/11/13	*/
 
 #include "il.h"
 
@@ -33,6 +33,7 @@
 #include "../vaxuba/ubavar.h"
 
 #define	ILMTU	1500
+#define	ILMIN	(60-14)
 
 int	ilprobe(), ilattach(), ilrint(), ilcint();
 struct	uba_device *ilinfo[NIL];
@@ -81,7 +82,7 @@ ilprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
-	ilrint(0); ilcint(0); ilwatch(0);
+	i = 0; ilrint(i); ilcint(i); ilwatch(i);
 #endif
 
 	addr->il_csr = ILC_OFFLINE|IL_CIE;
@@ -122,7 +123,7 @@ ilattach(ui)
 		printf("il%d: reset failed, csr=%b\n", ui->ui_unit,
 			addr->il_csr, IL_BITS);
 	
-	is->is_ubaddr = uballoc(ui->ui_ubanum, &is->is_stats,
+	is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
 		sizeof (struct il_stats), 0);
 	addr->il_bar = is->is_ubaddr & 0xffff;
 	addr->il_bcr = sizeof (struct il_stats);
@@ -199,10 +200,21 @@ ilinit(unit)
 		is->is_if.if_flags &= ~IFF_UP;
 		return;
 	}
-	is->is_ubaddr = uballoc(ui->ui_ubanum, &is->is_stats,
+	is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
 		sizeof (struct il_stats), 0);
 	addr = (struct ildevice *)ui->ui_addr;
 
+	/*
+	 * Turn off source address insertion (it's faster this way),
+	 * and set board online.
+	 */
+	s = splimp();
+	addr->il_csr = ILC_CISA;
+	while ((addr->il_csr & IL_CDONE) == 0)
+		;
+	addr->il_csr = ILC_ONLINE;
+	while ((addr->il_csr & IL_CDONE) == 0)
+		;
 	/*
 	 * Set board online.
 	 * Hang receive buffer and start any pending
@@ -236,7 +248,7 @@ ilinit(unit)
 ilstart(dev)
 	dev_t dev;
 {
-        int unit = ILUNIT(dev), dest, len;
+        int unit = ILUNIT(dev), len;
 	struct uba_device *ui = ilinfo[unit];
 	register struct il_softc *is = &il_softc[unit];
 	register struct ildevice *addr;
@@ -248,13 +260,22 @@ ilstart(dev)
 	if (m == 0) {
 		if ((is->is_flags & ILF_STATPENDING) == 0)
 			return;
-		addr->il_bar = is->is_ubaddr & 0xfff;
+		addr->il_bar = is->is_ubaddr & 0xffff;
 		addr->il_bcr = sizeof (struct il_stats);
 		csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_STAT|IL_RIE|IL_CIE;
 		is->is_flags &= ~ILF_STATPENDING;
 		goto startcmd;
 	}
 	len = if_wubaput(&is->is_ifuba, m);
+	/*
+	 * Ensure minimum packet length.
+	 * This makes the safe assumtion that there are no virtual holes
+	 * after the data.
+	 * For security, it might be wise to zero out the added bytes,
+	 * but we're mainly interested in speed at the moment.
+	 */
+	if (len - sizeof(struct il_xheader) < ILMIN)
+		len = ILMIN + sizeof(struct il_xheader);
 	if (is->is_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(is->is_ifuba.ifu_uba, is->is_ifuba.ifu_w.ifrw_bdp);
 	addr->il_bar = is->is_ifuba.ifu_w.ifrw_info & 0xffff;
@@ -441,7 +462,7 @@ iloutput(ifp, m0, dst)
 	register struct il_softc *is = &il_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct il_xheader *il;
-	register int off, i;
+	register int off;
 
 	switch (dst->sa_family) {
 
@@ -503,15 +524,16 @@ gottype:
 	}
 	il = mtod(m, struct il_xheader *);
 	if ((dest &~ 0xff) == 0)
-		bcopy(ilbroadcastaddr, il->ilx_dhost, 6);
+		bcopy((caddr_t)ilbroadcastaddr, (caddr_t)il->ilx_dhost, 6);
 	else {
 		u_char *to = dest & 0x8000 ? is->is_stats.ils_addr : il_ectop;
 
-		bcopy(to, il->ilx_dhost, 3);
+		bcopy((caddr_t)to, (caddr_t)il->ilx_dhost, 3);
 		il->ilx_dhost[3] = (dest>>8) & 0x7f;
 		il->ilx_dhost[4] = (dest>>16) & 0xff;
 		il->ilx_dhost[5] = (dest>>24) & 0xff;
 	}
+	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)il->ilx_shost, 6);
 	il->ilx_type = type;
 
 	/*

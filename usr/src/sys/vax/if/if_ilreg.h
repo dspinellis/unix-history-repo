@@ -1,4 +1,4 @@
-/*	if_ilreg.h	4.2	82/06/23	*/
+/*	if_ilreg.h	4.3	82/11/13	*/
 
 /*
  * Interlan Ethernet Communications Controller interface
@@ -33,6 +33,11 @@ struct ildevice {
 #define	ILC_OFFLINE	0x0800		/* Go Offline */
 #define	ILC_ONLINE	0x0900		/* Go Online */
 #define	ILC_DIAG	0x0a00		/* Run On-board Diagnostics */
+#define	ILC_ISA		0x0d00		/* Set Insert Source Address Mode */
+#define	ILC_CISA	0x0e00		/* Clear Insert Source Address Mode */
+#define	ILC_DEFPA	0x0f00		/* Set Physical Address to Default */
+#define	ILC_ALLMC	0x1000		/* Set Receive All Multicast Packets */
+#define	ILC_CALLMC	0x1100		/* Clear Receive All Multicast */
 #define	ILC_STAT	0x1800		/* Report and Reset Statistics */
 #define	ILC_DELAYS	0x1900		/* Report Collision Delay Times */
 #define	ILC_RCV		0x2000		/* Supply Receive Buffer */
@@ -40,6 +45,7 @@ struct ildevice {
 #define	ILC_XMIT	0x2900		/* Load Transmit Data and Send */
 #define	ILC_LDGRPS	0x2a00		/* Load Group Addresses */
 #define	ILC_RMGRPS	0x2b00		/* Delete Group Addresses */
+#define	ILC_LDPA	0x2c00		/* Load Physical Address */
 #define	ILC_FLUSH	0x3000		/* Flush Receive BAR/BCR Queue */
 #define	ILC_RESET	0x3f00		/* Reset */
 

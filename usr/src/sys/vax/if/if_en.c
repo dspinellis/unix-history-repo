@@ -1,4 +1,4 @@
-/*	if_en.c	4.71	82/10/31	*/
+/*	if_en.c	4.72	82/11/13	*/
 
 #include "en.h"
 
@@ -455,7 +455,7 @@ enoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
-		if (dest & 0x00ffff00) {
+		if (in_lnaof(*((struct in_addr *)&dest)) >= 0x100) {
 			error = EPERM;		/* ??? */
 			goto bad;
 		}

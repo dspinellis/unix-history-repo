@@ -1,4 +1,4 @@
-/*	if_ec.c	4.28	82/10/31	*/
+/*	if_ec.c	4.29	82/11/13	*/
 
 #include "ec.h"
 
@@ -34,6 +34,7 @@
 #include "../vaxuba/ubavar.h"
 
 #define	ECMTU	1500
+#define	ECMIN	(60-14)
 #define	ECMEM	0000000
 
 int	ecprobe(), ecattach(), ecrint(), ecxint(), eccollide();
@@ -620,8 +621,11 @@ bad:
 }
 
 /*
- * Routine to copy from mbuf chain to transmitter
+ * Routine to copy from mbuf chain to transmit
  * buffer in UNIBUS memory.
+ * If packet size is less than the minimum legal size,
+ * the buffer is expanded.  We probably should zero out the extra
+ * bytes for security, but that would slow things down.
  */
 ecput(ecbuf, m)
 	u_char *ecbuf;
@@ -633,6 +637,8 @@ ecput(ecbuf, m)
 
 	for (off = 2048, mp = m; mp; mp = mp->m_next)
 		off -= mp->m_len;
+	if (2048 - off < ECMIN + sizeof (struct ec_header))
+		off = 2048 - ECMIN - sizeof (struct ec_header);
 	*(u_short *)ecbuf = off;
 	bp = (u_char *)(ecbuf + off);
 	for (mp = m; mp; mp = mp->m_next) {

@@ -1,10 +1,12 @@
-/*	if_il.h	4.2	82/06/23	*/
+/*	if_il.h	4.3	82/11/13	*/
 
 /*
  * Structure of an Ethernet header -- transmit format
+ *	(source address insertion disabled)
  */
 struct	il_xheader {
 	u_char	ilx_dhost[6];		/* Destination Host */
+	u_char	ilx_shost[6];		/* Source Host */
 	u_short	ilx_type;		/* Type of packet */
 };
 
