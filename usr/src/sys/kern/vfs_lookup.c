@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.10 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -104,6 +104,7 @@ namei(ndp)
 		    &ndp->ni_pathlen);
 	if (error) {
 		free(ndp->ni_pnbuf, M_NAMEI);
+		ndp->ni_vp = NULL;
 		return (error);
 	}
 	ndp->ni_ptr = ndp->ni_pnbuf;
