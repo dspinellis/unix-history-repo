@@ -1,4 +1,4 @@
-/*	lpd.c	4.2	83/05/13	*/
+/*	lpd.c	4.3	83/05/26	*/
 /*
  * lpd -- line printer daemon.
  *
@@ -328,6 +328,9 @@ chkhost()
 	register FILE *hostf;
 	register char *cp;
 	char ahost[50];
+
+	if (!strcmp(from, host))
+		return(0);
 
 	hostf = fopen("/etc/hosts.equiv", "r");
 	while (fgets(ahost, sizeof(ahost), hostf)) {
