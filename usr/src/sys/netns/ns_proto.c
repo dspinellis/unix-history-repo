@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_proto.c	6.5 (Berkeley) %G%
+ *	@(#)ns_proto.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,13 +17,12 @@
 /*
  * NS protocol family: IDP, ERR, PE, SPP, ROUTE.
  */
-int	ns_init(), ns_ctlinput();
+int	ns_init();
 int	idp_input(), idp_output(), idp_ctlinput(), idp_usrreq();
-int	idp_raw_usrreq();
-int	idp_init(), idp_slowtimo(), idp_drain(), idp_ctloutput();
+int	idp_raw_usrreq(), idp_ctloutput();
 int	spp_input(), spp_ctlinput();
 int	spp_usrreq(), spp_usrreq_sp(), spp_ctloutput();
-int	spp_init(), spp_fasttimo(), spp_slowtimo(), spp_drain();
+int	spp_init(), spp_fasttimo(), spp_slowtimo();
 extern	int raw_usrreq();
 
 extern	struct domain nsdomain;
