@@ -3,11 +3,10 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.5	(Berkeley)	%G%
+#	@(#)Makefile	4.6	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-LFLGS=	-n		# should be -i on small machines, -n on a vax
 SRCS=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
 OBJS=	done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
 
@@ -18,15 +17,12 @@ advent: a.out
 	echo y | ./a.out
 
 a.out: ${OBJS} ${LIBC}
-	${CC} ${LDFLAGS} ${CFLAGS} ${OBJS}
-
-PROG:	${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS}
+	${CC} -n ${CFLAGS} ${OBJS}
 
 save.o: save.c			# vax C optimizer bug - infinite loop
 	${CC} -c save.c
 
-# always recomple okplay
+# always recompile okplay
 okplay.o: FRC
 
 advsaver: advsaver.s
