@@ -1,5 +1,5 @@
 /*
- * @(#)if_dmv.c	7.1 (Berkeley) %G%
+ * @(#)if_dmv.c	7.2 (Berkeley) %G%
  * DMV-11 Driver
  *
  * Qbus Sync DDCMP interface - DMV operated in full duplex, point to point mode
@@ -85,7 +85,9 @@ struct	uba_driver dmvdriver =
 #define DMV_RPMODD       1
 #define DMV_RPQOVF	 1
 #define DMV_RPCXRL	 1
-#define DMV_RPUNKNOWN	 1
+
+/* number of errors to accept before trying a reset */
+#define DMV_RPUNKNOWN	 10
 
 struct  dmv_command {
 	u_char	qp_mask;	/* Which registers to set up */
@@ -709,54 +711,41 @@ dmvxint(unit)
 				break;
 			case DMV_RTE:
 				ifp->if_ierrors++;
-				log(LOG_WARNING,
-				    "dmvxint: dmv%d receive threshold error\n",
-				    unit
-				);
 				if ((sc->sc_rte++ % DMV_RPRTE) == 0)
-					goto fatal;
+					log(LOG_WARNING,
+				    "dmvxint: dmv%d receive threshold error\n",
+					    unit);
 				break;
 			case DMV_TTE:
 				ifp->if_oerrors++;
-				log(LOG_WARNING,
-				    "dmvxint: dmv%d transmit threshold error\n",
-				    unit
-				);
 				if ((sc->sc_xte++ % DMV_RPTTE) == 0)
-					goto fatal;
+					log(LOG_WARNING,
+				    "dmvxint: dmv%d transmit threshold error\n",
+					    unit);
 				break;
 			case DMV_STE:
-				log(LOG_WARNING,
-				    "dmvxint: dmv%d select threshold error\n",
-				    unit
-				);
 				if ((sc->sc_ste++ % DMV_RPSTE) == 0)
-					goto fatal;
+					log(LOG_WARNING,
+				    "dmvxint: dmv%d select threshold error\n",
+					    unit);
 				break;
 			case DMV_NXM:
-				log(LOG_WARNING,
+				if ((sc->sc_nxm++ % DMV_RPNXM) == 0)
+					log(LOG_WARNING,
 				    "dmvxint: dmv%d nonexistent memory error\n",
-				    unit
-				);
-				if ((sc->sc_nxm++ % DMV_RPNXM) == 0) {
-					goto fatal;
-				}
+					    unit);
 				break;
 			case DMV_MODD:
-				log(LOG_WARNING,
-				    "dmvxint: dmv%d modem disconnected error\n",
-				    unit
-				);
 				if ((sc->sc_modd++ % DMV_RPMODD) == 0)
-					goto fatal;
+					log(LOG_WARNING,
+				    "dmvxint: dmv%d modem disconnected error\n",
+					    unit);
 				break;
 			case DMV_CXRL:
-				log(LOG_WARNING,
-				    "dmvxint: dmv%d carrier loss error\n",
-				    unit
-				);
 				if ((sc->sc_cxrl++ % DMV_RPCXRL) == 0)
-					goto fatal;
+					log(LOG_WARNING,
+				    "dmvxint: dmv%d carrier loss error\n",
+					    unit);
 				break;
 			case DMV_QOVF:
 				log(LOG_WARNING,
