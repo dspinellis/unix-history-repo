@@ -52,6 +52,9 @@ freebsd-scsi:      Mailing list for SCSI developers.
 freebsd-current:   This list is for persons wishing to run FreeBSD-current
                    and carries announcements and discussions on current.
 
+Please see also the FreeBSD mailing list FAQ in:
+/usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.mailing-list.FAQ
+
 0.0.3 What are the various FreeBSD news groups? 
 
 Presently there are no groups dedicated to FreeBSD, you may find the 
