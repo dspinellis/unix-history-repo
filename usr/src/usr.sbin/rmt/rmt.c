@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	4.6 (Berkeley) 85/01/23";
+static char sccsid[] = "@(#)rmt.c	4.7 (Berkeley) 85/03/20";
 #endif
 
 /*
@@ -14,8 +14,9 @@ static char sccsid[] = "@(#)rmt.c	4.6 (Berkeley) 85/01/23";
 
 int	tape = -1;
 
-#define	MAXRECSIZ	(10*1024)	/* small enuf for pdp-11's too */
-char	record[MAXRECSIZ];
+char	*record;
+int	maxrecsize = -1;
+char	*checkbuf();
 
 #define	SSIZE	64
 char	device[SSIZE];
@@ -48,8 +49,6 @@ main(argc, argv)
 			exit(1);
 		(void) setbuf(debug, (char *)0);
 	}
-	n = MAXRECSIZ;
-	(void) setsockopt(0, SOL_SOCKET, SO_RCVBUF, &n, sizeof (n));
 top:
 	errno = 0;
 	rval = 0;
@@ -87,11 +86,12 @@ top:
 		getstring(count);
 		n = atoi(count);
 		DEBUG1("rmtd: W %s\n", count);
+		record = checkbuf(record, n);
 		for (i = 0; i < n; i += cc) {
 			cc = read(0, &record[i], n - i);
 			if (cc <= 0) {
 				DEBUG("rmtd: premature eof\n");
-				exit(1);
+				exit(2);
 			}
 		}
 		rval = write(tape, record, n);
@@ -103,8 +103,7 @@ top:
 		getstring(count);
 		DEBUG1("rmtd: R %s\n", count);
 		n = atoi(count);
-		if (n > sizeof (record))
-			n = sizeof (record);
+		record = checkbuf(record, n);
 		rval = read(tape, record, n);
 		if (rval < 0)
 			goto ioerror;
@@ -139,7 +138,7 @@ top:
 
 	default:
 		DEBUG1("rmtd: garbage command %c\n", c);
-		exit(1);
+		exit(3);
 	}
 respond:
 	DEBUG1("rmtd: A %d\n", rval);
@@ -166,6 +165,26 @@ getstring(bp)
 	cp[i] = '\0';
 }
 
+char *
+checkbuf(record, size)
+	char *record;
+	int size;
+{
+	extern char *malloc();
+
+	if (size <= maxrecsize)
+		return (record);
+	if (record != 0)
+		free(record);
+	record = malloc(size);
+	if (record == 0) {
+		DEBUG("rmtd: cannot allocate buffer space\n");
+		exit(4);
+	}
+	(void) setsockopt(0, SOL_SOCKET, SO_RCVBUF, &size, sizeof (size));
+	return (record);
+}
+
 error(num)
 	int num;
 {
@@ -174,4 +193,3 @@ error(num)
 	(void) sprintf(resp, "E%d\n%s\n", num, sys_errlist[num]);
 	(void) write(1, resp, strlen (resp));
 }
-
