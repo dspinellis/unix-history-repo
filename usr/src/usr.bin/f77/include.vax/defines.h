@@ -3,7 +3,21 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defines.h	5.1 (Berkeley) %G%
+ *	@(#)defines.h	5.2 (Berkeley) %G%
+ */
+
+/*
+ * defines.h
+ *
+ * Global definitions for the first pass of the f77 compiler, Unix 4.3 BSD.
+ *
+ * University of Utah CS Dept modification history:
+ *
+ * $Log:	defines.h,v $
+ * Revision 5.2  85/08/10  05:11:20  donn
+ * Added comment header; added Jerry Berkman's changes to delete INTRCNST
+ * and to ifdef 66 code.
+ * 
  */
 
 #define INTERDATA 2
@@ -184,7 +198,6 @@ typedef long int ftnint;
 #define INTRGEN 4
 #define INTRSPEC 5
 #define INTRBOOL 6
-#define INTRCNST 7
 
 
 /* I/O statement codes */
@@ -235,8 +248,13 @@ typedef long int ftnint;
 #define INT(z) ONEOF(z, MSKINT|MSKCHAR)
 #define ICON(z) mkintcon( (ftnint)(z) )
 
+#ifdef ONLY66
 #define NO66(s)	if(no66flag) err66(s)
 #define NOEXT(s)	if(noextflag) errext(s)
+#else
+#define NO66(s)
+#define NOEXT(s)
+#endif
 
 /* round a up to a multiple of b */
 #define roundup(a,b)    ( b * ( (a+b-1)/b) )
