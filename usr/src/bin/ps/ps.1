@@ -1,443 +1,478 @@
-.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" Copyright (c) 1980, 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ps.1	6.15 (Berkeley) %G%
+.\"     @(#)ps.1	6.16 (Berkeley) %G%
 .\"
-.TH PS 1 "March 10, 1988"
-.UC 4
-.SH NAME
-ps \- process status
-.SH SYNOPSIS
-.nf
-.ft B
-ps [ \-aChjlmrSTuvwx ] [ \-M core ] [ \-N system ]
-.ti +5
-[ \-O|o fmt ] [ \-p pid ] [ \-t tty \] [ \-W swap ]
-ps [ \-L ]
-.ft R
-.fi
-.SH DESCRIPTION
-.I Ps
+.Dd 
+.Dt PS 1
+.Os BSD 4
+.Sh NAME
+.Nm \&ps
+.Nd process status
+.Sh SYNOPSIS
+.Nm \&ps
+.Op Fl aChjlmrSTuvwx
+.Op Fl M Ar core
+.Op Fl N Ar system
+.Oo
+.Fl O Ar fmt | Fl o Ar fmt
+.Oc
+.Op Fl p Ar pid
+.Op Fl t Ar tty
+.Op Fl W Ar swap
+.Nm ps
+.Op Fl L
+.Sh DESCRIPTION
+.Nm \&Ps
 displays a header line followed by lines containing information about your
 processes that have controlling terminals.
-This information is sorted by process ID.
-.PP
+This information is sorted by process
+.Tn ID .
+.Pp
 The information displayed is selected based on a set of keywords (see the
-\-L, \-O and \-o options).
-The default output format includes, for each process, the process' ID,
+.Fl L
+.Fl O
+and
+.Fl o
+options).
+The default output format includes, for each process, the process'
+.Tn ID ,
 controlling terminal, cpu time (including both user and system time),
 state, and associated command.
-.PP
+.Pp
 The options are as follows:
-.TP
-\-a
+.Bl -tag -width indent
+.It Fl a
 Display information about other users' processes as well as your own.
-.TP
-\-C
+.It Fl C
 Change the way the cpu percentage is calculated by using a ``raw''
 cpu calculation that ignores ``resident'' time (this normally has
 no effect).
-.TP
-\-h
+.It Fl h
 Repeat the information header as often as necessary to guarantee one
 header per page of information.
-.TP
-\-j
+.It Fl j
 Print information associated with the following keywords:
 user, pid, ppid, pgid, sess, jobc, state, tt, time and command.
-.TP
-\-L
+.It Fl L
 List the set of available keywords.
-.TP
-\-l
+.It Fl l
 Display information associated with the following keywords:
 uid, pid, ppid, cpu, pri, nice, vsz, rss, wchan, state, tt, time
 and command.
-.TP
-\-M
+.It Fl M
 Extract values associated with the name list from the specified core
-instead of the default ``/dev/kmem''.
-.TP
-\-m
-Sort by memory usage, instead of by process ID.
-.TP
-\-N
+instead of the default
+.Dq Pa /dev/kmem .
+.It Fl m
+Sort by memory usage, instead of by process
+.Tn ID .
+.It Fl N
 Extract the name list from the specified system instead of the default
-``/vmunix''.
-.TP
-\-O
+.Dq Pa /vmunix .
+.It Fl O
 Add the information associated with the space or comma separated list
-of keywords specifed, after the process ID, in the default information
+of keywords specifed, after the process
+.Tn ID ,
+in the default information
 display.
 Keywords may be appended with an equals (``='') sign and a string.
 This causes the printed header to use the specified string instead of
 the standard header.
-.TP
-\-o
+.It Fl o
 Display information associated with the space or comma separated list
 of keywords specifed.
 Keywords may be appended with an equals (``='') sign and a string.
 This causes the printed header to use the specified string instead of
 the standard header.
-.TP
-\-p
-Display information associated with the specified process ID.
-.TP
-\-r
-Sort by current cpu usage, instead of by process ID.
-.TP
-\-S
+.It Fl p
+Display information associated with the specified process
+.Tn ID .
+.It Fl r
+Sort by current cpu usage, instead of by process
+.Tn ID .
+.It Fl S
 Change the way the process time is calculated by summing all exited
 children to their parent process.
-.TP
-\-T
+.It Fl T
 Display information about processes attached to the device associated
 with the standard input.
-.TP
-\-t
+.It Fl t
 Display information about processes attached to the specified terminal
 device.
-.TP
-\-u
+.It Fl u
 Display information associated with the following keywords:
 user, pid, %cpu, %mem, vsz, rss, tt, state, start, time and command.
-The \-u option implies the \-r option.
-.TP
-\-v
+The
+.Fl u
+option implies the
+.Fl r
+option.
+.It Fl v
 Display information associated with the following keywords:
 pid, state, time, sl, re, pagein, vsz, rss, lim, tsiz, trss,
 %cpu, %mem and command.
-The \-v option implies the \-m option.
-.TP
-\-W
+The
+.Fl v
+option implies the
+.Fl m
+option.
+.It Fl W
 Extract swap information from the specified file instead of the
-default ``/dev/swap''.
-.TP
-\-w
+default
+.Dq Pa /dev/swap .
+.It Fl w
 Use 132 columns to display information, instead of the default which
 is your window size.
-If the \-w option is specified more than once,
-.I ps
+If the
+.Fl w
+option is specified more than once,
+.Nm \&ps
 will use as many columns as necessary without regard for your window size.
-.TP
-\-x
+.It Fl x
 Display information about processes without controlling terminals.
-.PP
+.El
+.Pp
 A complete list of the available keywords are listed below.
 Some of these keywords are further specifed as follows:
-.TP
-%cpu
+.Bl -tag -width indent
+.It %cpu
 The cpu utilization of the process; this is a decaying average over up to
 a minute of previous (real) time.
 Since the time base over which this is computed varies (since processes may
-be very young) it is possible for the sum of all %CPU fields to exceed 100%.
-.TP
-%mem
+be very young) it is possible for the sum of all
+.Tn \&%CPU
+fields to exceed 100%.
+.It %mem
 The percentage of real memory used by this process.
-.TP
-flags
+.It flags
 The flags (in hexadecimal) associated with the process as in
-the include file ``sys/proc.h'':
-.sp
-.nf
-.RS
-.ta \w'SNOCLDSTOP  'u +\w'0x0040000  'u
-SLOAD	0x0000001	in core
-SSYS	0x0000002	swapper or pager process
-SLOCK	0x0000004	process being swapped out
-SSWAP	0x0000008	save area flag
-STRC	0x0000010	process is being traced
-SWTED	0x0000020	another tracing flag
-SSINTR	0x0000040	sleep is interruptible
-SPAGE	0x0000080	process in page wait state
-SKEEP	0x0000100	another flag to prevent swap out
-SOMASK	0x0000200	restore old mask after taking signal
-SWEXIT	0x0000400	working on exiting
-SPHYSIO	0x0000800	doing physical i/o
-SVFORK	0x0001000	process resulted from vfork()
-SVFDONE	0x0002000	another vfork flag
-SNOVM	0x0004000	no vm, parent in a vfork()
-SPAGV	0x0008000	init data space on demand, from vnode
-SSEQL	0x0010000	user warned of sequential vm behavior
-SUANOM	0x0020000	user warned of random vm behavior
-STIMO	0x0040000	timing out during sleep
-SNOCLDSTOP	0x0080000	no SIGCHLD when children stop
-SCTTY	0x0100000	has a controlling terminal
-SOWEUPC	0x0200000	owe process an addupc() call at next ast
-SSEL	0x0400000	selecting; wakeup/waiting danger
-SEXEC	0x0800000	process called exec
-SHPUX	0x1000000	HP-UX process (HPUXCOMPAT)
-SULOCK	0x2000000	locked in core after swap error
-SPTECHG	0x4000000	pte's for process have changed
-.fi
-.RE
-.TP
-lim
+the include file
+.Aq Pa sys/proc.h :
+.Bl -column SNOCLDSTOP SNOCLDSTOP
+.It Dv "SLOAD" Ta No "0x0000001	in core"
+.It Dv "SSYS" Ta No "0x0000002	swapper or pager process"
+.It Dv "SLOCK" Ta No "0x0000004	process being swapped out"
+.It Dv "SSWAP" Ta No "0x0000008	save area flag"
+.It Dv "STRC" Ta No "0x0000010	process is being traced"
+.It Dv "SWTED" Ta No "0x0000020	another tracing flag"
+.It Dv "SSINTR" Ta No "0x0000040	sleep is interruptible"
+.It Dv "SPAGE" Ta No "0x0000080	process in page wait state"
+.It Dv "SKEEP" Ta No "0x0000100	another flag to prevent swap out"
+.It Dv "SOMASK" Ta No "0x0000200	restore old mask after taking signal"
+.It Dv "SWEXIT" Ta No "0x0000400	working on exiting"
+.It Dv "SPHYSIO" Ta No "0x0000800	doing physical"
+.Tn I/O
+.It Dv "SVFORK" Ta No "0x0001000	process resulted from"
+.Xr vfork 2
+.It Dv "SVFDONE" Ta No "0x0002000	another"
+.Xr vfork
+flag
+.It Dv "SNOVM" Ta No "0x0004000	no vm, parent in a"
+.Xr vfork
+.It Dv "SPAGV" Ta No "0x0008000	init data space on demand, from vnode"
+.It Dv "SSEQL" Ta No "0x0010000	user warned of sequential vm behavior"
+.It Dv "SUANOM" Ta No "0x0020000	user warned of random vm behavior"
+.It Dv "STIMO" Ta No "0x0040000	timing out during sleep"
+.It Dv "SNOCLDSTOP" Ta No "0x0080000	no"
+.Dv SIGCHLD
+when children stop
+.It Dv "SCTTY" Ta No "0x0100000	has a controlling terminal"
+.It Dv "SOWEUPC" Ta No "0x0200000	owe process an addupc() call at next ast"
+.\" the routine addupc is not documented in the man pages
+.It Dv "SSEL" Ta No "0x0400000	selecting; wakeup/waiting danger"
+.It Dv "SEXEC" Ta No "0x0800000	process called"
+.Xr exec 2
+.It Dv "SHPUX" Ta No "0x1000000	\\*(tNHP-UX\\*(sP process
+.Pq Dv HPUXCOMPAT
+.It Dv "SULOCK" Ta No "0x2000000	locked in core after swap error"
+.It Dv "SPTECHG" Ta No "0x4000000	pte's for process have changed"
+.El
+.It lim
 The soft limit on memory used, specified via a call to
-.IR setrlimit (2).
-.TP
-lstart
+.Xr setrlimit 2 .
+.It lstart
 The exact time the command started, using the ``%C'' format described in
-.IR strftime (3).
-.TP
-nice
+.Xr strftime 3 .
+.It nice
 The process scheduling increment (see
-.IR setpriority (2)).
-.TP
-rss
+.Xr setpriority 2 ) .
+.It rss
 the real memory (resident set) size of the process (in 1024 byte units).
-.TP
-start
+.It start
 The time the command started.
 If the command started less than 24 hours ago, the start time is
-displayed using the ``%l:ps.1p'' format described in 
-.IR strftime (3).
+displayed using the ``%l:ps.1p'' format described in
+.Xr strftime 3 .
 If the command started less than 7 days ago, the start time is
 displayed using the ``%a6.15p'' format.
 Otherwise, the start time is displayed using the ``%e%b%y'' format.
-.TP
-state
-The state is given by a sequence of letters, e.g., ``RWNA''.
+.It state
+The state is given by a sequence of letters, for example,
+.Dq Tn RWNA .
 The first letter indicates the run state of the process:
-.sp
-.PD 0
-.RS
-.IP D
+.Pp
+.Bl -tag -width indent -compact
+.It D
 Marks a process in disk (or other short term, uninterruptable) wait.
-.IP I
+.It I
 Marks a process that is idle (sleeping for longer than about 20 seconds).
-.IP P
+.It P
 Marks a process in page wait.
-.IP R
+.It R
 Marks a runnable process.
-.IP S
+.It S
 Marks a process that is sleeping for less than about 20 seconds.
-.IP T
+.It T
 Marks a stopped process.
-.IP Z
+.It Z
 Marks a dead process (a ``zombie'').
-.sp
-.PP
+.El
+.Pp
 Additional characters after these, if any, indicate additional state
 information:
-.sp
-.IP +
+.Pp
+.Bl -tag -width indent -compact
+.It +
 The process is in the foreground process group of its control terminal.
-.IP <
-The process has raised CPU scheduling priority.
-.IP >
+.It <
+The process has raised
+.Tn CPU
+scheduling priority.
+.It >
 The process has specified a soft limit on memory requirements and is
 currently exceeding that limit; such a process is (necessarily) not
 swapped.
-.IP A
-the process has asked for random page replacement (VA_ANOM, from
-.IR vadvise (2),
-e.g.,
-.IR lisp (1)
+.It A
+the process has asked for random page replacement
+.Pf ( Dv VA_ANOM ,
+from
+.Xr vadvise 2 ,
+for example,
+.Xr lisp 1
 in a garbage collect).
-.IP E
+.It E
 The process is trying to exit.
-.IP L
-The process has pages locked in core (e.g., for raw I/O).
-.IP N
-The process has reduced CPU scheduling priority (see
-.IR setpriority (2)).
-.IP S
-The process has asked for FIFO page replacement (VA_SEQL, from
-.IR vadvise (2),
-e.g., a large image processing program using virtual memory to
+.It L
+The process has pages locked in core (for example, for raw
+.Tn I/O ) .
+.It N
+The process has reduced
+.Tn CPU
+scheduling priority (see
+.Xr setpriority 2 ) .
+.It S
+The process has asked for
+.Tn FIFO
+page replacement
+.Pf ( Dv VA_SEQL ,
+from
+.Xr vadvise 2 ,
+for example, a large image processing program using virtual memory to
 sequentially address voluminous data).
-.IP s
+.It s
 The process is a session leader.
-.IP V
-The process is suspended during a vfork.
-.IP W
+.It V
+The process is suspended during a
+.Xr vfork .
+.It W
 The process is swapped out.
-.IP X
+.It X
 The process is being traced or debugged.
-.RE
-.PD
-.TP
-tt
+.El
+.It tt
 An abbreviation for the pathname of the controlling terminal, if any.
-The abbreviation consists of the two letters following ``/dev/tty'',
+The abbreviation consists of the two letters following
+.Dq Pa /dev/tty ,
 or, for the console, ``co''.
 This is followed by a ``-'' if the process can no longer reach that
 controlling terminal (i.e., it has been revoked).
-.TP
-wchan
-The event on which the process is waiting (an address in the system).
+.It wchan
+The event (an address in the system) on which a process waits.
 When printed numerically, the initial part of the address is
-trimmed off and the result is printed in hex, e.g., 0x80324000 prints
+trimmed off and the result is printed in hex, for example, 0x80324000 prints
 as 324000.
-.PP
+.El
+.Pp
 When printing using the command keyword, a process that has exited and
-has a parent that has not yet waited for the process (i.e., a zombie)
+has a parent that has not yet waited for the process (in other words, a zombie)
 is listed as ``<defunct>'', and a process which is blocked while trying
 to exit is listed as ``<exiting>''.
-.B Ps
+.Nm \&Ps
 makes an educated guess as to the file name and arguments given when the
 process was created by examining memory or the swap area.
 The method is inherently somewhat unreliable and in any event a process
 is entitled to destroy this information, so the names cannot be depended
 on too much.
 The ucomm (accounting) keyword can, however, be depended on.
-.SH "KEYWORDS"
+.Sh KEYWORDS
 The following is a complete list of the available keywords and their
 meanings.
-Several of them have aliases, i.e. keywords that are synonyms.
-.sp
-.PD 0
-.IP %cpu 10
+Several of them have aliases (keywords which are synonyms).
+.Pp
+.Bl -tag -width sigignore -compact
+.It %cpu
 percentage cpu usage (alias pcpu)
-.IP %mem 10
+.It %mem
 percentage memory usage (alias pmem)
-.IP acflag 10
+.It acflag
 accounting flag (alias acflg)
-.IP command 10
+.It command
 command and arguments
-.IP cpu 10
+.It cpu
 short-term cpu usage factor (for scheduling)
-.IP flags 10
+.It flags
 the process flags, in hexadecimal (alias f)
-.IP inblk 10
+.It inblk
 total blocks read (alias inblock)
-.IP jobc 10
+.It jobc
 job control count
-.IP ktrace 10
+.It ktrace
 tracing flags
-.IP ktracep 10
+.It ktracep
 tracing vnode
-.IP lim 10
+.It lim
 memoryuse limit
-.IP logname 10
+.It logname
 login name of user who started the process
-.IP lstart 10
+.It lstart
 time started
-.IP majflt 10
+.It majflt
 total page faults
-.IP minflt 10
+.It minflt
 total page reclaims
-.IP msgrcv 10
+.It msgrcv
 total messages received (reads from pipes/sockets)
-.IP msgsnd 10
+.It msgsnd
 total messages sent (writes on pipes/sockets)
-.IP nice 10
+.It nice
 nice value (alias ni)
-.IP nivcsw 10
+.It nivcsw
 total involuntary context switches
-.IP nsigs 10
+.It nsigs
 total signals taken (alias nsignals)
-.IP nswap 10
+.It nswap
 total swaps in/out
-.IP nvcsw 10
+.It nvcsw
 total voluntary context switches
-.IP nwchan 10
+.It nwchan
 wait channel (as an address)
-.IP oublk 10
+.It oublk
 total blocks written (alias oublock)
-.IP p_ru 10
+.It p_ru
 resource usage (valid only for zombie)
-.IP paddr 10
+.It paddr
 swap address
-.IP pagein 10
+.It pagein
 pageins (same as majflt)
-.IP pgid 10
+.It pgid
 process group number
-.IP pid 10
-process ID
-.IP poip 10
+.It pid
+process
+.Tn ID
+.It poip
 pageouts in progress
-.IP ppid 10
-parent process ID
-.IP pri 10
+.It ppid
+parent process
+.Tn ID
+.It pri
 scheduling priority
-.IP re 10
+.It re
 core residency time (in seconds; 127 = infinity)
-.IP rgid 10
-real group ID
-.IP rlink 10
+.It rgid
+real group
+.Tn ID
+.It rlink
 reverse link on run queue, or 0
-.IP rss 10
+.It rss
 resident set size
-.IP rsz 10
+.It rsz
 resident set size + (text size / text use count) (alias rssize)
-.IP ruid 10
-real user ID
-.IP ruser 10
+.It ruid
+real user
+.Tn ID
+.It ruser
 user name (from ruid)
-.IP sess 10
+.It sess
 session pointer
-.IP sig 10
+.It sig
 pending signals (alias pending)
-.IP sigcatch 10
+.It sigcatch
 caught signals (alias caught)
-.IP sigignore 10
+.It sigignore
 ignored signals (alias ignored)
-.IP sigmask 10
+.It sigmask
 blocked signals (alias blocked)
-.IP sl 10
+.It sl
 sleep time (in seconds; 127 = infinity)
-.IP start 10
+.It start
 time started
-.IP state 10
+.It state
 symbolic process state (alias stat)
-.IP svgid 10
+.It svgid
 saved gid from a setgid executable
-.IP svuid 10
+.It svuid
 saved uid from a setuid executable
-.IP tdev 10
+.It tdev
 control terminal device number
-.IP time 10
+.It time
 accumulated cpu time, user + system (alias cputime)
-.IP tpgid 10
-control terminal process group ID
-.IP trss 10
+.It tpgid
+control terminal process group
+.Tn ID
+.It trss
 text resident set size (in Kbytes)
-.IP tsess 10
+.It tsess
 control terminal session pointer
-.IP tsiz 10
+.It tsiz
 text size (in Kbytes)
-.IP tt 10
+.It tt
 control terminal name (two letter abbreviation)
-.IP tty 10
+.It tty
 full name of control terminal
-.IP uprocp 10
+.It uprocp
 process pointer
-.IP ucomm 10
+.It ucomm
 name to be used for accounting
-.IP uid 10
-effective user ID
-.IP upr 10
+.It uid
+effective user
+.Tn ID
+.It upr
 scheduling priority on return from system call (alias usrpri)
-.IP user 10
+.It user
 user name (from uid)
-.IP vsz 10
+.It vsz
 virtual size in Kbytes (alias vsize)
-.IP wchan 10
+.It wchan
 wait channel (as a symbolic name)
-.IP xstat 10
+.It xstat
 exit or stop status (valid only for stopped or zombie process)
-.PD
-.SH FILES
-.ta \w'/var/run/kvm_vmunix.db  'u
-/dev	special files and device names
-.br
-/dev/drum	default swap device
-.br
-/dev/kmem	default kernel memory
-.br
-/var/run/dev.db	/dev name database
-.br
-/var/run/kvm_vmunix.db	system namelist database
-.br
-/vmunix	default system namelist
-.SH "SEE ALSO"
-kill(1), w(1), kvm(3), strftime(3), pstat(8)
-.SH BUGS
-Things can change while
-.I ps
-is running; the picture it gives is only a fairly close
-approximation to reality.
+.El
+.Sh FILES
+.Bl -tag -width /var/run/kvm_vmunix.db -compact
+.It Pa /dev
+special files and device names
+.It Pa /dev/drum
+default swap device
+.It Pa /dev/kmem
+default kernel memory
+.It Pa /var/run/dev.db
+/dev name database
+.It Pa /var/run/kvm_vmunix.db
+system namelist database
+.It Pa /vmunix
+default system namelist
+.El
+.Sh SEE ALSO
+.Xr kill 1 ,
+.Xr w 1 ,
+.Xr kvm 3 ,
+.Xr strftime 3 ,
+.Xr pstat 8
+.Sh BUGS
+Since
+.Nm \&ps
+cannot run faster than the system and is run as any other scheduled
+process, the information it displays can never be exact.
