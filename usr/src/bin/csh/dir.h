@@ -1,4 +1,4 @@
-/* dir.h 4.1 %G% */
+/* @(#)dir.h	4.2 (Berkeley) %G% */
 
 /*
  * Structure for entries in directory stack.

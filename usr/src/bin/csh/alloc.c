@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)alloc.c 4.3 (Berkeley from Caltech) %G%";
+static	char *sccsid = "@(#)alloc.c 4.4 (Berkeley from Caltech) %G%";
 #endif
 
 /*
@@ -60,13 +60,11 @@ union	overhead {
 static	union overhead *nextf[NBUCKETS];
 extern	char *sbrk();
 
-#ifdef debug
 /*
  * nmalloc[i] is the difference between the number of mallocs and frees
  * for a given block size.
  */
 static	u_int nmalloc[NBUCKETS];
-#endif
 
 #ifdef debug
 #define	ASSERT(p)   if (!(p)) botch("p"); else
@@ -113,9 +111,7 @@ malloc(nbytes)
   	nextf[bucket] = nextf[bucket]->ov_next;
 	p->ov_magic = MAGIC;
 	p->ov_index= bucket;
-#ifdef debug
   	nmalloc[bucket]++;
-#endif
 #ifdef RCHECK
 	/*
 	 * Record allocated size of block and
@@ -150,7 +146,7 @@ morecore(bucket)
 	 */
   	op = (union overhead *)sbrk(0);
   	if ((int)op & 0x3ff)
-  		sbrk(1024 - ((int)op & 0x3ff));
+  		(void) sbrk(1024 - ((int)op & 0x3ff));
 	/* take 2k unless the block is bigger than that */
   	rnu = (bucket <= 8) ? 11 : bucket + 3;
   	nblks = 1 << (rnu - (bucket + 3));  /* how many blocks to get */
@@ -210,9 +206,7 @@ free(cp)
   	size = op->ov_index;
 	op->ov_next = nextf[size];
   	nextf[size] = op;
-#ifdef debug
   	nmalloc[size]--;
-#endif
 }
 
 /*
@@ -284,7 +278,6 @@ int srchlen;
 	return (-1);
 }
 
-#ifdef debug
 /*
  * mstats - print out statistics about malloc
  * 
@@ -293,32 +286,31 @@ int srchlen;
  * frees for each size category.
  */
 showall(s)
-	char **s;
+char **s;
 {
-  	register int i, j;
-  	register union overhead *p;
-  	int totfree = 0,
-  	totused = 0;
+	register int i, j;
+	register union overhead *p;
+	int totfree = 0,
+	totused = 0;
 
 	if (s[1])
-	    printf("Memory allocation statistics %s\nfree:\t", s[1]);
-  	for (i = 0; i < NBUCKETS; i++) {
-  		for (j = 0, p = nextf[i]; p; p = p->ov_next, j++)
-  			;
-	
-  		if (s[1])
-		    printf(" %d", j);
-  		totfree += j * (1 << (i + 3));
-  	}
+		printf("Memory allocation statistics %s\nfree:", s[1]);
+	for (i = 0; i < NBUCKETS; i++) {
+		for (j = 0, p = nextf[i]; p; p = p->ov_next, j++)
+			;
+
+		if (s[1])
+			printf(" %d", j);
+		totfree += j * (1 << (i + 3));
+	}
 	if (s[1])
-  	    printf("\nused:\t");
-  	for (i = 0; i < NBUCKETS; i++) {
-  		if (s[1])
-		    printf(" %d", nmalloc[i]);
-  		totused += nmalloc[i] * (1 << (i + 3));
-  	}
+		printf("\nused:");
+	for (i = 0; i < NBUCKETS; i++) {
+		if (s[1])
+			printf(" %d", nmalloc[i]);
+		totused += nmalloc[i] * (1 << (i + 3));
+	}
 	if (s[1])
-	    printf("\n\t");
-  	printf("Total in use: %d, total free: %d\n", totused, totfree);
+		printf("\n");
+	printf("Total in use: %d, total free: %d\n", totused, totfree);
 }
-#endif

@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)hist.c 4.8 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)hist.c	4.9 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
 
@@ -10,29 +12,30 @@ savehist(sp)
 	struct wordent *sp;
 {
 	register struct Hist *hp, *np;
-	int histlen;
-	register char *cp;
+	register int histlen = 0;
+	char *cp;
 
-	cp = value("history");
-	if (*cp == 0)
-		histlen = 0;
-	else {
-		while (*cp && digit(*cp))
-			cp++;
-		/* avoid a looping snafu */
-		if (*cp)
-			set("history", "10");
-		histlen = getn(value("history"));
-	}
 	/* throw away null lines */
 	if (sp->next->word[0] == '\n')
 		return;
+	cp = value("history");
+	if (*cp) {
+		register char *p = cp;
+
+		while (*p) {
+			if (!digit(*p)) {
+				histlen = 0;
+				break;
+			}
+			histlen = histlen * 10 + *p++ - '0';
+		}
+	}
 	for (hp = &Histlist; np = hp->Hnext;)
 		if (eventno - np->Href >= histlen || histlen == 0)
 			hp->Hnext = np->Hnext, hfree(np);
 		else
 			hp = np;
-	enthist(++eventno, sp, 1);
+	(void) enthist(++eventno, sp, 1);
 }
 
 struct Hist *
@@ -43,7 +46,7 @@ enthist(event, lp, docopy)
 {
 	register struct Hist *np;
 
-	np = (struct Hist *) calloc(1, sizeof *np);
+	np = (struct Hist *) xalloc(sizeof *np);
 	np->Hnum = np->Href = event;
 	if (docopy)
 		copylex(&np->Hlex, lp);
@@ -73,7 +76,7 @@ dohist(vp)
 	if (getn(value("history")) == 0)
 		return;
 	if (setintr)
-		sigsetmask(sigblock(0) & ~sigmask(SIGINT));
+		(void) sigsetmask(sigblock(0) & ~sigmask(SIGINT));
 	vp++;
 	while (*vp && *vp[0] == '-') {
 		if (*vp && eq(*vp, "-h"))

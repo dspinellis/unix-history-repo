@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)dir.c 4.2 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)dir.c	4.3 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -28,7 +30,7 @@ dinit(hp)
 	else {
 		cp = getwd(path);
 		if (cp == NULL) {
-			write(2, path, strlen(path));
+			(void) write(2, path, strlen(path));
 			exit(1);
 		}
 	}
@@ -138,9 +140,9 @@ dfollow(cp)
 		for (cdp = c->vec; *cdp; cdp++) {
 			char buf[BUFSIZ];
 
-			strcpy(buf, *cdp);
-			strcat(buf, "/");
-			strcat(buf, cp);
+			(void) strcpy(buf, *cdp);
+			(void) strcat(buf, "/");
+			(void) strcat(buf, cp);
 			if (chdir(buf) >= 0) {
 				printd = 1;
 				xfree(cp);
@@ -165,10 +167,10 @@ dfollow(cp)
 
 gotcha:
 	if (*cp != '/') {
-		char *dp = calloc(strlen(cp) + strlen(dcwd->di_name) + 2, 1);
-		strcpy(dp, dcwd->di_name);
-		strcat(dp, "/");
-		strcat(dp, cp);
+		char *dp = calloc((unsigned) (strlen(cp) + strlen(dcwd->di_name) + 2), 1);
+		(void) strcpy(dp, dcwd->di_name);
+		(void) strcat(dp, "/");
+		(void) strcat(dp, cp);
 		xfree(cp);
 		cp = dp;
 	}
@@ -309,7 +311,7 @@ dcanon(cp)
 		while(*++p == '/')	/* flush extra slashes */
 			;
 		if (p != ++sp)
-			strcpy(sp, p);
+			(void) strcpy(sp, p);
 		p = sp;			/* save start of component */
 		slash = 0;
 		while(*++p)		/* find next slash or end of path */
@@ -325,7 +327,7 @@ dcanon(cp)
 				*sp = '\0';
 		else if (eq(".", sp)) {
 			if (slash) {
-				strcpy(sp, ++p);
+				(void) strcpy(sp, ++p);
 				p = --sp;
 			} else if (--sp != cp)
 				*sp = '\0';
@@ -334,7 +336,7 @@ dcanon(cp)
 				while (*--sp != '/')
 					;
 			if (slash) {
-				strcpy(++sp, ++p);
+				(void) strcpy(++sp, ++p);
 				p = --sp;
 			} else if (cp == sp)
 				*++sp = '\0';

@@ -1,8 +1,13 @@
-/* csh.h 4.11 84/08/31 */
+/* @(#)csh.h	4.12 (Berkeley) %G% */
 
-#include "sh.local.h"
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/signal.h>
+#include <errno.h>
+#include <setjmp.h>
+#include "sh.local.h"
 
 /*
  * C shell
@@ -13,15 +18,8 @@
  * Jim Kulp, IIASA, Laxenburg Austria
  * April, 1980
  */
-#include <sys/param.h>
-#include <sys/stat.h>
 
 #define	isdir(d)	((d.st_mode & S_IFMT) == S_IFDIR)
-
-#include <errno.h>
-#include <setjmp.h>
-#include <signal.h>
-#include <sys/times.h>
 
 typedef	char	bool;
 
@@ -31,7 +29,6 @@ typedef	char	bool;
  * Global flags
  */
 bool	chkstop;		/* Warned of stopped jobs... allow exit */
-bool	didcch;			/* Have closed unused fd's for child */
 bool	didfds;			/* Have setup i/o fd's for child */
 bool	doneinp;		/* EOF indicator after reset from readc */
 bool	exiterr;		/* Exit if error or non-zero exit status */
@@ -46,6 +43,10 @@ bool	noexec;			/* Don't execute, just syntax check */
 bool	pjobs;			/* want to print jobs if interrupted */
 bool	setintr;		/* Set interrupts on/off -> Wait intr... */
 bool	timflg;			/* Time the next waited for command */
+bool	havhash;		/* path hashing is available */
+#ifdef FILEC
+bool	filec;			/* doing filename expansion */
+#endif
 
 /*
  * Global i/o info
@@ -71,7 +72,6 @@ int	tpgrp;			/* Terminal process group */
 /* If tpgrp is -1, leave tty alone! */
 int	opgrp;			/* Initial pgrp and tty pgrp */
 int	oldisc;			/* Initial line discipline or -1 */
-struct	tms shtimes;		/* shell and child times for process timing */
 
 /*
  * These are declared here because they want to be
@@ -83,13 +83,13 @@ struct	biltins {
 	int	(*bfunct)();
 	short	minargs, maxargs;
 } bfunc[];
-
-#define	INF	1000
+extern int nbfunc;
 
 struct srch {
 	char	*s_name;
 	short	s_value;
 } srchn[];
+extern int nsrchn;
 
 /*
  * To be able to redirect i/o for builtins easily, the shell moves the i/o
@@ -114,8 +114,8 @@ short	OLDSTD;			/* Old standard input (def for cmds) */
 
 jmp_buf	reslab;
 
-#define	setexit()	setjmp(reslab)
-#define	reset()		longjmp(reslab)
+#define	setexit()	((void) setjmp(reslab))
+#define	reset()		longjmp(reslab, 0)
 	/* Should use structure assignment here */
 #define	getexit(a)	copy((char *)(a), (char *)reslab, sizeof reslab)
 #define	resexit(a)	copy((char *)reslab, ((char *)(a)), sizeof reslab)
@@ -165,7 +165,6 @@ off_t	btell();
 off_t	lineloc;
 
 #ifdef	TELL
-off_t	tell();
 bool	cantell;			/* Is current source tellable ? */
 #endif
 
@@ -293,13 +292,21 @@ struct	whyle {
 /*
  * Variable structure
  *
- * Lists of aliases and variables are sorted alphabetically by name
+ * Aliases and variables are stored in AVL balanced binary trees.
  */
 struct	varent {
 	char	**vec;		/* Array of words which is the value */
-	char	*name;		/* Name of variable/alias */
-	struct	varent *link;
+	char	*v_name;	/* Name of variable/alias */
+	struct	varent *v_link[3];	/* The links, see below */
+	int	v_bal;		/* Balance factor */
 } shvhed, aliases;
+#define v_left		v_link[0]
+#define v_right		v_link[1]
+#define v_parent	v_link[2]
+
+struct varent *adrof1();
+#define adrof(v)	adrof1(v, &shvhed)
+#define value(v)	value1(v, &shvhed)
 
 /*
  * The following are for interfacing redo substitution in
@@ -361,13 +368,25 @@ int	lastev;				/* Last event reference (default) */
 char	HIST;				/* history invocation character */
 char	HISTSUB;			/* auto-substitute character */
 
+/*
+ * In lines for frequently called functions
+ */
+#define XFREE(cp) { \
+	extern char end[]; \
+	char stack; \
+	if ((cp) >= end && (cp) < &stack) \
+		free(cp); \
+}
+char	*alloctmp;
+#define xalloc(i) ((alloctmp = malloc(i)) ? alloctmp : (char *)nomem(i))
+
 char	*Dfix1();
-struct	varent *adrof(), *adrof1();
 char	**blkcat();
 char	**blkcpy();
 char	**blkend();
 char	**blkspl();
 char	*calloc();
+char	*malloc();
 char	*cname();
 char	**copyblk();
 char	**dobackp();
@@ -388,14 +407,17 @@ struct	passwd *getpwnam();
 struct	wordent *gethent();
 struct	wordent *getsub();
 char	*getwd();
-char	*globone();
-struct	biltins *isbfunc();
 char	**glob();
+char	*globone();
+char	*index();
+struct	biltins *isbfunc();
+off_t	lseek();
 char	*operate();
 int	phup();
 int	pintr();
 int	pchild();
 char	*putn();
+char	*rindex();
 char	**saveblk();
 char	*savestr();
 char	*strcat();
@@ -412,9 +434,7 @@ struct	command *syn1a();
 struct	command *syn1b();
 struct	command *syn2();
 struct	command *syn3();
-int	tglob();
-int	trim();
-char	*value(), *value1();
+char	*value1();
 char	*xhome();
 char	*xname();
 char	*xset();
@@ -425,7 +445,7 @@ char	*xset();
  * setname is a macro to save space (see sh.err.c)
  */
 char	*bname;
-#define	setname(a)	bname = (a);
+#define	setname(a)	(bname = (a))
 
 #ifdef VFORK
 char	*Vsav;

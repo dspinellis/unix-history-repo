@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)sem.c 4.4 %G%";
+#ifndef lint
+static	char *sccsid = "@(#)sem.c	4.5 (Berkeley) %G%";
+#endif
 
 #include "sh.h"
 #include "sh.proc.h"
@@ -26,7 +28,7 @@ execute(t, wanttty, pipein, pipeout)
 
 	case TCOM:
 		if ((t->t_dcom[0][0] & (QUOTE|TRIM)) == QUOTE)
-			strcpy(t->t_dcom[0], t->t_dcom[0] + 1);
+			(void) strcpy(t->t_dcom[0], t->t_dcom[0] + 1);
 		if ((t->t_dflg & FREDO) == 0)
 			Dfix(t);		/* $ " ' \ */
 		if (t->t_dcom[0] == 0)
@@ -42,10 +44,10 @@ execute(t, wanttty, pipein, pipeout)
 		 * If noexec then this is all we do.
 		 */
 		if (t->t_dflg & FHERE) {
-			close(0);
+			(void) close(0);
 			heredoc(t->t_dlef);
 			if (noexec)
-				close(0);
+				(void) close(0);
 		}
 		if (noexec)
 			break;
@@ -111,34 +113,34 @@ execute(t, wanttty, pipein, pipeout)
 #ifdef VFORK
 		    else {
 			int vffree();
-			int ochild, osetintr, ohaderr, odidfds, odidcch;
+			int ochild, osetintr, ohaderr, odidfds;
 			int oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
 			int omask;
 
 			omask = sigblock(sigmask(SIGCHLD));
 			ochild = child; osetintr = setintr;
-			ohaderr = haderr; odidfds = didfds; odidcch = didcch;
+			ohaderr = haderr; odidfds = didfds;
 			oSHIN = SHIN; oSHOUT = SHOUT;
 			oSHDIAG = SHDIAG; oOLDSTD = OLDSTD; otpgrp = tpgrp;
 			Vsav = Vdp = 0; Vav = 0;
 			pid = vfork();
 			if (pid < 0) {
-				sigsetmask(omask);
+				(void) sigsetmask(omask);
 				error("No more processes");
 			}
 			forked++;
 			if (pid) {
 				child = ochild; setintr = osetintr;
 				haderr = ohaderr; didfds = odidfds;
-				didcch = odidcch; SHIN = oSHIN;
+				SHIN = oSHIN;
 				SHOUT = oSHOUT; SHDIAG = oSHDIAG;
 				OLDSTD = oOLDSTD; tpgrp = otpgrp;
 				xfree(Vsav); Vsav = 0;
 				xfree(Vdp); Vdp = 0;
-				xfree(Vav); Vav = 0;
+				xfree((char *)Vav); Vav = 0;
 				/* this is from pfork() */
 				palloc(pid, t);
-				sigsetmask(omask);
+				(void) sigsetmask(omask);
 			} else {
 				/* this is from pfork() */
 				int pgrp;
@@ -153,32 +155,34 @@ execute(t, wanttty, pipein, pipeout)
 				if (setintr) {
 					setintr = 0;
 #ifdef notdef
-					signal(SIGCHLD, SIG_DFL);
+					(void) signal(SIGCHLD, SIG_DFL);
 #endif
-					signal(SIGINT, ignint ?
+					(void) signal(SIGINT, ignint ?
 						SIG_IGN : vffree);
-					signal(SIGQUIT, ignint ?
+					(void) signal(SIGQUIT, ignint ?
 						SIG_IGN : SIG_DFL);
 					if (wanttty >= 0) {
-						signal(SIGTSTP, SIG_DFL);
-						signal(SIGTTIN, SIG_DFL);
-						signal(SIGTTOU, SIG_DFL);
+						(void) signal(SIGTSTP, SIG_DFL);
+						(void) signal(SIGTTIN, SIG_DFL);
+						(void) signal(SIGTTOU, SIG_DFL);
 					}
-					signal(SIGTERM, parterm);
+					(void) signal(SIGTERM, parterm);
 				} else if (tpgrp == -1 && (t->t_dflg&FINT)) {
-					signal(SIGINT, SIG_IGN);
-					signal(SIGQUIT, SIG_IGN);
+					(void) signal(SIGINT, SIG_IGN);
+					(void) signal(SIGQUIT, SIG_IGN);
 				}
 				if (wanttty > 0)
-					ioctl(FSHTTY, TIOCSPGRP, &pgrp);
+					(void) ioctl(FSHTTY, TIOCSPGRP,
+						(char *)&pgrp);
 				if (wanttty >= 0 && tpgrp >= 0)
-					setpgrp(0, pgrp);
+					(void) setpgrp(0, pgrp);
 				if (tpgrp > 0)
 					tpgrp = 0;
 				if (t->t_dflg & FNOHUP)
-					signal(SIGHUP, SIG_IGN);
+					(void) signal(SIGHUP, SIG_IGN);
 				if (t->t_dflg & FNICE)
-					setpriority(PRIO_PROCESS, 0, t->t_nice);
+					(void) setpriority(PRIO_PROCESS,
+						0, t->t_nice);
 			}
 
 		    }
@@ -191,15 +195,19 @@ execute(t, wanttty, pipein, pipeout)
 			 * wait for the whole job anyway, but this test
 			 * doesn't really express our intentions.
 			 */
-			if (didfds==0 && t->t_dflg&FPIN)
-				close(pipein[0]), close(pipein[1]);
+			if (didfds==0 && t->t_dflg&FPIN) {
+				(void) close(pipein[0]);
+				(void) close(pipein[1]);
+			}
 			if ((t->t_dflg & (FPOU|FAND)) == 0)
 				pwait();
 			break;
 		}
 		doio(t, pipein, pipeout);
-		if (t->t_dflg & FPOU)
-			close(pipeout[0]), close(pipeout[1]);
+		if (t->t_dflg & FPOU) {
+			(void) close(pipeout[0]);
+			(void) close(pipeout[1]);
+		}
 
 		/*
 		 * Perform a builtin function.
@@ -221,8 +229,9 @@ execute(t, wanttty, pipein, pipeout)
 		OLDSTD = dcopy(0, FOLDSTD);
 		SHOUT = dcopy(1, FSHOUT);
 		SHDIAG = dcopy(2, FSHDIAG);
-		close(SHIN), SHIN = -1;
-		didcch = 0, didfds = 0;
+		(void) close(SHIN);
+		SHIN = -1;
+		didfds = 0;
 		wanttty = -1;
 		t->t_dspr->t_dflg |= t->t_dflg & FINT;
 		execute(t->t_dspr, wanttty);
@@ -288,9 +297,9 @@ vffree()
 	register char **v;
 
 	if (v = gargv)
-		gargv = 0, xfree(gargv);
+		gargv = 0, xfree((char *)v);
 	if (v = pargv)
-		pargv = 0, xfree(pargv);
+		pargv = 0, xfree((char *)v);
 	_exit(1);
 }
 #endif
@@ -309,25 +318,28 @@ doio(t, pipein, pipeout)
 	if (didfds || (flags & FREDO))
 		return;
 	if ((flags & FHERE) == 0) {	/* FHERE already done */
-		close(0);
+		(void) close(0);
 		if (cp = t->t_dlef) {
 			cp = globone(Dfix1(cp));
 			xfree(cp);
 			if (open(cp, 0) < 0)
 				Perror(cp);
-		} else if (flags & FPIN)
-			dup(pipein[0]), close(pipein[0]), close(pipein[1]);
-		else if ((flags & FINT) && tpgrp == -1)
-			close(0), open("/dev/null", 0);
-		else
-			dup(OLDSTD);
+		} else if (flags & FPIN) {
+			(void) dup(pipein[0]);
+			(void) close(pipein[0]);
+			(void) close(pipein[1]);
+		} else if ((flags & FINT) && tpgrp == -1) {
+			(void) close(0);
+			(void) open("/dev/null", 0);
+		} else
+			(void) ioctl(dup(OLDSTD), FIONCLEX, (char *)0);
 	}
-	close(1);
+	(void) close(1);
 	if (cp = t->t_drit) {
 		cp = globone(Dfix1(cp));
 		xfree(cp);
 		if ((flags & FCAT) && open(cp, 1) >= 0)
-			lseek(1, 0l, 2);
+			(void) lseek(1, (off_t)0, 2);
 		else {
 			if (!(flags & FANY) && adrof("noclobber")) {
 				if (flags & FCAT)
@@ -338,12 +350,15 @@ doio(t, pipein, pipeout)
 				Perror(cp);
 		}
 	} else if (flags & FPOU)
-		dup(pipeout[1]);
+		(void) dup(pipeout[1]);
 	else
-		dup(SHOUT);
+		(void) ioctl(dup(SHOUT), FIONCLEX, (char *)0);
 
-	close(2);
-	dup((flags & FDIAG) ? 1 : SHDIAG);
+	(void) close(2);
+	if (flags & FDIAG)
+		(void) dup(1);
+	else
+		(void) ioctl(dup(SHDIAG), FIONCLEX, (char *)0);
 	didfds = 1;
 }
 
