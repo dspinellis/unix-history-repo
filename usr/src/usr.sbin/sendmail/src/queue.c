@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.15 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.16 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.15 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.16 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -784,7 +784,7 @@ printqueue()
 	if (nrequests > WLSIZE)
 		printf(", only %d printed", WLSIZE);
 	if (Verbose)
-		printf(")\n--QID-- --Size-- -Priority- -----Q-Time----- --------Sender/Recipient--------\n");
+		printf(")\n--QID-- --Size-- -Priority- ---Q-Time--- -----------Sender/Recipient-----------\n");
 	else
 		printf(")\n--QID-- --Size-- -----Q-Time----- ------------Sender/Recipient------------\n");
 	for (w = WorkQ; w != NULL; w = w->w_next)
