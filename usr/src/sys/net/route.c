@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.24 (Berkeley) %G%
+ *	@(#)route.c	7.25 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -387,6 +387,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 		if (rn == 0) {
 			if (rt->rt_gwroute)
 				rtfree(rt->rt_gwroute);
+			Free(rt_key(rt));
 			Free(rt);
 			senderr(EEXIST);
 		}
