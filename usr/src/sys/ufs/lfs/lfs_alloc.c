@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.18 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.19 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -43,8 +43,7 @@ extern unsigned char	*fragtbl[];
  *      available block is located.
  */
 struct buf *
-alloc(dev, ip, bpref, size)
-	dev_t dev;
+alloc(ip, bpref, size)
 	register struct inode *ip;
 	daddr_t bpref;
 	int size;
@@ -54,7 +53,7 @@ alloc(dev, ip, bpref, size)
 	register struct buf *bp;
 	int cg;
 	
-	fs = getfs(dev);
+	fs = ip->i_fs;
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0)
 		panic("alloc: bad size");
 	if (size == fs->fs_bsize && fs->fs_cstotal.cs_nbfree == 0)
@@ -69,10 +68,10 @@ alloc(dev, ip, bpref, size)
 		cg = itog(fs, ip->i_number);
 	else
 		cg = dtog(fs, bpref);
-	bno = (daddr_t)hashalloc(dev, fs, cg, (long)bpref, size, alloccg);
+	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, size, alloccg);
 	if (bno == 0)
 		goto nospace;
-	bp = getblk(dev, fsbtodb(fs, bno), size);
+	bp = getblk(ip->i_dev, fsbtodb(fs, bno), size);
 	clrbuf(bp);
 	return (bp);
 nospace:
@@ -91,8 +90,8 @@ nospace:
  * invoked to get an appropriate block.
  */
 struct buf *
-realloccg(dev, bprev, bpref, osize, nsize)
-	dev_t dev;
+realloccg(ip, bprev, bpref, osize, nsize)
+	register struct inode *ip;
 	daddr_t bprev, bpref;
 	int osize, nsize;
 {
@@ -102,7 +101,7 @@ realloccg(dev, bprev, bpref, osize, nsize)
 	caddr_t cp;
 	int cg;
 	
-	fs = getfs(dev);
+	fs = ip->i_fs;
 	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
 	    (unsigned)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0)
 		panic("realloccg: bad size");
@@ -114,9 +113,9 @@ realloccg(dev, bprev, bpref, osize, nsize)
 		cg = dtog(fs, bprev);
 	else
 		panic("realloccg: bad bprev");
-	bno = fragextend(dev, fs, cg, (long)bprev, osize, nsize);
+	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
-		bp = bread(dev, fsbtodb(fs, bno), osize);
+		bp = bread(ip->i_dev, fsbtodb(fs, bno), osize);
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return 0;
@@ -127,23 +126,23 @@ realloccg(dev, bprev, bpref, osize, nsize)
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
-	bno = (daddr_t)hashalloc(dev, fs, cg, (long)bpref, nsize, alloccg);
+	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, nsize, alloccg);
 	if (bno != 0) {
 		/*
 		 * make a new copy
 		 */
-		obp = bread(dev, fsbtodb(fs, bprev), osize);
+		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize);
 		if (obp->b_flags & B_ERROR) {
 			brelse(obp);
 			return 0;
 		}
-		bp = getblk(dev, fsbtodb(fs, bno), nsize);
+		bp = getblk(ip->i_dev, fsbtodb(fs, bno), nsize);
 		cp = bp->b_un.b_addr;
 		bp->b_un.b_addr = obp->b_un.b_addr;
 		obp->b_un.b_addr = cp;
 		obp->b_flags |= B_INVAL;
 		brelse(obp);
-		fre(dev, bprev, (off_t)osize);
+		fre(ip, bprev, (off_t)osize);
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return(bp);
 	}
@@ -173,8 +172,8 @@ nospace:
  *      available inode is located.
  */
 struct inode *
-ialloc(dev, ipref, mode)
-	dev_t dev;
+ialloc(pip, ipref, mode)
+	register struct inode *pip;
 	ino_t ipref;
 	int mode;
 {
@@ -183,18 +182,18 @@ ialloc(dev, ipref, mode)
 	register struct inode *ip;
 	int cg;
 	
-	fs = getfs(dev);
+	fs = pip->i_fs;
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
 	cg = itog(fs, ipref);
-	ino = (ino_t)hashalloc(dev, fs, cg, (long)ipref, mode, ialloccg);
+	ino = (ino_t)hashalloc(pip, cg, (long)ipref, mode, ialloccg);
 	if (ino == 0)
 		goto noinodes;
-	ip = iget(dev, ino);
+	ip = iget(pip->i_dev, pip->i_fs, ino);
 	if (ip == NULL) {
-		ifree(dev, ino, 0);
+		ifree(ip, ino, 0);
 		return (NULL);
 	}
 	if (ip->i_mode)
@@ -214,13 +213,11 @@ noinodes:
  * among those cylinder groups with above the average number of
  * free inodes, the one with the smallest number of directories.
  */
-dirpref(dev)
-	dev_t dev;
-{
+dirpref(fs)
 	register struct fs *fs;
+{
 	int cg, minndir, mincg, avgifree;
 
-	fs = getfs(dev);
 	avgifree = fs->fs_cstotal.cs_nifree / fs->fs_ncg;
 	minndir = fs->fs_ipg;
 	mincg = 0;
@@ -242,13 +239,11 @@ dirpref(dev)
  * greater than the average number of free blocks is found.
  */
 daddr_t
-blkpref(dev)
-	dev_t dev;
-{
+blkpref(fs)
 	register struct fs *fs;
+{
 	int cg, avgbfree;
 
-	fs = getfs(dev);
 	avgbfree = fs->fs_cstotal.cs_nbfree / fs->fs_ncg;
 	for (cg = fs->fs_cgrotor + 1; cg < fs->fs_ncg; cg++)
 		if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
@@ -273,21 +268,22 @@ blkpref(dev)
  */
 /*VARARGS5*/
 u_long
-hashalloc(dev, fs, cg, pref, size, allocator)
-	dev_t dev;
-	register struct fs *fs;
+hashalloc(ip, cg, pref, size, allocator)
+	struct inode *ip;
 	int cg;
 	long pref;
 	int size;	/* size for data blocks, mode for inodes */
 	u_long (*allocator)();
 {
+	register struct fs *fs;
 	long result;
 	int i, icg = cg;
 
+	fs = ip->i_fs;
 	/*
 	 * 1: preferred cylinder group
 	 */
-	result = (*allocator)(dev, fs, cg, pref, size);
+	result = (*allocator)(ip, cg, pref, size);
 	if (result)
 		return (result);
 	/*
@@ -297,7 +293,7 @@ hashalloc(dev, fs, cg, pref, size, allocator)
 		cg += i;
 		if (cg >= fs->fs_ncg)
 			cg -= fs->fs_ncg;
-		result = (*allocator)(dev, fs, cg, 0, size);
+		result = (*allocator)(ip, cg, 0, size);
 		if (result)
 			return (result);
 	}
@@ -306,7 +302,7 @@ hashalloc(dev, fs, cg, pref, size, allocator)
 	 */
 	cg = icg;
 	for (i = 0; i < fs->fs_ncg; i++) {
-		result = (*allocator)(dev, fs, cg, 0, size);
+		result = (*allocator)(ip, cg, 0, size);
 		if (result)
 			return (result);
 		cg++;
@@ -323,26 +319,27 @@ hashalloc(dev, fs, cg, pref, size, allocator)
  * if they are, allocate them.
  */
 daddr_t
-fragextend(dev, fs, cg, bprev, osize, nsize)
-	dev_t dev;
-	register struct fs *fs;
+fragextend(ip, cg, bprev, osize, nsize)
+	struct inode *ip;
 	int cg;
 	long bprev;
 	int osize, nsize;
 {
+	register struct fs *fs;
 	register struct buf *bp;
 	register struct cg *cgp;
 	long bno;
 	int frags, bbase;
 	int i;
 
+	fs = ip->i_fs;
 	frags = numfrags(fs, nsize);
 	bbase = fragoff(fs, bprev);
 	if (bbase > (bprev + frags - 1) % fs->fs_frag) {
 		/* cannot extend across a block boundry */
 		return (0);
 	}
-	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
 		return 0;
@@ -384,22 +381,23 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
  * and if it is, allocate it.
  */
 daddr_t
-alloccg(dev, fs, cg, bpref, size)
-	dev_t dev;
-	register struct fs *fs;
+alloccg(ip, cg, bpref, size)
+	struct inode *ip;
 	int cg;
 	daddr_t bpref;
 	int size;
 {
+	register struct fs *fs;
 	register struct buf *bp;
 	register struct cg *cgp;
 	int bno, frags;
 	int allocsiz;
 	register int i;
 
+	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (0);
-	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
 		return 0;
@@ -468,7 +466,7 @@ alloccg(dev, fs, cg, bpref, size)
  */
 daddr_t
 alloccgblk(fs, cgp, bpref)
-	struct fs *fs;
+	register struct fs *fs;
 	register struct cg *cgp;
 	daddr_t bpref;
 {
@@ -584,20 +582,21 @@ gotit:
  *      inode in the specified cylinder group.
  */
 ino_t
-ialloccg(dev, fs, cg, ipref, mode)
-	dev_t dev;
-	register struct fs *fs;
+ialloccg(ip, cg, ipref, mode)
+	struct inode *ip;
 	int cg;
 	daddr_t ipref;
 	int mode;
 {
+	register struct fs *fs;
 	register struct buf *bp;
 	register struct cg *cgp;
 	int i;
 
+	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (0);
-	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
 		return 0;
@@ -642,8 +641,8 @@ gotit:
  * free map. If a fragment is deallocated, a possible 
  * block reassembly is checked.
  */
-fre(dev, bno, size)
-	dev_t dev;
+fre(ip, bno, size)
+	register struct inode *ip;
 	daddr_t bno;
 	off_t size;
 {
@@ -653,13 +652,13 @@ fre(dev, bno, size)
 	int cg, blk, frags, bbase;
 	register int i;
 
-	fs = getfs(dev);
+	fs = ip->i_fs;
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0)
 		panic("free: bad size");
 	cg = dtog(fs, bno);
 	if (badblock(fs, bno))
 		return;
-	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
 		return;
@@ -726,8 +725,8 @@ fre(dev, bno, size)
  *
  * The specified inode is placed back in the free map.
  */
-ifree(dev, ino, mode)
-	dev_t dev;
+ifree(ip, ino, mode)
+	struct inode *ip;
 	ino_t ino;
 	int mode;
 {
@@ -736,11 +735,11 @@ ifree(dev, ino, mode)
 	register struct buf *bp;
 	int cg;
 
-	fs = getfs(dev);
+	fs = ip->i_fs;
 	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg)
 		panic("ifree: range");
 	cg = itog(fs, ino);
-	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
 		return;

@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.13 %G%";
+char version[] = "@(#)main.c 1.14 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -49,6 +49,8 @@ int	eflag = 0, hflag = 0, mflag = 0, cvtdir = 0;
 
 char	mounted = 0;
 dev_t	dev = 0;
+struct fs *fsptr;
+struct inode parentino;
 char	tapename[] = "/dev/rmt8";
 char	*magtape = tapename;
 int	mt;
@@ -238,7 +240,6 @@ extractfiles(argc, argv)
 	char	*ststore();
 	register struct xtrlist *xp;
 	struct xtrlist **xpp;
-	struct fs *fs;
 	ino_t	d;
 	int	xtrfile(), xtrskip(), xtrcvtdir(), xtrcvtskip(), null();
 	int	mode;
@@ -251,8 +252,8 @@ extractfiles(argc, argv)
 	if (checkvol(&spcl, 1) == 0) {
 		fprintf(stderr, "Tape is not volume 1 of the dump\n");
 	}
-	fs = getfs(dev);
-	msiz = roundup(howmany(fs->fs_ipg * fs->fs_ncg, NBBY), TP_BSIZE);
+	fsptr = getfs(dev);
+	msiz = roundup(howmany(fsptr->fs_ipg * fsptr->fs_ncg, NBBY), TP_BSIZE);
 	clrimap = (char *)calloc(msiz, sizeof(char));
 	dumpmap = (char *)calloc(msiz, sizeof(char));
 	pass1(1);  /* This sets the various maps on the way by */
@@ -434,7 +435,6 @@ restorfiles(command, argv)
 	int null(), rstrfile(), rstrskip(), rstrcvtdir(), rstrcvtskip();
 	register struct dinode *dp;
 	register struct inode *ip;
-	struct fs *fs;
 	int mode, type;
 	char mount[BUFSIZ + 1];
 	char *ptr[2];
@@ -453,8 +453,10 @@ restorfiles(command, argv)
 	mounted++;
 	iput(u.u_cdir); /* release root inode */
 	iput(u.u_rdir); /* release root inode */
-	fs = getfs(dev);
-	maxi = fs->fs_ipg * fs->fs_ncg;
+	fsptr = getfs(dev);
+	parentino.i_fs = fsptr;
+	parentino.i_dev = dev;
+	maxi = fsptr->fs_ipg * fsptr->fs_ncg;
 #ifndef STANDALONE
 	msiz = roundup(howmany(maxi, NBBY), TP_BSIZE);
 	clrimap = (char *)calloc(msiz, sizeof(char));
@@ -511,9 +513,9 @@ restorfiles(command, argv)
 				BIS(LOSTFOUNDINO + 1, clrimap);
 			for (ino = ROOTINO; ino <= maxi; ino++)
 				if (BIT(ino, clrimap) == 0) {
-					if (!iexist(dev, ino))
+					if (!iexist(&parentino, ino))
 						continue;
-					ip = iget(dev, ino);
+					ip = iget(dev, fsptr, ino);
 					if (ip == NULL) {
 						fprintf(stderr, "can't find inode %u\n", ino);
 						done(1);
@@ -548,8 +550,8 @@ restorfiles(command, argv)
 			getfile(null, null, dp->di_size);
 			continue;
 		}
-		if (iexist(dev, ino)) {
-			ip = iget(dev, ino);
+		if (iexist(&parentino, ino)) {
+			ip = iget(dev, fsptr, ino);
 			if (ip == NULL) {
 				fprintf(stderr, "can't find inode %u\n",
 					ino);
@@ -559,7 +561,7 @@ restorfiles(command, argv)
 			ip->i_flag |= ICHG;
 			iput(ip);
 		}
-		ip = ialloc(dev, ino, dp->di_mode);
+		ip = ialloc(&parentino, ino, dp->di_mode);
 		if (ip == NULL || ip->i_number != ino) {
 			fprintf(stderr, "can't create inode %u\n", ino);
 			done(1);
@@ -827,18 +829,16 @@ getfile(f1, f2, size)
 	register int i;
 	char buf[MAXBSIZE / TP_BSIZE][TP_BSIZE];
 	union u_spcl addrblk;
-	register struct fs *fs;
 #	define addrblock addrblk.s_spcl
 
 	addrblock = spcl;
-	fs = getfs(dev);
 	for (;;) {
 		for (i = 0; i < addrblock.c_count; i++) {
 			if (addrblock.c_addr[i]) {
 				readtape(&buf[curblk++][0]);
-				if (curblk == BLKING(fs) * fs->fs_frag) {
+				if (curblk == BLKING(fsptr) * fsptr->fs_frag) {
 					(*f1)(buf, size > TP_BSIZE ?
-					     (long) (BLKING(fs) * fs->fs_frag * TP_BSIZE) :
+					     (long) (BLKING(fsptr) * fsptr->fs_frag * TP_BSIZE) :
 					     (curblk - 1) * TP_BSIZE + size);
 					curblk = 0;
 				}
@@ -1169,6 +1169,8 @@ checkdir(name)
 				while ((rp = wait(&i)) >= 0 && rp != pid)
 					;
 				xmount(envp);
+				fsptr = getfs(dev);
+				parentino.i_fs = fsptr;
 			}
 			*cp = '/';
 		}
@@ -1272,8 +1274,8 @@ seekdir(dirp, loc, base)
  * tell whether an inode is allocated
  * this is drawn from ialloccg in sys/alloc.c
  */
-iexist(dev, ino)
-	dev_t dev;
+iexist(ip, ino)
+	struct inode *ip;
 	ino_t ino;
 {
 	register struct fs *fs;
@@ -1281,11 +1283,11 @@ iexist(dev, ino)
 	register struct buf *bp;
 	int cg;
 
-	fs = getfs(dev);
+	fs = ip->i_fs;
 	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg)
 		return (0);
 	cg = itog(fs, ino);
-	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
 		return(0);
