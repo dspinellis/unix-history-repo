@@ -32,7 +32,9 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)host.c	5.12 (Berkeley) 2/2/91";
+/* From: static char sccsid[] = "@(#)host.c	5.12 (Berkeley) 2/2/91"; */
+const char host_c_rcsid[] =
+	"$Id$";
 #endif /* not lint */
 
 #include <sys/param.h>

@@ -32,7 +32,9 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.20 (Berkeley) 11/29/90";
+/* From: static char sccsid[] = "@(#)route.c	5.20 (Berkeley) 11/29/90"; */
+static const char route_c_rcsid[] =
+	"$Id$";
 #endif /* not lint */
 
 #include <sys/param.h>
