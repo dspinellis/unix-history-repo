@@ -7,10 +7,9 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 divert(0)
-VERSIONID(`@(#)Berkeley.EDU.m4	8.3 (Berkeley) %G%')
+VERSIONID(`@(#)Berkeley.EDU.m4	8.4 (Berkeley) %G%')
 define(`UUCP_RELAY', `ucbvax.Berkeley.EDU')dnl
 define(`BITNET_RELAY', `jade.Berkeley.EDU')dnl
-define(`CSNET_RELAY', `Relay.CV.COM')dnl
 define(`confFORWARD_PATH', `$z/.forward.$w:$z/.forward')dnl
 define(`confCW_FILE', `-o /etc/sendmail.cw')dnl
 FEATURE(redirect)dnl
