@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.9 %G%";
+static char sccsid[] = "@(#)printsym.c 1.10 %G%";
 
 /*
  * Printing of symbolic information.
@@ -369,6 +369,7 @@ Symbol s;
 	    printf("size\t%d\n", s->symvalue.field.length);
 	    break;
 
+	case PROG:
 	case PROC:
 	case FUNC:
 	    printf("address\t0x%x\n", s->symvalue.funcv.beginaddr);
@@ -380,36 +381,37 @@ Symbol s;
 	    break;
 
 	case RANGE:
-            switch(s->symvalue.rangev.lowertype) {
 
-	      case R_CONST :  printf("CONST");
-		              break;
-	      case R_ARG :    printf("ARG");
-			      break;
-	      case R_TEMP :   printf("TEMP");
-			      break;
-	      case R_ADJUST : printf("ADJUST");
-			      break;
-            }
+	    prangetype(s->symvalue.rangev.lowertype);
 	    printf("lower\t%d\n", s->symvalue.rangev.lower);
-
-            switch(s->symvalue.rangev.uppertype) {
-
-	      case R_CONST :  printf("CONST");
-		              break;
-	      case R_ARG :    printf("ARG");
-			      break;
-	      case R_TEMP :   printf("TEMP");
-			      break;
-	      case R_ADJUST : printf("ADJUST");
-			      break;
-            }
-
+	    prangetype(s->symvalue.rangev.uppertype);
 	    printf("upper\t%d\n", s->symvalue.rangev.upper);
 	    break;
 
 	default:
 	    /* do nothing */
+	    break;
+    }
+}
+
+private prangetype(r)
+Rangetype r;
+{
+    switch (r) {
+	case R_CONST:
+	    printf("CONST");
+	    break;
+
+	case R_ARG:
+	    printf("ARG");
+	    break;
+
+	case R_TEMP:
+	    printf("TEMP");
+	    break;
+
+	case R_ADJUST:
+	    printf("ADJUST");
 	    break;
     }
 }
