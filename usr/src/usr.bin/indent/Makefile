@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.1	(Berkeley)	%G%
+#	@(#)Makefile	4.2	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -11,4 +11,4 @@ clean:
 	rm -f ${OBJS} indent
 
 install:
-	install -s indent /usr/ucb/indent
+	install -s indent ${DESTDIR}/usr/ucb/indent
