@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)printf.1	5.5 (Berkeley) %G%
+.\"	@(#)printf.1	5.6 (Berkeley) %G%
 .\"
 .TH PRINTF 1 "
 .AT 1
@@ -43,12 +43,12 @@ either
 or
 .IR s ;
 otherwise it is evaluated as a C constant, with the following extensions:
-.in +0.5i
+.sp
+.RS
 A leading plus or minus sign is allowed.
-.br
 If the leading character is a single or double quote, or not a digit,
 plus, or minus sign, the value is the ASCII code of the next character.
-.in -0.5i
+.RE
 .PP
 The format string is reused as often as necessary to satisfy the
 .IR arguments .
