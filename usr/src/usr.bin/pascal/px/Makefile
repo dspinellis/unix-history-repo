@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.12 %G%"
+SCCSID = "@(#)Makefile 1.13 %G%"
 
 CFLAGS = -O
 DESTDIR =
@@ -101,7 +101,6 @@ interp.o: libpc.h
 opc.o: OPnames.h
 utilities.o: whoami.h
 utilities.o: vars.h
-utilities.o: h02opcs.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
