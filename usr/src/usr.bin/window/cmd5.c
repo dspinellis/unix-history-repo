@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	3.7 83/09/15";
+static	char *sccsid = "@(#)cmd5.c	3.8 83/11/29";
 #endif
 
 #include "defs.h"
@@ -28,15 +28,16 @@ register struct ww *w;
 		wwsetcursor(currow, curcol);
 		while (bpeekc() < 0)
 			bread();
-		wwunbox(boxwin);
 		switch (getpos(&row, &col, minrow, mincol, maxrow, maxcol)) {
-		case -1:
+		case 3:
+			wwunbox(boxwin);
 			wwdelete(boxwin);
-			if (!terse)
-				(void) wwputs("\r\nCancelled.  ", cmdwin);
 			return;
-		case 1:
+		case 2:
+			wwunbox(boxwin);
 			break;
+		case 1:
+			wwunbox(boxwin);
 		case 0:
 			continue;
 		}

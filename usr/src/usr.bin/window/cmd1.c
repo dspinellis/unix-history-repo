@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.13 83/11/22";
+static	char *sccsid = "@(#)cmd1.c	3.14 83/11/29";
 #endif
 
 #include "defs.h"
@@ -23,12 +23,14 @@ dowindow()
 		while (bpeekc() < 0)
 			bread();
 		switch (getpos(&row, &col, 0, 0)) {
-		case -1:
-			if (!terse)
-				wwputs("\r\nCancelled.  ", cmdwin);
+		case 3:
+			wwunbox(boxwin);
 			return;
-		case 1:
+		case 2:
+			wwunbox(boxwin);
 			break;
+		case 1:
+			wwunbox(boxwin);
 		case 0:
 			continue;
 		}
@@ -44,12 +46,14 @@ dowindow()
 		while (bpeekc() < 0)
 			bread();
 		switch (getpos(&xrow, &xcol, row + 1, col + 1)) {
-		case -1:
-			if (!terse)
-				wwputs("\r\nCancelled.  ", cmdwin);
+		case 3:
+			wwunbox(boxwin);
 			return;
-		case 1:
+		case 2:
+			wwunbox(boxwin);
 			break;
+		case 1:
+			wwunbox(boxwin);
 		case 0:
 			continue;
 		}
@@ -91,6 +95,7 @@ int maxrow, maxcol;
 	static int scount = 0;
 	int count;
 	char c;
+	int oldrow = *row, oldcol = *col;
 
 	while ((c = bgetc()) >= 0) {
 		switch (c) {
@@ -131,16 +136,18 @@ int maxrow, maxcol;
 			*row = minrow;
 			break;
 		case CTRL([):
-			return -1;
+			if (!terse)
+				(void) wwputs("\r\nCancelled.  ", cmdwin);
+			return 3;
 		case '\r':
-			return 1;
+			return 2;
 		default:
 			if (!terse)
 				wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
 			Ding();
 		}
 	}
-	return 0;
+	return oldrow != *row || oldcol != *col;
 }
 
 struct ww *
