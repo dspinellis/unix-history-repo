@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.100 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.101 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -174,7 +174,6 @@ ufs_access(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	USES_VOP_ISLOCKED;
 	register struct vnode *vp = ap->a_vp;
 	register struct inode *ip = VTOI(vp);
 	register struct ucred *cred = ap->a_cred;
@@ -278,8 +277,6 @@ ufs_setattr(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	USES_VOP_TRUNCATE;
-	USES_VOP_UPDATE;
 	register struct vattr *vap = ap->a_vap;
 	register struct vnode *vp = ap->a_vp;
 	register struct inode *ip = VTOI(vp);
@@ -596,8 +593,6 @@ ufs_link(ap)
 		struct componentname *a_cnp;
 	} */ *ap;
 {
-	USES_VOP_UPDATE;
-	USES_VOP_ABORTOP;
 	register struct vnode *vp = ap->a_vp;
 	register struct vnode *tdvp = ap->a_tdvp;
 	register struct componentname *cnp = ap->a_cnp;
@@ -651,9 +646,6 @@ relookup(dvp, vpp, cnp)
 	struct vnode *dvp, **vpp;
 	struct componentname *cnp;
 {
-	USES_VOP_LOCK;
-	USES_VOP_LOOKUP;
-	USES_VOP_UNLOCK;
 	register struct vnode *dp = 0;	/* the directory we are searching */
 	struct vnode *tdp;		/* saved dp */
 	struct mount *mp;		/* mount table entry */
@@ -834,12 +826,6 @@ ufs_rename(ap)
 		struct componentname *a_tcnp;
 	} */ *ap;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_ACCESS;
-	USES_VOP_LOCK;
-	USES_VOP_TRUNCATE;
-	USES_VOP_UNLOCK;
-	USES_VOP_UPDATE;
 	struct vnode *tvp = ap->a_tvp;
 	register struct vnode *tdvp = ap->a_tdvp;
 	struct vnode *fvp = ap->a_fvp;
@@ -1200,9 +1186,6 @@ ufs_mkdir(ap)
 		struct vattr *a_vap;
 	} */ *ap;
 {
-	USES_VOP_UPDATE;
-	USES_VOP_VALLOC;
-	USES_VOP_VFREE;
 	register struct vnode *dvp = ap->a_dvp;
 	register struct vattr *vap = ap->a_vap;
 	register struct componentname *cnp = ap->a_cnp;
@@ -1314,13 +1297,11 @@ bad:
 int
 ufs_rmdir(ap)
 	struct vop_rmdir_args /* {
-		struct vnodeop_desc *a_desc;
 		struct vnode *a_dvp;
 		struct vnode *a_vp;
 		struct componentname *a_cnp;
 	} */ *ap;
 {
-	USES_VOP_TRUNCATE;
 	register struct vnode *dvp = ap->a_dvp;
 	register struct componentname *cnp = ap->a_cnp;
 	register struct inode *ip, *dp;
@@ -1435,7 +1416,6 @@ ufs_readdir(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	USES_VOP_READ;
 	register struct uio *uio = ap->a_uio;
 	int count, lost, error;
 
@@ -1505,7 +1485,6 @@ ufs_readlink(ap)
 {
 	register struct vnode *vp = ap->a_vp;
 	register struct inode *ip = VTOI(vp);
-	USES_VOP_READ;
 
 	if (ip->i_size < vp->v_mount->mnt_maxsymlinklen) {
 		uiomove((char *)ip->i_shortlink, (int)ip->i_size, ap->a_uio);
@@ -1588,7 +1567,6 @@ ufs_strategy(ap)
 		struct buf *a_bp;
 	} */ *ap;
 {
-	USES_VOP_BMAP;
 	register struct buf *bp = ap->a_bp;
 	register struct vnode *vp = bp->b_vp;
 	register struct inode *ip;
@@ -1935,9 +1913,6 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	struct vnode **vpp;
 	struct componentname *cnp;
 {
-	USES_VOP_UPDATE;
-	USES_VOP_VALLOC;
-	USES_VOP_VFREE;
 	register struct inode *ip, *pdir;
 	struct vnode *tvp;
 	int error;
