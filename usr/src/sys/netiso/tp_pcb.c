@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
- *	@(#)tp_pcb.c	7.8 (Berkeley) %G% *
+ *	@(#)tp_pcb.c	7.9 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -67,9 +67,6 @@ static char *rcsid = "$Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $";
 #include "tp_meas.h"
 #include "tp_seq.h"
 #include "tp_clnp.h"
-
-/* list of reference structures */
-struct tp_ref tp_ref[N_TPREF];
 
 struct tp_param tp_param = {
 	1,				/*  configured 		*/
@@ -524,18 +521,13 @@ static RefNum
 tp_getref(tpcb) 
 	register struct tp_pcb *tpcb;
 {
-	register struct tp_ref	*r = tp_ref; 
+	register struct tp_ref	*r = tp_ref; /* tp_ref[0] is never used */
 	register int 			i=1;
 
-	r++; /* tp_ref[0] is never used */
 
-	/* REF_FREE is zero */
-	while( r->tpr_state ) {
-		r++; 
-		if ( i == N_TPREF ) {
+	while ((++r)->tpr_state != REF_FREE) {
+		if (++i == N_TPREF)
 			return TP_ENOREF;
-		}
-		i++;
 	}
 	r->tpr_state = REF_OPENING;
 	if (tp_maxrefopen < i) 
