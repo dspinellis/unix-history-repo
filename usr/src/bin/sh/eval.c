@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -203,19 +203,17 @@ evaltree(n, flags)
 		evalsubshell(n, flags);
 		break;
 	case NIF: {
-		int status = 0; 
+		int status; 
 
 		evaltree(n->nif.test, EV_TESTED);
+		status = exitstatus;
+		exitstatus = 0;
 		if (evalskip)
 			goto out;
-		if (exitstatus == 0) {
+		if (status == 0)
 			evaltree(n->nif.ifpart, flags);
-			status = exitstatus;
-		} else if (n->nif.elsepart) {
+		else if (n->nif.elsepart)
 			evaltree(n->nif.elsepart, flags);
-			status = exitstatus;
-		}
-		exitstatus = status;
 		break;
 	}
 	case NWHILE:
