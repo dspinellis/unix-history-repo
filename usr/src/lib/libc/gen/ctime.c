@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ctime.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	4.4 (Berkeley) %G%";
 #endif
 /*
  * This routine converts time as follows.
@@ -19,9 +19,7 @@ static char sccsid[] = "@(#)ctime.c	4.3 (Berkeley) %G%";
  *
  * The routine calls the system to determine the local
  * timezone and whether Daylight Saving Time is permitted locally.
- * (DST is then determined by the current US standard rules)
- * There is a table that accounts for the peculiarities
- * undergone by daylight time in 1974-1975.
+ * (DST is then determined by the current local rules)
  *
  * The routine does not work
  * in Saudi Arabia which runs on Solar time.
@@ -81,6 +79,30 @@ static struct dstab ausdaytab[] = {
 	0,	303,	65,	/* others: -> Mar 7, Oct 31 -> */
 };
 
+/*
+ * The European tables ... based on hearsay
+ * Believed correct for:
+ *	WE:	Great Britain, Ireland, Portugal
+ *	ME:	Belgium, Luxembourg, Netherlands, Denmark, Norway,
+ *		Austria, Poland, Czechoslovakia, Sweden, Switzerland,
+ *		DDR, DBR, France, Spain, Hungary, Italy, Jugoslavia
+ * Eastern European dst is unknown, we'll make it ME until someone speaks up.
+ *	EE:	Bulgaria, Finland, Greece, Rumania, Turkey, Western Russia
+ */
+static struct dstab wedaytab[] = {
+	1983,	86,	303,	/* 1983: end March - end Oct */
+	1984,	86,	303,	/* 1984: end March - end Oct */
+	1985,	86,	303,	/* 1985: end March - end Oct */
+	0,	400,	0,	/* others: no daylight saving at all ??? */
+};
+
+static struct dstab medaytab[] = {
+	1983,	86,	272,	/* 1983: end March - end Sep */
+	1984,	86,	272,	/* 1984: end March - end Sep */
+	1985,	86,	272,	/* 1985: end March - end Sep */
+	0,	400,	0,	/* others: no daylight saving at all ??? */
+};
+
 static struct dayrules {
 	int		dst_type;	/* number obtained from system */
 	int		dst_hrs;	/* hours to add when dst on */
@@ -89,6 +111,9 @@ static struct dayrules {
 } dayrules [] = {
 	DST_USA,	1,	usdaytab,	NTH,
 	DST_AUST,	1,	ausdaytab,	STH,
+	DST_WET,	1,	wedaytab,	NTH,
+	DST_MET,	1,	medaytab,	NTH,
+	DST_EET,	1,	medaytab,	NTH,	/* XXX */
 	-1,
 };
 

@@ -1,4 +1,4 @@
-/* @(#)timezone.c	4.2 (Berkeley) %G% */
+/* @(#)timezone.c	4.3 (Berkeley) %G% */
 /*
  * The arguments are the number of minutes of time
  * you are westward from Greenwich and whether DST is in effect.
@@ -13,12 +13,18 @@ static struct zone {
 	char	*stdzone;
 	char	*dlzone;
 } zonetab[] = {
+	1*60, "MET", "MET DST",		/* Middle European */
+	2*60, "EET", "EET DST",		/* Eastern European */
 	4*60, "AST", "ADT",		/* Atlantic */
 	5*60, "EST", "EDT",		/* Eastern */
 	6*60, "CST", "CDT",		/* Central */
 	7*60, "MST", "MDT",		/* Mountain */
 	8*60, "PST", "PDT",		/* Pacific */
+#ifdef notdef
+	/* there's no way to distinguish this from WET */
 	0, "GMT", 0,			/* Greenwich */
+#endif
+	0*60, "WET", "WET DST",		/* Western European */
 	-10*60, "EST", "EST",		/* Aust: Eastern */
 	-10*60+30, "CST", "CST",	/* Aust: Central */
 	-8*60, "WST", 0,		/* Aust: Western */
