@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
@@ -139,6 +139,8 @@ log_score(list_em)
 				if (thisscore.time > score[i].time) {
 					score[i].time = thisscore.time;
 					score[i].planes = thisscore.planes;
+					score[i].real_time =
+						thisscore.real_time;
 					changed++;
 				}
 				found++;
