@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_process.c	7.22 (Berkeley) 5/11/91
- *	$Id: sys_process.c,v 1.9 1993/12/19 00:51:35 wollman Exp $
+ *	$Id: sys_process.c,v 1.10 1994/02/26 07:17:53 davidg Exp $
  */
 
 #include "param.h"
@@ -445,9 +445,13 @@ profil(p, uap, retval)
 	 *
 	 * so we've gotta check to make sure that the info set up for
 	 * addupc is set right... it's gotta be writable by the user...
+	 *
+	 * Add a little extra sanity checking so that end profil requests
+	 * don't generate spurious faults.	-jkh
 	 */
 
-	if (useracc((caddr_t)uap->bufbase, uap->bufsize * sizeof(short),
+	if (uap->bufbase && uap->bufsize &&
+	    useracc((caddr_t)uap->bufbase, uap->bufsize * sizeof(short),
 		    B_WRITE) == 0)
 		return EFAULT;
 
