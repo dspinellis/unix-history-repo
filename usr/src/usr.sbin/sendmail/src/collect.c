@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	4.4		%G%);
+SCCSID(@(#)collect.c	4.5		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -77,6 +77,10 @@ collect(sayok)
 		int c;
 		extern bool isheader();
 
+		/* drop out on error */
+		if (ferror(InChannel))
+			break;
+
 		/* if the line is too long, throw the rest away */
 		if (index(buf, '\n') == NULL)
 		{
@@ -101,7 +105,7 @@ collect(sayok)
 				break;
 			fixcrlf(p, TRUE);
 		}
-		if (!feof(InChannel))
+		if (!feof(InChannel) && !ferror(InChannel))
 			(void) ungetc(c, InChannel);
 
 		CurEnv->e_msgsize += strlen(buf);
@@ -157,7 +161,7 @@ collect(sayok)
 	(void) fclose(tf);
 
 	/* An EOF when running SMTP is an error */
-	if (feof(InChannel) && OpMode == MD_SMTP)
+	if ((feof(InChannel) || ferror(InChannel)) && OpMode == MD_SMTP)
 	{
 		syserr("collect: unexpected close, from=%s", CurEnv->e_from.q_paddr);
 
