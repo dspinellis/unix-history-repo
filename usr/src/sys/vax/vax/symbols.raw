@@ -1,4 +1,4 @@
-# symbols.raw 3.2 %G%
+# symbols.raw 3.3 %G%
 	_version
 #dmesg
 	_msgbuf
@@ -15,7 +15,6 @@
 #ps
 	_proc
 	_swapdev
-	_swplo
 	_Usrptma
 	_usrpt
 	_text
@@ -52,7 +51,6 @@
 #w
 	_proc
 	_swapdev
-	_swplo
 	_Usrptma
 	_usrpt
 	_nswap
