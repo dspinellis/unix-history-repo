@@ -149,7 +149,7 @@ struct vnode *nfs_fhtovp();
 		}
 
 #define	nfsm_loadattr(v,a) \
-		if (error = nfs_loadattrcache((v), &md, &dpos, (a))) { \
+		if (error = nfs_loadattrcache(&(v), &md, &dpos, (a))) { \
 			m_freem(mrep); \
 			goto nfsmout; \
 		}
