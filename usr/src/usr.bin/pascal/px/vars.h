@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.3 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.4 %G%"; */
 
 #include <stdio.h>
 
@@ -162,6 +162,7 @@ struct stack {
 	struct hdr {
 		long framesze;	/* number of bytes of local vars */
 		long nargs;	/* number of bytes of arguments */
+		short tests;	/* TRUE => perform runtime tests */
 		short offset;	/* offset of procedure in source file */
 		char name[1];	/* name of active procedure */
 	} *entry;
