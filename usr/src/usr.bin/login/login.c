@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -228,7 +228,7 @@ main(argc, argv)
 	openlog("login", LOG_ODELAY, LOG_AUTH);
 
 	for (cnt = 0;; ask = 1) {
-		ioctlval = 0;
+		ioctlval = TTYDISC;
 		(void)ioctl(0, TIOCSETD, &ioctlval);
 
 		if (ask) {
@@ -423,11 +423,6 @@ main(argc, argv)
 
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = _PATH_BSHELL;
-	/* turn on new line discipline for the csh */
-	else if (!strcmp(pwd->pw_shell, _PATH_CSHELL)) {
-		ioctlval = NTTYDISC;
-		(void)ioctl(0, TIOCSETD, &ioctlval);
-	}
 
 	/* destroy environment unless user has requested preservation */
 	if (!pflag)
