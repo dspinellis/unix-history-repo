@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.1	5.5 (Berkeley) %G%
+.\"	@(#)chflags.1	5.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 1
@@ -47,10 +47,10 @@ The following keywords are currently defined:
 .Bd -literal -offset indent compact
 .\"arch	nothing yet.
 dump	set the dump flag
-sapp	set the system append-only flag (super-user only)
-schng	set the system immutable flag (super-user only)
-uapp	set the user append-only flag (owner or super-user only)
-uchng	set the user immutable flag (owner or super-user only)
+sappnd	set the system append-only flag (super-user only)
+schg	set the system immutable flag (super-user only)
+uappnd	set the user append-only flag (owner or super-user only)
+uchg	set the user immutable flag (owner or super-user only)
 .Ed
 .Pp
 Putting the letters
