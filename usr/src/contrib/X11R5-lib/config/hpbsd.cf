@@ -1,0 +1,57 @@
+XCOMM platform:  $XConsortium: hpbsd.cf,v 1.1 91/09/27 12:10:52 mark Exp $
+
+#define OSName            BSD 4.4Alpha
+XCOMM operating system:  OSName
+#define OSMajorVersion    4
+#define OSMinorVersion    4
+
+#ifdef hp800
+#undef hp800
+#define HP800Architecture
+#endif
+#ifdef hp300
+#undef hp300
+#define HP300Architecture
+#endif
+
+#define DirFailPrefix -
+#define HasGcc YES
+#define HasNdbm YES    /* for ndbm or db */
+#define HasSaberC YES
+#define InstKmemFlags -g kmem -m 2755
+
+#if OSMajorVersion < 4 || (OSMajorVersion == 4 && OSMinorVersion < 4)
+#if 0
+ /* Following probably needed on Utah BSD and pure MORE/bsd
+    but not for VUW or bsd net2 */
+#define BootstrapCFlags -DNOSTDHDRS
+#define StandardDefines -DNOSTDHDRS
+#define HasBsearch NO
+#else
+#define BootstrapCFlags -DX_NOT_POSIX
+#define StandardDefines -DX_NOT_POSIX
+#define HasBsearch YES
+#define HasPutenv YES
+#endif
+#define HasVoidSignalReturn NO
+#define CcCmd gcc -fstrength-reduce
+#else
+#define HasVoidSignalReturn YES
+#define CcCmd gcc
+#define CppCmd /usr/libexec/gcc2/cpp
+#define StandardCppDefines -traditional StandardDefines
+#define HasDB YES  /* for Berkeley DB routines */
+#define HasBsearch YES
+#define HasPutenv YES
+#define BSD44 YES
+#define DefaultUserPath :/bin:/usr/bin:$(BINDIR)
+#define DefaultSystemPath /sbin:/usr/sbin:/bin:/usr/bin:$(BINDIR)
+#endif
+
+#define XhpBSDServer YES
+#define BuildXInputExt YES
+#define BuildPexExt NO
+
+#if OSMajorVersion >= 4 && OSMinorVersion >= 3
+#define SetTtyGroup YES
+#endif
