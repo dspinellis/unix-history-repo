@@ -4,12 +4,12 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.29 (Berkeley) %G%
+#	@(#)maketape	4.30 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
 tape=/dev/rmt12
-type=6250
+type=1600
 if [ $# -gt 0 ]; then type=$1; fi
 if [ $# -gt 1 ]; then tape=$2; fi
 tartape=$tape
