@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -364,7 +364,7 @@ recipient(a, sendq, e)
 			a->q_flags |= QBADADDR;
 			usrerr("550 Cannot mail directly to files");
 		}
-		else if (!writable(buf))
+		else if (!writable(buf, SFF_ANYFILE))
 		{
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, NULL, a->q_alias, e);
@@ -610,7 +610,8 @@ finduser(name, fuzzyp)
 **	not writable.  This is also enforced by mailfile.
 **
 **	Parameters:
-**		s -- pointer to a stat struct for the file.
+**		filename -- the file name to check.
+**		flags -- SFF_* flags to control the function.
 **
 **	Returns:
 **		TRUE -- if we will be able to write this file.
@@ -621,8 +622,9 @@ finduser(name, fuzzyp)
 */
 
 bool
-writable(filename)
+writable(filename, flags)
 	char *filename;
+	int flags;
 {
 	uid_t euid;
 	gid_t egid;
@@ -633,10 +635,11 @@ writable(filename)
 	extern char RealUserName[];
 
 	if (tTd(29, 5))
-		printf("writable(%s)\n", filename);
+		printf("writable(%s, %x)\n", filename, flags);
 
 #ifdef HASLSTAT
-	if (lstat(filename, &stb) < 0)
+	if ((bitset(SFF_NOSLINK, flags) ? lstat(filename, &stb)
+					: stat(filename, &stb)) < 0)
 #else
 	if (stat(filename, &stb) < 0)
 #endif
@@ -647,7 +650,7 @@ writable(filename)
 			return FALSE;
 		*p = '\0';
 		if (safefile(filename, RealUid, RealGid, RealUserName,
-			     SF_MUSTOWN, S_IWRITE|S_IEXEC) != 0)
+			     SFF_MUSTOWN, S_IWRITE|S_IEXEC) != 0)
 		{
 			*p = '/';
 			return FALSE;
@@ -692,7 +695,7 @@ writable(filename)
 		printf("\teu/gid=%d/%d, st_u/gid=%d/%d\n",
 			euid, egid, stb.st_uid, stb.st_gid);
 
-	return safefile(filename, euid, egid, uname, SF_NOSLINK, S_IWRITE) == 0;
+	return safefile(filename, euid, egid, uname, flags, S_IWRITE) == 0;
 }
 /*
 **  INCLUDE -- handle :include: specification.
@@ -737,7 +740,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	gid_t savedgid, gid;
 	char *uname;
 	int rval = 0;
-	int sfflags = forwarding ? SF_MUSTOWN : 0;
+	int sfflags = forwarding ? SFF_MUSTOWN : SFF_ANYFILE;
 	char buf[MAXLINE];
 
 	if (tTd(27, 2))
