@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chown.8	8.1 (Berkeley) %G%
+.\"     @(#)chown.8	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHOWN 8
@@ -39,11 +39,11 @@ the exit status to reflect such failures.
 When encountering a symbolic link anywhere in the traversal, follow it.
 .El
 .Pp
-The ownership of a symbolic link is immutable, so that unless the
+The ownership of a symbolic link is immutable, so unless the
 .Fl h
 or 
 .Fl H 
-flags are set,
+flag is set,
 .Nm chown
 on a symbolic link is a no-op.
 .Pp

@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chgrp.1	8.1 (Berkeley) %G%
+.\"     @(#)chgrp.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHGRP 1
@@ -42,16 +42,16 @@ When symbolic links are encountered, their group is changed,
 but they are not traversed.
 .It Fl f
 The force option ignores errors, except for usage errors and doesn't
-query about strange modes (unless user does not have proper permissions).
+query about strange modes (unless the user does not have proper permissions).
 .It Fl h
 When encountering a symbolic link anywhere in the traversal, follow it.
 .El
 .Pp
-The group of a symbolic link is immutable, so that unless the 
+The group of a symbolic link is immutable, so unless the 
 .Fl h
 or
 .Fl H
-flags are set,
+flag is set,
 .Nm chgrp
 on a symbolic link is a no-op.
 .Pp
@@ -88,5 +88,5 @@ Group ID file
 .Sh STANDARDS
 The
 .Nm chgrp
-function is expected to be POSIX 1003.2 compatible.
+utility is expected to be POSIX 1003.2 compatible.
 This manual page is derived from the POSIX 1003.2 manual page.
