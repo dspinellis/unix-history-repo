@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.19 84/04/05";
+static	char *sccsid = "@(#)main.c	3.20 84/04/06";
 #endif
 
 #include "defs.h"
@@ -111,7 +111,7 @@ char **argv;
 	setterse(tflag);
 	setcmd(1);
 	if (cmd != 0)
-		dolongcmd(cmd);
+		(void) dolongcmd(cmd);
 	if (!fflag) {
 		if (dflag || doconfig() < 0)
 			dodefault();
