@@ -1,0 +1,7 @@
+Mspline	spline.c	/^main(argc,argv)$/
+getfloat	spline.c	/^getfloat(p)$/
+getlim	spline.c	/^getlim(p)$/
+numb	spline.c	/^numb(np,argcp,argvp)$/
+readin	spline.c	/^readin() {$/
+rhs	spline.c	/^rhs(i){$/
+spline	spline.c	/^spline(){$/

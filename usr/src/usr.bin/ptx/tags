@@ -1,0 +1,15 @@
+Mptx	ptx.c	/^main(argc,argv)$/
+cmpline	ptx.c	/^cmpline(pend)$/
+cmpword	ptx.c	/^cmpword(cpp,pend,hpp)$/
+diag	ptx.c	/^diag(s,arg)$/
+getline	ptx.c	/^char *getline()$/
+getsort	ptx.c	/^getsort()$/
+hash	ptx.c	/^hash(strtp,endp)$/
+isabreak	ptx.c	/^#define isabreak(c) (btable[c])$/
+ltrim	ptx.c	/^char *ltrim(c,b,d)$/
+msg	ptx.c	/^msg(s,arg)$/
+onintr	ptx.c	/^onintr()$/
+putline	ptx.c	/^putline(strt, end)$/
+putout	ptx.c	/^putout(strt,end)$/
+rtrim	ptx.c	/^char *rtrim(a,c,d)$/
+storeh	ptx.c	/^storeh(num,strtp)$/
