@@ -9,14 +9,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vscanf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vscanf.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
 
 vscanf(fmt, ap)
 	const char *fmt;
-	_VA_LIST_ ap;
+	_BSD_VA_LIST_ ap;
 {
 
 	return (__svfscanf(stdin, fmt, ap));
