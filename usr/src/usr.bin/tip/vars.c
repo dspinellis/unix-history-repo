@@ -1,4 +1,4 @@
-/*	vars.c	4.1	81/05/09	*/
+/*	vars.c	4.2	81/06/02	*/
 #include "tip.h"
 
 /*
@@ -55,5 +55,7 @@ value_t vtable[] = {
 	  NULL,		"/bin/sh" },
 	{ "HOME",	STRING|ENVIRON,		(READ|WRITE)<<PUBLIC,
 	  NOSTR,	NOSTR },
+	{ "echocheck",	BOOL,			(READ|WRITE)<<PUBLIC,
+	  "ec",		(char *)FALSE },
 	{ NOSTR, NULL, NULL, NOSTR, NOSTR }
 };

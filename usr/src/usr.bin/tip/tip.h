@@ -1,4 +1,4 @@
-/*	tip.h	4.1	81/05/09	*/
+/*	tip.h	4.2	81/06/02	*/
 /*
  * tip - terminal interface program
  *
@@ -163,6 +163,7 @@ extern value_t	vtable[];	/* variable table */
 #define VERBOSE		21
 #define SHELL		22
 #define HOME		23
+#define ECHOCHECK	24
 #else
 #define PHONES		11
 #define PROMPT		12
@@ -175,6 +176,7 @@ extern value_t	vtable[];	/* variable table */
 #define VERBOSE		19
 #define SHELL		20
 #define HOME		21
+#define ECHOCHECK	22
 #endif
 
 #define NOVAL	((value_t *)NULL)
