@@ -1,4 +1,4 @@
-/*	kern_descrip.c	6.7	84/11/27	*/
+/*	kern_descrip.c	6.8	85/02/16	*/
 
 #include "param.h"
 #include "systm.h"
@@ -399,8 +399,11 @@ flock()
 	}
 	if ((uap->how & (LOCK_SH | LOCK_EX)) == 0)
 		return;					/* error? */
+	if (uap->how & LOCK_EX)
+		uap->how &= ~LOCK_SH;
 	/* avoid work... */
-	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX))
+	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
+	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
 		return;
 	u.u_error = ino_lock(fp, uap->how);
 }
