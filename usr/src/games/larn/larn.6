@@ -1,19 +1,18 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)larn.6	5.3 (Berkeley) %G%
+.\"	@(#)larn.6	5.4 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt LARN 6
-.\" .UC 7
+.Os
 .Sh NAME
 .Nm larn
 .Nd exploring the caverns of Larn
 .Sh SYNOPSIS
-.Nm /usr/games/larn
+.Nm larn
 .Op Fl r
 .Op Fl H Ar number
 .Op Fl n
@@ -28,71 +27,80 @@ amount of time, and to collect gold along the way of course!
 .Pp
 The options are:
 .Pp
-.Tw Ds
-.Tp Fl r
+.Bl -tag -width flag
+.It Fl r
 The
 .Fl r
 option restores a checkpointed game after it has died.
-.Tp Fl H 
+.It Fl H
 The
 .Fl H
 option sets the hardness of the game.
-.Tp Fl n
+.It Fl n
 The
 .Fl n
 option suppresses the welcome message at start up, putting you directly
 into the game.
-.Tp Fl h
+.It Fl h
 The
 .Fl h
 option prints the command line options.
-.Tp Fl o
+.It Fl o
 The
 .Fl o
-option specifies a different options file than ~/.larnopts.
+option specifies a different options file than
+.Pa ~/.larnopts .
 .Sh COMMANDS
-.nf
 .Pp
 These are the movement commands:
-.ta \w'h'u+1n +\w'print program version'u+2n +\w'H'u+1n +\w'give present pack weight'u+2n +\w'Z'u+1n +\w'list all items found'u
-.sp
-h	move to the left	H	run left	.	stay here
-j	move down	J	run down	Z	teleport yourself
-k	move up	K	run up	c	cast a spell
-l	move to the right	L	run right	r	read a scroll
-y	move northwest	Y	run northwest	q	quaff a potion
-u	move northeast	U	run northeast	W	wear armor
-b	move southwest	B	run southwest	T	take off armor
-n	move southeast	N	run southeast	w	wield a weapon
-^	identify a trap	g	give present pack weight	P	give tax status
-d	drop an item	i	inventory your pockets	Q	quit the game
-v	print program version	S	save the game	D	list all items found
-?	this help screen	A	create diagnostic file	e	eat something
-			(wizards only)
-.ta
-.fi
+.Bl -column " print program version" " give present pack weight"
+h move to the left	H run left	. stay here
+j move down	J run down	Z teleport yourself
+k move up	K run up	c cast a spell
+l move to the right	L run right	r read a scroll
+y move northwest	Y run northwest	q quaff a potion
+u move northeast	U run northeast	W wear armor
+b move southwest	B run southwest	T take off armor
+n move southeast	N run southeast	w wield a weapon
+^ identify a trap	g give present pack weight	P give tax status
+d drop an item	i inventory your pockets	Q quit the game
+v print program version	S save the game	D list all items found
+? this help screen	A create diagnostic file	e eat something
+	(wizards only)
+.El
 .Sh OPTIONS FILE
 .Pp
-The file "~/.larnopts" may be used to set a few options for 
+The file
+.Pa ~/.larnopts
+may be used to set a few options for
 .Nm Larn.
 A sequence of words terminated by whitespace is used to specify options.
-.nf
-.ta \w'savefile save-file-name'u+6n
-.sp
-        \fIWord\fP	             \fIMeaning\fP
-.sp
-bold-objects	select bold display of objects
-inverse-objects	select inverse video display of objects
-no-introduction	do not display intro message
-enable-checkpointing	turn on periodic checkpointing
-no-beep	disable beeping of the terminal
-male	choose your sex to be a man
-female	choose your sex to be a woman
-name: "your name"	choose your playing name
-monster: "monst name"	choose a name for a monster
-savefile: "save-file-name"	define what the savegame filename will be
-.ta
-.fi
+.Pp
+.Bl -tag -width "savefile: xsave-file-namex" -compact
+.It Sy 	Word
+.Sy 	Meaning
+.Pp
+.It bold-objects
+Select bold display of objects.
+.It inverse-objects
+Select inverse video display of objects.
+.It no-introduction
+Do not display intro message.
+.It enable-checkpointing
+Turn on periodic checkpointing.
+.It no-beep
+Disable beeping of the terminal.
+.It male
+Choose your sex to be a man.
+.It female
+Choose your sex to be a woman.
+.It name: \*qyour name\*q
+Choose your playing name.
+.It monster: \*qmonst name\*q
+Choose a name for a monster.
+.It savefile: \*qsave-file-name\*q
+Define what the savegame filename will be.
+.El
 .Pp
 Your name and monster names must be enclosed in double quotation marks and may
 be up to 34 characters long.  Longer names are truncated.
@@ -100,13 +108,14 @@ Anything enclosed in quotation marks is considered one word, and must be
 separated from other words by whitespace.
 .Sh SPECIAL NOTES
 .Pp
-When \fBdropping gold\fP,
+When
+.Sy dropping gold ,
 if you type '*' as your amount, all your gold gets dropped.
 In general, typing in '*' means all of what your interested in.  This is true
 when visiting the bank, or when contributing at altars.
 .Pp
 You can get out of the store, trading post, school, or home by hitting
-\fB<esc>\fP.
+.Sy <esc> .
 .Pp
 When casting a spell, if you need a list of spells you can cast, type \fBD\fP
 as the first letter of your spell.  The available list of spells will be shown,
@@ -115,6 +124,9 @@ of the spell you are casting.
 .Sh AUTHOR
 Noah Morgan
 .Sh FILES
-.ta \w'/var/games/larn.scores'u+8n
-/var/games/larn.scores	Score file
-~/.larnopts	Options file
+.Bl -tag -width "/var/games/larn.scores" -compact
+.It Pa /var/games/larn.scores
+Score file.
+.It Pa ~/.larnopts
+Options file.
+.El
