@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.6 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.7 (Berkeley) %G%";
 #endif lint
 
 # include "mfile1"
@@ -250,10 +250,10 @@ defid( q, class )  NODE *q; {
 		int * memp;
 		p->sflags |= SNONUNIQ;  /* old entry is nonunique */
 		/* determine if name has occurred in this structure/union */
-		for( memp = &paramstk[paramno-1];
+		if (paramno > 0) for( memp = &paramstk[paramno-1];
 			/* while */ *memp>=0 && stab[*memp].sclass != STNAME
 				&& stab[*memp].sclass != UNAME;
-			/* iterate */ --memp){ char * cname, * oname;
+			/* iterate */ --memp){ char *cname, *oname;
 			if( stab[*memp].sflags & SNONUNIQ ){int k;
 				cname=p->sname;
 				oname=stab[*memp].sname;
