@@ -1,4 +1,4 @@
-/*	tabnec-t.c	4.2	85/02/14	*/
+/*	tabnec-t.c	4.3	86/02/26	*/
 #define INCH 240
 /*
  * NEC Spinwriter 5500 or 7700 12 Pitch
