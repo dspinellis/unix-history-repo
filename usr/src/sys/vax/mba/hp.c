@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.16 (Berkeley) %G%
+ *	@(#)hp.c	6.17 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -698,7 +698,7 @@ hard:
 		} else
 			retry = 1;
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
-		if ((mi->mi_tab.b_errcnt & 07) == 4) {
+		if (retry && (mi->mi_tab.b_errcnt & 07) == 4) {
 			hpaddr->hpcs1 = HP_RECAL|HP_GO;
 			sc->sc_recal = 1;
 			return (MBD_REPOSITION);
