@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)q.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)q.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -45,24 +45,28 @@ q(inputt, errnum)
 	sigspecial2 = 0;
 
 	l_which = ss;
-	for (;;) {
-		l_ss = getc(inputt);
-		if ((l_ss != ' ') && (l_ss != '\n') && (l_ss != EOF)) {
-			*errnum = -1;
-			strcpy(help_msg, "illegal command option");
-			return;
+	if (ss != -1) {
+		for (;;) {
+			l_ss = getc(inputt);
+			if ((l_ss != ' ') && (l_ss != '\n') && (l_ss != EOF)) {
+				*errnum = -1;
+				strcpy(help_msg, "illegal command option");
+				return;
+			}
+			if ((l_ss == '\n') || (l_ss == EOF))
+				break;
 		}
-		if ((l_ss == '\n') || (l_ss == EOF))
-			break;
-	}
 
-	ungetc(l_ss, inputt);
+		ungetc(l_ss, inputt);
+	}
 	/* Note: 'Q' will bypass this if stmt., which warns of no save. */
-	if ((change_flag == 1L) && (l_which == 'q')) {
+	if ((change_flag == 1L) && ((l_which == 'q') || (l_which == -1)) ) {
 		change_flag = 0L;
 		strcpy(help_msg, "buffer changes not saved");
 		*errnum = -1;
 		ss = l_ss;
+		if (l_which == EOF)
+			ungetc('\n', inputt);
 		return;
 	}
 	/* Do cleanup; should it be even bothered?? */
@@ -71,6 +75,8 @@ q(inputt, errnum)
 	Start_default = End_default = 0;
 
 	/* We don't care about the returned errnum val anymore. */
+	if (l_which == EOF)
+		ungetc('\n', inputt);
 	d(inputt, errnum);
 	u_clr_stk();
 	free(text);

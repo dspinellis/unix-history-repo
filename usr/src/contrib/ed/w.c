@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -104,7 +104,7 @@ w(inputt, errnum)
 
 	/* Write it out and get a report on the number of bytes written. */
 	l_ttl = edwrite(fp, Start, End);
-	if (explain_flag != 0)		/* For -s option. */
+	if (explain_flag > 0)		/* For -s option. */
 		printf("%d\n", l_ttl);
 
 point:	fclose(fp);

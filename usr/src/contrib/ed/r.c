@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)r.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)r.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -97,7 +97,7 @@ r(inputt, errnum)
 		return;
 	*errnum = 0;
 
-	if (explain_flag)	/* !=0 */
+	if (explain_flag > 0)
 		printf("%ld\n", l_num);
 	if (l_filename_read != filename_current)
 		free(l_filename_read);
