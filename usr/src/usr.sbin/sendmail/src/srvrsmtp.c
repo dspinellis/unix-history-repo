@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.25 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.26 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.25 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.26 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -68,8 +68,6 @@ struct cmd
 /* debugging-only commands, only enabled if SMTPDEBUG is defined */
 # define CMDDBGQSHOW	12	/* showq -- show send queue */
 # define CMDDBGDEBUG	13	/* debug -- set debug mode */
-# define CMDDBGKILL	14	/* kill -- kill sendmail */
-# define CMDDBGWIZ	15	/* wiz -- become a wizard */
 
 static struct cmd	CmdTab[] =
 {
@@ -93,15 +91,9 @@ static struct cmd	CmdTab[] =
 	 */
 	"showq",	CMDDBGQSHOW,
 	"debug",	CMDDBGDEBUG,
-	"kill",		CMDDBGKILL,
-	"wiz",		CMDDBGWIZ,
 	NULL,		CMDERROR,
 };
 
-# ifdef WIZ
-bool	IsWiz = FALSE;			/* set if we are a wizard */
-char	*WizWord;			/* the wizard word to compare against */
-# endif WIZ
 bool	InChild = FALSE;		/* true if running in a subprocess */
 bool	OneXact = FALSE;		/* one xaction only this run */
 
@@ -416,44 +408,10 @@ smtp()
 			message("200", "Debug set");
 			break;
 
-# ifdef WIZ
-		  case CMDDBGKILL:	/* kill the parent */
-			if (!iswiz())
-				break;
-			if (kill(MotherPid, SIGTERM) >= 0)
-				message("200", "Mother is dead");
-			else
-				message("500", "Can't kill Mom");
-			break;
-
-		  case CMDDBGWIZ:	/* become a wizard */
-			if (WizWord != NULL)
-			{
-				char seed[3];
-				extern char *crypt();
-
-				(void) strncpy(seed, WizWord, 2);
-				if (strcmp(WizWord, crypt(p, seed)) == 0)
-				{
-					IsWiz = TRUE;
-					message("200", "Please pass, oh mighty wizard");
-					break;
-				}
-			}
-			message("500", "You are no wizard!");
-			break;
-
-# else WIZ
-		  case CMDDBGWIZ:	/* try to become a wizard */
-			message("500", "You wascal wabbit!  Wandering wizards won't win!");
-			break;
-# endif WIZ
 # else /* not SMTPDEBUG */
 
 		  case CMDDBGQSHOW:	/* show queues */
 		  case CMDDBGDEBUG:	/* set debug mode */
-		  case CMDDBGKILL:	/* kill the parent */
-		  case CMDDBGWIZ:	/* become a wizard */
 # ifdef LOG
 			if (RealHostName != NULL && LogLevel > 0)
 				syslog(LOG_NOTICE,
@@ -580,33 +538,6 @@ help(topic)
 		message("214", "End of HELP info");
 	(void) fclose(hf);
 }
-/*
-**  ISWIZ -- tell us if we are a wizard
-**
-**	If not, print a nasty message.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		TRUE if we are a wizard.
-**		FALSE if we are not a wizard.
-**
-**	Side Effects:
-**		Prints a 500 exit stat if we are not a wizard.
-*/
-
-#ifdef WIZ
-
-bool
-iswiz()
-{
-	if (!IsWiz)
-		message("500", "Mere mortals musn't mutter that mantra");
-	return (IsWiz);
-}
-
-#endif WIZ
 /*
 **  RUNINCHILD -- return twice -- once in the child, then in the parent again
 **
