@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)symtab.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -57,7 +57,7 @@ lookupino(inum)
 {
 	register struct entry *ep;
 
-	if (inum < ROOTINO || inum >= maxino)
+	if (inum < WINO || inum >= maxino)
 		return (NULL);
 	for (ep = entry[inum % entrytblsize]; ep != NULL; ep = ep->e_next)
 		if (ep->e_ino == inum)
@@ -75,7 +75,7 @@ addino(inum, np)
 {
 	struct entry **epp;
 
-	if (inum < ROOTINO || inum >= maxino)
+	if (inum < WINO || inum >= maxino)
 		panic("addino: out of range %d\n", inum);
 	epp = &entry[inum % entrytblsize];
 	np->e_ino = inum;
@@ -97,7 +97,7 @@ deleteino(inum)
 	register struct entry *next;
 	struct entry **prev;
 
-	if (inum < ROOTINO || inum >= maxino)
+	if (inum < WINO || inum >= maxino)
 		panic("deleteino: out of range %d\n", inum);
 	prev = &entry[inum % entrytblsize];
 	for (next = *prev; next != NULL; next = next->e_next) {
@@ -444,7 +444,7 @@ dumpsymtable(filename, checkpt)
 	 * Assign indicies to each entry
 	 * Write out the string entries
 	 */
-	for (i = ROOTINO; i < maxino; i++) {
+	for (i = WINO; i <= maxino; i++) {
 		for (ep = lookupino(i); ep != NULL; ep = ep->e_links) {
 			ep->e_index = mynum++;
 			(void) fwrite(ep->e_name, sizeof(char),
@@ -456,7 +456,7 @@ dumpsymtable(filename, checkpt)
 	 */
 	tep = &temp;
 	stroff = 0;
-	for (i = ROOTINO; i < maxino; i++) {
+	for (i = WINO; i <= maxino; i++) {
 		for (ep = lookupino(i); ep != NULL; ep = ep->e_links) {
 			bcopy((char *)ep, (char *)tep,
 				(long)sizeof(struct entry));
