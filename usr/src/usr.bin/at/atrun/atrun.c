@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrun.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -169,6 +169,7 @@ char *spoolfile;
 	 */
 	if ((infile = fopen(spoolfile,"r")) == NULL) {
 		perror(spoolfile);
+		(void) unlink(spoolfile);
 		exit(1);
 	}
 
@@ -182,6 +183,7 @@ char *spoolfile;
 	    (fscanf(infile,"# notify by mail: %3s%*[^\n]\n",mailvar) != 1)
 	    ) {
 		fprintf(stderr, "%s: bad spool header\n", spoolfile);
+		(void) unlink(spoolfile);
 		exit(1);
 	}
 
@@ -199,10 +201,12 @@ char *spoolfile;
 	if (pwdbuf == NULL) {
 		fprintf(stderr, "%s: could not find owner in passwd file\n",
 		    spoolfile);
+		(void) unlink(spoolfile);
 		exit(1);
 	}
 	if (chown(spoolfile,pwdbuf->pw_uid,pwdbuf->pw_gid) == -1) {
 		perror(spoolfile);
+		(void) unlink(spoolfile);
 		exit(1);
 	}
 
