@@ -1,4 +1,4 @@
-/*	uba.c	4.2	%G%	*/
+/*	uba.c	4.3	81/03/21	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -9,6 +9,12 @@
 #include "saio.h"
 #include "savax.h"
 
+/*
+ * Note... this routine does not
+ * really allocate; unless bdp == 2
+ * you always get the same space.
+ * When bdp == 2 you get some other space.
+ */
 ubasetup(io, bdp)
 	register struct iob *io;
 	int bdp;
@@ -16,12 +22,17 @@ ubasetup(io, bdp)
 	int npf;
 	unsigned v;
 	register struct pte *pte;
-	int o, temp;
+	int o, temp, reg;
 
+	if (bdp == 2) {
+		reg = 128+64;		/* for stupid ts-11 */
+		bdp = 0;
+	} else
+		reg = 0;
 	v = btop(io->i_ma);
 	o = (int)io->i_ma & PGOFSET;
 	npf = btoc(io->i_cc + o) +1;
-	pte = ubauba(io->i_unit)->uba_map;
+	pte = &ubauba(io->i_unit)->uba_map[reg];
 	temp = (bdp << 21) | UBAMR_MRV;
 	if (bdp && (o & 01))
 		temp |= UBAMR_BO;
@@ -29,7 +40,7 @@ ubasetup(io, bdp)
 	while (--npf != 0)
 		*(int *)pte++ = v++ | temp;
 	*(int *)pte++ = 0;
-	return ((bdp << UBAMR_DPSHIFT) | o);
+	return ((bdp << 28) | (reg << 9) | o);
 }
 
 ubafree(io, mr)
@@ -50,6 +61,8 @@ ubafree(io, mr)
 	case VAX_750:
 		ubauba(io->i_unit)->uba_dpr[bdp] |=
 		     UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
+		break;
+	case VAX_730:
 		break;
 	}
 }
