@@ -36,6 +36,7 @@
 #ifdef NEWMOVE
 #include "move.h"
 #endif
+#include "pathnames.h"
 
 struct tms tmbuf1,tmbuf2;
 int TerminateSearch(),Die();
@@ -568,7 +569,7 @@ int c,i,j,side;
 struct BookEntry *entry;
 unsigned short mv,*mp,tmp[100];
 
-  if ((fd = fopen("gnuchess.book","r")) != NULL)
+  if ((fd = fopen(_PATH_CHESSBOOK,"r")) != NULL)
     {
       Book = NULL;
       i = 0; side = white;
@@ -591,6 +592,11 @@ unsigned short mv,*mp,tmp[100];
           }
       fclose(fd);
     }
+    else
+      {
+	fprintf(stderr, "\nchess: can't read %s.\n", _PATH_CHESSBOOK);
+	exit(1);
+      }
 }
 
 
