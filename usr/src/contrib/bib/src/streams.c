@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)streams.c	1.2	%G%";
+static char sccsid[] = "@(#)streams.c	2.1	%G%";
 #endif not lint
 
 # include "stdio.h"
