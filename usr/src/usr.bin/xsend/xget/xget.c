@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)xget.c	4.2 %G%";
+static char sccsid[] = "@(#)xget.c	4.3 %G%";
 #endif
 
 #include "xmail.h"
@@ -70,8 +70,8 @@ main()
 		case 'n':
 		case 'd':
 		case '\n':
-			unlink(line);
 			fclose(mf);
+			unlink(line);
 			break;
 		case '!':
 			system(buf+1);
@@ -82,19 +82,29 @@ main()
 			rewind(mf);
 			if(buf[1] == '\n' || buf[1] == '\0')
 				strcpy(buf, "s mbox\n");
-			for(p=buf; !isspace(*p); p++);
-			for(; isspace(*p); p++);
+			for(p = buf+1; isspace(*p); p++);
 			p[strlen(p)-1] = 0;
 			kf = fopen(p, "a");
 			if(kf == NULL)
 			{	perror(p);
-				break;
+				goto cmnd;
 			}
 			decipher(mf, kf);
 			fclose(mf);
 			fclose(kf);
 			unlink(line);
 			break;
+		default:
+			printf("Commands are:\n");
+			printf("q	quit, leaving unread messages\n");
+			printf("n	delete current message and goto next\n");
+			printf("d	same as above\n");
+			printf("\\n	same as above\n");
+			printf("!	execute shell command\n");
+			printf("s	save message in the named file or mbox\n");
+			printf("w	same as above\n");
+			printf("?	prints this list\n");
+			goto cmnd;
 		}
 	}
 	exit(0);
@@ -112,7 +122,8 @@ files()
 	strcpy(line, myname);
 	strcat(line, ".%d");
 	while ((dbuf = readdir(df)) != NULL) 
-	{	if(sscanf(dbuf->d_name, line, &i) != 1)
+	{
+		if(sscanf(dbuf->d_name, line, &i) != 1)
 			continue;
 		if(fcnt >= MXF)
 			break;
