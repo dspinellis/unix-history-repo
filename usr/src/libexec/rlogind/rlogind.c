@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.14 83/05/22";
+static char sccsid[] = "@(#)rlogind.c	4.15 83/06/02";
 #endif
 
 #include <stdio.h>
@@ -251,7 +251,7 @@ gotpty:
 						if (nstop)
 							stop = nstop;
 						pibuf[0] |= nstop;
-						send(f,&pibuf[0],1,SOF_OOB);
+						send(f,&pibuf[0],1,MSG_OOB);
 					}
 					pcc = 0;
 				}
