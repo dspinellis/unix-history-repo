@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vn.c 1.8 92/12/20$
  *
- *	@(#)vn.c	7.15 (Berkeley) %G%
+ *	@(#)vn.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -60,9 +60,6 @@ int vndebug = 0x00;
 #define VDB_IO		0x04
 #endif
 
-struct	buf vnbuf[NVN];
-struct	buf vntab[NVN];
-
 #define b_cylin	b_resid
 
 #define	vnunit(x)	((minor(x) >> 3) & 0x7)	/* for consistency */
@@ -78,11 +75,40 @@ struct vn_softc {
 	struct vnode	*sc_vp;		/* vnode */
 	struct ucred	*sc_cred;	/* credentials */
 	int		 sc_maxactive;	/* max # of active requests */
-} vn_softc[NVN];
+	struct buf	 sc_tab;	/* transfer queue */
+};
 
 /* sc_flags */
 #define	VNF_ALIVE	0x01
 #define VNF_INITED	0x02
+
+#if 0	/* if you need static allocation */
+struct vn_softc vn_softc[NVN];
+int numvnd = NVN;
+#else
+struct vn_softc *vn_softc;
+int numvnd;
+#endif
+
+void
+vnattach(num)
+	int num;
+{
+	char *mem;
+	register u_long size;
+
+	if (num <= 0)
+		return;
+	size = num * sizeof(struct vn_softc);
+	mem = malloc(size, M_DEVBUF, M_NOWAIT);
+	if (mem == NULL) {
+		printf("WARNING: no memory for vnode disks\n");
+		return;
+	}
+	bzero(mem, size);
+	vn_softc = (struct vn_softc *)mem;
+	numvnd = num;
+}
 
 int
 vnopen(dev, flags, mode, p)
@@ -96,7 +122,7 @@ vnopen(dev, flags, mode, p)
 	if (vndebug & VDB_FOLLOW)
 		printf("vnopen(%x, %x, %x, %x)\n", dev, flags, mode, p);
 #endif
-	if (unit >= NVN)
+	if (unit >= numvnd)
 		return(ENXIO);
 	return(0);
 }
@@ -181,10 +207,10 @@ vnstrategy(bp)
 		 */
 		nbp->b_cylin = nbp->b_blkno;
 		s = splbio();
-		disksort(&vntab[unit], nbp);
-		if (vntab[unit].b_active < vn->sc_maxactive) {
-			vntab[unit].b_active++;
-			vnstart(unit);
+		disksort(&vn->sc_tab, nbp);
+		if (vn->sc_tab.b_active < vn->sc_maxactive) {
+			vn->sc_tab.b_active++;
+			vnstart(vn);
 		}
 		splx(s);
 		bn += sz;
@@ -198,21 +224,21 @@ vnstrategy(bp)
  * to an NFS file.  This places the burden on the client rather than the
  * server.
  */
-vnstart(unit)
+vnstart(vn)
+	register struct vn_softc *vn;
 {
-	register struct vn_softc *vn = &vn_softc[unit];
 	register struct buf *bp;
 
 	/*
 	 * Dequeue now since lower level strategy routine might
 	 * queue using same links
 	 */
-	bp = vntab[unit].b_actf;
-	vntab[unit].b_actf = bp->b_actf;
+	bp = vn->sc_tab.b_actf;
+	vn->sc_tab.b_actf = bp->b_actf;
 #ifdef DEBUG
 	if (vndebug & VDB_IO)
 		printf("vnstart(%d): bp %x vp %x blkno %x addr %x cnt %x\n",
-		       unit, bp, bp->b_vp, bp->b_blkno, bp->b_un.b_addr,
+		       vn-vn_softc, bp, bp->b_vp, bp->b_blkno, bp->b_un.b_addr,
 		       bp->b_bcount);
 #endif
 	if ((bp->b_flags & B_READ) == 0)
@@ -225,14 +251,14 @@ vniodone(bp)
 	register struct buf *bp;
 {
 	register struct buf *pbp = (struct buf *)bp->b_pfcent;	/* XXX */
-	register int unit = vnunit(pbp->b_dev);
+	register struct vn_softc *vn = &vn_softc[vnunit(pbp->b_dev)];
 	int s;
 
 	s = splbio();
 #ifdef DEBUG
 	if (vndebug & VDB_IO)
 		printf("vniodone(%d): bp %x vp %x blkno %x addr %x cnt %x\n",
-		       unit, bp, bp->b_vp, bp->b_blkno, bp->b_un.b_addr,
+		       vn-vn_softc, bp, bp->b_vp, bp->b_blkno, bp->b_un.b_addr,
 		       bp->b_bcount);
 #endif
 	if (bp->b_error) {
@@ -252,10 +278,10 @@ vniodone(bp)
 #endif
 		biodone(pbp);
 	}
-	if (vntab[unit].b_actf)
-		vnstart(unit);
+	if (vn->sc_tab.b_actf)
+		vnstart(vn);
 	else
-		vntab[unit].b_active--;
+		vn->sc_tab.b_active--;
 	splx(s);
 }
 
@@ -265,13 +291,12 @@ vnread(dev, uio, flags, p)
 	int flags;
 	struct proc *p;
 {
-	register int unit = vnunit(dev);
 
 #ifdef DEBUG
 	if (vndebug & VDB_FOLLOW)
 		printf("vnread(%x, %x, %x, %x)\n", dev, uio, flags, p);
 #endif
-	return(physio(vnstrategy, &vnbuf[unit], dev, B_READ, minphys, uio));
+	return(physio(vnstrategy, NULL, dev, B_READ, minphys, uio));
 }
 
 vnwrite(dev, uio, flags, p)
@@ -280,13 +305,12 @@ vnwrite(dev, uio, flags, p)
 	int flags;
 	struct proc *p;
 {
-	register int unit = vnunit(dev);
 
 #ifdef DEBUG
 	if (vndebug & VDB_FOLLOW)
 		printf("vnwrite(%x, %x, %x, %x)\n", dev, uio, flags, p);
 #endif
-	return(physio(vnstrategy, &vnbuf[unit], dev, B_WRITE, minphys, uio));
+	return(physio(vnstrategy, NULL, dev, B_WRITE, minphys, uio));
 }
 
 /* ARGSUSED */
@@ -312,7 +336,7 @@ vnioctl(dev, cmd, data, flag, p)
 	error = suser(p->p_ucred, &p->p_acflag);
 	if (error)
 		return (error);
-	if (unit >= NVN)
+	if (unit >= numvnd)
 		return (ENXIO);
 
 	vn = &vn_softc[unit];
@@ -418,7 +442,7 @@ vnshutdown()
 {
 	register struct vn_softc *vn;
 
-	for (vn = &vn_softc[0]; vn < &vn_softc[NVN]; vn++)
+	for (vn = &vn_softc[0]; vn < &vn_softc[numvnd]; vn++)
 		if (vn->sc_flags & VNF_INITED)
 			vnclear(vn);
 }
@@ -453,7 +477,7 @@ vnsize(dev)
 	int unit = vnunit(dev);
 	register struct vn_softc *vn = &vn_softc[unit];
 
-	if (unit >= NVN || (vn->sc_flags & VNF_INITED) == 0)
+	if (unit >= numvnd || (vn->sc_flags & VNF_INITED) == 0)
 		return(-1);
 	return(vn->sc_size);
 }
