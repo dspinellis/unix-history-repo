@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_timer.c,v $
- *	@(#)tp_timer.c	7.3 (Berkeley) %G% *
+ *	@(#)tp_timer.c	7.4 (Berkeley) %G% *
  *
  * Contains all the timer code.  
  * There are two sources of calls to these routines:
@@ -56,6 +56,7 @@ static char *rcsid = "$Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $";
 #include "types.h"
 #include "time.h"
 #include "malloc.h"
+#include "socket.h"
 
 #include "tp_param.h"
 #include "tp_timer.h"
@@ -66,8 +67,10 @@ static char *rcsid = "$Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $";
 #include "tp_trace.h"
 #include "tp_seq.h"
 
-static  struct	Ecallout *TP_callfree;
-static  struct	Ecallout TP_callout[N_TPREF*2]; 
+struct	Ecallout *TP_callfree;
+struct	Ecallout *TP_callout; 
+struct	tp_ref *tp_ref;
+int		N_TPREF = 100;
 
 extern int tp_maxrefopen;  /* highest ref # of an open tp connection */
 
@@ -81,15 +84,19 @@ extern int tp_maxrefopen;  /* highest ref # of an open tp connection */
 void
 tp_timerinit()
 {
-	register int i;
+	register struct Ecallout *e;
+	register int s;
+#define GETME(x, t, n) {s = (n)*sizeof(*x); x = (t) malloc(s, M_PCB, M_NOWAIT);\
+if (x == 0) panic("tp_timerinit"); bzero((caddr_t)x, s);}
 	/*
-	 * Initialize callouts
+	 * Initialize storage
 	 */
-	TP_callfree = TP_callout;
-	for (i = 1; i < N_TPREF*2; i++)
-		TP_callout[i-1].c_next = &TP_callout[i];
+	GETME(TP_callout, struct Ecallout *, 2 * N_TPREF);
+	GETME(tp_ref, struct tp_ref *, 1 +  N_TPREF);
 
-	bzero( (caddr_t)tp_ref, N_TPREF * sizeof(struct tp_ref) );
+	TP_callfree = TP_callout + ((2 * N_TPREF) - 1);
+	for (e = TP_callfree; e > TP_callout; e--)
+		e->c_next = e - 1;
 
 	/* hate to do this but we really don't want zero to be a legit ref */
 	tp_maxrefopen = 1;
@@ -98,7 +105,7 @@ tp_timerinit()
 		* unless, of course, you make refs and address instead of an
 		* index - then 0 can be allocated
 		*/
-
+#undef GETME
 }
 
 /**********************  e timers *************************/
