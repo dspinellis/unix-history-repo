@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.2 83/11/22";
+static	char *sccsid = "@(#)parser1.c	3.3 83/11/23";
 #endif
 
 #include <stdio.h>
@@ -236,7 +236,8 @@ register struct value *v;
 			if (c != 0) {
 				ap = &c->lc_arg[i];
 				if (ap->arg_name == 0) {
-					p_error("Too many arguments.");
+					p_error("%s: Too many arguments.",
+						c->lc_name);
 					p_varfree(t);
 					ap = 0;
 					flag = 0;
@@ -274,7 +275,8 @@ register struct value *v;
 							ap->arg_minlen))
 						break;
 				if (ap->arg_name == 0) {
-					p_error("%s: Unknown argument.", tmp);
+					p_error("%s: Unknown argument \"%s\".",
+						c->lc_name, tmp);
 					p_varfree(t);
 					flag = 0;
 					ap = 0;
@@ -284,14 +286,18 @@ register struct value *v;
 		}
 		if (ap != 0) {
 			if (ap->arg_val.v_type != V_ERR) {
-				p_error("Argument %d (%s) multiply specified.",
-					ap - c->lc_arg + 1, ap->arg_name);
+				p_error("%s: Argument %d (%s) duplicated.",
+					c->lc_name, ap - c->lc_arg + 1,
+					ap->arg_name);
 				p_varfree(t);
 				flag = 0;
+			} else if (t.v_type == V_ERR) {
+				/* do nothing */
 			} else if (ap->arg_type == ARG_NUM && t.v_type != V_NUM
 			    || ap->arg_type == ARG_STR && t.v_type != V_STR) {
-				p_error("Argument %d (%s) type mismatch.",
-					ap - c->lc_arg + 1, ap->arg_name);
+				p_error("%s: Argument %d (%s) type mismatch.",
+					c->lc_name, ap - c->lc_arg + 1,
+					ap->arg_name);
 				p_varfree(t);
 				flag = 0;
 			} else
@@ -301,6 +307,10 @@ register struct value *v;
 			(void) s_gettok();
 	}
 
+	if (p_erred())
+		flag = 0;
+	if (token != T_RP && token != T_EOL && token != T_EOF)
+		flag = 0;		/* look ahead a bit */
 	if (flag)
 		(*c->lc_func)(v);
 	if (c != 0)
