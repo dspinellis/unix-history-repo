@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.6 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 DIR=	usd/21.troff
 SRCS=	m0 m0a m1 m2 m3 m4 m5
