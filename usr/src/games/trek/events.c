@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)events.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)events.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -353,7 +353,7 @@ int	warp;		/* set if called in a time warp */
 			i = (int) Etc.snapshot;
 			i = bmove(Quad, i, sizeof (Quad));
 			i = bmove(Event, i, sizeof (Event));
-			i = bmove(Now, i, sizeof (Now));
+			i = bmove(&Now, i, sizeof (Now));
 			Game.snap = 1;
 			break;
 
