@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rm.1	6.1 (Berkeley) %G%
+.\"	@(#)rm.1	6.2 (Berkeley) %G%
 .\"
 .TH RM 1 ""
 .UC 4
@@ -16,8 +16,6 @@ rm, rmdir  \- remove (unlink) files or directories
 .B \-r
 ] [
 .B \-i
-] [
-.B \-
 ] file ...
 .PP
 .B rmdir
@@ -53,11 +51,9 @@ asks whether to delete each file, and, under
 .BR \-r ,
 whether to examine each directory.
 .PP
-The null option
-.B \-
-indicates that all the arguments following it are to be treated as
-file names.  This allows the specification of file names starting with
-a minus.
+Since getopt recognizes the string ``--'' as terminating the set
+of options, it can be used to allow the removal of file names
+starting with a dash.
 .PP
 .I Rmdir
 removes entries for the named directories, which must be empty.
