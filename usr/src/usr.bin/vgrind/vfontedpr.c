@@ -106,8 +106,8 @@ main(argc, argv)
 		    goto rest;
 		}
 		printf("'ds =H %s\n", argv[1]);
-		argc -= 2;
-		argv += 2;
+		argc--, argv++;
+		argc--, argv++;
 		if (argc > 0)
 		    continue;
 		goto rest;
@@ -248,8 +248,8 @@ main(argc, argv)
 	    cp[16] = '\0';
 	    cp[24] = '\0';
 	    printf(".ds =M %s %s\n", cp+4, cp+20);
-	    ps("'wh 0 he\n");
-	    ps("'wh -1i fo\n");
+	    ps("'wh 0 vH\n");
+	    ps("'wh -1i vF\n");
 	}
 	if (needbp) {
 	    needbp = 0;
