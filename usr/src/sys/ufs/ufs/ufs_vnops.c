@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.47 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.48 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -461,13 +461,13 @@ chmod1(vp, mode, cred)
 	if (cred->cr_uid != ip->i_uid &&
 	    (error = suser(cred, &u.u_acflag)))
 		return (error);
-	ip->i_mode &= ~07777;
 	if (cred->cr_uid) {
-		if (vp->v_type != VDIR)
-			mode &= ~ISVTX;
-		if (!groupmember(ip->i_gid, cred))
-			mode &= ~ISGID;
+		if (vp->v_type != VDIR && mode & ISVTX)
+			return (EFTYPE);
+		if (!groupmember(ip->i_gid, cred) && mode & ISGID)
+			return (EPERM);
 	}
+	ip->i_mode &= ~07777;
 	ip->i_mode |= mode & 07777;
 	ip->i_flag |= ICHG;
 	if ((vp->v_flag & VTEXT) && (ip->i_mode & ISVTX) == 0)
