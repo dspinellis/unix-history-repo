@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.6 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -328,7 +328,9 @@ setlogname()
 		return;
 	if (uap->namelen > sizeof (u.u_logname) - 1)
 		u.u_error = EINVAL;
-	else
+	else {
+		u.u_logname[uap->namelen] = NULL;
 		u.u_error = copyin((caddr_t)uap->namebuf,
 			(caddr_t)u.u_logname, uap->namelen);
+	}
 }
