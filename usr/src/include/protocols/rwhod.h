@@ -1,4 +1,4 @@
-/*	rwhod.h	4.6	83/05/22	*/
+/*	rwhod.h	4.7	83/05/25	*/
 
 /*
  * rwho protocol packet format.
@@ -10,9 +10,11 @@ struct	outmp {
 };
 
 struct	whod {
+#ifdef notyet
 	char	wd_vers;		/* protocol version # */
 	char	wd_type;		/* packet type, see below */
 	char	wd_pad[2];
+#endif
 	int	wd_sendtime;		/* time stamp by sender */
 	int	wd_recvtime;		/* time stamp applied by receiver */
 	char	wd_hostname[32];	/* hosts's name */
