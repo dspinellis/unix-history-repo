@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -627,7 +627,6 @@ char *
 getname(uid)
 	uid_t uid;
 {
-	extern int _pw_stayopen;
 	static struct ncache {
 		uid_t	uid;
 		char	name[NMAX+1];
@@ -635,7 +634,6 @@ getname(uid)
 	register struct passwd *pw;
 	register struct ncache *cp;
 
-	_pw_stayopen = 1;
 	cp = c_uid + (uid & CAMASK);
 	if (cp->uid == uid && *cp->name)
 		return(cp->name);
