@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1065,6 +1065,9 @@ setupout()
 		chmod(ofilename, stbuf.st_mode & 0666);
 		ofilemode = stbuf.st_mode;
 	}
+#ifdef hp300
+	filhdr.a_mid = (rflag ? MID_ZERO : MID_HP300);
+#endif
 	filhdr.a_magic = nflag ? NMAGIC : (zflag ? ZMAGIC : OMAGIC);
 	filhdr.a_text = nflag ? tsize :
 	    round(tsize, zflag ? pagesize : sizeof (long));
