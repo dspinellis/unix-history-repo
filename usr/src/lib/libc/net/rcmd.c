@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.26 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -242,9 +242,13 @@ iruserok(raddr, superuser, ruser, luser)
 	int superuser;
 	const char *ruser, *luser;
 {
+	register char *cp;
+	struct stat sbuf;
+	struct passwd *pwd;
 	FILE *hostf;
 	uid_t uid;
 	int first;
+	char pbuf[MAXPATHLEN];
 
 	first = 1;
 	hostf = superuser ? NULL : fopen(_PATH_HEQUIV, "r");
@@ -257,10 +261,6 @@ again:
 		(void)fclose(hostf);
 	}
 	if (first == 1 && (__check_rhosts_file || superuser)) {
-		struct stat sbuf;
-		struct passwd *pwd;
-		char pbuf[MAXPATHLEN];
-
 		first = 0;
 		if ((pwd = getpwnam(luser)) == NULL)
 			return (-1);
@@ -283,18 +283,20 @@ again:
 		 * If not a regular file, or is owned by someone other than
 		 * user or root or if writeable by anyone but the owner, quit.
 		 */
+		cp = NULL;
 		if (lstat(pbuf, &sbuf) < 0)
-			__rcmd_errstr = ".rhosts lstat failed";
+			cp = ".rhosts lstat failed";
 		else if ((sbuf.st_mode & S_IFMT) != S_IFREG)
-			__rcmd_errstr = ".rhosts not regular file";
+			cp = ".rhosts not regular file";
 		else if (fstat(fileno(hostf), &sbuf) < 0)
-			__rcmd_errstr = ".rhosts fstat failed";
+			cp = ".rhosts fstat failed";
 		else if (sbuf.st_uid && sbuf.st_uid != pwd->pw_uid)
-			__rcmd_errstr = "bad .rhosts owner";
+			cp = "bad .rhosts owner";
 		else if (sbuf.st_mode & 022)
-			__rcmd_errstr = "bad .rhosts permissions";
+			cp = "bad .rhosts permissions";
 		/* If there were any problems, quit. */
-		if (__rcmd_errstr) {
+		if (cp) {
+			__rcmd_errstr = cp;
 			(void)fclose(hostf);
 			return (-1);
 		}
