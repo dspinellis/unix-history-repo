@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from:@(#)syscons.c	1.3 940129
- *	$Id: syscons.c,v 1.47 1994/05/20 12:23:28 sos Exp $
+ *	$Id: syscons.c,v 1.48 1994/05/22 20:15:01 sos Exp $
  *
  */
 
@@ -73,6 +73,10 @@
 #define NCONS 12
 #endif
 
+#if !defined(NO_HARDFONTS)
+#include "i386/isa/iso8859.font"
+#endif
+
 /* status flags */
 #define LOCK_KEY_MASK	0x0000F
 #define LED_MASK	0x00007
@@ -97,6 +101,9 @@
 #define TIMER_FREQ	1193182			/* should be in isa.h */
 #define CONSOLE_BUFSIZE 1024
 #define PCBURST		128
+#define FONT_8_LOADED	0x001
+#define FONT_14_LOADED	0x002
+#define FONT_16_LOADED	0x004
 
 /* defines related to hardware addresses */
 #define	MONO_BASE	0x3B4			/* crt controller base mono */
@@ -178,7 +185,8 @@ static	u_int		crtc_addr = MONO_BASE;
 static	char		crtc_vga = 0;
 static 	u_char		shfts = 0, ctls = 0, alts = 0, agrs = 0, metas = 0;
 static 	u_char		nlkcnt = 0, clkcnt = 0, slkcnt = 0, alkcnt = 0;
-static	char		*font_8x8 = NULL, *font_8x14 = NULL, *font_8x16 = NULL;
+static	char		*font_8 = NULL, *font_14 = NULL, *font_16 = NULL;
+static  int		fonts_loaded = 0;
 static	char		palette[3*256];
 static 	const u_int 	n_fkey_tab = sizeof(fkey_tab) / sizeof(*fkey_tab);
 static	int 		cur_cursor_pos = -1;
@@ -372,18 +380,28 @@ int pcattach(struct isa_device *dev)
 	if (crtc_vga) {
 		get_cursor_shape(&start, &end);
 #endif
-		font_8x8 = (char *)malloc(8 * 256, M_DEVBUF, M_NOWAIT);
-		font_8x14 = (char *)malloc(14 * 256, M_DEVBUF, M_NOWAIT);
-		font_8x16 = (char *)malloc(16 * 256, M_DEVBUF, M_NOWAIT);
+#if defined(HARDFONTS)
+		font_8 = font_8x8;
+		font_14 = font_8x14;
+		font_16 = font_8x16;
+		fonts_loaded = FONT_8_LOADED|FONT_14_LOADED|FONT_16_LOADED;
+		copy_font(LOAD, 1, 8, font_8);
+		copy_font(LOAD, 2, 14, font_14);
+		copy_font(LOAD, 0, 16, font_16);
+#else
+		font_8 = (char *)malloc(8*256, M_DEVBUF, M_NOWAIT);
+		font_14 = (char *)malloc(14*256, M_DEVBUF, M_NOWAIT);
+		font_16 = (char *)malloc(16*256, M_DEVBUF, M_NOWAIT);
+		copy_font(SAVE, 0, 16, font_16);
+		fonts_loaded = FONT_16_LOADED;
+#endif
 		save_palette();
-		copy_font(SAVE, 0, 16, font_8x16);
-		copy_font(SAVE, 1, 8, font_8x8);
-		copy_font(SAVE, 2, 14, font_8x14);
 	}
 	current_default = &user_default;
 	for (i = 0; i < NCONS; i++) {
 		scp = &console[i];
-		scp->scr_buf = (u_short *)malloc(COL * ROW * 2, M_DEVBUF, M_NOWAIT);
+		scp->scr_buf = (u_short *)malloc(COL * ROW * 2, 
+						 M_DEVBUF, M_NOWAIT);
 		scp->mode = TEXT80x25;
 		scp->term.esc = 0;
 		scp->term.std_attr = current_default->std_attr;
@@ -402,7 +420,8 @@ int pcattach(struct isa_device *dev)
 		scp->smode.mode = VT_AUTO;
 		if (i > 0) {
 			scp->crt_base = scp->crtat = scp->scr_buf;
-			fillw(scp->term.cur_attr|scr_map[0x20], scp->scr_buf, COL*ROW);
+			fillw(scp->term.cur_attr|scr_map[0x20], 
+			      scp->scr_buf, COL*ROW);
 		}
 	}
 	/* get cursor going */
@@ -638,17 +657,23 @@ int pcioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p)
 	case CONS_80x50TEXT:	/* set 80x50 text mode */
 		if (!crtc_vga)
 			return ENXIO;
-		scp->mode = TEXT80x50;
-		scp->ysize = 50;
-		free(scp->scr_buf, M_DEVBUF); 
-		scp->scr_buf = (u_short *)malloc(scp->xsize*scp->ysize*2,
-					     M_DEVBUF, M_NOWAIT);
-		if (scp != cur_console)
-			scp->crt_base = scp->scr_buf;
-		set_mode(scp);
-		clear_screen(scp);
-		change_winsize(tp, scp->xsize, scp->ysize); 
-		return 0;
+		/* is there a 8x8 font loaded ? */
+		if (fonts_loaded & FONT_8_LOADED) {
+			scp->mode = TEXT80x50;
+			scp->ysize = 50;
+			free(scp->scr_buf, M_DEVBUF); 
+			scp->scr_buf = 
+				(u_short *)malloc(scp->xsize * scp->ysize * 2,
+						  M_DEVBUF, M_NOWAIT);
+			if (scp != cur_console)
+				scp->crt_base = scp->scr_buf;
+			set_mode(scp);
+			clear_screen(scp);
+			change_winsize(tp, scp->xsize, scp->ysize); 
+			return 0;
+		}
+		else
+			return EINVAL;
 
 	case CONS_GETVERS:	/* get version number */
 		*(int*)data = 0x103;	/* version 1.3 */
@@ -775,9 +800,9 @@ int pcioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p)
 		case KD_TEXT:	/* switch to TEXT (known) mode */
 				/* restore fonts & palette ! */
 			if (crtc_vga) {
-				copy_font(LOAD, 0, 16, font_8x16);
-				copy_font(LOAD, 1, 8, font_8x8);
-				copy_font(LOAD, 2, 14, font_8x14);
+				copy_font(LOAD, 0, 16, font_16);
+				copy_font(LOAD, 1, 8, font_8);
+				copy_font(LOAD, 2, 14, font_14);
 				load_palette();
 			}
 			/* FALL THROUGH */
@@ -940,41 +965,56 @@ int pcioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p)
 	case PIO_FONT8x8:	/* set 8x8 dot font */
 		if (!crtc_vga)
 			return ENXIO;
-		bcopy(data, font_8x8, 8*256);
-		copy_font(LOAD, 1, 8, font_8x8);
+		bcopy(data, font_8, 8*256);
+		fonts_loaded |= FONT_8_LOADED;
+		copy_font(LOAD, 1, 8, font_8);
 		return 0;
 
 	case GIO_FONT8x8:	/* get 8x8 dot font */
 		if (!crtc_vga)
 			return ENXIO;
-		bcopy(font_8x8, data, 8*256);
-		return 0;
+		if (fonts_loaded & FONT_8_LOADED) {
+			bcopy(font_8, data, 8*256);
+			return 0;
+		}
+		else
+			return ENXIO;
 
 	case PIO_FONT8x14:	/* set 8x14 dot font */
 		if (!crtc_vga)
 			return ENXIO;
-		bcopy(data, font_8x14, 14*256);
-		copy_font(LOAD, 2, 14, font_8x14);
+		bcopy(data, font_14, 14*256);
+		fonts_loaded |= FONT_14_LOADED;
+		copy_font(LOAD, 2, 14, font_14);
 		return 0;
 
 	case GIO_FONT8x14:	/* get 8x14 dot font */
 		if (!crtc_vga)
 			return ENXIO;
-		bcopy(font_8x14, data, 14*256);
-		return 0;
+		if (fonts_loaded & FONT_14_LOADED) {
+			bcopy(font_14, data, 14*256);
+			return 0;
+		}
+		else
+			return ENXIO;
 
 	case PIO_FONT8x16:	/* set 8x16 dot font */
 		if (!crtc_vga)
 			return ENXIO;
-		bcopy(data, font_8x16, 16*256);
-		copy_font(LOAD, 0, 16, font_8x16);
+		bcopy(data, font_16, 16*256);
+		fonts_loaded |= FONT_16_LOADED;
+		copy_font(LOAD, 0, 16, font_16);
 		return 0;
 
 	case GIO_FONT8x16:	/* get 8x16 dot font */
 		if (!crtc_vga)
 			return ENXIO;
-		bcopy(font_8x16, data, 16*256);
-		return 0;
+		if (fonts_loaded & FONT_16_LOADED) {
+			bcopy(font_16, data, 16*256);
+			return 0;
+		}
+		else
+			return ENXIO;
 
 	case CONSOLE_X_MODE_ON:	/* just to be compatible */
 		if (saved_console < 0) {
@@ -992,9 +1032,9 @@ int pcioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p)
 	 	fp = (struct trapframe *)p->p_regs;
 	 	fp->tf_eflags &= ~PSL_IOPL;
 		if (crtc_vga) {
-			copy_font(LOAD, 0, 16, font_8x16);
-			copy_font(LOAD, 1, 8, font_8x8);
-			copy_font(LOAD, 2, 14, font_8x14);
+			copy_font(LOAD, 0, 16, font_16);
+			copy_font(LOAD, 1, 8, font_8);
+			copy_font(LOAD, 2, 14, font_14);
 			load_palette();
 		}
 		scp->status &= ~UNKNOWN_MODE;
@@ -1013,7 +1053,7 @@ int pcioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p)
                  */
                 if (data)
 	    		sysbeep(TIMER_FREQ/((int*)data)[0], 
-				((int*)data)[1]*hz/3000);
+				((int*)data)[1]*hz/1000);
                 else
 			sysbeep(scp->bell_pitch, scp->bell_duration);
                 return 0;
@@ -1475,9 +1515,9 @@ static void exchange_scr(void)
 	bcopy(new_scp->scr_buf, Crtat, new_scp->xsize * new_scp->ysize * 2);
 	update_leds(new_scp->status);
 	if ((old_scp->status & UNKNOWN_MODE) && crtc_vga) {
-		copy_font(LOAD, 0, 16, font_8x16);
-		copy_font(LOAD, 1, 8, font_8x8);
-		copy_font(LOAD, 2, 14, font_8x14);
+		copy_font(LOAD, 0, 16, font_16);
+		copy_font(LOAD, 1, 8, font_8);
+		copy_font(LOAD, 2, 14, font_14);
 		load_palette();
 	}
 	if (old_scp->status & KBD_RAW_MODE || new_scp->status & KBD_RAW_MODE)
