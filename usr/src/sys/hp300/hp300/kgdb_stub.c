@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	8.3 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -321,7 +321,7 @@ kgdb_trap(type, frame)
 	int inlen;
 	u_long gdb_regs[NUM_REGS];
 
-	if (kgdb_dev < 0) {
+	if ((int)kgdb_dev < 0) {
 		/* not debugging */
 		return (0);
 	}

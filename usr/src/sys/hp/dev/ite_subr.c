@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite_subr.c 1.4 92/01/21$
  *
- *	@(#)ite_subr.c	8.1 (Berkeley) %G%
+ *	@(#)ite_subr.c	8.2 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -101,7 +101,7 @@ ite_writeglyph(ip, fbmem, glyphp)
 	register u_char *fbmem, *glyphp;
 {
 	register int bn;
-	int c, l, b;
+	int l, b;
 
 	for (l = 0; l < ip->ftheight; l++) {
 		bn = 7;

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.36 93/08/13$
  *
- *	@(#)grf.c	8.3 (Berkeley) %G%
+ *	@(#)grf.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -519,12 +519,10 @@ iommap(dev, addrp)
 	dev_t dev;
 	caddr_t *addrp;
 {
-	struct proc *p = curproc;		/* XXX */
-	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
 
 #ifdef DEBUG
 	if (grfdebug & (GDB_MMAP|GDB_IOMAP))
-		printf("iommap(%d): addr %x\n", p->p_pid, *addrp);
+		printf("iommap(%d): addr %x\n", curproc->p_pid, *addrp);
 #endif
 	return(EINVAL);
 }
