@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.68 %G%";
+static char SccsId[] = "@(#)sccs.c	1.69 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -234,7 +234,7 @@ main(argc, argv)
 	char buf[FBUFSIZ];
 
 	/* pull "SccsDir" out of the environment (possibly) */
-	p = getenv("PROJECT");
+	p = getenv("PROJECTDIR");
 	if (p != NULL && p[0] != '\0')
 	{
 		if (p[0] == '/')
