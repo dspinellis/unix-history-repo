@@ -56,11 +56,11 @@
 	YAND		YARRAY		YBEGIN		YCASE
 	YCONST		YDIV		YDO		YDOTDOT
 	YTO		YELSE		YEND		YFILE
-	YFOR		YFORWARD	YFUNCTION	YGOTO
+	YFOR		YFORWARD	YPROCEDURE	YGOTO
 	YID		YIF		YIN		YINT
 	YLABEL		YMOD		YNOT		YNUMB
 	YOF		YOR		YPACKED		YNIL
-	YPROCEDURE	YPROG		YRECORD		YREPEAT
+	YFUNCTION	YPROG		YRECORD		YREPEAT
 	YSET		YSTRING		YTHEN		YDOWNTO
 	YTYPE		YUNTIL		YVAR		YWHILE
 	YWITH		YBINT		YOCT		YHEX
@@ -88,7 +88,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 1.9 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 1.10 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -98,7 +98,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 1.9 %G%";
+static	char sccsid[] = "@(#)pas.y 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
