@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kvm_getprocs.3	5.4 (Berkeley) %G%
+.\"     @(#)kvm_getprocs.3	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KVM_GETPROCS 3
@@ -68,9 +68,11 @@ processes with real user id
 The number of processes found is returned in the reference parameter
 .Fa cnt .
 The processes are returned as a contiguous array of kinfo_proc structures.
-This memory is owned by kvm and is not guaranteed to be persistent across
-subsequent kvm library calls.  Data should be copied out if it needs to be
-saved.
+This memory is locally allocated, and subsequent calls to
+.Fn kvm_getprocs 
+and 
+.Fn kvm_close
+will overwrite this storage.
 .Pp
 .Fn kvm_getargv
 returns a null-terminated argument vector that corresponds to the 
