@@ -1,4 +1,4 @@
-/*	ip_input.c	6.9	85/03/18	*/
+/*	ip_input.c	6.10	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -88,7 +88,7 @@ next:
 	hlen = ip->ip_hl << 2;
 	if (hlen < 10) {	/* minimum header length */
 		ipstat.ips_badhlen++;
-		goto next;
+		goto bad;
 	}
 	if (hlen > m->m_len) {
 		if ((m = m_pullup(m, hlen)) == 0) {
@@ -145,7 +145,7 @@ next:
 	 * Process options and, if not destined for us,
 	 * ship it on.  ip_dooptions returns 1 when an
 	 * error was detected (causing an icmp message
-	 * to be sent).
+	 * to be sent and the original packet to be freed).
 	 */
 	if (hlen > sizeof (struct ip) && ip_dooptions(ip))
 		goto next;
@@ -581,34 +581,6 @@ u_char inetctlerrmap[PRC_NCMDS] = {
 	0,		0,		0,		0
 };
 
-ip_ctlinput(cmd, arg)
-	int cmd;
-	caddr_t arg;
-{
-	struct in_addr *in;
-	int in_rtchange(), tcp_abort(), udp_abort();
-	extern struct inpcb tcb, udb;
-
-	if (cmd < 0 || cmd > PRC_NCMDS)
-		return;
-	if (inetctlerrmap[cmd] == 0)
-		return;		/* XXX */
-	if (cmd == PRC_IFDOWN)
-		in = &((struct sockaddr_in *)arg)->sin_addr;
-	else if (cmd == PRC_HOSTDEAD || cmd == PRC_HOSTUNREACH)
-		in = (struct in_addr *)arg;
-	else
-		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
-	/* THIS IS VERY QUESTIONABLE, SHOULD HIT ALL PROTOCOLS */
-	if (cmd == PRC_REDIRECT_NET || cmd == PRC_REDIRECT_HOST) {
-		in_pcbnotify(&tcb, in, 0, in_rtchange);
-		in_pcbnotify(&udb, in, 0, in_rtchange);
-	} else {
-		in_pcbnotify(&tcb, in, (int)inetctlerrmap[cmd], tcp_abort);
-		in_pcbnotify(&udb, in, (int)inetctlerrmap[cmd], udp_abort);
-	}
-}
-
 int	ipprintfs = 0;
 int	ipforwarding = 1;
 /*
@@ -649,8 +621,10 @@ ip_forward(ip)
 	if (error == 0) {
 		if (mcopy)
 			m_freem(mcopy);
+		ipstat.ips_forward++;
 		return;
 	}
+	ipstat.ips_cantforward++;
 	if (mcopy == NULL)
 		return;
 	ip = mtod(mcopy, struct ip *);
