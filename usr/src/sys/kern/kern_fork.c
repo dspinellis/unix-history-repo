@@ -4,21 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.40 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.41 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "filedesc.h"
-#include "kernel.h"
-#include "malloc.h"
-#include "proc.h"
-#include "resourcevar.h"
-#include "vnode.h"
-#include "file.h"
-#include "acct.h"
-#include "ktrace.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/filedesc.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
+#include <sys/resourcevar.h>
+#include <sys/vnode.h>
+#include <sys/file.h>
+#include <sys/acct.h>
+#include <sys/ktrace.h>
 
 struct fork_args {
 	int	dummy;
