@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.84	82/12/30	*/
+/*	tcp_input.c	1.85	83/01/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -196,24 +196,25 @@ tcp_input(m0)
 	 * segment in this state.
 	 */
 	case TCPS_LISTEN: {
-		struct mbuf *am = m_get(M_DONTWAIT, MT_SONAME);
+		struct mbuf *am;
 		register struct sockaddr_in *sin;
 
-		if (am == 0)
-			goto drop;
-		am->m_len = sizeof (struct sockaddr_in);
 		if (tiflags & TH_RST)
 			goto drop;
 		if (tiflags & TH_ACK)
 			goto dropwithreset;
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
+		am = m_get(M_DONTWAIT, MT_SONAME);
+		if (am == NULL)
+			goto drop;
+		am->m_len = sizeof (struct sockaddr_in);
 		sin = mtod(am, struct sockaddr_in *);
 		sin->sin_family = AF_INET;
 		sin->sin_addr = ti->ti_src;
 		sin->sin_port = ti->ti_sport;
 		laddr = inp->inp_laddr;
-		if (inp->inp_laddr.s_addr == 0)
+		if (inp->inp_laddr.s_addr == INADDR_ANY)
 			inp->inp_laddr = ti->ti_dst;
 		if (in_pcbconnect(inp, am)) {
 			inp->inp_laddr = laddr;
@@ -476,7 +477,6 @@ trimthenstep6:
 				tp->t_srtt =
 				    tcp_alpha * tp->t_srtt +
 				    (1 - tcp_alpha) * tp->t_rtt;
-/* printf("rtt %d srtt*100 now %d\n", tp->t_rtt, (int)(tp->t_srtt*100)); */
 			tp->t_rtt = 0;
 		}
 
@@ -886,11 +886,8 @@ present:
 		ti = (struct tcpiphdr *)ti->ti_next;
 		if (so->so_state & SS_CANTRCVMORE)
 			m_freem(m);
-		else {
-SBCHECK(&so->so_rcv, "tcp_input before");
+		else
 			sbappend(&so->so_rcv, m);
-SBCHECK(&so->so_rcv, "tcp_input after");
-		}
 	} while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt);
 	sorwakeup(so);
 	return (flags);
