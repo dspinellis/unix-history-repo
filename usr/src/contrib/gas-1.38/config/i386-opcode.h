@@ -1,6 +1,11 @@
-/*	@(#)i386-opcode.h	6.2 (Berkeley) %G%
-
-Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+/*-
+ * This code is derived from software copyrighted by the Free Software
+ * Foundation.
+ *
+ * Modified 1991 by Donn Seeley at UUNET Technologies, Inc.
+ *
+ *	@(#)i386-opcode.h	6.3 (Berkeley) %G%
+ */
 
 /* i386-opcode.h -- Intel 80386 opcode table
    Copyright (C) 1989, Free Software Foundation.

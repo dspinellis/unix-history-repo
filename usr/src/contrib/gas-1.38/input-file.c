@@ -1,3 +1,14 @@
+/*-
+ * This code is derived from software copyrighted by the Free Software
+ * Foundation.
+ *
+ * Modified 1991 by Donn Seeley at UUNET Technologies, Inc.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)input-file.c	6.2 (Berkeley) %G%";
+#endif /* not lint */
+
 /* input_file.c - Deal with Input Files -
    Copyright (C) 1987 Free Software Foundation, Inc.
 
