@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_cluster.c	7.54 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.55 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,26 +24,14 @@
  */
 #define	BUFHASH(dvp, lbn)	\
 	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & bufhash])
-struct	buf **bufhashtbl, *invalhash;
+struct	list_entry *bufhashtbl, invalhash;
 u_long	bufhash;
 
 /*
  * Insq/Remq for the buffer hash lists.
  */
-#define	bremhash(bp) { \
-	struct buf *bq; \
-	if (bq = (bp)->b_forw) \
-		bq->b_back = (bp)->b_back; \
-	*(bp)->b_back = bq; \
-}
-#define	binshash(bp, dp) { \
-	struct buf *bq; \
-	if (bq = *(dp)) \
-		bq->b_back = &(bp)->b_forw; \
-	(bp)->b_forw = bq; \
-	(bp)->b_back = (dp); \
-	*(dp) = (bp); \
-}
+#define	binshash(bp, dp)	list_enter_head(dp, bp, struct buf *, b_hash)
+#define	bremhash(bp)		list_remove(bp, struct buf *, b_hash)
 
 /*
  * Definitions for the buffer free lists.
@@ -55,50 +43,36 @@ u_long	bufhash;
 #define	BQ_AGE		2		/* rubbish */
 #define	BQ_EMPTY	3		/* buffer headers with no memory */
 
-struct bufqueue {
-	struct	buf *buffreehead;	/* head of available list */
-	struct	buf **buffreetail;	/* tail of available list */
-} bufqueues[BQUEUES];
+struct queue_entry bufqueues[BQUEUES];
 int needbuffer;
 
 /*
  * Insq/Remq for the buffer free lists.
  */
+#define	binsheadfree(bp, dp) \
+	queue_enter_head(dp, bp, struct buf *, b_freelist)
+#define	binstailfree(bp, dp) \
+	queue_enter_tail(dp, bp, struct buf *, b_freelist)
+
 void
 bremfree(bp)
 	struct buf *bp;
 {
-	struct buf *bq;
-	struct bufqueue *dp;
+	struct queue_entry *dp;
 
-	if (bq = bp->b_actf) {
-		bq->b_actb = bp->b_actb;
-	} else {
+	/*
+	 * We only calculate the head of the freelist when removing
+	 * the last element of the list as that is the only time that
+	 * it is needed (e.g. to reset the tail pointer).
+	 */
+	if (bp->b_freelist.qe_next == NULL) {
 		for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++)
-			if (dp->buffreetail == &bp->b_actf)
+			if (dp->qe_prev == &bp->b_freelist.qe_next)
 				break;
 		if (dp == &bufqueues[BQUEUES])
 			panic("bremfree: lost tail");
-		dp->buffreetail = bp->b_actb;
 	}
-	*bp->b_actb = bq;
-}
-
-#define	binsheadfree(bp, dp) { \
-	struct buf *bq; \
-	if (bq = (dp)->buffreehead) \
-		bq->b_actb = &(bp)->b_actf; \
-	else \
-		(dp)->buffreetail = &(bp)->b_actf; \
-	(dp)->buffreehead = (bp); \
-	(bp)->b_actf = bq; \
-	(bp)->b_actb = &(dp)->buffreehead; \
-}
-#define	binstailfree(bp, dp) { \
-	(bp)->b_actf = NULL; \
-	(bp)->b_actb = (dp)->buffreetail; \
-	*(dp)->buffreetail = (bp); \
-	(dp)->buffreetail = &(bp)->b_actf; \
+	queue_remove(dp, bp, struct buf *, b_freelist);
 }
 
 /*
@@ -108,13 +82,13 @@ void
 bufinit()
 {
 	register struct buf *bp;
-	struct bufqueue *dp;
+	struct queue_entry *dp;
 	register int i;
 	int base, residual;
 
 	for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++)
-		dp->buffreetail = &dp->buffreehead;
-	bufhashtbl = (struct buf **)hashinit(nbuf, M_CACHE, &bufhash);
+		queue_init(dp);
+	bufhashtbl = (struct list_entry *)hashinit(nbuf, M_CACHE, &bufhash);
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
 	for (i = 0; i < nbuf; i++) {
@@ -370,7 +344,7 @@ bawrite(bp)
 brelse(bp)
 	register struct buf *bp;
 {
-	register struct bufqueue *flist;
+	register struct queue_entry *flist;
 	int s;
 
 	trace(TR_BRELSE, pack(bp->b_vp, bp->b_bufsize), bp->b_lblkno);
@@ -433,7 +407,7 @@ incore(vp, blkno)
 {
 	register struct buf *bp;
 
-	for (bp = *BUFHASH(vp, blkno); bp; bp = bp->b_forw)
+	for (bp = BUFHASH(vp, blkno)->le_next; bp; bp = bp->b_hash.qe_next)
 		if (bp->b_lblkno == blkno && bp->b_vp == vp &&
 		    (bp->b_flags & B_INVAL) == 0)
 			return (1);
@@ -457,7 +431,8 @@ getblk(vp, blkno, size)
 	long secsize;
 #endif SECSIZE
 {
-	register struct buf *bp, **dp;
+	register struct buf *bp;
+	struct list_entry *dp;
 	int s;
 
 	if (size > MAXBSIZE)
@@ -469,7 +444,7 @@ getblk(vp, blkno, size)
 	 */
 	dp = BUFHASH(vp, blkno);
 loop:
-	for (bp = *dp; bp; bp = bp->b_forw) {
+	for (bp = dp->le_next; bp; bp = bp->b_hash.qe_next) {
 		if (bp->b_lblkno != blkno || bp->b_vp != vp ||
 		    (bp->b_flags & B_INVAL))
 			continue;
@@ -559,7 +534,7 @@ allocbuf(tp, size)
 	 * extra space in the present buffer.
 	 */
 	if (sizealloc < tp->b_bufsize) {
-		if ((ep = bufqueues[BQ_EMPTY].buffreehead) == NULL)
+		if ((ep = bufqueues[BQ_EMPTY].qe_next) == NULL)
 			goto out;
 		s = splbio();
 		bremfree(ep);
@@ -613,14 +588,14 @@ struct buf *
 getnewbuf()
 {
 	register struct buf *bp;
-	register struct bufqueue *dp;
+	register struct queue_entry *dp;
 	register struct ucred *cred;
 	int s;
 
 loop:
 	s = splbio();
 	for (dp = &bufqueues[BQ_AGE]; dp > bufqueues; dp--)
-		if (dp->buffreehead)
+		if (dp->qe_next)
 			break;
 	if (dp == bufqueues) {		/* no free blocks */
 		needbuffer = 1;
@@ -628,7 +603,7 @@ loop:
 		splx(s);
 		goto loop;
 	}
-	bp = dp->buffreehead;
+	bp = dp->qe_next;
 	bremfree(bp);
 	bp->b_flags |= B_BUSY;
 	splx(s);
@@ -718,7 +693,7 @@ vfs_bufstats()
 {
 	int s, i, j, count;
 	register struct buf *bp;
-	register struct bufqueue *dp;
+	register struct queue_entry *dp;
 	int counts[MAXBSIZE/CLBYTES+1];
 	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
 
@@ -727,7 +702,7 @@ vfs_bufstats()
 		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
 			counts[j] = 0;
 		s = splbio();
-		for (bp = dp->buffreehead; bp; bp = bp->b_actf) {
+		for (bp = dp->qe_next; bp; bp = bp->b_freelist.qe_next) {
 			counts[bp->b_bufsize/CLBYTES]++;
 			count++;
 		}
