@@ -1,7 +1,7 @@
 /*
 **  POSTBOX.H -- Global definitions for postbox.
 **
-**	@(#)sendmail.h	3.7	%G%
+**	@(#)sendmail.h	3.8	%G%
 */
 
 
@@ -16,7 +16,7 @@
 # define MAXLINE	256	/* maximum line length */
 # define MAXNAME	128	/* maximum length of a name */
 # define MAXFIELD	2500	/* maximum total length of a header field */
-# define MAXPV		15	/* maximum # of parms to mailers */
+# define MAXPV		40	/* maximum # of parms to mailers */
 # define MAXHOP		30	/* maximum value of HopCount */
 # define MAXATOM	15	/* max atoms per address */
 # define ALIASFILE	"/usr/lib/aliases"	/* location of alias file */
