@@ -1,17 +1,19 @@
 #ifndef lint
-static char sccsid[] = "@(#)diff3.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)diff3.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
-#
 
 /* diff3 - 3-way differential file comparison*/
 
-/* diff3 [-e] d13 d23 f1 f2 f3 
+/* diff3 [-ex3EX] d13 d23 f1 f2 f3 [m1 m3]
  *
  * d13 = diff report on f1 vs f3
  * d23 = diff report on f2 vs f3
  * f1, f2, f3 the 3 files
+ * if changes in f1 overlap with changes in f3, m1 and m3 are used
+ * to mark the overlaps; otherwise, the file names f1 and f3 are used
+ * (only for options E and X).
 */
 
 struct  range {int from,to; };
@@ -23,15 +25,20 @@ struct  range {int from,to; };
 struct diff {struct range old, new;};
 
 #define NC 200
+struct diff d13[NC];
+struct diff d23[NC];
 /* de is used to gather editing scripts,
  * that are later spewed out in reverse order.
  * its first element must be all zero
  * the "new" component of de contains line positions
  * or byte positions depending on when you look(!?)
+ * array overlap indicates which sections in de correspond to
+ * lines that are different in all three files.
 */
-struct diff d13[NC];
-struct diff d23[NC];
 struct diff de[NC];
+char overlap[NC];
+int  overlapcnt =0;
+
 char line[256];
 FILE *fp[3];
 int linct[3] = {0,0,0};
@@ -44,12 +51,16 @@ int cline[3];
 */
 int last[4];
 int eflag;
+int oflag;      /* indicates whether to mark overlaps (-E or -X)*/
 int debug  = 0;
+char f1mark[40], f3mark[40]; /*markers for -E and -X*/
+
 
 main(argc,argv)
 char **argv;
 {
 	register i,m,n;
+        eflag=0; oflag=0;
 	if(*argv[1]=='-') {
 		switch(argv[1][1]) {
 		default:
@@ -60,6 +71,14 @@ char **argv;
 			break;
 		case 'x':
 			eflag = 1;
+                        break;
+                case 'E':
+                        eflag = 3;
+                        oflag = 1;
+                        break;
+                case 'X':
+                        oflag = eflag = 1;
+                        break;
 		}
 		argv++;
 		argc--;
@@ -68,6 +87,11 @@ char **argv;
 		fprintf(stderr,"diff3: arg count\n");
 		exit(1);
 	}
+        if (oflag) { 
+                sprintf(f1mark,"<<<<<<< %s",argc>=7?argv[6]:argv[3]);
+                sprintf(f3mark,">>>>>>> %s",argc>=8?argv[7]:argv[5]);
+        }
+
 	m = readin(argv[1],d13);
 	n = readin(argv[2],d23);
 	for(i=0;i<=2;i++)
@@ -397,6 +421,8 @@ struct diff *diff;
 	if(((dup+1)&eflag)==0)
 		return(j);
 	j++;
+        overlap[j] = !dup;
+        if (!dup) overlapcnt++;
 	de[j].old.from = diff->old.from;
 	de[j].old.to = diff->old.to;
 	de[j].new.from = de[j-1].new.to
@@ -412,7 +438,10 @@ edscript(n)
 	register j,k;
 	char block[BUFSIZ];
 	for(n=n;n>0;n--) {
-		prange(&de[n].old);
+                if (!oflag || !overlap[n]) 
+                        prange(&de[n].old);
+                else
+                        printf("%da\n=======\n", de[n].old.to -1);
 		fseek(fp[2], (long)de[n].new.from, 0);
 		for(k=de[n].new.to-de[n].new.from;k>0;k-= j) {
 			j = k>BUFSIZ?BUFSIZ:k;
@@ -420,6 +449,12 @@ edscript(n)
 				trouble();
 			fwrite(block, 1, j, stdout);
 		}
-		printf(".\n");
+                if (!oflag || !overlap[n]) 
+                        printf(".\n");
+                else {
+                        printf("%s\n.\n",f3mark);
+                        printf("%da\n%s\n.\n",de[n].old.from-1,f1mark);
+                }
 	}
+        exit(overlapcnt);
 }
