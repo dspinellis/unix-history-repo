@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -30,6 +30,7 @@ static char sccsid[] = "@(#)recipient.c	6.17 (Berkeley) %G%";
 **			expansion.
 **		sendq -- a pointer to the head of a queue to put
 **			these people into.
+**		e -- the envelope in which to add these recipients.
 **
 **	Returns:
 **		The number of addresses actually on the list.
@@ -150,7 +151,7 @@ recipient(a, sendq, e)
 	bool quoted = FALSE;		/* set if the addr has a quote bit */
 	int findusercount = 0;
 	char buf[MAXNAME];		/* unquoted image of the user name */
-	extern bool safefile();
+	extern int safefile();
 
 	e->e_to = a->q_paddr;
 	m = a->q_mailer;
@@ -248,8 +249,12 @@ recipient(a, sendq, e)
 		}
 		else
 		{
+			int err;
+
 			message("including file %s", a->q_user);
-			(void) include(a->q_user, FALSE, a, sendq, e);
+			err = include(a->q_user, FALSE, a, sendq, e);
+			if (transienterror(err))
+				a->q_flags |= QQUEUEUP|QDONTSEND;
 		}
 	}
 	else if (m == FileMailer)
@@ -265,7 +270,7 @@ recipient(a, sendq, e)
 			usrerr("550 Cannot mail directly to files");
 		}
 		else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
-		    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
+		    (*p = '\0', safefile(buf, getruid(), S_IWRITE|S_IEXEC) != 0))
 		{
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, e);
@@ -290,7 +295,7 @@ recipient(a, sendq, e)
 
 		if (udbexpand(a, sendq, e) == EX_TEMPFAIL)
 		{
-			a->q_flags |= QQUEUEUP;
+			a->q_flags |= QQUEUEUP|QDONTSEND;
 			if (e->e_message == NULL)
 				e->e_message = newstr("Deferred: user database error");
 # ifdef LOG
@@ -306,7 +311,7 @@ recipient(a, sendq, e)
 # endif
 
 	/* if it was an alias or a UDB expansion, just return now */
-	if (bitset(QDONTSEND|QVERIFIED, a->q_flags))
+	if (bitset(QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags))
 		return (a);
 
 	/*
@@ -333,7 +338,7 @@ recipient(a, sendq, e)
 	**  and deliver it.
 	*/
 
-	if (!bitset(QDONTSEND, a->q_flags))
+	if (!bitset(QDONTSEND|QQUEUEUP, a->q_flags))
 	{
 		auto bool fuzzy;
 		register struct passwd *pw;
@@ -557,6 +562,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	int oldlinenumber = LineNumber;
 	register EVENT *ev = NULL;
 	int nincludes;
+	int ret;
 	char buf[MAXLINE];
 	static int includetimeout();
 
@@ -578,13 +584,14 @@ include(fname, forwarding, ctladdr, sendq, e)
 	ev = setevent((time_t) 60, includetimeout, 0);
 
 	/* if forwarding, the input file must be marked safe */
-	if (forwarding && !safefile(fname, ctladdr->q_uid, S_IREAD))
+	if (forwarding && (ret = safefile(fname, ctladdr->q_uid, S_IREAD)) != 0)
 	{
 		/* don't use this .forward file */
 		clrevent(ev);
 		if (tTd(27, 4))
-			printf("include: not safe (uid=%d)\n", ctladdr->q_uid);
-		return EPERM;
+			printf("include: not safe (uid=%d): %s\n",
+				ctladdr->q_uid, errstring(ret));
+		return ret;
 	}
 
 	fp = fopen(fname, "r");
@@ -676,6 +683,7 @@ includetimeout()
 **
 **	Parameters:
 **		argv -- argument vector to send to.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none.
