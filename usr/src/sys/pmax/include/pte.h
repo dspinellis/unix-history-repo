@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: pte.h 1.11 89/09/03$
  *
- *	@(#)pte.h	7.1 (Berkeley) %G%
+ *	@(#)pte.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -66,7 +66,7 @@ typedef union {
 #define	PG_PFNUM(x)	(((x) & PG_FRAME) >> PG_SHIFT)
 
 /*
- * Kernel virtual address to page table entry and to physical address.
+ * Kernel virtual address to page table entry and visa versa.
  */
 #define	kvtopte(va) \
 	((pt_entry_t *)PMAP_HASH_KADDR + \
@@ -74,5 +74,3 @@ typedef union {
 #define	ptetokv(pte) \
 	((((pt_entry_t *)(pte) - PMAP_HASH_KADDR) << PGSHIFT) + \
 	VM_MIN_KERNEL_ADDRESS)
-#define	kvtophys(va) \
-	((kvtopte(va)->pt_entry & PG_FRAME) | ((unsigned)(va) & PGOFSET))
