@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 LIB=	rpc
 CFLAGS+=-I${.CURDIR}
@@ -13,17 +13,13 @@ SRCS=	auth_none.c auth_unix.c  authunix_prot.c bindresvport.c \
 
 UNSUPPORTED=	xdr_float.c 
 
-HDRS=	auth.h auth_unix.h clnt.h netdb.h pmap_clnt.h \
+HDRS=	auth.h auth_unix.h clnt.h pmap_clnt.h \
 	pmap_prot.h pmap_rmt.h rpc.h rpc_msg.h svc.h svc_auth.h types.h xdr.h
 .PATH: ${.CURDIR} ${.CURDIR}/doc
 
 all: librpc.a
 
-beforeinstall: hdrs
-	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} portmap \
-	    ${DESTDIR}/usr/sbin/portmap
-
-hdrs: ${HDRS}
+beforeinstall: ${HDRS}
 	cd ${.CURDIR}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${HDRS} \
 	    ${DESTDIR}/usr/include/rpc
 
