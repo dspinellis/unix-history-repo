@@ -1,228 +1,194 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Kevin Fall.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cat.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * Concatenate files.
- */
-
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <ctype.h>
 
-/* #define OPTSIZE BUFSIZ	/* define this only if not 4.2 BSD or beyond */
-
-int	bflg, eflg, nflg, sflg, tflg, uflg, vflg;
-int	spaced, col, lno, inaline, ibsize, obsize;
+int bflag, eflag, nflag, sflag, tflag, vflag;
+int rval;
+char *filename;
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	int fflg = 0;
-	register FILE *fi;
-	register c;
-	int dev, ino = -1;
-	struct stat statb;
-	int retval = 0;
+	extern int errno, optind;
+	register FILE *fp;
+	int ch;
+	char *strerror();
 
-	lno = 1;
-	for( ; argc>1 && argv[1][0]=='-'; argc--,argv++) {
-		switch(argv[1][1]) {
-		case 0:
+	while ((ch = getopt(argc, argv, "-benstuv")) != EOF)
+		switch (ch) {
+		case '-':
+			--optind;
+			goto done;
+		case 'b':
+			bflag = nflag = 1;	/* -b implies -n */
+			break;
+		case 'e':
+			eflag = vflag = 1;	/* -e implies -v */
+			break;
+		case 'n':
+			nflag = 1;
+			break;
+		case 's':
+			sflag = 1;
+			break;
+		case 't':
+			tflag = vflag = 1;	/* -t implies -v */
 			break;
 		case 'u':
 			setbuf(stdout, (char *)NULL);
-			uflg++;
-			continue;
-		case 'n':
-			nflg++;
-			continue;
-		case 'b':
-			bflg++;
-			nflg++;
-			continue;
-		case 'v':
-			vflg++;
-			continue;
-		case 's':
-			sflg++;
-			continue;
-		case 'e':
-			eflg++;
-			vflg++;
-			continue;
-		case 't':
-			tflg++;
-			vflg++;
-			continue;
-		}
-		break;
-	}
-	if (fstat(fileno(stdout), &statb) == 0) {
-		statb.st_mode &= S_IFMT;
-		if (statb.st_mode!=S_IFCHR && statb.st_mode!=S_IFBLK) {
-			dev = statb.st_dev;
-			ino = statb.st_ino;
-		}
-#ifndef	OPTSIZE
-		obsize = statb.st_blksize;
-#endif
-	}
-	else
-		obsize = 0;
-	if (argc < 2) {
-		argc = 2;
-		fflg++;
-	}
-	while (--argc > 0) {
-		if (fflg || (*++argv)[0]=='-' && (*argv)[1]=='\0')
-			fi = stdin;
-		else {
-			if ((fi = fopen(*argv, "r")) == NULL) {
-				perror(*argv);
-				retval = 1;
-				continue;
-			}
-		}
-		if (fstat(fileno(fi), &statb) == 0) {
-			if ((statb.st_mode & S_IFMT) == S_IFREG &&
-			    statb.st_dev==dev && statb.st_ino==ino) {
-				fprintf(stderr, "cat: input %s is output\n",
-				   fflg?"-": *argv);
-				fclose(fi);
-				retval = 1;
-				continue;
-			}
-#ifndef	OPTSIZE
-			ibsize = statb.st_blksize;
-#endif
-		}
-		else
-			ibsize = 0;
-		if (nflg||sflg||vflg)
-			copyopt(fi);
-		else if (uflg) {
-			while ((c = getc(fi)) != EOF)
-				putchar(c);
-		} else
-			retval |= fastcat(fileno(fi));	/* no flags specified */
-		if (fi!=stdin)
-			fclose(fi);
-		else
-			clearerr(fi);		/* reset sticky eof */
-		if (ferror(stdout)) {
-			fprintf(stderr, "cat: output write error\n");
-			retval = 1;
 			break;
+		case 'v':
+			vflag = 1;
+			break;
+		case '?':
+			(void)fprintf(stderr,
+			    "usage: cat [-benstuv] [-] [file ...]\n");
+			exit(1);
 		}
-	}
-	exit(retval);
+done:	argv += optind;
+
+	fp = stdin;
+	filename = "-";
+	do {
+		if (*argv) {
+			if (!strcmp(*argv, "-")) {
+				fp = stdin;
+				filename = "-";
+			}
+			else if (!(fp = fopen(filename = *argv, "r"))) {
+				(void)fprintf(stderr, 
+				    "cat: %s: %s\n", *argv, strerror(errno));
+				++argv;
+				continue;
+			}
+			++argv;
+		}
+		if (bflag || eflag || nflag || sflag || tflag || vflag)
+			process_buf(fp);
+		else
+			rawcat(fileno(fp));
+		if (fp != stdin)
+			(void)fclose(fp);
+	} while (*argv);
+	exit(rval);
 }
 
-copyopt(f)
-	register FILE *f;
+process_buf(fp)
+	register FILE *fp;
 {
-	register int c;
+	register int ch, gobble, line, prev;
 
-top:
-	c = getc(f);
-	if (c == EOF)
-		return;
-	if (c == '\n') {
-		if (inaline == 0) {
-			if (sflg && spaced)
-				goto top;
-			spaced = 1;
-		}
-		if (nflg && bflg==0 && inaline == 0)
-			printf("%6d\t", lno++);
-		if (eflg)
-			putchar('$');
-		putchar('\n');
-		inaline = 0;
-		goto top;
-	}
-	if (nflg && inaline == 0)
-		printf("%6d\t", lno++);
-	inaline = 1;
-	if (vflg) {
-		if (tflg==0 && c == '\t')
-			putchar(c);
-		else {
-			if (c > 0177) {
-				printf("M-");
-				c &= 0177;
+	line = gobble = 0;
+	for (prev = '\n'; (ch = getc(fp)) != EOF; prev = ch) {
+		if (prev == '\n') {
+			if (ch == '\n') {
+				if (sflag) {
+					if (gobble)
+						continue;
+					gobble = 1;
+				}
+				if (nflag && !bflag) {
+					(void)fprintf(stdout, "%6d\t", ++line);
+					if (ferror(stdout))
+						break;
+				}
 			}
-			if (c < ' ')
-				printf("^%c", c+'@');
-			else if (c == 0177)
-				printf("^?");
-			else
-				putchar(c);
+			else if (nflag) {
+				(void)fprintf(stdout, "%6d\t", ++line);
+				if (ferror(stdout))
+					break;
+			}
 		}
-	} else
-		putchar(c);
-	spaced = 0;
-	goto top;
+		if (ch == '\n') {
+			if (eflag)
+				if (putc('$', stdout) == EOF)
+					break;
+		} else if (ch == '\t') {
+			if (tflag) {
+				if (putc('^', stdout) == EOF ||
+				    putc('I', stdout) == EOF)
+					break;
+				continue;
+			}
+		} else if (vflag) {
+			if (ch > 0177) {
+				if (putc('M', stdout) == EOF ||
+				    putc('-', stdout) == EOF)
+					break;
+				ch &= 0177;
+			}
+			if (iscntrl(ch)) {
+				if (putc('^', stdout) == EOF ||
+				    putc(ch == '\177' ? '?' :
+				    ch | 0100, stdout) == EOF)
+					break;
+				continue;
+			}
+		}
+		if (putc(ch, stdout) == EOF)
+			break;
+	}
+	if (ferror(fp)) {
+		(void)fprintf(stderr, "cat: %s: read error\n", filename);
+		rval = 1;
+	}
+	if (ferror(stdout)) {
+		clearerr(stdout);
+		(void)fprintf(stderr, "cat: stdout: write error\n");
+		rval = 1;
+	}
 }
 
-fastcat(fd)
-register int fd;
+rawcat(fd)
+	register int fd;
 {
-	register int	buffsize, n, nwritten, offset;
-	register char	*buff;
-	struct stat	statbuff;
-	char		*malloc();
+	extern int errno;
+	static char buf[8*1024];
+	register int nr, nw, off;
+	char *strerror();
 
-#ifndef	OPTSIZE
-	if (obsize)
-		buffsize = obsize;	/* common case, use output blksize */
-	else if (ibsize)
-		buffsize = ibsize;
-	else
-		buffsize = BUFSIZ;
-#else
-	buffsize = OPTSIZE;
-#endif
-
-	if ((buff = malloc(buffsize)) == NULL) {
-		perror("cat: no memory");
-		return (1);
-	}
-
-	/*
-	 * Note that on some systems (V7), very large writes to a pipe
-	 * return less than the requested size of the write.
-	 * In this case, multiple writes are required.
-	 */
-	while ((n = read(fd, buff, buffsize)) > 0) {
-		offset = 0;
-		do {
-			nwritten = write(fileno(stdout), &buff[offset], n);
-			if (nwritten <= 0) {
-				perror("cat: write error");
-				exit(2);
+	while ((nr = read(fd, buf, sizeof(buf))) > 0)
+		for (off = 0; off < nr;) {
+			if ((nw = write(fileno(stdout), buf + off, nr)) < 0) {
+				perror("cat: stdout");
+				rval = 1;
+				return;
 			}
-			offset += nwritten;
-		} while ((n -= nwritten) > 0);
+			off += nw;
+		}
+	if (nr < 0) {
+		(void)fprintf(stderr, "cat: %s: %s\n", filename,
+		    strerror(errno));
+		rval = 1;
 	}
-
-	free(buff);
-	if (n < 0) {
-		perror("cat: read error");
-		return (1);
-	}
-	return (0);
 }
