@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_extern.h	7.1 (Berkeley) %G%
+ *	@(#)vm_extern.h	7.2 (Berkeley) %G%
  */
 
 struct buf;
@@ -13,6 +13,7 @@ struct proc;
 struct vmspace;
 struct vmtotal;
 struct mount;
+struct vnode;
 
 #ifdef KGDB
 void		 chgkprot __P((caddr_t, int, int));
