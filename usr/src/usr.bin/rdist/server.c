@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.19 (Berkeley) 84/07/02";
+static	char *sccsid = "@(#)server.c	4.20 (Berkeley) 84/09/21";
 #endif
 
 #include "defs.h"
@@ -1245,6 +1245,7 @@ dospecial(cmd)
 		(void) dup(fd[1]);
 		(void) close(fd[0]);
 		(void) close(fd[1]);
+		setuid(userid);
 		execl("/bin/sh", "sh", "-c", cmd, 0);
 		_exit(127);
 	}
