@@ -1,4 +1,4 @@
-/*	dn11.c	4.1	81/05/09	*/
+/*	dn11.c	4.2	81/06/04	*/
 /*
  * Routines for dialing up on DN-11
  */
@@ -14,6 +14,7 @@ char *num, *acu;
 	char *p, *q, b[30];
 	int child = -1, dn, t, connected = 1;
 
+	ioctl(FD, TIOCNXCL, 0);	/* get rid of exclusive open from hunt() */
 	if ((dn = open(acu, 1)) < 0) {
 		if (errno == 6)
 			printf("line busy\n");
