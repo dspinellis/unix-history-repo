@@ -5,13 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
 #include <netdb.h>
 #include <sys/file.h>
 #include <ndbm.h>
+#include <ctype.h>
 
 #define	MAXALIASES	35
 
@@ -69,15 +70,24 @@ gethostbyname(nam)
 	register struct hostent *hp;
 	register char **cp;
         datum key;
+	char lowname[128];
+	register char *lp = lowname;
+	
+	while (*nam)
+		if (isupper(*nam))
+			*lp++ = tolower(*nam++);
+		else
+			*lp++ = *nam++;
+	*lp = '\0';
 
 	if ((_host_db == (DBM *)NULL)
 	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
 		sethostent(_host_stayopen);
 		while (hp = gethostent()) {
-			if (strcmp(hp->h_name, nam) == 0)
+			if (strcmp(hp->h_name, lowname) == 0)
 				break;
 			for (cp = hp->h_aliases; cp != 0 && *cp != 0; cp++)
-				if (strcmp(*cp, nam) == 0)
+				if (strcmp(*cp, lowname) == 0)
 					goto found;
 		}
 	found:
@@ -85,8 +95,8 @@ gethostbyname(nam)
 			endhostent();
 		return (hp);
 	}
-        key.dptr = nam;
-        key.dsize = strlen(nam);
+        key.dptr = lowname;
+        key.dsize = strlen(lowname);
 	hp = fetchhost(key);
 	if (!_host_stayopen) {
 		dbm_close(_host_db);
