@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gprof.h	5.9 (Berkeley) %G%
+ *	@(#)gprof.h	5.10 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -21,6 +21,12 @@
 #endif
 #if tahoe
 #   include "tahoe.h"
+#endif
+#if hp300
+#   include "hp300.h"
+#endif
+#if i386
+#   include "i386.h"
 #endif
 
 
