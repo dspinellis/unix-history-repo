@@ -1,4 +1,4 @@
-/*	pte.h	4.5	81/02/19	*/
+/*	pte.h	4.6	81/02/23	*/
 
 /*
  * VAX page table entry
@@ -10,6 +10,7 @@
  * structure used in page clustering.
  */
 
+#ifndef LOCORE
 struct pte
 {
 unsigned int	pg_pfnum:21,		/* core page frame number or 0 */
@@ -36,6 +37,7 @@ unsigned int	pg_blkno:20,		/* file system block number */
 		pg_prot:4,
 		pg_v:1;
 };
+#endif
 
 #define	PG_V		0x80000000
 #define	PG_PROT		0x78000000
@@ -60,6 +62,7 @@ unsigned int	pg_blkno:20,		/* file system block number */
 #define	dirty(pte)	((pte)->pg_fod == 0 && (pte)->pg_pfnum && \
 			    ((pte)->pg_m || (pte)->pg_swapm))
 
+#ifndef LOCORE
 #ifdef KERNEL
 struct	pte *vtopte();
 
@@ -79,4 +82,5 @@ extern	struct pte bufmap[];
 extern	struct pte msgbufmap[];
 extern	struct pte camap[];
 extern	struct pte Nexmap[16][16];
+#endif
 #endif
