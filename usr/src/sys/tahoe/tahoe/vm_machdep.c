@@ -1,4 +1,10 @@
-/*	vm_machdep.c	7.1	88/05/21	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vm_machdep.c	1.12 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "systm.h"
@@ -248,7 +254,6 @@ dkeyrelease(key)
 dkeyinval(p)
 	register struct proc *p;
 {
-	register int key;
 	int s;
 
 	dkeystats.ks_inval++;

@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)in_cksum.c	7.1 (Berkeley) %G%
+ *      @(#)in_cksum.c	7.2 (Berkeley) %G%
  */
 #include "types.h"
 #include "mbuf.h"
@@ -21,7 +21,7 @@
  * code and should be modified for each CPU to be as fast as possible.
  */
 
-#define ADDCARRY(x)  (x > 65535 ? x -= 65535 : x)
+#define ADDCARRY(x)  { if ((x) > 65535) (x) -= 65535; }
 #define REDUCE {l_util.l = sum; sum = l_util.s[0] + l_util.s[1]; ADDCARRY(sum);}
 
 #define ADD(n)	asm("adwc n (r10),r9")
@@ -35,7 +35,9 @@ in_cksum(m, len)
 	register u_short *w;		/* On CCI, known to be r10 */
 	register int sum = 0;		/* On CCI, known to be r9 */
 	register int mlen = 0;
-	register int ClearCarry = 0;	/* On CCI, known to be r7 */
+#ifndef lint
+	register int ClearCarry = 0;	/* On CCI, known to be r7; see BOTCH */
+#endif
 	int byte_swapped = 0;
 
 	union {
