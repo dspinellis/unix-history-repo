@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -62,7 +62,7 @@ main(argc, argv)
 		case 's':
 			maxblk = atoi(optarg);
 			if (maxblk <= 0) {
-				fputs("tcopy: illegal block size\n", stderr);
+				fprintf(stderr, "tcopy: illegal block size\n");
 				usage();
 			}
 			guesslen = 0;
@@ -218,7 +218,7 @@ verify(inp, outp, outb)
 						goto r1;
 				}
 			perror("tcopy: read error");
-			exit(1);
+			break;
 		}
 r1:		if ((outn = read(outp, outb, outmaxblk)) == -1) {
 			if (guesslen)
@@ -228,22 +228,25 @@ r1:		if ((outn = read(outp, outb, outmaxblk)) == -1) {
 						goto r2;
 				}
 			perror("tcopy: read error");
-			exit(1);
-		}
-r2:		if (inn != outn)
 			break;
+		}
+r2:		if (inn != outn) {
+			printf("tcopy: tapes have different block sizes; %d != %d.\n", inn, outn);
+			break;
+		}
 		if (!inn) {
 			if (eot++) {
-				puts("tcopy: tapes are identical.");
+				printf("tcopy: tapes are identical.\n");
 				return;
 			}
 		} else {
-			if (bcmp(inb, outb, inn))
+			if (bcmp(inb, outb, inn)) {
+				printf("tcopy: tapes have different data.\n");
 				break;
+			}
 			eot = 0;
 		}
 	}
-	puts("tcopy: tapes are different.");
 	exit(1);
 }
 
@@ -266,7 +269,7 @@ getspace(blk)
 	char *bp, *malloc();
 
 	if ((bp = malloc((u_int)blk)) == NULL) {
-		fputs("tcopy: no memory\n", stderr);
+		fprintf(stderr, "tcopy: no memory\n");
 		exit(11);
 	}
 	return(bp);
@@ -287,6 +290,6 @@ writeop(fd, type)
 
 usage()
 {
-	fputs("usage: tcopy [-cv] [-s maxblk] src [dest]\n", stderr);
+	fprintf(stderr, "usage: tcopy [-cv] [-s maxblk] src [dest]\n");
 	exit(1);
 }
