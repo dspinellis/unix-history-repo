@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpfs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumpfs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -117,8 +117,9 @@ dumpfs(name)
 	    afs.fs_rotdelay, afs.fs_headswitch, afs.fs_trkseek, afs.fs_rps);
 	printf("ntrak\t%d\tnsect\t%d\tnpsect\t%d\tspc\t%d\n",
 	    afs.fs_ntrak, afs.fs_nsect, afs.fs_npsect, afs.fs_spc);
-	printf("symlinklen %d\ttrackskew %d\tinterleave %d\n",
-	    afs.fs_maxsymlinklen, afs.fs_trackskew, afs.fs_interleave);
+	printf("symlinklen %d\ttrackskew %d\tinterleave %d\tcontigsumsize %d\n",
+	    afs.fs_maxsymlinklen, afs.fs_trackskew, afs.fs_interleave,
+	    afs.fs_contigsumsize);
 	printf("nindir\t%d\tinopb\t%d\tnspf\t%d\n",
 	    afs.fs_nindir, afs.fs_inopb, afs.fs_nspf);
 	printf("sblkno\t%d\tcblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
@@ -220,7 +221,23 @@ dumpcg(name, fd, c)
 		printf("\t%d", acg.cg_frsum[i]);
 		j += i * acg.cg_frsum[i];
 	}
-	printf("\nsum of frsum: %d\niused:\t", j);
+	printf("\nsum of frsum: %d", j);
+	if (afs.fs_contigsumsize > 0) {
+		for (i = 1; i < afs.fs_contigsumsize; i++) {
+			if ((i - 1) % 8 == 0)
+				printf("\nclusters %d-%d:", i,
+				    afs.fs_contigsumsize - 1 < i + 7 ?
+				    afs.fs_contigsumsize - 1 : i + 7);
+			printf("\t%d", cg_clustersum(&acg)[i]);
+		}
+		printf("\nclusters size %d and over: %d\n",
+		    afs.fs_contigsumsize,
+		    cg_clustersum(&acg)[afs.fs_contigsumsize]);
+		printf("clusters free:\t");
+		pbits(cg_clustersfree(&acg), acg.cg_nclusterblks);
+	} else
+		printf("\n");
+	printf("iused:\t");
 	pbits(cg_inosused(&acg), afs.fs_ipg);
 	printf("free:\t");
 	pbits(cg_blksfree(&acg), afs.fs_fpg);
