@@ -1,0 +1,38 @@
+#
+# VANGOGH
+#
+machine         vax
+cpu             "VAX8600"
+cpu             "VAX780"
+ident           VANGOGH
+timezone        8 dst
+maxusers        256
+options         QUOTA
+options         INET
+options         NS
+options         NSIP
+options		MAXDSIZ="(64*1024*1024)"
+options		BUFPAGES="3200"
+
+config          vmunix          root on ra0 swap on ra0 and ra1 and ra3
+config          vmunix_usr      root on ra0g swap on ra0b
+
+controller      uba0    at nexus ?
+controller      uba1    at nexus ?
+controller      uba2    at nexus ?
+controller      uda0    at uba? csr 0172150             vector udintr
+disk            ra0     at uda0 drive 0
+disk            ra1     at uda0 drive 1
+disk            ra2     at uda0 drive 2
+disk            ra3     at uda0 drive 3
+controller      mba0    at nexus ?
+disk            hp0     at mba0 drive ?
+disk            hp1     at mba0 drive ?
+master          ht0     at mba0 drive ?
+tape            tu0     at ht0 slave 0
+device          dmf0    at uba? csr 0160340             flags 0xff
+	vector dmfsrint dmfsxint dmfdaint dmfdbint dmfrint dmfxint dmflint
+pseudo-device   pty
+pseudo-device   loop
+pseudo-device   ether
+device          de0     at uba? csr 0174510             vector deintr
