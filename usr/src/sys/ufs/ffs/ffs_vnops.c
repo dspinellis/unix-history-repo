@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	8.13 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -192,20 +192,11 @@ struct vnodeopv_desc ffs_fifoop_opv_desc =
 	{ &ffs_fifoop_p, ffs_fifoop_entries };
 #endif /* FIFO */
 
-#ifdef DEBUG
 /*
  * Enabling cluster read/write operations.
  */
-#include <sys/sysctl.h>
 int doclusterread = 1;
-struct ctldebug debug11 = { "doclusterread", &doclusterread };
 int doclusterwrite = 1;
-struct ctldebug debug12 = { "doclusterwrite", &doclusterwrite };
-#else
-/* XXX for ufs_readwrite */
-#define doclusterread 1
-#define doclusterwrite 1
-#endif
 
 #include <ufs/ufs/ufs_readwrite.c>
 
