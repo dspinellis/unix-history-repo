@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: sio.c,v 1.46 1994/05/30 03:13:36 ache Exp $
+ *	$Id: sio.c,v 1.47 1994/05/30 14:35:41 ache Exp $
  */
 
 #include "sio.h"
@@ -383,13 +383,8 @@ sioprobe(dev)
 	outb(iobase + com_dlbl, COMBRD(9600) & 0xff);
 	outb(iobase + com_dlbh, (u_int) COMBRD(9600) >> 8);
 	outb(iobase + com_cfcr, CFCR_8BITS);
-#if 1
-	outb(iobase + com_mcr, MCR_IENABLE);	/* open gate early */
-	outb(iobase + com_ier, 0);		/* ensure edge on next intr */
-	outb(iobase + com_ier, IER_ETXRDY);	/* generate interrupt */
-#endif
 	DELAY((16 + 1) * 9600 / 10);
-#if 0
+
 	/* 
 	 * Enable the interrupt gate and disable device interupts.  This
 	 * should leave the device driving the interrupt line low and
@@ -397,7 +392,7 @@ sioprobe(dev)
 	 * Attempt to set loopback mode so that we can send a null byte
 	 * without annoying any external device.
 	 */
-	outb(iobase + com_mcr, mcr_image | MCR_LOOPBACK);
+	outb(iobase + com_mcr, mcr_image/* | MCR_LOOPBACK */);
 	outb(iobase + com_ier, 0);
 
 	/*
@@ -430,7 +425,7 @@ sioprobe(dev)
 	 * of the first device on a shared interrupt succeeds.
 	 */
 	outb(iobase + com_mcr, mcr_image);
-#endif
+
 	/*
 	 * Check that
 	 *	o the CFCR, IER and MCR in UART hold the values written to them
