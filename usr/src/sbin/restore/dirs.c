@@ -6,13 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
 #include <protocols/dumprestore.h>
 #include <sys/file.h>
-#include <ufs/dir.h>
+#include <ufs/ufs/dir.h>
 #include "pathnames.h"
 
 /*
