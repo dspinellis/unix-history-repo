@@ -1,4 +1,4 @@
-/*	systm.h	4.16	81/04/28	*/
+/*	systm.h	4.17	81/05/05	*/
 
 /*
  * Random set of variables
@@ -83,3 +83,4 @@ int	noproc;			/* no one is running just now */
 extern	int catcher[256];
 char	*panicstr;
 int	wantin;
+int	boothowto;		/* reboot flags, from console subsystem */
