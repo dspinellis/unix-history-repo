@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.7 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -47,6 +47,7 @@
 
 int	avefree = 0;		/* XXX */
 unsigned maxdmap = MAXDSIZ;	/* XXX */
+int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
 
 kernacc(addr, len, rw)
 	caddr_t addr;
@@ -68,7 +69,7 @@ kernacc(addr, len, rw)
 	 * or worse, inconsistencies at the pmap level.  We only worry
 	 * about the buffer cache for now.
 	 */
-	if (rv && (eaddr > (vm_offset_t)buffers &&
+	if (!readbuffers && rv && (eaddr > (vm_offset_t)buffers &&
 		   saddr < (vm_offset_t)buffers + MAXBSIZE * nbuf))
 		rv = FALSE;
 	return(rv == TRUE);
