@@ -1,5 +1,12 @@
-/*	sys.c	1.1	86/01/12	*/
-/*	sys.c	6.2	83/09/23	*/
+/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	sys.c	1.2	86/12/18
+ *
+ * from	@(#)sys.c	7.1 (Berkeley) 6/5/86
+ */
 
 #include "../machine/mtpr.h"
 
@@ -7,7 +14,6 @@
 #include "inode.h"
 #include "fs.h"
 #include "dir.h"
-
 #include "saio.h"
 
 ino_t	dlook();
@@ -60,6 +66,7 @@ find(path, file)
 			q++;
 		c = *q;
 		*q = '\0';
+		if (q == path) path = "." ;	/* "/" means "/." */
 
 		if ((n = dlook(path, file)) != 0) {
 			if (c == '\0')
@@ -70,7 +77,7 @@ find(path, file)
 			path = q;
 			continue;
 		} else {
-			printf("%s not found\n", path);
+			printf("%s: not found\n", path);
 			return (0);
 		}
 	}
@@ -169,10 +176,11 @@ dlook(s, io)
 	ip = &io->i_ino;
 	if ((ip->i_mode&IFMT) != IFDIR) {
 		printf("not a directory\n");
+		printf("%s: not a directory\n", s);
 		return (0);
 	}
 	if (ip->i_size == 0) {
-		printf("zero length directory\n");
+		printf("%s: zero length directory\n", s);
 		return (0);
 	}
 	len = strlen(s);
@@ -214,7 +222,8 @@ readdir(dirp)
 			io->i_cc = blksize(&io->i_fs, &io->i_ino, lbn);
 			if (devread(io) < 0) {
 				errno = io->i_error;
-				printf("bn %D: read error\n", io->i_bn);
+				printf("bn %D: directory read error\n",
+					io->i_bn);
 				return (NULL);
 			}
 		}
@@ -232,11 +241,13 @@ lseek(fdesc, addr, ptr)
 {
 	register struct iob *io;
 
+#ifndef	SMALL
 	if (ptr != 0) {
 		printf("Seek not from beginning of file\n");
 		errno = EOFFSET;
 		return (-1);
 	}
+#endif SMALL
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
 	    ((io = &iob[fdesc])->i_flgs & F_ALLOC) == 0) {
@@ -302,37 +313,19 @@ getc(fdesc)
 	return (c);
 }
 
-/* does this port?
-getw(fdesc)
-	int fdesc;
-{
-	register w,i;
-	int val;
-
-	for (i = 0, val = 0; i < sizeof(val); i++) {
-		w = getc(fdesc);
-		if (w < 0) {
-			if (i == 0)
-				return (-1);
-			else
-				return (val);
-		}
-		val = (val << 8) | (w & 0xff);
-	}
-	return (val);
-}
-*/
 int	errno;
 
 read(fdesc, buf, count)
 	int fdesc, count;
 	char *buf;
 {
-	register i;
+	register i, size;
 	register struct iob *file;
+	register struct fs *fs;
+	int lbn, off;
 
 	errno = 0;
-	if (fdesc >= 0 && fdesc <= 2) {
+	if (fdesc >= 0 & fdesc <= 2) {
 		i = count;
 		do {
 			*buf = getchar();
@@ -349,27 +342,59 @@ read(fdesc, buf, count)
 		errno = EBADF;
 		return (-1);
 	}
+#ifndef	SMALL
 	if ((file->i_flgs & F_FILE) == 0) {
 		file->i_cc = count;
 		file->i_ma = buf;
 		file->i_bn = file->i_boff + (file->i_offset / DEV_BSIZE);
 		i = devread(file);
-		file->i_offset += count;
 		if (i < 0)
 			errno = file->i_error;
+		else
+			file->i_offset += i;
 		return (i);
-	} else {
-		if (file->i_offset+count > file->i_ino.i_size)
-			count = file->i_ino.i_size - file->i_offset;
-		if ((i = count) <= 0)
-			return (0);
-		do {
-			*buf++ = getc(fdesc+3);
-		} while (--i);
-		return (count);
 	}
+#endif SMALL
+	if (file->i_offset+count > file->i_ino.i_size)
+		count = file->i_ino.i_size - file->i_offset;
+	if ((i = count) <= 0)
+		return (0);
+	/*
+	 * While reading full blocks, do I/O into user buffer.
+	 * Anything else uses getc().
+	 */
+	fs = &file->i_fs;
+	while (i) {
+		off = blkoff(fs, file->i_offset);
+		lbn = lblkno(fs, file->i_offset);
+		size = blksize(fs, &file->i_ino, lbn);
+		if (off == 0 && size <= i) {
+			file->i_bn = fsbtodb(fs, sbmap(file, lbn)) +
+			    file->i_boff;
+			file->i_cc = size;
+			file->i_ma = buf;
+			if (devread(file) < 0) {
+				errno = file->i_error;
+				return (-1);
+			}
+			file->i_offset += size;
+			file->i_cc = 0;
+			buf += size;
+			i -= size;
+		} else {
+			size -= off;
+			if (size > i)
+				size = i;
+			i -= size;
+			do {
+				*buf++ = getc(fdesc+3);
+			} while (--size);
+		}
+	}
+	return (count);
 }
 
+#ifndef	SMALL
 write(fdesc, buf, count)
 	int fdesc, count;
 	char *buf;
@@ -403,8 +428,13 @@ write(fdesc, buf, count)
 		errno = file->i_error;
 	return (i);
 }
+#endif SMALL
 
 int	openfirst = 1;
+#ifdef notyet
+int	opendev;	/* last device opened; for boot to set bootdev */
+extern	int bootdev;
+#endif notyet
 
 open(str, how)
 	char *str;
@@ -430,6 +460,66 @@ open(str, how)
 gotfile:
 	(file = &iob[fdesc])->i_flgs |= F_ALLOC;
 
+#ifdef notyet
+	for (cp = str; *cp && *cp != '/' && *cp != ':'; cp++)
+			;
+	if (*cp != ':') {
+		/* default bootstrap unit and device */
+		file->i_ino.i_dev = bootdev;
+		cp = str;
+	} else {
+# define isdigit(n)	((n>='0') && (n<='9'))
+		/*
+	 	 * syntax for possible device name:
+	 	 *	<alpha-string><digit-string><letter>:
+	 	 */
+		for (cp = str; *cp != ':' && !isdigit(*cp); cp++)
+			;
+		for (dp = devsw; dp->dv_name; dp++) {
+			if (!strncmp(str, dp->dv_name,cp-str))
+				goto gotdev;
+		}
+		printf("unknown device\n");
+		file->i_flgs = 0;
+		errno = EDEV;
+		return (-1);
+	gotdev:
+		i = 0;
+		while (*cp >= '0' && *cp <= '9')
+			i = i * 10 + *cp++ - '0';
+		if (i < 0 || i > 255) {
+			printf("minor device number out of range (0-255)\n");
+			file->i_flgs = 0;
+			errno = EUNIT;
+			return (-1);
+		}
+		if (*cp >= 'a' && *cp <= 'h') {
+			if (i > 31) {
+				printf("unit number out of range (0-31)\n");
+				file->i_flgs = 0;
+				errno = EUNIT;
+				return (-1);
+			}
+			i = make_minor(i, *cp++ - 'a');
+		}
+
+		if (*cp++ != ':') {
+			printf("incorrect device specification\n");
+			file->i_flgs = 0;
+			errno = EOFFSET;
+			return (-1);
+		}
+		opendev = file->i_ino.i_dev = makedev(dp-devsw, i);
+	}
+	file->i_boff = 0;
+	devopen(file);
+	if (cp != str && *cp == '\0') {
+		file->i_flgs |= how+1;
+		file->i_cc = 0;
+		file->i_offset = 0;
+		return (fdesc+3);
+	}
+#else notyet
 	for (cp = str; *cp && *cp != '('; cp++)
 			;
 	if (*cp != '(') {
@@ -481,6 +571,7 @@ badoff:
 		file->i_offset = 0;
 		return (fdesc+3);
 	}
+#endif notyet
 	file->i_ma = (char *)(&file->i_fs);
 	file->i_cc = SBSIZE;
 	file->i_bn = SBLOCK + file->i_boff;
@@ -488,7 +579,6 @@ badoff:
 	if (devread(file) < 0) {
 		errno = file->i_error;
 		printf("super block read error\n");
-		file->i_flgs = 0;
 		return (-1);
 	}
 	if ((i = find(cp, file)) == 0) {
@@ -496,20 +586,21 @@ badoff:
 		errno = ESRCH;
 		return (-1);
 	}
+#ifndef	SMALL
 	if (how != 0) {
 		printf("Can't write files yet.. Sorry\n");
 		file->i_flgs = 0;
 		errno = EIO;
 		return (-1);
 	}
+#endif SMALL
 	if (openi(i, file) < 0) {
 		errno = file->i_error;
-		file->i_flgs = 0;
 		return (-1);
 	}
 	file->i_offset = 0;
 	file->i_cc = 0;
-	file->i_flgs |= F_FILE | (how+1);
+	file->i_flgs |= F_FILE;
 	return (fdesc+3);
 }
 
@@ -530,6 +621,51 @@ close(fdesc)
 	return (0);
 }
 
+#ifndef	SMALL
+ioctl(fdesc, cmd, arg)
+	int fdesc, cmd;
+	char *arg;
+{
+	register struct iob *file;
+	int error = 0;
+
+	fdesc -= 3;
+	if (fdesc < 0 || fdesc >= NFILES ||
+	    ((file = &iob[fdesc])->i_flgs&F_ALLOC) == 0) {
+		errno = EBADF;
+		return (-1);
+	}
+	switch (cmd) {
+
+	case SAIOHDR:
+		file->i_flgs |= F_HDR;
+		break;
+
+	case SAIOCHECK:
+		file->i_flgs |= F_CHECK;
+		break;
+
+	case SAIOHCHECK:
+		file->i_flgs |= F_HCHECK;
+		break;
+
+	case SAIONOBAD:
+		file->i_flgs |= F_NBSF;
+		break;
+
+	case SAIODOBAD:
+		file->i_flgs &= ~F_NBSF;
+		break;
+
+	default:
+		error = devioctl(file, cmd, arg);
+		break;
+	}
+	if (error < 0)
+		errno = file->i_error;
+	return (error);
+}
+#endif SMALL
 
 exit()
 {
@@ -548,6 +684,7 @@ _stop(s)
 	_rtt();
 }
 
+#ifdef tahoe
 trap(ps)
 	int ps;
 {
@@ -562,3 +699,4 @@ uncache (addr)
 	/* Return *(addr-0x4000); DIRTY assumes this address is valid */
 	mtpr(PDCS, addr);
 }
+#endif

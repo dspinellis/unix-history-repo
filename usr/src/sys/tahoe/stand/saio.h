@@ -1,4 +1,4 @@
-/*	saio.h	1.1	86/01/12	*/
+/*	saio.h	1.2	86/12/18	*/
 
 /*	saio.h	6.2	9/23/83	*/
 
@@ -58,9 +58,11 @@ struct devsw {
 	int	(*dv_strategy)();
 	int	(*dv_open)();
 	int	(*dv_close)();
+	int	(*dv_ioctl)();
 };
 
 struct devsw devsw[];
+int ndevs;
 
 /*
  * Drive description table.
