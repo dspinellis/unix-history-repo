@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.11 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.12 %G%";
 
 #include "diff.h"
 /*
@@ -930,6 +930,7 @@ dump_context_vec()
 	register char	ch;
 	register struct	context_vec *cvp = context_vec_start;
 	register int	lowa, upb, lowc, upd;
+	register int	do_output;
 
 	if ( cvp > context_vec_ptr )
 		return;
@@ -941,71 +942,75 @@ dump_context_vec()
 
 	printf("***************\n*** ");
 	range(lowa,upb,",");
-	printf(" ****\n--- ");
+	printf(" ****\n");
+
+	/*
+	 * output changes to the "old" file.  The first loop suppresses
+	 * output if there were no changes to the "old" file (we'll see
+	 * the "old" lines as context in the "new" list).
+	 */
+	do_output = 0;
+	for ( ; cvp <= context_vec_ptr; cvp++)
+		if (cvp->a <= cvp->b) {
+			cvp = context_vec_start;
+			do_output++;
+			break;
+		}
+	
+	if ( do_output ) {
+		while (cvp <= context_vec_ptr) {
+			a = cvp->a; b = cvp->b; c = cvp->c; d = cvp->d;
+
+			if (a <= b && c <= d)
+				ch = 'c';
+			else
+				ch = (a <= b) ? 'd' : 'a';
+
+			if (ch == 'a')
+				fetch(ixold,lowa,b,input[0],"  ");
+			else {
+				fetch(ixold,lowa,a-1,input[0],"  ");
+				fetch(ixold,a,b,input[0],ch == 'c' ? "! " : "- ");
+			}
+			lowa = b + 1;
+			cvp++;
+		}
+		fetch(ixold, b+1, upb, input[0], "  ");
+	}
+
+	/* output changes to the "new" file */
+	printf("--- ");
 	range(lowc,upd,",");
 	printf(" ----\n");
 
-	/*
-	 * output changes to the "old" file.  The first loop is a
-	 * hack that suppresses the output if there were no changes to
-	 * the "old" file (we'll see the "old" lines as context in the
-	 * "new" list).
-	 */
-	while (cvp <= context_vec_ptr) {
-		if (cvp->a <= cvp->b) {
-			cvp = context_vec_start;
-			break;
-		}
-		cvp++;
-	}
-	while (cvp <= context_vec_ptr) {
-		a = cvp->a; b = cvp->b; c = cvp->c; d = cvp->d;
-
-		if (a <= b && c <= d)
-			ch = 'c';
-		else
-			ch = (a <= b) ? 'd' : 'a';
-
-		if (ch == 'a')
-			fetch(ixold,lowa,b,input[0],"  ");
-		else {
-			fetch(ixold,lowa,a-1,input[0],"  ");
-			fetch(ixold,a,b,input[0],ch == 'c' ? "!<" : "-<");
-		}
-		lowa = b + 1;
-		cvp++;
-	}
-	fetch(ixold, b+1, upb, input[0], "  ");
-
-	/* output changes to the "new" file */
-	printf("---------------\n");
-
-	cvp = context_vec_start;
-	while (cvp <= context_vec_ptr) {
+	do_output = 0;
+	for (cvp = context_vec_start; cvp <= context_vec_ptr; cvp++)
 		if (cvp->c <= cvp->d) {
 			cvp = context_vec_start;
+			do_output++;
 			break;
 		}
-		cvp++;
-	}
-	while (cvp <= context_vec_ptr) {
-		a = cvp->a; b = cvp->b; c = cvp->c; d = cvp->d;
+	
+	if (do_output) {
+		while (cvp <= context_vec_ptr) {
+			a = cvp->a; b = cvp->b; c = cvp->c; d = cvp->d;
 
-		if (a <= b && c <= d)
-			ch = 'c';
-		else
-			ch = (a <= b) ? 'd' : 'a';
+			if (a <= b && c <= d)
+				ch = 'c';
+			else
+				ch = (a <= b) ? 'd' : 'a';
 
-		if (ch == 'd')
-			fetch(ixnew,lowc,d,input[1],"  ");
-		else {
-			fetch(ixnew,lowc,c-1,input[1],"  ");
-			fetch(ixnew,c,d,input[1],ch == 'c' ? "!>" : "+>");
+			if (ch == 'd')
+				fetch(ixnew,lowc,d,input[1],"  ");
+			else {
+				fetch(ixnew,lowc,c-1,input[1],"  ");
+				fetch(ixnew,c,d,input[1],ch == 'c' ? "! " : "+ ");
+			}
+			lowc = d + 1;
+			cvp++;
 		}
-		lowc = d + 1;
-		cvp++;
+		fetch(ixnew, d+1, upd, input[1], "  ");
 	}
-	fetch(ixnew, d+1, upd, input[1], "  ");
 
 	context_vec_ptr = context_vec_start - 1;
 }
