@@ -1,11 +1,8 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.3 (Berkeley) %G%
+#	@(#)daily	5.4 (Berkeley) %G%
 #
-
-PATH=/usr/local:/usr/ucb:/bin:/usr/bin:/etc:/sbin:/usr/sbin
-export PATH
-
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
 echo "Subject: $host daily run output"
 bak=/var/backups
@@ -35,9 +32,9 @@ if [ -d /var/preserve ]; then
 	find .	! -name . -mtime +7 -exec rm -f {} \;
 fi
 
-if [ -d /var/spool/rwho ] ; then
-	cd /var/spool/rwho
-	find .	-mtime +7 -exec rm -f {} \;
+if [ -d /var/rwho ] ; then
+	cd /var/rwho
+	find .	! -name . -mtime +7 -exec rm -f {} \;
 fi
 
 find /	\( -name '[#,]*' -o -name '.#*' -o -name a.out -o -name core \
@@ -78,19 +75,19 @@ echo "Running calendar:"
 calendar -
 
 echo ""
-echo "Rotating mail syslog:"
+echo "Rotating mail log:"
 cd /var/log
-rm -f syslog.7
-if [ -f syslog.6 ]; then mv -f syslog.6  syslog.7; fi
-if [ -f syslog.5 ]; then mv -f syslog.5  syslog.6; fi
-if [ -f syslog.4 ]; then mv -f syslog.4  syslog.5; fi
-if [ -f syslog.3 ]; then mv -f syslog.3  syslog.4; fi
-if [ -f syslog.2 ]; then mv -f syslog.2  syslog.3; fi
-if [ -f syslog.1 ]; then mv -f syslog.1  syslog.2; fi
-if [ -f syslog.0 ]; then mv -f syslog.0  syslog.1; fi
-mv -f syslog syslog.0
-cp /dev/null syslog
-chmod 644    syslog
+rm -f maillog.7
+if [ -f maillog.6 ]; then mv -f maillog.6  maillog.7; fi
+if [ -f maillog.5 ]; then mv -f maillog.5  maillog.6; fi
+if [ -f maillog.4 ]; then mv -f maillog.4  maillog.5; fi
+if [ -f maillog.3 ]; then mv -f maillog.3  maillog.4; fi
+if [ -f maillog.2 ]; then mv -f maillog.2  maillog.3; fi
+if [ -f maillog.1 ]; then mv -f maillog.1  maillog.2; fi
+if [ -f maillog.0 ]; then mv -f maillog.0  maillog.1; fi
+mv -f maillog maillog.0
+cp /dev/null maillog
+chmod 644    maillog
 kill -1 `cat /var/run/syslog.pid`
 cd /
 
@@ -109,8 +106,6 @@ df
 echo ""
 dump W
 echo ""
-sync
-fsck -n | grep -v '^\*\* Phase'
 
 
 echo ""
@@ -151,6 +146,10 @@ fi
 echo ""
 echo "checking for uids of 0:"
 awk 'BEGIN {FS=":"} $3=="0" {print $1,$3}' /etc/master.passwd
+
+echo ""
+echo "Checking filesystems:"
+fsck -n | grep -v '^\*\* Phase'
 
 echo ""
 if [ -f /etc/Distfile ]; then
