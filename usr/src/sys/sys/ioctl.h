@@ -1,4 +1,4 @@
-/*	ioctl.h	6.8	85/03/07	*/
+/*	ioctl.h	6.9	85/03/13	*/
 /*
  * Ioctl definitions
  */
@@ -191,7 +191,7 @@ struct winsize {
 #define	TIOCMBIS	_IOW(t, 108, int)	/* bis modem bits */
 #define	TIOCMBIC	_IOW(t, 107, int)	/* bic modem bits */
 #define	TIOCMGET	_IOR(t, 106, int)	/* get all modem bits */
-#define	TIOCREMOTE	_IO(t, 105)		/* remote input editing */
+#define	TIOCREMOTE	_IOW(t, 105, int)	/* remote input editing */
 #define TIOCGWINSZ	_IOR(t, 104, struct winsize)	/* get window size */
 #define TIOCSWINSZ	_IOW(t, 103, struct winsize)	/* set window size */
 #define TIOCUCNTL	_IOW(t, 102, int)	/* pty: set/clr usr cntl mode */
