@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.17 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.18 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -103,11 +103,12 @@ bool	profflag;
 /*
  * TABLE_MULTIPLIER is for uniformly increasing the sizes of the tables
  */
-#ifdef VAX
+#ifdef ADDR32
 #define TABLE_MULTIPLIER	8
-#else
+#endif ADDR32
+#ifdef ADDR16
 #define TABLE_MULTIPLIER	1
-#endif VAX
+#endif ADDR16
 #define	MAXHASH	(4 * TABLE_MULTIPLIER)
 #define	MAXNL	(12 * TABLE_MULTIPLIER)
 #define	MAXTREE	(30 * TABLE_MULTIPLIER)
@@ -115,11 +116,12 @@ bool	profflag;
  * MAXDEPTH is the depth of the parse stack.
  * STACK_MULTIPLIER is for increasing its size.
  */
-#ifdef VAX
+#ifdef ADDR32
 #define	STACK_MULTIPLIER	8
-#else
+#endif ADDR32
+#ifdef ADDR16
 #define	STACK_MULTIPLIER	1
-#endif VAX
+#endif ADDR16
 #define	MAXDEPTH ( 150 * STACK_MULTIPLIER )
 
 /*
@@ -466,34 +468,6 @@ short	line;
  * this must be no greater than 32.
  */
 #define	DSPLYSZ 20
-
-    /*
-     *	the display is made up of saved AP's and FP's.
-     *	FP's are used to find locals, and AP's are used to find parameters.
-     *	FP and AP are untyped pointers, but are used throughout as (char *).
-     *	the display is used by adding AP_OFFSET or FP_OFFSET to the 
-     *	address of the approriate display entry.
-     */
-struct dispsave {
-    char	*savedAP;
-    char	*savedFP;
-} display[ DSPLYSZ ];
-
-#define	AP_OFFSET	( 0 )
-#define FP_OFFSET	( sizeof(char *) )
-
-    /*
-     *	formal routine structure:
-     */
-struct formalrtn {
-	long		(*fentryaddr)();	/* formal entry point */
-	long		fbn;			/* block number of function */
-	struct dispsave	fdisp[ DSPLYSZ ];	/* saved at first passing */
-} frtn;
-
-#define	FENTRYOFFSET	0
-#define FBNOFFSET	( FENTRYOFFSET + sizeof frtn.fentryaddr )
-#define	FDISPOFFSET	( FBNOFFSET + sizeof frtn.fbn )
 
 /*
  * The following structure is used
