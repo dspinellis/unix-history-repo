@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.98 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.99 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.98 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.99 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -323,9 +323,7 @@ gothostent:
 	**  Determine the port number.
 	*/
 
-	if (port != 0)
-		port = htons(port);
-	else
+	if (port == 0)
 	{
 		register struct servent *sp = getservbyname("smtp", "tcp");
 
