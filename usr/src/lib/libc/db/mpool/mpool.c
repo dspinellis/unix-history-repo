@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)mpool.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mpool.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -26,7 +26,7 @@ static BKT *mpool_bkt __P((MPOOL *));
 static BKT *mpool_look __P((MPOOL *, pgno_t));
 static int  mpool_write __P((MPOOL *, BKT *));
 #ifdef DEBUG
-static void err __P((const char *fmt, ...));
+static void __mpoolerr __P((const char *fmt, ...));
 #endif
 
 /*
@@ -172,7 +172,8 @@ mpool_get(mp, pgno, flags)
 #endif
 #ifdef DEBUG
 		if (b->flags & MPOOL_PINNED)
-			err("mpool_get: page %d already pinned", b->pgno);
+			__mpoolerr("mpool_get: page %d already pinned",
+			    b->pgno);
 #endif
 		rmchain(b);
 		inschain(b, &mp->lru);
@@ -243,10 +244,10 @@ mpool_put(mp, page, flags)
 	baddr = (BKT *)((char *)page - sizeof(BKT));
 #ifdef DEBUG
 	if (!(baddr->flags & MPOOL_PINNED))
-		err("mpool_put: page %d not pinned", b->pgno);
+		__mpoolerr("mpool_put: page %d not pinned", b->pgno);
 	for (b = mp->lru.cnext; b != (BKT *)&mp->lru; b = b->cnext) {
 		if (b == (BKT *)&mp->lru)
-			err("mpool_put: %0x: bad address", baddr);
+			__mpoolerr("mpool_put: %0x: bad address", baddr);
 		if (b == baddr)
 			break;
 	}
@@ -485,9 +486,9 @@ mpool_stat(mp)
 
 static void
 #if __STDC__
-err(const char *fmt, ...)
+__mpoolerr(const char *fmt, ...)
 #else
-err(fmt, va_alist)
+__mpoolerr(fmt, va_alist)
 	char *fmt;
 	va_dcl
 #endif
