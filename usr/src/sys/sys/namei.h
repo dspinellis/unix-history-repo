@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	7.19 (Berkeley) %G%
+ *	@(#)namei.h	7.20 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_H_
@@ -128,8 +128,8 @@ struct nameidata {
 #define	NCHNAMLEN	31	/* maximum name segment length we bother with */
 
 struct	namecache {
-	struct	namecache *nc_forw;	/* hash chain, MUST BE FIRST */
-	struct	namecache *nc_back;	/* hash chain, MUST BE FIRST */
+	struct	namecache *nc_forw;	/* hash chain */
+	struct	namecache **nc_back;	/* hash chain */
 	struct	namecache *nc_nxt;	/* LRU chain */
 	struct	namecache **nc_prev;	/* LRU chain */
 	struct	vnode *nc_dvp;		/* vnode of parent of name */
