@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)service.c	4.7 %G%";
+static char sccsid[] = "@(#)service.c	4.8 %G%";
 #endif
 
 #
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)service.c	4.7 %G%";
 
 #include	"defs.h"
 #include	"errno.h"
+#include	"sys/file.h"
 #include	"pathnames.h"
 
 
@@ -51,9 +52,9 @@ VOID	initio(iop)
 			THEN	fd=chkopen(ion);
 			ELIF flags&rshflg
 			THEN	failed(ion,restricted);
-			ELIF iof&IOAPP ANDF (fd=open(ion,1))>=0
-			THEN	lseek(fd, 0L, 2);
-			ELSE	fd=create(ion);
+			ELIF (iof&IOAPP)==0 ORF
+			     (fd=open(ion,O_WRONLY|O_APPEND))<0
+			THEN	fd=create(ion);
 			FI
 			IF fd>=0
 			THEN	rename(fd,iof&IOUFD);
