@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)yyput.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)yyput.c	1.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -100,7 +100,7 @@ yyoutfl(toseqid)
 	}
 }
 
-int	yygetunit -1;
+int	yygetunit = -1;
 char	*yygetfile;
 
 /*
@@ -234,7 +234,7 @@ graphic(ch)
 
 extern	int nopflg;
 
-char	printed 1;
+char	printed = 1;
 /*
  * Set the current file name to be file,
  * printing the name, or a header on a new

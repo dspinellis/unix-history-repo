@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)pmon.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)pmon.c	1.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -81,7 +81,7 @@ getpmon(fp)
 	return;
 }
 
-STATIC	char nospcm[]	"Not enough memory for count buffers\n";
+STATIC	char nospcm[]	= "Not enough memory for count buffers\n";
 
 pmnospac()
 {
@@ -178,7 +178,7 @@ pmread()
 	if (cp == -1)
 		pmnospac();
 	i -= sizeof(zmagic);
-	if (read(zfil, zbuf + (sizeof(zmagic) / sizeof(zbuf)), i) != i)
+	if (read(zfil, zbuf + (sizeof(zmagic) / sizeof(*zbuf)), i) != i)
 		return (-1);
 	zbuf++;
 	return (0);
@@ -342,7 +342,7 @@ shudpcnt()
 	return (i == 0);
 }
 
-STATIC	char mism[]	"Program and counter data do not correspond\n";
+STATIC	char mism[]	= "Program and counter data do not correspond\n";
 
 cPANIC()
 {
