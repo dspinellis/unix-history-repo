@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	5.4 (Berkeley) %G%
+ *	@(#)time.h	5.5 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -23,7 +23,7 @@ struct tm {
 	char	*tm_zone;	/* timezone abbreviation */
 };
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 extern struct tm *gmtime(const time_t *);
 extern struct tm *localtime(const time_t *);
 extern time_t mktime(const struct tm *);
