@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -98,6 +98,7 @@ main(argc, argv)
 	int quietlog, passwd_req, ioctlval, timedout();
 	char *domain, *salt, *envinit[1], *ttyn, *pp;
 	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
+	char localhost[MAXHOSTNAMELEN];
 	char *ctime(), *ttyname(), *stypeof(), *crypt(), *getpass();
 	time_t time();
 	off_t lseek();
@@ -116,8 +117,11 @@ main(argc, argv)
 	 * -h is used by other servers to pass the name of the remote
 	 *    host to login so that it may be placed in utmp and wtmp
 	 */
-	(void)gethostname(tbuf, sizeof(tbuf));
-	domain = index(tbuf, '.');
+	domain = NULL;
+	if (gethostname(localhost, sizeof(localhost)) < 0)
+		syslog(LOG_ERR, "couldn't get local hostname: %m");
+	else
+		domain = index(localhost, '.');
 
 	fflag = hflag = pflag = rflag = 0;
 	passwd_req = 1;
