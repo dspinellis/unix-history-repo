@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.2 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.3 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.2 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.3 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -434,6 +434,7 @@ smtpdata(m, mci, e)
 	register int r;
 	register EVENT *ev;
 	time_t timeout;
+	time_t mintimeout;
 	static int datatimeout();
 
 	/*
@@ -472,23 +473,26 @@ smtpdata(m, mci, e)
 		return (EX_PROTOCOL);
 	}
 
+	/*
+	**  Set timeout around data writes.  Make it at least large
+	**  enough for DNS timeouts on all recipients plus some fudge
+	**  factor.  The main thing is that it should not be infinite.
+	*/
+
 	if (setjmp(CtxDataTimeout) != 0)
 	{
 		mci->mci_errno = errno;
 		mci->mci_exitstat = EX_TEMPFAIL;
 		mci->mci_state = MCIS_ERROR;
-#ifdef LOG
-		syslog(LOG_NOTICE, "%s: timeout writing message to %s",
-			e->e_id, mci->mci_host);
-#endif
 		syserr("451 timeout writing message to %s", mci->mci_host);
 		smtpquit(m, mci, e);
 		return EX_TEMPFAIL;
 	}
 
 	timeout = e->e_msgsize / 64;
-	if (timeout < (time_t) 60)
-		timeout = 60;
+	mintimeout = e->e_nrcpts * 90 + 60;
+	if (timeout < mintimeout)
+		timeout = mintimeout;
 	ev = setevent(timeout, datatimeout, 0);
 
 	/* now output the actual message */
