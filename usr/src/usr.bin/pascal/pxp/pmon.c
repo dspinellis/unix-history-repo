@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pmon.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pmon.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -179,10 +179,10 @@ pmread()
 	zcnt = zmagic.cntrs;
 	zpfcnt = zmagic.rtns;
 	cp = zbuf = pcalloc(i = (zcnt + 1) * sizeof *zbuf, 1);
-	if (cp == -1)
+	if (cp == NULL)
 		pmnospac();
 	cp = zpf = pcalloc(zpfcnt * sizeof *zpf, 1);
-	if (cp == -1)
+	if (cp == NULL)
 		pmnospac();
 	i -= sizeof(zmagic);
 	if (read(zfil, zbuf + (sizeof(zmagic) / sizeof(*zbuf)), i) != i)
