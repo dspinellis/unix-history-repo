@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.12	%G%	*/
+/*	kern_proc.c	3.13	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -315,7 +315,7 @@ register struct inode *ip;
 			    1 + ts/CLSIZE, (int)btoc(u.u_exdata.ux_dsize));
 
 		/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
-		mtpr(TBIA,1);
+		mtpr(TBIA, 0);
 
 		/*
 		 * set SUID/SGID protections, if no tracing
