@@ -1,36 +1,36 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 
 CFLAGS=	-O -DLIBC_SCCS
 OBJS=	crt0.o mcrt0.o gcrt0.o
-CLEANFILES=gmon.o mon.o moncrt0.o
-
-.s.o:
-	${AS} -o ${.TARGET} ${.IMPSRC}
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
+CLEANFILES+=	gmon.o mon.o moncrt0.o core a.out
 
 all: ${OBJS}
+
+crt0.o: crt0.c
+	${CC} -c -DCRT0 ${.ALLSRC}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
+
+moncrt0.o: crt0.c
+	${CC} -c -DMCRT0 ${.ALLSRC} -o ${.TARGET}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
 
 mcrt0.o: moncrt0.o mon.o
 	${LD} -x -r -o ${.TARGET} moncrt0.o mon.o
 
 gcrt0.o: moncrt0.o gmon.o
-	${LD} -x -r -o ${.TARGET} ${.ALLSRC}
+	${LD} -x -r -o ${.TARGET} moncrt0.o gmon.o
 
-moncrt0.o: mcrt0.s
-	${AS} -o ${.TARGET} ${.ALLSRC}
+mon.o: mon.c
+	${CC} -c ${DEFS} ${.IMPSRC}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
 
-mon.o: mon.c mon.ex
-	${CC} -S ${CFLAGS} ${.IMPSRC}
-	ex - mon.s < ${.CURDIR}/mon.ex
-	${AS} -o ${.TARGET} mon.s
-	rm -f mon.s
-
-gmon.o: gmon.c mon.ex
-	${CC} -S ${CFLAGS} ${.IMPSRC}
-	ex - gmon.s < ${.CURDIR}/mon.ex
-	${AS} -o $@ gmon.s
-	rm -f gmon.s
+gmon.o: gmon.c gmon.h
+	${CC} -c ${DEFS} ${.IMPSRC}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
 
 install:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 ${OBJS} \
