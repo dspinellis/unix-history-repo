@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)vmstat.c	5.33 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <paths.h>
+#include <limits.h>
 
 #define NEWVM			/* XXX till old has been updated or purged */
 struct nlist nl[] = {
@@ -53,8 +54,8 @@ struct nlist nl[] = {
 	{ "_dk_xfer" },
 #define X_HZ		5
 	{ "_hz" },
-#define X_PHZ		6
-	{ "_phz" },
+#define X_STATHZ	6
+	{ "_stathz" },
 #define X_NCHSTATS	7
 	{ "_nchstats" },
 #define	X_INTRNAMES	8
@@ -116,6 +117,8 @@ int	*dr_select, dk_ndrive, ndrives;
 
 int	winlines = 20;
 
+kvm_t *kd;
+
 #define	FORKSTAT	0x01
 #define	INTRSTAT	0x02
 #define	MEMSTAT		0x04
@@ -141,6 +144,7 @@ main(argc, argv)
 	u_int interval;
 	int reps;
 	char *memf, *nlistf;
+        char errbuf[_POSIX2_LINE_MAX];
 
 	memf = nlistf = NULL;
 	interval = reps = todo = 0;
@@ -195,13 +199,14 @@ main(argc, argv)
 	if (nlistf != NULL || memf != NULL)
 		setgid(getgid());
 
-	if (kvm_openfiles(nlistf, memf, NULL) < 0) {
+        kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf);
+	if (kd == 0) {
 		(void)fprintf(stderr,
-		    "vmstat: kvm_openfiles: %s\n", kvm_geterr());
+		    "vmstat: kvm_openfiles: %s\n", errbuf);
 		exit(1);
 	}
 
-	if ((c = kvm_nlist(nl)) != 0) {
+	if ((c = kvm_nlist(kd, nl)) != 0) {
 		if (c > 0) {
 			(void)fprintf(stderr,
 			    "vmstat: undefined symbols: ");
@@ -211,7 +216,7 @@ main(argc, argv)
 			(void)fputc('\n', stderr);
 		} else
 			(void)fprintf(stderr, "vmstat: kvm_nlist: %s\n",
-			    kvm_geterr());
+			    kvm_geterr(kd));
 		exit(1);
 	}
 
@@ -360,8 +365,8 @@ dovmstat(interval, reps)
 	halfuptime = uptime / 2;
 	(void)signal(SIGCONT, needhdr);
 
-	if (nl[X_PHZ].n_type != 0 && nl[X_PHZ].n_value != 0)
-		kread(X_PHZ, &hz, sizeof(hz));
+	if (nl[X_STATHZ].n_type != 0 && nl[X_STATHZ].n_value != 0)
+		kread(X_STATHZ, &hz, sizeof(hz));
 	if (!hz)
 		kread(X_HZ, &hz, sizeof(hz));
 
@@ -763,11 +768,11 @@ kread(nlx, addr, size)
 		    "vmstat: symbol %s not defined\n", sym);
 		exit(1);
 	}
-	if (kvm_read((void *)nl[nlx].n_value, addr, size) != size) {
+	if (kvm_read(kd, nl[nlx].n_value, addr, size) != size) {
 		sym = nl[nlx].n_name;
 		if (*sym == '_')
 			++sym;
-		(void)fprintf(stderr, "vmstat: %s: %s\n", sym, kvm_geterr());
+		(void)fprintf(stderr, "vmstat: %s: %s\n", sym, kvm_geterr(kd));
 		exit(1);
 	}
 }
