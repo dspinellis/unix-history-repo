@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -649,7 +649,8 @@ rewrite(pvp, ruleset)
 				/* end-of-pattern before end-of-address */
 				goto backup;
 			}
-			if (ap == NULL && (*rp & 0377) != MATCHZANY)
+			if (ap == NULL && (*rp & 0377) != MATCHZANY &&
+			    (*rp & 0377) != CANONHOST)
 			{
 				/* end-of-input */
 				break;
@@ -686,6 +687,10 @@ rewrite(pvp, ruleset)
 				mlp->first = avp;
 				mlp->last = avp - 1;
 				mlp++;
+				break;
+
+			  case CANONHOST:
+				/* match zero tokens */
 				break;
 
 			  default:
