@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c.1	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)login.c.1	4.6 (Berkeley) %G%";
 /*
  * login [ name ]
  */
@@ -11,6 +11,7 @@ static	char *sccsid = "@(#)login.c.1	4.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/stat.h>
 #include <lastlog.h>
+#include <whoami.h>
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
 
 #define NMAX sizeof(utmp.ut_name)
@@ -129,8 +130,10 @@ bad:
 		}
 	}
 	sprintf(user, "USER=%.*s", NMAX, pwd->pw_name);
+#ifdef ERNIE
 	if (pwd->pw_uid == 0 && ttyn[5] != 'c')
 		goto bad;
+#endif
 	if (ttyn[LMAX] == 'd') {
 		FILE *console = fopen("/dev/console", "w");
 		if (console != NULL) {
