@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.7 (Berkeley) %G%
+ *	@(#)ut.c	7.8 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -22,6 +22,7 @@
 #include "conf.h"
 #include "file.h"
 #include "user.h"
+#include "proc.h"
 #include "map.h"
 #include "ioctl.h"
 #include "mtio.h"
