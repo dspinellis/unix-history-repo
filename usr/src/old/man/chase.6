@@ -1,0 +1,34 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)chase.6	4.1 (Berkeley) %G%
+.\"
+.TH CHASE 6 4/1/81
+.UC 4
+.SH NAME
+chase \- Try to escape to killer robots
+.SH SYNOPSIS
+.B /usr/games/chase
+[
+.I nrobots
+] [
+.I nfences
+]
+.SH DESCRIPTION
+.PP
+The object of the game chase is to move around inside of the box on the
+screen without getting eaten by the robots chasing and without running
+into anything.
+.PP
+If a robot runs into another robot while chasing you, they crash and leave
+a junk heap.  If a robot runs into a fence, it is destroyed.
+.PP
+If you can survive until all the robots are destroyed, you have won!
+.PP
+If you do not specify either
+.I nrobots
+or
+.I nfences,
+chase will prompt you for them.
+.SH BUGS
