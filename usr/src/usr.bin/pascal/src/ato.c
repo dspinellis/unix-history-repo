@@ -1,8 +1,9 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)ato.c 1.3 %G%";
+static char sccsid[] = "@(#)ato.c 1.5 %G%";
 #endif
+/* This is an sccs experiment */
 
 #include "whoami.h"
 #include "0.h"
