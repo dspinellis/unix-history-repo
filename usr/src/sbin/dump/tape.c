@@ -14,17 +14,14 @@ static char sccsid[] = "@(#)tape.c	5.23 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/dir.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
 #include <ufs/fs.h>
 #else
 #include <sys/param.h>
 #include <sys/wait.h>
-#include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #endif
+#include <sys/time.h>
+#include <ufs/ufs/dinode.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <protocols/dumprestore.h>
@@ -119,9 +116,10 @@ alloctape()
 	 * Align tape buffer on page boundary to speed up tape write().
 	 */
 	for (i = 0; i <= SLAVES; i++) {
-		buf = (char *) malloc(reqsiz + writesize + pgoff + TP_BSIZE);
+		buf = (char *)
+		    malloc((unsigned)(reqsiz + writesize + pgoff + TP_BSIZE));
 		if (buf == NULL)
-		  return(0);
+			return(0);
 		slaves[i].tblock = (char (*)[TP_BSIZE])
 		    (((long)&buf[ntrec + 1] + pgoff) &~ pgoff);
 		slaves[i].req = (struct req *)slaves[i].tblock - ntrec - 1;
@@ -213,7 +211,7 @@ flushtape()
 
 	slp->req[trecno].count = 0;			/* Sentinel */
 
-	if (atomic(write, slp->fd, slp->req, siz) != siz)
+	if (atomic(write, slp->fd, (char *)slp->req, siz) != siz)
 		quit("error writing command pipe: %s\n", strerror(errno));
 	slp->sent = 1; /* we sent a request, read the response later */
 
@@ -224,7 +222,8 @@ flushtape()
 
 	/* Read results back from next slave */
 	if (slp->sent) {
-		if (atomic(read, slp->fd, &got, sizeof got) != sizeof got) {
+		if (atomic(read, slp->fd, (char *)&got, sizeof got)
+		    != sizeof got) {
 			perror("  DUMP: error reading command pipe in master");
 			dumpabort();
 		}
@@ -240,8 +239,9 @@ flushtape()
 			 */
 			for (i = 0; i < SLAVES; i++) {
 				if (slaves[i].sent) {
-					if (atomic(read, slaves[i].fd, &got,
-					    sizeof got) != sizeof got) {
+					if (atomic(read, slaves[i].fd,
+					    (char *)&got, sizeof got)
+					    != sizeof got) {
 						perror("  DUMP: error reading command pipe in master");
 						dumpabort();
 					}
@@ -284,8 +284,6 @@ trewind()
 	int f;
 	int got;
 
-	if (pipeout)
-		return;
 	for (f = 0; f < SLAVES; f++) {
 		/*
 		 * Drain the results, but unlike EOT we DO (or should) care 
@@ -296,7 +294,7 @@ trewind()
 		 * fixme: punt for now.  
 		 */
 		if (slaves[f].sent) {
-			if (atomic(read, slaves[f].fd, &got, sizeof got)
+			if (atomic(read, slaves[f].fd, (char *)&got, sizeof got)
 			    != sizeof got) {
 				perror("  DUMP: error reading command pipe in master");
 				dumpabort();
@@ -308,10 +306,14 @@ trewind()
 				quit("or use no size estimate at all.\n");
 			}
 		}
-		close(slaves[f].fd);
+		(void) close(slaves[f].fd);
 	}
 	while (wait((int *)NULL) >= 0)	/* wait for any signals from slaves */
 		/* void */;
+
+	if (pipeout)
+		return;
+
 	msg("Closing %s\n", tape);
 
 #ifdef RDUMP
@@ -323,10 +325,10 @@ trewind()
 		return;
 	}
 #endif
-	close(tapefd);
+	(void) close(tapefd);
 	while ((f = open(tape, 0)) < 0)
 		sleep (10);
-	close(f);
+	(void) close(f);
 }
 
 void
@@ -346,31 +348,13 @@ close_rewind()
 		}
 }
 
-#ifdef ROLLDEBUG
-int do_sum(block)
-     union u_spcl *block;
-
-{
-	char sum = 0;
-	int i;
-
-	for (i = 0; i < TP_BSIZE; i++) {
-		sum = sum ^ block->dummy[i];
-	}
-	return(sum);
-}
-#endif
-
 void
 rollforward()
 {
 	register struct req *p, *q, *prev;
 	register struct slave *tslp;
-	int i, next, size, savedtapea, got;
+	int i, size, savedtapea, got;
 	union u_spcl *ntb, *otb;
-#ifdef ROLLDEBUG
-	int j; 
-#endif
 	tslp = &slaves[SLAVES];
 	ntb = (union u_spcl *)tslp->tblock[1];
 
@@ -387,19 +371,8 @@ rollforward()
 		/*
 		 * For each request in the current slave, copy it to tslp. 
 		 */
-#ifdef ROLLDEBUG
-		printf("replaying reqs to slave %d (%d)\n", slp - &slaves[0],
-		    slp->pid);
-		j = 0;
-#endif
 
 		for (p = slp->req; p->count > 0; p += p->count) {
-#ifdef ROLLDEBUG
-			printf("    req %d count %d dblk %d\n",
-			       j++, p->count, p->dblk);
-			if (p->dblk == 0)
-				printf("\tsum %x\n", do_sum(otb));
-#endif
 			*q = *p;
 			if (p->dblk == 0)
 				*ntb++ = *otb++; /* copy the datablock also */
@@ -425,22 +398,11 @@ rollforward()
 			lastspclrec = savedtapea - 1;
 		}
 		size = (char *)ntb - (char *)q;
-		if (atomic(write, slp->fd, q, size) != size) {
+		if (atomic(write, slp->fd, (char *)q, size) != size) {
 			perror("  DUMP: error writing command pipe");
 			dumpabort();
 		}
 		slp->sent = 1;
-#ifdef ROLLDEBUG
-		printf("after the shift:\n");
-		j = 0;
-		for (p = tslp->req; p->count > 0; p += p->count) {
-			printf("    req %d count %d dblk %d\n",
-			       j++, p->count, p->dblk);
-			if (p->dblk == 0) {
-				/* dump block also */
-			}
-		}
-#endif
 		if (++slp >= &slaves[SLAVES])
 			slp = &slaves[0];
 
@@ -476,7 +438,8 @@ rollforward()
 	 * worked ok, otherwise the tape is much too short!
 	 */
 	if (slp->sent) {
-		if (atomic(read, slp->fd, &got, sizeof got) != sizeof got) {
+		if (atomic(read, slp->fd, (char *)&got, sizeof got)
+		    != sizeof got) {
 			perror("  DUMP: error reading command pipe in master");
 			dumpabort();
 		}
@@ -505,20 +468,19 @@ startnewtape(top)
 	int	childpid;
 	int	status;
 	int	waitpid;
-	int	i;
 	char	*p;
 #ifdef sunos
-	void	(*interrupt)();
+	void	(*interrupt_save)();
 	char	*index();
 #else
-	sig_t	interrupt;
+	sig_t	interrupt_save;
 #endif
 
-	interrupt = signal(SIGINT, SIG_IGN);
+	interrupt_save = signal(SIGINT, SIG_IGN);
 	parentpid = getpid();
 
     restore_check_point:
-	(void)signal(SIGINT, interrupt);
+	(void)signal(SIGINT, interrupt_save);
 	/*
 	 *	All signals are inherited...
 	 */
@@ -626,7 +588,7 @@ startnewtape(top)
 		spcl.c_volume++;
 		spcl.c_type = TS_TAPE;
 		spcl.c_flags |= DR_NEWHEADER;
-		writeheader(slp->inode);
+		writeheader((ino_t)slp->inode);
 		spcl.c_flags &=~ DR_NEWHEADER;
 		if (tapeno > 1)
 			msg("Volume %d begins with blocks from inode %d\n",
@@ -639,7 +601,8 @@ dumpabort()
 {
 
 	if (master != 0 && master != getpid())
-		kill(master, SIGTERM);	/* Signals master to call dumpabort */
+		/* Signals master to call dumpabort */
+		(void) kill(master, SIGTERM);
 	else {
 		killall();
 		msg("The ENTIRE dump is aborted.\n");
@@ -655,7 +618,7 @@ Exit(status)
 #ifdef TDEBUG
 	msg("pid = %d exits with status %d\n", getpid(), status);
 #endif TDEBUG
-	exit(status);
+	(void) exit(status);
 }
 
 /*
@@ -699,7 +662,7 @@ enslave()
 		slaves[i].sent = 0;
 		if (slaves[i].pid == 0) { 	    /* Slave starts up here */
 			for (j = 0; j <= i; j++)
-			        close(slaves[j].fd);
+			        (void) close(slaves[j].fd);
 			signal(SIGINT, SIG_IGN);    /* Master handles this */
 			doslave(cmd[0], i);
 			Exit(X_FINOK);
@@ -707,8 +670,9 @@ enslave()
 	}
 	
 	for (i = 0; i < SLAVES; i++)
-		atomic(write, slaves[i].fd, &slaves[(i + 1) % SLAVES].pid, 
-		       sizeof slaves[0].pid);
+		(void) atomic(write, slaves[i].fd, 
+			      (char *) &slaves[(i + 1) % SLAVES].pid, 
+		              sizeof slaves[0].pid);
 		
 	master = 0; 
 }
@@ -720,7 +684,7 @@ killall()
 
 	for (i = 0; i < SLAVES; i++)
 		if (slaves[i].pid > 0)
-			kill(slaves[i].pid, SIGKILL);
+			(void) kill(slaves[i].pid, SIGKILL);
 }
 
 /*
@@ -740,41 +704,28 @@ doslave(cmd, slave_number)
 #ifndef __STDC__
 	int read();
 #endif
-#ifdef ROLLDEBUG
-	int dodump = 2;
-	FILE *out;
-	char name[64];
-#endif
 
 	/*
 	 * Need our own seek pointer.
 	 */
-	close(diskfd);
+	(void) close(diskfd);
 	if ((diskfd = open(disk, O_RDONLY)) < 0)
 		quit("slave couldn't reopen disk: %s\n", strerror(errno));
 
 	/*
 	 * Need the pid of the next slave in the loop...
 	 */
-	if ((nread = atomic(read, cmd, &nextslave, sizeof nextslave))
+	if ((nread = atomic(read, cmd, (char *)&nextslave, sizeof nextslave))
 	    != sizeof nextslave) {
 		quit("master/slave protocol botched - didn't get pid of next slave.\n");
 	}
 
-#ifdef ROLLDEBUG
-	sprintf(name, "slave.%d", slave_number);
-	out = fopen(name, "w");
-#endif
 	/*
 	 * Get list of blocks to dump, read the blocks into tape buffer
 	 */
-	while ((nread = atomic(read, cmd, slp->req, reqsiz)) == reqsiz) {
+	while ((nread = atomic(read, cmd, (char *)slp->req, reqsiz)) == reqsiz) {
 		register struct req *p = slp->req;
-		int j;
-		struct req *rover;
-		char (*orover)[TP_BSIZE];
 
-		j = 0;
 		for (trecno = 0; trecno < ntrec;
 		     trecno += p->count, p += p->count) {
 			if (p->dblk) {
@@ -782,32 +733,15 @@ doslave(cmd, slave_number)
 					p->count * TP_BSIZE);
 			} else {
 				if (p->count != 1 || atomic(read, cmd,
-				    slp->tblock[trecno], TP_BSIZE) != TP_BSIZE)
-					quit("master/slave protocol botched.\n");
+				    (char *)slp->tblock[trecno], 
+				    TP_BSIZE) != TP_BSIZE)
+				       quit("master/slave protocol botched.\n");
 			}
-#ifdef ROLLDEBUG
-			if (dodump) {
-				fprintf(out, "    req %d count %d dblk %d\n",
-					j++, p->count, p->dblk);
-				if (p->dblk == 0) {
-					fprintf(out, "\tsum %x\n",
-						do_sum(slp->tblock[trecno]));
-				}
-			}
-#endif
 		}
-#ifdef ROLLDEBUG
-		if (dodump) {
-			fprintf(out, "\n");
-		}
-		if (--dodump == 0) {
-			fclose(out);
-		}
-#endif
 		if (setjmp(jmpbuf) == 0) {
 			ready = 1;
 			if (!caught)
-				pause();
+				(void) pause();
 		}
 		ready = 0;
 		caught = 0;
@@ -849,22 +783,22 @@ doslave(cmd, slave_number)
 		 * at EOT on 1/2 inch drives.
 		 */
 		if (size < 0) {
-			kill(master, SIGUSR1);
+			(void) kill(master, SIGUSR1);
 			for (;;)
-				sigpause(0);
+				(void) sigpause(0);
 		} else {
 			/*
 			 * pass size of write back to master
 			 * (for EOT handling)
 			 */
-			atomic(write, cmd, &size, sizeof size);
+			(void) atomic(write, cmd, (char *)&size, sizeof size);
 		} 
 
 		/*
 		 * If partial write, don't want next slave to go.
 		 * Also jolts him awake.
 		 */
-		kill(nextslave, SIGUSR2);
+		(void) kill(nextslave, SIGUSR2);
 	}
 	if (nread != 0)
 		quit("error reading command pipe: %s\n", strerror(errno));
