@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * David Barto at Celerity Computer Corp.
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tttvi925.c	3.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tttvi925.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"

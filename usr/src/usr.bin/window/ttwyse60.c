@@ -6,8 +6,8 @@
  */
 
 /*
- * Copyright (c) 1988 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * David C. Elliott, of MIPS Computer Systems.
@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttwyse60.c	3.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttwyse60.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
