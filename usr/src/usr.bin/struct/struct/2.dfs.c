@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)2.dfs.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)2.dfs.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
