@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)odsyntax.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)odsyntax.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -117,11 +117,9 @@ oldsyntax(argc, argvp)
 	argc -= optind;
 	*argvp += optind;
 
-	odoffset(argc, argvp);
+	if (argc)
+		odoffset(argc, argvp);
 }
-
-#define	ishexdigit(c) \
-	(c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F')
 
 odoffset(argc, argvp)
 	int argc;
@@ -142,11 +140,11 @@ odoffset(argc, argvp)
 	 * multiplied the number by 512 or 1024 byte units.  There was
 	 * no way to assign a block count to a hex offset.
 	 *
-	 * We assumes it's a file if the offset is bad.
+	 * We assume it's a file if the offset is bad.
 	 */
 	p = **argvp;
 	if (*p != '+' && (argc < 2 ||
-	    (!isdigit(p[0]) && (p[0] != 'x' || !ishexdigit(p[1])))))
+	    (!isdigit(p[0]) && (p[0] != 'x' || !isxdigit(p[1])))))
 		return;
 
 	base = 0;
@@ -156,7 +154,7 @@ odoffset(argc, argvp)
 	 */
 	if (p[0] == '+')
 		++p;
-	if (p[0] == 'x' && ishexdigit(p[1])) {
+	if (p[0] == 'x' && isxdigit(p[1])) {
 		++p;
 		base = 16;
 	} else if (p[0] == '0' && p[1] == 'x') {
@@ -166,7 +164,7 @@ odoffset(argc, argvp)
 
 	/* skip over the number */
 	if (base == 16)
-		for (num = p; ishexdigit(*p); ++p);
+		for (num = p; isxdigit(*p); ++p);
 	else
 		for (num = p; isdigit(*p); ++p);
 
