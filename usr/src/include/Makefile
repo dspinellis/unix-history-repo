@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.41 (Berkeley) %G%
+#	@(#)Makefile	5.42 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -12,21 +12,12 @@ FILES=	a.out.h ar.h assert.h bitstring.h ctype.h db.h dirent.h disktab.h \
 	ndbm.h netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h regexp.h \
 	resolv.h setjmp.h sgtty.h stab.h stdarg.h stddef.h stdio.h \
 	stdlib.h string.h strings.h struct.h sysexits.h time.h ttyent.h \
-	tzfile.h utmp.h varargs.h vfont.h vis.h
+	tzfile.h unistd.h utime.h utmp.h varargs.h vfont.h vis.h
 MFILES=	float.h frame.h
-LFILES=	errno.h fcntl.h signal.h syslog.h termios.h unistd.h
+LFILES=	errno.h fcntl.h signal.h syslog.h termios.h
 
 DIRS=arpa protocols
-LDIRS=	sys net netimp netinet netiso netns ufs nfs
-.if   (${MACHINE} == "i386")
-MDIRS=	i386
-.elif   (${MACHINE} == "hp300")
-MDIRS=	hp300 dev
-.elif (${MACHINE} == "tahoe")
-MDIRS=	tahoe math vba if
-.elif (${MACHINE} == "vax")
-MDIRS=	vax bi if mba uba
-.endif
+LDIRS=	net netimp netinet netiso netns nfs sys ufs
 
 NOOBJ=	noobj
 
@@ -71,15 +62,10 @@ install: ${SHARED}
 	done
 
 copies:
-	@echo copies: ${LDIRS} ${MDIRS}
+	@echo copies: ${LDIRS}
 	@-for i in ${LDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		cd /sys; \
-		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
-	done
-	@-for i in ${MDIRS}; do \
-		rm -rf ${DESTDIR}/usr/include/$$i; \
-		cd /sys/${MACHINE}; \
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
 	done
 	rm -f ${DESTDIR}/usr/include/machine
@@ -89,11 +75,6 @@ copies:
 
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
-		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
-	done
-	@for i in ${MDIRS}; do \
-		rm -rf ${DESTDIR}/usr/include/$$i; \
-		ln -s /sys/${MACHINE}/$$i ${DESTDIR}/usr/include/$$i; \
 		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 	done
 	rm -f ${DESTDIR}/usr/include/machine
