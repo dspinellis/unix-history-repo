@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_tune.h	7.3	%G%  */
+/* sccs id:	@(#)ex_tune.h	7.4	%G%  */
 /*
  * Definitions of editor parameters and limits
  */
@@ -76,6 +76,7 @@
  * of the incore line information and could then
  * be reasonably large.
  */
+#undef NCARGS
 #ifndef VMUNIX
 #define	NARGS	100		/* Maximum number of names in "next" */
 #define	NCARGS	LBSIZE		/* Maximum arglist chars in "next" */
