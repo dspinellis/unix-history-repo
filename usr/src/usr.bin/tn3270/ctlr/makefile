@@ -19,20 +19,7 @@ ALLH =	dctype.h ebc_disp.h hostctlr.h kbdctlr.h options.h screen.h scrnctlr.h
 
 MOSTC =	dctype.c ebc_disp.c genbsubs.c inbound.c options.c outbound.c
 
-#
-#	In a vax environment, we use vaxbsubs.s, which gives us a fair amount
-#	of increased performance.  We have provided genbsubs.c, which perform
-#	(more or less) the same function.
-SUBS = vaxbsubs.s
-SUBS = genbsubs.c
-
-SUBSO = vaxbsubs.o
-SUBSO = genbsubs.o
-
-ALLS = vaxbsubs.s
-ALLS =
-
-ALLC = ${MOSTC} ${SUBS}
+ALLC = ${MOSTC}
 ALLC = ${MOSTC}
 
 MOSTO =	dctype.o ebc_disp.o genbsubs.o inbound.o options.o outbound.o
@@ -53,7 +40,7 @@ clean:
 print:
 	${PRINT} ${ALLH} ${M4FILE} default.map
 	${PRINT} ${MOSTC}
-	${PRINT} ${SUBS} ${MSMAIN} ${TNMAIN} ${PRT3270MAIN}
+	${PRINT} ${MSMAIN} ${TNMAIN} ${PRT3270MAIN}
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
@@ -68,8 +55,11 @@ lint:
 
 3270pc.out:	3270pc.kbd hostctlr.h
 	(cd ../tools; make mkhits $(MFLAGS) )
-	-/bin/rm $@
-	../tools/mkhits < 3270pc.kbd > $@
+	-/bin/rm $@ function.out TMPfunc.c
+	/bin/echo \#include \"function.h\" > TMPfunc.c
+	$(CC) $(CFLAGS) -E TMPfunc.c > function.out
+	../tools/mkhits - ../ctlr/function.out < 3270pc.kbd > $@
+	-/bin/rm function.out TMPfunc.c
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
