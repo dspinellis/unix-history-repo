@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	5.4 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.1 (Berkeley) %G%
  */
 
 struct fid;
@@ -19,15 +19,15 @@ int	 lfs_bmap __P((INODE *, daddr_t, daddr_t *));
 int	 lfs_bwrite __P((BUF *));
 int	 lfs_fsync
 	     __P((struct vnode *, int, struct ucred *, int, struct proc *));
-u_long	 lfs_getversion __P((LFS *fs, ino_t));
+u_long	 lfs_getversion __P((struct lfs *fs, ino_t));
 int	 lfs_ialloc __P((INODE *, int, UCRED *, INODE **));
-DINODE	*lfs_ifind __P((LFS *, ino_t, void *));
+DINODE	*lfs_ifind __P((struct lfs *, ino_t, void *));
 void	 lfs_ifree __P((INODE *, ino_t, int));
 int	 lfs_iget __P((INODE *, ino_t, INODE **));
 int	 lfs_inactive __P((VNODE *, struct proc *));
 int	 lfs_init __P((void));
 void	 lfs_iset __P((INODE *, daddr_t, time_t));
-daddr_t	 lfs_itod __P((LFS *, ino_t));
+daddr_t	 lfs_itod __P((struct lfs *, ino_t));
 int	 lfs_itrunc __P((INODE *, u_long, int));
 int	 lfs_iupdat
 	     __P((struct inode *, struct timeval *, struct timeval *, int));
@@ -45,7 +45,7 @@ int	 lfs_write __P((struct vnode *, struct uio *, int, struct ucred *));
 
 #ifdef DEBUG
 void	lfs_dump_dinode __P((DINODE *));
-void	lfs_dump_super __P((LFS *));
+void	lfs_dump_super __P((struct lfs *));
 int	lfs_umountdebug __P((struct mount *));
 int	lfs_vinvalbuf __P((struct vnode *));
 #endif
