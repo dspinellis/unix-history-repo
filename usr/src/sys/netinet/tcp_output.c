@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.33	82/03/13	*/
+/*	tcp_output.c	4.34	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -285,7 +285,7 @@ noopt:
 	 */
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (ip_output(m, tp->t_ipopt) == 0)
+	if (ip_output(m, tp->t_ipopt, 0) == 0)
 		return (0);
 
 	/*

@@ -1,4 +1,4 @@
-/*	ip_input.c	1.31	82/03/09	*/
+/*	ip_input.c	1.32	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,6 +15,7 @@
 #include "../net/tcp.h"
 
 u_char	ip_protox[IPPROTO_MAX];
+int	ipqmaxlen = IFQ_MAXLEN;
 
 /*
  * IP initialization: fill in IP protocol switch table.
@@ -37,6 +38,7 @@ COUNT(IP_INIT);
 			ip_protox[pr->pr_protocol] = pr - protosw;
 	ipq.next = ipq.prev = &ipq;
 	ip_id = time & 0xffff;
+	ipintrq.ifq_maxlen = ipqmaxlen;
 }
 
 u_char	ipcksum = 1;
@@ -120,11 +122,12 @@ next:
 	if (hlen > sizeof (struct ip))
 		ip_dooptions(ip);
 	if (ifnet && ip->ip_dst.s_addr != ifnet->if_addr.s_addr &&
-	    ip->ip_dst.s_addr != ifnet->if_broadaddr.s_addr &&
 	    if_ifwithaddr(ip->ip_dst) == 0) {
-printf("ip->ip_dst %x ip->ip_ttl %x\n", ip->ip_dst, ip->ip_ttl);
-		if (1)
-			goto bad;
+
+		goto bad;
+#ifdef notdef
+		printf("ip->ip_dst %x ip->ip_ttl %x\n",
+		    ip->ip_dst, ip->ip_ttl);
 		if (--ip->ip_ttl == 0) {
 			icmp_error(ip, ICMP_TIMXCEED, 0);
 			goto next;
@@ -133,8 +136,10 @@ printf("ip->ip_dst %x ip->ip_ttl %x\n", ip->ip_dst, ip->ip_ttl);
 		if (mopt == 0)
 			goto bad;
 		ip_stripoptions(ip, mopt);
-		(void) ip_output(m0, mopt);
+		/* 0 here means no directed broadcast */
+		(void) ip_output(m0, mopt, 0);
 		goto next;
+#endif
 	}
 
 	/*

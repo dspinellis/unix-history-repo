@@ -1,4 +1,4 @@
-/*	if_imp.c	4.14	82/03/13	*/
+/*	if_imp.c	4.15	82/03/15	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -96,6 +96,29 @@ COUNT(IMPATTACH);
 	return ((int)&sc->imp_if);
 }
 
+#ifdef notdef
+/*
+ * Timer routine to keep priming the IMP until it sends
+ * us the noops we need.  Since we depend on the host and
+ * imp values returned in the noop messages, we must wait
+ * for them before we allow any outgoing traffic.
+ */
+imptimer(sc)
+	register struct imp_softc *sc;
+{
+	int s = splimp();
+
+	if (sc->imp_state != IMPS_INIT) {
+		splx(s);
+		return;
+	}
+	sc->imp_dropcnt = IMP_DROPCNT;
+	impnoops(sc);
+	timeout(imptimer, (caddr_t)sc, 30 * hz);
+	splx(s);
+}
+#endif
+
 /*
  * IMP initialization routine: call hardware module to
  * setup UNIBUS resources, init state and get ready for
@@ -111,8 +134,12 @@ impinit(unit)
 		return;
 	}
 	sc->imp_state = IMPS_INIT;
+#ifdef notdef
+	imptimer(sc);
+#else
 	sc->imp_dropcnt = IMP_DROPCNT;
 	impnoops(sc);
+#endif
 }
 
 struct sockproto impproto = { PF_IMPLINK };
@@ -335,6 +362,10 @@ COUNT(IMPINPUT);
 		  (struct sockaddr *)&impsrc);
 		return;
 	}
+	if (IF_QFULL(inq)) {
+		IF_DROP(inq);
+		goto drop;
+	}
 	IF_ENQUEUE(inq, m);
 	return;
 
@@ -348,6 +379,7 @@ drop:
 impdown(sc)
 	struct imp_softc *sc;
 {
+
 	sc->imp_state = IMPS_DOWN;
 	impmsg(sc, "marked down");
 	/* notify protocols with messages waiting? */
@@ -359,6 +391,7 @@ impmsg(sc, fmt, a1, a2)
 	char *fmt;
 	u_int a1;
 {
+
 	printf("imp%d: ", sc->imp_if.if_unit);
 	printf(fmt, a1, a2);
 	printf("\n");
@@ -499,6 +532,12 @@ COUNT(IMPSND);
 		return (0);
 	}
 enque:
+	if (IF_QFULL(&ifp->if_snd)) {
+		IF_DROP(&ifp->if_snd);
+		m_freem(m);
+		splx(x);
+		return (0);
+	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 start:
 	splx(x);

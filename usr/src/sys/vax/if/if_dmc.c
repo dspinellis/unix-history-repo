@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.4	82/03/13	*/
+/*	if_dmc.c	4.5	82/03/15	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -327,7 +327,11 @@ dmcxint(unit)
 		m = if_rubaget(&sc->sc_ifuba, len, 0);
 		if (m == 0)
 			goto setup;
-		IF_ENQUEUE(inq, m);
+		if (IF_QFULL(inq)) {
+			IF_DROP(inq);
+			(void) m_freem(m);
+		} else
+			IF_ENQUEUE(inq, m);
 
 setup:
 		arg = sc->sc_ifuba.ifu_r.ifrw_info & 0x3ffff;
@@ -345,7 +349,7 @@ setup:
 		sc->sc_if.if_opackets++;
 		sc->sc_oactive = 0;
 		if (sc->sc_ifuba.ifu_xtofree) {
-			m_freem(sc->sc_ifuba.ifu_xtofree);
+			(void) m_freem(sc->sc_ifuba.ifu_xtofree);
 			sc->sc_ifuba.ifu_xtofree = 0;
 		}
 		if (sc->sc_if.if_snd.ifq_head == 0)
@@ -387,10 +391,16 @@ dmcoutput(ifp, m, pf)
 	printd("dmcoutput\n");
 	if (pf != (ui->ui_flags & DMC_PF)) {
 		printf("dmc%d: protocol %d not supported\n", ifp->if_unit, pf);
-		m_freem(m);
+		(void) m_freem(m);
 		return (0);
 	}
 	s = splimp();
+	if (IF_QFULL(&ifp->if_snd)) {
+		IF_DROP(&ifp->if_snd);
+		(void) m_freem(m);
+		splx(s);
+		return (0);
+	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if (dmc_softc[ifp->if_unit].sc_oactive == 0)
 		dmcstart(ifp->if_unit);

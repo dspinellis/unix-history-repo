@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.9	82/03/13	*/
+/*	raw_usrreq.c	4.10	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -12,13 +12,17 @@
 #include "../net/raw_cb.h"
 #include "../errno.h"
 
+int	rawqmaxlen = IFQ_MAXLEN;
+
 /*
  * Initialize raw connection block q.
-*/
+ */
 raw_init()
 {
+
 COUNT(RAW_INIT);
 	rawcb.rcb_next = rawcb.rcb_prev = &rawcb;
+	rawintrq.ifq_maxlen = IFQ_MAXLEN;
 }
 
 /*
@@ -57,7 +61,10 @@ COUNT(RAW_INPUT);
 	 * running at software interrupt level.
 	 */
 	s = splimp();
-	IF_ENQUEUE(&rawintrq, m);
+	if (IF_QFULL(&rawintrq))
+		m_freem(m);
+	else
+		IF_ENQUEUE(&rawintrq, m);
 	splx(s);
 	setrawintr();
 }
@@ -180,8 +187,10 @@ COUNT(RAW_USRREQ);
 	 * the appropriate raw interface routine.
 	 */
 	case PRU_ATTACH:
+		if ((so->so_state & SS_PRIV) == 0)
+			return (EPERM);
 		if (rp)
-			return (EINVAL);;
+			return (EINVAL);
 		error = raw_attach(so, (struct sockaddr *)addr);
 		break;
 

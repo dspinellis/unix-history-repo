@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.7	82/03/13	*/
+/*	raw_ip.c	4.8	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -85,7 +85,7 @@ COUNT(RIP_OUTPUT);
 	ip->ip_src =
 		((struct sockaddr_in *)&so->so_addr)->sin_addr;
 	ip->ip_ttl = MAXTTL;
-	return (ip_output(m, (struct mbuf *)0));
+	return (ip_output(m, (struct mbuf *)0, 1));
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	if.h	4.8	82/03/09	*/
+/*	if.h	4.9	82/03/15	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -42,6 +42,9 @@ struct ifnet {
 	struct	ifqueue {
 		struct	mbuf *ifq_head;
 		struct	mbuf *ifq_tail;
+		int	ifq_len;
+		int	ifq_maxlen;
+		int	ifq_drops;
 	} if_snd;			/* output queue */
 /* procedure handles */
 	int	(*if_init)();		/* init routine */
@@ -63,6 +66,8 @@ struct ifnet {
  * (defined above).  Entries are added to and deleted from these structures
  * by these macros, which should be called with ipl raised to splimp().
  */
+#define	IF_QFULL(ifq)		((ifq)->ifq_len >= (ifq)->ifq_maxlen)
+#define	IF_DROP(ifq)		((ifq)->ifq_drops++)
 #define	IF_ENQUEUE(ifq, m) { \
 	(m)->m_act = 0; \
 	if ((ifq)->ifq_tail == 0) \
@@ -70,12 +75,14 @@ struct ifnet {
 	else \
 		(ifq)->ifq_tail->m_act = m; \
 	(ifq)->ifq_tail = m; \
+	(ifq)->ifq_len++; \
 }
 #define	IF_PREPEND(ifq, m) { \
 	(m)->m_act = (ifq)->ifq_head; \
 	if ((ifq)->ifq_tail == 0) \
 		(ifq)->ifq_tail = (m); \
 	(ifq)->ifq_head = (m); \
+	(ifq)->ifq_len++; \
 }
 #define	IF_DEQUEUE(ifq, m) { \
 	(m) = (ifq)->ifq_head; \
@@ -83,8 +90,11 @@ struct ifnet {
 		if (((ifq)->ifq_head = (m)->m_act) == 0) \
 			(ifq)->ifq_tail = 0; \
 		(m)->m_act = 0; \
+		(ifq)->ifq_len--; \
 	} \
 }
+
+#define	IFQ_MAXLEN	50
 
 #ifdef KERNEL
 #ifdef INET

@@ -1,4 +1,4 @@
-/*	if_en.c	4.39	82/03/13	*/
+/*	if_en.c	4.40	82/03/15	*/
 
 #include "en.h"
 
@@ -413,7 +413,11 @@ COUNT(ENRINT);
 		goto setup;
 		}
 	}
-	IF_ENQUEUE(inq, m);
+	if (IF_QFULL(inq)) {
+		IF_DROP(inq);
+		(void) m_freem(m);
+	} else
+		IF_ENQUEUE(inq, m);
 
 setup:
 	/*
@@ -532,6 +536,12 @@ gottype:
 	 * not yet active.
 	 */
 	s = splimp();
+	if (IF_QFULL(&ifp->if_snd)) {
+		IF_DROP(&ifp->if_snd);
+		m_freem(m);
+		splx(s);
+		return (0);
+	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if (en_softc[ifp->if_unit].es_oactive == 0)
 		enstart(ifp->if_unit);
