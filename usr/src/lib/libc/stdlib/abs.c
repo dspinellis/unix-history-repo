@@ -6,8 +6,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)abs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)abs.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
+
+#include <stdlib.h>
 
 int
 abs(j)
