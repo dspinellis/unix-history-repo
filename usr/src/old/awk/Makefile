@@ -1,4 +1,4 @@
-#	Makefile	4.3	86/05/15
+#	Makefile	4.4	87/05/31
 #
 CFLAGS=-O
 YFLAGS=-d
@@ -33,6 +33,8 @@ profile:	awk.g.o $(FILES) mon.o
 
 find:
 	egrep -n "$(PAT)" *.[ylhc] awk.def
+
+depend:
 
 list:
 	-pr $(SOURCE) Makefile tokenscript README EXPLAIN

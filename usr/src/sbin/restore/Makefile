@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS= -O
@@ -32,6 +32,8 @@ install: rrestore restore
 
 clean:
 	rm -f restore rrestore *.o errs a.out core
+
+depend:
 
 lint:
 	lint ${FILES}

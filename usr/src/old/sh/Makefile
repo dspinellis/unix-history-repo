@@ -1,4 +1,4 @@
-#	Makefile	4.5	83/07/01
+#	Makefile	4.6	87/05/31
 #
 CFLAGS = -O -w
 
@@ -26,6 +26,8 @@ stak.o:		brkincr.h
 
 sh:
 	cc -o sh *.o
+
+depend:
 
 install:
 	install -s sh $(DESTDIR)/bin

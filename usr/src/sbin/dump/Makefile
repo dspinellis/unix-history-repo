@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/dumpdates
@@ -58,6 +58,8 @@ dumprtape.o: dumprtape.c
 
 clean:
 	rm -f *.o rdump dump errs dumprmain.c dumprtape.c
+
+depend:
 
 lint:
 	lint $(DFLAGS) $(SRCS)
