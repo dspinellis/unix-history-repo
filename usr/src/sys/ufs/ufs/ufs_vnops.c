@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.21 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -289,7 +289,7 @@ ufs_getattr(ap)
 		vap->va_blocksize = MAXBSIZE;
 	else
 		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
-	vap->va_bytes = dbtob(ip->i_blocks);
+	vap->va_bytes = dbtob((u_quad_t)ip->i_blocks);
 	vap->va_type = vp->v_type;
 	vap->va_filerev = ip->i_modrev;
 	return (0);
