@@ -1,5 +1,7 @@
 /*************************************************************************
  *
+ * @(#)parse.c	1.2 (CWI) 87/07/10
+ *
  * Code to parse the ditroff output language and take the appropriate
  * action.
  *
@@ -16,10 +18,7 @@ extern int	virtRES;	/* resolution of input		*/
 
 /* from main.c */
 extern int	debug, dbg;
-
-
-private char	*inname = "nver";	/* input was prepared for this dev */
-
+extern char	*devname;
 
 
 conv(fp)
@@ -197,7 +196,9 @@ FILE *fp;		/* returns -1 apon recieving "stop" command */
 		t_slant(n);
 		break;
 	case 'T':			/* device name */
-		fscanf(fp, "%s", inname);
+		fscanf(fp, "%s", str);
+		if (strcmp(str,devname) != 0)
+			exit(-1);	/* tell lpd to abort this file */
 		break;
 
 	}

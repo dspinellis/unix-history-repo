@@ -13,12 +13,13 @@
  *			by #ifdef BERK, allthough a lot of things are
  *			around (like polygon and gremlin...)
  *
- *		Carol Orange
+ *		Carol Orange and Denise Draper
  *			Changed to make the versatec a Harris typesetter
  *			look-alike.
  */
-
- 
+#ifndef LINT
+static char sccsid[] = "@(#)ndver80	1.2 (CWI) 87/07/10";
+#endif
 /*******************************************************************************
 
     output language from troff:
@@ -68,7 +69,7 @@ x ..\n	device control functions:
 #include <sys/vcmd.h>
 #include "the.h"
 
-public char	*devname = "nver";
+public char	*devname = "har";
 public char	*fontdir = "/usr/local/lib/ditroff/font";
 
 public int	debug = 0;		/* two different debugging modes	*/
@@ -91,7 +92,7 @@ char *argv[];
 
 	while (--argc > 0 && **++argv == '-') {
 		switch ((*argv)[1]) {
-		case 'F':
+		case 'F':	
 			dummy = operand(&argc, &argv);		/* ignore */
 			break;
 		case 'D': 
