@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.31 (Berkeley) %G%
+ *	@(#)conf.h	6.32 (Berkeley) %G%
  */
 
 /*
@@ -77,21 +77,22 @@
 **	change these.
 */
 
+/* HP-UX -- tested for 8.07 */
 # ifdef __hpux
 # define SYSTEM5	1
 # endif
 
-# ifdef IBM_AIX
+/* IBM AIX 3.x -- actually tested for 3.2.3 */
+# ifdef _AIX3
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define FORK		fork	/* no vfork primitive available */
 # endif
 
+/* general System V defines */
 # ifdef SYSTEM5
-
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define SYS5TZ		1	/* use System V style timezones */
 # define HASUNAME	1	/* use System V uname system call */
-
 # endif
 
 #if defined(sun) && !defined(BSD)
