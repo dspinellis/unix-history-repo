@@ -1,4 +1,4 @@
-#	@(#)NEWS3200	7.7 (Berkeley) %G%
+#	@(#)NEWS3200	7.8 (Berkeley) %G%
 #
 # NWS-3200
 #
@@ -40,7 +40,7 @@ options		"NEWS3200"
 options		"news3200"
 
 config		vmunix root on sd0a swap on sd0b and sd1b
-config		vmunixf root on sd0f swap on sd0b and sd1b
+config		vmunixe root on sd0e swap on sd0b and sd1b
 
 #
 # nexus
