@@ -7,7 +7,7 @@
 #
 # from: $NetBSD: vnode_if.sh,v 1.4.2.1 1994/07/15 22:32:01 cgd Exp $
 #
-SCRIPT_ID='@(#)vnode_if.sh	8.3 (Berkeley) %G%'
+SCRIPT_ID='@(#)vnode_if.sh	8.4 (Berkeley) %G%'
 
 # Script to produce VFS front-end sugar.
 #
@@ -85,9 +85,11 @@ awk_parser='
 		i++;
 	} else
 		willrele[argc] = 0;
-	argtype[argc] = $i; i++;
+	argtype[argc] = "";
 	while (i < NF) {
-		argtype[argc] = argtype[argc]" "$i;
+		argtype[argc] = argtype[argc]$i;
+		if (substr($i, length($i), 1) != "*")
+			argtype[argc] = argtype[argc]" ";
 		i++;
 	}
 	argname[argc] = $i;
@@ -127,9 +129,9 @@ sed -e "$sed_prep" $src | $awk "$toupper"'
 function doit() {
 	# Declare arg struct, descriptor.
 	printf("\nstruct %s_args {\n", name);
-	printf("\tstruct vnodeop_desc * a_desc;\n");
+	printf("\tstruct vnodeop_desc *a_desc;\n");
 	for (i=0; i<argc; i++) {
-		printf("\t%s a_%s;\n", argtype[i], argname[i]);
+		printf("\t%sa_%s;\n", argtype[i], argname[i]);
 	}
 	printf("};\n");
 	printf("extern struct vnodeop_desc %s_desc;\n", name);
@@ -141,9 +143,9 @@ function doit() {
 	}
 	printf(")\n");
 	for (i=0; i<argc; i++) {
-		printf("\t%s %s;\n", argtype[i], argname[i]);
+		printf("\t%s%s;\n", argtype[i], argname[i]);
 	}
-	printf("{\n\tstruct %s_args a;\n", name);
+	printf("{\n\tstruct %s_args a;\n\n", name);
 	printf("\ta.a_desc = VDESC(%s);\n", name);
 	for (i=0; i<argc; i++) {
 		printf("\ta.a_%s = %s;\n", argname[i], argname[i]);
