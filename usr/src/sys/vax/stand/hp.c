@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.6 (Berkeley) %G%
+ *	@(#)hp.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -103,10 +103,8 @@ hpopen(io)
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;		/* init drive */
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
 #ifndef SMALL
-		if ((hpaddr->hpds & HPDS_DPR) == 0) {
-			printf("hp: drive nonexistent\n");
+		if ((hpaddr->hpds & HPDS_DPR) == 0)
 			return (ENXIO);
-		}
 		sc->type = hpaddr->hpdt & MBDT_TYPE;
 		if (sc->type == MBDT_ML11B)
 			sc->type = MBDT_ML11A;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.3 (Berkeley) %G%
+ *	@(#)tm.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -31,10 +31,8 @@ tmopen(io)
 
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
-	if (badaddr((char *)ubamem(io->i_adapt, tmstd[io->i_ctlr]), sizeof(short))) {
-		printf("tm: nonexistent device\n");
+	if (badaddr((char *)ubamem(io->i_adapt, tmstd[io->i_ctlr]), sizeof(short)))
 		return (ENXIO);
-	}
 	tmstrategy(io, TM_REW);
 	for (skip = io->i_part; skip--;) {
 		io->i_cc = 0;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.3 (Berkeley) %G%
+ *	@(#)ut.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -33,10 +33,8 @@ utopen(io)
 
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
-	if (badaddr((char *)ubamem(io->i_unit, utstd[io->i_ctlr]), sizeof(short))) {
-		printf("ut: nonexistent device\n");
+	if (badaddr((char *)ubamem(io->i_unit, utstd[io->i_ctlr]), sizeof(short)))
 		return (ENXIO);
-	}
 	utstrategy(io, UT_REW);
 	for (skip = io->i_part; skip--;)
 		utstrategy(io, UT_SFORWF);
