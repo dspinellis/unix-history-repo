@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.8 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -59,7 +59,7 @@ main()
 		loct = localtime(&itime);
 		loct->tm_mon++;		 /* 1-12 for month */
 		if (loct->tm_wday == 0)
-			loct->tm_wday == 7;	/* sunday is 7, not 0 */
+			loct->tm_wday = 7;	/* sunday is 7, not 0 */
 		for(cp = list; *cp != EOS;) {
 			flag = 0;
 			cp = cmp(cp, loct->tm_min);
