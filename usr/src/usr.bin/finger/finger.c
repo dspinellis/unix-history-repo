@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -634,6 +634,14 @@ phone(s, len, alldigits)
 		*p++ = ' ';
 		*p++ = 'x';
 		*p++ = '2';
+		*p++ = '-';
+		for (i = 0; i < 4; i++)
+			*p++ = *s++;
+		break;
+	case 5:
+		*p++ = ' ';
+		*p++ = 'x';
+		*p++ = *s++;
 		*p++ = '-';
 		for (i = 0; i < 4; i++)
 			*p++ = *s++;
