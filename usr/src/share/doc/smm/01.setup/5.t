@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	6.10 (Berkeley) %G%
+.\"	@(#)5.t	6.11 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -316,7 +316,7 @@ will send ICMP redirects to the source host if it is on the same network.
 This improves the interaction of \*(4B gateways with hosts that configure
 their routes via default gateways and redirects.
 The generation of redirects may be disabled with the configuration option
-IPSENDREDIRECTS=0 or at boot time by using the command:
+IPSENDREDIRECTS=0 or while the system is running by using the command:
 .DS
 .ft CW
 sysctl -w net.inet.ip.redirect=0
