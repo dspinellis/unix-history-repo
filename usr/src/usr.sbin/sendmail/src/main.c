@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -105,7 +105,7 @@ main(argc, argv, envp)
 	bool queuemode = FALSE;		/* process queue requests */
 	bool nothaw;
 	static bool reenter = FALSE;
-	char jbuf[30];			/* holds MyHostName */
+	char jbuf[60];			/* holds MyHostName */
 	extern bool safefile();
 	extern time_t convtime();
 	extern putheader(), putbody();
@@ -932,10 +932,14 @@ thaw(freezefile)
 	char *freezefile;
 {
 	int f;
+	register char *p;
 	union frz fhdr;
+	char hbuf[60];
 	extern char edata, end;
 	extern char Version[];
 	extern caddr_t brk();
+	extern char **myhostname();
+	extern char *macvalue();
 
 	if (freezefile == NULL)
 		return (FALSE);
@@ -985,7 +989,17 @@ thaw(freezefile)
 	}
 
 	(void) close(f);
-	return (TRUE);
+
+	/* verify that the host name was correct on the freeze */
+	(void) myhostname(hbuf, sizeof hbuf);
+	p = macvalue('w', CurEnv);
+	if (p == NULL)
+		p = "";
+	if (strcmp(hbuf, macvalue('w', CurEnv)) == 0)
+		return (TRUE);
+	syslog(LOG_WARNING, "Hostname changed since freeze (%s => %s)",
+		p, hbuf);
+	return (FALSE);
 }
 /*
 **  DISCONNECT -- remove our connection with any foreground process
