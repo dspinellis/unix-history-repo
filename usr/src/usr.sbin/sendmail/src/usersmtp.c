@@ -1,9 +1,10 @@
+# include <ctype.h>
 # include <wellknown.h>
 # include <sysexits.h>
 # include <stdio.h>
 # include <useful.h>
 
-static char	SccsId[] =	"@(#)usersmtp.c	3.1	%G%";
+static char	SccsId[] =	"@(#)usersmtp.c	3.2	%G%";
 
 /*
 **  TCP -- TCP/Ethernet/ARPAnet mailer
@@ -15,25 +16,49 @@ static char	SccsId[] =	"@(#)usersmtp.c	3.1	%G%";
 
 char	*MailCommand =	"/usr/lib/sendmail";
 char	*MailUser =	"network";
-char	*MailPassword =	NULL;
-FILE	*MailFile;
+char	*MailPassword =	"mailhack";
+FILE	*InConnection;
+FILE	*OutConnection;
 bool	Verbose;
+bool	Debug;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern FILE *openconnection();
 	register int stat;
 
-	if (argc < 4)
-		exit(EX_USAGE);
+	while (argc > 1 && argv[1][0] == '-')
+	{
+		register char *p = *++argv;
 
-	MailFile = openconnection(argv[2]);
-	if (MailFile == NULL)
+		argc--;
+		switch (p[1])
+		{
+		  case 'v':
+			Verbose = TRUE;
+			break;
+
+		  case 'd':
+			Debug = TRUE;
+			break;
+		}
+	}
+
+	if (argc < 4)
+	{
+		if (Debug)
+			printf("Usage\n");
+		exit(EX_USAGE);
+	}
+
+	if (openconnection(argv[2]) < 0)
 		exit(EX_TEMPFAIL);
 
 	stat = runsmtp(argv[1], &argv[3]);
+
+	if (Debug)
+		printf("Finishing with stat %d\n", stat);
 
 	exit(stat);
 }
@@ -51,21 +76,33 @@ main(argc, argv)
 **		none.
 */
 
-FILE *
 openconnection(host)
 	char *host;
 {
 	char cmdbuf[100];
-	extern FILE *rexec();
-	register FILE *f;
+	register int fd;
 
 	/* create the command name */
-	sprintf(cmdbuf, "%s -p", MailCommand);
+	sprintf(cmdbuf, "%s -as%s%s", MailCommand,
+					Verbose ? " -v" : "",
+					Debug ? " -d" : "");
+
+	if (Debug)
+		printf("Creating connection to \"%s\" on %s\n", cmdbuf, host);
 
 	/* create connection (we hope) */
-	f = rexec(&host, SHELLSERVER, cmdbuf, &MailUser, NULL);
+	fd = rexec(&host, SHELLSERVER, cmdbuf, MailUser, MailPassword);
+	if (fd < 0)
+		return (-1);
+	InConnection = fdopen(fd, "r");
+	OutConnection = fdopen(fd, "w");
+	if (InConnection == NULL || OutConnection == NULL)
+		return (-1);
 
-	return (f);
+	if (Debug)
+		printf("Connection open to %s\n", host);
+
+	return (0);
 }
 /*
 **  RUNSMTP -- run the SMTP protocol over connection.
@@ -73,7 +110,6 @@ openconnection(host)
 **	Parameters:
 **		fr -- from person.
 **		tolist -- list of recipients.
-**		mf -- mail connection file.
 **
 **	Returns:
 **		none.
@@ -82,38 +118,37 @@ openconnection(host)
 **		Sends the mail via SMTP.
 */
 
-runsmtp(fr, tolist, mf)
+runsmtp(fr, tolist)
 	char *fr;
 	char **tolist;
-	FILE *mf;
 {
 	register int r;
 	register char **t;
 	char buf[MAXLINE];
 
 	/* get greeting message */
-	r = reply(mf);
+	r = reply();
 	if (r / 100 != 2)
 		return (EX_TEMPFAIL);
 
 	/* send the mail command */
-	fprintf(mf, "MAIL From:<%s>\r\n", fr);
-	r = reply(mf);
+	message("MAIL From:<%s>\r\n", fr);
+	r = reply();
 	if (r != 250)
 		return (EX_SOFTWARE);
 
 	/* send the recipients */
 	for (t = tolist; *t != NULL; t++)
 	{
-		fprintf(mf, "MRCP To:<%s>\r\n", *t);
-		r = reply(mf);
+		message("MRCP To:<%s>\r\n", *t);
+		r = reply();
 		if (r != 250)
 			return (EX_NOUSER);
 	}
 
 	/* send the data */
-	fprintf(mf, "DATA\r\n");
-	r = reply(mf);
+	message("DATA\r\n");
+	r = reply();
 	if (r != 354)
 		return (EX_SOFTWARE);
 	while (fgets(buf, sizeof buf, stdin) != NULL)
@@ -124,22 +159,22 @@ runsmtp(fr, tolist, mf)
 		if (p != NULL)
 			*p = '\0';
 		if (buf[0] == '.')
-			fprintf(mf, ".");
-		fprintf(mf, "%s\r\n", buf);
+			message(".");
+		message("%s\r\n", buf);
 	}
-	fprintf(mf, ".\r\n");
-	r = reply(mf);
+	message(".\r\n");
+	r = reply();
 	if (r != 250)
 		return (EX_SOFTWARE);
 
 	/* force delivery */
-	fprintf(mf, "DOIT\r\n");
-	r = reply(mf);
+	message("DOIT\r\n");
+	r = reply();
 	if (r != 250)
 		return (EX_TEMPFAIL);
 
-	fprintf(mf, "QUIT\r\n");
-	r = reply(mf);
+	message("QUIT\r\n");
+	r = reply();
 	if (r != 221)
 		return (EX_SOFTWARE);
 
@@ -149,7 +184,7 @@ runsmtp(fr, tolist, mf)
 **  REPLY -- read arpanet reply
 **
 **	Parameters:
-**		mf -- mail file.
+**		none.
 **
 **	Returns:
 **		reply code it reads.
@@ -158,10 +193,12 @@ runsmtp(fr, tolist, mf)
 **		flushes the mail file.
 */
 
-reply(mf)
-	FILE *mf;
+reply()
 {
-	fflush(mf);
+	fflush(OutConnection);
+
+	if (Debug)
+		printf("reply\n");
 
 	/* read the input line */
 	for (;;)
@@ -169,15 +206,39 @@ reply(mf)
 		char buf[MAXLINE];
 		register int r;
 
-		if (fgets(buf, sizeof buf, mf) == NULL)
+		if (fgets(buf, sizeof buf, InConnection) == NULL)
 			return (-1);
 		if (Verbose)
 			fputs(buf, stdout);
-		if (buf[3] == '-')
+		if (buf[3] == '-' || !isdigit(buf[0]))
 			continue;
 		r = atoi(buf);
 		if (r < 100)
 			continue;
 		return (r);
 	}
+}
+/*
+**  MESSAGE -- send message to server
+**
+**	Parameters:
+**		f -- format
+**		a, b, c -- parameters
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		writes message to OutChannel.
+*/
+
+message(f, a, b, c)
+	char *f;
+{
+	char buf[100];
+
+	sprintf(buf, f, a, b, c);
+	if (Debug)
+		fputs(buf, stdout);
+	fputs(buf, OutConnection);
 }
