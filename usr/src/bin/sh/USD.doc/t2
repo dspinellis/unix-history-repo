@@ -1,4 +1,4 @@
-.\"	@(#)t2	6.1 (Berkeley) %G%
+.\"	@(#)t2	6.2 (Berkeley) %G%
 .\"
 .SH
 2.0\ Shell\ procedures
@@ -216,9 +216,9 @@ The following example is a fragment of a \fIcc\fP command.
 	for i
 	do case $i in
 	\*(DC\(mi[ocs])	\*(ZZ ;;
-	\*(DC\(mi\*(ST)	echo \\'unknown flag $i\\' ;;
+	\*(DC\(mi\*(ST)	echo \\"unknown flag $i\\" ;;
 	\*(DC\*(ST.c)	/lib/c0 $i \*(ZZ ;;
-	\*(DC\*(ST)	echo \\'unexpected argument $i\\' ;;
+	\*(DC\*(ST)	echo \\"unexpected argument $i\\" ;;
 	\*(DOesac
 	done
 .DE
