@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.h	6.6 (Berkeley) %G%
+ *	@(#)in.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -14,12 +14,14 @@
 /*
  * Protocols
  */
+#define	IPPROTO_IP		0		/* dummy for IP */
 #define	IPPROTO_ICMP		1		/* control message protocol */
 #define	IPPROTO_GGP		2		/* gateway^2 (deprecated) */
 #define	IPPROTO_TCP		6		/* tcp */
 #define	IPPROTO_EGP		8		/* exterior gateway protocol */
 #define	IPPROTO_PUP		12		/* pup */
 #define	IPPROTO_UDP		17		/* user datagram protocol */
+#define	IPPROTO_IDP		22		/* xns idp */
 
 #define	IPPROTO_RAW		255		/* raw IP packet */
 #define	IPPROTO_MAX		256
@@ -79,6 +81,11 @@ struct sockaddr_in {
 	struct	in_addr sin_addr;
 	char	sin_zero[8];
 };
+
+/*
+ * Options for use with [gs]etsockopt at the IP level.
+ */
+#define	IP_OPTIONS	1		/* set/get IP per-packet options */
 
 #if !defined(vax)
 /*
