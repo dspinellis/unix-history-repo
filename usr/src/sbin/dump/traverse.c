@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
