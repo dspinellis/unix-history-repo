@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -230,7 +230,7 @@ VarFind (name, ctxt, flags)
 	     */
 	    int	  	len;
 	    
-	    v = (Var *) malloc(sizeof(Var));
+	    v = (Var *) emalloc(sizeof(Var));
 	    v->name = name;
 
 	    len = strlen(env);
@@ -282,7 +282,7 @@ VarAdd (name, val, ctxt)
     register Var   *v;
     int	    	  len;
 
-    v = (Var *) malloc (sizeof (Var));
+    v = (Var *) emalloc (sizeof (Var));
 
     v->name = strdup (name);
 
@@ -1203,7 +1203,7 @@ Var_Parse (str, ctxt, err, lengthPtr, freePtr)
 		*lengthPtr = tstr - start + 1;
 		*tstr = endc;
 		if (dynamic) {
-		    str = malloc(*lengthPtr + 1);
+		    str = emalloc(*lengthPtr + 1);
 		    strncpy(str, start, *lengthPtr);
 		    str[*lengthPtr] = '\0';
 		    *freePtr = TRUE;
@@ -1216,7 +1216,7 @@ Var_Parse (str, ctxt, err, lengthPtr, freePtr)
 		 * Still need to get to the end of the variable specification,
 		 * so kludge up a Var structure for the modifications
 		 */
-		v = (Var *) malloc(sizeof(Var));
+		v = (Var *) emalloc(sizeof(Var));
 		v->name = &str[1];
 		v->val = Buf_Init(1);
 		v->flags = VAR_JUNK;
@@ -1304,7 +1304,7 @@ Var_Parse (str, ctxt, err, lengthPtr, freePtr)
 			 * cp - tstr takes the null byte into account) and
 			 * compress the pattern into the space.
 			 */
-			pattern = malloc(cp - tstr);
+			pattern = emalloc(cp - tstr);
 			for (cp2 = pattern, cp = tstr + 1;
 			     *cp != '\0';
 			     cp++, cp2++)
@@ -1656,7 +1656,7 @@ Var_Parse (str, ctxt, err, lengthPtr, freePtr)
 	*freePtr = FALSE;
 	free((Address)v);
 	if (dynamic) {
-	    str = malloc(*lengthPtr + 1);
+	    str = emalloc(*lengthPtr + 1);
 	    strncpy(str, start, *lengthPtr);
 	    str[*lengthPtr] = '\0';
 	    *freePtr = TRUE;
