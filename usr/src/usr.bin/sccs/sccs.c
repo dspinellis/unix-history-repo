@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.56 %G%";
+static char SccsId[] = "@(#)sccs.c	1.57 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -226,6 +226,9 @@ bool	RealUser;		/* if set, running as real user */
 # ifdef DEBUG
 bool	Debug;			/* turn on tracing */
 # endif
+# ifndef V6
+extern char	*getenv();
+# endif V6
 
 main(argc, argv)
 	int argc;
@@ -234,6 +237,17 @@ main(argc, argv)
 	register char *p;
 	extern struct sccsprog *lookup();
 	register int i;
+
+# ifndef V6
+# ifndef SCCSDIR
+	/* pull "SccsDir" out of the environment (possibly) */
+	p = getenv("PROJECT");
+	if (p[0] == '/')
+		SccsDir = p;
+	else
+		fprintf(stderr, "PROJECT must be a full pathname\n");
+# endif SCCSDIR
+# endif V6
 
 	/*
 	**  Detect and decode flags intended for this program.
