@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)telnet.h	5.6 (Berkeley) %G%
+ *	@(#)telnet.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -131,9 +131,11 @@ char *telopts[NTELOPTS] = {
 #define	MODE_MASK	(MODE_EDIT|MODE_TRAPSIG|MODE_ACK)
 
 /* Not part of protocol, but needed to simplify things... */
-#define MODE_FLOW		0x40
-#define MODE_ECHO		0x80
-#define MODE_FORCE		0x20
+#define MODE_FLOW		0x0100
+#define MODE_ECHO		0x0200
+#define MODE_INBIN		0x0400
+#define MODE_OUTBIN		0x0800
+#define MODE_FORCE		0x1000
 
 #define	SLC_SYNCH	1
 #define	SLC_BRK		2
