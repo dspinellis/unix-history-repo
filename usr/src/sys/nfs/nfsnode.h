@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	8.4 (Berkeley) %G%
+ *	@(#)nfsnode.h	8.5 (Berkeley) %G%
  */
 
 /*
@@ -98,6 +98,7 @@ int	nfs_getattr __P((struct vop_getattr_args *));
 int	nfs_setattr __P((struct vop_setattr_args *));
 int	nfs_read __P((struct vop_read_args *));
 int	nfs_write __P((struct vop_write_args *));
+#define nfs_lease_check ((int (*) __P((struct  vop_lease_args *)))nullop)
 int	nfsspec_read __P((struct vop_read_args *));
 int	nfsspec_write __P((struct vop_write_args *));
 #ifdef FIFO

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -46,6 +46,7 @@ struct vnodeopv_entry_desc fifo_vnodeop_entries[] = {
 	{ &vop_setattr_desc, fifo_setattr },		/* setattr */
 	{ &vop_read_desc, fifo_read },			/* read */
 	{ &vop_write_desc, fifo_write },		/* write */
+	{ &vop_lease_desc, fifo_lease_check },		/* lease */
 	{ &vop_ioctl_desc, fifo_ioctl },		/* ioctl */
 	{ &vop_select_desc, fifo_select },		/* select */
 	{ &vop_mmap_desc, fifo_mmap },			/* mmap */
