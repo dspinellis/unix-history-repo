@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.25 %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.26 %G%";
 #endif
 
 /*
@@ -247,8 +247,6 @@ gen_init()
 
 gen_end()
 {
-	gen_setmodes(0);
-	gen_setinsert(0);
 	if (gen_TE)
 		ps(gen_TE);
 	if (gen_VE)
@@ -370,6 +368,8 @@ tt_generic()
 	tt.tt_write = gen_write;
 	tt.tt_putc = gen_putc;
 	tt.tt_move = gen_move;
+	tt.tt_setinsert = gen_setinsert;
+	tt.tt_setmodes = gen_setmodes;
 	if (gen_AS && strcmp(gen_AS, ANSI_AS) == 0)
 		tt.tt_frame = ansi_frame;
 	else

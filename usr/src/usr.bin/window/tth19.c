@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tth19.c	3.14 %G%";
+static char sccsid[] = "@(#)tth19.c	3.15 %G%";
 #endif
 
 /*
@@ -49,7 +49,12 @@ int h19_msp10c;
 #define ICPAD() PAD((NCOL - tt.tt_col) * 1)	/* 0.1 ms per char */
 #define ILPAD() PAD((NROW - tt.tt_row) * 10)	/* 1 ms per char */
 
-#define h19_setinsert(m) (esc(), (tt.tt_insert = (m)) ? pc(@) : pc(O))
+#define H19_SETINSERT(m) (esc(), (tt.tt_insert = (m)) ? pc(@) : pc(O))
+
+h19_setinsert(new)
+{
+	H19_SETINSERT(new);
+}
 
 h19_setmodes(new)
 register new;
@@ -92,9 +97,9 @@ h19_putc(c)
 register char c;
 {
 	if (tt.tt_nmodes != tt.tt_modes)
-		h19_setmodes(tt.tt_nmodes);
+		(*tt.tt_setmodes)(tt.tt_nmodes);
 	if (tt.tt_ninsert != tt.tt_insert)
-		h19_setinsert(tt.tt_ninsert);
+		H19_SETINSERT(tt.tt_ninsert);
 	ttputc(c);
 	if (tt.tt_insert)
 		ICPAD();
@@ -107,9 +112,9 @@ register char *p;
 register n;
 {
 	if (tt.tt_nmodes != tt.tt_modes)
-		h19_setmodes(tt.tt_nmodes);
+		(*tt.tt_setmodes)(tt.tt_nmodes);
 	if (tt.tt_ninsert != tt.tt_insert)
-		h19_setinsert(tt.tt_ninsert);
+		H19_SETINSERT(tt.tt_ninsert);
 	if (tt.tt_insert) {
 		while (--n >= 0) {
 			ttputc(*p++);
@@ -179,8 +184,6 @@ h19_init()
 
 h19_end()
 {
-	h19_setmodes(0);
-	h19_setinsert(0);
 	if (gen_VE)
 		ttputs(gen_VE);
 	esc();
@@ -231,6 +234,8 @@ tt_h19()
 	tt.tt_move = h19_move;
 	tt.tt_write = h19_write;
 	tt.tt_putc = h19_putc;
+	tt.tt_setinsert = h19_setinsert;
+	tt.tt_setmodes = h19_setmodes;
 
 	tt.tt_ncol = NCOL;
 	tt.tt_nrow = NROW;
