@@ -1,4 +1,4 @@
-/*	param.h	4.28	83/02/10	*/
+/*	param.h	4.29	83/02/10	*/
 
 /*
  * Macine type dependent parameters.
@@ -21,7 +21,7 @@
 /* NOFILE MUST NOT BE >= 31; SEE pte.h */
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	NCARGS	10240		/* # characters in exec arglist */
-#define	NGROUPS	16		/* max number groups */
+#define	NGROUPS	8		/* max number groups */
 
 /*
  * Priorities
