@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,7 +31,7 @@ static char sccsid[] = "@(#)sys_bsd.c	1.28 (Berkeley) %G%";
 #include "externs.h"
 #include "types.h"
 
-#if	defined(CRAY)
+#if	defined(CRAY) || (defined(USE_TERMIO) && !defined(SYSV_TERMIO))
 #define	SIG_FUNC_RET	void
 #else
 #define	SIG_FUNC_RET	int
@@ -47,22 +47,38 @@ struct	tchars otc = { 0 }, ntc = { 0 };
 struct	ltchars oltc = { 0 }, nltc = { 0 };
 struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
 int	olmode = 0;
+# define cfgetispeed(ptr)	(ptr)->sg_ispeed
+# define cfgetospeed(ptr)	(ptr)->sg_ospeed
+# define old_tc ottyb
 
 #else	/* USE_TERMIO */
 struct	termio old_tc = { 0 };
 extern struct termio new_tc;
 
-#ifndef	TCGETA
-# ifdef TCGETS
-#  define	TCGETA	TCGETS
-#  define	TCSETA	TCSETS
-#  define	TCSETAW	TCSETSW
-# else
-#  define	TCGETA	TIOCGETA
-#  define	TCSETA	TIOCSETA
-#  define	TCSETAW	TIOCSETAW
-# endif
-#endif	/* TCGETA */
+# ifndef	TCSANOW
+#  ifdef TCSETS
+#   define	TCSANOW		TCSETS
+#   define	TCSADRAIN	TCSETSW
+#   define	tcgetattr(f, t) ioctl(f, TCGETS, t)
+#  else
+#   ifdef TCSETA
+#    define	TCSANOW		TCSETA
+#    define	TCSADRAIN	TCSETAW
+#    define	tcgetattr(f, t) ioctl(f, TCGETA, t)
+#   else
+#    define	TCSANOW		TIOCSETA
+#    define	TCSADRAIN	TIOCSETAW
+#    define	tcgetattr(f, t) ioctl(f, TIOCGETA, t)
+#   endif
+#  endif
+#  define	tcsetattr(f, a, t) ioctl(f, a, t)
+#  define	cfgetospeed(ptr)	((ptr)->c_cflag&CBAUD)
+#  ifdef CIBAUD
+#   define	cfgetispeed(ptr)	(((ptr)->c_cflag&CIBAUD) >> IBSHIFT)
+#  else
+#   define	cfgetispeed(ptr)	cfgetospeed(ptr)
+#  endif
+# endif /* TCSANOW */
 #endif	/* USE_TERMIO */
 
 static fd_set ibits, obits, xbits;
@@ -196,16 +212,31 @@ TerminalSaveState()
     nttyb = ottyb;
 
 #else	/* USE_TERMIO */
-    ioctl(0, TCGETA, &old_tc);
+    tcgetattr(0, &old_tc);
 
     new_tc = old_tc;
 
+#ifndef	VDISCARD
     termFlushChar = CONTROL('O');
+#endif
+#ifndef	VWERASE
     termWerasChar = CONTROL('W');
+#endif
+#ifndef	VREPRINT
     termRprntChar = CONTROL('R');
+#endif
+#ifndef	VLNEXT
     termLiteralNextChar = CONTROL('V');
+#endif
+#ifndef	VSTART
     termStartChar = CONTROL('Q');
+#endif
+#ifndef	VSTOP
     termStopChar = CONTROL('S');
+#endif
+#ifndef	VSTATUS
+    termAytChar = CONTROL('T');
+#endif
 #endif	/* USE_TERMIO */
 }
 
@@ -222,20 +253,30 @@ register int func;
     case SLC_XON:	return(&termStartChar);
     case SLC_XOFF:	return(&termStopChar);
     case SLC_FORW1:	return(&termForw1Char);
-#ifndef	SYSV_TERMIO
-    case SLC_AO:	return(&termFlushChar);
-    case SLC_SUSP:	return(&termSuspChar);
-    case SLC_EW:	return(&termWerasChar);
-    case SLC_RP:	return(&termRprntChar);
-    case SLC_LNEXT:	return(&termLiteralNextChar);
-#endif	/* SYSV_TERMIO */
 #ifdef	USE_TERMIO
     case SLC_FORW2:	return(&termForw2Char);
+# ifdef	VDISCARD
+    case SLC_AO:	return(&termFlushChar);
+# endif
+# ifdef	VSUSP
+    case SLC_SUSP:	return(&termSuspChar);
+# endif
+# ifdef	VWERASE
+    case SLC_EW:	return(&termWerasChar);
+# endif
+# ifdef	VREPRINT
+    case SLC_RP:	return(&termRprntChar);
+# endif
+# ifdef	VLNEXT
+    case SLC_LNEXT:	return(&termLiteralNextChar);
+# endif
+# ifdef	VSTATUS
+    case SLC_AYT:	return(&termAytChar);
+# endif
 #endif
 
     case SLC_SYNCH:
     case SLC_BRK:
-    case SLC_AYT:
     case SLC_EOR:
     default:
 	return((cc_t *)0);
@@ -252,7 +293,7 @@ TerminalDefaultChars()
     nttyb.sg_erase = ottyb.sg_erase;
 #else	/* USE_TERMIO */
     memcpy(new_tc.c_cc, old_tc.c_cc, sizeof(old_tc.c_cc));
-# ifndef	VFLUSHO
+# ifndef	VDISCARD
     termFlushChar = CONTROL('O');
 # endif
 # ifndef	VWERASE
@@ -269,6 +310,9 @@ TerminalDefaultChars()
 # endif
 # ifndef	VSTOP
     termStopChar = CONTROL('S');
+# endif
+# ifndef	VSTATUS
+    termAytChar = CONTROL('T');
 # endif
 #endif	/* USE_TERMIO */
 }
@@ -329,22 +373,25 @@ register int f;
      * left to write out, it returns -1 if it couldn't do
      * anything at all, otherwise it returns 1 + the number
      * of characters left to write.
+#ifndef	USE_TERMIO
+     * We would really like ask the kernel to wait for the output
+     * to drain, like we can do with the TCSADRAIN, but we don't have
+     * that option.  The only ioctl that waits for the output to
+     * drain, TIOCSETP, also flushes the input queue, which is NOT
+     * what we want (TIOCSETP is like TCSADFLUSH).
+#endif
      */
     old = ttyflush(SYNCHing|flushout);
     if (old < 0 || old > 1) {
-#ifndef	USE_TERMIO
-	ioctl(tin, TIOCGETP, (char *)&sb);
-#else	/* USE_TERMIO */
-	ioctl(tin, TCGETA, (char *)&tmp_tc);
+#ifdef	USE_TERMIO
+	tcgetattr(tin, (char *)&tmp_tc);
 #endif	/* USE_TERMIO */
 	do {
 	    /*
 	     * Wait for data to drain, then flush again.
 	     */
-#ifndef	USE_TERMIO
-	    ioctl(tin, TIOCSETP, (char *)&sb);
-#else	/* USE_TERMIO */
-	    ioctl(tin, TCSETAW, (char *)&tmp_tc);
+#ifdef	USE_TERMIO
+	    tcsetattr(tin, TCSADRAIN, (char *)&tmp_tc);
 #endif	/* USE_TERMIO */
 	    old = ttyflush(SYNCHing|flushout);
 	} while (old < 0 || old > 1);
@@ -385,8 +432,8 @@ register int f;
 
     if ((f&MODE_FLOW) == 0) {
 #ifndef	USE_TERMIO
-	tc.t_startc = -1;
-	tc.t_stopc = -1;
+	tc.t_startc = _POSIX_VDISABLE;
+	tc.t_stopc = _POSIX_VDISABLE;
 #else
 	tmp_tc.c_iflag &= ~(IXANY|IXOFF|IXON);
     } else {
@@ -396,11 +443,11 @@ register int f;
 
     if ((f&MODE_TRAPSIG) == 0) {
 #ifndef	USE_TERMIO
-	tc.t_intrc = -1;
-	tc.t_quitc = -1;
-	tc.t_eofc = -1;
-	ltc.t_suspc = -1;
-	ltc.t_dsuspc = -1;
+	tc.t_intrc = _POSIX_VDISABLE;
+	tc.t_quitc = _POSIX_VDISABLE;
+	tc.t_eofc = _POSIX_VDISABLE;
+	ltc.t_suspc = _POSIX_VDISABLE;
+	ltc.t_dsuspc = _POSIX_VDISABLE;
 #else
 	tmp_tc.c_lflag &= ~ISIG;
 #endif
@@ -436,10 +483,10 @@ register int f;
 
     if ((f&(MODE_EDIT|MODE_TRAPSIG)) == 0) {
 #ifndef	USE_TERMIO
-	ltc.t_lnextc = -1;
+	ltc.t_lnextc = _POSIX_VDISABLE;
 #else
 # ifdef VLNEXT
-	tmp_tc.c_cc[VLNEXT] = (cc_t)(-1);
+	tmp_tc.c_cc[VLNEXT] = (cc_t)(_POSIX_VDISABLE);
 # endif
 #endif
     }
@@ -501,18 +548,18 @@ register int f;
 	else
 		lmode &= ~LPASS8;
 #else
-	if (f & MODE_OUTBIN)
-		tmp_tc.c_lflag &= ~ISTRIP;
+	if (f & MODE_INBIN)
+		tmp_tc.c_iflag &= ~ISTRIP;
 	else
-		tmp_tc.c_lflag |= ISTRIP;
-	if (f & MODE_INBIN) {
+		tmp_tc.c_iflag |= ISTRIP;
+	if (f & MODE_OUTBIN) {
 		tmp_tc.c_cflag &= ~(CSIZE|PARENB);
 		tmp_tc.c_cflag |= CS8;
-		tmp_tc.c_cflag &= ~OPOST;
+		tmp_tc.c_oflag &= ~OPOST;
 	} else {
-		tmp_tc.c_cflag &= ~CSIZE;
-		tmp_tc.c_cflag |= CS7|PARENB;
-		tmp_tc.c_cflag |= OPOST;
+		tmp_tc.c_cflag &= ~(CSIZE|PARENB);
+		tmp_tc.c_cflag |= old_tc.c_cflag & (CSIZE|PARENB);
+		tmp_tc.c_oflag |= OPOST;
 	}
 #endif
 	onoff = 1;
@@ -520,10 +567,21 @@ register int f;
 
     if (f != -1) {
 #ifdef	SIGTSTP
-	static void susp();
-
-	(void) signal(SIGTSTP, (SIG_FUNC_RET (*)())susp);
+	static SIG_FUNC_RET susp();
 #endif	/* SIGTSTP */
+#ifdef	SIGINFO
+	static SIG_FUNC_RET ayt();
+#endif	SIGINFO
+
+#ifdef	SIGTSTP
+	(void) signal(SIGTSTP, susp);
+#endif	/* SIGTSTP */
+#ifdef	SIGINFO
+	(void) signal(SIGINFO, ayt);
+#endif	SIGINFO
+#if	defined(USE_TERMIO) && defined(NOKERNINFO)
+	tmp_tc.c_lflag |= NOKERNINFO;
+#endif
 	/*
 	 * We don't want to process ^Y here.  It's just another
 	 * character that we'll pass on to the back end.  It has
@@ -531,18 +589,10 @@ register int f;
 	 * user attempts to read it, not when we send it.
 	 */
 #ifndef	USE_TERMIO
-	ltc.t_dsuspc = -1;
+	ltc.t_dsuspc = _POSIX_VDISABLE;
 #else
 # ifdef	VDSUSP
-	tmp_tc.c_cc[VDSUSP] = (cc_t)(-1);
-# endif
-#endif
-#ifdef USE_TERMIO
-/*
- * Disable VSTATUS (^T)
- */
-# ifdef VSTATUS
-	tmp_tc.c_cc[VSTATUS] = (cc_t)(-1);
+	tmp_tc.c_cc[VDSUSP] = (cc_t)(_POSIX_VDISABLE);
 # endif
 #endif
 #ifdef	USE_TERMIO
@@ -550,17 +600,28 @@ register int f;
 	 * If the VEOL character is already set, then use VEOL2,
 	 * otherwise use VEOL.
 	 */
-	if (tmp_tc.c_cc[VEOL] == (cc_t)(-1))
-		tmp_tc.c_cc[VEOL] = escape;
+	if ((tmp_tc.c_cc[VEOL] != escape)
 # ifdef	VEOL2
-	else if (tmp_tc.c_cc[VEOL2] == (cc_t)(-1))
-		tmp_tc.c_cc[VEOL2] = escape;
+	    && (tmp_tc.c_cc[VEOL2] != escape)
 # endif
+	   ) {
+		if (tmp_tc.c_cc[VEOL] == (cc_t)(_POSIX_VDISABLE))
+			tmp_tc.c_cc[VEOL] = escape;
+# ifdef	VEOL2
+		else if (tmp_tc.c_cc[VEOL2] == (cc_t)(_POSIX_VDISABLE))
+			tmp_tc.c_cc[VEOL2] = escape;
+# endif
+	}
 #else
-	if (tc.t_brkc == (cc_t)(-1))
+	if (tc.t_brkc == (cc_t)(_POSIX_VDISABLE))
 		tc.t_brkc = escape;
 #endif
     } else {
+#ifdef	SIGINFO
+	SIG_FUNC_RET ayt_status();
+
+	(void) signal(SIGINFO, ayt_status);
+#endif	SIGINFO
 #ifdef	SIGTSTP
 	(void) signal(SIGTSTP, SIG_DFL);
 	(void) sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
@@ -578,10 +639,10 @@ register int f;
     ioctl(tin, TIOCLSET, (char *)&lmode);
     ioctl(tin, TIOCSLTC, (char *)&ltc);
     ioctl(tin, TIOCSETC, (char *)&tc);
-    ioctl(tin, TIOCSETP, (char *)&sb);
+    ioctl(tin, TIOCSETN, (char *)&sb);
 #else
-    if (ioctl(tin, TCSETAW, &tmp_tc) < 0)
-	ioctl(tin, TCSETA, &tmp_tc);
+    if (tcsetattr(tin, TCSADRAIN, &tmp_tc) < 0)
+	tcsetattr(tin, TCSANOW, &tmp_tc);
 #endif
 
 #if	(!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR))
@@ -620,33 +681,24 @@ struct termspeeds {
 	{ 38400, B38400 }, { -1,    B38400 }
 };
 
-#ifndef	USE_TERMIO
-# define	ISPEED	ottyb.sg_ispeed
-# define	OSPEED	ottyb.sg_ospeed
-#else
-# ifdef	CBAUD
-#  define	ISPEED	(old_tc.c_cflag&CBAUD)
-#  define	OSPEED	ISPEED
-# else
-#  define	ISPEED	old_tc.c_ispeed
-#  define OSPEED	old_tc.c_ospeed
-# endif
-#endif
-
 void
 TerminalSpeeds(ispeed, ospeed)
 long *ispeed;
 long *ospeed;
 {
     register struct termspeeds *tp;
+    register long in, out;
+
+    in = cfgetispeed(&old_tc);
+    out = cfgetospeed(&old_tc);
 
     tp = termspeeds;
-    while ((tp->speed != -1) && (tp->value < ISPEED))
+    while ((tp->speed != -1) && (tp->value < in))
 	tp++;
     *ispeed = tp->speed;
 
     tp = termspeeds;
-    while ((tp->speed != -1) && (tp->value < OSPEED))
+    while ((tp->speed != -1) && (tp->value < out))
 	tp++;
     *ospeed = tp->speed;
 }
@@ -709,15 +761,19 @@ int fd;
  * Various signal handling routines.
  */
 
-static void
-deadpeer()
+/* ARGSUSED */
+static SIG_FUNC_RET
+deadpeer(sig)
+int sig;
 {
 	setcommandmode();
 	longjmp(peerdied, -1);
 }
 
-static void
-intr()
+/* ARGSUSED */
+static SIG_FUNC_RET
+intr(sig)
+int sig;
 {
     if (localchars) {
 	intp();
@@ -727,8 +783,10 @@ intr()
     longjmp(toplevel, -1);
 }
 
-static void
-intr2()
+/* ARGSUSED */
+static SIG_FUNC_RET
+intr2(sig)
+int sig;
 {
     if (localchars) {
 #ifdef	KLUDGELINEMODE
@@ -741,33 +799,57 @@ intr2()
     }
 }
 
-static void
-susp()
+#ifdef	SIGTSTP
+/* ARGSUSED */
+static SIG_FUNC_RET
+susp(sig)
+int sig;
 {
     if (localchars)
 	sendsusp();
 }
+#endif
 
-static void
-sendwin()
+#ifdef	SIGWINCH
+/* ARGSUSED */
+static SIG_FUNC_RET
+sendwin(sig)
+int sig;
 {
     if (connected) {
 	sendnaws();
     }
 }
+#endif
+
+#ifdef	SIGINFO
+/* ARGSUSED */
+static SIG_FUNC_RET
+ayt(sig)
+int sig;
+{
+    if (connected)
+	sendayt();
+    else
+	ayt_status();
+}
+#endif
 
 
 void
 sys_telnet_init()
 {
-    (void) signal(SIGINT, (SIG_FUNC_RET (*)())intr);
-    (void) signal(SIGQUIT, (SIG_FUNC_RET (*)())intr2);
-    (void) signal(SIGPIPE, (SIG_FUNC_RET (*)())deadpeer);
+    (void) signal(SIGINT, intr);
+    (void) signal(SIGQUIT, intr2);
+    (void) signal(SIGPIPE, deadpeer);
 #ifdef	SIGWINCH
-    (void) signal(SIGWINCH, (SIG_FUNC_RET (*)())sendwin);
+    (void) signal(SIGWINCH, sendwin);
 #endif
 #ifdef	SIGTSTP
-    (void) signal(SIGTSTP, (SIG_FUNC_RET (*)())susp);
+    (void) signal(SIGTSTP, susp);
+#endif
+#ifdef	SIGINFO
+    (void) signal(SIGINFO, ayt);
 #endif
 
     setconnmode(0);

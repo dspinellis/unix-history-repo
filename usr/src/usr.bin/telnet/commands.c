@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -236,16 +236,16 @@ control(c)
 
 	if (c == 0x7f)
 		return ("^?");
-	if (c == (cc_t)-1) {
+	if (c == (cc_t)_POSIX_VDISABLE) {
 		return "off";
 	}
-	if (c >= 0x80) {
+	if ((unsigned int)c >= 0x80) {
 		buf[0] = '\\';
 		buf[1] = ((c>>6)&07) + '0';
 		buf[2] = ((c>>3)&07) + '0';
 		buf[3] = (c&07) + '0';
 		buf[4] = 0;
-	} else if (c >= 0x20) {
+	} else if ((unsigned int)c >= 0x20) {
 		buf[0] = c;
 		buf[1] = 0;
 	} else {
@@ -428,6 +428,7 @@ char	**argv;
 		break;
 	    default:
 		NET2ADD(IAC, what);
+		printoption("SENT", "IAC", what);
 		break;
 	    }
 	}
@@ -796,10 +797,10 @@ static struct setlist Setlist[] = {
     { "echo", 	"character to toggle local echoing on/off", 0, &echoc },
 #endif
     { "escape",	"character to escape back to telnet command mode", 0, &escape },
-    { "tracefile", "file to write trace intormation to", SetNetTrace, (cc_t *)NetTraceFile},
+    { "tracefile", "file to write trace information to", SetNetTrace, (cc_t *)NetTraceFile},
     { " ", "" },
     { " ", "The following need 'localchars' to be toggled true", 0, 0 },
-    { "flushoutput", "character to cause an Abort Oubput", 0, termFlushCharp },
+    { "flushoutput", "character to cause an Abort Output", 0, termFlushCharp },
     { "interrupt", "character to cause an Interrupt Process", 0, termIntCharp },
     { "quit",	"character to cause an Abort process", 0, termQuitCharp },
     { "eof",	"character to cause an EOF ", 0, termEofCharp },
@@ -815,11 +816,12 @@ static struct setlist Setlist[] = {
     { "stop",	"character to use for XOFF", 0, termStopCharp },
     { "forw1",	"alternate end of line character", 0, termForw1Charp },
     { "forw2",	"alternate end of line character", 0, termForw2Charp },
+    { "ayt",	"alternate AYT character", 0, termAytCharp },
     { 0 }
 };
 
-#ifdef	CRAY
-/* Work around compiler bug */
+#if	defined(CRAY) && !defined(__STDC__)
+/* Work around compiler bug in pcc 4.1.5 */
 _setlist_init()
 {
 #ifndef	KLUDGELINEMODE
@@ -841,9 +843,10 @@ _setlist_init()
 	Setlist[N+13].charp = &termStopChar;
 	Setlist[N+14].charp = &termForw1Char;
 	Setlist[N+15].charp = &termForw2Char;
+	Setlist[N+16].charp = &termAytChar;
 #undef	N
 }
-#endif	/* CRAY */
+#endif	/* defined(CRAY) && !defined(__STDC__) */
 
 static char **
 getnextset(name)
@@ -864,7 +867,7 @@ char *name;
 set_escape_char(s)
 char *s;
 {
-	escape = (s && *s) ? special(s) : -1;
+	escape = (s && *s) ? special(s) : _POSIX_VDISABLE;
 	printf("escape character is '%s'.\n", control(escape));
 }
 
@@ -933,7 +936,7 @@ char	*argv[];
 	if (strcmp("off", argv[2])) {
 	    value = special(argv[2]);
 	} else {
-	    value = -1;
+	    value = _POSIX_VDISABLE;
 	}
 	*(ct->charp) = (cc_t)value;
 	printf("%s character is '%s'.\n", ct->name, control(*(ct->charp)));
@@ -998,7 +1001,7 @@ char	*argv[];
 	    (*ct->handler)(0);
 	    printf("%s reset to \"%s\".\n", ct->name, (char *)ct->charp);
 	} else {
-	    *(ct->charp) = -1;
+	    *(ct->charp) = _POSIX_VDISABLE;
 	    printf("%s character is '%s'.\n", ct->name, control(*(ct->charp)));
 	}
     }
@@ -1477,7 +1480,7 @@ struct envlist {
 extern struct env_lst *env_define();
 extern int env_undefine();
 extern int env_export(), env_unexport();
-extern int env_list(), env_help();
+extern int env_send(), env_list(), env_help();
 
 struct envlist EnvList[] = {
     { "define",	"Define an environment variable",
@@ -1488,6 +1491,7 @@ struct envlist EnvList[] = {
 						env_export,	1 },
     { "unexport", "Dont mark an environment variable for automatic export",
 						env_unexport,	1 },
+    { "send",	"Send an environment variable", env_send,	1 },
     { "list",	"List the current environment variables",
 						env_list,	0 },
     { "help",	0,				env_help,		0 },
@@ -1569,6 +1573,7 @@ struct env_lst envlisthead;
 
 struct env_lst *
 env_find(var)
+char *var;
 {
 	register struct env_lst *ep;
 
@@ -1610,15 +1615,15 @@ env_init()
 		free(ep->value);
 		ep->value = cp;
 	}
-#ifdef notdef
 	/*
 	 * If USER is not defined, but LOGNAME is, then add
-	 * USER with the value from LOGNAME.
+	 * USER with the value from LOGNAME.  By default, we
+	 * don't export the USER variable.
 	 */
-	if ((env_find("USER") == NULL) && (ep = env_find("LOGNAME")))
+	if ((env_find("USER") == NULL) && (ep = env_find("LOGNAME"))) {
 		env_define("USER", ep->value);
-	env_export("USER");
-#endif
+		env_unexport("USER");
+	}
 	env_export("DISPLAY");
 	env_export("PRINTER");
 }
@@ -1628,7 +1633,7 @@ env_define(var, value)
 char *var, *value;
 {
 	register struct env_lst *ep;
-	extern char *savestr();
+	extern char *strdup();
 
 	if (ep = env_find(var)) {
 		if (ep->var)
@@ -1644,8 +1649,8 @@ char *var, *value;
 			ep->next->prev = ep;
 	}
 	ep->export = 1;
-	ep->var = savestr(var);
-	ep->value = savestr(value);
+	ep->var = strdup(var);
+	ep->value = strdup(value);
 	return(ep);
 }
 
@@ -1656,7 +1661,8 @@ char *var;
 
 	if (ep = env_find(var)) {
 		ep->prev->next = ep->next;
-		ep->next->prev = ep->prev;
+		if (ep->next)
+			ep->next->prev = ep->prev;
 		if (ep->var)
 			free(ep->var);
 		if (ep->value)
@@ -1681,6 +1687,28 @@ char *var;
 
 	if (ep = env_find(var))
 		ep->export = 0;
+}
+
+env_send(var)
+char *var;
+{
+	register struct env_lst *ep;
+
+        if (my_state_is_wont(TELOPT_ENVIRON)) {
+		fprintf(stderr,
+		    "Cannot send '%s': Telnet ENVIRON option not enabled\n",
+									var);
+		return;
+	}
+	ep = env_find(var);
+	if (ep == 0) {
+		fprintf(stderr, "Cannot send '%s': variable not defined\n",
+									var);
+		return;
+	}
+	env_opt_start_info();
+	env_opt_add(ep->var);
+	env_opt_end(0);
 }
 
 env_list()
@@ -1722,8 +1750,9 @@ char *var;
 	return(NULL);
 }
 
+#ifdef	NO_STRDUP
 char *
-savestr(s)
+strdup(s)
 register char *s;
 {
 	register char *ret;
@@ -1731,6 +1760,7 @@ register char *s;
 		strcpy(ret, s);
 	return(ret);
 }
+#endif
 
 #if	defined(unix)
 #ifdef notdef
@@ -1899,6 +1929,15 @@ char	*argv[];
     return 1;
 }
 
+#ifdef	SIGINFO
+/*
+ * Function that gets called when SIGINFO is received.
+ */
+ayt_status()
+{
+    (void) call(status, "status", "notmuch", 0);
+}
+#endif
 
 #if	defined(NEED_GETTOS)
 struct tosent {
@@ -1945,6 +1984,8 @@ tn(argc, argv)
 #endif /* defined(HAS_IP_TOS) || defined(NEED_GETTOS) */
     char *cmd, *hostp = 0, *portp = 0, *user = 0;
 
+    /* clear the socket address prior to use */
+    bzero((char *)&sin, sizeof(sin));
 
     if (connected) {
 	printf("?Already connected to %s\n", hostname);
@@ -1969,6 +2010,11 @@ tn(argc, argv)
 	    --argc;
 	    continue;
 	}
+	if (strcmp(*argv, "-a") == 0) {
+	    --argc; ++argv;
+	    autologin = 1;
+	    continue;
+	}
 	if (hostp == 0) {
 	    hostp = *argv++;
 	    --argc;
@@ -1980,7 +2026,7 @@ tn(argc, argv)
 	    continue;
 	}
     usage:
-	printf("usage: %s [-l user] host-name [port]\n", cmd);
+	printf("usage: %s [-l user] [-a] host-name [port]\n", cmd);
 	return 0;
     }
 #if	defined(SRCRT) && defined(IPPROTO_IP)
@@ -2104,15 +2150,15 @@ tn(argc, argv)
     cmdrc(hostp, hostname);
     if (autologin && user == NULL) {
 	struct passwd *pw;
-	uid_t uid = getuid();
 
-	user = getlogin();
+	user = getenv("USER");
 	if (user == NULL ||
-	    (pw = getpwnam(user)) && pw->pw_uid != uid)
-		if (pw = getpwuid(uid))
+	    (pw = getpwnam(user)) && pw->pw_uid != getuid()) {
+		if (pw = getpwuid(getuid()))
 			user = pw->pw_name;
 		else
 			user = NULL;
+	}
     }
     if (user) {
 	env_define("USER", user);
