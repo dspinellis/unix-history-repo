@@ -1,25 +1,23 @@
 .\" Copyright (c) 1980, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)pc.1	6.3 (Berkeley) %G%
+.\"     @(#)pc.1	6.4 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt PC 1
 .Os BSD 4
 .Sh NAME
-.Nm pc
+.Nm \&pc
 .Nd Pascal compiler
 .Sh SYNOPSIS
-.Nm pc
+.Nm \&pc
 .Op  option
 .Op Fl i Ar name \&...
 .Ar name \&...
 .Sh DESCRIPTION
-.Nm Pc
+.Nm \&Pc
 is a Pascal compiler.
 If given an argument file ending with
 .Pa \&.p ,
@@ -31,7 +29,7 @@ into an executable file called, by default,
 A program may be separated into more than one
 .Pa \&.p
 file.
-.Nm Pc
+.Nm \&Pc
 will compile a number of argument
 .Pa \&.p
 files into object files (with
@@ -56,13 +54,9 @@ header files, whose names must end with
 Header files may only be included at the outermost level,
 and thus declare only globally available objects.
 To allow
-.Cx Ic function
-.Cx s
-.Cx
+.Ic function Ns s
 and
-.Cx Ic procedure
-.Cx s
-.Cx
+.Ic procedure Ns s
 to be declared, an
 .Ic external
 directive has been added, whose use is similar to the
@@ -82,15 +76,11 @@ are used consistently, to enforce the type checking rules of Pascal.
 Object files
 created by other language processors may be loaded together with
 object files created by
-.Nm pc  .
+.Nm \&pc  .
 The
-.Cx Ic function
-.Cx s
-.Cx
+.Ic function Ns s
 and
-.Cx Ic procedure
-.Cx s
-.Cx
+.Ic procedure Ns s
 they define must have been declared
 in
 .Pa \&.h
@@ -103,149 +93,139 @@ with
 .Ic var
 parameters passed by address.
 .Pp
-See the Berkeley Pascal User's Manual for details.
+See the
+.%T "Berkeley Pascal User's Manual"
+for details.
 .Pp
 The following options have the same meaning as in
 .Xr cc  1
 and
 .Xr f77  1  .
 See
-.Xr ld  1
+.Xr \&ld  1
 for load-time options.
-.Tw Fl
-.Tp Fl c
+.Bl -tag -width indent
+.It Fl c
 Suppress loading and produce `.o' file(s) from source file(s).
-.Tp Fl g
+.It Fl g
 Have the compiler produce additional symbol table information for
 .Xr dbx  1  .
-.Tp Fl w
+.It Fl w
 Suppress warning messages.
-.Tp Fl p
+.It Fl p
 Prepare object files for profiling, see
 .Xr prof  1  .
-.Tp Fl O
+.It Fl O
 Invoke an
 object-code improver.
-.Tp Fl S
+.It Fl S
 Compile the named program, and leave the
 assembler-language output on the corresponding file suffixed `.s'.
 (No `.o' is created.).
-.Tp Cx Fl o
-.Ws
-.Ar output
-.Cx
+.It Fl o Ns Ar output
 Name the final output file
 .Ar output
 instead of
 .Pa a.out .
-.Tp
+.El
 .Pp
 The following options are peculiar to
 .Nm pc  .
-.Tw Fl
-.Tp Fl C
+.Bl -tag -width indent
+.It Fl C
 Compile code to perform runtime checks,
 verify
 .Ic assert
 calls,
 and initialize all variables to zero as in
 .Nm pi  .
-.Tp Fl b
+.It Fl b
 Block buffer the file
 .Ar output .
-.Tp Fl i
+.It Fl i
 Produce a listing for
 the specified procedures, functions and
 .Ar include
 files.
-.Tp Fl l
+.It Fl l
 Make a program listing during translation.
-.Tp Fl s
+.It Fl s
 Accept standard Pascal only;
 non-standard constructs cause warning diagnostics.
-.Tp Cx Fl t
-.Ws
-.Ar directory
-.Cx
+.It Fl t Ar directory
 Use the given
 .Ar directory
 for compiler temporary files.
-.Tp Fl z
+.It Fl z
 Allow execution profiling with
 .Nm pxp
 by generating statement counters, and arranging for the
 creation of the profile data file
 .Pa pmon.out
 when the resulting object is executed.
+.El
 .Pp
-.Tp
 Other arguments
 are taken
 to be loader option arguments,
 perhaps libraries of
-.Nm pc
+.Nm \&pc
 compatible routines.
 Certain flags can also be controlled in comments within the program
 as described in the
-.Em "Berkeley Pascal User's Manual."
+.%T "Berkeley Pascal User's Manual."
 .Sh FILES
-.Dw /usr/lib.pc2.*strings
-.Di L
-.Dp Pa file.p
-pascal source files
-.Dp Pa /usr/lib/pc0
-compiler
-.Dp Pa /lib/f1
-code generator
-.Dp Pa /usr/lib/pc2
-runtime integrator (inline expander)
-.Dp Pa /lib/c2
-peephole optimizer
-.Dp Pa /usr/lib/pc3
-separate compilation consistency checker
-.Dp Pa /usr/lib/pc2.*strings
-text of the error messages
-.Dp Pa /usr/lib/how_pc
-basic usage explanation
-.Dp Pa /usr/lib/libpc.a
-intrinsic functions and I/O library
-.Dp Pa /usr/lib/libm.a
-math library
-.Dp Pa /lib/libc.a
-standard library, see
-.Xr intro 3
-.Dp
+.Bl -tag -width /usr/lib.pc2.*strings -compact
+.It Pa file.p
+Pascal source files.
+.It Pa /usr/lib/pc0
+Compiler.
+.It Pa /lib/f1
+Code generator.
+.It Pa /usr/lib/pc2
+Runtime integrator (inline expander).
+.It Pa /lib/c2
+Peephole optimizer.
+.It Pa /usr/lib/pc3
+Separate compilation consistency checker.
+.It Pa /usr/lib/pc2.*strings
+Text of the error messages.
+.It Pa /usr/lib/how_pc
+Basic usage explanation.
+.It Pa /usr/lib/libpc.a
+Intrinsic functions and
+.Tn I/O
+library.
+.It Pa /usr/lib/libm.a
+Math library.
+.It Pa /lib/libc.a
+Standard library, see
+.Xr intro 3 .
+.El
 .Sh SEE ALSO
-.Em Berkeley Pascal User's Manual
-.br
-.Xr pi 1 ,
+.Xr \&pi 1 ,
 .Xr pxp 1 ,
 .Xr pxref 1 ,
-.\" .Xr sdb 1
+.Rs
+.%T "Berkeley Pascal User's Manual"
+.Re
 .Sh HISTORY
-.Nm Pc
-appeared in 4.0 BSD.
+The
+.Nm \&pc
+appeared in
+.Bx 4.0 .
 .Sh DIAGNOSTICS
 For a basic explanation do
 .Pp
-.Df I
-.Nm pc
-.De 
+.Bd -literal -offset indent
+pc
+.Ed 
 .Pp
 See
-.Xr pi  1  .
+.Xr \&pi 1  .
 for an explanation of the error message format.
-Internal errors cause messages containing the word SNARK.
-.Sh AUTHORS
-Charles B. Haley, William N. Joy, and Ken Thompson
-.br
-Retargetted to the second pass of the portable
-.Ar C
-compiler by Peter Kessler
-.br
-Runtime library and inline optimizer by M. Kirk McKusick
-.br
-Separate compilation consistency checking by Louise Madrid
+Internal errors cause messages containing the word
+.Tn SNARK .
 .Sh BUGS
 The keyword
 .Ic packed
