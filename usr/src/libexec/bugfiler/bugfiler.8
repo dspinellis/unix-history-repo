@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bugfiler.8	6.6 (Berkeley) %G%
+.\"	@(#)bugfiler.8	6.7 (Berkeley) %G%
 .\"
 .TH BUGFILER 8 ""
 .UC 5
@@ -26,10 +26,6 @@ to run.  Unless otherwise noted all paths used by \fIbugfiler\fP are
 relative to the home directory of this login.  \fIBugfiler\fP also
 expects all of its files and directories to be owned by ``bugs''.
 .PP
-A mail acknowledgement is automatically sent to the bug report filer
-unless the \fB-a\fP flag is supplied.  The file ~bugs/bug:ack is appended
-to this acknowledgement.
-.PP
 For the bug report to be correctly filed, it must contain a line
 in the following format:
 .PP
@@ -48,13 +44,16 @@ the first one will be used, e.g. if \fIfolder\fP is ``bin/from.c'' or
 \fI-v\fP flag is provided as a means to override the \fIversion\fP
 provided within the bug report itself.
 .PP
+A mail acknowledgement is automatically sent to the bug report filer unless
+the \fB-a\fP flag is supplied.  The file ~bugs/\fIversion\fP/bug:ack is
+appended to this acknowledgement.
+.PP
 If the \fB-r\fP flag is not supplied, redistribution of the bug reports
 is done as specified in the file ~bugs/\fIversion\fP/bug:redist.  This file
-is in the format of the
-.IR aliases (5)
-file, including comments and entries requiring multiple lines, with
-the single exception that the \fIfolder\fP component of the ``Index:''
-line replaces the name to alias.  For example, the \fIbug:redist\fP file
+is in the format of the \fIaliases\fP(5) file, including comments and
+entries requiring multiple lines, with the single exception that the
+\fIfolder\fP component of the ``Index:'' line replaces the name to alias.
+For example, the \fIbug:redist\fP file
 .PP
 .DT
 	#	ucb folder redistribution list
