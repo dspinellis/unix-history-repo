@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -286,12 +286,11 @@ tahoe_ioconf()
 	 * Now generate interrupt vectors for the versabus
 	 */
 	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		mp = dp->d_conn;
+		if (mp == 0 || mp == TO_NEXUS || !eq(mp->d_name, "vba"))
+			continue;
 		if (dp->d_vec != 0) {
 			struct idlst *ip;
-			mp = dp->d_conn;
-			if (mp == 0 || mp == TO_NEXUS ||
-			    !eq(mp->d_name, "vba"))
-				continue;
 			fprintf(fp,
 			    "extern struct vba_driver %sdriver;\n",
 			    dp->d_name);
@@ -316,7 +315,10 @@ tahoe_ioconf()
 				fprintf(fp, ", ");
 			}
 			fprintf(fp, ", 0 } ;\n");
-		}
+		} else if (dp->d_type == DRIVER)  /* devices w/o interrupts */
+			fprintf(fp,
+			    "extern struct vba_driver %sdriver;\n",
+			    dp->d_name);
 	}
 	fprintf(fp, "\nstruct vba_ctlr vbminit[] = {\n");
 	fprintf(fp, "/*\t driver,\tctlr,\tvbanum,\talive,\tintr,\taddr */\n");
