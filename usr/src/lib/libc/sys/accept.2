@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)accept.2	6.1 (Berkeley) %G%
+.\"	@(#)accept.2	6.2 (Berkeley) %G%
 .\"
 .TH ACCEPT 2 ""
 .UC 5
@@ -23,7 +23,7 @@ int *addrlen;
 .SH DESCRIPTION
 The argument
 .I s
-is a socket which has been created with
+is a socket that has been created with
 .IR socket (2),
 bound to an address with
 .IR bind (2),
@@ -54,7 +54,7 @@ remains open.
 .PP
 The argument
 .I addr
-is a result parameter which is filled in with
+is a result parameter that is filled in with
 the address of the connecting entity,
 as known to the communications layer.
 The exact format of the
@@ -78,7 +78,7 @@ a socket for the purposes of doing an
 by selecting it for read.
 .SH "RETURN VALUE
 The call returns \-1 on error.  If it succeeds it returns a non-negative
-integer which is a descriptor for the accepted socket.
+integer that is a descriptor for the accepted socket.
 .SH ERRORS
 The \fIaccept\fP will fail if:
 .TP 20
