@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_usrreq.c	6.9 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -159,6 +159,8 @@ raw_usrreq(so, req, m, nam, rights)
 	register struct rawcb *rp = sotorawcb(so);
 	register int error = 0;
 
+	if (req == PRU_CONTROL)
+		return (EOPNOTSUPP);
 	if (rights && rights->m_len) {
 		error = EOPNOTSUPP;
 		goto release;
@@ -295,7 +297,6 @@ raw_usrreq(so, req, m, nam, rights)
 	/*
 	 * Not supported.
 	 */
-	case PRU_CONTROL:
 	case PRU_RCVOOB:
 	case PRU_RCVD:
 		return(EOPNOTSUPP);
