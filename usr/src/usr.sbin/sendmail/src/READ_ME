@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.21 (Berkeley) %G%
+#	@(#)READ_ME	8.22 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -223,9 +223,16 @@ SunOS 4.x (Solaris 1.x)
 	You may have to use -lresolv on SunOS.  However, beware that
 	this links in a new version of gethostbyname that does not
 	understand NIS, so you must have all of your hosts in DNS.
-	I understand that resolv+ works properly, allowing you to
-	specify a search-path of services.  I haven't tried this, as
-	we use DNS exclusively.
+
+	There is substantial disagreement about whether you can make
+	this work with resolv+, which allows you to specify a search-path
+	of services.  Some people report that it works fine, others
+	claim it doesn't work at all (including causing sendmail to
+	drop core when it tries to do multiple resolv+ lookups for a
+	single job).  I haven't tried resolv+, as we use DNS exclusively.
+
+	Should you want to try resolv+, it is on ftp.uu.net in
+	/networking/ip/dns.
 
 Solaris 2.x (SunOS 5.x)
 	To compile for Solaris, be sure you use -DSOLARIS.
@@ -360,4 +367,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.21, last update %G% 17:14:51)
+(Version 8.22, last update %G% 11:50:29)
