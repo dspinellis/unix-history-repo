@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.181 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.182 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2248,7 +2248,7 @@ usershellok(shell)
 	endusershell();
 	return p != NULL;
 #else
-# ifdef _AIX3
+# if USEGETCONFATTR
 	auto char *v;
 # endif
 	register FILE *shellf;
@@ -2257,16 +2257,29 @@ usershellok(shell)
 	if (shell == NULL || shell[0] == '\0')
 		return TRUE;
 
-# ifdef _AIX3
-	/* naturally IBM has a "better" idea..... */
-	if (getconfattr(SC_SYS_LOGIN, SC_SHELLS, &v, SEC_LIST) == 0)
+# if USEGETCONFATTR
+	/*
+	**  Naturally IBM has a "better" idea.....
+	**
+	**	What a crock.  This interface isn't documented, it is
+	**	considered part of the security library (-ls), and it
+	**	only works if you are running as root (since the list
+	**	of valid shells is obviously a source of great concern).
+	**	I recommend that you do NOT define USEGETCONFATTR,
+	**	especially since you are going to have to set up an
+	**	/etc/shells anyhow to handle the cases where getconfattr
+	**	fails.
+	*/
+
+	if (getconfattr(SC_SYS_LOGIN, SC_SHELLS, &v, SEC_LIST) == 0 && v != NULL)
 	{
-		while (v != NULL && *v != '\0')
+		while (*v != '\0')
 		{
 			if (strcmp(v, shell) == 0 || strcmp(v, WILDCARD_SHELL) == 0)
 				return TRUE;
 			v += strlen(v) + 1;
 		}
+		return FALSE;
 	}
 # endif
 
