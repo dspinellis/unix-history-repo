@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.6 (Berkeley)	%G%
+ *	@(#)pmap.c	7.7 (Berkeley)	%G%
  */
 
 /*
@@ -206,9 +206,6 @@ firstaddr = 0x100000;	/*XXX basemem completely fucked (again) */
 	mem_size = physmem << PG_SHIFT;
 	virtual_avail = atdevbase + 0x100000 - 0xa0000 + 10*NBPG;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
-printf("avail [%x %x] virtual [%x %x]\n",
-	avail_start, avail_end, virtual_avail, virtual_end);
-printf("cr3 %x", rcr3());
 	i386pagesperpage = PAGE_SIZE / I386_PAGE_SIZE;
 
 	/*
@@ -1187,8 +1184,8 @@ pmap_collect(pmap)
 #ifdef DEBUG
 	int *pde;
 	int opmapdebug;
-#endif
 	printf("pmap_collect(%x) ", pmap);
+#endif
 	if (pmap != kernel_pmap)
 		return;
 
@@ -1534,6 +1531,17 @@ pmap_changebit(pa, bit, setem)
 			toflush |= (pv->pv_pmap == kernel_pmap) ? 2 : 1;
 #endif
 			va = pv->pv_va;
+
+                        /*
+                         * XXX don't write protect pager mappings
+                         */
+                        if (bit == PG_RO) {
+                                extern vm_offset_t pager_sva, pager_eva;
+
+                                if (va >= pager_sva && va < pager_eva)
+                                        continue;
+                        }
+
 			pte = (int *) pmap_pte(pv->pv_pmap, va);
 			ix = 0;
 			do {
