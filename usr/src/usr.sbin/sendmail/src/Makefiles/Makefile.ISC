@@ -3,7 +3,7 @@
 #
 #	Contributed by J.J. Bailey <jjb@jagware.bcc.com>
 #
-#	@(#)Makefile.ISC	8.6	(Berkeley)	%G%
+#	@(#)Makefile.ISC	8.7	(Berkeley)	%G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -19,7 +19,7 @@ O=	-O
 DBMDEF=	-DNDBM -DNIS
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=	-DISC_UNIX
+ENVDEF=	-DISC_UNIX -D_POSIX_SOURCE -D_SYSV3
 
 # see also conf.h for additional compilation flags
 
