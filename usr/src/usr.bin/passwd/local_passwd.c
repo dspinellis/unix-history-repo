@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)local_passwd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)local_passwd.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -61,7 +61,7 @@ getnewpasswd(pw)
 {
 	register char *p, *t;
 	int tries;
-	char buf[_PASSWORD_LEN+1], salt[2], *crypt(), *getpass();
+	char buf[_PASSWORD_LEN+1], salt[9], *crypt(), *getpass();
 
 	(void)printf("Changing local password for %s.\n", pw->pw_name);
 
@@ -96,15 +96,15 @@ getnewpasswd(pw)
 	(void)srandom((int)time((time_t *)NULL));
 #ifdef NEWSALT
 	salt[0] = '_';
-	to64(&salt[1], (long)(29*25), 4);
-	to64(&salt[5], (long)random(), 4);
+	to64(&salt[1], (long)(29 * 25), 4);
+	to64(&salt[5], random(), 4);
 #else
-	to64(&salt[0], (long)random(), 2);
+	to64(&salt[0], random(), 2);
 #endif
 	return(crypt(buf, salt));
 }
 
-static unsigned char itoa64[] =		/* 0..63 => ascii-64 */
+static unsigned char itoa64[] =		/* 0 ... 63 => ascii - 64 */
 	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 to64(s, v, n)
