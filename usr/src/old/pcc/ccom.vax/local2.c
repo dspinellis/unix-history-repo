@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.34 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.35 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -468,7 +468,8 @@ NODE *makearg( ty ) int ty; {
 	p->in.op = ICON;
 	p->in.type = INT;
 	p->tn.name = "";
-	p->tn.lval = szty(ty) * (SZINT/SZCHAR);
+	/* size of floating argument is always 2 */
+	p->tn.lval = (1 + (ty == FLOAT || ty == DOUBLE)) * (SZINT/SZCHAR);
 	q->in.right = p;
 	p = talloc();
 	p->in.op = UNARY MUL;
