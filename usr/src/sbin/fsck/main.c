@@ -1,5 +1,5 @@
 #ifndef lint
-char version[] = "@(#)main.c	2.29 (Berkeley) %G%";
+char version[] = "@(#)main.c	2.30 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -1034,6 +1034,7 @@ pass3()
 	register DINODE *dp;
 	struct inodesc idesc;
 	ino_t inumber, orphan;
+	int loopcnt;
 
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	idesc.id_type = DATA;
@@ -1045,6 +1046,7 @@ pass3()
 			idesc.id_func = findino;
 			srchname = "..";
 			idesc.id_parent = inumber;
+			loopcnt = 0;
 			do {
 				orphan = idesc.id_parent;
 				if ((dp = ginode(orphan)) == NULL)
@@ -1055,6 +1057,9 @@ pass3()
 				(void)ckinode(dp, &idesc);
 				if (idesc.id_parent == 0)
 					break;
+				if (loopcnt >= sblock.fs_cstotal.cs_ndir)
+					break;
+				loopcnt++;
 			} while (statemap[idesc.id_parent] == DSTATE);
 			if (linkup(orphan, idesc.id_parent) == 1) {
 				idesc.id_func = pass2check;
