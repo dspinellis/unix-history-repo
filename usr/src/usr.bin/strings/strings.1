@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strings.1	6.10 (Berkeley) %G%
+.\"     @(#)strings.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRINGS 1
@@ -55,6 +55,14 @@ The algorithm for identifying strings is extremely primitive.
 In particular, machine code instructions on certain architectures
 can resemble sequences of ASCII bytes, which
 will fool the algorithm.
+.Sh COMPATIBILITY
+Historic implementations of
+.Nm
+only search the initialized data portion of the object file.
+This was reasonable as strings were normally stored there.
+Given new compiler technology which installs strings in the 
+text portion of the object file, the default behavior was
+changed.
 .Sh HISTORY
 The
 .Nm
