@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtree.h	5.5 (Berkeley) %G%
+ *	@(#)mtree.h	5.6 (Berkeley) %G%
  */
 
 #include <string.h>
@@ -25,9 +25,10 @@ typedef struct _node {
 #define	F_BLOCK	0x001				/* block special */
 #define	F_CHAR	0x002				/* char special */
 #define	F_DIR	0x004				/* directory */
-#define	F_FILE	0x008				/* regular file */
-#define	F_LINK	0x010				/* symbolic link */
-#define	F_SOCK	0x020				/* socket */
+#define	F_FIFO	0x008				/* fifo */
+#define	F_FILE	0x010				/* regular file */
+#define	F_LINK	0x020				/* symbolic link */
+#define	F_SOCK	0x040				/* socket */
 	u_short	type;				/* file type */
 
 #define	F_CKSUM	0x001				/* check sum */
