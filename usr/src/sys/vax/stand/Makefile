@@ -1,8 +1,8 @@
-#	Makefile	4.5	81/03/16
+#	Makefile	4.6	81/03/21
 
 DESTDIR=
 CFLAGS=	-O -DSTANDALONE ${COPTS}
-COPTS=	-DVAX750 -DVAX780
+COPTS=	-DVAX780 -DVAX750 -DVAX730
 RELOC=	70000
 SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c ht.c mba.c rk.c tm.c ts.c up.c uba.c
@@ -97,8 +97,8 @@ lint:
 	    grep -v 'struct/union .* never defined'
 
 install:
-	cp tprestor ${DESTDIR}/sys/restor
-	cp tpicheck ${DESTDIR}/sys/icheck
-	cp tpmkfs ${DESTDIR}/sys/mkfs
-	cp sboot ${DESTDIR}/sys/boot
+	cp tprestor ${DESTDIR}/tp/restor
+	cp tpicheck ${DESTDIR}/tp/icheck
+	cp tpmkfs ${DESTDIR}/tp/mkfs
+	cp sboot ${DESTDIR}/tp/boot
 	cp boot icheck mkfs restor cat ls ../floppy
