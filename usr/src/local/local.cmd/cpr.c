@@ -2,7 +2,7 @@
 # include <sgtty.h>
 # include <signal.h>
 
-static char	SccsId[] =	"@(#)cpr.c	1.2		%G%";
+static char	SccsId[] =	"@(#)cpr.c	1.3		%G%";
 
 /*
 **  CPR -- print on concept 108
@@ -16,6 +16,7 @@ static char	SccsId[] =	"@(#)cpr.c	1.2		%G%";
 */
 
 struct sgttyb	tbuf;
+int		SysLine;
 
 main(argc, argv)
 	int argc;
@@ -23,11 +24,15 @@ main(argc, argv)
 {
 	register char *p;
 	extern cleanterm();
+	extern char *getenv();
 
 	/* be nice on interrupts, etc. */
 	signal(SIGINT, cleanterm);
 
 	/* set the terminal to output to printer */
+	p = getenv("SYSLINE");
+	if (p != NULL)
+		SysLine = atoi(p);
 	setupterm();
 
 	/* print the appropriate files */
@@ -84,6 +89,8 @@ setupterm()
 	tbuf.sg_flags |= CBREAK;
 	stty(1, &tbuf);
 	tbuf.sg_flags = oldflags;
+	if (SysLine > 0)
+		kill(SysLine, SIGSTOP);
 }
 
 cleanterm()
@@ -105,4 +112,6 @@ getack()
 resetmodes()
 {
 	stty(1, &tbuf);
+	if (SysLine > 0)
+		kill(SysLine, SIGCONT);
 }
