@@ -49,6 +49,9 @@ char **arglist;
     long int	    distinct;     /*  number of distinct keys          */
     long int	    shorten();
 
+    strcpy(COMFILE, N_COMFILE);
+    strcpy(BMACLIB, N_BMACLIB);
+
     argc= argcount-1;
     argv= arglist+1;
     mktemp(tmpfile);
@@ -105,7 +108,7 @@ char **arglist;
     -%str   ignore lines that begin with %x     CNOPVX
             where x is in str
             str is a seq of chars
-    -cfile  file contains Common words          /usr/src/local/bib/common
+    -cfile  file contains Common words          /usr/lib/bib/common
             do not use common words as keys
     -pfile  name of output file                 INDEX
     -s	    do not print statistics		statistics printed
@@ -114,7 +117,9 @@ char **arglist;
 # define    operand     (strlen(*argv+2)==0 ? (argv++,argc--,*argv) : *argv+2)
 
 flags()
-{   for (; argc>0 && *argv[0]=='-';  argc--,argv++)
+{
+    char *p;
+    for (; argc>0 && *argv[0]=='-';  argc--,argv++)
     {   switch ((*argv)[1])
         {   case 'k':   max_kcnt= atoi(operand);
                         break;
@@ -128,6 +133,15 @@ flags()
                         break;
 	    case 's':	silent= 1;
 			break;
+	    case 'd':
+		p = &argv[0][2];
+		if (!p) { 
+			argv++;
+			p = &argv[0][0];
+		}
+		strreplace(COMFILE, BMACLIB, p);
+		strcpy(BMACLIB, p);
+		break;
             default:    fprintf(stderr, "unknown flag '%s'\n", *argv);
         }
     }
