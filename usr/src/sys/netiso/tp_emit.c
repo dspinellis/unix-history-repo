@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_emit.c	7.9 (Berkeley) %G%
+ *	@(#)tp_emit.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -731,7 +731,7 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 	struct mbuf 	*erdata;
 	int 			erlen;
 	struct tp_pcb 	*tpcb;
-	int 			cons_channel;
+	caddr_t			cons_channel;
 	int				(*dgout_routine)();
 {
 	int						dutype;
@@ -808,6 +808,7 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 		IncStat(ts_ER_sent);
 		hdr->tpdu_li = 5; 
 		hdr->tpdu_ERreason = (char)error;
+		hdr->tpdu_ERdref = htons(sref);
 		break;
 
 	default:
