@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -73,7 +73,7 @@ Version.c: version.c
 	@echo "# endif COMMENT" >> Version.c
 
 clean: FRC
-	rm -f ${OBJS} core sendmail rmail usersmtp uucp a.out sendmail.cf
+	rm -f ${OBJS} core sendmail a.out Version.o
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
