@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -62,7 +62,7 @@ extern	char *sys_errlist[];
 extern	char *crypt();
 extern	char version[];
 extern	char *home;		/* pointer to home directory for glob */
-extern	FILE *popen(), *fopen(), *freopen();
+extern	FILE *ftpd_popen(), *fopen(), *freopen();
 extern	int  pclose(), fclose();
 extern	char *getline();
 extern	char cbuf[];
@@ -89,8 +89,8 @@ int	pdata;			/* for passive mode */
 int	unique;
 int	transflag;
 char	tmpline[7];
-char	hostname[32];
-char	remotehost[32];
+char	hostname[MAXHOSTNAMELEN];
+char	remotehost[MAXHOSTNAMELEN];
 
 /*
  * Timeout intervals for retrying connections
@@ -164,11 +164,11 @@ nextopt:
 		syslog(LOG_ERR, "signal: %m");
 
 	/* handle urgent data inline */
+	/* Sequent defines this, but it doesn't work */
 #ifdef SO_OOBINLINE
-	if (setsockopt(0, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on)) < 0) {
+	if (setsockopt(0, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on)) < 0)
 		syslog(LOG_ERR, "setsockopt: %m");
-	}
-#endif SO_OOBINLINE
+#endif
 	pgid = getpid();
 	if (ioctl(fileno(stdin), SIOCSPGRP, (char *) &pgid) < 0) {
 		syslog(LOG_ERR, "ioctl: %m");
@@ -185,8 +185,7 @@ nextopt:
 	mode = MODE_S;
 	tmpline[0] = '\0';
 	(void) gethostname(hostname, sizeof (hostname));
-	reply(220, "%s FTP server (%s) ready.",
-		hostname, version);
+	reply(220, "%s FTP server (%s) ready.", hostname, version);
 	for (;;) {
 		(void) setjmp(errcatch);
 		(void) yyparse();
@@ -218,7 +217,7 @@ sgetsave(s)
 #endif
 	
 	if (new == NULL) {
-		reply(553, "Local resource failure");
+		reply(553, "Local resource failure: malloc");
 		dologout(1);
 	}
 #ifndef notdef
@@ -318,7 +317,7 @@ retrieve(cmd, name)
 #ifdef notdef
 		/* no remote command execution -- it's a security hole */
 		if (*name == '|')
-			fin = popen(name + 1, "r"), closefunc = pclose;
+			fin = ftpd_popen(name + 1, "r"), closefunc = pclose;
 		else
 #endif
 			fin = fopen(name, "r"), closefunc = fclose;
@@ -326,7 +325,7 @@ retrieve(cmd, name)
 		char line[BUFSIZ];
 
 		(void) sprintf(line, cmd, name), name = line;
-		fin = popen(line, "r"), closefunc = pclose;
+		fin = ftpd_popen(line, "r"), closefunc = pclose;
 	}
 	if (fin == NULL) {
 		if (errno != 0)
@@ -365,7 +364,7 @@ store(name, mode)
 #ifdef notdef
 	/* no remote command execution -- it's a security hole */
 	if (name[0] == '|')
-		fout = popen(&name[1], "w"), closefunc = pclose;
+		fout = ftpd_popen(&name[1], "w"), closefunc = pclose;
 	else
 #endif
 	{
@@ -404,7 +403,7 @@ store(name, mode)
 	pdata = -1;
 done:
 	if (dochown)
-		(void) chown(local, pw->pw_uid, -1);
+		(void) fchown(fileno(fout), pw->pw_uid, -1);
 	(*closefunc)(fout);
 }
 
@@ -721,16 +720,15 @@ cwd(path)
 makedir(name)
 	char *name;
 {
-	struct stat st;
-	int dochown = stat(name, &st) < 0;
-	
-	if (mkdir(name, 0777) < 0) {
+	uid_t	oldeuid;
+
+	oldeuid = geteuid();
+	seteuid(pw->pw_uid);
+	if (mkdir(name, 0777) < 0)
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
-		return;
-	}
-	if (dochown)
-		(void) chown(name, pw->pw_uid, -1);
-	reply(257, "MKD command successful.");
+	else
+		reply(257, "MKD command successful.");
+	seteuid(oldeuid);
 }
 
 removedir(name)

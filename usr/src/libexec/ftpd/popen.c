@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,7 +37,7 @@ static uid_t *pids;
 static int fds;
 
 FILE *
-popen(program, type)
+ftpd_popen(program, type)
 	char *program, *type;
 {
 	register char *cp;
