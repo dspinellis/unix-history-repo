@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getguess.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)getguess.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ttydefaults.h>
@@ -74,7 +74,7 @@ readch()
 		}
 		else if (ch == CTRL('L')) {
 			wrefresh(curscr);
-			mvcur(0, 0, curscr->_cury, curscr->_curx);
+			mvcur(0, 0, curscr->cury, curscr->curx);
 		}
 		else
 			return ch;
