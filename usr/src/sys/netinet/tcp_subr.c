@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.11 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -177,6 +177,9 @@ tcp_newtcpcb(inp)
 	 */
 	tp->t_srtt = TCPTV_SRTTBASE;
 	tp->t_rttvar = TCPTV_SRTTDFLT << 2;
+	TCPT_RANGESET(tp->t_rxtcur, 
+	    ((TCPTV_SRTTBASE >> 2) + (TCPTV_SRTTDFLT << 2)) >> 1,
+	    TCPTV_MIN, TCPTV_REXMTMAX);
 	tp->snd_cwnd = sbspace(&inp->inp_socket->so_snd);
 	tp->snd_ssthresh = 65535;		/* XXX */
 	inp->inp_ppcb = (caddr_t)tp;
