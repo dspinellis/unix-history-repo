@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -162,6 +162,9 @@ mfs_mount(mp, path, data, ndp, p)
 	u_int size;
 	int flags, error;
 
+	if (error = copyin(data, (caddr_t)&args, sizeof (struct mfs_args)))
+		return (error);
+
 	/*
 	 * If updating, check whether changing from read-only to
 	 * read/write; if there is no device name, that's all we do.
@@ -182,10 +185,12 @@ mfs_mount(mp, path, data, ndp, p)
 		}
 		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR))
 			fs->fs_ronly = 0;
+#ifdef EXPORTMFS
+		if (args.fspec == 0)
+			return (vfs_export(mp, &ump->um_export, &args.export));
+#endif
 		return (0);
 	}
-	if (error = copyin(data, (caddr_t)&args, sizeof (struct mfs_args)))
-		return (error);
 	error = getnewvnode(VT_MFS, (struct mount *)0, mfs_vnodeop_p, &devvp);
 	if (error)
 		return (error);
@@ -210,7 +215,7 @@ mfs_mount(mp, path, data, ndp, p)
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
 	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
 		MNAMELEN);
-	(void) copyinstr(args.name, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 		&size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void) mfs_statfs(mp, &mp->mnt_stat, p);
