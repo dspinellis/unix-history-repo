@@ -1,5 +1,6 @@
 #ifndef lint
 static char Notice[] = "Copyright (c) 1985 Adobe Systems Incorporated";
+static char sccsid[] = "@(#)enscript.c	1.4 (Berkeley) %G%";
 static char *RCSID = "$Header: enscript.c,v 1.7 89/03/12 01:31:55 van Exp $";
 
 #endif
@@ -56,10 +57,17 @@ static char *RCSID = "$Header: enscript.c,v 1.7 89/03/12 01:31:55 van Exp $";
 #define POSTSCRIPTPRINTER "PostScript"
 
 #define BODYROMAN "Courier"
-#define HEADFONT "Courier-Bold"
+#define BODYSZ	  10
+#define HEADFONT  "Courier-Bold"
+#define HEADSZ	  10
+#define GHEADFONT "Helvetica-Bold"
+#define GHEADSZ	  14
 #define SHEADFONT "Times-Bold"
+#define SHEADSZ	  12
 #define PGNUMFONT "Helvetica-Bold"
-#define DATEFONT "Times-Bold"
+#define PGNUMSZ   24
+#define DATEFONT  "Times-Bold"
+#define DATESZ    12
 
 #ifdef DEBUG
 #define debugp(x) {fprintf x ; VOIDC fflush(stderr);}
@@ -131,7 +139,8 @@ private char TempName[100];	/* name of temporary PostScript file */
 private char OutName[256] = "";	/* filename for disk output */
 private int PipeOut = FALSE;	/* output to stdout (-p -) */
 private int ListOmitted = FALSE;/* list omitted chars on the tty */
-private int BeQuiet = TRUE;	/* suppress stderr info messages */
+private int BeQuiet = FALSE;	/* suppress stderr error messages */
+private int Verbose = FALSE;	/* silly informational messages */
 private int Gaudy = FALSE;	/* pretty bars along the top */
 private int LPTsimulate = FALSE;/* an lpt should be simulated */
 private int Lines = 0;		/* max lines per page */
@@ -148,8 +157,8 @@ private int NoTitle = FALSE;	/* title line is suppressed */
 private int Cvted = FALSE;	/* converted a file to PS format */
 
 private int IgnoreGarbage = FALSE;	/* garbage should be ignored */
-private int SeenFile = FALSE;	/* a file has been processed */
 private int SeenFont = FALSE;	/* we've seen a font request */
+private int SeenFile = FALSE;	/* a file has been processed */
 private int ScannedFonts = FALSE;	/* we've scanned the font file */
 private char *FileName = 0;	/* name of file currently being PSed */
 private char *FileDate = 0;	/* last mod date of file being PSed */
@@ -201,6 +210,7 @@ private int pagepending;	/* start on next page when have something to
 				 * print */
 private char *UsersHeader = NULL;	/* user specified heading */
 private char *Header = NULL;	/* generated header (usually FileName) */
+private char *Header2 = NULL;	/* second header line for Gaudy */
 private int Page = 0;		/* current page number */
 private int TotalPages = 0;	/* total number of pages printed */
 private int TruncChars = 0;	/* number of characters truncated */
@@ -218,7 +228,6 @@ decodefont (name, f)
 {
 	register char *d, *p;
 
-	SeenFont = TRUE;
 	p = name;
 	d = f->name;
 	f->dsize = 0;
@@ -423,6 +432,7 @@ ShowChar (c)
 	register struct font *f;
 	register long nX, nY;
 	static  level = 0;
+	VOID PageEject();
 
 	level++;
 	f = &fonts[CurFont];
@@ -446,29 +456,42 @@ ShowChar (c)
 	nY = dY;
 
 	if (c != ' ' || ((cX == dX) && (cY == dY))) {
-		if (nX <= maxX) {
-			if (cX != dX) {
-				if (cY != dY) {
-					FlushShow ();
-					/* absolute x, relative y */
-					fprintf (OutFile, "%ld %ld", dX, dY);
-					movepending = AbsXY;
-				} else {
-					FlushShow ();
-					fprintf (OutFile, "%ld", dX - cX);	/* relative x */
-					movepending = RelX;
-				}
-			} else if (cY != dY) {
+		/*
+		 * If character doesn't fit on this line
+		 * (and we're not at left margin), simulate newline
+		 * and then call ourselves recursively.
+		 */
+		if (nX > maxX && dX > lX) {
+			SeenText = TRUE;
+			dY = lY = lY + crY;
+			dX = lX = lX + crX;
+			if ((dY < minY) || (--LinesLeft <= 0))
+				PageEject ();
+			col = 1;
+			ShowChar(c);
+			level--;
+			return;
+		}
+		if (cX != dX) {
+			if (cY != dY) {
 				FlushShow ();
-				fprintf (OutFile, "%ld", dY - cY);	/* relative y */
-				movepending = RelY;
+				/* absolute x, relative y */
+				fprintf (OutFile, "%ld %ld", dX, dY);
+				movepending = AbsXY;
+			} else {
+				FlushShow ();
+				fprintf (OutFile, "%ld", dX - cX);	/* relative x */
+				movepending = RelX;
 			}
-			OUTputc (c);
-			showpending = TRUE;
-			cX = nX;
-			cY = nY;
-		} else
-			TruncChars++;
+		} else if (cY != dY) {
+			FlushShow ();
+			fprintf (OutFile, "%ld", dY - cY);	/* relative y */
+			movepending = RelY;
+		}
+		OUTputc (c);
+		showpending = TRUE;
+		cX = nX;
+		cY = nY;
 	}
 	dX = nX;
 	dY = nY;
@@ -549,7 +572,10 @@ InitPage ()
 	if (!NoTitle) {
 		if (Gaudy) {
 			OUTstr(UsersHeader);
-			OUTstr(Header);
+			if (Header2)
+			    OUTstr(Header2);
+			else
+			    OUTstr(Header);
 			fprintf (OutFile, "[%s](%d)Gaudy\n", FileDate, ++Page);
 			cX = cY = 0;	/* force moveto here */
 		} else {
@@ -788,7 +814,7 @@ CopyFile ()
 						VOIDC   fgets (header, sizeof(header), stdin);
 
 						ClosePage ();
-						Header = header;
+						Header2 = header;
 						Page = 0;
 						break;
 					}
@@ -860,7 +886,7 @@ SetTime (tval)
 
 
 
-#define ARGS "12gGBlL:oqrRkKf:F:b:p:J:C:P:#:mhO:"
+#define ARGS "12gGBlL:oqrRkKf:F:b:p:J:C:P:#:mhO:s:v"
 
 private VOID ParseArgs (ac, av)
 	int     ac;
@@ -883,9 +909,8 @@ private VOID ParseArgs (ac, av)
 				UsersHeader = "";
 			if (Header == NULL)
 				Header = "";
-			SHeaderFont = DefineFont(SHEADFONT, 12);
-			DateFont = DefineFont(DATEFONT, 12);
-			PgNumFont = DefineFont(PGNUMFONT, 24);
+			DateFont = DefineFont(DATEFONT, DATESZ);
+			PgNumFont = DefineFont(PGNUMFONT, PGNUMSZ);
 			break;
 		case 'g':
 			IgnoreGarbage = TRUE;
@@ -937,13 +962,20 @@ private VOID ParseArgs (ac, av)
 				if (*whichfont < 0)
 					*whichfont = nf++;
 				decodefont (optarg, &fonts[*whichfont]);
+				if (font == 'r')
+					SeenFont++;
 			}
 			break;
 		case 'F':
+			if (HeaderFont == -1)
+				HeaderFont = nf++;
 			decodefont (optarg, &fonts[HeaderFont]);
 			break;
 		case 'b':
 			UsersHeader = optarg;
+			break;
+		case 's':
+			Header2 = optarg;
 			break;
 		case 'p':
 			OutOnly = TRUE;
@@ -978,6 +1010,9 @@ private VOID ParseArgs (ac, av)
 			Xoffset = atof(optarg) * (double)UperInch;
 			if (Xoffset < 0)
 				Xoffset = 0;
+			break;
+		case 'v':
+			Verbose = TRUE;
 			break;
 		default:
 			break;
@@ -1022,8 +1057,6 @@ SpoolIt ()
 	VOIDC   sprintf (temparg, "-P%s", PrinterName);
 
 	addarg (argstr, temparg, &nargs);
-	if (!BeQuiet)
-		fprintf (stderr, "spooled to %s\n", PrinterName);
 
 	if (spoolJobClass) {
 		addarg (argstr, "-C", &nargs);
@@ -1101,8 +1134,7 @@ main (argc, argv)
 	if ((tempdir = envget ("PSTEMPDIR")) == NULL)
 		tempdir = TempDir;
 
-	Roman = CurFont = DefineFont (BODYROMAN, 10);
-	HeaderFont = DefineFont (HEADFONT, 10);
+	Roman = CurFont = DefineFont (BODYROMAN, BODYSZ);
 
 	/* process args in environment variable ENSCRIPT */
 	if (p = envget ("ENSCRIPT")) {
@@ -1130,6 +1162,15 @@ main (argc, argv)
 	/* process the command line arguments */
 	optind = 1;		/* reset getopt global */
 	ParseArgs (argc, argv);
+	if (!Gaudy) {
+		if (HeaderFont == -1)
+			HeaderFont = DefineFont (HEADFONT, HEADSZ);
+	} else {
+		if (HeaderFont == -1)
+			HeaderFont = DefineFont (GHEADFONT, GHEADSZ);
+		if (SHeaderFont == -1)
+			SHeaderFont = DefineFont(SHEADFONT, SHEADSZ);
+	}
 
 	/* process non-option args */
 	for (; optind < argc; optind++) {
@@ -1168,18 +1209,13 @@ main (argc, argv)
 	if (UndefChars && !BeQuiet)
 		fprintf (stderr, "%s: %d characters omitted because of incomplete fonts.\n",
 			 prog, UndefChars);
-	if (!BeQuiet && (TotalPages > 0)) {
-		fprintf (stderr, "[ %d page%s * %s cop%s ] ",
-			 TotalPages, TotalPages > 1 ? "s" : "",
-			 spoolCopies, atoi (spoolCopies) > 1 ? "ies" : "y");
+	if (Verbose && (TotalPages > 0)) {
+	    fprintf(stderr,"[ %d page%s * %s cop%s ]\n",
+		    TotalPages, TotalPages > 1 ? "s" : "",
+		    spoolCopies, atoi(spoolCopies) > 1 ? "ies" : "y" );
 	}
-	if (Cvted) {
-		if (!BeQuiet) {
-			fprintf (stderr, "left in %s\n", OutName);
-		}
-		if (!OutOnly) {
-			SpoolIt ();	/* does an exec */
-		}
+	if (Cvted && !OutOnly) {
+		SpoolIt ();	/* does an exec */
 	}
 }
 
