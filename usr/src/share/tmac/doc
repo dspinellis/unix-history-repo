@@ -3,9 +3,10 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc	5.5 (Berkeley) %G%
+.\"     @(#)doc	5.6 (Berkeley) %G%
 .\"
-.\" .mdoc-parse - attempt to parse troff request arguments
+.\" doc - attempt to parse troff request arguments
+.\"	  basic content macros
 .\"     %beginstrip%
 .if \n(.g \{\
 .cp 0
@@ -19,15 +20,6 @@
 .\}
 .so /usr/share/tmac/tmac.doc-common
 .so /usr/share/tmac/tmac.doc-syms
-.\" .if t \{\
-.\" .	so /usr/u0/cael/man/tmac.mdoc-ditroff
-.\" .\}
-.\" .if n \{\
-.\" .	so /usr/u0/cael/man/tmac.mdoc-nroff
-.\" .\}
-.\" .so /usr/u0/cael/man/tmac.mdoc-common
-.\" .so /usr/u0/cael/man/tmac.mdoc-syms
-.\"
 .\" NS Db macro - start/stop DEBUG MODE
 .\" NS Db register DEBUG MODE
 .\" NS iN register DEBUG MODE (inline if 1, to stderr if 0 (default))
@@ -331,8 +323,11 @@
 .el \{\
 .	nr jN \\n(aP
 .	ie \\n(jM==2 \{\
-.               ie "\\*(A\\n(aP"-" .as b1 \&\|\-\-\|
-.               el .as b1 \&\|\-\\*(A\\n(aP
+.		ie !"\\*(A\\n(aP"\\*(Ba" \{\
+.	               ie "\\*(A\\n(aP"-" .as b1 \&\|\-\-\|
+.	               el .as b1 \&\|\-\\*(A\\n(aP
+.		\}
+.		el .as \&\\*(A\\n(aP
 .	\}
 .	el .as b1 \&\f\\n(cF\s\\n(cZ\\*(A\\n(aP\fP\s0
 .	ie \\n(aC==\\n(aP \{\
@@ -1277,6 +1272,7 @@
 .\" NS aT macro - argument type
 .\" NS aU macro - argument type (same as .aT but uses A[1-9] strings
 .\" NS aT register argument type
+.if \n(.g \{\
 .de aT
 .nr aT 0
 .ie \\n(sW>2:(\A'\\$1'==0) \{\
@@ -1316,6 +1312,51 @@
 .	\}
 .\}
 ..
+.\}
+.if !\n(.g \{\
+.de aT
+.nr aT 0
+.ie \\n(sW>2 \{\
+.	nr aT 2
+.\}
+.el \{\
+.	if \\n(sW==1 \{\
+.		ie \\n(z\\$1>2 \{\
+.			nr aT \\n(z\\$1
+.		\}
+.		el .nr aT 2
+.	\}
+.	if \\n(sW==2 \{\
+.		ie \\n(\\$1 \{\
+.			nr aT 1
+.		\}
+.		el .nr aT 2
+.	\}
+.\}
+..
+.de aU
+.nr aT 0
+.aW \\$1
+.ie \\n(sW>2 .nr aT 2
+.el \{\
+.	if \\n(sW==1 \{\
+.		ie \\n(z\\*(A\\$1>2 \{\
+.			nr aT \\n(z\\*(A\\$1
+.		\}
+.		el .nr aT 2
+.	\}
+.	if \\n(sW==2 \{\
+.		ie (\\n(\\*(A\\$1) \{\
+.			nr aT 1
+.		\}
+.		el .nr aT 2
+.	\}
+.\}
+..
+.\}
+.\" NS s1 macro - set spacing for class type 1
+.\" NS s2 macro - set spacing for class type 2
+.\" NS s3 macro - set spacing for class type 3
 .\" NS s1 macro - set spacing for class type 1
 .\" NS s2 macro - set spacing for class type 2
 .\" NS s3 macro - set spacing for class type 3
