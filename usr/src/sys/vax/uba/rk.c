@@ -1,4 +1,4 @@
-/*	rk.c	4.34	81/05/09	*/
+/*	rk.c	4.35	81/05/10	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -80,7 +80,7 @@ struct	uba_driver hkdriver =
  { rkprobe, rkslave, rkattach, rkdgo, rkstd, "rk", rkdinfo, "hk", rkminfo, 1 };
 struct	buf rkutab[NRK];
 short	rkcyl[NRK];
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 struct	dkbad rkbad[NRK];
 struct	buf brkbuf[NRK];
 #endif
@@ -233,14 +233,14 @@ rkustart(ui)
 	}
 	if ((rkaddr->rkds & RKDS_VV) == 0 || ui->ui_flags == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 		struct rkst *st = &rkst[ui->ui_type];
 		struct buf *bbp = &brkbuf[ui->ui_unit];
 #endif
 
 		rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_PACK|RK_GO;
 		ui->ui_flags = 1;
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 		bbp->b_flags = B_READ|B_BUSY;
 		bbp->b_dev = bp->b_dev;
 		bbp->b_bcount = 512;
@@ -383,7 +383,7 @@ rkintr(rk11)
 		bp = dp->b_actf;
 		ui = rkdinfo[dkunit(bp)];
 		dk_busy &= ~(1 << ui->ui_dk);
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 		if (bp->b_flags&B_BAD)
 			if (rkecc(ui, CONT))
 				return;
@@ -413,7 +413,7 @@ hard:
 				bp->b_flags |= B_ERROR;
 				sc->sc_recal = 0;
 			} else if (er & RKER_BSE) {
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 				if (rkecc(ui, BSE))
 					return;
 				else
@@ -548,7 +548,7 @@ rkecc(ui, flag)
 	int reg, npf, o, cmd, ubaddr;
 	int bn, cn, tn, sn;
 
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 	if (flag == CONT)
 		npf = bp->b_error;
 	else
@@ -596,7 +596,7 @@ rkecc(ui, flag)
 		break;
 		}
 
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 	case BSE:
 #ifdef RKBDEBUG
 		if (rkbdebug)

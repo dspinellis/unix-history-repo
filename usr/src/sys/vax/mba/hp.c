@@ -1,4 +1,4 @@
-/*	hp.c	4.37	81/05/09	*/
+/*	hp.c	4.38	81/05/10	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -48,7 +48,7 @@ struct	size {
 	0,	0,
 	0,	0,
 	0,	0,
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 	291302,	118,		/* G=cyl 118 thru 814 */
 #else
 	291346,	118,
@@ -61,7 +61,7 @@ struct	size {
 	0,	0,
 	0,	0,
 	0,	0,
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 	82016,	310,		/* G=cyl 310 thru 822 */
 #else
 	82080,	310,
@@ -73,7 +73,7 @@ struct	size {
 	500384,	0,		/* C=cyl 0 thru 822 */
 	15884,	562,		/* D=cyl 562 thru 588 */
 	55936,	589,		/* E=cyl 589 thru 680 */
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 	86572,	681,		/* F=cyl 681 thru 822 */
 	158624,	562,		/* G=cyl 562 thru 822 */
 #else
@@ -139,7 +139,7 @@ u_char	hp_offset[16] = {
 };
 
 struct	buf	rhpbuf[NHP];
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 struct	buf	bhpbuf[NHP];
 struct	dkbad	hpbad[NHP];
 #endif
@@ -212,7 +212,7 @@ hpustart(mi)
 	if ((hpaddr->hpcs1&HP_DVA) == 0)
 		return (MBU_BUSY);
 	if ((hpaddr->hpds & HPDS_VV) == 0 || hpinit[mi->mi_unit] == 0) {
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 		struct buf *bbp = &bhpbuf[mi->mi_unit];
 #endif
 
@@ -223,7 +223,7 @@ hpustart(mi)
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
 		hpaddr->hpof = HPOF_FMT22;
 		mbclrattn(mi);
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 		bbp->b_flags = B_READ|B_BUSY;
 		bbp->b_dev = bp->b_dev;
 		bbp->b_bcount = 512;
@@ -287,7 +287,7 @@ hpdtint(mi, mbsr)
 	register struct buf *bp = mi->mi_tab.b_actf;
 	int retry = 0;
 
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 	if (bp->b_flags&B_BAD) {
 		if (hpecc(mi, CONT))
 			return(MBD_RESTARTED);
@@ -332,7 +332,7 @@ hard:
 			bp->b_flags |= B_ERROR;
 			hprecal[mi->mi_unit] = 0;
 		} else if (hpaddr->hper2 & HPER2_BSE) {
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 			if (hpecc(mi, BSE))
 				return(MBD_RESTARTED);
 			else
@@ -441,7 +441,7 @@ hpecc(mi, flag)
 	bcr = mbp->mba_bcr & 0xffff;
 	if (bcr)
 		bcr |= 0xffff0000;		/* sxt */
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 	if (flag == CONT)
 		npf = bp->b_error;
 	else
@@ -489,7 +489,7 @@ hpecc(mi, flag)
 		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
 		break;
 
-#ifndef NOBADBLOCK
+#ifndef NOBADSECT
 	case BSE:
 #ifdef HPBDEBUG
 		if (hpbdebug)
