@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)signal_.c	5.2	%G%
+ *	@(#)signal_.c	5.3	%G%
  *
  * change the action for a specified signal
  *
@@ -13,7 +13,7 @@
  *	cursig = signal(signum, proc, flag)
  * where:
  *	'cursig' will receive the current value of signal(2)
- *	'signum' must be in the range 0 <= signum <= 16
+ *	'signum' must be in the range 0 <= signum <= 32
  *
  *	If 'flag' is negative, 'proc' must be an external proceedure name.
  *	
@@ -27,7 +27,7 @@
 
 #include	"../libI77/f_errno.h"
 
-static int (*dispatch[17])();
+static int (*dispatch[33])();
 int (*signal())();
 int sig_trap();
 
@@ -40,7 +40,7 @@ int (*procp)();
 
 	oldispatch = dispatch[*sigp];
 
-	if (*sigp < 0 || *sigp > 16)
+	if (*sigp < 0 || *sigp > 32)
 		return(-((long)(errno=F_ERARG)));
 
 	if (*flag < 0)	/* function address passed */
