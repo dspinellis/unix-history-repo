@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.54		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.55		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	3.54		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	3.54		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.55		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -61,13 +61,11 @@ SCCSID(@(#)daemon.c	3.54		%G%	(with daemon mode));
 
 struct sockaddr_in	SendmailAddress;/* internet address of sendmail */
 int	DaemonSocket = -1;		/* fd describing socket */
-int	MaxConnections = 4;		/* maximum simultaneous sendmails */
 
 getrequests()
 {
 	int t;
 	union wait status;
-	int numconnections = 0;
 	register struct servent *sp;
 
 	/*
@@ -217,10 +215,9 @@ getrequests()
 		/* close the port so that others will hang (for a while) */
 		(void) close(t);
 
-		/* pick up old zombies; implement load limiting */
-		numconnections++;
-		while (wait3(&status, numconnections < MaxConnections ? WNOHANG : 0, 0) > 0)
-			numconnections--;
+		/* pick up old zombies */
+		while (wait3(&status, WNOHANG, 0) > 0)
+			continue;
 	}
 	/*NOTREACHED*/
 }

@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.60		%G%);
+SCCSID(@(#)collect.c	3.61		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -54,14 +54,14 @@ collect(sayok)
 	**  Try to read a UNIX-style From line
 	*/
 
-	if (fgets(buf, sizeof buf, InChannel) == NULL)
+	if (sfgets(buf, sizeof buf, InChannel) == NULL)
 		return;
 	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
 	if (!SaveFrom && strncmp(buf, "From ", 5) == 0)
 	{
 		eatfrom(buf);
-		(void) fgets(buf, sizeof buf, InChannel);
+		(void) sfgets(buf, sizeof buf, InChannel);
 		fixcrlf(buf, FALSE);
 	}
 # endif NOTUNIX
@@ -70,12 +70,11 @@ collect(sayok)
 	**  Copy InChannel to temp file & do message editing.
 	**	To keep certain mailers from getting confused,
 	**	and to keep the output clean, lines that look
-	**	like UNIX "From" lines are deleted in the header,
-	**	and prepended with ">" in the body.
+	**	like UNIX "From" lines are deleted in the header.
 	*/
 
-	for (; !feof(InChannel); !feof(InChannel) &&
-				 fgets(buf, MAXFIELD, InChannel) != NULL)
+	for (; !feof(InChannel); !feof(InChannel) && !ferror(InChannel) &&
+				 sfgets(buf, MAXFIELD, InChannel) != NULL)
 	{
 		register char c;
 		extern bool isheader();
@@ -100,7 +99,7 @@ collect(sayok)
 			p = &buf[strlen(buf)];
 			*p++ = '\n';
 			*p++ = c;
-			if (fgets(p, MAXFIELD - (p - buf), InChannel) == NULL)
+			if (sfgets(p, MAXFIELD - (p - buf), InChannel) == NULL)
 				break;
 			fixcrlf(p, TRUE);
 		}
@@ -125,7 +124,7 @@ collect(sayok)
 	/* throw away a blank line */
 	if (buf[0] == '\0')
 	{
-		(void) fgets(buf, MAXFIELD, InChannel);
+		(void) sfgets(buf, MAXFIELD, InChannel);
 		fixcrlf(buf, TRUE);
 	}
 
@@ -133,8 +132,8 @@ collect(sayok)
 	**  Collect the body of the message.
 	*/
 
-	for (; !feof(InChannel); !feof(InChannel) &&
-				 fgets(buf, sizeof buf, InChannel) != NULL)
+	for (; !feof(InChannel); !feof(InChannel) && !ferror(InChannel) &&
+				 sfgets(buf, sizeof buf, InChannel) != NULL)
 	{
 		register char *bp = buf;
 
