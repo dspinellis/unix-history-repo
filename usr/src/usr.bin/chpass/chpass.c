@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -145,11 +145,12 @@ main(argc, argv)
 			    "chpass: password file busy -- try again later.\n");
 			exit(1);
 		}
-		(void)fprintf(stderr, "chpass: %s: %s", temp, strerror(errno));
+		(void)fprintf(stderr, "chpass: %s: %s; ",
+		    temp, strerror(errno));
 		goto bad;
 	}
 	if (!(temp_fp = fdopen(fd, "w"))) {
-		(void)fprintf(stderr, "chpass: can't write %s", temp);
+		(void)fprintf(stderr, "chpass: can't write %s; ", temp);
 		goto bad;
 	}
 
@@ -175,7 +176,7 @@ main(argc, argv)
 
 	passwd = _PATH_MASTERPASSWD;
 	if (!freopen(passwd, "r", stdin)) {
-		(void)fprintf(stderr, "chpass: can't read %s", passwd);
+		(void)fprintf(stderr, "chpass: can't read %s; ", passwd);
 		goto bad;
 	}
 	if (!copy(pw, temp_fp))
@@ -188,7 +189,7 @@ main(argc, argv)
 	case 0:
 		break;
 	case -1:
-		(void)fprintf(stderr, "chpass: can't fork");
+		(void)fprintf(stderr, "chpass: can't fork; ");
 		goto bad;
 		/* NOTREACHED */
 	default:
@@ -197,8 +198,8 @@ main(argc, argv)
 	}
 
 	if (makedb(temp)) {
-		(void)fprintf(stderr, "chpass: mkpasswd failed");
-bad:		(void)fprintf(stderr, "; information unchanged.\n");
+		(void)fprintf(stderr, "chpass: mkpasswd failed; ");
+bad:		(void)fprintf(stderr, "%s unchanged.\n", _PATH_MASTERPASSWD);
 		(void)unlink(temp);
 		exit(1);
 	}
@@ -232,13 +233,10 @@ bad:		(void)fprintf(stderr, "; information unchanged.\n");
 info(pw)
 	struct passwd *pw;
 {
-	register struct entry *ep;
-	register char *p;
-	static char buf[1024];
 	struct stat begin, end;
 	FILE *fp;
 	int fd, rval;
-	char *tfile, *getenv();
+	char *tfile;
 
 	tfile = "/tmp/passwd.XXXXXX";
 	if ((fd = mkstemp(tfile)) == -1 || !(fp = fdopen(fd, "w+"))) {
@@ -254,41 +252,66 @@ info(pw)
 	 * are discarded in edit()
 	 */
 	(void)fchown(fd, getuid(), getgid());
-	(void)fstat(fd, &begin);
-	rval = edit(tfile);
-	(void)unlink(tfile);
 
-	if (rval) {
-		(void)fprintf(stderr, "chpass: edit failed");
-		return(0);
+	for (rval = 0;;) {
+		(void)fstat(fd, &begin);
+		if (edit(tfile)) {
+			(void)fprintf(stderr, "chpass: edit failed; ");
+			break;
+		}
+		(void)fstat(fd, &end);
+		if (begin.st_mtime == end.st_mtime) {
+			(void)fprintf(stderr, "chpass: no changes made; ");
+			break;
+		}
+		(void)rewind(fp);
+		if (check(fp, pw)) {
+			rval = 1;
+			break;
+		}
+		(void)fflush(stderr);
+		if (prompt())
+			break;
 	}
-	(void)fstat(fd, &end);
-	if (begin.st_mtime == end.st_mtime) {
-		(void)fprintf(stderr, "chpass: no changes made");
-		return(0);
-	}
-	(void)rewind(fp);
+	(void)fclose(fp);
+	(void)unlink(tfile);
+	return(rval);
+}
+
+check(fp, pw)
+	FILE *fp;
+	struct passwd *pw;
+{
+	register struct entry *ep;
+	register char *p;
+	static char buf[1024];
+
 	while (fgets(buf, sizeof(buf), fp)) {
-		if (!buf[0])
+		if (!buf[0] || buf[0] == '#')
 			continue;
 		if (!(p = index(buf, '\n'))) {
-			(void)fprintf(stderr, "chpass: line too long");
+			(void)fprintf(stderr, "chpass: line too long.\n");
 			return(0);
 		}
 		*p = '\0';
-		for (ep = list; ep->prompt; ++ep)
+		for (ep = list;; ++ep) {
+			if (!ep->prompt) {
+				(void)fprintf(stderr,
+				    "chpass: unrecognized field.\n");
+				return(0);
+			}
 			if (!strncasecmp(buf, ep->prompt, ep->len)) {
 				if (ep->restricted && uid)
-					continue;
+					break;
 				if (!(p = index(buf, ':'))) {
 					(void)fprintf(stderr,
-					    "chpass: line corrupted");
+					    "chpass: line corrupted.\n");
 					return(0);
 				}
 				while (isspace(*++p));
 				if (ep->except && strpbrk(p, ep->except)) {
 					(void)fprintf(stderr,
-					   "chpass: illegal character in the \"%s\" field",
+					   "chpass: illegal character in the \"%s\" field.\n",
 					    ep->prompt);
 					return(0);
 				}
@@ -296,8 +319,8 @@ info(pw)
 					return(0);
 				break;
 			}
+		}
 	}
-	(void)fclose(fp);
 	/*
 	 * special checks...
 	 *
@@ -329,7 +352,7 @@ copy(pw, fp)
 	for (done = 0; fgets(buf, sizeof(buf), stdin);) {
 		/* skip lines that are too big */
 		if (!index(buf, '\n')) {
-			(void)fprintf(stderr, "chpass: line too long");
+			(void)fprintf(stderr, "chpass: line too long; ");
 			return(0);
 		}
 		if (done) {
@@ -337,7 +360,7 @@ copy(pw, fp)
 			continue;
 		}
 		if (!(p = index(buf, ':'))) {
-			(void)fprintf(stderr, "chpass: corrupted entry");
+			(void)fprintf(stderr, "chpass: corrupted entry; ");
 			return(0);
 		}
 		*p = '\0';
@@ -427,6 +450,21 @@ loadpw(arg, pw)
 bad:		(void)fprintf(stderr, "chpass: bad password list.\n");
 		exit(1);
 	}
+}
+
+prompt()
+{
+	register int c;
+
+	for (;;) {
+		(void)printf("re-edit the password file? [y]: ");
+		(void)fflush(stdout);
+		c = getchar();
+		if (c != EOF && c != (int)'\n')
+			while (getchar() != (int)'\n');
+		return(c == (int)'n');
+	}
+	/* NOTREACHED */
 }
 
 usage()
