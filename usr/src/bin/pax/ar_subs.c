@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar_subs.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar_subs.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -184,27 +184,37 @@ extract()
 		}
 
 		/*
-		 * with -u, only extract if the archive member is newer than
-		 * the file with the same name in the file system (no test of
-		 * being the same type is required).
+		 * with -u or -D only extract when the archive member is newer
+		 * than the file with the same name in the file system (nos
+		 * test of being the same type is required).
 		 * NOTE: this test is done BEFORE name modifications as
 		 * specified by pax. this operation can be confusing to the
 		 * user who might expect the test to be done on an existing
 		 * file AFTER the name mod. In honesty the pax spec is probably
 		 * flawed in this respect.
 		 */
-		if (uflag && (lstat(arcn->name, &sb) == 0) &&
-		    (arcn->sb.st_mtime <= sb.st_mtime)) {
-			(void)rd_skip(arcn->skip + arcn->pad);
-			continue;
+		if ((uflag || Dflag) && ((lstat(arcn->name, &sb) == 0))) {
+			if (uflag && Dflag) {
+				if ((arcn->sb.st_mtime <= sb.st_mtime) &&
+				    (arcn->sb.st_ctime <= sb.st_ctime)) {
+					(void)rd_skip(arcn->skip + arcn->pad);
+					continue;
+				}
+			} else if (Dflag) {
+				if (arcn->sb.st_ctime <= sb.st_ctime) {
+					(void)rd_skip(arcn->skip + arcn->pad);
+					continue;
+				}
+			} else if (arcn->sb.st_mtime <= sb.st_mtime) {
+				(void)rd_skip(arcn->skip + arcn->pad);
+				continue;
+			}
 		}
 
 		/*
 		 * this archive member is now been selected. modify the name.
 		 */
-		if (pat_sel(arcn) < 0) 
-			break;
-		if ((res = mod_name(arcn)) < 0)
+		if ((pat_sel(arcn) < 0) || ((res = mod_name(arcn)) < 0))
 			break;
 		if (res > 0) {
 			/*
@@ -216,13 +226,25 @@ extract()
 		}
 
 		/*
-		 * If the user asked for -Z they want a time check done after
-		 * the name mod.
+		 * Non standard -Y and -Z flag. When the exisiting file is
+		 * same age or newer skip
 		 */
-		if (Zflag && (lstat(arcn->name, &sb) == 0) &&
-		    (arcn->sb.st_mtime <= sb.st_mtime)) {
-			(void)rd_skip(arcn->skip + arcn->pad);
-			continue;
+		if ((Yflag || Zflag) && ((lstat(arcn->name, &sb) == 0))) {
+			if (Yflag && Zflag) {
+				if ((arcn->sb.st_mtime <= sb.st_mtime) &&
+				    (arcn->sb.st_ctime <= sb.st_ctime)) {
+					(void)rd_skip(arcn->skip + arcn->pad);
+					continue;
+				}
+			} else if (Yflag) {
+				if (arcn->sb.st_ctime <= sb.st_ctime) {
+					(void)rd_skip(arcn->skip + arcn->pad);
+					continue;
+				}
+			} else if (arcn->sb.st_mtime <= sb.st_mtime) {
+				(void)rd_skip(arcn->skip + arcn->pad);
+				continue;
+			}
 		}
 
 		if (vflag) {
@@ -584,7 +606,6 @@ append()
 		    (rd_skip(arcn->skip + arcn->pad) == 1))
 			break;
 
-		++flcnt;
 	}
 
 	/*
@@ -599,7 +620,7 @@ append()
 	 * try to postion for write, if this fails quit. if any error occurs,
 	 * we will refuse to write
 	 */
-	if ((appnd_start(tlen) < 0) || (exit_val != 0))
+	if (appnd_start(tlen) < 0)
 		return;
 
 	/*
@@ -679,11 +700,11 @@ copy()
 
 	if (stat(dirptr, &sb) < 0) {
 		syswarn(1, errno, "Cannot access destination directory %s",
-			dirbuf);
+			dirptr);
 		return;
 	}
 	if (!S_ISDIR(sb.st_mode)) {
-		warn(1, "Destination is not a directory %s", dirbuf);
+		warn(1, "Destination is not a directory %s", dirptr);
 		return;
 	}
 
@@ -728,7 +749,7 @@ copy()
 		 * the name mod. In honesty the pax spec is probably flawed in
 		 * this respect
 		 */
-		if (uflag) {
+		if (uflag || Dflag) {
 			/*
 			 * create the destination name
 			 */
@@ -750,8 +771,17 @@ copy()
 			res = lstat(dirbuf, &sb);
 			*dest_pt = '\0';
 
-		    	if ((res == 0) && (arcn->sb.st_mtime <= sb.st_mtime))
-				continue;
+		    	if (res == 0) {
+				if (uflag && Dflag) {
+					if ((arcn->sb.st_mtime<=sb.st_mtime) &&
+			    		    (arcn->sb.st_ctime<=sb.st_ctime))
+						continue;
+				} else if (Dflag) {
+					if (arcn->sb.st_ctime <= sb.st_ctime)
+						continue;
+				} else if (arcn->sb.st_mtime <= sb.st_mtime)
+					continue;
+			}
 		}
 
 		/*
@@ -760,9 +790,7 @@ copy()
 		 * user; set the final destination.
 		 */
 		ftree_sel(arcn);
-		if (chk_lnk(arcn) < 0)
-			break;
-		if ((res = mod_name(arcn)) < 0)
+		if ((chk_lnk(arcn) < 0) || ((res = mod_name(arcn)) < 0))
 			break;
 		if ((res > 0) || (set_dest(arcn, dirbuf, dlen) < 0)) {
 			/*
@@ -773,12 +801,20 @@ copy()
 		}
 
 		/*
-		 * Non standard -Z flag. When the exisiting file is
+		 * Non standard -Y and -Z flag. When the exisiting file is
 		 * same age or newer skip
 		 */
-		if (Zflag && (lstat(arcn->name, &sb) == 0) &&
-		    (arcn->sb.st_mtime <= sb.st_mtime))
-			continue;
+		if ((Yflag || Zflag) && ((lstat(arcn->name, &sb) == 0))) {
+			if (Yflag && Zflag) {
+				if ((arcn->sb.st_mtime <= sb.st_mtime) &&
+				    (arcn->sb.st_ctime <= sb.st_ctime))
+					continue;
+			} else if (Yflag) {
+				if (arcn->sb.st_ctime <= sb.st_ctime)
+					continue;
+			} else if (arcn->sb.st_mtime <= sb.st_mtime)
+				continue;
+		}
 
 		if (vflag) {
 			(void)fputs(arcn->name, stderr);
