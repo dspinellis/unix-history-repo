@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
@@ -147,7 +147,19 @@ main(argc, argv, envp)
 		readconfig = !thaw(FreezeFile);
 
 	/* reset the environment after the thaw */
-	environ = envp;
+	for (i = 0; i < MAXUSERENVIRON && envp[i] != NULL; i++)
+		UserEnviron[i] = newstr(envp[i]);
+	UserEnviron[i] = NULL;
+	environ = UserEnviron;
+
+# ifdef SETPROCTITLE
+	/*
+	**  Save start and extent of argv for setproctitle.
+	*/
+
+	Argv = argv;
+	LastArgv = envp[i - 1] + strlen(envp[i - 1]);
+# endif SETPROCTITLE
 
 	/*
 	**  Now do basic initialization

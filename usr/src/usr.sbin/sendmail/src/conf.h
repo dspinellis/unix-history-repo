@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)conf.h	5.3 (Berkeley) %G%
+**	@(#)conf.h	5.4 (Berkeley) %G%
 */
 
 /*
@@ -31,6 +31,7 @@
 # define MAXRWSETS	30		/* max # of sets of rewriting rules */
 # define MAXPRIORITIES	25		/* max values for Precedence: field */
 # define MAXTRUST	30		/* maximum number of trusted users */
+# define MAXUSERENVIRON	40		/* max # of items in user environ */
 
 /*
 **  Compilation options.
