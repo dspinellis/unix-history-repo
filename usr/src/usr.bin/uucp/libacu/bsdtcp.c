@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)bsdtcp.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bsdtcp.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
 #ifdef BSDTCP
+#include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h>
 
 /*
  *	bsdtcpopn -- make a tcp connection
@@ -51,14 +51,24 @@ register char *flds[];
 	signal(SIGALRM, alarmtr);
 	alarm(30);
 	hisctladdr.sin_family = hp->h_addrtype;
-	s = socket(hp->h_addrtype, SOCK_STREAM, 0, 0);
+#ifdef BSD2_9
+	s = socket(SOCK_STREAM, 0, &hisctladdr, 0);
+#else BSD4_2
+	s = socket(hp->h_addrtype, SOCK_STREAM, 0);
+#endif BSD4_2
 	if (s < 0)
 		goto bad;
+#ifndef BSD2_9
 	if (bind(s, (char *)&hisctladdr, sizeof (hisctladdr), 0) < 0)
 		goto bad;
+#endif BSD2_9
 	bcopy(hp->h_addr, (char *)&hisctladdr.sin_addr, hp->h_length);
 	hisctladdr.sin_port = port;
+#ifdef BSD2_9
+	if (connect(s, (char *)&hisctladdr) < 0)
+#else BSD4_2
 	if (connect(s, (char *)&hisctladdr, sizeof (hisctladdr), 0) < 0)
+#endif BSD4_2
 		goto bad;
 	alarm(0);
 	CU_end = bsdtcpcls;
