@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)tn3270.c	5.2 (Berkeley) %G%";
 #include "../ctlr/screen.h"
 #include "../general/globals.h"
 
-#include "../telextrn.h"
+#include "../sys_curses/telextrn.h"
 #include "../ctlr/externs.h"
 
 #if	defined(unix)
