@@ -1,0 +1,155 @@
+block data
+integer cshift, csize, yynlin
+common /yyllib/ cshift, csize, yynlin
+data yynlin/YYNEWLINE/
+end
+block data
+common /yyldat/ yyfnd, ymorf, yyprev, yybgin, yytop
+integer yyfnd, yymorf, yyprev, yybgin, yytop
+data yybgin/1/
+data yyprev/YYNEWLINE/
+data yytop/YYTOPVAL/
+end
+integer function yylook(dummy)
+common /Lverif/ verif
+common /Ladvan/ advan
+common /Lstoff/ stoff
+common /Lsfall/ sfall
+common /Latable/ atable
+common /Lextra/ extra
+common /Lvstop/ vstop
+integer verif(Sverif), advan(Sadvan),stoff(Sstoff),match(Smatch)
+integer sfall(Ssfall),atable(Satable),extra(Sextra), vstop(Svstop)
+integer state, lsp, r
+integer  ch, n
+common /yyldat/ yyfnd, yymorf, yyprev, yybgin, yytop, yylsp, yylsta(YYLMAX)
+common /yyxel/ yyleng, yytext
+integer yyfnd, yymorf, yylsta, yylsp, yytext, yyprev, yyleng, yytop
+integer  lexshf, yytext(YYLMAX), yyback, yybgin
+integer z, t
+if (yymorf .eq. 0)
+	yyleng = 0
+else
+	yymorf=0
+1776
+	lsp = 1
+	state = yybgin
+	if (yyprev .eq. YYNEWLINE)
+		state = state + 1
+	for (;;){
+		r = stoff(state)
+		if (r .eq. 0){
+			z = sfall(state)
+			if (z .eq. 0)
+				break
+			if(stoff(z) == 0) break
+			}
+		ch = input(dummy)
+		ich = lexshf(ch)
+		yyleng = yyleng+1
+		yytext(yyleng) = ch
+		1984
+		if(r .gt. 0){
+			t = r + ich
+			if (t<= yytop){
+			  if (verif(t) .eq. state){
+				if(advan(t) == YYERROR){
+					call unput(yytext(yyleng))
+					yyleng = yyleng - 1
+					break
+					}
+				state = advan(t)
+				yylsta(lsp) = state
+				lsp = lsp +1
+				goto 2001
+				}
+			  }
+			}
+		if(r < 0){
+			t = r + ich
+			if (t <= yytop .and. verif(t) .eq. state){
+				if(advan(t) == YYERROR){
+					call unput(yytext(yyleng))
+					yyleng = yyleng - 1
+					break
+					}
+				state = advan(t)
+				yylsta(lsp) = state
+				lsp = lsp +1
+				goto 2001
+				}
+			t = r + match(ich)
+			if(t <= yytop && state == verif(t)){
+				if(advan(t) == YYERROR){
+					call unput(yytext(yyleng))
+					yyleng = yyleng - 1
+					break
+					}
+			state = advan(t)
+			yylsta(lsp) = state
+			lsp = lsp + 1
+			goto 2001
+			}
+		}
+		else {
+			if (state > 0) state = sfall(state)
+			if (state .gt. 0) r = stoff(state)
+			if (state .gt. 0 .and. r .ne. 0)
+				goto 1984
+			call unput(yytext(yyleng))
+			yyleng = yyleng -1
+			break
+			}
+	2001
+		continue
+		}
+	while (lsp .gt. 1){
+		lsp = lsp -1
+		ilsp = yylsta(lsp)
+		yyfnd = atable(ilsp)
+		if (yyfnd .gt. 0)
+			if (vstop(yyfnd) .gt. 0){
+				r = vstop(yyfnd)
+				if (extra(r) .ne. 0){
+					for(;;){
+					ilsp = yylsta(lsp)
+					if (yyback(atable(ilsp), -r) .eq. 1)
+						break
+					lsp= lsp -1
+					call unput(yytext(yyleng))
+					yyleng = yyleng -1
+					}
+					}
+				yyprev = lexshf(yytext(yyleng))
+				yylsp = lsp
+				yyfnd = yyfnd + 1
+				yylook = r
+				yytext(yyleng+1) = 0
+				return
+				}
+		call unput(yytext(yyleng))
+		}
+	if (yytext(1) .eq. 0){
+		yylook=0
+		return
+		}
+	yyprev = input(dummy)
+	call output(yyprev)
+	yyprev = lexshf(yyprev)
+	yyleng = 0
+	goto 1776
+end
+integer function yyback (isub, n)
+common /Lvstop/ vstop
+integer vstop(Svstop)
+if (isub .ne. 0)
+while (vstop(isub) .ne. 0){
+	if (vstop(isub) .eq. m){
+		yyback = 1
+		return
+		}
+	isub = isub + 1
+	}
+yyback = 0
+return 
+end
