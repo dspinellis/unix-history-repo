@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nm.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)nm.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -180,6 +180,13 @@ show_archive(fname, fp)
 			return(1);
 		}
 
+		/* remember start position of current archive object */
+		last_ar_off = ftell(fp);
+
+		/* skip ranlib entries */
+		if (!strncmp(ar_head.ar_name, RANLIBMAG, sizeof(RANLIBMAG) - 1))
+			goto skip;
+
 		/*
 		 * construct a name of the form "archive.a:obj.o:" for the
 		 * current archive entry if the object name is to be printed
@@ -193,9 +200,6 @@ show_archive(fname, fp)
 				*p++ = ar_head.ar_name[i];
 		*p++ = '\0';
 
-		/* remember start position of current archive object */
-		last_ar_off = ftell(fp);
-
 		/* get and check current object's header */
 		if (fread((char *)&exec_head, sizeof(exec_head),
 		    (size_t)1, fp) != 1) {
@@ -203,27 +207,27 @@ show_archive(fname, fp)
 			(void)free(name);
 			return(1);
 		}
-		if (strcmp(name, RANLIBMAG))
-			if (N_BADMAG(exec_head)) {
-				if (!ignore_bad_archive_entries) {
-					(void)fprintf(stderr,
-					    "nm: %s: bad format.\n", name);
-					rval = 1;
-				}
-			} else {
-				(void)fseek(fp, (long)-sizeof(exec_head),
-				    SEEK_CUR);
-				if (!print_file_each_line)
-					(void)printf("\n%s:\n", name);
-				rval |= show_objfile(name, fp);
+
+		if (N_BADMAG(exec_head)) {
+			if (!ignore_bad_archive_entries) {
+				(void)fprintf(stderr,
+				    "nm: %s: bad format.\n", name);
+				rval = 1;
 			}
+		} else {
+			(void)fseek(fp, (long)-sizeof(exec_head),
+			    SEEK_CUR);
+			if (!print_file_each_line)
+				(void)printf("\n%s:\n", name);
+			rval |= show_objfile(name, fp);
+		}
 
 		/*
 		 * skip to next archive object - it starts at the next
 	 	 * even byte boundary
 		 */
 #define even(x) (((x) + 1) & ~1)
-		if (fseek(fp, last_ar_off + even(atol(ar_head.ar_size)),
+skip:		if (fseek(fp, last_ar_off + even(atol(ar_head.ar_size)),
 		    SEEK_SET)) {
 			(void)fprintf(stderr,
 			    "nm: %s: %s\n", fname, strerror(errno));
