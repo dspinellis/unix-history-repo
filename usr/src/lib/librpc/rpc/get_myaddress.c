@@ -57,7 +57,7 @@ get_myaddress(addr)
 	char buf[BUFSIZ];
 	struct ifconf ifc;
 	struct ifreq ifreq, *ifr;
-	int len;
+	int len, slop;
 
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 	    perror("get_myaddress: socket");
@@ -81,6 +81,14 @@ get_myaddress(addr)
 			*addr = *((struct sockaddr_in *)&ifr->ifr_addr);
 			addr->sin_port = htons(PMAPPORT);
 			break;
+		}
+		/*
+		 * Deal with variable length addresses
+		 */
+		slop = ifr->ifr_addr.sa_len - sizeof (struct sockaddr);
+		if (slop) {
+			ifr = (struct ifreq *) ((caddr_t)ifr + slop);
+			len -= slop;
 		}
 		ifr++;
 	}
