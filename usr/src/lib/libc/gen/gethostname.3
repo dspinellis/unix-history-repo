@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)gethostname.3	6.8 (Berkeley) %G%
+.\"     @(#)gethostname.3	6.9 (Berkeley) %G%
 .\"
 .Dd 
-.Dt GETHOSTNAME 2
+.Dt GETHOSTNAME 3
 .Os BSD 4.2
 .Sh NAME
 .Nm gethostname ,
@@ -56,7 +56,8 @@ invalid address.
 The caller tried to set the hostname and was not the super-user.
 .El
 .Sh SEE ALSO
-.Xr gethostid 2
+.Xr sysctl 2
+.Xr gethostid 3
 .Sh BUGS
 Host names are limited to
 .Dv MAXHOSTNAMELEN
