@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.33 (Berkeley) %G%
+#	@(#)READ_ME	8.34 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -111,6 +111,7 @@ NeXT		Define this if you are on a NeXT box.  (This one may
 _AIX3		Define this if you are IBM AIX 3.x.
 RISCOS		Define this if you are running RISC/os from MIPS.
 _SCO_unix_	Define this if you are on SCO UNIX.
+_SCO_unix_4_2	Define this if you are on SCO Open Server 3.2v4.
 
 If you are a system that sendmail has already been ported to, you
 probably won't have to touch these.  But if you are porting, you may
@@ -206,6 +207,13 @@ SCANF		You can set this to extend the F command to accept a
 		scanf string -- this gives you a primitive parser for
 		class definitions -- BUT it can make you vulnerable to
 		core dumps if the target file is poorly formed.
+SYSLOG_BUFSIZE	You can define this to be the size of the buffer that
+		syslog accepts.  If it is not defined, it assumes a
+		1024-byte buffer.  If the buffer is very small (under
+		256 bytes) the log message format changes -- each
+		e-mail message will log many more messages, since it
+		will log each piece of information as a separate line
+		in syslog.
 
 
 +-----------------------+
@@ -272,10 +280,53 @@ Some people have had a problem with BIND 4.9; it uses some routines
 that it expects to be externally defined such as strerror().  It may
 help to link with "-l44bsd" to solve this problem.
 
+!PLEASE! be sure to link with the same version of the resolver as
+the header files you used -- some people have used the 4.9 headers
+and linked with BIND 4.8 or vice versa, and it doesn't work.
+Unfortunately, it doesn't fail in an obvious way -- things just
+subtlely don't work.
+
 
 +-------------------------------------+
 | OPERATING SYSTEM AND COMPILE QUIRKS |
 +-------------------------------------+
+
+GCC 2.5.x problems  *** IMPORTANT ***
+	Date: Mon, 29 Nov 93 19:08:44 PST
+	From: wilson@cygnus.com (Jim Wilson)
+	Message-Id: <9311300308.AA04608@cygnus.com>
+	To: kenner@vlsi1.ultra.nyu.edu
+	Subject: [cattelan@thebarn.com: gcc 2.5.4-2.5.5 -O bug]
+	Cc: cattelan@thebarn.com, rms@gnu.ai.mit.edu, sendmail@cs.berkeley.edu
+
+	This fixes a problem that occurs when gcc 2.5.5 is used to compile
+	sendmail 8.6.4 with optimization on a sparc.
+
+	Mon Nov 29 19:00:14 1993  Jim Wilson  (wilson@sphagnum.cygnus.com)
+
+		* reload.c (find_reloads_toplev): Replace obsolete reference to
+		BYTE_LOADS_*_EXTEND with LOAD_EXTEND_OP.
+
+	*** clean-ss-931128/reload.c    Sun Nov 14 16:20:01 1993
+	--- ss-931128/reload.c  Mon Nov 29 18:52:55 1993
+	*************** find_reloads_toplev (x, opnum, type, ind
+	*** 3888,3894 ****
+		 force a reload in that case.  So we should not do anything here.  */
+	  
+		else if (regno >= FIRST_PSEUDO_REGISTER
+	! #if defined(BYTE_LOADS_ZERO_EXTEND) || defined(BYTE_LOADS_SIGN_EXTEND)
+		       && (GET_MODE_SIZE (GET_MODE (x))
+			   <= GET_MODE_SIZE (GET_MODE (SUBREG_REG (x))))
+	  #endif
+	--- 3888,3894 ----
+		 force a reload in that case.  So we should not do anything here.  */
+	  
+		else if (regno >= FIRST_PSEUDO_REGISTER
+	! #ifdef LOAD_EXTEND_OP
+		       && (GET_MODE_SIZE (GET_MODE (x))
+			   <= GET_MODE_SIZE (GET_MODE (SUBREG_REG (x))))
+	  #endif
+
 
 SunOS 4.x (Solaris 1.x)
 	You may have to use -lresolv on SunOS.  However, beware that
@@ -445,6 +496,55 @@ DG/UX
 	DG/UX -- the person who has this working, Douglas Anderson
 	<dlander@afterlife.ncsc.mil>, used procmail instead.
 
+DELL SVR4
+	Date:      Mon, 06 Dec 1993 10:42:29 EST
+	From: "Kimmo Suominen" <kim@grendel.lut.fi>
+	Message-ID: <2d0352f9.lento29@lento29.UUCP>
+	To: eric@cs.berkeley.edu
+	Cc: sendmail@cs.berkeley.edu, "Kimmo Suominen" <kim@grendel.lut.fi>
+	Subject:   Notes for DELL SVR4
+
+	Eric,
+
+	Here are some notes for compiling Sendmail 8.6.4 on DELL SVR4.  I ran
+	across these things when helping out some people who contacted me by
+	e-mail.
+
+	1) Use gcc 2.4.5 (or later?).  Dell distributes gcc 2.1 with their
+	   Issue 2.2 Unix.  It is too old, and gives you problems with
+	   clock.c, because sigset_t won't get defined in <sys/signal.h>.
+	   This is due to a problematic protection rule in there, and is
+	   fixed with gcc 2.4.5.
+
+	2) If you don't use the new Berkeley DB (-DNEWDB), then you need
+	   to add "-lc -lucb" to the libraries to link with.  This is because
+	   the -ldbm distributed by Dell needs the bcopy, bcmp and bzero
+	   functions.  It is important that you specify both libraries in
+	   the given order to be sure you only get the BSTRING functions
+	   from the UCB library (and not the signal routines etc.).
+
+	3) Don't leave out "-lelf" even if compiling with "-lc -lucb".
+	   The UCB library also has another copy of the nlist routines,
+	   but we do want the ones from "-lelf".
+
+	If anyone needs a compiled gcc 2.4.5 and/or a ported DB library, they
+	can use anonymous ftp to fetch them from lut.fi in the /kim directory. 
+	They are copies of what I use on grendel.lut.fi, and offering them
+	does not imply that I would also support them.  I have sent the DB
+	port for SVR4 back to Keith Bostic for inclusion in the official
+	distribution, but I haven't heard anything from him as of today.
+
+	- gcc-2.4.5-svr4.tar.gz	(gcc 2.4.5 and the corresponding libg++)
+	- db-1.72.tar.gz	(with source, objects and a installed copy)
+
+	Cheers
+	+ Kim
+	-- 
+	 *  Kimmo.Suominen@lut.fi  *  SysVr4 enthusiast at GRENDEL.LUT.FI  *
+	*    KIM@FINFILES.BITNET   *  Postmaster and Hostmaster at LUT.FI   *
+	 *    + 358 200 865 718    *  Unix area moderator at NIC.FUNET.FI  *
+
+
 Non-DNS based sites
 	This version of sendmail always tries to connect to the Domain
 	Name System (DNS) to resolve names, regardless of the setting
@@ -543,4 +643,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.33, last update %G% 11:34:48)
+(Version 8.34, last update %G% 17:35:33)
