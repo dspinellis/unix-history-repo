@@ -1,0 +1,77 @@
+This directory contains the version of the UNIX XNS/Courier implementation
+currently under development by JQJ@CORNELL.  It is still a test version.
+This file last updated 31 Dec 1986 (Ed Flint).
+
+To install the XNS Courier package:
+
+1/	install 4.3BSD, including support for XNS protocols by K. Sklower.
+	The Courier system is known to work on VAXes and Gould Powernode
+	systems running 4.3BSD.  It probably works on a SUN with XNS
+	support.  Note that it assumes that the routine ns_addr() is in
+	/lib/libc; this was not the case for the 4.3BSD Beta distribution.
+2/	make sure an interface has been enabled for xns e.g.:
+		ifconfig en0 ns 2273		(if en0 is connected to
+	XNS network number 2273)
+3/	edit the Makefile in this directory and modify the user-tunable
+	parameters CHDEFAULT, DESTDIR, DESTBIN, DESTLIB, DESTINCLUDE and
+	DESTCOURIER. At a minimum, CHDEFAULT should be changed to the
+	default :domain:organization for the system being installed; the
+	remaining parameters will default to appropriate directories
+	within the 4.3BSD system.
+4/	do ``make all'' on this directory. This will build the package
+	and deposit the necessary files in the bin, lib, include and
+	xnscourier subdirectories.
+	A simple ``make'' won't do, since some things require previous
+	installation of earlier things.
+5/	do ``make install'' on this directory.  Note that you MUST use
+	``make install'', and will probably need to be logged in as root.
+	This will copy the previously made files to the appropriate system
+	level directories as specified by the user-tunable parameters in
+	the Makefile.
+6/	edit /etc/rc.local to automatically run
+	/usr/new/lib/xnscourier/xnscourierd at system startup. This is the
+	daemon that listens for incoming Courier connections.  When it 
+	receives a connection, it looks up the remote program in
+	/usr/new/lib/xnscourier/Courierservices and runs that program.
+
+Notes:
+1/	The file ./morexnslib/ch/clearinghouse.addresses may contain 
+	the address of a local clearinghouse and a list of the domains 
+	served.  This file will be created during the make; the package
+	will build a program called xnsbfs which finds local clearinghouses
+	and the output of this program will be used to create
+	clearinghouse.addresses, and the result stored as the file 
+	./lib/xnscourier/CH.addrs.
+	Note that you MUST have a Xerox-provided or compatible (3Com won't
+	do) Clearinghouse on your local network.
+2/	Some programs in this package use the contents of the file
+	./lib/xnscourier/CH.default as a default if no domain 
+	is specified, e.g. "gaptelnet foo" defaults domain and 
+	organization on foo based on this file.  The file
+	./morexnslib/ch/CH.default is built by the package to contain this 
+	default value, as specified in CHDEFAULT in the Makefile.
+
+Problems:
+1/	The compiler is incomplete:  it does not handle forward references,
+	recursive declarations, constants containing a non-trivial CHOICE,
+	or recursive DEPENDencies.
+2/	The client runtimes are incomplete:  they do not correctly handle BDT
+	Abort messages; they require a static file (clearinghouse.addresses)
+	containing a local Clearinghouse rather than performing an expanding-
+	ring search.
+3/	The server runtimes are incompletely tested.
+4/	Providing Courier services is quite expensive.  In general, at least
+	one process per SPP connection is required.
+
+On the other hand, the package is adequate for writing non-trivial Courier
+client and server programs.  Of particular note are the example subdirectories
+print, gap, and filing, which contain Courier applications for (1) printing
+an Interpress master on a Xerox printer, (2) telnet (chat, aka GAP) from Unix 
+to file servers or from ViewPoint to UNIX, (3) an ftp-like interface to filing,
+allowing a Unix user to store and retrieve files from a Xerox file server and
+a XDE FileTool compatible Unix file service.
+
+Note that in order to use XDE Chat, ViewPoint remote system administration or
+FileTool to your UNIX system you will need to register the UNIX system with
+the Xerox Clearinghouse.  To do so, use the program registerhost contained on
+the examples/ch directory.
