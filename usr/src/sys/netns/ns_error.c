@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_error.c	6.4 (Berkeley) %G%
+ *	@(#)ns_error.c	6.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,6 +20,10 @@
 #include "ns_pcb.h"
 #include "idp.h"
 #include "ns_error.h"
+
+#ifdef lint
+#define NS_ERRPRINTFS 1
+#endif
 
 #ifdef NS_ERRPRINTFS
 /*
@@ -91,8 +95,8 @@ ns_error(om, type, param)
 	if ((u_int)type > NS_ERR_TOO_BIG)
 		panic("ns_err_error");
 	ns_errstat.ns_es_outhist[ns_err_x(type)]++;
-	ep->ns_ep_errp.ns_err_num = htons(type);
-	ep->ns_ep_errp.ns_err_param = htons(param);
+	ep->ns_ep_errp.ns_err_num = htons((u_short)type);
+	ep->ns_ep_errp.ns_err_param = htons((u_short)param);
 	bcopy((caddr_t)oip, (caddr_t)&ep->ns_ep_errp.ns_err_idp, 42);
 	nip = &ep->ns_ep_idp;
 	nip->idp_len = sizeof(*ep);
@@ -106,15 +110,11 @@ ns_error(om, type, param)
 		nip->idp_sum = ns_cksum(dtom(nip), sizeof(*ep));
 	} else 
 		nip->idp_sum = 0xffff;
-	ns_output(dtom(nip), (struct route *)0, 0);
+	(void) ns_output(dtom(nip), (struct route *)0, 0);
 
 free:
 	m_freem(dtom(oip));
 }
-
-static struct sockproto ns_errroto = { AF_NS, NSPROTO_ERROR };
-static struct sockaddr_ns ns_errsrc = { AF_NS };
-static struct sockaddr_ns ns_errdst = { AF_NS };
 
 ns_printhost(p)
 register struct ns_addr *p;

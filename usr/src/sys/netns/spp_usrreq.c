@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.6 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -50,7 +50,7 @@ spp_input(m, nsp)
 	register struct sppcb *cb;
 	register struct spidp *si = mtod(m, struct spidp *);
 	register struct socket *so;
-	int len; short ostate;
+	short ostate;
 	int dropsocket = 0;
 
 
@@ -194,7 +194,7 @@ spp_input(m, nsp)
 		cb->s_state = TCPS_ESTABLISHED;
 	}
 	if (so->so_options & SO_DEBUG || traceallspps)
-		spp_trace(SA_INPUT, ostate, cb, &spp_savesi, 0);
+		spp_trace(SA_INPUT, (u_char)ostate, cb, &spp_savesi, 0);
 
 	m->m_len -= sizeof (struct idp);
 	m->m_off += sizeof (struct idp);
@@ -202,7 +202,7 @@ spp_input(m, nsp)
 	if (spp_reass(cb,si)) {
 		goto drop;
 	}
-	spp_output(cb,(struct mbuf *)0);
+	(void) spp_output(cb,(struct mbuf *)0);
 	return;
 
 dropwithreset:
@@ -213,13 +213,13 @@ dropwithreset:
 	si->si_alo = ntohs(si->si_alo);
 	ns_error(dtom(si), NS_ERR_NOSOCK, 0);
 	if (cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
-		spp_trace(SA_DROP, ostate, cb, &spp_savesi, 0);
+		spp_trace(SA_DROP, (u_char)ostate, cb, &spp_savesi, 0);
 	return;
 
 drop:
 bad:
 	if (cb==0 || cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
-		spp_trace(SA_DROP, ostate, cb, &spp_savesi, 0);
+		spp_trace(SA_DROP, (u_char)ostate, cb, &spp_savesi, 0);
 	m_freem(m);
 }
 
@@ -358,6 +358,7 @@ spp_ctlinput(cmd, arg)
 	struct ns_addr *na;
 	extern u_char nsctlerrmap[];
 	extern spp_abort();
+	extern struct nspcb *idp_drop();
 	struct ns_errp *errp;
 	struct nspcb *nsp;
 	int type;
@@ -385,7 +386,7 @@ spp_ctlinput(cmd, arg)
 		errp = (struct ns_errp *)arg;
 		na = &errp->ns_err_idp.idp_dna;
 		type = errp->ns_err_num;
-		type = ntohs(type);
+		type = ntohs((u_short)type);
 	}
 	switch (type) {
 
@@ -399,13 +400,15 @@ spp_ctlinput(cmd, arg)
 			NS_WILDCARD);
 		if (nsp) {
 			if(nsp->nsp_pcb)
-				spp_drop(nsp->nsp_pcb, (int)nsctlerrmap[cmd]);
+				(void) spp_drop((struct sppcb *)nsp->nsp_pcb,
+						(int)nsctlerrmap[cmd]);
 			else
-				idp_drop(nsp, (int)nsctlerrmap[cmd]);
+				(void) idp_drop(nsp, (int)nsctlerrmap[cmd]);
 		}
 	}
 }
 
+#ifdef notdef
 int
 spp_fixmtu(nsp)
 register struct nspcb *nsp;
@@ -452,6 +455,7 @@ register struct nspcb *nsp;
 		} */
 	}
 }
+#endif
 
 int spp_output_cnt = 0;
 
@@ -464,7 +468,7 @@ spp_output(cb, m0)
 	register struct spidp *si = (struct spidp *) 0;
 	register struct sockbuf *sb = &(so->so_snd);
 	register int len = 0;
-	int flags, debit, mtu = cb->s_mtu;
+	int mtu = cb->s_mtu;
 	int error = 0; u_short lookfor = 0;
 	struct mbuf *mprev;
 	extern int idpcksum;
@@ -552,20 +556,19 @@ spp_output(cb, m0)
 				len = (1 + sizeof(*si));
 			}
 		}
-		si->si_len = htons(len);
+		si->si_len = htons((u_short)len);
 		/*
 		 * queue stuff up for output
 		 */
 		sbappendrecord(sb,m);
 		cb->s_seq++;
 	}
-output:
 	/*
 	 * update window
 	 */
 	{
-		register struct sockbuf *sb = &so->so_rcv;
-		int credit = ((sb->sb_mbmax - sb->sb_mbcnt) / cb->s_mtu);
+		register struct sockbuf *sb2 = &so->so_rcv;
+		int credit = ((sb2->sb_mbmax - sb2->sb_mbcnt) / cb->s_mtu);
 		int alo = cb->s_ack + credit;
 
 		if (cb->s_alo < alo) cb->s_alo = alo;
@@ -622,7 +625,7 @@ output:
 		 * idp_output to monkey with
 		 */
 		 m = dtom(si);
-		 m = m_copy(m, 0, M_COPYALL);
+		 m = m_copy(m, 0, (int)M_COPYALL);
 		 if (m==NULL)
 			return (ENOBUFS);
 		 m0 = m;
@@ -777,7 +780,7 @@ spp_ctloutput(req, so, level, name, value)
 
 	case PRCO_SETOPT:
 		switch (name) {
-			int mask, *ok;
+			int *ok;
 
 		case SO_HEADERS_ON_INPUT:
 			mask = SF_HI;
@@ -972,7 +975,7 @@ spp_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_ABORT:
-		spp_drop(cb, ECONNABORTED);
+		(void) spp_drop(cb, ECONNABORTED);
 		break;
 
 	case PRU_SENSE:
@@ -1025,7 +1028,7 @@ spp_usrreq(so, req, m, nam, rights)
 		panic("sp_usrreq");
 	}
 	if (cb && (so->so_options & SO_DEBUG || traceallspps))
-		spp_trace(SA_USER, ostate, cb, (struct sphdr *)0, req);
+		spp_trace(SA_USER, (u_char)ostate, cb, (struct spidp *)0, req);
 release:
 	if (m != NULL)
 		m_freem(m);
@@ -1142,7 +1145,7 @@ spp_abort(nsp)
 	struct nspcb *nsp;
 {
 
-	spp_close((struct sppcb *)nsp->nsp_pcb);
+	(void) spp_close((struct sppcb *)nsp->nsp_pcb);
 }
 
 spp_setpersist(cb)

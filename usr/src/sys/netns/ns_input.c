@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.7 (Berkeley) %G%
+ *	@(#)ns_input.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -93,7 +93,7 @@ next:
 	 * Give any raw listeners a crack at the packet
 	 */
 	for (nsp = nsrawpcb.nsp_next; nsp != &nsrawpcb; nsp = nsp->nsp_next) {
-		struct mbuf *m1 = m_copy(m, 0, M_COPYALL);
+		struct mbuf *m1 = m_copy(m, 0, (int)M_COPYALL);
 		if (m1) idp_input(m1, nsp);
 	}
 
@@ -224,6 +224,7 @@ idp_ctlinput(cmd, arg)
 	struct nspcb *nsp;
 	struct ns_errp *errp;
 	int idp_abort();
+	extern struct nspcb *idp_drop();
 	int type;
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
@@ -239,19 +240,19 @@ idp_ctlinput(cmd, arg)
 		errp = (struct ns_errp *)arg;
 		ns = &errp->ns_err_idp.idp_dna;
 		type = errp->ns_err_num;
-		type = ntohs(type);
+		type = ntohs((u_short)type);
 	}
 	switch (type) {
 
 	case NS_ERR_UNREACH_HOST:
-		ns_pcbnotify(ns, (int)nsctlerrmap[cmd], idp_abort, 0);
+		ns_pcbnotify(ns, (int)nsctlerrmap[cmd], idp_abort, (long)0);
 		break;
 
 	case NS_ERR_NOSOCK:
 		nsp = ns_pcblookup(ns, errp->ns_err_idp.idp_sna.x_port,
 			NS_WILDCARD);
 		if(nsp && idp_donosocks && ! ns_nullhost(nsp->nsp_faddr))
-			idp_drop(nsp, (int)nsctlerrmap[cmd]);
+			(void) idp_drop(nsp, (int)nsctlerrmap[cmd]);
 	}
 }
 
@@ -418,7 +419,7 @@ struct mbuf *m;
 	 * Give any raw listeners a crack at the packet
 	 */
 	for (nsp = nsrawpcb.nsp_next; nsp != &nsrawpcb; nsp = nsp->nsp_next) {
-		struct mbuf *m1 = m_copy(m, 0, M_COPYALL);
+		struct mbuf *m1 = m_copy(m, 0, (int)M_COPYALL);
 		if (m1) idp_input(m1, nsp);
 	}
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *      @(#)idp_usrreq.c	6.6 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -194,7 +194,7 @@ idp_output(nsp, m0)
 	}
 	return (ns_output(m, ro, so->so_options & SO_BROADCAST));
 }
-/*ARGSUSED*/
+/* ARGSUSED */
 idp_ctloutput(req, so, level, name, value)
 	int req, level;
 	struct socket *so;
@@ -259,7 +259,7 @@ idp_ctloutput(req, so, level, name, value)
 
 	case PRCO_SETOPT:
 		switch (name) {
-			int mask, *ok;
+			int *ok;
 
 		case SO_ALL_PACKETS:
 			mask = NSP_ALL_PACKETS;

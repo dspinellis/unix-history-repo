@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_pcb.c	6.3 (Berkeley) %G%
+ *	@(#)ns_pcb.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,7 @@ struct	ns_addr zerons_addr;
 
 ns_pcballoc(so, head)
 	struct socket *so;
-	struct nsp *head;
+	struct nspcb *head;
 {
 	struct mbuf *m;
 	register struct nspcb *nsp;
@@ -152,7 +152,7 @@ ns_pcbconnect(nsp, nam)
 		return (EADDRINUSE);
 	if (ns_nullhost(nsp->nsp_laddr)) {
 		if (nsp->nsp_lport == 0)
-			ns_pcbbind(nsp, (struct mbuf *)0);
+			(void) ns_pcbbind(nsp, (struct mbuf *)0);
 		nsp->nsp_laddr.x_host = ns_thishost;
 	}
 	nsp->nsp_faddr = sns->sns_addr;

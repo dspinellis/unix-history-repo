@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_output.c	6.4 (Berkeley) %G%
+ *	@(#)ns_output.c	6.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,8 +35,7 @@ ns_output(m0, ro, flags)
 {
 	register struct idp *idp = mtod(m0, struct idp *);
 	register struct ifnet *ifp;
-	register struct mbuf *m;
-	int len, rlen, off, error = 0;
+	int error = 0;
 	struct route idproute;
 	struct sockaddr_ns *dst;
 	extern int idpcksum;
@@ -45,7 +44,7 @@ ns_output(m0, ro, flags)
 		if (ns_lastout) {
 			m_free(ns_lastout);
 		}
-		ns_lastout = m_copy(m0, 0, M_COPYALL);
+		ns_lastout = m_copy(m0, 0, (int)M_COPYALL);
 	}
 	if (ns_copy_output) {
 		ns_watch_output(m0);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.c	6.3 (Berkeley) %G%
+ *	@(#)ns.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -51,6 +51,7 @@ ns_netmatch(sns1, sns2)
 /*
  * Generic internet control operations (ioctl's).
  */
+/* ARGSUSED */
 ns_control(so, cmd, data, ifp)
 	struct socket *so;
 	int cmd;
@@ -61,7 +62,6 @@ ns_control(so, cmd, data, ifp)
 	register struct ns_ifaddr *ia;
 	struct ifaddr *ifa;
 	struct mbuf *m;
-	int error;
 
 	/*
 	 * Find address for this interface, if it exists.
