@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)order.c	1.3 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.4 (Berkeley) %G%";
 # include "mfile2"
 
 int maxargs = { -1 };
@@ -327,8 +327,8 @@ setbin( p ) register NODE *p; {
 		offstar( p->in.right->in.left );
 		return(1);
 		}
-	else if( rt == CHAR || rt == UCHAR || rt == SHORT || rt == USHORT || (ro != REG &&
-			ro != NAME && ro != OREG && ro != ICON ) ){
+	else if( rt == CHAR || rt == UCHAR || rt == SHORT || rt == USHORT ||
+	    rt == FLOAT || (ro != REG && ro != NAME && ro != OREG && ro != ICON ) ){
 		order( p->in.right, INAREG|INBREG );
 		return(1);
 		}
@@ -394,8 +394,8 @@ setasop( p ) register NODE *p; {
 		offstar( p->in.right->in.left );
 		return(1);
 		}
-	if( ( rt == CHAR || rt == SHORT || rt == UCHAR || rt == USHORT ||
-			( ro != REG && ro != ICON && ro != NAME && ro != OREG ) ) ){
+	if( rt == CHAR || rt == SHORT || rt == UCHAR || rt == USHORT ||
+	    rt == FLOAT || ( ro != REG && ro != ICON && ro != NAME && ro != OREG ) ){
 		order( p->in.right, INAREG|INBREG );
 		return(1);
 		}
