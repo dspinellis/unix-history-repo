@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	7.7	%G%";
+static char *sccsid = "@(#)ex_io.c	7.8	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -641,13 +641,14 @@ getfile()
 				return (EOF);
 			}
 #ifdef CRYPT
-			fp = genbuf;
-			while(fp < &genbuf[ninbuf]) {
-				if (*fp++ & 0200) {
-					if (kflag)
+			if (kflag) {
+				fp = genbuf;
+				while(fp < &genbuf[ninbuf]) {
+					if (*fp++ & 0200) {
 						crblock(perm, genbuf, ninbuf+1,
-cntch);
-					break;
+	cntch);
+						break;
+					}
 				}
 			}
 #endif
