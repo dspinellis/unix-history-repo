@@ -3,11 +3,11 @@
 
 SUBDIR=	ar at basename bdes biff cal calendar checknr chat chpass cksum cmp \
 	col colcrt colrm column comm compress crontab ctags cut dirname \
-	du elvis elvisrecover env error expand false file find finger fmt fold \
-	fpr from fsplit fstat ftp getopt gprof groups head hexdump id indent \
-	ipcrm ipcs join ktrace last lastcomm leave lex locate lock logger \
-	login logname look lorder m4 machine mail make mesg mkdep mkfifo \
-	mkstr more msgs mt netstat nfsstat nice nm nohup pagesize \
+	du elvis elvisrecover env error expand f2c false file find finger fmt \
+	fold fpr from fsplit fstat ftp getopt gprof groups head hexdump \
+	id indent ipcrm ipcs join ktrace last lastcomm leave lex locate lock \
+	logger login logname look lorder m4 machine mail make mesg mkdep \
+	mkfifo 	mkstr more msgs mt netstat nfsstat nice nm nohup pagesize \
 	passwd paste printenv printf quota ranlib rdist ref renice rev rlogin \
 	rpcgen rpcinfo rsh rup ruptime rusers rwall rwho script sed shar \
 	showmount size soelim split strings strip su symorder syscons tail \
