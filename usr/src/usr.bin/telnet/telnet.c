@@ -1,23 +1,25 @@
-static char sccsid[] = "@(#)telnet.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.12 (Berkeley) %G%";
 /*
  * User telnet program.
  */
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
 #include <sgtty.h>
 #include <setjmp.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <net/in.h>
 #include <netdb.h>
+
 #define	TELOPTS
 #include "telnet.h"
 
 #define	ctrl(x)		((x) & 037)
 #define	strip(x)	((x)&0177)
-#define	INFINITY	10000000
 
 char	ttyobuf[BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
 char	netobuf[BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
@@ -144,9 +146,11 @@ tn(argc, argv)
 	}
 	host = gethostbyname(argv[1]);
 	if (host) {
-		bcopy(host->h_addr, &sin.sin_addr, host->h_length);
+		sin.sin_family = host->h_addrtype;
+		bcopy(host->h_addr, (caddr_t)&sin.sin_addr, host->h_length);
 		hostname = host->h_name;
 	} else {
+		sin.sin_family = AF_INET;
 		sin.sin_addr.s_addr = inet_addr(argv[1]);
 		if (sin.sin_addr.s_addr == -1) {
 			printf("%s: unknown host\n", argv[1]);
@@ -164,15 +168,16 @@ tn(argc, argv)
 		}
 	}
 	sin.sin_port = htons(sin.sin_port);
-	if ((net = socket(SOCK_STREAM, 0, 0, options)) < 0) {
-		perror("socket");
+	net = socket(0, SOCK_STREAM, 0, 0);
+	if (net < 0) {
+		perror("telnet: socket");
 		return;
 	}
 	sigset(SIGINT, intr);
 	sigset(SIGPIPE, deadpeer);
 	printf("Trying...\n");
-	if (connect(net, &sin)) {
-		perror("connect");
+	if (connect(net, (caddr_t)&sin, sizeof (sin), 0) < 0) {
+		perror("telnet: connect");
 		sigset(SIGINT, SIG_DFL);
 		return;
 	}
@@ -241,7 +246,9 @@ bye()
 
 	(void) mode(0);
 	if (connected) {
+#ifndef notdef
 		ioctl(net, SIOCDONE, &how);
+#endif
 		printf("Connection closed.\n");
 		close(net);
 		connected = 0;
@@ -332,6 +339,7 @@ mode(f)
 		else
 			stbuf.sg_flags |= ECHO;
 		tchars.t_intrc = tchars.t_quitc = -1;
+		tchars.t_stopc = tchars.t_startc = -1;
 		disc = OTTYDISC;
 		onoff = 1;
 	}
@@ -372,7 +380,7 @@ telnet(s)
 			ibits |= (1 << s);
 		if (scc < 0 && tcc < 0)
 			break;
-		select(32, &ibits, &obits, INFINITY);
+		select(16, &ibits, &obits, 0, 0);
 		if (ibits == 0 && obits == 0) {
 			sleep(5);
 			continue;

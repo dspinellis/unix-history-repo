@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.5 82/10/07";
+static char sccsid[] = "@(#)ruptime.c	4.6 82/11/14";
 #endif
 
 #include <sys/param.h>
@@ -118,7 +118,7 @@ again:
 		printf("%-8.8s%s,  %4d user%s  load %*.2f, %*.2f, %*.2f\n",
 		    hsp->hs_wd->wd_hostname,
 		    interval(hsp->hs_wd->wd_sendtime -
-			hsp->hs_wd->wd_bootime, "  up"),
+			hsp->hs_wd->wd_boottime, "  up"),
 		    hsp->hs_nusers,
 		    hsp->hs_nusers == 1 ? ", " : "s,",
 		    maxloadav >= 1000 ? 5 : 4,
@@ -209,9 +209,9 @@ tcmp(h1, h2)
 
 	return (
 		(down(h2) ? h2->hs_wd->wd_recvtime - now
-			  : h2->hs_wd->wd_sendtime - h2->hs_wd->wd_bootime)
+			  : h2->hs_wd->wd_sendtime - h2->hs_wd->wd_boottime)
 		-
 		(down(h1) ? h1->hs_wd->wd_recvtime - now
-			  : h1->hs_wd->wd_sendtime - h1->hs_wd->wd_bootime)
+			  : h1->hs_wd->wd_sendtime - h1->hs_wd->wd_boottime)
 	);
 }

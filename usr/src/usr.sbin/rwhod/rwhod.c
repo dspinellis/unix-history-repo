@@ -1,20 +1,23 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.4 82/10/10";
+static char sccsid[] = "@(#)rwhod.c	4.5 82/11/14";
 #endif
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+
+#include <netinet/in.h>
+
+#include <nlist.h>
 #include <stdio.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <net/in.h>
-#include <sys/socket.h>
 #include <errno.h>
 #include <utmp.h>
-#include "rwhod.h"
-#include <sys/stat.h>
-#include <nlist.h>
-#include <sys/ioctl.h>
 #include <ctype.h>
 #include <netdb.h>
+
+#include "rwhod.h"
 
 struct	sockaddr_in sin = { AF_INET };
 
@@ -26,8 +29,8 @@ char	*myname = "myname";
 struct	nlist nl[] = {
 #define	NL_AVENRUN	0
 	{ "_avenrun" },
-#define	NL_BOOTIME	1
-	{ "_bootime" },
+#define	NL_BOOTTIME	1
+	{ "_boottime" },
 	0
 };
 
@@ -51,10 +54,7 @@ main()
 		fprintf(stderr, "rwhod: udp/who: unknown service\n");
 		exit(1);
 	}
-#if vax || pdp11
 	sp->s_port = htons(sp->s_port);
-#endif
-	sin.sin_port = sp->s_port;
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -97,23 +97,26 @@ main()
 		perror("rwhod: /etc/utmp");
 		exit(1);
 	}
+	sin.sin_port = sp->s_port;
 	getkmem();
-again:
-	if ((s = socket(SOCK_DGRAM, 0, &sin, 0)) < 0) {
+	if ((s = socket(0, SOCK_DGRAM, 0, 0)) < 0) {
 		perror("rwhod: socket");
-		sleep(5);
-		goto again;
+		exit(1);
+	}
+	if (bind(s, &sin, sizeof (sin), 0) < 0) {
+		perror("rwhod: bind");
+		exit(1);
 	}
 	sigset(SIGALRM, onalrm);
 	onalrm();
 	for (;;) {
 		struct whod wd;
-		int cc, whod;
+		int cc, whod, len=sizeof (from);
 
-		cc = receive(s, &from, (char *)&wd, sizeof (struct whod));
+		cc = recvfrom(s, (char *)&wd, sizeof (struct whod), 0, &from, &len);
 		if (cc <= 0) {
 			if (cc < 0 && errno != EINTR)
-				perror("rwhod: receive");
+				perror("rwhod: recv");
 			continue;
 		}
 		if (from.sin_port != sp->s_port) {
@@ -212,7 +215,7 @@ onalrm()
 		mywd.wd_loadav[i] = avenrun[i] * 100;
 	cc = (char *)we - (char *)&mywd;
 	(void) time(&mywd.wd_sendtime);
-	send(s, &sin, (char *)&mywd, cc);
+	(void) sendto(s, (char *)&mywd, cc, 0, &sin, sizeof (sin));
 	(void) alarm(60);
 }
 
@@ -240,6 +243,6 @@ loop:
 		sleep(300);
 		goto loop;
 	}
-	(void) lseek(kmemf, (long)nl[NL_BOOTIME].n_value, 0);
-	(void) read(kmemf, (char *)&mywd.wd_bootime, sizeof (mywd.wd_bootime));
+	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, 0);
+	(void) read(kmemf, (char *)&mywd.wd_boottime, sizeof (mywd.wd_boottime));
 }
