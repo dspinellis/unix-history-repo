@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)aux.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)aux.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -524,7 +524,7 @@ nameof(mp, reptype)
 }
 
 /*
- * Skin an arpa net address according to the RFC 733 interpretation
+ * Skin an arpa net address according to the RFC 822 interpretation
  * of "host-phrase."
  */
 char *
@@ -533,6 +533,7 @@ skin(name)
 {
 	register int c;
 	register char *cp, *cp2;
+	char *bufend;
 	int gotlt, lastsp;
 	char nbuf[BUFSIZ];
 	int nesting;
@@ -544,12 +545,23 @@ skin(name)
 		return(name);
 	gotlt = 0;
 	lastsp = 0;
-	for (cp = name, cp2 = nbuf; c = *cp++; ) {
+	bufend = nbuf;
+	for (cp = name, cp2 = bufend; c = *cp++; ) {
 		switch (c) {
 		case '(':
+			/*
+			 * Start of a "comment".
+			 * Ignore it.
+			 */
 			nesting = 1;
-			while (*cp != '\0') {
-				switch (*cp++) {
+			while ((c = *cp) != 0) {
+				cp++;
+				switch (c) {
+				case '\\':
+					if (*cp == 0)
+						goto outcm;
+					cp++;
+					break;
 				case '(':
 					nesting++;
 					break;
@@ -562,6 +574,29 @@ skin(name)
 				if (nesting <= 0)
 					break;
 			}
+		outcm:
+			lastsp = 0;
+			break;
+
+		case '"':
+			/*
+			 * Start of a "quoted-string".
+			 * Copy it in its entirety.
+			 */
+			while ((c = *cp) != 0) {
+				cp++;
+				switch (c) {
+				case '\\':
+					if ((c = *cp) == 0)
+						goto outqs;
+					cp++;
+					break;
+				case '"':
+					goto outqs;
+				}
+				*cp2++ = c;
+			}
+		outqs:
 			lastsp = 0;
 			break;
 
@@ -576,14 +611,23 @@ skin(name)
 			break;
 
 		case '<':
-			cp2 = nbuf;
+			cp2 = bufend;
 			gotlt++;
 			lastsp = 0;
 			break;
 
 		case '>':
-			if (gotlt)
-				goto done;
+			if (gotlt) {
+				gotlt = 0;
+				while (*cp != ',' && *cp != 0)
+					cp++;
+				if (*cp == 0 )
+					goto done;
+				*cp2++ = ',';
+				*cp2++ = ' ';
+				bufend = cp2;
+				break;
+			}
 
 			/* Fall into . . . */
 
