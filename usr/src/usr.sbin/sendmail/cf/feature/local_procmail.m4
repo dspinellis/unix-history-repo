@@ -8,7 +8,7 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)local_procmail.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)local_procmail.m4	8.2 (Berkeley) %G%')
 divert(-1)
 
 define(`PROCMAIL_PATH',
@@ -16,4 +16,3 @@ define(`PROCMAIL_PATH',
 define(`LOCAL_MAILER_FLAGS', `SPfhn')
 define(`LOCAL_MAILER_PATH', PROCMAIL_PATH)
 define(`LOCAL_MAILER_ARGS', `procmail -a $h -d $u')
-define(`confOPERATORS', confOPERATORS`+')
