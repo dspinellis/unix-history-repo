@@ -1,4 +1,4 @@
-/*	necf.c	1.2	81/05/28	*/
+/*	necf.c	1.3	81/06/01	*/
 #include <stdio.h>
 #include <sgtty.h>
 #include <signal.h>
@@ -25,19 +25,27 @@ main()
 	if (ioctl(1, TIOCSETP, (char *)&tty) < 0)
 		exit (2);
 	setbuf(stdout, _sobuf);
+#ifdef SHEETFEEDER
 	printf("\033=\033\033\033O\f");
+#else
+	printf("\033=");
+#endif
 	lnumber = 0;
 	while (fgets(line, sizeof(line), stdin) != NULL) {
+#ifdef SHEETFEEDER
 		if (lnumber == PAGESIZE-1) {
 			putchar('\f');
 			lnumber = 0;
 		}
 		if (lnumber >= 2) {
+#endif
 			if ((cp = rindex(line, '\n')) != NULL)
 				*cp = '\r';
 			printf("%s", line);
+#ifdef SHEETFEEDER
 		}
 		lnumber++;
+#endif
 	}
 	fflush (stdout);
 }
