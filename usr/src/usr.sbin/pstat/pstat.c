@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pstat.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.3 (Berkeley) %G%";
 /*
  * Print system stuff
  */
@@ -322,7 +322,7 @@ dotty()
 	mesg = " # RAW CAN OUT   MODE    ADDR   DEL COL  STATE   PGRP DISC\n";
 	printf(mesg);
 	ttyprt(&dz_tty[0], 0);
-	if (nl[SNDZ].n_type == -1)
+	if (nl[SNDZ].n_type == 0)
 		goto dh;
 	lseek(fc, (long)nl[SNDZ].n_value, 0);
 	read(fc, &ndz, sizeof(ndz));
@@ -332,7 +332,7 @@ dotty()
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 dh:
-	if (nl[SNDH].n_type == -1)
+	if (nl[SNDH].n_type == 0)
 		return;
 	lseek(fc, (long)nl[SNDH].n_value, 0);
 	read(fc, &ndz, sizeof(ndz));
