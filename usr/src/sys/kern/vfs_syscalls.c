@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.14 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1863,7 +1863,7 @@ ogetdirentries(p, uap, retval)
 	struct iovec aiov, kiov;
 	struct dirent *dp, *edp;
 	caddr_t dirbuf;
-	int error, readcnt;
+	int error, eofflag, readcnt;
 	long loff;
 
 	if (error = getvnode(p->p_fd, uap->fd, &fp))
@@ -1871,6 +1871,7 @@ ogetdirentries(p, uap, retval)
 	if ((fp->f_flag & FREAD) == 0)
 		return (EBADF);
 	vp = (struct vnode *)fp->f_data;
+unionread:
 	if (vp->v_type != VDIR)
 		return (EINVAL);
 	aiov.iov_base = uap->buf;
@@ -1885,7 +1886,8 @@ ogetdirentries(p, uap, retval)
 	loff = auio.uio_offset = fp->f_offset;
 #	if (BYTE_ORDER != LITTLE_ENDIAN)
 		if (vp->v_mount->mnt_maxsymlinklen <= 0) {
-			error = VOP_READDIR(vp, &auio, fp->f_cred);
+			error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag,
+			    (u_long *)0, 0);
 			fp->f_offset = auio.uio_offset;
 		} else
 #	endif
@@ -1896,7 +1898,8 @@ ogetdirentries(p, uap, retval)
 		kiov.iov_len = uap->count;
 		MALLOC(dirbuf, caddr_t, uap->count, M_TEMP, M_WAITOK);
 		kiov.iov_base = dirbuf;
-		error = VOP_READDIR(vp, &kuio, fp->f_cred);
+		error = VOP_READDIR(vp, &kuio, fp->f_cred, &eofflag,
+			    (u_long *)0, 0);
 		fp->f_offset = kuio.uio_offset;
 		if (error == 0) {
 			readcnt = uap->count - kuio.uio_resid;
@@ -1935,11 +1938,54 @@ ogetdirentries(p, uap, retval)
 	VOP_UNLOCK(vp);
 	if (error)
 		return (error);
+
+#ifdef UNION
+{
+	extern int (**union_vnodeop_p)();
+	extern struct vnode *union_lowervp __P((struct vnode *));
+
+	if ((uap->count == auio.uio_resid) &&
+	    (vp->v_op == union_vnodeop_p)) {
+		struct vnode *lvp;
+
+		lvp = union_lowervp(vp);
+		if (lvp != NULLVP) {
+			VOP_LOCK(lvp);
+			error = VOP_OPEN(lvp, FREAD, fp->f_cred, p);
+			VOP_UNLOCK(lvp);
+
+			if (error) {
+				vrele(lvp);
+				return (error);
+			}
+			fp->f_data = (caddr_t) lvp;
+			fp->f_offset = 0;
+			error = vn_close(vp, FREAD, fp->f_cred, p);
+			if (error)
+				return (error);
+			vp = lvp;
+			goto unionread;
+		}
+	}
+}
+#endif /* UNION */
+
+	if ((uap->count == auio.uio_resid) &&
+	    (vp->v_flag & VROOT) &&
+	    (vp->v_mount->mnt_flag & MNT_UNION)) {
+		struct vnode *tvp = vp;
+		vp = vp->v_mount->mnt_vnodecovered;
+		VREF(vp);
+		fp->f_data = (caddr_t) vp;
+		fp->f_offset = 0;
+		vrele(tvp);
+		goto unionread;
+	}
 	error = copyout((caddr_t)&loff, (caddr_t)uap->basep, sizeof(long));
 	*retval = uap->count - auio.uio_resid;
 	return (error);
 }
-#endif
+#endif /* COMPAT_43 */
 
 /*
  * Read a block of directory entries in a file system independent format.
@@ -1960,7 +2006,7 @@ getdirentries(p, uap, retval)
 	struct uio auio;
 	struct iovec aiov;
 	long loff;
-	int error;
+	int error, eofflag;
 
 	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		return (error);
@@ -1980,7 +2026,7 @@ unionread:
 	auio.uio_resid = uap->count;
 	VOP_LOCK(vp);
 	loff = auio.uio_offset = fp->f_offset;
-	error = VOP_READDIR(vp, &auio, fp->f_cred);
+	error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag, (u_long *)0, 0);
 	fp->f_offset = auio.uio_offset;
 	VOP_UNLOCK(vp);
 	if (error)
@@ -1998,7 +2044,7 @@ unionread:
 		lvp = union_lowervp(vp);
 		if (lvp != NULLVP) {
 			VOP_LOCK(lvp);
-			error = VOP_OPEN(lvp, FREAD);
+			error = VOP_OPEN(lvp, FREAD, fp->f_cred, p);
 			VOP_UNLOCK(lvp);
 
 			if (error) {
