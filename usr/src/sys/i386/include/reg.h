@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)reg.h	5.1 (Berkeley) %G%
+ *	@(#)reg.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -52,6 +52,10 @@
 #define	sESP	(11)
 #define	sSS	(12)
 
+#define	SP	sESP
+#define	PS	sEFLAGS
+#define	R0	sEDX
+#define	R1	sECX
 /*
  * Registers accessible to ptrace(2) syscall for debugger
  */

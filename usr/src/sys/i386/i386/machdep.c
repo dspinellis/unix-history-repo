@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)machdep.c	5.4 (Berkeley) %G%
+ *	@(#)machdep.c	5.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,6 +15,7 @@
 #include "dir.h"
 #include "user.h"
 #include "kernel.h"
+#include "malloc.h"
 #include "map.h"
 #include "vm.h"
 #include "proc.h"
@@ -107,7 +108,6 @@ rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8)
 );
 	maxmem = Maxmem-1;
 
-#ifdef notdef
 	if(biosmem != 640)
 		panic("does not have 640K of base memory");
 
@@ -119,7 +119,6 @@ rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8)
 #ifdef SMALL
 if(forcemaxmem && maxmem > forcemaxmem)
 	maxmem = forcemaxmem-1;
-#endif
 #endif
 /*
 maxmem = 0xA00;*/
@@ -199,6 +198,9 @@ up to 640K.
 	valloc(useriomap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
 	valloc(namecache, struct namecache, nchsize);
+
+	valloc(kmemmap, struct map, ekmempt - kmempt);
+	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
 #ifdef QUOTA
 	valloclim(quota, struct quota, nquota, quotaNQUOTA);
 	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
@@ -342,6 +344,7 @@ up to 640K.
 	rminit(useriomap, (long)USRIOSIZE, (long)1, "usrio", nproc);
 	rminit(mbmap, (long)(nmbclusters * CLSIZE), (long)CLSIZE,
 	    "mbclusters", nmbclusters/4);
+	kmeminit();	/* now safe to do malloc/free */
 	/*intenable = 1;		/* Enable interrupts from now on */
 
 	/*
