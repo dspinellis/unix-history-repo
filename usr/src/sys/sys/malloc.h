@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)malloc.h	7.10 (Berkeley) %G%
+ *	@(#)malloc.h	7.11 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -49,7 +49,9 @@
 #define	M_SESSION	18	/* session header */
 #define M_IOV		19	/* large iov's */
 #define M_MOUNT		20	/* vfs mount struct */
-#define M_VNODE		21	/* vnode structure */
+#define M_FHANDLE	21	/* network file handle */
+#define	M_NFSREQ	22	/* NFS request header */
+#define	M_NFSMNT	23	/* NFS mount structure */
 #define M_TEMP		49	/* misc temporary data buffers */
 #define M_LAST		50
 
