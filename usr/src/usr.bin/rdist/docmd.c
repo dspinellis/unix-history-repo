@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)docmd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)docmd.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -318,7 +318,7 @@ dodcolon(filev, files, stamp, cmds)
 		return;
 	}
 	if (stat(stamp, &stb) < 0) {
-		error("%s: %s\n", stamp, sys_errlist[errno]);
+		error("%s: %s\n", stamp, strerror(errno));
 		return;
 	}
 	if (debug)
@@ -330,7 +330,7 @@ dodcolon(filev, files, stamp, cmds)
 		tfp = NULL;
 	else {
 		if ((tfp = fopen(tmpfile, "w")) == NULL) {
-			error("%s: %s\n", stamp, sys_errlist[errno]);
+			error("%s: %s\n", stamp, strerror(errno));
 			return;
 		}
 		(void) gettimeofday(&tv[0], &tz);
@@ -389,7 +389,7 @@ cmptime(name)
 			tp++;
 	}
 	if (access(name, 4) < 0 || stat(name, &stb) < 0) {
-		error("%s: %s\n", name, sys_errlist[errno]);
+		error("%s: %s\n", name, strerror(errno));
 		return;
 	}
 
@@ -423,7 +423,7 @@ rcmptime(st)
 		printf("rcmptime(%x)\n", st);
 
 	if ((d = opendir(target)) == NULL) {
-		error("%s: %s\n", target, sys_errlist[errno]);
+		error("%s: %s\n", target, strerror(errno));
 		return;
 	}
 	otp = tp;
@@ -474,11 +474,11 @@ notify(file, rhost, to, lmod)
 		return;
 
 	if ((fd = open(file, 0)) < 0) {
-		error("%s: %s\n", file, sys_errlist[errno]);
+		error("%s: %s\n", file, strerror(errno));
 		return;
 	}
 	if (fstat(fd, &stb) < 0) {
-		error("%s: %s\n", file, sys_errlist[errno]);
+		error("%s: %s\n", file, strerror(errno));
 		(void) close(fd);
 		return;
 	}

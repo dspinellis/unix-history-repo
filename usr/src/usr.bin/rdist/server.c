@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -283,7 +283,7 @@ sendf(rname, opts)
 	if (except(target))
 		return;
 	if ((opts & FOLLOW ? stat(target, &stb) : lstat(target, &stb)) < 0) {
-		error("%s: %s\n", target, sys_errlist[errno]);
+		error("%s: %s\n", target, strerror(errno));
 		return;
 	}
 	if ((u = update(rname, opts, &stb)) == 0) {
@@ -318,7 +318,7 @@ sendf(rname, opts)
 	switch (stb.st_mode & S_IFMT) {
 	case S_IFDIR:
 		if ((d = opendir(target)) == NULL) {
-			error("%s: %s\n", target, sys_errlist[errno]);
+			error("%s: %s\n", target, strerror(errno));
 			return;
 		}
 		(void) sprintf(buf, "D%o %04o 0 0 %s %s %s\n", opts,
@@ -431,7 +431,7 @@ sendf(rname, opts)
 	}
 
 	if ((f = open(target, 0)) < 0) {
-		error("%s: %s\n", target, sys_errlist[errno]);
+		error("%s: %s\n", target, strerror(errno));
 		return;
 	}
 	(void) sprintf(buf, "R%o %o %ld %ld %s %s %s\n", opts,
@@ -627,7 +627,7 @@ query(name)
 		if (errno == ENOENT)
 			(void) write(rem, "N\n", 2);
 		else
-			error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+			error("%s:%s: %s\n", host, target, strerror(errno));
 		*tp = '\0';
 		return;
 	}
@@ -747,7 +747,7 @@ recvf(cmd, type)
 				ack();
 			return;
 		}
-		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, target, strerror(errno));
 		tp = stp[--catname];
 		*tp = '\0';
 		return;
@@ -842,7 +842,7 @@ recvf(cmd, type)
 		return;
 	}
 	if (wrerr) {
-		error("%s:%s: %s\n", host, new, sys_errlist[olderrno]);
+		error("%s:%s: %s\n", host, new, strerror(errno));
 		(void) unlink(new);
 		return;
 	}
@@ -854,7 +854,7 @@ recvf(cmd, type)
 			goto badt;
 		if ((f2 = fopen(new, "r")) == NULL) {
 		badn:
-			error("%s:%s: %s\n", host, new, sys_errlist[errno]);
+			error("%s:%s: %s\n", host, new, strerror(errno));
 			(void) unlink(new);
 			return;
 		}
@@ -886,7 +886,7 @@ recvf(cmd, type)
 	tvp[1].tv_sec = mtime;
 	tvp[1].tv_usec = 0;
 	if (utimes(new, tvp) < 0) {
-		note("%s:utimes failed %s: %s\n", host, new, sys_errlist[errno]);
+		note("%s:utimes failed %s: %s\n", host, new, strerror(errno));
 	}
 	if (chog(new, owner, group, mode) < 0) {
 		(void) unlink(new);
@@ -895,7 +895,7 @@ recvf(cmd, type)
 fixup:
 	if (rename(new, target) < 0) {
 badt:
-		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, target, strerror(errno));
 		(void) unlink(new);
 		return;
 	}
@@ -948,12 +948,12 @@ hardlink(cmd)
 	}
 	if (chkparent(target) < 0 ) {
 		error("%s:%s: %s (no parent)\n",
-			host, target, sys_errlist[errno]);
+			host, target, strerror(errno));
 		return;
 	}
 	if (exists && (unlink(target) < 0)) {
 		error("%s:%s: %s (unlink)\n",
-			host, target, sys_errlist[errno]);
+			host, target, strerror(errno));
 		return;
 	}
 	if (link(oldname, target) < 0) {
@@ -1050,7 +1050,7 @@ ok:
 	if (chown(file, uid, gid) < 0 ||
 	    (mode & 07000) && chmod(file, mode) < 0) {
 		note("%s: chown or chmod failed: file %s:  %s",
-			     host, file, sys_errlist[errno]);
+			     host, file, strerror(errno));
 	}
 	if (userid)
 		setreuid(0, userid);
@@ -1159,7 +1159,7 @@ clean(cp)
 		return;
 	}
 	if ((d = opendir(target)) == NULL) {
-		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, target, strerror(errno));
 		return;
 	}
 	ack();
@@ -1181,7 +1181,7 @@ clean(cp)
 			;
 		tp--;
 		if (lstat(target, &stb) < 0) {
-			error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+			error("%s:%s: %s\n", host, target, strerror(errno));
 			continue;
 		}
 		(void) sprintf(buf, "Q%s\n", dp->d_name);
@@ -1259,7 +1259,7 @@ remove(stp)
 			;
 		tp--;
 		if (lstat(target, &stb) < 0) {
-			error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+			error("%s:%s: %s\n", host, target, strerror(errno));
 			continue;
 		}
 		remove(&stb);
@@ -1269,7 +1269,7 @@ remove(stp)
 	*tp = '\0';
 	if (rmdir(target) < 0) {
 bad:
-		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+		error("%s:%s: %s\n", host, target, strerror(errno));
 		return;
 	}
 removed:
@@ -1291,7 +1291,7 @@ dospecial(cmd)
 	extern int userid, groupid;
 
 	if (pipe(fd) < 0) {
-		error("%s\n", sys_errlist[errno]);
+		error("%s\n", strerror(errno));
 		return;
 	}
 	if ((pid = fork()) == 0) {

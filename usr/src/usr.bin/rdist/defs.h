@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	5.6 (Berkeley) %G%
+ *	@(#)defs.h	5.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -130,7 +130,6 @@ extern struct group *gr;	/* pointer to static area used by getgrent */
 extern char host[];		/* host name of master copy */
 extern char buf[];		/* general purpose buffer */
 extern int errno;		/* system error number */
-extern char *sys_errlist[];
 
 char *makestr();
 struct namelist *makenl();
