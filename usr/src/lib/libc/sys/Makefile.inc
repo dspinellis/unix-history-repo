@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.24 (Berkeley) %G%
+#	@(#)Makefile.inc	5.25 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -74,16 +74,16 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 \
 	getdirentries.0 getdtablesize.0 getfh.0 getfsstat.0 getgid.0 \
 	getgroups.0 gethostid.0 gethostname.0 getitimer.0 getlogin.0 \
 	getpagesize.0 getpeername.0 getpgrp.0 getpid.0 getpriority.0 \
-	getrlimit.0 getrusage.0 getsockname.0 getsockopt.0 \
-	gettimeofday.0 getuid.0 intro.0 ioctl.0 kill.0 link.0 listen.0 \
-	lseek.0 mkdir.0 mkfifo.0 mknod.0 madvise.0 mincore.0 mmap.0 mount.0 \
-	mprotect.0 msync.0 munmap.0 nfssvc.0 open.0 pipe.0 profil.0 \
-	ptrace.0 quotactl.0 read.0 readlink.0 reboot.0 recv.0 rename.0 \
+	getrlimit.0 getrusage.0 getsockname.0 getsockopt.0 gettimeofday.0 \
+	getuid.0 intro.0 ioctl.0 kill.0 link.0 listen.0 lseek.0 mkdir.0 \
+	mkfifo.0 mknod.0 madvise.0 mincore.0 mmap.0 mount.0 mprotect.0 \
+	msync.0 munmap.0 nfssvc.0 open.0 pipe.0 profil.0 ptrace.0 \
+	quotactl.0 read.0 readlink.0 reboot.0 recv.0 rename.0 revoke.0 \
 	rmdir.0 select.0 send.0 setgroups.0 setpgid.0 setsid.0 setuid.0 \
-	shutdown.0 sigaction.0 sigprocmask.0 sigreturn.0 sigaltstack.0 \
-	sigstack.0 sigsuspend.0 socket.0 socketpair.0 stat.0 statfs.0 \
-	swapon.0 symlink.0 sync.0 syscall.0 truncate.0 umask.0 unlink.0 \
-	utimes.0 vfork.0 wait.0 write.0
+	shutdown.0 sigaction.0 sigpending.0 sigprocmask.0 sigreturn.0 \
+	sigaltstack.0 sigstack.0 sigsuspend.0 socket.0 socketpair.0  \
+	stat.0 statfs.0 swapon.0 symlink.0 sync.0 syscall.0 truncate.0 \
+	umask.0 unlink.0 utimes.0 vfork.0 wait.0 write.0
 
 MLINKS+=brk.2 sbrk.2
 MLINKS+=dup.2 dup2.2
