@@ -1,4 +1,4 @@
-/*	ftp_var.h	4.3	83/03/01	*/
+/*	ftp_var.h	4.4	83/03/23	*/
 
 /*
  * FTP global variables.
@@ -8,6 +8,8 @@
  * Options and other state info.
  */
 int	trace;			/* trace packets exchanged */
+int	hash;			/* print # for each buffer transferred */
+int	sendport;		/* use PORT cmd for each data connection */
 int	verbose;		/* print messages coming back from server */
 int	connected;		/* connected to server */
 int	fromatty;		/* input is from a terminal */
@@ -51,10 +53,12 @@ struct cmd {
 	char	*c_name;	/* name of command */
 	char	*c_help;	/* help string */
 	char	c_bell;		/* give bell when command completes */
+	char	c_conn;		/* must be connected to use command */
 	int	(*c_handler)();	/* function to call */
 };
 
 extern	char *tail();
 extern	char *index();
 extern	char *rindex();
+extern	char *remglob();
 extern	int errno;

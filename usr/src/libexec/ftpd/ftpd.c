@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.18 (Berkeley) %G%";
 #endif
 
 /*
@@ -49,6 +49,7 @@ jmp_buf	errcatch;
 int	logged_in;
 struct	passwd *pw;
 int	debug;
+int	timeout;
 int	logging = 1;
 int	guest;
 int	type;
@@ -59,6 +60,17 @@ int	usedefault = 1;		/* for data transfers */
 char	hostname[32];
 char	*remotehost;
 struct	servent *sp;
+
+/*
+ * Timeout intervals for retrying connections
+ * to hosts that don't accept PORT cmds.  This
+ * is a kludge, but given the problems with TCP...
+ */
+#define	SWAITMAX	90	/* wait at most 90 seconds */
+#define	SWAITINT	5	/* interval between retries */
+
+int	swaitmax = SWAITMAX;
+int	swaitint = SWAITINT;
 
 int	lostconn();
 int	reapchild();
@@ -85,25 +97,38 @@ main(argc, argv)
 	while (argc > 0 && *argv[0] == '-') {
 		for (cp = &argv[0][1]; *cp; cp++) switch (*cp) {
 
+		case 'v':
+			debug = 1;
+			break;
+
 		case 'd':
 			debug = 1;
 			options |= SO_DEBUG;
 			break;
 
+		case 't':
+			timeout = atoi(++cp);
+			goto nextopt;
+			break;
+
 		default:
-			fprintf(stderr, "Unknown flag -%c ignored.\n", cp);
+			fprintf(stderr, "Unknown flag -%c ignored.\n", *cp);
 			break;
 		}
+nextopt:
 		argc--, argv++;
 	}
 #ifndef DEBUG
 	if (fork())
 		exit(0);
 	for (s = 0; s < 10; s++)
+		if (!logging || (s != 2))
+			(void) close(s);
 		(void) close(s);
 	(void) open("/", 0);
 	(void) dup2(0, 1);
-	(void) dup2(0, 2);
+	if (!logging)
+		(void) dup2(0, 2);
 	{ int tt = open("/dev/tty", 2);
 	  if (tt > 0) {
 		ioctl(tt, TIOCNOTTY, 0);
@@ -256,7 +281,7 @@ retrieve(cmd, name)
 	if (cmd == 0) {
 #ifdef notdef
 		/* no remote command execution -- it's a security hole */
-		if (*name == '!')
+		if (*name == '|')
 			fin = popen(name + 1, "r"), closefunc = pclose;
 		else
 #endif
@@ -297,7 +322,7 @@ store(name, mode)
 
 #ifdef notdef
 	/* no remote command execution -- it's a security hole */
-	if (name[0] == '!')
+	if (name[0] == '|')
 		fout = popen(&name[1], "w"), closefunc = pclose;
 	else
 #endif
@@ -312,7 +337,7 @@ store(name, mode)
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
 		return;
 	}
-	din = dataconn(name, -1, "r");
+	din = dataconn(name, (off_t)-1, "r");
 	if (din == NULL)
 		goto done;
 	if (receive_data(din, fout) || ferror(fout))
@@ -353,14 +378,15 @@ bad:
 FILE *
 dataconn(name, size, mode)
 	char *name;
-	int size;
+	off_t size;
 	char *mode;
 {
 	char sizebuf[32];
 	FILE *file;
+	int retry = 0;
 
 	if (size >= 0)
-		sprintf(sizebuf, " (%d bytes)", size);
+		sprintf (sizebuf, " (%ld bytes)", size);
 	else
 		(void) strcpy(sizebuf, "");
 	if (data >= 0) {
@@ -384,7 +410,12 @@ dataconn(name, size, mode)
 	    name, ntoa(data_dest.sin_addr.s_addr),
 	    ntohs(data_dest.sin_port), sizebuf);
 	data = fileno(file);
-	if (connect(data, &data_dest, sizeof (data_dest), 0) < 0) {
+	while (connect(data, &data_dest, sizeof (data_dest), 0) < 0) {
+		if (errno == EADDRINUSE && retry < swaitmax) {
+			sleep(swaitint);
+			retry += swaitint;
+			continue;
+		}
 		reply(425, "Can't build data connection: %s.",
 		    sys_errlist[errno]);
 		(void) fclose(file);
@@ -619,7 +650,6 @@ removedir(name)
 pwd()
 {
 	char path[MAXPATHLEN + 1];
-	char *p;
 
 	if (getwd(path) == NULL) {
 		reply(451, "%s.", path);
@@ -651,41 +681,6 @@ renamecmd(from, to)
 		return;
 	}
 	ack("RNTO");
-}
-
-int guest;
-/*
- * Test pathname for guest-user safety.
- */
-inappropriate_request(name)
-	char *name;
-{
-	int bogus = 0, depth = 0, length = strlen(name);
-	char *p, *s;
-
-	if (!guest)
-		return (0);
-	if (name[0] == '/' || name[0] == '|')
-		bogus = 1;
-	for (p = name; p < name+length;) {
-		s = p;				/* start of token */
-		while ( *p && *p!= '/')
-			p++;
-		*p = 0;
-		if (strcmp(s, "..") == 0)
-			depth -= 1;		/* backing up */
-		else if (strcmp(s, ".") == 0)
-			depth += 0;		/* no change */
-		else
-			depth += 1;		/* descending */
-		if (depth < 0) {
-			bogus = 1;
-			break;
-		}
-	}
-	if (bogus)
-		reply(553, "%s: pathname disallowed guest users", name);
-	return (bogus);
 }
 
 /*

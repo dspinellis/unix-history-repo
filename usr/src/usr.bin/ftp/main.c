@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -37,6 +37,7 @@ main(argc, argv)
 		exit(1);
 	}
 	doglob = 1;
+	interactive = 1;
 	autologin = 1;
 	argc--, argv++;
 	while (argc > 0 && **argv == '-') {
@@ -57,7 +58,7 @@ main(argc, argv)
 				break;
 
 			case 'i':
-				interactive++;
+				interactive = 0;
 				break;
 
 			case 'n':
@@ -190,6 +191,10 @@ cmdscanner(top)
 			printf("?Invalid command\n");
 			continue;
 		}
+		if (c->c_conn && !connected) {
+			printf ("Not connected.\n");
+			continue;
+		}
 		(*c->c_handler)(margc, margv);
 		if (bell && c->c_bell)
 			putchar(CTRL(g));
@@ -257,6 +262,10 @@ slurpstring()
 	register char *ap = argbase;
 	char *tmp = argbase;		/* will return this if token found */
 
+	if (*sb == '!') {		/* recognize ! as a token for shell */
+		stringbase++;
+		return ("!");
+	}
 S0:
 	switch (*sb) {
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -190,7 +190,7 @@ getreply(expecteof)
 empty(f)
 	FILE *f;
 {
-	int mask;
+	long mask;
 	struct timeval t;
 
 	if (f->_cnt > 0)
@@ -215,7 +215,7 @@ sendrequest(cmd, local, remote)
 	FILE *fin, *dout, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)();
 	char buf[BUFSIZ];
-	register int bytes = 0;
+	long bytes = 0, hashbytes = sizeof (buf);
 	register int c, d;
 	struct stat st;
 	struct timeval start, stop;
@@ -267,6 +267,14 @@ sendrequest(cmd, local, remote)
 			if ((d = write(fileno (dout), buf, c)) < 0)
 				break;
 			bytes += c;
+			if (hash) {
+				putchar('#');
+				fflush(stdout);
+			}
+		}
+		if (hash) {
+			putchar('\n');
+			fflush(stdout);
 		}
 		if (c < 0)
 			perror(local);
@@ -277,6 +285,11 @@ sendrequest(cmd, local, remote)
 	case TYPE_A:
 		while ((c = getc(fin)) != EOF) {
 			if (c == '\n') {
+				while (hash && (bytes >= hashbytes)) {
+					putchar('#');
+					fflush(stdout);
+					hashbytes += sizeof (buf);
+				}
 				if (ferror(dout))
 					break;
 				putc('\r', dout);
@@ -288,6 +301,10 @@ sendrequest(cmd, local, remote)
 				putc('\0', dout);
 				bytes++;
 			}
+		}
+		if (hash) {
+			putchar('\n');
+			fflush(stdout);
 		}
 		if (ferror(fin))
 			perror(local);
@@ -321,13 +338,13 @@ abortrecv()
 	longjmp(recvabort, 1);
 }
 
-recvrequest(cmd, local, remote)
-	char *cmd, *local, *remote;
+recvrequest(cmd, local, remote, mode)
+	char *cmd, *local, *remote, *mode;
 {
 	FILE *fout, *din, *popen();
-	char buf[BUFSIZ];
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)();
-	register int bytes = 0;
+	char buf[BUFSIZ];
+	long bytes = 0, hashbytes = sizeof (buf);
 	register int c, d;
 	struct timeval start, stop;
 
@@ -362,7 +379,7 @@ recvrequest(cmd, local, remote)
 		fout = popen(local + 1, "w");
 		closefunc = pclose;
 	} else {
-		fout = fopen(local, "w");
+		fout = fopen(local, mode);
 		closefunc = fclose;
 	}
 	if (fout == NULL) {
@@ -382,6 +399,14 @@ recvrequest(cmd, local, remote)
 			if ((d = write(fileno(fout), buf, c)) < 0)
 				break;
 			bytes += c;
+			if (hash) {
+				putchar('#');
+				fflush(stdout);
+			}
+		}
+		if (hash) {
+			putchar('\n');
+			fflush(stdout);
 		}
 		if (c < 0)
 			perror("netin");
@@ -392,6 +417,11 @@ recvrequest(cmd, local, remote)
 	case TYPE_A:
 		while ((c = getc(din)) != EOF) {
 			if (c == '\r') {
+				while (hash && (bytes >= hashbytes)) {
+					putchar('#');
+					fflush(stdout);
+					hashbytes += sizeof (buf);
+				}
 				bytes++;
 				if ((c = getc(din)) != '\n') {
 					if (ferror (fout))
@@ -405,6 +435,10 @@ recvrequest(cmd, local, remote)
 			}
 			putc (c, fout);
 			bytes++;
+		}
+		if (hash) {
+			putchar('\n');
+			fflush(stdout);
 		}
 		if (ferror (din))
 			perror ("netin");
@@ -435,13 +469,19 @@ bad:
  * before we send the command, otherwise the
  * server's connect may fail.
  */
+static int sendport = -1;
+
 initconn()
 {
 	register char *p, *a;
 	int result, len;
 
+noport:
 	data_addr = myctladdr;
-	data_addr.sin_port = 0;		/* let system pick one */
+	if (sendport)
+		data_addr.sin_port = 0;	/* let system pick one */ 
+	if (data != -1)
+		(void) close (data);
 	data = socket(AF_INET, SOCK_STREAM, 0, 0);
 	if (data < 0) {
 		perror("ftp: socket");
@@ -463,14 +503,21 @@ initconn()
 		perror("ftp: listen");
 		goto bad;
 	}
-	a = (char *)&data_addr.sin_addr;
-	p = (char *)&data_addr.sin_port;
+	if (sendport) {
+		a = (char *)&data_addr.sin_addr;
+		p = (char *)&data_addr.sin_port;
 #define	UC(b)	(((int)b)&0xff)
-	result =
-	    command("PORT %d,%d,%d,%d,%d,%d",
-	      UC(a[0]), UC(a[1]), UC(a[2]), UC(a[3]),
-	      UC(p[0]), UC(p[1]));
-	return (result != COMPLETE);
+		result =
+		    command("PORT %d,%d,%d,%d,%d,%d",
+		      UC(a[0]), UC(a[1]), UC(a[2]), UC(a[3]),
+		      UC(p[0]), UC(p[1]));
+		if (result == ERROR && sendport == -1) {
+			sendport = 0;
+			goto noport;
+		}
+		return (result != COMPLETE);
+	}
+	return (0);
 bad:
 	(void) close(data), data = -1;
 	return (1);
@@ -496,19 +543,19 @@ dataconn(mode)
 
 ptransfer(direction, bytes, t0, t1)
 	char *direction;
-	int bytes;
+	long bytes;
 	struct timeval *t0, *t1;
 {
 	struct timeval td;
-	int ms, bs;
+	long ms;
+	float bs;
 
 	tvsub(&td, t1, t0);
 	ms = (td.tv_sec * 1000) + (td.tv_usec / 1000);
 #define	nz(x)	((x) == 0 ? 1 : (x))
-	bs = ((bytes * NBBY * 1000) / nz(ms)) / NBBY;
-	printf("%d bytes %s in %d.%02d seconds (%d.%01d Kbytes/s)\n",
-		bytes, direction, td.tv_sec, td.tv_usec / 10000,
-		bs / 1024, (((bs % 1024) * 10) + 1023) / 1024);
+	bs = ((bytes * NBBY * 1000) / (float) nz(ms)) / NBBY;
+	printf("%ld bytes %s in %d.%02d seconds (%.2g Kbytes/s)\n",
+		bytes, direction, td.tv_sec, td.tv_usec / 10000, bs / 1024.);
 }
 
 tvadd(tsum, t0)

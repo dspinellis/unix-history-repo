@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.8 83/02/21";
+static char sccsid[] = "@(#)ftpcmd.y	4.9 83/03/23";
 #endif
 
 #include <sys/types.h>
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)ftpcmd.y	4.8 83/02/21";
 #include <netinet/in.h>
 
 #include <stdio.h>
+#include <signal.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <setjmp.h>
@@ -28,6 +29,7 @@ extern	int logging;
 extern	int type;
 extern	int form;
 extern	int debug;
+extern	int timeout;
 extern	char hostname[];
 extern	char *globerr;
 extern	int usedefault;
@@ -528,11 +530,31 @@ getline(s, n, iop)
 	if (c < 0 && cs == s)
 		return (NULL);
 	*cs++ = '\0';
-	fprintf(stderr, "FTPD: command: %s", s);
-	if (c != '\n')
-		putc('\n', stderr);
-	fflush(stderr);
+	if (debug) {
+		fprintf(stderr, "FTPD: command: %s", s);
+		if (c != '\n')
+			putc('\n', stderr);
+		fflush(stderr);
+	}
 	return (s);
+}
+
+static int
+toolong()
+{
+	long now;
+	extern char *ctime();
+
+	reply(421,
+	  "Timeout (%d seconds): closing control connection.", timeout);
+	time(&now);
+	if (logging) {
+		fprintf(stderr,
+			"FTPD: User %s timed out after %d seconds at %s",
+			(pw ? pw -> pw_name : "unknown"), timeout, ctime(&now));
+		fflush(stderr);
+	}
+	exit(1);
 }
 
 yylex()
@@ -548,10 +570,13 @@ yylex()
 		switch (state) {
 
 		case CMD:
+			signal(SIGALRM, toolong);
+			alarm(timeout);
 			if (getline(cbuf, sizeof(cbuf)-1, stdin) == NULL) {
 				reply(221, "You could at least say goodbye.");
 				exit(0);
 			}
+			alarm(0);
 			if (index(cbuf, '\r')) {
 				cp = index(cbuf, '\r');
 				cp[0] = '\n'; cp[1] = 0;
