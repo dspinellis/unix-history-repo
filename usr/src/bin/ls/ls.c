@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.2 82/03/05";
+static	char *sccsid = "@(#)ls.c	4.3 82/03/15";
 #endif
 
 /*
@@ -453,6 +453,8 @@ fmtentry(fp)
 	if (Fflg) {
 		if (fp->ftype == 'd')
 			*dp++ = '/';
+		else if (fp->ftype == 'l')
+			*dp++ = '@';
 		else if (fp->fflags & 0111)
 			*dp++ = '*';
 	}
