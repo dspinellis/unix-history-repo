@@ -16,7 +16,7 @@ initdeck: initdeck.c
 	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/initdeck.c
 
 beforeinstall:
-	install -o ${BINOWN} -g ${BINGRP} -m 444 cards.pck \
+	install ${COPY} -o ${BINOWN} -g ${BINGRP} -m 444 cards.pck \
 	    ${DESTDIR}/usr/share/games
 
 .include <bsd.prog.mk>
