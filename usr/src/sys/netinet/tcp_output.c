@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.39	82/06/06	*/
+/*	tcp_output.c	4.39	82/06/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -49,6 +49,7 @@ tcp_output(tp)
 	register struct tcpiphdr *ti;
 	u_char *opt;
 	unsigned optlen = 0;
+	int sendalot;
 
 COUNT(TCP_OUTPUT);
 
@@ -58,12 +59,16 @@ COUNT(TCP_OUTPUT);
 	 * If there is some data or critical controls (SYN, RST)
 	 * to send, then transmit; otherwise, investigate further.
 	 */
+again:
+	sendalot = 0;
 	off = tp->snd_nxt - tp->snd_una;
 	len = MIN(so->so_snd.sb_cc, tp->snd_wnd+tp->t_force) - off;
 	if (len < 0)
 		return (0);	/* ??? */	/* past FIN */
-	if (len > tp->t_maxseg)
+	if (len > tp->t_maxseg) {
 		len = tp->t_maxseg;
+		sendalot = 1;
+	}
 
 	flags = tcp_outflags[tp->t_state];
 	if (tp->snd_nxt + len < tp->snd_una + so->so_snd.sb_cc)
@@ -111,6 +116,33 @@ COUNT(TCP_OUTPUT);
 	if (win > 0 &&
 	    ((100*(win-(tp->rcv_adv-tp->rcv_nxt))/so->so_rcv.sb_hiwat) >= 35))
 		goto send;
+
+	/*
+	 * TCP window updates are not reliable, rather a polling protocol
+	 * using ``persist'' packets is used to insure receipt of window
+	 * updates.  The three ``states'' for the output side are:
+	 *	idle			not doing retransmits or persists
+	 *	persisting		to move a zero window
+	 *	(re)transmitting	and thereby not persisting
+	 *
+	 * tp->t_timer[TCPT_PERSIST]
+	 *	is set when we are in persist state.
+	 * tp->t_force
+	 *	is set when we are called to send a persist packet.
+	 * tp->t_timer[TCPT_REXMT]
+	 *	is set when we are retransmitting
+	 * The output side is idle when both timers are zero.
+	 *
+	 * If send window is closed, there is data to transmit, and no
+	 * retransmit or persist is pending, then go to persist state,
+	 * arranging to force out a byte to get more current window information
+	 * if nothing happens soon.
+	 */
+	if (tp->snd_wnd == 0 && so->so_snd.sb_cc &&
+	    tp->t_timer[TCPT_REXMT] == 0 && tp->t_timer[TCPT_PERSIST] == 0) {
+		tp->t_rxtshift = 0;
+		tcp_setpersist(tp);
+	}
 
 	/*
 	 * No reason to send a segment, just return.
@@ -258,44 +290,43 @@ noopt:
 	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + (int)optlen + len);
 
 	/*
-	 * Advance snd_nxt over sequence space of this segment
+	 * In transmit state, time the transmission and arrange for
+	 * the retransmit.  In persist state, reset persist time for
+	 * next persist.
 	 */
-	if (flags & (TH_SYN|TH_FIN))
-		tp->snd_nxt++;
-	tp->snd_nxt += len;
+	if (tp->t_force == 0) {
+		/*
+		 * Advance snd_nxt over sequence space of this segment
+		 */
+		if (flags & (TH_SYN|TH_FIN))
+			tp->snd_nxt++;
+		tp->snd_nxt += len;
 
-	/*
-	 * If this transmission closes the window,
-	 * start persistance timer at 2 round trip times
-	 * but at least TCPTV_PERSMIN ticks.
-	 */
-	if (TCPS_HAVERCVDSYN(tp->t_state) &&
-	    SEQ_GEQ(tp->snd_nxt, tp->snd_una+tp->snd_wnd) &&
-	    tp->t_timer[TCPT_PERSIST] == 0)
-		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
-		    2 * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
+		/*
+		 * Time this transmission if not a retransmission and
+		 * not currently timing anything.
+		 */
+		if (SEQ_GT(tp->snd_nxt, tp->snd_max) && tp->t_rtt == 0) {
+			tp->t_rtt = 1;
+			tp->t_rtseq = tp->snd_nxt - len;
+		}
 
-	/*
-	 * Time this transmission if not a retransmission and
-	 * not currently timing anything.
-	 */
-	if (SEQ_GT(tp->snd_nxt, tp->snd_max) && tp->t_rtt == 0) {
-		tp->t_rtt = 1;
-		tp->t_rtseq = tp->snd_nxt - len;
-	}
-
-	/*
-	 * Set retransmit timer if not currently set.
-	 * Initial value for retransmit timer to tcp_beta*tp->t_srtt.
-	 * Initialize shift counter which is used for exponential
-	 * backoff of retransmit time.
-	 */
-	if (tp->t_timer[TCPT_REXMT] == 0 && tp->snd_nxt != tp->snd_una) {
-		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-		    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-		tp->t_rtt = 0;
-		tp->t_rxtshift = 0;
-	}
+		/*
+		 * Set retransmit timer if not currently set.
+		 * Initial value for retransmit timer to tcp_beta*tp->t_srtt.
+		 * Initialize shift counter which is used for exponential
+		 * backoff of retransmit time.
+		 */
+		if (tp->t_timer[TCPT_REXMT] == 0 &&
+		    tp->snd_nxt != tp->snd_una) {
+			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
+			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
+			tp->t_rtt = 0;
+			tp->t_rxtshift = 0;
+		}
+		tp->t_timer[TCPT_PERSIST] = 0;
+	} else
+		tcp_setpersist(tp);
 
 	/*
 	 * Trace.
@@ -323,5 +354,24 @@ noopt:
 	tp->t_flags &= ~(TF_ACKNOW|TF_DELACK);
 	if (SEQ_GT(tp->snd_nxt, tp->snd_max))
 		tp->snd_max = tp->snd_nxt;
+	if (sendalot && tp->t_force == 0)
+		goto again;
 	return (0);
+}
+
+tcp_setpersist(tp)
+	register struct tcpcb *tp;
+{
+
+	if (tp->t_timer[TCPT_REXMT])
+		panic("tcp_output REXMT");
+	/*
+	 * Start/restart persistance timer.
+	 */
+	TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
+	    ((int)(tcp_beta * tp->t_srtt)) << tp->t_rxtshift,
+	    TCPTV_PERSMIN, TCPTV_MAX);
+	tp->t_rxtshift++;
+	if (tp->t_rxtshift >= TCP_MAXRXTSHIFT)
+		tp->t_rxtshift = 0;
 }
