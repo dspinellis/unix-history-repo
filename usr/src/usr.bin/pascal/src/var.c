@@ -1,14 +1,14 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)var.c 1.3 %G%";
+static	char sccsid[] = "@(#)var.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
 #include "align.h"
+#include "iorec.h"
 #ifdef PC
 #   include	"pc.h"
 #   include	"pcops.h"
-#   include	"iorec.h"
 #endif PC
 
 /*
@@ -202,13 +202,7 @@ loop:
 		case PTR:
 			return ( sizeof ( int * ) );
 		case FILET:
-#			ifdef OBJ
-			    return ( sizeof ( int * ) );
-#			endif OBJ
-#			ifdef PC
-			    return ( sizeof(struct iorec)
-				    + lwidth( p -> type ) );
-#			endif PC
+			return ( sizeof(struct iorec) + lwidth( p -> type ) );
 		case RANGE:
 			if (p->type == nl+TDOUBLE)
 #ifdef DEBUG

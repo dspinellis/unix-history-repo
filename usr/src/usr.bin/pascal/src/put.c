@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.4 %G%";
+static	char sccsid[] = "@(#)put.c 1.5 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -91,8 +91,6 @@ put(a)
 		case O_WRITEF:
 		case O_MAX:
 		case O_MIN:
-		case O_PACK:
-		case O_UNPACK:
 		case O_ARGV:
 		case O_CTTOT:
 		case O_INCT:

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.7 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -700,15 +700,12 @@ funcend(fp, bundle, endline)
 				continue;
 			}
 #			ifdef OBJ
-			    put(2, O_LV | bn << 8+INDX, iop->value[NL_OFFS]);
+			    put(2, O_CON24, text(iop->type) ? 0 : width(iop->type->type));
 			    i = lenstr(p->symbol,0);
+			    put(2, O_CON24, i);
 			    put(2, O_LVCON, i);
 			    putstr(p->symbol, 0);
-			    do {
-				i--;
-			    } while (p->symbol+i == 0);
-			    put(2, O_CON24, i+1);
-			    put(2, O_CON24, text(iop->type) ? 0 : width(iop->type->type));
+			    put(2, O_LV | bn << 8+INDX, iop->value[NL_OFFS]);
 			    put(1, O_DEFNAME);
 #			endif OBJ
 #			ifdef PC
@@ -761,6 +758,8 @@ funcend(fp, bundle, endline)
 			, "_PMFLUSH" );
 		putleaf( P2ICON , cnts , 0 , P2INT , 0 );
 		putleaf( P2ICON , pfcnt , 0 , P2INT , 0 );
+		putop( P2LISTOP , P2INT );
+		putLV( PCPCOUNT , 0 , 0 , P2INT );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );

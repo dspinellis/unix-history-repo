@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lval.c 1.1 %G%";
+static	char sccsid[] = "@(#)lval.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -135,7 +135,28 @@ lvalue(r, modflag , required )
 					goto bad;
 				}
 				if (f) {
-				    put(2, PTR_RV | bn <<8+INDX , o );
+				    if (p->class == FILET && bn != 0)
+				        put(2, O_LV | bn <<8+INDX , o );
+				    else
+					/*
+					 * this is the indirection from
+					 * the address of the pointer 
+					 * to the pointer itself.
+					 * kirk sez:
+					 * fnil doesn't want this.
+					 * and does it itself for files
+					 * since only it knows where the
+					 * actual window is.
+					 * but i have to do this for
+					 * regular pointers.
+					 * This is further complicated by
+					 * the fact that global variables
+					 * are referenced through pointers
+					 * on the stack. Thus an RV on a
+					 * global variable is the same as
+					 * an LV of a non-global one ?!?
+					 */
+				        put(2, PTR_RV | bn <<8+INDX , o );
 				} else {
 					if (o) {
 					    put2(O_OFF, o);
@@ -167,7 +188,15 @@ lvalue(r, modflag , required )
 					goto bad;
 				}
 				if (f) {
-					put2(O_LV | bn<<8+INDX, o);
+					if (bn == 0)
+						/*
+						 * global variables are
+						 * referenced through pointers
+						 * on the stack
+						 */
+						put2(PTR_RV | bn<<8+INDX, o);
+					else
+						put2(O_LV | bn<<8+INDX, o);
 				} else {
 					if (o) {
 					    put2(O_OFF, o);
@@ -219,7 +248,14 @@ lvalue(r, modflag , required )
 		}
 	}
 	if (f) {
-		put2(O_LV | bn<<8+INDX, o);
+		if (bn == 0)
+			/*
+			 * global variables are referenced through
+			 * pointers on the stack
+			 */
+			put2(PTR_RV | bn<<8+INDX, o);
+		else
+			put2(O_LV | bn<<8+INDX, o);
 	} else {
 		if (o) {
 		    put2(O_OFF, o);

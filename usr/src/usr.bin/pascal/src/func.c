@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)func.c 1.3 %G%";
+static	char sccsid[] = "@(#)func.c 1.4 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -107,7 +107,10 @@ funccod(r)
 	/*
 	 * Evaluate the argmument
 	 */
-	p1 = stkrval((int *) argv[1], NLNIL , RREQ );
+	if (op == O_EOF || op == O_EOLN)
+		p1 = stklval((int *) argv[1], NLNIL , LREQ );
+	else
+		p1 = stkrval((int *) argv[1], NLNIL , RREQ );
 	if (p1 == NIL)
 		return (NIL);
 	switch (op) {

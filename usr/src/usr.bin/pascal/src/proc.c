@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)proc.c 1.3 %G%";
+static	char sccsid[] = "@(#)proc.c 1.4 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -118,7 +118,7 @@ proc(r)
 			error("flush takes at most one argument");
 			return;
 		}
-		ap = stkrval(argv[1], NIL , RREQ );
+		ap = stklval(argv[1], NIL , LREQ );
 		if (ap == NIL)
 			return;
 		if (ap->class != FILET) {
@@ -170,7 +170,7 @@ proc(r)
 				 */
 				file = argv[1];
 				filetype = ap->type;
-				stkrval(argv[1], NIL , RREQ );
+				stklval(argv[1], NIL , LREQ );
 				put(1, O_UNIT);
 				/*
 				 * Skip over the first argument
@@ -290,7 +290,7 @@ proc(r)
 				 * Generalized write, i.e.
 				 * to a non-textfile.
 				 */
-				stkrval(file, NIL , RREQ );
+				stklval(file, NIL , LREQ );
 				put(1, O_FNIL);
 				/*
 				 * file^ := ...
@@ -359,6 +359,13 @@ proc(r)
 				break;
 			case TCHAR:
 			     tchar:
+				if (fmtspec == NIL) {
+					put(1, O_FILE);
+					ap = stkrval(alv, NIL , RREQ );
+					put(1, O_WRITEC);
+					fmtspec = SKIP;
+					break;
+				}
 				ap = stkrval(alv, NIL , RREQ );
 				stkcnt++;
 				fmt = 'c';
@@ -514,15 +521,11 @@ proc(r)
 			switch (fmtspec) {
 			default:
 				panic("fmt2");
-			case NIL:
-				if (fmt == 'c')
-					put(1, O_WRITEC);
-				else  {
-					sprintf(&format[1], "%%%c", fmt);
-					goto fmtgen;
-				}
 			case SKIP:
 				break;
+			case NIL:
+				sprintf(&format[1], "%%%c", fmt);
+				goto fmtgen;
 			case CONWIDTH:
 				sprintf(&format[1], "%%%1D%c", field, fmt);
 				goto fmtgen;
@@ -618,7 +621,7 @@ proc(r)
 				 */
 				file = argv[1];
 				filetype = ap->type;
-				stkrval(argv[1], NIL , RREQ );
+				stklval(argv[1], NIL , LREQ );
 				put(1, O_UNIT);
 				argv = argv[2];
 				argc--;
@@ -666,9 +669,9 @@ proc(r)
 				 * var := file ^;
 				 */
 				if (file != NIL)
-					stkrval(file, NIL , RREQ );
+					stklval(file, NIL , LREQ );
 				else /* Magic */
-					put(2, O_RV2, input->value[0]);
+					put(2, PTR_RV, input->value[0]);
 				put(1, O_FNIL);
 				put(2, O_IND, width(filetype));
 				convert(filetype, ap);
@@ -726,7 +729,7 @@ proc(r)
 			error("%s expects one argument", p->symbol);
 			return;
 		}
-		ap = stkrval(argv[1], NIL , RREQ );
+		ap = stklval(argv[1], NIL , LREQ );
 		if (ap == NIL)
 			return;
 		if (ap->class != FILET) {
@@ -747,13 +750,16 @@ proc(r)
 			standard();
 			error("Two argument forms of reset and rewrite are non-standard");
 		}
+		codeoff();
 		ap = stklval(argv[1], MOD|NOUSE);
+		codeon();
 		if (ap == NIL)
 			return;
 		if (ap->class != FILET) {
 			error("First argument to %s must be a file, not %s", p->symbol, nameof(ap));
 			return;
 		}
+		put(2, O_CON24, text(ap) ? 0: width(ap->type));
 		if (argc == 2) {
 			/*
 			 * Optional second argument
@@ -761,20 +767,23 @@ proc(r)
 			 * UNIX (R) file to be associated.
 			 */
 			al = argv[2];
+			codeoff();
 			al = stkrval(al[1], NOFLAGS , RREQ );
+			codeon();
 			if (al == NIL)
 				return;
 			if (classify(al) != TSTR) {
 				error("Second argument to %s must be a string, not %s", p->symbol, nameof(al));
 				return;
 			}
-			strnglen = width(al);
+			put(2, O_CON24, width(al));
+			al = argv[2];
+			al = stkrval(al[1], NOFLAGS , RREQ );
 		} else {
+			put(2, O_CON24, 0);
 			put(2, O_CON24, NIL);
-			strnglen = 0;
 		}
-		put(2, O_CON24, strnglen);
-		put(2, O_CON24, text(ap) ? 0: width(ap->type));
+		ap = stklval(argv[1], MOD|NOUSE);
 		put(1, op);
 		return;
 
@@ -899,7 +908,9 @@ proc(r)
 			error("remove expects one argument");
 			return;
 		}
+		codeoff();
 		ap = stkrval(argv[1], NOFLAGS , RREQ );
+		codeon();
 		if (ap == NIL)
 			return;
 		if (classify(ap) != TSTR) {
@@ -907,19 +918,13 @@ proc(r)
 			return;
 		}
 		put(2, O_CON24, width(ap));
+		ap = stkrval(argv[1], NOFLAGS , RREQ );
 		put(1, op);
 		return;
 
 	case O_LLIMIT:
 		if (argc != 2) {
 			error("linelimit expects two arguments");
-			return;
-		}
-		ap = stklval(argv[1], NOFLAGS|NOUSE);
-		if (ap == NIL)
-			return;
-		if (!text(ap)) {
-			error("linelimit's first argument must be a text file, not %s", nameof(ap));
 			return;
 		}
 		al = argv[2];
@@ -930,6 +935,13 @@ proc(r)
 			error("linelimit's second argument must be an integer, not %s", nameof(ap));
 			return;
 		}
+		ap = stklval(argv[1], NOFLAGS|NOUSE);
+		if (ap == NIL)
+			return;
+		if (!text(ap)) {
+			error("linelimit's first argument must be a text file, not %s", nameof(ap));
+			return;
+		}
 		put(1, op);
 		return;
 	case O_PAGE:
@@ -937,7 +949,7 @@ proc(r)
 			error("page expects one argument");
 			return;
 		}
-		ap = stkrval(argv[1], NIL , RREQ );
+		ap = stklval(argv[1], NIL , LREQ );
 		if (ap == NIL)
 			return;
 		if (!text(ap)) {
@@ -968,17 +980,16 @@ proc(r)
 		pua = (al = al[2])[1];
 		pui = (al = al[2])[1];
 packunp:
-		ap = stkrval((int *) pui, NLNIL , RREQ );
-		if (ap == NIL)
-			return;
+		codeoff();
 		ap = stklval(pua, op == O_PACK ? NOFLAGS : MOD|NOUSE);
+		al = (struct nl *) stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
+		codeon();
 		if (ap == NIL)
 			return;
 		if (ap->class != ARRAY) {
 			error("%s requires a to be an unpacked array, not %s", pu, nameof(ap));
 			return;
 		}
-		al = (struct nl *) stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
 		if (al->class != ARRAY) {
 			error("%s requires z to be a packed array, not %s", pu, nameof(ap));
 			return;
@@ -1016,7 +1027,16 @@ packunp:
 		 */
 		i -= j;
 		j = ap->range[0];
-		put(5, op, itemwidth , j, i, k);
+		put(2, O_CON24, k);
+		put(2, O_CON24, i);
+		put(2, O_CON24, j);
+		put(2, O_CON24, itemwidth);
+		al = (struct nl *) stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
+		ap = stklval(pua, op == O_PACK ? NOFLAGS : MOD|NOUSE);
+		ap = stkrval((int *) pui, NLNIL , RREQ );
+		if (ap == NIL)
+			return;
+		put(1, op);
 		return;
 	case 0:
 		error("%s is an unimplemented 6400 extension", p->symbol);
