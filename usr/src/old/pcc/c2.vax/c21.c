@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.13 %G%";
+static	char sccsid[] = "@(#)c21.c 4.14 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -78,7 +78,13 @@ bmove() {
 	case CALLS:
 		clearuse(); goto std;
 	case 0:
-		clearuse(); break;
+		/*
+		 * Be conservative -- if we don't know what it is, then we
+		 *	assume that it can set anything.
+		 */
+		for ( r = 0; r < NUSE; ++r )
+			uses[r] = p;
+		break;
 	case SUB:
 		if ((p->subop&0xF)!=LONG) goto std; cp1=p->code;
 		if (*cp1++!='$') goto std; splitrand(p);

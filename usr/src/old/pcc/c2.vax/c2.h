@@ -1,4 +1,4 @@
-/*	c2.h	4.7	83/08/11	*/
+/*	c2.h	4.8	85/01/16	*/
 
 /*
  * Header for object code improver
@@ -83,6 +83,11 @@
 #define JBSC 17
 #define JBCS 18
 #define JBSS 19
+
+#define	JCC 20
+#define	JCS 21
+#define	JVC 22
+#define	JVS 23
 
 /*
  *	When the new opcodes were added, the relative
