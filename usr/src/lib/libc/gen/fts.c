@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.37 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -558,7 +558,8 @@ fts_build(sp, type)
 #endif
 	/*
 	 * If we're going to need to stat anything or we want to descend
-	 * and stay in the directory, chdir.  If this fails we keep going.
+	 * and stay in the directory, chdir.  If this fails we keep going,
+	 * but set a flag so we don't chdir after the post-order visit.
 	 * We won't be able to stat anything, but we can still return the
 	 * names themselves.  Note, that since fts_read won't be able to
 	 * chdir into the directory, it will have to return different path
@@ -572,8 +573,10 @@ fts_build(sp, type)
 	 */
 	if (nlinks || type == BREAD)
 		if (FCHDIR(sp, dirfd(dirp))) {
-			if (nlinks && type == BREAD)
+			if (nlinks && type == BREAD) {
+				cur->fts_flags |= FTS_DONTCHDIR;
 				cur->fts_errno = errno;
+			}
 			descend = 0;
 			cderrno = errno;
 		} else {
