@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.75 (Berkeley) %G%
+#	@(#)READ_ME	8.76 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -13,7 +13,9 @@ For detailed instructions, please read the document ../doc/op.me:
 
 	eqn ../doc/op.me | pic | ditroff -me
 
-DO NOT USE MAKE to compile sendmail -- instead, use the "makesendmail"
+*******************
+* DO NOT USE MAKE * to compile sendmail -- instead, use the "makesendmail"
+*******************
 script located in the src directory.  It will find an appropriate
 Makefile, and create an appropriate obj.* subdirectory so that
 multiplatform support works easily.
@@ -52,9 +54,13 @@ very suspicious of gcc -O.
 +-----------+
 
 By far, the easiest way to compile sendmail is to use the "makesendmail"
-script.  This uses the "uname" command to figure out what architecture
-you are on and selects a proper Makefile accordingly.  It also creates
-a subdirectory per object format, so that multiarchitecture support is
+script:
+
+	sh makesendmail
+
+This uses the "uname" command to figure out what architecture you are
+on and selects a proper Makefile accordingly.  It also creates a
+subdirectory per object format, so that multiarchitecture support is
 easy.  In general this should be all you need.  However, if for some
 reason this doesn't work (e.g., NeXT systems don't have the "uname"
 command) you may have to set up your compile environment by hand.
@@ -908,4 +914,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.75, last update %G% 07:00:00)
+(Version 8.76, last update %G% 13:30:20)
