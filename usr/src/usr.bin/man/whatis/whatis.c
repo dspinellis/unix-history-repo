@@ -29,6 +29,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00005
+ * --------------------         -----   ----------------------
+ *
+ * 20 Aug 92	Andrew Moore		Fixed core dump from uninited pointers
  */
 
 #ifndef lint
@@ -65,6 +72,7 @@ main(argc, argv)
 	char *p_augment, *p_path, **getdb();
 
 	progname = "whatis";
+	p_augment = p_path = NULL;	/* 20 Aug 92*/
 	while ((ch = getopt(argc, argv, "M:m:P:")) != EOF)
 		switch((char)ch) {
 		case 'M':
