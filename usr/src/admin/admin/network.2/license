@@ -1,4 +1,4 @@
-.\" @(#)license	1.7 (CSRG - distribution) %G%
+.\" @(#)license	1.8 (CSRG - distribution) %G%
 .nr LL 6.8i
 .OF '30 April 1991'''
 .EF '30 April 1991'''
@@ -28,7 +28,6 @@ having its principal office at
 hereinafter called "LICENSEE",
 and shall become effective
 on the date of execution by THE REGENTS OF THE UNIVERSITY OF CALIFORNIA.
-.sp 1
 .nr FT HB
 .PP
 LICENSEE desires to obtain from THE REGENTS the Computer Programs
@@ -38,7 +37,6 @@ grant to LICENSEE, a license to use LICENSED MATERIAL. THE REGENTS
 hereby grants to LICENSEE a non-exclusive, non-transferable, and
 perpetual license to use the LICENSED MATERIAL upon the terms and
 conditions hereinafter set forth:
-.sp
 .IP 1.
 .I Other  
 .I Contributors.
@@ -60,7 +58,7 @@ breach of this agreement and fails to correct
 such breach within that time.
 .IP 3.
 .I Fee.
-LICENSEE shall pay THE REGENTS the sum of $895.00
+LICENSEE shall pay THE REGENTS the sum of $850.00
 as the fee for the LICENSED MATERIAL
 unless indicated otherwise on Exhibit A, which is incorporated into
 this Agreement.
@@ -106,8 +104,11 @@ thereto except as expressly set forth in this License Agreement.
 .I Warranty.
 THE REGENTS DOES NOT WARRANT THAT THE USE OF THE LICENSED MATERIAL
 WILL NOT INFRINGE ANY COPYRIGHT, TRADE SECRET, PATENT, OR OTHER
-PROPRIETARY RIGHT OF ANOTHER PARTY. THE LIMITATION OF LIABILITY
-SET FORTH IN THIS AGREEMENT IS APPLICABLE. 
+PROPRIETARY RIGHT OF ANOTHER PARTY.
+THE LIMITATION OF LIABILITY SET FORTH IN THIS AGREEMENT IS APPLICABLE
+TO ANY CLAIM THAT BSD NETWORKING SOFTWARE, RELEASE 2, OR ANY PORTION
+THEREOF, INFRINGES ANOTHER'S COPYRIGHT, TRADE SECRET, PATENT, OR OTHER
+PROPRIETARY RIGHT.
 .IP 8.
 .I Indemnification. 
 LICENSEE agrees to indemnify, defend and hold harmless The Regents of
@@ -188,7 +189,7 @@ and may use, reproduce, and distribute the LICENSED MATERIAL as
 modified.
 However, the modified version is still
 subject to the copyright and acknowledgement provisions
-noted in Section 8.
+noted in Section 10.
 .IP 12.
 .I Source
 .I Code.
