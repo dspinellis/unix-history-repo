@@ -1,4 +1,4 @@
-/*	tty.c	4.15	82/01/14	*/
+/*	tty.c	4.16	82/01/15	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -504,7 +504,6 @@ ttselect(dev, rw)
 	case FWRITE:
 		if (tp->t_outq.c_cc <= TTLOWAT(tp))
 			goto win;
-printf("wsel block\n");
 		if (tp->t_wsel && tp->t_wsel->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_WCOLL;
 		else
