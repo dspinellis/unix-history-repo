@@ -1,5 +1,5 @@
 /*
-char id_dofio[] = "@(#)dofio.c	1.6";
+char id_dofio[] = "@(#)dofio.c	1.7";
  *
  * fortran format executer
  */
@@ -11,6 +11,7 @@ char id_dofio[] = "@(#)dofio.c	1.6";
 #define STKSZ 10
 int cnt[STKSZ],ret[STKSZ],cp,rp;
 char *dfio = "dofio";
+int used_data;
 
 en_fio()
 {	ftnint one=1;
@@ -51,6 +52,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 			return(OK);
 		    }
 		    if(!more) return(OK);
+		    used_data = YES;
 		    DO((*doed)(p,ptr,len))
 		    ptr += len;
 		    more--;
@@ -83,6 +85,8 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 			return(OK);
 		}
 		if(!more) return(OK);
+		if( used_data == NO ) err(errflag,F_ERFMT,"\nNo more editing terms in format");
+		used_data = NO;
 		rp=cp=0;
 		pc = p->p1;
 		DO((*dorevert)())
@@ -137,4 +141,5 @@ fmt_bg()
 	in_mid = NO;
 	cp=rp=pc=cursor=0;
 	cnt[0]=ret[0]=0;
+	used_data = NO;
 }
