@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.25.1.1 (Berkeley) 5/7/91
 
-SUBDIR=	csu.${MACHINE} libc libcurses libm libpthread \
+SUBDIR=	csu.${MACHINE} libc libcurses libm libmalloc libpthread \
 	libresolv librpcsvc libtelnet libterm libutil liby
 
 .if exists(libcrypt)
