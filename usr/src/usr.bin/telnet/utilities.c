@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	1.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -28,6 +28,8 @@ static char sccsid[] = "@(#)utilities.c	1.7 (Berkeley) %G%";
 #include "general.h"
 
 #include "ring.h"
+
+#include "defines.h"
 
 #include "externs.h"
 
@@ -186,3 +188,87 @@ int	length;			/* length of suboption data */
 	}
     }
 }
+
+/* EmptyTerminal - called to make sure that the terminal buffer is empty.
+ *			Note that we consider the buffer to run all the
+ *			way to the kernel (thus the select).
+ */
+
+void
+EmptyTerminal()
+{
+#if	defined(unix)
+    fd_set	o;
+
+    FD_ZERO(&o);
+#endif	/* defined(unix) */
+
+    if (TTYBYTES() == 0) {
+#if	defined(unix)
+	FD_SET(tout, &o);
+	(void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
+			(struct timeval *) 0);	/* wait for TTLOWAT */
+#endif	/* defined(unix) */
+    } else {
+	while (TTYBYTES()) {
+	    ttyflush(0);
+#if	defined(unix)
+	    FD_SET(tout, &o);
+	    (void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
+				(struct timeval *) 0);	/* wait for TTLOWAT */
+#endif	/* defined(unix) */
+	}
+    }
+}
+
+void
+SetForExit()
+{
+    setconnmode();
+#if	defined(TN3270)
+    if (In3270) {
+	Finish3270();
+    }
+#endif	/* defined(TN3270) */
+    setcommandmode();
+    fflush(stdout);
+    fflush(stderr);
+#if	defined(TN3270)
+    if (In3270) {
+	StopScreen(1);
+    }
+#endif	/* defined(TN3270) */
+    setconnmode();
+    EmptyTerminal();			/* Flush the path to the tty */
+    setcommandmode();
+}
+
+void
+Exit(returnCode)
+int returnCode;
+{
+    SetForExit();
+    exit(returnCode);
+}
+
+void
+ExitString(string, returnCode)
+char *string;
+int returnCode;
+{
+    SetForExit();
+    fwrite(string, 1, strlen(string), stderr);
+    exit(returnCode);
+}
+
+#if defined(MSDOS)
+void
+ExitPerror(string, returnCode)
+char *string;
+int returnCode;
+{
+    SetForExit();
+    perror(string);
+    exit(returnCode);
+}
+#endif /* defined(MSDOS) */
