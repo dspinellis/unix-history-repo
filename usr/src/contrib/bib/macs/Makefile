@@ -1,3 +1,6 @@
+#
+#	@(#)Makefile	1.2	(Berkeley)	84/01/21
+#
 DEST	      = $(DESTDIR)/usr/lib/bmac
 
 MAKEFILE      = Makefile
@@ -13,6 +16,7 @@ SRCS	      = bib.astro \
 		bib.spe \
 		bib.spe2 \
 		bib.stda \
+		bib.stdafull \
 		bib.stdn \
 		bib.stdsn \
 		bib.supn \
