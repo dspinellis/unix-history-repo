@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.18 89/08/23$
  *
- *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -104,10 +104,8 @@ chgprot(addr, tprot)
 	register struct cmap *c;
 
 	v = clbase(btop(addr));
-	if (!isatsv(u.u_procp, v)) {
-		u.u_error = EFAULT;
-		return (0);
-	}
+	if (!isatsv(u.u_procp, v))
+		return (EFAULT);
 	tp = vtotp(u.u_procp, v);
 	pte = tptopte(u.u_procp, tp);
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
@@ -118,7 +116,7 @@ chgprot(addr, tprot)
 	*(u_int *)pte &= ~PG_PROT;
 	*(u_int *)pte |= tprot;
 	TBIS(addr);
-	return (1);
+	return (0);
 }
 
 settprot(tprot)
