@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -576,6 +576,7 @@ writable(filename)
 			return FALSE;
 		}
 		*p = '/';
+		return TRUE;
 	}
 
 	/*
@@ -583,7 +584,11 @@ writable(filename)
 	*/
 
 	if (bitset(0111, stb.st_mode))
+	{
+		if (tTd(29, 5))
+			printf("failed (mode %o: x bits)\n", stb.st_mode);
 		return (FALSE);
+	}
 
 	euid = RealUid;
 	uname = RealUserName;
