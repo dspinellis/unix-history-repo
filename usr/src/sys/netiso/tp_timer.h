@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_timer.h	7.6 (Berkeley) %G%
+ *	@(#)tp_timer.h	7.7 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -43,24 +43,25 @@ SOFTWARE.
  * The callout structures used by the tp timers.
  */
 
-#ifndef __TP_CALLOUT__
-#define __TP_CALLOUT__
-
-/* C timers - one per tpcb, generally cancelled */
-
-struct	Ecallarg {
-	u_int	c_arg1;
-	u_int	c_arg2;
-	int		c_arg3;
-};
-
-struct	Ccallout {
-	int	c_time;		/* incremental time */
-};
+#ifndef __TP_TIMER__
+#define __TP_TIMER__
 
 #define SET_DELACK(t) {\
     (t)->tp_flags |= TPF_DELACK; \
     if ((t)->tp_fasttimeo == 0)\
-	{ (t)->tp_fasttimeo = tp_ftimeolist; tp_ftimeolist = (t); } }
+		{ (t)->tp_fasttimeo = tp_ftimeolist; tp_ftimeolist = (t); } }
 
-#endif __TP_CALLOUT__
+#ifdef ARGO_DEBUG
+#define TP_DEBUG_TIMERS
+#endif
+
+#ifndef TP_DEBUG_TIMERS
+#define tp_ctimeout(tpcb, which, timo) ((tpcb)->tp_timer[which] = (timo))
+#define tp_cuntimeout(tpcb, which) ((tpcb)->tp_timer[which] = 0)
+#define tp_etimeout tp_ctimeout
+#define tp_euntimeout tp_cuntimeout
+#define tp_ctimeout_MIN(p, w, t) \
+    { if((p)->tp_timer[w] > (t)) (p)->tp_timer[w] = (t);}
+#endif TP_DEBUG_TIMERS
+
+#endif __TP_TIMER__
