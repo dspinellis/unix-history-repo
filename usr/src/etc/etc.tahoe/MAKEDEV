@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	5.3	%G%
+#	@(#)MAKEDEV	5.4	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -103,8 +103,10 @@ dk*)
 		/etc/mknod r${name}${unit}e	c $chr `expr $u '*' 8 + 4`
 		/etc/mknod r${name}${unit}f	c $chr `expr $u '*' 8 + 5`
 
-		chmod 644 ${name}${unit}[a-f]
-		chmod 644 r${name}${unit}[a-f]
+		chmod 640 ${name}${unit}[a-f]
+		chgrp operator ${name}${unit}[a-f]
+		chmod 640 r${name}${unit}[a-f]
+		chgrp operator r${name}${unit}[a-f]
 		;;
 	*)
 		echo bad unit for disk in: $i
