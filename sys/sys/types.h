@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)types.h	7.17 (Berkeley) 5/6/91
- *	$Id: types.h,v 1.9 1994/04/05 18:48:03 wollman Exp $
+ *	$Id: types.h,v 1.10 1994/04/05 22:09:33 wollman Exp $
  */
 
 #ifndef _TYPES_H_
@@ -96,14 +96,6 @@ typedef	_SIZE_T_	size_t;
 #ifdef	_TIME_T_
 typedef	_TIME_T_	time_t;
 #undef	_TIME_T_
-#endif
-
-#ifdef	_BSD_WCHAR_T_
-typedef _BSD_WCHAR_T_	wchar_t;
-#if !defined(_POSIX_SOURCE) && !defined(_ANSI_SOURCE)
-typedef _BSD_WCHAR_T_	rune_t;
-#endif
-#undef	_BSD_WCHAR_T_
 #endif
 
 #ifndef _POSIX_SOURCE
