@@ -222,8 +222,9 @@ done()
 writeroob()
 {
 
+	if (dosigwinch == 0)
+		sendwindow();
 	dosigwinch = 1;
-	sendwindow();
 }
 
 catchild()
@@ -369,6 +370,7 @@ oob()
 	int out = 1+1, atmark;
 	char waste[BUFSIZ], mark;
 	struct sgttyb sb;
+	static int didnotify = 0;
 
 	ioctl(1, TIOCFLUSH, (char *)&out);
 	for (;;) {
@@ -384,11 +386,12 @@ oob()
 			break;
 	}
 	recv(rem, &mark, 1, MSG_OOB);
-	if (mark & TIOCPKT_WINDOW) {
+	if (didnotify == 0 && (mark & TIOCPKT_WINDOW)) {
 		/*
 		 * Let server know about window size changes
 		 */
 		kill(getppid(), SIGURG);
+		didnotify = 1;
 	}
 	if (eight)
 		return;
