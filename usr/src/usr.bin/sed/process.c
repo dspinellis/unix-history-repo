@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -321,7 +321,9 @@ substitute(cp)
 			/* Move past this match. */
 			s += match[0].rm_eo;
 			slen -= match[0].rm_eo;
-		} while(regexec_e(re, s, REG_NOTBOL, 0, slen));
+		} while(match[0].rm_so != match[0].rm_eo &&
+		    regexec_e(re, s, REG_NOTBOL, 0, slen));
+
 		/* Copy trailing retained string. */
 		cspace(&SS, s, slen, APPEND);
 		break;
