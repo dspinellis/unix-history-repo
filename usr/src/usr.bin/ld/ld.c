@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -83,13 +83,6 @@ char *progname;
 #ifndef DEFAULT_MAGIC
 #define DEFAULT_MAGIC ZMAGIC
 #endif
-
-/* Ordinary 4.3bsd lacks these macros in a.out.h.  */
-
-#define N_TXTADDR(X) 0
-#define N_DATADDR(x) \
-    (((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
-    : (page_size+((N_TXTADDR(x)+(x).a_text-1) & ~(page_size-1))))
 
 #ifdef hp300
 #define	INITIALIZE_HEADER	outheader.a_mid = MID_HP300
