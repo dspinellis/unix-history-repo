@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ps.1	6.13 (Berkeley) %G%
+.\"     @(#)ps.1	6.14 (Berkeley) %G%
 .\"
 .TH PS 1 "March 10, 1988"
 .UC 4
@@ -140,34 +140,34 @@ the include file ``sys/proc.h'':
 .sp
 .nf
 .RS
-.ta \w'SNOCLDSTOP  'u +\w'0040000  'u
-SLOAD	0000001	in core
-SSYS	0000002	swapper or pager process
-SLOCK	0000004	process being swapped out
-SSWAP	0000008	save area flag
-STRC	0000010	process is being traced
-SWTED	0000020	another tracing flag
-SSINTR	0000040	sleep is interruptible
-SPAGE	0000080	process in page wait state
-SKEEP	0000100	another flag to prevent swap out
-SOMASK	0000200	restore old mask after taking signal
-SWEXIT	0000400	working on exiting
-SPHYSIO	0000800	doing physical i/o
-SVFORK	0001000	process resulted from vfork()
-SVFDONE	0002000	another vfork flag
-SNOVM	0004000	no vm, parent in a vfork()
-SPAGV	0008000	init data space on demand, from vnode
-SSEQL	0010000	user warned of sequential vm behavior
-SUANOM	0020000	user warned of random vm behavior
-STIMO	0040000	timing out during sleep
-SNOCLDSTOP	0080000	no SIGCHLD when children stop
-SCTTY	0100000	has a controlling terminal
-SOWEUPC	0200000	owe process an addupc() call at next ast
-SSEL	0400000	selecting; wakeup/waiting danger
-SEXEC	0800000	process called exec
-SHPUX	1000000	HP-UX process (HPUXCOMPAT)
-SULOCK	2000000	locked in core after swap error
-SPTECHG	4000000	pte's for process have changed
+.ta \w'SNOCLDSTOP  'u +\w'0x0040000  'u
+SLOAD	0x0000001	in core
+SSYS	0x0000002	swapper or pager process
+SLOCK	0x0000004	process being swapped out
+SSWAP	0x0000008	save area flag
+STRC	0x0000010	process is being traced
+SWTED	0x0000020	another tracing flag
+SSINTR	0x0000040	sleep is interruptible
+SPAGE	0x0000080	process in page wait state
+SKEEP	0x0000100	another flag to prevent swap out
+SOMASK	0x0000200	restore old mask after taking signal
+SWEXIT	0x0000400	working on exiting
+SPHYSIO	0x0000800	doing physical i/o
+SVFORK	0x0001000	process resulted from vfork()
+SVFDONE	0x0002000	another vfork flag
+SNOVM	0x0004000	no vm, parent in a vfork()
+SPAGV	0x0008000	init data space on demand, from vnode
+SSEQL	0x0010000	user warned of sequential vm behavior
+SUANOM	0x0020000	user warned of random vm behavior
+STIMO	0x0040000	timing out during sleep
+SNOCLDSTOP	0x0080000	no SIGCHLD when children stop
+SCTTY	0x0100000	has a controlling terminal
+SOWEUPC	0x0200000	owe process an addupc() call at next ast
+SSEL	0x0400000	selecting; wakeup/waiting danger
+SEXEC	0x0800000	process called exec
+SHPUX	0x1000000	HP-UX process (HPUXCOMPAT)
+SULOCK	0x2000000	locked in core after swap error
+SPTECHG	0x4000000	pte's for process have changed
 .fi
 .RE
 .TP
@@ -192,7 +192,7 @@ If the command started less than 24 hours ago, the start time is
 displayed using the ``%l:ps.1p'' format described in 
 .IR strftime (3).
 If the command started less than 7 days ago, the start time is
-displayed using the ``%a6.13p'' format.
+displayed using the ``%a6.14p'' format.
 Otherwise, the start time is displayed using the ``%e%b%y'' format.
 .TP
 state
