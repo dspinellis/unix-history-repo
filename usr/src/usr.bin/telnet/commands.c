@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #if	defined(unix)
@@ -661,7 +661,7 @@ static struct togglelist Togglelist[] = {
 	"don't read ~/.telnetrc file",
 	    0,
 		&skiprc,
-		    "read ~/.telnetrc file" },
+		    "skip reading of ~/.telnetrc file" },
     { "binary",
 	"sending and receiving of binary data",
 	    togbinary,
