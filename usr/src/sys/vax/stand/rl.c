@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.3 (Berkeley) %G%
+ *	@(#)rl.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -44,10 +44,8 @@ rlopen(io)
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
 	rladdr = (struct rldevice *)ubamem(io->i_adapt, rlstd[io->i_ctlr]);
-	if (badaddr((char *)rladdr, sizeof(short))) {
-		printf("rl: nonexistent device\n");
+	if (badaddr((char *)rladdr, sizeof(short)))
 		return (ENXIO);
-	}
 	if ((u_int)io->i_part >= MAXPART || rl_off[io->i_part] == -1)
 		return (EPART);
 
