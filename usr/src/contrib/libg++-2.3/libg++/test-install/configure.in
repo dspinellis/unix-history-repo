@@ -1,0 +1,13 @@
+# This file is a shell script fragment that supplies the information
+# necessary to tailor a template configure script into the configure
+# script appropriate for this directory.  For more information, check
+# any existing configure script.
+
+srctrigger=foo_main.cc
+srcname="GNU C++ Class Library: test-install"
+
+# per-host:
+
+
+# per-target:
+
