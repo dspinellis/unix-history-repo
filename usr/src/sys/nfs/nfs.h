@@ -17,28 +17,28 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs.h	7.7 (Berkeley) %G%
+ *	@(#)nfs.h	7.8 (Berkeley) %G%
  */
 
 /*
  * Tunable constants for nfs
  */
 
-#define	NFS_MAXIOVEC	10
+#define	NFS_MAXIOVEC	34
 #define NFS_HZ		10		/* Ticks per second for NFS timeouts */
 #define	NFS_TIMEO	(1*NFS_HZ)	/* Default timeout = 1 second */
-#define	NFS_MINTIMEO	(NFS_HZ/2)	/* Min timeout to use */
+#define	NFS_MINTIMEO	(NFS_HZ)	/* Min timeout to use */
 #define	NFS_MAXTIMEO	(60*NFS_HZ)	/* Max timeout to backoff to */
 #define	NFS_MINIDEMTIMEO (2*NFS_HZ)	/* Min timeout for non-idempotent ops*/
-#define	NFS_RELIABLETIMEO (300*NFS_HZ)	/* Min timeout on reliable sockets */
+#define	NFS_RELIABLETIMEO (5*NFS_HZ)	/* Min timeout on reliable sockets */
 #define	NFS_MAXREXMIT	100		/* Stop counting after this many */
 #define	NFS_MAXWINDOW	1024		/* Max number of outstanding requests */
 #define	NFS_RETRANS	10		/* Num of retrans for soft mounts */
-#define NFS_FISHY	6		/* Host not responding at this count */
+#define NFS_FISHY	8		/* Host not responding at this count */
 #define	NFS_ATTRTIMEO	5		/* Attribute cache timeout in sec */
-#define	NFS_WSIZE	8192		/* Max. write data size <= 8192 */
-#define	NFS_RSIZE	8192		/* Max. read data size <= 8192 */
-#define	NFS_MAXREADDIR	NFS_RSIZE	/* Max. size of directory read */
+#define	NFS_WSIZE	8192		/* Def. write data size <= 8192 */
+#define	NFS_RSIZE	8192		/* Def. read data size <= 8192 */
+#define	NFS_MAXREADDIR	NFS_MAXDATA	/* Max. size of directory read */
 #define	NFS_MAXASYNCDAEMON 20	/* Max. number async_daemons runable */
 #define	NMOD(a)		((a) % nfs_asyncdaemons)
 

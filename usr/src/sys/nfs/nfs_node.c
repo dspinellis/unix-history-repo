@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.27 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -115,7 +115,7 @@ loop:
 			continue;
 		if ((np->n_flag & NLOCKED) != 0) {
 			np->n_flag |= NWANT;
-			sleep((caddr_t)np, PINOD);
+			(void) tsleep((caddr_t)np, PINOD, "nfsnode", 0);
 			goto loop;
 		}
 		vp = NFSTOV(np);
@@ -236,7 +236,7 @@ nfs_lock(vp)
 		if (np->n_lockholder == u.u_procp->p_pid)
 			panic("locking against myself");
 		np->n_lockwaiter = u.u_procp->p_pid;
-		(void) sleep((caddr_t)np, PINOD);
+		(void) tsleep((caddr_t)np, PINOD, "nfslock", 0);
 	}
 	np->n_lockwaiter = 0;
 	np->n_lockholder = u.u_procp->p_pid;

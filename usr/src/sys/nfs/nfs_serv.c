@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.23 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -316,7 +316,8 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 	u_long xid;
 	int *repstat;
 {
-	struct iovec iv[(NFS_MAXDATA+MLEN-1)/MLEN];
+	register struct iovec *iv;
+	struct iovec *iv2;
 	register struct mbuf *m;
 	register struct nfsv2_fattr *fp;
 	register u_long *p;
@@ -354,6 +355,10 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 #ifdef lint
 	m2 = (struct mbuf *)0;
 #endif /* lint */
+	MALLOC(iv, struct iovec *,
+	       ((NFS_MAXDATA+MLEN-1)/MLEN) * sizeof (struct iovec), M_TEMP,
+	       M_WAITOK);
+	iv2 = iv;
 	while (left > 0) {
 		MGET(m, M_WAIT, MT_DATA);
 		if (left > MINCLSIZE)
@@ -361,8 +366,9 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 		m->m_len = 0;
 		siz = min(M_TRAILINGSPACE(m), left);
 		m->m_len = siz;
-		iv[i].iov_base = mtod(m, caddr_t);
-		iv[i].iov_len = siz;
+		iv->iov_base = mtod(m, caddr_t);
+		iv->iov_len = siz;
+		iv++;
 		i++;
 		left -= siz;
 		if (m3) {
@@ -371,7 +377,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 		} else
 			m3 = m2 = m;
 	}
-	uiop->uio_iov = iv;
+	uiop->uio_iov = iv2;
 	uiop->uio_iovcnt = i;
 	uiop->uio_offset = off;
 	uiop->uio_resid = cnt;
@@ -379,6 +385,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 	uiop->uio_segflg = UIO_SYSSPACE;
 	error = VOP_READ(vp, uiop, IO_NODELOCKED, cred);
 	off = uiop->uio_offset;
+	FREE((caddr_t)iv2, M_TEMP);
 	if (error) {
 		m_freem(m3);
 		vput(vp);

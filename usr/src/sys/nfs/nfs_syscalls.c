@@ -17,12 +17,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.15 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "file.h"
 #include "stat.h"
@@ -59,17 +59,19 @@ struct file *getsock();
  * NFS server system calls
  * getfh() lives here too, but maybe should move to kern/vfs_syscalls.c
  */
-#define RETURN(value)	{ u.u_error = (value); return; }
 
 /*
  * Get file handle system call
  */
-getfh()
-{
-	register struct a {
+/* ARGSUSED */
+getfh(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		char	*fname;
 		fhandle_t *fhp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct nameidata *ndp = &u.u_nd;
 	register struct vnode *vp;
 	fhandle_t fh;
@@ -78,7 +80,7 @@ getfh()
 	/*
 	 * Must be super user
 	 */
-	if (error = suser(u.u_cred, &u.u_acflag))
+	if (error = suser(ndp->ni_cred, &u.u_acflag))
 		RETURN (error);
 	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -100,15 +102,18 @@ getfh()
  * Nfs server psuedo system call for the nfsd's
  * Never returns unless it fails or gets killed
  */
-nfssvc()
-{
-	register struct a {
+/* ARGSUSED */
+nfssvc(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int s;
 		caddr_t mskval;
 		int msklen;
 		caddr_t mtchval;
 		int mtchlen;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct mbuf *m;
 	register int siz;
 	register struct ucred *cr;
@@ -117,7 +122,7 @@ nfssvc()
 	struct mbuf msk, mtch;
 	struct socket *so;
 	caddr_t dpos;
-	int procid, repstat, error, cacherep, solock = 0;
+	int procid, repstat, error, cacherep;
 	u_long retxid;
 
 	/*
@@ -133,7 +138,7 @@ nfssvc()
 		siz = NFS_MAXPACKET;
 	else
 		siz = NFS_MAXPACKET + sizeof(u_long);
-	if (error = soreserve(so, siz, siz * 4))
+	if (error = soreserve(so, siz, siz))
 		goto bad;
 	if (error = sockargs(&nam, uap->mskval, uap->msklen, MT_SONAME))
 		goto bad;
@@ -178,13 +183,15 @@ nfssvc()
 	 */
 	for (;;) {
 		if (error = nfs_getreq(so, nfs_prog, nfs_vers, NFS_NPROCS-1,
-		   &nam, &mrep, &md, &dpos, &retxid, &procid, cr, &solock,
+		   &nam, &mrep, &md, &dpos, &retxid, &procid, cr,
 		   &msk, &mtch)) {
 			if (nam)
 				m_freem(nam);
 			if (error == EPIPE || error == EINTR ||
-			    error == ERESTART)
+			    error == ERESTART) {
+				error = 0;
 				goto bad;
+			}
 			so->so_error = 0;
 			continue;
 		}
@@ -231,11 +238,7 @@ nfssvc()
 				M_PREPEND(mreq, sizeof(u_long), M_WAIT);
 				*mtod(mreq, u_long *) = htonl(0x80000000 | siz);
 			}
-			if (so->so_proto->pr_flags & PR_CONNREQUIRED)
-				nfs_solock(&solock, 0);
 			error = nfs_send(so, nam, mreq, (struct nfsreq *)0);
-			if (so->so_proto->pr_flags & PR_CONNREQUIRED)
-				nfs_sounlock(&solock);
 			if (nam)
 				m_freem(nam);
 			if (mrep)
@@ -263,7 +266,11 @@ bad:
  * for client nfs. They are mainly here for read ahead/write behind.
  * Never returns unless it fails or gets killed
  */
-async_daemon()
+/* ARGSUSED */
+async_daemon(p, uap, retval)
+	struct proc *p;
+	struct args *uap;
+	int *retval;
 {
 	register struct buf *bp, *dp;
 	int error;
@@ -286,7 +293,7 @@ async_daemon()
 	 */
 	for (;;) {
 		while (dp->b_actf == NULL) {
-			nfs_iodwant[myiod] = u.u_procp;
+			nfs_iodwant[myiod] = p;
 			if (error = tsleep((caddr_t)&nfs_iodwant[myiod],
 				PWAIT | PCATCH, "nfsidl", 0))
 				RETURN (error);
