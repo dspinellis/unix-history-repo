@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -16,11 +16,14 @@
 AOUT	= tdbx
 DEST	= /usr/ucb/dbx
 
+# Install the mail address of the person maintaining dbx below
+# as -DMAINTAINER.  A null string disables gripes.
+
 CC	= cc
-CFLAGS	= '-DMAINTAINER="linton@shasta"' -g
+CFLAGS	= '-DMAINTAINER=""' -O
 
 LD = cc
-LDFLAGS	= -g
+LDFLAGS	= 
 LIBRARIES =
 
 # LD	= /bin/oldld
@@ -153,10 +156,10 @@ y.tab.c: commands.y
 	yacc -d commands.y
 
 makedefs: makedefs.c library.o cerror.o
-	${CC} -g makedefs.c library.o cerror.o -o makedefs
+	${CC} -O makedefs.c library.o cerror.o -o makedefs
 
 mkdate: mkdate.c
-	${CC} -g mkdate.c -o mkdate
+	${CC} -O mkdate.c -o mkdate
 
 print:
 	@echo "don't print it, it's too long"
@@ -179,7 +182,7 @@ test:
 	@chdir tests; make
 
 install: ${AOUT}
-	install ${AOUT} ${DEST}
+	install -s ${AOUT} ${DEST}
 
 #
 # Create a tar file called "tape" containing relevant files.
