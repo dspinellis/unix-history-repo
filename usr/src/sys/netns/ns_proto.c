@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_proto.c	6.2 (Berkeley) %G%
+ *	@(#)ns_proto.c	6.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,17 +35,17 @@ struct protosw nssw[] = {
   ns_init,	0,		0,		0,
 },
 { SOCK_DGRAM,	&nsdomain,	0,		PR_ATOMIC|PR_ADDR,
-  0,		0,		idp_ctlinput,	idp_ctloutput,
+  0,		0,		0,		idp_ctloutput,
   idp_usrreq,
   0,		0,		0,		0,
 },
 { SOCK_STREAM,	&nsdomain,	NSPROTO_SPP,	PR_CONNREQUIRED|PR_WANTRCVD,
-  spp_input,	0,		spp_ctlinput,	spp_ctloutput,
+  spp_input,	0,		0,		spp_ctloutput,
   spp_usrreq,
   spp_init,	spp_fasttimo,	spp_slowtimo,	0,
 },
 { SOCK_SEQPACKET,&nsdomain,	NSPROTO_SPP,	PR_CONNREQUIRED|PR_WANTRCVD|PR_ATOMIC,
-  spp_input,	0,		spp_ctlinput,	spp_ctloutput,
+  spp_input,	0,		0,		spp_ctloutput,
   spp_usrreq_sp,
   0,		0,		0,		0,
 },
