@@ -1,10 +1,11 @@
-/*	uu.c	4.3	83/05/08	*/
+/*	uu.c	4.4	83/06/01	*/
 
 #include "uu.h"
-#if NDL > 0
+#if NUU > 0
 /*
  * TU58 DECtape II/DL11 device driver
- * (based on a driver written by Mike Obrien @ RAND)
+ *
+ *  ******   Warning: untested  ******
  *
  * The TU58 * is treated as a block device (only).  Error detection and
  * recovery is almost non-existant.  It is assumed that the
@@ -33,15 +34,16 @@
 
 #define	printd	if (uudebug) printf
 #ifdef	printd
-int	uudebug;		/* printd */
+int	uudebug = 0;		/* printd */
 #endif	printd
 
 #define	NTUBLK	512		/* number of blocks on a TU58 cassette */
-#define	WRV     02              /* bit in minor dev => write w. read verify */
+#define	WRV     01              /* bit in minor dev => write w. read verify */
 #define	NDPC	02		/* drives per controller */
-#define	NUU	NDPC * NDL	/* number of drives */
-#define	DNUM	01		/* mask for drive number */
+#define	NUX	NDPC * NUU	/* number of drives */
 #define	NTUQ	02		/* # of block which can be queued up */
+#define	UMASK	01		/* unit number mask */
+#define UUIPL	04		/* ipl level to use */
 
 /*
  * Structure of a command packet
@@ -59,8 +61,9 @@ struct packet {
 	u_short	pk_chksum;	/* checksum, by words with end around carry */
 };
 
-struct packet uucmd[NDL];	/* a command sent to the TU58 */
-struct packet uudata[NDL];	/* a command or data returned from TU58 */
+struct packet uucmd[NUU];	/* a command sent to the TU58 */
+struct packet uudata[NUU];	/* a command or data returned from TU58 */
+struct buf uitab[NUU];		/* buffer queue headers */
 
 /*
  * per controller state information
@@ -78,7 +81,7 @@ struct uu_ctlr {
 	int	uu_cerrs;	/* count of checksum errors */
 	int	uu_herrs;	/* count of hard errors */
 	char    uu_dopen[NDPC];	/* drive is open */
-} uu_ctlr[NDL];
+} uu_ctlr[NUU];
 
 /*
  * controller states
@@ -103,7 +106,7 @@ char *uustates[UUS_NSTATES] = {
 	"SENDW", "GETH", "GETD", "GETC", "GET", "WAIT"
 };
 
-#define	UNIT(dev)	(minor(dev)&DNUM)
+#define	UNIT(dev)	(minor(dev)>>1)
 #define	printstate(state) \
 	if ((state) < UUS_NSTATES) \
 		printf("%s", uustates[(state)]); \
@@ -143,15 +146,14 @@ u_char	uunull[2] = { 0, 0 };	/* nulls to send for initialization */
 u_char	uuinit[2] = { TUF_INITF, TUF_INITF };	/* inits to send */
 
 struct	uba_device	*uudinfo[NUU];
-struct	uba_ctlr	*uuminfo[NDL];
 
-int uuprobe(), uuslave(), uuattach(), uudgo(), uurintr(), uuxintr(), uuwatch();
-u_short uustd[] = { 0176500, 0 };
-struct uba_driver dldriver =
-    { uuprobe, uuslave, uuattach, uudgo, uustd, "uu", uudinfo, "uu", uuminfo };
+int uuprobe(), uuattach(), uurintr(), uuxintr(), uuwatch();
+u_short uustd[] = { 0176500 };
+struct uba_driver uudriver =
+    { uuprobe, 0, uuattach, 0, uustd, "uu", uudinfo };
 
 int	uuwstart;
-static char pcnt[2];			/* pee/vee counters */
+static char pcnt[NUX];			/* pee/vee counters */
 
 /*ARGSUSED*/
 uuprobe(reg)
@@ -165,26 +167,16 @@ uuprobe(reg)
 	br = 0; cvec = br; br = cvec;
 	uurintr(0); uuxintr(0);
 #endif
-	uuaddr->rcs = UUCS_INTR;
-	uuaddr->tdb = TUF_INITF;
-	DELAY(10000);
-	i = uuaddr->rdb;
-	uuaddr->rcs = 0;
+	uuaddr->tcs = UUCS_INTR;
+	DELAY(1000);
+	uuaddr->tcs = 0;
+	cvec -= 4;		/* since we are using the xmitter intrpt */
 	return(sizeof (*uuaddr));
 }
 
-uuslave(ui, reg)
-	struct uba_device *ui;
-	caddr_t reg;
-{
-	return (ui->ui_slave == 0 || ui->ui_slave == 1);
-}
-
-/*ARGSUSED*/
 uuattach(ui)
-	struct uba_device *ui;
+	register struct uba_device *ui;
 {
-	/* no local state to set up */
 }
 
 /*ARGSUSED1*/
@@ -195,29 +187,27 @@ uuopen(dev, flag)
 	register struct uba_device *ui;
 	register struct uu_ctlr *uuc;
 	register struct uudevice *uuaddr;
-	register struct uba_ctlr *um;
 	int ctlr, unit = UNIT(dev), s;
 
-	if (unit >= NUU || (ui = uudinfo[unit]) == 0 || ui->ui_alive == 0)
+	ctlr = unit / NDPC;
+	if (unit >= NUX || (ui = uudinfo[ctlr]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
-	um = ui->ui_mi;
-	ctlr = um->um_ctlr;
 	uuc = &uu_ctlr[ctlr];
-	if (uuc->uu_dopen[unit&DNUM])
+	if (uuc->uu_dopen[unit&UMASK])
 		return (EBUSY);
 	if (uuwstart++ == 0)
 		timeout(uuwatch, (caddr_t)0, hz);
 
-	uuc->uu_dopen[unit&DNUM]++;
-	uuaddr = (struct uudevice *)um->um_addr;
-	s = spl5();
+	uuc->uu_dopen[unit&UMASK]++;
+	uuaddr = (struct uudevice *)ui->ui_addr;
+	s = splx(UUIPL);
 	/*
 	 * If the unit already initialized,
 	 * just enable interrupts and return.
 	 */
 	if (uuc->uu_state == UUS_IDLE) {
 		uuaddr->rcs = UUCS_INTR;
-		splx(s);
+		(void) splx(s);
 		return (0);
 	}
 
@@ -227,10 +217,10 @@ uuopen(dev, flag)
 	 */
 	uureset(ctlr);
 	sleep((caddr_t)uuc, PZERO+1);
-	um->um_tab.b_active = NULL;
+	uitab[ctlr].b_active = NULL;
 	if (uuc->uu_state != UUS_IDLE) {
 		uuc->uu_state = UUS_INIT1;
-		uuc->uu_dopen[unit&DNUM] = 0;
+		uuc->uu_dopen[unit&UMASK] = 0;
 		uuc->uu_rcnt = uuc->uu_wcnt = 0;
 		uuaddr->rcs = 0;
 		uuaddr->tcs = 0;
@@ -245,22 +235,22 @@ uuclose(dev, flag)
 	dev_t dev;
 	int flag;
 {
-	register struct uba_ctlr *um = uudinfo[UNIT(dev)]->ui_mi;
 	register struct uu_ctlr *uuc;
+	int unit = UNIT(dev);
 
 	uuwstart--;
-	uuc = &uu_ctlr[um->um_ctlr];
+	uuc = &uu_ctlr[unit%NDPC];
 	if (uuc->uu_serrs + uuc->uu_cerrs + uuc->uu_herrs != 0) {
 		/*
 		 * A tu58 is like nothing ever seen before;
 		 * I guess this is appropriate then...
 		 */
 		uprintf(
-		   "uu%d: %d soft errors, %d chksum errors, %d hard errors\n",
-		    UNIT(dev), uuc->uu_serrs, uuc->uu_cerrs, uuc->uu_herrs);
+		   "uu%d: %d soft errors, %d checksum errors, %d hard errors\n",
+		    unit, uuc->uu_serrs, uuc->uu_cerrs, uuc->uu_herrs);
 		    uuc->uu_serrs = uuc->uu_cerrs = uuc->uu_herrs = 0;
 	}
-	uuc->uu_dopen[UNIT(dev)] = 0;
+	uuc->uu_dopen[unit%NDPC] = 0;
 }
 
 uureset(ctlr)
@@ -268,10 +258,11 @@ uureset(ctlr)
 {
 	register struct uu_ctlr *uuc = &uu_ctlr[ctlr];
 	register struct packet *cmd = &uucmd[ctlr];
-	struct uba_ctlr *um = uuminfo[ctlr];
-	register struct uudevice *uuaddr = (struct uudevice *)um->um_addr;
+	struct uba_device *ui = uudinfo[ctlr];
+	register struct uudevice *uuaddr = (struct uudevice *)ui->ui_addr;
 
-	um->um_tab.b_active++;
+	printf ("uureset\n");
+	uitab[ctlr].b_active++;
 	uuc->uu_state = UUS_INIT1;
 	uuc->uu_wbptr = uunull;
 	uuc->uu_wcnt = sizeof (uunull);
@@ -285,10 +276,6 @@ uureset(ctlr)
 	uuxintr(ctlr);				/* start output */
 }
 
-uudgo()
-{
-}
-
 /*
  * Strategy routine for block I/O
  */
@@ -297,27 +284,28 @@ uustrategy(bp)
 {
 	register struct buf *uutab;
 	struct uba_device *ui;
-	int s, unit = UNIT(bp->b_dev);
+	int s, unit = UNIT(minor(bp->b_dev));
 
-	if (unit > NUU)
+	if (unit > NUX)
 		goto bad;
 	if (bp->b_blkno >= NTUBLK)
 		goto bad;
-	ui = uudinfo[unit];
+	ui = uudinfo[unit/NDPC];
 	if (ui == 0 || ui->ui_alive == 0)
 		goto bad;
-	uutab = &ui->ui_mi->um_tab;	/* one request queue per controller */
+	uutab = &uitab[unit/NDPC];	/* one request queue per controller */
 	if ((bp->b_flags&B_READ) == 0)
-		uu_pee(&pcnt[UNIT(bp->b_dev)]);
-	s = spl5();
-	bp->av_forw = NULL;
+		uu_pee(&pcnt[unit]);
+	printf("uustrat: unit=%d, bp=%x\n", unit, bp);
+	s = splx(UUIPL);
+	bp->b_forw = NULL;
 	if (uutab->b_actf == NULL)
 		uutab->b_actf = bp;
 	else
-		uutab->b_actl->av_forw = bp;
+		uutab->b_actl->b_forw = bp;
 	uutab->b_actl = bp;
 	if (uutab->b_active == 0)
-		uustart(ui->ui_mi);
+		uustart(ui);
 	splx(s);
 	return;
 
@@ -331,29 +319,27 @@ bad:
 /*
  * Start the transfer
  */
-uustart(um)
-	register struct uba_ctlr *um;
+uustart(ui)
+	register struct uba_device *ui;
 {
 	register struct buf *bp;
 	register struct uu_ctlr *uuc;
 	struct packet *cmd;
-	int ctlr;
+	int ctlr = ui->ui_unit;
 
-	bp = um->um_tab.b_actf;
-	if (bp == NULL)
+	if ((bp = uitab[ctlr].b_actf) == NULL)
 		return;
-	ctlr = um->um_ctlr;
 	uuc = &uu_ctlr[ctlr];
 	cmd = &uucmd[ctlr];
 	if (uuc->uu_state != UUS_IDLE) {
 		uureset(ctlr);
 		return;
 	}
-	um->um_tab.b_active++;
+	uitab[ctlr].b_active++;
 	cmd->pk_op = bp->b_flags&B_READ ? TUOP_READ : TUOP_WRITE;
 	cmd->pk_mod = ((bp->b_flags&B_READ) == 0 && (minor(bp->b_dev)&WRV)) ?
 	    TUMD_WRV : 0;
-	cmd->pk_unit = UNIT(bp->b_dev);
+	cmd->pk_unit = UNIT(minor(bp->b_dev));
 	cmd->pk_sw = 0;
 	cmd->pk_count = uuc->uu_count = bp->b_bcount;
 	cmd->pk_block = bp->b_blkno;
@@ -374,31 +360,36 @@ uustart(um)
 uurintr(ctlr)
 	int ctlr;
 {
-	struct uba_ctlr *um = uuminfo[ctlr];
-	register struct buf *bp = um->um_tab.b_actf;
+	struct uba_device *ui = uudinfo[ctlr];
 	register struct uu_ctlr *uuc = &uu_ctlr[ctlr];
-	register struct uudevice *uuaddr = (struct uudevice *)um->um_addr;
-	register struct buf *uutab = &um->um_tab;
+	register struct uudevice *uuaddr = (struct uudevice *)ui->ui_addr;
+	register struct buf *uutab = &uitab[ctlr];
+	register struct buf *bp = uutab->b_actf;
 	struct packet *data, *cmd;
-	int c;
+	int c, unit = UNIT(minor(bp->b_dev));
 
-	if (!uutab->b_active)
+	c = uuaddr->rdb;
+	/*
+	 * We may have a stray interrupt, but read
+	 * the data anyway, otherwise we'll get an overrun
+	 * next time
+	 */
+	if (uutab->b_active == 0)
 		return;
 	cmd = &uucmd[ctlr];
-	c = uuaddr->rdb;
 	if (c & UURDB_ERROR) {
 		if (c & UURDB_ORUN) {
-			printf("data overrun, ");
-			goto bad;
+			printf("uu%d: data overrun (ignored)\n", unit);
 		} else {
 			printf("uu%d: break received, device reset, state=", 
-				UNIT(bp->b_dev));
+				unit);
 			printstate(uuc->uu_state);
 			uureset(ctlr);
 			printf("\n");
 			return;
 		}
 	}
+	data = &uudata[ctlr];
 top:
 	c &= 0xff;
 	if (uuc->uu_rcnt) {		/* still waiting for data? */
@@ -406,7 +397,6 @@ top:
 		if (--uuc->uu_rcnt)	/* decrement count, any left? */
 			return;		/* get some more */
 	}
-	data = &uudata[ctlr];
 
 	/*
 	 * We got all the data we were expecting for now,
@@ -422,7 +412,7 @@ top:
 		uuc->uu_state = c == TUF_CONT ? UUS_IDLE : UUS_INIT1;
 		uuc->uu_flag = 0;
 		wakeup((caddr_t)uuc);
-		uustart(um);
+		uustart(ui);
 		break;
 
 	/*
@@ -442,7 +432,7 @@ top:
 			uuc->uu_state = UUS_SENDH;
 			uuc->uu_wbptr = (u_char *)data;
 			uuc->uu_wcnt = 2;
-			tuxintr();
+			uuxintr(ctlr);
 			break;
 
 		case TUF_CMD:   /* sending us an END packet...error */
@@ -454,7 +444,7 @@ top:
 			goto top;
 
 		case TUF_INITF:
-			tureset();
+			uureset(ctlr);
 			break;
 
 		default:        /* something random...bad news */
@@ -513,8 +503,9 @@ top:
 			uuaddr->rcs = UUCS_INTR;
 			printd("ON ");
 			if (bp == NULL) {
-				printf("uu: no bp active\n");
-				uustart(um);
+				printf("uu(%d): no bp, active %d\n", 
+					uitab[ctlr].b_active);
+				uustart(ui);
 				return;
 			}
 			if (data->pk_mod > 1) {        /* hard error */
@@ -525,12 +516,12 @@ top:
 			} else if (data->pk_mod != 0)	/* soft error */
 				uuc->uu_serrs++;
 			uutab->b_active = NULL;
-			uutab->b_actf = bp->av_forw;
+			uutab->b_actf = bp->b_forw;
 			bp->b_resid = uuc->uu_count;
 			if ((bp->b_flags&B_READ) == 0)
-				uu_vee(&pcnt[UNIT(bp->b_dev)]);
+				uu_vee(&pcnt[unit]);
 			iodone(bp);
-			uustart(um);
+			uustart(ui);
 		} else {
 			printf("neither data nor end: %o %o\n",
 			    data->pk_flag&0xff, data->pk_op&0xff);
@@ -546,26 +537,26 @@ top:
 	default:
 bad:
 		if (c == TUF_INITF) {
-			printf("uu%d protocol error, state=", UNIT(bp->b_dev));
+			printf("uu%d protocol error, state=", unit);
 			printstate(uuc->uu_state);
 			printf(", op=%x, cnt=%d, block=%d\n",
 			    cmd->pk_op, cmd->pk_count, cmd->pk_block);
 			uutab->b_active = NULL;
 			if (bp = uutab->b_actf) {
 				bp->b_flags |= B_ERROR;
-				uutab->b_actf = bp->av_forw;
+				uutab->b_actf = bp->b_forw;
 				if ((bp->b_flags&B_READ) == 0)
-					uu_vee(&pcnt[UNIT(bp->b_dev)]);
+					uu_vee(&pcnt[unit]);
 				iodone(bp);
 			}
 			uuc->uu_state = UUS_INIT1;
 		} else {
 			printf("uu%d receive state error, state=", 
-				UNIT(bp->b_dev));
+				unit);
 			printstate(uuc->uu_state);
 			printf(", byte=%x\n", c);
 #ifdef notdef
-			uuc->uu_state = UUS_INIT1; */
+			uuc->uu_state = UUS_INIT1;
 #endif
 			wakeup((caddr_t)uuc);
 		}
@@ -579,11 +570,13 @@ uuxintr(ctlr)
 	int ctlr;
 {
 	register struct uu_ctlr *uuc = &uu_ctlr[ctlr];
-	register struct uudevice *uuaddr = 
-				(struct uudevice *) uuminfo[ctlr]->um_addr;
+	register struct uudevice *uuaddr;
 	register struct packet *data;
+	struct uba_device *ui = uudinfo[ctlr];
 	int c;
 
+	data = &uudata[ctlr];
+	uuaddr = (struct uudevice *) ui->ui_addr;
 top:
 	if (uuc->uu_wcnt) {
 		/* still stuff to send, send one byte */
@@ -593,7 +586,6 @@ top:
 		uuc->uu_wcnt--;
 		return;
 	}
-	data = &uudata[ctlr];
 
 	/*
 	 * Last message byte was sent out.
@@ -620,7 +612,7 @@ top:
 	 * Inits have been sent, wait for a continue msg.
 	 */
 	case UUS_INIT2:	
-		c = uuaddr->rdb;		/* not used */
+		c = uuaddr->rdb;	/* prevent overrun error */
 		uuaddr->rcs = UUCS_INTR;
 		uuc->uu_flag = 1;
 		break;
@@ -705,6 +697,7 @@ top:
 	if (uudebug) {
 		printd("  new uu_state=");
 		printstate(uuc->uu_state);
+		printf("\n");
 	}
 }
 
@@ -753,17 +746,17 @@ uuwatch()
 {
 	register struct uu_ctlr *uuc;
 	register struct uudevice *uuaddr;
-	struct uba_ctlr *um;
+	struct uba_device *ui;
 	struct buf *bp, *uutab;
 	int s;
 
 	if (uuwstart == 0)
 		return;
-	for (s=0; s<NDL; s++) {
+	for (s=0; s<NUU; s++) {
 		int i;
 
 		uuc = &uu_ctlr[s];
-		um = uuminfo[s];
+		ui = uudinfo[s];
 		if (uuc->uu_flag)
 			uuc->uu_flag++;
 		if (uuc->uu_flag <= 40)
@@ -773,8 +766,8 @@ uuwatch()
 		       uuc->uu_wbptr, uuc->uu_wcnt, uuc->uu_state, uuc->uu_flag,
 		       uuc->uu_addr, uuc->uu_count);
 		uuc->uu_flag = 0;
-		uuaddr = (struct uudevice *)um->um_addr;
-		uutab = &um->um_tab;
+		uuaddr = (struct uudevice *)ui->ui_addr;
+		uutab = &uitab[s];
 		i = uuaddr->rdb;		/* dummy */
 		uuaddr->rcs = UUCS_INTR;	/* in case we were flushing */
 		uuaddr->tcs = UUCS_INTR;
@@ -784,13 +777,13 @@ uuwatch()
 			continue;
 		}
 		if (++uutab->b_errcnt <= 1) {
-			uustart(um);
+			uustart(ui);
 			continue;
 		}
 		if (bp = uutab->b_actf) {
 			bp->b_flags |= B_ERROR;
 			if ((bp->b_flags&B_READ) == 0)
-				uu_vee(&pcnt[UNIT(bp->b_dev)]);
+				uu_vee(&pcnt[UNIT(minor(bp->b_dev))]);
 			iodone(bp);
 		}
 	}
@@ -798,12 +791,23 @@ uuwatch()
 	return;
 }
 
+
+uuioctl(dev, cmd, data, flag)
+	dev_t dev;
+	caddr_t data;
+{
+	/*
+	 * to be added later
+	 */
+	return (ENXIO);
+}
+
 uu_pee(cp)
 char *cp;
 {
 	register int s;
 
-	s = spl5();
+	s = splx(UUIPL);
 	if (++(*cp) > NTUQ) {
 		sleep(cp, PRIBIO);
 	}
@@ -815,7 +819,7 @@ char *cp;
 {
 	register int s;
 
-	s = spl5();
+	s = splx(UUIPL);
 	if (--(*cp) <= NTUQ) {
 		wakeup(cp);
 	}
