@@ -12,30 +12,20 @@
 # from this software without specific prior written permission.
 # THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
-MDIR=	/usr/man/cat7
-SRCS=	ascii.7 environ.7 eqnchar.7 hier.7 hostname.7 intro.7 mailaddr.7 \
-	man.7 me.7 ms.7 term.7
+MDIR=	${DESTDIR}/usr/man/cat7
 OBJS=	ascii.0 environ.0 eqnchar.0 hier.0 hostname.0 intro.0 mailaddr.0 \
 	man.0 me.0 ms.0 term.0
-LINKS=	miscellaneous.0
 
-.SUFFIXES: .7 .0
+all clean depend lint tags:
 
-.7.0:
-	${DESTDIR}/usr/man/manroff $*.7 > $*.0
-
-all: ${OBJS}
-
-clean: FRC
+cleandir:
 	rm -f ${OBJS}
 
-install: FRC
-	cd ${DESTDIR}${MDIR}; rm -f *.0
-	install -c -o bin -g bin -m 444 ${OBJS} ${DESTDIR}${MDIR}
-	ln ${DESTDIR}${MDIR}/intro.0 ${DESTDIR}${MDIR}/miscellaneous.0
-
-FRC:
+install: ${OBJS}
+	install -c -o bin -g bin -m 444 ${OBJS} ${MDIR}
+	rm -f ${MDIR}/miscellaneous.0; \
+		ln ${MDIR}/intro.0 ${MDIR}/miscellaneous.0
