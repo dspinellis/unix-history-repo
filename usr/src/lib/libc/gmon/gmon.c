@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.7 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -34,7 +34,7 @@ monstartup(lowpc, highpc)
     s_lowpc = lowpc;
     s_highpc = highpc;
     s_textsize = highpc - lowpc;
-    monsize = s_textsize + sizeof(struct phdr);
+    monsize = (s_textsize + 1) / 2 + sizeof(struct phdr);
     buffer = sbrk( monsize );
     if ( buffer == (char *) -1 ) {
 	write( 2 , MSG , sizeof(MSG) );
