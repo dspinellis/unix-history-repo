@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -208,7 +208,7 @@ main(argc, argv)
 		default:
 			usage();
 		}
-	if (argc -= optind)
+	if ((argc -= optind) != 0)
 		usage();
 
 	if (!Debug)
@@ -219,7 +219,7 @@ main(argc, argv)
 	consfile.f_type = F_CONSOLE;
 	(void)strcpy(consfile.f_un.f_fname, ctty);
 	(void)gethostname(LocalHostName, sizeof LocalHostName);
-	if (p = index(LocalHostName, '.')) {
+	if ((p = index(LocalHostName, '.')) != NULL) {
 		*p++ = '\0';
 		LocalDomain = p;
 	} else
@@ -693,6 +693,7 @@ wallmsg(f, iov)
 	register int i;
 	struct utmp ut;
 	char *p;
+	char line[sizeof(ut.ut_line) + 1];
 
 	if (reenter++)
 		return;
@@ -705,8 +706,10 @@ wallmsg(f, iov)
 	while (fread((char *)&ut, sizeof ut, 1, uf) == 1) {
 		if (ut.ut_name[0] == '\0')
 			continue;
+		strncpy(line, ut.ut_line, sizeof(ut.ut_line));
+		line[sizeof(ut.ut_line)] = '\0';
 		if (f->f_type == F_WALL) {
-			if (p = ttymsg(iov, 6, ut.ut_line, 60*5)) {
+			if ((p = ttymsg(iov, 6, line, 60*5)) != NULL) {
 				errno = 0;	/* already in msg */
 				logerror(p);
 			}
@@ -718,7 +721,7 @@ wallmsg(f, iov)
 				break;
 			if (!strncmp(f->f_un.f_uname[i], ut.ut_name,
 			    UT_NAMESIZE)) {
-				if (p = ttymsg(iov, 6, ut.ut_line, 60*5)) {
+				if ((p = ttymsg(iov, 6, line, 60*5)) != NULL) {
 					errno = 0;	/* already in msg */
 					logerror(p);
 				}
