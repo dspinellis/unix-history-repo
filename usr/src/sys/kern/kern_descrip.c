@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.11 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -37,35 +37,61 @@
 /*
  * System calls on descriptors.
  */
-getdtablesize()
+/* ARGSUSED */
+getdtablesize(p, uap, retval)
+	struct proc *p;
+	struct args *uap;
+	int *retval;
 {
 
-	u.u_r.r_val1 = NOFILE;
+	*retval = NOFILE;
+	RETURN (0);
 }
 
-dup()
-{
-	register struct a {
+/*
+ * Duplicate a file descriptor.
+ */
+/* ARGSUSED */
+dup(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	i;
-	} *uap = (struct a *) u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct file *fp;
-	int j;
+	int fd, error;
 
-	if (uap->i &~ 077) { uap->i &= 077; dup2(); return; }	/* XXX */
+	/*
+	 * XXX Compatibility
+	 */
+	if (uap->i &~ 077) { uap->i &= 077; RETURN (dup2(p, uap, retval)); }
 
 	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
 		RETURN (EBADF);
-	if (u.u_error = ufalloc(0, &j))
-		return;
-	u.u_r.r_val1 = j;
-	dupit(j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
+	if (error = ufalloc(0, &fd))
+		RETURN (error);
+	u.u_ofile[fd] = fp;
+	u.u_pofile[fd] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
+	fp->f_count++;
+	if (fd > u.u_lastfile)
+		u.u_lastfile = fd;
+	*retval = fd;
+	RETURN (0);
 }
 
-dup2()
+/*
+ * Duplicate a file descriptor to a particular value.
+ */
+/* ARGSUSED */
+dup2(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		int	i;
+		int	j;
+	} *uap;
+	int *retval;
 {
-	register struct a {
-		int	i, j;
-	} *uap = (struct a *) u.u_ap;
 	register struct file *fp;
 	int error;
 
@@ -73,7 +99,7 @@ dup2()
 		RETURN (EBADF);
 	if (uap->j < 0 || uap->j >= NOFILE)
 		RETURN (EBADF);
-	u.u_r.r_val1 = uap->j;
+	*retval = uap->j;
 	if (uap->i == uap->j)
 		RETURN (0);
 	if (u.u_ofile[uap->j]) {
@@ -81,7 +107,11 @@ dup2()
 			munmapfd(uap->j);
 		error = closef(u.u_ofile[uap->j]);
 	}
-	dupit(uap->j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
+	u.u_ofile[uap->j] = fp;
+	u.u_pofile[uap->j] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
+	fp->f_count++;
+	if (uap->j > u.u_lastfile)
+		u.u_lastfile = uap->j;
 	/*
 	 * dup2() must succeed even though the close had an error.
 	 */
@@ -89,32 +119,22 @@ dup2()
 	RETURN (error);
 }
 
-dupit(fd, fp, flags)
-	int fd;
-	register struct file *fp;
-	register int flags;
-{
-
-	u.u_ofile[fd] = fp;
-	u.u_pofile[fd] = flags;
-	fp->f_count++;
-	if (fd > u.u_lastfile)
-		u.u_lastfile = fd;
-}
-
 /*
  * The file control system call.
  */
-fcntl()
-{
-	register struct file *fp;
-	register struct a {
+/* ARGSUSED */
+fcntl(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		int	cmd;
 		int	arg;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	register struct file *fp;
 	register char *pop;
-	int i;
+	int i, error;
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
@@ -122,50 +142,49 @@ fcntl()
 	pop = &u.u_pofile[uap->fdes];
 	switch(uap->cmd) {
 	case F_DUPFD:
-		if (uap->arg < 0 || uap->arg >= NOFILE) {
-			u.u_error = EINVAL;
-			return;
-		}
-		if (u.u_error = ufalloc(uap->arg, &i))
-			return;
-		u.u_r.r_val1 = i;
-		dupit(i, fp, *pop &~ UF_EXCLOSE);
-		break;
+		if (uap->arg < 0 || uap->arg >= NOFILE)
+			RETURN (EINVAL);
+		if (error = ufalloc(uap->arg, &i))
+			RETURN (error);
+		u.u_ofile[i] = fp;
+		u.u_pofile[i] = *pop &~ UF_EXCLOSE;
+		fp->f_count++;
+		if (i > u.u_lastfile)
+			u.u_lastfile = i;
+		*retval = i;
+		RETURN (0);
 
 	case F_GETFD:
-		u.u_r.r_val1 = *pop & 1;
-		break;
+		*retval = *pop & 1;
+		RETURN (0);
 
 	case F_SETFD:
 		*pop = (*pop &~ 1) | (uap->arg & 1);
-		break;
+		RETURN (0);
 
 	case F_GETFL:
-		u.u_r.r_val1 = fp->f_flag+FOPEN;
-		break;
+		*retval = fp->f_flag + FOPEN;
+		RETURN (0);
 
 	case F_SETFL:
 		fp->f_flag &= FCNTLCANT;
 		fp->f_flag |= (uap->arg-FOPEN) &~ FCNTLCANT;
-		u.u_error = fset(fp, FNDELAY, fp->f_flag & FNDELAY);
-		if (u.u_error)
-			break;
-		u.u_error = fset(fp, FASYNC, fp->f_flag & FASYNC);
-		if (u.u_error)
+		if (error = fset(fp, FNDELAY, fp->f_flag & FNDELAY))
+			RETURN (error);
+		if (error = fset(fp, FASYNC, fp->f_flag & FASYNC))
 			(void) fset(fp, FNDELAY, 0);
-		break;
+		RETURN (error);
 
 	case F_GETOWN:
-		u.u_error = fgetown(fp, &u.u_r.r_val1);
-		break;
+		RETURN (fgetown(fp, retval));
 
 	case F_SETOWN:
-		u.u_error = fsetown(fp, uap->arg);
-		break;
+		RETURN (fsetown(fp, uap->arg));
 
 	default:
-		u.u_error = EINVAL;
+		RETURN (EINVAL);
 	}
+	/* NOTREACHED */
 }
 
 fset(fp, bit, value)
@@ -228,11 +247,17 @@ fioctl(fp, cmd, value)
 	return ((*fp->f_ops->fo_ioctl)(fp, cmd, value));
 }
 
-close()
-{
-	struct a {
+/*
+ * Close a file descriptor.
+ */
+/* ARGSUSED */
+close(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	fdes;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct file *fp;
 	register u_char *pf;
 
@@ -249,14 +274,21 @@ close()
 	RETURN (closef(fp));
 }
 
-fstat()
-{
-	register struct file *fp;
-	register struct a {
+/*
+ * Return status information about a file descriptor.
+ */
+/* ARGSUSED */
+fstat(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		struct	stat *sb;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
+	register struct file *fp;
 	struct stat ub;
+	int error;
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
@@ -264,20 +296,20 @@ fstat()
 	switch (fp->f_type) {
 
 	case DTYPE_VNODE:
-		u.u_error = vn_stat((struct vnode *)fp->f_data, &ub);
+		error = vn_stat((struct vnode *)fp->f_data, &ub);
 		break;
 
 	case DTYPE_SOCKET:
-		u.u_error = soo_stat((struct socket *)fp->f_data, &ub);
+		error = soo_stat((struct socket *)fp->f_data, &ub);
 		break;
 
 	default:
 		panic("fstat");
 		/*NOTREACHED*/
 	}
-	if (u.u_error == 0)
-		u.u_error = copyout((caddr_t)&ub, (caddr_t)uap->sb,
-		    sizeof (ub));
+	if (error == 0)
+		error = copyout((caddr_t)&ub, (caddr_t)uap->sb, sizeof (ub));
+	RETURN (error);
 }
 
 /*
@@ -300,6 +332,9 @@ ufalloc(want, result)
 	return (EMFILE);
 }
 
+/*
+ * Check to see if any user file descriptors are available.
+ */
 ufavail()
 {
 	register int i, avail = 0;
@@ -377,34 +412,35 @@ closef(fp)
 /*
  * Apply an advisory lock on a file descriptor.
  */
-flock()
-{
-	register struct a {
+/* ARGSUSED */
+flock(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	fdes;
 		int	how;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct file *fp;
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
 		RETURN (EBADF);
-	if (fp->f_type != DTYPE_VNODE) {
-		u.u_error = EOPNOTSUPP;
-		return;
-	}
+	if (fp->f_type != DTYPE_VNODE)
+		RETURN (EOPNOTSUPP);
 	if (uap->how & LOCK_UN) {
 		vn_unlock(fp, FSHLOCK|FEXLOCK);
-		return;
+		RETURN (0);
 	}
 	if ((uap->how & (LOCK_SH | LOCK_EX)) == 0)
-		return;					/* error? */
+		RETURN (0);				/* error? */
 	if (uap->how & LOCK_EX)
 		uap->how &= ~LOCK_SH;
 	/* avoid work... */
 	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
 	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
-		return;
-	u.u_error = vn_lock(fp, uap->how);
+		RETURN (0);
+	RETURN (vn_lock(fp, uap->how));
 }
 
 /*
@@ -452,7 +488,11 @@ fdopen(dev, mode, type)
 	 */
 	if ((mode & (FREAD|FWRITE) | wfp->f_flag) != wfp->f_flag)
 		return (EACCES);
-	dupit(indx, wfp, u.u_pofile[dfd]);
+	u.u_ofile[indx] = wfp;
+	u.u_pofile[indx] = u.u_pofile[dfd];
+	wfp->f_count++;
+	if (indx > u.u_lastfile)
+		u.u_lastfile = indx;
 
 	/*
 	 * Delete references to this pseudo-device by returning a special
