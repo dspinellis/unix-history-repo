@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c	4.7 (Berkeley) 82/12/30";
+static	char *sccsid = "@(#)proc.c	4.8 (Berkeley) 83/02/03";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -57,7 +57,7 @@ found:
 			time_t oldcutimes, oldcstimes;
 			oldcutimes = shtimes.tms_cutime;
 			oldcstimes = shtimes.tms_cstime;
-			time(&pp->p_etime);
+			gettimeofday(&pp->p_etime, (struct timezone *)0);
 			times(&shtimes);
 			pp->p_utime = shtimes.tms_cutime - oldcutimes;
 			pp->p_stime = shtimes.tms_cstime - oldcstimes;
@@ -398,7 +398,7 @@ palloc(pid, t)
 	}
 	pp->p_next = proclist.p_next;
 	proclist.p_next = pp;
-	time(&pp->p_btime);
+	gettimeofday(&pp->p_btime, (struct timezone *)0);
 }
 
 padd(t)
@@ -621,8 +621,8 @@ prcomd:
 			if (linp != linbuf)
 				printf("\n\t");
 			{ static struct rusage zru;
-			  prusage(&zru, &pp->p_rusage,
-			      pp->p_etime - pp->p_btime);
+			  prusage(&zru, &pp->p_rusage, &pp->p_etime,
+			    &pp->p_btime);
 			}
 		}
 		if (tp == pp->p_friends) {
@@ -646,18 +646,21 @@ prcomd:
 ptprint(tp)
 	register struct process *tp;
 {
-	time_t tetime = 0;
+	struct timeval tetime, diff;
+	static struct timeval ztime;
 	struct rusage ru;
 	static struct rusage zru;
 	register struct process *pp = tp;
 
 	ru = zru;
+	tetime = ztime;
 	do {
 		ruadd(&ru, &pp->p_rusage);
-		if (pp->p_etime - pp->p_btime > tetime)
-			tetime = pp->p_etime - pp->p_btime;
+		tvsub(&diff, &pp->p_etime, &pp->p_btime);
+		if (timercmp(&diff, &tetime, >))
+			tetime = diff;
 	} while ((pp = pp->p_friends) != tp);
-	prusage(&zru, &ru, tetime);
+	prusage(&zru, &ru, &tetime, &ztime);
 }
 
 /*

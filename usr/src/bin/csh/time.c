@@ -1,4 +1,4 @@
-/*	time.c	4.2	82/12/30	*/
+/*	time.c	4.3	83/02/03	*/
 
 #include "sh.h"
 
@@ -12,7 +12,7 @@ settimes()
 {
 	struct rusage ruch;
 
-	time(&time0);
+	gettimeofday(&time0, (struct timezone *)0);
 	getrusage(RUSAGE_SELF, &ru0);
 	getrusage(RUSAGE_CHILDREN, &ruch);
 	ruadd(&ru0, &ruch);
@@ -24,14 +24,14 @@ settimes()
  */
 dotime()
 {
-	time_t timedol;
+	struct timeval timedol;
 	struct rusage ru1, ruch;
 
 	getrusage(RUSAGE_SELF, &ru1);
 	getrusage(RUSAGE_CHILDREN, &ruch);
 	ruadd(&ru1, &ruch);
-	time(&timedol);
-	prusage(&ru0, &ru1, timedol - time0);
+	gettimeofday(&timedol, (struct timezone *)0);
+	prusage(&ru0, &ru1, &timedol, &time0);
 }
 
 /*
@@ -75,9 +75,9 @@ ruadd(ru, ru2)
 	while (--cnt > 0);
 }
 
-prusage(r0, r1, sec)
+prusage(r0, r1, e, b)
 	register struct rusage *r0, *r1;
-	time_t sec;
+	struct timeval *e, *b;
 {
 	register time_t t =
 	    (r1->ru_utime.tv_sec-r0->ru_utime.tv_sec)*100+
@@ -87,6 +87,8 @@ prusage(r0, r1, sec)
 	register char *cp;
 	register int i;
 	register struct varent *vp = adrof("time");
+	int ms =
+	    (e->tv_sec-b->tv_sec)*100 + (e->tv_usec-b->tv_usec)/10000;
 
 	cp = "%Uu %Ss %E %P %X+%Dk %I+%Oio %Fpf+%Ww";
 	if (vp && vp->vec[0] && vp->vec[1])
@@ -105,11 +107,11 @@ prusage(r0, r1, sec)
 		break;
 
 	case 'E':
-		psecs(sec);
+		psecs(ms / 100);
 		break;
 
 	case 'P':
-		printf("%d%%", (int) (t / ((sec ? sec : 1))));
+		printf("%d%%", (int) (t*100 / ((ms ? ms : 1))));
 		break;
 
 	case 'W':

@@ -1,4 +1,4 @@
-/* csh.h 4.5 82/12/30 */
+/* csh.h 4.6 83/02/03 */
 
 #include "sh.local.h"
 #include <time.h>
@@ -57,7 +57,7 @@ char	*file;			/* Name of shell file for $0 */
 char	*err;			/* Error message from scanner/parser */
 int	errno;			/* Error from C library routines */
 char	*shtemp;		/* Temp name for << shell files in /tmp */
-time_t	time0;			/* Time at which the shell started */
+struct	timeval time0;		/* Time at which the shell started */
 struct	rusage ru0;
 
 /*

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.9 %G%";
+static	char *sccsid = "@(#)csh.c 4.10 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -871,7 +871,7 @@ mailchk()
 	for (; *vp; vp++) {
 		if (stat(*vp, &stb) < 0)
 			continue;
-		new = stb.st_mtime > time0;
+		new = stb.st_mtime > time0.tv_sec;
 		if (stb.st_size == 0 || stb.st_atime > stb.st_mtime ||
 		    (stb.st_atime < chktim && stb.st_mtime < chktim) ||
 		    loginsh && !new)

@@ -1,4 +1,4 @@
-/* proc.h 4.2 %G% */
+/* proc.h 4.3 %G% */
 
 /*
  * C shell - process structure declarations
@@ -22,11 +22,11 @@ struct process	{
 	short	p_pid;
 	short	p_jobid;		/* pid of job leader */
 	/* if a job is stopped/background p_jobid gives its pgrp */
-	time_t	p_btime;		/* begin time */
-	time_t	p_etime;		/* end time */
-	long	p_stime;		/* system cpu time */
-	long	p_utime;		/* user cpu time */
+	struct	timeval p_btime;	/* begin time */
+	struct	timeval p_etime;	/* end time */
 	struct	rusage p_rusage;
+	long	p_utime;	/* XXX */
+	long	p_stime;	/* XXX */
 	char	*p_command;		/* first PMAXLEN chars of command */
 };
 
