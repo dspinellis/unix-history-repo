@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rogue.me	5.1 (Berkeley) %G%
+.\"	@(#)rogue.me	6.1 (Berkeley) %G%
 .\"
 .ds E \s-2<ESCAPE>\s0
 .ds R \s-2<RETURN>\s0
@@ -45,9 +45,10 @@ This paper describes how to play rogue,
 and gives a few hints
 for those who might otherwise get lost in the Dungeons of Doom.
 .)b
-.he '''\fBA Guide to the Dungeons of Doom\fP'
-.fo ''- % -''
-.bp 1
+\".he '''\fBA Guide to the Dungeons of Doom\fP'
+\" .fo ''- % -''
+.oh 'USD:33-%''A Guide to the Dungeons of Doom'
+.eh 'A Guide to the Dungeons of Doom''USD:33-%'
 .sh 1 Introduction
 .pp
 You have just finished your years as a student at the local fighter's guild.
@@ -138,7 +139,7 @@ ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce0 ce.
 
 
 .ce 1000
-Level: 1  Gold: 0      Hp: 12(12)  Str: 16(16)  Ac: 6  Exp: 1/0
+Level: 1  Gold: 0      Hp: 12(12)  Str: 16(16)  Arm: 4  Exp: 1/0
 
 Figure 1
 .ce
@@ -157,13 +158,13 @@ It starts at one and goes up as you go deeper into the dungeon.
 The number of gold pieces you have managed to find
 and keep with you so far.
 .ip Hp \w'Level\ \ 'u
-Your current and maximum hit points.
-Hit points indicate how much damage you can take before you die.
+Your current and maximum health points.
+Health points indicate how much damage you can take before you die.
 The more you get hit in a fight,
 the lower they get.
-You can regain hit points by resting.
+You can regain health points by resting.
 The number in parentheses
-is the maximum number your hit points can reach.
+is the maximum number your health points can reach.
 .ip Str \w'Level\ \ 'u
 Your current strength and maximum ever strength.
 This can be any integer less than or equal to 31,
@@ -172,11 +173,11 @@ The higher the number,
 the stronger you are.
 The number in the parentheses
 is the maximum strength you have attained so far this game.
-.ip Ac \w'Level\ \ 'u
-Your current armor class.
+.ip Arm \w'Level\ \ 'u
+Your current armor protection.
 This number indicates how effective your armor is
 in stopping blows from unfriendly creatures.
-The lower this number is,
+The higher this number is,
 the more effective the armor.
 .ip Exp \w'Level\ \ 'u
 These two numbers give your current experience level
@@ -357,7 +358,11 @@ This can't be done without the Amulet of Yendor in your possession.
 Rest.
 This is the \*(lqdo nothing\*(rq command.
 This is good for waiting and healing.
-.ip *
+.ip ,
+Pick up something.
+This picks up whatever you are currently standing on,
+if you are standing on anything at all.
+.ip i
 Inventory.
 List what you are carrying in your pack.
 .ip I
@@ -557,31 +562,31 @@ There are various sorts of armor lying around in the dungeon.
 Some of it is enchanted,
 some is cursed,
 and some is just normal.
-Different armor types have different armor classes.
-The lower the armor class,
+Different armor types have different armor protection.
+The higher the armor protection,
 the more protection the armor affords against the blows of monsters.
-Here is a list of the various armor types and their normal armor class:
+Here is a list of the various armor types and their normal armor protection:
 .(b
 .TS
 box center;
 l r.
-\ \ \fIType	Class\fP
-None	10
-Leather armor	8
-Studded leather / Ring mail	7
-Scale mail	6
+\ \ \fIType	Protection\fP
+None	0
+Leather armor	2
+Studded leather / Ring mail	3
+Scale mail	4
 Chain mail	5
-Banded mail / Splint mail	4
-Plate mail	3
+Banded mail / Splint mail	6
+Plate mail	7
 .TE
 .)b
 .lp
 If a piece of armor is enchanted,
-its armor class will be lower than normal.
+its armor protection will be higher than normal.
 If a suit of armor is cursed,
-its armor class will be higher,
+its armor protection will be lower,
 and you will not be able to remove it.
-However, not all armor with a class that is higher than normal is cursed.
+However, not all armor with a protection that is lower than normal is cursed.
 .pp
 The commands to use weapons are
 .Cs W
@@ -722,7 +727,7 @@ use the command
 .fi
 .(f
 \**
-For those of you who use the bourne shell, the commands would be
+For those of you who use the Bourne shell sh (1), the commands would be
 .in +3
 .nf
 $ ROGUEOPTS="jump,noterse,name=Blue Meanie"
@@ -846,7 +851,7 @@ along with 90% of your gold;
 ten percent of your gold is kept by the Dungeons' wizard as a fee\**.
 .(f
 \** The Dungeon's wizard is named Wally the Wonder Badger.
-Invocations should be accompanied by a sizable donative.
+Invocations should be accompanied by a sizable donation.
 .)f
 This should make you consider whether you want to take one last hit
 at that monster and possibly live,
