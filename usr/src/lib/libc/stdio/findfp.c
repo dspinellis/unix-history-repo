@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)findfp.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)findfp.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -25,8 +25,8 @@ int	__sdidinit;
 #define	NDYNAMIC 10	/* add ten more whenever necessary */
 
 #define	std(flags, file) \
-	{0,0,0,flags,file,{0},0,__sF+file,__sread,__swrite,__sseek,__sclose}
-/*	 p r w flags file _bf z  cookie    read    write    seek    close */
+	{0,0,0,flags,file,{0},0,__sF+file,__sclose,__sread,__sseek,__swrite}
+/*	 p r w flags file _bf z  cookie      close    read    seek    write */
 
 static FILE usual[NSTATIC - 3];	/* the usual */
 static struct glue uglue = { 0, NSTATIC - 3, usual };
