@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.21 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -140,8 +140,6 @@ getanswer(msg, msglen, iquery)
 	hap = h_addr_ptrs;
 #if BSD >= 43
 	host.h_addr_list = h_addr_ptrs;
-#else
-	host.h_addr = h_addr_ptrs[0];
 #endif
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
@@ -202,8 +200,7 @@ getanswer(msg, msglen, iquery)
 			}
 		}
 
-		bp += (sizeof(align) - ((u_long)bp % sizeof(align))) &~
-		    sizeof(align);
+		bp += sizeof(align) - ((u_long)bp % sizeof(align));
 
 		if (bp + n >= &hostbuf[sizeof(hostbuf)]) {
 #ifdef DEBUG
@@ -219,7 +216,11 @@ getanswer(msg, msglen, iquery)
 	}
 	if (haveanswer) {
 		*ap = NULL;
+#if BSD >= 43
 		*hap = NULL;
+#else
+		host.h_addr = h_addr_ptrs[0];
+#endif
 		return (&host);
 	} else {
 		h_errno = TRY_AGAIN;
@@ -243,10 +244,12 @@ gethostbyname(name)
 	for (cp = name, n = 0; *cp; cp++)
 		if (*cp == '.')
 			n++;
-	if ((n && cp[-1] == '.') || (_res.options & RES_DEFNAMES) == 0) {
-		cp[-1] = 0;
+	if ((n && *--cp == '.') || (_res.options & RES_DEFNAMES) == 0) {
+		if (n && *cp == '.')
+			*cp = 0;
 		hp = gethostdomain(name, (char *)NULL);
-		cp[-1] = '.';
+		if (n && cp == 0)
+			*cp = '.';
 		return (hp);
 	}
 	if (n == 0 && (cp = hostalias(name)))
@@ -273,7 +276,10 @@ gethostdomain(name, domain)
 	char nbuf[2*MAXDNAME+2];
 	int n;
 
-	sprintf(nbuf, "%.*s.%.*s", MAXDNAME, name, MAXDNAME, domain);
+	if (domain == NULL)
+		sprintf(nbuf, "%.*s", MAXDNAME, name);
+	else
+		sprintf(nbuf, "%.*s.%.*s", MAXDNAME, name, MAXDNAME, domain);
 	n = res_mkquery(QUERY, nbuf, C_IN, T_A, (char *)NULL, 0, NULL,
 		(char *)&buf, sizeof(buf));
 	if (n < 0) {
