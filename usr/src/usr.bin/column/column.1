@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)column.1	5.2 (Berkeley) %G%
+.\"	@(#)column.1	5.3 (Berkeley) %G%
 .\"
 .UC 7
 .TH COLUMN 1 ""
@@ -21,7 +21,7 @@
 .SH NAME
 column \- columnate lists
 .SH SYNOPSIS
-\fBcolumn [ \fI-tx\fB ] [\fI-c columns\fB ] [ \fIfile ...\fB ]
+\fBcolumn [ \fI\-tx\fB ] [ \fI\-s sep\fB ] [\fI\-c columns\fB ] [ \fIfile ...\fB ]
 .ft R
 .SH DESCRIPTION
 The
@@ -40,9 +40,17 @@ Output is formatted for a display
 .I columns
 wide.
 .TP
+.I \-s
+Specify a set of characters to be used to delimit columns for the
 .I \-t
-Use the whitespace in each line to determine the number of columns
-it contains and create a table.
+option.
+.TP
+.I \-t
+Determine the number of columns the input contains and create a table.
+Columns are delimited by whitespace, by default, or by the characters
+supplied using the
+.I \-s
+option.
 Useful for pretty-printing displays, for example:
 .sp
 (printf "PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en";
