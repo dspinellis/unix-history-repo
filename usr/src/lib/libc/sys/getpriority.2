@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpriority.2	6.1 (Berkeley) %G%
+.\"	@(#)getpriority.2	6.2 (Berkeley) %G%
 .\"
 .TH GETPRIORITY 2 ""
 .UC 4
@@ -87,7 +87,7 @@ In addition to the errors indicated above,
 .I setpriority
 may fail with one of the following errors returned:
 .TP 15
-[EACCES]
+[EPERM]
 A process was located, but neither its effective nor real user
 ID matched the effective user ID of the caller.
 .TP 15
