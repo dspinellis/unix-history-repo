@@ -8,7 +8,7 @@
  *
  * from: hp/dev/grf.c		7.13 (Berkeley) 7/12/92
  *
- *	@(#)fb.c	7.3 (Berkeley) %G%
+ *	@(#)fb.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -20,8 +20,6 @@
 #include <sys/proc.h>
 #include <sys/ioctl.h>
 #include <luna68k/dev/fbio.h>
-
-#include "bmc.h"
 
 extern	int hz;
 
