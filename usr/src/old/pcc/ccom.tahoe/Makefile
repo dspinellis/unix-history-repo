@@ -1,11 +1,11 @@
 #
-#	%MIP%	1.4	86/07/31
+#	%MIP%	1.5	86/10/13
 #
 # Makefile for tahoe pcc
 #
 RM=	/bin/rm -f
 GREP=	egrep
-MIP=	../mip
+MIP=	../../mip
 #
 # These symbols are used to configure the compiler:
 #	ASSTRINGS	assembler handles string initializations
@@ -204,60 +204,58 @@ depend: ${SRCS} ${DSRCS} ./pcclocal.h ./pcctokens
 
 # DO NOT DELETE THIS LINE
 
-code.o: code.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-code.o: /usr/include/stdio.h ../mip/config.h ../mip/onepass.h ../mip/ndu.h
-code.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-code.o: /usr/include/stab.h
-code.o: code.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-code.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-code.o: ../mip/ndu.h /usr/include/sys/types.h /usr/include/a.out.h
-code.o: /usr/include/sys/exec.h /usr/include/stab.h
-local.o: local.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-local.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-local.o: ../mip/ndu.h
-local2.o: local2.c ../mip/pass2.h ./macdefs.h ./mac2defs.h ../mip/manifest.h
-local2.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-local2.o: ../mip/ndu.h /usr/include/ctype.h
-order.o: order.c ../mip/pass2.h ./macdefs.h ./mac2defs.h ../mip/manifest.h
-order.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-order.o: ../mip/ndu.h
+code.o: code.c ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+code.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+code.o: ../../mip/onepass.h ../../mip/ndu.h /usr/include/sys/types.h
+code.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/stab.h
+local.o: local.c ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+local.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+local.o: ../../mip/onepass.h ../../mip/ndu.h
+local2.o: local2.c ../../mip/pass2.h ./macdefs.h ./mac2defs.h
+local2.o: ../../mip/manifest.h /usr/include/stdio.h ./pcclocal.h
+local2.o: ../../mip/config.h ../../mip/onepass.h ../../mip/ndu.h
+local2.o: /usr/include/ctype.h
+order.o: order.c ../../mip/pass2.h ./macdefs.h ./mac2defs.h
+order.o: ../../mip/manifest.h /usr/include/stdio.h ./pcclocal.h
+order.o: ../../mip/config.h ../../mip/onepass.h ../../mip/ndu.h
 rel.o: rel.c
-stab.o: stab.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-stab.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-stab.o: ../mip/ndu.h /usr/include/sys/types.h /usr/include/a.out.h
-stab.o: /usr/include/sys/exec.h /usr/include/stab.h
-common.o: ../mip/common.c
-match.o: ../mip/match.c ../mip/pass2.h ./macdefs.h ./mac2defs.h
-match.o: ../mip/manifest.h /usr/include/stdio.h ./pcclocal.h ../mip/config.h
-match.o: ../mip/onepass.h ../mip/ndu.h
-optim.o: ../mip/optim.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-optim.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-optim.o: ../mip/ndu.h
-pftn.o: ../mip/pftn.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-pftn.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-pftn.o: ../mip/ndu.h
-reader.o: ../mip/reader.c ../mip/pass2.h ./macdefs.h ./mac2defs.h
-reader.o: ../mip/manifest.h /usr/include/stdio.h ./pcclocal.h ../mip/config.h
-reader.o: ../mip/onepass.h ../mip/ndu.h
-scan.o: ../mip/scan.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-scan.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-scan.o: ../mip/ndu.h /usr/include/a.out.h /usr/include/sys/exec.h
-scan.o: /usr/include/stab.h /usr/include/ctype.h /usr/include/signal.h
-xdefs.o: ../mip/xdefs.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-xdefs.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-xdefs.o: ../mip/ndu.h
-cgram.o: ../mip/cgram.y ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-cgram.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-cgram.o: ../mip/ndu.h
-allo.o: ../mip/allo.c ../mip/pass2.h ./macdefs.h ./mac2defs.h ../mip/manifest.h
-allo.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-allo.o: ../mip/ndu.h
-trees.o: ../mip/trees.c ../mip/pass1.h ./macdefs.h ../mip/manifest.h
-trees.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-trees.o: ../mip/ndu.h /usr/include/setjmp.h
-table.o: table.c ../mip/pass2.h ./macdefs.h ./mac2defs.h ../mip/manifest.h
-table.o: /usr/include/stdio.h ./pcclocal.h ../mip/config.h ../mip/onepass.h
-table.o: ../mip/ndu.h
+stab.o: stab.c ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+stab.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+stab.o: ../../mip/onepass.h ../../mip/ndu.h /usr/include/sys/types.h
+stab.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/stab.h
+common.o: ../../mip/common.c
+match.o: ../../mip/match.c ../../mip/pass2.h ./macdefs.h ./mac2defs.h
+match.o: ../../mip/manifest.h /usr/include/stdio.h ./pcclocal.h
+match.o: ../../mip/config.h ../../mip/onepass.h ../../mip/ndu.h
+optim.o: ../../mip/optim.c ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+optim.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+optim.o: ../../mip/onepass.h ../../mip/ndu.h
+pftn.o: ../../mip/pftn.c ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+pftn.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+pftn.o: ../../mip/onepass.h ../../mip/ndu.h
+reader.o: ../../mip/reader.c ../../mip/pass2.h ./macdefs.h ./mac2defs.h
+reader.o: ../../mip/manifest.h /usr/include/stdio.h ./pcclocal.h
+reader.o: ../../mip/config.h ../../mip/onepass.h ../../mip/ndu.h
+scan.o: ../../mip/scan.c ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+scan.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+scan.o: ../../mip/onepass.h ../../mip/ndu.h /usr/include/a.out.h
+scan.o: /usr/include/sys/exec.h /usr/include/stab.h /usr/include/ctype.h
+scan.o: /usr/include/signal.h
+xdefs.o: ../../mip/xdefs.c ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+xdefs.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+xdefs.o: ../../mip/onepass.h ../../mip/ndu.h
+cgram.o: ../../mip/cgram.y ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+cgram.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+cgram.o: ../../mip/onepass.h ../../mip/ndu.h
+allo.o: ../../mip/allo.c ../../mip/pass2.h ./macdefs.h ./mac2defs.h
+allo.o: ../../mip/manifest.h /usr/include/stdio.h ./pcclocal.h
+allo.o: ../../mip/config.h ../../mip/onepass.h ../../mip/ndu.h
+trees.o: ../../mip/trees.c ../../mip/pass1.h ./macdefs.h ../../mip/manifest.h
+trees.o: /usr/include/stdio.h ./pcclocal.h ../../mip/config.h
+trees.o: ../../mip/onepass.h ../../mip/ndu.h /usr/include/setjmp.h
+table.o: table.c ../../mip/pass2.h ./macdefs.h ./mac2defs.h
+table.o: ../../mip/manifest.h /usr/include/stdio.h ./pcclocal.h
+table.o: ../../mip/config.h ../../mip/onepass.h ../../mip/ndu.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above

@@ -1,5 +1,5 @@
 #
-#	Makefile	1.13	86/03/11
+#	Makefile	1.14	86/10/13
 #
 # Makefile for PCC
 #
@@ -38,7 +38,7 @@ P2INCS=	$M/pass2.h macdefs.h mac2defs.h $M/manifest.h pcclocal.h $M/config.h \
 	$M/ndu.h /usr/include/stdio.h
 P2ONEP=	$(P2INCS) $M/onepass.h
 
-M=../mip
+M=../../mip
 TESTDIR = .
 
 all: ccom sccom f1
