@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tac.c	1.3 %G%";
+static char sccsid[] = "@(#)tac.c	1.4 %G%";
 #endif
 
 /*
@@ -41,7 +41,7 @@ int numerr;
 
 int cleanup();
 extern off_t lseek();
-extern char *malloc(), *realloc(), *mktemp();
+extern char *strcpy(), *malloc(), *realloc(), *mktemp();
 
 main(argc, argv)
     int argc;
@@ -88,19 +88,19 @@ tacstdin()
     int (*sigint)(), (*sighup)(), (*sigterm)();
 
     if ((sigint = signal(SIGINT, SIG_IGN)) != SIG_IGN)
-	signal(SIGINT, cleanup);
+	(void) signal(SIGINT, cleanup);
     if ((sighup = signal(SIGHUP, SIG_IGN)) != SIG_IGN)
-	signal(SIGHUP, cleanup);
+	(void) signal(SIGHUP, cleanup);
     if ((sigterm = signal(SIGTERM, SIG_IGN)) != SIG_IGN)
-	signal(SIGTERM, cleanup);
+	(void) signal(SIGTERM, cleanup);
 
     savestdin();
     tacit(tfile);
-    unlink(tfile);
+    (void) unlink(tfile);
 
-    signal(SIGINT, sigint);
-    signal(SIGHUP, sighup);
-    signal(SIGTERM, sigterm);
+    (void) signal(SIGINT, sigint);
+    (void) signal(SIGHUP, sighup);
+    (void) signal(SIGTERM, sigterm);
 }
 
 char template[] = "/tmp/tacXXXXXX";
@@ -111,7 +111,7 @@ savestdin()
     int fd;
     register int n;
 
-    strcpy(workplate, template);
+    (void) strcpy(workplate, template);
     tfile = mktemp(workplate);
     if ((fd = creat(tfile, 0600)) < 0) {
 	prterr(tfile);
@@ -122,7 +122,7 @@ savestdin()
 	    prterr(tfile);
 	    cleanup();
 	}
-    close(fd);
+    (void) close(fd);
     if (n < 0) {
 	prterr("stdin read");
 	cleanup();
@@ -268,6 +268,6 @@ prterr(s)
 cleanup()
 {
 
-    unlink(tfile);
+    (void) unlink(tfile);
     exit(1);
 }
