@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	7.27 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -13,10 +13,6 @@
 #include <sys/conf.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
-
-#ifdef HPUXCOMPAT
-#include <sys/user.h>
-#endif
 
 static void freeswbuf __P((struct buf *));
 static struct buf *getswbuf __P((int));
@@ -107,9 +103,6 @@ physio(strat, bp, dev, rw, mincnt, uio)
 		if (done < requested || bp->b_flags & B_ERROR)
 			break;
 	}
-#if defined(hp300)
-	DCIU();
-#endif
 	if (allocbuf)
 		freeswbuf(bp);
 	return (error);
