@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	1.4 (Berkeley) %G%
+ *	@(#)extern.h	1.5 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@
 extern char *arcname;
 int ar_open __P((char *));
 void ar_close __P((void));
-void ar_flush __P((void));
+void ar_drain __P((void));
 int ar_set_wr __P((void));
 int ar_app_ok __P((void));
 int ar_read __P((register char *, register int));
