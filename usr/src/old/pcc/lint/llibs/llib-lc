@@ -1,4 +1,4 @@
-/*	llib-lc	1.26	85/11/01	*/
+/*	llib-lc	1.27	85/11/07	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -246,7 +246,7 @@ int	system(s) char *s; { return(0); }
 long	tell(f) { return((long)0); }
 long	telldir( p ) DIR *p; { return 1L; }
 long	time(t) long *t; { return( 0L );}
-char *	timezone( z, d ){ return timezone(z, d); }
+char *	timezone( z, d ){ return (char *)0; }
 char *	ttyname(f) { return " "; }
 int	ttyslot() { return 1; }
 char *	valloc(s) unsigned s; { return malloc(s); }
