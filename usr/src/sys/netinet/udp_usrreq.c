@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.15	81/12/09	*/
+/*	udp_usrreq.c	4.16	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -57,8 +57,6 @@ COUNT(UDP_INPUT);
 	 */
 	ulen = ntohs((u_short)ui->ui_ulen);
 	len = sizeof (struct udphdr) + ulen;
-printf("len %d, ulen %d, ((struct ip *)ui)->ip_len %d\n",
-    len, ulen, ((struct ip *)ui)->ip_len);
 	if (((struct ip *)ui)->ip_len != len) {
 		if (len > ((struct ip *)ui)->ip_len) {
 			udpstat.udps_badlen++;
@@ -99,9 +97,6 @@ printf("len %d, ulen %d, ((struct ip *)ui)->ip_len %d\n",
 	udp_in.sin_addr = ui->ui_src;
 	m->m_len -= sizeof (struct udpiphdr);
 	m->m_off += sizeof (struct udpiphdr);
-printf("sbappendaddr called with m %x m->m_len %d m->m_off %d\n",
-m, m->m_len, m->m_off);
-printf("*mtod(m, char *) %x\n", *mtod(m, char *));
 	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in, m) == 0)
 		goto bad;
 	sorwakeup(inp->inp_socket);
@@ -115,7 +110,6 @@ udp_ctlinput(m)
 {
 
 COUNT(UDP_CTLINPUT);
-	printf("udp_ctlinput\n");
 	m_freem(m);
 }
 
@@ -183,7 +177,6 @@ udp_usrreq(so, req, m, addr)
 COUNT(UDP_USRREQ);
 	if (inp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
-printf("udp_usrreq %d\n", req);
 	switch (req) {
 
 	case PRU_ATTACH:
@@ -225,20 +218,15 @@ printf("udp_usrreq %d\n", req);
 
 	case PRU_SEND:
 		if (addr) {
-			if (inp->inp_faddr.s_addr) {
-				printf("EISCONN\n");
+			if (inp->inp_faddr.s_addr)
 				return (EISCONN);
-			}
 			error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
-			if (error) {
-				printf("pcbconnect error %d\n", error);
+			if (error)
 				return (error);
-			}
 		} else {
 			if (inp->inp_faddr.s_addr == 0)
 				return (ENOTCONN);
 		}
-printf("to udp_output\n");
 		udp_output(inp, m);
 		if (addr)
 			in_pcbdisconnect(inp);
