@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.87 (Berkeley) %G%
+ *	@(#)conf.h	8.88 (Berkeley) %G%
  */
 
 /*
@@ -746,7 +746,7 @@ typedef int		pid_t;
 # define HASINITGROUPS	1	/* has initgroups(2) call */
 # undef  SETPROCTITLE
 # define LA_TYPE	LA_SUBR		/* use getloadavg.c */
-# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
+# define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
