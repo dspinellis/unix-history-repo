@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1984, 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
@@ -206,7 +206,7 @@ spp_input(m, nsp, ifp)
 	m->m_off += sizeof (struct idp);
 
 	if (spp_reass(cb, si)) {
-		goto drop;
+		m_freem(m);
 	}
 	(void) spp_output(cb, (struct mbuf *)0);
 	return;
@@ -841,6 +841,10 @@ spp_ctloutput(req, so, level, name, value)
 			m->m_len = sizeof(struct spidp);
 			m->m_off = MMAXOFF - sizeof(struct sphdr);
 			*mtod(m, struct sphdr *) = cb->s_shdr.si_s;
+			break;
+
+		default:
+			error = EINVAL;
 		}
 		*value = m;
 		break;
@@ -880,6 +884,10 @@ spp_ctloutput(req, so, level, name, value)
 				cb->s_dt = sp->sp_dt;
 				cb->s_cc = sp->sp_cc & SP_EM;
 			}
+			break;
+
+		default:
+			error = EINVAL;
 		}
 		m_freem(*value);
 		break;
