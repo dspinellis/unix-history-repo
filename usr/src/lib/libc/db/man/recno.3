@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)recno.3	5.1 (Berkeley) %G%
+.\"	@(#)recno.3	5.2 (Berkeley) %G%
 .\"
 .TH RECNO 3 ""
 .UC 7
@@ -105,6 +105,20 @@ is 0 (no order is specified) the current host order is used.
 reclen
 The length of a fixed-length record.
 .PP
+The data part of the key/data pair used by the recno access method
+is the same as other access methods.
+The key is different.
+The
+.I data
+field of the key should be a pointer to a memory location of type
+.IR recno_t ,
+as defined in the <db.h> include file.
+This type is normally the largest unsigned integral type available to
+the implementation.
+The
+.I size
+field of the key should be the size of that type.
+.PP
 In the interface specified by
 .IR dbopen ,
 using the
@@ -117,7 +131,7 @@ largest record currently in the database.
 .IR hash (3),
 .IR mpool (3),
 .IR recno (3)
-.br
+.sp
 .IR "Document Processing in a Relational Database System" ,
 Michael Stonebraker, Heidi Stettner, Joseph Kalash, Antonin Guttman,
 Nadene Lynn, Memorandum No. UCB/ERL M82/32, May 1982.
