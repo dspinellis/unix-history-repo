@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.20 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -175,7 +175,7 @@ dead_ioctl (ap)
 
 	if (!chkvnlock(ap->a_vp))
 		return (EBADF);
-	return (VCALL(ap->a_vp, VDESC(vop_ioctl), ap));
+	return (VCALL(ap->a_vp, VOFFSET(vop_ioctl), ap));
 }
 
 /* ARGSUSED */
@@ -215,7 +215,7 @@ dead_lock (ap)
 
 	if (!chkvnlock(ap->a_vp))
 		return (0);
-	return (VCALL(ap->a_vp, VDESC(vop_lock), ap));
+	return (VCALL(ap->a_vp, VOFFSET(vop_lock), ap));
 }
 
 /*
