@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)write.c	4.13 %G%";
+static char *sccsid = "@(#)write.c	4.14 %G%";
 #endif
 /*
  * write to another user
@@ -12,6 +12,7 @@ static char *sccsid = "@(#)write.c	4.13 %G%";
 #include <signal.h>
 #include <utmp.h>
 #include <sys/time.h>
+#include "pathnames.h"
 
 #define	NMAX	sizeof(ubuf.ut_name)
 #define	LMAX	sizeof(ubuf.ut_line)
@@ -55,8 +56,8 @@ main(argc, argv)
 	him = argv[1];
 	if (argc > 2)
 		histtya = argv[2];
-	if ((uf = fopen("/etc/utmp", "r")) == NULL) {
-		perror("write: Can't open /etc/utmp");
+	if ((uf = fopen(_PATH_UTMP, "r")) == NULL) {
+		fprintf(stderr, "write: can't read %s\n", _PATH_UTMP);
 		if (histtya == 0)
 			exit(10);
 		goto cont;
@@ -78,7 +79,7 @@ main(argc, argv)
 	}
 	mytty = rindex(mytty, '/') + 1;
 	if (histtya) {
-		strcpy(histty, "/dev/");
+		strcpy(histty, _PATH_DEV);
 		strcat(histty, histtya);
 	}
 	while (fread((char *)&ubuf, sizeof(ubuf), 1, uf) == 1) {
@@ -110,7 +111,7 @@ main(argc, argv)
 			continue;
 		logcnt++;
 		if (histty[0]==0 || nomesg && histtya == 0) {
-			strcpy(ttybuf, "/dev/");
+			strcpy(ttybuf, _PATH_DEV);
 			strcat(ttybuf, ubuf.ut_line);
 			if (histty[0]==0)
 				strcpy(histty, ttybuf);
@@ -227,7 +228,7 @@ ex(bp)
 		setgid(getgid());	/* Give up effective group privs */
 		sigs((int (*)())0);
 		execl(getenv("SHELL") ?
-		    getenv("SHELL") : "/bin/sh", "sh", "-c", bp+1, 0);
+		    getenv("SHELL") : _PATH_BSHELL, "sh", "-c", bp+1, 0);
 		exit(0);
 	}
 	while (wait((int *)NULL) != i)
