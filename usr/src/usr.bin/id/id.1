@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)id.1	5.1 (Berkeley) %G%
+.\"	@(#)id.1	5.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt ID 1
@@ -59,12 +59,6 @@ If any of the ID numbers cannot be mapped into names, the number is displayed
 instead.
 .Pp
 The
-historic
-.Xr groups 1
-command is equivalent to:
-.Nm id Fl Gn Op Ar user .
-.Pp
-The
 .Nm id
 utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
@@ -73,10 +67,16 @@ utility exits 0 on success, and >0 if an error occurs.
 .Xr whoami 1
 .Sh STANDARDS
 The
-.Nm logname
+.Nm id
 function is expected to conform to
 .St -p1003.2 .
 .Sh HISTORY
+The
+historic
+.Xr groups 1
+command is equivalent to:
+.Nm id Fl Gn Op Ar user .
+.Pp
 The
 .Nm
 command is
