@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fend.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fend.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -84,9 +84,11 @@ funcend(fp, bundle, endline)
 	}
 #ifdef OBJ
 	/*
-	 * Patch the branch to the
-	 * entry point of the function
+	 * Patch the branch to the entry point of the function.
+	 * Assure alignment of O_BEG structure.
 	 */
+	if (((int)lc & 02) == 0)
+		word(0);
 	patch4((PTR_DCL) fp->value[NL_ENTLOC]);
 	/*
 	 * Put out the block entrance code and the block name.
@@ -519,12 +521,36 @@ codeformain()
     putprintf("	pushl	$0" , 0 );
     putprintf("	calls	$1,_PCEXIT" , 0 );
 }
+#endif vax
+
+#ifdef tahoe
+codeformain()
+{
+    putprintf("	.text" , 0 );
+    putprintf("	.align	1" , 0 );
+    putprintf("	.globl	_main" , 0 );
+    putprintf("_main:" , 0 );
+    putprintf("	.word	0" , 0 );
+    if ( opt ( 't' ) ) {
+	putprintf("	pushl	$1" , 0 );
+    } else {
+	putprintf("	pushl	$0" , 0 );
+    }
+    putprintf("	callf	$8,_PCSTART" , 0 );
+    putprintf("	movl	4(fp),__argc" , 0 );
+    putprintf("	movl	8(fp),__argv" , 0 );
+    putprintf("	callf	$4,_program" , 0 );
+    putprintf("	pushl	$0" , 0 );
+    putprintf("	callf	$8,_PCEXIT" , 0 );
+}
+#endif tahoe
 
     /*
      *	prologue for the program.
      *	different because it
      *		doesn't have formal entry point
      */
+#if defined(vax) || defined(tahoe) 
 prog_prologue(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
@@ -555,11 +581,13 @@ fp_prologue(eecookiep)
     eecookiep -> savlabel = (int) getlab();
     putprintf("	.word	%s%d", 0, (int) SAVE_MASK_LABEL , eecookiep -> savlabel );
 }
+#endif vax || tahoe
 
     /*
      *	code before any user code.
      *	or code that is machine dependent.
      */
+#ifdef vax
 fp_entrycode(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
@@ -646,7 +674,97 @@ fp_entrycode(eecookiep)
 	(void) putlab((char *) setjmp0);
     }
 }
+#endif vax
 
+#ifdef tahoe
+fp_entrycode(eecookiep)
+    struct entry_exit_cookie	*eecookiep;
+{
+    int	ftnno = eecookiep -> nlp -> value[NL_ENTLOC];
+    int	proflabel = (int) getlab();
+    int	setjmp0 = (int) getlab();
+
+	/*
+	 *	top of code;  destination of jump from formal entry code.
+	 */
+    eecookiep -> toplabel = (int) getlab();
+    (void) putlab( (char *) eecookiep -> toplabel );
+    putprintf("	subl3	$%s%d,fp,sp" , 0 , (int) FRAME_SIZE_LABEL, ftnno );
+    if ( profflag ) {
+	    /*
+	     *	call mcount for profiling
+	     */
+	putprintf( "	pushal	" , 1 );
+	putprintf( PREFIXFORMAT , 1 , (int) LABELPREFIX , proflabel, 0 );
+	putprintf( "	callf	$8,mcount" , 0 );
+	putprintf( "	.data" , 0 );
+	putprintf( "	.align	2" , 0 );
+	(void) putlab( (char *) proflabel );
+	putprintf( "	.long	0" , 0 );
+	putprintf( "	.text" , 0 );
+    }
+	/*
+	 *	if there are nested procedures that access our variables
+	 *	we must save the display.
+	 */
+    if ( parts[ cbn ] & NONLOCALVAR ) {
+	    /*
+	     *	save old display 
+	     */
+	putprintf( "	movl	%s+%d,%d(%s)" , 0
+		, (int) DISPLAYNAME , cbn * sizeof(struct dispsave)
+		, DSAVEOFFSET , (int) P2FPNAME );
+	    /*
+	     *	set up new display by saving FP in appropriate
+	     *	slot in display structure.
+	     */
+	putprintf( "	movl	%s,%s+%d" , 0
+		, (int) P2FPNAME , (int) DISPLAYNAME , cbn * sizeof(struct dispsave) );
+    }
+	/*
+	 *	set underflow checking if runtime tests
+	 */
+    if ( opt( 't' ) ) {
+	putprintf( "	bicpsw	$0x20" , 0 );
+    }
+	/*
+	 *	zero local variables if checking is on
+	 *	by calling blkclr( bytes of locals , starting local address );
+	 */
+    if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
+		, "_blkclr" );
+	putLV((char *) 0 , cbn , (int) sizes[ cbn ].om_max , NLOCAL , PCCT_CHAR );
+	putleaf( PCC_ICON ,  (int) (( -sizes[ cbn ].om_max ) - DPOFF1)
+		, 0 , PCCT_INT ,(char *) 0 );
+	putop( PCC_CM , PCCT_INT );
+	putop( PCC_CALL , PCCT_INT );
+	putdot( filename , line );
+    }
+	/*
+	 *  set up goto vector if non-local goto to this frame
+	 */
+    if ( parts[ cbn ] & NONLOCALGOTO ) {
+	putleaf( PCC_ICON , 0 , 0 , PCCM_ADDTYPE( PCCTM_FTN | PCCT_INT , PCCTM_PTR )
+		, "_setjmp" );
+	putLV( (char *) 0 , cbn , GOTOENVOFFSET , NLOCAL , PCCTM_PTR|PCCT_STRTY );
+	putop( PCC_CALL , PCCT_INT );
+	putleaf( PCC_ICON , 0 , 0 , PCCT_INT , (char *) 0 );
+	putop( PCC_NE , PCCT_INT );
+	putleaf( PCC_ICON , setjmp0 , 0 , PCCT_INT , (char *) 0 );
+	putop( PCC_CBRANCH , PCCT_INT );
+	putdot( filename , line );
+	    /*
+	     *	on non-local goto, setjmp returns with address to
+	     *	be branched to.
+	     */
+	putprintf( "	jmp	(r0)" , 0 );
+	(void) putlab((char *) setjmp0);
+    }
+}
+#endif tahoe
+
+#if defined(vax) || defined(tahoe)
 fp_exitcode(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
@@ -716,12 +834,21 @@ fp_exitcode(eecookiep)
 	    /*
 	     *	restore old display entry from save area
 	     */
+#ifdef vax
 	putprintf( "	movq	%d(%s),%s+%d" , 0
 	    , DSAVEOFFSET , (int) P2FPNAME
 	    , (int) DISPLAYNAME , cbn * sizeof(struct dispsave) );
+#endif
+#ifdef tahoe
+	putprintf( "	movl	%d(%s),%s+%d" , 0
+	    , DSAVEOFFSET , (int) P2FPNAME
+	    , (int) DISPLAYNAME , cbn * sizeof(struct dispsave) );
+#endif
     }
 }
+#endif vax || tahoe
 
+#if defined(vax) || defined(tahoe)
 fp_epilogue(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
@@ -733,7 +860,9 @@ fp_epilogue(eecookiep)
     putprintf("	.set	%s%d,0x%x", 0,
 		(int) SAVE_MASK_LABEL, eecookiep -> savlabel, savmask());
 }
+#endif vax || tahoe
 
+#if defined(vax) || defined(tahoe)
 fp_formalentry(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
@@ -751,7 +880,7 @@ fp_formalentry(eecookiep)
     putdot( filename , line );
     putjbr( (long) eecookiep -> toplabel );
 }
-#endif vax
+#endif vax || tahoe
 
 #ifdef mc68000
 
