@@ -1,14 +1,14 @@
-#	@(#)makefile	4.3	(Berkeley)	%G%
+#	@(#)makefile	4.4	(Berkeley)	%G%
 #
 DESTDIR = /
 OBJS =
 ARCH = /usr/src/ucb/berknet/
 RDIR = $(DESTDIR)/usr/ucb/
 CRYPT =
-OTHER = schmidt
+OTHER = daemon
 MWRITEMODE = 711
 NETLPRMODE = 711
-NETLPROWN = schmidt
+NETLPROWN = daemon
 V6MAILMODE = 4711
 CC = cc
 CFLAGS = -O
@@ -52,7 +52,7 @@ install:
 	-$(CPALL) net netcp netdaemon netstart mmail mwrite \
 		sendberkmail prmail chktroff v6mail $(NDIR)
 	-$(CPALL) netrm netq netlpr netmail netlogin $(RDIR)
-	-cp nsh /usr/net/network/nsh
+	-cp nsh $(DESTDIR)/usr/net/network/nsh
 	-cp netlog.sh $(RDIR)/netlog
 	-cp nettroff.sh $(RDIR)/nettroff
 	-rm -f netcp netmail sendberkmail netdaemon netstart mmail mwrite \
@@ -62,10 +62,10 @@ install:
 		$(NDIR)netcp $(NDIR)prmail $(NDIR)chktroff $(RDIR)netlogin
 	-chown root $(NDIR)net $(RDIR)netq $(RDIR)netrm $(NDIR)v6mail
 	-chown $(NETLPROWN) $(RDIR)netlpr
-	-chown network /usr/net/network/nsh
+	-chown network $(DESTDIR)/usr/net/network/nsh
 	-chmod 711 $(NDIR)netcp $(RDIR)netmail $(NDIR)sendberkmail \
 		$(NDIR)mmail $(NDIR)prmail $(RDIR)netlogin
-	-chmod 555 /usr/net/network/nsh $(RDIR)/nettroff $(RDIR)/netlog
+	-chmod 555 $(DESTDIR)/usr/net/network/nsh $(RDIR)/nettroff $(RDIR)/netlog
 	-chmod $(MWRITEMODE) $(NDIR)mwrite
 	-chmod $(NETLPRMODE) $(RDIR)netlpr
 	-chmod $(V6MAILMODE) $(NDIR)v6mail
