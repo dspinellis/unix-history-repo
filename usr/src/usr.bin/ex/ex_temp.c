@@ -1,4 +1,5 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/* Copyright (c) 1980 Regents of the University of California */
+static char *sccsid = "@(#)ex_temp.c	4.2 %G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_vis.h"
@@ -57,6 +58,12 @@ dumbness:
 	tfile = creat(tfname, 0600);
 	if (tfile < 0)
 		goto dumbness;
+#ifdef VMUNIX
+	{
+		extern stilinc;		/* see below */
+		stilinc = 0;
+	}
+#endif
 	havetmp = 1;
 	close(tfile);
 	tfile = open(tfname, 2);
@@ -205,16 +212,57 @@ getblock(atl, iof)
 	return (obuff + off);
 }
 
+#ifdef	VMUNIX
+#define	INCORB	64
+char	incorb[INCORB+1][BUFSIZ];
+#define	pagrnd(a)	((char *)(((int)a)&~(BUFSIZ-1)))
+int	stilinc;	/* up to here not written yet */
+#endif
+
 blkio(b, buf, iofcn)
 	short b;
 	char *buf;
 	int (*iofcn)();
 {
 
+#ifdef VMUNIX
+	if (b < INCORB) {
+		if (iofcn == read) {
+			bcopy(pagrnd(incorb[b+1]), buf, BUFSIZ);
+			return;
+		}
+		bcopy(buf, pagrnd(incorb[b+1]), BUFSIZ);
+		if (laste) {
+			if (b >= stilinc)
+				stilinc = b + 1;
+			return;
+		}
+	} else if (stilinc)
+		tflush();
+#endif
 	lseek(tfile, (long) (unsigned) b * BUFSIZ, 0);
 	if ((*iofcn)(tfile, buf, BUFSIZ) != BUFSIZ)
 		filioerr(tfname);
 }
+
+#ifdef VMUNIX
+tlaste()
+{
+
+	if (stilinc)
+		dirtcnt = 0;
+}
+
+tflush()
+{
+	int i = stilinc;
+	
+	stilinc = 0;
+	lseek(tfile, (long) 0, 0);
+	if (write(tfile, pagrnd(incorb[1]), i * BUFSIZ) != (i * BUFSIZ))
+		filioerr(tfname);
+}
+#endif
 
 /*
  * Synchronize the state of the temporary file in case
@@ -226,6 +274,10 @@ synctmp()
 	register line *a;
 	register short *bp;
 
+#ifdef VMUNIX
+	if (stilinc)
+		return;
+#endif
 	if (dol == zero)
 		return;
 	if (ichanged)
@@ -270,6 +322,10 @@ TSYNC()
 {
 
 	if (dirtcnt > 12) {
+#ifdef VMUNIX
+		if (stilinc)
+			tflush();
+#endif
 		dirtcnt = 0;
 		synctmp();
 	}

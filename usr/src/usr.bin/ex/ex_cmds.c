@@ -1,4 +1,5 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/* Copyright (c) 1980 Regents of the University of California */
+static char *sccsid = "@(#)ex_cmds.c	4.2 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -649,8 +650,7 @@ quit:
 /* version */
 				tail("version");
 				setNAEOL();
-				/* should use SCCS subst here */
-				printf("Version 3.4, June 24, 1980");
+				printf("@(#) Version 3.4, %G%"+5);
 				noonl();
 				continue;
 
