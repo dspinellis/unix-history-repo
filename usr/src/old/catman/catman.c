@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)catman.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)catman.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -181,7 +181,7 @@ doit(mandir)
 				continue;
 			(void) strcpy(msp, dir->d_name);
 			if ((inf = fopen(man, "r")) == NULL) {
-				sprintf(buf, "catman: %s");
+				sprintf(buf, "catman: %s", man);
 				perror(buf);
 				exstat = 1;
 				continue;
