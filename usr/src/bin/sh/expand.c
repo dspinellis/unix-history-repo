@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,6 +33,7 @@ static char sccsid[] = "@(#)expand.c	5.1 (Berkeley) %G%";
 #include "error.h"
 #include "mystring.h"
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <dirent.h>
@@ -184,11 +185,12 @@ argstr(p, full)
 	register char *p;
 	{
 	char c;
+	int sawari = 0;
 
 	for (;;) {
 		switch (c = *p++) {
 		case '\0':
-		case CTLENDVAR:
+		case CTLENDVAR: /* ??? */
 			goto breakloop;
 		case CTLESC:
 			if (full)
@@ -204,11 +206,53 @@ argstr(p, full)
 			expbackq(argbackq->n, c & CTLQUOTE, full);
 			argbackq = argbackq->next;
 			break;
+		case CTLENDARI:
+			expari();
+			break;
 		default:
 			STPUTC(c, expdest);
 		}
 	}
 breakloop:;
+}
+
+/*
+ * Expand arithmetic expression.  Backup to start of expression,
+ * evaluate, place result in (backed up) result, adjust string position.
+ */
+expari()
+{
+	char *p, *start = stackblock();
+	int result;
+
+	/*
+	 * This routine is slightly over-compilcated for
+	 * efficiency.  First we make sure there is
+	 * enough space for the result, which may be bigger
+	 * than the expression if we add exponentation.  Next we
+	 * scan backwards looking for the start of arithmetic.  If the
+	 * next previous character is a CTLESC character, then we
+	 * have to rescan starting from the beginning since CTLESC
+	 * characters have to be processed left to right.  
+	 */
+	CHECKSTRSPACE(8, expdest);
+	USTPUTC('\0', expdest);
+	p = expdest;
+	while (*p != CTLARI && p >= start)
+		--p;
+	if (*p != CTLARI)
+		error("missing CTLARI (shouldn't happen)");
+	if (p > start && *(p-1) == CTLESC)
+		for (p = start; *p != CTLARI; p++)
+			if (*p == CTLESC)
+				p++;
+	rmescapes(p+1);
+	result = arith(p+1);
+	fmtstr(p, 10, "%d", result);
+	while (*p++)
+		;
+	result = expdest - p + 1;
+	STADJUST(-result, expdest);
 }
 
 
