@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)col.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)col.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <ctype.h>
@@ -268,6 +268,9 @@ main(argc, argv)
 			l->l_max_col = cur_col;
 		cur_col++;
 	}
+	if (max_line == 0)
+		exit(0);	/* no lines, so just exit */
+
 	/* goto the last line that had a character on it */
 	for (; l->l_next; l = l->l_next)
 		this_line++;
