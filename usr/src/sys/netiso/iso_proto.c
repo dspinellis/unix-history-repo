@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_proto.c	7.12 (Berkeley) %G%
+ *	@(#)iso_proto.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -168,4 +168,4 @@ struct domain isodomain = {
 	48,					/* rtoffset */
 	sizeof(struct sockaddr_iso) /* maxkeylen */
 };
-#endif	ISO
+#endif	/* ISO */
