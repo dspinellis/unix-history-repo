@@ -1,4 +1,4 @@
-/*	dr.c	1.3	86/11/23	*/
+/*	dr.c	1.4	86/11/25	*/
 
 #include "dr.h"
 #if NDR > 0
@@ -70,6 +70,8 @@ drprobe(reg, vi)
     register struct rsdevice *dr;
     register ushort status;
 
+    if (badaddr(reg, 2))
+	return (0);
     dr = (struct rsdevice *)reg;
 #ifdef notdef
     dr->dr_intvect = --vi->ui_hd->vh_lastiv;
