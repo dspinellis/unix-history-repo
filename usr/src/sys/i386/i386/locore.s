@@ -5,9 +5,23 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * Copying or redistribution in any form is explicitly forbidden
+ * unless prior written permission is obtained from William Jolitz or an
+ * authorized representative of the University of California, Berkeley.
  *
- *	@(#)locore.s	5.9 (Berkeley) %G%
+ * Freely redistributable copies of this code will be available in
+ * the near future; for more information contact William Jolitz or
+ * the Computer Systems Research Group at the University of California,
+ * Berkeley.
+ *
+ * The name of the University may not be used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE.
+ *
+ *	@(#)locore.s	5.9 (Berkeley) 1/19/91
  */
 
 /*
@@ -16,6 +30,7 @@
  *		Written by William F. Jolitz, 386BSD Project
  */
 
+#include "assym.s"
 #include "machine/psl.h"
 #include "machine/pte.h"
 
@@ -33,20 +48,40 @@
 	.set	IDXSHIFT,10
 	.set	SYSTEM,0xFE000000	# virtual address of system start
 	/*note: gas copys sign bit (e.g. arithmetic >>), can't do SYSTEM>>22! */
-	.set	SYSPDROFF,0x3F8		# Page dir
-
-	.set	IOPHYSmem,0xa0000
+	.set	SYSPDROFF,0x3F8		# Page dir index of System Base
 
 /* IBM "compatible" nop - sensitive macro on "fast" 386 machines */
-#define	NOP	jmp 7f ; nop ; 7: jmp 7f ; nop ; 7:
+#define	NOP	;
+
+/*
+ * PTmap is recursive pagemap at top of virtual address space.
+ * Within PTmap, the page directory can be found (third indirection).
+ */
+	.set	PDRPDROFF,0x3F7		# Page dir index of Page dir
+	.globl	_PTmap, _PTD, _PTDpde
+	.set	_PTmap,0xFDC00000
+	.set	_PTD,0xFDFF7000
+	.set	_PTDpde,0xFDFF7000+4*PDRPDROFF
+
+/*
+ * APTmap, APTD is the alternate recursive pagemap.
+ * It's used when modifying another process's page tables.
+ */
+	.set	APDRPDROFF,0x3FE		# Page dir index of Page dir
+	.globl	_APTmap, _APTD, _APTDpde
+	.set	_APTmap,0xFF800000
+	.set	_APTD,0xFFBFE000
+	.set	_APTDpde,0xFDFF7000+4*APDRPDROFF
 
 /*
  * User structure is UPAGES at top of user space.
  */
-	.set	_u,0xFDFFE000
-	.globl	_u
-	.set	UPDROFF,0x3F7
-	.set	UPTEOFF,0x3FE
+	.globl	_u, _Upte, _Upde
+	.set	_u,0xFDBFE000
+	.set	UPDROFF,0x3F6
+	.set	UPTEOFF,0x400-UPAGES	# 0x3FE
+	.set	_Upte,_PTmap+0xFDBFE*4 
+	.set	_Upde,_PTD+UPDROFF*4
 
 #define	ENTRY(name) \
 	.globl _/**/name; _/**/name:
@@ -54,89 +89,29 @@
 	.globl _/**/name; _/**/name:
 
 /*
- * System page table
- * Mbmap and Usrptmap are enlarged by CLSIZE entries
- * as they are managed by resource maps starting with index 1 or CLSIZE.
- */ 
-#define	SYSMAP(mname, vname, npte)		\
-_/**/mname:	.globl	_/**/mname;		\
-	.space	(npte)*4;			\
-	.set	_/**/vname,ptes*NBPG+SYSTEM;	\
-	.globl	_/**/vname;			\
-	.set	ptes,ptes + npte
-#define	ZSYSMAP(mname, vname, npte)		\
-_/**/mname:	.globl	_/**/mname;		\
-	.set	_/**/vname,ptes*NBPG+SYSTEM;	\
-	.globl	_/**/vname;
-
-	.data
-	# assumed to start at data mod 4096
-	.set	ptes,0
-	SYSMAP(Sysmap,Sysbase,SYSPTSIZE)
-	SYSMAP(Forkmap,forkutl,UPAGES)
-	SYSMAP(Xswapmap,xswaputl,UPAGES)
-	SYSMAP(Xswap2map,xswap2utl,UPAGES)
-	SYSMAP(Swapmap,swaputl,UPAGES)
-	SYSMAP(Pushmap,pushutl,UPAGES)
-	SYSMAP(Vfmap,vfutl,UPAGES)
-	SYSMAP(CMAP1,CADDR1,1)
-	SYSMAP(CMAP2,CADDR2,1)
-	SYSMAP(mmap,vmmap,1)
-	SYSMAP(alignmap,alignutl,1)	/* XXX */
-	SYSMAP(msgbufmap,msgbuf,MSGBUFPTECNT)
-	/* SYSMAP(EMCmap,EMCbase,1) */
-	SYSMAP(Npxmap,npxutl,UPAGES)
-	SYSMAP(Swtchmap,Swtchbase,UPAGES)
-	.set mbxxx,(NMBCLUSTERS*MCLBYTES)
-	.set mbyyy,(mbxxx>>PGSHIFT)
-	.set mbpgs,(mbyyy+CLSIZE)
-	SYSMAP(Mbmap,mbutl,mbpgs)
-	/*
-	 * XXX: NEED way to compute kmem size from maxusers,
-	 * device complement
-	 */
-	SYSMAP(kmempt,kmembase,300*CLSIZE)
-#ifdef	GPROF
-	SYSMAP(profmap,profbase,600*CLSIZE)
-#endif
-	.set	atmemsz,0x100000-0xa0000
-	.set	atpgs,(atmemsz>>PGSHIFT)
-	SYSMAP(ATDevmem,atdevbase,atpgs)
-	SYSMAP(Usriomap,usrio,USRIOSIZE+CLSIZE) /* for PHYSIO */
-	ZSYSMAP(ekmempt,kmemlimit,0)
-	SYSMAP(Usrptmap,usrpt,USRPTSIZE+CLSIZE)
-
-eSysmap:
-	# .set	_Syssize,(eSysmap-_Sysmap)/4
-	.set	_Syssize,ptes
-	.globl	_Syssize
-
-	/* align on next page boundary */
-	# . = . + NBPG - 1 & -NBPG	/* align to page boundry-does not work*/
-	# .space (PGSIZE - ((eSysmap-_Sysmap) % PGSIZE)) % PGSIZE
-	.set sz,(4*ptes)%NBPG
-	# .set rptes,(ptes)%1024
-	# .set rptes,1024-rptes
-	# .set ptes,ptes+rptes
-	.set Npdes,8
-	# .space (NBPG - sz)
-
-/*
  * Initialization
  */
 	.data
-	.globl	_cpu, _cold, _boothowto, _bootdev, _cyloffset, _Maxmem
+	.globl	_cpu,_cold,_boothowto,_bootdev,_cyloffset,_Maxmem,_atdevbase,_atdevphys
 _cpu:	.long	0		# are we 386, 386sx, or 486
 _cold:	.long	1		# cold till we are not
+_atdevbase:	.long	0	# location of start of iomem in virtual
+_atdevphys:	.long	0	# location of device mapping ptes (phys)
+
+	.globl	_IdlePTD, _KPTphys
+_IdlePTD:	.long	0
+_KPTphys:	.long	0
+
+	.space 512
+tmpstk:
 	.text
 	.globl	start
-start:				# This is assumed to be location zero!
-	movw	$0x1234,%ax
+start:	movw	$0x1234,%ax
 	movw	%ax,0x472	# warm boot
 	jmp	1f
 	.space	0x500		# skip over warm boot shit
 
-	/* enable a20! yecchh!! */
+	/* enable a20! yecchh!! - move this to bootstrap? */
 1:	inb	$0x64,%al
 	andb	$2,%al
 	jnz	1b
@@ -151,7 +126,11 @@ start:				# This is assumed to be location zero!
 	NOP
 	outb	%al,$0x60
 
-	/* pass parameters on stack (howto, bootdev, unit, cyloffset) */
+	/*
+	 * pass parameters on stack (howto, bootdev, unit, cyloffset)
+	 * note: 0(%esp) is return address of boot
+	 * ( if we want to hold onto /boot, it's physical %esp up to _end)
+	 */
 
 	movl	4(%esp),%eax
 	movl	%eax,_boothowto-SYSTEM
@@ -167,6 +146,7 @@ start:				# This is assumed to be location zero!
 	movl	$ 0xA0,%ecx		# look every 4K up to 640K
 1:	movl	0(%eax),%ebx		# save location to check
 	movl	$0xa55a5aa5,0(%eax)	# write test pattern
+	/* flush stupid cache here! (with bcopy (0,0,512*1024) ) */
 	cmpl	$0xa55a5aa5,0(%eax)	# does not check yet for rollover
 	jne	2f
 	movl	%ebx,0(%eax)		# restore memory
@@ -188,27 +168,31 @@ start:				# This is assumed to be location zero!
 2:	shrl	$12,%eax
 	movl	%eax,_Maxmem-SYSTEM
 
-/* clear memory. */
-	movl	$_edata-SYSTEM,%edi
+/* find end of kernel image */
 	movl	$_end-SYSTEM,%ecx
 	addl	$ NBPG-1,%ecx
 	andl	$~(NBPG-1),%ecx
 	movl	%ecx,%esi
+
+/* clear bss and memory for bootstrap pagetables. */
+	movl	$_edata-SYSTEM,%edi
 	subl	%edi,%ecx
-	addl	$(UPAGES*NBPG)+NBPG+NBPG+NBPG,%ecx
-	#	txt+data+proc zero pt+u.
+	addl	$(UPAGES+5)*NBPG,%ecx
+	#	kernel bss + page directory + page table + stack
 	xorl	%eax,%eax	# pattern
 	cld
 	rep
 	stosb
 
-/* should do all of memory, but some systems don't probe correctly (yet)*/
-	movl	$0x100000,%edi
-	movl	$0x200000,%ecx
-	xorl	%eax,%eax	# pattern
-	cld
-	rep
-	stosb
+	movl	%esi,_IdlePTD-SYSTEM /*physical address of Idle Address space */
+	movl	$ tmpstk-SYSTEM,%esp	# bootstrap stack end location
+
+#define	fillkpt		\
+1:	movl	%eax,0(%ebx)	; \
+	addl	$ NBPG,%eax	; /* increment physical address */ \
+	addl	$4,%ebx		; /* next pte */ \
+	loop	1b		;
+
 /*
  * Map Kernel
  * N.B. don't bother with making kernel text RO, as 386
@@ -218,87 +202,56 @@ start:				# This is assumed to be location zero!
  */
 	movl	%esi,%ecx		# this much memory,
 	shrl	$ PGSHIFT,%ecx		# for this many pte s
+	addl	$ UPAGES+4,%ecx		# including our early context
 	movl	$ PG_V,%eax		#  having these bits set,
-	movl	$_Sysmap-SYSTEM,%ebx	#   in the kernel page table,
-					#    fill in kernel page table.
-1:	movl	%eax,0(%ebx)
-	addl	$ NBPG,%eax			# increment physical address
-	addl	$4,%ebx				# next pte
-	loop	1b
-
-/* temporary double map  virt == real */
-
-	movl	$1024,%ecx		# for this many pte s,
-	movl	$ PG_V,%eax		#  having these bits set,
-	movl	$_Sysmap+4096-SYSTEM,%ebx	#   in the temporary page table,
-					#    fill in kernel page table.
-1:	movl	%eax,0(%ebx)
-	addl	$ NBPG,%eax			# increment physical address
-	addl	$4,%ebx				# next pte
-	loop	1b
+	lea	(4*NBPG)(%esi),%ebx	#   physical address of KPT in proc 0,
+	movl	%ebx,_KPTphys-SYSTEM	#    in the kernel page table,
+	fillkpt
 
 /* map I/O memory map */
 
-	movl	$atpgs,%ecx		# for this many pte s,
-	movl	$(IOPHYSmem|PG_V),%eax	#  having these bits set, (perhaps URW?)
-	movl	$_ATDevmem-SYSTEM,%ebx	#   in the temporary page table,
-					#    fill in kernel page table.
-1:	movl	%eax,0(%ebx)
-	addl	$ NBPG,%eax			# increment physical address
-	addl	$4,%ebx				# next pte
-	loop	1b
+	movl	$0x100-0xa0,%ecx	# for this many pte s,
+	movl	$(0xa0000|PG_V),%eax	#  having these bits set, (perhaps URW?)
+	movl	%ebx,_atdevphys-SYSTEM	#   remember phys addr of ptes
+	fillkpt
 
-/* map proc 0's page table (P1 region) */
-
-	movl	$_Usrptmap-SYSTEM,%ebx	# get pt map address
-	lea	(0*NBPG)(%esi),%eax	# physical address of pt in proc 0
-	orl	$ PG_V,%eax		#  having these bits set,
-	movl	%eax,0(%ebx)
-
- /* map proc 0's _u */
+ /* map proc 0's _u into sole user page table page (mapping stack & u.) */
 
 	movl	$ UPAGES,%ecx		# for this many pte s,
-	lea	(2*NBPG)(%esi),%eax	# physical address of _u in proc 0
+	lea	(1*NBPG)(%esi),%eax	# physical address of _u in proc 0
+	lea	(SYSTEM)(%eax),%edx
+	movl	%edx,_proc0paddr-SYSTEM  # remember VA for 0th process init
 	orl	$ PG_V|PG_URKW,%eax	#  having these bits set,
-	lea	(0*NBPG)(%esi),%ebx	# physical address of stack pt in proc 0
+	lea	(3*NBPG)(%esi),%ebx	# physical address of stack pt in proc 0
 	addl	$(UPTEOFF*4),%ebx
-					#    fill in proc 0 stack page table.
-1:	movl	%eax,0(%ebx)
-	addl	$ NBPG,%eax			# increment physical address
-	addl	$4,%ebx				# next pte
-	loop	1b
-
- /* locate proc 0's page directory*/
-	lea	(1*NBPG)(%esi),%eax	# physical address of ptd in proc 0
-	movl	%eax,%edi		# remember ptd physical address
+	fillkpt
 
 /*
  * Construct a page table directory
  * (of page directory elements - pde's)
  */
-					/* kernel pde's */
-	movl	$_Sysmap-SYSTEM,%eax	# physical address of kernel page table
+	/* install a pde for temporary double map of bottom of VA */
+	lea	(4*NBPG)(%esi),%eax	# physical address of kernel page table
 	orl	$ PG_V,%eax		# pde entry is valid
-	movl	$ Npdes,%ecx		# for this many pde s,
-	movl	%edi,%ebx		# phys address of ptd in proc 0
-	addl	$(SYSPDROFF*4), %ebx	# offset of pde for kernel
-1:	movl	%eax,0(%ebx)
-	addl	$ NBPG,%eax			# increment physical address
-	addl	$4,%ebx				# next pde
-	loop	1b
-					# install a pde for temporary double map
-	movl	$_Sysmap+4096-SYSTEM,%eax	# physical address of temp page table
-	orl	$ PG_V,%eax		# pde entry is valid
-	movl	%edi,%ebx		# phys address of ptd in proc 0
-	movl	%eax,0(%ebx)			# which is where temp maps!
-					# install a pde to map _u for proc 0
-	lea	(0*NBPG)(%esi),%eax	# physical address of pt in proc 0
-	orl	$ PG_V,%eax		# pde entry is valid
-	movl	%edi,%ebx		# phys address of ptd in proc 0
-	addl	$(UPDROFF*4), %ebx	# offset of pde for kernel
-	movl	%eax,0(%ebx)		# which is where _u maps!
+	movl	%eax,(%esi)		# which is where temp maps!
 
-	movl	%edi,%eax		# phys address of ptd in proc 0
+	/* kernel pde's */
+	movl	$ 3,%ecx		# for this many pde s,
+	lea	(SYSPDROFF*4)(%esi), %ebx	# offset of pde for kernel
+	fillkpt
+
+	/* install a pde recursively mapping page directory as a page table! */
+	movl	%esi,%eax		# phys address of ptd in proc 0
+	orl	$ PG_V,%eax		# pde entry is valid
+	movl	%eax, PDRPDROFF*4(%esi)	# which is where PTmap maps!
+
+	/* install a pde to map _u for proc 0 */
+	lea	(3*NBPG)(%esi),%eax	# physical address of pt in proc 0
+	orl	$ PG_V,%eax		# pde entry is valid
+	movl	%eax,UPDROFF*4(%esi)		# which is where _u maps!
+
+	/* load base of page directory, and enable mapping */
+	movl	%esi,%eax		# phys address of ptd in proc 0
  	orl	$ I386_CR3PAT,%eax
 	movl	%eax,%cr3		# load ptd addr into mmu
 	movl	%cr0,%eax		# get control word
@@ -306,46 +259,40 @@ start:				# This is assumed to be location zero!
 	movl	%eax,%cr0		# NOW!
 
 	pushl	$begin				# jump to high mem!
-	ret		# jmp $begin does not work
-begin:
-	movl	$_Sysbase,%eax		# kernel stack just below system
-	movl	%eax,%esp
+	ret		# jmp $begin does not work - generates relative jmp
+begin: /* now running relocated at SYSTEM where the system is linked to run */
+#ifdef notyet
+	movl	$0,SYSTEM(%esi)		# destroy temp double map
+	movl	%esi,%eax		# phys address of ptd in proc 0
+ 	orl	$ I386_CR3PAT,%eax
+	movl	%eax,%cr3		# load ptd addr into mmu
+#endif
+
+	.globl _Crtat
+	movl	_Crtat,%eax
+	subl	$0xfe0a0000,%eax
+	movl	_atdevphys,%edx	# get pte PA
+	subl	_KPTphys,%edx	# remove base of ptes, now have phys offset
+	shll	$ PGSHIFT-2,%edx  # corresponding to virt offset
+	addl	$ SYSTEM,%edx	# add virtual base
+	movl	%edx, _atdevbase
+	addl	%eax,%edx
+	movl	%edx,_Crtat
+
+	/* set up bootstrap stack */
+	movl	$ _u+UPAGES*NBPG-4*12,%esp	# bootstrap stack end location
 	xorl	%eax,%eax		# mark end of frames
 	movl	%eax,%ebp
+	movl	%esi, _u+PCB_CR3
+
+	lea	7*NBPG(%esi),%esi	# skip past stack.
+	pushl	%esi
 	
-	movl	_Crtat,%eax		# initialize Crt video ram address
-	subl	$ IOPHYSmem,%eax
-	addl	$_atdevbase,%eax
-	movl	%eax,_Crtat
-
 	call	_init386		# wire 386 chip for unix operation
-
-/* initialize (slightly) the pcb */
-	movl	$_u,%eax		# proc0 u-area
-	movl	$_usrpt,%ecx
-	movl	%ecx,PCB_P0BR(%eax)	# p0br: SVA of text/data user PT
-	xorl	%ecx,%ecx
-	movl	%ecx,PCB_P0LR(%eax)	# p0lr: 0 (doesn t really exist)
-	movl	%ecx,PCB_FLAGS(%eax)	# no fp yet.
-	movl	$_usrpt+NBPG,%ecx	# addr of end of PT
-	subl	$ P1PAGES*4,%ecx		# backwards size of P1 region
-	movl	%ecx,PCB_P1BR(%eax)	# p1br: P1PAGES from end of PT
-	movl	$ P1PAGES-UPAGES,PCB_P1LR(%eax)	# p1lr: vax style
-	movl	$ CLSIZE,PCB_SZPT(%eax)	# page table size
-	movl	%edi,PCB_CR3(%eax)
-	pushl	%edi	# cr3
-	movl	%esi,%eax
-	addl	$(UPAGES*NBPG)+NBPG+NBPG+NBPG,%eax
-	shrl	$ PGSHIFT,%eax
-	pushl	%eax	# firstaddr
-
-	pushl	$20		# install signal trampoline code
-	pushl	$_u+PCB_SIGC
-	pushl	$sigcode
-	call	_bcopy
-	addl	$12,%esp
-
+	
+	movl	$0,_PTD
 	call 	_main
+	popl	%esi
 
 	.globl	__ucodesel,__udatasel
 	movzwl	__ucodesel,%eax
@@ -357,9 +304,14 @@ begin:
 	pushl	$0	# user ip
 	movw	%cx,%ds
 	movw	%cx,%es
-	movw	%ax,%fs		# double map cs to fs
-	movw	%cx,%gs		# and ds to gs
+	# movw	%ax,%fs		# double map cs to fs
+	# movw	%cx,%gs		# and ds to gs
 	lret	# goto user!
+
+	pushl	$lretmsg1	/* "should never get here!" */
+	call	_panic
+lretmsg1:
+	.asciz	"lret: toinit\n"
 
 	.globl	__exit
 __exit:
@@ -406,7 +358,9 @@ argv:	.long	init-_icode
 	.long	0
 _szicode:
 	.long	_szicode-_icode
-sigcode:
+
+	.globl	_sigcode,_szsigcode
+_sigcode:
 	movl	12(%esp),%eax	# unsure if call will dec stack 1st
 	call	%eax
 	xorl	%eax,%eax	# smaller movl $103,%eax
@@ -414,6 +368,8 @@ sigcode:
 	LCALL(0x7,0)		# enter kernel with args on stack
 	hlt			# never gets here
 
+_szsigcode:
+	.long	_szsigcode-_sigcode
 
 	.globl ___udivsi3
 ___udivsi3:
@@ -432,11 +388,19 @@ ___divsi3:
 
 	.globl	_inb
 _inb:	movl	4(%esp),%edx
-	inb	$0x84,%al	# Compaq SystemPro 
+	# inb	$0x84,%al	# Compaq SystemPro 
 	subl	%eax,%eax	# clr eax
 	NOP
 	inb	%dx,%al
 	NOP
+	ret
+
+
+	.globl	_rtcin
+_rtcin:	movl	4(%esp),%eax
+	outb	%al,$0x70
+	subl	%eax,%eax	# clr eax
+	inb	$0x71,%al	# Compaq SystemPro 
 	ret
 
 	.globl	_outb
@@ -444,7 +408,7 @@ _outb:	movl	4(%esp),%edx
 	movl	8(%esp),%eax
 	NOP
 	outb	%al,%dx
-	inb	$0x84,%al
+	# inb	$0x84,%al
 	NOP
 	ret
 
@@ -481,7 +445,6 @@ _fillw:
 	movl	8(%esp),%eax
 	movl	12(%esp),%edi
 	movl	16(%esp),%ecx
-	# xorl	%eax,%eax
 	cld
 	rep
 	stosw
@@ -663,10 +626,21 @@ _ltr:
 	.globl	_load_cr3
 _load_cr3:
 _lcr3:
+	inb	$0x84,%al	# check wristwatch
 	movl	4(%esp),%eax
+	pushfl
+	popl %ecx
+	cli
+	movl	%esp,%edx
+	movl	$tmpstk,%esp
  	orl	$ I386_CR3PAT,%eax
 	movl	%eax,%cr3
+	movl	(%edx),%eax	# touch stack
+	movl	%eax,(%edx)
+	movl	%edx,%esp
 	movl	%cr3,%eax
+	pushl %ecx
+	popfl		# turns ints on again
 	ret
 
 	# lcr0(cr0)
@@ -726,7 +700,7 @@ ALTENTRY(fuiword)
 ENTRY(fuword)
 	movl	$fusufault,_nofault	# in case we page/protection violate
 	movl	4(%esp),%edx
-	.byte	0x65		# use gs
+	# .byte	0x65		# use gs
 	movl	0(%edx),%eax
 	xorl	%edx,%edx
 	movl	%edx,_nofault
@@ -735,7 +709,7 @@ ENTRY(fuword)
 ENTRY(fusword)
 	movl	$fusufault,_nofault	# in case we page/protection violate
 	movl	4(%esp),%edx
-	.byte	0x65		# use gs
+	# .byte	0x65		# use gs
 	movzwl	0(%edx),%eax
 	xorl	%edx,%edx
 	movl	%edx,_nofault
@@ -745,7 +719,7 @@ ALTENTRY(fuibyte)
 ENTRY(fubyte)
 	movl	$fusufault,_nofault	# in case we page/protection violate
 	movl	4(%esp),%edx
-	.byte	0x65		# use gs
+	# .byte	0x65		# use gs
 	movzbl	0(%edx),%eax
 	xorl	%edx,%edx
 	movl	%edx,_nofault
@@ -762,7 +736,7 @@ ENTRY(suword)
 	movl	$fusufault,_nofault	# in case we page/protection violate
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax
-	.byte	0x65		# use gs
+	# .byte	0x65		# use gs
 	movl	%eax,0(%edx)
 	xorl	%eax,%eax
 	movl	%eax,_nofault
@@ -772,7 +746,7 @@ ENTRY(susword)
 	movl	$fusufault,_nofault	# in case we page/protection violate
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax
-	.byte	0x65		# use gs
+	# .byte	0x65		# use gs
 	movw	%ax,0(%edx)
 	xorl	%eax,%eax
 	movl	%eax,_nofault
@@ -783,7 +757,7 @@ ENTRY(subyte)
 	movl	$fusufault,_nofault	# in case we page/protection violate
 	movl	4(%esp),%edx
 	movl	8(%esp),%eax
-	.byte	0x65		# use gs
+	# .byte	0x65		# use gs
 	movb	%eax,0(%edx)
 	xorl	%eax,%eax
 	movl	%eax,_nofault
@@ -802,6 +776,7 @@ ENTRY(subyte)
 	xorl	%eax,%eax		# return (0);
 	ret
 
+#ifdef notdef
 	ENTRY(longjmp)
 	movl	4(%esp),%eax
 	movl	 0(%eax),%ebx		# restore ebx
@@ -814,6 +789,7 @@ ENTRY(subyte)
 	xorl	%eax,%eax		# return (1);
 	incl	%eax
 	ret
+#endif
 /*
  * The following primitives manipulate the run queues.
  * _whichqs tells which of the 32 queues _qs
@@ -953,9 +929,7 @@ sw2:
 	movl	%eax,P_RLINK(%ecx)
 
 	movl	P_ADDR(%ecx),%edx
-	movl	(%edx),%eax
-	movl	%eax,_Swtchmap
-	movl	_Swtchbase+PCB_CR3,%edx
+	movl	PCB_CR3(%edx),%edx
 
 /* switch to new process. first, save context as needed */
 
@@ -990,8 +964,17 @@ sw2:
 	movl	_CMAP2,%eax		# save temporary map PTE
 	movl	%eax,PCB_CMAP2(%ecx)	# in our context
 
+#pushal ; pushl %edx ; pushl $LF ; call _pg ; popl %eax ; popl %edx ; popal
+	movl	%esp,%ecx
+	movl	$tmpstk,%esp
+
  	orl	$ I386_CR3PAT,%edx
+	inb	$0x84,%al	# check wristwatch
 	movl	%edx,%cr3	# context switch address space
+
+	movl	(%ecx),%eax	# touch stack, fault if not there
+	movl	%eax,(%ecx)
+	movl	%ecx,%esp
 
 	movl	$_u,%ecx
 
@@ -1048,8 +1031,8 @@ res3:
  * current just used to fillout u. tss so fork can fake a return to swtch
  */
 ENTRY(resume)
-	# movl	4(%esp),%ecx
-	movl	$_u,%ecx
+	movl	4(%esp),%ecx
+	# movl	$_u,%ecx
 	movw	_cpl, %ax
 	movw	%ax,  PCB_IML(%ecx)
 	movl	(%esp),%eax	
@@ -1074,22 +1057,59 @@ ENTRY(resume)
 	movl	$0,%eax
 	ret
 
+/*
+ * update profiling information for the user
+ * addupc(pc, up, ticks) struct uprof *up;
+ */
+
+ENTRY(addupc)
+	movl	4(%esp),%eax		/* pc */
+	movl	8(%esp),%ecx		/* up */
+
+	/* does sampled pc fall within bottom of profiling window? */
+	subl	PR_OFF(%ecx),%eax 	/* pc -= up->pr_off; */
+	jl	1f 			/* if (pc < 0) return; */
+
+	/* construct scaled index */
+	shrl	$1,%eax			/* reduce pc to a short index */
+	mull	PR_SCALE(%ecx)		/* pc*up->pr_scale */
+	shrdl	$15,%edx,%eax 		/* praddr >> 15 */
+	cmpl	$0,%edx			/* if overflow, ignore */
+	jne	1f
+	andb	$0xfe,%al		/* praddr &= ~1 */
+
+	/* within profiling buffer? if so, compute address */
+	cmpl	%eax,PR_SIZE(%ecx)	/* if (praddr > up->pr_size) return; */
+	jg	1f
+	addl	PR_BASE(%ecx),%eax	/* praddr += up->pr_base; */
+
+	/* tally ticks to selected counter */
+	movl	$proffault,_nofault
+	movl	12(%esp),%edx		/* ticks */
+	addw	%dx,(%eax)
+	movl	$0,_nofault
+1:	ret
+
+proffault:
+	/* disable profiling if we get a fault */
+	movl	$0,PR_SCALE(%ecx) /*	up->pr_scale = 0; */
+	movl	$0,_nofault
+	ret
+
 .data
 	.globl	_cyloffset
 _cyloffset:	.long	0
 	.globl	_nofault
 _nofault:	.long	0
+	.globl	_proc0paddr
+_proc0paddr:	.long	0
+LF:	.asciz "swtch %x"
+
 .text
  # To be done:
-	.globl _addupc
 	.globl _astoff
-	.globl _doadump
-_addupc:		# sorry, no profiling
-	.byte 0xcc
 _astoff:
 	ret
-_doadump:
-	call _reset_cpu
 
 #define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
 /*#define	PANIC(msg)	xorl %eax,%eax; movl %eax,_waittime; pushl 1f; \
@@ -1102,16 +1122,21 @@ _doadump:
 /*
  * Trap and fault vector routines
  */ 
-#define	TRAP(a)	pushl $ a; jmp alltraps
+#define	TRAP(a)		pushl $ a; jmp alltraps
+#ifdef KGDB
+#define	BPTTRAP(a)	pushl $ a; jmp bpttraps
+#else
+#define	BPTTRAP(a)	TRAP(a)
+#endif
 
 IDTVEC(div)
 	pushl $0; TRAP(T_DIVIDE)
 IDTVEC(dbg)
-	pushl $0; TRAP(T_TRCTRAP)
+	pushl $0; BPTTRAP(T_TRCTRAP)
 IDTVEC(nmi)
 	pushl $0; TRAP(T_NMI)
 IDTVEC(bpt)
-	pushl $0; TRAP(T_BPTFLT)
+	pushl $0; BPTTRAP(T_BPTFLT)
 IDTVEC(ofl)
 	pushl $0; TRAP(T_OFLOW)
 IDTVEC(bnd)
@@ -1179,6 +1204,7 @@ alltraps:
 	movw	$0x10,%ax
 	movw	%ax,%ds
 	movw	%ax,%es
+calltrap:
 	incl	_cnt+V_TRAP
 	call	_trap
 	pop %es
@@ -1187,6 +1213,25 @@ alltraps:
 	nop
 	addl	$8,%esp			# pop type, code
 	iret
+
+#ifdef KGDB
+/*
+ * This code checks for a kgdb trap, then falls through
+ * to the regular trap code.
+ */
+bpttraps:
+	pushal
+	push	%es
+	push	%ds
+	movw	$0x10,%ax
+	movw	%ax,%ds
+	movw	%ax,%es
+	movzwl	52(%esp),%eax
+	test	$3,%eax			# make sure it's a kernel trap
+	jne	calltrap
+	call	_kgdb_trap_glue		# won't return, if successful
+	jmp	calltrap
+#endif
 
 /*
  * Call gate entry for syscall
@@ -1220,3 +1265,6 @@ ENTRY(ntohs)
 	movzwl	4(%esp),%eax
 	xchgb	%al,%ah
 	ret
+
+#include "vector.s"
+#include "i386/isa/icu.s"
