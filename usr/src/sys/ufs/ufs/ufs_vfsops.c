@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.58 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.59 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -55,7 +55,7 @@ int
 ufs_quotactl(mp, cmds, uid, arg, p)
 	struct mount *mp;
 	int cmds;
-	u_int uid;
+	uid_t uid;
 	caddr_t arg;
 	struct proc *p;
 {
