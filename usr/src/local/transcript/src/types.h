@@ -100,7 +100,7 @@ typedef StmRec *StreamHandle;
 
 /* the following defs are for relative pointers into PS VM */
 
-typedef unsigned integer Offset;
+typedef unsigned long int Offset;
 typedef Offset StrOffset, ArrayOffset, DictOffset, KeyValOffset, NameOffset,
 		SROoffset, SRCoffset, SRDoffset, SRoffset;
 #define NIL NULL
@@ -123,7 +123,7 @@ typedef Offset StrOffset, ArrayOffset, DictOffset, KeyValOffset, NameOffset,
 #define nObTypes 13
 
 #define nBitVectorBits 32
-typedef unsigned integer BitVector;
+typedef unsigned long int BitVector;
 
 typedef unsigned char Level;
 
@@ -157,7 +157,7 @@ typedef struct object{
 		/*array*/ ArrayOffset arrayval;
 		/*mark*/  int markval;
 		/*save*/  int saveval;
-		/*font*/  int fontval} val
+		/*font*/  int fontval;} val;
 		} Object, *PObject, NullObj, *PNullObj,
 		  IntObj, *PIntObj, RealObj, *PRealObj,
 		  NameObj, *PNameObj, BoolObj, *PBoolObj,
