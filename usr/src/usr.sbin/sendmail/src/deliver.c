@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.147		%G%);
+SCCSID(@(#)deliver.c	3.148		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -213,6 +213,13 @@ deliver(e, firstto)
 		**  talk to each other.
 		*/
 
+		if (m->m_maxsize != 0 && e->e_msgsize > m->m_maxsize)
+		{
+			usrerr("Message is too large; %ld bytes max", m->m_maxsize);
+			NoReturn = TRUE;
+			giveresponse(EX_UNAVAILABLE, m, e);
+			continue;
+		}
 		if (!checkcompat(to))
 		{
 			giveresponse(EX_UNAVAILABLE, m, e);

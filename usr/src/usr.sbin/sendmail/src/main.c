@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	3.154		%G%);
+SCCSID(@(#)main.c	3.155		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -403,8 +403,9 @@ main(argc, argv)
 
 			if (m == NULL)
 				continue;
-			printf("mailer %d (%s): P=%s S=%d R=%d F=", i, m->m_name,
-				m->m_mailer, m->m_s_rwset, m->m_r_rwset);
+			printf("mailer %d (%s): P=%s S=%d R=%d M=%ld F=", i, m->m_name,
+				m->m_mailer, m->m_s_rwset, m->m_r_rwset,
+				m->m_maxsize);
 			for (j = '\0'; j <= '\177'; j++)
 				if (bitnset(j, m->m_flags))
 					putchar(j);
