@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.58		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.59		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -129,6 +129,7 @@ typedef struct mailer	MAILER;
 # define M_HST_UPPER	000020000	/* preserve host case distinction */
 # define M_FULLNAME	000040000	/* want Full-Name field */
 # define M_UGLYUUCP	000100000	/* this wants an ugly UUCP from line */
+# define M_EXPENSIVE	000200000	/* it costs to use this mailer.... */
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 
@@ -334,6 +335,7 @@ EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
 EXTERN bool	ForkOff;	/* fork after initial verification */
 EXTERN bool	OldStyle;	/* spaces (not commas) delimit addresses */
+EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 extern time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
