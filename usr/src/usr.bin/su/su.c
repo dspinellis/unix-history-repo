@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -91,35 +91,17 @@ main(argc, argv)
 	(void)setpriority(PRIO_PROCESS, 0, -2);
 	openlog("su", LOG_CONS, 0);
 
-	/*
-	 * Get current login name and shell.
-	 * This code assumes the trustable (system call)
-	 * version of getlogin (the old one was easily confused).
-	 */
+	/* get current login name and shell */
 	ruid = getuid();
 	username = getlogin();
-	if (username == NULL || (pwd = getpwnam(username)) == NULL) {
-		if (username)
-			syslog(LOG_AUTH|LOG_ERR,
-			    "su attempt by unknown user %s (uid %d) to %s%s",
-			    username, ruid, user, ontty());
-#ifdef notyet
-		/*
-		 * The following will happen regularly from cron, etc.
-		 * unless such things do a setlogin().
-		 */
-		else
-			syslog(LOG_AUTH|LOG_ERR,
-			    "su attempt with null login name (uid %d) to %s%s",
-			    ruid, user, ontty());
-#endif
+	if (username == NULL || (pwd = getpwnam(username)) == NULL ||
+	    pwd->pw_uid != ruid)
 		pwd = getpwuid(ruid);
-		if (pwd == NULL) {
-			fprintf(stderr, "su: who are you?\n");
-			exit(1);
-		}
-		username = strdup(pwd->pw_name);
+	if (pwd == NULL) {
+		fprintf(stderr, "su: who are you?\n");
+		exit(1);
 	}
+	username = strdup(pwd->pw_name);
 	if (asme)
 		if (pwd->pw_shell && *pwd->pw_shell)
 			shell = strcpy(shellbuf,  pwd->pw_shell);
