@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lval.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)lval.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -387,6 +387,8 @@ int arycod(np, el, n)
 			return (i-1);
 		}
 		p = p->chain;
+		if (p == NLNIL)
+			return (0);
 		if ((p->class != CRANGE) &&
 			(constsub = constval(el->list_node.list))) {
 		    ap = con.ctype;

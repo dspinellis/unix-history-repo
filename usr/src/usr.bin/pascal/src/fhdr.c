@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fhdr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fhdr.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -336,7 +336,6 @@ params(p, formalist)
 #	endif PC
 	for (formalp = formalist; formalp != TR_NIL;
 			formalp = formalp->list_node.next) {
-		p = NLNIL;
 		formal = formalp->list_node.list;
 		if (formal == TR_NIL)
 			continue;
@@ -345,15 +344,14 @@ params(p, formalist)
 		 * don't have types !?!
 		 */
 		typ = formal->pfunc_node.type;
+		p = NLNIL;
 		if ( typ == TR_NIL ) {
 		    if ( formal->tag != T_PPROC ) {
 			error("Types must be specified for arguments");
-			p = NLNIL;
 		    }
 		} else {
 		    if ( formal->tag == T_PPROC ) {
 			error("Procedures cannot have types");
-			p = NLNIL;
 		    } else {
 			p = gtype(typ);
 		    }
@@ -453,7 +451,7 @@ params(p, formalist)
 				chainp = dp;
 			}
 		}
-		if (typ->tag == T_TYCARY) {
+		if (typ != TR_NIL && typ->tag == T_TYCARY) {
 #		    ifdef OBJ
 			w = -even(lwidth(p->chain));
 #			ifndef DEC11
