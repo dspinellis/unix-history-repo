@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -466,7 +466,7 @@ deliver(firstto, editfcn)
 	{
 
 	/* arrange a return receipt if requested */
-	if (e->e_receiptto != NULL && bitnset(M_LOCAL, m->m_flags))
+	if (e->e_receiptto != NULL && bitnset(M_LOCALMAILER, m->m_flags))
 	{
 		e->e_flags |= EF_SENDRECEIPT;
 		/* do we want to send back more info? */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1109,7 +1109,7 @@ buildaddr(tv, a)
 
 	/* figure out what host (if any) */
 	tv++;
-	if (!bitnset(M_LOCAL, m->m_flags))
+	if (!bitnset(M_LOCALMAILER, m->m_flags))
 	{
 		if ((**tv & 0377) != CANONHOST)
 		{
@@ -1277,7 +1277,7 @@ sameaddr(a, b)
 		return (FALSE);
 
 	/* if the mailer ignores hosts, we have succeeded! */
-	if (bitnset(M_LOCAL, a->q_mailer->m_flags))
+	if (bitnset(M_LOCALMAILER, a->q_mailer->m_flags))
 		return (TRUE);
 
 	/* otherwise compare hosts (but be careful for NULL ptrs) */
