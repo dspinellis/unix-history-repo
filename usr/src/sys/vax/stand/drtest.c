@@ -34,7 +34,7 @@ askunit:
 	}
 	ioctl(fd,SAIODEVDATA,&st);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
-		st->ncyl, st->ntrak, st->nsect);
+		st.ncyl, st.ntrak, st.nsect);
 	chunk = st.nsect*SECTSIZ;
 	printf("Testing %s, chunk size is %d bytes\n",buf, chunk);
 	printf("Start ...Make sure %s is online\n",buf);
