@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_timer.c	7.5 (Berkeley) %G%
+ *	@(#)tp_timer.c	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -178,8 +178,15 @@ tp_Eclock(refp)
 		TP_callfree = p1;
 		IncStat(ts_Eexpired);
 		(void) tp_driver( tpcb = refp->tpr_pcb, &E);
-		if (p1->c_func == TM_reference && tpcb->tp_state == TP_CLOSED)
+		if (p1->c_func == TM_reference && tpcb->tp_state == TP_CLOSED) {
+			if (tpcb->tp_notdetached) {
+				IFDEBUG(D_CONN)
+					printf("PRU_DETACH: not detached\n");
+				ENDDEBUG
+				tp_detach(tpcb);
+			}
 			free((caddr_t)tpcb, M_PCB); /* XXX wart; where else to do it? */
+		}
 	}
 }
 
