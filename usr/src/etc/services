@@ -1,7 +1,7 @@
 #
 # Network services, Internet style
 #
-#	@(#)services	5.5 (Berkeley) %G%
+#	@(#)services	5.6 (Berkeley) %G%
 #
 echo		7/tcp
 echo		7/udp
@@ -68,11 +68,10 @@ ingreslock	1524/tcp
 #
 # Kerberos (Project Athena/MIT) services
 #
-kerberos	750/udp		kdc	# Kerberos (server) udp -kfall
-kerberos	750/tcp		kdc	# Kerberos (server) tcp -kfall
-krbupdate	760/tcp		kreg	# Kerberos registration -kfall
-kpasswd		761/tcp		kpwd	# Kerberos "passwd" -kfall
-klogin		543/tcp			# Kerberos rlogin -kfall
-eklogin		2105/tcp		# Kerberos encrypted rlogin -kfall
-kshell		544/tcp		krcmd	# Kerberos remote shell -kfall
-ekshell		545/tcp		krcmd	# Kerberos encrypted remote shell -kfall
+kerberos	750/udp		kdc	# Kerberos (server) udp
+kerberos	750/tcp		kdc	# Kerberos (server) tcp
+krbupdate	760/tcp		kreg	# Kerberos registration
+kpasswd		761/tcp		kpwd	# Kerberos "passwd"
+klogin		543/tcp			# Kerberos rlogin
+eklogin		2105/tcp		# Kerberos encrypted rlogin
+kshell		544/tcp		krcmd	# Kerberos remote shell
