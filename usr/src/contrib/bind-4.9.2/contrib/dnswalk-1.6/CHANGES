@@ -1,0 +1,53 @@
+$Id: CHANGES,v 1.2 1993/07/21 14:38:47 barr Exp barr $
+
+Version 1.6
+removed -c switch, since I thought it would work a long time ago, but
+later found out it could never be made to work.  Well, it could, just
+not very nicely.  (nor efficiently)
+
+Fixed bug with parsing of dig output.  Newer dig has slightly different
+output, causing serial numbers to not be pulled out.
+
+Changed the do-dnswalk script to use exec > logfile instead of
+redirecting every invocation to a logfile.  Idea from Dan Ehrlich.
+
+Fixed problem with dnswalk using old list of subdomains in axfr file,
+ignoring the new zone transfer if it was needed.
+
+Accounted for annoying behavior of new dig to print duplicate SOA's.
+
+Documented nameserver error reporting.
+
+Version 1.5
+
+added -F switch.  This performs "fascist" checking.  For every A record,
+it checks to see that it actually points to the canonical name listed
+for the PTR and reports mismatches.  Try this switch at least once to see
+what kind of things pop up.  (You may be surprised)
+
+added -m switch.  Performs check on zone only if it has been modified
+(serial number changed) since the previous run.
+
+changed format of messages to be shorter and more precise.  (and hopefully
+easier to read)  Read the README section for a full description.
+
+warns if a zone has only one authoratative nameserver
+*** in later versions of 1.3, not posted here, but available for ftp,
+there was a bad bug which caused erroneous warnings about having only
+one nameserver.  (was using the wrong variable)
+
+reports any errors listed in dig zone transfer output.  (usually
+caused by a corrupted zone file, or invalid syntax in data; for example
+only one field in an HINFO record.)
+
+now reports any resolver errors from gethostbyname and gethostbyaddr.
+(for example, a server timeout, connection refused, etc)
+
+sorts output by zone (correctly -- some versions of 1.3 didn't quite do
+this right)
+
+displays server of authority and zone contact for each zone it checks.
+
+I've now included a 'do-dnswalk' script that is an example wrapper
+that I use around dnswalk to turn on status debugging and put the
+results in a log file.  Salt to taste.
