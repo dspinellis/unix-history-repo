@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.6	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)dirs.c	3.7	(Berkeley)	83/03/27";
 #endif
 
 #include "restore.h"
@@ -123,7 +123,7 @@ skipdirs()
 treescan(pname, ino, todo)
 	char *pname;
 	ino_t ino;
-	void (*todo)();
+	long (*todo)();
 {
 	register struct inotab *itp;
 	int namelen;
@@ -136,13 +136,14 @@ treescan(pname, ino, todo)
 		/*
 		 * Pname is name of a simple file or an unchanged directory.
 		 */
-		(*todo)(pname, ino, LEAF);
+		(void) (*todo)(pname, ino, LEAF);
 		return;
 	}
 	/*
 	 * Pname is a dumped directory name.
 	 */
-	(*todo)(pname, ino, NODE);
+	if ((*todo)(pname, ino, NODE) == FAIL)
+		return;
 	/*
 	 * begin search through the directory
 	 * skipping over "." and ".."
@@ -452,20 +453,6 @@ genliteraldir(name, ino)
 	(void) close(dp);
 	(void) close(ofile);
 	return (GOOD);
-}
-
-/*
- * Determine the type of an inode
- */
-inodetype(ino)
-	ino_t ino;
-{
-	struct inotab *itp;
-
-	itp = inotablookup(ino);
-	if (itp == NULL)
-		return (LEAF);
-	return (NODE);
 }
 
 /*
