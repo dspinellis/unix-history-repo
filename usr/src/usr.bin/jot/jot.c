@@ -1,39 +1,44 @@
-/* Copyright (c) 1983 Regents of the University of California */
-
-#ifndef lint
-static char sccsid[] = "@(#)jot.c	4.3	(Berkeley)	%G%";
-#endif not lint
-
-/*
- *	jot - print sequential or random data
- *	Author:  John Kunze, Office of Comp. Affairs, UCB
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
-#include <stdio.h>
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)jot.c	4.4 (Berkeley) %G%";
+#endif /* not lint */
+
+/*
+ * jot - print sequential or random data
+ *
+ * Author:  John Kunze, Office of Comp. Affairs, UCB
+ */
+
 #include <ctype.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 #define	REPS_DEF	100
 #define	BEGIN_DEF	1
 #define	ENDER_DEF	100
 #define	STEP_DEF	1
 
-#define BSD4_2		1
-#if BSD4_2
-#define RAND		random
-#define SRAND		srandom
-long RAND();
-#else
-#define RAND		rand
-#define SRAND		srand
-#endif
-
 #define	isdefault(s)	(strcmp((s), "-") == 0)
-#define	LARGESTINT	(~ (unsigned) 0 >> 1)
-#define	CASE		break; case
 
-char	*sepstring = "\n";
-char	format[BUFSIZ];
-char	buf[BUFSIZ];
+double	begin;
+double	ender;
+double	s;
+long	reps;
 int	randomize;
 int	infinity;
 int	boring;
@@ -41,15 +46,19 @@ int	prec;
 int	dox;
 int	chardata;
 int	nofinalnl;
+char	*sepstring = "\n";
+char	format[BUFSIZ];
 
-long	reps;
-double	begin;
-double	ender;
-double	s;
+void	error __P((char *, char *));
+void	getargs __P((int, char *[]));
+void	getformat __P((void));
+int	getprec __P((char *));
+void	putdata __P((double, long));
 
+int
 main(argc, argv)
-int	argc;
-char	**argv;
+	int argc;
+	char *argv[];
 {
 	double	xd, yd;
 	long	id;
@@ -57,13 +66,12 @@ char	**argv;
 	register double	*y = &yd;
 	register long	*i = &id;
 
-	setbuf(stdout, buf);
 	getargs(argc, argv);
 	if (randomize) {
 		*x = (ender - begin) * (ender > begin ? 1 : -1);
-		SRAND((int) s);
+		srandom((int) s);
 		for (*i = 1; *i <= reps || infinity; (*i)++) {
-			*y = (double) RAND() / LARGESTINT;
+			*y = (double) random() / INT_MAX;
 			putdata(*y * *x + begin, reps - *i);
 		}
 	}
@@ -75,9 +83,10 @@ char	**argv;
 	exit(0);
 }
 
+void
 getargs(ac, av)
-int	ac;
-char	**av;
+	int ac;
+	char *av[];
 {
 	register unsigned int	mask = 0;
 	register int		n = 0;
@@ -124,16 +133,17 @@ char	**av;
 		default:
 			error("Unknown option %s", *av);
 		}
+
 	switch (ac) {	/* examine args right to left, falling thru cases */
 	case 4:
 		if (!isdefault(av[3])) {
-			if (!sscanf(av[3], "%F", &s))
+			if (!sscanf(av[3], "%lf", &s))
 				error("Bad s value:  %s", av[3]);
 			mask |= 01;
 		}
 	case 3:
 		if (!isdefault(av[2])) {
-			if (!sscanf(av[2], "%F", &ender))
+			if (!sscanf(av[2], "%lf", &ender))
 				ender = av[2][strlen(av[2])-1];
 			mask |= 02;
 			if (!prec)
@@ -141,7 +151,7 @@ char	**av;
 		}
 	case 2:
 		if (!isdefault(av[1])) {
-			if (!sscanf(av[1], "%F", &begin))
+			if (!sscanf(av[1], "%lf", &begin))
 				begin = av[1][strlen(av[1])-1];
 			mask |= 04;
 			if (!prec)
@@ -151,7 +161,7 @@ char	**av;
 		}
 	case 1:
 		if (!isdefault(av[0])) {
-			if (!sscanf(av[0], "%D", &reps))
+			if (!sscanf(av[0], "%ld", &reps))
 				error("Bad reps value:  %s", av[0]);
 			mask |= 010;
 		}
@@ -164,25 +174,31 @@ char	**av;
 	getformat();
 	while (mask)	/* 4 bit mask has 1's where last 4 args were given */
 		switch (mask) {	/* fill in the 0's by default or computation */
-		CASE 001:
+		case 001:
 			reps = REPS_DEF;
 			mask = 011;
-		CASE 002:
+			break;
+		case 002:
 			reps = REPS_DEF;
 			mask = 012;
-		CASE 003:
+			break;
+		case 003:
 			reps = REPS_DEF;
 			mask = 013;
-		CASE 004:
+			break;
+		case 004:
 			reps = REPS_DEF;
 			mask = 014;
-		CASE 005:
+			break;
+		case 005:
 			reps = REPS_DEF;
 			mask = 015;
-		CASE 006:
+			break;
+		case 006:
 			reps = REPS_DEF;
 			mask = 016;
-		CASE 007:
+			break;
+		case 007:
 			if (randomize) {
 				reps = REPS_DEF;
 				mask = 0;
@@ -197,43 +213,52 @@ char	**av;
 			if (reps <= 0)
 				error("Impossible stepsize", "");
 			mask = 0;
-		CASE 010:
+			break;
+		case 010:
 			begin = BEGIN_DEF;
 			mask = 014;
-		CASE 011:
+			break;
+		case 011:
 			begin = BEGIN_DEF;
 			mask = 015;
-		CASE 012:
+			break;
+		case 012:
 			s = (randomize ? time(0) : STEP_DEF);
 			mask = 013;
-		CASE 013:
+			break;
+		case 013:
 			if (randomize)
 				begin = BEGIN_DEF;
 			else if (reps == 0)
 				error("Must specify begin if reps == 0", "");
 			begin = ender - reps * s + s;
 			mask = 0;
-		CASE 014:
+			break;
+		case 014:
 			s = (randomize ? time(0) : STEP_DEF);
 			mask = 015;
-		CASE 015:
+			break;
+		case 015:
 			if (randomize)
 				ender = ENDER_DEF;
 			else
 				ender = begin + reps * s - s;
 			mask = 0;
-		CASE 016:
+			break;
+		case 016:
 			if (randomize)
 				s = time(0);
 			else if (reps == 0)
-				error("Infinite sequences cannot be bounded", "");
+				error("Infinite sequences cannot be bounded",
+				    "");
 			else if (reps == 1)
 				s = 0.0;
 			else
 				s = (ender - begin) / (reps - 1);
 			mask = 0;
-		CASE 017:
-			if (!randomize && s != 0.0) {	/* if reps given and implied, */
+			break;
+		case 017:		/* if reps given and implied, */
+			if (!randomize && s != 0.0) {
 				long t = (ender - begin + s) / s;
 				if (t <= 0)
 					error("Impossible stepsize", "");
@@ -249,9 +274,10 @@ char	**av;
 		infinity = 1;
 }
 
+void
 putdata(x, notlast)
-double	x;
-long	notlast;
+	double x;
+	long notlast;
 {
 	long		d = x;
 	register long	*dp = &d;
@@ -266,18 +292,16 @@ long	notlast;
 		fputs(sepstring, stdout);
 }
 
+void
 error(msg, s)
-char	*msg;
-char	*s;
+	char *msg, *s;
 {
-	char	buf[BUFSIZ];
-
-	setbuf(stderr, buf);
 	fprintf(stderr, "jot: ");
 	fprintf(stderr, msg, s);
-	fprintf(stderr, "\nUsage:  jot [ options ] [ reps [ begin [ end [ s ] ] ] ]\n");
+	fprintf(stderr,
+	    "\nusage:  jot [ options ] [ reps [ begin [ end [ s ] ] ] ]\n");
 	if (strncmp("jot - ", msg, 6) == 0)
-		fprintf(stderr, "Options:\n\t%s\t%s\t%s\t%s\t%s\t%s",
+		fprintf(stderr, "Options:\n\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
 			"-r		random data\n",
 			"-c		character data\n",
 			"-n		no final newline\n",
@@ -288,8 +312,9 @@ char	*s;
 	exit(1);
 }
 
+int
 getprec(s)
-char	*s;
+	char *s;
 {
 	register char	*p;
 	register char	*q;
@@ -298,13 +323,14 @@ char	*s;
 		if (*p == '.')
 			break;
 	if (!*p)
-		return(0);
+		return (0);
 	for (q = ++p; *p; p++)
 		if (!isdigit(*p))
 			break;
-	return(p - q);
+	return (p - q);
 }
 
+void
 getformat()
 {
 	register char	*p;
