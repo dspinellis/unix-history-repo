@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.14		%G%);
+SCCSID(@(#)headers.c	3.14.1.1		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -118,8 +118,26 @@ chompheader(line, def)
 	if (h->h_value != NULL)
 		free(h->h_value);
 	h->h_value = newstr(fvalue);
-	if (!def && GrabTo && bitset(H_ADDR, h->h_flags))
-		sendto(h->h_value, 0, (ADDRESS *) NULL, &SendQueue);
+	if (!def && bitset(H_ADDR, h->h_flags))
+	{
+		if (GrabTo)
+			sendto(h->h_value, 0, (ADDRESS *) NULL, &SendQueue);
+		if (!OldStyle)
+			sendto(h->h_value, 0, (ADDRESS *) NULL, &h->h_addrq);
+		else
+		{
+			p = fvalue;
+			while (*p != '\0')
+			{
+				fvalue = p;
+				while (*p != '\0' && !isspace(*p))
+					p++;
+				while (isspace(*p))
+					*p++ = '\0';
+				sendto(fvalue, 1, (ADDRESS *) NULL, &h->h_addrq);
+			}
+		}
+	}
 
 	return (h->h_flags);
 }
