@@ -8,68 +8,58 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_lofs.c	5.1 (Berkeley) %G%
+ *	@(#)mount_lofs.c	5.2 (Berkeley) %G%
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <lofs/lofs.h>
 
-main(c, v)
-int c;
-char *v[];
+#include <errno.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
+void usage __P((void));
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
 {
-	extern char *optarg;
-	extern int optind;
-	int ch;
-	int usage = 0;
-	int mntflags;
-	char *target;
-	char *mountpt;
 	struct lofs_args args;
-	int rc;
+	int ch, mntflags;
 
-	/*
-	 * Crack -F option
-	 */
-	while ((ch = getopt(c, v, "F:")) != EOF)
-	switch (ch) {
-	case 'F':
-		mntflags = atoi(optarg);
-		break;
-	default:
-	case '?':
-		usage++;
-		break;
-	}
+	mntflags = 0;
+	while ((ch = getopt(argc, argv, "F:")) != EOF)
+		switch(ch) {
+		case 'F':
+			mntflags = atoi(optarg);
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
 
-	/*
-	 * Need two more arguments
-	 */
-	if (optind != (c - 2))
-		usage++;
+	if (argc != 2)
+		usage();
 
-	if (usage) {
-		fputs("usage: mount_lofs [ fsoptions ] target-fs mount-point\n", stderr);
-		exit(1);
-	}
+	args.target = argv[0];
 
-	/*
-	 * Get target and mount point
-	 */
-	target = v[optind];
-	mountpt = v[optind+1];
-
-	args.target = target;
-
-	rc = mount(MOUNT_LOFS, mountpt, mntflags, &args);
-	if (rc < 0) {
-		perror("mount_lofs");
+	if (mount(MOUNT_LOFS, argv[1], mntflags, &args)) {
+		(void)fprintf(stderr, "mount_lofs: %s\n", strerror(errno));
 		exit(1);
 	}
 	exit(0);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: mount_lofs [ -F fsoptions ] target_fs mount_point\n");
+	exit(1);
 }
