@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.15	82/12/28	*/
+/*	kern_sig.c	5.16	83/05/21	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -682,7 +682,7 @@ core()
 			asm("halt");
 	}
 #endif
-	if (u.u_uid != u.u_ruid)
+	if (u.u_uid != u.u_ruid || u.u_gid != u.u_rgid)
 		return (0);
 	if (ctob(UPAGES+u.u_dsize+u.u_ssize) >=
 	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
@@ -693,7 +693,7 @@ core()
 	if (ip == NULL) {
 		if (u.u_error)
 			return (0);
-		ip = maknode(0666);
+		ip = maknode(0644);
 		if (ip==NULL)
 			return (0);
 	}
