@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.14 (Berkeley) %G%
+ *	@(#)ts.c	7.15 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -124,7 +124,6 @@ tsprobe(reg, ctlr, um)
 	register struct tsdevice *addr = (struct tsdevice *)reg;
 	register struct ts_softc *sc;
 	register int i;
-	int a;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -140,7 +139,7 @@ tsprobe(reg, ctlr, um)
 	 * TS_SETCHR|TS_IE alone refuses to interrupt for me.
 	 */
 	sc = &ts_softc[ctlr];
-	tsmap(sc, numuba, &a);
+	tsmap(sc, numuba);
 	i = (int)&sc->sc_ubaddr->t_char;
 	sc->sc_ts.t_cmd.c_loba = i;
 	sc->sc_ts.t_cmd.c_hiba = (i >> 16) & 3;
@@ -155,12 +154,17 @@ tsprobe(reg, ctlr, um)
 	sc->sc_ts.t_cmd.c_repcnt = 1;
 	addr->tsdb = sc->sc_uba;
 	DELAY(20000);
-	/* should have interrupted by now */
-
-	if (cvec == 0 || cvec == 0x200)	/* no interrupt */
-		ubarelse(numuba, &a);
-
-	return (sizeof (struct tsdevice));
+	/*
+	 * The controller should have interrupted by now, but some do not,
+	 * even if the delays above are extended to many seconds.  If the
+	 * vector is still unknown, we assume the drive is present at
+	 * the usual vector.
+	 */
+	if (cvec == 0 || cvec == 0x200)	{
+		cvec = (int)reg & 7 ? 0260 : 0224;
+		br = 0x15;
+	}
+	return (sizeof(struct tsdevice));
 }
 
 /*
@@ -168,15 +172,13 @@ tsprobe(reg, ctlr, um)
  * make them contiguous to keep overhead down.  This also sets
  * sc_uba (which then never changes).
  */
-tsmap(sc, uban, a)
+tsmap(sc, uban)
 	register struct ts_softc *sc;
-	int uban, *a;
+	int uban;
 {
 	register int i;
 
 	i = uballoc(uban, (caddr_t)&sc->sc_ts, sizeof(sc->sc_ts), 0);
-	if (a != NULL)
-		*a = i;
 	i = UBAI_ADDR(i);
 	sc->sc_ubaddr = (struct ts_tsdata *)i;
 	/*
@@ -809,7 +811,7 @@ tsreset(uban)
 				break;
 			}
 		}
-		tsmap(&ts_softc[ts11], uban, (int *)NULL);
+		tsmap(&ts_softc[ts11], uban);
 		(void) tsinit(ts11);
 		tsstart(um);
 	}
