@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftp.1	6.7 (Berkeley) %G%
+.\"	@(#)ftp.1	6.8 (Berkeley) %G%
 .\"
 .TH FTP 1C "April 29, 1985"
 .UC 5
@@ -157,6 +157,12 @@ directory,
 .IR remote-directory ,
 and, optionally, placing the output in
 .IR local-file .
+If interactive prompting is on,
+.I ftp
+will prompt the user to verify that the last argument is indeed the
+target local file for receiving
+.B dir
+output.
 If no directory is specified, the current working
 directory on the remote machine is used.  If no local
 file is specified, or \fIlocal-file\fP is \fB-\fP,
@@ -229,8 +235,14 @@ is specified, the user's home directory is used.
 Print an abbreviated listing of the contents of a
 directory on the remote machine.  If
 .I remote-directory
-is left unspecified, the current working directory
-is used.  If no local file is specified, or if \fIlocal-file\fR is \fB-\fR,
+is left unspecified, the current working directory is used.
+If interactive prompting is on,
+.I ftp
+will prompt the user to verify that the last argument is indeed the
+target local file for receiving
+.B ls
+output.
+If no local file is specified, or if \fIlocal-file\fR is \fB-\fR,
 the output is sent to the terminal.
 .TP
 \fBmacdef\fP \fImacro-name\fP
