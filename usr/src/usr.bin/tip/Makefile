@@ -1,4 +1,4 @@
-#	Makefile	4.2	81/11/29
+#	Makefile	4.3	82/01/06
 #
 # makefile for intermachine communications package
 #
@@ -29,7 +29,7 @@
 ADM=/usr/adm
 BIN=/usr/bin
 OWNER=uucp
-CFLAGS=-O -DVMUNIX -DDEFBR=300 -DDEFFS=BUFSIZ -DDF02 -DVENTEL
+CFLAGS=-O -DVMUNIX -DDEFBR=300 -DDEFFS=BUFSIZ -DDF02 -DDF03 -DACULOG
 LDFLAGS=-z
 OBJECTS=acu.o acutab.o biz22.o biz31.o cmds.o cmdtab.o cu.o df.o dn11.o hunt.o \
 	lock.o log.o remote.o tip.o tipout.o value.o vars.o ventel.o
@@ -51,15 +51,15 @@ install: all
 	chmod 4711 ${BIN}/tip
 	chown ${OWNER} ${BIN}/tip
 	cp aculog /etc/aculog
-	cp /dev/null ${ADM}/aculog
+	chmod 4711 /etc/aculog
+	chown ${OWNER} /etc/aculog
+#	cp /dev/null ${ADM}/aculog
 	chown ${OWNER} ${ADM}/aculog
 	chmod 600 ${ADM}/aculog
 	@echo "create /etc/remote and /etc/phones"
 
 aculog:	aculog.c
 	${CC} -o aculog ${LDFLAGS} aculog.c
-	chmod 4711 aculog
-	chown ${OWNER} aculog
 
 ${OBJECTS}: tip.h
 
