@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)krb_passwd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)krb_passwd.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -24,6 +24,8 @@ static char sccsid[] = "@(#)krb_passwd.c	5.1 (Berkeley) %G%";
 #include <errno.h>
 #include <stdio.h>
 #include "kpasswd_proto.h"
+#include <string.h>
+#include <stdlib.h>
 
 #define	PROTO	"tcp"
 
@@ -242,12 +244,12 @@ send_update(dest, pwd, str)
 {
 	static struct update_data ud;
 
-	strncpy(ud.secure_msg, str, _PASSWORD_LEN);
-	strncpy(ud.pw, pwd, sizeof(ud.pw));
+	(void)strncpy(ud.secure_msg, str, _PASSWORD_LEN);
+	(void)strncpy(ud.pw, pwd, sizeof(ud.pw));
 	if (des_write(dest, &ud, sizeof(ud)) != sizeof(ud)) {
 		(void)fprintf(stderr,
 		    "passwd: couldn't write pw update (abort)\n");
-		bzero(ud, sizeof(ud));
+		bzero((char *)&ud, sizeof(ud));
 		cleanup();
 		exit(1);
 	}
@@ -271,10 +273,10 @@ recv_ack(remote)
 
 cleanup()
 {
-	(void)bzero(&proto_data, sizeof(proto_data));
-	(void)bzero(okey, sizeof(okey));
-	(void)bzero(osched, sizeof(osched));
-	(void)bzero(random_schedule, sizeof(random_schedule));
+	(void)bzero((char *)&proto_data, sizeof(proto_data));
+	(void)bzero((char *)okey, sizeof(okey));
+	(void)bzero((char *)osched, sizeof(osched));
+	(void)bzero((char *)random_schedule, sizeof(random_schedule));
 }
 
 finish()
