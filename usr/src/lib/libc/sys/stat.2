@@ -2,100 +2,212 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stat.2	4.1 (Berkeley) %G%
+.\"	@(#)stat.2	5.1 (Berkeley) %G%
 .\"
-.TH STAT 2 
+.TH STAT 2 "27 July 1983"
 .UC 4
 .SH NAME
-stat, fstat \- get file status
+stat, lstat, fstat \- get file status
 .SH SYNOPSIS
 .nf
-.B #include <sys/types.h>
-.B #include <sys/stat.h>
+.ft B
+#include <sys/types.h>
+#include <sys/stat.h>
 .PP
-.B stat(name, buf)
-.B char *name;
-.B struct stat *buf;
+.ft B
+stat(path, buf)
+char *path;
+struct stat *buf;
 .PP
-.B fstat(fildes, buf)
-.B struct stat *buf;
+.ft B
+lstat(path, buf)
+char *path;
+struct stat *buf;
+.PP
+.ft B
+fstat(fd, buf)
+int fd;
+struct stat *buf;
 .fi
+.ft R
 .SH DESCRIPTION
 .I Stat
-obtains detailed information about a named file.
+obtains information about the file
+.IR path .
+Read, write or execute
+permission of the named file is not required, but all directories
+listed in the path name leading to the file must be reachable.
+.PP
+.I Lstat
+is like \fIstat\fP except in the case where the named file is a symbolic link,
+in which case
+.I lstat
+returns information about the link,
+while
+.I stat
+returns information about the file the link references.
+.PP
 .I Fstat
 obtains the same information about an open file
-known by the file descriptor from a successful
-.I open, creat, dup
-or
-.IR pipe (2)
-call.
+referenced by the argument descriptor, such as would
+be obtained by an \fIopen\fP call.
 .PP
-.I Name
-points to a null-terminated string naming
-a file;
+.I Buf
+is a pointer to a
+.I stat
+structure into which information is placed concerning the file.
+The contents of the structure pointed to by
 .I buf
-is the address of a buffer
-into which information is placed concerning the file.
-It is unnecessary to have any
-permissions at all with respect to the file, but all directories
-leading to the file must be searchable.
-The layout of the structure pointed to by buf
-as defined in
-.I <stat.h>
-is given below.
-.I St_mode 
-is encoded according to the `#define' statements.
 .PP
 .nf
-.ta 5m 10m 15m 20m 25m 30m 35m 40m 45m 50m 55m 60m
-.so /usr/include/sys/stat.h
+.ta 1i 1.7i 2.5i
+     struct stat {
+	dev_t	st_dev;	/* device inode resides on */
+	ino_t	st_ino;	/* this inode's number */
+	u_short	st_mode;	/* protection */
+	short	st_nlink;	/* number or hard links to the file */
+	short	st_uid;	/* user-id of owner */
+	short	st_gid;	/* group-id of owner */
+	dev_t	st_rdev;	/* the device type, for inode that is device */
+	off_t	st_size;	/* total size of file */
+	time_t	st_atime;	/* file last access time */
+	int	st_spare1;
+	time_t	st_mtime;	/* file last modify time */
+	int	st_spare2;
+	time_t	st_ctime;	/* file last status change time */
+	int	st_spare3;
+	long	st_blksize;	/* optimal blocksize for file system i/o ops */
+	long	st_blocks;	/* actual number of blocks allocated */
+	long	st_spare4[2];
+    };
 .fi
 .DT
+.PP
+.TP 12
+st_atime
+Time when file data was last read or modified.  Changed by the following system
+calls:
+.IR mknod (2),
+.IR utimes (2),
+.IR read (2),
+and
+.IR write (2).
+For reasons of efficiency, 
+st_atime is not set when a directory
+is searched, although this would be more logical.
+.TP 12
+st_mtime
+Time when data was last modified.
+It is not set by changes of owner, group, link count, or mode.
+Changed by the following system calls:
+.IR mknod (2),
+.IR utimes (2),
+.IR write (2).
+.TP 12
+st_ctime
+Time when file status was last changed.
+It is set both both by writing and changing the i-node.
+Changed by the following system calls:
+.IR chmod (2)
+.IR chown (2),
+.IR link (2),
+.IR mknod (2),
+.IR unlink (2),
+.IR utimes (2),
+.IR write (2).
+.PP
+The status information word \fIst_mode\fP has bits:
+.nf
+.in +5n
+.ta 1.6i 2.5i 3i
+#define S_IFMT	0170000	/* type of file */
+#define\ \ \ \ S_IFDIR	0040000	/* directory */
+#define\ \ \ \ S_IFCHR	0020000	/* character special */
+#define\ \ \ \ S_IFBLK	0060000	/* block special */
+#define\ \ \ \ S_IFREG	0100000	/* regular */
+#define\ \ \ \ S_IFLNK	0120000	/* symbolic link */
+#define\ \ \ \ S_IFSOCK	0140000	/* socket */
+#define S_ISUID	0004000	/* set user id on execution */
+#define S_ISGID	0002000	/* set group id on execution */
+#define S_ISVTX	0001000	/* save swapped text even after use */
+#define S_IREAD	0000400	/* read permission, owner */
+#define S_IWRITE	0000200	/* write permission, owner */
+#define S_IEXEC	0000100	/* execute/search permission, owner */
+.fi
+.in -5n
 .PP
 The mode bits 0000070 and 0000007 encode group and
 others permissions (see
 .IR chmod (2)).
-The defined types,
-.I 
-ino_t, off_t, time_t,
-name various width integer values;
-.I dev_t
-encodes
-major and minor device numbers;
-their exact definitions are in
-the include file <sys/types.h>
-(see
-.IR types (5)).
 .PP
 When
-.I fildes
+.I fd
 is associated with a pipe,
 .I fstat
 reports an ordinary file with an i-node number,
 restricted permissions,
 and a not necessarily meaningful length.
+.SH "RETURN VALUE
+Upon successful completion a value of 0 is returned.
+Otherwise, a value of \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+.I Stat
+and
+.I lstat
+will fail if one or more of the following are true:
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EPERM]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENOENT]
+The pathname was too long.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix.
+.TP 15
+[EFAULT]
+.I Buf
+or
+.I name
+points to an invalid address.
 .PP
-.I st_atime
-is the file was last read.
-For reasons of efficiency, it is not set when a directory
-is searched, although this would be more logical.
-.I st_mtime
-is the time the file was last written or created.
-It is not set by changes of owner, group, link count, or mode.
-.I st_ctime
-is set both both by writing and changing the i-node.
+.I Fstat
+will fail if one or both of the following are true:
+.TP 15
+[EBADF]
+.I Fildes
+is not a valid open file descriptor.
+.TP 15
+[EFAULT]
+.I Buf
+points to an invalid address.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.SH CAVEAT
+The fields in the stat structure currently marked 
+.IR st_spare1 ,
+.IR st_spare2 ,
+and
+.I st_spare3
+are present in preparation for inode time stamps expanding
+to 64 bits.  This, however, can break certain programs which
+depend on the time stamps being contiguous (in calls to
+.IR utimes (2)).
 .SH "SEE ALSO"
-ls(1), filsys(5)
-.SH DIAGNOSTICS
-Zero is returned if a status is available;
-\-1 if the file cannot be found.
-.SH ASSEMBLER
-.nf
-(stat = 18.)
-.B sys stat; name; buf
+chmod(2), chown(2), utimes(2)
+.SH BUGS
+Applying
+.I fstat
+to a socket returns a zero'd buffer.
 .PP
-(fstat = 28.)
-(file descriptor in r0)
-.B sys fstat; buf
-.fi
+The list of calls which modify the various fields should be carefully
+checked with reality.
