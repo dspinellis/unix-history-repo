@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.20 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -291,7 +291,11 @@ udp_output(inp, m, addr, control)
 	 * Calculate data length and get a mbuf
 	 * for UDP and IP headers.
 	 */
-	M_PREPEND(m, sizeof(struct udpiphdr), M_WAIT);
+	M_PREPEND(m, sizeof(struct udpiphdr), M_DONTWAIT);
+	if (m == 0) {
+		error = ENOBUFS;
+		goto release;
+	}
 
 	/*
 	 * Fill in mbuf with extended UDP header
