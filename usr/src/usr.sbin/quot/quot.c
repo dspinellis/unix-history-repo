@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)quot.c	4.2 (Berkeley) 82/03/29";
+static char *sccsid = "@(#)quot.c	4.3 (Berkeley) 82/10/24";
 
 /*
  * quot
@@ -8,15 +8,17 @@ static char *sccsid = "@(#)quot.c	4.2 (Berkeley) 82/03/29";
 #include <ctype.h>
 #include <pwd.h>
 #include <sys/param.h>
-#include <sys/ino.h>
 #include <sys/inode.h>
-#include <sys/filsys.h>
+#include <sys/fs.h>
 
-#define	ITABSZ	256
-#define	ISIZ	(BSIZE/sizeof(struct dinode))
+#define	ISIZ	(MAXBSIZE/sizeof(struct dinode))
 #define	NUID	1000
-struct	filsys	sblock;
-struct	dinode	itab[ITABSZ];
+union {
+	struct fs u_sblock;
+	char dummy[SBSIZE];
+} sb_un;
+#define sblock sb_un.u_sblock
+struct dinode itab[MAXBSIZE/sizeof(struct dinode)];
 struct du
 {
 	long	blocks;
@@ -33,6 +35,7 @@ int	nflg;
 int	fflg;
 int	cflg;
 int	vflg;
+int	hflg;
 long	now;
 
 int	fi;
@@ -76,6 +79,8 @@ char **argv;
 				cflg++;
 			else if (argv[0][1]=='v')
 				vflg++;
+			else if (argv[0][1]=='h')
+				hflg++;
 		} else {
 			check(*argv);
 			report();
@@ -88,7 +93,8 @@ check(file)
 char *file;
 {
 	register unsigned i, j;
-	register c;
+	daddr_t iblk;
+	int c;
 
 	fi = open(file, 0);
 	if (fi < 0) {
@@ -97,54 +103,70 @@ char *file;
 	}
 	printf("%s:\n", file);
 	sync();
-	bread(1, (char *)&sblock, sizeof sblock);
-	nfiles = (sblock.s_isize-2)*(BSIZE/sizeof(struct dinode));
-	ino = 0;
+	bread(SBLOCK, (char *)&sblock, SBSIZE);
 	if (nflg) {
 		if (isdigit(c = getchar()))
 			ungetc(c, stdin);
 		else while (c!='\n' && c != EOF)
 			c = getchar();
 	}
-	for(i=2; ino<nfiles; i += ITABSZ/ISIZ) {
-		bread(i, (char *)itab, sizeof itab);
-		for (j=0; j<ITABSZ && ino<nfiles; j++) {
-			ino++;
+	nfiles = sblock.fs_ipg * sblock.fs_ncg;
+	for (ino = 0; ino < nfiles; ) {
+		iblk = fsbtodb(&sblock, itod(&sblock, ino));
+		bread(iblk, (char *)itab, sblock.fs_bsize);
+		for (j = 0; j < INOPB(&sblock) && ino < nfiles; j++) {
+			if (ino++ < ROOTINO)
+				continue;
 			acct(&itab[j]);
 		}
 	}
 }
 
 acct(ip)
-register struct dinode *ip;
+	register struct dinode *ip;
 {
-	register n;
 	register char *np;
+	long blks, frags, size;
+	char n;
 	static fino;
 
 	if ((ip->di_mode&IFMT) == 0)
 		return;
+	if (!hflg) {
+		/*
+		 * Assume that there are no holes in files.
+		 */
+		blks = lblkno(&sblock, ip->di_size);
+		frags = blks * sblock.fs_frag +
+			numfrags(&sblock, dblksize(&sblock, ip, blks));
+	} else {
+		/*
+		 * Actually go out and count the number of allocated blocks.
+		 */
+		printf("Sorry, hard way not implemented yet...\n");
+		exit(1);
+	}
+	size = frags * sblock.fs_fsize / 1024;
 	if (cflg) {
 		if ((ip->di_mode&IFMT)!=IFDIR && (ip->di_mode&IFMT)!=IFREG)
 			return;
-		n = (ip->di_size+BSIZE-1)/BSIZE;
-		if (n >= TSIZE) {
-			overflow += n;
-			n = TSIZE-1;
+		if (size >= TSIZE) {
+			overflow += size;
+			size = TSIZE-1;
 		}
-		sizes[n]++;
+		sizes[size]++;
 		return;
 	}
 	if (ip->di_uid >= NUID)
 		return;
-	du[ip->di_uid].blocks += (ip->di_size+BSIZE-1)/BSIZE;
+	du[ip->di_uid].blocks += size;
 #define	DAY (60 * 60 * 24)	/* seconds per day */
 	if (now - ip->di_atime > 30 * DAY)
-		du[ip->di_uid].blocks30 += (ip->di_size+BSIZE-1)/BSIZE;
+		du[ip->di_uid].blocks30 += size;
 	if (now - ip->di_atime > 60 * DAY)
-		du[ip->di_uid].blocks60 += (ip->di_size+BSIZE-1)/BSIZE;
+		du[ip->di_uid].blocks60 += size;
 	if (now - ip->di_atime > 90 * DAY)
-		du[ip->di_uid].blocks90 += (ip->di_size+BSIZE-1)/BSIZE;
+		du[ip->di_uid].blocks90 += size;
 	du[ip->di_uid].nfiles++;
 	if (nflg) {
 	tryagain:
@@ -179,7 +201,7 @@ unsigned bno;
 char *buf;
 {
 
-	lseek(fi, (long)bno*BSIZE, 0);
+	lseek(fi, (long)bno*DEV_BSIZE, 0);
 	if (read(fi, buf, cnt) != cnt) {
 		printf("read error %u\n", bno);
 		exit(1);
