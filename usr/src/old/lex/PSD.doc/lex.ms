@@ -1,4 +1,4 @@
-.\"	@(#)lex.ms	4.1 (Berkeley) %G%
+.\"	@(#)lex.ms	5.1 (Berkeley) %G%
 .\"
 .hc ~
 .bd I 2
