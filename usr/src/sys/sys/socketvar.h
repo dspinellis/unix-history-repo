@@ -16,7 +16,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socketvar.h	7.13 (Berkeley) %G%
+ *	@(#)socketvar.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -174,3 +174,28 @@ struct	socket *sonewconn1();
 /* strings for sleep message: */
 extern	char netio[], netcon[], netcls[];
 #endif
+
+/*
+ * Operations on sockets.
+ */
+struct	file;
+int	soo_read __P((			/* read a socket into a uio structure */
+		struct file *fp,
+		struct uio *uio,
+		struct ucred *cred));
+int	soo_write __P((			/* write socket from a uio structure */
+		struct file *fp,
+		struct uio *uio,
+		struct ucred *cred));
+int	soo_ioctl __P((			/* do an ioctl operation on a socket */
+		struct file *fp,
+		int com,
+		caddr_t data,
+		struct proc *p));
+int	soo_select __P((		/* do a select operation on a socket */
+		struct file *fp,
+		int which,
+		struct proc *p));
+int 	soo_close __P((			/* close socket */
+		struct file *fp,
+		struct proc *p));
