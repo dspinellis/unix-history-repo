@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.10	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.11	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -726,7 +726,8 @@ char c;
 {  reg char *p, *q, *fp;
    char c;
    char field[REFSIZE];
-   char *getfield(), *aabet(), *aabetlast(), *fullaabet(), *astro();
+   char *getfield(), *aabet(), *aabetlast(),
+        *fullaabet(), *multfull();
 
    getfield("F", field, ref);
    if (field[0] != 0)
@@ -752,7 +753,9 @@ char c;
          else if (c == '2')                     /* alternate alphabetic */
             cp = aabet(cp, ref);
          else if (c == '3')                     /* Astrophysical Journal style*/
-            cp = astro(cp, ref);
+            cp = multfull(cp, ref, 3);
+         else if (c == '4')                     /* Computing Surveys style*/
+            cp = multfull(cp, ref, 2);
 	 else if (c == '8')			/* Full alphabetic */
 	    cp = fullaabet(cp, ref);
          else if (c == '9')                     /* Last name of Senior Author*/
@@ -855,13 +858,21 @@ return(cp);
    return(cp);
 }
 
-/* Astrophysical Journal style
+/* 
+  Multiple full authors last names (1, 2 or 3 full names).
+
+  If maxauthors<3
+        if 1 author - last name date
+        if 2 authors - last name and last name date
+        if 3 or more authors - last name et al. date
+  If maxauthors>=3
         if 1 author - last name date
         if 2 authors - last name and last name date
         if 3 authors - last name, last name and last name date
         if 4 or more authors - last name et al. date */
-   char *astro(cp, ref)
+   char *multfull(cp, ref, maxauthors)
    char *cp, ref[];
+   int maxauthors;
 {  char name1[100], name2[100], name3[100], temp[100];
    reg char *fp;
    int getname();
@@ -869,8 +880,8 @@ return(cp);
    if (getname(1, name1, temp, ref)) {
       for (fp = name1; *fp; )
          *cp++ = *fp++;
-      if (getname(4, name3, temp, ref)) {
-         for (fp = " et al."; *fp; )
+      if ((maxauthors >= 3) && (getname(4, name3, temp, ref))) {
+         for (fp = " \\*(e]"; *fp; )
             *cp++ = *fp++;
          }
       else if (getname(2, name2, temp, ref)) {
@@ -1157,45 +1168,48 @@ return(cp);
    char *from;
    int numauths, maxauths, numeds, maxeds;
 
-   rdref(&refinfo[i], ref);
-   maxauths = maxeds = 0;
-   numauths = numeds = 0;
-   for (p = ref; *p; p++)
-      if (*p == '%')
-         if (*(p+1) == 'A') maxauths++;
-         else if (*(p+1) == 'E') maxeds++;
-   fprintf(ofd, ".[-\n");
-   fprintf(ofd, ".ds [F %s\n", refinfo[i].ri_cite);
+   if ( i < 0 ) ref[0] = 0; /* ref not found */
+   else {
+	   rdref(&refinfo[i], ref);
+	   maxauths = maxeds = 0;
+	   numauths = numeds = 0;
+	   for (p = ref; *p; p++)
+	      if (*p == '%')
+	         if (*(p+1) == 'A') maxauths++;
+	         else if (*(p+1) == 'E') maxeds++;
+	   fprintf(ofd, ".[-\n");
+	   fprintf(ofd, ".ds [F %s\n", refinfo[i].ri_cite);
 #ifndef INCORE
-   fseek(rfd, (long)refinfo[i].ri_pos, 0);
-   while (fgets(line, REFSIZE, rfd) != NULL) {
+	   fseek(rfd, (long)refinfo[i].ri_pos, 0);
+	   while (fgets(line, REFSIZE, rfd) != NULL) {
 #else INCORE
-   for (q = line, from = refinfo[i].ri_ref; *from; /*VOID*/) { /*} */
-	if (*from == '\n'){
-		*q++ = '\n';
-		*q = 0;
-		q = line;
-		from++;
-	} else {
-		*q++ = *from++;
-		continue;
-	}
-#endif INCORE
-	switch(line[0]){
-	case 0:
-		goto doneref;
-	case '.':
-		fprintf(ofd, "%s", line);
-		break;
-	case '%':
-		switch(line[1]){
-		case 'A':	numauths++;	break;
-		case 'E':	numeds++;	break;
+	   for (q = line, from = refinfo[i].ri_ref; *from; /*VOID*/) { /*} */
+		if (*from == '\n'){
+			*q++ = '\n';
+			*q = 0;
+			q = line;
+			from++;
+		} else {
+			*q++ = *from++;
+			continue;
 		}
-		for (p = &line[2]; *p == ' '; p++) /*VOID*/;
-		doline(line[1], p, numauths, maxauths, numeds, maxeds, ofd);
-	}
+#endif INCORE
+		switch(line[0]){
+		case 0:
+			goto doneref;
+		case '.':
+			fprintf(ofd, "%s", line);
+			break;
+		case '%':
+			switch(line[1]){
+			case 'A':	numauths++;	break;
+			case 'E':	numeds++;	break;
+			}
+			for (p = &line[2]; *p == ' '; p++) /*VOID*/;
+			doline(line[1], p, numauths, maxauths, numeds, maxeds, ofd);
+		}
+	   }
+	   doneref:;
+	   fprintf(ofd,".][\n");
    }
-   doneref:;
-   fprintf(ofd,".][\n");
 }
