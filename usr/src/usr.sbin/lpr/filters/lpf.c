@@ -1,4 +1,4 @@
-/*		lpf.c	4.10	83/05/02
+/*		lpf.c	4.11	83/05/19
  * 	filter which reads the output of nroff and converts lines
  *	with ^H's to overwritten lines.  Thus this works like 'ul'
  *	but is much better: it can handle more than 2 overwrites
@@ -18,6 +18,7 @@ int	maxcol[MAXREP] = {-1};
 int	lineno;
 int	width = 132;	/* default line length */
 int	length = 66;	/* page length */
+int	indent;		/* indentation length */
 int	npages = 1;
 int	literal;	/* print control characters */
 char	*name;		/* user's login name */
@@ -56,6 +57,10 @@ main(argc, argv)
 				length = atoi(&cp[2]);
 				break;
 
+			case 'i':
+				indent = atoi(&cp[2]);
+				break;
+
 			case 'c':	/* Print control chars */
 				literal++;
 				break;
@@ -68,7 +73,7 @@ main(argc, argv)
 	done = 0;
 	
 	while (!done) {
-		col = 0;
+		col = indent;
 		maxrep = -1;
 		linedone = 0;
 		while (!linedone) {
@@ -87,16 +92,16 @@ main(argc, argv)
 				break;
 
 			case '\b':
-				if (col-- < 0)
-					col = 0;
+				if (--col < indent)
+					col = indent;
 				break;
 
 			case '\r':
-				col = 0;
+				col = indent;
 				break;
 
 			case '\t':
-				col = (col | 07) + 1;
+				col = ((col - indent) | 07) + indent + 1;
 				break;
 
 			case '\031':
@@ -115,8 +120,10 @@ main(argc, argv)
 				}
 
 			default:
-				if (col >= width || !literal && ch < ' ')
+				if (col >= width || !literal && ch < ' ') {
+					col++;
 					break;
+				}
 				cp = &buf[0][col];
 				for (i = 0; i < MAXREP; i++) {
 					if (i > maxrep)
