@@ -1,4 +1,4 @@
-/* defs 4.4 82/05/07 */
+/* defs 4.5 83/06/13 */
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/param.h>
@@ -27,7 +27,7 @@ typedef long int TIMETYPE;
 #define NLEFTS 512
 #define NCHARS 500
 #define NINTS  250
-#define INMAX 2500
+#define INMAX 3500
 #define OUTMAX 3500
 #define QBUFMAX 2500
 #define MAXDIR 10
