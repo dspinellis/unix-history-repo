@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_ip.c	8.4 (Berkeley) %G%
+ *	@(#)raw_ip.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -67,10 +67,10 @@ rip_input(m)
 		if (inp->inp_ip.ip_p && inp->inp_ip.ip_p != ip->ip_p)
 			continue;
 		if (inp->inp_laddr.s_addr &&
-		    inp->inp_laddr.s_addr == ip->ip_dst.s_addr)
+		    inp->inp_laddr.s_addr != ip->ip_dst.s_addr)
 			continue;
 		if (inp->inp_faddr.s_addr &&
-		    inp->inp_faddr.s_addr == ip->ip_src.s_addr)
+		    inp->inp_faddr.s_addr != ip->ip_src.s_addr)
 			continue;
 		if (last) {
 			struct mbuf *n;
