@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	1.5 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -57,7 +57,7 @@ char *machfrom;
 struct timeval *intvl;
 {
 	int length;
-	int ready, found;
+	fd_set ready;
 	struct tsp *ret = NULL;
 	extern int status;
 	static struct tsplist *head = &msgslist;
@@ -134,9 +134,10 @@ struct timeval *intvl;
 			fprintf(fd, "readmsg: wait: (%d %d)\n", 
 						rwait.tv_sec, rwait.tv_usec);
 		}
-		ready = 1<<sock;
-		found = select(20, &ready, (int *)0, (int *)0, &rwait);
-		if (found) {
+		FD_ZERO(&ready);
+		FD_SET(sock, &ready);
+		if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0,
+		    &rwait)) {
 			length = sizeof(struct sockaddr_in);
 			if (recvfrom(sock, (char *)&msgin, sizeof(struct tsp), 
 						0, &from, &length) < 0) {
