@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ad.c	7.1 (Berkeley) %G%
+ *	@(#)ad.c	7.2 (Berkeley) %G%
  */
 
 #include "ad.h"
@@ -14,6 +14,7 @@
 #include "../machine/pte.h"
 
 #include "param.h"
+#include "ioctl.h"
 #include "dir.h"
 #include "user.h"
 #include "buf.h"
@@ -105,7 +106,7 @@ adioctl(dev, cmd, addr, flag)
 
 	case ADIOSCHAN:
 		adp = &ad[ADUNIT(dev)];
-		adp->ad_chan = (*(int *)data)<<8;
+		adp->ad_chan = (*(int *)addr)<<8;
 		break;
 
 	case ADIOGETW:
@@ -122,7 +123,7 @@ adioctl(dev, cmd, addr, flag)
 		while (adp->ad_state&ADBUSY)
 			sleep((caddr_t)adp, ADWAITPRI);
 		spl0();
-		*(int *)data = adp->ad_softdata;
+		*(int *)addr = adp->ad_softdata;
 		break;
 
 	default:
