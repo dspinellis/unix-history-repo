@@ -121,16 +121,17 @@
 **		HdrInfo -- a table describing well-known header fields.
 **			Each entry has the field name and some flags,
 **			which can be:
-**			H_CONCAT -- if there is more than one field
-**				of this name, turn it into a comma-
-**				seperated list.
-**			H_DELETE -- delete this field.
+**			- H_EOH -- this field is equivalent to a blank
+**			  line; i.e., it signifies end of header.
+**			- H_DELETE -- delete this field.
+**			There is also a field pointing to a pointer
+**			that should be set to point to this header.
 */
 
 
 
 
-static char SccsId[] = "@(#)conf.c	3.4	%G%";
+static char SccsId[] = "@(#)conf.c	3.5	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -377,17 +378,19 @@ struct parsetab ParseTab[] =
 
 /*
 **  Header info table
+**	Final (null) entry contains the flags used for any other field.
 */
 
 struct hdrinfo	HdrInfo[] =
 {
-	"date",		0,
-	"from",		0,
-	"to",		H_CONCAT,
-	"cc",		H_CONCAT,
-	"subject",	0,
-	"message-id",	0,
-	NULL,		0
+	"date",		0,			NULL,
+	"from",		0,			NULL,
+	"to",		0,			NULL,
+	"cc",		0,			NULL,
+	"subject",	0,			NULL,
+	"message-id",	0,			&MsgId,
+	"message",	H_EOH,			NULL,
+	NULL,		0,			NULL,
 };
 /*
 **  INITMACS -- initialize predefined macros.

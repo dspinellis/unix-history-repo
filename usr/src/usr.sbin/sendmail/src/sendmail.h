@@ -3,7 +3,7 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	3.4	%G%
+**	@(#)sendmail.h	3.5	%G%
 */
 
 
@@ -150,12 +150,13 @@ struct hdrinfo
 {
 	char	*hi_field;	/* the name of the field */
 	short	hi_flags;	/* status bits, see below */
+	char	**hi_pptr;	/* &ptr to point to this value */
 };
 
 extern struct hdrinfo	HdrInfo[];
 
 /* bits for h_flags and hi_flags */
-# define H_CONCAT	00001	/* comma-concat multiple fields */
+# define H_EOH		00001	/* this field terminates header */
 # define H_DELETE	00002	/* don't send this field */
 # define H_DEFAULT	00004	/* if another value is found, drop this */
 # define H_USED		00010	/* indicates that this has been output */

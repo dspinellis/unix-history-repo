@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)collect.c	3.3	%G%";
+static char	SccsId[] = "@(#)collect.c	3.4	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -64,7 +64,6 @@ maketemp(from)
 	extern char *index(), *rindex();
 	char *xfrom;
 	extern char *hvalue();
-	extern char *makemsgid();
 	struct hdrinfo *hi;
 	extern char *strcpy(), *strcat(), *mktemp();
 	extern char *index();
@@ -145,6 +144,19 @@ maketemp(from)
 			if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags))
 				break;
 		}
+
+		/* see if it is a known type */
+		for (hi = HdrInfo; hi->hi_field != NULL; hi++)
+		{
+			if (strcmp(hi->hi_field, fname) == 0)
+				break;
+		}
+
+		/* if this means "end of header" quit now */
+		if (bitset(H_EOH, hi->hi_flags))
+			break;
+
+		/* create/fill in a new node */
 		if (h == NULL)
 		{
 			/* create a new node */
@@ -152,56 +164,15 @@ maketemp(from)
 			h->h_field = newstr(fname);
 			h->h_value = NULL;
 			h->h_link = NULL;
-			h->h_flags = 0;
-
-			/* see if it is a known type */
-			for (hi = HdrInfo; hi->hi_field != NULL; hi++)
-			{
-				if (strcmp(hi->hi_field, h->h_field) == 0)
-				{
-					h->h_flags = hi->hi_flags;
-					break;
-				}
-			}
+			h->h_flags = hi->hi_flags;
 		}
-		else if (bitset(H_DEFAULT, h->h_flags))
-		{
-			/* overriding default, throw out old value */
+		if (h->h_value != NULL)
 			free(h->h_value);
-			h->h_value = NULL;
-		}
+		h->h_value = newstr(fvalue);
 
-		if (strncmp(buf, "From ", 5) == 0)
-		{
-			h->h_value = newstr(fvalue);
-				if (from != NULL)
-				{
-					fputs("From ", tf);
-					fputs(from, tf);
-					MsgSize += strlen(from) + 5;
-					p = index(&buf[5], ' ');
-					if (p != NULL)
-					{
-						fputs(p, tf);
-						MsgSize += strlen(p);
-					}
-					continue;
-				}
-			}
-		}
-		else
-		{
-			register unsigned len;
-
-			/* concatenate the two values */
-			len = strlen(h->h_value) + strlen(fvalue) + 2;
-			p = xalloc(len);
-			strcpy(p, h->h_value);
-			strcat(p, ",");
-			strcat(p, fvalue);
-			free(h->h_value);
-			h->h_value = p;
-		}
+		/* save the location of this field */
+		if (hi->hi_pptr != NULL)
+			*hi->hi_pptr = h->h_value;
 	}
 
 # ifdef DEBUG
@@ -248,8 +219,9 @@ maketemp(from)
 
 	/*
 	**  Find out some information from the headers.
-	**	Examples are who is the from person, the date, the
-	**	message-id, etc.
+	**	Examples are who is the from person & the date.  Some
+	**	fields, e.g., Message-Id, may have been handled by
+	**	the hi_pptr mechanism.
 	*/
 
 	/* from person */
@@ -271,11 +243,6 @@ maketemp(from)
 		time(&t);
 		Date = newstr(ctime(&t));
 	}
-
-	/* message id */
-	MsgId = hvalue("message-id");
-	if (MsgId == NULL)
-		MsgId = makemsgid();
 
 	if (freopen(InFileName, "r", stdin) == NULL)
 		syserr("Cannot reopen %s", InFileName);
