@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include <pwd.h>
 extern struct passwd *getpwuid();
 extern char *getlogin();
