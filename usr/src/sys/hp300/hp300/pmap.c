@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.6 (Berkeley) %G%
+ *	@(#)pmap.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -1600,6 +1600,7 @@ pmap_activate(pmap, pcbp)
  *	bzero to clear its contents, one machine dependent page
  *	at a time.
  */
+void
 pmap_zero_page(phys)
 	register vm_offset_t	phys;
 {
@@ -1622,6 +1623,7 @@ pmap_zero_page(phys)
  *	bcopy to copy the page, one machine dependent page at a
  *	time.
  */
+void
 pmap_copy_page(src, dst)
 	register vm_offset_t	src, dst;
 {
@@ -1654,6 +1656,7 @@ pmap_copy_page(src, dst)
  *		will specify that these pages are to be wired
  *		down (or not) as appropriate.
  */
+void
 pmap_pageable(pmap, sva, eva, pageable)
 	pmap_t		pmap;
 	vm_offset_t	sva, eva;
