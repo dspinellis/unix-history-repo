@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)rshd.c	4.19 (Berkeley) %G%";
+static	char sccsid[] = "@(#)rshd.c	4.20 (Berkeley) %G%";
 #endif
 
 /*
@@ -32,7 +32,8 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int linger, fromlen;
+	struct linger linger;
+	int on = 1, fromlen;
 	struct sockaddr_in from;
 
 	fromlen = sizeof (from);
@@ -41,11 +42,12 @@ main(argc, argv)
 		perror("getpeername");
 		_exit(1);
 	}
-	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0) {
+	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
 		perror("setsockopt (SO_KEEPALIVE)");
 	}
-	linger = 60;			/* XXX */
+	linger.l_onoff = 1;
+	linger.l_linger = 60;			/* XXX */
 	if (setsockopt(0, SOL_SOCKET, SO_LINGER, &linger, sizeof (linger)) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
 		perror("setsockopt (SO_LINGER)");

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)telnetd.c	4.27 (Berkeley) %G%";
+static	char sccsid[] = "@(#)telnetd.c	4.28 (Berkeley) %G%";
 #endif
 
 /*
@@ -49,7 +49,7 @@ main(argc, argv)
 	char *argv[];
 {
 	struct sockaddr_in from;
-	int fromlen;
+	int on = 1, fromlen;
 
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
@@ -57,7 +57,7 @@ main(argc, argv)
 		perror("getpeername");
 		_exit(1);
 	}
-	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0) {
+	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
 		perror("setsockopt (SO_KEEPALIVE)");
 	}

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)inetd.c	4.2 (Berkeley) %G%";
+static	char sccsid[] = "@(#)inetd.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -228,7 +228,7 @@ config()
 {
 	register struct servtab *sep, *cp, **sepp;
 	struct servtab *getconfigent(), *enter();
-	int omask;
+	int omask, on = 1;
 
 	if (!setconfig()) {
 		syslog(LOG_ERR, "%s: %m", CONFIG);
@@ -270,11 +270,14 @@ config()
 			    sep->se_service, sep->se_proto);
 			continue;
 		}
+#define	turnon(fd, opt) \
+	setsockopt(fd, SOL_SOCKET, opt, &on, sizeof (on))
 		if (strcmp(sep->se_proto, "tcp") == 0 && (options & SO_DEBUG) &&
-		    setsockopt(sep->se_fd, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+		    turnon(sep->se_fd, SO_DEBUG) < 0)
 			syslog(LOG_ERR, "setsockopt (SO_DEBUG): %m");
-		if (setsockopt(sep->se_fd, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0)
+		if (turnon(sep->se_fd, SO_REUSEADDR) < 0)
 			syslog(LOG_ERR, "setsockopt (SO_REUSEADDR): %m");
+#undef turnon
 		if (bind(sep->se_fd, &sep->se_ctrladdr,
 		    sizeof (sep->se_ctrladdr), 0) < 0) {
 			syslog(LOG_ERR, "%s/%s: bind: %m",
