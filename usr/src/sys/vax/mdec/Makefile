@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.1	%G%
+#	@(#)Makefile	6.2	%G%
 #
 ALL=	hkboot hpboot htboot mtboot noboot raboot rlboot \
 	upboot utboot tmboot tsboot tuboot \
@@ -120,8 +120,8 @@ clean:
 	rm -f a.out b.out ${ALL}
 
 install:
-	cp *boot /usr/mdec
-	rm -f /usr/mdec/mboot
-	ln /usr/mdec/htboot /usr/mdec/mboot
-	rm -f /usr/mdec/uboot
-	ln /usr/mdec/hpboot /usr/mdec/uboot
+	cp *boot ${DESTDIR}/usr/mdec
+	rm -f ${DESTDIR}/usr/mdec/mboot
+	ln ${DESTDIR}/usr/mdec/htboot ${DESTDIR}/usr/mdec/mboot
+	rm -f ${DESTDIR}/usr/mdec/uboot
+	ln ${DESTDIR}/usr/mdec/hpboot ${DESTDIR}/usr/mdec/uboot
