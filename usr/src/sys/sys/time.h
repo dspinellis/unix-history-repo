@@ -3,8 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)time.h	7.1 (Berkeley) %G%
+ *	@(#)time.h	7.2 (Berkeley) %G%
  */
+
+#ifndef _TIME_
+#define _TIME_
 
 /*
  * Structure returned by gettimeofday(2) system call,
@@ -54,3 +57,5 @@ struct	itimerval {
 #ifndef KERNEL
 #include <time.h>
 #endif
+
+#endif /* _TIME_ */
