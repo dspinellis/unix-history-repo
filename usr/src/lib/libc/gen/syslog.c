@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -32,9 +32,10 @@ static char sccsid[] = "@(#)syslog.c	8.2 (Berkeley) %G%";
 static int	LogFile = -1;		/* fd for log */
 static int	connected;		/* have done connect */
 static int	LogStat = 0;		/* status bits, set by openlog() */
-static const char *LogTag = "syslog";	/* string to tag the entry with */
+static const char *LogTag = NULL;	/* string to tag the entry with */
 static int	LogFacility = LOG_USER;	/* default facility code */
 static int	LogMask = 0xff;		/* mask of priorities to be logged */
+extern char	*__progname;		/* Program name, from crt0. */
 
 /*
  * syslog, vsyslog --
@@ -98,6 +99,8 @@ vsyslog(pri, fmt, ap)
 	    localtime(&now));
 	if (LogStat & LOG_PERROR)
 		stdp = p;
+	if (!LogTag)
+		LogTag = __progname;
 	if (LogTag) {
 		(void)strcpy(p, LogTag);
 		for (; *p; ++p);
