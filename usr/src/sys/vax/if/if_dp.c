@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dp.c	7.7 (Berkeley) %G%
+ *	@(#)if_dp.c	7.8 (Berkeley) %G%
  */
 
 #include "dp.h"
@@ -41,6 +41,7 @@
 #include "sys/kernel.h"
 
 #include "net/if.h"
+#include "net/if_types.h"
 #include "net/netisr.h"
 #include "net/route.h"
 
@@ -126,7 +127,7 @@ struct	dpstat {
 } dpstat;
 
 short dp_ilb = 0;
-short dp_log = 1;
+short dp_log = 0;
 
 #define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
 int dp_sizes[] = {
@@ -175,6 +176,9 @@ dpattach(ui)
 	dp->dp_if.if_mtu = DP_MTU;
 	dp->dp_if.if_init = dpinit;
 	dp->dp_if.if_output = x25_ifoutput;
+	dp->dp_if.if_type = IFT_X25;
+	dp->dp_if.if_hdrlen = 5;
+	dp->dp_if.if_addrlen = 8;
 	dp->dp_if.if_start = dpstart;
 	dp->dp_if.if_ioctl = dpioctl;
 	dp->dp_if.if_reset = dpreset;
