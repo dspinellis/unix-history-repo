@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_var.h	7.7 (Berkeley) %G%
+ *	@(#)ip_var.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -71,6 +71,18 @@ struct	ipasfrag {
 struct ipoption {
 	struct	in_addr ipopt_dst;	/* first-hop dst if source routed */
 	char	ipopt_list[MAX_IPOPTLEN];	/* options proper */
+};
+
+/*
+ * Structure attached to inpcb.ip_moptions and
+ * passed to ip_output when IP multicast options are in use.
+ */
+struct ip_moptions {
+	struct	ifnet *imo_multicast_ifp; /* ifp for outgoing multicasts */
+	u_char	imo_multicast_ttl;	/* TTL for outgoing multicasts */
+	u_char	imo_multicast_loop;	/* 1 => hear sends if a member */
+	u_short	imo_num_memberships;	/* no. memberships this socket */
+	struct	in_multi *imo_membership[IP_MAX_MEMBERSHIPS];
 };
 
 struct	ipstat {

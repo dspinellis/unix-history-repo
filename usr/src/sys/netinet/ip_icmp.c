@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_icmp.c	7.15 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,7 +72,11 @@ icmp_error(n, type, code, dest)
 		icmpstat.icps_oldicmp++;
 		goto freeit;
 	}
-
+#ifdef MULTICAST
+	/* Don't send error in response to a multicast or broadcast packet */
+	if (n->m_flags & (M_MCAST | M_BCAST))
+		goto freeit;
+#endif
 	/*
 	 * First, formulate icmp message
 	 */
@@ -157,11 +161,11 @@ icmp_input(m, hlen)
 		goto freeit;
 	}
 	i = hlen + MIN(icmplen, ICMP_ADVLENMIN);
- 	if (m->m_len < i && (m = m_pullup(m, i)) == 0)  {
+	if (m->m_len < i && (m = m_pullup(m, i)) == 0)  {
 		icmpstat.icps_tooshort++;
 		return;
 	}
- 	ip = mtod(m, struct ip *);
+	ip = mtod(m, struct ip *);
 	m->m_len -= hlen;
 	m->m_data += hlen;
 	icp = mtod(m, struct icmp *);
@@ -257,6 +261,7 @@ icmp_input(m, hlen)
 
 	case ICMP_MASKREQ:
 		if (icmplen < ICMP_MASKLEN ||
+		    m->m_flags & M_BCAST ||	/* Don't reply to broadcasts */
 		    (ia = ifptoia(m->m_pkthdr.rcvif)) == 0)
 			break;
 		icp->icmp_type = ICMP_MASKREPLY;
@@ -329,10 +334,7 @@ reflect:
 	}
 
 raw:
-	icmpsrc.sin_addr = ip->ip_src;
-	icmpdst.sin_addr = ip->ip_dst;
-	(void) raw_input(m, &icmproto, (struct sockaddr *)&icmpsrc,
-	    (struct sockaddr *)&icmpdst);
+	rip_input(m);
 	return;
 
 freeit:

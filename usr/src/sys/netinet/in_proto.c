@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_proto.c	7.5 (Berkeley) %G%
+ *	@(#)in_proto.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,13 +22,16 @@
 int	ip_output(),ip_ctloutput();
 int	ip_init(),ip_slowtimo(),ip_drain();
 int	icmp_input();
+#ifdef MULTICAST
+int	igmp_init(),igmp_input(),igmp_fasttimo();
+#endif
 int	udp_input(),udp_ctlinput();
 int	udp_usrreq();
 int	udp_init();
 int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq(),tcp_ctloutput();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	rip_input(),rip_output(),rip_ctloutput(), rip_usrreq();
+int	rip_init(),rip_input(),rip_output(),rip_ctloutput(), rip_usrreq();
 /*
  * IMP protocol family: raw interface.
  * Using the raw interface entry to get the timer routine
@@ -82,7 +85,7 @@ struct protosw inetsw[] = {
 },
 #ifdef TPIP
 { SOCK_SEQPACKET,&inetdomain,	IPPROTO_TP,	PR_CONNREQUIRED|PR_WANTRCVD,
-  tpip_input,	0,		tpip_ctlinput,		tp_ctloutput,
+  tpip_input,	0,		tpip_ctlinput,	tp_ctloutput,
   tp_usrreq,
   tp_init,	0,		tp_slowtimo,	tp_drain,
 },
@@ -93,6 +96,13 @@ struct protosw inetsw[] = {
   eoninput,	0,		eonctlinput,		0,
   0,
   eonprotoinit,	0,		0,		0,
+},
+#endif
+#ifdef MULTICAST
+{ SOCK_RAW,	&inetdomain,	IPPROTO_IGMP,	PR_ATOMIC|PR_ADDR,
+  igmp_input,	rip_output,	0,		rip_ctloutput,
+  rip_usrreq,
+  igmp_init,	igmp_fasttimo,	0,		0,
 },
 #endif
 #ifdef NSIP
@@ -106,7 +116,7 @@ struct protosw inetsw[] = {
 { SOCK_RAW,	&inetdomain,	0,		PR_ATOMIC|PR_ADDR,
   rip_input,	rip_output,	0,		rip_ctloutput,
   rip_usrreq,
-  0,		0,		0,		0,
+  rip_init,	0,		0,		0,
 },
 };
 
