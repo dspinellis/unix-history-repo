@@ -1,4 +1,4 @@
-/*	hdb.c	1.7	(Berkeley) 84/10/08
+/*	hdb.c	1.8	(Berkeley) 84/10/20
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -154,9 +154,10 @@ register FILE *file;
 		}
 	    }
             (void) fscanf(file, "%d%d\n", &brush, &size);
-            (void) fscanf(file, "%d ", &len);   
+            (void) fscanf(file, "%d", &len);	/* text length */
+	    (void) getc(file);			/* eat blank */
             txt = malloc((unsigned) len + 1);
-            for (i=0; i<len; ++i) {
+            for (i=0; i<len; ++i) {		/* read text */
                 txt[i] = getc(file);
 	    }
             txt[len] = '\0';
