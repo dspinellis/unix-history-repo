@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -164,7 +164,9 @@ rip_input(from, size)
 				continue;
 			}
 			rt = rtlookup(&n->rip_dst);
-			if (rt == 0) {
+			if (rt == 0 ||
+			    (rt->rt_state & (RTS_INTERNAL|RTS_INTERFACE)) ==
+			    (RTS_INTERNAL|RTS_INTERFACE)) {
 				rt = rtfind(&n->rip_dst);
 				if (rt && equal(from, &rt->rt_router) &&
 				    rt->rt_metric == n->rip_metric)
