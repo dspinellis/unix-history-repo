@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.9 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -22,24 +22,35 @@ struct disklabel *
 getdiskbyname(name)
 	char *name;
 {
-	static struct disklabel disk;
-	static char localbuf[100];
-	char *cp, *cq;
+	static struct	disklabel disk;
+	static char 	boot[BUFSIZ];
+	char	localbuf[BUFSIZ];
+	char	buf[BUFSIZ];
+	char	*cp, *cq;	/* can't be register */
 	register struct	disklabel *dp = &disk;
 	register struct partition *pp;
-	char p, max, psize[3], pbsize[3], pfsize[3], poffset[3], ptype[3];
-	char buf[BUFSIZ];
-	u_long *dx;
+	char	p, max, psize[3], pbsize[3],
+		pfsize[3], poffset[3], ptype[3];
+	u_long	*dx;
 
 	if (dgetent(buf, name) <= 0)
 		return ((struct disklabel *)0);
 	bzero((char *)&disk, sizeof(disk));
+	/*
+	 * typename
+	 */
 	cq = dp->d_typename;
 	cp = buf;
 	while (cq < dp->d_typename + sizeof(dp->d_typename) - 1 &&
 	    (*cq = *cp) && *cq != '|' && *cq != ':')
 		cq++, cp++;
 	*cq = '\0';
+	/*
+	 * boot name (optional)  xxboot, bootxx
+	 */
+	cp = boot;
+	dp->d_boot0 = dgetstr("b0", &cp);
+	dp->d_boot1 = dgetstr("b1", &cp);
 	cp = localbuf;
 	cq = dgetstr("ty", &cp);
 	if (cq && strcmp(cq, "removable") == 0)
@@ -48,6 +59,7 @@ getdiskbyname(name)
 		dp->d_flags |= D_RAMDISK;
 	if (dgetflag("sf"))
 		dp->d_flags |= D_BADSECT;
+
 #define getnumdflt(field, dname, dflt) \
 	{ int f = dgetnum(dname); \
 	(field) = f == -1 ? (dflt) : f; }
