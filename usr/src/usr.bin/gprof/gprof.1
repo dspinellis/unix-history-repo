@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gprof.1	6.1 (Berkeley) %G%
+.\"	@(#)gprof.1	6.2 (Berkeley) %G%
 .\"
 .TH GPROF 1 ""
 .UC 5
@@ -143,6 +143,19 @@ option
 overrides
 the
 .B \-E
+option.
+.TP
+.BI \-k " fromname toname"
+will delete any arcs from routine
+.I fromname
+to routine
+.IR toname .
+This can be used to break undesired cycles.
+More than one
+.B \-k
+option may be given.
+Only one pair of routine names may be given with each
+.B \-k
 option.
 .TP
 .B \-s
