@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* sccsid[] = "@(#)h00vars.h 1.10 %G%"; */
+/* sccsid[] = "@(#)h00vars.h 1.11 %G%"; */
 
 #include <stdio.h>
 #include "whoami.h"
@@ -19,8 +19,13 @@
 #define MAXFILES	32
 #define PREDEF		2
 #ifdef ADDR32
+#ifndef tahoe
 #define STDLVL		((struct iorec *)(0x7ffffff1))
 #define GLVL		((struct iorec *)(0x7ffffff0))
+#else tahoe
+#define STDLVL		((struct iorec *)(0xbffffff1))
+#define GLVL		((struct iorec *)(0xbffffff0))
+#endif tahoe
 #endif ADDR32
 #ifdef ADDR16
 #define STDLVL		((struct iorec *)(0xfff1))
