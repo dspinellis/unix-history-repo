@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.11 (Berkeley) 84/06/03";
+static char sccsid[] = "@(#)main.c	4.12 (Berkeley) 84/10/31";
 #endif
 
 #include <sys/param.h>
@@ -48,6 +48,8 @@ struct nlist nl[] = {
 	{ "_file" },
 #define	N_UNIXSW	17
 	{ "_unixsw" },
+#define N_RTHASHSIZE	18
+	{ "_rthashsize" },
 	"",
 };
 
@@ -221,7 +223,8 @@ use:
 		if (sflag)
 			rt_stats(nl[N_RTSTAT].n_value);
 		else
-			routepr(nl[N_RTHOST].n_value, nl[N_RTNET].n_value);
+			routepr(nl[N_RTHOST].n_value, nl[N_RTNET].n_value,
+				nl[N_RTHASHSIZE].n_value);
 		exit(0);
 	}
 	setprotoent(1);

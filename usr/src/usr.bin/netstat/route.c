@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.8 84/05/17";
+static char sccsid[] = "@(#)route.c	4.9 84/10/31";
 #endif
 
 #include <sys/types.h>
@@ -7,7 +7,6 @@ static char sccsid[] = "@(#)route.c	4.8 84/05/17";
 #include <sys/mbuf.h>
 
 #include <net/if.h>
-#define	KERNEL		/* to get routehash and RTHASHSIZ */
 #include <net/route.h>
 #include <netinet/in.h>
 
@@ -33,19 +32,18 @@ struct bits {
 /*
  * Print routing tables.
  */
-routepr(hostaddr, netaddr)
-	off_t hostaddr, netaddr;
+routepr(hostaddr, netaddr, hashsizeaddr)
+	off_t hostaddr, netaddr, hashsizeaddr;
 {
 	struct mbuf mb;
 	register struct rtentry *rt;
 	register struct mbuf *m;
 	register struct bits *p;
-	struct netent *np;
-	struct hostent *hp;
 	char name[16], *flags;
-	struct mbuf *routehash[RTHASHSIZ];
+	struct mbuf **routehash;
 	struct ifnet ifnet;
-	int first = 1, i, doinghost = 1;
+	int hashsize;
+	int i, doinghost = 1;
 
 	if (hostaddr == 0) {
 		printf("rthost: symbol not in namelist\n");
@@ -55,14 +53,21 @@ routepr(hostaddr, netaddr)
 		printf("rtnet: symbol not in namelist\n");
 		return;
 	}
+	if (hashsizeaddr == 0) {
+		printf("rthashsize: symbol not in namelist\n");
+		return;
+	}
+	klseek(kmem, hashsizeaddr, 0);
+	read(kmem, &hashsize, sizeof (hashsize));
+	routehash = (struct mbuf **)malloc( hashsize*sizeof (struct mbuf *) );
 	klseek(kmem, hostaddr, 0);
-	read(kmem, routehash, sizeof (routehash));
+	read(kmem, routehash, hashsize*sizeof (struct mbuf *));
 	printf("Routing tables\n");
 	printf("%-15.15s %-15.15s %-8.8s %-6.6s %-10.10s %s\n",
 		"Destination", "Gateway",
 		"Flags", "Refcnt", "Use", "Interface");
 again:
-	for (i = 0; i < RTHASHSIZ; i++) {
+	for (i = 0; i < hashsize; i++) {
 		if (routehash[i] == 0)
 			continue;
 		m = routehash[i];
@@ -99,10 +104,11 @@ again:
 	}
 	if (doinghost) {
 		klseek(kmem, netaddr, 0);
-		read(kmem, routehash, sizeof (routehash));
+		read(kmem, routehash, hashsize*sizeof (struct mbuf *));
 		doinghost = 0;
 		goto again;
 	}
+	free(routehash);
 }
 
 char *
@@ -123,8 +129,6 @@ routename(in)
 			np = getnetbyaddr(net, AF_INET);
 			if (np)
 				cp = np->n_name;
-			else if (net == 0)
-				cp = "default";
 		} else if ((subnet != net) && ((lna & 0xff) == 0) &&
 		    (np = getnetbyaddr(subnet, AF_INET))) {
 			struct in_addr subnaddr, inet_makeaddr();
