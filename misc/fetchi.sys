@@ -1,0 +1,7 @@
+--- Change this line in sysent.c ---
+	0, &fetchi,			/* 61 = fetchi */
+--- Add this code to sys4.c ---
+fetchi()
+{
+	u.u_ar0[R0] = fuiword(u.u_ar0[R0]);
+}
