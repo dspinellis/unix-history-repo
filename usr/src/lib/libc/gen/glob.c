@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -24,11 +24,13 @@ static char sccsid[] = "@(#)glob.c	5.12 (Berkeley) %G%";
  *	character might have (except \ at end of string is retained).
  * GLOB_MAGCHAR:
  *	Set in gl_flags if pattern contained a globbing character.
+ * GLOB_NOMAGIC:
+ *	Same as GLOB_NOCHECK, but it will only append pattern if it did
+ *	not contain any magic characters.  [Used in csh style globbing]
  * gl_matchc:
  *	Number of matches in the current invocation of glob.
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -141,7 +143,6 @@ glob(pattern, flags, errfunc, pglob)
 	while ((c = *qpatnext++) != EOS) {
 		switch (c) {
 		case LBRACKET:
-			pglob->gl_flags |= GLOB_MAGCHAR;
 			c = *qpatnext;
 			if (c == NOT)
 				++qpatnext;
@@ -165,6 +166,7 @@ glob(pattern, flags, errfunc, pglob)
 					qpatnext += 2;
 				}
 			} while ((c = *qpatnext++) != RBRACKET);
+			pglob->gl_flags |= GLOB_MAGCHAR;
 			*bufnext++ = M_END;
 			break;
 		case QUESTION:
@@ -188,7 +190,15 @@ glob(pattern, flags, errfunc, pglob)
 	if ((err = glob1(patbuf, pglob)) != 0)
 		return(err);
 
-	if (pglob->gl_pathc == oldpathc && flags & GLOB_NOCHECK) {
+	/*
+	 * If there was no match we are going to append the pattern 
+	 * if GLOB_NOCHECK was specified or if GLOB_NOMAGIC was specified
+	 * and the pattern did not contain any magic characters
+	 * GLOB_NOMAGIC is there just for compatibility with csh.
+	 */
+	if (pglob->gl_pathc == oldpathc && 
+	    ((flags & GLOB_NOCHECK) || 
+	     ((flags & GLOB_NOMAGIC) && !(pglob->gl_flags & GLOB_MAGCHAR)))) {
 		if (!(flags & GLOB_QUOTE)) {
 			Char *dp = compilebuf;
 			const u_char *sp = compilepat;
