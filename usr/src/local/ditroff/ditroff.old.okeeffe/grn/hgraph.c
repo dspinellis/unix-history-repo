@@ -1,4 +1,4 @@
-/*	hgraph.c	1.2	(Berkeley) 83/07/24
+/*	hgraph.c	1.3	(Berkeley) 83/08/03
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -110,12 +110,12 @@ char string[];
 					/* local vertical motions */
         case CENTLEFT:
         case CENTCENT:
-       case CENTRIGHT:	printf("\\v'\\n(dnu/2u'");	/* down half */
+       case CENTRIGHT:	printf("\\v'(\\n(dnu+1m)/2u'");	/* down half */
 			break;
 
 	 case TOPLEFT:
 	 case TOPCENT:
-        case TOPRIGHT:	printf("\\v'\\n(dnu'");		/* down whole */
+        case TOPRIGHT:	printf("\\v'\\n(dnu+1m'");		/* down whole */
     }
 
     switch (justify) {
@@ -204,9 +204,11 @@ HGSetBrush(mode)
 int mode;
 {
     if (linmod != style[--mode]) {
+	cr();
 	printf ("\\D's %du'",linmod = style[mode]);
     }
     if (linethickness != thick[mode]) {
+	cr();
 	printf ("\\D't %du'", linethickness = thick[mode]);
     }
 }
@@ -254,12 +256,8 @@ double y;
 /*----------------------------------------------------------------------------*
  | Routine:	tmove (point_pointer)
  |
- | Results:	produces horizontal and vertical moves for troff given
- |		the point pointer.
- |
- | Bugs:	Notice that this is identical to "dx" and "dy" in value
- |		output.  This is because troff does NOT understand spaces
- |		in \h or \v commands (!)
+ | Results:	produces horizontal and vertical moves for troff given the
+ |		pointer of a point to move to.
  *----------------------------------------------------------------------------*/
 
 tmove(ptr)
@@ -267,26 +265,28 @@ POINT *ptr;
 {
     register int ix = (int) (ptr->x * troffscale);
     register int iy = (int) (ptr->y * troffscale);
+    register int dx;
+    register int dy;
 
     cr();
-    if (iy - lasty) {
-	printf(".sp %du\n", iy - lasty);
+    if (dy = iy - lasty) {
+	printf(".sp %du\n", dy);
     }
     lastyline = lasty = iy;
-    if (ix - lastx) {
-	printf("\\h'%du'", ix - lastx);
+    if (dx = ix - lastx) {
+	printf("\\h'%du'", dx);
 	lastx = ix;
     }
 }
 
 
 /*----------------------------------------------------------------------------*
- | Routine:	cr
+ | Routine:	cr ( )
  |
  | Results:	breaks the output line up to not overrun troff with lines that
  |		are too long.
  |
- | Side Efct:	sets "lastx" to "leftpoint" for troff's return to left margin
+ | Side Efct:	sets "lastx" to "xleft" for troff's return to left margin
  *----------------------------------------------------------------------------*/
 
 cr()
