@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.1 (Berkeley) %G%
+#	@(#)Makefile.inc	8.1 (Berkeley) %G%
 
 BINOWN?=	games
 .if defined(HIDEGAME)

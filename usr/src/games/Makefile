@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.23 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 SUBDIR=	adventure arithmetic atc backgammon battlestar bcd boggle caesar \
 	canfield chess ching cribbage dm factor fish fortune hack hangman \
