@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Ed James.
@@ -36,7 +36,7 @@
 #include "include.h"
 
 #ifndef lint
-static char sccsid[] = "@(#)grammar.y	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)grammar.y	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 int	errors = 0;
