@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.30	82/07/24	*/
+/*	in_pcb.c	4.31	82/09/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,38 +14,6 @@
 #include "../net/in_pcb.h"
 #include "../h/protosw.h"
 
-/*
- * Routines to manage internet protocol control blocks.
- *
- * At PRU_ATTACH time a protocol control block is allocated in
- * in_pcballoc() and inserted on a doubly-linked list of such blocks
- * for the protocol.  A port address is either requested (and verified
- * to not be in use) or assigned at this time.  We also allocate
- * space in the socket sockbuf structures here, although this is
- * not a clearly correct place to put this function.
- *
- * A connectionless protocol will have its protocol control block
- * removed at PRU_DETACH time, when the socket will be freed (freeing
- * the space reserved) and the block will be removed from the list of
- * blocks for its protocol.
- *
- * A connection-based protocol may be connected to a remote peer at
- * PRU_CONNECT time through the routine in_pcbconnect().  In the normal
- * case a PRU_DISCONNECT occurs causing a in_pcbdisconnect().
- * It is also possible that higher-level routines will opt out of the
- * relationship with the connection before the connection shut down
- * is complete.  This often occurs in protocols like TCP where we must
- * hold on to the protocol control block for a unreasonably long time
- * after the connection is used up to avoid races in later connection
- * establishment.  To handle this we allow higher-level routines to
- * disassociate themselves from the socket, marking it SS_NOFDREF while
- * the disconnect is in progress.  We notice that this has happened
- * when the disconnect is complete, and perform the PRU_DETACH operation,
- * freeing the socket.
- *
- * TODO:
- *	use hashing
- */
 struct	in_addr zeroin_addr;
 
 in_pcbreserve(so, sndcc, rcvcc)
@@ -82,47 +50,51 @@ in_pcballoc(so, head)
 	return (0);
 }
 	
-in_pcbbind(inp, sin)
+in_pcbbind(inp, nam)
 	register struct inpcb *inp;
-	struct sockaddr_in *sin;
+	struct mbuf *nam;
 {
 	register struct socket *so = inp->inp_socket;
 	register struct inpcb *head = inp->inp_head;
+	register struct sockaddr_in *sin;
 	u_short lport = 0;
 
 	if (ifnet == 0)
 		return (EADDRNOTAVAIL);
-	if (sin) {
-		if (sin->sin_family != AF_INET)
-			return (EAFNOSUPPORT);
-		if (sin->sin_addr.s_addr) {
-			int tport = sin->sin_port;
+	if (inp->inp_lport || inp->inp_laddr.s_addr)
+		return (EINVAL);
+	if (nam == 0)
+		goto noname;
+	sin = mtod(nam, struct sockaddr_in *);
+	if (nam->m_len != sizeof (*sin))
+		return (EINVAL);
+	if (sin->sin_addr.s_addr) {
+		int tport = sin->sin_port;
 
-			sin->sin_port = 0;		/* yech... */
-			if (if_ifwithaddr((struct sockaddr *)sin) == 0)
-				return (EADDRNOTAVAIL);
-			sin->sin_port = tport;
-		}
-		lport = sin->sin_port;
-		if (lport) {
-			u_short aport = lport;
-			int wild = 0;
-#if vax
-			aport = htons(aport);
-#endif
-			/* GROSS */
-			if (aport < IPPORT_RESERVED && u.u_uid != 0)
-				return (EACCES);
-			if ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
-			    (so->so_options & SO_ACCEPTCONN) == 0)
-				wild = INPLOOKUP_WILDCARD;
-			if (in_pcblookup(head,
-			    zeroin_addr, 0, sin->sin_addr, lport, wild))
-				return (EADDRINUSE);
-		}
+		sin->sin_port = 0;		/* yech... */
+		if (if_ifwithaddr((struct sockaddr *)sin) == 0)
+			return (EADDRNOTAVAIL);
+		sin->sin_port = tport;
 	}
-	if (sin)
-		inp->inp_laddr = sin->sin_addr;
+	lport = sin->sin_port;
+	if (lport) {
+		u_short aport = lport;
+		int wild = 0;
+
+#if vax
+		aport = htons(aport);
+#endif
+		/* GROSS */
+		if (aport < IPPORT_RESERVED && u.u_uid != 0)
+			return (EACCES);
+		if ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0)
+			wild = INPLOOKUP_WILDCARD;
+		if (in_pcblookup(head,
+		    zeroin_addr, 0, sin->sin_addr, lport, wild))
+			return (EADDRINUSE);
+	}
+	inp->inp_laddr = sin->sin_addr;
+noname:
 	if (lport == 0)
 		do {
 			if (head->inp_lport++ < IPPORT_RESERVED)
@@ -133,84 +105,6 @@ in_pcbbind(inp, sin)
 	inp->inp_lport = lport;
 	return (0);
 }
-
-/* BEGIN DEPRECATED */
-/*
- * Allocate a protocol control block, space
- * for send and receive data, and local host information.
- * Return error.  If no error make socket point at pcb.
- */
-in_pcbattach(so, head, sndcc, rcvcc, sin)
-	struct socket *so;
-	struct inpcb *head;
-	int sndcc, rcvcc;
-	struct sockaddr_in *sin;
-{
-	struct mbuf *m;
-	register struct inpcb *inp;
-	u_short lport = 0;
-
-	if (ifnet == 0)
-		return (EADDRNOTAVAIL);
-	if (sin) {
-		if (sin->sin_family != AF_INET)
-			return (EAFNOSUPPORT);
-		if (sin->sin_addr.s_addr) {
-			int tport = sin->sin_port;
-
-			sin->sin_port = 0;		/* yech... */
-			if (if_ifwithaddr((struct sockaddr *)sin) == 0)
-				return (EADDRNOTAVAIL);
-			sin->sin_port = tport;
-		}
-		lport = sin->sin_port;
-		if (lport) {
-			u_short aport = lport;
-			int wild = 0;
-#if vax
-			aport = htons(aport);
-#endif
-			/* GROSS */
-			if (aport < IPPORT_RESERVED && u.u_uid != 0)
-				return (EACCES);
-			if ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
-			    (so->so_options & SO_ACCEPTCONN) == 0)
-				wild = INPLOOKUP_WILDCARD;
-			if (in_pcblookup(head,
-			    zeroin_addr, 0, sin->sin_addr, lport, wild))
-				return (EADDRINUSE);
-		}
-	}
-	m = m_getclr(M_DONTWAIT);
-	if (m == 0)
-		return (ENOBUFS);
-	if (sbreserve(&so->so_snd, sndcc) == 0)
-		goto bad;
-	if (sbreserve(&so->so_rcv, rcvcc) == 0)
-		goto bad2;
-	inp = mtod(m, struct inpcb *);
-	inp->inp_head = head;
-	if (sin)
-		inp->inp_laddr = sin->sin_addr;
-	if (lport == 0)
-		do {
-			if (head->inp_lport++ < IPPORT_RESERVED)
-				head->inp_lport = IPPORT_RESERVED;
-			lport = htons(head->inp_lport);
-		} while (in_pcblookup(head,
-			    zeroin_addr, 0, inp->inp_laddr, lport, 0));
-	inp->inp_lport = lport;
-	inp->inp_socket = so;
-	insque(inp, head);
-	so->so_pcb = (caddr_t)inp;
-	return (0);
-bad2:
-	sbrelease(&so->so_snd);
-bad:
-	(void) m_free(m);
-	return (ENOBUFS);
-}
-/* END DEPRECATED */
 
 /*
  * Connect from a socket to a specified address.
@@ -218,13 +112,16 @@ bad:
  * If don't have a local address for this socket yet,
  * then pick one.
  */
-in_pcbconnect(inp, sin)
+in_pcbconnect(inp, nam)
 	struct inpcb *inp;
-	struct sockaddr_in *sin;
+	struct mbuf *nam;
 {
 	struct ifnet *ifp;
 	struct sockaddr_in *ifaddr;
+	register struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
 
+	if (nam->m_len != sizeof (*sin))
+		return (EINVAL);
 	if (sin->sin_family != AF_INET)
 		return (EAFNOSUPPORT);
 	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
@@ -281,12 +178,14 @@ in_pcbdetach(inp)
 	(void) m_free(dtom(inp));
 }
 
-in_setsockaddr(sin, inp)
-	register struct sockaddr_in *sin;
+in_setsockaddr(inp, nam)
 	register struct inpcb *inp;
+	struct mbuf *nam;
 {
-	if (sin == 0 || inp == 0)
-		panic("setsockaddr_in");
+	register struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
+	
+	nam->m_len = sizeof (*sin);
+	sin = mtod(nam, struct sockaddr_in *);
 	bzero((caddr_t)sin, sizeof (*sin));
 	sin->sin_family = AF_INET;
 	sin->sin_port = inp->inp_lport;
@@ -323,9 +222,6 @@ in_pcbnotify(head, dst, errno, abort)
 	splx(s);
 }
 
-/*
- * SHOULD ALLOW MATCH ON MULTI-HOMING ONLY
- */
 struct inpcb *
 in_pcblookup(head, faddr, fport, laddr, lport, flags)
 	struct inpcb *head;
