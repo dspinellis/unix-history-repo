@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.62		%G%);
+SCCSID(@(#)main.c	3.63		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -160,6 +160,7 @@ main(argc, argv)
 # endif
 	errno = 0;
 	from = NULL;
+	initmacros();
 
 	/*
 	** Crack argv.
@@ -915,4 +916,42 @@ initsys()
 			define('y', ybuf);
 		}
 	}
+}
+/*
+**  INITMACROS -- initialize the macro system
+**
+**	This just involves defining some macros that are actually
+**	used internally as metasymbols to be themselves.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		initializes several macros to be themselves.
+*/
+
+char	*MetaMacros[] =
+{
+	/* $0 .... are rewrite replacement */
+	"$$0",	"$$1",	"$$2",	"$$3",	"$$4",
+	"$$5",	"$$6",	"$$7",	"$$8",	"$$9",
+
+	/* these are important on the LHS */
+	"$$+",	"$$-",	"$$=",
+
+	/* these are RHS metasymbols */
+	"$$#",	"$$@",	"$$:",
+
+	NULL
+};
+
+initmacros()
+{
+	register char **pp;
+
+	for (pp = MetaMacros; *pp != NULL; pp++)
+		define((*pp)[2], *pp);
 }
