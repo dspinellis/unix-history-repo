@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)comm.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/file.h>
@@ -93,12 +93,12 @@ done:	argc -= optind;
 		/* if one file done, display the rest of the other file */
 		if (file1done) {
 			if (!file2done && col2)
-				show(fp1, col2, line2);
+				show(fp2, col2, line2);
 			break;
 		}
 		if (file2done) {
 			if (!file1done && col1)
-				show(fp2, col1, line1);
+				show(fp1, col1, line1);
 			break;
 		}
 
