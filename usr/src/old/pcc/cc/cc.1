@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cc.1	6.2 (Berkeley) %G%
+.\"	@(#)cc.1	6.3 (Berkeley) %G%
 .\"
 .TH CC 1 ""
 .UC 4
@@ -172,13 +172,9 @@ precision.  This option also makes
 variables work appropriately.
 .TP
 .SM
-.BI \-B \*Sstring
-Find substitute compiler passes in the files named
-.I string
+.BI \-B \*Spath
+Find substitute compiler passes in the named path
 with the suffixes cpp, ccom and c2.
-If 
-.I string 
-is empty, use a standard backup version.
 .TP
 .BR \-t [ p012 ]
 Find only the designated compiler passes in the
