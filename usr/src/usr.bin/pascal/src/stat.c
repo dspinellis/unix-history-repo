@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.3 %G%";
+static char sccsid[] = "@(#)stat.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -35,11 +35,11 @@ statement(r)
 {
 	register *s;
 	register struct nl *snlp;
-	long	soffset;
+	struct tmps soffset;
 
 	s = r;
 	snlp = nlp;
-	soffset = sizes[ cbn ].om_off;
+	soffset = sizes[cbn].curtmps;
 top:
 	if (cntstat) {
 		cntstat = 0;
@@ -135,12 +135,7 @@ top:
 	     *	free any temporaries allocated for this statement
 	     *	these come from strings and sets.
 	     */
-	if ( soffset != sizes[ cbn ].om_off ) {
-	    sizes[ cbn ].om_off = soffset;
-#	    ifdef PC
-		putlbracket( ftnno , -sizes[cbn].om_off );
-#	    endif PC
-	}
+	tmpfree(&soffset);
 }
 
 ungoto()
@@ -236,20 +231,15 @@ withop(s)
 	register struct nl *r;
 	int i;
 	int *swl;
-	long soffset;
 
 	putline();
 	swl = withlist;
-	soffset = sizes[cbn].om_off;
 	for (p = s[2]; p != NIL; p = p[2]) {
-		i = sizes[cbn].om_off -= sizeof ( int * );
-		if (sizes[cbn].om_off < sizes[cbn].om_max)
-			sizes[cbn].om_max = sizes[cbn].om_off;
+		i = tmpalloc(sizeof(int *), INT_TYP, REGOK);
 #		ifdef OBJ
 		    put(2, O_LV | cbn <<8+INDX, i );
 #		endif OBJ
 #		ifdef PC
-		    putlbracket( ftnno , -sizes[cbn].om_off );
 		    putRV( 0 , cbn , i , P2PTR|P2STRTY );
 #		endif PC
 		r = lvalue(p[1], MOD , LREQ );
@@ -271,10 +261,6 @@ withop(s)
 #		endif PC
 	}
 	statement(s[3]);
-	sizes[cbn].om_off = soffset;
-#	ifdef PC
-	    putlbracket( ftnno , -sizes[cbn].om_off );
-#	endif PC
 	withlist = swl;
 }
 

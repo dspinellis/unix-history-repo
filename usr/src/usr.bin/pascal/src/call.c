@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.6 %G%";
+static	char sccsid[] = "@(#)call.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -106,11 +106,7 @@ call(p, argv, porf, psbn)
 			break;
 		}
 		if ( temptype != P2UNDEF ) {
-		    tempoffset = sizes[ cbn ].om_off -= p_type_width;
-		    putlbracket( ftnno , -tempoffset );
-		    if ( tempoffset < sizes[cbn].om_max) {
-			    sizes[cbn].om_max = tempoffset;
-		    }
+		    tempoffset = tmpalloc(p_type_width, p -> type, NOREG);
 			/*
 			 *	temp
 			 *	for (temp = ...

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.6 %G%";
+static char sccsid[] = "@(#)var.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -51,7 +51,7 @@ varbeg()
 #endif
     /*
      *  #ifndef PI0
-     *      sizes[cbn].om_max = sizes[cbn].om_off = -DPOFF1;
+     *      sizes[cbn].om_max = sizes[cbn].curtmps.om_off = -DPOFF1;
      *  #endif
      */
 	forechain = NIL;
@@ -94,8 +94,9 @@ var(vline, vidl, vtype)
 	op = &sizes[cbn];
 	for (; vidl != NIL; vidl = vidl[2]) {
 #		ifdef OBJ
-		    op->om_off = roundup((int)(op->om_off-w), (long)align(np));
-		    o2 = op -> om_off;
+		    op->curtmp.om_off =
+			roundup((int)(op->curtmp.om_off-w), (long)align(np));
+		    o2 = op -> curtmp.om_off;
 #		endif OBJ
 #		ifdef PC
 		    if ( cbn == 1 ) {
@@ -108,9 +109,10 @@ var(vline, vidl, vtype)
 				/*
 				 * locals are aligned, too.
 				 */
-			    op->om_off = roundup((int)(op->om_off - w),
+			    op->curtmps.om_off =
+				roundup((int)(op->curtmps.om_off - w),
 				(long)align(np));
-			    o2 = op -> om_off;
+			    o2 = op -> curtmps.om_off;
 		    }
 #		endif PC
 		enter(defnl(vidl[1], VAR, np, o2));
@@ -147,7 +149,7 @@ varend()
 
 	foredecl();
 #ifndef PI0
-	sizes[cbn].om_max = sizes[cbn].om_off;
+	sizes[cbn].om_max = sizes[cbn].curtmps.om_off;
 #else
 	send(REVVEND);
 #endif

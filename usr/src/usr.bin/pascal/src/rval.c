@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.9 %G%";
+static char sccsid[] = "@(#)rval.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -372,12 +372,8 @@ cstrng:
 			/*
 			 *	allocate a temporary and use it
 			 */
-			sizes[ cbn ].om_off -= lwidth( csetd.csettype );
-			tempoff = sizes[ cbn ].om_off;
-			putlbracket( ftnno , -tempoff );
-			if ( tempoff < sizes[ cbn ].om_max ) {
-			    sizes[ cbn ].om_max = tempoff;
-			}
+			tempoff = tmpalloc(lwidth(csetd.csettype),
+				csetd.csettype, NOREG);
 			putLV( 0 , cbn , tempoff , P2PTR|P2STRTY );
 			setran( ( csetd.csettype ) -> type );
 			putleaf( P2ICON , set.lwrb , 0 , P2INT , 0 );
@@ -583,12 +579,7 @@ cstrng:
 			    /*
 			     *	allocate a temporary and use it
 			     */
-			sizes[ cbn ].om_off -= lwidth( contype );
-			tempoff = sizes[ cbn ].om_off;
-			putlbracket( ftnno , -tempoff );
-			if ( tempoff < sizes[ cbn ].om_max ) {
-			    sizes[ cbn ].om_max = tempoff;
-			}
+			tempoff = tmpalloc(lwidth(contype), contype, NOREG);
 			putLV( 0 , cbn , tempoff , P2PTR|P2STRTY );
 			p = rvalue( r[2] , contype , LREQ );
 			if ( isa( p , "t" ) ) {

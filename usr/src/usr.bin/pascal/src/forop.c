@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.3 %G%";
+static char sccsid[] = "@(#)forop.c 1.4 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -104,15 +104,9 @@ forop( arg )
 	    /*
 	     * allocate space for the initial and termination expressions
 	     */
-	sizes[cbn].om_off -= sizeof( long );
-	initoff = sizes[cbn].om_off;
-	sizes[cbn].om_off -= sizeof( long );
-	termoff = sizes[cbn].om_off;
-	if ( sizes[cbn].om_off < sizes[cbn].om_max ) {
-	    sizes[cbn].om_max = sizes[cbn].om_off;
-	}
+	initoff = tmpalloc(sizeof(long), nl+T4INT, REGOK);
+	termoff = tmpalloc(sizeof(long), nl+T4INT, REGOK);
 #	ifdef PC
-	    putlbracket( ftnno , -sizes[cbn].om_off );
 		/*
 		 * compute and save the initial expression
 		 */
@@ -260,11 +254,6 @@ forop( arg )
 		 * and here we are
 		 */
 	    putlab( after );
-		/*
-		 * deallocate the initial and limit variables
-		 */
-	    sizes[cbn].om_off += 2 * ( sizeof( long ) );
-	    putlbracket( ftnno , -sizes[cbn].om_off );
 #	endif PC
 #	ifdef OBJ
 		/*
@@ -289,10 +278,6 @@ forop( arg )
 		 * and here we are
 		 */
 	    patch( after );
-		/*
-		 * deallocate the initial and limit variables
-		 */
-	    sizes[cbn].om_off += 2 * ( sizeof( long ) );
 #	endif OBJ
 byebye:
 	noreach = 0;
