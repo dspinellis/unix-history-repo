@@ -1,4 +1,4 @@
-/*	tcp_output.c	6.3	84/08/29	*/
+/*	tcp_output.c	6.4	84/10/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -271,7 +271,6 @@ noopt:
 		    tp->snd_nxt != tp->snd_una) {
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-			tp->t_rtt = 0;
 			tp->t_rxtshift = 0;
 		}
 		tp->t_timer[TCPT_PERSIST] = 0;
