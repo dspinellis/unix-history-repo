@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	8.2 (Berkeley) %G%
+ *	@(#)uipc_socket.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -295,6 +295,15 @@ sosend(so, addr, uio, top, control, flags)
 		resid = uio->uio_resid;
 	else
 		resid = top->m_pkthdr.len;
+	/*
+	 * In theory resid should be unsigned.
+	 * However, space must be signed, as it might be less than 0
+	 * if we over-committed, and we must use a signed comparison
+	 * of space and resid.  On the other hand, a negative resid
+	 * causes us to loop sending 0-length segments to the protocol.
+	 */
+	if (resid < 0)
+		return (EINVAL);
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
