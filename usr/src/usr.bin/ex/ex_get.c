@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_get.c	7.3	%G%";
+static char *sccsid = "@(#)ex_get.c	7.4	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -87,7 +87,7 @@ top:
 		input = 0;
 	}
 	flush();
-	if (!intty) {
+	if (intty) {
 		c = read(0, inline, sizeof inline - 4);
 		if (c < 0)
 			return (lastc = EOF);
@@ -102,20 +102,12 @@ top:
 		input = inline;
 		goto top;
 	}
-#ifdef notdef
-/* mjm:	if (read(0, (char *) &lastc, 1) != 1)	CHANGED and added else */
-	if (read(0, inline, 1) != 1)
-		lastc = EOF;
-	else				/* mjm: lastc is a short! */
-		lastc = inline[0];	/* mjm: in rightmost 8 bits ! */
-	return (lastc);
-#else
-	c = read(0, inline, sizeof inline);
+	c = read(0, inline, sizeof inline - 1);
 	if(c <= 0)
 		return(lastc = EOF);
+	inline[c] = '\0';
 	input = inline;
 	goto top;
-#endif
 }
 
 /*
