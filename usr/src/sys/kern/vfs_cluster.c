@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.34	82/06/14	*/
+/*	vfs_cluster.c	4.35	82/08/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,7 +126,7 @@ printf("write %x blk %d count %d\n", bp->b_dev, bp->b_blkno, bp->b_bcount);
 	} else if (flag & B_DELWRI)
 		bp->b_flags |= B_AGE;
 	else
-		geterror(bp);
+		u.u_error = geterror(bp);
 }
 
 /*
@@ -474,7 +474,7 @@ biowait(bp)
 	while ((bp->b_flags&B_DONE)==0)
 		sleep((caddr_t)bp, PRIBIO);
 	splx(s);
-	geterror(bp);
+	u.u_error = geterror(bp);
 }
 
 /*
@@ -555,10 +555,12 @@ loop:
 geterror(bp)
 	register struct buf *bp;
 {
+	int error = 0;
 
 	if (bp->b_flags&B_ERROR)
-		if ((u.u_error = bp->b_error)==0)
-			u.u_error = EIO;
+		if ((error = bp->b_error)==0)
+			return (EIO);
+	return (error);
 }
 
 /*

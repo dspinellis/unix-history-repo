@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.14	82/07/25	*/
+/*	subr_xxx.c	4.15	82/08/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,7 @@
 #include "../h/vm.h"
 #include "../h/pte.h"
 #include "../h/cmap.h"
+#include "../h/uio.h"
 
 /*
  * Pass back  c  to the user at his location u_base;
@@ -207,3 +208,71 @@ strlen(s1)
 	return (len);
 }
 #endif
+
+copyuout(uio, to, len)
+	register struct uio *uio;
+	caddr_t to;
+	int len;
+{
+	register struct iovec *iov = uio->uio_iov;
+	int error = 0;
+	int count;
+
+	while (uio->uio_iovcnt > 0) {
+		count = iov->iov_len;
+		if (count > len)
+			count = len;
+		if (copyout(iov->iov_base, to, count)) {
+			error = EFAULT;
+			break;
+		}
+		iov->iov_base += len;
+		to += count;
+		uio->uio_resid -= count;
+		iov->iov_len -= len;
+		iov++;
+		uio->uio_iovcnt--;
+		if (iov->iov_len)
+			break;
+	}
+	return (error);
+}
+
+/*
+ * Pass back c to the user.
+ */
+passuc(c, uio)
+	register c;
+	struct uio *uio;
+{
+	register struct iovec *iov = uio->uio_iov;
+	register id;
+
+	switch (uio->uio_segflg) {
+
+	case 0:
+		if (subyte(iov->iov_base, c) < 0)
+			goto fault;
+		break;
+
+	case 1:
+		*iov->iov_base = c;
+		break;
+
+	case 2:
+		if (suibyte(iov->iov_base, c) < 0)
+			goto fault;
+		break;
+	}
+	iov->iov_base++;
+	iov->iov_len--;
+	uio->uio_resid--;
+	uio->uio_offset++;
+	if (iov->iov_len <= 0) {
+		uio->uio_iov++;
+		uio->uio_iovcnt--;
+	}
+	return (0);
+fault:
+	return (EFAULT);
+}

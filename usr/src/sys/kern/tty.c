@@ -1,4 +1,4 @@
-/*	tty.c	4.26	82/08/04	*/
+/*	tty.c	4.27	82/08/13	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -15,6 +15,7 @@
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/dk.h"
+#include "../h/uio.h"
 
 /*
  * Table giving parity for characters and indicating
@@ -948,8 +949,9 @@ ttyoutput(c, tp)
  * Called from device's read routine after it has
  * calculated the tty-structure given as argument.
  */
-ttread(tp)
+ttread(tp, uio)
 	register struct tty *tp;
+	struct uio *uio;
 {
 	register struct clist *qp;
 	register c, first;
@@ -985,8 +987,11 @@ loop:
 			goto loop;
 		}
 		(void) spl0();
-		while (tp->t_rawq.c_cc && passc(getc(&tp->t_rawq))>=0)
-			;
+		while (tp->t_rawq.c_cc && uio->uio_iovcnt) {
+			u.u_error = passuc(getc(&tp->t_rawq), uio);
+			if (u.u_error)
+				break;
+		}
 		return (0);
 	} else {
 		qp = tp->t_flags & CBREAK ? &tp->t_rawq : &tp->t_canq;
@@ -1027,7 +1032,10 @@ loop:
 			}
 			if (c == tun.t_eofc && (tp->t_flags&CBREAK)==0)
 				break;
-			if (passc(c & 0177) < 0)
+			u.u_error = passuc(c & 0177, uio);
+			if (u.u_error)
+				break;
+			if (uio->uio_iovcnt == 0)
 				break;
 			if ((tp->t_flags&CBREAK)==0 && ttbreakc(c, tp))
 				break;
