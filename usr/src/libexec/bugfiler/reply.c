@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reply.c	5.2 (Berkeley) 87/04/11";
+static char sccsid[] = "@(#)reply.c	5.3 (Berkeley) 87/07/20";
 #endif not lint
 
 #include <bug.h>
@@ -64,7 +64,7 @@ gotone:	if (to = index(C, '<'))
 		fprintf(pf, "In-Acknowledgement-Of: Your message of %s", mailhead[DATE_TAG].line + mailhead[DATE_TAG].len);
 	if (mailhead[MSG_TAG].found)
 		fprintf(pf, "\t\t%s", mailhead[MSG_TAG].line);
-	putc('\n', pf);
+	fputs("Precedence: bulk\n\n", pf);	/* vacation(1) uses this... */
 	fflush(pf);
 
 	if ((afd = open(ACK_FILE, O_RDONLY, 0)) >= 0) {
