@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -64,9 +64,15 @@ char *getinetproto();
 #define TEXT	-2
 
 int	pcbpf, nswap, kmem, mem, swap, uid, pid;
-int	uflg, fflg, inum, Mdev, mdev, special, vflg, nproc, pflg;
+int	uflg, fflg, vflg, nproc, pflg;
 int sflg, kflg; /*4.2*/
 int argaddr; /*4.2*/
+
+struct devs {
+	struct devs *next;
+	dev_t dev;
+	int inum;
+} devs;
 
 #define clear(x) 	((int)x & 0x7fffffff)
 
@@ -127,7 +133,7 @@ char **argv;
 	dev_t	dev;
 
 	argv++;
-	while (--argc > 0) {
+	while (*argv) {
 		if (strcmp(*argv, "-v") == 0) {
 			vflg++;
 			argv++;
@@ -140,18 +146,15 @@ char **argv;
 				fprintf(stderr, "%s: unknown user\n", *argv);
 				exit(1);
 			}
-			--argc;
 			argv++;
 			continue;
 		} 
 		if (strcmp(*argv, "-f") == 0) {
-			if (fflg++)
-				usage();
-			if ((dev = getfname(*(++argv))) < 0) {
+			fflg++;
+			if (getfname(*(++argv)) < 0) {
 				perror(*argv);
 				exit(1);
 			}
-			--argc;
 			argv++;
 			continue;
 		}
@@ -162,55 +165,17 @@ char **argv;
 				perror(*argv);
 				exit(1);
 			}
-			--argc;
 			argv++;
 			continue;
 		}
-
-		/* admit missing -u, -f, -p */
-		/* it's an expert system! */
-		if ((pid = Atoi(*argv)) > 0) {
-			if (pflg++)
-				usage();
-			continue;
+		/* otherwise its a file argument */
+		fflg++;
+		if (getfname(*argv) < 0) {
+			perror(*argv);
+			exit(1);
 		}
-		if (fflg && uflg)
-			usage();
-		if (uflg) {
-			/* it must be a file */
-			fflg++;
-			if ((dev = getfname(*argv)) < 0) {
-				perror(*argv);
-				exit(1);
-			}
-			argv++;
-			continue;
-		}
-		if (fflg) {
-			/* it must be a user */
-			uflg++;
-			if ((uid = getuname(*argv)) < 0) {
-				fprintf(stderr,
-					"%s: unknown user\n", *argv);
-				exit(1);
-			}
-			argv++;
-			continue;
-		}
-		/* !uflg && !fflg -- which is it? */
-		if ((dev = getfname(*argv)) >= 0)
-			fflg++;		/* could be a file */
-		if ((uid = getuname(*argv)) >= 0)
-			uflg++;		/* could be a user */
-		if ((!uflg ^ !fflg) == 0)
-			usage();	/* could be either/neither */
 		argv++;
 		continue;
-	}
-
-	if (fflg) {
-		Mdev = major(dev);
-		mdev = minor(dev);
 	}
 
 	if (chdir("/dev") < 0) {
@@ -442,15 +407,8 @@ struct inode	*g;  /* if ftype is inode */
 		vprintf("error %d reading inode at %x from kmem\n", errno, g);
 		return;
 	}
-	if (special)
-		idev = inode.i_dev;
-	else
-		idev = inode.i_dev;
-	if (fflg && major(idev) != Mdev)
-		return;	
-	if (fflg && minor(idev) != mdev)
-		return;	
-	if (inum && inode.i_number != inum)
+	idev = inode.i_dev;
+	if (fflg && !devmatch(idev, inode.i_number))
 		return;
 skip:
 	if (mproc->p_pid == 0)
@@ -488,6 +446,21 @@ skip:
 	else {
 		printf("* (unknown file type)\n");
 	}
+}
+devmatch(idev, inum)
+dev_t idev;
+int inum;
+{
+	struct devs *d = &devs;
+	for (d = d->next; d; d = d->next) {
+		if (d->dev == idev) {
+			if (d->inum == 0)
+				return(1);
+			if (d->inum == inum)
+				return(1);
+		}
+	}
+	return(0);
 }
 
 socktrans(sock)
@@ -592,8 +565,15 @@ struct socket *sock;
 				     errno, so.so_pcb);
 				return;
 			}
-			if (unpcb.unp_conn)
-				printf(" -> %x", unpcb.unp_conn);
+			if (unpcb.unp_conn) {
+				char shoconn[4]; *shoconn = 0;
+				if (!(so.so_state & SS_CANTRCVMORE))
+					strcat(shoconn, "<");
+				strcat(shoconn,"-");
+				if (!(so.so_state & SS_CANTSENDMORE))
+					strcat(shoconn, ">");
+				printf(" %s %x", shoconn, unpcb.unp_conn);
+			}
 		}
 	} else {
 		/* print protocol number and socket address */
@@ -673,6 +653,9 @@ getfname(filename)
 char	*filename;
 {
 	struct	stat statbuf;
+	struct devs *d, *oldd;
+	dev_t dev;
+	int inum;
 
 	if (stat(filename, &statbuf) != 0)
 		return(-1);
@@ -682,12 +665,18 @@ char	*filename;
 	 */
 	if ((statbuf.st_mode & S_IFMT) != S_IFBLK) {
 		inum = statbuf.st_ino;
-		return(statbuf.st_dev);
+		dev = statbuf.st_dev;
 	} else {
-		special++;
 		inum = 0;
-		return(statbuf.st_rdev);
+		dev = statbuf.st_rdev;
 	}
+	for (d = oldd = &devs; d; oldd = d, d = d->next)
+		;
+	d = (struct devs *)emalloc(sizeof(struct devs));
+	oldd->next = d;
+	d->next = 0;
+	d->dev = dev;
+	d->inum = inum;
 }
 
 Atoi(p)
