@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	3.1	%H%	*/
+/*	ffs_vnops.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #include "../h/file.h"
 #include "../h/conf.h"
 #include "../h/stat.h"
+#include "../h/inline.h"
 
 /*
  * the fstat system call.
@@ -64,7 +65,7 @@ off_t pipeadj;
 	register struct buf *bp;
 	struct stat ds;
 
-	iupdat(ip, &time, &time);
+	IUPDAT(ip, &time, &time);
 	/*
 	 * first copy from inode table
 	 */
