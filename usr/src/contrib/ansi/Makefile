@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1	(Berkeley)	85/08/13
+#	@(#)Makefile	5.2	(Berkeley)	85/09/09
 #
 DESTDIR=
 CFLAGS=	-O
@@ -17,8 +17,8 @@ vmsprep: vmsprep.c
 install: vmsprep ansitape
 	install -s vmsprep ${DESTDIR}/usr/new/vmsprep
 	install -s ansitape ${DESTDIR}/usr/new/ansitape
-	install -c vmsprep.n ${DESTDIR}/usr/man/mann/vmsprep.n
-	install -c ansitape.n ${DESTDIR}/usr/man/mann/ansitape.n
+	install -c -m 444 vmsprep.n ${DESTDIR}/usr/man/mann/vmsprep.n
+	install -c -m 444 ansitape.n ${DESTDIR}/usr/man/mann/ansitape.n
 
 clean:
 	rm -f a.out core errs makefile.bak Makefile.bak ansitape vmsprep
