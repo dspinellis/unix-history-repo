@@ -1,0 +1,29 @@
+NVI.RECOVER(8)            BSD System Manager's Manual           NVI.RECOVER(8)
+
+NNAAMMEE
+     nnvvii..rreeccoovveerr - send mail about recoverable files
+
+SSYYNNOOPPSSIISS
+     nnvvii..rreeccoovveerr [--dd _d_i_r_e_c_t_o_r_y]
+
+DDEESSCCRRIIPPTTIIOONN
+     The nnvvii..rreeccoovveerr utility sends mail to users about files which they were
+     editing with nvi(1) when the system crashed, the editor received a
+     SIGHUP, or the user requested preservation of the file.
+
+     The options are as follows:
+
+     --dd      Look in the specified directory instead of the default
+             ``/var/tmp/vi.recover''.
+
+     File names are expected to be of the form ``vi.file.123456'', where
+     ``file'' is the last component of the name of the file the user was edit-
+     ing and ``123456'' is a random string of digits.
+
+SSEEEE AALLSSOO
+     nvi(1)
+
+HHIISSTTOORRYY
+     The nnvvii..rreeccoovveerr command appeared in 4.4BSD.
+
+4th Berkeley Distribution        May 16, 1993                                1
