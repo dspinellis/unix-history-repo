@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -60,13 +60,11 @@ static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <varargs.h>
 #include "make.h"
-
-extern int errno;
 
 #ifndef	DEFMAXLOCAL
 #define	DEFMAXLOCAL DEFMAXJOBS
@@ -74,7 +72,6 @@ extern int errno;
 
 #define	MAKEFLAGS	".MAKEFLAGS"
 
-static char		*progName;	/* Our invocation name */
 Lst			create;		/* Targets to be made */
 time_t			now;		/* Time at start of make */
 GNode			*DEFAULT;	/* .DEFAULT node */
@@ -87,62 +84,21 @@ static Lst		makefiles;	/* List of makefiles to read (in
 int			maxJobs;	/* -J argument */
 static int		maxLocal;	/* -L argument */
 Boolean			debug;		/* -d flag */
-Boolean			amMake;		/* -M flag */
 Boolean			noWarnings;	/* -W flag */
 Boolean			noExecute;	/* -n flag */
 Boolean			keepgoing;	/* -k flag */
 Boolean			queryFlag;	/* -q flag */
 Boolean			touchFlag;	/* -t flag */
 Boolean			usePipes;	/* !-P flag */
-Boolean			backwards;	/* -B flag */
 Boolean			ignoreErrors;	/* -i flag */
 Boolean			beSilent;	/* -s flag */
-Boolean			sysVmake;	/* -v flag */
 Boolean			oldVars;	/* variable substitution style */
 Boolean			checkEnvFirst;	/* -e flag */
 static Boolean		jobsRunning;	/* TRUE if the jobs might be running */
 
 static Boolean		ReadMakefile();
 
-/*
- * Initial value for optind when parsing args. Different getopts start it
- * differently...
- */
-static int	initOptInd;
-
-static char	*help[] = {
-"-B		Be as backwards-compatible with make as possible without\n\
-		being make.",
-"-C		Cancel any current indications of compatibility.",
-"-D<var>	Define the variable <var> with value 1.",
-"-I<dir>	Specify another directory in which to search for included\n\
-		makefiles.",
-"-J<num>	Specify maximum overall concurrency.",
-"-L<num>	Specify maximum local concurrency.",
-"-M		Be Make as closely as possible.",
-"-P		Don't use pipes to catch the output of jobs, use files.",
-"-S		Turn off the -k flag (see below).",
-"-W		Don't print warning messages.",
-"-d<flags>	Turn on debugging output.",
-"-e		Give environment variables precedence over those in the\n\
-		makefile(s).",
-"-f<file>	Specify a(nother) makefile to read",
-"-i		Ignore errors from executed commands.",
-"-k		On error, continue working on targets that do not depend on\n\
-		the one for which an error was detected.",
-"-n		Don't execute commands, just print them.",
-"-p<num>	Tell when to print the input graph: 1 (before processing),\n\
-		2 (after processing), or 3 (both).",
-"-q		See if anything needs to be done. Exits 1 if so.",
-"-r		Do not read the system makefile for pre-defined rules.",
-"-s		Don't print commands as they are executed.",
-"-t		Update targets by \"touching\" them (see touch(1)).",
-"-v		Be compatible with System V make. Implies -B.",
-};
-
-
 /*-
- *----------------------------------------------------------------------
  * MainParseArgs --
  *	Parse a given argument vector. Called from main() and from
  *	Main_ParseArgLine() when the .MAKEFLAGS target is used.
@@ -155,7 +111,6 @@ static char	*help[] = {
  * Side Effects:
  *	Various global and local flags will be set depending on the flags
  *	given
- *----------------------------------------------------------------------
  */
 static void
 MainParseArgs(argc, argv)
@@ -168,18 +123,8 @@ MainParseArgs(argc, argv)
 	register char *cp;
 	char c;
 
-	optind = initOptInd;
-	while((c = getopt(argc, argv,
-	    "BCD:I:J:L:MPSWd:ef:iknp:qrstvh")) != -1) {
+	while((c = getopt(argc, argv, "D:I:J:L:PSWd:ef:iknp:qrstv")) != -1) {
 		switch(c) {
-		case 'B':
-			backwards = TRUE;
-			Var_Append(MAKEFLAGS, "-B", VAR_GLOBAL);
-			break;
-		case 'C':
-			backwards = sysVmake = amMake = FALSE;
-			Var_Append(MAKEFLAGS, "-C", VAR_GLOBAL);
-			break;
 		case 'D':
 			Var_Set(optarg, "1", VAR_GLOBAL);
 			Var_Append(MAKEFLAGS, "-D", VAR_GLOBAL);
@@ -199,10 +144,6 @@ MainParseArgs(argc, argv)
 			maxLocal = atoi(optarg);
 			Var_Append(MAKEFLAGS, "-L", VAR_GLOBAL);
 			Var_Append(MAKEFLAGS, optarg, VAR_GLOBAL);
-			break;
-		case 'M':
-			amMake = TRUE;
-			Var_Append(MAKEFLAGS, "-M", VAR_GLOBAL);
 			break;
 		case 'P':
 			usePipes = FALSE;
@@ -300,24 +241,12 @@ MainParseArgs(argc, argv)
 			touchFlag = TRUE;
 			Var_Append(MAKEFLAGS, "-t", VAR_GLOBAL);
 			break;
-		case 'v':
-			sysVmake = backwards = TRUE;
-			Var_Append(MAKEFLAGS, "-v", VAR_GLOBAL);
-			break;
-		case 'h':
-		case '?': {
-			int i;
-
-			for (i = 0; i < sizeof(help)/sizeof(help[0]); i++)
-				(void)printf("%s\n", help[i]);
-			exit(c == '?' ? -1 : 0);
-		}
+		default:
+		case '?':
+			usage();
 		}
 	}
 
-	/* Take care of encompassing compatibility levels... */
-	if (amMake)
-		backwards = TRUE;
 	oldVars = TRUE;
 
 	/*
@@ -325,16 +254,14 @@ MainParseArgs(argc, argv)
 	 * perform them if so. Else take them to be targets and stuff them
 	 * on the end of the "create" list.
 	 */
-	for (i = optind; i < argc; i++) {
-		if (Parse_IsVar (argv[i])) {
-			Parse_DoVar(argv[i], VAR_CMD);
-		} else {
-			if (argv[i][0] == 0) {
+	for (argv += optind; *argv; ++argv)
+		if (Parse_IsVar(*argv))
+			Parse_DoVar(*argv, VAR_CMD);
+		else {
+			if (!**argv)
 				Punt("Bogus argument in MainParseArgs");
-			}
-			(void)Lst_AtEnd (create, (ClientData)argv[i]);
+			(void)Lst_AtEnd(create, (ClientData)*argv);
 		}
-	}
 }
 
 /*-
@@ -351,7 +278,6 @@ MainParseArgs(argc, argv)
  *
  * Side Effects:
  *	Only those that come from the various arguments.
- *-----------------------------------------------------------------------
  */
 void
 Main_ParseArgLine(line)
@@ -362,8 +288,7 @@ Main_ParseArgLine(line)
 
 	if (line == NULL)
 		return;
-	while (*line == ' ')
-		++line;
+	for (; *line == ' '; ++line);
 
 	argv = Str_BreakString (line, " \t", "\n", &argc);
 	MainParseArgs(argc, argv);
@@ -386,17 +311,13 @@ Main_ParseArgLine(line)
  *
  * Side Effects:
  *	The program exits when done. Targets are created. etc. etc. etc.
- *
- *----------------------------------------------------------------------
  */
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
 	Lst targs;	/* target nodes to create -- passed to Make_Init */
 	Boolean outOfDate; 	/* FALSE if all targets up to date */
-	char *cp;
 
 	create = Lst_Init (FALSE);
 	makefiles = Lst_Init(FALSE);
@@ -411,41 +332,11 @@ main(argc, argv)
 	usePipes = TRUE;		/* Catch child output in pipes */
 	debug = 0;			/* No debug verbosity, please. */
 	noWarnings = FALSE;		/* Print warning messages */
-	sysVmake = FALSE;		/* Don't be System V compatible */
 	jobsRunning = FALSE;
 
 	maxJobs = DEFMAXJOBS;		/* Set default max concurrency */
 	maxLocal = DEFMAXLOCAL;		/* Set default local max concurrency */
     
-	/*
-	 * Deal with disagreement between different getopt's as to what
-	 * the initial value of optind should be by simply saving the
-	 * damn thing.
-	 */
-	initOptInd = optind;
-
-	/*
-	 * See what the user calls us. If s/he calls us (yuck) "make", then
-	 * act like it. Otherwise act like our normal, cheerful self.
-	 */
-	cp = rindex (argv[0], '/');
-	if (cp != (char *)NULL) {
-		cp += 1;
-	} else {
-		cp = argv[0];
-	}
-	progName = cp;
-
-	if (strcmp (cp, "make") == 0) {
-		amMake = TRUE;		/* Be like make */
-		backwards = TRUE;	/* Do things the old-fashioned way */
-	} else if (strcmp(cp, "smake") == 0 || strcmp(cp, "vmake") == 0) {
-		sysVmake = backwards = TRUE;
-	} else {
-		amMake = FALSE;
-		backwards = FALSE;	/* Do things MY way, not MAKE's */
-	}
-
 	/*
 	 * Initialize the parsing, directory and variable modules to prepare
 	 * for the reading of inclusion paths and variable settings on the
@@ -525,17 +416,8 @@ main(argc, argv)
 		ln = Lst_Find(makefiles, (ClientData)NULL, ReadMakefile);
 		if (ln != NILLNODE)
 			Fatal ("Cannot open %s", (char *)Lst_Datum(ln));
-	} else {
-#ifdef POSIX
-		if (!ReadMakefile("makefile"))
-			(void)ReadMakefile("Makefile");
-#else
-		if (!ReadMakefile((amMake || sysVmake) ?
-		    "makefile" : "Makefile"))
-			(void)ReadMakefile((amMake||sysVmake) ?
-			    "Makefile" : "makefile");
-#endif
-	}
+	} else if (!ReadMakefile("makefile"))
+		(void)ReadMakefile("Makefile");
 
 	Var_Append ("MFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL), VAR_GLOBAL);
 
@@ -599,7 +481,11 @@ main(argc, argv)
 	else
 		targs = Targ_FindList (create, TARG_CREATE);
 
-	if (!amMake) {
+/*
+ * this was original amMake -- want to allow parallelism, so put this
+ * back in, eventually.
+ */
+	if (0) {
 		/*
 		 * Initialize job module before traversing the graph, now that
 		 * any .BEGIN and .END targets have been read.  This is done
@@ -646,7 +532,7 @@ static Boolean
 ReadMakefile(fname)
 	char *fname;		/* makefile to read */
 {
-	if (strcmp (fname, "-") == 0) {
+	if (!strcmp (fname, "-")) {
 		Parse_File("(stdin)", stdin);
 		Var_Set("MAKEFILE", "", VAR_GLOBAL);
 	} else {
@@ -688,7 +574,7 @@ ReadMakefile(fname)
 
 /*-
  * Error --
- *	Print an error message given its format and 0, 1, 2 or 3 arguments.
+ *	Print an error message given its format.
  *
  * Results:
  *	None.
@@ -696,18 +582,19 @@ ReadMakefile(fname)
  * Side Effects:
  *	The message is printed.
  */
-/*VARARGS1*/
+/* VARARGS */
 void
-Error(fmt, arg1, arg2, arg3)
-	char *fmt;			/* format string */
-	int arg1, arg2, arg3;		/* optional arguments */
+Error(va_alist)
+	va_dcl
 {
-	static char estr[BSIZE];	/* output string */
+	va_list ap;
+	char *fmt;
 
-	(void)sprintf(estr, "%s: ", Var_Value(".PMAKE", VAR_GLOBAL));
-	(void)sprintf(&estr[strlen(estr)], fmt, arg1, arg2, arg3);
-	(void)strcat(estr, "\n");
-	(void)fputs(estr, stderr);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
 	(void)fflush(stderr);
 }
 
@@ -722,16 +609,15 @@ Error(fmt, arg1, arg2, arg3)
  * Side Effects:
  *	The program exits
  */
-/* VARARGS1 */
+/* VARARGS */
 void
-Fatal(fmt, arg1, arg2)
-	char *fmt;		/* format string */
-	int arg1, arg2;		/* optional arguments */
+Fatal(va_alist)
+	va_dcl
 {
 	if (jobsRunning)
 		Job_Wait();
     
-	Error(fmt, arg1, arg2);
+	Error(va_alist);
 
 	if (printGraph & 2)
 		Targ_PrintGraph(2);
@@ -749,13 +635,12 @@ Fatal(fmt, arg1, arg2)
  * Side Effects:
  *	All children are killed indiscriminately and the program Lib_Exits
  */
-/* VARARGS1 */
+/* VARARGS */
 void
-Punt(fmt, arg1, arg2)
-	char *fmt;		/* format string */
-	int arg1, arg2;		/* optional arguments */
+Punt(va_alist)
+	va_dcl
 {
-	Error(fmt, arg1, arg2);
+	Error(va_alist);
 	DieHorribly();
 }
 
@@ -795,4 +680,12 @@ Finish(errors)
 	int errors;	/* number of errors encountered in Make_Make */
 {
 	Fatal("%d error%s", errors, errors == 1 ? "" : "s");
+}
+
+usage()
+{
+	(void)fprintf(stderr,
+"usage: make [-PSWeiknqrstvh] [-D define] [-I include] [-J max_target] \n\t\
+[-L max_local] [-d debug] [-f file] [-p #]\n");
+	exit(2);
 }

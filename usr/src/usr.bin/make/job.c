@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -557,8 +557,7 @@ JobFinish (job, status)
     Boolean 	  done;
 
     if ((WIFEXITED(status) &&
-	  (((status.w_retcode != 0) && !(job->flags & JOB_IGNERR)) ||
-	   !backwards)) ||
+	  (((status.w_retcode != 0) && !(job->flags & JOB_IGNERR)))) ||
 	(WIFSIGNALED(status) && (status.w_termsig != SIGCONT)))
     {
 	/*
@@ -589,7 +588,7 @@ JobFinish (job, status)
 	    fclose(job->cmdFILE);
 	}
 	done = TRUE;
-    } else if (backwards && WIFEXITED(status) && status.w_retcode != 0) {
+    } else if (WIFEXITED(status) && status.w_retcode != 0) {
 	/*
 	 * Deal with ignored errors in -B mode. We need to print a message
 	 * telling of the ignored error as well as setting status.w_status
@@ -613,7 +612,7 @@ JobFinish (job, status)
     {
 	FILE	  *out;
 	
-	if (backwards && !usePipes && (job->flags & JOB_IGNERR)) {
+	if (!usePipes && (job->flags & JOB_IGNERR)) {
 	    /*
 	     * If output is going to a file and this job is ignoring
 	     * errors, arrange to have the exit status sent to the
@@ -701,7 +700,7 @@ JobFinish (job, status)
      * try and restart the job on the next command. If JobStart says it's
      * ok, it's ok. If there's an error, this puppy is done.
      */
-    if (backwards && (status.w_status == 0) &&
+    if ((status.w_status == 0) &&
 	!Lst_IsAtEnd (job->node->commands))
     {
 	switch (JobStart (job->node,
@@ -1370,7 +1369,7 @@ JobStart (gn, flags, previous)
      * Check the commands now so any attributes from .DEFAULT have a chance
      * to migrate to the node
      */
-    if (!backwards || (job->flags & JOB_FIRST)) {
+    if (job->flags & JOB_FIRST) {
 	cmdsOK = Job_CheckCommands(gn, Error);
     } else {
 	cmdsOK = TRUE;
@@ -1402,7 +1401,11 @@ JobStart (gn, flags, previous)
 	 */
 	noExec = FALSE;
 
-	if (backwards) {
+	/*
+	 * used to be backwards; replace when start doing multiple commands
+	 * per shell.
+	 */
+	if (1) {
 	    /*
 	     * Be compatible: If this is the first time for this node,
 	     * verify its commands are ok and open the commands list for
@@ -1550,7 +1553,7 @@ JobStart (gn, flags, previous)
      * starting a job and then set up its temporary-file name. This is just
      * tfile with two extra digits tacked on -- jobno.
      */
-    if (!backwards || (job->flags & JOB_FIRST)) {
+    if (job->flags & JOB_FIRST) {
 	if (usePipes) {
 	    int fd[2];
 	    (void) pipe(fd); 

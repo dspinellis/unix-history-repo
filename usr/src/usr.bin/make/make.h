@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)make.h	5.5 (Berkeley) %G%
+ *	@(#)make.h	5.6 (Berkeley) %G%
  */
 
 /*-
@@ -289,17 +289,7 @@ extern char    	var_Error[];   	/* Value returned by Var_Parse when an error
 extern time_t 	now;	    	/* The time at the start of this whole
 				 * process */
 
-/*
- * Three levels of compatibility. amMake incorporates backwards and oldVars,
- * backwards incorporates oldVars.
- */
-extern Boolean	amMake;	    	/* Go all the way to backwards compatibility:
-				 *	- Depth-first traversal of the graph
-				 *	- No paralellism */
-extern Boolean  backwards;    	/* Go halfway to backwards compatibility:
-				 *	- One shell per command */
 extern Boolean	oldVars;    	/* Do old-style variable substitution */
-extern Boolean  sysVmake;    	/* Imitate System V make in anything weird */
 
 /*
  * Debug control:
