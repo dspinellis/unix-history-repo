@@ -10,9 +10,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from:hp300/hp300/autoconf.c	7.9 (Berkeley) 12/27/92
+ * from:hp300/hp300/autoconf.c	7.11 (Berkeley) 5/9/93
  *
- *	@(#)autoconf.c	8.1 (Berkeley) %G%
+ *	@(#)autoconf.c	8.2 (Berkeley) %G%
  */
 
 /*
