@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.28	83/06/14	*/
+/*	raw_usrreq.c	4.29	83/06/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -8,6 +8,7 @@
 #include "../h/errno.h"
 
 #include "../net/if.h"
+#include "../net/route.h"
 #include "../net/netisr.h"
 #include "../net/raw_cb.h"
 
@@ -227,6 +228,8 @@ raw_usrreq(so, req, m, nam, rights)
 			error = ENOTCONN;
 			break;
 		}
+		if (rp->rcb_route.ro_rt)
+			rtfree(rp->rcb_route.ro_rt);
 		raw_disconnect(rp);
 		soisdisconnected(so);
 		break;
@@ -253,6 +256,22 @@ raw_usrreq(so, req, m, nam, rights)
 			error = ENOTCONN;
 			break;
 		}
+#ifdef notdef
+		/*
+		 * Check for routing.  If new foreign address, or
+		 * no route presently in use, try to allocate new
+		 * route.  On failure, just hand packet to output
+		 * routine anyway in case it can handle it.
+		 */
+		if ((rp->rcb_flags & RAW_DONTROUTE) == 0)
+			if (!equal(rp->rcb_faddr, rp->rcb_route.ro_dst) ||
+			    rp->rcb_route.ro_rt == 0) {
+				if (rp->rcb_route.ro_rt)
+					rtfree(rp->rcb_route.ro_rt);
+				rp->rcb_route.ro_dst = rp->rcb_faddr;
+				rtalloc(&rp->rcb_route);
+			}
+#endif
 		error = (*so->so_proto->pr_output)(m, so);
 		m = NULL;
 		if (nam)

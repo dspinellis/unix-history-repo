@@ -1,4 +1,4 @@
-/*	raw_cb.h	4.4	82/04/10	*/
+/*	raw_cb.h	4.5	83/06/30	*/
 
 /*
  * Raw protocol interface control block.  Used
@@ -11,6 +11,7 @@ struct rawcb {
 	struct	sockaddr rcb_faddr;	/* destination address */
 	struct	sockaddr rcb_laddr;	/* socket's address */
 	caddr_t	rcb_pcb;		/* protocol specific stuff */
+	struct	route rcb_route;	/* routing information */
 	short	rcb_flags;
 };
 
@@ -20,6 +21,7 @@ struct rawcb {
  */
 #define	RAW_LADDR	01
 #define	RAW_FADDR	02
+#define	RAW_DONTROUTE	04		/* no routing, default */
 
 #define	sotorawcb(so)		((struct rawcb *)(so)->so_pcb)
 
