@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.15 (Berkeley) %G%
+ *	@(#)hp.c	6.16 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -656,7 +656,13 @@ hpdtint(mi, mbsr)
 		    mi->mi_tab.b_errcnt >= 3) {
 			if (hpecc(mi, ECC))
 				return (MBD_RESTARTED);
-			/* else done */
+			/*
+			 * ECC corrected.  Only log retries below
+			 * if we got errors other than soft ECC
+			 * (as indicated by additional retries).
+			 */
+			if (mi->mi_tab.b_errcnt == 3)
+				mi->mi_tab.b_errcnt = 0;
 		} else if ((er1 & HPER1_HCRC) && !ML11 && hpecc(mi, BSE)) {
  			/*
  			 * HCRC means the header is screwed up and the sector
@@ -720,7 +726,7 @@ hard:
 		HPWAIT(mi, hpaddr);
 		mbclrattn(mi);
 	}
-	if (mi->mi_tab.b_errcnt)
+	if (mi->mi_tab.b_errcnt && (bp->b_flags & B_ERROR) == 0)
 		log(LOG_INFO, "hp%d%c: %d retries %sing sn%d\n",
 		    hpunit(bp->b_dev), 'a'+(minor(bp->b_dev)&07),
 		    mi->mi_tab.b_errcnt,
