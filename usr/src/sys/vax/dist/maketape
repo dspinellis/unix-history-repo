@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.22 (Berkeley) %G%
+#	@(#)maketape	4.23 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
@@ -63,9 +63,9 @@ cd /nbsd/usr/src; eval tar cf ${tartape} Makefile bin etc games \
 	${remote+'| $remote /usr/local/20b ">" $tape'}
 if [ ${type} != '6250' ]
 then
-	echo "Done, rewinding first tape"
+	echo "Done, rewinding second tape"
 	$remote mt -t ${tape} rew &
-	echo "Mount second tape and hit return when ready"
+	echo "Mount third tape and hit return when ready"
 	echo "(or type name of next tape drive)"
 	read x
 	if [ "$x" != "" ]
