@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)newfs.8	8.5 (Berkeley) %G%
+.\"     @(#)newfs.8	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NEWFS 8
@@ -16,7 +16,8 @@
 .Nm newfs
 .Op Fl NO
 .Op Fl S Ar sector-size
-.Op Fl a maxcontig
+.Op Fl T Ar disktype
+.Op Fl a Ar maxcontig
 .Op Fl b Ar block-size
 .Op Fl c Ar cylinders
 .Op Fl d Ar rotdelay
@@ -26,6 +27,7 @@
 .Op Fl k Ar skew
 .Op Fl l Ar interleave
 .Op Fl m Ar free space
+.Op Fl n Ar rotational positions
 .Op Fl o Ar optimization
 .Op Fl p Ar sectors
 .Op Fl r Ar revolutions
@@ -36,7 +38,8 @@
 .Ar special
 .Nm mount_mfs
 .Op Fl N
-.Op Fl a maxcontig
+.Op Fl T Ar disktype
+.Op Fl a Ar maxcontig
 .Op Fl b Ar block-size
 .Op Fl c Ar cylinders
 .Op Fl d Ar rotdelay
@@ -44,6 +47,7 @@
 .Op Fl f Ar frag-size
 .Op Fl i Ar bytes
 .Op Fl m Ar free space
+.Op Fl n Ar rotational positions
 .Op Fl o Ar options
 .Op Fl s Ar size
 .Ar special node
@@ -81,7 +85,10 @@ The parameters to
 .Nm mount_mfs
 are the same as those to
 .Nm newfs .
-The special file is only used to read the disk label which provides
+If the
+.Fl T
+flag is specified (see below), the special file is unused.
+Otherwise, it is only used to read the disk label which provides
 a set of configuration parameters for the memory based file system.
 The special file is typically that of the primary swap area,
 since that is where the file system will be backed up when
@@ -97,6 +104,10 @@ without really creating the file system.
 Creates a 4.3BSD format filesystem.
 This options is primarily used to build root filesystems
 that can be understood by older boot ROMs.
+.It Fl T
+Uses information for the specified disk from
+.Pa /etc/disktab
+instead of trying to get the information from a disklabel.
 .It Fl a Ar maxcontig
 This specifies the maximum number of contiguous blocks that will be
 laid out before forcing a rotational delay (see the
@@ -141,6 +152,9 @@ The default value used is 10%.
 See
 .Xr tunefs 8
 for more details on how to set this option.
+.It Fl n Ar rotational\ positions
+Determines how many rotational time slots there are in
+one revolution of the disk.
 .It Fl o Ar optimization\ preference
 .Pq ``space'' or ``time''
 The file system can either be instructed to try to minimize the time spent
