@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_tan.c	5.3	%G%
+ *	@(#)r_tan.c	5.4	%G%
  */
 
 #ifndef tahoe
@@ -29,12 +29,28 @@ return( tan(*x) );
 int	errno;
 static double invpi = 1.27323954473516268;  /* 4/pi */
 
+#ifndef __GNUC__
+fortran float sin(), cos();
+#else
+#define	sin(x) \
+({ \
+	float __result; \
+	asm("ldd %1; cvdf; sinf; stf %0" : "=rm" (__result) : "rm" (x)); \
+	__result; \
+})
+#define	cos(x) \
+({ \
+	float __result; \
+	asm("ldd %1; cvdf; cosf; stf %0" : "=rm" (__result) : "rm" (x)); \
+	__result; \
+})
+#endif
+
 float
 r_tan(parg)
 float *parg;
 {
 	double arg;
-	fortran float sin(), cos();
 	double modf();
 	float flmax_();
 	double temp, e, x, xsq;
