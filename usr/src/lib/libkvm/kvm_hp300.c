@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_hp300.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_hp300.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <machine/pte.h>
@@ -167,6 +167,8 @@ kvm_openfiles(uf, mf, sf)
 		goto failed;
 	}
 	kvmfilesopen++;
+	if (kvminit == 0 && kvm_init(NULL, NULL, NULL, 0) == -1) /*XXX*/
+		return (-1);
 	return (0);
 failed:
 	kvm_close();
@@ -224,8 +226,8 @@ kvm_nlist(nl)
 {
 	datum key, data;
 	char dbname[MAXPATHLEN];
-	char dbversion[LINE_MAX];
-	char kversion[LINE_MAX];
+	char dbversion[_BSD_LINE_MAX];
+	char kversion[_BSD_LINE_MAX];
 	int dbversionlen;
 	char symbuf[MAXSYMSIZE+1];
 	struct nlist nbuf, *n;
@@ -863,7 +865,7 @@ vtophys(loc)
 }
 
 #include <varargs.h>
-static char errbuf[LINE_MAX];
+static char errbuf[_BSD_LINE_MAX];
 
 static
 seterr(va_alist)
