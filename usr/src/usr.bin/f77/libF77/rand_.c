@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rand_.c	5.2	%G%
+ *	@(#)rand_.c	5.3	%G%
  *
  * Routines to return random values
  *
@@ -20,15 +20,15 @@
  *	(see rand(3))
  */
 
-#if	vax
+#if	defined(vax) || defined(tahoe)
 #define	RANDMAX		2147483647
-#else	vax
+#else	vax || tahoe
 #if	pdp11
 #define	RANDMAX		32767
 #else	pdp11
 	UNKNOWN MACHINE!
 #endif	pdp11
-#endif	vax
+#endif	vax || tahoe
 
 long irand_(iarg)
 long *iarg;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)range.c	5.2	%G%
+ *	@(#)range.c	5.3	%G%
  *
  * routines to return extreme values
  * VERY MACHINE DEPENDENT
