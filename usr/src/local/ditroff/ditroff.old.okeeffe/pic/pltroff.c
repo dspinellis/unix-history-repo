@@ -1,4 +1,4 @@
-/* pltroff.c	(Berkeley)	1.4	83/08/15
+/* pltroff.c	(Berkeley)	1.5	83/10/07
  *	This version has code generators to drive the old-style troff
  *	that produces output for the Graphic Systems C/A/T.  
  *	Very few people actually have a C/A/T; they instead typically
@@ -19,8 +19,10 @@ extern int dbg;
 /* this is the place to define OLDTROFF if you're going to */
 #ifdef	OLDTROFF
 #	define	OLDSTYLE	1
+#	define  MAXMOT		8192
 #else
 #	define	OLDSTYLE	0
+#	define  MAXMOT		32768
 #endif
 
 #define	abs(n)	(n >= 0 ? n : -(n))
@@ -107,7 +109,7 @@ openpl(s)	/* initialize device */
 		xconv(sxmin), yconv(symin), xconv(sxmax), yconv(symax));
 	printf(".PS %d %d %s", yconv(ymin), xconv(xmax), s);
 		/* assumes \n comes as part of s */
-	if (xconv(xmax) >= 8192 || yconv(ymax) >= 8192) {	/* internal troff limit: 13 bits for motion */
+	if (xconv(xmax) >= MAXMOT || yconv(ymax) >= MAXMOT) {	/* internal troff limit: 15 bits for motion */
 		fprintf(stderr, "picture too high or wide");
 		exit(1);
 	}
@@ -473,7 +475,8 @@ linemod(s)
 
 dot() {
 	hvflush();
-	printf("\\&.\n");
+	if (OLDSTYLE) printf("\\&.\n");
+	else printf("\\D'l 0 0'\n");
 	flyback();
 }
 
