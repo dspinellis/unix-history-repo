@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.1	(Berkeley)	84/08/18
+#	@(#)Makefile	1.2	(Berkeley)	84/08/18
 #
 DESTDIR=
 CFLAGS=	-O
@@ -7,7 +7,7 @@ LFLAGS=
 
 # The program itself
 #
-PROG=	pc2
+PROG=	inline
 
 # Sources
 #
@@ -19,7 +19,7 @@ OBJS=	main.o machdep.o machpats.o libcpats.o langpats.o
 
 # Header files
 #
-HDRS=	pc2.h
+HDRS=	inline.h
 
 ${PROG}: ${OBJS} ${HDRS}
 	cc ${LFLAGS} -o ${PROG} ${OBJS}
@@ -28,7 +28,7 @@ ${OBJS}:
 	cc ${CFLAGS} ${INCPATH} -c $*.c
 
 install: ${PROG}
-	install ${PROG} ${DESTDIR}/usr/lib/${PROG}
+	install ${PROG} ../inline
 
 clean:
 	rm -f a.out core ${OBJS} ${PROG}
@@ -55,11 +55,11 @@ depend:
 # DO NOT DELETE THIS LINE -- make depend uses it
 
 
-main.o: main.c /usr/include/stdio.h /usr/include/ctype.h ./pc2.h
+main.o: main.c /usr/include/stdio.h /usr/include/ctype.h ./inline.h
 machdep.o: machdep.c /usr/include/stdio.h /usr/include/ctype.h
-machpats.o: machpats.c ./pc2.h
-libcpats.o: libcpats.c ./pc2.h
-langpats.o: langpats.c ./pc2.h
+machpats.o: machpats.c ./inline.h
+libcpats.o: libcpats.c ./inline.h
+langpats.o: langpats.c ./inline.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
