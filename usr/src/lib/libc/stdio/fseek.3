@@ -1,4 +1,4 @@
-.\"	@(#)fseek.3	6.3 (Berkeley) %G%
+.\"	@(#)fseek.3	6.4 (Berkeley) %G%
 .\"
 .TH FSEEK 3S  ""
 .AT 3
@@ -53,7 +53,7 @@ for
 .IR Rewind ( stream )
 is equivalent to
 .IR fseek ( stream ,
-0L, 0).
+0L, L_SET).
 .SH "SEE ALSO"
 lseek(2),
 fopen(3S)
