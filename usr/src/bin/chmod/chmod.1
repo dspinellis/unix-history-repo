@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)chmod.1	6.4 (Berkeley) %G%
+.\"	@(#)chmod.1	6.5 (Berkeley) %G%
 .\"
 .TH CHMOD 1 ""
 .UC 7
@@ -60,7 +60,7 @@ An absolute mode is an octal number constructed by
 .IR or 'ing
 the following values:
 .RS
-.TP 8
+.TP 10
 4000
 set-user-ID-on-execution
 .br
@@ -98,60 +98,95 @@ read, write, execute/search by group
 .TP
 0007
 read, write, execute/search by others
+.RE
 .PP
 The read, write, and execute/search values for group and others
 are encoded as described for owner.
-.RE
 .PP
 The symbolic mode is described by the following grammar:
-.sp
-.nf
 .RS
-newmode ::= clause [ , clause ]
- clause ::= [ who ] op [ perm ]
-    who ::= [ u | g | o ] ... | a
-     op ::= + | - | =
-   perm ::= [ r | s | t | w | X | x ] ...
+.TP 10
+mode
+::= clause [ , clause ] ...
+.br
+.ns
+.TP
+clause
+::= [ who ... ] [ action ... ] last_action
+.br
+.ns
+.TP
+action
+::= op perm ...
+.br
+.ns
+.TP
+last_action
+::= op [ perm ... ]
+.br
+.ns
+.TP
+who
+::= a | u | g | o
+.br
+.ns
+.TP
+op
+::= + | - | =
+.br
+.ns
+.TP
+perm
+::= r | s | t | w | X | x
 .RE
-.fi
-.sp
-.PP
-Each
-.I clause
-specifies an operation to be performed on the current mode
-bits.
-Each operation is applied to the mode bits in the order specified.
 .PP
 The
 .I who
 symbols ``u'', ``g'', and ``o'' specify the user, group, and other parts
 of the mode bits, respectively.
-A
+The
 .I who
-consisting of the symbol ``a'' is equivalent to ``ugo''.
+symbol ``a'' is equivalent to ``ugo''.
 .PP
 The
 .I perm
 symbols represent the portions of the mode bits as follows:
-.TP
+.RS
+.TP 10
 r
 The read bits.
+.br
+.ns
 .TP
 s
 The set-user-ID-on-execution and set-group-ID-on-execution bits.
+.br
+.ns
 .TP
 t
-The sticky bits.
+The sticky bit.
+.br
+.ns
 .TP
 w
 The write bits.
-.TP
-X
-The execute/search bits if the file is a directory or any of the
-execute/search bits are already set.
+.br
+.ns
 .TP
 x
 The execute/search bits.
+.br
+.ns
+.TP
+X
+The execute/search bits if the file is a directory or any of the
+execute/search bits are set in the original (unmodified) mode.
+Operations with the
+.I perm
+symbol ``X'' are only meaningful in conjunction with the
+.I op
+symbol ``+'', and it is ignored in all other cases.
+.RE
 .PP
 The
 .I op
@@ -165,80 +200,74 @@ If no value is supplied for
 .IR who ,
 each permission bit specified in
 .IR perm ,
-for which the corresponding bit in the file mode creation mask of the
-invoking process is clear, is set, and, if
-.I perm
-includes ``s'', the set-user-ID-on-execution and set-group-ID-on-execution
-bits are set.
-If values are provided for both
-.I who
-and
-.IR perm ,
-each mode bit represented by the specified
+for which the corresponding bit in the file mode creation mask
+is clear, is set.
+Otherwise, the mode bits represented by the specified
 .I who
 and
 .I perm
-values is set.
+values are set.
 .TP
 -
 If no value is supplied for
-.IR who ,
-clear the mode bits represented by
-.I perm
-for the owner, group, and other permissions.
-Otherwise, clear the mode bits represented by the specified
-.I who
-and
-.I perm
-values.
-.TP
-=
+.IR perm ,
+the ``-'' operation has no effect.
 If no value is supplied for
 .IR who ,
-set the permission bits specified in
+the mode bits represented by
 .I perm
-that correspond to bits that are not set in the value of the file mode
-creation mask of the invoking process.
-Otherwise, clear all the mode bits for user, group, and other as
-specified by the
+are cleared for the owner, group and other permissions.
+Otherwise, the mode bits represented by the specified
 .I who
-value.
-Then, if a value is supplied for both
-.I perm
 and
+.I perm
+values are cleared.
+.TP
+=
+The mode bits specified by the
+.I who
+value are cleared, or, if no who value is specified, the owner, group
+and other mode bits are cleared.
+Then, if no value is supplied for
 .IR who ,
-set each mode bit represented by all combinations
-of the specified
+each permission bit specified in
+.IR perm ,
+for which the corresponding bit in the file mode creation mask
+is clear, is set.
+Otherwise, the mode bits represented by the specified
 .I who
 and
 .I perm
-values.
+values are set.
 .PP
-Operations upon the other permissions (specified by the symbol ``o'' or
-the symbol ``a'') in combination with the
+Each
+.I clause
+specifies one or more operations to be performed on the mode
+bits, and each operation is applied to the mode bits in the
+order specified.
+.PP
+Operations upon the other permissions only (specified by the symbol
+``o'' by itself), in combination with the
 .I perm
-symbols ``s'' or ``t''
-are ignored, and do not change any mode bits or cause an error.
+symbols ``s'' or ``t'', are ignored.
 .SH EXAMPLES
 .TP
 ``644''
-make a file readable by anyone but writeable only by the owner.
-.br
-.ns
+make a file readable by anyone and writable by the owner only.
 .TP
 ``go-w''
 deny write permission to group and others.
-.br
-.ns
+.TP
+``=rw,+X''
+set the read and write permissions to the usual defaults, but
+retain any execute permissions that are currently set.
 .TP
 ``+X''
-make a file executable by everyone if it is already executable by
-anyone.
-.br
-.ns
+make a directory or file searchable/executable by everyone if it is
+already searchable/executable by anyone.
 .TP
-``711'' or ``u=rwx,go=x''
-make a file executable by everyone and read/writeable by the owner only.
+``755'' or ``u=rwx,go=rx''
+make a file readable/executable by everyone and writeable by the owner only.
 .TP
 ``go=''
 clear all mode bits for group and others.
