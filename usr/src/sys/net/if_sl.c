@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1987, 1989 Regents of the University of California.
+ * Copyright (c) 1987, 1989, 1992 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.24 (Berkeley) %G%
+ *	@(#)if_sl.c	7.25 (Berkeley) %G%
  */
 
 /*
@@ -123,27 +123,12 @@ Huh? Slip without inet?
  *	(inspired by HAYES modem escape arrangement)
  *	1sec escape 1sec escape 1sec escape { 1sec escape 1sec escape }
  *	within window time signals a "soft" exit from slip mode by remote end
+ *	if the IFF_DEBUG flag is on.
  */
-
 #define	ABT_ESC		'\033'	/* can't be t_intr - distant host must know it*/
 #define ABT_IDLE	1	/* in seconds - idle before an escape */
 #define ABT_COUNT	3	/* count of escapes for abort */
 #define ABT_WINDOW	(ABT_COUNT*2+2)	/* in seconds - time to count */
-
-
-#ifdef nomore
-/*
- * The following disgusting hack gets around the problem that IP TOS
- * can't be set yet.  We want to put "interactive" traffic on a high
- * priority queue.  To decide if traffic is interactive, we check that
- * a) it is TCP and b) one of its ports is telnet, rlogin or ftp control.
- */
-static u_short interactive_ports[8] = {
-	0,	513,	0,	0,
-	0,	21,	0,	23,
-};
-#define INTERACTIVE(p) (interactive_ports[(p) & 7] == (p))
-#endif
 
 struct sl_softc sl_softc[NSL];
 
@@ -169,7 +154,7 @@ slattach()
 		sc->sc_if.if_name = "sl";
 		sc->sc_if.if_unit = i++;
 		sc->sc_if.if_mtu = SLMTU;
-		sc->sc_if.if_flags = IFF_POINTOPOINT;
+		sc->sc_if.if_flags = IFF_POINTOPOINT | SC_AUTOCOMP;
 		sc->sc_if.if_type = IFT_SLIP;
 		sc->sc_if.if_ioctl = slioctl;
 		sc->sc_if.if_output = sloutput;
@@ -278,25 +263,6 @@ sltioctl(tp, cmd, data, flag)
 		*(int *)data = sc->sc_if.if_unit;
 		break;
 
-#ifdef notdef
-	case SLIOCGFLAGS:
-		*(int *)data = sc->sc_if.if_flags;
-		break;
-#endif
-
-	case SLIOCSFLAGS:
-		s = splimp();
-		/* temp compat */
-		sc->sc_if.if_flags &= ~(SC_COMPRESS | SC_NOICMP | SC_AUTOCOMP);
-		if (*(int *)data & 0x2)
-			sc->sc_if.if_flags |= SC_COMPRESS;
-		if (*(int *)data & 0x4)
-			sc->sc_if.if_flags |= SC_NOICMP;
-		if (*(int *)data & 0x8)
-			sc->sc_if.if_flags |= SC_AUTOCOMP;
-		splx(s);
-		break;
-
 	default:
 		return (-1);
 	}
@@ -314,6 +280,7 @@ sloutput(ifp, m, dst)
 	register struct sl_softc *sc = &sl_softc[ifp->if_unit];
 	register struct ip *ip;
 	register struct ifqueue *ifq;
+	register int p;
 	int s;
 
 	/*
@@ -337,25 +304,13 @@ sloutput(ifp, m, dst)
 		return (EHOSTUNREACH);
 	}
 	ifq = &sc->sc_if.if_snd;
+	if (ip->ip_tos & IPTOS_LOWDELAY) {
+		ifq = &sc->sc_fastq;
+		p = 1;
+	} else
+		p = 0;
+
 	if ((ip = mtod(m, struct ip *))->ip_p == IPPROTO_TCP) {
-#ifdef nomore
-		register int p = ((int *)ip)[ip->ip_hl];
-
-		if (INTERACTIVE(p & 0xffff) || INTERACTIVE(p >> 16)) {
-			ifq = &sc->sc_fastq;
-			p = 1;
-		} else
-			p = 0;
-#else
-		register int p;
-
-		if (ip->ip_tos & IPTOS_LOWDELAY) {
-			ifq = &sc->sc_fastq;
-			p = 1;
-		} else
-			p = 0;
-#endif
-
 		if (sc->sc_if.if_flags & SC_COMPRESS) {
 			/*
 			 * The last parameter turns off connection id
