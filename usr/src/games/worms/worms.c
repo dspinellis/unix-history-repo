@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)worms.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)worms.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -147,8 +147,8 @@ static struct options {
 
 #define	cursor(c, r)	tputs(tgoto(CM, c, r), 1, fputchar)
 
-char	*TE;
-int	fputchar();
+char *tcp;
+int fputchar();
 
 static char	flavor[] = {
 	'O', '*', '#', '$', '%', '0', '@', '~'
@@ -178,7 +178,7 @@ main(argc, argv)
 	int CO, IN, LI, last, bottom, ch, length, number, trail, Wrap;
 	int onsig();
 	short **ref;
-	char *AL, *BC, *CM, *EI, *HO, *IC, *IM, *IP, *SR, *tcp;
+	char *AL, *BC, *CM, *EI, *HO, *IC, *IM, *IP, *SR;
 	char *field, tcb[100], *mp, *malloc(), *getenv(), *tgetstr(), *tgoto();
 	long random();
 #ifdef USG
@@ -254,7 +254,6 @@ main(argc, argv)
 		LI = 24;
 	bottom = LI - 1;
 	SR = tgetstr("sr", &tcp);
-	TE = tgetstr("te", &tcp);
 	UP = tgetstr("up", &tcp);
 #ifdef USG
 	ioctl(1, TCGETA, &sg);
@@ -368,7 +367,7 @@ main(argc, argv)
 			if ((x = w->xpos[h = w->head]) < 0) {
 				cursor(x = w->xpos[h] = 0,
 				     y = w->ypos[h] = bottom);
-				fputchar(flavor[n % 6]);
+				fputchar(flavor[n % sizeof(flavor)]);
 				ref[y][x]++;
 			}
 			else
@@ -402,7 +401,7 @@ main(argc, argv)
 			cursor(x += xinc[w->orientation],
 			    y += yinc[w->orientation]);
 			if (!Wrap || x != last || y != bottom)
-				fputchar(flavor[n % 6]);
+				fputchar(flavor[n % sizeof(flavor)]);
 			ref[w->ypos[h] = y][w->xpos[h] = x]++;
 		}
 	}
@@ -410,7 +409,8 @@ main(argc, argv)
 
 onsig()
 {
-	tputs(TE, 1, fputchar);
+	tputs(tgetstr("cl", &tcp), 1, fputchar);
+	tputs(tgetstr("te", &tcp), 1, fputchar);
 	exit(0);
 }
 
