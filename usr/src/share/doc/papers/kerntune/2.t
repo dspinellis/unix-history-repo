@@ -1,4 +1,11 @@
-.\"	@(#)2.t	1.2	(Copyright 1984 M. K. McKusick)	87/08/05
+.\" Copyright (c) 1984 M. K. McKusick
+.\" Copyright (c) 1984 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)2.t	1.3 (Berkeley) %G%
+.\"
 .ds RH The \fIgprof\fP Profiler
 .NH 1
 The \fIgprof\fP Profiler

@@ -1,4 +1,11 @@
-.\"	@(#)0.t	1.1	(Copyright 1984 M. K. McKusick)	84/05/21
+.\" Copyright (c) 1984 M. K. McKusick
+.\" Copyright (c) 1984 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)0.t	1.2 (Berkeley) %G%
+.\"
 .EQ
 delim $$
 .EN
