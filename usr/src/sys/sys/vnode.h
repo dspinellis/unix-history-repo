@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.66 (Berkeley) %G%
+ *	@(#)vnode.h	7.67 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -108,7 +108,7 @@ struct vattr {
 	dev_t		va_rdev;	/* device the special file represents */
 	u_quad_t	va_bytes;	/* bytes of disk space held by file */
 	u_quad_t	va_filerev;	/* file modification number */
-	u_int		va_cflags;	/* operations flags, see below */
+	u_int		va_vaflags;	/* operations flags, see below */
 };
 
 /*
