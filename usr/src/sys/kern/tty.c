@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.15 (Berkeley) %G%
+ *	@(#)tty.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -109,7 +109,7 @@ ttychars(tp)
  * Wait for output to drain, then flush input waiting.
  */
 ttywflush(tp)
-	register struct tty *tp;
+	struct tty *tp;
 {
 
 	ttywait(tp);
@@ -125,10 +125,11 @@ ttywflush(tp)
 ttywait(tp)
 	register struct tty *tp;
 {
-	register int s = spltty();
+	int s = spltty();
 
 	while ((tp->t_outq.c_cc || tp->t_state&TS_BUSY) &&
-	    tp->t_state&TS_CARR_ON && tp->t_oproc) {
+	    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL) && 
+	    tp->t_oproc) {
 		(*tp->t_oproc)(tp);
 		tp->t_state |= TS_ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
@@ -148,10 +149,10 @@ ttyflush(tp, rw)
 	if (rw & FREAD) {
 		while (getc(&tp->t_canq) >= 0)
 			;
-		wakeup((caddr_t)&tp->t_rawq);
+		ttwakeup(tp);
 	}
 	if (rw & FWRITE) {
-		wakeup((caddr_t)&tp->t_outq);
+		wakeup((caddr_t)&tp->t_outq); /* XXX? what about selwakeup? */
 		tp->t_state &= ~TS_TTSTOP;
 		(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
 		while (getc(&tp->t_outq) >= 0)
@@ -201,7 +202,7 @@ ttyblock(tp)
  * subroutine and it is called during a clock interrupt.
  */
 ttrstrt(tp)
-	register struct tty *tp;
+	struct tty *tp;
 {
 
 	if (tp == 0)
@@ -217,7 +218,7 @@ ttrstrt(tp)
  * character, and after a timeout has finished.
  */
 ttstart(tp)
-	register struct tty *tp;
+	struct tty *tp;
 {
 
 	if (tp->t_oproc)		/* kludge for pty */
@@ -326,6 +327,16 @@ ttioctl(tp, com, data, flag)
 		break;
 	}
 
+	case FIOASYNC:
+		if (*(int *)data)
+			tp->t_state |= TS_ASYNC;
+		else
+			tp->t_state &= ~TS_ASYNC;
+		break;
+
+	case FIONBIO:
+		break;	/* XXX remove */
+
 	/* return number of characters immediately available */
 	case FIONREAD:
 		*(off_t *)data = ttnread(tp);
@@ -410,20 +421,6 @@ ttioctl(tp, com, data, flag)
 			ttytrace(com, tp);
 		break;
 	}
-
-	case FIONBIO:
-		if (*(int *)data)
-			tp->t_state |= TS_NBIO;
-		else
-			tp->t_state &= ~TS_NBIO;
-		break;
-
-	case FIOASYNC:
-		if (*(int *)data)
-			tp->t_state |= TS_ASYNC;
-		else
-			tp->t_state &= ~TS_ASYNC;
-		break;
 
 	/*
 	 * Set terminal process group.
@@ -575,7 +572,8 @@ ttselect(dev, rw)
 
 	case FREAD:
 		nread = ttnread(tp);
-		if (nread > 0 || (tp->t_state & TS_CARR_ON) == 0)
+		if (nread > 0 || 
+		   (!(tp->t_cflag&CLOCAL) && !(tp->t_state&TS_CARR_ON)))
 			goto win;
 		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_RCOLL;
@@ -683,7 +681,7 @@ ttymodem(tp, flag)
 		 * Carrier now on.
 		 */
 		tp->t_state |= TS_CARR_ON;
-		wakeup((caddr_t)&tp->t_rawq);
+		ttwakeup(tp);
 	}
 	return (1);
 }
@@ -929,12 +927,8 @@ ttyinput(c, tp)
 			ttyrub(unputc(&tp->t_rawq), tp);
 		goto endcase;
 	}
-	/*
-	 * kill (^X / ^U)
-	 */
-	if (CCEQ(cc[VKILL], c)) {
-		if (lflag&ECHOKE &&
-		    tp->t_rawq.c_cc == tp->t_rocount) {
+		if (lflag&ECHOKE && tp->t_rawq.c_cc == tp->t_rocount &&
+		    !(lflag&ECHOPRT)) {
 			while (tp->t_rawq.c_cc)
 				ttyrub(unputc(&tp->t_rawq), tp);
 		} else {
@@ -1172,7 +1166,7 @@ ttyoutput(c, tp)
  * Called from device's read routine after it has
  * calculated the tty-structure given as argument.
  */
-ttread(tp, uio)
+ttread(tp, uio, flag)
 	register struct tty *tp;
 	struct uio *uio;
 {
@@ -1185,15 +1179,32 @@ ttread(tp, uio)
 
 
 loop:
-	/*
-	 * Take any pending input first.
-	 */
 	s = spltty();
+	/*
+	 * take pending input first 
+	 */
 	if (tp->t_lflag&PENDIN)
 		ttypend(tp);
+	/*
+	 * Handle carrier.
+	 */
+	if (!(tp->t_state&TS_CARR_ON) && !(tp->t_cflag&CLOCAL)) {
+		if (tp->t_state&TS_ISOPEN) {
+			splx(s);
+			return (0);	/* EOF */
+		} else if (flag&FNDELAY) {
+			splx(s);
+			return (EWOULDBLOCK);
+		} else {
+			/*
+			 * sleep awaiting carrier
+			 */
+			sleep((caddr_t)&tp->t_rawq, TTIPRI);
+			splx(s);
+			goto loop;
+		}
+	}
 	splx(s);
-	if ((tp->t_state&TS_CARR_ON)==0)
-		return (EIO);
 	/*
 	 * Hang process if it's in the background.
 	 */
@@ -1217,8 +1228,14 @@ loop:
 	 */
 	s = spltty();
 	if (qp->c_cc <= 0) {
+		/** XXX ??? ask mike why TS_CARR_ON was (once) necessary here
 		if ((tp->t_state&TS_CARR_ON) == 0 ||
 		    (tp->t_state&TS_NBIO)) {
+			splx(s);
+			return (EWOULDBLOCK);
+		}
+		**/
+		if (flag&FNDELAY) {
 			splx(s);
 			return (EWOULDBLOCK);
 		}
@@ -1318,7 +1335,7 @@ ttycheckoutq(tp, wait)
  * Called from the device's write routine after it has
  * calculated the tty-structure given as argument.
  */
-ttwrite(tp, uio)
+ttwrite(tp, uio, flag)
 	register struct tty *tp;
 	register struct uio *uio;
 {
@@ -1331,8 +1348,24 @@ ttwrite(tp, uio)
 	cnt = uio->uio_resid;
 	error = 0;
 loop:
-	if ((tp->t_state&TS_CARR_ON) == 0)
-		return (EIO);
+	s = spltty();
+	if (!(tp->t_state&TS_CARR_ON) && !(tp->t_cflag&CLOCAL)) {
+		if (tp->t_state&TS_ISOPEN) {
+			splx(s);
+			return (EIO);
+		} else if (flag&FNDELAY) {
+			splx(s);
+			return (EWOULDBLOCK);
+		} else {
+			/*
+			 * sleep awaiting carrier
+			 */
+			sleep((caddr_t)&tp->t_rawq, TTIPRI);
+			splx(s);
+			goto loop;
+		}
+	}
+	splx(s);
 	/*
 	 * Hang the process if it's in the background.
 	 */
@@ -1464,7 +1497,7 @@ ovhiwat:
 		splx(s);
 		goto loop;
 	}
-	if (tp->t_state&TS_NBIO) {
+	if (flag&FNDELAY) {
 		splx(s);
 		if (uio->uio_resid == cnt)
 			return (EWOULDBLOCK);
@@ -1546,6 +1579,7 @@ ttyrub(c, tp)
 		}
 
 		default:
+			/* XXX */
 			printf("ttyrub: would panic c = %d, val = %d\n",
 				c, partab[c&=0377]&077);
 			/*panic("ttyrub");*/
