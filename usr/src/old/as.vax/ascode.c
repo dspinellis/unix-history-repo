@@ -1,63 +1,39 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)ascode.c 4.7 %G%";
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ */
+#ifndef lint
+static char sccsid[] = "@(#)ascode.c 4.8 %G%";
+#endif not lint
+
 #include <stdio.h>
 #include "as.h"
 #include "assyms.h"
 
-/*
- *	Loader reference types  (plust PCREL) to bytes and lg bytes
- */
-/*		LEN1	LEN1+PC	LEN2	LEN2+PC	LEN4	LEN4+PC	LEN8	LEN8+PC*/
-int	reflen[] = 	/* {LEN*+PCREL} ==> number of bytes */
-{0,	0,	1,	1,	2,	2,	4,	4,	8,	8};	
-int	lgreflen[] =	/* {LEN*+PCREL} ==> lg number of bytes */ 
-{-1,	-1,	0,	0,	1,	1,	2,	2,	3,	3};
-
-/*
- *	Sizes to Loader reference types and type flags
- */
-/*0	1	2	3	4	5	6	7	8*/
-int	len124[] = 	/* {1,2,4,8} ==> {LEN1, LEN2, LEN4, LEN8} */
-{0,	LEN1,	LEN2,	0,	LEN4,	0,	0,	0,	LEN8};
-char	mod124[] = 	/* {1,2,4,8} ==> {bits to construct operands */
-{0,	0x00,	0x20,	0,	0x40,	0,	0,	0,	0};
-int	type_124[] =	/* {1,2,4,8} ==> {TYPB, TYPW, TYPL, TYPQ} */
-{0,	 TYPB,	TYPW,	 0,	 TYPL,	 0,	 0,	 0,	 TYPQ};
-
-/*
- *	type flags to Loader reference and byte lengths
- */
-/*TYPB	TYPW	TYPL	TYPQ	TYPF	TYPD*/
-int	ty_NORELOC[] =	/* {TYPB..TYPD} ==> {1 if relocation not OK */
-{0,	0,	0,	1,	1,	1};
-int	ty_LEN[] =	/* {TYPB..TYPD} ==> {LEN1..LEN8} */
-{LEN1,	LEN2,	LEN4,	LEN8,	LEN4,	LEN8};
-int	ty_nbyte[] =	/* {TYPB..TYPD} ==> {1,2,4,8} */
-{1,	2,	4,	8,	4,	8};
-int	ty_nlg[] =	/* {TYPB..TYPD} ==> lg{1,2,4,8} */
-{0,	1,	2,	3,	2,	3};
-
-insout(op, ap, nact)
-	struct arg *ap;
+insout(opcode, ap, nact)
+	struct	Opcode	opcode;
+	struct	arg	*ap;
+	int	nact;
 {
-	int		jxxflg;
-	register	struct	instab	*ip;		/* the instruction */
-	register	struct	arg	*ap_walk;	/* actual param walk */
-	register	int	i;
-	register	int	ap_type;		/* actual param type */
-	register	int	ap_type_mask;		/* masked actual param */
-	op &= 0xFF;
+	int	jxxflg;
+	reg	struct	instab	*ip;		/* the instruction */
+	reg	struct	arg	*ap_walk;	/* actual param walk */
+	reg	int	i;
+	reg	int	ap_type;		/* actual param type */
+	reg	int	ap_type_mask;		/* masked actual param */
+
 	jxxflg = nact;
 	if (nact < 0)
 		nact = -nact;
 	if (passno == 1) {
-	    ip = itab[op];
-	    if (nact < ip->i_nargs)
-		yyerror("Too few arguments");
-	    if (nact > ip->i_nargs) {
-		yyerror("Too many arguments");
-		nact = ip->i_nargs;
-	    }
+		if (!(ITABCHECK(opcode)))
+			panic("Botched reference into itab");
+		ip = ITABFETCH(opcode);
+		if (nact < ip->i_nargs)
+			yyerror("Too few arguments");
+		if (nact > ip->i_nargs) {
+			yyerror("Too many arguments");
+			nact = ip->i_nargs;
+		}
 	    /*
 	     *	Check argument compatability with instruction template
 	     */
@@ -65,23 +41,24 @@ insout(op, ap, nact)
 		ap_type = ap_walk->a_atype;
 		ap_type_mask = ap_type & AMASK;
 		/*
-		 *	The switch value is >> by 3 so that the switch
+		 *	The switch value is >> by TYPLG so that the switch
 		 *	code is dense, not implemented as a sequence
 		 *	of branches but implemented as a casel.
 		 *	In addition, cases ACCI and ACCR are added to force
 		 *	dense switch code.
+		 *	switch on the type of fp
 		 */
-		switch( ((fetcharg(ip, i-1)) & ACCESSMASK)>>3){	/* type of fp */
-		case ACCI >> 3:
-		case ACCR >> 3:
+		switch( ((fetcharg(ip, i-1)) & ACCESSMASK) >> TYPLG){
+		case ACCI >> TYPLG:
+		case ACCR >> TYPLG:
 			break;
-		case ACCB >> 3:
+		case ACCB >> TYPLG:
 			if ( !((ap_type_mask == AEXP) || (ap_type_mask == AIMM)) ){
 				yyerror("arg %d, branch displacement must be an expression",i);
 				return;
 			}
 			break;
-		case ACCA >> 3:
+		case ACCA >> TYPLG:
 			switch(ap_type_mask){
 			case AREG:	yyerror("arg %d, addressing a register",i);
 					return;
@@ -91,8 +68,8 @@ insout(op, ap, nact)
 					}
 			}
 			break;
-		case ACCM >> 3:
-		case ACCW >> 3:
+		case ACCM >> TYPLG:
+		case ACCW >> TYPLG:
 			switch(ap_type_mask){
 			case AIMM:	if (!(ap_type&ASTAR)) {
 					 yyerror("arg %d, modifying a constant",i);
@@ -122,22 +99,23 @@ insout(op, ap, nact)
 	   }
 	} /* both passes here */
 	if (jxxflg < 0)
-		ijxout(op, ap, nact);
-	else putins(op, ap, nact);
+		ijxout(opcode, ap, nact);
+	else
+		putins(opcode, ap, nact);
 }
 
 extern	int d124;
 
-putins(op, ap, n)
-	/*
-	 *	n had better be positive
-	 */
+putins(opcode, ap, n)
+	struct	Opcode	opcode;
 	register struct arg *ap;
+	int	n;			/* Must be positive */
 {
-	register struct exp 	*xp;
-	register int 		argtype;
-	int 			i;
-	int			reloc_how;
+	reg	struct exp 	*xp;
+	reg	int 	argtype;
+		int 	i;
+		int	reloc_how;
+		int	value;
 
 #ifdef DEBUG
 	fflush(stdout);
@@ -145,7 +123,20 @@ putins(op, ap, n)
 	if (passno == 2)
 		goto PASS2;
 
-	dotp->e_xvalue += n+1;		/* 1 for the opcode, at least 1 per arg */
+	dotp->e_xvalue += n;		/* at least one byte per arg */
+	switch(opcode.Op_eopcode){
+	case NEW:
+	case CORE:
+		dotp->e_xvalue += 1;	/* 1 byte opcode */
+		break;
+	case ESCD:
+	case ESCF:
+		dotp->e_xvalue += 2;	/* 2 byte opcode */
+		break;
+	default:
+		panic("Bad escape opcode");
+	}
+
 	for (i=0; i<n; i++,ap++) {	/* some args take more than 1 byte */
 	    argtype = ap->a_atype;
 	    if (argtype & AINDX)
@@ -162,10 +153,10 @@ putins(op, ap, n)
 		case AINCR:
 			break;
 		case AEXP: 
-			argtype = fetcharg(itab[op], i);
-			if (argtype == ACCB+TYPB)
+			argtype = fetcharg(ITABFETCH(opcode), i);
+			if (argtype == A_BB)
 				break;
-			if (argtype==ACCB+TYPW){
+			if (argtype == A_BW){
 				dotp->e_xvalue++;
 				break;
 			}
@@ -183,80 +174,59 @@ putins(op, ap, n)
 			}
 			if (xp->e_xvalue==0 && !(argtype&ASTAR))
 				break;
-			dotp->e_xvalue++;
-			if ((xp->e_xvalue<MINBYTE) || (xp->e_xvalue>MAXBYTE))
-				dotp->e_xvalue++;
-			if ((xp->e_xvalue<MINWORD) || (xp->e_xvalue>MAXWORD))
-				dotp->e_xvalue += 2;
+			dotp->e_xvalue += 1;
+			if (ISBYTE(xp->e_xvalue))
+				break;
+			dotp->e_xvalue += 1;
+			if (ISWORD(xp->e_xvalue))
+				break;
+			dotp->e_xvalue += 2;
 			break;
 
 		case AIMM: 
-			if (ap->a_atype&ASTAR) argtype=TYPL;
-			else {
-				argtype = fetcharg(itab[op], i);
+			if (ap->a_atype&ASTAR) {
+				argtype=TYPL;
+			} else {
+				argtype = fetcharg(ITABFETCH(opcode), i);
 				if (argtype&ACCA)
 					argtype = TYPL;
 				else
 					argtype &= TYPMASK;
 				xp = ap->a_xp;
-				if (   ((xp->e_xtype&XTYPE)==XABS)
-				    && (!(xp->e_xtype&XFORW))
-				    && (xp->e_xvalue>=0)
-				    && (xp->e_xvalue<=63) 
-				    && (xp->e_yvalue == 0)
-				    && (argtype != TYPD)
-				    && (argtype != TYPF)
-				)
-						break;
+				if (immconstant(ap->a_xp, argtype, &value))
+					break;
 			}
-			switch (argtype) {
-			case TYPD:
-			case TYPF:
-				if (   !(((xp->e_xtype&XTYPE)==XABS)
-				    && (!(xp->e_xtype&XFORW))
-				    && (slitflt(xp)))
-				){
-				/* it is NOT short */
-					dotp->e_xvalue += ((argtype==TYPF)?
-						4 : 8);
-				}
-				break;
-			case TYPQ: 
-				dotp->e_xvalue += 8;break;
-			case TYPL:
-				dotp->e_xvalue += 4;break;
-			case TYPW: 
-				dotp->e_xvalue += 2;break;
-			case TYPB: 
-				dotp->e_xvalue += 1;break;
-			}	/*end of the switch on argtype*/
+			dotp->e_xvalue += ty_nbyte[argtype];
 	    }	/*end of the switch on the type*/
 	}	/*end of looping for all arguments*/
 	return;
 
 PASS2:
-
-#ifdef UNIX
-	outb(op); /* the opcode */
-#endif UNIX
-#ifdef VMS
-	*vms_obj_ptr++ = -1; *vms_obj_ptr++ = (char)op;
-	dotp->e_xvalue += 1;
-#endif VMS
+	/*
+	 *	Output the opcode
+	 */
+	switch(opcode.Op_eopcode){
+	case NEW:
+		nnewopcodes++;
+		break;
+	case ESCD:
+	case ESCF:
+		nGHopcodes++;
+		Outb(opcode.Op_eopcode);
+		break;
+	case CORE:
+		break;
+	default:
+		panic("Bad escape opcode");
+	}
+	Outb(opcode.Op_popcode);
 
 	for (i=0; i<n; i++,ap++) {/* now for the arguments */
 		argtype=ap->a_atype;
 		xp=ap->a_xp;
 		reloc_how = TYPNONE;
 		if (argtype&AINDX) {
-#ifdef UNIX
-			{ outb(0x40 | ap->a_areg2); }
-#endif UNIX
-#ifdef VMS
-			{ *vms_obj_ptr++ = -1;
-			  *vms_obj_ptr++ = (0x40 | ap->a_areg2);
-			  dotp->e_xvalue += 1; }
-#endif VMS
+			{ Outb(0x40 | ap->a_areg2); }
 			argtype &= ~AINDX;
 		}
 		if (argtype&ASTAR) {
@@ -277,19 +247,30 @@ PASS2:
 			ap->a_areg1 |= 0x80;
 			break;
 		case AEXP: /* expr */
-			argtype = fetcharg(itab[op], i);
-			if (argtype == ACCB+TYPB) {
+			argtype = fetcharg(ITABFETCH(opcode), i);
+			if (argtype == A_BB) {
 				ap->a_areg1 = argtype = 
 					xp->e_xvalue - (dotp->e_xvalue + 1);
-				if (argtype<MINBYTE || argtype>MAXBYTE)
-					yyerror("Branch too far"); break;
+				if (xp->e_xtype & XXTRN)
+					yywarning("%s: destination label is external",
+						ITABFETCH(opcode)->s_name);
+				if (!ISBYTE(argtype))
+					yyerror("%s: Branch too far: %d",
+						ITABFETCH(opcode)->s_name,
+						argtype);
+				break;
 			}
-			if (argtype == ACCB+TYPW) {
+			if (argtype == A_BW) {
 				ap->a_areg1 = argtype = xp->e_xvalue
 					-= dotp->e_xvalue + 2;
+				if (xp->e_xtype & XXTRN)
+					yywarning("%s: destination label is external",
+						ITABFETCH(opcode)->s_name);
 				xp->e_xtype = XABS;
-				if (argtype<MINWORD || argtype>MAXWORD) 
-					yyerror("Branch too far");
+				if (!ISWORD(argtype))
+					yyerror("%s: Branch too far: %d",
+						ITABFETCH(opcode)->s_name,
+						argtype);
 				xp->e_xvalue = argtype>>8;
 				reloc_how = TYPB;
 				break;
@@ -311,59 +292,41 @@ PASS2:
 				break;
 			}
 			reloc_how = TYPB;
-			if ((xp->e_xvalue<MINBYTE) || (xp->e_xvalue>MAXBYTE)){
-				ap->a_areg1 += 0x20;
-				reloc_how = TYPW;
-			}
-			if ((xp->e_xvalue<MINWORD) || (xp->e_xvalue>MAXWORD)){
-				ap->a_areg1 += 0x20;
-				reloc_how = TYPL;
-			}
+			if (ISBYTE(xp->e_xvalue))
+				break;
+			ap->a_areg1 += 0x20;
+			reloc_how = TYPW;
+			if (ISWORD(xp->e_xvalue))
+				break;
+			ap->a_areg1 += 0x20;
+			reloc_how = TYPL;
 			break;
 		
 		case AIMM:  /* $expr */
-			if (ap->a_atype&ASTAR)
+			if (ap->a_atype&ASTAR) {
 				argtype=TYPL;
-			else {
-				argtype = fetcharg(itab[op], i);
+			} else {
+				argtype = fetcharg(ITABFETCH(opcode), i);
 				if (argtype&ACCA)
-					argtype=TYPL;
+					argtype = TYPL;
 				else
 					argtype &= TYPMASK;
-				if (    ( (xp->e_xtype&XTYPE) == XABS) 
-				    && !(xp->e_xtype&XFORW)
-				    &&  (xp->e_xvalue >= 0)
-				    &&  (xp->e_xvalue <= 63)
-				    &&  (xp->e_yvalue == 0)
-				    &&  (argtype != TYPF)
-				    &&  (argtype != TYPD) ) {
-					ap->a_areg1 = xp->e_xvalue;
+				if (immconstant(xp, argtype, &value)){
+					reloc_how = TYPNONE;
+					ap->a_areg1 = value;
 					break;
 				}
 			}
 			ap->a_areg1 |= 0x8F;
 			reloc_how = argtype;
-			if (reloc_how == TYPD || reloc_how == TYPF){
-				if (   ((xp->e_xtype&XTYPE)==XABS)
-				    && (!(xp->e_xtype&XFORW))
-				    && (slitflt(xp))
-				){
-					reloc_how = TYPNONE;
-					ap->a_areg1=extlitflt(xp);
-				}
-			}	
 			break;
 		
 		}	/*end of the switch on argtype*/
 		/*
 		 *	use the first byte to describe the argument
 		 */
-#ifdef UNIX
-		outb(ap->a_areg1);
-#endif UNIX
+		Outb(ap->a_areg1);
 #ifdef VMS
-		*vms_obj_ptr++ = -1; *vms_obj_ptr++ = (char)(ap->a_areg1);
-		dotp->e_xvalue += 1;
 		if ((vms_obj_ptr-sobuf) > 400) {
 			write(objfil,sobuf,vms_obj_ptr-sobuf);
 			vms_obj_ptr=sobuf+1;
@@ -372,4 +335,106 @@ PASS2:
 		if (reloc_how != TYPNONE) 
 			outrel(xp, reloc_how);
 	}	/*end of the for to pick up all arguments*/
+}
+/*
+ *	Is xp an immediate constant?
+ *	argtype: how the instruction will interpret the bytes
+ *	xp->e_number.num_tag ("numtype"): the kind of number given
+ *
+ *	Use the following table:
+ *	float: TYPF, TYPD, TYPG, TYPH
+ *	quad: TYPQ, TYPO
+ *	int: TYPG, TYPW, TYPL
+ *
+ *				numtype
+ *	argtype		float	quad	int
+ *	
+ *	float		slitflt	slitflt	slitflt
+ *	quad		0	0	0
+ *	int		0..63	0	0..63
+ *
+ *	Where the table entry implies the predicate to return.
+ */
+#define	IMMFLT	1		/* these flags are not used by anybody (yet) */
+#define	IMMINT	2
+
+int immconstant(xp, argtype, valuep)
+	reg	struct	exp	*xp;
+		int	argtype;
+		int	*valuep;
+{
+	reg	int	back = 0;
+		int	numtype;
+	reg	int	fits;
+
+	if ((xp->e_xtype & XTYPE) != XABS)
+		return(0);
+	if ((xp->e_xtype & XFORW) != 0)
+		return(0);
+	numtype = xp->e_number.num_tag;
+
+	fits = 1;
+	if (passno == 2) switch(argtype){
+	case TYPB:
+		switch(numtype){
+		default:	fits = 0; break;
+		case TYPB:	fits = 1; break;
+		case TYPW:	
+		case TYPL:
+			fits = ISBYTE(xp->e_xvalue) || ISUBYTE(xp->e_xvalue);
+			break;
+		}
+		break;
+	case TYPW:
+		switch(numtype){
+		default:	fits = 0; break;
+		case TYPB:
+		case TYPW:	fits = 1; break;
+		case TYPL:
+			fits = ISWORD(xp->e_xvalue) || ISUWORD(xp->e_xvalue);
+			break;
+		}
+		break;
+	case TYPF:
+		if (numtype == TYPD){	/* same format for first 32 bits */
+			fits = 1;
+			break;
+		}
+		/*FALLTHROUGH*/
+	default:
+		fits = ty_nbyte[argtype] >= ty_nbyte[numtype];
+	}
+	if (!fits){
+	  yywarning("Immediate constant type %s mismatches instruction type %s",
+		ty_string[numtype],
+		ty_string[argtype]);
+	}
+
+	switch(argtype){
+	case TYPF:
+	case TYPG:
+	case TYPD:
+	case TYPH:
+		back = slitflt(xp->e_number, argtype, valuep);
+		break;
+	case TYPO:
+	case TYPQ:
+		back = 0;
+		break;
+	case TYPB:
+	case TYPW:
+	case TYPL:
+		switch(numtype){
+		case TYPO:
+		case TYPQ:
+			back = 0;
+			break;
+		default:
+			*valuep = xp->e_xvalue;
+			back = ISLIT(xp->e_xvalue);
+			break;
+		}
+		break;
+	}
+	return(back);
 }

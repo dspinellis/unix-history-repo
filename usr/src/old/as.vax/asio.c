@@ -1,5 +1,10 @@
-/* Coypright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asio.c 4.3 %G%";
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ */
+#ifndef lint
+static char sccsid[] = "@(#)asio.c 4.4 %G%";
+#endif not lint
+
 #include <stdio.h>
 #include "as.h"
 /*
@@ -59,6 +64,9 @@ top:
 			put = cnt;
 		bp->b_nleft -= put;
 		to = bp->b_ptr;
+#ifdef lint
+		*to = *to;
+#endif lint
 		asm("movc3 r8,(r11),(r7)");
 		bp->b_ptr += put;
 		p += put;
@@ -70,7 +78,7 @@ top:
 			bflush1(bp);
 		put = cnt - cnt % BUFSIZ;
 		if (boffset != bp->b_off)
-			lseek(biofd, bp->b_off, 0);
+			(void)lseek(biofd, (long)bp->b_off, 0);
 		if (write(biofd, p, put) != put) {
 			bwrerror = 1;
 			error(1, "Output write error");
@@ -103,7 +111,7 @@ bflush1(bp)
 	if (cnt == 0)
 		return;
 	if (boffset != bp->b_off)
-		lseek(biofd, bp->b_off, 0);
+		(void)lseek(biofd, (long)bp->b_off, 0);
 	if (write(biofd, bp->b_buf, cnt) != cnt) {
 		bwrerror = 1;
 		error(1, "Output write error");
@@ -118,7 +126,6 @@ bflushc(bp, c)
 	register struct biobuf *bp;
 	char	c;
 {
-
 	bflush1(bp);
 	bputc(c, bp);
 }

@@ -1,7 +1,13 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asexpr.c 4.2 %G%";
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ */
+#ifndef lint
+static char sccsid[] = "@(#)asexpr.c 4.3 %G%";
+
+#endif not lint
 #include <stdio.h>
 #include "as.h"
+#include "asscan.h"
 #include "asexpr.h"
 
 /*
@@ -51,12 +57,12 @@ readonly char othtab[6][6] = {
 /*EXT*/		XUNDEF,	ERR,	ERR,	ERR,	ERR,	ERR,
 };
 
-struct exp *
-combine(op, exp1, exp2)
-	register struct exp *exp1, *exp2;
+struct exp *combine(op, exp1, exp2)
+	reg struct exp *exp1, *exp2;
 {
-	register 	e1_type, e2_type;
-	register	back_type;
+	reg 	e1_type, e2_type;
+	reg	back_type;
+	char	*btype = "The assembler can only do arithmetic on 1,2, or 4 byte integers";
 
 	lastnam=0; 			/* kludge for jxxx instructions */
 
@@ -73,7 +79,25 @@ combine(op, exp1, exp2)
 	e1_type >>= 1;		/*dispose of the external (XXTRN) bit*/
 	e2_type >>= 1;
 
-	switch (op) {
+	switch(exp1->e_number.num_tag){
+	case TYPB:
+	case TYPW:
+	case TYPL:
+		break;
+	default:
+		yyerror(btype);
+		return(exp1);
+	}
+	switch(exp2->e_number.num_tag){
+	case TYPB:
+	case TYPW:
+	case TYPL:
+		break;
+	default:
+		yyerror(btype);
+		return(exp1);
+	}
+	switch (op){
 	case PLUS:
 		exp1->e_xvalue += exp2->e_xvalue;
 		back_type = pltab[e1_type][e2_type];
@@ -150,7 +174,7 @@ buildtokensets()
 	clobber(BFINT,	YUKKYEXPRBEG);
 
 	clobber(INT,	SAFEEXPRBEG);
-	clobber(FLTNUM,	SAFEEXPRBEG);
+	clobber(BIGNUM,	SAFEEXPRBEG);
 
 	clobber(PLUS,	ADDOPS);
 	clobber(MINUS,	ADDOPS + EBEGOPS);
@@ -180,13 +204,17 @@ buildtokensets()
 extern	int	yylval;		/*the value of the lexical value*/
 extern	struct	exp	*xp;	/*the next free expression slot*/
 
-static int	val;
-int exprparse(inval, backexpr)	/*return the value the read head is sitting on*/
-	int	inval;
+static	inttoktype	val;
+
+/*
+ *	return the value the read head is sitting on
+ */
+inttoktype exprparse(inval, backexpr)
+	inttoktype	inval;
 	struct	exp **backexpr;
 {
-	register struct exp *lexpr;
-	int	op;
+	reg	struct exp *lexpr;
+	inttoktype	op;
 
 	val = inval;
 	lexpr = boolterm();
@@ -201,8 +229,8 @@ int exprparse(inval, backexpr)	/*return the value the read head is sitting on*/
 
 struct exp *boolterm()
 {
-	register	struct exp *lexpr;
-	int	op;
+	reg	struct exp *lexpr;
+	inttoktype	op;
 
 	lexpr = term();
 	while(INTOKSET(val, BOOLOPS)){
@@ -215,8 +243,8 @@ struct exp *boolterm()
 
 struct exp *term()
 {
-	register	struct	exp	*lexpr;
-	int		op;
+	reg	struct	exp	*lexpr;
+	inttoktype	op;
 
 	lexpr = factor();
 	while(INTOKSET(val, MULOPS)){
@@ -230,7 +258,7 @@ struct exp *term()
 struct exp *factor()
 {
 	struct	exp *lexpr;
-	int		op;
+	inttoktype	op;
 	extern		int	droppedLP;	/*called exprparse after consuming an LP*/
 
 	if (val == LP || droppedLP){
@@ -257,45 +285,50 @@ struct exp *factor()
 		shift;
 		lexpr = xp++;
 		lexpr->e_xtype = XABS;
-		lexpr->e_xvalue = 0;
+		lexpr->e_number = Znumber;
+		lexpr->e_number.num_tag = TYPL;
 		lexpr = combine(op, lexpr, factor());
-	}
-	else {
+	} else {
 		yyerror("Bad expression syntax");
 		lexpr = xp++;
 		lexpr->e_xtype = XABS;
-		lexpr->e_xvalue = 0;
+		lexpr->e_number = Znumber;
+		lexpr->e_number.num_tag = TYPL;
 	}
 	return(lexpr);
 }
 
 struct exp *yukkyexpr(val, np)
 	int	val;
-	register	np;
+	reg	np;
 {
-	register	struct exp *locxp;
-	extern		int	exprisname;	/*last factor is a name*/
+	reg	struct exp *locxp;
+	extern	int	exprisname;	/*last factor is a name*/
+		int	off = 0;
 
 	exprisname = 0;
 	locxp = xp++;
-	if (val == NAME || val == BFINT){
-		if (val == BFINT) {
-			int off = 0;
-			yylval = ((struct exp *)np)->e_xvalue;
-			if (yylval < 0) {
-				yylval = -yylval;
-				yylval--;
-				off = -1;
-				if (lgensym[yylval] == 1)
-					yyerror("Reference to undefined local label %db", yylval);
-			} else {
-				yylval--;
-				genref[yylval] = 1;
-			}
-			sprintf(yytext, "L%d\001%d", yylval, lgensym[yylval] + off);
-			yylval = np = (int)*lookup(passno == 1);
-			lastnam = (struct symtab *)np;
+	locxp->e_number = Znumber;
+	locxp->e_number.num_tag = TYPL;
+
+	switch(val){
+	case BFINT:
+		yylval = ((struct exp *)np)->e_xvalue;
+		if (yylval < 0) {
+			yylval = -yylval;
+			yylval--;
+			off = -1;
+			if (lgensym[yylval] == 1)
+				yyerror("Reference to undefined local label %db", yylval);
+		} else {
+			yylval--;
+			genref[yylval] = 1;
 		}
+		(void)sprintf(yytext, "L%d\001%d", yylval, lgensym[yylval] + off);
+		yylval = np = (int)*lookup(passno == 1);
+		lastnam = (struct symtab *)np;
+		/* FALLTHROUGH */
+	case NAME:
 		exprisname++;
 		locxp->e_xtype = ((struct symtab *)np)->s_type;
 		if (( ((struct symtab *)np)->s_type&XTYPE)==XUNDEF) { /*forward*/
@@ -307,11 +340,19 @@ struct exp *yukkyexpr(val, np)
 			locxp->e_xvalue = ((struct symtab *)np)->s_value;
 			locxp->e_xname = NULL;
 		}
-	} else {	/*INSTn or INST0 or REG*/
+		break;
+	default:
+		yyerror("Internal Error in yukkyexpr");
+		/* FALLTHROUGH */
+
+	case INSTn:
+	case INST0:
+	case REG:
 		locxp->e_xtype = XABS;
 		locxp->e_xvalue = ( (int)np) & 0xFF;
 		locxp->e_xloc = 0;
 		locxp->e_xname = NULL;
+		break;
 	}
 
 	return(locxp);
@@ -324,87 +365,91 @@ struct Tok_Desc{
 	int		tok_which;
 	char		*tok_name;
 } tok_desc[] = {
-	FIRSTTOKEN,	"firsttoken",	/* 0 */
-	ISPACE,		"ispace", 	/* 1 */
-	IBYTE,		"ibyte", 	/* 2 */
-	IWORD,		"iword", 	/* 3 */
-	IINT,		"iint", 	/* 4 */
-	ILONG,		"ilong", 	/* 5 */
-	IDATA,		"idata", 	/* 6 */
-	IGLOBAL,	"iglobal", 	/* 7 */
-	ISET,		"iset", 	/* 8 */
-	ITEXT,		"itext", 	/* 9 */
-	ICOMM,		"icomm", 	/* 10 */
-	ILCOMM,		"ilcomm", 	/* 11 */
-	IFLOAT,		"ifloat", 	/* 12 */
-	IDOUBLE,	"idouble", 	/* 13 */
-	IORG,		"iorg", 	/* 14 */
-	IASCII,		"iascii", 	/* 15 */
-	IASCIZ,		"iasciz", 	/* 16 */
-	ILSYM,		"ilsym", 	/* 17 */
-	IFILE,		"ifile", 	/* 18 */
-	ILINENO,	"ilineno", 	/* 19 */
-	IABORT,		"iabort", 	/* 20 */
-	ISTAB,		"istab", 	/* 23 */
-	ISTABSTR,	"istabstr", 	/* 24 */
-	ISTABNONE,	"istabnone", 	/* 25 */
-	ISTABDOT,	"istabdot", 	/* 26 */
-	IJXXX,		"ijxxx", 	/* 27 */
-	IALIGN,		"ialign", 	/* 28 */
-	INST0,		"inst0", 	/* 29 */
-	INSTn,		"instn", 	/* 30 */
-	BFINT,		"bfint",	/* 31 */
-	PARSEEOF,	"parseeof",	/* 32 */
-	ILINESKIP,	"ilineskip",	/* 33 */
-	VOID,		"void",		/* 34 */
-	SKIP,		"skip",		/* 35 */
-	INT,		"int",		/* 36 */
-	FLTNUM,		"fltnum",	/* 37 */
-	NAME,		"name",		/* 38 */
-	STRING,		"string",	/* 39 */
-	QUAD,		"quad",		/* 40 */
-	SIZESPEC,	"sizespec", 	/* 41 */
-	REG,		"reg",		/* 42 */
-	MUL,		"mul",		/* 43 */
-	LITOP,		"litop",	/* 44 */
-	LP,		"lp",		/* 45 */
-	MP,		"mp",		/* 46 */
-	NEEDSBUF,	"needsbuf",	/* 48 */	
-	REGOP,		"regop",	/* 49 */
-	NL,		"nl",		/* 50 */
-	SCANEOF,	"scaneof",	/* 51 */
-	BADCHAR,	"badchar",	/* 52 */
-	SP,		"sp",		/* 53 */
-	ALPH,		"alph",		/* 54 */
-	DIG,		"dig",		/* 55 */
-	SQ,		"sq",		/* 56 */
-	DQ,		"dq",		/* 57 */
-	SH,		"sh",		/* 58 */
-	LSH,		"lsh",		/* 59 */
-	RSH,		"rsh",		/* 60 */
-	MINUS,		"minus",	/* 61 */
-	SIZEQUOTE,	"sizequote",	/* 62 */
-	XOR,		"xor",		/* 64 */
-	DIV,		"div",		/* 65 */
-	SEMI,		"semi",		/* 66 */
-	COLON,		"colon",	/* 67 */
-	PLUS,		"plus",		/* 68 */
-	IOR,		"ior",		/* 69 */ 
-	AND,		"and",		/* 70 */
-	TILDE,		"tilde",	/* 71 */
-	ORNOT,		"ornot",	/* 72 */
-	CM,		"cm",		/* 73 */
-	LB,		"lb",		/* 74 */
-	RB,		"rb",		/* 75 */
-	RP,		"rp",		/* 76 */
-	LASTTOKEN,	"lasttoken"	/* 80 */
+	FIRSTTOKEN,	"firsttoken",
+	ISPACE,		"ispace", 
+	IBYTE,		"ibyte", 
+	IWORD,		"iword", 
+	IINT,		"iint", 
+	ILONG,		"ilong", 
+	IQUAD,		"quad",	
+	IOCTA,		"octa",	
+	IDATA,		"idata", 
+	IGLOBAL,	"iglobal", 
+	ISET,		"iset", 
+	ITEXT,		"itext", 
+	ICOMM,		"icomm", 
+	ILCOMM,		"ilcomm", 
+	IFFLOAT,	"iffloat", 
+	IDFLOAT,	"idfloat", 
+	IGFLOAT,	"igfloat", 
+	IHFLOAT,	"ihfloat", 
+	IORG,		"iorg", 
+	IASCII,		"iascii", 
+	IASCIZ,		"iasciz", 
+	ILSYM,		"ilsym", 
+	IFILE,		"ifile", 
+	ILINENO,	"ilineno", 
+	IABORT,		"iabort", 
+	ISTAB,		"istab", 
+	ISTABSTR,	"istabstr", 
+	ISTABNONE,	"istabnone", 
+	ISTABDOT,	"istabdot", 
+	IJXXX,		"ijxxx", 
+	IALIGN,		"ialign", 
+	INST0,		"inst0", 
+	INSTn,		"instn", 
+	BFINT,		"bfint",
+	PARSEEOF,	"parseeof",
+	ILINESKIP,	"ilineskip",
+	VOID,		"void",	
+	SKIP,		"skip",	
+	INT,		"int",	
+	BIGNUM,		"bignum",
+	NAME,		"name",	
+	STRING,		"string",
+	SIZESPEC,	"sizespec", 
+	REG,		"reg",	
+	MUL,		"mul",	
+	LITOP,		"litop",
+	LP,		"lp",	
+	MP,		"mp",	
+	NEEDSBUF,	"needsbuf",
+	REGOP,		"regop",
+	NL,		"nl",	
+	SCANEOF,	"scaneof",
+	BADCHAR,	"badchar",
+	SP,		"sp",	
+	ALPH,		"alph",	
+	DIG,		"dig",	
+	SQ,		"sq",	
+	DQ,		"dq",	
+	SH,		"sh",	
+	LSH,		"lsh",	
+	RSH,		"rsh",	
+	MINUS,		"minus",
+	SIZEQUOTE,	"sizequote",
+	XOR,		"xor",	
+	DIV,		"div",	
+	SEMI,		"semi",	
+	COLON,		"colon",
+	PLUS,		"plus",	
+	IOR,		"ior",	
+	AND,		"and",	
+	TILDE,		"tilde",
+	ORNOT,		"ornot",
+	CM,		"cm",	
+	LB,		"lb",	
+	RB,		"rb",	
+	RP,		"rp",	
+	LASTTOKEN,	"lasttoken"
 };
 /*
  *	turn a token type into a string
  */
-static	int	fixed = 0;
 char *tok_to_name(token)
 {
+	static	int	fixed = 0;
+
 	if (!fixed){
 		int	i;
 		for (i = FIRSTTOKEN; i <= LASTTOKEN; i++)

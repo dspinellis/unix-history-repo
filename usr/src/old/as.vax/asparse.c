@@ -1,10 +1,15 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asparse.c 4.7 %G%";
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ */
+#ifndef lint
+static char sccsid[] = "@(#)asparse.c 4.8 %G%";
+#endif not lint
+
 #include <stdio.h>
 #include "as.h"
-#include "asexpr.h"
 #include "asscan.h"
 #include "assyms.h"
+#include "asexpr.h"
 
 int	lgensym[10];
 char	genref[10];
@@ -26,6 +31,8 @@ int	droppedLP;		/*one is analyzing an expression beginning with*/
 
 char	yytext[NCPS+2];		/*the lexical image*/
 int	yylval;			/*the lexical value; sloppy typing*/
+struct	Opcode		yyopcode;	/* lexical value for an opcode */
+Bignum	yybignum;		/* lexical value for a big number */
 /*
  *	Expression and argument managers
  */
@@ -39,46 +46,47 @@ char	tokensets[(LASTTOKEN) - (FIRSTTOKEN) + 1];
 
 static	char	UDotsname[32];	/*name of the assembly source*/
 
-int	yyparse()
+yyparse()
 {
-	register	struct	exp	*locxp;
-			/*
-			 *	loc1xp and ptrloc1xp are used in the
-			 * 	expression lookahead
-			 */
-			struct	exp	*loc1xp;	/*must be non register*/
-			struct	exp	**ptrloc1xp = & loc1xp;
-			struct	exp	*pval;		/*hacking expr:expr*/
+	reg	struct	exp	*locxp;
+		/*
+		 *	loc1xp and ptrloc1xp are used in the
+		 * 	expression lookahead
+		 */
+		struct	exp	*loc1xp;	/*must be non register*/
+		struct	exp	**ptrloc1xp = & loc1xp;
+		struct	exp	*pval;		/*hacking expr:expr*/
 
-	register	struct	symtab	*np;
-	register	int		argcnt;
+	reg	struct	symtab	*np;
+	reg	int		argcnt;
 
-	register	int		val;		/*what yylex gives*/
-	register	int		auxval;		/*saves val*/
+	reg	inttoktype	val;		/*what yylex gives*/
+	reg	inttoktype	auxval;		/*saves val*/
 
-	register	struct 	arg	*ap;		/*first free argument*/
+	reg	struct 	arg	*ap;		/*first free argument*/
 
-			struct	symtab	*p;
-	register	struct	symtab	*stpt;
+	reg	struct	symtab	*p;
+	reg	struct	symtab	*stpt;
 
-			struct	strdesc	*stringp;	/*handles string lists*/
+		struct	strdesc	*stringp;	/*handles string lists*/
 
-			int		regno;		/*handles arguments*/
-			int		*ptrregno = &regno;
-			int		sawmul;		/*saw * */
-			int		sawindex;	/*saw [rn]*/
-			int		sawsize;
-			int		seg_type; 	/*the kind of segment: data or text*/
-			int		seg_number;	/*the segment number*/
-			int		space_value;	/*how much .space needs*/
-			int		fill_rep;	/*how many reps for .fill */
-			int		fill_size;	/*how many bytes for .fill */
+		int	regno;		/*handles arguments*/
+		int	*ptrregno = &regno;
+		int	sawmul;		/*saw * */
+		int	sawindex;	/*saw [rn]*/
+		int	sawsize;
+		int	seg_type; 	/*the kind of segment: data or text*/
+		int	seg_number;	/*the segment number*/
+		int	space_value;	/*how much .space needs*/
+		int	fill_rep;	/*how many reps for .fill */
+		int	fill_size;	/*how many bytes for .fill */
 
-			int		field_width;	/*how wide a field is to be*/
-			int		field_value;	/*the value to stuff in a field*/
-			char		*stabname;	/*name of stab dealing with*/
-			ptrall		stabstart;	/*where the stab starts in the buffer*/
-			int		reloc_how;	/* how to relocate expressions */
+		int	field_width;	/*how wide a field is to be*/
+		int	field_value;	/*the value to stuff in a field*/
+		char	*stabname;	/*name of stab dealing with*/
+		ptrall	stabstart;	/*where the stab starts in the buffer*/
+		int	reloc_how;	/* how to relocate expressions */
+		int	toconv;		/* how to convert bignums */
 
 	xp = explist;
 	ap = arglist;
@@ -91,13 +99,16 @@ int	yyparse()
 		if (val == INT) {
 			int i = ((struct exp *)yylval)->e_xvalue;
 			shift;
-			if (val != COLON)
-				goto nocolon;
+			if (val != COLON){
+				yyerror("Local label %d is not followed by a ':' for a label definition",
+					i);
+				goto  errorfix;
+			}
 			if (i < 0 || i > 9) {
 				yyerror("Local labels are 0-9");
 				goto errorfix;
 			}
-			sprintf(yytext, "L%d\001%d", i, lgensym[i]);
+			(void)sprintf(yytext, "L%d\001%d", i, lgensym[i]);
 			lgensym[i]++;
 			genref[i] = 0;
 			yylval = (int)*lookup(passno == 1);
@@ -117,7 +128,6 @@ int	yyparse()
 			}
 			np = (struct symtab *)yylval;
 			shiftover(NAME);
-nocolon:
 			if (val != COLON) {
 #ifdef FLEXNAMES
 				yyerror("\"%s\" is not followed by a ':' for a label definition",
@@ -194,7 +204,7 @@ restlab:
 	break;
 
    case PARSEEOF:
-	tokptr -= sizeof(toktype);
+	tokptr -= sizeof(bytetoktype);
 	*tokptr++ = VOID;
 	tokptr[1] = VOID;
 	tokptr[2] = PARSEEOF;
@@ -254,10 +264,10 @@ restlab:
 		np->s_tag = OBSOLETE;	/*invalidate original */
 		nforgotten++;
 		np = stpt;
-		if (locxp->e_xtype != XABS) 
-			("Illegal lsym");
-		np->s_value=locxp->e_xvalue;
-		np->s_type=XABS;
+		if ( (locxp->e_xtype & XTYPE) != XABS)
+			yyerror("Illegal second argument to lsym");
+		np->s_value = locxp->e_xvalue;
+		np->s_type = XABS;
 		np->s_tag = ILSYM;
 	}
 	break;
@@ -282,7 +292,8 @@ restlab:
 		seg_number = 0;
 		seg_type = -seg_type;
 	} else {
-		if (locxp->e_xtype != XABS || (seg_number=locxp->e_xvalue) >= NLOC) {
+		if (   ((locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
+		    || (seg_number = locxp->e_xvalue) >= NLOC) {
 			yyerror("illegal location counter");
 			seg_number = 0;
 		}
@@ -320,12 +331,10 @@ restlab:
 	 *	outexpr:   <expr> | <expr> : <expr>
 	 */
    case IBYTE:	curlen = NBPW/4; goto elist;
-
-   case IINT:
+   case IWORD:	curlen = NBPW/2; goto elist;
+   case IINT:	curlen = NBPW;   goto elist;
    case ILONG:	curlen = NBPW;   goto elist;
 
-   case IWORD:
-	curlen = NBPW/2;
    elist:
 	seg_type = val;
 	shift;
@@ -348,12 +357,11 @@ restlab:
 		if (val == COLON){
 			shiftover(COLON);
 			expr(pval, val);
-			if (locxp->e_xtype != XABS)
-			  yyerror("Width not absolute");
+			if ((locxp->e_xtype & XTYPE) != XABS) /* tekmdp */
+				yyerror("Width not absolute");
 			field_width = locxp->e_xvalue;
 			locxp = pval;
-			if (bitoff + field_width >
-			  curlen)
+			if (bitoff + field_width > curlen)
 				flushfield(curlen);
 			if (field_width > curlen)
 				yyerror("Expression crosses field boundary");
@@ -362,7 +370,7 @@ restlab:
 			flushfield(curlen);
 		}
 
-		 if ((locxp->e_xtype&XTYPE)!=XABS) {
+		if ((locxp->e_xtype & XTYPE) != XABS) {
 			if (bitoff)
 				yyerror("Illegal relocation in field");
 			switch(curlen){
@@ -380,10 +388,11 @@ restlab:
 			bitfield |= field_value << bitoff;
 			bitoff += field_width;
 		}
-		if ( auxval = (val == CM)) shift;
 		xp = explist;
+		if (auxval = (val == CM))
+			shift;
 	    } while (auxval);
-	}	/*existed an expression  at all*/
+	}	/* there existed an expression at all */
 
 	flushfield(curlen);
 	if ( ( curlen == NBPW/4) && bitoff)
@@ -394,7 +403,7 @@ restlab:
    case ISPACE: 	/* .space <expr> */
 	shift;
 	expr(locxp, val);
-	if (locxp->e_xtype != XABS)
+	if ((locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
 		yyerror("Space size not absolute");
 	space_value = locxp->e_xvalue;
   ospace:
@@ -430,26 +439,26 @@ restlab:
    case	IFILL:
 	shift;
 	expr(locxp, val);
-	if (locxp->e_xtype != XABS)
+	if ( (locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
 		yyerror("Fill repetition count not absolute");
 	fill_rep = locxp->e_xvalue;
 	shiftover(CM);
 	expr(locxp, val);
-	if (locxp->e_xtype != XABS)
+	if ( (locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
 		yyerror("Fill size not absolute");
 	fill_size = locxp->e_xvalue;
 	if (fill_size <= 0 || fill_size > 8)
 		yyerror("Fill count not in in 1..8");
 	shiftover(CM);
 	expr(locxp, val);
-	if (passno == 2 && locxp->e_xtype != XABS)
-			yyerror("Fill value not absolute");
+	if (passno == 2 && (locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
+		yyerror("Fill value not absolute");
 	flushfield(NBPW/4);
 	if (passno == 1) {
-		locxp->e_xvalue += fill_rep * fill_size;
+		dotp->e_xvalue += fill_rep * fill_size;
 	} else {
 		while(fill_rep-- > 0)
-			bwrite(&locxp->e_xvalue, fill_size, txtfil);
+			bwrite((char *)&locxp->e_xvalue, fill_size, txtfil);
 	}
 	break;
 #endif UNIX
@@ -474,7 +483,7 @@ restlab:
 #endif UNIX
 #ifdef VMS
 		{
-			register int i;
+			reg int i;
 			for (i=0; i < stringp->str_lg; i++){
 			  dotp->e_xvalue += 1;
 			    if (passno==2){
@@ -512,7 +521,7 @@ restlab:
 	shift;
 	expr(locxp, val);
 
-	if (locxp->e_xtype==XABS)
+	if ((locxp->e_xtype & XTYPE) == XABS)	/* tekmdp */
 		orgwarn++;
 	else if ((locxp->e_xtype & ~XXTRN) != dotp->e_xtype)
 		yyerror("Illegal expression to set origin");
@@ -563,7 +572,7 @@ restlab:
 	 */
 	stabstart = tokptr;
 	(char *)stabstart -= sizeof(struct symtab *);
-	(char *)stabstart -= sizeof(toktype);
+	(char *)stabstart -= sizeof(bytetoktype);
 	shift;
 	for (argcnt = 0; argcnt < NCPS; argcnt++){
 		expr(locxp, val);
@@ -580,7 +589,7 @@ restlab:
   tailstab:
 	expr(locxp, val);
 	if (! (locxp->e_xvalue & STABTYPS)){
-		yyerror("Invalid type in %s",stabname);
+		yyerror("Invalid type in %s", stabname);
 		goto errorfix;
 	}
 	stpt->s_ptype = locxp->e_xvalue;
@@ -639,7 +648,7 @@ restlab:
 	 *	one.  Therefore, to point to the next token
 	 *	after the end of this stab, just back up one..
 	 */
-	buildskip(stabstart, (char *)tokptr - sizeof(toktype));
+	buildskip(stabstart, (bytetoktype *)tokptr - sizeof(bytetoktype));
 	break;	/*end of the .stab*/
 
    case ISTABDOT:	
@@ -674,7 +683,7 @@ restlab:
 		 *	tokptr points to the next token,
 		 *	build the skip up to this
 		 */
-		buildskip(stabstart, (toktype *)tokptr - sizeof(toktype));
+		buildskip(stabstart, (bytetoktype *)tokptr - sizeof(bytetoktype));
 	}
 	/*
 	 *	pass 1:	Assign a good guess for its position
@@ -694,8 +703,8 @@ restlab:
 	if (passno == 2) goto errorfix;
 	stpt = (struct symtab *)yylval;
 	stabstart = tokptr;
-	(char *)stabstart -= sizeof(struct symtab *);
-	(char *)stabstart -= sizeof(toktype);
+	(bytetoktype *)stabstart -= sizeof(struct symtab *);
+	(bytetoktype *)stabstart -= sizeof(bytetoktype);
 	shift;
 	if (auxval == ISTABSTR){
 		stringp = (struct strdesc *)yylval;
@@ -720,7 +729,7 @@ restlab:
 	goto tailstab;
 	break;
 
-   case ICOMM:	/* .comm  <name> , <expr> */
+   case ICOMM:		/* .comm  <name> , <expr> */
    case ILCOMM: 	/* .lcomm <name> , <expr> */
 	auxval = val;
 	shift;
@@ -729,9 +738,9 @@ restlab:
 	shiftover(CM);
 	expr(locxp, val);
 
-	if (locxp->e_xtype != XABS)
+	if ( (locxp->e_xtype & XTYPE) != XABS)	/* tekmdp */
 		yyerror("comm size not absolute");
-	if (passno==1 && (np->s_type&XTYPE)!=XUNDEF)
+	if (passno == 1 && (np->s_type&XTYPE) != XUNDEF)
 #ifdef FLEXNAMES
 		yyerror("Redefinition of %s",
 #else not FLEXNAMES
@@ -758,14 +767,13 @@ restlab:
 	break;
 
    case INST0: 		/* instructions w/o arguments*/
-	insout(yylval, (struct arg *)0, 0);
+	insout(yyopcode, (struct arg *)0, 0);
 	shift;	
 	break;
 
    case INSTn:		/* instructions with arguments*/
    case IJXXX: 		/* UNIX style jump instructions */
 	auxval = val;
-	seg_type = yylval;
 	/*
 	 *	Code to process an argument list
 	 */
@@ -894,7 +902,8 @@ restlab:
 			if (ap->a_atype == ABASE) {
 				ap->a_atype = ADISP;
 				xp->e_xtype = XABS;
-				xp->e_xvalue = 0;
+				xp->e_number = Znumber;
+				xp->e_number.num_tag = TYPL;
 				xp->e_xloc = 0;
 				ap->a_xp = xp++;
 			}
@@ -915,66 +924,51 @@ restlab:
 		goto errorfix;
 	}
 
-	insout(seg_type, arglist,
+	insout(yyopcode, arglist,
 		auxval == INSTn ? argcnt : - argcnt);
 	break;
 
-   case IFLOAT:	curlen = 4;	goto floatlist;
-   case IQUAD:
-   case IDOUBLE: 
-	curlen = 8;
-      floatlist:	
-	/*
-	 *	eat a list of floating point numbers
-	 */
-	shift;
-	if (val == FLTNUM){
-		/* KLS MOD */
-		float flocal;
-		do{
-			if (val == CM) shift;
-			if (val != FLTNUM) {
-			  ERROR("floating number expected");
-			}
-			dotp->e_xvalue += curlen;
-#ifdef UNIX
-			if (passno == 2) {
-			  if(curlen == 8)
-			   bwrite((char *)&(((union Double *)yylval)->dvalue),
-				curlen, txtfil);
-			  else  {
-			   flocal = ((union Double *)yylval)->dvalue;
-			   bwrite((char *)&flocal, curlen, txtfil);
-			  }
-			}
-#endif UNIX
+   case IQUAD:		toconv = TYPQ;	goto bignumlist;
+   case IOCTA:		toconv = TYPO;	goto bignumlist;
 
-#ifdef VMS
-			if (passno == 2) {
-			   puchar(vms_obj_ptr,-4);
-			   pulong(vms_obj_ptr,
-			    ((struct exp *)yylval)
-				->doub_MSW);
-			   if (curlen==8) {
-			    puchar(vms_obj_ptr,-4);
-			    pulong(vms_obj_ptr,
-			    ((struct exp *)yylval)
-				->doub_LSW);
-			   }
-			   if((vms_obj_ptr-sobuf) > 400) {
-			    write(objfil,sobuf,vms_obj_ptr-sobuf);
-			    vms_obj_ptr = sobuf + 1;
-			   }
+   case IFFLOAT:	toconv = TYPF;	goto bignumlist;
+   case IDFLOAT:	toconv = TYPD;	goto bignumlist;
+   case IGFLOAT:	toconv = TYPG;	goto bignumlist;
+   case IHFLOAT:	toconv = TYPH;	goto bignumlist;
+   bignumlist:	
+	/*
+	 *	eat a list of non 32 bit numbers.
+	 *	IQUAD and IOCTA can, possibly, return
+	 *	INT's, if the numbers are "small".
+	 *
+	 *	The value of the numbers is coming back
+	 *	as an expression, NOT in yybignum.
+	 */
+	shift;	/* over the opener */
+	if ((val == BIGNUM) || (val == INT)){
+		do{
+			if ((val != BIGNUM) && (val != INT)){
+				ERROR(ty_float[toconv]
+				   ? "floating number expected"
+				   : "integer number expected" );
 			}
-#endif VMS
-			shift;
+			dotp->e_xvalue += ty_nbyte[toconv];
+			if (passno == 2){
+				bignumwrite(
+					((struct exp *)yylval)->e_number,
+					toconv);
+			}
 			xp = explist;
-		} while (val == CM);
+			shift;		/* over this number */
+			if (auxval = (val == CM))
+				shift;	/* over the comma */
+		} while (auxval);	/* as long as there are commas */
 	}
 	break;
+	/* end of the case for initialized big numbers */
     }	/*end of the switch for looking at each reserved word*/
 
-     continue;
+	continue;
 
    errorfix: 
 	/*
@@ -1007,19 +1001,19 @@ restlab:
  *	the digit, the scanner wouldn't have recognized it, so we
  *	hack it out here.
  */
-int funnyreg(val, regnoback)		/*what the read head will sit on*/
-	int	val;			/*what the read head is sitting on*/
+inttoktype funnyreg(val, regnoback)	/*what the read head will sit on*/
+	inttoktype	val;		/*what the read head is sitting on*/
 	int	*regnoback;		/*call by return*/
 {
-	register	struct	exp *locxp;
-			struct	exp *loc1xp;
-			struct	exp **ptrloc1xp = & loc1xp;
+	reg	struct	exp *locxp;
+		struct	exp *loc1xp;
+		struct	exp **ptrloc1xp = & loc1xp;
 
 	expr(locxp, val);	/*and leave the current read head with value*/
 	if ( (passno == 2) &&
-	    (   locxp->e_xtype & XTYPE != XABS
-	     || locxp->e_xvalue < 0
-	     || locxp->e_xvalue >= 16 
+	    (   (locxp->e_xtype & XTYPE) != XABS
+	     || (locxp->e_xvalue < 0)
+	     || (locxp->e_xvalue >= 16)
 	    )
 	  ){
 		yyerror("Illegal register");
@@ -1036,28 +1030,29 @@ yyerror(s, a1, a2,a3,a4,a5)
 
 #define	sink stdout
 
-	if (anyerrs == 0 && ! silent) 
+	if (anyerrs == 0 && anywarnings == 0 && ! silent) 
 		fprintf(sink, "Assembler:\n");
 	anyerrs++;
-	if (silent) return;
-	
+	if (silent)
+		return;
 	fprintf(sink, "\"%s\", line %d: ", dotsname, lineno);
 	fprintf(sink, s, a1, a2,a3,a4,a5);
 	fprintf(sink, "\n");
+#undef sink
 }
 
 /*VARARGS1*/
 yywarning(s, a1, a2,a3,a4,a5)
 	char	*s;
 {
-
 #define	sink stdout
-
-	if (anyerrs == 0 && ! silent) 
+	if (anyerrs == 0 && anywarnings == 0 && ! silent) 
 		fprintf(sink, "Assembler:\n");
-	if (silent) return;
-	
+	anywarnings++;
+	if (silent)
+		return;
 	fprintf(sink, "\"%s\", line %d: WARNING: ", dotsname, lineno);
 	fprintf(sink, s, a1, a2,a3,a4,a5);
 	fprintf(sink, "\n");
+#undef sink
 }

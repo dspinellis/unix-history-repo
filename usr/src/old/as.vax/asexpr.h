@@ -1,5 +1,7 @@
-/* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)asexpr.h 4.2 %G%" */
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ *	@(#)asexpr.h 4.3 %G%
+ */
 /*
  *	Definitions to parse tokens
  */
@@ -54,6 +56,10 @@ extern	char	tokensets[(LASTTOKEN) - (FIRSTTOKEN) + 1];
 #define	MULOPS		0100	/*LSH, RSH, MUL, DIV, TILDE*/
 
 #define	INTOKSET(val, set)	(tokensets[(val)] & (set) )
+
+inttoktype	exprparse();
+inttoktype	funnyreg();
+inttoktype	yylex();
 
 #define expr(xp, val) { \
 	if ( (!INTOKSET(val, EBEGOPS)) && (!INTOKSET(peekahead, ADDOPS+BOOLOPS+MULOPS))) { \

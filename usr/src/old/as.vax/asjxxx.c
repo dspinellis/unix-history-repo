@@ -1,5 +1,10 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asjxxx.c 4.5 %G%";
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ */
+#ifndef lint
+static char sccsid[] = "@(#)asjxxx.c 4.6 %G%";
+#endif not lint
+
 #include	<stdio.h>
 #include	"as.h"
 #include	"assyms.h"
@@ -42,8 +47,10 @@ initijxxx()
 /*
  *	Handle jxxx instructions
  */
-ijxout(op,ap,nact)
-	struct arg *ap;
+ijxout(opcode, ap, nact)
+	struct	Opcode	opcode;
+	struct	arg	*ap;
+	int	nact;
 {
 	if (passno == 1){
 		/*
@@ -56,11 +63,11 @@ ijxout(op,ap,nact)
 		/*
 		 *	We assume the MINIMAL length
 		 */
-		putins(op,ap,nact); 
+		putins(opcode, ap, nact); 
 		jumpfrom = lastjxxx;
 		jumpfrom->s_tag = JXACTIVE;
 		jumpfrom->s_jxbump = 0;
-		if (op == JBR)
+		if (opcode.Op_popcode == JBR)
 			jumpfrom->s_jxfear = jbrfsize;
 		else
 			jumpfrom->s_jxfear = jxxxfsize;
@@ -80,10 +87,11 @@ ijxout(op,ap,nact)
 		/*
 		 *	READ THIS AFTER LOOKING AT jxxxfix()
 		 */
-		register long		oxvalue;
-		register struct	exp 	*xp; 
-		register struct symtab	*tunnel;
-		register struct arg	*aplast;
+		reg	long		oxvalue;
+		reg	struct	exp 	*xp; 
+		reg	struct	symtab	*tunnel;
+		reg	struct	arg	*aplast;
+			struct	Opcode	nopcode;
 
 		aplast = ap + nact - 1;
 		xp = aplast->a_xp;
@@ -97,19 +105,26 @@ ijxout(op,ap,nact)
 							/*non bumped branch byteis only 2 back*/
 		}
 		if (lastjxxx->s_jxbump == 0){	/*wasn't bumped, so is short form*/
-			putins(op, ap, nact);
+			putins(opcode, ap, nact);
 		} else {
-			if (op != JBR){	/*branch reverse conditional byte over 
-					  branch unconditional word*/
+			if (opcode.Op_popcode != JBR){
+				/*
+				 *	branch reverse conditional byte over
+				 *	branch unconditional word
+				 */
 				oxvalue = xp->e_xvalue;
 				xp->e_xvalue = lastjxxx->s_value;
-				putins(op^1, ap, nact);
+				nopcode = opcode;
+				nopcode.Op_popcode ^= 1;
+				putins(nopcode, ap, nact);
 				xp->e_xvalue = oxvalue;
 			}
-			putins(jxxxJUMP ? JMP : BRW, aplast, 1);
+			nopcode.Op_eopcode = CORE;
+			nopcode.Op_popcode = jxxxJUMP ? JMP : BRW;
+			putins(nopcode, aplast, 1);
 		}
 	}
-}	/*end of ijxout*/
+}
 
 jalign(xp, sp)
 	register struct exp *xp;
@@ -134,7 +149,7 @@ jalign(xp, sp)
 	 *	So, ridiculous aligns are caught here and converted
 	 *	to a .align 2, if possible.
 	 */
-	if (   (xp->e_xtype != XABS)
+	if (   ( (xp->e_xtype & XTYPE) != XABS)
 	    || (xp->e_xvalue < 0)
 	    || (xp->e_xvalue > 16)
 	    ) {
@@ -143,10 +158,10 @@ jalign(xp, sp)
 	}
 	if (xp->e_xvalue > 2){
 		if (passno == 1){
-		  yywarning(".align %d in any segment is NOT preserved by the loader",
-			xp->e_xvalue);
-		  yywarning(".align %d converted to .align 2",
-			xp->e_xvalue);
+			yywarning(".align %d is NOT preserved by the loader",
+				xp->e_xvalue);
+			yywarning(".align %d converted to .align 2",
+				xp->e_xvalue);
 		}
 		xp->e_xvalue = 2;
 	}
@@ -174,16 +189,8 @@ jalign(xp, sp)
 		njxxx++;
 	} else {
 		mask = (1 << xp->e_xvalue) - 1;
-		while (dotp->e_xvalue & mask){
-#ifdef UNIX
-			outb(0);
-#endif UNIX
-#ifdef VMS
-			*vms_obj_ptr++ = -1;
-			*vms_obj_ptr++ = 0;
-			dotp->e_xvalue += 1;
-#endif VMS
-		}
+		while (dotp->e_xvalue & mask)
+			Outb(0);
 	}
 }
 
@@ -214,6 +221,9 @@ jxxxfix()
 	     *	Do a lazy topological sort.
 	     */
 	    for (topono = 1, nchange = 1; nchange != 0; topono++){
+#ifdef lint
+		topno = topno;
+#endif lint
 #ifdef DEBUG
 		if (debug)
 			printf("\nSegment %d, topo iteration %d\n",

@@ -1,16 +1,21 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asmain.c 4.8 %G%";
+/*
+ *	Copyright (c) 1982 Regents of the University of California
+ */
+#ifndef lint
+static char sccsid[] = "@(#)asmain.c 4.9 %G%";
+#endif not lint
+
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
 
 #include "as.h"
 #include "assyms.h"
-#include "asexpr.h"
 #include "asscan.h"
+#include "asexpr.h"
 
 #ifdef UNIX
-#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.8"
+#define	unix_lang_name "VAX/UNIX Assembler V%G% 4.9"
 #endif
 
 #ifdef VMS
@@ -31,10 +36,15 @@ int	silent = 0;	/*don't complain about any errors*/
 int	savelabels = 0;	/*write the labels to the a.out file*/
 int 	d124 = 4;	/*default allocate 4 bytes for unknown pointers*/
 int	anyerrs = 0;	/*no errors yet*/
+int	anywarnings=0;	/*no warnings yet*/
 int	orgwarn = 0;	/*Bad origins*/
 int	passno = 1;	/* current pass*/
 int	jxxxJUMP = 0;	/* in jxxxes that branch too far, use jmp instead of brw */
 int	readonlydata = 0;	/* initialzed data -> text space */
+
+int	nGHnumbers = 0;		/* GH numbers used */
+int	nGHopcodes = 0;		/* GH opcodes used */
+int	nnewopcodes = 0;	/* new opcodes used */
 
 #ifdef DEBUG
 int 	debug = 0;
@@ -170,9 +180,10 @@ main(argc, argv)
 	int	argc;
 	char 	**argv;
 {
+	char	*sbrk();
 
 	tmpn1[0] = 0;
-	endcore = (char *)sbrk(0);
+	endcore = sbrk(0);
 
 	argprocess(argc, argv);		/* process argument lists */
 	if (anyerrs) exit(1);
@@ -206,6 +217,16 @@ main(argc, argv)
 
 	if (anyerrs == 0 && orgwarn)
 		yyerror("Caution: absolute origins.\n");
+
+	if (nGHnumbers)
+		yywarning("Caution: G or H format floating point numbers");
+	if (nGHopcodes)
+		yywarning("Caution: G or H format floating point operators");
+	if (nnewopcodes)
+		yywarning("Caution: New Opcodes");
+	if (nGHnumbers || nGHopcodes || nnewopcodes)
+		yywarning("These are not defined for all implementations of the VAX architecture.\n");
+
 	exit(anyerrs != 0);
 }	/*end of UNIX main*/
 
@@ -324,8 +345,6 @@ zeroorigins()
 		usedot[NLOC + locindex].e_xtype = XDATA;
 		usedot[locindex].e_xvalue = 0;
 		usedot[NLOC + locindex].e_xvalue = 0;
-		usedot[locindex].e_yvalue = 0;
-		usedot[NLOC + locindex].e_yvalue = 0;
 	}
 }
 
@@ -345,8 +364,8 @@ i_pass1()
 		strcat(tmpn1, tmpdirprefix);
 		if (tmpdirprefix[strlen(tmpdirprefix)-1] != '/')
 			strcat(tmpn1, "/");
-		strcat(tmpn1, TMP_SUFFIX);
-		mktemp(tmpn1);
+		(void)strcat(tmpn1, TMP_SUFFIX);
+		(void)mktemp(tmpn1);
 		tmpfil = fopen(tmpn1, "w");
 		if (tmpfil==NULL) {
 		  yyerror("Bad pass 1 temporary file for writing %s", tmpn1);
@@ -581,7 +600,7 @@ reloc_syms()
 
 fix_a_out()
 {
-	if (lseek(a_out_file->_file, 0L, 0) < 0)
+	if (lseek(a_out_file->_file, 0L, 0) < 0L)
 		yyerror("Reposition for header rewrite fails");
 	if (write(a_out_file->_file, (char *)&hdr, sizeof (struct exec)) < 0)
 		yyerror("Rewrite of header fails");

@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assizetab.c 4.2 %G%";
+static char sccsid[] = "@(#)assizetab.c 4.3 %G%";
 #endif not lint
 
 #ifdef AS
