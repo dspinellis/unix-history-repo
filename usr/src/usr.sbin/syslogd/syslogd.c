@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #define COMPAT		/* include 4.3 Alpha compatibility */
@@ -241,7 +241,8 @@ main(argc, argv)
 		setlinebuf(stdout);
 
 	(void) signal(SIGTERM, die);
-	(void) signal(SIGINT, die);
+	(void) signal(SIGINT, Debug ? die : SIG_IGN);
+	(void) signal(SIGQUIT, Debug ? die : SIG_IGN);
 	(void) signal(SIGCHLD, reapchild);
 	(void) unlink(LogName);
 
@@ -566,6 +567,7 @@ logmsg(pri, msg, from, flags)
 			(void) writev(cfd, iov, 6);
 			(void) close(cfd);
 		}
+		untty();
 		return;
 	}
 	for (f = Files; f < &Files[NLOGS]; f++) {
