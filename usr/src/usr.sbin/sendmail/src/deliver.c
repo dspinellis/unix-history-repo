@@ -17,14 +17,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
 #include <sys/signal.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
 #include <netdb.h>
+#include <fcntl.h>
 #include <errno.h>
 #ifdef NAMED_BIND
 #include <arpa/nameser.h>
@@ -900,8 +900,11 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		}
 
 		/* arrange for all the files to be closed */
-		for (i = 3; i < DtableSize; i++)
-			(void) ioctl(i, FIOCLEX, 0);
+		for (i = 3; i < DtableSize; i++) {
+			register int j;
+			if ((j = fcntl(i, F_GETFD, 0)) != -1)
+				(void)fcntl(i, F_SETFD, j|1);
+		}
 
 		/* try to execute the mailer */
 		execve(m->m_mailer, pvp, UserEnviron);
