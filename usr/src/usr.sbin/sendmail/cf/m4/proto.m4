@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.12 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.13 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -64,7 +64,7 @@ CEroot
 undivert(5)dnl
 
 # operators that cannot be in local usernames (i.e., network indicators)
-CO @ % !
+CO @ % ifdef(`_NO_UUCP_', `', `!')
 
 # a class with just dot (for identifying canonical names)
 C..
@@ -323,10 +323,11 @@ R$+ @ $+		$: $1 < @ $2 >			focus on domain
 R$+ < $+ @ $+ >		$1 $2 < @ $3 >			move gaze right
 R$+ < @ $+ >		$@ $>6 $1 < @ $2 >		already canonical
 
-# convert old-style addresses to a domain-based address
+ifdef(`_NO_UUCP_', `dnl',
+`# convert old-style addresses to a domain-based address
 R$- ! $+		$@ $>6 $2 < @ $1 .UUCP >	resolve uucp names
 R$+ . $- ! $+		$@ $>6 $3 < @ $1 . $2 >		domain uucps
-R$+ ! $+		$@ $>6 $2 < @ $1 .UUCP >	uucp subdomains
+R$+ ! $+		$@ $>6 $2 < @ $1 .UUCP >	uucp subdomains')
 
 # if we have % signs, take the rightmost one
 R$* % $*		$1 @ $2				First make them all @s.
@@ -399,8 +400,9 @@ R$* < $+ > $*		$1 $2 $3			defocus
 R@ $+ : @ $+ : $+	@ $1 , @ $2 : $3		<route-addr> canonical
 R@ $*			$@ @ $1				... and exit
 
-# UUCP must always be presented in old form
-R$+ @ $- . UUCP		$2!$1				u@h.UUCP => h!u
+ifdef(`_NO_UUCP_', `dnl',
+`# UUCP must always be presented in old form
+R$+ @ $- . UUCP		$2!$1				u@h.UUCP => h!u')
 
 # delete duplicate local names
 R$+ % $=w @ $=w		$1 @ $j				u%host@host => u@host
