@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -1032,19 +1032,23 @@ initgroups(name, basegid)
 #endif
 
 #ifdef HASSTATFS
+# undef HASUSTAT
+#endif
+
+#if defined(HASUSTAT)
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <ustat.h>
+#endif
+
+#ifdef HASSTATFS
 # if defined(sgi) || defined(apollo)
 #  include <sys/statfs.h>
 # else
 #  if defined(sun) || defined(hpux)
 #   include <sys/vfs.h>
 #  else
-#   if defined(HASUSTAT)
-#    include <sys/types.h>
-#    include <sys/stat.h>
-#    include ustat.h>
-#   else
-#    include <sys/mount.h>
-#   endif
+#   include <sys/mount.h>
 #  endif
 # endif
 #endif
@@ -1052,15 +1056,15 @@ initgroups(name, basegid)
 bool
 enoughspace()
 {
-#ifdef HASSTATFS
-# if defined(ultrix)
-	struct fs_data fs;
-#  define f_bavail	fd_bfreen
-# else
-#  if defined(HASUSTAT)
+#ifdef defined(HASSTATFS) || defined(HASUSTAT)
+# if defined(HASUSTAT)
 	struct ustat fs;
 	struct stat statbuf;
-#   define f_bavail	f_tfree
+#  define f_bavail	f_tfree
+# else
+#  if defined(ultrix)
+	struct fs_data fs;
+#   define f_bavail	fd_bfreen
 #  else
 	struct statfs fs;
 #  endif
@@ -1074,14 +1078,14 @@ enoughspace()
 			printf("enoughspace: no threshold\n");
 		return TRUE;
 	}
-# if defined(sgi) || defined(apollo)
-	if (statfs(QueueDir, &fs, sizeof fs, 0) == 0)
-# else
-#  if defined(ultrix)
-	if (statfs(QueueDir, &fs) > 0)
-#  else
-#   if defined(HASUSTAT)
+# if defined(HASUSTAT)
 	if (stat(QueueDir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
+# else
+#  if defined(sgi) || defined(apollo)
+	if (statfs(QueueDir, &fs, sizeof fs, 0) == 0)
+#  else
+#   if defined(ultrix)
+	if (statfs(QueueDir, &fs) > 0)
 #   else
 	if (statfs(QueueDir, &fs) == 0)
 #   endif
