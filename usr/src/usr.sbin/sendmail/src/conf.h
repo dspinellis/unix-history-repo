@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.91 (Berkeley) %G%
+ *	@(#)conf.h	8.92 (Berkeley) %G%
  */
 
 /*
@@ -552,19 +552,26 @@ extern void		*malloc();
 
 /*
 **  Linux 0.99pl10 and above...
-**	From Karl London <karl@borg.demon.co.uk>.
+**	From Karl London <karl@borg.demon.co.uk> and John Kennedy
+**	<warlock@csuchico.edu>.  Conversion for "native (non-BSD)
+**	mode" from Florian La Roche <rzsfl@rzluxt.rz.uni-sb.de>.
 */
 
 #ifdef __linux__
-# define BSD		1	/* pretend to be BSD based today */
-# undef  NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
+# define BSD		1	/* include BSD defines */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
+# define HASUNAME	1	/* use System V uname(2) system call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
+# define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# define GIDSET_T	gid_t
+# define sleep		sleepXX
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_FLOAT
 # endif
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
+# include <linux/fs.h>
 # include <sys/sysmacros.h>
-# define GIDSET_T	gid_t
+# undef atol
 #endif
 
 
@@ -814,7 +821,7 @@ typedef int		pid_t;
 #endif
 
 /* general System V defines */
-# ifdef SYSTEM5
+#ifdef SYSTEM5
 # include <sys/sysmacros.h>
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
@@ -828,7 +835,7 @@ typedef int		pid_t;
 # define bcopy(s, d, l)		(memmove((d), (s), (l)))
 # define bzero(d, l)		(memset((d), '\0', (l)))
 # define bcmp(s, d, l)		(memcmp((s), (d), (l)))
-# endif
+#endif
 
 /* general POSIX defines */
 #ifdef _POSIX_VERSION
