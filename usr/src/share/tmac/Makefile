@@ -1,6 +1,7 @@
-#	@(#)Makefile	6.6 (Berkeley) %G%
+#	@(#)Makefile	6.7 (Berkeley) %G%
 
-FILES=	tmac.an tmac.r
+FILES=	tmac.an tmac.r tmac.doc tmac.andoc
+NOOBJ=	noobj
 
 # old macros not currently installed...
 OFILES=	tmac.an.v6compat tmac.an6n tmac.an6t tmac.a tmac.cp
@@ -11,4 +12,4 @@ install:
 	install -c -o ${BINOWN} -g ${BINOWN} -m 444 ${FILES} \
 	    ${DESTDIR}${BINDIR}/tmac
 
-.include <bsd.own.mk>
+.include <bsd.prog.mk>
