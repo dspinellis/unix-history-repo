@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 CFLAGS=	-O -DLIBC_SCCS
 OBJS=	crt0.o
@@ -23,3 +23,5 @@ cleandir clean:
 	rm -f ${OBJS} gmon.o mon.o moncrt0.o core a.out x.s x.o crt0.s
 
 depend lint tags:
+
+.include <bsd.prog.mk>
