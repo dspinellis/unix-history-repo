@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -110,28 +110,29 @@ setthetime(p)
 {
 	register struct tm *lt;
 	struct timeval tv;
-	int dot;
-	char *t;
+	char *dot, *t;
 
-	for (t = p, dot = 0; *t; ++t)
-		if (!isdigit(*t) && (*t != '.' || dot++))
-			badformat();
+	for (t = p, dot = NULL; *t; ++t) {
+		if (isdigit(*t))
+			continue;
+		if (*t == '.' && dot == NULL) {
+			dot = t;
+			continue;
+		}
+		badformat();
+	}
 
 	lt = localtime(&tval);
 
-	if (t = index(p, '.')) {		/* .ss */
-		*t++ = '\0';
-		if (strlen(t) != 2)
+	if (dot != NULL) {			/* .ss */
+		*dot++ = '\0';
+		if (strlen(dot) != 2)
 			badformat();
-		lt->tm_sec = ATOI2(t);
+		lt->tm_sec = ATOI2(dot);
 		if (lt->tm_sec > 61)
 			badformat();
 	} else
 		lt->tm_sec = 0;
-
-	for (t = p; *t; ++t)
-		if (!isdigit(*t))
-			badformat();
 
 	switch (strlen(p)) {
 	case 10:				/* yy */
