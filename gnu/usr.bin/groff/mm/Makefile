@@ -11,9 +11,9 @@ MLINKS=		groff_mm.7 mm.7 groff_mmse.7 mmse.7
 
 afterinstall:
 	install -c -o $(TMACOWN) -g $(TMACGRP) -m $(TMACMODE) \
-		$(.CURDIR)/tmac.m $(DESTDIR)$(TMACDIR)/tmac.$(tmac_m)
+		$(.CURDIR)/tmac.m $(DESTDIR)$(TMACDIR)/tmac.m
 	install -c -o $(TMACOWN) -g $(TMACGRP) -m $(TMACMODE) \
-		$(.CURDIR)/tmac.m $(DESTDIR)$(TMACDIR)/tmac.$(tmac_m)se
+		$(.CURDIR)/tmac.m $(DESTDIR)$(TMACDIR)/tmac.mse
 
 	test -d $(DESTDIR)$(TMACDIR)/mm || mkdir $(DESTDIR)$(TMACDIR)/mm
 	chown $(TMACOWN).$(TMACGRP) $(DESTDIR)$(TMACDIR)/mm

@@ -18,7 +18,7 @@ afterinstall:
 			${.CURDIR}/$$f ${DESTDIR}${TMACDIR}; \
 	done
 	install -c -o ${TMACOWN} -g ${TMACGRP} -m ${TMACMODE} \
-		${.CURDIR}/tmac.s ${DESTDIR}${TMACDIR}/tmac.${tmac_s}
+		${.CURDIR}/tmac.s ${DESTDIR}${TMACDIR}/tmac.s
 	install -c -o ${TMACOWN} -g ${TMACGRP} -m ${TMACMODE} \
 		${.CURDIR}/tmac.an ${DESTDIR}${TMACDIR}/tmac.an.old
 
