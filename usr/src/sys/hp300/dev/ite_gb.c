@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_gb.c 1.17 89/04/11$
+ * from: Utah $Hdr: ite_gb.c 1.1 90/07/09$
  *
- *	@(#)ite_gb.c	7.1 (Berkeley) %G%
+ *	@(#)ite_gb.c	7.2 (Berkeley) %G%
  */
 
 #include "ite.h"
