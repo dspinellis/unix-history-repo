@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.8 83/07/01";
+static char *sccsid = "@(#)cp.c	4.9 85/06/07";
 #endif
 
 /*
@@ -9,8 +9,6 @@ static char *sccsid = "@(#)cp.c	4.8 83/07/01";
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
-
-#define	BSIZE	8192
 
 int	iflag;
 int	rflag;
@@ -31,6 +29,7 @@ main(argc, argv)
 		case 'i':
 			iflag++; break;
 
+		case 'R':
 		case 'r':
 			rflag++; break;
 
@@ -41,7 +40,7 @@ main(argc, argv)
 	}
 	if (argc < 2) 
 		goto usage;
-	if (argc > 2 || rflag) {
+	if (argc > 2) {
 		if (stat(argv[argc-1], &stb) < 0)
 			goto usage;
 		if ((stb.st_mode&S_IFMT) != S_IFDIR) 
@@ -61,7 +60,7 @@ copy(from, to)
 	char *from, *to;
 {
 	int fold, fnew, n;
-	char *last, destname[BSIZE], buf[BSIZE];
+	char *last, destname[MAXPATHLEN + 1], buf[MAXBSIZE];
 	struct stat stfrom, stto;
 
 	fold = open(from, 0);
@@ -78,7 +77,7 @@ copy(from, to)
 	   (stto.st_mode&S_IFMT) == S_IFDIR) {
 		last = rindex(from, '/');
 		if (last) last++; else last = from;
-		if (strlen(to) + strlen(last) >= BSIZE - 1) {
+		if (strlen(to) + strlen(last) >= sizeof destname - 1) {
 			fprintf(stderr, "cp: %s/%s: Name too long", to, last);
 			(void) close(fold);
 			return(1);
@@ -89,7 +88,7 @@ copy(from, to)
 	if (rflag && (stfrom.st_mode&S_IFMT) == S_IFDIR) {
 		(void) close(fold);
 		if (stat(to, &stto) < 0) {
-			if (mkdir(to, (int)stfrom.st_mode) < 0) {
+			if (mkdir(to, stfrom.st_mode & 07777) < 0) {
 				Perror(to);
 				return (1);
 			}
@@ -99,14 +98,22 @@ copy(from, to)
 		}
 		return (rcopy(from, to));
 	}
+
+	if ((stfrom.st_mode&S_IFMT) == S_IFDIR)
+		fprintf(stderr,
+			"cp: %s: Is a directory (copying as plain file).\n",
+				from);
+
 	if (stat(to, &stto) >= 0) {
 		if (stfrom.st_dev == stto.st_dev &&
 		   stfrom.st_ino == stto.st_ino) {
-			fprintf(stderr, "cp: Cannot copy file to itself.\n");
+			fprintf(stderr,
+				"cp: %s and %s are identical (not copied).\n",
+					from, to);
 			(void) close(fold);
 			return (1);
 		}
-		if (iflag) {
+		if (iflag && isatty(fileno(stdin))) {
 			int i, c;
 
 			fprintf (stderr, "overwrite %s? ", to);
@@ -119,13 +126,13 @@ copy(from, to)
 			}
 		}
 	}
-	fnew = creat(to, (int)stfrom.st_mode);
+	fnew = creat(to, stfrom.st_mode & 07777);
 	if (fnew < 0) {
 		Perror(to);
 		(void) close(fold); return(1);
 	}
 	for (;;) {
-		n = read(fold, buf, BSIZE);
+		n = read(fold, buf, sizeof buf);
 		if (n == 0)
 			break;
 		if (n < 0) {
@@ -146,7 +153,7 @@ rcopy(from, to)
 	DIR *fold = opendir(from);
 	struct direct *dp;
 	int errs = 0;
-	char fromname[BUFSIZ];
+	char fromname[MAXPATHLEN + 1];
 
 	if (fold == 0) {
 		Perror(from);
@@ -162,7 +169,7 @@ rcopy(from, to)
 			continue;
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
-		if (strlen(from) + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
+		if (strlen(from)+1+strlen(dp->d_name) >= sizeof fromname - 1) {
 			fprintf(stderr, "cp: %s/%s: Name too long.\n",
 			    from, dp->d_name);
 			errs++;
