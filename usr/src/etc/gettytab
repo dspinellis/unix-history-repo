@@ -1,4 +1,4 @@
-#	@(#)gettytab	4.2 (Berkeley) 83/07/07
+#	@(#)gettytab	4.3 (Berkeley) 83/07/07
 
 #
 # Most of the table entries here are just copies of the
@@ -13,7 +13,7 @@
 #
 default:\
 	:ap:fd#1000:im=\r\n\r\n4.2 BSD UNIX (%h)\r\n\r\r\n\r:sp#1200:\
-	:er=^H:kl=@:in=\177:
+	:er=#:kl=@:in=\177:
 
 #
 # Fixed speed entries
