@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	4.6		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	4.7		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -22,6 +22,9 @@ static char SmailSccsId[] =	"@(#)sendmail.h	4.6		%G%";
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
+
+
+# define PSBUFSIZE	(MAXNAME + MAXATOM)	/* size of prescan buffer */
 
 
 /*
