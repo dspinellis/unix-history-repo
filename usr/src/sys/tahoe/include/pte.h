@@ -1,4 +1,4 @@
-/*	pte.h	1.4	87/06/06	*/
+/*	pte.h	1.5	87/07/11	*/
 
 /*
  * Tahoe page table entry
@@ -64,7 +64,7 @@ unsigned int
 /*
  * Pte related macros
  */
-#define	dirty(pte)	((pte)->pg_fod == 0 && (pte)->pg_pfnum && (pte)->pg_m)
+#define	dirty(pte)	((pte)->pg_m)
 
 #ifndef LOCORE
 #ifdef KERNEL
