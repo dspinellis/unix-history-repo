@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ndbm.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ndbm.c	5.6 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -18,14 +18,16 @@ static char sccsid[] = "@(#)ndbm.c	5.5 (Berkeley) %G%";
 #define BYTESIZ 8
 #undef setbit
 
-static  datum makdatum();
-static  long hashinc();
-static  long dcalchash();
-extern  int errno;
+static	datum makdatum();
+static	long hashinc();
+static	long dcalchash();
+static	int additem(), delitem(), finddatum(), getbit();
+static	void dbm_access(), setbit();
+extern	int errno;
 
 DBM *
 dbm_open(file, flags, mode)
-	char *file;
+	const char *file;
 	int flags, mode;
 {
 	struct stat statb;
@@ -261,7 +263,7 @@ err:
 	return (item);
 }
 
-static
+static void
 dbm_access(db, hash)
 	register DBM *db;
 	long hash;
@@ -308,7 +310,7 @@ getbit(db)
 	return (db->dbm_dirbuf[i] & (1<<n));
 }
 
-static
+static void
 setbit(db)
 	register DBM *db;
 {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dbm.h	5.4 (Berkeley) %G%
+ *	@(#)dbm.h	5.5 (Berkeley) %G%
  */
 
 #ifndef NULL
@@ -22,7 +22,7 @@
 
 #define PBLKSIZ 1024
 
-#include <ndbm.h>
+#include "ndbm.h"
 
 datum	fetch();
 datum	firstkey();
