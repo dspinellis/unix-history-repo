@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.30 (Berkeley) %G%
+#	@(#)MAKEDEV	4.31 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -12,6 +12,7 @@
 # Tapes:
 #	ht*	massbus tm03 & tu??
 #	tm*	unibus tm11 & te10 emulations (e.g. Emulex tc-11)
+#	tms*	unibus/qbus TMSCP (e.g. TU81, TK50)
 #	ts*	unibus ts11
 #	mt*	massbus tu78
 #	ut*	unibus tu45 emulations (e.g.si 9700)
@@ -21,6 +22,7 @@
 #	hk*	unibus rk06 and rk07
 #	up*	other unibus devices (e.g. on Emulex sc-21v controller)
 #	ra*	unibus uda50 w/ ra??
+#	kra*	bi kdb50 w/ ra??
 #	rl*	unibus rl02
 #	rb*	730 idc w/ rb80 and/or rb02
 #	rx*	unibus rx211 floppy disk 
@@ -56,6 +58,8 @@ std)
 	/etc/mknod drum		c 7 0	; chmod 640 drum ; chgrp kmem drum
 	/etc/mknod floppy	c 8 0
 	/etc/mknod crl		c 35 0
+	/etc/mknod csa1		c 51 0
+	/etc/mknod csa2		c 51 1
 	/etc/mknod tu0		b 8 0
 	/etc/mknod tu1		b 8 1
 	/etc/mknod kUmem	c 3 3	; chmod 600 kUmem
@@ -66,10 +70,11 @@ std)
 	/etc/mknod klog		c 33 0	; chmod 600 klog
 	;;
 
-ht*|tm*|ts*|ut*)
-	umask 0 ; unit=`expr $i : '..\(.*\)'`
+ht*|tm*|tms*|ts*|ut*)
+	umask 0 ; unit=`expr $i : '[^0-9]*\(.*\)'`
 	case $i in
 	ht*) blk=1; chr=5 ;;
+	tms*) blk=15; chr=38;;
 	tm*) blk=5; chr=14;;
 	ts*) blk=6; chr=16;;
 	ut*) blk=10; chr=17;;
@@ -134,13 +139,14 @@ mt*)
 	umask 77
 	;;
 
-hp*|hk*|up*|ra*|rl*|rb*)
+hp*|hk*|up*|ra*|kra*|rl*|rb*)
 	umask 2 ; unit=`expr $i : '..\(.*\)'`
 	case $i in
 	hp*) name=hp; blk=0; chr=4;;
 	hk*) name=hk; blk=3; chr=11;;
 	up*) name=up; blk=2; chr=13;;
 	ra*) name=ra; blk=9; chr=9;;
+	kra*) name=kra; blk=16; chr=52;;
 	rb*) name=rb; blk=11; chr=23;;
 	rl*) name=rl; blk=14; chr=32;;
 	esac
@@ -349,7 +355,7 @@ qv0)
 	;;
 
 ttyv0)
-	if [ ! -f ttyqf ]; then sh ./MAKEDEV pty1; fi
+	if [ ! -f ttyqe ]; then sh ./MAKEDEV pty1; fi
 	mv ttyqf ttyv0
 	mv ptyqf ptyv0
 	;;
