@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -153,9 +153,9 @@ set(argc, argv)
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = inet_addr(host);
 	if (sin->sin_addr.s_addr == -1) {
-		hp = gethostbyname(host);
-		if (hp == NULL) {
-			fprintf(stderr, "arp: %s: unknown host\n", host);
+		if (!(hp = gethostbyname(host))) {
+			fprintf(stderr, "arp: %s: ", host);
+			herror((char *)NULL);
 			return (1);
 		}
 		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
@@ -207,9 +207,9 @@ get(host)
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = inet_addr(host);
 	if (sin->sin_addr.s_addr == -1) {
-		hp = gethostbyname(host);
-		if (hp == NULL) {
-			fprintf(stderr, "arp: %s: unknown host\n", host);
+		if (!(hp = gethostbyname(host))) {
+			fprintf(stderr, "arp: %s: ", host);
+			herror((char *)NULL);
 			exit(1);
 		}
 		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
@@ -261,9 +261,9 @@ delete(host)
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = inet_addr(host);
 	if (sin->sin_addr.s_addr == -1) {
-		hp = gethostbyname(host);
-		if (hp == NULL) {
-			fprintf(stderr, "arp: %s: unknown host\n", host);
+		if (!(hp = gethostbyname(host))) {
+			fprintf(stderr, "arp: %s: ", host);
+			herror((char *)NULL);
 			exit(1);
 		}
 		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
