@@ -1,0 +1,43 @@
+.pa 1
+.he 'ATOI (III)'1/15/73'ATOI (III)'
+.ti 0
+NAME		atoi -- ascii to integer
+.sp
+.ti 0
+SYNOPSIS	jsr	r5,atoi; subr
+.sp
+.ti 0
+DESCRIPTION	atoi____
+will convert an ascii stream to a binary
+number returned in r1.
+
+The subroutine subr____
+(supplied by the caller)
+is called on r5 for each character of the
+ascii stream.
+subr____ should return the character in r0.
+The first character not used in the conversion
+is left in r0.
+.sp
+The numbers recognized are:  an optional minus sign
+followed by a string of digits.
+.sp
+The subroutine subr____ must not disturb any registers.
+.sp
+.ti 0
+FILES		kept in /lib/liba.a
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	There are none;
+the routine charges on regardless of consequences; see BUGS.
+.sp
+.ti 0
+BUGS		It
+pays no attention to overflow - you get whatever the machine
+instructions mul and div happen to leave in the low order half
+- in fact, the carry bit should be set and isn't.
+.sp
+The routine should accept initial "+" and initial blanks.
