@@ -32,11 +32,12 @@ profile: awk.g.o ${OBJS} mon.o
 proctab.c: proc
 	./proc > proctab.c
 
-proc:	awk.h proc.o token.o
+proc: awk.h proc.o token.o
 	${CC} -o $@ proc.o token.o
 
 clean: FRC
-	rm -f ${OBJS} core awk awk.h proc proctab.c yacc*
+#	use *.o, not ${OBJS}
+	rm -f *.o core awk awk.h awk.lx.c y.tab.h proc proctab.c yacc*
 
 depend: y.tab.h ${SRCS} FRC
 	mkdep ${CFLAGS} ${SRCS}
