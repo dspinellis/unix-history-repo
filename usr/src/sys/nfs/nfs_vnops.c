@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.77 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.78 (Berkeley) %G%
  */
 
 /*
@@ -960,6 +960,14 @@ nfs_rename (ap)
 	int error = 0;
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
 
+	/* Check for cross-device rename */
+	if ((ap->a_fvp->v_mount != ap->a_tdvp->v_mount) ||
+	    (ap->a_tvp && (ap->a_fvp->v_mount != ap->a_tvp->v_mount))) {
+		error = EXDEV;
+		goto out;
+	}
+
+
 	nfsstats.rpccnt[NFSPROC_RENAME]++;
 	nfsm_reqhead(ap->a_fdvp, NFSPROC_RENAME,
 		(NFSX_FH+NFSX_UNSIGNED)*2+nfsm_rndup(ap->a_fcnp->cn_namelen)+
@@ -977,6 +985,7 @@ nfs_rename (ap)
 			cache_purge(ap->a_tdvp);
 		cache_purge(ap->a_fdvp);
 	}
+out:
 	if (ap->a_tdvp == ap->a_tvp)
 		vrele(ap->a_tdvp);
 	else
@@ -1037,6 +1046,16 @@ nfs_link (ap)
 	caddr_t bpos, dpos;
 	int error = 0;
 	struct mbuf *mreq, *mrep, *md, *mb, *mb2;
+
+	if (ap->a_vp->v_mount != ap->a_tdvp->v_mount) {
+		/*VOP_ABORTOP(ap->a_vp, ap->a_cnp);*/
+		if (ap->a_tdvp == ap->a_vp)
+			vrele(ap->a_vp);
+		else
+			vput(ap->a_vp);
+		vrele(ap->a_tdvp);
+		return (EXDEV);
+	}
 
 	nfsstats.rpccnt[NFSPROC_LINK]++;
 	nfsm_reqhead(ap->a_tdvp, NFSPROC_LINK,
