@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_utils.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_utils.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -57,7 +57,8 @@ __rec_ret(t, e, nrec, key, data)
 	} else if (ISSET(t, B_DB_LOCK)) {
 		/* Use +1 in case the first record retrieved is 0 length. */
 		if (rl->dsize + 1 > t->bt_dbufsz) {
-			if ((p = realloc(t->bt_dbuf, rl->dsize + 1)) == NULL)
+			if ((p =
+			    (void *)realloc(t->bt_dbuf, rl->dsize + 1)) == NULL)
 				return (RET_ERROR);
 			t->bt_dbuf = p;
 			t->bt_dbufsz = rl->dsize + 1;
@@ -75,7 +76,7 @@ retkey:	if (key == NULL)
 
 	/* We have to copy the key, it's not on the page. */
 	if (sizeof(recno_t) > t->bt_kbufsz) {
-		if ((p = realloc(t->bt_kbuf, sizeof(recno_t))) == NULL)
+		if ((p = (void *)realloc(t->bt_kbuf, sizeof(recno_t))) == NULL)
 			return (RET_ERROR);
 		t->bt_kbuf = p;
 		t->bt_kbufsz = sizeof(recno_t);

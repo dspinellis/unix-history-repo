@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	8.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -128,7 +128,7 @@ __bt_open(fname, flags, mode, openinfo, dflags)
 		goto einval;
 
 	/* Allocate and initialize DB and BTREE structures. */
-	if ((t = malloc(sizeof(BTREE))) == NULL)
+	if ((t = (BTREE *)malloc(sizeof(BTREE))) == NULL)
 		goto err;
 	memset(t, 0, sizeof(BTREE));
 	t->bt_bcursor.pgno = P_INVALID;
@@ -139,7 +139,7 @@ __bt_open(fname, flags, mode, openinfo, dflags)
 	t->bt_pfx = b.prefix;
 	t->bt_rfd = -1;
 
-	if ((t->bt_dbp = dbp = malloc(sizeof(DB))) == NULL)
+	if ((t->bt_dbp = dbp = (DB *)malloc(sizeof(DB))) == NULL)
 		goto err;
 	t->bt_flags = 0;
 	if (t->bt_lorder != machine_lorder)

@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_buf.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_buf.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -149,9 +149,12 @@ newbuf(hashp, addr, prev_bp)
 	 */
 	if (hashp->nbufs || (bp->flags & BUF_PIN)) {
 		/* Allocate a new one */
-		bp = malloc(sizeof(struct _bufhead));
-		if (!bp || !(bp->page = malloc(hashp->BSIZE)))
+		if ((bp = (BUFHEAD *)malloc(sizeof(BUFHEAD))) == NULL)
 			return (NULL);
+		if ((bp->page = (char *)malloc(hashp->BSIZE)) == NULL) {
+			free(bp);
+			return (NULL);
+		}
 		if (hashp->nbufs)
 			hashp->nbufs--;
 	} else {

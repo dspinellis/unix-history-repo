@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_utils.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_utils.c	8.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -57,7 +57,8 @@ __bt_ret(t, e, key, data)
 	} else if (ISSET(t, B_DB_LOCK)) {
 		/* Use +1 in case the first record retrieved is 0 length. */
 		if (bl->dsize + 1 > t->bt_dbufsz) {
-			if ((p = realloc(t->bt_dbuf, bl->dsize + 1)) == NULL)
+			if ((p =
+			    (void *)realloc(t->bt_dbuf, bl->dsize + 1)) == NULL)
 				return (RET_ERROR);
 			t->bt_dbuf = p;
 			t->bt_dbufsz = bl->dsize + 1;
@@ -80,7 +81,8 @@ __bt_ret(t, e, key, data)
 		key->data = t->bt_kbuf;
 	} else if (ISSET(t, B_DB_LOCK)) {
 		if (bl->ksize > t->bt_kbufsz) {
-			if ((p = realloc(t->bt_kbuf, bl->ksize)) == NULL)
+			if ((p =
+			    (void *)realloc(t->bt_kbuf, bl->ksize)) == NULL)
 				return (RET_ERROR);
 			t->bt_kbuf = p;
 			t->bt_kbufsz = bl->ksize;

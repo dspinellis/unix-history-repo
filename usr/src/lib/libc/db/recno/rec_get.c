@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_get.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_get.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -107,7 +107,8 @@ __rec_fpipe(t, top)
 	data.size = t->bt_reclen;
 
 	if (t->bt_dbufsz < t->bt_reclen) {
-		if ((t->bt_dbuf = realloc(t->bt_dbuf, t->bt_reclen)) == NULL)
+		if ((t->bt_dbuf =
+		    (char *)realloc(t->bt_dbuf, t->bt_reclen)) == NULL)
 			return (RET_ERROR);
 		t->bt_dbufsz = t->bt_reclen;
 	}
@@ -168,8 +169,8 @@ __rec_vpipe(t, top)
 			if (sz == 0) {
 				len = p - t->bt_dbuf;
 				t->bt_dbufsz += (sz = 256);
-				if ((t->bt_dbuf =
-				    realloc(t->bt_dbuf, t->bt_dbufsz)) == NULL)
+				if ((t->bt_dbuf = (char *)realloc(t->bt_dbuf,
+				    t->bt_dbufsz)) == NULL)
 					return (RET_ERROR);
 				p = t->bt_dbuf + len;
 			}
@@ -211,7 +212,8 @@ __rec_fmap(t, top)
 	data.size = t->bt_reclen;
 
 	if (t->bt_dbufsz < t->bt_reclen) {
-		if ((t->bt_dbuf = realloc(t->bt_dbuf, t->bt_reclen)) == NULL)
+		if ((t->bt_dbuf =
+		    (char *)realloc(t->bt_dbuf, t->bt_reclen)) == NULL)
 			return (RET_ERROR);
 		t->bt_dbufsz = t->bt_reclen;
 	}

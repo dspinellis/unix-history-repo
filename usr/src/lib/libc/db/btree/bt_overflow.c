@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_overflow.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_overflow.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -72,7 +72,7 @@ __ovfl_get(t, p, ssz, buf, bufsz)
 #endif
 	/* Make the buffer bigger as necessary. */
 	if (*bufsz < sz) {
-		if ((*buf = realloc(*buf, sz)) == NULL)
+		if ((*buf = (char *)realloc(*buf, sz)) == NULL)
 			return (RET_ERROR);
 		*bufsz = sz;
 	}

@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_bigkey.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_bigkey.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -441,8 +441,7 @@ collect_data(hashp, bufp, len, set)
 		totlen = len + mylen;
 		if (hashp->tmp_buf)
 			free(hashp->tmp_buf);
-		hashp->tmp_buf = malloc(totlen);
-		if (!hashp->tmp_buf)
+		if ((hashp->tmp_buf = (char *)malloc(totlen)) == NULL)
 			return (-1);
 		if (set) {
 			hashp->cndx = 1;
@@ -515,10 +514,9 @@ collect_key(hashp, bufp, len, val, set)
 	save_addr = bufp->addr;
 	totlen = len + mylen;
 	if (bp[2] == FULL_KEY || bp[2] == FULL_KEY_DATA) {    /* End of Key. */
-		if (hashp->tmp_key)
+		if (hashp->tmp_key != NULL)
 			free(hashp->tmp_key);
-		hashp->tmp_key = malloc(totlen);
-		if (!hashp->tmp_key)
+		if ((hashp->tmp_key = (char *)malloc(totlen)) == NULL)
 			return (-1);
 		if (__big_return(hashp, bufp, 1, val, set))
 			return (-1);
