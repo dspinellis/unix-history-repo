@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.8 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,8 +31,6 @@
 
 int     pk_sendspace = 1024 * 2 + 8;
 int     pk_recvspace = 1024 * 2 + 8;
-
-struct	x25_packet *pk_template ();
 
 /* 
  *  Attach X.25 protocol to socket, allocate logical channel descripter
@@ -106,7 +104,7 @@ register struct pklcd *lcp;
 			soisdisconnecting (so);
 			sbflush (&so -> so_rcv);
 		}
-		pk_clear (lcp);
+		pk_clear (lcp, 241, 0); /* Normal Disconnect */
 
 	}
 }
@@ -127,10 +125,8 @@ struct pklcd *lcp;
 		return;
 
 	so -> so_pcb = 0;
-	sbflush (&so -> so_snd);
-	sbflush (&so -> so_rcv);
 	soisdisconnected (so);
-	sofree (so);	/* gak!!! you can't do that here */
+	/* sofree (so);	/* gak!!! you can't do that here */
 }
 
 /* 
@@ -140,7 +136,7 @@ struct pklcd *lcp;
  *  the remainer of the packet is filled in.
 */
 
-struct x25_packet *
+struct mbuf *
 pk_template (lcn, type)
 int lcn, type;
 {
@@ -169,7 +165,7 @@ int lcn, type;
 	SET_LCN(xp, lcn);
 	xp -> packet_type = type;
 
-	return (xp);
+	return (m);
 }
 
 /* 
@@ -183,7 +179,7 @@ pk_restart (pkp, restart_cause)
 register struct pkcb *pkp;
 int restart_cause;
 {
-	register struct x25_packet *xp;
+	register struct mbuf *m;
 	register struct pklcd *lcp;
 	register int i;
 
@@ -192,9 +188,15 @@ int restart_cause;
 		return;
 	for (i = 1; i <= pkp -> pk_maxlcn; ++i)
 		if ((lcp = pkp -> pk_chan[i]) != NULL) {
-			if (lcp -> lcd_so)
+			if (lcp -> lcd_so) {
 				lcp -> lcd_so -> so_error = ENETRESET;
-			pk_close (lcp);
+				pk_close (lcp);
+			} else {
+				pk_flush (lcp);
+				lcp -> lcd_state = READY;
+				if (lcp -> lcd_upper)
+					lcp -> lcd_upper(lcp, 0);
+			}
 		}
 
 	if (restart_cause < 0)
@@ -202,9 +204,10 @@ int restart_cause;
 
 	pkp -> pk_state = DTE_SENT_RESTART;
 	lcp = pkp -> pk_chan[0];
-	xp = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESTART);
-	(dtom (xp)) -> m_len++;
-	xp -> packet_data = 0;	/* DTE only */
+	m = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESTART);
+	m -> m_len += 2;
+	mtod(m, struct x25_packet *) -> packet_data = 0;	/* DTE only */
+	mtod(m, octet *)[4]  = restart_cause;
 	pk_output (lcp);
 }
 
@@ -219,12 +222,10 @@ register struct pklcd *lcp;
 	if (lcp == NULL)
 		return;
 
-	if (lcp -> lcd_template)
-		m_freem (dtom (lcp -> lcd_template));
-
 	if (lcp -> lcd_lcn > 0)
 		lcp -> lcd_pkp -> pk_chan[lcp -> lcd_lcn] = NULL;
 
+	pk_flush(lcp);
 	free((caddr_t)lcp, M_PCB);
 }
 
@@ -240,7 +241,6 @@ struct pklcd *lcp;
 struct mbuf *nam;
 {
 	register struct pkcb *pkp;
-	register struct mbuf *m;
 	register struct pklcd *pp;
 	register struct sockaddr_x25 *sa;
 
@@ -248,7 +248,7 @@ struct mbuf *nam;
 		return (EADDRNOTAVAIL);
 	if (lcp -> lcd_ceaddr)				/* XXX */
 		return (EADDRINUSE);
-	if (checksockaddr (nam))
+	if (pk_checksockaddr (nam))
 		return (EINVAL);
 	sa = mtod (nam, struct sockaddr_x25 *);
 
@@ -265,14 +265,74 @@ struct mbuf *nam;
 				break;
 		}
 
-	for (pp = pk_listenhead; pp; pp = pp -> lcd_listen)
-		if (bcmp (pp -> lcd_ceaddr -> x25_udata, sa -> x25_udata,
-		          min (pp -> lcd_ceaddr -> x25_udlen, sa -> x25_udlen)) == 0)
-			return (EADDRINUSE);
-
+	/*
+	 * For ISO's sake permit default listeners, but only one such . . .
+	 */
+	for (pp = pk_listenhead; pp; pp = pp -> lcd_listen) {
+		register struct sockaddr_x25 *sa2 = pp -> lcd_ceaddr;
+		if ((sa2 -> x25_udlen == sa -> x25_udlen) &&
+		    (sa2 -> x25_udlen == 0 ||
+		     (bcmp (sa2 -> x25_udata, sa -> x25_udata,
+			    min (sa2 -> x25_udlen, sa -> x25_udlen)) == 0)))
+				return (EADDRINUSE);
+	}
 	lcp -> lcd_laddr = *sa;
 	lcp -> lcd_ceaddr = &lcp -> lcd_laddr;
 	return (0);
+}
+
+/*
+ * Include a bound control block in the list of listeners.
+ */
+pk_listen (lcp)
+register struct pklcd *lcp;
+{
+	register struct pklcd **pp;
+
+	if (lcp -> lcd_ceaddr == 0)
+		return (EDESTADDRREQ);
+
+	lcp -> lcd_state = LISTEN;
+	/*
+	 * Add default listener at end, any others at start.
+	 */
+	if (lcp -> lcd_ceaddr -> x25_udlen == 0) {
+		for (pp = &pk_listenhead; *pp; )
+			pp = &((*pp) -> lcd_listen);
+		*pp = lcp;
+	} else {
+		lcp -> lcd_listen = pk_listenhead;
+		pk_listenhead = lcp;
+	}
+	return (0);
+}
+/*
+ * Include a listening control block for the benefit of other protocols.
+ */
+pk_protolisten (spi, spilen, callee)
+int (*callee)();
+{
+	register struct pklcd *lcp = pk_attach ((struct socket *)0);
+	register struct mbuf *nam;
+	register struct sockaddr_x25 *sa;
+	int error = ENOBUFS;
+
+	if (lcp) {
+		if (nam = m_getclr(MT_SONAME, M_DONTWAIT)) {
+			sa = mtod(nam, struct sockaddr_x25 *);
+			sa -> x25_family = AF_CCITT;
+			sa -> x25_len = nam -> m_len = sizeof (*sa);
+			sa -> x25_udlen = spilen;
+			sa -> x25_udata[0] = spi;
+			lcp -> lcd_upper = callee;
+			lcp -> lcd_flags = X25_MBS_HOLD;
+			error = pk_bind (lcp, nam) || pk_listen (lcp);
+			(void) m_free (nam);
+		}
+		if (error)
+			pk_freelcd(lcp);
+	}
+	return error; /* Hopefully Zero !*/
 }
 
 /*
@@ -307,20 +367,12 @@ register struct sockaddr_x25 *sa;
 	lcp -> lcd_stime = time.tv_sec;
 }
 
-pk_connect (lcp, nam, sa)
+pk_connect (lcp, sa)
 register struct pklcd *lcp;
 register struct sockaddr_x25 *sa;
-struct mbuf *nam;
 {
 	register struct pkcb *pkp;
-	register struct mbuf *m;
-	register struct ifnet *ifp;
 
-	if (sa == 0) {
-		if (checksockaddr (nam))
-			return (EINVAL);
-		sa = mtod (nam, struct sockaddr_x25 *);
-	}
 	if (sa -> x25_addr[0] == '\0')
 		return (EDESTADDRREQ);
 	if (lcp -> lcd_pkp == 0)
@@ -362,13 +414,14 @@ register struct sockaddr_x25 *sa;
 register struct x25config *xcp;
 {
 	register struct x25_calladdr *a;
-	register struct mbuf *m = dtom (lcp -> lcd_template);
+	register struct mbuf *m = lcp -> lcd_template;
+	register struct x25_packet *xp = mtod(m, struct x25_packet *);
 	unsigned posn = 0;
 	octet *cp;
 
 	if (lcp -> lcd_flags & X25_DBIT)
-		lcp -> lcd_template -> d_bit = 1;
-	a = (struct x25_calladdr *) &lcp -> lcd_template -> packet_data;
+		xp -> d_bit = 1;
+	a = (struct x25_calladdr *) &xp -> packet_data;
 	a -> calling_addrlen = strlen (xcp -> xc_addr.x25_addr);
 	a -> called_addrlen = strlen (sa -> x25_addr);
 	cp = (octet *) a -> address_field;
@@ -376,14 +429,16 @@ register struct x25config *xcp;
 	to_bcd (&cp, (int)a -> calling_addrlen, xcp -> xc_addr.x25_addr, &posn);
 	if (posn & 0x01)
 		*cp++ &= 0xf0;
-
-	build_facilities (&cp, sa, (int)xcp -> xc_type);
-
-	bcopy (sa -> x25_udata, (caddr_t)cp, (unsigned)sa -> x25_udlen);
-	cp += sa -> x25_udlen;
-
 	m -> m_len += cp - (octet *) a;
 
+	if (lcp -> lcd_facilities) {
+		m -> m_next = lcp -> lcd_facilities;
+		lcp -> lcd_facilities = 0;
+		m -> m_pkthdr.len += m -> m_next -> m_len;
+	} else
+		build_facilities (m, sa, (int)xcp -> xc_type);
+
+	m_copyback(m, m -> m_pkthdr.len, sa -> x25_udlen, sa -> x25_udata);
 #ifdef ANDREW
 	printf ("call: ");
 	for (cp = mtod (m, octet *), posn = 0; posn < m -> m_len; ++posn)
@@ -392,14 +447,16 @@ register struct x25config *xcp;
 #endif
 }
 
-build_facilities (cp, sa, type)
-register octet **cp;
+build_facilities (m, sa, type)
+register struct mbuf *m;
 struct sockaddr_x25 *sa;
 {
+	register octet *cp;
 	register octet *fcp;
 	register int revcharge;
 
-	fcp = *cp + 1;
+	cp = mtod(m, octet *) + m -> m_len;
+	fcp = cp + 1;
 	revcharge = sa -> x25_opts.op_flags & X25_REVERSE_CHARGE ? 1 : 0;
 	/*
 	 * This is specific to Datapac X.25(1976) DTEs.  International
@@ -422,8 +479,8 @@ struct sockaddr_x25 *sa;
 		*fcp++ = sa -> x25_opts.op_wsize;
 		*fcp++ = sa -> x25_opts.op_wsize;
 	}
-	**cp = fcp - *cp - 1;
-	*cp = fcp;
+	*cp = fcp - cp - 1;
+	m -> m_pkthdr.len = (m -> m_len += *cp + 1);
 }
 
 to_bcd (a, len, x, posn)
@@ -458,40 +515,31 @@ register struct pkcb *pkp;
 
 }
 
-static
-checksockaddr (m)
-struct mbuf *m;
-{
-	register struct sockaddr_x25 *sa = mtod (m, struct sockaddr_x25 *);
-	register char *cp;
-
-	if (m -> m_len != sizeof (struct sockaddr_x25))
-		return (1);
-	if (sa -> x25_family != AF_CCITT || sa -> x25_udlen == 0 ||
-		sa -> x25_udlen > sizeof (sa -> x25_udata))
-		return (1);
-	for (cp = sa -> x25_addr; *cp; cp++) {
-		if (*cp < '0' || *cp > '9' ||
-			cp >= &sa -> x25_addr[sizeof (sa -> x25_addr) - 1])
-			return (1);
-	}
-	return (0);
-}
-
 /* 
  *  This procedure sends a CLEAR request packet. The lc state is
  *  set to "SENT_CLEAR". 
  */
 
-pk_clear (lcp)
-struct pklcd *lcp;
+pk_clear (lcp, diagnostic, abortive)
+register struct pklcd *lcp;
 {
-	register struct x25_packet *xp;
+	register struct mbuf *m = pk_template (lcp -> lcd_lcn, X25_CLEAR);
 
-	xp = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CLEAR);
-	(dtom (xp)) -> m_len++;
-	xp -> packet_data = 0;
-
+	m -> m_len += 2;
+	mtod(m, struct x25_packet *) -> packet_data = 0;
+	mtod(m, octet *)[4] = diagnostic;
+	if (lcp -> lcd_facilities) {
+		m -> m_next = lcp -> lcd_facilities;
+		m -> m_pkthdr.len += m -> m_next -> m_len;
+		lcp -> lcd_facilities = 0;
+	}
+	if (abortive)
+		lcp -> lcd_template = m;
+	else {
+		struct socket *so = lcp -> lcd_so;
+		struct sockbuf *sb = so ? & so -> so_snd : & lcp -> lcd_sb;
+		sbappendrecord(sb, m);
+	}
 	pk_output (lcp);
 
 }
@@ -502,34 +550,57 @@ struct pklcd *lcp;
  */
 
 static
-pk_reset (lcp)
+pk_reset (lcp, diagnostic)
 register struct pklcd *lcp;
 {
-	register struct x25_packet *xp;
-	register struct socket *so;
+	register struct mbuf *m;
+	register struct socket *so = lcp -> lcd_so;
 
 	if (lcp -> lcd_state != DATA_TRANSFER)
 		return;
 
+	if (so)
+		so -> so_error = ECONNRESET;
 	lcp -> lcd_reset_condition = TRUE;
 
 	/* Reset all the control variables for the channel. */
+	pk_flush (lcp);
 	lcp -> lcd_window_condition = lcp -> lcd_rnr_condition =
 		lcp -> lcd_intrconf_pending = FALSE;
 	lcp -> lcd_rsn = MODULUS - 1;
 	lcp -> lcd_ssn = 0;
 	lcp -> lcd_output_window = lcp -> lcd_input_window =
 		lcp -> lcd_last_transmitted_pr = 0;
-	if (so = lcp -> lcd_so)  {
-		so -> so_error = ECONNRESET;
-		sbflush (&so -> so_rcv);
-		sbflush (&so -> so_snd);
-	}
-	xp = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESET);
-	(dtom (xp)) -> m_len += 2;
-	xp -> packet_data = 0;
+	m = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESET);
+	m -> m_len += 2;
+	mtod(m, struct x25_packet *) -> packet_data = 0;
+	mtod(m, octet *)[4] = diagnostic;
 	pk_output (lcp);
 
+}
+
+/*
+ * This procedure frees all data queued for output or delivery on a
+ *  virtual circuit.
+ */
+
+pk_flush (lcp)
+register struct pklcd *lcp;
+{
+	register struct socket *so;
+
+	if (lcp -> lcd_template)
+		m_freem (lcp -> lcd_template);
+
+	if (lcp -> lcd_cps) {
+		m_freem(lcp -> lcd_cps);
+		lcp -> lcd_cps = 0;
+	}
+	if (so = lcp -> lcd_so)  {
+		sbflush (&so -> so_rcv);
+		sbflush (&so -> so_snd);
+	} else 
+		sbflush (&lcp -> lcd_sb);
 }
 
 
@@ -537,7 +608,7 @@ register struct pklcd *lcp;
  *  This procedure handles all local protocol procedure errors.
  */
 
-pk_procerror (error, lcp, errstr)
+pk_procerror (error, lcp, errstr, diagnostic)
 register struct pklcd *lcp;
 char *errstr;
 {
@@ -550,11 +621,11 @@ char *errstr;
 			lcp -> lcd_so -> so_error = ECONNABORTED;
 			soisdisconnecting (lcp -> lcd_so);
 		}
-		pk_clear (lcp);
+		pk_clear (lcp, diagnostic, 1);
 		break;
 
 	case RESET: 
-		pk_reset (lcp);
+		pk_reset (lcp, diagnostic);
 	}
 }
 
@@ -574,13 +645,15 @@ unsigned pr;
 		return (PACKET_OK);
 	if (lcp -> lcd_output_window < lcp -> lcd_ssn) {
 		if (pr < lcp -> lcd_output_window || pr > lcp -> lcd_ssn) {
-			pk_procerror (RESET, lcp, "p(r) flow control error");
+			pk_procerror (RESET, lcp,
+				"p(r) flow control error", 2);
 			return (ERROR_PACKET);
 		}
 	}
 	else {
 		if (pr < lcp -> lcd_output_window && pr > lcp -> lcd_ssn) {
-			pk_procerror (RESET, lcp, "p(r) flow control error");
+			pk_procerror (RESET, lcp,
+				"p(r) flow control error", 2);
 			return (ERROR_PACKET);
 		}
 	}
@@ -609,14 +682,14 @@ register struct x25_packet *xp;
 
 	if (xp -> fmt_identifier != 1)
 		return (INVALID_PACKET);
-
+#ifdef ancient_history
 	/* 
 	 *  Make sure that the logical channel group number is 0.
 	 *  This restriction may be removed at some later date.
 	 */
 	if (xp -> lc_group_number != 0)
 		return (INVALID_PACKET);
-
+#endif
 	/* 
 	 *  Test for data packet first.
 	 */
@@ -808,23 +881,20 @@ register struct pklcd *lcp;
 	register struct mbuf *m = m0;
 	register struct x25_packet *xp;
 	register struct sockbuf *sb;
-	struct mbuf *head = 0, *next, **mp = &head;
+	struct mbuf *head = 0, *next, **mp = &head, *m_split();
 	int totlen, psize = 1 << (lcp -> lcd_packetsize);
 
 	if (m == 0)
 		return;
-	if (m->m_flags & M_PKTHDR == 0)
+	if (m -> m_flags & M_PKTHDR == 0)
 		panic("pk_fragment");
 	totlen = m -> m_pkthdr.len;
 	m -> m_act = 0;
 	sb = lcp -> lcd_so ? &lcp -> lcd_so -> so_snd : & lcp -> lcd_sb;
 	do {
 		if (totlen > psize) {
-			next = m;
-			m = m_copym(m, 0, psize, wait);
-			if (m == 0)
+			if ((next = m_split(m, psize, wait)) == 0)
 				goto abort;
-			m_adj(next, psize);
 			totlen -= psize;
 		} else
 			next = 0;
@@ -905,7 +975,7 @@ int len0;
 extpacket:
 	len = m -> m_len - len;		/* remainder to be copied */
 	m -> m_len -= len;		/* now equals original len */
-	if (m -> m>flags & M_EXT) {
+	if (m -> m_flags & M_EXT) {
 		n -> m_flags |= M_EXT;
 		n -> m_ext = m -> m_ext;
 		mclrefcnt[mtocl(m -> m_ext.ext_buf)]++;

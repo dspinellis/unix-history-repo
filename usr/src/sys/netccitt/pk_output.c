@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	7.6 (Berkeley) %G%
+ *	@(#)pk_output.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -93,7 +93,9 @@ register struct pklcd *lcp;
 			break;
 
 		case INTERRUPT + DATA_TRANSFER: 
+#ifdef ancient_history
 			xp -> packet_data = 0;
+#endif
 			lcp -> lcd_intrconf_pending = TRUE;
 			break;
 
@@ -141,7 +143,7 @@ register struct pklcd *lcp;
 		}
 
 		/* Trace the packet. */
-		pk_trace (pkp -> pk_xcp, xp, "P-Out");
+		pk_trace (pkp -> pk_xcp, m, "P-Out");
 
 		/* Pass the packet on down to the link layer */
 		(*pkp -> pk_lloutput) (pkp -> pk_llnext, m);
@@ -162,7 +164,7 @@ struct pklcd *lcp;
 	register struct sockbuf *sb = & (so ? so -> so_snd : lcp -> lcd_sb);
 
 	if (lcp -> lcd_template) {
-		m = dtom (lcp -> lcd_template);
+		m = lcp -> lcd_template;
 		lcp -> lcd_template = NULL;
 	} else {
 		if (lcp -> lcd_rnr_condition || lcp -> lcd_window_condition ||

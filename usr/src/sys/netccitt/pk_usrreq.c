@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.9 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,8 +29,6 @@
 #include "pk.h"
 #include "pk_var.h"
 
-struct	x25_packet *pk_template ();
-
 /*
  * 
  *  X.25 Packet level protocol interface to socket abstraction.
@@ -49,13 +47,12 @@ register struct mbuf *m, *nam;
 struct mbuf *control;
 {
 	register struct pklcd *lcp = (struct pklcd *) so -> so_pcb;
-	register struct x25_packet *xp;
 	register int error = 0;
 
 	if (req == PRU_CONTROL)
 		return (pk_control(so, (int)m, (caddr_t)nam,
 			(struct ifnet *)control));
-	if (control && control->m_len) {
+	if (control && control -> m_len) {
 		error = EINVAL;
 		goto release;
 	}
@@ -108,13 +105,7 @@ struct mbuf *control;
 	 *  Prepare to accept connections.
 	 */
 	case PRU_LISTEN: 
-		if (lcp -> lcd_ceaddr == 0) {
-			error = EDESTADDRREQ;
-			break;
-		}
-		lcp -> lcd_state = LISTEN;
-		lcp -> lcd_listen = pk_listenhead;
-		pk_listenhead = lcp;
+		error = pk_listen (lcp);
 		break;
 
 	/* 
@@ -125,7 +116,9 @@ struct mbuf *control;
 	case PRU_CONNECT: 
 		if (nam -> m_len == sizeof (struct x25_sockaddr))
 			old_to_new (nam);
-		error = pk_connect (lcp, nam, (struct sockaddr_25 *)0);
+		if (pk_checksockaddr (nam))
+			return (EINVAL);
+		error = pk_connect (lcp, mtod (nam, struct sockaddr_x25 *));
 		break;
 
 	/* 
@@ -161,11 +154,35 @@ struct mbuf *control;
 		break;
 
 	/* 
+	 *  Send INTERRUPT packet.
+	 */
+	case PRU_SENDOOB: 
+		if (m == 0) {
+			MGETHDR(m, M_WAITOK, MT_OOBDATA);
+			m -> m_pkthdr.len = m -> m_len = 1;
+			*mtod(m, octet *) = 0;
+		}
+		if (m -> m_pkthdr.len > 32) {
+			m_freem(m);
+			error = EMSGSIZE;
+			break;
+		}
+		MCHTYPE(m, MT_OOBDATA);
+		/* FALLTHROUGH */
+
+	/* 
 	 *  Do send by placing data on the socket output queue.
-	 *  SHOULD WE USE m_cat HERE.
 	 */
 	case PRU_SEND: 
-		error = pk_send (lcp, m);
+		if (control) {
+			register struct cmsghdr *ch = mtod(m, struct cmsghdr *);
+			control -> m_len -= sizeof (*ch);
+			control -> m_data += sizeof (*ch);
+			pk_ctloutput(PRCO_SETOPT, so, ch -> cmsg_level,
+					ch -> cmsg_type, &control);
+		}
+		if (m)
+			error = pk_send (lcp, m);
 		break;
 
 	/* 
@@ -221,24 +238,22 @@ struct mbuf *control;
 	 *  Receive INTERRUPT packet.
 	 */
 	case PRU_RCVOOB: 
-		m -> m_len = 1;
-		*mtod (m, char *) = lcp -> lcd_intrdata;
-		break;
-
-	/* 
-	 *  Send INTERRUPT packet.
-	 */
-	case PRU_SENDOOB: 
-		if (lcp -> lcd_intrconf_pending) {
-			error = ETOOMANYREFS;
+		if (so -> so_options & SO_OOBINLINE) {
+			register struct mbuf *n  = so -> so_rcv.sb_mb;
+			if (n && n -> m_type == MT_OOBDATA) {
+				unsigned len =  n -> m_pkthdr.len;
+				so -> so_rcv.sb_mb = n -> m_nextpkt;
+				if (len !=  n -> m_len &&
+				    (n = m_pullup(n, len)) == 0)
+					break;
+				m -> m_len = len;
+				bcopy(mtod(m, caddr_t), mtod(n, caddr_t), len);
+				m_freem(n);
+			}
 			break;
 		}
-		lcp -> lcd_intrcnt++;
-		xp = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_INTERRUPT);
-		xp -> packet_data = 0;
-		(dtom (xp)) -> m_len++;
-		pk_output (lcp);
-		m_freem (m);
+		m -> m_len = 1;
+		*mtod (m, char *) = lcp -> lcd_intrdata;
 		break;
 
 	default: 
@@ -252,7 +267,7 @@ release:
 
 /* 
  * If you want to use UBC X.25 level 3 in conjunction with some
- * other X.25 level 2 driver, have the ifp->if_ioctl routine
+ * other X.25 level 2 driver, have the ifp -> if_ioctl routine
  * assign pk_start to pkp -> pk_start when called with SIOCSIFCONF_X25.
  */
 /* ARGSUSED */
@@ -283,8 +298,8 @@ register struct ifnet *ifp;
 	 * Find address for this interface, if it exists.
 	 */
 	if (ifp)
-		for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
-			if (ifa->ifa_addr->sa_family == AF_CCITT)
+		for (ifa = ifp -> if_addrlist; ifa; ifa = ifa -> ifa_next)
+			if (ifa -> ifa_addr -> sa_family == AF_CCITT)
 				break;
 
 	ia = (struct x25_ifaddr *)ifa;
@@ -292,7 +307,7 @@ register struct ifnet *ifp;
 	case SIOCGIFCONF_X25:
 		if (ifa == 0)
 			return (EADDRNOTAVAIL);
-		ifr->ifr_xc = ia->ia_xc;
+		ifr -> ifr_xc = ia -> ia_xc;
 		return (0);
 
 	case SIOCSIFCONF_X25:
@@ -308,41 +323,41 @@ register struct ifnet *ifp;
 			if (ia == 0)
 				return (ENOBUFS);
 			bzero((caddr_t)ia, sizeof (*ia));
-			if (ifa = ifp->if_addrlist) {
-				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
+			if (ifa = ifp -> if_addrlist) {
+				for ( ; ifa -> ifa_next; ifa = ifa -> ifa_next)
 					;
-				ifa->ifa_next = &ia->ia_ifa;
+				ifa -> ifa_next = &ia -> ia_ifa;
 			} else
-				ifp->if_addrlist = &ia->ia_ifa;
-			ifa = &ia->ia_ifa;
-			ifa->ifa_netmask = (struct sockaddr *)&ia->ia_sockmask;
-			ifa->ifa_addr = (struct sockaddr *)&ia->ia_xc.xc_addr;
-			ia->ia_xcp = &ia->ia_xc;
-			ia->ia_ifp = ifp;
-			ia->ia_pkcb.pk_ia = ia;
-			ia->ia_pkcb.pk_next = pkcbhead;
-			ia->ia_pkcb.pk_state = DTE_WAITING;
-			ia->ia_pkcb.pk_start = pk_start;
-			pkcbhead = &ia->ia_pkcb;
+				ifp -> if_addrlist = &ia -> ia_ifa;
+			ifa = &ia -> ia_ifa;
+			ifa -> ifa_netmask = (struct sockaddr *)&ia -> ia_sockmask;
+			ifa -> ifa_addr = (struct sockaddr *)&ia -> ia_xc.xc_addr;
+			ia -> ia_xcp = &ia -> ia_xc;
+			ia -> ia_ifp = ifp;
+			ia -> ia_pkcb.pk_ia = ia;
+			ia -> ia_pkcb.pk_next = pkcbhead;
+			ia -> ia_pkcb.pk_state = DTE_WAITING;
+			ia -> ia_pkcb.pk_start = pk_start;
+			pkcbhead = &ia -> ia_pkcb;
 		}
-		old_maxlcn = ia->ia_maxlcn;
-		ia->ia_xc = ifr->ifr_xc;
-		if (ia->ia_chan && (ia->ia_maxlcn != old_maxlcn)) {
-			pk_restart(&ia->ia_pkcb, X25_RESTART_NETWORK_CONGESTION);
-			dev_lcp = ia->ia_chan[0];
-			free((caddr_t)ia->ia_chan, M_IFADDR);
-			ia->ia_chan = 0;
+		old_maxlcn = ia -> ia_maxlcn;
+		ia -> ia_xc = ifr -> ifr_xc;
+		if (ia -> ia_chan && (ia -> ia_maxlcn != old_maxlcn)) {
+			pk_restart(&ia -> ia_pkcb, X25_RESTART_NETWORK_CONGESTION);
+			dev_lcp = ia -> ia_chan[0];
+			free((caddr_t)ia -> ia_chan, M_IFADDR);
+			ia -> ia_chan = 0;
 		}
-		if (ia->ia_chan == 0) {
-			n = (ia->ia_maxlcn + 1) * sizeof(struct pklcd *);
-			ia->ia_chan = (struct pklcd **) malloc(n, M_IFADDR, M_WAITOK);
-			if (ia->ia_chan) {
-				bzero((caddr_t)ia->ia_chan, n);
+		if (ia -> ia_chan == 0) {
+			n = (ia -> ia_maxlcn + 1) * sizeof(struct pklcd *);
+			ia -> ia_chan = (struct pklcd **) malloc(n, M_IFADDR, M_WAITOK);
+			if (ia -> ia_chan) {
+				bzero((caddr_t)ia -> ia_chan, n);
 				if (dev_lcp == 0)
 					dev_lcp = pk_attach((struct socket *)0);
-				ia->ia_chan[0] = dev_lcp;
-				dev_lcp->lcd_state = READY;
-				dev_lcp->lcd_pkp = &ia->ia_pkcb;
+				ia -> ia_chan[0] = dev_lcp;
+				dev_lcp -> lcd_state = READY;
+				dev_lcp -> lcd_pkp = &ia -> ia_pkcb;
 			} else {
 				if (dev_lcp)
 					pk_close(dev_lcp);
@@ -354,17 +369,17 @@ register struct ifnet *ifp;
 		 * is its first address, and to validate the address.
 		 */
 		s = splimp();
-		if (ifp->if_ioctl)
-			error = (*ifp->if_ioctl)(ifp, SIOCSIFCONF_X25, ifa);
+		if (ifp -> if_ioctl)
+			error = (*ifp -> if_ioctl)(ifp, SIOCSIFCONF_X25, ifa);
 		if (error)
-			ifp->if_flags &= ~IFF_UP;
-		splx(s);
+			ifp -> if_flags &= ~IFF_UP;
+		splx (s);
 		return (error);
 
 	default:
-		if (ifp == 0 || ifp->if_ioctl == 0)
+		if (ifp == 0 || ifp -> if_ioctl == 0)
 			return (EOPNOTSUPP);
-		return ((*ifp->if_ioctl)(ifp, cmd, data));
+		return ((*ifp -> if_ioctl)(ifp, cmd, data));
 	}
 }
 
@@ -374,22 +389,30 @@ struct mbuf **mp;
 int cmd, level, optname;
 {
 	register struct mbuf *m = *mp;
+	register struct pklcd *lcp = (struct pklcd *) so -> so_pcb;
 	int error;
 
 	if (cmd == PRCO_SETOPT) switch (optname) {
 	case PK_ACCTFILE:
 		if (m == 0)
 			return (EINVAL);
-		if (m->m_len)
-			error = pk_accton(mtod(m, char *));
+		if (m -> m_len)
+			error = pk_accton (mtod(m, char *));
 		else
-			error = pk_accton((char *)0);
-		(void) m_freem(m);
+			error = pk_accton ((char *)0);
+		(void) m_freem (m);
 		*mp = 0;
 		return (error);
+
+	case PK_FACILITIES:
+		if (m == 0)
+			return (EINVAL);
+		lcp -> lcd_facilities = m;
+		*mp = 0;
+		return (0);
 	}
 	if (*mp) {
-		(void) m_freem(*mp);
+		(void) m_freem (*mp);
 		*mp = 0;
 	}
 	return (EOPNOTSUPP);
@@ -415,7 +438,7 @@ register struct mbuf *m;
 	bzero ((caddr_t)newp, sizeof (*newp));
 
 	newp -> x25_family = AF_CCITT;
-	newp->x25_opts.op_flags = (oldp->xaddr_facilities & X25_REVERSE_CHARGE)
+	newp -> x25_opts.op_flags = (oldp -> xaddr_facilities & X25_REVERSE_CHARGE)
 		| X25_MQBIT | X25_OLDSOCKADDR;
 	if (oldp -> xaddr_facilities & XS_HIPRIO)	/* Datapac specific */
 		newp -> x25_opts.op_psize = X25_PS128;
@@ -432,7 +455,7 @@ register struct mbuf *m;
 	}
 
 	bcopy ((caddr_t)newp, mtod (m, char *), sizeof (*newp));
-	m->m_len = sizeof (*newp);
+	m -> m_len = sizeof (*newp);
 }
 
 /*
@@ -471,12 +494,48 @@ register struct mbuf *m;
 	m -> m_len = sizeof (*oldp);
 }
 
+
+pk_checksockaddr (m)
+struct mbuf *m;
+{
+	register struct sockaddr_x25 *sa = mtod (m, struct sockaddr_x25 *);
+	register char *cp;
+
+	if (m -> m_len != sizeof (struct sockaddr_x25))
+		return (1);
+	if (sa -> x25_family != AF_CCITT ||
+		sa -> x25_udlen > sizeof (sa -> x25_udata))
+		return (1);
+	for (cp = sa -> x25_addr; *cp; cp++) {
+		if (*cp < '0' || *cp > '9' ||
+			cp >= &sa -> x25_addr[sizeof (sa -> x25_addr) - 1])
+			return (1);
+	}
+	return (0);
+}
 pk_send (lcp, m)
 struct pklcd *lcp;
 register struct mbuf *m;
 {
-	int mqbit = 0, error;
+	int mqbit = 0, error = 0;
+	register struct x25_packet *xp;
 
+	if (m -> m_type == MT_OOBDATA) {
+		if (lcp -> lcd_intrconf_pending)
+			error = ETOOMANYREFS;
+		if (m -> m_pkthdr.len > 32)
+			error = EMSGSIZE;
+		M_PREPEND(m, PKHEADERLN, M_WAITOK);
+		if (m == 0 || error)
+			goto bad;
+		lcp -> lcd_template = m;
+		*(mtod (m, octet *)) = 0;
+		xp = mtod (m, struct x25_packet *);
+		xp -> fmt_identifier = 1;
+		xp -> packet_type = X25_INTERRUPT;
+		SET_LCN(xp, lcp -> lcd_lcn);
+		return (pk_output (lcp));
+	}
 	/*
 	 * Application has elected (at call setup time) to prepend
 	 * a control byte to each packet written indicating m-bit
@@ -487,12 +546,16 @@ register struct mbuf *m;
 			m_freem (m);
 			return (EMSGSIZE);
 		}
-		mqbit = *(mtod(m, u_char *));
+		mqbit = *(mtod (m, u_char *));
 		m -> m_len--;
 		m -> m_data++;
 		m -> m_pkthdr.len--;
 	}
 	if ((error = pk_fragment(lcp, m, mqbit & 0x80, mqbit &0x40, 1)) == 0)
 		error = pk_output (lcp);
+	return (error);
+bad:
+	if (m)
+		m_freem (m);
 	return (error);
 }
