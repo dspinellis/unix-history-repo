@@ -1,5 +1,5 @@
-/*-
- * Copyright (c) 1990 The Regents of the University of California.
+/*
+ * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,46 +30,53 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)ansi.h	7.1 (Berkeley) 3/9/91
- *	$Id: ansi.h,v 1.2 1993/10/16 14:39:05 rgrimes Exp $
+ *	@(#)ctype.h	5.3 (Berkeley) 4/3/91
  */
 
-#ifndef	_ANSI_H_
-#define	_ANSI_H_
+#ifndef _CTYPE_H_
+#define _CTYPE_H_
 
-/*
- * Types which are fundamental to the implementation and may appear in
- * more than one standard header are defined here.  Standard headers
- * then use:
- *	#ifdef	_SIZE_T_
- *	typedef	_SIZE_T_ size_t;
- *	#undef	_SIZE_T_
- *	#endif
- *
- * Thanks, ANSI!
- */
-#define	_CLOCK_T_	unsigned long		/* clock() */
-#define	_PTRDIFF_T_	int			/* ptr1 - ptr2 */
-#define	_SIZE_T_	unsigned int		/* sizeof() */
-#define	_TIME_T_	long			/* time() */
-#define	_VA_LIST_	char *			/* va_list */
+#include <sys/cdefs.h>
 
-/*
- * Runes (wchar_t) is declared to be an ``int'' instead of the more natural
- * ``unsigned long'' or ``long''.  Two things are happening here.  It is not
- * unsigned so that EOF (-1) can be naturally assigned to it and used.  Also,
- * it looks like 10646 will be a 31 bit standard.  This means that if your
- * ints cannot hold 32 bits, you will be in trouble.  The reason an int was
- * chosen over a long is that the is*() and to*() routines take ints (says
- * ANSI C), but they use _RUNE_T_ instead of int.  By changing it here, you
- * lose a bit of ANSI conformance, but your programs will still work.
- *
- * Note that _WCHAR_T_ and _RUNE_T_ must be of the same type.  When wchar_t
- * and rune_t are typedef'd, _WCHAR_T_ will be undef'd, but _RUNE_T remains
- * defined for ctype.h.
- */
-#define _BSD_WCHAR_T_   int                     /* wchar_t */
-#define _BSD_RUNE_T_    int                     /* rune_t */
+#define	_U	0x01
+#define	_L	0x02
+#define	_N	0x04
+#define	_S	0x08
+#define	_P	0x10
+#define	_C	0x20
+#define	_X	0x40
+#define	_B	0x80
 
+extern char	_ctype_[];
 
-#endif	/* _ANSI_H_ */
+__BEGIN_DECLS
+int isdigit __P((int));
+int islower __P((int));
+int isspace __P((int));
+int ispunkt __P((int));
+int isupper __P((int));
+int isalpha __P((int));
+int isxdigit __P((int));
+int isalnum __P((int));
+int isprint __P((int));
+int isgraph __P((int));
+int iscntrl __P((int));
+int toupper __P((int));
+int tolower __P((int));
+__END_DECLS
+
+#define	isdigit(c)	((_ctype_ + 1)[c] & _N)
+#define	islower(c)	((_ctype_ + 1)[c] & _L)
+#define	isspace(c)	((_ctype_ + 1)[c] & _S)
+#define	ispunct(c)	((_ctype_ + 1)[c] & _P)
+#define	isupper(c)	((_ctype_ + 1)[c] & _U)
+#define	isalpha(c)	((_ctype_ + 1)[c] & (_U|_L))
+#define	isxdigit(c)	((_ctype_ + 1)[c] & (_N|_X))
+#define	isalnum(c)	((_ctype_ + 1)[c] & (_U|_L|_N))
+#define	isprint(c)	((_ctype_ + 1)[c] & (_P|_U|_L|_N|_B))
+#define	isgraph(c)	((_ctype_ + 1)[c] & (_P|_U|_L|_N))
+#define	iscntrl(c)	((_ctype_ + 1)[c] & _C)
+#define	isascii(c)	((unsigned)(c) <= 0177)
+#define	toascii(c)	((c) & 0177)
+
+#endif /* !_CTYPE_H_ */

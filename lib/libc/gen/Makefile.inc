@@ -8,7 +8,7 @@ SRCS+=	alarm.c assert.c clock.c crypt.c ctermid.c ctime.c ctype_.c \
 	fnmatch.c frexp.c fstab.c fts.c getcap.c getcwd.c getgrent.c \
 	getlogin.c getmntinfo.c getpass.c getpwent.c getsubopt.c getttyent.c \
 	getusershell.c glob.c infinity.c initgroups.c insque.c isatty.c \
-	isctype.c isinf.c mktemp.c msgctl.c msgget.c msgsnd.c msgrcv.c \
+	isinf.c mktemp.c msgctl.c msgget.c msgsnd.c msgrcv.c \
 	nice.c nlist.c pause.c popen.c psignal.c raise.c scandir.c \
 	semconfig.c semctl.c semget.c semop.c \
 	setjmperr.c setmode.c \

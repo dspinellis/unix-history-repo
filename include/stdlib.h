@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	From: @(#)stdlib.h	5.13 (Berkeley) 6/4/91
- *	$Id: stdlib.h,v 1.3 1994/03/16 20:29:53 wollman Exp $
+ *	$Id: stdlib.h,v 1.4 1994/03/19 21:43:18 wollman Exp $
  */
 
 #ifndef _STDLIB_H_
@@ -46,10 +46,15 @@
 typedef	_WCHAR_T_	wchar_t;
 #undef	_WCHAR_T_
 #endif
-#ifdef	_SIZE_T_
-typedef	_SIZE_T_	size_t;
-#undef	_SIZE_T_
+
+#ifdef  _BSD_WCHAR_T_
+#ifndef _ANSI_SOURCE
+typedef _BSD_WCHAR_T_   rune_t;
 #endif
+typedef _BSD_WCHAR_T_   wchar_t;
+#undef  _BSD_WCHAR_T_
+#endif
+
 #ifndef	NULL
 #define	NULL		0
 #endif
@@ -69,7 +74,8 @@ typedef struct {
 
 #define	RAND_MAX	0x7fffffff
 
-#define	MB_CUR_MAX	1	/* XXX */
+extern int __mb_cur_max;
+#define MB_CUR_MAX	__mb_cur_max
 
 #include <sys/cdefs.h>
 

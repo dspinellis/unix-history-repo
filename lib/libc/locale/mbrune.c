@@ -1,6 +1,9 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Paul Borman at Krystal Technologies.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,47 +32,81 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	from: @(#)ansi.h	7.1 (Berkeley) 3/9/91
- *	$Id: ansi.h,v 1.2 1993/10/16 14:39:05 rgrimes Exp $
  */
 
-#ifndef	_ANSI_H_
-#define	_ANSI_H_
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)mbrune.c	8.1 (Berkeley) 6/27/93";
+#endif /* LIBC_SCCS and not lint */
 
-/*
- * Types which are fundamental to the implementation and may appear in
- * more than one standard header are defined here.  Standard headers
- * then use:
- *	#ifdef	_SIZE_T_
- *	typedef	_SIZE_T_ size_t;
- *	#undef	_SIZE_T_
- *	#endif
- *
- * Thanks, ANSI!
- */
-#define	_CLOCK_T_	unsigned long		/* clock() */
-#define	_PTRDIFF_T_	int			/* ptr1 - ptr2 */
-#define	_SIZE_T_	unsigned int		/* sizeof() */
-#define	_TIME_T_	long			/* time() */
-#define	_VA_LIST_	char *			/* va_list */
+#include <limits.h>
+#include <rune.h>
+#include <stddef.h>
+#include <string.h>
 
-/*
- * Runes (wchar_t) is declared to be an ``int'' instead of the more natural
- * ``unsigned long'' or ``long''.  Two things are happening here.  It is not
- * unsigned so that EOF (-1) can be naturally assigned to it and used.  Also,
- * it looks like 10646 will be a 31 bit standard.  This means that if your
- * ints cannot hold 32 bits, you will be in trouble.  The reason an int was
- * chosen over a long is that the is*() and to*() routines take ints (says
- * ANSI C), but they use _RUNE_T_ instead of int.  By changing it here, you
- * lose a bit of ANSI conformance, but your programs will still work.
- *
- * Note that _WCHAR_T_ and _RUNE_T_ must be of the same type.  When wchar_t
- * and rune_t are typedef'd, _WCHAR_T_ will be undef'd, but _RUNE_T remains
- * defined for ctype.h.
- */
-#define _BSD_WCHAR_T_   int                     /* wchar_t */
-#define _BSD_RUNE_T_    int                     /* rune_t */
+char *
+mbrune(string, c)
+	const char *string;
+	rune_t c;
+{
+	char const *result;
+	rune_t r;
 
+	while ((r = sgetrune(string, MB_LEN_MAX, &result))) {
+		if (r == c)
+			return ((char *)string);
+		string = result == string ? string + 1 : result;
+	}
 
-#endif	/* _ANSI_H_ */
+	return (c == *string ? (char *)string : NULL);
+}
+
+char *
+mbrrune(string, c)
+	const char *string;
+	rune_t c;
+{
+	const char *last = 0;
+	char const *result;
+	rune_t  r;
+
+	while ((r = sgetrune(string, MB_LEN_MAX, &result))) {
+		if (r == c)
+			last = string;
+		string = result == string ? string + 1 : result;
+	}
+	return (c == *string ? (char *)string : (char *)last);
+}
+
+char *
+mbmb(string, pattern)
+	const char *string;
+	char *pattern;
+{
+	rune_t first, r;
+	size_t plen, slen;
+	char const *result;
+
+	plen = strlen(pattern);
+	slen = strlen(string);
+	if (plen > slen)
+		return (0);
+
+	first = sgetrune(pattern, plen, &result);
+	if (result == string)
+		return (0);
+
+	while (slen >= plen && (r = sgetrune(string, slen, &result))) {
+		if (r == first) {
+			if (strncmp(string, pattern, slen) == 0)
+				return ((char *) string);
+		}
+		if (result == string) {
+			--slen;
+			++string;
+		} else {
+			slen -= result - string;
+			string = result;
+		}
+	}
+	return (0);
+}

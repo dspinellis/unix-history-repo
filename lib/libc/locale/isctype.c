@@ -1,6 +1,9 @@
-/*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+/*
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Paul Borman at Krystal Technologies.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,47 +32,139 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	from: @(#)ansi.h	7.1 (Berkeley) 3/9/91
- *	$Id: ansi.h,v 1.2 1993/10/16 14:39:05 rgrimes Exp $
  */
 
-#ifndef	_ANSI_H_
-#define	_ANSI_H_
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)isctype.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
 
-/*
- * Types which are fundamental to the implementation and may appear in
- * more than one standard header are defined here.  Standard headers
- * then use:
- *	#ifdef	_SIZE_T_
- *	typedef	_SIZE_T_ size_t;
- *	#undef	_SIZE_T_
- *	#endif
- *
- * Thanks, ANSI!
- */
-#define	_CLOCK_T_	unsigned long		/* clock() */
-#define	_PTRDIFF_T_	int			/* ptr1 - ptr2 */
-#define	_SIZE_T_	unsigned int		/* sizeof() */
-#define	_TIME_T_	long			/* time() */
-#define	_VA_LIST_	char *			/* va_list */
+#define _ANSI_LIBRARY
+#include <ctype.h>
 
-/*
- * Runes (wchar_t) is declared to be an ``int'' instead of the more natural
- * ``unsigned long'' or ``long''.  Two things are happening here.  It is not
- * unsigned so that EOF (-1) can be naturally assigned to it and used.  Also,
- * it looks like 10646 will be a 31 bit standard.  This means that if your
- * ints cannot hold 32 bits, you will be in trouble.  The reason an int was
- * chosen over a long is that the is*() and to*() routines take ints (says
- * ANSI C), but they use _RUNE_T_ instead of int.  By changing it here, you
- * lose a bit of ANSI conformance, but your programs will still work.
- *
- * Note that _WCHAR_T_ and _RUNE_T_ must be of the same type.  When wchar_t
- * and rune_t are typedef'd, _WCHAR_T_ will be undef'd, but _RUNE_T remains
- * defined for ctype.h.
- */
-#define _BSD_WCHAR_T_   int                     /* wchar_t */
-#define _BSD_RUNE_T_    int                     /* rune_t */
+#undef isalnum
+int
+isalnum(c)
+	int c;
+{
+	return(__istype((c), (_A|_D)));
+}
 
+#undef isalpha
+int
+isalpha(c)
+	int c;
+{
+	return (__istype((c), _A));
+}
 
-#endif	/* _ANSI_H_ */
+#undef isascii
+int
+isascii(c)
+	int c;
+{
+	return((c & ~0x7F) == 0);
+}
+
+#undef isblank
+int
+isblank(c)
+	int c;
+{
+	return (__istype((c), _B));
+}
+
+#undef iscntrl
+int
+iscntrl(c)
+	int c;
+{
+	return (__istype((c), _C));
+}
+
+#undef isdigit
+int
+isdigit(c)
+	int c;
+{
+	return (__isctype((c), _D));
+}
+
+#undef isgraph
+int
+isgraph(c)
+	int c;
+{
+	return (__istype((c), _G));
+}
+
+#undef islower
+int
+islower(c)
+	int c;
+{
+	return (__istype((c), _L));
+}
+
+#undef isprint
+int
+isprint(c)
+	int c;
+{
+	return (__istype((c), _R));
+}
+
+#undef ispunct
+int
+ispunct(c)
+	int c;
+{
+	return (__istype((c), _P));
+}
+
+#undef isspace
+int
+isspace(c)
+	int c;
+{
+	return (__istype((c), _S));
+}
+
+#undef isupper
+int
+isupper(c)
+	int c;
+{
+	return (__istype((c), _U));
+}
+
+#undef isxdigit
+int
+isxdigit(c)
+	int c;
+{
+	return (__isctype((c), _X));
+}
+
+#undef toascii
+int
+toascii(c)
+	int c;
+{
+	return (c & 0177);
+}
+
+#undef tolower
+int
+tolower(c)
+	int c;
+{
+        return((c & _CRMASK) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+}
+
+#undef toupper
+int
+toupper(c)
+	int c;
+{
+        return((c & _CRMASK) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+}
