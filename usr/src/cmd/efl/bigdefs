@@ -1,0 +1,588 @@
+#include "stdio.h"
+
+#define HASHEDTABLE 1
+
+
+#define NFTNTYPES 5
+#define NEFLTYPES 12
+
+#define MEMSIZE 12000
+
+#define MAXSTNO 200
+#define MAXINCLUDEDEPTH 10
+#define MAXBLOCKDEPTH 30
+#define MAXINDIFS 100
+#define MAXFTNAMES 200
+#define MAXEFLNAMES 401
+
+#define EXECPOOL 20
+#define EXPRPOOL 40
+
+#define NAMESPERLINE 6
+
+#define LINESPACES 66
+#define INDENTSPACES 3
+
+extern int yylineno;
+extern int dumpic;
+extern int memdump;
+extern int dbgflag;
+extern int nowarnflag;
+extern int nocommentflag;
+extern int verbose;
+extern int dumpcore;
+#define TEST if(dbgflag)
+#define efgetc (efmacp?*efmacp++:getc(yyin))
+extern char msg[];
+
+#define UNIX 1
+#define GCOS 2
+#define GCOSBCD 3
+
+#define FIELDMAX 32768.
+
+typedef *ptr;
+#define ALLOC(x) intalloc(sizeof(struct x))
+
+extern FILE *diagfile;
+extern FILE *codefile;
+extern FILE *yyin;
+extern FILE *fileptrs[];
+extern char *filenames[];
+extern int  filelines[];
+extern int filedepth;
+extern char *efmacp;
+extern int filemacs[];
+extern int pushchars[];
+
+extern struct fileblock *iifilep;
+
+extern int mem[];
+extern unsigned int nmemused;
+extern long int totfreed;
+extern long int totalloc;
+
+extern int nhid[];
+extern int ndecl[];
+
+extern int indifs[];
+extern int nxtindif;
+extern int afterif;
+
+extern neflnames;
+
+extern int nftnch;
+extern int nftncont;
+
+extern char ftnames[MAXFTNAMES][7];
+extern int nftnames;
+extern int nftnm0;
+extern int impltype[];
+extern int ftnmask[];
+
+extern double fieldmax;
+extern int ftnefl[];
+extern int eflftn[];
+
+extern ptr thisexec;
+extern ptr thisctl;
+extern int pushlex;
+extern int igeol;
+extern int ateof;
+extern int eofneed;
+extern int forcerr;
+extern int comneed;
+extern int optneed;
+extern int defneed;
+extern int lettneed;
+
+extern int prevbg;
+
+extern ptr hidlist;
+extern ptr commonlist;
+extern ptr tempvarlist;
+extern ptr temptypelist;
+extern ptr gonelist;
+extern int blklevel;
+extern int ctllevel;
+extern int dclsect;
+extern int instruct;
+extern int inbound;
+extern int inproc;
+
+extern int ncases;
+extern ptr comments;
+extern ptr prevcomments;
+extern ptr genequivs;
+extern ptr arrays;
+extern ptr generlist;
+extern ptr knownlist;
+
+extern int graal;
+extern ptr thisproc;
+extern ptr thisargs;
+
+extern int langopt;
+extern int dotsopt;
+extern int dbgopt;
+extern int dbglevel;
+
+extern int stnos[];
+extern int nxtstno;
+extern int constno;
+extern int labno;
+extern int nerrs;
+extern int nbad;
+extern int nwarns;
+
+struct headbits
+	{
+	int tag:8;
+	int subtype:8;
+	int blklevel:8;
+	};
+
+extern struct fileblock
+	{
+	FILE *fileptr;
+	char filename[20];
+	};
+
+extern struct fileblock *ibfile;
+extern struct fileblock *icfile;
+extern struct fileblock *idfile;
+extern struct fileblock *iefile;
+
+extern struct chain
+	{
+	ptr nextp;
+	ptr datap;
+	} ;
+
+typedef struct chain *chainp;
+
+extern struct comentry
+	{
+	struct headbits header;
+	char comname[7];
+	long int comleng;
+	int cominit:2;
+	chainp comchain;
+	} ;
+
+extern struct stentry
+	{
+	struct headbits header;
+	char *namep;
+	ptr varp;
+	int hashval;
+	};
+
+extern struct stentry *hashtab[];
+extern struct stentry **hashend;
+
+extern struct typeblock
+	{
+	struct headbits header;
+	ptr sthead;
+	ptr strdesc;
+	int stralign;
+	int strsize;
+	int basetypes;
+	} ;
+
+extern struct keyblock
+	{
+	struct headbits header;
+	ptr sthead;
+	} ;
+
+
+extern struct varblock
+	{
+	struct headbits header;
+	ptr sthead;
+	ptr vinit;
+		int vadjdim:1;
+		int vdcldone:1;
+		int vdclstart:1;
+		int vnamedone:1;
+		int vprec:1;
+		int vext:1;
+		int vproc:2;
+		int needpar:1;
+		int vtype:4;
+		int vclass:3;
+	ptr vtypep;
+	ptr vdim;
+	ptr vsubs;
+	ptr voffset;
+	int vextbase;
+	int vbase[NFTNTYPES];
+	} ;
+
+extern struct atblock
+	{
+	int atprec;
+	int attype;
+	int atext;
+	int atclass;
+	ptr attypep;
+	ptr atcommon;
+	ptr atdim;
+	} ;
+
+extern struct dimblock
+	{
+	ptr nextp;
+	ptr lowerb;
+	ptr upperb;
+	} ;
+
+extern struct exprblock	/* must be same size as varblock */
+	{
+	struct headbits header;
+	ptr leftp;
+	ptr rightp;
+		int vadjdim:1;
+		int vdcldone:1;
+		int vdclstart:1;
+		int vnamedone:1;
+		int vprec:1;
+		int vext:1;
+		int vproc:2;
+		int needpar:1;
+		int vtype:4;
+		int vclass:3;
+	ptr vtypep;
+	ptr vdim;
+	ptr vsubs;
+	ptr voffset;
+	int vextbase;
+	int vbase[NFTNTYPES];
+	} ;
+
+
+typedef union { struct varblock ; struct exprblock; } *nodep;
+
+extern struct execblock
+	{
+	struct headbits header;
+	ptr temps;
+	int labelno;
+		int uniffable:1;
+		int brnchend:1;
+		int labeled:1;
+		int copylab:1;
+		int labdefined:1;
+		int labused:1;
+		int labinacc:1;
+	ptr execdesc;
+	ptr prevexec;
+	int nxtlabno;
+	int nftnst;
+	} ;
+
+
+extern struct ctlblock	/* must be same size as execblock */
+	{
+	struct headbits header;
+	ptr loopvar;
+	ptr loopctl;
+	ptr prevctl;
+	int nextlab;
+	int breaklab;
+	int xlab;
+	int indifn;
+	} ;
+
+extern struct caseblock
+	{
+	struct headbits header;
+	ptr nextcase;
+	int labelno;
+		int uniffable:1;
+		int brnchend:1;
+		int labeled:1;
+		int copylab:1;
+		int labdefined:1;
+		int labused:1;
+		int labinacc:1;
+	ptr casexpr;
+	} ;
+
+extern struct labelblock
+	{
+	struct headbits header;
+	ptr sthead;
+	int labelno;
+		int uniffable:1;
+		int brnchend:1;
+		int labeled:1;
+		int copylab:1;
+		int labdefined:1;
+		int labused:1;
+		int labinacc:1;
+	} ;
+
+extern struct defblock
+	{
+	struct headbits header;
+	ptr sthead;
+	char *valp;
+	} ;
+
+extern struct doblock
+	{
+	struct headbits header;
+	ptr dovar;
+	ptr dopar[3];
+	} ;
+
+extern struct fieldspec
+	{
+	struct headbits header;
+	int flbound;
+	int frange;
+	int frshift;
+	int fanymore;
+	} ;
+
+
+extern struct genblock
+	{
+	struct headbits header;
+	ptr nextgenf;
+	char *genname;
+	char *genfname[NEFLTYPES];
+	int genftype[NEFLTYPES];
+	} ;
+
+
+extern struct knownname
+	{
+	struct headbits header;
+	ptr nextfunct;
+	char *funcname;
+	int functype;
+	} ;
+
+extern struct iostblock
+	{
+	struct headbits header;
+	ptr leftp;	/* padding */
+	ptr right;	/* padding */
+		int vadjdim:1;
+		int vdcldone:1;
+		int vdclstart:1;
+		int vnamedone:1;
+		int vprec:1;
+		int vext:1;
+		int vproc:2;
+		int needpar:1;
+		int vtype:4;
+		int vclass:3;
+	int iokwd;
+	ptr iounit;
+	ptr iolist;
+	int iojunk[7];	/* padding */
+	} ;
+
+extern struct ioitem
+	{
+	struct headbits header;
+	ptr ioexpr;
+	char *iofmt;
+	} ;
+
+
+extern struct tailoring
+	{
+	int ftnsys;
+	int errmode;
+	int charcomp;
+	int ftnin;
+	int ftnout;
+	int ftncontnu;
+	char *procheader;
+	int ftnchwd;
+	int ftnsize[NFTNTYPES];
+	int ftnalign[NFTNTYPES];
+	char *dfltfmt[NEFLTYPES];
+	int hollincall;
+	int deltastno;
+	int dclintrinsics;
+	}  tailor;
+
+/*Block tags */
+
+#define TAROP 1
+#define TASGNOP 2
+#define TLOGOP 3
+#define TRELOP 4
+#define TCALL 5
+#define TREPOP 6
+#define TLIST 7
+#define TCONST 8
+#define TNAME 9
+#define TERROR 10
+#define TCOMMON 11
+#define TSTRUCT 12
+#define TSTFUNCT 13
+#define TEXEC 14
+#define TTEMP 15
+#define TDEFINE 16
+#define TKEYWORD 17
+#define TLABEL 18
+#define TCASE 19
+#define TNOTOP 20
+#define TNEGOP 21
+#define TDOBLOCK 22
+#define TCONTROL 23
+#define TKNOWNFUNCT 24
+#define TFIELD 25
+#define TGENERIC 26
+#define TIOSTAT 27
+
+/* Operator subtypes */
+
+#define OPPLUS 1
+#define OPMINUS 2
+#define OPSTAR 3
+#define OPSLASH 4
+#define OPPOWER 5
+
+#define OPNOT 6
+#define OPAND 7
+#define OP2AND 8
+#define OP2OR 9
+#define OPOR 10
+
+#define OPEQ 11
+#define OPLT 12
+#define OPGT 13
+#define OPLE 14
+#define OPGE 15
+#define OPNE 16
+
+#define OPLPAR 17
+#define OPRPAR 18
+#define OPEQUALS 19
+#define OPCOMMA 20
+
+#define OPASGN 0
+#define OPREL 0
+
+
+/* Simplification types */
+
+#define LVAL 1
+#define RVAL 2
+#define SUBVAL 3
+#define IFVAL 4
+
+
+/* Parser return values */
+
+#define PARSERR 1
+#define PARSEOF 2
+#define PARSOPT 3
+#define PARSDCL 4
+#define PARSDEF 5
+#define PARSPROC 6
+
+
+/* Symbol table types */
+
+#define TYUNDEFINED 0
+#define TYINT 1
+#define TYREAL 2
+#define TYLREAL 3
+#define TYLOG 4
+#define TYCOMPLEX 5
+#define TYCHAR 6
+#define TYSTRUCT 7
+#define TYLABEL 8
+#define TYSUBR 9
+#define TYFIELD 10
+#define TYHOLLERITH 11
+
+
+
+/* Fortran types */
+
+#define FTNINT 0
+#define FTNREAL 1
+#define FTNLOG 2
+#define FTNCOMPLEX 3
+#define FTNDOUBLE 4
+#define FTNCHAR 5
+
+
+
+/* symbol table classes */
+
+#define CLUNDEFINED 0
+#define CLARG 1
+#define CLVALUE 2
+#define CLSTAT 3
+#define CLAUTO 4
+#define CLCOMMON 5
+#define CLMOS 6
+#define CLEXT 7
+
+
+/* values of vproc */
+
+#define PROCUNKNOWN 0
+#define PROCNO 1
+#define PROCYES 2
+#define PROCINTRINSIC 3
+
+
+
+/* ctlblock subtypes */
+
+#define STNULL 1
+#define STIF 2
+#define STIFELSE 3
+#define STREPEAT 4
+#define STWHILE 5
+#define STFOR 6
+#define STDO 7
+#define STSWITCH 8
+#define STRETURN 9
+#define STGOTO 10
+#define STCALL 11
+#define STPROC 12
+
+
+
+/* intermediate code definitions */
+
+#define ICEOF 0
+#define ICBEGIN 1
+#define ICKEYWORD 2
+#define ICOP 3
+#define ICNAME 4
+#define ICCONST 5
+#define ICLABEL 6
+#define ICMARK 7
+#define ICINDENT 8
+#define ICCOMMENT 9
+#define ICINDPTR 10
+#define ICBLANK 11
+
+#define FCONTINUE 2
+#define FCALL 3
+#define FDO 4
+#define FIF1 5
+#define FIF2 6
+#define FGOTO 7
+#define FRETURN 8
+#define FREAD 9
+#define FWRITE 10
+#define FFORMAT 11
+#define FSTOP 12
+#define FDATA 13
+#define FEQUIVALENCE 14
