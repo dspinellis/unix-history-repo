@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -186,9 +186,14 @@ chkquota(fsdev, qffile)
 			dqbuf = zerodqbuf;
 		fup = lookup(uid);
 		if (fup == 0) {
-			if (!feof(qf)) {
+			if ((dqbuf.dqb_curinodes != 0 ||
+			    dqbuf.dqb_curblocks != 0) &&
+			    !feof(qf)) {
+				dqbuf.dqb_curinodes = 0;
+				dqbuf.dqb_curblocks = 0;
 				fseek(qf, uid * sizeof(struct dqblk), 0);
-				fwrite(&zerodqbuf, sizeof(struct dqblk), 1, qf);
+				fwrite(&dqbuf, sizeof(struct dqblk), 1, qf);
+				fseek(qf, (uid + 1) * sizeof(struct dqblk), 0);
 			}
 			continue;
 		}
@@ -212,6 +217,7 @@ chkquota(fsdev, qffile)
 		dqbuf.dqb_curblocks = fup->fu_usage.du_curblocks;
 		fseek(qf, uid * sizeof(struct dqblk), 0);
 		fwrite(&dqbuf, sizeof(struct dqblk), 1, qf);
+		fseek(qf, (uid + 1) * sizeof(struct dqblk), 0);
 		quota(Q_SETDUSE, uid, quotadev, &fup->fu_usage);
 		fup->fu_usage.du_curinodes = 0;
 		fup->fu_usage.du_curblocks = 0;
