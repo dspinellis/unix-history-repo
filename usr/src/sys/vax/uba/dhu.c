@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	4.3 (Berkeley) %G%
+ *	@(#)dhu.c	4.4 (Berkeley) %G%
  */
 
 /*
@@ -364,7 +364,7 @@ dhurint(dhu)
 			    (tp->t_flags&(EVENP|ODDP)) == ODDP)
 				continue;
 		if ((c & DHU_RB_DO) && overrun == 0) {
-			log(KERN_RECOV, "dhu%d: silo overflow\n", dhu);
+			log(LOG_WARNING, "dhu%d: silo overflow\n", dhu);
 			overrun = 1;
 		}
 		if (c & DHU_RB_FE)

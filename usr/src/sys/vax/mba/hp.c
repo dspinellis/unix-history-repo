@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.13 (Berkeley) %G%
+ *	@(#)hp.c	6.14 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -612,7 +612,7 @@ hpdtint(mi, mbsr)
 			er2 &= ~HPER2_BSE;
 		}
 		if (er1 & HPER1_WLE) {
-			log(KERN_RECOV, "hp%d: write locked\n",
+			log(LOG_WARNING, "hp%d: write locked\n",
 			    hpunit(bp->b_dev));
 			bp->b_flags |= B_ERROR;
 		} else if (sc->sc_hdr) {
@@ -829,7 +829,7 @@ hpecc(mi, flag)
 		bn--;
 		if (bp->b_flags & B_BAD)
 			bn = sc->sc_badbn;
-		log(KERN_RECOV, "hp%d%c: soft ecc sn%d\n", hpunit(bp->b_dev),
+		log(LOG_WARNING, "hp%d%c: soft ecc sn%d\n", hpunit(bp->b_dev),
 		    'a'+(minor(bp->b_dev)&07), bn);
 		mask = MASKREG(rp->hpec2);
 		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */

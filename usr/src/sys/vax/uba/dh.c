@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	6.10 (Berkeley) %G%
+ *	@(#)dh.c	6.11 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -310,7 +310,7 @@ dhrint(dh)
 			 || (tp->t_flags&(EVENP|ODDP))==ODDP )
 				continue;
 		if ((c & DH_DO) && overrun == 0) {
-			log(KERN_RECOV, "dh%d: silo overflow\n", dh);
+			log(LOG_WARNING, "dh%d: silo overflow\n", dh);
 			overrun = 1;
 		}
 		if (c & DH_FE)

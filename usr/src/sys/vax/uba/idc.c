@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	6.9 (Berkeley) %G%
+ *	@(#)idc.c	6.10 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -711,7 +711,7 @@ idcecc(ui)
 	tn = idc_softc.sc_trk;
 	sn = idc_softc.sc_sect;
 	um->um_tab.b_active = 1;	/* Either complete or continuing... */
-	log(KERN_RECOV, "rb%d%c: soft ecc sn%d\n", idcunit(bp->b_dev),
+	log(LOG_WARNING, "rb%d%c: soft ecc sn%d\n", idcunit(bp->b_dev),
 	    'a'+(minor(bp->b_dev)&07),
 	    (cn*st->ntrak + tn) * st->nsect + sn + npf);
 	mask = idc->idceccpat;
