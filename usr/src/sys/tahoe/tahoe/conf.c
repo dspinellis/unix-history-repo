@@ -1,4 +1,4 @@
-/*	conf.c	1.3	86/01/26	*/
+/*	conf.c	1.4	86/01/26	*/
 
 #include "param.h"
 #include "systm.h"
@@ -48,7 +48,7 @@ int	xpopen(),xpstrategy(),xpread(),xpwrite(),xpdump(),xpioctl(),xpsize();
 #define	xpsize		0
 #endif
 
-#include "cy.h"
+#include "yc.h"
 #if NCY > 0
 int	cyopen(),cyclose(),cystrategy(),cyread(),cywrite(),cydump(),cyioctl(),cyreset();
 #else
