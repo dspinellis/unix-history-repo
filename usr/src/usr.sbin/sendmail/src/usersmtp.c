@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.5		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.6		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.5		%G%);
+SCCSID(@(#)usersmtp.c	4.6		%G%);
 
 
 
@@ -84,7 +84,7 @@ smtpinit(m, pvp)
 		{
 			extern char *errstring();
 
-			fprintf(CurEnv->e_xfp, "421 %s.%s... Deferred: %s",
+			fprintf(CurEnv->e_xfp, "421 %s.%s... Deferred: %s\n",
 				pvp[1], m->m_name, errstring(errno));
 		}
 		return (ExitStat);
