@@ -57,10 +57,13 @@ Adaptec 154x series ISA SCSI controller (as long as you have less than
 
 Adaptec 174x series EISA SCSI controller in standard and enhanced mode.
 
+[Note that Buslogic was formerly known as "Bustec"]
 Buslogic 545S.
 Buslogic 445S VLB SCSI controller
-
-Bustec 742A and 747.
+Buslogic 742A and 747.
+Please see special notes in /usr/src/KNOWNBUGS for details concerning
+possible buggy firmware and undocumented switch settings that
+may be necessary for proper operation of your controller.
 
 DTC 3290 EISA SCSI controller in 1542 emulation mode (as long as
 you have less than 16MB of main memory).
@@ -293,4 +296,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.23 1994/02/22 17:23:48 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.24 1994/02/24 06:49:44 jkh Exp $

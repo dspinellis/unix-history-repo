@@ -18,11 +18,12 @@ keyboard problems.
 /usr/bin/gdb:
 	The gdb in the release will not work on shared objects nor will it
 	work with C++ executables.  Please use the gdb in the ports area for
-	debugging shared and/or C++ code.
+	debugging shared and/or C++ code.  This is just a work-around until
+	we can transition to the new version of gdb completely.
 
 /sys/i386/isa/if_ep.c
 	The 3c509 driver will hang under heavy network loads and take your
-	machine off network.  (Though the machine will continue to run with
+	machine off the network.  (Though the machine will continue to run with
 	no network facilities)
 
 /sys/i386/boot
@@ -42,4 +43,15 @@ keyboard problems.
 	the question for what drive the root file system is on with B.
 	This will be fixed by the 1.1 release date.
 
-$Id: KNOWNBUGS,v 1.6 1994/02/22 17:52:23 rgrimes Exp $
+/sys/i386/isa/bt742a.c
+	The Bt445S and Bt747 controllers can cause problems when ISA DMA
+	is selected as an option.  With the EISA controller the remedy is
+	easy - simply turn it off using your EISA configuration utility.
+	With the Bt445S, which is a VLB card, you must switch the undocumented
+	"SW10" on "SB2" to the off position.  Also note that certain revisions
+	of the Buslogic firmware can cause data corruption with systems
+	containing more than 16Mb of memory.  If you find this to be the case,
+	temporarily remove your extra memory and contact Buslogic for an
+	upgrade.
+
+$Id: KNOWNBUGS,v 1.7 1994/02/22 22:34:52 rgrimes Exp $
