@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_extern.h	7.1 (Berkeley) %G%
+ *	@(#)mfs_extern.h	7.2 (Berkeley) %G%
  */
 
 struct buf;
@@ -23,6 +23,7 @@ int	mfs_close __P((struct vnode *vp,
 	    int flag, struct ucred *cred, struct proc *p));
 void	mfs_doio __P((struct buf *bp, caddr_t base));
 int	mfs_inactive __P((struct vnode *vp, struct proc *p));
+int	mfs_reclaim __P((struct vnode *vp));
 int	mfs_init __P((void));
 int	mfs_ioctl __P((struct vnode *vp, int com,
 	    caddr_t data, int fflag, struct ucred *cred, struct proc *p));
