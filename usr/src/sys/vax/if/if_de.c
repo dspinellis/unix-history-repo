@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_de.c	7.8 (Berkeley) %G%
+ *	@(#)if_de.c	7.9 (Berkeley) %G%
  */
 
 #include "de.h"
@@ -103,7 +103,6 @@ struct	de_softc {
 #define	ds_if	ds_ac.ac_if		/* network-visible interface */
 #define	ds_addr	ds_ac.ac_enaddr		/* hardware Ethernet address */
 	int	ds_flags;
-#define	DSF_LOCK	1		/* lock out destart */
 #define	DSF_RUNNING	2		/* board is enabled */
 #define	DSF_SETADDR	4		/* physical address is changed */
 	int	ds_ubaddr;		/* map info for incore structs */
@@ -353,7 +352,7 @@ deinit(unit)
 	ds->ds_rindex = ds->ds_xindex = ds->ds_xfree = ds->ds_nxmit = 0;
 	ds->ds_if.if_flags |= IFF_RUNNING;
 	addr->pclow = PCSR0_INTE;		/* avoid interlock */
-	(void) destart(&ds->ds_if);		/* queue output packets */
+	destart(&ds->ds_if);		/* queue output packets */
 	ds->ds_flags |= DSF_RUNNING;		/* need before de_setaddr */
 	if (ds->ds_flags & DSF_SETADDR)
 		de_setaddr(ds->ds_addr, unit);
@@ -365,6 +364,7 @@ deinit(unit)
  * Setup output on interface.
  * Get another datagram to send off of the interface queue,
  * and map it to the interface before starting the output.
+ * Must be called from ipl >= our interrupt level.
  */
 destart(ifp)
 	struct ifnet *ifp;
@@ -384,7 +384,7 @@ destart(ifp)
 	 * multiple transmission buffers.
 	 */
 	if (ds->ds_if.if_flags & IFF_OACTIVE)
-		return (0);
+		return;
 	for (nxmit = ds->ds_nxmit; nxmit < NXMT; nxmit++) {
 		IF_DEQUEUE(&ds->ds_if.if_snd, m);
 		if (m == 0)
@@ -409,7 +409,6 @@ destart(ifp)
 		if (ds->ds_flags & DSF_RUNNING)
 			addr->pclow = PCSR0_INTE|CMD_PDMD;
 	}
-	return (0);
 }
 
 /*
@@ -481,7 +480,7 @@ deintr(unit)
 			ds->ds_xindex = 0;
 	}
 	ds->ds_if.if_flags &= ~IFF_OACTIVE;
-	(void) destart(&ds->ds_if);
+	destart(&ds->ds_if);
 
 	if (csr0 & PCSR0_RCBI) {
 		if (dedebug)
@@ -580,21 +579,11 @@ deread(ds, ifrw, len)
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; if_ubaget will then force this header
-	 * information to be at the front, but we still have to drop
-	 * the type and length which are at the front of any trailer data.
+	 * information to be at the front.
 	 */
 	m = if_ubaget(&ds->ds_deuba, ifrw, len, off, &ds->ds_if);
-	if (m == 0)
-		return;
-	ether_input(&ds->ds_if, eh, m);
-
-	s = splimp();
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-	} else
-		IF_ENQUEUE(inq, m);
-	splx(s);
+	if (m)
+		ether_input(&ds->ds_if, eh, m);
 }
 /*
  * Process an ioctl request.
