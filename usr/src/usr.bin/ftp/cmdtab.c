@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -66,6 +66,7 @@ char	rmtstatushelp[]="show status of remote machine";
 char	runiquehelp[] = "toggle store unique for local files";
 char	resethelp[] =	"clear queued command replies";
 char	sendhelp[] =	"send one file";
+char	passivehelp[] =	"enter passive transfer mode";
 char	sitehelp[] =	"send site specific command to remote server\n\t\tTry \"rhelp site\" or \"site help\" for more information";
 char	shellhelp[] =	"escape to the shell";
 char	sizecmdhelp[] = "show size of remote file";
@@ -121,6 +122,7 @@ struct cmd cmdtab[] = {
 	{ "nlist",	nlisthelp,	1,	1,	1,	ls },
 	{ "ntrans",	ntranshelp,	0,	0,	1,	setntrans },
 	{ "open",	connecthelp,	0,	0,	1,	setpeer },
+	{ "passive",	passivehelp,	0,	0,	0,	setpassive },
 	{ "prompt",	prompthelp,	0,	0,	0,	setprompt },
 	{ "proxy",	proxyhelp,	0,	0,	1,	doproxy },
 	{ "sendport",	porthelp,	0,	0,	0,	setport },
