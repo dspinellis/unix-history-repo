@@ -1,5 +1,5 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getgrent.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getgrent.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -7,7 +7,7 @@ static char sccsid[] = "@(#)getgrent.c	5.2 (Berkeley) %G%";
 
 #define	MAXGRP	200
 
-static char GROUP[] = "/etc/group";
+static char *GROUP = "/etc/group";
 static FILE *grf = NULL;
 static char line[BUFSIZ+1];
 static struct group group;
@@ -62,4 +62,10 @@ getgrent()
 	}
 	*q = NULL;
 	return( &group );
+}
+
+setgrfile(file)
+	char *file;
+{
+	GROUP = file;
 }
