@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.6 (Berkeley) %G%
+ *	@(#)genassym.c	7.7 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -19,7 +19,6 @@
 #include "buf.h"
 #include "vmmeter.h"
 #include "vmparam.h"
-#include "dir.h"
 #include "user.h"
 #include "cmap.h"
 #include "map.h"
