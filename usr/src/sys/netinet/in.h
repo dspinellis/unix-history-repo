@@ -1,4 +1,4 @@
-/* in.h 4.3 81/11/15 */
+/* in.h 4.4 81/11/18 */
 
 /*
  * Constants and structures defined by the internet system,
@@ -52,7 +52,7 @@
 /*
  * Internet address (old style... should be updated)
  */
-struct ip_addr {
+struct in_addr {
 	union {
 		struct { u_char s_b1,s_b2,s_b3,s_b4; } S_un_b;
 		struct { u_short s_w1,s_w2; } S_un_w;
@@ -64,4 +64,14 @@ struct ip_addr {
 #define	s_imp	S_un.S_un_w.s_w2	/* imp */
 #define	s_lhost	S_un.S_un_b.s_b1	/* net library format host on imp */
 #define	s_lnet	S_un.S_un_b.s_b2	/* net library format network */
+};
+
+/*
+ * Socket address, internet style.
+ */
+struct sockaddr_in {
+	short	sin_family;
+	u_short	sin_port;
+	struct	in_addr sin_addr;
+	char	sin_zero[8];
 };

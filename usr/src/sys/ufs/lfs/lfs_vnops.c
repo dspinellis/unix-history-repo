@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.14	81/11/16	*/
+/*	lfs_vnops.c	4.15	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

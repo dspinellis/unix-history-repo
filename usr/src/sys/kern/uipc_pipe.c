@@ -1,16 +1,15 @@
-/*	uipc_pipe.c	4.2	81/11/16	*/
+/*	uipc_pipe.c	4.3	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/mbuf.h"
-#include "../h/protocol.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../h/inaddr.h"
+#include "../net/inet_systm.h"		/* XXX */
 
-int	pi_usrreq();
+int	piusrreq();
 #define	PIPSIZ	4096
 
 /*
@@ -19,7 +18,7 @@ int	pi_usrreq();
 struct	protosw pipeproto = {
 	SOCK_STREAM,	PF_LOCAL,	0,		PR_CONNREQUIRED,
 	0,		0,		0,		0,
-	pi_usrreq,	0,		0,
+	piusrreq,	0,		0,
 	0,		0,		0,		0
 };
 
@@ -29,10 +28,11 @@ struct	protosw pipeproto = {
  * Each half of the pipe gets half of the buffer space (half send
  * buffers, half receive buffers).
  */
-pi_connect(wso, rso)
+piconnect(wso, rso)
 	struct socket *wso, *rso;
 {
 
+COUNT(PICONNECT);
 	if (m_reserve(PIPSIZ) == 0) {
 		u.u_error = ENOBUFS;
 		return (0);
@@ -49,27 +49,12 @@ pi_connect(wso, rso)
 	return (1);
 }
 
-pi_splice(pso, so)
-	struct socket *pso, *so;
-{
-
-	if (pso->so_proto != &pipeproto) {
-		struct socket *tso;
-		tso = pso; pso = so; so = tso;
-	}
-	if (pso->so_proto != &pipeproto)
-		return (EOPNOTSUPP);
-	/* check types and buffer space */
-	/* merge buffers */
-	return (0);
-}
-
 /*
  * User requests on pipes and other internally implemented
  * structures.
  */
 /*ARGSUSED*/
-pi_usrreq(so, req, m, addr)
+piusrreq(so, req, m, addr)
 	struct socket *so;
 	int req;
 	struct mbuf *m;
@@ -77,6 +62,7 @@ pi_usrreq(so, req, m, addr)
 {
 	struct socket *so2 = (struct socket *)so->so_pcb;
 
+COUNT(PIUSRREQ);
 	switch (req) {
 
 	case PRU_ATTACH:
@@ -84,6 +70,7 @@ pi_usrreq(so, req, m, addr)
 		break;
 
 	case PRU_CONNECT:
+	case PRU_ACCEPT:
 		return (EOPNOTSUPP);
 
 	case PRU_DISCONNECT:
@@ -93,16 +80,10 @@ pi_usrreq(so, req, m, addr)
 		soisdisconnected(so);
 		break;
 
-	case PRU_FLUSH:
-		return (EOPNOTSUPP);
-
 	case PRU_SHUTDOWN:
-		so->so_state |= SS_CANTSENDMORE;
-		sowwakeup(so);
-		if (so2) {
-			so2->so_state |= SS_CANTRCVMORE;
-			sorwakeup(so2);
-		}
+		socantsendmore(so);
+		if (so2)
+			socantrcvmore(so2);
 		break;
 
 	case PRU_RCVD:
@@ -130,7 +111,7 @@ pi_usrreq(so, req, m, addr)
 		return (EOPNOTSUPP);
 
 	default:
-		panic("pi_usrreq");
+		panic("piusrreq");
 	}
 	return (0);
 }

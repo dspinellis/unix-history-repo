@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.29 81/11/16 */
+/* tcp_usrreq.c 1.30 81/11/18 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -159,13 +159,16 @@ COUNT(TCP_USRREQ);
 	case PRU_CONNECT:
 		if (tp->t_state != 0 && tp->t_state != CLOSED)
 			goto bad;
-		inp->inp_fhost = in_hosteval((struct inaddr *)addr, &error);
+		inp->inp_fhost = in_hosteval((struct sockaddr *)addr, &error);
 		if (inp->inp_fhost == 0)
 			break;
 		(void) tcp_sndctl(tp);
 		nstate = SYN_SENT;
 		soisconnecting(so);
 		break;
+
+	case PRU_ACCEPT:
+		return (EOPNOTSUPP);		/* XXX */
 
 	case PRU_DISCONNECT:
 		if ((tp->tc_flags & TC_FIN_RCVD) == 0)
@@ -178,10 +181,6 @@ COUNT(TCP_USRREQ);
 			tp->tc_flags |= TC_USR_CLOSED;
 			soisdisconnecting(so);
 		}
-		break;
-
-	case PRU_FLUSH:
-		error = EOPNOTSUPP;
 		break;
 
 	case PRU_SHUTDOWN:
@@ -363,9 +362,6 @@ tcp_abort(tp)
 }
 
 /*
-/*###366 [cc] warning: struct/union or struct/union pointer required %%%*/
-/*###366 [cc] member of structure or union required %%%*/
-/*###366 [cc] tp_inpcb undefined %%%*/
  * Send data queue headed by m0 into the protocol.
  */
 tcp_usrsend(tp, m0)

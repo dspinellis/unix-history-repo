@@ -1,7 +1,8 @@
-/* tcp.h 1.16 81/11/15 */
+/* tcp.h 1.17 81/11/18 */
 
 /*
  * TCP header.
+ * Per RFC 793, September, 1981.
  */
 struct tcphdr {
 	u_short	th_sport;		/* source port */

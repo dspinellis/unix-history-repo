@@ -1,11 +1,11 @@
-/*	uipc_proto.c	4.4	81/11/16	*/
+/*	uipc_proto.c	4.5	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
-#include "../h/protocol.h"
 #include "../h/protosw.h"
 #include "../h/mbuf.h"
 #include "../net/inet.h"
+#include "../net/inet_systm.h"
 
 /*
  * Protocol configuration table and routines to search it.
@@ -16,7 +16,7 @@
 /*
  * Local protocol handler.
  */
-int	pi_usrreq();
+int	piusrreq();
 
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
@@ -37,22 +37,22 @@ int	ri_usrreq(),ri_sense();
 struct protosw protosw[] = {
 { SOCK_STREAM,	PF_LOCAL,	0,		PR_CONNREQUIRED,
   0,		0,		0,		0,
-  pi_usrreq,	0,		0,
+  piusrreq,	0,		0,
   0,		0,		0,		0,
 },
 { SOCK_DGRAM,	PF_LOCAL,	0,		PR_ATOMIC|PR_ADDR,
   0,		0,		0,		0,
-  pi_usrreq,	0,		0,
+  piusrreq,	0,		0,
   0,		0,		0,		0,
 },
 { SOCK_RDM,	PF_LOCAL,	0,		PR_ATOMIC|PR_ADDR,
   0,		0,		0,		0,
-  pi_usrreq,	0,		0,
+  piusrreq,	0,		0,
   0,		0,		0,		0,
 },
 { SOCK_RAW,	PF_LOCAL,	0,		PR_ATOMIC|PR_ADDR,
   0,		0,		0,		0,
-  pi_usrreq,	0,		0,
+  piusrreq,	0,		0,
   0,		0,		0,		0,
 },
 { 0,		0,		0,		0,
@@ -97,6 +97,7 @@ pfinit()
 {
 	register struct protosw *pr;
 
+COUNT(PFINIT);
 	for (pr = protoswLAST; pr >= protosw; pr--)
 		if (pr->pr_init)
 			(*pr->pr_init)();
@@ -112,6 +113,7 @@ pffindtype(family, type)
 {
 	register struct protosw *pr;
 
+COUNT(PFFINDTYPE);
 	if (family == 0)
 		return (0);
 	for (pr = protosw; pr < protoswLAST; pr++)
@@ -129,6 +131,7 @@ pffindproto(family, protocol)
 {
 	register struct protosw *pr;
 
+COUNT(PFFINDPROTO);
 	if (family == 0)
 		return (0);
 	for (pr = protosw; pr < protoswLAST; pr++)

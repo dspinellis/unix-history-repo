@@ -1,4 +1,4 @@
-/* ip_icmp.h 4.1 81/11/08 */
+/* ip_icmp.h 4.2 81/11/18 */
 
 /*
  * Interface Control Message Protocol Definitions.
@@ -14,7 +14,7 @@ struct icmp {
 	u_short	icmp_cksum;		/* ones complement cksum of struct */
 	union {
 		u_char ih_pptr;			/* ICMP_PARAMPROB */
-		struct ip_addr ih_gwaddr;	/* ICMP_REDIRECT */
+		struct in_addr ih_gwaddr;	/* ICMP_REDIRECT */
 		struct ih_idseq {
 			n_short	icd_id;
 			n_short	icd_seq;

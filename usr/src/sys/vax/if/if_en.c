@@ -1,4 +1,4 @@
-/* if_en.c 4.9 81/11/16 */
+/* if_en.c 4.10 81/11/18 */
 
 #include "en.h"
 /*
@@ -60,7 +60,7 @@ enprobe(reg)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
-	enrint(), enxint(), encollide();
+	enrint(0); enxint(0); encollide(0);
 #endif
 
 	addr->en_istat = 0;

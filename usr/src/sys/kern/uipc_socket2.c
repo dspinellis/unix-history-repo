@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.2	81/11/16	*/
+/*	uipc_socket2.c	4.3	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,11 +9,9 @@
 #include "../h/inode.h"
 #include "../h/buf.h"
 #include "../h/mbuf.h"
-#include "../h/protocol.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../h/inaddr.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
 
@@ -205,6 +203,33 @@ sbappend(sb, m)
 	}
 }
 
+sbappendaddr(sb, asa, m0)
+	struct sockbuf *sb;
+	struct sockaddr *asa;
+	struct mbuf *m0;
+{
+	struct sockaddr *msa;
+	register struct mbuf *m;
+	register int len = sizeof (struct sockaddr);
+
+	for (m = m0; m; m = m->m_next)
+		len += m->m_len;
+	if (len > sbspace(sb))
+		return (0);
+	m = m_get(0);
+	if (m == 0)
+		return (0);
+	m->m_off = MMINOFF;
+	m->m_len = sizeof (struct sockaddr);
+	msa = mtod(m, struct sockaddr *);
+	*msa = *asa;
+	m->m_act = (struct mbuf *)1;
+	sbappend(sb, m);
+	m0->m_act = (struct mbuf *)1;
+	sbappend(sb, m0);
+	return (1);
+}
+
 /*
  * Free all mbufs on a sockbuf mbuf chain.
  * Check that resource allocations return to 0.
@@ -245,58 +270,4 @@ sbdrop(sb, len)
 		}
 	}
 	sb->sb_mb = m;
-}
-
-struct mbuf *
-sbcopy(sb, off, len)
-	struct sockbuf *sb;
-	int off;
-	register int len;
-{
-	register struct mbuf *m, *n, **np;
-	struct mbuf *top, *p;
-COUNT(SB_COPY);
-
-	if (len == 0)
-		return (0);
-	if (off < 0 || len < 0)
-		panic("sb_copy");
-	m = sb->sb_mb;
-	while (off > 0) {
-		if (m == 0)
-			panic("sb_copy");
-		if (off < m->m_len)
-			break;
-		off -= m->m_len;
-		m = m->m_next;
-	}
-	np = &top;
-	top = 0;
-	while (len > 0) {
-		MGET(n, 1);
-		*np = n;
-		if (n == 0)
-			goto nospace;
-		if (m == 0)
-			panic("sb_copy");
-		n->m_len = MIN(len, m->m_len - off);
-		if (m->m_off > MMAXOFF) {
-			p = mtod(m, struct mbuf *);
-			n->m_off = ((int)p - (int)n) + off;
-			mprefcnt[mtopf(p)]++;
-		} else {
-			n->m_off = MMINOFF;
-			bcopy(mtod(m, caddr_t)+off, mtod(n, caddr_t),
-			    (unsigned)n->m_len);
-		}
-		len -= n->m_len;
-		off = 0;
-		m = m->m_next;
-		np = &n->m_next;
-	}
-	return (top);
-nospace:
-	printf("snd_copy: no space\n");
-	m_freem(top);
-	return (0);
 }

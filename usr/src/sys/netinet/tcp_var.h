@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.4	81/11/16	*/
+/*	tcp_var.h	4.5	81/11/18	*/
 
 /*
  * Kernel variables for tcp.
@@ -137,6 +137,14 @@ struct tcpcb {
 #define	T_REXMTTL	(30*2)		/* retransmit too long timeout */
 #define	T_REMAX		(30*2)		/* maximum retransmission time */
 
+struct	tcpstat {
+	int	tcps_badsum;
+	int	tcps_badoff;
+	int	tcps_hdrops;
+	int	tcps_badsegs;
+	int	tcps_unack;
+};
+
 #ifdef TCPDEBUG
 #define	TDBSIZE		50
 /*
@@ -160,6 +168,7 @@ struct tcp_debug {
 #ifdef KERNEL
 seq_t	tcp_iss;			/* tcp initial send seq # */
 struct	inpcb tcb;
+struct	tcpstat tcpstat;
 #ifdef TCPDEBUG
 int	tcpconsdebug;			/* set to 1 traces on console */
 struct	tcp_debug tcp_debug[TDBSIZE];

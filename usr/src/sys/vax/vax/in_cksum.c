@@ -1,4 +1,4 @@
-/*	in_cksum.c	1.9	81/11/08	*/
+/* in_cksum.c 1.10 81/11/18 */
 
 #include <sys/types.h>
 #include "../h/mbuf.h"
@@ -6,29 +6,34 @@
 #include "../net/inet_systm.h"
 
 /*
- * Network primitives; this file varies per-cpu,
- * and the code here is for VAX only.
+ * Checksum routine for Internet Protocol family headers.
+ * This routine is very heavily used in the network
+ * code and should be rewritten for each CPU to be as fast as possible.
  */
 
-/*
- * Checksum routine for TCP/IP headers.  This
- * is very heavily used in the network
- * code and should be rewritten for each CPU
- * to be as fast as possible.
- */
+#if vax
 inet_cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
-	register long *l;		/* known to be r9 */
+	register u_short *w;		/* known to be r9 */
 	register int sum = 0;		/* known to be r8 */
-	register u_short *w;		/* known to be r7 */
 	register int mlen = 0;
 COUNT(INET_CKSUM);
 
 	for (;;) {
-		w = (u_short *)((int)m + m->m_off);
+		/*
+		 * Each trip around loop adds in
+		 * word from one mbuf segment.
+		 */
+		w = mtod(m, u_short *);
 		if (mlen == -1) {
+			/*
+			 * There is a byte left from the last segment;
+			 * add it into the checksum.  Don't have to worry
+			 * about a carry-out here because we make sure
+			 * that high part of (32 bit) sum is small below.
+			 */
 			sum += *(u_char *)w << 8;
 			w = (u_short *)((char *)w + 1);
 			mlen = m->m_len - 1;
@@ -39,7 +44,31 @@ COUNT(INET_CKSUM);
 		if (len < mlen)
 			mlen = len;
 		len -= mlen;
-		l = (long *)w;
+		/*
+		 * Force to long boundary so we do longword aligned
+		 * memory operations.  It is too hard to do byte
+		 * adjustment, do only word adjustment.
+		 */
+		if (((int)w&0x2) && mlen >= 2) {
+			sum += *w++;
+			mlen -= 2;
+		}
+		/*
+		 * Do as much of the checksum as possible 32 bits at at time.
+		 * In fact, this loop is unrolled to make overhead from
+		 * branches &c small.
+		 *
+		 * We can do a 16 bit ones complement sum 32 bits at a time
+		 * because the 32 bit register is acting as two 16 bit
+		 * registers for adding, with carries from the low added
+		 * into the high (by normal carry-chaining) and carries
+		 * from the high carried into the low on the next word
+		 * by use of the adwc instruction.  This lets us run
+		 * this loop at almost memory speed.
+		 *
+		 * Here there is the danger of high order carry out, and
+		 * we carefully use adwc.
+		 */
 		while ((mlen -= 32) >= 0) {
 			asm("clrl r0");		/* clears carry */
 #undef ADD
@@ -54,15 +83,27 @@ COUNT(INET_CKSUM);
 			asm("adwc $0,r8");
 		}
 		mlen += 8;
-		sum = ((sum >> 16) & 0xffff) + (sum & 0xffff);
-		w = (u_short *)l;
+		/*
+		 * Now eliminate the possibility of carry-out's by
+		 * folding back to a 16 bit number (adding high and
+		 * low parts together.)  Then mop up trailing words
+		 * and maybe an odd byte.
+		 */
+		{ asm("ashl $-16,r8,r0; addw2 r0,r8");
+		  asm("adwc $0,r8; movzwl r8,r8"); }
 		while ((mlen -= 2) >= 0) {
-			asm("movzwl (r7)+,r0; addl2 r0,r8");
+			asm("movzwl (r9)+,r0; addl2 r0,r8");
 		}
 		if (mlen == -1)
 			sum += *(u_char *)w;
 		if (len == 0)
 			break;
+		/*
+		 * Locate the next block with some data.
+		 * If there is a word split across a boundary we
+		 * will wrap to the top with mlen == -1 and
+		 * then add it in shifted appropriately.
+		 */
 		for (;;) {
 			if (m == 0) {
 				printf("cksum: out of data\n");
@@ -74,8 +115,14 @@ COUNT(INET_CKSUM);
 		}
 	}
 done:
-	/* add together high and low parts of sum and carry to get cksum */
+	/*
+	 * Add together high and low parts of sum
+	 * and carry to get cksum.
+	 * Have to be careful to not drop the last
+	 * carry here.
+	 */
 	{ asm("ashl $-16,r8,r0; addw2 r0,r8; adwc $0,r8");
 	  asm("mcoml r8,r8; movzwl r8,r8"); }
 	return (sum);
 }
+#endif

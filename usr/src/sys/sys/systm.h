@@ -1,4 +1,4 @@
-/*	systm.h	4.19	81/11/16	*/
+/*	systm.h	4.20	81/11/18	*/
 
 /*
  * Random set of variables
@@ -8,7 +8,6 @@
 int	hz;			/* frequency of the clock */
 int	timezone;		/* minutes west from greenwich */
 int	dstflag;		/* daylight savings time in effect? */
-char	canonb[CANBSIZ];	/* buffer for erase and kill (#@) */
 char	version[];		/* system version */
 int	lbolt;			/* time of day in 60th not in time */
 time_t	time;			/* time in sec from 1970 */

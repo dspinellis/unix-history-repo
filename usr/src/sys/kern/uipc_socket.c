@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.5	81/11/16	*/
+/*	uipc_socket.c	4.6	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,11 +9,9 @@
 #include "../h/inode.h"
 #include "../h/buf.h"
 #include "../h/mbuf.h"
-#include "../h/protocol.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../h/inaddr.h"
 #include "../h/stat.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
@@ -22,33 +20,34 @@
  * Socket support routines.
  *
  * DEAL WITH INTERRUPT NOTIFICATION.
- * DO NEWFD STUFF
  */
 
 /*
  * Create a socket.
  */
-socket(aso, type, iap, options)
+socreate(aso, type, asp, asa, options)
 	struct socket **aso;
 	int type;
-	register struct in_addr *iap;
+	struct sockproto *asp;
+	struct sockaddr *asa;
 	int options;
 {
 	register struct protosw *prp;
 	register struct socket *so;
 	struct mbuf *m;
 	int pf, proto, error;
+COUNT(SOCREATE);
 
 	/*
 	 * Use process standard protocol/protocol family if none
 	 * specified by address argument.
 	 */
-	if (iap == 0) {
+	if (asp == 0) {
 		pf = PF_INET;		/* should be u.u_protof */
 		proto = 0;
 	} else {
-		pf = iap->ia_pf;
-		proto = iap->ia_proto;
+		pf = asp->sp_family;
+		proto = asp->sp_protocol;
 	}
 
 	/*
@@ -76,7 +75,7 @@ socket(aso, type, iap, options)
 	 * and reserving resources.
 	 */
 	so->so_proto = prp;
-	(*prp->pr_usrreq)(so, PRU_ATTACH, 0, 0);
+	(*prp->pr_usrreq)(so, PRU_ATTACH, 0, asa);
 	if (so->so_error) {
 		error = so->so_error;
 		m_free(dtom(so));
@@ -90,6 +89,7 @@ sofree(so)
 	struct socket *so;
 {
 
+COUNT(SOFREE);
 	m_free(dtom(so));
 }
 
@@ -103,11 +103,12 @@ soclose(so)
 {
 	int s = splnet();		/* conservative */
 
+COUNT(SOCLOSE);
 	if (so->so_pcb == 0)
 		goto discard;
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
-			u.u_error = disconnect(so, (struct in_addr *)0);
+			u.u_error = sodisconnect(so, (struct sockaddr *)0);
 			if (u.u_error) {
 				splx(s);
 				return;
@@ -129,13 +130,55 @@ discard:
 	splx(s);
 }
 
+sosplice(pso, so)
+	struct socket *pso, *so;
+{
+
+COUNT(SOSPLICE);
+	if (pso->so_proto->pr_family != PF_LOCAL) {
+		struct socket *tso;
+		tso = pso; pso = so; so = tso;
+	}
+	if (pso->so_proto->pr_family != PF_LOCAL)
+		return (EOPNOTSUPP);
+	/* check types and buffer space */
+	/* merge buffers */
+	return (0);
+}
+
 /*ARGSUSED*/
 sostat(so, sb)
 	struct socket *so;
 	struct stat *sb;
 {
 
+COUNT(SOSTAT);
 	return (EOPNOTSUPP);
+}
+
+/*
+ * Accept connection on a socket.
+ */
+soaccept(so, asa)
+	struct socket *so;
+	struct sockaddr *asa;
+{
+	int s = splnet();
+	int error;
+
+COUNT(SOACCEPT);
+	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) {
+		error = EISCONN;
+		goto bad;
+	}
+	if ((so->so_options & SO_ACCEPTCONN) == 0) {
+		error = EINVAL;			/* XXX */
+		goto bad;
+	}
+	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT, 0, (caddr_t)asa);
+bad:
+	splx(s);
+	return (error);
 }
 
 /*
@@ -143,18 +186,19 @@ sostat(so, sb)
  * If already connected or connecting, then avoid
  * the protocol entry, to keep its job simpler.
  */
-connect(so, iap)
+soconnect(so, asa)
 	struct socket *so;
-	struct in_addr *iap;
+	struct sockaddr *asa;
 {
 	int s = splnet();
 	int error;
 
+COUNT(SOCONNECT);
 	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) {
 		error = EISCONN;
 		goto bad;
 	}
-	error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT, 0, (caddr_t)iap);
+	error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT, 0, (caddr_t)asa);
 bad:
 	splx(s);
 	return (error);
@@ -166,14 +210,14 @@ bad:
  * protocols.  Check to make sure that connected and no disconnect
  * in progress (for protocol's sake), and then invoke protocol.
  */
-/*ARGSUSED*/
-disconnect(so, iap)
+sodisconnect(so, asa)
 	struct socket *so;
-	struct in_addr *iap;
+	struct sockaddr *asa;
 {
 	int s = splnet();
 	int error;
 
+COUNT(SODISCONNECT);
 	if ((so->so_state & SS_ISCONNECTED) == 0) {
 		error = ENOTCONN;
 		goto bad;
@@ -182,7 +226,7 @@ disconnect(so, iap)
 		error = EALREADY;
 		goto bad;
 	}
-	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT, 0, 0);
+	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT, 0, asa);
 bad:
 	splx(s);
 	return (error);
@@ -196,15 +240,16 @@ bad:
  * If must go all at once and not enough room now, then
  * inform user that this would block and do nothing.
  */
-send(so, iap)
+sosend(so, asa)
 	register struct socket *so;
-	struct inaddr *iap;
+	struct sockaddr *asa;
 {
 	struct mbuf *top = 0;
 	register struct mbuf *m, **mp = &top;
 	register u_int len;
 	int error = 0, space, s;
 
+COUNT(SOSEND);
 	if (so->so_state & SS_CANTSENDMORE)
 		return (EPIPE);
 	if (sosendallatonce(so) && u.u_count > so->so_snd.sb_hiwat)
@@ -219,13 +264,13 @@ again:
 	if ((so->so_state & SS_ISCONNECTED) == 0) {
 		if (so->so_proto->pr_flags & PR_CONNREQUIRED)
 			snderr(ENOTCONN);
-		if (iap == 0)
+		if (asa == 0)
 			snderr(EDESTADDRREQ);
 	}
 	if (so->so_error)
 		snderr(so->so_error);
 	if (top) {
-		error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, top, iap);
+		error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, top, asa);
 		if (error) {
 			splx(s);
 			goto release;
@@ -274,14 +319,15 @@ release:
 	return (error);
 }
 
-receive(so, iap)
+soreceive(so, asa)
 	register struct socket *so;
-	struct inaddr *iap;
+	struct sockaddr *asa;
 {
 	register struct mbuf *m, *n;
 	u_int len;
 	int eor, s, error = 0;
 
+COUNT(SORECEIVE);
 restart:
 	sblock(&so->so_rcv);
 	s = splnet();
@@ -304,27 +350,18 @@ restart:
 	m = so->so_rcv.sb_mb;
 	if (m == 0)
 		panic("receive");
-	/*
-	 * Pull address off receive chain, if protocol
-	 * put one there.
-	 */
 	if ((so->so_proto->pr_flags & PR_ADDR)) {
 		so->so_rcv.sb_mb = m->m_next;
-		if (iap) {
+		if (asa) {
 			so->so_rcv.sb_cc -= m->m_len;
-			len = MIN(m->m_len, sizeof (struct in_addr));
-			bcopy(mtod(m, caddr_t), (caddr_t)iap, len);
+			len = MIN(m->m_len, sizeof (struct sockaddr));
+			bcopy(mtod(m, caddr_t), (caddr_t)asa, len);
 		} else
-			bzero((caddr_t)iap, sizeof (*iap));
+			bzero((caddr_t)asa, sizeof (*asa));
 		m = so->so_rcv.sb_mb;
 		if (m == 0)
 			panic("receive 2");
 	}
-
-	/*
-	 * Next pull data off the chain.
-	 * Stop at eor or when run out of space in user buffer.
-	 */
 	eor = 0;
 	do {
 		len = MIN(m->m_len, u.u_count);
@@ -343,10 +380,6 @@ restart:
 			so->so_rcv.sb_cc -= len;
 		}
 	} while ((m = so->so_rcv.sb_mb) && u.u_count && !eor);
-
-	/*
-	 * If atomic protocol discard rest of record.
-	 */
 	if ((so->so_proto->pr_flags & PR_ATOMIC) && eor == 0)
 		do {
 			if (m == 0)
@@ -357,14 +390,8 @@ restart:
 			MFREE(m, n);
 			m = n;
 		} while (eor == 0);
-
-	/*
-	 * If protocol cares, inform it that
-	 * there is more space in the receive buffer.
-	 */
 	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVD, 0, 0);
-
 release:
 	sbunlock(&so->so_rcv);
 	splx(s);
@@ -378,6 +405,7 @@ soioctl(so, cmd, cmdp)
 	register caddr_t cmdp;
 {
 
+COUNT(SOIOCTL);
 	switch (cmdp) {
 
 	}

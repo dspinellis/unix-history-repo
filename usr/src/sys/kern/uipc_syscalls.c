@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.3	81/11/16	*/
+/*	uipc_syscalls.c	4.4	81/11/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,11 +9,9 @@
 #include "../h/inode.h"
 #include "../h/buf.h"
 #include "../h/mbuf.h"
-#include "../h/protocol.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../h/inaddr.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
 
@@ -24,11 +22,10 @@
  * isolating the system interface from the socket-protocol interface.
  *
  * TODO:
- *	SO_NEWFDONCONN
  *	SO_INTNOTIFY
  */
 
-static	struct in_addr localaddr = { PF_LOCAL };
+static	struct sockproto localproto = { PF_LOCAL, 0 };
 /*
  * Pipe system call interface.
  */
@@ -37,11 +34,14 @@ spipe()
 	register struct file *rf, *wf;
 	struct socket *rso, *wso;
 	int r;
+COUNT(SPIPE);
 	
-	u.u_error = socket(&rso, SOCK_STREAM, &localaddr, SO_ACCEPTCONN);
+	u.u_error = socreate(&rso, SOCK_STREAM,
+	    &localproto, (struct sockaddr *)0, 0);
 	if (u.u_error)
 		return;
-	u.u_error = socket(&wso, SOCK_STREAM, &localaddr, 0);
+	u.u_error = socreate(&wso, SOCK_STREAM,
+	    &localproto, (struct sockaddr *)0, 0);
 	if (u.u_error)
 		goto free;
 	rf = falloc();
@@ -57,8 +57,9 @@ spipe()
 	wf->f_socket = wso;
 	u.u_r.r_val2 = u.u_r.r_val1;
 	u.u_r.r_val1 = r;
-	if (pi_connect(rso, wso) == 0)
+	if (piconnect(rso, wso) == 0)
 		goto free4;
+	rso->so_isfilerefd = wso->so_isfilerefd = 1;
 	return;
 free4:
 	wf->f_count = 0;
@@ -82,6 +83,7 @@ ssplice()
 		int	fd2;
 	} *ap = (struct a *)u.u_ap;
 	struct file *f1, *f2;
+COUNT(SSPLICE);
 
 	f1 = getf(ap->fd1);
 	if (f1 == NULL)
@@ -89,6 +91,10 @@ ssplice()
 	f2 = getf(ap->fd2);
 	if (f2 == NULL)
 		return;
+	if (f1 == f2) {
+		u.u_error = EINVAL;
+		return;
+	}
 	if ((f1->f_flag & FSOCKET) == 0 || (f2->f_flag & FSOCKET) == 0) {
 		u.u_error = ENOTSOCK;
 		return;
@@ -97,7 +103,7 @@ ssplice()
 		u.u_error = ETOOMANYREFS;
 		return;
 	}
-	u.u_error = pi_splice(f1->f_socket, f2->f_socket);
+	u.u_error = sosplice(f1->f_socket, f2->f_socket);
 	if (u.u_error)
 		return;
 	u.u_ofile[ap->fd1] = 0;
@@ -107,7 +113,7 @@ ssplice()
 }
 
 /*
- * Socket system call interface.  Copy in arguments
+ * Socket system call interface.  Copy sa arguments
  * set up file descriptor and call internal socket
  * creation routine.
  */
@@ -115,51 +121,97 @@ ssocket()
 {
 	register struct a {
 		int	type;
-		struct	in_addr *ain;
+		struct	sockproto *asp;
+		struct	sockaddr *asa;
 		int	options;
 	} *uap = (struct a *)u.u_ap;
-	struct in_addr in;
-	struct socket *so0;
+	struct sockproto sp;
+	struct sockaddr sa;
+	struct socket *so;
 	register struct file *fp;
+COUNT(SSOCKET);
 
 	if ((fp = falloc()) == NULL)
 		return;
 	fp->f_flag = FSOCKET|FREAD|FWRITE;
-	if (copyin((caddr_t)uap->ain, (caddr_t)&in, sizeof (in))) {
+	if (uap->asp && copyin((caddr_t)uap->asp, (caddr_t)&sp, sizeof (sp)) ||
+	    uap->asa && copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
 		return;
 	}
-	u.u_error = socket(&so0, uap->type, &in, uap->options);
+	u.u_error = socreate(&so, uap->type,
+	    uap->asp ? &sp : 0, uap->asa ? &sa : 0, uap->options);
 	if (u.u_error)
 		goto bad;
-	fp->f_socket = so0;
+	fp->f_socket = so;
+	so->so_isfilerefd = 1;
 	return;
 bad:
 	u.u_ofile[u.u_r.r_val1] = 0;
 	fp->f_count = 0;
 }
 
+/*
+ * Accept system call interface.
+ */
 saccept()
 {
+	register struct a {
+		int	fdes;
+		struct	sockaddr *asa;
+	} *uap = (struct a *)u.u_ap;
+	struct sockaddr sa;
+	register struct file *fp;
+	struct socket *so;
+	int s;
+COUNT(SACCEPT);
 
+	if (uap->asa && useracc((caddr_t)uap->asa, sizeof (sa), B_WRITE)==0) {
+		u.u_error = EFAULT;
+		return;
+	}
+	fp = getf(uap->fdes);
+	if (fp == 0)
+		return;
+	if ((fp->f_flag & FSOCKET) == 0) {
+		u.u_error = ENOTSOCK;
+		return;
+	}
+	s = splnet();
+	so = fp->f_socket;
+	if ((so->so_options & SO_NBIO) &&
+	    (so->so_state & SS_CONNAWAITING) == 0) {
+		u.u_error = EWOULDBLOCK;
+		splx(s);
+		return;
+	}
+	u.u_error = soaccept(so, &sa);
+	if (u.u_error) {
+		splx(s);
+		return;
+	}
+	/* deal with new file descriptor case */
+	/* u.u_r.r_val1 = ... */
+	splx(s);
 }
 
 /*
  * Connect socket to foreign peer; system call
- * interface.  Copy in arguments and call internal routine.
+ * interface.  Copy sa arguments and call internal routine.
  */
 sconnect()
 {
 	register struct a {
-		int fdes;
-		struct in_addr *a;
+		int	fdes;
+		struct	sockaddr *a;
 	} *uap = (struct a *)u.u_ap;
-	in_addr in;
+	struct sockaddr sa;
 	register struct file *fp;
 	register struct socket *so;
 	int s;
+COUNT(SCONNECT);
 
-	if (copyin((caddr_t)uap->a, (caddr_t)&in, sizeof (in))) {
+	if (copyin((caddr_t)uap->a, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
 		return;
 	}
@@ -171,7 +223,7 @@ sconnect()
 		return;
 	}
 	so = fp->f_socket;
-	u.u_error = connect(so, &in);
+	u.u_error = soconnect(so, &sa);
 	if (u.u_error)
 		return;
 	s = splnet();
@@ -190,21 +242,22 @@ sconnect()
 
 /*
  * Disconnect socket from foreign peer; system call
- * interface.  Copy in arguments and call internal routine.
+ * interface.  Copy sa arguments and call internal routine.
  */
 sdisconnect()
 {
 	register struct a {
 		int	fdes;
-		in_addr	 *addr;
+		struct	sockaddr *asa;
 	} *uap = (struct a *)u.u_ap;
-	in_addr in;
+	struct sockaddr sa;
 	register struct file *fp;
 	register struct socket *so;
 	int s;
+COUNT(SDISCONNECT);
 
-	if (uap->addr &&
-	    copyin((caddr_t)uap->addr, (caddr_t)&in, sizeof (in))) {
+	if (uap->asa &&
+	    copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
 		return;
 	}
@@ -216,7 +269,7 @@ sdisconnect()
 		return;
 	}
 	so = fp->f_socket;
-	u.u_error = disconnect(so, uap->addr ? &in : 0);
+	u.u_error = sodisconnect(so, uap->asa ? &sa : 0);
 	if (u.u_error)
 		return;
 	s = splnet();
@@ -239,12 +292,13 @@ ssend()
 {
 	register struct a {
 		int	fdes;
-		in_addr	*ain;
+		struct	sockaddr *asa;
 		caddr_t	cbuf;
-		u_int	count;
+		unsigned count;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
-	struct in_addr in;
+	struct sockaddr sa;
+COUNT(SSEND);
 
 	fp = getf(uap->fdes);
 	if (fp == 0)
@@ -256,11 +310,11 @@ ssend()
 	u.u_count = uap->count;
 	u.u_segflg = 0;
 	if (useracc(uap->cbuf, uap->count, B_READ) == 0 ||
-	    uap->ain && copyin((caddr_t)uap->ain, (caddr_t)&in, sizeof (in))) {
+	    uap->asa && copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
 		return;
 	}
-	u.u_error = send(fp->f_socket, uap->ain ? &in : 0);
+	u.u_error = sosend(fp->f_socket, uap->asa ? &sa : 0);
 }
 
 /*
@@ -270,12 +324,13 @@ sreceive()
 {
 	register struct a {
 		int	fdes;
-		in_addr	*ain;
+		struct	sockaddr *asa;
 		caddr_t	cbuf;
 		u_int	count;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
-	struct in_addr in;
+	struct sockaddr sa;
+COUNT(SRECEIVE);
 
 	fp = getf(uap->fdes);
 	if (fp == 0)
@@ -287,9 +342,13 @@ sreceive()
 	u.u_count = uap->count;
 	u.u_segflg = 0;
 	if (useracc(uap->cbuf, uap->count, B_WRITE) == 0 ||
-	    uap->ain && copyin((caddr_t)uap->ain, (caddr_t)&in, sizeof (in))) {
+	    uap->asa && copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
 		return;
 	}
-	receive(fp->f_socket, uap->ain ? &in : 0);
+	u.u_error = soreceive(fp->f_socket, uap->asa ? &sa : 0);
+	if (u.u_error)
+		return;
+	if (uap->asa)
+		(void) copyout((caddr_t)&sa, (caddr_t)uap->asa, sizeof (sa));
 }
