@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)com.c	7.7 (Berkeley) %G%
+ *	@(#)com.c	7.8 (Berkeley) %G%
  */
 
 #include "com.h"
@@ -87,7 +87,7 @@ comprobe(dev)
 struct isa_device *dev;
 {
 	/* force access to id reg */
-	outb(dev->id_iobase+com_cfcr, 0);
+	outb(dev->id_iobase+com_cfcr, inb (dev->id_iobase+com_cfcr) & ~0x80);
 	outb(dev->id_iobase+com_iir, 0);
 	if ((inb(dev->id_iobase+com_iir) & 0x38) == 0)
 		return(1);
