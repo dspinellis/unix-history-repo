@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)praliases.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)praliases.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <ndbm.h>
@@ -81,7 +81,7 @@ main(argc, argv)
 			exit(EX_OSFILE);
 		}
 		if (!argc)
-			for (key = dbm_nextkey(dbp);
+			for (key = dbm_firstkey(dbp);
 			    key.dptr != NULL; key = dbm_nextkey(dbp)) {
 				content = dbm_fetch(dbp, key);
 				(void)printf("%s:%s\n", key.dptr, content.dptr);
