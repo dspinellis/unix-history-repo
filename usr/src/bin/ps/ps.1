@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ps.1	6.10 (Berkeley) %G%
+.\"     @(#)ps.1	6.11 (Berkeley) %G%
 .\"
 .TH PS 1 "March 10, 1988"
 .UC 4
@@ -44,7 +44,7 @@ header per page of information.
 .TP
 \-j
 Print information associated with the following keywords:
-user, pid, ppid, pgid, sess, jobc, state, tname, cputime, comm.
+user, pid, ppid, pgid, sess, jobc, state, tt, time and command.
 .TP
 \-L
 List the set of available keywords.
@@ -54,8 +54,8 @@ will display a long listing of the keywords and their meanings.
 .TP
 \-l
 Display information associated with the following keywords:
-uid, pid, ppid, cp, pri, nice, vsize, rss, wchan, state, tname,
-cputime and comm.
+uid, pid, ppid, cpu, pri, nice, vsz, rss, wchan, state, tt, time
+and command.
 .TP
 \-m
 Sort by memory usage, instead of by process ID.
@@ -87,7 +87,7 @@ children to their parent process.
 .TP
 \-s
 Display information associated with the following keywords:
-uid, pid, sig, sigmask, sigignore, sigcatch, stat, tname and comm.
+uid, pid, sig, sigmask, sigignore, sigcatch, state, tt and command.
 .TP
 \-T
 Display information about processes attached to the device associated
@@ -99,13 +99,13 @@ device.
 .TP
 \-u
 Display information associated with the following keywords:
-uname, pid, pcpu, pmem, vsize, rss, tt, state, start, time and comm.
+user, pid, %cpu, %mem, vsz, rss, tt, state, start, time and command.
 The \-u option implies the \-r option.
 .TP
 \-v
 Display information associated with the following keywords:
-pid, tt, state, time, sl, re, pagein, vsize, rss, lim, tsiz, trs, pcpu,
-pmem and comm.
+pid, tt, state, time, sl, re, pagein, vsz, rss, lim, tsiz, trs,
+%cpu, %mem and command.
 The \-v option implies the \-m option.
 .TP
 \-w
@@ -196,7 +196,7 @@ If the command started less than 24 hours ago, the start time is
 displayed using the ``%l:ps.1p'' format described in 
 .IR strftime (3).
 If the command started less than 7 days ago, the start time is
-displayed using the ``%a6.10p'' format.
+displayed using the ``%a6.11p'' format.
 Otherwise, the start time is displayed using the ``%e%b%y'' format.
 .TP
 state

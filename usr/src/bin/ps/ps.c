@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,15 +49,15 @@ enum sort { SORTMEM, SORTCPU } sortby;
 uid_t	getuid();
 char	*ttyname();
 
-#define DFMT	"pid tname state cputime command"
-#define	JFMT	"user pid ppid pgid sess jobc state tname cputime command"
+#define DFMT	"pid tt state time command"
+#define	JFMT	"user pid ppid pgid sess jobc state tt time command"
 #define LFMT \
-	"uid pid ppid cpu pri nice vsize rss wchan state tname cputime command"
-#define	SFMT	"uid pid sig sigmask sigignore sigcatch state tname command"
+	"uid pid ppid cpu pri nice vsz rss wchan state tt time command"
+#define	SFMT	"uid pid sig sigmask sigignore sigcatch state tt command"
 #define UFMT \
-	"user pid pcpu pmem vsize rss tname state start cputime command"
+	"user pid %cpu %mem vsz rss tt state start time command"
 #define	VFMT \
-	"pid tname state cputime sl re pagein vsize rss lim tsiz trs pcpu pmem command"
+	"pid tt state time sl re pagein vsz rss lim tsiz trs %cpu %mem command"
 
 main(argc, argv)
 	int argc;
@@ -120,7 +120,7 @@ main(argc, argv)
 		case 'O':
 			parsefmt("pid");
 			parsefmt(optarg);
-			parsefmt("state tname cputime command");
+			parsefmt("tt state time command");
 			fmt = 1;
 			break;
 		case 'o':
