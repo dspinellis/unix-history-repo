@@ -1,4 +1,4 @@
-/*	@(#)config.h	4.3	(Berkeley)	%G%	*/
+/*	@(#)config.h	4.4	(Berkeley)	%G%	*/
 
 /*
 	These are machine-configuration dependent
@@ -324,7 +324,7 @@ char configK[] = {		/* to get to i, config[i] */
 	'g','g','g','g','g',		/* a,b,c,d,e */
 	'g','g','g','j','j',		/* f,g,h,i,j */
 	'k','p','p','n','p',		/* k,l,m,n,o */
-	'p',000,'r','g','t',		/* p,q,r,s,t */
+	'p','g','r','g','t',		/* p,q,r,s,t */
 	'u','v','w','x','y',		/* u,v,w,x,y */
 	'p',0				/* z */
 	};
