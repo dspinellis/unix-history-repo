@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.3 82/12/25";
+static char sccsid[] = "@(#)rsh.c	4.4 83/01/13";
 #endif
 
 #include <sys/types.h>
@@ -104,6 +104,16 @@ another:
 	    user ? user : pwd->pw_name, args, &rfd2);
         if (rem < 0)
                 exit(1);
+	if (rfd2 < 0) {
+		fprintf(stderr, "rsh: can't establish stderr\n");
+		exit(2);
+	}
+	if (options & SO_DEBUG) {
+		if (setsockopt(rem, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+			perror("setsockopt (stdin)");
+		if (setsockopt(rfd2, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+			perror("setsockopt (stderr)");
+	}
 	(void) setuid(getuid());
 	sigacts(SIG_HOLD);
         pid = fork();
@@ -143,7 +153,7 @@ another:
 			goto reread;
 		goto rewrite;
 	done:
-		{ int flags = 1; ioctl(rem, SIOCDONE, &flags); }
+		{ int flags = 1; (void) shutdown(rem, &flags); }
 		exit(0);
 	}
 	sigacts(sendsig);
