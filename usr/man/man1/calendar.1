@@ -1,0 +1,44 @@
+.TH CALENDAR 1 
+.SH NAME
+calendar \- reminder service
+.SH SYNOPSIS
+.B calendar
+[ \- ]
+.SH DESCRIPTION
+.I Calendar 
+consults the file `calendar' in the current directory
+and prints out lines that contain today's or
+tomorrow's date anywhere in the line.
+Most reasonable month-day dates such as `Dec. 7,'
+`december 7,' `12/7,' etc., are recognized, but not
+`7 December' or `7/12'.
+On weekends `tomorrow' extends through Monday.
+.PP
+When 
+an argument is present,
+.I calendar
+does its job for every user
+who has a file `calendar' in his login directory
+and sends him any positive results by
+.IR mail (1).
+Normally this is done daily in the wee hours under control of
+.IR cron (8).
+.SH FILES
+calendar
+.br
+/usr/lib/calendar to figure out today's and tomorrow's dates
+.br
+/etc/passwd
+.br
+/tmp/cal*
+.br
+egrep, sed, mail subprocesses
+.SH "SEE ALSO"
+at(1), cron(8), mail(1)
+.SH BUGS
+Your calendar must be public information for you
+to get reminder service.
+.br
+.I Calendar's
+extended idea of `tomorrow' doesn't account for
+holidays.
