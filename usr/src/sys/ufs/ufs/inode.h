@@ -9,11 +9,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	8.8 (Berkeley) %G%
+ *	@(#)inode.h	8.9 (Berkeley) %G%
  */
 
-#include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
+#include <ufs/ufs/dinode.h>
 
 /*
  * The inode is used to describe each active (or recently active) file in the
@@ -42,8 +42,7 @@ struct inode {
 	struct	 dquot *i_dquot[MAXQUOTAS]; /* Dquot structures. */
 	u_quad_t i_modrev;	/* Revision level for NFS lease. */
 	struct	 lockf *i_lockf;/* Head of byte-level lock list. */
-	pid_t	 i_lockholder;	/* DEBUG: holder of inode lock. */
-	pid_t	 i_lockwaiter;	/* DEBUG: latest blocked for inode lock. */
+	struct	 lock i_lock;	/* Inode lock. */
 	/*
 	 * Side effects; used during directory lookup.
 	 */
@@ -81,14 +80,11 @@ struct inode {
 /* These flags are kept in i_flag. */
 #define	IN_ACCESS	0x0001		/* Access time update request. */
 #define	IN_CHANGE	0x0002		/* Inode change time update request. */
-#define	IN_EXLOCK	0x0004		/* File has exclusive lock. */
-#define	IN_LOCKED	0x0008		/* Inode lock. */
-#define	IN_LWAIT	0x0010		/* Process waiting on file lock. */
-#define	IN_MODIFIED	0x0020		/* Inode has been modified. */
-#define	IN_RENAME	0x0040		/* Inode is being renamed. */
-#define	IN_SHLOCK	0x0080		/* File has shared lock. */
-#define	IN_UPDATE	0x0100		/* Modification time update request. */
-#define	IN_WANTED	0x0200		/* Inode is wanted by a process. */
+#define	IN_UPDATE	0x0004		/* Modification time update request. */
+#define	IN_MODIFIED	0x0008		/* Inode has been modified. */
+#define	IN_RENAME	0x0010		/* Inode is being renamed. */
+#define	IN_SHLOCK	0x0020		/* File has shared lock. */
+#define	IN_EXLOCK	0x0040		/* File has exclusive lock. */
 
 #ifdef KERNEL
 /*
