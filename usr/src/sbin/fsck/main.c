@@ -1,5 +1,5 @@
 #ifndef lint
-char version[] = "@(#)main.c	2.24 (Berkeley) %G%";
+char version[] = "@(#)main.c	2.25 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -7,7 +7,7 @@ char version[] = "@(#)main.c	2.24 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/fs.h>
 #include <sys/inode.h>
-#include <dir.h>
+#include <sys/dir.h>
 #include <sys/stat.h>
 #include <fstab.h>
 
@@ -295,7 +295,7 @@ retry:
 		if (stchar.st_mode & S_IFCHR) {
 			if (stslash.st_dev == stblock.st_rdev) {
 				hotroot++;
-				raw = rawname(name);
+				raw = unrawname(name);
 			}
 			checkfilesys(raw);
 			return (1);
@@ -389,19 +389,17 @@ checkfilesys(filesys)
 	free(freemap);
 	free(statemap);
 	free(lncntp);
-	if (dfile.mod) {
-		if (preen) {
-			if (hotroot)
-				exit(4);
-		} else {
-			printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
-			if (hotroot) {
-				printf("\n***** BOOT UNIX (NO SYNC!) *****\n");
-				exit(4);
-			}
-		}
+	if (!dfile.mod)
+		return;
+	if (!preen) {
+		printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
+		if (hotroot)
+			printf("\n***** REBOOT UNIX *****\n");
 	}
-	sync();			/* ??? */
+	if (hotroot) {
+		sync();
+		exit(4);
+	}
 }
 
 setup(dev)
