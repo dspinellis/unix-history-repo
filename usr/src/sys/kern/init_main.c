@@ -1,4 +1,4 @@
-/*	init_main.c	4.8	%G%	*/
+/*	init_main.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -96,17 +96,17 @@ main(firstaddr)
 
 	/*
 	 * make page-out daemon (process 2)
-	 * the daemon has ctopt(NSWBUF*CLSIZE*KLMAX) pages of page
+	 * the daemon has ctopt(nswbuf*CLSIZE*KLMAX) pages of page
 	 * table so that it can map dirty pages into
 	 * its address space during asychronous pushes.
 	 */
 
 	mpid = 1;
-	proc[0].p_szpt = clrnd(ctopt(NSWBUF*CLSIZE*KLMAX + UPAGES));
+	proc[0].p_szpt = clrnd(ctopt(nswbuf*CLSIZE*KLMAX + UPAGES));
 	proc[1].p_stat = SZOMB;		/* force it to be in proc slot 2 */
 	if (newproc(0)) {
 		proc[2].p_flag |= SLOAD|SSYS;
-		proc[2].p_dsize = u.u_dsize = NSWBUF*CLSIZE*KLMAX; 
+		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
 		pageout();
 	}
 
@@ -232,11 +232,12 @@ binit()
 bswinit()
 {
 	register int i;
+	register struct buf *sp
 
-	bswlist.av_forw = &swbuf[0];
-	for (i=0; i<NSWBUF-1; i++)
-		swbuf[i].av_forw = &swbuf[i+1];
-	swbuf[NSWBUF-1].av_forw = NULL;
+	bswlist.av_forw = sp;
+	for (i=0; i<NSWBUF-1; i++, sp++)
+		sp->av_forw = sp+1;
+	sp->av_forw = NULL;
 }
 
 /*

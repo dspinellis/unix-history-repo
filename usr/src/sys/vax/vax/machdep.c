@@ -1,4 +1,4 @@
-/*	machdep.c	4.17	81/02/26	*/
+/*	machdep.c	4.18	81/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,12 +19,18 @@
 #include "../h/conf.h"
 #include "../h/mem.h"
 #include "../h/cpu.h"
+#include "../h/inode.h"
+#include "../h/file.h"
+#include "../h/text.h"
+#include "../h/clist.h"
+#include "../h/callout.h"
+#include "../h/cmap.h"
 #include <frame.h>
 
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.17) 81/02/26 21:56:22 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.18) 81/02/27 02:39:23 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -44,10 +50,12 @@ int	memchk();
  * Machine-dependent startup code
  */
 startup(firstaddr)
+	int firstaddr;
 {
 	register int unixsize;
 	register int i;
 	register struct pte *pte;
+	register caddr_t v;
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -65,21 +73,58 @@ startup(firstaddr)
 	printf("real mem  = %d\n", ctob(maxmem));
 	
 	/*
-	 * Allow for the u. area of process 0 and its (single)
-	 * page of page tables.
+	 * First determine how many buffers are reasonable.
+	 * Current alg is 32 per megabyte, with min of 32.
+	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
-	unixsize = (firstaddr+UPAGES+1);
+	nbuf = (32 * physmem) / btoc(1024*1024); if (nbuf < 32) nbuf = 32;
+	nswbuf = nbuf / 2;
 
 	/*
-	 * Initialze buffers
+	 * Allocate space for system data structures.
 	 */
-	pte = bufmap;
-	for (i = 0; i < NBUF * CLSIZE; i++)
-		*(int *)pte++ = PG_V | PG_KW | unixsize++;
+	v = (caddr_t)(0x80000000 | (firstaddr * NBPG));
+#define	valloc(name, type, num) \
+	    (name) = (type *)(v); (v) = (caddr_t)((name)+(num))
+#define	valloclim(name, type, num, lim) \
+	    (name) = (type *)(v); (v) = (caddr_t)((lim) = ((name)+(num)))
+	valloc(buffers, char, BSIZE*nbuf);
+	valloc(buf, struct buf, nbuf);
+	valloc(swbuf, struct buf, nswbuf);
+	valloclim(inode, struct inode, ninode, inodeNINODE);
+	valloclim(file, struct file, nfile, fileNFILE);
+	valloclim(proc, struct proc, nproc, procNPROC);
+	valloclim(text, struct text, ntext, textNTEXT);
+	valloc(cfree, struct cblock, nclist);
+	valloc(callout, struct callout, ncallout);
+	valloc(swapmap, struct map, nproc * 4);
+	valloc(argmap, struct map, 25);
+	valloc(kernelmap, struct map, nproc);
+
+	/*
+	 * Now allocate space for core map
+	 */
+	ncmap = (physmem*NBPG - ((int)v &~ 0x80000000)) /
+		    (NBPG*CLSIZE + sizeof (struct cmap));
+	valloclim(cmap, struct cmap, ncmap, ecmap);
+
+	/*
+	 * Clear allocated space, and make r/w entries
+	 * for the space in the kernel map.
+	 */
+	unixsize = btoc((int)ecmap);
+	if (unixsize >= physmem - 8*UPAGES)
+		panic("no memory");
+	pte = &Sysmap[firstaddr];
+	for (i = firstaddr; i < unixsize; i++) {
+		*(int *)(&Sysmap[i]) = PG_V | PG_KW | i;
+		clearseg(i);
+	}
 	mtpr(TBIA, 1);
 
 	/*
-	 * Initialize maps.
+	 * Initialize memory allocator and
+	 * related maps.
 	 */
 	meminit(unixsize, maxmem);
 	maxmem = freemem;
@@ -97,7 +142,7 @@ startup(firstaddr)
 	tocons(TXDB_CWSI);
 	tocons(TXDB_CCSI);
 
-	timeout(memchk, (caddr_t)0, HZ);	/* it will pick its own intvl */
+	timeout(memchk, (caddr_t)0, hz);	/* it will pick its own intvl */
 }
 
 /*

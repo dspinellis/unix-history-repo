@@ -1,10 +1,12 @@
-/*	locore.s	4.30	81/02/26	*/
+/*	locore.s	4.31	81/02/27	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
 #include "../h/psl.h"
 #include "../h/pte.h"
 #include "../h/cpu.h"
+#include "../h/nexus.h"
+#include "../h/uba.h"
 #include "mba.h"
 
 	.set	HIGH,0x1f	# mask for total disable
@@ -12,7 +14,6 @@
 	.set	NBPG,512
 	.set	PGSHIFT,9
 
-	.set	BSIZE,NBPG*CLSIZE
 	.set	NISP,3		# number of interrupt stack pages
 
 /*
@@ -220,10 +221,6 @@ _catcher:
 
 	.globl	_cold
 _cold:	.long	1
-	.globl	_cmap
-_cmap:	.long	0
-	.globl	_ecmap
-_ecmap:	.long	0
 	.data
 
 	.text
@@ -306,12 +303,12 @@ _/**/mname:	.globl	_/**/mname;		\
 
 	.data
 	.align	2
-	SYSMAP(Sysmap	,Sysbase	,6*NBPG/4	)
+	SYSMAP(Sysmap	,Sysbase	,SYSPTSIZE/4	)
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
-	SYSMAP(Nexmap	,nexus		,16*16		)
-	SYSMAP(UMEMmap	,umem		,16*4		)
+	SYSMAP(Nexmap	,nexus		,16*NNEXUS	)
+	SYSMAP(UMEMmap	,umem		,16*MAXNUBA	)
 	SYSMAP(UMBAend	,umbaend	,0		)
-	SYSMAP(Usrptmap	,usrpt		,2*NBPG		)
+	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE/4	)
 	SYSMAP(Forkmap	,forkutl	,UPAGES		)
 	SYSMAP(Xswapmap	,xswaputl	,UPAGES		)
 	SYSMAP(Xswap2map,xswap2utl	,UPAGES		)
@@ -322,9 +319,8 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(CMAP2	,CADDR2		,1		)
 	SYSMAP(mcrmap	,mcr		,1		)
 	SYSMAP(mmap	,vmmap		,1		)
-	SYSMAP(bufmap	,buffers	,MAXNBUF*CLSIZE	)
 	SYSMAP(msgbufmap,msgbuf		,CLSIZE		)
-	SYSMAP(camap	,cabase		,32*CLSIZE	)
+	SYSMAP(camap	,cabase		,16*CLSIZE	)
 	SYSMAP(ecamap	,calimit	,0		)
 
 eSysmap:
@@ -366,16 +362,9 @@ start:
 1:	pushl	$4; pushl r7; calls $2,_badaddr; tstl r0; bneq 9f
 	acbl	$8096*1024-1,$64*1024,r7,1b
 9:
-/* allocate space for cmap[] */
-	movab	_end,r5
-	movl	r5,_cmap; bbss $31,_cmap,0f; 0:
-	subl3	r5,r7,r1
-	divl2	$(NBPG*CLSIZE)+CMSIZE,r1
-	mull2	$CMSIZE,r1
-	addl3	_cmap,r1,_ecmap
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6
-	movl	_ecmap,r5		# clear to end of cmap[]
+	movab	_end,r5
 	bbcc	$31,r5,0f; 0:
 	addl2	$(UPAGES*NBPG)+NBPG+NBPG,r5
 1:	clrq	(r6); acbl r5,$8,r6,1b
@@ -393,8 +382,8 @@ start:
 /* make kernel text space read-only */
 	movab	_etext+NBPG-1,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KR,r2,_Sysmap[r2]; aoblss r1,r2,1b
-/* make kernel data, bss, core map read-write */
-	addl3	_ecmap,$NBPG-1,r1; bbcc	$31,r1,0f; 0:; ashl $-PGSHIFT,r1,r1
+/* make kernel data, bss */
+	movab	_end+NBPG-1,r1; bbcc	$31,r1,0f; 0:; ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
 /* now go to mapped mode */
 	mtpr	$1,$TBIA; mtpr $1,$MAPEN; jmp *$0f; 0:
@@ -403,7 +392,7 @@ start:
 	movl	_maxmem,_physmem
 	movl	_maxmem,_freemem
 /* setup context for proc[0] == Scheduler */
-	addl3	_ecmap,$NBPG-1,r6
+	movab	_end+NBPG-1,r6
 	bicl2	$NBPG-1,r6		# make page boundary
 /* setup page table for proc[0] */
 	bbcc	$31,r6,0f; 0:
@@ -452,8 +441,8 @@ start:
 1:	movab	_u,r0
 	movc3	$12,sigcode,PCB_SIGC(r0)
 /* calculate firstaddr, and call main() */
-	addl3	_ecmap,$NBPG-1,r0; bbcc	$31,r0,0f; 0:; ashl $-PGSHIFT,r0,-(sp)
-	calls	$1,_main
+	movab	_end+NBPG-1,r0; bbcc $31,r0,0f; 0:; ashl $-PGSHIFT,r0,-(sp)
+	addl2	$UPAGES+1,(sp); calls $1,_main
 /* proc[1] == /etc/init now running here; run icode */
 	pushl	$PSL_CURMOD|PSL_PRVMOD
 	pushl	$0
