@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_copy.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_copy.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)pw_copy.c	8.2 (Berkeley) %G%";
 #include <string.h>
 
 #include <pw_util.h>
+#include "pw_copy.h"
 
 extern char *tempname;
 
