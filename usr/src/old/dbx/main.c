@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)main.c 5.2 %G%";
+static char sccsid[] = "@(#)main.c 5.3 %G%";
 /*
  * Debugger main routine.
  */
@@ -52,7 +52,6 @@ private Boolean initdone = false;	/* true if initialization done */
 private jmp_buf env;			/* setjmp/longjmp data */
 private char outbuf[BUFSIZ];		/* standard output buffer */
 private char namebuf[512];		/* possible name of object file */
-private int firstarg;			/* first program argument (for -r) */
 
 private Ttyinfo ttyinfo;
 private String corename;		/* name of core file */
@@ -70,11 +69,15 @@ String argv[];
     register Integer i;
     extern String date;
 
-    cmdname = argv[0];
+    if (!(cmdname = rindex(*argv, '/')))
+	cmdname = *argv;
+    else
+	++cmdname;
+
     catcherrs();
     onsyserr(EINTR, nil);
     fflush(stdout);
-    scanargs(argc, argv);
+    argv = scanargs(argc, argv);
     language_init();
     symbols_init();
     symbols_init();
@@ -83,9 +86,8 @@ String argv[];
     if (runfirst) {
 	if (setjmp(env) == FIRST_TIME) {
 	    arginit();
-	    for (i = firstarg; i < argc; i++) {
-		newarg(argv[i]);
-	    }
+	    while (*argv)
+		newarg(*argv++);
 	    run();
 	    /* NOTREACHED */
 	} else {
@@ -246,13 +248,16 @@ private catchintr()
  * Scan the argument list.
  */
 
-private scanargs(argc, argv)
+private char **scanargs(argc, argv)
 int argc;
 String argv[];
 {
+    extern char *optarg;
+    extern int optind;
     register int i, j;
     register Boolean foundfile;
     register File f;
+    int ch;
     char *tmp;
 
     runfirst = false;
@@ -266,42 +271,62 @@ String argv[];
     coredump = true;
     sourcepath = list_alloc();
     list_append(list_item("."), nil, sourcepath);
-    i = 1;
-    while (i < argc and (not foundfile or (corefile == nil and not runfirst))) {
-	if (argv[i][0] == '-') {
-	    if (streq(argv[i], "-I")) {
-		++i;
-		if (i >= argc) {
-		    fatal("missing directory for -I");
-		}
-		list_append(list_item(argv[i]), nil, sourcepath);
-	    } else if (streq(argv[i], "-c")) {
-		++i;
-		if (i >= argc) {
-		    fatal("missing command file name for -c");
-		}
-		initfile = argv[i];
-	    } else {
-		for (j = 1; argv[i][j] != '\0'; j++) {
-		    setoption(argv[i][j]);
-		}
-	    }
-	} else if (not foundfile) {
-	    objname = argv[i];
-	    foundfile = true;
-	} else if (coredump and corefile == nil) {
-	    corefile = fopen(argv[i], "r");
-	    corename = argv[i];
-	    if (corefile == nil) {
+
+    while ((ch = getopt(argc, argv, "I:bc:eiklnrs")) != EOF)
+    switch((char)ch) {
+	case 'I':
+		list_append(list_item(optarg), nil, sourcepath);
+		break;
+	case 'b':
+		tracebpts = true;
+		break;
+	case 'c':
+		initfile = optarg;
+		break;
+	case 'e':
+		traceexec = true;
+		break;
+	case 'i':
+		interactive = true;
+		break;
+	case 'k':
+		vaddrs = true;
+		break;
+	case 'l':
+#ifdef LEXDEBUG
+		lexdebug = true;
+#else
+		fatal("\"-l\" only applicable when compiled with LEXDEBUG");
+#endif
+		break;
+	case 'n':
+		traceblocks = true;
+		break;
+	case 'r':	/* run program before accepting commands */
+		runfirst = true;
 		coredump = false;
-	    }
+		break;
+	case 's':
+		tracesyms = true;
+		break;
+	case '?':
+	default:
+		fatal("unknown option");
+    }
+    argv += optind;
+    if (*argv) {
+	objname = *argv;
+	foundfile = true;
+	if (*++argv && coredump) {
+		corename = *argv;
+		corefile = fopen(*argv, "r");
+		if (corefile == nil)
+			coredump = false;
+		++argv;
 	}
-	++i;
     }
-    if (i < argc and not runfirst) {
-	fatal("extraneous argument %s", argv[i]);
-    }
-    firstarg = i;
+    if (*argv and not runfirst)
+	fatal("extraneous argument %s", *argv);
     if (not foundfile and isatty(0)) {
 	printf("enter object file name (default is `%s'): ", objname);
 	fflush(stdout);
@@ -323,61 +348,20 @@ String argv[];
     }
     if (coredump and corefile == nil) {
 	if (vaddrs) {
-	    corefile = fopen("/dev/mem", "r");
 	    corename = "/dev/mem";
+	    corefile = fopen(corename, "r");
 	    if (corefile == nil) {
 		panic("can't open /dev/mem");
 	    }
 	} else {
-	    corefile = fopen("core", "r");
 	    corename = "core";
+	    corefile = fopen(corename, "r");
 	    if (corefile == nil) {
 		coredump = false;
 	    }
 	}
     }
-}
-
-/*
- * Take appropriate action for recognized command argument.
- */
-
-private setoption(c)
-char c;
-{
-    switch (c) {
-	case 'r':   /* run program before accepting commands */
-	    runfirst = true;
-	    coredump = false;
-	    break;
-
-	case 'i':
-	    interactive = true;
-	    break;
-
-	case 'b':
-	    tracebpts = true;
-	    break;
-
-	case 'e':
-	    traceexec = true;
-	    break;
-
-	case 's':
-	    tracesyms = true;
-	    break;
-
-	case 'l':
-#   	    ifdef LEXDEBUG
-		lexdebug = true;
-#	    else
-		fatal("\"-l\" only applicable when compiled with LEXDEBUG");
-#	    endif
-	    break;
-
-	default:
-	    fatal("unknown option '%c'", c);
-    }
+    return(argv);
 }
 
 /*
