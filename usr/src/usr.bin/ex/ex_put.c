@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	7.3	%G%";
+static char *sccsid = "@(#)ex_put.c	7.4	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -562,59 +562,93 @@ plod(cnt)
 		outcol = 0;
 	}
 dontcr:
+	/* Move down, if necessary, until we are at the desired line */
 	while (outline < destline) {
-		outline++;
-		if (xNL && pfast)
-			tputs(xNL, 0, plodput);
-		else
-			plodput('\n');
+		j = destline - outline;
+		if (j > costDP) {
+			/* Win big on Tek 4025 */
+			tputs(tgoto(DOWN_PARM, 0, j), j, plodput);
+			outline += j;
+		}
+		else {
+			outline++;
+			if (xNL && pfast)
+				tputs(xNL, 0, plodput);
+			else
+				plodput('\n');
+		}
 		if (plodcnt < 0)
 			goto out;
 		if (NONL || pfast == 0)
 			outcol = 0;
 	}
 	if (BT)
-		k = strlen(BT);
+		k = strlen(BT);	/* should probably be cost(BT) and moved out */
+	/* Move left, if necessary, to desired column */
 	while (outcol > destcol) {
 		if (plodcnt < 0)
 			goto out;
-/*
 		if (BT && !insmode && outcol - destcol > 4+k) {
 			tputs(BT, 0, plodput);
 			outcol--;
-			outcol &= ~7;
+			outcol -= outcol % value(HARDTABS); /* outcol &= ~7; */
 			continue;
 		}
-*/
-		outcol--;
-		if (BC)
-			tputs(BC, 0, plodput);
-		else
-			plodput('\b');
+		j = outcol - destcol;
+		if (j > costLP) {
+			tputs(tgoto(LEFT_PARM, 0, j), j, plodput);
+			outcol -= j;
+		}
+		else {
+			outcol--;
+			if (BC)
+				tputs(BC, 0, plodput);
+			else
+				plodput('\b');
+		}
 	}
+	/* Move up, if necessary, to desired row */
 	while (outline > destline) {
-		outline--;
-		tputs(UP, 0, plodput);
+		j = outline - destline;
+		if (j > 1) {
+			/* Win big on Tek 4025 */
+			tputs(tgoto(UP_PARM, 0, j), j, plodput);
+			outline -= j;
+		}
+		else {
+			outline--;
+			tputs(UP, 0, plodput);
+		}
 		if (plodcnt < 0)
 			goto out;
 	}
+	/*
+	 * Now move to the right, if necessary.  We first tab to
+	 * as close as we can get.
+	 */
 	if (GT && !insmode && destcol - outcol > 1) {
-	for (;;) {
-		i = tabcol(outcol, value(HARDTABS));
-		if (i > destcol)
-			break;
+		/* tab to right as far as possible without passing col */
+		for (;;) {
+			i = tabcol(outcol, value(HARDTABS));
+			if (i > destcol)
+				break;
 			if (TA)
 				tputs(TA, 0, plodput);
 			else
 				plodput('\t');
 			outcol = i;
 		}
+		/* consider another tab and then some backspaces */
 		if (destcol - outcol > 4 && i < COLUMNS && (BC || BS)) {
 			if (TA)
 				tputs(TA, 0, plodput);
 			else
 				plodput('\t');
 			outcol = i;
+			/*
+			 * Back up.  Don't worry about LEFT_PARM because
+			 * it's never more than 4 spaces anyway.
+			 */
 			while (outcol > destcol) {
 				outcol--;
 				if (BC)
@@ -624,25 +658,43 @@ dontcr:
 			}
 		}
 	}
+	/*
+	 * We've tabbed as much as possible.  If we still need to go
+	 * further (not exact or can't tab) space over.  This is a
+	 * very common case when moving to the right with space.
+	 */
 	while (outcol < destcol) {
-		/*
-		 * move one char to the right.  We don't use ND space
-		 * because it's better to just print the char we are
-		 * moving over.  There are various exceptions, however.
-		 * If !inopen, vtube contains garbage.  If the char is
-		 * a null or a tab we want to print a space.  Other random
-		 * chars we use space for instead, too.
-		 */
-		if (!inopen || vtube[outline]==NULL ||
-			(i=vtube[outline][outcol]) < ' ')
-			i = ' ';
-		if(i & QUOTE)		/* mjm: no sign extension on 3B */
-			i = ' ';
-		if (insmode && ND)
-			tputs(ND, 0, plodput);
-		else
-			plodput(i);
-		outcol++;
+		j = destcol - outcol;
+		if (j > costRP) {
+			/*
+			 * This probably happens rarely, if at all.
+			 * It seems mainly useful for ANSI terminals
+			 * with no hardware tabs, and I don't know
+			 * of any such terminal at the moment.
+			 */
+			tputs(tgoto(RIGHT_PARM, 0, j), j, plodput);
+			outcol += j;
+		}
+		else {
+			/*
+			 * move one char to the right.  We don't use ND space
+			 * because it's better to just print the char we are
+			 * moving over.  There are various exceptions, however.
+			 * If !inopen, vtube contains garbage.  If the char is
+			 * a null or a tab we want to print a space.  Other
+			 * random chars we use space for instead, too.
+			 */
+			if (!inopen || vtube[outline]==NULL ||
+				(i=vtube[outline][outcol]) < ' ')
+				i = ' ';
+			if(i & QUOTE)	/* mjm: no sign extension on 3B */
+				i = ' ';
+			if (insmode && ND)
+				tputs(ND, 0, plodput);
+			else
+				plodput(i);
+			outcol++;
+		}
 		if (plodcnt < 0)
 			goto out;
 	}
