@@ -3,70 +3,64 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pow_ci.c	5.2	%G%
+ *	@(#)pow_ci.c	5.3	%G%
  */
 
 #include "complex"
 
-#ifndef tahoe
+#ifdef tahoe
+
+#define	C_MULEQ(A,B)	\
+	t = (A).real * (B).real - (A).imag * (B).imag,\
+	(A).imag = (A).real * (B).imag + (A).imag * (B).real,\
+	(A).real = t	/* A *= B */
+
+void
 pow_ci(p, a, b) 	/* p = a**b  */
-complex *p, *a;
-long int *b;
+	complex *p, *a;
+	long *b;
 {
-dcomplex p1, a1;
+	register long n = *b;
+	register float t;
+	complex x;
 
-a1.dreal = a->real;
-a1.dimag = a->imag;
-
-pow_zi(&p1, &a1, b);
-
-p->real = p1.dreal;
-p->imag = p1.dimag;
+	x = *a;
+	p->real = (float)1, p->imag = (float)0;
+	if (!n)
+		return;
+	if (n < 0) {
+		c_div(&x, p, a);
+		n = -n;
+	}
+	while (!(n&1)) {
+		C_MULEQ(x, x);
+		n >>= 1;
+	}
+	for (*p = x; --n > 0; C_MULEQ(*p, x))
+		while (!(n&1)) {
+			C_MULEQ(x, x);
+			n >>= 1;
+		}
 }
 
-#else tahoe
+#else /* !tahoe */
 
+extern void pow_zi();
+
+void
 pow_ci(p, a, b) 	/* p = a**b  */
-complex *p, *a;
-long int *b;
+	complex *p, *a;
+	long *b;
 {
-register long int n;
-register float t;
-complex x;
+	dcomplex p1, a1;
 
-n = *b;
-p->real = 1;
-p->imag = 0;
+	a1.dreal = a->real;
+	a1.dimag = a->imag;
 
-if(n == 0)
-	return;
-if(n < 0)
-	{
-	n = -n;
-	c_div(&x,p,a);
-	}
-else
-	{
-	x.real = a->real;
-	x.imag = a->imag;
-	}
+	pow_zi(&p1, &a1, b);
 
-for( ; ; )
-	{
-	if(n & 01)
-		{
-		t = p->real * x.real - p->imag * x.imag;
-		p->imag = p->real * x.imag + p->imag * x.real;
-		p->real = t;
-		}
-	if(n >>= 1)
-		{
-		t = x.real * x.real - x.imag * x.imag;
-		x.imag = 2 * x.real * x.imag;
-		x.real = t;
-		}
-	else
-		break;
-	}
+	p->real = p1.dreal;
+	p->imag = p1.dimag;
 }
-#endif tahoe
+
+#endif /* tahoe */

@@ -3,43 +3,41 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pow_ri.c	5.3	%G%
+ *	@(#)pow_ri.c	5.4	%G%
  */
 
-float pow_ri(ap, bp)
-float *ap;
-long int *bp;
+#ifdef tahoe
+#define	double	float
+#endif /* tahoe */
+
+float
+pow_ri(ap, bp)
+	float *ap;
+	long *bp;
 {
-double pow, x;
-long int n;
+	register long n = *bp;
+#ifdef tahoe
+	register
+#endif /* tahoe */
+	double y, x = *ap;
 
-pow = 1;
-x = *ap;
-n = *bp;
-
-if(n != 0)
-	{
-	if(n < 0)
-		{
-		if(x == 0)
-			{
-			return(pow);
-			}
+	if (!n)
+		return((double)1);
+	if (n < 0) {
+		x = (double)1 / x;
 		n = -n;
-		x = 1/x;
-		}
-	if (x == 0)
-		return(0);
-
-	for( ; ; )
-		{
-		if(n & 01)
-			pow *= x;
-		if(n >>= 1)
-			x *= x;
-		else
-			break;
-		}
 	}
-return(pow);
+	while (!(n&1)) {
+		x *= x;
+		n >>= 1;
+	}
+	for (y = x; --n > 0; y *= x)
+		while (!(n&1)) {
+			x *= x;
+			n >>= 1;
+		}
+	return(y);
 }
+#ifdef tahoe
+#undef double
+#endif /* tahoe */
