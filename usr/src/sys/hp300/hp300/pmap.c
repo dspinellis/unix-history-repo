@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.9 (Berkeley) %G%
+ *	@(#)pmap.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -48,6 +48,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "malloc.h"
 #include "user.h"
