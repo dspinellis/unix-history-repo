@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getty.8	6.2 (Berkeley) %G%
+.\"	@(#)getty.8	6.3 (Berkeley) %G%
 .\"
 .TH GETTY 8  ""
 .UC 4
@@ -10,12 +10,12 @@
 getty  \- set terminal mode
 .SH SYNOPSIS
 .B /etc/getty
-[ type ] [ tty ]
+[ type [ tty ] ]
 .SH DESCRIPTION
 .I Getty
 is usually invoked by
 .IR  init (8)
-to intialize the tty line, read a login name, and invoke
+to open and initialize the tty line, read a login name, and invoke
 .IR login (1).
 .I getty
 attempts to adapt the system to the speed and type of terminal
@@ -87,5 +87,4 @@ if the login name is not entered reasonably quickly.
 .SH FILES
 /etc/gettytab
 .SH "SEE ALSO"
-gettytab(5), init(8), login(1), ioctl(2), tty(4), ttys(5).
-.SH BUGS
+gettytab(5), init(8), login(1), ioctl(2), tty(4), ttys(5)
