@@ -1,4 +1,4 @@
-#	@(#)Makefile	2.1	%G%
+#	@(#)Makefile	2.2	%G%
 #
 CC = cc
 .c.o:
@@ -82,4 +82,4 @@ doc/INDEX:	doc/testrefs
 	cd doc; invert -p INDEX testrefs
 
 clean:	
-	-rm *.o bib invert listrefs lookup tags
+	-rm -f *.o bib invert listrefs lookup tags
