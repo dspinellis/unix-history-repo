@@ -113,7 +113,7 @@ netflush()
     if (netdata && n) {
 	Dump('>', netoring.send, n);
     }
-    ring_sent(&netoring, n);
+    ring_sent_acked(&netoring, n);
     return n > 0;
 }
 
