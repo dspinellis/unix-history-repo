@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)lookup.c	1.2 (Berkeley) %G%";
+    static	char *sccsid = "@(#)lookup.c	1.3 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -28,7 +28,7 @@ nllookup( address )
 	middle = ( high + low ) >> 1;
 	if ( nl[ middle ].value <= address && nl[ middle+1 ].value > address ) {
 #	    ifdef DEBUG
-		if ( debug & TALLYDEBUG ) {
+		if ( debug & LOOKUPDEBUG ) {
 		    printf( "[nllookup] %d (%d) probes\n" , probes , nname-1 );
 		}
 #	    endif DEBUG
@@ -56,14 +56,14 @@ arclookup( parentp , childp )
 	return 0;
     }
 #   ifdef DEBUG
-	if ( debug & TALLYDEBUG ) {
+	if ( debug & LOOKUPDEBUG ) {
 	    printf( "[arclookup] parent %s child %s\n" ,
 		    parentp -> name , childp -> name );
 	}
 #   endif DEBUG
     for ( arcp = parentp -> children ; arcp ; arcp = arcp -> arc_childlist ) {
 #	ifdef DEBUG
-	    if ( debug & TALLYDEBUG ) {
+	    if ( debug & LOOKUPDEBUG ) {
 		printf( "[arclookup]\t arc_parent %s arc_child %s\n" ,
 			arcp -> arc_parentp -> name ,
 			arcp -> arc_childp -> name );

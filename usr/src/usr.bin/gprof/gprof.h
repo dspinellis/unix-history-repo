@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.2 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.3 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -121,8 +121,10 @@ double	scale;			/* scale factor converting samples to pc
 char	*strtab;		/* string table in core */
 off_t	ssiz;			/* size of the string table */
 struct	exec xbuf;		/* exec header of a.out */
+unsigned char	*textspace;		/* text space of a.out in core */
 
 int	zflg;
+int	cflag;
 
     /*
      * booleans
@@ -150,4 +152,6 @@ bool		dfn_busy();
 #define	TIMEDEBUG	16
 #define	SAMPLEDEBUG	32
 #define	AOUTDEBUG	64
-#define	ANYDEBUG	128
+#define	CALLSDEBUG	128
+#define	LOOKUPDEBUG	256
+#define	ANYDEBUG	512
