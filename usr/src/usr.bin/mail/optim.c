@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)optim.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)optim.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -99,7 +99,7 @@ netlook(machine, attnet)
 {
 	register struct netmach *np;
 	register char *cp, *cp2;
-	char nbuf[100];
+	char nbuf[BUFSIZ];
 
 	/*
 	 * Make into lower case.
