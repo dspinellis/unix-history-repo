@@ -1,4 +1,4 @@
-/*	dh.c	4.5	%G%	*/
+/*	dh.c	4.6	%G%	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -503,4 +503,9 @@ dhreset()
 	}
 	dhtimer();
 }
+#if DHDM > 0
+#include "../dev/dhdm.c"
+#else
+#include "../dev/dhfdm.c"
+#endif
 #endif
