@@ -23,7 +23,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -154,6 +154,12 @@ main(argc, argv, envp)
 		(void) close(i);
 	errno = 0;
 
+#ifdef LOG_MAIL
+	openlog("sendmail", LOG_PID, LOG_MAIL);
+#else 
+	openlog("sendmail", LOG_PID);
+#endif 
+
 	/*
 	**  Set default values for variables.
 	**	These cannot be in initialized data space.
@@ -239,10 +245,6 @@ main(argc, argv, envp)
 	MotherPid = getpid();
 	FullName = getenv("NAME");
 
-#ifdef LOG_MAIL
-#else 
-	openlog("sendmail", LOG_PID);
-#endif 
 	errno = 0;
 	from = NULL;
 
@@ -950,16 +952,24 @@ thaw(freezefile)
 	f = open(freezefile, 0);
 	if (f < 0)
 	{
+		syslog(LOG_WARNING, "Cannot open frozen config file %s: %m",
+			freezefile);
 		errno = 0;
 		return (FALSE);
 	}
 
 	/* read in the header */
-	if (read(f, (char *) &fhdr, sizeof fhdr) < sizeof fhdr ||
-	    fhdr.frzinfo.frzedata != &edata ||
+	if (read(f, (char *) &fhdr, sizeof fhdr) < sizeof fhdr)
+	{
+		syserr("Cannot read frozen config file");
+		(void) close(f);
+		return (FALSE);
+	}
+	if ( fhdr.frzinfo.frzedata != &edata ||
 	    fhdr.frzinfo.frzend != &end ||
 	    strcmp(fhdr.frzinfo.frzver, Version) != 0)
 	{
+		syslog(LOG_WARNING, "Wrong version of frozen config file");
 		(void) close(f);
 		return (FALSE);
 	}
@@ -976,6 +986,7 @@ thaw(freezefile)
 	if (read(f, (char *) &edata, (int) (fhdr.frzinfo.frzbrk - &edata)) !=
 					(int) (fhdr.frzinfo.frzbrk - &edata))
 	{
+		syserr("Cannot read frozen config file");
 		/* oops!  we have trashed memory..... */
 		(void) write(2, "Cannot read freeze file\n", 24);
 		_exit(EX_SOFTWARE);
