@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.39 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.40 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.39 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.40 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -379,9 +379,22 @@ runqueue(forkflag)
 	while (WorkQ != NULL)
 	{
 		WORK *w = WorkQ;
+		extern bool shouldqueue();
 
 		WorkQ = WorkQ->w_next;
-		dowork(w, e);
+
+		/*
+		**  Ignore jobs that are too expensive for the moment.
+		*/
+
+		if (shouldqueue(w->w_pri, w->w_ctime))
+		{
+			if (Verbose)
+				printf("\nSkipping %s\n", w->w_name + 2);
+			return;
+		}
+
+		dowork(w->w_name + 2, ForkQueueRuns, e);
 		free(w->w_name);
 		free((char *) w);
 	}
@@ -645,7 +658,9 @@ workcmpf(a, b)
 **  DOWORK -- do a work request.
 **
 **	Parameters:
-**		w -- the work request to be satisfied.
+**		id -- the ID of the job to run.
+**		forkflag -- if set, run this in background.
+**		e - the envelope in which to run it.
 **
 **	Returns:
 **		none.
@@ -654,33 +669,22 @@ workcmpf(a, b)
 **		The work request is satisfied if possible.
 */
 
-dowork(w, e)
-	register WORK *w;
+dowork(id, forkflag, e)
+	char *id;
+	bool forkflag;
 	register ENVELOPE *e;
 {
 	register int i;
-	extern bool shouldqueue();
 	extern bool readqf();
 
 	if (tTd(40, 1))
-		printf("dowork: %s pri %ld\n", w->w_name, w->w_pri);
-
-	/*
-	**  Ignore jobs that are too expensive for the moment.
-	*/
-
-	if (shouldqueue(w->w_pri, w->w_ctime))
-	{
-		if (Verbose)
-			printf("\nSkipping %s\n", w->w_name + 2);
-		return;
-	}
+		printf("dowork(%s)\n", id);
 
 	/*
 	**  Fork for work.
 	*/
 
-	if (ForkQueueRuns)
+	if (forkflag)
 	{
 		i = fork();
 		if (i < 0)
@@ -705,7 +709,7 @@ dowork(w, e)
 		clearenvelope(e, FALSE);
 		e->e_flags |= EF_QUEUERUN;
 		e->e_errormode = EM_MAIL;
-		e->e_id = &w->w_name[2];
+		e->e_id = id;
 # ifdef LOG
 		if (LogLevel > 76)
 			syslog(LOG_DEBUG, "%s: dowork, pid=%d", e->e_id,
@@ -717,7 +721,7 @@ dowork(w, e)
 
 		if (!bitset(EF_FATALERRS, e->e_flags))
 			sendall(e, SM_DELIVER);
-		if (ForkQueueRuns)
+		if (forkflag)
 			finis();
 		else
 			dropenvelope(e);
@@ -769,6 +773,9 @@ readqf(e)
 	qfp = fopen(qf, "r+");
 	if (qfp == NULL)
 	{
+		if (tTd(40, 8))
+			printf("readqf(%s): fopen failure (%s)\n",
+				qf, errstring(errno));
 		if (errno != ENOENT)
 			syserr("readqf: no control file %s", qf);
 		return FALSE;
@@ -781,6 +788,9 @@ readqf(e)
 	if (fstat(fileno(qfp), &st) < 0)
 	{
 		/* must have been being processed by someone else */
+		if (tTd(40, 8))
+			printf("readqf(%s): fstat failure (%s)\n",
+				qf, errstring(errno));
 		fclose(qfp);
 		return FALSE;
 	}
@@ -794,6 +804,8 @@ readqf(e)
 				e->e_id, st.st_uid, st.st_mode);
 		}
 # endif /* LOG */
+		if (tTd(40, 8))
+			printf("readqf(%s): bogus file\n", qf);
 		fclose(qfp);
 		return FALSE;
 	}
@@ -801,6 +813,8 @@ readqf(e)
 	if (!lockfile(fileno(qfp), qf, LOCK_EX|LOCK_NB))
 	{
 		/* being processed by another queuer */
+		if (tTd(40, 8))
+			printf("readqf(%s): locked\n", qf);
 		if (Verbose)
 			printf("%s: locked\n", e->e_id);
 # ifdef LOG
