@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -17,7 +17,7 @@ initialize(startup)
 	char startup;
 {
 	register struct objs *p;
-	int die();
+	void die();
 
 	puts("Version 4.2, fall 1984.");
 	puts("First Adventure game written by His Lordship, the honorable");
