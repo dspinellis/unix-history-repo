@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -34,10 +34,16 @@ static char sccsid[] = "@(#)telnetd.c	5.13 (Berkeley) %G%";
 #include <sgtty.h>
 #include <netdb.h>
 #include <syslog.h>
+#include <ctype.h>
 
 #define	BELL	'\07'
 #define BANNER	"\r\n\r\n4.3 BSD UNIX (%s)\r\n\r\r\n\r%s"
 
+#define	OPT_DONT	0		/* don't do this option */
+#define	OPT_WONT	0		/* won't do this option */
+#define	OPT_DO		1		/* do this option */
+#define	OPT_WILL	1		/* will do this option */
+#define	OPT_ALWAYS_LOOK	2		/* special case for echo */
 char	hisopts[256];
 char	myopts[256];
 
@@ -50,10 +56,27 @@ char	wont[] = { IAC, WONT, '%', 'c', 0 };
  * I/O data buffers, pointers, and counters.
  */
 char	ptyibuf[BUFSIZ], *ptyip = ptyibuf;
+
 char	ptyobuf[BUFSIZ], *pfrontp = ptyobuf, *pbackp = ptyobuf;
+
 char	netibuf[BUFSIZ], *netip = netibuf;
+#define	NIACCUM(c)	{   *netip++ = c; \
+			    ncc++; \
+			}
+
 char	netobuf[BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
 char	*neturg = 0;		/* one past last bye of urgent data */
+	/* the remote system seems to NOT be an old 4.2 */
+int	not42 = 1;
+
+
+char	subbuffer[100], *subpointer, *subend;	/* buffer for sub-options */
+#define	SB_CLEAR()	subpointer = subbuffer;
+#define	SB_TERM()	subend = subpointer;
+#define	SB_ACCUM(c)	if (subpointer < (subbuffer+sizeof subbuffer)) { \
+				*subpointer++ = (c); \
+			}
+
 int	pcc, ncc;
 
 int	pty, net;
@@ -138,7 +161,30 @@ main(argc, argv)
 	doit(0, &from);
 }
 
-char	*envinit[] = { "TERM=network", 0 };
+
+/*
+ * Get()
+ *
+ *	Return next character from file descriptor.
+ *
+ *	This is not meant to be very efficient, since it is only
+ * run during startup.
+ */
+
+Get(f)
+int	f;		/* the file descriptor */
+{
+    char	input;
+
+    if (read(f, &input, 1) != 1) {
+	syslog(LOG_ERR, "read: %m\n");
+	exit(1);
+    }
+    return input&0xff;
+}
+
+char	*terminaltype;
+char	*envinit[2];
 int	cleanup();
 
 /*
@@ -152,7 +198,104 @@ doit(f, who)
 	int i, p, t;
 	struct sgttyb b;
 	struct hostent *hp;
-	char c;
+	int c;
+	int gotterminaltype = 0;
+
+	/*
+	 * Try to get a terminal type from the foreign host.
+	 */
+
+	{
+	    static char sbuf[] = { IAC, DO, TELOPT_TTYPE };
+
+	    terminaltype = 0;
+	    if (write(f, sbuf, sizeof sbuf) == -1) {
+		syslog(LOG_ERR, "write sbuf: %m\n");
+		exit(1);
+	    }
+	    for (;;) {		/* ugly, but we are VERY early */
+		while ((c = Get(f)) != IAC) {
+		    NIACCUM(c);
+		}
+		if ((c = Get(f)) == WILL) {
+		    if ((c = Get(f)) == TELOPT_TTYPE) {
+			static char sbbuf[] = { IAC, SB, TELOPT_TTYPE,
+							TELQUAL_SEND, IAC, SE };
+			if (write(f, sbbuf, sizeof sbbuf) == -1) {
+			    syslog(LOG_ERR, "write sbbuf: %m\n");
+			    exit(1);
+			}
+			break;
+		    } else {
+			NIACCUM(IAC);
+			NIACCUM(WILL);
+			NIACCUM(c);
+		    }
+		} else if (c == WONT) {
+		    if ((c = Get(f)) == TELOPT_TTYPE) {
+			terminaltype = "TERM=network";
+			break;
+		    } else {
+			NIACCUM(IAC);
+			NIACCUM(WONT);
+			NIACCUM(c);
+		    }
+		} else {
+		    NIACCUM(IAC);
+		    NIACCUM(c);
+		}
+	    }
+	    if (!terminaltype) {
+		for (;;) {
+		    while ((c = Get(f)) != IAC) {
+			NIACCUM(c);
+		    }
+		    if ((c = Get(f)) != SB) {
+			NIACCUM(IAC);
+			NIACCUM(c);
+		    } else if ((c = Get(f)) != TELOPT_TTYPE) {
+			NIACCUM(IAC);
+			NIACCUM(SB);
+			NIACCUM(c);
+		    } else if ((c = Get(f)) != TELQUAL_IS) {
+			NIACCUM(IAC);
+			NIACCUM(SB);
+			NIACCUM(TELOPT_TTYPE);
+			NIACCUM(c);
+		    } else {		/* Yaaaay! */
+			static char terminalname[5+41] = "TERM=";
+
+			terminaltype = terminalname+strlen(terminalname);
+
+			while (terminaltype <
+				    (terminalname + sizeof terminalname-1)) {
+			    if ((c = Get(f)) == IAC) {
+				if ((c = Get(f)) == SE) {
+				    break;		/* done */
+				} else {
+				    *terminaltype++ = IAC;	/* ? */
+				    if (isupper(c)) {
+					c = tolower(c);
+				    }
+				    *terminaltype++ = c;
+				}
+			    } else {
+				if (isupper(c)) {
+				    c = tolower(c);
+				}
+				*terminaltype++ = c;    /* accumulate name */
+			    }
+			}
+			*terminaltype = 0;
+			terminaltype = terminalname;
+			gotterminaltype = 1;
+			break;
+		    }
+		}
+	    }
+	    envinit[0] = terminaltype;
+	    envinit[1] = 0;
+	}
 
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -205,7 +348,12 @@ gotpty:
 	dup2(t, 2);
 	close(t);
 	environ = envinit;
-	execl("/bin/login", "login", "-h", host, 0);
+	/*
+	 * -h : pass on name of host.
+	 * -p : don't clobber the environment (so terminal type stays set).
+	 */
+	execl("/bin/login", "login", "-h", host,
+					gotterminaltype ? "-p" : 0, 0);
 	fatalperror(f, "/bin/login", errno);
 	/*NOTREACHED*/
 }
@@ -274,9 +422,9 @@ telnet(f, p)
 	net = f, pty = p;
 	ioctl(f, FIONBIO, &on);
 	ioctl(p, FIONBIO, &on);
-#if	defined(xxxSO_OOBINLINE)
-	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, on, sizeof on);
-#endif	/* defined(xxxSO_OOBINLINE) */
+#if	defined(SO_OOBINLINE)
+	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, &on, sizeof on);
+#endif	/* defined(SO_OOBINLINE) */
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGCHLD, cleanup);
 	setpgrp(0, 0);
@@ -287,11 +435,32 @@ telnet(f, p)
 	dooption(TELOPT_ECHO);
 	dooption(TELOPT_SGA);
 	/*
+	 * Is the client side a 4.2 (NOT 4.3) system?  We need to know this
+	 * because 4.2 clients are unable to deal with TCP urgent data.
+	 *
+	 * To find out, we send out a "DO ECHO".  If the remote system
+	 * answers "WILL ECHO" it is probably a 4.2 client, and we note
+	 * that fact ("WILL ECHO" ==> that the client will echo what
+	 * WE, the server, sends it; it does NOT mean that the client will
+	 * echo the terminal input).
+	 */
+	sprintf(nfrontp, doopt, TELOPT_ECHO);
+	nfrontp += sizeof doopt-2;
+	hisopts[TELOPT_ECHO] = OPT_ALWAYS_LOOK;
+
+	/*
 	 * Show banner that getty never gave.
 	 */
 	gethostname(hostname, sizeof (hostname));
 	sprintf(nfrontp, BANNER, hostname, "");
 	nfrontp += strlen(nfrontp);
+
+	/*
+	 * Call telrcv() once to pick up anything received during
+	 * terminal type negotiation.
+	 */
+	telrcv();
+
 	for (;;) {
 		fd_set ibits, obits, xbits;
 		register int c;
@@ -341,7 +510,7 @@ telnet(f, p)
 		 * Something to read from the network...
 		 */
 		if (FD_ISSET(net, &ibits)) {
-#if	!defined(xxxSO_OOBINLINE)
+#if	!defined(SO_OOBINLINE)
 			/*
 			 * In 4.2 (and some early 4.3) systems, the
 			 * OOB indication and data handling in the kernel
@@ -395,9 +564,9 @@ telnet(f, p)
 			ncc = read(net, netibuf, sizeof (netibuf));
 		    }
 		    settimer(didnetreceive);
-#else	/* !defined(xxxSO_OOBINLINE)) */
+#else	/* !defined(SO_OOBINLINE)) */
 		    ncc = read(net, netibuf, sizeof (netibuf));
-#endif	/* !defined(xxxSO_OOBINLINE)) */
+#endif	/* !defined(SO_OOBINLINE)) */
 		    if (ncc < 0 && errno == EWOULDBLOCK)
 			ncc = 0;
 		    else {
@@ -453,8 +622,8 @@ telnet(f, p)
 #define	TS_DATA		0	/* base state */
 #define	TS_IAC		1	/* look for double IAC's */
 #define	TS_CR		2	/* CR-LF ->'s CR */
-#define	TS_BEGINNEG	3	/* throw away begin's... */
-#define	TS_ENDNEG	4	/* ...end's (suboption negotiation) */
+#define	TS_SB		3	/* throw away begin's... */
+#define	TS_SE		4	/* ...end's (suboption negotiation) */
 #define	TS_WILL		5	/* will option negotiation */
 #define	TS_WONT		6	/* wont " */
 #define	TS_DO		7	/* do " */
@@ -492,7 +661,7 @@ telrcv()
 			 * unix way of saying that (\r is only good
 			 * if CRMOD is set, which it normally is).
 			 */
-			if (!myopts[TELOPT_BINARY] && c == '\r') {
+			if ((myopts[TELOPT_BINARY] == OPT_DONT) && c == '\r') {
 				if ((ncc > 0) && ('\n' == *netip)) {
 					netip++; ncc--;
 					c = '\n';
@@ -577,7 +746,7 @@ telrcv()
 			 * Begin option subnegotiation...
 			 */
 			case SB:
-				state = TS_BEGINNEG;
+				state = TS_SB;
 				continue;
 
 			case WILL:
@@ -603,38 +772,49 @@ telrcv()
 			state = TS_DATA;
 			break;
 
-		case TS_BEGINNEG:
-			if (c == IAC)
-				state = TS_ENDNEG;
+		case TS_SB:
+			if (c == IAC) {
+				state = TS_SE;
+			} else {
+				SB_ACCUM(c);
+			}
 			break;
 
-		case TS_ENDNEG:
-			state = c == SE ? TS_DATA : TS_BEGINNEG;
+		case TS_SE:
+			if (c != SE) {
+				if (c != IAC) {
+					SB_ACCUM(IAC);
+				}
+				SB_ACCUM(c);
+				state = TS_SB;
+			} else {
+				SB_TERM();
+				suboption();	/* handle sub-option */
+				state = TS_DATA;
+			}
 			break;
 
 		case TS_WILL:
-			if (!hisopts[c])
+			if (hisopts[c] != OPT_WILL)
 				willoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_WONT:
-			if (hisopts[c])
+			if (hisopts[c] != OPT_WONT)
 				wontoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DO:
-			if (!myopts[c])
+			if (myopts[c] != OPT_DO)
 				dooption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DONT:
-			if (myopts[c]) {
-				myopts[c] = 0;
-				sprintf(nfrontp, wont, c);
-				nfrontp += sizeof (wont) - 2;
+			if (myopts[c] != OPT_DONT) {
+				dontoption(c);
 			}
 			state = TS_DATA;
 			continue;
@@ -659,10 +839,19 @@ willoption(option)
 		break;
 
 	case TELOPT_ECHO:
-		mode(0, ECHO|CRMOD);
-		fmt = doopt;
+		not42 = 0;		/* looks like a 4.2 system */
+		/*
+		 * Now, in a 4.2 system, to break them out of ECHOing
+		 * (to the terminal) mode, we need to send a "WILL ECHO".
+		 * Kludge upon kludge!
+		 */
+		if (myopts[TELOPT_ECHO] == OPT_DO) {
+		    dooption(TELOPT_ECHO);
+		}
+		fmt = dont;
 		break;
 
+	case TELOPT_TTYPE:
 	case TELOPT_SGA:
 		fmt = doopt;
 		break;
@@ -676,9 +865,9 @@ willoption(option)
 		break;
 	}
 	if (fmt == doopt) {
-		hisopts[option] = 1;
+		hisopts[option] = OPT_WILL;
 	} else {
-		hisopts[option] = 0;
+		hisopts[option] = OPT_WONT;
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (dont) - 2;
@@ -691,7 +880,7 @@ wontoption(option)
 
 	switch (option) {
 	case TELOPT_ECHO:
-		mode(ECHO|CRMOD, 0);
+		not42 = 1;		/* doesn't seem to be a 4.2 system */
 		break;
 
 	case TELOPT_BINARY:
@@ -699,7 +888,7 @@ wontoption(option)
 		break;
 	}
 	fmt = dont;
-	hisopts[option] = 0;
+	hisopts[option] = OPT_WONT;
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
 }
@@ -734,12 +923,55 @@ dooption(option)
 		break;
 	}
 	if (fmt == will) {
-	    myopts[option] = 1;
+	    myopts[option] = OPT_DO;
 	} else {
-	    myopts[option] = 0;
+	    myopts[option] = OPT_DONT;
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
+}
+
+
+dontoption(option)
+int option;
+{
+    char *fmt;
+
+    switch (option) {
+    case TELOPT_ECHO:		/* we should stop echoing */
+	mode(0, ECHO|CRMOD);
+	fmt = wont;
+	break;
+    default:
+	fmt = wont;
+	break;
+    }
+    if (fmt = wont) {
+	myopts[option] = OPT_DONT;
+    } else {
+	myopts[option] = OPT_DO;
+    }
+    sprintf(nfrontp, fmt, option);
+    nfrontp += sizeof (wont) - 2;
+}
+
+/*
+ * suboption()
+ *
+ *	Look at the sub-option buffer, and try to be helpful to the other
+ * side.
+ *
+ *	Currently we recognize:
+ *
+ *	(nothing - we only do terminal type at start-up time)
+ */
+
+suboption()
+{
+    switch (subbuffer[0]&0xff) {
+    default:
+	;
+    }
 }
 
 mode(on, off)
@@ -917,7 +1149,12 @@ netflush()
     int n;
 
     if ((n = nfrontp - nbackp) > 0) {
-	if (!neturg) {
+	/*
+	 * if no urgent data, or if the other side appears to be an
+	 * old 4.2 client (and thus unable to survive TCP urgent data),
+	 * write the entire buffer in non-OOB mode.
+	 */
+	if ((neturg == 0) || (not42 == 0)) {
 	    n = write(net, nbackp, n);	/* normal write */
 	} else {
 	    n = neturg - nbackp;
