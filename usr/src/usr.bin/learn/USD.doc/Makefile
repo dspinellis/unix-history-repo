@@ -1,41 +1,10 @@
-#
-# Copyright (c) 1986 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	6.1 (Berkeley) %G%
-#
-DOCS = p0 p1 p2 p3 p4 p5 p6 p7
-#
-#
-# Change these to change the way the document is printed out
-#
-FMT = ditroff
-PKG = -msU
-PRINTER = -Pdp
-FMTOPTIONS =
-TBL = dtbl
+#	@(#)Makefile	6.2 (Berkeley) %G%
 
-all: sources fmt
+DIR=	usd/02.learn
+SRCS=	p0 p1 p2 p3 p4 p5 p6 p7
+MACROS=	-msU
 
-clean:
-	-rm $(FMTDST)
+paper.${PRINTER}: ${SRCS}
+	${REFER} -p Refs -e ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
 
-srcs: sources
-sources:  $(DOCS)
-$(DOCS):
-	sccs get $@
-
-
-
-docs.raw: $(DOCS)
-
-fmt: $(DOCS)
-	refer -p Refs -e $(DOCS) | $(TBL) $(PRINTER) | $(FMT) $(FMTOPTIONS) $(PKG) $(PRINTER)
-
-aps: $(DOCS)
-	refer -p Refs -e $(DOCS) | $(TBL) $(PRINTER) | $(FMT) $(FMTOPTIONS) $(PKG) $(PRINTER) | $(LPR)
-
-indexable: $(DOCS)
-	refer -p Refs -e $(DOCS) | $(TBL) $(PRINTER) | sed -f ../pre.sed | $(FMT) $(FMTOPTIONS) $(PKG) $(PRINTER) | sed -f ../post.sed >../learn.a
-
+.include <bsd.doc.mk>

@@ -1,7 +1,7 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 
-DIR=	smm/03.kdebug
-SRCS=	kdebug.ms
+DIR=	usd/28.tbl
+SRCS=	tbl
 MACROS=	-msU
 
 paper.${PRINTER}: ${SRCS}

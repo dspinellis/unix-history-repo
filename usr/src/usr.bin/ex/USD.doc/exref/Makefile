@@ -1,30 +1,14 @@
-#
-# Copyright (c) 1986 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	6.1 (Berkeley) %G%
-#
+#	@(#)Makefile	6.2 (Berkeley) %G%
+
+DIR=	usd/16.ex
 SRCS=	ex.rm
 MACROS=	-msU
-PRINTER=Pdp
-TBL=	dtbl -${PRINTER}
-TROFF=	ditroff -${PRINTER}
+CLEANFILES=summary.*
 
-paper:	paper.${PRINTER} summary.${PRINTER}
-	lpr -${PRINTER} -n paper.${PRINTER}
-	lpr -${PRINTER} -n summary.${PRINTER}
-
-paper.${PRINTER}: ${SRCS}
-	${TROFF} ${MACROS} -t ${SRCS} > paper.${PRINTER}
+paper.${PRINTER}: ${SRCS} summary.${PRINTER}
+	${ROFF} ${SRCS} > ${.TARGET}
 
 summary.${PRINTER}: ex.summary
-	${TBL} ex.summary | ${TROFF} ${MACROS} -t > summary.${PRINTER}
+	${TBL} ex.summary | ${ROFF} > ${.TARGET}
 
-clean:
-	rm -f paper.[PT]* summary.[PT]* *.spell errs Errs make.out
-
-spell:	${SRCS}
-	@for i in ${SRCS}; do \
-		echo $$i; spell $$i | sort | comm -23 - spell.ok > $$i.spell; \
-	done
+.include <bsd.doc.mk>
