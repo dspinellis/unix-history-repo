@@ -1,4 +1,4 @@
-#	@(#)sys.mk	5.12 (Berkeley) %G%
+#	@(#)sys.mk	5.13 (Berkeley) %G%
 
 unix		?=	We run UNIX.
 
@@ -14,7 +14,11 @@ AS		?=	as
 AFLAGS		?=
 
 CC		?=	cc
+.if ${MACHINE} == "sparc"
+CFLAGS		?=	-O4
+.else
 CFLAGS		?=	-O
+.endif
 
 CPP		?=	cpp
 
