@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)win.c	3.4 84/03/29";
+static	char *sccsid = "@(#)win.c	3.5 84/04/05";
 #endif
 
 #include "defs.h"
@@ -11,12 +11,12 @@ static	char *sccsid = "@(#)win.c	3.4 84/03/29";
  * User windows are the ones with a pty and shell.  Information windows
  * are for displaying error messages, and other information.
  *
- * The windows are stacked in overlapping order and divided into
- * three groups: foreground, normal, and background.  Information
- * windows are always foreground.  User windows can be anywhere.
- * Addwin() adds a window to one of the three groups.
+ * The windows are doubly linked in overlapping order and divided into
+ * two groups: foreground and normal.  Information
+ * windows are always foreground.  User windows can be either.
+ * Addwin() adds a window to the list at the top of one of the two groups.
  * Deletewin() deletes a window.  Front() moves a window to the front
- * of its group.  Wwadd() and wwdelete() should never be called
+ * of its group.  Wwopen(), wwadd(), and wwdelete() should never be called
  * directly.
  */
 
@@ -48,7 +48,7 @@ char *label;
 	if (label != 0 && setlabel(w, label) < 0)
 		error("No memory for label.");
 	wwcursor(w, 1);
-	addwin(w, 1);
+	addwin(w, 0);
 	selwin = w;
 	reframe();
 	wwupdate();
@@ -110,7 +110,7 @@ char *label;
 	w->ww_id = -1;
 	w->ww_center = 1;
 	(void) setlabel(w, label);
-	addwin(w, 0);
+	addwin(w, 1);
 	reframe();
 	wwupdate();
 	return w;
@@ -127,20 +127,8 @@ struct ww *w;
 }
 
 /*
- * Set the current window.
- */
-setselwin(w)
-struct ww *w;
-{
-	if (selwin == w)
-		return;
-	lastselwin = selwin;
-	front(selwin = w, 1);
-}
-
-/*
  * Move the window to the top of its group.
- * Don't do it, if already fully visible.
+ * Don't do it if already fully visible.
  * Wwvisible() doesn't work for tinted windows.
  * But anything to make it faster.
  * Always reframe() if doreframe is true.
@@ -149,52 +137,28 @@ front(w, doreframe)
 register struct ww *w;
 char doreframe;
 {
-	if (isfg(w)) {
-		if (w->ww_back != framewin && !wwvisible(w)) {
-			deletewin(w);
-			addwin(w, 0);
-			doreframe = 1;
-		}
-	} else if (isbg(w)) {
-		if (w != bgwin && !wwvisible(w)) {
-			deletewin(w);
-			addwin(w, 3);
-			doreframe = 1;
-		}
-	} else {
-		if (w->ww_back != fgwin && !wwvisible(w)) {
-			deletewin(w);
-			addwin(w, 1);
-			doreframe = 1;
-		}
+	if (w->ww_back != (isfg(w) ? framewin : fgwin) && !wwvisible(w)) {
+		deletewin(w);
+		addwin(w, isfg(w));
+		doreframe = 1;
 	}
 	if (doreframe)
 		reframe();
 }
 
 /*
- * Add a window at one of four places.
+ * Add a window at the top of normal windows or foreground windows.
  */
-addwin(w, where)
+addwin(w, fg)
 register struct ww *w;
+char fg;
 {
-	switch (where) {
-	case 0:		/* top of foreground windows */
+	if (fg) {
 		wwadd(w, framewin);
 		if (fgwin == framewin)
 			fgwin = w;
-		break;
-	case 1:		/* top of normal windows */
+	} else
 		wwadd(w, fgwin);
-		break;
-	case 2:		/* bottom of normal windows */
-		wwadd(w, bgwin->ww_back);
-		break;
-	case 3:		/* top of background windows */
-		wwadd(w, bgwin->ww_back);
-		bgwin = w;
-		break;
-	}
 }
 
 /*
@@ -203,13 +167,8 @@ register struct ww *w;
 deletewin(w)
 register struct ww *w;
 {
-	if (isfg(w)) {
-		if (fgwin == w)
-			fgwin = w->ww_back;
-	} else if (isbg(w)) {
-		if (bgwin == w)
-			bgwin = w->ww_forw;
-	}
+	if (fgwin == w)
+		fgwin = w->ww_back;
 	wwdelete(w);
 }
 
