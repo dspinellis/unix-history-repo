@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stkrval.c 1.5 %G%";
+static char sccsid[] = "@(#)stkrval.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -80,29 +80,7 @@ stkrval(r, contype , required )
 			if (classify(q) == TSTR)
 				return(stklval(r, NOFLAGS));
 #			ifdef OBJ
-			    w = width(q);
-			    switch (w) {
-			    case 8:
-				    put(2, O_RV8 | bn << 8+INDX,
-					(int)p->value[0]);
-				    return(q);
-			    case 4:
-				    put(2, O_RV4 | bn << 8+INDX,
-					(int)p->value[0]);
-				    return(q);
-			    case 2:
-				    put(2, O_RV24 | bn << 8+INDX,
-					(int)p->value[0]);
-				    return(q);
-			    case 1:
-				    put(2, O_RV14 | bn << 8+INDX,
-					(int)p->value[0]);
-				    return(q);
-			    default:
-				    put(3, O_RV | bn << 8+INDX,
-					(int)p->value[0], w);
-				    return(q);
-			     }
+				return (stackRV(p));
 #			endif OBJ
 #			ifdef PC
 			    q = rvalue( r , contype , required );
@@ -404,3 +382,39 @@ conint:
 	
 	}
 }
+
+#ifdef OBJ
+/*
+ * push a value onto the interpreter stack, longword aligned.
+ */
+stackRV(p)
+	struct nl *p;
+{
+	struct nl *q;
+	int w, bn;
+
+	q = p->type;
+	if (q == NIL)
+		return (NIL);
+	bn = BLOCKNO(p->nl_block);
+	w = width(q);
+	switch (w) {
+	case 8:
+		put(2, O_RV8 | bn << 8+INDX, (int)p->value[0]);
+		break;
+	case 4:
+		put(2, O_RV4 | bn << 8+INDX, (int)p->value[0]);
+		break;
+	case 2:
+		put(2, O_RV24 | bn << 8+INDX, (int)p->value[0]);
+		break;
+	case 1:
+		put(2, O_RV14 | bn << 8+INDX, (int)p->value[0]);
+		break;
+	default:
+		put(3, O_RV | bn << 8+INDX, (int)p->value[0], w);
+		break;
+	}
+	return (q);
+}
+#endif OBJ
