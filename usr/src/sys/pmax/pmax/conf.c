@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.5 (Berkeley) %G%
+ *	@(#)conf.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -222,6 +222,9 @@ cdev_decl(cfb);
 #include "xcfb.h"
 cdev_decl(xcfb);
 
+#include "mfb.h"
+cdev_decl(mfb);
+
 #include "dtop.h"
 cdev_decl(dtop);
 
@@ -251,6 +254,7 @@ struct cdevsw	cdevsw[] =
 	cdev_tty_init(NDTOP,dtop),	/* 15: desktop bus interface */
 	cdev_tty_init(NDC,dc),		/* 16: dc7085 serial interface */
 	cdev_tty_init(NSCC,scc),	/* 17: scc 82530 serial interface */
+	cdev_pm_init(NMFB,mfb),		/* 18: mono frame buffer */
 };
 
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);

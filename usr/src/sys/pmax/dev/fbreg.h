@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fbreg.h	7.1 (Berkeley) %G%
+ *	@(#)fbreg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -27,6 +27,7 @@ struct pmax_fb {
 	int	row, col;		/* Screen pos for glass tty */
 	struct	fbuaccess *fbu;		/* X event stuff */
 	char	*fr_addr;		/* Frame buffer address */
+	char	*fr_chipaddr;		/* Base address for chips */
 	void	(*posCursor)();		/* Position cursor func */
 	void	(*KBDPutc)();		/* Send char to keyboard func */
 	dev_t	kbddev;			/* Device for KBDPutc */

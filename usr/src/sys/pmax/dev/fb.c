@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fb.c	7.2 (Berkeley) %G%
+ *	@(#)fb.c	7.3 (Berkeley) %G%
  */
 
 /* 
@@ -631,12 +631,17 @@ fbScroll(fp)
 		scanInc = 44;
 	} else {
 		lineCount = 40;
-		scanInc = 96;
-		line = 1920 * 8;
+		if (fp->fbu->scrInfo.max_x > 1024) {
+			scanInc = 352;
+			line = 1920 * 16;
+		} else {
+			scanInc = 96;
+			line = 1920 * 8;
+		}
 	}
 	src = (int *)(fp->fr_addr + line);
 	dest = (int *)(fp->fr_addr);
-	end = (int *)(fp->fr_addr + (60 * line) - line);
+	end = (int *)(fp->fr_addr + (68 * line) - line);
 	do {
 		i = 0;
 		do {
@@ -728,9 +733,13 @@ fbBlitc(c, fp)
 {
 	register char *bRow, *fRow;
 	register int i;
-	register int ote = fp->isMono ? 256 : 1024; /* offset to table entry */
+	register int ote;
 	int colMult = fp->isMono ? 1 : 8;
 
+	if (fp->isMono)
+		ote = 256;
+	else
+		ote = ((fp->fbu->scrInfo.max_x + 1023) / 1024) * 1024;
 	c &= 0xff;
 
 	switch (c) {
@@ -826,7 +835,7 @@ fbBlitc(c, fp)
 				 * Remember the font is 8 bits wide
 				 * and 15 bits high.
 				 *
-				 * We add 256 to the pointer to
+				 * We add 256/512 to the pointer to
 				 * point to the pixel on the 
 				 * next scan line
 				 * directly below the current
@@ -835,7 +844,10 @@ fbBlitc(c, fp)
 				pInt[0] = fontmaskBits[(*fRow) & 0xf];
 				pInt[1] = fontmaskBits[((*fRow) >> 4) & 0xf];
 				fRow++; 
-				pInt += 256;
+				if (fp->fbu->scrInfo.max_x > 1024)
+					pInt += 512;
+				else
+					pInt += 256;
 			}
 		}
 		fp->col++; /* increment column counter */

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dtop.c	7.2 (Berkeley) %G%
+ *	@(#)dtop.c	7.3 (Berkeley) %G%
  */
 
 /* 
@@ -95,7 +95,7 @@ SOFTWARE.
 extern int pmax_boardtype;
 
 extern int ttrstrt	__P((void *));
-void dtop_keyboard_autorepeat	__P((void *));
+void dtop_keyboard_repeat	__P((void *));
 int dtop_null_device_handler	__P((dtop_device_t, dtop_message_t, int, int));
 int dtop_locator_handler	__P((dtop_device_t, dtop_message_t, int, int));
 int dtop_keyboard_handler	__P((dtop_device_t, dtop_message_t, int, int));
@@ -103,7 +103,6 @@ int dtopparam		__P((struct tty *, struct termios *));
 int dtopstop		__P((struct tty *, int));
 void dtopstart		__P((struct tty *));
 void dtopKBDPutc	__P((dev_t, int));
-static void dtop_keyboard_repeat __P((dtop_device_t));
 
 struct	tty dtop_tty[NDTOP];
 void	(*dtopDivertXInput)();	/* X windows keyboard input routine */
@@ -189,16 +188,9 @@ dtopprobe(cp)
 	/* a lot more needed here, fornow: */
 	dtop->device[DTOP_DEVICE_NO(0x6a)].handler = dtop_locator_handler;
 	dtop->device[DTOP_DEVICE_NO(0x6c)].handler = dtop_keyboard_handler;
-	dtop->device[DTOP_DEVICE_NO(0x6c)].status.keyboard.poll_frequency =
-		(hz * 5) / 100; /* x0.01 secs */
 	dtop->device[DTOP_DEVICE_NO(0x6c)].status.keyboard.k_ar_state =
 		K_AR_IDLE;
 
-	/*
-	 * Sometimes a first interrupt gets lost, so just in case
-	 * poke it now.
-	 */
-	dtopintr(dtopunit);
 	dtop->probed_once = 1;
 	printf("dtop%d at nexus0 csr 0x%x priority %d\n",
 		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
@@ -338,15 +330,29 @@ dtopintr(unit)
 
 	dtop = &dtop_softc[unit];
 	if (dtop_get_packet(dtop, &msg) < 0) {
-		if (dtop->probed_once)
-			printf("%s", "dtop: overrun (or stray)\n");
-		return;
+#ifdef DIAGNOSTIC
+	    printf("dtop: overrun (or stray)\n");
+#endif
+	    /*
+	     * Ugh! The most common occurrence of a data overrun is upon a
+	     * key press and the result is a software generated "stuck key".
+	     * All I can think to do is fake an "all keys up" whenever a
+	     * data overrun occurs.
+	     */
+	    msg.src_address = 0x6c;
+	    msg.code.val.len = 1;
+	    msg.body[0] = DTOP_KBD_EMPTY;
 	}
+
+	/*
+	 * If not probed yet, just throw the data away.
+	 */
+	if (!dtop->probed_once)
+		return;
 
 	devno = DTOP_DEVICE_NO(msg.src_address);
 	if (devno < 0 || devno > 15)
 		return;
-
 	(void) (*dtop->device[devno].handler)
 			(&dtop->device[devno].status, &msg,
 			 DTOP_EVENT_RECEIVE_PACKET, 0);
@@ -649,9 +655,10 @@ dtop_locator_handler(dev, msg, event, outc)
 	
 		/*
 		 * Time for the buttons now
+		 * Shuffle button bits around to serial mouse order.
 		 */
 		buttons = GET_SHORT(msg->body[0], msg->body[1]);
-		mrp->state |= (buttons & 0x7);
+		mrp->state |= (((buttons >> 1) & 0x3) | ((buttons << 2) & 0x4));
 		if (moved)
 			(*dtopMouseEvent)(mrp);
 		(*dtopMouseButtons)(mrp);
@@ -673,7 +680,7 @@ dtop_keyboard_handler(dev, msg, event, outc)
 {
 	register u_char *ls, *le, *ns, *ne;
 	u_char save[11], retc;
-	int msg_len, c;
+	int msg_len, c, s;
 	struct tty *tp = &dtop_tty[0];
 
 	/*
@@ -683,34 +690,32 @@ dtop_keyboard_handler(dev, msg, event, outc)
 	 * emulate the stateful lk201, since the X11R5 X servers
 	 * only know about the lk201... (oh well)
 	 */
+	/*
+	 * Turn off any autorepeat timeout.
+	 */
+	s = splhigh();
+	if (dev->keyboard.k_ar_state != K_AR_IDLE) {
+		dev->keyboard.k_ar_state = K_AR_IDLE;
+		untimeout(dtop_keyboard_repeat, (void *)dev);
+	}
+	splx(s);
 	msg_len = msg->code.val.len;
 
 	/* Check for errors */
 	c = msg->body[0];
 	if ((c < DTOP_KBD_KEY_MIN) && (c != DTOP_KBD_EMPTY)) {
 		printf("Keyboard error: %x %x %x..\n", msg_len, c, msg->body[1]);
+#ifdef notdef
 		if (c != DTOP_KBD_OUT_ERR) return -1;
-		/* spec sez if scan list overflow still there is data */
-		msg->body[0] = 0;
+#endif
+		/*
+		 * Fake an "all ups" to avoid the stuck key syndrome.
+		 */
+		c = msg->body[0] = DTOP_KBD_EMPTY;
+		msg_len = 1;
 	}
 
 	dev->keyboard.last_msec = TO_MS(time);
-
-	switch (dev->keyboard.k_ar_state) {
-	case K_AR_IDLE:
-		if (outc != 0xff) /* from debugger, might be too early */
-			dtop_keyboard_autorepeat(dev);
-		/* fall through */
-	case K_AR_TRIGGER:
-		dev->keyboard.k_ar_state = K_AR_ACTIVE;
-		break;
-	case K_AR_ACTIVE:
-		break;
-	case K_AR_OFF:
-		printf("dtop keyb off?\n");
-		dev->keyboard.k_ar_state = K_AR_IDLE;
-	}
-
 	/*
 	 * To make things readable, do a first pass cancelling out
 	 * all keys that are still pressed, and a second one generating
@@ -771,6 +776,7 @@ dtop_keyboard_handler(dev, msg, event, outc)
 			c = -1; /* consumed by X */
 		    } else if (c >= 0)
 			(*linesw[tp->t_line].l_rint)(c, tp);
+		    dev->keyboard.k_ar_state = K_AR_ACTIVE;
 		}
 		/* return the related keycode anyways */
 		if ((c >= 0) && (retc == 0))
@@ -783,67 +789,44 @@ dtop_keyboard_handler(dev, msg, event, outc)
 	else if (msg_len > 0)
 		bcopy(save, dev->keyboard.last_codes, msg_len);
 	dev->keyboard.last_codes_count = msg_len;
+	if (dev->keyboard.k_ar_state == K_AR_ACTIVE)
+		timeout(dtop_keyboard_repeat, (void *)dev, hz / 2);
 	return (outc);
 }
 
 /*
- * Timeout routine to do autorepeat.
+ * Do an autorepeat as required.
  */
 void
-dtop_keyboard_autorepeat(arg)
+dtop_keyboard_repeat(arg)
 	void *arg;
 {
 	dtop_device_t dev = (dtop_device_t)arg;
-	int s;
-
-	s = spltty();
-	if (dev->keyboard.k_ar_state != K_AR_IDLE)
-		dtop_keyboard_repeat(dev);
-
-	if (dev->keyboard.k_ar_state == K_AR_OFF)
-		dev->keyboard.k_ar_state = K_AR_IDLE;
-	else
-		timeout(dtop_keyboard_autorepeat, dev, dev->keyboard.poll_frequency);
-
-	splx(s);
-}
-
-/*
- * See if an autorepeat is required.
- */
-static void
-dtop_keyboard_repeat(dev)
-	dtop_device_t dev;
-{
 	register int i, c;
-	register u_int t, t0;
 	struct tty *tp = dtop_tty;
+	int s = spltty(), gotone = 0;
 
 	for (i = 0; i < dev->keyboard.last_codes_count; i++) {
 		c = (int)dev->keyboard.last_codes[i];
 		if (c != DTOP_KBD_EMPTY &&
 		    (keymodes[(c >> 5) & 0x7] & (1 << (c & 0x1f))) == 0) {
-			/*
-			 * Got a char. See if enough time from stroke,
-			 * or from last repeat.
-			 */
-			t0 = (dev->keyboard.k_ar_state == K_AR_TRIGGER) ? 30 : 500;
-			t = TO_MS(time);
-			if ((t - dev->keyboard.last_msec) < t0)
-				return;
-
 			dev->keyboard.k_ar_state = K_AR_TRIGGER;
-
 			if (dtopDivertXInput) {
 				(*dtopDivertXInput)(KEY_REPEAT);
-				return;
+				gotone = 1;
+				continue;
 			}
 
-			if ((c = kbdMapChar(KEY_REPEAT)) >= 0)
+			if ((c = kbdMapChar(KEY_REPEAT)) >= 0) {
 				(*linesw[tp->t_line].l_rint)(c, tp);
-			return;
+				gotone = 1;
+			}
 		}
 	}
-	dev->keyboard.k_ar_state = K_AR_OFF;
+	if (gotone)
+		timeout(dtop_keyboard_repeat, arg, hz / 20);
+	else
+		dev->keyboard.k_ar_state = K_AR_IDLE;
+	splx(s);
 }
 #endif

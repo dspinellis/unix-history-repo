@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfb.c	7.2 (Berkeley) %G%
+ *	@(#)mfb.c	7.3 (Berkeley) %G%
  */
 
 /* 
@@ -164,7 +164,7 @@ mfbopen(dev, flag)
 		return (EBUSY);
 
 	fp->GraphicsOpen = 1;
-	mfbInitColorMap();
+	mfbInitColorMap(1);
 	/*
 	 * Set up event queue for later
 	 */
@@ -189,11 +189,11 @@ mfbclose(dev, flag)
 		return (EBADF);
 
 	fp->GraphicsOpen = 0;
-	mfbInitColorMap();
+	mfbInitColorMap(0);
 	mfbDeconfigMouse();
 	mfbScreenInit();
 	vmUserUnmap();
-	bzero((caddr_t)fp->fr_addr, 256 * 1024);
+	bzero((caddr_t)fp->fr_addr, 2048 * 1024);
 	mfbPosCursor(fp->col * 8, fp->row * 15);
 	return (0);
 }
@@ -226,8 +226,7 @@ mfbioctl(dev, cmd, data, flag)
 		/*
 		 * Map the frame buffer into the user's address space.
 		 */
-		addr = vmUserMap(256 * 1024,
-			(unsigned)(fp->fr_addr + MFB_OFFSET_VRAM));
+		addr = vmUserMap(2048 * 1024, (unsigned)fp->fr_addr);
 		if (addr == (caddr_t)0)
 			goto mapError;
 		fp->fbu->scrInfo.bitmap = (char *)addr;
@@ -287,7 +286,9 @@ mfbioctl(dev, cmd, data, flag)
 		break;
 
 	case QIOSETCMAP:
+#ifdef notdef
 		mfbLoadColorMap((ColorMap *)data);
+#endif
 		break;
 
 	case QIOKERNLOOP:
@@ -299,7 +300,6 @@ mfbioctl(dev, cmd, data, flag)
 		break;
 
 	case QIOVIDEOON:
-		mfbRestoreCursorColor();
 		bt455_video_on();
 		break;
 
@@ -348,12 +348,13 @@ mfbLoadCursor(cursor)
 	register u_short ap, bp, out;
 	register bt431_regmap_t *regs;
 
-	regs = (bt431_regmap_t *)(mfbfb.fr_addr + MFB_OFFSET_BT431);
+	regs = (bt431_regmap_t *)(mfbfb.fr_chipaddr +
+		 MFB_OFFSET_BT431);
 	/*
 	 * Fill in the cursor sprite using the A and B planes, as provided
 	 * for the pmax.
 	 * XXX This will have to change when the X server knows that this
-	 * is not a pmax display.
+	 * is not a pmax display. (ie. Not the Xcfbpmax server.)
 	 */
 	pos = 0;
 	bt431_select_reg(regs, BT431_REG_CRAM_BASE);
@@ -364,14 +365,8 @@ mfbLoadCursor(cursor)
 		while (j < 2) {
 			out = 0;
 			for (i = 0; i < 8; i++) {
-#ifdef CURSOR_EL
-				out = (out << 1) | ((ap & 0x1) << 8) |
-					(bp & 0x1);
-#else
-				out = ((out >> 1) & 0x7f7f) |
-					((ap & 0x1) << 15) |
-					((bp & 0x1) << 7);
-#endif
+				out = (out << 1) | ((bp & 0x1) << 8) |
+					(ap & 0x1);
 				ap >>= 1;
 				bp >>= 1;
 			}
@@ -405,8 +400,9 @@ mfbinit(cp)
 	if (badaddr(cp, 4))
 		return (0);
 
-	fp->isMono = 1;
-	fp->fr_addr = (char *)cp;
+	fp->isMono = 0;
+	fp->fr_addr = cp + MFB_OFFSET_VRAM;
+	fp->fr_chipaddr = cp;
 	/*
 	 * Must be in Uncached space or the Xserver sees a stale version of
 	 * the event queue and acts totally wacko. I don't understand this,
@@ -421,7 +417,7 @@ mfbinit(cp)
 	/*
 	 * Initialize the screen.
 	 */
-	bt431_init(fp->fr_addr + MFB_OFFSET_BT431);
+	bt431_init(fp->fr_chipaddr + MFB_OFFSET_BT431);
 
 	/*
 	 * Initialize screen info.
@@ -446,7 +442,7 @@ mfbinit(cp)
 	/*
 	 * Initialize the color map, the screen, and the mouse.
 	 */
-	mfbInitColorMap();
+	mfbInitColorMap(0);
 	mfbScreenInit();
 	fbScroll(fp);
 
@@ -509,24 +505,29 @@ mfbScreenInit()
 static void
 mfbRestoreCursorColor()
 {
-	bt455_regmap_t *regs = (bt455_regmap_t *)(mfbfb.fr_addr + MFB_OFFSET_BT455);
+	bt455_regmap_t *regs = (bt455_regmap_t *)(mfbfb.fr_chipaddr +
+		MFB_OFFSET_BT455);
 	ColorMap cm;
-	register int i;
+	u_char fg;
 
+	if (cursor_RGB[0] || cursor_RGB[1] || cursor_RGB[2])
+		cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0xffff;
+	else
+		cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0;
 	cm.index = 8;
-	cm.Entry.red = cursor_RGB[0] << 8;
-	cm.Entry.green = cursor_RGB[1] << 8;
-	cm.Entry.blue = cursor_RGB[2] << 8;
 	mfbLoadColorMap(&cm);
 	cm.index = 9;
-	cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0xffff;
 	mfbLoadColorMap(&cm);
 
-	regs->addr_ovly = cursor_RGB[3] >> 4;
+	if (cursor_RGB[3] || cursor_RGB[4] || cursor_RGB[5])
+		fg = 0xf;
+	else
+		fg = 0;
+	regs->addr_ovly = fg;
 	MachEmptyWriteBuffer();
-	regs->addr_ovly = cursor_RGB[4] >> 4;
+	regs->addr_ovly = fg;
 	MachEmptyWriteBuffer();
-	regs->addr_ovly = cursor_RGB[5] >> 4;
+	regs->addr_ovly = fg;
 	MachEmptyWriteBuffer();
 }
 
@@ -576,7 +577,8 @@ void
 mfbPosCursor(x, y)
 	register int x, y;
 {
-	bt431_regmap_t *regs = (bt431_regmap_t *)(mfbfb.fr_addr + MFB_OFFSET_BT431);
+	bt431_regmap_t *regs = (bt431_regmap_t *)(mfbfb.fr_chipaddr +
+		 MFB_OFFSET_BT431);
 	register struct pmax_fb *fp = &mfbfb;
 
 	if (y < fp->fbu->scrInfo.min_cur_y || y > fp->fbu->scrInfo.max_cur_y)
@@ -600,7 +602,7 @@ mfbPosCursor(x, y)
 	 *	clocks after VSYNCH falling, and active video
 	 */
 
-	bt431_write_reg(regs, lo(x + 360));
+	bt431_write_reg(regs, BT431_REG_CXLO, lo(x + 360));
 	BT431_WRITE_REG_AUTOI(regs, hi(x + 360));
 	BT431_WRITE_REG_AUTOI(regs, lo(y + 36));
 	BT431_WRITE_REG_AUTOI(regs, hi(y + 36));
@@ -622,22 +624,29 @@ mfbPosCursor(x, y)
  * ----------------------------------------------------------------------------
  */
 static void
-mfbInitColorMap()
+mfbInitColorMap(blackpix)
+	int blackpix;
 {
 	ColorMap cm;
 	register int i;
 
 	cm.index = 0;
-	cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0;
+	if (blackpix)
+		cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0xffff;
+	else
+		cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0;
 	mfbLoadColorMap(&cm);
-	cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0xffff;
+	if (blackpix)
+		cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0;
+	else
+		cm.Entry.red = cm.Entry.green = cm.Entry.blue = 0xffff;
 	for (i = 1; i < 16; i++) {
 		cm.index = i;
 		mfbLoadColorMap(&cm);
 	}
 
 	for (i = 0; i < 3; i++) {
-		cursor_RGB[i] = 0x00;
+		cursor_RGB[i] = 0;
 		cursor_RGB[i + 3] = 0xff;
 	}
 	mfbRestoreCursorColor();
@@ -662,7 +671,8 @@ static void
 mfbLoadColorMap(ptr)
 	ColorMap *ptr;
 {
-	bt455_regmap_t *regs = (bt455_regmap_t *)(mfbfb.fr_addr + MFB_OFFSET_BT455);
+	bt455_regmap_t *regs = (bt455_regmap_t *)(mfbfb.fr_chipaddr +
+		 MFB_OFFSET_BT455);
 
 	if (ptr->index > 15)
 		return;
@@ -682,6 +692,7 @@ mfbLoadColorMap(ptr)
 static struct vstate {
 	u_char	color0[6];	/* saved color map entry zero */
 	u_char	off;		/* TRUE if display is off */
+	u_char	cursor[6];	/* saved cursor color */
 } vstate;
 
 /*
@@ -702,26 +713,21 @@ static struct vstate {
 static void
 bt455_video_on()
 {
-	bt455_regmap_t *regs = (bt455_regmap_t *)(mfbfb.fr_addr + MFB_OFFSET_BT455);
+	register int i;
+	bt455_regmap_t *regs = (bt455_regmap_t *)(mfbfb.fr_chipaddr +
+		 MFB_OFFSET_BT455);
 
 	if (!vstate.off)
 		return;
 
 	/* restore old color map entry zero */
 	BT455_SELECT_ENTRY(regs, 0);
-	regs->addr_cmap_data = vstate.color0[0];
-	MachEmptyWriteBuffer();
-	regs->addr_cmap_data = vstate.color0[1];
-	MachEmptyWriteBuffer();
-	regs->addr_cmap_data = vstate.color0[2];
-	MachEmptyWriteBuffer();
-	regs->addr_cmap_data = vstate.color0[3];
-	MachEmptyWriteBuffer();
-	regs->addr_cmap_data = vstate.color0[4];
-	MachEmptyWriteBuffer();
-	regs->addr_cmap_data = vstate.color0[5];
-	MachEmptyWriteBuffer();
-
+	for (i = 0; i < 6; i++) {
+		regs->addr_cmap_data = vstate.color0[i];
+		MachEmptyWriteBuffer();
+		cursor_RGB[i] = vstate.cursor[i];
+	}
+	mfbRestoreCursorColor();
 	vstate.off = 0;
 }
 
@@ -743,7 +749,9 @@ bt455_video_on()
 static void
 bt455_video_off()
 {
-	bt455_regmap_t *regs = (bt455_regmap_t *)(mfbfb.fr_addr + MFB_OFFSET_BT455);
+	register int i;
+	bt455_regmap_t *regs = (bt455_regmap_t *)(mfbfb.fr_chipaddr +
+		 MFB_OFFSET_BT455);
 	ColorMap cm;
 
 	if (vstate.off)
@@ -751,12 +759,11 @@ bt455_video_off()
 
 	/* save old color map entry zero */
 	BT455_SELECT_ENTRY(regs, 0);
-	vstate.color0[0] = regs->addr_cmap_data;
-	vstate.color0[1] = regs->addr_cmap_data;
-	vstate.color0[2] = regs->addr_cmap_data;
-	vstate.color0[3] = regs->addr_cmap_data;
-	vstate.color0[4] = regs->addr_cmap_data;
-	vstate.color0[5] = regs->addr_cmap_data;
+	for (i = 0; i < 6; i++) {
+		vstate.color0[i] = regs->addr_cmap_data;
+		vstate.cursor[i] = cursor_RGB[i];
+		cursor_RGB[i] = 0;
+	}
 
 	/* set color map entry zero to zero */
 	cm.index = 0;
@@ -765,6 +772,7 @@ bt455_video_off()
 	cm.index = 1;
 	mfbLoadColorMap(&cm);
 
+	mfbRestoreCursorColor();
 	vstate.off = 1;
 }
 

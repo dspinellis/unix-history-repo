@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.17 (Berkeley) %G%
+ *	@(#)machdep.c	7.18 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -388,6 +388,8 @@ mach_init(argc, argv, code, cv)
 		tc_slot_hand_fill = kmin_slot_hand_fill;
 		pmax_hardware_intr = kmin_intr;
 		tc_enable_interrupt = kmin_enable_intr;
+		kmin_tc3_imask = (KMIN_INTR_CLOCK | KMIN_INTR_PSWARN |
+			KMIN_INTR_TIMEOUT);
 
 		/*
 		 * Since all the motherboard interrupts come through the
@@ -463,6 +465,7 @@ mach_init(argc, argv, code, cv)
 		tc_slot_hand_fill = kn03_slot_hand_fill;
 		pmax_hardware_intr = kn03_intr;
 		tc_enable_interrupt = kn03_enable_intr;
+		kn03_tc3_imask = KN03_INTR_PSWARN;
 
 		Mach_splnet = Mach_spl0;
 		Mach_splbio = Mach_spl0;
@@ -1617,6 +1620,8 @@ tc_find_all_options()
 		for (cp = pmax_cinit; drp = cp->pmax_driver; cp++) {
 			if (strcmp(drp->d_name, map->driver_name))
 				continue;
+			if (cp->pmax_alive)
+				continue;
 			if (cp->pmax_addr == (char *)QUES) {
 				cp->pmax_addr = (char *)sl->k1seg_address;
 				cp->pmax_pri = i;
@@ -1628,7 +1633,8 @@ tc_find_all_options()
 				 */
 				if (drp->d_intr)
 					(*tc_enable_interrupt)(i, 1);
-				continue;
+				cp->pmax_alive = 1;
+				break;
 			}
 			if (cp->pmax_addr != (char *)sl->k1seg_address) {
 				cp->pmax_addr = (char *)QUES;
@@ -1819,9 +1825,14 @@ kn03_enable_intr(slotno, on)
 
 	switch (slotno) {
 	case 0:
+		mask = KN03_INTR_TC_0;
+		break;
 	case 1:
+		mask = KN03_INTR_TC_1;
+		break;
 	case 2:
-		return;
+		mask = KN03_INTR_TC_2;
+		break;
 	case KN03_SCSI_SLOT:
 		mask = (KN03_INTR_SCSI | KN03_INTR_SCSI_PTR_LOAD |
 			KN03_INTR_SCSI_OVRUN | KN03_INTR_SCSI_READ_E);

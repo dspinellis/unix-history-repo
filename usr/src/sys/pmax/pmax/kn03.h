@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kn03.h	1.1 (Berkeley) %G%
+ *	@(#)kn03.h	1.2 (Berkeley) %G%
  */
 
 /* 
@@ -84,8 +84,8 @@
 /* Pseudo-TCslots */
 #define	KN03_SCSI_SLOT		3
 #define	KN03_LANCE_SLOT		4
-#define	KN03_SCC0_SLOT		5
-#define	KN03_SCC1_SLOT		6
+#define	KN03_SCC1_SLOT		5
+#define	KN03_SCC0_SLOT		6
 #define	KN03_ASIC_SLOT		7
 
 /*
