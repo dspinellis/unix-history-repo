@@ -35,7 +35,7 @@
 @c LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 @c OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 @c
-@c	@(#)amdref.texinfo	1.4 (Berkeley) %G%
+@c	@(#)amdref.texinfo	8.1 (Berkeley) %G%
 @c
 @c $Id: amdref.texinfo,v 5.2.2.1 1992/02/09 15:11:50 jsp beta $
 @c
