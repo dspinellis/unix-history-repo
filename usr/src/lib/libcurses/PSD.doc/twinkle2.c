@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)twinkle2.c	6.4 (Berkeley) %G%
+.\"	@(#)twinkle2.c	8.1 (Berkeley) %G%
 .\"
 extern int	_putchar();
 

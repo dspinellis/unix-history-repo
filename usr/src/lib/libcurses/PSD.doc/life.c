@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)life.c	6.4 (Berkeley) %G%
+.\"	@(#)life.c	8.1 (Berkeley) %G%
 .\"
 # include	<curses.h>
 # include	<signal.h>
