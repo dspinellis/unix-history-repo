@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.9 (Berkeley) %G%
+#	@(#)Makefile	1.10 (Berkeley) %G%
 #
 
 DESTDIR=
@@ -29,6 +29,7 @@ OBJS=	cmd.o cons.o config.o correct.o delete.o disklabel.o exercise.o help.o \
 	format.o info.o io.o list.o maps.o proc_cmd.o profile.o relocate.o \
 	reset.o smd.o smd_e.o start.o status.o util.o vdfmt.o verify.o
 ALL=	vdformat
+MAN=	vdformat.0
 
 all: ${ALL}
 
@@ -38,17 +39,21 @@ vdformat: ${OBJS} ../srt0.o ../libsa.a
 clean:
 	rm -f ${OBJS} ${ALL} a.out core t.c errs
 
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
 ../srt0.o: 
 	@(cd ..; make srt0.o)
 
 ../libsa.a: 
 	@(cd ..; make libsa.a)
 
-install:
+install: ${MAN}
 	install -o bin -g bin -m 644 vdformat ${DESTDIR}/stand/vdformat
+	install -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8/tahoe
 
-depend:
+depend: ${SRCS}
 	mkdep ${COPTS} ${SRCS}
 
-tags:
+tags: ${SRCS}
 	ctags ${SRCS}
