@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scsi_1185.c,v 4.300 91/06/09 06:22:20 root Rel41 $ SONY
  *
- *	@(#)scsi_1185.c	7.1 (Berkeley) %G%
+ *	@(#)scsi_1185.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -826,7 +826,7 @@ scsi_softreset()
 			MachFlushDCache(scdp->scd_scaddr, sizeof(struct scsi));
 
 			if (MACH_IS_USPACE(scdp->scd_vaddr)) {
-#ifdef notyet /* KU:XXX */
+#ifdef never_happen /* KU:XXX */
 				clean_kudcache(scdp->scd_procp, scdp->scd_vaddr,						scdp->scd_count, FLUSH_DCACHE);
 #else
 				panic("scsi_softreset: user address is not supported");
@@ -1026,7 +1026,7 @@ sc_discon()
 		MachFlushDCache(scdp->scd_scaddr, sizeof(struct scsi));
 
 		if (MACH_IS_USPACE(scdp->scd_vaddr)) {
-#ifdef notyet /* KU:XXX */
+#ifdef never_happen /* KU:XXX */
 			clean_kudcache(scdp->scd_procp, scdp->scd_vaddr,
 					scdp->scd_count, FLUSH_DCACHE);
 #else
