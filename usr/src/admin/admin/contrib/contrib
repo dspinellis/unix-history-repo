@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.46 (Berkeley) %G%
+.\"	@(#)contrib	5.47 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -152,6 +152,7 @@ bib(1)	Dain Samples
 bib(1)	Gary M. Levin
 bib(1)	Timothy A. Budd
 bitstring(3)	Paul Vixie
+boggle(6)	Barry Brachman
 bpf(4)	Steven McCanne
 btree(3)	Mike Olson
 byte-range locking	Scooter Morris
