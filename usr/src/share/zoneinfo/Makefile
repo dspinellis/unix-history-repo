@@ -18,7 +18,7 @@ POSIXRULES=	US/Pacific
 
 # Use an absolute path name for TZDIR unless you're just testing the software.
 
-TZDIR=	${DESTDIR}/etc/zoneinfo
+TZDIR=	${DESTDIR}/usr/share/zoneinfo
 
 # If you always want time values interpreted as "seconds since the epoch
 # (not counting leap seconds)", use
