@@ -7,19 +7,19 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)swapgeneric.c	5.3 (Berkeley) %G%
+ *	@(#)swapgeneric.c	5.4 (Berkeley) %G%
  */
 
 /*	swapgeneric.c	1.5	86/11/25	*/
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
-#include "param.h"
-#include "conf.h"
-#include "buf.h"
-#include "vm.h"
-#include "systm.h"
-#include "reboot.h"
+#include "sys/param.h"
+#include "sys/conf.h"
+#include "sys/buf.h"
+#include "sys/vm.h"
+#include "sys/systm.h"
+#include "sys/reboot.h"
 
 /*
  * Generic configuration;  all in one
