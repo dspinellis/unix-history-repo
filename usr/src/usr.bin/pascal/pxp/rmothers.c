@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)rmothers.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)rmothers.c	1.3 (Berkeley) %G%";
 /* Copyright (c) 1983 Regents of the University of California */
 #ifdef RMOTHERS
     /* and the rest of the file */
@@ -159,11 +159,18 @@ postcaseguard(othersp)
     ppgoout(STAT);
     ppnl();
     indent();
-    if (othersp == NIL) {
-	return;
-    }
     ppkw("else");
     ppgoin(STAT);
+    if (othersp == NIL) {
+	    /*
+	     *	this will print a call to the routine ``null''.
+	     *	but it has to be checked first, or we will indirect through
+	     *	NIL to check the statement type.
+	     */
+	statement(NIL);
+	ppgoout(STAT);
+	return;
+    }
     if (othersp[0] == T_BLOCK) {
 	ppnl();
 	indent();
