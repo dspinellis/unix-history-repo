@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.9		%G%);
+SCCSID(@(#)envelope.c	3.10		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -108,7 +108,7 @@ dropenvelope(e)
 
 	if (e->e_receiptto != NULL && bitset(EF_SENDRECEIPT, e->e_flags))
 	{
-		auto ADDRESS *rlist;
+		auto ADDRESS *rlist = NULL;
 
 		sendtolist(CurEnv->e_receiptto, (ADDRESS *) NULL, &rlist);
 		(void) returntosender("Return receipt", rlist, FALSE);
