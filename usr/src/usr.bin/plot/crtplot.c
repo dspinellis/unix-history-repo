@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crtplot.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)crtplot.c	4.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -21,6 +21,8 @@ because some function names conflicted with the curses library.
 #include <curses.h>
 #include <math.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 /*  These map from plot routine coordinates to screen coordinates.  */
@@ -34,8 +36,6 @@ static double lowX, rangeX;	/* min and range of x */
 static double lowY, rangeY;	/* min and range of y */
 static int lastX, lastY;	/* last point plotted */
 
-
-char *getenv();
 
 /* This routine just moves the cursor. */
 screen_move(y, x)
@@ -115,7 +115,6 @@ label(str)
 char *str;
 {
 	reg i, length;
-	int strlen();
 
 	if ( (length=strlen(str)) > (COLS-lastX) )
 		length = COLS - lastX;
