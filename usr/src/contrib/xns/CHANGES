@@ -1,0 +1,166 @@
+
+---------------------------------
+Xerox WRC changes 4/87 [ed flint]
+
+[courierlib]
+
+Filing4.cr		moved from examples/filing4
+Filing5.cr		created from Filing4
+Filing6.cr		moved from examples/filing6
+FilingSubset1.cr	moved from examples/filingsubset1
+
+
+[examples/archive]
+
+xnsarchive.c		brand new
+xnsrestore.c		brand new
+
+
+[examples/filing4]
+[examples/filing6]
+[examples/filingsubset]
+
+			consolidated into courierlib and examples/filing_client
+
+
+[examples/filing_client]
+
+xnftp.c			Viewpoint file attribute support
+			Serialization/Deserialization
+			Unify AccessLists
+cmds.c			Archive, Restore Unify commands
+cmdtab.c		Archive, Restore Unify commands
+main.c			command line interface for multiple commands
+
+
+[examples/filing_common]
+
+filingd.c		Viewpoint file/attribute support
+			compatible with XDE FileTool, PC/XNS, XNS/DECVAX
+			Copy, Move, ChangeAttributes,
+			Serialize, Deserialize procedure support
+system_interface.c	Viewpoint file/attribute support
+			Copy, Move ChangeAttributes procedure support
+get_type.c		Additional Viewpoint file types
+VP_support.c		Viewpoint attribute support
+
+
+[examples/remotetool]
+
+xnsremote.c		brand new (both remote browse and remote print)
+
+
+[examples/xnscreds]
+
+xnscreds.c		brand new
+
+
+[examples/vpfile]
+
+vpfile.c		brand new
+
+
+[man]
+
+new man pages for new tools
+
+
+
+---------------------------------
+
+Xerox WRC changes 1/87 [ed flint]
+
+[general]
+
+Rearrange directory structure and Makefiles to make everything into local
+bin, include, lib and xnscourier directories. Top level install then moves
+from there to local system target (/usr/new by default).
+
+
+[courierlib]
+
+Authentication3.cr	Authentication version 3 added
+BulkData1.cr		StreamOfUnspecified definition added
+Clearinghouse3.cr	Clearinghouse version 3 added
+Printing3.cr		Previous fix from ./examples/print/Printing3.cr added
+			since Makefile uses this definition instead
+
+
+[examples/print]
+
+Printing3.cr		Obsoleted by ./courierlib/Printing3.cr
+xnsprint.c		New options for setting message field and waiting
+			until master is actually printed
+
+
+[examples/filing]
+
+Obsoleted by ./examples/filingsubset client
+
+
+[examples/filing_common]
+
+			Filing service support for Filing Protocol versions 4 & 6
+			and FilingSubset Protocol version 1
+
+
+[examples/filing4]
+
+Filing4.cr		Minor corrections/additions
+
+XDE Filetool compatible service for Filing Protocol version 4
+
+
+[examples/filing6]
+
+Filing6.cr		All new Filing version 6
+
+service for Filing Protocol version 6
+
+
+[examples/filingsubset]
+
+FilingSubset1.cr	All new FilingSubset version 1
+xnsftp			Replaces previous xnsftp,
+			Use FilingSubset, if rejected attempt Filing
+			Allows user override with -F switch
+			Maintain FilingSubset mandatory attributes
+			User niceties:  echo file name/type on transfer commands
+					prompt on delete
+			guess type which will determine file type implied by content
+			New commands: (type related) Guess, Whatis
+				      (file transfer) Copy, Move, Rename
+service for FilingSubset Protocol version 1
+
+
+[man]
+
+All man pages consolidated here
+Upgrades to manual pages, new pages written for some library routines and 
+Filing services
+
+
+[morexnslib/auth]
+
+simpleauth.c		Added MakeSimpleVerifier routine
+Auth_lookup.c		Find and open connection to Authentication service
+Auth_credcheck.c	Check simple credentials with Authentication service
+
+
+[morexnslib/ch]
+
+CH_retrieve		Retrieve item from Clearinghouse service
+
+
+[morexnslib/xnsbfs]
+
+xnsbfs.c		Added -a option to broadcast for Authentication services
+
+
+[xnslib]
+
+misc.c			Added generic Sequence_of_Unspecified routines to
+			replace use of Clearinghouse_Item use
+server.c		Reset abortseen flag in ReceiveCallMessage
+
+			
