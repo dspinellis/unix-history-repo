@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)init.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.6 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
@@ -36,6 +36,8 @@ struct	tab
 	char	comn;
 	char	xflag;
 	int	pid;
+	time_t	gettytime;
+	int	gettycnt;
 } itab[TABSIZ];
 
 int	fi;
@@ -339,9 +341,31 @@ dfork(p)
 struct tab *p;
 {
 	register pid;
+	time_t t;
+	int dowait = 0;
 
+	time(&t);
+	p->gettycnt++;
+	if ((t - p->gettytime) >= 60) {
+		p->gettytime = t;
+		p->gettycnt = 1;
+	} else {
+		if (p->gettycnt >= 5) {
+			dowait = 1;
+			p->gettytime = t;
+			p->gettycnt = 1;
+		}
+	}
 	pid = fork();
 	if(pid == 0) {
+		if (dowait) {
+			int f = open("/dev/console", 1);
+			write(f, "init: ", 6);
+			write(f, tty, strlen(tty));
+			write(f, ": getty failing, sleeping\n\r", 27);
+			close(f);
+			sleep(30);
+		}
 		signal(SIGTERM, SIG_DFL);
 		signal(SIGHUP, SIG_IGN);
 		strcpy(tty, dev);
