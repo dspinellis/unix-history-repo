@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.73 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.74 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -66,6 +66,7 @@ static char sccsid[] = "@(#)map.c	8.73 (Berkeley) %G%";
 #define DBMMODE		0644
 
 extern bool	aliaswait __P((MAP *, char *, int));
+extern bool	extract_canonname __P((char *, char *, char[]));
 /*
 **  MAP_PARSEARGS -- parse config line arguments for database lookup
 **
@@ -589,6 +590,62 @@ getcanonname(host, hbsize, trymx)
 #endif
 
 	return FALSE;
+}
+/*
+**  EXTRACT_CANONNAME -- extract canonical name from /etc/hosts entry
+**
+**	Parameters:
+**		name -- the name against which to match.
+**		line -- the /etc/hosts line.
+**		cbuf -- the location to store the result.
+**
+**	Returns:
+**		TRUE -- if the line matched the desired name.
+**		FALSE -- otherwise.
+*/
+
+bool
+extract_canonname(name, line, cbuf)
+	char *name;
+	char *line;
+	char cbuf[];
+{
+	int i;
+	char *p;
+	bool found = FALSE;
+	extern char *get_column();
+
+	cbuf[0] = '\0';
+	if (line[0] == '#')
+		return FALSE;
+
+	for (i = 1; !found; i++)
+	{
+		char nbuf[MAXNAME + 1];
+
+		p = get_column(line, i, '\0', nbuf);
+		if (p == NULL)
+			break;
+		if (cbuf[0] == '\0' ||
+		    (strchr(cbuf, '.') == NULL && strchr(p, '.') != NULL))
+			strcpy(cbuf, p);
+		if (strcasecmp(name, p) == 0)
+			found = TRUE;
+	}
+	if (found && strchr(cbuf, '.') == NULL)
+	{
+		/* try to add a domain on the end of the name */
+		char *domain = macvalue('m', CurEnv);
+
+		if (domain != NULL &&
+		    strlen(domain) + strlen(cbuf) + 1 < MAXNAME)
+		{
+			p = &cbuf[strlen(cbuf)];
+			*p++ = '.';
+			strcpy(p, domain);
+		}
+	}
+	return found;
 }
 /*
 **  NDBM modules
@@ -1325,9 +1382,8 @@ nis_getcanonname(name, hbsize, statp)
 	static bool try1null = TRUE;
 	static char *yp_domain = NULL;
 	char *domain;
-	char *cname;
 	char host_record[MAXLINE];
-	char fbuf[MAXNAME];
+	char cbuf[MAXNAME];
 	char nbuf[MAXNAME + 1];
 	extern char *get_column();
 
@@ -1384,35 +1440,20 @@ nis_getcanonname(name, hbsize, statp)
 	host_record[vsize] = '\0';
 	if (tTd(38, 44))
 		printf("got record `%s'\n", host_record);
-	cname = get_column(host_record, 1, '\0', fbuf);
-	if (cname == NULL)
+	if (!extract_canonname(nbuf, host_record, cbuf))
 	{
 		/* this should not happen, but.... */
 		*statp = EX_NOHOST;
 		return FALSE;
 	}
-
-	if (strchr(cname, '.') != NULL)
+	if (hbsize < strlen(cbuf))
 	{
-		domain = "";
+		*statp = EX_UNAVAILABLE;
+		return FALSE;
 	}
-	else
-	{
-		domain = macvalue('m', CurEnv);
-		if (domain == NULL)
-			domain = "";
-	}
-	if (hbsize >= strlen(cname) + strlen(domain) + 1)
-	{
-		if (domain[0] == '\0')
-			strcpy(name, vp);
-		else
-			sprintf(name, "%s.%s", vp, domain);
-		*statp = EX_OK;
-		return TRUE;
-	}
-	*statp = EX_UNAVAILABLE;
-	return FALSE;
+	strcpy(name, cbuf);
+	*statp = EX_OK;
+	return TRUE;
 }
 
 #endif
@@ -2136,7 +2177,6 @@ text_getcanonname(name, hbsize, statp)
 	int *statp;
 {
 	int key_idx;
-	char *cname;
 	bool found;
 	FILE *f;
 	char linebuf[MAXLINE];
@@ -2178,23 +2218,7 @@ text_getcanonname(name, hbsize, statp)
 			continue;
 		if ((p = strchr(linebuf, '\n')) != NULL)
 			*p = '\0';
-		cname = get_column(linebuf, 1, '\0', cbuf);
-		if (cname != NULL && strcasecmp(nbuf,  cname) == 0)
-		{
-			found = TRUE;
-			break;
-		}
-
-		key_idx = 2;
-		while ((p = get_column(linebuf, key_idx, '\0', fbuf)) != NULL)
-		{
-			if (strcasecmp(nbuf, p) == 0)
-			{
-				found = TRUE;
-				break;
-			}
-			key_idx++;
-		}
+		found = extract_canonname(nbuf, linebuf, cbuf);
 	}
 	fclose(f);
 	if (!found)
@@ -2203,9 +2227,9 @@ text_getcanonname(name, hbsize, statp)
 		return FALSE;
 	}
 
-	if (hbsize >= strlen(cname))
+	if (hbsize >= strlen(cbuf))
 	{
-		strcpy(name, cname);
+		strcpy(name, cbuf);
 		*statp = EX_OK;
 		return TRUE;
 	}
