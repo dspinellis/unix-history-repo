@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.c	6.9 (Berkeley) %G%
+ *	@(#)if.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -257,6 +257,8 @@ ifioctl(so, cmd, data)
 		break;
 
 	case SIOCSIFFLAGS:
+		if (!suser())
+			return (u.u_error);
 		if (ifp->if_flags & IFF_UP && (ifr->ifr_flags & IFF_UP) == 0) {
 			int s = splimp();
 			if_down(ifp);
