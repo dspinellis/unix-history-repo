@@ -1,4 +1,4 @@
-/*	telnet.c	4.2	82/03/01	*/
+/*	telnet.c	4.3	82/03/01	*/
 
 /*
  * User telnet program.
@@ -129,7 +129,7 @@ tn(argc, argv)
 		return;
 	}
 	sin.sin_addr.s_addr = rhost(&argv[1]);
-	if (sin.sin_addr.s_addr <= 0) {
+	if (sin.sin_addr.s_addr == (u_long)-1) {
 		printf("%s: unknown host\n", argv[1]);
 		return;
 	}
