@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PCSTART.c 1.7 %G%";
+static char sccsid[] = "@(#)PCSTART.c 1.8 %G%";
 
 #include <signal.h>
 #include "h00vars.h"
@@ -15,11 +15,12 @@ char		**_argv;
 long		_stlim = 500000;
 long		_stcnt = 0;
 long		_seed = 1;
-#ifdef VAX
+#ifdef ADDR32
 char		*_minptr = (char *)0x7fffffff;
-#else
+#endif ADDR32
+#ifdef ADDR16
 char		*_minptr = (char *)0xffff;
-#endif VAX
+#endif ADDR16
 char		*_maxptr = (char *)0;
 
 /*
