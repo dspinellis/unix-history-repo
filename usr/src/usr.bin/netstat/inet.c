@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.17 (Berkeley) 84/07/04";
+static char sccsid[] = "@(#)inet.c	4.18 (Berkeley) 84/10/31";
 #endif
 
 #include <sys/types.h>
@@ -71,7 +71,8 @@ protopr(off, name)
 		putchar('\n');
 		if (Aflag)
 			printf("%-8.8s ", "PCB");
-		printf("%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
+		printf(Aflag ? "%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s %s\n" :
+			"%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
 			"Proto", "Recv-Q", "Send-Q",
 			"Local Address", "Foreign Address", "(state)");
 		first = 0;
@@ -272,8 +273,9 @@ inetprint(in, port, proto)
 {
 	struct servent *sp = 0;
 	char line[80], *cp, *index();
+	int width;
 
-	sprintf(line, "%.16s.", inetname(*in));
+	sprintf(line, "%.*s.", Aflag ? 10 : 16, inetname(*in));
 	cp = index(line, '\0');
 	if (!nflag && port)
 		sp = getservbyport(port, proto);
@@ -281,7 +283,8 @@ inetprint(in, port, proto)
 		sprintf(cp, "%.8s", sp ? sp->s_name : "*");
 	else
 		sprintf(cp, "%d", ntohs((u_short)port));
-	printf(" %-22.22s", line);
+	width = Aflag ? 18 : 22;
+	printf(" %-*.*s", width, width, line);
 }
 
 /*
