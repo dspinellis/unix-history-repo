@@ -1,4 +1,4 @@
-/*	ioctl.h	4.11	82/01/13	*/
+/*	ioctl.h	4.12	82/01/17	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -101,4 +101,9 @@ struct ltchars {
 #define	SIOCGKEEP	(('s'<<8)|2)	/* inspect keep alive */
 #define	SIOCSLINGER	(('s'<<8)|3)	/* set linger time */
 #define	SIOCGLINGER	(('s'<<8)|4)	/* get linger time */
+#define	SIOCSENDOOB	(('s'<<8)|5)	/* send out of band */
+#define	SIOCRCVOOB	(('s'<<8)|6)	/* get out of band */
+#define	SIOCATMARK	(('s'<<8)|7)	/* at out of band mark? */
+#define	SIOCSPGRP	(('s'<<8)|8)	/* set process group */
+#define	SIOCGPGRP	(('s'<<8)|9)	/* get process group */
 #endif
