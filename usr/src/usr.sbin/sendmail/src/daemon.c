@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.30 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.31 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.30 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.31 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -100,7 +100,7 @@ getrequests()
 		sp = getservbyname("smtp", "tcp");
 		if (sp == NULL)
 		{
-			syserr("554 server \"smtp\" unknown");
+			syserr("554 service \"smtp\" unknown");
 			goto severe;
 		}
 		DaemonAddr.sin.sin_port = sp->s_port;
@@ -417,7 +417,7 @@ setdaemonoptions(p)
 
 					sp = getservbyname(v, "tcp");
 					if (sp == NULL)
-						syserr("554 server \"%s\" unknown", v);
+						syserr("554 service \"%s\" unknown", v);
 					else
 						DaemonAddr.sin.sin_port = sp->s_port;
 				}
@@ -435,7 +435,7 @@ setdaemonoptions(p)
 
 					sp = getservbyname(v, "tcp");
 					if (sp == NULL)
-						syserr("554 server \"%s\" unknown", v);
+						syserr("554 service \"%s\" unknown", v);
 					else
 						port = sp->s_port;
 				}
@@ -577,7 +577,7 @@ gothostent:
 
 		if (sp == NULL)
 		{
-			syserr("554 makeconnection: server \"smtp\" unknown");
+			syserr("554 makeconnection: service \"smtp\" unknown");
 			return (EX_OSERR);
 		}
 		port = sp->s_port;
