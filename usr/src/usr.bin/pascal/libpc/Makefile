@@ -1,12 +1,16 @@
-SCCSID = "@(#)Makefile 1.10 %G%"
+SCCSID = "@(#)Makefile 1.11 %G%"
+
 CFLAGS = -O
+
 LIB = ${DESTDIR}/usr/lib
 SRCDIR = ${DESTDIR}/usr/ucb
 PASDIR = ${DESTDIR}/usr/src/cmd/pascal
-LD= ld
+
+INSTALL= /bin/cp
+LD= /bin/ld
 RM = /bin/rm -f
 RANLIB= ranlib
-AR= ar
+AR= /bin/ar
 
 CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c BUFF.c CARD.c CHR.c CLCK.c \
 	CTTOT.c DATE.c DEFNAME.c DISPOSE.c EXPO.c FCALL.c FLUSH.c \
@@ -45,37 +49,36 @@ EXOBJ =	APPEND.o SEEK.o TELL.o
 sources: ${CMDS} ${SYS} ${EXTN} ${HDRS}
 
 .s.o:
-	${AS} -o tmp $*.s
-	-${LD} -x -r -o normal/$@ tmp
 	sed -f mcount.sed $*.s | ${AS} -o tmp
-	-${LD} -x -r -o $@ tmp
+	-${LD} -X -r -o profiled/$@ tmp
+	${AS} -o tmp $*.s
+	-${LD} -X -r -o $@ tmp
 
 .c.o:
-	${CC} ${CFLAGS} -c $*.c
-	mv $@ tmp
-	-${LD} -x -r -o normal/$@ tmp
 	${CC} -p ${CFLAGS} -c $*.c
 	mv $@ tmp
-	-${LD} -x -r -o $@ tmp
+	-${LD} -X -r -o profiled/$@ tmp
+	${CC} ${CFLAGS} -c $*.c
+	mv $@ tmp
+	-${LD} -X -r -o $@ tmp
 
 libpc libpc_p: ${OBJS} ${SYOBJ} ${EXOBJ}
-	${AR} cru libpc_p ${OBJS} ${SYOBJ} ${EXOBJ}
+	cd profiled; ${AR} cru ../libpc_p ${OBJS} ${SYOBJ} ${EXOBJ}
 	${RANLIB} libpc_p
-	mv normal/* .
 	${AR} cru libpc ${OBJS} ${SYOBJ} ${EXOBJ}
 	${RANLIB} libpc
 
 install: libpc libpc_p
-	cp libpc_p ${LIB}/libpc_p.a
+	${INSTALL} libpc_p ${LIB}/libpc_p.a
 	${RANLIB} ${LIB}/libpc_p.a
-	cp libpc ${LIB}/libpc.a
+	${INSTALL} libpc ${LIB}/libpc.a
 	${RANLIB} ${LIB}/libpc.a
 
 whoami.h:
 	cp ${PASDIR}/whoami.h whoami.h
 
 clean:
-	${RM} libpc libpc_p *.o a.out lpr tmp core errs
+	${RM} libpc libpc_p *.o profiled/*.o a.out lpr tmp core errs
 
 print:
 	ls -l >lst
