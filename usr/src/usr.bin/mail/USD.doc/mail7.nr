@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail7.nr	6.1 (Berkeley) %G%
+.\"	@(#)mail7.nr	6.1 (Berkeley) 5/23/86
 .\"
 .sh 1 "Format of messages"
 .pp
@@ -50,7 +50,7 @@ and
 .i to .
 Other header fields are also significant to other systems; see,
 for example, the current Arpanet message standard for much more
-on this topic.
+information on this topic.
 A header field can be continued onto following lines by making the
 first character on the following line a space or tab character.
 .pp
@@ -58,11 +58,11 @@ If any headers are present, they must be followed by a blank line.
 The part that follows is called the
 .i body
 of the message, and must be ASCII text, not containing null characters.
-Each line in the message body must be terminated with an ASCII newline
-character and no line may be longer than 512 characters.
+Each line in the message body must be no longer than 512 characters and
+terminated with an ASCII newline character.
 If binary data must be passed through the mail system, it is suggested
 that this data be encoded in a system which encodes six bits into
-a printable character.
+a printable character (i.e.: uuencode).
 For example, one could use the upper and lower case letters, the digits,
 and the characters comma and period to make up the 64 characters.
 Then, one can send a 16-bit binary number

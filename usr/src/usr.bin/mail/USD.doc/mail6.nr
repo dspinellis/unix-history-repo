@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail6.nr	6.1 (Berkeley) %G%
+.\"	@(#)mail6.nr	6.1 (Berkeley) 5/23/86
 .\"
 .bp
 .sh 1 "Command line options"
@@ -14,7 +14,7 @@ and what they are used for.
 Suppress the initial printing of headers.
 .ip \-d
 Turn on debugging information.  Not of general interest.
-.ip "\-f file"
+.ip "\-f file\ \ "
 Show the messages in
 .i file
 instead of your system mailbox.  If
@@ -47,7 +47,7 @@ mail instead of your own.  Unwitting others often neglect to protect
 their mailboxes, but discretion is advised. Essentially,
 .b "\-u user"
 is a shorthand way of doing
-.b "\-f /usr/spool/user".
+.b "\-f /usr/spool/mail/user".
 .ip "\-v"
 Use the
 .b \-v

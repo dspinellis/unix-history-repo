@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail9.nr	6.1 (Berkeley) %G%
+.\"	@(#)mail9.nr	6.1 (Berkeley) 5/23/86
 .\"
 .bp
 .sh 1 "Summary of commands, options, and escapes"
@@ -10,7 +10,6 @@
 This section gives a quick summary of the
 .i Mail
 commands, binary and valued options, and tilde escapes.
-.(b
 .pp
 The following table describes the commands:
 .TS
@@ -19,27 +18,31 @@ c ci
 lb l.
 Command	Description
 _
-!	Single command escape to shell
++	Same as \fBnext\fP
 -	Back up to previous message
+?	Print brief summary of \fIMail\fP commands
+!	Single command escape to shell
 Print	Type message with ignored fields
 Reply	Reply to author of message only
+Respond	Same as \fBReply\fP
 Type	Type message with ignored fields
 alias	Define an alias as a set of user names
 alternates	List other names you are known by
 chdir	Change working directory, home by default
 copy	Copy a message to a file or folder
 delete	Delete a list of messages
+dp	Same as \fBdt\fP
 dt	Delete current message, type next message
-endif	End of conditional statement; see \fBif\fP
 edit	Edit a list of messages
 else	Start of else part of conditional; see \fBif\fP
+endif	End of conditional statement; see \fBif\fP
 exit	Leave mail without changing anything
 file	Interrogate/change current mail file
 folder	Same as \fBfile\fP
 folders	List the folders in your folder directory
 from	List headers of a list of messages
 headers	List current window of messages
-help	Print brief summary of \fIMail\fP commands
+help	Same as \fB?\fP
 hold	Same as \fBpreserve\fP
 if	Conditional execution of \fIMail\fP commands
 ignore	Set/examine list of ignored header fields
@@ -49,20 +52,27 @@ mail	Send mail to specified names
 mbox	Arrange to save a list of messages in \fImbox\fP
 next	Go to next message and type it
 preserve	Arrange to leave list of messages in system mailbox
+print	Print messages
 quit	Leave \fIMail\fP; update system mailbox, \fImbox\fP as appropriate
 reply	Compose a reply to a message
+respond	Same as \fBreply\fP
+retain	Supersedes \fBignore\fP
 save	Append messages, headers included, on a file
 set	Set binary or valued options
 shell	Invoke an interactive shell
+size	Prints out size of message list
+source	Read \fImail\fP commands from a file
 top	Print first so many (5 by default) lines of list of messages
-type	Print messages
+type	Same as \fBprint\fP
 undelete	Undelete list of messages
+unread	Marks list of messages as not been read
 unset	Undo the operation of a \fBset\fP
 visual	Invoke visual editor on a list of messages
 write	Append messages to a file, don't include headers
+xit	Same as \fBexit\fP
 z	Scroll to next/previous screenful of headers
 .TE
-.)b
+.bp
 .(b
 .pp
 The following table describes the options.  Each option is
@@ -74,16 +84,17 @@ l ci l.
 Option	Type	Description
 _
 EDITOR	valued	Pathname of editor for ~e and \fBedit\fP
+PAGER	valued	Pathname of paginator for \fBPrint\fP, \fBprint\fP, \fBType\fP and \fBtype\fP
 SHELL	valued	Pathname of shell for \fBshell\fP, ~! and \fB!\fP
 VISUAL	valued	Pathname of screen editor for ~v, \fBvisual\fP
 append	binary	Always append messages to end of \fImbox\fP
 ask	binary	Prompt user for Subject: field when sending
 askcc	binary	Prompt user for additional Cc's at end of message
 autoprint	binary	Print next message after \fBdelete\fP
-crt	valued	Minimum number of lines before using \fImore\fP
+crt	valued	Minimum number of lines before using \fBPAGER\fP
 debug	binary	Print out debugging information
 dot	binary	Accept . alone on line to terminate message input
-escape	valued	Escape character to be used instead of ~
+escape	valued	Escape character to be used instead of\ \ ~
 folder	valued	Directory to store folders in
 hold	binary	Hold messages in system mailbox by default
 ignore	binary	Ignore \s-2RUBOUT\s0 while sending mail
@@ -112,6 +123,7 @@ l li l.
 Escape	Arguments	Description
 _
 ~!	command	Execute shell command
+~b	name ...	Add names to "blind" Cc: list
 ~c	name ...	Add names to Cc: field
 ~d		Read \fIdead.letter\fP into message
 ~e		Invoke text editor on partial message
@@ -126,6 +138,7 @@ _
 ~v		Invoke screen editor on message
 ~w	filename	Write message on file
 ~|	command	Pipe message through \fIcommand\fP
+~:	Mail command	Execute a \fIMail\fP command
 ~~	string	Quote a ~ in front of \fIstring\fP
 .TE
 .)b

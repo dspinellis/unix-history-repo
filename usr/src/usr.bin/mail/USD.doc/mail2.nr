@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail2.nr	6.1 (Berkeley) %G%
+.\"	@(#)mail2.nr	6.1 (Berkeley) 5/23/86
 .\"
 .bp
 .sh 1 "Common usage"
@@ -78,7 +78,7 @@ the messages you have waiting.  Then it will type a prompt and await
 your command.  The messages are assigned numbers starting with 1 \*- you
 refer to the messages with these numbers.
 .i Mail
-keeps tack of which messages are
+keeps track of which messages are
 .i new
 (have been sent since you last read your mail) and
 .i read
@@ -349,16 +349,16 @@ With the
 option, you can make
 .i Mail
 print any message larger than a given number of lines by sending
-it through the paging program
-.i more .
+it through a paging program. This program is specified by the
+valued option \fBPAGER\fP.
+If \fBPAGER\fP is not set, a default paginator is used.
 For example, most CRT users with 24-line screens should do:
 .(l
 set crt=24
 .)l
 to paginate messages that will not fit on their screens.
-.i More
-prints a screenful of information, then types --MORE--.  Type
-a space to see the next screenful.
+In the default state, \fImore\fP (default paginator) prints a screenful of
+information, then types --More--.  Type a space to see the next screenful.
 .pp
 Another adaptation to user needs that
 .i Mail
