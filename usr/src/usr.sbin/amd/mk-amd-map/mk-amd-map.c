@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mk-amd-map.c	5.1 (Berkeley) %G%
+ *	@(#)mk-amd-map.c	5.2 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@ char copyright[] = "\
 
 #ifndef lint
 static char rcsid[] = "$Id: mk-amd-map.c,v 5.2 90/06/23 22:20:10 jsp Rel $";
-static char sccsid[] = "@(#)mk-amd-map.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mk-amd-map.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -191,7 +191,7 @@ again:
 	return errs;
 }
 
-static int remove(f)
+static int xremove(f)
 char *f;
 {
 	if (unlink(f) < 0 && errno != ENOENT)
@@ -207,7 +207,7 @@ char *argv[];
 	char *map;
 	int rc = 0;
 	DBM *mapd;
-	char *maptmp = "dbmXXXXXX";
+	static char maptmp[] = "dbmXXXXXX";
 	char maptpag[16], maptdir[16];
 	char *mappag, *mapdir;
 	int len;
@@ -240,7 +240,7 @@ char *argv[];
 	mktemp(maptmp);
 	sprintf(maptpag, "%s.pag", maptmp);
 	sprintf(maptdir, "%s.dir", maptmp);
-	if (remove(maptpag) < 0 || remove(maptdir) < 0) {
+	if (xremove(maptpag) < 0 || xremove(maptdir) < 0) {
 		fprintf(stderr, "Can't remove existing temporary files; %s and", maptpag);
 		perror(maptdir);
 		exit(1);
