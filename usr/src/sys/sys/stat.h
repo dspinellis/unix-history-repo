@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	8.11 (Berkeley) %G%
+ *	@(#)stat.h	8.12 (Berkeley) %G%
  */
 
 #ifndef _SYS_STAT_H_
@@ -51,11 +51,11 @@ struct stat {
 	struct	timespec st_ctimespec;	/* time of last file status change */
 #else
 	time_t	  st_atime;		/* time of last access */
-	int32_t	  st_atimensec;		/* nsec of last access */
+	long	  st_atimensec;		/* nsec of last access */
 	time_t	  st_mtime;		/* time of last data modification */
-	int32_t	  st_mtimensec;		/* nsec of last data modification */
+	long	  st_mtimensec;		/* nsec of last data modification */
 	time_t	  st_ctime;		/* time of last file status change */
-	int32_t	  st_ctimensec;		/* nsec of last file status change */
+	long	  st_ctimensec;		/* nsec of last file status change */
 #endif
 	off_t	  st_size;		/* file size, in bytes */
 	int64_t	  st_blocks;		/* blocks allocated for file */
