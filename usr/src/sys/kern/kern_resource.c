@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.19	82/12/28	*/
+/*	kern_resource.c	4.20	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
