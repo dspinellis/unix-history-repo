@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -147,7 +147,7 @@ double avenrun[3];		/* used for storing load averages */
  * logged in or out, we read in the /etc/utmp file. We also keep track of
  * the previous utmp file.
  */
-int ut;				/* the file descriptor */
+int ut = -1;			/* the file descriptor */
 struct utmp *new, *old;	
 char *status;			/* per tty status bits, see below */
 int nentries;			/* number of utmp entries */
@@ -413,7 +413,6 @@ main(argc,argv)
 	readnamelist();
 	if (proccheck)
 		initprocread();
-	initutmp();
 	if (mailcheck)
 		if ((username = getenv("USER")) == 0)
 			mailcheck = 0;
@@ -479,42 +478,39 @@ readnamelist()
 	}
 }
 
-initutmp()
-{
-	struct stat st;
-
-	if ((ut = open("/etc/utmp", 0)) < 0) {
-		fprintf(stderr, "Can't open utmp.\n");
-		exit(1);
-	}
-	if (fstat(ut, &st) < 0) {
-		perror("fstat: utmp");
-		exit(1);
-	}
-	/*
-	 * Calculate the size once and allocate buffer space.
-	 * Utmp is not expected to grow or shrink.
-	 */
-	nentries = st.st_size / sizeof (struct utmp);
-	if ((old = (struct utmp *)calloc(nentries, sizeof *old)) == 0 ||
-	    (new = (struct utmp *)calloc(nentries, sizeof *new)) == 0 ||
-	    (status = calloc(nentries, sizeof *status)) == 0) {
-		fprintf(stderr, "Out of memory.\n");
-		exit(1);
-	}
-}
-
-readutmp(u)
-	struct utmp *u;
+readutmp(nflag)
+	char nflag;
 {
 	static time_t lastmod;		/* initially zero */
+	static off_t utmpsize;		/* ditto */
 	struct stat st;
 
-	if (fstat(ut, &st) >= 0 && st.st_mtime == lastmod)
+	if (ut < 0 && (ut = open("/etc/utmp", 0)) < 0) {
+		fprintf(stderr, "sysline: Can't open utmp.\n");
+		exit(1);
+	}
+	if (fstat(ut, &st) < 0 || st.st_mtime == lastmod)
 		return 0;
 	lastmod = st.st_mtime;
+	if (utmpsize != st.st_size) {
+		utmpsize = st.st_size;
+		nentries = utmpsize / sizeof (struct utmp);
+		if (old == 0) {
+			old = (struct utmp *)calloc(utmpsize, 1);
+			new = (struct utmp *)calloc(utmpsize, 1);
+		} else {
+			old = (struct utmp *)realloc((char *)old, utmpsize);
+			new = (struct utmp *)realloc((char *)new, utmpsize);
+			free(status);
+		}
+		status = malloc(nentries * sizeof *status);
+		if (old == 0 || new == 0 || status == 0) {
+			fprintf(stderr, "sysline: Out of memory.\n");
+			exit(1);
+		}
+	}
 	lseek(ut, 0L, 0);
-	(void) read(ut, (char *)u, nentries * sizeof *u);
+	(void) read(ut, (char *) (nflag ? new : old), utmpsize);
 	return 1;
 }
 
@@ -639,11 +635,11 @@ prtinfo()
 	 */
 	on = off = 0;
 	if (users == 0) {		/* first time */
-		if (readutmp(old))
+		if (readutmp(0))
 			for (i = 0; i < nentries; i++)
 				if (old[i].ut_name[0])
 					users++;
-	} else if (fullprocess && readutmp(new)) {
+	} else if (fullprocess && readutmp(1)) {
 		struct utmp *tmp;
 
 		users = 0;
