@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)worm.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)worm.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)worm.c	5.8 (Berkeley) %G%";
 #include <ctype.h>
 #include <curses.h>
 #include <signal.h>
+#include <termios.h>
 
 #define newlink() (struct body *) malloc(sizeof (struct body));
 #define HEAD '@'
