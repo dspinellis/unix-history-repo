@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.43 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.44 (Berkeley) %G%
  */
 
 /*
@@ -662,11 +662,9 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		np->n_size = vap->va_size;
 		vnode_pager_setsize(vp, np->n_size);
 	}
-	vap->va_size_rsv = 0;
 	vap->va_blocksize = fxdr_unsigned(long, fp->fa_blocksize);
 	vap->va_rdev = (dev_t)rdev;
 	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * NFS_FABLKSIZE;
-	vap->va_bytes_rsv = 0;
 	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
 	vap->va_fileid = fxdr_unsigned(long, fp->fa_fileid);
 	vap->va_atime.tv_sec = fxdr_unsigned(long, fp->fa_atime.tv_sec);
@@ -676,6 +674,10 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_ctime.tv_sec = fxdr_unsigned(long, fp->fa_ctime.tv_sec);
 	vap->va_ctime.tv_usec = 0;
 	vap->va_gen = fxdr_unsigned(u_long, fp->fa_ctime.tv_usec);
+#ifdef _NOQUAD
+	vap->va_size_rsv = 0;
+	vap->va_bytes_rsv = 0;
+#endif
 	np->n_attrstamp = time.tv_sec;
 	*dposp = dpos;
 	*mdp = md;
