@@ -1,4 +1,4 @@
-/*	if_en.c	4.45	82/03/30	*/
+/*	if_en.c	4.46	82/03/30	*/
 
 #include "en.h"
 
@@ -376,16 +376,12 @@ COUNT(ENRINT);
 	case ENPUP_IPTYPE:
 		len = htons((u_short)endataaddr(en,
 			off ? off + sizeof (u_short) : 0, struct ip *)->ip_len);
-		if (off)
-			len += sizeof (u_short);
 		break;
 #endif
 #ifdef PUP
 	case ENPUP_PUPTYPE:
 		len = endataaddr(en, off ? off + sizeof (u_short) : 0,
 			struct pup_header *)->pup_length;
-		if (off)
-			len -= sizeof (u_short);
 		break;
 #endif
 		
@@ -393,6 +389,8 @@ COUNT(ENRINT);
 		printf("en%d: unknown pkt type 0x%x\n", unit, en->en_type);
 		goto setup;
 	}
+	if (off)
+		len += sizeof (u_short);
 	if (len == 0)
 		goto setup;
 
