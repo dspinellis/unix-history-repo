@@ -1,0 +1,18 @@
+@(#)README	3.1 83/11/18
+
+options:
+
+	O_SUN		use 68000 byte ordering
+	O_4_1C		4.1c
+	O_4_1A		4.1a
+
+	4.2bsd on a vax needs no flags.
+
+	Some systems will need the jobs library.
+
+	4.1a does not support the 't' command.
+
+The makefile can be updated with mkmf.
+
+Do not profile on 4.1.  A bug in the system causes profiling
+to stay on after an exec.
