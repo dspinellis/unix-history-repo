@@ -2,13 +2,14 @@
                                FreeBSD
                       Frequently Asked Questions
                       For Version 1.1 and above
+
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.27 1994/05/20 05:42:05 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.28 1994/05/27 11:13:39 jkh Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
-are for both.
+are for both version 1.1 and current.
 
 
 Table of Contents
@@ -84,8 +85,7 @@ stop distributing the disputed software.
 Since Berkeley will no longer defend this code, we have been requested
 to stop distributing it, and will be integrating all the improvements
 we have made in the VM system and i386-specific code into Berkeley's
-4.4-Lite distribution; the result will form the basis of the next
-release of FreeBSD (we haven't decided whether to call it 1.2 or 2.0).
+4.4-Lite distribution; the result will form the basis of FreeBSD 2.0.
 We expect the integration to take place over a period of three to six
 months, during which time we will have to stop work on 1.1 and
 concentrate all our efforts on the merge, and we expect to make more 
@@ -203,11 +203,11 @@ OK, UNLESS it's a Buslogic Bt445S with a revision less than `D' (BIOS
 3.36 or earlier).
 
 <CURRENT>
-FreeBSD-current (and the upcoming FreeBSD 1.2) have bounce-buffer
+FreeBSD-current (and the upcoming FreeBSD 1.1.5) have bounce-buffer
 support that make all of the above scenarios work with a full 32MB of
 memory or more.  You are therefore advised to simply pull 16MB of
 memory out, install, and then see about upgrading to FreeBSD-current
-or FreeBSD 1.2 (when it comes out) so that you can put it back.
+or FreeBSD 1.1.5 (when it comes out) so that you can put it back.
 
 
 1.6:  Do I need to install the complete sources?
@@ -420,6 +420,15 @@ better than others.  It pains us to say it, but nobody ever got fired
 for buying Intel.  Unless you're sure it works with FreeBSD, beware of
 clones.
 
+2.12:  I am about to buy a new machine to run FreeBSD on and
+       want an idea of what other people are running.  Is there list
+       of other systems anywhere? 
+
+Yes.  Please look at the file FAQ/OTHER-FAQS/Systems.faq.  This file
+is a listing of hardware that people are running in their machines.
+Please note, this is a raw listing of equipment that other users
+have sent in.
+
 
 
 3 Commercial Applications
@@ -524,6 +533,13 @@ in the packages directory provides more details on the care and
 feeding of the package software, so no explicit details will be given
 here.
 
+4.4:  I'm trying to get Perl to work properly, but I keep getting
+      errors about dbm failures when I test it.  How can I fix this?
+
+The problem here is that the tests are written for an older version of
+the dbm code.  There is nothing wrong with perl and the errors can
+be ignored.
+
 
 
 5 Miscellaneous Questions
@@ -584,12 +600,42 @@ take place.  Using it on those systems where it works may make your
 disks run faster, but on those systems where it doesn't, your data could
 be corrupted.
 
-5.6:  I would like to track changes to current.  Is there any other way
-      besides downloading the whole tree?
+5.6:  I would like to track changes to current and do not have net access.  
+      Is there any way besides downloading the whole tree?
 
 Yes, Poul-Henning has set up a source tracking list.  Please email 
 majordomo@ref.tfs.com with a body of "get ctm-src-cur README" for
 futher information.
+
+5.7:  How do I split up large binary files into smaller 240k files
+      like the distribution does?
+
+Newer BSD based systems have a "-b" option to split that allows them to
+split files on arbitary byte bondaries.
+
+Here is an example from /usr/src/Makefile.
+bin-tarball:
+	(cd ${DISTDIR}; \
+		tar cf - . \
+		gzip --no-name -9 -c | \
+		split -b 240640 - \
+		${RELEASEDIR}/tarballs/bindist/bin_tgz.)
+
+5.8:  I'm running Syscons and every morning my console locks up.  What
+      is going on here?
+
+This sounds like the "kill -1 syslogd" problem.  Make sure that the
+following is correct on your system.
+1. The attributes of the following nodes are correct.
+/dev/console
+crw-------	1 root		0,	0 May 23 15:32 /dev/console
+/dev/ttyv0
+crw-------	1 root		12,	0 May 23 15:32 /dev/ttyv0
+The part you are concerned with are the major and minor device numbers.
+
+2. Make sure that getty is running on ttyv0 and NOT console.
+
+3. If /dev/vga exists that it is a symlink to /dev/ttyv0.
 
 
 
@@ -678,6 +724,35 @@ because of licensing restrictions, then character major number 32 and
 block major number 8 have been reserved specifically for this purpose;
 please use them.  In any case, we'd appreciate hearing about your
 driver on <FreeBSD-hackers@freefall.cdrom.com>.
+
+6.7:  I'm wanting to switch console drivers to Syscons.  I changed my
+      kernel config file to run Syscons, but when I reboot the system
+      locks up!  How do I fix it?
+
+There are four things that need to be done to properly install syscons
+on a system.
+1. Add the following line to your kernel config file while deleting the
+   line for pccons.
+device	sc0	at isa? port "IO_KBD" tty irq 1 vector scintr
+(Note the changed vector 'scintr'.  It is a common error to change the 
+device name but NOT the vector.
+
+2. Add the following option to your config file.
+options		"NCONS=6" # Change to reflect the number of consoles
+
+3. Modify /etc/ttys to enable gettys on ttyv0 - ttyv??.  Here is an
+example line.
+ttyv0	"/usr/libexec/getty Pc" Pc3	on	secure
+Please make sure that you have disabled the getty on /dev/console.
+
+4. Create the device nodes in /dev.  This is done useing the MAKEDEV
+script located in that directory.  Here is a command line that will create
+6 virtual consoles.
+MAKEDEV vty6
+If /dev/vga exists, it should now be a symlink to /dev/ttyv0.
+
+NOTE:  If you are going to be running X, you will need an unused vty that
+       has no getty running on it.
 
 
 
