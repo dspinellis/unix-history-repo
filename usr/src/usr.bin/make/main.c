@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -77,13 +77,11 @@ time_t			now;		/* Time at start of make */
 GNode			*DEFAULT;	/* .DEFAULT node */
 Boolean			allPrecious;	/* .PRECIOUS given on line by itself */
 
-static int		printGraph;	/* -p flag */
 static Boolean		noBuiltins;	/* -r flag */
 static Lst		makefiles;	/* ordered list of makefiles to read */
 int			maxJobs;	/* -J argument */
 static int		maxLocal;	/* -L argument */
 Boolean			debug;		/* -d flag */
-Boolean			noWarnings;	/* -W flag */
 Boolean			noExecute;	/* -n flag */
 Boolean			keepgoing;	/* -k flag */
 Boolean			queryFlag;	/* -q flag */
@@ -124,7 +122,7 @@ MainParseArgs(argc, argv)
 	register char *cp;
 	char c;
 
-	while((c = getopt(argc, argv, "D:I:J:L:PSWd:ef:iknp:qrstv")) != -1) {
+	while((c = getopt(argc, argv, "D:I:d:ef:ij:knqrstv")) != -1) {
 		switch(c) {
 		case 'D':
 			Var_Set(optarg, "1", VAR_GLOBAL);
@@ -136,11 +134,7 @@ MainParseArgs(argc, argv)
 			Var_Append(MAKEFLAGS, "-I", VAR_GLOBAL);
 			Var_Append(MAKEFLAGS, optarg, VAR_GLOBAL);
 			break;
-		case 'J':
-			maxJobs = atoi(optarg);
-			Var_Append(MAKEFLAGS, "-J", VAR_GLOBAL);
-			Var_Append(MAKEFLAGS, optarg, VAR_GLOBAL);
-			break;
+#ifdef notdef
 		case 'L':
 			maxLocal = atoi(optarg);
 			Var_Append(MAKEFLAGS, "-L", VAR_GLOBAL);
@@ -154,16 +148,13 @@ MainParseArgs(argc, argv)
 			keepgoing = FALSE;
 			Var_Append(MAKEFLAGS, "-S", VAR_GLOBAL);
 			break;
-		case 'W':
-			noWarnings = TRUE;
-			Var_Append(MAKEFLAGS, "-W", VAR_GLOBAL);
-			break;
+#endif
 		case 'd': {
 			char *modules = optarg;
 
-			while (*modules) {
+			for (; *modules; ++modules)
 				switch (*modules) {
-				case '*':
+				case 'A':
 					debug = ~0;
 					break;
 				case 'a':
@@ -175,6 +166,16 @@ MainParseArgs(argc, argv)
 				case 'd':
 					debug |= DEBUG_DIR;
 					break;
+				case 'g':
+					if (modules[1] == '1') {
+						debug |= DEBUG_GRAPH1;
+						++modules;
+					}
+					else if (modules[1] == '2') {
+						debug |= DEBUG_GRAPH2;
+						++modules;
+					}
+					break;
 				case 'j':
 					debug |= DEBUG_JOB;
 					break;
@@ -183,9 +184,6 @@ MainParseArgs(argc, argv)
 					break;
 				case 'p':
 					debug |= DEBUG_PARSE;
-					break;
-				case 'r':
-					debug |= DEBUG_RMT;
 					break;
 				case 's':
 					debug |= DEBUG_SUFF;
@@ -197,8 +195,6 @@ MainParseArgs(argc, argv)
 					debug |= DEBUG_VAR;
 					break;
 				}
-				++modules;
-			}
 			Var_Append(MAKEFLAGS, "-d", VAR_GLOBAL);
 			Var_Append(MAKEFLAGS, optarg, VAR_GLOBAL);
 			break;
@@ -214,6 +210,11 @@ MainParseArgs(argc, argv)
 			ignoreErrors = TRUE;
 			Var_Append(MAKEFLAGS, "-i", VAR_GLOBAL);
 			break;
+		case 'j':
+			maxJobs = atoi(optarg);
+			Var_Append(MAKEFLAGS, "-J", VAR_GLOBAL);
+			Var_Append(MAKEFLAGS, optarg, VAR_GLOBAL);
+			break;
 		case 'k':
 			keepgoing = TRUE;
 			Var_Append(MAKEFLAGS, "-k", VAR_GLOBAL);
@@ -221,9 +222,6 @@ MainParseArgs(argc, argv)
 		case 'n':
 			noExecute = TRUE;
 			Var_Append(MAKEFLAGS, "-n", VAR_GLOBAL);
-			break;
-		case 'p':
-			printGraph = atoi(optarg);
 			break;
 		case 'q':
 			queryFlag = TRUE;
@@ -361,7 +359,6 @@ main(argc, argv)
 	touchFlag = FALSE;		/* Actually update targets */
 	usePipes = TRUE;		/* Catch child output in pipes */
 	debug = 0;			/* No debug verbosity, please. */
-	noWarnings = FALSE;		/* Print warning messages */
 	jobsRunning = FALSE;
 
 	maxJobs = DEFMAXJOBS;		/* Set default max concurrency */
@@ -502,8 +499,8 @@ main(argc, argv)
 	 */
 	Suff_DoPaths();
 
-	/* Print the initial graph, if the user requested it */
-	if (printGraph & 1)
+	/* print the initial graph, if the user requested it */
+	if (DEBUG(GRAPH1))
 		Targ_PrintGraph(1);
 
 	/*
@@ -543,8 +540,8 @@ main(argc, argv)
 		 */
 		Compat_Run(targs);
     
-	/* Print the graph now it's been processed if the user requested it */
-	if (printGraph & 2)
+	/* print the graph now it's been processed if the user requested it */
+	if (DEBUG(GRAPH2))
 		Targ_PrintGraph(2);
 
 	if (queryFlag && outOfDate)
@@ -655,7 +652,7 @@ Fatal(va_alist)
 	(void)fprintf(stderr, "\n");
 	(void)fflush(stderr);
 
-	if (printGraph & 2)
+	if (DEBUG(GRAPH2))
 		Targ_PrintGraph(2);
 	exit(2);		/* Not 1 so -q can distinguish error */
 }
@@ -704,7 +701,7 @@ DieHorribly()
 {
 	if (jobsRunning)
 		Job_AbortAll();
-	if (printGraph & 2)
+	if (DEBUG(GRAPH2))
 		Targ_PrintGraph(2);
 	exit(2);		/* Not 1, so -q can distinguish error */
 }
@@ -760,7 +757,7 @@ enomem()
 usage()
 {
 	(void)fprintf(stderr,
-"usage: make [-PSWeiknqrstvh] [-D define] [-I include] [-J max_target] \n\t\
-[-L max_local] [-d debug] [-f file] [-p #]\n");
+"usage: make [-eiknqrstv] [-D variable] [-d flags] [-f makefile ]\n\t\
+[-I directory] [-j max_jobs] [variable=value]\n");
 	exit(2);
 }
