@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -106,12 +106,13 @@ nfs_read(vp, uio, ioflag, cred)
 			n = diff;
 		bn = lbn*(NFS_BIOSIZE/DEV_BSIZE);
 		rablock = (lbn+1)*(NFS_BIOSIZE/DEV_BSIZE);
-		if (np->n_lastr+1 == lbn && np->n_size > (rablock*DEV_BSIZE))
+		if (vp->v_lastr + 1 == lbn &&
+		    np->n_size > (rablock * DEV_BSIZE))
 			error = breada(vp, bn, NFS_BIOSIZE, rablock, NFS_BIOSIZE,
 				cred, &bp);
 		else
 			error = bread(vp, bn, NFS_BIOSIZE, cred, &bp);
-		np->n_lastr = lbn;
+		vp->v_lastr = lbn;
 		if (bp->b_resid) {
 			diff = (on >= (NFS_BIOSIZE-bp->b_resid)) ? 0 :
 				(NFS_BIOSIZE-bp->b_resid-on);
