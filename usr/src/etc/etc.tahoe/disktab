@@ -1,0 +1,87 @@
+#	disktab	4.2	84/02/20
+# Disk geometry and partition layout tables. 
+# Key:
+#	ty	type of disk
+#	ns	#sectors/track
+#	nt	#tracks/cylinder
+#	nc	#cylinders/disk
+#	p[a-h]	partition sizes in sectors
+#	b[a-h]	partition block sizes in bytes
+#	f[a-h]	partition fragment sizes in bytes
+#
+# All partition sizes contain space for bad sector tables unless
+# the device drivers fail to support this.
+# (5 cylinders needed for maintenance + replacement sectors)
+#
+# disks on SMD/E
+#
+
+eagle|egl|474 Mb Fujitsu Eagle:\
+ 	:ty=winchester:ns#44:nt#20:nc#842:rm#3961:so:\
+ 	:pa#26400:ba#4096:fa#1024:\
+ 	:pb#33000:bb#4096:fb#1024:\
+ 	:pc#308880:bc#4096:fc#1024:\
+ 	:pd#367840:bd#4096:fd#1024:\
+ 	:pe#0:be#4096:fe#1024:\
+ 	:pf#0:bf#4096:ff#1024:\
+	:pg#0:bg#4096:fg#1024:\
+	:ph#0:bh#4096:fh#1024:
+
+xsd|Xsd|515 Mb FSD:\
+ 	:ty=winchester:ns#24:nt#24:nc#711:rm#3600:so:\
+ 	:pa#30528:ba#8192:fa#1024:\
+ 	:pb#30528:bb#4096:fb#1024:\
+ 	:pc#345600:bc#4096:fc#1024:\
+ 	:pd#61056:bd#4096:fd#1024:\
+ 	:pe#406656:be#4096:fe#1024:\
+ 	:pf#376128:bf#4096:ff#1024:\
+	:pg#172800:bg#4096:fg#1024:\
+	:ph#172800:bh#4096:fh#1024:
+
+# disks on SMD/E or VDDC
+#
+
+xfd|Xfd|XFD|340 Mb FSD:\
+	:ty=winchester:ns#16:nt#24:nc#711:rm#3600:so:\
+	:pa#20352:ba#8192:fa#1024:\
+	:pb#20352:bb#4096:fb#1024:\
+	:pc#230400:bc#4096:fc#1024:\
+	:pd#40704:bd#4096:fd#1024:\
+	:pe#271104:be#4096:fe#1024:\
+	:pf#250752:bf#4096:ff#1024:\
+	:pg#115200:bg#4096:fg#1024:\
+	:ph#115200:bh#4096:fh#1024:
+
+fuj|Fujitsu|Fujitsu 330 Mb 20mhz:\
+ 	:ty=winchester:ns#32:nt#10:nc#823:rm#3600:so:\
+ 	:pa#19200:ba#8192:fa#1024:\
+ 	:pb#24000:bb#4096:fb#1024:\
+ 	:pc#218560:bc#4096:fc#1024:\
+ 	:pd#43200:bd#4096:fd#1024:\
+ 	:pe#261760:be#4096:fe#1024:\
+ 	:pf#242560:bf#4096:ff#1024:\
+	:pg#109440:bg#4096:fg#1024:\
+	:ph#109120:bh#4096:fh#1024:
+
+smd|Smd|SMD|300 Mb SMD:\
+	:ty=removable:ns#16:nt#19:nc#823:rm#3600:so:\
+	:pa#20064:ba#8192:fa#1024:\
+	:pb#13680:bb#4096:fb#1024:\
+	:pc#214928:bc#4096:fc#1024:\
+	:pd#33744:bd#4096:fd#1024:\
+	:pe#248672:be#4096:fe#1024:\
+	:pf#228608:bf#4096:ff#1024:\
+	:pg#107312:bg#4096:fg#1024:\
+	:ph#107616:bh#4096:fh#1024:
+
+fsd|Fsd|FSD|160 Mb FSD:\
+	:ty=winchester:ns#16:nt#10:nc#823:rm#3600:so:\
+	:pa#9600:ba#8192:fa#1024:\
+	:pb#12000:bb#4096:fb#1024:\
+	:pc#109280:bc#4096:fc#1024:\
+	:pd#21600:bd#4096:fd#1024:\
+	:pe#130880:be#4096:fe#1024:\
+	:pf#121280:bf#4096:ff#1024:\
+	:pg#54240:bg#4096:fg#1024:\
+	:ph#55040:bh#4096:fh#1024:
+
