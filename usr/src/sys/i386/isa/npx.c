@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)npx.c	7.2 (Berkeley) %G%
+ *	@(#)npx.c	7.3 (Berkeley) %G%
  */
 #include "npx.h"
 #if NNPX > 0
@@ -16,7 +16,7 @@
 #include "file.h"
 #include "proc.h"
 #include "machine/cpu.h"
-#include "machine/pcb.h"
+#include "user.h"
 #include "machine/trap.h"
 #include "ioctl.h"
 #include "machine/specialreg.h"
@@ -137,7 +137,7 @@ npxintr(frame) struct intrframe frame; {
 
 	/* sync state in process context structure, in advance of debugger/process looking for it */
 	if (npxproc == 0 || npxexists == 0) panic ("npxintr");
-	asm ("	fnsave %0 " : : "g" (npxpcb->pcb_savefpu) );
+	asm ("	fnsave %0 " : : "g" (npxproc->p_addr->u_pcb.pcb_savefpu) );
 
 	/*
 	 * Prepair a trap frame for our generic exception processing routine, trap()
@@ -165,6 +165,16 @@ npxintr(frame) struct intrframe frame; {
 npxdna() {
 
 	if (npxexists == 0) return(0);
+	if (npxproc == curproc)
+		load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
+	else {
+		load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
+		if (npxproc)
+			asm(" fnsave %0 "::"g" (npxproc->p_addr->u_pcb.pcb_savefpu));
+		asm("	frstor %0 " : : "g" (curpcb->pcb_savefpu));
+		npxproc = curproc;
+	}
+#ifdef garbage
 	if (!(curpcb->pcb_flags & FP_WASUSED)
 	    ||(curpcb->pcb_flags & FP_NEEDSRESTORE)) {
 		load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
@@ -173,9 +183,9 @@ npxdna() {
 		curpcb->pcb_flags &= ~FP_NEEDSRESTORE;
 		npxproc = curproc;
 		npxpcb = curpcb;
-		
-		return(1);
 	}
-	return (0);
+	load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
+#endif
+	return (1);
 }
 #endif
