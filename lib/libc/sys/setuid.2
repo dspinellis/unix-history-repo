@@ -30,7 +30,7 @@
 .\" SUCH DAMAGE.
 .\"
 .\"     From: @(#)setuid.3	6.4 (Berkeley) 4/19/91
-.\"	$Id$
+.\"	$Id: setuid.2,v 1.1 1994/03/16 19:01:10 wollman Exp $
 .\"
 .Dd March 16, 1994
 .Dt SETUID 2
@@ -97,8 +97,10 @@ and
 .Nm setgid
 functions return \-1.
 .Pp
-If the user is not the super user, and the ID specfied is neither the
-current real ID nor the saved ID, the
+If the user is not the super user, and the ID specfied is not the
+current real ID, the
+.\" nor the saved ID, the
+.\" should this really be true that setuid(geteuid()) is not allowed?
 .Nm seteuid
 and
 .Nm setegid
