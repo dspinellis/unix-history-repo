@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.18 89/08/23$
  *
- *	@(#)vm_machdep.c	7.3 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -60,8 +60,7 @@ chksize(ts, ids, uds, ss)
 	    ctob(uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(ids + uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(ss) > u.u_rlimit[RLIMIT_STACK].rlim_cur) {
-		u.u_error = ENOMEM;
-		return (1);
+		return (ENOMEM);
 	}
 	return (0);
 }
