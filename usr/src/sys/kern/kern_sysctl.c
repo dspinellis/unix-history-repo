@@ -1,133 +1,433 @@
-/*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+/*-
+ * Copyright (c) 1982, 1986, 1989, 1993 Regents of the University of California.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Mike Karels at Berkeley Software Design, Inc.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.25 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.26 (Berkeley) %G%
+ */
+
+/*
+ * sysctl system call.
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
 #include <sys/proc.h>
-#include <sys/kinfo.h>
+#include <sys/file.h>
+#include <sys/sysctl.h>
+#include <sys/unistd.h>
+#include <sys/buf.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
-#include <sys/buf.h>
-#include <sys/file.h>
 
 #include <vm/vm.h>
 
 #include <sys/kinfo_proc.h>
 
-#define snderr(e) { error = (e); goto release;}
-extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode(), kinfo_file();
-extern int kinfo_meter(), kinfo_loadavg(), kinfo_clockrate();
-struct kinfo_lock kinfo_lock;
+sysctlfn kern_sysctl;
+sysctlfn hw_sysctl;
+extern sysctlfn vm_sysctl;
+extern sysctlfn fs_sysctl;
+extern sysctlfn net_sysctl;
+extern sysctlfn cpu_sysctl;
 
-struct getkerninfo_args {
-	int	op;
-	char	*where;
-	int	*size;
-	int	arg;
+/*
+ * Locking and stats
+ */
+static struct sysctl_lock {
+	int	sl_lock;
+	int	sl_want;
+	int	sl_locked;
+} memlock;
+
+struct sysctl_args {
+	int	*name;
+	u_int	namelen;
+	void	*old;
+	u_int	*oldlenp;
+	void	*new;
+	u_int	newlen;
 };
-/* ARGSUSED */
-getkerninfo(p, uap, retval)
+
+#define	STK_PARAMS	32	/* largest old/new values on stack */
+
+sysctl(p, uap, retval)
 	struct proc *p;
-	register struct getkerninfo_args *uap;
+	register struct sysctl_args *uap;
 	int *retval;
 {
-	int bufsize;		/* max size of users buffer */
-	int needed, locked, (*server)(), error = 0;
+	int error, dolock = 1;
+	u_int savelen, oldlen = 0;
+	sysctlfn *fn;
+	int name[CTL_MAXNAME];
 
-	switch (ki_type(uap->op)) {
+	if (uap->new != NULL && (error = suser(p->p_ucred, &p->p_acflag)))
+		return (error);
+	/*
+	 * all top-level sysctl names are non-terminal
+	 */
+	if (uap->namelen > CTL_MAXNAME || uap->namelen < 2)
+		return (EINVAL);
+	if (error = copyin(uap->name, &name, uap->namelen * sizeof(int)))
+		return (error);
 
-	case KINFO_PROC:
-		server = kinfo_doproc;
+	switch (name[0]) {
+	case CTL_KERN:
+		fn = kern_sysctl;
+		if (name[2] != KERN_VNODE)	/* XXX */
+			dolock = 0;
 		break;
-
-	case KINFO_RT:
-		server = kinfo_rtable;
+	case CTL_HW:
+		fn = hw_sysctl;
 		break;
-
-	case KINFO_VNODE:
-		server = kinfo_vnode;
+	case CTL_VM:
+		fn = vm_sysctl;
 		break;
-
-	case KINFO_FILE:
-		server = kinfo_file;
+	case CTL_NET:
+		fn = net_sysctl;
 		break;
-
-	case KINFO_METER:
-		server = kinfo_meter;
+#ifdef notyet
+	case CTL_FS:
+		fn = fs_sysctl;
 		break;
-
-	case KINFO_LOADAVG:
-		server = kinfo_loadavg;
+	case CTL_DEBUG:
+		fn = debug_sysctl;
 		break;
-
-	case KINFO_CLOCKRATE:
-		server = kinfo_clockrate;
+	case CTL_MACHDEP:
+		fn = cpu_sysctl;
 		break;
-
+#endif
 	default:
-		error = EINVAL;
-		goto done;
+		return (EOPNOTSUPP);
 	}
-	if (uap->where == NULL || uap->size == NULL) {
-		error = (*server)(uap->op, NULL, NULL, uap->arg, &needed);
-		goto done;
-	}
-	if (error = copyin((caddr_t)uap->size, (caddr_t)&bufsize,
-	    sizeof (bufsize)))
-		goto done;
-	while (kinfo_lock.kl_lock) {
-		kinfo_lock.kl_want = 1;
-		sleep((caddr_t)&kinfo_lock, PRIBIO+1);
-		kinfo_lock.kl_locked++;
-	}
-	kinfo_lock.kl_lock = 1;
 
-	if (!useracc(uap->where, bufsize, B_WRITE))
-		snderr(EFAULT);
-	if (server != kinfo_vnode)	/* XXX */
-		vslock(uap->where, bufsize);
-	locked = bufsize;
-	error = (*server)(uap->op, uap->where, &bufsize, uap->arg, &needed);
-	if (server != kinfo_vnode)	/* XXX */
-		vsunlock(uap->where, locked, B_WRITE);
-	if (error == 0)
-		error = copyout((caddr_t)&bufsize,
-				(caddr_t)uap->size, sizeof (bufsize));
-release:
-	kinfo_lock.kl_lock = 0;
-	if (kinfo_lock.kl_want) {
-		kinfo_lock.kl_want = 0;
-		wakeup((caddr_t)&kinfo_lock);
+	if (uap->oldlenp &&
+	    (error = copyin(uap->oldlenp, &oldlen, sizeof(oldlen))))
+		return (error);
+	if (uap->old != NULL) {
+		if (!useracc(uap->old, oldlen, B_WRITE))
+			return (EFAULT);
+		while (memlock.sl_lock) {
+			memlock.sl_want = 1;
+			sleep((caddr_t)&memlock, PRIBIO+1);
+			memlock.sl_locked++;
+		}
+		memlock.sl_lock = 1;
+		if (dolock)
+			vslock(uap->old, oldlen);
+		savelen = oldlen;
 	}
-done:
-	if (!error)
-		*retval = needed;
+	error = (*fn)(name + 1, uap->namelen - 1, uap->old, &oldlen,
+	    uap->new, uap->newlen);
+	if (uap->old != NULL) {
+		if (dolock)
+			vsunlock(uap->old, savelen, B_WRITE);
+		memlock.sl_lock = 0;
+		if (memlock.sl_want) {
+			memlock.sl_want = 0;
+			wakeup((caddr_t)&memlock);
+		}
+	}
+	if (error)
+		return (error);
+	if (uap->oldlenp)
+		error = copyout(&oldlen, uap->oldlenp, sizeof(oldlen));
+	*retval = oldlen;
+	return (0);
+}
+
+/*
+ * Attributes stored in the kernel.
+ */
+char hostname[MAXHOSTNAMELEN];
+int hostnamelen;
+long hostid;
+
+kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	u_int newlen;
+{
+	int error;
+	extern char ostype[], osrelease[], version[];
+
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1 && name[0] != KERN_PROC)
+		return (ENOTDIR);		/* overloaded */
+
+	switch (name[0]) {
+	case KERN_OSTYPE:
+		return (sysctl_rdstring(oldp, oldlenp, newp, ostype));
+	case KERN_OSRELEASE:
+		return (sysctl_rdstring(oldp, oldlenp, newp, osrelease));
+	case KERN_OSREV:
+		return (sysctl_rdint(oldp, oldlenp, newp, BSD));
+	case KERN_VERSION:
+		return (sysctl_rdstring(oldp, oldlenp, newp, version));
+	case KERN_POSIX1:
+		return (sysctl_rdint(oldp, oldlenp, newp, _POSIX_VERSION));
+	case KERN_MAXPROC:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &maxproc));
+	case KERN_MAXFILES:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &maxfiles));
+	case KERN_ARGMAX:
+		return (sysctl_rdint(oldp, oldlenp, newp, ARG_MAX));
+	case KERN_HOSTNAME:
+		error = sysctl_string(oldp, oldlenp, newp, newlen, 
+		    hostname, sizeof(hostname));
+		if (!error)
+			hostnamelen = newlen;
+		return (error);
+	case KERN_HOSTID:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &hostid));
+	case KERN_CLOCKRATE:
+		return (sysctl_clockrate(oldp, oldlenp));
+	case KERN_FILE:
+		return (sysctl_file(oldp, oldlenp));
+	case KERN_VNODE:
+		return (sysctl_vnode(oldp, oldlenp));
+	case KERN_PROC:
+		return (sysctl_doproc(name + 1, namelen - 1, oldp, oldlenp));
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
+}
+
+hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	u_int newlen;
+{
+	extern char machine[], cpu_model[];
+
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR);		/* overloaded */
+
+	switch (name[0]) {
+	case HW_MACHINE:
+		return (sysctl_rdstring(oldp, oldlenp, newp, machine));
+	case HW_MODEL:
+		return (sysctl_rdstring(oldp, oldlenp, newp, cpu_model));
+	case HW_NCPU:
+		return (sysctl_rdint(oldp, oldlenp, newp, 1));	/* XXX */
+	case HW_CPUSPEED:
+		return (sysctl_rdint(oldp, oldlenp, newp, cpuspeed));
+	case HW_PHYSMEM:
+		return (sysctl_rdint(oldp, oldlenp, newp, ctob(physmem)));
+	case HW_USERMEM:
+		return (sysctl_rdint(oldp, oldlenp, newp,
+		    ctob(physmem - cnt.v_wire_count)));
+	case HW_PAGESIZE:
+		return (sysctl_rdint(oldp, oldlenp, newp, PAGE_SIZE));
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
+}
+
+/*
+ * Validate parameters and get old / set new parameters
+ * for an integer-valued sysctl function.
+ */
+sysctl_int(oldp, oldlenp, newp, newlen, valp)
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	u_int newlen;
+	int *valp;
+{
+	int error = 0;
+
+	if (oldp && *oldlenp < sizeof(int))
+		return (ENOMEM);
+	if (newp && newlen != sizeof(int))
+		return (EINVAL);
+	*oldlenp = sizeof(int);
+	if (oldp)
+		error = copyout(valp, oldp, sizeof(int));
+	if (error == 0 && newp)
+		error = copyin(newp, valp, sizeof(int));
 	return (error);
+}
+
+/*
+ * As above, but read-only.
+ */
+sysctl_rdint(oldp, oldlenp, newp, val)
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	int val;
+{
+	int error = 0;
+
+	if (oldp && *oldlenp < sizeof(int))
+		return (ENOMEM);
+	if (newp)
+		return (EPERM);
+	*oldlenp = sizeof(int);
+	if (oldp)
+		error = copyout((caddr_t)&val, oldp, sizeof(int));
+	return (error);
+}
+
+/*
+ * Validate parameters and get old / set new parameters
+ * for a string-valued sysctl function.
+ */
+sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	u_int newlen;
+	char *str;
+	int maxlen;
+{
+	int len, error = 0;
+
+	len = strlen(str) + 1;
+	if (oldp && *oldlenp < len)
+		return (ENOMEM);
+	if (newp && newlen >= maxlen)
+		return (EINVAL);
+	*oldlenp = len;
+	if (oldp)
+		error = copyout(str, oldp, len);
+	if (error == 0 && newp) {
+		error = copyin(newp, str, newlen);
+		str[newlen] = 0;
+	}
+	return (error);
+}
+
+/*
+ * As above, but read-only.
+ */
+sysctl_rdstring(oldp, oldlenp, newp, str)
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	char *str;
+{
+	int len, error = 0;
+
+	len = strlen(str) + 1;
+	if (oldp && *oldlenp < len)
+		return (ENOMEM);
+	if (newp)
+		return (EPERM);
+	*oldlenp = len;
+	if (oldp)
+		error = copyout(str, oldp, len);
+	return (error);
+}
+
+/*
+ * Validate parameters and get old parameters
+ * for a structure oriented sysctl function.
+ */
+sysctl_rdstruct(oldp, oldlenp, newp, sp, len)
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	void *sp;
+	int len;
+{
+	int error = 0;
+
+	if (oldp && *oldlenp < len)
+		return (ENOMEM);
+	if (newp)
+		return (EPERM);
+	*oldlenp = len;
+	if (oldp)
+		error = copyout(sp, oldp, len);
+	return (error);
+}
+
+/*
+ * Get file structures.
+ */
+sysctl_file(where, sizep)
+	char *where;
+	int *sizep;
+{
+	int buflen, error;
+	struct file *fp;
+	char *start = where;
+
+	buflen = *sizep;
+	if (where == NULL) {
+		/*
+		 * overestimate by 10 files
+		 */
+		*sizep = sizeof(filehead) + (nfiles + 10) * sizeof(struct file);
+		return (0);
+	}
+
+	/*
+	 * first copyout filehead
+	 */
+	if (buflen < sizeof(filehead)) {
+		*sizep = 0;
+		return (0);
+	}
+	if (error = copyout((caddr_t)&filehead, where, sizeof(filehead)))
+		return (error);
+	buflen += sizeof(filehead);
+	where += sizeof(filehead);
+
+	/*
+	 * followed by an array of file structures
+	 */
+	for (fp = filehead; fp != NULL; fp = fp->f_filef) {
+		if (buflen < sizeof(struct file)) {
+			*sizep = where - start;
+			return (ENOMEM);
+		}
+		if (error = copyout((caddr_t)fp, where, sizeof (struct file)))
+			return (error);
+		buflen -= sizeof(struct file);
+		where += sizeof(struct file);
+	}
+	*sizep = where - start;
+	return (0);
 }
 
 /* 
  * try over estimating by 5 procs 
  */
-#define KINFO_PROCSLOP	(5 * sizeof (struct kinfo_proc))
+#define KERN_PROCSLOP	(5 * sizeof (struct kinfo_proc))
 
-kinfo_doproc(op, where, acopysize, arg, aneeded)
-	int op;
+sysctl_doproc(name, namelen, where, sizep)
+	int *name;
+	int namelen;
 	char *where;
-	int *acopysize, arg, *aneeded;
+	int *sizep;
 {
 	register struct proc *p;
 	register struct kinfo_proc *dp = (struct kinfo_proc *)where;
-	register needed = 0;
-	int buflen = where != NULL ? *acopysize : 0;
+	register int needed = 0;
+	int buflen = where != NULL ? *sizep : 0;
 	int doingzomb;
 	struct eproc eproc;
 	int error = 0;
 
+	if (namelen != 2)
+		return (EINVAL);
 	p = (struct proc *)allproc;
 	doingzomb = 0;
 again:
@@ -141,61 +441,63 @@ again:
 		 * TODO - make more efficient (see notes below).
 		 * do by session. 
 		 */
-		switch (ki_op(op)) {
+		switch (name[0]) {
 
-		case KINFO_PROC_PID:
+		case KERN_PROC_PID:
 			/* could do this with just a lookup */
-			if (p->p_pid != (pid_t)arg)
+			if (p->p_pid != (pid_t)name[1])
 				continue;
 			break;
 
-		case KINFO_PROC_PGRP:
+		case KERN_PROC_PGRP:
 			/* could do this by traversing pgrp */
-			if (p->p_pgrp->pg_id != (pid_t)arg)
+			if (p->p_pgrp->pg_id != (pid_t)name[1])
 				continue;
 			break;
 
-		case KINFO_PROC_TTY:
+		case KERN_PROC_TTY:
 			if ((p->p_flag&SCTTY) == 0 || 
 			    p->p_session->s_ttyp == NULL ||
-			    p->p_session->s_ttyp->t_dev != (dev_t)arg)
+			    p->p_session->s_ttyp->t_dev != (dev_t)name[1])
 				continue;
 			break;
 
-		case KINFO_PROC_UID:
-			if (p->p_ucred->cr_uid != (uid_t)arg)
+		case KERN_PROC_UID:
+			if (p->p_ucred->cr_uid != (uid_t)name[1])
 				continue;
 			break;
 
-		case KINFO_PROC_RUID:
-			if (p->p_cred->p_ruid != (uid_t)arg)
+		case KERN_PROC_RUID:
+			if (p->p_cred->p_ruid != (uid_t)name[1])
 				continue;
 			break;
 		}
-		if (buflen >= sizeof (struct kinfo_proc)) {
+		if (buflen >= sizeof(struct kinfo_proc)) {
 			fill_eproc(p, &eproc);
 			if (error = copyout((caddr_t)p, &dp->kp_proc, 
-			    sizeof (struct proc)))
+			    sizeof(struct proc)))
 				return (error);
 			if (error = copyout((caddr_t)&eproc, &dp->kp_eproc, 
-			    sizeof (eproc)))
+			    sizeof(eproc)))
 				return (error);
 			dp++;
-			buflen -= sizeof (struct kinfo_proc);
+			buflen -= sizeof(struct kinfo_proc);
 		}
-		needed += sizeof (struct kinfo_proc);
+		needed += sizeof(struct kinfo_proc);
 	}
 	if (doingzomb == 0) {
 		p = zombproc;
 		doingzomb++;
 		goto again;
 	}
-	if (where != NULL)
-		*acopysize = (caddr_t)dp - where;
-	else
-		needed += KINFO_PROCSLOP;
-	*aneeded = needed;
-
+	if (where != NULL) {
+		*sizep = (caddr_t)dp - where;
+		if (needed > *sizep)
+			return (ENOMEM);
+	} else {
+		needed += KERN_PROCSLOP;
+		*sizep = needed;
+	}
 	return (0);
 }
 
@@ -254,56 +556,77 @@ fill_eproc(p, ep)
 	ep->e_xccount = ep->e_xswrss = 0;
 }
 
-/*
- * Get file structures.
- */
-kinfo_file(op, where, acopysize, arg, aneeded)
-	int op;
-	register char *where;
-	int *acopysize, arg, *aneeded;
+#ifdef COMPAT_43
+#include <sys/kinfo.h>
+#include <sys/socket.h>
+
+struct getkerninfo_args {
+	int	op;
+	char	*where;
+	int	*size;
+	int	arg;
+};
+
+getkerninfo(p, uap, retval)
+	struct proc *p;
+	register struct getkerninfo_args *uap;
+	int *retval;
 {
-	int buflen, needed, error;
-	struct file *fp;
-	char *start = where;
+	int error, name[5];
+	u_int size;
 
-	if (where == NULL) {
-		/*
-		 * overestimate by 10 files
-		 */
-		*aneeded = sizeof (filehead) + 
-			(nfiles + 10) * sizeof (struct file);
-		return (0);
+	if (error = copyin((caddr_t)uap->size, (caddr_t)&size, sizeof(size)))
+		return (error);
+
+	switch (ki_type(uap->op)) {
+
+	case KINFO_RT:
+		name[0] = PF_ROUTE;
+		name[1] = 0;
+		name[2] = (uap->op & 0xff0000) >> 16;
+		name[3] = uap->op & 0xff;
+		name[4] = uap->arg;
+		error = net_sysctl(name, 5, uap->where, &size, NULL, 0);
+		break;
+
+	case KINFO_VNODE:
+		name[0] = KERN_VNODE;
+		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0);
+		break;
+
+	case KINFO_PROC:
+		name[0] = KERN_PROC;
+		name[1] = uap->op & 0xff;
+		name[2] = uap->arg;
+		error = kern_sysctl(name, 3, uap->where, &size, NULL, 0);
+		break;
+
+	case KINFO_FILE:
+		name[0] = KERN_FILE;
+		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0);
+		break;
+
+	case KINFO_METER:
+		name[0] = VM_METER;
+		error = vm_sysctl(name, 1, uap->where, &size, NULL, 0);
+		break;
+
+	case KINFO_LOADAVG:
+		name[0] = VM_LOADAVG;
+		error = vm_sysctl(name, 1, uap->where, &size, NULL, 0);
+		break;
+
+	case KINFO_CLOCKRATE:
+		name[0] = KERN_CLOCKRATE;
+		error = kern_sysctl(name, 1, uap->where, &size, NULL, 0);
+		break;
+
+	default:
+		return (EINVAL);
 	}
-	buflen = *acopysize;
-	needed = 0;
-
-	/*
-	 * first copyout filehead
-	 */
-	if (buflen > sizeof (filehead)) {
-		if (error = copyout((caddr_t)&filehead, where,
-		    sizeof (filehead)))
-			return (error);
-		buflen -= sizeof (filehead);
-		where += sizeof (filehead);
-	}
-	needed += sizeof (filehead);
-
-	/*
-	 * followed by an array of file structures
-	 */
-	for (fp = filehead; fp != NULL; fp = fp->f_filef) {
-		if (buflen > sizeof (struct file)) {
-			if (error = copyout((caddr_t)fp, where,
-			    sizeof (struct file)))
-				return (error);
-			buflen -= sizeof (struct file);
-			where += sizeof (struct file);
-		}
-		needed += sizeof (struct file);
-	}
-	*acopysize = where - start;
-	*aneeded = needed;
-
-	return (0);
+	if (error)
+		return (error);
+	*retval = size;
+	return (copyout((caddr_t)&size, (caddr_t)uap->size, sizeof(size)));
 }
+#endif /* COMPAT_43 */
