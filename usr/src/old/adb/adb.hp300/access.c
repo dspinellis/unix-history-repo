@@ -396,3 +396,10 @@ within(addr,lbd,ubd)
 
 longseek(f, a)
     off_t a; { return(lseek(f, a, 0) != -1); }
+
+#ifdef NEWVM
+#undef lseek
+#undef off_t
+Lseek(f, o, w)
+    int f, w; Ooff_t o; { return(lseek(f, (off_t)o, w)); }
+#endif
