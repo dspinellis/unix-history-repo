@@ -5,7 +5,7 @@
 .\" Guido van Rossum.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)glob.3	8.1 (Berkeley) %G%
+.\"     @(#)glob.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GLOB 3
@@ -385,7 +385,7 @@ A rough equivalent of
 can be obtained with the
 following code:
 .Bd -literal -offset indent
-GLOB_t g;
+glob_t g;
 
 g.gl_offs = 2;
 glob("*.c", GLOB_DOOFFS, NULL, &g);
