@@ -10,7 +10,7 @@
  * Perform message editing functions.
  */
 
-static char *SccsId = "@(#)edit.c	1.2 %G%";
+static char *SccsId = "@(#)edit.c	1.3 %G%";
 
 /*
  * Edit a message list.
@@ -67,8 +67,8 @@ edit1(msgvec, ed)
 	 * Set signals; locate editor.
 	 */
 
-	sigint = signal(SIGINT, SIG_IGN);
-	sigquit = signal(SIGQUIT, SIG_IGN);
+	sigint = sigset(SIGINT, SIG_IGN);
+	sigquit = sigset(SIGQUIT, SIG_IGN);
 
 	/*
 	 * Deal with each message to be edited . . .
@@ -145,9 +145,9 @@ edit1(msgvec, ed)
 		}
 		if (pid == 0) {
 			if (sigint != SIG_IGN)
-				signal(SIGINT, SIG_DFL);
+				sigsys(SIGINT, SIG_DFL);
 			if (sigquit != SIG_IGN)
-				signal(SIGQUIT, SIG_DFL);
+				sigsys(SIGQUIT, SIG_DFL);
 			execl(ed, ed, edname, 0);
 			perror(ed);
 			_exit(1);
@@ -210,6 +210,6 @@ edit1(msgvec, ed)
 	 */
 
 out:
-	signal(SIGINT, sigint);
-	signal(SIGQUIT, sigquit);
+	sigset(SIGINT, sigint);
+	sigset(SIGQUIT, sigquit);
 }
