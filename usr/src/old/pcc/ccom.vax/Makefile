@@ -1,5 +1,5 @@
 #
-#	Makefile	1.18	88/09/22
+#	Makefile	1.19	89/03/06
 #
 # Makefile for PCC
 #
@@ -177,6 +177,8 @@ shrink:
 	$(RM) *.o ccom sccom f1 $(DUMMIES)
 clean:
 	$(RM) *.o ccom sccom f1 cgram.c rodata.c pcctokens pcclocal.h gram.in $(DUMMIES)
+cleandir: clean
+	rm -f ${MAN} tags .depend
 sfix:
 	$(RM) $(SFILES)
 sclean:
@@ -194,4 +196,5 @@ lintall:
 		$M/common.c table.c rodata.c rel.c
 
 depend:
+lint:
 tags:

@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.5	(Berkeley)	%G%
+#	@(#)Makefile	1.6	(Berkeley)	%G%
 #
 CFLAGS=	-O -Dunix=1 -DFLEXNAMES
 LIBC=	/lib/libc.a
@@ -26,31 +26,20 @@ cpy.o: cpy.c yylex.c
 rodata.o: cpy.c
 	${CC} ${CFLAGS} -R -c rodata.c
 
-clean: FRC
+clean:
 	rm -f ${OBJS} cpp core cpy.c rodata.c
 
-depend: ${SRCS} FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 cpp ${DESTDIR}/lib/cpp
 
-lint: ${SRCS} FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: ${SRCS} FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-cpp.o: cpp.c /usr/include/sys/param.h /usr/include/sys/types.h
-cpp.o: /usr/include/signal.h /usr/include/machine/machparam.h
-cpp.o: /usr/include/stdio.h /usr/include/ctype.h
-cpy.o: cpy.c
-cpy.o:yylex.c
-rodata.o: rodata.c
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
