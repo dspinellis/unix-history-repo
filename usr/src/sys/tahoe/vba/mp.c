@@ -1,4 +1,4 @@
-/*	mp.c	1.2	87/11/24	*/
+/*	mp.c	1.3	88/03/05	*/
 
 #include "mp.h"
 #if NMP > 0
@@ -984,15 +984,14 @@ mprintr(unit, list)
 			ptr = (caddr_t)&mp_softc[unit].ms_cbuf[port][mp->mp_nextrcv][0];
 			ev->ev_un.rcvblk = (u_char *)vtoph(0, ptr);
 			ev->ev_params = (caddr_t) vtoph(0, ptr);
-                        switch(ev->ev_error) {
-                        case RCVDTA:    /* Normal (good) rcv data */
-                                rcverr = (char *)0;
-				break;
-			case PARERR:    /* parity error */
-				rcverr = "parity error";
-				break;
+			switch(ev->ev_error) {
+			case RCVDTA:    /* Normal (good) rcv data */
+					/* do not report the following */
+					/* they are "normal" errors */
 			case FRAMERR:   /* frame error */
-				rcverr = "frame error";
+			case BRKASRT:   /* Break condition */
+			case PARERR:    /* parity error */
+				rcverr = (char *)0;
 				break;
 			case OVRNERR:   /* Overrun error */
 				rcverr = "overrun error";
