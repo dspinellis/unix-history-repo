@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.10	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.11	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1187,11 +1187,12 @@ readdir(dirp)
 	dirp->loc += dp->d_reclen;
 	filsize -= dp->d_reclen;
 	ndp = (DIRECT *)(dirblk.b_buf + dirp->loc);
-	if (dirp->loc < dirp->blksiz && filsize > 0 &&
+	if ((filsize <= 0 && dirp->loc % DIRBLKSIZ != 0) ||
+	    (dirp->loc < dirp->blksiz && filsize > 0 &&
 	    (ndp->d_ino >= imax ||
 	    ndp->d_namlen > MAXNAMLEN || ndp->d_namlen < 0 ||
 	    ndp->d_reclen <= 0 || 
-	    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ))) {
+	    ndp->d_reclen > DIRBLKSIZ - (dirp->loc % DIRBLKSIZ)))) {
 		size = DIRBLKSIZ - (dirp->loc % DIRBLKSIZ);
 		dirp->loc += size;
 		filsize -= size;
