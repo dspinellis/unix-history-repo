@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_vv.c	7.4 (Berkeley) %G%
+ *	@(#)if_vv.c	7.5 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -57,14 +57,15 @@
  * which was implemented in March, 1982. Most such CTLs have received
  * this ECO.
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
 #include "buf.h"
+#include "time.h"
+#include "kernel.h"
 #include "protosw.h"
 #include "socket.h"
+#include "syslog.h"
 #include "vmmac.h"
 #include "errno.h"
 #include "ioctl.h"
@@ -80,6 +81,7 @@
 #include "../netinet/ip.h"
 #endif
 
+#include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
 #include "if_vv.h"
@@ -114,7 +116,7 @@
 int	vv_tracehdr = 0;	/* 1 => trace headers (slowly!!) */
 
 #define vvtracehdr  if (vv_tracehdr) vvprt_hdr
-#define vvprintf    if (vs->vs_if.if_flags & IFF_DEBUG) printf
+#define vvlog    if (vs->vs_if.if_flags & IFF_DEBUG) log
 
 /*
  * externals, types, etc.
@@ -132,6 +134,8 @@ struct	uba_driver vvdriver =
 #ifdef	LOOPBACK
 extern struct ifnet loif;
 #endif
+
+extern wakeup();
 
 /*
  * Software status of each interface.
@@ -163,9 +167,12 @@ struct	vv_softc {
 	short	vs_parity;		/* number of parity errors on 10 meg, */
 					/* link data errors on 80 meg */
 	short	vs_ipl;			/* interrupt priority on Q-bus */
+	short	vs_flags;		/* board state: */
+#define	VS_RUNNING	0x01		/* board has been initialized */
+#define	VS_INIT		0x02		/* board being initialized */
 } vv_softc[NVV];
 
-#define	NOHOST	0xffff			/* illegal host number */
+#define	NOHOST	0xff			/* illegal host number */
 
 /*
  * probe the interface to see that the registers exist, and then
@@ -231,6 +238,7 @@ vvattach(ui)
 
 	/* use flag to determine if this is proNET-80 */
 	vs->vs_is80 = (short)(ui->ui_flags & 01);
+	vs->vs_host = NOHOST;
 
 #if defined(VAX750)
 	/* don't chew up 750 bdp's */
@@ -253,15 +261,17 @@ vvreset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" vv%d", unit);
-	vvinit(unit);
+	vv_softc[unit].vs_if.if_flags &= ~IFF_RUNNING;
+	vv_softc[unit].vs_flags &= ~VS_RUNNING;
+	vvinit(unit, 0);
 }
 
 /*
  * Initialization of interface; clear recorded pending
  * operations, and reinitialize UNIBUS usage.
  */
-vvinit(unit)
-	int unit;
+vvinit(unit, cansleep)
+	int unit, cansleep;
 {
 	register struct vv_softc *vs;
 	register struct uba_device *ui;
@@ -274,12 +284,27 @@ vvinit(unit)
 	if (vs->vs_if.if_addrlist == (struct ifaddr *)0)
 		return;
 
+	/*
+	 * Prevent multiple instances of vvinit
+	 * from trying simultaneously.
+	 */
+	while (vs->vs_flags & VS_INIT) {
+		if (cansleep)
+			sleep((caddr_t)vs);
+		else
+			return;
+	}
+	if (vs->vs_flags & VS_RUNNING)
+		return;
+	vs->vs_flags = VS_INIT;
+
 	addr = (struct vvreg *)ui->ui_addr;
 	if ((vs->vs_if.if_flags & IFF_RUNNING) == 0 &&
 	    if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
 	      sizeof (struct vv_header), (int)btoc(VVMRU)) == 0) {
 		printf("vv%d: can't initialize, if_ubainit() failed\n", unit);
 		vs->vs_if.if_flags &= ~IFF_UP;
+		vs->vs_flags = 0;
 		return;
 	}
 	vs->vs_if.if_flags |= IFF_RUNNING;
@@ -288,11 +313,14 @@ vvinit(unit)
 	 * Now that the uba is set up, figure out our address and
 	 * update complete our host address.
 	 */
-	if ((vs->vs_host = vvidentify(unit)) == NOHOST) {
+	if (cansleep)
+		vs->vs_host = vvidentify(unit);
+	if (vs->vs_host == NOHOST) {
 		vs->vs_if.if_flags &= ~IFF_UP;
+		vs->vs_flags = 0;
 		return;
 	}
-	printf("vv%d: host %u\n", unit, vs->vs_host);
+	vvlog(LOG_DEBUG, "vv%d: host %u\n", unit, vs->vs_host);
 
 	/*
 	 * Reset the interface, and stay in the ring
@@ -301,7 +329,11 @@ vvinit(unit)
 	addr->vvocsr = VV_CPB;			/* clear packet buffer */
 	addr->vvicsr = VV_RST | VV_HEN;		/* take over input, */
 						/* keep relay closed */
-	DELAY(500000);				/* let contacts settle */
+	if (cansleep) {
+		timeout(wakeup, (caddr_t)vs, hz/2);
+		sleep((caddr_t)vs, PZERO);	/* let contacts settle */
+	} else
+		DELAY(500000);			/* let contacts settle */
 
 	vs->vs_init = 0;			/* clear counters, etc. */
 	vs->vs_refused = 0;
@@ -324,6 +356,8 @@ vvinit(unit)
 	addr->vvicsr = VV_IEN | VV_HEN | VV_DEN | VV_ENB;
 	vs->vs_oactive = 1;
 	vs->vs_if.if_flags |= IFF_UP;
+	vs->vs_flags = VS_RUNNING;		/* clear VS_INIT */
+	wakeup((caddr_t)vs);
 	vvxint(unit);
 	splx(s);
 }
@@ -368,7 +402,7 @@ vvidentify(unit)
 	m = m_get(M_DONTWAIT, MT_HEADER);
 	if (m == NULL) {
 		printf("vv%d: can't initialize, m_get() failed\n", unit);
-		return (0);
+		return (NOHOST);
 	}
 	m->m_next = 0;
 	m->m_off = MMINOFF;
@@ -403,7 +437,8 @@ vvidentify(unit)
 		 * let the flag and token timers pop so that the init ring bit
 		 * will be allowed to work, by waiting about 1 second
 		 */
-		DELAY(1000000L);
+		timeout(wakeup, (caddr_t)vs, hz);
+		sleep((caddr_t)vs, PZERO);
 
 		/*
 		 * retry loop
@@ -418,10 +453,12 @@ vvidentify(unit)
 			addr->vviwc = -(VVBUFSIZE) >> 1;
 			addr->vvicsr = vv_modes[i] | VV_DEN | VV_ENB;
 
+#ifdef notdef
 			/* purge stale data from BDP */
 			if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 				UBAPURGE(vs->vs_ifuba.ifu_uba,
 				    vs->vs_ifuba.ifu_w.ifrw_bdp);
+#endif
 
 			/* do a transmit */
 			ubaaddr = UBAI_ADDR(vs->vs_ifuba.ifu_w.ifrw_info);
@@ -452,10 +489,12 @@ gotit:			/* we got something--is it any good? */
 			if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 				UBAPURGE(vs->vs_ifuba.ifu_uba,
 				    vs->vs_ifuba.ifu_r.ifrw_bdp);
+#ifdef notdef
 			m = if_rubaget(&vs->vs_ifuba, sizeof(struct vv_header),
 				0, &vs->vs_if);
 			if (m != NULL)
 				m_freem(m);
+#endif
 			
 			v = (struct vv_header *)(vs->vs_ifuba.ifu_r.ifrw_addr);
 
@@ -581,16 +620,16 @@ vvxint(unit)
 	register struct vvreg *addr;
 	register int oc;
 
-#ifdef QBA
-	splx(vv_softc[unit].vs_ipl);
-#endif
 	ui = vvinfo[unit];
 	vs = &vv_softc[unit];
+#ifdef QBA
+	splx(vs->vs_ipl);
+#endif
 	vs->vs_if.if_timer = 0;
 	addr = (struct vvreg *)ui->ui_addr;
 	oc = 0xffff & (addr->vvocsr);
 	if (vs->vs_oactive == 0) {
-		vvprintf("vv%d: stray interrupt vvocsr = %b\n", unit,
+		vvlog(LOG_DEBUG, "vv%d: stray interrupt vvocsr = %b\n", unit,
 		    oc, VV_OBITS);
 		return;
 	}
@@ -617,8 +656,8 @@ vvxint(unit)
 
 	if (oc & VVXERR) {
 		vs->vs_if.if_oerrors++;
-		vvprintf("vv%d: error vvocsr = %b\n", unit, 0xffff & oc,
-		    VV_OBITS);
+		vvlog(LOG_ERR, "vv%d: error vvocsr = %b\n",
+		    unit, 0xffff & oc, VV_OBITS);
 	}
 	if (vs->vs_ifuba.ifu_xtofree) {
 		m_freem(vs->vs_ifuba.ifu_xtofree);
@@ -636,14 +675,11 @@ vvwatchdog(unit)
 	int unit;
 {
 	register struct vv_softc *vs;
-	register int s;
 
 	vs = &vv_softc[unit];
-	vvprintf("vv%d: lost a transmit interrupt.\n", unit);
+	log(LOG_ERR, "vv%d: lost transmit interrupt\n", unit);
 	vs->vs_timeouts++;
-	s = splimp();
 	vvstart(unit);
-	splx(s);
 }
 
 /*
@@ -666,10 +702,10 @@ vvrint(unit)
 	int ubaaddr, len, off, s;
 	short resid;
 
-#ifdef QBA
-	splx(vv_softc[unit].vs_ipl);
-#endif
 	vs = &vv_softc[unit];
+#ifdef QBA
+	splx(vs->vs_ipl);
+#endif
 	vs->vs_if.if_ipackets++;
 	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
 
@@ -683,7 +719,7 @@ vvrint(unit)
 	 * receive errors?
 	 */
 	if (addr->vvicsr & VVRERR) {
-		vvprintf("vv%d: receive error, vvicsr = %b\n", unit,
+		vvlog(LOG_INFO, "vv%d: receive error, vvicsr = %b\n", unit,
 		    0xffff&(addr->vvicsr), VV_IBITS);
 		if (addr->vvicsr & VV_BDF)
 			vs->vs_ibadf++;
@@ -728,7 +764,7 @@ vvrint(unit)
 	len -= sizeof(struct vv_header);
 
 	if ((addr->vvicsr & VV_DPR) || len > VVMRU || len <= 0) {
-		vvprintf("vv%d: len too long or short, \
+		vvlog(LOG_DEBUG, "vv%d: len too long or short, \
 len = %d, vvicsr = %b\n",
 			    unit, len, 0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
@@ -736,7 +772,7 @@ len = %d, vvicsr = %b\n",
 
 	/* check the protocol header version */
 	if (vv->vh_version != RING_VERSION) {
-		vvprintf("vv%d: bad protocol header version %d\n",
+		vvlog(LOG_DEBUG, "vv%d: bad protocol header version %d\n",
 		    unit, vv->vh_version & 0xff);
 		goto dropit;
 	}
@@ -745,17 +781,19 @@ len = %d, vvicsr = %b\n",
 	if (vv->vh_type == RING_TRAILER ) {
 		off = ntohs((u_short)vv->vh_info);
 		if (off > VVMTU) {
-			vvprintf("vv%d: off > VVMTU, off = %d, vvicsr = %b\n",
-				    unit, off, 0xffff&(addr->vvicsr), VV_IBITS);
+			vvlog(LOG_DEBUG,
+			    "vv%d: off > VVMTU, off = %d, vvicsr = %b\n",
+			    unit, off, 0xffff&(addr->vvicsr), VV_IBITS);
 			goto dropit;
 		}
 		vv->vh_type = ntohs(*vvdataaddr(vv, off, u_short *));
 		resid = ntohs(*(vvdataaddr(vv, off+sizeof(u_short), u_short *)));
 		if (off + resid > len) {
-			vvprintf("vv%d: trailer packet too short\n", unit);
-			vvprintf("vv%d: off = %d, resid = %d, vvicsr = %b\n",
-				    unit, off, resid,
-				    0xffff&(addr->vvicsr), VV_IBITS);
+			vvlog(LOG_DEBUG, "vv%d: trailer packet too short\n",
+			    unit);
+			vvlog(LOG_DEBUG,
+			    "vv%d: off = %d, resid = %d, vvicsr = %b\n",
+			    unit, off, resid, 0xffff&(addr->vvicsr), VV_IBITS);
 			goto dropit;
 		}
 		len = off + resid;
@@ -763,15 +801,15 @@ len = %d, vvicsr = %b\n",
 		off = 0;
 
 	if (len == 0) {
-		vvprintf("vv%d: len is zero, vvicsr = %b\n", unit,
+		vvlog(LOG_DEBUG, "vv%d: len is zero, vvicsr = %b\n", unit,
 			    0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
 	}
 
 	m = if_rubaget(&vs->vs_ifuba, len, off, &vs->vs_if);
 	if (m == NULL) {
-		vvprintf("vv%d: if_rubaget() failed, vvicsr = %b\n", unit,
-			    0xffff&(addr->vvicsr), VV_IBITS);
+		vvlog(LOG_DEBUG, "vv%d: if_rubaget() failed, vvicsr = %b\n",
+		    unit, 0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
 	}
 	if (off) {
@@ -798,7 +836,8 @@ len = %d, vvicsr = %b\n",
 		break;
 #endif
 	default:
-		vvprintf("vv%d: unknown pkt type 0x%x\n", unit, vv->vh_type);
+		vvlog(LOG_DEBUG, "vv%d: unknown pkt type 0x%x\n",
+		    unit, vv->vh_type);
 		m_freem(m);
 		goto setup;
 	}
@@ -851,6 +890,8 @@ vvoutput(ifp, m0, dst)
 
 	m = m0;
 	unit = ifp->if_unit;
+	if ((ifp->if_flags & IFF_UP) == 0)
+		return (ENETDOWN);
 	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
 	vs = &vv_softc[unit];
 
@@ -867,7 +908,7 @@ vvoutput(ifp, m0, dst)
 	 */
 	s = vs->vs_if.if_ipackets;
 	if (addr->vvicsr & VV_RDY && s == vs->vs_if.if_ipackets) {
-		vvprintf("vv%d: lost a receive interrupt, icsr = %b\n",
+		log(LOG_ERR, "vv%d: lost a receive interrupt, icsr = %b\n",
 			    unit, 0xffff&(addr->vvicsr), VV_IBITS);
 		s = splimp();
 		vvrint(unit);
@@ -984,14 +1025,16 @@ vvioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
+	register struct vv_softc *vs = &vv_softc[ifp->if_unit];
 	struct ifaddr *ifa = (struct ifaddr *) data;
+	struct vvreg *addr = (struct vvreg *)(vvinfo[ifp->if_unit]);
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if ((ifp->if_flags & IFF_RUNNING) == 0)
-			vvinit(ifp->if_unit);
+		if ((vs->vs_flags & VS_RUNNING) == 0)
+			vvinit(ifp->if_unit, 1);
 		/*
 		 * Did self-test succeed?
 		 */
@@ -1005,15 +1048,27 @@ vvioctl(ifp, cmd, data)
 			switch (ifa->ifa_addr.sa_family) {
 			case AF_INET:
 				if ((in_lnaof(IA_SIN(ifa)->sin_addr) & 0xff) !=
-				    vv_softc[ifp->if_unit].vs_host)
+				    vs->vs_host)
 					error = EADDRNOTAVAIL;
 				break;
 			}
 		}
 		break;
 
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    vs->vs_flags & VS_RUNNING) {
+			addr->vvicsr = VV_RST;
+			addr->vvocsr = VV_RST;
+			vs->vs_flags &= ~VS_RUNNING;
+		} else if (ifp->if_flags & IFF_UP &&
+		    (vs->vs_flags & VS_RUNNING) == 0)
+			vvinit(ifp->if_unit, 1);
+		break;
+
 	default:
 		error = EINVAL;
+		break;
 	}
 	splx(s);
 	return (error);
