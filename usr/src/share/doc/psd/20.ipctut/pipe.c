@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pipe.c	6.1 (Berkeley) %G%
+.\"	@(#)pipe.c	6.2 (Berkeley) %G%
 .\"
 #include <stdio.h>
 
@@ -18,14 +18,18 @@
 
 main()
 {
-	int             sockets[2], child;
+	int sockets[2], child;
 
 	/* Create a pipe */
-	if (pipe(sockets) < 0)
+	if (pipe(sockets) < 0) {
 		perror("opening stream socket pair");
+		exit(10);
+	}
 
-	if (child = fork()) {
-		char            buf[1024];
+	if ((child = fork()) == -1)
+		perror("fork");
+	else if (child) {
+		char buf[1024];
 
 		/* This is still the parent.  It reads the child's message. */
 		close(sockets[1]);

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)socketpair.c	6.1 (Berkeley) %G%
+.\"	@(#)socketpair.c	6.2 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -20,12 +20,17 @@
 
 main()
 {
-	int             sockets[2], child;
-	char            buf[1024];
+	int sockets[2], child;
+	char buf[1024];
 
-	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) < 0)
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) < 0) {
 		perror("opening stream socket pair");
-	if (child = fork()) {	/* This is the parent. */
+		exit(1);
+	}
+
+	if ((child = fork()) == -1)
+		perror("fork");
+	else if (child) {	/* This is the parent. */
 		close(sockets[0]);
 		if (read(sockets[1], buf, 1024, 0) < 0)
 			perror("reading stream message");

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)streamread.c	6.1 (Berkeley) %G%
+.\"	@(#)streamread.c	6.2 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -20,18 +20,18 @@
 
 main()
 {
-	int             sock, length;
+	int sock, length;
 	struct sockaddr_in server;
-	int             msgsock;
-	char            buf[1024];
-	int             rval;
-	int             i;
+	int msgsock;
+	char buf[1024];
+	int rval;
+	int i;
 
 	/* Create socket */
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
 		perror("opening stream socket");
-		exit(0);
+		exit(1);
 	}
 	/* Name socket using wildcards */
 	server.sin_family = AF_INET;
@@ -39,12 +39,13 @@ main()
 	server.sin_port = 0;
 	if (bind(sock, &server, sizeof(server))) {
 		perror("binding stream socket");
+		exit(1);
 	}
 	/* Find out assigned port number and print it out */
 	length = sizeof(server);
 	if (getsockname(sock, &server, &length)) {
 		perror("getting socket name");
-		exit(0);
+		exit(1);
 	}
 	printf("Socket has port #%d\en", ntohs(server.sin_port));
 
@@ -52,9 +53,10 @@ main()
 	listen(sock, 5);
 	do {
 		msgsock = accept(sock, 0, 0);
-		do {
-			for (i = 0; i < 1024; i++)
-				buf[i] = '\e0';
+		if (msgsock == -1)
+			perror("accept");
+		else do {
+			bzero(buf, sizeof(buf));
 			if ((rval = read(msgsock, buf, 1024)) < 0)
 				perror("reading stream message");
 			i = 0;

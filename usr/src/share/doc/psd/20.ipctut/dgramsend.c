@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dgramsend.c	6.1 (Berkeley) %G%
+.\"	@(#)dgramsend.c	6.2 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -19,10 +19,10 @@
  */
 
 main(argc, argv)
-	int             argc;
-	char           *argv[];
+	int argc;
+	char *argv[];
 {
-	int             sock;
+	int sock;
 	struct sockaddr_in name;
 	struct hostent *hp, *gethostbyname();
 
@@ -30,7 +30,7 @@ main(argc, argv)
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0) {
 		perror("opening datagram socket");
-		exit(-1);
+		exit(1);
 	}
 	/*
 	 * Construct name, with no wildcards, of the socket to send to.
@@ -39,12 +39,15 @@ main(argc, argv)
 	 * line. 
 	 */
 	hp = gethostbyname(argv[1]);
-	bcopy(hp->h_addr, &(name.sin_addr.s_addr), hp->h_length);
+	if (hp == 0) {
+		fprintf(stderr, "%s: unknown host\n", argv[1]);
+		exit(2);
+	}
+	bcopy(hp->h_addr, &name.sin_addr, hp->h_length);
 	name.sin_family = AF_INET;
 	name.sin_port = htons(atoi(argv[2]));
 	/* Send message. */
-	if (sendto(sock, DATA, sizeof(DATA), 0, &name, sizeof(name)) < 0) {
+	if (sendto(sock, DATA, sizeof(DATA), 0, &name, sizeof(name)) < 0)
 		perror("sending datagram message");
-	}
 	close(sock);
 }

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)udgramsend.c	6.1 (Berkeley) %G%
+.\"	@(#)udgramsend.c	6.2 (Berkeley) %G%
 .\"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,17 +17,17 @@
  */
 
 main(argc, argv)
-	int             argc;
-	char           *argv[];
+	int argc;
+	char *argv[];
 {
-	int             sock;
+	int sock;
 	struct sockaddr_un name;
 
 	/* Create socket on which to send. */
 	sock = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (sock < 0) {
 		perror("opening datagram socket");
-		exit(-1);
+		exit(1);
 	}
 	/* Construct name of socket to send to. */
 	name.sun_family = AF_UNIX;
