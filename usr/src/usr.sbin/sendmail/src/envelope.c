@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.12		%G%);
+SCCSID(@(#)envelope.c	3.13		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -575,6 +575,8 @@ setsender(from)
 			/* syserr("%s, you cannot use the -f flag", realname); */
 			from = NULL;
 		}
+		else if (strcmp(from, realname) != 0)
+			pw = NULL;
 	}
 
 	SuprErrs = TRUE;
