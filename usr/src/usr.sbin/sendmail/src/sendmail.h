@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.66 (Berkeley) %G%
+ *	@(#)sendmail.h	8.67 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.66		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.67		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -219,6 +219,7 @@ typedef struct mailer	MAILER;
 # define M_XDOT		'X'	/* use hidden-dot algorithm */
 # define M_TRYRULESET5	'5'	/* use ruleset 5 after local aliasing */
 # define M_7BITS	'7'	/* use 7-bit path */
+# define M_8BITS	'8'	/* force "just send 8" behaviour */
 # define M_CHECKINCLUDE	':'	/* check for :include: files */
 # define M_CHECKPROG	'|'	/* check for |program addresses */
 # define M_CHECKFILE	'/'	/* check for /file addresses */
