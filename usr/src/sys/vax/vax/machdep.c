@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.21 (Berkeley) %G%
+ *	@(#)machdep.c	6.22 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -333,7 +333,7 @@ sendsig(p, sig, mask)
 	fp = (struct sigframe *)scp - 1;
 	if ((int)fp <= USRSTACK - ctob(u.u_ssize)) 
 		grow((unsigned)fp);
-	if (useracc((caddr_t)fp, sizeof (*fp) + sizeof (*scp), 1) == 0) {
+	if (useracc((caddr_t)fp, sizeof (*fp) + sizeof (*scp), B_WRITE) == 0) {
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
@@ -397,7 +397,7 @@ sigreturn()
 	register int *regs = u.u_ar0;
 
 	scp = ((struct a *)(u.u_ap))->sigcntxp;
-	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0)
+	if (useracc((caddr_t)scp, sizeof (*scp), B_WRITE) == 0)
 		return;
 	if ((scp->sc_ps & (PSL_MBZ|PSL_IPL|PSL_IS)) != 0 ||
 	    (scp->sc_ps & (PSL_PRVMOD|PSL_CURMOD)) != (PSL_PRVMOD|PSL_CURMOD) ||
@@ -429,7 +429,7 @@ osigcleanup()
 	scp = (struct sigcontext *)fuword((caddr_t)regs[SP]);
 	if ((int)scp == -1)
 		return;
-	if (useracc((caddr_t)scp, 3 * sizeof (int), 0) == 0)
+	if (useracc((caddr_t)scp, 3 * sizeof (int), B_WRITE) == 0)
 		return;
 	u.u_onstack = scp->sc_onstack & 01;
 	u.u_procp->p_sigmask = scp->sc_mask &~
@@ -760,7 +760,7 @@ boot(paniced, arghowto)
 			;
 	} else {
 		if (paniced == RB_PANIC) {
-			doadump();		/* TXDB_BOOT's itsself */
+			doadump();		/* TXDB_BOOT's itself */
 			/*NOTREACHED*/
 		}
 		tocons(TXDB_BOOT);
@@ -776,10 +776,42 @@ boot(paniced, arghowto)
 
 tocons(c)
 {
+	register oldmask;
 
-	while ((mfpr(TXCS)&TXCS_RDY) == 0)
+	while (((oldmask = mfpr(TXCS)) & TXCS_RDY) == 0)
 		continue;
+
+	switch (cpu) {
+
+#if VAX780 || VAX750 || VAX730
+	case VAX_780:
+	case VAX_750:
+	case VAX_730:
+		c |= TXDB_CONS;
+		break;
+#endif
+
+#if VAX8600
+	case VAX_8600:
+		mtpr(TXCS, TXCS_LCONS | TXCS_WMASK);
+		while ((mfpr(TXCS) & TXCS_RDY) == 0)
+			continue;
+		break;
+#endif
+	}
+
 	mtpr(TXDB, c);
+
+#if VAX8600
+	switch (cpu) {
+
+	case VAX_8600:
+		while ((mfpr(TXCS) & TXCS_RDY) == 0)
+			continue;
+		mtpr(TXCS, oldmask | TXCS_WMASK);
+		break;
+	}
+#endif
 }
 
 int	dumpmag = 0x8fca0101;	/* magic number for savecore */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.31 (Berkeley) %G%
+ *	@(#)locore.s	6.32 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -71,10 +71,8 @@ _doadump:
 	pushr	$0x3fff
 	calls	$0,_dumpsys
 1:
-	mfpr	$TXCS,r0
-	bitl	$TXCS_RDY,r0
-	beql	1b
-	mtpr	$TXDB_BOOT,$TXDB
+	pushl	$TXDB_BOOT
+	calls	$1,_tocons
 	halt
 
 /*
