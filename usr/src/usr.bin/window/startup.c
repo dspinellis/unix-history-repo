@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.2 83/08/17";
+static	char *sccsid = "@(#)startup.c	3.3 83/08/18";
 #endif
 
 #include "defs.h"
@@ -30,7 +30,7 @@ dodefault()
 		goto bad;
 	if (doopen(-1, wwnrow - r, wwncol, r, 0) == 0)
 		goto bad;
-	wwprintf(w, "Escape character is %s.\r\n", unctrl(escapec));
+	(void) wwprintf(w, "Escape character is %s.\r\n", unctrl(escapec));
 	setselwin(w);
 	return;
 bad:
