@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quad.h	5.6 (Berkeley) %G%
+ *	@(#)quad.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -92,3 +92,15 @@ union uu {
 #define	LHUP(x)		((x) << HALF_BITS)
 
 extern u_quad __qdivrem(u_quad u, u_quad v, u_quad *rem);
+
+/*
+ * XXX
+ * Compensate for gcc 1 vs gcc 2.  Gcc 1 defines ?sh?di3's second argument
+ * as u_quad, while gcc 2 correctly uses int.  Unfortunately, we still use
+ * both compilers.
+ */
+#ifdef sparc
+typedef unsigned int	qshift_t;
+#else
+typedef u_quad		qshift_t;
+#endif
