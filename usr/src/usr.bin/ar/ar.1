@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ar.1	6.5 (Berkeley) %G%
+.\"	@(#)ar.1	6.6 (Berkeley) %G%
 .\"
 .TH AR 1 ""
 .AT 3
@@ -15,15 +15,15 @@ ar \- create and maintain library archives
 .SH SYNOPSIS
 .nf
 .ft B
-ar -d [-v] archive file ...
-ar -m [-v] archive file ...
-ar -m [-abiv] position archive file ...
-ar -p [-v] archive [file ...]
-ar -q [-cv] archive file ...
-ar -r [-cuv] archive file ...
-ar -r [-abciuv] position archive file ...
-ar -t [-v] archive [file ...]
-ar -x [-ouv] archive [file ...]
+ar -d [-sv] archive file ...
+ar -m [-sv] archive file ...
+ar -m [-abisv] position archive file ...
+ar -p [-sv] archive [file ...]
+ar -q [-csv] archive file ...
+ar -r [-cusv] archive file ...
+ar -r [-abciusv] position archive file ...
+ar -t [-sv] archive [file ...]
+ar -x [-ousv] archive [file ...]
 .fi
 .ft R
 .SH DESCRIPTION
@@ -116,6 +116,17 @@ Files that replace existing files do not change the order of the files
 within the archive.
 New files are appended to the archive unless one of the options \-a, \-b
 or \-i is specified.
+.TP
+\-s
+Truncate file names as necessary to fit in the standard archive file
+format (which has only sixteen bytes for the name).
+This means that file names that are not unique in their first sixteen
+characters can subsequently be confused.
+A warning message is printed to the standard error output if any file
+names are truncated.
+(See
+.IR ar (5)
+for more information.)
 .TP
 \-t
 List the specified files in the order in which they appear in the archive,
