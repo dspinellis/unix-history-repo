@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.1 82/08/25";
+static char sccsid[] = "@(#)inet.c	4.2 82/10/05";
 #endif
 
 #include <sys/types.h>
@@ -115,7 +115,7 @@ inetprint(in, port, proto)
 	port = ntohs((u_short)port);
 #endif
 	if (!nflag && port)
-		sp = getservport(port, proto);
+		sp = getservbyport(port, proto);
 	if (sp || port == 0)
 		sprintf(cp, "%.8s", sp ? sp->s_name : "*");
 	else
@@ -178,13 +178,14 @@ inetname(in)
 
 	if (!nflag) {
 		if (in_lnaof(in) == INADDR_ANY) {
-			struct netent *np = getnetaddr(in_netof(in));
+			struct netent *np = getnetbyaddr(in_netof(in));
 
 			if (np)
 				cp = np->n_name;
 		} else {
-			struct hostent *hp = gethostaddr(in.s_addr);
+			struct hostent *hp;
 
+			hp = gethostbyaddr(&in, sizeof (struct in_addr));
 			if (hp)
 				cp = hp->h_name;
 		}
