@@ -4,7 +4,7 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 2.2 %G%";
+static char sccsid[] = "@(#)main.c 2.3 %G%";
 #endif
 
 #include "whoami.h"
@@ -324,7 +324,12 @@ pchr(c)
 	putc ( c , stdout );
 }
 
+#ifdef PC
+char	ugh[]	= "Fatal error in pc\n";
+#endif
+#ifdef OBJ
 char	ugh[]	= "Fatal error in pi\n";
+#endif
 /*
  * Exit from the Pascal system.
  * We throw in an ungraceful termination
