@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.3";
+char id_lread[] = "@(#)lread.c	1.4";
  *
  * list directed read
  */
@@ -154,11 +154,11 @@ lr_comm()
 	if(lcount) return(lcount);
 	ltype=NULL;
 	while(isblnk(GETC(ch)));
+	(*ungetn)(ch,cf);
 	if(ch==',')
 	{	lcount=1;
 		return(lcount);
 	}
-	(*ungetn)(ch,cf);
 	if(ch=='/')
 	{	lquit = YES;
 		return(lquit);
