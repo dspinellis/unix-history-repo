@@ -3,10 +3,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.49		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.50		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.49		%G%);
+SCCSID(@(#)srvrsmtp.c	3.50		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -107,11 +107,14 @@ smtp()
 	settime();
 	expand("$e", inp, &inp[sizeof inp], CurEnv);
 	message("220", inp);
-	(void) setjmp(TopFrame);
-	QuickAbort = FALSE;
-	HoldErrs = FALSE;
 	for (;;)
 	{
+		/* arrange for backout */
+		if (setjmp(TopFrame) > 0 && InChild)
+			finis();
+		QuickAbort = FALSE;
+		HoldErrs = FALSE;
+
 		/* setup for the read */
 		CurEnv->e_to = NULL;
 		Errors = 0;
@@ -204,6 +207,9 @@ smtp()
 			break;
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
+			if (setjmp(TopFrame) > 0)
+				break;
+			QuickAbort = TRUE;
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
@@ -212,11 +218,20 @@ smtp()
 			if (Debug > 1)
 				printaddr(a, TRUE);
 # endif DEBUG
-			if (Errors == 0)
+			if (Errors != 0)
+				break;
+
+			/* no errors during parsing, but might be a duplicate */
+			CurEnv->e_to = p;
+			if (!bitset(QBADADDR, a->q_flags))
+				message("250", "Recipient ok");
+			else
 			{
-				message("250", "%s... Recipient ok", p);
-				rcps++;
+				/* punt -- should keep message in ADDRESS.... */
+				message("550", "Addressee unknown");
 			}
+			CurEnv->e_to = NULL;
+			rcps++;
 			break;
 
 		  case CMDDATA:		/* data -- text of mail */

@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.52		%G%);
+SCCSID(@(#)recipient.c	3.53		%G%);
 
 /*
 **  SENDTOLIST -- Designate a send list.
@@ -114,6 +114,7 @@ sendto(list, copyf, ctladdr, qflags)
 	{
 		register ADDRESS *a = al;
 		extern ADDRESS *recipient();
+		extern ADDRESS *recipient();
 
 		al = a->q_next;
 		sibl = recipient(a);
@@ -191,6 +192,7 @@ addrref(a, r)
 **		none.
 */
 
+ADDRESS *
 ADDRESS *
 recipient(a, sendq)
 	register ADDRESS *a;
@@ -372,6 +374,7 @@ recipient(a, sendq)
 			}
 		}
 	}
+	return (a);
 
 	return (a);
 }
