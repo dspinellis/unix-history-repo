@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.28	82/07/15	*/
+/*	lfs_vnops.c	4.29	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,6 +15,7 @@
 #include "../net/in.h"
 #include "../h/efs.h"
 #endif
+#include "../h/quota.h"
 
 chdir()
 {
@@ -653,11 +654,24 @@ chmod()
 		    (u.u_grps[ip->i_gid/(sizeof(int)*8)] &
 		     (1 << ip->i_gid%(sizeof(int)*8))) == 0)
 			uap->fmode &= ~ISGID;
+#if	MUSH
+		if (u.u_quota->q_syflags & QF_UMASK && u.u_uid != 0 &&
+		    (ip->i_mode & IFMT) != IFCHR)
+			uap->fmode &= ~u.u_cmask;
+#endif
 	}
 	ip->i_mode |= uap->fmode&07777;
 	ip->i_flag |= ICHG;
 	if (ip->i_flag&ITEXT && (ip->i_mode&ISVTX)==0)
 		xrele(ip);
+#ifdef MELB
+	if ((ip->i_mode & ISUID) && ip->i_uid == 0)
+		printf("%s: ino %d (%s) setuid root\n"
+		    , getfs(ip->i_dev)->s_fsmnt
+		    , ip->i_number
+		    , u.u_dent.d_name
+		);
+#endif
 	iput(ip);
 }
 
@@ -669,6 +683,9 @@ chown()
 		int	uid;
 		int	gid;
 	} *uap;
+#if	QUOTA
+	register long change;
+#endif
 
 	uap = (struct a *)u.u_ap;
 	if (!suser() || (ip = owner(0)) == NULL)
@@ -686,6 +703,35 @@ chown()
 		ip = owner(0);
 	}
 #endif
+#if	QUOTA
+	/*
+	 * This doesn't allow for holes in files (which hopefully don't
+	 * happen often in files that we chown), and is not accurate anyway
+	 * (eg: it totally ignores 3 level indir blk files - but hopefully
+	 * noone who can make a file that big will have a quota)
+	 */
+	if (ip->i_uid == uap->uid)
+		change = 0;
+	else {
+		register struct fs *fs = ip->i_fs;
+
+		if (ip->i_size > (change = NDADDR * fs->fs_bsize)) {
+			register off_t size;
+
+			size = blkroundup(fs, ip->i_size) - change;
+			change += size;
+			change += fs->fs_bsize;
+			/* This assumes NIADDR <= 2 */
+			if (size > NINDIR(fs) * fs->fs_bsize)
+				change += fs->fs_bsize;
+		} else
+			change = fragroundup(fs, ip->i_size);
+		change /= DEV_BSIZE;
+	}
+	chkdq(ip, -change, 1);
+	chkiq(ip->i_dev, ip, ip->i_uid, 1);
+	dqrele(ip->i_dquot);
+#endif
 	/*
 	 * keep uid/gid's in sane range - no err, so chown(file, uid, -1)
 	 * will do something useful
@@ -697,6 +743,11 @@ chown()
 	ip->i_flag |= ICHG;
 	if (u.u_ruid != 0)
 		ip->i_mode &= ~(ISUID|ISGID);
+#if	QUOTA
+	ip->i_dquot = inoquota(ip);
+	chkdq(ip, change, 1);
+	chkiq(ip->i_dev, NULL, uap->uid, 1);
+#endif
 	iput(ip);
 }
 
