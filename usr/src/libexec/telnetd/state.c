@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -340,7 +340,7 @@ gotiac:			switch (c) {
 		char	xbuf2[BUFSIZ];
 		register char *cp;
 		int n = pfrontp - opfrontp, oc;
-		bcopy(opfrontp, xptyobuf, n);
+		memmove(xptyobuf, opfrontp, n);
 		pfrontp = opfrontp;
 		pfrontp += term_input(xptyobuf, pfrontp, n, BUFSIZ+NETSLOP,
 					xbuf2, &oc, BUFSIZ);
@@ -362,7 +362,7 @@ gotiac:			switch (c) {
  * All state defaults are negative, and resp defaults to 0.
  *
  * When initiating a request to change state to new_state:
- * 
+ *
  * if ((want_resp == 0 && new_state == my_state) || want_state == new_state) {
  *	do nothing;
  * } else {
