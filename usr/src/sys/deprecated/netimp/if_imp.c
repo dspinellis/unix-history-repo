@@ -1,4 +1,4 @@
-/*	if_imp.c	4.26	82/04/24	*/
+/*	if_imp.c	4.27	82/04/25	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -162,28 +162,15 @@ COUNT(IMPINPUT);
 		goto drop;
 	}
 
-	/*
-	 * Certain messages require a host structure.
-	 * Do this in one shot here.
-	 */
-	switch (ip->il_mtype) {
-
-	case IMPTYPE_RFNM:
-	case IMPTYPE_INCOMPLETE:
-	case IMPTYPE_HOSTDEAD:
-	case IMPTYPE_HOSTUNREACH:
-	case IMPTYPE_BADDATA:
+	if (ip->il_mtype != IMPTYPE_DATA) {
 #ifdef notdef
 		addr.s_net = ip->il_network;
 #else
-		addr.s_net = 0;
+		addr.s_net = sc->imp_if.if_net;
 #endif
 		addr.s_imp = ip->il_imp;
 		addr.s_host = ip->il_host;
-		hp = hostlookup(addr);
-		break;
 	}
-
 	switch (ip->il_mtype) {
 
 	case IMPTYPE_DATA:
@@ -255,8 +242,12 @@ COUNT(IMPINPUT);
 	 */
 	case IMPTYPE_RFNM:
 	case IMPTYPE_INCOMPLETE:
-		if (hp && hp->h_rfnm && (next = hostdeque(hp)))
-			(void) impsnd(&sc->imp_if, next);
+		if (hp = hostlookup(addr)) {
+			if (hp->h_rfnm == 0)
+				hp->h_flags &= ~HF_INUSE;
+			else if (next = hostdeque(hp))
+				(void) impsnd(&sc->imp_if, next);
+		}
 		goto drop;
 
 	/*
@@ -264,20 +255,28 @@ COUNT(IMPINPUT);
 	 * awaiting transmission and release the host structure.
 	 */
 	case IMPTYPE_HOSTDEAD:
-	case IMPTYPE_HOSTUNREACH:
-		impnotify(ip->il_mtype, ip, hp);
+	case IMPTYPE_HOSTUNREACH: {
+		int s = splnet();
+		impnotify(ip->il_mtype, ip, hostlookup(addr));
+		splx(s);
 		goto rawlinkin;
+	}
 
 	/*
 	 * Error in data.  Clear RFNM status for this host and send
 	 * noops to the IMP to clear the interface.
 	 */
-	case IMPTYPE_BADDATA:
+	case IMPTYPE_BADDATA: {
+		int s;
+
 		impmsg(sc, "data error");
-		if (hp)
+		s = splnet();
+		if (hp = hostlookup(addr))
 			hp->h_rfnm = 0;
+		splx(s);
 		impnoops(sc);
 		goto drop;
+	}
 
 	/*
 	 * Interface reset.
@@ -339,8 +338,10 @@ impdown(sc)
 	struct imp_softc *sc;
 {
 
+COUNT(IMPDOWN);
 	sc->imp_state = IMPS_DOWN;
 	impmsg(sc, "marked down");
+	hostreset(sc->imp_if.if_net);
 	if_down(&sc->imp_if);
 }
 
@@ -351,6 +352,7 @@ impmsg(sc, fmt, a1, a2)
 	u_int a1;
 {
 
+COUNT(IMPMSG);
 	printf("imp%d: ", sc->imp_if.if_unit);
 	printf(fmt, a1, a2);
 	printf("\n");
@@ -367,10 +369,11 @@ impnotify(what, cp, hp)
 {
 	struct in_addr in;
 
+COUNT(IMPNOTIFY);
 #ifdef notdef
 	in.s_net = cp->dl_network;
 #else
-	in.s_net = 10;
+	in.s_net = 10;			/* XXX */
 #endif
 	in.s_host = cp->dl_host;
 	in.s_imp = cp->dl_imp;
@@ -378,8 +381,10 @@ impnotify(what, cp, hp)
 		raw_ctlinput(what, (caddr_t)&in);
 	else
 		ip_ctlinput(what, (caddr_t)&in);
-	if (hp)
+	if (hp) {
+		hp->h_flags |= (1 << what);
 		hostfree(hp);
+	}
 }
 
 /*
@@ -481,7 +486,7 @@ impsnd(ifp, m)
 	register struct imp_leader *ip;
 	register struct host *hp;
 	struct impcb *icp;
-	int x;
+	int s, error;
 
 COUNT(IMPSND);
 	ip = mtod(m, struct imp_leader *);
@@ -490,19 +495,30 @@ COUNT(IMPSND);
 	 * Do RFNM counting for data messages
 	 * (no more than 8 outstanding to any host)
 	 */ 
-	x = splimp();
+	s = splimp();
 	if (ip->il_mtype == IMPTYPE_DATA) {
 		struct in_addr addr;
 
 #ifdef notdef
                 addr.s_net = ip->il_network;
 #else
-		addr.s_net = 0;
+		addr.s_net = ifp->if_net;	/* XXX */
 #endif
                 addr.s_host = ip->il_host;
                 addr.s_imp = ip->il_imp;
 		if ((hp = hostlookup(addr)) == 0)
 			hp = hostenter(addr);
+		if (hp && (hp->h_flags & (HF_DEAD|HF_UNREACH))) {
+#ifdef notdef
+			error = hp->h_flags & HF_DEAD ?
+				EHOSTDEAD : EHOSTUNREACH;
+#else
+			error = ENETUNREACH;
+			hp->h_timer = HOSTTIMER;
+			hp->h_flags &= ~HF_INUSE;
+			goto bad;
+#endif
+		}
 
 		/*
 		 * If IMP would block, queue until RFNM
@@ -517,20 +533,21 @@ COUNT(IMPSND);
 				goto start;
 			}
 		}
-		m_freem(m);
-		splx(x);
-		return (ENOBUFS);	/* XXX */
+		error = ENOBUFS;
+		goto bad;
 	}
 enque:
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
+		error = ENOBUFS;
+bad:
 		m_freem(m);
-		splx(x);
-		return (ENOBUFS);	/* XXX */
+		splx(s);
+		return (error);
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 start:
-	splx(x);
+	splx(s);
 	icp = &imp_softc[ifp->if_unit].imp_cb;
 	if (icp->ic_oactive == 0)
 		(*icp->ic_start)(ifp->if_unit);
