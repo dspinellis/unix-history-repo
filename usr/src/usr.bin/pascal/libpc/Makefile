@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.13 %G%"
+SCCSID = "@(#)Makefile 1.14 %G%"
 
 CFLAGS = -O
 
@@ -13,7 +13,7 @@ RANLIB= ranlib
 AR= /bin/ar
 
 CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c BUFF.c CARD.c CASERNG.c CHR.c CLCK.c \
-	CTTOT.c DATE.c DEFNAME.c DISPOSE.c EXPO.c FCALL.c FLUSH.c \
+	CTTOT.c DATE.c DEFNAME.c DISPOSE.c EXCEPT.c EXPO.c FCALL.c FLUSH.c \
 	FNIL.c FRTN.c FSAV.c GET.c GOTO.s HALT.c IN.c INCT.c LINO.c \
 	LLIMIT.c LN.c MAX.c MULT.c NAM.c NEW.c NEWZ.c NIL.c PACK.c \
 	PAGE.c PRED.c PUT.c RANDOM.c RANG4.c READ4.c READ8.c READC.c \
@@ -31,7 +31,7 @@ EXTN =	APPEND.c SEEK.c TELL.c
 HDRS =	whoami.h h00vars.h
 
 OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o BUFF.o CARD.o CASERNG.o CHR.o CLCK.o\
-	CTTOT.o DATE.o DEFNAME.o DISPOSE.o EXPO.o FCALL.o FLUSH.o\
+	CTTOT.o DATE.o DEFNAME.o DISPOSE.o EXCEPT.o EXPO.o FCALL.o FLUSH.o\
 	FNIL.o FRTN.o FSAV.o GET.o GOTO.o HALT.o IN.o INCT.o LINO.o \
 	LLIMIT.o LN.o MAX.o MULT.o NAM.o NEW.o NEWZ.o NIL.o PACK.o\
 	PAGE.o PRED.o PUT.o RANDOM.o RANG4.o READ4.o READ8.o READC.o\
@@ -119,7 +119,7 @@ CTTOT.o: whoami.h
 CTTOT.o: h00vars.h
 DEFNAME.o: h00vars.h
 DISPOSE.o: h00vars.h
-ERROR.o: h00vars.h
+EXCEPT.o: whoami.h
 FCALL.o: h00vars.h
 FLUSH.o: h00vars.h
 FNIL.o: h00vars.h
@@ -142,6 +142,7 @@ PAGE.o: h00vars.h
 PCEXIT.o: h00vars.h
 PCLOSE.o: h00vars.h
 PCSTART.o: h00vars.h
+PCSTART.o: libpc.h
 PERROR.o: h00vars.h
 PFLUSH.o: h00vars.h
 PMFLUSH.o: h00vars.h
