@@ -1728,6 +1728,12 @@ struct speed {
 #ifdef EXTB
   { 38400, EXTB },
 #endif
+#ifdef B57600
+  { 57600, B57600 },
+#endif
+#ifdef B115200
+  { 115200, B115200 },
+#endif
   { 0, 0 }
 };
 
