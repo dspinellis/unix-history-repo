@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.39 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -115,8 +115,10 @@ getanswer(answer, anslen, iquery)
 		return ((struct hostent *) NULL);
 	}
 	ap = host_aliases;
+	*ap = NULL;
 	host.h_aliases = host_aliases;
 	hap = h_addr_ptrs;
+	*hap = NULL;
 #if BSD >= 43 || defined(h_addr)	/* new-style hostent structure */
 	host.h_addr_list = h_addr_ptrs;
 #endif
