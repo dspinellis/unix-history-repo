@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.29 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -747,6 +747,8 @@ static char convtab[SZINT/SZCHAR + 1] = {
  *	ignored and the high bits of the source are copied.  (Note
  *	that zero-extension is not a problem for immediate
  *	constants.)
+ * Another problem -- condition codes for a conversion with a
+ *	register source reflect the source rather than the destination.
  */
 sconv(p, forcc)
 	NODE *p;
@@ -838,7 +840,7 @@ sconv(p, forcc)
 		}
 		genconv(ISUNSIGNED(srctype),
 			srclen, dst->in.op == REG ? SZINT/SZCHAR : dstlen,
-			src, dst);
+			src, dst, forcc);
 		return;
 	}
 
@@ -898,20 +900,21 @@ sconv(p, forcc)
 			tmp->tn.op = OREG;
 			tmp->tn.lval = srclen - dstlen;
 		}
-		genconv(ISUNSIGNED(dsttype), dstlen, SZINT/SZCHAR, tmp, dst);
+		genconv(ISUNSIGNED(dsttype), dstlen, SZINT/SZCHAR, tmp, dst, forcc);
 		tmp->in.op = FREE;
 		return;
 	}
 
 	genconv(neg ? -1 : ISUNSIGNED(dsttype),
 		srclen, dst->in.op == REG ? SZINT/SZCHAR : dstlen,
-		src, dst);
+		src, dst, forcc);
 }
 
-genconv(srcflag, srclen, dstlen, src, dst)
+genconv(srcflag, srclen, dstlen, src, dst, forcc)
 	int srcflag;
 	register int srclen, dstlen;
 	NODE *src, *dst;
+	int forcc;
 {
 	if (srclen != dstlen) {
 		if (srcflag > 0 && srclen < dstlen)
@@ -928,6 +931,17 @@ genconv(srcflag, srclen, dstlen, src, dst)
 	adrput(src);
 	putchar(',');
 	adrput(dst);
+
+	/*
+	 * This hack is made necessary by architecture problems
+	 *	described above
+	 */
+	if (forcc && src->in.op == REG && srclen > dstlen) {
+		putstr("\n\ttst");
+		prlen(dstlen);
+		putchar('\t');
+		adrput(dst);
+	}
 }
 
 rmove( rt, rs, t ) TWORD t; {
