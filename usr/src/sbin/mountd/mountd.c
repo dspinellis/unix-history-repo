@@ -25,7 +25,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -133,6 +133,12 @@ main(argc, argv)
 		strcpy(exname, _PATH_EXPORTS);
 	get_exportlist();
 	signal(SIGHUP, get_exportlist);
+	{ FILE *pidfile = fopen(_PATH_MOUNTDPID, "w");
+	  if (pidfile != NULL) {
+		fprintf(pidfile, "%d\n", getpid());
+		fclose(pidfile);
+	  }
+	}
 	if ((mlfile = open(_PATH_RMOUNTLIST, (O_RDWR|O_CREAT), 0600)) < 0) {
 		syslog(LOG_ERR, "Can't open mountlist file");
 		exit(1);
