@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.59 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.60 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -615,12 +615,10 @@ R$+ $=O $+		$@ $>97 $1 $2 $3			try again
 
 # handle locally delivered names
 R$=L			$#_LOCAL_ $: @ $1			special local names
-R$+ + $*		$#_LOCAL_ $@ $2 $: $1		plussed local names
 R$+			$#_LOCAL_ $: $1			regular local names
 
 ###########################################################################
 ###   Ruleset 5 -- special rewriting after aliases have been expanded   ###
-###		   (new sendmail only)					###
 ###########################################################################
 
 S5
@@ -634,8 +632,13 @@ R$+			$: <> $1
 
 ifdef(`LUSER_RELAY',
 `# send unrecognized local users to a relay host
-R< > $+			$: < $L > $( user $1 $)		look up user
-R< $* > $+ <>		$: <> $2			found; strip $L')
+R< > $+ + $*		$: < $L . > $( user $1 $) + $2
+R< > $+			$: < $L . > $( user $1 $)	look up user
+R< $* > $+ <> $*	$: < > $2 $3			found; strip $L
+R< $* . > $+		$: < $1 > $2			strip extra dot')
+
+# handle plussed local names
+R< > $+ + $*		$#_LOCAL_ $@ $2 $: $1
 
 # see if we have a relay or a hub
 R< > $+			$: < $R > $1			try relay
@@ -648,7 +651,6 @@ ifdef(`MAILER_TABLE',
 
 ###################################################################
 ###  Ruleset 90 -- try domain part of mailertable entry 	###
-###		   (new sendmail only)				###
 ###################################################################
 
 S90
