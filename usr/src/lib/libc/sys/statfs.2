@@ -1,133 +1,120 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)statfs.2	6.3 (Berkeley) %G%
+.\"     @(#)statfs.2	6.4 (Berkeley) %G%
 .\"
-.TH STATFS 2 ""
-.UC 7
-.SH NAME
-statfs \- get file system statistics
-.SH SYNOPSIS
-.nf
-.ft B
-#include <sys/types.h>
-#include <sys/mount.h>
-.LP
-.ft B
-statfs(path, buf)
-char *path;
-struct statfs *buf;
-.LP
-.ft B
-fstatfs(fd, buf)
-int fd;
-struct statfs *buf;
-.fi
-.ft R
-.SH DESCRIPTION
-.I Statfs
+.Dd 
+.Dt STATFS 2
+.Os BSD 4.4
+.Sh NAME
+.Nm statfs
+.Nd get file system statistics
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <sys/mount.h>
+.Ft int
+.Fn statfs "const char *path" "struct statfs *buf"
+.Ft int
+.Fn fstatfs "int fd" "struct statfs *buf"
+.Sh DESCRIPTION
+.Fn Statfs
 returns information about a mounted file system.
-.I path
+.Fa Path
 is the path name of any file within the mounted filesystem.
-.I Buf
+.Fa Buf
 is a pointer to a
-.I statfs
+.Fn statfs
 structure defined as follows:
-.IP
-.ta \w'#define\0\0'u +\w'fsid_t\0\0'u +\w'f_mntfromname[MNAMELEN]\0\0'u
-.nf
+.Bd -literal
 typedef quad fsid_t;
-.sp 1
+
 #define MNAMELEN 32	/* length of buffer for returned name */
-.sp 1
+
 struct statfs {
-	short	f_type;	/* type of filesystem (see below) */
-	short	f_flags;	/* copy of mount flags */
-	long	f_fsize;	/* fundamental file system block size */
-	long	f_bsize;	/* optimal transfer block size */
-	long	f_blocks;	/* total data blocks in file system */
-	long	f_bfree;	/* free blocks in fs */
-	long	f_bavail;	/* free blocks avail to non-superuser */
-	long	f_files;	/* total file nodes in file system */
-	long	f_ffree;	/* free file nodes in fs */
-	fsid_t	f_fsid;	/* file system id */
-	long	f_spare[6];	/* spare for later */
-	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
-	char	f_mntfromname[MNAMELEN];	/* mounted filesystem */
+short	f_type;		  /* type of filesystem (see below) */
+short	f_flags;	  /* copy of mount flags */
+long	f_fsize;	  /* fundamental file system block size */
+long	f_bsize;	  /* optimal transfer block size */
+long	f_blocks;	  /* total data blocks in file system */
+long	f_bfree;	  /* free blocks in fs */
+long	f_bavail;	  /* free blocks avail to non-superuser */
+long	f_files;	  /* total file nodes in file system */
+long	f_ffree;	  /* free file nodes in fs */
+fsid_t	f_fsid;		  /* file system id */
+long	f_spare[6];	  /* spare for later */
+char	f_mntonname[MNAMELEN];	  /* mount point */
+char	f_mntfromname[MNAMELEN];  /* mounted filesystem */
 };
 /*
- * File system types.
- */
+* File system types.
+*/
 #define	MOUNT_UFS	1
 #define	MOUNT_NFS	2
 #define	MOUNT_MFS	3
 #define	MOUNT_PC	4
-.fi
-.PP
-Fields that are undefined for a particular file system are set to \-1.
-.I Fstatfs
+.Ed
+.Pp
+Fields that are undefined for a particular file system are set to -1.
+.Fn Fstatfs
 returns the same information about an open file referenced by descriptor
-.IR fd .
-.SH RETURN VALUE
+.Fa fd .
+.Sh RETURN VALUES
 Upon successful completion, a value of 0 is returned.
-Otherwise, \-1 is returned and the global variable
-.I errno
+Otherwise, -1 is returned and the global variable
+.Va errno
 is set to indicate the error.
-.SH ERRORS
-.I Statfs
+.Sh ERRORS
+.Fn Statfs
 fails if one or more of the following are true:
-.TP 15
-ENOTDIR
+.Bl -tag -width ENAMETOOLONGA
+.It Bq Er ENOTDIR
 A component of the path prefix of
-.I path
+.Fa Path
 is not a directory.
-.TP 15
-EINVAL
-.I path
+.It Bq Er EINVAL
+.Fa path
 contains a character with the high-order bit set.
-.TP 15
-ENAMETOOLONG
+.It Bq Er ENAMETOOLONG
 The length of a component of
-.I path
+.Fa path
 exceeds 255 characters,
 or the length of
-.I path
+.Fa path
 exceeds 1023 characters.
-.TP 15
-ENOENT
+.It Bq Er ENOENT
 The file referred to by
-.I path
+.Fa path
 does not exist.
-.TP 15
-EACCES
+.It Bq Er EACCES
 Search permission is denied for a component of the path prefix of
-.IR path .
-.TP 15
-ELOOP
+.Fa path .
+.It Bq Er ELOOP
 Too many symbolic links were encountered in translating
-.IR path .
-.TP 15
-EFAULT
-.I Buf
+.Fa path .
+.It Bq Er EFAULT
+.Fa Buf
 or
-.I path
+.Fa path
 points to an invalid address.
-.TP 15
-EIO
+.It Bq Er EIO
 An I/O error occurred while reading from or writing to the file system.
-.PP
-.I Fstatfs
+.El
+.Pp
+.Fn Fstatfs
 fails if one or both of the following are true:
-.TP 15
-EBADF
-.I fd
+.Bl -tag -width ENAMETOOLONGA
+.It Bq Er EBADF
+.Fa Fd
 is not a valid open file descriptor.
-.TP 15
-EFAULT
-.I buf
+.It Bq Er EFAULT
+.Fa Buf
 points to an invalid address.
-.TP 15
-EIO
+.It Bq Er EIO
 An I/O error occurred while reading from or writing to the file system.
+.El
+.Sh HISTORY
+The
+.Nm
+function call is currently under development.

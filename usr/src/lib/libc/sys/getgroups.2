@@ -1,59 +1,70 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getgroups.2	6.6 (Berkeley) %G%
+.\"     @(#)getgroups.2	6.7 (Berkeley) %G%
 .\"
-.TH GETGROUPS 2 ""
-.UC 5
-.SH NAME
-getgroups \- get group access list
-.SH SYNOPSIS
-.nf
-.ft B
-#include <sys/param.h>
-.PP
-.ft B
-ngroups = getgroups(gidsetlen, gidset)
-int ngroups, gidsetlen, *gidset;
-.fi
-.SH DESCRIPTION
-.I Getgroups
+.Dd 
+.Dt GETGROUPS 2
+.Os BSD 4.2
+.Sh NAME
+.Nm getgroups
+.Nd get group access list
+.Sh SYNOPSIS
+.Fd #include <sys/param.h>
+.Fd #include <unistd.h>
+.Ft int
+.Fn getgroups "int gidsetlen" "int *gidset"
+.Sh DESCRIPTION
+.Fn Getgroups
 gets the current group access list of the user process
 and stores it in the array 
-.IR gidset .
+.Fa gidset .
 The parameter
-.I gidsetlen
+.Fa gidsetlen
 indicates the number of entries that may be placed in 
-.IR gidset.
-.I Getgroups
+.Fa gidset .
+.Fn Getgroups
 returns the actual number of groups returned in
-.IR gidset .
-No more than NGROUPS, as defined in
-.RI < sys/param.h >,
+.Fa gidset .
+No more than
+.Dv NGROUPS ,
+as defined in
+.Aq Pa sys/param.h ,
 will ever
 be returned.
-.SH "RETURN VALUE
+.Sh RETURN VALUES
 A successful call returns the number of groups in the group set.
-A value of \-1 indicates that an error occurred, and the error
-code is stored in the global variable \fIerrno\fP\|.
-.SH "ERRORS
-The possible errors for \fIgetgroup\fP are:
-.TP 15
-[EINVAL]
+A value of -1 indicates that an error occurred, and the error
+code is stored in the global variable
+.Va errno .
+.Sh ERRORS
+The possible errors for
+.Fn getgroups
+are:
+.Bl -tag -width Er
+.It Bq Er EINVAL
 The argument
-.I gidsetlen
+.Fa gidsetlen
 is smaller than the number of groups in the group set.
-.TP
-[EFAULT]
-The argument \fIgidset\fP specifies
+.It Bq Er EFAULT
+The argument
+.Fa gidset
+specifies
 an invalid address.
-.SH "SEE ALSO
-setgroups(2), initgroups(3)
-.SH BUGS
+.El
+.Sh SEE ALSO
+.Xr setgroups 2 ,
+.Xr initgroups 3
+.Sh BUGS
 The
-.I gidset
+.Fa gidset
 array should be of type
-.BR gid_t ,
+.Vt gid_t ,
 but remains integer for compatibility with earlier systems.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

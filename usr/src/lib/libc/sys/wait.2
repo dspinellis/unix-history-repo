@@ -1,259 +1,269 @@
 .\" Copyright (c) 1980, 1991 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" All rights reserved.
 .\"
-.\"	@(#)wait.2	6.4 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH WAIT 2 ""
-.UC 4
-.SH NAME
-wait, waitpid, wait4, wait3 \- wait for process to terminate
-.SH SYNOPSIS
-.ft B
-.nf
-#include <sys/types.h>
-#include <sys/wait.h>
-.PP
-.ft B
-pid = wait(statp)
-pid_t pid;
-int *statp;
-.PP
-.ft B
-pid = waitpid(wpid, statp, options)
-pid_t pid, wpid;
-int *statp;
-int options;
-.PP
-.ft B
-#include <sys/time.h>
-#include <sys/resource.h>
-.PP
-.ft B
-pid = wait4(wpid, statp, options, rusage)
-pid_t pid, wpid;
-int *statp;
-int options;
-struct rusage *rusage;
-.PP
-.ft B
-pid = wait3(statp, options, rusage)
-pid_t pid;
-int *statp;
-int options;
-struct rusage *rusage;
-.fi
-.SH DESCRIPTION
-.I Wait
-causes its caller to delay until a signal is received or
-one of its child
-processes terminates.
-If any child has died since the last
-.IR wait ,
-return is immediate, returning the process id and
-exit status of one of the terminated
-children.
-If there are no children, return is immediate with
-the value \-1 returned.
-.PP
-On return from a successful 
-.I wait
-call with a non-null
-.I statp
-pointer, 
-the location to which
-.I statp
-points contains termination information about the process that exited
-as defined below.
-.PP
+.\"     @(#)wait.2	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt WAIT 2
+.Os BSD 4
+.Sh NAME
+.Nm wait ,
+.Nm waitpid ,
+.Nm wait4 ,
+.Nm wait3
+.Nd wait for process terminatation
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <sys/wait.h>
+.Ft pid_t
+.Fn wait "int *status"
+.Fd #include <sys/time.h>
+.Fd #include <sys/resource.h>
+.Ft pid_t
+.Fn waitpid "pid_t wpid" "int *status" "int options"
+.Ft pid_t
+.Fn wait3 "int *status" "int options" "struct rusage *rusage"
+.Ft pid_t
+.Fn wait4 "pid_t wpid" "int *status" "int options" "struct rusage *rusage"
+.Sh DESCRIPTION
 The
-.I wait4
+.Fn wait
+function suspends execution of its calling process until
+.Fa status
+information is available for a terminated child process,
+or a signal is received.
+On return from a successful 
+.Fn wait
+call, 
+the
+.Fa status
+area contains termination information about the process that exited
+as defined below.
+.Pp
+The
+.Fn wait4
 call provides a more general interface for programs
-that wish to wait for certain child processes,
-that wish resource utilization statistics accummulated by child processes,
+that need to wait for certain child processes,
+that need resource utilization statistics accummulated by child processes,
 or that require options.
 The other wait functions are implemented using
-.IR wait4 .
-.PP
+.Fn wait4 .
+.Pp
 The
-.I wpid
+.Fa wpid
 parameter specifies the set of child processes for which to wait.
 If
-.I wpid
-is \-1, the call waits for any child process.
+.Fa wpid
+is -1, the call waits for any child process.
 If
-.I wpid
+.Fa wpid
 is 0,
 the call waits for any child process in the process group of the caller.
 If
-.I wpid
+.Fa wpid
 is greater than zero, the call waits for the process with process id
-.IR wpid .
+.Fa wpid .
 If
-.I wpid
-is less than \-1, the call waits for any process whose process group id
+.Fa wpid
+is less than -1, the call waits for any process whose process group id
 equals the absolute value of
-.IR wpid .
-.PP
+.Fa wpid .
+.Pp
 The
-.I statp
+.Fa status
 parameter is defined below.  The
-.I options
+.Fa options
 parameter contains the bitwise OR of any of the following options.
-The WNOHANG option
+The
+.Dv WNOHANG
+option
 is used to indicate that the call should not block if
 there are no processes that wish to report status.
-If the WUNTRACED option is set,
+If the
+.Dv WUNTRACED
+option is set,
 children of the current process that are stopped
-due to a SIGTTIN, SIGTTOU, SIGTSTP, or SIGSTOP signal also have
+due to a
+.Dv SIGTTIN , SIGTTOU , SIGTSTP ,
+or
+.Dv SIGSTOP
+signal also have
 their status reported.
-.PP
+.Pp
 If
-.I rusage
+.Fa rusage
 is non-zero, a summary of the resources used by the terminated
 process and all its
 children is returned (this information is currently not available
 for stopped processes).
-.PP
-When the WNOHANG option is specified and no processes
+.Pp
+When the
+.Dv WNOHANG
+option is specified and no processes
 wish to report status, 
-.I wait4
+.Fn wait4
 returns a 
-.I pid
+process id
 of 0.
-.PP
+.Pp
 The
-.I waitpid
+.Fn waitpid
 call is identical to
-.I wait4
+.Fn wait4
 with an
-.I rusage
+.Fa rusage
 value of zero.
 The older
-.I wait3
+.Fn wait3
 call is the same as
-.I wait4
+.Fn wait4
 with a
-.I wpid
-value of \-1.
-.PP
-If the
-.I statp
-parameter is not null,
-the status of the process is placed in the location to which
-.I statp
-points.
-The following macros may be used with that status information
-to test the state and/or manner of exit of the process.
+.Fa wpid
+value of -1.
+.Pp
+The following macros may be used to test the manner of exit of the process.
 One of the first three macros will evaluate to a non-zero (true) value:
-.IP WIFEXITED(status)
+.Bl -tag -width Ds
+.It Fn WIFEXITED status
 True if the process terminated normally by a call to
-.IR _exit (2)
+.Xr _exit 2
 or
-.IR exit (2).
-.IP WIFSIGNALED(status)
+.Xr exit 2 .
+.It Fn WIFSIGNALED status
 True if the process terminated due to receipt of a signal.
-.IP WIFSTOPPED(status)
+.It Fn WIFSTOPPED status
 True if the process has not terminated, but has stopped and can be restarted.
 This macro can be true only if the wait call specified the
-WUNTRACED
+.Dv WUNTRACED
 option
 or if the child process is being traced (see
-.IR ptrace (2)).
-.LP
+.Xr ptrace 2 ) .
+.El
+.Pp
 Depending on the values of those macros, the following macros
 produce the remaining status information about the child process:
-.IP WEXITSTATUS(status)
-If WIFEXITED(status) is true, evaluates to the low-order 8 bits
+.Bl -tag -width Ds
+.It Fn WEXITSTATUS status
+If
+.Fn WIFEXITED status
+is true, evaluates to the low-order 8 bits
 of the argument passed to
-.IR _exit (2)
+.Xr _exit 2
 or
-.IR exit (2)
+.Xr exit 2
 by the child.
-.IP WTERMSIG(status)
-If WIFSIGNALED(status) is true, evaluates to the number of the signal
+.It Fn WTERMSIG status
+If
+.Fn WIFSIGNALED status
+is true, evaluates to the number of the signal
 that caused the termination of the process.
-.IP WCOREDUMP(status)
-If WIFSIGNALED(status) is true, evaluates as true if the termination
+.It Fn WCOREDUMP status
+If
+.Fn WIFSIGNALED status
+is true, evaluates as true if the termination
 of the process was accompanied by the creation of a core file
 containing an image of the process when the signal was received.
-.IP WSTOPSIG(status)
-If WIFSTOPPED(status) is true, evaluates to the number of the signal
+.It Fn WSTOPSIG status
+If
+.Fn WIFSTOPPED status
+is true, evaluates to the number of the signal
 that caused the process to stop.
-.SH NOTES
+.El
+.Sh NOTES
 See
-.IR sigaction (2)
+.Xr sigaction 2
 for a list of termination signals.
 A status of 0 indicates normal termination.
-.PP
-If the parent process terminates without
-waiting on its children,
-the initialization process
-(process ID = 1)
-inherits the children.
-.PP
+.Pp
+If a parent process terminates without
+waiting for all of its child processes to terminate,
+the remaining child processes are assigned the parent
+process 1 ID (the init process ID).
+.Pp
 If a signal is caught while any of the
-.I wait
+.Fn wait
 calls is pending,
 the call may be interrupted or restarted when the signal-catching routine
 returns,
 depending on the options in effect for the signal;
 see
-.IR intro (2),
+.Xr intro 2 ,
 System call restart.
-.SH "RETURN VALUE
-If \fIwait\fP returns due to a stopped
-or terminated child process, the process ID of the child
-is returned to the calling process.  Otherwise, a value of \-1
-is returned and \fIerrno\fP is set to indicate the error.
-.PP
+.Sh RETURN VALUES
 If
-.IR wait4 ,
-.I wait3
+.Fn wait
+returns due to a stopped
+or terminated child process, the process ID of the child
+is returned to the calling process.  Otherwise, a value of -1
+is returned and
+.Va errno
+is set to indicate the error.
+.Pp
+If
+.Fn wait4 ,
+.Fn wait3
 or
-.I waitpid
+.Fn waitpid
 returns due to a stopped
 or terminated child process, the process ID of the child
 is returned to the calling process.
 If there are no children not previously awaited,
-\-1 is returned with
-.I errno
-set to [ECHILD].
-Otherwise, if WNOHANG is specified and there are
+-1 is returned with
+.Va errno
+set to
+.Bq Er ECHILD .
+Otherwise, if
+.Dv WNOHANG
+is specified and there are
 no stopped or exited children,
 0 is returned.
 If an error is detected or a caught signal aborts the call,
-a value of \-1
-is returned and \fIerrno\fP is set to indicate the error.
-.SH ERRORS
-.I Wait
-will fail and return immediately if one or more of the following
-are true:
-.TP 15
-[ECHILD]
+a value of -1
+is returned and
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+.Fn Wait
+will fail and return immediately if:
+.Bl -tag -width Er
+.It Bq Er ECHILD
 The calling process has no existing unwaited-for
 child processes.
-.TP 15
-[EFAULT]
-The \fIstatp\fP or \fIrusage\fP arguments point to an illegal address.
-(May not be detected before exit of a child process.)
-.TP 15
-[EINTR]
-The call was interrupted by a caught signal,
-or the signal did not have the SA_RESTART flag set.
-.SH STANDARDS
+.It Bq Er EFAULT
 The
-.I wait
+.Fa status
+or
+.Fa rusage
+arguments point to an illegal address.
+(May not be detected before exit of a child process.)
+.It Bq Er EINTR
+The call was interrupted by a caught signal,
+or the signal did not have the
+.Dv SA_RESTART
+flag set.
+.El
+.Sh STANDARDS
+The
+.Fn wait
 and
-.I waitpid
+.Fn waitpid
 functions are defined by POSIX;
-.I wait4
+.Fn wait4
 and
-.I wait3
+.Fn wait3
 are not specified by POSIX.
-The WCOREDUMP macro
+The
+.Fn WCOREDUMP
+macro
 and the ability to restart a pending
-.I wait
+.Fn wait
 call are extensions to the POSIX interface.
-.SH "SEE ALSO"
-exit(2), sigaction(2)
+.Sh SEE ALSO
+.Xr exit 2 ,
+.Xr sigaction 2
+.Sh HISTORY
+A
+.Nm
+function call appeared in Version 6 AT&T UNIX.

@@ -1,62 +1,65 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)socketpair.2	6.3 (Berkeley) %G%
+.\"     @(#)socketpair.2	6.4 (Berkeley) %G%
 .\"
-.TH SOCKETPAIR 2 ""
-.UC 5
-.SH NAME
-socketpair \- create a pair of connected sockets
-.SH SYNOPSIS
-.nf
-.ft B
-#include <sys/types.h>
-#include <sys/socket.h>
-.PP
-.ft B
-socketpair(d, type, protocol, sv)
-int d, type, protocol;
-int sv[2];
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt SOCKETPAIR 2
+.Os BSD 4.2
+.Sh NAME
+.Nm socketpair
+.Nd create a pair of connected sockets
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <sys/socket.h>
+.Ft int
+.Fn socketpair "int d" "int type" "int protocol" "int *sv"
+.Sh DESCRIPTION
 The
-.I socketpair
+.Fn socketpair
 call creates an unnamed pair of connected sockets in
 the specified domain
-.IR d ,
+.Fa d ,
 of the specified
-.IR type ,
+.Fa type ,
 and using the optionally specified
-.IR protocol .
+.Fa protocol .
 The descriptors used in referencing the new sockets
 are returned in
-.IR sv [0]
+.Fa sv Ns [0]
 and
-.IR sv [1].
+.Fa sv Ns [1] .
 The two sockets are indistinguishable.
-.SH DIAGNOSTICS
-A 0 is returned if the call succeeds, \-1 if it fails.
-.SH ERRORS
+.Sh DIAGNOSTICS
+A 0 is returned if the call succeeds, -1 if it fails.
+.Sh ERRORS
 The call succeeds unless:
-.TP 20
-[EMFILE]
+.Bl -tag -width EPROTONOSUPPORTA
+.It Bq Er EMFILE
 Too many descriptors are in use by this process.
-.TP 20
-[EAFNOSUPPORT]
+.It Bq Er EAFNOSUPPORT
 The specified address family is not supported on this machine.
-.TP 20
-[EPROTONOSUPPORT]
+.It Bq Er EPROTONOSUPPORT
 The specified protocol is not supported on this machine.
-.TP 20
-[EOPNOSUPPORT]
+.It Bq Er EOPNOSUPPORT
 The specified protocol does not support creation of socket pairs.
-.TP 20
-[EFAULT]
-The address \fIsv\fP does not specify a valid part of the
+.It Bq Er EFAULT
+The address
+.Fa sv
+does not specify a valid part of the
 process address space.
-.SH "SEE ALSO"
-read(2), write(2), pipe(2)
-.SH BUGS
-This call is currently implemented only for the UNIX domain.
+.Sh SEE ALSO
+.Xr read 2 ,
+.Xr write 2 ,
+.Xr pipe 2
+.Sh BUGS
+This call is currently implemented only for the
+.Tn UNIX
+domain.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

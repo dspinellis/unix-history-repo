@@ -1,33 +1,56 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)umask.2	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH UMASK 2 ""
-.UC 4
-.SH NAME
-umask \- set file creation mode mask
-.SH SYNOPSIS
-.ft B
-oumask = umask(numask)
-.br
-int oumask, numask;
-.ft R
-.SH DESCRIPTION
-.I Umask
-sets the process's file mode creation mask to \fInumask\fP
-and returns the previous value of the mask.  The low-order
-9 bits of \fInumask\fP are used whenever a file is created,
-clearing corresponding bits in the file mode
+.\"     @(#)umask.2	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UMASK 2
+.Os BSD 4
+.Sh NAME
+.Nm umask
+.Nd set file creation mode mask
+.Sh SYNOPSIS
+.Fd #include <sys/stat.h>
+.Ft mode_t
+.Fn umask "mode_t numask"
+.Sh DESCRIPTION
+The
+.Fn umask
+routine sets the process's file mode creation mask to
+.Fa numask
+and returns the previous value of the mask.  The 9 low-order
+access permission
+bits of
+.Fa numask
+are used by system calls, including
+.Xr open 2 ,
+.Xr mkdir 2 ,
+and
+.Xr mkfifo 2 ,
+to turn off corresponding bits
+requested in file mode.
 (see
-.IR chmod (2)).
+.Xr chmod 2 ) .
 This clearing allows each user to restrict the default access
 to his files.
-.PP
-The value is initially 022 (write access for owner only).
-The mask is inherited by child processes.
-.SH "RETURN VALUE
+.Pp
+The default mask value is 022 (write access for owner only).
+Child processes inherit the mask of the calling process.
+.Sh RETURN VALUES
 The previous value of the file mode mask is returned by the call.
-.SH SEE ALSO
-chmod(2), mknod(2), open(2)
+.Sh ERRORS
+The
+.Fn umask
+function is always successful.
+.Sh SEE ALSO
+.Xr chmod 2 ,
+.Xr mknod 2 ,
+.Xr open 2
+.Sh STANDARDS
+The
+.Fn umask
+function call is expected to
+conform to IEEE Std 1003.1-1988
+.Pq Dq Tn POSIX .

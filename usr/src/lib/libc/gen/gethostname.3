@@ -1,61 +1,70 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)gethostname.3	6.6 (Berkeley) %G%
+.\"     @(#)gethostname.3	6.7 (Berkeley) %G%
 .\"
-.TH GETHOSTNAME 2 ""
-.UC 5
-.SH NAME
-gethostname, sethostname \- get/set name of current host
-.SH SYNOPSIS
-.nf
-.ft B
-gethostname(name, namelen)
-char *name;
-int namelen;
-.PP
-.ft B
-sethostname(name, namelen)
-char *name;
-int namelen;
-.fi
-.SH DESCRIPTION
-.I Gethostname
+.Dd 
+.Dt GETHOSTNAME 2
+.Os BSD 4.2
+.Sh NAME
+.Nm gethostname ,
+.Nm sethostname
+.Nd get/set name of current host
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn gethostname "char *name" "int namelen"
+.Ft int
+.Fn sethostname "const char *name" "int namelen"
+.Sh DESCRIPTION
+.Fn Gethostname
 returns the standard host name for the current processor, as
 previously set by
-.IR sethostname . 
+.Fn sethostname .
 The parameter
-.I namelen
+.Fa namelen
 specifies the size of the 
-.I name
+.Fa name
 array.  The returned name is null-terminated unless insufficient
 space is provided.
-.PP
-.I Sethostname
+.Pp
+.Fn Sethostname
 sets the name of the host machine to be
-.IR name ,
+.Fa name ,
 which has length
-.IR namelen .
+.Fa namelen .
 This call is restricted to the super-user and
 is normally used only when the system is bootstrapped.
-.SH "RETURN VALUE
+.Sh RETURN VALUES
 If the call succeeds a value of 0 is returned.  If the call
-fails, then a value of \-1 is returned and an error code is
-placed in the global location \fIerrno\fP.
-.SH "ERRORS
+fails, a value of -1 is returned and an error code is
+placed in the global location
+.Va errno .
+.Sh ERRORS
 The following errors may be returned by these calls:
-.TP 15
-[EFAULT]
-The \fIname\fP or \fInamelen\fP parameter gave an
+.Bl -tag -width Er
+.It Bq Er EFAULT
+The
+.Fa name
+or
+.Fa namelen
+parameter gave an
 invalid address.
-.TP 15
-[EPERM]
+.It Bq Er EPERM
 The caller tried to set the hostname and was not the super-user.
-.SH SEE ALSO
-gethostid(2)
-.SH BUGS
-Host names are limited to MAXHOSTNAMELEN (from
-.IR <sys/param.h> )
+.El
+.Sh SEE ALSO
+.Xr gethostid 2
+.Sh BUGS
+Host names are limited to
+.Dv MAXHOSTNAMELEN
+(from
+.Ao Pa sys/param.h Ac )
 characters, currently 64.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .
