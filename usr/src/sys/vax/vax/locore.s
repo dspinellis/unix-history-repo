@@ -1,4 +1,4 @@
-/*	locore.s	4.23	81/02/18	*/
+/*	locore.s	4.24	81/02/19	*/
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into Scbbase of machine check vector
@@ -102,13 +102,6 @@ SCBVEC(mba0int):
 	rei
 
 #if VAX780
-/* Special register return of IPL and interrupt vector during configuration */
-SCBVEC(confuaint):
-	mfpr	$IPL,r11
-	movl	_curuba,r0
-	movl	UBA_BRRVR-0x14*4(r0)[r11],r10
-	rei
-
 /*
  * Registers for the uba handling code
  */
@@ -218,8 +211,19 @@ _catcher:
 	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
 	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
 
+	.data
+	.globl	_cold
+_cold:
+	.long	1
 	.text
 SCBVEC(ustray):
+	blbc	_cold,1f
+	mfpr	$IPL,r11
+	subl3	$_catcher+8,(sp)+,r10
+	ashl	$-1,r10,r10
+	POPR
+	rei
+1:
 	subl3	$_catcher+8,(sp)+,r0
 	ashl	$-1,r0,-(sp)
 	mfpr	$IPL,-(sp)
