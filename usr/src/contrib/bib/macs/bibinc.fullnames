@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.8	%G%";
+#	"@(#)bibinc.fullnames	2.9	%G%";
 # full journal names, and other names
 #
 # journals
@@ -94,6 +94,12 @@ D POPL10 CONF Record of the Tenth POPL\
 D POPL11 CONF Record of the Eleventh POPL\
 %C Salt Lake City, UT\
 %D JAN 1984
+D POPL12 CONF Record of the Twelfth POPL\
+%C New Orleans, LA\
+%D JAN 1985
+D POPL13 CONF Record of the Thirteenth POPL\
+%C Tampa Bay, FL\
+%D JAN 1986
 D STOC Annual ACM SYMP on Theory of Computing
 D FOCS Annual SYMP on Foundations of Computer Science
 D SOSP SYMP on Operating System Principles
