@@ -1,5 +1,5 @@
-static	char sccsid[] = "@(#)c21.c 4.1 %G%";
-/* char C21[] = {"@(#)c21.c 1.82 - 81 ??/??/?? ??:??:?? JFR"}; /* sccs ident */
+static	char sccsid[] = "@(#)c21.c 4.2 %G%";
+/* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
  * C object code improver-- second part
@@ -614,8 +614,9 @@ register struct node *p;
 	|| OP2==(p->subop>>4) && 0<=(r=isreg(regs[RT2])) && r<NUSE && uses[r]==0) {
 		/* writing a dead register is useless, but watch side effects */
 		switch (p->op) {
+		case ACB:
 		case AOBLEQ: case AOBLSS: case SOBGTR: case SOBGEQ: break;
-		default: if (p->op==ACB) break;
+		default:
 			if (uses[r]==0) {/* no direct uses, check for use of condition codes */
 				register struct node *q=p;
 				while ((q=nonlab(q->forw))->combop==JBR) q=q->ref;	/* cc unused, unchanged */
@@ -644,6 +645,7 @@ register struct node *p;
 		/* check for  r  */
 		if (lastrand!=cp1 && 0<=(r=isreg(cp1)) && r<NUSE && uses[r]==0) {
 			uses[r]=p; cp2=regs[r]; *cp2++=p->subop;
+ 			if (p->op==ASH && preg==(regs+RT1+1)) cp2[-1]=BYTE; /* stupid DEC */
 			if (p->op==MOV || p->op==PUSH || p->op==CVT || p->op==MOVZ || p->op==COM || p->op==NEG) {
 				if (p->op==PUSH) cp1="-(sp)";
 				else {
@@ -654,7 +656,8 @@ register struct node *p;
 					if (p->op!=MOV) cp1=0;
 				}
 				if (cp1) while (*cp2++= *cp1++);
-			} else *cp2++=0;
+ 				else *cp2=0;
+ 			} else *cp2=0;
 			continue;
 		}
 		/* check for (r),(r)+,-(r),[r] */
