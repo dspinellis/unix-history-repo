@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.3 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -535,7 +535,6 @@ get_exportlist()
 	struct statfs fsb, *fsp;
 	struct hostent *hpe;
 	struct ucred anon;
-	struct ufs_args targs;
 	char *cp, *endcp, *dirp, *hst, *usr, *dom, savedc;
 	int len, has_host, exflags, got_nondir, dirplen, num, i, netgrp;
 
@@ -566,12 +565,22 @@ get_exportlist()
 	 */
 	num = getmntinfo(&fsp, MNT_NOWAIT);
 	for (i = 0; i < num; i++) {
-		if (fsp->f_type == MOUNT_UFS) {
-			targs.fspec = (char *)0;
-			targs.exflags = MNT_DELEXPORT;
+		union {
+			struct ufs_args ua;
+			struct iso_args ia;
+			struct mfs_args ma;
+		} targs;
+
+		switch (fsp->f_type) {
+		case MOUNT_UFS:
+		case MOUNT_ISOFS:
+		case MOUNT_MFS:
+			targs.ua.fspec = (char *)0;
+			targs.ua.export.ex_flags = MNT_DELEXPORT;
 			if (mount(fsp->f_type, fsp->f_mntonname,
-			    fsp->f_flags | MNT_UPDATE, (caddr_t)&targs) < 0)
-				syslog(LOG_ERR, "Can't del exports %s",
+				  fsp->f_flags | MNT_UPDATE,
+				  (caddr_t)&targs) < 0)
+				syslog(LOG_ERR, "Can't delete exports for %s",
 				       fsp->f_mntonname);
 		}
 		fsp++;
@@ -1369,12 +1378,16 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 	int done;
 	char savedc;
 	struct sockaddr_in sin, imask;
-	struct ufs_args args;
+	union {
+		struct ufs_args ua;
+		struct iso_args ia;
+		struct mfs_args ma;
+	} args;
 	u_long net;
 
-	args.fspec = 0;
-	args.exflags = exflags;
-	args.anon = *anoncrp;
+	args.ua.fspec = 0;
+	args.ua.export.ex_flags = exflags;
+	args.ua.export.ex_anon = *anoncrp;
 	bzero((char *)&sin, sizeof(sin));
 	bzero((char *)&imask, sizeof(imask));
 	sin.sin_family = AF_INET;
@@ -1391,11 +1404,11 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 		case GT_HOST:
 			if (addrp) {
 				sin.sin_addr.s_addr = **addrp;
-				args.slen = sizeof(sin);
+				args.ua.export.ex_addrlen = sizeof(sin);
 			} else
-				args.slen = 0;
-			args.saddr = (struct sockaddr *)&sin;
-			args.msklen = 0;
+				args.ua.export.ex_addrlen = 0;
+			args.ua.export.ex_addr = (struct sockaddr *)&sin;
+			args.ua.export.ex_masklen = 0;
 			break;
 		case GT_NET:
 			if (grp->gr_ptr.gt_net.nt_mask)
@@ -1413,16 +1426,18 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 			    grp->gr_ptr.gt_net.nt_mask = imask.sin_addr.s_addr;
 			}
 			sin.sin_addr.s_addr = grp->gr_ptr.gt_net.nt_net;
-			args.saddr = (struct sockaddr *)&sin;
-			args.slen = sizeof (sin);
-			args.smask = (struct sockaddr *)&imask;
-			args.msklen = sizeof (imask);
+			args.ua.export.ex_addr = (struct sockaddr *)&sin;
+			args.ua.export.ex_addrlen = sizeof (sin);
+			args.ua.export.ex_mask = (struct sockaddr *)&imask;
+			args.ua.export.ex_masklen = sizeof (imask);
 			break;
 #ifdef ISO
 		case GT_ISO:
-			args.saddr = (struct sockaddr *)grp->gr_ptr.gt_isoaddr;
-			args.slen = sizeof (struct sockaddr_iso);
-			args.msklen = 0;
+			args.ua.export.ex_addr =
+				(struct sockaddr *)grp->gr_ptr.gt_isoaddr;
+			args.ua.export.ex_addrlen =
+				sizeof(struct sockaddr_iso);
+			args.ua.export.ex_masklen = 0;
 			break;
 #endif	/* ISO */
 		default:
