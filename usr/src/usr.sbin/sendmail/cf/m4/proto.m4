@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.8 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.9 (Berkeley) %G%)
 
 
 ##################
@@ -21,7 +21,7 @@ Fw/etc/sendmail.cw', `dnl')
 
 ifdef(`UUCP_RELAY',
 `# UUCP relay host
-CONCAT(DU, UUCP_RELAY)
+CONCAT(DY, UUCP_RELAY)
 ')dnl
 ifdef(`BITNET_RELAY',
 `#  BITNET relay host
@@ -210,9 +210,9 @@ undivert(3)dnl
 undivert(4)dnl
 
 # resolve remotely connected UUCP links
+R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: $1<@$2.UUCP>$3
 R$* < @ $=W . UUCP > $*		$#smtp $@ $W $: $1<@$2.UUCP>$3
 R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: $1<@$2.UUCP>$3
-R$* < @ $=Y . UUCP > $*		$#smtp $@ $Y $: $1<@$2.UUCP>$3
 
 # resolve fake top level domains by forwarding to other hosts
 ifdef(`BITNET_RELAY',
@@ -224,7 +224,7 @@ ifdef(`CSNET_RELAY',
 
 ifdef(`UUCP_RELAY',
 `# forward non-local UUCP traffic to our UUCP relay
-R$*<@$*.UUCP>$*		$#smtp$@$U$:$1<@$2.UUCP>		uucp mail',
+R$*<@$*.UUCP>$*		$#smtp$@$Y$:$1<@$2.UUCP>		uucp mail',
 `ifdef(`_UUCP_LINKED_',
 `# forward other UUCP traffic straight to UUCP
 R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $1:$2			@host.UUCP:...
