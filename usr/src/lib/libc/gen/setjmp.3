@@ -3,12 +3,12 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)setjmp.3	6.3 (Berkeley) %G%
+.\"	@(#)setjmp.3	6.4 (Berkeley) %G%
 .\"
 .TH SETJMP 3 ""
 .UC 4
 .SH NAME
-sigsetjmp, siglongjmp, setjmp, longjmp, _setjmp, _longjmp \-
+sigsetjmp, siglongjmp, setjmp, longjmp, _setjmp, _longjmp longjmperror \-
 non-local jumps
 .SH SYNOPSIS
 .nf
@@ -29,6 +29,9 @@ _setjmp(jmp_buf env);
 
 void
 _longjmp(jmp_buf env, int val);
+
+void
+longjmperror();
 .ft R
 .fi
 .SH DESCRIPTION
