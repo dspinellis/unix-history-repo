@@ -4,37 +4,35 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	8.10 (Berkeley) %G%
+ *	@(#)vfs_conf.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
 
-#ifdef FFS
-#include <ufs/ufs/dinode.h>
-#include <ufs/ffs/ffs_extern.h>
-
 /*
- * This specifies the filesystem used to mount the root.
- * This specification should be done by /etc/config.
- */
-int (*mountroot)() = ffs_mountroot;
-#endif
-
-/*
- * These define the root filesystem and device.
+ * These define the root filesystem, device, and root filesystem type.
  */
 struct mount *rootfs;
 struct vnode *rootvnode;
+int (*mountroot)() = NULL;
 
+/*
+ * Set up the initial array of known filesystem types.
+ */
 extern	struct vfsops ufs_vfsops;
+extern	int ffs_mountroot();
 extern	struct vfsops lfs_vfsops;
+extern	int lfs_mountroot();
 extern	struct vfsops mfs_vfsops;
+extern	int mfs_mountroot();
 extern	struct vfsops cd9660_vfsops;
+extern	int cd9660_mountroot();
 extern	struct vfsops msdos_vfsops;
 extern	struct vfsops adosfs_vfsops;
 extern	struct vfsops nfs_vfsops;
+extern	int nfs_mountroot();
 extern	struct vfsops afs_vfsops;
 extern	struct vfsops procfs_vfsops;
 extern	struct vfsops null_vfsops;
@@ -51,77 +49,77 @@ static struct vfsconf vfsconflist[] = {
 
 	/* Fast Filesystem */
 #ifdef FFS
-	{ &ufs_vfsops, "ufs", 1, 0, MNT_LOCAL, NULL },
+	{ &ufs_vfsops, "ufs", 1, 0, MNT_LOCAL, ffs_mountroot, NULL },
 #endif
 
 	/* Log-based Filesystem */
 #ifdef LFS
-	{ &lfs_vfsops, "lfs", 5, 0, MNT_LOCAL, NULL },
+	{ &lfs_vfsops, "lfs", 5, 0, MNT_LOCAL, lfs_mountroot, NULL },
 #endif
 
 	/* Memory-based Filesystem */
 #ifdef MFS
-	{ &mfs_vfsops, "mfs", 3, 0, MNT_LOCAL, NULL },
+	{ &mfs_vfsops, "mfs", 3, 0, MNT_LOCAL, mfs_mountroot, NULL },
 #endif
 
 	/* ISO9660 (aka CDROM) Filesystem */
 #ifdef CD9660
-	{ &cd9660_vfsops, "cd9660", 14, 0, MNT_LOCAL, NULL },
+	{ &cd9660_vfsops, "cd9660", 14, 0, MNT_LOCAL, cd9660_mountroot, NULL },
 #endif
 
 	/* MSDOS Filesystem */
 #ifdef MSDOS
-	{ &msdos_vfsops, "msdos", 4, 0, MNT_LOCAL, NULL },
+	{ &msdos_vfsops, "msdos", 4, 0, MNT_LOCAL, NULL, NULL },
 #endif
 
 	/* AmigaDOS Filesystem */
 #ifdef ADOSFS
-	{ &adosfs_vfsops, "adosfs", 16, 0, MNT_LOCAL, NULL },
+	{ &adosfs_vfsops, "adosfs", 16, 0, MNT_LOCAL, NULL, NULL },
 #endif
 
 	/* Sun-compatible Network Filesystem */
 #ifdef NFS
-	{ &nfs_vfsops, "nfs", 2, 0, 0, NULL },
+	{ &nfs_vfsops, "nfs", 2, 0, 0, nfs_mountroot, NULL },
 #endif
 
 	/* Andrew Filesystem */
 #ifdef AFS
-	{ &afs_vfsops, "andrewfs", 13, 0, 0, NULL },
+	{ &afs_vfsops, "andrewfs", 13, 0, 0, afs_mountroot, NULL },
 #endif
 
 	/* /proc Filesystem */
 #ifdef PROCFS
-	{ &procfs_vfsops, "procfs", 12, 0, 0, NULL },
+	{ &procfs_vfsops, "procfs", 12, 0, 0, NULL, NULL },
 #endif
 
 	/* Loopback (Minimal) Filesystem Layer */
 #ifdef NULLFS
-	{ &null_vfsops, "loopback", 9, 0, 0, NULL },
+	{ &null_vfsops, "loopback", 9, 0, 0, NULL, NULL },
 #endif
 
 	/* Union (translucent) Filesystem */
 #ifdef UNION
-	{ &union_vfsops, "union", 15, 0, 0, NULL },
+	{ &union_vfsops, "union", 15, 0, 0, NULL, NULL },
 #endif
 
 	/* User/Group Identifer Remapping Filesystem */
 #ifdef UMAPFS
-	{ &umap_vfsops, "umap", 10, 0, 0, NULL },
+	{ &umap_vfsops, "umap", 10, 0, 0, NULL, NULL },
 #endif
 
 	/* Portal Filesystem */
 #ifdef PORTAL
-	{ &portal_vfsops, "portal", 8, 0, 0, NULL },
+	{ &portal_vfsops, "portal", 8, 0, 0, NULL, NULL },
 #endif
 
 	/* File Descriptor Filesystem */
 #ifdef FDESC
-	{ &fdesc_vfsops, "fdesc", 7, 0, 0, NULL },
+	{ &fdesc_vfsops, "fdesc", 7, 0, 0, NULL, NULL },
 #endif
 
 	/* Kernel Information Filesystem */
 #ifdef KERNFS
-	{ &kernfs_vfsops, "kernfs", 11, 0, 0, NULL },
+	{ &kernfs_vfsops, "kernfs", 11, 0, 0, NULL, NULL },
 #endif
 
 };
