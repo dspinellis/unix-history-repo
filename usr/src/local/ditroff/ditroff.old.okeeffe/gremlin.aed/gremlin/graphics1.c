@@ -1,4 +1,4 @@
-/* @(#)graphics1.c	1.2	%G%
+/* @(#)graphics1.c	1.3	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -385,7 +385,7 @@ int invert;			/* An integer whose low-order eight bits
     sgispeed = sgttyb.sg_ispeed;
     sgospeed = sgttyb.sg_ospeed;
     sgttyb.sg_flags = (sgttyb.sg_flags &
-	~(RAW | CBREAK | ECHO | LCASE)) | EVENP | ODDP;
+	~(RAW | CBREAK | ECHO | LCASE)) | EVENP | ODDP | CRMOD;
     sgttyb.sg_ispeed = B9600;
     sgttyb.sg_ospeed = B9600;
     (void) stty(fileno(stream), &sgttyb);
