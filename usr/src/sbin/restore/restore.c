@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.3	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)restore.c	3.4	(Berkeley)	83/02/28";
 #endif
 
 #include "restore.h"
@@ -61,18 +61,29 @@ addfile(name, ino, type)
 		vprintf(stdout, "%s: not on the tape\n", name);
 		return;
 	}
-	if (mflag) {
-		if (ino == ROOTINO)
+	if (!mflag) {
+		sprintf(buf, "./%u", ino);
+		name = buf;
+		if (type == NODE) {
+			genliteraldir(name, ino);
 			return;
-		ep = lookupino(ino);
-		if (ep != NIL)
-			type |= LINK;
-		ep = addentry(name, ino, type);
-	} else {
-		(void) sprintf(buf, "./%u", ino);
-		ep = addentry(buf, ino, type);
+		}
+	}
+	if (ino == ROOTINO)
+		return;
+	ep = lookupino(ino);
+	if (ep != NIL) {
+		if (strcmp(name, myname(ep)) == 0)
+			return;
+		type |= LINK;
+	}
+	ep = addentry(name, ino, type);
+	if (type == NODE) {
+		newnode(ep);
+		return;
 	}
 	ep->e_flags |= NEW;
+	return;
 }
 
 /*
@@ -442,6 +453,8 @@ createfiles()
 	first = lowerbnd(ROOTINO);
 	last = upperbnd(maxino - 1);
 	for (;;) {
+		skipmaps();
+		skipdirs();
 		first = lowerbnd(first);
 		last = upperbnd(last);
 		if (first > last)
@@ -449,6 +462,10 @@ createfiles()
 		while (curfile.ino > last) {
 			curfile.action = SKIP;
 			getvol((long)0);
+			if (volno == 1) {
+				skipmaps();
+				skipdirs();
+			}
 		}
 		next = lowerbnd(curfile.ino);
 		do	{
