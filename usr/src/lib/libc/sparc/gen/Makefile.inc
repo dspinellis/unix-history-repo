@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.2 (Berkeley) %G%
+#	@(#)Makefile.inc	5.3 (Berkeley) %G%
 
 # machine-dependent gen sources
 SRCS+=	_setjmp.s fabs.s fixunsdfsi.s main.s modf.s mul.s saveregs.s \
@@ -21,18 +21,22 @@ sdiv.s: divrem.m4
 	@echo 'building ${.TARGET} from ${.ALLSRC}'
 	@(echo "define(NAME,\`.div')define(OP,\`div')define(S,\`true')"; \
 	 cat ${.ALLSRC}) | m4 > ${.TARGET}
+	@chmod 444 ${.TARGET}
 
 udiv.s: divrem.m4
 	@echo 'building ${.TARGET} from ${.ALLSRC}'
 	@(echo "define(NAME,\`.udiv')define(OP,\`div')define(S,\`false')"; \
 	 cat ${.ALLSRC}) | m4 > ${.TARGET}
+	@chmod 444 ${.TARGET}
 
 rem.s: divrem.m4
 	@echo 'building ${.TARGET} from ${.ALLSRC}'
 	@(echo "define(NAME,\`.rem')define(OP,\`rem')define(S,\`true')"; \
 	 cat ${.ALLSRC}) | m4 > ${.TARGET}
+	@chmod 444 ${.TARGET}
 
 urem.s: divrem.m4
 	@echo 'building ${.TARGET} from ${.ALLSRC}'
 	@(echo "define(NAME,\`.urem')define(OP,\`rem')define(S,\`false')"; \
 	 cat ${.ALLSRC}) | m4 > ${.TARGET}
+	@chmod 444 ${.TARGET}
