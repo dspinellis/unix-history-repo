@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.1 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,8 +40,8 @@ sysacct()
 		}
 		if (uap->fname==NULL) {
 			if (ip = acctp) {
-				irele(ip);
 				acctp = NULL;
+				irele(ip);
 			}
 			return;
 		}
