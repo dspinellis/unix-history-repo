@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.17 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.18 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.17 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.18 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -261,4 +261,24 @@ loop:
 	}
 }
 
-#endif /* NAMED_BIND */
+#else /* not NAMED_BIND */
+
+#include <netdb.h>
+
+getcanonname(host, hbsize)
+	char *host;
+	int hbsize;
+{
+	struct hostent *hp;
+
+	hp = gethostbyname(host);
+	if (hp == NULL)
+		return;
+
+	if (strlen(hp->h_name) >= hbsize)
+		return;
+
+	(void) strcpy(host, hp->h_name);
+}
+
+#endif /* not NAMED_BIND */
