@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)factor.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)factor.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,9 +37,13 @@ static char sccsid[] = "@(#)factor.c	8.1 (Berkeley) %G%";
  * If no args are given, the list of numbers are read from stdin.
  */
 
+#include <err.h>
 #include <ctype.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "primes.h"
 
 /*
@@ -49,201 +53,65 @@ static char sccsid[] = "@(#)factor.c	8.1 (Berkeley) %G%";
  * up to 65537 and 65537^2 > 2^32-1.
  */
 extern ubig prime[];
-extern ubig *pr_limit;	/* largest prime in the prime array */
+extern ubig *pr_limit;		/* largest prime in the prime array */
 
-#define MAX_LINE 255	/* max line allowed on stdin */
+void	pr_fact __P((ubig));	/* print factors of a value */
+void	usage __P((void));
 
-void pr_fact();		/* print factors of a value */
-long small_fact();	/* find smallest factor of a value */
-char *read_num_buf();	/* read a number buffer */
-char *program;		/* name of this program */
-
+int
 main(argc, argv)
-	int argc;	/* arg count */
-	char *argv[];	/* the args */
+	int argc;
+	char *argv[];
 {
-	int arg;	/* which arg to factor */
-	long val;	/* the value to factor */
-	char buf[MAX_LINE+1];	/* input buffer */
+	ubig val;
+	int ch;
+	char *p, buf[100];		/* > max number of digits. */
 
-	/* parse args */
-	program = argv[0];
-	if (argc >= 2) {
-
-		/* factor each arg */
-		for (arg=1; arg < argc; ++arg) {
-
-			/* process the buffer */
-			if (read_num_buf(NULL, argv[arg]) == NULL) {
-				fprintf(stderr, "%s: ouch\n", program);
-				exit(1);
-			}
-
-			/* factor the argument */
-			if (sscanf(argv[arg], "%ld", &val) == 1) {
-				pr_fact(val);
-			} else {
-				fprintf(stderr, "%s: ouch\n", program);
-				exit(1);
-			}
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch (ch) {
+		case '?':
+		default:
+			usage();
 		}
+	argc -= optind;
+	argv += optind;
 
-	/* no args supplied, read numbers from stdin */
-	} else {
-		/*
-		 * read asciii numbers from input
-		 */
-		while (read_num_buf(stdin, buf) != NULL) {
-
-			/* factor the argument */
-			if (sscanf(buf, "%ld", &val) == 1) {
-				pr_fact(val);
+	/* No args supplied, read numbers from stdin. */
+	if (argc == 0)
+		for (;;) {
+			if (fgets(buf, sizeof(buf), stdin) == NULL) {
+				if (ferror(stdin))
+					err(1, "stdin");
+				exit (0);
 			}
+			for (p = buf; isblank(*p); ++p);
+			if (*p == '\n' || *p == '\0')
+				continue;
+			if (*p == '-')
+				errx(1, "negative numbers aren't permitted.");
+			errno = 0;
+			val = strtoul(buf, &p, 10);
+			if (errno)
+				err(1, "%s", buf);
+			if (*p != '\n')
+				errx(1, "%s: illegal numeric format.", buf);
+			pr_fact(val);
 		}
-	}
+	/* Factor the arguments. */
+	else
+		for (; *argv != NULL; ++argv) {
+			if (argv[0][0] == '-')
+				errx(1, "negative numbers aren't permitted.");
+			errno = 0;
+			val = strtoul(argv[0], &p, 10);
+			if (errno)
+				err(1, "%s", argv[0]);
+			if (*p != '\0')
+				errx(1, "%s: illegal numeric format.", argv[0]);
+			pr_fact(val);
+		}
 	exit(0);
 }
-
-/*
- * read_num_buf - read a number buffer from a stream
- *
- * Read a number on a line of the form:
- *
- *	^[ \t]*\([+-]?[0-9][0-9]\)*.*$
- *
- * where ? is a 1-or-0 operator and the number is within \( \).
- *
- * If does not match the above pattern, it is ignored and a new
- * line is read.  If the number is too large or small, we will
- * print ouch and read a new line.
- *
- * We have to be very careful on how we check the magnitude of the
- * input.  We can not use numeric checks because of the need to
- * check values against maximum numeric values.
- *
- * This routine will return a line containing a ascii number between
- * NEG_SEMIBIG and SEMIBIG, or it will return NULL.
- *
- * If the stream is NULL then buf will be processed as if were
- * a single line stream.
- *
- * returns:
- *	char *	pointer to leading digit, + or -
- *	NULL	EOF or error
- */
-char *
-read_num_buf(input, buf)
-	FILE *input;		/* input stream or NULL */
-	char *buf;		/* input buffer */
-{
-	static char limit[MAX_LINE+1];	/* ascii value of SEMIBIG */
-	static int limit_len;		/* digit count of limit */
-	static char neg_limit[MAX_LINE+1];	/* value of NEG_SEMIBIG */
-	static int neg_limit_len;		/* digit count of neg_limit */
-	int len;			/* digits in input (excluding +/-) */
-	char *s;	/* line start marker */
-	char *d;	/* first digit, skip +/- */
-	char *p;	/* scan pointer */
-	char *z;	/* zero scan pointer */
-
-	/* form the ascii value of SEMIBIG if needed */
-	if (!isascii(limit[0]) || !isdigit(limit[0])) {
-		sprintf(limit, "%ld", SEMIBIG);
-		limit_len = strlen(limit);
-		sprintf(neg_limit, "%ld", NEG_SEMIBIG);
-		neg_limit_len = strlen(neg_limit)-1;	/* exclude - */
-	}
-	
-	/*
-	 * the search for a good line
-	 */
-	if (input != NULL && fgets(buf, MAX_LINE, input) == NULL) {
-		/* error or EOF */
-		return NULL;
-	}
-	do {
-
-		/* ignore leading whitespace */
-		for (s=buf; *s && s < buf+MAX_LINE; ++s) {
-			if (!isascii(*s) || !isspace(*s)) {
-				break;
-			}
-		}
-
-		/* skip over any leading + or - */
-		if (*s == '+' || *s == '-') {
-			d = s+1;
-		} else {
-			d = s;
-		}
-
-		/* note leading zeros */
-		for (z=d; *z && z < buf+MAX_LINE; ++z) {
-			if (*z != '0') {
-				break;
-			}
-		}
-
-		/* scan for the first non-digit */
-		for (p=d; *p && p < buf+MAX_LINE; ++p) {
-			if (!isascii(*p) || !isdigit(*p)) {
-				break;
-			}
-		}
-
-		/* ignore empty lines */
-		if (p == d) {
-			continue;
-		}
-		*p = '\0';
-
-		/* object if too many digits */
-		len = strlen(z);
-		len = (len<=0) ? 1 : len;
-		if (*s == '-') {
-			/* accept if digit count is below limit */
-			if (len < neg_limit_len) {
-				/* we have good input */
-				return s;
-
-			/* reject very large numbers */
-			} else if (len > neg_limit_len) {
-				fprintf(stderr, "%s: ouch\n", program);
-				exit(1);
-
-			/* carefully check against near limit numbers */
-			} else if (strcmp(z, neg_limit+1) > 0) {
-				fprintf(stderr, "%s: ouch\n", program);
-				exit(1);
-			}
-			/* number is near limit, but is under it */
-			return s;
-		
-		} else {
-			/* accept if digit count is below limit */
-			if (len < limit_len) {
-				/* we have good input */
-				return s;
-
-			/* reject very large numbers */
-			} else if (len > limit_len) {
-				fprintf(stderr, "%s: ouch\n", program);
-				exit(1);
-
-			/* carefully check against near limit numbers */
-			} else if (strcmp(z, limit) > 0) {
-				fprintf(stderr, "%s: ouch\n", program);
-				exit(1);
-			}
-			/* number is near limit, but is under it */
-			return s;
-		}
-	} while (input != NULL && fgets(buf, MAX_LINE, input) != NULL);
-
-	/* error or EOF */
-	return NULL;
-}
-
 
 /*
  * pr_fact - print the factors of a number
@@ -260,62 +128,48 @@ read_num_buf(input, buf)
  */
 void
 pr_fact(val)
-	long val;	/* factor this value */
+	ubig val;		/* Factor this value. */
 {
-	ubig *fact;	/* the factor found */
+	ubig *fact;		/* The factor found. */
 
-	/* firewall - catch 0 and 1 */
-	switch (val) {
-	case LONG_MIN:
-		/* avoid negation problems - assumes LONG_MIN is even  XXX */
-		printf("%ld: -1 2", val);
-		val /= -2;
-		break;
-	case -1:
-		puts("-1: -1\n");
-		return;
-	case 0:
+	/* Firewall - catch 0 and 1. */
+	if (val == 0)		/* Historical practice; 0 just exits. */
 		exit(0);
-	case 1:
-		puts("1: 1\n");
+	if (val == 1) {
+		(void)printf("1: 1\n");
 		return;
-	default:
-		if (val < 0) {
-			val = -val;
-			printf("%ld: -1", val);
-		} else
-			printf("%ld:", val);
-		break;
 	}
-	fflush(stdout);
 
-	/*
-	 * factor value
-	 */
-	fact = &prime[0];
-	while (val > 1) {
-
-		/* look for the smallest factor */
+	/* Factor value. */
+	(void)printf("%ld:", val);
+	for (fact = &prime[0]; val > 1; ++fact) {
+		/* Look for the smallest factor. */
 		do {
-			if (val%(long)*fact == 0) {
+			if (val % (long)*fact == 0)
 				break;
-			}
 		} while (++fact <= pr_limit);
 
-		/* watch for primes larger than the table */
+		/* Watch for primes larger than the table. */
 		if (fact > pr_limit) {
-			printf(" %ld\n", val);
-			return;
+			(void)printf(" %ld", val);
+			break;
 		}
 
-		/* divide factor out until none are left */
+		/* Divide factor out until none are left. */
 		do {
-			printf(" %ld", *fact);
+			(void)printf(" %ld", *fact);
 			val /= (long)*fact;
 		} while ((val % (long)*fact) == 0);
-		fflush(stdout);
-		++fact;
+
+		/* Let the user know we're doing something. */
+		(void)fflush(stdout);
 	}
-	putchar('\n');
-	return;
+	(void)putchar('\n');
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: factor [value ...]\n");
+	exit (0);
 }
