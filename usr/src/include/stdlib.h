@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.12 (Berkeley) %G%
+ *	@(#)stdlib.h	5.13 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -83,6 +83,8 @@ extern	 int opterr;
 int	 getopt __P((int, char * const *, const char *));
 extern	 char *suboptarg;		/* getsubopt(3) external variable */
 int	 getsubopt __P((char **, char * const *, char **));
+int	 heapsort __P((void *, size_t, size_t,
+	    int (*)(const void *, const void *)));
 char	*initstate __P((unsigned, char *, int));
 int	 radixsort __P((const u_char **, int, const u_char *, u_char));
 long	 random __P((void));
