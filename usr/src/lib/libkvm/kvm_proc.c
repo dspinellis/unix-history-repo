@@ -6,31 +6,27 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_proc.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_proc.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <machine/pte.h>
 #include <machine/vmparam.h>
 #include <sys/param.h>
+#include <sys/vmmac.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/file.h>
 #include <sys/text.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/vmmac.h>
 #include <sys/ioctl.h>
+#include <sys/kinfo.h>
 #include <sys/tty.h>
+#include <fcntl.h>
 #include <kvm.h>
-#include <ctype.h>
-#include <vis.h>
 #include <nlist.h>
-#include <pwd.h>
-#include <string.h>
 #include <ndbm.h>
 #include <limits.h>
 #include <paths.h>
 #include <stdio.h>
+#include <string.h>
 
 /*
  * files
@@ -229,7 +225,7 @@ kvm_nlist(nl)
 	char dbversion[_POSIX2_LINE_MAX];
 	char kversion[_POSIX2_LINE_MAX];
 	int dbversionlen;
-	char symbuf[MAXSYMSIZE+1];
+	char symbuf[MAXSYMSIZE];
 	struct nlist nbuf, *n;
 	int num, did;
 
@@ -241,7 +237,6 @@ kvm_nlist(nl)
 	 * initialize key datum
 	 */
 	key.dptr = symbuf;
-	symbuf[0] = KVMDB_NLIST;
 
 	if (db != NULL)
 		goto win;	/* off to the races */
@@ -254,7 +249,7 @@ kvm_nlist(nl)
 	/*
 	 * read version out of database
 	 */
-	bcopy("VERSION", symbuf+1, sizeof ("VERSION")-1);
+	bcopy("VERSION", symbuf, sizeof ("VERSION")-1);
 	key.dsize = (sizeof ("VERSION") - 1) + 1;
 	data = dbm_fetch(db, key);
 	if (data.dptr == NULL)
@@ -264,7 +259,7 @@ kvm_nlist(nl)
 	/*
 	 * read version string from kernel memory
 	 */
-	bcopy("_version", symbuf+1, sizeof ("_version")-1);
+	bcopy("_version", symbuf, sizeof ("_version")-1);
 	key.dsize = (sizeof ("_version")-1) + 1;
 	data = dbm_fetch(db, key);
 	if (data.dptr == NULL)
@@ -301,7 +296,7 @@ win:
 			seterr("kvm_nlist: symbol too large");
 			return (-1);
 		}
-		strcpy(symbuf+1, n->n_name);
+		(void)strcpy(symbuf, n->n_name);
 		key.dsize = len + 1;
 		data = dbm_fetch(db, key);
 		if (data.dptr == NULL || data.dsize != sizeof (struct nlist))
