@@ -1,4 +1,4 @@
-/*	in_pcb.c	6.7	85/04/16	*/
+/*	in_pcb.c	6.7	85/04/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -112,15 +112,22 @@ in_pcbconnect(inp, nam)
 	if (sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
 	if (in_ifaddr) {
+		/*
+		 * If the destination address is INADDR_ANY,
+		 * use the primary local address.
+		 * If the supplied address is INADDR_BROADCAST,
+		 * and the primary interface supports broadcast,
+		 * choose the broadcast address for that interface.
+		 */
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
 		if (sin->sin_addr.s_addr == INADDR_ANY)
-		    sin->sin_addr.s_addr = IA_SIN(in_ifaddr)->sin_addr.s_addr;
-		else if (sin->sin_addr.s_addr == INADDR_BROADCAST)
-		    /* SHOULD CHECK FOR BROADCAST CAPABILITY */
-		    sin->sin_addr.s_addr = satosin(&in_ifaddr->ia_broadaddr)->sin_addr.s_addr;
+		    sin->sin_addr = IA_SIN(in_ifaddr)->sin_addr;
+		else if (sin->sin_addr.s_addr == INADDR_BROADCAST &&
+		  (in_ifaddr->ia_ifp->if_flags & IFF_BROADCAST))
+		    sin->sin_addr = satosin(&in_ifaddr->ia_broadaddr)->sin_addr;
 	}
 	if (inp->inp_laddr.s_addr == INADDR_ANY) {
-		ia = (struct in_ifaddr *)ifa_ifwithnet(sin);
+		ia = (struct in_ifaddr *)ifa_ifwithnet((struct sockaddr *)sin);
 		if (ia == (struct in_ifaddr *)0) {
 			register struct route *ro;
 			struct ifnet *ifp;
@@ -138,20 +145,22 @@ in_pcbconnect(inp, nam)
 			}
 			if ((ro->ro_rt == (struct rtentry *)0) ||
 			    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0) {
-				struct ifnet *ifp;
-
 				/* No route yet, so try to acquire one */
 				ro->ro_dst.sa_family = AF_INET;
 				((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
 					sin->sin_addr;
 				rtalloc(ro);
 				if (ro->ro_rt == 0)
-				    ia = (struct in_ifaddr *) 0;
+					ifp = (struct ifnet *)0;
 				else
-				    for (ia = in_ifaddr; ia; ia = ia->ia_next)
-					if (ia->ia_ifp == ifp)
-					    break;
+					ifp = ro->ro_rt->rt_ifp;
 			}
+			if (ifp) {
+				for (ia = in_ifaddr; ia; ia = ia->ia_next)
+					if (ia->ia_ifp == ifp)
+						break;
+			} else
+				ia = (struct in_ifaddr *)0;
 			if (ia == 0)
 				ia = in_ifaddr;
 			if (ia == 0)
