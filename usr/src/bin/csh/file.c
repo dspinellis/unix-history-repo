@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)file.c	5.8 (Berkeley) %G%";
+static char *sccsid = "@(#)file.c	5.9 (Berkeley) %G%";
 #endif
 
 #ifdef FILEC
@@ -363,6 +363,7 @@ search(word, command, max_word_length)
 	char tilded_dir[MAXPATHLEN + 1], dir[MAXPATHLEN + 1];
 	char name[MAXNAMLEN + 1], extended_name[MAXNAMLEN+1];
 	char *entry;
+	static int is_prefix();
 #define MAXITEMS 1024
 
 	if (items != NULL)
