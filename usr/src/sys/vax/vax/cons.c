@@ -1,4 +1,4 @@
-/*	cons.c	4.8	81/03/11	*/
+/*	cons.c	4.9	81/05/05	*/
 
 /*
  * Vax console driver and floppy interface
@@ -162,18 +162,17 @@ register struct tty *tp;
 		goto out;
 	if (consdone == 0)
 		return;
-	if ((c=getc(&tp->t_outq)) >= 0) {
-		consdone = 0;
-		if (tp->t_flags&RAW)
-			mtpr(TXDB, c&0xff);
-		else if (c<=0177)
-			mtpr(TXDB, (c | (partab[c]&0200))&0xff);
-		else {
-			timeout(ttrstrt, (caddr_t)tp, (c&0177));
-			tp->t_state |= TIMEOUT;
-			goto out;
-		}
+	c = getc(&tp->t_outq);
+	if (tp->t_flags&RAW)
+		mtpr(TXDB, c&0xff);
+	else if (c<=0177)
+		mtpr(TXDB, (c | (partab[c]&0200))&0xff);
+	else {
+		timeout(ttrstrt, (caddr_t)tp, (c&0177));
+		tp->t_state |= TIMEOUT;
+		goto out;
 	}
+	consdone = 0;
 	tp->t_state |= BUSY;
     out:
 	splx(s);
