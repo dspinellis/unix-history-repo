@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -119,6 +119,7 @@ main(argc, argv)
 
 	ns_anynet.s_net[0] = -1; ns_anynet.s_net[1] = -1;
 	addr.sns_family = AF_NS;
+	addr.sns_len = sizeof(addr);
 	addr.sns_port = htons(IDPPORT_RIF);
 	s = getsocket(SOCK_DGRAM, 0, &addr);
 	if (s < 0)

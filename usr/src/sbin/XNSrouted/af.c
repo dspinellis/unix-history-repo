@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -45,7 +45,7 @@ int	xnnet_hash(), xnnet_netmatch(), xnnet_output(),
 struct afswitch afswitch[AF_MAX] =
 	{ NIL, NIL, NIL, NIL, NIL, NIL, XNSNET, NIL, NIL, NIL, NIL };
 
-struct sockaddr_ns xnnet_default = { AF_NS };
+struct sockaddr_ns xnnet_default = { sizeof(struct sockaddr_ns), AF_NS };
 
 union ns_net ns_anynet;
 union ns_net ns_zeronet;
