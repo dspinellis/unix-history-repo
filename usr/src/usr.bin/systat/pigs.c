@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pigs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)pigs.c	5.1 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/time.h>
 #include <sys/proc.h>
+#include <sys/dk.h>
 #include <pwd.h>
 
 WINDOW *
@@ -41,6 +42,8 @@ int     factor;
 float   total;
 struct  passwd *getpwuid();
 char    pidname[30];
+long	stime[CPUSTATES];
+double	idle;
 
 showpigs()
 {
@@ -70,13 +73,12 @@ showpigs()
                 ptptr++;
         }
 
-        pt[numprocs].pt_pctcpu = 1.0 - total;
+        pt[numprocs].pt_pctcpu = total / (1.0 - idle) * idle;
+	total += pt[numprocs].pt_pctcpu;
         pt[numprocs].pt_uid = -1;
         pt[numprocs].pt_pid = -1;
         pt[numprocs].pt_pp = NULL;
 
-        if (total < 1.0)
-                total = 1.0;
         factor = 50.0/total;
 
         /* Find the top few by executing a "bubble pass" ten times. */
@@ -150,6 +152,8 @@ static struct nlist nlst[] = {
         { "_Usrptmap" },
 #define X_USRPT         3
         { "_usrpt" },
+#define X_CPTIME	4
+	{ "_cp_time" },
         { "" }
 };
 
@@ -175,6 +179,8 @@ initpigs()
 	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
 	if (pt == NULL)
 		pt = (struct p_times *)calloc(nproc, sizeof (struct p_times));
+	lseek(kmem, (long)nlst[X_CPTIME].n_value, L_SET);
+	read(kmem, stime, sizeof stime);
 }
 
 fetchpigs()
@@ -183,6 +189,9 @@ fetchpigs()
         register struct p_times *prt;
         register float time;
         register struct proc *pp;
+	long ctime[CPUSTATES];
+	char buf[25];
+	double t;
 
 	if (nlst[X_PROC].n_type == 0)
 		return;
@@ -211,6 +220,16 @@ fetchpigs()
         }
         for (; prt < &pt[nproc]; prt++)
                 prt->pt_uid = -1;
+	lseek(kmem, (long)nlst[X_CPTIME].n_value, L_SET);
+	read(kmem, ctime, sizeof ctime);
+	t = 0;
+	for (i = 0; i < CPUSTATES; i++)
+		t += ctime[i] - stime[i];
+	if (t == 0.0)
+		t = 1.0;
+	idle = (ctime[CP_IDLE] - stime[CP_IDLE]) / t;
+	for (i = 0; i < CPUSTATES; i++)
+		stime[i] = ctime[i];
 }
 
 labelpigs()
