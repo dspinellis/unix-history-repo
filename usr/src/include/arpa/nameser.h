@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nameser.h	5.26 (Berkeley) %G%
+ *	@(#)nameser.h	5.27 (Berkeley) %G%
  */
 
 #ifndef _NAMESER_H_
@@ -64,7 +64,7 @@
 #define QUERY		0x0		/* standard query */
 #define IQUERY		0x1		/* inverse query */
 #define STATUS		0x2		/* nameserver status query */
-/*#define xxx		0x3		/* 0x3 reserved */
+#define __NAMESER_RESV	0x3		/* 0x3 reserved */
 	/* non standard */
 #define UPDATEA		0x9		/* add resource record */
 #define UPDATED		0xa		/* delete a specific resource record */
