@@ -2,27 +2,72 @@
  * Copyright (c) 1980, 1992 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
-#include <sys/dmap.h>
+/*
+ * swapinfo - based on a program of the same name by Kevin Lahey
+ */
 
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/conf.h>
+#include <sys/ioctl.h>
+#include <sys/map.h>
+#include <sys/stat.h>
+
+#include <kvm.h>
 #include <nlist.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include "systat.h"
 #include "extern.h"
 
-long ntext, textp;
-struct text *xtext;
+extern char *devname __P((int, int));
+extern char *getbsize __P((int *headerlenp, long *blocksizep));
+void showspace __P((char *header, int hlen, long blocksize));
 
-static void swaplabel __P((int, int, int));
-static void vsacct __P((struct dmap *));
-static int swapdisplay __P((int, int, int));
-static int dmtoindex __P((int));
+kvm_t	*kd;
+
+struct nlist syms[] = {
+	{ "_swapmap" },	/* list of free swap areas */
+#define VM_SWAPMAP	0
+	{ "_nswapmap" },/* size of the swap map */
+#define VM_NSWAPMAP	1
+	{ "_swdevt" },	/* list of swap devices and sizes */
+#define VM_SWDEVT	2
+	{ "_nswap" },	/* size of largest swap device */
+#define VM_NSWAP	3
+	{ "_nswdev" },	/* number of swap devices */
+#define VM_NSWDEV	4
+	{ "_dmmax" },	/* maximum size of a swap block */
+#define VM_DMMAX	5
+	0
+};
+
+static int nswap, nswdev, dmmax, nswapmap;
+static struct swdevt *sw;
+static long *perdev;
+static struct map *swapmap, *kswapmap;
+static struct mapent *mp;
+static int nfree, hlen, blocksize;
+
+#define	SVAR(var) __STRING(var)	/* to force expansion */
+#define	KGET(idx, var) \
+	KGET1(idx, &var, sizeof(var), SVAR(var))
+#define	KGET1(idx, p, s, msg) \
+	KGET2(syms[idx].n_value, p, s, msg)
+#define	KGET2(addr, p, s, msg) \
+	if (kvm_read(kd, addr, p, s) != s) { \
+		error("cannot read %s: %s", msg, kvm_geterr(kd)); \
+		return (0); \
+	}
 
 WINDOW *
 openswap()
@@ -41,253 +86,146 @@ closeswap(w)
 	delwin(w);
 }
 
-int	dmmin;
-int	dmmax;
-int	dmtext;
-int	nswdev;
-#define	MAXSWAPDEV	4
-short	buckets[MAXSWAPDEV][NDMAP];
-struct	swdevt *swdevt;
-int	colwidth;
-
-void
-showswap()
-{
-#ifdef notdef	
-	register int i, j;
-	register struct proc *pp;
-	register struct text *xp;
-	register int row;
-	register int ts;
-	register swblk_t *dp;
-
-	if (xtext == 0)
-		return;
-	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->x_vptr == NULL)
-			continue;
-		ts = ctod(xp->x_size);
-		dp = xp->x_daddr;
-		for (i = 0; i < ts; i += dmtext) {
-			j = ts - i;
-			if (j > dmtext)
-				j = dmtext;
-#define	swatodev(addr)	(((addr) / dmmax) % nswdev)
-			buckets[swatodev(*dp)][dmtoindex(j)]++;
-			dp++;
-		}
-		if ((xp->x_flag & XPAGV) && xp->x_ptdaddr)
-			buckets[swatodev(xp->x_ptdaddr)]
-			    [dmtoindex(ctod(ctopt(xp->x_size)))]++;
-	}
-	row = swapdisplay(2, dmtext, 'X');
-	if (kprocp == NULL)
-		return;
-	/* TODO - traverse procs { */
-		if (pp->p_stat == 0 || pp->p_stat == SZOMB)
-			continue;
-		if (pp->p_flag & SSYS)
-			continue;
-		if (getu(pp) == 0)
-			continue;
-		vsacct(&u.u_dmap);
-		vsacct(&u.u_smap);
-		if ((pp->p_flag & SLOAD) == 0)
-			vusize(pp);
-	}
-	(void) swapdisplay(1+row, dmmax, 'X');
-#endif
-}
-
-#define	OFFSET	5			/* left hand column */
-
-static int
-swapdisplay(baserow, dmbound, c)
-	int baserow, dmbound, c;
-{
-#ifdef notdef	
-	register int i, j, k, row;
-	register short *pb;
-	char buf[10];
-
-	for (row = baserow, i = dmmin; i <= dmbound; i *= 2, row++) {
-		for (j = 0; j < nswdev; j++) {
-			pb = &buckets[j][row - baserow];
-			wmove(wnd, row, OFFSET + j * (1 + colwidth));
-			k = MIN(*pb, colwidth);
-			if (*pb > colwidth) {
-				sprintf(buf, " %d", *pb);
-				k -= strlen(buf);
-				while (k--)
-					waddch(wnd, c);
-				waddstr(wnd, buf);
-			} else {
-				while (k--)
-					waddch(wnd, c);
-				k = MAX(colwidth - *pb, 0);
-				while (k--)
-					waddch(wnd, ' ');
-			}
-			*pb = 0;
-		}
-	}
-	return (row);
-#endif
-}
-
-static void
-vsacct(dmp)
-	register struct dmap *dmp;
-{
-#ifdef notdef	
-	register swblk_t *ip;
-	register int blk = dmmin, index = 0;
-
-	for (ip = dmp->dm_map; dmp->dm_alloc > 0; ip++) {
-		if (ip - dmp->dm_map >= NDMAP) {
-			error("vsacct NDMAP");
-			break;
-		}
-		if (*ip == 0)
-			error("vsacct *ip == 0");
-		buckets[swatodev(*ip)][index]++;
-		dmp->dm_alloc -= blk;
-		if (blk < dmmax) {
-			blk *= 2;
-			index++;
-		}
-	}
-#endif
-}
-
-static int
-dmtoindex(dm)
-	int dm;
-{
-#ifdef notdef	
-	register int i, j;
-
-	for (j = 0, i = dmmin; i <= dmmax; i *= 2, j++)
-		if (dm <= i)
-			return (j);
-	error("dmtoindex(%d)", dm);
-	return (NDMAP - 1);
-#endif
-}
-
-static struct nlist namelist[] = {
-#define X_FIRST		0
-#define X_NSWAP         0
-	{ "_nswap" },
-#define X_DMMIN         1
-	{ "_dmmin" },
-#define X_DMMAX         2
-	{ "_dmmax" },
-#define	X_DMTEXT	3
-	{ "_dmtext" },
-#define X_NSWDEV        4
-	{ "_nswdev" },
-#define	X_SWDEVT	5
-	{ "_swdevt" },
-#define	X_NTEXT		6
-	{ "_ntext" },
-#define	X_TEXT		7
-	{ "_text" },
-	{ "" }
-};
-
-int
 initswap()
 {
-#ifdef notdef	
-	if (namelist[X_FIRST].n_type == 0) {
-		if (kvm_nlist(kd, namelist)) {
-			nlsterr(namelist);
-			return(0);
+	int i;
+	char msgbuf[BUFSIZ];
+	static int once = 0;
+
+	if (once)
+		return (1);
+	if (kvm_nlist(kd, syms)) {
+		strcpy(msgbuf, "systat: swap: cannot find");
+		for (i = 0; syms[i].n_name != NULL; i++) {
+			if (syms[i].n_value == 0) {
+				strcat(msgbuf, " ");
+				strcat(msgbuf, syms[i].n_name);
+			}
 		}
-		if (namelist[X_FIRST].n_type == 0) {
-			error("namelist on %s failed", _PATH_UNIX);
-			return(0);
-		}
+		error(msgbuf);
+		return (0);
 	}
-	if (nswdev == 0) {
-		NREAD(X_DMMIN, &dmmin, LONG);
-		NREAD(X_DMMAX, &dmmax, LONG);
-		NREAD(X_DMTEXT, &dmtext, LONG);
-		NREAD(X_NSWDEV, &nswdev, LONG);
-		if (nswdev > MAXSWAPDEV)
-			nswdev = MAXSWAPDEV;
-		swdevt = (struct swdevt *)calloc(nswdev, sizeof (*swdevt));
-		NREAD(X_SWDEVT, swdevt, nswdev * sizeof (struct swdevt));
-		NREAD(X_NTEXT, &ntext, LONG);
-		NREAD(X_TEXT, &textp, LONG);
+	KGET(VM_NSWAP, nswap);
+	KGET(VM_NSWDEV, nswdev);
+	KGET(VM_DMMAX, dmmax);
+	KGET(VM_NSWAPMAP, nswapmap);
+	KGET(VM_SWAPMAP, kswapmap);	/* kernel `swapmap' is a pointer */
+	if ((sw = malloc(nswdev * sizeof(*sw))) == NULL ||
+	    (perdev = malloc(nswdev * sizeof(*perdev))) == NULL ||
+	    (mp = malloc(nswapmap * sizeof(*mp))) == NULL) {
+		error("swap malloc");
+		return (0);
 	}
-	if (xtext == NULL)
-		xtext = (struct text *)calloc(ntext, sizeof (struct text));
-	return(1);
-#endif
+	KGET1(VM_SWDEVT, sw, nswdev * sizeof(*sw), "swdevt");
+	once = 1;
+	return (1);
 }
 
 void
 fetchswap()
 {
-#ifdef notdef	
-	if (namelist[X_FIRST].n_type == 0)
-		return;
+	int s, e, i;
+
+	s = nswapmap * sizeof(*mp);
+	if (kvm_read(kd, (long)kswapmap, mp, s) != s)
+		error("cannot read swapmap: %s", kvm_geterr(kd));
+
+	/* first entry in map is `struct map'; rest are mapent's */
+	swapmap = (struct map *)mp;
+	if (nswapmap != swapmap->m_limit - (struct mapent *)kswapmap)
+		error("panic: swap: nswapmap goof");
+
 	/*
-	 * TODO - read procs
+	 * Count up swap space.
 	 */
-	if (xtext == NULL) {
-		xtext = (struct text *)calloc(ntext, sizeof (struct text));
-		if (xtext == NULL)
-			return;
+	nfree = 0;
+	bzero(perdev, nswdev * sizeof(*perdev));
+	for (mp++; mp->m_addr != 0; mp++) {
+		s = mp->m_addr;			/* start of swap region */
+		e = mp->m_addr + mp->m_size;	/* end of region */
+		nfree += mp->m_size;
+
+		/*
+		 * Swap space is split up among the configured disks.
+		 * The first dmmax blocks of swap space some from the
+		 * first disk, the next dmmax blocks from the next, 
+		 * and so on.  The list of free space joins adjacent
+		 * free blocks, ignoring device boundries.  If we want
+		 * to keep track of this information per device, we'll
+		 * just have to extract it ourselves.
+		 */
+
+		/* calculate first device on which this falls */
+		i = (s / dmmax) % nswdev;
+		while (s < e) {		/* XXX this is inefficient */
+			int bound = roundup(s + 1, dmmax);
+
+			if (bound > e)
+				bound = e;
+			perdev[i] += bound - s;
+			if (++i >= nswdev)
+				i = 0;
+			s = bound;
+		}
 	}
-	if (!KREAD(textp, xtext, ntext * sizeof (struct text)))
-		error("couldn't read text table");
-#endif
 }
 
 void
 labelswap()
 {
-#ifdef notdef	
-	register int row;
+	char *header;
+	int row, i;
 
-	if (nswdev == 0) {
-		error("Don't know how many swap devices.\n");
-		return;
+	row = 0;
+	wmove(wnd, row, 0); wclrtobot(wnd);
+	header = getbsize(&hlen, &blocksize);
+	mvwprintw(wnd, row++, 0, "%-5s%*s%9s  %55s",
+	    "Disk", hlen, header, "Used",
+	    "/0%  /10% /20% /30% /40% /50% /60% /70% /80% /90% /100%");
+	for (i = 0; i < nswdev; i++) {
+		mvwprintw(wnd, i + 1, 0, "%-5s",
+		    devname(sw[i].sw_dev, S_IFBLK));
 	}
-	colwidth = (COLS - OFFSET - (nswdev - 1)) / nswdev;
-	row = swaplabel(0, dmtext, 1);
-	(void) swaplabel(row, dmmax, 0);
-#endif
 }
 
-static void
-swaplabel(row, dmbound, donames)
-	register int row;
-	int dmbound, donames;
+void
+showswap()
 {
-#ifdef notdef	
-	register int i, j;
+	int col, row, div, i, j, avail, npfree, used, xsize, xfree;
 
+	div = blocksize / 512;
+	avail = npfree = 0;
 	for (i = 0; i < nswdev; i++) {
-		if (donames)
-			mvwprintw(wnd,
-			    row, OFFSET + i*(1 + colwidth) + (colwidth - 3)/2,
-			    "%s", devname(swdevt[i].sw_dev, S_IFBLK));
-		for (j = 0; j + 5 < colwidth; j += 5)
-			mvwprintw(wnd, row + donames,
-			    OFFSET + i*(1 + colwidth) + j, "/%-2d  ", j);
+		col = 5;
+		mvwprintw(wnd, i + 1, col, "%*d", hlen, sw[i].sw_nblks / div);
+		col += hlen;
+		/*
+		 * Don't report statistics for partitions which have not
+		 * yet been activated via swapon(8).
+		 */
+		if (!sw[i].sw_freed) {
+			mvwprintw(wnd, i + 1, col + 8,
+			    "0  *** not available for swapping ***");
+			continue;
+		}
+		xsize = sw[i].sw_nblks;
+		xfree = perdev[i];
+		used = xsize - xfree;
+		mvwprintw(wnd, i + 1, col, "%9d  ", used / div);
+		for (j = (100 * used / xsize + 1) / 2; j > 0; j--)
+			waddch(wnd, 'X');
+		npfree++;
+		avail += xsize;
 	}
-	row += 1 + donames;
-	for (j = 0, i = dmmin; i <= dmbound; i *= 2, j++, row++) {
-		int k;
-
-		mvwprintw(wnd, row, 0, "%4d|", i);
-		for (k = 1; k < nswdev; k++)
-			mvwaddch(wnd, row, OFFSET + k*(1 + colwidth) - 1, '|');
+	/* 
+	 * If only one partition has been set up via swapon(8), we don't
+	 * need to bother with totals.
+	 */
+	if (npfree > 1) {
+		used = avail - nfree;
+		mvwprintw(wnd, i + 1, 0, "%-5s%*d%9d  ",
+		    "Total", hlen, avail / div, used / div);
+		for (j = (100 * used / avail + 1) / 2; j > 0; j--)
+			waddch(wnd, 'X');
 	}
-	return (row);
-#endif
 }
