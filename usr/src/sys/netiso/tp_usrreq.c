@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.16 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.17 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -48,13 +48,13 @@ SOFTWARE.
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "domain.h"
 #include "protosw.h"
 #include "errno.h"
+#include "time.h"
 
 #include "tp_param.h"
 #include "tp_timer.h"

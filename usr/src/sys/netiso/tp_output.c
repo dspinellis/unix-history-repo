@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_output.c	7.9 (Berkeley) %G%
+ *	@(#)tp_output.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -48,8 +48,6 @@ SOFTWARE.
 #include "socket.h"
 #include "socketvar.h"
 #include "protosw.h"
-#include "user.h"
-#include "kernel.h"
 #include "errno.h"
 #include "time.h"
 #include "tp_param.h"
@@ -61,6 +59,7 @@ SOFTWARE.
 #include "argo_debug.h"
 #include "tp_pcb.h"
 #include "tp_trace.h"
+#include "kernel.h"
 
 #define USERFLAGSMASK_G 0x0f00643b
 #define USERFLAGSMASK_S 0x0f000432
@@ -432,9 +431,10 @@ tp_ctloutput(cmd, so, level, optname, mp)
 	switch (optname) {
 
 	case TPOPT_INTERCEPT:
-		if (error = suser(u.u_cred, &u.u_acflag))
+		if ((so->so_state & SS_PRIV) == 0) {
+			error = EPERM;
 			break;
-		else if (cmd != PRCO_SETOPT || tpcb->tp_state != TP_LISTENING)
+		} else if (cmd != PRCO_SETOPT || tpcb->tp_state != TP_LISTENING)
 			error = EINVAL;
 		else {
 			register struct tp_pcb *t = 0;

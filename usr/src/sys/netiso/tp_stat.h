@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_stat.h	7.4 (Berkeley) %G%
+ *	@(#)tp_stat.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -160,6 +160,7 @@ struct tp_stat {
 	  	 *	ACK_FCC **
 		 */
 } tp_stat ;
+#define 	TP_PM_MAX			0xa /* 10 decimal */
 
 #define IncStat(x) tp_stat./**/x/**/++
 
@@ -174,7 +175,6 @@ struct tp_stat {
 
 
 /* for perf measurement stuff: maximum window size it can handle */
-#define 	TP_PM_MAX			0xa /* 10 decimal */
 
 struct tp_pmeas {
 		/* the first few are distributions as a fn of window size 
@@ -242,14 +242,13 @@ struct tp_pmeas {
 
 #else
 
-#define PStat(tpcb, x)  /* no-op */
+int PStat_Junk;
+#define PStat(tpcb, x)  PStat_Junk
 #define IncPStat(tpcb, x)  /* no-op */
+#define tpmeas(a,b,c,d,e,f) 0
 
-#ifndef STAR
-#define STAR *
-#endif	STAR
-#define IFPERF	//*beginning of comment*/STAR
-#define ENDPERF		 STAR/*end of comment*//
+#define IFPERF(x)	if (0) {
+#define ENDPERF }
 
 #endif TP_PERF_MEAS
 

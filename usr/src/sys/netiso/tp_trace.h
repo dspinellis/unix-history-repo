@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_trace.h	7.4 (Berkeley) %G%
+ *	@(#)tp_trace.h	7.5 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -46,7 +46,6 @@ SOFTWARE.
 #ifndef __TP_TRACE__
 #define __TP_TRACE__
 
-#ifdef TPPT
 
 #define TPPTsendack	1
 #define TPPTgotack	2
@@ -124,23 +123,12 @@ struct	tp_Trace {
 #define tpt_window tpt_stuff.tpt_Time.tptv_window
 #define tpt_size tpt_stuff.tpt_Time.tptv_size
 
-#define TPTRACEN 300
-int tp_Tracen = 0;
-struct tp_Trace tp_Trace[TPTRACEN];
-
 #endif defined(TP_TRACEFILE)||!defined(KERNEL)
 
-extern u_char	tp_traceflags[];
 
-#define IFTRACE(ascii)\
-	if(tp_traceflags[ascii]) {
-/* 
- * for some reason lint complains about tp_param being undefined no
- * matter where or how many times I define it.
- */
+#ifdef TPPT
 
-
-#define ENDTRACE  }
+#define TPTRACEN 300
 
 #define tptrace(A,B,C,D,E,F) \
 	tpTrace((struct tp_pcb *)0,\
@@ -151,19 +139,34 @@ extern u_char	tp_traceflags[];
 	(u_int)(A),(u_int)(B),(u_int)(C),(u_int)(D),(u_int)(E),(u_int)(F))
 
 extern void tpTrace();
+extern struct tp_Trace tp_Trace[];
+extern u_char	tp_traceflags[];
+int tp_Tracen = 0;
+
+#define IFTRACE(ascii)\
+	if(tp_traceflags[ascii]) {
+/* 
+ * for some reason lint complains about tp_param being undefined no
+ * matter where or how many times I define it.
+ */
+#define ENDTRACE  }
+
 
 #else  TPPT
 
 /***********************************************
  * NO TPPT TRACE STUFF
  **********************************************/
+#define TPTRACEN 1
 
-#ifndef STAR
-#define STAR *
-#endif	STAR
-#define IFTRACE(ascii)	 //*beginning of comment*/STAR
-#define ENDTRACE	 STAR/*end of comment*//
+#define tptrace(A,B,C,D,E,F) 0
+#define tptraceTPCB(A,B,C,D,E,F) 0
+
+#define IFTRACE(ascii)	 if (0) {
+#define ENDTRACE	 }
 
 #endif TPPT
+
+
 
 #endif __TP_TRACE__
