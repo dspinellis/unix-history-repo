@@ -19,7 +19,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)bdes.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bdes.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -66,20 +66,24 @@ static char sccsid[] = "@(#)bdes.c	5.3 (Berkeley) %G%";
 #define	MEMCPY(dest,src,len)	bcopy((src),(dest),(len))
 #define	MEMZERO(dest,len)	bzero((dest),(len))
 
-/*
- * these "hide" the calls to the primitive encryption routines
- */
+/* Hide the calls to the primitive encryption routines. */
+#define	FASTWAY
+#ifdef	FASTWAY
+#define	DES_KEY(buf)	des_setkey(buf)
+#define	DES_XFORM(buf)	des_cipher(buf, buf, 0L, (inverse ? -1 : 1))
+#else
 #define	DES_KEY(buf)	{						\
 				char bits1[64];	/* bits of key */	\
 				expand(buf, bits1);			\
 				setkey(bits1);				\
 			}
-#define DES_XFORM(buf)	{						\
+#define	DES_XFORM(buf)	{						\
 				char bits1[64];	/* bits of message */	\
 				expand(buf, bits1);			\
 				encrypt(bits1, inverse);		\
 				compress(bits1, buf);			\
 			}
+#endif
 
 /*
  * this does an error-checking write
@@ -472,9 +476,13 @@ makekey(buf)
 		}
 	}
 	/*
-	 * Make the key schedule
+	 * Make the key schedule.  If an error, the system probably does
+	 * not have the encryption routines available.
 	 */
+	errno = 0;
 	DES_KEY(UBUFFER(buf));
+	if (errno)
+		err(0, NULL);
 }
 
 /*
@@ -969,6 +977,7 @@ cfbauth()
 	}
 }
 
+#ifndef FASTWAY
 /*
  * change from 8 bits/Uchar to 1 bit/Uchar
  */
@@ -998,6 +1007,7 @@ compress(from, to)
 			CHAR(to, i) = ((*from++)<<(7-j))|CHAR(to, i);
 	}
 }
+#endif
 
 /*
  * message about usage
