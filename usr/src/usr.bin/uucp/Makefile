@@ -1,4 +1,4 @@
-#	Makefile	5.11	85/12/12
+#	Makefile	5.12	87/06/18
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -53,9 +53,6 @@ STST=	${SPOOL}/STST
 # The six subdirs {not counting XTMP}.
 HOSTNAME=`uuname -l | sed 's/\(.......\).*/\1/'`
 SUBDIRS=C. D.${HOSTNAME}X D.${HOSTNAME} D. X. TM.
-# for make depend
-UNDEF=	-UNDIR -UUNET -USYSIII -UUNAME -UCCWHOAMI -UGETMYHNAME -UDATAKIT \
-	-DBSD4_2 -UUSG -UVMS -UBSD2_9
 
 all:	${ALL} 
 
@@ -163,244 +160,173 @@ install: ${ALL}
 	install -s -m 500 -o uucp uucpd ${ETC}
 	@echo Dont forget to fork off /etc/uucpd in /etc/rc.local
 	@echo if you are not running /etc/inetd
-	install -s uuencode ${BIN}
-	install -s uudecode ${BIN}
+	install -s -o bin -g bin -m 755 uuencode ${BIN}
+	install -s -o bin -g bin -m 755 uudecode ${BIN}
 
 clean:
 	rm -f *.o ${ALL} uulib.a
 	cd aculib; make ${MFLAGS} clean
 
-depend:
-	for i in *.c; do \
-		(echo `basename $$i .c`.o: $$i >>makedep; \
-			unifdef ${UNDEF} $$i | \
-			/bin/grep '^#[ 	]*include' | sed \
-			-e '/\.\.\/h/d' \
-			-e 's,<\(.*\)>,"/usr/include/\1",' \
-			-e 's/^[^"]*"\([^"]*\)".*/'"$$i"': \1/' \
-			-e 's/\.c/.o/' >>makedep); done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+depend: FRC
+	cd aculib; make ${MFLAGS} depend
+	mkdep ${CFLAGS} ${SRCS}
 
-# DO NOT DELETE THIS LINE -- make depend uses it
-# DEPENDENCIES MUST END AT END OF FILE
-acucntrl.o: acucntrl.c
-acucntrl.o: uucp.h
-acucntrl.o: /usr/include/sys/buf.h
-acucntrl.o: /usr/include/signal.h
-acucntrl.o: /usr/include/sys/conf.h
-acucntrl.o: /usr/include/vaxuba/ubavar.h
-acucntrl.o: /usr/include/sys/stat.h
-acucntrl.o: /usr/include/nlist.h
-acucntrl.o: /usr/include/sgtty.h
-acucntrl.o: /usr/include/utmp.h
-acucntrl.o: /usr/include/pwd.h
-acucntrl.o: /usr/include/stdio.h
-anlwrk.o: anlwrk.c
-anlwrk.o: uucp.h
-anlwrk.o: /usr/include/sys/stat.h
-anlwrk.o: uust.h
-anlwrk.o: /usr/include/sys/dir.h
-anlwrk.o: /usr/include/ctype.h
-anyread.o: anyread.c
-anyread.o: uucp.h
-anyread.o: /usr/include/sys/stat.h
-assert.o: assert.c
-assert.o: uucp.h
-assert.o: /usr/include/sys/time.h
-assert.o: /usr/include/errno.h
-cfgets.o: cfgets.c
-cfgets.o: /usr/include/stdio.h
-chkpth.o: chkpth.c
-chkpth.o: uucp.h
-chkpth.o: /usr/include/sys/stat.h
-chksum.o: chksum.c
-cico.o: cico.c
-cico.o: /usr/include/signal.h
-cico.o: uucp.h
-cico.o: /usr/include/setjmp.h
-cico.o: /usr/include/sgtty.h
-cico.o: /usr/include/netdb.h
-cico.o: /usr/include/netinet/in.h
-cico.o: /usr/include/sys/socket.h
-cico.o: /usr/include/sys/stat.h
-cico.o: uust.h
-cico.o: uusub.h
-cntrl.o: cntrl.c
-cntrl.o: uucp.h
-cntrl.o: /usr/include/sys/stat.h
-cntrl.o: uust.h
-condevs.o: condevs.c
-condevs.o: condevs.h
-condevs.o: /usr/include/sys/time.h
-conn.o: conn.c
-conn.o: /usr/include/signal.h
-conn.o: uucp.h
-conn.o: /usr/include/setjmp.h
-conn.o: /usr/include/ctype.h
-conn.o: /usr/include/errno.h
-conn.o: /usr/include/sgtty.h
-conn.o: /usr/include/sys/time.h
-cpmv.o: cpmv.c
-cpmv.o: uucp.h
-cpmv.o: /usr/include/sys/stat.h
-expfile.o: expfile.c
-expfile.o: uucp.h
-expfile.o: /usr/include/sys/stat.h
-fio.o: fio.c
-fio.o: /usr/include/signal.h
-fio.o: uucp.h
-fio.o: /usr/include/sgtty.h
-fio.o: /usr/include/setjmp.h
-gename.o: gename.c
-gename.o: uucp.h
-getargs.o: getargs.c
-getargs.o: uucp.h
-getprm.o: getprm.c
-getprm.o: uucp.h
-getpwinfo.o: getpwinfo.c
-getpwinfo.o: uucp.h
-getpwinfo.o: /usr/include/pwd.h
-getwd.o: getwd.c
-getwd.o: uucp.h
-gio.o: gio.c
-gio.o: uucp.h
-gio.o: pk.h
-gio.o: /usr/include/setjmp.h
-gnamef.o: gnamef.c
-gnamef.o: uucp.h
-gnamef.o: /usr/include/sys/dir.h
-gnsys.o: gnsys.c
-gnsys.o: uucp.h
+tags: FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+cico.o: cico.c /usr/include/signal.h uucp.h /usr/include/stdio.h
+cico.o: /usr/include/sysexits.h /usr/include/sys/types.h
+cico.o: /usr/include/sys/timeb.h /usr/include/setjmp.h /usr/include/sgtty.h
+cico.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+cico.o: /usr/include/sys/ttydev.h /usr/include/netdb.h
+cico.o: /usr/include/netinet/in.h /usr/include/sys/socket.h
+cico.o: /usr/include/sys/stat.h uust.h uusub.h
+cntrl.o: cntrl.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+cntrl.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+cntrl.o: /usr/include/sys/stat.h uust.h
+conn.o: conn.c /usr/include/signal.h uucp.h /usr/include/stdio.h
+conn.o: /usr/include/sysexits.h /usr/include/sys/types.h
+conn.o: /usr/include/sys/timeb.h /usr/include/setjmp.h /usr/include/ctype.h
+conn.o: /usr/include/errno.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+conn.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+conn.o: /usr/include/sys/time.h /usr/include/time.h
+condevs.o: condevs.c condevs.h uucp.h /usr/include/stdio.h
+condevs.o: /usr/include/sysexits.h /usr/include/sys/types.h
+condevs.o: /usr/include/sys/timeb.h /usr/include/errno.h /usr/include/setjmp.h
+condevs.o: /usr/include/signal.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+condevs.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+condevs.o: /usr/include/sys/time.h /usr/include/time.h
+gnsys.o: gnsys.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+gnsys.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
 gnsys.o: /usr/include/sys/dir.h
-gnxseq.o: gnxseq.c
-gnxseq.o: uucp.h
-gnxseq.o: /usr/include/sys/time.h
-imsg.o: imsg.c
-imsg.o: uucp.h
-index.o: index.c
-index.o: /usr/include/stdio.h
-ioctl.o: ioctl.c
-ioctl.o: uucp.h
-ioctl.o: /usr/include/sgtty.h
-lastpart.o: lastpart.c
-lastpart.o: uucp.h
-logent.o: logent.c
-logent.o: uucp.h
-logent.o: /usr/include/sys/time.h
-logent.o: /usr/include/fcntl.h
-logent.o: /usr/include/sgtty.h
-mailst.o: mailst.c
-mailst.o: /usr/include/signal.h
-mailst.o: uucp.h
-mkdir.o: mkdir.c
-pk0.o: pk0.c
-pk0.o: uucp.h
-pk0.o: pk.h
-pk1.o: pk1.c
-pk1.o: /usr/include/signal.h
-pk1.o: uucp.h
-pk1.o: pk.h
-pk1.o: /usr/include/setjmp.h
-pk1.o: /usr/include/sys/time.h
-prefix.o: prefix.c
-setline.o: setline.c
-setline.o: uucp.h
-strpbrk.o: strpbrk.c
-subdir.o: subdir.c
-subdir.o: uucp.h
-sysacct.o: sysacct.c
-sysacct.o: /usr/include/sys/types.h
-systat.o: systat.c
-systat.o: uucp.h
-tio.o: tio.c
-tio.o: /usr/include/signal.h
-tio.o: uucp.h
-tio.o: /usr/include/setjmp.h
-tio.o: /usr/include/sys/stat.h
-ulockf.o: ulockf.c
-ulockf.o: uucp.h
-ulockf.o: /usr/include/sys/stat.h
-uuclean.o: uuclean.c
-uuclean.o: /usr/include/signal.h
-uuclean.o: uucp.h
-uuclean.o: /usr/include/pwd.h
-uuclean.o: /usr/include/sys/stat.h
+pk0.o: pk0.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+pk0.o: /usr/include/sys/types.h /usr/include/sys/timeb.h pk.h
+chksum.o: chksum.c
+pk1.o: pk1.c /usr/include/signal.h uucp.h /usr/include/stdio.h
+pk1.o: /usr/include/sysexits.h /usr/include/sys/types.h
+pk1.o: /usr/include/sys/timeb.h pk.h /usr/include/setjmp.h
+pk1.o: /usr/include/sys/time.h /usr/include/time.h
+tio.o: tio.c /usr/include/signal.h uucp.h /usr/include/stdio.h
+tio.o: /usr/include/sysexits.h /usr/include/sys/types.h
+tio.o: /usr/include/sys/timeb.h /usr/include/setjmp.h /usr/include/sys/stat.h
+fio.o: fio.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+fio.o: /usr/include/sys/types.h /usr/include/sys/timeb.h /usr/include/signal.h
+fio.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+fio.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+fio.o: /usr/include/setjmp.h
+gio.o: gio.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+gio.o: /usr/include/sys/types.h /usr/include/sys/timeb.h pk.h
+gio.o: /usr/include/setjmp.h
+imsg.o: imsg.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+imsg.o: /usr/include/sys/types.h /usr/include/sys/timeb.h /usr/include/ctype.h
+uuclean.o: uuclean.c /usr/include/signal.h uucp.h /usr/include/stdio.h
+uuclean.o: /usr/include/sysexits.h /usr/include/sys/types.h
+uuclean.o: /usr/include/sys/timeb.h /usr/include/pwd.h /usr/include/sys/stat.h
 uuclean.o: /usr/include/sys/dir.h
-uucp.o: uucp.c
-uucp.o: uucp.h
-uucp.o: /usr/include/sys/stat.h
-uucp.o: uust.h
-uucpd.o: uucpd.c
-uucpd.o: uucp.h
-uucpd.o: /usr/include/netdb.h
-uucpd.o: /usr/include/signal.h
-uucpd.o: /usr/include/errno.h
-uucpd.o: /usr/include/sys/socket.h
-uucpd.o: /usr/include/netinet/in.h
-uucpd.o: /usr/include/sys/wait.h
-uucpd.o: /usr/include/sys/ioctl.h
-uucpd.o: /usr/include/pwd.h
-uucpd.o: /usr/include/lastlog.h
-uucpd.o: /usr/include/utmp.h
-uucpd.o: /usr/include/fcntl.h
-uucpdefs.o: uucpdefs.c
-uucpdefs.o: uucp.h
-uucpname.o: uucpname.c
-uucpname.o: uucp.h
-uucpname.o: /usr/include/sys/stat.h
-uudecode.o: uudecode.c
-uudecode.o: /usr/include/stdio.h
-uudecode.o: /usr/include/pwd.h
-uudecode.o: /usr/include/sys/types.h
-uudecode.o: /usr/include/sys/stat.h
-uuencode.o: uuencode.c
-uuencode.o: /usr/include/stdio.h
-uuencode.o: /usr/include/sys/types.h
-uuencode.o: /usr/include/sys/stat.h
-uulog.o: uulog.c
-uulog.o: uucp.h
-uuname.o: uuname.c
-uuname.o: uucp.h
+uucp.o: uucp.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uucp.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+uucp.o: /usr/include/sys/stat.h uust.h
+uulog.o: uulog.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uulog.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+uuname.o: uuname.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uuname.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
 uuname.o: /usr/include/signal.h
-uupoll.o: uupoll.c
-uupoll.o: uucp.h
-uuq.o: uuq.c
-uuq.o: uucp.h
-uuq.o: /usr/include/stdio.h
-uuq.o: /usr/include/sys/dir.h
-uuq.o: /usr/include/sys/stat.h
-uusend.o: uusend.c
-uusend.o: /usr/include/stdio.h
-uusend.o: /usr/include/pwd.h
-uusend.o: /usr/include/sys/types.h
-uusend.o: /usr/include/sys/stat.h
-uusnap.o: uusnap.c
-uusnap.o: uucp.h
-uusnap.o: /usr/include/sys/stat.h
-uusnap.o: /usr/include/sys/dir.h
-uusnap.o: /usr/include/ctype.h
-uux.o: uux.c
-uux.o: uucp.h
-uuxqt.o: uuxqt.c
-uuxqt.o: uucp.h
-uuxqt.o: /usr/include/sys/stat.h
-uuxqt.o: /usr/include/sys/dir.h
-uuxqt.o: /usr/include/signal.h
-versys.o: versys.c
-versys.o: uucp.h
-versys.o: /usr/include/stdio.h
-versys.o: /usr/include/ctype.h
-xqt.o: xqt.c
-xqt.o: /usr/include/signal.h
-xqt.o: uucp.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+uupoll.o: uupoll.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uupoll.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+uusend.o: uusend.c /usr/include/stdio.h /usr/include/pwd.h
+uusend.o: /usr/include/sys/types.h /usr/include/sys/stat.h
+uusnap.o: uusnap.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uusnap.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+uusnap.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/ctype.h
+uux.o: uux.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uux.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+uuxqt.o: uuxqt.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uuxqt.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+uuxqt.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/signal.h
+uuq.o: uuq.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uuq.o: /usr/include/sys/types.h /usr/include/sys/timeb.h /usr/include/stdio.h
+uuq.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
+acucntrl.o: acucntrl.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+acucntrl.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+acucntrl.o: /usr/include/sys/buf.h /usr/include/signal.h
+acucntrl.o: /usr/include/sys/conf.h /sys/vaxuba/ubavar.h
+acucntrl.o: /usr/include/sys/stat.h /usr/include/nlist.h /usr/include/sgtty.h
+acucntrl.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+acucntrl.o: /usr/include/sys/ttydev.h /usr/include/utmp.h /usr/include/pwd.h
+acucntrl.o: /usr/include/stdio.h /usr/include/sys/file.h
+anlwrk.o: anlwrk.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+anlwrk.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+anlwrk.o: /usr/include/sys/stat.h uust.h /usr/include/sys/dir.h
+anlwrk.o: /usr/include/ctype.h
+anyread.o: anyread.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+anyread.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+anyread.o: /usr/include/sys/stat.h
+assert.o: assert.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+assert.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+assert.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/errno.h
+cfgets.o: cfgets.c /usr/include/stdio.h
+chkpth.o: chkpth.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+chkpth.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+chkpth.o: /usr/include/sys/stat.h
+cpmv.o: cpmv.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+cpmv.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+cpmv.o: /usr/include/sys/stat.h
+expfile.o: expfile.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+expfile.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+expfile.o: /usr/include/sys/stat.h
+gename.o: gename.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+gename.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+gename.o: /usr/include/sys/file.h
+getargs.o: getargs.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+getargs.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+getprm.o: getprm.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+getprm.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+getpwinfo.o: getpwinfo.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+getpwinfo.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+getpwinfo.o: /usr/include/pwd.h
+gnamef.o: gnamef.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+gnamef.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+gnamef.o: /usr/include/sys/dir.h
+gnxseq.o: gnxseq.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+gnxseq.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+gnxseq.o: /usr/include/sys/time.h /usr/include/time.h
+lastpart.o: lastpart.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+lastpart.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+logent.o: logent.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+logent.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+logent.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/fcntl.h
+logent.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+logent.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+mailst.o: mailst.c /usr/include/signal.h uucp.h /usr/include/stdio.h
+mailst.o: /usr/include/sysexits.h /usr/include/sys/types.h
+mailst.o: /usr/include/sys/timeb.h
+prefix.o: prefix.c
+setline.o: setline.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+setline.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+strpbrk.o: strpbrk.c
+subdir.o: subdir.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+subdir.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+sysacct.o: sysacct.c /usr/include/sys/types.h
+systat.o: systat.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+systat.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+ulockf.o: ulockf.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+ulockf.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+ulockf.o: /usr/include/sys/stat.h /usr/include/errno.h
+uucpdefs.o: uucpdefs.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uucpdefs.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+uucpname.o: uucpname.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+uucpname.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+uucpname.o: /usr/include/sys/stat.h
+versys.o: versys.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
+versys.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+versys.o: /usr/include/stdio.h /usr/include/ctype.h
+xqt.o: xqt.c /usr/include/signal.h uucp.h /usr/include/stdio.h
+xqt.o: /usr/include/sysexits.h /usr/include/sys/types.h
+xqt.o: /usr/include/sys/timeb.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
