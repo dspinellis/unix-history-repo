@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.51	83/02/20	*/
+/*	ufs_vnops.c	4.52	83/03/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -914,7 +914,7 @@ rename()
 	int error = 0;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, LOOKUP | LOCKPARENT, 0);
+	ip = namei(uchar, DELETE | LOCKPARENT, 0);
 	if (ip == NULL)
 		return;
 	dp = u.u_pdir;
@@ -924,20 +924,23 @@ rename()
 
 		d = &u.u_dent;
 		/*
-		 * Avoid "." and ".." for obvious reasons.
+		 * Avoid ".", "..", and aliases of "." for obvious reasons.
 		 */
-		if (d->d_name[0] == '.') {
-			if (d->d_namlen == 1 ||
-			    (d->d_namlen == 2 && d->d_name[1] == '.')) {
+		if ((d->d_namlen == 1 && d->d_name[0] == '.') ||
+		    (d->d_namlen == 2 && bcmp(d->d_name, "..", 2) == 0) ||
+		    (dp == ip)) {
+			iput(dp);
+			if (dp == ip)
+				irele(ip);
+			else
 				iput(ip);
-				u.u_error = EINVAL;
-				return;
-			}
+			u.u_error = EINVAL;
+			return;
 		}
 		oldparent = dp->i_number;
 		doingdirectory++;
 	}
-	irele(dp);
+	iput(dp);
 
 	/*
 	 * 1) Bump link count while we're moving stuff
@@ -962,13 +965,19 @@ rename()
 	}
 	dp = u.u_pdir;
 	/*
+	 * If ".." must be changed (ie the directory gets a new
+	 * parent) then the user must have write permission.
+	 */
+	parentdifferent = oldparent != dp->i_number;
+	if (parentdifferent && access(ip, IWRITE))
+		goto bad;
+	/*
 	 * 2) If target doesn't exist, link the target
 	 *    to the source and unlink the source. 
 	 *    Otherwise, rewrite the target directory
 	 *    entry to reference the source inode and
 	 *    expunge the original entry's existence.
 	 */
-	parentdifferent = oldparent != dp->i_number;
 	if (xp == NULL) {
 		if (dp->i_dev != ip->i_dev) {
 			error = EXDEV;
