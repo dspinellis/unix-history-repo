@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)archive.h	5.8 (Berkeley) %G%
+ *	@(#)archive.h	5.9 (Berkeley) %G%
  */
 
 /* Ar(1) options. */
@@ -60,11 +60,11 @@ typedef struct {
 } CHDR;
 
 /* Header format strings. */
-#define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10ld%2s"
-#define	HDR2	"%-16.16s%-12ld%-6u%-6u%-8o%-10ld%2s"
+#define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10qd%2s"
+#define	HDR2	"%-16.16s%-12ld%-6u%-6u%-8o%-10qd%2s"
 
 #define	OLDARMAXNAME	15
-#define	HDR3	"%-16.15s%-12ld%-6u%-6u%-8o%-10ld%2s"
+#define	HDR3	"%-16.15s%-12ld%-6u%-6u%-8o%-10qd%2s"
 
 
 #include <sys/cdefs.h>
