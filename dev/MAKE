@@ -1,0 +1,221 @@
+umask 77
+for i
+do
+case $i in
+
+std)
+	/etc/mknod console	c 0 0
+	/etc/mknod drum		c 7 0	; chmod 644 drum
+	/etc/mknod floppy	c 8 0
+	/etc/mknod kUmem	c 3 3	;: no one has ever tried using this
+	/etc/mknod kmem		c 3 1	; chmod 644 kmem
+	/etc/mknod mem		c 3 0	; chmod 644 mem
+	/etc/mknod null		c 3 2	; chmod 666 null
+	/etc/mknod tty		c 2 0	; chmod 666 tty
+	cp /dev/null mail		;: will be made by comsat
+	;;
+
+tu*)
+	umask 0; 
+	case $i in
+	tu0)
+	/etc/mknod tu0 b 8 0 ;;
+	tu1)
+	/etc/mknod tu1 b 8 1; rm -f floppy; ln tu1 floppy ;;
+	esac
+	;;
+
+ht*|mt*|tm*|ts*)
+	umask 0 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	ht*) blk=1; chr=5 ;;
+	mt*) blk=7; chr=19;;
+	tm*) blk=5; chr=14;;
+	ts*) blk=6; chr=16;;
+	esac
+	case $unit in
+	0|1|2|3|4|5|6|7)
+		four=`expr $unit + 4` ; eight=`expr $unit + 8`
+		twelve=`expr $unit + 12`
+		/etc/mknod mt$unit	b $blk $unit
+		/etc/mknod mt$four	b $blk $four
+		/etc/mknod mt$eight	b $blk $eight
+		/etc/mknod mt$twelve	b $blk $twelve
+		/etc/mknod nmt$unit	b $blk $four ;: sanity with pdp11 v7
+		/etc/mknod nmt$eight	b $blk $twelve ;: ditto
+		/etc/mknod nrmt$unit	c $chr $four ;: sanity with pdp11 v7
+		/etc/mknod nrmt$eight	c $chr $twelve ;: ditto
+		/etc/mknod rmt$unit	c $chr $unit
+		/etc/mknod rmt$four	c $chr $four
+		/etc/mknod rmt$eight	c $chr $eight
+		/etc/mknod rmt$twelve	c $chr $twelve
+		umask 77
+		;;
+	*)
+		bad unit for tape in: $1
+		;;
+	esac
+	;;
+
+ut*)
+	umask 0 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	ut*) blk=10; chr=17;;
+	esac
+	case $unit in
+	0|1|2|3|4|5|6|7)
+		four=`expr $unit + 4` ; eight=`expr $unit + 8`
+		twelve=`expr $unit + 12`; twenty=`expr $unit + 20`
+		/etc/mknod ut$unit	b $blk $unit
+		/etc/mknod ut$four	b $blk $four
+		/etc/mknod ut$eight	b $blk $eight
+		/etc/mknod ut$twelve	b $blk $twelve
+		/etc/mknod ut$twenty	b $blk $twenty
+		/etc/mknod rut$unit	c $chr $unit
+		/etc/mknod rut$four	c $chr $four
+		/etc/mknod rut$eight	c $chr $eight
+		/etc/mknod rut$twelve	c $chr $twelve
+		/etc/mknod rut$twenty	c $blk $twenty
+		umask 77
+		;;
+	*)
+		bad unit for tape in: $1
+		;;
+	esac
+	;;
+
+hp*|hk*|rb*|ra*|up*)
+	unit=`expr $i : '..\(.*\)'`
+	case $i in
+	hp*) name=hp; blk=0; chr=4;;
+	hk*) name=hk; blk=3; chr=11;;
+	ra*) name=ra; blk=9; chr=24;;
+	rb*) name=rb; blk=11; chr=23;;
+	up*) name=up; blk=2; chr=13;;
+	esac
+	case $unit in
+	0|1|2|3|4|5|6|7)
+		/etc/mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
+		/etc/mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
+		/etc/mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
+		/etc/mknod ${name}${unit}g	b $blk `expr $unit '*' 8 + 6`
+		/etc/mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
+		/etc/mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
+		/etc/mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
+		/etc/mknod r${name}${unit}g	c $chr `expr $unit '*' 8 + 6`
+		if [ $name != hk ]
+		then
+		/etc/mknod ${name}${unit}d	b $blk `expr $unit '*' 8 + 3`
+		/etc/mknod ${name}${unit}e	b $blk `expr $unit '*' 8 + 4`
+		/etc/mknod ${name}${unit}f	b $blk `expr $unit '*' 8 + 5`
+		/etc/mknod ${name}${unit}h	b $blk `expr $unit '*' 8 + 7`
+		/etc/mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
+		/etc/mknod r${name}${unit}e	c $chr `expr $unit '*' 8 + 4`
+		/etc/mknod r${name}${unit}f	c $chr `expr $unit '*' 8 + 5`
+		/etc/mknod r${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
+		fi
+		;;
+	*)
+		echo bad unit for disk in: $i
+		;;
+	esac
+	;;
+
+dz*)
+	unit=`expr $i : 'dz\(.*\)'`
+	case $unit in
+	0|1|2|3|4|5|6|7)
+		eval `echo $unit | awk ' { u = $1 } END {
+		    for (i = 0; i < 8; i++)
+			printf("/etc/mknod tty%02d c 1 %d; ",u*8+i,u*8+i); }'`
+		;;
+	*)
+		echo bad unit for dz in: $i
+		;;
+	esac
+	;;
+dh*)
+	unit=`expr $i : 'dh\(.*\)'`
+	case $unit in
+	0) ch=h ;; 1) ch=i ;; 2) ch=j ;; 3) ch=k ;;
+	4) ch=l ;; 5) ch=m ;; 6) ch=n ;; 7) ch=o ;;
+	*) echo bad unit for dh in: $i ;;
+	esac
+	case $ch in
+	h|i|j|k|l|m|n|o)
+		eval `echo $ch $unit | awk ' { ch = $1; u = 16 * $2 } END {
+		    for (i = 0; i < 16; i++)
+			printf("/etc/mknod tty%s%x c 12 %d; ",ch,i,u+i); }'`
+		;;
+	esac
+	;;
+
+dmf*)
+	unit=`expr $i : 'dmf\(.*\)'`
+	case $unit in
+	0) ch=h ;; 1) ch=i ;; 2) ch=j ;; 3) ch=k ;;
+	4) ch=l ;; 5) ch=m ;; 6) ch=n ;; 7) ch=o ;;
+	*) echo bad unit for dh in: $i ;;
+	esac
+	case $ch in
+	h|i|j|k|l|m|n|o)
+		eval `echo $ch $unit | awk ' { ch = $1; u = 16 * $2 } END {
+		    for (i = 0; i < 16; i++)
+			printf("/etc/mknod tty%s%x c 25 %d; ",ch,i,u+i); }'`
+		;;
+	esac
+	;;
+
+dn|dn0)
+	/etc/mknod cua0 c 22 0		; chmod 222 cua0
+	;;
+
+lp0)
+	/etc/mknod lp c 15 0		; chmod 666 lp
+	;;
+
+va|va0)
+	/etc/mknod va0 c 10  0		; chmod 666 va0
+	;;
+
+vp|vp0)
+	/etc/mknod vp0 c  6  0		; chmod 666 vp0
+	;;
+
+NOTICE)
+	echo THE REST OF THE ENTRIES ARE SYSTEM DEPENDENT
+	;;
+
+LOCAL)
+	: RV
+	cp /dev/null cua0		; : cua0 will be made mpx by dnd
+	cp /dev/null cua1		; : cua1 will be made mpx by dnd
+	mv tty8 cul0			; chmod 666 cul0
+	mv tty9 cul1			; chmod 666 cul1
+	ln cul0 ttya0
+	ln cul1 ttya1
+	mv tty10 ttya2
+
+	: DIALUPS
+	mv tty11 ttyd0
+	mv tty12 ttyd1
+	mv tty13 ttyd2
+	mv tty14 ttyd3
+	mv tty15 ttyd4
+	mv tty16 ttyd5
+	mv tty17 ttyd6
+	mv tty18 ttyd7
+	mv tty19 ttyd8
+	mv tty20 ttyd9
+	mv tty21 ttyda
+
+	: NETWORKS
+	mv ttyi1 ttyny
+	mv ttyi2 ttyni
+	;;
+
+*)
+	echo dont know how to MAKE $i
+	;;
+esac
+done
