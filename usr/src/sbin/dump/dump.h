@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1980 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dump.h	5.23 (Berkeley) %G%
+ *	@(#)dump.h	8.1 (Berkeley) %G%
  */
 
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
