@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_usrreq.c	6.6 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -246,8 +246,9 @@ tcp_usrreq(so, req, m, nam, rights)
 		return (0);
 
 	case PRU_RCVOOB:
-		if (so->so_oobmark == 0 &&
-		    (so->so_state & SS_RCVATMARK) == 0) {
+		if ((so->so_oobmark == 0 &&
+		    (so->so_state & SS_RCVATMARK) == 0) ||
+		    tp->t_oobflags & TCPOOB_HADDATA) {
 			error = EINVAL;
 			break;
 		}
@@ -257,6 +258,8 @@ tcp_usrreq(so, req, m, nam, rights)
 		}
 		m->m_len = 1;
 		*mtod(m, caddr_t) = tp->t_iobc;
+		if (((int)nam & MSG_PEEK) == 0)
+			tp->t_oobflags ^= (TCPOOB_HAVEDATA | TCPOOB_HADDATA);
 		break;
 
 	case PRU_SENDOOB:
@@ -296,6 +299,18 @@ tcp_usrreq(so, req, m, nam, rights)
 		tcp_trace(TA_USER, ostate, tp, (struct tcpiphdr *)0, req);
 	splx(s);
 	return (error);
+}
+
+tcp_ctloutput(op, so, level, optname, m)
+	int op;
+	struct socket *so;
+	int level, optname;
+	struct mbuf **m;
+{
+	if (level != IPPROTO_TCP)
+		return (ip_ctloutput(op, so, level, optname, m));
+	/* INCOMPLETE */
+	return (0);
 }
 
 int	tcp_sendspace = 1024*4;
