@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)events.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)events.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: events.c,v 1.5 84/12/26 10:39:26 linton Exp $";
+static char rcsid[] = "$Header: events.c,v 1.3 87/07/08 18:46:02 donn Exp $";
 
 /*
  * Event/breakpoint managment.
@@ -28,24 +28,33 @@ static char rcsid[] = "$Header: events.c,v 1.5 84/12/26 10:39:26 linton Exp $";
 #include "lists.h"
 
 #ifndef public
+
 typedef struct Event *Event;
 typedef struct Breakpoint *Breakpoint;
 
-boolean inst_tracing;
-boolean single_stepping;
-boolean isstopped;
-
 #include "symbols.h"
-
-Symbol linesym;
-Symbol procsym;
-Symbol pcsym;
-Symbol retaddrsym;
 
 #define addevent(cond, cmdlist) event_alloc(false, cond, cmdlist)
 #define event_once(cond, cmdlist) event_alloc(true, cond, cmdlist)
 
+/*
+ * When tracing variables we keep a copy of their most recent value
+ * and compare it to the current one each time a breakpoint occurs.
+ * MAXTRSIZE is the maximum size variable we allow.
+ */
+
+#define MAXTRSIZE 512
+
 #endif
+
+public boolean inst_tracing;
+public boolean single_stepping;
+public boolean isstopped;
+
+public Symbol linesym;
+public Symbol procsym;
+public Symbol pcsym;
+public Symbol retaddrsym;
 
 struct Event {
     unsigned int id;
@@ -688,14 +697,6 @@ boolean iscall;
     endfor
     return false;
 }
-
-/*
- * When tracing variables we keep a copy of their most recent value
- * and compare it to the current one each time a breakpoint occurs.
- * MAXTRSIZE is the maximum size variable we allow.
- */
-
-#define MAXTRSIZE 512
 
 /*
  * List of variables being watched.

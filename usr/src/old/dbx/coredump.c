@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)coredump.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)coredump.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: coredump.c,v 1.5 84/12/26 10:38:56 linton Exp $";
+static char rcsid[] = "$Header: coredump.c,v 1.4 87/04/15 03:25:22 donn Exp $";
 
 /*
  * Deal with the core dump anachronism.
@@ -56,8 +56,11 @@ public coredump_getkerinfo ()
     if (s == nil) {
 	panic("can't find 'masterpaddr'");
     }
-    fseek(corefile,
-	datamap.seekaddr + physaddr(s->symvalue.offset) - datamap.begin, 0);
+    fseek(
+	corefile,
+	datamap.seekaddr + s->symvalue.offset&0x7fffffff - datamap.begin,
+	0
+    );
     get(corefile, masterpcbb);
     masterpcbb = (masterpcbb&PG_PFNUM)*NBPG;
     getpcb();
@@ -93,8 +96,18 @@ short *signo;
     } else {
 	up = &(ustruct.u);
 	fread(up, ctob(UPAGES), 1, corefile);
-	savreg = (Word *) &(ustruct.dummy[ctob(UPAGES)]);
-	*mask = savreg[PS];
+#	if vax || tahoe
+	    savreg = (Word *) &(ustruct.dummy[ctob(UPAGES)]);
+#	else ifdef mc68000
+	    savreg = (Word *) (
+		&ustruct.dummy[ctob(UPAGES) - 10] - (NREG * sizeof(Word))
+	    );
+#	endif
+#       ifdef IRIS
+	    *mask = savreg[RPS];
+#       else
+	    *mask = savreg[PS];
+#       endif
 	copyregs(savreg, reg);
 	*signo = up->u_arg[0];
 	datamap.seekaddr = ctob(UPAGES);
@@ -103,13 +116,14 @@ short *signo;
 	stkmap.seekaddr = datamap.seekaddr + ctob(up->u_dsize);
 	switch (hdr.a_magic) {
 	    case OMAGIC:
-		datamap.begin = 0;
-		datamap.end = ctob(up->u_tsize) + ctob(up->u_dsize);
+		datamap.begin = CODESTART;
+		datamap.end = CODESTART + ctob(up->u_tsize) + ctob(up->u_dsize);
 		break;
 
 	    case NMAGIC:
 	    case ZMAGIC:
-		datamap.begin = (Address) ptob(btop(ctob(up->u_tsize) - 1) + 1);
+		datamap.begin = (Address)
+		    ptob(btop(ctob(up->u_tsize) - 1) + 1) + CODESTART;
 		datamap.end = datamap.begin + ctob(up->u_dsize);
 		break;
 
@@ -145,7 +159,7 @@ int nbytes;
     if (hdr.a_magic == OMAGIC or vaddrs) {
 	coredump_readdata(buff, addr, nbytes);
     } else {
-	fseek(objfile, N_TXTOFF(hdr) + addr, 0);
+	fseek(objfile, N_TXTOFF(hdr) + addr - CODESTART, 0);
 	fread(buff, nbytes, sizeof(Byte), objfile);
     }
 }

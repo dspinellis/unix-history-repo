@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	5.5 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: eval.c,v 1.5 84/12/26 10:39:08 linton Exp $";
+static char rcsid[] = "$Header: eval.c,v 1.2 87/03/25 19:48:33 donn Exp $";
 
 /*
  * Tree evaluation.
@@ -208,15 +208,8 @@ register Node p;
 	    rpush(addr, len);
 	    break;
 
-	/*
-	 * Move the stack pointer so that the top of the stack has
-	 * something corresponding to the size of the current node type.
-	 * If this new type is bigger than the subtree (len > 0),
-	 * then the stack is padded with nulls.  If it's smaller,
-	 * the stack is just dropped by the appropriate amount.
-	 */
 	case O_TYPERENAME:
-	    typerename(size(p->value.arg[0]->nodetype), size(p->nodetype));
+	    loophole(size(p->value.arg[0]->nodetype), size(p->nodetype));
 	    break;
 
 	case O_COMMA:
@@ -797,13 +790,15 @@ Symbol t;
 public Boolean cond(p)
 Node p;
 {
-    register Boolean b;
+    Boolean b;
+    int i;
 
     if (p == nil) {
 	b = true;
     } else {
 	eval(p);
-	b = (Boolean) pop(Boolrep);
+	i = pop(Boolrep);
+	b = (Boolean) i;
     }
     return b;
 }
@@ -1008,6 +1003,9 @@ Node cond;
     Node event;
     Command action;
 
+    if (size(exp->nodetype) > MAXTRSIZE) {
+	error("expression too large to trace (limit is %d bytes)", MAXTRSIZE);
+    }
     p = (place == nil) ? tcontainer(exp) : place->value.sym;
     if (p == nil) {
 	p = program;
@@ -1105,6 +1103,9 @@ Node cond;
     Node event;
     Command action;
 
+    if (size(exp->nodetype) > MAXTRSIZE) {
+	error("expression too large to trace (limit is %d bytes)", MAXTRSIZE);
+    }
     if (place == nil) {
 	if (exp->op == O_LCON) {
 	    p = program;
@@ -1271,12 +1272,6 @@ Node p;
  * Send a message to the current support person.
  */
 
-#ifdef MAINTAINER
-static char maintainer[] = MAINTAINER;
-#else
-static char maintainer[] = "";
-#endif
-
 public gripe()
 {
     typedef Operation();
@@ -1285,24 +1280,25 @@ public gripe()
     extern int versionNumber;
     char subject[100];
 
-    if (maintainer[0] == '\0') {
-	puts("Gripes not supported at this site.  Sorry.");
-	return;
-    }
-    puts("Type control-D to end your message.  Be sure to include");
-    puts("your name and the name of the file you are debugging.");
-    putchar('\n');
-    old = signal(SIGINT, SIG_DFL);
-    sprintf(subject, "dbx (version 3.%d) gripe", versionNumber);
-    pid = back("Mail", stdin, stdout, "-s", subject, maintainer, nil);
-    signal(SIGINT, SIG_IGN);
-    pwait(pid, &status);
-    signal(SIGINT, old);
-    if (status == 0) {
-	puts("Thank you.");
-    } else {
-	puts("\nMail not sent.");
-    }
+#   ifdef MAINTAINER
+	puts("Type control-D to end your message.  Be sure to include");
+	puts("your name and the name of the file you are debugging.");
+	putchar('\n');
+	old = signal(SIGINT, SIG_DFL);
+	sprintf(subject, "dbx (version 3.%d) gripe", versionNumber);
+	pid = back("Mail", stdin, stdout, "-s", subject, MAINTAINER, nil);
+	signal(SIGINT, SIG_IGN);
+	pwait(pid, &status);
+	signal(SIGINT, old);
+	if (status == 0) {
+	    puts("Thank you.");
+	} else {
+	    puts("\nMail not sent.");
+	}
+#   else
+	puts("Sorry, no dbx maintainer available to gripe to.");
+	puts("Try contacting your system manager.");
+#   endif
 }
 
 /*
