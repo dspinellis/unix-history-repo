@@ -33,6 +33,9 @@
  *	@(#)in.h	7.11 (Berkeley) 4/20/91
  */
 
+#ifndef _NETINET_IN_H_
+#define _NETINET_IN_H_
+
 /*
  * Constants and structures defined by the internet system,
  * Per RFC 790, September 1981.
@@ -149,3 +152,5 @@ struct ip_opts {
 struct	in_addr in_makeaddr();
 u_long	in_netof(), in_lnaof();
 #endif
+
+#endif	/* _NETINET_IN_H_ */
