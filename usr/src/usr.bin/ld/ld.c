@@ -1,4 +1,4 @@
-/*	@(#)ld.c	6.2 (Berkeley) %G%
+/*	@(#)ld.c	6.3 (Berkeley) %G%
 
 Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
 
@@ -3686,22 +3686,71 @@ perform_relocation (data, pc_relocation, data_size, reloc_info, reloc_size, entr
 	  break;
 
 	case 1:
-	  if (RELOC_MEMORY_SUB_P(p))
-	    relocation -= mask & *(short *) (data + addr);
-	  else if (RELOC_MEMORY_ADD_P(p))
-	    relocation += mask & *(short *) (data + addr);
-	  *(short *) (data + addr) &= ~mask;
-	  *(short *) (data + addr) |= relocation;
+#ifdef tahoe
+	  if (((int) data + addr & 1) == 0)
+	    {
+#endif
+	      if (RELOC_MEMORY_SUB_P(p))
+		relocation -= mask & *(short *) (data + addr);
+	      else if (RELOC_MEMORY_ADD_P(p))
+		relocation += mask & *(short *) (data + addr);
+	      *(short *) (data + addr) &= ~mask;
+	      *(short *) (data + addr) |= relocation;
+#ifdef tahoe
+	    }
+	  /*
+	   * The CCI Power 6 (aka Tahoe) architecture has byte-aligned
+	   * instruction operands but requires data accesses to be aligned.
+	   * Brain-damage...
+	   */
+	  else
+	    {
+	      unsigned char *da = (unsigned char *) (data + addr);
+	      unsigned short s = da[0] << 8 | da[1];
+
+	      if (RELOC_MEMORY_SUB_P(p))
+		relocation -= mask & s;
+	      else if (RELOC_MEMORY_ADD_P(p))
+		relocation += mask & s;
+	      s &= ~mask;
+	      s |= relocation;
+	      da[0] = s >> 8;
+	      da[1] = s;
+	    }
+#endif
 	  break;
 
 	case 2:
 #ifndef _CROSS_TARGET_ARCH
-	  if (RELOC_MEMORY_SUB_P(p))
-	    relocation -= mask & *(long *) (data + addr);
-	  else if (RELOC_MEMORY_ADD_P(p))
-	    relocation += mask & *(long *) (data + addr);
-	  *(long *) (data + addr) &= ~mask;
-	  *(long *) (data + addr) |= relocation;
+#ifdef tahoe
+	  if (((int) data + addr & 3) == 0)
+	    {
+#endif
+	      if (RELOC_MEMORY_SUB_P(p))
+		relocation -= mask & *(long *) (data + addr);
+	      else if (RELOC_MEMORY_ADD_P(p))
+		relocation += mask & *(long *) (data + addr);
+	      *(long *) (data + addr) &= ~mask;
+	      *(long *) (data + addr) |= relocation;
+#ifdef tahoe
+	    }
+	  else
+	    {
+	      unsigned char *da = (unsigned char *) (data + addr);
+	      unsigned long l = da[0] << 24 | da[1] << 16 | da[2] << 8 | da[3];
+
+	      if (RELOC_MEMORY_SUB_P(p))
+		relocation -= mask & l;
+	      else if (RELOC_MEMORY_ADD_P(p))
+		relocation += mask & l;
+	      l &= ~mask;
+	      l |= relocation;
+	      da[0] = l >> 24;
+	      da[1] = l >> 16;
+	      da[2] = l >> 8;
+	      da[3] = l;
+	    }
+#endif
 #else
 	/* Handle long word alignment requirements of SPARC architecture */
 	/* WARNING:  This fix makes an assumption on byte ordering */
@@ -4085,7 +4134,7 @@ write_syms ()
 	    if (nl.n_type == (N_INDR | N_EXT))
 	      {
 		struct nlist xtra_ref;
-		xtra_ref.n_type == N_EXT | N_UNDF;
+		xtra_ref.n_type = N_EXT | N_UNDF;
 		xtra_ref.n_un.n_strx
 		  = assign_string_table_index (((symbol *) sp->value)->name);
 		xtra_ref.n_other = 0;
