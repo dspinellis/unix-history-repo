@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef STANDALONE
@@ -28,8 +28,7 @@ static char sccsid[] = "@(#)mkfs.c	6.12 (Berkeley) %G%";
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
+#include <ufs/dinode.h>
 #include <ufs/fs.h>
 #include <ufs/dir.h>
 #include <sys/disklabel.h>
@@ -733,7 +732,7 @@ initcg(cylno)
 /*
  * initialize the file system
  */
-struct inode node;
+struct dinode node;
 
 #ifdef LOSTDIR
 #define PREDEFDIR 3
@@ -764,9 +763,9 @@ fsinit()
 	/*
 	 * initialize the node
 	 */
-	node.i_atime = utime;
-	node.i_mtime = utime;
-	node.i_ctime = utime;
+	node.di_atime = utime;
+	node.di_mtime = utime;
+	node.di_ctime = utime;
 #ifdef LOSTDIR
 	/*
 	 * create the lost+found directory
@@ -774,29 +773,27 @@ fsinit()
 	(void)makedir(lost_found_dir, 2);
 	for (i = DIRBLKSIZ; i < sblock.fs_bsize; i += DIRBLKSIZ)
 		bcopy(&lost_found_dir[2], &buf[i], DIRSIZ(&lost_found_dir[2]));
-	node.i_number = LOSTFOUNDINO;
-	node.i_mode = IFDIR | UMASK;
-	node.i_nlink = 2;
-	node.i_size = sblock.fs_bsize;
-	node.i_db[0] = alloc(node.i_size, node.i_mode);
-	node.i_blocks = btodb(fragroundup(&sblock, node.i_size));
-	wtfs(fsbtodb(&sblock, node.i_db[0]), node.i_size, buf);
-	iput(&node);
+	node.di_mode = IFDIR | UMASK;
+	node.di_nlink = 2;
+	node.di_size = sblock.fs_bsize;
+	node.di_db[0] = alloc(node.di_size, node.di_mode);
+	node.di_blocks = btodb(fragroundup(&sblock, node.di_size));
+	wtfs(fsbtodb(&sblock, node.di_db[0]), node.di_size, buf);
+	iput(&node, LOSTFOUNDINO);
 #endif
 	/*
 	 * create the root directory
 	 */
-	node.i_number = ROOTINO;
 	if (mfs)
-		node.i_mode = IFDIR | 01777;
+		node.di_mode = IFDIR | 01777;
 	else
-		node.i_mode = IFDIR | UMASK;
-	node.i_nlink = PREDEFDIR;
-	node.i_size = makedir(root_dir, PREDEFDIR);
-	node.i_db[0] = alloc(sblock.fs_fsize, node.i_mode);
-	node.i_blocks = btodb(fragroundup(&sblock, node.i_size));
-	wtfs(fsbtodb(&sblock, node.i_db[0]), sblock.fs_fsize, buf);
-	iput(&node);
+		node.di_mode = IFDIR | UMASK;
+	node.di_nlink = PREDEFDIR;
+	node.di_size = makedir(root_dir, PREDEFDIR);
+	node.di_db[0] = alloc(sblock.fs_fsize, node.di_mode);
+	node.di_blocks = btodb(fragroundup(&sblock, node.di_size));
+	wtfs(fsbtodb(&sblock, node.di_db[0]), sblock.fs_fsize, buf);
+	iput(&node, ROOTINO);
 }
 
 /*
@@ -877,14 +874,15 @@ goth:
 /*
  * Allocate an inode on the disk
  */
-iput(ip)
-	register struct inode *ip;
+iput(ip, ino)
+	register struct dinode *ip;
+	register ino_t ino;
 {
 	struct dinode buf[MAXINOPB];
 	daddr_t d;
 	int c;
 
-	c = itog(&sblock, ip->i_number);
+	c = itog(&sblock, ino);
 	rdfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
 	    (char *)&acg);
 	if (acg.cg_magic != CG_MAGIC) {
@@ -892,19 +890,18 @@ iput(ip)
 		exit(31);
 	}
 	acg.cg_cs.cs_nifree--;
-	setbit(cg_inosused(&acg), ip->i_number);
+	setbit(cg_inosused(&acg), ino);
 	wtfs(fsbtodb(&sblock, cgtod(&sblock, 0)), sblock.fs_cgsize,
 	    (char *)&acg);
 	sblock.fs_cstotal.cs_nifree--;
 	fscs[0].cs_nifree--;
-	if (ip->i_number >= sblock.fs_ipg * sblock.fs_ncg) {
-		printf("fsinit: inode value out of range (%d).\n",
-		    ip->i_number);
+	if (ino >= sblock.fs_ipg * sblock.fs_ncg) {
+		printf("fsinit: inode value out of range (%d).\n", ino);
 		exit(32);
 	}
-	d = fsbtodb(&sblock, itod(&sblock, ip->i_number));
+	d = fsbtodb(&sblock, itod(&sblock, ino));
 	rdfs(d, sblock.fs_bsize, buf);
-	buf[itoo(&sblock, ip->i_number)].di_ic = ip->i_ic;
+	buf[itoo(&sblock, ino)] = *ip;
 	wtfs(d, sblock.fs_bsize, buf);
 }
 
