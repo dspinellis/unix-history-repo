@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -17,19 +17,15 @@ static char sccsid[] = "@(#)dumprmt.c	5.14 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/dir.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
 #else
 #include <sys/param.h>
 #include <sys/mtio.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <ufs/ufs/dinode.h>
 #include <stdio.h>
 #endif
+#include <ufs/ufs/dinode.h>
 #include <signal.h>
 
 #include <netinet/in.h>
@@ -60,6 +56,8 @@ char	*rmtpeer;
 extern int ntrec;		/* blocking factor on tape */
 extern void msg();
 
+extern void exit();
+
 int
 rmthost(host)
 	char *host;
@@ -77,8 +75,8 @@ void
 rmtconnaborted()
 {
 
-	fprintf(stderr, "rdump: Lost connection to remote host.\n");
-	exit(1);
+	(void) fprintf(stderr, "rdump: Lost connection to remote host.\n");
+	(void) exit(1);
 }
 
 void
@@ -92,14 +90,16 @@ rmtgetconn()
 	if (sp == 0) {
 		sp = getservbyname("shell", "tcp");
 		if (sp == 0) {
-			fprintf(stderr, "rdump: shell/tcp: unknown service\n");
-			exit(1);
+			(void) fprintf(stderr,
+			    "rdump: shell/tcp: unknown service\n");
+			(void) exit(1);
 		}
 	}
 	pw = getpwuid(getuid());
 	if (pw && pw->pw_name)
 		name = pw->pw_name;
-	rmtape = rcmd(&rmtpeer, sp->s_port, name, name, _PATH_RMT, 0);
+	rmtape = rcmd(&rmtpeer, (u_short)sp->s_port, name, name, _PATH_RMT,
+	    (int *)0);
 	size = ntrec * TP_BSIZE;
 	while (size > TP_BSIZE &&
 	    setsockopt(rmtape, SOL_SOCKET, SO_SNDBUF, &size, sizeof (size)) < 0)
