@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -113,7 +113,7 @@ main(argc, argv)
 				} else
 					fprintf(stderr, "df: %s: %s\n",
 					    *argv, strerror(errno));
-				(void)umount(mntpt, MNT_NOFORCE);
+				(void)unmount(mntpt, MNT_NOFORCE);
 				(void)rmdir(mntpt);
 				continue;
 		} else
