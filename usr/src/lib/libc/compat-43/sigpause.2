@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sigpause.2	5.1 (Berkeley) %G%
+.\"	@(#)sigpause.2	6.1 (Berkeley) %G%
 .\"
-.TH SIGPAUSE 2 "7 July 1983"
+.TH SIGPAUSE 2 ""
 .UC 4
 .SH NAME
 sigpause \- atomically release blocked signals and wait for interrupt
@@ -25,7 +25,9 @@ on return the set of masked signals is restored.
 is usually 0 to indicate that no
 signals are now to be blocked.
 .I Sigpause
-always terminates by being interrupted, returning EINTR.
+always terminates by being interrupted, returning \-1 with
+.I errno
+set to EINTR.
 .PP
 In normal usage, a signal is blocked using
 .IR sigblock (2),
