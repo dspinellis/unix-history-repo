@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)table.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -46,21 +46,23 @@ find_match(request)
 	CTL_MSG *request;
 {
 	TABLE_ENTRY *ptr;
+	extern FILE *debugout;
 	long current_time;
 
 	gettimeofday(&tp, &txp);
 	current_time = tp.tv_sec;
 	if (debug) {
-		printf("Entering Look-Up with : \n");
+		fprintf(debugout, "Entering Look-Up with : \n");
 		print_request(request);
 	}
 	for (ptr = table; ptr != NIL; ptr = ptr->next) {
 		if ((ptr->time - current_time) > MAX_LIFE) {
 			/* the entry is too old */
-			if (debug)
-				printf("Deleting expired entry : \n");
-			if (debug)
+			if (debug) {
+				fprintf(debugout
+					,"Deleting expired entry : \n");
 				print_request(&ptr->request);
+			}
 			delete(ptr);
 			continue;
 		}
@@ -83,6 +85,7 @@ find_request(request)
 	CTL_MSG *request;
 {
 	TABLE_ENTRY *ptr;
+	extern FILE *debugout;
 	long current_time;
 
 	gettimeofday(&tp, &txp);
@@ -92,14 +95,15 @@ find_request(request)
 	 * out of date entries in the table while we are it.
 	 */
 	if (debug) {
-		printf("Entering find_request with : \n");
+		fprintf(debugout, "Entering find_request with : \n");
 		print_request(request);
 	}
 	for (ptr = table; ptr != NIL; ptr = ptr->next) {
 		if ((ptr->time - current_time) > MAX_LIFE) {
 			/* the entry is too old */
 			if (debug) {
-				printf("Deleting expired entry : \n");
+				fprintf(debugout
+					, "Deleting expired entry : \n");
 				print_request(&ptr->request);
 			}
 			delete(ptr);
@@ -165,11 +169,12 @@ delete_invite(id_num)
 	int id_num;
 {
 	TABLE_ENTRY *ptr;
+	extern FILE *debugout;
 
 	ptr = table;
 
 	if (debug)
-		printf("Entering delete_invite with %d\n", id_num);
+		fprintf(debugout,"Entering delete_invite with %d\n", id_num);
 	for (ptr = table; ptr != NIL; ptr = ptr->next) {
 		if (ptr->request.id_num == id_num)
 			break;
@@ -189,9 +194,10 @@ delete_invite(id_num)
 delete(ptr)
 	TABLE_ENTRY *ptr;
 {
+	extern FILE *debugout;
 
 	if (debug) {
-		printf("Deleting : ");
+		fprintf(debugout, "Deleting : ");
 		print_request(&ptr->request);
 	}
 	if (table == ptr)
