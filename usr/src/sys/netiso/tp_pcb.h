@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.18 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -86,23 +86,16 @@ SOFTWARE.
 #define TM_NTIMERS 		6
 
 struct tp_ref {
-/*	u_char	 			tpr_state; /* values REF_FROZEN, etc. above */
-#define	tpr_state		tpr_pcb->tp_refstate
 	struct tp_pcb 		*tpr_pcb;	/* back ptr to PCB */
 };
 
+/* PER system stuff (one static structure instead of a bunch of names) */
 struct tp_refinfo {
 	struct tp_ref		*tpr_base;
 	int					tpr_size;
 	int					tpr_maxopen;
 	int					tpr_numopen;
 };
-
-struct tp_param {
-	/* PER system stuff (one static structure instead of a bunch of names) */
-	unsigned 	tpp_configed:1;			/* Has TP been initialized? */
-};
-
 
 struct nl_protosw {
 	int		nlp_afamily;			/* address family */
@@ -250,12 +243,12 @@ struct tp_pcb {
 		tp_notdetached:1,		/* Call tp_detach before freeing XXXXXXX */
 		tp_unused:14;
 
-
 #ifdef TP_PERF_MEAS
 	/* performance stats - see tp_stat.h */
 	struct tp_pmeas		*tp_p_meas;
 	struct mbuf			*tp_p_mbuf;
 #endif TP_PERF_MEAS
+
 	/* addressing */
 	u_short				tp_domain;		/* domain (INET, ISO) */
 	/* for compatibility with the *old* way and with INET, be sure that
@@ -275,7 +268,6 @@ struct tp_pcb {
 	u_char	 			tp_refstate;		/* values REF_FROZEN, etc. above */
 	struct tp_pcb		*tp_fasttimeo;		/* limit pcbs to examine */
 	u_int			 	tp_timer[TM_NTIMERS]; /* C timers */
-	struct Ecallarg		tp_retransargs;		/* dunt ask ... */
 
 	struct sockbuf		tp_Xsnd;		/* for expedited data */
 /*	struct sockbuf		tp_Xrcv;		/* for expedited data */
