@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,6 +40,8 @@ char	Base64Code[] =	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456
 #define MBT_NOTSEP	1	/* not a boundary */
 #define MBT_INTERMED	2	/* intermediate boundary (no trailing --) */
 #define MBT_FINAL	3	/* final boundary (trailing -- included) */
+
+static int	MimeBoundaryType;	/* internal linkage */
 /*
 **  MIME8TO7 -- output 8 bit body in 7 bit format
 **
@@ -175,19 +177,37 @@ mime8to7(mci, header, e, boundary)
 			break;
 		for (p = buf; *p != '\0'; p++)
 		{
+			/* count bytes with the high bit set */
+			/* XXX should this count any character that will */
+			/* XXX have to be encoded in quoted-printable? */
 			sectionsize++;
 			if (bitset(0200, *p))
 				sectionhighbits++;
 		}
+
+		/*
+		**  Heuristic: if 1/4 of the first 4K bytes are 8-bit,
+		**  assume base64.  This heuristic avoids double-reading
+		**  large graphics or video files.
+		*/
+
+		if (sectionsize >= 4096 && sectionhighbits > sectionsize / 4)
+			break;
 	}
 	if (feof(e->e_dfp))
 		bt = MBT_FINAL;
 
 	/* return to the original offset for processing */
+	/* XXX use relative seeks to handle >31 bit file sizes? */
 	if (fseek(e->e_dfp, offset, SEEK_SET) < 0)
 		syserr("mime8to7: cannot fseek on %s", e->e_df);
 
-	/* heuristically determine encoding method */
+	/*
+	**  Heuristically determine encoding method.
+	**	If more than 1/8 of the total characters have the
+	**	eighth bit set, use base64; else use quoted-printable.
+	*/
+
 	if (tTd(43, 8))
 	{
 		printf("mime8to7: %ld high bits in %ld bytes\n",
@@ -265,7 +285,7 @@ mime8to7(mci, header, e, boundary)
 				fputs(mci->mci_mailer->m_eol, mci->mci_out);
 				linelen = 0;
 			}
-			if ((c1 < 0x20 && c1 != '\t') || c2 >= 0xff || c2 == '=')
+			if ((c1 < 0x20 && c1 != '\t') || c1 >= 0x7f || c1 == '=')
 			{
 				fputc('=', mci->mci_out);
 				fputc(Base16Code[(c1 >> 4) & 0x0f], mci->mci_out);
@@ -282,7 +302,7 @@ mime8to7(mci, header, e, boundary)
 	}
 	if (linelen > 0)
 		fputs(mci->mci_mailer->m_eol, mci->mci_out);
-	return bt;
+	return MimeBoundaryType;
 }
 
 
@@ -327,7 +347,8 @@ mime_getchar(fp, boundary)
 			*bp++ = c;
 		}
 		*bp = '\0';
-		switch (mimeboundary(buf, boundary))
+		MimeBoundaryType = mimeboundary(buf, boundary);
+		switch (MimeBoundaryType)
 		{
 		  case MBT_FINAL:
 		  case MBT_INTERMED:
