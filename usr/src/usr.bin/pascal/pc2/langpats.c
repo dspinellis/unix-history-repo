@@ -16,7 +16,7 @@ struct pats {
 } ptab[] = {
 
 	{ "1,_ACTFILE\n",
-"	popr	$0x2\n\
+"	movl	(sp)+,r1\n\
 	movl	12(r1),r0\n" },
 
 	{ "1,_fgetc\n",
@@ -50,7 +50,7 @@ struct pats {
 	movzwl	$65535,r0\n\
 	cmpl	(sp),r0\n\
 	jgtr	1b\n\
-	popr	$0x1\n\
+	movl	(sp)+,r0\n\
 	movc3	r0,(r1),(r3)\n" },
 
 	{ "2,_blkclr\n",
@@ -68,7 +68,7 @@ struct pats {
 
 	{ "3,_LOCC\n",
 "	popr	$0x30\n\
-	popr	$0x2\n\
+	movl	(sp)+,r1\n\
 1:\n\
 	movzwl	$65535,r0\n\
 	cmpl	r5,r0\n\
@@ -90,28 +90,24 @@ struct pats {
 
 	{ "2,_FCALL\n",
 "	movl	4(sp),r0\n\
-	ashl	$3,4(r0),r1\n\
-	movc3	r1,__disply+8,*(sp)+\n\
+	movc3	4(r0),__disply+8,*(sp)+\n\
 	movl	(sp)+,r0\n\
-	ashl	$3,4(r0),r1\n\
-	movc3	r1,8(r0),__disply+8\n" },
+	movc3	4(r0),8(r0),__disply+8\n" },
 
 	{ "2,_FRTN\n",
 "	movl	(sp)+,r0\n\
-	ashl	$3,4(r0),r1\n\
-	movc3	r1,*(sp)+,__disply+8\n" },
+	movc3	4(r0),*(sp)+,__disply+8\n" },
 
 	{ "3,_FSAV\n",
 "	movl	8(sp),r0\n\
 	movl	(sp)+,(r0)\n\
-	movl	(sp)+,4(r0)\n\
-	ashl	$3,4(r0),r1\n\
-	movc3	r1,__disply+8,8(r0)\n\
-	popr	$0x1\n" },
+	ashl	$3,(sp)+,4(r0)\n\
+	movc3	4(r0),__disply+8,8(r0)\n\
+	movl	(sp)+,r0\n" },
 
 	{ "3,_RELEQ\n",
-"	popr	$0x10\n\
-	popr	$0xa\n\
+"	popr	$0xb\n\
+	movl	r0,r4\n\
 1:\n\
 	movzwl	$65535,r0\n\
 	cmpl	r4,r0\n\
@@ -129,8 +125,8 @@ struct pats {
 4:\n" },
 
 	{ "3,_RELNE\n",
-"	popr	$0x10\n\
-	popr	$0xa\n\
+"	popr	$0xb\n\
+	movl	r0,r4\n\
 1:\n\
 	movzwl	$65535,r0\n\
 	cmpl	r4,r0\n\
@@ -147,8 +143,8 @@ struct pats {
 4:\n" },
 
 	{ "3,_RELSLT\n",
-"	popr	$0x10\n\
-	popr	$0xa\n\
+"	popr	$0xb\n\
+	movl	r0,r4\n\
 	jbr	2f\n\
 1:\n\
 	subl2	r0,r4\n\
@@ -168,8 +164,8 @@ struct pats {
 5:\n" },
 
 	{ "3,_RELSLE\n",
-"	popr	$0x10\n\
-	popr	$0xa\n\
+"	popr	$0xb\n\
+	movl	r0,r4\n\
 	jbr	2f\n\
 1:\n\
 	subl2	r0,r4\n\
@@ -189,8 +185,8 @@ struct pats {
 5:\n" },
 
 	{ "3,_RELSGT\n",
-"	popr	$0x10\n\
-	popr	$0xa\n\
+"	popr	$0xb\n\
+	movl	r0,r4\n\
 	jbr	2f\n\
 1:\n\
 	subl2	r0,r4\n\
@@ -210,8 +206,8 @@ struct pats {
 5:\n" },
 
 	{ "3,_RELSGE\n",
-"	popr	$0x10\n\
-	popr	$0xa\n\
+"	popr	$0xb\n\
+	movl	r0,r4\n\
 	jbr	2f\n\
 1:\n\
 	subl2	r0,r4\n\
