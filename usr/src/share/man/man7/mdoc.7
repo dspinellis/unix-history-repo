@@ -1,0 +1,394 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mdoc.7	1.1 (Berkeley) %G%
+.\"
+.Dd 
+.Os
+.Dt MDOC 7
+.Sh NAME
+.Nm mdoc
+.Nd Quick reference guide for the
+.Nm \-mdoc
+macro package
+.Sh SYNOPSIS
+.Nm groff
+.Fl m Ns Ar doc
+.Ar files ...
+.Sh DESCRIPTION
+The
+.Nm \-mdoc
+package is a set of manual page domain content-based macros
+used to format the
+.Bx
+man pages.
+The macro names and their meanings are
+listed below for quick reference; for
+a detailed explanation on using the package,
+see the tutorial sampler
+.Xr mdoc.samples 7 .
+.Pp
+The macros are described in three domain groups, the first
+domain includes the structural and the physical page layout macros.
+The second group contains the manual domain
+content macros which differentiate the
+.Nm -\mdoc
+package from other
+.Xr troff
+formatting packages.
+The manual page domain specific content macros
+are a subset of the day to day language
+used to describe
+.Bx
+commands, functions, devices and files.
+The third group consists of general text
+domain macros which apply to other types of documentation
+as well as manual pages.
+.Sh PAGE STRUCTURAL DOMAIN
+.Ss Title Macros
+To create a valid manual page, these three macros
+required in the order they are presented:
+.Bl -tag -width ".Os OPERATING_SYSTEM [version/release]" -compact
+.It Sy \&.Dd Ar "Month day, year"
+Document date.
+.It Sy \&.Dt Ar "DOCUMENT_TITLE [section] [volume]"
+Title, in upper case.
+.It Sy \&.Os Ar "OPERATING_SYSTEM [version/release]"
+Operating system
+.Pq Tn BSD .
+.El
+.Ss Page Layout Macros
+Section eaders, paragraph breaks, lists and displays.
+.Bl -tag -width flag -compact
+.It Sy \&.Sh Ar HEADER
+Section Header Macro.
+Valid headers, in the order of presentation:
+.Bl -tag -width "RETURN VALUES" -compact
+.It Ar NAME
+Name section, should include the
+.Ql \&.Nm
+or
+.Ql \&.Fn
+and the
+.Ql \&.Nd
+macros.
+.It Ar SYNOPSIS
+Usage.
+.It Ar DESCRIPTION
+General description, should include
+options and parameters.
+.It Ar RETURN VALUES
+Sections two and three function calls.
+.It Ar ENVIRONMENT
+Describe environment variables.
+.It Ar FILES
+Files associated with the subject.
+.It Ar EXAMPLES
+Examples and suggestions.
+.It Ar DIAGNOSTICS
+Normally used for section four device interface diagnostics.
+.It Ar ERRORS
+Sections two and three error and signal
+handling.
+.It Ar SEE ALSO
+Cross references and citations.
+.It Ar STANDARDS
+Conformance to standards if applicable.
+.It Ar HISTORY
+If a standard is not applicable, the history
+of the subject should be given.
+.It Ar BUGS
+Gotchas and caveats.
+.It Ar other
+Customized headers may be added at
+the authors discretion.
+.El
+.It Sy \&.Ss
+Subsection Headers.
+.It Sy \&.Pp
+Paragraph Break.
+Vertical space (one line).
+.It Sy \&.D1
+(D-one) Display-one
+Indent and display one text line.
+.It Sy \&.Dl
+(D-ell) Display-one literal.
+Indent and display one line of literal text.
+.It Sy \&.Bd
+Begin-display of text across one or more lines.
+Requires the end-display macro
+.Ql \&.Ed .
+.Pp
+Display options:
+.Bl -tag -width "xoffset string" -compact
+.It Fl ragged
+Unjustified (ragged edges).
+.It Fl filled
+Justified.
+.It Fl literal
+Literal text or code.
+.It Fl file Ar name
+Read in named
+.Ar file
+and display.
+.It Fl offset Ar string
+Offset (indent) display by the
+width of
+.Ar string
+(or value of register name).
+Known values:
+.Pp
+.Bl -tag -width indent-two -compact
+.It Ar left
+Align block on current left margin (default).
+.It Ar center
+Approximate center margin.
+.It Ar indent
+Six constant width spaces (a tab).
+.It Ar indent-two
+Twelve constant width spaces (two tabs).
+.It Ar right
+Left aligns block about 2 inches from
+right side of page.
+.El
+.El
+.It Sy \&.Ed
+End-display (matches \&.Bd).
+.It Sy \&.Bl
+Begin-list.
+Create lists or columns.
+.Pp
+.Bl -tag -width flag -compact
+.It Ar List-types
+.Bl -column xbullet -compact
+.It Fl bullet Ta "Bullet Item List"
+.It Fl item Ta "Unlabled List"
+.It Fl enum Ta "Enumerated List"
+.It Fl tag Ta "Tag Labeled List"
+.It Fl diag Ta "Diagnostic List"
+.It Fl hang Ta "Hanging Labeled List"
+.It Fl ohang Ta "Overhanging Labeled List"
+.It Fl inset Ta "Inset or Run-on Labeled List"
+.El
+.It List-parameters
+.Bl -tag -width xcompact -compact
+.It Fl offset Ar indent
+(All lists.)
+Offset or indent by
+.Ar indent .
+The
+.Ar indent
+may be expressed as a scaled number
+(12n), a string, a register name or
+the string
+.Li indent
+which represents a tab.
+.It Fl width Ar string
+.Pf ( Fl tag
+and
+.Fl hang
+lists only.)
+The label width is set to the constant width of
+.Ar string .
+The
+.Fl width
+option may be a scaled number
+(20n), a string,
+a register name or the
+string
+.Li indent
+which represents a tab.
+.It Fl compact
+(All lists.)
+Suppresses the insertion of a blank line at the beginning
+of a display and in between each item.
+.It Sy \&.El
+End-list.
+.It Sy \&.It
+List item.
+.El
+.El
+.Sh MANUAL AND GENERAL TEXT DOMAIN MACROS
+The manual and general text domain macros are special in that
+most of them are parsed for callable macros
+for example:
+.Bd -literal -offset indent
+\&.Op Fl s Ar file
+.Ed
+.Pp
+In this example, the option enclosure macro
+.Ql \&.Op
+is parsed, and calls the callable content macro
+.Ql \&Fl
+which operates on the argument
+.Ql s
+and then calls the callable content macro
+.Ql \&Ar
+which operates on the argument
+.Ql file .
+The result is:
+.Pp
+.Dl Op Fl s Ar file
+.Pp
+Some macros may be callable, but are not parsed and vice versa.
+These macros are indicated in the
+.Em parsed
+and
+.Em callable columns below.
+.Pp
+Unless stated, manual page domain macros share a common syntax:
+.Pp
+.Dl \&.Va argument [\ .\ ,\ ;\ :\ (\ )\ [\ ]\ argument \...\ ]
+.Pp
+Macros may be given up to nine arguments.
+.Sy Note :
+Opening and closing
+punctuation characters are only recognized as such if they are presented
+one at a time.
+The string
+.Ql "),"
+is not recognized as punctuation and will be output with a leading white
+space and in what ever font the calling macro uses.
+The
+the argument list
+.Ql "] ) ,"
+is recognized as three sequential closing punctuation characters
+and a leading white space is not output between the characters
+and the previous argument (if any).
+The special meaning of a punctuation character may be escaped
+with the string
+.Ql \e& .
+For example the following string,
+.Pp
+.Dl \&.Ar file1\ , file2\ , file3\ )\ .
+.Pp
+Produces
+.Pp
+.D1 .Ar file1 , file2 , file3 ) .
+.Ss Manual Domain Macros
+.Bl -column "Name" "Parsed" Callable"
+.It Em Name	Parsed	Callable	Description
+.It Sy \&Ad Ta Yes Ta Yes Ta Address. "(This macro may be deprecated.)"
+.It Sy \&Ar Ta Yes Ta Yes Ta "Command line argument."
+.It Sy \&Cd Ta \&No Ta \&No Ta "Configuration declaration (section four only)."
+.It Sy \&Cm Ta Yes Ta Yes Ta "Command line argument modifier."
+.It Sy \&Dv Ta Yes Ta Yes Ta "Defined variable (source code)."
+.It Sy \&Er Ta Yes Ta Yes Ta "Error number (source code)."
+.It Sy \&Ev Ta Yes Ta Yes Ta "Environment variable."
+.It Sy \&Fa Ta Yes Ta Yes Ta "Function argument."
+.It Sy \&Fd Ta Yes Ta Yes Ta "Function declaration."
+.It Sy \&Fn Ta Yes Ta Yes Ta "Function call (also .Fo and .Fc)."
+.It Sy \&Ic Ta Yes Ta Yes Ta "Interactive command."
+.It Sy \&Li Ta Yes Ta Yes Ta "Literal text."
+.It Sy \&Nm Ta Yes Ta Yes Ta "Command name."
+.It Sy \&Op Ta Yes Ta Yes Ta "Option (also .Oo and .Oc)."
+.It Sy \&Ot Ta Yes Ta Yes Ta "Old style function type (Fortran only)."
+.It Sy \&Pa Ta Yes Ta Yes Ta "Pathname or file name."
+.It Sy \&St Ta Yes Ta Yes Ta "Standards (-p1003.2, -p1003.1 or -ansiC)"
+.It Sy \&Va Ta Yes Ta Yes Ta "Variable name."
+.It Sy \&Vt Ta Yes Ta Yes Ta "Variable type (Fortran only)."
+.It Sy \&Xr Ta Yes Ta Yes Ta "Manual Page Cross Reference."
+.El
+.Ss General Text Domain Macros
+.Bl -column "Name" "Parsed" Callable"
+.It Em "Name	Parsed	Callable	Description"
+.It Sy \&%A Ta Yes Ta \&No Ta "Reference author."
+.It Sy \&%B Ta Yes Ta Yes Ta "Reference book title."
+.It Sy \&%\&C Ta \&No Ta \&No Ta "Reference place of publishing (city)."
+.It Sy \&%\&D Ta \&No Ta \&No Ta "Reference date."
+.It Sy \&%J Ta Yes Ta Yes Ta "Reference journal title."
+.It Sy \&%N Ta \&No Ta \&No Ta "Reference issue number."
+.It Sy \&%\&O Ta \&No Ta \&No Ta "Reference optional information."
+.It Sy \&%P Ta \&No Ta \&No Ta "Reference page number(s)."
+.It Sy \&%R Ta \&No Ta \&No Ta "Reference report Name."
+.It Sy \&%T Ta Yes Ta Yes Ta "Reference article title."
+.It Sy \&%V Ta \&No Ta \&No Ta "Reference volume."
+.It Sy \&Ac Ta Yes Ta Yes Ta "Angle close quote."
+.It Sy \&Ao Ta Yes Ta Yes Ta "Angle open quote."
+.It Sy \&Aq Ta Yes Ta Yes Ta "Angle quote."
+.It Sy \&At Ta \&No Ta \&No Ta Tn "AT&T UNIX"
+.It Sy \&Bc Ta Yes Ta Yes Ta "Bracket close quote."
+.It Sy \&Bf Ta \&No Ta \&No Ta "Begin font mode."
+.It Sy \&Bo Ta Yes Ta Yes Ta "Bracket open quote."
+.It Sy \&Bq Ta Yes Ta Yes Ta "Bracket quote."
+.It Sy \&Bx Ta Yes Ta Yes Ta Bx .
+.It Sy \&Db Ta \&No Ta \&No Ta "Debug (default is off)"
+.It Sy \&Dc Ta Yes Ta Yes Ta "Double close quote."
+.It Sy \&Do Ta Yes Ta Yes Ta "Double open quote."
+.It Sy \&Dq Ta Yes Ta Yes Ta "Double quote."
+.It Sy \&Ec Ta Yes Ta Yes Ta "Enclose string close quote."
+.It Sy \&Ef Ta \&No Ta \&No Ta "End font mode."
+.It Sy \&Em Ta Yes Ta Yes Ta "Emphasis (traditional English)."
+.It Sy \&Eo Ta Yes Ta Yes Ta "Enclose string open quote."
+.It Sy \&No Ta Yes Ta Yes Ta "Normal text (no-op)."
+.It Sy \&Ns Ta Yes Ta Yes Ta "No space."
+.It Sy \&Pc Ta Yes Ta Yes Ta "Parenthesis close quote."
+.It Sy \&Pf Ta Yes Ta \&No Ta "Prefix string."
+.It Sy \&Po Ta Yes Ta Yes Ta "Parenthesis open quote."
+.It Sy \&Pq Ta Yes Ta Yes Ta "Parentheses quote."
+.It Sy \&Qc Ta Yes Ta Yes Ta "Strait Double close quote."
+.It Sy \&Ql Ta Yes Ta Yes Ta "Quoted literal."
+.It Sy \&Qo Ta Yes Ta Yes Ta "Strait Double open quote."
+.It Sy \&Qq Ta Yes Ta Yes Ta "Strait Double quote."
+.It Sy \&Re Ta \&No Ta \&No Ta "Reference start."
+.It Sy \&Rs Ta \&No Ta \&No Ta "Reference start."
+.It Sy \&Sc Ta Yes Ta Yes Ta "Single close quote."
+.It Sy \&So Ta Yes Ta Yes Ta "Single open quote."
+.It Sy \&Sq Ta Yes Ta Yes Ta "Single quote."
+.It Sy \&Sm Ta \&No Ta \&No Ta "Space mode (default is \\*qon\\*q)"
+.It Sy \&Sx Ta Yes Ta Yes Ta "Section Cross Reference."
+.It Sy \&Sy Ta Yes Ta Yes Ta "Symbolic (traditional English)."
+.It Sy \&Tn Ta Yes Ta Yes Ta "Trade or type name (small Caps)."
+.It Sy \&Ux Ta Yes Ta Yes Ta Ux
+.It Sy \&Xc Ta Yes Ta Yes Ta "Extend argument list close."
+.It Sy \&Xo Ta Yes Ta Yes Ta "Extend argument list close."
+.El
+.\" .It Sy \&Hf Ta \&No Ta \&No Ta "Include file with header"
+.Pp
+Macro names ending in
+.Ql q
+quote remaining items on the argument list.
+Macro names ending in
+.Ql o
+begin a quote which may span more than one line of input and
+are close quoted with the matching macro name ending in
+.Ql c .
+Enclosure macros may be nested.
+.Pp
+Note: the extended argument list macros
+.Pf ( Ql \&.Xo ,
+.Ql \&.Xc )
+and the function enclosure macros
+.Pf ( Ql \&.Fo ,
+.Ql \&.Fc )
+are irregular.
+The extended list macros are used when the number of macro arguments
+would exceed the
+.Xr troff
+limitation of nine arguments.
+.Sh CONFIGURATION
+For site specific configuration of the macro package,
+see the file
+.Pa /usr/src/share/tmac/README .
+.Sh FILES
+.Bl -tag -width "tmac.doc-ditroff" -compact
+.It Pa tmac.doc
+Manual and general text domain macros.
+.It Pa tmac.doc-common
+Shared structural macros (between nroff/troff/groff).
+.It Pa tmac.doc-nroff
+Site dependent nroff style file.
+.It Pa tmac.doc-ditroff
+Site dependent groff/troff/ditroff style file.
+.It Pa tmac.doc-syms
+Special defines (such as the standards macro).
+.El
+.Sh SEE ALSO
+.Xr mdoc.samples 7
+.Sh HISTORY
+The
+.Nm \-mdoc
+macro package is
+.Ud .
