@@ -1,9 +1,15 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	5.4	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific written prior permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -27,10 +33,12 @@ routed:	${OBJS} ${LIBC}
 	rm -f $*.s
 
 clean: FRC
-	rm -f ${OBJS} core routed
+	rm -f ${OBJS} core routed tags
+	(cd tools; make ${MFLAGS} clean)
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
+	(cd tools; make ${MFLAGS} depend)
 
 install: FRC
 	install -s -o bin -g bin -m 755 routed ${DESTDIR}/etc/routed
@@ -40,6 +48,7 @@ lint: FRC
 
 tags: FRC
 	ctags ${SRCS}
+	(cd tools; make ${MFLAGS} tags)
 
 FRC:
 
@@ -66,7 +75,7 @@ main.o: /usr/include/netdb.h trace.h interface.h table.h af.h
 main.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 main.o: /usr/include/sys/ttydev.h /usr/include/sys/time.h /usr/include/time.h
 main.o: /usr/include/net/if.h /usr/include/net/if_arp.h /usr/include/errno.h
-main.o: /usr/include/signal.h /usr/include/syslog.h
+main.o: /usr/include/signal.h /usr/include/machine/trap.h /usr/include/syslog.h
 output.o: output.c defs.h /usr/include/sys/types.h /usr/include/sys/socket.h
 output.o: /usr/include/net/route.h /usr/include/netinet/in.h
 output.o: /usr/include/protocols/routed.h /usr/include/stdio.h
