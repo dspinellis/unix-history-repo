@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.62 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
