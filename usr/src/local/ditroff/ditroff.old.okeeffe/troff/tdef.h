@@ -7,6 +7,7 @@
 
 #define	PS	10	/* default point size */
 #define	FT	1	/* default font position */
+#define ST	1	/* default stipple */
 #define	LL	(unsigned) 65*INCH/10	/* line length; 39picas=6.5in */
 #define	VS	((12*INCH)/72)	/* initial vert space */
 
@@ -79,6 +80,7 @@
 #define	DRAWARC		'a'	/* arbitrary arc */
 #define DRAWCURVE	'g'	/* gremlin spline */
 #define	DRAWWIG		'~'	/* wiggly line with spline */
+#define	DRAWPOLY	'p'	/* polygon with stipples */
 
 #define	LEFT	020	/* \{ */
 #define	RIGHT	021	/* \} */

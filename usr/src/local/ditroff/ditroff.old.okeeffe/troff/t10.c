@@ -29,6 +29,9 @@ int	Unitwidth;
 int	nfonts;
 int	nsizes;
 int	nchtab;
+int	nstips;
+int	xstip	= ~ST;
+tchar *	stiplab;
 
 /* these characters are used as various signals or values
 /* in miscellaneous places.
@@ -82,7 +85,9 @@ ptinit()
 	nfonts = dev.nfonts;
 	nsizes = dev.nsizes;
 	nchtab = dev.nchtab;
+	nstips = dev.nstips;
 			/* "unsigned" so very large files will work properly */
+	stiplab = (tchar *) setbrk((nstips + 1) * sizeof(tchar));
 	filebase = setbrk((unsigned short) dev.filesize + 2*EXTRAFONT);
 						/* enough room for whole file */
 	read(fin, filebase, dev.filesize);	/* all at once */
@@ -100,6 +105,10 @@ ptinit()
 		kerntab[i] = p + nw;
 		fitab[i] = p + 3 * nw;	/* skip width, kern, code */
 		p += 3 * nw + dev.nchtab + 128 - 32;
+	}
+	for (i = 1; i <= nstips; i++) {		/* make stipple names tchars */
+		stiplab[i] = PAIR(*p, *(p+1));
+		while (*(p++));
 	}
 	fontbase[0] = (struct font *) p;	/* the last shall be first */
 	fontbase[0]->nwfont = EXTRAFONT - dev.nchtab - (128-32) - sizeof (struct font);
@@ -354,6 +363,7 @@ tchar	*pi;
 			fprintf(ptid, "D%c %d %d", cbits(pi[1]), dx, dy);
 			hpos += dx;
 			vpos += dy;
+writecoords:
 			for (n = 4; cbits(pi[n]) != '.'; n += 2) {
 				dx = absmot(pi[n]);
 				if (isnmot(pi[n]))
@@ -367,6 +377,10 @@ tchar	*pi;
 			}
 			fprintf(ptid, "\n");
 			break;
+		case DRAWPOLY:	/* polygon with stipple */
+			if (xstip != stip) ptstip();
+			fprintf(ptid, "D%c %d", DRAWPOLY, dx);
+			goto writecoords;
 		}
 		for (n = 2; cbits(pi[n]) != '.'; n++)
 			;
@@ -419,6 +433,13 @@ ptps()
 	fprintf(ptid, "s%d\n", k);	/* really should put out string rep of size */
 	mpts = i;
 }
+
+ptstip()
+{
+	xstip = stip;
+	fprintf(ptid, "i%d\n", xstip);
+}
+
 
 ptfont()
 {

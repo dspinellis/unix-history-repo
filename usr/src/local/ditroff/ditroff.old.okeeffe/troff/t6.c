@@ -1,4 +1,4 @@
-/*	t6.c	1.6	(Berkeley)	84/01/19	*/
+/*	t6.c	1.7	(Berkeley)	84/04/13	*/
 #include "tdef.h"
 extern
 #include "d.h"
@@ -329,6 +329,40 @@ tchar setslant()		/* set slant from \S'...' */
 	c |= ZBIT;
 	setsfbits(c, n+180);
 	return(c);
+}
+
+
+casest()
+{
+	register i, j;
+	register char last;
+
+	skip();
+	i = getrq();
+	if (!i || i == 'P') {
+	    stip = stip1;
+	    return;
+	}
+	if (i == '0')
+	    goto sterr;
+
+	last = cbits(i) >> BYTE;
+	if ((j = (i & BMASK) - '0') >= 0 && j <= 9) {	/* digit - see if two */
+	    if (last)
+		if ((last -= '0') < 0 || last > 9)
+		    goto sterr;
+	    if (j > nstips)
+		goto sterr;
+	} else {					/* stipple name */
+	    for (j = 0; stiplab[j] != i; j++)
+		if (j > nstips)
+		    goto sterr;
+	}
+	stip1 = stip;
+	stip = j;
+	return;
+sterr:
+	fprintf(stderr, "troff: Can't find stipple %c%c\n", i & BMASK, last);
 }
 
 
