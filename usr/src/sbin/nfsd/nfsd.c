@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -176,7 +176,7 @@ main(argc, argv)
 						&mtch, sizeof(mtch));
 				if (ret < 0)
 					syslog(LOG_ERR, "nfssvc() failed %m");
-				exit();
+				exit(1);
 			}
 		close(sock);
 	}
@@ -248,7 +248,7 @@ main(argc, argv)
 				if (ret < 0)
 					syslog(LOG_NOTICE,
 					    "Nfssvc STREAM Failed");
-				exit();
+				exit(1);
 			}
 			close(msgsock);
 		}
