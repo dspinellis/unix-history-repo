@@ -1,4 +1,7 @@
-static char *sccsid = "@(#)su.c	4.3 (Berkeley) 4.3";
+#ifndef lint
+static char *sccsid = "@(#)su.c	4.4 (Berkeley) 4.4";
+#endif
+
 #include <stdio.h>
 #include <pwd.h>
 
@@ -7,36 +10,29 @@ char	*crypt();
 char	*getpass();
 
 main(argc,argv)
-int	argc;
-char	**argv;
+	int argc;
+	char **argv;
 {
-	char *nptr;
+	char *nptr = "root";
 	char *password;
-	int badsw = 0;
 	char *shell = "/bin/sh";
-	int niced = 0;
 
-	if(argc > 1)
+	if (argc > 1)
 		nptr = argv[1];
-	else {
-		nptr = "root";
-		nice(-4);
-		niced = -4;
-	}
-	if((pwd=getpwnam(nptr)) == NULL) {
+	if ((pwd = getpwnam(nptr)) == NULL) {
 		printf("Unknown id: %s\n",nptr);
 		exit(1);
 	}
-	if(pwd->pw_passwd[0] == '\0' || getuid() == 0)
+	if (pwd->pw_passwd[0] == '\0' || getuid() == 0)
 		goto ok;
 	password = getpass("Password:");
-	if(badsw || (strcmp(pwd->pw_passwd, crypt(password, pwd->pw_passwd)) != 0)) {
-bad:
+	if (strcmp(pwd->pw_passwd, crypt(password, pwd->pw_passwd)) != 0) {
 		printf("Sorry\n");
-		if(pwd->pw_uid == 0) {
+		if (pwd->pw_uid == 0) {
 			FILE *console = fopen("/dev/console", "w");
 			if (console != NULL) {
-				fprintf(console, "BADSU: %s %s\r\n", getlogin(), ttyname(2));
+				fprintf(console, "BADSU: %s %s\r\n",
+					getlogin(), ttyname(2));
 				fclose(console);
 			}
 		}
@@ -44,21 +40,30 @@ bad:
 	}
 ok:
 	endpwent();
-	if(pwd->pw_uid == 0) {
+	if (pwd->pw_uid == 0) {
 		FILE *console = fopen("/dev/console", "w");
 		if (console != NULL) {
-			fprintf(console, "SU: %s %s\r\n", getlogin(), ttyname(2));
+			fprintf(console, "SU: %s %s\r\n",
+				getlogin(), ttyname(2));
 			fclose(console);
 		}
 	}
-	setgid(pwd->pw_gid);
-	initgroups(nptr, pwd->pw_gid);
-	setuid(pwd->pw_uid);
+	if (setgid(pwd->pw_gid) < 0) {
+		perror("su: setgid");
+		exit(3);
+	}
+	if (initgroups(nptr, pwd->pw_gid)) {
+		fprintf(stderr, "su: initgroups failed\n");
+		exit(4);
+	}
+	if (setuid(pwd->pw_uid) < 0) {
+		perror("su: setuid");
+		exit(5);
+	}
 	if (pwd->pw_shell && *pwd->pw_shell)
 		shell = pwd->pw_shell;
 	homeis(pwd->pw_dir);
 	shellis(shell);
-	nice(-niced);
 	execl(shell, "su", 0);
 	printf("No shell\n");
 	exit(3);
