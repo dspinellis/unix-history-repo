@@ -15,8 +15,8 @@
 #include <sys/signal.h>
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
-extern char *sys_signame[NSIG];
-extern char *sys_siglist[NSIG];
+extern char *const sys_signame[NSIG];
+extern char *const sys_siglist[NSIG];
 #endif
 
 __BEGIN_DECLS
