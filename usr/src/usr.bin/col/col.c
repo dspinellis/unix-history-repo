@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)col.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)col.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <ctype.h>
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)col.c	8.4 (Berkeley) %G%";
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define	BS	'\b'		/* backspace */
 #define	TAB	'\t'		/* tab */

@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cut.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cut.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <ctype.h>
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)cut.c	8.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int	cflag;
 char	dchar;
