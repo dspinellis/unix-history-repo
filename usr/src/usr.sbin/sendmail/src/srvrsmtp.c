@@ -15,12 +15,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.15 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.16 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.15 (Berkeley) %G%";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.16 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -118,7 +118,15 @@ smtp()
 	}
 	settime();
 	if (RealHostName != NULL)
-		setproctitle("srvrsmtp %s", RealHostName);
+	{
+		CurHostName = RealHostName;
+		setproctitle("srvrsmtp %s", CurHostName);
+	}
+	else
+	{
+		/* this must be us!! */
+		CurHostName = MyHostName;
+	}
 	expand("\001e", inp, &inp[sizeof inp], CurEnv);
 	message("220", inp);
 	SmtpPhase = "startup";
@@ -142,7 +150,8 @@ smtp()
 		if (p == NULL)
 		{
 			/* end of file, just die */
-			message("421", "%s Lost input channel", HostName);
+			message("421", "%s Lost input channel to %s",
+				MyHostName, CurHostName);
 			finis();
 		}
 
@@ -173,12 +182,12 @@ smtp()
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
 			SmtpPhase = "HELO";
-			setproctitle("%s: %s", RealHostName, inp);
-			if (sameword(p, HostName))
+			setproctitle("%s: %s", CurHostName, inp);
+			if (sameword(p, MyHostName))
 			{
 				/* connected to an echo server */
 				message("553", "%s I refuse to talk to myself",
-					HostName);
+					MyHostName);
 				break;
 			}
 			if (RealHostName != NULL && !sameword(p, RealHostName))
@@ -217,7 +226,7 @@ smtp()
 				break;
 			initsys();
 			setproctitle("%s %s: %s", CurEnv->e_id,
-				RealHostName, inp);
+				CurHostName, inp);
 
 			/* child -- go do the processing */
 			p = skipword(p, "from");
@@ -236,7 +245,7 @@ smtp()
 		  case CMDRCPT:		/* rcpt -- designate recipient */
 			SmtpPhase = "RCPT";
 			setproctitle("%s %s: %s", CurEnv->e_id,
-				RealHostName, inp);
+				CurHostName, inp);
 			if (setjmp(TopFrame) > 0)
 			{
 				CurEnv->e_flags &= ~EF_FATALERRS;
@@ -282,7 +291,7 @@ smtp()
 			/* collect the text of the message */
 			SmtpPhase = "collect";
 			setproctitle("%s %s: %s", CurEnv->e_id,
-				RealHostName, inp);
+				CurHostName, inp);
 			collect(TRUE);
 			if (Errors != 0)
 				break;
@@ -347,7 +356,7 @@ smtp()
 		  case CMDVRFY:		/* vrfy -- verify address */
 			if (runinchild("SMTP-VRFY") > 0)
 				break;
-			setproctitle("%s: %s", RealHostName, inp);
+			setproctitle("%s: %s", CurHostName, inp);
 				paddrtree(a);
 			break;
 
@@ -362,7 +371,7 @@ smtp()
 			break;
 
 		  case CMDQUIT:		/* quit -- leave mail */
-			message("221", "%s closing connection", HostName);
+			message("221", "%s closing connection", MyHostName);
 			if (InChild)
 				ExitStat = EX_QUIT;
 			finis();
@@ -613,6 +622,7 @@ runinchild(label)
 		{
 			/* child */
 			InChild = TRUE;
+			QuickAbort = FALSE;
 			clearenvelope(CurEnv);
 		}
 	}

@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)err.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)err.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -314,7 +314,6 @@ errstring(errno)
 	static char buf[100];
 # ifdef SMTP
 	extern char *SmtpPhase;
-	extern char *RealHostName;
 # endif SMTP
 
 # ifdef DAEMON
@@ -335,23 +334,23 @@ errstring(errno)
 			(void) strcat(buf, " during ");
 			(void) strcat(buf, SmtpPhase);
 		}
-		if (RealHostName != NULL)
+		if (CurHostName != NULL)
 		{
 			(void) strcat(buf, " with ");
-			(void) strcat(buf, RealHostName);
+			(void) strcat(buf, CurHostName);
 		}
 		return (buf);
 
 	  case EHOSTDOWN:
-		if (RealHostName == NULL)
+		if (CurHostName == NULL)
 			break;
-		(void) sprintf(buf, "Host %s is down", RealHostName);
+		(void) sprintf(buf, "Host %s is down", CurHostName);
 		return (buf);
 
 	  case ECONNREFUSED:
-		if (RealHostName == NULL)
+		if (CurHostName == NULL)
 			break;
-		(void) sprintf(buf, "Connection refused by %s", RealHostName);
+		(void) sprintf(buf, "Connection refused by %s", CurHostName);
 		return (buf);
 	}
 # endif VMUNIX

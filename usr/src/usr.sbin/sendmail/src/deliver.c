@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.6 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -681,6 +681,8 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 # endif DEBUG
 	errno = 0;
 
+	CurHostName = m->m_mailer;
+
 	/*
 	**  Deal with the special case of mail handled through an IPC
 	**  connection.
@@ -710,6 +712,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		register int i;
 		register u_short port;
 
+		CurHostName = pvp[1];
 		if (!clever)
 			syserr("non-clever IPC");
 		if (pvp[2] != NULL)
@@ -722,7 +725,10 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		if (st == NULL || st->s_host.ho_exitstat == EX_OK)
 			i = makeconnection(pvp[1], port, pmfile, prfile);
 		else
+		{
 			i = st->s_host.ho_exitstat;
+			errno = st->s_host.ho_errno;
+		}
 #else HOSTINFO
 		i = makeconnection(pvp[1], port, pmfile, prfile);
 #endif HOSTINFO

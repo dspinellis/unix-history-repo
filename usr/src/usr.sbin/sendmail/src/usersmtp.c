@@ -16,12 +16,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.5 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)usersmtp.c	5.6 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)usersmtp.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)usersmtp.c	5.6 (Berkeley) %G%";
 # endif not lint
 
 
@@ -143,7 +143,7 @@ smtpinit(m, pvp)
 	**	My mother taught me to always introduce myself.
 	*/
 
-	smtpmessage("HELO %s", m, HostName);
+	smtpmessage("HELO %s", m, MyHostName);
 	SmtpPhase = "HELO wait";
 	r = reply(m);
 	if (r < 0)
@@ -194,7 +194,7 @@ smtpinit(m, pvp)
 	}
 	else
 	{
-		smtpmessage("MAIL From:<@%s%c%s>", m, HostName,
+		smtpmessage("MAIL From:<@%s%c%s>", m, MyHostName,
 			buf[0] == '@' ? ',' : ':', buf);
 	}
 	SmtpPhase = "MAIL wait";

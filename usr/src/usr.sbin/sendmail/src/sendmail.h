@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)sendmail.h	5.5 (Berkeley) %G%
+**	@(#)sendmail.h	5.6 (Berkeley) %G%
 */
 
 /*
@@ -19,7 +19,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.5		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.6		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -519,14 +519,15 @@ EXTERN int	QueueLA;	/* load average starting forced queueing */
 EXTERN int	RefuseLA;	/* load average refusing connections are */
 EXTERN int	QueueFactor;	/* slope of queue function */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
-EXTERN char	*HostName;	/* name of this host for SMTP messages */
 EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
 EXTERN char	*StatFile;	/* location of statistics summary */
 EXTERN char	*QueueDir;	/* location of queue directory */
 EXTERN char	*FileName;	/* name to print on error messages */
 EXTERN char	*SmtpPhase;	/* current phase in SMTP processing */
+EXTERN char	*MyHostName;	/* name of this host for SMTP messages */
 EXTERN char	*RealHostName;	/* name of host we are talking to */
+EXTERN char	*CurHostName;	/* current host we are dealing with */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */

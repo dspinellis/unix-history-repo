@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
@@ -109,7 +109,7 @@ main(argc, argv, envp)
 	bool readconfig = TRUE;
 	bool queuemode = FALSE;		/* process queue requests */
 	static bool reenter = FALSE;
-	char jbuf[30];			/* holds HostName */
+	char jbuf[30];			/* holds MyHostName */
 	extern bool safefile();
 	extern time_t convtime();
 	extern putheader(), putbody();
@@ -428,7 +428,7 @@ main(argc, argv, envp)
 
 	/* our name for SMTP codes */
 	expand("\001j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
-	HostName = jbuf;
+	MyHostName = jbuf;
 
 	/* the indices of local and program mailers */
 	st = stab("local", ST_MAILER, ST_FIND);
