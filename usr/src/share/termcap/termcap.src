@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.24 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.25 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1599,6 +1599,22 @@ hz|2392|hp2392|hp2392a:\
 	:ml=\El:MT:mu=\Em:km:\
 	:mh=\E&dH:mr=\E&dB:us=\E&dD:mb=\E&dA:me=\E&d@:\
 	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\Eh:ks=\E&s1A:ke=\E&s0A:tc=hp:
+#HP 236 console running 4.3 BSD
+#from ddavis@ic.berkeley.edu
+h7|236|hp236|HP236 internal terminal emulator:\
+	:am:bs:li#24:co#80:cl=\EF:cm=\EE%+ %+ :\
+	:dc=\EJ:dl=\EH:ic=\EI:al=\EG:up=^K:im=:ei=:\
+	:so=\EBI:se=\ECI:vs=\EDB:ve=\EDE:
+# hp150 from ddavis@ic.berkeley.edu
+h0|150|hp150|hp150a|150a:\
+	:is=\E&s1A\E&f0a1k2L\Ep\r\E&k0K\E&f0a2k2L\Eq\r\E&f0a3k2L\Er\r\E&f0a4k2L\Es\r\E&f0a5k2L\Et\r\E&f0a6k2L\Eu\r\E&f0a7k2L\Ev\r\E&f0a8k2L\Ew\r\E&k0D\E&s0A:\
+	:bt=\Ei:li#24:cm=\E&a%r%dc%dY:dc=2\EP:ip=2:pb#19200:so=\E&dJ:\
+	:se=\E&d@:us=\E&dD:ue=\E&d@:me=\E&d@:kh=\Eh:ku=\EA:kl=\ED:kr=\EC:\
+	:kd=\EB:kn#8:k1=\Ep:k2=\Eq:k3=\Er:k4=\Es:k5=\Et:k6=\Eu:k7=\Ev:\
+	:k8=\Ew:ta=2^I:ct=\E3:st=\E1:do=^J:al=\EL:am:le=^H:\
+	:bs:cd=\EJ:ce=\EK:ch=\E&a%dC:cl=\Eh\EJ:co#80:cv=\E&a%dY:da:db:dl=\EM:\
+	:ei=\ER:im=\EQ:kb=^H:mi:nd=\EC:pt:up=\EA:xs:vt#6:sf=\ES:sr=\ET:\
+	:vs=\E&s1A:ve=\E&s0A:ks=\E&jB\E&j@:ke=\E&j@:
 # # --------------------------------
 #
 # i: INFOTON (GENERAL TERMINAL)
