@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.8 (Berkeley) %G%
+ *	@(#)machdep.c	7.9 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -639,12 +639,13 @@ sendsig(catcher, sig, mask, code)
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
+struct sigreturn_args {
+	struct sigcontext *sigcntxp;
+};
 /* ARGSUSED */
 sigreturn(p, uap, retval)
 	struct proc *p;
-	struct args {
-		struct sigcontext *sigcntxp;
-	} *uap;
+	struct sigreturn_args *uap;
 	int *retval;
 {
 	register struct sigcontext *scp;

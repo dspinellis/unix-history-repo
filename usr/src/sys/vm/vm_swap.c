@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.23 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -131,13 +131,14 @@ swstrategy(bp)
  * which must be in the swdevsw.  Return EBUSY
  * if already swapping on this device.
  */
+struct swapon_args {
+	char	*name;
+};
 /* ARGSUSED */
 int
 swapon(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*name;
-	} *uap;
+	struct swapon_args *uap;
 	int *retval;
 {
 	register struct vnode *vp;

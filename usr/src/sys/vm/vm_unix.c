@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_unix.c 1.1 89/11/07$
  *
- *	@(#)vm_unix.c	7.3 (Berkeley) %G%
+ *	@(#)vm_unix.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -24,13 +24,14 @@
 
 #include <vm/vm.h>
 
+struct obreak_args {
+	char	*nsiz;
+};
 /* ARGSUSED */
 int
 obreak(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*nsiz;
-	} *uap;
+	struct obreak_args *uap;
 	int *retval;
 {
 	register struct vmspace *vm = p->p_vmspace;
@@ -95,13 +96,14 @@ grow(p, sp)
 	return (1);
 }
 
+struct ovadvise_args {
+	int	anom;
+};
 /* ARGSUSED */
 int
 ovadvise(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	anom;
-	} *uap;
+	struct ovadvise_args *uap;
 	int *retval;
 {
 

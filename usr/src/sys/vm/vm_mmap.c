@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.14 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -39,11 +39,14 @@ int mmapdebug = 0;
 #define MDB_MAPIT	0x04
 #endif
 
+struct getpagesize_args {
+	int	dummy;
+};
 /* ARGSUSED */
 int
 getpagesize(p, uap, retval)
 	struct proc *p;
-	void *uap;
+	struct getpagesize_args *uap;
 	int *retval;
 {
 
@@ -51,13 +54,14 @@ getpagesize(p, uap, retval)
 	return (0);
 }
 
+struct sbrk_args {
+	int	incr;
+};
 /* ARGSUSED */
 int
 sbrk(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	incr;
-	} *uap;
+	struct sbrk_args *uap;
 	int *retval;
 {
 
@@ -65,13 +69,14 @@ sbrk(p, uap, retval)
 	return (EOPNOTSUPP);
 }
 
+struct sstk_args {
+	int	incr;
+};
 /* ARGSUSED */
 int
 sstk(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	incr;
-	} *uap;
+	struct sstk_args *uap;
 	int *retval;
 {
 
@@ -90,17 +95,18 @@ struct mmap_args {
 };
 
 #ifdef COMPAT_43
+struct osmmap_args {
+	caddr_t	addr;
+	int	len;
+	int	prot;
+	int	flags;
+	int	fd;
+	long	pos;
+};
 int
 osmmap(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		caddr_t	addr;
-		int	len;
-		int	prot;
-		int	flags;
-		int	fd;
-		long	pos;
-	} *uap;
+	register struct osmmap_args *uap;
 	int *retval;
 {
 	long spos;
@@ -223,13 +229,14 @@ smmap(p, uap, retval)
 	return(error);
 }
 
+struct msync_args {
+	caddr_t	addr;
+	int	len;
+};
 int
 msync(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-	} *uap;
+	struct msync_args *uap;
 	int *retval;
 {
 	vm_offset_t addr, objoff, oaddr;
@@ -296,13 +303,14 @@ msync(p, uap, retval)
 	return(0);
 }
 
+struct munmap_args {
+	caddr_t	addr;
+	int	len;
+};
 int
 munmap(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		caddr_t	addr;
-		int	len;
-	} *uap;
+	register struct munmap_args *uap;
 	int *retval;
 {
 	vm_offset_t addr;
@@ -343,14 +351,15 @@ munmapfd(fd)
 	curproc->p_fd->fd_ofileflags[fd] &= ~UF_MAPPED;
 }
 
+struct mprotect_args {
+	caddr_t	addr;
+	int	len;
+	int	prot;
+};
 int
 mprotect(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		int	prot;
-	} *uap;
+	struct mprotect_args *uap;
 	int *retval;
 {
 	vm_offset_t addr;
@@ -363,10 +372,10 @@ mprotect(p, uap, retval)
 		       p->p_pid, uap->addr, uap->len, uap->prot);
 #endif
 
-	addr = (vm_offset_t) uap->addr;
+	addr = (vm_offset_t)uap->addr;
 	if ((addr & PAGE_MASK) || uap->len < 0)
 		return(EINVAL);
-	size = (vm_size_t) uap->len;
+	size = (vm_size_t)uap->len;
 	/*
 	 * Map protections
 	 */
@@ -388,15 +397,16 @@ mprotect(p, uap, retval)
 	return (EINVAL);
 }
 
+struct madvise_args {
+	caddr_t	addr;
+	int	len;
+	int	behav;
+};
 /* ARGSUSED */
 int
 madvise(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		int	behav;
-	} *uap;
+	struct madvise_args *uap;
 	int *retval;
 {
 
@@ -404,15 +414,16 @@ madvise(p, uap, retval)
 	return (EOPNOTSUPP);
 }
 
+struct mincore_args {
+	caddr_t	addr;
+	int	len;
+	char	*vec;
+};
 /* ARGSUSED */
 int
 mincore(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		char	*vec;
-	} *uap;
+	struct mincore_args *uap;
 	int *retval;
 {
 
@@ -450,7 +461,7 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 		*addr = round_page(*addr);
 	} else {
 		fitit = FALSE;
-		(void) vm_deallocate(map, *addr, size);
+		(void)vm_deallocate(map, *addr, size);
 	}
 
 	/*
