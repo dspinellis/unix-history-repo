@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -942,10 +942,11 @@ checkuser(name)
 	pw = getpwnam(name);
 	if (pw == NULL)
 		return (0);
+	if (pw ->pw_shell == NULL || pw->pw_shell[0] == NULL)
+		pw->pw_shell = "/bin/sh";
 	while ((cp = getusershell()) != NULL)
 		if (strcmp(cp, pw->pw_shell) == 0)
 			break;
-	endpwent();
 	endusershell();
 	if (cp == NULL)
 		return (0);
