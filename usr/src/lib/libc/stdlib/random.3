@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)random.3	5.1 (Berkeley) %G%
+.\"	@(#)random.3	6.1 (Berkeley) %G%
 .\"
-.TH RANDOM 3 "19 January 1983"
+.TH RANDOM 3 ""
 .UC 5
 .SH NAME
 random, srandom, initstate, setstate \- better random number generator; routines for changing generators
@@ -78,7 +78,8 @@ returns a pointer to the previous state information array.
 Once a state has been initialized, the
 .I setstate
 routine provides for rapid switching between states.
-.I Setstate returns a pointer to the previous state array; its
+.I Setstate
+returns a pointer to the previous state array; its
 argument state array is used for further random number generation
 until the next call to
 .I initstate
