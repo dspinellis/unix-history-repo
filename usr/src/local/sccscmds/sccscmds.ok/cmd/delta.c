@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-static char Sccsid[] = "@(#)delta.c	4.8	%G%";
+static char Sccsid[] = "@(#)delta.c	4.9	%G%";
 USXALLOC();
 
 # ifdef LOGDELTA
@@ -223,7 +223,7 @@ char *file;
 			/*
 			Re-try.
 			*/
-			if (difflim =- 500) {	/* reduce segmentation */
+			if (difflim -= 500) {	/* reduce segmentation */
 				fprintf(stderr,
 			"'%s' failed, re-trying, segmentation = %d (de13)\n",
 					Diffpgm,difflim);
@@ -370,10 +370,10 @@ int orig_nlines;
 			putline(pkt,sprintf(str,"%c%c %s/%s/%05u\n",
 				CTLCHAR, STATS,
 				"00000", "00000", orig_nlines));
-			dt.d_sid.s_rel =- 1;
-			dt.d_serial =- 1;
+			dt.d_sid.s_rel -= 1;
+			dt.d_serial -= 1;
 			if (ser_inc != 1)
-				dt.d_pred =- 1;
+				dt.d_pred -= 1;
 			else
 				dt.d_pred = opred;	/* point to old pred */
 			del_ba(&dt,str);

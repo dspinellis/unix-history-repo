@@ -3,7 +3,7 @@
 # include	"seven/macros.h"
 # include	"fatal.h"
 
-SCCSID(@(#)vc.c	4.1);
+SCCSID(@(#)vc.c	4.2);
 USXALLOC();
 
 /*
@@ -231,7 +231,7 @@ register char *dptr;
 			error("`%s' declared twice on line %d (905)", 
 				dname, Lineno);
 		else
-			Sym[i].usage =| DCL;
+			Sym[i].usage |= DCL;
 		NONBLANK(dptr);
 	}
 }
@@ -317,7 +317,7 @@ char *iptr;
 		NONBLANK(sptr);
 		if (imatch("not ", sptr)) {
 			not = FALSE;
-			sptr =+ 4;
+			sptr += 4;
 		}
 		else not = TRUE;
 
@@ -340,7 +340,7 @@ door()
 	NONBLANK(sptr);
 	while (*sptr=='|') {
 		sptr++;
-		value =| doand();
+		value |= doand();
 		NONBLANK(sptr);
 	}
 	return(value);
@@ -354,7 +354,7 @@ doand()
 	NONBLANK(sptr);
 	while (*sptr=='&') {
 		sptr++;
-		value =& exp();
+		value &= exp();
 		NONBLANK(sptr);
 	}
 	return(value);
@@ -517,14 +517,14 @@ char *ptr;
 		*t++ = '\0';
 		INCR(i);
 		slots[i] = Sym[j = lookup(s)].value;
-		Sym[j].usage =| USD;
+		Sym[j].usage |= USD;
 	}
 	INCR(i);
 	slots[i] = p;
 	if (i==0) return(ptr);
 	newlen = 0;
 	for (j=0; j<=i; j++)
-		newlen =+ (size(slots[j])-1);
+		newlen += (size(slots[j])-1);
 	t = Repflag = alloc(++newlen);
 	for (j=0; j<=i; j++)
 		t = ecopy(slots[j],t);
@@ -582,7 +582,7 @@ char *pvalue;
 	free(s->value);
 	s->lenval = size(pvalue);
 	copy(pvalue, (s->value = alloc(s->lenval)));
-	s->usage =| ASG;
+	s->usage |= ASG;
 	return(i);
 }
 

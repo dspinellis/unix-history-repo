@@ -44,7 +44,7 @@ unsigned pid;
 			return(xmsg(lockfile,"lockit"));
 		if (exists(lockfile)) {
 			time(&ltime);
-			ltime =- Statbuf.st_mtime;
+			ltime -= Statbuf.st_mtime;
 			if ((fd = open(lockfile,0)) < 0)
 				continue;
 			if (ltime < 60L)

@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)stree.c	4.2);
+SCCSID(@(#)stree.c	4.3);
 USXALLOC();
 
 struct	tree {
@@ -72,8 +72,8 @@ register char *argv[];
 	if(num_files == 0)
 		fatal("missing file arg (cm3)");
 	setsig();
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 	for (i = 1; i < argc; i++)
 		if (p=argv[i])
 			do_file(p,prttree);
