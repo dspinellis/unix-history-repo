@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.8 (Berkeley) %G%
+ *	@(#)mp.c	7.9 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -62,7 +62,8 @@ struct  vba_driver mpdriver =
     { mpprobe, 0, mpattach, 0, mpstd, "mp", mpinfo };
 
 int	mpstart();
-struct	mpevent *mpparam();
+int	mpparam();
+struct	mpevent *mpparam2();
 struct	mpevent *mp_getevent();
 
 /*
@@ -94,6 +95,38 @@ struct	mpsoftc {
 	struct	asyncparam ms_async[MPMAXPORT][MPINSET];/* async structs */
 	char	ms_cbuf[MPMAXPORT][MPOUTSET][CBSIZE];/* input character buffers */
 } mp_softc[NMP];
+
+struct	speedtab	  
+mpspeedtab[] = {
+	9600,	M9600,	  /* baud rate = 9600 */
+	4800,	M4800,	  /* baud rate = 4800 */
+	2400,	M2400,	  /* baud rate = 2400 */
+	1800,	M1800,	  /* baud rate = 1800 */
+	1200,	M1200,	  /* baud rate = 1200 */
+	600,	M600,	  /* baud rate = 600 */
+	300,	M300,	  /* baud rate = 300 */
+	200,	M200,	  /* baud rate = 200 */
+	150,	M150,	  /* baud rate = 150 */
+	134,	M134_5,	  /* baud rate = 134.5 */
+	110,	M110,	  /* baud rate = 110 */
+	75,	M75,	  /* baud rate = 75 */
+	50,	M50,	  /* baud rate = 50 */
+	0,	M0,	  /* baud rate = 0 */
+	2000,	M2000,	  /* baud rate = 2000 */
+	3600,	M3600,	  /* baud rate = 3600 */
+	7200,	M7200,	  /* baud rate = 7200 */
+	19200,	M19200,	  /* baud rate = 19,200 */
+	24000,	M24000,	  /* baud rate = 24,000 */
+	28400,	M28400,	  /* baud rate = 28,400 */
+	37800,	M37800,	  /* baud rate = 37,800 */
+	40300,	M40300,	  /* baud rate = 40,300 */
+	48000,	M48000,	  /* baud rate = 48,000 */
+	52000,	M52000,	  /* baud rate = 52,000 */
+	56800,	M56800,	  /* baud rate = 56,800 */
+	EXTA,	MEXTA,	  /* baud rate = Ext A */
+	EXTB,	MEXTB,	  /* baud rate = Ext B */
+	-1,	-1,
+};
 
 struct	tty mp_tty[NMP*MPCHUNK];
 #ifndef lint
@@ -178,19 +211,24 @@ mpopen(dev, mode)
 	/*
 	 * serialize open and close events
 	 */
-	while ((mp->mp_flags & MP_PROGRESS) || (tp->t_state & TS_WOPEN))
+	while ((mp->mp_flags & MP_PROGRESS) || ((tp->t_state & TS_WOPEN) && 
+		!(mode&O_NONBLOCK) && !(tp->t_cflag&CLOCAL)))
 		sleep((caddr_t)&tp->t_canq, TTIPRI);
 restart:
 	tp->t_state |= TS_WOPEN;
 	tp->t_addr = (caddr_t)ms;
 	tp->t_oproc = mpstart;
+	tp->t_param = mpparam;
 	tp->t_dev = dev;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
 		if (tp->t_ispeed == 0) {
-			tp->t_ispeed = B9600;
-			tp->t_ospeed = B9600;
-			tp->t_flags = ODDP|EVENP|ECHO;
+		tp->t_ispeed = TTYDEF_SPEED;
+		tp->t_ospeed = TTYDEF_SPEED;
+		tp->t_iflag = TTYDEF_IFLAG;
+		tp->t_oflag = TTYDEF_OFLAG;
+		tp->t_lflag = TTYDEF_LFLAG;
+		tp->t_cflag = TTYDEF_CFLAG;
 		}
 		/*
 		 * Initialize port state: init MPCC interface
@@ -199,7 +237,7 @@ restart:
 		error = mpportinit(ms, mp, port);
 		if (error)
 			goto bad;
-		ev = mpparam(unit);
+		ev = mpparam2(tp, &tp->t_termios);
 		if (ev == 0) {
 			error = ENOBUFS;
 			goto bad;
@@ -211,9 +249,11 @@ restart:
 		 */
 		while (mp->mp_proto != MPPROTO_ASYNC)
 			sleep((caddr_t)&tp->t_canq, TTIPRI);
+		ttsetwater(tp);
 		mp->mp_flags &= ~MP_PROGRESS;
 	}
-	while ((tp->t_state & TS_CARR_ON) == 0) {
+	while (!(mode&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&  
+	       (tp->t_state & TS_CARR_ON) == 0) {
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 		/*
 		 * a mpclose() might have disabled port. if so restart
@@ -291,27 +331,27 @@ out:
 /*
  * Read from an mpcc port.
  */
-mpread(dev, uio)
+mpread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	struct tty *tp;
 
 	tp = &mp_tty[minor(dev)];
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
 /*
  * Write to an mpcc port.
  */
-mpwrite(dev, uio)
+mpwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	struct tty *tp;
 
 	tp = &mp_tty[minor(dev)];
-	return ((*linesw[tp->t_line].l_write)(tp, uio));
+	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
 /*
@@ -323,8 +363,8 @@ mpioctl(dev, cmd, data, flag)
 {
 	register struct tty *tp;
 	register struct mpsoftc *ms;
-	register struct mpevent *ev;
 	register struct mpport *mp;
+	register struct mpevent *ev;
 	int s, port, error, unit;
 	struct mblok *mb;
 
@@ -340,29 +380,8 @@ mpioctl(dev, cmd, data, flag)
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
-	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
-		    cmd == TIOCLBIC || cmd == TIOCLSET || cmd == TIOCSETC) {
-			s = spl8();
-			while (mp->mp_flags & MP_IOCTL) {
-				sleep((caddr_t)&tp->t_canq, TTIPRI);
-				if (mp->mp_proto != MPPROTO_ASYNC) {
-					mp->mp_flags &= ~MP_IOCTL;
-					splx(s);
-					return(ENXIO);
-				}
-			}
-			ev = mpparam(unit);
-			if (ev == 0)
-				error = ENOBUFS;
-			else {
-				mp->mp_flags |= MP_IOCTL;
-				mpcmd(ev, EVCMD_IOCTL, A_CHGALL, mb, port);
-			}
-			splx(s);
-		}
+	if (error >= 0)
 		return (error);
-	}
 	switch (cmd) {
 	case TIOCSBRK:			/* send break */
 	case TIOCCBRK:			/* clear break */
@@ -395,44 +414,65 @@ mpioctl(dev, cmd, data, flag)
 	return (error);
 }
 
+mpparam(tp, t)
+	struct tty *tp;
+	struct termios *t;
+{
+	register struct mpevent *ev;
+	int unit = minor(tp->t_dev);
+	struct mpsoftc *ms = &mp_softc[MPUNIT(unit)];
+	struct mblok *mb = ms->ms_mb;
+
+	ev = mpparam2(tp, t);
+	if (ev == 0)
+		return (ENOBUFS);
+	mpcmd(ev, EVCMD_IOCTL, A_CHGALL, mb, MPPORT(unit));
+	return (0);
+}	
+
 struct mpevent *
-mpparam(unit)
-	int unit;
+mpparam2(tp, t)
+	register struct tty *tp;
+	struct termios *t;
 {
 	register struct mpevent *ev;
 	register struct mpport *mp;
-	register struct tty *tp;
+	int unit = minor(tp->t_dev);
 	struct mblok *mb;
 	struct mpsoftc *ms;
 	register struct asyncparam *asp;
-	int port;
+	int port, speedcode;
 
 	ms = &mp_softc[MPUNIT(unit)];
 	mb = ms->ms_mb;
 	port = MPPORT(unit);
 	mp = &mb->mb_port[port];
 	ev = mp_getevent(mp, unit, 0);	/* XXX */
-	if (ev == 0)
-		return (ev);
-	tp = &mp_tty[unit];
+	speedcode = ttspeedtab(t->c_ospeed, mpspeedtab);
+	if (ev == 0 || speedcode < 0) {
+printf("mp mpunit %d port %d param2 failed ev: %x speed %d, wanted %d\n",
+			MPUNIT(unit), port, ev, speedcode, t->c_ospeed);
+		return (0);	/* XXX */
+	}
 	/* YUCK */
 	asp = &ms->ms_async[port][mp->mp_on?mp->mp_on-1:MPINSET-1];
-	asp->ap_xon = (u_char)tp->t_startc;
-	asp->ap_xoff = (u_char)tp->t_stopc;
-	if ((tp->t_flags & RAW) || (tp->t_stopc == -1) || (tp->t_startc == -1))
+	asp->ap_xon = t->c_cc[VSTART];
+	asp->ap_xoff = t->c_cc[VSTOP];
+	if (!(t->c_iflag&IXON) || (asp->ap_xon == _POSIX_VDISABLE) || 
+	    (asp->ap_xoff == _POSIX_VDISABLE))
 		asp->ap_xena = MPA_DIS;
 	else
 		asp->ap_xena = MPA_ENA;
-	asp->ap_xany = ((tp->t_flags & DECCTQ) ? MPA_DIS : MPA_ENA);
+	asp->ap_xany = ((t->c_iflag & IXANY) ? MPA_ENA : MPA_DIS);
 #ifdef notnow
-	if (tp->t_flags & (RAW|LITOUT|PASS8)) {
+	if (t->t_cflag&CSIZE) == CS8) {
 #endif
 		asp->ap_data = MPCHAR_8;
 		asp->ap_parity = MPPAR_NONE;
 #ifdef notnow
 	} else {
 		asp->ap_data = MPCHAR_7;
-		if ((tp->t_flags & (EVENP|ODDP)) == ODDP)
+		if ((t->c_flags & (EVENP|ODDP)) == ODDP) /* XXX */
 			asp->ap_parity = MPPAR_ODD;
 		else
 			asp->ap_parity = MPPAR_EVEN;
@@ -440,26 +480,26 @@ mpparam(unit)
 #endif
 	asp->ap_loop = MPA_DIS;		/* disable loopback */
 	asp->ap_rtimer = A_RCVTIM;	/* default receive timer */
-	if (tp->t_ospeed == B110)
+	if (t->c_ospeed == B110)
 		asp->ap_stop = MPSTOP_2;
 	else
 		asp->ap_stop = MPSTOP_1;
-	if (tp->t_ospeed == 0) {
+	if (t->c_ospeed == 0) {
 		tp->t_state |= TS_HUPCLS;
 		setm(&asp->ap_modem, 0, DROP);
 		seti(&asp->ap_intena, A_DCD);
 		return (ev);
 	} 
-	if (tp->t_ospeed == EXTA || tp->t_ospeed == EXTB)
+	if (t->c_ospeed == EXTA || t->c_ospeed == EXTB)
 		asp->ap_baud = M19200;
 	else
-		asp->ap_baud = tp->t_ospeed;
-	if (ms->ms_softCAR & (1<<port))
+		asp->ap_baud = speedcode;
+	if (1 || ms->ms_softCAR & (1<<port)) /* XXX HARDWIRE FOR NOW */
 		setm(&asp->ap_modem, A_DTR, ASSERT);
 	else
 		setm(&asp->ap_modem, A_DTR, AUTO);
 	seti(&asp->ap_intena, A_DCD);
-	return (ev);
+	return(ev);
 }
 
 mpstart(tp)
@@ -485,7 +525,7 @@ mpstart(tp)
 	for (i = 0; i < MPXMIT; i++) {
 		if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 			break;
-		if (outq.c_cc <= TTLOWAT(tp)) {
+		if (outq.c_cc <= tp->t_lowat) {
 			if (tp->t_state & TS_ASLEEP) {
 				tp->t_state &= ~TS_ASLEEP;
 				wakeup((caddr_t)&tp->t_outq);
@@ -503,7 +543,7 @@ mpstart(tp)
 		 * and there is data to be output, set up
 		 * port transmit structure to send to mpcc.
 		 */
-		if (tp->t_flags & (RAW|LITOUT))
+		if (1) /* || tp->t_flags & (RAW|LITOUT))  XXX FIX */
 			n = ndqb(&outq, 0);
 		else {
 			n = ndqb(&outq, 0200);
@@ -727,7 +767,7 @@ mpmodem(unit, flag)
 	mp = &ms->ms_mb->mb_port[port];
 	asp = &ms->ms_async[port][mp->mp_on?mp->mp_on-1:MPINSET-1];
 	if (flag == MMOD_ON) {
-		if (ms->ms_softCAR & (1 << port))
+		if (1 || ms->ms_softCAR & (1 << port))/* XXX HARDWIRE FOR NOW */
 			setm(&asp->ap_modem, A_DTR, ASSERT);
 		else
 			setm(&asp->ap_modem, A_DTR, AUTO);
@@ -1066,11 +1106,13 @@ mprintr(unit, list)
 					 * mode, substitute the interrupt
 					 * character.
 				 	 */
+					/*** XXX - FIXUP ***/
 					if (*cp == 0 &&
 				            (ev->ev_error == BRKASRT ||
 				             ev->ev_error == FRAMERR))
 						if ((tp->t_flags&RAW) == 0)
-							*cp = tp->t_intrc;
+							;
+							/* XXX was break */
 					(*linesw[tp->t_line].l_rint)(*cp++, tp);
 				}
 				/* setup for next read */
