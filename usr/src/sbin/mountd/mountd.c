@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.22 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -556,7 +556,7 @@ get_exportlist()
 	 * XXX: Should know how to handle all local exportable file systems
 	 *      instead of just MOUNT_UFS.
 	 */
-	num = getmntinfo(&fsp, MNT_WAIT);
+	num = getmntinfo(&fsp, MNT_NOWAIT);
 	for (i = 0; i < num; i++) {
 		if (fsp->f_type == MOUNT_UFS) {
 			targs.fspec = (char *)0;
