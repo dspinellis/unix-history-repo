@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signalvar.h	8.3 (Berkeley) %G%
+ *	@(#)signalvar.h	8.4 (Berkeley) %G%
  */
 
 #ifndef	_SYS_SIGNALVAR_H_		/* tmp for user.h */
@@ -49,7 +49,7 @@ struct	sigacts {
 /*
  * Determine signal that should be delivered to process p, the current
  * process, 0 if none.  If there is a pending stop signal with default
- * action, the process stops in issig().
+ * action, the process stops in issignal().
  */
 #define	CURSIG(p)							\
 	(((p)->p_siglist == 0 ||					\
@@ -126,7 +126,7 @@ int sigprop[NSIG + 1] = {
 int	coredump __P((struct proc *p));
 void	execsigs __P((struct proc *p));
 void	gsignal __P((int pgid, int sig));
-int	issig __P((struct proc *p));
+int	issignal __P((struct proc *p));
 void	pgsignal __P((struct pgrp *pgrp, int sig, int checkctty));
 void	postsig __P((int sig));
 void	psignal __P((struct proc *p, int sig));
