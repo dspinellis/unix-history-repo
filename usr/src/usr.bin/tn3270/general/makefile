@@ -29,10 +29,6 @@ ALLH =	bsubs.ext general.h globals.h
 
 ALLC =	globals.c
 
-ALLPRINT =	${ALLH} ${ALLC}
-
-ALLSOURCE =	${ALLPRINT} makefile makefile.mak
-
 #
 #	In a vax environment, we use vaxbsubs.s, which gives us a fair amount
 #	of increased performance.  We have provided genbsubs.c, which perform
@@ -44,6 +40,11 @@ SUBSO = vaxbsubs.o
 SUBSO = genbsubs.o
 
 ALLS = vaxbsubs.s
+
+ALLPRINT =	${ALLH} ${ALLC} vaxbsubs.s genbsubs.c
+
+ALLSOURCE =	${ALLPRINT} makefile makefile.mak
+
 ALLS =
 
 ALLO	= globals.o ${SUBSO}
