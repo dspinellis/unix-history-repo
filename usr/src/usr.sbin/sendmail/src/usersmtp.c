@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.20 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.21 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.20 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.21 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -366,7 +366,7 @@ smtpdata(m, mci, e)
 		return (EX_TEMPFAIL);
 	}
 	mci->mci_state = MCIS_OPEN;
-	e->e_message = newstr(&SmtpReplyBuffer[4]);
+	e->e_statmsg = newstr(&SmtpReplyBuffer[4]);
 	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (r == 250)
