@@ -12,30 +12,17 @@
 # from this software without specific prior written permission.
 # THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
-MDIR=	/usr/man/cat8/vax
-SRCS=	arff.8 bad144.8 crash.8 drtest.8 format.8 installboot.8 rxformat.8 \
-	reboot.8
-OBJS=	arff.0 bad144.0 crash.0 drtest.0 format.0 installboot.0 rxformat.0 \
-	reboot.0
-LINKS=	flcopy.0
+MDIR=	${DESTDIR}/usr/man/cat8/vax
+OBJS=	crash.0 drtest.0 format.0 installboot.0
 
-.SUFFIXES: .8 .0
+all clean depend lint tags:
 
-.8.0:
-	${DESTDIR}/usr/man/manroff $*.8 > $*.0
-
-all: ${OBJS}
-
-clean: FRC
+cleandir:
 	rm -f ${OBJS}
 
-install: FRC
-	cd ${DESTDIR}${MDIR}; rm -f *.0
-	install -c -o bin -g bin -m 444 ${OBJS} ${DESTDIR}${MDIR}
-	ln ${DESTDIR}${MDIR}/arff.0 ${DESTDIR}${MDIR}/flcopy.0
-
-FRC:
+install: ${OBJS}
+	install -c -o bin -g bin -m 444 ${OBJS} ${MDIR}
