@@ -1,10 +1,19 @@
 #ifndef lint
-static char sccsid[] = "@(#)1.form.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)1.form.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
 #include "1.defs.h"
 #include "def.h"
+
+/*
+ * The following are used in <stdio.h> but are defines as constants
+ * in 1.defs.h -- since their values are never used here we simply
+ * discard them.			XXX
+ */
+#undef _r
+#undef _p
+
 extern int linechar, errflag, debug;
 extern int (*input)(), (*unput)();
 
