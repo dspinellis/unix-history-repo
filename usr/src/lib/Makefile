@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -59,20 +59,19 @@ clean:
 	rm -f ${STD} ${NSTD}
 
 depend:
-	cat </dev/null >x.c
-	-for i in ${STD} ${NSTD}; do \
-		(echo $$i: $$i.c >>makedep; \
-		/bin/grep '^#[ 	]*include' x.c $$i.c | sed \
-			-e '/\.\.\/h/d' \
-			-e 's,<\(.*\)>,"/usr/include/\1",' \
-			-e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-			-e 's/\.c//' >>makedep); done
+	for i in ${STD} ${NSTD}; do \
+	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
+	    awk ' { if ($$1 != prev) \
+		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
+		else rec = rec " " $$2 } } \
+		END { print rec } ' >> makedep; done
 	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
 	cp Makefile Makefile.bak
 	ed - Makefile < eddep
-	rm eddep makedep x.c
+	rm eddep makedep
 	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
 	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
 	echo '# see make depend above' >> Makefile
@@ -81,8 +80,7 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
-getNAME: getNAME.c
-getNAME: /usr/include/stdio.h
+getNAME: getNAME.c /usr/include/strings.h /usr/include/stdio.h
 makekey: makekey.c
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
