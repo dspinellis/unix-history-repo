@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.4 (Berkeley) %G%
+ *	@(#)sendmail.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.4		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.5		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -461,6 +461,7 @@ struct symtab
 		char		*sv_alias;	/* alias */
 		MAPCLASS	sv_mapclass;	/* mapping function class */
 		MAP		sv_map;		/* mapping function */
+		char		*sv_hostsig;	/* host signature */
 		MCI		sv_mci;		/* mailer connection info */
 	}	s_value;
 };
@@ -475,6 +476,7 @@ typedef struct symtab	STAB;
 # define ST_ALIAS	4	/* an alias */
 # define ST_MAPCLASS	5	/* mapping function class */
 # define ST_MAP		6	/* mapping function */
+# define ST_HOSTSIG	7	/* host signature */
 # define ST_MCI		16	/* mailer connection info (offset) */
 
 # define s_class	s_value.sv_class
