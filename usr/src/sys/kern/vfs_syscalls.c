@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.50 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.51 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -657,7 +657,10 @@ out:
 		error = VOP_MKNOD(ndp, &vattr, ndp->ni_cred);
 	} else {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		if (vp)
 			vrele(vp);
 	}
@@ -690,7 +693,10 @@ mkfifo(p, uap, retval)
 		RETURN (error);
 	if (ndp->ni_vp != NULL) {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == ndp->ni_vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vrele(ndp->ni_vp);
 		RETURN (EEXIST);
 	} else {
@@ -744,7 +750,10 @@ out:
 		error = VOP_LINK(vp, ndp);
 	} else {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == ndp->ni_vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		if (ndp->ni_vp)
 			vrele(ndp->ni_vp);
 	}
@@ -780,7 +789,10 @@ symlink(p, uap, retval)
 		goto out;
 	if (ndp->ni_vp) {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == ndp->ni_vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vrele(ndp->ni_vp);
 		error = EEXIST;
 		goto out;
@@ -833,7 +845,10 @@ out:
 		error = VOP_REMOVE(ndp);
 	} else {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vput(vp);
 	}
 	RETURN (error);
@@ -1445,7 +1460,10 @@ out:
 		error = VOP_RENAME(ndp, &tond);
 	} else {
 		VOP_ABORTOP(&tond);
-		vput(tdvp);
+		if (tdvp == tvp)
+			vrele(tdvp);
+		else
+			vput(tdvp);
 		if (tvp)
 			vput(tvp);
 		VOP_ABORTOP(ndp);
@@ -1484,7 +1502,10 @@ mkdir(p, uap, retval)
 	vp = ndp->ni_vp;
 	if (vp != NULL) {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vrele(vp);
 		RETURN (EEXIST);
 	}
@@ -1539,7 +1560,10 @@ out:
 		error = VOP_RMDIR(ndp);
 	} else {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vput(vp);
 	}
 	RETURN (error);
