@@ -1,6 +1,7 @@
 #	@(#)Makefile	5.13 (Berkeley) %G%
 
 LIB=	F77
+CFLAGS+=-I/sys
 SRCS=	abort_.c besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
 	c_abs.c c_cos.c c_div.c c_exp.c c_log.c c_sin.c c_sqrt.c d_abs.c \
 	d_acos.c d_asin.c d_atan.c d_atn2.c d_cnjg.c d_cos.c d_cosh.c \

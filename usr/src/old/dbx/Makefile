@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.21 (Berkeley) %G%
+#	@(#)Makefile	5.22 (Berkeley) %G%
 # N.B.:
 #    My version of cerror automatically catches certain errors
 # such as out of memory, I/O error.  If you re-make this with
@@ -6,7 +6,7 @@
 #
 
 PROG=	dbx
-CFLAGS+=-I. -I${.CURDIR} -I/sys
+CFLAGS+=-I. -I${.CURDIR}
 HDRS=	asm.h events.h c.h check.h coredump.h debug.h eval.h fortran.h \
 	keywords.h languages.h lists.h machine.h main.h mappings.h \
 	modula-2.h names.h object.h operators.h pascal.h printsym.h \
