@@ -1,41 +1,43 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt1.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt1.c	4.2 (Berkeley) %G%";
 #endif
 
-#include <stdio.h>
-#include <assert.h>
+# include <stdio.h>
+# include <assert.h>
 extern char refdir[];
 extern int keepold;
 extern char *fgnames[];
 extern char **fgnamp;
-FILE *fd = 0;
-int lmaster = 500;
+FILE *fd =NULL;
+int lmaster =500;
 int *hfreq, hfrflg;
-int colevel = 0;
-int soutlen = 1000;
-int reached = 0;
-int iflong = 0;
-int prfreqs = 0;
+int colevel =0;
+int measure=0;
+int soutlen =1000;
+int reached =0;
+int iflong =0;
+int prfreqs =0;
 char usedir[100];
+char * calloc(); 
+char * todir();
 char gfile[50];
-static int full = 1000;
-static int tags = 0;
+static int full =1000;
+static int tags =0;
 char *sinput, *soutput, *tagout;
-long indexdate = 0, gdate();
-extern char *todir();
+long indexdate =0, gdate();
 
 main(argc,argv)
 char *argv[];
 {
 	/* read query from stdin, expect name of indexes in argv[1] */
 	static FILE *fa, *fb, *fc;
-	char nma[100], nmb[100], nmc[100], *qitem[100], *rprog = 0;
+	char nma[100], nmb[100], nmc[100], *qitem[100], *rprog = NULL;
 	char nmd[100], grepquery[256];
 	static char oldname[30] ;
-	static int was = 0;
+	static int was =0;
 	/* these pointers are unions of pointer to int and pointer to long */
 	long *hpt;
-	unsigned *master = 0;
+	unsigned *master =0;
 	int falseflg, nhash, nitem, nfound, frtbl, kk;
 
 	/* special wart for refpart: default is tags only */
@@ -70,7 +72,7 @@ char *argv[];
 			soutput = argv[1];
 			if (argv[2]<16000)
 			{
-				soutlen = argv[2];
+				soutlen = (int)argv[2];
 				argc--; 
 				argv++;
 			}
@@ -97,6 +99,9 @@ char *argv[];
 		case 'P': /* print term freqs */
 			prfreqs=1; 
 			break;
+		case 'm':
+			measure=1; 
+			break;
 		}
 		argc--; 
 		argv++;
@@ -122,8 +127,9 @@ char *argv[];
 		fa = fopen(nma, "r");
 		if (fa==NULL)
 		{
-			err("No files %s",nma);
-			exit(1);
+			strcpy(*fgnamp++ = calloc(strlen(oldname)+2,1), oldname);
+			fb=NULL;
+			goto search;
 		}
 		fb = fopen(nmb, "r");
 		fc = fopen(nmc, "r");
@@ -140,7 +146,7 @@ char *argv[];
 	fread (&nhash, sizeof(nhash), 1, fa);
 	fread (&iflong, sizeof(iflong), 1, fa);
 	if(master==0)
-		master = calloc (lmaster, iflong? sizeof(long): sizeof(int));
+		master = calloc (lmaster, iflong? 4: 2);
 	hpt = calloc(nhash, sizeof(*hpt));
 	kk=fread( hpt, sizeof(*hpt), nhash, fa);
 # if D1
@@ -155,21 +161,27 @@ char *argv[];
 	fprintf(stderr, "read freqs %d\n", frtbl);
 # endif
 
+search:
 	while (1)
 	{
 		nitem = getq(qitem);
+		if (measure) tick();
 		if (nitem==0) continue;
 		if (nitem < 0) break;
-		nfound = doquery(hpt, nhash, fb, nitem, qitem, master);
+		if (tagout) tagout[0]=0;
+		if (fb!=NULL)
+		{
+			nfound = doquery(hpt, nhash, fb, nitem, qitem, master);
 # if D1
-		fprintf(stderr,"after doquery nfound %d\n", nfound);
+			fprintf(stderr,"after doquery nfound %d\n", nfound);
 # endif
-		fgnamp=fgnames;
-		if (falseflg == 0)
-			nfound = baddrop(master, nfound, fc, nitem, qitem, rprog, full);
+			fgnamp=fgnames;
+			if (falseflg == 0)
+				nfound = baddrop(master, nfound, fc, nitem, qitem, rprog, full);
 # if D1
-		fprintf(stderr,"after baddrop nfound %d\n", nfound);
+			fprintf(stderr,"after baddrop nfound %d\n", nfound);
 # endif
+		}
 		if (fgnamp>fgnames)
 		{
 			char **fgp, tgbuff[100];
@@ -204,13 +216,24 @@ char *argv[];
 				if (full)
 				{
 					char bout[1000];
-					findline(tagout, bout, 1000);
-					fputs(bout,stdout);
+					char *tagp;
+					char *oldtagp;
+					tagp = tagout;
+					while (*tagp) {
+						oldtagp = tagp;
+						while (*tagp && (*tagp != '\n'))
+							tagp++;
+						if (*tagp)
+							tagp++;
+						findline(oldtagp, bout, 1000);
+						fputs(bout,stdout);
+					}
 				}
 			}
 		}
 		if (tags)
 			result (master, nfound >tags ? tags: nfound, fc);
+		if (measure) tock();
 	}
 }
 
@@ -229,7 +252,6 @@ char *t;
 	strcpy (usedir,t);
 	return(s);
 }
-
 setfrom(c)
 {
 	switch(c)
