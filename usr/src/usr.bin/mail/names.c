@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)names.c	2.2 %G%";
+static char *SccsId = "@(#)names.c	2.3 %G%";
 
 /*
  * Allocate a single element of a name list,
@@ -253,7 +253,7 @@ outof(names, fo, hp)
 	time(&now);
 	date = ctime(&now);
 	while (np != NIL) {
-		if (!any('/', np->n_name) && np->n_name[0] != '|') {
+		if (!isfileaddr(np->n_name) && np->n_name[0] != '|') {
 			np = np->n_flink;
 			continue;
 		}
@@ -379,6 +379,30 @@ cant:
 		image = -1;
 	}
 	return(top);
+}
+
+/*
+ * Determine if the passed address is a local "send to file" address.
+ * If any of the network metacharacters precedes any slashes, it can't
+ * be a filename.  We cheat with .'s to allow path names like ./...
+ */
+isfileaddr(name)
+	char *name;
+{
+	register char *cp;
+	extern char *metanet;
+
+	if (any('@', name))
+		return(0);
+	for (cp = name; *cp; cp++) {
+		if (*cp == '.')
+			continue;
+		if (any(*cp, metanet))
+			return(0);
+		if (*cp == '/')
+			return(1);
+	}
+	return(0);
 }
 
 /*
