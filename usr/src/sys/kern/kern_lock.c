@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.7 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -125,20 +125,23 @@ lockstatus(lkp)
  * accepted shared locks and shared-to-exclusive upgrades to go away.
  */
 int
-lockmgr(lkp, flags, p)
-	volatile struct lock *lkp;
+lockmgr(lkp, flags, interlkp, pid)
+	__volatile struct lock *lkp;
 	u_int flags;
-	struct proc *p;
+	struct simple_lock *interlkp;
+	pid_t pid;
 {
 	int error;
-	pid_t pid;
-	volatile int extflags;
+	__volatile int extflags;
 
 	error = 0;
-	pid = p->p_pid;
 	simple_lock(&lkp->lk_interlock);
+	if (flags & LK_INTERLOCK)
+		simple_unlock(interlkp);
 	extflags = (flags | lkp->lk_flags) & LK_EXTFLG_MASK;
-	if (lkp->lk_flags & LK_DRAINED)
+	if ((lkp->lk_flags & LK_DRAINED) &&
+	    (((flags & LK_TYPE_MASK) != LK_RELEASE) ||
+	    lkp->lk_lockholder != pid))
 		panic("lockmgr: using decommissioned lock");
 
 	switch (flags & LK_TYPE_MASK) {
@@ -326,7 +329,9 @@ lockmgr(lkp, flags, p)
 				return (ENOLCK);
 			simple_lock(&lkp->lk_interlock);
 		}
-		lkp->lk_flags |= LK_DRAINED;
+		lkp->lk_flags |= LK_DRAINED | LK_HAVE_EXCL;
+		lkp->lk_lockholder = pid;
+		lkp->lk_exclusivecount = 1;
 		break;
 
 	default:
@@ -343,4 +348,17 @@ lockmgr(lkp, flags, p)
 	}
 	simple_unlock(&lkp->lk_interlock);
 	return (error);
+}
+
+lockmgr_printinfo(lkp)
+	struct lock *lkp;
+{
+
+	if (lkp->lk_sharecount)
+		printf(" lock type %s: SHARED", lkp->lk_wmesg);
+	else if (lkp->lk_flags & LK_HAVE_EXCL)
+		printf(" lock type %s: EXCL by pid %d", lkp->lk_wmesg,
+		    lkp->lk_lockholder);
+	if (lkp->lk_waitcount > 0)
+		printf(" with %d pending", lkp->lk_waitcount);
 }
