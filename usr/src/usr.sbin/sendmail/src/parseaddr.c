@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.51		%G%);
+SCCSID(@(#)parseaddr.c	3.52		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -68,13 +68,9 @@ parse(addr, a, copyf)
 
 	/*
 	**  Apply rewriting rules.
-	**	Ruleset 4 rewrites the address into a form that will
-	**		be reflected in the outgoing message.  It must
-	**		not resolve.
 	**	Ruleset 0 does basic parsing.  It must resolve.
 	*/
 
-	rewrite(pvp, 4);
 	rewrite(pvp, 0);
 
 	/*
@@ -426,9 +422,9 @@ rewrite(pvp, ruleset)
 	extern bool sameword();
 
 # ifdef DEBUG
-	if (tTd(21, 9))
+	if (tTd(21, 2))
 	{
-		printf("rewrite: ruleset %d, original pvp:\n", ruleset);
+		printf("rewrite: ruleset %d, original pvp:", ruleset);
 		printav(pvp);
 	}
 # endif DEBUG
@@ -443,7 +439,7 @@ rewrite(pvp, ruleset)
 # ifdef DEBUG
 		if (tTd(21, 12))
 		{
-			printf("-----trying rule:\n");
+			printf("-----trying rule:");
 			printav(rwr->r_lhs);
 		}
 # endif DEBUG
@@ -458,11 +454,11 @@ rewrite(pvp, ruleset)
 # ifdef DEBUG
 			if (tTd(21, 35))
 			{
-				printf("ap=\"");
+				printf("ap=");
 				xputs(ap);
-				printf("\", rp=\"");
+				printf(", rp=");
 				xputs(rp);
-				printf("\"\n");
+				printf("\n");
 			}
 # endif DEBUG
 			if (rp == NULL)
@@ -561,7 +557,7 @@ rewrite(pvp, ruleset)
 # ifdef DEBUG
 			if (tTd(21, 12))
 			{
-				printf("-----rule matches:\n");
+				printf("-----rule matches:");
 				printav(rvp);
 			}
 # endif DEBUG
@@ -572,16 +568,28 @@ rewrite(pvp, ruleset)
 			{
 				rp = *++rvp;
 # ifdef DEBUG
-				if (tTd(21, 2))
+				if (tTd(21, 3))
 					printf("-----callsubr %s\n", rp);
 # endif DEBUG
 				rewrite(pvp, atoi(rp));
 				rwr = rwr->r_next;
 				continue;
 			}
+			else if (*rp == CANONUSER)
+			{
+				rvp++;
+				rwr = rwr->r_next;
+			}
+			else if (*rp == CANONHOST)
+			{
+				rvp++;
+				rwr = NULL;
+			}
+			else if (*rp == CANONNET)
+				rwr = NULL;
 
 			/* substitute */
-			for (rvp = rwr->r_rhs, avp = npvp; *rvp != NULL; rvp++)
+			for (avp = npvp; *rvp != NULL; rvp++)
 			{
 				rp = *rvp;
 				if (*rp == MATCHREPL)
@@ -630,20 +638,10 @@ rewrite(pvp, ruleset)
 # ifdef DEBUG
 			if (tTd(21, 4))
 			{
-				char **vp;
-
-				printf("rewritten as `");
-				for (vp = pvp; *vp != NULL; vp++)
-				{
-					if (vp != pvp)
-						printf("_");
-					xputs(*vp);
-				}
-				printf("'\n");
+				printf("rewritten as:");
+				printav(pvp);
 			}
 # endif DEBUG
-			if (**pvp == CANONNET || **pvp == CANONUSER)
-				break;
 		}
 		else
 		{
@@ -654,6 +652,14 @@ rewrite(pvp, ruleset)
 			rwr = rwr->r_next;
 		}
 	}
+
+# ifdef DEBUG
+	if (tTd(21, 2))
+	{
+		printf("rewrite: ruleset %d returns:", ruleset);
+		printav(pvp);
+	}
+# endif DEBUG
 }
 /*
 **  BUILDADDR -- build address from token vector.
@@ -773,8 +779,6 @@ cataddr(pvp, buf, sz)
 
 	p = buf;
 	sz--;
-	if (*pvp != NULL && **pvp == CANONUSER)
-		pvp++;
 	while (*pvp != NULL && (i = strlen(*pvp)) < sz)
 	{
 		natomtok = (toktype(**pvp) == ATOM);
@@ -892,9 +896,10 @@ printaddr(a, follow)
 **
 **	Parameters:
 **		name -- the name to translate.
-**		force -- if set, forces rewriting even if the mailer
-**			does not request it.  Used for rewriting
-**			sender addresses.
+**		m -- the mailer that we want to do rewriting relative
+**			to.
+**		senderaddress -- if set, uses the sender rewriting rules
+**			rather than the recipient rewriting rules.
 **
 **	Returns:
 **		the text string representing this address relative to
@@ -909,21 +914,19 @@ printaddr(a, follow)
 */
 
 char *
-remotename(name, m, force)
+remotename(name, m, senderaddress)
 	char *name;
 	struct mailer *m;
-	bool force;
+	bool senderaddress;
 {
+	register char **pvp;
+	char *fancy;
+	extern char *macvalue();
+	char *oldg = macvalue('g');
 	static char buf[MAXNAME];
 	char lbuf[MAXNAME];
-	extern char *macvalue();
-	char *oldf = macvalue('f');
-	char *oldg = macvalue('g');
 	extern char **prescan();
-	register char **pvp;
-	extern ADDRESS *buildaddr();
 	extern char *crackaddr();
-	char *fancy;
 
 # ifdef DEBUG
 	if (tTd(12, 1))
@@ -933,12 +936,10 @@ remotename(name, m, force)
 	/*
 	**  First put this address into canonical form.
 	**	First turn it into a macro.
-	**	Then run it through ruleset 4.
+	**	Then run it through ruleset 1 or 2, depending on whether
+	**		it is a sender or a recipient address.
 	**	If the mailer defines a rewriting set, run it through
 	**		there next.
-	**	The intent is that ruleset 4 puts the name into a
-	**		canonical form; the mailer's ruleset then
-	**		does any customization.
 	*/
 
 	/* save away the extraneous pretty stuff */
@@ -948,46 +949,23 @@ remotename(name, m, force)
 	pvp = prescan(name, '\0');
 	if (pvp == NULL)
 		return (name);
-	rewrite(pvp, 4);
-	if (m->m_rwset > 0)
-		rewrite(pvp, m->m_rwset);
-
-	/*
-	**  See if this mailer wants the name to be rewritten.  There are
-	**  many problems here, owing to the standards for doing replies.
-	**  In general, these names should only be rewritten if we are
-	**  sending to another host that runs sendmail.
-	*/
-
-	if (bitset(M_RELRCPT, m->m_flags) && !force)
+	if (senderaddress)
 	{
-		/*
-		**  Do general rewriting of name.
-		**	This will also take care of doing global name
-		**	translation.
-		*/
-
 		rewrite(pvp, 1);
-		rewrite(pvp, 3);
-
-		/* make the name relative to the receiving mailer */
-		cataddr(pvp, lbuf, sizeof lbuf);
-		define('f', lbuf);
-		expand(m->m_from, buf, &buf[sizeof buf - 1], CurEnv);
-
-		/* rewrite to get rid of garbage we added in the expand above */
-		pvp = prescan(buf, '\0');
-		if (pvp == NULL)
-			return (name);
+		if (m->m_s_rwset > 0)
+			rewrite(pvp, m->m_s_rwset);
+	}
+	else
+	{
 		rewrite(pvp, 2);
+		if (m->m_r_rwset > 0)
+			rewrite(pvp, m->m_r_rwset);
 	}
 
 	/* now add any comment info we had before back */
 	cataddr(pvp, lbuf, sizeof lbuf);
 	define('g', lbuf);
 	expand(fancy, buf, &buf[sizeof buf - 1], CurEnv);
-
-	define('f', oldf);
 	define('g', oldg);
 
 # ifdef DEBUG
@@ -1020,13 +998,11 @@ char *
 canonname(name)
 	char *name;
 {
-	static char nbuf[MAXNAME + 2];
+	static char nbuf[MAXNAME];
 	register char **pvp;
 
 	pvp = prescan(name, '\0');
-	rewrite(pvp, 4);
-	cataddr(pvp, nbuf + 1, MAXNAME);
-	nbuf[0] = '<';
-	strcat(nbuf, ">");
+	rewrite(pvp, 3);
+	cataddr(pvp, nbuf, sizeof nbuf);
 	return (nbuf);
 }
