@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bstring.3	6.1 (Berkeley) %G%
+.\"	@(#)bstring.3	6.2 (Berkeley) %G%
 .\"
 .TH BSTRING 3  ""
 .UC 5
@@ -61,11 +61,9 @@ places
 0 bytes in the string
 .IR b1 .
 .PP
-.I Ffs
-find the first bit set in the argument passed it and
-returns the index of that bit.  Bits are numbered
-starting at 1.  A return value of 0 indicates the
-value passed is zero.
+\fIFfs\fP finds the first bit set in the argument passed it and returns
+the index of that bit.  Bits are numbered starting at 1, from the right.
+A return value of 0 indicates the value passed is zero.
 .SH BUGS
 The
 .I bcopy
