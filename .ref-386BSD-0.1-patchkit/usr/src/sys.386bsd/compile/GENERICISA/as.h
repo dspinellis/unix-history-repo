@@ -1,1 +1,0 @@
-#define NAS 3

@@ -1,8 +1,0 @@
-Marithmetic	arithmetic.c	/^main(argc, argv)$/
-getrandom	arithmetic.c	/^getrandom(maxval, op, operand)$/
-intr	arithmetic.c	/^intr()$/
-opnum	arithmetic.c	/^opnum(op)$/
-penalise	arithmetic.c	/^penalise(value, op, operand)$/
-problem	arithmetic.c	/^problem()$/
-showstats	arithmetic.c	/^showstats()$/
-usage	arithmetic.c	/^usage()$/

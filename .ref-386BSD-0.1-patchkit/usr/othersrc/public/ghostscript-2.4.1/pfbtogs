@@ -1,1 +1,0 @@
-gs -q -dNODISPLAY -- pfbtogs.ps $1 $2
