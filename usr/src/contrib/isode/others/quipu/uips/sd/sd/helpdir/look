@@ -1,0 +1,4 @@
+
+  A  call  to  "History"  will  return  a  list  of  all  directory
+ objects previously visited.  This in addition to the "Go To Number"
+ function allows quick and easy return to such entries.
