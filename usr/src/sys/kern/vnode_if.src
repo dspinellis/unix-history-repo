@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	7.1 (Berkeley) %G%
+#	@(#)vnode_if.src	7.2 (Berkeley) %G%
 #
 vop_lookup {
 	IN struct vnode *dvp;
@@ -13,15 +13,15 @@ vop_lookup {
 };
 
 vop_create {
-	IN struct vnode *dvp;
+	IN WILLRELE struct vnode *dvp;
 	OUT struct vnode **vpp;
 	IN struct componentname *cnp;
 	IN struct vattr *vap;
 };
 
 vop_mknod {
-	IN struct vnode *dvp;
-	OUT struct vnode **vpp;
+	IN WILLRELE struct vnode *dvp;
+	OUT WILLRELE struct vnode **vpp;
 	IN struct componentname *cnp;
 	IN struct vattr *vap;
 };
@@ -116,42 +116,42 @@ vop_seek {
 };
 
 vop_remove {
-	IN struct vnode *dvp;
-	IN struct vnode *vp;
+	IN WILLRELE struct vnode *dvp;
+	IN WILLRELE struct vnode *vp;
 	IN struct componentname *cnp;
 };
 
 vop_link {
-	IN struct vnode *vp;
+	IN WILLRELE struct vnode *vp;
 	IN struct vnode *tdvp;
 	IN struct componentname *cnp;
 };
 
 vop_rename {
-	IN struct vnode *fdvp;
-	IN struct vnode *fvp;
+	IN WILLRELE struct vnode *fdvp;
+	IN WILLRELE struct vnode *fvp;
 	IN struct componentname *fcnp;
-	IN struct vnode *tdvp;
-	IN struct vnode *tvp;
+	IN WILLRELE struct vnode *tdvp;
+	IN WILLRELE struct vnode *tvp;
 	IN struct componentname *tcnp;
 };
 
 vop_mkdir {
-	IN struct vnode *dvp;
+	IN WILLRELE struct vnode *dvp;
 	OUT struct vnode **vpp;
 	IN struct componentname *cnp;
 	IN struct vattr *vap;
 };
 
 vop_rmdir {
-	IN struct vnode *dvp;
-	IN struct vnode *vp;
+	IN WILLRELE struct vnode *dvp;
+	IN WILLRELE struct vnode *vp;
 	IN struct componentname *cnp;
 };
 
 vop_symlink {
-	IN struct vnode *dvp;
-	OUT struct vnode **vpp;
+	IN WILLRELE struct vnode *dvp;
+	OUT WILLRELE struct vnode **vpp;
 	IN struct componentname *cnp;
 	IN struct vattr *vap;
 	IN char *target;
