@@ -1,4 +1,4 @@
-/*	subr_prof.c	4.4	83/01/15	*/
+/*	subr_prof.c	4.5	83/07/01	*/
 
 /* last integrated from: gmon.c	4.10 (Berkeley) 1/14/83 */
 
@@ -16,9 +16,6 @@ struct tostruct *tos = 0;
 long tolimit = 0;
 #ifdef vax
 char	*s_lowpc = (char *)0x80000000;
-#endif
-#ifdef sun
-char	*s_lowpc = (char *)0x4000;
 #endif
 extern char etext;
 char *s_highpc = &etext;

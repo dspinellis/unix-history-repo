@@ -1,4 +1,4 @@
-/*	sys_process.c	5.9	83/05/18	*/
+/*	sys_process.c	5.10	83/07/01	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -81,16 +81,8 @@ ptrace()
 
 #ifdef vax
 #define	NIPCREG 16
-#endif
-#ifdef sun
-#define	NIPCREG 17
-#endif
 int ipcreg[NIPCREG] =
-#ifdef vax
 	{R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,AP,FP,SP,PC};
-#endif
-#ifdef sun
-	{R0,R1,R2,R3,R4,R5,R6,R7,AR0,AR1,AR2,AR3,AR4,AR5,AR6,AR7,PC};
 #endif
 
 #define	PHYSOFF(p, o) \
@@ -178,12 +170,6 @@ procxmt()
 		if (p == &u.u_ar0[PS]) {
 			ipc.ip_data |= PSL_USERSET;
 			ipc.ip_data &=  ~PSL_USERCLR;
-#ifdef sun
-			if (ipc.ip_data & PSL_T)
-				traceon();
-			else
-				traceoff();
-#endif
 			goto ok;
 		}
 		goto error;
@@ -202,11 +188,7 @@ procxmt()
 			goto error;
 		u.u_procp->p_cursig = ipc.ip_data;	/* see issig */
 		if (i == 9) 
-#ifdef sun
-			traceon();
-#else
 			u.u_ar0[PS] |= PSL_T;
-#endif
 		wakeup((caddr_t)&ipc);
 		return (1);
 

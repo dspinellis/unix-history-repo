@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.56	83/06/14	*/
+/*	kern_clock.c	4.57	83/07/01	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -50,19 +50,10 @@
  * we run through the statistics gathering routine as well.
  */
 /*ARGSUSED*/
-#ifdef vax
 hardclock(pc, ps)
 	caddr_t pc;
 	int ps;
 {
-#endif
-#ifdef sun
-hardclock(regs)
-	struct regs regs;
-{
-#define	ps	regs.r_sr
-#define	pc	(caddr_t)regs.r_pc
-#endif
 	register struct callout *p1;
 	register struct proc *p;
 	register int s, cpstate;
@@ -95,9 +86,6 @@ hardclock(regs)
 	 * one tick.
 	 */
 	if (USERMODE(ps)) {
-#ifdef sun
-		u.u_ar0 = &regs.r_r0;	/* aston needs ar0 */
-#endif
 		if (u.u_prof.pr_scale)
 			needsoft = 1;
 		/*
@@ -208,10 +196,6 @@ hardclock(regs)
 	if (needsoft)
 		setsoftclock();
 }
-#ifdef sun
-#undef pc
-#undef ps
-#endif
 
 /*
  * Gather statistics on resource utilization.
@@ -269,18 +253,10 @@ gatherstats(pc, ps)
  * Run periodic events from timeout queue.
  */
 /*ARGSUSED*/
-#ifdef vax
 softclock(pc, ps)
 	caddr_t pc;
 	int ps;
 {
-#endif
-#ifdef sun
-softclock()
-{
-#define	pc	(caddr_t)u.u_ar0[PC]
-#define	ps	u.u_ar0[PS]
-#endif
 
 	for (;;) {
 		register struct callout *p1;
@@ -311,7 +287,6 @@ softclock()
 			p->p_flag |= SOWEUPC;
 			aston();
 		}
-#ifdef vax
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so
@@ -323,7 +298,6 @@ softclock()
 			(void) setpri(p);
 			p->p_pri = p->p_usrpri;
 		}
-#endif
 	}
 }
 

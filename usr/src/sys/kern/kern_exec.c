@@ -1,4 +1,4 @@
-/*	kern_exec.c	4.4	83/06/14	*/
+/*	kern_exec.c	4.5	83/07/01	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -20,6 +20,10 @@
 #include "../h/uio.h"
 #include "../h/nami.h"
 #include "../h/acct.h"
+
+#ifdef vax
+#include "../vax/mtpr.h"
+#endif
 
 /*
  * exec system call, with and without environments.
@@ -373,7 +377,6 @@ getxfile(ip, nargc, uid, gid)
 
 #ifdef vax
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
-#include "../vax/mtpr.h"		/* XXX */
 	mtpr(TBIA, 0);
 #endif
 
@@ -414,25 +417,12 @@ setregs()
 		u.u_signal[i] = SIG_DFL;
 		(void) spl0();
 	}
-#ifdef vax
 #ifdef notdef
 	/* should pass args to init on the stack */
 	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
 		*rp++ = 0;
 #endif
 	u.u_ar0[PC] = u.u_exdata.ux_entloc+2;
-#endif
-#ifdef sun
-	{ register struct regs *r = (struct regs *)u.u_ar0;
-	  for (i = 0; i < 8; i++) {
-		r->r_dreg[i] = 0;
-		if (&r->r_areg[i] != &r->r_sp)
-			r->r_areg[i] = 0;
-	  }
-	  r->r_sr = PSL_USERSET;
-	  r->r_pc = u.u_exdata.ux_entloc;
-	}
-#endif
 	for (i=0; i<NOFILE; i++) {
 		if (u.u_pofile[i]&UF_EXCLOSE) {
 			closef(u.u_ofile[i]);
@@ -448,7 +438,4 @@ setregs()
 	u.u_acflag &= ~AFORK;
 	bcopy((caddr_t)u.u_dent.d_name, (caddr_t)u.u_comm,
 	    (unsigned)(u.u_dent.d_namlen + 1));
-#ifdef sun
-	u.u_eosys = REALLYRETURN;
-#endif
 }

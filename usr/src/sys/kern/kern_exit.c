@@ -1,4 +1,4 @@
-/*	kern_exit.c	4.5	83/06/16	*/
+/*	kern_exit.c	4.6	83/07/01	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -89,9 +89,6 @@ exit(rv)
 	acct();
 #ifdef QUOTA
 	qclean();
-#endif
-#ifdef sun
-	ctxfree(u.u_procp);
 #endif
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);

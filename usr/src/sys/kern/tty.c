@@ -1,4 +1,4 @@
-/*	tty.c	4.42	83/06/13	*/
+/*	tty.c	4.43	83/07/01	*/
 
 #include "../machine/reg.h"
 
@@ -1509,7 +1509,7 @@ ttwakeup(tp)
 	wakeup((caddr_t)&tp->t_rawq);
 }
 
-#if !defined(vax) && !defined(sun)
+#if !defined(vax)
 scanc(size, cp, table, mask)
 	register int size;
 	register char *cp, table[];

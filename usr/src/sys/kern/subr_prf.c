@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.27	83/05/27	*/
+/*	subr_prf.c	4.28	83/07/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,10 @@
 #include "../h/user.h"
 #include "../h/proc.h"
 #include "../h/tty.h"
+
+#ifdef vax
+#include "../vax/mtpr.h"
+#endif
 
 /*
  * In case console is off,
@@ -170,23 +174,12 @@ printn(n, b, touser)
 panic(s)
 	char *s;
 {
-#ifdef sun
-	register int *a5;
-#endif
 	int bootopt = RB_AUTOBOOT;
 
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
 	else {
 		panicstr = s;
-#ifdef sun
-		asm("movl a6, a5");
-		traceback(a5, a5);
-		/* make sure u area has been initialized before doing resume */
-		if (u.u_procp >= proc && u.u_procp < procNPROC &&
-		    u.u_procp->p_addr != 0)
-			resume(pcbb(u.u_procp));	/* for adb traceback */
-#endif
 	}
 	printf("panic: %s\n", s);
 	boot(RB_PANIC, bootopt);
@@ -202,7 +195,6 @@ tablefull(tab)
 	printf("%s: table is full\n", tab);
 }
 
-#ifdef vax
 /*
  * Hard error is the preface to plaintive error messages
  * about failing disk transfers.
@@ -215,7 +207,6 @@ harderr(bp, cp)
 	printf("%s%d%c: hard error sn%d ", cp,
 	    dkunit(bp), 'a'+(minor(bp->b_dev)&07), bp->b_blkno);
 }
-#endif
 
 /*
  * Print a character on console or users terminal.
@@ -240,9 +231,6 @@ putchar(c, touser)
 		}
 		return;
 	}
-#ifdef vax
-#include "../vax/mtpr.h"		/* XXX */
-#endif
 	if (c != '\0' && c != '\r' && c != 0177
 #ifdef vax
 	    && mfpr(MAPEN)
