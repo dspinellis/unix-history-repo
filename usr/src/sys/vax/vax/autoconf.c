@@ -1,4 +1,4 @@
-/*	autoconf.c	6.3	83/08/11	*/
+/*	autoconf.c	6.4	84/02/02	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -188,16 +188,49 @@ probenexus(pcpu)
 		case NEX_MEM4I:
 		case NEX_MEM16:
 		case NEX_MEM16I:
-		case NEX_MEM64L:
-		case NEX_MEM64LI:
-		case NEX_MEM64U:
-		case NEX_MEM64UI:
-		case NEX_MEM64I:
 			printf("mcr%d at tr%d\n", nmcr, nexnum);
 			if (nmcr >= 4) {
 				printf("5 mcr's");
 				goto unsupp;
 			}
+			switch (cpu) {
+			case VAX_780:
+				mcrtype[nmcr] = M780C;
+				break;
+			case VAX_750:
+				mcrtype[nmcr] = M750;
+				break;
+			case VAX_730:
+				mcrtype[nmcr] = M730;
+				break;
+			}
+			mcraddr[nmcr++] = (struct mcr *)nxv;
+			break;
+
+		case NEX_MEM64I:
+		case NEX_MEM64L:
+		case NEX_MEM64LI:
+			printf("mcr%d (el) at tr%d\n", nmcr, nexnum);
+			if (nmcr >= 4) {
+				printf("5 mcr's");
+				goto unsupp;
+			}
+			if (cpu == VAX_780)
+				mcrtype[nmcr] = M780EL;
+			mcraddr[nmcr++] = (struct mcr *)nxv;
+			if (nexcsr.nex_type != NEX_MEM64I)
+				break;
+			/* fall into ... */
+
+		case NEX_MEM64U:
+		case NEX_MEM64UI:
+			printf("mcr%d (eu) at tr%d\n", nmcr, nexnum);
+			if (nmcr >= 4) {
+				printf("5 mcr's");
+				goto unsupp;
+			}
+			if (cpu == VAX_780)
+				mcrtype[nmcr] = M780EU;
 			mcraddr[nmcr++] = (struct mcr *)nxv;
 			break;
 

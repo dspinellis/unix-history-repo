@@ -1,13 +1,13 @@
-/*	mem.h	6.1	83/07/29	*/
+/*	mem.h	6.2	84/02/02	*/
 
 /*
  * Memory controller registers
  *
  * The way in which the data is stored in these registers varies
- * per cpu, so we define macros here to mask that.
+ * per controller and cpu, so we define macros here to mask that.
  */
 struct	mcr {
-	int	mc_reg[3];
+	int	mc_reg[6];
 };
 
 /*
@@ -21,7 +21,7 @@ struct	mcr {
 #endif
 
 /*
- * For each processor type we define 5 macros:
+ * For each controller type we define 5 macros:
  *	M???_INH(mcr)		inhibits further crd interrupts from mcr
  *	M???_ENA(mcr)		enables another crd interrupt from mcr
  *	M???_ERR(mcr)		tells whether an error is waiting
@@ -36,15 +36,35 @@ struct	mcr {
 /* register; bit 14 there is an error bit which we also clear */
 /* these bits are in the back of the ``red book'' (or in the VMS code) */
 
-#define	M780_INH(mcr)	\
+#define	M780C_INH(mcr)	\
 	(((mcr)->mc_reg[2] = (M780_ICRD|M780_HIER|M780_ERLOG)), mtpr(SBIER, 0))
-#define	M780_ENA(mcr)	\
+#define	M780C_ENA(mcr)	\
 	(((mcr)->mc_reg[2] = (M780_HIER|M780_ERLOG)), mtpr(SBIER, 3<<14))
-#define	M780_ERR(mcr)	\
+#define	M780C_ERR(mcr)	\
 	((mcr)->mc_reg[2] & (M780_ERLOG))
 
-#define	M780_SYN(mcr)	((mcr)->mc_reg[2] & 0xff)
-#define	M780_ADDR(mcr)	(((mcr)->mc_reg[2] >> 8) & 0xfffff)
+#define	M780C_SYN(mcr)	((mcr)->mc_reg[2] & 0xff)
+#define	M780C_ADDR(mcr)	(((mcr)->mc_reg[2] >> 8) & 0xfffff)
+
+#define	M780EL_INH(mcr)	\
+	(((mcr)->mc_reg[2] = (M780_ICRD|M780_HIER|M780_ERLOG)), mtpr(SBIER, 0))
+#define	M780EL_ENA(mcr)	\
+	(((mcr)->mc_reg[2] = (M780_HIER|M780_ERLOG)), mtpr(SBIER, 3<<14))
+#define	M780EL_ERR(mcr)	\
+	((mcr)->mc_reg[2] & (M780_ERLOG))
+
+#define	M780EL_SYN(mcr)	((mcr)->mc_reg[2] & 0x7f)
+#define	M780EL_ADDR(mcr)	(((mcr)->mc_reg[2] >> 11) & 0x1ffff)
+
+#define	M780EU_INH(mcr)	\
+	(((mcr)->mc_reg[3] = (M780_ICRD|M780_HIER|M780_ERLOG)), mtpr(SBIER, 0))
+#define	M780EU_ENA(mcr)	\
+	(((mcr)->mc_reg[3] = (M780_HIER|M780_ERLOG)), mtpr(SBIER, 3<<14))
+#define	M780EU_ERR(mcr)	\
+	((mcr)->mc_reg[3] & (M780_ERLOG))
+
+#define	M780EU_SYN(mcr)	((mcr)->mc_reg[3] & 0x7f)
+#define	M780EU_ADDR(mcr)	(((mcr)->mc_reg[3] >> 11) & 0x1ffff)
 #endif
 
 #if VAX750
@@ -76,9 +96,17 @@ struct	mcr {
 #define	M730_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & 0x7fff)
 #endif
 
+/* controller types */
+#define	M780C	1
+#define	M780EL	2
+#define	M780EU	3
+#define	M750	4
+#define	M730	5
+
 #define	MEMINTVL	(60*10)		/* 10 minutes */
 
 #ifdef	KERNEL
 int	nmcr;
 struct	mcr *mcraddr[MAXNMCR];
+int	mcrtype[MAXNMCR];
 #endif
