@@ -1,0 +1,53 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)dz.4	4.1 (Berkeley) %G%
+.\"
+.TH DZ 4 9/1/81
+.UC 4
+.SH NAME
+dz \- DZ-11 communications multiplexer
+.SH SYNOPSIS
+device dz0 at uba0 csr 0160100 vector dzrint dzxint
+.SH DESCRIPTION
+A dz-11 provides 8 communication lines with partial modem control,
+adequate for UNIX dialup use.
+Each line attached to the DZ-11 communications multiplexer
+behaves as described in
+.IR tty (4)
+and may be set to run at any of 16 speeds; see
+.IR tty (4)
+for the encoding.
+.PP
+Bit
+.I i
+of flags may be specified for a dz to say that a line is not properly
+connected, and that the line should be treated as hard-wired with carrier
+always present.  Thus specifying ``flags 0x04'' in the specification of dz0
+would cause line tty02 to be treated in this way.
+.PP
+The dz driver normally uses its input silos
+and polls for input at each clock tick (1/60'th of a
+second) rather than taking an interrupt on each input character.
+.SH FILES
+/dev/tty[0-9][0-9]
+.br
+/dev/ttyd[0-9a-f]		dialups
+.SH "SEE ALSO"
+tty(4)
+.SH DIAGNOSTICS
+.PP
+\fBdz%d: silo overflow\fR.  The 64 character input silo overflowed
+before it could be serviced.  This can happen if a hard error occurs
+when the CPU is running with elevated priority, as the system will
+then print a message on the console with interrupts disabled.  If the
+Berknet
+.IR net (1)
+is running on a
+.I dz
+line at high speed (e.g. 9600 baud), there is only 1/15th of a second of
+buffering capacity in the silo, and overrun is possible.  This may
+cause a few input characters to be lost to users and a network
+packet is likely to be corrupted, but the network will recover.
+It is not serious.
