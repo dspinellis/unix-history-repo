@@ -1,0 +1,59 @@
+/* Copyright (c) 1982 Regents of the University of California */
+
+static char sccsid[] = "@(#)process.rep 1.1 %G%";
+
+/*
+ * This file defines the representation of a process.
+ * It is MACHINE DEPENDENT.
+ */
+
+#define STOPPED 0177
+#define FINISHED 0
+
+#define NREG 12			/* maximum number of saved registers */
+#define CSIZE 101		/* size of instruction cache */
+
+/*
+ * Cache-ing of instruction segment is done to reduce the number
+ * of calls to ptrace.
+ */
+
+typedef struct {
+	WORD addr;
+	WORD val;
+} CACHEWORD;
+
+/*
+ * This structure holds the information we need from the user structure.
+ */
+
+struct process {
+	int pid;		/* process being traced */
+	WORD reg[NREG];		/* process's registers */
+	WORD ap, fp, sp, pc;	/* special registers */
+	WORD oreg[NREG];	/* registers when process last stopped */
+	WORD oap, ofp, osp, opc;/* special registers when process stopped */
+	int status;		/* either STOPPED or FINISHED */
+	int signo;		/* signal that stopped process */
+	int exitval;		/* return value from exit() */
+	long sigset;		/* bit array of traced signals */
+	CACHEWORD word[CSIZE];	/* text segment cache */
+};
+
+/*
+ * Process manipulation routines local to this module.
+ */
+
+pstart();			/* start up a process */
+pcont();			/* continue execution */
+pstep();			/* single step */
+pio();				/* process memory move */
+psigtrace();			/* catch/don't catch a signal */
+unsetsigtraces();		/* don't catch any signals */
+
+/*
+ * These definitions are for the arguments to "pio".
+ */
+
+typedef enum { PREAD, PWRITE } PIO_OP;
+typedef enum { TEXTSEG, DATASEG } PIO_SEG;
