@@ -2,62 +2,66 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kill.2	4.1 (Berkeley) %G%
+.\"	@(#)kill.2	5.1 (Berkeley) %G%
 .\"
-.TH KILL 2 5/11/81
+.TH KILL 2 "27 July 1983"
 .UC 4
 .SH NAME
 kill \- send signal to a process
 .SH SYNOPSIS
-.B kill(pid, sig)
+.ft B
+kill(pid, sig)
+.br
+int pid, sig;
 .SH DESCRIPTION
 .I Kill
-sends the signal
-.I sig
-to the process specified by the
-process number
-.I pid.
-See
-.IR sigsys (2)
-for a list of signals.
+sends the signal \fIsig\fP
+to a process, specified by the process number
+.IR pid .
+.I Sig
+may be one of the signals specified in
+.IR sigvec (2),
+or it may be 0, in which case
+error checking is performed but no
+signal is actually sent. 
+This can be used to check the validity of
+.IR pid .
 .PP
 The sending and receiving processes must
 have the same effective user ID, otherwise
 this call is restricted to the super-user.
-(A single exception is the signal SIGCONT which may be sent
-as described in
-.IR killpg (2),
-although it is usually sent using
-.I killpg
-rather than
-.IR kill ).
+A single exception is the signal SIGCONT which may always be sent
+to any child or grandchild of the current process.
 .PP
 If the process number is 0,
 the signal is sent to all other processes in the
-sender's process group;
-see
-.IR tty (4)
-and also
+sender's process group; this is a variant of
 .IR killpg (2).
 .PP
 If the process number is \-1, and the user is the super-user,
 the signal is broadcast universally
-except to processes 0, 1, 2, the scheduler
-initialization, and pageout processes,
+except to system processes
 and the process sending the signal.
 .PP
 Processes may send signals to themselves.
+.SH "RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, a value of \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+.I Kill
+will fail and no signal will be sent if any of the following
+occur:
+.TP 15
+[EINVAL]
+\fISig\fP is not a valid signal number.
+.TP 15
+[ESRCH]
+No process can be found corresponding to that specified by \fIpid\fP.
+.TP 15
+[EPERM]
+The sending process is not the super-user and its effective
+user id does not match the effective user-id of the receiving process.
 .SH "SEE ALSO"
-sigsys(2), signal(2), kill(1), killpg(2), init(8)
-.SH DIAGNOSTICS
-Zero is returned if the process is killed;
-\-1 is returned if the process does not
-have the same effective user ID and the
-user is not super-user, or if the process
-does not exist.
-.SH "ASSEMBLER (PDP-11)"
-(kill = 37.)
-.br
-(process number in r0)
-.br
-.B sys kill; sig
+getpid(2), getpgrp(2), killpg(2), sigvec(2)
