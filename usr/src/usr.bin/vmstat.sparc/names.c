@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)names.c	5.1 (Berkeley) %G%
+ *	@(#)names.c	8.1 (Berkeley) %G%
  */
 
 #ifdef hp300
