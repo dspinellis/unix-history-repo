@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.11 (Berkeley) %G%
+ *	@(#)mount.h	7.12 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -83,20 +83,25 @@ struct mount {
 /*
  * Mount flags.
  */
-#define	M_RDONLY	0x0001		/* read only filesystem */
-#define	M_SYNCHRONOUS	0x0002		/* file system written synchronously */
-#define	M_NOEXEC	0x0004		/* can't exec from filesystem */
-#define	M_NOSUID	0x0008		/* don't honor setuid bits on fs */
-#define	M_NODEV		0x0010		/* don't interpret special files */
+#define	M_RDONLY	0x00000001	/* read only filesystem */
+#define	M_SYNCHRONOUS	0x00000002	/* file system written synchronously */
+#define	M_NOEXEC	0x00000004	/* can't exec from filesystem */
+#define	M_NOSUID	0x00000008	/* don't honor setuid bits on fs */
+#define	M_NODEV		0x00000010	/* don't interpret special files */
 /*
  * exported mount flags.
  */
-#define	M_EXPORTED	0x0100		/* file system is exported */
-#define	M_EXRDONLY	0x0200		/* exported read only */
+#define	M_EXPORTED	0x00000100	/* file system is exported */
+#define	M_EXRDONLY	0x00000200	/* exported read only */
+/*
+ * Flags set by internal operations.
+ */
+#define	M_LOCAL		0x00001000	/* filesystem is stored locally */
+#define	M_QUOTA		0x00002000	/* quotas are enabled on filesystem */
 /*
  * Mask of flags that are visible to statfs()
  */
-#define	M_VISFLAGMASK	0x0fff
+#define	M_VISFLAGMASK	0x0000ffff
 /*
  * filesystem control flags.
  *
@@ -104,9 +109,12 @@ struct mount {
  * past the mount point.  This keeps the subtree stable during mounts
  * and unmounts.
  */
-#define	M_MLOCK		0x1000		/* lock so that subtree is stable */
-#define	M_MWAIT		0x2000		/* someone is waiting for lock */
-#define	M_UPDATE	0x4000		/* not a real mount, just an update */
+#define	M_UPDATE	0x00010000	/* not a real mount, just an update */
+#define	M_MLOCK		0x00100000	/* lock so that subtree is stable */
+#define	M_MWAIT		0x00200000	/* someone is waiting for lock */
+#define M_MPBUSY	0x00400000	/* scan of mount point in progress */
+#define M_MPWANT	0x00800000	/* waiting for mount point */
+#define M_UNMOUNT	0x01000000	/* unmount in progress */
 
 /*
  * Operations supported on mounted file system.
@@ -116,6 +124,7 @@ struct vfsops {
 	int	(*vfs_start)(	/* mp, flags */ );
 	int	(*vfs_unmount)(	/* mp, forcibly */ );
 	int	(*vfs_root)(	/* mp, vpp */ );
+	int	(*vfs_quotactl)(/* mp, cmd, uid, arg */ );
 	int	(*vfs_statfs)(	/* mp, sbp */ );
 	int	(*vfs_sync)(	/* mp, waitfor */ );
 	int	(*vfs_fhtovp)(	/* mp, fidp, vpp */ );
@@ -128,6 +137,7 @@ struct vfsops {
 #define VFS_START(MP, FLAGS)	  (*(MP)->m_op->vfs_start)(MP, FLAGS)
 #define VFS_UNMOUNT(MP, FORCIBLY) (*(MP)->m_op->vfs_unmount)(MP, FORCIBLY)
 #define VFS_ROOT(MP, VPP)	  (*(MP)->m_op->vfs_root)(MP, VPP)
+#define VFS_QUOTACTL(MP, C, U, A) (*(MP)->m_op->vfs_quotactl)(MP, C, U, A)
 #define VFS_STATFS(MP, SBP)	  (*(MP)->m_op->vfs_statfs)(MP, SBP)
 #define VFS_SYNC(MP, WAITFOR)	  (*(MP)->m_op->vfs_sync)(MP, WAITFOR)
 #define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->m_op->vfs_fhtovp)(MP, FIDP, VPP)
