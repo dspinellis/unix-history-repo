@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)gcore.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)gcore.c	4.2	(Berkeley)	%G%";
 
 /*
  * gcore - get core images of running processes
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)gcore.c	4.1	(Berkeley)	%G%";
 #include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/pte.h>
+#include <machine/pte.h>
 #include <sys/vm.h>
 #include <setjmp.h>
 
