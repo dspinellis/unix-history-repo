@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.5 (Berkeley) %G%
+ *	@(#)vnode.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,7 @@ enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS };
  * is used rather than a union structure to cut down on the
  * number of header files that must be included.
  */
-#define VN_MAXPRIVATE	204
+#define VN_MAXPRIVATE	196
 
 struct vnode {
 	u_long		v_flag;			/* vnode flags (see below) */
@@ -55,6 +55,8 @@ struct vnode {
 	struct vnode	**v_freeb;		/* vnode freelist back */
 	struct vnode	*v_mountf;		/* vnode mountlist forward */
 	struct vnode	**v_mountb;		/* vnode mountlist back */
+	struct buf	*v_blockh;		/* logical blocklist head */
+	struct buf	**v_blockt;		/* logical blocklist tail */
 	enum vtype	v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
