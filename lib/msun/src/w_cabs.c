@@ -1,4 +1,4 @@
-/*
+ /*
  * cabs() wrapper for hypot().
  * 
  * Written by J.T. Conklin, <jtc@wimsey.com>
@@ -17,4 +17,11 @@ cabs(z)
 	struct complex z;
 {
 	return hypot(z.x, z.y);
+}
+
+double
+z_abs(z)
+	struct complex *z;
+{
+	return hypot(z->x, z->y);
 }
