@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fsck.h	5.1 (Berkeley) %G%
+ *	@(#)fsck.h	5.2 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -166,6 +166,7 @@ struct	dinode zino;
 #define	getbmap(x)	isset(blockmap, x)
 #define	clrbmap(x)	clrbit(blockmap, x)
 
+#define	FOUND	020
 #define	ALTERED	010
 #define	KEEPON	04
 #define	SKIP	02

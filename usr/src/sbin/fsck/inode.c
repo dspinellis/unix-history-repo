@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -81,8 +81,6 @@ iblock(idesc, ilevel, isize)
 		return (SKIP);
 	initbarea(&ib);
 	getblk(&ib, idesc->id_blkno, sblock.fs_bsize);
-	if (ib.b_errs != NULL)
-		return (SKIP);
 	ilevel--;
 	for (sizepb = sblock.fs_bsize, i = 0; i < ilevel; i++)
 		sizepb *= NINDIR(&sblock);
@@ -199,7 +197,7 @@ findname(idesc)
 	if (dirp->d_ino != idesc->id_parent)
 		return (KEEPON);
 	bcopy(dirp->d_name, idesc->id_name, dirp->d_namlen + 1);
-	return (STOP);
+	return (STOP|FOUND);
 }
 
 findino(idesc)
@@ -212,7 +210,7 @@ findino(idesc)
 	if (strcmp(dirp->d_name, idesc->id_name) == 0 &&
 	    dirp->d_ino >= ROOTINO && dirp->d_ino <= imax) {
 		idesc->id_parent = dirp->d_ino;
-		return (STOP);
+		return (STOP|FOUND);
 	}
 	return (KEEPON);
 }

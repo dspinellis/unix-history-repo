@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -273,7 +273,7 @@ getpathname(namebuf, curdir, ino)
 	bzero(&idesc, sizeof(struct inodesc));
 	idesc.id_type = DATA;
 	cp = &namebuf[BUFSIZ - 1];
-	*cp-- = '\0';
+	*cp = '\0';
 	if (curdir != ino) {
 		idesc.id_parent = curdir;
 		goto namelookup;
@@ -282,14 +282,14 @@ getpathname(namebuf, curdir, ino)
 		idesc.id_number = ino;
 		idesc.id_func = findino;
 		idesc.id_name = "..";
-		if ((ckinode(ginode(ino), &idesc) & STOP) == 0)
+		if ((ckinode(ginode(ino), &idesc) & FOUND) == 0)
 			break;
 	namelookup:
 		idesc.id_number = idesc.id_parent;
 		idesc.id_parent = ino;
 		idesc.id_func = findname;
 		idesc.id_name = namebuf;
-		if ((ckinode(ginode(idesc.id_number), &idesc) & STOP) == 0)
+		if ((ckinode(ginode(idesc.id_number), &idesc) & FOUND) == 0)
 			break;
 		len = strlen(namebuf);
 		cp -= len;

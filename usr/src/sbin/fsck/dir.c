@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -63,6 +63,11 @@ descend(parentino, inumber)
 	curino.id_parent = parentino->id_number;
 	curino.id_number = inumber;
 	(void)ckinode(dp, &curino);
+	if (curino.id_entryno < 2) {
+		direrr(inumber, "NULL DIRECTORY");
+		if (reply("REMOVE") == 1)
+			statemap[inumber] = DCLEAR;
+	}
 }
 
 dirscan(idesc)
@@ -90,13 +95,9 @@ dirscan(idesc)
 		idesc->id_dirp = (DIRECT *)dbuf;
 		if ((n = (*idesc->id_func)(idesc)) & ALTERED) {
 			getblk(&fileblk, idesc->id_blkno, blksiz);
-			if (fileblk.b_errs != NULL) {
-				n &= ~ALTERED;
-			} else {
-				bcopy(dbuf, (char *)dp, dsize);
-				dirty(&fileblk);
-				sbdirty();
-			}
+			bcopy(dbuf, (char *)dp, dsize);
+			dirty(&fileblk);
+			sbdirty();
 		}
 		if (n & STOP) 
 			return (n);
@@ -116,10 +117,6 @@ fsck_readdir(idesc)
 
 	blksiz = idesc->id_numfrags * sblock.fs_fsize;
 	getblk(&fileblk, idesc->id_blkno, blksiz);
-	if (fileblk.b_errs != NULL) {
-		idesc->id_filesize -= blksiz - idesc->id_loc;
-		return NULL;
-	}
 	if (idesc->id_loc % DIRBLKSIZ == 0 && idesc->id_filesize > 0 &&
 	    idesc->id_loc < blksiz) {
 		dp = (DIRECT *)(dirblk.b_buf + idesc->id_loc);
@@ -306,8 +303,7 @@ linkup(orphan, pdir)
 		idesc.id_type = DATA;
 		idesc.id_func = findino;
 		idesc.id_number = ROOTINO;
-		(void)ckinode(dp, &idesc);
-		if (idesc.id_parent >= ROOTINO && idesc.id_parent < imax) {
+		if ((ckinode(dp, &idesc) & FOUND) != 0) {
 			lfdir = idesc.id_parent;
 		} else {
 			pwarn("NO lost+found DIRECTORY");
