@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	4.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -89,8 +89,7 @@ main ( argc, argv )
 	fwrite ( bigrams, 1, BGBUFSIZE, stdout );
 	fclose( fp );
 
-	/* every path will fit in path buffer, so safe to use gets */
-     	while ( gets ( path ) != NULL ) {
+     	while ( fgets ( path, sizeof(buf2), stdin ) != NULL ) {
 		/* squelch characters that would botch the decoding */
 		for ( cp = path; *cp != NULL; cp++ ) {
 			if ( *cp >= PARITY )
