@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.4 (Berkeley) %G%
+ *	@(#)lfs.h	7.5 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -205,21 +205,28 @@ struct segsum {
 #define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */ \
 	((loc) >> (fs)->lfs_bshift)
 
+/* Read in the block with the cleaner info from the ifile. */
+#define LFS_CLEANERINFO(CP, F, BP) { \
+	if (bread((F)->lfs_ivnode, (daddr_t)0, (F)->lfs_bsize, NOCRED, &BP)) \
+		panic("lfs: ifile read"); \
+	(CP) = (CLEANERINFO *)BP->b_un.b_addr; \
+}
+
 /* Read in the block with a specific inode from the ifile. */
-#define	LFS_IENTRY(I, F, IN, BP) { \
+#define	LFS_IENTRY(IP, F, IN, BP) { \
 	if (bread((F)->lfs_ivnode, \
 	    (IN) / (F)->lfs_ifpb + (F)->lfs_cleansz + (F)->lfs_segtabsz, \
 	    (F)->lfs_bsize, NOCRED, &BP)) \
 		panic("lfs: ifile read"); \
-	(I) = (IFILE *)BP->b_un.b_addr + IN % (F)->lfs_ifpb; \
+	(IP) = (IFILE *)BP->b_un.b_addr + IN % (F)->lfs_ifpb; \
 }
 
 /* Read in the block with a specific segment usage entry from the ifile. */
-#define	LFS_SEGENTRY(I, F, IN, BP) { \
+#define	LFS_SEGENTRY(SP, F, IN, BP) { \
 	if (bread((F)->lfs_ivnode, (IN) / (F)->lfs_sepb + (F)->lfs_cleansz, \
 	    (F)->lfs_bsize, NOCRED, &BP)) \
 		panic("lfs: ifile read"); \
-	(I) = (SEGUSE *)BP->b_un.b_addr + IN % (F)->lfs_sepb; \
+	(SP) = (SEGUSE *)BP->b_un.b_addr + IN % (F)->lfs_sepb; \
 }
 
 /*
