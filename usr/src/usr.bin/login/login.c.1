@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c.1	4.21 83/03/31";
+static	char *sccsid = "@(#)login.c.1	4.22 83/04/18";
 /*
  * login [ name ]
  * login -r
@@ -97,11 +97,8 @@ char **argv;
 		setpwent();
 		pwd = getpwnam(lusername);
 		endpwent();
-		if (pwd == NULL) {
-			if (strcmp(rusername, lusername))
-				printf("%s: No such user\r\n", lusername);
+		if (pwd == NULL)
 			goto abnormal;
-		}
 		hostf = pwd->pw_uid ? fopen("/etc/hosts.equiv", "r") : 0;
 	again:
 		if (hostf) {
