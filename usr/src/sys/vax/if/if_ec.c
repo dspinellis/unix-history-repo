@@ -1,4 +1,4 @@
-/*	if_ec.c	4.34	83/05/27	*/
+/*	if_ec.c	4.35	83/06/12	*/
 
 #include "ec.h"
 
@@ -14,7 +14,8 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/vmmac.h"
-#include <errno.h>
+#include "../h/ioctl.h"
+#include "../h/errno.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -42,7 +43,7 @@ struct	uba_driver ecdriver =
 	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo };
 #define	ECUNIT(x)	minor(x)
 
-int	ecinit(),ecoutput(),ecreset();
+int	ecinit(),ecioctl(),ecoutput(),ecreset();
 struct	mbuf *ecget();
 
 extern struct ifnet loif;
@@ -181,6 +182,7 @@ ecattach(ui)
 	sin->sin_family = AF_INET;
 	sin->sin_addr = arpmyaddr((struct arpcom *)0);
 	ifp->if_init = ecinit;
+	ifp->if_ioctl = ecioctl;
 	ifp->if_output = ecoutput;
 	ifp->if_reset = ecreset;
 	for (i=0; i<16; i++)
@@ -214,35 +216,31 @@ ecinit(unit)
 {
 	struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr;
-	int i, s;
 	register struct ifnet *ifp = &es->es_if;
 	register struct sockaddr_in *sin, *sinb;
+	int i, s;
 
 	sin = (struct sockaddr_in *)&ifp->if_addr;
-	if (sin->sin_addr.s_addr == 0)	/* if address still unknown */
+	if (sin->sin_addr.s_addr == 0)		/* address still unknown */
 		return;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	sinb = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sinb->sin_family = AF_INET;
-	sinb->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags = IFF_BROADCAST;
 
 	/*
 	 * Hang receive buffers and start any pending writes.
 	 * Writing into the rcr also makes sure the memory
 	 * is turned on.
 	 */
-	addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
-	s = splimp();
-	for (i=ECRHBF; i>=ECRLBF; i--)
-		addr->ec_rcr = EC_READ|i;
-	es->es_oactive = 0;
-	es->es_mask = ~0;
-	es->es_if.if_flags |= IFF_UP;
-	if (es->es_if.if_snd.ifq_head)
-		ecstart(unit);
-	splx(s);
+	if ((es->es_if.if_flags & IFF_RUNNING) == 0) {
+		addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
+		s = splimp();
+		for (i = ECRHBF; i >= ECRLBF; i--)
+			addr->ec_rcr = EC_READ | i;
+		es->es_oactive = 0;
+		es->es_mask = ~0;
+		es->es_if.if_flags |= IFF_UP|IFF_RUNNING;
+		if (es->es_if.if_snd.ifq_head)
+			ecstart(unit);
+		splx(s);
+	}
 	if_rtinit(&es->es_if, RTF_UP);
 	arpattach(&es->es_ac);
 	arpwhohas(&es->es_ac, &sin->sin_addr);
@@ -520,6 +518,8 @@ ecoutput(ifp, m0, dst)
 		if (in_lnaof(idst) == INADDR_ANY)
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		/* need per host negotiation */
+		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ETHERPUP_TRAIL + (off>>9);
@@ -733,4 +733,38 @@ ecget(ecbuf, totlen, off0)
 bad:
 	m_freem(top);
 	return (0);
+}
+
+/*
+ * Process an ioctl request.
+ */
+ecioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	register struct ifreq *ifr = (struct ifreq *)data;
+	register struct sockaddr_in *sin;
+	int s = splimp(), error = 0;
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
+		ifp->if_addr = ifr->ifr_addr;
+		ifp->if_net = in_netof(ifr->ifr_addr);
+		ifp->if_host[0] = in_lnaof(ifr->ifr_addr);
+		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
+		sin->sin_family = AF_INET;
+		sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+		ifp->if_flags |= IFF_BROADCAST;
+		ecinit(ifp->if_unit);
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
 }

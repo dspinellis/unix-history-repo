@@ -1,4 +1,4 @@
-/*	if_il.c	4.20	83/05/27	*/
+/*	if_il.c	4.21	83/06/12	*/
 
 #include "il.h"
 
@@ -14,7 +14,8 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/vmmac.h"
-#include <errno.h>
+#include "../h/ioctl.h"
+#include "../h/errno.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -40,7 +41,7 @@ u_short ilstd[] = { 0 };
 struct	uba_driver ildriver =
 	{ ilprobe, 0, ilattach, 0, ilstd, "il", ilinfo };
 #define	ILUNIT(x)	minor(x)
-int	ilinit(),iloutput(),ilreset(),ilwatch();
+int	ilinit(),iloutput(),ilioctl(),ilreset(),ilwatch();
 
 /*
  * Ethernet software status per interface.
@@ -121,7 +122,7 @@ ilattach(ui)
 			addr->il_csr, IL_BITS);
 	
 	is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
-		sizeof (struct il_stats), 0);
+	    sizeof (struct il_stats), 0);
 	addr->il_bar = is->is_ubaddr & 0xffff;
 	addr->il_bcr = sizeof (struct il_stats);
 	addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_STAT;
@@ -146,6 +147,7 @@ ilattach(ui)
 	sin->sin_addr = arpmyaddr((struct arpcom *)0);
 	ifp->if_init = ilinit;
 	ifp->if_output = iloutput;
+	ifp->if_ioctl = ilioctl;
 	ifp->if_reset = ilreset;
 	ifp->if_watchdog = ilwatch;
 	is->is_scaninterval = ILWATCHINTERVAL;
@@ -183,20 +185,16 @@ ilinit(unit)
 	register struct il_softc *is = &il_softc[unit];
 	register struct uba_device *ui = ilinfo[unit];
 	register struct ildevice *addr;
-	int s;
 	register struct ifnet *ifp = &is->is_if;
-	register struct sockaddr_in *sin, *sinb;
+	register struct sockaddr_in *sin;
+	int s;
 
 	sin = (struct sockaddr_in *)&ifp->if_addr;
-	if (sin->sin_addr.s_addr == 0)	/* if address still unknown */
+	if (sin->sin_addr.s_addr == 0)		/* address still unknown */
 		return;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	sinb = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sinb->sin_family = AF_INET;
-	sinb->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags = IFF_BROADCAST;
 
+	if (ifp->if_flags & IFF_RUNNING)
+		goto justarp;
 	if (if_ubainit(&is->is_ifuba, ui->ui_ubanum,
 	    sizeof (struct il_rheader), (int)btoc(ETHERMTU)) == 0) { 
 		printf("il%d: can't initialize\n", unit);
@@ -204,7 +202,7 @@ ilinit(unit)
 		return;
 	}
 	is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
-		sizeof (struct il_stats), 0);
+	    sizeof (struct il_stats), 0);
 	addr = (struct ildevice *)ui->ui_addr;
 
 	/*
@@ -233,7 +231,7 @@ ilinit(unit)
 	addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
 	addr->il_bcr = sizeof(struct il_rheader) + ETHERMTU + 6;
 	addr->il_csr =
-		((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
+	    ((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
 	is->is_flags = ILF_OACTIVE;
@@ -241,6 +239,7 @@ ilinit(unit)
 	is->is_lastcmd = 0;
 	ilcint(unit);
 	splx(s);
+justarp:
 	if_rtinit(&is->is_if, RTF_UP);
 	arpattach(&is->is_ac);
 	arpwhohas(&is->is_ac, &sin->sin_addr);
@@ -486,6 +485,8 @@ iloutput(ifp, m0, dst)
 		if (!arpresolve(&is->is_ac, m, &idst, edst))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		/* need per host negotiation */
+		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ETHERPUP_TRAIL + (off>>9);
@@ -607,4 +608,38 @@ iltotal(is)
 	while (sum < end)
 		*sum++ += *interval++;
 	is->is_if.if_collisions = is->is_sum.ils_collis;
+}
+
+/*
+ * Process an ioctl request.
+ */
+ilioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	register struct ifreq *ifr = (struct ifreq *)data;
+	register struct sockaddr_in *sin;
+	int s = splimp(), error = 0;
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
+		ifp->if_addr = ifr->ifr_addr;
+		ifp->if_net = in_netof(ifr->ifr_addr);
+		ifp->if_host[0] = in_lnaof(ifr->ifr_addr);
+		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
+		sin->sin_family = AF_INET;
+		sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+		ifp->if_flags |= IFF_BROADCAST;
+		ilinit(ifp->if_unit);
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
 }
