@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -108,7 +108,7 @@ ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
 #endif /* SMTP */
 #endif /* DAEMON */
 
-#define MAXCONFIGLEVEL	3	/* highest config version level known */
+#define MAXCONFIGLEVEL	4	/* highest config version level known */
 
 main(argc, argv, envp)
 	int argc;

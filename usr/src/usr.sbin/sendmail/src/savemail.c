@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -412,8 +412,11 @@ returntosender(msg, returnq, sendbody, e)
 
 	/* fake up an address header for the from person */
 	expand("\201n", buf, &buf[sizeof buf - 1], e);
-	ee->e_returnpath = "<>";
 	ee->e_sender = newstr(buf);
+	if (ConfigLevel >= 4)
+		ee->e_returnpath = "<>";
+	else
+		ee->e_returnpath = ee->e_sender;
 	if (parseaddr(buf, &ee->e_from, -1, '\0', e) == NULL)
 	{
 		syserr("Can't parse myself!");
