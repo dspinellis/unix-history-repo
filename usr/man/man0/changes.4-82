@@ -1,0 +1,170 @@
+.TL
+Surviving with 4.1a bsd
+.AU
+Bill Joy
+Sam Leffler
+.AI
+Computer Systems Research Group
+Department of EECS
+U.C. Berkeley
+Berkeley, Ca.  94720
+.SH
+Introduction
+.PP
+.de IR
+\fI\\$1\fR\\$2\\fR
+..
+This short paper describes what ``4.1a bsd'' is,
+and what you need to know to make best use of this
+release of the system if it is running on your machine.
+.SH
+What is 4.1a?
+.PP
+4.1a is an intermediate version of the VAX system distributed
+by our group.  It is an
+.I experimental
+version of the system whose most noticeable improvement over
+the 4.1 system is its support for local networking.
+It also includes a few other features which you may find useful,
+such as ``symbolic links'' and an improved group scheme.
+.PP
+4.1a is not a full distribution of the VAX system.
+It is being used at a
+.I very
+limited number of sites, and is
+.B not
+being made available to the general VAX/UNIX user community.
+.PP
+We currently plan to have two more intermediate versions of the VAX
+system before the next full release.  The next intermediate
+version 4.1b will tenatively include a higher-performance file
+system, a more fully integrated scheme for inter-process
+communication, and page-sharing virtual memory facilities.
+These facilities are described in a draft new system manual
+which is available from our group.
+.PP
+The rest of this document consists of a number of sections
+describing new commands and changes to existing facilities
+in the new system.
+.NH 1
+User commands for networking
+.PP
+The new system supports the DARPA standard TCP, IP and UDP communications
+protocols.  These are used to provide for the transfer of data
+between machines interconnected via local networks (such as an ETHERNET)
+or a long-haul network such as the ARPANET.  Currently most
+hosts on the ARPANET speak older protocols, so you are likely to find
+the local networking facilities to be of the most immediate use.
+.PP
+Most of the networking commands provided with this 4.1a release
+begin with a letter
+.B r
+standing for ``remote''.  These commands are all provisional,
+and subject to change.
+.NH 2
+Status of the network
+.PP
+Each machine on your local network is kept informed by other machines
+as to the status of those machines.  The command
+.I ruptime
+prints a status line for each machine on the local network.
+Its output might look like:
+.DS
+monet % ruptime
+arpa      up  1+10:22,     1 user,   load 0.94, 0.80, 0.70
+calder       up  0:57,     0 users,  load 0.20, 0.75, 1.08
+dali         up  2:23,     0 users,  load 0.08, 0.10, 0.09
+ingres    up  1+17:26,     0 users,  load 0.32, 0.49, 0.67
+kim       up  1+10:27,     0 users,  load 0.74, 0.75, 0.77
+matisse    down 13:36
+monet        up  7:01,     1 user,   load 0.73, 0.79, 0.78
+monet %
+.DE
+Here ``monet % '' is my prompt.
+This command shows 7 hosts on the local network.  For each
+host the number of users logged in, the load average and the
+amount of time the machine has been up (or down) is shown.
+As it is very late (about 3 am), there are essentially no users
+logged in.  In fact, the users which are logged in will be shown
+by a
+.DS
+monet % rwho
+root     arpa:ttyh9  Mar 31 23:42
+root     monet:ttyp0 Mar 31 23:39
+monet %
+.DE
+command.  Currently this shows only me (logged in a root on
+the \fImonet\fP machine), and another \fIroot\fP user (logged
+in on the \fIarpa\fP machine.)
+.PP
+Both of these commands suppress and do not count users who have
+been idle more than an hour.  They both take \fB\-a\fP commands
+to force these users to be printed.  Thus
+.DS
+monet % rwho \-a
+fabry    arpa:ttyh3    Mar 30 17:59 10:51
+kateveni kim:ttyh4     Mar 30 18:42  9:10
+kridle   ingres:ttyh0  Mar 31 18:48  6:32
+mckusick arpa:ttyj1    Mar 31 19:50  6:50
+mosher   arpa:ttyh1    Mar 31 08:26  2:48
+root     arpa:console  Mar 31 12:19  1:55
+root     arpa:ttyh9    Mar 31 23:42
+root     monet:console Mar 31 20:54  6:45
+root     monet:ttyp0   Mar 31 23:39
+root     monet:ttyp1   Apr  1 01:45  2:11
+rwh      arpa:ttyh5    Mar 31 14:34 13:20
+sam      arpa:ttyh2    Mar 31 11:36 15:50
+wilensky kim:ttyib     Mar 31 11:17 10:22
+wnj      monet:tty00   Mar 31 21:17  6:38
+monet %
+.DE
+produces more, if rather pointless, output.
+.NH 2
+Logging in and executing commands on remote machines
+.PP
+It is quite easy to log in on another machine and execute commands
+there.  You can do this by saying
+.DS
+monet % rlogin \fIothermachine\fP
+.DE
+If your current machine and the \fIothermachine\fP name that you
+give are under common administration you may find that you are
+simply logged in on the other machine with no fuss.
+If not, you may get a prompt for a password.*
+.FS
+*If there is not
+an account on that machine with your current login name, then
+you will likely be prompted for a login name.  Other possibilities
+are mentioned in
+.IR rlogin (1x).
+.FE
+Here, for example, is what is printed when I log into the
+\fIkim\fP machine from my current machine \fImonet\fP:
+.ID
+.nf
+monet % rlogin kim
+Last login: Wed Mar 31 20:32:25 on ttyp0
+TERM = (c1004p) h19
+Erase is Delete
+Kill is Ctrl-U
+  4:10am  up 1 day, 10:34,  3 users,  load average: 0.64, 0.67, 0.73
+kim % who
+kateveni ttyh4   Mar 30 18:42
+wilensky ttyib   Mar 31 11:17
+wnj      ttyp0   Apr  1 04:10
+kim % date
+Thu Apr  1 04:10:33 PST 1982
+kim % hostname
+ucbkim
+kim % logout
+Lost connection.
+monet % 
+.fi
+.DE
+On the
+\fIkim\fP machine my login prompt includes the machine name,
+just as it does on the \fImonet\fP machine.  I do this while having
+a single \fI.cshrc\fP file by using the
+\fIhostname\fP command, in a sequence of the form:
+.DS
+if ($?prompt) then

@@ -1,0 +1,106 @@
+.TL
+Setting up 4.1a bsd
+.AU
+Bill Joy
+Sam Leffler
+.sp
+415 642 7780
+.SH
+Introduction
+.PP
+This is a very brief guide to setting up 4.1a bsd.  This is not a regular
+system distribution, and we assume here that you know what you are doing.
+Refer to the appendix to ``Surviving with 4.1a bsd'' for a list of
+files you will be changing.
+.IP 1) 5
+First back yourself up in whatever way you see fit.
+.IP 2)
+Read the tape into some convenient place; its a blocked \fItar\fP.
+.IP 3)
+Fixup some basic directories:
+.de DR
+.IP \\fB\\$1\\fP
+.br
+..
+.DR /bin
+.PP
+Install the supplied new binaries; note that /bin/chgrp is now
+suid root.  (Note: the new kernel does not clear setuid bits when
+you are running as root as it did before; it only does this when
+such files are touched by setuid programs.  You aren't running the
+new system yet, however, so be careful not to lose these bits on /bin/mail,
+/bin/df, /bin/su, etc.)
+.DR /dev
+Install the new MAKE script.  Run ``make pty0 pty1'' to make
+32 pty's, /dev/tty[pq][0-f] and /dev/pty[pq][0-f].
+Remove /dev/mail which is no longer needed.
+.DR /etc
+Install the new binaries supplied.  Edit /etc/hosts.equiv to contain
+the ``full names'' of any machines with which you will share user names.
+Edit /etc/hosts.local to contain an indication of the local network
+your machine is on and also the nickname of your machine, as:
+.DS
+% cat /etc/hosts.local
+0/0 \fInickname\fI myname
+x/y localnet
+%
+.DE
+See the \fIrhost\fP(3x) manual page for explanation of hosts names.
+Replace /etc/rc with the new /etc/rc, moving any local stuff into
+/etc/rc.local.  Please be sure to put a /etc/savecore call in /etc/rc.local
+so you can help us track down any problems you encounter.
+Add the pty's to /etc/ttys, i.e.
+.DS
+02ttyp0
+02ttyp1
+\&...
+02ttyqe
+02ttyqf
+.DE
+a total of 32 lines.  It is pointless to add them to /etc/ttytype (read
+the code of \fIlogin\fP and about \fIrlogin\fP to find out why; do it
+if you are fastidious).
+.DR /lib
+Install the new C library and startup routines.
+.DR /usr/include
+Update errno.h and signal.h, and add ndir.h.
+(We will come back for more later.)
+.IP 4) 5
+Create a configuration file for your system from your old file
+referring to section 4 manual pages about network interfaces.
+You must include a
+.DS
+options	INET
+.DE
+also.
+Build a kernel and boot it.
+.IP 5)
+Read about \fIrstat\fP(1x) and run it to see if your network interfaces
+exist and have the right addresses.
+.IP 6)
+Install the new commands in /usr/bin and /usr/ucb.
+.IP 7)
+Install the file /usr/lib/hosts.
+Make the directory /usr/hosts and modify /usr/lib/hosts/MAKE if you are not at
+/usr/ucb.  Run MAKE to create files there.
+.IP 8)
+Make a directory /usr/lib/adb and put the kernel debugging scripts there.
+.IP 9)
+Put in the new manual macros /usr/lib/tmac/tmac.an.new and the new
+manual pages in /usr/man.  Note that you should remove
+man8/chgrp.8, man2/stat.2, man2/intro.2, man2/mpx.2, and man1/newgrp.1.
+.IP 10)
+Replace the /usr/include/net directory with a symbolic link
+to the sys/net directory of the system source, wherever that is.
+Make /usr/include/sys a symlink to sys/h.
+.LP
+.LP
+.LP
+That should do it.  Fix any bugs which you find and tell us about them.
+.LP
+Congratulations, you are now one of the few lucky sites to be running
+4.1a bsd.  Since the system probably contains bugs, we provide you
+with a (slightly more) powerful \fIadb\fP to debug it.
+Heres a document about \fIadb\fP to help out.
+.LP
+Ciao.
