@@ -1,4 +1,4 @@
-/*	mba.c	1.3	%G%	*/
+/*	mba.c	1.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -34,8 +34,7 @@ int *adcr;
 	register struct mba_regs *mbap;
 
 	mbap = (struct mba_regs *)mbaloc[mbanum[io->i_ino.i_dev]];
-	pte = (struct pte *)mbap;
-	pte += (MBA_MAP + 128*4)/4;
+	pte = &mbap->mba_map[128];
 	v = btop(io->i_ma);
 	o = (int)io->i_ma & PGOFSET;
 	npf = btoc(io->i_cc + o);
@@ -56,8 +55,8 @@ int *adcr;
 mbainit(mbanum)
 	int mbanum;
 {
-	register struct mba_regs *mbap = mbainfo[mbanum];
+	register struct mba_regs *mbap = mbainfo[mbanum].mi_phys;
 
-	mbap->mba_cr = MBA_INIT;
+	mbap->mba_cr = MBAINIT;
 	mbaact |= 1<<mbanum;
 }

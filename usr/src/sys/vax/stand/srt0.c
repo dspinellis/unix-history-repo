@@ -1,4 +1,4 @@
-#	srt0.c	1.3	%G%
+#	srt0.c	1.4	%G%
 
 # Startup code for standalone system
 # Non-relocating version -- for programs which are loaded by boot
@@ -16,6 +16,7 @@
 	.word	0x0
 	mtpr	$HIGH,$IPL		# just in case
 	movl	$1,PHYSUBA+4		# init
+	movab	_end,r0
 clr:
 	clrl	(r0)+
 	cmpl	r0,sp

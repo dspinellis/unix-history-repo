@@ -1,7 +1,8 @@
-/*	conf.c	1.1	%G%	*/
+/*	conf.c	1.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
+#include "../h/pte.h"
 #include "../h/mba.h"
 #include "saio.h"
 
