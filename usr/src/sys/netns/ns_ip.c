@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.2 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.3 (Berkeley) %G%
  */
 
 /*
@@ -144,6 +144,7 @@ idpip_input(m0)
 	m->m_len -= sizeof (struct ip);
 	idp = mtod(m, struct idp *);
 	len = ntohs(idp->idp_len);
+	if (len & 1) len++;		/* Preserve Garbage Byte */
 	if (ip->ip_len != len) {
 		if (len > ip->ip_len) {
 			nsipif.if_ierrors++;
@@ -200,6 +201,7 @@ nsipoutput(ifn, m0, dst)
 	 * for IP header.
 	 */
 	len =  ntohs(idp->idp_len);
+	if (len & 1) len++;		/* Preserve Garbage Byte */
 	m = m0;
 	if(m->m_off < MMINOFF + sizeof (struct ip)) {
 		m = m_get(M_DONTWAIT, MT_HEADER);
