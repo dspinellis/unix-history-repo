@@ -1,4 +1,4 @@
-/*	subr_prof.c	6.1	83/07/29	*/
+/*	subr_prof.c	6.2	84/07/28	*/
 
 /* last integrated from: gmon.c	4.10 (Berkeley) 1/14/83 */
 
@@ -40,17 +40,17 @@ kmstartup()
 	printf("Profiling kernel, s_textsize=%d [%x..%x]\n",
 		s_textsize, s_lowpc, s_highpc);
 	ssiz = (s_textsize / HISTFRACTION) + sizeof(struct phdr);
-	sbuf = (u_short *)wmemall(memall, ssiz);
+	sbuf = (u_short *)calloc(ssiz);
 	if (sbuf == 0) {
 		printf("No space for monitor buffer(s)\n");
 		return;
 	}
 	blkclr((caddr_t)sbuf, ssiz);
 	fromssize = s_textsize / HASHFRACTION;
-	froms = (u_short *)wmemall(memall, fromssize);
+	froms = (u_short *)calloc(fromssize);
 	if (froms == 0) {
 		printf("No space for monitor buffer(s)\n");
-		wmemfree(sbuf, ssiz);
+		cfreemem(sbuf, ssiz);
 		sbuf = 0;
 		return;
 	}
@@ -62,12 +62,12 @@ kmstartup()
 		tolimit = 65534;
 	}
 	tossize = tolimit * sizeof(struct tostruct);
-	tos = (struct tostruct *)wmemall(memall, tossize);
+	tos = (struct tostruct *)calloc(tossize);
 	if (tos == 0) {
 		printf("No space for monitor buffer(s)\n");
-		wmemfree(sbuf, ssiz);
+		cfreemem(sbuf, ssiz);
 		sbuf = 0;
-		wmemfree(froms, fromssize);
+		cfreemem(froms, fromssize);
 		froms = 0;
 		return;
 	}
