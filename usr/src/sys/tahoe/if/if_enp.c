@@ -1,14 +1,13 @@
-/*	if_enp.c	1.1	86/07/20	*/
+/*	if_enp.c	1.2	86/11/29	*/
 
 #include "enp.h"
-#define ENPBPTE 128
 #if NENP > 0
-
 /*
- * Modified 3 Com Ethernet Controller interface
+ * Modified 3Com Ethernet Controller interface
  * enp modifications added S. F. Holmgren
+ *
+ * UNTESTED WITH 4.3
  */
-
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
@@ -16,71 +15,47 @@
 #include "protosw.h"
 #include "socket.h"
 #include "vmmac.h"
+#include "ioctl.h"
 #include "errno.h"
-#include "time.h"
-#include "kernel.h"
+#include "vmparam.h"
+#include "syslog.h"
 #include "uio.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+#ifdef INET
 #include "../netinet/in.h"
-#include "../h/ioctl.h"
-
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
+#endif
+#ifdef NS
+#include "../netns/ns.h"
+#include "../netns/ns_if.h"
+#endif
+
+#include "../tahoe/cpu.h"
+#include "../tahoe/pte.h"
+#include "../tahoe/mtpr.h"
 
 #include "../tahoevba/vbavar.h"
-#include "../tahoeif/if_enp.h"
-#include "../machine/mtpr.h"
-#include "../tahoeif/if_debug.h"
+#include "../tahoeif/if_enpreg.h"
 
-#define ENP0_PHYSADDR	0xf40000	/* board # 0 physical base addr */
-#define ENP1_PHYSADDR	0xf60000	/* board # 1 physical base addr */
-#define ENPSTART	0xf02000	/* standard enp start addr 	*/
+#define	ENPVEC	0xc1
+#define ENPSTART	0xf02000	/* standard enp start addr */
+#define	ENPUNIT(dev)	(minor(dev))	/* for enp ram devices */
 
 int	enpprobe(), enpattach(), enpintr();
-extern	nulldev();
-caddr_t	vtoph();
-struct  mbuf *m_tofree();
-struct  vba_device *enpinfo[ NENP ];
-
-/*	Maximun 2 controllers per system supported			*/
-
-long  enpstd[] = { ENP0_PHYSADDR+0x1000,ENP1_PHYSADDR+0x1000, 0 };
-extern	char	enp0utl[], enp1utl[];	/* enp accessible ram map	*/
-char	*enpmap[]= { enp0utl, enp1utl };
-extern	long	ENP0map[], ENP1map[];
-long	*ENPmap[] = {ENP0map, ENP1map};
-long	ENPmapa[] = {0xfff41000, 0xfff61000};
-long	enpismapped[NENP];
-
-unsigned short intvec[4] = 
-	{ 0xc1, 0xc2, 0xc3, 0xc4 };	/* intrvec of upto 4 enps	*/
-
+long	enpstd[] = { 0xf41000, 0xf61000, 0 };
+struct  vba_device *enpinfo[NENP];
 struct  vba_driver enpdriver = 
-{
-/* use of prom based version 
-	enpprobe, 0, enpattach, 0, 0,	enpintr,
-*/
-	enpprobe, 0, nulldev, 0, 
-	enpstd,   "enp", enpinfo, "ENP 20", 0
-};
+    { enpprobe, 0, enpattach, 0, enpstd, "enp", enpinfo, "enp-20", 0 };
 
-int     enpinit(),
-	enpioctl(),
-	enpoutput(),
-	enpreset(),
-	enpbroadcast(),
-	enptimeout();
-
-int	enpcopy();
-
+int	enpinit(), enpioctl(), enpreset(), enpoutput();
 struct  mbuf *enpget();
-
-extern  struct ifnet loif;
 
 /*
  * Ethernet software status per interface.
@@ -89,40 +64,34 @@ extern  struct ifnet loif;
  * es_if, which the routing code uses to locate the interface.
  * This structure contains the output queue for the interface, its address, ...
  */
+struct  enp_softc {
+	struct  arpcom es_ac;           /* common ethernet structures */
+#define es_if		es_ac.ac_if
+#define es_enaddr	es_ac.ac_enaddr
+	short	es_flags;		/* flags for devices */
+	short	es_ivec;		/* interrupt vector */
+	struct	pte *es_map;		/* map for dual ported memory */
+	caddr_t	es_ram;			/* virtual address of mapped memory */
+} enp_softc[NENP]; 
+extern	struct ifnet loif;
 
-struct 	enp_softc	enp_softc[NENP];
-long	stat_addr[NENP];	/* enp statistic addr (for nstat use) */
-long	ring_addr[NENP];	/* enp dev ring addresses (for nstat use) */
-int 	numenp = NENP;
-int	enp_intr = 0, 		/* no. of enp_to_host interrupts */
-	host_intr = 0;		/* no. of host_to_enp interrupts */
-short	enpram[NENP];		/* open/close flags for enp devices */
-/*	Debugging tools, used to trace input packets */
-extern 	int	printerror;	/* error print flag, from if_ace.c */
-int	save_enp_inpkt = 0;
-#define	ENPTRACE(X)	if (save_enp_inpkt) X;
-
-struct 	inp_err 	enperr[NENP];
-
-/*
- * Probe for device.
- */
-
-enpprobe(reg)
-caddr_t reg;
+enpprobe(reg, vi)
+	caddr_t reg;
+	struct vba_device *vi;
 {
-	static	int 	unit=0;
-	register ENPDEVICE	*addr = (ENPDEVICE *)reg;
+	register br, cvec;		/* must be r12, r11 */
+	register struct enpdevice *addr = (struct enpdevice *)reg;
+	struct enp_softc *es = &enp_softc[vi->ui_unit];
 
-	if( (badaddr( addr, 2 ) ) || (badaddr( &addr->enp_ram[0], 2 ) ) )
-		return( 0 );
-	addr->enp_state = S_ENPRESET; /* controller is reset by vbus reset */
-	/* save address of statistic area for nstat uses	*/
-
-	stat_addr[unit] = (long) &(addr->enp_stat); 
-	ring_addr[unit++] = (long) &(addr->enp_toenp); 
-
-	return( ENPSIZE );
+#ifdef lint
+	enpintr(0);
+#endif
+	if (badaddr(addr, 2) || badaddr(&addr->enp_ram[0], 2))
+		return (0);
+	es->es_ivec = --vi->ui_hd->vh_lastiv;
+	addr->enp_state = S_ENPRESET;		/* reset by VERSAbus reset */
+	br = 0x14, cvec = es->es_ivec;		/* XXX */
+	return (sizeof (struct enpdevice));
 }
 
 /*
@@ -130,166 +99,110 @@ caddr_t reg;
  * record.  System will initialize the interface when it is ready
  * to accept packets. 
  */
-
-enpattach( md )
-register struct vba_device *md;
+enpattach(ui)
+	register struct vba_device *ui;
 {
-	struct enp_softc 	*es = &enp_softc[md->ui_unit];
-	register struct ifnet 	*ifp = &es->es_if;
-	register ENPDEVICE 	*addr = (ENPDEVICE *)md->ui_addr;
-	struct sockaddr_in 	*sin;
+	struct enp_softc *es = &enp_softc[ui->ui_unit];
+	register struct ifnet *ifp = &es->es_if;
+	register struct enpdevice *addr = (struct enpdevice *)ui->ui_addr;
 
-	enpgetaddr( md->ui_unit );
-
-	ifp->if_unit = md->ui_unit;
+	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "enp";
 	ifp->if_mtu = ETHERMTU;
-
-/*	bcopy(&es->es_boardaddr, es->es_enaddr, sizeof(es->es_enaddr)); */
-
-	sin = (struct sockaddr_in *)&es->es_if.if_addr;
-	sin->sin_family = AF_INET;
+	/*
+	 * Get station's addresses.
+	 */
+	enpcopy(&addr->enp_addr.e_baseaddr, es->es_enaddr,
+	    sizeof (es->es_enaddr));
+	printf("enp%d: hardware address %s\n", ui->ui_unit,
+	    ether_sprintf(es->es_enaddr));
+	/*
+	 * Allocate and map ram.
+	 */
+	vbmemalloc(128, ((caddr_t)addr)+0x1000, &es->es_map, &es->es_ram);
 
 	ifp->if_init = enpinit;
 	ifp->if_ioctl = enpioctl;
 	ifp->if_output = enpoutput;
 	ifp->if_reset = enpreset;
+	ifp->if_flags = IFF_BROADCAST;
 	if_attach(ifp);
 }
 
-
 /*
- * Reset of interface after UNIBUS reset.
+ * Reset of interface after "system" reset.
  */
-enpreset(unit)
-int unit;
+enpreset(unit, vban)
+	int unit, vban;
 {
-	register struct vba_device *md;
+	register struct vba_device *ui;
 
-	if (unit >= NENP || (md = enpinfo[unit]) == 0 || md->ui_alive == 0)
-		return(ENODEV);
-
+	if (unit >= NENP || (ui = enpinfo[unit]) == 0 || ui->ui_alive == 0 ||
+	    ui->ui_vbanum != vban)
+		return;
+	printf(" enp%d", unit);
 	enpinit(unit);
 }
 
 /*
- * Initialization of interface; clear recorded pending
- * operations.
+ * Initialization of interface; clear recorded pending operations.
  */
-
-enpinit( unit )
-int unit;
+enpinit(unit)
+	int unit;
 {
-	struct enp_softc 	*es = &enp_softc[unit];
-	ENPDEVICE 		*addr;
-	int i, s;
-	u_char *cp, *ap;
-	register struct ifnet 	*ifp = &es->es_if;
-	register struct sockaddr_in *sin, *sinb;
+	struct enp_softc *es = &enp_softc[unit];
+	register struct vba_device *ui = enpinfo[unit];
+	struct enpdevice *addr;
+	register struct ifnet *ifp = &es->es_if;
+	int s;
 
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-
-	if ( !enpismapped[unit] ) {
-		ioaccess(ENPmap[unit],ENPmapa[unit],ENPBPTE);
-		++enpismapped[unit];
+	if (ifp->if_addrlist == (struct ifaddr *)0)
+		return;
+	if ((ifp->if_flags & IFF_RUNNING) == 0) {
+		addr = (struct enpdevice *)ui->ui_addr;
+		s = splimp();
+		RESET_ENP(addr);
+		DELAY(200000);
+		addr->enp_intrvec = es->es_ivec;
+		es->es_if.if_flags |= IFF_RUNNING;
+		splx(s);
 	}
-	if ((addr = (ENPDEVICE *)enpinfo[unit]->ui_addr) == (ENPDEVICE *)0)
-		return(ENODEV);
-	s = splimp();
-	RESET_ENP( addr );
-	DELAY( 200000 );
-
-#ifdef notdef
-/* only needed if not downloading ( ie, ROM-resident ENP code) */
-	addr->enp_intrvec = intvec[unit];
-	ENP_GO( addr,ENPSTART );
-	DELAY( 200000 );
-/* end of ROM-resident */
-#endif notdef
-
-	es->es_if.if_flags |= IFF_UP|IFF_RUNNING; /* open for business*/
-	splx(s);
-
-	if_rtinit( &es->es_if,RTF_UP );
-	arpwhohas(&es->es_ac, &sin->sin_addr);
 }
-
 
 /*
  * Ethernet interface interrupt.
  */
-
-enpintr( unit )
+enpintr(unit)
+	int unit;
 {
-	register ENPDEVICE 		*addr;
-	register BCB			*bcbp;
-	register struct vba_device	 *md;
+	register struct enpdevice *addr;
+	register BCB *bcbp;
 
-	enp_intr++;
-
-	if (unit >= NENP || (md = enpinfo[unit]) == 0)
+	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
+	if (!IS_ENP_INTR(addr))
 		return;
-
-	addr = (ENPDEVICE *)md->ui_addr;
-
-	if( IS_ENP_INTR(addr) == 0 )
-		return;
-
-	ACK_ENP_INTR( addr );
-
-	while( (bcbp = (BCB *)ringget( &addr->enp_tohost )) != 0 )
-	{
-		enpread( &enp_softc[ unit ],bcbp, unit );
-		ringput( &addr->enp_enpfree,bcbp ); 
+	ACK_ENP_INTR(addr);
+	while ((bcbp = (BCB *)ringget(&addr->enp_tohost )) != 0) {
+		(void) enpread(&enp_softc[unit], bcbp, unit);
+		ringput(&addr->enp_enpfree, bcbp); 
 	}
-	return(0);
-}
-
-#define	MAXBLEN	1500
-char	errpkt[MAXBLEN];
-int	bufptr = 0;
-int	maxl_tosave = 200;		/* save only the first 200 bytes */
-
-saverrpkt(errbuf, errtype, len)
-register u_char *errbuf;
-int errtype, len;
-{
-	int remain, newptr;
-
-	remain = MAXBLEN - bufptr;
-	if (remain < 50)		/* if too small			*/
-		return;			/* no space avail		*/
-	len = (len > maxl_tosave || len <= 0) ? maxl_tosave : len;
-	len = len > remain ? (remain - 2*sizeof(len)): len;
-	newptr = bufptr + len + 2*sizeof(len);
-	if (newptr <= MAXBLEN) {
-		enpcopy((char *)&len, &errpkt[bufptr], sizeof(len));
-		enpcopy((char *)&errtype, &errpkt[bufptr+sizeof(len)],
-			sizeof(errtype));
-		enpcopy(errbuf, &errpkt[bufptr+(2*sizeof(len))], len);
-	}
-	bufptr = newptr;
 }
 
 /*
  * Read input packet, examine its packet type, and enqueue it.
  */
-
-enpread( es, bcbp, unit )
-struct	enp_softc *es;
-register BCB *bcbp;
-int	unit;
+enpread(es, bcbp, unit)
+	struct enp_softc *es;
+	register BCB *bcbp;
+	int unit;
 {
 	register struct ether_header *enp;
 	struct mbuf *m;
-	long int  s, v;
-	register short *vp = (short *)&v,
-			*sp;
+	long int s;
 	int len, off, resid, enptype;
 	register struct ifqueue *inq;
 
 	es->es_if.if_ipackets++; 
-
 	/*
 	 * Get input data length.
 	 * Get pointer to ethernet header (in input buffer).
@@ -297,106 +210,75 @@ int	unit;
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
-
-	len = bcbp->b_msglen - SIZEOF_ETHEADER;
-#ifdef TAHOE
-	sp = (short *)&bcbp->b_addr;
-	*vp = *sp; vp[1] = sp[1];
-	enp = (struct ether_header *) v;
-#else
+	len = bcbp->b_msglen - sizeof (struct ether_header);
 	enp = (struct ether_header *)bcbp->b_addr;
-#endif TAHOE
-
-#define enpdataaddr(enp, off, type) ((type)(((caddr_t)(((char *)enp)+SIZEOF_ETHEADER)+(off))))
-
-	enptype = enp->ether_type;
-	if (enptype >= ETHERPUP_TRAIL && enptype < ETHERPUP_TRAIL+ETHERPUP_NTRAILER) 
-	{
-		off = (enptype - ETHERPUP_TRAIL) * 512;
-		if (off >= ETHERMTU) {
-			enperr[unit].bad_offset++;
-			ENPTRACE(saverrpkt((char *)enp, B_OFFSET, bcbp->b_msglen)); 
-
-			goto badinput;
-		}
-		enptype = *enpdataaddr(enp, off, u_short *);
-		resid = *(enpdataaddr(enp, off+2, u_short *));
-
-		if (off + resid > len) {
-			enperr[unit].bad_length++;
-			ENPTRACE(saverrpkt((char *)enp, B_LENGTH, bcbp->b_msglen)); 
-			goto badinput;
-		}
+#define enpdataaddr(enp, off, type) \
+    ((type)(((caddr_t)(((char *)enp)+sizeof (struct ether_header))+(off))))
+	enp->ether_type = ntohs((u_short)enp->ether_type);
+	if (enp->ether_type >= ETHERTYPE_TRAIL &&
+	    enp->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+		off = (enp->ether_type - ETHERTYPE_TRAIL) * 512;
+		if (off >= ETHERMTU)
+			goto setup;
+		enp->ether_type = ntohs(*enpdataaddr(enp, off, u_short *));
+		resid = ntohs(*(enpdataaddr(enp, off+2, u_short *)));
+		if (off + resid > len)
+			goto setup;
 		len = off + resid;
-	} 
-	else
+	} else
 		off = 0;
+	if (len == 0)
+		goto setup;
 
-	if( len == 0 ) {
-		enperr[unit].bad_length++;
-		ENPTRACE(saverrpkt((char *)enp, B_LENGTH, bcbp->b_msglen)); 
-		goto badinput;
-	}
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; enpget will then force this header
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
+	m = enpget(bcbp->b_addr, len, off, &es->es_if);
+	if (m == 0)
+		goto setup;
+	if (off) {
+		struct ifnet *ifp;
 
-	m = enpget(bcbp, len, off);
-	if( m == 0 )  {
-		enperr[unit].h_nobuffer++; /* host runs out of buf */
-		goto badinput;
-	}
-	if( off )
-	{
+		ifp = *(mtod(m, struct ifnet **));
 		m->m_off += 2 * sizeof (u_short);
 		m->m_len -= 2 * sizeof (u_short);
+		*(mtod(m, struct ifnet **)) = ifp;
 	}
+	switch (enp->ether_type) {
 
-	switch (enptype) 
-	{
 #ifdef INET
-	case ETHERPUP_IPTYPE:
-#ifdef notdef
-		arpipin(enp, m);
-#endif notdef
+	case ETHERTYPE_IP:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
-
-	case ETHERPUP_ARPTYPE:
-		arpinput(&es->es_ac, m);
-		return(0);
 #endif
-	default:	/* unrecognized ethernet header */
-		enperr[unit].bad_packetype++;
-		if (printerror) { 
-			printf("\nenp%d: Undefined packet type 0x%x ", unit,
-				enp->ether_type);
-			printf("from host: %x.%x.%x.%x.%x.%x\n", 
-				enp->ether_shost[0], enp->ether_shost[1], 
-				enp->ether_shost[2], enp->ether_shost[3],
-				enp->ether_shost[4], enp->ether_shost[5]);
-		}	/* end debugging aid	*/
-		ENPTRACE(saverrpkt((char *)enp, B_PACKETYPE, bcbp->b_msglen)); 
-		m_freem(m);
-		goto badinput;
-	}
+	case ETHERTYPE_ARP:
+		arpinput(&es->es_ac, m);
+		goto setup;
 
-	if (IF_QFULL(inq)) 
-	{
-		enperr[unit].inq_full++;
+#ifdef NS
+	case ETHERTYPE_NS:
+		schednetisr(NETISR_NS);
+		inq = &nsintrq;
+		break;
+#endif
+	default:
+		m_freem(m);
+		goto setup;
+	}
+	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
-		return(0);
+		goto setup;
 	}
 	s = splimp();
 	IF_ENQUEUE(inq, m);
 	splx(s);
-badinput:
-	return(0);         /* sanity */
+setup:
+	return (0);
 }
 
 /*
@@ -408,83 +290,69 @@ badinput:
  * loop device to kludge around the fact that 3com interfaces can't
  * talk to themselves.
  */
-
 enpoutput(ifp, m0, dst)
-struct ifnet *ifp;
-struct mbuf *m0;
-struct sockaddr *dst;
+	struct ifnet *ifp;
+	struct mbuf *m0;
+	struct sockaddr *dst;
 {
-	int type, s, error;
-	struct ether_addr edst;
-	struct in_addr idst;
-
 	register struct enp_softc *es = &enp_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct ether_header *enp;
 	register int off, i;
+	struct mbuf *mcopy = (struct mbuf *)0;
+	int type, s, error, usetrailers;
+	u_char edst[6];
+	struct in_addr idst;
 
-	struct mbuf *mcopy = (struct mbuf *) 0;         /* Null */
-	int unit = ifp->if_unit;
-
-	switch( dst->sa_family )
-	{
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
+		error = ENETDOWN;
+		goto bad;
+	}
+	switch (dst->sa_family) {
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-
-		/* translate internet to ethernet address */
-
-		switch(arpresolve(&es->es_ac, m, &idst, &edst)) {
-
-		   	case ARPRESOLVE_WILLSEND:
-				return (0);	/* if not yet resolved */
-		   	case ARPRESOLVE_BROADCAST:
-				mcopy = m_copy(m, 0, (int)M_COPYALL);
-				if (mcopy)
-					looutput(&loif, mcopy, dst);
-
-				/* falls through ... */
-		   	case ARPRESOLVE_OK:
-				break;
+		if (!arpresolve(&es->es_ac, m, &idst, edst, &usetrailers))
+			return (0);	/* if not yet resolved */
+		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
+		    sizeof (edst)))
+			mcopy = m_copy(m, 0, (int)M_COPYALL);
+		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
+		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
+			type = ETHERTYPE_TRAIL + (off>>9);
+			m->m_off -= 2 * sizeof (u_short);
+			m->m_len += 2 * sizeof (u_short);
+			*mtod(m, u_short *) = ETHERTYPE_IP;
+			*(mtod(m, u_short *) + 1) = m->m_len;
+			goto gottrailertype;
 		}
-		off = ((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
-			if (off > 0 && (off & 0x1ff) == 0 &&
-			    m->m_off >= MMINOFF + 2 * sizeof (u_short)) 
-			{
-				type = ETHERPUP_TRAIL + (off>>9);
-				m->m_off -= 2 * sizeof (u_short);
-				m->m_len += 2 * sizeof (u_short);
-				*mtod(m, u_short *) = ETHERPUP_IPTYPE;
-				*(mtod(m, u_short *) + 1) = m->m_len;
-				goto gottrailertype;
-			}
-
-		type = ETHERPUP_IPTYPE;
+		type = ETHERTYPE_IP;
 		off = 0;
 		goto gottype;
 #endif
-
-#ifdef notdef
-	case AF_RAW:
-		enp = mtod(m, struct ether_header *);
-		if (m->m_len < sizeof *enp) 
-		{
-			error = EMSGSIZE;
-			goto bad;
-		}
-		goto gotheader;
+#ifdef NS
+	case AF_NS:
+		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
+		    (caddr_t)edst, sizeof (edst));
+		if (!bcmp((caddr_t)edst, (caddr_t)&ns_broadhost, sizeof (edst)))
+			mcopy = m_copy(m, 0, (int)M_COPYALL);
+		else if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost,
+		    sizeof (edst)))
+			return (looutput(&loif, m, dst));
+		type = ETHERTYPE_NS;
+		off = 0;
+		goto gottype;
 #endif
-
 	case AF_UNSPEC:
 		enp = (struct ether_header *)dst->sa_data;
-		bcopy( enp->ether_dhost, &edst, sizeof(edst));
+		bcopy((caddr_t)enp->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = enp->ether_type;
 		goto gottype;
 
 	default:
-		if (printerror)
-		    printf("enp%d: can't handle af%d\n", unit,dst->sa_family);
+		log(LOG_ERR, "enp%d: can't handle af%d\n",
+		    ifp->if_unit, dst->sa_family);
 		error = EAFNOSUPPORT;
 		goto bad;
 	}
@@ -507,197 +375,143 @@ gottype:
          * allocate another.
          */
 	if (m->m_off > MMAXOFF ||
-	    MMINOFF + SIZEOF_ETHEADER > m->m_off) 
-	{
+	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
 		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) 
-		{
-			enperr[unit].h_nobuffer++; /* host runs out of buf */
+		if (m == 0) {
 			error = ENOBUFS;
 			goto bad;
 		}
 		m->m_next = m0;
 		m->m_off = MMINOFF;
-		m->m_len = SIZEOF_ETHEADER;
-	} 
-	else
-	{
-		m->m_off -= SIZEOF_ETHEADER;
-		m->m_len += SIZEOF_ETHEADER;
+		m->m_len = sizeof (struct ether_header);
+	} else {
+		m->m_off -= sizeof (struct ether_header);
+		m->m_len += sizeof (struct ether_header);
 	}
 	enp = mtod(m, struct ether_header *);
-	bcopy( &edst, enp->ether_dhost, sizeof(enp->ether_dhost) );
-	enp->ether_type = type;
-gotheader:
-	bcopy( es->es_enaddr, enp->ether_shost, sizeof(enp->ether_shost));
+	bcopy((caddr_t)edst, (caddr_t)enp->ether_dhost, sizeof (edst));
+	bcopy((caddr_t)es->es_enaddr, (caddr_t)enp->ether_shost,
+	    sizeof (es->es_enaddr));
+	enp->ether_type = htons((u_short)type);
 
 	/*
 	 * Queue message on interface if possible 
 	 */
-
 	s = splimp();	
-	if( enpput( unit,m ) )
-	{
+	if (enpput(ifp->if_unit, m)) {
 		error = ENOBUFS;
-		enperr[unit].c_nobuffer++; /* controller runs out of buf */
 		goto qfull;
 	}
-	splx( s );	
+	splx(s);	
 	es->es_if.if_opackets++; 
-	return(0);
+	return (mcopy ? looutput(&loif, mcopy, dst) : 0);
 qfull:
-	splx( s );	
+	splx(s);	
 	m0 = m;
 bad:
 	m_freem(m0);
-	return(error);
+	if (mcopy)
+		m_freem(mcopy);
+	return (error);
 }
 
 /*
- * Routine to copy from mbuf chain to transmitter
- * buffer in Multibus memory.
+ * Routine to copy from mbuf chain to transmitter buffer on the VERSAbus.
  */
-
-enpput( unit,m )
-int unit;
-struct mbuf *m;
+enpput(unit, m)
+	int unit;
+	struct mbuf *m;
 {
 	register BCB *bcbp;
-	register ENPDEVICE *addr;
+	register struct enpdevice *addr;
 	register struct mbuf *mp;
 	register u_char *bp;
-	int	 ctr = 0;
-	long int	v;
-	register short *vp = (short *)&v,
-			*sp;
+	register u_int len;
+	u_char *mcp;
 
-	addr = (ENPDEVICE *)enpinfo[ unit ]->ui_addr;
-
-	if ( ringempty( &addr->enp_hostfree ) ) 
-			return( 1 );	
-
-	bcbp = (BCB *)ringget( &addr->enp_hostfree );
+	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
+	if (ringempty(&addr->enp_hostfree)) 
+		return (1);	
+	bcbp = (BCB *)ringget(&addr->enp_hostfree);
 	bcbp->b_len = 0;
-#ifdef TAHOE
-	sp = (short *)&bcbp->b_addr;
-	*vp = *sp; vp[1] = sp[1];
-	bp = (u_char *)v;
-#else
 	bp = (u_char *)bcbp->b_addr;
-#endif TAHOE
-	for (mp = m; mp; mp = mp->m_next) 
-	{
-		register unsigned len;
-		u_char *mcp;
-
+	for (mp = m; mp; mp = mp->m_next) {
 		len = mp->m_len;
-		if( len == 0 )
+		if (len == 0)
 			continue;
-		mcp = mtod( mp,u_char * );
-		enpcopy( mcp,bp,len );
+		mcp = mtod(mp, u_char *);
+		enpcopy(mcp, bp, len);
 		bp += len;
 		bcbp->b_len += len;
 	}
-	bcbp->b_len = max( MINPKTSIZE,bcbp->b_len );
+	bcbp->b_len = max(ETHERMIN, bcbp->b_len);
 	bcbp->b_reserved = 0;
-	if ( ringput( &addr->enp_toenp,bcbp ) == 1 ) {
-		host_intr++;
-		INTR_ENP( addr );
-	}
+	if (ringput(&addr->enp_toenp, bcbp) == 1)
+		INTR_ENP(addr);
 	m_freem(m);
-	return( 0 );
+	return (0);
 }
 
 /*
- * Routine to copy from Multibus memory into mbufs.
+ * Routine to copy from VERSAbus memory into mbufs.
  *
  * Warning: This makes the fairly safe assumption that
  * mbufs have even lengths.
  */
 struct mbuf *
-enpget( bcbp, totlen, off0 )
-register BCB *bcbp;
-int totlen, off0;
+enpget(rxbuf, totlen, off0, ifp)
+	u_char *rxbuf;
+	int totlen, off0;
+	struct ifnet *ifp;
 {
+	register u_char *cp, *mcp;
 	register struct mbuf *m;
-	register int off = off0;
-	register unsigned char *cp;
-	long int	v;
-	register short *vp = (short *)&v,
-			*sp;
+	struct mbuf *top = 0, **mp = &top;
+	int len, off = off0;
 
-	int len;
-	struct mbuf *top = 0;
-	struct mbuf **mp = &top;
-
-#ifdef TAHOE
-	sp = (short *)&bcbp->b_addr;
-	*vp = *sp; vp[1] = sp[1];
-	cp = (unsigned char *)v + SIZEOF_ETHEADER;
-#else
-	cp = (unsigned char *)bcbp->b_addr + SIZEOF_ETHEADER;
-#endif TAHOE
-
-	while( totlen > 0 )
-	{
-		u_char *mcp;
-
+	cp = rxbuf + sizeof (struct ether_header);
+	while (totlen > 0) {
 		MGET(m, M_DONTWAIT, MT_DATA);
 		if (m == 0) 
 			goto bad;
-		if( off )
-		{
+		if (off) {
 			len = totlen - off;
-#ifdef TAHOE
-			sp = (short *)&bcbp->b_addr;
-			*vp = *sp; vp[1] = sp[1];
-			cp = (unsigned char *)v + SIZEOF_ETHEADER
-				+ off;
-#else
-			cp = (unsigned char *)bcbp->b_addr + 
-				SIZEOF_ETHEADER + off;
-#endif TAHOE
-		} 
-		else
+			cp = rxbuf + sizeof (struct ether_header) + off;
+		} else
 			len = totlen;
-
-
-		if (len >= CLBYTES) {
+		if (len >= NBPG) {
 			struct mbuf *p;
 
-			MCLGET(p, 1);
-			if (p != 0) {
-				m->m_len = len = CLBYTES;
-				m->m_off = (int)p - (int)m;
-			} else  {
+			MCLGET(m);
+			if (m->m_len == CLBYTES)
+				m->m_len = len = MIN(len, CLBYTES);
+			else
 				m->m_len = len = MIN(MLEN, len);
-				m->m_off = MMINOFF;
-				}
-		} else  { 
+		} else {
 			m->m_len = len = MIN(MLEN, len);
 			m->m_off = MMINOFF;
 		}
-
 		mcp = mtod(m, u_char *);
+		if (ifp) {
+			/*
+			 * Prepend interface pointer to first mbuf.
+			 */
+			*(mtod(m, struct ifnet **)) = ifp;
+			mcp += sizeof (ifp);
+			len -= sizeof (ifp);
+			ifp = (struct ifnet *)0;
+		}
 		enpcopy(cp, mcp, len);
 		cp += len;
 		*mp = m;
 		mp = &m->m_next;
-		if (off == 0) 
-		{
+		if (off == 0) {
 			totlen -= len;
 			continue;
 		}
 		off += len;
-		if (off == totlen) 
-		{
-#ifdef TAHOE
-			sp = (short *)&bcbp->b_addr;
-			*vp = *sp; vp[1] = sp[1];
-			cp = (unsigned char *)v + SIZEOF_ETHEADER;
-#else
-			cp = (unsigned char *)bcbp->b_addr + SIZEOF_ETHEADER;
-#endif TAHOE
+		if (off == totlen) {
+			cp = rxbuf + sizeof (struct ether_header);
 			off = 0;
 			totlen = off0;
 		}
@@ -708,269 +522,123 @@ bad:
 	return (0);
 }
 
+enpcopy(from, to, cnt)
+	register char *from, *to;
+	register cnt;
+{
+	register c;
+	register short *f, *t;
+
+	if (((int)from&01) && ((int)to&01)) {
+		/* source & dest at odd addresses */
+		*to++ = *from++;
+		--cnt;
+	}
+	if (cnt > 1 && (((int)to&01) == 0) && (((int)from&01) == 0)) {
+		t = (short *)to;
+		f = (short *)from;
+		for (c = cnt>>1; c; --c)	/* even address copy */
+			*t++ = *f++;
+		cnt &= 1;
+		if (cnt) {			/* odd len */
+			from = (char *)f;
+			to = (char *)t;
+			*to = *from;
+		}
+	}
+	while (cnt-- > 0)	/* one of the address(es) must be odd */
+		*to++ = *from++;
+}
+
 /*
  * Process an ioctl request.
- *    this can be called via the "socket" route for SIOCSIFADDR or
- *	by the cdev/inode route for SIOCSIFCCFWR/RD
- *
  */
-
 enpioctl(ifp, cmd, data)
-register struct ifnet *ifp;
-int cmd;
-caddr_t data;
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
 {
-	register int	unit = ifp->if_unit;
-	register struct vba_device *md;
-	int s, error = 0;
-	struct sockaddr_in	*sin;
-	struct sockaddr		*sa;
-	struct enp_softc	*es = &enp_softc[ifp->if_unit];
-	ENPDEVICE		*addr;
-	struct config_entry	*cf;
-	struct ifreq *ifr	= (struct ifreq *)data;
-	struct sockaddr_in	*et_addr;
-	int code, i;
-
-
-	if (unit >= NENP || (md = enpinfo[unit]) == 0 || md->ui_alive == 0)
-		return(ENODEV);
+	register struct ifaddr *ifa = (struct ifaddr *)data;
+	struct enpdevice *addr;
+	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		s = splimp();
-		sa = (struct sockaddr *)&ifr->ifr_addr;
-		if (sa->sa_family == AF_UNSPEC ) {
-			if (sa->sa_data[0] & 1){ /*broad or multi-cast*/
-				splx( s );
-				return( EINVAL );
-			}
-			bcopy(sa->sa_data,es->es_enaddr,sizeof(es->es_enaddr));
-			enpinit( ifp->if_unit);
+		ifp->if_flags |= IFF_UP;
+		switch (ifa->ifa_addr.sa_family) {
+#ifdef INET
+		case AF_INET:
+			enpinit(ifp->if_unit);
+			((struct arpcom *)ifp)->ac_ipaddr =
+			    IA_SIN(ifa)->sin_addr;
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+			break;
+#endif
+#ifdef NS
+		case AF_NS: {
+			struct ns_addr *ina = &IA_SNS(ifa)->sns_addr;
+			struct enp_softc *es = &enp_softc[ifp->if_unit];
+
+			if (!ns_nullhost(*ina)) {
+				ifp->if_flags &= ~IFF_RUNNING;
+				addr = (struct enpdevice *)
+				    enpinfo[ifp->if_unit]->ui_addr;
+				enpsetaddr(ifp->if_unit, addr,
+				    ina->x_host.c_host);
+			} else
+				ina->x_host = *(union ns_host *)es->es_enaddr;
+			enpinit(ifp->if_unit);
 			break;
 		}
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		if (sin->sin_family != AF_INET){
-			splx( s );
-			return( EINVAL );
+#endif
+		default:
+			enpinit(ifp->if_unit);
+			break;
 		}
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);     /* delete previous route */
-		enpsetaddr(ifp, sin);
-		enpinit(ifp->if_unit);
-		enpgetaddr( ifp->if_unit );
-		splx(s);
 		break;
 
-
-	case SIOCSETETADDR:	/* Set Ethernet station address */
-		s = splimp();
-		ifp->if_flags &= (~IFF_RUNNING | IFF_UP);
-		et_addr = (struct sockaddr_in *)&ifr->ifr_addr;
-		addr = (ENPDEVICE *)enpinfo[ifp->if_unit]->ui_addr;
-
-		/* Set station address and reset controller board */
-		{
-		u_char	*to = &addr->enp_addr.e_baseaddr.ea_addr[0];
-		char	*from = &et_addr->sin_zero[2];
-		int	i;
-
-		for (i = 0 ; i < ETHADDR_SIZE; i++) 
-			*to++ = (u_char) (~(*from++ & 0xff));
-		}
-		enpcopy(&addr->enp_addr.e_listsize, &code, sizeof(code)); 
-		code |= E_ADDR_SUPP;
-		enpcopy(&code, &addr->enp_addr.e_listsize, sizeof(code)); 
-		enpreset(ifp->if_unit);		/* Re-initialize */
-		enpgetaddr(ifp->if_unit);
-		splx(s);
-		break;
-
-	case SIOCGETETADDR:	/* Get Foreign Hosts' Ethernet addresses */
-		arpwhohas(&es->es_ac, (struct in_addr *)ifr->ifr_data);
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags&IFF_UP) == 0 && ifp->if_flags&IFF_RUNNING) {
+			enpinit(ifp->if_unit);		/* reset board */
+			ifp->if_flags &= ~IFF_RUNNING;
+		} else if (ifp->if_flags&IFF_UP &&
+		     (ifp->if_flags&IFF_RUNNING) == 0)
+			enpinit(ifp->if_unit);
 		break;
 
 	default:
 		error = EINVAL;
 	}
-	return(error);
+	splx(s);
+	return (error);
 }
 
-enpsetaddr(ifp, sin)
-register struct ifnet *ifp;
-register struct sockaddr_in *sin;
+enpsetaddr(unit, addr, enaddr)
+	int unit;
+	struct enpdevice *addr;
+	u_char *enaddr;
 {
+	u_char *cp;
+	int i, code;
 
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
-}
-
-
-/*
- * Get the ethernet addr, store it and print it
- * Read the ethernet address off the board, one byte at a time.
- *	put it in enp_softc
- */
-
-
-enpgetaddr( unit )
-int unit;
-{
-	register struct enp_softc	*es = &enp_softc[unit];
-	register ENPDEVICE *addr =(ENPDEVICE *)enpinfo[unit]->ui_addr;
-	int i;
-	
-#ifdef TAHOE
-	enpcopy(&addr->enp_addr.e_baseaddr, &es->es_boardaddr, sizeof(es->es_boardaddr));
-#else
-	es->es_boardaddr = addr->enp_addr.e_baseaddr;
-#endif TAHOE
-	bcopy(&es->es_boardaddr, es->es_enaddr, ETHADDR_SIZE);
-	return( 1 );
-}
-
-/*
- * enpram device
- *
- */
-
-enpr_open( dev )
-{
-	register int	unit = minor(dev);
-	register struct vba_device *md;
-	register ENPDEVICE	*addr;
-
-	if (unit >= NENP || (md = enpinfo[unit]) == 0 || md->ui_alive == 0 ||
-	    (addr = (ENPDEVICE *)md->ui_addr) == (ENPDEVICE *)0)
-		return(ENODEV);
-	if (addr->enp_state != S_ENPRESET)
-		return(EACCES);  /* enp is not in reset state, don't open  */
-	if ( !enpismapped[unit] ) {
-		ioaccess(ENPmap[unit],ENPmapa[unit],ENPBPTE);
-		++enpismapped[unit];
-	}
-	enpram[unit] = ENP_OPEN;
-	return( 0 );
-}
-
-enpr_close(dev)
-{
-	enpram[minor(dev)] = ENP_CLOSE;
-	return( 0 );
-}
-
-enpr_read( dev,uio )
-int dev;
-register struct uio *uio;
-{
-	register ENPDEVICE *addr;
-	register struct iovec *iov;
-	register r=0;
-
-	if (enpram[minor(dev)] != ENP_OPEN)
-		return(EACCES);
-	if ( uio->uio_offset > RAM_SIZE )
-		return( ENODEV );
-	if ( uio->uio_offset + iov->iov_len > RAM_SIZE )
-		iov->iov_len = RAM_SIZE - uio->uio_offset;
-	addr = (ENPDEVICE *)enpinfo[ minor( dev ) ]->ui_addr;
-	iov  = uio->uio_iov;
-
-	if( r = enpcopyout( &addr->enp_ram[ uio->uio_offset ], iov->iov_base,
-			 iov->iov_len ) )
-		 return( r );
-
-	uio->uio_resid -= iov->iov_len;
-	iov->iov_len = 0;
-
-	return( 0 );
-}
-
-enpr_write( dev,uio )
-int dev;
-register struct uio *uio;
-{
-	register ENPDEVICE *addr;
-	register struct iovec *iov;
-	register r=0;
-
-	if (enpram[minor(dev)] != ENP_OPEN)
-		return(EACCES);
-	addr = (ENPDEVICE *)enpinfo[ minor( dev ) ]->ui_addr;
-	iov  = uio->uio_iov;
-
-	if ( uio->uio_offset > RAM_SIZE )
-		return( ENODEV );
-	if ( uio->uio_offset + iov->iov_len > RAM_SIZE )
-		iov->iov_len = RAM_SIZE - uio->uio_offset;
-	if( r = enpcopyin( iov->iov_base, &addr->enp_ram[ uio->uio_offset ],
-			iov->iov_len ) )
-		return( r );
-
-	uio->uio_resid -= iov->iov_len;
-	iov->iov_len = 0;
-
-	return( 0 );
-}
-
-enpr_ioctl( dev,cmd,arg,fflag )
-dev_t dev;
-caddr_t *arg;
-{
-	register ENPDEVICE *addr;
-	long int	v;
-	register short	*vp = (short *)&v, *sp;
-	register unit = minor(dev);
-	register struct vba_device *md;
-
-	if (unit >= NENP || (md = enpinfo[unit]) == 0 || md->ui_alive == 0 ||
-	    (addr = (ENPDEVICE *)md->ui_addr) == (ENPDEVICE *)0)
-		return(ENODEV);
-	switch( cmd )
-	{
-		case ENPIOGO:
-/* not needed if prom based version */
-#ifdef TAHOE
-			sp = (short *)&addr->enp_base;
-			v = (int)addr;
-			*sp = *vp; sp[1] = vp[1];
-#else
-			addr->enp_base = (int)addr;
-#endif TAHOE
-			addr->enp_intrvec = intvec[ unit ];
-			ENP_GO( addr, ENPSTART );
-			DELAY( 200000 );
-			enpattach( enpinfo[ unit ] );
-			enpinit( unit );
-			addr->enp_state = S_ENPRUN;  /* it is running now */
-/* end of not needed */
-
-			break;
-
-		case ENPIORESET:
-			RESET_ENP( addr );
-			addr->enp_state = S_ENPRESET;  /* it is reset now */
-			DELAY( 100000 );
-			break;
-	}
-	return( 0 );
+	cp = &addr->enp_addr.e_baseaddr.ea_addr[0];
+	for (i = 0; i < 6; i++)
+		*cp++ = ~*enaddr++;
+	enpcopy(&addr->enp_addr.e_listsize, &code, sizeof (code)); 
+	code |= E_ADDR_SUPP;
+	enpcopy(&code, &addr->enp_addr.e_listsize, sizeof (code)); 
+	enpinit(unit);
 }
 
 /* 
- * routines to synchronize enp and host 
+ * Routines to synchronize enp and host.
  */
-
 static
-ringinit( rp,size )
-register RING *rp;
+ringinit(rp, size)
+	register RING *rp;
 {
-	register int	i;
+	register int i;
 	register short *sp; 
 
 	rp->r_rdidx = rp->r_wrtidx = 0;
@@ -978,180 +646,160 @@ register RING *rp;
 }
 
 static
-ringempty( rp )
-register RING *rp;
+ringempty(rp)
+	register RING *rp;
 {
-	return( rp->r_rdidx == rp->r_wrtidx );
+
+	return (rp->r_rdidx == rp->r_wrtidx);
 }
 
 static
-ringfull( rp )
-register RING *rp;
+ringfull(rp)
+	register RING *rp;
 {
 	register short idx;
 
 	idx = (rp->r_wrtidx + 1) & (rp->r_size-1);
-	return( idx == rp->r_rdidx );
+	return (idx == rp->r_rdidx);
 }
 
 static
-ringput( rp,v )
-register RING *rp;
+ringput(rp, v)
+	register RING *rp;
 {
 	register int idx;
-	register short *vp = (short *)&v,
-		       *sp;
 
 	idx = (rp->r_wrtidx + 1) & (rp->r_size-1);
-	if( idx != rp->r_rdidx )
-	{
-#ifdef TAHOE
-		sp = (short *)&rp->r_slot[ rp->r_wrtidx ];
-		*sp = *vp; sp[1] = vp[1];
-#else
-		rp->r_slot[ rp->r_wrtidx ] = v;
-#endif TAHOE
+	if (idx != rp->r_rdidx) {
+		rp->r_slot[rp->r_wrtidx] = v;
 		rp->r_wrtidx = idx;
-		if( (idx -= rp->r_rdidx) < 0 )
+		if ((idx -= rp->r_rdidx) < 0)
 			idx += rp->r_size;
-		return( idx );			/* num ring entries */
+		return (idx);			/* num ring entries */
 	}
-	return( 0 );
+	return (0);
 }
 
 static
-ringget( rp )
-register RING *rp;
+ringget(rp)
+	register RING *rp;
 {
 	register int i = 0;
-	long int v;
-	register short *vp = (short *)&v,
-		       *sp;
 
-	if( rp->r_rdidx != rp->r_wrtidx )
-	{
-#ifdef TAHOE
-		sp = (short *)&rp->r_slot[ rp->r_rdidx ];
-		*vp = *sp; vp[1] = sp[1];
-		i = v;
-#else
-		i = rp->r_slot[ rp->r_rdidx ];
-#endif TAHOE
+	if (rp->r_rdidx != rp->r_wrtidx) {
+		i = rp->r_slot[rp->r_rdidx];
 		rp->r_rdidx = (++rp->r_rdidx) & (rp->r_size-1);
 	}
-	return( i );
-}
-
-#ifdef notdef
-struct mbuf *
-m_tofree( rp )
-register RING *rp;
-{
-	long int v = 0;
-	register short *vp = (short *)&v,
-		       *sp;
-
-	if( rp->r_rdidx != rp->r_wrtidx )
-	{
-#ifdef TAHOE
-		sp = (short *)&rp->r_slot[ rp->r_rdidx ];
-		*vp = *sp; vp[1] = sp[1];
-		/* *sp = 0xffff; sp[1] = 0xffff; */
-#else
-		v = rp->r_slot[ rp->r_rdidx ];
-#endif TAHOE
-	  	rp->r_rdidx = (++rp->r_rdidx) & (rp->r_size-1);
-	}
-	return( (struct mbuf *)v );
-}
-#endif
-static
-fir( rp )
-register RING *rp;
-{
-	long int v;
-	register short *vp = (short *)&v,
-		       *sp;
-
-	if( rp->r_rdidx != rp->r_wrtidx )
-#ifdef TAHOE
-	{
-		sp = (short *)&rp->r_slot[ rp->r_rdidx ];
-		*vp = *sp; vp[1] = sp[1];
-		return( v );
-	}
-#else
-		return( rp->r_slot[ rp->r_rdidx ] );
-#endif TAHOE
-	else   
-		return( 0 );
-}
-
-
-static
-prtbytes( addr )
-register char *addr;
-{
-	register int i;
-
-	for( i = 0; i < 12; i++ )
-	{
-		printf("%X ",*addr&0377);
-		addr++;
-	}
-	printf("\n");
+	return (i);
 }
 
 static
-enpcopy(from, to, cnt)
-register char *from, *to;
-register cnt;
+fir(rp)
+	register RING *rp;
 {
-	register c;
-	register short *f, *t;
 
-	if (((int)from & 01) && ((int)to & 01)) {
-					/* source & dest at odd addresses */
-		*to++ = *from++;
-		--cnt;
-	}
-	if (cnt > 1 && (((int)to & 01)==0) && (((int)from & 01)==0)) {
-		t = (short *) to;
-		f = (short *) from;
-		for( c = cnt>>1; c; --c)	/* even address copy */
-			*t++ = *f++;
-		cnt &= 1;
-		if ( cnt ) {			/* odd len */
-			from = (char *) f;
-			to   = (char *) t;
-			*to = *from;
-		}
-	}
-	while (cnt-- > 0)	/* one of the address(es) must be odd */
-		*to++ = *from++;
-
+	return (rp->r_rdidx != rp->r_wrtidx ? rp->r_slot[rp->r_rdidx] : 0);
 }
 
-static
-enpcopyin(userv, kernv, cnt)
+/*
+ * ENP Ram device.
+ */
+enpr_open(dev)
+	dev_t dev;
 {
+	register int unit = ENPUNIT(dev);
+	struct vba_device *ui;
+	struct enpdevice *addr;
 
-	if (useracc(userv, cnt, 1)) {
-		enpcopy( userv, kernv, cnt );
-		return( 0 );
-	}
-	else	return( EFAULT );
+	if (unit >= NENP || (ui = enpinfo[unit]) == 0 || ui->ui_alive == 0 ||
+	    (addr = (struct enpdevice *)ui->ui_addr) == 0)
+		return (ENODEV);
+	if (addr->enp_state != S_ENPRESET)
+		return (EACCES);  /* enp is not in reset state, don't open  */
+	return (0);
 }
 
-
-static
-enpcopyout(kernv, userv, cnt)
+enpr_close(dev)
+	dev_t dev;
 {
 
-	if (useracc(userv, cnt, 0)) {
-		enpcopy( kernv, userv, cnt );
-		return( 0 );
+	return (0);
+}
+
+enpr_read(dev, uio)
+	dev_t dev;
+	register struct uio *uio;
+{
+	register struct iovec *iov;
+	struct enpdevice *addr;
+	int error;
+
+	if (uio->uio_offset > RAM_SIZE)
+		return (ENODEV);
+	if (uio->uio_offset + iov->iov_len > RAM_SIZE)
+		iov->iov_len = RAM_SIZE - uio->uio_offset;
+	addr = (struct enpdevice *)enpinfo[ENPUNIT(dev)]->ui_addr;
+	iov = uio->uio_iov;
+	error = useracc(iov->iov_base, iov->iov_len, 0);
+	if (error)
+		return (error);
+	enpcopy(&addr->enp_ram[uio->uio_offset], iov->iov_base, iov->iov_len);
+	uio->uio_resid -= iov->iov_len;
+	iov->iov_len = 0;
+	return (0);
+}
+
+enpr_write(dev, uio)
+	dev_t dev;
+	register struct uio *uio;
+{
+	register struct enpdevice *addr;
+	register struct iovec *iov;
+	register error;
+
+	addr = (struct enpdevice *)enpinfo[ENPUNIT(dev)]->ui_addr;
+	iov = uio->uio_iov;
+	if (uio->uio_offset > RAM_SIZE)
+		return (ENODEV);
+	if (uio->uio_offset + iov->iov_len > RAM_SIZE)
+		iov->iov_len = RAM_SIZE - uio->uio_offset;
+	error =  useracc(iov->iov_base, iov->iov_len, 1);
+	if (error)
+		return (error);
+	enpcopy(iov->iov_base, &addr->enp_ram[uio->uio_offset], iov->iov_len);
+	uio->uio_resid -= iov->iov_len;
+	iov->iov_len = 0;
+	return (0);
+}
+
+enpr_ioctl(dev, cmd, data)
+	dev_t dev;
+	caddr_t data;
+{
+	register struct enpdevice *addr;
+	register unit = ENPUNIT(dev);
+	register struct vba_device *ui;
+
+	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
+	switch(cmd) {
+
+	case ENPIOGO:
+/* not needed if prom based version */
+		addr->enp_base = (int)addr;
+		addr->enp_intrvec = enp_softc[unit].es_ivec;
+		ENP_GO(addr, ENPSTART);
+		DELAY(200000);
+		enpinit(unit);
+		addr->enp_state = S_ENPRUN;  /* it is running now */
+/* end of not needed */
+		break;
+
+	case ENPIORESET:
+		RESET_ENP(addr);
+		addr->enp_state = S_ENPRESET;  /* it is reset now */
+		DELAY(100000);
+		break;
 	}
-	else	return( EFAULT );
+	return (0);
 }
 #endif
