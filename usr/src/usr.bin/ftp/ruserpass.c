@@ -6,20 +6,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ruserpass.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <stdio.h>
-#include <utmp.h>
-#include <ctype.h>
 #include <sys/stat.h>
+
+#include <ctype.h>
+#include <err.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "ftp_var.h"
 
-char	*renvlook(), *malloc(), *index(), *getenv(), *getpass(), *getlogin();
-char	*strcpy();
-struct	utmp *getutmp();
+static	int token __P((void));
 static	FILE *cfile;
 
 #define	DEFAULT	1
@@ -36,16 +39,17 @@ static struct toktab {
 	char *tokstr;
 	int tval;
 } toktab[]= {
-	"default",	DEFAULT,
-	"login",	LOGIN,
-	"password",	PASSWD,
-	"passwd",	PASSWD,
-	"account",	ACCOUNT,
-	"machine",	MACH,
-	"macdef",	MACDEF,
-	0,		0
+	{ "default",	DEFAULT },
+	{ "login",	LOGIN },
+	{ "password",	PASSWD },
+	{ "passwd",	PASSWD },
+	{ "account",	ACCOUNT },
+	{ "machine",	MACH },
+	{ "macdef",	MACDEF },
+	{ NULL,		0 }
 };
 
+int
 ruserpass(host, aname, apass, aacct)
 	char *host, **aname, **apass, **aacct;
 {
@@ -53,7 +57,6 @@ ruserpass(host, aname, apass, aacct)
 	char myname[MAXHOSTNAMELEN], *mydomain;
 	int t, i, c, usedefault = 0;
 	struct stat stb;
-	static int token();
 
 	hdir = getenv("HOME");
 	if (hdir == NULL)
@@ -62,12 +65,12 @@ ruserpass(host, aname, apass, aacct)
 	cfile = fopen(buf, "r");
 	if (cfile == NULL) {
 		if (errno != ENOENT)
-			perror(buf);
-		return(0);
+			warn("%s", buf);
+		return (0);
 	}
 	if (gethostname(myname, sizeof(myname)) < 0)
 		myname[0] = '\0';
-	if ((mydomain = index(myname, '.')) == NULL)
+	if ((mydomain = strchr(myname, '.')) == NULL)
 		mydomain = "";
 next:
 	while ((t = token())) switch(t) {
@@ -89,12 +92,12 @@ next:
 				goto match;
 			if (strcasecmp(hostname, tokval) == 0)
 				goto match;
-			if ((tmp = index(hostname, '.')) != NULL &&
+			if ((tmp = strchr(hostname, '.')) != NULL &&
 			    strcasecmp(tmp, mydomain) == 0 &&
 			    strncasecmp(hostname, tokval, tmp-hostname) == 0 &&
 			    tokval[tmp - hostname] == '\0')
 				goto match;
-			if ((tmp = index(host, '.')) != NULL &&
+			if ((tmp = strchr(host, '.')) != NULL &&
 			    strcasecmp(tmp, mydomain) == 0 &&
 			    strncasecmp(host, tokval, tmp - host) == 0 &&
 			    tokval[tmp - host] == '\0')
@@ -118,9 +121,8 @@ next:
 			if (strcmp(*aname, "anonymous") &&
 			    fstat(fileno(cfile), &stb) >= 0 &&
 			    (stb.st_mode & 077) != 0) {
-	fprintf(stderr, "Error: .netrc file is readable by others.\n");
-	fprintf(stderr, 
-		"Remove password or make file unreadable by others.\n\n");
+	warnx("Error: .netrc file is readable by others.");
+	warnx("Remove password or make file unreadable by others.");
 				goto bad;
 			}
 			if (token() && *apass == 0) {
@@ -131,9 +133,8 @@ next:
 		case ACCOUNT:
 			if (fstat(fileno(cfile), &stb) >= 0
 			    && (stb.st_mode & 077) != 0) {
-	fprintf(stderr, "Error: .netrc file is readable by others.\n");
-	fprintf(stderr, 
-		"Remove account or make file unreadable by others.\n\n");
+	warnx("Error: .netrc file is readable by others.");
+	warnx("Remove account or make file unreadable by others.");
 				goto bad;
 			}
 			if (token() && *aacct == 0) {
@@ -144,7 +145,7 @@ next:
 		case MACDEF:
 			if (proxy) {
 				(void) fclose(cfile);
-				return(0);
+				return (0);
 			}
 			while ((c=getc(cfile)) != EOF && c == ' ' || c == '\t');
 			if (c == EOF || c == '\n') {
@@ -201,20 +202,20 @@ next:
 			}
 			break;
 		default:
-	fprintf(stderr, "Unknown .netrc keyword %s\n", tokval);
+			warnx("Unknown .netrc keyword %s", tokval);
 			break;
 		}
 		goto done;
 	}
 done:
 	(void) fclose(cfile);
-	return(0);
+	return (0);
 bad:
 	(void) fclose(cfile);
-	return(-1);
+	return (-1);
 }
 
-static
+static int
 token()
 {
 	char *cp;

@@ -6,26 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <stdio.h>
 #include "ftp_var.h"
 
 /*
  * User FTP -- Command Tables.
  */
-int	setascii(), setbell(), setbinary(), setdebug(), setform();
-int	setglob(), sethash(), setmode(), setpeer(), setport();
-int	setprompt(), setstruct();
-int	settenex(), settrace(), settype(), setverbose();
-int	disconnect(), syst();
-int	cd(), lcd(), delete(), mdelete(), user();
-int	ls(), mls(), get(), mget(), help(), append(), put(), mput();
-int	quit(), renamefile(), status();
-int	quote(), rmthelp(), shell(), site();
-int	pwd(), makedir(), removedir(), setcr();
-int	account(), doproxy(), reset(), setcase(), setntrans(), setnmap();
-int	setsunique(), setrunique(), cdup(), macdef(), domacro();
 int	sizecmd(), modtime(), rmtstatus();
 
 char	accounthelp[] =	"send account command to remote server";
@@ -125,7 +114,7 @@ struct cmd cmdtab[] = {
 	{ "mget",	mgethelp,	1,	1,	1,	mget },
 	{ "mkdir",	mkdirhelp,	0,	1,	1,	makedir },
 	{ "mls",	mlshelp,	1,	1,	1,	mls },
-	{ "mode",	modehelp,	0,	1,	1,	setmode },
+	{ "mode",	modehelp,	0,	1,	1,	setftmode },
 	{ "modtime",	modtimehelp,	0,	1,	1,	modtime },
 	{ "mput",	mputhelp,	1,	1,	1,	mput },
 	{ "nmap",	nmaphelp,	0,	0,	1,	setnmap },

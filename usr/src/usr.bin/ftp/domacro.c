@@ -6,28 +6,24 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)domacro.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)domacro.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <ctype.h>
+#include <signal.h>
+#include <stdio.h>
+#include <strings.h>
 
 #include "ftp_var.h"
 
-#include <signal.h>
-#include <stdio.h>
-#include <errno.h>
-#include <ctype.h>
-#include <sys/ttychars.h>
-
+void
 domacro(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register int i, j;
-	register char *cp1, *cp2;
-	int count = 2, loopflg = 0;
-	char line2[200];
-	extern char **glob(), *globerr;
-	struct cmd *getcmd(), *c;
-	extern struct cmd cmdtab[];
+	int i, j, count = 2, loopflg = 0;
+	char *cp1, *cp2, line2[200];
+	struct cmd *c;
 
 	if (argc < 2 && !another(&argc, &argv, "macro name")) {
 		printf("Usage: %s macro_name.\n", argv[0]);

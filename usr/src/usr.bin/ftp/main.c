@@ -12,84 +12,81 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * FTP User Program -- Command Interface.
  */
-#include "ftp_var.h"
-#include <sys/socket.h>
-#include <sys/ioctl.h>
+/*#include <sys/ioctl.h>*/
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #include <arpa/ftp.h>
 
-#include <signal.h>
-#include <stdio.h>
-#include <errno.h>
 #include <ctype.h>
+#include <err.h>
 #include <netdb.h>
 #include <pwd.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-uid_t	getuid();
-void	intr(), lostpeer();
-extern	char *home;
-char	*getlogin();
+#include "ftp_var.h"
 
+int
 main(argc, argv)
+	int argc;
 	char *argv[];
 {
-	register char *cp;
-	int top;
+	int ch, top;
 	struct passwd *pw = NULL;
-	char homedir[MAXPATHLEN];
+	char *cp, homedir[MAXPATHLEN];
 
 	sp = getservbyname("ftp", "tcp");
-	if (sp == 0) {
-		fprintf(stderr, "ftp: ftp/tcp: unknown service\n");
-		exit(1);
-	}
+	if (sp == 0)
+		errx(1, "ftp/tcp: unknown service");
 	doglob = 1;
 	interactive = 1;
 	autologin = 1;
-	argc--, argv++;
-	while (argc > 0 && **argv == '-') {
-		for (cp = *argv + 1; *cp; cp++)
-			switch (*cp) {
 
-			case 'd':
-				options |= SO_DEBUG;
-				debug++;
-				break;
+	while ((ch = getopt(argc, argv, "dgintv")) != EOF) {
+		switch (*cp) {
+		case 'd':
+			options |= SO_DEBUG;
+			debug++;
+			break;
 			
-			case 'v':
-				verbose++;
-				break;
+		case 'g':
+			doglob = 0;
+			break;
 
-			case 't':
-				trace++;
-				break;
+		case 'i':
+			interactive = 0;
+			break;
 
-			case 'i':
-				interactive = 0;
-				break;
+		case 'n':
+			autologin = 0;
+			break;
 
-			case 'n':
-				autologin = 0;
-				break;
+		case 't':
+			trace++;
+			break;
 
-			case 'g':
-				doglob = 0;
-				break;
+		case 'v':
+			verbose++;
+			break;
 
-			default:
-				fprintf(stdout,
-				  "ftp: %c: unknown option\n", *cp);
-				exit(1);
-			}
-		argc--, argv++;
+		default:
+			(void)fprintf(stderr,
+				"usage: ftp [-dgintv] [host [port]]\n");
+			exit(1);
+		}
 	}
+	argc -= optind;
+	argv += optind;
+
 	fromatty = isatty(fileno(stdin));
 	if (fromatty)
 		verbose++;
@@ -111,11 +108,18 @@ main(argc, argv)
 		(void) strcpy(home, pw->pw_dir);
 	}
 	if (argc > 0) {
+		char *xargv[3];
+		extern char *__progname;
+
 		if (setjmp(toplevel))
 			exit(0);
 		(void) signal(SIGINT, intr);
 		(void) signal(SIGPIPE, lostpeer);
-		setpeer(argc + 1, argv - 1);
+		xargv[0] = __progname;
+		xargv[1] = argv[0];
+		xargv[2] = argv[1];
+		xargv[3] = argv[2];
+		setpeer(argc+1, xargv);
 	}
 	top = setjmp(toplevel) == 0;
 	if (top) {
@@ -138,8 +142,6 @@ intr()
 void
 lostpeer()
 {
-	extern FILE *cout;
-	extern int data;
 
 	if (connected) {
 		if (cout != NULL) {
@@ -167,14 +169,15 @@ lostpeer()
 	pswitch(0);
 }
 
-/*char *
+/*
+char *
 tail(filename)
 	char *filename;
 {
-	register char *s;
+	char *s;
 	
 	while (*filename) {
-		s = rindex(filename, '/');
+		s = strrchr(filename, '/');
 		if (s == NULL)
 			break;
 		if (s[1])
@@ -184,16 +187,16 @@ tail(filename)
 	return (filename);
 }
 */
+
 /*
  * Command parser.
  */
+void
 cmdscanner(top)
 	int top;
 {
-	register struct cmd *c;
-	register int l;
-	struct cmd *getcmd();
-	extern int help();
+	struct cmd *c;
+	int l;
 
 	if (!top)
 		(void) putchar('\n');
@@ -203,7 +206,7 @@ cmdscanner(top)
 			(void) fflush(stdout);
 		}
 		if (fgets(line, sizeof line, stdin) == NULL)
-			quit();
+			quit(0, 0);
 		l = strlen(line);
 		if (l == 0)
 			break;
@@ -246,12 +249,11 @@ cmdscanner(top)
 
 struct cmd *
 getcmd(name)
-	register char *name;
+	char *name;
 {
-	extern struct cmd cmdtab[];
-	register char *p, *q;
-	register struct cmd *c, *found;
-	register int nmatches, longest;
+	char *p, *q;
+	struct cmd *c, *found;
+	int nmatches, longest;
 
 	longest = 0;
 	nmatches = 0;
@@ -280,10 +282,10 @@ getcmd(name)
 
 int slrflag;
 
+void
 makeargv()
 {
 	char **argp;
-	char *slurpstring();
 
 	margc = 0;
 	argp = margv;
@@ -303,8 +305,8 @@ char *
 slurpstring()
 {
 	int got_one = 0;
-	register char *sb = stringbase;
-	register char *ap = argbase;
+	char *sb = stringbase;
+	char *ap = argbase;
 	char *tmp = argbase;		/* will return this if token found */
 
 	if (*sb == '!' || *sb == '$') {	/* recognize ! as a token for shell */
@@ -401,7 +403,7 @@ OUT:
 	argbase = ap;			/* update storage pointer */
 	stringbase = sb;		/* update scan pointer */
 	if (got_one) {
-		return(tmp);
+		return (tmp);
 	}
 	switch (slrflag) {
 		case 0:
@@ -414,26 +416,25 @@ OUT:
 		default:
 			break;
 	}
-	return((char *)0);
+	return ((char *)0);
 }
 
-#define HELPINDENT (sizeof ("directory"))
+#define HELPINDENT ((int) sizeof ("directory"))
 
 /*
  * Help command.
  * Call each command handler with argc == 0 and argv[0] == name.
  */
+void
 help(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern struct cmd cmdtab[];
-	register struct cmd *c;
+	struct cmd *c;
 
 	if (argc == 1) {
-		register int i, j, w, k;
+		int i, j, w, k;
 		int columns, width = 0, lines;
-		extern int NCMDS;
 
 		printf("Commands may be abbreviated.  Commands are:\n\n");
 		for (c = cmdtab; c < &cmdtab[NCMDS]; c++) {
@@ -472,7 +473,7 @@ help(argc, argv)
 		return;
 	}
 	while (--argc > 0) {
-		register char *arg;
+		char *arg;
 		arg = *++argv;
 		c = getcmd(arg);
 		if (c == (struct cmd *)-1)
