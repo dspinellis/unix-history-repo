@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fs.h	6.5 (Berkeley) %G%
+ *	@(#)fs.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -305,9 +305,9 @@ struct	cg {
 #define blkmap(fs, map, loc) \
     (((map)[(loc) / NBBY] >> ((loc) % NBBY)) & (0xff >> (NBBY - (fs)->fs_frag)))
 #define cbtocylno(fs, bno) \
-	((bno) * NSPF(fs) / (fs)->fs_spc)
+    ((bno) * NSPF(fs) / (fs)->fs_spc)
 #define cbtorpos(fs, bno) \
-	((bno) * NSPF(fs) % (fs)->fs_nsect * NRPOS / (fs)->fs_nsect)
+    ((bno) * NSPF(fs) % (fs)->fs_spc % (fs)->fs_nsect * NRPOS / (fs)->fs_nsect)
 
 /*
  * The following macros optimize certain frequently calculated
