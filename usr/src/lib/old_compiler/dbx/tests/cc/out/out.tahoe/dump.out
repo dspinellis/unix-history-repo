@@ -1,0 +1,39 @@
+reading symbolic information ...
+[1] stop at 20
+[1] stopped in $b1 at line 20
+   20   	j = j + i;
+$b1, line 20 in "dump.c"
+sub(), line 20 in "dump.c"
+main(0x1, 0xbfffe7e8, 0xbfffe7f0), line 10 in "dump.c"
+----- 
+$b1, line 20 in "dump.c"
+j = 0
+----- 
+sub(), line 20 in "dump.c"
+i = 1
+j = 0
+----- 
+main(0x1, 0xbfffe7e8, 0xbfffe7f0), line 10 in "dump.c"
+----- 
+$b1, line 20 in "dump.c"
+j = 0
+
+sub(), line 20 in "dump.c"
+i = 1
+j = 0
+
+main(0x1, 0xbfffe7e8, 0xbfffe7f0), line 10 in "dump.c"
+
+in "":
+errno = 0
+_lg_flag = 1
+_dbargs = 0
+environ = -1073747984
+cerror.o = 223407872
+fakcu.o = 16384
+exit.o = 52993
+dump.o = 4367
+crt0.o = 59822
+dump.i = 3
+
+
