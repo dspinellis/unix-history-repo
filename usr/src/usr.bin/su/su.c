@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)su.c	4.2 (Berkeley) 4.2";
+static char *sccsid = "@(#)su.c	4.3 (Berkeley) 4.3";
 #include <stdio.h>
 #include <pwd.h>
 
@@ -52,7 +52,7 @@ ok:
 		}
 	}
 	setgid(pwd->pw_gid);
-	inigrp(nptr, pwd->pw_gid);
+	initgroups(nptr, pwd->pw_gid);
 	setuid(pwd->pw_uid);
 	if (pwd->pw_shell && *pwd->pw_shell)
 		shell = pwd->pw_shell;

@@ -8,7 +8,7 @@
 #include <setjmp.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.8	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.9	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 
@@ -599,7 +599,7 @@ usage()
 }
 
 #include <sys/socket.h>
-#include <net/in.h>
+#include <netinet/in.h>
 struct sockaddr_in biffaddr = { AF_INET, IPPORT_BIFFUDP };
 char *localhost = "localhost";
 
@@ -643,7 +643,7 @@ char *fromaddr;
 	lock(file);
 	chown(file, pw->pw_uid, pw->pw_gid);
 	{
-		f = socket(SOCK_DGRAM, 0, 0, 0);
+		f = socket(0, SOCK_DGRAM, 0, 0);
 		sprintf(buf, "%s@%d\n", name, ftell(malf)); 
 	}
 	copylet(n, malf, ORDINARY);
@@ -654,7 +654,7 @@ char *fromaddr;
 		biffaddr.sin_port =
 		    ((biffaddr.sin_port<<8)&0xff00)|((biffaddr.sin_port>>8)&0xff);
 #endif
-		send(f, &biffaddr, buf, strlen(buf)+1);
+		sendto(f, buf, strlen(buf)+1, 0, &biffaddr, sizeof (biffaddr));
 		close(f);
 	}
 	unlock();

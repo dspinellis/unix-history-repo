@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.6 82/05/07";
+static	char *sccsid = "@(#)ls.c	4.7 82/11/14";
 #endif
 
 /*
@@ -294,6 +294,8 @@ gstat(fp, file, statarg, pnkb)
 			fp->ftype = 'b'; fp->fsize = stb.st_rdev; break;
 		case S_IFCHR:
 			fp->ftype = 'c'; fp->fsize = stb.st_rdev; break;
+		case S_IFSOCK:
+			fp->ftype = 's'; fp->fsize = 0; break;
 		case S_IFLNK:
 			fp->ftype = 'l';
 			if (lflg) {
@@ -317,7 +319,8 @@ gstat(fp, file, statarg, pnkb)
 		else
 			fp->fmtime = stb.st_mtime;
 		if (pnkb)
-			if (fp->ftype != 'b' && fp->ftype != 'c')
+			if (fp->ftype != 'b' && fp->ftype != 'c' &&
+			    fp->ftype != 's')
 				*pnkb += kbytes(fp->fsize);
 	}
 	return (fp);
@@ -455,6 +458,8 @@ fmtentry(fp)
 			*dp++ = '/';
 		else if (fp->ftype == 'l')
 			*dp++ = '@';
+		else if (fp->ftype == 's')
+			*dp++ = '=';
 		else if (fp->fflags & 0111)
 			*dp++ = '*';
 	}
@@ -490,6 +495,7 @@ fmtsize(p)
 
 	case 'b':
 	case 'c':
+	case 's':
 		(void) sprintf(sizebuf, "%4ld ", 0);
 		break;
 
@@ -528,6 +534,8 @@ fmtlstuff(p)
 	if (p->ftype == 'b' || p->ftype == 'c')
 		(void) sprintf(fsize, "%3d,%4d",
 		    major(p->fsize), minor(p->fsize));
+	else if (p->ftype == 's')
+		(void) sprintf(fsize, "%8ld", 0);
 	else
 		(void) sprintf(fsize, "%8ld", p->fsize);
 /* get ftime */

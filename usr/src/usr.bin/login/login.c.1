@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c.1	4.18 82/06/27";
+static	char *sccsid = "@(#)login.c.1	4.19 82/11/14";
 /*
  * login [ name ]
  * login -r
@@ -301,7 +301,7 @@ normal:
 	setgid(pwd->pw_gid);
 	strncpy(name, utmp.ut_name, NMAX);
 	name[NMAX] = '\0';
-	inigrp(name, pwd->pw_gid);
+	initgroups(name, pwd->pw_gid);
 	setuid(pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
