@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.17 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.18 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -68,9 +68,9 @@ OU`'ifdef(`USERDB_SPEC', `USERDB_SPEC')
 # set if we can guarantee no wildcard MX records matching our domain
 ifdef(`_NO_WILDCARD_MX_', `', `#')Ow
 
-ifdef(`NEWSENDMAIL',
+ifdef(`_OLD_SENDMAIL_', `dnl',
 `# level 2 config file format
-O=2', `dnl')
+O=2')
 
 include(`../m4/version.m4')
 
@@ -159,9 +159,9 @@ ifdef(`_CLASS_Y_',
 
 # try UUCP traffic as a local address
 R$* < @ $+ .UUCP > $*			$: $1 < @ $[ $2 $] .UUCP > $3
-ifdef(`NEWSENDMAIL',
-`R$* < @ $+ . .UUCP > $*		$@ $1 < @ $2 . > $3',
-`R$* < @ $+ . $+ .UUCP > $*		$@ $1 < @ $2 . $3 > $4')')
+ifdef(`_OLD_SENDMAIL_',
+`R$* < @ $+ . $+ .UUCP > $*		$@ $1 < @ $2 . $3 > $4',
+`R$* < @ $+ . .UUCP > $*		$@ $1 < @ $2 . > $3')
 
 # pass to name server to make hostname canonical
 R$* < @ $* $~. > $*		$: $1 < @ $[ $2 $3 $] > $4
@@ -227,9 +227,9 @@ R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
 R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
 
 # short circuit local delivery so forwarded email works
-ifdef(`NEWSENDMAIL',
-`R$+ < @ $j . >		$#local $: @ $1			local address',
-`R$+ < @ $j . >		$#local $: $1			local address')
+ifdef(`_OLD_SENDMAIL_',
+`R$+ < @ $j . >		$#local $: $1			local address',
+`R$+ < @ $j . >		$#local $: @ $1			local address')
 undivert(3)dnl
 undivert(4)dnl
 
@@ -261,17 +261,16 @@ R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1			user@host.UUCP',
 # deal with other remote names
 R$* < @ $* > $*		$# smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
 
-ifdef(`NEWSENDMAIL',
-`# handle locally delivered names
-R$=L			$# local $: @ $1		special local names
-R$+			$# local $: $1			regular local names
-',
+ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
 R$+			$: $1 < @ $R >
 R$+ < @ >		$# local $: $1
-R$+ < @ $+ >		$# smtp $@ $2 $: $1')
+R$+ < @ $+ >		$# smtp $@ $2 $: $1',
+`# handle locally delivered names
+R$=L			$# local $: @ $1		special local names
+R$+			$# local $: $1			regular local names')
 
-ifdef(`NEWSENDMAIL',
+ifdef(`_OLD_SENDMAIL_', `dnl',
 `#
 # special rewriting after aliases have been expanded
 #

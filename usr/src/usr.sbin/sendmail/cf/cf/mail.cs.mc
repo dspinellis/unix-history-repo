@@ -8,12 +8,11 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(@(#)mail.cs.mc	2.4 (Berkeley) %G%)
+VERSIONID(@(#)mail.cs.mc	2.5 (Berkeley) %G%)
 OSTYPE(hpux)dnl
 DOMAIN(cs.hidden)dnl
 MAILER(local)dnl
 MAILER(smtp)dnl
-define(`NEWSENDMAIL')dnl
 DDBerkeley.EDU
 
 # hosts for which we accept and forward mail (must be in .Berkeley.EDU)
