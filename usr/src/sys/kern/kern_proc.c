@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_proc.c	6.6 (Berkeley) %G%
+ *	@(#)kern_proc.c	6.7 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -30,10 +30,9 @@
 #include "mbuf.h"
 
 /*
- * Change the process group of top and all descendents to npgrp.
- * If npgrp is -1, instead clear any pending stops.
+ * Clear any pending stops for top and all descendents.
  */
-spgrp(top, npgrp)
+spgrp(top)
 	struct proc *top;
 {
 	register struct proc *p;
@@ -41,11 +40,8 @@ spgrp(top, npgrp)
 
 	p = top;
 	for (;;) {
-		if (npgrp == -1)
-			p->p_sig &=
+		p->p_sig &=
 			  ~(sigmask(SIGTSTP)|sigmask(SIGTTIN)|sigmask(SIGTTOU));
-		else
-			p->p_pgrp = npgrp;
 		f++;
 		/*
 		 * If this process has children, descend to them next,
@@ -62,8 +58,6 @@ spgrp(top, npgrp)
 			p = p->p_pptr;
 			if (p == top)
 				return (f);
-if (p == &proc[1])
-	panic("spgrp");
 			if (p->p_osptr) {
 				p = p->p_osptr;
 				break;
