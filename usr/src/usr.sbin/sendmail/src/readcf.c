@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.50 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1055,7 +1055,49 @@ printrules()
 		}
 	}
 }
+/*
+**  PRINTMAILER -- print mailer structure (for debugging)
+**
+**	Parameters:
+**		m -- the mailer to print
+**
+**	Returns:
+**		none.
+*/
 
+printmailer(m)
+	register MAILER *m;
+{
+	int j;
+
+	printf("mailer %d (%s): P=%s S=%d/%d R=%d/%d M=%ld U=%d:%d F=",
+		m->m_mno, m->m_name,
+		m->m_mailer, m->m_se_rwset, m->m_sh_rwset,
+		m->m_re_rwset, m->m_rh_rwset, m->m_maxsize,
+		m->m_uid, m->m_gid);
+	for (j = '\0'; j <= '\177'; j++)
+		if (bitnset(j, m->m_flags))
+			(void) putchar(j);
+	printf(" L=%d E=", m->m_linelimit);
+	xputs(m->m_eol);
+	if (m->m_defcharset != NULL)
+		printf(" C=%s", m->m_defcharset);
+	if (m->m_mtstype != NULL)
+		printf(" T=%s", m->m_mtstype);
+	if (m->m_argv != NULL)
+	{
+		char **a = m->m_argv;
+
+		printf(" A=");
+		while (*a != NULL)
+		{
+			if (a != m->m_argv)
+				printf(" ");
+			xputs(*a++);
+		}
+	}
+	printf("\n");
+}
 /*
 **  SETOPTION -- set global processing option
 **
