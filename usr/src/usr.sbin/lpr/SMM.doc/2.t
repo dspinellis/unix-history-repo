@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	6.2 (Berkeley) %G%
+.\"	@(#)2.t	6.3 (Berkeley) %G%
 .\"
 .NH 1
 Commands
@@ -18,7 +18,7 @@ When
 .I lpd
 is started it makes a single pass through the
 .I printcap
-database restarting any printers which have jobs.
+database restarting any printers that have jobs.
 In normal operation
 .I lpd
 listens for service requests on multiple sockets,
@@ -65,8 +65,8 @@ the local
 .I lpd
 that there are new jobs in the spooling area.
 .I Lpd
-either schedules the job to be printed locally, or in the
-case of remote printing, attempts to forward
+either schedules the job to be printed locally, or if
+printing remotely, attempts to forward
 the job to the appropriate machine.
 If the printer cannot be opened or the destination
 machine is unreachable, the job will remain queued until it is
@@ -80,14 +80,14 @@ the printer and then the queue(s) of the machine(s) that lead to it.
 .I Lpq
 has two forms of output: in the default, short, format it
 gives a single line of output per queued job; in the long 
-format it shows the list of files, and their sizes, which
+format it shows the list of files, and their sizes, that
 comprise a job.
 .NH 2
 lprm \- remove jobs from a queue
 .PP
 The \fIlprm\fP\|(1) command deletes jobs from a spooling
 queue.  If necessary, \fIlprm\fP will first kill off a
-running daemon which is servicing the queue, restarting
+running daemon that is servicing the queue and restart
 it after the required files are removed.  When removing
 jobs destined for a remote printer, \fIlprm\fP acts
 similarly to \fIlpq\fP except it first checks locally

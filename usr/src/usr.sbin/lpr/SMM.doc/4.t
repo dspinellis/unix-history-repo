@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.2 (Berkeley) %G%
+.\"	@(#)4.t	6.3 (Berkeley) %G%
 .\"
 .NH 1
 Setting up
@@ -27,7 +27,7 @@ database contains one or more entries per printer.
 A printer should have a separate spooling directory;
 otherwise, jobs will be printed on
 different printers depending on which printer daemon starts first.
-This section describes how to create entries for printers which do not
+This section describes how to create entries for printers that do not
 conform to the default printer description (an LP-11 style interface to a
 standard, band printer).
 .NH 3
@@ -45,7 +45,7 @@ lp|LA-180 DecWriter III:\e
 .DE
 The
 .B lp
-entry specifies the file name to open for output. In this case it could
+entry specifies the file name to open for output. Here it could
 be left out since ``/dev/lp'' is the default.
 The
 .B br
@@ -54,7 +54,7 @@ entry sets the baud rate for the tty line and the
 entry sets CRMOD, no parity, and XTABS (see \fItty\fP\|(4)).
 The
 .B tr
-entry indicates a form-feed should be printed when the queue
+entry indicates that a form-feed should be printed when the queue
 empties so the paper can be torn off without turning the printer off-line and
 pressing form feed.
 The
@@ -71,7 +71,7 @@ filters may use either method of reporting errors.
 .NH 3
 Remote printers
 .PP
-Printers which reside on remote hosts should have an empty
+Printers that reside on remote hosts should have an empty
 .B lp
 entry.
 For example, the following printcap entry would send output to the printer
@@ -89,7 +89,7 @@ The
 .B rp
 capability indicates
 the name of the printer on the remote machine is ``lp'';
-in this case it could be left out since this is the default value.
+here it could be left out since this is the default value.
 The
 .B sd
 entry specifies ``/usr/spool/vaxlpd''
@@ -99,23 +99,23 @@ default value of ``/usr/spool/lpd''.
 Output filters
 .PP
 Filters are used to handle device dependencies and to
-perform accounting functions.  The output filter
+do accounting functions.  The output filtering of
 .B of
-is used to filter text data to the printer device when accounting is
+is for when accounting is
 not used or when all text data must be passed through a filter.
-It is not intended to perform accounting since it is started only once,
+It is not intended to do accounting since it is started only once,
 all text files are filtered through it, and no provision is made for passing
 owners' login name, identifying the beginning and ending of jobs, etc.
 The other filters (if specified) are started for each file
-printed and perform accounting if there is an
+printed and do accounting if there is an
 .B af
 entry.
 If entries for both
 .B of
-and one of the other filters are specified,
+and other filters are specified,
 the output filter is used only to print the banner page;
 it is then stopped to allow other filters access to the printer.
-An example of a printer which requires output filters
+An example of a printer that requires output filters
 is the Benson-Varian.
 .DS
 .DT
@@ -156,7 +156,7 @@ printcap entry.
 .DE
 Users must be in the group
 .I lprgroup
-in order to submit jobs to the specified printer.
+to submit jobs to the specified printer.
 The default is to allow all users access.
 Note that once the files are in the local queue, they can be printed
 locally or forwarded to another host depending on the configuration.

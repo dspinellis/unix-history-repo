@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	6.2 (Berkeley) %G%
+.\"	@(#)6.t	6.3 (Berkeley) %G%
 .\"
 .NH 1
 Line printer Administration
@@ -52,10 +52,9 @@ reports that there is no daemon present.
 \fBstop\fP
 .IP
 .I Stop
-is used to halt a spooling daemon after the current job completes;
+halts a spooling daemon after the current job completes;
 this also disables printing.  This is a clean way to shutdown a
-printer in order to perform
-maintenance, etc.  Note that users can still enter jobs in a
+printer to do maintenance, etc.  Note that users can still enter jobs in a
 spool queue while a printer is
 .IR stopped .
 .LP

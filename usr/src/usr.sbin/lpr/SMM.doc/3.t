@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.2 (Berkeley) %G%
+.\"	@(#)3.t	6.3 (Berkeley) %G%
 .\"
 .NH 1
 Access control
@@ -17,8 +17,8 @@ The spooling area is writable only by a \fIdaemon\fP user
 and \fIspooling\fP group.
 .IP \(bu 3
 The \fIlpr\fP program runs set-user-id to \fIroot\fP and
-set-group-id to group \fIdaemon\fP.  The \fIroot\fP access is used to
-read any file required, verifying accessibility
+set-group-id to group \fIdaemon\fP.  The \fIroot\fP access permits
+reading any file required. Accessibility is verified
 with an \fIaccess\fP\|(2) call.  The group ID
 is used in setting up proper ownership of files
 in the spooling area for \fIlprm\fP.
