@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.15 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -39,9 +39,16 @@
 char	*panicstr;
 
 extern	cnputc();			/* standard console putc */
+int	(*v_putc)() = cnputc;		/* routine to putc on virtual console */
 extern	struct tty cons;		/* standard console tty */
 struct	tty *constty;			/* pointer to console "window" tty */
-int	(*v_putc)() = cnputc;		/* routine to putc on virtual console */
+
+#ifdef KADB
+extern	cngetc();			/* standard console getc */
+extern	cnpoll();
+int	(*v_getc)() = cngetc;		/* "" getc from virtual console */
+int	(*v_poll)() = cnpoll;		/* kdb hook to enable input polling */
+#endif
 
 extern	cnputc();			/* standard console putc */
 extern	struct tty cons;		/* standard console tty */
