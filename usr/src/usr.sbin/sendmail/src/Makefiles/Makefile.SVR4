@@ -9,7 +9,7 @@
 #	<kim@grendel.lut.fi> -- I haven't tested this myself.  It may
 #	work on other SVR4 ports.
 #
-#	@(#)Makefile.SVR4	8.4 (Berkeley) %G%
+#	@(#)Makefile.SVR4	8.5 (Berkeley) %G%
 #
 
 # make sure the shell constructs below use the right shell
@@ -79,19 +79,21 @@ all: ${ALL}
 sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${OBJS} ${LIBDIRS} ${LIBS}
 
-NROFF=	nroff -h
+#NROFF=	nroff -h
+NROFF=	groff -Tascii
+MANDOC=	-mandoc
 
 aliases.0: aliases.5
-	${NROFF} -mandoc aliases.5 > aliases.0
+	${NROFF} ${MANDOC} aliases.5 > aliases.0
 
 mailq.0: mailq.1
-	${NROFF} -mandoc mailq.1 > mailq.0
+	${NROFF} ${MANDOC} mailq.1 > mailq.0
 
 newaliases.0: newaliases.1
-	${NROFF} -mandoc newaliases.1 > newaliases.0
+	${NROFF} ${MANDOC} newaliases.1 > newaliases.0
 
 sendmail.0: sendmail.8
-	${NROFF} -mandoc sendmail.8 > sendmail.0
+	${NROFF} ${MANDOC} sendmail.8 > sendmail.0
 
 install: install-sendmail install-docs
 
