@@ -28,7 +28,7 @@ SRCS =	ato.c \
 	yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c yyseman.c yytree.c \
 	p2put.c pcforop.c stab.c pcproc.c pcfunc.c pccaseop.c pclval.c
 
-HDRS =	0.h OPnames.h align.h iorec.h objfmt.h p.a.out.h pc.h pcops.h \
+HDRS =	0.h OPnames.h align.h iorec.h objfmt.h pstab.h pc.h pcops.h \
 	send.h tree.h whoami.h yy.h
 
 OTHERS = pas.y opc.c version.c gram pic.c
@@ -268,7 +268,7 @@ rval.o: pc.h
 rval.o: pcops.h
 stab.o: whoami.h
 stab.o: 0.h
-stab.o: p.a.out.h
+stab.o: pstab.h
 stab.o: pc.h
 stat.o: whoami.h
 stat.o: 0.h
