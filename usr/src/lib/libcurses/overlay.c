@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overlay.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)overlay.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <ctype.h>
@@ -22,7 +22,7 @@ overlay(win1, win2)
 {
 
 	register int x, y, y1, y2, endy, endx, starty, startx;
-	register char *sp, *end;
+	register __LDATA *sp, *end;
 
 #ifdef DEBUG
 	__TRACE("overlay: (%0.2o, %0.2o);\n", win1, win2);
@@ -44,10 +44,9 @@ overlay(win1, win2)
 		x = startx - win2->begx;
 		for (sp = &win1->lines[y1]->line[startx - win1->begx]; 
 		     sp < end; sp++) {
-			if (!isspace(*sp)) {
+			if (!isspace(sp->ch)) {
 				wmove(win2, y2, x);
-				__waddch(win2, y2, x, *sp, 
-					 *(sp + win1->maxx) & __STANDOUT);
+				__waddch(win2, sp);
 			}
 			x++;
 		}

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.16 (Berkeley) %G%
+ *	@(#)curses.h	5.17 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -51,28 +51,33 @@ extern char	*Def_term;		/* Default terminal type. */
 #define	unctrllen(ch)		__unctrllen[(ch) & 0x7f]
 
 /*
- * A window is a circular doubly linked list of LINEs who's first line is 
- * given by the topline pointer in the WINDOW structure.
+ * A window an array of __LINE structures pointed to by the 'lines' pointer.
+ * A line is an array of __LDATA structures pointed to by the 'line' pointer.
+ *
+ * IMPORTANT: the __LDATA structure must NOT induce any padding, so if new
+ * fields are added -- padding fields with *constant values* should ensure 
+ * that the compiler will not generate any padding when storing an array of
+ *  __LDATA structures.  This is to enable consistent use of bcmp, and bcopy
+ * for comparing and copying arrays.
  */
 
-typedef struct __line {
-	struct __line *next, *prev;	/* Next line, previous line. */
+typedef struct {
+	char ch;			/* the actual character */
+
+#define	__STANDOUT	0x01  		/* Added characters are standout. */
+	char attr;			/* attributes of character */
+} __LDATA;
+
+#define __LDATASIZE	(sizeof(__LDATA))
+
+typedef struct {
 #define	__ISDIRTY	0x01		/* Line is dirty. */
 #define __ISPASTEOL	0x02		/* Cursor is past end of line */
 	u_int flags;
 	u_int hash;			/* Hash value for the line. */
 	size_t firstch, lastch;		/* First and last changed columns. */
-
-#define	__STANDOUT	0x01  		/* Added characters are standout. */
-	char *standout;			/* Standout character markers.
-					 * This field is stored as an 
-					 * extension to the line, i.e., 
-					 * lp->standout = lp->line + win->maxx
-					 * is an invariant.
-					 */
-	
-	char *line;			/* Pointer to the line text. */
-} LINE;
+	__LDATA *line;			/* Pointer to the line text. */
+} __LINE;
 
 typedef struct __window {		/* Window structure. */
 	struct __window	*nextp, *orig;	/* Subwindows list and parent. */
@@ -80,9 +85,9 @@ typedef struct __window {		/* Window structure. */
 	size_t cury, curx;		/* Current x, y coordinates. */
 	size_t maxy, maxx;		/* Maximum values for curx, cury. */
 	short ch_off;			/* x offset for firstch/lastch. */
-	LINE **lines;			/* Array of pointers to the lines */
-	LINE *topline;			/* Pointer to first line in window */
-	char *wspace;			/* window space (for cleanup) */
+	__LINE **lines;			/* Array of pointers to the lines */
+	__LINE  *lspace;		/* line space (for cleanup) */
+	__LDATA *wspace;		/* window space (for cleanup) */
 
 #define	__ENDLINE	0x001		/* End of screen. */
 #define	__FLUSH		0x002		/* Fflush(stdout) after refresh. */

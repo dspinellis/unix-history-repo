@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addch.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)addch.c	5.9 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -22,17 +22,20 @@ waddch(win, ch)
 	WINDOW *win;
 	int ch;
 {
-	__waddch(win, ch, 0);
+	static __LDATA buf;
+
+	buf.ch = ch;
+	buf.attr = 0;
+	__waddch(win, &buf);
 }
 
 int
-__waddch(win, ch, so)
+__waddch(win, dp)
 	WINDOW *win;
-	int ch;
-	int so;
+	__LDATA *dp;
 {
 	static char buf[2];
 
-	buf[0] = ch;
-	return (__waddbytes(win, buf, 1, so));
+	buf[0] = dp->ch;
+	return (__waddbytes(win, buf, 1, dp->attr & __STANDOUT));
 }
