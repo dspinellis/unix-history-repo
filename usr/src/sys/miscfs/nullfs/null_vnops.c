@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	8.5 (Berkeley) %G%
+ *	@(#)null_vnops.c	8.6 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -296,7 +296,8 @@ null_bypass(ap)
 
 /*
  * We have to carry on the locking protocol on the null layer vnodes
- * as we progress through the tree.
+ * as we progress through the tree. We also have to enforce read-only
+ * if this layer is mounted read-only.
  */
 null_lookup(ap)
 	struct vop_lookup_args /* {
@@ -305,13 +306,22 @@ null_lookup(ap)
 		struct componentname * a_cnp;
 	} */ *ap;
 {
-	struct proc *p = ap->a_cnp->cn_proc;
+	struct componentname *cnp = ap->a_cnp;
+	struct proc *p = cnp->cn_proc;
+	int flags = cnp->cn_flags;
 	struct vop_lock_args lockargs;
 	struct vop_unlock_args unlockargs;
 	struct vnode *dvp, *vp;
 	int error;
 
+	if ((flags & ISLASTCN) && (ap->a_dvp->v_mount->mnt_flag & MNT_RDONLY) &&
+	    (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
+		return (EROFS);
 	error = null_bypass(ap);
+	if (error == EJUSTRETURN && (flags & ISLASTCN) &&
+	    (ap->a_dvp->v_mount->mnt_flag & MNT_RDONLY) &&
+	    (cnp->cn_nameiop == CREATE || cnp->cn_nameiop == RENAME))
+		error = EROFS;
 	/*
 	 * We must do the same locking and unlocking at this layer as 
 	 * is done in the layers below us. We could figure this out 
@@ -340,6 +350,50 @@ null_lookup(ap)
 }
 
 /*
+ * Setattr call. Disallow write attempts if the layer is mounted read-only.
+ */
+int
+null_setattr(ap)
+	struct vop_setattr_args /* {
+		struct vnodeop_desc *a_desc;
+		struct vnode *a_vp;
+		struct vattr *a_vap;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	struct vnode *vp = ap->a_vp;
+	struct vattr *vap = ap->a_vap;
+
+  	if ((vap->va_flags != VNOVAL || vap->va_uid != (uid_t)VNOVAL ||
+	    vap->va_gid != (gid_t)VNOVAL || vap->va_atime.ts_sec != VNOVAL ||
+	    vap->va_mtime.ts_sec != VNOVAL || vap->va_mode != (mode_t)VNOVAL) &&
+	    (vp->v_mount->mnt_flag & MNT_RDONLY))
+		return (EROFS);
+	if (vap->va_size != VNOVAL) {
+ 		switch (vp->v_type) {
+ 		case VDIR:
+ 			return (EISDIR);
+ 		case VCHR:
+ 		case VBLK:
+ 		case VSOCK:
+ 		case VFIFO:
+			return (0);
+		case VREG:
+		case VLNK:
+ 		default:
+			/*
+			 * Disallow write attempts if the filesystem is
+			 * mounted read-only.
+			 */
+			if (vp->v_mount->mnt_flag & MNT_RDONLY)
+				return (EROFS);
+		}
+	}
+	return (null_bypass(ap));
+}
+
+/*
  *  We handle getattr only to change the fsid.
  */
 int
@@ -358,6 +412,36 @@ null_getattr(ap)
 	/* Requires that arguments be restored. */
 	ap->a_vap->va_fsid = ap->a_vp->v_mount->mnt_stat.f_fsid.val[0];
 	return (0);
+}
+
+int
+null_access(ap)
+	struct vop_access_args /* {
+		struct vnode *a_vp;
+		int  a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	struct vnode *vp = ap->a_vp;
+	mode_t mode = ap->a_mode;
+
+	/*
+	 * Disallow write attempts on read-only layers;
+	 * unless the file is a socket, fifo, or a block or
+	 * character device resident on the file system.
+	 */
+	if (mode & VWRITE) {
+		switch (vp->v_type) {
+		case VDIR:
+		case VLNK:
+		case VREG:
+			if (vp->v_mount->mnt_flag & MNT_RDONLY)
+				return (EROFS);
+			break;
+		}
+	}
+	return (null_bypass(ap));
 }
 
 /*
@@ -517,7 +601,9 @@ struct vnodeopv_entry_desc null_vnodeop_entries[] = {
 	{ &vop_default_desc, null_bypass },
 
 	{ &vop_lookup_desc, null_lookup },
+	{ &vop_setattr_desc, null_setattr },
 	{ &vop_getattr_desc, null_getattr },
+	{ &vop_access_desc, null_access },
 	{ &vop_lock_desc, null_lock },
 	{ &vop_unlock_desc, null_unlock },
 	{ &vop_inactive_desc, null_inactive },
