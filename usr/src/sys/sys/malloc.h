@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.27 (Berkeley) %G%
+ *	@(#)malloc.h	7.28 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_
@@ -36,7 +36,7 @@
 #define	M_NAMEI		12	/* namei path name buffer */
 #define	M_GPROF		13	/* kernel profiling buffer */
 #define	M_IOCTLOPS	14	/* ioctl data buffer */
-#define	M_SUPERBLK	15	/* super block data */
+#define	M_MAPMEM	15	/* mapped memory descriptors */
 #define	M_CRED		16	/* credentials */
 #define	M_PGRP		17	/* process group header */
 #define	M_SESSION	18	/* session header */
@@ -45,11 +45,11 @@
 #define	M_FHANDLE	21	/* network file handle */
 #define	M_NFSREQ	22	/* NFS request header */
 #define	M_NFSMNT	23	/* NFS mount structure */
-#define	M_VNODE		24	/* Dynamically allocated vnodes */
-#define	M_CACHE		25	/* Dynamically allocated cache entries */
-#define	M_DQUOT		26	/* UFS quota entries */
-#define	M_UFSMNT	27	/* UFS mount structure */
-#define	M_MAPMEM	28	/* mapped memory descriptors */
+#define	M_NFSNODE	24	/* NFS vnode private part */
+#define	M_VNODE		25	/* Dynamically allocated vnodes */
+#define	M_CACHE		26	/* Dynamically allocated cache entries */
+#define	M_DQUOT		27	/* UFS quota entries */
+#define	M_UFSMNT	28	/* UFS mount structure */
 #define	M_SHM		29	/* SVID compatible shared memory segments */
 #define	M_VMMAP		30	/* VM map structures */
 #define	M_VMMAPENT	31	/* VM map entry structures */
@@ -65,8 +65,11 @@
 #define	M_PROC		41	/* Proc structures */
 #define	M_SUBPROC	42	/* Proc sub-structures */
 #define	M_SEGMENT	43	/* Segment for LFS */
-#define	M_TEMP		49	/* misc temporary data buffers */
-#define	M_LAST		50	/* Must be last type + 1 */
+#define	M_LFSNODE	44	/* LFS vnode private part */
+#define	M_FFSNODE	45	/* FFS vnode private part */
+#define	M_MFSNODE	46	/* MFS vnode private part */
+#define	M_TEMP		74	/* misc temporary data buffers */
+#define	M_LAST		75	/* Must be last type + 1 */
 
 #define INITKMEMNAMES { \
 	"free",		/* 0 M_FREE */ \
@@ -84,7 +87,7 @@
 	"namei",	/* 12 M_NAMEI */ \
 	"gprof",	/* 13 M_GPROF */ \
 	"ioctlops",	/* 14 M_IOCTLOPS */ \
-	"superblk",	/* 15 M_SUPERBLK */ \
+	"mapmem",	/* 15 M_MAPMEM */ \
 	"cred",		/* 16 M_CRED */ \
 	"pgrp",		/* 17 M_PGRP */ \
 	"session",	/* 18 M_SESSION */ \
@@ -93,11 +96,11 @@
 	"fhandle",	/* 21 M_FHANDLE */ \
 	"NFS req",	/* 22 M_NFSREQ */ \
 	"NFS mount",	/* 23 M_NFSMNT */ \
-	"vnodes",	/* 24 M_VNODE */ \
-	"namecache",	/* 25 M_CACHE */ \
-	"UFS quota",	/* 26 M_DQUOT */ \
-	"UFS mount",	/* 27 M_UFSMNT */ \
-	"mapmem",	/* 28 M_MAPMEM */ \
+	"NFS node",	/* 24 M_NFSNODE */ \
+	"vnodes",	/* 25 M_VNODE */ \
+	"namecache",	/* 26 M_CACHE */ \
+	"UFS quota",	/* 27 M_DQUOT */ \
+	"UFS mount",	/* 28 M_UFSMNT */ \
 	"shm",		/* 29 M_SHM */ \
 	"VM map",	/* 30 M_VMMAP */ \
 	"VM mapent",	/* 31 M_VMMAPENT */ \
@@ -113,8 +116,16 @@
 	"proc",		/* 41 M_PROC */ \
 	"subproc",	/* 42 M_SUBPROC */ \
 	"LFS segment",	/* 43 M_SEGMENT */ \
+	"LFS node",	/* 44 M_LFSNODE */ \
+	"FFS node",	/* 45 M_FFSNODE */ \
+	"MFS node",	/* 46 M_MFSNODE */ \
+	NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
-	"temp",		/* 49 M_TEMP */ \
+	NULL, NULL, NULL, NULL, NULL, \
+	NULL, NULL, NULL, NULL, NULL, \
+	NULL, NULL, NULL, NULL, NULL, \
+	NULL, NULL, NULL, NULL, \
+	"temp",		/* 74 M_TEMP */ \
 }
 
 struct kmemstats {
