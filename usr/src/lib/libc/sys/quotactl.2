@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)quotactl.2	6.2 (Berkeley) %G%
+.\"	@(#)quotactl.2	6.3 (Berkeley) %G%
 .\"
 .TH QUOTA 2 ""
 .UC 5
@@ -64,12 +64,13 @@ This call is restricted to the super-user.
 .TP
 Q_SYNC
 Update the on-disc copy of quota usages.
-The
-.IR uid ,
-.IR arg ,
-and
-.I addr 
-parameters are ignored.
+.I Arg
+is a major-minor device indicating the file system to be sync'ed.
+If the
+.I arg
+parameter is specified as NODEV, all file systems which have
+disc quotas will be sync'ed.
+The \fIuid\fP and \fIaddr\fP parameters are ignored.
 .TP
 Q_SETUID
 Change the calling process's quota limits to those of the
