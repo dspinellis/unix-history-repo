@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.37 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -52,7 +52,7 @@ mount(scp)
 	register struct nameidata *ndp = &scp->sc_nd;
 	register struct vnode *vp;
 	register struct mount *mp;
-	int error;
+	int error, flag;
 
 	/*
 	 * Must be super user
@@ -83,6 +83,7 @@ mount(scp)
 			vput(vp);
 			RETURN (EOPNOTSUPP);	/* Needs translation */
 		}
+		flag = mp->m_flag;
 		mp->m_flag |= M_UPDATE;
 		VOP_UNLOCK(vp);
 		goto update;
@@ -155,6 +156,8 @@ update:
 	if (mp->m_flag & M_UPDATE) {
 		mp->m_flag &= ~M_UPDATE;
 		vrele(vp);
+		if (error)
+			mp->m_flag = flag;
 		RETURN (error);
 	}
 	/*
