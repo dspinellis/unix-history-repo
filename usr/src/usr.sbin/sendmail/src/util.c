@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1212,6 +1212,7 @@ dumpfd(fd, printclosed, logit)
 	p += strlen(p);
 	switch (st.st_mode & S_IFMT)
 	{
+#ifdef S_IFSOCK
 	  case S_IFSOCK:
 		sprintf(p, "SOCK ");
 		p += strlen(p);
@@ -1237,6 +1238,7 @@ dumpfd(fd, printclosed, logit)
 						   : hp->h_name, ntohs(sin.sin_port));
 		}
 		break;
+#endif
 
 	  case S_IFCHR:
 		sprintf(p, "CHR: ");
