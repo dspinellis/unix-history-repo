@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1991, 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * The game adventure was originally written in Fortran by Will Crowther
  * and Don Woods.  It was later translated to C and enhanced by Jim
@@ -11,13 +11,13 @@
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1991, 1993 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1991, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*      Re-coding of advent in C: main program                          */
