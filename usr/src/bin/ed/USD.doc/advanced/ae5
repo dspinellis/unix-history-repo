@@ -1,4 +1,4 @@
-.\"	@(#)ae5	5.1 (Berkeley) %G%
+.\"	@(#)ae5	6.1 (Berkeley) %G%
 .\"
 .NH
 CUT AND PASTE WITH UNIX COMMANDS
@@ -263,7 +263,7 @@ since
 is obviously all you need.
 The answer is that 
 .UL cp
-will do some other things as well,
+can do some other things as well,
 which you can investigate for yourself
 by reading the manual.
 For now we'll stick to simple usages.
