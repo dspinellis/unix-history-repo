@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)decode.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)decode.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -233,10 +233,10 @@ cmd_search(table, endtable)
 	public void
 init_cmd()
 {
-	char *filename;
 	char *homedir;
 	int f;
 	int n;
+	char filename[MAXPATHLEN];
 	extern char *getenv();
 
 	/*
@@ -246,12 +246,8 @@ init_cmd()
 	homedir = getenv("HOME");
 	if (homedir == NULL)
 		return;
-	filename = calloc(strlen(homedir)+7, sizeof(char));
-	if (filename == NULL)
-		return;
-	sprintf(filename, "%s/%s", homedir, ".less");
-	f = open(filename, 0);
-	free(filename);
+	(void)sprintf(filename, "%s/%s", homedir, ".less");
+	f = open(filename, O_RDONLY);
 	if (f < 0)
 		return;
 
