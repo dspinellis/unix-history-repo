@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.122 (Berkeley) %G%
+ *	@(#)conf.h	8.123 (Berkeley) %G%
  */
 
 /*
@@ -154,7 +154,15 @@ extern int	syslog(int, char *, ...);
 **  Silicon Graphics IRIX
 **
 **	Compiles on 4.0.1.
+**
+**	Use IRIX64 instead of IRIX for 64-bit IRIX.
+**
+**	IRIX64 changes from Mark R. Levinson <ml@cvdev.rochester.edu>.
 */
+
+#ifdef IRIX64
+# define IRIX
+#endif
 
 #ifdef IRIX
 # define SYSTEM5	1	/* this is a System-V derived system */
@@ -167,7 +175,11 @@ extern int	syslog(int, char *, ...);
 # define GIDSET_T	gid_t
 # define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # define LA_TYPE	LA_INT
-# define NAMELISTMASK	0x7fffffff	/* mask for nlist() values */
+# ifdef IRIX64
+#  define NAMELISTMASK	0x7fffffffffffffff	/* mask for nlist() values */
+# else
+#  define NAMELISTMASK	0x7fffffff		/* mask for nlist() values */
+# endif
 #endif
 
 
