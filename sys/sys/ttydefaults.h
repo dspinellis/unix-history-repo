@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ttydefaults.h	7.9 (Berkeley) 5/9/91
- *	$Id$
+ *	$Id: ttydefaults.h,v 1.2 1993/10/16 17:18:10 rgrimes Exp $
  */
 
 /*
@@ -43,10 +43,10 @@
 /*
  * Defaults on "first" open.
  */
-#define	TTYDEF_IFLAG	(BRKINT | ISTRIP | ICRNL | IMAXBEL | IXON | IXANY)
+#define TTYDEF_IFLAG    (BRKINT | ICRNL | IMAXBEL | IXON | IXANY)
 #define TTYDEF_OFLAG	(OPOST | ONLCR | OXTABS)
 #define TTYDEF_LFLAG	(ECHO | ICANON | ISIG | IEXTEN | ECHOE|ECHOKE|ECHOCTL)
-#define TTYDEF_CFLAG	(CREAD | CS7 | PARENB | HUPCL)
+#define TTYDEF_CFLAG    (CREAD | CS8 | HUPCL)
 #define TTYDEF_SPEED	(B9600)
 
 /*
