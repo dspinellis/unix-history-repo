@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.6 %G%";
+static char sccsid[] = "@(#)symbols.c 1.7 %G%";
 
 /*
  * Symbol management.
@@ -516,9 +516,12 @@ Symbol sym;
 	case VAR:
 	case FVAR:
 	    r = size(t->type);
+	    /*
+	     *
 	    if (r < sizeof(Word) and isparam(t)) {
 		r = sizeof(Word);
 	    }
+	     */
 	    break;
 
 	case CONST:
@@ -581,9 +584,6 @@ Symbol sym;
 		error("improper operation on a %s", classname(t));
 	    }
 	    /* NOTREACHED */
-    }
-    if (r < sizeof(Word) and isparam(sym)) {
-	r = sizeof(Word);
     }
     return r;
 }
