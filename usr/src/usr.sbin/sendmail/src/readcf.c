@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1877,11 +1877,11 @@ setoption(opt, val, sticky)
 	return;
 }
 /*
-**  SETCLASS -- set a word into a class
+**  SETCLASS -- set a string into a class
 **
 **	Parameters:
-**		class -- the class to put the word in.
-**		word -- the word to enter
+**		class -- the class to put the string in.
+**		str -- the string to enter
 **
 **	Returns:
 **		none.
@@ -1890,15 +1890,15 @@ setoption(opt, val, sticky)
 **		puts the word into the symbol table.
 */
 
-setclass(class, word)
+setclass(class, str)
 	int class;
-	char *word;
+	char *str;
 {
 	register STAB *s;
 
 	if (tTd(37, 8))
-		printf("setclass(%c, %s)\n", class, word);
-	s = stab(word, ST_CLASS, ST_ENTER);
+		printf("setclass(%c, %s)\n", class, str);
+	s = stab(str, ST_CLASS, ST_ENTER);
 	setbitn(class, s->s_class);
 }
 /*
