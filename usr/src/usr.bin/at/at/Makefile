@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 #       Makefile for at, atq, atrm, and atrun
 #
@@ -15,6 +15,7 @@ DESTDIR=
 ATRUNDIR=	/usr/lib
 SPOOLDIRS=	/usr/spool/at /usr/spool/at/past
 SPOOLFILES=	/usr/spool/at/lasttimedone
+OWNER=		root
 
 all: ${ALL}
 
@@ -33,20 +34,20 @@ atrun: atrun.c
 install: all
 	-for i in $(SPOOLDIRS); \
 		do mkdir $(DESTDIR)/$$i; \
-		chown daemon $(DESTDIR)/$$i; \
+		chown ${OWNER} $(DESTDIR)/$$i; \
 		chgrp daemon $(DESTDIR)/$$i; \
 		chmod 755    $(DESTDIR)/$$i; \
 		done
 	-for i in $(SPOOLFILES); \
 		do if [ ! -f $(DESTDIR)/$$i ]; \
 		then echo 0 > $(DESTDIR)/$$i; fi; \
-		chown daemon $(DESTDIR)/$$i; \
+		chown ${OWNER} $(DESTDIR)/$$i; \
 		chgrp daemon $(DESTDIR)/$$i; \
 		done
 	install -s atrun $(DESTDIR)/$(ATRUNDIR)
-	install -s -o daemon -m 4755 atq $(DESTDIR)/usr/bin
-	install -s -o daemon -m 4755 at $(DESTDIR)/usr/bin
-	install -s -o daemon -m 4755 atrm $(DESTDIR)/usr/bin
+	install -s -o ${OWNER} -m 4755 atq $(DESTDIR)/usr/bin
+	install -s -o ${OWNER} -m 4755 at $(DESTDIR)/usr/bin
+	install -s -o ${OWNER} -m 4755 atrm $(DESTDIR)/usr/bin
 
 clean:
 	rm -f $(ALL) errs *.o
