@@ -1,4 +1,4 @@
-/*	if_loop.c	4.4	81/12/07	*/
+/*	if_loop.c	4.5	81/12/22	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -15,7 +15,7 @@
 #include "../net/ip_var.h"
 #include "../h/mtpr.h"
 
-#define	LONET	254
+#define	LONET	127
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
