@@ -1,22 +1,28 @@
 /*
-**  Sendmail
-**  Copyright (c) 1983  Eric P. Allman
-**  Berkeley, California
-**
-**  Copyright (c) 1983 Regents of the University of California.
-**  All rights reserved.  The Berkeley software License Agreement
-**  specifies the terms and conditions for redistribution.
-*/
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *  Sendmail
+ *  Copyright (c) 1983  Eric P. Allman
+ *  Berkeley, California
+ */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1988 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.14 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
+#endif /* not lint */
 
 # define  _DEFINE
 # include <signal.h>
