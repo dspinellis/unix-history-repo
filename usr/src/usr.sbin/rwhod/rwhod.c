@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -84,6 +84,7 @@ struct	in_addr inet_makeaddr();
 main()
 {
 	struct sockaddr_in from;
+	struct stat st;
 	char path[64];
 	int addr, on = 1;
 	char *cp;
@@ -190,13 +191,11 @@ main()
 			continue;
 		}
 		(void) sprintf(path, "whod.%s", wd.wd_hostname);
-		whod = open(path, O_WRONLY);	/* much faster than creat() */
-		{	struct stat s;
-			if (whod < 0 || fstat(whod, &s) < 0 || s.st_size > cc) {
-				(void) close(whod);
-				whod = creat(path, 0666);
-			}
-		}
+		/*
+		 * Rather than truncating and growing the file each time,
+		 * use ftruncate if size is less than previous size.
+		 */
+		whod = open(path, O_WRONLY | O_CREAT, 0644);
 		if (whod < 0) {
 			syslog(LOG_WARNING, "%s: %m", path);
 			continue;
@@ -222,6 +221,8 @@ main()
 #endif
 		(void) time(&wd.wd_recvtime);
 		(void) write(whod, (char *)&wd, cc);
+		if (fstat(whod, &st) < 0 || st.st_size > cc)
+			ftruncate(whod, cc);
 		(void) close(whod);
 	}
 }
