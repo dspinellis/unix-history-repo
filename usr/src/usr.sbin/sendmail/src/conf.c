@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -1063,13 +1063,16 @@ enoughspace(msize)
 # if defined(HASUSTAT)
 	struct ustat fs;
 	struct stat statbuf;
+#  define FSBLOCKSIZE	DEV_BSIZE
 #  define f_bavail	f_tfree
 # else
 #  if defined(ultrix)
 	struct fs_data fs;
 #   define f_bavail	fd_bfreen
+#   define FSBLOCKSIZE	fs.fd_bsize
 #  else
 	struct statfs fs;
+#   define FSBLOCKSIZE	fs.f_bsize
 #  endif
 # endif
 	long blocksneeded;
@@ -1102,7 +1105,7 @@ enoughspace(msize)
 				fs.f_bavail, msize);
 
 		/* convert msize to block count */
-		msize = msize / fs.f_bsize + 1;
+		msize = msize / FSBLOCKSIZE + 1;
 		if (MinBlocksFree >= 0)
 			msize += MinBlocksFree;
 
