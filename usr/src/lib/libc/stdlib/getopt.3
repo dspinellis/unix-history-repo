@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getopt.3	6.12 (Berkeley) %G%
+.\"	@(#)getopt.3	6.13 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -115,6 +115,10 @@ to be used with programs that expect ``-'' as an option flag.
 This practice is wrong, and should not be used in any current development.
 It is provided for backward compatibility
 .BR only .
+By default, a single dash causes
+.I getopt
+to return EOF.
+This is, we believe, compatible with System V.
 .PP
 It is also possible to handle digits as option letters.
 This allows
