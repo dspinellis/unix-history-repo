@@ -2,20 +2,18 @@
  * Varian and Versatec queue
  */
 
-static char vpqSCCSid[] = "@(#)vpq.c	1.2\t%G%";
+static char vpqSCCSid[] = "@(#)vpq.c	1.3\t%G%";
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <dir.h>
 #include <stat.h>
 #include <stdio.h>
 #include <errno.h>
 #define	MAXJOBS 100
 
-struct	dir dirent;
 struct	stat stbuf;
 int	nextflag;
 int	linecnt;
-FILE	*df;
 FILE	*jf;
 char	line[100];
 char	username[10];
@@ -64,6 +62,8 @@ queue(device, devname, spooldir, daemon)
 char *device, *devname, *spooldir, *daemon;
 {
 	FILE *vc;
+	DIR *df;
+	register struct direct *dirp;
 
 	printf("%s: ", devname);
 	vc = fopen(device, "w");
@@ -84,39 +84,36 @@ char *device, *devname, *spooldir, *daemon;
 		perror(spooldir);
 		return;
 	}
-oloop:
-	df = fopen(".", "r");
+	df = opendir(".");
 	if (df == NULL) {
 		perror(spooldir);
 		return;
 	}
-loop:
-	fseek(df, 0l, 0);
 	linecnt = 0;
 	cnt = 0;
-	while (fread(&dirent, sizeof dirent, 1, df) == 1) {
-		if (dirent.d_ino == 0)
+	while ((dirp = readdir(df)) != NULL) {
+		if (dirp->d_name[0] != 'd')
 			continue;
-		if (dirent.d_name[0] != 'd')
+		if (dirp->d_name[1] != 'f')
 			continue;
-		if (dirent.d_name[1] != 'f')
-			continue;
-		if (stat(dirent.d_name, &stbuf) < 0)
+		if (stat(dirp->d_name, &stbuf) < 0)
 			continue;
 		if (cnt == 0)
 			printf("Owner\t  Id      Chars  Filename\n");
 		cnt++;
-		process();
+		process(dirp);
 	}
+	closedir(df);
 	if (cnt == 0)
 		printf("Queue is empty.\n");
 	printf("\n");
 }
 
-process()
+process(dirp)
+	register struct direct *dirp;
 {
 
-	jf = fopen(dirent.d_name, "r");
+	jf = fopen(dirp->d_name, "r");
 	if (jf == NULL)
 		return;
 	while (getline()) {
@@ -134,8 +131,8 @@ process()
 		case 'T':
 			if (stat(line+1, &stbuf) < 0)
 				stbuf.st_size = 0;
-			printf("%-10s%5s%8d  %s\n", username, dirent.d_name+3,
-			    stbuf.st_size, line+1);
+			printf("%-10s%5s%8d  %s\n", username,
+			    &(dirp->d_name[3]), stbuf.st_size, line+1);
 			break;
 		}
 	}
