@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)usermem.sh	5.1 (Berkeley) %G%
+#	@(#)usermem.sh	5.2 (Berkeley) %G%
 #
 : This shell script snoops around to find the maximum amount of available
 : user memory.  These variables need to be set only if there is no
@@ -46,17 +46,28 @@ then
 	    SIZE=`echo maxmem/D | adb $UNIX $KMEM | sed -n '$s/.*[ 	]//p'`
 	    if test 0$SIZE -le 0
 	    then
-		SIZE=`echo physmem/D | adb $UNIX $KMEM | sed -n '$s/.*[ 
-	]//p'`
+		SIZE=`echo physmem/D | adb $UNIX $KMEM | sed -n '$s/.*[ 	]//p'`
 	    fi
 	    SIZE=`expr 0$SIZE '*' $CLICKSIZE`
 	fi
     fi
 fi
 
+case $UNIX in
+    /vmunix)		# Assume 4.2bsd: check for resource limits
+	MAXSIZE=`csh -c limit | awk 'BEGIN	{ MAXSIZE = 1000000 }
+/datasize|memoryuse/ && NF == 3	{ if ($2 < MAXSIZE) MAXSIZE = $2 }
+END	{ print MAXSIZE * 1000 }'`
+	if test $MAXSIZE -lt $SIZE
+	then
+	    SIZE=$MAXSIZE
+	fi
+	;;
+esac
+
 if test 0$SIZE -le 0
 then
-    echo 0
+    echo 0;exit 1
 else
     echo $SIZE
 fi
