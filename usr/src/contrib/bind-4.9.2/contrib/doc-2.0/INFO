@@ -1,0 +1,130 @@
+
+/*
+** Distributed with 'doc' Version 2.0 from University of Southern
+** California Information Sciences Institute (USC-ISI). 8/22/90
+*/
+
+This documents the current procedure as implemented by
+'doc' (Version 1.0).  Similar information, along with additional
+comments can be found in the draft RFC.XXXX.
+
+
+Current procedure:
+==================
+
+A: Abort test -- can't continue
+E: Incorrect behavior is considered an error.
+W: Incorrect behavior in this respect causes warning to be issued.
+N: Note occurrence/information.
+o: Side effects ... additional "computation".
+
+Start test:
+
+(1) Query default nameserver for NS records of parent domain.
+
+(2) Query servers for parent domain for SOA record for parent domain.
+
+    W: Check each response to see that it was authoritative.
+    W: Check each response to see that SOA records were returned.
+    W: Check that only one SOA was returned.
+
+    W: Check that SOA serial numbers are same from all servers.
+       Only servers not issued warning above are tested here.
+
+    A: No server returned an SOA record.
+
+    o  Generate list of parent servers that are authoritative and
+       returned correct SOA information.  This is the list of servers
+       that are asked next query.
+  
+  At this point, might want to add check to compare entire SOA.
+  Such a check for parent SOAs probably not relative enough for
+  test of child domain.  Similar reasoning why above are warnings
+  and not errors.
+
+
+(3) Query all authoritative servers of parent zone for
+    NS records of domain being tested.
+
+    N: Note the number of NS records and A records corresponding
+       to nameserver (glue) were returned in response.
+
+    E: Check that TTLs of NS records are the same.
+
+    o: Determine if response is happens to be authoritative for
+       testee domain.  Information is kept separate depending if
+       came from authoritative server.
+       This gets sort of messy, and may not be necessary (partially
+       leftover from earlier versions).  However, many domains have
+       different information at non-authoritative and authoritative.
+       This allows one to be a bit more specific in issuing errors
+       about what set of servers had inconsistent data.
+
+    E: Check that NS records from different servers agree.
+        (Test is done separately for the AUTH and non-AUTH
+        server's lists.  If both are consistent, then check
+        if the two lists also agree.)
+
+    o: Generate list of servers for testee domain.
+        Include any with corresponding NS record from any
+        parent server (regardless to authority of server).
+        Other lists are also maintained:
+          - servers known by authoritative parent servers
+          - servers known by non-authoritative parent servers
+          - servers only known by non-authoritative parent servers
+        Might also want to look at those only known by authoritative.
+
+    W: Look at each parent server that also claimed authority for
+       domain -- check that an NS record is held for it (by any
+       of the servers).
+
+(4) Query set of nameservers for testee domain for SOA records for
+    domain.  Currently, set is generated above and includes any
+    nameserver for which an NS record was returned in the above
+    series (3) of queries.  Different criteria for set inclusion
+    may also be interesting.
+
+    E: Check each response to see that it was authoritative.
+    E: Check each response to see that SOA records were returned.
+    W: Check that only one SOA was returned.
+
+    E: Check that SOA serial numbers are same from all servers.
+       Only servers not issued warning above are tested here.
+
+    E: Check that entire SOA record matches among servers.
+       (Checked only if serial numbers agree).
+
+    o: Generate list of nameservers that are authoritative
+       and have at least one SOA record.
+
+
+(5) Query set of testee domain nameservers for NS records of domain.
+    Currently, this set includes all nameservers which in previous
+    series of queries, returned authoritative response containing
+    exactly one SOA.
+
+    E: Check that TTLs of NS records are the same.
+
+    E: Check that NS records from servers are the same.
+
+    E: Check that NS records from testee serves agree with
+       NS records from parent domain servers (make comparison with
+       any list consistent among some set of the parent servers --
+       i.e. remember that AUTH/non-AUTH mess !!)
+       This is only checked if child servers agree among themselves.
+     check for agreement between parent and child servers.
+
+    E: Check that all servers that claim to be authoritative
+       have NS record at held by one of the AUTH servers.
+
+Generate a list of addresses of nameservers for domain the domain.
+Choose addresses of servers that are in the domain in question
+(i.e. don't care about some other domain's server which is acting
+as a secondary).  Currently, I only look at one address on a network
+(i.e. I'd only look at one of 128.9.0.32 and 128.9.0.33).
+
+
+(6) Query for in-addr.arpa. PTR records for list of addresses
+    on networks of the domain.
+
+    E:  Check that response is returned to reverse mapping query.
