@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -311,7 +311,7 @@ hashcmd(argc, argv)
 		 && (cmdp->cmdtype == CMDNORMAL
 		     || (cmdp->cmdtype == CMDBUILTIN && builtinloc >= 0)))
 			delete_cmd_entry();
-		find_command(name, &entry, 1);
+		find_command(name, &entry, 1, pathval());
 		if (verbose) {
 			if (entry.cmdtype != CMDUNKNOWN) {	/* if no error msg */
 				cmdp = cmdlookup(name, 0);
@@ -372,15 +372,15 @@ printentry(cmdp, verbose)
  */
 
 void
-find_command(name, entry, printerr)
+find_command(name, entry, printerr, path)
 	char *name;
 	struct cmdentry *entry;
 	int printerr;
+	char *path;
 {
 	struct tblentry *cmdp;
 	int index;
 	int prev;
-	char *path;
 	char *fullname;
 	struct stat statb;
 	int e;
@@ -416,7 +416,6 @@ find_command(name, entry, printerr)
 			prev = cmdp->param.index;
 	}
 
-	path = pathval();
 	e = ENOENT;
 	index = -1;
 loop:

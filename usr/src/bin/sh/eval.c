@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -645,7 +645,18 @@ evalcommand(cmd, flags, backcmd)
 		cmdentry.cmdtype = CMDBUILTIN;
 		cmdentry.u.index = BLTINCMD;
 	} else {
-		find_command(argv[0], &cmdentry, 1);
+		static const char PATH[] = "PATH=";
+		char *path = pathval();
+
+		/*
+		 * Modify the command lookup path, if a PATH= assignment
+		 * is present
+		 */
+		for (sp = varlist.list ; sp ; sp = sp->next)
+			if (strncmp(sp->text, PATH, sizeof(PATH) - 1) == 0)
+				path = sp->text + sizeof(PATH) - 1;
+
+		find_command(argv[0], &cmdentry, 1, path);
 		if (cmdentry.cmdtype == CMDUNKNOWN) {	/* command not found */
 			exitstatus = 1;
 			flushout(&errout);
@@ -844,7 +855,8 @@ prehash(n)
 
 	if (n->type == NCMD && n->ncmd.args)
 		if (goodname(n->ncmd.args->narg.text))
-			find_command(n->ncmd.args->narg.text, &entry, 0);
+			find_command(n->ncmd.args->narg.text, &entry, 0,
+				     pathval());
 }
 
 
