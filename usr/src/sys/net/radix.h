@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.h	7.4 (Berkeley) %G%
+ *	@(#)radix.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -39,8 +39,6 @@ struct radix_node {
 #endif
 };
 
-#define MAXKEYLEN 32
-
 #define rn_dupedkey rn_u.rn_leaf.rn_Dupedkey
 #define rn_key rn_u.rn_leaf.rn_Key
 #define rn_mask rn_u.rn_leaf.rn_Mask
@@ -70,12 +68,14 @@ extern struct radix_mask {
 
 #define MKFree(m) { (m)->rm_mklist = rn_mkfreelist; rn_mkfreelist = (m);}
 
-extern struct radix_node_head {
-	struct	radix_node_head *rnh_next;
+struct radix_node_head {
 	struct	radix_node *rnh_treetop;
-	int	rnh_af;
+	struct	radix_node *(*rnh_add)();
+	struct	radix_node *(*rnh_delete)();
+	struct	radix_node *(*rnh_match)();
+	int	(*rnh_walk)();
 	struct	radix_node rnh_nodes[3];
-} *radix_node_head;
+};
 
 
 #ifndef KERNEL
