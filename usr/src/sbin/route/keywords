@@ -1,4 +1,4 @@
-#	@(#)keywords	5.7 (Berkeley) %G%
+#	@(#)keywords	5.8 (Berkeley) %G%
 
 add
 change
@@ -26,6 +26,7 @@ monitor
 mtu
 net
 netmask
+nostatic
 osi
 proto1
 proto2
@@ -36,6 +37,7 @@ rttvar
 sa
 sendpipe
 ssthresh
+static
 x25
 xns
 xresolve
