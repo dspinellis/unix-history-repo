@@ -62,4 +62,5 @@ daemon(nochdir, noclose)
 				(void) close(devnull);
 		}
 	}
+	return 0;
 }
