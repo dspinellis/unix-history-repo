@@ -1,6 +1,6 @@
-.\"	@(#)gamma.3	4.1 (Berkeley) %G%
+.\"	@(#)gamma.3	5.1 (Berkeley) %G%
 .\"
-.TH GAMMA 3M 
+.TH GAMMA 3M  "19 January 1983"
 .AT 3
 .SH NAME
 gamma \- log gamma function
@@ -13,15 +13,10 @@ gamma \- log gamma function
 .fi
 .SH DESCRIPTION
 .I Gamma
-returns
-ln \||\|\(*G(\||\|\fIx\fR\||\|)\||\|.
-The sign of
-\(*G(\||\|\fIx\fR\||\|)
-is returned in the external integer
+returns ln \||\|\(*G(\||\|\fIx\fR\||\|)\||\|.
+The sign of \(*G(\||\|\fIx\fR\||\|) is returned in the external integer
 .IR signgam .
-The following C program might be
-used to calculate
-\(*G:
+The following C program might be used to calculate \(*G:
 .PP
 .nf
 	y = gamma(x);
