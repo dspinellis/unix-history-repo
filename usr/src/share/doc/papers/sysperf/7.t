@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)7.t	1.2 (Berkeley) %G%
+.\"	@(#)7.t	1.3 (Berkeley) %G%
 .\"
 .ds RH Conclusions
 .NH
@@ -62,6 +62,18 @@ ideas, information, and work while the system was undergoing change.
 .SH
 \s+2References\s-2
 .LP
+.IP [Cabrera84] 20
+Luis Felipe Cabrera, Eduard Hunter, Michael J. Karels, and David Mosher,
+``A User-Process Oriented Performance Study of Ethernet Networking Under
+Berkeley UNIX 4.2BSD,''
+Research Report No. UCB/CSD 84/217, University of California,
+Berkeley, December 1984.
+.IP [Cabrera85] 20
+Luis Felipe Cabrera, Michael J. Karels, and David Mosher,
+``The Impact of Buffer Management on Networking Software Performance
+in Berkeley UNIX 4.2BSD: A Case Study,''
+Proceedings of the Summer Usenix Conference, Portland, Oregon,
+June 1985, pp. 507-517.
 .IP [GADS85] 20
 GADS (Gateway Algorithms and Data Structures Task Force),
 ``Toward an Internet Standard for Subnetting,'' RFC-940,
@@ -123,15 +135,3 @@ Robert Walsh and Robert Gurwitz,
 ``Converting BBN TCP/IP to 4.2BSD,''
 \fIProceedings of the Salt Lake City Usenix Conference\fP,
 pp 52-61, June 1984.
-.IP [Cabrera84] 20
-Luis Felipe Cabrera, Eduard Hunter, Michael J. Karels, and David Mosher,
-``A User-Process Oriented Performance Study of Ethernet Networking Under
-Berkeley UNIX 4.2BSD,''
-Research Report No. UCB/CSD 84/217, University of California,
-Berkeley, December 1984.
-.IP [Cabrera85] 20
-Luis Felipe Cabrera, Michael J. Karels, and David Mosher,
-``The Impact of Buffer Management on Networking Software Performance
-in Berkeley UNIX 4.2BSD: A Case Study,''
-Proceedings of the Summer Usenix Conference, Portland, Oregon,
-June 1985, pp. 507-517.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	1.2 (Berkeley) %G%
+.\"	@(#)4.t	1.3 (Berkeley) %G%
 .\"
 .ds RH Performance Improvements
 .NH
@@ -445,18 +445,12 @@ and a better tuned delayed acknowledgement algorithm.
 Routing has been modified to include a one element cache of the last
 route computed.
 Multiple messages send with the same destination now require less processing.
-Figures 1 and 2 present typical throughput rates that user processes in
-4.3BSD systems may expect when run under light load.
-In [Cabrera85] we documented the performance degradation due to load in
-either the sender host, receiver host, or ether. 
-Any CPU contention degrades substantially
-the throughput achievable by user processes.
+Performance deteriorates because of load in
+either the sender host, receiver host, or ether.
+Also, any CPU contention degrades substantially
+the throughput achievable by user processes [Cabrera85].
 We have observed empty VAX 11/750s using up to 90% of their cycles
 transmitting network messages.
-.PP
-Figure 1. (I owe it. lfc)
-.PP
-Figure 2. (I owe it. lfc)
 .NH 3
 Exec
 .PP

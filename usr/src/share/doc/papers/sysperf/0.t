@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	1.3 (Berkeley) %G%
+.\"	@(#)0.t	1.4 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -12,8 +12,7 @@ Measuring and Improving the Performance of Berkeley UNIX*
 .AU
 Marshall Kirk McKusick,
 Samuel J. Leffler\(dg,
-Michael J. Karels,
-Luis Felipe Cabrera\(dd
+Michael J. Karels
 .AI
 Computer Systems Research Group
 Computer Science Division
@@ -26,12 +25,7 @@ Berkeley, CA  94720
 .FE
 .FS
 \(dg Samuel J. Leffler is currently employed by:
-Lucasfilm Ltd., PO Box 2009, San Rafael, CA 94912
-.FE
-.FS
-\(dd Luis Felipe Cabrera is currently employed by:
-Computer Science Department, IBM Research Laboratory, 5600 Cottle Road,
-San Jose, California 95193.
+Silicon Graphics, Inc.
 .FE
 .FS
 This work was done under grants from
@@ -90,28 +84,18 @@ D.4.3
 .B "[Operating Systems]":
 File Systems Management \-
 .I "file organization, directory structures, access methods";
-D.4.2
-.B "[Operating Systems]":
-Storage Management \-
-.I "allocation/deallocation strategies, secondary storage devices";
 D.4.8
 .B "[Operating Systems]":
 Performance \-
 .I "measurements, operational analysis";
-H.3.2
-.B "[Information Systems]":
-Information Storage \-
-.I "file organization"
 .sp
 Additional Keywords and Phrases:
 Berkeley UNIX,
-file system organization,
-file system performance,
-file system design,
+system performance,
 application program interface.
 .sp
 General Terms:
-file system,
+UNIX operating system,
 measurement,
 performance.
 .de PT
