@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.6 (Berkeley) %G%
+.\"	@(#)op.me	8.7 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,9 +43,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.6
+Version 8.7
 .sp
-For Sendmail Version 8.4
+For Sendmail Version 8.6
 .)l
 .sp 2
 .pp
@@ -715,17 +715,21 @@ do
 		rm \-f $tffile
 	fi
 done
-# remove bogus qf files
+# remove df files with no corresponding qf files
 for dffile in df*
 do
 	qffile=`echo $dffile | sed 's/d/q/'`
 	if [ \-r $dffile \-a ! \-f $qffile ]
 	then
 		echo \-n " <incomplete: $dffile>" > /dev/console
-		rm \-f $dffile
+		mv $dffile `echo $dffile | sed 's/d/D/'`
 	fi
 done
-fi
+# announce files that have been saved during disaster recovery
+for xffile in [A-Z]f*
+do
+	echo \-n " <panic: $xffile>" > /dev/console
+done
 .)b
 .pp
 If you are not running a version of UNIX
@@ -3549,6 +3553,7 @@ for mailers to run in
 to
 .i n .
 Defaults to 1.
+The value can also be given as a symbolic group name.
 .ip G
 Allow fuzzy matching on the GECOS field.
 If this flag is set,
@@ -3811,13 +3816,15 @@ under any circumstances.
 .ip S\fIfile\fP
 Log statistics in the named
 .i file .
-.ip t\fIS,D\fP
-Set the local time zone name to
-.i S
-for standard time and
-.i D
-for daylight time;
-this is only used under version six.
+.ip t\fItzinfo\fP
+Set the local time zone info to
+.i tzinfo
+\*- for example,
+.q PST8PDT .
+Actually, if this is not set,
+the TZ environment variable is cleared (so the system default is used);
+if set but null, the user's TZ variable is used,
+and if set and non-null the TZ variable is set to this value.
 .ip T\fIrtime/wtime\fP
 Set the queue timeout to
 .i rtime .
@@ -3838,6 +3845,7 @@ Mailers without the
 flag in the mailer definition
 will run as this user.
 Defaults to 1.
+The value can also be given as a symbolic user name.
 .ip U\fIudbspec\fP
 The user database specification.
 .ip v
@@ -4194,7 +4202,7 @@ are specified,
 will never try any matches at all \(em
 that is, everything will appear to fail.
 .ip "\-a\fIx\fP"
-Append the character
+Append the string
 .i x
 on successful matches.
 For example, the default
@@ -6609,7 +6617,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.6
+.\"Version 8.7
 .\".ce 0
 .bp 2
 .ce
