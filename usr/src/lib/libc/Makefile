@@ -1,12 +1,16 @@
-#	@(#)Makefile	4.1	(Berkeley)	82/12/03
+#	@(#)Makefile	4.2	(Berkeley)	82/12/04
+#
+#	The system has two monitoring schemes, utilizing either ``prof''
+#	or ``gprof''. DFLMON determines the default profiler; mon.o
+#	specifies that ``prof'' is the default, gmon.o specifies that
+#	``gprof'' is the default.
 #
 DESTDIR=
+INSTALL=install -m 644
+DFLMON=mon.o
 
-INSTALL=mv
-
-all: libc.a libc_p.a crtx
-
-libc.a libc_p.a:
+libc.a libc_p.a: csu sys gen stdio net
+	cd csu; make
 	cd sys; make
 	cd gen; make
 	cd stdio; make
@@ -17,7 +21,7 @@ libc.a libc_p.a:
 	cd tmp; ar x ../stdio/stdiolib
 	cd tmp; ar x ../net/netlib
 	ls tmp/*.o | sort -t/ +1 > t1
-	ar ar libc.a `lorder \`cat t1\` | tsort`;
+	ar cr libc.a `lorder \`cat t1\` | tsort` csu/${DFLMON}
 	ar ma flsbuf.o libc.a exit.o
 	rm -f t1 tmp/*
 	cd tmp; ar x ../sys/syslib_p
@@ -25,12 +29,9 @@ libc.a libc_p.a:
 	cd tmp; ar x ../stdio/stdiolib_p
 	cd tmp; ar x ../net/netlib_p
 	ls tmp/*.o | sort -t/ +1 > t1
-	ar ar libc_p.a `lorder \`cat t1\` | tsort`;
+	ar cr libc_p.a `lorder \`cat t1\` | tsort` csu/${DFLMON}
 	ar ma flsbuf.o libc_p.a exit.o
 	rm -rf t1 tmp
-
-crtx:
-	cd csu; make
 
 clean:
 	for i in */.; do cd $$i; make clean; cd ..; done
@@ -42,11 +43,9 @@ errlst.o: gen/errlst.c
 	as -o errlst.o errlst.s
 	rm errlst.s
 
-install: all
+install: libc.a libc_p.a
 	$(INSTALL) libc.a $(DESTDIR)/lib/libc.a
 	ranlib $(DESTDIR)/lib/libc.a
 	$(INSTALL) libc_p.a $(DESTDIR)/usr/lib/libc_p.a
 	ranlib $(DESTDIR)/usr/lib/libc_p.a
-	cd csu; $(INSTALL) crt0.o $(DESTDIR)/lib
-	cd csu; $(INSTALL) mcrt0.o $(DESTDIR)/lib
-	cd csu; $(INSTALL) gcrt0.o $(DESTDIR)/usr/lib
+	cd csu; make DESTDIR=${DESTDIR} install
