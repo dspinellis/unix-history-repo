@@ -1,5 +1,5 @@
 /*
- * @(#)ww.h	3.39 %G%	
+ * @(#)ww.h	3.40 %G%	
  */
 
 /*
@@ -207,8 +207,6 @@ int wwnselect, wwnselecte, wwnselectz;
 	/* things for handling input */
 int wwrint();		/* interrupt handler */
 struct ww *wwcurwin;	/* window to copy input into */
-char wwsetjmp;		/* want a longjmp() from wwrint() */
-jmp_buf wwjmpbuf;	/* jmpbuf for above */
 char *wwib;		/* input (keyboard) buffer */
 char *wwibe;		/* wwib + sizeof buffer */
 char *wwibp;		/* current read position in buffer */
@@ -216,7 +214,14 @@ char *wwibq;		/* current write position in buffer */
 #define wwgetc()	(wwibp < wwibq ? *wwibp++ & 0x7f : -1)
 #define wwpeekc()	(wwibp < wwibq ? *wwibp & 0x7f : -1)
 #define wwungetc(c)	(wwibp > wwib ? *--wwibp = (c) : -1)
-#define wwinterrupt()	(wwibp < wwibq)
+
+	/* things for short circuiting wwiomux() */
+char wwintr;		/* interrupting */
+char wwsetjmp;		/* want a longjmp() from wwrint() and wwchild() */
+jmp_buf wwjmpbuf;	/* jmpbuf for above */
+#define wwinterrupt()	wwintr
+#define wwsetintr()	(wwintr = 1, wwsetjmp ? longjmp(wwjmpbuf, 1) : 0)
+#define wwclrintr()	(wwintr = 0)
 
 	/* the window virtual terminal */
 #define WWT_TERM	"TERM=window"

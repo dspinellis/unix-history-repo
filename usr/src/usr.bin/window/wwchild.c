@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwchild.c	3.6 %G%";
+static char sccsid[] = "@(#)wwchild.c	3.7 %G%";
 #endif
 
 /*
@@ -19,6 +19,7 @@ wwchild()
 	register struct ww **wp;
 	union wait w;
 	int pid;
+	char collected = 0;
 
 	olderrno = errno;
 	while ((pid = wait3(&w, WNOHANG|WUNTRACED, (struct rusage *)0)) > 0) {
@@ -26,9 +27,13 @@ wwchild()
 			if (*wp && (*wp)->ww_state == WWS_HASPROC
 			    && (*wp)->ww_pid == pid) {
 				(*wp)->ww_state = WWS_DEAD;
+				collected = 1;
 				break;
 			}
 		}
 	}
 	errno = olderrno;
+	/* jump out of wwiomux when somebody dies */
+	if (collected)
+		wwsetintr();
 }

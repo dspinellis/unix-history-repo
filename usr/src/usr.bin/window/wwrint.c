@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwrint.c	3.4 %G%";
+static char sccsid[] = "@(#)wwrint.c	3.5 %G%";
 #endif
 
 /*
@@ -15,8 +15,7 @@ static char sccsid[] = "@(#)wwrint.c	3.4 %G%";
 /*
  * Tty input interrupt handler.
  * (1) Read input into buffer (wwib*).
- * (2) If the flag wwsetjmp is true, do longjmp(wwjmpbuf) for asyncronous
- *     actions, and to avoid race conditions, clear wwsetjmp.
+ * (2) Set the interrupt flag if anything is read.
  * Currently, the last is used to get out of the blocking
  * select() in wwiomux().
  * To avoid race conditions, we only modify wwibq in here, except
@@ -36,13 +35,9 @@ wwrint()
 	if (n > 0) {
 		wwibq += n;
 		wwnreadc += n;
+		wwsetintr();
 	} else if (n == 0)
 		wwnreadz++;
 	else
 		wwnreade++;
-	if (wwinterrupt() && wwsetjmp) {
-		wwsetjmp = 0;
-		(void) sigsetmask(sigblock(0) & ~sigmask(SIGIO));
-		longjmp(wwjmpbuf, 1);
-	}
 }
