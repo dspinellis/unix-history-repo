@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -44,13 +44,13 @@ static char sccsid[] = "@(#)hash_page.c	5.14 (Berkeley) %G%";
 #include "page.h"
 #include "extern.h"
 
-static void putpair __P((char *, const DBT *, const DBT *));
-static int ugly_split __P((u_int, BUFHEAD *, BUFHEAD *, int, int));
-static int first_free __P((u_long));
-static u_short overflow_page __P((void));
-static int open_temp __P((void));
-static void squeeze_key __P((u_short *, const DBT *, const DBT *));
-static u_long *fetch_bitmap __P((int));
+static u_long	*fetch_bitmap __P((int));
+static u_long	 first_free __P((u_long));
+static int	 open_temp __P((void));
+static u_short	 overflow_page __P((void));
+static void	 putpair __P((char *, const DBT *, const DBT *));
+static void	 squeeze_key __P((u_short *, const DBT *, const DBT *));
+static int	 ugly_split __P((u_int, BUFHEAD *, BUFHEAD *, int, int));
 
 #define	PAGE_INIT(P) { \
 	((u_short *)(P))[0] = 0; \
@@ -108,7 +108,7 @@ __delpair(bufp, ndx)
 	n = bp[0];
 
 	if (bp[ndx + 1] < REAL_KEY)
-		return (__big_delete(bufp, ndx));
+		return (__big_delete(bufp));
 	if (ndx != 1)
 		newoff = bp[ndx - 1];
 	else
@@ -175,7 +175,7 @@ __split_page(obucket, nbucket)
 	for (n = 1, ndx = 1; n < ino[0]; n += 2) {
 		if (ino[n + 1] < REAL_KEY) {
 			retval = ugly_split(obucket, old_bufp, new_bufp,
-			    copyto, moved);
+			    (int)copyto, (int)moved);
 			old_bufp->flags &= ~BUF_PIN;
 			new_bufp->flags &= ~BUF_PIN;
 			return (retval);
@@ -253,7 +253,7 @@ ugly_split(obucket, old_bufp, new_bufp, copyto, moved)
 	BUFHEAD *last_bfp;	/* Last buf header OVFL needing to be freed */
 	DBT key, val;
 	SPLIT_RETURN ret;
-	u_short last_addr, n, off, ov_addr, scopyto;
+	u_short n, off, ov_addr, scopyto;
 	char *cino;		/* Character value of ino */
 
 	bufp = old_bufp;
@@ -261,12 +261,15 @@ ugly_split(obucket, old_bufp, new_bufp, copyto, moved)
 	np = (u_short *)new_bufp->page;
 	op = (u_short *)old_bufp->page;
 	last_bfp = NULL;
-	last_addr = 0;
 	scopyto = (u_short)copyto;	/* ANSI */
 
 	n = ino[0] - 1;
 	while (n < ino[0]) {
 		if (ino[2] < REAL_KEY && ino[2] != OVFLPAGE) {
+			/*
+			 * Ov_addr gets set before reaching this point; there's
+			 * always an overflow page before a big key/data page.
+			 */
 			if (__big_split(old_bufp,
 			    new_bufp, bufp, ov_addr, obucket, &ret))
 				return (-1);
@@ -572,7 +575,7 @@ __put_page(p, bucket, is_bucket, is_bitmap)
  * Initialize a new bitmap page.  Bitmap pages are left in memory
  * once they are read in.
  */
-extern u_long *
+extern int
 __init_bitmap(pnum, nbits, ndx)
 	int pnum, nbits, ndx;
 {
@@ -580,21 +583,21 @@ __init_bitmap(pnum, nbits, ndx)
 	int clearbytes, clearints;
 
 	if (!(ip = malloc(hashp->BSIZE)))
-		return (NULL);
+		return (1);
 	hashp->nmaps++;
 	clearints = ((nbits - 1) >> INT_BYTE_SHIFT) + 1;
 	clearbytes = clearints << INT_TO_BYTE;
-	memset((char *)ip, 0, clearbytes);
-	memset(((char *)ip) + clearbytes, 0xFF,
+	(void)memset((char *)ip, 0, clearbytes);
+	(void)memset(((char *)ip) + clearbytes, 0xFF,
 	    hashp->BSIZE - clearbytes);
 	ip[clearints - 1] = ALL_SET << (nbits & BYTE_MASK);
 	SETBIT(ip, 0);
 	hashp->BITMAPS[ndx] = (u_short)pnum;
 	hashp->mapp[ndx] = ip;
-	return (ip);
+	return (0);
 }
 
-static int
+static u_long
 first_free(map)
 	u_long map;
 {
@@ -665,7 +668,9 @@ overflow_page()
 		 * don't have to if we tell init_bitmap not to leave it clear
 		 * in the first place.
 		 */
-		__init_bitmap(OADDR_OF(splitnum, offset), 1, free_page);
+		if (__init_bitmap((int)OADDR_OF(splitnum, offset),
+		    1, free_page))
+			return (NULL);
 		hashp->SPARES[splitnum]++;
 #ifdef DEBUG2
 		free_bit = 2;
