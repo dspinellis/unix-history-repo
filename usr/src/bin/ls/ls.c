@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.18 (Berkeley) %G%";
+static	char *sccsid = "@(#)ls.c	4.19 (Berkeley) %G%";
 #endif
 
 /*
@@ -589,10 +589,11 @@ fmtmode(lp, flags)
 #include <utmp.h>
 
 struct	utmp utmp;
+#define	NMAX	(sizeof (utmp.ut_name))
+#define SCPYN(a, b)	strncpy(a, b, NMAX)
 
 #define NUID	2048
 #define NGID	300
-#define	NMAX	(sizeof (utmp.ut_name))
 
 char	names[NUID][NMAX+1];
 char	outrangename[NMAX+1];
@@ -620,7 +621,7 @@ getname(uid)
 			if (pw->pw_uid != uid)
 				continue;
 			outrangeuid = pw->pw_uid;
-			strncpy(outrangename, pw->pw_name, NUID);
+			SCPYN(outrangename, pw->pw_name);
 			endpwent();
 			return (outrangename);
 		}
@@ -633,14 +634,14 @@ getname(uid)
 		if (pw->pw_uid < 0 || pw->pw_uid >= NUID) {
 			if (pw->pw_uid == uid) {
 				outrangeuid = pw->pw_uid;
-				strncpy(outrangename, pw->pw_name, NUID);
+				SCPYN(outrangename, pw->pw_name);
 				return (outrangename);
 			}
 			continue;
 		}
 		if (names[pw->pw_uid][0])
 			continue;
-		strncpy(names[pw->pw_uid], pw->pw_name, NMAX);
+		SCPYN(names[pw->pw_uid], pw->pw_name);
 		if (pw->pw_uid == uid) {
 			return (&names[uid][0]);
 		}
@@ -669,7 +670,7 @@ getgroup(gid)
 			if (gr->gr_gid != gid)
 				continue;
 			outrangegid = gr->gr_gid;
-			strncpy(outrangegroup, gr->gr_name, NGID);
+			SCPYN(outrangegroup, gr->gr_name);
 			endgrent();
 			return (outrangegroup);
 		}
@@ -682,14 +683,14 @@ getgroup(gid)
 		if (gr->gr_gid < 0 || gr->gr_gid >= NGID) {
 			if (gr->gr_gid == gid) {
 				outrangegid = gr->gr_gid;
-				strncpy(outrangegroup, gr->gr_name, NGID);
+				SCPYN(outrangegroup, gr->gr_name);
 				return (outrangegroup);
 			}
 			continue;
 		}
 		if (groups[gr->gr_gid][0])
 			continue;
-		strncpy(groups[gr->gr_gid], gr->gr_name, NMAX);
+		SCPYN(groups[gr->gr_gid], gr->gr_name);
 		if (gr->gr_gid == gid) {
 			return (&groups[gid][0]);
 		}

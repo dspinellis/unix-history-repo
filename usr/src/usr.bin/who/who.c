@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)who.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)who.c	4.6 (Berkeley) %G%";
 #endif
 /*
  * who
@@ -39,7 +39,7 @@ main(argc, argv)
 			tp = rindex(tp, '/') + 1;
 		else {	/* no tty - use best guess from passwd file */
 			pw = getpwuid(getuid());
-			strcpy(utmp.ut_name, pw?pw->pw_name: "?");
+			strncpy(utmp.ut_name, pw ? pw->pw_name : "?", NMAX);
 			strcpy(utmp.ut_line, "tty??");
 			time(&utmp.ut_time);
 			putline();
