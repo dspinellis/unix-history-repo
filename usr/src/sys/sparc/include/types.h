@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	8.3 (Berkeley) %G%
+ *	@(#)types.h	8.4 (Berkeley) %G%
  *
  * from: $Header: types.h,v 1.5 92/11/26 02:00:07 torek Exp $ (LBL)
  */
@@ -46,5 +46,7 @@ typedef	int			  int32_t;
 typedef	unsigned int		u_int32_t;
 typedef	long long		  int64_t;
 typedef	unsigned long long	u_int64_t;
+
+typedef	int32_t			register_t;
 
 #endif	/* _MACHTYPES_H_ */
