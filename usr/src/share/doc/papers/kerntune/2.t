@@ -1,4 +1,4 @@
-.\"	@(#)2.t	1.1	(Copyright 1984 M. K. McKusick)	84/05/21
+.\"	@(#)2.t	1.2	(Copyright 1984 M. K. McKusick)	87/08/05
 .ds RH The \fIgprof\fP Profiler
 .NH 1
 The \fIgprof\fP Profiler
@@ -123,19 +123,7 @@ corresponding to the entry in the call graph profile listing
 shown in Figure 1.
 .KF
 .DS L
-.TS
-center;
-c c c.
-
-\s-1CALLER1\s+1		\s-1CALLER2\s+1
-
-
-	\s-1EXAMPLE\s+1
-
-
-\s-1SUB1\s+1	\s-1SUB2\s+1	\s-1SUB3\s+1
-
-.TE
+.so fig2.pic
 .ce
 Figure 2. Example call graph fragment.
 .DE
