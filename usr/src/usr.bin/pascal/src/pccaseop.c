@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.5 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.6 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -28,7 +28,6 @@ struct ct {
      *	these to keep from thinking of it as r0 all over.
      */
 #define	FORCENAME	"r0"
-#define	FORCENUMBER	0
 
     /*
      *	given a tree for a case statement, generate code for it.
@@ -48,6 +47,7 @@ pccaseop( tcase )
     int	*tcase;
 {
     struct nl	*exprtype;
+    int		exproff;
     struct nl	*rangetype;
     long	low;
     long	high;
@@ -73,7 +73,9 @@ pccaseop( tcase )
 	 *  even if the expression has errors (exprtype == NIL), continue.
 	 */
     line = tcase[1];
+    codeoff();
     exprtype = rvalue( (int *) tcase[2] , NIL  , RREQ );
+    codeon();
     if ( exprtype != NIL ) {
 	if ( isnta( exprtype , "bcsi" ) ) {
 	    error("Case selectors cannot be %ss" , nameof( exprtype ) );
@@ -94,12 +96,17 @@ pccaseop( tcase )
     }
     if ( exprtype != NIL ) {
 	    /*
-	     *	put expression into a register
+	     *	compute and save the case expression.
+	     *	also, put expression into a register
 	     *	save its c-type and jump to the code to do the switch.
 	     */
+	exprctype = p2type( exprtype );
+	exproff = tmpalloc( sizeof (long) , nl + T4INT , NOREG );
+	putRV( 0 , cbn , exproff , P2INT );
+	(void) rvalue( (int *) tcase[2] , NIL , RREQ );
+	putop( P2ASSIGN , P2INT );
 	putop( P2FORCE , P2INT );
 	putdot( filename , line );
-	exprctype = p2type( exprtype );
 	swlabel = getlab();
 	putjbr( swlabel );
     }
@@ -184,7 +191,7 @@ pccaseop( tcase )
     putlab( ctab[0].clabel );
     putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_ERROR" );
     putleaf( P2ICON , ECASE , 0 , P2INT , 0 );
-    putleaf( P2REG , FORCENUMBER , 0 , P2INT , 0 );
+    putRV( 0 , cbn , exproff , P2INT );
     putop( P2LISTOP , P2INT );
     putop( P2CALL , P2INT );
     putdot( filename , line );
