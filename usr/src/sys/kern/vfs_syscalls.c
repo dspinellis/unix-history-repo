@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.31 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -84,6 +84,7 @@ mount(scp)
 		VOP_UNLOCK(vp);
 		goto update;
 	}
+	vinvalbuf(vp, 1);
 	if (vp->v_count != 1) {
 		vput(vp);
 		RETURN (EBUSY);
