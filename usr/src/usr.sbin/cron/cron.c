@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)cron.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.5 (Berkeley) %G%";
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -54,8 +54,8 @@ main()
 		}
 		loct = localtime(&itime);
 		loct->tm_mon++;		 /* 1-12 for month */
-		if (loct->tm_day == 0)
-			loct->tm_day == 7;	/* sunday is 7, not 0 */
+		if (loct->tm_wday == 0)
+			loct->tm_wday == 7;	/* sunday is 7, not 0 */
 		for(cp = list; *cp != EOS;) {
 			flag = 0;
 			cp = cmp(cp, loct->tm_min);
