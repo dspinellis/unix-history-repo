@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)newvers.sh	7.4 (Berkeley) %G%
+#	@(#)newvers.sh	7.5 (Berkeley) %G%
 #
 
 if [ ! -r version ]
@@ -15,7 +15,7 @@ fi
 
 touch version
 v=`cat version` u=${USER-root} d=`pwd` h=`hostname` t=`date`
-( echo "char sccs[] = \"@(#)4.3 BSD Reno #${v}: ${t} (${u}@${h}:${d})\\n\";" ;
-  echo "char version[] = \"4.3 BSD Reno UNIX #${v}: ${t}\\n    ${u}@${h}:${d}\\n\";"
+( echo "char sccs[] = \"@(#)4.4BSD-Alpha #${v}: ${t} (${u}@${h}:${d})\\n\";" ;
+  echo "char version[] = \"4.4BSD-Alpha UNIX #${v}: ${t}\\n    ${u}@${h}:${d}\\n\";"
 ) > vers.c
 echo `expr ${v} + 1` > version
