@@ -35,6 +35,6 @@ clean:;
 depend:;	@mkmf -f $(MAKEFILE)
 
 install:;	@echo Installing $(SRCS) in $(DEST)
-		@for i in $(SRCS); do cp $$i $(DEST)/$$i; done
+		-for i in $(SRCS); do rm -f $(DEST)/$$i; cp $$i $(DEST)/$$i; done
 
 update:;
