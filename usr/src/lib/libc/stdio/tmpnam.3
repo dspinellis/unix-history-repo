@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)tmpnam.3	5.4 (Berkeley) %G%
+.\"	@(#)tmpnam.3	5.5 (Berkeley) %G%
 .\"
 .TH COMPATS5 3 ""
 .UC 7
@@ -67,6 +67,10 @@ tmpfile, tmpnam \- System V compatibility routines
 .PP
 .B char *strtok(str, sep)
 .B char *str, *sep;
+.PP
+.B char *strtol(str, ptr, base)
+.B char *str, **ptr;
+.B int base;
 .PP
 .B char *tempnam(tmpdir, prefix)
 .B char *tmpdir, *prefix;
