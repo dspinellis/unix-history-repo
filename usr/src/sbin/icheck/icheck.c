@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)icheck.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)icheck.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -101,7 +101,7 @@ main(argc, argv)
 			continue;
 
 		case 'b':
-			for(i=0; i<NB; i++) {
+			for(i=0; i<NB && argc >= 2; i++) {
 				n = atol(argv[1]);
 				if(n == 0)
 					break;
