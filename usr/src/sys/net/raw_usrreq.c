@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_usrreq.c	6.10 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -266,16 +266,16 @@ raw_usrreq(so, req, m, nam, rights)
 		 * route.  On failure, just hand packet to output
 		 * routine anyway in case it can handle it.
 		 */
-		if ((rp->rcb_flags & RAW_DONTROUTE) == 0)
-			if (!equal(rp->rcb_faddr, rp->rcb_route.ro_dst) ||
-			    rp->rcb_route.ro_rt == 0) {
-				if (rp->rcb_route.ro_rt) {
-					RTFREE(rp->rcb_route.ro_rt);
-					rp->rcb_route.ro_rt = NULL;
-				}
-				rp->rcb_route.ro_dst = rp->rcb_faddr;
-				rtalloc(&rp->rcb_route);
-			}
+		if ((!equal(rp->rcb_faddr, rp->rcb_route.ro_dst) ||
+		    (so->so_options & SO_DONTROUTE)) && rp->rcb_route.ro_rt) {
+			RTFREE(rp->rcb_route.ro_rt);
+			rp->rcb_route.ro_rt = NULL;
+		}
+		if ((so->so_options & SO_DONTROUTE) == 0 &&
+		    rp->rcb_route.ro_rt == 0) {
+			rp->rcb_route.ro_dst = rp->rcb_faddr;
+			rtalloc(&rp->rcb_route);
+		}
 		error = (*so->so_proto->pr_output)(m, so);
 		m = NULL;
 		if (nam)
