@@ -1,4 +1,4 @@
-.\"	@(#)fseek.3	6.1 (Berkeley) %G%
+.\"	@(#)fseek.3	6.2 (Berkeley) %G%
 .\"
 .TH FSEEK 3S  ""
 .AT 3
@@ -7,7 +7,7 @@ fseek, ftell, rewind \- reposition a stream
 .SH SYNOPSIS
 .B #include <stdio.h>
 .PP
-.B fseek(stream, offset, ptrname)
+.B long fseek(stream, offset, ptrname)
 .br
 .SM
 .B FILE
@@ -34,6 +34,11 @@ from the beginning, the current position, or the end of the file,
 according as 
 .I ptrname
 has the value 0, 1, or 2.
+.I Fseek
+returns \-1 for improper seeks,
+otherwise it returns the new value of the offset relative
+to the beginning of the file associated with the named
+.IR stream .
 .PP
 .I Fseek
 undoes any effects of
@@ -57,6 +62,3 @@ is equivalent to
 .SH "SEE ALSO"
 lseek(2),
 fopen(3S)
-.SH DIAGNOSTICS
-.I Fseek
-returns \-1 for improper seeks.
