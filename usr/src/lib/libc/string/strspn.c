@@ -16,8 +16,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strspn.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)strspn.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
+
+#include <string.h>
 
 strspn(s, set)
 	register char *s, *set;
