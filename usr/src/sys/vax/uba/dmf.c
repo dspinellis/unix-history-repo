@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.17 (Berkeley) %G%
+ *	@(#)dmf.c	6.18 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -204,8 +204,8 @@ dmfattach(ui)
 	register int lines = (ui->ui_flags>>16) & 0xff;
 
 	dmfsoftCAR[ui->ui_unit] = ui->ui_flags & 0xff;
-	dmfl_softc[ui->ui_unit].dmfl_cols = cols==0?DMFL_DEFCOLS:cols;
-	dmfl_softc[ui->ui_unit].dmfl_lines = lines==0?DMFL_DEFLINES:lines;
+	dmfl_softc[ui->ui_unit].dmfl_cols = cols == 0 ? DMFL_DEFCOLS : cols;
+	dmfl_softc[ui->ui_unit].dmfl_lines = lines == 0 ? DMFL_DEFLINES : lines;
  	if ((ui->ui_flags >> 24) & 0x1)
  		dmfl_softc[ui->ui_unit].dmfl_format = (2 << 8);
  	else
@@ -264,11 +264,17 @@ dmfopen(dev, flag)
 	 */
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
+#ifndef PORTSELECTOR
 		if (tp->t_ispeed == 0) {
+#else
+			tp->t_state |= TS_HUPCLS;
+#endif PORTSELECTOR
 			tp->t_ispeed = ISPEED;
 			tp->t_ospeed = ISPEED;
 			tp->t_flags = IFLAGS;
+#ifndef PORTSELECTOR
 		}
+#endif PORTSELECTOR
 		dmfparam(unit);
 	}
 	/*
@@ -825,7 +831,6 @@ dmfreset(uban)
 	}
 }
 
-#if NDMF > 0
 /*
  * dmflopen -- open the line printer port on a dmf32
  */
