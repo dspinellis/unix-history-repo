@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -68,7 +68,6 @@ int	dev_bsize = 1;
 int	nerror;
 daddr_t	bmap();
 long	atol();
-off_t	lseek();
 char	*malloc(), *strcpy();
 struct htab *lookup();
 struct direct *nreaddir();
@@ -388,7 +387,7 @@ bread(bno, buf, lcount)
 	register int i, cnt = lcount;
 	register off_t off = bno * dev_bsize;
 
-	(void) lseek(fi, off, 0);
+	(void) lseek(fi, off, SEEK_SET);
 	if (read(fi, buf, cnt) != cnt) {
 		(void) fprintf(stderr, "ncheck: read error %ld\n", bno);
 		if (cnt % dev_bsize) {
@@ -401,7 +400,7 @@ bread(bno, buf, lcount)
 			return;
 		}
 		for (i = 0; i < cnt; i += dev_bsize) {
-			(void) lseek(fi, off, 0);
+			(void) lseek(fi, off, SEEK_SET);
 			if (read(fi, buf, dev_bsize) != dev_bsize) {
 				(void) fprintf(stderr,
 				    "ncheck: re-read error %ld\n", bno);
