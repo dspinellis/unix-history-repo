@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.63 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.64 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -210,7 +210,8 @@ main(argc, argv, envp)
 	**	to the run that froze the configuration.
 	*/
 	nothaw = FALSE;
-	while ((j = getopt(argc, argv, "b:C:d:")) != EOF)
+#define OPTIONS		"b:C:cd:eF:f:h:Iimno:p:q:R:r:sTtv"
+	while ((j = getopt(argc, argv, OPTIONS)) != EOF)
 	{
 		switch (j)
 		{
@@ -336,7 +337,7 @@ main(argc, argv, envp)
 		OpMode = MD_DAEMON;
 
 	optind = 1;
-	while ((j = getopt(argc, argv, "b:C:c:d:e:F:f:h:I:i:m:no:p:q:R:r:s:T:tv:")) != EOF)
+	while ((j = getopt(argc, argv, OPTIONS)) != EOF)
 	{
 		switch (j)
 		{
@@ -466,11 +467,11 @@ main(argc, argv, envp)
 		  case 'm':	/* send to me too */
 		  case 'T':	/* set timeout interval */
 		  case 'v':	/* give blow-by-blow description */
-			setoption(j, optarg, FALSE, TRUE);
+			setoption(j, "T", FALSE, TRUE);
 			break;
 
 		  case 's':	/* save From lines in headers */
-			setoption('f', optarg, FALSE, TRUE);
+			setoption('f', "T", FALSE, TRUE);
 			break;
 
 # ifdef DBM
@@ -1221,5 +1222,10 @@ obsolete(argv)
 		if (ap[1] == 'q' && ap[2] == '\0' &&
 		    (argv[1] == NULL || argv[1][0] == '-'))
 			*argv = "-q0";
+
+		/* if -d doesn't have an argument, use 0-99.1 */
+		if (ap[1] == 'd' && ap[2] == '\0' &&
+		    (argv[1] == NULL || argv[1][0] == '-'))
+			*argv = "-d0-99.1";
 	}
 }
