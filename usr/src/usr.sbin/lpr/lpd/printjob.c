@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.15 (Berkeley) %G%";
 #endif
 
 /*
@@ -29,7 +29,7 @@ static int	remote;			/* true if sending files to remote */
 
 static char	fromhost[32];		/* user's host machine */
 static char	logname[32];		/* user's login name */
-static char	jobname[32];		/* job or file name */
+static char	jobname[100];		/* job or file name */
 static char	class[32];		/* classification field */
 static char	width[10] = "-w";	/* page width in characters */
 static char	length[10] = "-l";	/* page length in lines */
@@ -256,11 +256,11 @@ printit(file)
 		case 'H':
 			strcpy(fromhost, line+1);
 			if (class[0] == '\0')
-				strcpy(class, line+1);
+				strncpy(class, line+1, sizeof(class)-1);
 			continue;
 
 		case 'P':
-			strcpy(logname, line+1);
+			strncpy(logname, line+1, sizeof(logname)-1);
 			if (RS) {			/* restricted */
 				if (getpwnam(logname) == (struct passwd *)0) {
 					bombed = 2;
@@ -272,20 +272,20 @@ printit(file)
 
 		case 'J':
 			if (line[1] != '\0')
-				strcpy(jobname, line+1);
+				strncpy(jobname, line+1, sizeof(jobname)-1);
 			else
 				strcpy(jobname, " ");
 			continue;
 
 		case 'C':
 			if (line[1] != '\0')
-				strcpy(class, line+1);
+				strncpy(class, line+1, sizeof(class)-1);
 			else if (class[0] == '\0')
 				gethostname(class, sizeof (class));
 			continue;
 
 		case 'T':	/* header title for pr */
-			strcpy(title, line+1);
+			strncpy(title, line+1, sizeof(title)-1);
 			continue;
 
 		case 'L':	/* identification line */
@@ -302,11 +302,11 @@ printit(file)
 			continue;
 
 		case 'W':	/* page width */
-			strcpy(width+2, line+1);
+			strncpy(width+2, line+1, sizeof(width)-3);
 			continue;
 
 		case 'I':	/* indent amount */
-			strcpy(indent+2, line+1);
+			strncpy(indent+2, line+1, sizeof(indent)-3);
 			continue;
 
 		default:	/* some file to print */
