@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -96,15 +96,14 @@ pass2()
 			continue;
 		if (inp->i_isize < MINDIRSIZE) {
 			direrror(inp->i_number, "DIRECTORY TOO SHORT");
-			inp->i_isize = MINDIRSIZE;
+			inp->i_isize = roundup(MINDIRSIZE, DIRBLKSIZ);
 			if (reply("FIX") == 1) {
 				dp = ginode(inp->i_number);
-				dp->di_size = MINDIRSIZE;
+				dp->di_size = inp->i_isize;
 				inodirty();
 				dp = &dino;
 			}
-		}
-		if ((inp->i_isize & (DIRBLKSIZ - 1)) != 0) {
+		} else if ((inp->i_isize & (DIRBLKSIZ - 1)) != 0) {
 			getpathname(pathbuf, inp->i_number, inp->i_number);
 			pwarn("DIRECTORY %s: LENGTH %d NOT MULTIPLE OF %d",
 				pathbuf, inp->i_isize, DIRBLKSIZ);
