@@ -1,4 +1,4 @@
-/*	systm.h	4.25	82/07/16	*/
+/*	systm.h	4.26	82/09/04	*/
 
 /*
  * Random set of variables
@@ -10,9 +10,6 @@ int	timezone;		/* minutes west from greenwich */
 int	dstflag;		/* daylight savings time in effect? */
 char	version[];		/* system version */
 int	lbolt;			/* time of day in 60th not in time */
-time_t	time;			/* time in sec from 1970 */
-time_t	bootime;		/* time at which booted */
-
 int	hand;			/* current index into coremap used by daemon */
 
 /*
