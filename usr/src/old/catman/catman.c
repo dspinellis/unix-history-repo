@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)catman.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)catman.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -33,7 +33,7 @@ char	wflag;
 char	man[MAXNAMLEN+6] = "manx/";
 int	exstat = 0;
 char	cat[MAXNAMLEN+6] = "catx/";
-char	lncat[MAXNAMLEN+6] = "catx/";
+char	lncat[MAXNAMLEN+9] = "../catx/";
 char	*manpath = "/usr/man";
 char	*sections = "12345678ln";
 char	*makewhatis = "/usr/lib/makewhatis";
@@ -190,19 +190,17 @@ doit(mandir)
 			if (getc(inf) == '.' && getc(inf) == 's'
 			    && getc(inf) == 'o') {
 				if (getc(inf) != ' ' ||
-				    fgets(lncat, sizeof(lncat), inf)==NULL) {
+				    fgets(lncat+3, sizeof(lncat)-3, inf)==NULL) {
 					fclose(inf);
 					continue;
 				}
 				if (lncat[strlen(lncat)-1] == '\n')
 					lncat[strlen(lncat)-1] = '\0';
-				if (strncmp(lncat, "man", 3) != 0) {
+				if (strncmp(lncat+3, "man", 3) != 0) {
 					fclose(inf);
 					continue;
 				}
-				lncat[0] = 'c';
-				lncat[1] = 'a';
-				lncat[2] = 't';
+				bcopy("../cat", lncat, sizeof("../cat")-1);
 				makelink = 1;
 			}
 			fclose(inf);
@@ -218,14 +216,15 @@ doit(mandir)
 				/*
 				 * Don't unlink a directory by accident.
 				 */
-				if (stat(lncat, &sbuf) >= 0 &&
-				    ((sbuf.st_mode&S_IFMT)==S_IFREG))
+				if (stat(lncat+3, &sbuf) >= 0 &&
+				    (((sbuf.st_mode&S_IFMT)==S_IFREG) ||
+				     ((sbuf.st_mode&S_IFMT)==S_IFLNK)))
 					(void) unlink(cat);
 				if (pflag)
-					printf("ln %s %s\n", lncat, cat);
+					printf("ln -s %s %s\n", lncat, cat);
 				else
-					if (link(lncat, cat) == -1) {
-						sprintf(buf, "catman: link: %s", cat);
+					if (symlink(lncat, cat) == -1) {
+						sprintf(buf, "catman: symlink: %s", cat);
 						perror(buf);
 						exstat = 1;
 						continue;
