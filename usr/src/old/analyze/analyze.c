@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)analyze.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)analyze.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -61,7 +61,7 @@ struct	pte *Usrptma;
 int	firstfree;
 int	maxfree;
 int	freemem;
-struct	pte p0br[ctopt(MAXTSIZ+MAXDSIZ+MAXSSIZ)][NPTEPG];
+struct	pte p0br[ctopt(btoc(MAXTSIZ+MAXDSIZ+MAXSSIZ))][NPTEPG];
 int	pid;
 
 struct	paginfo {
