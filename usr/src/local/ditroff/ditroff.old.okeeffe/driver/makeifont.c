@@ -1,4 +1,4 @@
-/*	makeifont.c	(Berkeley)	1.6	85/02/04
+/*	makeifont.c	(Berkeley)	1.7	85/02/26
  *
  * Font description file producer for imagen fonts:  David Slattengren
  * Taken from vfontinfo by Andy Hertzfeld  4/79
@@ -57,11 +57,13 @@
 #include <ctype.h>
 #include "rst.h"
 
-char 	sccsid[] = "@(#)makeifont.c	1.6	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makeifont.c	1.7	(Berkeley)	%G%";
 
 #define PCNTUP		62	/* percent of maximum height for an ascender */
 #define PCNTDOWN	73	/* percent of maximum droop for a descender */
+#ifndef BITDIR
 #define BITDIR		"/usr/src/local/imagen/fonts/raster"
+#endif
 #define POINTSIZE	40	/* this is the "unitwidth" point size */
 #define MINSIZE		6	/* the minimum and maximum point size values */
 #define MAXSIZE		36	/*    acceptible for use as "unitwidth"s */

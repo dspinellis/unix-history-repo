@@ -1,4 +1,4 @@
-/*	makevfont.c	(Berkeley)	85/02/04	1.4
+/*	makevfont.c	(Berkeley)	85/02/26	1.5
  *
  * Font description file producer for versatec fonts:  David Slattengren
  * Taken from vfontinfo by Andy Hertzfeld  4/79
@@ -56,12 +56,14 @@
 #include <ctype.h>
 #include <vfont.h>
 
-char 	sccsid[] = "@(#)makevfont.c	1.4	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makevfont.c	1.5	(Berkeley)	%G%";
 
 #define MAGICN		0436	/* font file magic number */
 #define PCNTUP		62	/* percent of maximum height for an ascender */
 #define PCNTDOWN	73	/* percent of maximum droop for a descender */
+#ifndef BITDIR
 #define BITDIR		"/usr/lib/vfont"
+#endif
 #define POINTSIZE	36	/* this is the "unitwidth" point size */
 #define MINSIZE		6	/* the minimum and maximum point size values */
 #define MAXSIZE		36	/*    acceptible for use as "unitwidth"s */
