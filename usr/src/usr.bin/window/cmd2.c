@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	1.2 83/07/19";
+static	char *sccsid = "@(#)cmd2.c	1.3 83/07/20";
 #endif
 
 #include "defs.h"
@@ -12,26 +12,28 @@ dohelp()
 {
 	register struct ww *w;
 
-	if ((w = openwin(22, "Help")) == 0)
+	if ((w = openwin(22, "Help")) == 0) {
+		wwputs("Can't open help window.  ", cmdwin);
 		return;
+	}
 	wwprintf(w, "The escape character is ^P, which gets you into command mode.\r\n");
 	wwprintf(w, "The commands are:\r\n");
-	wwprintf(w, "[1-9]   select window [1-9] and exit command mode\r\n");
-	wwprintf(w, "%%[1-9]  select window [1-9]\r\n");
-	wwprintf(w, "c[1-9]  close window [1-9]\r\n");
-	wwprintf(w, "C       close all empty windows\r\n");
-	wwprintf(w, "Z       close all windows\r\n");
-	wwprintf(w, "Q       show all windows in sequence\r\n");
-	wwprintf(w, "R       force refresh after every newline in current window\r\n");
-	wwprintf(w, "r       don't refresh every line\r\n");
-	wwprintf(w, "w       open a new window\r\n");
-	wwprintf(w, "s       print IO statistics\r\n");
-	wwprintf(w, "t       print resource usage of this program\r\n");
-	wwprintf(w, "T       print resource usage of children\r\n");
-	wwprintf(w, "escape  exit command mode\r\n");
-	wwprintf(w, "^L      redraw screen\r\n");
-	wwprintf(w, "^Z      suspend\r\n");
-	wwprintf(w, ".       quit\r\n");
+	wwprintf(w, "[1-9]   Select window [1-9] and exit command mode\r\n");
+	wwprintf(w, "%%[1-9]  Select window [1-9]\r\n");
+	wwprintf(w, "c[1-9]  Close window [1-9]\r\n");
+	wwprintf(w, "C       Close all empty windows\r\n");
+	wwprintf(w, "Z       Close all windows\r\n");
+	wwprintf(w, "Q       Show all windows in sequence\r\n");
+	wwprintf(w, "R       Force refresh after every newline in current window\r\n");
+	wwprintf(w, "r       Don't refresh every line\r\n");
+	wwprintf(w, "w       Open a new window\r\n");
+	wwprintf(w, "s       Print IO statistics\r\n");
+	wwprintf(w, "t       Print resource usage of this program\r\n");
+	wwprintf(w, "T       Print resource usage of children\r\n");
+	wwprintf(w, "escape  Exit command mode\r\n");
+	wwprintf(w, "^L      Redraw screen\r\n");
+	wwprintf(w, "^Z      Suspend\r\n");
+	wwprintf(w, ".       Quit\r\n");
 	waitnl(w);
 	closewin(w);
 }
@@ -42,8 +44,10 @@ dotime(flag)
 	struct rusage rusage;
 	struct timeval timeval;
 
-	if ((w = openwin(8, "Time")) == 0)
+	if ((w = openwin(8, "Time")) == 0) {
+		wwputs("Can't open time window.  ", cmdwin);
 		return;
+	}
 
 	gettimeofday(&timeval, &timezone);
 	timeval.tv_sec -= starttime.tv_sec;
@@ -100,25 +104,37 @@ register struct timeval *t;
 	return buf;
 }
 
+doquit()
+{
+	wwputs("Really quit? ", cmdwin);
+	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
+	while (bpeekc() < 0)
+		bread();
+	if (bgetc() == 'y') {
+		wwputs("Yes", cmdwin);
+		quit++;
+	} else
+		wwputs("\r\n", cmdwin);
+}
+
 struct ww *
 openwin(nrow, label)
 char *label;
 {
 	register struct ww *w;
 
-	if ((w = wwopen(WW_NONE, 0, nrow, WCols, 1, 0)) == 0) {
-		wwputs("\r\nCan't open help window.  ", cmdwin);
+	if ((w = wwopen(WW_NONE, 0, nrow, WCols, 1, 0)) == 0)
 		return 0;
-	}
 	wwframe(w);
 	wwlabel(w, label, WINVERSE);
-	wwsetcurrent(w);
+	wwsetcurwin(w);
 	return w;
 }
 
 waitnl(w)
 register struct ww *w;
 {
+	wwsetcurwin(w);
 	wwprintf(w, "\r\nType return to continue: ");
 	wwsetcursor(WCurRow(w->ww_win), WCurCol(w->ww_win));
 	while (bgetc() < 0)
@@ -129,5 +145,5 @@ closewin(w)
 register struct ww *w;
 {
 	wwclose(w);
-	wwsetcurrent(cmdwin);
+	wwsetcurwin(cmdwin);
 }

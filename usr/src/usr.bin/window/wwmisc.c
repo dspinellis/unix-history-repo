@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmisc.c	1.4 83/07/19";
+static	char *sccsid = "@(#)wwmisc.c	1.5 83/07/20";
 #endif
 
 #include "ww.h"
@@ -7,7 +7,7 @@ static	char *sccsid = "@(#)wwmisc.c	1.4 83/07/19";
 struct ww *wwhead = 0;
 struct ww *curwin = 0;
 
-wwsetcurrent(wp)
+wwsetcurwin(wp)
 register struct ww *wp;
 {
 	curwin = wp;

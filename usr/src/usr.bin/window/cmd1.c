@@ -1,27 +1,17 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	1.2 83/07/19";
+static	char *sccsid = "@(#)cmd1.c	1.3 83/07/20";
 #endif
 
 #include "defs.h"
 
-struct ww *getwin();
-struct ww *openwin();
-char *strtime();
+struct ww *doopen();
 
 dowindow()
 {
 	int col, row, xcol, xrow;
-	register struct ww *w;
 	int id;
-	char ids[10];
 
-	for (id = 1; id < 10; id++)
-		ids[id] = 0;
-	for (w = wwhead; w; w = w->ww_next)
-		ids[w->ww_ident] = 1;
-	for (id = 1; id < 10 && ids[id]; id++)
-		;
-	if (id == 10) {
+	if ((id = findid()) < 0) {
 		wwputs("Too many windows.  ", cmdwin);
 		return;
 	}
@@ -67,31 +57,28 @@ dowindow()
 	}
 	WBoxActive = 0;
 	wwputs("\r\n", cmdwin);
-	if ((w = wwopen(WW_PTY, id, xrow-row+1, xcol-col+1, row, col)) == 0) {
+	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
+	if (doopen(id, xrow-row+1, xcol-col+1, row, col) == 0)
 		wwputs("Can't open window.  ", cmdwin);
-		return;
+}
+
+findid()
+{
+	register id;
+	char ids[10];
+	register struct ww *w;
+#define NWINDOW 9
+
+	for (id = 1; id <= NWINDOW; id++)
+		ids[id] = 0;
+	for (w = wwhead; w; w = w->ww_next) {
+		if (w->ww_ident < 1 || w->ww_ident > NWINDOW)
+			continue;
+		ids[w->ww_ident]++;
 	}
-	wwframe(w);
-	labelwin(w, 0);
-	/*
-	reframe();
-	*/
-	wwsetcursor(WCurRow(w->ww_win), WCurCol(w->ww_win));
-	wwflush();
-	switch (wwfork(w)) {
-	case -1:
-		wwprintf(cmdwin, "Can't fork.  ");
-		wwclose(w);
-		return;
-	case 0:
-		execl("/bin/csh", "csh", 0);
-		perror("exec(csh)");
-		exit(1);
-	}
-	if (selwin == 0)
-		setselwin(w);
-	else
-		wwsetcurrent(cmdwin);
+	for (id = 1; id <= NWINDOW && ids[id]; id++)
+		;
+	return id < 10 ? id : -1;
 }
 
 getpos(row, col, minrow, mincol)
@@ -151,15 +138,34 @@ register int *row, *col, minrow, mincol;
 	return 0;
 }
 
-/*
-reframe()
+struct ww *
+doopen(id, nrow, ncol, row, col)
+int id, nrow, ncol, row, col;
 {
 	register struct ww *w;
 
-	for (w = wwhead; w; w = w->ww_next) {
-		wwunframe(w);
-		wwframe(w);
-		labelwin(w, selwin == w ? WINVERSE : 0);
+	if (id < 0 && (id = findid()) < 0)
+		return 0;
+	if ((w = wwopen(WW_PTY, id, nrow, ncol, row, col)) == 0)
+		return 0;
+	wwframe(w);
+	labelwin(w, 0);
+	/*
+	reframe();
+	*/
+	wwflush();
+	switch (wwfork(w)) {
+	case -1:
+		wwclose(w);
+		return 0;
+	case 0:
+		execl("/bin/csh", "csh", 0);
+		perror("exec(csh)");
+		exit(1);
 	}
+	if (selwin == 0)
+		setselwin(w);
+	else
+		wwsetcurwin(cmdwin);
+	return w;
 }
-*/
