@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_comp.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -18,22 +18,22 @@ static char sccsid[] = "@(#)res_comp.c	6.3 (Berkeley) %G%";
  * Expand compressed domain name 'comp_dn' to full domain name.
  * Expanded names are converted to lower case.
  * 'msg' is a pointer to the begining of the message,
+ * 'eomorig' points to the first location after the message,
  * 'exp_dn' is a pointer to a buffer of size 'length' for the result.
  * Return size of compressed name or -1 if there was an error.
  */
-dn_expand(msg, msglen, comp_dn, exp_dn, length)
-	char *msg, *comp_dn, *exp_dn;
-	int length, msglen;
+dn_expand(msg, eomorig, comp_dn, exp_dn, length)
+	char *msg, *eomorig, *comp_dn, *exp_dn;
+	int length;
 {
 	register char *cp, *dn;
 	register int n, c;
-	char *eom, *eomorig;
+	char *eom;
 	int len = -1;
 
 	dn = exp_dn;
 	cp = comp_dn;
 	eom = exp_dn + length - 1;
-	eomorig = msg + msglen - 1;
 	/*
 	 * fetch next label in domain name
 	 */
@@ -61,7 +61,7 @@ dn_expand(msg, msglen, comp_dn, exp_dn, length)
 					}
 					*dn++ = c;
 				}
-				if (cp > eomorig)	/* out of range */
+				if (cp >= eomorig)	/* out of range */
 					return(-1);
 			}
 			break;
@@ -70,7 +70,7 @@ dn_expand(msg, msglen, comp_dn, exp_dn, length)
 			if (len < 0)
 				len = cp - comp_dn + 1;
 			cp = msg + (((n & 0x3f) << 8) | (*cp & 0xff));
-			if (cp < msg || cp > eomorig)	/* out of range */
+			if (cp < msg || cp >= eomorig)	/* out of range */
 				return(-1);
 			break;
 

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -169,7 +169,7 @@ p_cdname(cp, msg, file)
 	char name[MAXDNAME];
 	int n;
 
-	if ((n = dn_expand(msg, 512, cp, name, sizeof(name))) < 0)
+	if ((n = dn_expand(msg, msg + 512, cp, name, sizeof(name))) < 0)
 		return (NULL);
 	if (name[0] == '\0') {
 		name[0] = '.';
