@@ -1,57 +1,74 @@
 #ifndef lint
-static	char *sccsid = "@(#)arp.c	5.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)arp.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
  * arp - display, set, and delete arp table entries
  */
 
-#include <stdio.h>
-#include <sys/types.h>
+#include <machine/pte.h>
+
+#include <sys/param.h>
+#include <sys/vmmac.h>
+#include <sys/file.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <sys/ioctl.h>
-#include <errno.h>
+
 #include <netdb.h>
-#include <nlist.h>
+#include <netinet/in.h>
 #include <net/if.h>
 #include <netinet/if_ether.h>
 
+#include <errno.h>
+#include <nlist.h>
+#include <stdio.h>
+
 extern int errno;
+static int kflag;
 
 main(argc, argv)
+	int argc;
 	char **argv;
 {
-	if (argc >= 2 && strcmp(argv[1], "-a") == 0) {
-		char *kernel = "/vmunix", *mem = "/dev/kmem";
+	int ch;
 
-		if (argc >= 3)
-			kernel = argv[2];
-		if (argc >= 4)
-			mem = argv[3];
-		dump(kernel, mem);
-		exit(0);
-	}
-	if (argc == 2) {
-		get(argv[1]);
-		exit(0);
-	}
-	if (argc >= 4 && strcmp(argv[1], "-s") == 0) {
-		if (set(argc-2, &argv[2]))
-			exit(1);
-		exit(0);
-	}
-	if (argc == 3 && strcmp(argv[1], "-d") == 0) {
-		delete(argv[2]);
-		exit(0);
-	}
-	if (argc == 3 && strcmp(argv[1], "-f") == 0) {
-		if (file(argv[2]))
-			exit(1);
-		exit(0);
-	}
-	usage();
-	exit(1);
+	while ((ch = getopt(argc, argv, "adsf")) != EOF)
+		switch((char)ch) {
+		case 'a': {
+			char *mem;
+
+			if (argc > 4)
+				usage();
+			if (argc == 4) {
+				kflag = 1;
+				mem = argv[3];
+			}
+			else
+				mem = "/dev/kmem";
+			dump((argc >= 3) ? argv[2] : "/vmunix", mem);
+			exit(0);
+		}
+		case 'd':
+			if (argc != 3)
+				usage();
+			delete(argv[2]);
+			exit(0);
+		case 's':
+			if (argc < 4 || argc > 7)
+				usage();
+			exit(set(argc-2, &argv[2]) ? 1 : 0);
+		case 'f':
+			if (argc != 3)
+				usage();
+			exit (file(argv[2]) ? 1 : 0);
+		case '?':
+		default:
+			usage();
+		}
+	if (argc != 2)
+		usage();
+	get(argv[1]);
+	exit(0);
 }
 
 /*
@@ -61,9 +78,8 @@ file(name)
 	char *name;
 {
 	FILE *fp;
-	int i;
+	int i, retval;
 	char line[100], arg[5][50], *args[5];
-	int retval;
 
 	if ((fp = fopen(name, "r")) == NULL) {
 		fprintf(stderr, "arp: cannot open %s\n", name);
@@ -94,6 +110,7 @@ file(name)
  * Set an individual arp entry 
  */
 set(argc, argv)
+	int argc;
 	char **argv;
 {
 	struct arpreq ar;
@@ -125,18 +142,18 @@ set(argc, argv)
 	while (argc-- > 0) {
 		if (strncmp(argv[0], "temp", 4) == 0)
 			ar.arp_flags &= ~ATF_PERM;
-		if (strncmp(argv[0], "pub", 3) == 0)
+		else if (strncmp(argv[0], "pub", 3) == 0)
 			ar.arp_flags |= ATF_PUBL;
-		if (strncmp(argv[0], "trail", 5) == 0)
+		else if (strncmp(argv[0], "trail", 5) == 0)
 			ar.arp_flags |= ATF_USETRAILERS;
 		argv++;
 	}
 	
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
-                perror("arp: socket");
-                exit(1);
-        }
+		perror("arp: socket");
+		exit(1);
+	}
 	if (ioctl(s, SIOCSARP, (caddr_t)&ar) < 0) {
 		perror(host);
 		exit(1);
@@ -144,7 +161,6 @@ set(argc, argv)
 	close(s);
 	return (0);
 }
-
 
 /*
  * Display an individual arp entry
@@ -157,6 +173,7 @@ get(host)
 	struct sockaddr_in *sin;
 	u_char *ea;
 	int s;
+	char *inet_ntoa();
 
 	bzero((caddr_t)&ar, sizeof ar);
 	ar.arp_pa.sa_family = AF_INET;
@@ -174,9 +191,9 @@ get(host)
 	}
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
-                perror("arp: socket");
-                exit(1);
-        }
+		perror("arp: socket");
+		exit(1);
+	}
 	if (ioctl(s, SIOCGARP, (caddr_t)&ar) < 0) {
 		if (errno == ENXIO)
 			printf("%s (%s) -- no entry\n",
@@ -192,9 +209,12 @@ get(host)
 		ether_print(ea);
 	else
 		printf("(incomplete)");
-	if (ar.arp_flags & ATF_PERM) printf(" permanent");
-	if (ar.arp_flags & ATF_PUBL) printf(" published");
-	if (ar.arp_flags & ATF_USETRAILERS) printf(" trailers");
+	if (ar.arp_flags & ATF_PERM)
+		printf(" permanent");
+	if (ar.arp_flags & ATF_PUBL)
+		printf(" published");
+	if (ar.arp_flags & ATF_USETRAILERS)
+		printf(" trailers");
 	printf("\n");
 }
 
@@ -225,9 +245,9 @@ delete(host)
 	}
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
-                perror("arp: socket");
-                exit(1);
-        }
+		perror("arp: socket");
+		exit(1);
+	}
 	if (ioctl(s, SIOCDARP, (caddr_t)&ar) < 0) {
 		if (errno == ENXIO)
 			printf("%s (%s) -- no entry\n",
@@ -245,8 +265,14 @@ struct nlist nl[] = {
 	{ "_arptab" },
 #define	X_ARPTAB_SIZE	1
 	{ "_arptab_size" },
+#define	N_SYSMAP	2
+	{ "_Sysmap" },
+#define	N_SYSSIZE	3
+	{ "_Syssize" },
 	{ "" },
 };
+
+static struct pte *Sysmap;
 
 /*
  * Dump the entire arp table
@@ -254,42 +280,55 @@ struct nlist nl[] = {
 dump(kernel, mem)
 	char *kernel, *mem;
 {
-	int mf, arptab_size, sz;
+	extern int h_errno;
 	struct arptab *at;
 	struct hostent *hp;
-	char *host;
-	int bynumber = 0;
-	extern int h_errno;
+	int bynumber, mf, arptab_size, sz;
+	char *host, *malloc();
+	off_t lseek();
 
-	nlist(kernel, nl);
-	if(nl[X_ARPTAB_SIZE].n_type == 0) {
+	if (nlist(kernel, nl) < 0 || nl[X_ARPTAB_SIZE].n_type == 0) {
 		fprintf(stderr, "arp: %s: bad namelist\n", kernel);
 		exit(1);
 	}
-	mf = open(mem, 0);
-	if(mf < 0) {
+	mf = open(mem, O_RDONLY);
+	if (mf < 0) {
 		fprintf(fprintf, "arp: cannot open %s\n", mem);
 		exit(1);
 	}
-	lseek(mf, (long)nl[X_ARPTAB_SIZE].n_value, 0);
+	if (kflag) {
+		off_t off;
+
+		Sysmap = (struct pte *)
+		   malloc((u_int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
+		if (!Sysmap) {
+			fputs("arp: can't get memory for Sysmap.\n", stderr);
+			exit(1);
+		}
+		off = nl[N_SYSMAP].n_value & ~KERNBASE;
+		(void)lseek(mf, off, L_SET);
+		(void)read(mf, (char *)Sysmap,
+		    (int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
+	}
+	klseek(mf, (long)nl[X_ARPTAB_SIZE].n_value, L_SET);
 	read(mf, &arptab_size, sizeof arptab_size);
-	if (arptab_size <=0 || arptab_size > 1000) {
+	if (arptab_size <= 0 || arptab_size > 1000) {
 		fprintf(stderr, "arp: %s: namelist wrong\n", kernel);
 		exit(1);
 	}
 	sz = arptab_size * sizeof (struct arptab);
-	at = (struct arptab *)malloc(sz);
+	at = (struct arptab *)malloc((u_int)sz);
 	if (at == NULL) {
-		fprintf(stderr, "arp: can't get memory for arptab\n");
+		fputs("arp: can't get memory for arptab.\n", stderr);
 		exit(1);
 	}
-	lseek(mf, (long)nl[X_ARPTAB].n_value, 0);
+	klseek(mf, (long)nl[X_ARPTAB].n_value, L_SET);
 	if (read(mf, (char *)at, sz) != sz) {
 		perror("arp: error reading arptab");
 		exit(1);
 	}
 	close(mf);
-	for (; arptab_size-- > 0; at++) {
+	for (bynumber = 0; arptab_size-- > 0; at++) {
 		if (at->at_iaddr.s_addr == 0 || at->at_flags == 0)
 			continue;
 		if (bynumber == 0)
@@ -309,11 +348,30 @@ dump(kernel, mem)
 			ether_print(at->at_enaddr);
 		else
 			printf("(incomplete)");
-		if (at->at_flags & ATF_PERM) printf(" permanent");
-		if (at->at_flags & ATF_PUBL) printf(" published");
-		if (at->at_flags & ATF_USETRAILERS) printf(" trailers");
+		if (at->at_flags & ATF_PERM)
+			printf(" permanent");
+		if (at->at_flags & ATF_PUBL)
+			printf(" published");
+		if (at->at_flags & ATF_USETRAILERS)
+			printf(" trailers");
 		printf("\n");
 	}
+}
+
+/*
+ * Seek into the kernel for a value.
+ */
+klseek(fd, base, off)
+	int fd, off;
+	off_t base;
+{
+	off_t lseek();
+
+	if (kflag) {	/* get kernel pte */
+		base &= ~KERNBASE;
+		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
+	}
+	(void)lseek(fd, base, off);
 }
 
 ether_print(cp)
@@ -341,9 +399,10 @@ ether_aton(a, n)
 
 usage()
 {
-	printf("Usage: arp hostname\n");
+	printf("usage: arp hostname\n");
 	printf("       arp -a [/vmunix] [/dev/kmem]\n");
 	printf("       arp -d hostname\n");
 	printf("       arp -s hostname ether_addr [temp] [pub] [trail]\n");
 	printf("       arp -f filename\n");
+	exit(1);
 }
