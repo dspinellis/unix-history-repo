@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)mkey2.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)mkey2.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -18,11 +18,10 @@ char *name;
 	/* read file f & spit out keys & ptrs */
 
 	char line[MAXLINE], *s;
-	extern int minlen, keycount, labels;
+	extern int keycount;
 	int c;
 	long grec();
 	extern int wholefile;
-	extern char *iglist;
 	alph=used=prevc=eof=0;
 
 	lp=0;
@@ -53,6 +52,7 @@ char *name;
 outkey( ky, lead, trail)
 char *ky;
 {
+	extern int minlen;
 	int n;
 	n = strlen(ky);
 	if (n<minlen) return (0);
@@ -77,6 +77,8 @@ FILE *f;
 	int curtype = 0;
 	long len = 0L, tlen = 0L;
 	extern int wholefile;
+	extern char *iglist;
+
 	if (eof) return(0);
 	*s = 0;
 	while (fgets(tm, 200, f))
@@ -112,6 +114,9 @@ char *ln;
 
 chkey (c, name)
 {
+	extern int labels;
+	extern int wholefile;
+
 	if (isalpha(c) || isdigit(c))
 	{
 		if (alph++ < 6)
