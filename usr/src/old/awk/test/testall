@@ -1,0 +1,1 @@
+Compare t.* >test.out 2>&1
