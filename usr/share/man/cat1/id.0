@@ -1,0 +1,66 @@
+ID(1)                        BSD Reference Manual                        ID(1)
+
+NNAAMMEE
+     iidd - return user identity
+
+SSYYNNOOPPSSIISS
+     iidd [_u_s_e_r]
+     iidd --GG [--nn] [_u_s_e_r]
+     iidd --gg [--nnrr] [_u_s_e_r]
+     iidd --pp
+     iidd --uu [--nnrr] [_u_s_e_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     The iidd utility displays the user and group names and numeric IDs, of the
+     calling process, to the standard output.  If the real and effective IDs
+     are different, both are displayed, otherwise only the real ID is dis-
+     played.
+
+     If a _u_s_e_r (login name or user ID) is specified, the user and group IDs of
+     that user are displayed.  In this case, the real and effective IDs are
+     assumed to be the same.
+
+     The options are as follows:
+
+     --GG      Display the different group IDs (effective, real and supplemen-
+             tary) as white-space separated numbers, in no particular order.
+
+     --gg      Display the effective group ID as a number.
+
+     --nn      Display the name of the user or group ID for the --GG, --gg and --uu
+             options instead of the number.  If any of the ID numbers cannot
+             be mapped into names, the number will be displayed as usual.
+
+     --pp      Make the output human-readable.  If the user name returned by
+             getlogin(2) is different from the login name referenced by the
+             user ID, the name returned by getlogin(2) is displayed, preceded
+             by the keyword ``login''.  The user ID as a name is displayed,
+             preceded by the keyword ``uid''.  If the effective user ID is
+             different from the real user ID, the real user ID is displayed as
+             a name, preceded by the keyword ``euid''.  If the effective group
+             ID is different from the real group ID, the real group ID is dis-
+             played as a name, preceded by the keyword ``rgid''.  The list of
+             groups to which the user belongs is then displayed as names, pre-
+             ceded by the keyword ``groups''.  Each display is on a separate
+             line.
+
+     --rr      Display the real ID for the --gg and --uu options instead of the ef-
+             fective ID.
+
+     --uu      Display the effective user ID as a number.
+
+     The iidd utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     who(1)
+
+SSTTAANNDDAARRDDSS
+     The iidd function is expected to conform to IEEE Std1003.2 (``POSIX'').
+
+HHIISSTTOORRYY
+     The historic groups(1) command is equivalent to ``iidd --GGnn [_u_s_e_r]''.
+
+     The historic whoami(1) command is equivalent to ``iidd --uunn''.
+
+
+     The iidd command appears in 4.4BSD.

@@ -1,0 +1,83 @@
+CKSUM(1)                     BSD Reference Manual                     CKSUM(1)
+
+NNAAMMEE
+     cckkssuumm - display file checksums and block counts
+
+SSYYNNOOPPSSIISS
+     cckkssuumm [--oo [1 | 2]] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The cckkssuumm utility writes to the standard output three whitespace separat-
+     ed fields for each input file.  These fields are a checksum CRC, the to-
+     tal number of octets in the file and the file name.  If no file name is
+     specified, the standard input is used and no file name is written.
+
+     The options are as follows:
+
+     --oo      Use historic algorithms instead of the (superior) default one.
+
+             Algorithm 1 is the algorithm used by historic BSD systems as the
+             sum(1) algorithm and by historic AT&T System V UNIX systems as
+             the sum algorithm when using the --rr option.  This is a 16-bit
+             checksum, with a right rotation before each addition; overflow is
+             discarded.
+
+             Algorithm 2 is the algorithm used by historic AT&T System V UNIX
+             systems as the default sum algorithm.  This is a 32-bit checksum,
+             and is defined as follows:
+
+                   s = sum of all bytes;
+                   r = s % 2^16 + (s % 2^32) / 2^16;
+                   cksum = (r % 2^16) + r / 2^16;
+
+             Both algorithm 1 and 2 write to the standard output the same
+             fields as the default algorithm except that the size of the file
+             in bytes is replaced with the size of the file in blocks.  For
+             historic reasons, the block size is 1024 for algorithm 1 and 512
+             for algorithm 2.  Partial blocks are rounded up.
+
+     The default CRC used is based on the polynomial used for CRC error check-
+     ing in the networking standard ISO 8802-3: 1989  The CRC checksum encod-
+     ing is defined by the generating polynomial:
+
+           G(x) = x^32 + x^26 + x^23 + x^22 + x^16 + x^12 +
+                x^11 + x^10 + x^8 + x^7 + x^5 + x^4 + x^2 + x + 1
+
+     Mathematically, the CRC value corresponding to a given file is defined by
+     the following procedure:
+
+           The _n bits to be evaluated are considered to be the coefficients of
+           a mod 2 polynomial M(x) of degree _n-1. These _n bits are the bits
+           from the file, with the most significant bit being the most signif-
+           icant bit of the first octet of the file and the last bit being the
+           least significant bit of the last octet, padded with zero bits (if
+           necessary) to achieve an integral number of octets, followed by one
+           or more octets representing the length of the file as a binary val-
+           ue, least significant octet first.  The smallest number of octets
+           capable of representing this integer are used.
+
+           M(x) is multiplied by x^32 (i.e., shifted left 32 bits) and divided
+           by G(x) using mod 2 division, producing a remainder R(x) of degree
+           <= 31.
+
+           The coefficients of R(x) are considered to be a 32-bit sequence.
+
+
+           The bit sequence is complemented and the result is the CRC.
+
+     The cckkssuumm utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     The default calculation is identical to that given in pseudo-code in the
+     following ACM article.
+
+     Dilip V. Sarwate, "Computation of Cyclic Redundancy Checks Via Table
+     Lookup", _C_o_m_m_u_n_i_c_a_t_i_o_n_s _o_f _t_h_e _A_C_M, August 1988.
+
+SSTTAANNDDAARRDDSS
+     The cckkssuumm utility is expected to be POSIX 1003.2 compatible.
+
+HHIISSTTOORRYY
+     The cckkssuumm utility appears in 4.4BSD.
+
+4.4BSD                           June 29, 1993                               2

@@ -1,0 +1,132 @@
+
+
+
+LAM(1)                 BSD Reference Manual                LAM(1)
+
+
+NNAAMMEE
+       lam - laminate files
+
+SSYYNNOOPPSSIISS
+       llaamm [[ --[[ffpp]] min.max ]] [[ --ss sepstring ]] [[ --tt c ]] file ...
+
+DDEESSCCRRIIPPTTIIOONN
+       _L_a_m  copies the named files side by side onto the standard
+       output.  The _n-th input lines from  the  input  _f_i_l_es  are
+       considered  fragments  of the single long _n-th output line
+       into which they are assembled.  The  name  `--'  means  the
+       standard input, and may be repeated.
+
+       Normally,  each option affects only the _f_i_l_e after it.  If
+       the option letter is capitalized it affects all subsequent
+       files  until  it appears again uncapitalized.  The options
+       are described below.
+
+       --ff min.max
+              Print line fragments according to the format string
+              _m_i_n_._m_a_x,  where  _m_i_n is the minimum field width and
+              _m_a_x the maximum field width.  If _m_i_n begins with  a
+              zero,  zeros  will  be  added  to make up the field
+              width, and if it begins with a  `-',  the  fragment
+              will be left-adjusted within the field.
+
+       --pp min.max
+              Like --ff, but pad this file's field when end-of-file
+              is reached and other files are still active.
+
+       --ss sepstring
+              Print _s_e_p_s_t_r_i_n_g before printing line fragments from
+              the  next  file.   This option may appear after the
+              last file.
+
+       --tt c   The input line terminator is _c instead  of  a  new-
+              line.  The newline normally appended to each output
+              line is omitted.
+
+       To print files simultaneously for easy viewing use  _p_r(1).
+
+EEXXAAMMPPLLEESS
+       The command
+
+              llaamm   ffiillee11   ffiillee22   ffiillee33   ffiillee44
+
+       joins  4  files  together  along  each line.  To merge the
+       lines from four different files use
+
+              llaamm   ffiillee11   --SS   ""\\
+              ""   ffiillee22   ffiillee33   ffiillee44
+
+
+
+4th Berkeley Distribution  June 6, 1993                         1
+
+
+
+
+
+
+
+
+LAM(1)                 BSD Reference Manual                LAM(1)
+
+
+       Every 2 lines of a file may be joined on one line with
+
+              llaamm   --   --   <<   ffiillee
+
+       and a form letter with substitutions keyed by `@'  can  be
+       done with
+
+              llaamm   --tt   @@   lleetttteerr   cchhaannggeess
+
+
+SSEEEE AALLSSOO
+       join(1), pr(1), printf(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4th Berkeley Distribution  June 6, 1993                         2
+
+
+
+
+

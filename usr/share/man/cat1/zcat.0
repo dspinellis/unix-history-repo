@@ -1,0 +1,85 @@
+COMPRESS(1)                  BSD Reference Manual                  COMPRESS(1)
+
+NNAAMMEE
+     ccoommpprreessss, uunnccoommpprreessss, zzccaatt - compress and expand data
+
+SSYYNNOOPPSSIISS
+     ccoommpprreessss [--ccffvv] [--bb _b_i_t_s] [_f_i_l_e _._._.]
+     uunnccoommpprreessss [--ccffvv] [_f_i_l_e _._._.]
+     zzccaatt [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     CCoommpprreessss reduces the size of the named files using adaptive Lempel-Ziv
+     coding.  Each _f_i_l_e is renamed to the same name plus the extension ``.Z''.
+     As many of the modification time, access time, file flags, file mode, us-
+     er ID, and group ID as allowed by permissions are retained in the new
+     file.  If compression would not reduce the size of a _f_i_l_e, the file is
+     ignored.
+
+     UUnnccoommpprreessss restores the compressed files to their original form, renaming
+     the files by deleting the ``.Z'' extension.
+
+     ZZccaatt is an alias for ``uncompress -c''.
+
+     If renaming the files would cause files to be overwritten and the stan-
+     dard input device is a terminal, the user is prompted (on the standard
+     error output) for confirmation.  If prompting is not possible or confir-
+     mation is not received, the files are not overwritten.
+
+     If no files are specified, the standard input is compressed or uncom-
+     pressed to the standard output.  If either the input and output files are
+     not regular files, the checks for reduction in size and file overwriting
+     are not performed, the input file is not removed, and the attributes of
+     the input file are not retained.
+
+     The options are as follows:
+
+     --bb      Specify the _b_i_t_s code limit (see below).
+
+     --cc      Compressed or uncompressed output is written to the standard out-
+             put.  No files are modified.
+
+     --ff      Force compression of _f_i_l_e, even if it is not actually reduced in
+             size.  Additionally, files are overwritten without prompting for
+             confirmation.
+
+     --vv      Print the percentage reduction of each file.
+
+     CCoommpprreessss uses a modified Lempel-Ziv algorithm.  Common substrings in the
+     file are first replaced by 9-bit codes 257 and up.  When code 512 is
+     reached, the algorithm switches to 10-bit codes and continues to use more
+     bits until the limit specified by the --bb flag is reached (the default is
+     16).  _B_i_t_s must be between 9 and 16.
+
+     After the _b_i_t_s limit is reached, ccoommpprreessss periodically checks the com-
+     pression ratio.  If it is increasing, ccoommpprreessss continues to use the ex-
+     isting code dictionary.  However, if the compression ratio decreases,
+     ccoommpprreessss discards the table of substrings and rebuilds it from scratch.
+     This allows the algorithm to adapt to the next "block" of the file.
+
+     The --bb flag is omitted for _u_n_c_o_m_p_r_e_s_s since the _b_i_t_s parameter specified
+     during compression is encoded within the output, along with a magic num-
+     ber to ensure that neither decompression of random data nor recompression
+     of compressed data is attempted.
+
+
+
+     The amount of compression obtained depends on the size of the input, the
+     number of _b_i_t_s per code, and the distribution of common substrings.  Typ-
+     ically, text such as source code or English is reduced by 50-60%.  Com-
+     pression is generally much better than that achieved by Huffman coding
+     (as used in the historical command pack), or adaptive Huffman coding (as
+     used in the historical command compact), and takes less time to compute.
+
+     The ccoommpprreessss utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     zopen(3)
+
+     Welch, Terry A., "A Technique for High Performance Data Compression",
+     _I_E_E_E _C_o_m_p_u_t_e_r, 17:6, pp. 8-19, June, 1984.
+
+HHIISSTTOORRYY
+     The ccoommpprreessss command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                2

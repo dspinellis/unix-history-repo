@@ -1,0 +1,33 @@
+FROM(1)                      BSD Reference Manual                      FROM(1)
+
+NNAAMMEE
+     ffrroomm - print names of those who have sent mail
+
+SSYYNNOOPPSSIISS
+     ffrroomm [--ss _s_e_n_d_e_r] [--ff _f_i_l_e] [_u_s_e_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     FFrroomm prints out the mail header lines from the invoker's mailbox.
+
+     Options:
+
+     --ff _f_i_l_e     The supplied file is examined instead of the invoker's mail-
+                 box.  If the --ff option is used, the _u_s_e_r argument should not
+                 be used.
+
+     --ss _s_e_n_d_e_r   Only mail from addresses containing the supplied string are
+                 printed.
+
+     If _u_s_e_r is given, the _u_s_e_r's mailbox, is examined instead of the invok-
+     er's own mailbox.  (Priviledges are required.)
+
+FFIILLEESS
+     /var/mail/*
+
+SSEEEE AALLSSOO
+     biff(1),  mail(1)
+
+HHIISSTTOORRYY
+     The ffrroomm command appeared in 3.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1

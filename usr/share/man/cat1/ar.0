@@ -1,0 +1,264 @@
+
+
+
+AR(1)                  BSD Reference Manual                 AR(1)
+
+
+NNAAMMEE
+       ar - create and maintain library archives
+
+SSYYNNOOPPSSIISS
+       aarr --dd [[--TTvv]] aarrcchhiivvee ffiillee ......
+       aarr --mm [[--TTvv]] aarrcchhiivvee ffiillee ......
+       aarr --mm [[--aabbiiTTvv]] ppoossiittiioonn aarrcchhiivvee ffiillee ......
+       aarr --pp [[--TTvv]] aarrcchhiivvee [[ffiillee ......]]
+       aarr --qq [[--ccTTvv]] aarrcchhiivvee ffiillee ......
+       aarr --rr [[--ccuuTTvv]] aarrcchhiivvee ffiillee ......
+       aarr --rr [[--aabbcciiuuTTvv]] ppoossiittiioonn aarrcchhiivvee ffiillee ......
+       aarr --tt [[--TTvv]] aarrcchhiivvee [[ffiillee ......]]
+       aarr --xx [[--oouuTTvv]] aarrcchhiivvee [[ffiillee ......]]
+
+DDEESSCCRRIIPPTTIIOONN
+       The  _a_r utility creates and maintains groups of files com-
+       bined into an archive.  Once an archive has been  created,
+       new   files  can  be  added  and  existing  files  can  be
+       extracted, deleted, or replaced.
+
+       Files are named in the  archive  by  a  single  component,
+       i.e.,  if  a  file referenced by a path containing a slash
+       (``/'') is archived it will be named by the last component
+       of  that  path.  When matching paths listed on the command
+       line against file names stored in the  archive,  only  the
+       last component of the path will be compared.
+
+       All  informational  and error messages use the path listed
+       on the command line, if any was specified;  otherwise  the
+       name  in  the  archive  is used.  If multiple files in the
+       archive have the same name, and paths are  listed  on  the
+       command line to ``select'' archive files for an operation,
+       only the ffiirrsstt file with a matching name will be selected.
+
+       The  normal  use of _a_r is for the creation and maintenance
+       of libraries suitable for use with the loader (see _l_d(1)),
+       although  it  is  not  restricted  to  this  purpose.  The
+       options are as follows:
+
+       -a     A positioning modifier used with the options -r and
+              -m.   The  files  are  entered  or  moved aafftteerr the
+              archive member _p_o_s_i_t_i_o_n, which must be specified.
+
+       -b     A positioning modifier used with the options -r and
+              -m.   The  files  are  entered  or moved bbeeffoorree the
+              archive member _p_o_s_i_t_i_o_n, which must be specified.
+
+       -c     Whenever an archive is  created,  an  informational
+              message  to  that  effect  is  written  to standard
+              error.  If the -c option is specified,  _a_r  creates
+              the archive silently.
+
+
+
+7th Edition               June 29, 1993                         1
+
+
+
+
+
+
+
+
+AR(1)                  BSD Reference Manual                 AR(1)
+
+
+       -d     Delete the specified archive files.
+
+       -i     Identical to the -b option.
+
+       -m     Move   the   specified  archive  files  within  the
+              archive.  If one of the options -a,  -b  or  -i  is
+              specified,  the files are moved before or after the
+              _p_o_s_i_t_i_o_n file in the archive.   If  none  of  those
+              options  are  specified, the files are moved to the
+              end of the archive.
+
+       -o     Set the access and modification times of  extracted
+              files  to the modification time of the file when it
+              was entered into the archive.  This  will  fail  if
+              the  user is not the owner of the extracted file or
+              the super-user.
+
+       -p     Write the contents of the specified  archive  files
+              to the standard output.  If no files are specified,
+              the contents of all the files in  the  archive  are
+              written in the order they appear in the archive.
+
+       -q     (Quickly)   append   the  specified  files  to  the
+              archive.  If the  archive  does  not  exist  a  new
+              archive  file  is created.  Much faster than the -r
+              option, when creating  a  large  archive  piece-by-
+              piece,  as  no checking is done to see if the files
+              already exist in the archive.
+
+       -r     Replace or add the specified files to the  archive.
+              If the archive does not exist a new archive file is
+              created.  Files that replace existing files do  not
+              change  the  order of the files within the archive.
+              New files are appended to the archive unless one of
+              the options -a, -b or -i is specified.
+
+       -T     Select  and/or  name archive members using only the
+              first fifteen characters of the archive  member  or
+              command  line file name.  The historic archive for-
+              mat had sixteen bytes for the name, but  some  his-
+              toric  archiver  and  loader  implementations  were
+              unable to handle names that used the entire  space.
+              This  means  that file names that are not unique in
+              their first fifteen characters can subsequently  be
+              confused.   A  warning  message  is  printed to the
+              standard error output if any file names  are  trun-
+              cated.  (See _a_r(5) for more information.)
+
+       -t     List the specified files in the order in which they
+              appear in the archive, each on a separate line.  If
+              no  files  are  specified, all files in the archive
+
+
+
+7th Edition               June 29, 1993                         2
+
+
+
+
+
+
+
+
+AR(1)                  BSD Reference Manual                 AR(1)
+
+
+              are listed.
+
+       -u     Update files.  When used with the -r option,  files
+              in  the  archive  will be replaced only if the disk
+              file has a newer modification time than the file in
+              the  archive.   When used with the -x option, files
+              in the  archive  will  be  extracted  only  if  the
+              archive file has a newer modification time than the
+              file on disk.
+
+       -v     Provide verbose output.  When used with the -d, -m,
+              -q  or -x options, _a_r gives a file-by-file descrip-
+              tion of the archive modification.  This description
+              consists  of  three,  white-space separated fields:
+              the option letter, a  dash  (``-'')  and  the  file
+              name.   When  used  with the -r option, _a_r displays
+              the description as above, but the initial letter is
+              an ``a'' if the file is added to the archive and an
+              ``r'' if the file replaces a file  already  in  the
+              archive.
+
+              When  used  with  the  -p  option, the name of each
+              printed file, enclosed  in  less-than  (``<'')  and
+              greater-than  (``>'') characters, is written to the
+              standard output before the contents of the file; it
+              is preceded by a single newline character, and fol-
+              lowed by two newline characters.
+
+              When used with the -t option, _a_r displays  an  ``ls
+              -l'' style listing of information about the members
+              of the archive.  This listing  consists  of  eight,
+              white-space  separated fields: the file permissions
+              (see _s_t_r_m_o_d_e(3)), the decimal user and  group  ID's
+              separated  by a single slash (``/''), the file size
+              (in bytes), the  file  modification  time  (in  the
+              _d_a_t_e(1) format ``%b %e %H:%M %Y''), and the name of
+              the file.
+
+       -x     Extract the  specified  archive  members  into  the
+              files  named  by the command line arguments.  If no
+              members are  specified,  all  the  members  of  the
+              archive are extracted into the current directory.
+
+              If  the  file  does not exist, it is created; if it
+              does exist, the owner and group will be  unchanged.
+              The file access and modification times are the time
+              of the extraction (but see  the  -o  option).   The
+              file  permissions  will be set to those of the file
+              when it was entered into  the  archive;  this  will
+              fail  if the user is not the owner of the extracted
+              file or the super-user.
+
+
+
+7th Edition               June 29, 1993                         3
+
+
+
+
+
+
+
+
+AR(1)                  BSD Reference Manual                 AR(1)
+
+
+       The _a_r utility exits 0 on success,  and  >0  if  an  error
+       occurs.
+
+EENNVVIIRROONNMMEENNTT
+       TMPDIR The  pathname of the directory to use when creating
+              temporary files.
+
+FFIILLEESS
+       /tmp          default temporary file directory
+
+       ar.XXXXXX     temporary file names
+
+CCOOMMPPAATTIIBBIILLIITTYY
+       By default, _a_r writes archives that  may  be  incompatible
+       with  historic  archives,  as  the format used for storing
+       archive members with names longer than fifteen  characters
+       has  changed.   This implementation of _a_r is backward com-
+       patible with previous versions of _a_r in that it  can  read
+       and write (using the -T option) historic archives.  The -T
+       option is provided for compatibility  only,  and  will  be
+       deleted  in a future release.  See _a_r(5) for more informa-
+       tion.
+
+SSTTAANNDDAARRDDSS
+       The _a_r utility is expected to  offer  a  superset  of  the
+       POSIX 1003.2 functionality.
+
+SSEEEE AALLSSOO
+       ld(1), ranlib(1), strmode(3), ar(5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7th Edition               June 29, 1993                         4
+
+
+
+
+

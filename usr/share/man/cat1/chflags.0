@@ -1,0 +1,48 @@
+CHFLAGS(1)                   BSD Reference Manual                   CHFLAGS(1)
+
+NNAAMMEE
+     cchhffllaaggss - change file flags
+
+SSYYNNOOPPSSIISS
+     cchhffllaaggss [--HHRRhh] _f_l_a_g_s _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The cchhffllaaggss utility modifies the file flags of the listed files as speci-
+     fied by the _f_l_a_g_s operand.
+
+     The options are as follows:
+
+     --HH      When encountering a symbolic link on the command line, follow it.
+             All other symbolic links encountered in the traversal are not
+             followed.
+
+     --RR      Traverse a file hierarchy.  For each file that is of type direc-
+             tory, cchhffllaaggss changes the flags of all files in the file hierar-
+             chy below it followed by the flags of the directory itself.
+
+     --hh      When encountering a symbolic link anywhere in the traversal, fol-
+             low it.
+
+     Flags are a comma separated list of keywords.  The following keywords are
+     currently defined:
+
+           dump    set the dump flag
+           sappnd  set the system append-only flag (super-user only)
+           schg    set the system immutable flag (super-user only)
+           uappnd  set the user append-only flag (owner or super-user only)
+           uchg    set the user immutable flag (owner or super-user only)
+
+     Putting the letters ``no'' before an option causes the flag to be turned
+     off.  For example:
+
+           nodump  the file should never be dumped
+
+     The flags of a symbolic link are immutable, so unless the --hh or --HH flag
+     is set, cchhffllaaggss on a symbolic link always succeeds and has no effect.
+
+     The cchhffllaaggss utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     chflags(2),  stat(2),  fts(3),  symlink(7)
+
+4.4BSD                           June 29, 1993                               1
