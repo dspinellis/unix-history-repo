@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null.h	1.7 (Berkeley) %G%
+ *	@(#)null.h	7.1 (Berkeley) %G%
  *
  * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -48,4 +48,3 @@ extern struct vnode *null_checkvp __P((struct vnode *vp, char *fil, int lno));
 extern int (**null_vnodeop_p)();
 extern struct vfsops null_vfsops;
 #endif /* KERNEL */
-

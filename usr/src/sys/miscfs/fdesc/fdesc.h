@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc.h	1.2 (Berkeley) %G%
+ *	@(#)fdesc.h	7.1 (Berkeley) %G%
  *
  * $Id: fdesc.h,v 1.5 1992/05/30 10:05:34 jsp Exp jsp $
  */
