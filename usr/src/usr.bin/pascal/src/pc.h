@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pc.h 1.5 %G%"; */
+/* static	char sccsid[] = "@(#)pc.h 1.6 %G%"; */
+
+#include <setjmp.h>
 
     /*
      *		random constants for pc
@@ -25,16 +27,13 @@
      *	thus the offsets of the fields are as indicated below.
      */
 struct rtlocals {
+    jmp_buf		gotoenv;
     struct iorec	*curfile;
     struct dispsave	dsave;
-    struct dispsave	*dptr;
-    int			(*unwind)();
 } rtlocs;
-#define	CURFILEOFFSET	( ( -sizeof rtlocs ) + sizeof rtlocs.unwind )
+#define	GOTOENVOFFSET	( -sizeof rtlocs )
+#define	CURFILEOFFSET	( GOTOENVOFFSET + sizeof rtlocs.gotoenv )
 #define	DSAVEOFFSET	( CURFILEOFFSET + sizeof rtlocs.curfile )
-#define	DPTROFFSET	( DSAVEOFFSET + sizeof rtlocs.dsave )
-#define	UNWINDOFFSET	( DPTROFFSET + sizeof rtlocs.dptr )
-#define	UNWINDNAME	"_UNWIND"
 
     /*
      *	the register save mask for saving no registers

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)objfmt.h 1.9 %G%"; */
+/* static char sccsid[] = "@(#)objfmt.h 1.10 %G%"; */
 
 #ifdef OBJ
 	/*
@@ -55,7 +55,7 @@
 #	    define OUTPUT_OFF		-4	/* offset of `output' */
 #	endif OBJ
 #	ifdef	PC
-#	    define DPOFF1	( sizeof rtlocs - sizeof rtlocs.unwind )
+#	    define DPOFF1	( sizeof rtlocs )
 #	    define DPOFF2	( sizeof (long) )
 #	    define INPUT_OFF	0
 #	    define OUTPUT_OFF	0
