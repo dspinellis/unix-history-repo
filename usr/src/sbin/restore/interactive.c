@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -590,6 +590,10 @@ mkentry(name, dp, fp)
 		fp->postfix = '#';
 		break;
 
+	case DT_WHT:
+		fp->postfix = '%';
+		break;
+
 	case DT_UNKNOWN:
 	case DT_DIR:
 		if (inodetype(dp->d_ino) == NODE)
@@ -685,7 +689,7 @@ glob_readdir(dirp)
 	static struct dirent adirent;
 
 	while ((dp = rst_readdir(dirp)) != NULL) {
-		if (dp->d_ino == 0)
+		if (!vflag && dp->d_ino == WINO)
 			continue;
 		if (dflag || TSTINO(dp->d_ino, dumpmap))
 			break;
@@ -709,7 +713,8 @@ glob_stat(name, stp)
 	register struct direct *dp;
 
 	dp = pathsearch(name);
-	if (dp == NULL || (!dflag && TSTINO(dp->d_ino, dumpmap) == 0))
+	if (dp == NULL || (!dflag && TSTINO(dp->d_ino, dumpmap) == 0) ||
+	    (!vflag && dp->d_ino == WINO))
 		return (-1);
 	if (inodetype(dp->d_ino) == NODE)
 		stp->st_mode = IFDIR;

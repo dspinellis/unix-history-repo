@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -201,6 +201,45 @@ linkit(existing, new, type)
 	vprintf(stdout, "Create %s link %s->%s\n",
 		type == SYMLINK ? "symbolic" : "hard", new, existing);
 	return (GOOD);
+}
+
+/*
+ * Create a whiteout.
+ */
+int
+addwhiteout(name)
+	char *name;
+{
+
+	if (!Nflag && mknod(name, S_IFWHT, 0) < 0) {
+		fprintf(stderr, "warning: cannot create whiteout %s: %s\n",
+		    name, strerror(errno));
+		return (FAIL);
+	}
+	vprintf(stdout, "Create whiteout %s\n", name);
+	return (GOOD);
+}
+
+/*
+ * Delete a whiteout.
+ */
+void
+delwhiteout(ep)
+	register struct entry *ep;
+{
+	char *name;
+
+	if (ep->e_type != LEAF)
+		badentry(ep, "delwhiteout: not a leaf");
+	ep->e_flags |= REMOVED;
+	ep->e_flags &= ~TMPNAME;
+	name = myname(ep);
+	if (!Nflag && unwhiteout(name) < 0) {
+		fprintf(stderr, "warning: cannot delete whiteout %s: %s\n",
+		    name, strerror(errno));
+		return;
+	}
+	vprintf(stdout, "Delete whiteout %s\n", name);
 }
 
 /*
