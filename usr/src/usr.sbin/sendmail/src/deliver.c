@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.118		%G%);
+SCCSID(@(#)deliver.c	3.119		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -72,7 +72,8 @@ deliver(firstto)
 	**		This should be on a per-mailer basis.
 	*/
 
-	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags))
+	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags) &&
+	    !Verbose)
 	{
 		for (; to != NULL; to = to->q_next)
 			if (!bitset(QDONTSEND, to->q_flags) &&
