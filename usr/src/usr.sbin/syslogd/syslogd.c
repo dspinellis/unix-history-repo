@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)syslogd.c	5.14 (Berkeley) %G%";
  *
  * Author: Eric Allman
  * extensive changes by Ralph Campbell
+ * more extensive changes by Eric Allman (again)
  */
 
 #define	NLOGS		20		/* max number of log files */
@@ -905,6 +906,7 @@ struct code	FacNames[] = {
 	"mark",		LOG_MARK,
 	"syslog",	LOG_SYSLOG,
 	"lpr",		LOG_LPR,
+	"news",		LOG_NEWS,
 	"local0",	LOG_LOCAL0,
 	"local1",	LOG_LOCAL1,
 	"local2",	LOG_LOCAL2,
