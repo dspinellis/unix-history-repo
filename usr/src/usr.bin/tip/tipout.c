@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tipout.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tipout.c	4.10 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -96,14 +96,13 @@ tipout()
 		if (cnt <= 0) {
 			/* lost carrier */
 			if (cnt < 0 && errno == EIO) {
-#define	mask(s)	(1 << ((s) - 1))
-				sigblock(mask(SIGTERM));
+				sigblock(sigmask(SIGTERM));
 				intTERM();
 				/*NOTREACHED*/
 			}
 			continue;
 		}
-#define	ALLSIGS	mask(SIGEMT)|mask(SIGTERM)|mask(SIGIOT)|mask(SIGSYS)
+#define	ALLSIGS	sigmask(SIGEMT)|sigmask(SIGTERM)|sigmask(SIGIOT)|sigmask(SIGSYS)
 		omask = sigblock(ALLSIGS);
 		for (cp = buf; cp < buf + cnt; cp++)
 			*cp &= 0177;
