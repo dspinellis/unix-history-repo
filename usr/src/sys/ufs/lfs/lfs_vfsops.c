@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.75 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.76 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,6 +43,7 @@ struct vfsops lfs_vfsops = {
 	ufs_quotactl,
 	lfs_statfs,
 	lfs_sync,
+	lfs_vget,
 	lfs_fhtovp,
 	lfs_vptofh,
 	lfs_init,
@@ -99,12 +100,12 @@ lfs_mount(mp, path, data, ndp, p)
 			 * Process export requests.
 			 */
 			if (args.exflags & MNT_EXPORTED) {
-				if (error = hang_addrlist(mp, &args))
+				if (error = ufs_hang_addrlist(mp, &args))
 					return (error);
 				mp->mnt_flag |= MNT_EXPORTED;
 			}
 			if (args.exflags & MNT_DELEXPORT) {
-				free_addrlist(ump);
+				ufs_free_addrlist(ump);
 				mp->mnt_flag &=
 				    ~(MNT_EXPORTED | MNT_DEFEXPORTED);
 			}
@@ -173,10 +174,6 @@ lfs_mountfs(devvp, mp, p)
 	struct mount *mp;
 	struct proc *p;
 {
-	USES_VOP_CLOSE;
-	USES_VOP_IOCTL;
-	USES_VOP_OPEN;
-	USES_VOP_VGET;
 	extern struct vnode *rootvp;
 	register struct lfs *fs;
 	register struct ufsmount *ump;
@@ -257,7 +254,7 @@ lfs_mountfs(devvp, mp, p)
 	 * artificially increment the reference count and keep a pointer
 	 * to it in the incore copy of the superblock.
 	 */
-	if (error = LFS_VGET(mp, LFS_IFILE_INUM, &vp))
+	if (error = VFS_VGET(mp, LFS_IFILE_INUM, &vp))
 		goto out;
 	fs->lfs_ivnode = vp;
 	VREF(vp);
@@ -285,39 +282,23 @@ lfs_unmount(mp, mntflags, p)
 	int mntflags;
 	struct proc *p;
 {
-	USES_VOP_CLOSE;
 	extern int doforce;
 	register struct ufsmount *ump;
 	register struct lfs *fs;				/* LFS */
-	int i, error, ronly, flags = 0;
-	int ndirty;						/* LFS */
+	int i, error, flags, ronly;
 
 #ifdef VERBOSE
 	printf("lfs_unmount\n");
 #endif
+	flags = 0;
 	if (mntflags & MNT_FORCE) {
 		if (!doforce || mp == rootfs)
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
-	/*
-	 * FFS does a mntflushbuf here.  Our analagous operation
-	 * would be a segment write, but that has already been
-	 * done in the vfs code.
-	 */
-	if (lfs_mntinvalbuf(mp))
-		return(EBUSY);
 
-	/* Need to checkpoint again to pick up any new ifile changes */
-	if (error = lfs_segwrite(mp, 1))
-		return(error);
 	ump = VFSTOUFS(mp);
 	fs = ump->um_lfs;
-	if (fs->lfs_ivnode->v_dirtyblkhd)
-		panic("Still have dirty blocks on ifile vnode\n");
-	if (lfs_vinvalbuf(fs->lfs_ivnode))
-		panic("lfs_vinvalbuf failed on ifile\n");
-
 		return (error);
 #ifdef QUOTA
 	if (mp->mnt_flag & MNT_QUOTA) {
@@ -335,8 +316,14 @@ lfs_unmount(mp, mntflags, p)
 	}
 #endif
 	vrele(fs->lfs_ivnode);
-	if (error = vflush(mp, NULLVP, flags))
+	if (error = vflush(mp, fs->lfs_ivnode, flags))
 		return (error);
+	if (error = VFS_SYNC(mp, 1, p->p_ucred, p))
+		return (error);
+	if (fs->lfs_ivnode->v_dirtyblkhd)
+		panic("lfs_unmount: still dirty blocks on ifile vnode\n");
+	vgone(fs->lfs_ivnode);
+
 	ronly = !fs->lfs_ronly;
  * Get file system statistics.
  */
@@ -377,9 +364,11 @@ lfs_statfs(mp, sbp, p)
  *
  * Note: we are always called with the filesystem marked `MPBUSY'.
  */
-lfs_sync(mp, waitfor)
+lfs_sync(mp, waitfor, cred, p)
 	struct mount *mp;
 	int waitfor;
+	struct ucred *cred;
+	struct proc *p;
 {
 	extern int crashandburn, syncprt;
 	int error;
@@ -392,8 +381,6 @@ lfs_sync(mp, waitfor)
 	if (crashandburn)
 		return (0);
 #endif
-	if (syncprt)
-		ufs_bufstats();
 
 	/* All syncs must be checkpoints until roll-forward is implemented. */
 	error = lfs_segwrite(mp, 1);
@@ -401,6 +388,109 @@ lfs_sync(mp, waitfor)
 	qsync(mp);
 #endif
 	return (error);
+}
+
+/*
+ * Look up an LFS dinode number to find its incore vnode.  If not already
+ * in core, read it in from the specified device.  Return the inode locked.
+ * Detection and handling of mount points must be done by the calling routine.
+ */
+int
+lfs_vget(mp, ino, vpp)
+	struct mount *mp;
+	ino_t ino;
+	struct vnode **vpp;
+{
+	register struct lfs *fs;
+	register struct inode *ip;
+	struct buf *bp;
+	struct ifile *ifp;
+	struct vnode *vp;
+	struct ufsmount *ump;
+	daddr_t daddr;
+	dev_t dev;
+	int error;
+
+#ifdef VERBOSE
+	printf("lfs_vget\n");
+#endif
+	ump = VFSTOUFS(mp);
+	dev = ump->um_dev;
+	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
+		return (0);
+
+	/* Translate the inode number to a disk address. */
+	fs = ump->um_lfs;
+	if (ino == LFS_IFILE_INUM)
+		daddr = fs->lfs_idaddr;
+	else {
+		LFS_IENTRY(ifp, fs, ino, bp);
+		daddr = ifp->if_daddr;
+		brelse(bp);
+		if (daddr == LFS_UNUSED_DADDR)
+			return (ENOENT);
+	}
+
+	/* Allocate new vnode/inode. */
+	if (error = lfs_vcreate(mp, ino, &vp)) {
+		*vpp = NULL;
+		return (error);
+	}
+
+	/*
+	 * Put it onto its hash chain and lock it so that other requests for
+	 * this inode will block if they arrive while we are sleeping waiting
+	 * for old data structures to be purged or for the contents of the
+	 * disk portion of this inode to be read.
+	 */
+	ip = VTOI(vp);
+	ufs_ihashins(ip);
+
+	/*
+	 * XXX
+	 * This may not need to be here, logically it should go down with
+	 * the i_devvp initialization.
+	 * Ask Kirk.
+	 */
+	ip->i_lfs = ump->um_lfs;
+
+	/* Read in the disk contents for the inode, copy into the inode. */
+	if (error =
+	    bread(ump->um_devvp, daddr, (int)fs->lfs_bsize, NOCRED, &bp)) {
+		/*
+		 * The inode does not contain anything useful, so it
+		 * would be misleading to leave it on its hash chain.
+		 * Iput() will return it to the free list.
+		 */
+		remque(ip);
+		ip->i_forw = ip;
+		ip->i_back = ip;
+
+		/* Unlock and discard unneeded inode. */
+		ufs_iput(ip);
+		brelse(bp);
+		*vpp = NULL;
+		return (error);
+	}
+	ip->i_din = *lfs_ifind(fs, ino, bp->b_un.b_dino);
+	brelse(bp);
+
+	/*
+	 * Initialize the vnode from the inode, check for aliases.  In all
+	 * cases re-init ip, the underlying vnode/inode may have changed.
+	 */
+	if (error = ufs_vinit(mp, lfs_specop_p, LFS_FIFOOPS, &vp)) {
+		ufs_iput(ip);
+		*vpp = NULL;
+		return (error);
+	}
+	/*
+	 * Finish inode initialization now that aliasing has been resolved.
+	 */
+	ip->i_devvp = ump->um_devvp;
+	VREF(ip->i_devvp);
+	*vpp = vp;
+	return (0);
 }
 
 /*
@@ -418,13 +508,11 @@ lfs_sync(mp, waitfor)
  * generational number.
  */
 int
-lfs_fhtovp(mp, fhp, setgen, vpp)
+lfs_fhtovp(mp, fhp, vpp)
 	register struct mount *mp;
 	struct fid *fhp;
-	int setgen;
 	struct vnode **vpp;
 {
-	USES_VOP_VGET;
 	register struct inode *ip;
 	register struct ufid *ufhp;
 	struct vnode *nvp;
@@ -433,24 +521,15 @@ lfs_fhtovp(mp, fhp, setgen, vpp)
 	ufhp = (struct ufid *)fhp;
 	if (ufhp->ufid_ino < ROOTINO)
 		return (EINVAL);
-	if (error = LFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
+	if (error = VFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
 		*vpp = NULLVP;
 		return (error);
 	}
 	ip = VTOI(nvp);
-	if (ip->i_mode == 0) {
+	if (ip->i_mode == 0 || ip->i_gen != ufhp->ufid_gen) {
 		ufs_iput(ip);
 		*vpp = NULLVP;
 		return (EINVAL);
-	}
-	if (ip->i_gen != ufhp->ufid_gen) {
-		if (setgen)
-			ufhp->ufid_gen = ip->i_gen;
-		else {
-			ufs_iput(ip);
-			*vpp = NULLVP;
-			return (EINVAL);
-		}
 	}
 	*vpp = nvp;
 	return (0);
