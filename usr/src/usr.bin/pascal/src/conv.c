@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)conv.c 1.2.1.2 %G%";
+static char sccsid[] = "@(#)conv.c 1.4 %G%";
 
 #include "whoami.h"
 #ifdef PI
@@ -209,9 +209,15 @@ rangechk(p, q)
 #	endif OBJ
 #	ifdef PC
 		/*
-		 *	pc uses precheck() and postcheck().
+		 * what i want to do is make this and some other stuff
+		 * arguments to a function call, which will do the rangecheck,
+		 * and return the value of the current expression, or abort
+		 * if the rangecheck fails.
+		 * probably i need one rangecheck routine to return each c-type
+		 * of value.
+		 * also, i haven't figured out what the `other stuff' is.
 		 */
-	    panic("rangechk()");
+	    putprintf( "#	call rangecheck" , 0 );
 #	endif PC
 }
 #endif
@@ -241,8 +247,9 @@ precheck( p , name1 , name2 )
 	switch ( p -> class ) {
 	    case RANGE:
 		if ( p != nl + T4INT ) {
-		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-			    , p -> range[0] != 0 ? name1 : name2 );
+		    putleaf( P2ICON , 0 , 0 ,
+			    ADDTYPE( P2FTN | P2INT , P2PTR ),
+			    p -> range[0] != 0 ? name1 : name2 );
 		}
 		break;
 	    case SCAL:
@@ -264,38 +271,41 @@ precheck( p , name1 , name2 )
      *	the second argument is the lower bound of the range,
      *	the third argument is the upper bound of the range.
      */
-postcheck( p )
-    struct nl	*p;
-    {
+postcheck(need, have)
+    struct nl	*need;
+    struct nl	*have;
+{
 
-	if ( opt( 't' ) == 0 ) {
-	    return;
-	}
-	if ( p == NIL ) {
-	    return;
-	}
-	if ( p -> class == TYPE ) {
-	    p = p -> type;
-	}
-	switch ( p -> class ) {
-	    case RANGE:
-		if ( p != nl + T4INT ) {
-		    if (p -> range[0] != 0 ) {
-			putleaf( P2ICON , p -> range[0] , 0 , P2INT , 0 );
-			putop( P2LISTOP , P2INT );
-		    }
-		    putleaf( P2ICON , p -> range[1] , 0 , P2INT , 0 );
-		    putop( P2LISTOP , P2INT );
-		    putop( P2CALL , P2INT );
-		}
-		break;
-	    case SCAL:
-		break;
-	    default:
-		panic( "postcheck" );
-		break;
-	}
+    if ( opt( 't' ) == 0 ) {
+	return;
     }
+    if ( need == NIL ) {
+	return;
+    }
+    if ( need -> class == TYPE ) {
+	need = need -> type;
+    }
+    switch ( need -> class ) {
+	case RANGE:
+	    if ( need != nl + T4INT ) {
+		sconv(p2type(have), P2INT);
+		if (need -> range[0] != 0 ) {
+		    putleaf( P2ICON , need -> range[0] , 0 , P2INT , 0 );
+		    putop( P2LISTOP , P2INT );
+		}
+		putleaf( P2ICON , need -> range[1] , 0 , P2INT , 0 );
+		putop( P2LISTOP , P2INT );
+		putop( P2CALL , P2INT );
+		sconv(P2INT, p2type(have));
+	    }
+	    break;
+	case SCAL:
+	    break;
+	default:
+	    panic( "postcheck" );
+	    break;
+    }
+}
 #endif PC
 
 #ifdef DEBUG
