@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_rb.c 1.14 92/01/21$
+ * from: Utah $Hdr: grf_rb.c 1.15 93/08/13$
  *
- *	@(#)grf_rb.c	8.1 (Berkeley) %G%
+ *	@(#)grf_rb.c	8.2 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -83,8 +83,9 @@ rb_init(gp, addr)
  * Right now all we can do is grfon/grfoff.
  * Return a UNIX error number or 0 for success.
  */
-rb_mode(gp, cmd)
+rb_mode(gp, cmd, data)
 	register struct grf_softc *gp;
+	caddr_t data;
 {
 	register struct rboxfb *rbp;
 	int error = 0;
@@ -97,16 +98,68 @@ rb_mode(gp, cmd)
 	case GM_GRFON:
 	case GM_GRFOFF:
 		break;
+
 	case GM_GRFOVON:
 		rbp->write_enable = 0;
 		rbp->opwen = 0xF;
 		rbp->drive = 0x10;
 		break;
+
 	case GM_GRFOVOFF:
 		rbp->opwen = 0;
 		rbp->write_enable = 0xffffffff;
 		rbp->drive = 0x01;
 		break;
+
+	/*
+	 * Remember UVA of mapping for GCDESCRIBE.
+	 * XXX this should be per-process.
+	 */
+	case GM_MAP:
+		gp->g_data = data;
+		break;
+
+	case GM_UNMAP:
+		gp->g_data = 0;
+		break;
+
+#ifdef HPUXCOMPAT
+	case GM_DESCRIBE:
+	{
+		struct grf_fbinfo *fi = (struct grf_fbinfo *)data;
+		struct grfinfo *gi = &gp->g_display;
+		int i, j;
+
+		/* feed it what HP-UX expects */
+		fi->id = gi->gd_id;
+		fi->mapsize = gi->gd_fbsize;
+		fi->dwidth = gi->gd_dwidth;
+		fi->dlength = gi->gd_dheight;
+		fi->width = gi->gd_fbwidth;
+		fi->length = gi->gd_fbheight;
+		fi->bpp = NBBY;
+		fi->xlen = (fi->width * fi->bpp) / NBBY;
+		fi->npl = gi->gd_planes;
+		fi->bppu = fi->npl;
+		fi->nplbytes = fi->xlen * ((fi->length * fi->bpp) / NBBY);
+		bcopy("HP98720", fi->name, 8);
+		fi->attr = 2;	/* HW block mover */
+		/*
+		 * If mapped, return the UVA where mapped.
+		 */
+		if (gp->g_data) {
+			fi->regbase = gp->g_data;
+			fi->fbbase = fi->regbase + gp->g_display.gd_regsize;
+		} else {
+			fi->fbbase = 0;
+			fi->regbase = 0;
+		}
+		for (i = 0; i < 6; i++)
+			fi->regions[i] = 0;
+		break;
+	}
+#endif
+
 	default:
 		error = EINVAL;
 		break;

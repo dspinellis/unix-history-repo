@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_tc.c 1.19 92/01/21$
+ * from: Utah $Hdr: grf_tc.c 1.20 93/08/13$
  *
- *	@(#)grf_tc.c	8.1 (Berkeley) %G%
+ *	@(#)grf_tc.c	8.2 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -25,6 +25,7 @@
 
 #include <hp/dev/grfioctl.h>
 #include <hp/dev/grfvar.h>
+#include <hp/dev/grfreg.h>
 #include <hp300/dev/grf_tcreg.h>
 
 #include <machine/cpu.h>
@@ -96,8 +97,9 @@ tc_init(gp, addr)
  * Function may not be needed anymore.
  */
 /*ARGSUSED*/
-tc_mode(gp, cmd)
+tc_mode(gp, cmd, data)
 	struct grf_softc *gp;
+	caddr_t data;
 {
 	int error = 0;
 
@@ -105,6 +107,80 @@ tc_mode(gp, cmd)
 	case GM_GRFON:
 	case GM_GRFOFF:
 		break;
+
+	/*
+	 * Remember UVA of mapping for GCDESCRIBE.
+	 * XXX this should be per-process.
+	 */
+	case GM_MAP:
+		gp->g_data = data;
+		break;
+
+	case GM_UNMAP:
+		gp->g_data = 0;
+		break;
+
+#ifdef HPUXCOMPAT
+	case GM_DESCRIBE:
+	{
+		struct grf_fbinfo *fi = (struct grf_fbinfo *)data;
+		struct grfinfo *gi = &gp->g_display;
+		int i, j;
+
+		/* feed it what HP-UX expects */
+		fi->id = gi->gd_id;
+		fi->mapsize = gi->gd_fbsize;
+		fi->dwidth = gi->gd_dwidth;
+		fi->dlength = gi->gd_dheight;
+		fi->width = gi->gd_fbwidth;
+		fi->length = gi->gd_fbheight;
+		fi->bpp = NBBY;
+		fi->xlen = (fi->width * fi->bpp) / NBBY;
+		fi->npl = gi->gd_planes;
+		fi->bppu = fi->npl;
+		fi->nplbytes = fi->xlen * ((fi->length * fi->bpp) / NBBY);
+		/* XXX */
+		switch (gp->g_sw->gd_hwid) {
+		case GID_HRCCATSEYE:
+			bcopy("HP98550", fi->name, 8);
+			break;
+		case GID_LRCATSEYE:
+			bcopy("HP98549", fi->name, 8);
+			break;
+		case GID_HRMCATSEYE:
+			bcopy("HP98548", fi->name, 8);
+			break;
+		case GID_TOPCAT:
+			switch (gi->gd_colors) {
+			case 64:
+				bcopy("HP98547", fi->name, 8);
+				break;
+			case 16:
+				bcopy("HP98545", fi->name, 8);
+				break;
+			case 2:
+				bcopy("HP98544", fi->name, 8);
+				break;
+			}
+			break;
+		}
+		fi->attr = 2;	/* HW block mover */
+		/*
+		 * If mapped, return the UVA where mapped.
+		 */
+		if (gp->g_data) {
+			fi->regbase = gp->g_data;
+			fi->fbbase = fi->regbase + gp->g_display.gd_regsize;
+		} else {
+			fi->fbbase = 0;
+			fi->regbase = 0;
+		}
+		for (i = 0; i < 6; i++)
+			fi->regions[i] = 0;
+		break;
+	}
+#endif
+
 	default:
 		error = EINVAL;
 		break;

@@ -10,9 +10,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_hy.c 1.1 92/01/22$
+ * from: Utah $Hdr: grf_hy.c 1.2 93/08/13$
  *
- *	@(#)grf_hy.c	8.1 (Berkeley) %G%
+ *	@(#)grf_hy.c	8.2 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -87,8 +87,9 @@ hy_init(gp, addr)
  * Return a UNIX error number or 0 for success.
  * Function may not be needed anymore.
  */
-hy_mode(gp, cmd)
+hy_mode(gp, cmd, data)
 	struct grf_softc *gp;
+	caddr_t data;
 {
 	int error = 0;
 
@@ -96,6 +97,56 @@ hy_mode(gp, cmd)
 	case GM_GRFON:
 	case GM_GRFOFF:
 		break;
+
+	/*
+	 * Remember UVA of mapping for GCDESCRIBE.
+	 * XXX this should be per-process.
+	 */
+	case GM_MAP:
+		gp->g_data = data;
+		break;
+
+	case GM_UNMAP:
+		gp->g_data = 0;
+		break;
+
+#ifdef HPUXCOMPAT
+	case GM_DESCRIBE:
+	{
+		struct grf_fbinfo *fi = (struct grf_fbinfo *)data;
+		struct grfinfo *gi = &gp->g_display;
+		int i, j;
+
+		/* feed it what HP-UX expects */
+		fi->id = gi->gd_id;
+		fi->mapsize = gi->gd_fbsize;
+		fi->dwidth = gi->gd_dwidth;
+		fi->dlength = gi->gd_dheight;
+		fi->width = gi->gd_fbwidth;
+		fi->length = gi->gd_fbheight;
+		fi->bpp = NBBY;
+		fi->xlen = (fi->width * fi->bpp) / NBBY;
+		fi->npl = gi->gd_planes;
+		fi->bppu = fi->npl;
+		fi->nplbytes = fi->xlen * ((fi->length * fi->bpp) / NBBY);
+		bcopy("A1096A", fi->name, 7);	/* ?? */
+		fi->attr = 0;			/* ?? */
+		/*
+		 * If mapped, return the UVA where mapped.
+		 */
+		if (gp->g_data) {
+			fi->regbase = gp->g_data;
+			fi->fbbase = fi->regbase + gp->g_display.gd_regsize;
+		} else {
+			fi->fbbase = 0;
+			fi->regbase = 0;
+		}
+		for (i = 0; i < 6; i++)
+			fi->regions[i] = 0;
+		break;
+	}
+#endif
+
 	default:
 		error = EINVAL;
 		break;
