@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	1.6	%G%";
+static char SccsId[] = "@(#)deliver.c	1.7	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -81,7 +81,7 @@ deliver(to, editfcn)
 	m = to->q_mailer;
 	user = to->q_user;
 	host = to->q_host;
-	Error = 0;
+	Errors = 0;
 	errno = 0;
 # ifdef DEBUG
 	if (Debug)
@@ -288,7 +288,7 @@ deliver(to, editfcn)
 **		none.
 **
 **	Side Effects:
-**		Error may be set.
+**		Errors may be incremented.
 **		ExitStat may be set.
 **
 **	Called By:
@@ -314,7 +314,7 @@ giveresponse(stat, force, m)
 		statmsg = "ok";
 	else
 	{
-		Error++;
+		Errors++;
 		if (statmsg == NULL && m->m_badstat != 0)
 		{
 			stat = m->m_badstat;
@@ -504,29 +504,6 @@ recipient(a, targetq)
 	if (Debug)
 		printf("recipient(%s)\n", To);
 # endif DEBUG
-
-	/*
-	**  Don't go to the net if already on the target host.
-	**	This is important on the berkeley network, since
-	**	it get confused if we ask to send to ourselves.
-	**	For nets like the ARPANET, we probably will have
-	**	the local list set to NULL to simplify testing.
-	**	The canonical representation of the name is also set
-	**	to be just the local name so the duplicate letter
-	**	suppression algorithm will work.
-	*/
-
-	if ((pvp = m->m_local) != NULL)
-	{
-		while (*pvp != NULL)
-		{
-			if (strcmp(*pvp++, a->q_host) == 0)
-			{
-				a->q_mailer = m = &Mailer[0];
-				break;
-			}
-		}
-	}
 
 	/*
 	**  Look up this person in the recipient list.  If they

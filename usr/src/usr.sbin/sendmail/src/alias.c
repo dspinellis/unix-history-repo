@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)alias.c	1.4	%G%";
+static char SccsId[] = "@(#)alias.c	1.5	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -25,7 +25,6 @@ static char SccsId[] = "@(#)alias.c	1.4	%G%";
 **
 **	Defined Constants:
 **		MAXRCRSN -- the maximum recursion depth.
-**		ALIASFILE -- the pathname of the alias file.
 **
 **	Called By:
 **		main
@@ -52,13 +51,12 @@ static char SccsId[] = "@(#)alias.c	1.4	%G%";
 */
 
 
-# define ALIASFILE	"/usr/lib/mailaliases"
 # define MAXRCRSN	10
 
 #ifdef DBM
 typedef struct {char *dptr; int dsize;} datum;
 datum lhs, rhs;
-datum fetch();
+extern datum fetch();
 #endif DBM
 
 alias()
@@ -168,28 +166,6 @@ alias()
 			}
 			if (q != NULL)
 			{
-#else DBM
-	/*
-	**  Scan SendQ
-	**	We pass through the queue several times.  Didalias tells
-	**	us if we took some alias on this pass through the queue;
-	**	when it goes false at the top of the loop we don't have
-	**	to scan any more.
-	*/
-
-	do
-	{
-		didalias = FALSE;
-		/*  Scan SendQ for that canonical form. */
-		for (q = &SendQ; (q = nxtinq(q)) != NULL; )
-		{
-			lhs.dptr = q -> q_paddr;
-			lhs.dsize = strlen(lhs.dptr)+1;
-			rhs = fetch(lhs);
-			p = rhs.dptr;
-			if (p != NULL)
-			{
-#endif
 				/*
 				**  Match on Alias.
 				**	Deliver to the target list.
@@ -211,9 +187,49 @@ alias()
 			}
 		}
 	} while (didalias);
-#ifndef DBM
 	fclose(af);
-#endif
+#else DBM
+	/*
+	**  Scan SendQ
+	**	We only have to do this once, since anything we alias
+	**	two is being put at the end of the queue we are
+	**	scanning.
+	*/
+
+	for (q = &SendQ; (q = nxtinq(q)) != NULL; )
+	{
+		/* only alias local users */
+		if (q->q_mailer != &Mailer[0])
+			continue;
+
+		/* create a key for fetch */
+		lhs.dptr = q->q_user;
+		lhs.dsize = strlen(q->q_user) + 1;
+		lhs.dptr = line;
+		rhs = fetch(lhs);
+
+		/* find this alias? */
+		p = rhs.dptr;
+		if (p == NULL)
+			continue;
+
+		/*
+		**  Match on Alias.
+		**	Deliver to the target list.
+		**	Remove the alias from the send queue
+		**	  and put it on the Alias queue.
+		*/
+
+# ifdef DEBUG
+		if (Debug)
+			printf("%s (%s, %s) aliased to %s\n",
+			    q->q_paddr, q->q_host, q->q_user, p);
+# endif
+		tkoffq(q, &SendQ);
+		putonq(q, &AliasQ);
+		sendto(p, 1);
+	}
+#endif DBM
 }
 /*
 **  FORWARD -- Try to forward mail

@@ -3,7 +3,7 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	1.5	%G%
+**	@(#)sendmail.h	1.6	%G%
 */
 
 
@@ -20,6 +20,7 @@
 # define MAXFIELD	2500	/* maximum total length of a header field */
 # define MAXPV		15	/* maximum # of parms to mailers */
 # define MAXHOP		30	/* maximum value of HopCount */
+# define ALIASFILE	"/usr/lib/aliases"	/* location of alias file */
 
 
 
@@ -120,10 +121,10 @@ extern bool	WriteBack;	/* write back response on error */
 extern bool	NoAlias;	/* if set, don't do any aliasing */
 extern bool	ForceMail;	/* if set, mail even if already got a copy */
 extern bool	MeToo;		/* send to the sender also */
-extern bool	Error;		/* set if errors */
 extern bool	UseMsgId;	/* put msg-id's in all msgs [conf.c] */
 extern bool	IgnrDot;	/* don't let dot end messages */
 extern bool	SaveFrom;	/* save leading "From" lines */
+extern int	Errors;		/* set if errors */
 extern int	ExitStat;	/* exit status code */
 extern char	InFileName[];	/* input file name */
 extern char	Transcript[];	/* the transcript file name */

@@ -4,10 +4,10 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	1.3	%G%";
+static char	SccsId[] = "@(#)err.c	1.4	%G%";
 
 /*
-**  ERR -- Print error message.
+**  SYSERR -- Print error message.
 **
 **	Prints an error message via printf to the diagnostic
 **	output.  If LOG is defined, it logs it also.
@@ -20,8 +20,8 @@ static char	SccsId[] = "@(#)err.c	1.3	%G%";
 **		-1 always
 **
 **	Side Effects:
-**		Sets Error.
-**		Sets ExitStat.
+**		increments Errors.
+**		sets ExitStat.
 */
 
 /*VARARGS1*/
@@ -44,7 +44,7 @@ syserr(fmt, a, b, c, d, e)
 			sprintf(p, ": error %d", errno);
 	}
 	printf("delivermail: %s\n", errbuf);
-	Error++;
+	Errors++;
 
 	/* determine exit status if not already set */
 	if (ExitStat == EX_OK)
@@ -73,7 +73,7 @@ syserr(fmt, a, b, c, d, e)
 **		-1
 **
 **	Side Effects:
-**		sets Error.
+**		increments Errors.
 */
 
 /*VARARGS1*/
@@ -85,7 +85,7 @@ usrerr(fmt, a, b, c, d, e)
 	if (SuprErrs)
 		return;
 
-	Error++;
+	Errors++;
 	if (To != NULL)
 		printf("%s... ", To);
 	printf(fmt, a, b, c, d, e);
