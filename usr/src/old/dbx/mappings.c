@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)mappings.c 1.3 %G%";
+static char sccsid[] = "@(#)mappings.c 1.4 %G%";
 
 /*
  * Source-to-object and vice versa mappings.
@@ -200,7 +200,12 @@ String name;
 
 #define MAXNFUNCS 1001      /* maximum number of functions allowed */
 
-private Symbol functab[MAXNFUNCS];
+typedef struct {
+    Symbol func;
+    Address addr;
+} AddrOfFunc;
+
+private AddrOfFunc functab[MAXNFUNCS];
 private int nfuncs;
 
 /*
@@ -208,13 +213,18 @@ private int nfuncs;
  * The table is ordered by object address.
  */
 
-public newfunc(f)
+public newfunc(f, addr)
 Symbol f;
+Address addr;
 {
+    register AddrOfFunc *af;
+
     if (nfuncs >= MAXNFUNCS) {
 	panic("too many procedures/functions");
     }
-    functab[nfuncs] = f;
+    af = &functab[nfuncs];
+    af->func = f;
+    af->addr = addr;
     ++nfuncs;
 }
 
@@ -230,28 +240,28 @@ Address addr;
 
     i = 0;
     j = nfuncs - 1;
-    if (addr < codeloc(functab[i])) {
+    if (addr < functab[i].addr) {
 	return program;
-    } else if (addr == codeloc(functab[i])) {
-	return functab[i];
-    } else if (addr >= codeloc(functab[j])) {
-	return functab[j];
+    } else if (addr == functab[i].addr) {
+	return functab[i].func;
+    } else if (addr >= functab[j].addr) {
+	return functab[j].func;
     }
     while (i <= j) {
 	k = (i + j) / 2;
-	a = codeloc(functab[k]);
+	a = functab[k].addr;
 	if (a == addr) {
-	    return functab[k];
+	    return functab[k].func;
 	} else if (addr > a) {
 	    i = k+1;
 	} else {
 	    j = k-1;
 	}
     }
-    if (addr > codeloc(functab[i])) {
-	return functab[i];
+    if (addr > functab[i].addr) {
+	return functab[i].func;
     } else {
-	return functab[i-1];
+	return functab[i-1].func;
     }
     /* NOTREACHED */
 }
@@ -261,18 +271,18 @@ Address addr;
  */
 
 private int cmpfunc(f1, f2)
-Symbol *f1, *f2;
+AddrOfFunc *f1, *f2;
 {
     register Address a1, a2;
 
-    a1 = codeloc(*f1);
-    a2 = codeloc(*f2);
+    a1 = (*f1).addr;
+    a2 = (*f2).addr;
     return ( (a1 < a2) ? -1 : ( (a1 == a2) ? 0 : 1 ) );
 }
 
 public ordfunctab()
 {
-    qsort(functab, nfuncs, sizeof(Symbol), cmpfunc);
+    qsort(functab, nfuncs, sizeof(AddrOfFunc), cmpfunc);
 }
 
 /*
@@ -286,15 +296,9 @@ public clrfunctab()
 
 public dumpfunctab()
 {
-Symbol s;
-int i;
+    int i;
 
-  for(i=0;i<nfuncs;i++) { 
-	s=functab[i];
-	printf( "%s %s %s %lx \n",
-	classname(s),
-	symname(s),
-	(s->block == nil ? "noblock" : symname(s->block) ),
-	codeloc(s) );
-   }
+    for (i = 0; i < nfuncs; i++) { 
+	psym(functab[i].func);
+    }
 }
