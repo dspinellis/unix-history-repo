@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)table.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -17,12 +17,15 @@ static char sccsid[] = "@(#)table.c	5.6 (Berkeley) %G%";
  *
  * Consider this a mis-guided attempt at modularity
  */
-#include <stdio.h>
-#include <sys/time.h>
-#include <syslog.h>
 #include <sys/param.h>
-
+#include <sys/time.h>
+#include <sys/socket.h>
 #include <protocols/talkd.h>
+#include <syslog.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MAX_ID 16000	/* << 2^15 so I don't have sign troubles */
 
@@ -30,7 +33,7 @@ static char sccsid[] = "@(#)table.c	5.6 (Berkeley) %G%";
 
 extern	int debug;
 struct	timeval tp;
-struct	timezone *txp;
+struct	timezone txp;
 
 typedef struct table_entry TABLE_ENTRY;
 
@@ -44,7 +47,6 @@ struct table_entry {
 TABLE_ENTRY *table = NIL;
 CTL_MSG *find_request();
 CTL_MSG *find_match();
-char	*malloc();
 
 /*
  * Look in the table for an invitation that matches the current
@@ -55,7 +57,7 @@ find_match(request)
 	register CTL_MSG *request;
 {
 	register TABLE_ENTRY *ptr;
-	long current_time;
+	time_t current_time;
 
 	gettimeofday(&tp, &txp);
 	current_time = tp.tv_sec;
@@ -89,7 +91,7 @@ find_request(request)
 	register CTL_MSG *request;
 {
 	register TABLE_ENTRY *ptr;
-	long current_time;
+	time_t current_time;
 
 	gettimeofday(&tp, &txp);
 	current_time = tp.tv_sec;
@@ -127,7 +129,7 @@ insert_table(request, response)
 	CTL_RESPONSE *response;
 {
 	register TABLE_ENTRY *ptr;
-	long current_time;
+	time_t current_time;
 
 	gettimeofday(&tp, &txp);
 	current_time = tp.tv_sec;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -17,17 +17,17 @@ static char sccsid[] = "@(#)process.c	5.9 (Berkeley) %G%";
  *		  in the table for the local user
  *	DELETE - delete invitation
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
-#include <stdio.h>
-#include <syslog.h>
-#include <netdb.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
-
 #include <protocols/talkd.h>
+#include <netdb.h>
+#include <syslog.h>
+#include <stdio.h>
+#include <string.h>
 #include <paths.h>
 
-char	*strcpy();
 CTL_MSG *find_request();
 CTL_MSG *find_match();
 
@@ -117,7 +117,7 @@ do_announce(mp, rp)
 		return;
 	}
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
-	hp = gethostbyaddr(&satosin(&mp->ctl_addr)->sin_addr,
+	hp = gethostbyaddr((char *)&satosin(&mp->ctl_addr)->sin_addr,
 		sizeof (struct in_addr), AF_INET);
 	if (hp == (struct hostent *)0) {
 		rp->answer = MACHINE_UNKNOWN;
