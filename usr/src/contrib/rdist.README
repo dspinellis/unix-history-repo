@@ -1,0 +1,20 @@
+                     README for Rdist for 4.4BSD
+
+A new, greatly improved version of Rdist is available via anonymous FTP
+from "usc.edu" in the directory "/pub/rdist".  The paper "Overhauling
+Rdist for the '90s", from the 1992 USENIX LISA VI conference is also
+available as "/pub/rdist/overhaul.ps.gz".  This paper contains a fairly
+complete list of major features.  Some of the highlights are as follows:
+
+        - Update multiple clients simultaneously.
+        - Enhanced security.  The rdist client and server are now
+          seperate programs.  Only the client need be setuid "root".
+        - Check and maintain file ownerships and modes.
+        - Greatly enhanced portability and support for a variety of
+          OS platforms.
+        - Greatly improved error handling and avoidance.
+
+Michael A. Cooper
+mcooper@usc.edu
+June 14th, 1993
+
