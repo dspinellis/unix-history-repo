@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vax.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)vax.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -69,7 +69,6 @@ typedef unsigned int Word;
 #include "symbols.h"
 #include <signal.h>
 #include <sys/param.h>
-#include <sys/dir.h>
 #include <machine/psl.h>
 #include <machine/pte.h>
 #include <sys/user.h>
