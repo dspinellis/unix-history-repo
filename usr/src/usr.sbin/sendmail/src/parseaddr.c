@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.20	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.21	%G%";
 
 /*
 **  PARSE -- Parse an address
