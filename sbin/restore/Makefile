@@ -17,7 +17,7 @@ rtape.o: tape.c ${LIBC}
 	${CC} ${CFLAGS} -c -DRRESTORE ${.CURDIR}/tape.c -o ${.TARGET}
 
 afterinstall:
-	install ${STRIP} -o root -g ${BINGRP} -m 4755 rrestore \
+	install ${COPY} ${STRIP} -o root -g ${BINGRP} -m 4755 rrestore \
 	    ${DESTDIR}${BINDIR}
 
 .include <bsd.prog.mk>
