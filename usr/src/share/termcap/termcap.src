@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.42	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.43	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2327,6 +2327,36 @@ K1|kermitam|standard kermit plus am:\
 K2|pckermit|pckermit12|UCB IBMPC Kermit 1.2:\
 	:am:li#25:cd@:ce@:cl=\EH\EJ:\
 	:is=K2 UCB IBMPC Kermit 1.2  8-30-84\n:tc=kermit:
+# MS-DOS Kermit 2.27 for the IBMPC	(UCB gts 1-22-85)
+# Straight ascii keyboard. :sr=\EI: not avail. many versions + bug prone in vi.
+# Cannot use line 25, now acts funny like ansi special scrolling region.
+# Initialization must escape from that region by cursor position to line 24.
+# Does not use am: because autowrap mode lost when kermit dropped and restarted.
+# Reverse video for standout like H19.
+K4|mskermit227|msk227|MS-DOS Kermit 2.27 for the IBMPC:\
+	:al=\EL:am@:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:\
+	:dc=\EN:dl=\EM:do=\EB:ei=\EO:im=\E@:\
+	:ho=\EH:li#24:nd=\EC:up=\EA:pt:rc=\Ek:sc=\Ej:se=\Eq:so=\Ep:\
+	:ku=^K:kd=^J:kl=^H:kr=^L:kh=^^:ma=^Hh\012j^Kk^Ll^^H:\
+	:is=\EO\Eq\EG\Ew\EJ\EY7 K4 MS Kermit 2.27 for the IBMPC 1-22-85\n:\
+	:vs=\EO\Eq\EG\Ew\EEK4:
+#
+# MS-DOS Kermit 2.27 with automatic margins	(UCB gts 3-2-85)
+K5|mskermit227am|msk227am|UCB MS-DOS Kermit 2.27 with automatic margins:\
+	:am:\
+	:is=\EO\Eq\EG\Ev\EJ\EY7 K5 MS Kermit 2.27 + automatic margins 3-2-85\n:\
+	:vs=\EO\Eq\EG\Ev\EEK5:tc=mskermit227:
+#
+# MS-DOS Kermit 2.27 UCB 227.14 for the IBM PC	(UCB gts 3-4-85)
+# Automatic margins now default.  Use ansi set graphic rendition for standout,
+# underline and ul codes (md,me,mr).  Define function keys.
+K6|mskermit22714|msk22714|UCB MS-DOS Kermit 2.27 UCB 227.14 IBM PC:\
+	:am:kn#10:\
+	:k0=\E0:k1=\E1:k2=\E2:k3=\E3:k4=\E4:k5=\E5:k6=\E6:k7=\E7:k8=\E8:k9=\E9:\
+	:md=\E[1m:me=\E[m:mr=\E[7m:\
+	:se=\E[m:so=\E[1m:ue=\E[m:us=\E[4m:\
+	:is=\EO\Eq\EG\Ev\EJ\EY7 K6 MS Kermit 2.27 UCB 227.14 IBM PC 3-5-86\n:\
+	:vs=\EO\Eq\EG\Ev\EEK6:tc=mskermit227:
 #
 # END OF TERMCAP
 #  ------------------------
