@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)spec_vnops.c	7.37 (Berkeley) 5/30/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00007
+ * --------------------         -----   ----------------------
+ *
+ * 20 Aug 92    David Greenman          Fixed incorrect setting of B_AGE on
  */
 
 #include "param.h"
@@ -218,8 +225,10 @@ spec_read(vp, uio, ioflag, cred)
 				return (error);
 			}
 			error = uiomove(bp->b_un.b_addr + on, n, uio);
+#ifdef OMIT	/* 20 Aug 92*/
 			if (n + on == bsize)
 				bp->b_flags |= B_AGE;
+#endif	/* OMIT*/
 			brelse(bp);
 		} while (error == 0 && uio->uio_resid > 0 && n != 0);
 		return (error);
