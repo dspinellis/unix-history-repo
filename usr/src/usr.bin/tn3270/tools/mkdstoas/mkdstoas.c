@@ -5,8 +5,8 @@
 #include <string.h>
 #endif	/* defined(unix) */
 #include <ctype.h>
-#include "../apilib/asc_ebc.h"
-#include "../apilib/ebc_disp.h"
+#include "../api/asc_ebc.h"
+#include "../api/ebc_disp.h"
 
 
 int

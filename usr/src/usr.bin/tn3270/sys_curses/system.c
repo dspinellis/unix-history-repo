@@ -22,8 +22,8 @@ extern int errno;
 #include <pwd.h>
 
 #include "../general/general.h"
-#include "../api/api.h"
-#include "../apilib/api_exch.h"
+#include "../ctlr/api.h"
+#include "../api/api_exch.h"
 
 #include "../general/globals.h"
 

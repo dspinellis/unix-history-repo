@@ -1,19 +1,18 @@
 #include <stdio.h>
 
-#include <apilib/apilib.h>
+#include <api/apilib.h>
 
 #include "tncomp.h"
 
 
-#include "../api/api.h"
-
+#include "../ctlr/api.h"
 #include "../ctlr/function.h"
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/oia.h"
 #include "../ctlr/screen.h"
 
-#include "../apilib/disp_asc.h"
-#include "../apilib/astosc.h"
+#include "../api/disp_asc.h"
+#include "../api/astosc.h"
 
 #include "../general/general.h"
 

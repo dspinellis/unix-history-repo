@@ -115,9 +115,9 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-system$O: ../general/general.h ../api/api.h ../apilib/api_exch.h
+system$O: ../general/general.h ../ctlr/api.h ../api/api_exch.h
 system$O: ../general/globals.h
-termout$O: ../general/general.h terminal.h ../telnet.ext ../apilib/disp_asc.h
+termout$O: ../general/general.h terminal.h ../telnet.ext ../api/disp_asc.h
 termout$O: ../ctlr/hostctlr.h ../ctlr/inbound.ext ../ctlr/oia.h
 termout$O: ../ctlr/options.ext ../ctlr/outbound.ext ../ctlr/screen.h
 termout$O: ../ascii/map3270.ext ../general/globals.h

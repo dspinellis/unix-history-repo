@@ -10,11 +10,11 @@ static	char	sccsid[] = "@(#)prt3270.c	3.1  10/29/86";
 
 #include "../general/general.h"
 
-#include "../apilib/asc_ebc.h"
+#include "../api/asc_ebc.h"
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/screen.h"
 #include "../ctlr/function.h"
-#include "../apilib/astosc.h"
+#include "../api/astosc.h"
 #include "../general/globals.h"
 
 #include "../ctlr/kbd.out"

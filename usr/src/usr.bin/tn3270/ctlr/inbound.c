@@ -34,8 +34,8 @@ static	char	sccsid[] = "@(#)inbound.c	3.1  10/29/86";
 #include "scrnctlr.h"
 #include "screen.h"
 #include "options.h"
-#include "../apilib/dctype.h"
-#include "../apilib/ebc_disp.h"
+#include "../api/dctype.h"
+#include "../api/ebc_disp.h"
 
 #include "../general/globals.h"
 #include "inbound.ext"
