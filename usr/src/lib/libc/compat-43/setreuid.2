@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setreuid.2	6.6 (Berkeley) %G%
+.\"     @(#)setreuid.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SETREUID 2
@@ -28,7 +28,8 @@ ID to the effective user ID and vice-versa; only the super-user may
 make other changes.
 .Pp
 The
-.Fn setreuid function has been used to swap the real and effective user IDs
+.Fn setreuid
+function has been used to swap the real and effective user IDs
 in set-user-ID programs to temporarily relinquish the set-user-ID value.
 This purpose is now better served by the use of the
 .Fn seteuid
