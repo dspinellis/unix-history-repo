@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ferror.3	6.2 (Berkeley) %G%
+.\"	@(#)ferror.3	6.3 (Berkeley) %G%
 .\"
 .TH FERROR 3S  ""
 .UC 4
@@ -39,6 +39,10 @@ ferror, feof, clearerr, fileno \- stream status inquiries
 returns non-zero when end of file is read on the named input
 .IR stream ,
 otherwise zero.
+Unless cleared by
+.IR clearerr ,
+the end-of-file indication lasts until
+the stream is closed.
 .PP
 .I Ferror
 returns non-zero when an error has occurred reading or writing
@@ -59,10 +63,9 @@ returns the integer file descriptor
 associated with the
 .IR stream ,
 see
-.IR  open (2).
+.IR open (2).
 .PP
-Currently all of these functions except
-.I clearerr
+Currently all of these functions
 are implemented as macros;
 they cannot be redeclared.
 .SH "SEE ALSO"

@@ -43,7 +43,8 @@ it may be used to save object text.
 .PP
 .I Getw
 returns the next
-word (in a 32-bit integer on a VAX-11) from the named input
+.B int
+(a 32-bit integer on a VAX-11) from the named input
 .IR stream .
 It returns the constant
 .SM
@@ -58,6 +59,7 @@ should be used to check the success of
 .I Getw
 assumes no special alignment in the file.
 .SH "SEE ALSO"
+clearerr(3S),
 fopen(3S),
 putc(3S),
 gets(3S),
@@ -68,18 +70,16 @@ ungetc(3S)
 These functions return the integer constant
 .SM
 .B EOF
-at end of file or upon read error.
-.PP
-A stop with message,
-`Reading bad file', means an attempt has been made to
-read from a stream that has not been opened for
-reading by
+at end of file, upon read error,
+or if an attempt is made to read a file not opened by
 .IR fopen .
+The end-of-file condition is remembered,
+even on a terminal,
+and all subsequent attempts to read will return
+.B EOF
+until the condition is cleared with
+.IR clearerr (3S).
 .SH BUGS
-The end-of-file return from
-.I getchar
-is incompatible with that in UNIX editions 1-6.
-.PP
 Because it is implemented as a macro,
 .I getc
 treats a
