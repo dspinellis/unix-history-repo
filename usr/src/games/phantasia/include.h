@@ -8,6 +8,7 @@
 #include <setjmp.h>
 #include <signal.h>
 #include <time.h>
+#include <errno.h>
 
 #include "macros.h"
 #include "phantdefs.h"
