@@ -1,4 +1,12 @@
-#	@(#)TOUR	5.1 (Berkeley) %G%
+#	@(#)TOUR	5.2 (Berkeley) %G%
+
+NOTE -- This is the original TOUR paper distributed with ash and
+does not represent the current state of the shell.  It is provided anyway
+since it provides helpful information for how the shell is structured,
+but be warned that things have changed -- the current shell is
+still under development.
+
+================================================================
 
                        A Tour through Ash
 
