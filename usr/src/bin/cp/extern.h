@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.4 (Berkeley) %G%
+ *	@(#)extern.h	5.5 (Berkeley) %G%
  */
 
 typedef struct {
@@ -22,13 +22,11 @@ extern int exit_val, myumask;
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-void	 err __P((const char *fmt, ...));
-
 void copy_fifo __P((struct stat *, int));
 void copy_file __P((FTSENT *, int));
 void copy_link __P((FTSENT *, int));
 void copy_special __P((struct stat *, int));
+void err __P((const char *fmt, ...));
 void setfile __P((struct stat *, int));
 void usage __P((void));
-
 __END_DECLS
