@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -68,7 +68,7 @@ int	col;
 char	*globp;
 int	tfile	= -1;
 int	tline;
-char	tfname[] = _PATH_TMP;
+char	tfname[sizeof(_PATH_TMP) + 20];
 char	*loc1;
 char	*loc2;
 char	*locs;
@@ -137,7 +137,9 @@ char **argv;
 		globp = "r";
 	}
 	zero = (int *)malloc(nlall*sizeof(int));
-	mktemp(tfname);
+	(void)strcpy(tfname, _PATH_TMP);
+	(void)strcat(tfname, "_edXXXXXX");
+	(void)mktemp(tfname);
 	init();
 	if (((int)oldintr&01) == 0)
 		signal(SIGINT, onintr);
