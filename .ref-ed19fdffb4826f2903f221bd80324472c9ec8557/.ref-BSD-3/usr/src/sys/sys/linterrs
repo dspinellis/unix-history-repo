@@ -1,9 +1,0 @@
-fuibyte defined( "Locore.c"(80) ), but never used
-mcrmap defined( "Locore.c"(289) ), but never used
-pgintim defined( "./../h/vm.h"(218) ), but never used
-printsw defined( "Locore.c"(16) ), but never used
-rectime defined( "./../h/vm.h"(217) ), but never used
-ttread returns value which is always ignored
-ttwrite returns value which is always ignored
-ubafree defined( "uba.c"(112) ), but never used
-ubasetu defined( "uba.c"(28) ), but never used

@@ -1,0 +1,6 @@
+e panics
+g,"@(#)make.ed1 1.3 3/6/81",s//&/
+1d
+1,$s/^/#define /
+w! panics.h
+q

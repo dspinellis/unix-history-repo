@@ -1,5 +1,0 @@
-#
-foreach f ($argv)
-	echo /usr/bin/spell $f \> $f.sp
-	/usr/bin/spell $f > $f.sp
-end

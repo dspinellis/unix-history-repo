@@ -1,2 +1,0 @@
-(load "car")
-(load "cdr")

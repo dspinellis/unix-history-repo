@@ -1,3 +1,0 @@
-daemon:*:1:daemon
-staff:*:10:bill,sklower,mark
-operator:*:28:bill,sklower,mark,root

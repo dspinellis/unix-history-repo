@@ -1,9 +1,0 @@
-decwriter console
-patchboard tty0
-patchboard tty1
-patchboard tty2
-patchboard tty3
-patchboard tty4
-dialup tty5
-patchboard tty6
-patchboard tty7

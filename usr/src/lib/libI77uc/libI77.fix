@@ -1,0 +1,170 @@
+From G:dlw  Tue Apr 28 14:03:40 1981
+To: r:sklower
+Subject: reading into (nH....
+
+The following puts it back.
+	David
+----
+
+
+Apr 28 13:56 1981  s.rdfmt.c: -r1.2 vs. -r1.3 Page 1
+
+
+55,58c55,60
+< /*	case APOS:
+< /*		return(rd_POS(p->p1));
+< /*	case H:
+< /*		return(rd_H(p->p1,p->p2));	*/
+---
+> #ifndef	KOSHER
+> 	case APOS:					/* NOT STANDARD F77 */
+> 		return(rd_POS((char *)p->p1));
+> 	case H:						/* NOT STANDARD F77 */
+> 		return(rd_H(p->p1,(char *)p->p2));
+> #endif
+234,253c236,264
+< /*rd_H(n,s) char *s;
+< /*{	int i,ch;
+< /*	for(i=0;i<n;i++)
+< /*		if((ch=(*getn)())<0) return(ch);
+< /*		else if(ch=='\n') for(;i<n;i++) *s++ = ' ';
+< /*		else *s++ = ch;
+< /*	return(OK);
+< /*}
+< */
+< /*rd_POS(s) char *s;
+< /*{	char quote;
+< /*	int ch;
+< /*	quote= *s++;
+< /*	for(;*s;s++)
+< /*		if(*s==quote && *(s+1)!=quote) break;
+< /*		else if((ch=(*getn)())<0) return(ch);
+< /*		else *s = ch=='\n'?' ':ch;
+< /*	return(OK);
+< /*}
+< */
+---
+> rd_H(n,s) char *s;
+> {	int i,ch = 0;
+> 	for(i=0;i<n;i++)
+> 	{	if (ch != '\n')
+> 			GET(ch);
+> 		if (ch == '\n')
+> 			*s++ = ' ';
+> 		else
+> 			*s++ = ch;
+> 	}
+> 	return(OK);
+> }
+> 
+> rd_POS(s) char *s;
+> {	char quote;
+> 	int ch = 0;
+> 	quote = *s++;
+> 	while(*s)
+> 	{	if(*s==quote && *(s+1)!=quote)
+> 			break;
+> 		if (ch != '\n')
+> 			GET(ch);
+> 		if (ch == '\n')
+> 			*s++ = ' ';
+> 		else
+> 			*s++ = ch;
+> 	}
+> 	return(OK);
+> }
+
+From G:dlw  Tue Apr 28 19:48:37 1981
+To: r:sklower
+Subject: fort-66 carriage control on lu.6
+
+Below are diffs to allow initialization of the I/O lib for carriage control
+on logical unit 6 (stdout). The "trick" is to load a module that initializes
+a short int (init66_) to:
+	<non-zero> for fortran-66,
+	0 for f-77 (this is the default)
+
+Now, there are several ways to force init66_ to be set.
+1) pass "-u _init66_" to the loader. This is next to impossible with
+   the f77 driver as it is.
+2) load a BLOCK DATA module that does the initialization.
+   For example:
+	block data old66
+	common /init66/ iflag
+	integer*2 iflag
+	data iflag/1/
+	end
+
+The following two routines are new in libI77 .....
+
+--- yes_66.c ---
+/*
+char id_yes_66[] = "@(#)yes_66.c	1.1";
+ * set flag to initialize fortran-66 mods
+ *
+ * user's load command must include "-u _init66_"
+ */
+
+short init66_ = 1;
+
+--- no_66.c ---
+/*
+char id_no_66[] = "@(#)no_66.c	1.1";
+ * flag to NOT initialize fortran-66 mods
+ */
+
+short init66_ = 0;
+
+--- sccsdiffs for other affected routines ---
+
+
+Apr 28 19:31 1981  s.Makefile: -r1.8 vs. -r1.9 Page 1
+
+
+20c20,21
+< 	dofio.c f_errlist.c f_errno.h fiodefs.h fio.h format.h lio.h
+---
+> 	dofio.c f_errlist.c yes_66.c no_66.c \
+> 	f_errno.h fiodefs.h fio.h format.h lio.h
+26c27
+< 	dballoc.o err.o util.o f_errlist.o
+---
+> 	dballoc.o yes_66.o err.o no_66.o util.o f_errlist.o
+
+
+
+
+Apr 28 19:29 1981  s.err.c: -r1.4 vs. -r1.5 Page 1
+
+
+148,150c148,151
+< {	ini_std(STDERR, stderr, WRITE);
+< 	ini_std(STDIN, stdin, READ);
+< 	ini_std(STDOUT, stdout, WRITE);
+---
+> {	extern short init66_;
+> 	ini_std(STDERR, stderr, WRITE, 0);
+> 	ini_std(STDIN, stdin, READ, 0);
+> 	ini_std(STDOUT, stdout, WRITE, init66_);
+
+
+
+
+Apr 28 19:30 1981  s.util.c: -r1.2 vs. -r1.3 Page 1
+
+
+12c12
+< ini_std(u,F,w) FILE *F;
+---
+> ini_std(u,F,w,i66) FILE *F;
+20c20,21
+< 	p->ublnk = p->uscrtch = p->uprnt = p->uend = NO;
+---
+> 	p->ublnk = p->uscrtch = p->uend = NO;
+> 	p->uprnt = (i66!=0)? YES : NO;
+
+
+-------------------------------------------------
+Please let me know if this allows the "standard nbs" tests to run.
+	David
+

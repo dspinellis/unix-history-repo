@@ -1,5 +1,0 @@
-#
-foreach i (*/)
-echo "	======= $i"; date
-cd $i; csh -e -fc "make; make DESTDIR=/4bsd install clean"; cd ..
-end

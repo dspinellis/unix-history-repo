@@ -1,4 +1,0 @@
-  Common (Cstak) Ds ; Long Real Ds(500)
-  Long Real Ws(500)
-  Real Rs(1000) ; Integer Is(1000) ; Complex Cs(500) ; Logical Ls(1000)
-  Equivalence ( Ds(1),Cs(1),Ws(1),Rs(1),Is(1),Ls(1))

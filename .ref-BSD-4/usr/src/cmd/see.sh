@@ -1,1 +1,0 @@
-exec /bin/cat -v $*

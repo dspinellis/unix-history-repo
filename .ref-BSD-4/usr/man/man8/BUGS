@@ -1,8 +1,0 @@
-crash.8: s/wish/with/
-delivermail.8: s/sendmail/v6mail/ in FILES
-flcopy.8: flcopy -h in SYNOPSIS
-reboot.8: s/brount/brought/
-
-new:
-	labelit			label disk pack
-	shutdown		script doing walls and then kill 1

@@ -1,0 +1,22 @@
+." @(#)chd.n	34.1 1/29/81
+.Ap 4  VMS\ Franz
+.sp 2v
+.pp
+The VMS version of 
+.Fr
+uses these functions instead of \fIdumplisp\fP for saving and restoring
+a lisp.
+.Lf savelisp "'st_filename"
+.Re
+t
+.Se
+This saves the current lisp system on the file named st_filename.
+.Lf restorelisp "'st_filename"
+.Wh
+st_filename is the name of a file created by \fIsavelisp\fP.
+.Re
+t
+.Se
+This restores the lisp to the state it was in when the corresponding
+\fIsavelisp\fP was done.
+Anything done in the current lisp will be lost.

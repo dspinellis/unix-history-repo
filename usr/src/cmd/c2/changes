@@ -1,0 +1,83 @@
+Only in .: Keep
+Only in .: Makefile
+Only in .: SCCS
+Only in .: c2
+diff ./c2.h /va/staff/sklower/c2/c2.h
+1,2c1
+< /*static	char sccsid[] = "@(#)c2.h 4.1 10/16/80";*/
+< /* @(#)c2.h 1.18 80/03/14 10:27:01 */
+---
+> /* @(#)c2.h 1.19 80/08/26 13:39:07 */
+63,64c62,63
+< #define	COMM 59
+< #define LCOMM 60
+---
+> #define	LCOMM 59
+> #define	COMM 60
+115c114
+< 	int	labno;
+---
+> 	long	labno;
+diff ./c20.c /va/staff/sklower/c2/c20.c
+2,3c2
+< static	char sccsid[] = "@(#)c20.c 4.1 10/16/80";
+< /* char C20[] = {"@(#)c20.c 1.33 80/08/08 10:01:02"}; /* sccs ident */
+---
+> char C20[] = {"@(#)c20.c 1.35 80/08/26 14:13:40"}; /* sccs ident */
+14c13
+< int	isn	= 2000000;
+---
+> int	isn	= 20000;
+17,18c16,17
+< int lgensym[10] =
+<   {100000,200000,300000,400000,500000,600000,700000,800000,900000,1000000};
+---
+> long lgensym[10] =
+>   {100000L,200000L,300000L,400000L,500000L,600000L,700000L,800000L,900000L,1000000L};
+27,28c26,27
+< 	n++;
+< 	n &= ~01;
+---
+> 	n+=sizeof(char *)-1;
+> 	n &= ~(sizeof(char *)-1);
+132c131
+< 				if (isn<=p->labno) isn=1+p->labno;
+---
+> 				if (p->labno<100000L && isn<=p->labno) isn=1+p->labno;
+diff ./c21.c /va/staff/sklower/c2/c21.c
+1,3c1
+< static	char sccsid[] = "@(#)c21.c 4.2 10/16/80";
+< /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
+< 
+---
+> char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22"}; /* sccs ident */
+422,426c420,424
+<  		if (r>=0) {
+<  			if (r1>=0) savereg(r1, regs[r]+1, p->subop);
+<  			else if (p->op!=CVT) savereg(r, regs[RT2], p->subop);
+<  		} else if (r1>=0) savereg(r1, regs[RT1], p->subop);
+<  		else if (p->op!=CVT) setcon(regs[RT1], regs[RT2], p->subop);
+---
+> 		if (r>=0) {
+> 			if (r1>=0) savereg(r1, regs[r]+1, p->subop);
+> 			else if (p->op!=CVT) savereg(r, regs[RT2], p->subop);
+> 		} else if (r1>=0) savereg(r1, regs[RT1], p->subop);
+> 		else if (p->op!=CVT) setcon(regs[RT1], regs[RT2], p->subop);
+648c646
+<  			if (p->op==ASH && preg==(regs+RT1+1)) cp2[-1]=BYTE; /* stupid DEC */
+---
+> 			if (p->op==ASH && preg==(regs+RT1+1)) cp2[-1]=BYTE; /* stupid DEC */
+659,660c657,658
+<  				else *cp2=0;
+<  			} else *cp2=0;
+---
+> 				else *cp2=0;
+> 			} else *cp2=0;
+diff ./c22.c /va/staff/sklower/c2/c22.c
+1d0
+< static	char sccsid[] = "@(#)c22.c 4.1 10/16/80";
+3c2
+< /* char c22[] = "@(#)c22.c 1.10 80/03/14 10:27:37"; */
+---
+> char c22[] = "@(#)c22.c 1.11 80/08/26 13:53:54";
+Only in .: jfr.mail

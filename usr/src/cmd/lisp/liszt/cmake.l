@@ -1,0 +1,20 @@
+; file which loads in all the object files and dumps them
+; sccs id: @(#)cmake.l	1.4	4/21/82
+;				-[Wed Apr 21 07:17:25 1982 by jkf]-
+(progn (load 'decl)
+   (load 'array)
+   (load 'datab)
+   (load 'expr)
+   (load 'io)
+   (load 'funa)
+   (load 'funb)
+   (load 'func)
+   (load 'tlev)
+   (load 'fixnum)
+   (load 'util)
+   (load 'lversion)
+   (allocate 'list 400)
+   (allocate 'fixnum 10)
+   (allocate 'symbol 50)
+   (sstatus translink on)
+   (dumplisp nliszt))

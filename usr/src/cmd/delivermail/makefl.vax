@@ -1,0 +1,98 @@
+#
+#  VAX Version
+#
+#	@(#)makefl.vax	2.1	11/5/80
+#
+
+LIBS=
+TARG=	/etc
+
+OBJS1=	conf.o main.o maketemp.o parse.o alias.o deliver.o \
+	savemail.o addr.o err.o
+OBJS2=	matchhdr.o sysexits.o util.o bmove.o
+SRCS=	useful.h dlvrmail.h \
+	conf.c deliver.c main.c parse.c err.c alias.c savemail.c addr.c \
+	matchhdr.c sysexits.c util.c bmove.c bmove.11.s bmove.vax.s \
+	arpa.c arpadate.c version.c maketemp.c
+
+CHOWN=	-echo chown
+CHMOD=	chmod
+CFLAGS=	-O -DDEBUG -I.
+LDFLAGS=-n -s
+AR=	-ar
+ARFLAGS=rvu
+LINT=	lint
+LINTFLAGS=-bxa
+XREF=	csh /usr/bin/xref
+CP=	cp
+
+GET=	sccs get
+DELTA=	sccs delta
+REL=
+
+ROOT=	root
+OBJMODE=755
+
+delivermail: $(OBJS1) $(OBJS2) version.o
+	$(CC) $(LDFLAGS) -o delivermail version.o $(OBJS1) $(OBJS2) $(LIBS)
+	$(CHMOD) $(OBJMODE) delivermail
+	size delivermail; ls -l delivermail
+
+install: $(OBJS1) $(OBJS2) install1 delivermail
+	$(CP) delivermail $(TARG)/delivermail
+
+install1:
+	@rm -f SCCS/p.version.c version.c
+	@$(GET) $(REL) -e -s SCCS/s.version.c
+	@$(DELTA) -s SCCS/s.version.c
+	@$(GET) -t SCCS/s.version.c
+
+$(OBJS1): dlvrmail.h
+
+dlvrmail.h util.o: useful.h
+
+#
+#  Auxiliary stuff
+#
+
+clean:
+	rm -f core delivermail arpa uucp a.out xref version.c
+	rm -f *.o
+
+sources: $(SRCS)
+
+$(SRCS):
+	$(GET) $(REL) SCCS/s.$@
+
+archive:
+	${AR} ${ARFLAGS} delivermail.a READ_ME TO_BE_DONE makefile makefl.* *.h *.c *.s makeversion *.[123456789u]
+
+print: xref
+	@ls -l | pr -h "delivermail directory"
+	@pr -h "cross reference listing" xref
+	@size *.o | pr -h "object code sizes"
+	@pr *.h *.[cs]
+
+lint:
+	$(LINT) $(LINTFLAGS) $(SRCS)
+
+xref: *.c
+	${XREF} *.c > xref
+
+#
+#  Auxiliary mailers
+#
+
+arpa: arpa.o matchhdr.o arpadate.o
+	$(CC) $(LDFLAGS) -o arpa arpa.o matchhdr.o arpadate.o $(LIBS)
+	${CHMOD} ${OBJMODE} arpa
+	size arpa; ls -l arpa
+
+uucp: uucp.o
+	${CC} ${LDFLAGS} -o uucp uucp.o ${LIBS}
+	${CHMOD} ${OBJMODE} uucp
+	size uucp; ls -l uucp
+
+mail:	mail.o getname.o
+	$(CC) $(LDFLAGS) -o mail mail.o getname.o
+	size mail; ls -l mail

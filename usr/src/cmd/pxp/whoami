@@ -1,0 +1,2 @@
+/* static	char *sccsid = "@(#)whoami	1.1 (Berkeley) 3/2/81";*/
+#define PXP 1
