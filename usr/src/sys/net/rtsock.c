@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.33 (Berkeley) %G%
+ *	@(#)rtsock.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -731,9 +731,9 @@ sysctl_rtable(name, namelen, where, given, new, newlen)
 	int	*name;
 	int	namelen;
 	caddr_t	where;
-	int	*given;
+	size_t	*given;
 	caddr_t	*new;
-	int	newlen;
+	size_t	newlen;
 {
 	register struct radix_node_head *rnh;
 	int	i, s, error = EINVAL;
