@@ -1,4 +1,4 @@
-/*	hpreg.h	4.5	81/03/09	*/
+/*	hpreg.h	4.6	81/03/09	*/
 
 struct hpdevice
 {
@@ -102,7 +102,7 @@ struct hpdevice
 #define	HPER2_LSC	0004000		/* loss of system clock */
 #define	HPER2_LBC	0002000		/* loss of bit check */
 #define	HPER2_DVC	0000200		/* device check */
-#define	HPER2_SSE	0000020		/* skip sector error (rm80) */
+#define	HPER2_SSE	0000040		/* skip sector error (rm80) */
 #define	HPER2_DPE	0000010		/* data parity error */
 
 #define	HPER2_BITS \
