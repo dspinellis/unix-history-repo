@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG = amq
 SRCS = amq.c amq_clnt.c amq_xdr.c misc_rpc.c
