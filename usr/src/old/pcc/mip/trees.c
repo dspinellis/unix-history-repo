@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.23 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.24 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -241,7 +241,7 @@ buildtree( o, l, r ) register NODE *l, *r; {
 
 	if( actions&LVAL ){ /* check left descendent */
 		if( notlval(p->in.left) ) {
-			uerror( "illegal lhs of assignment operator" );
+			uerror( "illegal lvalue operand of assignment operator" );
 			}
 		}
 
