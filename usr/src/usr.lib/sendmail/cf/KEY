@@ -1,0 +1,39 @@
+		USES FOR MACROS AND CLASSES
+
+	MACROS				CLASSES
+	======				=======
+
+A	arpanet name			arpanet names
+B
+C	comp ctr gateway (ucbvax only)	comp ctr hosts (ucbvax & jade only)
+ -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+D	full local domain name		(bottom) local domain names
+E
+F
+ -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+G
+H	internet name			all names this host is known by
+I
+ -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+J
+K
+L
+ -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+M
+N	ncp gateway			list of ncp-only hosts
+O
+ -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+P
+Q
+R
+ -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+S					known internet hostnames
+T
+U	uucp name			uucp names
+ -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+V	a machine with local uucp link	uucp sites on $V machine
+W	a machine with local uucp link	uucp sites on $W machine
+X	a machine with local uucp link	uucp sites on $X machine
+ -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+Y
+Z					known berknet hosts
