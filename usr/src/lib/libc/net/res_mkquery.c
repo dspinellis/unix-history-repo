@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1985 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1985, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  * -
@@ -26,7 +26,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	8.1 (Berkeley) %G%";
 static char rcsid[] = "$Id: res_mkquery.c,v 4.9.1.2 1993/05/17 10:00:01 vixie Exp $";
 #endif /* LIBC_SCCS and not lint */
 
