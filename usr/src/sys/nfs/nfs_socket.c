@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -333,7 +333,8 @@ nfs_dgreceive(so, msk, mtch, aname, mp)
 		*aname = 0;
 
 	for (;;) {
-		sblock(&so->so_rcv);
+		if (error = sblock(&so->so_rcv))
+			return (error);
 		s = splnet();
 
 		if (so->so_rcv.sb_cc == 0) {
@@ -342,8 +343,10 @@ nfs_dgreceive(so, msk, mtch, aname, mp)
 				break;
 			}
 			sbunlock(&so->so_rcv);
-			sbwait(&so->so_rcv);
+			error = sbwait(&so->so_rcv);
 			splx(s);
+			if (error)
+				return (error);
 			continue;
 		}
 		m = so->so_rcv.sb_mb;
