@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: vmparam.h 1.14 89/08/14$
+ * from: Utah $Hdr: vmparam.h 1.16 91/01/18$
  *
- *	@(#)vmparam.h	7.2 (Berkeley) %G%
+ *	@(#)vmparam.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -64,26 +64,39 @@
  */
 #define	DMMIN	32			/* smallest swap allocation */
 #define	DMMAX	4096			/* largest potential swap allocation */
-#define	DMTEXT	1024			/* swap allocation for text */
 
 /*
  * Sizes of the system and user portions of the system page table.
  */
 /* SYSPTSIZE IS SILLY; IT SHOULD BE COMPUTED AT BOOT TIME */
-#define	SYSPTSIZE	(2 * NPTEPG)
-#define	USRPTSIZE 	(1 * NPTEPG)
+#define	SYSPTSIZE	(2 * NPTEPG)	/* 8mb */
+#define	USRPTSIZE 	(1 * NPTEPG)	/* 4mb */
 
 /*
- * PTEs for mapping user space into kernel for phyio operations.
+ * PTEs for mapping user space into the kernel for phyio operations.
  * One page is enough to handle 4Mb of simultaneous raw IO operations.
  */
-#define USRIOSIZE	(1 * NPTEPG)
+#ifndef USRIOSIZE
+#define USRIOSIZE	(1 * NPTEPG)	/* 4mb */
+#endif
 
 /*
  * PTEs for system V style shared memory.
  * This is basically slop for kmempt which we actually allocate (malloc) from.
  */
-#define SHMMAXPGS	1024
+#ifndef SHMMAXPGS
+#define SHMMAXPGS	1024		/* 4mb */
+#endif
+
+/*
+ * External IO space map size.
+ * By default we make it large enough to map up to 3 DIO-II devices and
+ * the complete DIO space.  For a 320-only configuration (which has no
+ * DIO-II) you could define a considerably smaller region.
+ */
+#ifndef EIOMAPSIZE
+#define EIOMAPSIZE	3584		/* 14mb */
+#endif
 
 /*
  * Boundary at which to place first MAPMEM segment if not explicitly
@@ -197,6 +210,7 @@
 
 /* user/kernel map constants */
 #define VM_MIN_ADDRESS		((vm_offset_t)0)
+#define VM_MAXUSER_ADDRESS	((vm_offset_t)0xFFF00000)
 #define VM_MAX_ADDRESS		((vm_offset_t)0xFFF00000)
 #define VM_MIN_KERNEL_ADDRESS	((vm_offset_t)0)
 #define VM_MAX_KERNEL_ADDRESS	((vm_offset_t)0xFFFFF000)
