@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.39	82/06/08	*/
+/*	tcp_output.c	4.40	82/06/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -296,7 +296,7 @@ noopt:
 	 */
 	if (tp->t_force == 0) {
 		/*
-		 * Advance snd_nxt over sequence space of this segment
+		 * Advance snd_nxt over sequence space of this segment.
 		 */
 		if (flags & (TH_SYN|TH_FIN))
 			tp->snd_nxt++;
@@ -325,13 +325,12 @@ noopt:
 			tp->t_rxtshift = 0;
 		}
 		tp->t_timer[TCPT_PERSIST] = 0;
-	} else
-		tcp_setpersist(tp);
+	}
 
 	/*
 	 * Trace.
 	 */
-	if (tp->t_inpcb->inp_socket->so_options & SO_DEBUG)
+	if (so->so_options & SO_DEBUG)
 		tcp_trace(TA_OUTPUT, tp->t_state, tp, ti, 0);
 
 	/*
@@ -340,7 +339,8 @@ noopt:
 	 */
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (error = ip_output(m, tp->t_ipopt, &tp->t_inpcb->inp_route, 0))
+	if (error = ip_output(m, tp->t_ipopt, (so->so_options & SO_DONTROUTE) ?
+	    &routetoif : &tp->t_inpcb->inp_route, 0))
 		return (error);
 
 	/*
