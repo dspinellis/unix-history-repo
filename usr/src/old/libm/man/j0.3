@@ -1,0 +1,40 @@
+.\"	@(#)j0.3	4.1 (Berkeley) %G%
+.\"
+.TH J0 3M 
+.AT 3
+.SH NAME
+j0, j1, jn, y0, y1, yn \- bessel functions
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double j0(x)
+.B double x;
+.PP
+.B double j1(x)
+.B double x;
+.PP
+.B double jn(n, x)
+.B double x;
+.PP
+.B double y0(x)
+.B double x;
+.PP
+.B double y1(x)
+.B double x;
+.PP
+.B double yn(n, x)
+.B double x;
+.fi
+.SH DESCRIPTION
+These functions calculate Bessel functions of the first
+and second kinds for real arguments and integer orders.
+.SH DIAGNOSTICS
+Negative arguments cause
+.I y0, y1,
+and
+.I yn
+to return a huge negative value
+and set
+.I errno
+to EDOM.
