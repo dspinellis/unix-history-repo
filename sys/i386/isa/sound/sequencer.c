@@ -1156,11 +1156,14 @@ sequencer_init (long mem_start)
   return mem_start;
 }
 
+#ifdef ALLOW_SELECT
+
 int
 sequencer_select (int dev, struct fileinfo *file, int sel_type, select_table * wait)
 {
   return RET_ERROR (EIO);
 }
+#endif /* ALLOW_SELECT */
 
 #endif
 
