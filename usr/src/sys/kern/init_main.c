@@ -1,4 +1,4 @@
-/*	init_main.c	6.4	84/07/08	*/
+/*	init_main.c	6.5	84/07/31	*/
 
 #include "../machine/pte.h"
 
