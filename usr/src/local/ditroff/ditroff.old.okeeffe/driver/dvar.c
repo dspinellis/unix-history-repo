@@ -1,4 +1,4 @@
-/*	dvar.c	1.2	83/07/09
+/*	dvar.c	1.3	83/07/29
  *
  * Varian driver for the new troff
  *
@@ -71,12 +71,11 @@ x ..\n	device control functions:
 #define FONTDIR	"/usr/lib/font"	/* default place to look for fonts */
 #define MAXWRIT 4096		/* max characters allowed to write at once */
 
-#define  hmot(n)	hpos += n
-#define  hgoto(n)	hpos = n
+#define  hmot(n)	hgoto(hpos + n)
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.2	83/07/09";
+char	SccsId[]= "dvar.c	1.3	83/07/29";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -105,13 +104,12 @@ struct {			/* table of what font */
 #ifdef DEBUGABLE
 int	dbg	= 0;
 #endif
-int	maxH;		/* farthest down we've been on the current page */
 int	size	= -1;	/* current point size being use */
 int	font	= -1;	/* current font - not using any to start with */
 int	hpos;		/* horizontal position we are to be at next; left = 0 */
 int	vpos;		/* current vertical position (down positive) */
-int	horig;		/* h origin of current block (just a marker) */
-int	vorig;		/* v origin of current block (just a marker) */
+extern	linethickness;	/* thickness, in pixels, of any drawn object */
+extern	linmod;		/* line style (a bit mask - dotted, etc.) of objects */
 int	lastw;		/* width of last character printed */
 
 
@@ -120,11 +118,11 @@ int	lastw;		/* width of last character printed */
 #define DSIZ		((sizeof *dispatch)*DISPATCHSIZE)
 #define OUTFILE 	fileno (stdout)
 #define	RES		200		/* resolution of the device */
-#define	TRAILER		(10 * RES)	/* position of trailer */
+#define	TRAILER		(10*RES+RES/2)	/* position of trailer */
 
 #define RASTER_LENGTH	2112			/* device line length */
 #define BYTES_PER_LINE	(RASTER_LENGTH/8)
-#define NLINES		1600			/* device page width */
+#define NLINES		1700			/* page width, 8.5 inches */
 #define BUFFER_SIZE	(NLINES*BYTES_PER_LINE)	/* number of chars in picture */
 
 
@@ -180,7 +178,6 @@ main(argc, argv)
 char *argv[];
 {
 	FILE *fp;
-	int done();
 
 	while (argc > 1 && argv[1][0] == '-') {
 		switch (argv[1][1]) {
@@ -224,7 +221,6 @@ noversatec */
 			conv(fp);
 			fclose(fp);
 		}
-	done();
 	exit(0);
 }
 
@@ -334,7 +330,7 @@ register FILE *fp;
 			    drawstyle(n);
 			    break;
 			default:
-			    error(FATAL, "unknown drawing function %s\n", buf);
+			    error(FATAL, "unknown drawing function %s", buf);
 			    break;
 			}
 			break;
@@ -394,8 +390,7 @@ register FILE *fp;
 			devcntrl(fp);
 			break;
 		default:
-			error(!FATAL, "unknown input character %o %c\n", c, c);
-			done();
+			error(FATAL, "unknown input character %o %c", c, c);
 		}
 	}
 }
@@ -457,9 +452,9 @@ fileinit()
 	char	*filebase, *p;
 	char	temp[60];
 
-	sprintf(temp, "%s/devver/DESC.out", fontdir);
+	sprintf(temp, "%s/devvar/DESC.out", fontdir);
 	if ((fin = open(temp, 0)) < 0)
-		error(FATAL, "can't open tables for %s\n", temp);
+		error(FATAL, "can't open tables for %s", temp);
 	read(fin, &dev, sizeof(struct dev));
 	nfonts = dev.nfonts;
 	nsizes = dev.nsizes;
@@ -533,7 +528,7 @@ char *s, *s1;
 	if (strcmp(s, fontbase[n]->namefont) == 0)
 		return;
 	if (s1 == NULL || s1[0] == '\0')
-		sprintf(temp, "%s/devver/%s.out", fontdir, s);
+		sprintf(temp, "%s/devvar/%s.out", fontdir, s);
 	else
 		sprintf(temp, "%s/%s.out", s1, s);
 	if ((fin = open(temp, 0)) < 0)
@@ -541,7 +536,7 @@ char *s, *s1;
 	norig = fontbase[n]->nwfont & BMASK;
 	read(fin, fontbase[n], 3*norig + nchtab+128-32 + sizeof(struct font));
 	if ((fontbase[n]->nwfont & BMASK) > norig)
-		error(FATAL, "Font %s too big for position %d\n", s, n);
+		error(FATAL, "Font %s too big for position %d", s, n);
 	close(fin);
 	nw = fontbase[n]->nwfont & BMASK;
 	widtab[n] = (char *) fontbase[n] + sizeof(struct font);
@@ -554,26 +549,16 @@ char *s, *s1;
 #endif
 }
 
-done()
-{
-	t_reset('s');
-	exit(0);
-}
+
 /*VARARGS1*/
 error(f, s, a1, a2, a3, a4, a5, a6, a7) {
-	fprintf(stderr, "dver: ");
+	fprintf(stderr, "dvar: ");
 	fprintf(stderr, s, a1, a2, a3, a4, a5, a6, a7);
 	fprintf(stderr, "\n");
 	if (f)
-		done();
+		exit(1);
 }
 
-
-/*******************************************************************************
- * Routine:	
- * Results:	
- * Side Efct:	
- ******************************************************************************/
 
 t_init()	/* initialize device */
 {
@@ -591,8 +576,8 @@ struct state {
 	int	sfont;
 	int	shpos;
 	int	svpos;
-	int	shorig;
-	int	svorig;
+	int	sstyle;
+	int	sthick;
 };
 struct	state	state[MAXSTATE];
 struct	state	*statep = state;
@@ -601,12 +586,10 @@ t_push()	/* begin a new block */
 {
 	statep->ssize = size;
 	statep->sfont = font;
-	statep->shorig = horig;
-	statep->svorig = vorig;
+	statep->sstyle = linmod;
+	statep->sthick = linethickness;
 	statep->shpos = hpos;
 	statep->svpos = vpos;
-	horig = hpos;
-	vorig = vpos;
 	hpos = vpos = 0;
 	if (statep++ >= state+MAXSTATE)
 		error(FATAL, "{ nested too deep");
@@ -621,8 +604,8 @@ t_pop()	/* pop to previous state */
 	font = statep->sfont;
 	hpos = statep->shpos;
 	vpos = statep->svpos;
-	horig = statep->shorig;
-	vorig = statep->svorig;
+	linmod = statep->sstyle;
+	linethickness = statep->sthick;
 }
 
 t_page(n)	/* do whatever new page functions */
@@ -635,19 +618,16 @@ t_page(n)	/* do whatever new page functions */
 			t_reset('p');
 			scount = 0;
 		}
-		slop_lines(maxH);
+		slop_lines(NLINES);
 /* noversatec
 		ioctl(OUTFILE, VSETSTATE, prtmode);
 		if (write(OUTFILE, "\f", 2) != 2)
 			exit(RESTART);
 		ioctl(OUTFILE, VSETSTATE, pltmode);
 noversatec */
-		size = BYTES_PER_LINE * maxH;
-		vclear(buf0p, size);
+		vclear(buf0p, BYTES_PER_LINE * NLINES);
 		buf0p = buffer;
 	}
-
-	maxH = 0;
 
 	vpos = 0;
 	output = 1;
@@ -684,7 +664,7 @@ t_charht(n)	/* set character height to n */
 int n;
 {
 #ifdef DEBUGABLE
-	if (dbg)fprintf(stderr,"can't set height on versatec yet\n");
+	if (dbg) error(!FATAL, "can't set height on varian yet");
 #endif
 }
 
@@ -692,7 +672,7 @@ t_slant(n)	/* set slant to n */
 int n;
 {
 #ifdef DEBUGABLE
-	if (dbg)fprintf(stderr,"can't set slant on versatec yet\n");
+	if (dbg) error(!FATAL, "can't set slant on varian yet");
 #endif
 }
 
@@ -741,17 +721,14 @@ char *s;
 
 t_reset(c)
 {	
-
-
 	output = 1;
 	switch(c){
 	case 'p':
-		slop_lines(maxH);
-		maxH = 0;
+		slop_lines(NLINES);
 		buf0p = buffer;
 		break;
 	case 's':
-		slop_lines(maxH);
+		slop_lines(NLINES);
 		t_done();
 		break; /* no Return */
 	}
@@ -773,15 +750,39 @@ t_trailer()
 	vpos = 0;
 }
 
-vgoto(n)
+
+/*----------------------------------------------------------------------------*
+ | Routine:	hgoto (horizontal_spot)
+ |
+ | Results:	hpos is set to n.  If n overlaps in either direction, it wraps
+ |		around to the other end of the page.
+ *----------------------------------------------------------------------------*/
+
+hgoto(n)
+int n;
 {
-			/* check to see if n would move use past buf0p */
-    if (n < 0) {
-	fprintf (stderr, "ERROR vgoto past the beginning");
-	done();
-    }
-					/* check for end of page */
-    if (n > RES * 11) n -= RES * 11;	/* wrap around on to the top */
+    if (n < 0)
+	n += NLINES;
+    else if (n >= NLINES)
+	n -= NLINES;
+    hpos = n;
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	vgoto (vertical_spot)
+ |
+ | Results:	vpos is set to n.  If n overlaps in either direction, it wraps
+ |		around to the other end of the page.
+ *----------------------------------------------------------------------------*/
+
+vgoto(n)
+int n;
+{
+    if (n < 0)
+	n += RASTER_LENGTH;
+    else if (n > RASTER_LENGTH)
+	n -= RASTER_LENGTH;
     vpos = n;
 }
 
@@ -890,7 +891,7 @@ setfont(n)	/* set font to n */
 int n;
 {
 	if (n < 0 || n > NFONTS)
-		error(FATAL, "illegal font %d\n", n);
+		error(FATAL, "illegal font %d", n);
 	if (vloadfont(n,pstab[size - 1]) != -1)
 		font = n;
 }
@@ -940,7 +941,7 @@ getfont()
 	fontd = open(cbuf, OPENREAD);
 	if (fontd == -1) {
 		perror(cbuf);
-		error(0,"fnum = %d size = %d name = %s\n",
+		error(!FATAL,"fnum = %d size = %d name = %s",
 			fnum,fsize,fontname[fnum]);
 		fontwanted = 0;
 		return (-1);
@@ -1052,7 +1053,6 @@ int code;		/* character to print */
 	addr = bits + dis->addr;
 	llen = (dis->up + dis->down + 7) >> 3;
 	nlines = dis->right + dis->left;
-	if ((i = hpos + dis->right) > maxH) maxH = i;	/* remember page len */
 	scanp = buf0p + (hpos - dis->left) * BYTES_PER_LINE
 			- (1 + ((dis->down + vpos) >> 3));
 	if (scanp < &buffer[0])
@@ -1115,7 +1115,7 @@ unsigned usize;
 		if (dbg)fprintf(stderr,"buf = %d size = %d\n",buf,tsize);
 #endif
 		if ((tsize = write(OUTFILE, buf, tsize)) < 0) {
-			perror("dver: write failed");
+			perror("dvar: write failed");
 			exit(RESTART);
 		}
 		usize -= tsize;
