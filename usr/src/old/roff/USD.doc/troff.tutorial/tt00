@@ -1,26 +1,27 @@
-.\"	@(#)tt00	5.1 (Berkeley) %G%
+.\"	@(#)tt00	6.1 (Berkeley) %G%
 .\"
-.RP
+.EH 'USD:25-%''A TROFF Tutorial'
+.OH 'A TROFF Tutorial''USD:25-%'
+.\".RP
 .....TM 76-1273-7 39199 39199-11
 .TL
 A TROFF Tutorial
 .AU "MH 2C-518" 6021
 Brian W. Kernighan
+(updated for 4.3BSD by Mark Seiden)
 .AI
 .MH
 .OK
-Typesetting
-Text formatting
-NROFF
+\"Typesetting
+\"Text formatting
+\"NROFF
 .AB
 .PP
 .UL troff
-is a text-formatting program for driving the Graphic Systems
-phototypesetter on the
+is a text-formatting program for
+typesetting on the
 .UX
-and
-.UC GCOS
-operating systems.
+operating system.
 This device is capable of producing high quality
 text;
 this paper is an example of
@@ -57,11 +58,16 @@ In most respects, the
 .UC UNIX
 formatter
 .UL nroff
-is identical to
-.UL troff ,
-so this document also serves as a tutorial on
-.UL nroff .
+and a more recent version
+.ul
+(device-independent 
+.UL troff)
+are identical to
+the version described here, so this document also serves as a tutorial for
+them as well.
 .AE
+.nr LL 6.5i
+.nr LT 6.5i
 .CS 13 1 14 0 0 5
 .if t .2C
 .nr PS 9
