@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.43 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.44 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -729,7 +729,6 @@ ufs_vptofh(vp, fhp)
 }
 
 /*
- * Common code for mount and quota.
  * Check that the user's argument is a reasonable
  * thing on which to mount, and return the device number if so.
  */
@@ -741,7 +740,7 @@ getmdev(devvpp, fname, ndp)
 	register struct vnode *vp;
 	int error;
 
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = fname;
 	if (error = namei(ndp)) {
@@ -751,14 +750,13 @@ getmdev(devvpp, fname, ndp)
 	}
 	vp = ndp->ni_vp;
 	if (vp->v_type != VBLK) {
-		vput(vp);
+		vrele(vp);
 		return (ENOTBLK);
 	}
 	if (major(vp->v_rdev) >= nblkdev) {
-		vput(vp);
+		vrele(vp);
 		return (ENXIO);
 	}
-	iunlock(VTOI(vp));
 	*devvpp = vp;
 	return (0);
 }
