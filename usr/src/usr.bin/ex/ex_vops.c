@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops.c	7.2	%G%";
+static char *sccsid = "@(#)ex_vops.c	7.3	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -626,9 +626,11 @@ voOpen(c, cnt)
 {
 	register int ind = 0, i;
 	short oldhold = hold;
+	int oldmask;
 
 	if (value(SLOWOPEN) || value(REDRAW) && AL && DL)
 		cnt = 1;
+	oldmask = sigblock(sigmask(SIGWINCH));
 	vsave();
 	setLAST();
 	if (value(AUTOINDENT))
@@ -676,6 +678,7 @@ voOpen(c, cnt)
 	cursor = linebuf;
 	linebuf[0] = 0;
 	vappend('o', 1, ind);
+	(void)sigsetmask(oldmask);
 }
 
 /*
