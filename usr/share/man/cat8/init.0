@@ -1,0 +1,124 @@
+INIT(8)                   BSD System Manager's Manual                  INIT(8)
+
+NNAAMMEE
+     iinniitt - process control initialization
+
+SSYYNNOOPPSSIISS
+     iinniitt
+
+DDEESSCCRRIIPPTTIIOONN
+     The iinniitt program is the last stage of the boot process.  It normally runs
+     the automatic reboot sequence as described in reboot(8),  and if this
+     succeeds, begins multi-user operation.  If the reboot scripts fail, iinniitt
+     commences single user operation by giving the super-user a shell on the
+     console.  The iinniitt program may be passed parameters from the boot program
+     to prevent the system from going multi-user and to instead execute a sin-
+     gle user shell without starting the normal daemons.  The system is then
+     quiescent for maintenance work and may later be made to go to multi-user
+     by exiting the single-user shell (with ^D).  This causes iinniitt to run the
+     _/_e_t_c_/_r_c start up command file in fastboot mode (skipping disk checks).
+
+     If the ccoonnssoollee entry in the ttys(5) file is marked ``insecure'', then
+     iinniitt will require that the superuser password be entered before the sys-
+     tem will start a single-user shell.  The password check is skipped if the
+     ccoonnssoollee is marked as ``secure''.
+
+     The kernel runs with four different levels of security.  Any superuser
+     process can raise the security level, but only iinniitt can lower it.  Secu-
+     rity levels are defined as follows:
+
+     --11    Permanently insecure mode - always run system in level 0 mode.
+
+     00     Insecure mode - immutable and append-only flags may be turned off.
+           All devices may be read or written subject to their permissions.
+
+     11     Secure mode - immutable and append-only flags may not be changed;
+           disks for mounted filesystems, _/_d_e_v_/_m_e_m, and _/_d_e_v_/_k_m_e_m are read-
+           only.
+
+     22     Highly secure mode - same as secure mode, plus disks are always
+           read-only whether mounted or not.  This level precludes tampering
+           with filesystems by unmounting them, but also inhibits running
+           newfs(8) while the system is multi-user.
+
+     Normally, the system runs in level 0 mode while single user and in level
+     1 mode while multiuser.  If the level 2 mode is desired while running
+     multiuser, it can be set in the startup script _/_e_t_c_/_r_c using sysctl(1).
+     If it is desired to run the system in level 0 mode while multiuser, the
+     administrator must build a kernel with the variable sseeccuurreelleevveell in the
+     kernel source file _/_s_y_s_/_k_e_r_n_/_k_e_r_n___s_y_s_c_t_l_._c initialized to -1.
+
+     In multi-user operation, iinniitt maintains processes for the terminal ports
+     found in the file ttys(5).  IInniitt reads this file, and executes the com-
+     mand found in the second field.  This command is usually getty(8);  getty
+     opens and initializes the tty line and executes the login program.  The
+     login program, when a valid user logs in, executes a shell for that user.
+     When this shell dies, either because the user logged out or an abnormal
+     termination occurred (a signal), the iinniitt program wakes up, deletes the
+     user from the utmp(5) file of current users and records the logout in the
+     wtmp file.  The cycle is then restarted by iinniitt executing a new getty for
+     the line.
+
+     Line status (on, off, secure, getty, or window information) may be
+     changed in the ttys file without a reboot by sending the signal SIGHUP to
+     iinniitt with the command ``kill -HUP 1''. On receipt of this signal, iinniitt
+     re-reads the ttys file.  When a line is turned off in ttys,  iinniitt will
+     send a SIGHUP signal to the controlling process for the session associat-
+     ed with the line.  For any lines that were previously turned off in the
+     ttys file and are now on, iinniitt executes a new getty to enable a new lo-
+     gin.  If the getty or window field for a line is changed, the change
+     takes effect at the end of the current login session (e.g., the next time
+     iinniitt starts a process on the line).  If a line is commented out or delet-
+     ed from ttys,  iinniitt will not do anything at all to that line.  However,
+     it will complain that the relationship between lines in the ttys file and
+     records in the utmp file is out of sync, so this practice is not recom-
+     mended.
+
+     IInniitt will terminate multi-user operations and resume single-user mode if
+     sent a terminate (TERM) signal, for example, ``kill -TERM 1''. If there
+     are processes outstanding that are deadlocked (because of hardware or
+     software failure), init will not wait for them all to die (which might
+     take forever), but will time out after 30 seconds and print a warning
+     message.
+
+     IInniitt will cease creating new getty's  and allow the system to slowly die
+     away, if it is sent a terminal stop (TSTP) signal, i.e.  ``kill -TSTP
+     1''. A later hangup will resume full multi-user operations, or a termi-
+     nate will start a single user shell.  This hook is used by reboot(8) and
+     halt(8).
+
+     The role of iinniitt is so critical that if it dies, the system will reboot
+     itself automatically.  If, at bootstrap time, the init process cannot be
+     located, the system will panic with the message ``panic: "init died (sig-
+     nal %d, exit %d)''.
+
+DDIIAAGGNNOOSSTTIICCSS
+     ggeettttyy rreeppeeaattiinngg ttoooo qquuiicckkllyy oonn ppoorrtt %%ss,, sslleeeeppiinngg  A process being started
+     to service a line is exiting quickly each time it is started.  This is
+     often caused by a ringing or noisy terminal line.  _I_n_i_t _w_i_l_l _s_l_e_e_p _f_o_r _1_0
+     _s_e_c_o_n_d_s, _t_h_e_n _c_o_n_t_i_n_u_e _t_r_y_i_n_g _t_o _s_t_a_r_t _t_h_e _p_r_o_c_e_s_s.
+
+     ssoommee pprroocceesssseess wwoouulldd nnoott ddiiee;; ppss aaxxll aaddvviisseedd..  A process is hung and
+     could not be killed when the system was shutting down.  This condition is
+     usually caused by a process that is stuck in a device driver because of a
+     persistent device error condition.
+
+FFIILLEESS
+     /dev/console   System console device.
+     /dev/tty*      Terminal ports found in ttys.
+     /var/run/utmp  Record of Current users on the system.
+     /var/log/wtmp  Record of all logins and logouts.
+     /etc/ttys      The terminal initialization information file.
+     /etc/rc        System startup commands.
+
+SSEEEE AALLSSOO
+     login(1),  kill(1),  sh(1),  ttys(5),  crash(8),  getty(8),  rc(8),
+     reboot(8),  halt(8),  shutdown(8)
+
+HHIISSTTOORRYY
+     A iinniitt command appeared in Version 6 AT&T UNIX.
+
+BBUUGGSS
+     Systems without sysctl behave as though they have security level -1.
+
+4th Berkeley Distribution        June 5, 1993                                2
