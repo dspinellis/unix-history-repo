@@ -1,3 +1,0 @@
-path=(~/scr ~/bin/$HOSTTYPE
-	/usr/princeton/bin /usr/ucb /usr/bin /bin
-	/usr/hosts /usr/princeton/bin/X11 /usr/etc /etc .)

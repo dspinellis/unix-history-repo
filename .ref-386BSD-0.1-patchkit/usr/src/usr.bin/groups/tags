@@ -1,2 +1,0 @@
-Mgroups	groups.c	/^main(argc, argv)$/
-showgroups	groups.c	/^showgroups(user)$/

@@ -1,2 +1,0 @@
-Mtee	tee.c	/^main(argc, argv)$/
-add	tee.c	/^add(fd, name)$/
