@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_regs.c	8.2 (Berkeley) %G%
+ *	@(#)procfs_regs.c	8.3 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_regs.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
