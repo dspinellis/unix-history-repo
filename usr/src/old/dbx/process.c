@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.10 %G%";
+static char sccsid[] = "@(#)process.c 1.11 %G%";
 
 /*
  * Process management.
@@ -79,6 +79,8 @@ typedef enum { TEXTSEG, DATASEG } PioSeg;
 private struct Process pbuf;
 
 #define MAXNCMDARGS 100         /* maximum number of arguments to RUN */
+
+extern int errno;
 
 private Boolean just_started;
 private int argc;
@@ -460,6 +462,8 @@ Address addr;
 
 public printstatus()
 {
+    int status;
+
     if (process->status == FINISHED) {
 	exit(0);
     } else {
@@ -704,17 +708,19 @@ String infile;
 String outfile;
 {
     int status;
+    Fileid in, out;
 
     if (p->pid != 0) {          	/* child already running? */
 	ptrace(PKILL, p->pid, 0, 0);    /* ... kill it! */
+	pwait(p->pid, &status);		/* wait for it to exit */
+	unptraced(p->pid);
     }
     psigtrace(p, SIGTRAP, true);
-    if ((p->pid = vfork()) == -1) {
+    p->pid = vfork();
+    if (p->pid == -1) {
 	panic("can't fork");
     }
     if (ischild(p->pid)) {
-	Fileid in, out;
-
 	traceme();
 	if (infile != nil) {
 	    in = open(infile, 0);
@@ -747,6 +753,7 @@ String outfile;
     if (p->status != STOPPED) {
 	error("program could not begin execution");
     }
+    ptraced(p->pid);
 }
 
 /*
@@ -772,7 +779,7 @@ int signo;
 	setinfo(p, signo);
 	sigs_off();
 	if (ptrace(CONT, p->pid, p->reg[PROGCTR], p->signo) < 0) {
-	    panic("can't continue process");
+	    panic("error %d trying to continue process", errno);
 	}
 	pwait(p->pid, &status);
 	sigs_on();
