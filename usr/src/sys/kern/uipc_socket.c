@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.39	82/04/10	*/
+/*	uipc_socket.c	4.40	82/05/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -143,7 +143,13 @@ COUNT(SOCLOSE);
 		}
 	}
 drop:
-	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH, 0, 0);
+	if (so->so_pcb) {
+		u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH, 0, 0);
+		if (exiting == 0 && u.u_error) {
+			splx(s);
+			return;
+		}
+	}
 discard:
 	so->so_state |= SS_USERGONE;
 	sofree(so);
