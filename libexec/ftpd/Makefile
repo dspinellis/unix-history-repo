@@ -2,7 +2,7 @@
 
 
 PROG=	ftpd
-CFLAGS+=-I${.CURDIR}/../../usr.bin/ftp -I${.CURDIR}/../../lib \
+CFLAGS+=-I${.CURDIR}/../../usr.bin/ftp \
 	-DSETPROCTITLE -DSKEY
 SRCS=	ftpd.c ftpcmd.c glob.c logwtmp.c popen.c vers.c skey-stuff.c
 MAN8=	ftpd.8

@@ -8,7 +8,7 @@ LDADD=	-lutil -lskey
 BINOWN=	root
 BINMODE=4555
 #CFLAGS+=-DLOGIN_ACCESS -DSKEY -DLOGALL -I${.CURDIR}/../../lib
-CFLAGS+=-DLOGIN_ACCESS -DSKEY -I${.CURDIR}/../../lib
+CFLAGS+=-DLOGIN_ACCESS -DSKEY 
 
 .if exists(${DESTDIR}/usr/lib/libcrypt.a)
 DPADD+= ${LIBCRYPT}

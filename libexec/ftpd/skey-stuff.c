@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <pwd.h>
 
-#include "libskey/skey.h"
+#include <skey.h>
 
 /* skey_challenge - additional password prompt stuff */
 

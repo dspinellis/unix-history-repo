@@ -10,7 +10,7 @@
 #include <pwd.h>
 #include <syslog.h>
 
-#include "libskey/skey.h"
+#include <skey.h>
 
 /* skey_getpass - read regular or s/key password */
 
