@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -60,11 +60,7 @@ main(argc, argv)
 	char **argv;
 {
 	char *targ, *host, *src;
-#ifndef NAMESERVER
-	char *suser, *tuser;
-#else NAMESERVER
 	char *suser, *tuser, *thost;
-#endif NAMESERVER
 	int i;
 	char buf[BUFSIZ], cmd[16];
 	struct servent *sp;
@@ -129,40 +125,24 @@ main(argc, argv)
 		*targ++ = 0;
 		if (*targ == 0)
 			targ = ".";
-#ifndef NAMESERVER
-		tuser = rindex(argv[argc - 1], '.');
-		if (tuser) {
-			*tuser++ = 0;
-			if (!okname(tuser))
-				exit(1);
-		} else
-			tuser = pwd->pw_name;
-#else NAMESERVER
 		thost = index(argv[argc - 1], '@');
 		if (thost) {
 			*thost++ = 0;
 			tuser = argv[argc - 1];
 			if (*tuser == '\0')
-				tuser = pwd->pw_name;
+				tuser = NULL;
 			else if (!okname(tuser))
 				exit(1);
 		} else {
 			thost = argv[argc - 1];
-			tuser = pwd->pw_name;
+			tuser = NULL;
 		}
-#endif NAMESERVER
 		for (i = 0; i < argc - 1; i++) {
 			src = colon(argv[i]);
 			if (src) {		/* remote to remote */
 				*src++ = 0;
 				if (*src == 0)
 					src = ".";
-#ifndef NAMESERVER
-				suser = rindex(argv[i], '.');
-				if (suser) {
-					*suser++ = 0;
-					if (!okname(suser))
-#else NAMESERVER
 				host = index(argv[i], '@');
 				if (host) {
 					*host++ = 0;
@@ -170,36 +150,24 @@ main(argc, argv)
 					if (*suser == '\0')
 						suser = pwd->pw_name;
 					else if (!okname(suser))
-#endif NAMESERVER
 						continue;
-#ifndef NAMESERVER
-		(void) sprintf(buf, "rsh %s -l %s -n %s %s '%s.%s:%s'",
-					    argv[i], suser, cmd, src,
-					    argv[argc - 1], tuser, targ);
+		(void) sprintf(buf, "rsh %s -l %s -n %s %s '%s%s%s:%s'",
+					    host, suser, cmd, src, tuser,
+					    tuser ? "@" : "",
+					    thost, targ);
 				} else
-		(void) sprintf(buf, "rsh %s -n %s %s '%s.%s:%s'",
-					    argv[i], cmd, src,
-					    argv[argc - 1], tuser, targ);
-#else NAMESERVER
-		(void) sprintf(buf, "rsh %s -l %s -n %s %s '%s@%s:%s'",
-					    host, suser, cmd, src,
-					    tuser, thost, targ);
-				} else
-		(void) sprintf(buf, "rsh %s -n %s %s '%s@%s:%s'",
-					    argv[i], cmd, src,
-					    tuser, thost, targ);
-#endif NAMESERVER
+		(void) sprintf(buf, "rsh %s -n %s %s '%s%s%s:%s'",
+					    argv[i], cmd, src, tuser,
+					    tuser ? "@" : "",
+					    thost, targ);
 				(void) susystem(buf);
 			} else {		/* local to remote */
 				if (rem == -1) {
 					(void) sprintf(buf, "%s -t %s",
 					    cmd, targ);
-#ifndef NAMESERVER
-					host = argv[argc - 1];
-#else NAMESERVER
 					host = thost;
-#endif NAMESERVER
-					rem = rcmd(&host, port, pwd->pw_name, tuser,
+					rem = rcmd(&host, port, pwd->pw_name,
+					    tuser ? tuser : pwd->pw_name,
 					    buf, 0);
 					if (rem < 0)
 						exit(1);
@@ -225,12 +193,6 @@ main(argc, argv)
 				*src++ = 0;
 				if (*src == 0)
 					src = ".";
-#ifndef NAMESERVER
-				suser = rindex(argv[i], '.');
-				if (suser) {
-					*suser++ = 0;
-					if (!okname(suser))
-#else NAMESERVER
 				host = index(argv[i], '@');
 				if (host) {
 					*host++ = 0;
@@ -238,22 +200,12 @@ main(argc, argv)
 					if (*suser == '\0')
 						suser = pwd->pw_name;
 					else if (!okname(suser))
-#endif NAMESERVER
 						continue;
-#ifndef NAMESERVER
-				} else
-#else NAMESERVER
 				} else {
 					host = argv[i];
-#endif NAMESERVER
 					suser = pwd->pw_name;
-#ifdef NAMESERVER
 				}
-#endif NAMESERVER
 				(void) sprintf(buf, "%s -f %s", cmd, src);
-#ifndef NAMESERVER
-				host = argv[i];
-#endif NAMESERVER
 				rem = rcmd(&host, port, pwd->pw_name, suser,
 				    buf, 0);
 				if (rem < 0)
@@ -671,8 +623,14 @@ sink(argc, argv)
 			count += amt;
 			do {
 				j = read(rem, cp, amt);
-				if (j <= 0)
+				if (j <= 0) {
+					if (j == 0)
+					    error("rcp: dropped connection");
+					else
+					    error("rcp: %s\n",
+						sys_errlist[errno]);
 					exit(1);
+				}
 				amt -= j;
 				cp += j;
 			} while (amt > 0);
