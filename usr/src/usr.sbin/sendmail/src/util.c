@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.39.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.49 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -243,9 +243,16 @@ xputs(s)
 	{
 		if (!isascii(c))
 		{
-			if (c == MATCHREPL || c == MACROEXPAND)
+			if (c == MATCHREPL)
 			{
 				putchar('$');
+				continue;
+			}
+			if (c == MACROEXPAND)
+			{
+				putchar('$');
+				if (bitset(0200, *s))
+					printf("{%s}", macname(*s++ & 0377));
 				continue;
 			}
 			for (mp = MetaMacros; mp->metaname != '\0'; mp++)
@@ -430,48 +437,56 @@ safefile(fn, uid, gid, uname, flags, mode)
 			fn, uid, gid, flags, mode);
 	errno = 0;
 
-	for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
+	if (!bitset(SFF_NOPATHCHECK, flags) ||
+	    (uid == 0 && !bitset(SFF_ROOTOK, flags)))
 	{
-		*p = '\0';
-		if (stat(fn, &stbuf) < 0)
-			break;
-		if (uid == 0 && !bitset(SFF_ROOTOK, flags))
+		/* check the path to the file for acceptability */
+		for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
 		{
-			if (bitset(S_IXOTH, stbuf.st_mode))
+			*p = '\0';
+			if (stat(fn, &stbuf) < 0)
+				break;
+			if (uid == 0 && !bitset(SFF_ROOTOK, flags))
+			{
+				if (bitset(S_IXOTH, stbuf.st_mode))
+					continue;
+				break;
+			}
+			if (stbuf.st_uid == uid &&
+			    bitset(S_IXUSR, stbuf.st_mode))
 				continue;
-			break;
-		}
-		if (stbuf.st_uid == uid && bitset(S_IXUSR, stbuf.st_mode))
-			continue;
-		if (stbuf.st_gid == gid && bitset(S_IXGRP, stbuf.st_mode))
-			continue;
+			if (stbuf.st_gid == gid &&
+			    bitset(S_IXGRP, stbuf.st_mode))
+				continue;
 #ifndef NO_GROUP_SET
-		if (uname != NULL &&
-		    ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
-		     (gr = getgrgid(stbuf.st_gid)) != NULL))
-		{
-			register char **gp;
+			if (uname != NULL &&
+			    ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
+			     (gr = getgrgid(stbuf.st_gid)) != NULL))
+			{
+				register char **gp;
 
-			for (gp = gr->gr_mem; *gp != NULL; gp++)
-				if (strcmp(*gp, uname) == 0)
-					break;
-			if (*gp != NULL && bitset(S_IXGRP, stbuf.st_mode))
-				continue;
-		}
+				for (gp = gr->gr_mem; gp != NULL && *gp != NULL; gp++)
+					if (strcmp(*gp, uname) == 0)
+						break;
+				if (gp != NULL && *gp != NULL &&
+				    bitset(S_IXGRP, stbuf.st_mode))
+					continue;
+			}
 #endif
-		if (!bitset(S_IXOTH, stbuf.st_mode))
-			break;
-	}
-	if (p != NULL)
-	{
-		int ret = errno;
+			if (!bitset(S_IXOTH, stbuf.st_mode))
+				break;
+		}
+		if (p != NULL)
+		{
+			int ret = errno;
 
-		if (ret == 0)
-			ret = EACCES;
-		if (tTd(54, 4))
-			printf("\t[dir %s] %s\n", fn, errstring(ret));
-		*p = '/';
-		return ret;
+			if (ret == 0)
+				ret = EACCES;
+			if (tTd(54, 4))
+				printf("\t[dir %s] %s\n", fn, errstring(ret));
+			*p = '/';
+			return ret;
+		}
 	}
 
 #ifdef HASLSTAT
@@ -814,9 +829,6 @@ xfclose(fp, a, b)
 
 static jmp_buf	CtxReadTimeout;
 static int	readtimeout();
-static EVENT	*GlobalTimeout = NULL;
-static bool	EnableTimeout = FALSE;
-static int	ReadProgress;
 
 char *
 sfgets(buf, siz, fp, timeout, during)
@@ -854,10 +866,7 @@ sfgets(buf, siz, fp, timeout, during)
 #endif
 			return (NULL);
 		}
-		if (GlobalTimeout == NULL)
-			ev = setevent(timeout, readtimeout, 0);
-		else
-			EnableTimeout = TRUE;
+		ev = setevent(timeout, readtimeout, 0);
 	}
 
 	/* try to read */
@@ -872,10 +881,7 @@ sfgets(buf, siz, fp, timeout, during)
 	}
 
 	/* clear the event if it has not sprung */
-	if (GlobalTimeout == NULL)
-		clrevent(ev);
-	else
-		EnableTimeout = FALSE;
+	clrevent(ev);
 
 	/* clean up the books and exit */
 	LineNumber++;
@@ -888,50 +894,30 @@ sfgets(buf, siz, fp, timeout, during)
 	}
 	if (TrafficLogFile != NULL)
 		fprintf(TrafficLogFile, "%05d <<< %s", getpid(), buf);
-	if (SevenBit)
+	if (SevenBitInput)
+	{
 		for (p = buf; *p != '\0'; p++)
 			*p &= ~0200;
+	}
+	else if (!HasEightBits)
+	{
+		for (p = buf; *p != '\0'; p++)
+		{
+			if (bitset(0200, *p))
+			{
+				HasEightBits = TRUE;
+				break;
+			}
+		}
+	}
 	return (buf);
-}
-
-void
-sfgetset(timeout)
-	time_t timeout;
-{
-	/* cancel pending timer */
-	if (GlobalTimeout != NULL)
-	{
-		clrevent(GlobalTimeout);
-		GlobalTimeout = NULL;
-	}
-
-	/* schedule fresh one if so requested */
-	if (timeout != 0)
-	{
-		ReadProgress = LineNumber;
-		GlobalTimeout = setevent(timeout, readtimeout, timeout);
-	}
 }
 
 static
 readtimeout(timeout)
 	time_t timeout;
 {
-	/* terminate if ordinary timeout */
-	if (GlobalTimeout == NULL)
-		longjmp(CtxReadTimeout, 1);
-
-	/* terminate if no progress was made -- reset state */
-	if (EnableTimeout && (LineNumber <= ReadProgress))
-	{
-		EnableTimeout = FALSE;
-		GlobalTimeout = NULL;
-		longjmp(CtxReadTimeout, 2);
-	}
-
-	/* schedule a new timeout */
-	GlobalTimeout = NULL;
-	sfgetset(timeout);
+	longjmp(CtxReadTimeout, 1);
 }
 /*
 **  FGETFOLDED -- like fgets, but know about folded lines.
@@ -1320,7 +1306,8 @@ dumpfd(fd, printclosed, logit)
 			sprintf(p, "(badsock)");
 		else
 		{
-			hp = gethostbyaddr((char *) &sin.sin_addr, slen, AF_INET);
+			hp = gethostbyaddr((char *) &sin.sin_addr,
+					   INADDRSZ, AF_INET);
 			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
 						   : hp->h_name, ntohs(sin.sin_port));
 		}
@@ -1332,7 +1319,8 @@ dumpfd(fd, printclosed, logit)
 			sprintf(p, "(badsock)");
 		else
 		{
-			hp = gethostbyaddr((char *) &sin.sin_addr, slen, AF_INET);
+			hp = gethostbyaddr((char *) &sin.sin_addr,
+					   INADDRSZ, AF_INET);
 			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
 						   : hp->h_name, ntohs(sin.sin_port));
 		}
@@ -1438,4 +1426,157 @@ shortenstring(s, m)
 	strcpy(buf + m, "...");
 	strcpy(buf + m + 3, s + l - m);
 	return buf;
+}
+/*
+**  GET_COLUMN  -- look up a Column in a line buffer
+**
+**	Parameters:
+**		line -- the raw text line to search.
+**		col -- the column number to fetch.
+**		delim -- the delimiter between columns.  If null,
+**			use white space.
+**		buf -- the output buffer.
+**
+**	Returns:
+**		buf if successful.
+**		NULL otherwise.
+*/
+
+char *
+get_column(line, col, delim, buf)
+	char line[];
+	int col;
+	char delim;
+	char buf[];
+{
+	char *p;
+	char *begin, *end;
+	int i;
+	char delimbuf[3];
+	
+	if (delim == '\0')
+		strcpy(delimbuf, "\t ");
+	else
+	{
+		delimbuf[0] = delim;
+		delimbuf[1] = '\0';
+	}
+
+	p = line;
+	if (*p == '\0')
+		return NULL;			/* line empty */
+	if (*p == delim && col == 0)
+		return NULL;			/* first column empty */
+
+	begin = line;
+
+	if (col == 0 && delim == '\0')
+	{
+		while (*begin && isspace(*begin))
+			begin++;
+	}
+
+	for (i = 0; i < col; i++)
+	{
+		if ((begin = strpbrk(begin, delimbuf)) == NULL)
+			return NULL;		/* no such column */
+		begin++;
+		if (delim == '\0')
+		{
+			while (*begin && isspace(*begin))
+				begin++;
+		}
+	}
+	
+	end = strpbrk(begin, delimbuf);
+	if (end == NULL)
+	{
+		strcpy(buf, begin);
+	}
+	else
+	{
+		strncpy(buf, begin, end - begin);
+		buf[end - begin] = '\0';
+	}
+	return buf;
+}
+/*
+**  CLEANSTRCPY -- copy string keeping out bogus characters
+**
+**	Parameters:
+**		t -- "to" string.
+**		f -- "from" string.
+**		l -- length of space available in "to" string.
+**
+**	Returns:
+**		none.
+*/
+
+void
+cleanstrcpy(t, f, l)
+	register char *t;
+	register char *f;
+	int l;
+{
+#ifdef LOG
+	/* check for newlines and log if necessary */
+	(void) denlstring(f);
+#endif
+
+	l--;
+	while (l > 0 && *f != '\0')
+	{
+		if (isascii(*f) &&
+		    (isalnum(*f) || strchr("!#$%&'*+-./^_`{|}~", *f) != NULL))
+		{
+			l--;
+			*t++ = *f;
+		}
+		f++;
+	}
+	*t = '\0';
+}
+/*
+**  DENLSTRING -- convert newlines in a string to spaces
+**
+**	Parameters:
+**		s -- the input string
+**
+**	Returns:
+**		A pointer to a version of the string with newlines
+**		mapped to spaces.  This should be copied.
+*/
+
+char *
+denlstring(s)
+	char *s;
+{
+	register char *p;
+	int l;
+	static char *bp = NULL;
+	static int bl = 0;
+
+	if (strchr(s, '\n') == NULL)
+		return s;
+
+	l = strlen(s) + 1;
+	if (bl < l)
+	{
+		/* allocate more space */
+		if (bp != NULL)
+			free(bp);
+		bp = xalloc(l);
+		bl = l;
+	}
+	strcpy(bp, s);
+	for (p = bp; (p = strchr(p, '\n')) != NULL; )
+		*p++ = ' ';
+
+#ifdef LOG
+	p = macvalue('_', CurEnv);
+	syslog(LOG_ALERT, "POSSIBLE ATTACK from %s: newline in string \"%s\"",
+		p == NULL ? "[UNKNOWN]" : p, bp);
+#endif
+
+	return bp;
 }
