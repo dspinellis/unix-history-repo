@@ -4,16 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.11 (Berkeley) %G%
+ *	@(#)lfs.h	7.12 (Berkeley) %G%
  */
-
-typedef struct buf	BUF;
-typedef struct dinode	DINODE;
-typedef struct inode	INODE;
-typedef struct mount	MOUNT;
-typedef struct ucred	UCRED;
-typedef struct ufsmount	UFSMOUNT;
-typedef struct vnode	VNODE;
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
 #define	LFS_SBPAD	8192		/* LFS superblock size */
@@ -98,7 +90,7 @@ struct lfs {
 	daddr_t	lfs_sboffs[LFS_MAXNUMSB];
 
 /* These fields are set at mount time and are meaningless on disk. */
-	VNODE	*lfs_ivnode;		/* vnode for the ifile */
+	struct	vnode *lfs_ivnode;	/* vnode for the ifile */
 	SEGUSE	*lfs_segtab;		/* in-memory segment usage table */
 					/* XXX NOT USED */
 	void	*XXXlfs_seglist;	/* list of segments being written */
