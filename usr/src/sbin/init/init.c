@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -456,8 +456,10 @@ void
 clear_session_logs(sp)
 	session_t *sp;
 {
-	if (logout(sp->se_device))
-		logwtmp(sp->se_device, "", "");
+	char *line = sp->se_device + sizeof(_PATH_DEV) - 1;
+
+	if (logout(line))
+		logwtmp(line, "", "");
 }
 
 /*
@@ -819,9 +821,8 @@ new_session(sprev, session_index, typ)
 	sp->se_flags = 0;
 	sp->se_window = 0;
 
-	sp->se_device = malloc(6 + strlen(typ->ty_name));
-	memcpy(sp->se_device, _PATH_DEV, 5);
-	strcpy(sp->se_device + 5, typ->ty_name);
+	sp->se_device = malloc(sizeof(_PATH_DEV) + strlen(typ->ty_name));
+	(void) sprintf(sp->se_device, "%s%s", _PATH_DEV, typ->ty_name);
 
 	sp->se_getty = strdup(typ->ty_getty);
 	sp->se_getty_argv = construct_argv(sp->se_getty);
@@ -1082,13 +1083,12 @@ clean_ttys()
 	if (! sessions)
 		return (state_func_t) multi_user;
 
-	devlen = strlen(_PATH_DEV);
+	devlen = sizeof(_PATH_DEV) - 1;
 	while (typ = getttyent()) {
 		++session_index;
 
 		for (sp = sessions; sp; sprev = sp, sp = sp->se_next)
-			if (strcmp(typ->ty_name, 
-			    (char *)(sp->se_device + devlen)) == 0)
+			if (strcmp(typ->ty_name, sp->se_device + devlen) == 0)
 				break;
 
 		if (sp) {
