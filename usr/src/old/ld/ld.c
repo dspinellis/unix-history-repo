@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1320,13 +1320,13 @@ tracesym()
 
 #if !defined(tahoe)
 /* for machines which allow arbitrarily aligned word and longword accesses */
-#define	getw(cp)	(*(short *)(cp))
+#define	getword(cp)	(*(short *)(cp))
 #define	getl(cp)	(*(long *)(cp))
 #define	putw(cp, w)	(*(short *)(cp) = (w))
 #define	putl(cp, l)	(*(long *)(cp) = (l))
 #else
 short
-getw(cp)
+getword(cp)
 	char *cp;
 {
 	union {
@@ -1432,7 +1432,7 @@ load2td(creloc, position, b1, b2)
 			break;
 
 		case 1:		/* word */
-			tw = getw(cp);
+			tw = getword(cp);
 			break;
 
 		case 2:		/* long */
