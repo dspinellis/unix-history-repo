@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tunefs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tunefs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -42,9 +42,9 @@ main(argc, argv)
 	struct stat st;
 	int i;
 	int Aflag = 0;
-	char device[MAXPATHLEN];
-	extern char *sprintf();
 	struct fstab *fs;
+	char *chg[2], device[MAXPATHLEN];
+	extern char *sprintf();
 
 	argc--, argv++; 
 	if (argc < 2)
@@ -134,6 +134,32 @@ again:
 				sblock.fs_minfree = i;
 				continue;
 
+			case 'o':
+				name = "optimization preference";
+				if (argc < 1)
+					fatal("-o: missing %s", name);
+				argc--, argv++;
+				chg[FS_OPTSPACE] = "space";
+				chg[FS_OPTTIME] = "time";
+				if (strcmp(*argv, chg[FS_OPTSPACE]) == 0)
+					i = FS_OPTSPACE;
+				else if (strcmp(*argv, chg[FS_OPTTIME]) == 0)
+					i = FS_OPTTIME;
+				else
+					fatal("%s: bad %s (options are `space' or `time')",
+						*argv, name);
+				if (sblock.fs_optim == i) {
+					fprintf(stdout,
+						"%s remains unchanged as %s\n",
+						name, chg[i]);
+					continue;
+				}
+				fprintf(stdout,
+					"%s changes from %s to %s\n",
+					name, chg[sblock.fs_optim], chg[i]);
+				sblock.fs_optim = i;
+				continue;
+
 			default:
 				fatal("-%c: unknown flag", *cp);
 			}
@@ -154,6 +180,7 @@ usage:
 	fprintf(stderr, "\t-d rotational delay between contiguous blocks\n");
 	fprintf(stderr, "\t-e maximum blocks per file in a cylinder group\n");
 	fprintf(stderr, "\t-m minimum percentage of free space\n");
+	fprintf(stderr, "\t-o optimization preference (`space' or `time')\n");
 	exit(2);
 }
 
