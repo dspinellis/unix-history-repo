@@ -4,18 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.3 (Berkeley) %G%
+ *	@(#)boot.c	7.4 (Berkeley) %G%
  */
 
+#include <sys/param.h>
+#include <sys/reboot.h>
 #include <a.out.h>
 #include "saio.h"
-#include "sys/reboot.h"
 
 #ifndef INSECURE
 #include "sys/stat.h"
 struct stat sb;
 #endif
-
+					/* XXX -- see sys/reboot.h */
 #define B_MAKEDEV(a,u,p,t) \
 	(((a) << B_ADAPTORSHIFT) | ((u) << B_UNITSHIFT) | \
 	 ((p) << B_PARTITIONSHIFT) | ((t) << B_TYPESHIFT))
@@ -28,15 +29,14 @@ struct stat sb;
 
 /* Types in `devtype' specifying major device */
 char	devname[][2] = {
-	0,0,		/* 0 = ct */
-	0,0,		/* 1 = fd */
-	'r','d',	/* 2 = rd */
-	0,0,		/* 3 = sw */
-	's','d',	/* 4 = sd */
+	'\0', '\0',	/* 0 = ct */
+	'\0', '\0',	/* 1 = fd */
+	 'r',  'd',	/* 2 = rd */
+	'\0', '\0',	/* 3 = sw */
+	 's',  'd',	/* 4 = sd */
 };
 #define	MAXTYPE	(sizeof(devname) / sizeof(devname[0]))
 
-#define	UNIX	"vmunix"
 char line[100];
 
 int	retry = 0;
