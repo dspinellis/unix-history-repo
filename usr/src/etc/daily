@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.1 (Berkeley) %G%
+#	@(#)daily	5.2 (Berkeley) %G%
 #
 
 PATH=/usr/local:/usr/ucb:/bin:/usr/bin:/etc:/sbin:/usr/sbin
@@ -91,7 +91,7 @@ if [ -f syslog.0 ]; then mv -f syslog.0  syslog.1; fi
 mv -f syslog syslog.0
 cp /dev/null syslog
 chmod 644    syslog
-kill -1 `cat /etc/syslog.pid`
+kill -1 `cat /var/run/syslog.pid`
 cd /
 
 if [ -d /var/spool/uucp -a -f /usr/lib/uucp/clean.daily ]; then
