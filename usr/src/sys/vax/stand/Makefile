@@ -1,5 +1,10 @@
-#	Makefile	6.3	84/11/27
-
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	6.4 (Berkeley) %G%
+#
 DESTDIR=/
 CFLAGS=	-O -I../h -DSTANDALONE ${COPTS} 
 COPTS=	-DVAX780 -DVAX750 -DVAX730

@@ -1,4 +1,10 @@
-/*	tcp_timer.h	6.2	85/04/17	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)tcp_timer.h	6.3 (Berkeley) %G%
+ */
 
 /*
  * Definitions of the TCP timers.  These timers are counted

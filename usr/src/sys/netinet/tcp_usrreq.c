@@ -1,4 +1,10 @@
-/*	tcp_usrreq.c	6.5	85/03/18	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)tcp_usrreq.c	6.6 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "systm.h"

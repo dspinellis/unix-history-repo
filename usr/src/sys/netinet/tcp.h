@@ -1,4 +1,10 @@
-/*	tcp.h	6.2	84/11/01	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)tcp.h	6.3 (Berkeley) %G%
+ */
 
 typedef	u_long	tcp_seq;
 /*
