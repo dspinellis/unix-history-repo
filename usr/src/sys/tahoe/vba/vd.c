@@ -1,4 +1,4 @@
-/*	vd.c	1.6	86/01/20	*/
+/*	vd.c	1.7	86/01/21	*/
 
 #include "fsd.h"
 #if NVD > 0
@@ -27,7 +27,7 @@
 
 #include "../tahoevba/vbavar.h"
 #define	VDGENDATA
-#include "../tahoevba/vddcreg.h"
+#include "../tahoevba/vdreg.h"
 #undef VDGENDATA
 #include "../tahoevba/scope.h"
 
