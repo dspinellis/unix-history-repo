@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_subr.c	7.11 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.12 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -148,7 +148,8 @@ setblock(fs, cp, h)
 	}
 }
 
-#if (!defined(vax) && !defined(tahoe)) || defined(VAX630) || defined(VAX650)
+#if (!defined(vax) && !defined(tahoe) && !defined(hp300)) \
+	|| defined(VAX630) || defined(VAX650)
 /*
  * C definitions of special instructions.
  * Normally expanded with inline.
@@ -166,7 +167,7 @@ scanc(size, cp, table, mask)
 }
 #endif
 
-#if !defined(vax) && !defined(tahoe)
+#if !defined(vax) && !defined(tahoe) && !defined(hp300)
 skpc(mask, size, cp)
 	register u_char mask;
 	u_int size;
