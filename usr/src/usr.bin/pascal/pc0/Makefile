@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.5 %G%"
+SCCSID = "@(#)Makefile 1.6 %G%"
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
