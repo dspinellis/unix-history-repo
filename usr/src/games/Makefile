@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.1	(Berkeley)	%G%
+#	@(#)Makefile	4.2	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -11,6 +11,10 @@ WORK=	aard ddl mpu
 #
 SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
 	mille monop snake
+
+# Shell scripts that need only be installed and are never removed.
+#
+SCRIPT=	ching
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
@@ -32,6 +36,7 @@ ${STD}:
 install:
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
+	for i in ${SCRIPT}; do (install -c $$i ${DESTDIR}/usr/games/$$i); done
 	for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/usr/games/$$i); done
 
 clean:
