@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.3 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -54,22 +54,13 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	u_int pfcent;
 {
 	register struct buf *bp;
-	register u_int c;
-	int p2dp;
 	register struct pte *dpte, *vpte;
-	int s;
-	extern swdone();
-	int error = 0;
+	register u_int c;
+	int p2dp, s, error = 0;
+	struct buf *getswbuf();
+	int swdone();
 
-	s = splbio();
-	while (bswlist.av_forw == NULL) {
-		bswlist.b_flags |= B_WANTED;
-		sleep((caddr_t)&bswlist, PSWP+1);
-	}
-	bp = bswlist.av_forw;
-	bswlist.av_forw = bp->av_forw;
-	splx(s);
-
+	bp = getswbuf(PSWP+1);
 	bp->b_flags = B_BUSY | B_PHYS | rdflg | flag;
 	if ((bp->b_flags & (B_DIRTY|B_PGIN)) == 0)
 		if (rdflg == B_READ)
@@ -101,11 +92,17 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 #ifdef TRACE
 		trace(TR_SWAPIO, dev, bp->b_blkno);
 #endif
-		physstrat(bp, bdevsw[major(dev)].d_strategy, PSWP);
+		(*bdevsw[major(dev)].d_strategy)(bp);
+		/* pageout daemon doesn't wait for pushed pages */
 		if (flag & B_DIRTY) {
 			if (c < nbytes)
 				panic("big push");
 			return (0);
+		} else {
+			s = splbio();
+			while ((bp->b_flags & B_DONE) == 0)
+				sleep((caddr_t)bp, PSWP);
+			splx(s);
 		}
 		bp->b_un.b_addr += c;
 		bp->b_flags &= ~B_DONE;
@@ -118,16 +115,8 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		nbytes -= c;
 		dblkno += btodb(c);
 	}
-	s = splbio();
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
-	bp->av_forw = bswlist.av_forw;
-	bswlist.av_forw = bp;
-	if (bswlist.b_flags & B_WANTED) {
-		bswlist.b_flags &= ~B_WANTED;
-		wakeup((caddr_t)&bswlist);
-		wakeup((caddr_t)&proc[2]);
-	}
-	splx(s);
+	freeswbuf(bp);
 	return (error);
 }
 
@@ -177,8 +166,9 @@ swkill(p, rout)
 /*
  * Raw I/O. The arguments are
  *	The strategy routine for the device
- *	A buffer, which will always be a special buffer
- *	  header owned exclusively by the device for this purpose
+ *	A buffer, which will either be a special buffer header owned
+ *	    exclusively by the device for this purpose, or NULL,
+ *	    indicating that we should use a swap buffer
  *	The device number
  *	Read/write flag
  * Essentially all the work is computing physical addresses and
@@ -193,32 +183,39 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	register struct buf *bp;
 	dev_t dev;
 	int rw;
-	unsigned (*mincnt)();
+	u_int (*mincnt)();
 	struct uio *uio;
 {
 	register struct iovec *iov;
 	register int c;
 	char *a;
-	int s, error = 0;
+	int s, allocbuf = 0, error = 0;
+	struct buf *getswbuf();
 
-	for (;;) {
-		if (uio->uio_iovcnt == 0)
-			return (0);
+	if (bp == NULL) {
+		allocbuf = 1;
+		bp = getswbuf(PRIBIO+1);
+	}
+	for (; uio->uio_iovcnt; uio->uio_iov++, uio->uio_iovcnt--) {
 		iov = uio->uio_iov;
-		if (useracc(iov->iov_base, (u_int)iov->iov_len,
-		    rw==B_READ? B_WRITE : B_READ) == NULL)
-			return (EFAULT);
-		s = splbio();
-		while (bp->b_flags&B_BUSY) {
-			bp->b_flags |= B_WANTED;
-			sleep((caddr_t)bp, PRIBIO+1);
+		if (!useracc(iov->iov_base, (u_int)iov->iov_len,
+		    rw == B_READ ? B_WRITE : B_READ)) {
+			error = EFAULT;
+			break;
 		}
-		splx(s);
+		if (!allocbuf) {	/* only if sharing caller's buffer */
+			s = splbio();
+			while (bp->b_flags&B_BUSY) {
+				bp->b_flags |= B_WANTED;
+				sleep((caddr_t)bp, PRIBIO+1);
+			}
+			splx(s);
+		}
 		bp->b_error = 0;
 		bp->b_proc = u.u_procp;
 		bp->b_un.b_addr = iov->iov_base;
 		while (iov->iov_len > 0) {
-			bp->b_flags = B_BUSY | B_PHYS | rw;
+			bp->b_flags = B_BUSY | B_PHYS | B_RAW | rw;
 			bp->b_dev = dev;
 			bp->b_blkno = btodb(uio->uio_offset);
 			bp->b_bcount = iov->iov_len;
@@ -226,11 +223,13 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			c = bp->b_bcount;
 			u.u_procp->p_flag |= SPHYSIO;
 			vslock(a = bp->b_un.b_addr, c);
-			physstrat(bp, strat, PRIBIO);
-			(void) splbio();
+			(*strat)(bp);
+			s = splbio();
+			while ((bp->b_flags & B_DONE) == 0)
+				sleep((caddr_t)bp, PRIBIO);
 			vsunlock(a, c, rw);
 			u.u_procp->p_flag &= ~SPHYSIO;
-			if (bp->b_flags&B_WANTED)
+			if (bp->b_flags&B_WANTED)	/* rare */
 				wakeup((caddr_t)bp);
 			splx(s);
 			c -= bp->b_resid;
@@ -242,21 +241,73 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			if (bp->b_resid || (bp->b_flags&B_ERROR))
 				break;
 		}
-		bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS);
+		bp->b_flags &= ~(B_BUSY | B_WANTED | B_PHYS | B_RAW);
 		error = geterror(bp);
 		/* temp kludge for tape drives */
 		if (bp->b_resid || error)
-			return (error);
-		uio->uio_iov++;
-		uio->uio_iovcnt--;
+			break;
 	}
+	if (allocbuf)
+		freeswbuf(bp);
+	return (error);
 }
 
-unsigned
+u_int
 minphys(bp)
 	struct buf *bp;
 {
-
 	if (bp->b_bcount > MAXPHYS)
 		bp->b_bcount = MAXPHYS;
+}
+
+static
+struct buf *
+getswbuf(prio)
+	int prio;
+{
+	int s;
+	struct buf *bp;
+
+	s = splbio();
+	while (bswlist.av_forw == NULL) {
+		bswlist.b_flags |= B_WANTED;
+		sleep((caddr_t)&bswlist, prio);
+	}
+	bp = bswlist.av_forw;
+	bswlist.av_forw = bp->av_forw;
+	splx(s);
+	return (bp);
+}
+
+static
+freeswbuf(bp)
+	struct buf *bp;
+{
+	int s;
+
+	s = splbio();
+	bp->av_forw = bswlist.av_forw;
+	bswlist.av_forw = bp;
+	if (bswlist.b_flags & B_WANTED) {
+		bswlist.b_flags &= ~B_WANTED;
+		wakeup((caddr_t)&bswlist);
+		wakeup((caddr_t)&proc[2]);
+	}
+	splx(s);
+}
+
+rawread(dev, uio)
+	dev_t dev;
+	struct uio *uio;
+{
+	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL,
+	    dev, B_READ, minphys, uio));
+}
+
+rawwrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
+{
+	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL,
+	    dev, B_WRITE, minphys, uio));
 }
