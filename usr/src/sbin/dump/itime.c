@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)itime.c	1.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)itime.c	1.13 (Berkeley) %G%";
 
 #include "dump.h"
 #include <sys/file.h>
@@ -204,20 +204,37 @@ int makeidate(ip, buf)
 
 /*
  * This is an estimation of the number of TP_BSIZE blocks in the file.
- * It assumes that there are no unallocated blocks; hence
- * the estimate may be high
+ * It estimates the number of blocks in files with holes by assuming
+ * that all of the blocks accounted for by di_blocks are data blocks
+ * (when some of the blocks are usually used for indirect pointers);
+ * hence the estimate may be high.
  */
 est(ip)
 	struct dinode *ip;
 {
-	long s;
+	long s, t;
 
+ 	/*
+ 	 * ip->di_size is the size of the file in bytes.
+ 	 * ip->di_blocks stores the number of sectors actually in the file.
+ 	 * If there are more sectors than the size would indicate, this just
+ 	 *	means that there are indirect blocks in the file or unused
+	 *	sectors in the last file block;	we can safely ignore these
+	 *	(s = t below).
+ 	 * If the file is bigger than the number of sectors would indicate,
+ 	 *	then the file has holes in it.  In this case we must use the
+ 	 *	block count to estimate the number of data blocks used, but
+ 	 *	we use the actual size for estimating the number of indirect
+ 	 *	dump blocks (t vs. s in the indirect block calculation).
+ 	 */
 	esize++;
-	/* calc number of TP_BSIZE blocks */
-	s = howmany(ip->di_size, TP_BSIZE);
+ 	s = howmany(dbtob(ip->di_blocks), TP_BSIZE);
+ 	t = howmany(ip->di_size, TP_BSIZE);
+ 	if ( s > t )
+ 		s = t;
 	if (ip->di_size > sblock->fs_bsize * NDADDR) {
-		/* calc number of indirect blocks on the dump tape */
-		s += howmany(s - NDADDR * sblock->fs_bsize / TP_BSIZE,
+		/* calculate the number of indirect blocks on the dump tape */
+		s += howmany(t - NDADDR * sblock->fs_bsize / TP_BSIZE,
 			TP_NINDIR);
 	}
 	esize += s;
