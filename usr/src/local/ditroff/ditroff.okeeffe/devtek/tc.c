@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "tc.c	(CWI)	1.1	85/03/26";
+static char sccsid[] = "@(#)tc.c	1.2	(CWI)	1.2	85/03/26";
 #endif lint
 /*
  *	drive 4014 scope
@@ -523,6 +523,7 @@ t_page(n)	/* do whatever new page functions */
 	*bp = 0;
 	switch (buf[0]) {
 	case 0:
+	case 'q':
 		done();
 		break;
 	case '\n':
@@ -583,6 +584,7 @@ t_page(n)	/* do whatever new page functions */
 		fputs("-n	go back n pages\n", stderr);
 		fputs("n	print page n (previously printed)\n", stderr);
 		fputs("o...	set the -o output list to ...\n", stderr);
+		fputs("q	quit\n", stderr);
 		fputs("en	n=0 -> don't erase; n=1 -> erase\n", stderr);
 		fputs("an	sets aspect ratio to n\n", stderr);
 		break;
