@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.5 %G%";
+static	char sccsid[] = "@(#)call.c 1.4.1.1 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -72,13 +72,13 @@ call(p, argv, porf, psbn)
 
 #	ifdef OBJ
 	    if (p->class == FFUNC || p->class == FPROC)
-		put(2, PTR_RV | cbn << 8+INDX, p->value[NL_OFFS]);
+		put(2, PTR_RV | cbn << 8+INDX, (int)p->value[NL_OFFS]);
 	    if (porf == FUNC)
 		    /*
 		     * Push some space
 		     * for the function return type
 		     */
-		    put2(O_PUSH, even(-width(p->type)));
+		    put(2, O_PUSH, leven(-lwidth(p->type)));
 #	endif OBJ
 #	ifdef PC
 		/*
@@ -306,7 +306,7 @@ call(p, argv, porf, psbn)
 	    for ( ; argv != NIL ; argv = argv[2] ) {
 #		ifdef OBJ
 		    q = rvalue(argv[1], NIL, RREQ );
-		    cnt += even(lwidth(q));
+		    cnt += leven(lwidth(q));
 #		endif OBJ
 #		ifdef PC
 			/*
@@ -369,12 +369,12 @@ call(p, argv, porf, psbn)
 	}
 #	ifdef OBJ
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
-		put(2, PTR_RV | cbn << 8+INDX, p->value[NL_OFFS]);
-		put(2, O_FCALL, cnt);
-		put(2, O_FRTN, even(lwidth(p->type)));
+		put(2, PTR_RV | cbn << 8+INDX, (int)p->value[NL_OFFS]);
+		put(2, O_FCALL, (long)cnt);
+		put(2, O_FRTN, even(width(p->type)));
 	    } else {
-		/* put(2, O_CALL | psbn << 8+INDX, p->entloc); */
-		put(2, O_CALL | psbn << 8, p->entloc);
+		/* put(2, O_CALL | psbn << 8+INDX, (long)p->entloc); */
+		put(2, O_CALL | psbn << 8, (long)p->entloc);
 	    }
 #	endif OBJ
 #	ifdef PC
