@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	1.4 (Berkeley) %G%
+ *	@(#)union.h	1.5 (Berkeley) %G%
  */
 
 struct union_args {
@@ -53,7 +53,14 @@ struct union_node {
 #define UN_WANT 0x01
 #define UN_LOCKED 0x02
 
-extern int union_allocvp __P((struct vnode **, struct mount *, struct vnode *, struct vnode *, struct componentname *, struct vnode *, struct vnode *));
+extern int union_allocvp __P((struct vnode **, struct mount *,
+				struct vnode *, struct vnode *,
+				struct componentname *, struct vnode *,
+				struct vnode *));
+extern int union_copyfile __P((struct proc *, struct ucred *,
+				struct vnode *, struct vnode *));
+extern int union_vn_create __P((struct vnode **, struct union_node *,
+				int, struct proc *));
 
 #define	MOUNTTOUNIONMOUNT(mp) ((struct union_mount *)((mp)->mnt_data))
 #define	VTOUNION(vp) ((struct union_node *)(vp)->v_data)
