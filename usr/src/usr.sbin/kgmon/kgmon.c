@@ -12,12 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
-#include <sys/gprof.h>
+#include <sys/gmon.h>
 #include <errno.h>
 #include <kvm.h>
 #include <limits.h>
@@ -28,34 +28,209 @@ static char sccsid[] = "@(#)kgmon.c	5.13 (Berkeley) %G%";
 #include <ctype.h>
 #include <paths.h>
 
-#define	PROFILING_ON	0
-#define	PROFILING_OFF	3
-
 struct nlist nl[] = {
-#define N_FROMS		0
-	{ "_froms" },
-#define	N_PROFILING	1
-	{ "_profiling" },
-#define	N_S_LOWPC	2
-	{ "_s_lowpc" },
-#define	N_S_TEXTSIZE	3
-	{ "_s_textsize" },
-#define	N_SBUF		4
-	{ "_sbuf" },
-#define N_SSIZ		5
-	{ "_ssiz" },
-#define	N_TOS		6
-	{ "_tos" },
+#define	N_GMONPARAM	0
+	{ "__gmonparam" },
+#define	N_KCOUNT	1
+	{ "_kcount" },
+#define	N_PROFHZ	2
+	{ "_profhz" },
 	0,
 };
+
+/*
+ * We should call this _gmonparam for consistency, but that would cause a 
+ * problem if we want to profile this program itself.
+ */
+struct gmonparam gmonparam;
+
+u_short *kcount;
+int profhz;
 
 kvm_t	*kd;
 int	bflag, hflag, kflag, rflag, pflag;
 int	debug = 0;
 
-main(argc, argv)
-	int argc;
-	char **argv;
+#define KREAD(kd, addr, s)\
+	kvm_read(kd, addr, (void *)(s), sizeof*(s)) != (sizeof*(s))
+
+/*
+ * Build the gmon header and write it to a file.
+ */
+void
+dumphdr(FILE *fp, struct gmonparam *p, int ksize)
+{
+	struct gmonhdr h;
+
+	/* zero out the unused fields */
+	bzero(&h, sizeof(h));
+
+	h.lpc = p->lowpc;
+	h.hpc = p->highpc;
+	h.ncnt = ksize + sizeof(h);
+	h.version = GMONVERSION;
+	h.profrate = profhz;
+
+	fwrite((char *)&h, sizeof(h), 1, fp);
+}
+
+/*
+ * Dump a range of kernel memory to a file.
+ */
+void
+dumpbuf(FILE *fp, u_long addr, int cc)
+{
+	int ret, n;
+	char buf[8192];
+
+	while (cc > 0) {
+		n = MIN(cc, sizeof(buf));
+		if ((ret = kvm_read(kd, addr, buf, n)) != n) {
+			(void)fprintf(stderr,
+			    "kgmon: read kmem: read %d, got %d: %s\n",
+			    n, ret, kvm_geterr(kd));
+			exit(4);
+		}
+		if ((ret = fwrite(buf, n, 1, fp)) != 1) {
+			perror("kgmon: gmon.out");
+			exit(1);
+		}
+		addr += n;
+		cc -= n;
+	}
+}
+
+/*
+ * Enable or disable kernel profiling according to the state variable.
+ */
+void
+setprof(int state)
+{
+	struct gmonparam *p = (struct gmonparam *)nl[N_GMONPARAM].n_value;
+
+	if (kvm_write(kd, (u_long)&p->state, (void *)&state, sizeof(state)) !=
+	    sizeof(state))
+		(void)fprintf(stderr,
+		    "kgmon: warning: can't turn profiling %s\n",
+		    state == GMON_PROF_OFF ? "off" : "on");
+}
+
+/*
+ * Build the gmon.out file.
+ */
+void
+dumpstate(struct gmonparam *p)
+{
+	register FILE *fp;
+	struct rawarc rawarc;
+	struct tostruct *tos;
+	u_long frompc, addr;
+	u_short *froms;
+	int i, n;
+	int fromindex, endfrom, toindex;
+	u_int fromssize, tossize, ksize;
+
+	setprof(GMON_PROF_OFF);
+	fp = fopen("gmon.out", "w");
+	if (fp == 0) {
+		perror("gmon.out");
+		return;
+	}
+	ksize = p->textsize / HISTFRACTION;
+	dumphdr(fp, p, ksize);
+	dumpbuf(fp, (u_long)kcount, ksize);
+
+	fromssize = p->textsize / HASHFRACTION;
+	froms = (u_short *)malloc(fromssize);
+	i = kvm_read(kd, (u_long)p->froms, (void *)froms, fromssize);
+	if (i != fromssize) {
+		(void)fprintf(stderr, "kgmon: read kmem: read %u, got %d: %s",
+		    fromssize, i, strerror(errno));
+		exit(5);
+	}
+	tossize = (p->textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
+	tos = (struct tostruct *)malloc(tossize);
+	i = kvm_read(kd, (u_long)p->tos, (void *)tos, tossize);
+	if (i != tossize) {
+		(void)fprintf(stderr, "kgmon: read kmem: read %u, got %d: %s",
+		    tossize, i, kvm_geterr(kd));
+		exit(6);
+	}
+	if (debug)
+		(void)fprintf(stderr, "lowpc 0x%x, textsize 0x%x\n",
+			      p->lowpc, p->textsize);
+	endfrom = fromssize / sizeof(*froms);
+	for (fromindex = 0; fromindex < endfrom; ++fromindex) {
+		if (froms[fromindex] == 0)
+			continue;
+		frompc = (u_long)p->lowpc +
+		    (fromindex * HASHFRACTION * sizeof(*froms));
+		for (toindex = froms[fromindex]; toindex != 0;
+		   toindex = tos[toindex].link) {
+			if (debug)
+			    (void)fprintf(stderr,
+			    "[mcleanup] frompc 0x%x selfpc 0x%x count %d\n" ,
+			    frompc, tos[toindex].selfpc, tos[toindex].count);
+			rawarc.raw_frompc = frompc;
+			rawarc.raw_selfpc = (u_long)tos[toindex].selfpc;
+			rawarc.raw_count = tos[toindex].count;
+			fwrite((char *)&rawarc, sizeof(rawarc), 1, fp);
+		}
+	}
+	fclose(fp);
+}
+
+/*
+ * Zero out a region of kernel memory.
+ */
+int
+kzero(u_long addr, int cc)
+{
+	static char zbuf[MAXBSIZE];
+
+	while (cc > 0) {
+		register int n = MIN(cc, sizeof(zbuf));
+
+		if (kvm_write(kd, addr, zbuf, n) != n)
+			return (-1);
+		addr += n;
+		cc -= n;
+	}
+	return (0);
+}
+
+/*
+ * Reset the kernel profiling date structures.
+ */
+void
+reset(struct gmonparam *p)
+{
+	int fromssize, tossize, ksize;
+
+	setprof(GMON_PROF_OFF);
+
+	ksize = p->textsize / HISTFRACTION;
+	if (kzero((u_long)kcount, ksize)) {
+		(void)fprintf(stderr, "kgmon: sbuf write: %s\n",
+		    kvm_geterr(kd));
+		exit(7);
+	}
+	fromssize = p->textsize / HASHFRACTION;
+	if (kzero((u_long)p->froms, fromssize)) {
+		(void)fprintf(stderr, "kgmon: kfroms write: %s\n",
+		    kvm_geterr(kd));
+		exit(8);
+	}
+	tossize = (p->textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
+	if (kzero((u_long)p->tos, tossize)) {
+		(void)fprintf(stderr, "kgmon: ktos write: %s\n",
+		    kvm_geterr(kd));
+		exit(9);
+	}
+}
+
+int
+main(int argc, char **argv)
 {
 	extern char *optarg;
 	extern int optind;
@@ -65,32 +240,40 @@ main(argc, argv)
 
 	kmemf = NULL;
 	system = NULL;
-	while ((ch = getopt(argc, argv, "M:N:bhpr")) != EOF)
+	while ((ch = getopt(argc, argv, "M:N:bhpr")) != EOF) {
 		switch((char)ch) {
+
 		case 'M':
 			kmemf = optarg;
 			kflag = 1;
 			break;
+
 		case 'N':
 			system = optarg;
 			break;
+
 		case 'b':
 			bflag = 1;
 			break;
+
 		case 'h':
 			hflag = 1;
 			break;
+
 		case 'p':
 			pflag = 1;
 			break;
+
 		case 'r':
 			rflag = 1;
 			break;
+
 		default:
 			(void)fprintf(stderr,
 			    "usage: kgmon [-bhrp] [-M core] [-N system]\n");
 			exit(1);
 		}
+	}
 	argc -= optind;
 	argv += optind;
 
@@ -104,7 +287,6 @@ main(argc, argv)
 		}
 	}
 #endif
-
 	if (system == NULL)
 		system = _PATH_UNIX;
 	openmode = (bflag || hflag || pflag || rflag) ? O_RDWR : O_RDONLY;
@@ -133,186 +315,39 @@ main(argc, argv)
 		(void)fprintf(stderr, "kgmon: %s: no namelist\n", system);
 		exit(2);
 	}
-	if (!nl[N_PROFILING].n_value) {
+	if (!nl[N_GMONPARAM].n_value) {
 		(void)fprintf(stderr,
 		    "kgmon: profiling not defined in kernel.\n");
 		exit(10);
 	}
-	mode = kfetch(N_PROFILING);
+	if (KREAD(kd, nl[N_GMONPARAM].n_value, &gmonparam))
+		(void)fprintf(stderr,
+		    "kgmon: read kmem: %s\n", kvm_geterr(kd));
+	if (KREAD(kd, nl[N_KCOUNT].n_value, &kcount))
+		(void)fprintf(stderr, "kgmon: read kmem: %s\n",
+			      kvm_geterr(kd));
+	if (KREAD(kd, nl[N_PROFHZ].n_value, &profhz))
+		(void)fprintf(stderr, "kgmon: read kmem: %s\n",
+			      kvm_geterr(kd));
+
+	mode = gmonparam.state;
 	if (hflag)
-		disp = PROFILING_OFF;
+		disp = GMON_PROF_OFF;
 	else if (bflag)
-		disp = PROFILING_ON;
+		disp = GMON_PROF_ON;
 	else
 		disp = mode;
 	if (pflag) {
-		if (openmode == O_RDONLY && mode == PROFILING_ON)
+		if (openmode == O_RDONLY && mode == GMON_PROF_ON)
 			(void)fprintf(stderr, "data may be inconsistent\n");
-		dumpstate();
+		dumpstate(&gmonparam);
 	}
 	if (rflag)
-		resetstate();
+		reset(&gmonparam);
 	if (openmode == O_RDWR)
-		turnonoff(disp);
-	(void)fprintf(stdout,
-	    "kernel profiling is %s.\n", disp ? "off" : "running");
-	exit(0);
-}
+		setprof(disp);
+	(void)fprintf(stdout, "kernel profiling is %s.\n",
+		      disp == GMON_PROF_OFF ? "off" : "running");
 
-dumpstate()
-{
-	struct rawarc rawarc;
-	struct tostruct *tos;
-	u_long frompc;
-	u_short *froms;		/* froms is a bunch of u_shorts indexing tos */
-	int i, n, ret, fd;
-	int fromindex, endfrom, toindex;
-	u_int fromssize, tossize;
-	u_long s_textsize;
-	off_t sbuf;
-	char *s_lowpc;
-	char buf[MAXBSIZE];
-
-	turnonoff(PROFILING_OFF);
-	fd = open("gmon.out", O_WRONLY | O_CREAT, 0666);
-	if (fd < 0) {
-		perror("gmon.out");
-		return;
-	}
-	sbuf = kfetch(N_SBUF);
-	for (i = kfetch(N_SSIZ); i != 0; i -= n, sbuf += n) {
-		n = i < sizeof(buf) ? i : sizeof(buf);
-		if ((ret = kvm_read(kd, sbuf, buf, n)) != n) {
-			(void)fprintf(stderr,
-			    "kgmon: read kmem: read %d, got %d: %s\n",
-			    n, ret, kvm_geterr(kd));
-			exit(4);
-		}
-		if ((ret = write(fd, buf, n)) != n) {
-			(void)fprintf(stderr,
-			    "kgmon: write gmon.out: wrote %d, got %d: %s\n",
-			    n, ret, strerror(errno));
-		}
-	}
-	s_textsize = kfetch(N_S_TEXTSIZE);
-	fromssize = s_textsize / HASHFRACTION;
-	froms = (u_short *)malloc(fromssize);
-	i = kvm_read(kd, kfetch(N_FROMS), (char *)froms, fromssize);
-	if (i != fromssize) {
-		(void)fprintf(stderr, "kgmon: read kmem: read %u, got %d: %s",
-		    fromssize, i, strerror(errno));
-		exit(5);
-	}
-	tossize = (s_textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
-	tos = (struct tostruct *)malloc(tossize);
-	i = kvm_read(kd, kfetch(N_TOS), (char *)tos, tossize);
-	if (i != tossize) {
-		(void)fprintf(stderr, "kgmon: read kmem: read %u, got %d: %s",
-		    tossize, i, kvm_geterr(kd));
-		exit(6);
-	}
-	s_lowpc = (char *)kfetch(N_S_LOWPC);
-	if (debug)
-		(void)fprintf(stderr, "s_lowpc 0x%x, s_textsize 0x%x\n",
-		    s_lowpc, s_textsize);
-	endfrom = fromssize / sizeof(*froms);
-	for (fromindex = 0; fromindex < endfrom; fromindex++) {
-		if (froms[fromindex] == 0)
-			continue;
-		frompc = (u_long)s_lowpc +
-		    (fromindex * HASHFRACTION * sizeof(*froms));
-		for (toindex = froms[fromindex]; toindex != 0;
-		   toindex = tos[toindex].link) {
-			if (debug)
-			    (void)fprintf(stderr,
-			    "[mcleanup] frompc 0x%x selfpc 0x%x count %d\n" ,
-			    frompc, tos[toindex].selfpc, tos[toindex].count);
-			rawarc.raw_frompc = frompc;
-			rawarc.raw_selfpc = (u_long)tos[toindex].selfpc;
-			rawarc.raw_count = tos[toindex].count;
-			write(fd, (char *)&rawarc, sizeof (rawarc));
-		}
-	}
-	close(fd);
-}
-
-int
-zeroit(addr, len, zbuf, zsize)
-	off_t addr;
-	int len;
-	char *zbuf;
-	int zsize;
-{
-	register int n;
-
-	while (len > 0) {
-		n = len < zsize ? len : zsize;
-		if (kvm_write(kd, addr, zbuf, n) != n)
-			return (-1);
-		addr += n;
-		len -= n;
-	}
 	return (0);
-}
-
-resetstate()
-{
-	off_t sbuf, ktos;
-	int ssiz, fromssize, tossize;
-	u_long s_textsize;
-	char zbuf[MAXBSIZE];
-
-	turnonoff(PROFILING_OFF);
-	bzero(zbuf, sizeof(zbuf));
-	ssiz = kfetch(N_SSIZ) - sizeof(struct phdr);
-	sbuf = kfetch(N_SBUF) + sizeof(struct phdr);
-	if (zeroit(sbuf, ssiz, zbuf, sizeof(zbuf))) {
-		(void)fprintf(stderr, "kgmon: sbuf write: %s\n",
-		    kvm_geterr(kd));
-		exit(7);
-	}
-	s_textsize = kfetch(N_S_TEXTSIZE);
-	fromssize = s_textsize / HASHFRACTION;
-	if (zeroit((off_t)kfetch(N_FROMS), fromssize, zbuf, sizeof(zbuf))) {
-		(void)fprintf(stderr, "kgmon: kfroms write: %s\n",
-		    kvm_geterr(kd));
-		exit(8);
-	}
-	tossize = (s_textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
-	ktos = kfetch(N_TOS);
-	if (zeroit((off_t)kfetch(N_TOS), tossize, zbuf, sizeof(zbuf))) {
-		(void)fprintf(stderr, "kgmon: ktos write: %s\n",
-		    kvm_geterr(kd));
-		exit(9);
-	}
-}
-
-turnonoff(onoff)
-	int onoff;
-{
-
-	if (kvm_write(kd, (off_t)nl[N_PROFILING].n_value,
-	    (char *)&onoff, sizeof(onoff)) != sizeof(onoff))
-		(void)fprintf(stderr,
-		    "kgmon: warning: can't turn profiling %s\n",
-		    onoff ? "off" : "on");
-}
-
-kfetch(index)
-	int index;
-{
-	off_t off;
-	int value;
-
-	if ((off = nl[index].n_value) == 0) {
-		(void)fprintf(stderr, "kgmon: %s: not defined in kernel\n",
-		    nl[index].n_name);
-		exit(11);
-	}
-	if (kvm_read(kd, off, (char *)&value, sizeof(value)) != sizeof(value)) {
-		(void)fprintf(stderr, "kgmon: kvm_read(%s): %s\n",
-		    nl[index].n_name, kvm_geterr(kd));
-		exit(13);
-	}
-	return (value);
 }
