@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)savecore.c	4.5 (Berkeley) 81/05/14";
+static	char *sccsid = "@(#)savecore.c	4.6 (Berkeley) 81/05/20";
 /*
  * savecore
  */
@@ -50,7 +50,6 @@ char	vers[80];
 char	core_vers[80];
 char	panic_mesg[80];
 int	panicstr;
-int	do_the_dump = 1;
 off_t	lseek();
 off_t	Lseek();
 
@@ -71,8 +70,10 @@ main(argc, argv)
 	(void) time(&now);
 	read_kmem();
 	log_entry();
-	if (do_the_dump && get_crashtime() && check_space())
+	if (get_crashtime() && check_space())
 		save_core();
+	else
+		exit(1);
 }
 
 char *
@@ -192,8 +193,12 @@ get_crashtime()
 	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_TIME].n_value)), 0);
 	Write(dumpfd, (char *)&clobber, sizeof clobber);
 	close(dumpfd);
-	if (dumptime == 0)
+	if (dumptime == 0) {
+#ifdef DEBUG
+		printf("dump time is 0\n");
+#endif
 		return 0;
+	}
 	printf("System went down at %s", ctime(&dumptime));
 	if (dumptime < now - LEEWAY || dumptime > now + LEEWAY) {
 		printf("Dump time is unreasonable\n");
