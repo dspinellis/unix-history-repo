@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_usrreq.c	6.14 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -161,7 +161,8 @@ uipc_usrreq(so, req, m, nam, rights)
 				    &sun_noname, m, rights)) {
 					sorwakeup(so2);
 					m = 0;
-				}
+				} else
+					error = ENOBUFS;
 			}
 			/* END XXX */
 			if (nam)
@@ -175,8 +176,10 @@ uipc_usrreq(so, req, m, nam, rights)
 				error = EOPNOTSUPP;
 				break;
 			}
-			if (so->so_state & SS_CANTSENDMORE)
-				return (EPIPE);
+			if (so->so_state & SS_CANTSENDMORE) {
+				error = EPIPE;
+				break;
+			}
 			if (unp->unp_conn == 0)
 				panic("uipc 3");
 			so2 = unp->unp_conn->unp_socket;
