@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.h,v 5.2 88/11/18 17:09:32 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.h,v $
- *	@(#)tp_pcb.h	7.5 (Berkeley) %G% *
+ *	@(#)tp_pcb.h	7.6 (Berkeley) %G% *
  *
  * 
  * This file defines the transport protocol control block (tpcb).
@@ -211,6 +211,7 @@ struct tp_pcb {
 #define	tp_no_disc_indications _tp_param.p_no_disc_indications
 #define	tp_dont_change_params _tp_param.p_dont_change_params
 #define	tp_netservice _tp_param.p_netservice
+#define	tp_version _tp_param.p_version
 
 	int tp_l_tpdusize;
 		/* whereas tp_tpdusize is log2(the negotiated max size)
