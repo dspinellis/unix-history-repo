@@ -1,4 +1,4 @@
-/*	if_de.c	6.4	84/03/27	*/
+/*	if_de.c	6.5	84/04/04	*/
 #include "de.h"
 #if NDE > 0
 
@@ -44,7 +44,7 @@
 #define	NRCV	4	/* number of receive buffers (must be > 1) */
 #define	NTOT	(NXMT + NRCV)
 
-int	dedebug = 1;
+int	dedebug = 0;
 
 int	deprobe(), deattach(), deintr();
 struct	uba_device *deinfo[NDE];
