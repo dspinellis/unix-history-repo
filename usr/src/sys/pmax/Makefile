@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.1 (Berkeley) %G%
+#	@(#)Makefile	7.2 (Berkeley) %G%
 
 # Makefile for pmax tags file
 
@@ -23,6 +23,6 @@ tags: FRC
 
 links:
 	-for i in ${DPMAX}; do \
-	    cd ../$$i && rm -f tags; ln -s ../tags tags; done
+	    (cd $$i && rm -f tags; ln -s ../tags tags); done
 
 FRC:
