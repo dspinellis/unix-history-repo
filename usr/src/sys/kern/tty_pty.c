@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tty_pty.c	7.12 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -81,6 +81,7 @@ ptsopen(dev, flag)
 		return (ENXIO);
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state & TS_ISOPEN) == 0) {
+		tp->t_state |= TS_WOPEN;
 		ttychars(tp);		/* Set up default chars */
 		tp->t_iflag = TTYDEF_IFLAG;
 		tp->t_oflag = TTYDEF_OFLAG;
@@ -96,7 +97,7 @@ ptsopen(dev, flag)
 		tp->t_state |= TS_WOPEN;
 		if (flag&FNDELAY)
 			break;
-		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		if (error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
 		    ttopen, 0))
 			return (error);
 	}
@@ -133,14 +134,14 @@ again:
 			    u.u_procp->p_flag&SVFORK)
 				return (EIO);
 			pgsignal(u.u_procp->p_pgrp, SIGTTIN, 1);
-			if (error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH,
-			    ttybg, 0))
+			if (error = ttysleep(tp, (caddr_t)&lbolt, 
+			    TTIPRI | PCATCH, ttybg, 0))
 				return (error);
 		}
 		if (tp->t_canq.c_cc == 0) {
 			if (flag & IO_NDELAY)
 				return (EWOULDBLOCK);
-			if (error = tsleep((caddr_t)&tp->t_canq,
+			if (error = ttysleep(tp, (caddr_t)&tp->t_canq,
 			    TTIPRI | PCATCH, ttyin, 0))
 				return (error);
 			goto again;
@@ -298,7 +299,6 @@ ptcread(dev, uio, flag)
 			return (0);	/* EOF */
 		if (flag & IO_NDELAY)
 			return (EWOULDBLOCK);
-if (ptydebug) printf("SLEEP(1) c_cf %d\n", u.u_procp->p_pid);	/* XXX */
 		if (error = tsleep((caddr_t)&tp->t_outq.c_cf, TTIPRI | PCATCH,
 		    ttyin, 0))
 			return (error);
@@ -500,7 +500,6 @@ block:
 			return (EWOULDBLOCK);
 		return (0);
 	}
-if (ptydebug) printf("SLEEP(2) c_cf %d\n", u.u_procp->p_pid);
 	if (error = tsleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI | PCATCH,
 	    ttyout, 0))
 		return (error);
