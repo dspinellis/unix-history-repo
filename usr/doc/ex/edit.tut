@@ -1,0 +1,1951 @@
+.ND Draft:\ \ \ April 5, 1979
+.RP
+.TL
+Edit:  A Tutorial
+.AU
+Ricki Blau
+.AU
+James Joyce
+.AI
+Computing Services
+University of California
+Berkeley, California 94720
+.AB
+.PP
+This narrative introduction to the use of the text editor
+.I edit
+assumes no prior familiarity with computers or with text editing.
+Its aim is to lead the beginning \s-2UNIX\(dg\s+2 user through the
+.FS
+\(dgUNIX is a trademark of Bell Laboratories.
+.FE
+fundamental steps of writing and revising a file of text.
+Edit,
+a version of the text editor
+.I ex,
+was designed to provide an informative environment
+for new and casual users.
+.PP
+This edition documents Versions 2.0 thru 3.1 of
+.I edit
+and
+.I ex .
+.PP
+We welcome comments and suggestions about this tutorial
+and the \s-2UNIX\s+2 documentation in general.
+Contact the \s-2UNIX\s+2 consultant in 217 Evans, 642-4072.
+.AE
+.SH
+.PP
+Text editing using a terminal connected to a computer
+allows a user to create, modify, and print text
+easily.  Creating text is as easy as typing it much
+as one would on an electric typewriter.
+Modifying text involves telling the text editor 
+what to add, change, or delete.
+Text is printed by giving the proper
+command to print the file contents, with or
+without special instructions as to the format
+of the desired output.
+.PP
+These lessons assume no prior familiarity with computers
+or with text editing.
+They consist of a series of text editing sessions
+which will lead you through the fundamental steps
+of creating and revising a file of text.
+After scanning each lesson and before beginning the next,
+you should follow the examples at a terminal to get a feeling
+for the actual process of text editing.
+Set aside some time for experimentation,
+and you will soon become familiar with using the
+computer to write and modify text.
+In addition to the actual use of the text editor,
+other features of \s-2UNIX\s0 will be very important to your work.
+You can begin to
+learn about these other features by
+reading ``Communicating with \s-2UNIX\s0''
+or one of the other tutorials
+which provide a general introduction to the system.
+You will be ready to proceed with this lesson as soon as
+you are familiar with your terminal and its special keys,
+the login procedure, and the ways of correcting typing errors.
+Let's first define some terms:
+.sp .5
+.IP program 12
+A set of instructions given to the computer,
+describing the sequence of steps which the computer performs
+in order to accomplish a specific task.
+As an example, a series of steps to balance your
+checkbook is a program.
+.IP UNIX
+\s-2UNIX\s0 is a special type of program,
+called an operating system, that supervises the machinery
+and all other programs comprising the total
+computer system.
+.IP edit
+.I edit
+is the name of the \s-2UNIX\s0 text editor which you will be learning to use,
+a program that aids you in writing or revising text.
+Edit was designed for beginning users,
+and is a simplified version of an editor called
+.I ex.
+.IP file
+Each \s-2UNIX\s0 account is allotted
+space for the permanent storage of information, such as programs, data or text.
+A file is a logical unit of data,
+for example, an essay, a program, or a chapter from a book,
+which is stored on a computer system.
+Once you create a file,
+it is kept until you instruct the system to remove it.
+You may create a file during one \s-2UNIX\s0 session, log out,
+and return to use it at a later time.
+Files contain anything you choose to write and store in them.
+The sizes of files vary to suit your needs;
+one file might hold only a single number while another might contain
+a very long document or program.
+The only way to save
+information from one session to the next is to store it in a file.
+.IP filename
+Filenames are used to distinguish one file from another,
+serving the same purpose as the labels of manila
+folders in a file cabinet.
+In order to write or access information in a file,
+you use the name of that file in a \s-2UNIX\s0 command,
+and the system will automatically locate the file.
+.IP disk
+Files are stored on an input/output device called a disk,
+which looks something like a stack of phonograph records.
+Each surface is coated with a material similar to the
+coating on magnetic recording tape, on which information is recorded.
+.IP buffer
+A temporary work space, made available to the user
+for the duration of a session of text editing
+and used for building and modifying
+the text file.
+We can imagine the buffer as a blackboard that is
+erased after each class, where each session with the editor
+is a class.
+.sp 2
+.SH
+.ce 1
+Session 1:  Creating a File of Text
+.sp 1
+.PP
+To use the editor you must first make contact with the computer
+by logging in to \s-2UNIX\s0.
+We'll quickly review the standard \s-2UNIX\s0 login procedure.
+.PP
+If the terminal you are using is directly linked to the computer,
+turn it on and press carriage return,
+usually
+labelled ``\s-1RETURN\s+1''.
+If your terminal connects with the computer over a telephone line,
+turn on the terminal, dial the system access number,
+and, when you hear a high-pitched tone, place the receiver of
+the telephone in the acoustic coupler.
+Press carriage return once and await the login message:
+.DS I 1i
+:login:
+.DE
+.PP
+Type your login name, which identifies you to \s-2UNIX\s0,
+on the same line as the login
+message, and press carriage return.
+If the terminal you are using has both upper
+and lower case, be sure you enter your login name
+in lower case; otherwise \s-2UNIX\s0 assumes your terminal
+has only upper case and will not recognize lower case
+letters you may type.
+\s-2UNIX\s0 types ``:login:'' and you reply
+with your login name, for example ``susan'':
+.DS I 1i
+:login: \fBsusan\fR \fI(and press carriage return)\fR
+.DE
+(In the examples, input typed by the user appears in
+.B "bold face"
+to distinguish it from the responses from \s-2UNIX\s0.)
+.PP
+\s-2UNIX\s0 will next respond with a request for a password
+as an additional precaution to prevent
+unauthorized people from using your account.
+The password will not appear when you type it,
+to prevent others from seeing it.
+The message is:
+.DS I 1i
+Password:    \fI(type your password and press carriage return)\fR
+.DE
+If any of the information you gave during the login
+sequence was mistyped or incorrect,
+\s-2UNIX\s0 will respond with
+.DS I 1i
+Login incorrect.
+.if t .sp .2v
+.if n .sp 1
+:login:
+.DE
+in which case you should start the login process anew.
+Assuming that you have successfully
+logged in, \s-2UNIX\s0
+will print the message of the day and eventually will present
+you with a % at the beginning of a fresh line.
+The % is the \s-2UNIX\s0 prompt symbol
+which tells you that \s-2UNIX\s0 is ready to accept a command.
+.bd I 3
+.SH
+Asking for \fIedit\fP
+.fl
+.bd I
+.PP
+You are ready to tell \s-2UNIX\s0 that you
+want to work with edit, the text editor.
+Now is a convenient time to choose
+a name for the file of text which you are about to create.
+To begin your editing session type
+.B edit
+followed by a space and then the filename
+which you have selected, for example ``text''.
+When you have completed the command,
+press carriage return and wait for edit's response:
+.DS I 1i
+% \fBedit text\fP    \fI(followed by a carriage return)\fR
+"text" No such file or directory
+:
+.DE
+If you typed the command correctly,
+you will now be in communication with edit.
+Edit has set aside a buffer for use as
+a temporary working space during your current editing session.
+It also checked to see if the file you named, ``text'',
+already existed.
+As we expected, it was unable to find such a file
+since ``text'' is the name of the new file that we will create.
+Edit confirms this with the line:
+.DS I 1i
+"text" No such file or directory
+.DE
+On the next line appears edit's prompt ``:'',
+announcing that edit expects a command from you.
+You may now begin to create the new file.
+.SH
+The ``not found'' message
+.PP
+If you misspelled edit by typing, say, ``editor'',
+your request would be handled as follows:
+.DS I 1i
+% \fBeditor\fP
+editor:  not found
+%
+.DE
+Your mistake in calling edit ``editor'' was
+treated by \s-2UNIX\s0 as a request
+for a program named ``editor''.
+Since there is no program
+named ``editor'',
+\s-2UNIX\s0 reported that the program was ``not found''.
+A new % indicates that \s-2UNIX\s0 is ready for another command,
+so you may enter the correct command.
+.SH
+A summary
+.PP
+Your exchange with \s-2UNIX\s0 as you logged in and made contact with edit
+should look something like this:
+.DS I 1i
+:login: \fBsusan\fP
+Password:
+Computer Center \s-2UNIX\s0 System
+\&... A Message of General Interest ...
+% \fBedit text\fP
+"text" No such file or directory
+:
+.DE
+.SH
+Entering text
+.PP
+You may now begin to enter text into the buffer.
+This is done by \fIappending\fP text to whatever
+is currently in the buffer.
+Since there is nothing in the buffer at the moment,
+you are appending text to nothing; in effect, you 
+are creating text.
+Most edit commands have two forms:
+a word which describes what the command does
+and a shorter abbreviation of that word.
+Either form may be used.
+Many beginners find the full command names
+easier to remember,
+but once you are familiar with editing you may
+prefer to type the shorter abbreviations.
+The command to input text is ``append''
+which may be abbreviated ``a''.
+Type
+.B append
+and press carriage return.
+.DS I 1i
+% \fBedit text
+\fR:\|\fBappend
+.R
+.DE
+.SH
+.bd I 3
+Messages from
+.I edit
+.fl
+.bd I
+.PP
+If you make a mistake in entering a command and
+type something that edit does not recognize,
+edit will respond with a message
+intended to help you diagnose your error.
+For example, if you misspell the command to input text by typing,
+perhaps, ``add'' instead of ``append'' or ``a'',
+you will receive this message:
+.DS I 1i
+:\|\fBadd\fR
+add: Not an editor command
+:
+.DE
+When you receive a diagnostic message,
+check what you typed in order to determine what
+part of your command confused edit.
+The message above means that edit
+was unable to recognize your mistyped command
+and, therefore, did not execute it.
+Instead, a new ``:''
+appeared to let you know that
+edit is again ready to execute a command.
+.SH
+Text input mode
+.PP
+By giving the command ``append'' (or using the abbreviation ``a''),
+you entered
+.I
+text input mode,
+.R
+also known as
+.I
+append mode.
+.R
+When you enter text input mode,
+edit responds by doing nothing.
+You will not receive any prompts
+while in text input mode.
+This is your signal
+that you are to begin entering lines of text.  You can enter
+pretty much anything you want on the lines.  The
+lines are transmitted one by one to the buffer
+and held there during the editing session.
+You may append as much text as you want, and
+.I
+when you wish to stop entering text lines you should
+type a period as the only character on the line
+and press carriage return.
+.R
+When you give this signal that you want to stop appending text,
+you will exit from text input mode and reenter command mode.
+Edit will again
+prompt you for a command by printing ``:''.
+.PP
+Leaving append mode does not destroy the text in
+the buffer.  You have to leave append
+mode to do any of the other kinds of editing,
+such as changing, adding, or printing text.
+If you type a period as the first character and
+type any other character on the same line,
+edit will believe you want to remain in append mode
+and will not let you out.
+As this can be very frustrating, 
+be sure to type
+.B only
+the period and carriage return.
+.PP
+This is as good a place as any to learn an important
+lesson about computers and text:  a blank space is
+a character as far as a computer is concerned.  
+If you so much as type a period followed by a blank
+(that is, type a period and then the space bar on the keyboard),
+you will remain in append mode with the last line of text
+being:
+.DS I 1i
+.B
+.ps +2
+\&.
+.ps -2
+.R
+.DE
+Let's say that the lines of text you enter are
+(try to type
+.B exactly
+what you see, including ``thiss''):
+.DS I 1i
+.B
+This is some sample text.
+And thiss is some more text.
+Text editing is strange, but nice.
+\&.
+.R
+.DE
+The last line is the period followed by a carriage return
+that gets you out of append mode.  
+If while typing the line you hit an incorrect key,
+recall that
+you may delete the incorrect character
+or cancel the entire line of input by erasing in the usual way.
+Refer to ``Communicating with \s-2UNIX\s0'' if you need to review
+the procedures for making a correction.
+Erasing a character or cancelling a line must be done
+before the line has been completed by a carriage return.
+We will discuss changes in lines already typed in session 2.
+.SH
+Writing text to disk
+.PP
+You are now ready to edit the text.  The simplest kind of editing
+is to write it to disk as a file for safekeeping
+after the session is over.
+This is the only way to save information from one session to the next,
+since the editor's buffer is temporary and will last only until the
+end of the editing session.
+Thus, learning how to write a file to disk is second in
+importance only to entering the text.
+To write the contents of the buffer to a disk
+file, use the command ``write''
+(or its abbreviation ``w''):
+.DS I 1i
+:\|\fBwrite
+.R
+.DE
+Edit will copy the buffer to a disk file.
+If the file does not yet exist,
+a new file will be created automatically
+and the presence of a ``[New file]'' will be noted.
+The newly-created file will be given the name specified when
+you entered the editor, in this case ``text''.
+To confirm that the disk file has been successfully written,
+edit will repeat the filename and give
+the number of lines and the total
+number of characters in the file.
+The buffer remains unchanged by the ``write'' command.
+All of the lines which were written to disk will still be
+in the buffer,
+should you want to modify or add to them.
+.PP
+Edit must have a filename to use before it can write a file.
+If you forgot to indicate the name of the file
+when you began the editing session,
+edit will print
+.DS I 1i
+No current filename
+.DE
+in response to your write command.
+If this happens, you can specify the filename in a new write command:
+.DS I 1i
+:\|\fBwrite text
+.R
+.DE
+After the ``write'' (or ``w'') type a space and then the name of the file.
+.SH
+Signing off
+.PP
+We have done enough for this first lesson on using the
+\s-2UNIX\s0 text editor, and are ready to quit the session with edit.
+To do this we type ``quit'' (or ``q'') and press carriage return:
+.DS I 1i
+:\|\fBwrite
+.R
+"text" [New file]  3 lines, 90 characters
+:\|\fBquit\fR
+%
+.DE
+The % is from \s-2UNIX\s0 to tell you that your session with edit is
+over and you may command \s-2UNIX\s0 further.  Since we want
+to end the entire session at the terminal we also need to
+exit from \s-2UNIX\s0.
+In response to the \s-2UNIX\s0 prompt of ``\|%\|''
+type a ``control d''.  This is done by holding down the control
+key (usually labelled ``CTRL'') and simultaneously
+pressing the d key.  This
+will end your session with \s-2UNIX\s0 and will ready the
+terminal for the next user.
+It is always important to type a ``control-d'' at the end of a session
+to make absolutely sure no one
+could accidentally stumble into your abandoned 
+session and thus gain access to your files,
+tempting even the most honest of souls.
+.PP
+This is the end of the first session on \s-2UNIX\s0 text editing.
+.bp
+.ND
+.TL
+Session 2
+.PP
+Login with \s-2UNIX\s0 as in the first session:
+.DS I 1i
+:login: \fBsusan\fP  \fI(carriage return)\fR
+Password:       \fI(give password and carriage return)\fR
+.if t .sp .2v
+.if n .sp 1
+Computer Center \s-2UNIX\s0 System
+% 
+.DE
+This time when you say that you want to edit,
+you can specify the name of the file you worked on last time.
+This will
+start edit working and it will fetch the contents of the
+file into the buffer, so that you can resume editing the same file.
+When edit has copied the file into the buffer, it
+will repeat its name and tell
+you the number of lines and characters it contains.
+Thus,
+.DS I 1i
+.B
+% edit text
+.R
+"text" 3 lines, 90 characters
+:
+.DE
+means you asked edit to fetch
+the file named ``text'' for editing,
+causing it to copy the
+90 characters of text into the buffer.
+Edit awaits
+your further instructions.
+In this session, we will append more text to our file,
+print the contents of the buffer, and learn to change the text of a line.
+.SH
+Adding more text to the file
+.PP
+If you want to add more to the end of your
+text you may do so by using the append command to enter text input mode.
+Here we'll use the abbreviation for the append command, ``a'':
+.DS I 1i
+:\|\fBa
+This is text added in Session 2.
+It doesn't mean much here, but
+it does illustrate the editor.
+\&.
+.R
+.DE
+.SH
+\ \ Interrupt
+.PP
+Should you press the \s-2RUBOUT\s+2 key (sometimes labelled \s-2DELETE\s+2)
+while working with edit,
+it will send this message to you:
+.DS I 1i
+Interrupt
+:
+.DE
+Any command that edit might be executing
+is terminated by rubout or delete,
+causing edit to prompt you for a new command.
+If you are appending text at the time,
+you will exit from append mode and be expected to give another command.
+The line of text that you were typing when the append command was interrupted
+will not be entered into the buffer.
+.SH
+Making corrections
+.PP
+If you have read a general introduction to \s-2UNIX\s0,
+such as ``Communicating with \s-2UNIX\s0'',
+you will recall that it is possible to erase individual
+letters that you have typed.
+This is done by typing the designated erase character,
+usually the number sign (#),
+as many times as there are characters you want to erase.
+If you make a bad start
+in a line
+and would like to begin again, this technique
+is cumbersome \- what if you had 15
+characters in your line and wanted to get rid of them?
+To do so either requires:
+.bd S 3
+.DS I 1i
+.B
+This is yukky tex###############
+.R
+.DE
+with no room for the great text you'd like to type, or,
+.DS I 1i
+.B
+This is yukky tex@This is great text.
+.R
+.fl
+.bd S
+.DE
+When you type the at-sign (@), you erase
+the entire line typed so far.
+You may immediately begin to retype the line.
+This, unfortunately, does not help after you type the
+line and press carriage return.  
+To make corrections in lines which have been completed,
+it is necessary to use the editing commands
+covered in this session and those that follow.
+.SH
+Listing what's in the buffer
+.PP
+Having appended text to what you wrote in Lesson 1,
+you might be curious to see what is in the buffer.
+To print the contents of the buffer, type the command:
+.DS I 1i
+:\|\fB1,$p
+.R
+.DE
+The ``1'' stands for line 1 of the buffer,
+the ``$'' is a special symbol designating the last line
+of the buffer,
+and ``p'' (or \fBprint\fR) is the command to print from line 1
+to the end of the buffer.  Thus,
+``1,$p''
+gives you:
+.DS I 1i
+This is some sample text.
+And thiss is some more text.
+Text editing is strange, but nice.
+This is text added in Session 2.
+It doesn't mean much here, but
+it does illustrate the editor.
+.DE
+Occasionally, you may
+enter into the buffer a character which can't be printed,
+which is done by striking a key while the \s-2CTRL\s0 key is depressed.
+In printing lines, edit uses a special notation to
+show the existence of non-printing characters.
+Suppose you had introduced the non-printing character ``control-a''
+into the word ``illustrate''
+by accidently holding down the \s-2CTRL\s0 key while
+typing ``a''.
+Edit would display
+.DS I 1i
+it does illustr^Ate the editor.
+.DE
+if you asked to have the line printed.
+To represent the control-a, edit shows ``^A''.
+The sequence ``^'' followed by a capital letter stands for the one character
+entered by holding down the \s-2CTRL\s0 key and typing the letter
+which appears after the ``^''.
+We'll soon discuss the commands which can be used
+to correct this typing error.
+.PP
+In looking over the text we see that
+``this'' is typed as ``thiss'' in the second line, as suggested.
+Let's correct the spelling.
+.SH
+Finding things in the buffer
+.PP
+In order to change something in the buffer we first need to
+find it.  We can find ``thiss'' in the text we have
+entered by looking at a listing
+of the lines.  Physically speaking, we search the lines
+of text looking for ``thiss'' and stop searching when
+we have found it.
+The way to tell edit to search for something
+is to type it inside slash marks:
+.DS I 1i
+:\|\fB/thiss/
+.R
+.DE
+By typing
+.B /thiss/
+and pressing carriage return edit is
+instructed to search for ``thiss''.
+If we asked edit to look for a pattern of characters
+which it could not find in the buffer,
+it would respond ``Pattern not found''.
+When edit finds
+the characters ``thiss'', it will print the line of text
+for your inspection:
+.DS I 1i
+And thiss is some more text.
+.DE
+Edit is now positioned in the buffer at the
+line which it just printed,
+ready to make a change in the line.
+.SH
+The current line
+.PP
+At all times during an editing session,
+edit keeps track of the line in the buffer where it is positioned.
+In general, the line which has been most recently
+printed, entered, or changed
+is considered to be the current position in the buffer.
+You can refer to your current position in the buffer by the
+symbol
+period (.) usually known by the name ``dot''.
+If you type ``.'' and carriage
+return you will be instructing edit to print the current line:
+.DS I 1i
+:\|\fB\s+2\&.\s-2
+.R
+And thiss is some more text.
+.DE
+.PP
+If you want to know the number of the current line,
+you can type
+.B \&.=
+and carriage return, 
+and edit will respond with the line number:
+.DS I 1i
+:\|\fB\s+2.\s-2=
+.R
+2
+.DE
+If you type the number of any line and a carriage return,
+edit will
+position you at that line and
+print its contents:
+.DS I 1i
+:\|\fB2
+.R
+And thiss is some more text.
+.DE
+You should experiment with these commands to assure
+yourself that you understand what they do.
+.SH
+Numbering lines (nu)
+.PP
+The
+.B
+number (nu)
+.R
+command is similar to print,
+giving both the number and the text of each printed line.
+To see the number and the text of the current line type
+.DS I 1i
+:\|\fBnu
+.R
+\0\0\0\0\02\0\0And thiss is some more text.
+.DE
+Notice that the shortest abbreviation for the number command is
+``nu'' (and not ``n'' which is used for a different command).
+You may specify a range of lines
+to be listed by the number command in the same way that lines
+are specified for print.
+For example, ``1,$nu'' lists all lines in the buffer with the
+corresponding line numbers.
+.SH
+Substitute command (s)
+.PP
+Now that we have found our misspelled word it is 
+time to change it from ``thiss'' to ``this''.
+As far as edit is concerned,
+changing things is a matter of
+substituting one thing for another.
+As
+.I a
+stood for
+.I append,
+so
+.I s
+stands for
+.I substitute.
+We will use the abbreviation ``s'' to reduce the chance
+of mistyping the substitute command.
+This command will instruct edit to make the change:
+.DS I 1i
+2s/thiss/this/
+.DE
+We first indicate the line to be changed, line 2,
+and then
+type an ``s'' to indicate we want
+substitution.
+Inside the first set of slashes
+are the characters that we want to change,
+followed by the characters to replace them
+and then a closing slash mark.
+To summarize:
+.DS I 1i
+2s/ \fIwhat is to be changed\fR / \fIwhat to change to \fR/
+.DE
+If edit finds an exact match of the characters to be
+changed it will make the change
+.B only
+in the first occurrence of 
+the characters.
+If it does not find the characters
+to be changed it will respond:
+.DS I 1i
+Substitute pattern match failed
+.DE
+indicating your instructions could not be carried out.
+When edit does find the characters which you want to change,
+it will make the substitution and automatically print
+the changed line, so that you can check that the correct substitution
+was made.
+In the example,
+.DS I 1i
+:\|\fB2s/thiss/this/
+.R
+And this is some more text.
+:
+.DE
+line 2 (and line 2 only) will be searched for the characters
+``thiss'', and when the first exact match is found, ``thiss''
+will be changed to ``this''.
+Strictly speaking, it was not necessary above to
+specify  the number of the line to be changed.
+In
+.DS I 1i
+:\|\fBs/thiss/this/
+.R
+.DE
+edit will assume that we mean to change
+the line where we are currently positioned
+(``.'').
+In this case,
+the command without a line number would have produced the same result
+because we were already positioned
+at the line we wished to change.
+.PP
+For another illustration of substitution
+we may choose the line:
+.DS I 1i
+Text editing is strange, but nice.
+.DE
+We might like to be a bit more positive.  Thus, we could
+take out the characters ``strange, but\ '' so the line 
+would read:
+.DS I 1i
+Text editing is nice.
+.DE
+A command which will first position edit at that line
+and then make the substitution is:
+.DS I 1i
+:\|\fB/strange/s/strange, but //
+.R
+.DE
+.PP
+What we have done here is combine our search with
+our substitution.
+Such combinations are perfectly legal.
+This illustrates that we do not necessarily have to use
+line numbers to identify a line to edit.
+Instead, we may identify the line we want to change
+by asking edit to search for a specified pattern of letters
+which occurs in that line.
+The parts of the above command are:
+.in +1i
+.TS
+.nr 35 \n(.u
+.nf
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.nr 80 0
+.nr 38 \w\f3/strange/\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3s\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3/strange, but //\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 81 0
+.nr 38 \wtells edit to find the characters ``strange'' in the text
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wtells edit we want to make a substitution
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wsubstitutes nothing at all for the characters ``strange, but ''
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.75i .tm Table at line 307 file ed2.tbl is too wide - \n(TW units
+.fc  
+.nr #T 0
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+..
+.ec
+.ta \n(80u \n(81u 
+\&\h'|\n(40u'\f3/strange/\fP\h'|\n(41u'tells edit to find the characters ``strange'' in the text
+.ta \n(80u \n(81u 
+\&\h'|\n(40u'\f3s\fP\h'|\n(41u'tells edit we want to make a substitution
+.ta \n(80u \n(81u 
+\&\h'|\n(40u'\f3/strange, but //\fP\h'|\n(41u'substitutes nothing at all for the characters ``strange, but ''
+.fc
+.nr T. 1
+.T# 1
+.if \n(35>0 .fi
+.TE
+.in -1i
+.PP
+You should note the space after ``but'' in ``/strange, but /''. 
+If you do not indicate the space is to be taken out,
+your line will be:
+.DS I 1i
+.if t Text editing is   nice.
+.if n Text editing is  nice.
+.DE
+which looks a little funny   
+because of the extra space between ``is'' and ``nice''.
+Again, we realize from this that a blank space
+is a real character to a computer, and in editing text
+we need to be aware of spaces
+within a line just as we would be aware of an ``a'' or 
+a ``4''.
+.SH
+Another way to list what's in the buffer (z)
+.PP
+Although the print command is useful for looking at specific lines
+in the buffer,
+other commands can be more convenient for
+viewing large sections of text.
+You can ask to see a screen full of text at a time
+by using the command
+.B z.
+If you type
+.DS I 1i
+:\|\fB1z
+.R
+.DE
+edit will start with line 1 and continue printing lines,
+stopping either when the screen of
+your terminal is full
+or when the last line in the buffer has been printed.
+If you want to read the next segment of text, give the command
+.DS I 1i
+:\|\fBz
+.DE
+If no starting line number is given for the z command,
+printing will start at the ``current'' line, in this case the
+last line printed.
+Viewing lines in the buffer one screen full at a time
+is known as paging.
+Paging can also be used to print a section of text on a hard-copy terminal.
+.SH
+Saving the modified text
+.PP
+This seems to be a good place to pause in our work,
+and so we should end the second session.
+If you (in haste) type ``q'' to quit the session
+your dialogue with edit will be:
+.DS I 1i
+:\|\fBq
+.R
+No write since last change (q! quits)
+:
+.DE
+This is edit's warning that you have not written
+the modified contents of the buffer to disk.
+You run the risk of losing the work you have done
+during the editing session since the latest write
+command.  Since in this lesson we have not written
+to disk at all, everything we have done
+would be lost.
+If we did not want to save the work done during
+this editing session, we would have to type ``q!''
+to confirm that we indeed wanted to end the session
+immediately, losing the contents of the buffer.
+However,
+since we want to preserve what
+we have edited, we need to say:
+.DS I 1i
+:\|\fBw
+.R
+"text" 6 lines, 171 characters
+.DE
+and then,
+.DS I 1i
+:\|\fBq
+% \fI{control d}\fR
+.DE
+and hang up the phone or turn off the terminal when
+\s-2UNIX\s0 asks for a name.
+This is the end of the second session on \s-2UNIX\s0 text editing.
+.bp
+.ND
+.TL
+Session 3
+.SH
+Bringing text into the buffer (e)
+.PP
+Login to \s-2UNIX\s0 and make contact with edit.  
+You should try to login without
+looking at the notes, but if you must
+then by all means do.
+.PP
+Did you remember to give the name of the file
+you wanted to edit?  That is, did you say
+.DS I 1i
+% \fBedit text\fR
+.DE
+or simply
+.DS I 1i
+% \fBedit\fR
+.DE
+Both ways get you in contact with edit, but the first way
+will bring a copy of the file named ``text'' into
+the buffer.  
+If you did forget to tell edit the name of your file,
+you can get it into the buffer by
+saying:
+.DS I 1i
+:\|\fBe text
+.R
+"text" 6 lines, 171 characters
+.DE
+The command
+.B edit,
+which may be abbreviated ``\fBe\fR'',
+tells edit that you want
+to erase anything that might already be in 
+the buffer and bring a copy of the file ``text'' into the buffer
+for editing.
+You may also use the edit (e) command to change files in
+the middle of an editing session 
+or to give edit the name of a new file that you want to create.
+Because the edit command clears the buffer,
+you will receive a warning if you try to edit a new file without
+having saved a copy of the old file.
+This gives you a chance to write the contents of the buffer to disk
+before editing the next file.
+.SH
+Moving text in the buffer (m)
+.PP
+Edit allows you to move lines of text
+from one location in the buffer to another
+by means of the
+.B move
+(\fBm\fR) command:
+.DS I 1i
+:\|\fB2,4m$
+.R
+.DE
+This command directs edit to move lines 2, 3, and 4
+to the end of the buffer ($).  
+The format for the move command is that you specify
+the first line to be moved, the last line to be moved,
+the move command ``m'', and the line after which
+the moved text is to be placed.
+Thus,
+.DS I 1i
+:\|\fB1,6m20
+.R
+.DE
+would instruct edit to move lines 1 through 6 (inclusive) 
+to a position after line 20 in the buffer.
+To move only one line, say, line 4,
+to a position in the buffer after line 6, 
+the command would be ``4m6''.
+.PP
+Let's move some text using the command:
+.DS I 1i
+:\|\fB5,$m1
+.R
+2 lines moved
+it does illustrate the editor.
+.DE
+After executing a command which changes more than one line of the buffer,
+edit tells how many lines were affected by the change.
+The last moved line is printed for your inspection.
+If you want to see more than just the last line,
+use the print (p), z, or number (nu) command to view more text.
+The buffer should now contain:
+.DS I 1i
+This is some sample text.
+It doesn't mean much here, but
+it does illustrate the editor.
+And this is some more text.
+Text editing is nice.
+This is text added in Session 2.
+.DE
+We can restore the original order by typing:
+.DS I 1i
+:\|\fB4,$m1
+.R
+.DE
+or, combining context searching and the move command:
+.DS I 1i
+:\|\fB/And this is some/,/This is text/m/This is some sample/
+.R
+.DE
+The problem with combining context searching
+with the move command 
+is that the chance of making a typing error
+in such a long command is greater than
+if one types line numbers.
+.SH
+Copying lines (copy)
+.PP
+The
+.B copy
+command
+is used to make a second copy of specified lines,
+leaving the original lines where they were.
+Copy
+has the same format as the move command, for example:
+.DS I 1i
+:\|\fB12,15copy $
+.R
+.DE
+makes a copy of lines 12 through 15,
+placing the added lines after the buffer's end ($).
+Experiment with the copy command
+so that you can become familiar with how it works.
+Note that the shortest abbreviation for copy is
+``co'' (and
+.B not
+the letter ``c'' which has another meaning).
+.SH
+Deleting lines (d)
+.PP
+Suppose you want to delete 
+the line
+.DS I 1i
+This is text added in Session 2.
+.DE
+from the buffer.
+If you know the number of the line to be deleted,
+you can type
+that number followed by
+``\fBdelete\fR'' or ``\fBd\fR''.
+This example deletes line 4:
+.DS I 1i
+:\|\fB4d
+.R
+It doesn't mean much here, but
+.DE
+Here ``4'' is the number of the line to be deleted and
+``delete'' or ``d'' is the command to delete the line.
+After executing the delete command,
+edit prints the line which has become the current line (``.'').
+.PP
+If you do not happen to know the line number
+you can search for the line and then delete it using this
+sequence of commands:
+.DS I 1i
+:\|\fB/added in Session 2./
+.R
+This is text added in Session 2.
+:\|\fBd
+.R
+It doesn't mean much here, but
+.DE
+The ``/added in Session 2./''
+asks edit to locate and print
+the next line which contains the indicated text.
+Once you are sure that you have correctly specified the line that
+you want to delete,
+you can enter the delete (d) command.
+In this case it is not necessary to
+specify a line number before the ``d''.
+If no line number is given,
+edit deletes the current line (``.''),
+that is, the line found by our search.
+After the deletion, your buffer should contain:
+.DS I 1i
+This is some sample text.
+And this is some more text.
+Text editing is nice.
+It doesn't mean much here, but
+it does illustrate the editor.
+.DE
+To delete both lines 2 and 3:
+.DS I 1i
+And this is some more text.
+Text editing is nice.
+.DE
+you type
+.DS I 1i
+:\|\fB2,3d
+.R
+.DE
+which specifies the range of lines from 2 to 3,
+and the operation on those lines \- ``d'' for delete.
+.PP
+Again, this presumes that you know the line numbers for
+the lines to be deleted.
+If you do not you might combine the search command
+with the delete command as so:
+.DS I 1i
+:\|\fB/And this is some/,/Text editing is nice./d
+.R
+.DE
+.SH
+A word or two of caution:
+.PP
+In using the search function to locate lines to
+be deleted you should be
+.B
+absolutely sure
+.R
+the characters you give as the basis for the search
+will take edit to the line you want deleted.
+Edit will search for the first
+occurrence of the characters starting from where
+you last edited \-
+that is, from the line you see printed if you type dot (.).
+.PP
+A search based on too few
+characters may result in the wrong lines being deleted,
+which edit will do as easily as if you had meant it.
+For this reason, it is usually safer
+to specify the search and then delete in two separate steps,
+at least until you become familiar enough with using the editor
+that you understand how best to specify searches.
+For a beginner it is not a bad idea to double-check
+each command before pressing carriage return to send the command on its way.
+.SH
+Undo (u) to the rescue
+.PP
+The
+.B
+undo (u)
+.R
+command has the ability to
+reverse the effects of the last command.
+To undo the previous command, type
+``u'' or ``undo''.
+Undo can rescue
+the contents of the buffer from many an unfortunate mistake.
+However, its powers are not unlimited,
+so it is still wise to be reasonably careful about the commands you give.
+It is possible to undo only commands which
+have the power to change the buffer, for example
+delete, append, move, copy, substitute, and even undo itself.
+The commands write (w) and edit (e) which interact with disk files
+cannot be undone, nor can commands such as print which do not change
+the buffer.
+Most importantly,
+the
+.B only
+command which can be reversed by undo
+is the
+last ``undo-able'' command which you gave.
+.PP
+To illustrate,
+let's issue an undo command.
+Recall that the last buffer-changing command we gave deleted
+the lines which were formerly numbered 2 and 3.
+Executing undo at this moment will reverse the effects
+of the deletion, causing those two lines to be
+replaced in the buffer.
+.DS I 1i
+:\|\fBu
+.R
+2 more lines in file after undo
+And this is some more text.
+.DE
+Here again, edit informs you if the command affects more
+than one line,
+and prints
+the text of the line which is now ``dot'' (the current line).
+.SH
+More about the dot (.) and buffer end ($)
+.PP
+The function assumed by the symbol dot depends on its context.
+It can be used:
+.IP
+1.  to exit from append mode we type dot (and only a dot) on
+a line and press carriage return;
+.IP
+2.  to refer to the line we are at in the buffer.
+.LP
+Dot can also be combined with the equal sign to get
+the number of the line currently being edited:
+.DS I 1i
+:\|\fB\&.=
+.R
+.DE
+Thus if we type ``\fB.\fR='' we are asking for the number of the line
+and if we type ``\fB.\fR'' we are asking for the text of the line.
+.PP
+In this editing session and the last, we used the dollar
+sign to indicate the end of the buffer
+in commands such as print, copy, and move.
+The dollar sign as a command asks edit to print the last
+line in the buffer.
+If the dollar sign is combined with the equal sign ($=)
+edit will print the line number corresponding to the
+last line in the buffer.
+.PP
+``\fB.\fR'' and ``$'' therefore represent line numbers.
+Whenever appropriate, these symbols can be used in
+place of line numbers in commands.
+For example
+.DS I 1i
+:\|\fB\s+2.\s-2,$d
+.R
+.DE
+instructs edit to delete all lines from the current line (\fB.\fR)
+to the end of the buffer.
+.SH
+Moving around in the buffer  (+ and \-)
+.PP
+It is frequently convenient during an editing session
+to go back and re-read a previous line.
+We could specify a context search for a line we want to
+read if we remember some of its text,
+but if we simply want to see what was written a few, say 3, lines
+ago, we can type
+.DS I 1i
+\-3p
+.DE
+This tells edit to move back to a position 3 lines
+before the current line (.)
+and print that line.
+We can move forward in the buffer similarly:
+.DS I 1i
++2p
+.DE
+instructs edit to print the line which is 2
+ahead of our current position.
+.PP
+You may use ``+'' and ``\-'' in any command where edit
+accepts line numbers.
+Line numbers specified with ``+'' or ``\-''
+can be combined to print a range of lines.
+The command
+.DS I 1i
+:\|\fB\-1,+2copy$
+.R
+.DE
+makes a copy of 4 lines:  the current line, the line before it,
+and the two after it.
+The copied lines will be placed after the last line
+in the buffer ($).
+.PP
+Try typing only ``\-''; you will move back one line just as
+if you had typed ``\-1p''.
+Typing the command ``+'' works similarly.
+You might also try typing a few plus or minus signs in a row
+(such as ``+++'') to see edit's response.
+Typing a carriage return alone on a line is the equivalent
+of typing ``+1p''; it will move you one line ahead in the buffer
+and print that line.
+.PP
+If you are at the last line of the buffer and try
+to move further ahead, perhaps by typing a ``+'' or
+a carriage return alone on the line,
+edit will remind you that you are at the end of the buffer:
+.DS I 1i
+At end-of-file
+.DE
+Similarly, if you try to move to a position before the first line,
+edit will print one of these messages:
+.DS I 1i
+Nonzero address required on this command
+Negative address \- first buffer line is 1
+.DE
+The number associated with a buffer line is the line's ``address'',
+in that it can be used to locate the line.
+.SH
+Changing lines (c)
+.PP
+There may be occasions when you want to delete certain lines and
+insert new text in their place.
+This can be accomplished easily with the
+.B "change (c)"
+command.
+The change command instructs edit to delete specified lines
+and then switch to text input mode in order to
+accept the text which will replace them.
+Let's say we want to change the first two lines in the buffer:
+.DS I 1i
+This is some sample text.
+And this is some more text.
+.DE
+to read
+.DS I 1i
+This text was created with the \s-2UNIX\s0 text editor.
+.DE
+To do so, you can type:
+.DS I 1i
+:\|\fB1,2c
+.R
+2 lines changed
+.B
+This text was created with the \s-2UNIX\s0 text editor.
+\s+2\&.\s-2
+.R
+:
+.DE
+In the command
+.B 1,2c
+we specify that we want to change
+the range of lines beginning with 1 and ending with 2
+by giving line numbers as with the print command.
+These lines will be deleted.
+After a carriage return enters the change command,
+edit notifies you if more than one line will be changed
+and places you in text input mode.
+Any text typed on the following lines will be inserted into
+the position where lines were deleted by the change command.
+You will remain in text input mode until you exit in the usual way,
+by typing a period alone on a line.
+Note that the number of lines added to the buffer need not be
+the same as the number of lines deleted.
+.sp 1
+.PP
+This is the end of the third session on text editing with \s-2UNIX\s0.
+.bp
+.ND
+.TL
+Session 4
+.PP
+This lesson covers several topics, starting with
+commands which apply throughout the buffer,
+characters with special meanings,
+and how to issue \s-2UNIX\s0 commands while in the editor.
+The next topics deal with files:
+more on reading and writing,
+and methods of recovering files lost in a crash.
+The final section suggests sources of further information.
+.SH
+Making commands global (g)
+.PP
+One disadvantage to the commands we have used for
+searching or substituting is that if you
+have a number of instances of a word to change 
+it appears that you have to type the command 
+repeatedly, once for
+each time the change needs to be made.
+Edit, however, provides a way to make commands
+apply to the entire contents of the buffer \-
+the
+.B
+global (g)
+.R
+command.
+.PP
+To print all lines
+containing a certain sequence of characters
+(say, ``text'')
+the command is:
+.DS I 1i
+:\|\fBg/text/p
+.R
+.DE
+The ``g'' instructs edit to
+make a global search for all lines
+in the buffer containing the characters  ``text''.
+The ``p'' prints the lines found.
+.PP
+To issue a global command, start by typing a ``g'' and then a search
+pattern identifying
+the lines to be affected.
+Then, on the same line, type the command to be
+executed on the identified lines.
+Global substitutions are frequently useful.
+For example,
+to change all instances of the word ``text'' to the word ``material''
+the command would be a combination of the global search and the
+substitute command:
+.DS I 1i
+:\|\fBg/text/s/text/material/g
+.R
+.DE
+Note the ``g'' at the end of the global command
+which instructs edit to change
+each and every instance of ``text'' to ``material''.
+If you do not type the ``g'' at the end of the command
+only the
+.I first
+instance of ``text'' in each line will be changed
+(the normal result of the substitute command).
+The ``g'' at the end of the command is independent of the ``g''
+at the beginning.
+You may give a command such as:
+.DS I 1i
+:\|\fB14s/text/material/g
+.R
+.DE
+to change every instance of ``text'' in line 14 alone.
+Further, neither command will change ``Text'' to ``material''
+because ``Text'' begins with a capital rather than a lower-case
+.I t.
+.PP
+Edit does not automatically print the lines modified by a
+global command.
+If you want the lines to be printed, type a ``p''
+at the end of the global command:
+.DS I 1i
+:\|\fBg/text/s/text/material/gp
+.R
+.DE
+The usual qualification should be made
+about using the global command in combination with any other \-
+in essence, be sure of what you are telling edit to do
+to the entire buffer.  For example,
+.DS I 1i
+:\|\fBg/ /d
+.R
+72 less lines in file after global
+.DE
+will delete every line containing a blank anywhere in it.
+This could adversely affect
+your document, since most lines have spaces between words
+and thus would be deleted.
+After executing the global command,
+edit will print a warning if the command added or deleted more than one line.
+Fortunately, the undo command can reverse
+the effects of a global command.
+You should experiment with the global command
+on a small buffer of text to see what it can do for you.
+.SH
+More about searching and substituting
+.PP
+In using slashes to identify a character string
+that we want to search for or change,
+we have always specified the exact characters.
+There is a less tedious way to
+repeat the same string of characters.
+To change ``noun'' to ``nouns'' we may type either
+.DS I 1i
+:\|\fB/noun/s/noun/nouns/
+.R
+.DE
+as we have done in the past,
+or a somewhat abbreviated command:
+.DS I 1i
+:\|\fB/noun/s//nouns/
+.R
+.DE
+In this example, the characters to be changed
+are not specified \-
+there are no characters, not even a space,
+between the two slash marks which indicate what is to be changed.
+This lack of characters between the slashes is taken by the editor to mean
+``use the characters we last searched for as the characters to be changed.''
+.PP
+Similarly, the last context search may be repeated
+by typing a pair of slashes with nothing between them:
+.DS I 1i
+:\|\fB/does/
+.R
+It doesn't mean much here, but
+:\|\fB//
+.R
+it does illustrate the editor.
+.DE
+Because no characters are specified for the second search,
+the editor scans the buffer for the next occurrence of the
+characters ``does''.
+.PP
+Edit normally searches forward through the buffer,
+wrapping around from the end of the buffer to the beginning,
+until the specified character string is found.
+If you want to search in the reverse direction,
+use question marks (?) instead of slashes
+to surround the character string.
+.SH
+Special characters
+.PP
+Two characters have special meanings when
+used in specifying searches:  ``$'' and ``^''.
+``$'' is taken by the editor to mean ``end of the line''
+and is used to identify strings
+which occur at the end of a line.
+.DS I 1i
+:\|\fBg/ing$/s//ed/p
+.R
+.DE
+tells the editor to search for all lines ending in ``ing''
+(and nothing else, not even a blank space),
+to change each final ``ing'' to ``ed''
+and print the changed lines.
+.PP
+The symbol ``^'' indicates the beginning of a line.
+Thus,
+.DS I 1i
+:\|\fBs/^/1. /
+.R
+.DE
+instructs the editor to insert ``1.'' and a space at the beginning
+of the current line.
+.PP
+The characters ``$'' and ``^'' have special meanings only in the context
+of searching.
+At other times, they are ordinary characters.
+If you ever need to search for a character that has a special meaning,
+you must indicate that the
+character is to temporarily lose
+its special significance by typing another special character,
+the backslash (\\), before it.
+.DS I 1i
+:\|\fBs/\\\\\&$/dollar/
+.R
+.DE
+looks for the character ``$'' in the current
+line and replaces it by the word ``dollar''.
+Were it not for the backslash, the ``$'' would have represented
+``the end of the line'' in your search,
+not necessarily the character ``$''.
+The backslash retains its special significance at all times.
+.SH
+Issuing \s-2UNIX\s0 commands from the editor
+.PP
+After creating several files with the editor,
+you may want to delete files
+no longer useful to you or ask for a list of your files.
+Removing and listing files are not functions of the editor,
+and so they require the use of \s-2UNIX\s0 system commands
+(also referred to as ``shell'' commands, as
+``shell'' is the name of the program that processes \s-2UNIX\s0 commands).
+You do not need to quit the editor to execute a \s-2UNIX\s0 command
+as long as you indicate that it
+is to be sent to the shell for execution.
+To use the \s-2UNIX\s0 command
+.I rm
+to remove the file named ``junk'' type:
+.DS I 1i
+:\|\fB!rm junk
+.R
+!
+:
+.DE
+The exclamation mark (!)
+indicates that the rest of the line is to be processed as a \s-2UNIX\s0 command.
+If the buffer contents have not been written since the last change,
+a warning will be printed before the command is executed.
+The editor prints a ``!'' when the command is completed.
+The tutorial ``Communicating with \s-2UNIX\s0''
+describes useful features of the system,
+of which the editor is only one part.
+.SH
+Filenames and file manipulation
+.PP
+Throughout each editing session,
+edit keeps track of the name of the file being edited as the
+.I "current filename."
+Edit remembers as the current filename the name given
+when you entered the editor.
+The current filename changes whenever the edit (e) command
+is used to specify a new file.
+Once edit has recorded a current filename,
+it inserts that name into any command where a filename has been omitted.
+If a write command does not specify a file,
+edit, as we have seen, supplies the current filename.
+You can have the editor write onto a different file
+by including its name in the write command:
+.DS I 1i
+:\fB\|w chapter3
+.R
+"chapter3" 283 lines, 8698 characters
+.DE
+The current filename remembered by the editor
+.I
+will not be changed as a result of the write command
+unless it is the first filename given in the editing session.
+.R
+Thus, in the next write command
+which does not specify a name,
+edit will write onto the current file and not onto the file ``chapter3''.
+.SH
+The file (f) command
+.PP
+To ask for the current filename, type
+.B file
+(or
+.B f ).
+In response, the editor provides current information about the buffer,
+including the filename, your current position, and the number of
+lines in the buffer:
+.DS I 1i
+:\|\fBf
+.R
+"text" [Modified] line 3 of 4 --75%--
+.DE
+.\"The expression ``[Edited]'' indicates that the buffer contains
+.\"either the editor's copy of the existing file ``text''
+.\"or a file which you are just now creating.
+If the contents of the buffer have changed
+since the last time the file was written,
+the editor will tell you that the file has been ``[Modified]''.
+After you save the changes by writing onto a disk file,
+the buffer will no longer be considered modified:
+.DS I 1i
+:\|\fBw
+.R
+"text" 4 lines, 88 characters
+:\|\fBf
+.R
+"text" line 3 of 4 --75%--
+.DE
+.SH
+Reading additional files (r)
+
+.PP
+The
+.B
+read (r)
+.R
+command allows you to add the contents of a file
+to the buffer
+without destroying the text already there.
+To use it, specify the line after which the new text will be placed,
+the command
+.I r,
+and then the name of the file.
+.DS I 1i
+:\|\fB$r bibliography
+.R
+"bibliography" 18 lines, 473 characters
+.DE
+This command reads in the file
+.I bibliography
+and adds it to the buffer after the last line.
+The current filename is not changed by the read command unless
+it is the first filename given in the editing session.
+.SH
+Writing parts of the buffer
+.PP
+The
+.B
+write (w)
+.R
+command can write all or part of the buffer
+to a file you specify.
+We are already familiar with
+writing the entire contents of the
+buffer to a disk file.
+To write only part of the buffer onto a file,
+indicate the beginning and ending lines before the write command,
+for example
+.DS I 1i
+:\|\fB45,$w ending
+.R
+.DE
+Here all lines from 45 through the end of the buffer
+are written onto the file named
+.I ending.
+The lines remain in the buffer
+as part of the document you are editing,
+and you may continue to edit the entire buffer.
+.SH
+Recovering files
+.PP
+Under most circumstances,
+edit's crash recovery mechanism
+is able to save work to within a few lines of changes
+after a crash or if the phone is hung up accidently.
+If you lose the contents of an editing buffer in a system crash,
+you will normally receive mail when you login which gives
+the name of the recovered file.
+To recover the file,
+enter the editor and type the command
+.B recover
+(\fBrec\fR),
+followed by the name of the lost file.
+.DS I 1i
+.R
+:\|\fBrecover chap6
+.R
+.DE
+Recover is sometimes unable to save the entire buffer successfully,
+so always check the contents of the saved buffer carefully
+before writing it back onto the original file.
+.SH
+Other recovery techniques
+.PP
+If something goes wrong when you are using the editor,
+it may be possible to save your work by using the command
+.B preserve
+(\fBpre\fR),
+which saves the buffer as if the system had crashed.
+If you are writing a file and you get the message
+``Quota exceeded'', you have tried to use more disk storage
+than is allotted to your account.
+.I
+Proceed with caution
+.R
+because it is likely that only a part
+of the editor's buffer is now present in the file you tried to write.
+In this case you should use the shell escape from the editor (!)
+to remove some files you don't need and try to write
+the file again.
+If this is not possible and you cannot find someone to help you,
+enter the command
+.DS I 1i
+:\|\fBpreserve
+.R
+.DE
+and then seek help.
+Do not simply leave the editor.
+If you do, the buffer will be lost, 
+and you may not be able to save your file.
+After a preserve, you can use the recover command
+once the problem has been corrected.
+.PP
+If you make an undesirable change to the buffer
+and issue a write command before discovering your mistake,
+the modified version will replace any previous version of the file.
+Should you ever lose a good version of a document in this way,
+do not panic and leave the editor.
+As long as you stay in the editor,
+the contents of the buffer remain accessible.
+Depending on the nature of the problem,
+it may be possible
+to restore the buffer to a more complete
+state with the undo command.
+After fixing the damaged buffer, you can again write the file
+to disk.
+.SH
+Further reading and other information
+.PP
+Edit is an editor designed for beginning and casual users.
+It is actually a version of a more powerful editor called
+.I ex.
+These lessons are intended to introduce you to the editor
+and its more commonly-used commands.
+We have not covered all of the editor's commands,
+just a selection of commands
+which should be sufficient to accomplish most of your editing tasks.
+You can find out more about the editor in the
+.I
+Ex Reference Manual,
+.R
+which is applicable to both
+.I ex
+and
+.I edit.
+The manual is available from the Computer Center Library,
+218 Evans Hall.
+One way to become familiar with the manual is to begin by reading
+the description of commands that you already know.
+.bd I 3
+.SH
+Using
+.I ex
+.fl
+.bd I
+.PP
+As you become more experienced with using the editor,
+you may still find that edit continues to meet your needs.
+However, should you become interested in using ex,
+it is easy to switch.
+To begin an editing session with ex,
+use the name
+.B ex
+in your command instead of
+.B edit.
+.PP
+Edit commands work the same way in ex,
+but the editing environment is somewhat different.
+You should be aware of a few differences
+that exist between the two versions of the editor.
+In edit, only the characters ``^'', ``$'', and ``\\'' have
+special meanings in searching the buffer
+or indicating characters to be changed by a substitute command.
+Several additional characters have ``magic''
+meanings in ex, as described in the
+.I
+Ex Reference Manual.
+.R
+Another feature of the edit environment prevents users from
+accidently entering two alternative modes of editing,
+.I open
+and
+.I visual,
+in which
+the editor behaves quite differently than in normal command mode.
+If you are using ex and the editor behaves strangely,
+you may have accidently entered open mode by typing ``o''.
+Type the \s-2ESC\s0 key and then a ``q''
+to get out of open or visual mode and back into
+the regular editor command mode.
+The document
+.I
+An Introduction to Display Editing with Vi
+.R
+provides a full discussion of visual mode.
+.sp 5
+.bd I 3
+.in +.7i
+.ll -.7i
+.nr LL -.7i
+.LP
+.I
+This tutorial was produced at the Computer Center of the
+University of California, Berkeley.
+We welcome comments and suggestions concerning this item
+and the \s-2UNIX\s0 documentation in general.
+Contact the \s-2UNIX\s0 consultant in 217 Evans, 642-4072.
+.fl
+.bp
+.bd I
+.ND
+.TL
+Index
+.sp 3
+.2C
+.nf
+addressing, \fIsee\fR line numbers
+append mode, 4
+backslash (\\), 17
+buffer, 1
+command mode, 4
+context search, 7, 9, 13, 17
+control characters (``^'' notation), 7
+control-d, 5
+current filename, 18, 19
+current line (.), 8, 14
+diagnostic messages, 3
+disk, 1
+documentation, 20
+edit (to begin editing session), 2, 6
+editing commands:
+.in +2
+append (a), 3, 4, 6
+change (c), 15
+copy (co), 12
+delete (d), 12-13
+edit (e), 11
+file (f), 18
+global (g), 16-17
+move (m), 11-12
+number (nu), 8
+preserve (pre), 19
+print (p), 7
+quit (q), 5, 10
+quit! (q!), 10
+read (r), 18-19
+recover (rec), 19
+substitute (s), 8-9, 16, 17
+undo (u), 13, 17
+write (w), 4-5, 10, 19
+z, 9
+.sp 10i
+! (shell escape), 18
+$= , 14
++, 14
+\-, 14
+//, 7, 17
+??, 17
+\&\fB.\fR, 8, 14
+\&\fB.\fR=, 8, 14
+.in -2
+erasing
+.ti +2
+characters (#), 6
+.ti +2
+lines (@), 7
+ex (text editor), 20
+\fIEx Reference Manual\fR, 20
+file, 1
+file recovery, 19
+filename, 1
+Interrupt (message), 6
+line numbers, \fIsee also\fR current line
+.ti +2
+dollar sign ($), 7, 14
+.ti +2
+dot (.), 8, 14
+.ti +2
+relative (+ and \-), 14
+logging out, 5
+login procedure, 2
+``magic'' characters, 20
+non-printing characters, 7
+``not found'' (message), 3
+program, 1
+recovery \fIsee\fR file recovery
+shell, 18
+shell escape (!), 18
+special characters (^, $, \e), 17
+text input mode, 4
+UNIX, 1
