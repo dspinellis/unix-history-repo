@@ -107,12 +107,12 @@ char	*argv[];
 			(strcmp(Ph->name[i], this->name) == 0)) {
 		    printf("\t{ 0x%02x, %s, ",
 				Ph-Hits, shiftof[i]);
-		    if (bcmp("AID_", this->name, 4) == 0) {	/* AID key */
+		    if (memcmp("AID_", this->name, 4) == 0) {	/* AID key */
 			printf("FCN_AID, ");
 		    } else {
 			printf("%s, ", Ph->name[i]);
 		    }
-		    if (bcmp("PF", this->name+4, 2) == 0) {
+		    if (memcmp("PF", this->name+4, 2) == 0) {
 			printf("\"PFK%s\" },\n", Ph->name[i]+4+2);
 		    } else {
 			printf("\"%s\" },\n", Ph->name[i]+4);
