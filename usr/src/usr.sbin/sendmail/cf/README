@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.13 (Berkeley) %G%
+		@(#)README	8.14 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -691,16 +691,16 @@ Sam Leffler's FlexFAX software is still in beta test -- but he expects a
 public version out "later this week" [as of 3/1/93].  The following
 blurb is direct from Sam:
 
-	$Header: /usr/people/sam/fax/RCS/HOWTO,v 1.7 93/02/08 09:00:55 sam Exp $
+	$Header: /usr/people/sam/fax/RCS/HOWTO,v 1.14 93/05/24 11:42:16 sam Exp $
 
 	How To Obtain This Software (in case all you get is this file)
-
+	--------------------------------------------------------------
 	The source code is available for public ftp on
-	    sgi.com			sgi/fax/v2.1beta.tar.Z
+	    sgi.com			sgi/fax/v2.1.src.tar.Z
 		(192.48.153.1)
 
 	You can also obtain inst'able images for Silicon Graphics machines from
-	    sgi.com			sgi/fax/v2.1beta.inst.tar
+	    sgi.com			sgi/fax/v2.1.inst.tar
 		(192.48.153.1)
 
 	For example,
@@ -710,47 +710,69 @@ blurb is direct from Sam:
 	    ... <type in password>
 	    ftp> cd sgi/fax
 	    ftp> binary
-	    ftp> get v2.1beta.tar.Z
+	    ftp> get v2.1.src.tar.Z
 
-	If you cannot use FTP at all, there is a service called "ftpmail"
-	available from gateekeeper.dec.com:  you can send e-mail to this
-	machine and it will use FTP to retrieve files for you and send you the
-	files back again via e-mail.  To find out more about the ftpmail
+	In general, the latest version of the 2.1 release of the software is
+	always available as "v2.1.src.tar.Z" or "v2.1.inst.tar" in the ftp
+	directory.  This file is a link to the appropriate released version (so
+	don't waste your time retrieving the linked file as well!) Any files of
+	the form v2.1.*.patch are shell scripts that can be used to patch older
+	versions of the source code.  For example, the file v2.1.0.patch would
+	contain patches to update v2.1.0.tar.Z.  (Note to beta testers: this is
+	different than the naming conventions used during beta testing.) Patch
+	files only work to go between consecutive versions, so if you are
+	multiple versions behind the latest release, you will need to apply
+	each patch file between your current version and the latest.
+
+
+	Obtaining the Software by Electronic Mail
+	-----------------------------------------
+	Do not send me requests for the software; they will be ignored (without
+	response).  If you cannot use FTP at all, there is a service called
+	"ftpmail" available from gatekeeper.dec.com:  you can send e-mail to
+	this machine and it will use FTP to retrieve files for you and send you
+	the files back again via e-mail.  To find out more about the ftpmail
 	service, send a message to "ftpmail@gatekeeper.dec.com" whose body
 	consists of the single line "help".
 
+
+	Obtaining the Software Within Silicon Graphics
+	----------------------------------------------
 	Internal to Silicon Graphics there are inst'able images on the host
-	flake.asd in the directory /d/dist.  Thus you can do something like:
+	flake.asd in the directory /usr/dist.  Thus you can do something like:
 
-	    % inst -f flake.asd.sgi.com:/d/dist/flexfax
+	    % inst -f flake.asd.sgi.com:/usr/dist/flexfax
 
-	to install the software on your machine.
+	to install the latest version of the software on your machine.
 
+
+	What to do Once You've Retrieved Stuff
+	--------------------------------------
 	The external distributions come in a compressed or uncompressed tar
 	file.  To extract the source distribution:
 
-	    % zcat v2.1beta.tar.Z | tar xf -
+	    % zcat v2.1.src.tar.Z | tar xf -
 
 	(uncompress and extract individual files in current directory).  To
 	unpack and install the client portion of the inst'able distribution:
 
 	    % mkdir dist
-	    % cd dist; tar xf ../v2.1beta.inst.tar; cd ..
+	    % cd dist; tar xf ../v2.1.inst.tar; cd ..
 	    % inst -f dist/flexfax
 	    ...
 	    inst> go
 
 	(Note, the dist subdirectory is because some versions of inst fail if
-	the files are in the current directory.) Server binaries is also
-	included in the inst'able images as flexfax.server.*.  It is not
-	installed by default, so to get it also you need to extract the do:
+	the files are in the current directory.) Server binaries are also
+	included in the inst'able images as flexfax.server.*.  They are not
+	installed by default, so to get them also you need to do:
 
 	    % inst -f flexfax
 	    ...
 	    inst> install flexfax.server.*
 	    inst> go
 
-	The SGI binaries were built for Version 4.0.5 of the IRIX operating
+	The SGI binaries were built for Version 4.0.5H of the IRIX operating
 	system.  They should work w/o problem on earlier versions of the
 	system, but I have not fully tested this.  Also, note that to install a
 	server on an SGI machine, you need to have installed the Display
@@ -758,22 +780,34 @@ blurb is direct from Sam:
 	server will not be able to convert PostScript to facsimile for
 	transmission.
 
-	If you are working from the source distribution, look at the file README
-	in the top of the source tree.  If you are working from the inst images,
-	you need to run faxaddmodem to setup and configure your fax modem.  Do
-	man faxaddmodem for more information.
+	If you are working from the source distribution, look at the file
+	README in the top of the source tree.  If you are working from the inst
+	images, the subsystem flexfax.man.readme contains the README file and
+	other useful pieces of information--the installed files are placed in
+	the directory /usr/local/doc/flexfax).  Basically you will need to run
+	the faxaddmodem script to setup and configure your fax modem.  Consult
+	the README file and the manual page for faxaddmodem for information.
 
-Also from Sam:
 
+	FlexFAX Mail List
+	-----------------
 	A mailing list for users of this software is located on sgi.com.
 	If you want to join this mailing list or have a list-related request
 	such as getting your name removed from it, send a request to
 
-	    flexfax-request@sgi.com
+	    majordomo@whizzer.wpd.sgi.com
+
+	For example, to subscribe, send the line "subscribe flexfax" in
+	the body of your message.  The line "help" will return a list of
+	the commands understood by the mailing list management software.
 
 	Submissions (including bug reports) should be directed to:
 
 	    flexfax@sgi.com
+
+	When corresponding about this software please always specify what
+	version you have, what system you're running on, and, if the problem is
+	specific to your modem, identify the modem and firmware revision.
 
 
 +--------------------------------+
