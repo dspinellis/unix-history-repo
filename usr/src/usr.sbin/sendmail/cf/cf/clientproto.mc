@@ -14,10 +14,14 @@ divert(-1)
 #  To use this, you MUST use the nullclient feature with the name of
 #  the mail hub as its argument.  You MAY also define an OSTYPE to
 #  define the location of the queue directories and the like.
+#  In addition, you MAY select the nocanonify feature.  This causes
+#  addresses to be sent unqualified via the SMTP connection; normally
+#  they are qualifed with the masquerade name, which defaults to the
+#  name of the hub machine.
 #  Other than these, it should never contain any other lines.
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)clientproto.mc	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)clientproto.mc	8.3 (Berkeley) %G%')
 
 FEATURE(nullclient, mailhost.$m)
