@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.1 90/07/09$
  *
- *	@(#)hpux_tty.c	7.9 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -23,8 +23,8 @@
 #include "systm.h"
 #include "filedesc.h"
 #include "ioctl.h"
-#include "tty.h"
 #include "proc.h"
+#include "tty.h"
 #include "file.h"
 #include "conf.h"
 #include "buf.h"
