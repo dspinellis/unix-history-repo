@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)netdb.h	5.10 (Berkeley) %G%
+ *	@(#)netdb.h	5.10.1.1 (Berkeley) %G%
  */
 
 /*
@@ -29,8 +29,7 @@ struct	hostent {
 	char	**h_aliases;	/* alias list */
 	int	h_addrtype;	/* host address type */
 	int	h_length;	/* length of address */
-	char	**h_addr_list;	/* list of addresses from name server */
-#define	h_addr	h_addr_list[0]	/* address, for backward compatiblity */
+	char	*h_addr;	/* address */
 };
 
 /*
