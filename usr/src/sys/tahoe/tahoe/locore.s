@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.11 (Berkeley) %G%
+ *	@(#)locore.s	7.12 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -1267,43 +1267,7 @@ ENTRY(copyout, 0)
 	ret
 
 /*
- * non-local goto's
- */
-#ifdef notdef
-ENTRY(setjmp, 0)
-	movl	4(fp),r0
-	movl	(fp),(r0); addl2 $4,r0		# save fp
-	movl	-8(fp),(r0)			# save pc
-	clrl	r0
-	ret
-#endif
-
-ENTRY(longjmp, 0)
-	movl	4(fp),r0
-	movl	(r0),newfp; addl2 $4,r0		# must save parameters in memory
-	movl	(r0),newpc			# as all regs may be clobbered.
-1:
-	cmpl	fp,newfp			# are we there yet?
-	bgequ	2f				# yes
-	moval	1b,-8(fp)			# redirect return pc to us!
-	ret					# pop next frame
-2:
-	beql	3f				# did we miss our frame?
-	pushab	4f				# yep ?!?
-	callf	$8,_panic
-3:
-	movl	newpc,r0			# all done, just return
-	jmp	(r0)				# to setjmp `ret'
-
-	.data
-newpc:	.space	4
-newfp:	.space	4
-4:	.asciz	"longjmp"
-	.text
-
-/*
- * setjmp that saves all registers as the call frame may not
- * be available to recover them in the usual manner by longjmp.
+ * savectx is like setjmp but saves all registers.
  * Called before swapping out the u. area, restored by resume()
  * below.
  */
@@ -1318,7 +1282,7 @@ ENTRY(savectx, 0)
 
 #ifdef KADB
 /*
- * C library -- reset, setexit
+ * C library -- reset, setexit -- XXX
  *
  *	reset(x)
  * will generate a "return" from
@@ -1526,7 +1490,7 @@ res0:
 	tstl	_u+PCB_SSWAP
 	bneq	res1
 	rei
-res1:					# longjmp to saved context
+res1:					# restore alternate saved context
 	movl	_u+PCB_SSWAP,r2
 	clrl	_u+PCB_SSWAP
 	loadr	$0x3ff8,(r2); addl2 $44,r2	# restore r3-r13 (r13=fp)
