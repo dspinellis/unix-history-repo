@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_var.h	6.4 (Berkeley) %G%
+ *	@(#)ip_var.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -55,14 +55,32 @@ struct	ipasfrag {
 	struct	ipasfrag *ipf_prev;	/* previous fragment */
 };
 
+/*
+ * Structure stored in mbuf in inpcb.ip_options
+ * and passed to ip_output when ip options are in use.
+ * The actual length of the options (including ipopt_dst)
+ * is in m_len.
+ */
+#define MAX_IPOPTLEN	40
+
+struct ipoption {
+	struct	in_addr ipopt_dst;	/* first-hop dst if source routed */
+	char	ipopt_list[MAX_IPOPTLEN];	/* options proper */
+};
+
 struct	ipstat {
-	int	ips_badsum;		/* checksum bad */
-	int	ips_tooshort;		/* packet too short */
-	int	ips_toosmall;		/* not enough data */
-	int	ips_badhlen;		/* ip header length < data size */
-	int	ips_badlen;		/* ip length < ip header length */
+	long	ips_total;		/* total packets received */
+	long	ips_badsum;		/* checksum bad */
+	long	ips_tooshort;		/* packet too short */
+	long	ips_toosmall;		/* not enough data */
+	long	ips_badhlen;		/* ip header length < data size */
+	long	ips_badlen;		/* ip length < ip header length */
+	long	ips_fragments;		/* fragments received */
+	long	ips_fragdropped;	/* frags dropped (dups, out of space) */
+	long	ips_fragtimeout;	/* fragments timed out */
 	long	ips_forward;		/* packets forwarded */
 	long	ips_cantforward;	/* packets rcvd for unreachable dest */
+	long	ips_redirectsent;	/* packets forwarded on same net */
 };
 
 #ifdef KERNEL
@@ -74,4 +92,6 @@ struct	ipstat {
 struct	ipstat	ipstat;
 struct	ipq	ipq;			/* ip reass. queue */
 u_short	ip_id;				/* ip packet ctr, for ids */
+
+struct	mbuf *ip_srcroute();
 #endif
