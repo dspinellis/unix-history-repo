@@ -1,9 +1,21 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readdir.c 1.3 %G%";
+static char sccsid[] = "@(#)readdir.c 1.4 %G%";
 
 #include <sys/types.h>
 #include <ndir.h>
+
+/*
+ * read an old stlye directory entry and present it as a new one
+ */
+#ifndef	DIRSIZ
+#define	DIRSIZ	14
+#endif
+
+struct	olddirect {
+	ino_t	d_ino;
+	char	d_name[DIRSIZ];
+};
 
 /*
  * get next entry in a directory.
