@@ -68,8 +68,10 @@ in_pcbbind(inp, nam)
 		/* GROSS */
 		if (aport < IPPORT_RESERVED && u.u_uid != 0)
 			return (EACCES);
-		if ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
-		    (so->so_options & SO_ACCEPTCONN) == 0)
+		/* even GROSSER, but this is the Internet */
+		if ((so->so_options & SO_REUSEADDR) == 0 &&
+		    ((so->so_proto->pr_flags & PR_CONNREQUIRED) == 0 ||
+		     (so->so_options & SO_ACCEPTCONN) == 0))
 			wild = INPLOOKUP_WILDCARD;
 		if (in_pcblookup(head,
 		    zeroin_addr, 0, sin->sin_addr, lport, wild))

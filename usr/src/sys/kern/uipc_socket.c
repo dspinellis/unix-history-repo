@@ -570,11 +570,11 @@ sosetopt(so, level, optname, m)
 	switch (optname) {
 
 	case SO_DEBUG:
-		so->so_options |= SO_DEBUG;
-		break;
-
 	case SO_KEEPALIVE:
-		so->so_options |= SO_KEEPALIVE;
+	case SO_DONTROUTE:
+	case SO_USELOOPBACK:
+	case SO_REUSEADDR:
+		so->so_options |= optname;
 		break;
 
 	case SO_LINGER:
@@ -587,14 +587,6 @@ sosetopt(so, level, optname, m)
 	case SO_DONTLINGER:
 		so->so_options &= ~SO_LINGER;
 		so->so_linger = 0;
-		break;
-
-	case SO_DONTROUTE:
-		so->so_options |= SO_DONTROUTE;
-		break;
-
-	case SO_USELOOPBACK:
-		so->so_options |= SO_USELOOPBACK;
 		break;
 
 	default:
@@ -618,6 +610,7 @@ sogetopt(so, level, optname, m)
 	case SO_DEBUG:
 	case SO_KEEPALIVE:
 	case SO_LINGER:
+	case SO_REUSEADDR:
 		if ((so->so_options & optname) == 0)
 			return (ENOPROTOOPT);
 		if (optname == SO_LINGER && m != NULL) {
