@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.1	%G%	*/
+/*	vfs_bio.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -339,7 +339,7 @@ daddr_t blkno;
 		sleep((caddr_t)&bfreelist, PRIBIO+1);
 		goto loop;
 	}
-	spl0();
+	(void) spl0();
 	bp = bfreelist.av_forw;
 	notavail(bp);
 	if (bp->b_flags & B_DELWRI) {

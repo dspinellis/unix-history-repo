@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.2	%G%	*/
+/*	kern_synch.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -379,7 +379,7 @@ retry:
 	(void) spl6();
 	rpp->p_stat = SRUN;
 	setrq(rpp);
-	spl0();
+	(void) spl0();
 	/* SSWAP NOT NEEDED IN THIS CASE AS u.u_pcb.pcb_sswap SUFFICES */
 	/* rpp->p_flag |= SSWAP; */
 	rip->p_flag &= ~SKEEP;
