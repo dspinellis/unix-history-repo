@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -590,6 +590,18 @@ main(argc, argv, envp)
 					(void) putchar(j);
 			printf(" E=");
 			xputs(m->m_eol);
+			if (m->m_argv != NULL)
+			{
+				char **a = m->m_argv;
+
+				printf(" A=");
+				while (*a != NULL)
+				{
+					if (a != m->m_argv)
+						printf(" ");
+					xputs(*a++);
+				}
+			}
 			printf("\n");
 		}
 	}
@@ -609,7 +621,8 @@ main(argc, argv, envp)
 	{
 		char buf[MAXLINE];
 
-		printf("ADDRESS TEST MODE\nEnter <ruleset> <address>\n");
+		printf("ADDRESS TEST MODE (ruleset 3 NOT automatically invoked)\n");
+		printf("Enter <ruleset> <address>\n");
 		for (;;)
 		{
 			register char **pvp;
@@ -636,7 +649,6 @@ main(argc, argv, envp)
 				pvp = prescan(++p, ',', pvpbuf);
 				if (pvp == NULL)
 					continue;
-				rewrite(pvp, 3);
 				p = q;
 				while (*p != '\0')
 				{
