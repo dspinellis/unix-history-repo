@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vfsops.c	1.1 (Berkeley) %G%
+ *	@(#)fdesc_vfsops.c	1.2 (Berkeley) %G%
  *
  * $Id: fdesc_vfsops.c,v 1.6 1992/05/30 10:25:59 jsp Exp jsp $
  */
@@ -175,25 +175,10 @@ fdesc_root(mp, vpp)
 	/*
 	 * Return locked reference to root.
 	 */
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_root: fdesc = %x\n", VFSTOFDESC(mp));
-#endif
 	vp = VFSTOFDESC(mp)->f_root;
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_root: root = %x\n", vp);
-#endif
 	VREF(vp);
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_root: calling VOP_LOCK\n");
-#endif
 	VOP_LOCK(vp);
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_root: back from VOP_LOCK\n");
-#endif
 	*vpp = vp;
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_root(mp = %x) = %x\n", mp, vp);
-#endif
 	return (0);
 }
 
