@@ -1,10 +1,12 @@
-/* ip_icmp.c 4.1 81/11/07 */
+/* ip_icmp.c 4.2 81/11/08 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
-#include "../inet/ip.h"
+#include "../h/inaddr.h"
+#include "../net/inet.h"
+#include "../net/inet_systm.h"
+#include "../net/ip.h"
+#include "../net/ip_icmp.h"
 
 /*
  * ICMP routines: error generation, receive packet processing, and
@@ -20,7 +22,7 @@ icmp_error(oip, type, code)
 	int type;
 {
 	int oiplen = oip->ip_hl << 2;
-	struct icmp *icp = (struct icp *)((int)oip + oiplen);
+	struct icmp *icp = (struct icmp *)((int)oip + oiplen);
 	struct mbuf *m;
 	struct ip *nip;
 
@@ -47,7 +49,7 @@ icmp_error(oip, type, code)
 		icp->icmp_pptr = code;
 	} else
 		icp->icmp_code = code;
-	bcopy((caddr_t)oip, (caddr_t)&icp->icmp_ip.icmp_ip, oiplen + 8);
+	bcopy((caddr_t)oip, (caddr_t)&icp->icmp_ip, oiplen + 8);
 
 	/*
 	 * Now prepend an IP header and reflect this packet back to
@@ -55,9 +57,9 @@ icmp_error(oip, type, code)
 	 */
 	m->m_off -= sizeof (struct ip);
 	m->m_len += sizeof (struct ip);
-	nip = (struct ip *)mtod(m);
-	*nip = *ip;
-	icmp_reflect(ip);
+	nip = (struct ip *)mtod(m, struct ip *);
+	*nip = *oip;
+	icmp_reflect(nip);
 
 	/*
 	 * Discard mbufs of original datagram
@@ -67,15 +69,16 @@ free:
 }
 
 /*
- * Processor a received ICMP message.
+ * Process a received ICMP message.
  */
 icmp_input(m)
 	struct mbuf *m;
 {
-	int hlen = ip->ip_hl << 2;
-	register struct ip *ip = (struct ip *)mtod(m);
 	register struct icmp *icp;
+	register struct ip *ip = mtod(m, struct ip *);
+	int hlen = ip->ip_hl << 2;
 	int icmplen = ip->ip_len - hlen;
+	int i;
 
 	/*
 	 * Locate icmp structure in mbuf, and check
@@ -84,16 +87,16 @@ icmp_input(m)
 	m->m_len -= hlen;
 	m->m_off += hlen;
 	/* need routine to make sure header is in this mbuf here */
-	icp = (struct icmp *)mtod(m);
+	icp = (struct icmp *)mtod(m, struct icmp *);
 	i = icp->icmp_cksum;
 	icp->icmp_cksum = 0;
-	if (i != cksum(m, icmplen) || icmplen < ICMP_MINLEN)
-		goto bad;
+	if (i != inet_cksum(m, icmplen) || icmplen < ICMP_MINLEN)
+		goto free;
 
 	/*
 	 * Message type specific processing.
 	 */
-	switch (ipc->icmp_type) {
+	switch (icp->icmp_type) {
 
 	case ICMP_UNREACH:
 	case ICMP_TIMXCEED:
@@ -104,9 +107,9 @@ icmp_input(m)
 		 * Problem with previous datagram; advise
 		 * higher level routines.
 		 */
-		if (icmplen < ICMP_MINADVLEN || icmplen < ICMP_ADVLEN(ipc))
-			goto drop;
-		icmp_advise(ip, ipc);
+		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))
+			goto free;
+		icmp_advise(ip, icp);
 		goto free;
 
 	case ICMP_ECHO:
@@ -114,10 +117,10 @@ icmp_input(m)
 		goto reflect;
 
 	case ICMP_TSTAMP:
-		if (icmplen < ICMP_MINLEN + sizeof ())
-			goto bad;
+		if (icmplen < ICMP_TSLEN)
+			goto free;
 		icp->icmp_type = ICMP_TSTAMPREPLY;
-		millitime(&icp->icmp_rtime);
+		ip_time(&icp->icmp_rtime);
 		icp->icmp_ttime = icp->icmp_rtime;	/* bogus, do later! */
 		goto reflect;
 		
@@ -128,8 +131,8 @@ icmp_input(m)
 	case ICMP_ECHOREPLY:
 	case ICMP_TSTAMPREPLY:
 	case ICMP_IREQREPLY:
-		if (icmplen < ICMP_MINADVLEN || icmplen < ICMP_ADVLEN(ipc))
-			goto drop;
+		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))
+			goto free;
 		icmp_gotreply(icp);
 		goto free;
 
@@ -148,15 +151,13 @@ free:
 icmp_reflect(ip)
 	struct ip *ip;
 {
-	struct inet_addr t;
+	struct ip_addr t;
 
+	t = ip->ip_src; ip->ip_dst = ip->ip_src; ip->ip_src = t;
 	/*
 	 * This is a little naive... do we have to munge the options
 	 * to reverse source routing?
 	 */
-	t = ip->ip_src.s_addr;
-	ip->ip_dst.s_addr = ip->ip_src.d_addr;
-	ip->ip_src.d_addr = t;
 	icmp_send(ip);
 }
 
@@ -164,13 +165,13 @@ icmp_reflect(ip)
  * Send an icmp packet back to the ip level, after
  * supplying a checksum.
  */
-icmp_send(ip, ipc)
+icmp_send(ip, icp)
 	struct ip *ip;
-	struct icmp *ipc;
+	struct icmp *icp;
 {
 
-	ipc->ipc_cksum = 0;
-	ipc->ipc_cksum = cksum(m, impclen);
+	icp->icmp_cksum = 0;
+	icp->icmp_inet_cksum = cksum(dtom(ip), 0);		/* ### */
 	/* what about ttl? */
 	ip_output(ip);
 }
@@ -183,22 +184,9 @@ icmp_advise(ip, icp)
 	struct ip *ip;
 	struct icmp *icp;
 {
-	int (*f)(), tcp_advise(), udp_advise(), raw_advise();
 
-	switch (ip->ip_p) {
-	case IPPROTO_TCP:
-		f = tcp_advise;
-		break;
-
-	case IPPROTO_UDP:
-		f = udp_advise;
-		break;
-
-	default:
-		f = raw_advise;
-		break;
-	}
-	(*f)(ip, icp);
+	/* pass through protocol specific switch */
+	/* (*f)(ip, icp); */
 }
 
 /*
@@ -208,6 +196,16 @@ icmp_advise(ip, icp)
 /*ARGSUSED*/
 icmp_gotreply(icp)
 	struct icmp *icp;
+{
+
+}
+
+icmp_drain()
+{
+
+}
+
+ip_time()
 {
 
 }

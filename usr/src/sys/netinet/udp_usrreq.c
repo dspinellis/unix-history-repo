@@ -1,10 +1,15 @@
-/* udp_usrreq.c 4.1 81/11/07 */
+/*	udp_usrreq.c	4.2	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
-#include "../inet/udp.h"
+#include "../h/protosw.h"
+#include "../net/inet.h"
+#include "../net/inet_systm.h"
+
+udp_init()
+{
+
+}
 
 udp_input(m)
 	struct mbuf *m;
@@ -63,4 +68,10 @@ udp_usrreq(up, req, m, addr)
 
 	default:
 		panic("udp_usrreq");
+	}
+}
+
+udp_sense()
+{
+
 }
