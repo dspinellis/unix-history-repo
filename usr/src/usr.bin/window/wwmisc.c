@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmisc.c	3.3 83/09/15";
+static	char *sccsid = "@(#)wwmisc.c	3.4 83/11/28";
 #endif
 
 #include "ww.h"
@@ -25,11 +25,12 @@ register struct ww *w;
 
 char *
 unctrl(c)
-register char c;
+register c;
 {
 	static char buf[5];
 	register char *p = buf;
 
+	c = (unsigned)(unsigned char)c;
 	if (c == DEL) {
 		*p++ = '^';
 		*p++ = '?';
