@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_usrreq.c	7.13 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -55,10 +55,10 @@ struct	tcpcb *tcp_newtcpcb();
  * (called from the software clock routine), then timertype tells which timer.
  */
 /*ARGSUSED*/
-tcp_usrreq(so, req, m, nam, rights)
+tcp_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *control;
 {
 	register struct inpcb *inp;
 	register struct tcpcb *tp;
@@ -69,13 +69,13 @@ tcp_usrreq(so, req, m, nam, rights)
 #if BSD>=43
 	if (req == PRU_CONTROL)
 		return (in_control(so, (int)m, (caddr_t)nam,
-			(struct ifnet *)rights));
-#else
-	if (req == PRU_CONTROL)
-		return(EOPNOTSUPP);
-#endif
-	if (rights && rights->m_len)
+			(struct ifnet *)control));
+	if (control && control->m_len) {
+		m_freem(control);
+		if (m)
+			m_freem(m);
 		return (EINVAL);
+	}
 
 	s = splnet();
 	inp = sotoinpcb(so);
