@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1469,8 +1469,19 @@ lockfile(fd, filename, type)
 	else
 		action = F_SETLKW;
 
+	if (tTd(55, 60))
+		printf("lockfile(%s, action=%d, type=%d): ",
+			filename, action, lfd.l_type);
+
 	if (fcntl(fd, action, &lfd) >= 0)
+	{
+		if (tTd(55, 60))
+			printf("SUCCESS\n");
 		return TRUE;
+	}
+
+	if (tTd(55, 60))
+		printf("(%s) ", errstring(errno));
 
 	/*
 	**  On SunOS, if you are testing using -oQ/tmp/mqueue or
@@ -1482,16 +1493,32 @@ lockfile(fd, filename, type)
 	*/
 
 	if (errno == EINVAL)
+	{
+		if (tTd(55, 60))
+			printf("SUCCESS\n");
 		return TRUE;
+	}
 
 	if (!bitset(LOCK_NB, type) || (errno != EACCES && errno != EAGAIN))
 		syserr("cannot lockf(%s, %o)", filename, type);
 # else
+	if (tTd(55, 60))
+		printf("lockfile(%s, type=%o): ", filename, type);
+
 	if (flock(fd, type) >= 0)
+	{
+		if (tTd(55, 60))
+			printf("SUCCESS\n");
 		return TRUE;
+	}
+
+	if (tTd(55, 60))
+		printf("(%s) ", errstring(errno));
 
 	if (!bitset(LOCK_NB, type) || errno != EWOULDBLOCK)
 		syserr("cannot flock(%s, %o)", filename, type);
 # endif
+	if (tTd(55, 60))
+		printf("FAIL\n");
 	return FALSE;
 }

@@ -56,5 +56,6 @@
 52	main.c		disconnect
 53	util.c		xfclose
 54	err.c		putoutmsg
+55	conf.c		lockfile
 59	Extended Load Average implementation from Christophe Wolfhugel
 60	map.c

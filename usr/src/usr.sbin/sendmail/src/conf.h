@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.21 (Berkeley) %G%
+ *	@(#)conf.h	8.22 (Berkeley) %G%
  */
 
 /*
@@ -161,6 +161,10 @@
 
 /*
 **  Digital Ultrix 4.2A or 4.3
+**
+**	Apparently, fcntl locking is broken on 4.2A, in that locks are
+**	not dropped when the process exits.  This causes major problems,
+**	so flock is the only alternative.
 */
 
 #ifdef ultrix
@@ -168,7 +172,7 @@
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-/* # define HASFLOCK	1	/* has flock(2) call */
+# define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
 # define LA_AVENRUN	"avenrun"
 # undef IDENTPROTO
