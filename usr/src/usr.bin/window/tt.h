@@ -1,5 +1,5 @@
 /*
- *	@(#)tt.h	3.4 83/08/17
+ *	@(#)tt.h	3.5 83/08/17
  */
 
 struct tt {
@@ -32,3 +32,16 @@ struct tt_tab {
 };
 
 struct tt_tab tt_tab[];
+
+/*
+ * nicer interface to termcap routines
+ */
+char tt_strings[1024];		/* string buffer */
+char *tt_strp;			/* pointer for it */
+
+int tt_pc();			/* just putchar() */
+int tt_sc();			/* *tt_strp++ = c */
+char *tt_xgetstr();		/* tgetstr() and expand delays */
+
+#define tt_tgetstr(s)	tgetstr((s), &tt_strp)
+#define tt_tputs(s, n)	tputs((s), (n), tt_pc)

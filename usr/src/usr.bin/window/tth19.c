@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tth19.c	3.5 83/08/17";
+static	char *sccsid = "@(#)tth19.c	3.6 83/08/17";
 #endif
 
 #include "ww.h"
@@ -29,6 +29,8 @@ char h19_modes, h19_nmodes;
 char h19_insert, h19_ninsert;
 char h19_graphics;
 short h19_msp10c;
+char *h19_VS;
+char *h19_VE;
 
 #define pc(c)	putchar('c')
 #define esc()	pc(\033)
@@ -185,13 +187,12 @@ out:
 
 h19_init()
 {
-	esc();
-	pc(x);
-	pc(4);
-	esc();
-	pc(E);
+	if (h19_VS)
+		fputs(h19_VS, stdout);
 	esc();
 	pc(w);
+	esc();
+	pc(E);
 	h19_col = h19_row = 0;
 	h19_insert = 0;
 	h19_graphics = 0;
@@ -203,9 +204,8 @@ h19_end()
 	SETMODES(0);
 	SETINSERT(0);
 	SETGRAPHICS(0);
-	esc();
-	pc(y);
-	pc(4);
+	if (h19_VE)
+		fputs(h19_VE, stdout);
 	esc();
 	pc(v);
 }
@@ -239,6 +239,8 @@ tt_h19()
 	float cpms = (float) wwbaud / 10000;	/* char per ms */
 
 	h19_msp10c = 10 / cpms;			/* ms per 10 char */
+	h19_VS = tt_xgetstr("vs");
+	h19_VE = tt_xgetstr("ve");
 	tt.tt_setinsert = h19_setinsert;
 	tt.tt_setmodes = h19_setmodes;
 	tt.tt_insline = h19_insline;

@@ -1,11 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.7 83/08/17";
+static	char *sccsid = "@(#)ttgeneric.c	3.8 83/08/17";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 
-char *tgetstr();
 char *tgoto();
 
 char gen_frame[16] = {
@@ -55,16 +54,6 @@ char *gen_strp = gen_strings;
 #define pc(c) putchar('c')
 #define ps(s) fputs((s), stdout)
 
-gen_pc(c)
-{
-	putchar(c);
-}
-
-gen_sc(c)
-{
-	*gen_strp++ = c;
-}
-
 gen_setinsert(new)
 char new;
 {
@@ -109,13 +98,13 @@ register new;
 gen_insline()
 {
 	if (gen_AL)
-		tputs(gen_AL, gen_LI - gen_row, gen_pc);
+		tt_tputs(gen_AL, gen_LI - gen_row);
 }
 
 gen_delline()
 {
 	if (gen_DL)
-		tputs(gen_DL, gen_LI - gen_row, gen_pc);
+		tt_tputs(gen_DL, gen_LI - gen_row);
 }
 
 gen_putc(c)
@@ -123,10 +112,10 @@ register char c;
 {
 	if (gen_insert) {
 		if (gen_IC)
-			tputs(gen_IC, gen_CO - gen_col, gen_pc);
+			tt_tputs(gen_IC, gen_CO - gen_col);
 		putchar(c);
 		if (gen_IP)
-			tputs(gen_IP, gen_CO - gen_col, gen_pc);
+			tt_tputs(gen_IP, gen_CO - gen_col);
 	} else
 		putchar(c);
 	gen_col++;
@@ -138,10 +127,10 @@ register char *start, *end;
 	if (gen_insert) {
 		while (start <= end) {
 			if (gen_IC)
-				tputs(gen_IC, gen_CO - gen_col, gen_pc);
+				tt_tputs(gen_IC, gen_CO - gen_col);
 			putchar(*start++);
 			if (gen_IP)
-				tputs(gen_IP, gen_CO - gen_col, gen_pc);
+				tt_tputs(gen_IP, gen_CO - gen_col);
 			gen_col++;
 		}
 	} else {
@@ -159,10 +148,10 @@ register n;
 	if (gen_insert) {
 		while (--n >= 0) {
 			if (gen_IC)
-				tputs(gen_IC, gen_CO - gen_col, gen_pc);
+				tt_tputs(gen_IC, gen_CO - gen_col);
 			putchar(' ');
 			if (gen_IP)
-				tputs(gen_IP, gen_CO - gen_col, gen_pc);
+				tt_tputs(gen_IP, gen_CO - gen_col);
 			gen_col++;
 		}
 	} else {
@@ -215,7 +204,7 @@ register char row, col;
 		ps(gen_HO);
 		goto out;
 	}
-	tputs(tgoto(gen_CM, col, row), 1, gen_pc);
+	ps(tgoto(gen_CM, col, row));
 out:
 	gen_col = col;
 	gen_row = row;
@@ -249,13 +238,13 @@ gen_end()
 gen_clreol()
 {
 	if (gen_CE)
-		tputs(gen_CE, gen_CO - gen_col, gen_pc);
+		tt_tputs(gen_CE, gen_CO - gen_col);
 }
 
 gen_clreos()
 {
 	if (gen_CD)
-		tputs(gen_CD, gen_LI - gen_row, gen_pc);
+		tt_tputs(gen_CD, gen_LI - gen_row);
 }
 
 gen_clear()
@@ -267,50 +256,34 @@ gen_clear()
 gen_delchar()
 {
 	if (gen_DC)
-		tputs(gen_DC, gen_CO - gen_col, gen_pc);
-}
-
-char *
-gen_getstr(str)
-char *str;
-{
-	char buf[100];
-	char *bufp = buf;
-
-	str = tgetstr(str, &bufp);
-	if (str == 0)
-		return 0;
-	str = gen_strp;
-	tputs(buf, 1, gen_sc);
-	gen_sc(0);
-	return str;
+		tt_tputs(gen_DC, gen_CO - gen_col);
 }
 
 tt_generic()
 {
-	gen_CM = tgetstr("cm", &gen_strp);
-	gen_IM = gen_getstr("im");
-	gen_IC = tgetstr("ic", &gen_strp);
-	gen_IP = tgetstr("ip", &gen_strp);
-	gen_EI = gen_getstr("ei");
-	gen_DC = tgetstr("dc", &gen_strp);
-	gen_AL = tgetstr("al", &gen_strp);
-	gen_DL = tgetstr("dl", &gen_strp);
-	gen_CE = tgetstr("ce", &gen_strp);
-	gen_CD = tgetstr("cd", &gen_strp);
-	gen_CL = gen_getstr("cl");
-	gen_VS = gen_getstr("vs");
-	gen_VE = gen_getstr("ve");
-	gen_SO = gen_getstr("so");
-	gen_SE = gen_getstr("se");
-	gen_US = gen_getstr("us");
-	gen_UE = gen_getstr("ue");
-	gen_UP = gen_getstr("up");
-	gen_PC = tgetstr("pc", &gen_strp);
-	gen_BC = gen_getstr("bc");
-	gen_ND = gen_getstr("nd");
-	gen_HO = gen_getstr("ho");
-	gen_NL = gen_getstr("nl");
+	gen_CM = tt_xgetstr("cm");		/* may not work */
+	gen_IM = tt_xgetstr("im");
+	gen_IC = tt_tgetstr("ic");
+	gen_IP = tt_tgetstr("ip");
+	gen_EI = tt_xgetstr("ei");
+	gen_DC = tt_tgetstr("dc");
+	gen_AL = tt_tgetstr("al");
+	gen_DL = tt_tgetstr("dl");
+	gen_CE = tt_tgetstr("ce");
+	gen_CD = tt_tgetstr("cd");
+	gen_CL = tt_xgetstr("cl");
+	gen_VS = tt_xgetstr("vs");
+	gen_VE = tt_xgetstr("ve");
+	gen_SO = tt_xgetstr("so");
+	gen_SE = tt_xgetstr("se");
+	gen_US = tt_xgetstr("us");
+	gen_UE = tt_xgetstr("ue");
+	gen_UP = tt_xgetstr("up");
+	gen_PC = tt_tgetstr("pc");
+	gen_BC = tt_xgetstr("bc");
+	gen_ND = tt_xgetstr("nd");
+	gen_HO = tt_xgetstr("ho");
+	gen_NL = tt_xgetstr("nl");
 	gen_MI = tgetflag("mi");
 	gen_MS = tgetflag("ms");
 	gen_AM = tgetflag("am");
