@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -386,15 +386,16 @@ showkre()
 	putfloat(avenrun[1], STATROW, STATCOL + 23, 6, 2, 0);
 	putfloat(avenrun[2], STATROW, STATCOL + 29, 6, 2, 0);
 	mvaddstr(STATROW, STATCOL + 53, buf);
-	putint(total.t_arm/2, MEMROW + 2, MEMCOL + 4, 5);
-	putint(total.t_armtxt/2, MEMROW + 2, MEMCOL + 9, 5);
-	putint(total.t_avm/2, MEMROW + 2, MEMCOL + 14, 6);
-	putint(total.t_avmtxt/2, MEMROW + 2, MEMCOL + 20, 5);
-	putint(total.t_rm/2, MEMROW + 3, MEMCOL + 4, 5);
-	putint(total.t_rmtxt/2, MEMROW + 3, MEMCOL + 9, 5);
-	putint(total.t_vm/2, MEMROW + 3, MEMCOL + 14, 6);
-	putint(total.t_vmtxt/2, MEMROW + 3, MEMCOL + 20, 5);
-	putint(total.t_free/2, MEMROW + 2, MEMCOL + 27, 5);
+#define pgtokb(pg)	((pg) * NBPG / 1024)
+	putint(pgtokb(total.t_arm), MEMROW + 2, MEMCOL + 4, 5);
+	putint(pgtokb(total.t_armtxt), MEMROW + 2, MEMCOL + 9, 5);
+	putint(pgtokb(total.t_avm), MEMROW + 2, MEMCOL + 14, 6);
+	putint(pgtokb(total.t_avmtxt), MEMROW + 2, MEMCOL + 20, 5);
+	putint(pgtokb(total.t_rm), MEMROW + 3, MEMCOL + 4, 5);
+	putint(pgtokb(total.t_rmtxt), MEMROW + 3, MEMCOL + 9, 5);
+	putint(pgtokb(total.t_vm), MEMROW + 3, MEMCOL + 14, 6);
+	putint(pgtokb(total.t_vmtxt), MEMROW + 3, MEMCOL + 20, 5);
+	putint(pgtokb(total.t_free), MEMROW + 2, MEMCOL + 27, 5);
 	putint(total.t_rq, PROCSROW + 1, PROCSCOL + 5, 3);
 	putint(total.t_pw, PROCSROW + 1, PROCSCOL + 8, 3);
 	putint(total.t_dw, PROCSROW + 1, PROCSCOL + 11, 3);
