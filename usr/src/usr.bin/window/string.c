@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)string.c	3.2 83/11/25";
+static	char *sccsid = "@(#)string.c	3.3 84/01/05";
 #endif
 
 #include "string.h"
@@ -14,7 +14,7 @@ register char *s;
 	char *str;
 	register char *p;
 
-	str = p = malloc((unsigned) strlen(s) + 1);
+	str = p = str_alloc(strlen(s) + 1);
 	if (p == 0)
 		return 0;
 	while (*p++ = *s++)
@@ -39,7 +39,7 @@ char *s1, *s2;
 	char *str;
 	register char *p, *q;
 
-	str = p = malloc((unsigned) strlen(s1) + strlen(s2) + 1);
+	str = p = str_alloc(strlen(s1) + strlen(s2) + 1);
 	if (p == 0)
 		return 0;
 	for (q = s1; *p++ = *q++;)
@@ -47,15 +47,6 @@ char *s1, *s2;
 	for (q = s2, p--; *p++ = *q++;)
 		;
 	return str;
-}
-
-str_free(str)
-char *str;
-{
-	extern char end[];
-
-	if (str >= end)
-		free(str);
 }
 
 /*
@@ -70,3 +61,40 @@ register min;
 		;
 	return *s == *p || *s == 0 && min <= 0;
 }
+
+#ifdef STR_DEBUG
+struct string str_head = {
+	&str_head, &str_head
+};
+
+char *
+str_alloc(l)
+int l;
+{
+	register struct string *s;
+
+	s = (struct string *) malloc((unsigned)l + str_offset);
+	if (s == 0)
+		return 0;
+	s->s_forw = str_head.s_forw;
+	s->s_back = &str_head;
+	str_head.s_forw = s;
+	s->s_forw->s_back = s;
+	return s->s_data;
+}
+
+str_free(str)
+char *str;
+{
+	register struct string *s = str_stos(s);
+
+	for (s = str_head.s_forw; s != &str_head && s->s_data != str;
+	     s = s->s_forw)
+		;
+	if (s == &str_head)
+		abort();
+	s->s_back->s_forw = s->s_forw;
+	s->s_forw->s_back = s->s_back;
+	free(s->s_data);
+}
+#endif
