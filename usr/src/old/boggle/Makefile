@@ -14,50 +14,39 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	comp.c boggle.c
+MAN=	boggle.0
 
 all: boggle bogdict
 
 bogdict: comp sfile
 	sed -f sfile /usr/dict/words | uniq | ./comp >bogdict
 
-boggle: ${LIBC}
+boggle comp: ${LIBC}
 	${CC} -o $@ ${CFLAGS} $@.c
 
-comp: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
-
-clean: FRC
+clean:
 	rm -f ${OBJS} core comp boggle bogdict
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o games -g bin -m 4700 boggle ${DESTDIR}/usr/games/hide/boggle
 	install -o games -g bin -m 400 bogdict ${DESTDIR}/usr/games/lib/bogdict
 	(cd ${DESTDIR}/usr/games; rm -f boggle; ln -s dm boggle; chown games.bin boggle)
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} comp.c
 	lint ${CFLAGS} boggle.c
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-comp: comp.c /usr/include/stdio.h
-boggle: boggle.c /usr/include/ctype.h /usr/include/errno.h
-boggle: /usr/include/setjmp.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-boggle: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-boggle: /usr/include/signal.h /usr/include/machine/trap.h /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
