@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.59 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -244,10 +244,6 @@ main(argc, argv)
 		else
 			salt = "xx";
 
-		/* if user not super-user, check for disabled logins */
-		if (!pwd || pwd->pw_uid)
-			checknologin();
-
 		/*
 		 * Disallow automatic login to root; if not invoked by
 		 * root, disallow if the uid's differ.
@@ -316,6 +312,10 @@ main(argc, argv)
 
 	/* paranoia... */
 	endpwent();
+
+	/* if user not super-user, check for disabled logins */
+	if (pwd->pw_uid)
+		checknologin();
 
 	if (chdir(pwd->pw_dir) < 0) {
 		(void)printf("No directory %s!\n", pwd->pw_dir);
