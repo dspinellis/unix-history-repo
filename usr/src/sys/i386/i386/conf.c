@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	8.1 (Berkeley) %G%
+ *	@(#)conf.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -242,3 +242,21 @@ int	mem_no = 2; 	/* major device number of memory special file */
  * provided as a character (raw) device.
  */
 dev_t	swapdev = makedev(1, 0);
+
+/*
+ * Routine that identifies /dev/mem and /dev/kmem.
+ *
+ * A minimal stub routine can always return 0.
+ */
+iskmemdev(dev)
+	dev_t dev;
+{
+
+	return (major(dev) == 2 && (minor(dev) == 0 || minor(dev) == 1));
+}
+
+iszerodev(dev)
+	dev_t dev;
+{
+	return (major(dev) == 2 && minor(dev) == 12);
+}

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)conf.c	8.1 (Berkeley) %G%
+ *      @(#)conf.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -165,11 +165,12 @@ cdev_decl(ctty);
 	(dev_type_map((*))) enodev, 0 }
 
 dev_type_read(mmrw);
-/* read/write */
+dev_type_map(mmmap);
+/* read, write, mmap */
 #define	cdev_mm_init(c,n) { \
 	(dev_type_open((*))) nullop, (dev_type_close((*))) nullop, mmrw, \
 	mmrw, (dev_type_ioctl((*))) enodev, (dev_type_stop((*))) nullop, \
-	(dev_type_reset((*))) nullop, 0, seltrue, (dev_type_map((*))) enodev, 0 }
+	(dev_type_reset((*))) nullop, 0, seltrue, mmmap, 0 }
 
 /* read, write, strategy */
 #define	cdev_swap_init(c,n) { \
@@ -327,9 +328,14 @@ iskmemdev(dev)
 	dev_t dev;
 {
 
-	if (major(dev) == 2 && (minor(dev) == 0 || minor(dev) == 1))
-		return (1);
-	return (0);
+	return (major(dev) == 2 && minor(dev) < 2);
+}
+
+iszerodev(dev)
+	dev_t dev;
+{
+
+	return (major(dev) == 2 && minor(dev) == 12);
 }
 
 /*
