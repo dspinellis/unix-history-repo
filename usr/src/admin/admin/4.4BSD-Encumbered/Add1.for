@@ -1,4 +1,4 @@
-.\" @(#)Add1.for	1.1 (CSRG - distribution) 6/11/92
+.\" @(#)Add1.for	1.2 (CSRG - distribution) 6/11/92
 .ND
 .ce 5
 ADDENDUM NUMBER ONE
@@ -41,7 +41,7 @@ States Export Administration Regulations.
 .IP 4
 Licensee is responsible for maintaining current knowledge
 of the list of embargoed destinations and prohibited end-uses
-outlined above, as implemented under United States export law.
+outlined above, as implemented under United States export laws.
 Further information may be obtained from the United States
 Department of Commerce, Bureau of Export Administration and the
 United States Department of the Treasury, Office of Foreign
