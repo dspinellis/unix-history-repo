@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.73 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.74 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -88,7 +88,7 @@ lfs_update(ap)
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
 
 	/* Push back the vnode and any dirty blocks it may have. */
-	return (ap->a_waitfor ? lfs_vflush(vp) : 0);
+	return (ap->a_waitfor & LFS_SYNC ? lfs_vflush(vp) : 0);
 }
 
 /* Update segment usage information when removing a block. */
@@ -155,7 +155,7 @@ lfs_truncate(ap)
 		bzero((char *)&ip->i_shortlink, (u_int)ip->i_size);
 		ip->i_size = 0;
 		ip->i_flag |= ICHG|IUPD;
-		return (VOP_UPDATE(vp, &tv, &tv, 1));
+		return (VOP_UPDATE(vp, &tv, &tv, 0));
 	}
 	vnode_pager_setsize(vp, (u_long)length);
 
@@ -171,7 +171,7 @@ lfs_truncate(ap)
 	/* If length is larger than the file, just update the times. */
 	if (ip->i_size <= length) {
 		ip->i_flag |= ICHG|IUPD;
-		return (VOP_UPDATE(vp, &tv, &tv, 1));
+		return (VOP_UPDATE(vp, &tv, &tv, 0));
 	}
 
 	/*
