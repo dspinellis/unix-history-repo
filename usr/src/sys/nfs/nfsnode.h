@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	8.8 (Berkeley) %G%
+ *	@(#)nfsnode.h	8.9 (Berkeley) %G%
  */
 
 
@@ -162,12 +162,12 @@ int	nfs_readlink __P((struct vop_readlink_args *));
 int	nfs_abortop __P((struct vop_abortop_args *));
 int	nfs_inactive __P((struct vop_inactive_args *));
 int	nfs_reclaim __P((struct vop_reclaim_args *));
-int	nfs_lock __P((struct vop_lock_args *));
-int	nfs_unlock __P((struct vop_unlock_args *));
+#define nfs_lock ((int (*) __P((struct vop_lock_args *)))vop_nolock)
+#define nfs_unlock ((int (*) __P((struct vop_unlock_args *)))vop_nounlock)
+#define nfs_islocked ((int (*) __P((struct vop_islocked_args *)))vop_noislocked)
 int	nfs_bmap __P((struct vop_bmap_args *));
 int	nfs_strategy __P((struct vop_strategy_args *));
 int	nfs_print __P((struct vop_print_args *));
-int	nfs_islocked __P((struct vop_islocked_args *));
 int	nfs_pathconf __P((struct vop_pathconf_args *));
 int	nfs_advlock __P((struct vop_advlock_args *));
 int	nfs_blkatoff __P((struct vop_blkatoff_args *));
