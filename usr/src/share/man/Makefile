@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 SUBDIR=	man1 man3 man3f man4 man5 man7 man8
 
