@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	1.6 83/07/27";
+static	char *sccsid = "@(#)cmd2.c	1.7 83/07/28";
 #endif
 
 #include "defs.h"
@@ -12,7 +12,7 @@ dohelp()
 {
 	register struct ww *w;
 
-	if ((w = openwin(22, "Help")) == 0) {
+	if ((w = openwin(wwncol - 1, "Help")) == 0) {
 		wwputs("Can't open help window.  ", cmdwin);
 		return;
 	}
@@ -21,9 +21,8 @@ dohelp()
 	wwprintf(w, "[1-9]   Select window [1-9] and exit command mode.\r\n");
 	wwprintf(w, "%%[1-9]  Select window [1-9].\r\n");
 	wwprintf(w, "c[1-9]  Close window [1-9].\r\n");
-	wwprintf(w, "C       Close all empty windows.\r\n");
-	wwprintf(w, "Z       Close all windows.\r\n");
-	wwprintf(w, "Q       Show all windows in sequence.\r\n");
+	wwprintf(w, "C       Close all windows.\r\n");
+	wwprintf(w, "S       Show all windows in sequence.\r\n");
 	wwprintf(w, "R       Force refresh after every newline (current window only).\r\n");
 	wwprintf(w, "r       Don't refresh every line.\r\n");
 	wwprintf(w, "w       Open a new window.\r\n");
@@ -146,7 +145,7 @@ char *label;
 	if ((w = wwopen(WW_NONE, 0, nrow, wwncol, 1, 0)) == 0)
 		return 0;
 	wwframe(w);
-	wwlabel(w, label, WINVERSE);
+	wwlabel(w, (wwncol - strlen(label)) / 2 + 1, label, WINVERSE);
 	wwsetcurwin(w);
 	return w;
 }
