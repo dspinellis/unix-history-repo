@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *	from: @(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
- *	$Id: sysv_shm.c,v 1.8 1993/12/20 19:31:18 wollman Exp $
+ *	$Id: sysv_shm.c,v 1.9 1994/01/21 09:56:31 davidg Exp $
  */
 
 /*
@@ -90,7 +90,7 @@ struct	shmhandle {
 	caddr_t		shmh_id;
 };
 
-static int ipcaccess(struct ipc_perm *, int, struct ucred *);
+extern int ipcaccess(struct ipc_perm *, int, struct ucred *);
 static void shmufree(struct proc *, struct shmdesc *);
 static void shmfree(struct shmid_ds *);
 static int shmvalid(int);
