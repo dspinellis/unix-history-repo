@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.31		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.32		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.31		%G%);
+SCCSID(@(#)srvrsmtp.c	3.32		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -198,20 +198,36 @@ smtp()
 			if (Errors != 0)
 				break;
 
-			/* if sending to multiple people, mail back errors */
+			/*
+			**  Arrange to send to everyone.
+			**	If sending to multiple people, mail back
+			**		errors rather than reporting directly.
+			**	In any case, don't mail back errors for
+			**		anything that has happened up to
+			**		now (the other end will do this).
+			**	Then send to everyone.
+			**	Finally give a reply code.  If an error has
+			**		already been given, don't mail a
+			**		message back.
+			**	We goose error returns by clearing FatalErrors.
+			*/
+
 			if (rcps != 1)
 				HoldErrs = MailBack = TRUE;
+			FatalErrors = FALSE;
 
 			/* send to all recipients */
 			sendall(CurEnv, FALSE);
-
-			/* reset strange modes */
-			HoldErrs = FALSE;
 			CurEnv->e_to = NULL;
 
-			/* issue success if appropriate */
-			if (Errors == 0 || rcps != 1)
+			/* issue success if appropriate and reset */
+			if (Errors == 0 || HoldErrs)
+			{
+				HoldErrs = FALSE;
 				message("250", "Sent");
+			}
+			else
+				FatalErrors = FALSE;
 			break;
 
 		  case CMDRSET:		/* rset -- reset state */
