@@ -1,9 +1,10 @@
-#	@(#)Makefile	7.5 (Berkeley) %G%
+#	@(#)Makefile	7.6 (Berkeley) %G%
 
 DESTDIR=/
 STAND=	../../stand
 INCPATH=-I../../sys -I../../  -I${STAND}
 VPATH=	${STAND}
+STANDDIR= ${DESTDIR}/stand
 
 CC=	cc -traditional
 C2=	/usr/libexec/c2
@@ -15,21 +16,23 @@ RELOC2=	70200
 CFLAGS=	-DSTANDALONE -DAT386 -O ${INCPATH}
 
 DRIVERS=cga.c fd.c kbd.c wd.c
-SASRC=	bmap.c close.c dev.c getfile.c gets.c ioctl.c lseek.c open.c \
-	printf.c read.c sys.c write.c
 SRCS=	boot.c bootxx.c conf.c confxx.c copy.c fd.c fdbootblk.c prf.c \
 	srt0.c wdbootblk.c ${DRIVERS} ${SASRC}
-LIBS=	libsa.a ${DESTDIR}/usr/lib/libc.a
+LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+SMLIBS=	${STAND}/obj/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
 
 BOOTBLOCKS= wdboot bootwd fdboot bootfd
 DISKUTILS= boot copy cat ls
 ALL=	${BOOTBLOCKS} ${DISKUTILS}
 
-STANDDIR= ${DESTDIR}/stand
-
 all: ${ALL}
 
-libsa.a: conf.o prf.o ${DRIVERS:.c=.o} ${SASRC:.c=.o}
+${STAND}/obj/libsa.a:
+	cd ${STAND}; make
+${STAND}/obj/libsmsa.a:
+	cd ${STAND}; make LIB=smsa CFLAGS='-O -DSMALL'
+
+libdrive.a: conf.o prf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
 	ranlib $@
 
@@ -83,9 +86,9 @@ wdboot: wdbootblk.o
 	strip a.out;dd if=a.out of=wdboot ibs=32 skip=1;rm -f a.out
 	ls -l wdboot
 
-bootwd: wdbootblk.o wsrt0.o bootxx.o confwd.o sm_wd.o sys.o sm_cga.o ${LIBS}
-	ld -N -T ${RELOC2} wsrt0.o bootxx.o confwd.o sys.o sm_wd.o \
-	    sm_cga.o ${LIBS}
+bootwd: wdbootblk.o wsrt0.o bootxx.o sm_confwd.o sm_wd.o sm_cga.o ${SMLIBS}
+	ld -N -T ${RELOC2} wsrt0.o bootxx.o sm_confwd.o sm_wd.o \
+	    sm_cga.o ${SMLIBS}
 	size a.out
 	cp a.out bwd
 	rm -f bootwd
@@ -99,45 +102,41 @@ fdboot: fdbootblk.o
 	strip a.out;dd if=a.out of=fdboot ibs=32 skip=1;rm -f a.out
 	ls -l fdboot
 
-bootfd: fdbootblk.o wsrt0.o bootxx.o conffd.o fd.o sys.o sm_cga.o ${LIBS}
-	ld -N -T ${RELOC2} wsrt0.o bootxx.o conffd.o sys.o \
-		fd.o sm_cga.o ${LIBS}
+bootfd: fdbootblk.o wsrt0.o bootxx.o fd.o sm_cga.o sm_conffd.o ${SMLIBS}
+	ld -N -T ${RELOC2} wsrt0.o bootxx.o fd.o sm_cga.o sm_conffd.o ${SMLIBS}
 	size a.out
 	cp a.out bfd
 	rm -f bootfd
 	strip a.out; dd if=a.out of=bootfd ibs=32 skip=1;rm -f a.out
 	ls -l bootfd
 
-sm_wd.o: wd.o
-	rm -f sm_wd.c
-	ln -s wd.c sm_wd.c
-	${CC} -S -DSMALL ${CFLAGS} sm_wd.c
-	${AS} sm_wd.s -o sm_wd.o
-	rm -f sm_wd.s sm_wd.c
+sm_conffd.o: conffd.c
+	rm -f sm_conffd.c
+	ln -s conffd.c sm_conffd.c
+	${CC} -S -DSMALL ${CFLAGS} sm_conffd.c
+	${AS} sm_conffd.s -o sm_conffd.o
+	rm -f sm_conffd.s sm_conffd.c
 
-sm_cga.o: cga.o
+sm_confwd.o: confwd.c
+	rm -f sm_confwd.c
+	ln -s confwd.c sm_confwd.c
+	${CC} -S -DSMALL ${CFLAGS} sm_confwd.c
+	${AS} sm_confwd.s -o sm_confwd.o
+	rm -f sm_confwd.s sm_confwd.c
+
+sm_cga.o: cga.c
 	rm -f sm_cga.c
 	ln -s cga.c sm_cga.c
 	${CC} -S -DSMALL ${CFLAGS} sm_cga.c
 	${AS} sm_cga.s -o sm_cga.o
 	rm -f sm_cga.s sm_cga.c
 
-sm_cst.o: cst.o
-	rm -f sm_cst.c
-	ln -s cst.c sm_cst.c
-	${CC} -S -DSMALL ${CFLAGS} sm_cst.c
-	${C2} -i sm_cst.s | ${AS} -o sm_cst.o
-	rm -f sm_cst.s sm_cst.c
-
-sm_swd.o: swd.o
-	rm -f sm_swd.c
-	ln -s swd.c sm_swd.c
-	${CC} -S -DSMALL ${CFLAGS} sm_swd.c
-	${C2} -i sm_swd.s | ${AS} -o sm_swd.o
-	rm -f sm_swd.s sm_swd.c
-
-sys.o: sys.c
-	${CC} -c -DSMALL ${CFLAGS} ${.ALLSRC}
+sm_wd.o: wd.c
+	rm -f sm_wd.c
+	ln -s wd.c sm_wd.c
+	${CC} -S -DSMALL ${CFLAGS} sm_wd.c
+	${AS} sm_wd.s -o sm_wd.o
+	rm -f sm_wd.s sm_wd.c
 
 confwd.o: confwd.c confxx.o
 conffd.o: conffd.c confxx.o
@@ -156,7 +155,7 @@ conffd.c: confxx.c
 	sed -e 's/XX/fd/' -e 's/xx/fd/g'	< confxx.c >> conffd.c
 
 clean:
-	rm -f *.o *.exe *.i sm_*.c libsa.a
+	rm -f *.o *.exe *.i sm_*.c libdrive.a
 	rm -f a.out bfd bwd fdb wdb ${ALL}
 	rm -f boot[a-wyz]? boot[a-wyz]?? boot[a-wyz]?.c boot[a-wyz]??.c \
 		conf[a-wyz]?.c conf[a-wyz]??.c
