@@ -1,4 +1,4 @@
-/*	hp.c	4.76	83/05/30	*/
+/*	hp.c	4.77	83/06/16	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -161,25 +161,27 @@ short	hptypes[] = {
 	MBDT_RP06,
 #define	HPDT_RM80	3
 	MBDT_RM80,
-#define	HPDT_RP05	4
+#define	HPDT_RP04	4
+	MBDT_RP04,
+#define	HPDT_RP05	5
 	MBDT_RP05,
-#define	HPDT_RP07	5
+#define	HPDT_RP07	6
 	MBDT_RP07,
-#define	HPDT_ML11A	6
+#define	HPDT_ML11A	7
 	MBDT_ML11A,
-#define	HPDT_ML11B	7
+#define	HPDT_ML11B	8
 	MBDT_ML11B,
-#define	HPDT_9775	8
+#define	HPDT_9775	9
 	-1,
-#define	HPDT_9730	9
+#define	HPDT_9730	10
 	-1,
-#define	HPDT_CAPRICORN	10
+#define	HPDT_CAPRICORN	11
 	-1,
-#define HPDT_EAGLE	11
+#define HPDT_EAGLE	12
 	-1,
-#define	HPDT_9300	12
+#define	HPDT_9300	13
 	-1,
-#define HPDT_RM02	13
+#define HPDT_RM02	14
 	MBDT_RM02,		/* beware, actually capricorn or eagle */
 	0
 };
@@ -208,6 +210,7 @@ struct hpst {
 	{ 32,	19,	32*19,	823,	rm05_sizes,	3, 4 },	/* RM05 */
 	{ 22,	19,	22*19,	815,	rp06_sizes,	3, 4 },	/* RP06 */
 	{ 31,	14, 	31*14,	559,	rm80_sizes,	3, 4 },	/* RM80 */
+	{ 22,	19,	22*19,	411,	rp05_sizes,	3, 4 },	/* RP04 */
 	{ 22,	19,	22*19,	411,	rp05_sizes,	3, 4 },	/* RP05 */
 	{ 50,	32,	50*32,	630,	rp07_sizes,	7, 8 },	/* RP07 */
 	{ 1,	1,	1,	1,	0,		0, 0 },	/* ML11A */
@@ -343,6 +346,11 @@ hpmaptype(mi)
 			type = HPDT_CAPRICORN;
 			goto done;
 		}
+		if (ntracks == 19) {
+			printf("hp%d: 9300\n", mi->mi_unit);
+			type = HPDT_9300;
+			goto done;
+		}
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXSECT;
 		nsectors = MASKREG(hpaddr->hphr) + 1;
@@ -352,7 +360,7 @@ hpmaptype(mi)
 			goto done;
 		}
 		printf("hp%d: ntracks %d, nsectors %d: unknown device\n",
-			ntracks, nsectors);
+			mi->mi_unit, ntracks, nsectors);
 done:
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		mbclrattn(mi);		/* conservative */
