@@ -13,7 +13,7 @@
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  * from: hp300/hp300/machdep.c   7.37 (Berkeley) 5/20/93
  *
- *	@(#)machdep.c	7.11 (Berkeley) %G%
+ *	@(#)machdep.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -451,10 +451,8 @@ sendsig(catcher, sig, mask, code)
 	      (caddr_t)kfp->sf_state.ss_frame.f_regs, sizeof frame->f_regs);
 	if (ft >= FMT7) {
 #ifdef DEBUG
-		if (ft != FMT9 && ft != FMTA && ft != FMTB) {
-			printf("sendsig: ft = 0x%x\n", ft);
+		if (ft > 15 || exframesize[ft] < 0)
 			panic("sendsig: bogus frame type");
-		}
 #endif
 		kfp->sf_state.ss_flags |= SS_RTEFRAME;
 		kfp->sf_state.ss_frame.f_format = frame->f_format;
