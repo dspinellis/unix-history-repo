@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	6.14 (Berkeley) %G%
+ *	@(#)tcp_output.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -308,7 +308,7 @@ send:
 
 		/*
 		 * Set retransmit timer if not currently set,
-		 * and not doing a keep-alive probe.
+		 * and not doing an ack or a keep-alive probe.
 		 * Initial value for retransmit timer is tcp_beta*tp->t_srtt.
 		 * Initialize shift counter which is used for exponential
 		 * backoff of retransmit time.
@@ -318,12 +318,11 @@ send:
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 			tp->t_rxtshift = 0;
+			tp->t_timer[TCPT_PERSIST] = 0;
 		}
-		tp->t_timer[TCPT_PERSIST] = 0;
-	} else {
+	} else
 		if (SEQ_GT(tp->snd_nxt + len, tp->snd_max))
 			tp->snd_max = tp->snd_nxt + len;
-	}
 
 	/*
 	 * Trace.
