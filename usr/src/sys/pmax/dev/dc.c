@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	7.12 (Berkeley) %G%
+ *	@(#)dc.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -77,8 +77,6 @@ void dcscan	__P((void *));
 extern void ttrstrt __P((void *));
 int dcGetc	__P((dev_t));
 int dcparam	__P((struct tty *, struct termios *));
-extern void KBDReset	__P((dev_t, void (*)()));
-extern void MouseInit	__P((dev_t, void (*)(), int (*)()));
 
 struct	tty dc_tty[NDCLINE];
 int	dc_cnt = NDCLINE;
@@ -191,6 +189,7 @@ dcprobe(cp)
 			s = spltty();
 			dcaddr->dc_lpr = LPR_RXENAB | LPR_8_BIT_CHAR |
 				LPR_B4800 | DCKBD_PORT;
+			MachEmptyWriteBuffer();
 			dcaddr->dc_lpr = LPR_RXENAB | LPR_B4800 | LPR_OPAR |
 				LPR_PARENB | LPR_8_BIT_CHAR | DCMOUSE_PORT;
 			MachEmptyWriteBuffer();
@@ -431,6 +430,7 @@ dcparam(tp, t)
 		lpr |= LPR_2_STOP;
 	dcaddr->dc_lpr = lpr;
 	MachEmptyWriteBuffer();
+	DELAY(10);
 	return (0);
 }
 
@@ -569,7 +569,8 @@ dcxint(tp)
 	else
 		dcstart(tp);
 	if (tp->t_outq.c_cc == 0 || !(tp->t_state & TS_BUSY)) {
-		((dcregs *)dp->p_addr)->dc_tcr &= ~(1 << (minor(tp->t_dev) & 03));
+		dcaddr = (dcregs *)dp->p_addr;
+		dcaddr->dc_tcr &= ~(1 << (minor(tp->t_dev) & 03));
 		MachEmptyWriteBuffer();
 		DELAY(10);
 	}
