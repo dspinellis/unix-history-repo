@@ -46,7 +46,7 @@
  *					Avoid sleeping on lbolt, it slows down
  *					output unnecessarily.
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty.c,v 1.1.1.1 1993/06/12 14:57:31 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty.c,v 1.2 1993/09/08 01:49:20 rgrimes Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -1708,13 +1708,18 @@ ttyecho(c, tp)
 	register c;
 	register struct tty *tp;
 {
-	if ((tp->t_state&TS_CNTTB) == 0)
+	if ((tp->t_state & TS_CNTTB) == 0)
 		tp->t_lflag &= ~FLUSHO;
-	if (((tp->t_lflag&ECHO) == 0 &&
-	    ((tp->t_lflag&ECHONL) == 0 || c == '\n')) || (tp->t_lflag&EXTPROC))
+	if (tp->t_lflag & EXTPROC)
 		return;
-	if (tp->t_lflag&ECHOCTL) {
-		if ((c&TTY_CHARMASK) <= 037 && c != '\t' && c != '\n' ||
+	if ((tp->t_lflag & ECHO) == 0) {
+		if ((tp->t_lflag & ECHONL) == 0)
+			return;
+		else if  (c != '\n')
+			return;
+	}
+	if (tp->t_lflag & ECHOCTL) {
+		if ((c & TTY_CHARMASK) <= 037 && c != '\t' && c != '\n' ||
 		    c == 0177) {
 			(void) ttyoutput('^', tp);
 			c &= TTY_CHARMASK;
