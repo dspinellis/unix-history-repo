@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_compat.c	7.3 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.4 (Berkeley) %G%
  */
 
 /* 
@@ -13,7 +13,6 @@
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "ioctl.h"
 #include "tty.h"

@@ -17,7 +17,6 @@
 #include "tty.h"
 #include "kmcreg.h"
 #include "buf.h"
-#include "dir.h"
 #include "user.h"
 #include "../vaxuba/ubavar.h"
 #include "uio.h"

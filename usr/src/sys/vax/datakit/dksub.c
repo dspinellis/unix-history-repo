@@ -13,7 +13,6 @@
 #include "signal.h"
 #include "errno.h"
 #include "seg.h"
-#include "dir.h"
 #include "user.h"
 #include "ioctl.h"
 #include "tty.h"
