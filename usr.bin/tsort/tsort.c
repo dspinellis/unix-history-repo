@@ -112,7 +112,7 @@ main(argc, argv)
 
 	if (argc < 2)
 		fp = stdin;
-	else if (argc == 2) {
+	else if (argc > 2) {
 		(void)fprintf(stderr, "usage: tsort [ inputfile ]\n");
 		exit(1);
 	} else if (!(fp = fopen(argv[1], "r"))) {
