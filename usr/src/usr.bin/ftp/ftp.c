@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -40,21 +40,19 @@ hookup(host, port)
 {
 	register struct hostent *hp;
 	int s, len;
+	long addr;
 
 	bzero((char *)&hisctladdr, sizeof (hisctladdr));
-	hp = gethostbyname(host);
-	if (hp == NULL) {
+	if ((addr = inet_addr(host)) == -1) {
+		hp = gethostbyname(host);
+	} else  {
 		static struct hostent def;
 		static struct in_addr defaddr;
-		static char namebuf[128];
+		static char namebuf[MAXHOSTNAMELEN];
 		static char *addrbuf;
-		int inet_addr();
+		long inet_addr();
 
-		defaddr.s_addr = inet_addr(host);
-		if (defaddr.s_addr == -1) {
-			fprintf(stderr, "%s: Unknown host.\n", host);
-			return (0);
-		}
+		defaddr.s_addr = addr;
 		strcpy(namebuf, host);
 		def.h_name = namebuf;
 		hostname = namebuf;
@@ -64,6 +62,10 @@ hookup(host, port)
 		def.h_addrtype = AF_INET;
 		def.h_aliases = 0;
 		hp = &def;
+	}
+	if (hp == NULL) {
+		fprintf(stderr, "%s: Unknown host.\n", host);
+		return (0);
 	}
 	hostname = hp->h_name;
 	hisctladdr.sin_family = hp->h_addrtype;
