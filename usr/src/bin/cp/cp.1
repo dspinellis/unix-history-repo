@@ -1,4 +1,4 @@
-.\" Copyright (c) 1989, 1990, 1993
+.\" Copyright (c) 1989, 1990, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)cp.1	8.1 (Berkeley) %G%
+.\"	@(#)cp.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CP 1
@@ -16,10 +16,18 @@
 .Nd copy files
 .Sh SYNOPSIS
 .Nm cp
-.Op Fl HRfhip
+.Oo
+.Fl R
+.Op Fl H | Fl L | Fl P
+.Oc
+.Op Fl fip
 .Ar source_file target_file
 .Nm cp
-.Op Fl HRfhip
+.Oo
+.Fl R
+.Op Fl H | Fl L | Fl P
+.Oc
+.Op Fl fip
 .Ar source_file ... target_directory
 .Sh DESCRIPTION
 In the first synopsis form, the
@@ -41,11 +49,18 @@ detects an attempt to copy a file to itself, the copy will fail.
 The following options are available:
 .Bl -tag -width flag
 .It Fl H
-When encountering a symbolic link on the command line, follow it.  All other
-symbolic links encountered in the traversal are not followed.
-Provided for the
+If the
 .Fl R
-option which does not follow symbolic links by default.
+option is specified, symbolic links on the command line are followed.
+(Symbolic links encountered in the tree traversal are not followed.)
+.It Fl L
+If the
+.Fl R
+option is specified, all symbolic links are followed.
+.It Fl P
+If the
+.Fl R
+option is specified, no symbolic links are followed.
 .It Fl R
 If
 .Ar source_file
@@ -67,19 +82,14 @@ regardless of its permissions.
 option is ignored if the
 .Fl f
 option is specified.)
-.It Fl h
-When encountering a symbolic link anywhere in the traversal, follow it.
-Provided for the
-.Fl R
-option which does not follow symbolic links by default.
 .It Fl i
 Causes
 .Nm cp
-to write a prompt to the standard error output before copying a file that would
-overwrite an existing file.
+to write a prompt to the standard error output before copying a file
+that would overwrite an existing file.
 If the response from the standard input begins with the character
 .Sq Li y ,
-the file is copied if permissions allow the copy.
+the file copy is attempted.
 .It Fl p
 Causes
 .Nm cp
@@ -131,17 +141,36 @@ Appropriate permissions are required for file creation or overwriting.
 .Pp
 Symbolic links are always followed unless the 
 .Fl R 
-flag is set in which case symbolic links are not followed by default.  
-However, the
+flag is set, in which case symbolic links are not followed, by default.
+The
 .Fl H
 or 
-.Fl h
+.Fl L
 flags (in conjuction with the
 .Fl R
-flag) cause symbolic link following as detailed above.
+flag) cause symbolic links to be followed as described above.
+The
+.Fl H ,
+.Fl L
+and
+.Fl P
+options are ignored unless the
+.Fl R
+option is specified.
+In addition, these options override each other and the
+command's actions are determined by the last one specified.
 .Pp
 .Nm Cp
 exits 0 on success, >0 if an error occurred.
+.Sh COMPATIBILITY
+Historic versions of the
+.Nm cp
+utility had a
+.Fl r
+option.
+This implementation supports that option, however, its use is strongly
+discouraged, as it does not correctly copy special files, symbolic links
+or fifo's.
 .Sh SEE ALSO
 .Xr mv 1 ,
 .Xr rcp 1 ,

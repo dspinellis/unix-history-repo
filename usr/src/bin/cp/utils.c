@@ -1,12 +1,12 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utils.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)utils.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)utils.c	8.2 (Berkeley) %G%";
 #include <sys/mman.h>
 #include <sys/time.h>
 
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>
@@ -24,20 +25,21 @@ static char sccsid[] = "@(#)utils.c	8.2 (Berkeley) %G%";
 
 #include "extern.h"
 
-void
+int
 copy_file(entp, dne)
 	FTSENT *entp;
 	int dne;
 {
 	static char buf[MAXBSIZE];
-	register int from_fd, to_fd, rcount, wcount;
 	struct stat to_stat, *fs;
+	int ch, checkch, from_fd, rcount, rval, to_fd, wcount;
+#ifdef VM_AND_BUFFER_CACHE_SYNCHRONIZED
 	char *p;
+#endif
 	
-
 	if ((from_fd = open(entp->fts_path, O_RDONLY, 0)) == -1) {
-		err("%s: %s", entp->fts_path, strerror(errno));
-		return;
+		warn("%s", entp->fts_path);
+		return (1);
 	}
 
 	fs = entp->fts_statp;
@@ -52,75 +54,101 @@ copy_file(entp, dne)
 	 */
 	if (!dne) {
 		if (iflag) {
-			int checkch, ch;
-
 			(void)fprintf(stderr, "overwrite %s? ", to.p_path);
 			checkch = ch = getchar();
 			while (ch != '\n' && ch != EOF)
 				ch = getchar();
 			if (checkch != 'y') {
 				(void)close(from_fd);
-				return;
+				return (0);
 			}
 		}
-		to_fd = open(to.p_path, O_WRONLY|O_TRUNC, 0);
+		to_fd = open(to.p_path, O_WRONLY | O_TRUNC, 0);
 	} else
-		to_fd = open(to.p_path, O_WRONLY|O_CREAT|O_TRUNC,
-		    fs->st_mode & ~(S_ISUID|S_ISGID));
+		to_fd = open(to.p_path, O_WRONLY | O_TRUNC | O_CREAT,
+		    fs->st_mode & ~(S_ISUID | S_ISGID));
 
 	if (to_fd == -1) {
-		err("%s: %s", to.p_path, strerror(errno));
+		warn("%s", to.p_path);
 		(void)close(from_fd);
-		return;
+		return (1);;
 	}
+
+	rval = 0;
 
 	/*
 	 * Mmap and write if less than 8M (the limit is so we don't totally
 	 * trash memory on big files.  This is really a minor hack, but it
 	 * wins some CPU back.
 	 */
-#ifdef VM_AND_BUFFER_CACHE_FIXED
+#ifdef VM_AND_BUFFER_CACHE_SYNCHRONIZED
 	if (fs->st_size <= 8 * 1048576) {
 		if ((p = mmap(NULL, (size_t)fs->st_size, PROT_READ,
-		    0, from_fd, (off_t)0)) == (char *)-1)
-			err("%s: %s", entp->fts_path, strerror(errno));
-		if (write(to_fd, p, fs->st_size) != fs->st_size)
-			err("%s: %s", to.p_path, strerror(errno));
-		/* Some systems don't unmap on close(2). */
-		if (munmap(p, fs->st_size) < 0)
-			err("%s: %s", entp->fts_path, strerror(errno));
+		    0, from_fd, (off_t)0)) == (char *)-1) {
+			warn("%s", entp->fts_path);
+			rval = 1;
+		} else {
+			if (write(to_fd, p, fs->st_size) != fs->st_size) {
+				warn("%s", to.p_path);
+				rval = 1;
+			}
+			/* Some systems don't unmap on close(2). */
+			if (munmap(p, fs->st_size) < 0) {
+				warn("%s", entp->fts_path);
+				rval = 1;
+			}
+		}
 	} else
 #endif
 	{
 		while ((rcount = read(from_fd, buf, MAXBSIZE)) > 0) {
 			wcount = write(to_fd, buf, rcount);
 			if (rcount != wcount || wcount == -1) {
-				err("%s: %s", to.p_path, strerror(errno));
+				warn("%s", to.p_path);
+				rval = 1;
 				break;
 			}
 		}
-		if (rcount < 0)
-			err("%s: %s", entp->fts_path, strerror(errno));
+		if (rcount < 0) {
+			warn("%s", entp->fts_path);
+			rval = 1;
+		}
 	}
-	if (pflag)
-		setfile(fs, to_fd);
+
+	/* If the copy went bad, lose the file. */
+	if (rval == 1) {
+		(void)unlink(to.p_path);
+		(void)close(from_fd);
+		(void)close(to_fd);
+		return (1);
+	}
+
+	if (pflag && setfile(fs, to_fd))
+		rval = 1;
 	/*
 	 * If the source was setuid or setgid, lose the bits unless the
 	 * copy is owned by the same user and group.
 	 */
-	else if (fs->st_mode & (S_ISUID|S_ISGID) && fs->st_uid == myuid)
-		if (fstat(to_fd, &to_stat))
-			err("%s: %s", to.p_path, strerror(errno));
-#define	RETAINBITS	(S_ISUID|S_ISGID|S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO)
-		else if (fs->st_gid == to_stat.st_gid && fchmod(to_fd,
-		    fs->st_mode & RETAINBITS & ~myumask))
-			err("%s: %s", to.p_path, strerror(errno));
+#define	RETAINBITS \
+	(S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO)
+	else if (fs->st_mode & (S_ISUID | S_ISGID) && fs->st_uid == myuid)
+		if (fstat(to_fd, &to_stat)) {
+			warn("%s", to.p_path);
+			rval = 1;
+		} else if (fs->st_gid == to_stat.st_gid &&
+		    fchmod(to_fd, fs->st_mode & RETAINBITS & ~myumask)) {
+			warn("%s", to.p_path);
+			rval = 1;
+		}
 	(void)close(from_fd);
-	if (close(to_fd))
-		err("%s: %s", to.p_path, strerror(errno));
+	if (close(to_fd)) {
+		warn("%s", to.p_path);
+		rval = 1;
+	}
+	return (rval);
 }
 
-void
+int
 copy_link(p, exists)
 	FTSENT *p;
 	int exists;
@@ -129,68 +157,71 @@ copy_link(p, exists)
 	char link[MAXPATHLEN];
 
 	if ((len = readlink(p->fts_path, link, sizeof(link))) == -1) {
-		err("readlink: %s: %s", p->fts_path, strerror(errno));
-		return;
+		warn("readlink: %s", p->fts_path);
+		return (1);
 	}
 	link[len] = '\0';
 	if (exists && unlink(to.p_path)) {
-		err("unlink: %s: %s", to.p_path, strerror(errno));
-		return;
+		warn("unlink: %s", to.p_path);
+		return (1);
 	}
 	if (symlink(link, to.p_path)) {
-		err("symlink: %s: %s", link, strerror(errno));
-		return;
+		warn("symlink: %s", link);
+		return (1);
 	}
+	return (0);
 }
 
-void
+int
 copy_fifo(from_stat, exists)
 	struct stat *from_stat;
 	int exists;
 {
 	if (exists && unlink(to.p_path)) {
-		err("unlink: %s: %s", to.p_path, strerror(errno));
-		return;
+		warn("unlink: %s", to.p_path);
+		return (1);
 	}
 	if (mkfifo(to.p_path, from_stat->st_mode)) {
-		err("mkfifo: %s: %s", to.p_path, strerror(errno));
-		return;
+		warn("mkfifo: %s", to.p_path);
+		return (1);
 	}
-	if (pflag)
-		setfile(from_stat, 0);
+	return (pflag ? setfile(from_stat, 0) : 0);
 }
 
-void
+int
 copy_special(from_stat, exists)
 	struct stat *from_stat;
 	int exists;
 {
 	if (exists && unlink(to.p_path)) {
-		err("unlink: %s: %s", to.p_path, strerror(errno));
-		return;
+		warn("unlink: %s", to.p_path);
+		return (1);
 	}
-	if (mknod(to.p_path, from_stat->st_mode,  from_stat->st_rdev)) {
-		err("mknod: %s: %s", to.p_path, strerror(errno));
-		return;
+	if (mknod(to.p_path, from_stat->st_mode, from_stat->st_rdev)) {
+		warn("mknod: %s", to.p_path);
+		return (1);
 	}
-	if (pflag)
-		setfile(from_stat, 0);
+	return (pflag ? setfile(from_stat, 0) : 0);
 }
 
 
-void
+int
 setfile(fs, fd)
 	register struct stat *fs;
 	int fd;
 {
 	static struct timeval tv[2];
+	int rval;
 
-	fs->st_mode &= S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO;
+	rval = 0;
+	fs->st_mode &= S_ISUID | S_ISGID | S_IRWXU | S_IRWXG | S_IRWXO;
 
 	TIMESPEC_TO_TIMEVAL(&tv[0], &fs->st_atimespec);
 	TIMESPEC_TO_TIMEVAL(&tv[1], &fs->st_mtimespec);
-	if (utimes(to.p_path, tv))
-		err("utimes: %s: %s", to.p_path, strerror(errno));
+	if (utimes(to.p_path, tv)) {
+		warn("utimes: %s", to.p_path);
+		rval = 1;
+	}
 	/*
 	 * Changing the ownership probably won't succeed, unless we're root
 	 * or POSIX_CHOWN_RESTRICTED is not set.  Set uid/gid before setting
@@ -199,49 +230,30 @@ setfile(fs, fd)
 	 */
 	if (fd ? fchown(fd, fs->st_uid, fs->st_gid) :
 	    chown(to.p_path, fs->st_uid, fs->st_gid)) {
-		if (errno != EPERM)
-			err("chown: %s: %s", to.p_path, strerror(errno));
-		fs->st_mode &= ~(S_ISUID|S_ISGID);
+		if (errno != EPERM) {
+			warn("chown: %s", to.p_path);
+			rval = 1;
+		}
+		fs->st_mode &= ~(S_ISUID | S_ISGID);
 	}
-	if (fd ? fchmod(fd, fs->st_mode) : chmod(to.p_path, fs->st_mode))
-		err("chown: %s: %s", to.p_path, strerror(errno));
+	if (fd ? fchmod(fd, fs->st_mode) : chmod(to.p_path, fs->st_mode)) {
+		warn("chown: %s", to.p_path);
+		rval = 1;
+	}
 
-	if (fd ? fchflags(fd, fs->st_flags) : chflags(to.p_path, fs->st_flags))
-		err("chflags: %s: %s", to.p_path, strerror(errno));
+	if (fd ?
+	    fchflags(fd, fs->st_flags) : chflags(to.p_path, fs->st_flags)) {
+		warn("chflags: %s", to.p_path);
+		rval = 1;
+	}
+	return (rval);
 }
 
 void
 usage()
 {
-	(void)fprintf(stderr,
-"usage: cp [-HRfhip] src target;\n       cp [-HRfhip] src1 ... srcN directory\n");
+	(void)fprintf(stderr, "%s\n%s\n",
+"usage: cp [-R [-H | -L | -P] [-fip] src target",
+"       cp [-R [-H | -L | -P] [-fip] src1 ... srcN directory");
 	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "%s: ", progname);
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit_val = 1;
 }
