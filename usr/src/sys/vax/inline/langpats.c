@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	2.2 (Berkeley) %G%";
 #endif
 
 #include "inline.h"
@@ -171,26 +171,30 @@ struct pats language_ptab[] = {
 	{ "1,_htons\n",
 "	movl	(sp)+,r5\n\
 	rotl	$8,r5,r0\n\
-	movb	1(r5),r0\n\
+	rotl	$-8,r5,r1\n\
+	movb	r1,r0\n\
 	movzwl	r0,r0\n" },
 
 	{ "1,_ntohs\n",
 "	movl	(sp)+,r5\n\
-	rotl	$8,(r5),r0\n\
-	movb	1(r5),r0\n\
+	rotl	$8,r5,r0\n\
+	rotl	$-8,r5,r1\n\
+	movb	r1,r0\n\
 	movzwl	r0,r0\n" },
 
 	{ "1,_htonl\n",
 "	movl	(sp)+,r5\n\
-	rotl	$-8,(r5),r0\n\
+	rotl	$-8,r5,r0\n\
 	insv	r0,$16,$8,r0\n\
-	movb	3(sp),r0\n" },
+	rotl	$8,r5,r1\n\
+	movb	r1,r0\n" },
 
 	{ "1,_ntohl\n",
 "	movl	(sp)+,r5\n\
-	rotl	$-8,(r5),r0\n\
+	rotl	$-8,r5,r0\n\
 	insv	r0,$16,$8,r0\n\
-	movb	3(r5),r0\n" },
+	rotl	$8,r5,r1\n\
+	movb	r1,r0\n" },
 
 	{ "2,__insque\n",
 "	movl	(sp)+,r4\n\
