@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.11 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,8 +28,8 @@
 #ifdef INET
 #include "../netinet/in.h"
 #include "../netinet/in_var.h"
-#include "../netinet/if_ether.h"
 #endif
+#include "../netinet/if_ether.h"
 
 #ifdef NS
 #include "../netns/ns.h"
