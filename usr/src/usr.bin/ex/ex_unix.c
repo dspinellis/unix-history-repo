@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_unix.c	7.8 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_unix.c	7.8 (Berkeley) 7/28/88";
 #endif not lint
 
 #include "ex.h"
@@ -166,6 +166,11 @@ unixex(opt, up, newstdin, mode)
 		error("No more processes");
 	}
 	if (pid == 0) {
+		if (up) {
+			register char *cp = up;
+			while (*cp)
+				*cp++ &= TRIM;
+		}
 		if (mode & 2) {
 			close(0);
 			dup(newstdin);
@@ -317,7 +322,8 @@ recover()
 		close(1);
 		dup(pvec[1]);
 	        close(pvec[1]);
-		execl(EXRECOVER, "exrecover", svalue(DIRECTORY), file, (char *) 0);
+		execl(_PATH_EXRECOVER, "exrecover", svalue(DIRECTORY),
+		    file, (char *) 0);
 		close(1);
 		dup(2);
 		error(" No recovery routine");
