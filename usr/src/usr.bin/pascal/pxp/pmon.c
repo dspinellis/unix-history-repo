@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)pmon.c	2.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)pmon.c	2.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -171,10 +171,10 @@ pmread()
 	ptvec = zmagic.tim;
 	zcnt = zmagic.cntrs;
 	zpfcnt = zmagic.rtns;
-	cp = zbuf = alloc(i = (zcnt + 1) * sizeof *zbuf);
+	cp = zbuf = pcalloc(i = (zcnt + 1) * sizeof *zbuf, 1);
 	if (cp == -1)
 		pmnospac();
-	cp = zpf = alloc(zpfcnt * sizeof *zpf);
+	cp = zpf = pcalloc(zpfcnt * sizeof *zpf, 1);
 	if (cp == -1)
 		pmnospac();
 	i -= sizeof(zmagic);
