@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.14 (Berkeley) %G%
+#	@(#)run.test	5.15 (Berkeley) %G%
 #
 
 # db regression tests
@@ -487,7 +487,7 @@ test20()
 	}' >> $TMP2
 	bsize=256
 	for ffactor in 11 14 21; do
-		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		printf "\tbucketsize %d, fill factor %d\n" $bsize $ffactor
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
@@ -500,7 +500,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	done
 	bsize=512
 	for ffactor in 21 28 43; do
-		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		printf "\tbucketsize %d, fill factor %d\n" $bsize $ffactor
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
@@ -513,7 +513,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	done
 	bsize=1024
 	for ffactor in 43 57 85; do
-		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		printf "\tbucketsize %d, fill factor %d\n" $bsize $ffactor
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
@@ -526,7 +526,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	done
 	bsize=2048
 	for ffactor in 85 114 171; do
-		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		printf "\tbucketsize %d, fill factor %d\n" $bsize $ffactor
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
@@ -539,7 +539,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	done
 	bsize=4096
 	for ffactor in 171 228 341; do
-		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		printf "\tbucketsize %d, fill factor %d\n" $bsize $ffactor
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
@@ -552,7 +552,7 @@ bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 	done
 	bsize=8192
 	for ffactor in 341 455 683; do
-		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		printf "\tbucketsize %d, fill factor %d\n" $bsize $ffactor
 		$PROG -o$TMP3 \
 		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
 		    hash $TMP2
