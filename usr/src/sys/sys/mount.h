@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.4 (Berkeley) %G%
+ *	@(#)mount.h	7.5 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -50,48 +50,34 @@ struct mount {
 };
 
 /*
- * mount flags.
- * M_MLOCK lock the mount entry so that name lookup cannot proceed
- * past the mount point.  This keeps the subtree stable during mounts
- * and unmounts.
+ * Mount flags.
  */
 #define	M_RDONLY	0x01		/* read only filesystem */
 #define	M_SYNCHRONOUS	0x02		/* file system written synchronously */
-#define	M_MLOCK		0x04		/* lock so that subtree is stable */
-#define	M_MWAIT		0x08		/* someone is waiting for lock */
-#define	M_NOEXEC	0x10		/* can't exec from filesystem */
-#define	M_NOSUID	0x20		/* don't honor setuid bits on fs */
-#define	M_NODEV		0x40		/* don't interpret special files */
+#define	M_NOEXEC	0x04		/* can't exec from filesystem */
+#define	M_NOSUID	0x08		/* don't honor setuid bits on fs */
+#define	M_NODEV		0x10		/* don't interpret special files */
 /*
  * exported mount flags.
  */
 #define	M_EXPORTED	0x100		/* file system is exported */
 #define	M_EXRDONLY	0x200		/* exported read only */
-
 /*
- * Set/clear the M_MLOCK
+ * filesystem control flags.
+ *
+ * M_MLOCK lock the mount entry so that name lookup cannot proceed
+ * past the mount point.  This keeps the subtree stable during mounts
+ * and unmounts.
  */
-#define	VFSLOCK(mp) { \
-	while ((mp)->m_flag & M_MLOCK) { \
-		(mp)->m_flag |= M_MWAIT; \
-		(void) sleep((caddr_t)(mp), PVFS); \
-	} \
-	(mp)->m_flag |= M_MLOCK; \
-}
-
-#define	VFSUNLOCK(mp) { \
-	(mp)->m_flag &= ~M_MLOCK; \
-	if ((mp)->m_flag&M_MWAIT) { \
-		(mp)->m_flag &= ~M_MWAIT; \
-		wakeup((caddr_t)(mp)); \
-	} \
-}
+#define	M_MLOCK		0x1000		/* lock so that subtree is stable */
+#define	M_MWAIT		0x2000		/* someone is waiting for lock */
 
 /*
  * Operations supported on mounted file system.
  */
 struct vfsops {
 	int	(*vfs_mount)(	/* mp, path, data, ndp */ );
+	int	(*vfs_start)(	/* mp, flags */ );
 	int	(*vfs_unmount)(	/* mp, forcibly */ );
 	int	(*vfs_root)(	/* mp, vpp */ );
 	int	(*vfs_statfs)(	/* mp, sbp */ );
@@ -102,8 +88,9 @@ struct vfsops {
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP) \
 	(*(MP)->m_op->vfs_mount)(MP, PATH, DATA, NDP)
+#define VFS_START(MP, FLAGS)	  (*(MP)->m_op->vfs_start)(MP, FLAGS)
 #define VFS_UNMOUNT(MP, FORCIBLY) (*(MP)->m_op->vfs_unmount)(MP, FORCIBLY)
-#define VFS_ROOT(MP, VPP)	  (*(MP)->m_op->vfs_root)(MP,VPP)
+#define VFS_ROOT(MP, VPP)	  (*(MP)->m_op->vfs_root)(MP, VPP)
 #define VFS_STATFS(MP, SBP)	  (*(MP)->m_op->vfs_statfs)(MP, SBP)
 #define VFS_SYNC(MP, WAITFOR)	  (*(MP)->m_op->vfs_sync)(MP, WAITFOR)
 #define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->m_op->vfs_fhtovp)(MP, FIDP, VPP)
@@ -122,7 +109,7 @@ struct vfsops {
  * file system statistics
  */
 
-#define MNAMELEN 32	/* length of buffer for returned name */
+#define MNAMELEN 90	/* length of buffer for returned name */
 
 struct statfs {
 	short	f_type;			/* type of filesystem (see below) */
@@ -135,7 +122,7 @@ struct statfs {
 	long	f_files;		/* total file nodes in file system */
 	long	f_ffree;		/* free file nodes in fs */
 	fsid_t	f_fsid;			/* file system id */
-	long	f_spare[6];		/* spare for later */
+	long	f_spare[9];		/* spare for later */
 	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
 	char	f_mntfromname[MNAMELEN];/* mounted filesystem */
 };
@@ -145,8 +132,9 @@ struct statfs {
 #define	MOUNT_NONE	0
 #define	MOUNT_UFS	1
 #define	MOUNT_NFS	2
-#define	MOUNT_PC	3
-#define	MOUNT_MAXTYPE	3
+#define MOUNT_MFS	3
+#define	MOUNT_PC	4
+#define	MOUNT_MAXTYPE	4
 
 /*
  * Arguments to mount UFS
@@ -163,6 +151,17 @@ struct fhandle {
 	struct	fid fh_fid;	/* Id of file */
 };
 typedef struct fhandle	fhandle_t;
+
+#ifdef MFS
+/*
+ * Arguments to mount MFS
+ */
+struct mfs_args {
+	char	*name;
+	caddr_t	base;
+	u_long size;
+};
+#endif MFS
 
 #ifdef NFS
 /*
