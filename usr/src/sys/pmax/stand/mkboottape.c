@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboottape.c	7.3 (Berkeley) %G%
+ *	@(#)mkboottape.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -19,10 +19,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include "../dev/devDiskLabel.h"
+
+#include "dec_boot.h"
 
 void err __P((const char *, ...));
 void usage __P((void));
+
+struct	Dec_DiskBoot decBootInfo;
 
 /*
  * This program takes a kernel and the name of the special device file that
@@ -38,7 +41,6 @@ main(argc, argv)
 	char *argv[];
 {
 	register int i, n;
-	Dec_DiskBoot decBootInfo;
 	ProcSectionHeader shdr;
 	struct exec aout;
 	long loadAddr;
@@ -68,19 +70,19 @@ main(argc, argv)
 		usage();
 
 	if (makebootfile)
-		ofd = open(argv[1], O_CREAT|O_TRUNC|O_WRONLY, DEFFILEMODE);
+		ofd = open(argv[0], O_CREAT|O_TRUNC|O_WRONLY, DEFFILEMODE);
 	else
-		ofd = open(argv[1], O_RDWR, 0);
+		ofd = open(argv[0], O_RDWR, 0);
 	if (ofd < 0)
-deverr:		err("%s: %s", argv[1], strerror(errno));
+deverr:		err("%s: %s", argv[0], strerror(errno));
 
-	if ((ifd = open(argv[2], O_RDONLY, 0)) < 0)
-bootferr:	err("%s: %s", argv[2], strerror(errno));
+	if ((ifd = open(argv[1], O_RDONLY, 0)) < 0)
+bootferr:	err("%s: %s", argv[1], strerror(errno));
 
-	if ((rfd = open(argv[3], 0, 0)) < 0)
-rooterr:	err("%s: %s", argv[3], strerror(errno));
+	if ((rfd = open(argv[2], O_RDONLY, 0)) < 0)
+rooterr:	err("%s: %s", argv[2], strerror(errno));
 
-	rootsize = atoi(argv[4]);
+	rootsize = atoi(argv[3]);
 
 	/*
 	 * Check for exec header and skip to code segment.
@@ -100,7 +102,7 @@ rooterr:	err("%s: %s", argv[3], strerror(errno));
 	 * Compute size of boot program rounded to page size + mini-root size.
 	 */
 	nsectors = (((length + aout.a_bss + NBPG - 1) & ~(NBPG - 1)) >>
-	    DEV_BSHIFT) + rootsize;
+		DEV_BSHIFT) + rootsize;
 
 	if (makebootfile) {
 		/*
@@ -158,7 +160,7 @@ rooterr:	err("%s: %s", argv[3], strerror(errno));
 			n = i;
 		if (read(ifd, block, n) != n)
 			goto bootferr;
-		if (write(ofd, block, n) != n)
+		if (write(ofd, block, DEV_BSIZE) != DEV_BSIZE)
 			goto deverr;
 	}
 
@@ -166,11 +168,10 @@ rooterr:	err("%s: %s", argv[3], strerror(errno));
 	 * Pad the boot file with zeros to the start of the mini-root.
 	 */
 	bzero(block, DEV_BSIZE);
-	for (i = ((nsectors - rootsize) << DEV_BSHIFT) - length;
-	    i > 0; i -= n) {
-		n = DEV_BSIZE;
-		if (n > i)
-			n = i;
+	i = ((nsectors - rootsize) << DEV_BSHIFT) -
+		((length + DEV_BSIZE - 1) & ~(DEV_BSIZE - 1));
+	n = DEV_BSIZE;
+	for (; i > 0; i -= n) {
 		if (write(ofd, block, n) != n)
 			goto deverr;
 	}
