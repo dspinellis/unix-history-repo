@@ -49,6 +49,7 @@
  */
 	.set	vfork,66
 .globl	_vfork
+.type	_vfork,@function
 
 _vfork:
 	popl	%ecx		/* my rta into ecx */
