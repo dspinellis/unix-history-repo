@@ -115,15 +115,50 @@ main(argc, argv)
          if (getch(d, fd) == '.') { /* found a reference */
             if (c == '{') { if (lastc) putc(lastc, tfd);}
             else
-               if (lastc == ' ')       fputs("\\*([<", tfd);
-               else if (lastc == '.')  fputs("\\*([.", tfd);
-               else if (lastc == ',')  fputs("\\*([,", tfd);
-               else if (lastc)         putc(lastc, tfd);
+	       switch (lastc) {
+	       case ' ': fputs("\\*([<", tfd);
+			 break;
+               case '.': fputs("\\*([.", tfd);
+			 break;
+               case ',': fputs("\\*([,", tfd);
+			 break;
+               case '?': fputs("\\*([?", tfd);
+			 break;
+               case ':': fputs("\\*([:", tfd);
+			 break;
+               case ';': fputs("\\*([;", tfd);
+			 break;
+               case '!': fputs("\\*([!", tfd);
+			 break;
+               case '"': fputs("\\*([\"", tfd);
+			 break;
+               case '\'': fputs("\\*(['", tfd);
+			 break;
+	       default : putc(lastc, tfd);
+			 break;
+	       }
             rdcite(fd, c);
             if (c == '[')
-               if (lastc == ' ')       fputs("\\*(>]", tfd);
-               else if (lastc == '.')  fputs("\\*(.]", tfd);
-               else if (lastc == ',')  fputs("\\*(,]", tfd);
+	       switch (lastc) {
+	       case ' ': fputs("\\*(<]", tfd);
+			 break;
+               case '.': fputs("\\*(.]", tfd);
+			 break;
+               case ',': fputs("\\*(,]", tfd);
+			 break;
+               case '?': fputs("\\*(?]", tfd);
+			 break;
+               case ':': fputs("\\*(:]", tfd);
+			 break;
+               case ';': fputs("\\*(;]", tfd);
+			 break;
+               case '!': fputs("\\*(!]", tfd);
+			 break;
+               case '"': fputs("\\*(\"]", tfd);
+			 break;
+               case '\'': fputs("\\*(']", tfd);
+			 break;
+	       }
             lastc = 0;
             }
          else {
@@ -326,6 +361,7 @@ main(argc, argv)
 {  char ref1[REFSIZE], ref2[REFSIZE], field1[MAXFIELD], field2[MAXFIELD];
    char *p, *q, *getfield();
    int  neg, res;
+   int  fields_found;
 
    rdref(*ap, ref1);
    rdref(*bp, ref2);
@@ -337,11 +373,45 @@ main(argc, argv)
       else
          neg = false;
       q = getfield(p, field1, ref1);
-      if (q == 0)
-         res = 1;
-      else if (getfield(p, field2, ref2) == 0)
-         res = -1;
-      else {
+      fields_found = true;
+      if (q == 0) {
+	 res = 1;
+	 fields_found = false;
+      } else if (strcmp (field1, "") == 0) {	/* field not found */
+         if (*p == 'A') {
+            getfield("F", field1, ref1);
+	    if (strcmp (field1, "") == 0) {
+               getfield("I", field1, ref1);
+	       if (strcmp (field1, "") == 0) {
+	          res = 1;
+		  fields_found = false;
+	       }
+	    }
+	 } else {
+	    res = 1;
+	    fields_found = false;
+	 }
+      }
+
+      if (getfield(p, field2, ref2) == 0) {
+	 res = -1;
+	 fields_found = false;
+      } else if (strcmp (field2, "") == 0) {	/* field not found */
+         if (*p == 'A') {
+            getfield("F", field2, ref2);
+	    if (strcmp (field2, "") == 0) {
+               getfield("I", field2, ref2);
+	       if (strcmp (field2, "") == 0) {
+	          res = -1;
+		  fields_found = false;
+	       }
+	    }
+	 } else {
+	    res = -1;
+	    fields_found = false;
+	 }
+      }
+      if (fields_found) {
          if (*p == 'A') {
             if (isupper(field1[0]))
                field1[0] -= 'A' - 'a';
@@ -506,7 +576,7 @@ main(argc, argv)
 {  char *p;
 
    for (p = ref; *p; p++)
-      if (*p == '%' & *(p+1) == 'A') {
+      if (*p == '%' & (*(p+1) == 'A' || *(p+1) == 'E')) {
          n--;
          if (n == 0) {
             for (p = p + 2; *p == ' '; p++) ;

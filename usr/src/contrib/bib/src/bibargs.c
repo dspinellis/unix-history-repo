@@ -56,7 +56,18 @@
       if (argv[i][0] == '-')
          switch(argv[i][1]) {
 
-            case 'a':  abbrev = true;
+            case 'a':  for (p = &argv[i][2]; *p; p++) /* author */
+                          if (*p == 'a')
+                             abbrev = true;
+                           else if (*p == 'x')
+                             capsmcap = true;
+                           else if (*p == 'r') {
+                             if (*(p+1))
+                                numrev = atoi(p+1);
+                              else
+                                numrev = 1000;
+                              break;
+                              }
                        break;
 
             case 'c':  if (argv[i][2] == 0)
@@ -267,7 +278,18 @@ char *walloc(word)
 
          case '#': break;
 
-         case 'A': abbrev = true;
+         case 'A': for (p = &line[1]; *p; p++)
+                      if (*p == 'A')
+                         abbrev = true;
+                      else if (*p == 'X')
+                         capsmcap = true;
+                      else if (*p == 'R') {
+                         if (*(p+1))
+                            numrev = atoi(p+1);
+                         else
+                            numrev = 1000;
+                         break;
+                         }
                    break;
 
          case 'C': for (p = &line[1]; *p == ' '; p++) ;
