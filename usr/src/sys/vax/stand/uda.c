@@ -1,4 +1,4 @@
-/*	uda.c	4.5	82/12/30	*/
+/*	uda.c	4.6	83/02/16	*/
 
 /*
  * UDA50/RAxx disk device driver
@@ -24,7 +24,7 @@
 #include "../vaxuba/ubareg.h"
 #include "../vax/mscp.h"
 
-u_short udastd[] = { 0777550 };
+u_short udastd[] = { 0772550 };
 
 struct iob	cudbuf;
 
