@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.13 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.14 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -499,10 +499,6 @@ asgnsamples()
 	    printf( "[asgnsamples] totime %f\n" , totime );
 	}
 #   endif DEBUG
-    if (totime==0.0) {
-	fprintf( stderr , "No time accumulated\n" );
-	totime=1.0;
-    }
 }
 
 

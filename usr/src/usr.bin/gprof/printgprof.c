@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.10 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.11 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -12,7 +12,16 @@ printprof()
 
     printf( "\ngranularity: each sample hit covers %d byte(s)" ,
 	    (long) scale * sizeof(UNIT) );
-    printf( " for %.2f%% of %.2f seconds\n\n" , 100.0/totime , totime / HZ );
+    if ( totime > 0.0 ) {
+	printf( " for %.2f%% of %.2f seconds\n\n" ,
+		100.0/totime , totime / HZ );
+    } else {
+	printf( " no time accumulated\n\n" );
+	    /*
+	     *	this doesn't hurt sinc eall the numerators will be zero.
+	     */
+	totime = 1.0;
+    }
     actime = 0.0;
     flatprofheader();
 	/*
@@ -91,8 +100,16 @@ gprofheader()
     }
     printf( "\ngranularity: each sample hit covers %d byte(s)" ,
 	    (long) scale * sizeof(UNIT) );
-    printf( " for %.2f%% of %.2f seconds\n\n" ,
-	    100.0/printtime , printtime / HZ );
+    if ( printtime > 0.0 ) {
+	printf( " for %.2f%% of %.2f seconds\n\n" ,
+		100.0/printtime , printtime / HZ );
+    } else {
+	printf( " no time propagated\n\n" );
+	    /*
+	     *	this doesn't hurt, since all the numerators will be 0.0
+	     */
+	printtime = 1.0;
+    }
     printf( "%6.6s %5.5s %7.7s %11.11s %7.7s/%-7.7s     %-8.8s\n" ,
 	"" , "" , "" , "" , "called" , "total" , "parents" , "" );
     printf( "%-6.6s %5.5s %7.7s %11.11s %7.7s+%-7.7s %-8.8s\t%5.5s\n" ,
