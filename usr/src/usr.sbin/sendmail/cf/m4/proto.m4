@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.53 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.54 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -304,6 +304,12 @@ ifdef(`confWORK_CLASS_FACTOR',
 ifdef(`confWORK_TIME_FACTOR',
 	OZ`'confWORK_TIME_FACTOR,
 	#OZ90000)
+
+# do our SMTP peers choke on multi-line greeting messages?
+O BrokenSmtpPeers=confBROKEN_SMTP_PEERS
+
+# shall we sort the queue by hostname first?
+O SortQueueByHost=confSORT_QUEUE_BY_HOST
 
 ###########################
 #   Message precedences   #
