@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.98 (Berkeley) %G%
+#	@(#)termcap.src	5.99 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -458,6 +458,13 @@ Ih|hft|AIWS High Function Terminal:\
 	:k1=\E[001q:k2=\E[002q:k3=\E[003q:k4=\E[004q:\
 	:k5=\E[005q:k6=\E[006q:k7=\E[007q:k8=\E[008q:\
 	:k9=\E[009q:ka=\E[010q:
+#From pryor@math.berkeley.edu
+Ii|ibm5081|ibmmpel|IBM 5081 1024x1024 256/4096 color display:\
+	:ts=\Ej\EYA%+ \Eo:fs=\Ek:ds=\Ej\EYA\40\EI\Ek:es:hs:\
+	:li#33:tc=ibmconsole:
+Ij|ibm5081-c|ibmmpel-c|IBM 5081 1024x1024 256/4096 enhanced color display:\
+	:ts=\Ej\EYA%+ \Eo:fs=\Ek:ds=\Ej\EYA\40\EI\Ek:es:hs:\
+	:li#33:tc=ibmega-c:
 # # --------------------------------
 #
 # M: MISCELLANEOUS TERMINALS
