@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prompt.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)prompt.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -95,7 +95,7 @@ setmp()
 ap_pos(pos)
 	POSITION pos;
 {
-	sprintf(mp, "%ld", (long)pos);
+	(void)sprintf(mp, "%ld", (long)pos);
 	setmp();
 }
 
@@ -106,7 +106,7 @@ ap_pos(pos)
 ap_int(n)
 	int n;
 {
-	sprintf(mp, "%d", n);
+	(void)sprintf(mp, "%d", n);
 	setmp();
 }
 
