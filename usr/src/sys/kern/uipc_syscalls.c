@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	8.1 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1112,11 +1112,11 @@ getpeername1(p, uap, retval)
 	so = (struct socket *)fp->f_data;
 	if ((so->so_state & (SS_ISCONNECTED|SS_ISCONFIRMING)) == 0)
 		return (ENOTCONN);
+	if (error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len)))
+		return (error);
 	m = m_getclr(M_WAIT, MT_SONAME);
 	if (m == NULL)
 		return (ENOBUFS);
-	if (error = copyin((caddr_t)uap->alen, (caddr_t)&len, sizeof (len)))
-		return (error);
 	if (error = (*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0))
 		goto bad;
 	if (len > m->m_len)
