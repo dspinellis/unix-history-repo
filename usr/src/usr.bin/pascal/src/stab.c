@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.6 %G%";
+static	char sccsid[] = "@(#)stab.c 1.7 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -152,9 +152,9 @@ stabrbrac( level )
     /*
      *	functions
      */
-stabfunc( name , class , line , level )
+stabfunc( name , typeclass , line , level )
     char	*name;
-    int		class;
+    int		typeclass;
     int		line;
     long	level;
     {
@@ -166,10 +166,10 @@ stabfunc( name , class , line , level )
 	     *	for separate compilation
 	     */
 	if ( level == 1 ) {
-	    if ( class == FUNC ) {
+	    if ( typeclass == FUNC ) {
 		putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
 			    , name , N_PC , N_PGFUNC , ABS( line ) );
-	    } else if ( class == PROC ) {
+	    } else if ( typeclass == PROC ) {
 		putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
 			    , name , N_PC , N_PGPROC , ABS( line ) );
 	    }
@@ -304,16 +304,16 @@ stabgtype( type , line )
     /*
      *	external functions and procedures
      */	
-stabefunc( name , class , line )
+stabefunc( name , typeclass , line )
     char	*name;
-    int		class;
+    int		typeclass;
     int		line;
     {
 	int	type;
 
-	if ( class == FUNC ) {
+	if ( typeclass == FUNC ) {
 	    type = N_PEFUNC;
-	} else if ( class == PROC ) {
+	} else if ( typeclass == PROC ) {
 	    type = N_PEPROC;
 	} else {
 	    return;

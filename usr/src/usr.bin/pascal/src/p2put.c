@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.9 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.10 %G%";
 
     /*
      *	functions to help pi put out
@@ -212,11 +212,11 @@ putleaf( op , lval , rval , type , name )
      *	special cases for registers and for named globals,
      *	whose names are their rvalues.
      */
-putRV( name , level , offset , extra_flags , type )
+putRV( name , level , offset , other_flags , type )
     char	*name;
     int		level;
     int		offset;
-    char	extra_flags;
+    char	other_flags;
     int		type;
     {
 	char	extname[ BUFSIZ ];
@@ -225,14 +225,14 @@ putRV( name , level , offset , extra_flags , type )
 
 	if ( !CGENNING )
 	    return;
-	if ( extra_flags & NREGVAR ) {
+	if ( other_flags & NREGVAR ) {
 	    if ( ( offset < 0 ) || ( offset > P2FP ) ) {
 		panic( "putRV regvar" );
 	    }
 	    putleaf( P2REG , 0 , offset , type , 0 );
 	    return;
 	}
-	if ( whereis( level , offset , extra_flags ) == GLOBALVAR ) {
+	if ( whereis( level , offset , other_flags ) == GLOBALVAR ) {
 	    if ( name != 0 ) {
 		if ( name[0] != '_' ) {
 			sprintf( extname , EXTFORMAT , name );
@@ -246,7 +246,7 @@ putRV( name , level , offset , extra_flags , type )
 		panic( "putRV no name" );
 	    }
 	}
-	putLV( name , level , offset , extra_flags , type );
+	putLV( name , level , offset , other_flags , type );
 	putop( P2UNARY P2MUL , type );
     }
 
@@ -256,11 +256,11 @@ putRV( name , level , offset , extra_flags , type )
      *	special case for
      *	    named globals, whose lvalues are just their names as constants.
      */
-putLV( name , level , offset , extra_flags , type )
+putLV( name , level , offset , other_flags , type )
     char	*name;
     int		level;
     int		offset;
-    char	extra_flags;
+    char	other_flags;
     int		type;
 {
     char		extname[ BUFSIZ ];
@@ -268,10 +268,10 @@ putLV( name , level , offset , extra_flags , type )
 
     if ( !CGENNING )
 	return;
-    if ( extra_flags & NREGVAR ) {
+    if ( other_flags & NREGVAR ) {
 	panic( "putLV regvar" );
     }
-    switch ( whereis( level , offset , extra_flags ) ) {
+    switch ( whereis( level , offset , other_flags ) ) {
 	case GLOBALVAR:
 	    if ( ( name != 0 ) ) {
 		if ( name[0] != '_' ) {
@@ -315,8 +315,8 @@ putLV( name , level , offset , extra_flags , type )
      *	the constant is declared in aligned data space
      *	and a P2NAME leaf put out for it
      */
-putCON8( value )
-    double	value;
+putCON8( val )
+    double	val;
     {
 	int	label;
 	char	name[ BUFSIZ ];
@@ -327,7 +327,7 @@ putCON8( value )
 	putprintf( "	.align 2" , 0 );
 	label = getlab();
 	putlab( label );
-	putprintf( "	.double 0d%.20e" , 0 , value );
+	putprintf( "	.double 0d%.20e" , 0 , val );
 	putprintf( "	.text" , 0 );
 	sprintf( name , PREFIXFORMAT , LABELPREFIX , label );
 	putleaf( P2NAME , 0 , 0 , P2DOUBLE , name );
