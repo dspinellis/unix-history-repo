@@ -1,5 +1,5 @@
 #define IMPLOOP
-/*	ip_output.c	1.17	81/11/21	*/
+/*	ip_output.c	1.18	81/11/23	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -25,7 +25,6 @@ COUNT(IP_OUTPUT);
 	ip->ip_v = IPVERSION;
 	ip->ip_hl = hlen >> 2;
 	ip->ip_off &= IP_DF;
-	ip->ip_ttl = MAXTTL;
 	ip->ip_id = ip_id++;
 
 	/*
