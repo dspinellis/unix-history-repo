@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asic.h	7.1 (Berkeley) %G%
+ *	@(#)asic.h	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -173,4 +173,43 @@
 #define	ASIC_DECODE_HW_ADDRESS	0x000003f0
 #define	ASIC_DECODE_CHIP_SELECT	0x0000000f
 
+/*
+ * Asic register addresses at offset from base.
+ */
+#define	ASIC_REG_SCSI_DMAPTR(base)	((base) + ASIC_SCSI_DMAPTR)
+#define	ASIC_REG_SCSI_DMANPTR(base)	((base) + ASIC_SCSI_NEXTPTR)
+#define	ASIC_REG_LANCE_DMAPTR(base)	((base) + ASIC_LANCE_DMAPTR)
+#define	ASIC_REG_SCC_T1_DMAPTR(base)	((base) + ASIC_SCC_T1_DMAPTR)
+#define	ASIC_REG_SCC_R1_DMAPTR(base)	((base) + ASIC_SCC_R1_DMAPTR)
+#define	ASIC_REG_SCC_T2_DMAPTR(base)	((base) + ASIC_SCC_T2_DMAPTR)
+#define	ASIC_REG_SCC_R2_DMAPTR(base)	((base) + ASIC_SCC_R2_DMAPTR)
+#define	ASIC_REG_FLOPPY_DMAPTR(base)	((base) + ASIC_FLOPPY_DMAPTR)
+#define	ASIC_REG_ISDN_X_DMAPTR(base)	((base) + ASIC_ISDN_X_DMAPTR)
+#define	ASIC_REG_ISDN_X_NEXTPTR(base)	((base) + ASIC_ISDN_X_NEXTPTR)
+#define	ASIC_REG_ISDN_R_DMAPTR(base)	((base) + ASIC_ISDN_R_DMAPTR)
+#define	ASIC_REG_ISDN_R_NEXTPTR(base)	((base) + ASIC_ISDN_R_NEXTPTR)
+#define	ASIC_REG_BUFF0(base)		((base) + ASIC_BUFF0)
+#define	ASIC_REG_BUFF1(base)		((base) + ASIC_BUFF1)
+#define	ASIC_REG_BUFF2(base)		((base) + ASIC_BUFF2)
+#define	ASIC_REG_BUFF3(base)		((base) + ASIC_BUFF3)
+#define	ASIC_REG_CSR(base)		((base) + ASIC_CSR)
+#define	ASIC_REG_INTR(base)		((base) + ASIC_INTR)
+#define	ASIC_REG_IMSK(base)		((base) + ASIC_IMSK)
+#define	ASIC_REG_CURADDR(base)		((base) + ASIC_CURADDR)
+#define	ASIC_REG_ISDN_X_DATA(base)	((base) + ASIC_ISDN_X_DATA)
+#define	ASIC_REG_ISDN_R_DATA(base)	((base) + ASIC_ISDN_R_DATA)
+#define	ASIC_REG_LANCE_DECODE(base)	((base) + ASIC_LANCE_DECODE)
+#define	ASIC_REG_SCSI_DECODE(base)	((base) + ASIC_SCSI_DECODE)
+#define	ASIC_REG_SCC0_DECODE(base)	((base) + ASIC_SCC0_DECODE)
+#define	ASIC_REG_SCC1_DECODE(base)	((base) + ASIC_SCC1_DECODE)
+#define	ASIC_REG_FLOPPY_DECODE(base)	((base) + ASIC_FLOPPY_DECODE)
+#define	ASIC_REG_SCSI_SCR(base)		((base) + ASIC_SCSI_SCR)
+#define	ASIC_REG_SCSI_SDR0(base)	((base) + ASIC_SCSI_SDR0)
+#define	ASIC_REG_SCSI_SDR1(base)	((base) + ASIC_SCSI_SDR1)
+
+/*
+ * And slot assignments.
+ */
+#define	ASIC_SYS_ETHER_ADDRESS(base)	((base) + ASIC_SLOT_2_START)
+#define	ASIC_SYS_LANCE(base)		((base) + ASIC_SLOT_3_START)
 #endif	MIPS_ASIC_H
