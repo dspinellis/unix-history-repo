@@ -1,4 +1,4 @@
-/*	user.h	4.21	82/10/31	*/
+/*	user.h	4.22	82/11/13	*/
 
 #ifdef vax
 #include <vax/pcb.h>
@@ -69,8 +69,8 @@ struct	user {
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
 	char	u_pofile[NOFILE];	/* per-process flags of open files */
 #define	EXCLOSE 	0x1		/* auto-close on exec */
-#define	RDLOCK		0x2		/* read lock present */
-#define	WRLOCK		0x4		/* write lock present */
+#define	SHLOCK		0x2		/* shared lock present */
+#define	EXLOCK		0x4		/* exclusive lock present */
 #define	UF_MAPPED 	0x8
 	struct	inode *u_cdir;		/* current directory */
 	struct	inode *u_rdir;		/* root directory of current process */

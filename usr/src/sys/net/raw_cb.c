@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.13	82/10/31	*/
+/*	raw_cb.c	4.14	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -86,6 +86,7 @@ raw_bind(so, nam)
 	if (ifnet == 0)
 		return (EADDRNOTAVAIL);
 {
+#include "../h/domain.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 /* BEGIN DUBIOUS */
@@ -115,7 +116,7 @@ raw_bind(so, nam)
 		struct sockaddr_pup *spup = (struct sockaddr_pup *)addr;
 		struct sockaddr_in inpup;
 
-		bzero((caddr_t)&inpup, sizeof(inpup));
+		bzero((caddr_t)&inpup, (unsigned)sizeof(inpup));
 		inpup.sin_family = AF_INET;
 		inpup.sin_addr.s_net = spup->sp_net;
 		inpup.sin_addr.s_impno = spup->sp_host;
@@ -131,6 +132,7 @@ raw_bind(so, nam)
 	}
 }
 /* END DUBIOUS */
+	rp = sotorawcb(so);
 	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_laddr, sizeof (*addr));
 	rp->rcb_flags |= RAW_LADDR;
 	return (0);

@@ -1,4 +1,4 @@
-/*	types.h	4.8	82/10/31	*/
+/*	types.h	4.9	82/11/13	*/
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -29,8 +29,8 @@ typedef	struct	_physadr { short r[1]; } *physadr;
 typedef	struct	label_t	{
 	int	val[13];
 } label_t;
-typedef	struct	quad { long val[2]; } quad;
 #endif
+typedef	struct	_quad { long val[2]; } quad;
 typedef	long	daddr_t;
 typedef	char *	caddr_t;
 typedef	u_long	ino_t;

@@ -1,4 +1,4 @@
-/*	dir.h	4.4	82/10/09	*/
+/*	dir.h	4.5	82/11/13	*/
 
 /*
  * A directory consists of some number of blocks of DIRBLKSIZ
@@ -25,6 +25,10 @@
  * Entries other than the first in a directory do not normally have
  * dp->d_ino set to 0.
  */
+/* so user programs can just include dir.h */
+#if !defined(KERNEL) && !defined(DEV_BSIZE)
+#define	DEV_BSIZE	512
+#endif
 #define DIRBLKSIZ	DEV_BSIZE
 #define	MAXNAMLEN	255
 
@@ -55,10 +59,31 @@ typedef struct _dirdesc {
 	long	dd_size;
 	char	dd_buf[DIRBLKSIZ];
 } DIR;
+#ifndef NULL
+#define NULL 0
+#endif
 extern	DIR *opendir();
 extern	struct direct *readdir();
 extern	long telldir();
 extern	void seekdir();
 #define rewinddir(dirp)	seekdir((dirp), (long)0)
 extern	void closedir();
-#endif KERNEL
+#endif
+
+#ifdef KERNEL
+/*
+ * Template for manipulating directories.
+ * Should use struct direct's, but the name field
+ * is MAXNAMLEN - 1, and this just won't do.
+ */
+struct dirtemplate {
+	u_long	dot_ino;
+	short	dot_reclen;
+	short	dot_namlen;
+	char	dot_name[4];		/* must be multiple of 4 */
+	u_long	dotdot_ino;
+	short	dotdot_reclen;
+	short	dotdot_namlen;
+	char	dotdot_name[4];		/* ditto */
+};
+#endif
