@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.29 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.30 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1510,8 +1510,9 @@ makecg()
 	sblock.fs_cstotal.cs_ndir = 0;
 	for (i = 0; i < howmany(sblock.fs_cssize, sblock.fs_bsize); i++) {
 		sblock.fs_csp[i] = (struct csum *)calloc(1, sblock.fs_bsize);
-		getblk((char *)sblock.fs_csp[i],
-		    sblock.fs_csaddr + (i * sblock.fs_frag), sblock.fs_bsize);
+		bread(&dfile, (char *)sblock.fs_csp[i],
+		    fsbtodb(&sblock, sblock.fs_csaddr + (i * sblock.fs_frag)),
+		    sblock.fs_bsize);
 	}
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		dbase = cgbase(&sblock, c);
