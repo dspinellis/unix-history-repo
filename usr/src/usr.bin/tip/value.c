@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)value.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)value.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
@@ -57,6 +57,8 @@ vinit()
 	vtable[EXCEPTIONS].v_access &= ~(WRITE<<PUBLIC);
 }
 
+static int vaccess();
+
 /*VARARGS1*/
 vassign(p, v)
 	register value_t *p;
@@ -102,10 +104,13 @@ vassign(p, v)
 	p->v_access |= CHANGED;
 }
 
+static void vprint();
+
 vlex(s)
 	register char *s;
 {
 	register value_t *p;
+	static void vtoken();
 
 	if (equal(s, "all")) {
 		for (p = vtable; p->v_name; p++)
@@ -127,7 +132,7 @@ vlex(s)
 	}
 }
 
-static int
+static void
 vtoken(s)
 	register char *s;
 {
@@ -167,7 +172,7 @@ vtoken(s)
 	printf("%s: unknown variable\r\n", s);
 }
 
-static int
+static void
 vprint(p)
 	register value_t *p;
 {
