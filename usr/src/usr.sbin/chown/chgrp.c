@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)chgrp.c	4.5 83/04/28";
+static	char *sccsid = "@(#)chgrp.c	4.6 83/05/10";
 #endif
 
 /*
@@ -82,7 +82,7 @@ ok:
 			status = 1;
 			continue;
 		}
-		if (chown(argv[c], stbuf.st_uid, gid))
+		if (chown(argv[c], stbuf.st_uid, gid) && !fflag)
 			perror(argv[c]);
 	}
 	exit(status);
