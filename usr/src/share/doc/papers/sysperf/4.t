@@ -2,16 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	1.1 (Berkeley) %G%
+.\"	@(#)4.t	1.2 (Berkeley) %G%
 .\"
 .ds RH Performance Improvements
 .NH
 Performance Improvements
 .PP
 This section outlines the changes made to the system 
-since the 4.2 distribution.
+since the 4.2BSD distribution.
 The changes reported here were made in response
-to the problems described in section 3.
+to the problems described in Section 3.
 The improvements fall into two major classes;
 changes to the kernel that are described in this section,
 and changes to the system libraries and utilities that are
@@ -76,7 +76,7 @@ The cost of the cache is about 20 lines of code
 and 16 bytes per process, with the cached data
 stored in a process's \fIuser\fP vector.
 .PP
-As a quick benchmark to verify the effectiveness of the
+As a quick benchmark to verify the maximum effectiveness of the
 cache we ran ``ls \-l''
 on a directory containing 600 files.
 Before the per-process cache this command
@@ -425,7 +425,7 @@ for long-haul networks.
 On multiply-homed hosts, the local address bound by TCP now always corresponds
 to the interface that will be used in transmitting data packets for the
 connection.
-Several bugs in the calculation of round trip timing have corrected.
+Several bugs in the calculation of round trip timing have been corrected.
 TCP now switches to an alternate gateway when an existing route fails,
 or when an ICMP redirect message is received.
 ICMP source quench messages are used to throttle the transmission
@@ -438,6 +438,25 @@ for network terminal traffic [Nagle84],
 providing additional reduction of network congestion.
 The overhead of packet routing has been decreased by changes in the routing
 code and by cacheing the most recently used route for each datagram socket.
+.PP
+The buffer management strategy implemented by \fIsosend\fP has been
+changed to make better use of the increased size of the socket buffers
+and a better tuned delayed acknowledgement algorithm.
+Routing has been modified to include a one element cache of the last
+route computed.
+Multiple messages send with the same destination now require less processing.
+Figures 1 and 2 present typical throughput rates that user processes in
+4.3BSD systems may expect when run under light load.
+In [Cabrera85] we documented the performance degradation due to load in
+either the sender host, receiver host, or ether. 
+Any CPU contention degrades substantially
+the throughput achievable by user processes.
+We have observed empty VAX 11/750s using up to 90% of their cycles
+transmitting network messages.
+.PP
+Figure 1. (I owe it. lfc)
+.PP
+Figure 2. (I owe it. lfc)
 .NH 3
 Exec
 .PP
@@ -511,8 +530,11 @@ operations to generate the code shown in the right hand column.
 .KF
 .TS
 center, box;
+c s s s s s
 c s | c s | c s
 l l | l l | l l.
+Alternative C Language Code Optimizations
+_
 cc	sed	inline
 _
 subl3	$64,_i,\-(sp)	subl3	$64,_i,\-(sp)	subl3	$64,_i,r5
@@ -529,7 +551,7 @@ jeql	L7	movl	(sp)+,r3	tstl	r0
 		jeql	L7
 .TE
 .ce
-Table 11. Inline code expansion.
+Table 11. Alternative inline code expansions.
 .KE
 .PP
 Another optimization involved reevaluating
@@ -547,9 +569,9 @@ Improvements to Libraries and Utilities
 Intuitively, changes to the kernel would seem to have the greatest 
 payoff since they affect all programs that run on the system.
 However, the kernel has been tuned many times before, so the
-opportunity for significant improvement is small.
-By contrast, many of the libraries and utilities have never been tuned.
-For example, we have found utilities that spent 90% of their
+opportunity for significant improvement was small.
+By contrast, many of the libraries and utilities had never been tuned.
+For example, we found utilities that spent 90% of their
 running time doing single character read system calls.
 Changing the utility to use the standard I/O library cut the
 running time by a factor of five!
@@ -616,7 +638,7 @@ Mail System
 The problems discussed in section 3.1.1 prompted significant work
 on the entire mail system.  The first problem identified was a bug
 in the \fIsyslog\fP program.  The mail delivery program, \fIsendmail\fP
-logs all mail transactions through this process with the 4.2 interprocess
+logs all mail transactions through this process with the 4.2BSD interprocess
 communication facilities.  \fISyslog\fP then records the information in
 a log file.  Unfortunately, \fIsyslog\fP was performing a \fIsync\fP 
 operation after each message it received, whether it was logged to a file
@@ -634,7 +656,7 @@ a user was changed to cache host table lookups, resulting in a similar
 speedup on large distribution lists. 
 .PP
 Next, the file locking facilities
-provided in 4.2, \fIflock\fP\|(2), were used in place of the old
+provided in 4.2BSD, \fIflock\fP\|(2), were used in place of the old
 locking mechanism. 
 The mail system previously used \fIlink\fP and \fIunlink\fP in
 implementing file locking primitives. 

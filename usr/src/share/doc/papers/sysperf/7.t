@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)7.t	1.1 (Berkeley) %G%
+.\"	@(#)7.t	1.2 (Berkeley) %G%
 .\"
 .ds RH Conclusions
 .NH
@@ -11,11 +11,11 @@ Conclusions
 4.2BSD, while functionally superior to 4.1BSD, lacked much of the
 performance tuning required of a good system.  We found that
 the distributed system spent 10-20% more time in the kernel than
-4.1.  This added overhead combined with problems with several
+4.1BSD.  This added overhead combined with problems with several
 user programs severely limited the overall performance of the
 system in a general timesharing environment.
 .PP
-Changes made to the system since the 4.2 distribution have
+Changes made to the system since the 4.2BSD distribution have
 eliminated most of the
 added system overhead by replacing old algorithms
 or introducing additional cacheing schemes.  
@@ -31,9 +31,10 @@ field about 25% fewer interrupts than before.
 .PP
 The kernel
 changes, combined with many bug fixes, make the system much more
-responsive in a general timesharing environment.  The system now appears
-capable of supporting loads at least as large as supported under
-4.1 while providing all the new interprocess communication, networking,
+responsive in a general timesharing environment.
+The 4.3BSD Berkeley UNIX system now appears
+capable of supporting loads at least as large as those supported under
+4.1BSD while providing all the new interprocess communication, networking,
 and file system facilities.  
 .nr H2 1
 .ds RH Acknowledgements
@@ -122,3 +123,15 @@ Robert Walsh and Robert Gurwitz,
 ``Converting BBN TCP/IP to 4.2BSD,''
 \fIProceedings of the Salt Lake City Usenix Conference\fP,
 pp 52-61, June 1984.
+.IP [Cabrera84] 20
+Luis Felipe Cabrera, Eduard Hunter, Michael J. Karels, and David Mosher,
+``A User-Process Oriented Performance Study of Ethernet Networking Under
+Berkeley UNIX 4.2BSD,''
+Research Report No. UCB/CSD 84/217, University of California,
+Berkeley, December 1984.
+.IP [Cabrera85] 20
+Luis Felipe Cabrera, Michael J. Karels, and David Mosher,
+``The Impact of Buffer Management on Networking Software Performance
+in Berkeley UNIX 4.2BSD: A Case Study,''
+Proceedings of the Summer Usenix Conference, Portland, Oregon,
+June 1985, pp. 507-517.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	1.1 (Berkeley) %G%
+.\"	@(#)6.t	1.2 (Berkeley) %G%
 .\"
 .ds RH Security Tightening
 .NH
