@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socket.h	7.7 (Berkeley) %G%
+ *	@(#)socket.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -167,8 +167,6 @@ struct msghdr {
 #define	MSG_TRUNC	0x10		/* data discarded before delivery */
 #define	MSG_CTRUNC	0x20		/* control data lost before delivery */
 #define	MSG_WAITALL	0x40		/* wait for full request or error */
-
-#define	MSG_MAXIOVLEN	16
 
 /*
  * Header for ancillary data objects in msg_control buffer.
