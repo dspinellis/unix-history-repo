@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)netstart	5.8 (Berkeley) %G%
+#	@(#)netstart	5.9 (Berkeley) %G%
 
 routedflags=-q
 timedflags=YES
@@ -15,8 +15,10 @@ hostname $hostname
 ifconfig imp0 inet $hostname
 ifconfig ace0 inet $hostname netmask my-netmask
 ifconfig ex0 inet $hostname netmask my-netmask
+ifconfig we0 inet $hostname netmask my-netmask
+ifconfig ne0 inet $hostname netmask my-netmask
 
-# for en enthernet interface, load microcode before ifconfig
+# for en ethernet interface, load microcode before ifconfig
 # /etc/enpload /dev/enp0ram /etc/enpcode	> /dev/console 2>&1
 ifconfig en0 inet $hostname netmask my-netmask
 
