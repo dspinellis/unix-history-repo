@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lookup.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)lookup.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -27,6 +27,7 @@ static struct syment *hashtab[HASHSIZE];
 /*
  * Define a variable from a command line argument.
  */
+void
 define(name)
 	char *name;
 {
