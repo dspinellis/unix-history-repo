@@ -1,4 +1,4 @@
-/*	kern_clock.c	6.1	83/07/29	*/
+/*	kern_clock.c	6.2	83/10/01	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -57,7 +57,6 @@ hardclock(pc, ps)
 	register struct callout *p1;
 	register struct proc *p;
 	register int s, cpstate;
-	int needsoft = 0;
 
 	/*
 	 * Update real-time timeout queue.
@@ -73,7 +72,6 @@ hardclock(pc, ps)
 	while (p1) {
 		if (--p1->c_time > 0)
 			break;
-		needsoft = 1;
 		if (p1->c_time == 0)
 			break;
 		p1 = p1->c_next;
@@ -86,8 +84,6 @@ hardclock(pc, ps)
 	 * one tick.
 	 */
 	if (USERMODE(ps)) {
-		if (u.u_prof.pr_scale)
-			needsoft = 1;
 		/*
 		 * CPU was in user state.  Increment
 		 * user time counter, and process process-virtual time
@@ -193,8 +189,7 @@ hardclock(pc, ps)
 	 * priority any longer than necessary.
 	 */
 	bumptime(&time, tick);
-	if (needsoft)
-		setsoftclock();
+	setsoftclock();
 }
 
 /*
