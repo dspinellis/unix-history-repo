@@ -1,11 +1,12 @@
-#	Makefile	1.5	%G%
+#	Makefile	1.6	%G%
 
 DESTDIR=
 CFLAGS = -O -DSTANDALONE
 RELOC=	70000
 DRIVERS=hp.o ht.o mba.o up.o uba.o
 
-all:	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor tpicheck tpmkfs tprestor
+all:	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor \
+	tpicheck tpmkfs tprestor sboot
 
 /usr/lib/libsa.a:	sys.o conf.o hp.o ht.o mba.o up.o uba.o prf.o machdep.o 
 	ar crv ${DESTDIR}/usr/lib/libsa.a $?
@@ -20,6 +21,13 @@ ${DRIVERS}:
 boot:	boot.o relsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boot.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=boot ibs=32 skip=1; rm b.out
+
+sboot:	boot.c relsrt0.o ${DESTDIR}/usr/lib/libsa.a
+	cp boot.c sboot.c
+	cc -c -O -DJUSTASK sboot.c
+	rm sboot.c
+	ld -N -T ${RELOC} relsrt0.o sboot.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=sboot ibs=32 skip=1; rm b.out
 
 cat:	cat.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o cat.o -lsa -lc
@@ -89,11 +97,12 @@ vgrindt:
 
 clean:
 	rm -f *.o *.exe
-	rm -f a.out b.out boot cat ls icheck mkfs restor rpboot tpicheck tpmkfs tprestor
+	rm -f a.out b.out boot cat ls icheck mkfs restor rpboot \
+	    tpicheck tpmkfs tprestor sboot
 
 install:
 	cp tprestor ${DESTDIR}/sys/restor
 	cp tpicheck ${DESTDIR}/sys/icheck
 	cp tpmkfs ${DESTDIR}/sys/mkfs
-	cp boot ${DESTDIR}/sys/boot
+	cp sboot ${DESTDIR}/sys/boot
 	cp boot icheck mkfs restor cat ls ../floppy
