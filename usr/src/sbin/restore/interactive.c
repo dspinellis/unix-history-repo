@@ -1,7 +1,7 @@
 /* Copyright (c) 1985 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	3.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)interactive.c	3.4	(Berkeley)	%G%";
 #endif not lint
 
 #include "restore.h"
@@ -392,7 +392,7 @@ expandarg(arg, ap)
 	char *arg;
 	register struct arglist *ap;
 {
-	struct afile single;
+	static struct afile single;
 	int size;
 
 	ap->head = ap->last = (struct afile *)0;
