@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1985, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
  * K.C. Ng, with Z-S. Alex Liu, S. McDonald, P. Tang, W. Kahan.
  * Revised on 5/10/85, 5/13/85, 6/14/85, 8/20/85, 8/27/85, 9/11/85.
  *
- *	@(#)README	5.4 (Berkeley) %G%
+ *	@(#)README	8.1 (Berkeley) %G%
  */
 
 ******************************************************************************
