@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_misc.c	8.3 (Berkeley) %G%
+ *	@(#)sun_misc.c	8.4 (Berkeley) %G%
  *
  * from: $Header: sun_misc.c,v 1.16 93/04/07 02:46:27 torek Exp $
  */
@@ -142,9 +142,9 @@ gettype(tptr)
 	if (error = copyinstr((caddr_t)*tptr, in, sizeof in, (u_int *)0))
 		return (error);
 	if (strcmp(in, "4.2") == 0 || strcmp(in, "ufs") == 0)
-		type = MOUNT_UFS;
+		type = 1;	/* old MOUNT_UFS */
 	else if (strcmp(in, "nfs") == 0)
-		type = MOUNT_NFS;
+		type = 2;	/* old MOUNT_NFS */
 	else
 		return (EINVAL);
 	*tptr = type;
