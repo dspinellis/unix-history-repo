@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.2 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 # 
 BOOTS=	boot
 STDBOOS= defboo.com anyboo.com
