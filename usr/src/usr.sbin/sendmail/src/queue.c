@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.23		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.24		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.23		%G%);
+SCCSID(@(#)queue.c	3.24		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
