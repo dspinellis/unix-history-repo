@@ -9,7 +9,7 @@
 #define	gamename	"quest"
 #else
 #define	gamename	"hack"
-#endif QUEST
+#endif
 
 extern char *getlogin(), *getenv();
 extern char plname[PL_NSIZ], pl_character[PL_CSIZ];
@@ -20,20 +20,24 @@ int (*afternmv)();
 int (*occupation)();
 char *occtxt;			/* defined when occupation != NULL */
 
-int done1();
-int hangup();
+void done1();
+void hangup();
 
 int hackpid;				/* current pid */
 int locknum;				/* max num of players */
 #ifdef DEF_PAGER
 char *catmore;				/* default pager */
-#endif DEF_PAGER
+#endif
 char SAVEF[PL_NSIZ + 11] = "save/";	/* save/99999player */
 char *hname;		/* name of the game (argv[0] of call) */
 char obuf[BUFSIZ];	/* BUFSIZ is defined in stdio.h */
 
 extern char *nomovemsg;
 extern long wailmsg;
+
+#ifdef CHDIR
+static void chdirx();
+#endif
 
 main(argc,argv)
 int argc;
@@ -42,7 +46,7 @@ char *argv[];
 	register int fd;
 #ifdef CHDIR
 	register char *dir;
-#endif CHDIR
+#endif
 
 	hname = argv[0];
 	hackpid = getpid();
@@ -70,7 +74,7 @@ char *argv[];
 		if(!*dir)
 		    error("Flag -d must be followed by a directory name.");
 	}
-#endif CHDIR
+#endif
 
 	/*
 	 * Who am i? Algorithm: 1. Use name as specified in HACKOPTIONS
@@ -101,7 +105,7 @@ char *argv[];
 	if(argc > 1 && !strncmp(argv[1], "-s", 2)) {
 #ifdef CHDIR
 		chdirx(dir,0);
-#endif CHDIR
+#endif
 		prscore(argc, argv);
 		exit(0);
 	}
@@ -130,7 +134,7 @@ char *argv[];
 	 */
 #ifdef CHDIR
 	chdirx(dir,1);
-#endif CHDIR
+#endif
 
 	/*
 	 * Process options.
@@ -146,12 +150,12 @@ char *argv[];
 /*			else
 				printf("Sorry.\n"); */
 			break;
-#endif WIZARD
+#endif
 #ifdef NEWS
 		case 'n':
 			flags.nonews = TRUE;
 			break;
-#endif NEWS
+#endif
 		case 'u':
 			if(argv[0][2])
 			  (void) strncpy(plname, argv[0]+2, sizeof(plname)-1);
@@ -176,17 +180,17 @@ char *argv[];
 #ifdef MAX_NR_OF_PLAYERS
 	if(!locknum || locknum > MAX_NR_OF_PLAYERS)
 		locknum = MAX_NR_OF_PLAYERS;
-#endif MAX_NR_OF_PLAYERS
+#endif
 #ifdef DEF_PAGER
 	if(!(catmore = getenv("HACKPAGER")) && !(catmore = getenv("PAGER")))
 		catmore = DEF_PAGER;
-#endif DEF_PAGER
+#endif
 #ifdef MAIL
 	getmailstatus();
-#endif MAIL
+#endif
 #ifdef WIZARD
 	if(wizard) (void) strcpy(plname, "wizard"); else
-#endif WIZARD
+#endif
 	if(!*plname || !strncmp(plname, "player", 4)
 		    || !strncmp(plname, "games", 4))
 		askname();
@@ -195,7 +199,7 @@ char *argv[];
 				/* accepts any suffix */
 #ifdef WIZARD
 	if(!wizard) {
-#endif WIZARD
+#endif
 		/*
 		 * check for multiple games under the same name
 		 * (if !locknum) or check max nr of players (otherwise)
@@ -232,7 +236,7 @@ char *argv[];
 			(void) strcpy(fut_geno, genocided);
 		}
 	}
-#endif WIZARD
+#endif
 	setftty();
 	(void) sprintf(SAVEF, "save/%d%s", getuid(), plname);
 	regularize(SAVEF+5);		/* avoid . or / in name */
@@ -270,7 +274,7 @@ not_recovered:
 #ifdef NEWS
 		if(flags.nonews || !readnews())
 			/* after reading news we did docrt() already */
-#endif NEWS
+#endif
 			docrt();
 
 		/* give welcome message before pickup messages */
@@ -351,7 +355,7 @@ not_recovered:
 		find_ac();
 #ifndef QUEST
 		if(!flags.mv || Blind)
-#endif QUEST
+#endif
 		{
 			seeobjs();
 			seemons();
@@ -372,7 +376,7 @@ not_recovered:
 		if(multi > 0) {
 #ifdef QUEST
 			if(flags.run >= 4) finddir();
-#endif QUEST
+#endif
 			lookaround();
 			if(!multi) {	/* lookaround may clear multi */
 				flags.move = 0;
@@ -389,7 +393,7 @@ not_recovered:
 		} else if(multi == 0) {
 #ifdef MAIL
 			ckmailstatus();
-#endif MAIL
+#endif
 			rhack((char *) 0);
 		}
 		if(multi && multi%7 == 0)
@@ -442,7 +446,7 @@ register char *s;
 }
 
 #ifdef CHDIR
-static
+static void
 chdirx(dir, wr)
 char *dir;
 boolean wr;
@@ -452,17 +456,17 @@ boolean wr;
 	if(dir					/* User specified directory? */
 #ifdef HACKDIR
 	       && strcmp(dir, HACKDIR)		/* and not the default? */
-#endif HACKDIR
+#endif
 		) {
 		(void) setuid(getuid());		/* Ron Wessels */
 		(void) setgid(getgid());
 	}
-#endif SECURE
+#endif
 
 #ifdef HACKDIR
 	if(dir == NULL)
 		dir = HACKDIR;
-#endif HACKDIR
+#endif
 
 	if(dir && chdir(dir) < 0) {
 		perror(dir);
@@ -484,7 +488,7 @@ boolean wr;
 		(void) close(fd);
 	}
 }
-#endif CHDIR
+#endif
 
 stop_occupation()
 {

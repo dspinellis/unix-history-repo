@@ -10,6 +10,7 @@ extern char *itoa(), *ordin(), *eos();
 
 xchar maxdlevel = 1;
 
+void
 done1()
 {
 	(void) signal(SIGINT,SIG_IGN);
@@ -19,7 +20,7 @@ done1()
 		clrlin();
 		(void) fflush(stdout);
 		if(multi > 0) nomul(0);
-		return(0);
+		return;
 	}
 	done("quit");
 	/* NOTREACHED */
@@ -28,12 +29,14 @@ done1()
 int done_stopprint;
 int done_hup;
 
+void
 done_intr(){
 	done_stopprint++;
 	(void) signal(SIGINT, SIG_IGN);
 	(void) signal(SIGQUIT, SIG_IGN);
 }
 
+void
 done_hangup(){
 	done_hup++;
 	(void) signal(SIGHUP, SIG_IGN);
