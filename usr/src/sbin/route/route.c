@@ -12,10 +12,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/mbuf.h>
@@ -26,6 +27,7 @@ static char sccsid[] = "@(#)route.c	5.34 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <netns/ns.h>
 #include <netiso/iso.h>
+#include <netccitt/x25.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
@@ -52,6 +54,7 @@ union	sockunion {
 	struct	sockaddr_ns sns;
 	struct	sockaddr_iso siso;
 	struct	sockaddr_dl sdl;
+	struct	sockaddr_x25 sx25;
 } so_dst, so_gate, so_mask, so_genmask, so_ifa, so_ifp;
 
 union sockunion *so_addrs[] =
@@ -60,7 +63,7 @@ union sockunion *so_addrs[] =
 typedef union sockunion *sup;
 int	pid, rtm_addrs, uid;
 int	s;
-int	forcehost, forcenet, doflush, nflag, af, qflag, Cflag, keyword();
+int	forcehost, forcenet, doflush, nflag, af, qflag, tflag, Cflag, keyword();
 int	iflag, verbose, aflen = sizeof (struct sockaddr_in);
 int	locking, lockrest, debugonly;
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
@@ -68,7 +71,7 @@ struct	rt_metrics rt_metrics;
 u_long  rtm_inits;
 struct	in_addr inet_makeaddr();
 char	*routename(), *netname();
-void	flushroutes(), newroute(), monitor();
+void	flushroutes(), newroute(), monitor(), sockaddr();
 void	print_getmsg(), print_rtmsg(), pmsg_common(), sodump(), bprintf();
 int	getaddr(), rtmsg();
 extern	char *inet_ntoa(), *iso_ntoa(), *link_ntoa();
@@ -114,7 +117,7 @@ main(argc, argv)
 	if (argc < 2)
 		usage((char *)NULL);
 
-	while ((ch = getopt(argc, argv, "Cnqv")) != EOF)
+	while ((ch = getopt(argc, argv, "Cnqtv")) != EOF)
 		switch(ch) {
 		case 'C':
 			Cflag = 1;	/* Use old ioctls. */
@@ -128,6 +131,9 @@ main(argc, argv)
 		case 'v':
 			verbose = 1;
 			break;
+		case 't':
+			tflag = 1;
+			break;
 		case '?':
 		default:
 			usage();
@@ -137,7 +143,9 @@ main(argc, argv)
 
 	pid = getpid();
 	uid = getuid();
-	if (Cflag)
+	if (tflag)
+		s = open("/dev/null", O_WRONLY, 0);
+	else if (Cflag)
 		s = socket(AF_INET, SOCK_RAW, 0);
 	else
 		s = socket(PF_ROUTE, SOCK_RAW, 0);
@@ -206,6 +214,8 @@ flushroutes(argc, argv)
 			case K_OSI:
 				af = AF_ISO;
 				break;
+			case K_X25:
+				af = AF_CCITT;
 			default:
 				goto bad;
 		} else
@@ -479,6 +489,14 @@ newroute(argc, argv)
 				af = AF_INET;
 				aflen = sizeof(struct sockaddr_in);
 				break;
+			case K_X25:
+				af = AF_CCITT;
+				aflen = sizeof(struct sockaddr_x25);
+				break;
+			case K_SA:
+				af = 0;
+				aflen = sizeof(union sockunion);
+				break;
 			case K_XNS:
 				af = AF_NS;
 				aflen = sizeof(struct sockaddr_ns);
@@ -729,6 +747,10 @@ getaddr(which, s, hpp)
 		goto do_osi;
 	if (af == AF_LINK)
 		goto do_link;
+	if (af == AF_CCITT)
+		goto do_ccitt;
+	if (af == 0)
+		goto do_sa;
 	if (hpp == NULL)
 		hpp = &hp;
 	*hpp = NULL;
@@ -783,8 +805,15 @@ do_osi:
 		su->siso.siso_len = 1 + cp - (char *)su;
 	}
 	return (1);
+do_ccitt:
+	ccitt_addr(s, &su->sx25);
+	return (1);
 do_link:
 	link_addr(s, &su->sdl);
+	return (1);
+do_sa:
+	su->sa.sa_len = sizeof(*su);
+	sockaddr(s, &su->sa);
 	return (1);
 }
 
@@ -888,6 +917,8 @@ rtmsg(cmd, flags)
 	rtm.rtm_rmx = rt_metrics;
 	rtm.rtm_inits = rtm_inits;
 
+	if (rtm_addrs & RTA_NETMASK)
+		mask_addr();
 	NEXTADDR(RTA_DST, so_dst);
 	NEXTADDR(RTA_GATEWAY, so_gate);
 	NEXTADDR(RTA_NETMASK, so_mask);
@@ -916,6 +947,31 @@ rtmsg(cmd, flags)
 	}
 #undef rtm
 	return (0);
+}
+
+mask_addr() {
+	register char *cp1, *cp2;
+	int olen;
+
+	if ((rtm_addrs & RTA_DST) == 0)
+		return;
+	switch(so_dst.sa.sa_family) {
+	case AF_NS: case AF_INET: case 0:
+		return;
+	case AF_ISO:
+		olen = MIN(so_dst.siso.siso_nlen, so_mask.sa.sa_len - 6);
+	}
+	cp1 = so_mask.sa.sa_len + 1 + (char *)&so_dst;
+	cp2 = so_dst.sa.sa_len + 1 + (char *)&so_dst;
+	while (cp2 > cp1)
+		*--cp2 = 0;
+	cp2 = so_mask.sa.sa_len + 1 + (char *)&so_mask;
+	while (cp1 > so_dst.sa.sa_data)
+		*--cp1 &= *--cp2;
+	switch(so_dst.sa.sa_family) {
+	case AF_ISO:
+		so_dst.siso.siso_nlen = olen;
+	}
 }
 
 char *msgtypes[] = {
@@ -1081,4 +1137,55 @@ sodump(su, which)
 		break;
 	}
 	(void) fflush(stdout);
+}
+/* States*/
+#define VIRGIN	0
+#define GOTONE	1
+#define GOTTWO	2
+/* Inputs */
+#define	DIGIT	(4*0)
+#define	END	(4*1)
+#define DELIM	(4*2)
+
+void
+sockaddr(addr, sa)
+register char *addr;
+register struct sockaddr *sa;
+{
+	register char *cp = (char *)sa;
+	int size = sa->sa_len;
+	char *cplim = cp + size;
+	register int byte = 0, state = VIRGIN, new;
+
+	bzero(cp, size);
+	do {
+		if ((*addr >= '0') && (*addr <= '9')) {
+			new = *addr - '0';
+		} else if ((*addr >= 'a') && (*addr <= 'f')) {
+			new = *addr - 'a' + 10;
+		} else if ((*addr >= 'A') && (*addr <= 'F')) {
+			new = *addr - 'A' + 10;
+		} else if (*addr == 0) 
+			state |= END;
+		else
+			state |= DELIM;
+		addr++;
+		switch (state /* | INPUT */) {
+		case GOTTWO | DIGIT:
+			*cp++ = byte; /*FALLTHROUGH*/
+		case VIRGIN | DIGIT:
+			state = GOTONE; byte = new; continue;
+		case GOTONE | DIGIT:
+			state = GOTTWO; byte = new + (byte << 4); continue;
+		default: /* | DELIM */
+			state = VIRGIN; *cp++ = byte; byte = 0; continue;
+		case GOTONE | END:
+		case GOTTWO | END:
+			*cp++ = byte; /* FALLTHROUGH */
+		case VIRGIN | END:
+			break;
+		}
+		break;
+	} while (cp < cplim); 
+	sa->sa_len = cp - (char *)sa;
 }
