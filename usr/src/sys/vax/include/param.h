@@ -1,4 +1,4 @@
-/*	param.h	4.1	82/11/09	*/
+/*	param.h	4.2	82/12/09	*/
 
 /*
  * Machine dependent constants for vax.
@@ -37,6 +37,6 @@
  * Macros to decode processor status word.
  */
 #define	USERMODE(ps)	(((ps) & PSL_CURMOD) == PSL_CURMOD)
-#define	BASEPRI(ps)	(((ps) & PSL_IPL) != 0)
+#define	BASEPRI(ps)	(((ps) & PSL_IPL) == 0)
 
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
