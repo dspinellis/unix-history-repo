@@ -60,6 +60,13 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00002
+ * --------------------         -----   ----------------------
+ *
+ * 15 Aug 92    William Jolitz		Prevent running out of map entries...
  */
 
 /*
@@ -199,6 +206,11 @@ void		vm_map_verify_done();
 
 /* XXX: number of kernel maps and entries to statically allocate */
 #define MAX_KMAP	10
-#define	MAX_KMAPENT	500
+
+#ifdef OMIT
+#define MAX_KMAPENT     500
+#else   /* !OMIT*/
+#define MAX_KMAPENT     1000	/* 15 Aug 92*/
+#endif  /* !OMIT*/
 
 #endif	_VM_MAP_

@@ -34,6 +34,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)machdep.c	7.4 (Berkeley) 6/3/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00002
+ * --------------------         -----   ----------------------
+ *
+ * 15 Aug 92    William Jolitz		Large memory bug
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/machdep.c,v 1.2 92/01/21 14:22:09 william Exp Locker: root $";
 
@@ -167,6 +174,11 @@ again:
 			bufpages = physmem / 10 / CLSIZE;
 		else
 			bufpages = ((2 * 1024 * 1024 + physmem) / 20) / CLSIZE;
+        /*
+         * 15 Aug 92    William Jolitz          bufpages fix for too large
+         */
+        bufpages = min( NKMEMCLUSTERS/2, bufpages);
+
 	if (nbuf == 0) {
 		nbuf = bufpages / 2;
 		if (nbuf < 16)
