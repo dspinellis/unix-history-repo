@@ -1,4 +1,4 @@
-/*	raw_cb.c	6.3	85/03/19	*/
+/*	raw_cb.c	6.4	85/05/04	*/
 
 #include "param.h"
 #include "systm.h"
@@ -11,7 +11,9 @@
 #include "route.h"
 #include "raw_cb.h"
 #include "../netinet/in.h"
+#ifdef PUP
 #include "../netpup/pup.h"
+#endif
 
 #include "../vax/mtpr.h"
 
