@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)readdir.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)readdir.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -33,8 +33,8 @@ readdir(dirp)
 
 	for (;;) {
 		if (dirp->dd_loc == 0) {
-			dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, 
-			    DIRBLKSIZ);
+			dirp->dd_size = getdirentries(dirp->dd_fd,
+			    dirp->dd_buf, dirp->dd_len, &dirp->dd_seek);
 			if (dirp->dd_size <= 0)
 				return NULL;
 		}
@@ -46,7 +46,7 @@ readdir(dirp)
 		if ((int)dp & 03)	/* bogus pointer check */
 			return NULL;
 		if (dp->d_reclen <= 0 ||
-		    dp->d_reclen > DIRBLKSIZ + 1 - dirp->dd_loc)
+		    dp->d_reclen > dirp->dd_len + 1 - dirp->dd_loc)
 			return NULL;
 		dirp->dd_loc += dp->d_reclen;
 		if (dp->d_ino == 0)
