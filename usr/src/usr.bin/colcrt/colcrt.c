@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)colcrt.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)colcrt.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 /*
  * colcrt - replaces col for crts with new nroff esp. when using tbl.
@@ -19,7 +19,7 @@ char	page[267][132];
 int	outline = 1;
 int	outcol;
 
-char	buf[256];
+char	buf[BUFSIZ];
 char	suppresul;
 char	printall;
 
