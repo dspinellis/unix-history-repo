@@ -1,4 +1,4 @@
-/* ip_input.c 1.19 81/11/26 */
+/* ip_input.c 1.20 81/11/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -119,7 +119,7 @@ next:
 			icmp_error(ip, ICMP_TIMXCEED, 0);
 			goto next;
 		}
-		ip_output(dtom(ip), (struct mbuf *)0);
+		(void) ip_output(dtom(ip), (struct mbuf *)0);
 		goto next;
 	}
 

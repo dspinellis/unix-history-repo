@@ -1,4 +1,4 @@
-/* in_pcb.c 4.9 81/11/26 */
+/* in_pcb.c 4.10 81/11/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -37,7 +37,7 @@ in_pcballoc(so, head, sndcc, rcvcc, sin)
 		lport = sin->sin_port;
 		if (lport) {
 			xp = head->inp_next;
-			for (; xp != head; xp = inp->inp_next) 
+			for (; xp != head; xp = xp->inp_next) 
 				if (xp->inp_laddr.s_addr ==
 				    sin->sin_addr.s_addr &&
 				    xp->inp_lport == lport &&

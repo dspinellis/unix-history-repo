@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.9	81/11/26	*/
+/*	tcp_var.h	4.10	81/11/29	*/
 
 /*
  * Kernel variables for tcp.
@@ -54,12 +54,8 @@ struct tcpcb {
 	short	rxt_cnt;
 };
 
-#define	tcp_finisacked(tp)	0		/* XXX */
-
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)
 #define	sototcpcb(so)	(intotcpcb(sotoinpcb(so)))
-
-#define	TCP_ISSINCR	128		/* increment for iss each second */
 
 struct	tcpstat {
 	int	tcps_badsum;

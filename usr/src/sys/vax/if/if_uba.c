@@ -1,4 +1,4 @@
-/*	if_uba.c	4.2	81/11/26	*/
+/*	if_uba.c	4.3	81/11/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -85,46 +85,38 @@ COUNT(IF_UBAALLOC);
 }
 
 /*
- * Pull read data off a interface, given length.
- * Map the header into a mbuf, and then copy or
- * remap the data into a chain of mbufs.
- * Return 0 if there is no space, or a pointer
- * to the assembled mbuf chain.
+ * Pull read data off a interface.
+ * Len is length of data, with local net header stripped.
+ * Off is non-zero if a trailer protocol was used, and
+ * gives the offset of the trailer information.
+ * We copy the trailer information and then all the normal
+ * data into mbufs.  When full cluster sized units are present
+ * on the interface on cluster boundaries we can get them more
+ * easily by remapping, and take advantage of this here.
  */
 struct mbuf *
-if_rubaget(ifu, len)
+if_rubaget(ifu, totlen, off0)
 	register struct ifuba *ifu;
-	int len;
+	int totlen, off0;
 {
 	register struct mbuf *m;
 	register caddr_t cp;
-	struct mbuf *mp, *p, *top;
+	struct mbuf **mp, *p, *top;
+	int len, off = off0;
 
 COUNT(IF_RUBAGET);
-	/*
-	 * First pull local net header off into a mbuf.
-	 */
-	MGET(m, 0);
-	if (m == 0)
-		return (0);
-	m->m_off = MMINOFF;
-	m->m_len = ifu->ifu_hlen;
-	top = m;
-	cp = ifu->ifu_r.ifrw_addr;
-	bcopy(cp, mtod(m, caddr_t), ifu->ifu_hlen);
-	len -= ifu->ifu_hlen;
-	cp += ifu->ifu_hlen;
 
-	/*
-	 * Now pull data off.  If whole pages
-	 * are there, pull into pages if possible,
-	 * otherwise copy small blocks into mbufs.
-	 */
-	mp = m;
-	while (len > 0) {
+	top = 0;
+	mp = &top;
+	while (totlen > 0) {
 		MGET(m, 0);
 		if (m == 0)
 			goto bad;
+		if (off) {
+			len = totlen - off;
+			cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen + off;
+		} else
+			len = totlen;
 		if (len >= CLSIZE) {
 			struct pte *cpte, *ppte;
 			int i, x, *ip;
@@ -181,9 +173,16 @@ copy:
 		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
 		cp += m->m_len;
 nocopy:
-		len -= m->m_len;
-		mp->m_next = m;
-		mp = m;
+		*mp = m;
+		mp = &m->m_next;
+		if (off) {
+			off += m->m_len;
+			if (off == totlen) {
+				cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen;
+				off = 0;
+				totlen -= off0;
+			}
+		}
 	}
 	return (top);
 bad:
@@ -239,4 +238,5 @@ COUNT(IF_WUBAPUT);
 				i++;
 			}
 		}
+	return (cp - ifu->ifu_w.ifrw_addr);
 }

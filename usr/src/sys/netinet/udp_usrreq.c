@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.11	81/11/26	*/
+/*	udp_usrreq.c	4.12	81/11/29	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -160,7 +160,7 @@ COUNT(UDP_OUTPUT);
 	ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len);
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
-	ip_output(m, (struct mbuf *)0);
+	(void) ip_output(m, (struct mbuf *)0);
 	return;
 bad:
 	m_freem(m);

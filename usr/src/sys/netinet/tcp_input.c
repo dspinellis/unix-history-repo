@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.32	81/11/26	*/
+/*	tcp_input.c	1.33	81/11/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,11 +18,9 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 int	tcpcksum = 1;
-
-struct	sockaddr_in tcp_sockaddr = { AF_INET };
 
 /*
  * TCP input routine, follows pages 65-76 of the
@@ -38,8 +36,7 @@ tcp_input(m0)
 	register struct tcpcb *tp;
 	register int tiflags;
 	struct socket *so;
-	int acceptable;
-	tcp_seq todrop, acked;
+	int todrop, acked;
 
 COUNT(TCP_INPUT);
 	/*
@@ -112,6 +109,7 @@ COUNT(TCP_INPUT);
 	tp = intotcpcb(inp);
 	if (tp == 0)
 		goto dropwithreset;
+	so = inp->inp_socket;
 
 	/*
 	 * Calculate amount of space in receive window,
@@ -533,11 +531,11 @@ dropwithreset:
 	if (tiflags & TH_RST)
 		goto drop;
 	if (tiflags & TH_ACK)
-		tcp_respond(ti, 0, ti->ti_ack, TH_RST);
+		tcp_respond(ti, (tcp_seq)0, ti->ti_ack, TH_RST);
 	else {
 		if (tiflags & TH_SYN)
 			ti->ti_len++;
-		tcp_respond(ti, ti->ti_seq+ti->ti_len, 0, TH_RST|TH_ACK);
+		tcp_respond(ti, ti->ti_seq+ti->ti_len, (tcp_seq)0, TH_RST|TH_ACK);
 	}
 	goto drop;
 
@@ -553,10 +551,9 @@ drop:
  * control block tp.  Return TH_FIN if reassembly now includes
  * a segment with FIN.
  */
-tcp_reass(tp, ti, endp)
+tcp_reass(tp, ti)
 	register struct tcpcb *tp;
 	register struct tcpiphdr *ti;
-	int *endp;
 {
 	register struct tcpiphdr *q;
 	struct socket *so = tp->t_inpcb->inp_socket;

@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.19	81/11/26	*/
+/*	tcp_output.c	4.20	81/11/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,7 +17,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 /*
  * Tcp output routine: figure out what should be sent
@@ -76,7 +76,7 @@ COUNT(TCP_OUTPUT);
 	/*
 	 * No reason to send a segment, just return.
 	 */
-	return;
+	return (0);
 
 send:
 	/*
@@ -97,7 +97,7 @@ send:
 	ti = mtod(m, struct tcpiphdr *);
 	if (tp->t_template == 0)
 		panic("tcp_output");
-	bcopy((caddr_t)tp->t_template, ti, sizeof (struct tcpiphdr));
+	bcopy((caddr_t)tp->t_template, (caddr_t)ti, sizeof (struct tcpiphdr));
 
 	/*
 	 * Fill in fields, remembering maximum advertised
@@ -106,22 +106,24 @@ send:
 	ti->ti_seq = htonl(tp->snd_nxt);
 	ti->ti_ack = htonl(tp->rcv_nxt);
 	if (tp->t_tcpopt) {
+		m0 = m->m_next;
 		m->m_next = m_get(0);
 		if (m->m_next == 0) {
 			(void) m_free(m);
+			m_freem(m);
 			return (0);
 		}
 		m->m_next->m_next = m0;
 		m->m_off = MMINOFF;
 		m->m_len = tp->t_tcpopt->m_len;
 		bcopy(mtod(tp->t_tcpopt, caddr_t), mtod(m, caddr_t),
-		    tp->t_tcpopt->m_len);
+		    (unsigned)tp->t_tcpopt->m_len);
 		ti->ti_off = (sizeof (struct tcphdr)+tp->t_tcpopt->m_len) >> 2;
 	}
 	ti->ti_flags = flags;
 	win = sbspace(&so->so_rcv);
 	if (win > 0)
-		ti->ti_win = htons(win);
+		ti->ti_win = htons((u_short)win);
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		ti->ti_urp = htons((u_short)(tp->snd_up - tp->snd_nxt));
 		ti->ti_flags |= TH_URG;
