@@ -14,10 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_output.c	7.13 (Berkeley) %G%
+ *	@(#)ip_output.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "errno.h"
 #include "protosw.h"
@@ -60,6 +61,8 @@ ip_output(m0, opt, ro, flags)
 	struct route iproute;
 	struct sockaddr_in *dst;
 
+if ((m->m_flags & M_PKTHDR) == 0)
+panic("ip_output no HDR");
 	if (opt) {
 		m = ip_insertoptions(m, opt, &len);
 		hlen = len;
@@ -96,6 +99,7 @@ ip_output(m0, opt, ro, flags)
 	}
 	if (ro->ro_rt == 0) {
 		dst->sin_family = AF_INET;
+		dst->sin_len = sizeof(*dst);
 		dst->sin_addr = ip->ip_dst;
 	}
 	/*
@@ -125,7 +129,7 @@ ip_output(m0, opt, ro, flags)
 		}
 		ro->ro_rt->rt_use++;
 		if (ro->ro_rt->rt_flags & RTF_GATEWAY)
-			dst = (struct sockaddr_in *)&ro->ro_rt->rt_gateway;
+			dst = (struct sockaddr_in *)ro->ro_rt->rt_gateway;
 	}
 #ifndef notdef
 	/*
@@ -161,6 +165,7 @@ ip_output(m0, opt, ro, flags)
 			error = EMSGSIZE;
 			goto bad;
 		}
+		m->m_flags |= M_BCAST;
 	}
 
 	/*
@@ -191,7 +196,7 @@ ip_output(m0, opt, ro, flags)
 
     {
 	int mhlen, firstlen = len;
-	struct mbuf **mnext = &m->m_act;
+	struct mbuf **mnext = &m->m_nextpkt;
 
 	/*
 	 * Loop through length of segment after first fragment,
@@ -200,12 +205,12 @@ ip_output(m0, opt, ro, flags)
 	m0 = m;
 	mhlen = sizeof (struct ip);
 	for (off = hlen + len; off < ip->ip_len; off += len) {
-		MGET(m, M_DONTWAIT, MT_HEADER);
+		MGETHDR(m, M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
 			goto sendorfree;
 		}
-		m->m_off = MMAXOFF - hlen;
+		m->m_data += max_linkhdr;
 		mhip = mtod(m, struct ip *);
 		*mhip = *ip;
 		if (hlen > sizeof (struct ip)) {
@@ -226,25 +231,28 @@ ip_output(m0, opt, ro, flags)
 			error = ENOBUFS;	/* ??? */
 			goto sendorfree;
 		}
+		m->m_pkthdr.len = mhlen + len;
+		m->m_pkthdr.rcvif = (struct ifnet *)0;
 		mhip->ip_off = htons((u_short)mhip->ip_off);
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(m, mhlen);
 		*mnext = m;
-		mnext = &m->m_act;
+		mnext = &m->m_nextpkt;
 	}
 	/*
 	 * Update first fragment by trimming what's been copied out
 	 * and updating header, then send each fragment (in order).
 	 */
 	m_adj(m0, hlen + firstlen - ip->ip_len);
-	ip->ip_len = htons((u_short)(hlen + firstlen));
+	m->m_pkthdr.len = hlen + firstlen;
+	ip->ip_len = htons((u_short)m->m_pkthdr.len);
 	ip->ip_off = htons((u_short)(ip->ip_off | IP_MF));
 	ip->ip_sum = 0;
 	ip->ip_sum = in_cksum(m0, hlen);
 sendorfree:
 	for (m = m0; m; m = m0) {
-		m0 = m->m_act;
-		m->m_act = 0;
+		m0 = m->m_nextpkt;
+		m->m_nextpkt = 0;
 		if (error == 0)
 			error = (*ifp->if_output)(ifp, m,
 			    (struct sockaddr *)dst);
@@ -280,20 +288,22 @@ ip_insertoptions(m, opt, phlen)
 	optlen = opt->m_len - sizeof(p->ipopt_dst);
 	if (p->ipopt_dst.s_addr)
 		ip->ip_dst = p->ipopt_dst;
-	if (m->m_off >= MMAXOFF || MMINOFF + optlen > m->m_off) {
-		MGET(n, M_DONTWAIT, MT_HEADER);
+	if (m->m_flags & M_EXT || m->m_data - optlen < m->m_pktdat) {
+		MGETHDR(n, M_DONTWAIT, MT_HEADER);
 		if (n == 0)
 			return (m);
+		n->m_pkthdr.len = m->m_pkthdr.len + optlen;
 		m->m_len -= sizeof(struct ip);
-		m->m_off += sizeof(struct ip);
+		m->m_data += sizeof(struct ip);
 		n->m_next = m;
 		m = n;
-		m->m_off = MMAXOFF - sizeof(struct ip) - optlen;
 		m->m_len = optlen + sizeof(struct ip);
+		m->m_data += max_linkhdr;
 		bcopy((caddr_t)ip, mtod(m, caddr_t), sizeof(struct ip));
 	} else {
-		m->m_off -= optlen;
+		m->m_data -= optlen;
 		m->m_len += optlen;
+		m->m_pkthdr.len += optlen;
 		ovbcopy((caddr_t)ip, mtod(m, caddr_t), sizeof(struct ip));
 	}
 	ip = mtod(m, struct ip *);
@@ -369,7 +379,6 @@ ip_ctloutput(op, so, level, optname, m)
 		case IP_OPTIONS:
 			*m = m_get(M_WAIT, MT_SOOPTS);
 			if (inp->inp_options) {
-				(*m)->m_off = inp->inp_options->m_off;
 				(*m)->m_len = inp->inp_options->m_len;
 				bcopy(mtod(inp->inp_options, caddr_t),
 				    mtod(*m, caddr_t), (unsigned)(*m)->m_len);
@@ -422,13 +431,8 @@ ip_pcbopts(pcbopt, m)
 	 * actual options; move other options back
 	 * and clear it when none present.
 	 */
-#if	MAX_IPOPTLEN >= MMAXOFF - MMINOFF
-	if (m->m_off + m->m_len + sizeof(struct in_addr) > MAX_IPOPTLEN)
+	if (m->m_data + m->m_len + sizeof(struct in_addr) >= &m->m_dat[MLEN])
 		goto bad;
-#else
-	if (m->m_off + m->m_len + sizeof(struct in_addr) > MMAXOFF)
-		goto bad;
-#endif
 	cnt = m->m_len;
 	m->m_len += sizeof(struct in_addr);
 	cp = mtod(m, u_char *) + sizeof(struct in_addr);
@@ -483,6 +487,8 @@ ip_pcbopts(pcbopt, m)
 			break;
 		}
 	}
+	if (m->m_len > MAX_IPOPTLEN + sizeof(struct in_addr))
+		goto bad;
 	*pcbopt = m;
 	return (0);
 
