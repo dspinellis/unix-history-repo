@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.39	83/06/11	*/
+/*	sys_generic.c	5.39	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -252,12 +252,13 @@ select()
 	} *uap = (struct uap *)u.u_ap;
 	int ibits[3], obits[3];
 	struct timeval atv;
-	int s, ncoll;
+	int s, ncoll, mask;
 	label_t lqsave;
 
 	obits[0] = obits[1] = obits[2] = 0;
 	if (uap->nd > NOFILE)
 		uap->nd = NOFILE;	/* forgiving, if slightly wrong */
+	mask = (1 << uap->nd) - 1;
 
 #define	getbits(name, x) \
 	if (uap->name) { \
@@ -265,6 +266,7 @@ select()
 		    sizeof (ibits[x])); \
 		if (u.u_error) \
 			goto done; \
+		ibits[x] &= mask; \
 	} else \
 		ibits[x] = 0;
 	getbits(in, 0);
