@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -403,8 +403,13 @@ eatheader(e)
 			extern char *anynet_ntoa();
 
 			name = hbuf;
-			(void)sprintf(hbuf, "%.80s (%s)", 
-			    RealHostName, anynet_ntoa(&RealHostAddr));
+			(void) sprintf(hbuf, "%.80s", RealHostName);
+			if (RealHostAddr.sa.sa_family != 0)
+			{
+				p = &hbuf[strlen(hbuf)];
+				(void) sprintf(p, " (%s)",
+					anynet_ntoa(&RealHostAddr));
+			}
 		}
 
 		/* some versions of syslog only take 5 printf args */

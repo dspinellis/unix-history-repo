@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.24 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.25 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.24 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.25 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -537,7 +537,8 @@ maphostname(map, hbuf, hbsize, avp)
 	{
 		extern bool getcanonname();
 
-		printf("maphostname(%s, %d) => ", hbuf, hbsize);
+		if (tTd(9, 1))
+			printf("maphostname(%s, %d) => ", hbuf, hbsize);
 		if (getcanonname(hbuf, hbsize))
 		{
 			if (tTd(9, 1))
@@ -596,6 +597,12 @@ anynet_ntoa(sap)
 	register char *ap;
 	int l;
 	static char buf[80];
+
+	/* check for null/zero family */
+	if (sap == NULL)
+		return "NULLADDR";
+	if (sap->sa.sa_family == 0)
+		return "0";
 
 #ifdef NETINET
 	if (sap->sa.sa_family == AF_INET)
