@@ -1,5 +1,5 @@
 hp300/hp300/autoconf.c		standard
-hp300/hp300/clock.c		standard clock
+hp300/hp300/clock.c		standard
 hp300/hp300/conf.c		standard
 hp300/hp300/dkbad.c		standard
 hp300/hp300/in_cksum.c		optional inet
