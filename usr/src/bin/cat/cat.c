@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cat.c	4.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)cat.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,7 +10,7 @@ static	char *sccsid = "@(#)cat.c	4.8 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/stat.h>
 
-/* #define OPTSIZE BUFSIZ	/* define this only if not 4.2 BSD */
+/* #define OPTSIZE BUFSIZ	/* define this only if not 4.2 BSD or beyond */
 
 int	bflg, eflg, nflg, sflg, tflg, uflg, vflg;
 int	spaced, col, lno, inline, ibsize, obsize;
@@ -64,7 +64,9 @@ char **argv;
 			dev = statb.st_dev;
 			ino = statb.st_ino;
 		}
+#ifndef	OPTSIZE
 		obsize = statb.st_blksize;
+#endif
 	}
 	else
 		obsize = 0;
@@ -91,7 +93,9 @@ char **argv;
 				retval = 1;
 				continue;
 			}
+#ifndef	OPTSIZE
 			ibsize = statb.st_blksize;
+#endif
 		}
 		else
 			ibsize = 0;
@@ -101,7 +105,7 @@ char **argv;
 			while ((c = getc(fi)) != EOF)
 				putchar(c);
 		} else
-			fastcat(fileno(fi));	/* no flags specified */
+			retval |= fastcat(fileno(fi));	/* no flags specified */
 		if (fi!=stdin)
 			fclose(fi);
 		if (ferror(stdout)) {
@@ -169,18 +173,20 @@ register int fd;
 	char		*malloc();
 
 #ifndef	OPTSIZE
-	if (ibsize == 0)
-		buffsize = BUFSIZ;	/* handle reads from a pipe */
-	else if (obsize == 0)
+	if (obsize)
+		buffsize = obsize;	/* common case, use output blksize */
+	else if (ibsize)
 		buffsize = ibsize;
 	else
-		buffsize = obsize;	/* common case, use output blksize */
+		buffsize = BUFSIZ;
 #else
 	buffsize = OPTSIZE;
 #endif
 
-	if ((buff = malloc(buffsize)) == NULL)
+	if ((buff = malloc(buffsize)) == NULL) {
 		perror("cat: no memory");
+		return (1);
+	}
 
 	/*
 	 * Note that on some systems (V7), very large writes to a pipe
@@ -191,13 +197,18 @@ register int fd;
 		offset = 0;
 		do {
 			nwritten = write(fileno(stdout), &buff[offset], n);
-			if (nwritten <= 0)
+			if (nwritten <= 0) {
 				perror("cat: write error");
+				exit(2);
+			}
 			offset += nwritten;
 		} while ((n -= nwritten) > 0);
 	}
-	if (n < 0)
-		perror("cat: read error");
 
 	free(buff);
+	if (n < 0) {
+		perror("cat: read error");
+		return (1);
+	}
+	return (0);
 }
