@@ -1,12 +1,14 @@
+int	cs1del;
 int	printsw;
-int	slow1 = 1;
-int	slow2 = 1;
-int	slow3 = 1;
-int	slow4 = 1;
-/*	%H%	3.1	%G%	*/
+/*	%H%	3.2	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
+ *
+ * NB: This device is very sensitive: be aware that the code is the way
+ *     it is for good reason and that there are delay loops here which may
+ *     have to be lengthened if your processor is faster and which should
+ *     probably be shortened if your processor is slower.
  *
  * This driver has been tested on a SC-11B Controller, configured
  * with the following internal switch settings:
@@ -98,8 +100,8 @@ struct	device
  * transfer.  SDIST represents interrupt latency, RDIST the amount
  * of rotation which is tolerable to avoid another interrupt.
  */
-#define	SDIST	4		/* 4 sectors ~~= 2 msec */
-#define	RDIST	6		/* 6 sectors ~~= 3 msec */
+#define	SDIST	3		/* 2-3 sectors 1-1.5 msec */
+#define	RDIST	6		/* 5-6 sectors 2.5-3 msec */
 
 /*
  * To fill a 300M drive:
@@ -180,6 +182,7 @@ struct	buf	rupbuf;			/* Buffer for raw i/o */
 /* Other bits of upcs1 */
 #define	IE	0100		/* Controller wide interrupt enable */
 #define	TRE	040000		/* Transfer error */
+#define	RDY	020		/* Transfer terminated */
 
 /* Drive status bits of upds */
 #define	PIP	020000		/* Positioning in progress */
@@ -210,6 +213,10 @@ int	up_ubinfo;		/* Information about UBA usage saved here */
  */
 int	idelay = 500;		/* Delay after PRESET or DCLR */
 int	sdelay = 500;		/* Delay after selecting drive in upcs2 */
+int	iedel1 = 500;
+int	iedel2 = 500;
+int	iedel3 = 0;
+int	iedel4 = 500;
 
 #define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
  
@@ -272,60 +279,96 @@ register unit;
 	int sn, cn, csn;
 
 	if (printsw&1) printf("upustart\n");
-	if (slow1) DELAY(idelay);
-	upaddr->upas = 1<<unit;
-	if (slow4) DELAY(idelay);
-	upaddr->upcs1 = IE;
-	if (slow4) DELAY(idelay);
-	if (unit >= NUP) {
-		printf("stray upustart\n");		/* can't happen */
+	if (unit >= NUP)
 		return;
-	}
-
+	/*
+	 * Whether or not it was before, this unit is no longer busy.
+	 * Check to see if there is (still or now) a request in this
+	 * drives queue, and if there is, select this unit.
+	 */
 	if (unit+DK_N <= DK_NMAX)
 		dk_busy &= ~(1<<(unit+DK_N));
 	dp = &uputab[unit];
-	if((bp=dp->b_actf) == NULL)
+	if ((bp = dp->b_actf) == NULL)
 		return;
-	if (slow1) DELAY(idelay);
 	if ((upaddr->upcs2 & 07) != unit) {
 		upaddr->upcs2 = unit;
 		DELAY(sdelay);
 		nwaitcs2++;
 	} else
 		neasycs2++;
-	if (slow2) DELAY(idelay);
-	if((upaddr->upds & VV) == 0) {
+	/*
+	 * If we have changed packs or just initialized,
+	 * the the volume will not be valid; if so, clear
+	 * the drive, preset it and put in 16bit/word mode.
+	 */
+	if ((upaddr->upds & VV) == 0) {
+		upaddr->upcs1 = IE|DCLR|GO;
+		DELAY(idelay);
 		upaddr->upcs1 = IE|PRESET|GO;
 		DELAY(idelay);
 		upaddr->upof = FMT22;
 	}
 	/*
-	 * Don't SEARCH twice on same drive; avoids looping.
+	 * We are called from upstrategy when a new request arrives
+	 * if we are not already active (with dp->b_active == 0),
+	 * and we then set dp->b_active to 1 if we are to SEARCH
+	 * for the desired cylinder, or 2 if we are on-cylinder.
+	 * If we SEARCH then we will later be called from upintr()
+	 * when the search is complete, and will link this disk onto
+	 * the uptab.  We then set dp->b_active to 2 so that upintr()
+	 * will not call us again.
+	 *
+	 * NB: Other drives clear the bit in the attention status
+	 * (i.e. upas) register corresponding to the drive when they
+	 * place the drive on the ready (i.e. uptab) queue.  This does
+	 * not work with the Emulex, as the controller hangs the UBA
+	 * of the VAX shortly after the upas register is set, for
+	 * reasons unknown.  This only occurs in multi-spindle configurations,
+	 * but to avoid the problem we use the fact that dp->b_active is
+	 * 2 to replace the clearing of the upas bit.
 	 */
-	if(dp->b_active)
+	if (dp->b_active)
 		goto done;
-	dp->b_active++;
+	dp->b_active = 1;
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL))
-		goto done;
+		goto done;	/* Will redetect error in upstart() soon */
 
+	/*
+	 * Do enough of the disk address decoding to determine
+	 * which cylinder and sector the request is on.
+	 * Then compute the number of the sector SDIST sectors before
+	 * the one where the transfer is to start, this being the
+	 * point where we wish to attempt to begin the transfer,
+	 * allowing approximately SDIST/2 msec for interrupt latency
+	 * and preparation of the request.
+	 *
+	 * If we are on the correct cylinder and the desired sector
+	 * lies between SDIST and SDIST+RDIST sectors ahead of us, then
+	 * we don't bother to SEARCH but just begin the transfer asap.
+	 */
 	bn = dkblock(bp);
 	cn = bp->b_cylin;
 	sn = bn%(NSECT*NTRAC);
 	sn = (sn+NSECT-SDIST)%NSECT;
 
-	if(cn - upaddr->updc)
-		goto search;
+	if (cn - upaddr->updc)
+		goto search;		/* Not on-cylinder */
 	csn = (upaddr->upla>>6) - sn - 1;
-	if(csn < 0)
+	if (csn < 0)
 		csn += NSECT;
-	if(csn > NSECT-RDIST)
+	if (csn > NSECT-RDIST)
 		goto done;
 
 search:
 	upaddr->updc = cn;
 	upaddr->upda = sn;
+	if (cs1del&8) DELAY(500);
 	upaddr->upcs1 = IE|SEARCH|GO;
+	if (cs1del&8) DELAY(500);
+	/*
+	 * Mark this unit busy.
+	 */
 	unit += DK_N;
 	if (unit <= DK_NMAX) {
 		dk_busy |= 1<<unit;
@@ -334,8 +377,14 @@ search:
 	return;
 
 done:
+	/*
+	 * This unit is ready to go.  Make active == 2 so
+	 * we won't get called again (by upintr() because upas&(1<<unit))
+	 * and link us onto the chain of ready disks.
+	 */
+	dp->b_active = 2;
 	dp->b_forw = NULL;
-	if(uptab.b_actf == NULL)
+	if (uptab.b_actf == NULL)
 		uptab.b_actf = dp;
 	else
 		uptab.b_actl->b_forw = dp;
@@ -344,9 +393,6 @@ done:
 
 /*
  * Start a transfer; call from top level at spl5() or on interrupt.
- *
- * Pick a drive off the queue of ready drives and perform
- * the first transfer in its queue.
  */
 upstart()
 {
@@ -354,16 +400,28 @@ upstart()
 	register unit;
 	register struct device *upaddr;
 	daddr_t bn;
-	int dn, sn, tn, cn;
+	int dn, sn, tn, cn, cmd;
 
 	if (printsw&2) printf("upstart\n");
 loop:
+	/*
+	 * Pick a drive off the queue of ready drives, and
+	 * perform the first transfer on its queue.
+	 *
+	 * Looping here is completely for the sake of drives which
+	 * are not present and on-line, for which we completely clear the
+	 * request queue.
+	 */
 	if ((dp = uptab.b_actf) == NULL)
 		return;
 	if ((bp = dp->b_actf) == NULL) {
 		uptab.b_actf = dp->b_forw;
 		goto loop;
 	}
+	/*
+	 * Mark the controller busy, and multi-part disk address.
+	 * Select the unit on which the i/o is to take place.
+	 */
 	uptab.b_active++;
 	unit = minor(bp->b_dev) & 077;
 	dn = dkunit(bp);
@@ -372,42 +430,67 @@ loop:
 	cn += bn/(NSECT*NTRAC);
 	sn = bn%(NSECT*NTRAC);
 	tn = sn/NSECT;
-	sn = sn%NSECT;
-
+	sn %= NSECT;
 	upaddr = UPADDR;
-	if (slow3) DELAY(idelay);
 	if ((upaddr->upcs2 & 07) != dn) {
 		upaddr->upcs2 = dn;
 		DELAY(sdelay);
 		nwaitcs2++;
 	} else
 		neasycs2++;
-	up_ubinfo = ubasetup(bp, 1);
+	up_ubinfo = ubasetup(bp, 1);	/* In a funny place for delay... */
+	/*
+	 * If drive is not present and on-line, then
+	 * get rid of this with an error and loop to get
+	 * rid of the rest of its queued requests.
+	 * (Then on to any other ready drives.)
+	 */
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
 		uptab.b_active = 0;
 		uptab.b_errcnt = 0;
 		dp->b_actf = bp->av_forw;
+		dp->b_active = 0;
 		bp->b_flags |= B_ERROR;
 		iodone(bp);
-		ubafree(up_ubinfo), up_ubinfo = 0;
+		ubafree(up_ubinfo), up_ubinfo = 0;	/* A funny place ... */
 		goto loop;
 	}
-	if(uptab.b_errcnt >= 16) {
+	/*
+	 * If this is a retry, then with the 16'th retry we
+	 * begin to try offsetting the heads to recover the data.
+	 */
+	if (uptab.b_errcnt >= 16) {
 		upaddr->upof = up_offset[uptab.b_errcnt & 017] | FMT22;
-		upaddr->upcs1 = OFFSET|GO;
+		upaddr->upcs1 = IE|OFFSET|GO;
 		DELAY(idelay);
-		while(upaddr->upds & PIP)
+		while (upaddr->upds & PIP)
 			DELAY(25);
 	}
+	/*
+	 * Now set up the transfer, retrieving the high
+	 * 2 bits of the UNIBUS address from the information
+	 * returned by ubasetup() for the cs1 register bits 8 and 9.
+	 */
 	upaddr->updc = cn;
 	upaddr->upda = (tn << 8) + sn;
 	upaddr->upba = up_ubinfo;
+	if (cs1del&1) DELAY(500);
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
+	cmd = (up_ubinfo >> 8) & 0x300;
 	if (bp->b_flags & B_READ)
-		upaddr->upcs1 = IE|GO|RCOM;
+		cmd |= IE|RCOM|GO;
 	else
-		upaddr->upcs1 = IE|GO|WCOM;
-
+		cmd |= IE|WCOM|GO;
+	if (cs1del&1) DELAY(500);
+	upaddr->upcs1 = cmd;
+	if (cs1del&1) DELAY(500);
+	/*
+	 * This is a controller busy situation.
+	 * Record in dk slot NUP+DK_N (after last drive)
+	 * unless there aren't that many slots reserved for
+	 * us in which case we record this as a drive busy
+	 * (if there is room for that).
+	 */
 	unit = dn+DK_N;
 	if (NUP+DK_N == DK_NMAX)
 		unit = NUP+DK_N;
@@ -434,8 +517,21 @@ upintr()
 	register struct device *upaddr = UPADDR;
 	int as = upaddr->upas & 0377;
 
-	if (printsw&4) printf("upintr\n");
-	if(uptab.b_active) {
+	if (printsw&4) printf("upintr as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
+	if (uptab.b_active) {
+		/*
+		 * The drive is transferring, thus the hardware
+		 * (say the designers) will only interrupt when the transfer
+		 * completes; check for it anyways.
+		 */
+		if ((upaddr->upcs1 & RDY) == 0) {
+			printf("upintr b_active && !RDY\n");
+			goto out;
+		}
+		/*
+		 * Mark controller or drive not busy, and check for an
+		 * error condition which may have resulted from the transfer.
+		 */
 		dp = uptab.b_actf;
 		bp = dp->b_actf;
 		unit = dkunit(bp);
@@ -444,38 +540,79 @@ upintr()
 		else if (DK_N+unit <= DK_NMAX)
 			dk_busy &= ~(1<<(DK_N+unit));
 		if (upaddr->upcs1 & TRE) {
+			/*
+			 * An error occurred, indeed.  Select this unit
+			 * to get at the drive status (a SEARCH may have
+			 * intervened to change the selected unit), and
+			 * wait for the command which caused the interrupt
+			 * to complete (DRY).
+			 *
+			 * WHY IS THE WAIT NECESSARY?
+			 */
 			if ((upaddr->upcs2 & 07) != unit) {
 				upaddr->upcs2 = unit;
 				DELAY(sdelay);
 				nwaitcs2++;
 			} else
 				neasycs2++;
-			while((upaddr->upds & DRY) == 0)
+			while ((upaddr->upds & DRY) == 0)
 				DELAY(25);
-			if(++uptab.b_errcnt > 28 || upaddr->uper1&WLE)
+			/*
+			 * After 28 retries (16 w/o servo offsets, and then
+			 * 12 with servo offsets), or if we encountered
+			 * an error because the drive is write-protected,
+			 * give up.  Print an error message on the last 2
+			 * retries before a hard failure.
+			 */
+			if (++uptab.b_errcnt > 28 || upaddr->uper1&WLE)
 				bp->b_flags |= B_ERROR;
 			else
-				uptab.b_active = 0;
-			if(uptab.b_errcnt > 27)
+				uptab.b_active = 0;	/* To force retry */
+			if (uptab.b_errcnt > 27)
 				deverror(bp, upaddr->upcs2, upaddr->uper1);
-			if ((upaddr->uper1&(DCK|ECH)) == DCK) {
-				if (upecc(upaddr, bp))
-					return;
-			}
+			/*
+			 * If this was a correctible ECC error, let upecc
+			 * do the dirty work to correct it.  If upecc
+			 * starts another READ for the rest of the data
+			 * then it returns 1 (having set uptab.b_active).
+			 * Otherwise we are done and fall through to
+			 * finish up.
+			 */
+			if ((upaddr->uper1&(DCK|ECH))==DCK && upecc(upaddr, bp))
+				return;
+			/*
+			 * Clear the drive and, every 4 retries, recalibrate
+			 * to hopefully help clear up seek positioning problems.
+			 */
 			upaddr->upcs1 = TRE|IE|DCLR|GO;
 			DELAY(idelay);
-			if((uptab.b_errcnt&07) == 4) {
+			if ((uptab.b_errcnt&07) == 4) {
 				upaddr->upcs1 = RECAL|GO|IE;
 				DELAY(idelay);
 				while(upaddr->upds & PIP)
 					DELAY(25);
 			}
 		}
-		if(uptab.b_active) {
-			if(uptab.b_errcnt) {
-				upaddr->upcs1 = RTC|GO;
+		/*
+		 * If we are still noted as active, then no
+		 * (further) retries are necessary.  
+		 *
+		 * Make sure the correct unit is selected,
+		 * return it to centerline if necessary, and mark
+		 * this i/o complete, starting the next transfer
+		 * on this drive with the upustart routine (if any).
+		 */
+		if (uptab.b_active) {
+			if ((upaddr->upcs2 & 07) != unit) {
+				upaddr->upcs2 = unit;
+				DELAY(sdelay);
+				nwaitcs2++;
+			} else
+				neasycs2++;
+			if (uptab.b_errcnt >= 16) {
+				upaddr->upcs1 = RTC|GO|IE;
 				DELAY(idelay);
-				while(upaddr->upds & PIP)
+				while (upaddr->upds & PIP)
 					DELAY(25);
 			}
 			uptab.b_active = 0;
@@ -484,27 +621,50 @@ upintr()
 			dp->b_active = 0;
 			dp->b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
-			bp->b_resid = (-upaddr->upwc * 2);
+			bp->b_resid = (-upaddr->upwc * sizeof(short));
+			if (cs1del&2) DELAY(500);
+			upaddr->upcs1 = IE;
+			if (cs1del&2) DELAY(500);
 			iodone(bp);
 			if(dp->b_actf)
 				upustart(unit);
 		}
 		as &= ~(1<<unit);
 		ubafree(up_ubinfo), up_ubinfo = 0;
-	} else {
+	}
+#ifndef notdef
+	else {
+		if (printsw&64) printf("cs1 %o\n", upaddr->upcs1);
 		if (upaddr->upcs1 & TRE) {
 			upaddr->upcs1 = TRE;
 			DELAY(idelay);
+			if (printsw&64) printf("after TRE cs1 %o\n", upaddr->upcs1);
 		}
-		if (slow4) DELAY(idelay);
-		if(as == 0)
-			upaddr->upcs1 = IE;
-		if (slow4) DELAY(idelay);
 	}
-	for(unit=0; unit<NUP; unit++)
-		if(as & (1<<unit))
-			upustart(unit);
-	upstart();
+#endif
+	/*
+	 * If we have a unit with an outstanding SEARCH,
+	 * and the hardware indicates the unit requires attention,
+	 * the bring the drive to the ready queue.
+	 * Finally, if the controller is not transferring
+	 * start it if any drives are now ready to transfer.
+	 */
+	for (unit = 0; unit < NUP; unit++)
+		if (as & (1<<unit))
+			if (uputab[unit].b_active == 1)
+				upustart(unit);
+			else {
+				upaddr->upas = 1<<unit;
+				DELAY(1000);
+			}
+	if (uptab.b_actf && uptab.b_active == 0)
+		upstart();
+out:
+	if (cs1del&4) DELAY(500);
+	if ((upaddr->upcs1&IE) == 0)
+		upaddr->upcs1 = IE;
+	if (cs1del&4) DELAY(500);
+	if (printsw&128) printf("exit cs1 %o\n", upaddr->upcs1);
 }
 
 upread(dev)
@@ -519,67 +679,89 @@ upwrite(dev)
 	physio(upstrategy, &rupbuf, dev, B_WRITE, minphys);
 }
 
+/*
+ * Correct an ECC error, and restart the i/o to complete
+ * the transfer if necessary.  This is quite complicated because
+ * the transfer may be going to an odd memory address base and/or
+ * across a page boundary.
+ */
 upecc(up, bp)
 register struct device *up;
 register struct buf *bp;
 {
 	struct uba_regs *ubp = (struct uba_regs *)UBA0;
-	register int i, off;
+	register int i;
 	caddr_t addr;
-	int reg, bit, byte, npf, mask, o;
-	extern char buffers[NBUF][BSIZE];
+	int reg, bit, byte, npf, mask, o, cmd, ubaddr;
 	int bn, cn, tn, sn;
 
 	if (printsw&8) printf("upecc\n");
 	/*
-	 * Npf is number of page frames (= disk blocks) completed before ecc.
+	 * Npf is the number of sectors transferred before the sector
+	 * containing the ECC error, and reg is the UBA register
+	 * mapping (the first part of) the transfer.
+	 * O is offset within a memory page of the first byte transferred.
 	 */
-	npf = btop((UPADDR->upwc * sizeof(short)) + bp->b_bcount) - 1;
-	reg = btop(up_ubinfo&0xffff) + npf;
+	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
+	reg = btop(up_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("%D ", bp->b_blkno+npf);
 	prdev("ECC", bp->b_dev);
 	mask = up->upec2;
 	if (mask == 0) {
-		up->upof = FMT22;
+		up->upof = FMT22;		/* == RTC ???? */
 		DELAY(idelay);
 		return (0);
 	}
-	i = up->upec1 - 1;
-	bit = i&017;
-	i = (i&~017)>>3;
+	/*
+	 * Flush the buffered data path, and compute the
+	 * byte and bit position of the error.  The variable i
+	 * is the byte offset in the transfer, the variable byte
+	 * is the offset from a page boundary in main memory.
+	 */
+	ubp->uba_dpr[(up_ubinfo>>28)&0x0f] |= BNE;
+	i = up->upec1 - 1;		/* -1 makes 0 origin */
+	bit = i&07;
+	i = (i&~07)>>3;
 	byte = i + o;
-	if (byte & 1) {
-		byte--;
-		bit += 8;
+	/*
+	 * Correct while possible bits remain of mask.  Since mask
+	 * contains 11 bits, we continue while the bit offset is > -11.
+	 * Also watch out for end of this block and the end of the whole
+	 * transfer.
+	 */
+	while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
+		addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
+		    (byte & PGOFSET);
+		putmemc(addr, getmemc(addr)^(mask<<bit));
+		byte++;
+		i++;
+		bit -= 8;
 	}
-	i += (int)ptob(reg);
-	for (off = 0; off <= 32; off += 16) {
-		if (i <= bp->b_bcount) {
-			addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
-			    (byte & PGOFSET);
-			putmemw(addr, getmemw(addr)^(mask<<bit));
-		}
-		byte += sizeof (short);
-		i += sizeof (short);
-		bit -= 16;
-	}
-	uptab.b_active++;
+	uptab.b_active++;	/* Either complete or continuing... */
 	if (up->upwc == 0)
 		return (0);
-	up->upcs1 = DCLR|GO;
+	/*
+	 * Have to continue the transfer... clear the drive,
+	 * and compute the position where the transfer is to continue.
+	 * We have completed npf+1 sectors of the transfer already;
+	 * restart at offset o of next sector (i.e. in UBA register reg+1).
+	 */
+	up->upcs1 = TRE|IE|DCLR|GO;
 	DELAY(idelay);
 	bn = dkblock(bp);
 	cn = bp->b_cylin;
-	sn = bn%(NSECT*NTRAC);
+	sn = bn%(NSECT*NTRAC) + npf + 1;
 	tn = sn/NSECT;
 	sn %= NSECT;
-	sn += npf + 1;
-	cn += sn/NSECT;
-	sn %= NSECT;
+	cn += tn/NTRAC;
+	tn %= NTRAC;
 	up->updc = cn;
-	up->upda = ((i/NSECT)<<8) + (i%NSECT);
-	up->upba = (int)ptob(reg+1)|((int)bp->b_un.b_addr&PGOFSET);
-	up->upcs1 = IE|GO|RCOM;
+	up->upda = (tn << 8) | sn;
+	ubaddr = (int)ptob(reg+1) + o;
+	up->upba = ubaddr;
+	cmd = (ubaddr >> 8) & 0x300;
+	cmd |= IE|GO|RCOM;
+	up->upcs1 = cmd;
 	return (1);
 }
