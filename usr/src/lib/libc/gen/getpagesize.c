@@ -6,21 +6,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpagesize.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpagesize.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/sysctl.h>
 
-#if __STDC__
-int
-getpagesize(void)
-#else
 int
 getpagesize()
-#endif
 {
-	int mib[2], size, value;
+	int mib[2], value;
+	size_t size;
 
 	mib[0] = CTL_HW;
 	mib[1] = HW_PAGESIZE;
