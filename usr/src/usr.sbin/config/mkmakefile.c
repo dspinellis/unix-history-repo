@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.4	81/03/06
+ * mkmakefile.c	1.5	81/03/06
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -149,7 +149,7 @@ read_files()
 	    continue;
 	this = ns(wd);
 	/*
-	 * Read standard/optional
+	 * Readad standard/optional
 	 */
 	next_word(fp, wd);
 	if (wd == NULL)
