@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.14 (Berkeley) %G%
+#	@(#)Makefile	4.15 (Berkeley) %G%
 #
 #
 # The system has two monitoring schemes, utilizing either ``prof''
@@ -24,24 +24,19 @@
 # All files contain sccsid strings. To compile a library that does
 # not include these strings one must add -Dlint to DEFS below.
 #
-#*********************************************************************
-#=====================================================================
-#							
 # There are two possible methods of doing host name look up.  They are
-# to use the nameserver or /etc/hosts.
-#
-#	HOSTLOOKUP defines which method is to be compiled into libc  
+# to use the nameserver or /etc/hosts. HOSTLOOKUP defines which method
+# is to be compiled into libc  :
 #								     
-#		defining HOSTLOOKUP to be "named", compiles the         
-#		routines which the BIND nameserver uses into libc    
-#---------------------------------------------------------------------
-#HOSTLOOKUP=	named
-#---------------------------------------------------------------------
-#		defining HOSTLOOKUP to "hosttable", compiles
-#		the routines which use the old method of
-#		hostname lookup. (ie /etc/hosts )
-#---------------------------------------------------------------------
+#	defining HOSTLOOKUP to be "named", compiles the         
+#	host lookup routines that use the BIND nameserver.
+#
+#	defining HOSTLOOKUP to be "hosttable", compiles
+#	the host lookup routines that use /etc/hosts.
+#
 HOSTLOOKUP=	hosttable
+#HOSTLOOKUP=	named
+#							
 DESTDIR=
 INSTALL=install -m 644
 DFLMON=	mon.o
@@ -88,7 +83,11 @@ tags:
 	done
 
 clean:
-	for i in ${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}; \
+	for i in ${MACHINE}/csu ${ALL} net/hosttable net/named; \
 		do (cd $$i; make ${MFLAGS} clean); done
 	rm -f t1 tmp/*.o
 	-rmdir tmp
+
+depend:
+	for i in ${MACHINE}/csu ${ALL} net/hosttable net/named; \
+		do (cd $$i; make ${MFLAGS} DEFS=${DEFS} depend); done
