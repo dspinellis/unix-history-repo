@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strftime.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)strftime.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -66,25 +66,34 @@ _fmt(format, t)
 	register char *format;
 	struct tm *t;
 {
-	char *timezone();
-
 	for (; *format; ++format) {
 		if (*format == '%')
 			switch(*++format) {
+			case '\0':
+				--format;
+				break;
 			case 'A':
-				if (!_add(Afmt[t->tm_mon]))
+				if (t->tm_wday < 0 || t->tm_wday > 6)
+					return(0);
+				if (!_add(Afmt[t->tm_wday]))
 					return(0);
 				continue;
 			case 'a':
-				if (!_add(afmt[t->tm_mon]))
+				if (t->tm_wday < 0 || t->tm_wday > 6)
+					return(0);
+				if (!_add(afmt[t->tm_wday]))
 					return(0);
 				continue;
 			case 'B':
+				if (t->tm_mon < 0 || t->tm_mon > 11)
+					return(0);
 				if (!_add(Bfmt[t->tm_mon]))
 					return(0);
 				continue;
 			case 'b':
 			case 'h':
+				if (t->tm_mon < 0 || t->tm_mon > 11)
+					return(0);
 				if (!_add(bfmt[t->tm_mon]))
 					return(0);
 				continue;
@@ -105,7 +114,8 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'I':
-				if (!_conv((t->tm_hour - 1) % 12 + 1, 2))
+				if (!_conv(t->tm_hour % 12 ?
+				    t->tm_hour % 12 : 12, 2))
 					return(0);
 				continue;
 			case 'j':
@@ -125,7 +135,7 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'p':
-				if (!_add(t->tm_hour >= 12 ? "AM" : "PM"))
+				if (!_add(t->tm_hour >= 12 ? "PM" : "AM"))
 					return(0);
 				continue;
 			case 'R':
@@ -156,7 +166,8 @@ _fmt(format, t)
 				continue;
 			case 'W':
 				if (!_conv((t->tm_yday + 7 -
-				    (t->tm_wday ? t->tm_wday : 6)) / 7, 2))
+				    (t->tm_wday ? (t->tm_wday - 1) : 6))
+				    / 7, 2))
 					return(0);
 				continue;
 			case 'w':
@@ -164,7 +175,7 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'x':
-				if (!_fmt("%a %b %d", t))
+				if (!_fmt("%a %b %d %Y", t))
 					return(0);
 				continue;
 			case 'y':
@@ -177,7 +188,7 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'Z':
-				if (!_add(t->tm_zone))
+				if (!t->tm_zone || !_add(t->tm_zone))
 					return(0);
 				continue;
 			case '%':
