@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_tune.h	7.9 (Berkeley) %G%
+ *	@(#)ex_tune.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -111,9 +111,9 @@
 #define	TUBECOLS	160	/* Number of screen columns for visual */
 #define	TUBESIZE	5000	/* Maximum screen size for visual */
 #else
-#define	TUBELINES	70
+#define	TUBELINES	100
 #define	TUBECOLS	160
-#define	TUBESIZE	7000	/* 70 * 100 */
+#define	TUBESIZE	(TUBELINES * 100)
 #endif
 
 /*
