@@ -1,4 +1,4 @@
-/*	param.c	6.5	84/07/02	*/
+/*	param.c	6.6	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,6 @@
 #include "../h/clist.h"
 #include "../h/cmap.h"
 #include "../h/mbuf.h"
-#include "../h/nami.h"
 #include "../h/quota.h"
 #include "../h/kernel.h"
 /*
