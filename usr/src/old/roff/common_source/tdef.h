@@ -1,5 +1,5 @@
 /*
- *	@(#)tdef.h	4.3 %G%
+ *	@(#)tdef.h	4.4 %G%
  */
 #define MAXPTR 0x7fffffff	/* max value of any pointer variable */
 #ifdef NROFF	/*NROFF*/
@@ -130,6 +130,11 @@
 #define PAIR(A,B) (A|(B<<BYTE))
 
 #define BLK  128	/*alloc block words*/
+
+#ifdef VMUNIX
+#define	BIG 1024
+#endif VMUNIX
+
 #ifdef BIG
 typedef long filep;
 #define NBLIST BIG	/*allocation , BIG = 256 per 65k*/
