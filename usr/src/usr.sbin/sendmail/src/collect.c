@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -39,18 +39,43 @@ static char sccsid[] = "@(#)collect.c	8.18 (Berkeley) %G%";
 char	*CollectErrorMessage;
 bool	CollectErrno;
 
+static jmp_buf	CtxCollectTimeout;
+static int	collecttimeout();
+static bool	CollectProgress;
+static EVENT	*CollectTimeout;
+
+/* values for input state machine */
+#define IS_NORM		0	/* middle of line */
+#define IS_BOL		1	/* beginning of line */
+#define IS_DOT		2	/* read a dot at beginning of line */
+#define IS_DOTCR	3	/* read ".\r" at beginning of line */
+#define IS_CR		4	/* read a carriage return */
+
+/* values for message state machine */
+#define MS_UFROM	0	/* reading Unix from line */
+#define MS_HEADER	1	/* reading message header */
+#define MS_BODY		2	/* reading message body */
+
+
 maketemp(from)
 	char *from;
 {
 	register FILE *tf;
 	bool ignrdot = smtpmode ? FALSE : IgnrDot;
 	time_t dbto = smtpmode ? TimeOuts.to_datablock : 0;
-	register char *workbuf, *freebuf;
+	register char *bp;
+	register int c;
 	bool inputerr = FALSE;
 	bool headeronly = FALSE;
-	char buf[MAXLINE], buf2[MAXLINE];
+	char *buf;
+	int buflen;
+	int istate;
+	int mstate;
+	char *pbp;
+	char peekbuf[8];
+	char bufbuf[MAXLINE];
 	extern char *hvalue();
-	extern bool isheader(), flusheol();
+	extern bool isheader();
 	extern char *index();
 
 	CollectErrorMessage = NULL;
@@ -84,194 +109,246 @@ maketemp(from)
 	if (smtpmode)
 		message("354 Enter mail, end with \".\" on a line by itself");
 
-	/* set global timer to monitor progress */
-	sfgetset(dbto);
-
 	/*
-	**  Try to read a UNIX-style From line
+	**  Read the message.
+	**
+	**	This is done using two interleaved state machines.
+	**	The input state machine is looking for things like
+	**	hidden dots; the message state machine is handling
+	**	the larger picture (e.g., header versus body).
 	*/
 
-	if (sfgets(buf, MAXLINE, fp, dbto, "initial message read") == NULL)
-		goto readerr;
-	fixcrlf(buf, FALSE);
-# ifndef NOTUNIX
-	if (!headeronly && !SaveFrom && strncmp(buf, "From ", 5) == 0)
+	buf = bp = bufbuf;
+	buflen = sizeof bufbuf;
+	pbp = peekbuf;
+	istate = IS_BOL;
+	mstate = SaveFrom ? MS_HEADER : MS_UFROM;
+	CollectProgress = FALSE;
+
+	/* if transmitting binary, don't map NL to EOL */
+	if (e->e_bodytype != NULL && strcasecmp(e->e_bodytype, "8BITMIME") == 0)
+		e->e_flags |= EF_NL_NOT_EOL;
+
+	if (dbto != 0)
 	{
-		if (!flusheol(buf, fp, dbto))
+		/* handle possible input timeout */
+		if (setjmp(CtxCollectTimeout) != 0)
+		{
+#ifdef LOG
+			syslog(LOG_NOTICE,
+			    "timeout waiting for input from %s during message collect",
+			    CurHostName ? CurHostName : "<local machine>");
+#endif
+			errno = 0;
+			usrerr("451 timeout waiting for input during message collect");
 			goto readerr;
-		eatfrom(buf, e);
-		if (sfgets(buf, MAXLINE, fp, dbto,
-				"message header read") == NULL)
-			goto readerr;
-		fixcrlf(buf, FALSE);
+		}
+		CollectTimeout = setevent(dbto, collecttimeout, dbto);
 	}
-# endif /* NOTUNIX */
 
-	/*
-	**  Copy fp to temp file & do message editing.
-	**	To keep certain mailers from getting confused,
-	**	and to keep the output clean, lines that look
-	**	like UNIX "From" lines are deleted in the header.
-	*/
-
-	workbuf = buf;		/* `workbuf' contains a header field */
-	freebuf = buf2;		/* `freebuf' can be used for read-ahead */
 	for (;;)
 	{
-		char *curbuf;
-		int curbuffree;
-		register int curbuflen;
-		char *p;
-
-		/* first, see if the header is over */
-		if (!isheader(workbuf))
-		{
-			fixcrlf(workbuf, TRUE);
-			break;
-		}
-
-		/* if the line is too long, throw the rest away */
-		if (!flusheol(workbuf, fp, dbto))
-			goto readerr;
-
-		/* it's okay to toss '\n' now (flusheol() needed it) */
-		fixcrlf(workbuf, TRUE);
-
-		curbuf = workbuf;
-		curbuflen = strlen(curbuf);
-		curbuffree = MAXLINE - curbuflen;
-		p = curbuf + curbuflen;
-
-		/* get the rest of this field */
+		if (tTd(30, 35))
+			printf("top, istate=%d, mstate=%d\n", istate, mstate);
 		for (;;)
 		{
-			int clen;
-
-			if (sfgets(freebuf, MAXLINE, fp, dbto,
-					"message header read") == NULL)
+			if (pbp > peekbuf)
+				c = *--pbp;
+			else
 			{
-				freebuf[0] = '\0';
+				while (!feof(InChannel) && !ferror(InChannel))
+				{
+					errno = 0;
+					c = fgetc(InChannel);
+					if (errno != EINTR)
+						break;
+					clearerr(InChannel);
+				}
+				CollectProgress = TRUE;
+				if (TrafficLogFile != NULL)
+				{
+					if (istate == IS_BOL)
+						fprintf(TrafficLogFile, "%05d <<< ",
+							getpid());
+					if (c == EOF)
+						fprintf(TrafficLogFile, "[EOF]\n");
+					else
+						fputc(c, TrafficLogFile);
+				}
+				if (c == EOF)
+					goto readerr;
+				if (SevenBitInput)
+					c &= 0x7f;
+				else
+					HasEightBits |= bitset(0x80, c);
+				e->e_msgsize++;
+			}
+			if (tTd(30, 94))
+				printf("istate=%d, c=%c (0x%x)\n",
+					istate, c, c);
+			switch (istate)
+			{
+			  case IS_BOL:
+				if (c == '.')
+				{
+					istate = IS_DOT;
+					continue;
+				}
+				break;
+
+			  case IS_DOT:
+				if (c == '\n' && !ignrdot &&
+				    !bitset(EF_NL_NOT_EOL, e->e_flags))
+					goto readerr;
+				else if (c == '\r' &&
+					 !bitset(EF_CRLF_NOT_EOL, e->e_flags))
+				{
+					istate = IS_DOTCR;
+					continue;
+				}
+				else if (c != '.' ||
+					 (OpMode != MD_SMTP &&
+					  OpMode != MD_DAEMON &&
+					  OpMode != MD_ARPAFTP))
+				{
+					*pbp++ = c;
+					c = '.';
+				}
+				break;
+
+			  case IS_DOTCR:
+				if (c == '\n')
+					goto readerr;
+				else
+				{
+					/* push back the ".\rx" */
+					*pbp++ = c;
+					*pbp++ = '\r';
+					c = '.';
+				}
+				break;
+
+			  case IS_CR:
+				if (c != '\n')
+				{
+					ungetc(c, InChannel);
+					c = '\r';
+				}
+				else if (!bitset(EF_CRLF_NOT_EOL, e->e_flags))
+					istate = IS_BOL;
 				break;
 			}
 
-			/* is this a continuation line? */
-			if (*freebuf != ' ' && *freebuf != '\t')
-				break;
-
-			if (!flusheol(freebuf, fp, dbto))
-				goto readerr;
-
-			fixcrlf(freebuf, TRUE);
-			clen = strlen(freebuf) + 1;
-
-			/* if insufficient room, dynamically allocate buffer */
-			if (clen >= curbuffree)
+			if (c == '\r')
 			{
-				/* reallocate buffer */
-				int nbuflen = ((p - curbuf) + clen) * 2;
-				char *nbuf = xalloc(nbuflen);
-
-				p = nbuf + curbuflen;
-				curbuffree = nbuflen - curbuflen;
-				bcopy(curbuf, nbuf, curbuflen);
-				if (curbuf != buf && curbuf != buf2)
-					free(curbuf);
-				curbuf = nbuf;
+				istate = IS_CR;
+				continue;
 			}
-			*p++ = '\n';
-			bcopy(freebuf, p, clen - 1);
-			p += clen - 1;
-			curbuffree -= clen;
-			curbuflen += clen;
+			else if (c == '\n' && !bitset(EF_NL_NOT_EOL, e->e_flags))
+				istate = IS_BOL;
+			else
+				istate = IS_NORM;
+
+			if (mstate == MS_BODY)
+			{
+				/* just put the character out */
+				fputc(c, tf);
+				continue;
+			}
+
+			/* header -- buffer up */
+			if (bp >= &buf[buflen - 2])
+			{
+				char *obuf;
+
+				if (mstate != MS_HEADER)
+					break;
+
+				/* out of space for header */
+				obuf = buf;
+				if (buflen < MEMCHUNKSIZE)
+					buflen *= 2;
+				else
+					buflen += MEMCHUNKSIZE;
+				buf = xalloc(buflen);
+				bcopy(obuf, buf, bp - obuf);
+				bp = &buf[bp - obuf];
+				if (obuf != bufbuf)
+					free(obuf);
+			}
+			*bp++ = c;
+			if (istate == IS_BOL)
+				break;
 		}
-		*p++ = '\0';
+		*bp = '\0';
 
-		e->e_msgsize += curbuflen;
-
-		/*
-		**  The working buffer now becomes the free buffer, since
-		**  the free buffer contains a new header field.
-		**
-		**  This is premature, since we still havent called
-		**  chompheader() to process the field we just created
-		**  (so the call to chompheader() will use `freebuf').
-		**  This convolution is necessary so that if we break out
-		**  of the loop due to H_EOH, `workbuf' will always be
-		**  the next unprocessed buffer.
-		*/
-
+nextstate:
+		if (tTd(30, 35))
+			printf("nextstate, istate=%d, mstate=%d, line = \"%s\"\n",
+				istate, mstate, buf);
+		switch (mstate)
 		{
-			register char *tmp = workbuf;
-			workbuf = freebuf;
-			freebuf = tmp;
+		  case MS_UFROM:
+			mstate = MS_HEADER;
+			if (strncmp(buf, "From ", 5) == 0)
+			{
+				eatfrom(buf, e);
+				continue;
+			}
+			/* fall through */
+
+		  case MS_HEADER:
+			if (!isheader(buf))
+			{
+				mstate = MS_BODY;
+				goto nextstate;
+			}
+
+			/* check for possible continuation line */
+			do
+			{
+				clearerr(InChannel);
+				errno = 0;
+				c = fgetc(InChannel);
+			} while (errno == EINTR);
+			if (c != EOF)
+				ungetc(c, InChannel);
+			if (c == ' ' || c == '\t')
+			{
+				/* yep -- defer this */
+				continue;
+			}
+
+			/* trim off trailing CRLF or NL */
+			if (*--bp != '\n' || *--bp != '\r')
+				bp++;
+			*bp = '\0';
+			if (bitset(H_EOH, chompheader(buf, FALSE, e)))
+				mstate = MS_BODY;
+			break;
+
+		  case MS_BODY:
+			if (tTd(30, 1))
+				printf("EOH\n");
+			if (headeronly)
+				goto readerr;
+			bp = buf;
+
+			/* toss blank line */
+			if ((!bitset(EF_CRLF_NOT_EOL, e->e_flags) &&
+				bp[0] == '\r' && bp[1] == '\n') ||
+			    (!bitset(EF_NL_NOT_EOL, e->e_flags) &&
+				bp[0] == '\n'))
+			{
+				break;
+			}
+
+			/* if not a blank separator, write it out */
+			while (*bp != '\0')
+				fputc(*bp++, tf);
+			break;
 		}
-
-		/*
-		**  Snarf header away.
-		*/
-
-		if (bitset(H_EOH, chompheader(curbuf, FALSE, e)))
-			break;
-
-		/*
-		**  If the buffer was dynamically allocated, free it.
-		*/
-
-		if (curbuf != buf && curbuf != buf2)
-			free(curbuf);
-	}
-
-	if (tTd(30, 1))
-		printf("EOH\n");
-
-	if (headeronly)
-	{
-		if (*workbuf != '\0')
-			syserr("collect: lost first line of message");
-		goto readerr;
-	}
-
-	if (*workbuf == '\0')
-	{
-		/* throw away a blank line */
-		if (sfgets(buf, MAXLINE, fp, dbto,
-				"message separator read") == NULL)
-			goto readerr;
-	}
-	else if (workbuf == buf2)	/* guarantee `buf' contains data */
-		(void) strcpy(buf, buf2);
-
-	/*
-	**  Collect the body of the message.
-	*/
-
-	for (;;)
-	{
-		register char *bp = buf;
-
-		fixcrlf(buf, TRUE);
-
-		/* check for end-of-message */
-		if (!ignrdot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
-			break;
-
-		/* check for transparent dot */
-		if ((OpMode == MD_SMTP || OpMode == MD_DAEMON) &&
-		    bp[0] == '.' && bp[1] == '.')
-			bp++;
-
-		/*
-		**  Figure message length, output the line to the temp
-		**  file, and insert a newline if missing.
-		*/
-
-		e->e_msgsize += strlen(bp) + 1;
-		fputs(bp, tf);
-		fputs("\n", tf);
-		if (ferror(tf))
-			tferror(tf, e);
-		if (sfgets(buf, MAXLINE, fp, dbto, "message body read") == NULL)
-			goto readerr;
+		bp = buf;
 	}
 
 readerr:
@@ -283,7 +360,7 @@ readerr:
 	}
 
 	/* reset global timer */
-	sfgetset((time_t) 0);
+	clrevent(CollectTimeout);
 
 	if (headeronly)
 		return;
@@ -418,40 +495,19 @@ readerr:
 		finis();
 	}
 }
-/*
-**  FLUSHEOL -- if not at EOL, throw away rest of input line.
-**
-**	Parameters:
-**		buf -- last line read in (checked for '\n'),
-**		fp -- file to be read from.
-**
-**	Returns:
-**		FALSE on error from sfgets(), TRUE otherwise.
-**
-**	Side Effects:
-**		none.
-*/
 
-bool
-flusheol(buf, fp, dbto)
-	char *buf;
-	FILE *fp;
-	time_t dbto;
+
+static
+collecttimeout(timeout)
+	time_t timeout;
 {
-	register char *p = buf;
-	char junkbuf[MAXLINE];
+	/* if no progress was made, die now */
+	if (!CollectProgress)
+		longjmp(CtxCollectTimeout, 1);
 
-	while (strchr(p, '\n') == NULL)
-	{
-		CollectErrorMessage = "553 header line too long";
-		CollectErrno = 0;
-		if (sfgets(junkbuf, MAXLINE, fp, dbto,
-				"long line flush") == NULL)
-			return (FALSE);
-		p = junkbuf;
-	}
-
-	return (TRUE);
+	/* otherwise reset the timeout */
+	CollectTimeout = setevent(timeout, collecttimeout, timeout);
+	CollectProgress = FALSE;
 }
 /*
 **  TFERROR -- signal error on writing the temporary file.

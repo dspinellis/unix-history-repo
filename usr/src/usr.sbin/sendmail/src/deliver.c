@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.89 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.90 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2048,6 +2048,11 @@ putfromline(mci, e)
 **		The message is written onto fp.
 */
 
+/* values for output state variable */
+#define OS_HEAD		0	/* at beginning of line */
+#define OS_CR		1	/* read a carriage return */
+#define OS_INLINE	2	/* putting rest of line */
+
 putbody(mci, e, separator)
 	register MCI *mci;
 	register ENVELOPE *e;
@@ -2076,34 +2081,74 @@ putbody(mci, e, separator)
 				mci->mci_flags &= ~MCIF_INHEADER;
 			}
 			putline("<<< No Message Collected >>>", mci);
+			goto endofmessage;
 		}
 	}
-	if (e->e_dfp != NULL)
-	{
-		rewind(e->e_dfp);
+	rewind(e->e_dfp);
 
-		if (bitset(MCIF_CVT8TO7, mci->mci_flags))
+	if (bitset(MCIF_CVT8TO7, mci->mci_flags))
+	{
+		/* do 8 to 7 bit MIME conversion */
+		if (hvalue("MIME-Version", e->e_header) == NULL)
+			putline("MIME-Version: 1.0", mci);
+		mime8to7(mci, e->e_header, e, NULL);
+	}
+	else
+	{
+		int ostate;
+		register char *bp;
+		register char *pbp;
+		register int c;
+		int padc;
+		char *buflim;
+		int pos;
+		char peekbuf[10];
+
+		/* we can pass it through unmodified */
+		if (bitset(MCIF_INHEADER, mci->mci_flags))
 		{
-			/* do 8 to 7 bit MIME conversion */
-			if (hvalue("MIME-Version", e->e_header) == NULL)
-				putline("MIME-Version: 1.0", mci);
-			mime8to7(mci, e->e_header, e, NULL);
+			putline("", mci);
+			mci->mci_flags &= ~MCIF_INHEADER;
 		}
-		else
+
+		/* determine end of buffer; allow for short mailer lines */
+		buflim = &buf[sizeof buf - 1];
+		if (mci->mci_mailer->m_linelimit < sizeof buf - 1)
+			buflim = &buf[mci->mci_mailer->m_linelimit - 1];
+
+		/* copy temp file to output with mapping */
+		ostate = OS_HEAD;
+		bp = buf;
+		pbp = peekbuf;
+		while (!ferror(mci->mci_out))
 		{
-			/* we can pass it through unmodified */
-			if (bitset(MCIF_INHEADER, mci->mci_flags))
+			register char *xp;
+
+			if (pbp > peekbuf)
+				c = *--pbp;
+			else if ((c = fgetc(e->e_dfp)) == EOF)
+				break;
+			if (bitset(MCIF_7BIT, mci->mci_flags))
+				c &= 0x7f;
+			switch (ostate)
 			{
-				putline("", mci);
-				mci->mci_flags &= ~MCIF_INHEADER;
-			}
-			while (!ferror(mci->mci_out) &&
-			       fgets(buf, sizeof buf, e->e_dfp) != NULL)
-			{
+			  case OS_HEAD:
+				if (c != '\r' && c != '\n' && bp < buflim)
+				{
+					*bp++ = c;
+					break;
+				}
+
+				/* check beginning of line for special cases */
+				*bp = '\0';
+				pos = 0;
+				padc = EOF;
 				if (buf[0] == 'F' &&
 				    bitnset(M_ESCFROM, mci->mci_mailer->m_flags) &&
 				    strncmp(buf, "From ", 5) == 0)
-					(void) putc('>', mci->mci_out);
+				{
+					padc = '>';
+				}
 				if (buf[0] == '-' && buf[1] == '-' &&
 				    separator != NULL)
 				{
@@ -2111,19 +2156,113 @@ putbody(mci, e, separator)
 					int sl = strlen(separator);
 
 					if (strncmp(&buf[2], separator, sl) == 0)
-						(void) putc(' ', mci->mci_out);
+						padc = ' ';
 				}
-				putline(buf, mci);
-			}
-		}
+				if (buf[0] == '.' &&
+				    bitnset(M_XDOT, mci->mci_mailer->m_flags))
+				{
+					padc = '.';
+				}
 
-		if (ferror(e->e_dfp))
-		{
-			syserr("putbody: %s: read error", e->e_df);
-			ExitStat = EX_IOERR;
+				/* now copy out saved line */
+				if (TrafficLogFile != NULL)
+				{
+					fprintf(TrafficLogFile, "%05d >>> ", getpid());
+					if (padc != EOF)
+						fputc(padc, TrafficLogFile);
+					for (xp = buf; xp < bp; xp++)
+						fputc(*xp, TrafficLogFile);
+					if (c == '\n')
+						fputs(mci->mci_mailer->m_eol,
+						      TrafficLogFile);
+				}
+				if (padc != EOF)
+				{
+					fputc(padc, mci->mci_out);
+					pos++;
+				}
+				for (xp = buf; xp < bp; xp++)
+					fputc(*xp, mci->mci_out);
+				if (c == '\n')
+				{
+					fputs(mci->mci_mailer->m_eol,
+					      mci->mci_out);
+					pos = 0;
+				}
+				else
+				{
+					pos += bp - buf;
+					*pbp++ = c;
+				}
+				bp = buf;
+
+				/* determine next state */
+				if (c == '\n')
+					ostate = OS_HEAD;
+				else if (c == '\r')
+					ostate = OS_CR;
+				else
+					ostate = OS_INLINE;
+				continue;
+
+			  case OS_CR:
+				if (c == '\n')
+				{
+					/* got CRLF */
+					fputs(mci->mci_mailer->m_eol, mci->mci_out);
+					if (TrafficLogFile != NULL)
+					{
+						fputs(mci->mci_mailer->m_eol,
+						      TrafficLogFile);
+					}
+					ostate = OS_HEAD;
+					continue;
+				}
+
+				/* had a naked carriage return */
+				*pbp++ = c;
+				c = '\r';
+				goto putchar;
+
+			  case OS_INLINE:
+				if (c == '\r')
+				{
+					ostate = OS_CR;
+					continue;
+				}
+putchar:
+				if (pos > mci->mci_mailer->m_linelimit &&
+				    c != '\n')
+				{
+					putc('!', mci->mci_out);
+					fputs(mci->mci_mailer->m_eol, mci->mci_out);
+					if (TrafficLogFile != NULL)
+					{
+						fprintf(TrafficLogFile, "!%s",
+							mci->mci_mailer->m_eol);
+					}
+					ostate = OS_HEAD;
+					*pbp++ = c;
+					continue;
+				}
+				if (TrafficLogFile != NULL)
+					fputc(c, TrafficLogFile);
+				putc(c, mci->mci_out);
+				pos++;
+				if (c == '\n')
+					ostate = OS_HEAD;
+				break;
+			}
 		}
 	}
 
+	if (ferror(e->e_dfp))
+	{
+		syserr("putbody: %s: read error", e->e_df);
+		ExitStat = EX_IOERR;
+	}
+
+endofmessage:
 	/* some mailers want extra blank line at end of message */
 	if (bitnset(M_BLANKEND, mci->mci_mailer->m_flags) &&
 	    buf[0] != '\0' && buf[0] != '\n')
