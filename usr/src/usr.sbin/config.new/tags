@@ -1,0 +1,165 @@
+ABS	sem.c	/^#define ABS(x) ((x) < 0 ? -(x) : (x))$/
+HASHFRACTION	hash.c	/^#define	HASHFRACTION(sz) ((sz) * 3 \/ 2)$/
+Mmain	main.c	/^main(argc, argv)$/
+ROUND	hash.c	/^#define	ROUND(x, y) (((x) + (y) - 1) & ~((y) - 1))/
+SEP	mkioconf.c	/^#define	SEP(pos, max)	(((u_int)(pos) % (max)) == 0/
+addconf	sem.c	/^addconf(cf0)$/
+adddev	sem.c	/^adddev(name, at, loclist, flags)$/
+addfile	files.c	/^addfile(path, opts, flags, rule)$/
+addlocs	pack.c	/^addlocs(locs, len)$/
+addmkoption	main.c	/^addmkoption(name, value)$/
+addoption	main.c	/^addoption(name, value)$/
+addparents	pack.c	/^addparents(src, dst)$/
+addpseudo	sem.c	/^addpseudo(name, number)$/
+addpv	pack.c	/^addpv(pv, len)$/
+addtoattr	sem.c	/^addtoattr(l, dev)$/
+atlist	gram.y	/^atlist:$/
+atname	gram.y	/^atname:$/
+attachment	gram.y	/^attachment:$/
+attr	gram.y	/^attr:$/
+attrs	gram.y	/^attrs:$/
+attrs_opt	gram.y	/^attrs_opt:$/
+badstar	main.c	/^badstar()$/
+cfcrosscheck	main.c	/^cfcrosscheck(cf, what, nv)$/
+cforder	mkioconf.c	/^cforder(a, b)$/
+checkfiles	files.c	/^checkfiles()$/
+cleanup	gram.y	/^cleanup()$/
+cntname	mkheaders.c	/^cntname(src)$/
+concat	sem.c	/^concat(name, c)$/
+conf	gram.y	/^conf:$/
+config_spec	gram.y	/^config_spec:$/
+crosscheck	main.c	/^crosscheck()$/
+defattr	sem.c	/^defattr(name, locs)$/
+defdev	sem.c	/^defdev(dev, ispseudo, atlist, vectors, loclist, at/
+dev_def	gram.y	/^dev_def:$/
+dev_defs	gram.y	/^dev_defs:$/
+dev_eof	gram.y	/^dev_eof:$/
+dev_spec	gram.y	/^dev_spec:$/
+devbase	gram.y	/^devbase:$/
+device_instance	gram.y	/^device_instance:$/
+do_option	main.c	/^do_option(ht, nppp, name, value, type)$/
+emalloc	util.c	/^emalloc(size)$/
+emitcfdata	mkioconf.c	/^emitcfdata(fp)$/
+emitcfiles	mkmakefile.c	/^emitcfiles(fp)$/
+emitcnt	mkheaders.c	/^emitcnt(head)$/
+emitdefs	mkmakefile.c	/^emitdefs(fp)$/
+emitexterns	mkioconf.c	/^emitexterns(fp)$/
+emitfiles	mkmakefile.c	/^emitfiles(fp, suffix)$/
+emithdr	mkioconf.c	/^emithdr(ofp)$/
+emitload	mkmakefile.c	/^emitload(fp)$/
+emitloc	mkioconf.c	/^emitloc(fp)$/
+emitobjs	mkmakefile.c	/^emitobjs(fp)$/
+emitpseudo	mkioconf.c	/^emitpseudo(fp)$/
+emitpv	mkioconf.c	/^emitpv(fp)$/
+emitroots	mkioconf.c	/^emitroots(fp)$/
+emitrules	mkmakefile.c	/^emitrules(fp)$/
+emitsfiles	mkmakefile.c	/^emitsfiles(fp)$/
+emitvec	mkioconf.c	/^emitvec(fp)$/
+enddefs	sem.c	/^enddefs(fname)$/
+erealloc	util.c	/^erealloc(p, size)$/
+err	mkheaders.c	/^err(what, fname, fp)$/
+error	util.c	/^error(fmt, va_alist)$/
+exclude	sem.c	/^exclude(nv, name, what)$/
+extend	sem.c	/^extend(p, name)$/
+fflgs	gram.y	/^fflgs:$/
+file	gram.y	/^file:$/
+findvec	pack.c	/^findvec(ptr, hash, len, cmp, nextplace)$/
+fixfiles	files.c	/^fixfiles()$/
+fixloc	sem.c	/^fixloc(name, attr, got)$/
+flags_opt	gram.y	/^flags_opt:$/
+fopts	gram.y	/^fopts:$/
+getattr	sem.c	/^getattr(name)$/
+getdevbase	sem.c	/^getdevbase(name)$/
+getdevi	sem.c	/^getdevi(name)$/
+has_errobj	sem.c	/^has_errobj(nv, obj)$/
+has_instances	main.c	/^has_instances(dev, unit)$/
+hash	hash.c	/^hash(str)$/
+hasparent	main.c	/^hasparent(i)$/
+hdr	gram.y	/^hdr:$/
+hdrs	gram.y	/^hdrs:$/
+ht_expand	hash.c	/^ht_expand(ht)$/
+ht_init	hash.c	/^ht_init(ht, sz)$/
+ht_insrep	hash.c	/^ht_insrep(ht, nam, val, replace)$/
+ht_lookup	hash.c	/^ht_lookup(ht, nam)$/
+ht_new	hash.c	/^ht_new()$/
+include	gram.y	/^include:$/
+initfiles	files.c	/^initfiles()$/
+initintern	hash.c	/^initintern()$/
+initsem	sem.c	/^initsem()$/
+int	pack.c	/^typedef int (*vec_cmp_func) __P((const void *, int/
+interface_opt	gram.y	/^interface_opt:$/
+intern	hash.c	/^intern(s)$/
+locator	gram.y	/^locator:$/
+locators	gram.y	/^locators:$/
+locdef	gram.y	/^locdef:$/
+locdefault	gram.y	/^locdefault:$/
+loclencmp	pack.c	/^loclencmp(a, b)$/
+loclist	gram.y	/^loclist:$/
+loclist_opt	gram.y	/^loclist_opt:$/
+lresolve	sem.c	/^lresolve(nvp, name, what, dflt, part)$/
+machine_spec	gram.y	/^machine_spec:$/
+major_minor	gram.y	/^major_minor:$/
+majordef	gram.y	/^majordef:$/
+majorlist	gram.y	/^majorlist:$/
+mkheaders	mkheaders.c	/^mkheaders()$/
+mkioconf	mkioconf.c	/^mkioconf()$/
+mkmakefile	mkmakefile.c	/^mkmakefile()$/
+mkoneswap	mkswap.c	/^mkoneswap(cf)$/
+mkopt_list	gram.y	/^mkopt_list:$/
+mkoption	gram.y	/^mkoption:$/
+mkswap	mkswap.c	/^mkswap()$/
+mksymlinks	main.c	/^mksymlinks()$/
+newdevi	sem.c	/^newdevi(name, unit, d)$/
+newhashent	hash.c	/^newhashent(name, h)$/
+newnv	util.c	/^newnv(name, str, ptr, i)$/
+nomem	util.c	/^nomem()$/
+nparents	pack.c	/^nparents(p, dev, unit)$/
+npseudo	gram.y	/^npseudo:$/
+nvfree	util.c	/^nvfree(nv)$/
+nvfreel	util.c	/^nvfreel(nv)$/
+on_opt	gram.y	/^on_opt:$/
+one_def	gram.y	/^one_def:$/
+onlist	sem.c	/^onlist(nv, ptr)$/
+opt_list	gram.y	/^opt_list:$/
+option	gram.y	/^option:$/
+pack	pack.c	/^pack()$/
+packdevi	pack.c	/^packdevi()$/
+packlocs	pack.c	/^packlocs()$/
+packpvec	pack.c	/^packpvec()$/
+panic	util.c	/^panic(fmt, va_alist)$/
+path	util.c	/^path(file)$/
+poolalloc	hash.c	/^poolalloc(size)$/
+pvlencmp	pack.c	/^pvlencmp(a, b)$/
+resettails	pack.c	/^resettails()$/
+resolve	sem.c	/^resolve(nvp, name, what, dflt, part)$/
+rule	gram.y	/^rule:$/
+sameas	pack.c	/^sameas(i1, i2)$/
+samelocs	pack.c	/^samelocs(ptr, off, len)$/
+samepv	pack.c	/^samepv(ptr, off, len)$/
+selectbase	sem.c	/^selectbase(d)$/
+setconf	sem.c	/^setconf(npp, what, v)$/
+setdefmaxusers	sem.c	/^setdefmaxusers(min, def, max)$/
+setmachine	gram.y	/^setmachine(mch)$/
+setmajor	sem.c	/^setmajor(d, n)$/
+setmaxusers	sem.c	/^setmaxusers(n)$/
+showprev	files.c	/^showprev(pref, fi)$/
+signed_number	gram.y	/^signed_number:$/
+spec	gram.y	/^spec:$/
+specs	gram.y	/^specs:$/
+split	sem.c	/^split(name, nlen, base, bsize, aunit)$/
+starref	sem.c	/^starref(name)$/
+stop	main.c	/^stop()$/
+swapdev_list	gram.y	/^swapdev_list:$/
+sysparam	gram.y	/^sysparam:$/
+sysparam_list	gram.y	/^sysparam_list:$/
+value	gram.y	/^value:$/
+veclist	gram.y	/^veclist:$/
+veclist_opt	gram.y	/^veclist_opt:$/
+vecname	mkioconf.c	/^vecname(buf, name, unit)$/
+vxerror	util.c	/^vxerror(file, line, fmt, ap)$/
+wildref	sem.c	/^wildref(name)$/
+xerror	util.c	/^xerror(file, line, fmt, va_alist)$/
+yyerror	gram.y	/^yyerror(s)$/
+yylex	scan.l	/^%%$/
+yyparse	gram.y	/^%%$/
+yywrap	scan.l	/^#define	yywrap() 1$/
