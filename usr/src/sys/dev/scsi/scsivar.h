@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsivar.h	5.3 (Berkeley) %G%
+ *	@(#)scsivar.h	8.1 (Berkeley) %G%
  *
  * from: $Header: scsivar.h,v 1.7 92/12/02 03:54:05 torek Exp $ (LBL)
  */

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1990, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	5.7 (Berkeley) %G%
+ *	@(#)sd.c	8.1 (Berkeley) %G%
  *
  * from: $Header: sd.c,v 1.27 93/04/29 01:22:19 torek Exp $
  */
