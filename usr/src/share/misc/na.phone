@@ -1,5 +1,5 @@
 # Area Code : City : State/Province : State/Province Abbrev.
-#	@(#)na.phone	5.3 (Berkeley) %G%
+#	@(#)na.phone	5.4 (Berkeley) %G%
 201:Ashbury Park:New Jersey:NJ
 201:Newark:New Jersey:NJ
 202::District of Columbia:DC
@@ -48,7 +48,7 @@
 308:Grand Island:Nebraska:NE
 308:North Platte:Nebraska:NE
 309:Bloomington:Illinois:IL
-310:Los Angelos:California:LA
+310:Los Angeles:California:LA
 312:Arlington Heights:Illinois:IL
 312:Broadview:Illinois:IL
 312:Calumet Park:Illinois:IL
@@ -85,6 +85,7 @@
 406::Montana:MT
 407:Orlando:Florida:FL
 407:West Palm Beach:Florida:FL
+408:San Jose:California:CA
 409:Galveston:Texas:TX
 410:Baltimore:Maryland:MD
 412:Pittsburgh:Pennsylvania:PA
@@ -99,6 +100,7 @@
 417:Joplin:Missouri:MO
 417:Springfield:Missouri:MO
 418:Quebec:Quebec:PQ
+419:Toledo:Ohio:OH
 501::Arkansas:AR
 502:Louisville:Kentucky:KY
 502:Paducah:Kentucky:KY
@@ -136,6 +138,7 @@
 605::South Dakota:SD
 606:Ashland:Kentucky:KY
 606:Winchester:Kentucky:KY
+607:Binghamton:New York:NY
 608:Beloit:Wisconsin:WI
 608:Madison:Wisconsin:WI
 609:Allentown:New Jersey:NJ
@@ -163,6 +166,7 @@
 703:Fredericksburg:Virginia:VA
 704:Asheville:North Carolina:NC
 705:North Bay:Ontario:ON
+706:Was Mexico:Mexico:MX
 707:Eureka:California:CA
 707:Napa:California:CA
 708:Chicago:Illinois:IL
@@ -190,6 +194,7 @@
 803::South Carolina:SC
 804:Charlottesville:Virginia:VA
 804:Norfolk:Virginia:VA
+805:Bakersfield:California:CA
 806:Amarillo:Texas:TX
 807:Thunder Bay:Ontario:ON
 808::Hawaii:HI
@@ -198,6 +203,8 @@
 812:Evansville:Indiana:IN
 813:Bowling Green:Florida:FL
 813:Tampa:Florida:FL
+814:Altoona:Pennsylvania:PA
+815:Joliet:Illinois:IL
 816:Independence:Missouri:MO
 816:Kansas City:Missouri:MO
 817:Fort Worth:Texas:TX
@@ -210,9 +217,13 @@
 901:Memphis:Tennessee:TN
 902:Charlottetown:Prince Edward Island:PE
 902:Halifax:Nova Scotia:NS
+903:Paris:Texas:TX
+903:Tyler:Texas:TX
 904:Apalachicola:Florida:FL
 904:Atlantic Beach:Florida:FL
 904:Tallahassee:Florida:FL
+905:Was Mexico:Mexico:FL
+906:Escananba:Michigan:MI
 907::Alaska:AK
 908::New Jersey:NJ
 912:Macon:Georgia:GA
