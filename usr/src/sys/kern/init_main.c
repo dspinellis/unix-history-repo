@@ -1,4 +1,4 @@
-/*	init_main.c	4.14	81/04/23	*/
+/*	init_main.c	4.15	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -86,6 +86,7 @@ main(firstaddr)
 	binit();
 	bswinit();
 	iinit();
+	ptinit();
 	rootdir = iget(rootdev, (ino_t)ROOTINO);
 	rootdir->i_flag &= ~ILOCK;
 	u.u_cdir = iget(rootdev, (ino_t)ROOTINO);
