@@ -1,4 +1,4 @@
-/*	tty.c	4.5	81/03/09	*/
+/*	tty.c	4.6	81/03/22	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -161,6 +161,10 @@ ttrstrt(tp)
 register struct tty *tp;
 {
 
+	if (tp == 0) {
+		printf("ttrstrt: arg was 0!\n");
+		return;
+	}
 	tp->t_state &= ~TIMEOUT;
 	ttstart(tp);
 }
