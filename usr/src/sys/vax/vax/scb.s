@@ -1,4 +1,4 @@
-/*	scb.s	4.8	81/04/02	*/
+/*	scb.s	4.9	81/05/13	*/
 
 /*
  * System control block
@@ -8,7 +8,7 @@
 
 _scb:	.globl	_scb
 
-#define	STRAY	.long	_Xstray+HALT
+#define	STRAY	.long	_Xstray+INTSTK
 #define	STRAY8	STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY
 #define	STRAY15	STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY8
 #define	KS(a)	.long	_X/**/a
