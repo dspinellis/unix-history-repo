@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resourcevar.h	7.2 (Berkeley) %G%
+ *	@(#)resourcevar.h	7.3 (Berkeley) %G%
  */
 
 #ifndef	_RESOURCEVAR_H_		/* tmp for user.h */
@@ -24,7 +24,7 @@ struct pstats {
 	struct	itimerval p_timer[3];	/* virtual-time timers */
 
 	struct uprof {			/* profile arguments */
-		short	*pr_base;	/* buffer base */
+		caddr_t	pr_base;	/* buffer base */
 		u_long	pr_size;	/* buffer size */
 		u_long	pr_off;		/* pc offset */
 		u_long	pr_scale;	/* pc scaling */
@@ -54,4 +54,13 @@ struct plimit {
 
 /* make copy of plimit structure */
 struct	plimit *limcopy __P((struct plimit *lim));
+
+/* add profiling ticks: in interrupt context, and from AST */
+void	addupc_intr __P((struct proc *p, u_long pc, u_int ticks));
+void	addupc_task __P((struct proc *p, u_long pc, u_int ticks));
+
+/* add user profiling from AST */
+#define	ADDUPROF(p)	addupc_task(p, (p)->p_stats->p_prof.pr_addr, \
+			    (p)->p_stats->p_prof.pr_ticks)
+
 #endif	/* !_RESOURCEVAR_H_ */
