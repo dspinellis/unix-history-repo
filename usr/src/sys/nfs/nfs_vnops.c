@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -33,7 +33,7 @@
 #include "mount.h"
 #include "buf.h"
 #include "vm.h"
-#include "dir.h"
+#include "../ufs/dir.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "uio.h"
@@ -365,7 +365,7 @@ nfs_lookup(vp, ndp)
 		 * an explaination of the locking protocol.
 		 */
 		if (vp == vdp) {
-			vdp->v_count++;
+			VREF(vdp);
 		} else if (ndp->ni_isdotdot) {
 			nfs_unlock(vp);
 			nfs_ngrab(VTONFS(vdp));
@@ -377,7 +377,7 @@ nfs_lookup(vp, ndp)
 		return (0);
 	}
 	nfsstats.lookupcache_misses++;
-#endif notyet
+#endif
 	nfsstats.rpccnt[NFSPROC_LOOKUP]++;
 	len = ndp->ni_namelen;
 	nfsm_reqhead(nfs_procids[NFSPROC_LOOKUP], ndp->ni_cred, NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
@@ -400,7 +400,7 @@ nfsmout:
 	 */
 	if (flag == DELETE && *ndp->ni_next == 0) {
 		if (!bcmp(VTONFS(vp)->n_fh.fh_bytes, (caddr_t)fhp, NFSX_FH)) {
-			vp->v_count++;
+			VREF(vp);
 			newvp = vp;
 			np = VTONFS(vp);
 		} else {
@@ -414,7 +414,7 @@ nfsmout:
 			if (newvp != vp)
 				nfs_nput(newvp);
 			else
-				vp->v_count--;
+				vrele(vp);
 			m_freem(mrep);
 			return (error);
 		}
@@ -437,10 +437,7 @@ nfsmout:
 		}
 		newvp = NFSTOV(np);
 		if (error = nfs_loadattrcache(newvp, &md, &dpos, (struct vattr *)0)) {
-			if (newvp != vp)
-				nfs_nput(newvp);
-			else
-				vp->v_count--;
+			nfs_nput(newvp);
 			m_freem(mrep);
 			return (error);
 		}
@@ -451,7 +448,7 @@ nfsmout:
 	}
 
 	if (!bcmp(VTONFS(vp)->n_fh.fh_bytes, (caddr_t)fhp, NFSX_FH)) {
-		vp->v_count++;
+		VREF(vp);
 		newvp = vp;
 		np = VTONFS(vp);
 	} else if (ndp->ni_isdotdot) {
@@ -474,7 +471,7 @@ nfsmout:
 		if (newvp != vp)
 			nfs_nput(newvp);
 		else
-			vp->v_count--;
+			vrele(vp);
 		m_freem(mrep);
 		return (error);
 	}
@@ -506,7 +503,7 @@ nfsmout:
 #ifdef notyet
 	if (error == 0 && ndp->ni_makeentry)
 		cache_enter(ndp);
-#endif notyet
+#endif
 	return (error);
 }
 
@@ -681,10 +678,10 @@ nfs_remove(ndp)
 		nfsm_reqdone;
 	}
 	if (ndp->ni_dvp == ndp->ni_vp)
-		vrele(ndp->ni_dvp);
+		vrele(ndp->ni_vp);
 	else
-		nfs_nput(ndp->ni_dvp);
-	nfs_nput(ndp->ni_vp);
+		nfs_nput(ndp->ni_vp);
+	nfs_nput(ndp->ni_dvp);
 	return (error);
 }
 
@@ -766,6 +763,8 @@ nfs_link(vp, ndp)
 {
 	nfsm_vars;
 
+	if (ndp->ni_dvp != vp)
+		nfs_lock(vp);
 	nfsstats.rpccnt[NFSPROC_LINK]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_LINK], ndp->ni_cred,
 		NFSX_FH*2+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
@@ -774,6 +773,8 @@ nfs_link(vp, ndp)
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
 	nfsm_request(vp);
 	nfsm_reqdone;
+	if (ndp->ni_dvp != vp)
+		nfs_unlock(vp);
 	nfs_nput(ndp->ni_dvp);
 	return (error);
 }

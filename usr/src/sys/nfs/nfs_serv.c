@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.2 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -25,16 +25,16 @@
  * - these routines generally have 3 phases
  *   1 - break down and validate rpc request in mbuf list
  *   2 - do the vnode ops for the request
- *	 (surprisingly ?? many are very similar to syscalls in vfs_syscalls.c)
+ *       (surprisingly ?? many are very similar to syscalls in vfs_syscalls.c)
  *   3 - build the rpc reply in an mbuf list
  *   nb:
  *	- do not mix the phases, since the nfsm_?? macros can return failures
  *	  on mbuf exhaustion or similar and do not do any vrele() or vput()'s
  *
- *	- the nfsm_reply() macro generates an nfs rpc reply with the nfs
+ *      - the nfsm_reply() macro generates an nfs rpc reply with the nfs
  *	error number iff error != 0 whereas
- *	 nfsm_srverr simply drops the mbufs and gives up
- *	 (==> nfsm_srverr implies an error here at the server, usually mbuf
+ *       nfsm_srverr simply drops the mbufs and gives up
+ *       (==> nfsm_srverr implies an error here at the server, usually mbuf
  *	  exhaustion)
  */
 
@@ -59,8 +59,8 @@
 #include "nfsm_subs.h"
 
 /* Defs */
-#define TRUE	1
-#define FALSE	0
+#define	TRUE	1
+#define	FALSE	0
 
 /* Global vars */
 extern u_long nfs_procids[NFS_NPROCS];
@@ -152,8 +152,9 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 		vap->va_uid = fxdr_unsigned(uid_t, *p);
 	if (*++p != nfs_xdrneg1)
 		vap->va_gid = fxdr_unsigned(gid_t, *p);
-	if (*++p != nfs_xdrneg1)
+	if (*++p != nfs_xdrneg1) {
 		vap->va_size = fxdr_unsigned(u_long, *p);
+	}
 	if (*++p != nfs_xdrneg1)
 		fxdr_time(p, &(vap->va_atime));
 	p += 2;
@@ -210,7 +211,6 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
 	ndp->ni_cred = cred;
 	ndp->ni_nameiop = LOOKUP | LOCKLEAF;
-	ndp->ni_segflg = UIO_SYSSPACE;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
 	vp = ndp->ni_vp;
@@ -572,7 +572,6 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
 	ndp->ni_cred = cred;
 	ndp->ni_nameiop = CREATE | LOCKPARENT | LOCKLEAF;
-	ndp->ni_segflg = UIO_SYSSPACE;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
 	vattr_null(vap);
@@ -587,15 +586,15 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 		vap->va_mode = nfstov_mode(*p++);
 		if (error = VOP_CREATE(ndp, vap))
 			nfsm_reply(0);
+		vp = ndp->ni_vp;
 	} else {
+		vp = ndp->ni_vp;
+		ndp->ni_vp = (struct vnode *)0;
+		VOP_ABORTOP(ndp);
 		vap->va_size = 0;
-		if (error = VOP_SETATTR(ndp->ni_vp, vap, cred)) {
-			VOP_ABORTOP(ndp);
+		if (error = VOP_SETATTR(vp, vap, cred))
 			nfsm_reply(0);
-		}
-		vput(ndp->ni_dvp);
 	}
-	vp = ndp->ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
 	fhp->fh_fsid = vp->v_mount->m_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
@@ -650,7 +649,6 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
 	ndp->ni_cred = cred;
 	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
-	ndp->ni_segflg = UIO_SYSSPACE;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
 	vp = ndp->ni_vp;
@@ -677,7 +675,6 @@ out:
 
 /*
  * nfs rename service
- * malloc() the tond structure to avoid blowing the kernel stack
  */
 nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 	struct mbuf *mrep, *md, **mrq;
@@ -685,18 +682,17 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	long xid;
 {
-	struct nameidata *nam, *tond;
+	register struct nameidata *ndp;
 	nfsm_srvars;
+	struct nameidata tond;
 	struct vnode *fvp, *tvp, *tdvp;
 	nfsv2fh_t fnfh, tnfh;
 	fhandle_t *ffhp, *tfhp;
 	long len, len2;
 	int rootflg = 0;
 
-	nam = &u.u_nd;
-	MALLOC(tond, struct nameidata *, sizeof(*tond), M_TEMP, M_WAITOK);
-	ndinit(tond);
-	nam->ni_vp = nam->ni_dvp = (struct vnode *)0;
+	ndp = &u.u_nd;
+	ndp->ni_vp = ndp->ni_dvp = (struct vnode *)0;
 	ffhp = &fnfh.fh_generic;
 	tfhp = &tnfh.fh_generic;
 	nfsm_srvmtofh(ffhp);
@@ -707,23 +703,20 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 	 */
 	if (cred->cr_uid == 0)
 		rootflg++;
-	nam->ni_cred = cred;
-	nam->ni_nameiop = DELETE | WANTPARENT;
-	nam->ni_segflg = UIO_SYSSPACE;
-	if (error = nfs_namei(nam, ffhp, len, &md, &dpos))
+	ndp->ni_cred = cred;
+	ndp->ni_nameiop = DELETE | WANTPARENT;
+	if (error = nfs_namei(ndp, ffhp, len, &md, &dpos))
 		nfsm_reply(0);
+	fvp = ndp->ni_vp;
 	nfsm_srvmtofh(tfhp);
 	nfsm_srvstrsiz(len2, NFS_MAXNAMLEN);
 	if (rootflg)
 		cred->cr_uid = 0;
-	tond->ni_cred = cred;
-	crhold(cred);
-	tond->ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
-	tond->ni_segflg = UIO_SYSSPACE;
-	error = nfs_namei(tond, tfhp, len2, &md, &dpos);
-	fvp = nam->ni_vp;
-	tdvp = tond->ni_dvp;
-	tvp = tond->ni_vp;
+	nddup(ndp, &tond);
+	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
+	error = nfs_namei(&tond, tfhp, len2, &md, &dpos);
+	tdvp = tond.ni_dvp;
+	tvp = tond.ni_vp;
 	if (tvp != NULL) {
 		if (fvp->v_type == VDIR && tvp->v_type != VDIR) {
 			error = EISDIR;
@@ -734,7 +727,7 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 		}
 	}
 	if (error) {
-		VOP_ABORTOP(nam);
+		VOP_ABORTOP(ndp);
 		goto out1;
 	}
 	if (fvp->v_mount != tdvp->v_mount) {
@@ -745,19 +738,17 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 		error = EINVAL;
 out:
 	if (error) {
-		VOP_ABORTOP(tond);
-		VOP_ABORTOP(nam);
+		VOP_ABORTOP(&tond);
+		VOP_ABORTOP(ndp);
 	} else {
-		error = VOP_RENAME(nam, tond);
+		error = VOP_RENAME(ndp, &tond);
 	}
 out1:
-	crfree(tond->ni_cred);
-	FREE((caddr_t)tond, M_TEMP);
+	ndrele(&tond);
 	nfsm_reply(0);
 	return (error);
 nfsmout:
-	VOP_ABORTOP(nam);
-	free((caddr_t)tond, M_TEMP);
+	VOP_ABORTOP(ndp);
 	return (error);
 }
 
@@ -788,7 +779,6 @@ nfsrv_link(mrep, md, dpos, cred, xid, mrq)
 		goto out1;
 	ndp->ni_cred = cred;
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	ndp->ni_segflg = UIO_SYSSPACE;
 	if (error = nfs_namei(ndp, dfhp, len, &md, &dpos))
 		goto out1;
 	xp = ndp->ni_vp;
@@ -834,7 +824,6 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
 	ndp->ni_cred = cred;
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	ndp->ni_segflg = UIO_SYSSPACE;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		goto out1;
 	nfsm_srvstrsiz(len2, NFS_MAXPATHLEN);
@@ -890,7 +879,6 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
 	ndp->ni_cred = cred;
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	ndp->ni_segflg = UIO_SYSSPACE;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
 	nfsm_disect(p, u_long *, NFSX_UNSIGNED);
@@ -960,7 +948,6 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
 	ndp->ni_cred = cred;
 	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
-	ndp->ni_segflg = UIO_SYSSPACE;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
 	vp = ndp->ni_vp;
@@ -992,30 +979,30 @@ out:
 /*
  * nfs readdir service
  * - mallocs what it thinks is enough to read
- *      count rounded up to a multiple of DIRBLKSIZ <= MAX_READDIR
+ *	count rounded up to a multiple of DIRBLKSIZ <= MAX_READDIR
  * - calls VOP_READDIR()
  * - loops arround building the reply
- *      if the output generated exceeds count break out of loop
- *      The nfsm_clget macro is used here so that the reply will be packed
- *      tightly in mbuf clusters.
+ *	if the output generated exceeds count break out of loop
+ *	The nfsm_clget macro is used here so that the reply will be packed
+ *	tightly in mbuf clusters.
  * - it only knows that it has encountered eof when the VOP_READDIR()
- *      reads nothing
+ *	reads nothing
  * - as such one readdir rpc will return eof false although you are there
- *      and then the next will return eof
+ *	and then the next will return eof
  * - it trims out records with d_ino == 0
- *      this doesn't matter for Unix clients, but they might confuse clients
- *      for other os'.
+ *	this doesn't matter for Unix clients, but they might confuse clients
+ *	for other os'.
  * NB: It is tempting to set eof to true if the VOP_READDIR() reads less
- *      than requested, but this may not apply to all filesystems. For
- *      example, client NFS does not { although it is never remote mounted
- *      anyhow }
+ *	than requested, but this may not apply to all filesystems. For
+ *	example, client NFS does not { although it is never remote mounted
+ *	anyhow }
  * PS: The NFS protocol spec. does not clarify what the "count" byte
- *      argument is a count of.. just name strings and file id's or the
- *      entire reply rpc or ...
- *      I tried just file name and id sizes and it confused the Sun client,
- *      so I am using the full rpc size now. The "paranoia.." comment refers
- *      to including the status longwords that are not a part of the dir.
- *      "entry" structures, but are in the rpc.
+ *	argument is a count of.. just name strings and file id's or the
+ *	entire reply rpc or ...
+ *	I tried just file name and id sizes and it confused the Sun client,
+ *	so I am using the full rpc size now. The "paranoia.." comment refers
+ *	to including the status longwords that are not a part of the dir.
+ *	"entry" structures, but are in the rpc.
  */
 nfsrv_readdir(mrep, md, dpos, cred, xid, mrq)
 	struct mbuf **mrq;
@@ -1106,7 +1093,7 @@ again:
 		goto again;
 	}
 	vrele(vp);
-	len = 3*NFSX_UNSIGNED;  /* paranoia, probably can be 0 */
+	len = 3*NFSX_UNSIGNED;	/* paranoia, probably can be 0 */
 	bp = be = (caddr_t)0;
 	mp3 = (struct mbuf *)0;
 	nfsm_reply(siz);
@@ -1116,7 +1103,7 @@ again:
 		if (dp->d_ino != 0) {
 			nlen = dp->d_namlen;
 			rem = nfsm_rndup(nlen)-nlen;
-
+	
 			/*
 			 * As noted above, the NFS spec. is not clear about what
 			 * should be included in "count" as totalled up here in
@@ -1125,7 +1112,7 @@ again:
 			len += (4*NFSX_UNSIGNED+nlen+rem);
 			if (len > cnt)
 				break;
-
+	
 			/* Build the directory record xdr from the direct entry */
 			nfsm_clget;
 			*p = nfs_true;
@@ -1136,7 +1123,7 @@ again:
 			nfsm_clget;
 			*p = txdr_unsigned(nlen);
 			bp += NFSX_UNSIGNED;
-
+	
 			/* And loop arround copying the name */
 			xfer = nlen;
 			cp = dp->d_name;
@@ -1156,7 +1143,7 @@ again:
 			for (i = 0; i < rem; i++)
 				*bp++ = '\0';
 			nfsm_clget;
-
+	
 			/* Finish off the record */
 			toff += dp->d_reclen;
 			*p = txdr_unsigned(toff);
@@ -1205,7 +1192,7 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq)
 	vput(vp);
 	nfsm_reply(NFSX_STATFS);
 	nfsm_build(p, u_long *, NFSX_STATFS);
-	*p++ = txdr_unsigned(sf->f_bsize);
+	*p++ = txdr_unsigned(NFS_MAXDATA);
 	*p++ = txdr_unsigned(sf->f_fsize);
 	*p++ = txdr_unsigned(sf->f_blocks);
 	*p++ = txdr_unsigned(sf->f_bfree);
@@ -1246,3 +1233,4 @@ nfsrv_noop(mrep, md, dpos, cred, xid, mrq)
 	nfsm_reply(0);
 	nfsm_srvdone;
 }
+
