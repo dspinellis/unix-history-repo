@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	6.4 (Berkeley) %G%
+ *	@(#)if_uba.c	6.5 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -115,11 +115,14 @@ if_ubaalloc(ifu, ifrw, nmr)
  * data into mbufs.  When full cluster sized units are present
  * on the interface on cluster boundaries we can get them more
  * easily by remapping, and take advantage of this here.
+ * Prepend a pointer to the interface structure,
+ * so that protocols can determine where incoming packets arrived.
  */
 struct mbuf *
-if_rubaget(ifu, totlen, off0)
+if_rubaget(ifu, totlen, off0, ifp)
 	register struct ifuba *ifu;
 	int totlen, off0;
+	struct ifnet *ifp;
 {
 	struct mbuf *top, **mp, *m;
 	int off = off0, len;
@@ -137,15 +140,24 @@ if_rubaget(ifu, totlen, off0)
 			cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen + off;
 		} else
 			len = totlen;
-		if (len >= CLBYTES) {
+		if (len >= NBPG) {
 			struct mbuf *p;
 			struct pte *cpte, *ppte;
 			int x, *ip, i;
 
+			/*
+			 * If doing the first mbuf and
+			 * the interface pointer hasn't been put in,
+			 * put it in a separate mbuf to preserve alignment.
+			 */
+			if (ifp) {
+				len = 0;
+				goto nopage;
+			}
 			MCLGET(p, 1);
 			if (p == 0)
 				goto nopage;
-			len = m->m_len = CLBYTES;
+			len = m->m_len = min(len, CLBYTES);
 			m->m_off = (int)p - (int)m;
 			if (!claligned(cp))
 				goto copy;
@@ -171,8 +183,15 @@ if_rubaget(ifu, totlen, off0)
 			goto nocopy;
 		}
 nopage:
-		m->m_len = MIN(MLEN, len);
 		m->m_off = MMINOFF;
+		if (ifp) {
+			/*
+			 * Leave room for ifp.
+			 */
+			m->m_len = MIN(MLEN - sizeof(ifp), len);
+			m->m_off += sizeof(ifp);
+		} else 
+			m->m_len = MIN(MLEN, len);
 copy:
 		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
 		cp += m->m_len;
@@ -189,6 +208,15 @@ nocopy:
 			}
 		} else
 			totlen -= m->m_len;
+		if (ifp) {
+			/*
+			 * Prepend interface pointer to first mbuf.
+			 */
+			m->m_len += sizeof(ifp);
+			m->m_off -= sizeof(ifp);
+			*(mtod(m, struct ifnet **)) = ifp;
+			ifp = (struct ifnet *)0;
+		}
 	}
 	return (top);
 bad:
@@ -216,7 +244,8 @@ if_wubaput(ifu, m)
 	cp = ifu->ifu_w.ifrw_addr;
 	while (m) {
 		dp = mtod(m, char *);
-		if (claligned(cp) && claligned(dp) && m->m_len == CLBYTES) {
+		if (claligned(cp) && claligned(dp) &&
+		    (m->m_len == CLBYTES || m->m_next == (struct mbuf *)0)) {
 			struct pte *pte; int *ip;
 			pte = &Mbmap[mtocl(dp)*CLSIZE];
 			x = btop(cp - ifu->ifu_w.ifrw_addr);
