@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -132,7 +132,7 @@ onalrm()
 			}
 		}
 		(void)lseek(uf, 0L, L_SET);
-		nutmp = read(uf, utmp, statbf.st_size)/sizeof(struct utmp);
+		nutmp = read(uf, utmp, (int)statbf.st_size)/sizeof(struct utmp);
 	}
 }
 
@@ -141,7 +141,7 @@ mailfor(name)
 {
 	register struct utmp *utp = &utmp[nutmp];
 	register char *cp;
-	int offset;
+	off_t offset, atol();
 
 	if (!(cp = index(name, '@')))
 		return;
@@ -156,7 +156,7 @@ static char	*cr;
 
 notify(utp, offset)
 	register struct utmp *utp;
-	int offset;
+	off_t offset;
 {
 	static char tty[20] = "/dev/";
 	struct sgttyb gttybuf;
@@ -192,7 +192,7 @@ notify(utp, offset)
 jkfprintf(tp, name, offset)
 	register FILE *tp;
 	char name[];
-	int offset;
+	off_t offset;
 {
 	register char *cp;
 	register FILE *fi;
@@ -202,7 +202,7 @@ jkfprintf(tp, name, offset)
 
 	if ((fi = fopen(name, "r")) == NULL)
 		return;
-	(void)fseek(fi, (long)offset, L_SET);
+	(void)fseek(fi, offset, L_SET);
 	/* 
 	 * Print the first 7 lines or 560 characters of the new mail
 	 * (whichever comes first).  Skip header crap other than
