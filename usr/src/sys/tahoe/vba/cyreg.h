@@ -1,4 +1,4 @@
-/*	cyreg.h	7.4	87/04/01	*/
+/*	cyreg.h	7.5	87/04/09	*/
 
 /*
  * Tapemaster controller definitions.
@@ -8,7 +8,7 @@
  * With 20-bit addressing, the intermediate buffer
  * must be allocated early in startup().
  */
-#define	CYMAXIO	(32*NBPG)		/* max i/o size */
+#define	CYMAXIO	(64*1024)		/* max i/o size + 1 */
 char	*cybuf;
 
 /* for byte swapping Multibus values */
@@ -62,13 +62,13 @@ struct	cyccb {
  * Tape parameter block definitions
  */
 struct	cytpb {
-	long	tpcmd;		/* command, see below */
-	short	tpcontrol;	/* control word */
-	short	tpcount;	/* return count */
-	short	tpsize;		/* buffer size */
-	short	tprec;		/* records/overrun */
+	u_long	tpcmd;		/* command, see below */
+	u_short	tpcontrol;	/* control word */
+	u_short	tpcount;	/* return count */
+	u_short	tpsize;		/* buffer size */
+	u_short	tprec;		/* records/overrun */
 	u_char	tpdata[4];	/* pointer to source/dest */
-	short	tpstatus;	/* status */
+	u_short	tpstatus;	/* status */
 	u_char	tplink[4];	/* pointer to next parameter block */
 };
 

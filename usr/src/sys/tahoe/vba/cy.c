@@ -1,4 +1,4 @@
-/*	cy.c	1.11	87/04/01	*/
+/*	cy.c	1.12	87/04/09	*/
 
 #include "yc.h"
 #if NCY > 0
@@ -316,7 +316,7 @@ cyopen(dev, flag)
 	yc->yc_blkno = (daddr_t)0;
 	yc->yc_nxrec = INF;
 	yc->yc_lastiow = 0;
-	yc->yc_blksize = 1024;		/* guess > 0 */
+	yc->yc_blksize = CYMAXIO;		/* guess > 0 */
 	yc->yc_blks = 0;
 	yc->yc_softerrs = 0;
 	yc->yc_ttyp = u.u_ttyp;
@@ -418,9 +418,9 @@ cystrategy(bp)
 	vm = ycdinfo[ycunit]->ui_mi;
 	/* BEGIN GROT */
 	if (bp == &rcybuf[CYUNIT(bp->b_dev)]) {
-		if (bp->b_bcount > CYMAXIO) {
+		if (bp->b_bcount >= CYMAXIO) {
 			uprintf("cy%d: i/o size too large\n", vm->um_ctlr);
-			bp->b_error = EIO;
+			bp->b_error = EINVAL;
 			bp->b_resid = bp->b_bcount;
 			bp->b_flags |= B_ERROR;
 			biodone(bp);
@@ -506,6 +506,10 @@ loop:
 		if (bp->b_command == CY_REW) {
 			vm->um_tab.b_active = SREW;
 			yc->yc_timo = 5*60;
+		} else if (bp->b_command == CY_FSF ||
+		    bp->b_command == CY_BSF) {
+			vm->um_tab.b_active = SCOM;
+			yc->yc_timo = 5*60;
 		} else {
 			vm->um_tab.b_active = SCOM;
 			yc->yc_timo = imin(imax(10*(int)bp->b_repcnt,60),5*60);
@@ -549,17 +553,21 @@ loop:
 		 * Choose the appropriate i/o command based on the
 		 * transfer size, the estimated block size,
 		 * and the controller's internal buffer size.
+		 * If the request length is longer than the tape
+		 * block length, a buffered read will fail,
+		 * thus, we request at most the size that we expect.
+		 * We then check for larger records when the read completes.
 		 * If we're retrying a read on a raw device because
 		 * the original try was a buffer request which failed
 		 * due to a record length error, then we force the use
 		 * of the raw controller read (YECH!!!!).
 		 */
 		if (bp->b_flags&B_READ) {
-			if ((bp->b_bcount > cy->cy_bs &&
-			    yc->yc_blksize > cy->cy_bs) || vm->um_tab.b_errcnt)
-				cmd = CY_RCOM;
-			else
+			if (yc->yc_blksize <= cy->cy_bs &&
+			    vm->um_tab.b_errcnt == 0)
 				cmd = CY_BRCOM;
+			else
+				cmd = CY_RCOM;
 		} else {
 			/*
 			 * On write error retries erase the
@@ -584,8 +592,9 @@ loop:
 		cy->cy_tpb.tpcount = 0;
 		cyldmba(cy->cy_tpb.tpdata, (caddr_t)addr);
 		cy->cy_tpb.tprec = 0;
-		if (cmd == CY_BRCOM && bp->b_bcount > cy->cy_bs)
-			cy->cy_tpb.tpsize = htoms(cy->cy_bs);
+		if (cmd == CY_BRCOM)
+			cy->cy_tpb.tpsize = htoms(min(yc->yc_blksize,
+			    bp->b_bcount));
 		else
 			cy->cy_tpb.tpsize = htoms(bp->b_bcount);
 		cyldmba(cy->cy_tpb.tplink, (caddr_t)0);
@@ -749,9 +758,7 @@ cyintr(cyunit)
 			 * a raw read if necessary.  Setting b_errcnt
 			 * here causes cystart (above) to force a CY_RCOM.
 			 */
-			if (htoms(cy->cy_tpb.tprec) > cy->cy_bs &&
-			    bp->b_bcount > cy->cy_bs && 
-			    yc->yc_blksize <= cy->cy_bs &&
+			if (cy->cy_tpb.tpcmd == CY_BRCOM &&
 			    vm->um_tab.b_errcnt++ == 0) {
 				yc->yc_blkno++;
 				goto opcont;
@@ -783,6 +790,24 @@ cyintr(cyunit)
 		    (err < NCYERROR) ? cyerror[err] : "");
 		bp->b_flags |= B_ERROR;
 		goto opdone;
+	} else if (cy->cy_tpb.tpcmd == CY_BRCOM) {
+		int reclen = htoms(cy->cy_tpb.tprec);
+
+		/*
+		 * If we did a buffered read, check whether the read
+		 * was long enough.  If we asked the controller for less
+		 * than the user asked for because the previous record
+		 * was shorter, update our notion of record size
+		 * and retry.  If the record is longer than the buffer,
+		 * bump the errcnt so the retry will use direct read.
+		 */
+		if (reclen > yc->yc_blksize && bp->b_bcount > yc->yc_blksize) {
+			yc->yc_blksize = reclen;
+			if (reclen > cy->cy_bs)
+				vm->um_tab.b_errcnt++;
+			yc->yc_blkno++;
+			goto opcont;
+		}
 	}
 	/*
 	 * Advance tape control FSM.
@@ -1108,6 +1133,7 @@ cyuncachetpb(cy)
 /*
  * Dump routine.
  */
+#define	DUMPREC	(32*1024)
 cydump(dev)
 	dev_t dev;
 {
@@ -1125,7 +1151,7 @@ cydump(dev)
 	addr = phys(cyminfo[unit]->um_addr);
 	num = maxfree, start = NBPG*2;
 	while (num > 0) {
-		bs = num > btoc(CYMAXIO) ? btoc(CYMAXIO) : num;
+		bs = num > btoc(DUMPREC) ? btoc(DUMPREC) : num;
 		error = cydwrite(cy, start, bs, addr);
 		if (error)
 			return (error);
