@@ -1,4 +1,4 @@
-/*	trap.c	1.7	86/12/15	*/
+/*	trap.c	1.8	88/05/21	*/
 
 #include "../tahoe/psl.h"
 #include "../tahoe/reg.h"
@@ -71,7 +71,7 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	switch (type) {
 
 	default:
-#ifdef KDB
+#ifdef KADB
 		if (kdb_trap(&psl))
 			return;
 #endif
