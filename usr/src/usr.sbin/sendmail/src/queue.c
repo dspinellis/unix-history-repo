@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.9 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.10 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.9 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.10 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -221,13 +221,10 @@ queueup(e, queueall, announce)
 	qf = queuename(e, 'q');
 	if (tf != NULL)
 	{
-		holdsigs();
 		(void) unlink(qf);
-		if (link(tf, qf) < 0)
-			syserr("cannot link(%s, %s), df=%s", tf, qf, e->e_df);
-		else
-			(void) unlink(tf);
-		rlsesigs();
+		if (rename(tf, qf) < 0)
+			syserr("cannot unlink(%s, %s), df=%s", tf, qf, e->e_df);
+		errno = 0;
 	}
 
 # ifdef LOG
