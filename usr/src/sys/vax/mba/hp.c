@@ -1,4 +1,4 @@
-/*	hp.c	4.29	81/03/09	*/
+/*	hp.c	4.30	81/03/09	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -286,6 +286,7 @@ hpdtint(mi, mbsr)
 		hprecal[mi->mi_unit]++;
 		return (MBD_RESTARTED);
 	donerecal:
+	case 3:
 		hprecal[mi->mi_unit] = 0;
 		return (MBD_RETRY);
 	}

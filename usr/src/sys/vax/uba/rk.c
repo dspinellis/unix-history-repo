@@ -1,4 +1,4 @@
-/*	rk.c	4.27	81/03/09	*/
+/*	rk.c	4.28	81/03/09	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -386,11 +386,10 @@ retry:
 			rkcyl[ui->ui_unit] = bp->b_cylin;
 			rkaddr->rkcs1 = RK_CDT|RK_IE|RK_SEEK|RK_GO;
 			goto nextrecal;
-
 		case 2:
 			if (um->um_tab.b_errcnt < 16 ||
 			    (bp->b_flags&B_READ) != 0)
-				break;
+				goto donerecal;
 			rkaddr->rkatt = rk_offset[um->um_tab.b_errcnt & 017];
 			rkaddr->rkcs1 = RK_CDT|RK_IE|RK_OFFSET|RK_GO;
 			/* fall into ... */
@@ -399,7 +398,7 @@ retry:
 			rkwait(rkaddr);
 			um->um_tab.b_active = 1;
 			return;
-
+		donerecal:
 		case 3:
 			sc->sc_recal = 0;
 			um->um_tab.b_active = 0;
