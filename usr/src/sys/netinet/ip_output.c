@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip_output.c	7.8 (Berkeley) %G%
+ *	@(#)ip_output.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -184,17 +184,17 @@ ip_output(m0, opt, ro, flags)
 		goto bad;
 	}
 
-	/*
-	 * Discard IP header from logical mbuf for m_copy's sake.
-	 * Loop through length of segment, make a copy of each
-	 * part and output.
-	 */
-	m->m_len -= hlen;
-	m->m_off += hlen;
-	m0 = m;
-	for (off = 0; off < ip->ip_len - hlen; off += len) {
-		int mhlen;
+    {
+	int mhlen, firstlen = len;
+	struct mbuf **mnext = &m->m_act;
 
+	/*
+	 * Loop through length of segment after first fragment,
+	 * make new header and copy data of each part and link onto chain.
+	 */
+	m0 = m;
+	mhlen = sizeof (struct ip);
+	for (off = hlen + len; off < ip->ip_len; off += len) {
 		MGET(m, M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
@@ -204,37 +204,56 @@ ip_output(m0, opt, ro, flags)
 		mhip = mtod(m, struct ip *);
 		*mhip = *ip;
 		if (hlen > sizeof (struct ip)) {
-			mhlen = ip_optcopy(ip, mhip, off) + sizeof (struct ip);
+			mhlen = ip_optcopy(ip, mhip) + sizeof (struct ip);
 			mhip->ip_hl = mhlen >> 2;
-		} else
-			mhlen = sizeof (struct ip);
+		}
 		m->m_len = mhlen;
-		mhip->ip_off = (off >> 3) + (ip->ip_off & ~IP_MF);
+		mhip->ip_off = ((off - hlen) >> 3) + (ip->ip_off & ~IP_MF);
 		if (ip->ip_off & IP_MF)
 			mhip->ip_off |= IP_MF;
-		if (off + len >= ip->ip_len - hlen)
-			len = ip->ip_len - hlen - off;
+		if (off + len >= ip->ip_len)
+			len = ip->ip_len - off;
 		else
 			mhip->ip_off |= IP_MF;
 		mhip->ip_len = htons((u_short)(len + mhlen));
 		m->m_next = m_copy(m0, off, len);
 		if (m->m_next == 0) {
-			(void) m_free(m);
 			error = ENOBUFS;	/* ??? */
-			goto bad;
+			goto sendorfree;
 		}
 		mhip->ip_off = htons((u_short)mhip->ip_off);
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(m, mhlen);
-		if (error = (*ifp->if_output)(ifp, m, (struct sockaddr *)dst))
-			break;
+		*mnext = m;
+		mnext = &m->m_act;
 	}
-bad:
-	m_freem(m0);
+	/*
+	 * Update first fragment by trimming what's been copied out
+	 * and updating header, then send each fragment (in order).
+	 */
+	m_adj(m0, hlen + firstlen - ip->ip_len);
+	ip->ip_len = hlen + firstlen;
+	ip->ip_off |= IP_MF;
+	ip->ip_sum = 0;
+	ip->ip_sum = in_cksum(m0, hlen);
+sendorfree:
+	for (m = m0; m; m = m0) {
+		m0 = m->m_act;
+		m->m_act = 0;
+		if (error == 0)
+			error = (*ifp->if_output)(ifp, m,
+			    (struct sockaddr *)dst);
+		else
+			m_freem(m);
+	}
+    }
 done:
 	if (ro == &iproute && (flags & IP_ROUTETOIF) == 0 && ro->ro_rt)
 		RTFREE(ro->ro_rt);
 	return (error);
+bad:
+	m_freem(m0);
+	goto done;
 }
 
 /*
@@ -280,13 +299,11 @@ ip_insertoptions(m, opt, phlen)
 }
 
 /*
- * Copy options from ip to jp.
- * If off is 0 all options are copied
- * otherwise copy selectively.
+ * Copy options from ip to jp,
+ * omitting those not copied during fragmentation.
  */
-ip_optcopy(ip, jp, off)
+ip_optcopy(ip, jp)
 	struct ip *ip, *jp;
-	int off;
 {
 	register u_char *cp, *dp;
 	int opt, optlen, cnt;
@@ -302,9 +319,10 @@ ip_optcopy(ip, jp, off)
 			optlen = 1;
 		else
 			optlen = cp[IPOPT_OLEN];
-		if (optlen > cnt)			/* XXX */
-			optlen = cnt;			/* XXX */
-		if (off == 0 || IPOPT_COPIED(opt)) {
+		/* bogus lengths should have been caught by ip_dooptions */
+		if (optlen > cnt)
+			optlen = cnt;
+		if (IPOPT_COPIED(opt)) {
 			bcopy((caddr_t)cp, (caddr_t)dp, (unsigned)optlen);
 			dp += optlen;
 		}
