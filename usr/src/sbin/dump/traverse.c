@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.5 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -273,7 +273,7 @@ getino(ino)
 	if (ino >= minino && ino < maxino) {
 		return (&itab[ino - minino]);
 	}
-	bread(fsbtodb(sblock, itod(ino, sblock)), itab, sblock->fs_bsize);
+	bread(fsbtodb(sblock, itod(sblock, ino)), itab, sblock->fs_bsize);
 	minino = ino - (ino % INOPB(sblock));
 	maxino = minino + INOPB(sblock);
 	return (&itab[ino - minino]);

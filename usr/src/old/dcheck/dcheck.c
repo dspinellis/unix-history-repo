@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dcheck.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)dcheck.c	1.6 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
@@ -101,7 +101,7 @@ char *file;
 		ecount[i] = 0;
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for (j = 0; j < sblock.fs_ipg; j++) {
 			pass1(&itab[j]);
@@ -110,7 +110,7 @@ char *file;
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for (j = 0; j < sblock.fs_ipg; j++) {
 			pass2(&itab[j]);

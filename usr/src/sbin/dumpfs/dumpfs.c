@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	1.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	1.10 (Berkeley) %G%";
 
 #include "../h/param.h"
 #include "../h/fs.h"
@@ -112,7 +112,7 @@ dumpcg(c)
 	int i,j;
 
 	printf("\ncg %d:\n", c);
-	lseek(0, fsbtodb(&afs, cgtod(c,&afs)) * DEV_BSIZE, 0);
+	lseek(0, fsbtodb(&afs, cgtod(&afs, c)) * DEV_BSIZE, 0);
 	printf("tell\t%x\n", tell(0));
 	if (read(0, (char *)&acg, afs.fs_bsize) != afs.fs_bsize) {
 		printf("\terror reading cg\n");

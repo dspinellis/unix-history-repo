@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char sccsid[] = "@(#)clri.c 1.2 %G%";
+static char sccsid[] = "@(#)clri.c 1.3 %G%";
 
 /* static char *sccsid = "@(#)clri.c	4.1 (Berkeley) 10/1/80"; */
 /*
@@ -61,7 +61,7 @@ main(argc, argv)
 			status = 1;
 			continue;
 		}
-		off = fsbtodb(&sblock, itod(n, &sblock)) * DEV_BSIZE;
+		off = fsbtodb(&sblock, itod(&sblock, n)) * DEV_BSIZE;
 		lseek(f, off, 0);
 		if (read(f, (char *)buf, sblock.fs_bsize) != sblock.fs_bsize) {
 			printf("%s: read error\n", argv[i]);
@@ -73,10 +73,10 @@ main(argc, argv)
 	for (i = 2; i < argc; i++) {
 		n = atoi(argv[i]);
 		printf("clearing %u\n", n);
-		off = fsbtodb(&sblock, itod(n, &sblock)) * DEV_BSIZE;
+		off = fsbtodb(&sblock, itod(&sblock, n)) * DEV_BSIZE;
 		lseek(f, off, 0);
 		read(f, (char *)buf, sblock.fs_bsize);
-		j = itoo(n, &sblock);
+		j = itoo(&sblock, n);
 		for (k = 0; k < ISIZE; k++)
 			buf[j].junk[k] = 0;
 		lseek(f, off, 0);

@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.10 %G%";
+char version[] = "@(#)main.c 1.11 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -1217,8 +1217,8 @@ iexist(dev, ino)
 	fs = getfs(dev);
 	if ((unsigned)ino >= fs->fs_ipg*fs->fs_ncg)
 		return (0);
-	cg = itog(ino, fs);
-	bp = bread(dev, fsbtodb(fs, cgtod(cg, fs)), fs->fs_bsize);
+	cg = itog(fs, ino);
+	bp = bread(dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR)
 		return(0);
 	cgp = bp->b_un.b_cg;

@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.12	%G%	*/
+/*	fs.h	1.13	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -22,7 +22,7 @@
  *	[fs->fs_iblkno]		Inode blocks
  *	[fs->fs_dblkno]		Data blocks
  * The beginning of cylinder group cg in fs, is given by
- * the ``cgbase(cg, fs)'' macro.
+ * the ``cgbase(fs, cg)'' macro.
  *
  * The first boot and super blocks are given in absolute disk addresses.
  */
@@ -267,16 +267,16 @@ struct	cg {
  * Note that these are in absolute addresses, and can NOT
  * in general be expressable in terms of file system addresses.
  */
-#define	cgbblock(c,fs)	(fsbtodb(fs, cgbase(c,fs)) + (fs)->fs_bblkno)
-#define	cgsblock(c,fs)	(fsbtodb(fs, cgbase(c,fs)) + (fs)->fs_sblkno)
+#define	cgbblock(fs, c)	(fsbtodb(fs, cgbase(fs, c)) + (fs)->fs_bblkno)
+#define	cgsblock(fs, c)	(fsbtodb(fs, cgbase(fs, c)) + (fs)->fs_sblkno)
 
 /*
  * file system addresses of cylinder group data structures
  */
-#define	cgbase(c,fs)	((daddr_t)((fs)->fs_fpg * (c)))		/* base addr */
-#define	cgtod(c,fs)	(cgbase(c,fs) + (fs)->fs_cblkno)	/* cg block */
-#define	cgimin(c,fs)	(cgbase(c,fs) + (fs)->fs_iblkno)	/* inode blk */
-#define	cgdmin(c,fs)	(cgbase(c,fs) + (fs)->fs_dblkno)	/* 1st data */
+#define	cgbase(fs, c)	((daddr_t)((fs)->fs_fpg * (c)))		/* base addr */
+#define	cgtod(fs, c)	(cgbase(fs, c) + (fs)->fs_cblkno)	/* cg block */
+#define	cgimin(fs, c)	(cgbase(fs, c) + (fs)->fs_iblkno)	/* inode blk */
+#define	cgdmin(fs, c)	(cgbase(fs, c) + (fs)->fs_dblkno)	/* 1st data */
 
 /*
  * macros for handling inode numbers
@@ -284,18 +284,18 @@ struct	cg {
  *     inode number to cylinder group number
  *     inode number to file system block address
  */
-#define	itoo(x,fs)	((x) % INOPB(fs))
-#define	itog(x,fs)	((x) / (fs)->fs_ipg)
-#define	itod(x,fs) \
-	((daddr_t)(cgimin(itog(x,fs),fs) + \
+#define	itoo(fs, x)	((x) % INOPB(fs))
+#define	itog(fs, x)	((x) / (fs)->fs_ipg)
+#define	itod(fs, x) \
+	((daddr_t)(cgimin(fs, itog(fs, x)) + \
 	(x) % (fs)->fs_ipg / INOPB(fs) * (fs)->fs_frag))
 
 /*
  * give cylinder group number for a file system block
  * give cylinder group block number for a file system block
  */
-#define	dtog(d,fs)	((d) / (fs)->fs_fpg)
-#define	dtogd(d,fs)	((d) % (fs)->fs_fpg)
+#define	dtog(fs, d)	((d) / (fs)->fs_fpg)
+#define	dtogd(fs, d)	((d) % (fs)->fs_fpg)
 
 /*
  * compute the cylinder and rotational position of a cyl block addr
