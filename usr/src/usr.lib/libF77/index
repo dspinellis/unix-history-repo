@@ -1,0 +1,140 @@
+
+
+
+
+
+
+
+
+
+                            libF77 Sources 
+                       Fri Aug 14 19:43:09 1981
+
+
+/ga/dlw/f77/libF77
+ 
+-r--r----- 1 dlw        3439 Aug 14 19:30 Makefile
+-rw-r----- 1 dlw         340 Aug 13 18:01 Version.c
+-rw-r----- 1 dlw         347 Feb 17 17:38 abort_.c
+-rw-r----- 1 dlw          76 Feb 18 12:07 besj0_.c
+-rw-r----- 1 dlw          76 Feb 18 12:07 besj1_.c
+-rw-r----- 1 dlw          97 Feb 18 12:07 besjn_.c
+-rw-r----- 1 dlw          76 Feb 18 12:07 besy0_.c
+-rw-r----- 1 dlw          76 Feb 18 12:07 besy1_.c
+-rw-r----- 1 dlw          97 Feb 18 12:07 besyn_.c
+-rw-r----- 1 dlw         752 Feb 15  1981 bit.c
+-rw-r----- 1 dlw         103 Jan 21  1980 c_abs.c
+-rw-r----- 1 dlw         172 Jan 21  1980 c_cos.c
+-rw-r----- 1 dlw         584 Apr 17 09:11 c_div.c
+-rw-r----- 1 dlw         177 Jan 21  1980 c_exp.c
+-rw-r----- 1 dlw         160 Jan 21  1980 c_log.c
+-rw-r----- 1 dlw         170 Jan 21  1980 c_sin.c
+-rw-r----- 1 dlw         376 Jan 21  1980 c_sqrt.c
+-rw-r----- 1 dlw         309 Jan 21  1980 cabs.c
+-rw-r----- 1 dlw          70 Jan 21  1980 d_abs.c
+-rw-r----- 1 dlw          67 Jan 21  1980 d_acos.c
+-rw-r----- 1 dlw          67 Jan 21  1980 d_asin.c
+-rw-r----- 1 dlw          67 Jan 21  1980 d_atan.c
+-rw-r----- 1 dlw          78 Jan 21  1980 d_atn2.c
+-rw-r----- 1 dlw          98 Jan 21  1980 d_cnjg.c
+-rw-r----- 1 dlw          64 Jan 21  1980 d_cos.c
+-rw-r----- 1 dlw          67 Jan 21  1980 d_cosh.c
+-rw-r----- 1 dlw          69 Jan 21  1980 d_dim.c
+-rw-r----- 1 dlw          64 Jan 21  1980 d_exp.c
+-rw-r----- 1 dlw          72 Jan 21  1980 d_imag.c
+-rw-r----- 1 dlw          96 Mar 26  1980 d_int.c
+-rw-r----- 1 dlw         114 Jan 21  1980 d_lg10.c
+-rw-r----- 1 dlw          64 Jan 21  1980 d_log.c
+-rw-r----- 1 dlw         190 Mar 26  1980 d_mod.c
+-rw-r----- 1 dlw         104 Jan 21  1980 d_nint.c
+-rw-r----- 1 dlw          60 Jan 21  1980 d_prod.c
+-rw-r----- 1 dlw         102 Jan 21  1980 d_sign.c
+-rw-r----- 1 dlw          64 Jan 21  1980 d_sin.c
+-rw-r----- 1 dlw          67 Jan 21  1980 d_sinh.c
+-rw-r----- 1 dlw          67 Jan 21  1980 d_sqrt.c
+-rw-r----- 1 dlw          64 Jan 21  1980 d_tan.c
+-rw-r----- 1 dlw          67 Jan 21  1980 d_tanh.c
+-rw-r----- 1 dlw          64 Feb 18 12:06 dbesj0_.c
+-rw-r----- 1 dlw          64 Feb 18 12:06 dbesj1_.c
+-rw-r----- 1 dlw          85 Feb 18 12:06 dbesjn_.c
+-rw-r----- 1 dlw          64 Feb 18 12:06 dbesy0_.c
+-rw-r----- 1 dlw          64 Feb 18 12:07 dbesy1_.c
+-rw-r----- 1 dlw          85 Feb 18 12:07 dbesyn_.c
+-rw-r----- 1 dlw         239 Apr 17 09:14 ef1asc_.c
+-rw-r----- 1 dlw         176 Apr 17 09:14 ef1cmc_.c
+-rw-r----- 1 dlw          63 Aug 11 19:59 exit_.c
+-rw-r----- 1 dlw          68 Jan 21  1980 h_abs.c
+-rw-r----- 1 dlw          67 Jan 21  1980 h_dim.c
+-rw-r----- 1 dlw         103 Jan 21  1980 h_dnnt.c
+-rw-r----- 1 dlw         256 Jan 21  1980 h_indx.c
+-rw-r----- 1 dlw          54 Jan 21  1980 h_len.c
+-rw-r----- 1 dlw          53 Jan 21  1980 h_mod.c
+-rw-r----- 1 dlw         102 Jan 21  1980 h_nint.c
+-rw-r----- 1 dlw          99 Jan 21  1980 h_sign.c
+-rw-r----- 1 dlw          88 Oct  4  1980 hl_ge.c
+-rw-r----- 1 dlw          87 Oct  4  1980 hl_gt.c
+-rw-r----- 1 dlw          88 Oct  4  1980 hl_le.c
+-rw-r----- 1 dlw          87 Oct  4  1980 hl_lt.c
+-rw-r----- 1 dlw          74 Jan 21  1980 i_abs.c
+-rw-r----- 1 dlw          73 Jan 21  1980 i_dim.c
+-rw-r----- 1 dlw         106 Jan 21  1980 i_dnnt.c
+-rw-r----- 1 dlw         264 Jan 21  1980 i_indx.c
+-rw-r----- 1 dlw          57 Jan 21  1980 i_len.c
+-rw-r----- 1 dlw          59 Jan 21  1980 i_mod.c
+-rw-r----- 1 dlw         105 Jan 21  1980 i_nint.c
+-rw-r----- 1 dlw         108 Jan 21  1980 i_sign.c
+-rw-r----- 1 dlw          90 Jan 21  1980 l_ge.c
+-rw-r----- 1 dlw          89 Jan 21  1980 l_gt.c
+-rw-r----- 1 dlw          90 Jan 21  1980 l_le.c
+-rw-r----- 1 dlw          89 Jan 21  1980 l_lt.c
+-rw-r----- 1 dlw         450 Feb 19 21:58 lnblnk_.c
+-r--r----- 1 dlw        2586 Aug 13 23:25 main.c
+-rw-r----- 1 dlw         207 Jan 21  1980 pow_ci.c
+-rw-r----- 1 dlw          82 Jan 21  1980 pow_dd.c
+-rw-r----- 1 dlw         305 Jan 21  1980 pow_di.c
+-rw-r----- 1 dlw         218 Jan 21  1980 pow_hh.c
+-rw-r----- 1 dlw         227 Jan 21  1980 pow_ii.c
+-rw-r----- 1 dlw         303 Jan 21  1980 pow_ri.c
+-rw-r----- 1 dlw         561 Apr 17 14:07 pow_zi.c
+-rw-r----- 1 dlw         344 Jan 21  1980 pow_zz.c
+-rw-r----- 1 dlw          69 Jan 21  1980 r_abs.c
+-rw-r----- 1 dlw          66 Jan 21  1980 r_acos.c
+-rw-r----- 1 dlw          66 Jan 21  1980 r_asin.c
+-rw-r----- 1 dlw          66 Jan 21  1980 r_atan.c
+-rw-r----- 1 dlw          77 Jan 21  1980 r_atn2.c
+-rw-r----- 1 dlw          93 Jan 21  1980 r_cnjg.c
+-rw-r----- 1 dlw          63 Jan 21  1980 r_cos.c
+-rw-r----- 1 dlw          66 Jan 21  1980 r_cosh.c
+-rw-r----- 1 dlw          68 Jan 21  1980 r_dim.c
+-rw-r----- 1 dlw          63 Jan 21  1980 r_exp.c
+-rw-r----- 1 dlw          70 Jan 21  1980 r_imag.c
+-rw-r----- 1 dlw          95 Mar 26  1980 r_int.c
+-rw-r----- 1 dlw         113 Jan 21  1980 r_lg10.c
+-rw-r----- 1 dlw          63 Jan 21  1980 r_log.c
+-rw-r----- 1 dlw         189 Mar 26  1980 r_mod.c
+-rw-r----- 1 dlw         103 Jan 21  1980 r_nint.c
+-rw-r----- 1 dlw         100 Jan 21  1980 r_sign.c
+-rw-r----- 1 dlw          63 Jan 21  1980 r_sin.c
+-rw-r----- 1 dlw          66 Jan 21  1980 r_sinh.c
+-rw-r----- 1 dlw          66 Jan 21  1980 r_sqrt.c
+-rw-r----- 1 dlw          63 Jan 21  1980 r_tan.c
+-rw-r----- 1 dlw          66 Jan 21  1980 r_tanh.c
+-rw-r----- 1 dlw         899 Feb 17 12:58 rand_.c
+-rw-r----- 1 dlw         810 Apr 19 19:33 range.c
+-rw-r----- 1 dlw         561 Mar  2 10:24 rindex_.c
+-rw-r----- 1 dlw         273 Jan 21  1980 s_cat.c
+-rw-r----- 1 dlw         485 Apr 17 14:10 s_cmp.c
+-rw-r----- 1 dlw         256 Jan 21  1980 s_copy.c
+-rw-r----- 1 dlw         709 Oct  2  1980 s_paus.c
+-rw-r----- 1 dlw         503 Jan 21  1980 s_rnge.c
+-rw-r----- 1 dlw         207 Oct  2  1980 s_stop.c
+-rw-r----- 1 dlw        1321 Apr 17 14:11 sinh.c
+-rw-r----- 1 dlw         376 Apr 17 14:12 tanh.c
+-rw-r----- 1 dlw         633 Aug 13 19:58 traper_.c
+-rw-r----- 1 dlw         107 Jan 21  1980 z_abs.c
+-rw-r----- 1 dlw         179 Jan 21  1980 z_cos.c
+-rw-r----- 1 dlw         605 Apr 17 14:30 z_div.c
+-rw-r----- 1 dlw         183 Jan 21  1980 z_exp.c
+-rw-r----- 1 dlw         169 Jan 21  1980 z_log.c
+-rw-r----- 1 dlw         177 Jan 21  1980 z_sin.c
+-rw-r----- 1 dlw         396 Apr 23 11:23 z_sqrt.c
