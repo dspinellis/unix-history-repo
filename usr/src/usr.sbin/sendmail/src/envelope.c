@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	4.2		%G%);
+SCCSID(@(#)envelope.c	4.3		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -632,7 +632,7 @@ setsender(from)
 
 		/* run user's .mailcf file */
 		define('z', CurEnv->e_from.q_home, CurEnv);
-		expand("$z/.mailcf", buf, &buf[sizeof buf - 1], CurEnv);
+		expand("\001z/.mailcf", buf, &buf[sizeof buf - 1], CurEnv);
 		if (safefile(buf, getruid(), S_IREAD))
 			readcf(buf, FALSE);
 

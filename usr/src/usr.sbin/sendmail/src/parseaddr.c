@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.3		%G%);
+SCCSID(@(#)parseaddr.c	4.4		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -41,7 +41,7 @@ SCCSID(@(#)parseaddr.c	4.3		%G%);
 */
 
 /* following delimiters are inherent to the internal algorithms */
-# define DELIMCHARS	"$()<>,;\\\"\r\n"	/* word delimiters */
+# define DELIMCHARS	"\001()<>,;\\\"\r\n"	/* word delimiters */
 
 ADDRESS *
 parseaddr(addr, a, copyf, delim)
@@ -410,7 +410,7 @@ toktype(c)
 	if (firstime)
 	{
 		firstime = FALSE;
-		expand("$o", buf, &buf[sizeof buf - 1], CurEnv);
+		expand("\001o", buf, &buf[sizeof buf - 1], CurEnv);
 		(void) strcat(buf, DELIMCHARS);
 	}
 	if (c == MATCHCLASS || c == MATCHREPL || c == MATCHNCLASS)
@@ -1011,7 +1011,7 @@ remotename(name, m, senderaddress, canonical)
 	*/
 
 	if (canonical)
-		fancy = "$g";
+		fancy = "\001g";
 	else
 		fancy = crackaddr(name);
 
@@ -1077,19 +1077,12 @@ remotename(name, m, senderaddress, canonical)
 
 	/*
 	**  Now restore the comment information we had at the beginning.
-	**	Make sure that any real '$' characters in the input are
-	**	not accidently interpreted as macro expansions by quoting
-	**	them before expansion.
 	*/
 
 	cataddr(pvp, lbuf, sizeof lbuf);
-	for (p = lbuf; *p != '\0'; p++)
-		if (*p == '$')
-			*p |= 0200;
 	define('g', lbuf, CurEnv);
 	expand(fancy, buf, &buf[sizeof buf - 1], CurEnv);
 	define('g', oldg, CurEnv);
-	stripquotes(buf, FALSE);
 
 # ifdef DEBUG
 	if (tTd(12, 1))

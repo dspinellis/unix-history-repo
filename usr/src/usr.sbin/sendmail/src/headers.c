@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	4.3		%G%);
+SCCSID(@(#)headers.c	4.4		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -557,7 +557,7 @@ crackaddr(addr)
 			*bp++ = *p;
 		else if (!gotaddr)
 		{
-			strcpy(bp, "$g");
+			strcpy(bp, "\001g");
 			bp += 2;
 			gotaddr = TRUE;
 		}

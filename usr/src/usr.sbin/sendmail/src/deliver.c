@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	4.5		%G%);
+SCCSID(@(#)deliver.c	4.6		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -102,7 +102,7 @@ deliver(e, firstto)
 	*/
 
 	/* rewrite from address, using rewriting rules */
-	expand("$f", buf, &buf[sizeof buf - 1], e);
+	expand("\001f", buf, &buf[sizeof buf - 1], e);
 	(void) strcpy(tfrombuf, remotename(buf, m, TRUE, TRUE));
 
 	define('g', tfrombuf, e);		/* translated sender address */
@@ -118,7 +118,7 @@ deliver(e, firstto)
 			*pvp++ = "-f";
 		else
 			*pvp++ = "-r";
-		expand("$g", buf, &buf[sizeof buf - 1], e);
+		expand("\001g", buf, &buf[sizeof buf - 1], e);
 		*pvp++ = newstr(buf);
 	}
 
@@ -131,7 +131,7 @@ deliver(e, firstto)
 
 	for (mvp = m->m_argv; (p = *++mvp) != NULL; )
 	{
-		while ((p = index(p, '$')) != NULL)
+		while ((p = index(p, '\001')) != NULL)
 			if (*++p == 'u')
 				break;
 		if (p != NULL)
@@ -966,11 +966,10 @@ logdelivery(stat)
 **	managed to extract a date already, use that; otherwise,
 **	use the current date/time.
 **
-**	One of the ugliest hacks seen by human eyes is
-**	contained herein: UUCP wants those stupid
-**	"emote from <host>" lines.  Why oh why does a
-**	well-meaning programmer such as myself have to
-**	deal with this kind of antique garbage????
+**	One of the ugliest hacks seen by human eyes is contained herein:
+**	UUCP wants those stupid "remote from <host>" lines.  Why oh why
+**	does a well-meaning programmer such as myself have to deal with
+**	this kind of antique garbage????
 **
 **	Parameters:
 **		fp -- the file to output to.
@@ -987,7 +986,7 @@ putfromline(fp, m)
 	register FILE *fp;
 	register MAILER *m;
 {
-	char *template = "$l\n";
+	char *template = "\001l\n";
 	char buf[MAXLINE];
 	extern char SentDate[];
 
@@ -1000,14 +999,14 @@ putfromline(fp, m)
 		char *bang;
 		char xbuf[MAXLINE];
 
-		expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
+		expand("\001g", buf, &buf[sizeof buf - 1], CurEnv);
 		bang = index(buf, '!');
 		if (bang == NULL)
 			syserr("No ! in UUCP! (%s)", buf);
 		else
 		{
 			*bang++ = '\0';
-			(void) sprintf(xbuf, "From %s  $d remote from %s\n", bang, buf);
+			(void) sprintf(xbuf, "From %s  \001d remote from %s\n", bang, buf);
 			template = xbuf;
 		}
 	}

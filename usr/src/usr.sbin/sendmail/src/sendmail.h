@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	4.3		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	4.4		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -306,6 +306,8 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 # define CONDIF		'\031'	/* conditional if-then */
 # define CONDELSE	'\032'	/* conditional else */
 # define CONDFI		'\033'	/* conditional fi */
+
+/* \001 is also reserved as the macro expansion character */
 /*
 **  Symbol table definitions
 */
