@@ -1,3 +1,14 @@
+/*-
+ * Copyright (c) 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)library.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/stat.h>

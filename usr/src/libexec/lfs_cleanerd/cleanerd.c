@@ -1,6 +1,24 @@
+/*-
+ * Copyright (c) 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1992 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)cleanerd.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/lfs/lfs.h>
 
@@ -88,6 +106,7 @@ cost_benefit(fsp, su)
 	}
 }
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];

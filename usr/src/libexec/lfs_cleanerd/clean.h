@@ -1,7 +1,16 @@
+/*-
+ * Copyright (c) 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)clean.h	5.1 (Berkeley) %G%
+ */
+
 /*
  * The LFS user-level library will be used when writing cleaners and
- * checkers for LFS file systems.  It will have facilities
- * for finding and parsing LFS segments.
+ * checkers for LFS file systems.  It will have facilities for finding
+ * and parsing LFS segments.
  */
 
 #define DUMP_SUM_HEADER		0x0001
@@ -10,11 +19,6 @@
 #define	DUMP_ALL		0xFFFF
 
 #define IFILE_NAME "ifile"
-
-#ifndef TRUE
-#define TRUE	(1)
-#define FALSE	(0)
-#endif
 
 /*
  * Cleaner parameters
@@ -32,13 +36,14 @@
 
 #define	BUSY_LIM	0.50
 #define	IDLE_LIM	0.90
-#define	MIN_SEGS(lfsp)	(3)
+
+#define	MIN_SEGS(lfsp)		(3)
 #define	NUM_TO_CLEAN(fsp)	(5)
 
 #define MAXLOADS	3
-#define	ONE_MIN	0
-#define	FIVE_MIN 1
-#define	FIFTEEN_MIN 2
+#define	ONE_MIN		0
+#define	FIVE_MIN	1
+#define	FIFTEEN_MIN	2
 
 typedef struct fs_info {
 	struct	statfs	*fi_statfsp;	/* fsstat info from getfsstat */
@@ -135,5 +140,4 @@ void	 print_CLEANERINFO __P((CLEANERINFO *));
 #define	dump_cleaner_info(cip)
 #define	dump_super(lfsp)
 #endif
-
 __END_DECLS
