@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -300,6 +300,8 @@ deliver(firstto, editfcn)
 			{
 				rcode = mailfile(user, getctladdr(to));
 				giveresponse(rcode, m, e);
+				if (rcode == EX_OK)
+					to->q_flags |= QSENT;
 				continue;
 			}
 		}
@@ -426,9 +428,11 @@ deliver(firstto, editfcn)
 
 	if (tobuf[0] != '\0')
 		giveresponse(rcode, m, e);
-	if (rcode != EX_OK)
-		for (to = tochain; to != NULL; to = to->q_tchain)
+	for (to = tochain; to != NULL; to = to->q_tchain)
+		if (rcode != EX_OK)
 			markfailure(e, to, rcode);
+		else
+			to->q_flags |= QSENT;
 
 	errno = 0;
 	define('g', (char *) NULL, e);
@@ -1296,6 +1300,7 @@ sendall(e, mode)
 	register ADDRESS *q;
 	bool oldverbose;
 	int pid;
+	int nsent;
 	FILE *lockfp = NULL, *queueup();
 
 	/* determine actual delivery mode */
@@ -1389,6 +1394,7 @@ sendall(e, mode)
 	**  Run through the list and send everything.
 	*/
 
+	nsent = 0;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (mode == SM_VERIFY)
@@ -1397,6 +1403,4 @@ sendall(e, mode)
 			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 				message(Arpa_Info, "deliverable");
 		}
-		else
-			(void) deliver(q, (fnptr) NULL);
 }

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.16 (Berkeley) %G%
+ *	@(#)sendmail.h	5.17 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.16		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.17		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -92,6 +92,7 @@ typedef struct address ADDRESS;
 # define QGOODUID	000004	/* the q_uid q_gid fields are good */
 # define QPRIMARY	000010	/* set from argv */
 # define QQUEUEUP	000020	/* queue for later transmission */
+# define QSENT		000040	/* has been successfully delivered */
 /*
 **  Mailer definition structure.
 **	Every mailer known to the system is declared in this
