@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.76 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -849,7 +849,7 @@ errbody(mci, e, separator)
 			putline(buf, mci);
 
 			/* X-Actual-Recipient: -- the real problem address */
-			if (r != q)
+			if (r != q && q->q_user[0] != '\0')
 			{
 				if (strchr(q->q_user, '@') == NULL)
 				{
