@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	8.10 (Berkeley) %G%
  */
 
 /*
@@ -1290,6 +1290,13 @@ nfs_link(ap)
 			vput(vp);
 		return (EXDEV);
 	}
+
+	/*
+	 * Push all writes to the server, so that the attribute cache
+	 * doesn't get "out of sync" with the server.
+	 * XXX There should be a better way!
+	 */
+	VOP_FSYNC(tdvp, cnp->cn_cred, MNT_WAIT, cnp->cn_proc);
 
 	nfsstats.rpccnt[NFSPROC_LINK]++;
 	nfsm_reqhead(tdvp, NFSPROC_LINK,
