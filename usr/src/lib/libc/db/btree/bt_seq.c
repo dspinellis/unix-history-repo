@@ -9,15 +9,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_seq.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_seq.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <errno.h>
+
 #include <db.h>
+#include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
+
 #include "btree.h"
 
 static int	 bt_seqadv __P((BTREE *, EPG *, int));
@@ -172,7 +174,7 @@ bt_seqset(t, ep, key, flags)
 		for (pg = P_ROOT;;) {
 			if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
 				return (RET_ERROR);
-			if (h->flags & (P_BLEAF|P_RLEAF))
+			if (h->flags & (P_BLEAF | P_RLEAF))
 				break;
 			pg = GETBINTERNAL(h, 0)->pgno;
 			mpool_put(t->bt_mp, h, 0);
@@ -200,7 +202,7 @@ bt_seqset(t, ep, key, flags)
 		for (pg = P_ROOT;;) {
 			if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
 				return (RET_ERROR);
-			if (h->flags & (P_BLEAF|P_RLEAF))
+			if (h->flags & (P_BLEAF | P_RLEAF))
 				break;
 			pg = GETBINTERNAL(h, NEXTINDEX(h) - 1)->pgno;
 			mpool_put(t->bt_mp, h, 0);
@@ -302,7 +304,7 @@ bt_seqadv(t, e, flags)
 	 * a larger index.
 	 */
 	if (ISSET(t, BTF_DELCRSR)) {
-		UNSET(t, BTF_DELCRSR);			/* Don't try twice. */
+		CLR(t, BTF_DELCRSR);			/* Don't try twice. */
 		if (c->pgno == delc.pgno && c->index > delc.index)
 			--c->index;
 		if (__bt_crsrdel(t, &delc))
@@ -328,7 +330,7 @@ __bt_crsrdel(t, c)
 	PAGE *h;
 	int status;
 
-	UNSET(t, BTF_DELCRSR);			/* Don't try twice. */
+	CLR(t, BTF_DELCRSR);			/* Don't try twice. */
 	if ((h = mpool_get(t->bt_mp, c->pgno, 0)) == NULL)
 		return (RET_ERROR);
 	status = __bt_dleaf(t, h, c->index);
