@@ -1,4 +1,4 @@
-/*	uba.c	4.18	%G%	*/
+/*	uba.c	4.19	%G%	*/
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
 
@@ -17,6 +17,10 @@
 #include "../h/mtpr.h"
 #include "../h/nexus.h"
 #include "../h/dk.h"
+
+#if VAX780
+char	ubasr_bits[] = UBASR_BITS;
+#endif
 
 /*
  * Do transfer on device argument.  The controller
@@ -296,15 +300,16 @@ ubareset(uban)
 	switch (cpu) {
 #if VAX780
 	case VAX_780:
-		printf("UBA RESET %d:", uban);
+		printf("uba%d: reset", uban);
 		ubainit(uh->uh_uba);
 		break;
 #endif
 #if VAX750
 	case VAX_750:
-		printf("UNIBUS INIT:");
+		printf("uba0: reset");
 		mtpr(IUR, 1);
-		DELAY(100000);
+		/* give devices time to recover from power fail */
+		DELAY(5000000);
 		break;
 #endif
 	}
@@ -351,7 +356,7 @@ unhang()
 		uh->uh_hangcnt++;
 		if (uh->uh_hangcnt > 5*hz) {
 			uh->uh_hangcnt = 0;
-			printf("HANG ");
+			printf("uba%d: hung\n", uban);
 			ubareset(uban);
 		}
 	}
@@ -397,22 +402,23 @@ ubaerror(uban, uh, xx, uvec, uba)
 	if (uvec == 0) {
 		uh->uh_zvcnt++;
 		if (uh->uh_zvcnt > 250000) {
-			printf("ZERO VECTOR ");
+			printf("uba%d: too many zero vectors\n");
 			ubareset(uban);
 		}
 		uvec = 0;
 		return;
 	}
 	if (uba->uba_cnfgr & NEX_CFGFLT) {
-		printf("UBA%d SBI FAULT sr %x cnfgr %x\n",
-		    uban, uba->uba_sr, uba->uba_cnfgr);
+		printf("uba%d: sbi fault sr=%b cnfgr=%b\n",
+		    uban, uba->uba_sr, ubasr_bits,
+		    uba->uba_cnfgr, nexflt_bits);
 		ubareset(uban);
 		uvec = 0;
 		return;
 	}
 	sr = uba->uba_sr;
 	s = spl7();
-	printf("UBA%d ERROR SR %x FMER %x FUBAR %o\n",
+	printf("uba%d: uba error sr=%x fmer=%x fubar=%o\n",
 	    uban, uba->uba_sr, uba->uba_fmer, 4*uba->uba_fubar);
 	splx(s);
 	uba->uba_sr = sr;
