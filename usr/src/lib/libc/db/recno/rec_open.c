@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -156,6 +156,7 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 	/* Use the recno routines. */
 	dbp->close = __rec_close;
 	dbp->del = __rec_delete;
+	dbp->fd = __rec_fd;
 	dbp->get = __rec_get;
 	dbp->put = __rec_put;
 	dbp->seq = __rec_seq;
@@ -184,4 +185,19 @@ err:	sverrno = errno;
 		(void)close(rfd);
 	errno = sverrno;
 	return (NULL);
+}
+
+int
+__rec_fd(dbp)
+	const DB *dbp;
+{
+	BTREE *t;
+
+	t = dbp->internal;
+
+	if (ISSET(t, R_INMEM)) {
+		errno = ENOENT;
+		return (-1);
+	}
+	return (t->bt_rfd);
 }
