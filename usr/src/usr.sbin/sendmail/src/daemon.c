@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.11 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.12 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.11 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.12 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -202,9 +202,16 @@ makeconnection(host, port, mci, usesecureport)
 		{
 			*p = '\0';
 			hid = inet_addr(&host[1]);
+			if (hid == -1)
+			{
+				/* try it as a host name (avoid MX lookup) */
+				hp = gethostbyname(&host[1]);
+				*p = ']';
+				goto gothostent;
+			}
 			*p = ']';
 		}
-		if (p == NULL || hid == -1)
+		if (p == NULL)
 		{
 			usrerr("553 Invalid numeric domain spec \"%s\"", host);
 			return (EX_NOHOST);
@@ -214,6 +221,7 @@ makeconnection(host, port, mci, usesecureport)
 	else
 	{
 		hp = gethostbyname(host);
+gothostent:
 		if (hp == NULL)
 		{
 #ifdef NAMED_BIND
