@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.6 (Berkeley) 83/10/26";
+static	char *sccsid = "@(#)docmd.c	4.7 (Berkeley) 83/10/27";
 #endif
 
 #include "defs.h"
@@ -47,10 +47,10 @@ dohcmds(files, hosts, cmds)
 			}
 			if (f == NULL)
 				except->b_args = f = expand(makeblock(NAME, cp), 0);
-			else {
+			else
 				f->b_next = expand(makeblock(NAME, cp), 0);
+			while (f->b_next != NULL)
 				f = f->b_next;
-			}
 		}
 	}
 
