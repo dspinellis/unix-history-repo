@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.35	83/02/10	*/
+/*	ufs_lookup.c	4.36	83/03/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -537,7 +537,7 @@ direnter(ip)
 {
 	register struct direct *ep, *nep;
 	struct buf *bp;
-	int loc, freespace, error = 0;
+	int loc, spacefree, error = 0;
 	u_int dsize;
 	int newentrysize;
 	char *dirbuf;
@@ -596,7 +596,7 @@ direnter(ip)
 	 */
 	ep = (struct direct *)dirbuf;
 	dsize = DIRSIZ(ep);
-	freespace = ep->d_reclen - dsize;
+	spacefree = ep->d_reclen - dsize;
 	for (loc = ep->d_reclen; loc < u.u_count; ) {
 		nep = (struct direct *)(dirbuf + loc);
 		if (ep->d_ino) {
@@ -605,10 +605,10 @@ direnter(ip)
 			ep = (struct direct *)((char *)ep + dsize);
 		} else {
 			/* overwrite; nothing there; header is ours */
-			freespace += dsize;	
+			spacefree += dsize;	
 		}
 		dsize = DIRSIZ(nep);
-		freespace += nep->d_reclen - dsize;
+		spacefree += nep->d_reclen - dsize;
 		loc += nep->d_reclen;
 		bcopy((caddr_t)nep, (caddr_t)ep, dsize);
 	}
@@ -617,13 +617,13 @@ direnter(ip)
 	 * copy in the new entry, and write out the block.
 	 */
 	if (ep->d_ino == 0) {
-		if (freespace + dsize < newentrysize)
+		if (spacefree + dsize < newentrysize)
 			panic("wdir: compact1");
-		u.u_dent.d_reclen = freespace + dsize;
+		u.u_dent.d_reclen = spacefree + dsize;
 	} else {
-		if (freespace < newentrysize)
+		if (spacefree < newentrysize)
 			panic("wdir: compact2");
-		u.u_dent.d_reclen = freespace;
+		u.u_dent.d_reclen = spacefree;
 		ep->d_reclen = dsize;
 		ep = (struct direct *)((char *)ep + dsize);
 	}
