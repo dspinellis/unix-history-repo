@@ -1,0 +1,1923 @@
+/* llib-lcommon - lint library for QUIPU-common */
+
+/*
+ * $Header: /f/osi/dsap/common/RCS/llib-lcommon,v 7.6 91/02/22 09:19:28 mrose Interim $
+ *
+ *
+ * $Log:	llib-lcommon,v $
+# Revision 7.6  91/02/22  09:19:28  mrose
+# Interim 6.8
+# 
+# Revision 7.5  90/12/23  18:45:41  mrose
+# update
+# 
+# Revision 7.4  90/10/17  11:42:06  mrose
+# sync
+# 
+# Revision 7.3  90/07/09  14:34:35  mrose
+# sync
+# 
+# Revision 7.2  90/03/15  11:17:35  mrose
+# quipu-sync
+# 
+# Revision 7.1  89/12/19  16:19:22  mrose
+# sync
+# 
+# Revision 7.0  89/11/23  21:42:20  mrose
+# Release 6.0
+# 
+ */
+
+/*
+ *                                NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include <signal.h>
+#include "quipu/util.h"
+#include "quipu/entry.h"
+#include "quipu/common.h"
+#include "quipu/connection.h"
+#include "quipu/list.h"     
+#include "quipu/ds_search.h"
+#include "quipu/ufn.h"
+
+struct acl_info * acl_info_new (x,y,z) 
+register int x,y; 
+struct dn_seq * z; 
+{
+	return (acl_info_new(x,y,z));
+} 
+
+struct acl_info * acl_default () 
+{
+	return (acl_default());
+} 
+
+int	  acl_cmp (acl1, acl2)
+struct acl	* acl1;
+struct acl	* acl2;
+{
+	return (acl_cmp(acl1,acl2));
+}
+
+get_default_acl () 
+{
+	(void) get_default_acl();
+} 
+
+set_default_acl (ai_ptr) 
+struct acl_info * ai_ptr; 
+{
+	(void) set_default_acl(ai_ptr);
+} 
+
+test_acl_default (a)
+struct acl_info * a;
+{
+	return (test_acl_default (a));
+}
+
+acl_syntax ()
+{
+	(void) (acl_syntax ());
+}
+
+as_cmp_comp (a,b) 
+Attr_Sequence a,b; 
+{
+	return (as_cmp_comp(a,b));
+} 
+
+as_cmp (a,b) 
+Attr_Sequence a,b; 
+{
+	return (as_cmp(a,b));
+} 
+
+
+Attr_Sequence as_comp_cpy (as) 
+Attr_Sequence as; 
+{
+	return (as_comp_cpy(as));
+} 
+
+Attr_Sequence as_cpy (as) 
+Attr_Sequence as; 
+{
+	return (as_cpy(as));
+} 
+
+
+as_delnext (as) 
+Attr_Sequence as; 
+{
+	(void) as_delnext(as);
+} 
+
+
+Attr_Sequence as_find_type (a,b) 
+Attr_Sequence a; 
+AttributeType b; 
+{
+	return (as_find_type(a,b));
+} 
+
+
+as_comp_free (as) 
+Attr_Sequence as; 
+{
+	(void) as_comp_free(as);
+} 
+
+as_free (as) 
+Attr_Sequence as; 
+{
+	(void) as_free(as);
+} 
+
+Attr_Sequence as_merge_aux (a,b) 
+Attr_Sequence a,b; 
+{
+	return (as_merge_aux (a,b));
+} 
+
+Attr_Sequence as_merge (a,b) 
+Attr_Sequence a,b; 
+{
+	return (as_merge(a,b));
+} 
+
+
+Attr_Sequence as_comp_new (at,as,acl) 
+AttributeType at; 
+AV_Sequence as; 
+struct acl_info * acl; 
+{
+	return (as_comp_new(at,as,acl));
+} 
+
+
+as_comp_print (ps,as,format) 
+PS ps; 
+Attr_Sequence as; 
+int format; 
+{
+	(void) as_comp_print(ps,as,format);
+} 
+
+as_print (ps,as,format) 
+Attr_Sequence as; 
+PS ps; 
+int format; 
+{
+	(void) as_print(ps,as,format);
+} 
+
+
+Attr_Sequence str2as (str) 
+register char * str; 
+{
+	return (str2as(str));
+} 
+
+Attr_Sequence as_combine (as,str,allownull) 
+Attr_Sequence as; 
+register char * str; 
+char allownull;
+{
+	return (as_combine(as,str,allownull));
+} 
+
+oid_table_attr * AttrT_new_aux (name) 
+register char * name; 
+{
+	return (AttrT_new_aux(name));
+} 
+
+AttributeType AttrT_new (name) 
+register char * name; 
+{
+	return (AttrT_new(name));
+} 
+
+
+AttrT_print (ps,x,format) 
+register PS ps; 
+register AttributeType x; 
+register int format; 
+{
+	(void) AttrT_print(ps,x,format);
+} 
+
+short add_attribute_syntax (sntx,enc,dec,parse,print,cpy,cmp,sfree,print_pe,approx,multiline) 
+char * sntx; 
+IFP enc,dec,parse,print,cpy,cmp,sfree,approx; 
+char * print_pe; 
+char multiline; 
+{
+	return (add_attribute_syntax(sntx,enc,dec,parse,print,cpy,cmp,sfree,print_pe,approx,multiline));
+} 
+
+set_attribute_syntax (sntx,enc,dec,parse,print,cpy,cmp,sfree,print_pe,approx,multiline) 
+short sntx; 
+IFP enc,dec,parse,print,cpy,cmp,sfree,approx; 
+char * print_pe; 
+char multiline; 
+{
+	(void) set_attribute_syntax(sntx,enc,dec,parse,print,cpy,cmp,sfree,print_pe,approx,multiline);
+} 
+
+set_av_pe_print (sntx,print_pe) 
+short sntx; 
+char * print_pe; 
+{
+	(void) set_av_pe_print(sntx,print_pe);
+} 
+
+split_attr (as) 
+Attr_Sequence as; 
+{
+	return (split_attr(as));
+} 
+
+IFP approxfn (x) 
+int x; 
+{
+	return (approxfn(x));
+} 
+
+char * syntax2str (sntx) 
+int sntx; 
+{
+	return (syntax2str(sntx));
+} 
+
+short str2syntax (str) 
+char * str; 
+{
+	return (str2syntax(str));
+} 
+
+sntx_table * get_syntax_table (x) 
+short x; 
+{
+	return (get_syntax_table(x));
+} 
+
+AttrV_free (x) 
+register AttributeValue x; 
+{
+	(void) AttrV_free(x);
+} 
+
+AttrV_free_aux (x) 
+register AttributeValue x; 
+{
+	(void) AttrV_free_aux(x);
+} 
+
+PE grab_pe(av) 
+AttributeValue av; 
+{
+	return (grab_pe(av));
+} 
+
+AttrV_decode(x,y) 
+register AttributeType x; 
+register AttributeValue y; 
+{
+	return (AttrV_decode(x,y));
+} 
+
+
+str_at2AttrV_aux (str,at,rav)
+char * str;
+AttributeType at;
+AttributeValue rav;
+{
+	return str_at2AttrV_aux (str,at,rav);
+}
+
+AttributeValue str_at2AttrV (str,at)
+char * str;
+AttributeType at;
+{
+	return str_at2AttrV (str,at);
+}
+
+AttributeValue str2AttrV (str,syntax)
+register char * str;
+short syntax;
+{
+	return (str2AttrV (str,syntax));
+}
+
+str2AttrV_aux (str,syntax,x)
+register char * str;
+short syntax;
+AttributeValue x;
+{
+	return str2AttrV_aux(str,syntax,x);
+}
+
+AttributeValue AttrV_cpy (x)
+register AttributeValue x;
+{
+	return ( AttrV_cpy (x));
+}
+
+AttrV_cpy_aux (x,y)
+register AttributeValue x;
+register AttributeValue y;
+{
+	(void) AttrV_cpy_aux (x,y);
+}
+
+AttrV_cpy_enc (x,y)
+register AttributeValue x;
+register AttributeValue y;
+{
+	(void) AttrV_cpy_enc (x,y);
+}
+
+AttrV_cmp (x,y)
+register AttributeValue x,y;
+{
+	return AttrV_cmp (x,y);
+}
+
+IFP av_cmp_fn (syntax)
+int syntax;
+{
+	return av_cmp_fn (syntax);
+}
+
+AttrV_print (ps,x,format)
+register PS ps;
+register AttributeValue x;
+register int format;
+{
+	(void) AttrV_print (ps,x,format);
+}
+
+avs_cmp (a,b) 
+AV_Sequence a,b; 
+{
+	return (avs_cmp(a,b));
+} 
+
+AV_Sequence avs_comp_cpy (avs) 
+AV_Sequence avs; 
+{
+	return (avs_comp_cpy(avs));
+} 
+
+AV_Sequence avs_cpy (avs) 
+AV_Sequence avs; 
+{
+	return (avs_cpy(avs));
+} 
+
+AV_Sequence avs_cpy_enc (avs) 
+AV_Sequence avs; 
+{
+	return (avs_cpy_enc(avs));
+} 
+
+
+avs_delnext (avs) 
+AV_Sequence avs; 
+{
+	(void) avs_delnext(avs);
+} 
+
+
+avs_comp_free (avs) 
+AV_Sequence avs; 
+{
+	(void) avs_comp_free(avs);
+} 
+
+avs_free (avs) 
+AV_Sequence avs; 
+{
+	(void) avs_free(avs);
+} 
+
+AV_Sequence avs_merge (a,b) 
+AV_Sequence a,b; 
+{
+	return (avs_merge(a,b));
+} 
+
+
+avs_comp_fill (ptr,pe) 
+AV_Sequence ptr; 
+AttributeValue pe; 
+{
+	(void) avs_comp_fill(ptr,pe);
+} 
+
+AV_Sequence avs_comp_new (pe) 
+AttributeValue pe; 
+{
+	return (avs_comp_new(pe));
+} 
+
+avs_print (ps,avs,format) 
+AV_Sequence avs; 
+PS ps; 
+int format; 
+{
+	(void) avs_print(ps,avs,format);
+} 
+
+avs_print_aux (ps,avs,format,sep) 
+AV_Sequence avs; 
+PS ps; 
+int format; 
+char * sep;
+{
+	(void) avs_print_aux(ps,avs,format,sep);
+} 
+
+
+AV_Sequence str2avs (str,at) 
+char * str; 
+AttributeType at; 
+{
+	return (str2avs(str,at));
+} 
+
+boolean_syntax () 
+{
+	(void) boolean_syntax();
+} 
+
+
+struct common_args * get_ca_ref(dsarg) 
+struct ds_op_arg * dsarg; 
+{
+	return get_ca_ref(dsarg);
+} 
+
+cha_loopdetected(cha) 
+struct chain_arg * cha; 
+{
+	return cha_loopdetected(cha);
+} 
+
+ti_is_elem(ti, ti_list) 
+struct trace_info * ti; 
+struct trace_info * ti_list; 
+{
+	return ti_is_elem(ti,ti_list);
+} 
+
+struct trace_info * ti_cpy(ti) 
+struct trace_info * ti; 
+{
+	return ti_cpy(ti);
+} 
+
+
+correlate_search_results(sr_res) 
+struct ds_search_result * sr_res; 
+{
+	(void) correlate_search_results(sr_res);
+} 
+
+merge_search_results(sr_res, sr_tmp) 
+struct ds_search_result * sr_res; 
+struct ds_search_result * sr_tmp; 
+{
+	(void) merge_search_results(sr_res,sr_tmp);
+} 
+
+search_result_free(arg) 
+struct ds_search_result * arg; 
+{
+	(void) search_result_free(arg);
+} 
+
+
+dn_append (a,b) 
+DN a,b; 
+{
+	(void) dn_append(a,b);
+} 
+
+
+dn_cmp (a,b) 
+register DN a,b; 
+{
+	return (dn_cmp(a,b));
+} 
+
+dn_cmp_prefix (a,b) 
+register DN a,b; 
+{
+	return (dn_cmp_prefix(a,b));
+} 
+
+
+DN dn_comp_cpy (dn) 
+register DN dn; 
+{
+	return (dn_comp_cpy(dn));
+} 
+
+DN dn_cpy (dn) 
+register DN dn; 
+{
+	return (dn_cpy(dn));
+} 
+
+
+dn_comp_free (dn) 
+DN dn; 
+{
+	(void) dn_comp_free(dn);
+} 
+dn_free (dn) 
+DN dn; 
+{
+	(void) dn_free(dn);
+} 
+
+
+DN dn_comp_new (rdn) 
+RDN rdn; 
+{
+	return (dn_comp_new(rdn));
+} 
+
+
+dn_print (ps,dn,format) 
+DN dn; 
+PS ps; 
+int format; 
+{
+	(void) dn_print(ps,dn,format);
+} 
+
+ufn_dn_print (ps,dn,multiline)
+PS  ps;
+DN  dn;
+char multiline;
+{
+	(void) ufn_dn_print (ps,dn,multiline);
+}
+
+ufn_dn_print_aux (ps,dn,marker,multiline)
+PS  ps;
+DN  dn;
+DN marker;
+int	multiline;
+{
+	(void) ufn_dn_print_aux (ps,dn,marker,multiline);
+} 
+
+ufn_rdn_print (ps,rdn)
+RDN  rdn;
+PS   ps;
+{	
+	(void) ufn_rdn_print (ps,rdn);
+}
+char * dn2str(dn)
+DN dn;
+{
+	return dn2str(dn);
+}
+char * dn2ufn(dn,multiline)
+DN dn;
+char multiline;
+{
+	return dn2ufn(dn,multiline);
+}
+
+dn_seq_free (dnseq) 
+struct dn_seq * dnseq; 
+{
+	(void) dn_seq_free(dnseq);
+} 
+
+struct dn_seq * dn_seq_cpy (dnseq) 
+struct dn_seq * dnseq; 
+{
+	return (dn_seq_cpy(dnseq));
+} 
+
+check_dnseq (dnseq,who) 
+struct dn_seq * dnseq; 
+DN who; 
+{
+	return (check_dnseq(dnseq,who));
+} 
+
+dn_seq_cmp (a,b) 
+struct dn_seq * a, * b; 
+{
+	return (dn_seq_cmp(a,b));
+} 
+
+check_dnseq_prefix (dnseq,who) 
+struct dn_seq * dnseq; 
+DN who; 
+{
+	return (check_dnseq_prefix(dnseq,who));
+} 
+
+dn_seq_print (ps,dnseq,format) 
+PS ps; 
+struct dn_seq * dnseq; 
+int format; 
+{
+	(void) dn_seq_print(ps,dnseq,format);
+} 
+
+struct dn_seq * str2dnseq (str) 
+register char * str; 
+{
+	return (str2dnseq(str));
+} 
+
+int       dn_in_dnseq(dn, dnseq)
+DN                dn;
+struct dn_seq   * dnseq;
+{
+	return (dn_in_dnseq(dn, dnseq));
+}
+
+struct dn_seq   * dn_seq_push(dn,dnseq)
+DN                dn;
+struct dn_seq   * dnseq;
+{
+	return dn_seq_push(dn,dnseq);
+}
+
+struct dn_seq   * dn_seq_pop(dnseq)
+struct dn_seq   * dnseq;
+{
+	return dn_seq_pop(dnseq);
+}
+
+DN str2dn (str) 
+register char * str; 
+{
+	return (str2dn(str));
+} 
+
+DN str2dn_aux (str,alias) 
+char * str; 
+char *alias; 
+{
+	return (str2dn_aux(str,alias));
+} 
+
+DN str2dnX (str) 
+register char * str; 
+{
+	return (str2dnX(str));
+} 
+
+DN dn_dec (pe)
+PE pe;
+{
+	return dn_dec (pe);
+}
+
+PE dn_enc (dn)
+DN dn;
+{
+	return dn_enc (dn);
+}
+
+dn_syntax ()
+{
+	(void) dn_syntax ();
+}
+
+DN dq2dn (designator, qualifier) 
+char *designator, 
+*qualifier; 
+{
+	return (dq2dn(designator,qualifier));
+} 
+
+edbinfo_syntax ()
+{
+	(void) edbinfo_syntax ();
+}
+
+entryinfo_comp_free (a,state) 
+register EntryInfo *a; 
+int state; 
+{
+	(void) entryinfo_comp_free(a,state);
+} 
+
+entryinfo_free (a,state) 
+register EntryInfo * a; 
+register int state; 
+{
+	(void) entryinfo_free(a,state);
+} 
+
+entryinfo_cpy (a,b) 
+register EntryInfo *a; 
+register EntryInfo *b; 
+{
+	(void) entryinfo_cpy(a,b);
+} 
+
+entryinfo_append (a,b) 
+register EntryInfo *a,*b; 
+{
+	(void) entryinfo_append(a,b);
+} 
+
+entryinfo_merge (a,b) 
+EntryInfo *a,*b; 
+{
+	(void) entryinfo_merge(a,b);
+} 
+
+entryinfo_print (ps,entryinfo,format) 
+PS ps; 
+EntryInfo *entryinfo; 
+int format; 
+{
+	(void) entryinfo_print(ps,entryinfo,format);
+} 
+
+fax_syntax ()
+{
+	(void) fax_syntax ();
+}
+
+struct file_syntax * fileattr_cpy (fs) 
+struct file_syntax * fs; 
+{
+	return (fileattr_cpy(fs));
+} 
+
+file_cmp (a,b) 
+struct file_syntax *a, *b; 
+{
+	return (file_cmp(a,b));
+} 
+
+PE grab_filepe (av) 
+AttributeValue av; 
+{
+	return (grab_filepe(av));
+}
+
+
+file_decode (x)
+AttributeValue x;
+{
+	(void) file_decode (x);
+}
+
+#ifndef SYS5
+/* ARGSUSED */
+#endif
+int dflt_attr_file (at,x,full) 
+AttributeType at; 
+AttributeValue x; 
+char full;
+{
+	return (dflt_attr_file(at,x,full));
+} 
+
+fileattr_print (ps,y,format) 
+PS ps; 
+AttributeValue y; 
+int format; 
+{
+	(void) fileattr_print(ps,y,format);
+} 
+
+
+str2file_aux (str,at,x) 
+char * str; 
+AttributeType at; 
+AttributeValue x; 
+{
+	return (str2file_aux(str,at,x));
+} 
+
+AttributeValue str2file (str,at) 
+char * str; 
+AttributeType at; 
+{
+	return (str2file(str,at));
+} 
+
+file_free (fs) 
+struct file_syntax * fs; 
+{
+	(void) file_free(fs);
+} 
+
+filter_free (filt) 
+Filter filt; 
+{
+	(void) filter_free(filt);
+} 
+
+filter_append (a,b) 
+Filter a,b; 
+{
+	(void) filter_append(a,b);
+} 
+
+Filter strfilter (at,s,type)
+AttributeType at;
+char * s;
+char type;
+{
+	return strfilter (at,s,type);
+}
+
+Filter ocfilter (s)
+char * s;
+{
+	return ocfilter (s);
+}
+
+Filter joinfilter (f, type)
+Filter f;
+char type;
+{
+	return joinfilter (f, type);
+}
+
+print_filter (nps, fi, level)
+PS nps;
+register Filter fi;
+int     level;
+{
+	(void) print_filter (nps, fi, level);
+}
+
+guide_syntax ()
+{
+	(void) guide_syntax ();
+}
+
+integer_syntax () 
+{
+	(void) integer_syntax();
+} 
+
+mailbox_syntax () 
+{
+	(void) mailbox_syntax();
+} 
+
+objectclass * oc_add (oid) 
+OID oid; 
+{
+	return (oc_add(oid));
+} 
+
+check_in_oc (oid,avs) 
+OID oid; 
+AV_Sequence avs; 
+{
+	return (check_in_oc(oid,avs));
+} 
+
+oc_print (ps,oc,format)
+PS ps;
+objectclass * oc;
+int format;
+{
+	(void) oc_print (ps,oc,format);
+}
+
+objectclass_syntax () 
+{
+	(void) objectclass_syntax();
+} 
+
+load_oid_table (table) 
+char * table; 
+{
+	(void) load_oid_table(table);
+} 
+
+add_entry_aux (a,b,c,d) 
+char * a; 
+caddr_t b; 
+int c; 
+char * d; 
+{
+	(void) add_entry_aux(a,b,c,d);
+} 
+
+char * get_oid (str) 
+char * str; 
+{
+	return (get_oid(str));
+} 
+
+oid_table_attr *name2attr(nodename) 
+char * nodename; 
+{
+	return (name2attr(nodename));
+} 
+
+set_heap (x) 
+AttributeType x; 
+{
+	return (set_heap(x));
+} 
+
+oid_table_attr *oid2attr(oid) 
+OID oid; 
+{
+	return (oid2attr(oid));
+} 
+
+objectclass *name2oc(nodename) 
+register char * nodename; 
+{
+	return (name2oc(nodename));
+} 
+
+objectclass *oid2oc(oid) 
+OID oid; 
+{
+	return (oid2oc(oid));
+} 
+
+char *attr2name(oa,format) 
+register oid_table_attr *oa; 
+int format; 
+{
+	return (attr2name(oa,format));
+} 
+
+char *oc2name(oc,format) 
+register objectclass *oc; 
+int format; 
+{
+	return (oc2name(oc,format));
+} 
+
+char *oid2name(oid,format) 
+OID oid; 
+int format; 
+{
+	return (oid2name(oid,format));
+} 
+
+OID name2oid (str) 
+register char * str; 
+{
+	return (name2oid(str));
+} 
+
+PE oid2pe (o) 
+OID o; 
+{
+	return (oid2pe(o));
+} 
+
+oidprint (ps,o,format) 
+PS ps; 
+OID o; 
+int format; 
+{
+	(void) oidprint(ps,o,format);
+} 
+
+OID dup_prim2oid (pe) 
+PE pe; 
+{
+	return (dup_prim2oid(pe));
+} 
+
+oid_syntax () 
+{
+	(void) oid_syntax();
+} 
+
+want_oc_hierarchy () 
+{
+	(void) want_oc_hierarchy();
+} 
+
+load_obj_hier (sep,newname) 
+char * sep; 
+char * newname; 
+{
+	return load_obj_hier(sep,newname);
+} 
+
+void dumpalloid () 
+{
+	dumpalloid();
+} 
+
+objectclass * str2oc (str)
+char * str;
+{
+	return (str2oc (str));
+}
+
+add_oc_macro (buf,ptr) 
+char * buf, *ptr; 
+{
+	(void) add_oc_macro(buf,ptr);
+} 
+
+oid_seq_free (ptr) 
+struct oid_seq * ptr; 
+{
+	(void) oid_seq_free(ptr);
+} 
+
+struct oid_seq *oid_seq_merge (a,b) 
+struct oid_seq *a; 
+struct oid_seq *b; 
+{
+	return (oid_seq_merge(a,b));
+} 
+
+oid_seq_cmp (a,b) 
+struct oid_seq *a, *b; 
+{
+	return (oid_seq_cmp(a,b));
+} 
+
+struct oid_seq * oid_seq_cpy (a) 
+struct oid_seq * a; 
+{
+	return (oid_seq_cpy(a));
+} 
+
+oid_seq_print (ps,ptr,format) 
+PS ps; 
+register struct oid_seq * ptr; 
+int format; 
+{
+	(void) oid_seq_print(ps,ptr,format);
+} 
+
+struct oid_seq * str2oidseq (str) 
+char * str; 
+{
+	return (str2oidseq(str));
+} 
+
+parse_error (a,b) 
+char *a, *b; 
+{
+	(void) parse_error(a,b);
+} 
+
+pref_deliv_syntax ()
+{
+	(void) pref_deliv_syntax ();
+}
+
+pe_print (ps, pe, format) 
+register PS ps; 
+register PE pe; 
+int format; 
+{
+	(void) pe_print (ps,pe,format);
+} 
+
+PE asn2pe (str) 
+char * str; 
+{
+	return (asn2pe(str));
+} 
+
+char * show_picture (picture,picture_process,len) 
+char *picture; 
+char *picture_process; 
+int len; 
+{
+	return (show_picture(picture,picture_process,len));
+} 
+
+exec_print (ps,av,proc) 
+PS ps; 
+AttributeValue av; 
+char * proc; 
+{
+	(void) exec_print(ps,av,proc);
+} 
+
+hide_picture () 
+{
+	(void) hide_picture();
+} 
+
+picture_print (ps,pe,format) 
+PS ps; 
+PE pe; 
+int format; 
+{
+	(void) picture_print(ps,pe,format);
+} 
+
+photo_syntax () 
+{
+	(void) photo_syntax();
+} 
+
+post_syntax () 
+{
+	(void) post_syntax();
+} 
+
+
+psap_free (psap) 
+struct PSAPaddr * psap; 
+{
+	(void) psap_free(psap);
+} 
+
+struct PSAPaddr * psap_cpy (a) 
+struct PSAPaddr * a; 
+{
+	return (psap_cpy(a));
+} 
+
+psap_dup (r,a) 
+struct PSAPaddr * r, * a; 
+{
+	(void) psap_dup(r,a);
+} 
+
+psap_syntax () 
+{
+	(void) psap_syntax();
+} 
+
+quipu_syntaxes () 
+{
+	(void) quipu_syntaxes();
+} 
+
+rdn_cmp_comp (a,b) 
+RDN a,b; 
+{
+	return (rdn_cmp_comp(a,b));
+} 
+
+rdn_cmp (a,b) 
+register RDN a,b; 
+{
+	return (rdn_cmp(a,b));
+} 
+
+
+RDN rdn_comp_cpy (rdn) 
+RDN rdn; 
+{
+	return (rdn_comp_cpy(rdn));
+} 
+
+RDN rdn_cpy (rdn) 
+RDN rdn; 
+{
+	return (rdn_cpy(rdn));
+} 
+
+
+rdn_comp_free (rdn) 
+RDN rdn; 
+{
+	(void) rdn_comp_free(rdn);
+} 
+
+rdn_free (rdn) 
+RDN rdn; 
+{
+	(void) rdn_free(rdn);
+} 
+
+
+RDN rdn_merge (a,b) 
+RDN a,b; 
+{
+	return (rdn_merge(a,b));
+} 
+
+
+RDN rdn_comp_new (at,av) 
+AttributeType at; 
+AttributeValue av; 
+{
+	return (rdn_comp_new(at,av));
+} 
+
+
+rdn_comp_print (ps,rdn,format) 
+PS ps; 
+RDN rdn; 
+int format; 
+{
+	(void) rdn_comp_print(ps,rdn,format);
+} 
+
+rdn_print (ps,rdn,format) 
+RDN rdn; 
+PS ps; 
+int format; 
+{
+	(void) rdn_print(ps,rdn,format);
+} 
+
+
+RDN str2rdn_aux (str) 
+char * str; 
+{
+	return (str2rdn_aux(str));
+} 
+
+RDN str2rdn (str) 
+char * str; 
+{
+	return (str2rdn(str));
+} 
+
+stop_listeners () 
+{
+	(void) stop_listeners();
+} 
+
+soundex_cmp (a,b)
+register char * a;
+register char * b;
+{
+	return (soundex_cmp (a,b));
+}
+
+soundex_match (fitem,avs) 
+register struct filter_item *fitem; 
+register AV_Sequence avs; 
+{
+	return (soundex_match(fitem,avs));
+} 
+
+standard_syntaxes () 
+{
+	(void) standard_syntaxes();
+} 
+
+char * octparse (str) 
+char * str; 
+{
+	return (octparse(str));
+} 
+
+char * prtparse (str) 
+char * str; 
+{
+	return (prtparse(str));
+} 
+
+sfree (x) 
+char *x; 
+{
+	(void) sfree(x);
+} 
+
+pstrcmp (a,b)
+char * a, *b;
+{
+	return pstrcmp (a,b);
+}
+
+telcmp (a, b) 
+char *a, 
+*b; 
+{
+	return (telcmp(a,b));
+} 
+
+strprint (ps,str,format) 
+PS ps; 
+char * str; 
+int format; 
+{
+	(void) strprint(ps,str,format);
+} 
+
+octprint (ps,str,format) 
+PS ps; 
+char * str; 
+int format; 
+{
+	(void) octprint(ps,str,format);
+} 
+
+case_exact_match (sntx) 
+short sntx; 
+{
+	return (case_exact_match(sntx));
+} 
+
+approx_string (sntx) 
+short sntx; 
+{
+	return (approx_string(sntx));
+} 
+
+sub_string (sntx) 
+short sntx; 
+{
+	return (sub_string(sntx));
+} 
+
+string_syntaxes () 
+{
+	(void) string_syntaxes();
+} 
+
+
+teletex_syntax () 
+{
+	(void) teletex_syntax();
+} 
+
+telex_syntax () 
+{
+	(void) telex_syntax();
+} 
+
+utcprint (ps,time,format)
+PS ps;
+char *time;
+int format;
+{
+	(void) utcprint (ps,time,format);
+}
+
+time_syntax () 
+{
+	(void) time_syntax();
+} 
+
+schema_syntax () 
+{
+	(void) schema_syntax();
+} 
+
+char * SkipSpace (ptr) 
+register char * ptr; 
+{
+	return (SkipSpace(ptr));
+} 
+
+void StripSpace (b) 
+register char *b; 
+{
+	StripSpace (b);
+} 
+
+void StripSpace2 (b) 
+register char *b; 
+{
+	StripSpace2 (b);
+} 
+
+char * TidyString (a) 
+register char * a; 
+{
+	return (TidyString(a));
+} 
+
+test_prim_pe (pe,class,id) 
+PE pe; 
+PElementClass class; 
+PElementID id; 
+{
+	return (test_prim_pe(pe,class,id));
+} 
+
+/* VARARGS2 */
+ps_printf (ps,fmt) 
+PS ps; 
+char * fmt; 
+{
+	(void) ps_printf(ps,fmt);
+} 
+
+fatal (code,fmt) 
+int code; 
+char *fmt; 
+{
+	(void) fatal(code,fmt);
+} 
+
+pslog (lp,event,str,func,ptr) 
+LLog * lp; 
+int event; 
+char * str; 
+int (*func) (); 
+caddr_t ptr; 
+{
+	(void) pslog(lp,event,str,func,ptr);
+} 
+
+quipu_pe_cmp (a,b) 
+register PE a,b; 
+{
+	return (quipu_pe_cmp(a,b));
+} 
+
+struct acl_info * acl_dflt () 
+{
+	return (acl_dflt());
+} 
+
+/* VARARGS2 */
+dsap_init(acptr,avptr)
+int *acptr;
+char *** avptr;
+{
+        (void) dsap_init(acptr,avptr);
+}
+
+dsap_tai (argc, argv)
+char    **argv;
+{
+        return (dsap_tai (argc, argv));
+}
+
+tai_args (acptr,avptr)
+int *acptr;
+char ***avptr;
+{
+        (void) tai_args (acptr,avptr);
+}
+
+dsap_tai_init()
+{
+        return (dsap_tai_init());
+}
+
+
+tai_string (str)
+char * str;
+{
+        return (tai_string (str));
+}
+
+ds_error (ps,err)
+PS ps;
+struct DSError *err;
+{
+	(void) ds_error (ps,err);
+}
+
+log_ds_error (err)
+struct DSError *err;
+{
+	(void) log_ds_error (err);
+}
+
+ds_error_free (err)
+struct DSError * err;
+{
+	(void) ds_error_free (err);
+}
+
+struct subordinate * subord_cpy (x) 
+struct subordinate * x; 
+{
+	return (subord_cpy(x));
+} 
+
+cache_list (ptr, prob,dn,sizelimit) 
+struct subordinate *ptr; 
+int prob; 
+DN dn; 
+int sizelimit; 
+{
+	(void) cache_list (ptr,prob,dn,sizelimit);
+} 
+
+delete_list_cache (adn)
+DN adn;
+{
+	(void) delete_list_cache (adn);
+}
+
+struct list_cache *find_list_cache (dn,sizelimit) 
+DN dn; 
+int sizelimit; 
+{
+	return (find_list_cache(dn,sizelimit));
+} 
+
+cache_entry (ptr, complete, vals) 
+EntryInfo *ptr; 
+char complete; 
+char vals; 
+{
+	(void) cache_entry (ptr, complete, vals);
+} 
+
+delete_cache (adn) 
+DN adn; 
+{
+	(void) delete_cache(adn);
+} 
+
+Entry local_find_entry (object,deref) 
+DN object; 
+char deref; 
+{
+	return (local_find_entry(object,deref));
+} 
+
+Entry local_find_entry_aux (object,deref) 
+DN object; 
+char deref; 
+{
+	return (local_find_entry_aux(object,deref));
+} 
+
+DN get_copy_dn (entryptr) 
+Entry entryptr; 
+{
+	return (get_copy_dn(entryptr));
+} 
+
+unravel_attribute (eptr,error) 
+Entry eptr; 
+struct DSError * error; 
+{
+	return (unravel_attribute(eptr,error));
+} 
+
+check_schema (eptr,as,error) 
+Entry eptr; 
+Attr_Sequence as; 
+struct DSError * error; 
+{
+	return (check_schema(eptr,as,error));
+} 
+
+char * new_version ()
+{
+	return new_version();
+}
+
+directory_free (directory) 
+Entry directory; 
+{
+	(void) directory_free(directory);
+} 
+
+entry_free (entryptr) 
+Entry entryptr; 
+{
+	(void) entry_free(entryptr);
+} 
+
+Entry entry_cpy (entryptr) 
+register Entry entryptr; 
+{
+	return (entry_cpy(entryptr));
+} 
+
+Entry get_default_entry (parent) 
+Entry parent; 
+{
+	return (get_default_entry(parent));
+} 
+
+check_known_oids () 
+{
+	(void) check_known_oids();
+} 
+
+char * getline (file)
+FILE * file;
+{
+	return getline (file);
+}
+
+Attr_Sequence get_attributes_aux (file) 
+FILE * file; 
+{
+	return (get_attributes_aux(file));
+} 
+
+Attr_Sequence get_attributes (file) 
+FILE * file; 
+{
+	return (get_attributes(file));
+} 
+
+Entry get_entry_aux (file,parent,dtype) 
+FILE * file; 
+Entry parent; 
+int dtype; 
+{
+	return (get_entry_aux(file,parent,dtype));
+} 
+
+Entry get_entry (file,parent,dtype) 
+FILE * file; 
+Entry parent; 
+int dtype; 
+{
+	return (get_entry(file,parent,dtype));
+} 
+
+Entry new_constructor (parent) 
+Entry parent; 
+{
+	return (new_constructor(parent));
+} 
+
+Entry make_path (dn) 
+DN dn; 
+{
+	return (make_path(dn));
+} 
+
+
+DNS DNS_append (a,b)
+DNS a, b;
+{
+	return DNS_append (a,b);
+}
+
+dnSelect (s,dlist,interact,el)
+char * s;
+DNS *dlist;
+DNS (* interact) ();
+DNS el;
+{
+	return dnSelect (s,dlist,interact,el);
+}
+
+ufn_search (base, subtree, filt, res, s, interact, el)
+DN base;
+char subtree;
+Filter filt;
+DNS * res;
+char * s;
+DNS (* interact) ();
+DNS el;
+{
+	return ufn_search (base, subtree, filt, res, s, interact, el);
+}
+
+envlist read_envlist()
+{
+	return read_envlist();
+}
+
+ufn_match (c,v,interact,result,el)
+int c;
+char ** v;
+DNS (* interact) ();
+DNS * result;
+envlist el;
+{
+	return ufn_match (c,v,interact,result,el);
+}
+
+
+ufn_init ()
+{
+	return ufn_init ();
+}
+
+
+aet_match (c,v,interact,result,el,context)
+int c;
+char ** v;
+DNS *result;
+DNS (* interact) ();
+envlist el;
+char * context;
+{
+	return aet_match (c,v,interact,result,el,context);
+}
+
+set_lookup_ufn (flag)
+char	flag;
+{
+    set_lookup_ufn (flag);
+}
+
+set_lookup_dap (flag)
+char flag;
+{
+	set_lookup_dap (flag);
+}
+
+
+reset_arg () 
+{
+	(void) reset_arg();
+} 
+
+print_arg_error (opt) 
+PS opt; 
+{
+	return (print_arg_error(opt));
+} 
+
+int test_arg (x, y, c) 
+char *x; 
+char *y; 
+int c; 
+{
+	return test_arg (x, y, c);
+} 
+
+
+set_default_service (opt) 
+PS opt; 
+{
+	return (set_default_service(opt));
+} 
+
+int get_default_service (ca) 
+CommonArgs * ca; 
+{
+	return (get_default_service(ca));
+} 
+
+int service_control (opt,argc, argv, ca) 
+PS opt; 
+int argc; 
+char **argv; 
+CommonArgs *ca; 
+{
+	return service_control (opt,argc, argv, ca);
+} 
+
+int do_service_control (opt,argc, argv, ca) 
+PS opt; 
+int argc; 
+char **argv; 
+CommonArgs *ca; 
+{
+	return do_service_control (opt,argc, argv, ca);
+} 
+
+shuffle_up (argc, argv, start) 
+register int argc; 
+char **argv; 
+register int start; 
+{
+	(void) shuffle_up (argc, argv, start);
+} 
+
+new_service (ptr) 
+char * ptr; 
+{
+	(void) new_service(ptr);
+} 
+
+
+subords_free(subp) 
+struct subordinate *subp; 
+{
+	(void) subords_free(subp);
+} 
+
+ems_free(emp) 
+struct entrymod *emp; 
+{
+	(void) ems_free(emp);
+} 
+
+aps_free(app) 
+struct access_point *app; 
+{
+	(void) aps_free(app);
+} 
+
+crefs_free(crefp) 
+ContinuationRef crefp; 
+{
+	(void) crefs_free(crefp);
+} 
+
+
+avl_insert( root, data, fcmp, fdup )
+Avlnode	**root;
+caddr_t	data;
+IFP	fcmp;
+IFP	fdup;
+{
+	return( avl_insert( root, data, fcmp, fdup) );
+}
+
+caddr_t avl_delete( root, data, fcmp )
+Avlnode	**root;
+caddr_t	data;
+IFP	fcmp;
+{
+	return( avl_delete( root, data, fcmp ) );
+}
+
+avl_inapply( root, fn, arg, stopflag )
+Avlnode	*root;
+IFP	fn;
+caddr_t	arg;
+int	stopflag;
+{
+return avl_inapply( root, fn, arg, stopflag );
+}
+
+avl_postapply( root, fn, arg, stopflag )
+Avlnode	*root;
+IFP	fn;
+caddr_t	arg;
+int	stopflag;
+{
+return avl_postapply( root, fn, arg, stopflag );
+}
+
+avl_preapply( root, fn, arg, stopflag )
+Avlnode	*root;
+IFP	fn;
+caddr_t	arg;
+int	stopflag;
+{
+return avl_preapply( root, fn, arg, stopflag );
+}
+
+/*
+ * avl_apply -- avl tree root is traversed, function fn is called with
+ * arguments arg and the data portion of each node.  if fn returns stopflag,
+ * the traversal is cut short, otherwise it continues.  Do not use -6 as
+ * a stopflag.
+ */
+
+avl_apply( root, fn, arg, stopflag, type )
+Avlnode	*root;
+IFP	fn;
+caddr_t	arg;
+int	stopflag;
+int	type;
+{
+return avl_apply( root, fn, arg, stopflag, type );
+}
+
+avl_prefixapply( root, data, fmatch, marg, fcmp, carg )
+Avlnode	*root;
+caddr_t	data;
+IFP	fmatch;
+caddr_t	marg;
+IFP	fcmp;
+caddr_t	carg;
+{
+return avl_prefixapply( root, data, fmatch, marg, fcmp, carg );
+}
+
+avl_free( root, dfree )
+Avlnode	*root;
+IFP	dfree;
+{
+return avl_free( root, dfree );
+}
+
+caddr_t avl_find( root, data, fcmp )
+Avlnode	*root;
+caddr_t	data;
+IFP	fcmp;
+{
+return avl_find( root, data, fcmp );
+}
+
+caddr_t avl_getfirst( root )
+Avlnode	*root;
+{
+return avl_getfirst( root );
+}
+
+caddr_t avl_getnext()
+{
+return avl_getnext();
+}
