@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 # ieee		- for most IEEE machines, we hope.
 # mc68881	- the, ahem, mc68881.
@@ -35,7 +35,7 @@ SRCS+=	acosh.c asinh.c exp__E.c fmod.c log__L.c \
 	pow.c
 # mc68881
 SRCS+=	asincos.s atan.s atan2.c atanh.s cosh.s exp.s expm1.s floor.s \
-	log.s log10.s log1p.s sincos.s sinh.s sqrt.s support.s tan.s tanh.s
+	log10.s log1p.s sincos.s sinh.s sqrt.s support.s tan.s tanh.s
 # ieee
 SRCS+=	cabs.c cbrt.c
 
