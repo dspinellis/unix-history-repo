@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.1	%G%	*/
+/*	vm_meter.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -96,7 +96,7 @@ loop:
 	 * look for someone who deserves to be brought in.
 	 */
 	outpri = -20000;
-	for (rp = &proc[0]; rp < &proc[NPROC]; rp++) switch(rp->p_stat) {
+	for (rp = proc; rp < procNPROC; rp++) switch(rp->p_stat) {
 
 	case SRUN:
 		if ((rp->p_flag&SLOAD) == 0) {
@@ -180,7 +180,7 @@ hardswap:
 		nbig = 1;
 	biggot = 0;
 	bplist.bp_link = 0;
-	for (rp = &proc[0]; rp < &proc[NPROC]; rp++) {
+	for (rp = proc; rp < procNPROC; rp++) {
 		if (!swappable(rp))
 			continue;
 		if (rp->p_stat==SZOMB)
@@ -365,7 +365,7 @@ next:
 	total.t_pw = 0;
 	total.t_sl = 0;
 	total.t_sw = 0;
-	for (p = &proc[0]; p < &proc[NPROC]; p++) {
+	for (p = proc; p < procNPROC; p++) {
 		if (p->p_flag & SSYS)
 			continue;
 		if (p->p_stat) {

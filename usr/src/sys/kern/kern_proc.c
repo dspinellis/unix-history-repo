@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.6	%G%	*/
+/*	kern_proc.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -575,7 +575,7 @@ done:
 	((struct xproc *)p)->xp_xstat = rv;		/* overlay */
 	((struct xproc *)p)->xp_vm = u.u_vm;		/* overlay */
 	vmsadd(&((struct xproc *)p)->xp_vm, &u.u_cvm);
-	for(q = &proc[0]; q < &proc[NPROC]; q++)
+	for(q = proc; q < procNPROC; q++)
 		if(q->p_pptr == p) {
 			q->p_pptr = &proc[1];
 			q->p_ppid = 1;
@@ -639,7 +639,7 @@ wait1(options, vp)
 
 	f = 0;
 loop:
-	for(p = &proc[0]; p < &proc[NPROC]; p++)
+	for(p = proc; p < procNPROC; p++)
 	if(p->p_pptr == u.u_procp) {
 		f++;
 		if(p->p_stat == SZOMB) {
@@ -709,7 +709,7 @@ fork1(isvfork)
 
 	a = 0;
 	p2 = NULL;
-	for(p1 = &proc[0]; p1 < &proc[NPROC]; p1++) {
+	for(p1 = proc; p1 < procNPROC; p1++) {
 		if (p1->p_stat==NULL && p2==NULL)
 			p2 = p1;
 		else {
@@ -723,7 +723,7 @@ fork1(isvfork)
 	 *  not su and too many procs owned; or
 	 *  not su and would take last slot.
 	 */
-	if (p2==NULL || (u.u_uid!=0 && (p2==&proc[NPROC-1] || a>MAXUPRC))) {
+	if (p2==NULL || (u.u_uid!=0 && (p2==procNPROC-1 || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
 		if (!isvfork) {
 			(void) vsexpand(0, &u.u_cdmap, 1);
