@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -365,7 +365,8 @@ readcf(cfname)
 
 		  case 'C':		/* word class */
 			/* scan the list of words and set class for all */
-			for (p = &bp[2]; *p != '\0'; )
+			expand(&bp[2], exbuf, &exbuf[sizeof exbuf], e);
+			for (p = exbuf; *p != '\0'; )
 			{
 				register char *wd;
 				char delim;
