@@ -522,7 +522,7 @@ int_tcheck(v)
 	char *p;
 
 	for (p = v; *p != '\0'; p++)
-		if (!isdigit(*p))
+		if (!isdigit(*p) && !isspace(*p))
 			err("illegal operand \"%s\" -- expected integer.", v);
 	return (1);
 }
