@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)disktab	4.15 (Berkeley) %G%
+#	@(#)disktab	4.16 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -415,12 +415,25 @@ rd54|RD54|DEC RD54 on Microvax:\
 	:ty=winchester:ns#17:nt#15:nc#1225:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
-	:pb#33440:ob#16065:bb#8192:fb#1024:tb=swap:\
-	:pc#312375:oc#0:bc#8192:fc#1024:\
-	:pd#15884:od#49725:bd#4096:fd#512:\
-	:pe#55936:oe#65790:be#8192:fe#1024:\
-	:pf#190485:of#121890:bf#8192:ff#1024:\
-	:pg#262650:og#49725:bg#8192:fg#1024:\
+	:pb#33440:ob#15884:bb#8192:fb#1024:tb=swap:\
+	:pc#311200:oc#0:bc#8192:fc#1024:\
+	:pd#15884:od#49324:bd#4096:fd#512:\
+	:pe#55936:oe#65208:be#8192:fe#1024:\
+	:pf#190485:of#121144:bf#8192:ff#1024:\
+	:pg#261876:og#49324:bg#8192:fg#1024:\
+	:b0=rdboot:
+#
+qdeagle|qd-eagle|Fujitsu 2351A eagle on QD33 (Microvax):\
+	:ty=winchester:ns#47:nt#20:nc#840:\
+	:dt=MSCP:\
+	:pa#15884:oa#0:ba#8192:fa#1024:\
+	:pb#66880:ob#15980:bb#8192:fb#1024:tb=swap:\
+	:pc#787156:oc#0:bc#8192:fc#1024:\
+	:pd#15884:od#375060:bd#4096:fd#512:\
+	:pe#307200:oe#391040:be#8192:fe#1024:\
+	:pf#88736:of#698420:bf#8192:ff#1024:\
+	:pg#412096:og#375060:bg#8192:fg#1024:\
+	:ph#291346:oh#83660:bh#8192:fh#1024:\
 	:b0=rdboot:
 #
 # RX02 floppy disk drives
