@@ -1,19 +1,20 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.27 (Berkeley) %G%
 
 NOOBJ=	oobj
 
 # disktab may be wrong -- hcx9 is a tahoe, but gets its own.
 # -rw-r--r--
-BIN1=	aliases changelist csh.cshrc csh.login csh.logout crontab daily \
-	dm.conf ftpusers gettytab group hosts hosts.equiv hosts.lpd \
-	inetd.conf man.conf monthly motd netstart phones printcap protocols \
-	rc rc.local remote security services shells syslog.conf ttys weekly \
+BIN1=	aliases amd-home amd-n changelist csh.cshrc csh.login csh.logout \
+	crontab crontab.local daily dm.conf exports ftpusers ftpwelcome \
+	gettytab group hosts hosts.equiv hosts.lpd inetd.conf man.conf \
+	monthly motd netgroup netstart phones printcap protocols rc \
+	rc.local remote security services shells syslog.conf ttys weekly \
 	etc.${MACHINE}/disktab
 
 # -rw-rw-rw-
 BIN2=	motd
 
-MTREE=	4.4alpha.dist special
+MTREE=	4.4BSD.dist special
 KRB=	README krb.conf krb.realms
 NAMEDB=	localhost.rev named.boot root.cache
 PCS=	pcs750.bin
@@ -31,7 +32,7 @@ distribution:
 	rm -f /tmp/p
 	cp group /etc/group
 	# Build the tree.
-	-mtree -def mtree/4.4alpha.dist -p ${DESTDIR}/ -u
+	-mtree -def mtree/4.4BSD.dist -p ${DESTDIR}/ -u
 	# install devices
 .if ${MACHINE} == "hp300"
 	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
@@ -64,6 +65,8 @@ distribution:
 	    ${DESTDIR}/etc/kerberosIV)
 	install -c -o ${BINOWN} -g operator -m 664 /dev/null \
 	    ${DESTDIR}/etc/dumpdates
+	install -c -o root -g staff -m 644 /dev/null \
+	    ${DESTDIR}/var/log/lastlog
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
 	    ${DESTDIR}/var/log/messages
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
@@ -88,12 +91,13 @@ distribution:
 .endif
 	# There are certain symbolic links we have to have, and
 	# no other place to have install them.
-	(cd / && rm -f sys && ln -s /usr/src/sys sys)
+	(cd / && rm -f sys && ln -s usr/src/sys sys)
 	(cd /etc && rm -f rmt && ln -s /usr/sbin/rmt rmt)
 	(cd /etc && rm -f termcap && ln -s /usr/share/misc/termcap termcap)
-	(cd /usr/bin && rm -f X11 && ln -s /usr/X11R4/bin X11)
+	(cd /usr && rm -f X11 && ln -s X11R5 X11)
+	(cd /usr/bin && rm -f X11 && ln -s /usr/X11/bin X11)
 	(cd /usr/lib && rm -f X && ln -s /usr/hpux/lib/X X)
-	(cd /usr/lib && rm -f X11 && ln -s /usr/X11R4/lib X11)
+	(cd /usr/lib && rm -f X11 && ln -s /usr/X11/lib X11)
 	(cd /usr/lib && rm -f grmd && ln -s /usr/hpux/lib/grmd grmd)
 	(cd /usr/lib && rm -f tmac && ln -s /usr/share/tmac tmac)
 	(cd /usr/ucb && rm -f rdist && ln -s /usr/bin/rdist rdist)
