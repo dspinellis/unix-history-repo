@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c21.c	1.5 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c21.c	1.6 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -650,7 +650,8 @@ bflow(p)
 				if (tempreg(src,r2))
 					uses[r2]=uses[r], uses[r]=0;
 				redun3(p);
-				newcode(p); redunm++; flow=r;
+				newcode(p); redunm++;
+				return(p);	/* avoid stale uses[] data */
 			} else
 				splitrand(p);
 		}
