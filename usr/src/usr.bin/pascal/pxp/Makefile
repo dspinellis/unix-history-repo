@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile	1.10 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.11 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
@@ -113,7 +113,6 @@ func.o: func.c
 lab.o: lab.c
 lval.o: lval.c
 main.o: main.c
-nl.o: nl.c
 pmon.o: pmon.c
 pp.o: pp.c
 proc.o: proc.c
@@ -211,8 +210,6 @@ lab.o: 0.h
 lval.o: 0.h
 lval.o: ../src/tree.h
 main.o: 0.h
-nl.o: 0.h
-nl.o: opcode.h
 pmon.o: 0.h
 pp.o: 0.h
 proc.o: 0.h
