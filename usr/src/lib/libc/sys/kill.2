@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kill.2	6.6 (Berkeley) %G%
+.\"     @(#)kill.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KILL 2
@@ -56,9 +56,9 @@ this is a variant of
 .It \&If Fa pid No \&is -1 :
 If the user has super user privileges,
 the signal is sent to all processes excluding
-system processes. If the user is not the super user,
-the signal is sent to all processes with the same uid as the user
-except the process sending the signal.
+system processes and the process sending the signal.
+If the user is not the super user, the signal is sent to all processes
+with the same uid as the user excluding the process sending the signal.
 No error is returned if any process could be signaled.
 .El
 .Pp
