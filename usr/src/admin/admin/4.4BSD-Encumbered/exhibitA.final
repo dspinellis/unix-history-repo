@@ -1,0 +1,20 @@
+.\"     @(#)exhibitA.final	1.1 (Berkeley) 1/16/92
+.ll 6.8i
+.nr LL 6.8i
+.ls 4
+.ce 2
+.ps 14
+.B "4.4BSD-ENCUMBERED"    
+.ps 10
+.B "EXHIBIT A"
+.nf
+.sp 3
+.ta 6i
+\l'.5i'  4.4BSD, 9 track tape, 6250 bpi, HP 9000/300 68000 binaries  $2500
+\l'.5i'  4.4BSD, 8mm Exabyte, HP 9000/300 68000 binaries  $2500
+.sp 2
+\l'.5i'  4.4BSD, 9 track tape, 6250 bpi, DECstation 3100 and 5000 MIPS binaries  $2500
+\l'.5i'  4.4BSD, 8mm Exabyte, DECstation 3100 and 5000 MIPS binaries  $2500
+.sp 2
+\l'.5i'  4.4BSD, 9 track tape, 6250 bpi, Sparcstation I & II SPARC binaries  $2500
+\l'.5i'  4.4BSD, 8mm Exabyte, Sparcstation I & II SPARC binaries  $2500
