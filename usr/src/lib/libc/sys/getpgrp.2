@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getpgrp.2	6.4 (Berkeley) %G%
+.\"     @(#)getpgrp.2	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETPGRP 2
@@ -13,13 +13,10 @@
 .Nd get process group
 .Sh SYNOPSIS
 .Ft pid_t
-.Fn getpgrp "int pid"
+.Fn getpgrp "void"
 .Sh DESCRIPTION
-The process group of the specified process is returned by
+The process group of the current process is returned by
 .Fn getpgrp .
-If
-.Fa pid
-is zero, the call applies to the current process.
 .Pp
 Process groups are used for distribution of signals, and
 by terminals to arbitrate requests for their input: processes
@@ -33,19 +30,46 @@ to create
 process groups
 in implementing job control.
 The
-.Dv TIOCGPGRP
+.Fn tcgetpgrp
 and
-.Dv TIOCSPGRP
+.Fn tcsetpgrp
 calls
-described in
-.Xr termios 4
 are used to get/set the process group of the control terminal.
 .Sh SEE ALSO
-.Xr setpgrp 2 ,
-.Xr getuid 2 ,
+.Xr setpgid 2 ,
 .Xr termios 4
 .Sh HISTORY
 The
 .Nm
 function call appeared in
 .Bx 4.0 .
+.Sh STANDARDS
+The
+.Fn getpgrp
+function conforms to IEEE Std 1003.1-1988
+.Pq Dq Tn POSIX .
+.Sh COMPATABILITY
+This version of
+.Fn getpgrp
+differs from past Berkeley versions because it does
+not take a
+.Fa "pid_t pid"
+argument.  We regret changing this but were forced to in
+order to comply with IEEE Std 1003.1-1988
+.Pq Dq Tn POSIX .
+The reasons \fIthey\fR gave for changing this are quoted
+in the next paragraph.  We wonder why they didn't just
+change the name to avoid this incompatability.
+.Pp
+(Quoted from the POSIX Rationale)
+.br
+\fI4.3BSD provides a
+.Fn getpgrp
+function that returns the process group ID for a specified process.
+Although this function is used to support job control, all known
+job-control shells always specify the calling process with this
+function.  Thus, the simpler System V
+.Fn getpgrp
+suffices, and the added complexity of the 4.3BSD
+.Fn getpgrp
+has been omitted from POSIX.1.\fP
