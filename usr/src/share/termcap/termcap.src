@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.37 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.38 (Berkeley) %G%
 #	John Kunze, Berkeley
 #
 # Please mail changes to (arpanet):  termcap@berkeley
@@ -1968,7 +1968,7 @@ hz|2392|hp2392|hp2392a:\
 	:ml=\El:MT:mu=\Em:km:\
 	:mh=\E&dH:mr=\E&dB:us=\E&dD:mb=\E&dA:me=\E&d@:\
 	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\Eh:ks=\E&s1A:ke=\E&s0A:tc=hp:
-#HP 236 console running 4.3 BSD
+#HP 236 console
 #from ddavis@ic.berkeley.edu
 h7|236|hp236|HP236 internal terminal emulator:\
 	:am:bs:li#24:co#80:cl=\EF:cm=\EE%+ %+ :\
@@ -2238,8 +2238,8 @@ qb|ex3000:\
 qc|carlock|klc:\
 	:do=^J:al=^E:am:bs:ce=^U:cl=100^Z:cm=\E=%+ %+ :co#80:dc=\177:dl=^D:\
 	:dm=:ed=:ei=^T:ho=^^:im=^T:li#24:nd=^L:se=^V:so=^V:up=^K:vb=\EV\EV:
-# For microvax running 4.3+ BSD qdss driver -- from Marc Teitelbaum
-qd|qdss|qdcons|qdss glass tty (4.4 BSD):\
+# uVAX
+qd|qdss|qdcons|qdss glass tty:\
 	:am:do=^J:le=^H:bs:cm=\E=%.%.:cl=1^Z:co#128:li#57::nd=^L:up=^K:
 qe|exidy|exidy2500|exidy sorcerer as dm2500:\
 	:do=^J:al=^P^J^X:am:le=^H:bs:ce=^W:cl=^^:cm=^L%r%n%.%.:co#64:\
