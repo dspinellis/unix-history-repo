@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -820,6 +820,7 @@ doswap()
 	register struct mapent *me;
 	register struct text *xp;
 	int i, j;
+	long rmalloc();
 
 	nproc = getword(nl[SNPROC].n_value);
 	ntext = getword(nl[SNTEXT].n_value);
