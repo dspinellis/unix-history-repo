@@ -306,6 +306,8 @@ int	control;				/* this buffer ended block? */
 	    }
 	    UnLocked = 1;
 	    AidByte = 0;
+	    OiaSystemLocked(0);
+	    TerminalIn();
 	    break;
 	case CMD_WRITE:
 	case CMD_SNA_WRITE:
@@ -525,6 +527,7 @@ int	control;				/* this buffer ended block? */
 #endif	/* !defined(PURE3274) */
 		UnLocked = 1;
 		OiaSystemLocked(0);
+		TerminalIn();
 	    }
 	    if (Wcc & WCC_ALARM) {
 		RingBell(0);
