@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)catman.8	5.1 (Berkeley) %G%
+.\"	@(#)catman.8	6.1 (Berkeley) %G%
 .\"
-.TH CATMAN 8 "4 February 1983"
+.TH CATMAN 8 ""
 .UC 4
 .SH NAME
 catman \- create the cat files for the manual
@@ -16,6 +16,9 @@ catman \- create the cat files for the manual
 .B \-n
 ] [
 .B \-w
+] [
+.B \-M
+.I directory
 ]
 [ sections ]
 .SH DESCRIPTION
@@ -27,11 +30,11 @@ missing or out of date are recreated.
 If any changes are made,
 .I catman
 will recreate the
-.B /usr/lib/whatis
+.B whatis
 database.
 .PP
 If there is one parameter not starting with a `\-',
-it is take to be a list of manual sections to look in.
+it is taken to be a list of manual sections to look in.
 For example
 .IP
 .B catman 123
@@ -42,24 +45,32 @@ will cause the updating to only happen to manual sections
 Options:
 .TP
 .B \-n
-prevents creations of
-.BR /usr/lib/whatis .
+prevents creations of the
+.B whatis
+database.
 .TP
 .B \-p
 prints what would be done instead of doing it.
 .TP
 .B \-w
 causes only the 
-.B /usr/lib/whatis
+.B whatis
 database to be created.
 No manual reformatting is done.
+.TP
+.B \-M
+update manual pages located in the specified
+.I directory
+(/usr/man by default).
 .SH FILES
-.ta 2i
+.nf
+.ta \w'/usr/lib/makewhatis   'u
+/usr/man	default manual directory location
 /usr/man/man?/*.*	raw (nroff input) manual sections
-.br
 /usr/man/cat?/*.*	preformatted manual pages
-.br
-/usr/lib/makewhatis	commands to make whatis database
+/usr/man/whatis	whatis database
+/usr/lib/makewhatis	command script to make whatis database
+.fi
 .DT
 .SH "SEE ALSO"
 man(1)
