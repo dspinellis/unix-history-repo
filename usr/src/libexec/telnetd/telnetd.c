@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.7 82/10/06";
+static char sccsid[] = "@(#)telnetd.c	4.8 82/10/07";
 #endif
 
 /*
@@ -130,7 +130,7 @@ gotpty:
 	b.sg_flags = CRMOD|XTABS|ANYP;
 	ioctl(t, TIOCSETP, &b);
 	ioctl(p, TIOCGETP, &b);
-	b.sg_flags &= ~ECHO;		/* not until remote says to */
+	b.sg_flags &= ~ECHO;
 	ioctl(p, TIOCSETP, &b);
 	if ((i = fork()) < 0) {
 		dup2(f, 2);
@@ -164,6 +164,11 @@ telnet(f, p)
 	signal(SIGTSTP, SIG_IGN);
 	sigset(SIGCHLD, cleanup);
 
+	/*
+	 * Request to do remote echo.
+	 */
+	dooption(TELOPT_ECHO);
+	myopts[TELOPT_ECHO] = 1;
 	for (;;) {
 		int ibits = 0, obits = 0;
 		register int c;
@@ -367,7 +372,7 @@ telrcv()
 			if (myopts[c]) {
 				myopts[c] = 0;
 				sprintf(nfrontp, wont, c);
-				nfrontp += sizeof(wont) - 2;
+				nfrontp += sizeof (wont) - 2;
 			}
 			state = TS_DATA;
 			continue;
@@ -409,7 +414,7 @@ willoption(option)
 		break;
 	}
 	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof(dont) - 2;
+	nfrontp += sizeof (dont) - 2;
 }
 
 wontoption(option)
@@ -437,7 +442,7 @@ wontoption(option)
 		fmt = dont;
 	}
 	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof(doopt) - 2;
+	nfrontp += sizeof (doopt) - 2;
 }
 
 dooption(option)
@@ -469,7 +474,7 @@ dooption(option)
 		break;
 	}
 	sprintf(nfrontp, fmt, option);
-	nfrontp += sizeof(doopt) - 2;
+	nfrontp += sizeof (doopt) - 2;
 }
 
 mode(on, off)
@@ -550,8 +555,8 @@ cleanup()
 struct	utmp wtmp;
 char	wtmpf[]	= "/usr/adm/wtmp";
 char	utmp[] = "/etc/utmp";
-#define SCPYN(a, b)	strncpy(a, b, sizeof(a))
-#define SCMPN(a, b)	strncmp(a, b, sizeof(a))
+#define SCPYN(a, b)	strncpy(a, b, sizeof (a))
+#define SCMPN(a, b)	strncmp(a, b, sizeof (a))
 
 rmut()
 {
@@ -560,13 +565,13 @@ rmut()
 
 	f = open(utmp, 2);
 	if (f >= 0) {
-		while(read(f, (char *)&wtmp, sizeof(wtmp)) == sizeof(wtmp)) {
+		while(read(f, (char *)&wtmp, sizeof (wtmp)) == sizeof (wtmp)) {
 			if (SCMPN(wtmp.ut_line, line+5) || wtmp.ut_name[0]==0)
 				continue;
-			lseek(f, -(long)sizeof(wtmp), 1);
+			lseek(f, -(long)sizeof (wtmp), 1);
 			SCPYN(wtmp.ut_name, "");
 			time(&wtmp.ut_time);
-			write(f, (char *)&wtmp, sizeof(wtmp));
+			write(f, (char *)&wtmp, sizeof (wtmp));
 			found++;
 		}
 		close(f);
@@ -578,7 +583,7 @@ rmut()
 			SCPYN(wtmp.ut_name, "");
 			time(&wtmp.ut_time);
 			lseek(f, (long)0, 2);
-			write(f, (char *)&wtmp, sizeof(wtmp));
+			write(f, (char *)&wtmp, sizeof (wtmp));
 			close(f);
 		}
 	}
