@@ -111,13 +111,13 @@ struct mailer Mailer[] =
 	/* local berkeley mail */
 	{
 		"/usr/net/bin/sendberkmail",
-		M_FOPT|M_HDR,			EX_UNAVAIL,	BerkLocal,
+		M_FOPT|M_HDR|M_STRIPQ,		EX_UNAVAIL,	BerkLocal,
 		{ "...berk%mail", "-m", "$h", "-t", "$u", "-h", "$c", NULL }
 	},
 	/* arpanet mail */
 	{
 		"/usr/lib/mailers/arpa",
-		0,				0,		NULL,
+		M_STRIPQ,			0,		NULL,
 		{ "...arpa%mail", "$f", "$h", "$u", NULL }
 	},
 	/* uucp mail (cheat & use Bell's v7 mail) */
