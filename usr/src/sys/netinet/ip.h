@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip.h	6.5 (Berkeley) %G%
+ *	@(#)ip.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -57,6 +57,14 @@ struct ip {
 #define	IPOPT_LSRR		131		/* loose source route */
 #define	IPOPT_SATID		136		/* satnet id */
 #define	IPOPT_SSRR		137		/* strict source route */
+
+/*
+ * Offsets to fields in options other than EOL and NOP.
+ */
+#define	IPOPT_OPTVAL		0		/* option ID */
+#define	IPOPT_OLEN		1		/* option length */
+#define IPOPT_OFFSET		2		/* offset within option */
+#define	IPOPT_MINOFF		4		/* min value of above */
 
 /*
  * Time stamp option structure.
