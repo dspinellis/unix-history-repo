@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)hys.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hys.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
 
 #ifdef HAYES
-/***
+/*
  *	hyspopn(telno, flds, dev) connect to hayes smartmodem (pulse call)
  *	hystopn(telno, flds, dev) connect to hayes smartmodem (tone call)
  *	char *flds[], *dev[];
@@ -63,7 +63,7 @@ int toneflag;
 			close(dh);
 			return CF_DIAL;
 		}
-		write(dh, "ATH\r", 4);
+		write(dh, "ATV1H\r", 6);
 		if (expect("OK\r\n", dh) != 0) {
 			logent(dcname, "HSM seems dead");
 			close(dh);
@@ -133,11 +133,8 @@ int fd;
 		write(fd, "+++", 3);
 #endif
 		sleep(3);
-		write(fd, "ATH\r", 4);
-		if (expect("ATH", fd) || expect("OK\r\n", fd))
-			logent(devSel, "HSM did not respond to ATH");
 		write(fd, "ATZ\r", 4);
-		if (expect("ATZ", fd) || expect("OK\r\n", fd))
+		if (expect("OK",fd) != 0)
 			logent(devSel, "HSM did not respond to ATZ");
 		sleep(1);
 		close(fd);
@@ -146,3 +143,4 @@ int fd;
 }
 
 #endif HAYES
+
