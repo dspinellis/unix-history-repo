@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.14 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -169,11 +169,14 @@ ndrele(ndp)
  */
 struct vnode *vfreeh, **vfreet;
 extern struct vnodeops dead_vnodeops, spec_vnodeops;
-struct speclist *speclisth;
-struct speclist {
-	struct speclist *sl_next;
-	struct vnode *sl_vp;
-};
+
+#define	SPECHSZ	64
+#if	((SPECHSZ&(SPECHSZ-1)) == 0)
+#define	SPECHASH(rdev)	(((rdev>>5)+(rdev))&(SPECHSZ-1))
+#else
+#define	SPECHASH(rdev)	(((unsigned)((rdev>>5)+(rdev)))%SPECHSZ)
+#endif
+struct vnode *speclisth[SPECHSZ];
 
 /*
  * Initialize the vnode structures and initialize each file system type.
@@ -309,8 +312,7 @@ bdevvp(dev, vpp)
 	}
 	vp = nvp;
 	vp->v_type = VBLK;
-	vp->v_rdev = dev;
-	if (nvp = checkalias(vp, (struct mount *)0)) {
+	if (nvp = checkalias(vp, dev, (struct mount *)0)) {
 		vput(vp);
 		vp = nvp;
 	}
@@ -327,30 +329,46 @@ bdevvp(dev, vpp)
  * caller is responsible for filling it with its new contents.
  */
 struct vnode *
-checkalias(nvp, mp)
+checkalias(nvp, nvp_rdev, mp)
 	register struct vnode *nvp;
+	dev_t nvp_rdev;
 	struct mount *mp;
 {
 	register struct vnode *vp;
-	register struct speclist *slp;
+	struct vnode **vpp;
 
 	if (nvp->v_type != VBLK && nvp->v_type != VCHR)
 		return ((struct vnode *)0);
+
+	vpp = &speclisth[SPECHASH(nvp_rdev)];
 loop:
-	for (slp = speclisth; slp; slp = slp->sl_next) {
-		vp = slp->sl_vp;
-		if (nvp->v_rdev != vp->v_rdev ||
-		    nvp->v_type != vp->v_type)
+	for (vp = *vpp; vp; vp = vp->v_specnext) {
+		if (nvp_rdev != vp->v_rdev || nvp->v_type != vp->v_type)
 			continue;
 		if (vget(vp))
 			goto loop;
+		/*
+		 * Alias, but not in use, so flush it out.
+		 */
+		if (vp->v_count == 1) {
+			vput(vp);
+			vgone(vp);
+			goto loop;
+		}
 		break;
 	}
-	if (slp == NULL) {
-		MALLOC(slp, struct speclist *, sizeof(*slp), M_VNODE, M_WAITOK);
-		slp->sl_vp = nvp;
-		slp->sl_next = speclisth;
-		speclisth = slp;
+	if (vp == NULL || vp->v_tag != VT_NON) {
+		if (vp != NULL) {
+			vp->v_flag |= VALIASED;
+			nvp->v_flag |= VALIASED;
+		}
+		MALLOC(nvp->v_specinfo, struct specinfo *,
+			sizeof(struct specinfo), M_VNODE, M_WAITOK);
+		nvp->v_rdev = nvp_rdev;
+		nvp->v_mounton = NULL;
+		nvp->v_lastr = 0;
+		nvp->v_specnext = *vpp;
+		*vpp = nvp;
 		return ((struct vnode *)0);
 	}
 	VOP_UNLOCK(vp);
@@ -574,9 +592,9 @@ void vclean(vp, doclose)
 void vgone(vp)
 	register struct vnode *vp;
 {
-	register struct speclist *slp;
-	struct speclist *pslp;
-	register struct vnode *vq;
+	register struct vnode *vq, **vpp;
+	struct vnode *vx;
+	long count;
 
 	/*
 	 * Clean out the filesystem specific data.
@@ -596,21 +614,34 @@ void vgone(vp)
 	 * If special device, remove it from special device alias list.
 	 */
 	if (vp->v_type == VBLK || vp->v_type == VCHR) {
-		if (speclisth->sl_vp == vp) {
-			slp = speclisth;
-			speclisth = slp->sl_next;
+		vpp = &speclisth[SPECHASH(vp->v_rdev)];
+		if (*vpp == vp) {
+			*vpp = vp->v_specnext;
 		} else {
-			for (pslp = speclisth, slp = pslp->sl_next; slp;
-			     pslp = slp, slp = slp->sl_next) {
-				if (slp->sl_vp != vp)
+			for (vq = *vpp; vq; vq = vq->v_specnext) {
+				if (vq->v_specnext != vp)
 					continue;
-				pslp->sl_next = slp->sl_next;
+				vq->v_specnext = vp->v_specnext;
 				break;
 			}
-			if (slp == NULL)
+			if (vq == NULL)
 				panic("missing bdev");
 		}
-		FREE(slp, M_VNODE);
+		if (vp->v_flag & VALIASED) {
+			for (count = 0, vq = *vpp; vq; vq = vq->v_specnext) {
+				if (vq->v_rdev != vp->v_rdev)
+					continue;
+				count++;
+				vx = vq;
+			}
+			if (count == 0)
+				panic("missing alias");
+			if (count == 1)
+				vx->v_flag &= ~VALIASED;
+			vp->v_flag &= ~VALIASED;
+		}
+		FREE(vp->v_specinfo, M_VNODE);
+		vp->v_specinfo = NULL;
 	}
 	/*
 	 * If it is on the freelist, move it to the head of the list.
