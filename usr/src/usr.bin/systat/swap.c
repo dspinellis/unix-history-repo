@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -209,6 +209,8 @@ initswap()
                 dmmax = getw(nlst[X_DMMAX].n_value);
                 dmtext = getw(nlst[X_DMTEXT].n_value);
                 nswdev = getw(nlst[X_NSWDEV].n_value);
+		if (nswdev > MAXSWAPDEV)
+			nswdev = MAXSWAPDEV;
 		swdevt = (struct swdevt *)calloc(nswdev, sizeof (*swdevt));
 		klseek(kmem, nlst[X_SWDEVT].n_value, L_SET);
 		read(kmem, swdevt, nswdev * sizeof (struct swdevt));
