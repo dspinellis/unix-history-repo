@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.18 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.19 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.18 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.19 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -563,8 +563,8 @@ _udbx_init()
 				{
 #ifdef LOG
 					if (LogLevel > 2)
-						syslog(LOG_ERR, "dbopen(%s): %e",
-							spec);
+						syslog(LOG_ERR, "dbopen(%s): %s",
+							spec, errstring(errno));
 #endif
 					up->udb_type = UDB_EOLIST;
 					goto tempfail;
