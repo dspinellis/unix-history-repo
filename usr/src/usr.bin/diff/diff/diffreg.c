@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.17 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.18 %G%";
 
 #include "diff.h"
 /*

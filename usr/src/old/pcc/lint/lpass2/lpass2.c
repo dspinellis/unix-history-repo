@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.9	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.10	(Berkeley)	%G%";
 #endif lint
 
 # include "macdefs.h"
@@ -525,7 +525,7 @@ chktype( pt1, pt2, fno ) register ATYPE *pt1, *pt2; {
 	return( pt1->aty != pt2->aty );
 	}
 
-struct tb { int m; char * nm };
+struct tb { int m; char *nm; };
 
 struct tb dfs[] = {
 	LDI, "LDI",
