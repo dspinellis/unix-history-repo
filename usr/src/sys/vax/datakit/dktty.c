@@ -13,7 +13,6 @@
 #include "errno.h"
 #include "signal.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "ioctl.h"
