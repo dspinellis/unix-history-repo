@@ -12,7 +12,11 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 
 # Lint flags
 LINTFLAGS	= -hbxaz
-# How to install the bloody thing...
+
+# Which keyboard are we emulating.
+KBD	= 3180.kbd
+KBD	= 3270pc.kbd
+KBD	= unix.kbd
 
 # The source files...
 ALLH =	dctype.h ebc_disp.h hostctlr.h kbdctlr.h options.h screen.h scrnctlr.h
@@ -35,7 +39,7 @@ ctlrlib:	${ALLO}
 
 clean:
 	rm -f $(ALLO) mset tn3270 prt3270 m4.out errs makefile.bak ctlrlib
-	rm -f 3270pc.out
+	rm -f kbd.out TMPfunc.out TMPfunc.c
 
 print:
 	${PRINT} ${ALLH} ${M4FILE} default.map
@@ -53,13 +57,13 @@ lint:
 .DEFAULT:
 	sccs get $<
 
-3270pc.out:	3270pc.kbd hostctlr.h
+kbd.out:	$(KBD) hostctlr.h
 	(cd ../tools; make mkhits $(MFLAGS) )
-	-/bin/rm $@ function.out TMPfunc.c
+	-/bin/rm $@ TMPfunc.out TMPfunc.c
 	/bin/echo \#include \"function.h\" > TMPfunc.c
-	$(CC) $(CFLAGS) -E TMPfunc.c > function.out
-	../tools/mkhits - ../ctlr/function.out < 3270pc.kbd > $@
-	-/bin/rm function.out TMPfunc.c
+	$(CC) $(CFLAGS) -E TMPfunc.c > TMPfunc.out
+	../tools/mkhits - ../ctlr/TMPfunc.out < $(KBD) > $@
+	-/bin/rm TMPfunc.out TMPfunc.c
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
@@ -82,7 +86,7 @@ depend:
 dctype.o: dctype.h
 inbound.o: ../general.h function.h hostctlr.h scrnctlr.h screen.h options.h
 inbound.o: dctype.h ebc_disp.h ../system/globals.h inbound.ext outbound.ext
-inbound.o: ../telnet.ext 3270pc.out
+inbound.o: ../telnet.ext kbd.out
 options.o: options.h ../system/globals.h options.ext
 outbound.o: hostctlr.h screen.h ebc_disp.h ../system/globals.h options.ext
 outbound.o: ../telnet.ext inbound.ext outbound.ext
