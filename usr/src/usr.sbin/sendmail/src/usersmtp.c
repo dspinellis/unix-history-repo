@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.36		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.37		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.36		%G%);
+SCCSID(@(#)usersmtp.c	3.37		%G%);
 
 
 
@@ -221,8 +221,9 @@ smtpdata(m, e)
 	(*e->e_putbody)(SmtpOut, m, CurEnv);
 
 	/* terminate the message */
-	fprintf(SmtpOut, ".%s\n", bitset(M_CRLF, m->m_flags) ? "\r" : "");
-	nmessage(Arpa_Info, ">>> .");
+	fprintf(SmtpOut, ".%s", crlf(m));
+	if (Verbose && !HoldErrs)
+		nmessage(Arpa_Info, ">>> .");
 
 	/* check for the results of the transaction */
 	r = reply(m);
@@ -386,7 +387,7 @@ smtpmessage(f, m, a, b, c)
 	else if (CurEnv->e_xfp != NULL)
 		fprintf(CurEnv->e_xfp, ">>> %s\n", buf);
 	if (!SmtpClosing)
-		fprintf(SmtpOut, "%s%s\n", bitset(M_CRLF, m->m_flags) ? "\r" : "", buf);
+		fprintf(SmtpOut, "%s%s", buf, crlf(m));
 }
 
 # endif SMTP

@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.39		%G%);
+SCCSID(@(#)util.c	3.40		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -140,31 +140,6 @@ xalloc(sz)
 		syserr("Out of memory!!");
 		exit(EX_UNAVAILABLE);
 	}
-	return (p);
-}
-/*
-**  NEWSTR -- make copy of string.
-**
-**	Space is allocated for it using xalloc.
-**
-**	Parameters:
-**		string to copy.
-**
-**	Returns:
-**		pointer to new string.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-newstr(s)
-	register char *s;
-{
-	register char *p;
-
-	p = xalloc(strlen(s) + 1);
-	(void) strcpy(p, s);
 	return (p);
 }
 /*
@@ -556,10 +531,6 @@ putline(l, fp, m)
 {
 	register char *p;
 	char svchar;
-	char *crlfstring = "\r\n";
-
-	if (!bitset(M_CRLF, m->m_flags))
-		crlfstring++;
 
 	do
 	{
@@ -579,7 +550,7 @@ putline(l, fp, m)
 				fputc('.', fp);
 			fputs(l, fp);
 			fputc('!', fp);
-			fputs(crlfstring, fp);
+			fputs(crlf(m), fp);
 			*q = svchar;
 			l = q;
 		}
@@ -590,7 +561,7 @@ putline(l, fp, m)
 		if (l[0] == '.' && bitset(M_XDOT, m->m_flags))
 			fputc('.', fp);
 		fputs(l, fp);
-		fputs(crlfstring, fp);
+		fputs(crlf(m), fp);
 		*p = svchar;
 		l = p;
 		if (*l == '\n')
