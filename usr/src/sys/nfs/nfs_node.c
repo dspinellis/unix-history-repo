@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.7 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -197,7 +197,7 @@ nfs_inactive(vp)
 		free((caddr_t)sp, M_TEMP);
 	}
 	nfs_unlock(vp);
-	np->n_flag = 0;
+	np->n_flag &= NBUFFERED;
 #ifdef notdef
 	/*
 	 * Scan the request list for any requests left hanging about
@@ -240,7 +240,6 @@ nfs_reclaim(vp)
 	cache_purge(vp);
 	/*
 	 * Flush out any associated bio buffers that might be lying about
-	 * XXX n_flags are set to zero by nfs_inactive.
 	 */
 	if (vp->v_type == VREG && (np->n_flag & NBUFFERED)) {
 		np->n_flag |= NLOCKED;
