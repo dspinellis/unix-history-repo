@@ -1,4 +1,5 @@
-/*	mtio.h	4.5	81/04/02	*/
+/*	mtio.h	4.6	81/11/07	*/
+
 /*
  * Structures and definitions for mag tape io control commands
  */
@@ -44,3 +45,5 @@ struct	mtget	{
 #define MT_ISTS		01
 #define MT_ISHT		02
 #define MT_ISTM		03
+#define MT_ISMT		04
+#define MT_ISUT		05
