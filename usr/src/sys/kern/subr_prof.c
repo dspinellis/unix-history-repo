@@ -1,254 +1,183 @@
-/*
+/*-
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.14 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.15 (Berkeley) %G%
  */
 
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <machine/cpu.h>
+
 #ifdef GPROF
-#include "gprof.h"
-#include "param.h"
-#include "systm.h"
-#include "kernel.h"
-#include "malloc.h"
+#include <sys/malloc.h>
+#include <sys/gmon.h>
 
 /*
  * Froms is actually a bunch of unsigned shorts indexing tos
  */
-int	profiling = 3;
-u_short	*froms;
-struct	tostruct *tos = 0;
-long	tolimit = 0;
-char	*s_lowpc = (char *)KERNBASE;
-extern	char etext;
-char	*s_highpc = &etext;
-u_long	s_textsize = 0;
-int	ssiz;
-u_short	*sbuf;
+struct gmonparam _gmonparam = { GMON_PROF_OFF };
+
 u_short	*kcount;
+extern char etext[];
 
 kmstartup()
 {
-	u_long fromssize, tossize;
-
+	char *cp;
+	int fsize, tsize, ksize;
+	struct gmonparam *p = &_gmonparam;
 	/*
 	 * Round lowpc and highpc to multiples of the density we're using
 	 * so the rest of the scaling (here and in gprof) stays in ints.
 	 */
-	s_lowpc = (char *)
-	    ROUNDDOWN((unsigned)s_lowpc, HISTFRACTION*sizeof (HISTCOUNTER));
-	s_highpc = (char *)
-	    ROUNDUP((unsigned)s_highpc, HISTFRACTION*sizeof (HISTCOUNTER));
-	s_textsize = s_highpc - s_lowpc;
-	printf("Profiling kernel, s_textsize=%d [%x..%x]\n",
-		s_textsize, s_lowpc, s_highpc);
-	ssiz = (s_textsize / HISTFRACTION) + sizeof (struct phdr);
-	sbuf = (u_short *)malloc(ssiz, M_GPROF, M_WAITOK);
-	if (sbuf == 0) {
-		printf("No space for monitor buffer(s)\n");
+	p->lowpc = ROUNDDOWN(KERNBASE, HISTFRACTION * sizeof(HISTCOUNTER));
+	p->highpc = ROUNDUP((u_long)etext, HISTFRACTION * sizeof(HISTCOUNTER));
+	p->textsize = p->highpc - p->lowpc;
+	p->profrate = profhz;
+	printf("Profiling kernel, textsize=%d [%x..%x]\n",
+	       p->textsize, p->lowpc, p->highpc);
+	ksize = p->textsize / HISTFRACTION;
+	fsize = p->textsize / HASHFRACTION;
+	p->tolimit = p->textsize * ARCDENSITY / 100;
+	if (p->tolimit < MINARCS)
+		p->tolimit = MINARCS;
+	else if (p->tolimit > MAXARCS)
+		p->tolimit = MAXARCS;
+	tsize = p->tolimit * sizeof(struct tostruct);
+	cp = (char *)malloc(ksize + fsize + tsize, M_GPROF, M_NOWAIT);
+	if (cp == 0) {
+		printf("No memory for profiling.\n");
 		return;
 	}
-	bzero(sbuf, ssiz);
-	fromssize = s_textsize / HASHFRACTION;
-	froms = (u_short *)malloc(fromssize, M_GPROF, M_NOWAIT);
-	if (froms == 0) {
-		printf("No space for monitor buffer(s)\n");
-		free(sbuf, M_GPROF);
-		sbuf = 0;
-		return;
-	}
-	bzero(froms, fromssize);
-	tolimit = s_textsize * ARCDENSITY / 100;
-	if (tolimit < MINARCS)
-		tolimit = MINARCS;
-	else if (tolimit > (0xffff - 1))
-		tolimit = 0xffff - 1;
-	tossize = tolimit * sizeof (struct tostruct);
-	tos = (struct tostruct *)malloc(tossize, M_GPROF, M_WAITOK);
-	if (tos == 0) {
-		printf("No space for monitor buffer(s)\n");
-		free(sbuf, M_GPROF), sbuf = 0;
-		free(froms, M_GPROF), froms = 0;
-		return;
-	}
-	bzero(tos, tossize);
-	tos[0].link = 0;
-	((struct phdr *)sbuf)->lpc = s_lowpc;
-	((struct phdr *)sbuf)->hpc = s_highpc;
-	((struct phdr *)sbuf)->ncnt = ssiz;
-	((struct phdr *)sbuf)->version = GMONVERSION;
+	bzero(cp, ksize + tsize + fsize);
+	p->tos = (struct tostruct *)cp;
+	cp += tsize;
+	kcount = (u_short *)cp;
+	cp += ksize;
+	p->froms = (u_short *)cp;
 	startprofclock(&proc0);
-	((struct phdr *)sbuf)->profrate = profhz;
-	kcount = (u_short *)(((int)sbuf) + sizeof (struct phdr));
+}
+#endif
+
+/*
+ * Profiling system call.
+ *
+ * The scale factor is a fixed point number with 16 bits of fraction, so that
+ * 1.0 is represented as 0x10000.  A scale factor of 0 turns off profiling.
+ */
+/* ARGSUSED */
+profil(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		caddr_t	buf;
+		u_int	bufsize;
+		u_int	offset;
+		u_int	scale;
+	} *uap;
+	int *retval;
+{
+	register struct uprof *upp;
+	int s;
+
+	if (uap->scale > (1 << 16))
+		return (EINVAL);
+	if (uap->scale == 0) {
+		stopprofclock(p);
+		return (0);
+	}
+	upp = &p->p_stats->p_prof;
+	s = splstatclock(); /* block profile interrupts while changing state */
+	upp->pr_base = uap->buf;
+	upp->pr_size = uap->bufsize;
+	upp->pr_off = uap->offset;
+	upp->pr_scale = uap->scale;
+	startprofclock(p);
+	splx(s);
+	return (0);
 }
 
 /*
- * This routine is massaged so that it may be jsb'ed to on vax.
+ * Scale is a fixed-point number with the binary point 16 bits
+ * into the value, and is <= 1.0.  pc is at most 32 bits, so the
+ * intermediate result is at most 48 bits.
  */
-mcount()
+#define	PC_TO_INDEX(pc, prof) \
+	((int)(((u_quad_t)((pc) - (prof)->pr_off) * \
+	    (u_quad_t)((prof)->pr_scale)) >> 16) & ~1)
+
+/*
+ * Collect user-level profiling statistics; called on a profiling tick,
+ * when a process is running in user-mode.  This routine may be called
+ * from an interrupt context.  We try to update the user profiling buffers
+ * cheaply with fuswintr() and suswintr().  If that fails, we revert to
+ * an AST that will vector us to trap() with a context in which copyin
+ * and copyout will work.  Trap will then call addupc_task().
+ *
+ * Note that we may (rarely) not get around to the AST soon enough, and
+ * lose profile ticks when the next tick overwrites this one, but in this
+ * case the system is overloaded and the profile is probably already
+ * inaccurate.
+ */
+void
+addupc_intr(p, pc, ticks)
+	register struct proc *p;
+	register u_long pc;
+	u_int ticks;
 {
-	register char *selfpc;			/* r11 => r5 */
-	register u_short *frompcindex;		/* r10 => r4 */
-	register struct tostruct *top;		/* r9  => r3 */
-	register struct tostruct *prevtop;	/* r8  => r2 */
-	register long toindex;			/* r7  => r1 */
-	static int s;
+	register struct uprof *prof;
+	register caddr_t addr;
+	register u_int i;
+	register int v;
 
-	/*
-	 * Check that we are profiling.
-	 */
-	if (profiling)
-		goto out;
-	/*
-	 * Find the return address for mcount,
-	 * and the return address for mcount's caller.
-	 */
-#ifdef lint
-	selfpc = (char *)0;
-	frompcindex = 0;
-#else
-	;				/* avoid label botch */
-#ifdef __GNUC__
-#if defined(vax)
-	Fix Me!!
-#endif
-#if defined(tahoe)
-	Fix Me!!
-#endif
-#if defined(hp300) || defined(luna68k)
-	/*
-	 * selfpc = pc pushed by mcount jsr,
-	 * frompcindex = pc pushed by jsr into self.
-	 * In GCC the caller's stack frame has already been built so we
-	 * have to chase a6 to find caller's raddr.  This assumes that all
-	 * routines we are profiling were built with GCC and that all
-	 * profiled routines use link/unlk.
-	 */
-	asm("movl a6@(4),%0" : "=r" (selfpc));
-	asm("movl a6@(0)@(4),%0" : "=r" (frompcindex));
-#endif
-#else
-#if defined(vax)
-	asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
-	asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
-#endif
-#if defined(tahoe)
-	asm("	movl -8(fp),r12");	/* selfpc = callf frame */
-	asm("	movl (fp),r11");
-	asm("	movl -8(r11),r11");	/* frompcindex = 1 callf frame back */
-#endif
-#if defined(hp300) || defined(luna68k)
-	Fix Me!!
-#endif
-#endif /* not __GNUC__ */
-#endif /* not lint */
-	/*
-	 * Insure that we cannot be recursively invoked.
-	 * this requires that splhigh() and splx() below
-	 * do NOT call mcount!
-	 */
-#if defined(hp300) || defined(luna68k)
-	asm("movw	sr,%0" : "=g" (s));
-	asm("movw	#0x2700,sr");
-#else
-	s = splhigh();
-#endif
-	/*
-	 * Check that frompcindex is a reasonable pc value.
-	 * For example:	signal catchers get called from the stack,
-	 *	not from text space.  too bad.
-	 */
-	frompcindex = (u_short *)((long)frompcindex - (long)s_lowpc);
-	if ((u_long)frompcindex > s_textsize)
-		goto done;
-	frompcindex =
-	    &froms[((long)frompcindex) / (HASHFRACTION * sizeof (*froms))];
-	toindex = *frompcindex;
-	if (toindex == 0) {
-		/*
-		 * First time traversing this arc
-		 */
-		toindex = ++tos[0].link;
-		if (toindex >= tolimit)
-			goto overflow;
-		*frompcindex = toindex;
-		top = &tos[toindex];
-		top->selfpc = selfpc;
-		top->count = 1;
-		top->link = 0;
-		goto done;
-	}
-	top = &tos[toindex];
-	if (top->selfpc == selfpc) {
-		/*
-		 * Arc at front of chain; usual case.
-		 */
-		top->count++;
-		goto done;
-	}
-	/*
-	 * Have to go looking down chain for it.
-	 * Top points to what we are looking at,
-	 * prevtop points to previous top.
-	 * We know it is not at the head of the chain.
-	 */
-	for (; /* goto done */; ) {
-		if (top->link == 0) {
-			/*
-			 * Top is end of the chain and none of the chain
-			 * had top->selfpc == selfpc.
-			 * So we allocate a new tostruct
-			 * and link it to the head of the chain.
-			 */
-			toindex = ++tos[0].link;
-			if (toindex >= tolimit)
-				goto overflow;
-			top = &tos[toindex];
-			top->selfpc = selfpc;
-			top->count = 1;
-			top->link = *frompcindex;
-			*frompcindex = toindex;
-			goto done;
-		}
-		/*
-		 * Otherwise, check the next arc on the chain.
-		 */
-		prevtop = top;
-		top = &tos[top->link];
-		if (top->selfpc == selfpc) {
-			/*
-			 * There it is, increment its count and
-			 * move it to the head of the chain.
-			 */
-			top->count++;
-			toindex = prevtop->link;
-			prevtop->link = top->link;
-			top->link = *frompcindex;
-			*frompcindex = toindex;
-			goto done;
-		}
+	if (ticks == 0)
+		return;
+	prof = &p->p_stats->p_prof;
+	if (pc < prof->pr_off ||
+	    (i = PC_TO_INDEX(pc, prof)) >= prof->pr_size)
+		return;			/* out of range; ignore */
 
+	addr = prof->pr_base + i;
+	if ((v = fuswintr(addr)) == -1 || suswintr(addr, v + ticks) == -1) {
+		prof->pr_addr = pc;
+		prof->pr_ticks = ticks;
+		need_proftick(p);
 	}
-done:
-#if defined(hp300) || defined(luna68k)
-	asm("movw	%0,sr" : : "g" (s));
-#else
-	splx(s);
-#endif
-	/* and fall through */
-out:
-#if defined(vax)
-	asm("	rsb");
-#endif
-	return;
-overflow:
-	profiling = 3;
-	printf("mcount: tos overflow\n");
-	goto out;
 }
-asm(".text");
-asm("#the end of mcount()");
-asm(".data");
-#endif
+
+/*
+ * Much like before, but we can afford to take faults here.  If the
+ * update fails, we simply turn off profiling.
+ */
+void
+addupc_task(p, pc, ticks)
+	register struct proc *p;
+	register u_long pc;
+	u_int ticks;
+{
+	register struct uprof *prof;
+	register caddr_t addr;
+	register u_int i;
+	u_short v;
+
+	/* testing SPROFIL may be unnecessary, but is certainly safe */
+	if ((p->p_flag & SPROFIL) == 0 || ticks == 0)
+		return;
+
+	prof = &p->p_stats->p_prof;
+	if (pc < prof->pr_off ||
+	    (i = PC_TO_INDEX(pc, prof)) >= prof->pr_size)
+		return;
+
+	addr = prof->pr_base + i;
+	if (copyin(addr, (caddr_t)&v, sizeof(v)) == 0) {
+		v += ticks;
+		if (copyout((caddr_t)&v, addr, sizeof(v)) == 0)
+			return;
+	}
+	stopprofclock(p);
+}
