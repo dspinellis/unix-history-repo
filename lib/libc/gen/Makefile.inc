@@ -1,22 +1,14 @@
 #	@(#)Makefile.inc	5.21 (Berkeley) 5/24/91
-#
-# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
-# --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       50000
-# --------------------         -----   ----------------------
-#
-# 10 Oct 92	Rodney W. Grimes	Install a real crypt for passwords
-#
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
-SRCS+=	alarm.c clock.c closedir.c crypt.c ctermid.c ctime.c ctype_.c \
-	difftime.c disklabel.c err.c errlst.c exec.c fnmatch.c frexp.c \
-	fstab.c fts.c getcwd.c getgrent.c getlogin.c getmntinfo.c getpass.c \
-	getpwent.c getsubopt.c getttyent.c getusershell.c glob.c initgroups.c \
-	isatty.c isctype.c isinf.c mktemp.c nice.c nlist.c opendir.c \
-	pause.c popen.c psignal.c raise.c readdir.c \
+SRCS+=	alarm.c assert.c clock.c closedir.c crypt.c ctermid.c ctime.c \
+	ctype_.c difftime.c disklabel.c err.c errlst.c exec.c fnmatch.c \
+	frexp.c fstab.c fts.c getcwd.c getgrent.c getlogin.c getmntinfo.c \
+	getpass.c getpwent.c getsubopt.c getttyent.c getusershell.c glob.c \
+	initgroups.c isatty.c isctype.c isinf.c mktemp.c nice.c nlist.c \
+	opendir.c pause.c popen.c psignal.c raise.c readdir.c \
 	rewinddir.c scandir.c seekdir.c setjmperr.c \
 	setmode.c setrgid.c setruid.c siginterrupt.c \
 	siglist.c signal.c sigsetops.c sleep.c syslog.c telldir.c \

@@ -9,13 +9,13 @@ SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c div.c exit.c \
 	strtol.c strtoul.c system.c
 
 .if   (${MACHINE} == "hp300")
-SRCS+=	abs.s atof.c
+SRCS+=	abs.s
 .elif (${MACHINE} == "i386")
-SRCS+=	abs.s atof.c
+SRCS+=	abs.s 
 .elif (${MACHINE} == "tahoe")
-SRCS+=	abs.s atof.s
+SRCS+=	abs.s
 .elif (${MACHINE} == "vax")
-SRCS+=	abs.s atof.s
+SRCS+=	abs.s
 .endif
 
 MAN3+=	abort.0 abs.0 alloca.0 atexit.0 atof.0 atoi.0 atol.0 bsearch.0 \
