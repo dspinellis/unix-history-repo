@@ -22,10 +22,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/signal.h>
@@ -51,9 +51,9 @@ static char sccsid[] = "@(#)rwhod.c	5.14 (Berkeley) %G%";
  */
 #define AL_INTERVAL (3 * 60)
 
-struct	sockaddr_in sin = { AF_INET };
+struct	sockaddr_in sin;
 
-char	myname[32];
+char	myname[MAXHOSTNAMELEN];
 
 struct	nlist nl[] = {
 #define	NL_BOOTTIME	0
@@ -153,6 +153,7 @@ main()
 		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
 		exit(1);
 	}
+	sin.sin_family = AF_INET;
 	sin.sin_port = sp->s_port;
 	if (bind(s, &sin, sizeof (sin)) < 0) {
 		syslog(LOG_ERR, "bind: %m");
@@ -178,13 +179,6 @@ main()
 				ntohs(from.sin_port));
 			continue;
 		}
-#ifdef notdef
-		if (gethostbyname(wd.wd_hostname) == 0) {
-			syslog(LOG_WARNING, "%s: unknown host",
-				wd.wd_hostname);
-			continue;
-		}
-#endif
 		if (wd.wd_vers != WHODVERSION)
 			continue;
 		if (wd.wd_type != WHODTYPE_STATUS)
@@ -204,7 +198,7 @@ main()
 			syslog(LOG_WARNING, "%s: %m", path);
 			continue;
 		}
-#if vax || pdp11
+#if ENDIAN != BIG_ENDIAN
 		{
 			int i, n = (cc - WHDRSIZE)/sizeof(struct whoent);
 			struct whoent *we;
