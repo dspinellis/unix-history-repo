@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)route.8	6.5 (Berkeley) %G%
+.\"	@(#)route.8	6.6 (Berkeley) %G%
 .\"
 .TH ROUTE 8 ""
 .UC 5
@@ -27,9 +27,6 @@ route \- manually manipulate the routing tables (Interim)
 .B \-q
 ] [
 .B \-v
-] [
-.B \-k
-.I vmunix
 ]
 .I command
 [ [
@@ -64,9 +61,30 @@ The monitor command has the syntax
 .ti +0.25i
 .B route 
 [
-.I -n 
+.B -n 
 ]
-.I monitor
+.B monitor
+.PP
+The flush command has the syntax
+.ti +0.25i
+.B route
+[
+.B -n
+]
+[
+.B -n
+]
+.B flush
+[
+.I family
+]
+.PP
+where the address family may be specified by any of the
+.BR -osi ,
+.BR -xns ,
+or
+.B -inet
+keywords.
 .PP
 The other commands have the following syntax:
 .PP
@@ -82,9 +100,6 @@ The other commands have the following syntax:
 .B -host
 ]
 .I destination gateway
-[
-.I mask
-]
 .PP
 where
 .I destination
@@ -106,7 +121,24 @@ or if the
 .I destination
 is the symbolic name of a network, then the route is
 assumed to be to a network; otherwise, it is presumed to be a
-route to a host.  If the route is via an interface rather than
+route to a host.
+.PP
+For example,
+128.32 is interpreted as
+.I -host
+128.0.0.32,
+128.32.130 is interpreted as
+.I -host
+128.32.0.130;
+.I -net 128.32
+is interpreted as
+128.32.0.0,
+and 
+.I -net 128.32.130
+is interpreted as
+128.32.130.0.
+.PP
+If the route is via an interface rather than
 via a gateway, the 
 .I -interface
 modifier should be specified;
@@ -120,9 +152,32 @@ and
 specify that all subsequent addresses are in the XNS or OSI address families,
 and the names must be numeric specifications rather than
 symbolic names.
-For OSI addresses a third parameter is the address mask,
-as given in an ESIS redirect.
-(preceded by the -netmask modifier)
+To acheieve the effect of an OSI ESIS redirect with the netmask option,
+one can specify
+.I -netmask
+qualifier followed by an OSI address (to be interpreted as a network mask).
+One can override the implicit network mask generated in the inet case
+by making sure this option follows the destination parameter.
+.PP
+The optional modifiers
+.IR -rtt ,
+.IR -rttvar ,
+.IR -sendpipe ,
+.IR -recvpipe ,
+.IR -mtu ,
+.IR -hopcount ,
+.IR -expire ,
+and
+.I -ssthresh 
+provide initial values to metrics maintained in the routing entry.
+These may be individually locked by preceding each such modifier to
+be locked by
+the
+.I -lock
+meta-modifier, or one can 
+specify that all ensuing metrics may be locked by the
+.I -lockrest
+meta-modifier.
 .PP
 All symbolic names specified for a
 .I destination 
@@ -136,7 +191,7 @@ is then used to interpret the name as that of a network.
 .PP
 .I Route
 uses a routing socket and the new message types
-RTM_ADD and RTM_DELETE.
+RTM_ADD, RTM_DELETE, and RTM_CHANGE.
 As such, only the super-user may modify
 the routing tables.
 .PP
@@ -153,6 +208,12 @@ The
 .B \-n
 option prevents attempts to print host and network names symbolically
 when reporting actions.
+The
+.B \-v
+option causes additional details to be printed.
+The
+.B \-q
+option supresses all output.
 .SH DIAGNOSTICS
 ``\fBadd [ host | network ] %s: gateway %s flags %x\fP''
 .br
