@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)swapon.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)swapon.c	4.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 
@@ -28,7 +28,8 @@ main(argc, argv)
 				extern errno;
 				extern char *sys_errlist[];
 				printf("%s: %s\n",
-				    sys_errlist[errno]);
+				    sys_errlist[errno],
+				    fsp->fs_spec);
 				stat = 1;
 			}
 		}
