@@ -1,0 +1,76 @@
+.pa 1
+.he 'IF (I)'3/15/72'IF (I)'
+.ti 0
+NAME		if --  conditional command
+.sp
+.ti 0
+SYNOPSIS	if__ expr command [ arg918 ... ]
+.sp
+.ti 0
+DESCRIPTION	if__
+evaluates the expression expr____, and if its value is true____,
+executes the given command_______ with the given arguments.
+
+The following primitives are used to construct
+the expr____:
+
+.in +9
+.ti -4
+-r__ file
+.br
+true if the file exists and is readable.
+
+.ti -4
+-w__ file
+.br
+true if the file exists and is writable
+
+.ti -4
+s1 =_ s2
+.br
+true if the strings s1__ and s2__ are equal.
+
+.ti -4
+s1 !=__ s2
+.br
+true if the strings s1__ and s2__ are not equal.
+
+.in -9
+These primaries may be combined with the
+following operators:
+
+.in +5
+!_
+.ti +4
+unary negation operator
+
+-a__
+.ti +4
+binary and___ operator
+
+-o__
+.ti +4
+binary or__ operator
+
+(_ expr )_
+.ti +4
+parentheses for grouping.
+
+.in -5
+-a__ has higher precedence than -o__.
+Notice that all the operators and flags are separate
+arguments to if__ and hence must be surrounded by spaces.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	sh(I)
+.sp
+.ti 0
+DIAGNOSTICS	"if error",
+if the expression has the wrong syntax;
+"command not found."
+.sp
+.ti 0
+BUGS		--
