@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)csh.3	8.1 (Berkeley) %G%
+.\"	@(#)csh.3	8.2 (Berkeley) %G%
 .\"
 .nr H1 2
 .NH
@@ -282,9 +282,11 @@ of the shell and some of its control structure follows:
 # to the directory ~/backup if they differ from the files
 # already in ~/backup
 #
+.DE
+.sp -1
+.DS
 set noglob
 foreach i ($argv) 
-
         if ($i !~ *.c) continue  # not a .c file so do nothing
 
         if (! \-r ~/backup/$i:t) then
@@ -621,4 +623,3 @@ There is also another quotation mechanism using `"' which allows
 only some of the expansion mechanisms we have so far discussed to occur
 on the quoted string and serves to make this string into a single word
 as `\'' does.
-.bp
