@@ -11,12 +11,6 @@ all: termcap ${MAN5}
 termcap: reorder termcap.src
 	ed - ${.CURDIR}/termcap.src < ${.CURDIR}/reorder > /dev/null
 
-clean:
-	rm -f termcap
-
-cleandir: clean
-	rm -f ${MAN5}
-
 beforeinstall:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 termcap \
 	     ${DESTDIR}${BINDIR}/misc
