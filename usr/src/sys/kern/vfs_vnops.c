@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.30 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -38,9 +38,9 @@ vn_open(ndp, p, fmode, cmode)
 	struct vattr *vap = &vat;
 	int error;
 
-	if (fmode & FCREAT) {
+	if (fmode & O_CREAT) {
 		ndp->ni_nameiop = CREATE | LOCKPARENT | LOCKLEAF;
-		if ((fmode & FEXCL) == 0)
+		if ((fmode & O_EXCL) == 0)
 			ndp->ni_nameiop |= FOLLOW;
 		if (error = namei(ndp, p))
 			return (error);
@@ -50,7 +50,7 @@ vn_open(ndp, p, fmode, cmode)
 			vap->va_mode = cmode;
 			if (error = VOP_CREATE(ndp, vap, p))
 				return (error);
-			fmode &= ~FTRUNC;
+			fmode &= ~O_TRUNC;
 			vp = ndp->ni_vp;
 		} else {
 			VOP_ABORTOP(ndp);
@@ -60,11 +60,11 @@ vn_open(ndp, p, fmode, cmode)
 				vput(ndp->ni_dvp);
 			ndp->ni_dvp = NULL;
 			vp = ndp->ni_vp;
-			if (fmode & FEXCL) {
+			if (fmode & O_EXCL) {
 				error = EEXIST;
 				goto bad;
 			}
-			fmode &= ~FCREAT;
+			fmode &= ~O_CREAT;
 		}
 	} else {
 		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
@@ -76,12 +76,12 @@ vn_open(ndp, p, fmode, cmode)
 		error = EOPNOTSUPP;
 		goto bad;
 	}
-	if ((fmode & FCREAT) == 0) {
+	if ((fmode & O_CREAT) == 0) {
 		if (fmode & FREAD) {
 			if (error = VOP_ACCESS(vp, VREAD, cred, p))
 				goto bad;
 		}
-		if (fmode & (FWRITE|FTRUNC)) {
+		if (fmode & (FWRITE | O_TRUNC)) {
 			if (vp->v_type == VDIR) {
 				error = EISDIR;
 				goto bad;
@@ -91,18 +91,14 @@ vn_open(ndp, p, fmode, cmode)
 				goto bad;
 		}
 	}
-	if (fmode & FTRUNC) {
+	if (fmode & O_TRUNC) {
 		VATTR_NULL(vap);
 		vap->va_size = 0;
 		if (error = VOP_SETATTR(vp, vap, cred, p))
 			goto bad;
 	}
-	VOP_UNLOCK(vp);
-	error = VOP_OPEN(vp, fmode, cred, p);
-	if (error)
-		vrele(vp);
-	return (error);
-
+	if ((error = VOP_OPEN(vp, fmode, cred, p)) == 0)
+		return (0);
 bad:
 	vput(vp);
 	return (error);
@@ -193,7 +189,8 @@ vn_read(fp, uio, cred)
 	VOP_LOCK(vp);
 	uio->uio_offset = fp->f_offset;
 	count = uio->uio_resid;
-	error = VOP_READ(vp, uio, (fp->f_flag & FNDELAY) ? IO_NDELAY : 0, cred);
+	error = VOP_READ(vp, uio, (fp->f_flag & FNONBLOCK) ? IO_NDELAY : 0,
+		cred);
 	fp->f_offset += count - uio->uio_resid;
 	VOP_UNLOCK(vp);
 	return (error);
@@ -207,9 +204,9 @@ vn_write(fp, uio, cred)
 	register struct vnode *vp = (struct vnode *)fp->f_data;
 	int count, error, ioflag = 0;
 
-	if (vp->v_type == VREG && (fp->f_flag & FAPPEND))
+	if (vp->v_type == VREG && (fp->f_flag & O_APPEND))
 		ioflag |= IO_APPEND;
-	if (fp->f_flag & FNDELAY)
+	if (fp->f_flag & FNONBLOCK)
 		ioflag |= IO_NDELAY;
 	VOP_LOCK(vp);
 	uio->uio_offset = fp->f_offset;
