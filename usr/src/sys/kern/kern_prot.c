@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.6	82/09/06	*/
+/*	kern_prot.c	5.7	82/09/12	*/
 
 /*
  * System calls related to processes and protection
@@ -153,7 +153,6 @@ setgroups()
 	} *uap = (struct a *)u.u_ap;
 	register int *gp;
 
-printf("gidsetsize %d, gidset %x\n", uap->gidsetsize, uap->gidset);
 	if (!suser())
 		return;
 	if (uap->gidsetsize > sizeof (u.u_groups) / sizeof (u.u_groups[0])) {
@@ -165,7 +164,6 @@ printf("gidsetsize %d, gidset %x\n", uap->gidsetsize, uap->gidset);
 		u.u_error = EFAULT;
 		return;
 	}
-printf("copied in %d %d ... \n", u.u_groups[0], u.u_groups[1]);
 	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)
 		*gp = -1;
 }
