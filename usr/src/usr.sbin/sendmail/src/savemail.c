@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -361,6 +361,7 @@ savemail(e)
 static bool	SendBody;
 
 #define MAXRETURNS	6	/* max depth of returning messages */
+#define ERRORFUDGE	100	/* nominal size of error message text */
 
 returntosender(msg, sendbody)
 	char *msg;
