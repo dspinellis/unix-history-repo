@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.24 (Berkeley) 83/07/06";
+static char sccsid[] = "@(#)telnetd.c	4.25 (Berkeley) 83/07/06";
 #endif
 
 /*
@@ -42,6 +42,7 @@ int	pcc, ncc;
 int	pty, net;
 int	inter;
 int	reapchild();
+extern	char **environ;
 extern	int errno;
 char	line[] = "/dev/ptyp0";
 
@@ -136,6 +137,7 @@ reapchild()
 		;
 }
 
+char	*envinit[] = { "TERM=network", 0 };
 int	cleanup();
 
 /*
@@ -191,6 +193,7 @@ gotpty:
 	dup2(t, 1);
 	dup2(t, 2);
 	close(t);
+	environ = envinit;
 	execl("/bin/login", "login", "-h", host, 0);
 	fatalperror(f, "/bin/login", errno);
 	/*NOTREACHED*/
