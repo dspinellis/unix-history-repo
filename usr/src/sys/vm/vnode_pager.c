@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	8.8 (Berkeley) %G%
+ *	@(#)vnode_pager.c	8.9 (Berkeley) %G%
  */
 
 /*
@@ -433,8 +433,7 @@ vnode_pager_uncache(vp)
 	/*
 	 * Not a mapped vnode
 	 */
-	pager = (vm_pager_t)vp->v_vmdata;
-	if (pager == NULL)
+	if (vp->v_type != VREG || (pager = (vm_pager_t)vp->v_vmdata) == NULL)
 		return (TRUE);
 #ifdef DEBUG
 	if (!VOP_ISLOCKED(vp)) {
