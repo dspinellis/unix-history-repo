@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.18	82/03/15	*/
+/*	tcp_subr.c	4.19	82/03/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -138,7 +138,7 @@ COUNT(TCP_RESPOND);
 	ti->ti_win = htons(ti->ti_win);
 #endif
 	ti->ti_urp = 0;
-	ti->ti_sum = in_cksum(m, sizeof(struct tcpiphdr));
+	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + tlen);
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + tlen;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
 	(void) ip_output(m, (struct mbuf *)0, 0);

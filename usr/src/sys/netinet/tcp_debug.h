@@ -1,4 +1,4 @@
-/*	tcp_debug.h	4.1	81/12/22	*/
+/*	tcp_debug.h	4.2	82/03/24	*/
 
 struct	tcp_debug {
 	n_time	td_time;
@@ -13,9 +13,12 @@ struct	tcp_debug {
 #define	TA_INPUT 	0
 #define	TA_OUTPUT	1
 #define	TA_USER		2
+#define	TA_RESPOND	3
+#define	TA_DROP		4
 
 #ifdef TANAMES
-char	*tanames[] = { "input", "output", "user" };
+char	*tanames[] =
+    { "input", "output", "user", "respond", "drop" };
 #endif
 
 #define	TCP_NDEBUG 100
