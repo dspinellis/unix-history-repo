@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tty.c	7.11 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -33,11 +33,11 @@ cttyopen(dev, flag, mode, p)
 		return (ENXIO);
 	VOP_LOCK(ttyvp);
 	error = VOP_ACCESS(ttyvp,
-	   (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), p->p_ucred);
+	  (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), p->p_ucred, p);
 	VOP_UNLOCK(ttyvp);
 	if (error)
 		return (error);
-	return (VOP_OPEN(ttyvp, flag, NOCRED));
+	return (VOP_OPEN(ttyvp, flag, NOCRED, p));
 }
 
 /*ARGSUSED*/
@@ -93,7 +93,7 @@ cttyioctl(dev, cmd, addr, flag, p)
 		} else
 			return (EINVAL);
 	}
-	return (VOP_IOCTL(ttyvp, cmd, addr, flag, NOCRED));
+	return (VOP_IOCTL(ttyvp, cmd, addr, flag, NOCRED, p));
 }
 
 /*ARGSUSED*/
@@ -106,5 +106,5 @@ cttyselect(dev, flag, p)
 
 	if (ttyvp == NULL)
 		return (1);	/* try operation to get EOF/failure */
-	return (VOP_SELECT(ttyvp, flag, FREAD|FWRITE, NOCRED));
+	return (VOP_SELECT(ttyvp, flag, FREAD|FWRITE, NOCRED, p));
 }
