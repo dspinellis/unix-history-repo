@@ -208,13 +208,13 @@ another:
 
 #ifdef	KERBEROS
 try_connect:
-	if(use_kerberos) {
+	if (use_kerberos) {
 		rem = KSUCCESS;
 		errno = 0;
 		if (dest_realm == NULL)
 			dest_realm = krb_realmofhost(host);
 
-		if(encrypt) {
+		if (encrypt) {
 			rem = krcmd_mutual(
 				&host, sp->s_port,
 				user ? user : pwd->pw_name,
@@ -229,13 +229,12 @@ try_connect:
 				user ? user : pwd->pw_name,
 				args,
 				&rfd2,
-				dest_realm,
-				NULL, NULL);
+				dest_realm);
 		}
 		if (rem < 0) {
 			use_kerberos = 0;
 			sp = getservbyname("shell", "tcp");
-			if(sp == NULL) {
+			if (sp == NULL) {
 				fprintf(stderr, "unknown service shell/tcp\n");
 				exit(1);
 			}
@@ -246,7 +245,7 @@ try_connect:
 			goto try_connect;
 		}
 	} else {
-		if(encrypt) {
+		if (encrypt) {
 			fprintf(stderr,"The -x flag requires Kerberos authentication\n");
 			exit(1);
 		}
