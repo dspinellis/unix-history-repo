@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -350,6 +350,7 @@ rt_setmetrics(which, in, out)
 	metric(RTV_RTTVAR, rmx_rttvar);
 	metric(RTV_HOPCOUNT, rmx_hopcount);
 	metric(RTV_MTU, rmx_mtu);
+	metric(RTV_EXPIRE, rmx_expire);
 #undef metric
 }
 
