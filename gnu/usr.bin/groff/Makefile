@@ -9,7 +9,4 @@ SUBDIR=		libgroff libdriver libbib\
 # BSD already provides soelim 
 MISC=		soelim
 
-depend:
-	@echo "BROKEN MAKEDEPEND!"
-
 .include <bsd.subdir.mk>
