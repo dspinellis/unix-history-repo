@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.149 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.150 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1262,9 +1262,6 @@ tryhost:
 		{
 			int i;
 			int saveerrno;
-			char **ep;
-			char *env[MAXUSERENVIRON];
-			extern char **environ;
 			extern int DtableSize;
 
 			if (e->e_lockfp != NULL)
@@ -1382,31 +1379,11 @@ tryhost:
 					(void) fcntl(i, F_SETFD, j | 1);
 			}
 
-			/*
-			**  Set up the mailer environment
-			**	_FORCE_MAIL_LOCAL_ is DG-UX equiv of -d flag.
-			**	TZ is timezone information.
-			**	SYSTYPE is Apollo software sys type (required).
-			**	ISP is Apollo hardware system type (required).
-			*/
-
-			i = 0;
-			env[i++] = "AGENT=sendmail";
-			env[i++] = "_FORCE_MAIL_LOCAL_=yes";
-			for (ep = environ; *ep != NULL; ep++)
-			{
-				if (strncmp(*ep, "TZ=", 3) == 0 ||
-				    strncmp(*ep, "ISP=", 4) == 0 ||
-				    strncmp(*ep, "SYSTYPE=", 8) == 0)
-					env[i++] = *ep;
-			}
-			env[i] = NULL;
-
 			/* run disconnected from terminal */
 			(void) setsid();
 
 			/* try to execute the mailer */
-			execve(m->m_mailer, (ARGV_T) pv, (ARGV_T) env);
+			execve(m->m_mailer, (ARGV_T) pv, (ARGV_T) UserEnviron);
 			saveerrno = errno;
 			syserr("Cannot exec %s", m->m_mailer);
 			if (bitnset(M_LOCALMAILER, m->m_flags) ||

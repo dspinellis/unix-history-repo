@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.67 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.68 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1721,12 +1721,9 @@ prog_open(argv, pfd, e)
 	int pid;
 	int i;
 	int saveerrno;
-	char **ep;
 	int fdv[2];
 	char *p, *q;
 	char buf[MAXLINE + 1];
-	char *env[MAXUSERENVIRON];
-	extern char **environ;
 	extern int DtableSize;
 
 	if (pipe(fdv) < 0)
@@ -1812,20 +1809,8 @@ prog_open(argv, pfd, e)
 			(void) fcntl(i, F_SETFD, j | 1);
 	}
 
-	/* set up the environment */
-	i = 0;
-	env[i++] = "AGENT=sendmail";
-	for (ep = environ; *ep != NULL; ep++)
-	{
-		if (strncmp(*ep, "TZ=", 3) == 0 ||
-		    strncmp(*ep, "ISP=", 4) == 0 ||
-		    strncmp(*ep, "SYSTYPE=", 8) == 0)
-			env[i++] = *ep;
-	}
-	env[i] = NULL;
-
 	/* now exec the process */
-	execve(argv[0], (ARGV_T) argv, (ARGV_T) env);
+	execve(argv[0], (ARGV_T) argv, (ARGV_T) UserEnviron);
 
 	/* woops!  failed */
 	saveerrno = errno;

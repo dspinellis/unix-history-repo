@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.132 (Berkeley) %G%
+ *	@(#)sendmail.h	8.133 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.132		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.133		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -996,6 +996,8 @@ EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
 EXTERN char	*QueueLimitSender;	/* limit queue runs to this sender */
 EXTERN char	*QueueLimitId;		/* limit queue runs to this id */
 EXTERN FILE	*TrafficLogFile;	/* file in which to log all traffic */
+EXTERN char	*UserEnviron[MAXUSERENVIRON + 1];
+					/* saved user environment */
 extern int	errno;
 
 

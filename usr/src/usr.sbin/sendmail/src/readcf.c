@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.89 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.90 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -48,6 +48,7 @@ static char sccsid[] = "@(#)readcf.c	8.89 (Berkeley) %G%";
 **		Kmapname mapclass arguments....
 **				Define keyed lookup of a given class.
 **				Arguments are class dependent.
+**		Eenvar=value	Set the environment value to the given value.
 **
 **	Parameters:
 **		cfname -- control file name.
@@ -570,6 +571,13 @@ readcf(cfname)
 
 		  case 'K':
 			makemapentry(&bp[1]);
+			break;
+
+		  case 'E':
+			p = strchr(bp, '=');
+			if (p != NULL)
+				*p++ = '\0';
+			setuserenv(&bp[1], p);
 			break;
 
 		  default:
