@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.13	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.14	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -147,7 +147,7 @@ savemail()
 	if (ArpaMode != ARPA_NONE)
 		return;
 	p = NULL;
-	if (From.q_mailer == M_LOCAL)
+	if (From.q_mailer == MN_LOCAL)
 	{
 		if (From.q_home != NULL)
 			p = From.q_home;
@@ -171,7 +171,7 @@ savemail()
 		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
 		To = buf;
 		i = mailfile(buf);
-		giveresponse(i, TRUE, Mailer[M_LOCAL]);
+		giveresponse(i, TRUE, Mailer[MN_LOCAL]);
 	}
 
 	/* add terminator to writeback message */

@@ -32,7 +32,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.20	%G%";
+static char SccsId[] = "@(#)conf.c	3.21	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -62,8 +62,8 @@ struct hdrinfo	HdrInfo[] =
 	"text",			H_EOH,			0,
 	"posted-date",		0,			0,
 	"return-receipt-to",	0,			0,
-	"received-date",	H_CHECK,		M_FINAL,
-	"received-from",	H_CHECK,		M_FINAL,
+	"received-date",	H_CHECK,		M_LOCAL,
+	"received-from",	H_CHECK,		M_LOCAL,
 	"precedence",		0,			0,
 	"via",			H_FORCE,		0,
 	NULL,			0,			0,

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.18	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.19	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -813,7 +813,7 @@ buildaddr(tv, a)
 
 	/* figure out what host (if any) */
 	tv++;
-	if (!bitset(M_NOHOST, m->m_flags))
+	if (!bitset(M_LOCAL, m->m_flags))
 	{
 		if (**tv != CANONHOST)
 			syserr("buildaddr: no host");
@@ -868,7 +868,7 @@ sameaddr(a, b, wildflg)
 		return (FALSE);
 
 	/* if the mailer ignores hosts, we have succeeded! */
-	if (bitset(M_NOHOST, Mailer[a->q_mailer]->m_flags))
+	if (bitset(M_LOCAL, Mailer[a->q_mailer]->m_flags))
 		return (TRUE);
 
 	/* otherwise compare hosts (but be careful for NULL ptrs) */

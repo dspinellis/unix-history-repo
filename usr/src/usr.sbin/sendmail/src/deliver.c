@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.25	%G%";
+static char SccsId[] = "@(#)deliver.c	3.26	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -185,7 +185,7 @@ deliver(to, editfcn)
 		**	with the others, so we fudge on the To person.
 		*/
 
-		if (m == Mailer[M_LOCAL])
+		if (m == Mailer[MN_LOCAL])
 		{
 			if (index(user, '/') != NULL)
 			{
@@ -433,7 +433,7 @@ giveresponse(stat, force, m)
 		statmsg = SysExMsg[i];
 	if (stat == 0)
 	{
-		if (bitset(M_FINAL, m->m_flags))
+		if (bitset(M_LOCAL, m->m_flags))
 			statmsg = "delivered";
 		else
 			statmsg = "queued";
