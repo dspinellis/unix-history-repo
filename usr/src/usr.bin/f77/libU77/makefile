@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.6	%G%
+#	@(#)makefile	1.7	%G%
 
 LIB = libU77.a
 LPR = lpr
@@ -155,7 +155,13 @@ Makefile:	makefile
 	@sed -n -e "1,/End of Makefile/p" makefile > Makefile
 
 tape:	Makefile
-	@tar cbf 20 $(TAPE) Makefile man $(SOURCES) mkindx.c mkvers.c
+	@-ln man/s.makefile man.s.makefile
+	@ls man.s.makefile > /dev/null
+	@rm -f man/s.makefile
+	@-tar cbf 20 $(TAPE) READ_ME Makefile man $(SOURCES) mkindx.c mkvers.c
+	@ln man.s.makefile man/s.makefile
+	@rm -f man.s.makefile
+
 
 # below here is SCCS stuff ---
 
