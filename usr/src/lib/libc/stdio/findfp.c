@@ -23,7 +23,7 @@ FILE _iob[NSTATIC] = {
 	{ 0, NULL, NULL, 0, _IOWRT|_IONBF,	2 },	/* stderr */
 };
 
-extern	char	*malloc();
+extern	char	*calloc();
 
 static	char sbuf[NSTATIC];
 char	*_smallbuf = sbuf;
@@ -64,9 +64,7 @@ _findiop()
 		}
 
 	if (*iov == NULL)
-		*iov = (FILE *)malloc(sizeof **iov);
-	if (*iov)
-		bzero((char *)*iov, sizeof(**iov));
+		*iov = (FILE *)calloc(1, sizeof **iov);
 
 	return (*iov);
 }
@@ -80,17 +78,16 @@ _f_morefiles()
 
 	nfiles = getdtablesize();
 
-	iobglue = (FILE **)malloc(nfiles * sizeof *iobglue);
+	iobglue = (FILE **)calloc(nfiles, sizeof *iobglue);
 	if (iobglue == NULL)
 		return (0);
 
-	bzero((char *)iobglue, nfiles * sizeof(*iobglue));
 	endglue = iobglue + nfiles;
 
 	for (fp = _iob, iov = iobglue; fp < &_iob[NSTATIC]; /* void */)
 		*iov++ = fp++;
 
-	_smallbuf = malloc(nfiles * sizeof(*_smallbuf));
+	_smallbuf = calloc(nfiles, sizeof(*_smallbuf));
 	return (1);
 }
 
@@ -103,11 +100,8 @@ f_prealloc()
 		return;
 
 	for (iov = iobglue; iov < endglue; iov++)
-		if (*iov == NULL) {
-			*iov = (FILE *)malloc(1, sizeof **iov);
-			if (*iov)
-				bzero((char *)*iov, sizeof(**iov));
-		}
+		if (*iov == NULL)
+			*iov = (FILE *)calloc(1, sizeof **iov);
 }
 
 _fwalk(function)
