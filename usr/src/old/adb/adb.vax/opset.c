@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)opset.c 4.4 %G%";
+static	char sccsid[] = "@(#)opset.c 4.5 %G%";
 #endif lint
 /*
  *	UNIX debugger
@@ -385,8 +385,11 @@ dispaddress(valuep, mode)
 		}
 	}
 #ifdef ADB
-	psymoff(valuep->num_ulong[0], type, &insoutfmt[0]);
-	if (regnumber != R_PC){		/* } */
+	if (regnumber == R_PC)
+		psymoff(valuep->num_ulong[0], type, &insoutfmt[0]);
+	else {				/* } */
+		printf(LPRMODE, valuep->num_ulong[0]);
+		printf(insoutfmt);
 #endif ADB
 #ifdef SDB
 	if(psymoff(valuep->num_ulong[0], regnumber, &insoutfmt[0])
