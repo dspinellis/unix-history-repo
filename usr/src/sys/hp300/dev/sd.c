@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	8.2 (Berkeley) %G%
+ *	@(#)sd.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -246,6 +246,11 @@ sdinit(hd)
 
 	sc->sc_hd = hd;
 	sc->sc_flags = 0;
+	/*
+	 * XXX formerly 0 meant unused but now pid 0 can legitimately
+	 * use this interface (sdgetcapacity).
+	 */
+	sc->sc_format_pid = -1;
 	sc->sc_punit = sdpunit(hd->hp_flags);
 	sc->sc_type = sdident(sc, hd);
 	if (sc->sc_type < 0)
@@ -282,28 +287,39 @@ sdgetcapacity(sc, hd, dev)
 		10,
 		CMD_READ_CAPACITY, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	};
-	u_char capbuf[8];
-	struct buf tbuf;
-	int i;
+	u_char *capbuf;
+	int i, capbufsize;
+
+	/*
+	 * Cannot use stack space for this buffer since stack KVA may not
+	 * be valid (i.e. in context of this process) when the operation
+	 * actually starts.
+	 */
+	capbufsize = 8;
+	capbuf = malloc(capbufsize, M_DEVBUF, M_WAITOK);
 
 	if (dev == NODEV) {
 		i = scsi_immed_command(hd->hp_ctlr, hd->hp_slave, sc->sc_punit,
-				       &cap, capbuf, sizeof(capbuf), B_READ);
+				       &cap, capbuf, capbufsize, B_READ);
 	} else {
+		struct buf *bp;
+
 		/*
 		 * XXX this is horrible
 		 */
-		if (sc->sc_format_pid)
+		if (sc->sc_format_pid >= 0)
 			panic("sdgetcapacity");
+		bp = malloc(sizeof *bp, M_DEVBUF, M_WAITOK);
 		sc->sc_format_pid = curproc->p_pid;
 		bcopy((caddr_t)&cap, (caddr_t)&sdcmd[hd->hp_unit], sizeof cap);
-		tbuf.b_dev = dev;
-		tbuf.b_flags = B_READ | B_BUSY;
-		tbuf.b_un.b_addr = (caddr_t)capbuf;
-		tbuf.b_bcount = sizeof capbuf;
-		sdstrategy(&tbuf);
-		i = biowait(&tbuf) ? sdsense[hd->hp_unit].status : 0;
-		sc->sc_format_pid = 0;
+		bp->b_dev = dev;
+		bp->b_flags = B_READ | B_BUSY;
+		bp->b_un.b_addr = (caddr_t)capbuf;
+		bp->b_bcount = capbufsize;
+		sdstrategy(bp);
+		i = biowait(bp) ? sdsense[hd->hp_unit].status : 0;
+		free(bp, M_DEVBUF);
+		sc->sc_format_pid = -1;
 	}
 	if (i) {
 		if (i != STS_CHECKCOND || (sc->sc_flags & SDF_RMEDIA) == 0) {
@@ -312,6 +328,7 @@ sdgetcapacity(sc, hd, dev)
 				printf("sd%d: read_capacity returns %d\n",
 				       hd->hp_unit, i);
 #endif
+			free(capbuf, M_DEVBUF);
 			return (-1);
 		}
 		/*
@@ -325,10 +342,12 @@ sdgetcapacity(sc, hd, dev)
 			printf("sd%d: removable media not present\n",
 			       hd->hp_unit);
 #endif
+		free(capbuf, M_DEVBUF);
 		return (1);
 	}
 	sc->sc_blks = *(u_int *)&capbuf[0];
 	sc->sc_blksize = *(int *)&capbuf[4];
+	free(capbuf, M_DEVBUF);
 	sc->sc_bshift = 0;
 
 	/* return value of read capacity is last valid block number */
@@ -336,8 +355,8 @@ sdgetcapacity(sc, hd, dev)
 
 	if (sc->sc_blksize != DEV_BSIZE) {
 		if (sc->sc_blksize < DEV_BSIZE) {
-			printf("sd%d: need %d byte blocks - drive ignored\n",
-				hd->hp_unit, DEV_BSIZE);
+			printf("sd%d: need at least %d byte blocks - %s\n",
+				hd->hp_unit, DEV_BSIZE, "drive ignored");
 			return (-1);
 		}
 		for (i = sc->sc_blksize; i > DEV_BSIZE; i >>= 1)
@@ -526,7 +545,7 @@ sdclose(dev, flag, mode, p)
 		sc->sc_flags &= ~(SDF_CLOSING|SDF_WLABEL|SDF_ERROR);
 		wakeup((caddr_t)sc);
 	}
-	sc->sc_format_pid = 0;
+	sc->sc_format_pid = -1;
 	return(0);
 }
 
@@ -639,7 +658,7 @@ sdstrategy(bp)
 	register daddr_t bn;
 	register int sz, s;
 
-	if (sc->sc_format_pid) {
+	if (sc->sc_format_pid >= 0) {
 		if (sc->sc_format_pid != curproc->p_pid) {	/* XXX */
 			bp->b_error = EPERM;
 			goto bad;
@@ -804,7 +823,7 @@ sdstart(unit)
 	 * we have the SCSI bus -- in format mode, we may or may not need dma
 	 * so check now.
 	 */
-	if (sc->sc_format_pid && legal_cmds[sdcmd[unit].cdb[0]] > 0) {
+	if (sc->sc_format_pid >= 0 && legal_cmds[sdcmd[unit].cdb[0]] > 0) {
 		register struct buf *bp = sdtab[unit].b_actf;
 		register int sts;
 
@@ -840,7 +859,7 @@ sdgo(unit)
 	register int pad;
 	register struct scsi_fmt_cdb *cmd;
 
-	if (sc->sc_format_pid) {
+	if (sc->sc_format_pid >= 0) {
 		cmd = &sdcmd[unit];
 		pad = 0;
 	} else {
@@ -939,7 +958,7 @@ sdread(dev, uio, flags)
 	register int unit = sdunit(dev);
 	register int pid;
 
-	if ((pid = sd_softc[unit].sc_format_pid) &&
+	if ((pid = sd_softc[unit].sc_format_pid) >= 0 &&
 	    pid != uio->uio_procp->p_pid)
 		return (EPERM);
 		
@@ -955,7 +974,7 @@ sdwrite(dev, uio, flags)
 	register int unit = sdunit(dev);
 	register int pid;
 
-	if ((pid = sd_softc[unit].sc_format_pid) &&
+	if ((pid = sd_softc[unit].sc_format_pid) >= 0 &&
 	    pid != uio->uio_procp->p_pid)
 		return (EPERM);
 		
@@ -1026,11 +1045,11 @@ sdioctl(dev, cmd, data, flag, p)
 			return(EPERM);
 
 		if (*(int *)data) {
-			if (sc->sc_format_pid)
+			if (sc->sc_format_pid >= 0)
 				return (EPERM);
 			sc->sc_format_pid = p->p_pid;
 		} else
-			sc->sc_format_pid = 0;
+			sc->sc_format_pid = -1;
 		return (0);
 
 	case SDIOCGFORMAT:
@@ -1105,7 +1124,7 @@ sddump(dev)
 	register int maddr;
 	register int pages, i;
 	int stat;
-	extern int lowram;
+	extern int lowram, dumpsize;
 
 	/* is drive ok? */
 	if (unit >= NSD || (sc->sc_flags & SDF_ALIVE) == 0)
@@ -1115,7 +1134,7 @@ sddump(dev)
 	if (dumplo < 0 || dumplo >= pinfo->p_size ||
 	    pinfo->p_fstype != FS_SWAP)
 		return (EINVAL);
-	pages = physmem;
+	pages = dumpsize;
 	if (dumplo + ctod(pages) > pinfo->p_size)
 		pages = dtoc(pinfo->p_size - dumplo);
 	maddr = lowram;
