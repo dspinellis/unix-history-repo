@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)collect.c	1.3	%G%";
+static char	SccsId[] = "@(#)collect.c	1.4	%G%";
 
 /*
 **  MAKETEMP -- read & parse message header & make temp file.
