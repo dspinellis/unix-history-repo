@@ -1,4 +1,10 @@
-/* @(#)cribbage.h	1.4 (Berkeley) %G% */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)cribbage.h	5.1 (Berkeley) %G%
+ */
 
 extern  CARD		deck[ CARDS ];		/* a deck */
 extern  CARD		phand[ FULLHAND ];	/* player's hand */
