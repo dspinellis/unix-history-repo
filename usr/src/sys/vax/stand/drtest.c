@@ -1,62 +1,99 @@
-/*	drtest.c	4.9	83/03/01	*/
+/*	drtest.c	4.10	83/03/01	*/
 
 /*
  * Standalone program to test a disk and driver
- * by reading the disk in CHUNK sector units.
+ * by reading the disk a track at a time.
  */
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
 #include "saio.h"
 
-#define CHUNK	32
 #define SECTSIZ	512
 
-char diskname[] = "xx(00,0)";
+extern	int end;
+char	*malloc();
+char	*prompt();
 
 main()
 {
-	char buf[50], buffer[CHUNK*SECTSIZ];
-	int unit, fd, chunk, j, hc = 0;
+	char *cp, *bp;
+	int fd, tracksize, debug;
+	register int sector, lastsector;
 	struct st st;
-	register i;
 
-	printf("Testprogram for stand-alone hp or up driver\n\n");
-	printf("Is the console terminal a hard-copy device (y/n)? ");
-	gets(buf);
-	if (*buf == 'y')
-		hc = 1;
-askunit:
-	printf("Enter disk name [type(adapter,unit), e.g, hp(1,3)] ? ");
-	gets(buf);
-	unit = (*(buf + 3) - '0')*8 + *(buf + 5) - '0';
-	diskname[0] = *buf;	
-	diskname[1] = *(buf + 1);
-	diskname[3] = '0' + (unit / 10);
-	diskname[4] = '0' + (unit % 10);
-	if ((fd = open(diskname, 0)) < 0) {
-		goto askunit;
-	}
+	printf("Testprogram for stand-alone driver\n\n");
+again:
+	cp = prompt("Enable debugging (1=bse, 2=ecc, 3=bse+ecc)? ");
+	debug = atoi(cp);
+	if (debug < 0)
+		debug = 0;
+	fd = getdevice();
 	ioctl(fd, SAIODEVDATA, &st);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
 		st.ncyl, st.ntrak, st.nsect);
-	chunk = st.nsect * SECTSIZ;
-	printf("Testing %s, chunk size is %d bytes\n",buf, chunk);
-	printf("Start ...Make sure %s is online\n", buf);
+	ioctl(fd, SAIODEBUG, &debug);
+	tracksize = st.nsect * SECTSIZ;
+	printf("Reading in %d byte records\n", tracksize);
+	printf("Start ...make sure drive is on-line\n");
 	lseek(fd, 0, 0);
-	for (i = 0; i < st.ncyl * st.ntrak; i++) {
-		read(fd, buffer, chunk);
-		if ((i % (st.ntrak*5)) == 0) {
-			int x = i / st.ntrak;
-
-			if (!hc)
-				printf("%d\r", x);
-			else {
-				printf(".");
-				if (x && (x % 125) == 0)
-					printf(". %d\n", x);
-			}
-		}
+	lastsector = st.ncyl * st.ntrak;
+	for (sector = 0; sector < lastsector; sector++) {
+		if (sector && (sector % (st.nspc * 10)) == 0)
+			printf("sector %d\n", sector);
+		read(fd, bp, tracksize);
 	}
-	goto askunit;
+	goto again;
+}
+
+/*
+ * Prompt and verify a device name from the user.
+ */
+getdevice()
+{
+	register char *cp;
+	register struct devsw *dp;
+	int fd;
+
+top:
+	cp = prompt("Device to read? ");
+	if ((fd = open(cp, 2)) < 0) {
+		printf("Known devices are: ");
+		for (dp = devsw; dp->dv_name; dp++)
+			printf("%s ",dp->dv_name);
+		printf("\n");
+		goto top;
+	}
+	return (fd);
+}
+
+char *
+prompt(msg)
+	char *msg;
+{
+	static char buf[132];
+
+	printf("%s", msg);
+	gets(buf);
+	return (buf);
+}
+
+/*
+ * Allocate memory on a page-aligned address.
+ * Round allocated chunk to a page multiple to
+ * ease next request.
+ */
+char *
+malloc(size)
+	int size;
+{
+	char *result;
+	static caddr_t last = 0;
+
+	if (last == 0)
+		last = (caddr_t)(((int)&end + 511) & ~0x1ff);
+	size = (size + 511) & ~0x1ff;
+	result = (char *)last;
+	last += size;
+	return (result);
 }
