@@ -1,0 +1,325 @@
+ABS	../src/stab.c	/^#define	ABS( x )	( x < 0 ? -x : x )$/
+ADDTYPE	../src/pcops.h	/^#define ADDTYPE( t,m )	( ( ( ( t ) & ~P2BASETYPE )/
+BLOCKNO	../src/0.h	/^#define	BLOCKNO( flag )	( flag & 037 )$/
+DEBUG_RECORDS	../src/rec.c	/^#define	DEBUG_RECORDS(x)	if (debug_records) { x ; /
+Mmain	../src/main.c	/^main(argc, argv)$/
+Mopc	../src/opc.c	/^main()  {$/
+Mpic	../src/pic.c	/^main()  {$/
+NLFLAGS	../src/0.h	/^#define NLFLAGS( flag ) ( flag &~ 037 )$/
+OYcopy	../src/yycopy.c	/^OYcopy ()$/
+Perror	../src/subr.c	/^Perror(file, error)$/
+TOF77	../src/p2put.c	/^#define		TOF77( fop,val,rest )	( ( ( (rest) & 0177/
+a8tol	../src/ato.c	/^a8tol(cp)$/
+addlist	../src/yytree.c	/^addlist(vroot, new)$/
+addtype	../src/p2put.c	/^addtype( underlying , mtype )$/
+align	../src/var.c	/^align( np )$/
+aligndot	../src/var.c	/^aligndot(alignment)$/
+alph	../src/yy.h	/^#define alph(c)		((c >= 'a' && c <= 'z') || (c >= /
+any	../src/subr.c	/^any(cp, ch)$/
+arycod	../src/lval.c	/^arycod(np, el)$/
+aryconst	../src/var.c	/^long aryconst(np, n)$/
+asgnop	../src/stat.c	/^asgnop(r)$/
+asgnop1	../src/stat.c	/^asgnop1(r, p)$/
+binarysw	../src/pccaseop.c	/^binarysw( ctab , count )$/
+brerror	../src/yyerror.c	/^brerror(where, what)$/
+bsrecur	../src/pccaseop.c	/^bsrecur( deflabel , ctab , count )$/
+bytes	../src/var.c	/^bytes(lb, ub)$/
+call	../src/call.c	/^call(p, argv, porf, psbn)$/
+calloc	../src/subr.c	/^calloc(num, size)$/
+casecmp	../src/pccaseop.c	/^casecmp( this , that )$/
+caseop	../src/case.c	/^caseop(r)$/
+cat	../src/savenl.c	/^cat(fd)$/
+cerror	../src/error.c	/^cerror(a1, a2, a3, a4, a5)$/
+charname	../src/yyprint.c	/^charname(ch , which )$/
+classify	../src/clas.c	/^classify(p1)$/
+codeformain	../src/fend.c	/^codeformain()$/
+codeoff	../src/0.h	/^#define	codeoff()	--cgenflg$/
+codeon	../src/0.h	/^#define	codeon()	cgenflg++$/
+commform	../src/yy.h	/^#define	commform()	quickcomm(CFORM)$/
+commnl	../src/yy.h	/^#define	commnl()	quickcomm(CNL)$/
+commnlbl	../src/yy.h	/^#define	commnlbl()	quickcomm(CNLBL)$/
+compat	../src/conv.c	/^compat(p1, p2, t)$/
+const	../src/const.c	/^const(cline, cid, cdecl)$/
+constbeg	../src/const.c	/^constbeg( lineofyconst , r )$/
+constend	../src/const.c	/^constend()$/
+constval	../src/rval.c	/^constval(r)$/
+continuation	../src/0.h	/^#define	continuation()	setpfx(' ')$/
+conv	../src/conv.c	/^conv(dub)$/
+convert	../src/conv.c	/^convert(p1, p2)$/
+copy	../src/subr.c	/^copy(to, from, bytes)$/
+copyfile	../src/yymain.c	/^copyfile()$/
+copynlfile	../src/savenl.c	/^copynlfile()$/
+copystr	../src/tree.c	/^copystr(token)$/
+correct	../src/yyrecover.c	/^correct(fchar, origin, c, multvec, Ps0, Pv0)$/
+deffld	../src/rec.c	/^deffld(p, s, t)$/
+defnl	../src/nl.c	/^defnl(sym, cls, typ, val)$/
+defvnt	../src/rec.c	/^defvnt(p, t, vr, ct)$/
+delcost	../src/yycosts.c	/^delcost(what)$/
+derror	../src/error.c	/^derror(a1, a2, a3, a4, a5)$/
+digit	../src/yy.h	/^#define digit(c)	(c >= '0' && c <= '9')$/
+directsw	../src/pccaseop.c	/^directsw( ctab , count )$/
+dotted	../src/subr.c	/^dotted(fp, c)$/
+dumpnl	../src/nl.c	/^dumpnl(to, rout)$/
+eholdnl	../src/0.h	/^#define	eholdnl()	Eholdnl = 1$/
+elineoff	../src/0.h	/^#define	elineoff()	Enoline = TRUE$/
+elineon	../src/0.h	/^#define	elineon()	Enoline = FALSE$/
+enter	../src/nl.c	/^enter(np)$/
+error	../src/error.c	/^error(a1, a2, a3, a4, a5)$/
+esavestr	../src/string.c	/^esavestr(cp)$/
+even	../src/var.c	/^even(w)$/
+evenit	../src/string.c	/^evenit()$/
+extlabname	../src/lab.c	/^extlabname( buffer , name , level )$/
+fcompat	../src/call.c	/^fcompat( formal , actual )$/
+fields	../src/rec.c	/^fields(p, r)$/
+fixlist	../src/yytree.c	/^fixlist(vroot)$/
+flvalue	../src/flvalue.c	/^flvalue( r , formalp )$/
+foredecl	../src/type.c	/^foredecl()$/
+forop	../src/forop.c	/^forop( arg )$/
+fp_entrycode	../src/fend.c	/^fp_entrycode(eecookiep)$/
+fp_epilogue	../src/fend.c	/^fp_epilogue(eecookiep)$/
+fp_exitcode	../src/fend.c	/^fp_exitcode(eecookiep)$/
+fp_formalentry	../src/fend.c	/^fp_formalentry(eecookiep)$/
+fp_prologue	../src/fend.c	/^fp_prologue(eecookiep)$/
+fparams	../src/fhdr.c	/^fparams(p, formal)$/
+funcbody	../src/fdec.c	/^funcbody(fp)$/
+funccod	../src/func.c	/^funccod(r)$/
+funcend	../src/fend.c	/^funcend(fp, bundle, endline)$/
+funcext	../src/fdec.c	/^funcext(fp)$/
+funcfwd	../src/fdec.c	/^funcfwd(fp)$/
+funchdr	../src/fhdr.c	/^funchdr(r)$/
+gconst	../src/const.c	/^gconst(r)$/
+gen	../src/gen.c	/^gen(p, o, w1, w2)$/
+genmx	../src/gen.c	/^genmx()$/
+getcnt	../src/stat.c	/^getcnt()$/
+geterr	../src/main.c	/^geterr(seekpt, buf)$/
+getlab	../src/put.c	/^getlab()$/
+getline	../src/yyget.c	/^getline()$/
+getnext	../src/put.c	/^getnext(next, new)$/
+gettime	../src/subr.c	/^gettime( filename )$/
+gotoop	../src/lab.c	/^gotoop(s)$/
+graphic	../src/yyput.c	/^graphic(ch)$/
+gtype	../src/type.c	/^gtype(r)$/
+hash	../src/hash.c	/^int *hash(s, save)$/
+hdefnl	../src/nl.c	/^hdefnl(sym, cls, typ, val)$/
+header	../src/main.c	/^header()$/
+identis	../src/yyid.c	/^identis(cp, kind)$/
+ifop	../src/stat.c	/^ifop(r)$/
+inccnt	../src/stat.c	/^inccnt( counter )$/
+includ	../src/yyget.c	/^includ()$/
+inithash	../src/hash.c	/^inithash()$/
+initnl	../src/nl.c	/^initnl()$/
+initstring	../src/string.c	/^initstring()$/
+inittree	../src/tree.c	/^inittree()$/
+inpflist	../src/subr.c	/^inpflist(fp)$/
+inscost	../src/yycosts.c	/^inscost(sy, before)$/
+isa	../src/clas.c	/^isa(p, s)$/
+isblock	../src/savenl.c	/^#define isblock(s)	(s->class == FUNC || s->class =/
+isbuiltin	../src/savenl.c	/^#define isbuiltin(s)	((s->nl_block&037) == 0 && is/
+isconst	../src/const.c	/^isconst(r)$/
+isnta	../src/clas.c	/^isnta(p, s)$/
+itesw	../src/pccaseop.c	/^itesw( ctab , count )$/
+label	../src/lab.c	/^label(r, l)$/
+labeled	../src/lab.c	/^labeled(s)$/
+lenstr	../src/put.c	/^lenstr(sptr, padding)$/
+level1	../src/fdec.c	/^level1()$/
+leven	../src/var.c	/^leven(w)$/
+lineno	../src/savenl.c	/^lineno(line)$/
+linenum	../src/call.c	/^linenum(p)$/
+listnames	../src/put.c	/^listnames(ap)$/
+loccor	../src/yyrecover.c	/^loccor(ps, ntok)$/
+lookup	../src/lookup.c	/^lookup(s)$/
+lookup1	../src/lookup.c	/^lookup1(s)$/
+lptr	../src/lval.c	/^lptr(c)$/
+lvalue	../src/lval.c	/^lvalue(r, modflag , required )$/
+lwidth	../src/var.c	/^lwidth(np)$/
+magic	../src/yymain.c	/^magic()$/
+magic2	../src/yymain.c	/^magic2()$/
+myctime	../src/subr.c	/^myctime(tv)$/
+nameof	../src/clas.c	/^nameof(p)$/
+nerror	../src/fdec.c	/^nerror(a1, a2, a3)$/
+newfile	../src/savenl.c	/^newfile(s, line)$/
+newlist	../src/yytree.c	/^newlist(new)$/
+nilfnil	../src/pclval.c	/^nilfnil( p , c , modflag , firstp , r2 )$/
+nlcopy	../src/nl.c	/^nlcopy(p)$/
+nlfree	../src/nl.c	/^nlfree(p)$/
+nlfund	../src/lookup.c	/^nlfund(sp)$/
+nlhdrsize	../src/savenl.c	/^nlhdrsize()$/
+nloff	../src/nl.c	/^nloff(p)$/
+nocascade	../src/0.h	/^#define	nocascade()	Enocascade = 1$/
+nocomp	../src/rval.c	/^nocomp(c)$/
+norange	../src/type.c	/^norange(p)$/
+nowexp	../src/clas.c	/^nowexp(r)$/
+nullsem	../src/yyseman.c	/^nullsem(ch)$/
+onintr	../src/main.c	/^onintr()$/
+opop	../src/subr.c	/^opop(c)$/
+opt	../src/0.h	/^#define opt(c) opts[c-'A']$/
+options	../src/yyoptions.c	/^options()$/
+opush	../src/subr.c	/^opush(c)$/
+p2name	../src/p2put.c	/^p2name( name )$/
+p2string	../src/p2put.c	/^p2string( string )$/
+p2type	../src/p2put.c	/^p2type( np )$/
+p2word	../src/p2put.c	/^p2word( word )$/
+panic	../src/error.c	/^panic(s)$/
+params	../src/fhdr.c	/^params(p, formalist)$/
+parnam	../src/call.c	/^parnam(nltype)$/
+patch	../src/put.c	/^patch(loc)$/
+patch4	../src/put.c	/^patch4(loc)$/
+patchfil	../src/put.c	/^patchfil(loc, jmploc, words)$/
+pccaseop	../src/pccaseop.c	/^pccaseop( tcase )$/
+pcfunccod	../src/pcfunc.c	/^pcfunccod( r )$/
+pchr	../src/main.c	/^pchr(c)$/
+pclvalue	../src/pclval.c	/^pclvalue( r , modflag , required )$/
+pcproc	../src/pcproc.c	/^pcproc(r)$/
+pexit	../src/main.c	/^pexit(c)$/
+pflush	../src/put.c	/^pflush()$/
+plist	../src/call.c	/^plist(p)$/
+pnums	../src/fdec.c	/^pnums(p)$/
+postcheck	../src/conv.c	/^postcheck(need, have)$/
+postcset	../src/cset.c	/^postcset( r , csetp )$/
+precheck	../src/conv.c	/^precheck( p , name1 , name2 )$/
+precset	../src/cset.c	/^precset( r , settype , csetp )$/
+printjbr	../src/p2put.c	/^printjbr( prefix , label )$/
+proc	../src/proc.c	/^proc(r)$/
+prog_prologue	../src/fend.c	/^prog_prologue(eecookiep)$/
+put	../src/p2put.c	/^put( arg1 , arg2 )$/
+putCON8	../src/p2put.c	/^putCON8( val )$/
+putCONG	../src/p2put.c	/^putCONG( string , length , required )$/
+putLV	../src/p2put.c	/^putLV( name , level , offset , other_flags , type /
+putRV	../src/p2put.c	/^putRV( name , level , offset , other_flags , type /
+putblock	../src/savenl.c	/^LOCAL putblock(s)$/
+putcnt	../src/stat.c	/^putcnt()$/
+putdot	../src/p2put.c	/^putdot( filename , line )$/
+puteof	../src/p2put.c	/^puteof()$/
+putjbr	../src/p2put.c	/^putjbr( label )$/
+putlab	../src/put.c	/^putlab(l)$/
+putlbracket	../src/p2put.c	/^putlbracket( ftnno , localbytes )$/
+putleaf	../src/p2put.c	/^putleaf( op , lval , rval , type , name )$/
+putline	../src/stat.c	/^putline()$/
+putop	../src/p2put.c	/^putop( op , type )$/
+putprintf	../src/p2put.c	/^putprintf( format , incomplete , arg1 , arg2 , arg/
+putrbracket	../src/p2put.c	/^putrbracket( ftnno )$/
+putspace	../src/put.c	/^putspace(n)$/
+putstr	../src/put.c	/^putstr(sptr, padding)$/
+putstring	../src/savenl.c	/^LOCAL putstring(s)$/
+putstrop	../src/p2put.c	/^putstrop( op , type , size , alignment )$/
+puttext	../src/p2put.c	/^puttext( string )$/
+rangechk	../src/conv.c	/^rangechk(p, q)$/
+rdops	../src/pcproc.c	/^#define rdops(x) rdxxxx[(x)-(TFIRST)]$/
+readch	../src/yyget.c	/^readch()$/
+rec_offsets	../src/rec.c	/^rec_offsets(recp, offset)$/
+reclook	../src/rec.c	/^reclook(p, s)$/
+recovered	../src/0.h	/^#define	recovered()	setpfx('e')$/
+removenlfile	../src/savenl.c	/^removenlfile()$/
+repcost	../src/yycosts.c	/^repcost(what, with)$/
+repop	../src/stat.c	/^repop(r)$/
+roundup	../src/var.c	/^roundup( x , y )$/
+rvalue	../src/rval.c	/^rvalue(r, contype , required )$/
+rvlist	../src/call.c	/^rvlist(al)$/
+savenl	../src/savenl.c	/^savenl(to, rout)$/
+savestr	../src/string.c	/^savestr(cp)$/
+savmask	../src/tmps.c	/^savmask()$/
+scalar	../src/clas.c	/^scalar(p1)$/
+sconv	../src/sconv.c	/^sconv(fromp2type, top2type)$/
+segend	../src/fdec.c	/^ segend()$/
+setpfx	../src/0.h	/^#define	setpfx(x)	errpfx = x$/
+setran	../src/var.c	/^setran(q)$/
+setuflg	../src/yylex.c	/^setuflg()$/
+setupfield	../src/yytree.c	/^setupfield( field , other )$/
+setuptyrec	../src/yytree.c	/^setuptyrec( line , fldlst )$/
+setupvar	../src/yytree.c	/^setupvar(var, init)$/
+sextname	../src/fend.c	/^sextname( buffer , name , level )$/
+skipbl	../src/yyget.c	/^skipbl(ocp)$/
+soffset	../src/string.c	/^soffset(cp)$/
+sreloc	../src/string.c	/^sreloc(i)$/
+stabefunc	../src/stab.c	/^stabefunc( name , typeclass , line )$/
+stabfield	../src/stab.c	/^stabfield( name , type , offset , length )$/
+stabfunc	../src/stab.c	/^stabfunc( name , typeclass , line , level )$/
+stabgconst	../src/stab.c	/^stabgconst( const , line )$/
+stabglabel	../src/stab.c	/^stabglabel( label , line )$/
+stabgtype	../src/stab.c	/^stabgtype( type , line )$/
+stabgvar	../src/stab.c	/^stabgvar( name , type , offset , length , line )$/
+stabinclude	../src/stab.c	/^stabinclude( filename )$/
+stablbrac	../src/stab.c	/^stablbrac( level )$/
+stabline	../src/stab.c	/^stabline( line )$/
+stablvar	../src/stab.c	/^stablvar( name , type , level , offset , length )$/
+stabparam	../src/stab.c	/^stabparam( name , type , offset , length )$/
+stabrbrac	../src/stab.c	/^stabrbrac( level )$/
+stabsource	../src/stab.c	/^stabsource( filename )$/
+stackRV	../src/stkrval.c	/^stackRV(p)$/
+standard	../src/0.h	/^#define	standard()	setpfx('s')$/
+startnlfile	../src/savenl.c	/^startnlfile()$/
+statement	../src/stat.c	/^statement(r)$/
+statlist	../src/stat.c	/^statlist(r)$/
+stklval	../src/stklval.c	/^stklval(r, modflag)$/
+stkrval	../src/stkrval.c	/^stkrval(r, contype , required )$/
+str4len	../src/p2put.c	/^str4len( string )$/
+strcmp	../src/subr.c	/^strcmp(s1, s2)$/
+strcpy	../src/subr.c	/^strcpy(s1, s2)$/
+symno	../src/savenl.c	/^#define symno(p)	(p==NULL ? 0 : nloff(p))$/
+text	../src/clas.c	/^text(p)$/
+tmpalloc	../src/tmps.c	/^tmpalloc(size, type, mode)$/
+tmpfree	../src/tmps.c	/^tmpfree(restore)$/
+togopt	../src/subr.c	/^togopt(c)$/
+tokname	../src/yyprint.c	/^tokname(tp , which )$/
+tralloc	../src/tree.c	/^tralloc(howmuch)$/
+tree	../src/tree.c	/^int *tree(cnt, a)$/
+tree1	../src/treen.c	/^tree1 ( arg1 )$/
+tree2	../src/treen.c	/^tree2 ( arg1 , arg2 )$/
+tree3	../src/treen.c	/^tree3 ( arg1 , arg2 , arg3 )$/
+tree4	../src/treen.c	/^tree4 ( arg1 , arg2 , arg3 , arg4 )$/
+tree5	../src/treen.c	/^tree5 ( arg1 , arg2 , arg3 , arg4 , arg5 )$/
+trfree	../src/tree.c	/^trfree()$/
+trystate	../src/yyrecover.c	/^trystate(Ps0, Pv0, flag, insmult, delmult, repmult/
+tuac	../src/sconv.c	/^tuac(thistype, thattype, resulttypep, resultp2type/
+tyary	../src/type.c	/^tyary(r)$/
+type	../src/type.c	/^type(tline, tid, tdecl)$/
+typebeg	../src/type.c	/^typebeg( lineofytype , r )$/
+typeend	../src/type.c	/^typeend()$/
+typerecur	../src/p2put.c	/^typerecur( np , quals )$/
+tyrang	../src/type.c	/^tyrang(r)$/
+tyrec	../src/rec.c	/^tyrec(r, off)$/
+tyrec1	../src/rec.c	/^tyrec1(r, first)$/
+tyscal	../src/type.c	/^tyscal(r)$/
+ungoto	../src/stat.c	/^ungoto()$/
+uninclud	../src/yyget.c	/^uninclud()$/
+uniqv	../src/rec.c	/^uniqv(p)$/
+unyylex	../src/yylex.c	/^unyylex(y)$/
+var	../src/var.c	/^var(vline, vidl, vtype)$/
+varbeg	../src/var.c	/^varbeg( lineofyvar , r )$/
+varend	../src/var.c	/^varend()$/
+variants	../src/rec.c	/^variants(p, r)$/
+warning	../src/0.h	/^#define	warning()	setpfx('w')$/
+whereis	../src/clas.c	/^whereis( level , offset , other_flags )$/
+whilop	../src/stat.c	/^whilop(r)$/
+width	../src/var.c	/^width(np)$/
+withop	../src/stat.c	/^withop(s)$/
+word	../src/put.c	/^word(o)$/
+writef	../src/yymain.c	/^writef(i, cp)$/
+yerror	../src/yyerror.c	/^yerror(s, a1, a2, a3, a4, a5)$/
+yyPerror	../src/yypanic.c	/^yyPerror(cp, kind)$/
+yySsync	../src/yyput.c	/^yySsync()$/
+yybadref	../src/yyid.c	/^yybadref(p, line)$/
+yybaduse	../src/yyid.c	/^yybaduse(cp, line, kindmask)$/
+yycosts	../src/yycosts.c	/^yycosts()$/
+yydocost	../src/yycosts.c	/^yydocost(c)$/
+yyexeof	../src/yyrecover.c	/^yyexeof()$/
+yyflush	../src/yyput.c	/^yyflush()$/
+yygetline	../src/yyput.c	/^yygetline(efile, seekp, eline, eseqid)$/
+yyidok	../src/yyid.c	/^yyidok(p, kind)$/
+yyidok1	../src/yyid.c	/^yyidok1(p, kind)$/
+yyisvar	../src/yyid.c	/^yyisvar(p, varclass)$/
+yylex	../src/yylex.c	/^yylex()$/
+yymain	../src/yymain.c	/^yymain()$/
+yyoutfl	../src/yyput.c	/^yyoutfl(toseqid)$/
+yyoutline	../src/yyput.c	/^yyoutline()$/
+yyparse	../src/yyparse.c	/^yyparse()$/
+yyprintf	../src/yyput.c	/^yyprintf(cp, line)$/
+yyprline	../src/yyput.c	/^yyprline(buf, line, file, id)$/
+yyputfn	../src/yyput.c	/^yyputfn(cp)$/
+yyrecover	../src/yyrecover.c	/^yyrecover(Ps0, idfail)$/
+yyresume	../src/yy.h	/^#define	yyresume()	yyResume = 1;$/
+yyretrieve	../src/yyput.c	/^yyretrieve()$/
+yyset	../src/yylex.c	/^yyset()$/
+yysetfile	../src/error.c	/^yysetfile(name)$/
+yysync	../src/yyput.c	/^yysync()$/
+yyunexeof	../src/yyrecover.c	/^yyunexeof()$/
