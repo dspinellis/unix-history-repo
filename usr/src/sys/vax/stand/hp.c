@@ -1,4 +1,4 @@
-/*	hp.c	6.6	84/08/09	*/
+/*	hp.c	6.6	85/03/27	*/
 
 /*
  * RP??/RM?? disk driver
@@ -262,10 +262,7 @@ hard:
 	}
 	/*
 	 * Attempt to forward bad sectors on
-	 * anything but an ML11.  If drive
-	 * supports skip sector handling, try to
-	 * use it first; otherwise try the
-	 * bad sector table.
+	 * anything but an ML11.
 	 */
 	if ((er2 & HPER2_BSE) && !ML11) {
 badsect:
@@ -280,7 +277,6 @@ badsect:
 		io->i_error = EBSE;
 		goto hard;
 	}
-
 	/*
 	 * Skip sector handling.
 	 */
@@ -288,7 +284,7 @@ badsect:
 skipsect:
 		(void) hpecc(io, SSE);
 		ssect[unit] = 1;
-		goto success;
+		goto restart;
 	}
 	/*
 	 * ECC correction?
@@ -353,6 +349,7 @@ done:
 		while (hpaddr->hpds & HPDS_PIP)
 			;
 	}
+	io->i_cc = bytecnt;		/*reset i_cc to total count xfered*/
 	return (bytecnt);
 }
 
