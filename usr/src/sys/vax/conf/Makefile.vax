@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	6.11 (Berkeley) %G%
+#	@(#)Makefile.vax	6.12 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -75,7 +75,8 @@ autoconf.o tu.o: makefile
 
 # the following are necessary because the files depend on the types of
 # vax cpu's included in the system configuration
-clock.o machdep.o autoconf.o conf.o cons.o flp.o mba.o uba.o vaxcpu.o : makefile
+clock.o machdep.o autoconf.o conf.o cons.o cpudata.o : makefile
+flp.o mba.o uba.o vaxcpu.o : makefile
 # depend on network configuration
 af.o : makefile
 # depend on maxusers
