@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.85 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.86 (Berkeley) %G%
  */
 
 /*
@@ -304,9 +304,9 @@ vwakeup(bp)
  * Called with the underlying object locked.
  */
 int
-vinvalbuf(vp, save, cred, p)
+vinvalbuf(vp, flags, cred, p)
 	register struct vnode *vp;
-	int save;
+	int flags;
 	struct ucred *cred;
 	struct proc *p;
 {
@@ -314,21 +314,26 @@ vinvalbuf(vp, save, cred, p)
 	struct buf *nbp, *blist;
 	int s, error;
 
-	if (save) {
+	if (flags & V_SAVE) {
 		if (error = VOP_FSYNC(vp, cred, MNT_WAIT, p))
 			return (error);
 		if (vp->v_dirtyblkhd != NULL)
 			panic("vinvalbuf: dirty bufs");
 	}
 	for (;;) {
-		if (blist = vp->v_cleanblkhd)
-			/* void */;
-		else if (blist = vp->v_dirtyblkhd)
-			/* void */;
-		else
+		if ((blist = vp->v_cleanblkhd) && flags & V_SAVEMETA)
+			while (blist && blist->b_lblkno < 0)
+				blist = blist->b_blockf;
+		if (!blist && (blist = vp->v_dirtyblkhd) && flags & V_SAVEMETA)
+			while (blist && blist->b_lblkno < 0)
+				blist = blist->b_blockf;
+		if (!blist)
 			break;
+
 		for (bp = blist; bp; bp = nbp) {
 			nbp = bp->b_blockf;
+			if (flags & V_SAVEMETA && bp->b_lblkno < 0)
+				continue;
 			s = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
@@ -339,14 +344,11 @@ vinvalbuf(vp, save, cred, p)
 			bremfree(bp);
 			bp->b_flags |= B_BUSY;
 			splx(s);
-			if (bp->b_vp != vp)
-				reassignbuf(bp, bp->b_vp);
-			else
-				bp->b_flags |= B_INVAL;
+			bp->b_flags |= B_INVAL;
 			brelse(bp);
 		}
 	}
-	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
+	if (!(flags & V_SAVEMETA) && (vp->v_dirtyblkhd || vp->v_cleanblkhd))
 		panic("vinvalbuf: flush failed");
 	return (0);
 }
