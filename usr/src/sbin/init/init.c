@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)init.c	5.14 (Berkeley) %G%";
 #include <sys/reboot.h>
 #include <sys/syslog.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <setjmp.h>
 #include <utmp.h>
 #include <errno.h>
@@ -29,7 +30,6 @@ static char sccsid[] = "@(#)init.c	5.14 (Berkeley) %G%";
 char	shell[]	= _PATH_BSHELL;
 char	minus[]	= "-";
 char	runc[]	= _PATH_RC;
-char	utmpf[]	= _PATH_UTMP;
 char	ctty[]	= _PATH_CONSOLE;
 
 struct	tab
@@ -52,13 +52,11 @@ int	mergflag;
 char	tty[20];
 jmp_buf	sjbuf, shutpass;
 
-int	reset();
-int	idle();
 char	*strcpy(), *strcat();
 long	lseek();
+void	idle(), merge(), reset();
 
 struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
-
 
 #if defined(vax) || defined(tahoe)
 main()
@@ -72,15 +70,15 @@ main(argc, argv)
 	char **argv;
 {
 #endif
-	int howto, oldhowto;
+	int howto, oldhowto, started;
 
 #if defined(vax) || defined(tahoe)
 	howto = r11;
 #else
+	howto = 0;
 	if (argc > 1 && argv[1][0] == '-') {
 		char *cp;
 
-		howto = 0;
 		cp = &argv[1][1];
 		while (*cp) switch (*cp++) {
 		case 'a':
@@ -94,18 +92,23 @@ main(argc, argv)
 		howto = RB_SINGLE;
 	}
 #endif
+	if (getuid() != 0)
+		exit(1);
 	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
+	if (setsid() < 0)
+		syslog(LOG_ERR, "setsid failed (initial) %m");
 	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
 	signal(SIGTSTP, idle);
 	signal(SIGSTOP, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	(void) setjmp(sjbuf);
-	for (EVER) {
+	for (started = 0; ; ) {
 		oldhowto = howto;
 		howto = RB_SINGLE;
-		if (setjmp(shutpass) == 0)
+		if (started && setjmp(shutpass) == 0)
 			shutdown();
+		started = 1;
 		if (oldhowto & RB_SINGLE)
 			single();
 		if (runcom(oldhowto) == 0) 
@@ -115,14 +118,13 @@ main(argc, argv)
 	}
 }
 
-int	shutreset();
+void	shutreset();
 
 shutdown()
 {
 	register i;
 	register struct tab *p, *p1;
 
-	close(creat(utmpf, 0644));
 	signal(SIGHUP, SIG_IGN);
 	for (p = itab; p ; ) {
 		term(p);
@@ -143,8 +145,9 @@ shutdown()
 	shutend();
 }
 
-char shutfailm[] = "WARNING: Something is hung (won't die); ps axl advised\n";
+char shutfailm[] = "init: WARNING: something is hung (won't die); ps axl advised\n";
 
+void
 shutreset()
 {
 	int status;
@@ -184,7 +187,11 @@ single()
 			signal(SIGHUP, SIG_DFL);
 			signal(SIGALRM, SIG_DFL);
 			signal(SIGTSTP, SIG_IGN);
+			if (setsid() < 0)
+				syslog(LOG_ERR, "setsid failed (single): %m");
 			(void) open(ctty, O_RDWR);
+			if (ioctl(0, TIOCSCTTY, 0) < 0)
+				syslog(LOG_ERR, "TIOCSCTTY failed: %m");
 			dup2(0, 1);
 			dup2(0, 2);
 			execl(shell, minus, (char *)0);
@@ -205,9 +212,13 @@ runcom(oldhowto)
 
 	pid = fork();
 	if (pid == 0) {
-		(void) open("/", O_RDONLY);
+		(void) open(ctty, O_RDONLY);
 		dup2(0, 1);
 		dup2(0, 2);
+		if (setsid() < 0)
+			syslog(LOG_ERR, "setsid failed (runcom) %m");
+		if (ioctl(0, TIOCSCTTY, 0) < 0) 
+			syslog(LOG_ERR, "TIOCSCTTY failed (runcom) %m");
 		if (oldhowto & RB_SINGLE)
 			execl(shell, shell, runc, (char *)0);
 		else
@@ -222,7 +233,6 @@ runcom(oldhowto)
 	return (1);
 }
 
-int merge();
 struct	sigvec	mvec = { merge, sigmask(SIGTERM), 0 };
 /*
  * Multi-user.  Listen for users leaving, SIGHUP's
@@ -231,6 +241,7 @@ struct	sigvec	mvec = { merge, sigmask(SIGTERM), 0 };
  */
 multiple()
 {
+	extern int errno;
 	register struct tab *p;
 	register pid;
 	int omask;
@@ -238,7 +249,8 @@ multiple()
 	sigvec(SIGHUP, &mvec, (struct sigvec *)0);
 	for (EVER) {
 		pid = wait((int *)0);
-		if (pid == -1)
+/* SHOULD FIX THIS IN THE KERNEL */
+		if (pid == -1 && errno != EINTR)
 			return;
 		omask = sigblock(sigmask(SIGHUP));
 		for (ALL) {
@@ -266,6 +278,7 @@ multiple()
 #define	CHANGE	2
 #define WCHANGE 4
 
+void
 merge()
 {
 	register struct tab *p;
@@ -390,6 +403,8 @@ dfork(p)
 			closelog();
 			sleep(30);
 		}
+		if (setsid() < 0)
+			syslog(LOG_ERR, "setsid failed(dfork) %m");
 		execit(p->comn, p->line);
 		exit(0);
 	}
@@ -400,7 +415,7 @@ cleanutmp(p)
 	register struct tab *p;
 {
 	if (logout(p->line)) {
-		logwtmp(p->line);
+		logwtmp(p->line, "", "");
 		/*
 		 * After a proper login force reset
 		 * of error detection code in dfork.
@@ -410,20 +425,21 @@ cleanutmp(p)
 	}
 }
 
+void
 reset()
 {
-
 	longjmp(sjbuf, 1);
 }
 
 jmp_buf	idlebuf;
 
+void
 idlehup()
 {
-
 	longjmp(idlebuf, 1);
 }
 
+void
 idle()
 {
 	register struct tab *p;
@@ -488,6 +504,8 @@ wstart(p)
 			closelog();
 			sleep(30);
 		}
+		if (setsid() < 0)
+			syslog(LOG_ERR, "setsid failed (window) %m");
 		execit(p->wcmd, p->line);
 		exit(0);
 	}
