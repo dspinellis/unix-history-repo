@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.11 %G%";
+static char sccsid[] = "@(#)object.c 1.12 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -181,7 +181,7 @@ Fileid f;
 		    ++p;
 		}
 		--p;
-		if (*p == '-') {
+		if (*p == '_') {
 		    *p = '\0';
 		}
             }
@@ -220,7 +220,7 @@ Fileid f;
 	}
     }
     if (not afterlg) {
-	panic("not linked for debugging, use \"cc -g ...\"");
+	fatal("not linked for debugging, use \"cc -g ...\"");
     }
     dispose(namelist);
 }
@@ -251,11 +251,6 @@ private initsyms()
     findbeginning(program);
     enterblock(program);
     curmodule = program;
-    t_boolean = maketype("$boolean", 0L, 1L);
-    t_int = maketype("$integer", 0x80000000L, 0x7fffffffL);
-    t_char = maketype("$char", 0L, 127L);
-    t_real = maketype("$real", 8L, 0L);
-    t_nil = maketype("$nil", 0L, 0L);
 }
 
 /*
@@ -821,8 +816,11 @@ struct nlist *np;
  *	r<type>;<number>;<number>		$ subrange
  *	a<type>;<type>				$ array[index] of element
  *	s{<name>:<type>;<number>;<number>}	$ record
+ *	S<type>					$ set
  *	*<type>					$ pointer
  */
+
+private Rangetype getrangetype();
 
 private Symbol constype(type)
 Symbol type;
@@ -869,60 +867,13 @@ Symbol type;
 	t->block = curblock;
 	class = *curchar++;
 	switch (class) {
-
 	    case 'r':
 		t->class = RANGE;
 		t->type = constype(nil);
 		skipchar(curchar, ';');
-                /* some letters indicate a dynamic bound, ie what follows
-                   is the offset from the fp which contains the bound; this will
-                   need a different encoding when pc a['A'..'Z'] is
-                   added; J is a special flag to handle fortran a(*) bounds
-                */
-		switch(*curchar) {
-			case 'A':
-				t->symvalue.rangev.lowertype = R_ARG;
-                  		curchar++;
-			        break;
-
-			case 'T':
-				t->symvalue.rangev.lowertype = R_TEMP;
-                  		curchar++;
-			        break;
-
-			case 'J': 
-				t->symvalue.rangev.lowertype = R_ADJUST;
-                  		curchar++;
-			  	break;
-
-			default:
-				 t->symvalue.rangev.lowertype = R_CONST;
-			  	 break;
-
-		}
+		t->symvalue.rangev.lowertype = getrangetype();
 	        t->symvalue.rangev.lower = getint();
-		skipchar(curchar, ';');
-		switch(*curchar) {
-			case 'A':
-				t->symvalue.rangev.uppertype = R_ARG;
-                  		curchar++;
-			        break;
-
-			case 'T':
-				t->symvalue.rangev.uppertype = R_TEMP;
-                  		curchar++;
-			        break;
-
-			case 'J': 
-				t->symvalue.rangev.uppertype = R_ADJUST;
-                  		curchar++;
-			  	break;
-
-			default:
-				 t->symvalue.rangev.uppertype = R_CONST;
-			  	 break;
-
-		}
+		t->symvalue.rangev.uppertype = getrangetype();
 		t->symvalue.rangev.upper = getint();
 		break;
 
@@ -930,6 +881,11 @@ Symbol type;
 		t->class = ARRAY;
 		t->chain = constype(nil);
 		skipchar(curchar, ';');
+		t->type = constype(nil);
+		break;
+
+	    case 'S':
+		t->class = SET;
 		t->type = constype(nil);
 		break;
 
@@ -998,6 +954,41 @@ Symbol type;
 	    default:
 		badcaseval(class);
 	}
+    }
+    return t;
+}
+
+/*
+ * Get a range type.
+ *
+ * Special letters indicate a dynamic bound, i.e. what follows
+ * is the offset from the fp which contains the bound.
+ * J is a special flag to handle fortran a(*) bounds.
+ */
+
+private Rangetype getrangetype()
+{
+    Rangetype t;
+
+    switch (*curchar) {
+	case 'A':
+	    t = R_ARG;
+	    curchar++;
+	    break;
+
+	case 'T':
+	    t = R_TEMP;
+	    curchar++;
+	    break;
+
+	case 'J': 
+	    t = R_ADJUST;
+	    curchar++;
+	    break;
+
+	default:
+	    t = R_CONST;
+	    break;
     }
     return t;
 }
