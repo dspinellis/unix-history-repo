@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.4 (Berkeley) %G%
+ *	@(#)locore.s	7.5 (Berkeley) %G%
  */
 
 /*
@@ -2318,7 +2318,6 @@ LEAF(MachSwitchFPState)
 	.set	noreorder
 	mfc0	t1, MACH_COP_0_STATUS_REG	# Save old SR
 	li	t0, MACH_SR_COP_1_BIT		# enable the coprocessor
-	or	t0, t0, t1
 	mtc0	t0, MACH_COP_0_STATUS_REG
 
 	beq	a0, zero, 1f			# skip save if NULL pointer
@@ -2432,7 +2431,7 @@ END(MachSwitchFPState)
  *	None.
  *
  * Side effects:
- *	None.
+ *	machFPCurProcPtr is cleared.
  *
  *----------------------------------------------------------------------------
  */
@@ -2442,7 +2441,7 @@ LEAF(MachSaveCurFPState)
 	mfc0	t1, MACH_COP_0_STATUS_REG	# Disable interrupts and
 	li	t0, MACH_SR_COP_1_BIT		#  enable the coprocessor
 	mtc0	t0, MACH_COP_0_STATUS_REG
-	nop
+	sw	zero, machFPCurProcPtr		# indicate state has been saved
 /*
  * First read out the status register to make sure that all FP operations
  * have completed.
