@@ -104,7 +104,8 @@ init_services()
 	if ((fd = (FILE *)fopen(_PATH_HOSTCONF, "r")) == NULL) {
 				/* make some assumptions */
 		service_order[0] = SERVICE_BIND;
-		service_order[1] = SERVICE_NONE;
+		service_order[1] = SERVICE_HOSTS;
+		service_order[2] = SERVICE_NONE;
 	} else {
 		while (fgets(buf, BUFSIZ, fd) != NULL && cc < SERVICE_MAX) {
 			if ((cp = rindex(buf, '\n')) != NULL)
