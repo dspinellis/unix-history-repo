@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.42 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.43 (Berkeley) %G%
  */
 
 /*
@@ -695,6 +695,8 @@ nfs_reply(myrep)
 			 */
 			if (NFSIGNORE_SOERROR(nmp->nm_soflags, error)) {
 				nmp->nm_so->so_error = 0;
+				if (myrep->r_flags & R_GETONEREP)
+					return (0);
 				continue;
 			}
 			return (error);
@@ -718,6 +720,8 @@ nfs_reply(myrep)
 				m_freem(mrep);
 			}
 nfsmout:
+			if (myrep->r_flags & R_GETONEREP)
+				return (0);
 			continue;
 		}
 
@@ -802,6 +806,8 @@ nfsmout:
 				panic("nfsreply nil");
 			return (0);
 		}
+		if (myrep->r_flags & R_GETONEREP)
+			return (0);
 	}
 }
 
@@ -1302,7 +1308,7 @@ nfs_timer(arg)
 		nqnfs_serverd();
 	}
 	splx(s);
-	timeout(nfs_timer, (caddr_t)0, hz/NFS_HZ);
+	timeout(nfs_timer, (void *)0, hz / NFS_HZ);
 }
 
 /*
