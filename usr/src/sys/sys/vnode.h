@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.11 (Berkeley) %G%
+ *	@(#)vnode.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -137,7 +137,7 @@ struct vnodeops {
 #define	VOP_IOCTL(v,o,d,f,c)	(*((v)->v_op->vn_ioctl))((v),(o),(d),(f),(c))
 #define	VOP_SELECT(v,w,c)	(*((v)->v_op->vn_select))((v),(w),(c))
 #define	VOP_MMAP(v,c)		(*((v)->v_op->vn_mmap))((v),(c))
-#define	VOP_FSYNC(v,f,c)	(*((v)->v_op->vn_fsync))((v),(f),(c))
+#define	VOP_FSYNC(v,f,c,w)	(*((v)->v_op->vn_fsync))((v),(f),(c),(w))
 #define	VOP_SEEK(v,p,o,w)	(*((v)->v_op->vn_seek))((v),(p),(o),(w))
 #define	VOP_REMOVE(n)		(*((n)->ni_dvp->v_op->vn_remove))(n)
 #define	VOP_LINK(v,n)		(*((n)->ni_dvp->v_op->vn_link))((v),(n))
