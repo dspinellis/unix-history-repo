@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.21 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.22 (Berkeley) %G%
  */
 
 /*
@@ -27,7 +27,7 @@ getpid(p, uap, retval)
 {
 
 	*retval = p->p_pid;
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 	retval[1] = p->p_pptr->p_pid;
 #endif
 	return (0);
@@ -63,7 +63,7 @@ getuid(p, uap, retval)
 {
 
 	*retval = p->p_cred->p_ruid;
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 	retval[1] = p->p_ucred->cr_uid;
 #endif
 	return (0);
@@ -88,7 +88,7 @@ getgid(p, uap, retval)
 {
 
 	*retval = p->p_cred->p_rgid;
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 	retval[1] = p->p_ucred->cr_groups[0];
 #endif
 	return (0);
@@ -298,7 +298,7 @@ setegid(p, uap, retval)
 	return (0);
 }
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /* ARGSUSED */
 osetreuid(p, uap, retval)
 	register struct proc *p;
@@ -359,7 +359,7 @@ osetregid(p, uap, retval)
 	pc->p_rgid = rgid;
 	return (0);
 }
-#endif
+#endif /* COMPAT_43 || COMPAT_SUNOS */
 
 /* ARGSUSED */
 setgroups(p, uap, retval)
