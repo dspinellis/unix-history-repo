@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.17 (Berkeley) %G%";
 #endif
 
 /*
@@ -243,7 +243,7 @@ savestr(s)
 	
 	if (new != NULL)
 		strcpy(new, s);
-	return(new);
+	return (new);
 }
 
 retrieve(cmd, name)
