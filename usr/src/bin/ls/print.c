@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -63,7 +63,7 @@ printlong(stats, num)
 			printgrp(stats->lstat.st_gid);
 		if (S_ISCHR(stats->lstat.st_mode) ||
 		    S_ISBLK(stats->lstat.st_mode))
-			(void)printf("%3d,%4d ", major(stats->lstat.st_rdev),
+			(void)printf("%3d, %3d ", major(stats->lstat.st_rdev),
 			    minor(stats->lstat.st_rdev));
 		else
 			(void)printf("%8ld ", stats->lstat.st_size);
@@ -322,6 +322,7 @@ printperms(mode)
 		(void)putchar('t');
 		break;
 	}
+	(void)putchar(' ');
 }
 
 printtype(mode)
