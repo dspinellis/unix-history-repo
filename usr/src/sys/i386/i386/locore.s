@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)locore.s	5.1 (Berkeley) %G%
+ *	@(#)locore.s	5.2 (Berkeley) %G%
  */
 
 /*
@@ -267,11 +267,21 @@ start:				# This is assumed to be location zero!
 	addl	$(UPDROFF*4), %ebx	# offset of pde for kernel
 	movl	%eax,0(%ebx)		# which is where _u maps!
 
+#ifdef bug
+	movl	$_Sysmap-SYSTEM,%eax	# physical address of kernel page table
+	movl	$0x21,%ebx
+	shll	$2,%ebx
+	addl	%ebx,%eax
+	xorl	%ebx,%ebx
+	movl	%ebx,0(%eax)		# un validate offending pte
+#endif
+
 	movl	%edi,%eax		# phys address of ptd in proc 0
  # orl $0x80000000,%eax
-	movl	%eax,%cr3			# load ptd addr into mmu
-	movl	$0x80000001,%eax		# and let s page!
-	movl	%eax,%cr0			# NOW!
+	movl	%eax,%cr3		# load ptd addr into mmu
+	movl	%cr0,%eax		# get control word
+	orl	$0x80000001,%eax	# and let s page!
+	movl	%eax,%cr0		# NOW!
 
 	pushl	$begin				# jump to high mem!
 	ret		# jmp $begin does not work
@@ -299,6 +309,10 @@ begin:
 	movl	%ecx,PCB_P1BR(%eax)	# p1br: P1PAGES from end of PT
 	movl	$ P1PAGES-UPAGES,PCB_P1LR(%eax)	# p1lr: vax style
 	movl	$ CLSIZE,PCB_SZPT(%eax)	# page table size
+	fninit
+	pushl	$0x262
+	fldcw	0(%esp)
+	popl	%eax
 #ifdef FPUNOTYET
 #endif
 	pushl	%edi	# cr3
@@ -734,8 +748,7 @@ ENTRY(subyte)
 	movl	%edi,16(%eax)		# save edi
 	movl	(%esp),%edx		# get rta
 	movl	%edx,20(%eax)		# save eip
-	movl	$0,%edx			# return (0);
-	movl	$0,%eax			# return (0);
+	xorl	%eax,%eax		# return (0);
 	ret
 
 	ENTRY(longjmp)
@@ -857,7 +870,7 @@ sw1:
 	bsfl	_whichqs,%eax	# find a full q
 	jz	idle		# if none, idle
 swfnd:
-	cli
+	# cli
 	btrl	%eax,_whichqs	# clear q full status
 	jnb	sw1		# if it was clear, look for another
 	pushl	%eax		# save which one we are using
@@ -934,8 +947,8 @@ sw2:
 #endif
 	cmpl	$0,PCB_SSWAP(%ecx)	# do an alternate return?
 	jne	res3			# yes, go reload regs
-	# call	_spl0
-	sti
+	call	_spl0
+	# sti
 	ret
 res3:
 	xorl	%eax,%eax		# inline restore context
@@ -961,7 +974,8 @@ res3:
  * [ all thats really needed is esp and eip ]
  */
 ENTRY(resume)
-	movl	4(%esp),%ecx
+	# movl	4(%esp),%ecx
+	movl	$_u,%ecx
 	movl	(%esp),%eax	
 	movl	%eax, PCB_EIP(%ecx)
 	movl	%ebx, PCB_EBX(%ecx)
@@ -985,15 +999,12 @@ _nofault:	.long	0
 	.globl _astoff
 	.globl _doadump
 	.globl _inittodr
-	.globl _ovbcopy
 	.globl _physaddr
 _addupc:
 	.byte 0xcc
 _astoff:
 	ret
 _doadump:
-	.byte 0xcc
-_ovbcopy:
 	.byte 0xcc
 _physaddr:
 	.byte 0xcc
