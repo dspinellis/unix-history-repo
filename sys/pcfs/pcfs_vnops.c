@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id: pcfs_vnops.c,v 1.5 1994/03/15 20:28:54 ache Exp $
+ *	$Id: pcfs_vnops.c,v 1.6 1994/05/25 08:33:15 swallace Exp $
  */
 
 #include "param.h"
@@ -403,17 +403,6 @@ pcfs_read(vp, uio, ioflag, cred)
 			return error;
 		}
 		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
-/*
- *  If we have read everything from this block or
- *  have read to end of file then we are done with
- *  this block.  Mark it to say the buffer can be reused if
- *  need be.
- */
-#if 0
-		if (n + on == pmp->pm_bpcluster  ||
-		    uio->uio_offset == dep->de_FileSize)
-			bp->b_flags |= B_AGE;
-#endif
 		brelse(bp);
 	} while (error == 0  &&  uio->uio_resid > 0  && n != 0);
 	return error;
@@ -568,7 +557,6 @@ printf("pcfs_write(): diroff %d, dirclust %d, startcluster %d\n",
 			(void) bwrite(bp);
 		else
 		if (n + croffset == pmp->pm_bpcluster) {
-			bp->b_flags |= B_AGE;
 			bawrite(bp);
 		} else
 			bdwrite(bp);
@@ -1460,17 +1448,6 @@ printf("pcfs_readdir(): vp %08x, uio %08x, cred %08x, eofflagp %08x\n",
 				uio);
 		}
 
-/*
- *  If we have read everything from this block or
- *  have read to end of file then we are done with
- *  this block.  Mark it to say the buffer can be reused if
- *  need be.
- */
-#if 0
-		if (n + on == pmp->pm_bpcluster  ||
-		    (uio->uio_offset-bias) == dep->de_FileSize)
-			bp->b_flags |= B_AGE;
-#endif
 		brelse(bp);
 	} while (error == 0  &&  uio->uio_resid > 0  && n != 0);
 out:;
