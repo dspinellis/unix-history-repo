@@ -40,25 +40,34 @@ static char sccsid[] = "@(#)strftime.c	5.11 (Berkeley) 2/24/91";
 #include <tzfile.h>
 #include <string.h>
 
-static char *afmt[] = {
+static char *abday[] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
 };
-static char *Afmt[] = {
+static char *day[] = {
 	"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
 	"Saturday",
 };
-static char *bfmt[] = {
+static char *abmon[] = {
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
 	"Oct", "Nov", "Dec",
 };
-static char *Bfmt[] = {
+static char *mon[] = {
 	"January", "February", "March", "April", "May", "June", "July",
 	"August", "September", "October", "November", "December",
 };
+static char *ampm[] = {
+	"AM", "PM",
+};
+
+static const char *d_t_fmt = "%a %b %e %H:%M:%S %Y";
+static const char *d_fmt = "%m/%d/%y";
+static const char *t_fmt = "%H:%M:%S";
+static const char *t_fmt_ampm = "%I:%M:%S %p";
 
 static size_t gsize;
 static char *pt;
 static int _add(), _conv(), _secs();
+static size_t _fmt();
 
 size_t
 strftime(s, maxsize, format, t)
@@ -67,8 +76,6 @@ strftime(s, maxsize, format, t)
 	const char *format;
 	const struct tm *t;
 {
-	static size_t _fmt();
-
 	pt = s;
 	if ((gsize = maxsize) < 1)
 		return(0);
@@ -85,42 +92,51 @@ _fmt(format, t)
 	struct tm *t;
 {
 	for (; *format; ++format) {
-		if (*format == '%')
-			switch(*++format) {
+		if (*format == '%') {
+			++format;
+			if (*format == 'E') {
+				/* Alternate Era */
+				++format;
+			} else if (*format == 'O') {
+				/* Alternate numeric symbols */
+				++format;
+			}
+			switch(*format) {
 			case '\0':
 				--format;
 				break;
 			case 'A':
 				if (t->tm_wday < 0 || t->tm_wday > 6)
 					return(0);
-				if (!_add(Afmt[t->tm_wday]))
+				if (!_add(day[t->tm_wday]))
 					return(0);
 				continue;
 			case 'a':
 				if (t->tm_wday < 0 || t->tm_wday > 6)
 					return(0);
-				if (!_add(afmt[t->tm_wday]))
+				if (!_add(abday[t->tm_wday]))
 					return(0);
 				continue;
 			case 'B':
 				if (t->tm_mon < 0 || t->tm_mon > 11)
 					return(0);
-				if (!_add(Bfmt[t->tm_mon]))
+				if (!_add(mon[t->tm_mon]))
 					return(0);
 				continue;
 			case 'b':
 			case 'h':
 				if (t->tm_mon < 0 || t->tm_mon > 11)
 					return(0);
-				if (!_add(bfmt[t->tm_mon]))
+				if (!_add(abmon[t->tm_mon]))
 					return(0);
 				continue;
 			case 'C':
-				if (!_fmt("%a %b %e %H:%M:%S %Y", t))
+				if (!_conv((t->tm_year + TM_YEAR_BASE) / 100,
+				    2, '0'))
 					return(0);
 				continue;
 			case 'c':
-				if (!_fmt("%m/%d/%y %H:%M:%S", t))
+				if (!_fmt(d_t_fmt, t))
 					return(0);
 				continue;
 			case 'D':
@@ -154,7 +170,7 @@ _fmt(format, t)
 				continue;
 			case 'l':
 				if (!_conv(t->tm_hour % 12 ?
-				    t->tm_hour % 12 : 12, 2, ' '))
+				    t->tm_hour % 12: 12, 2, ' '))
 					return(0);
 				continue;
 			case 'M':
@@ -170,15 +186,14 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'p':
-				if (!_add(t->tm_hour >= 12 ? "PM" : "AM"))
+				if (!_add(ampm[t->tm_hour >= 12]))
 					return(0);
 				continue;
 			case 'R':
 				if (!_fmt("%H:%M", t))
 					return(0);
-				continue;
 			case 'r':
-				if (!_fmt("%I:%M:%S %p", t))
+				if (!_fmt(t_fmt_ampm, t))
 					return(0);
 				continue;
 			case 'S':
@@ -190,7 +205,6 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'T':
-			case 'X':
 				if (!_fmt("%H:%M:%S", t))
 					return(0);
 				continue;
@@ -203,10 +217,36 @@ _fmt(format, t)
 				    2, '0'))
 					return(0);
 				continue;
+			case 'u':
+				if (!_conv(t->tm_wday ? t->tm_wday : 7, 2, '0'))
+					return(0);
+				continue;
+			case 'V':
+				{
+				/* ISO 8601 Week Of Year:
+				   If the week (Monday - Sunday) containing
+				   January 1 has four or more days in the new 
+				   year, then it is week 1; otherwise it is 
+				   week 53 of the previous year and the next
+				   week is week one. */
+				 
+				int week = (t->tm_yday + 7 - 
+					    (t->tm_wday ? (t->tm_wday - 1) : 6)) / 7;
+
+				if (((t->tm_yday + 7 - (t->tm_wday + 1)) % 7) >= 4) {
+					week++;
+				} else if (week == 0) {
+					week = 53;
+				}
+
+				if (!_conv(week, 2, '0'))
+					return(0);
+				continue;
+				}
 			case 'W':
 				if (!_conv((t->tm_yday + 7 -
-				    (t->tm_wday ? (t->tm_wday - 1) : 6))
-				    / 7, 2, '0'))
+				    (t->tm_wday ? (t->tm_wday - 1) : 6)) / 7,
+				    2, '0'))
 					return(0);
 				continue;
 			case 'w':
@@ -214,20 +254,24 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'x':
-				if (!_fmt("%m/%d/%y", t))
+				if (!_fmt(d_fmt, t))
+					return(0);
+				continue;
+			case 'X':
+				if (!_fmt(t_fmt, t))
 					return(0);
 				continue;
 			case 'y':
-				if (!_conv((t->tm_year + TM_YEAR_BASE)
-				    % 100, 2, '0'))
+				if (!_conv((t->tm_year + TM_YEAR_BASE) % 100,
+				    2, '0'))
 					return(0);
 				continue;
 			case 'Y':
-				if (!_conv(t->tm_year + TM_YEAR_BASE, 4, '0'))
+				if (!_conv((t->tm_year + TM_YEAR_BASE), 4, '0'))
 					return(0);
 				continue;
 			case 'Z':
-				if (!t->tm_zone || !_add(t->tm_zone))
+				if (t->tm_zone && !_add(t->tm_zone))
 					return(0);
 				continue;
 			case '%':
@@ -238,6 +282,7 @@ _fmt(format, t)
 			 */
 			default:
 				break;
+			}
 		}
 		if (!gsize--)
 			return(0);
