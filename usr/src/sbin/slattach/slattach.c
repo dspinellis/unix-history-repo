@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)slattach.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)slattach.c	4.1 (Berkeley) 2/17/86";
 #endif
 #include <stdio.h>
 #include <sys/param.h>
@@ -15,23 +15,19 @@ static char rcsid[] = "$Header: slattach.c,v 1.1 84/10/04 12:57:12 rick Exp $";
 #endif
 
 #define DEFAULT_BAUD	9600
-int	speed;
 int	slipdisc = SLIPDISC;
 
 char	devname[32];
 char	hostname[MAXHOSTNAMELEN];
 
-extern int errno;
-
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register FILE *fp;
 	register int fd;
 	register char *dev = argv[1];
 	struct sgttyb sgtty;
-	int n;
+	int	speed;
 
 	if (argc < 2 || argc > 3) {
 		fprintf(stderr, "usage: %s ttyname [baudrate]\n", argv[0]);
@@ -43,7 +39,7 @@ main(argc, argv)
 		exit(1);
 	}
 	if (strncmp("/dev/", dev, 5)) {
-		sprintf(devname, "/dev/%s", dev);
+		(void)sprintf(devname, "/dev/%s", dev);
 		dev = devname;
 	}
 	if ((fd = open(dev, O_RDWR | O_NDELAY)) < 0) {
@@ -64,7 +60,7 @@ main(argc, argv)
 	if (fork() > 0)
 		exit(0);
 	for (;;)
-		sigpause(0);
+		sigpause(0L);
 }
 
 struct sg_spds {
