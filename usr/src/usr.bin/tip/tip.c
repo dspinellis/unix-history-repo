@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -83,9 +83,8 @@ main(argc, argv)
 
 	if (system == NOSTR)
 		goto notnumber;
-	for (p = system; *p; p++)
-		if (isalpha(*p))
-			goto notnumber;
+	if (isalpha(*system))
+		goto notnumber;
 	/*
 	 * System name is really a phone number...
 	 * Copy the number then stomp on the original (in case the number
