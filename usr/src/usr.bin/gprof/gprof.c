@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gprof.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)gprof.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -398,6 +398,8 @@ tally( rawp )
 
     parentp = nllookup( rawp -> raw_frompc );
     childp = nllookup( rawp -> raw_selfpc );
+    if ( parentp == 0 || childp == 0 )
+	return;
     if ( kflag
 	 && onlist( kfromlist , parentp -> name )
 	 && onlist( ktolist , childp -> name ) ) {
