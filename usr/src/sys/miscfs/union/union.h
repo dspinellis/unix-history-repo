@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	1.1 (Berkeley) %G%
+ *	@(#)union.h	1.2 (Berkeley) %G%
  */
 
 struct union_args {

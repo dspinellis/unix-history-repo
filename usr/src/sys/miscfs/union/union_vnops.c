@@ -4,11 +4,11 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Jan-Simon Pendry and by John Heidemann of the UCLA Ficus project.
+ * Jan-Simon Pendry.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	1.1 (Berkeley) %G%
+ *	@(#)union_vnops.c	1.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,176 +24,6 @@
 #include <sys/malloc.h>
 #include <sys/buf.h>
 #include "union.h"
-
-
-int union_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
-
-/*
- * This is the 10-Apr-92 bypass routine.
- *    This version has been optimized for speed, throwing away some
- * safety checks.  It should still always work, but it's not as
- * robust to programmer errors.
- *    Define SAFETY to include some error checking code.
- *
- * In general, we map all vnodes going down and unmap them on the way back.
- * As an exception to this, vnodes can be marked "unmapped" by setting
- * the Nth bit in operation's vdesc_flags.
- *
- * Also, some BSD vnode operations have the side effect of vrele'ing
- * their arguments.  With stacking, the reference counts are held
- * by the upper node, not the lower one, so we must handle these
- * side-effects here.  This is not of concern in Sun-derived systems
- * since there are no such side-effects.
- *
- * This makes the following assumptions:
- * - only one returned vpp
- * - no INOUT vpp's (Sun's vop_open has one of these)
- * - the vnode operation vector of the first vnode should be used
- *   to determine what implementation of the op should be invoked
- * - all mapped vnodes are of our vnode-type (NEEDSWORK:
- *   problems on rmdir'ing mount points and renaming?)
- */ 
-int
-union_bypass(ap)
-	struct vop_generic_args /* {
-		struct vnodeop_desc *a_desc;
-		<other random data follows, presumably>
-	} */ *ap;
-{
-	struct vnode **this_vp_p;
-	int error;
-	struct vnode *old_vps[VDESC_MAX_VPS];
-	struct vnode **vps_p[VDESC_MAX_VPS];
-	struct vnode ***vppp;
-	struct vnodeop_desc *descp = ap->a_desc;
-	int reles, i;
-
-	if (union_bug_bypass)
-		printf ("union_bypass: %s\n", descp->vdesc_name);
-
-#ifdef SAFETY
-	/*
-	 * We require at least one vp.
-	 */
-	if (descp->vdesc_vp_offsets == NULL ||
-	    descp->vdesc_vp_offsets[0] == VDESC_NO_OFFSET)
-		panic ("union_bypass: no vp's in map.\n");
-#endif
-
-	/*
-	 * Map the vnodes going in.
-	 * Later, we'll invoke the operation based on
-	 * the first mapped vnode's operation vector.
-	 */
-	reles = descp->vdesc_flags;
-	for (i = 0; i < VDESC_MAX_VPS; reles >>= 1, i++) {
-		if (descp->vdesc_vp_offsets[i] == VDESC_NO_OFFSET)
-			break;   /* bail out at end of list */
-		vps_p[i] = this_vp_p = 
-			VOPARG_OFFSETTO(struct vnode **, descp->vdesc_vp_offsets[i],ap);
-		/*
-		 * We're not guaranteed that any but the first vnode
-		 * are of our type.  Check for and don't map any
-		 * that aren't.  (We must always map first vp or vclean fails.)
-		 */
-		if (i && (*this_vp_p)->v_op != union_vnodeop_p) {
-			old_vps[i] = NULL;
-		} else {
-			old_vps[i] = *this_vp_p;
-			*(vps_p[i]) = OTHERVP(*this_vp_p);
-			/*
-			 * XXX - Several operations have the side effect
-			 * of vrele'ing their vp's.  We must account for
-			 * that.  (This should go away in the future.)
-			 */
-			if (reles & 1)
-				VREF(*this_vp_p);
-		}
-			
-	}
-
-	/*
-	 * Call the operation on the lower layer
-	 * with the modified argument structure.
-	 */
-	error = VCALL(*(vps_p[0]), descp->vdesc_offset, ap);
-
-	/*
-	 * Maintain the illusion of call-by-value
-	 * by restoring vnodes in the argument structure
-	 * to their original value.
-	 */
-	reles = descp->vdesc_flags;
-	for (i = 0; i < VDESC_MAX_VPS; reles >>= 1, i++) {
-		if (descp->vdesc_vp_offsets[i] == VDESC_NO_OFFSET)
-			break;   /* bail out at end of list */
-		if (old_vps[i]) {
-			*(vps_p[i]) = old_vps[i];
-			if (reles & 1)
-				vrele(*(vps_p[i]));
-		}
-	}
-
-	/*
-	 * Map the possible out-going vpp
-	 * (Assumes that the lower layer always returns
-	 * a VREF'ed vpp unless it gets an error.)
-	 */
-	if (descp->vdesc_vpp_offset != VDESC_NO_OFFSET &&
-	    !(descp->vdesc_flags & VDESC_NOMAP_VPP) &&
-	    !error) {
-		/*
-		 * XXX - even though some ops have vpp returned vp's,
-		 * several ops actually vrele this before returning.
-		 * We must avoid these ops.
-		 * (This should go away when these ops are regularized.)
-		 */
-		if (descp->vdesc_flags & VDESC_VPP_WILLRELE)
-			goto out;
-		vppp = VOPARG_OFFSETTO(struct vnode***,
-				 descp->vdesc_vpp_offset,ap);
-		panic("union: failed to handled returned vnode");
-		error = union_allocvp(0, 0, 0, 0, 0, 0);
-	}
-
-out:
-	return (error);
-}
-
-/*
- * Check access permission on the union vnode.
- * The access check being enforced is to check
- * against both the underlying vnode, and any
- * copied vnode.  This ensures that no additional
- * file permissions are given away simply because
- * the user caused an implicit file copy.
- */
-int
-union_access(ap)
-	struct vop_access_args /* {
-		struct vnodeop_desc *a_desc;
-		struct vnode *a_vp;
-		int a_mode;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap;
-{
-	struct union_node *un = VTOUNION(ap->a_vp);
-	struct vnode *vp;
-
-	if (vp = un->un_lowervp) {
-		int error;
-
-		error = VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p);
-		if (error)
-			return (error);
-	}
-
-	if (vp = un->un_uppervp)
-		return (VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p));
-	
-	return (0);
-}
 
 static int
 union_mkshadow(dvp, cnp, vpp)
@@ -391,9 +221,86 @@ union_lookup(ap)
 			      uppervp, lowervp));
 }
 
+int
+union_create(ap)
+	struct vop_create_args /* {
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+		struct vattr *a_vap;
+	} */ *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_dvp);
+	struct vnode *dvp = un->un_uppervp;
+
+	if (dvp) {
+		int error;
+		struct vnode *vp;
+		struct mount *mp = ap->a_dvp->v_mount;
+
+		VREF(dvp);
+		VOP_LOCK(dvp);
+		vput(ap->a_dvp);
+		error = VOP_CREATE(dvp, &vp, ap->a_cnp, ap->a_vap);
+		if (error)
+			return (error);
+
+		error = union_allocvp(
+				ap->a_vpp,
+				mp,
+				un->un_uppervp,
+				ap->a_cnp,
+				vp,
+				NULLVP);
+		return (error);
+	}
+
+	vput(ap->a_dvp);
+	return (EROFS);
+}
+
+int
+union_mknod(ap)
+	struct vop_mknod_args /* {
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+		struct vattr *a_vap;
+	} */ *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_dvp);
+	struct vnode *dvp = un->un_uppervp;
+
+	if (dvp) {
+		int error;
+		struct vnode *vp;
+		struct mount *mp = ap->a_dvp->v_mount;
+
+		VREF(dvp);
+		VOP_LOCK(dvp);
+		vput(ap->a_dvp);
+		error = VOP_MKNOD(dvp, &vp, ap->a_cnp, ap->a_vap);
+		if (error)
+			return (error);
+
+		error = union_allocvp(
+				ap->a_vpp,
+				mp,
+				un->un_uppervp,
+				ap->a_cnp,
+				vp,
+				NULLVP);
+		return (error);
+	}
+
+	vput(ap->a_dvp);
+	return (EROFS);
+}
+
 /*
  * copyfile.  copy the vnode (fvp) to the vnode (tvp)
- * using a sequence of reads and writes.
+ * using a sequence of reads and writes.  both (fvp)
+ * and (tvp) are locked on entry and exit.
  */
 static int
 union_copyfile(p, cred, fvp, tvp)
@@ -477,8 +384,15 @@ union_open(ap)
 	/*
 	 * If there is an existing upper vp then simply open that.
 	 */
-	if (un->un_uppervp)
-		return (VOP_OPEN(un->un_uppervp, mode, cred, p));
+	if (un->un_uppervp) {
+		int error;
+
+		VOP_LOCK(un->un_uppervp);
+		error = VOP_OPEN(un->un_uppervp, mode, cred, p);
+		VOP_UNLOCK(un->un_lowervp);
+
+		return (error);
+	}
 
 	/*
 	 * If the lower vnode is being opened for writing, then
@@ -508,7 +422,9 @@ union_open(ap)
 		error = vn_open(&nd, fmode, cmode);
 		if (error)
 			return (error);
-		un->un_uppervp = nd.ni_vp;
+		un->un_uppervp = nd.ni_vp;	/* XXX */
+		/* at this point, uppervp is locked */
+
 		/*
 		 * Now, if the file is being opened with truncation, then
 		 * the (new) upper vnode is ready to fly, otherwise the
@@ -518,13 +434,17 @@ union_open(ap)
 		 */
 		if ((mode & O_TRUNC) == 0) {
 			/* XXX - should not ignore errors from VOP_CLOSE */
+			VOP_LOCK(un->un_lowervp);
 			error = VOP_OPEN(un->un_lowervp, FREAD, cred, p);
 			if (error == 0) {
 				error = union_copyfile(p, cred,
 					       un->un_lowervp, un->un_uppervp);
 				(void) VOP_CLOSE(un->un_lowervp, FREAD);
 			}
+			VOP_UNLOCK(un->un_lowervp);
+			VOP_UNLOCK(un->un_uppervp);
 			(void) VOP_CLOSE(un->un_uppervp, FWRITE);
+			VOP_LOCK(un->un_uppervp);
 		}
 		if (error == 0)
 			error = VOP_OPEN(un->un_uppervp, FREAD, cred, p);
@@ -532,6 +452,54 @@ union_open(ap)
 	}
 
 	return (VOP_OPEN(un->un_lowervp, mode, cred, p));
+}
+
+int
+union_close(ap)
+	struct vop_close_args /* {
+		struct vnode *a_vp;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+	return (VOP_CLOSE(OTHERVP(ap->a_vp), ap->a_fflag, ap->a_cred, ap->a_p));
+}
+
+/*
+ * Check access permission on the union vnode.
+ * The access check being enforced is to check
+ * against both the underlying vnode, and any
+ * copied vnode.  This ensures that no additional
+ * file permissions are given away simply because
+ * the user caused an implicit file copy.
+ */
+int
+union_access(ap)
+	struct vop_access_args /* {
+		struct vnodeop_desc *a_desc;
+		struct vnode *a_vp;
+		int a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_vp);
+	struct vnode *vp;
+
+	if (vp = un->un_lowervp) {
+		int error;
+
+		error = VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p);
+		if (error)
+			return (error);
+	}
+
+	if (vp = un->un_uppervp)
+		return (VOP_ACCESS(vp, ap->a_mode, ap->a_cred, ap->a_p));
+	
+	return (0);
 }
 
 /*
@@ -555,6 +523,420 @@ union_getattr(ap)
 	return (0);
 }
 
+int
+lofs_setattr(ap)
+	struct vop_setattr_args /* {
+		struct vnode *a_vp;
+		struct vattr *a_vap;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_vp);
+	int error;
+
+	if (un->un_uppervp) {
+		VOP_LOCK(un->un_uppervp);
+		error = VOP_SETATTR(un->un_uppervp, ap->a_vap,
+					ap->a_cred, ap->a_p);
+		VOP_UNLOCK(un->un_uppervp);
+	} else {
+		/*
+		 * XXX should do a copyfile (perhaps only if
+		 * the file permission change, which would not
+		 * track va_ctime correctly).
+		 */
+		error = EROFS;
+	}
+
+	return (error);
+}
+
+int
+union_read(ap)
+	struct vop_read_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+	int error;
+	struct vnode *vp = OTHERVP(ap->a_vp);
+
+	VOP_LOCKvp);
+	error = VOP_READ(vp, ap->a_uio, ap->a_ioflag, ap->a_cred);
+	VOP_UNLOCKvp);
+
+	return (error);
+}
+
+int
+union_write(ap)
+	struct vop_read_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+	int error;
+	struct vnode *vp = OTHERVP(ap->a_vp);
+
+	VOP_LOCK(vp);
+	error = VOP_WRITE(vp, ap->a_uio, ap->a_ioflag, ap->a_cred);
+	VOP_UNLOCK(vp);
+
+	return (error);
+}
+
+int
+union_ioctl(ap)
+	struct vop_ioctl_args /* {
+		struct vnode *a_vp;
+		int  a_command;
+		caddr_t  a_data;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+	return (VOP_IOCTL(OTHERVP(ap->a_vp), ap->a_command, ap->a_data,
+				ap->a_fflag, ap->a_cred, ap->a_p));
+}
+
+int
+union_select(ap)
+	struct vop_select_args /* {
+		struct vnode *a_vp;
+		int  a_which;
+		int  a_fflags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+	return (VOP_SELECT(OTHERVP(ap->a_vp), ap->a_which, ap->a_fflags,
+				ap->a_cred, ap->a_p));
+}
+
+int
+union_mmap(ap)
+	struct vop_mmap_args /* {
+		struct vnode *a_vp;
+		int  a_fflags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+	return (VOP_MMAP(OTHERVP(ap->a_vp), ap->a_fflags,
+				ap->a_cred, ap->a_p));
+}
+
+int
+union_fsync(ap)
+	struct vop_fsync_args /* {
+		struct vnode *a_vp;
+		struct ucred *a_cred;
+		int  a_waitfor;
+		struct proc *a_p;
+	} */ *ap;
+{
+	int error = 0;
+	struct vnode *targetvp = OTHERVP(ap->a_vp);
+
+	if (targetvp) {
+		VOP_LOCK(targetvp);
+		error = VOP_FSYNC(targetvp, ap->a_cred,
+					ap->a_waitfor, ap->a_p);
+		VOP_UNLOCK(targetvp);
+	}
+
+	return (error);
+}
+
+int
+union_seek(ap)
+	struct vop_seek_args /* {
+		struct vnode *a_vp;
+		off_t  a_oldoff;
+		off_t  a_newoff;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+
+	return (VOP_SEEK(OTHERVP(ap->a_vp), ap->a_oldoff, ap->a_newoff, ap->a_cred));
+}
+
+int
+union_remove(ap)
+	struct vop_remove_args /* {
+		struct vnode *a_dvp;
+		struct vnode *a_vp;
+		struct componentname *a_cnp;
+	} */ *ap;
+{
+	int error;
+	struct union_node *dun = VTOUNION(ap->a_dvp);
+	struct union_node *un = VTOUNION(ap->a_vp);
+
+	if (dun->un_uppervp && un->un_uppervp) {
+		struct vnode *dvp = dun->un_uppervp;
+		struct vnode *vp = un->un_uppervp;
+
+		VREF(dvp);
+		VOP_LOCK(dvp);
+		vput(ap->a_dvp);
+		VREF(vp);
+		VOP_LOCK(vp);
+		vput(ap->a_vp);
+
+		error = VOP_REMOVE(dvp, vp, ap->a_cnp);
+	} else {
+		/*
+		 * XXX: should create a whiteout here
+		 */
+		vput(ap->a_dvp);
+		vput(ap->a_vp);
+		error = EROFS;
+	}
+
+	return (error);
+}
+
+int
+union_link(ap)
+	struct vop_link_args /* {
+		struct vnode *a_vp;
+		struct vnode *a_tdvp;
+		struct componentname *a_cnp;
+	} */ *ap;
+{
+	int error;
+	struct union_node *dun = VTOUNION(ap->a_vp);
+	struct union_node *un = VTOUNION(ap->a_tdvp);
+
+	if (dun->un_uppervp && un->un_uppervp) {
+		struct vnode *dvp = dun->un_uppervp;
+		struct vnode *vp = un->un_uppervp;
+
+		VREF(dvp);
+		VOP_LOCK(dvp);
+		vput(ap->a_vp);
+		VREF(vp);
+		vrele(ap->a_tdvp);
+
+		error = VOP_LINK(dvp, vp, ap->a_cnp);
+	} else {
+		/*
+		 * XXX: need to copy to upper layer
+		 * and do the link there.
+		 */
+		vput(ap->a_vp);
+		vrele(ap->a_tdvp);
+		error = EROFS;
+	}
+
+	return (error);
+}
+
+int
+union_rename(ap)
+	struct vop_rename_args  /* {
+		struct vnode *a_fdvp;
+		struct vnode *a_fvp;
+		struct componentname *a_fcnp;
+		struct vnode *a_tdvp;
+		struct vnode *a_tvp;
+		struct componentname *a_tcnp;
+	} */ *ap;
+{
+	int error;
+
+	struct vnode *fdvp = ap->a_fdvp;
+	struct vnode *fvp = ap->a_fvp;
+	struct vnode *tdvp = ap->a_tdvp;
+	struct vnode *tvp = ap->a_tvp;
+
+	if (fdvp->v_op == union_vnodeop_p) {	/* always true */
+		struct union_node *un = VTOUNION(fdvp);
+		if (un->un_uppervp == 0) {
+			error = EROFS;
+			goto bad;
+		}
+
+		fdvp = un->un_uppervp;
+		VREF(fdvp);
+		vrele(ap->a_fdvp);
+	}
+
+	if (fvp->v_op == union_vnodeop_p) {	/* always true */
+		struct union_node *un = VTOUNION(fvp);
+		if (un->un_uppervp == 0) {
+			error = EROFS;
+			goto bad;
+		}
+
+		fvp = un->un_uppervp;
+		VREF(fvp);
+		vrele(ap->a_fvp);
+	}
+
+	if (tdvp->v_op == union_vnodeop_p) {
+		struct union_node *un = VTOUNION(tdvp);
+		if (un->un_uppervp == 0) {
+			error = EROFS;
+			goto bad;
+		}
+
+		tdvp = un->un_uppervp;
+		VREF(tdvp);
+		VOP_LOCK(tdvp);
+		vput(ap->a_fdvp);
+	}
+
+	if (tvp && tvp->v_op == union_vnodeop_p) {
+		struct union_node *un = VTOUNION(tvp);
+		if (un->un_uppervp == 0) {
+			error = EROFS;
+			goto bad;
+		}
+
+		tvp = un->un_uppervp;
+		VREF(tvp);
+		VOP_LOCK(tvp);
+		vput(ap->a_tvp);
+	}
+
+	return (VOP_RENAME(fdvp, fvp, ap->a_fcnp, tdvp, tvp, ap->a_tcnp));
+
+bad:
+	vrele(fdvp);
+	vrele(fvp);
+	vput(tdvp);
+	if (tvp)
+		vput(tvp);
+
+	return (error);
+}
+
+int
+union_mkdir(ap)
+	struct vop_mkdir_args /* {
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+		struct vattr *a_vap;
+	} */ *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_dvp);
+	struct vnode *dvp = un->un_uppervp;
+
+	if (dvp) {
+		int error;
+		struct vnode *vp;
+		struct mount *mp = ap->a_dvp->v_mount;
+
+		VREF(dvp);
+		VOP_LOCK(dvp);
+		vput(ap->a_dvp);
+		error = VOP_MKDIR(dvp, &vp, ap->a_cnp, ap->a_vap);
+		if (error)
+			return (error);
+
+		error = union_allocvp(
+				ap->a_vpp,
+				mp,
+				un->un_uppervp,
+				ap->a_cnp,
+				vp,
+				NULLVP);
+		return (error);
+	}
+
+	vput(ap->a_dvp);
+	return (EROFS);
+}
+
+int
+union_rmdir(ap)
+	struct vop_rmdir_args /* {
+		struct vnode *a_dvp;
+		struct vnode *a_vp;
+		struct componentname *a_cnp;
+	} */ *ap;
+{
+	int error;
+	struct union_node *dun = VTOUNION(ap->a_dvp);
+	struct union_node *un = VTOUNION(ap->a_vp);
+
+	if (dun->un_uppervp && un->un_uppervp) {
+		struct vnode *dvp = dun->un_uppervp;
+		struct vnode *vp = un->un_uppervp;
+
+		VREF(dvp);
+		VOP_LOCK(dvp);
+		vput(ap->a_dvp);
+		VREF(vp);
+		VOP_LOCK(vp);
+		vput(ap->a_vp);
+
+		error = VOP_REMOVE(dvp, vp, ap->a_cnp);
+	} else {
+		/*
+		 * XXX: should create a whiteout here
+		 */
+		vput(ap->a_dvp);
+		vput(ap->a_vp);
+		error = EROFS;
+	}
+
+	return (error);
+}
+
+int
+union_symlink(ap)
+	struct vop_symlink_args /* {
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+		struct vattr *a_vap;
+		char *a_target;
+	} */ *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_dvp);
+	struct vnode *dvp = un->un_uppervp;
+
+	if (dvp) {
+		int error;
+		struct vnode *vp;
+		struct mount *mp = ap->a_dvp->v_mount;
+
+		VREF(dvp);
+		VOP_LOCK(dvp);
+		vput(ap->a_dvp);
+		error = VOP_SYMLINK(dvp, &vp, ap->a_cnp,
+					ap->a_vap, ap->a_target);
+		if (error)
+			return (error);
+
+		error = union_allocvp(
+				ap->a_vpp,
+				mp,
+				un->un_uppervp,
+				ap->a_cnp,
+				vp,
+				NULLVP);
+		vput(*ap->a_vpp);
+		return (error);
+	}
+
+	vput(ap->a_dvp);
+	return (EROFS);
+}
+
 /*
  * union_readdir works in concert with getdirentries and
  * readdir(3) to provide a list of entries in the unioned
@@ -571,12 +953,57 @@ union_readdir(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
+	int error = 0;
 	struct union_node *un = VTOUNION(ap->a_vp);
 
-	if (un->un_uppervp)
-		return (union_bypass(ap));
+	if (un->un_uppervp) {
+		struct vnode *vp = OTHERVP(ap->a_vp);
 
-	return (0);
+		VOP_LOCK(vp);
+		error = VOP_READLINK(vp, ap->a_uio, ap->a_cred);
+		VOP_UNLOCK(vp);
+	}
+
+	return (error);
+}
+
+int
+union_readlink(ap)
+	struct vop_readlink_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+	int error;
+	struct vnode *vp = OTHERVP(ap->a_vp);
+
+	VOP_LOCK(vp);
+	error = VOP_READLINK(vp, ap->a_uio, ap->a_cred);
+	VOP_UNLOCK(vp);
+
+	return (error);
+}
+
+int
+union_abortop(ap)
+	struct vop_abortop_args /* {
+		struct vnode *a_dvp;
+		struct componentname *a_cnp;
+	} */ *ap;
+{
+	int error;
+	struct vnode *vp = OTHERVP(a->a_dvp);
+	struct union_node *un = VTOUNION(ap->a_dvp);
+	int islocked = un->un_flags & UN_LOCKED;
+
+	if (islocked)
+		VOP_LOCK(vp);
+	error = VOP_ABORTOP(vp, ap->a_cnp);
+	if (islocked)
+		VOP_UNLOCK(vp);
+
+	return (error);
 }
 
 int
@@ -635,6 +1062,69 @@ union_reclaim(ap)
 	return (0);
 }
 
+int
+union_lock(ap)
+	struct vop_lock_args *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_vp);
+
+#ifdef DIAGNOSTIC
+	if (un->un_pid == curproc->p_pid)
+		panic("union: locking agsinst myself");
+#endif
+	while (un->un_flags & UN_LOCKED) {
+		un->un_flags |= UN_WANT;
+		sleep((caddr_t) &un->un_flags, PINOD);
+	}
+	un->un_flags |= UN_LOCKED;
+#ifdef DIAGNOSTIC
+	un->un_pid = curproc->p_pid;
+#endif
+}
+
+int
+union_unlock(ap)
+	struct vop_lock_args *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_vp);
+
+#ifdef DIAGNOSTIC
+	if (un->un_pid != curproc->p_pid)
+		panic("union: unlocking other process's union node");
+	if ((un->un_flags & UN_LOCKED) == 0)
+		panic("union: unlock unlocked node");
+#endif
+
+	un->un_flags &= ~UN_LOCKED;
+	if (un->un_flags & UN_WANT) {
+		un->un_flags &= ~UN_WANT;
+		wakeup((caddr_t) &un->un_flags);
+	}
+
+#ifdef DIAGNOSTIC
+	un->un_pid = 0;
+#endif
+}
+
+int
+union_bmap(ap)
+	struct vop_bmap_args /* {
+		struct vnode *a_vp;
+		daddr_t  a_bn;
+		struct vnode **a_vpp;
+		daddr_t *a_bnp;
+		int *a_runp;
+	} */ *ap;
+{
+	int error;
+	struct vnode *vp = OTHERVP(ap->a_vp);
+
+	VOP_LOCK(vp);
+	error = VOP_BMAP(vp, ap->a_bn, ap->a_vpp, ap->a_bnp, ap->a_runp);
+	VOP_UNLOCK(vp);
+
+	return (error);
+}
 
 int
 union_print(ap)
@@ -647,6 +1137,49 @@ union_print(ap)
 	printf("\ttag VT_UNION, vp=%x, uppervp=%x, lowervp=%x\n",
 			vp, UPPERVP(vp), LOWERVP(vp));
 	return (0);
+}
+
+int
+union_islocked(ap)
+	struct vop_islocked_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
+{
+
+	return ((VTOUNION(ap->a_vp)->un_flags & UN_LOCKED) ? 1 : 0);
+}
+
+int
+union_pathconf(ap)
+	struct vop_pathconf_args /* {
+		struct vnode *a_vp;
+		int a_name;
+		int *a_retval;
+	} */ *ap;
+{
+	int error;
+	struct vnode *vp = OTHERVP(ap->a_vp);
+
+	VOP_LOCK(vp);
+	error = VOP_PATHCONF(vp, ap->a_name, ap->a_retval);
+	VOP_UNLOCK(vp);
+
+	return (error);
+}
+
+int
+union_advlock(ap)
+	struct vop_advlock_args /* {
+		struct vnode *a_vp;
+		caddr_t  a_id;
+		int  a_op;
+		struct flock *a_fl;
+		int  a_flags;
+	} */ *ap;
+{
+
+	return (VOP_ADVLOCK(OTHERVP(ap->a_vp), ap->a_id, ap->a_op,
+				ap->a_fl, ap->a_flags));
 }
 
 
@@ -682,109 +1215,54 @@ union_strategy(ap)
 	return (error);
 }
 
-
-/*
- * XXX - like vop_strategy, vop_bwrite must be hand coded because it has no
- * vnode in its arguments.
- * This goes away with a merged VM/buffer cache.
- */
-int
-union_bwrite(ap)
-	struct vop_bwrite_args /* {
-		struct buf *a_bp;
-	} */ *ap;
-{
-	struct buf *bp = ap->a_bp;
-	int error;
-	struct vnode *savedvp;
-
-	savedvp = bp->b_vp;
-	bp->b_vp = UPPERVP(bp->b_vp);
-
-#ifdef DIAGNOSTIC
-	if (bp->b_vp == 0)
-		panic("union_bwrite: no upper vp");
-#endif
-
-	error = VOP_BWRITE(bp);
-
-	bp->b_vp = savedvp;
-
-	return (error);
-}
-
-int
-union_lock(ap)
-	struct vop_lock_args *ap;
-{
-	struct union_node *un = VTOUNION(ap->a_vp);
-
-#ifdef DIAGNOSTIC
-	if (un->un_pid == curproc->p_pid)
-		panic("union: locking agsinst myself");
-#endif
-	while (un->un_flags & UN_LOCKED) {
-		un->un_flags |= UN_WANT;
-		sleep((caddr_t) &un->un_flags, PINOD);
-	}
-	un->un_flags |= UN_LOCKED;
-#ifdef DIAGNOSTIC
-	un->un_pid = curproc->p_pid;
-#endif
-
-	if (un->un_lowervp && !VOP_ISLOCKED(un->un_lowervp))
-		VOP_LOCK(un->un_lowervp);
-	if (un->un_uppervp && !VOP_ISLOCKED(un->un_uppervp))
-		VOP_LOCK(un->un_uppervp);
-}
-
-int
-union_unlock(ap)
-	struct vop_lock_args *ap;
-{
-	struct union_node *un = VTOUNION(ap->a_vp);
-
-#ifdef DIAGNOSTIC
-	if (un->un_pid != curproc->p_pid)
-		panic("union: unlocking other process's union node");
-	if ((un->un_flags & UN_LOCKED) == 0)
-		panic("union: unlock unlocked node");
-#endif
-
-	if (un->un_uppervp && VOP_ISLOCKED(un->un_uppervp))
-		VOP_UNLOCK(un->un_uppervp);
-	if (un->un_lowervp && VOP_ISLOCKED(un->un_lowervp))
-		VOP_UNLOCK(un->un_lowervp);
-
-	un->un_flags &= ~UN_LOCKED;
-	if (un->un_flags & UN_WANT) {
-		un->un_flags &= ~UN_WANT;
-		wakeup((caddr_t) &un->un_flags);
-	}
-
-#ifdef DIAGNOSTIC
-	un->un_pid = 0;
-#endif
-}
-
 /*
  * Global vfs data structures
  */
 int (**union_vnodeop_p)();
-struct vnodeopv_entry_desc union_vnodeop_entries[] = {
-	{ &vop_default_desc, union_bypass },
-
-	{ &vop_getattr_desc, union_getattr },
-	{ &vop_inactive_desc, union_inactive },
-	{ &vop_reclaim_desc, union_reclaim },
-	{ &vop_print_desc, union_print },
-
-	{ &vop_strategy_desc, union_strategy },
-	{ &vop_bwrite_desc, union_bwrite },
-
-	{ &vop_lock_desc, union_lock }, 
-	{ &vop_unlock_desc, union_unlock }, 
-
+struct vnodeopv_entry_desc lofs_vnodeop_entries[] = {
+	{ &vop_default_desc, vn_default_error },
+	{ &vop_lookup_desc, union_lookup },		/* lookup */
+	{ &vop_create_desc, union_create },		/* create */
+	{ &vop_mknod_desc, union_mknod },		/* mknod */
+	{ &vop_open_desc, union_open },			/* open */
+	{ &vop_close_desc, union_close },		/* close */
+	{ &vop_access_desc, union_access },		/* access */
+	{ &vop_getattr_desc, union_getattr },		/* getattr */
+	{ &vop_setattr_desc, union_setattr },		/* setattr */
+	{ &vop_read_desc, union_read },			/* read */
+	{ &vop_write_desc, union_write },		/* write */
+	{ &vop_ioctl_desc, union_ioctl },		/* ioctl */
+	{ &vop_select_desc, union_select },		/* select */
+	{ &vop_mmap_desc, union_mmap },			/* mmap */
+	{ &vop_fsync_desc, union_fsync },		/* fsync */
+	{ &vop_seek_desc, union_seek },			/* seek */
+	{ &vop_remove_desc, union_remove },		/* remove */
+	{ &vop_link_desc, union_link },			/* link */
+	{ &vop_rename_desc, union_rename },		/* rename */
+	{ &vop_mkdir_desc, union_mkdir },		/* mkdir */
+	{ &vop_rmdir_desc, union_rmdir },		/* rmdir */
+	{ &vop_symlink_desc, union_symlink },		/* symlink */
+	{ &vop_readdir_desc, union_readdir },		/* readdir */
+	{ &vop_readlink_desc, union_readlink },		/* readlink */
+	{ &vop_abortop_desc, union_abortop },		/* abortop */
+	{ &vop_inactive_desc, union_inactive },		/* inactive */
+	{ &vop_reclaim_desc, union_reclaim },		/* reclaim */
+	{ &vop_lock_desc, union_lock },			/* lock */
+	{ &vop_unlock_desc, union_unlock },		/* unlock */
+	{ &vop_bmap_desc, union_bmap },			/* bmap */
+	{ &vop_strategy_desc, union_strategy },		/* strategy */
+	{ &vop_print_desc, union_print },		/* print */
+	{ &vop_islocked_desc, union_islocked },		/* islocked */
+	{ &vop_pathconf_desc, union_pathconf },		/* pathconf */
+	{ &vop_advlock_desc, union_advlock },		/* advlock */
+#ifdef notdef
+	{ &vop_blkatoff_desc, union_blkatoff },		/* blkatoff */
+	{ &vop_valloc_desc, union_valloc },		/* valloc */
+	{ &vop_vfree_desc, union_vfree },		/* vfree */
+	{ &vop_truncate_desc, union_truncate },		/* truncate */
+	{ &vop_update_desc, union_update },		/* update */
+	{ &vop_bwrite_desc, union_bwrite },		/* bwrite */
+#endif
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };
 struct vnodeopv_desc union_vnodeop_opv_desc =
