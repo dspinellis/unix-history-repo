@@ -98,10 +98,11 @@ report.  The \fIOwner\fP and \fIStatus\fP fields are intended to provide a
 rudimentary method of tracking the status of bug reports.
 .PP
 The file ~bugs/bug:lock is the focus of all locking for \fIbugfiler.\fP
-If you wish to manipulate any of the log or error files, remove it and
-\fIbugfiler\fP will treat all bug reports that it receives as if they were
-incorrectly formatted, i.e. it will place them in the directory ~bugs/errors,
-where they should recovered by the \fIbugfiler\fP maintainer.
+If you wish to manipulate any of the log or error files, rename or remove
+it and \fIbugfiler\fP will treat all bug reports that it receives as if
+they were incorrectly formatted, i.e. it will place them in the directory
+~bugs/errors, for later recovery by the \fIbugfiler\fP maintainer.
+Obviously, this file must be created when you first install \fIbugfiler\fP.
 .PP
 All errors that occur before ~bugs/log is found are logged into the system
 log file, using
