@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -18,14 +18,13 @@ static char sccsid[] = "@(#)refresh.c	5.17 (Berkeley) %G%";
 static int curwin;
 static short ly, lx;
 
-int doqch = 1;
-
 WINDOW *_win;
 
 static void	domvcur __P((int, int, int, int));
 static int	makech __P((WINDOW *, int));
 static void	quickch __P((WINDOW *));	
 static void	scrolln __P((WINDOW *, int, int, int, int, int));
+
 /*
  * wrefresh --
  *	Make the current screen look like "win" over the area coverd by
@@ -35,7 +34,7 @@ int
 wrefresh(win)
 	register WINDOW *win;
 {
-	register LINE *wlp;
+	register __LINE *wlp;
 	register int retval;
 	register short wy;
 
@@ -58,8 +57,8 @@ wrefresh(win)
 		for (wy = 0; wy < win->maxy; wy++) {
 			wlp = win->lines[wy];
 			if (wlp->flags & __ISDIRTY)
-				/* need standout characteristics as well */
-				wlp->hash = __hash(wlp->line, 2 * win->maxx);
+				wlp->hash = 
+				   __hash(wlp->line, win->maxx * __LDATASIZE);
 		}
 
 	if (win->flags & __CLEAROK || curscr->flags & __CLEAROK || curwin) {
@@ -162,10 +161,10 @@ makech(win, wy)
 {
 	register int nlsp, clsp;		/* Last space in lines. */
 	register short wx, lch, y;
-	register char *nsp, *csp, *ce, *nsop, *csop;
-	char zero, soeq;
-	
-	zero = '\0';
+	register __LDATA *nsp, *csp, *cp;
+	char *ce;
+	__LDATA blank = {' ', 0};
+
 	/* Is the cursor still on the end of the last line? */
 	if (wy > 0 && win->lines[wy - 1]->flags & __ISPASTEOL) {
 		win->lines[wy - 1]->flags &= ~__ISPASTEOL;
@@ -188,17 +187,17 @@ makech(win, wy)
 	y = wy + win->begy;
 
 	if (curwin)
-		csp = " ";
+		csp = &blank;
 	else
 		csp = &curscr->lines[wy + win->begy]->line[wx + win->begx];
 
 	nsp = &win->lines[wy]->line[wx];
 	if (CE && !curwin) {
-		for (ce = &win->lines[wy]->line[win->maxx - 1]; 
-		     *ce == ' ' && !(*(ce + win->maxx) & __STANDOUT); ce--)
-			if (ce <= win->lines[wy]->line)
+		for (cp = &win->lines[wy]->line[win->maxx - 1]; 
+		     cp->ch == ' ' && cp->attr == 0; cp--)
+			if (cp <= win->lines[wy]->line)
 				break;
-		nlsp = ce - win->lines[wy]->line;
+		nlsp = cp - win->lines[wy]->line;
 	}
 	if (!curwin)
 		ce = CE;
@@ -206,18 +205,15 @@ makech(win, wy)
 		ce = NULL;
 
 	while (wx <= lch) {
-		if (*nsp == *csp && 
-		    __SOEQ(*(nsp + win->maxx), *(csp + win->maxx))){
+		if (bcmp(nsp, csp, sizeof(__LDATA)) == 0) {
 			if (wx <= lch) {
-				while (*nsp == *csp && 
-				    __SOEQ(*(nsp + win->maxx), 
-				    *(csp + win->maxx)) &&
-				    wx <= lch) {
+				while (bcmp(nsp, csp, sizeof(__LDATA)) == 0 &&
+			            wx <= lch) {
 					    nsp++;
-					if (!curwin)
-						csp++;
-					++wx;
-				}
+					    if (!curwin)
+						    csp++;
+					    ++wx;
+				    }
 				continue;
 			}
 			break;
@@ -230,12 +226,7 @@ makech(win, wy)
 #endif
 		ly = y;
 		lx = wx + win->begx;
-		nsop = nsp + win->maxx;
-		if (!curwin)
-			csop = csp + win->maxx;
-		else
-			csop = &zero;
-		while ((*nsp != *csp || !__SOEQ(*nsop, *csop)) && wx <= lch) {
+		while (bcmp(nsp, csp, sizeof(__LDATA)) != 0 && wx <= lch) {
 #ifdef notdef
 			/* XXX
 			 * The problem with this code is that we can't count on
@@ -245,27 +236,29 @@ makech(win, wy)
 			 * clear the previous line and do nothing to the
 			 * next line.
 			 */
-			if (ce != NULL && wx >= nlsp && *nsp == ' ') {
+			if (ce != NULL && wx >= nlsp && 
+			    nsp->ch == ' ') {
 				/* Check for clear to end-of-line. */
 				ce = &curscr->lines[wy]->line[COLS - 1];
-				while (*ce == ' ')
+				while (ce->ch == ' ' && ce->attr = 0)
 					if (ce-- <= csp)
 						break;
 				clsp = ce - curscr->lines[wy]->line - 
-				       win->begx;
+				       win->begx * __LDATASIZE;
 #ifdef DEBUG
 			__TRACE("makech: clsp = %d, nlsp = %d\n", clsp, nlsp);
 #endif
-				if (clsp - nlsp >= strlen(CE) &&
-				    clsp < win->maxx) {
+				if (clsp - nlsp >= strlen(CE) 
+				    && clsp < win->maxx * __LDATASIZE) {
 #ifdef DEBUG
 					__TRACE("makech: using CE\n");
 #endif
 					tputs(CE, 0, __cputchar);
 					lx = wx + win->begx;
 					while (wx++ <= clsp) {
-						*csp++ = ' ';
-						*csop++ &= ~__STANDOUT;
+						csp->ch = ' ';
+						csp->attr = 0;
+						csp++;
 					}
 					return (OK);
 				}
@@ -274,9 +267,9 @@ makech(win, wy)
 #endif
 
 			/* Enter/exit standout mode as appropriate. */
-			if (SO && (*nsop & __STANDOUT) !=
+			if (SO && (nsp->attr & __STANDOUT) !=
 			    (curscr->flags & __WSTANDOUT)) {
-				if (*nsop & __STANDOUT) {
+				if (nsp->attr & __STANDOUT) {
 					tputs(SO, 0, __cputchar);
 					curscr->flags |= __WSTANDOUT;
 				} else {
@@ -297,11 +290,11 @@ makech(win, wy)
 							    ~__WSTANDOUT;
 						}
 					if (!curwin) {
-						*csop = *nsop;
-						putchar(*csp = *nsp);
+						csp->attr = nsp->attr;
+						putchar(csp->ch = nsp->ch);
 					} else
-						putchar(*nsp);
-#ifdef notdef /* why is this here? */
+						putchar(nsp->ch);
+#ifdef notdef /* XXX why is this here? */
 					if (win->flags & __FULLWIN && !curwin)
 						scroll(curscr);
 #endif
@@ -319,20 +312,20 @@ makech(win, wy)
 						return (ERR);
 					}
 			if (!curwin) {
-				*csop++ = *nsop;
-				putchar(*csp++ = *nsp);
-			} else
-				putchar(*nsp);
+				csp->attr = nsp->attr;
+				putchar(csp->ch = nsp->ch);
+				csp++;
+		       	} else
+				putchar(nsp->ch);
 			
 #ifdef DEBUG
-			__TRACE("makech: putchar(%c)\n", *nsp & 0177);
+			__TRACE("makech: putchar(%c)\n", nsp->ch & 0177);
 #endif
-			if (UC && (*nsop & __STANDOUT)) {
+			if (UC && (nsp->attr & __STANDOUT)) {
 				putchar('\b');
 				tputs(UC, 0, __cputchar);
 			}
 			nsp++;
-			nsop++;
 		}
 #ifdef DEBUG
 		__TRACE("makech: 2: wx = %d, lx = %d\n", wx, lx);
@@ -397,10 +390,10 @@ quickch(win)
 {
 #define THRESH		win->maxy / 4
 
-	register LINE *clp, *tmp1, *tmp2;
+	register __LINE *clp, *tmp1, *tmp2;
 	register int bsize, curs, curw, starts, startw, i, j;
-	int n, target, remember, bot, top;
-	char buf[1024];
+	int n, target, remember, bot, top, sc_region;
+	__LDATA buf[1024];
 	u_int blank_hash;
 
 	/*
@@ -414,9 +407,9 @@ quickch(win)
 				     curs < starts + bsize; curw++, curs++)
 					if (win->lines[curw]->hash !=
 					    curscr->lines[curs]->hash ||
-				            bcmp(&win->lines[curw], 
-					    &curscr->lines[curs], 
-					    2 * win->maxx) != 0)
+				            bcmp(win->lines[curw]->line, 
+					    curscr->lines[curs]->line, 
+					    win->maxx * __LDATASIZE) != 0)
 						break;
 				if (curs == starts + bsize)
 					goto done;
@@ -432,8 +425,9 @@ quickch(win)
 	if (starts != 0) {
 		for (top = 0; top < win->maxy; top++)
 			if (win->lines[top]->hash != curscr->lines[top]->hash 
-			    || bcmp(&win->lines[top], &curscr->lines[top], 
-				 2 * win->maxx) != 0)
+			    || bcmp(win->lines[top]->line, 
+			    curscr->lines[top]->line, 
+			    win->maxx * __LDATASIZE) != 0)
 				break;
 	} else
 		top = 0;
@@ -444,8 +438,9 @@ quickch(win)
 	if (curs != win->maxy) {
 		for (bot = win->maxy - 1; bot >= 0; bot--)
 			if (win->lines[bot]->hash != curscr->lines[bot]->hash 
-			    || bcmp(&win->lines[bot], &curscr->lines[bot], 
-				 2 * win->maxx) != 0)
+			    || bcmp(win->lines[bot]->line, 
+			    curscr->lines[bot]->line, 
+			    win->maxx * __LDATASIZE) != 0)
 				break;
 	} else
 		bot = win->maxy - 1;
@@ -469,18 +464,21 @@ quickch(win)
 	n = startw - starts;
 
 	/* So we don't have to call __hash() each time */
-	(void)memset(buf, ' ', win->maxx);
-	(void)memset(buf + win->maxx, '\0', win->maxx);
-	blank_hash = __hash(buf, 2 * win->maxx);
+	for (i = 0; i < win->maxx; i++) {
+		buf[i].ch = ' ';
+		buf[i].attr = 0;
+	}
+	blank_hash = __hash(buf, win->maxx * __LDATASIZE);
 
 	/*
 	 * Perform the rotation to maintain the consistency of curscr.
 	 */
-	i = 0;
-	tmp1 = curscr->lines[0];
-	remember = 0;
-	for (j = 0; j < win->maxy; j++) {
-		target = (i + n + win->maxy) % win->maxy;
+	sc_region = bot - top + 1;
+	i = top;
+	tmp1 = curscr->lines[top];
+	remember = top;
+	for (j = top; j <= bot; j++) {
+		target = (i - top + n + sc_region) % sc_region + top;
 		tmp2 = curscr->lines[target];
 		curscr->lines[target] = tmp1;
 		/* Mark block as clean and blank out scrolled lines. */
@@ -495,23 +493,24 @@ quickch(win)
 			__TRACE("-- notdirty");
 #endif
 			win->lines[target]->flags &= ~__ISDIRTY;
-		} else if ((n < 0 && target >= win->maxy + n) || 
-			 (n > 0 && target < n)) {
-			if (clp->hash != blank_hash || 
-			    bcmp(clp->line, buf, 2 * win->maxx) != 0) {
-				(void)bcopy(clp->line, buf, 2 * win->maxx);
+		} else if ((n < 0 && target >= curw && target < curs) ||
+		           (n > 0 && target < startw && target >= starts)) {
+			if (clp->hash != blank_hash ||  bcmp(clp->line, 
+			    buf, win->maxx * __LDATASIZE) !=0) {
+				(void)bcopy(buf, clp->line,  
+				    win->maxx * __LDATASIZE);
 #ifdef DEBUG
-				__TRACE("-- bcopy ");
+				__TRACE("-- blanked out: dirty");
 #endif
 				clp->hash = blank_hash;
 			} else 
 #ifdef DEBUG
-				__TRACE(" -- no bcopy");
+				__TRACE(" -- blank line already: dirty");
 #endif
 			touchline(win, target, 0, win->maxx - 1);
 		} else {
 #ifdef DEBUG
-			__TRACE(" -- just dirty");
+			__TRACE(" -- dirty");
 #endif
 			touchline(win, target, 0, win->maxx - 1);
 		}
@@ -528,10 +527,14 @@ quickch(win)
 		}
 	}
 #ifdef DEBUG
-	__TRACE("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
-	for (i = 0; i < curscr->maxy; i++)
-		__TRACE("Q: %d: %.70s\n", i,
-	           curscr->lines[i]->line);
+		__TRACE("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+		for (i = 0; i < curscr->maxy; i++) {
+			__TRACE("Q: %d:", i);
+			for (j = 0; j < curscr->maxx; j++) 
+				__TRACE("%c", 
+			           curscr->lines[i]->line[j].ch);
+			__TRACE("\n");
+		}
 #endif
 }
 
