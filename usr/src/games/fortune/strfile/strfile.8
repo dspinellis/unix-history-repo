@@ -16,16 +16,8 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strfile.8	5.2 (Berkeley) %G%
+.\"	@(#)strfile.8	5.3 (Berkeley) %G%
 .\"
-.ie t \{\
-.	ds lq ``
-.	ds rq ''
-.\}
-.el \{\
-.	ds lq "
-.	ds rq "
-.\}
 .TH STRFILE 8 ""
 .UC 4
 .SH NAME
@@ -33,11 +25,9 @@ strfile, unstr \- create a random access file for storing strings
 .SH SYNOPSIS
 .B strfile
 [
-.B \-
+.B \-iors
 ] [
-.B \-svc\fIC\fP
-] [
-.B \-oir
+.B \-c char
 ]
 sourcefile
 [ datafile ]
@@ -45,154 +35,106 @@ sourcefile
 .B unstr
 [
 .B \-o
+] [
+.B \-c char
 ]
 datafile[.dat] [ outfile ]
 .SH DESCRIPTION
-.I strfile
-is designed to take a file which contains a set of strings
-and create a data file which contains those strings,
-along with a seek pointer table
-to the beginning of each.
+.I Strfile
+takes a file which contains a set of strings and creates a data file
+which contains those strings, along with a seek pointer table to the
+beginning of each.
 This allows random access of the strings.
 .PP
-The source file contains strings
-separated by lines starting with \*(lq%%\*(rq or \*(lq%\-\*(rq
-Anything following these starting characters on the line
-will be ignored,
-so comments can be placed on these lines.
-A \*(lq%%\*(rq simply separates strings;
-a \*(lq%\-\*(rq separates not only strings but sections.
-A file can have up to four sections,
-.I i.e. ,
-up to three delimiters.
-This can be used in a program-defined way.
+The source file contains strings separated by lines containing
+a single percent (``%'') sign.
 .PP
-The data file,
-if not specified on the command line,
-is named
+The data file, if not specified on the command line, is named
 .IB sourcefile .out ,
-and contains a header,
-which describes the contents of the data file,
-the seek pointers to the beginning of each string,
-and the strings themselves,
-terminated by null bytes.
+and contains a header, which describes the contents of the data file,
+the seek pointers to the beginning of each string, and the strings
+themselves, terminated by null bytes.
 .PP
-The format of the header is:
-.sp
-.nf
-.ta
-.ta 8n +\w'unsigned long\ \ 'u +\w'str_delims[MAXDELIMS];\ 'u
-# define	MAXDELIMS	3
-
-# define	STR_RANDOM	0x1
-# define	STR_ORDERED	0x2
-
-typedef struct {
-	unsigned long	str_numstr;	/* # of strings in the file */
-	unsigned long	str_longlen;	/* length of longest string */
-	unsigned long	str_shortlen;	/* length of shortest string */
-	long	str_delims[MAXDELIMS];	/* delimiter markings */
-	off_t	str_dpos[MAXDELIMS];	/* delimiter positions */
-	short	str_flags;	/* bit field for flags */
-} STRFILE;
-.ev
-.fi
-.PP
-The values in
-.B str_delims
-are the indices of the first string
-which follow each \*(lq%\-\*(rq in the file.
-The field
-.B str_flags
-fill have the bit
-.SM STR_RANDOM
-set if the
-.B \-r
-flag was specified,
-or
-.SM STR_ORDERED
-if the
-.B \-o
-flag was specified.
-.PP
-The options are:
+The options are as follows:
 .TP
-.B \-
-Give a usage summary.
+.BI \-c \ char
+Change the delimiting character from the percent sign to
+.IR char .
 .TP
-.B \-s
-Run silently;
-don't give the summary of data at the end.
-.TP
-.B \-v
-Verbose (default).
+.B \-i
+Ignore case when ordering the strings.
 .TP
 .B \-o
 Order the strings in alphabetical order.
 The strings will be stored in the same order in the data file
-as they were in the source,
-but the seek pointer table will be sorted in alphabetical order
-of the strings the point to.
+as they were in the source, but the seek pointer table will be
+sorted in alphabetical order of the strings pointed to.
 Any
 .I initial
 non-alphanumeric characters are ignored.
-This sets the
-.SM STR_ORDERED
-bit in the
+This option sets the STR_ORDERED bit in the
 .B str_flags
 field of the header.
-.TP
-.B \-i
-Ignore case when ordering.
 .TP
 .B \-r
 Randomize the order of the seek pointers in the table.
 The strings will be stored in the same order in the data file
-as they were in the source,
-but the seek pointer table will be randomized.
-This sets the
-.SM STR_RANDOM
-bit in the
+as they were in the source, but the seek pointer table will
+be randomized.
+This option sets the STR_RANDOM bit in the
 .B str_flags
 field of the header.
 .TP
-.BI \-c C
-Change the delimiting character from \*(lq%\*(rq to
-.RI \\*(lq C \\*(rq,
-making the delimiting lines start with
-.RI \\*(lq CC \\*(rq
-or
-.RI \\*(lq C \-\\*(rq.
+.B \-s
+Run silently; don't give a summary of data at the end.
+.PP
+The format of the header is:
+.sp
+.nf
+#define	STR_RANDOM	0x1
+#define	STR_ORDERED	0x2
+
+unsigned long	str_numstr;	/* # of strings in the file */
+unsigned long	str_longlen;	/* length of longest string */
+unsigned long	str_shortlen;	/* length of shortest string */
+unsigned char	str_flags;	/* bit field for flags */
+char str_delim;			/* delimiting character */
+.fi
+.PP
+The field
+.B str_flags
+will have the bit STR_RANDOM set if the
+.B \-r
+flag was specified, or STR_ORDERED if the
+.B \-o
+flag was specified.
 .PP
 The purpose of
 .I unstr
 is to undo the work of
-.I strfile .
-It primarily exists as an emergency backup
-in case you accidentally delete your source file,
-but still have your data file around.
+.IR strfile .
+It primarily exists as an emergency backup in case the source file
+is accidentally deleted and the data file is still available.
 It reads data files and creates a corresponding output file.
-If you don't want \*(lq%\*(rq as your delimiting character,
-you can use the
-.BI \-c C
-option to change it.
 .PP
-.I unstr
-will normally print out the strings
-in the order they are in the data file.
-If you give it the
+The options are as follows:
+.TP
+.B \-c \ char
+This option allows specification of a delimiting character to be
+used instead of the default percent sign.
+.TP
 .B \-o
-option,
-it will print them out in the header order,
-which could be different if the file was
-randomized or ordered when created.
-Using this,
-you can created sorted versions of your input file
-by using
+.I Unstr
+normally prints out the strings in the order they are in the data file.
+If you specify the
+.B -o
+option, it will print them out in the header order, which could be
+different if the file was randomized or ordered when created.
+It is possible to create sorted versions of input files by using
 .B \-o
-when you run
-.IR strfile , 
-and then using
+when
+.I strfile
+is run and then using
 .B "unstr \-o"
 to dump them out in the table order.
 .SH "SEE ALSO"
