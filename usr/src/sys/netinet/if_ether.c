@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	7.3 (Berkeley) %G%
+ *	@(#)if_ether.c	7.1.1.1 (Berkeley) %G%
  */
 
 /*
@@ -124,6 +124,8 @@ arpwhohas(ac, addr)
 	sa.sa_family = AF_UNSPEC;
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
 }
+
+int	useloopback = 1;	/* use loopback interface for local traffic */
 
 int	useloopback = 1;	/* use loopback interface for local traffic */
 
@@ -318,6 +320,7 @@ in_arpinput(ac, m)
 		goto out;
 	}
 	s = splimp();
+	s = splimp();
 	ARPTAB_LOOK(at, isaddr.s_addr);
 	if (at) {
 		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
@@ -339,6 +342,7 @@ in_arpinput(ac, m)
 			at->at_flags |= ATF_COM;
 		}
 	}
+	splx(s);
 	splx(s);
 reply:
 	switch (proto) {
