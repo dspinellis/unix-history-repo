@@ -34,7 +34,6 @@
 .\"
 .\"     @(#)rmdir.1	6.5 (Berkeley) 6/27/91
 .\"
-.Vx
 .Dd June 27, 1991
 .Dt RMDIR 1
 .Os
@@ -43,7 +42,7 @@
 .Nd remove directories
 .Sh SYNOPSIS
 .Nm rmdir
-.Op Fl p
+.\" .Op Fl p
 .Ar directory ...
 .Sh DESCRIPTION
 The rmdir utility removes the directory entry specified by
@@ -60,8 +59,8 @@ is empty when
 tries to remove it.
 .\" .Pp
 .\" The following option is available:
-.\" .Tw Ds
-.\" .Tp Fl p
+.\" .Bl -tag -width Ds
+.\" .It Fl p
 .\" Each
 .\" .Ar directory
 .\" argument is treated as a pathname of which all
@@ -70,18 +69,19 @@ tries to remove it.
 .\" (See
 .\" .Xr rm 1
 .\" for fully non-discriminant recursive removal).
+.\" .El
 .Pp
 The
 .Nm rmdir
 utility exits with one of the following values:
-.Tw Ds
-.Tp Li \&0
+.Bl -tag -width Ds
+.It Li \&0
 Each directory entry specified by a dir operand
 referred to an empty directory and was removed
 successfully.
-.Tp Li \&>\&0
+.It Li \&>\&0
 An error occurred.
-.Tp
+.El
 .Sh SEE ALSO
 .Xr rm 1
 .Sh STANDARDS
