@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stty.1	6.14 (Berkeley) %G%
+.\"     @(#)stty.1	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STTY 1
@@ -20,7 +20,7 @@
 .Op Fl f Ar file
 .Op operands
 .Sh DESCRIPTION
-The 
+The
 .Nm stty
 utility sets or reports on terminal
 characteristics for the device that is its standard input.
@@ -35,11 +35,11 @@ exclusive on some terminal types.
 The following options are available:
 .Bl -tag -width Ds
 .It Fl a
-Display all the current settings for the terminal to standard output 
-in the
+Display all the current settings for the terminal to standard output
+as per
 .St -p1003.2 .
 .It Fl e
-Display all the current settings for the terminal to standard output 
+Display all the current settings for the terminal to standard output
 in the traditional
 .Tn BSD
 ``all'' and ``everything'' formats.
@@ -47,10 +47,11 @@ in the traditional
 Display the current settings for the terminal named by
 .Ar file .
 .It Fl g
-Display all the current settings for the terminal to standard output 
+Display all the current settings for the terminal to standard output
 in a form that may be used as an argument to a subsequent invocation of
 .Nm stty
-to restore the current terminal state.
+to restore the current terminal state as per
+.St -p1003.2.
 .El
 .Pp
 The following arguments are available to set the terminal
@@ -282,4 +283,9 @@ The
 .Nm stty
 function is expected to be
 .St -p1003.2
-compatible.
+compatible.  The flags
+.Fl e
+and
+.Fl f
+are \*(Bx
+extensions to the standard.
