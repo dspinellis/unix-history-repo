@@ -1,17 +1,15 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd2.c	3.1 84/04/05";
+static	char *sccsid = "@(#)lcmd2.c	3.2 84/04/07";
 #endif
 
 #include "defs.h"
 #include "string.h"
 #include "value.h"
+#include "var.h"
 #include "lcmd.h"
 #include <sys/resource.h>
 
-struct lcmd_arg arg_iostat[] = {
-	0
-};
-
+/*ARGSUSED*/
 l_iostat(v, a)
 struct value *v, *a;
 {
@@ -49,6 +47,7 @@ struct lcmd_arg arg_time[] = {
 	0
 };
 
+/*ARGSUSED*/
 l_time(v, a)
 struct value *v;
 register struct value *a;
@@ -56,7 +55,6 @@ register struct value *a;
 	register struct ww *w;
 	struct rusage rusage;
 	struct timeval timeval;
-	int flag;
 	char *strtime();
 
 	if ((w = openiwin(6, "Timing and Resource Usage")) == 0) {
@@ -119,4 +117,74 @@ register struct timeval *t;
 	(void) sprintf(p, fill ? "%02D.%02d" : "%D.%02D",
 		t->tv_sec, t->tv_usec / 10000);
 	return buf;
+}
+
+/*ARGSUSED*/
+l_list(v, a)
+struct value *v, *a;
+{
+	register struct ww *w, *wp;
+	register i;
+	int n;
+
+	for (n = 0, i = 0; i < NWINDOW; i++)
+		if (window[i] != 0)
+			n++;
+	if (n == 0) {
+		error("No windows.");
+		return;
+	}
+	if ((w = openiwin(n + 2, "Windows")) == 0) {
+		error("Can't open listing window: %s.", wwerror());
+		return;
+	}
+	for (i = 0; i < NWINDOW; i++) {
+		if ((wp = window[i]) == 0)
+			continue;
+		wwprintf(w, "%c %c %-13s %-.*s\n",
+			wp == selwin ? '*' : ' ',
+			i + '1',
+			wp->ww_state == WWS_HASPROC ? "" : "(No process)",
+			wwncol - 20,
+			wp->ww_label ? wp->ww_label : "(No label)");
+	}
+	waitnl(w);
+	closeiwin(w);
+}
+
+/*ARGSUSED*/
+l_variable(v, a)
+struct value *v, *a;
+{
+	register struct ww *w;
+	int printvar();
+
+	if ((w = openiwin(wwnrow - 3, "Variables")) == 0) {
+		error("Can't open variable window: %s.", wwerror());
+		return;
+	}
+	if (var_walk(printvar, (int)w) >= 0)
+		waitnl(w);
+	closeiwin(w);
+}
+
+printvar(w, r)
+register struct ww *w;
+register struct var *r;
+{
+	if (more(w, 0) == 2)
+		return -1;
+	wwprintf(w, "%16s\t", r->r_name);
+	switch (r->r_val.v_type) {
+	case V_STR:
+		wwprintf(w, "%s\n", r->r_val.v_str);
+		break;
+	case V_NUM:
+		wwprintf(w, "%d\n", r->r_val.v_num);
+		break;
+	case V_ERR:
+		wwprintf(w, "ERROR\n");
+		break;
+	}
+	return 0;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd.c	3.16 84/04/06";
+static	char *sccsid = "@(#)lcmd.c	3.17 84/04/07";
 #endif
 
 #include "defs.h"
@@ -13,12 +13,14 @@ int l_escape();
 int l_foreground();
 int l_iostat();
 int l_label();
+int l_list();
 int l_nline();
 int l_select();
 int l_source();
 int l_terse();
 int l_time();
 int l_unset();
+int l_variable();
 int l_window();
 int l_write();
 
@@ -26,7 +28,6 @@ struct lcmd_arg arg_cursormodes[];
 struct lcmd_arg arg_debug[];
 struct lcmd_arg arg_escape[];
 struct lcmd_arg arg_foreground[];
-struct lcmd_arg arg_iostat[];
 struct lcmd_arg arg_label[];
 struct lcmd_arg arg_nline[];
 struct lcmd_arg arg_select[];
@@ -35,6 +36,7 @@ struct lcmd_arg arg_terse[];
 struct lcmd_arg arg_time[];
 struct lcmd_arg arg_unset[];
 struct lcmd_arg arg_window[];
+struct lcmd_arg arg_null[] = 0;
 
 struct lcmd_tab lcmd_tab[] = {
 	"%",		1,	l_select,	arg_select,
@@ -44,14 +46,16 @@ struct lcmd_tab lcmd_tab[] = {
 	"debug",	1,	l_debug,	arg_debug,
 	"escape",	1,	l_escape,	arg_escape,
 	"foreground",	1,	l_foreground,	arg_foreground,
-	"iostat",	1,	l_iostat,	arg_iostat,
-	"label",	1,	l_label,	arg_label,
+	"iostat",	1,	l_iostat,	arg_null,
+	"label",	2,	l_label,	arg_label,
+	"list",		2,	l_list,		arg_null,
 	"nlines",	1,	l_nline,	arg_nline,
 	"select",	2,	l_select,	arg_select,
 	"source",	2,	l_source,	arg_source,
 	"terse",	2,	l_terse,	arg_terse,
 	"time",		2,	l_time,		arg_time,
 	"unset",	1,	l_unset,	arg_unset,
+	"variable",	1,	l_variable,	arg_null,
 	"window",	2,	l_window,	arg_window,
 	"write",	2,	l_write,	0,
 	0
