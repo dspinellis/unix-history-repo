@@ -1,8 +1,12 @@
-static	char *sccsid = "@(#)more.c	4.3 (Berkeley) 81/04/02";
+static	char *sccsid = "@(#)more.c	4.4 (Berkeley) 81/04/23";
+
 /*
 ** more.c - General purpose tty output filter and file perusal program
 **
 **	by Eric Shienbrood, UC Berkeley
+**
+**	modified by Geoff Peck, UCB to add underlining, single spacing
+**	modified by John Foderaro, UCB to add -c and MORE environment variable
 */
 
 #include <whoami.h>
@@ -65,6 +69,8 @@ int		onsusp();
 int		nscroll = 11;	/* Number of lines scrolled by 'd' */
 int		fold_opt = 1;	/* Fold long lines */
 int		stop_opt = 1;	/* Stop after form feeds */
+int		ssp_opt = 0;	/* Suppress white space */
+int		ul_opt = 1;	/* Underline as best we can */
 int		promptlen;
 int		Currline;	/* Line we are currently at */
 int		startup = 1;
@@ -74,7 +80,7 @@ int		bad_so;	/* True if overwriting does not turn off standout */
 int		inwait, Pause, errors;
 int		within;	/* true if we are within a file,
 			false if we are between files */
-int		hard, dumb, noscroll, hardtabs,clreol;
+int		hard, dumb, noscroll, hardtabs, clreol;
 int		catch_susp;	/* We should catch the SIGTSTP signal */
 char		**fnames;	/* The list of file names */
 int		nfiles;		/* Number of files left to process */
@@ -88,10 +94,13 @@ int		Lpp = 24;	/* lines per page */
 char		*Clear;		/* clear screen */
 char		*eraseln;	/* erase line */
 char		*Senter, *Sexit;/* enter and exit standout mode */
+char		*ULenter, *ULexit;	/* enter and exit underline mode */
+char		*chUL;		/* underline character */
+char		*chBS;		/* backspace character */
 char		*Home;		/* go to home */
 char		*cursorm;	/* cursor movement */
 char		cursorhome[40];	/* contains cursor movement to home */
-char		*Cleareod;	/* clear rest of screen */
+char		*EodClr;	/* clear rest of screen */
 char		*tgetstr();
 int		Mcol = 80;	/* number of columns */
 int		Wrap = 1;	/* set if automargins */
@@ -147,13 +156,13 @@ char *argv[];
 	}
 	else break;
     }
-    /* allow clreol only if Home and eraseln and Cleareod strings are
+    /* allow clreol only if Home and eraseln and EodClr strings are
      *  defined, and in that case, make sure we are in noscroll mode
      */
     if(clreol)
     {
-	if((*Home == '\0') || (*eraseln == '\0') || (*Cleareod == '\0'))
-	   clreol = 0;
+	if ((*Home == '\0') || (*eraseln == '\0') || (*EodClr == '\0'))
+	    clreol = 0;
 	else noscroll = 1;
     }
 
@@ -186,18 +195,21 @@ char *argv[];
 	    copy_file (stdin);
 	else {
 	    if ((ch = Getc (f)) == '\f')
-		doclear ();
+		doclear();
 	    else {
 		Ungetc (ch, f);
-		if (noscroll && (ch != EOF))
-		{ if(clreol) home();
-		  else doclear ();
+		if (noscroll && (ch != EOF)) {
+		    if (clreol)
+			home ();
+		    else
+			doclear ();
 		}
 	    }
 	    if (srchopt)
 	    {
 		search (initbuf, stdin, 1);
-		if(noscroll) left--;
+		if (noscroll)
+		    left--;
 	    }
 	    else if (initopt)
 		skiplns (initline, stdin);
@@ -218,7 +230,8 @@ char *argv[];
 		if (srchopt)
 		{
 		    search (initbuf, f, 1);
-		    if(noscroll) left--;
+		    if (noscroll)
+			left--;
 		}
 		else if (initopt)
 		    skiplns (initline, f);
@@ -228,13 +241,16 @@ char *argv[];
 		left = command (fnames[fnum], f);
 	    }
 	    if (left != 0) {
-		if((noscroll  || clearit) && (file_size != 0x7fffffffffffffffL))
-		    if(clreol) home();
-		    else doclear ();
+		if ((noscroll || clearit) && (file_size != 0x7fffffffffffffffL))
+		    if (clreol)
+			home ();
+		    else
+			doclear ();
 		if (prnames) {
 		    if (bad_so)
 			erase (0);
-		    if(clreol)cleareol();
+		    if (clreol)
+			cleareol ();
 		    pr("::::::::::::::");
 		    if (promptlen > 14)
 			erase (14);
@@ -283,11 +299,14 @@ char *s;
 		    noscroll++;
 		else if (*s == 'c')
 		    clreol++;
+		else if (*s == 's')
+		    ssp_opt = 1;
+		else if (*s == 'u')
+		    ul_opt = 0;
 }
 
 
 /*
-
 ** Check whether the file named by fs is an ASCII file which the user may
 ** access.  If it is, return the opened file. Otherwise return NULL.
 */
@@ -303,7 +322,8 @@ int *clearfirst;
 
     if (stat (fs, &stbuf) == -1) {
 	fflush(stdout);
-	if(clreol)cleareol();
+	if (clreol)
+	    cleareol ();
 	perror(fs);
 	return (NULL);
     }
@@ -366,22 +386,35 @@ register int num_lines;
 {
     register int c;
     register int nchars;
-    int length;
+    int length;			/* length of current line */
+    static int prev_len = 1;	/* length of previous line */
 
     for (;;) {
 	while (num_lines > 0 && !Pause) {
 	    if ((nchars = getline (f, &length)) == EOF)
 	    {
-		if(clreol) cleareod();
+		if (clreol)
+		    clreos();
 		return;
 	    }
+	    if (ssp_opt && length == 0 && prev_len == 0)
+		continue;
+	    prev_len = length;
 	    if (bad_so || (Senter && *Senter == ' ') && promptlen > 0)
 		erase (0);
-	    if (clreol) cleareol();
+	    /* must clear before drawing line since tabs on some terminals
+	     * do not erase what they tab over.
+	     */
+	    if (clreol)
+		cleareol ();
 	    prbuf (Line, length);
 	    if (nchars < promptlen)
 		erase (nchars);	/* erase () sets promptlen to 0 */
 	    else promptlen = 0;
+	    /* is this needed?
+	     * if (clreol)
+	     *	cleareol();	/* must clear again in case we wrapped *
+	     */
 	    if (nchars < Mcol || !fold_opt)
 		putchar('\n');
 	    if (nchars == STOP)
@@ -391,12 +424,13 @@ register int num_lines;
 	fflush(stdout);
 	if ((c = Getc(f)) == EOF)
 	{
-	    if(clreol) cleareod();
+	    if (clreol)
+		clreos ();
 	    return;
 	}
 
-	if(Pause && clreol) cleareod();
-
+	if (Pause && clreol)
+	    clreos ();
 	Ungetc (c, f);
 	setjmp (restore);
 	Pause = 0; startup = 0;
@@ -406,8 +440,10 @@ register int num_lines;
 		erase (0);
 	if (noscroll && num_lines == dlines)
 	{ 
-	    if(clreol) home();
-	    else doclear ();
+	    if (clreol)
+		home();
+	    else
+		doclear ();
 	}
 	screen_start.line = Currline;
 	screen_start.chrctr = Ftell (f);
@@ -446,7 +482,11 @@ end_it ()
 {
 
     reset_tty ();
-    if(clreol) { putchar('\r'); cleareod(); fflush(stdout); }
+    if (clreol) {
+	putchar ('\r');
+	clreos ();
+	fflush (stdout);
+    }
     else if (!clreol && (promptlen > 0)) {
 	kill_line ();
 	fflush (stdout);
@@ -583,14 +623,16 @@ register char *string;
 prompt (filename)
 char *filename;
 {
-    if(clreol)cleareol();
+    if (clreol)
+	cleareol ();
     else if (promptlen > 0)
 	kill_line ();
     if (!hard) {
 	promptlen = 8;
 	if (Senter && Sexit)
 	    tputs (Senter, 1, putch);
-	if(clreol)cleareol();
+	if (clreol)
+	    cleareol ();
 	pr("--More--");
 	if (filename != NULL) {
 	    promptlen += printf ("(Next file: %s)", filename);
@@ -603,6 +645,8 @@ char *filename;
 	}
 	if (Senter && Sexit)
 	    tputs (Sexit, 1, putch);
+	if (clreol)
+	    clreos ();
 	fflush(stdout);
     }
     else
@@ -731,12 +775,12 @@ kill_line ()
  */
 cleareol()
 {
-    tputs(eraseln,1,putch);
+    tputs(eraseln, 1, putch);
 }
 
-cleareod()
+clreos()
 {
-    tputs(Cleareod,1,putch);
+    tputs(EodClr, 1, putch);
 }
 
 /*
@@ -761,8 +805,37 @@ prbuf (s, n)
 register char *s;
 register int n;
 {
-    while (n-- > 0)
-	putchar (*s++);
+    char c;				/* next ouput character */
+    register int state;			/* next output char's UL state */
+    static int pstate = 0;		/* current terminal UL state (off) */
+
+    while (--n >= 0)
+	if (!ul_opt)
+	    putchar (*s++);
+	else {
+	    if (n >= 2 && s[0] == '_' && s[1] == '\b') {
+		n -= 2;
+	        s += 2;
+		c = *s++;
+		state = 1;
+	    } else if (n >= 2 && s[1] == '\b' && s[2] == '_') {
+		n -= 2;
+		c = *s++;
+		s += 2;
+		state = 1;
+	    } else {
+		c = *s++;
+		state = 0;
+	    }
+	    if (state != pstate)
+		tputs(state ? ULenter : ULexit, 1, putch);
+	    pstate = state;
+	    putchar(c);
+	    if (state && *chUL) {
+		pr(chBS);
+		tputs(chUL, 1, putch);
+	    }
+	}
 }
 
 /*
@@ -867,21 +940,19 @@ register FILE *f;
 		nlines *= dlines;
 	    putchar ('\r');
 	    erase (0);
-	    printf("\n");
-	    if(clreol)cleareol();
-	    printf("...skipping %d line", nlines);
+	    printf ("\n");
+	    if (clreol)
+		cleareol ();
+	    printf ("...skipping %d line", nlines);
 	    if (nlines > 1)
-	    {
-		pr("s\n");
-	        if(clreol)cleareol();
-		pr("\n");
-	    }
+		pr ("s\n");
 	    else
-	    {
-		pr("\n");
-	        if(clreol)cleareol();
-		pr("\n");
-	    }
+		pr ("\n");
+
+	    if (clreol)
+		cleareol ();
+	    pr ("\n");
+
 	    while (nlines > 0) {
 		while ((c = Getc (f)) != '\n')
 		    if (c == EOF) {
@@ -1125,29 +1196,30 @@ register int n;
 		    if (lncount > 3 || (lncount > 1 && no_intty))
 		    {
 			pr ("\n");
-			if(clreol) cleareol();
+			if (clreol)
+			    cleareol ();
 			pr("...skipping\n");
 		    }
 		    if (!no_intty) {
 			Currline -= (lncount >= 3 ? 3 : lncount);
 			Fseek (file, line3);
-			if(noscroll)
-			  if(clreol)
-			  {
-			     home(); 
-			     cleareol();
-			  } 
-			  else doclear();
+			if (noscroll)
+			    if (clreol) {
+				home ();
+				cleareol ();
+			    } 
+			    else
+				doclear ();
 		    }
 		    else {
 			kill_line ();
-			if(noscroll)
-			  if(clreol)
-			  {
-			     home(); 
-			     cleareol();
-			  } 
-			  else doclear();
+			if (noscroll)
+			    if (clreol) {
+			        home (); 
+			        cleareol ();
+			    } 
+			    else
+				doclear ();
 			pr (Line);
 			putchar ('\n');
 		    }
@@ -1241,13 +1313,16 @@ register int nskip;
     fnum += nskip;
     if (fnum < 0)
 	fnum = 0;
+    pr ("\n...Skipping ");
     pr ("\n");
-    if (clreol) cleareol();
+    if (clreol)
+	cleareol ();
     pr ("...Skipping ");
     pr (nskip > 0 ? "to file " : "back to file ");
     pr (fnames[fnum]);
     pr ("\n");
-    if (clreol) cleareol();
+    if (clreol)
+	cleareol ();
     pr ("\n");
     --fnum;
 }
@@ -1264,7 +1339,7 @@ initterm ()
     setbuf(stdout, obuf);
     if (!(no_tty = gtty(1, &otty))) {
 	if (tgetent(buf, getenv("TERM")) <= 0) {
-	    dumb++;
+	    dumb++; ul_opt = 0;
 	}
 	else {
 	    if (((Lpp = tgetnum("li")) < 0) || tgetflag("hc")) {
@@ -1282,18 +1357,37 @@ initterm ()
 	    Clear = tgetstr("cl", &clearptr);
 	    Senter = tgetstr("so", &clearptr);
 	    Sexit = tgetstr("se", &clearptr);
+
+	    /*
+	     *  Set up for underlining:  some terminals don't need it;
+	     *  others have start/stop sequences, still others have an
+	     *  underline char sequence which is assumed to move the
+	     *  cursor forward one character.  If underline sequence
+	     *  isn't available, settle for standout sequence.
+	     */
+
+	    if (tgetflag("ul") || tgetflag("os"))
+		ul_opt = 0;
+	    if ((chUL = tgetstr("uc", &clearptr)) == NULL )
+		chUL = "";
+	    if ((ULenter = tgetstr("us", &clearptr)) == NULL &&
+		(!*chUL) && (ULenter = tgetstr("so", &clearptr)) == NULL)
+		ULenter = "";
+	    if ((ULexit = tgetstr("ue", &clearptr)) == NULL &&
+		(!*chUL) && (ULexit = tgetstr("se", &clearptr)) == NULL)
+		ULexit = "";
+	    
 	    if (padstr = tgetstr("pc", &clearptr))
 		PC = *padstr;
 	    Home = tgetstr("ho",&clearptr);
-	    if(*Home == '\0')
+	    if (*Home == '\0')
 	    {
-	       if(*(cursorm = tgetstr("cm",&clearptr)))
-	       {
-		    strcpy(cursorhome,tgoto(cursorm,0,0));
+		if ((cursorm = tgetstr("cm", &clearptr)) != NULL) {
+		    strcpy(cursorhome, tgoto(cursorm, 0, 0));
 		    Home = cursorhome;
 	       }
 	    }
-	    Cleareod = tgetstr("cd",&clearptr);
+	    EodClr = tgetstr("cd", &clearptr);
 	}
 	if ((shell = getenv("SHELL")) == NULL)
 	    shell = "/bin/sh";
@@ -1465,8 +1559,10 @@ register char ch;
 error (mess)
 char *mess;
 {
-    if(clreol)cleareol();
-    else kill_line ();
+    if (clreol)
+	cleareol ();
+    else
+	kill_line ();
     promptlen += strlen (mess);
     if (Senter && Sexit) {
 	tputs (Senter, 1, putch);
