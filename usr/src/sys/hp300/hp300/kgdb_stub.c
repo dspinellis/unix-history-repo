@@ -4,23 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.7 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.8 (Berkeley) %G%
  */
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
  */
 #ifdef KGDB
 #ifndef lint
-static char rcsid[] = "$Header: kgdb_stub.c,v 1.9 91/03/08 07:03:13 van Locked $";
+static char rcsid[] = "$Header: kgdb_stub.c,v 1.13 91/03/23 13:55:57 mccanne Exp $";
 #endif
 
 #include "param.h"
 #include "systm.h"
-#include "machine/trap.h"
-#include "machine/cpu.h"
-#include "machine/psl.h"
-#include "machine/reg.h"
-#include "frame.h"
+#include "../include/trap.h"
+#include "../include/cpu.h"
+#include "../include/psl.h"
+#include "../include/reg.h"
+#include "../include/frame.h"
 #include "buf.h"
 #include "cons.h"
 
@@ -132,7 +132,7 @@ kgdb_recv(bp, lenp)
 			escape = 0;
 			continue;
 		}
-		if (++len > SL_MAXMSG) {
+		if (++len > SL_BUFSIZE) {
 			while (GETC != FRAME_END)
 				;
 			return (0);
@@ -206,7 +206,7 @@ computeSignal(type)
 }
 
 /*
- * Trap into kgdb to Wait for debugger to connect, 
+ * Trap into kgdb to wait for debugger to connect, 
  * noting on the console why nothing else is going on.
  */
 kgdb_connect(verbose)
@@ -257,8 +257,8 @@ kgdb_copy(register u_char *src, register u_char *dst, register u_int nbytes)
 	(kgdb_copy((u_char *)(regs), (u_char *)((fp)->f_regs), REGISTER_BYTES))
 
 static u_long reg_cache[NUM_REGS];
-static u_char inbuffer[SL_MAXMSG+1];
-static u_char outbuffer[SL_MAXMSG];
+static u_char inbuffer[SL_BUFSIZE];
+static u_char outbuffer[SL_BUFSIZE];
 
 /*
  * This function does all command procesing for interfacing to 
@@ -294,21 +294,34 @@ kgdb_trap(int type, struct frame *frame)
 		if (kgdb_getc == 0 || kgdb_putc == 0)
 			return (0);
 		/*
-		 * If the packet that woke us up isn't a signal packet,
+		 * If the packet that woke us up isn't an exec packet,
 		 * ignore it since there is no active debugger.  Also,
 		 * we check that it's not an ack to be sure that the 
 		 * remote side doesn't send back a response after the
 		 * local gdb has exited.  Otherwise, the local host
 		 * could trap into gdb if it's running a gdb kernel too.
 		 */
-#ifdef notdef
 		in = GETC;
-		if (KGDB_CMD(in) != KGDB_SIGNAL || (in & KGDB_ACK) != 0)
+		/*
+		 * If we came in asynchronously through the serial line,
+		 * the framing character is eaten by the receive interrupt,
+		 * but if we come in through a synchronous trap (i.e., via
+		 * kgdb_connect()), we will see the extra character.
+		 */
+		if (in == FRAME_END)
+			in = GETC;
+
+		if (KGDB_CMD(in) != KGDB_EXEC || (in & KGDB_ACK) != 0)
 			return (0);
-#endif
 		while (GETC != FRAME_END)
 			;
-
+		/*
+		 * Do the printf *before* we ack the message.  This way
+		 * we won't drop any inbound characters while we're 
+		 * doing the polling printf.
+		 */
+		printf("kgdb started from device %x\n", kgdb_dev);
+		kgdb_send(in | KGDB_ACK, (u_char *)0, 0);
 		kgdb_active = 1;
 	}
 	/*
@@ -316,8 +329,17 @@ kgdb_trap(int type, struct frame *frame)
 	 * that an exception has occured.
 	 */
 	regs_to_gdb(frame, gdb_regs);
-	outbuffer[0] = computeSignal(type);
-	kgdb_send(KGDB_SIGNAL, outbuffer, 1);
+	if (type != T_TRAP15) {
+		/*
+		 * Only send an asynchronous SIGNAL message when we hit
+		 * a breakpoint.  Otherwise, we will drop the incoming
+		 * packet while we output this one (and on entry the other 
+		 * side isn't interested in the SIGNAL type -- if it is,
+		 * it will have used a signal packet.)
+		 */
+		outbuffer[0] = computeSignal(type);
+		kgdb_send(KGDB_SIGNAL, outbuffer, 1);
+	}
 
 	while (1) {
 		in = kgdb_recv(inbuffer, &inlen);
@@ -410,6 +432,7 @@ kgdb_trap(int type, struct frame *frame)
 
 		case KGDB_KILL:
 			kgdb_active = 0;
+			printf("kgdb detached\n");
 			/* fall through */
 		case KGDB_CONT:
 			kgdb_send(out, 0, 0);
@@ -421,6 +444,7 @@ kgdb_trap(int type, struct frame *frame)
 			frame->f_sr |= PSL_T;
 			return (1);
 
+		case KGDB_EXEC:
 		default:
 			/* Unknown command.  Ack with a null message. */
 			outlen = 0;
