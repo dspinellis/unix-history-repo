@@ -169,6 +169,8 @@ Errorclass pi()
 {
 	char	**nwordv;
 
+	if (wordc < 2)
+		return (C_UNKNOWN);
 	if (   ( strlen(wordv[1]) == 1)
 	    && ( (wordv[1][0] == 'e') || (wordv[1][0] == 'E') )
 	    && ( piptr(wordv[2]) )
