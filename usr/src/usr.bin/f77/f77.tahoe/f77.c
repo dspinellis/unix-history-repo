@@ -801,8 +801,6 @@ register char *v0[], *v[];
 char **p;
 int waitpid;
 
-if(sdbflag)
-	*v++ = "-lg";
 if (profileflag)
 	{
 	for(p = p_liblist ; *p ; *v++ = *p++)
