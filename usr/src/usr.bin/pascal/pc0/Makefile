@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.17 %G%"
+SCCSID = "@(#)Makefile 1.18 %G%"
 WHOAMI = pc
 INSTALLNAME = $(DESTDIR)/usr/lib/pc0
 VERSION = 2.0
