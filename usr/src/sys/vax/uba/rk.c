@@ -1,8 +1,9 @@
-/*	rk.c	4.22	%G%	*/
+/*	rk.c	4.23	%G%	*/
 
+int	rkpip;
+int	rknosval;
 #include "rk.h"
 #if NHK > 0
-int	rkwaitdry;
 /*
  * RK11/RK07 disk driver
  *
@@ -109,7 +110,7 @@ rkslave(ui, reg)
 
 	rkaddr->rkcs1 = RK_CDT|RK_CCLR;
 	rkaddr->rkcs2 = ui->ui_slave;
-	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
+	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
 	DELAY(50);
 	if (rkaddr->rkcs2&RK_NED || (rkaddr->rkds&RK_SVAL) == 0) {
@@ -197,7 +198,7 @@ rkustart(ui)
 	}
 	rkaddr->rkcs1 = RK_CDT|RK_CERR;
 	rkaddr->rkcs2 = ui->ui_slave;
-	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
+	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
 	if ((bp = dp->b_actf) == NULL) {
 		rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
@@ -250,7 +251,6 @@ rkstart(um)
 	struct rkst *st;
 	daddr_t bn;
 	int sn, tn, cmd;
-	int waitdry;
 
 loop:
 	if ((dp = um->um_tab.b_actf) == NULL)
@@ -267,15 +267,18 @@ loop:
 	tn = sn/st->nsect;
 	sn %= st->nsect;
 	rkaddr = (struct rkdevice *)ui->ui_addr;
+retry:
 	rkaddr->rkcs1 = RK_CDT|RK_CERR;
 	rkaddr->rkcs2 = ui->ui_slave;
-	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
+	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
 	rkwait(rkaddr);
-	waitdry = 0;
-	while ((rkaddr->rkds&RK_SVAL) == 0) {
-		if (++waitdry > 32)
-			break;
-		rkwaitdry++;
+	if ((rkaddr->rkds&RK_SVAL) == 0) {
+		rknosval++;
+		goto nosval;
+	}
+	if (rkaddr->rkds&RK_PIP) {
+		rkpip++;
+		goto retry;
 	}
 	if ((rkaddr->rkds&RK_DREADY) != RK_DREADY) {
 		printf("rk%d: not ready", dkunit(bp));
@@ -295,11 +298,7 @@ loop:
 		}
 		printf(" (came back!)\n");
 	}
-	if (um->um_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
-		rkaddr->rkatt = rk_offset[um->um_tab.b_errcnt & 017];
-		rkaddr->rkcs1 = RK_CDT|RK_OFFSET|RK_GO;
-		rkwait(rkaddr);
-	}
+nosval:
 	rkaddr->rkcyl = bp->b_cylin;
 	rkcyl[ui->ui_unit] = bp->b_cylin;
 	rkaddr->rkda = (tn << 8) + sn;
@@ -337,6 +336,7 @@ rkintr(rk11)
 	sc->sc_wticks = 0;
 	sc->sc_softas = 0;
 	if (um->um_tab.b_active) {
+		ubadone(um);
 		dp = um->um_tab.b_actf;
 		bp = dp->b_actf;
 		ui = rkdinfo[dkunit(bp)];
@@ -376,18 +376,37 @@ rkintr(rk11)
 			if (recal && um->um_tab.b_active == 0) {
 				rkaddr->rkcs1 = RK_CDT|RK_IE|RK_RECAL|RK_GO;
 				rkcyl[ui->ui_unit] = -1;
-				rkwait(rkaddr);
-				um->um_tab.b_active = 1;
-				sc->sc_recal = 1;
-				return;
+				sc->sc_recal = 0;
+				goto nextrecal;
 			}
 		}
 retry:
-		if (sc->sc_recal) {
+		switch (sc->sc_recal) {
+
+		case 1:
+			rkaddr->rkcyl = bp->b_cylin;
+			rkcyl[ui->ui_unit] = bp->b_cylin;
+			rkaddr->rkcs1 = RK_CDT|RK_IE|RK_SEEK|RK_GO;
+			goto nextrecal;
+
+		case 2:
+			if (um->um_tab.b_errcnt < 16 ||
+			    (bp->b_flags&B_READ) != 0)
+				break;
+			rkaddr->rkatt = rk_offset[um->um_tab.b_errcnt & 017];
+			rkaddr->rkcs1 = RK_CDT|RK_IE|RK_OFFSET|RK_GO;
+			/* fall into ... */
+		nextrecal:
+			sc->sc_recal++;
+			rkwait(rkaddr);
+			um->um_tab.b_active = 1;
+			return;
+
+		case 3:
 			sc->sc_recal = 0;
 			um->um_tab.b_active = 0;
+			break;
 		}
-		ubadone(um);
 		if (um->um_tab.b_active) {
 			um->um_tab.b_active = 0;
 			um->um_tab.b_errcnt = 0;
@@ -403,7 +422,6 @@ retry:
 		}
 		as &= ~(1<<ui->ui_slave);
 	}
-att:
 	for (unit = 0; as; as >>= 1, unit++)
 		if (as & 1)
 			if (rkustart(rkip[rk11][unit]))
