@@ -1,3 +1,11 @@
+Received: from jsdinc.root.com (uucp@localhost) by Root.COM (8.6.5/8.6.5) with UUCP id MAA09093 for implode.root.com!davidg; Sat, 19 Mar 1994 12:12:17 -0800
+Received: from localhost (root@localhost) by jsdinc.root.com (8.6.5/8.6.5) id PAA00122 for implode!davidg; Sat, 19 Mar 1994 15:09:05 -0459
+Date: Sat, 19 Mar 1994 15:09:05 -0459
+From: John Dyson <toor@jsdinc.root.com>
+Message-Id: <199403192008.PAA00122@jsdinc.root.com>
+To: davidg@implode.root.com
+Subject: new kern_physio.c
+
 /*
  * Copyright (c) 1989, 1990, 1991, 1992 William F. Jolitz, TeleMuse
  * All rights reserved.
@@ -45,7 +53,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_physio.c,v 1.1 1994/01/17 09:43:52 davidg Exp $
+ *	$Id: kern_physio.c,v 1.2 1994/03/14 21:54:16 davidg Exp $
  */
 
 #include "param.h"
@@ -178,7 +186,9 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 				 * properly handle copy-on-write
 				 */
 				*(volatile int *) adr += 0;
-			} else {
+			} 
+#if defined(HOLD_WORKS_FOR_SHARING)
+			else {
 				*(volatile int *) adr;
 			}
 			pa = pmap_extract(&p->p_vmspace->vm_pmap, (vm_offset_t) adr);
@@ -186,10 +196,17 @@ int physio(strat, dev, bp, off, rw, base, len, p)
  * hold the data page
  */
 			vm_page_hold(PHYS_TO_VM_PAGE(pa));
+#endif
 		}
 
+#if !defined(HOLD_WORKS_FOR_SHARING)
+		vslock(base, bp->b_bcount);
+#endif
 		/* perform transfer */
 		physstrat(bp, strat, PRIBIO);
+#if !defined(HOLD_WORKS_FOR_SHARING)
+		vsunlock(base, bp->b_bcount);
+#endif
 
 /*
  * unhold the pde, and data pages
@@ -203,8 +220,10 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 				vm_page_unhold(PHYS_TO_VM_PAGE(pa));
 				lastv = v;
 			}
+#if defined(HOLD_WORKS_FOR_SHARING)
 			pa = pmap_extract(&p->p_vmspace->vm_pmap, (vm_offset_t) adr);
 			vm_page_unhold(PHYS_TO_VM_PAGE(pa));
+#endif
 		}
 			
 
