@@ -9,11 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setmode.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)setmode.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <errno.h>
 #include <stddef.h>
 #ifdef SETMODE_DEBUG
@@ -139,6 +140,7 @@ setmode(p)
 	register int perm, who;
 	register char op;
 	BITCMD *set, *saveset, *endset;
+	sigset_t sigset, sigoset;
 	mode_t mask;
 	int permXbits, setlen;
 
@@ -147,10 +149,15 @@ setmode(p)
 
 	/*
 	 * Get a copy of the mask for the permissions that are mask relative.
-	 * Flip the bits, we want what's not set.
+	 * Flip the bits, we want what's not set.  Since it's possible that
+	 * the caller is opening files inside a signal handler, protect them
+	 * as best we can.
 	 */
+	sigfillset(&sigset);
+        (void)sigprocmask(SIG_BLOCK, &sigset, &sigoset);
 	(void)umask(mask = umask(0));
 	mask = ~mask;
+        (void)sigprocmask(SIG_SETMASK, &sigoset, NULL);
 
 	setlen = SET_LEN + 2;
 	
