@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -57,6 +57,11 @@ syserr(fmt, va_alist)
 	register char *p;
 	int olderrno = errno;
 	bool panic;
+#ifdef LOG
+	char *uname;
+	struct passwd *pw;
+	char ubuf[80];
+#endif
 	VA_LOCAL_DECL
 
 	panic = *fmt == '!';
@@ -83,10 +88,19 @@ syserr(fmt, va_alist)
 	}
 
 # ifdef LOG
+	pw = getpwuid(getuid());
+	if (pw != NULL)
+		uname = pw->pw_name;
+	else
+	{
+		uname = ubuf;
+		sprintf(ubuf, "UID%d", getuid());
+	}
+
 	if (LogLevel > 0)
-		syslog(panic ? LOG_ALERT : LOG_CRIT, "%s: SYSERR: %s",
+		syslog(panic ? LOG_ALERT : LOG_CRIT, "%s: SYSERR(%s): %s",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
-			&MsgBuf[4]);
+			uname, &MsgBuf[4]);
 # endif /* LOG */
 	if (olderrno == EMFILE)
 	{
