@@ -1,18 +1,8 @@
-/*
+/*-
  * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -22,13 +12,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ktrace.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ktrace.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ktrace.h"
 
 #define USAGE \
- "usage: ktrace [-acid] [-f trfile] [-t trops] [-p pid] [-g pgid]\n\
+ "usage: ktrace [-acid] [-f trfile] [-t trpoints] [-p pid] [-g pgid]\n\
 	trops: c = syscalls, n = namei, g = generic-i/o, a = everything\n\
 	ktrace -C (clear everthing)\n"
 	
@@ -41,7 +31,7 @@ main(argc, argv)
 {
 	extern int optind;
 	extern char *optarg;
-	int facs = ALL_FACS;
+	int trpoints = ALL_POINTS;
 	int ops = 0;
 	int pid = 0;
 	int ch;
@@ -58,8 +48,8 @@ main(argc, argv)
 			ops |= KTRFLAG_DESCEND;
 			break;
 		case 't':
-			facs = getfacs(optarg);
-			if (facs < 0) {
+			trpoints = getpoints(optarg);
+			if (trpoints < 0) {
 				fprintf(stderr, 
 				    "ktrace: unknown facility in %s\n",
 			 	     optarg);
@@ -88,7 +78,7 @@ main(argc, argv)
 	argv += optind, argc -= optind;
 	
 	if (inherit)
-		facs |= KTRFAC_INHERIT;
+		trpoints |= KTRFAC_INHERIT;
 	if (clear) {			/* untrace something */
 		if (clear == 2) {	/* -C */
 			ops = KTROP_CLEAR | KTRFLAG_DESCEND;
@@ -96,7 +86,7 @@ main(argc, argv)
 		} else {
 			ops |= pid ? KTROP_CLEAR : KTROP_CLEARFILE;
 		}
-		if (ktrace(tracefile, ops, facs, pid) < 0) {
+		if (ktrace(tracefile, ops, trpoints, pid) < 0) {
 			perror("ktrace");
 			exit(1);
 		}
@@ -112,13 +102,13 @@ main(argc, argv)
 	if (!append)
 		close(open(tracefile, O_WRONLY | O_TRUNC));
 	if (!*argv) {
-		if (ktrace(tracefile, ops, facs, pid) < 0) {
+		if (ktrace(tracefile, ops, trpoints, pid) < 0) {
 			perror("ktrace");
 			exit(1);
 		}
 	} else {
 		pid = getpid();
-		if (ktrace(tracefile, ops, facs, pid) < 0) {
+		if (ktrace(tracefile, ops, trpoints, pid) < 0) {
 			perror("ktrace");
 			exit(1);
 		}
