@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -410,6 +410,7 @@ ndbm_map_lookup(map, name, av, statp)
 	int *statp;
 {
 	datum key, val;
+	int fd;
 	char keybuf[MAXNAME + 1];
 
 	if (tTd(38, 20))
@@ -425,8 +426,9 @@ ndbm_map_lookup(map, name, av, statp)
 		makelower(keybuf);
 		key.dptr = keybuf;
 	}
-	(void) lockfile(dbm_dirfno((DBM *) map->map_db1), map->map_file,
-			".dir", LOCK_SH);
+	fd = dbm_dirfno((DBM *) map->map_db1);
+	if (fd >= 0)
+		(void) lockfile(fd, map->map_file, ".dir", LOCK_SH);
 	val.dptr = NULL;
 	if (bitset(MF_TRY0NULL, map->map_mflags))
 	{
@@ -441,8 +443,8 @@ ndbm_map_lookup(map, name, av, statp)
 		if (val.dptr != NULL)
 			map->map_mflags &= ~MF_TRY0NULL;
 	}
-	(void) lockfile(dbm_dirfno((DBM *) map->map_db1), map->map_file,
-			".dir", LOCK_UN);
+	if (fd >= 0)
+		(void) lockfile(fd, map->map_file, ".dir", LOCK_UN);
 	if (val.dptr == NULL)
 		return NULL;
 	if (bitset(MF_MATCHONLY, map->map_mflags))
@@ -552,6 +554,7 @@ bt_map_open(map, mode)
 	DB *db;
 	int i;
 	int omode;
+	int fd;
 	struct stat st;
 	char buf[MAXNAME];
 
@@ -585,21 +588,24 @@ bt_map_open(map, mode)
 		return FALSE;
 	}
 #if !defined(OLD_NEWDB) && defined(HASFLOCK)
+	fd = db->fd(db);
 # if !defined(O_EXLOCK)
-	if (mode == O_RDWR)
-		(void) lockfile(db->fd(db), map->map_file, ".db", LOCK_EX);
+	if (mode == O_RDWR && fd >= 0)
+		(void) lockfile(fd, map->map_file, ".db", LOCK_EX);
 # else
-	if (mode == O_RDONLY)
-		(void) lockfile(db->fd(db), map->map_file, ".db", LOCK_UN);
+	if (mode == O_RDONLY && fd >= 0)
+		(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
 # endif
 #endif
 
 	/* try to make sure that at least the database header is on disk */
 	if (mode == O_RDWR)
+#ifdef OLD_NEWDB
+		(void) db->sync(db);
+#else
 		(void) db->sync(db, 0);
 
-#ifndef OLD_NEWDB
-	if (fstat(db->fd(db), &st) >= 0)
+	if (fd >= 0 && fstat(fd, &st) >= 0)
 		map->map_mtime = st.st_mtime;
 #endif
 
@@ -622,6 +628,7 @@ hash_map_open(map, mode)
 	DB *db;
 	int i;
 	int omode;
+	int fd;
 	struct stat st;
 	char buf[MAXNAME];
 
@@ -655,21 +662,24 @@ hash_map_open(map, mode)
 		return FALSE;
 	}
 #if !defined(OLD_NEWDB) && defined(HASFLOCK)
+	fd = db->fd(db);
 # if !defined(O_EXLOCK)
-	if (mode == O_RDWR)
-		(void) lockfile(db->fd(db), map->map_file, ".db", LOCK_EX);
+	if (mode == O_RDWR && fd >= 0)
+		(void) lockfile(fd, map->map_file, ".db", LOCK_EX);
 # else
-	if (mode == O_RDONLY)
-		(void) lockfile(db->fd(db), map->map_file, ".db", LOCK_UN);
+	if (mode == O_RDONLY && fd >= 0)
+		(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
 # endif
 #endif
 
 	/* try to make sure that at least the database header is on disk */
 	if (mode == O_RDWR)
+#ifdef OLD_NEWDB
+		(void) db->sync(db);
+#else
 		(void) db->sync(db, 0);
 
-#ifndef OLD_NEWDB
-	if (fstat(db->fd(db), &st) >= 0)
+	if (fd >= 0 && fstat(fd, &st) >= 0)
 		map->map_mtime = st.st_mtime;
 #endif
 
@@ -695,6 +705,7 @@ db_map_lookup(map, name, av, statp)
 	register DB *db = (DB *) map->map_db2;
 	int st;
 	int saveerrno;
+	int fd;
 	char keybuf[MAXNAME + 1];
 
 	if (tTd(38, 20))
@@ -726,7 +737,9 @@ db_map_lookup(map, name, av, statp)
 	}
 	saveerrno = errno;
 #ifndef OLD_NEWDB
-	(void) lockfile(db->fd(db), map->map_file, ".db", LOCK_UN);
+	fd = db->fd(db);
+	if (fd >= 0)
+		(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
 #endif
 	if (st != 0)
 	{
