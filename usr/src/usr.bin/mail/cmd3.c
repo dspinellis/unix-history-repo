@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -518,16 +518,12 @@ null(e)
 file(argv)
 	register char **argv;
 {
-	char *cp;
 
 	if (argv[0] == NOSTR) {
 		newfileinfo();
 		return 0;
 	}
-	if ((cp = expand(*argv)) == NOSTR)
-		return 1;
-	strcpy(prevfile, mailname);
-	if (setfile(cp, **argv != '%') < 0)
+	if (setfile(*argv) < 0)
 		return 1;
 	announce();
 	return 0;

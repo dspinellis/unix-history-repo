@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -33,22 +33,28 @@ char	*prompt = "& ";
 
 /*
  * Set up editing on the given file name.
- * If isedit is true, we are considered to be editing the file,
- * otherwise we are reading our mail which has signficance for
- * mbox and so forth.
+ * If the first character of name is %, we are considered to be
+ * editing the file, otherwise we are reading our mail which has
+ * signficance for mbox and so forth.
  */
-
-setfile(name, isedit)
+setfile(name)
 	char *name;
 {
 	FILE *ibuf;
 	int i;
 	struct stat stb;
+	char isedit = *name != '%';
+	char *who = name[1] ? name + 1 : myname;
 	static int shudclob;
 	extern char tempMesg[];
 	extern int errno;
 
+	if ((name = expand(name)) == NOSTR)
+		return -1;
+
 	if ((ibuf = fopen(name, "r")) == NULL) {
+		if (!isedit && errno == ENOENT)
+			goto nomail;
 		perror(name);
 		return(-1);
 	}
@@ -103,6 +109,7 @@ setfile(name, isedit)
 	}
 	shudclob = 1;
 	edit = isedit;
+	strcpy(prevfile, mailname);
 	if (name != mailname)
 		strcpy(mailname, name);
 	mailsize = fsize(ibuf);
@@ -120,6 +127,11 @@ setfile(name, isedit)
 	fclose(ibuf);
 	relsesigs();
 	sawcom = 0;
+	if (!edit && msgCount == 0) {
+nomail:
+		fprintf(stderr, "No mail for %s\n", who);
+		return -1;
+	}
 	return(0);
 }
 
