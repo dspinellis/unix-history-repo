@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)fmt.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)fmt.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -21,16 +21,22 @@ static char *sccsid = "@(#)fmt.c	5.2 (Berkeley) %G%";
  * fmt -- format the concatenation of input files or standard input
  * onto standard output.  Designed for use with Mail ~|
  *
- * Syntax: fmt [ -width ] [ name ... ]
- * Author: Kurt Shoens (UCB) 12/7/78
+ * Syntax : fmt [ goal [ max ] ] [ name ... ]
+ * Authors: Kurt Shoens (UCB) 12/7/78;
+ *          Liz Allen (UMCP) 2/24/83 [Addition of goal length concept].
  */
 
+/* LIZ@UOM 6/18/85 -- Don't need LENGTH any more.
+ * #define	LENGTH	72		Max line length in output
+ */
 #define	NOSTR	((char *) 0)	/* Null string pointer for lint */
 
+/* LIZ@UOM 6/18/85 --New variables goal_length and max_length */
+int	goal_length = 65;	/* Target or goal line length in output */
+int	max_length = 75;	/* Max line length in output */
 int	pfx;			/* Current leading blank count */
 int	lineno;			/* Current input line */
 int	mark;			/* Last place we saw a head line */
-int	width = 72;		/* Width that we will not exceed */
 
 char	*calloc();		/* for lint . . . */
 char	*headnames[] = {"To", "Subject", "Cc", 0};
@@ -42,44 +48,48 @@ char	*headnames[] = {"To", "Subject", "Cc", 0};
  */
 
 main(argc, argv)
+	int argc;
 	char **argv;
 {
 	register FILE *fi;
 	register int errs = 0;
-	register char *cp;
-	int nofile;
+	int number;		/* LIZ@UOM 6/18/85 */
 
 	setout();
 	lineno = 1;
 	mark = -10;
+	/*
+	 * LIZ@UOM 6/18/85 -- Check for goal and max length arguments 
+	 */
+	if (argc > 1 && (1 == (sscanf(argv[1], "%d", &number)))) {
+		argv++;
+		argc--;
+		goal_length = number;
+		if (argc > 1 && (1 == (sscanf(argv[1], "%d", &number)))) {
+			argv++;
+			argc--;
+			max_length = number;
+		}
+	}
+	if (max_length <= goal_length) {
+		fprintf(stderr, "Max length must be greater than %s\n",
+			"goal length");
+		exit(1);
+	}
 	if (argc < 2) {
-single:
 		fmt(stdin);
 		oflush();
 		exit(0);
 	}
-	nofile = 1;
 	while (--argc) {
-		cp = *++argv;
-		if (*cp == '-') {
-			width = atoi(cp+1);
-			if (width <= 0 || width >= BUFSIZ-2) {
-				fprintf(stderr, "fmt:  bad width: %d\n", width);
-				exit(1);
-			}
-			continue;
-		}
-		nofile = 0;
-		if ((fi = fopen(cp, "r")) == NULL) {
-			perror(cp);
+		if ((fi = fopen(*++argv, "r")) == NULL) {
+			perror(*argv);
 			errs++;
 			continue;
 		}
 		fmt(fi);
 		fclose(fi);
 	}
-	if (nofile)
-		goto single;
 	oflush();
 	exit(errs);
 }
@@ -89,7 +99,6 @@ single:
  * doing ^H processing, expanding tabs, stripping trailing blanks,
  * and sending each line down for analysis.
  */
-
 fmt(fi)
 	FILE *fi;
 {
@@ -99,12 +108,10 @@ fmt(fi)
 
 	c = getc(fi);
 	while (c != EOF) {
-		
 		/*
 		 * Collect a line, doing ^H processing.
 		 * Leave tabs for now.
 		 */
-
 		cp = linebuf;
 		while (c != '\n' && c != EOF && cp-linebuf < BUFSIZ-1) {
 			if (c == '\b') {
@@ -125,14 +132,12 @@ fmt(fi)
 		/*
 		 * Toss anything remaining on the input line.
 		 */
-
 		while (c != '\n' && c != EOF)
 			c = getc(fi);
 		
 		/*
 		 * Expand tabs on the way to canonb.
 		 */
-
 		col = 0;
 		cp = linebuf;
 		cp2 = canonb;
@@ -153,7 +158,6 @@ fmt(fi)
 		/*
 		 * Swipe trailing blanks from the line.
 		 */
-
 		for (cp2--; cp2 >= canonb && *cp2 == ' '; cp2--)
 			;
 		*++cp2 = '\0';
@@ -170,7 +174,6 @@ fmt(fi)
  * Finally, if the line minus the prefix is a mail header, try to keep
  * it on a line by itself.
  */
-
 prefix(line)
 	char line[];
 {
@@ -190,7 +193,6 @@ prefix(line)
 	 * The following horrible expression attempts to avoid linebreaks
 	 * when the indent changes due to a paragraph.
 	 */
-
 	if (np != pfx && (np > pfx || abs(pfx-np) > 8))
 		oflush();
 	if (h = ishead(cp))
@@ -217,42 +219,45 @@ prefix(line)
  * attached at the end.  Pass these words along to the output
  * line packer.
  */
-
 split(line)
 	char line[];
 {
 	register char *cp, *cp2;
 	char word[BUFSIZ];
+	int wordl;		/* LIZ@UOM 6/18/85 */
 
 	cp = line;
 	while (*cp) {
 		cp2 = word;
+		wordl = 0;	/* LIZ@UOM 6/18/85 */
 
 		/*
-		 * Collect a 'word,' allowing it to contain escaped
-		 * white space.
+		 * Collect a 'word,' allowing it to contain escaped white
+		 * space. 
 		 */
-
 		while (*cp && *cp != ' ') {
 			if (*cp == '\\' && isspace(cp[1]))
 				*cp2++ = *cp++;
 			*cp2++ = *cp++;
+			wordl++;/* LIZ@UOM 6/18/85 */
 		}
 
 		/*
-		 * Guarantee a space at end of line.
-		 * Two spaces after end of sentence punctuation.
+		 * Guarantee a space at end of line. Two spaces after end of
+		 * sentence punctuation. 
 		 */
-
 		if (*cp == '\0') {
 			*cp2++ = ' ';
-			if (any(cp[-1], ".:!?"))
+			if (any(cp[-1], ".:!"))
 				*cp2++ = ' ';
 		}
 		while (*cp == ' ')
 			*cp2++ = *cp++;
 		*cp2 = '\0';
-		pack(word);
+		/*
+		 * LIZ@UOM 6/18/85 pack(word); 
+		 */
+		pack(word, wordl);
 	}
 }
 
@@ -265,14 +270,12 @@ split(line)
  * there ain't nothing in there yet.  At the bottom of this whole mess,
  * leading tabs are reinserted.
  */
-
 char	outbuf[BUFSIZ];			/* Sandbagged output line image */
 char	*outp;				/* Pointer in above */
 
 /*
  * Initialize the output section.
  */
-
 setout()
 {
 	outp = NOSTR;
@@ -284,34 +287,51 @@ setout()
  * If the word won't fit on the current line, flush and begin a new
  * line.  If the word is too long to fit all by itself on a line,
  * just give it its own and hope for the best.
+ *
+ * LIZ@UOM 6/18/85 -- If the new word will fit in at less than the
+ *	goal length, take it.  If not, then check to see if the line
+ *	will be over the max length; if so put the word on the next
+ *	line.  If not, check to see if the line will be closer to the
+ *	goal length with or without the word and take it or put it on
+ *	the next line accordingly.
  */
 
-pack(word)
+/*
+ * LIZ@UOM 6/18/85 -- pass in the length of the word as well
+ * pack(word)
+ *	char word[];
+ */
+pack(word,wl)
 	char word[];
+	int wl;
 {
 	register char *cp;
 	register int s, t;
 
 	if (outp == NOSTR)
 		leadin();
-	t = strlen(word);
-	s = outp-outbuf;
-	if (t+s <= width) {
-		
+	/*
+	 * LIZ@UOM 6/18/85 -- change condition to check goal_length; s is the
+	 * length of the line before the word is added; t is now the length
+	 * of the line after the word is added
+	 *	t = strlen(word);
+	 *	if (t+s <= LENGTH) 
+	 */
+	s = outp - outbuf;
+	t = wl + s;
+	if ((t <= goal_length) ||
+	    ((t <= max_length) && (t - goal_length <= goal_length - s))) {
 		/*
-		 * In like flint!
+		 * In like flint! 
 		 */
-
-		for (cp = word; *cp; *outp++ = *cp++)
-			;
+		for (cp = word; *cp; *outp++ = *cp++);
 		return;
 	}
 	if (s > pfx) {
 		oflush();
 		leadin();
 	}
-	for (cp = word; *cp; *outp++ = *cp++)
-		;
+	for (cp = word; *cp; *outp++ = *cp++);
 }
 
 /*
@@ -319,7 +339,6 @@ pack(word)
  * its way.  Set outp to NOSTR to indicate the absence of the current
  * line prefix.
  */
-
 oflush()
 {
 	if (outp == NOSTR)
@@ -333,7 +352,6 @@ oflush()
  * Take the passed line buffer, insert leading tabs where possible, and
  * output on standard output (finally).
  */
-
 tabulate(line)
 	char line[];
 {
@@ -343,7 +361,6 @@ tabulate(line)
 	/*
 	 * Toss trailing blanks in the output line.
 	 */
-
 	cp = line + strlen(line) - 1;
 	while (cp >= line && *cp == ' ')
 		cp--;
@@ -352,7 +369,6 @@ tabulate(line)
 	/*
 	 * Count the leading blank space and tabulate.
 	 */
-
 	for (cp = line; *cp == ' '; cp++)
 		;
 	b = cp-line;
@@ -375,7 +391,6 @@ tabulate(line)
  * Initialize the output line with the appropriate number of
  * leading blanks.
  */
-
 leadin()
 {
 	register int b;
@@ -391,7 +406,6 @@ leadin()
  * This little goodie is needed for
  * a headline detector in head.c
  */
-
 char *
 savestr(str)
 	char str[];
@@ -404,18 +418,17 @@ savestr(str)
 		exit(1);
 	}
 	copy(str, top);
-	return(top);
+	return (top);
 }
 
 /*
  * Is s1 a prefix of s2??
  */
-
 ispref(s1, s2)
 	register char *s1, *s2;
 {
 
 	while (*s1++ == *s2)
 		;
-	return(*s1 == '\0');
+	return (*s1 == '\0');
 }
