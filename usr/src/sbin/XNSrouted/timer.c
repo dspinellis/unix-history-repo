@@ -1,16 +1,26 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
  *
- * Includes material written at Cornell University by Bill Nesheim,
- * by permission of the author.
+ * This file includes significant work done at Cornell University by
+ * Bill Nesheim.  That work included by permission.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.4 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)timer.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Routing Table Management Daemon
