@@ -2,9 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)eqnchar.7	4.1 (Berkeley) %G%
+.\"	@(#)eqnchar.7	5.1 (Berkeley) %G%
 .\"
+.TH EQNCHAR 7 "1 February 1983"
+.UC 3
 .EQ
+tdefine ciplus % "\o'\(pl\(ci'" %
 tdefine ciplus % "\o'\(pl\(ci'" %
 ndefine ciplus % O+ %
 tdefine citimes % "\o'\(mu\(ci'" %
@@ -94,8 +97,6 @@ define supset % \(sp %
 define !subset % \(ib %
 define !supset % \(ip %
 .EN
-.TH EQNCHAR 7 
-.UC 3
 .SH NAME
 eqnchar \- special character definitions for eqn
 .SH SYNOPSIS
@@ -120,8 +121,7 @@ These definitions are primarily intended for use with
 .I eqn
 and
 .IR neqn .
-It contains
-definitions for the following characters
+It contains definitions for the following characters
 .PP
 .nf
 .ta \w'angstrom  'u \n(.lu/3u +\w'angstrom  'u \n(.lu*2u/3u +\w'angstrom  'u
