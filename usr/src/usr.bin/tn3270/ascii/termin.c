@@ -1,12 +1,12 @@
 /*-
- * Copyright (c) 1988 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termin.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)termin.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /* this takes characters from the keyboard, and produces 3270 keystroke
