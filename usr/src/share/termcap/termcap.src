@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.36	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.37	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -272,7 +272,7 @@ I9|ibm|ibm3101|3101|i3101|IBM 3101-10:\
 	:cr=^M:do=^J:nl=^J:bl=^G:ct=\EH:st=\E0:\
 	:am:le=^H:bs:cl=\EK:li#24:co#80:nd=\EC:up=\EA:cd=\EJ:ce=\EI:\
 	:kd=\EB:kl=\ED:kr=\EC:ku=\EA:ho=\EH:cm=\EY%+\40%+\40:ta=^I:pt:
-# # --------------------------------
+Ia|ibm-apl|apl|IBM apl terminal simulator:li#25:tc=dm1520:
 #
 # M: MISCELLANEOUS TERMINALS
 #
@@ -610,6 +610,11 @@ Mz|zen30|z30|zentec 30:\
 	:al=1.5*\EE:le=^H:bs:ce=1.0*\ET:cm=\E=%+ %+ :cl=\E*:\
 	:ho=^^:nd=^L:se=\EG0:so=\EG6:up=^K:im=\Eq:ei=\Er:\
 	:am:dc=\EW:dl=1.5*\ER:cd=\EY:
+m0|modgraph|mod|Modgraph terminal emulating vt100, 24x80:\
+	:xn@:rf@:sr=5\EM\E[K:vs=\E\^9;0s\E\^7;1s:\
+	:is=\E\^9;0s\E\^7;1s\E[3g\E\^11;9s\E\^11;17s\E\^11;25s\E\^11;33s\E\^11;41s\E\^11;49s\E\^11;57s\E\^11;65s\E\^11;73s\E\^11;81s\E\^11;89s:\
+	:tc=vt100:
+# # --------------------------------
 # # --------------------------------
 #
 # N: ANN ARBOR
