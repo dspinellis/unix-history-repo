@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)trap.c	5.3 (Berkeley) %G%
+ *	@(#)trap.c	5.4 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,6 @@
 
 struct	sysent sysent[];
 int	nsysent;
-#include "dbg.h"
 /*
  * Called from the trap handler when a processor trap occurs.
  */
@@ -54,36 +53,20 @@ trap(frame)
 #define code frame.tf_err
 #define pc frame.tf_eip
 {
-	register int *locr0 = ((int *)&frame)/*-PS*/;
+	register int *locr0 = ((int *)&frame);
 	register int i;
 	register struct proc *p;
 	struct timeval syst;
 	extern int nofault;
 
-#ifdef DEBUG
-dprintf(DALLTRAPS, "%d. trap",u.u_procp->p_pid);
-dprintf(DALLTRAPS, "\npc:%x cs:%x ds:%x eflags:%x isp %x\n",
-		frame.tf_eip, frame.tf_cs, frame.tf_ds, frame.tf_eflags,
-		frame.tf_isp);
-dprintf(DALLTRAPS, "edi %x esi %x ebp %x ebx %x esp %x\n",
-		frame.tf_edi, frame.tf_esi, frame.tf_ebp,
-		frame.tf_ebx, frame.tf_esp);
-dprintf(DALLTRAPS, "edx %x ecx %x eax %x\n",
-		frame.tf_edx, frame.tf_ecx, frame.tf_eax);
-dprintf(DALLTRAPS|DPAUSE, "ec %x type %x cr0 %x cr2 %x cpl %x \n",
-		frame.tf_err, frame.tf_trapno, rcr0(), rcr2(), cpl);
-#endif
 
 	locr0[tEFLAGS] &= ~PSL_NT;	/* clear nested trap XXX */
-if(nofault && frame.tf_trapno != 0xc)
-	{ locr0[tEIP] = nofault; return;}
+	if(nofault && frame.tf_trapno != 0xc) {
+		locr0[tEIP] = nofault; return;
+	}
 
 	syst = u.u_ru.ru_stime;
-	if (ISPL(locr0[tCS]) == SEL_UPL /*&& cpl == 0*/) {
-#ifdef DEBUG
-if(cpl) pg("user cpl %x trap %d", cpl, frame.tf_trapno);
-if(((unsigned)frame.tf_eip) >= 0xfe000000) pg("user eip %x", frame.tf_eip);
-#endif
+	if (ISPL(locr0[tCS]) == SEL_UPL) {
 		type |= USER;
 		u.u_ar0 = locr0;
 	}
@@ -95,8 +78,8 @@ bit_sucker:
 		if (kdb_trap(&psl))
 			return;
 #endif
-splhigh();
-		printf("trap type %d, code = %x, pc = %x cs = %x, eflags = %x\n", type, code, pc, frame.tf_cs, frame.tf_eflags);
+		printf("trap type %d code %x pc %x cs %x eflags %x\n",
+			type, code, pc, frame.tf_cs, frame.tf_eflags);
 		type &= ~USER;
 		panic("trap");
 		/*NOTREACHED*/
@@ -148,14 +131,14 @@ splhigh();
 		u.u_code = code;
 		i = SIGFPE;
 		break;
-
+#ifdef notdef
 	/*
 	 * If the user SP is above the stack segment,
 	 * grow the stack automatically.
 	 */
 	case T_STKFLT + USER:
 	case T_SEGFLT + USER:
-		if (grow((unsigned)locr0[tESP]) /*|| grow(code)*/)
+		if (grow((unsigned)locr0[tESP]))
 			goto out;
 		u.u_code = code;
 		i = SIGSEGV;
@@ -164,56 +147,43 @@ splhigh();
 	case T_TABLEFLT:		/* allow page table faults in kernel */
 	case T_TABLEFLT + USER:		/* page table fault */
 		panic("ptable fault");
+#endif
 
 	case T_PAGEFLT:			/* allow page faults in kernel mode */
 	case T_PAGEFLT + USER:		/* page fault */
-			{ register u_int vp;
-			struct pte *pte;
+		{	register u_int vp;
+			u_int ea;
 
-			if(u.u_procp->p_pid == 2) goto bit_sucker;
-#define PGEX_P	0x01
-			if (rcr2() >= &Sysbase || code & PGEX_P) {
+			ea = (u_int)rcr2();
+
+			/* out of bounds reference */
+			if (ea >= &Sysbase && code & PGEX_P) {
 				u.u_code = code + BUS_PAGE_FAULT;
 				i = SIGBUS;
 				break;
-			} else {
-				vp = btop((int)rcr2());
-				if (vp >= dptov(u.u_procp, u.u_procp->p_dsize)
-				&& vp < sptov(u.u_procp, u.u_procp->p_ssize-1)){
-					if (grow((unsigned)locr0[tESP])
-					|| grow(rcr2()))
-						goto out;
-					else	if (nofault) {
-						locr0[tEIP] = nofault;
-						return;
-					}
-#ifdef DEBUG
-pg("didnt ");
-printf("\npc:%x cs:%x ds:%x eflags:%x isp %x\n",
-		frame.tf_eip, frame.tf_cs, frame.tf_ds, frame.tf_eflags,
-		frame.tf_isp);
-printf("edi %x esi %x ebp %x ebx %x esp %x\n",
-		frame.tf_edi, frame.tf_esi, frame.tf_ebp,
-		frame.tf_ebx, frame.tf_esp);
-printf("edx %x ecx %x eax %x\n",
-		frame.tf_edx, frame.tf_ecx, frame.tf_eax);
-printf("ec %x type %x cr0 %x cr2 %x cpl %x \n",
-		frame.tf_err, frame.tf_trapno, rcr0(), rcr2(), cpl);
-#endif
-					i = SIGSEGV;
-					break;
-				}
-				i = u.u_error;
-				pagein(rcr2(), 0);
-				u.u_error = i;
-				if (type == T_PAGEFLT) return;
+			}
 
-				if(nofault) {
+			/* stack reference to the running process? */
+			vp = btop(ea);
+			if (vp >= dptov(u.u_procp, u.u_procp->p_dsize)
+			&& vp < sptov(u.u_procp, u.u_procp->p_ssize-1)){
+				/* attempt to grow stack */
+				if (grow((unsigned)locr0[tESP]) || grow(ea)) {
+					if (type == T_PAGEFLT) return;
+					goto out;
+				} else	if (nofault) {
 					locr0[tEIP] = nofault;
 					return;
 				}
-				goto out;
+				i = SIGSEGV;
+				break;
 			}
+
+			i = u.u_error;
+			pagein(ea, 0);
+			u.u_error = i;
+			if (type == T_PAGEFLT) return;
+			goto out;
 		}
 
 	case T_TRCTRAP:	 /* trace trap -- someone single stepping lcall's */
@@ -227,6 +197,7 @@ printf("ec %x type %x cr0 %x cr2 %x cpl %x \n",
 		i = SIGTRAP;
 		break;
 
+#ifdef notdef
 	/*
 	 * For T_KSPNOTVAL and T_BUSERR, can not allow spl to
 	 * drop to 0 as clock could go off and we would end up
@@ -250,6 +221,15 @@ printf("ec %x type %x cr0 %x cr2 %x cpl %x \n",
 		u.u_code = code;
 		psignal(u.u_procp, SIGBUS);
 		return;
+#endif
+
+#include "isa.h"
+#if	NISA > 0
+	case T_NMI:
+	case T_NMI + USER:
+		if(isa_nmi(code) == 0) return;
+		else goto bit_sucker;
+#endif
 	}
 	psignal(u.u_procp, i);
 out:
@@ -297,7 +277,7 @@ syscall(frame)
 #define code frame.sf_eax	/* note: written over! */
 #define pc frame.sf_eip
 {
-	register int *locr0 = ((int *)&frame)/*-PS*/;
+	register int *locr0 = ((int *)&frame);
 	register caddr_t params;
 	register int i;
 	register struct sysent *callp;
@@ -310,19 +290,7 @@ syscall(frame)
 #endif
 	syst = u.u_ru.ru_stime;
 	if (ISPL(locr0[sCS]) != SEL_UPL)
-{
-printf("\npc:%x cs:%x eflags:%x\n",
-		frame.sf_eip, frame.sf_cs, frame.sf_eflags);
-printf("edi %x esi %x ebp %x ebx %x esp %x\n",
-		frame.sf_edi, frame.sf_esi, frame.sf_ebp,
-		frame.sf_ebx, frame.sf_esp);
-printf("edx %x ecx %x eax %x\n", frame.sf_edx, frame.sf_ecx, frame.sf_eax);
-printf("cr0 %x cr2 %x cpl %x \n", rcr0(), rcr2(), cpl);
 		panic("syscall");
-}
-#ifdef DEBUG
-if(cpl) pg("User cpl %x", cpl);
-#endif
 	u.u_ar0 = locr0;
 	params = (caddr_t)locr0[sESP] + NBPW ;
 	u.u_error = 0;
@@ -336,7 +304,6 @@ if(cpl) pg("User cpl %x", cpl);
 		params += NBPW;
 		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
-dprintf(DALLSYSC,"%d. call %d\n", u.u_procp->p_pid, code);
 	if ((i = callp->sy_narg * sizeof (int)) &&
 	    (u.u_error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
 		locr0[sEAX] = u.u_error;
@@ -354,7 +321,6 @@ dprintf(DALLSYSC,"%d. call %d\n", u.u_procp->p_pid, code);
 	}
 	if (u.u_eosys == NORMALRETURN) {
 		if (u.u_error) {
-/*dprintf(DSYSFAIL,"%d. fail %d %d\n",u.u_procp->p_pid,  code, u.u_error);*/
 			locr0[sEAX] = u.u_error;
 			locr0[sEFLAGS] |= PSL_C;	/* carry bit */
 		} else {
@@ -396,14 +362,6 @@ done:
 			addupc(opc, &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
-dprintf(DALLSYSC,"%d. rtn to %x %x\n",
-	u.u_procp->p_pid, frame.sf_eip, frame.sf_cs);
-#ifdef DEBUG
-if(cpl) {
- printf("uSer cpl %x syscall %d\n", cpl, callp - sysent);
- spl0();
-}
-#endif
 }
 
 /*
@@ -424,5 +382,4 @@ nosys()
  */
 nullsys()
 {
-
 }

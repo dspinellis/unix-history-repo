@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)machdep.c	5.3 (Berkeley) %G%
+ *	@(#)machdep.c	5.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -58,8 +58,9 @@ int kernmem;
 /*
  * Machine-dependent startup code
  */
-extern char Sysbase;
-caddr_t sbase = { &Sysbase };
+/*extern char Sysbase;
+caddr_t sbase = { &Sysbase };*/
+extern	char	Sysbase[];
 /* extern struct pte	EMCmap[];
 extern char		EMCbase[]; */
 int boothowto = 0, Maxmem = 0;
@@ -73,8 +74,8 @@ extern cyloffset;
 
 caddr_t bypasshole(b,t) caddr_t b,t; {
 
-	if (b <= sbase + 0xa0000 && t > sbase + 0xa0000)
-		return(sbase + 0x100000);
+	if (b <= Sysbase + 0xa0000 && t > Sysbase + 0xa0000)
+		return(Sysbase + 0x100000);
 	return(b);
 }
 
@@ -140,6 +141,8 @@ How about starting cmap normally following valloc space, and then
 write a routine than allocs only phys pages in the 0xa0000-0x100000
 hole?
 
+Temporary fix for beta, if we only have 640K, then cmap follows valloc
+up to 640K.
 */
 	maxmem -= btoc(sizeof (struct msgbuf));
 	pte = msgbufmap;
@@ -176,7 +179,7 @@ hole?
 	 * An index into the kernel page table corresponding to the
 	 * virtual memory address maintained in "v" is kept in "mapaddr".
 	 */
-	v = (caddr_t)(sbase + (firstaddr * NBPG));
+	v = (caddr_t)(Sysbase + (firstaddr * NBPG));
 	/*v = sbase + (firstaddr * NBPG);*/
 #define	valloc(name, type, num) \
 		v = bypasshole (v, v + (int) ((name)+(num))) ; \
@@ -228,10 +231,10 @@ hole?
 	 * Now the amount of virtual memory remaining for buffers
 	 * can be calculated, estimating needs for the cmap.
 	 */
-	ncmap = (maxmem*NBPG  - ((int)(v - sbase))) /
+	ncmap = (maxmem*NBPG  - ((int)(v - Sysbase))) /
 		(CLBYTES + sizeof(struct cmap)) + 2;
 	maxbufs = ((SYSPTSIZE * NBPG) -
-		((int)(v - sbase + ncmap * sizeof(struct cmap)))) /
+		((int)(v - Sysbase + ncmap * sizeof(struct cmap)))) /
 		(MAXBSIZE + sizeof(struct buf));
 	if (maxbufs < 16)
 		panic("sys pt too small");
@@ -253,7 +256,7 @@ hole?
 	 * Add 2: 1 because the 0th entry is unused, 1 for rounding.
 	 */
 	/*ncmap = (maxmem*NBPG - ((int)((v - sbase) + bufpages*CLBYTES))) /*/
-	ncmap = (maxmem*NBPG - ((int)((v - sbase) + bufpages*CLBYTES))) /
+	ncmap = (maxmem*NBPG - ((int)((v - Sysbase) + bufpages*CLBYTES))) /
 		(CLBYTES + sizeof(struct cmap)) + 2;
 	valloclim(cmap, struct cmap, ncmap, ecmap);
 
@@ -261,7 +264,7 @@ hole?
 	 * Clear space allocated thus far, and make r/w entries
 	 * for the space in the kernel map.
 	 */
-	unixsize = btoc((int)(v - sbase));
+	unixsize = btoc((int)(v - Sysbase));
 	while (firstaddr < unixsize) {
 		*(int *)(&Sysmap[firstaddr]) = PG_V | PG_KW | ctob(firstaddr);
 		clearseg((unsigned)firstaddr);
@@ -278,7 +281,7 @@ hole?
 	valloc(buffers, char, MAXBSIZE * nbuf);
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
-	mapaddr = firstaddr = btoc((unsigned) buffers - (unsigned)sbase);
+	mapaddr = firstaddr = btoc((unsigned) buffers - (unsigned)Sysbase);
 	for (i = 0; i < residual; i++) {
 		for (j = 0; j < (base + 1) * CLSIZE; j++) {
 			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | ctob(firstaddr);
@@ -296,7 +299,7 @@ hole?
 		mapaddr += MAXBSIZE / NBPG;
 	}
 
-	unixsize = btoc((int)(v - sbase));
+	unixsize = btoc((int)(v - Sysbase));
 	if (firstaddr >= physmem - 8*UPAGES)
 		panic("no memory");
 
@@ -590,9 +593,8 @@ boot(arghowto)
 	devtype = major(rootdev);
 	if (howto&RB_HALT) {
 		printf("halting (in tight loop); hit reset\n\n");
-reset_cpu();
-		for (;;)
-			;
+		reset_cpu();
+		for (;;) ;
 	} else {
 		if (howto & RB_DUMP) {
 			doadump();		/* CPBOOT's itsself */
@@ -603,9 +605,8 @@ reset_cpu();
 	dummy = 0; dummy = dummy;
 	printf("howto %d, devtype %d\n", arghowto, devtype);
 #endif
-reset_cpu();
-	for (;;)
-		/*asm("hlt")*/;
+	reset_cpu();
+	for(;;) ;
 	/*NOTREACHED*/
 }
 
@@ -882,56 +883,14 @@ setidt(idx, func, typ, dpl) char *func; {
 }
 
 #define	IDTVEC(name)	X/**/name
-extern
-IDTVEC(div),
-IDTVEC(dbg),
-IDTVEC(nmi),
-IDTVEC(bpt),
-IDTVEC(ofl),
-IDTVEC(bnd),
-IDTVEC(ill),
-IDTVEC(dna),
- IDTVEC(dble),		/* XXX needs to be handled by task gate */
-IDTVEC(fpusegm),
- IDTVEC(tss),		/* XXX needs to be handled by task gate */
- IDTVEC(missing),	/* XXX needs to be handled by task gate */
- IDTVEC(stk),		/* XXX needs to be handled by task gate */
-IDTVEC(prot),
-IDTVEC(page),
-IDTVEC(rsvd),
-IDTVEC(fpu),
-IDTVEC(rsvd0),
-IDTVEC(rsvd1),
-IDTVEC(rsvd2),
-IDTVEC(rsvd3),
-IDTVEC(rsvd4),
-IDTVEC(rsvd5),
-IDTVEC(rsvd6),
-IDTVEC(rsvd7),
-IDTVEC(rsvd8),
-IDTVEC(rsvd9),
-IDTVEC(rsvd10),
-IDTVEC(rsvd11),
-IDTVEC(rsvd12),
-IDTVEC(rsvd13),
-IDTVEC(rsvd14),
-IDTVEC(rsvd14),
-IDTVEC(intr0),
-IDTVEC(intr1),
-IDTVEC(intr3),
-IDTVEC(intr4),
-IDTVEC(intr5),
-IDTVEC(intr6),
-IDTVEC(intr7),
-IDTVEC(intr8),
-IDTVEC(intr9),
-IDTVEC(intr10),
-IDTVEC(intr11),
-IDTVEC(intr12),
-IDTVEC(intr13),
-IDTVEC(intr14),
-IDTVEC(intr15),
-IDTVEC(syscall);
+extern	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
+	IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
+	IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot),
+	IDTVEC(page), IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(rsvd0),
+	IDTVEC(rsvd1), IDTVEC(rsvd2), IDTVEC(rsvd3), IDTVEC(rsvd4),
+	IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
+	IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
+	IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
 
 int lcr0(), lcr3(), rcr0(), rcr2();
 int _udatasel, _ucodesel, _gsel_tss;
@@ -944,17 +903,17 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
 	for (x=0; x < 6; x++) ssdtosd(gdt_segs+x, gdt+x);
 	/* make ldt memory segments */
-	ldt_segs[LUCODE_SEL].ssd_limit = btoc((int) &Sysbase);
-	/*ldt_segs[LUDATA_SEL].ssd_limit = btoc((int) &Sysbase); */
+	ldt_segs[LUCODE_SEL].ssd_limit = btoc((int) Sysbase);
+	/*ldt_segs[LUDATA_SEL].ssd_limit = btoc((int) Sysbase); */
 	ldt_segs[LUDATA_SEL].ssd_limit = btoc(0xfffff000);
-	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
 /* Note. eventually want private ldts per process */
+	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
 
 /* exceptions */
 	setidt(0, &IDTVEC(div),  SDT_SYS386TGT, SEL_KPL);
 	setidt(1, &IDTVEC(dbg),  SDT_SYS386TGT, SEL_KPL);
 	setidt(2, &IDTVEC(nmi),  SDT_SYS386TGT, SEL_KPL);
-	  setidt(3, &IDTVEC(bpt),  SDT_SYS386TGT, SEL_UPL);
+ 	setidt(3, &IDTVEC(bpt),  SDT_SYS386TGT, SEL_UPL);
 	setidt(4, &IDTVEC(ofl),  SDT_SYS386TGT, SEL_KPL);
 	setidt(5, &IDTVEC(bnd),  SDT_SYS386TGT, SEL_KPL);
 	setidt(6, &IDTVEC(ill),  SDT_SYS386TGT, SEL_KPL);
@@ -984,25 +943,10 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL);
 	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL);
 
-/* first icu */
-	setidt(32, &IDTVEC(intr0),  SDT_SYS386IGT, SEL_KPL);
-	setidt(33, &IDTVEC(intr1),  SDT_SYS386IGT, SEL_KPL);
-	setidt(34, &IDTVEC(intr9),  SDT_SYS386IGT, SEL_KPL); /* note: never happens */
-	setidt(35, &IDTVEC(intr3),  SDT_SYS386IGT, SEL_KPL);
-	setidt(36, &IDTVEC(intr4),  SDT_SYS386IGT, SEL_KPL);
-	setidt(37, &IDTVEC(intr5),  SDT_SYS386IGT, SEL_KPL);
-	setidt(38, &IDTVEC(intr6),  SDT_SYS386IGT, SEL_KPL);
-	setidt(39, &IDTVEC(intr7),  SDT_SYS386IGT, SEL_KPL);
-
-/* second icu */
-	setidt(40, &IDTVEC(intr8),  SDT_SYS386IGT, SEL_KPL);
-	setidt(41, &IDTVEC(intr9),  SDT_SYS386IGT, SEL_KPL);
-	setidt(42, &IDTVEC(intr10),  SDT_SYS386IGT, SEL_KPL);
-	setidt(43, &IDTVEC(intr11),  SDT_SYS386IGT, SEL_KPL);
-	setidt(44, &IDTVEC(intr12),  SDT_SYS386IGT, SEL_KPL);
-	setidt(45, &IDTVEC(intr13),  SDT_SYS386IGT, SEL_KPL);
-	setidt(46, &IDTVEC(intr14),  SDT_SYS386IGT, SEL_KPL);
-	setidt(47, &IDTVEC(intr15),  SDT_SYS386IGT, SEL_KPL);
+#include	"isa.h"
+#if	NISA >0
+	isa_defaultirq();
+#endif
 
 	lgdt(gdt, sizeof(gdt)-1);
 	lidt(idt, sizeof(idt)-1);
@@ -1031,21 +975,6 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 
 	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
-
-	/* initialize 8259's */
-	outb(0xf1,0);
-	outb(0x20,0x11);
-	outb(0x21,32);
-	outb(0x21,4);
-	outb(0x21,1);
-	outb(0x21,0xff);
-
-	outb(0xa0,0x11);
-	outb(0xa1,40);
-	outb(0xa1,2);
-	outb(0xa1,1);
-	outb(0xa1,0xff);
-
 }
 
 /*
@@ -1070,12 +999,6 @@ copyseg(frm, n) {
 	CMAP2 = PG_V | PG_KW | ctob(n);
 	load_cr3(_cr3());
 	bcopy(frm, &CADDR2,NBPG);
-}
-
-strayintr(d) {
-static x;
-	/* for some reason, get bursts of intr #7, though not enabled! */
-	pg("%d strayintr %x", x++,d);
 }
 
 aston() {
@@ -1190,9 +1113,4 @@ ovbcopy(from, to, bytes)
 		while (bytes-- > 0)
 			*to-- = *from--;
 	}
-}
-
-redstack() { int i;
-
-	if ((u_int)&u+sizeof(u)+100 >= (u_int)&i) pg("redstack");
 }

@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)autoconf.c	5.4 (Berkeley) %G%
+ *	@(#)autoconf.c	5.5 (Berkeley) %G%
  */
 
 /*
@@ -43,6 +43,7 @@ int	cold;		/* cold start flag initialized in locore.s */
  */
 configure()
 {
+
 #include "isa.h"
 #if NISA > 0
 	isa_configure();
@@ -62,60 +63,6 @@ configure()
 	swapconf();
 	cold = 0;
 }
-
-#if NISA > 0
-#include "machine/isa/device.h"
-#include "machine/isa/icu.h"
-isa_configure() {
-	struct isa_device *dvp;
-	struct isa_driver *dp;
-
-	splhigh();
-	INTREN(IRQ_SLAVE);
-	for (dvp = isa_devtab_bio; config_isadev(dvp,&biomask); dvp++);
-	for (dvp = isa_devtab_tty; config_isadev(dvp,&ttymask); dvp++);
-	for (dvp = isa_devtab_net; config_isadev(dvp,&netmask); dvp++);
-	for (dvp = isa_devtab_null; config_isadev(dvp,0); dvp++);
-#include "sl.h"
-#if NSL > 0
-	netmask |= ttymask;
-	ttymask |= netmask;
-#endif
-	/* biomask |= ttymask ;  can some tty devices use buffers? */
-	printf("biomask %x ttymask %x netmask %x\n", biomask, ttymask, netmask);
-	splnone();
-}
-
-config_isadev(isdp, mp)
-	struct isa_device *isdp;
-	int *mp;
-{
-	struct isa_driver *dp;
- 
-	if (dp = isdp->id_driver) {
-		if (isdp->id_maddr) {
-			extern int atdevbase[];
-
-			isdp->id_maddr -= 0xa0000;
-			isdp->id_maddr += (int)&atdevbase;
-		}
-		isdp->id_alive = (*dp->probe)(isdp);
-		if (isdp->id_alive) {
-			printf("%s%d", dp->name, isdp->id_unit);
-			(*dp->attach)(isdp);
-			printf(" at 0x%x ", isdp->id_iobase);
-			if(isdp->id_irq) {
-				printf("irq %d ", ffs(isdp->id_irq)-1);
-				INTREN(isdp->id_irq);
-				if(mp)INTRMASK(*mp,isdp->id_irq);
-			}
-			if (isdp->id_drq != -1) printf("drq %d ", isdp->id_drq);
-			printf("on isa0\n");
-		}
-		return (1);
-	} else	return(0);
-}
-#endif
 
 /*
  * Configure swap space and related parameters.

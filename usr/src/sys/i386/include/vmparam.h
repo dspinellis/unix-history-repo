@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)vmparam.h	5.2 (Berkeley) %G%
+ *	@(#)vmparam.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -168,7 +168,7 @@
 #define	LOTSOFMEM	2
 
 #define	mapin(pte, v, pfnum, prot) \
-	(*(int *)(pte) = ((pfnum)<<PGSHIFT) | (prot))
+	{(*(int *)(pte) = ((pfnum)<<PGSHIFT) | (prot)); tlbflush(); }
 
 /*
  * Invalidate a cluster (optimized here for standard CLSIZE).
@@ -178,7 +178,31 @@
 #endif
 
 /*
+ * inline assembler macros
+ */
+
+/*
  * Flush MMU TLB
  */
 
-#define	tlbflush()	asm(" movl %cr3,%eax; movl %eax,%cr3 " /*, "ax" */)
+#define	tlbflush()	asm(" movl %%cr3,%%eax; movl %%eax,%%cr3 " ::: "ax")
+
+#ifndef I386_CR3PAT
+#define	I386_CR3PAT	0x0
+#endif
+
+#define _cr3() ({u_long rtn; \
+	asm (" movl %%cr3,%%eax; movl %%eax,%0 " \
+		: "=g" (rtn) \
+		: \
+		: "ax"); \
+	rtn; \
+})
+
+#define load_cr3(s) ({ u_long val; \
+	val = (s) | I386_CR3PAT; \
+	asm ("movl %0,%%eax; movl %%eax,%%cr3" \
+		:  \
+		: "g" (val) \
+		: "ax"); \
+})
