@@ -1,4 +1,4 @@
-/*	icmp_var.h	4.1	83/03/10	*/
+/*	icmp_var.h	4.2	83/03/10	*/
 
 /*
  * Variables related to this implementation
@@ -19,5 +19,5 @@ struct	icmpstat {
 };
 
 #ifdef KERNEL
-struct	impcstat icmpstat;
+struct	icmpstat icmpstat;
 #endif
