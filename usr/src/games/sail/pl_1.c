@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	1.11 83/10/14";
+static	char *sccsid = "@(#)pl_1.c	1.12 83/10/14";
 #endif
 
 #include "player.h"
@@ -7,6 +7,8 @@ static	char *sccsid = "@(#)pl_1.c	1.11 83/10/14";
 #include <sys/wait.h>
 
 int choke(), child();
+
+char isplayer = 1;
 
 /*ARGSUSED*/
 main(argc, argv)
@@ -45,8 +47,7 @@ char **argv;
 	initialize(nodrive, randomize, debug);
 	Signal("Aye aye, Sir", (struct ship *)0);
 	for (;;) {
-		prompt();
-		switch (sgetch(0)) {
+		switch (sgetch("~\b", (struct ship *)0, 0)) {
 		case 'm':
 			if (mc->crew3 && !snagged(ms)
 			    && windspeed != 0) {

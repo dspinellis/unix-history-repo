@@ -1,8 +1,13 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_4.c	1.4 83/10/14";
+static	char *sccsid = "@(#)pl_4.c	1.5 83/10/14";
 #endif
 
 #include "player.h"
+
+static char sc_hasprompt;
+static char *sc_prompt;
+static char *sc_buf;
+static int sc_line;
 
 changesail()
 {
@@ -14,14 +19,14 @@ changesail()
 		rig = 0;
 	if (mc->crew3 && rig) {
 		if (!full) {
-			Signal("Increase to Full sails? ", (struct ship *)0);
-			if (sgetch(1) == 'y') {
+			if (sgetch("Increase to Full sails? ",
+				(struct ship *)0, 1) == 'y') {
 				changed = 1;
 				Write(W_FS, ms, 0, 1, 0, 0, 0);
 			}
 		} else {
-			Signal("Reduce to Battle sails? ", (struct ship *)0);
-			if (sgetch(1) == 'y') {
+			if (sgetch("Reduce to Battle sails? ",
+				(struct ship *)0, 1) == 'y') {
 				Write(W_FS, ms, 0, 0, 0, 0, 0);
 				changed = 1;
 			}
@@ -35,9 +40,8 @@ acceptsignal()
 	char buf[60];
 	register char *p = buf;
 
-	Signal("Message? ", (struct ship *)0);
 	*p++ = '"';
-	sgetstr(p, sizeof buf - 2);
+	sgetstr("Mesage? ", p, sizeof buf - 2);
 	while (*p++)
 		;
 	p[-1] = '"';
@@ -50,31 +54,21 @@ char *fmt;
 register struct ship *ship;
 int a, b, c, d;
 {
-	Scroll();
 	if (ship == 0)
 		(void) wprintw(scroll_w, fmt, a, b, c, d);
 	else
 		(void) wprintw(scroll_w, fmt, ship->shipname, colours(ship),
 			sterncolour(ship), a, b, c, d);
-	(void) wrefresh(scroll_w);
+	Scroll();
 }
-
-static int sline = 0;
 
 Scroll()
 {
-	(void) wmove(scroll_w, sline++, 0);
+	if (++sc_line >= SCROLL_Y)
+		sc_line = 0;
+	(void) wmove(scroll_w, sc_line, 0);
 	(void) wclrtoeol(scroll_w);
-	if (sline >= SCROLL_Y)
-		sline = 0;
-}
-
-/* make sure we have two consecutive lines */
-Scroll2()
-{
-	Scroll();
-	if (sline > SCROLL_Y - 2)
-		Scroll();
+	(void) wrefresh(scroll_w);
 }
 
 lastline()
@@ -84,41 +78,65 @@ lastline()
 	(void) wrefresh(scroll_w);
 }
 
-prompt()
+prompt(p, ship)
+register char *p;
+struct ship *ship;
 {
-	(void) wmove(scroll_w, sline, 0);
-	(void) wclrtoeol(scroll_w);
-	(void) waddch(scroll_w, '~');
-	(void) wmove(scroll_w, sline, 0);
+	static char buf[60];
+
+	if (ship != 0)
+		p = sprintf(buf, p, ship->shipname, colours(ship),
+			sterncolour(ship));
+	sc_prompt = p;
+	sc_buf = "";
+	sc_hasprompt = 1;
+	(void) waddstr(scroll_w, p);
 	(void) wrefresh(scroll_w);
 }
 
-sgetch(flag)
+endprompt(flag)
+char flag;
+{
+	sc_hasprompt = 0;
+	if (flag)
+		Scroll();
+}
+
+sgetch(p, ship, flag)
+char *p;
+struct ship *ship;
 char flag;
 {
 	register c;
 
+	prompt(p, ship);
 	while ((c = wgetch(scroll_w)) == EOF)
 		;
-	if (flag)
+	if (flag && c >= ' ' && c < 0x7f)
 		(void) waddch(scroll_w, c);
+	endprompt(flag);
 	return c;
 }
 
-sgetstr(buf, n)
-char *buf;
+sgetstr(pr, buf, n)
+char *pr;
+register char *buf;
+register n;
 {
 	register c;
 	register char *p = buf;
 
+	prompt(pr, (struct ship *)0);
+	sc_buf = buf;
 	for (;;) {
+		*p = 0;
 		(void) wrefresh(scroll_w);
 		while ((c = wgetch(scroll_w)) == EOF)
 			;
 		switch (c) {
 		case '\n':
 		case '\r':
-			*p = 0;
+			endprompt(1);
 			return;
 		case '\b':
 			if (p > buf) {
@@ -152,7 +170,15 @@ newturn()
 			mf->readyR = R_LOADING;
 		else
 			mf->readyR = R_LOADED;
+
+	if (sc_hasprompt) {
+		(void) wmove(scroll_w, sc_line, 0);
+		(void) wclrtoeol(scroll_w);
+	}
 	Sync();
+	if (sc_hasprompt)
+		(void) wprintw(scroll_w, "%s%s", sc_prompt, sc_buf);
+
 	if (turn % 50 == 0)		/* still playing */
 		Write(W_ALIVE, SHIP(0), 0, 0, 0, 0, 0); /* XXX */
 	if (mf->FS == 1)
@@ -317,6 +343,8 @@ board()
 	(void) werase(scroll_w);
 	(void) werase(stat_w);
 	(void) werase(turn_w);
+
+	sc_line = 0;
 
 	(void) move(BOX_T, BOX_L);
 	for (n = 0; n < BOX_X; n++)
