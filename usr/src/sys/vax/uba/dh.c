@@ -1,4 +1,4 @@
-/*	dh.c	6.2	84/02/16	*/
+/*	dh.c	6.3	84/03/15	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -19,6 +19,7 @@
 #include "../h/map.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
+#include "../h/kernel.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
@@ -34,7 +35,7 @@
  * Definition of the driver for the auto-configuration program.
  * There is one definition for the dh and one for the dm.
  */
-int	dhprobe(), dhattach(), dhrint(), dhxint();
+int	dhprobe(), dhattach(), dhrint(), dhxint(), dhtimer();
 struct	uba_device *dhinfo[NDH];
 u_short	dhstd[] = { 0 };
 struct	uba_driver dhdriver =
@@ -54,6 +55,8 @@ struct	uba_driver dmdriver =
 #define	IFLAGS	(EVENP|ODDP)
 #endif
 
+#define	FASTTIMER	(hz/30)		/* scan rate with silos on */
+
 /*
  * Local variables for the driver
  */
@@ -63,6 +66,12 @@ short	dhsoftCAR[NDH];
 struct	tty dh11[NDH*16];
 int	ndh11	= NDH*16;
 int	dhact;				/* mask of active dh's */
+int	dhsilos;			/* mask of dh's with silo in use */
+int	dhchars[NDH];			/* recent input count */
+int	dhrate[NDH];			/* smoothed input count */
+int	dhhighrate = 100;		/* silo on if dhchars > dhhighrate */
+int	dhlowrate = 75;			/* silo off if dhrate < dhlowrate */
+static short timerstarted;
 int	dhstart(), ttrstrt();
 
 /*
@@ -185,10 +194,14 @@ dhopen(dev, flag)
 			512+nclist*sizeof(struct cblock), 0);
 		cbase[ui->ui_ubanum] = dh_ubinfo[ui->ui_ubanum]&0x3ffff;
 	}
+	if (timerstarted == 0) {
+		timerstarted++;
+		timeout(dhtimer, (caddr_t) 0, hz);
+	}
 	if ((dhact&(1<<dh)) == 0) {
 		addr->un.dhcsr |= DH_IE;
 		dhact |= (1<<dh);
-		addr->dhsilo = 16;
+		addr->dhsilo = 0;
 	}
 	splx(s);
 	/*
@@ -276,6 +289,7 @@ dhrint(dh)
 	 */
 	while ((c = addr->dhrcr) < 0) {
 		tp = tp0 + ((c>>8)&0xf);
+		dhchars[dh]++;
 #ifndef PORTSELECTOR
 		if ((tp->t_state&TS_ISOPEN)==0) {
 #else
@@ -587,7 +601,7 @@ dhreset(uban)
 			continue;
 		printf(" dh%d", dh);
 		((struct dhdevice *)ui->ui_addr)->un.dhcsr |= DH_IE;
-		((struct dhdevice *)ui->ui_addr)->dhsilo = 16;
+		((struct dhdevice *)ui->ui_addr)->dhsilo = 0;
 		unit = dh * 16;
 		for (i = 0; i < 16; i++) {
 			tp = &dh11[unit];
@@ -600,21 +614,49 @@ dhreset(uban)
 			unit++;
 		}
 	}
-	dhtimer();
+	dhsilos = 0;
 }
 
+int dhtransitions, dhslowtimers, dhfasttimers;		/*DEBUG*/
 /*
- * At software clock interrupt time or after a UNIBUS reset
- * empty all the dh silos.
+ * At software clock interrupt time, check status.
+ * Empty all the dh silos that are in use, and decide whether
+ * to turn any silos off or on.
  */
 dhtimer()
 {
-	register int dh;
-	register int s = spl5();
+	register int dh, s;
+	static int timercalls;
 
-	for (dh = 0; dh < NDH; dh++)
-		dhrint(dh);
-	splx(s);
+	if (dhsilos) {
+		dhfasttimers++;		/*DEBUG*/
+		timercalls++;
+		s = spl5();
+		for (dh = 0; dh < NDH; dh++)
+			if (dhsilos & (1 << dh))
+				dhrint(dh);
+		splx(s);
+	}
+	if ((dhsilos == 0) || ((timercalls += FASTTIMER) >= hz)) {
+		dhslowtimers++;		/*DEBUG*/
+		timercalls = 0;
+		for (dh = 0; dh < NDH; dh++) {
+		    ave(dhrate[dh], dhchars[dh], 8);
+		    if ((dhchars[dh] > dhhighrate) &&
+		      ((dhsilos & (1 << dh)) == 0)) {
+			((struct dhdevice *)(dhinfo[dh]->ui_addr))->dhsilo =
+			    (dhchars[dh] > 500? 32 : 16);
+			dhsilos |= (1 << dh);
+			dhtransitions++;		/*DEBUG*/
+		    } else if ((dhsilos & (1 << dh)) &&
+		      (dhrate[dh] < dhlowrate)) {
+			((struct dhdevice *)(dhinfo[dh]->ui_addr))->dhsilo = 0;
+			dhsilos &= ~(1 << dh);
+		    }
+		    dhchars[dh] = 0;
+		}
+	}
+	timeout(dhtimer, (caddr_t) 0, dhsilos? FASTTIMER: hz);
 }
 
 /*

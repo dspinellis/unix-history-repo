@@ -1,4 +1,4 @@
-/*	dzreg.h	6.1	83/07/29	*/
+/*	dzreg.h	6.2	84/03/15	*/
 
 /*
  * DZ-11/DZ-32 Registers and bits.
@@ -52,7 +52,7 @@ struct dzdevice {
 #define DZ_MSC	004000		/* Modem Status Change */
 #define	DZ_SAE	010000		/* Silo Alarm Enable */
 #define	DZ_TIE	040000		/* Transmit Interrupt Enable */
-#define	DZ_IEN	(DZ_32|DZ_MIE|DZ_MSE|DZ_RIE|DZ_TIE|DZ_SAE)
+#define	DZ_IEN	(DZ_32|DZ_MIE|DZ_MSE|DZ_RIE|DZ_TIE)
 
 /* flags for modem-control */
 #define	DZ_ON	DZ_DTR
