@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.35 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,14 +25,15 @@
 /*
  * Read system call.
  */
+struct read_args {
+	int	fdes;
+	char	*cbuf;
+	unsigned count;
+};
 /* ARGSUSED */
 read(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		char	*cbuf;
-		unsigned count;
-	} *uap;
+	register struct read_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -80,14 +81,14 @@ read(p, uap, retval)
 /*
  * Scatter read system call.
  */
-/* ARGSUSED */
+struct readv_args {
+	int	fdes;
+	struct	iovec *iovp;
+	unsigned iovcnt;
+};
 readv(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		struct	iovec *iovp;
-		unsigned iovcnt;
-	} *uap;
+	register struct readv_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -170,13 +171,14 @@ done:
 /*
  * Write system call
  */
+struct write_args {
+	int	fdes;
+	char	*cbuf;
+	unsigned count;
+};
 write(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		char	*cbuf;
-		unsigned count;
-	} *uap;
+	register struct write_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -228,13 +230,14 @@ write(p, uap, retval)
 /*
  * Gather write system call
  */
+struct writev_args {
+	int	fdes;
+	struct	iovec *iovp;
+	unsigned iovcnt;
+};
 writev(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		struct	iovec *iovp;
-		unsigned iovcnt;
-	} *uap;
+	register struct writev_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -320,14 +323,15 @@ done:
 /*
  * Ioctl system call
  */
+struct ioctl_args {
+	int	fdes;
+	int	cmd;
+	caddr_t	cmarg;
+};
 /* ARGSUSED */
 ioctl(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		int	cmd;
-		caddr_t	cmarg;
-	} *uap;
+	register struct ioctl_args *uap;
 	int *retval;
 {
 	register struct file *fp;
@@ -456,13 +460,14 @@ int	selwait, nselcoll;
 /*
  * Select system call.
  */
+struct select_args {
+	int	nd;
+	fd_set	*in, *ou, *ex;
+	struct	timeval *tv;
+};
 select(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		int	nd;
-		fd_set	*in, *ou, *ex;
-		struct	timeval *tv;
-	} *uap;
+	register struct select_args *uap;
 	int *retval;
 {
 	fd_set ibits[3], obits[3];
@@ -579,14 +584,10 @@ selscan(p, ibits, obits, nfd, retval)
 }
 
 /*ARGSUSED*/
-#ifdef __STDC__
-seltrue(dev_t dev, int which, struct proc *p)
-#else
 seltrue(dev, flag, p)
 	dev_t dev;
 	int flag;
 	struct proc *p;
-#endif
 {
 
 	return (1);
