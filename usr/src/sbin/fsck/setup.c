@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -28,20 +28,6 @@ struct bufarea asblk;
 #define altsblock (*asblk.b_un.b_fs)
 #define POWEROF2(num)	(((num) & ((num) - 1)) == 0)
 
-/*
- * The size of a cylinder group is calculated by CGSIZE. The maximum size
- * is limited by the fact that cylinder groups are at most one block.
- * Its size is derived from the size of the maps maintained in the 
- * cylinder group and the (struct cg) size.
- */
-#define CGSIZE(fs) \
-    /* base cg */	(sizeof(struct cg) + \
-    /* blktot size */	(fs)->fs_cpg * sizeof(long) + \
-    /* blks size */	(fs)->fs_cpg * (fs)->fs_nrpos * sizeof(short) + \
-    /* inode map */	howmany((fs)->fs_ipg, NBBY) + \
-    /* block map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPF(fs), NBBY))
-
-char	*index();
 struct	disklabel *getdisklabel();
 
 setup(dev)
