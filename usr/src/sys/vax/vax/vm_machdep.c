@@ -3,10 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_machdep.c	7.1 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
  */
-
-#include "pte.h"
 
 #include "param.h"
 #include "systm.h"
@@ -18,6 +16,7 @@
 #include "vm.h"
 #include "text.h"
 
+#include "pte.h"
 #include "mtpr.h"
 
 /*
@@ -34,34 +33,6 @@ setredzone(pte, vaddr)
 	if (vaddr)
 		mtpr(TBIS, vaddr + sizeof (struct user));
 }
-
-#ifndef mapin
-mapin(pte, v, pfnum, count, prot)
-	struct pte *pte;
-	u_int v, pfnum;
-	int count, prot;
-{
-
-	while (count > 0) {
-		*(int *)pte++ = pfnum | prot;
-		mtpr(TBIS, ptob(v));
-		v++;
-		pfnum++;
-		count--;
-	}
-}
-#endif
-
-#ifdef notdef
-/*ARGSUSED*/
-mapout(pte, size)
-	register struct pte *pte;
-	int size;
-{
-
-	panic("mapout");
-}
-#endif
 
 /*
  * Check for valid program size
