@@ -1,4 +1,4 @@
-/*	swapgeneric.c	4.2	82/05/27	*/
+/*	swapgeneric.c	4.4	82/10/17	*/
 
 #include "mba.h"
 
@@ -6,15 +6,17 @@
 #include "../h/conf.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
-#include "../h/mbareg.h"
-#include "../h/mbavar.h"
 #include "../h/vm.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/systm.h"
 #include "../h/reboot.h"
-#include "../h/cons.h"
-#include "../h/mtpr.h"
+
+#include "../vax/cons.h"
+#include "../vax/mtpr.h"
+#include "../vaxmba/mbareg.h"
+#include "../vaxmba/mbavar.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
+
 /*
  * Generic configuration;  all in one
  */
