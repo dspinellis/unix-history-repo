@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.28	82/10/05	*/
+/*	uipc_syscalls.c	4.29	82/10/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -79,10 +79,11 @@ bind()
 	u.u_error = sockopt(&aopt, uap->opt);
 	if (u.u_error) {
 		m_freem(nam);
-		return;
+		goto freeopt;
 	}
 	u.u_error = sobind(fp->f_socket, nam, &aopt);
 	m_freem(nam);
+freeopt:
 	if (uap->opt)
 		m_free(dtom(aopt.so_optdata));
 }
@@ -194,7 +195,6 @@ noname:
 	fp->f_socket = so;
 ret:
 	nam = m_get(M_WAIT);
-	nam->m_off = MMINOFF;
 	soaccept(so, nam, &aopt);
 	if (uap->name) {
 		if (namelen > nam->m_len)
@@ -305,7 +305,7 @@ sendto()
 	u.u_error = sockname(&to, uap->to, uap->tolen);
 	if (u.u_error)
 		goto bad;
-	u.u_error = sosend(fp->f_socket, to, &auio);
+	u.u_error = sosend(fp->f_socket, to, &auio, uap->flags);
 bad:
 	m_freem(to);
 }
@@ -343,7 +343,7 @@ send()
 	}
 	if (u.u_error)
 		return;
-	u.u_error = sosend(fp->f_socket, (struct mbuf *)0, &auio);
+	u.u_error = sosend(fp->f_socket, (struct mbuf *)0, &auio, uap->flags);
 }
 
 recvfrom()
@@ -385,7 +385,7 @@ recvfrom()
 		return;
 	}
 	from = 0;
-	u.u_error = soreceive(fp->f_socket, &from, &auio);
+	u.u_error = soreceive(fp->f_socket, &from, &auio, uap->flags);
 	if (u.u_error)
 		goto bad;
 	if (from == 0)
@@ -440,7 +440,7 @@ recv()
 		u.u_error = EFAULT;
 		return;
 	}
-	u.u_error = soreceive(fp->f_socket, (struct mbuf *)0, &auio);
+	u.u_error = soreceive(fp->f_socket, (struct mbuf *)0, &auio, uap->flags);
 	u.u_r.r_val1 = uap->len - auio.uio_resid;
 }
 
@@ -548,7 +548,6 @@ sockname(aname, name, namelen)
 	if (namelen > MLEN)
 		return (EINVAL);
 	m = m_get(M_WAIT);
-	m->m_off = MMINOFF;
 	m->m_len = namelen;
 	if (copyin(name, mtod(m, caddr_t), namelen)) {
 		(void) m_free(m);
@@ -574,7 +573,6 @@ sockopt(so, opt)
 	if (so->so_optlen < 0 || so->so_optlen > MLEN)
 		return (EINVAL);
 	m = m_get(M_WAIT);
-	m->m_off = MMINOFF;
 	m->m_len = so->so_optlen;
 	if (copyin(so->so_optdata, mtod(m, caddr_t), m->m_len)) {
 		(void) m_free(m);
