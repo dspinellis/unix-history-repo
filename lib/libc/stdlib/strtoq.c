@@ -131,6 +131,6 @@ strtoq(nptr, endptr, base)
 	} else if (neg)
 		acc = -acc;
 	if (endptr != 0)
-		*endptr = any ? s - 1 : (char *)nptr;
+		*endptr = any ? (char *)s - 1 : (char *)nptr;
 	return (acc);
 }

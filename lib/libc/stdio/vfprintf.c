@@ -36,7 +36,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 /*static char *sccsid = "from: @(#)vfprintf.c	5.50 (Berkeley) 12/16/92";*/
-static char *rcsid = "$Id: vfprintf.c,v 1.9 1993/11/04 02:26:10 jtc Exp $";
+static char *rcsid = "$Id: vfprintf.c,v 1.4 1993/11/04 19:38:22 jtc Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -475,7 +475,12 @@ reswitch:	switch (ch) {
 			 *	-- ANSI X3J11
 			 */
 			/* NOSTRICT */
+			/* no easy way to tell in cpp how big a type is */
+#if defined(__i386)
+			_uquad = (u_quad_t)(u_long)va_arg(ap, void *);
+#else
 			_uquad = (u_quad_t)va_arg(ap, void *);
+#endif
 			base = HEX;
 			xdigs = "0123456789abcdef";
 			flags |= HEXPREFIX;
