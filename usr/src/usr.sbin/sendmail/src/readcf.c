@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -128,6 +128,10 @@ readcf(cfname)
 				FileName);
 #endif
 	}
+
+#ifdef XLA
+	xla_zero();
+#endif
 
 	while ((bp = fgetfolded(buf, sizeof buf, cf)) != NULL)
 	{
