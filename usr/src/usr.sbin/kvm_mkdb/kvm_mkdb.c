@@ -12,14 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/user.h>
 #include <fcntl.h>
-#include <ndbm.h>
+#include <db.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -33,7 +33,7 @@ main(argc, argv)
 	char **argv;
 {
 	extern int optind;
-	DBM *db;
+	DB *db;
 	int ch;
 	char *nlistpath, *nlistname, dbtemp[MAXPATHLEN], dbname[MAXPATHLEN];
 
@@ -48,18 +48,19 @@ main(argc, argv)
 
 	nlistpath = argc > 1 ? argv[0] : _PATH_UNIX;
 	nlistname = basename(nlistpath);
+
 	(void)sprintf(dbtemp, "%s/kvm_%s.tmp", _PATH_VARRUN, nlistname);
 	(void)sprintf(dbname, "%s/kvm_%s.db", _PATH_VARRUN, nlistname);
 	(void)umask(0);
-	if ((db = dbm_open(dbtemp, O_CREAT|O_WRONLY|O_EXCL,
-	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)) == NULL) {
+	db = hash_open(dbtemp, O_CREAT|O_WRONLY|O_EXCL,
+	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, NULL);
+	if (!db) {
 		(void)fprintf(stderr,
 		    "kvm_mkdb: %s: %s\n", dbtemp, strerror(errno));
 		exit(1);
 	}
 	create_knlist(nlistpath, db);
-	(void)dbm_close(db);
-	(void)strcat(dbtemp, DBM_SUFFIX);
+	(void)(db->close)(db);
 	if (rename(dbtemp, dbname)) {
 		(void)fprintf(stderr, "kvm_mkdb: %s to %s: %s.\n",
 		    dbtemp, dbname, strerror(errno));
