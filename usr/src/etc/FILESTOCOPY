@@ -6,7 +6,7 @@
 # needed in configuring the system before the /usr filesystem
 # has been extracted and is available.
 #
-#	@(#)FILESTOCOPY	6.1 (Berkeley) %G%
+#	@(#)FILESTOCOPY	8.1 (Berkeley) %G%
 #
 DESTDIR=/nbsd
 
