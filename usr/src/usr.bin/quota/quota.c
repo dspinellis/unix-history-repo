@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)quota.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -135,12 +135,26 @@ showquotas(uid, name)
 			if (fd < 0)
 				continue;
 			lseek(fd, (long)(uid * sizeof (dqblk)), L_SET);
-			if (read(fd, &dqblk, sizeof dqblk) != sizeof (dqblk)) {
+			switch (read(fd, &dqblk, sizeof dqblk)) {
+			case 0:			/* EOF */
+				/*
+				 * Convert implicit 0 quota (EOF)
+				 * into an explicit one (zero'ed dqblk).
+				 */
+				bzero((caddr_t)&dqblk, sizeof dqblk);
+				break;
+
+			case sizeof dqblk:	/* OK */
+				break;
+
+			default:		/* ERROR */
+				fprintf(stderr, "quota: read error in ");
+				perror(qfilename);
 				close(fd);
 				continue;
 			}
 			close(fd);
-			if (dqblk.dqb_isoftlimit == 0 &&
+			if (!vflag && dqblk.dqb_isoftlimit == 0 &&
 			    dqblk.dqb_bsoftlimit == 0)
 				continue;
 			enab = 0;
@@ -202,7 +216,7 @@ showquotas(uid, name)
 		xprintf("Disc quotas for %s (uid %d):", name, uid);
 		xprintf("none.");
 	}
-	xprintf(0);
+	xprintf((char *)0);
 }
 
 heading(uid, name)
@@ -212,17 +226,17 @@ heading(uid, name)
 
 	if (done++)
 		return;
-	xprintf(0);
+	xprintf((char *)0);
 	if (qflag) {
 		if (!morethanone)
 			return;
 		xprintf("User %s (uid %d):", name, uid);
-		xprintf(0);
+		xprintf((char *)0);
 		return;
 	}
 	putchar('\n');
 	xprintf("Disc quotas for %s (uid %d):", name, uid);
-	xprintf(0);
+	xprintf((char *)0);
 	printf("%10s%8s %7s%8s%8s%8s %7s%8s%8s\n"
 		, "Filsys"
 		, "current"
@@ -236,6 +250,7 @@ heading(uid, name)
 	);
 }
 
+/*VARARGS1*/
 xprintf(fmt, arg1, arg2, arg3, arg4, arg5, arg6)
 	char *fmt;
 {
