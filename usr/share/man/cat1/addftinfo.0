@@ -1,0 +1,132 @@
+
+
+
+ADDFTINFO(1)           BSD Reference Manual          ADDFTINFO(1)
+
+
+NNAAMMEE
+       addftinfo  -  add  information to troff font files for use
+       with groff
+
+SSYYNNOOPPSSIISS
+       aaddddffttiinnffoo [ --_p_a_r_a_m _v_a_l_u_e...  ] _r_e_s _u_n_i_t_w_i_d_t_h _f_o_n_t
+
+DDEESSCCRRIIPPTTIIOONN
+       aaddddffttiinnffoo reads a troff font file and adds some additional
+       font-metric  information that is used by the groff system.
+       The font file with the information added is written on the
+       standard  output.   The information added is guessed using
+       some parametric information about the font and assumptions
+       about  the  traditional  troff  names for characters.  The
+       main information added is the heights and depths of  char-
+       acters.   The  _r_e_s  and  _u_n_i_t_w_i_d_t_h arguments should be the
+       same as the corresponding parameters  in  the  DESC  file;
+       _f_o_n_t  is the name of the file describing the font; if _f_o_n_t
+       ends with II the font will be assumed to be italic.
+
+OOPPTTIIOONNSS
+       Each of the options changes one of the parameters that  is
+       used  to derive the heights and depths.  Like the existing
+       quantities in the font file, each _v_a_l_u_e is  in  inches/_r_e_s
+       for  a  font whose point size is _u_n_i_t_w_i_d_t_h.  _p_a_r_a_m must be
+       one of:
+
+       xx--hheeiigghhtt
+              The height of lowercase letters  without  ascenders
+              such as x.
+
+       ffiigg--hheeiigghhtt
+              The height of figures (digits).
+
+       aasscc--hheeiigghhtt
+              The height of characters with ascenders, such as b,
+              d or l.
+
+       bbooddyy--hheeiigghhtt
+              The height of characters such as parentheses.
+
+       ccaapp--hheeiigghhtt
+              The height of uppercase letters such as A.
+
+       ccoommmmaa--ddeepptthh
+              The depth of a comma.
+
+       ddeesscc--ddeepptthh
+              The depth of characters with  descenders,  such  as
+              p,q, or y.
+
+
+
+
+Groff Version 1.08        6 August 1992                         1
+
+
+
+
+
+
+
+
+ADDFTINFO(1)           BSD Reference Manual          ADDFTINFO(1)
+
+
+       bbooddyy--ddeepptthh
+              The depth of characters such as parentheses.
+
+       aaddddffttiinnffoo makes no attempt to use the specified parameters
+       to guess the unspecified parameters.  If  a  parameter  is
+       not  specified the default will be used.  The defaults are
+       chosen to have the reasonable values for a Times font.
+
+SSEEEE AALLSSOO
+       ffoonntt(5) ggrrooffff__ffoonntt(5), ggrrooffff(1), ggrrooffff__cchhaarr(7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        6 August 1992                         2
+
+
+
+
+

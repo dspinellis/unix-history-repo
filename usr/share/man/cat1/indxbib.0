@@ -1,0 +1,132 @@
+
+
+
+INDXBIB(1)             BSD Reference Manual            INDXBIB(1)
+
+
+NNAAMMEE
+       indxbib - make inverted index for bibliographic databases
+
+SSYYNNOOPPSSIISS
+       iinnddxxbbiibb [ --vvww ] [ --cc_f_i_l_e ] [ --dd_d_i_r ] [ --ff_f_i_l_e ] [ --hh_n ]
+               [ --ii_s_t_r_i_n_g ] [ --kk_n ] [ --ll_n ] [ --nn_n ] [ --oo_f_i_l_e ]
+               [ --tt_n ] [ _f_i_l_e_n_a_m_e... ]
+
+DDEESSCCRRIIPPTTIIOONN
+       iinnddxxbbiibb  makes  an  inverted  index  for the bibliographic
+       databases in _f_i_l_e_n_a_m_e...  for  use  with  rreeffeerr(1),  llooookk--
+       bbiibb(1), and llkkbbiibb(1).  The index will be named _f_i_l_e_n_a_m_e..ii;
+       the index is written to a temporary  file  which  is  then
+       renamed to this.  If no filenames are given on the command
+       line because the --ff option has been used, and no --oo option
+       is given, the index will be named IInndd..ii.
+
+       Bibliographic  databases are divided into records by blank
+       lines.  Within a record, each fields starts with a %% char-
+       acter  at the beginning of a line.  Fields have a one let-
+       ter name which follows the %% character.
+
+       The values set by the --cc, --nn, --ll and --tt options are stored
+       in  the  index;  when  the index is searched, keys will be
+       discarded and truncated in a manner appropriate  to  these
+       options; the original keys will be used for verifying that
+       any record found using the  index  actually  contains  the
+       keys.   This  means  that a user of an index need not know
+       whether these options were used in  the  creation  of  the
+       index,  provided  that not all the keys to be searched for
+       would have been discarded during  indexing  and  that  the
+       user  supplies  at  least  the part of each key that would
+       have remained after being truncated during indexing.   The
+       value set by the --ii option is also stored in the index and
+       will be used in verifying records found using the index.
+
+OOPPTTIIOONNSS
+       --vv     Print the version number.
+
+       --ww     Index whole files.  Each file is a separate record.
+
+       --cc_f_i_l_e Read  the list of common words from _f_i_l_e instead of
+              //uussrr//sshhaarree//mmiisscc//eeiiggnn.
+
+       --dd_d_i_r  Use _d_i_r as the  pathname  of  the  current  working
+              directory  to  store  in  the index, instead of the
+              path printed by ppwwdd(1).  Usually _d_i_r will be a sym-
+              bolic  link that points to the directory printed by
+              ppwwdd(1).
+
+       --ff_f_i_l_e Read the files to be indexed from _f_i_l_e.  If _f_i_l_e is
+
+
+
+Groff Version 1.08        16 April 1993                         1
+
+
+
+
+
+
+
+
+INDXBIB(1)             BSD Reference Manual            INDXBIB(1)
+
+
+              --, files will be read from the standard input.  The
+              --ff option can be given at most once.
+
+       --ii_s_t_r_i_n_g
+              Don't index the contents of fields whose names  are
+              in _s_t_r_i_n_g.  Initially _s_t_r_i_n_g is XXYYZZ.
+
+       --hh_n    Use  the first prime greater than or equal to _n for
+              the size of the hash table.   Larger  values  of  _n
+              will  usually  make searching faster, but will make
+              the index larger and iinnddxxbbiibb use more memory.  Ini-
+              tially _n is 997.
+
+       --kk_n    Use  at  most _n keys per input record.  Initially _n
+              is 100.
+
+       --ll_n    Discard keys that are shorter than _n.  Initially  _n
+              is 3.
+
+       --nn_n    Discard  the  _n  most common words.  Initially _n is
+              100.
+
+       --oo_b_a_s_e_n_a_m_e
+              The index should be named _b_a_s_e_n_a_m_e..ii.
+
+       --tt_n    Truncate keys to _n.  Initially _n is 6.
+
+FFIILLEESS
+       _f_i_l_e_n_a_m_e..ii     Index.
+
+       IInndd..ii          Default index name.
+
+       //uussrr//sshhaarree//mmiisscc//eeiiggnn
+                      List of common words.
+
+       iinnddxxbbiibb_X_X_X_X_X_X  Temporary file.
+
+SSEEEE AALLSSOO
+       rreeffeerr(1), llkkbbiibb(1), llooookkbbiibb(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        16 April 1993                         2
+
+
+
+
+
