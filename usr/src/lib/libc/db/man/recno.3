@@ -1,0 +1,125 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)recno.3	5.1 (Berkeley) %G%
+.\"
+.TH RECNO 3 ""
+.UC 7
+.SH NAME
+recno \- record number database access method
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <db.h>
+.ft R
+.fi
+.SH DESCRIPTION
+The routine
+.IR dbopen
+is the library interface to database files.
+One of the supported file formats is record number files.
+The general description of the database access methods is in
+.IR dbopen (3),
+this manual page describes only the recno specific information.
+.PP
+The record number data structure is either variable or fixed-length
+records stored in a flat-file format.
+.PP
+The recno access method specific data structure provided to
+.I dbopen
+is defined in the <db.h> include file as follows:
+.PP
+typedef struct {
+.RS
+u_char bval;
+.br
+u_int cachesize;
+.br
+u_long flags;
+.br
+int lorder;
+.br
+size_t reclen;
+.RE
+} RECNOINFO;
+.PP
+The elements of this structure are defined as follows:
+.TP
+bval
+The delimiting byte to be used to mark the end of a record for
+variable-length records, and the pad character for fixed-length
+records.
+If no value is specified, newlines (``\en'') are used to mark the end
+of variable-length records and fixed-length records are padded with
+spaces.
+.TP
+cachesize
+A suggested maximum size, in bytes, of the memory cache.
+This value is
+.B only
+advisory, and the access method will allocate more memory rather than fail.
+.TP
+flags
+The flag value is specified by
+.IR or 'ing
+any of the following values:
+.RS
+.TP
+R_FIXEDLEN
+The records are fixed-length, not byte delimited.
+The structure element
+.I reclen
+specifies the length of the record, and the structure element
+.I bval
+is used as the pad character.
+.TP
+R_NOKEY
+In the interface specified by
+.IR dbopen ,
+the sequential record retrieval fills in both the caller's key and
+data structures.
+If the R_NOKEY flag is specified, the
+.I cursor
+routines are not required to fill in the key structure.
+This permits applications to retrieve records at the end of files without
+reading all of the intervening records.
+.TP
+R_SNAPSHOT
+This flag requires that a snapshot of the file be taken when
+.I dbopen
+is called, instead of permitting any unmodified records to be read from
+the original file.
+.RE
+.TP
+lorder
+The byte order for integers in the stored database metadata.
+The number should represent the order as an integer; for example,
+big endian order would be the number 4,321.
+If
+.I lorder
+is 0 (no order is specified) the current host order is used.
+.TP
+reclen
+The length of a fixed-length record.
+.PP
+In the interface specified by
+.IR dbopen ,
+using the
+.I put
+interface to create a new record may cause the creation of multiple,
+empty records if the record number is more than one greater than the
+largest record currently in the database.
+.SH "SEE ALSO"
+.IR dbopen (3),
+.IR hash (3),
+.IR mpool (3),
+.IR recno (3)
+.br
+.IR "Document Processing in a Relational Database System" ,
+Michael Stonebraker, Heidi Stettner, Joseph Kalash, Antonin Guttman,
+Nadene Lynn, Memorandum No. UCB/ERL M82/32, May 1982.
+.SH BUGS
+Only big and little endian byte order is supported.
