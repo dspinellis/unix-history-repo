@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.30 %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.31 %G%";
 #endif
 
 /*
@@ -69,6 +69,7 @@ char gen_AM;
 char gen_OS;
 char gen_BS;
 char gen_DB;
+char gen_NS;
 char gen_XN;
 int gen_CO;
 int gen_LI;
@@ -329,6 +330,7 @@ tt_generic()
 	gen_OS = tgetflag("os");
 	gen_BS = tgetflag("bs");
 	gen_DB = tgetflag("db");
+	gen_NS = tgetflag("ns");
 	gen_XN = tgetflag("xn");
 	gen_CO = tgetnum("co");
 	gen_LI = tgetnum("li");
@@ -373,6 +375,7 @@ tt_generic()
 	tt.tt_hasinsert = gen_IM != 0;
 	tt.tt_wrap = gen_AM;
 	tt.tt_retain = gen_DB;
+	tt.tt_noscroll = gen_NS;
 	tt.tt_ncol = gen_CO;
 	tt.tt_nrow = gen_LI;
 	tt.tt_init = gen_init;

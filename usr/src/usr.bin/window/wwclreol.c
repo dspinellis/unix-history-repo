@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwclreol.c	3.14 %G%";
+static char sccsid[] = "@(#)wwclreol.c	3.15 %G%";
 #endif
 
 /*
@@ -22,7 +22,6 @@ int row, col;
 char cleared;
 {
 	register i;
-	int gain;
 
 	/*
 	 * Clear the buffer right off
@@ -65,12 +64,12 @@ char cleared;
 		register union ww_char *s;
 		register char *smap, *win;
 		int ntouched = 0;
+		int gain = 0;
 
 		i = col;
 		smap = &wwsmap[row][i];
 		s = wwns[row];
 		win = w->ww_win[row];
-		gain = 0;
 		for (; i < w->ww_i.r; i++) {
 			if (*smap++ != w->ww_index) {
 				if (s[i].c_w != ' ')
@@ -97,19 +96,16 @@ char cleared;
 				gain--;
 		if (ntouched > 0)
 			wwtouched[row] |= WWU_TOUCHED;
-	}
-
-	/*
-	 * Can/Should we use clear eol?
-	 */
-	if (!cleared && tt.tt_clreol != 0 && gain > 4) {
-		register union ww_char *s;
-
-		/* clear to the end */
-		(*tt.tt_move)(row, col);
-		(*tt.tt_clreol)();
-		s = &wwos[row][col];
-		for (i = wwncol - col; --i >= 0;)
-			s++->c_w = ' ';
+		/*
+		 * Can/should we use clear eol?
+		 */
+		if (tt.tt_clreol != 0 && gain > 4) {
+			/* clear to the end */
+			(*tt.tt_move)(row, col);
+			(*tt.tt_clreol)();
+			s = &wwos[row][col];
+			for (i = wwncol - col; --i >= 0;)
+				s++->c_w = ' ';
+		}
 	}
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwscroll.c	3.13 %G%";
+static char sccsid[] = "@(#)wwscroll.c	3.14 %G%";
 #endif
 
 /*
@@ -90,15 +90,27 @@ int leaveit;
 		register union ww_char **cpp, **cqq;
 
 		/*
-		 * Don't worry about retain when scrolling down.
-		 * But do worry when scrolling up.  For hp2621.
+		 * Don't worry about retain when scrolling down,
+		 * but do worry when scrolling up, for hp2621.
 		 */
 		if (dir > 0) {
-			(*tt.tt_move)(row1x, 0);
-			(*tt.tt_delline)();
-			if (row2x < wwnrow) {
-				(*tt.tt_move)(row2x - 1, 0);
-				(*tt.tt_insline)();
+			/*
+			 * We're going to assume that a line feed at the
+			 * bottom of the screen will cause a scroll, unless
+			 * "ns" is set.  This should work at least 99%
+			 * of the time.  At any rate, vi seems to do it.
+			 */
+			if (tt.tt_noscroll || row1x != 0 || row2x != wwnrow) {
+				(*tt.tt_move)(row1x, 0);
+				(*tt.tt_delline)();
+				if (row2x < wwnrow) {
+					(*tt.tt_move)(row2x - 1, 0);
+					(*tt.tt_insline)();
+				}
+			} else {
+				if (tt.tt_row != wwnrow - 1)
+					(*tt.tt_move)(wwnrow - 1, 0);
+				ttputc('\n');
 			}
 			/*
 			 * Fix up the old screen.
