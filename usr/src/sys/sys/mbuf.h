@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -9,7 +8,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)mbuf.h	7.9 (Berkeley) %G%
+ *	@(#)mbuf.h	7.8.1.2 (Berkeley) %G%
  */
 
 /*
