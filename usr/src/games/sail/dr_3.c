@@ -7,7 +7,8 @@ extern int dtab[];
 
 moveall()		/* move all comp ships */
 {
-	register int n, k, l, m, ta, ma, af, closest, weakest[5];
+	register int n, k, l, m, ma, closest, weakest[5];
+	int ta, af, jj;
 	char command[10], clast[20][10];
 	int row[20], col[20], dir[20], r1, r2, c1, c2, d1, d2;
 	struct File *ptr;
@@ -18,8 +19,10 @@ moveall()		/* move all comp ships */
 				
 			if (!ptr -> struck && windspeed && !grappled(n) && !fouled(n) && specs[scene[game].ship[n].shipnum].crew3){
 				ta = maxturns(n);
-				af = ta & 0100000;
-				ta &= 077777;
+				jj = 0100000;
+				af = ta & jj;
+				jj = 077777;
+				ta = ta & jj;
 				ma = maxmove(n, pos[n].dir, 0);
 				closest = closestenemy(n, 0, 0);
 				if (closest == 30000) 
