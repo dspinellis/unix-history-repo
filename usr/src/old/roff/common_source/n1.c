@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n1.c	4.8 %G%";
+static char sccsid[] = "@(#)n1.c	4.9 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -341,12 +341,13 @@ char a;
 {
 	register char *p;
 	char *mktemp();
+	static char tempname[] = "/tmp/taXXXXX";
 	register i;
 
 #ifndef NROFF
 	acctg();/*open troff actg file while mode 4755*/
 #endif
-	p = mktemp("/tmp/taXXXXX");
+	p = mktemp(tempname);
 	if(a == 'a')p = &p[5];
 	if((close(creat(p, 0600))) < 0){
 		prstr("Cannot create temp file.\n");
