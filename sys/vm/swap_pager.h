@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)swap_pager.h	7.1 (Berkeley) 12/5/90
- *	$Id: swap_pager.h,v 1.7 1994/01/17 09:33:25 davidg Exp $
+ *	$Id: swap_pager.h,v 1.8 1994/03/07 11:39:10 davidg Exp $
  */
 
 /*
@@ -48,7 +48,7 @@
 #define	_SWAP_PAGER_	1
 
 /*
- * SWB_NPAGES can be set to any value from 1 to 32 pages per allocation,
+ * SWB_NPAGES can be set to any value from 1 to 16 pages per allocation,
  * however, due to the allocation spilling into non-swap pager backed memory,
  * suggest keeping SWB_NPAGES small (1-4).  If high performance is manditory
  * perhaps up to 8 pages might be in order????
@@ -57,7 +57,8 @@
  */
 #define SWB_NPAGES 8
 struct	swblock {
-	unsigned int swb_valid;		/* bitmask for valid pages */
+	unsigned short swb_valid;	/* bitmask for valid pages */
+	unsigned short swb_locked;	/* block locked */
 	int	 swb_block[SWB_NPAGES];	/* unfortunately int instead of daddr_t */
 };
 typedef struct swblock	*sw_blk_t;

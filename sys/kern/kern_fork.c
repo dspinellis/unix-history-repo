@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_fork.c	7.29 (Berkeley) 5/15/91
- *	$Id: kern_fork.c,v 1.5 1993/12/09 09:16:41 davidg Exp $
+ *	$Id: kern_fork.c,v 1.6 1993/12/19 00:51:25 wollman Exp $
  */
 
 #include "param.h"
@@ -239,6 +239,11 @@ again:
 #endif
 
 	/*
+	 * set priority of child to be that of parent
+	 */
+	p2->p_cpu = p1->p_cpu;
+
+	/*
 	 * This begins the section where we must prevent the parent
 	 * from being swapped.
 	 */
@@ -261,6 +266,9 @@ again:
 		p2->p_stats->p_start = time;
 		(void) spl0();
 		p2->p_acflag = AFORK;
+/*
+		vm_map_init_pmap(&p2->p_vmspace->vm_map);
+*/
 		return (0);
 	}
 

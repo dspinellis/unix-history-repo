@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_object.h,v 1.5 1993/12/19 00:56:09 wollman Exp $
+ *	$Id: vm_object.h,v 1.6 1994/01/14 16:27:25 davidg Exp $
  */
 
 /*
@@ -100,7 +100,8 @@ struct vm_object {
 						/* Paging (in or out) - don't
 						   collapse or destroy */
 	/* boolean_t */		can_persist:1,	/* allow to persist */
-	/* boolean_t */		internal:1;	/* internally created object */
+	/* boolean_t */		internal:1,	/* internally created object */
+				read_only:1;	/* entire obj is read only */
 	queue_chain_t		cached_list;	/* for persistence */
 };
 

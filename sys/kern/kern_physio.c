@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern__physio.c,v 1.7 1994/01/17 09:32:59 davidg Exp $
+ *	$Id: kern_physio.c,v 1.1 1994/01/17 09:43:52 davidg Exp $
  */
 
 #include "param.h"
@@ -56,6 +56,7 @@
 #include "malloc.h"
 #include "vnode.h"
 #include "vm/vm.h"
+#include "vm/vm_page.h"
 #include "specdev.h"
 
 /*
@@ -92,7 +93,7 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 	int amttodo = *len;
 	int error, amtdone;
 	vm_prot_t ftype;
-	vm_offset_t v, lastv;
+	vm_offset_t v, lastv, pa;
 	caddr_t adr;
 	int oldflags;
 	int s;
@@ -157,12 +158,14 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 			adr += NBPG) {
 	
 /*
- * make sure that the pde is valid and wired
+ * make sure that the pde is valid and held
  */
 			v = trunc_page(((vm_offset_t)vtopte(adr)));
 			if (v != lastv) {
-				vm_map_pageable(&p->p_vmspace->vm_map, v,
-					round_page(v+1), FALSE);
+				
+				*(volatile int *)v += 0;
+				pa = pmap_extract(&p->p_vmspace->vm_pmap, v);
+				vm_page_hold(PHYS_TO_VM_PAGE(pa));
 				lastv = v;
 			}
 
@@ -175,52 +178,33 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 				 * properly handle copy-on-write
 				 */
 				*(volatile int *) adr += 0;
-			}
-#if 0
-			else {
-				/*
-				 * this clause is not really necessary because 
-				 * vslock does a vm_map_pageable FALSE.
-				 * It is not optimally efficient to reference the
-				 * page with the possiblity of it being paged out, but
-				 * if this page is faulted here, it will be placed on the
-				 * active queue, with the probability of it being paged
-				 * out being very very low.  This is here primarily for
-				 * "symmetry".
-				 */
+			} else {
 				*(volatile int *) adr;
 			}
-#endif
-		}
+			pa = pmap_extract(&p->p_vmspace->vm_pmap, (vm_offset_t) adr);
 /*
- * if the process has been blocked by the wiring of the page table pages
- * above or faults of other pages, then the vm_map_pageable contained in the
- * vslock will fault the pages back in if they have been paged out since
- * being referenced in the loop above. (vm_map_pageable calls vm_fault_wire
- * which calls vm_fault to get the pages if needed.)
+ * hold the data page
  */
-
-		/* lock in core (perform vm_map_pageable, FALSE) */
-		vslock (base, bp->b_bcount);
+			vm_page_hold(PHYS_TO_VM_PAGE(pa));
+		}
 
 		/* perform transfer */
 		physstrat(bp, strat, PRIBIO);
 
-		/* unlock (perform vm_map_pageable, TRUE) */
-		vsunlock (base, bp->b_bcount, 0);
-
-		lastv = 0;
-
 /*
- * unwire the pde
+ * unhold the pde, and data pages
  */
+		lastv = 0;
 		for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bcount;
 			adr += NBPG) {
 			v = trunc_page(((vm_offset_t)vtopte(adr)));
 			if (v != lastv) {
-				vm_map_pageable(&p->p_vmspace->vm_map, v, round_page(v+1), TRUE);
+				pa = pmap_extract(&p->p_vmspace->vm_pmap, v);
+				vm_page_unhold(PHYS_TO_VM_PAGE(pa));
 				lastv = v;
 			}
+			pa = pmap_extract(&p->p_vmspace->vm_pmap, (vm_offset_t) adr);
+			vm_page_unhold(PHYS_TO_VM_PAGE(pa));
 		}
 			
 

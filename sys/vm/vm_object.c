@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.21 1994/02/10 00:15:51 davidg Exp $
+ *	$Id: vm_object.c,v 1.22 1994/03/05 03:22:46 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -551,7 +551,7 @@ vm_object_deactivate_pages(object)
 		next = (vm_page_t) queue_next(&p->listq);
 		vm_page_lock_queues();
 		if ((p->flags & (PG_INACTIVE|PG_BUSY)) == 0 &&
-			p->wire_count == 0)
+			(p->wire_count == 0 && p->hold_count == 0))
 			vm_page_deactivate(p);	/* optimisation from mach 3.0 -
 						 * andrew@werple.apana.org.au,
 						 * Feb '93
@@ -658,13 +658,13 @@ vm_object_pmap_copy(object, start, end)
 	register vm_page_t	p;
 	vm_offset_t amount;
 
+	if (object == NULL)
+		return;
+
 	start = trunc_page(start);
 	end = round_page(end);
 
 	amount = ((end - start) + PAGE_SIZE - 1) / PAGE_SIZE;
-
-	if (object == NULL)
-		return;
 
 	vm_object_lock(object);
 	p = (vm_page_t) queue_first(&object->memq);

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.12 1994/02/09 07:03:10 davidg Exp $
+ *	$Id: vm_page.c,v 1.13 1994/03/07 11:39:13 davidg Exp $
  */
 
 /*
@@ -311,6 +311,7 @@ vm_page_startup(starta, enda, vaddr)
 			m->flags = 0;
 			m->object = 0;
 			m->phys_addr = pa;
+			m->hold_count = 0;
 			queue_enter(&vm_page_queue_free, m, vm_page_t, pageq);
 			pa += PAGE_SIZE;
 		}
@@ -714,7 +715,6 @@ vm_page_unwire(mem)
 		vm_page_active_count++;
 		mem->flags |= PG_ACTIVE;
 		vm_page_wire_count--;
-		vm_pageout_deact_bump(mem);
 	}
 	vm_set_intr(spl);
 }
@@ -747,7 +747,7 @@ vm_page_deactivate(m)
 
 	spl = splhigh();
 	m->deact = 0;
-	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0) {
+	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0 && m->hold_count == 0) {
 		pmap_clear_reference(VM_PAGE_TO_PHYS(m));
 		if (m->flags & PG_ACTIVE) {
 			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
@@ -796,6 +796,9 @@ vm_page_activate(m)
 
 	if( m->wire_count)
 		return;
+	if( (m->flags & (PG_INACTIVE|PG_ACTIVE)) == (PG_INACTIVE|PG_ACTIVE)) {
+		panic("vm_page_activate: on both queues?");
+	}
 
 	spl = vm_disable_intr();
 

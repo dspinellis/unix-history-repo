@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.7 1994/01/14 16:27:27 davidg Exp $
+ *	$Id: vm_page.h,v 1.8 1994/01/31 04:21:19 davidg Exp $
  */
 
 /*
@@ -71,6 +71,7 @@
 #ifndef	_VM_PAGE_
 #define	_VM_PAGE_
 
+#include <systm.h>
 /*
  *	Management of resident (logical) pages.
  *
@@ -122,6 +123,7 @@ struct vm_page {
 	unsigned int	wire_count;	/* how many wired down maps use me? */
 	unsigned short	flags;		/* bit encoded flags */
 	unsigned short	deact;		/* deactivation count */
+	int		hold_count;	/* page hold count -- don't pageout */
 
 	vm_offset_t	phys_addr;	/* physical address of page */
 };
@@ -226,10 +228,10 @@ void		vm_page_replace();
 
 boolean_t	vm_page_zero_fill();
 void		vm_page_copy();
-
+#if 0
 void		vm_page_wire();
 void		vm_page_unwire();
-
+#endif
 
 /*
  *	Functions implemented as macros
@@ -278,6 +280,27 @@ extern vm_offset_t pmap_phys_ddress(int);
  */
 #define vm_disable_intr() (disable_intr(), 0)
 #define vm_set_intr(spl) enable_intr()
+
+/*
+ * Keep page from being freed by the page daemon
+ * much of the same effect as wiring, except much lower
+ * overhead and should be used only for *very* temporary
+ * holding ("wiring").
+ */
+static inline void
+vm_page_hold(mem)
+	vm_page_t mem;
+{
+	mem->hold_count++;
+}
+
+static inline void
+vm_page_unhold(mem)
+	vm_page_t mem;
+{
+	if( --mem->hold_count < 0)
+		panic("vm_page_unhold: hold count < 0!!!");
+}
 
 #endif /* KERNEL */
 #endif /* _VM_PAGE_ */
