@@ -1,12 +1,12 @@
-/*	param.h	4.24	82/10/31	*/
+/*	param.h	4.25	82/10/31	*/
 
 /*
  * Macine type dependent parameters.
  */
-#if vax
+#ifdef vax
 #include "../vax/param.h"
 #endif
-#if sun
+#ifdef sun
 #include "../sun/param.h"
 #endif
 
