@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.2	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.3	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -119,7 +119,7 @@ savemail()
 	**	sender.
 	*/
 
-	if (MailBack || From.q_mailer != &Mailer[0])
+	if (MailBack)
 	{
 		freopen("/dev/null", "w", stdout);
 		NoAlias++;
@@ -152,7 +152,7 @@ savemail()
 	setuid(getuid());
 	setgid(getgid());
 	setpwent();
-	if (From.q_mailer == &Mailer[0] && (pw = getpwnam(From.q_user)) != NULL)
+	if (From.q_mailer == 0 && (pw = getpwnam(From.q_user)) != NULL)
 	{
 		/* user has a home directory */
 		p = pw->pw_dir;

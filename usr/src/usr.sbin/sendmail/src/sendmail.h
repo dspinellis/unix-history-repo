@@ -3,7 +3,7 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	3.3	%G%
+**	@(#)sendmail.h	3.4	%G%
 */
 
 
@@ -54,7 +54,7 @@ struct mailer
 	char	**m_local;	/* list of local names for this host */
 	char	*m_from;	/* pattern for From: header */
 	char	***m_hmap;	/* host map */
-	char	*m_argv[MAXPV];	/* template argument vector */
+	char	**m_argv;	/* template argument vector */
 };
 
 # define M_FOPT		000001	/* mailer takes picky -f flag */
@@ -72,7 +72,7 @@ struct mailer
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID|M_COMMAS)
 
-extern struct mailer Mailer[];
+extern struct mailer *Mailer[];
 
 
 /*
@@ -85,8 +85,8 @@ struct address
 	char		*q_paddr;	/* the printname for the address */
 	char		*q_user;	/* user name */
 	char		*q_host;	/* host name */
-	struct mailer	*q_mailer;	/* mailer to use */
-	int		q_rmailer;	/* real mailer (before mapping) */
+	short		q_mailer;	/* mailer to use */
+	short		q_rmailer;	/* real mailer (before mapping) */
 	struct address	*q_next;	/* chain */
 	struct address	*q_prev;	/* back pointer */
 };

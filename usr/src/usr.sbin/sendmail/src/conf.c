@@ -130,7 +130,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.3	%G%";
+static char SccsId[] = "@(#)conf.c	3.4	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -229,57 +229,116 @@ char		*DaemonName = "EECS40:~MAILER~DAEMON~";
 # endif HASUUCP
 
 
-struct mailer Mailer[] =
+/* local mail -- must be #0 */
+static char	*LocalArgv[] =
 {
-	/* local mail -- must be #0 */
-	{
-# ifdef NETV6MAIL
-		"/usr/net/bin/v6mail",
-# else
-		"/bin/mail",
-# endif
-		M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT,	EX_NOUSER,	NULL,
-		"$f",		NULL,
-		{ "...local%mail", "-d", "$u", NULL }
-	},
-	/* pipes through programs -- must be #1 */
-	{
-		"/bin/csh",
-		M_HDR|M_FHDR|M_NOHOST,		EX_UNAVAILABLE,	NULL,
-		"$f",		NULL,
-		{ "...prog%mail", "-fc", "$u", NULL }
-	},
-	/* local berkeley mail */
-	{
-		"/usr/net/bin/sendberkmail",
-		M_FOPT|M_HDR|M_STRIPQ,		EX_UNAVAILABLE,	BerkLocal,
-		"$B:$f",	NULL,
-		{ "...berk%mail", "-m", "$h", "-t", "$u", "-h", "$c", NULL }
-	},
-	/* arpanet mail */
-	{
-		"/usr/lib/mailers/arpa",
-		M_STRIPQ|M_ARPAFMT,		0,		ArpaLocal,
-		"$f@$A",	NULL,
-		{ "...arpa%mail", "$f", "$h", "$u", NULL }
-	},
-	/* uucp mail (cheat & use Bell's v7 mail) */
-	{
-		"/bin/mail",
-		M_ROPT|M_STRIPQ,		EX_NOUSER,	UucpLocal,
-		"$U!$f",	NULL,
-# ifdef DUMBMAIL
-		{ "...uucp%mail", "$h!$u", NULL }
-# else
-		{ "...uucp%mail", "-d", "$h!$u", NULL }
-# endif DUMBMAIL
-	},
+	"...local%mail",
+	"-d",
+	"$u",
+	NULL
 };
 
+static struct mailer	LocalMailer =
+{
+# ifdef NETV6MAIL
+	"/usr/net/bin/v6mail",
+# else
+	"/bin/mail",
+# endif
+	M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT,	EX_NOUSER,	NULL,
+	"$f",		NULL,			LocalArgv,
+};
+
+/* pipes through programs -- must be #1 */
+static char	*ProgArgv[] =
+{
+	"...prog%mail",
+	"-fc",
+	"$u",
+	NULL
+};
+
+static struct mailer	ProgMailer =
+{
+	"/bin/csh",
+	M_HDR|M_FHDR|M_NOHOST,			EX_UNAVAILABLE,	NULL,
+	"$f",		NULL,			ProgArgv,
+};
+
+/* local berkeley mail */
+static char	*BerkArgv[] =
+{
+	"...berk%mail",
+	"-m",
+	"$h",
+	"-t",
+	"$u",
+	"-h",
+	"$c",
+	NULL
+};
+
+static struct mailer	BerkMailer =
+{
+	"/usr/net/bin/sendberkmail",
+	M_FOPT|M_HDR|M_STRIPQ,			EX_UNAVAILABLE,	BerkLocal,
+	"$B:$f",	NULL,			BerkArgv,
+};
+
+/* arpanet mail */
+static char	*ArpaArgv[] =
+{
+	"...arpa%mail",
+	"$f",
+	"$h",
+	"$u",
+	NULL
+};
+
+static struct mailer	ArpaMailer =
+{
+	"/usr/lib/mailers/arpa",
+	M_STRIPQ|M_ARPAFMT,			0,		ArpaLocal,
+	"$f@$A",	NULL,			ArpaArgv,
+};
+
+/* uucp mail (cheat & use Bell's v7 mail) */
+static char	*UucpArgv[] =
+{
+	"...uucp%mail",
+# ifdef DUMBMAIL
+	"-d",
+# endif DUMBMAIL
+	"$h!$u",
+	NULL
+};
+
+static struct mailer	UucpMailer =
+{
+	"/bin/mail",
+	M_ROPT|M_STRIPQ,			EX_NOUSER,	UucpLocal,
+	"$U!$f",	NULL,			UucpArgv,
+};
+
+struct mailer	*Mailer[] =
+{
+	&LocalMailer,		/* 0 -- must be 0 */
+	&ProgMailer,		/* 1 -- must be 1 */
+	&BerkMailer,		/* 2 */
+	&ArpaMailer,		/* 3 */
+	&UucpMailer,		/* 4 */
+};
+
+# define NMAILERS	(sizeof Mailer / sizeof Mailer[0])
+
 # define M_LOCAL	0
+# define M_PROG		1
 # define M_BERK		2
 # define M_ARPA		3
 # define M_UUCP		4
+
+/* list of messages for each mailer (sorted by host) */
+ADDRESS		MailList[NMAILERS];
 
 
 

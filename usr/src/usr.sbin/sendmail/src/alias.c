@@ -234,7 +234,7 @@ alias()
 		q2 = nxtinq(q);
 
 		/* only alias local users */
-		if (q->q_mailer != &Mailer[0])
+		if (q->q_mailer != 0)
 			continue;
 
 		/* create a key for fetch */
