@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)statfs.2	8.2 (Berkeley) %G%
+.\"	@(#)statfs.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STATFS 2
@@ -30,7 +30,7 @@ structure defined as follows:
 .Bd -literal
 typedef quad fsid_t;
 
-#define MNAMELEN 32	/* length of buffer for returned name */
+#define MNAMELEN 90	/* length of buffer for returned name */
 
 struct statfs {
 short	f_type;		  /* type of filesystem (see below) */
@@ -43,17 +43,28 @@ long	f_bavail;	  /* free blocks avail to non-superuser */
 long	f_files;	  /* total file nodes in file system */
 long	f_ffree;	  /* free file nodes in fs */
 fsid_t	f_fsid;		  /* file system id */
-long	f_spare[6];	  /* spare for later */
+long	f_spare[9];	  /* spare for later */
 char	f_mntonname[MNAMELEN];	  /* mount point */
 char	f_mntfromname[MNAMELEN];  /* mounted filesystem */
 };
 /*
 * File system types.
 */
-#define	MOUNT_UFS	1
-#define	MOUNT_NFS	2
-#define	MOUNT_MFS	3
-#define	MOUNT_PC	4
+#define	MOUNT_UFS	1	/* Fast Filesystem */
+#define	MOUNT_NFS	2	/* Sun-compatible Network Filesystem */
+#define	MOUNT_MFS	3	/* Memory-based Filesystem */
+#define	MOUNT_MSDOS	4	/* MS/DOS Filesystem */
+#define	MOUNT_LFS	5	/* Log-based Filesystem */
+#define	MOUNT_LOFS	6	/* Loopback Filesystem */
+#define	MOUNT_FDESC	7	/* File Descriptor Filesystem */
+#define	MOUNT_PORTAL	8	/* Portal Filesystem */
+#define MOUNT_NULL	9	/* Minimal Filesystem Layer */
+#define MOUNT_UMAP	10	/* Uid/Gid Remapping Filesystem */
+#define MOUNT_KERNFS	11	/* Kernel Information Filesystem */
+#define MOUNT_PROCFS	12	/* /proc Filesystem */
+#define MOUNT_AFS	13	/* Andrew Filesystem */
+#define MOUNT_CD9660	14	/* ISO9660 (aka CDROM) Filesystem */
+#define MOUNT_UNION	15	/* Union (translucent) Filesystem */
 .Ed
 .Pp
 Fields that are undefined for a particular file system are set to -1.
