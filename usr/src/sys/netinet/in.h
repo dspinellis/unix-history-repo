@@ -1,4 +1,4 @@
-/* in.h 4.10 82/03/05 */
+/* in.h 4.11 82/03/15 */
 
 /*
  * Constants and structures defined by the internet system,
@@ -42,6 +42,23 @@
 #define	IPPORT_TTYLINK		87
 #define	IPPORT_SUPDUP		95
 
+/*
+ * UNIX TCP sockets
+ */
+#define	IPPORT_EXECSERVER	512
+#define	IPPORT_LOGINSERVER	513
+#define	IPPORT_CMDSERVER	514
+
+/*
+ * UNIX UDP sockets
+ */
+#define	IPPORT_BIFFUDP		512
+#define	IPPORT_WHOSERVER	513
+
+/*
+ * Ports < IPPORT_RESERVED are reserved for
+ * privileged processes (e.g. root).
+ */
 #define	IPPORT_RESERVED		1024
 
 /*
