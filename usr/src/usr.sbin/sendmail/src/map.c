@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.64 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.65 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)map.c	8.64 (Berkeley) %G%";
 # include <db.h>
 #endif
 #ifdef NIS
-  struct dom_binding { int dummy; };	/* needed on IRIX */
+  struct dom_binding;	/* forward reference needed on IRIX */
 # include <rpcsvc/ypclnt.h>
 #endif
 
@@ -661,11 +661,14 @@ ndbm_map_close(map)
 		inclnull = bitset(MF_INCLNULL, map->map_mflags);
 		map->map_mflags &= ~MF_INCLNULL;
 
-		(void) sprintf(buf, "%010ld", curtime());
-		ndbm_map_store(map, "YP_LAST_MODIFIED", buf);
+		if (strstr(map->map_file, "/yp/") != NULL)
+		{
+			(void) sprintf(buf, "%010ld", curtime());
+			ndbm_map_store(map, "YP_LAST_MODIFIED", buf);
 
-		(void) gethostname(buf, sizeof buf);
-		ndbm_map_store(map, "YP_MASTER_NAME", buf);
+			(void) gethostname(buf, sizeof buf);
+			ndbm_map_store(map, "YP_MASTER_NAME", buf);
+		}
 
 		if (inclnull)
 			map->map_mflags |= MF_INCLNULL;
@@ -2186,7 +2189,7 @@ impl_map_open(map, mode)
 	if (hash_map_open(map, mode))
 	{
 #if defined(NDBM) && defined(NIS)
-		if (mode == O_RDONLY || access("/var/yp/Makefile", R_OK) != 0)
+		if (mode == O_RDONLY || strstr(map->map_file, "/yp/") == NULL)
 #endif
 			return TRUE;
 	}
