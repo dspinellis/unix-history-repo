@@ -1,4 +1,4 @@
-/*	autoconf.c	6.7	84/08/28	*/
+/*	autoconf.c	6.8	85/03/07	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -158,7 +158,7 @@ probenexus(pcpu)
 		case NEX_UBA2:
 		case NEX_UBA3:
 			printf("uba%d at tr%d\n", numuba, nexnum);
-#if VAX_750
+#if VAX750
 			if (numuba >= 2 && cpu == VAX_750) {
 				printf("More than 2 UBA's");
 				goto unsupp;
@@ -475,6 +475,11 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	}
 #endif
 	/*
+	 * First configure devices that have unibus memory,
+	 * allowing them to allocate the correct map registers.
+	 */
+	ubameminit(numuba);
+	/*
 	 * Grab some memory to record the umem address space we allocate,
 	 * so we can be sure not to place two devices at the same address.
 	 *
@@ -529,7 +534,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		}
 #endif
 		cvec = 0x200;
-		i = (*udp->ud_probe)(reg, um->um_ctlr);
+		i = (*udp->ud_probe)(reg, um->um_ctlr, um);
 #if VAX780
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
@@ -610,7 +615,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		}
 #endif
 		cvec = 0x200;
-		i = (*udp->ud_probe)(reg);
+		i = (*udp->ud_probe)(reg, ui);
 #if VAX780
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
