@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Ozan Yigit at York University.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.5 (Berkeley) %G%
+ *	@(#)pathnames.h	8.1 (Berkeley) %G%
  */
 
 /*
