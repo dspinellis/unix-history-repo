@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.125 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.126 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2541,6 +2541,7 @@ mailfile(filename, ctladdr, e)
 		struct stat stb;
 		struct stat fsb;
 		MCI mcibuf;
+		int oflags = O_WRONLY|O_APPEND;
 
 		if (e->e_lockfp != NULL)
 		{
@@ -2553,9 +2554,18 @@ mailfile(filename, ctladdr, e)
 		(void) setsignal(SIGTERM, SIG_DFL);
 		(void) umask(OldUmask);
 
+#ifdef HASLSTAT
+		if ((SafeFileEnv != NULL ? lstat(filename, &stb)
+					 : stat(filename, &stb)) < 0)
+#else
 		if (stat(filename, &stb) < 0)
+#endif
+		{
 			stb.st_mode = FileMode;
-		else if (bitset(0111, stb.st_mode) || stb.st_nlink != 1)
+			oflags |= O_CREAT|O_EXCL;
+		}
+		else if (bitset(0111, stb.st_mode) || stb.st_nlink != 1 ||
+			 (SafeFileEnv != NULL && !S_ISREG(stb.st_mode)))
 			exit(EX_CANTCREAT);
 		mode = stb.st_mode;
 
@@ -2580,6 +2590,23 @@ mailfile(filename, ctladdr, e)
 			}
 		}
 
+		if (SafeFileEnv != NULL && SafeFileEnv[0] != NULL)
+		{
+			int i;
+
+			if (chroot(SafeFileEnv) < 0)
+			{
+				syserr("mailfile: Cannot chroot(%s)",
+					SafeFileEnv);
+				exit(EX_CANTCREAT);
+			}
+			i = strlen(SafeFileEnv);
+			if (strncmp(SafeFileEnv, filename, i) == 0)
+				filename += i;
+		}
+		if (chdir("/") < 0)
+			syserr("mailfile: cannot chdir(/)");
+
 		if (!bitset(S_ISGID, mode) || setgid(stb.st_gid) < 0)
 		{
 			if (ctladdr != NULL && ctladdr->q_uid != 0)
@@ -2602,17 +2629,18 @@ mailfile(filename, ctladdr, e)
 		}
 		FileName = filename;
 		LineNumber = 0;
-		f = dfopen(filename, O_WRONLY|O_CREAT|O_APPEND, FileMode);
+		f = dfopen(filename, oflags, FileMode);
 		if (f == NULL)
 		{
 			message("554 cannot open: %s", errstring(errno));
 			exit(EX_CANTCREAT);
 		}
 		if (fstat(fileno(f), &fsb) < 0 ||
-		    stb.st_nlink != fsb.st_nlink ||
-		    stb.st_dev != fsb.st_dev ||
-		    stb.st_ino != fsb.st_ino ||
-		    stb.st_uid != fsb.st_uid)
+		    (!bitset(O_CREAT, oflags) &&
+		     (stb.st_nlink != fsb.st_nlink ||
+		      stb.st_dev != fsb.st_dev ||
+		      stb.st_ino != fsb.st_ino ||
+		      stb.st_uid != fsb.st_uid)))
 		{
 			message("554 cannot write: file changed after open");
 			exit(EX_CANTCREAT);

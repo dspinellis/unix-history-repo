@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.52 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -356,6 +356,12 @@ savemail(e, sendbody)
 				break;
 			}
 
+			if (SafeFileEnv != NULL && SafeFileEnv[0] != '\0')
+			{
+				state = ESM_PANIC;
+				break;
+			}
+
 			strcpy(buf, _PATH_VARTMP);
 			strcat(buf, "dead.letter");
 			if (!writable(buf, NULLADDR, SFF_NOSLINK))
@@ -392,6 +398,7 @@ savemail(e, sendbody)
 
 		  case ESM_PANIC:
 			/* leave the locked queue & transcript files around */
+			loseqfile(e, "savemail panic");
 			syserr("!554 savemail: cannot save rejected email anywhere");
 		}
 	}
