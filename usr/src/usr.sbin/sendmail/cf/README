@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.12 (Berkeley) %G%
+		@(#)README	8.13 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -368,11 +368,16 @@ nodns		We aren't running DNS at our site (for example,
 
 nullclient	This is a special case -- it creates a stripped down
 		configuration file containing nothing but support for
-		forwarding all mail to a central hub.  The argument
-		is the name of that hub.  No other features should be
-		used, and no mailers need be defined -- this is all
-		implicit.  The client always masquerades as the mail
-		hub.  No aliasing or forwarding is done.
+		forwarding all mail to a central hub via a local
+		SMTP-based network.  The argument is the name of that
+		hub.
+		
+		The only other feature that should be used in conjunction
+		with this one is "nocanonify" (this causes addresses to
+		be sent unqualified via the SMTP connection; normally
+		they are qualifed with the masquerade name, which
+		defaults to the name of the hub machine).  No mailers
+		should be defined.  No aliasing or forwarding is done.
 
 
 +-------+
