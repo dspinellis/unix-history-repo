@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)recipient.c	5.8 (Berkeley) %G%";
+static char	SccsId[] = "@(#)recipient.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -264,7 +264,7 @@ recipient(a, sendq)
 		a->q_user++;
 		if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
 		{
-			a->q_flags |= QDONTSEND;
+			a->q_flags |= QDONTSEND|QBADADDR;
 			usrerr("Cannot mail directly to programs");
 		}
 	}
@@ -314,7 +314,10 @@ recipient(a, sendq)
 		{
 			a->q_flags |= QDONTSEND;
 			if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
+			{
+				a->q_flags |= QBADADDR;
 				usrerr("Cannot mail directly to :include:s");
+			}
 			else
 			{
 				message(Arpa_Info, "including file %s", &a->q_user[9]);
@@ -345,7 +348,7 @@ recipient(a, sendq)
 			/* check if writable or creatable */
 			if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
 			{
-				a->q_flags |= QDONTSEND;
+				a->q_flags |= QDONTSEND|QBADADDR;
 				usrerr("Cannot mail directly to files");
 			}
 			else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
