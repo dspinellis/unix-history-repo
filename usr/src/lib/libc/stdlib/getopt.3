@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getopt.3	6.16 (Berkeley) %G%
+.\"     @(#)getopt.3	6.17 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETOPT 3
@@ -16,6 +16,7 @@
 .Vt extern char *optarg
 .Vt extern int   optind
 .Vt extern int   opterr
+.Vt extern int   optreset
 .Ft int
 .Fn getopt "int argc" "char * const *argv" "const char *optstring"
 .Sh DESCRIPTION
@@ -35,7 +36,8 @@ The option string
 .Fa optstring
 may contain the following characters; letters and
 letters followed by a colon to indicate an option argument
-is to follow. It does not matter to
+is to follow.
+It does not matter to the function
 .Fn getopt
 if a following argument has leading white space.
 .Pp
@@ -56,13 +58,23 @@ The variable
 and
 .Va optind
 are both initialized to 1.
+The
+.Va optind
+variable may be set to another value before a set of calls to
+.Fn getopt
+in order to skip over more or less argv entries.
+.Pp
 In order to use
 .Fn getopt
 to evaluate multiple sets of arguments, or to evaluate a single set of
 arguments multiple times,
+the variable
+.Va optreset
+must be set to 1 before the second and each additional set of calls to
+.Fn getopt ,
+and the variable
 .Va optind
-must be initialized to the number of argv entries to be skipped in each
-evaluation.
+must be reinitialized.
 .Pp
 The
 .Fn getopt
@@ -89,14 +101,35 @@ If the
 function encounters a character not found in the string
 .Va optarg
 or detects
-a missing option argument
-it writes error message
+a missing option argument it writes an error message and returns
 .Ql ?
 to the
 .Em stderr .
 Setting
 .Va opterr
 to a zero will disable these error messages.
+If
+.Va optstring 
+has a leading 
+.Ql \&:
+then then a missing option argumet causes a
+.Ql \&:
+to be returned in addition to supressing any error messages.
+option argument
+.Pp
+Option arguments are allowed to begin with
+.Dq Li \- ;
+this is reasonable but
+reduces the amount of error checking possible.
+.Sh EXTENSIONS
+The
+.Va optreset
+variable was added to make it possible to call the
+.Fn getopt
+function multiple times.
+This is an extension to the
+.St -p1003.2
+specification.
 .Sh EXAMPLE
 .Bd -literal -compact
 extern char *optarg;
@@ -112,8 +145,8 @@ while ((ch = getopt(argc, argv, "bf:")) != EOF)
 	case 'f':
 		if ((fd = open(optarg, O_RDONLY, 0)) < 0) {
 			(void)fprintf(stderr,
-				"myname: unable to read file %s.\en", optarg);
-			exit(1) ;
+			    "myname: %s: %s\en", optarg, strerror(errno));
+			exit(1);
 		}
 		break;
 	case '?':
@@ -129,11 +162,6 @@ The
 function appeared
 .Bx 4.3 .
 .Sh BUGS
-Option arguments are allowed to begin with
-.Dq Li \- ;
-this is reasonable but
-reduces the amount of error checking possible.
-.Pp
 A single dash
 .Dq Li -
 may be specified as an character in
@@ -164,7 +192,7 @@ as an option.
 This practice is wrong, and should not be used in any current development.
 It is provided for backward compatibility
 .Em only .
-The following code fragment works fairly well.
+The following code fragment works in most cases.
 .Bd -literal -offset indent
 int length;
 char *p;
