@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.10 (Berkeley) 87/04/22";
+static char sccsid[] = "@(#)bugfiler.c	5.9 (Berkeley) 87/04/23";
 #endif not lint
 
 /*
@@ -67,7 +67,7 @@ main(argc, argv)
 	if (setreuid(0, pwd->pw_uid))
 		error("can't set id to %s.", BUGS_ID);
 
-	(void)umask(2);			/* everything is 664 */
+	(void)umask(02);		/* everything is 664 */
 	seterr();			/* redirect to log file */
 	logit();			/* log report arrival */
 	make_copy();			/* save copy in case */
