@@ -1,0 +1,125 @@
+These are the GNU file management utilities.  Most of these programs
+have significant advantages over their Unix counterparts, such as
+greater speed, additional options, and fewer arbitrary limits.
+
+The programs
+cat cmp cut expand head paste split tac tail unexpand
+which used to be part of the fileutils are now part of the textutils.
+
+To compile these programs:
+
+1.  At the top level (the directory this README is in), type
+`./configure'.  This shell script attempts to guess correct values for
+various system-dependent variables used during compilation, and
+creates the Makefiles.  This takes minute or so.
+On Ultrix 4.2, you have to run `configure' with sh5, bash, or ksh,
+e.g., `sh5 configure'; `sh' doesn't work.
+
+If you want to compile in a different directory from the one
+containing the source code, `cd' to that directory and run `configure'
+with the option `--srcdir=DIR', where DIR is the directory that
+contains the source code.  The object files and executables will be
+put in the current directory.  This option only works with versions of
+`make' that support the VPATH variable.  `configure' ignores any other
+arguments you give it.
+
+If your system requires unusual options for compilation or linking
+that `configure' doesn't know about, you can give `configure' initial
+values for variables by setting them in the environment; in
+Bourne-compatible shells, you can do that on the command line like
+this:
+$ CC='gcc -traditional' LIBS=-lposix ./configure
+
+2.  If you want to change the directories where the programs and their
+documentation will be installed, or the optimization options, edit
+`Makefile' and change those values.  If you have an unusual system
+that needs special compilation options that `configure' doesn't know
+about, and you didn't pass them in the environment when running
+`configure', you should add them to `Makefile' now.  Alternately,
+teach `configure' how to figure out that it is being run on a system
+where they are needed, and mail the diffs to the address listed at the
+end of this file so we can include them in the next release.
+
+3.  If your system needs to link with -lPW to get alloca, but has
+rename in the C library (so RENAME_MISSING is not used), -lPW might
+give you an incorrect version of rename.  On HP-UX this manifests
+itself as an undefined data symbol called "Error" when linking cp, ln,
+and mv.  If this happens, use `ar x' to extract alloca.o from libPW.a
+and `ar rc' to put it in a library liballoca.a, and put that in LIBS
+instead of -lPW.  This problem does not occur when using gcc, which
+has alloca built in.
+
+4.  In the top-level directory, type `make'.  You don't need to
+otherwise touch the Makefiles in the subdirectories or use them
+directly.
+
+5.  If the programs compile successfully, type `make install' to
+install them and their documentation.
+
+6.  After you have installed the programs and documentation, you can
+remove the binaries from the source directories by typing `make
+mostlyclean'.  Type `make clean' if you also want to remove the
+Makefiles that `configure' created, for instance if you are going to
+recompile the utilities next on another type of machine.
+
+
+Other things to note:
+
+The fileutils are intended to be POSIX compliant (with BSD and other
+extensions), like the rest of the GNU system.  They are not all quite
+there yet; however, the POSIX shell and utilities standard (1003.2)
+has not been finalized, either.  They presently don't support
+internationalization features.
+
+The comprehensive Texinfo documentation for these programs is not
+finished yet, and needs to be rewritten.  In the interim, the skeletal
+man pages provided with this distribution will have to serve.
+
+The ls, dir, and vdir commands are all separate executables instead of
+one program that checks argv[0] because people often rename these
+programs to things like gls, gnuls, l, etc.  Renaming a program
+file shouldn't affect how it operates, so that people can get the
+behavior they want with whatever name they want.
+
+A warning about du for HP-UX users: GNU du (and I'm sure BSD-derived
+versions) counts the st_blocks field of the `struct stat' for each
+file.  (It's best to use st_blocks where available, instead of
+st_size, because otherwise you get wildly wrong answers for sparse
+files like coredumps, and it counts indirect blocks.)  Chris Torek in
+a comp.unix.wizards posting stated that in 4BSD st_blocks is always
+counted in 512 byte blocks.  On HP-UX filesystems, however, st_blocks
+is counted in 1024 byte blocks.  When GNU du is compiled on HP-UX, it
+assumes that st_blocks counts 1024-byte blocks, because locally
+mounted filesystems do; so to get the number of 512-byte blocks, it
+doubles the st_blocks value.  (The HP-UX du seems to do the same
+thing.)  This gives the correct numbers on HP-UX filesystems.  But for
+4BSD filesystems mounted on HP-UX machines, it gives twice the correct
+numbers; similarly, for HP-UX filesystems, du on 4BSD machines gives
+half the correct numbers.  GNU ls with the -s option has the same
+problem.  I know of no way to determine for a given filesystem or file
+what units st_blocks is measured in.  The f_bsize element of `struct
+statfs' does not work, because its meaning varies between different
+versions of Unix.
+
+The GNU cp, mv, and ln commands can make backups of files that they
+are about to overwrite or remove.  Backup file names will end up being
+the same as the original file names for files that are at the system's
+filename length limit; when that happens, the new file will silently
+replace the backup file that was just made.  This happens with GNU
+Emacs, also.  I am not aware of a clean, portable solution to this
+problem.
+
+Special thanks to Jim Meyering, Brian Matthews, Bruce Evans, and Karl
+Berry for help with debugging and porting these programs.
+
+Although these programs have no `-V' or `--version' option, you can
+check which version you have by using `grep' or `strings -' on the
+binaries, e.g., `grep fileutils /usr/local/bin/ls'.
+
+The file `configure.in' is a template for creating `configure' using
+m4 macros (which will eventually be distributed, separately, under the
+name `autoconf').  It is probably needed only if you want to update
+`configure' using a newer version of autoconf.
+
+Mail suggestions and bug reports for these programs to
+bug-gnu-utils@prep.ai.mit.edu.
