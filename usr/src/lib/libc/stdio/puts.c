@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)puts.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)puts.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -27,7 +27,7 @@ puts(s)
 	struct __suio uio;
 	struct __siov iov[2];
 
-	iov[0].iov_base = s;
+	iov[0].iov_base = (void *)s;
 	iov[0].iov_len = c;
 	iov[1].iov_base = "\n";
 	iov[1].iov_len = 1;
