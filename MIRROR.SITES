@@ -14,7 +14,7 @@ France		ftp.ibp.fr:/pub/FreeBSD
 		<ftp@ftp.ibp.fr>
 
 Germany		ftp.informatik.tu-muenchen.de:/pub/comp/os/bsd/FreeBSD
-		<unknown>
+		<bsd@informatik.tu-muenchen.de>
 
 Germany		ftp.uni-duisburg.de:/pub/unix/FreeBSD
 		<ftp@ftp.uni-duisburg.de>
@@ -44,4 +44,4 @@ USA		freebsd.uml.edu:/FreeBSD
 		<oneill@cs.uml.edu>
 
 
-$Id: MIRROR.SITES,v 1.9 1994/04/18 00:28:35 rgrimes Exp $
+$Id: MIRROR.SITES,v 1.10 1994/04/20 12:06:50 jkh Exp $
