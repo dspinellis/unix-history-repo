@@ -1,17 +1,20 @@
-/*	dumprestore.h	2.5	83/08/11	*/
+/*	dumprestore.h	2.6	85/03/24	*/
 
 /*
  * TP_BSIZE is the size of file blocks on the dump tapes.
  * Note that TP_BSIZE must be a multiple of DEV_BSIZE.
  *
  * NTREC is the number of TP_BSIZE blocks that are written
- * in each tape record.
+ * in each tape record. HIGHDENSITYTREC is the number of
+ * TP_BSIZE blocks that are written in each tape record on
+ * 6250 BPI or higher density tapes.
  *
  * TP_NINDIR is the number of indirect pointers in a TS_INODE
  * or TS_ADDR record. Note that it must be a power of two.
  */
 #define TP_BSIZE	1024
 #define NTREC   	10
+#define HIGHDENSITYTREC	32
 #define TP_NINDIR	(TP_BSIZE/2)
 
 #define TS_TAPE 	1
