@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chown.2	8.1 (Berkeley) %G%
+.\"     @(#)chown.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHOWN 2
@@ -49,12 +49,6 @@ with the file locking primitives (see
 .Pp
 One of the owner or group id's
 may be left unchanged by specifying it as -1.
-.Pp
-If the final component of
-.Fa path
-is a symbolic link,
-the ownership and group of the symbolic link is changed,
-not the ownership and group of the file or directory to which it points.
 .Sh RETURN VALUES
 Zero is returned if the operation was successful;
 -1 is returned if an error occurs, with a more specific
