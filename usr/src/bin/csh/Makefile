@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.24 (Berkeley) %G%
+#	@(#)Makefile	5.25 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -6,10 +6,15 @@
 # To profile, put -DPROF in DEFS and -pg in CFLAGS, and recompile.
 
 PROG=	csh
-CFLAGS+=-fcombine-regs -fstrength-reduce -DFILEC -DNLS -DSHORT_STRINGS -I.
+DFLAGS=-DBUILTIN -DFILEC -DNLS -DSHORT_STRINGS
+STRIP=
+CFLAGS+=-fcombine-regs -fstrength-reduce 
+CFLAGS+=-g
+CFLAGS+=-Wall -pedantic -I. ${DFLAGS}
 SRCS=	alloc.c char.c const.c csh.c dir.c dol.c err.c exec.c exp.c file.c \
-	func.c glob.c hist.c init.c lex.c misc.c parse.c print.c printf.c \
-	proc.c sem.c set.c str.c time.c
+	func.c glob.c hist.c init.c lex.c misc.c parse.c printf.c proc.c \
+	sem.c set.c str.c time.c
+.PATH:	${.CURDIR}/../../usr.bin/printf
 
 MAN1=	csh.0
 MLINKS=	csh.1 limit.1 csh.1 alias.1 csh.1 bg.1 csh.1 dirs.1 csh.1 fg.1 \
@@ -18,6 +23,7 @@ MLINKS=	csh.1 limit.1 csh.1 alias.1 csh.1 bg.1 csh.1 dirs.1 csh.1 fg.1 \
 	csh.1 stop.1 csh.1 source.1
 CLEANFILES+=err.h const.h
 
+OBJS+= 
 const.h: err.h
 
 err.h: err.c
@@ -35,6 +41,6 @@ const.h: const.c
 	    sed -e 's/Char \([a-zA-Z0-9_]*\)\(.*\)/extern Char \1[];/' | \
 	    sort >> $@
 
-.depend: const.h err.h
+.depend: const.h err.h 
 
 .include <bsd.prog.mk>
