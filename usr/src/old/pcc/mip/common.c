@@ -1,4 +1,4 @@
-/*	common.c	4.2	85/08/22	*/
+/*	common.c	4.3	87/12/09	*/
 
 #ifdef PASS1COMMON
 #include "pass1.h"
@@ -347,6 +347,8 @@ char	itstrbuf[TSTRSZ];
 char	*tstrbuf[NTSTRBUF] = { itstrbuf };
 char	**curtstr = tstrbuf;
 int	tstrused;
+char	*malloc();
+char	*strcpy();
 
 char *
 tstr(cp)
@@ -360,13 +362,13 @@ tstr(cp)
 			cerror("out of temporary string space");
 		tstrused = 0;
 		if (*curtstr == 0) {
-			dp = (char *)malloc(TSTRSZ);
+			dp = malloc(TSTRSZ);
 			if (dp == 0)
 				cerror("out of memory (tstr)");
 			*curtstr = dp;
 		}
 	}
-	strcpy(dp = *curtstr+tstrused, cp);
+	(void) strcpy(dp = *curtstr+tstrused, cp);
 	tstrused += i + 1;
 	return (dp);
 }
