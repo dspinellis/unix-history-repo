@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1010,7 +1010,7 @@ tryhost:
 				if (tTd(11, 1))
 				{
 					printf("openmailer: ");
-					mci_dump(mci);
+					mci_dump(mci, FALSE);
 				}
 				CurHostName = mci->mci_host;
 				break;
@@ -1317,7 +1317,7 @@ tryhost:
 	if (tTd(11, 1))
 	{
 		printf("openmailer: ");
-		mci_dump(mci);
+		mci_dump(mci, FALSE);
 	}
 
 	if (mci->mci_state != MCIS_OPEN)

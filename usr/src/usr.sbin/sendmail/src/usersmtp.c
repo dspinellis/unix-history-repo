@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.11 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.12 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.11 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.12 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -70,7 +70,7 @@ smtpinit(m, mci, e)
 	if (tTd(18, 1))
 	{
 		printf("smtpinit ");
-		mci_dump(mci);
+		mci_dump(mci, FALSE);
 	}
 
 	/*
