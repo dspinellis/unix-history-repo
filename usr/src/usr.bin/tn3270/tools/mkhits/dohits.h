@@ -3,7 +3,7 @@
 
 #define	firstentry(x)	(table[dohash(0, (x))%highestof(table)])
 
-extern struct Hits {
+struct Hits {
     struct hits hits;
     char *name[4];
 };

@@ -19,15 +19,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "../ascebc.h"
-#include "../ebc_disp.h"
-#include "../kbd3270.h"
+#include "../ascii/ascebc.h"
+#include "../ctlr/ebc_disp.h"
+#include "../ctlr/function.h"
 
 #include "dohits.h"
 
 struct Hits Hits[256];		/* one for each of 0x00-0xff */
 
 struct thing *table[100];
+
+extern char *malloc();
 
 unsigned int
 dohash(seed, string)
@@ -102,6 +104,19 @@ char *file,		/* Name of file to scan */
     }
 }
 
+char *savechr(c)
+unsigned char c;
+{
+    char *foo;
+
+    foo = malloc(sizeof c);
+    if (foo == 0) {
+	fprintf(stderr, "No room for ascii characters!\n");
+	exit(1);
+    }
+    *foo = c;
+    return foo;
+}
 
 char *
 doit(hit, type, hits)
@@ -118,6 +133,7 @@ struct Hits *hits;
     if (type[1] == 0) {		/* character */
 	hit->type = character;
 	hit->code = ebc_disp[ascebc[AE_IN][type[0]]];
+	return savechr(*type);		/* The character is the name */
     } else {
 	for (this = firstentry(type); this; this = this->next) {
 	    if ((type[0] == this->name[4])
@@ -131,7 +147,7 @@ struct Hits *hits;
 		return this->name;
 	    }
 	}
-	printf("Error: Unknown type %s.\n", type);
+	fprintf(stderr, "Error: Unknown type %s.\n", type);
 	return 0;
     }
 }
@@ -157,8 +173,8 @@ dohits()
      * of various FCNs.
      */
 
-    scan("host3270.h", "AID_");
-    scan("kbd3270.h", "FCN_");
+    scan("../ctlr/hostctlr.h", "AID_");
+    scan("../ctlr/function.h", "FCN_");
 
     while (gets(line) != NULL) {
 	if (!isdigit(line[0])) {
@@ -177,12 +193,14 @@ dohits()
 	    continue;
 	}
 	if (scancode >= 256) {
-	    printf("Error: scancode 0x%02x for keynumber %d\n", scancode,
+	    fprintf(stderr,
+		"Error: scancode 0x%02x for keynumber %d\n", scancode,
 		    keynumber);
 	    break;
 	}
 	if (Hits[scancode].hits.hit[0].type != undefined) {
-	    printf("Error: duplicate scancode 0x%02x for keynumber %d\n",
+	    fprintf(stderr,
+		"Error: duplicate scancode 0x%02x for keynumber %d\n",
 		    scancode, keynumber);
 	    break;
 	}
