@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -16,6 +16,42 @@ static char sccsid[] = "@(#)popen.c	5.14 (Berkeley) %G%";
 #define WRITE 1
 static int *pid;
 
+struct fp {
+	FILE *fp;
+	int pipe;
+	struct fp *link;
+};
+static struct fp *fp_head;
+
+FILE *
+Fopen(file, mode)
+	char *file, *mode;
+{
+	FILE *fp;
+
+	if ((fp = fopen(file, mode)) != NULL)
+		register_file(fp, 0);
+	return fp;
+}
+
+FILE *
+Fdopen(fd, mode)
+	char *mode;
+{
+	FILE *fp;
+
+	if ((fp = fdopen(fd, mode)) != NULL)
+		register_file(fp, 0);
+	return fp;
+}
+
+Fclose(fp)
+	FILE *fp;
+{
+	unregister_file(fp);
+	return fclose(fp);
+}
+
 FILE *
 Popen(cmd, mode)
 	char *cmd;
@@ -23,6 +59,7 @@ Popen(cmd, mode)
 {
 	int p[2];
 	int myside, hisside, fd0, fd1;
+	FILE *fp;
 
 	if (pid == 0)
 		pid = (int *) malloc((unsigned) sizeof (int) * getdtablesize());
@@ -42,8 +79,10 @@ Popen(cmd, mode)
 		close(p[WRITE]);
 		return NULL;
 	}
-	close(hisside);
-	return fdopen(myside, mode);
+	(void) close(hisside);
+	if ((fp = fdopen(myside, mode)) != NULL)
+		register_file(fp, 1);
+	return fp;
 }
 
 Pclose(ptr)
@@ -53,9 +92,51 @@ Pclose(ptr)
 	int omask;
 
 	i = fileno(ptr);
-	fclose(ptr);
+	unregister_file(ptr);
+	(void) fclose(ptr);
 	sigsetmask(omask);
 	return i;
+}
+
+close_all_files()
+{
+
+	while (fp_head)
+		if (fp_head->pipe)
+			(void) Pclose(fp_head->fp);
+		else
+			(void) Fclose(fp_head->fp);
+}
+
+register_file(fp, pipe)
+	FILE *fp;
+{
+	struct fp *fpp;
+
+	if ((fpp = (struct fp *) malloc(sizeof *fpp)) == NULL)
+		panic("Out of memory");
+	fpp->fp = fp;
+	fpp->pipe = pipe;
+	fpp->link = fp_head;
+	fp_head = fpp;
+}
+
+unregister_file(fp)
+	FILE *fp;
+{
+	struct fp **pp, *p;
+
+	for (pp = &fp_head; p = *pp; pp = &p->link)
+		if (p->fp == fp) {
+			*pp = p->link;
+			free((char *) p);
+			return;
+		}
+	/* XXX
+	 * Ignore this for now; there may still be uncaught
+	 * duplicate closes.
+	panic("Invalid file pointer");
+	*/
 }
 
 /*

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)names.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)names.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -215,7 +215,7 @@ outof(names, fo, hp)
 		 */
 
 		if (image < 0) {
-			if ((fout = fopen(tempEdit, "a")) == NULL) {
+			if ((fout = Fopen(tempEdit, "a")) == NULL) {
 				perror(tempEdit);
 				senderr++;
 				goto cant;
@@ -225,20 +225,19 @@ outof(names, fo, hp)
 			if (image < 0) {
 				perror(tempEdit);
 				senderr++;
+				(void) Fclose(fout);
 				goto cant;
 			}
-			else {
-				fprintf(fout, "From %s %s", myname, date);
-				puthead(hp, fout, GTO|GSUBJECT|GCC|GNL);
-				while ((c = getc(fo)) != EOF)
-					(void) putc(c, fout);
-				rewind(fo);
-				(void) putc('\n', fout);
-				(void) fflush(fout);
-				if (ferror(fout))
-					perror(tempEdit);
-				(void) fclose(fout);
-			}
+			fprintf(fout, "From %s %s", myname, date);
+			puthead(hp, fout, GTO|GSUBJECT|GCC|GNL);
+			while ((c = getc(fo)) != EOF)
+				(void) putc(c, fout);
+			rewind(fo);
+			(void) putc('\n', fout);
+			(void) fflush(fout);
+			if (ferror(fout))
+				perror(tempEdit);
+			(void) Fclose(fout);
 		}
 
 		/*
@@ -251,7 +250,13 @@ outof(names, fo, hp)
 			int pid;
 			char *shell;
 
-			/* XXX, can't really reuse the same image file */
+			/*
+			 * XXX
+			 * We can't really reuse the same image file,
+			 * because multiple piped recipients will
+			 * share the same lseek location and trample
+			 * on one another.
+			 */
 			if ((shell = value("SHELL")) == NOSTR)
 				shell = _PATH_CSHELL;
 			pid = start_command(shell, sigmask(SIGHUP)|
@@ -263,15 +268,20 @@ outof(names, fo, hp)
 			}
 			free_child(pid);
 		} else {
-			if ((fout = fopen(fname, "a")) == NULL) {
+			int f;
+			if ((fout = Fopen(fname, "a")) == NULL) {
 				perror(fname);
 				senderr++;
 				goto cant;
 			}
-			fin = Fdopen(image, "r");
+			if ((f = dup(image)) < 0) {
+				perror("dup");
+				fin = NULL;
+			} else
+				fin = Fdopen(f, "r");
 			if (fin == NULL) {
 				fprintf(stderr, "Can't reopen image\n");
-				(void) fclose(fout);
+				(void) Fclose(fout);
 				senderr++;
 				goto cant;
 			}
@@ -280,8 +290,8 @@ outof(names, fo, hp)
 				(void) putc(c, fout);
 			if (ferror(fout))
 				senderr++, perror(fname);
-			(void) fclose(fout);
-			(void) fclose(fin);
+			(void) Fclose(fout);
+			(void) Fclose(fin);
 		}
 cant:
 		/*

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -73,7 +73,7 @@ collect(hp, printheaders)
 	sigsetmask(omask & ~(sigmask(SIGINT) | sigmask(SIGHUP)));
 
 	noreset++;
-	if ((collf = fopen(tempMail, "w+")) == NULL) {
+	if ((collf = Fopen(tempMail, "w+")) == NULL) {
 		perror(tempMail);
 		goto err;
 	}
@@ -245,7 +245,7 @@ cont:
 				printf("%s: Directory\n", cp);
 				break;
 			}
-			if ((fbuf = fopen(cp, "r")) == NULL) {
+			if ((fbuf = Fopen(cp, "r")) == NULL) {
 				perror(cp);
 				break;
 			}
@@ -256,12 +256,12 @@ cont:
 			while (readline(fbuf, linebuf, LINESIZE) >= 0) {
 				lc++;
 				if ((t = putline(collf, linebuf)) < 0) {
-					fclose(fbuf);
+					Fclose(fbuf);
 					goto err;
 				}
 				cc += t;
 			}
-			fclose(fbuf);
+			Fclose(fbuf);
 			printf("%d/%d\n", lc, cc);
 			break;
 		case 'w':
@@ -294,13 +294,13 @@ cont:
 				goto err;
 			goto cont;
 		case '?':
-			if ((fbuf = fopen(_PATH_TILDE, "r")) == NULL) {
+			if ((fbuf = Fopen(_PATH_TILDE, "r")) == NULL) {
 				perror(_PATH_TILDE);
 				break;
 			}
 			while ((t = getc(fbuf)) != EOF)
 				(void) putchar(t);
-			fclose(fbuf);
+			Fclose(fbuf);
 			break;
 		case 'p':
 			/*
@@ -363,7 +363,7 @@ exwrite(name, fp, f)
 		fprintf(stderr, "File exists\n");
 		return(-1);
 	}
-	if ((of = fopen(name, "w")) == NULL) {
+	if ((of = Fopen(name, "w")) == NULL) {
 		perror(NOSTR);
 		return(-1);
 	}
@@ -376,11 +376,11 @@ exwrite(name, fp, f)
 		(void) putc(c, of);
 		if (ferror(of)) {
 			perror(name);
-			fclose(of);
+			Fclose(of);
 			return(-1);
 		}
 	}
-	fclose(of);
+	Fclose(of);
 	printf("%d/%ld\n", lc, cc);
 	fflush(stdout);
 	return(0);
@@ -399,7 +399,7 @@ mesedit(fp, c)
 	if (nf != NULL) {
 		fseek(nf, (off_t)0, 2);
 		collf = nf;
-		fclose(fp);
+		Fclose(fp);
 	}
 	(void) signal(SIGINT, sigint);
 }
@@ -418,7 +418,7 @@ mespipe(fp, cmd)
 	sig_t sigint = signal(SIGINT, SIG_IGN);
 	extern char tempEdit[];
 
-	if ((nf = fopen(tempEdit, "w+")) == NULL) {
+	if ((nf = Fopen(tempEdit, "w+")) == NULL) {
 		perror(tempEdit);
 		goto out;
 	}
@@ -428,12 +428,12 @@ mespipe(fp, cmd)
 	 * stdout = new message.
 	 */
 	if (run_command(cmd, 0, fileno(fp), fileno(nf), NOSTR) < 0) {
-		(void) fclose(nf);
+		(void) Fclose(nf);
 		goto out;
 	}
 	if (fsize(nf) == 0) {
 		fprintf(stderr, "No bytes from \"%s\" !?\n", cmd);
-		(void) fclose(nf);
+		(void) Fclose(nf);
 		goto out;
 	}
 	/*
@@ -441,7 +441,7 @@ mespipe(fp, cmd)
 	 */
 	(void) fseek(nf, 0L, 2);
 	collf = nf;
-	(void) fclose(fp);
+	(void) Fclose(fp);
 out:
 	(void) signal(SIGINT, sigint);
 }
@@ -564,12 +564,12 @@ savedeadletter(fp)
 		return;
 	cp = getdeadletter();
 	c = umask(077);
-	dbuf = fopen(cp, "a");
+	dbuf = Fopen(cp, "a");
 	(void) umask(c);
 	if (dbuf == NULL)
 		return;
 	while ((c = getc(fp)) != EOF)
 		(void) putc(c, dbuf);
-	fclose(dbuf);
+	Fclose(dbuf);
 	rewind(fp);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -155,7 +155,7 @@ save1(str, mark, cmd, ignore)
 		disp = "[Appended]";
 	else
 		disp = "[New file]";
-	if ((obuf = fopen(file, "a")) == NULL) {
+	if ((obuf = Fopen(file, "a")) == NULL) {
 		perror(NOSTR);
 		return(1);
 	}
@@ -164,7 +164,7 @@ save1(str, mark, cmd, ignore)
 		touch(mp);
 		if (send(mp, obuf, ignore, NOSTR) < 0) {
 			perror(file);
-			fclose(obuf);
+			Fclose(obuf);
 			return(1);
 		}
 		if (mark)
@@ -173,7 +173,7 @@ save1(str, mark, cmd, ignore)
 	fflush(obuf);
 	if (ferror(obuf))
 		perror(file);
-	fclose(obuf);
+	Fclose(obuf);
 	printf("%s\n", disp);
 	return(0);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)send.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -337,10 +337,10 @@ mail1(hp, printheaders)
 		if (access(_PATH_MAIL_LOG, 0) == 0) {
 			FILE *postage;
 
-			if ((postage = fopen(_PATH_MAIL_LOG, "a")) != NULL) {
+			if ((postage = Fopen(_PATH_MAIL_LOG, "a")) != NULL) {
 				fprintf(postage, "%s %d %ld\n", myname,
 				    count(to), fsize(mtf));
-				(void) fclose(postage);
+				(void) Fclose(postage);
 			}
 		}
 		prepare_child(sigmask(SIGHUP)|sigmask(SIGINT)|sigmask(SIGQUIT)|
@@ -359,7 +359,7 @@ mail1(hp, printheaders)
 	else
 		free_child(pid);
 out:
-	(void) fclose(mtf);
+	(void) Fclose(mtf);
 }
 
 /*
@@ -400,13 +400,13 @@ infix(hp, fi)
 	register FILE *nfo, *nfi;
 	register int c;
 
-	if ((nfo = fopen(tempMail, "w")) == NULL) {
+	if ((nfo = Fopen(tempMail, "w")) == NULL) {
 		perror(tempMail);
 		return(fi);
 	}
-	if ((nfi = fopen(tempMail, "r")) == NULL) {
+	if ((nfi = Fopen(tempMail, "r")) == NULL) {
 		perror(tempMail);
-		(void) fclose(nfo);
+		(void) Fclose(nfo);
 		return(fi);
 	}
 	(void) remove(tempMail);
@@ -424,13 +424,13 @@ infix(hp, fi)
 	(void) fflush(nfo);
 	if (ferror(nfo)) {
 		perror(tempMail);
-		(void) fclose(nfo);
-		(void) fclose(nfi);
+		(void) Fclose(nfo);
+		(void) Fclose(nfi);
 		rewind(fi);
 		return(fi);
 	}
-	(void) fclose(nfo);
-	(void) fclose(fi);
+	(void) Fclose(nfo);
+	(void) Fclose(fi);
 	rewind(nfi);
 	return(nfi);
 }
@@ -507,7 +507,7 @@ savemail(name, fi)
 	time_t now, time();
 	char *ctime();
 
-	if ((fo = fopen(name, "a")) == NULL) {
+	if ((fo = Fopen(name, "a")) == NULL) {
 		perror(name);
 		return (-1);
 	}
@@ -519,7 +519,7 @@ savemail(name, fi)
 	(void) fflush(fo);
 	if (ferror(fo))
 		perror(name);
-	(void) fclose(fo);
+	(void) Fclose(fo);
 	rewind(fi);
 	return (0);
 }

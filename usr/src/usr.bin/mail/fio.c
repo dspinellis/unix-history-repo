@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -40,7 +40,7 @@ setptr(ibuf)
 
 	if ((c = opentemp(tempSet)) < 0)
 		exit(1);
-	if ((mestmp = fdopen(c, "r+")) == NULL)
+	if ((mestmp = Fdopen(c, "r+")) == NULL)
 		panic("Can't open temporary");
 	msgCount = 0;
 	maybe = 1;
@@ -57,7 +57,6 @@ setptr(ibuf)
 				perror(tempSet);
 				exit(1);
 			}
-			fclose(ibuf);
 			makemessage(mestmp);
 			return;
 		}
@@ -186,7 +185,7 @@ makemessage(f)
 		panic("Message temporary file corrupted");
 	message[msgCount].m_size = 0;
 	message[msgCount].m_lines = 0;
-	fclose(f);
+	Fclose(f);
 }
 
 /*
@@ -404,21 +403,4 @@ getdeadletter()
 		cp = expand(buf);
 	}
 	return cp;
-}
-
-/*
- * A nicer version of Fdopen, which allows us to fclose
- * without losing the open file.
- */
-FILE *
-Fdopen(fildes, mode)
-	char *mode;
-{
-	int f;
-
-	if ((f = dup(fildes)) < 0) {
-		perror("dup");
-		return (NULL);
-	}
-	return fdopen(f, mode);
 }
