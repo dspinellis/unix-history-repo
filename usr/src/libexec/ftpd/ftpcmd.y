@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.20.1.1 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.21 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.20.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -1150,7 +1150,8 @@ char *filename;
 		break;}
 	case TYPE_A: {
 		FILE *fin;
-		register int c, count;
+		register int c;
+		register long count;
 		struct stat stbuf;
 		fin = fopen(filename, "r");
 		if (fin == NULL) {
