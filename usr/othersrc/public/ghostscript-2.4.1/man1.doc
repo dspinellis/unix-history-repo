@@ -1,0 +1,567 @@
+
+From kankkune  Fri Dec 20 11:17:53 1991 remote from cs.Helsinki.FI
+Received: by aladdin.com (UUL1.3#5127)
+	from decwrl with UUCP; Fri, 20 Dec 91 11:18:24 PDT
+Received: by uucp-gw-1.pa.dec.com; id AA23754; Fri, 20 Dec 91 11:17:53 -0800
+Received: from poros (poros.Helsinki.FI) by hydra.Helsinki.FI (4.1/SMI-4.1/36)
+	id AA04379; Fri, 20 Dec 91 21:17:42 +0200
+Date: Fri, 20 Dec 91 21:17:42 +0200
+From: kankkune@cs.Helsinki.FI (Risto Kankkunen)
+Message-Id: <9112201917.AA04379@hydra.Helsinki.FI>
+X-Mailer: Mail User's Shell (7.2.0 10/31/90)
+To: ghost@aladdin.com
+Subject: Here is a unix manual page for gs 2.3
+
+I was installing gs version 2.3 when I noticed, that there was only the
+very minimal manual page for it. So, I wound up hacking one from the
+file use.doc by reorganizing, adding formatting and some bits and pieces
+of my own. I thought you might find use to it, so I'm sending it here to
+you. Below is the troff source and after that is a pre-fomatted version,
+in case you don't have access to troff and want to see what the file
+looks like. The files are separated with cut lines and total about 14K,
+so I think this should get to you without truncation.
+
+- cut here --- cut here --- cut here --- cut here --- cut here --- cut here -
+.TH GS 1 "20 December 1991"
+.SH NAME
+gs \- ghostscript previewer, version 2.3.
+.SH SYNOPSIS
+.B gs
+[
+.B \-D
+.Iname
+.B \-S
+.I name
+.B \-q
+.B \-g
+.I number1
+x
+.I number2
+.B \-I
+.I directories
+.B \-h \- \-\-
+.I prog args...
+]
+[
+.I file
+]...
+
+.SH DESCRIPTION
+Ghostscript is a programming language similar to Adobe Systems'
+PostScript (tm) language, which is in turn similar to Forth.
+.B Gs
+reads
+.I file
+and displays or prints it as a Ghostscript file to an output device.
+
+To invoke the interpreter, give the command
+.B gs
+.I filename1 ... filenameN.
+The interpreter will read in the files in sequence and execute them.
+After doing this, it reads further input from the primary input stream
+(normally the keyboard). Each line (i.e. characters up to a
+.B <return>
+) is interpreted separately. To exit from the interpreter, type
+.B quit<return>.
+The interpreter also exits gracefully if it encounters end-of-file.
+Typing the interrupt character, e.g.,
+.B control-C,
+is also safe.
+
+.SH OPTIONS
+The interpreter recognizes several options described below, which may
+appear anywhere in the command line and apply to all files thereafter.
+.TP
+.B \-\-
+.I filename arg1 ...
+Takes the next argument as a file name as usual, but takes all remaining
+arguments (even if they have the syntactic form of switches) and defines
+the name
+.B ARGUMENTS
+in
+.B userdict
+(not
+.B systemdict
+) as an array of those strings,
+.I before
+running the file. When
+.B gs
+finishes executing the file, it exits back to the shell.
+.TP
+.B \-Dname\=token
+.TP
+.B \-dname\=token
+Define a name in
+.B systemdict
+with the given definition. The token must be exactly one token (as
+defined by the
+.B token
+operator) and must not contain any whitespace.
+.TP
+.B \-Dname
+.TP
+.B \-dname
+Define a name in
+.B systemdict
+with value null.
+.TP
+.B \-Sname=string
+.TP
+.B \-sname=string
+Define a name in
+.B systemdict
+with a given string as value. This is different from
+.B \-D.
+For example,
+.B \-Dname=35
+is equivalent to the program fragment
+.B /name 35 def
+whereas
+.B \-Sname=35
+is equivalent to
+.B /name (35) def.
+
+Note that
+.B gs_init.ps
+makes
+.B systemdict
+read-only, so the values of names defined with
+.B \-D
+or
+.B \-S
+cannot be changed (although, of course, they can be superseded by
+definitions in
+.B userdict
+or other dictionaries).
+
+Ghostscript may be built with multiple output devices (you can see the
+list of supported devices by giving the command
+.B gs \-h
+). Ghostscript normally opens the first one and directs output to it.
+To use device
+.I xyz
+as the initial output device, include the option
+.B \-sDEVICE\=
+.I xyz
+in the command line.  Note that this switch must precede the first .ps
+file, and only its first invocation has any effect.
+
+Including
+.B \-dNODISPLAY
+in the command line will suppress the normal initialization of the
+output device. This may be useful when debugging. Similarly,
+.B \-dNOCACHE
+disables character caching, and
+.B \-dNOBIND
+disables the 'bind' operator.
+.B \-dNOPAUSE
+disables the prompt and pause at the end of each page; this may be
+desirable for applications where another program is 'driving'
+.B gs.
+.TP
+.B \-q
+Quiet startup \- suppress normal startup messages, and also do the
+equivalent of
+.B \-dQUIET.
+.TP
+.B \-g
+.I number1
+x
+.I number2
+Equivalent to
+.B \-dDEVICEWIDTH\=
+.I number1
+and
+.B \-dDEVICEHEIGHT\=
+.I number2.
+This is for the benefit of devices (such as display windows) that
+require (or allow) width and height to be specified.
+.TP
+.B \-I
+.Idirectories
+Adds the designated list of
+.I directories
+at the head of the search path for library files. This path is used to
+locate the initialization and font files, and also files given to the
+.B run
+operator.
+.B gs
+searches these files using the specified
+.B \-I
+options, the contents of the environment variable
+.B GS_LIB
+and some site specific default values.
+
+To work properly
+.B gs
+needs to have access to the initialization files
+.B
+gs_init.ps, gs_statd.ps, gs_fonts.ps
+and various font files (these usually have extension .gsf or .pfa). The
+program is usually configured so that it finds these files
+automatically. You can use the
+.B \-I
+option if you want to add your own fonts or override the system
+initialization files.
+.TP
+.B \-h
+Prints a short usage message listing the available command line options
+and supported output devices.
+.TP
+.B \-
+This is not really a switch.  It indicates to
+.B gs
+that the standard input is coming from a file or a pipe.
+.B gs
+reads from stdin until reaching end-of-file, executing it like any other
+file, and then continues processing the command line.  At the end of the
+command line,
+.B gs
+exits rather than going into its interactive mode.
+.SH X WINDOW SYSTEM RESOURCES
+.B gs
+looks for the following resources under the program name
+.B Ghostscript:
+.TP
+.B borderWidth
+the border width in pixels (default = 1)
+.TP
+.B borderColor
+the name of the border color (default = black)
+.TP
+.B geometry
+the window size and placement, WxH+X+Y
+.TP
+.B xResolution
+the number of x pixels per inch (default is computed from
+.B WidthOfScreen
+and
+.B WidthMMOfScreen
+)
+.TP
+.B yResolution
+the number of y pixels per inch (default is computed from
+.B HeightOfScreen
+and
+.B HeightMMOfScreen
+)
+.SH EXAMPLES
+To change output to printer in a normal configuration that includes an
+PaintJet printer driver, you might use the shell command
+.B gs \-sDEVICE\=paintjet myfile.ps
+instead of just
+.B gs myfile.ps
+Alternatively, you can type
+
+.B (paintjet) selectdevice
+
+.B (myfile.ps) run.
+
+All output then goes to the printer instead of the display until further
+notice.  You can switch devices at any time by using the selectdevice
+procedure, e.g.,
+.B (x11) selectdevice
+or
+.B (paintjet) selectdevice
+
+To find out what devices are available, just type
+.B devicenames.
+.SH FILES
+.TP
+.B gs_fonts.ps
+Font initialization.
+.TP
+.B gs_init.ps
+Various initialization routines.
+.TP
+.B gs_statd.ps
+Dummy
+.B statusdict
+definitions for the benefit of PostScript files that think they are
+being printed on a hardcopy printer.
+.TP
+.B Fontmap
+A catalog of fonts known to
+.B gs.
+Lists the GhostScript name, corresponding font file name, font encoding
+and font identification number for each font that
+.B gs
+knows.
+.SH "SEE ALSO"
+dvi2ps(1), lpr(1)
+.SH BUGS
+Beta Software.
+See the netnews group ``gnu.ghostscript.bugs''.
+- cut here --- cut here --- cut here --- cut here --- cut here --- cut here -
+
+
+
+GS(1)                    USER COMMANDS                      GS(1)
+
+
+
+NAME
+     gs - ghostscript previewer, version 2.3.
+
+SYNOPSIS
+     gs [ -D -S _n_a_m_e -q -g _n_u_m_b_e_r_1 x _n_u_m_b_e_r_2 -I _d_i_r_e_c_t_o_r_i_e_s -h  -
+     -- _p_r_o_g _a_r_g_s... ] [ _f_i_l_e ]...
+
+
+DESCRIPTION
+     Ghostscript is a programming language similar to Adobe  Sys-
+     tems'  PostScript (tm) language, which is in turn similar to
+     Forth.  Gs reads  _f_i_l_e  and  displays  or  prints  it  as  a
+     Ghostscript file to an output device.
+
+     To invoke the interpreter, give the command gs _f_i_l_e_n_a_m_e_1 ...
+     _f_i_l_e_n_a_m_e_N.  The  interpreter  will  read  in  the  files  in
+     sequence and execute  them.   After  doing  this,  it  reads
+     further  input  from  the primary input stream (normally the
+     keyboard). Each line (i.e. characters up to a <return> )  is
+     interpreted  separately.  To exit from the interpreter, type
+     quit<return>. The interpreter also exits  gracefully  if  it
+     encounters  end-of-file.   Typing  the  interrupt character,
+     e.g., control-C, is also safe.
+
+
+OPTIONS
+     The interpreter recognizes several options described  below,
+     which  may  appear anywhere in the command line and apply to
+     all files thereafter.
+
+     --   _f_i_l_e_n_a_m_e _a_r_g_1 ... Takes the next  argument  as  a  file
+          name  as usual, but takes all remaining arguments (even
+          if they  have  the  syntactic  form  of  switches)  and
+          defines  the name ARGUMENTS in userdict (not systemdict
+          ) as an array of  those  strings,  _b_e_f_o_r_e  running  the
+          file.  When  gs  finishes  executing the file, it exits
+          back to the shell.
+
+     -Dname=token
+
+     -dname=token
+          Define a name in systemdict with the given  definition.
+          The  token must be exactly one token (as defined by the
+          token operator) and must not contain any whitespace.
+
+     -Dname
+
+     -dname
+          Define a name in systemdict with value null.
+
+     -Sname=string
+
+
+
+
+Sun Release 4.1   Last change: 20 December 1991                 1
+
+
+
+
+
+
+GS(1)                    USER COMMANDS                      GS(1)
+
+
+
+     -sname=string
+          Define a name in systemdict  with  a  given  string  as
+          value.   This   is  different  from  -D.  For  example,
+          -Dname=35 is equivalent to the program  fragment  /name
+          35  def  whereas  -Sname=35 is equivalent to /name (35)
+          def.
+
+          Note that gs_init.ps makes systemdict read-only, so the
+          values of names defined with -D or -S cannot be changed
+          (although, of course, they can be superseded by defini-
+          tions in userdict or other dictionaries).
+
+          Ghostscript may be built with multiple  output  devices
+          (you  can  see  the list of supported devices by giving
+          the command gs -h ).  Ghostscript  normally  opens  the
+          first  one and directs output to it.  To use device _x_y_z
+          as the initial output device, include the option -sDEV-
+          ICE=  _x_y_z  in  the command line.  Note that this switch
+          must precede the first .ps file,  and  only  its  first
+          invocation has any effect.
+
+          Including -dNODISPLAY in the command line will suppress
+          the  normal  initialization  of the output device. This
+          may be useful when debugging. Similarly, -dNOCACHE dis-
+          ables  character  caching,  and  -dNOBIND  disables the
+          'bind' operator.  -dNOPAUSE  disables  the  prompt  and
+          pause  at  the  end of each page; this may be desirable
+          for applications where another program is 'driving' gs.
+
+     -q   Quiet startup - suppress normal startup  messages,  and
+          also do the equivalent of -dQUIET.
+
+     -g   _n_u_m_b_e_r_1 x _n_u_m_b_e_r_2 Equivalent to -dDEVICEWIDTH=  _n_u_m_b_e_r_1
+          and -dDEVICEHEIGHT= _n_u_m_b_e_r_2. This is for the benefit of
+          devices (such as  display  windows)  that  require  (or
+          allow) width and height to be specified.
+
+     -I   Adds the designated list of _d_i_r_e_c_t_o_r_i_e_s at the head  of
+          the search path for library files. This path is used to
+          locate the initialization  and  font  files,  and  also
+          files  given  to  the  run operator.  gs searches these
+          files using the specified -I options, the  contents  of
+          the  environment variable GS_LIB and some site specific
+          default values.
+
+          To work properly gs needs to have access  to  the  ini-
+          tialization  files gs_init.ps, gs_statd.ps, gs_fonts.ps
+          and various font files (these  usually  have  extension
+          .gsf  or  .pfa).  The  program is usually configured so
+          that it finds these files automatically.  You  can  use
+          the  -I  option  if  you  want to add your own fonts or
+          override the system initialization files.
+
+
+
+Sun Release 4.1   Last change: 20 December 1991                 2
+
+
+
+
+
+
+GS(1)                    USER COMMANDS                      GS(1)
+
+
+
+     -h   Prints a short usage message listing the available com-
+          mand line options and supported output devices.
+
+     -    This is not really a switch.  It indicates to  gs  that
+          the standard input is coming from a file or a pipe.  gs
+          reads from stdin until reaching end-of-file,  executing
+          it  like  any other file, and then continues processing
+          the command line.  At the end of the command  line,  gs
+          exits rather than going into its interactive mode.
+
+X WINDOW SYSTEM RESOURCES
+     gs looks for the following resources under the program  name
+     Ghostscript:
+
+     borderWidth
+          the border width in pixels (default = 1)
+
+     borderColor
+          the name of the border color (default = black)
+
+     geometry
+          the window size and placement, WxH+X+Y
+
+     xResolution
+          the number of x pixels per inch  (default  is  computed
+          from WidthOfScreen and WidthMMOfScreen )
+
+     yResolution
+          the number of y pixels per inch  (default  is  computed
+          from HeightOfScreen and HeightMMOfScreen )
+
+EXAMPLES
+     To change output to printer in a normal  configuration  that
+     includes an PaintJet printer driver, you might use the shell
+     command gs -sDEVICE=paintjet myfile.ps instead  of  just  gs
+     myfile.ps Alternatively, you can type
+
+     (paintjet) selectdevice
+
+     (myfile.ps) run.
+
+     All output then goes to the printer instead of  the  display
+     until further notice.  You can switch devices at any time by
+     using the selectdevice procedure, e.g.,  (x11)  selectdevice
+     or (paintjet) selectdevice
+
+     To find out what devices  are  available,  just  type  devi-
+     cenames.
+
+FILES
+     gs_fonts.ps
+          Font initialization.
+
+
+
+Sun Release 4.1   Last change: 20 December 1991                 3
+
+
+
+
+
+
+GS(1)                    USER COMMANDS                      GS(1)
+
+
+
+     gs_init.ps
+          Various initialization routines.
+
+     gs_statd.ps
+          Dummy  statusdict  definitions  for  the   benefit   of
+          PostScript files that think they are being printed on a
+          hardcopy printer.
+
+     Fontmap
+          A catalog of fonts known to gs. Lists  the  GhostScript
+          name,  corresponding  font file name, font encoding and
+          font identification number for each font that gs knows.
+
+SEE ALSO
+     dvi2ps(1), lpr(1)
+
+BUGS
+     Beta     Software.      See      the      netnews      group
+     ``gnu.ghostscript.bugs''.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sun Release 4.1   Last change: 20 December 1991                 4
+
+
+
+- cut here --- cut here --- cut here --- cut here --- cut here --- cut here -
+
+
+-- 
+ Risto Kankkunen                   kankkune@cs.Helsinki.FI (Internet)
+ Department of Computer Science    kankkunen@finuh          (Bitnet)
+ University of Helsinki, Finland   ..!mcsun!uhecs!kankkune   (UUCP)
+
