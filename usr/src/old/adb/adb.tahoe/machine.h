@@ -1,4 +1,4 @@
-/*	machine.h	1.1	86/02/25	*/
+/*	machine.h	1.2	87/06/25	*/
 
 #include <sys/vm.h>
 
@@ -26,6 +26,5 @@
 #define	INUDOT(x)	(((int)(x)&0xf0000000) == 0xb0000000)
 #define	INKERNEL(x)	(((int)(x)&0xf0000000) == 0xc0000000)
 
-#define	KERNBASE	0xc0000000
 #define	KERNOFF		(KERNBASE + 0x800)	/* start of kernel's text */
 #define	KVTOPH(x)	((x)&~ 0xc0000000)
