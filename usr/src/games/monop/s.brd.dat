@@ -1,0 +1,145 @@
+h22341
+s 00011/00006/00051
+d D 5.3 88/06/18 14:54:24 bostic 3 2
+c install approved copyright notice
+e
+s 00010/00010/00047
+d D 5.2 88/01/02 20:59:12 bostic 2 1
+c John Gilmore's changes for ANSI C and general cleanup
+e
+s 00057/00000/00000
+d D 5.1 88/01/02 20:53:20 bostic 1 0
+c date and time created 88/01/02 20:53:20 by bostic
+e
+u
+U
+t
+T
+I 1
+/*
+D 3
+ * Copyright (c) 1987 Regents of the University of California.
+E 3
+I 3
+ * Copyright (c) 1980 Regents of the University of California.
+E 3
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+D 3
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+E 3
+I 3
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+E 3
+ *
+ *	%W% (Berkeley) %G%
+ */
+
+/* name (COLOR)			owner	type	desc		cost	*/
+
+{"=== GO ===",			-1,	SAFE,	0			},
+{"Mediterranean ave. (P)",	-1,	PRPTY,	&prop[0],	60	},
+D 2
+{"Community Chest i",		-1,	CC,	cc			},
+E 2
+I 2
+{"Community Chest i",		-1,	CC,				},
+E 2
+{"Baltic ave. (P)",		-1,	PRPTY,	&prop[1],	60	},
+D 2
+{"Income Tax",			-1,	SPEC,	inc_tax			},
+E 2
+I 2
+{"Income Tax",			-1,	INC_TAX,			},
+E 2
+{"Reading RR",			-1,	RR,	&rr[0],		200	},
+{"Oriental ave. (L)",		-1,	PRPTY,	&prop[2],	100	},
+D 2
+{"Chance i",			-1,	CHANCE,	chance			},
+E 2
+I 2
+{"Chance i",			-1,	CHANCE,				},
+E 2
+{"Vermont ave. (L)",		-1,	PRPTY,	&prop[3],	100	},
+{"Connecticut ave. (L)",	-1,	PRPTY,	&prop[4],	120	},
+{"Just Visiting",		-1,	SAFE,	0			},
+{"St. Charles pl. (V)",		-1,	PRPTY,	&prop[5],	140	},
+{"Electric Co.",		-1,	UTIL,	&util[0],	150	},
+{"States ave. (V)",		-1,	PRPTY,	&prop[6],	140	},
+{"Virginia ave. (V)",		-1,	PRPTY,	&prop[7],	160	},
+{"Pennsylvania RR",		-1,	RR,	&rr[1],		200	},
+{"St. James pl. (O)",		-1,	PRPTY,	&prop[8],	180	},
+D 2
+{"Community Chest ii",		-1,	CC,	cc			},
+E 2
+I 2
+{"Community Chest ii",		-1,	CC,				},
+E 2
+{"Tennessee ave. (O)",		-1,	PRPTY,	&prop[9],	180	},
+{"New York ave. (O)",		-1,	PRPTY,	&prop[10],	200	},
+{"Free Parking",		-1,	SAFE,	0			},
+{"Kentucky ave. (R)",		-1,	PRPTY,	&prop[11],	220	},
+D 2
+{"Chance ii",			-1,	CHANCE,	chance			},
+E 2
+I 2
+{"Chance ii",			-1,	CHANCE,				},
+E 2
+{"Indiana ave. (R)",		-1,	PRPTY,	&prop[12],	220	},
+{"Illinois ave. (R)",		-1,	PRPTY,	&prop[13],	240	},
+{"B&O RR",			-1,	RR,	&rr[2],		200	},
+{"Atlantic ave. (Y)",		-1,	PRPTY,	&prop[14],	260	},
+{"Ventnor ave. (Y)",		-1,	PRPTY,	&prop[15],	260	},
+{"Water Works",			-1,	UTIL,	&util[1],	150	},
+{"Marvin Gardens (Y)",		-1,	PRPTY,	&prop[16],	280	},
+D 2
+{"GO TO JAIL",			-1,	SPEC,	goto_jail		},
+E 2
+I 2
+{"GO TO JAIL",			-1,	GOTO_J,				},
+E 2
+{"Pacific ave. (G)",		-1,	PRPTY,	&prop[17],	300	},
+{"N. Carolina ave. (G)",	-1,	PRPTY,	&prop[18],	300	},
+D 2
+{"Community Chest iii",		-1,	CC,	cc			},
+E 2
+I 2
+{"Community Chest iii",		-1,	CC,				},
+E 2
+{"Pennsylvania ave. (G)",	-1,	PRPTY,	&prop[19],	320	},
+{"Short Line RR",		-1,	RR,	&rr[3],		200	},
+D 2
+{"Chance iii",			-1,	CHANCE,	chance			},
+E 2
+I 2
+{"Chance iii",			-1,	CHANCE,				},
+E 2
+{"Park place (D)",		-1,	PRPTY,	&prop[20],	350	},
+D 2
+{"Luxury Tax",			-1,	SPEC,	lux_tax			},
+E 2
+I 2
+{"Luxury Tax",			-1,	LUX_TAX,			},
+E 2
+{"Boardwalk (D)",		-1,	PRPTY,	&prop[21],	400	},
+D 2
+{"JAIL",			-1,	SPEC				}
+E 2
+I 2
+{"JAIL",			-1,	IN_JAIL,				}
+E 2
+E 1
