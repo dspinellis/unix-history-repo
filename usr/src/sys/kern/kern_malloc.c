@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_malloc.c	7.15 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,12 +32,6 @@ struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
 long wantkmemmap;
-
-struct {
-	int	nomap;
-	int	atlimit;
-	int	freemem;
-} KFail;
 
 /*
  * Allocate a block of memory
@@ -66,7 +60,6 @@ again:
 #ifdef KMEMSTATS
 	while (ksp->ks_memuse >= ksp->ks_limit) {
 		if (flags & M_NOWAIT) {
-			KFail.atlimit++;
 			splx(s);
 			return (0);
 		}
@@ -82,14 +75,12 @@ again:
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
 		if ((flags & M_NOWAIT) && freemem < npg) {
-			KFail.freemem++;
 			splx(s);
 			return (0);
 		}
 		alloc = rmalloc(kmemmap, npg);
 		if (alloc == 0) {
 			if (flags & M_NOWAIT) {
-				KFail.nomap++;
 				splx(s);
 				return (0);
 			}
