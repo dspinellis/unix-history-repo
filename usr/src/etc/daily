@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.18 (Berkeley) %G%
+#	@(#)daily	5.19 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
 host=`hostname`
@@ -123,7 +123,7 @@ echo ""
 echo "Checking subsystem status:"
 echo ""
 echo "disks:"
-df -k
+env BLOCKSIZE=1k df
 echo ""
 dump W
 echo ""
