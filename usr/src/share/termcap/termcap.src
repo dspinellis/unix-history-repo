@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.78 (Berkeley) %G%
+#	@(#)termcap.src	5.79 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -2724,7 +2724,37 @@ vx|ims-ansi|ultima2|ultimaII|IMS Ultima II:\
 #	Wyse Technology
 #	3571 North First Street
 #	San Jose, CA 95134
-# Entries for the wy60 and wy99 are based on Wyse's recommendations.
+# Entries for the wy60 and wy99 are only based on Wyse's recommendations.
+#
+# Advice on the Wyse 30 and 50 standout mode glitch:
+#			(from steve@omni.com or ...pyramid!koosh!steve)
+# 
+# These terminals support a "PROTECT" sequence on/off that has no
+# standout-glitch (xmc), while the regular "attribute" stuff enabled
+# with <ESC>G'some-character' gives a 1-space glitch.
+# 
+# All but the very old revision firmware on both terminals support a
+# visible PROTECT attribute that's selectable by the ol' SETUP menu.
+# (The older rev. terminals do support PROTECT attribute but only
+#  have the options REGULAR and DIM)
+# 
+# Get into your terminal's SETUP menu, and down-key to the 5'th
+# menu (on a wyse 30; I think 3'rd or 4'th on a wyse 50) and
+# right-key over to the PROTECT item.
+# 
+# Change PROTECT to REVERSE or REVERSE/DIM, and go over to the next
+# item -- ATTRIBUTE and change it to LINE;  then save the changes for
+# power-on.  (ATTRIBUTE change isn't necessary but looks a whole lot
+# nicer to the eye when inverting the remainder of a line rather then
+# the rest of the screen!).
+# 
+# The next thing to do is change your /usr/lib/something?/terminfo/w/wyse50
+# so that it uses the proper escape sequences to turn on/off the protect
+# sequence rather than the very-ugly \EG4 and \EG0.
+# 
+# Change standout to \E), standend to \E(, and glitch to 0, which means
+# changing the so, se, and sg fields to :so=\E):se=\E(:sg#0:
+#
 w0|wy30|wyse30|Wyse 30:\
 	:am:bw:hs:mi:xo:bs:pt:\
 	:co#80:li#24:sg#1:ug#1:kn#9:\
