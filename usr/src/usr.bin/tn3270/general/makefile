@@ -29,7 +29,20 @@ ALLH =	globals.h
 
 ALLC =	globals.c
 
-ALLO	= globals.o
+#
+#	In a vax environment, we use vaxbsubs.s, which gives us a fair amount
+#	of increased performance.  We have provided genbsubs.c, which perform
+#	(more or less) the same function.
+SUBS = vaxbsubs.s
+SUBS = genbsubs.c
+
+SUBSO = vaxbsubs.o
+SUBSO = genbsubs.o
+
+ALLS = vaxbsubs.s
+ALLS =
+
+ALLO	= globals.o ${SUBSO}
 
 .s.o:
 	/lib/cpp -E $< | as -o $@
