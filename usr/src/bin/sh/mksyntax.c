@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mksyntax.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mksyntax.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,6 +42,8 @@ struct synclass synclass[] = {
 	"CBQUOTE",	"backwards single quote",
 	"CVAR",		"a dollar sign",
 	"CENDVAR",	"a '}' character",
+	"CLP",		"a left paren in arithmetic",
+	"CRP",		"a right paren in arithmetic",
 	"CEOF",		"end of file",
 	"CCTL",		"like CWORD, except it must be escaped",
 	"CSPCL",		"these terminate a word",
@@ -152,6 +154,7 @@ main() {
 	fputs("#define BASESYNTAX (basesyntax + SYNBASE)\n", hfile);
 	fputs("#define DQSYNTAX (dqsyntax + SYNBASE)\n", hfile);
 	fputs("#define SQSYNTAX (sqsyntax + SYNBASE)\n", hfile);
+	fputs("#define ARISYNTAX (arisyntax + SYNBASE)\n", hfile);
 	putc('\n', hfile);
 	output_type_macros();		/* is_digit, etc. */
 	putc('\n', hfile);
@@ -178,14 +181,26 @@ main() {
 	add("`", "CBQUOTE");
 	add("$", "CVAR");
 	add("}", "CENDVAR");
-	add("!*?[=", "CCTL");
+	add("!*?[=~:/", "CCTL");	/* ':/' for tilde - yuck */
 	print("dqsyntax");
 	init();
 	fputs("\n/* syntax table used when in single quotes */\n", cfile);
 	add("\n", "CNL");
 	add("'", "CENDQUOTE");
-	add("!*?[=", "CCTL");
+	add("!*?[=~:/", "CCTL");	/* ':/' for tilde - yuck */
 	print("sqsyntax");
+	init();
+	fputs("\n/* syntax table used when in arithmetic */\n", cfile);
+	add("\n", "CNL");
+	add("\\", "CBACK");
+	add("`", "CBQUOTE");
+	add("'", "CSQUOTE");
+	add("\"", "CDQUOTE");
+	add("$", "CVAR");
+	add("}", "CENDVAR");
+	add("(", "CLP");
+	add(")", "CRP");
+	print("arisyntax");
 	filltable("0");
 	fputs("\n/* character classification table */\n", cfile);
 	add("0123456789", "ISDIGIT");
@@ -227,6 +242,8 @@ init() {
 	syntax[base + CTLENDVAR] = "CCTL";
 	syntax[base + CTLBACKQ] = "CCTL";
 	syntax[base + CTLBACKQ + CTLQUOTE] = "CCTL";
+	syntax[base + CTLARI] = "CCTL";
+	syntax[base + CTLENDARI] = "CCTL";
 }
 
 
