@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_malloc.c	7.3 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,8 +57,9 @@ qaddr_t malloc(size, type, flags)
 			splx(s);
 			return (0);
 		}
+		alloc -= CLSIZE;		/* convert to base 0 */
 		if (vmemall(&kmempt[alloc], npg, &proc[0], CSYS) == 0) {
-			rmfree(kmemmap, npg, alloc);
+			rmfree(kmemmap, npg, alloc+CLSIZE);
 			splx(s);
 			return (0);
 		}
@@ -123,7 +124,7 @@ void free(addr, type)
 	if (1 << kup->ku_indx > MAXALLOCSAVE) {
 		alloc = btokmemx(addr);
 		(void) memfree(&kmempt[alloc], kup->ku_pagecnt, 0);
-		rmfree(kmemmap, (long)kup->ku_pagecnt, alloc);
+		rmfree(kmemmap, (long)kup->ku_pagecnt, alloc+CLSIZE);
 #ifdef KMEMSTATS
 		kup->ku_indx = 0;
 		kup->ku_pagecnt = 0;
