@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,6 +47,8 @@ extern	char *remglob();
 extern	char *getenv();
 extern	char *index();
 extern	char *rindex();
+extern	char *strerror();
+extern	int  errno;
 extern char reply_string[];
 
 char *mname;
@@ -292,16 +294,6 @@ setascii()
 settenex()
 {
 	stype[1] = "tenex";
-	settype(2, stype);
-}
-
-/*
- * Set ebcdic transfer type.
- */
-/*VARARGS*/
-setebcdic()
-{
-	stype[1] = "ebcdic";
 	settype(2, stype);
 }
 
@@ -993,7 +985,7 @@ lcd(argc, argv)
 		return;
 	}
 	if (chdir(argv[1]) < 0) {
-		perror(argv[1]);
+		fprintf(stderr, "local: %s: %s\n", argv[1], strerror(errno));
 		code = -1;
 		return;
 	}
