@@ -6,15 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
+#include <time.h>
 #include <tzfile.h>
+#include <errno.h>
 #include <utmp.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 /* Derived from the print routines in the ls(1) source code. */
 
@@ -24,7 +27,7 @@ printlong(name, accpath, sb)
 	char *accpath;			/* current valid path to filename */
 	struct stat *sb;		/* stat buffer */
 {
-	char modep[15], *user_from_uid(), *group_from_gid(), *strerror();
+	char modep[15], *user_from_uid(), *group_from_gid();
 
 	(void)printf("%6lu %4ld ", sb->st_ino, sb->st_blocks);
 	(void)strmode(sb->st_mode, modep);
@@ -71,10 +74,11 @@ printlink(name)
 	char *name;
 {
 	int lnklen;
-	char path[MAXPATHLEN + 1], *strerror();
+	char path[MAXPATHLEN + 1];
 
 	if ((lnklen = readlink(name, path, MAXPATHLEN)) == -1) {
-		(void)fprintf(stderr, "\nfind: %s: %s\n", name, strerror(errno));
+		(void)fprintf(stderr,
+		    "\nfind: %s: %s\n", name, strerror(errno));
 		return;
 	}
 	path[lnklen] = '\0';
