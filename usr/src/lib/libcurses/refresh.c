@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -35,15 +35,7 @@ wrefresh(win)
 	register int retval;
 	register short wy;
 
-	/* Make sure were in visual state. */
-	if (__endwin) {
-		tputs(VS, 0, __cputchar);
-		tputs(TI, 0, __cputchar);
-		__endwin = 0;
-	}
-
 	/* Initialize loop parameters. */
-
 	ly = curscr->cury;
 	lx = curscr->curx;
 	wy = 0;
