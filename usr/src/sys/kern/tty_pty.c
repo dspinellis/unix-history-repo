@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tty_pty.c	7.9 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -103,7 +103,9 @@ ptsopen(dev, flag)
 		tp->t_state |= TS_WOPEN;
 		if (flag&FNDELAY)
 			break;
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
+			return (error);
 	}
 	error = (*linesw[tp->t_line].l_open)(dev, tp, flag);
 	ptcwakeup(tp, FREAD|FWRITE);
@@ -139,12 +141,16 @@ again:
 			    u.u_procp->p_flag&SVFORK)
 				return (EIO);
 			pgsignal(u.u_procp->p_pgrp, SIGTTIN);
-			sleep((caddr_t)&lbolt, TTIPRI);
+			if (error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH,
+			    ttybg, 0))
+				return (error);
 		}
 		if (tp->t_canq.c_cc == 0) {
 			if (flag & IO_NDELAY)
 				return (EWOULDBLOCK);
-			sleep((caddr_t)&tp->t_canq, TTIPRI);
+			if (error = tsleep((caddr_t)&tp->t_canq,
+			    TTIPRI | PCATCH, ttyin, 0))
+				return (error);
 			goto again;
 		}
 		while (tp->t_canq.c_cc > 1 && uio->uio_resid > 0)
@@ -314,8 +320,10 @@ ptcread(dev, uio, flag)
 			return (0);	/* EOF */
 		if (flag & IO_NDELAY)
 			return (EWOULDBLOCK);
-if (ptydebug) printf("SLEEP(1) c_cf %d\n", u.u_procp->p_pid);
-		sleep((caddr_t)&tp->t_outq.c_cf, TTIPRI);
+if (ptydebug) printf("SLEEP(1) c_cf %d\n", u.u_procp->p_pid);	/* XXX */
+		if (error = tsleep((caddr_t)&tp->t_outq.c_cf, TTIPRI | PCATCH,
+		    ttyin, 0))
+			return (error);
 	}
 	if (pti->pt_flags & (PF_PKT|PF_UCNTL|PF_TIOC))
 		error = ureadc(0, uio);
@@ -521,7 +529,9 @@ block:
 		return (0);
 	}
 if (ptydebug) printf("SLEEP(2) c_cf %d\n", u.u_procp->p_pid);
-	sleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI);
+	if (error = tsleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI | PCATCH,
+	    ttyout, 0))
+		return (error);
 	goto again;
 }
 
