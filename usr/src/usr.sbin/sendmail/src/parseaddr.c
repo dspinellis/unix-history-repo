@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.63		%G%);
+SCCSID(@(#)parseaddr.c	3.64		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -193,9 +193,9 @@ parse(addr, a, copyf)
 static short StateTab[NSTATES][NSTATES] =
 {
    /*	oldst	chtype>	OPR	ATM	QST	SPC	ONE	*/
-	/*OPR*/		OPR|B,	ATM|B,	QST|MB,	SPC|MB,	ONE|B,
-	/*ATM*/		OPR|B,	ATM,	QST|MB,	SPC|MB,	ONE|B,
-	/*QST*/		QST,	QST,	OPR|MB,	QST,	QST,
+	/*OPR*/		OPR|B,	ATM|B,	QST|B,	SPC|MB,	ONE|B,
+	/*ATM*/		OPR|B,	ATM,	QST|B,	SPC|MB,	ONE|B,
+	/*QST*/		QST,	QST,	OPR,	QST,	QST,
 	/*SPC*/		OPR,	ATM,	QST,	SPC|M,	ONE,
 	/*ONE*/		OPR,	OPR,	OPR,	OPR,	OPR,
 };
