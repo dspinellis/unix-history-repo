@@ -1,4 +1,4 @@
-/*	main.c	1.10	(Berkeley) 83/10/13
+/*	main.c	1.11	(Berkeley) 83/10/13
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -90,7 +90,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.10	83/10/13";
+char	SccsId[] = "main.c	1.11	83/10/13";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
@@ -468,7 +468,7 @@ int baseline;
 					/*   starts on left), and put out the */
 					/*   user's ".GS" line. */
 		printf(".nr g1 %d\n.nr g2 %d\n", xright-xleft, ybottom-ytop);
-		printf("%s.nr g3 \\n(.f\n.nr g4 \\n(.s\n", GScommand);
+		printf(".br\n%s.nr g3 \\n(.f\n.nr g4 \\n(.s\n", GScommand);
 
 		lastx = xleft;		/* note where we are, (upper left */
 		lastyline = lasty = ytop;	/* corner of the picture) */
@@ -486,7 +486,7 @@ int baseline;
 					/* then restore everything to the way */
 					/* it was before the .GS */
 		printf("\\D't %du'\\D's %du'\n", DEFTHICK, DEFSTYLE);
-		printf(".sp -1\n.ft \\n(g3\n.ps \\n(g4\n%s", inputline);
+		printf(".br\n.ft \\n(g3\n.ps \\n(g4\n%s", inputline);
 	    } else {
 		interpret(inputline);	/* take commands from the input file */
 	    }
