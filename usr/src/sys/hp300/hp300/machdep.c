@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: machdep.c 1.68 92/01/20$
+ * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	7.34 (Berkeley) %G%
+ *	@(#)machdep.c	7.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -76,6 +76,7 @@ int	physmem = MAXMEM;	/* max supported memory, changes to actual */
 int	safepri = PSL_LOWIPL;
 
 extern	u_int lowram;
+extern	short exframesize[];
 
 /*
  * Console initialization: called early on from main,
@@ -87,27 +88,34 @@ consinit()
 
 	/*
 	 * Set cpuspeed immediately since cninit() called routines
-	 * might use delay.
+	 * might use delay.  Note that we only set it if a custom value
+	 * has not already been specified.
 	 */
-	switch (machineid) {
-	case HP_320:
-	case HP_330:
-	case HP_340:
-		cpuspeed = MHZ_16;
-		break;
-	case HP_350:
-	case HP_360:
-		cpuspeed = MHZ_25;
-		break;
-	case HP_370:
-		cpuspeed = MHZ_33;
-		break;
-	case HP_375:
-		cpuspeed = MHZ_50;
-		break;
-	case HP_380:
-		cpuspeed = MHZ_25 * 2;	/* XXX */
-		break;
+	if (cpuspeed == 0) {
+		switch (machineid) {
+		case HP_320:
+		case HP_330:
+		case HP_340:
+			cpuspeed = MHZ_16;
+			break;
+		case HP_350:
+		case HP_360:
+		case HP_380:
+			cpuspeed = MHZ_25;
+			break;
+		case HP_370:
+		case HP_433:
+			cpuspeed = MHZ_33;
+			break;
+		case HP_375:
+			cpuspeed = MHZ_50;
+			break;
+		default:	/* assume the fastest */
+			cpuspeed = MHZ_50;
+			break;
+		}
+		if (mmutype == MMU_68040)
+			cpuspeed *= 2;	/* XXX */
 	}
 	/*
          * Find what hardware is attached to this machine.
@@ -311,16 +319,18 @@ setregs(p, entry, retval)
 	u_long entry;
 	int retval[2];
 {
-	p->p_md.md_regs[PC] = entry & ~1;
+	struct frame *frame = (struct frame *)p->p_md.md_regs;
+
+	frame->f_pc = entry & ~1;
 #ifdef FPCOPROC
 	/* restore a null state frame */
 	p->p_addr->u_pcb.pcb_fpregs.fpf_null = 0;
 	m68881_restore(&p->p_addr->u_pcb.pcb_fpregs);
 #endif
 #ifdef HPUXCOMPAT
-	if (p->p_flag & SHPUX) {
+	if (p->p_md.md_flags & MDP_HPUX) {
 
-		p->p_md.md_regs[A0] = 0; /* not 68010 (bit 31), no FPA (30) */
+		frame->f_regs[A0] = 0; /* not 68010 (bit 31), no FPA (30) */
 		retval[0] = 0;		/* no float card */
 #ifdef FPCOPROC
 		retval[1] = 1;		/* yes 68881 */
@@ -354,11 +364,12 @@ setregs(p, entry, retval)
 	{
 		extern short sigcodetrap[];
 
-		if ((p->p_pptr->p_flag & SHPUX) && (p->p_flag & STRC)) {
-			p->p_addr->u_pcb.pcb_flags |= PCB_HPUXTRACE;
+		if ((p->p_pptr->p_md.md_flags & MDP_HPUX) &&
+		    (p->p_flag & STRC)) {
+			p->p_md.md_flags |= MDP_HPUXTRACE;
 			*sigcodetrap = 0x4E42;
 		} else {
-			p->p_addr->u_pcb.pcb_flags &= ~PCB_HPUXTRACE;
+			p->p_md.md_flags &= ~MDP_HPUXTRACE;
 			*sigcodetrap = 0x4E41;
 		}
 	}
@@ -393,6 +404,9 @@ identifycpu()
 		break;
 	case HP_380:
 		printf("380/425 (25Mhz)");
+		break;
+	case HP_433:
+		printf("433 (33Mhz)");
 		break;
 	default:
 		printf("\nunknown machine type %d\n", machineid);
@@ -457,12 +471,60 @@ identifycpu()
 #endif
 #if !defined(HP380)
 	case HP_380:
+	case HP_433:
 #endif
 		panic("CPU type not configured");
 	default:
 		break;
 	}
 }
+
+#ifdef USELEDS
+#include <hp300/hp300/led.h>
+
+int inledcontrol = 0;	/* 1 if we are in ledcontrol already, cheap mutex */
+char *ledaddr;
+
+/*
+ * Map the LED page and setup the KVA to access it.
+ */
+ledinit()
+{
+	extern caddr_t ledbase;
+
+	pmap_enter(kernel_pmap, (vm_offset_t)ledbase, (vm_offset_t)LED_ADDR,
+		   VM_PROT_READ|VM_PROT_WRITE, TRUE);
+	ledaddr = (char *) ((int)ledbase | (LED_ADDR & PGOFSET));
+}
+
+/*
+ * Do lights:
+ *	`ons' is a mask of LEDs to turn on,
+ *	`offs' is a mask of LEDs to turn off,
+ *	`togs' is a mask of LEDs to toggle.
+ * Note we don't use splclock/splx for mutual exclusion.
+ * They are expensive and we really don't need to be that precise.
+ * Besides we would like to be able to profile this routine.
+ */
+ledcontrol(ons, offs, togs)
+	register int ons, offs, togs;
+{
+	static char currentleds;
+	register char leds;
+
+	inledcontrol = 1;
+	leds = currentleds;
+	if (ons)
+		leds |= ons;
+	if (offs)
+		leds &= ~offs;
+	if (togs)
+		leds ^= togs;
+	currentleds = leds;
+	*ledaddr = ~leds;
+	inledcontrol = 0;
+}
+#endif
 
 #define SS_RTEFRAME	1
 #define SS_FPSTATE	2
@@ -540,7 +602,6 @@ sendsig(catcher, sig, mask, code)
 	register struct sigacts *psp = p->p_sigacts;
 	register short ft;
 	int oonstack, fsize;
-	extern short exframesize[];
 	extern char sigcode[], esigcode[];
 
 	frame = (struct frame *)p->p_md.md_regs;
@@ -554,7 +615,7 @@ sendsig(catcher, sig, mask, code)
 	 * the space with a `brk'.
 	 */
 #ifdef HPUXCOMPAT
-	if (p->p_flag & SHPUX)
+	if (p->p_md.md_flags & MDP_HPUX)
 		fsize = sizeof(struct sigframe) + sizeof(struct hpuxsigframe);
 	else
 #endif
@@ -611,11 +672,7 @@ sendsig(catcher, sig, mask, code)
 	      (caddr_t)kfp->sf_state.ss_frame.f_regs, sizeof frame->f_regs);
 	if (ft >= FMT7) {
 #ifdef DEBUG
-		if (ft != FMT9 && ft != FMTA && ft != FMTB
-#if defined(HP380)
-		    && mmutype != MMU_68040 || mmutype==MMU_68040 && ft != FMT7
-#endif
-		    )
+		if (ft > 15 || exframesize[ft] < 0)
 			panic("sendsig: bogus frame type");
 #endif
 		kfp->sf_state.ss_flags |= SS_RTEFRAME;
@@ -665,7 +722,7 @@ sendsig(catcher, sig, mask, code)
 	/*
 	 * Create an HP-UX style sigcontext structure and associated goo
 	 */
-	if (p->p_flag & SHPUX) {
+	if (p->p_md.md_flags & MDP_HPUX) {
 		register struct hpuxsigframe *hkfp;
 
 		hkfp = (struct hpuxsigframe *)&kfp[1];
@@ -736,7 +793,6 @@ sigreturn(p, uap, retval)
 	struct sigcontext tsigc;
 	struct sigstate tstate;
 	int flags;
-	extern short exframesize[];
 
 	scp = uap->sigcntxp;
 #ifdef DEBUG
@@ -750,7 +806,7 @@ sigreturn(p, uap, retval)
 	 * Grab context as an HP-UX style context and determine if it
 	 * was one that we contructed in sendsig.
 	 */
-	if (p->p_flag & SHPUX) {
+	if (p->p_md.md_flags & MDP_HPUX) {
 		struct hpuxsigcontext *hscp = (struct hpuxsigcontext *)scp;
 		struct hpuxsigcontext htsigc;
 
@@ -1026,6 +1082,9 @@ dumpsys()
 initcpu()
 {
 	parityenable();
+#ifdef USELEDS
+	ledinit();
+#endif
 }
 
 straytrap(pc, evec)
@@ -1259,7 +1318,7 @@ parityerror(fp)
 		printf("WARNING: kernel parity error ignored\n");
 #endif
 	} else {
-		regdump(fp->f_regs, 128);
+		regdump(fp, 128);
 		panic("kernel parity error");
 	}
 	return(1);
@@ -1329,9 +1388,9 @@ done:
 	return(found);
 }
 
-regdump(rp, sbytes)
-  int *rp; /* must not be register */
-  int sbytes;
+regdump(fp, sbytes)
+	struct frame *fp; /* must not be register */
+	int sbytes;
 {
 	static int doingdump = 0;
 	register int i;
@@ -1342,8 +1401,9 @@ regdump(rp, sbytes)
 		return;
 	s = splhigh();
 	doingdump = 1;
-	printf("pid = %d, pc = %s, ", curproc->p_pid, hexstr(rp[PC], 8));
-	printf("ps = %s, ", hexstr(rp[PS], 4));
+	printf("pid = %d, pc = %s, ",
+	       curproc ? curproc->p_pid : -1, hexstr(fp->f_pc, 8));
+	printf("ps = %s, ", hexstr(fp->f_sr, 4));
 	printf("sfc = %s, ", hexstr(getsfc(), 4));
 	printf("dfc = %s\n", hexstr(getdfc(), 4));
 	printf("Registers:\n     ");
@@ -1351,18 +1411,18 @@ regdump(rp, sbytes)
 		printf("        %d", i);
 	printf("\ndreg:");
 	for (i = 0; i < 8; i++)
-		printf(" %s", hexstr(rp[i], 8));
+		printf(" %s", hexstr(fp->f_regs[i], 8));
 	printf("\nareg:");
 	for (i = 0; i < 8; i++)
-		printf(" %s", hexstr(rp[i+8], 8));
+		printf(" %s", hexstr(fp->f_regs[i+8], 8));
 	if (sbytes > 0) {
-		if (rp[PS] & PSL_S) {
+		if (fp->f_sr & PSL_S) {
 			printf("\n\nKernel stack (%s):",
-			       hexstr((int)(((int *)&rp)-1), 8));
-			dumpmem(((int *)&rp)-1, sbytes, 0);
+			       hexstr((int)(((int *)&fp)-1), 8));
+			dumpmem(((int *)&fp)-1, sbytes, 0);
 		} else {
-			printf("\n\nUser stack (%s):", hexstr(rp[SP], 8));
-			dumpmem((int *)rp[SP], sbytes, 1);
+			printf("\n\nUser stack (%s):", hexstr(fp->f_regs[SP], 8));
+			dumpmem((int *)fp->f_regs[SP], sbytes, 1);
 		}
 	}
 	doingdump = 0;
@@ -1418,3 +1478,21 @@ hexstr(val, len)
 	}
 	return(nbuf);
 }
+
+#ifdef DEBUG
+char oflowmsg[] = "k-stack overflow";
+char uflowmsg[] = "k-stack underflow";
+
+badkstack(oflow, fr)
+	int oflow;
+	struct frame fr;
+{
+	extern char kstackatbase[];
+
+	printf("%s: sp should be %x\n", 
+	       oflow ? oflowmsg : uflowmsg,
+	       kstackatbase - (exframesize[fr.f_format] + 8));
+	regdump(&fr, 0);
+	panic(oflow ? oflowmsg : uflowmsg);
+}
+#endif
