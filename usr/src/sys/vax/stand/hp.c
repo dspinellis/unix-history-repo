@@ -1,4 +1,4 @@
-/*	hp.c	4.5	83/01/29	*/
+/*	hp.c	4.6	83/01/29	*/
 
 /*
  * RP??/RM?? disk driver
@@ -144,10 +144,10 @@ found:
 		tio = *io;
 		tio.i_bn = st->nspc * st->ncyl - st->nsect;
 		tio.i_ma = (char *)&hpbad[unit];
-		tio.i_cc = sizeof (hpbad);
+		tio.i_cc = sizeof (struct dkbad);
 		tio.i_flgs |= F_RDDATA;
 		for (i = 0; i < 5; i++) {
-			if (hpstrategy(&tio, READ) == sizeof (hpbad))
+			if (hpstrategy(&tio, READ) == sizeof (struct dkbad))
 				break;
 			tio.i_bn += 2;
 		}
