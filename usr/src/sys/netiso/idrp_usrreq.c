@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)idrp_usrreq.c	7.1 (Berkeley) %G%
+ *	@(#)idrp_usrreq.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
