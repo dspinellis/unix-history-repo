@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.82		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.83		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -292,6 +292,9 @@ extern STAB	*stab();
 **  STRUCT EVENT -- event queue.
 **
 **	Maintained in sorted order.
+**
+**	We store the pid of the process that set this event to insure
+**	that when we fork we will not take events intended for the parent.
 */
 
 struct event
@@ -299,6 +302,7 @@ struct event
 	time_t		ev_time;	/* time of the function call */
 	int		(*ev_func)();	/* function to call */
 	int		ev_arg;		/* argument to ev_func */
+	int		ev_pid;		/* pid that set this event */
 	struct event	*ev_link;	/* link to next item */
 };
 
