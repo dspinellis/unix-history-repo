@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.46	82/12/09	*/
+/*	kern_clock.c	4.47	82/12/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -283,7 +283,8 @@ timeout(fun, arg, tim)
 	pnew->c_arg = arg;
 	pnew->c_func = fun;
 	for (p1 = &calltodo; (p2 = p1->c_next) && p2->c_time < t; p1 = p2)
-		t -= p2->c_time;
+		if (p2->c_time > 0)
+			t -= p2->c_time;
 	p1->c_next = pnew;
 	pnew->c_next = p2;
 	pnew->c_time = t;
