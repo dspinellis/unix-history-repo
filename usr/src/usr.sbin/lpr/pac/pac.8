@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pac.8	6.1 (Berkeley) %G%
+.\"	@(#)pac.8	6.2 (Berkeley) %G%
 .\"
 .TH PAC 8 ""
 .UC 5
 .SH NAME
-pac \- printer/ploter accounting information
+pac \- printer/plotter accounting information
 .SH SYNOPSIS
 .B /etc/pac
 [
@@ -20,6 +20,8 @@ pac \- printer/ploter accounting information
 .B \-r
 ] [
 .B \-c
+] [
+.B \-m
 ] [ name ... ]
 .SH DESCRIPTION
 .I Pac
@@ -44,7 +46,9 @@ The
 .B \-p
 flag causes the value
 .I price
-to be used for the cost in dollars instead of the default value of 0.02.
+to be used for the cost in dollars instead of the default value of 0.02
+or the price specified in
+.IR /etc/printcap.
 .PP
 The
 .B \-c
@@ -60,6 +64,12 @@ The
 flag causes the accounting information to be summarized on the
 summary accounting file; this summarization is necessary since on a
 busy system, the accounting file can grow by several lines per day.
+.PP
+The
+.B \-m
+flag causes the host name to be ignored in the accounting file.  This
+allows for a user on multiple machines to have all of his printing
+charges grouped together.
 .SH FILES
 .ta 2i
 /usr/adm/?acct	raw accounting files
