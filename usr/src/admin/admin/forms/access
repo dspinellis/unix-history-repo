@@ -32,9 +32,11 @@ made available to me are to be used only to assist in the development of,
 and for the review of, Berkeley UNIX.  I will not copy any source or
 documentation from a Berkeley machine to any other machine without the
 explicit written or electronic approval of a CSRG staff member.  I will
-not make any source or documentation from Berkeley UNIX available to
-anyone else without the explicit written or electronic approval of a CSRG
-staff member.
+delete any source which I have copied once I am no longer reviewing or
+developing Berkeley UNIX.  I will not make any source or documentation
+from Berkeley UNIX available to anyone else without the explicit written
+or electronic approval of a CSRG staff member, unless it has been released
+as part of an official distribution made by the University of California.
 
 
 
