@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -732,15 +732,17 @@ int *length;
 	}
 	*p++ = c;
 	if (c == '\t')
-	    if (hardtabs && column < promptlen && !hard) {
-		if (eraseln && !dumb) {
+	    if (!hardtabs || column < promptlen && !hard) {
+		if (hardtabs && eraseln && !dumb) {
 		    column = 1 + (column | 7);
 		    tputs (eraseln, 1, putch);
 		    promptlen = 0;
 		}
 		else {
-		    for (--p; column & 7 && p < &Line[LINSIZ - 1]; column++) {
+		    for (--p; p < &Line[LINSIZ - 1];) {
 			*p++ = ' ';
+			if ((++column & 7) == 0)
+			    break;
 		    }
 		    if (column >= promptlen) promptlen = 0;
 		}
