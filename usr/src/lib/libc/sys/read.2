@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)read.2	8.1 (Berkeley) %G%
+.\"     @(#)read.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt READ 2
@@ -13,9 +13,9 @@
 .Nm readv
 .Nd read input
 .Sh SYNOPSIS
-.Fd #include <unistd.h>
 .Fd #include <sys/types.h>
 .Fd #include <sys/uio.h>
+.Fd #include <unistd.h>
 .Ft ssize_t
 .Fn read "int d" "void *buf" "size_t nbytes"
 .Ft int
@@ -40,11 +40,12 @@ For
 .Fn readv ,
 the 
 .Fa iovec
-structure is defined as
+structure is defined as:
+.Pp
 .Bd -literal -offset indent -compact
 struct iovec {
 	void *iov_base;
-	int iov_len;
+	size_t iov_len;
 };
 .Ed
 .Pp
