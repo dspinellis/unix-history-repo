@@ -75,7 +75,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpr.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpr.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -87,6 +87,7 @@ static char sccsid[] = "@(#)lpr.c	8.3 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 
 #include <dirent.h>
 #include <fcntl.h>
