@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.127		%G%);
+SCCSID(@(#)deliver.c	3.128		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -235,6 +235,10 @@ deliver(firstto)
 			stripquotes(user, FALSE);
 			stripquotes(host, FALSE);
 		}
+
+		/* hack attack -- delivermail compatibility */
+		if (m == ProgMailer && *user == '|')
+			user++;
 
 		/*
 		**  Do initial connection setup if needed.
