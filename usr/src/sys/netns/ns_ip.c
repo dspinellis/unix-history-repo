@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.3 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.4 (Berkeley) %G%
  */
 
 /*
@@ -133,8 +133,16 @@ idpip_input(m0)
 		return;
 	}
 	ip = mtod(m, struct ip *);
-	if (ip->ip_hl > (sizeof (struct ip) >> 2))
+	if (ip->ip_hl > (sizeof (struct ip) >> 2)) {
 		ip_stripoptions(ip, (struct mbuf *)0);
+		if (m->m_len < s) {
+			if ((m = m_pullup(m, s))==0) {
+				nsipif.if_ierrors++;
+				return;
+			}
+			ip = mtod(m, struct ip *);
+		}
+	}
 
 	/*
 	 * Make mbuf data length reflect IDP length.
@@ -152,8 +160,7 @@ idpip_input(m0)
 			nsip_badlen = m;
 			return;
 		}
-		m_adj(m, len - ip->ip_len);
-		/* ip->ip_len = len; */
+		/* Any extra will be trimmed off by the NS routines */
 	}
 	/*
 	 * Deliver to NS
@@ -221,7 +228,7 @@ nsipoutput(ifn, m0, dst)
 	 */
 	ip = mtod(m, struct ip *);
 	*(long *)ip = 0;
-	ip->ip_p = IPPROTO_PUP;
+	ip->ip_p = IPPROTO_IDP;
 	ip->ip_src = ifn->ifen_src;
 	ip->ip_dst = ifn->ifen_dst;
 	ip->ip_len = (u_short)len + sizeof (struct ip);
