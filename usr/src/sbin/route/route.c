@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983, 1989 The Regents of the University of California.
+ * Copyright (c) 1983, 1989, 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1989, 1991 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -63,7 +63,7 @@ union sockunion *so_addrs[] =
 typedef union sockunion *sup;
 int	pid, rtm_addrs, uid;
 int	s;
-int	forcehost, forcenet, doflush, nflag, af, qflag, tflag, Cflag, keyword();
+int	forcehost, forcenet, doflush, nflag, af, qflag, tflag, keyword();
 int	iflag, verbose, aflen = sizeof (struct sockaddr_in);
 int	locking, lockrest, debugonly;
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
@@ -83,7 +83,7 @@ usage(cp)
 	if (cp)
 		(void) fprintf(stderr, "route: botched keyword: %s\n", cp);
 	(void) fprintf(stderr,
-	    "usage: route [ -Cnqv ] cmd [[ -<qualifers> ] args ]\n");
+	    "usage: route [ -nqv ] cmd [[ -<qualifers> ] args ]\n");
 	exit(1);
 	/* NOTREACHED */
 }
@@ -117,11 +117,8 @@ main(argc, argv)
 	if (argc < 2)
 		usage((char *)NULL);
 
-	while ((ch = getopt(argc, argv, "Cnqtv")) != EOF)
+	while ((ch = getopt(argc, argv, "nqtv")) != EOF)
 		switch(ch) {
-		case 'C':
-			Cflag = 1;	/* Use old ioctls. */
-			break;
 		case 'n':
 			nflag = 1;
 			break;
@@ -145,8 +142,6 @@ main(argc, argv)
 	uid = getuid();
 	if (tflag)
 		s = open("/dev/null", O_WRONLY, 0);
-	else if (Cflag)
-		s = socket(AF_INET, SOCK_RAW, 0);
 	else
 		s = socket(PF_ROUTE, SOCK_RAW, 0);
 	if (s < 0)
@@ -158,10 +153,6 @@ main(argc, argv)
 			/* FALLTHROUGH */
 
 		case K_CHANGE:
-			if (Cflag)
-				usage("change or get with -C");
-			/* FALLTHROUGH */
-
 		case K_ADD:
 		case K_DELETE:
 			newroute(argc, argv);
@@ -580,9 +571,14 @@ newroute(argc, argv)
 				(void) getaddr(RTA_GATEWAY, *argv, &hp);
 			} else {
 				int ret = atoi(*argv);
+
 				if (ret == 0) {
-				    printf("%s,%s", "old usage of trailing 0",
-					   "assuming route to if\n");
+				    if (strcmp(*argv, "0") == 0)
+				        printf("%s,%s",
+					    "old usage of trailing 0",
+					    "assuming route to if\n");
+				    else
+					usage(NULL);
 				    iflag = 1;
 				    continue;
 				} else if (ret > 0 && ret < 10) {
@@ -606,22 +602,13 @@ newroute(argc, argv)
 		flags |= RTF_GATEWAY;
 	for (attempts = 1; ; attempts++) {
 		errno = 0;
-		if (Cflag && (af == AF_INET || af == AF_NS)) {
-			route.rt_flags = flags;
-			route.rt_dst = so_dst.sa;
-			route.rt_gateway = so_gate.sa;
-			if ((ret = ioctl(s, *cmd == 'a' ? SIOCADDRT : SIOCDELRT,
-			     (caddr_t)&route)) == 0)
-				break;
-		} else {
-		    if ((ret = rtmsg(*cmd, flags)) == 0)
-				break;
-		}
+		if ((ret = rtmsg(*cmd, flags)) == 0)
+			break;
 		if (errno != ENETUNREACH && errno != ESRCH)
 			break;
-		if (af == AF_INET && hp && hp->h_addr_list[1]) {
+		if (af == AF_INET && *gateway && hp && hp->h_addr_list[1]) {
 			hp->h_addr_list++;
-			bcopy(hp->h_addr_list[0], (caddr_t)&so_dst.sin.sin_addr,
+			bcopy(hp->h_addr_list[0], &so_gate.sin.sin_addr,
 			    hp->h_length);
 		} else
 			break;
@@ -629,11 +616,13 @@ newroute(argc, argv)
 	if (*cmd == 'g')
 		exit(0);
 	oerrno = errno;
-	(void) printf("%s %s %s: gateway %s", cmd, ishost? "host" : "net",
-		dest, gateway);
-	if (attempts > 1 && ret == 0)
-	    (void) printf(" (%s)",
-		inet_ntoa(((struct sockaddr_in *)&route.rt_gateway)->sin_addr));
+	(void) printf("%s %s %s", cmd, ishost? "host" : "net", dest);
+	if (*gateway) {
+		(void) printf(": gateway %s", gateway);
+		if (attempts > 1 && ret == 0 && af == AF_INET)
+		    (void) printf(" (%s)",
+			inet_ntoa(((struct sockaddr_in *)&route.rt_gateway)->sin_addr));
+	}
 	if (ret == 0)
 		(void) printf("\n");
 	else {
@@ -929,7 +918,7 @@ rtmsg(cmd, flags)
 	if (verbose)
 		print_rtmsg(&rtm, l);
 	if (debugonly)
-		return 0;
+		return (0);
 	if ((rlen = write(s, (char *)&m_rtmsg, l)) < 0) {
 		perror("writing to routing socket");
 		return (-1);
@@ -949,17 +938,21 @@ rtmsg(cmd, flags)
 	return (0);
 }
 
-mask_addr() {
+mask_addr()
+{
 	register char *cp1, *cp2;
 	int olen;
 
 	if ((rtm_addrs & RTA_DST) == 0)
 		return;
-	switch(so_dst.sa.sa_family) {
-	case AF_NS: case AF_INET: case 0:
+	switch (so_dst.sa.sa_family) {
+	case AF_NS:
+	case AF_INET:
+	case 0:
 		return;
 	case AF_ISO:
 		olen = MIN(so_dst.siso.siso_nlen, so_mask.sa.sa_len - 6);
+		break;
 	}
 	cp1 = so_mask.sa.sa_len + 1 + (char *)&so_dst;
 	cp2 = so_dst.sa.sa_len + 1 + (char *)&so_dst;
@@ -968,9 +961,10 @@ mask_addr() {
 	cp2 = so_mask.sa.sa_len + 1 + (char *)&so_mask;
 	while (cp1 > so_dst.sa.sa_data)
 		*--cp1 &= *--cp2;
-	switch(so_dst.sa.sa_family) {
+	switch (so_dst.sa.sa_family) {
 	case AF_ISO:
 		so_dst.siso.siso_nlen = olen;
+		break;
 	}
 }
 
@@ -1019,30 +1013,86 @@ print_getmsg(rtm, msglen)
 	register struct rt_msghdr *rtm;
 	int msglen;
 {
+	struct sockaddr *dst = NULL, *gate = NULL, *mask = NULL;
+	register struct sockaddr *sa;
+	register char *cp;
+	register int i;
+
+	(void) printf("   route to: %s\n", routename(so_addrs[0]));
 	if (rtm->rtm_version != RTM_VERSION) {
-		(void)printf("routing message version %d not understood\n",
+		(void)fprintf(stderr,
+		    "routing message version %d not understood\n",
 		    rtm->rtm_version);
 		return;
 	}
 	if (rtm->rtm_msglen > msglen) {
-		(void)printf("get length mismatch, in packet %d, returned %d\n",
+		(void)fprintf(stderr,
+		    "message length mismatch, in packet %d, returned %d\n",
 		    rtm->rtm_msglen, msglen);
 	}
-	(void) printf("RTM_GET: errno %d, flags:", rtm->rtm_errno); 
+	if (rtm->rtm_errno)  {
+		(void) fprintf(stderr, "RTM_GET: %s (errno %d)\n",
+		    strerror(rtm->rtm_errno), rtm->rtm_errno);
+		return;
+	}
+	cp = ((char *)(rtm + 1));
+	if (rtm->rtm_addrs)
+		for (i = 1; i; i <<= 1)
+			if (i & rtm->rtm_addrs) {
+				sa = (struct sockaddr *)cp;
+				switch (i) {
+				case RTA_DST:
+					dst = sa;
+					break;
+				case RTA_GATEWAY:
+					gate = sa;
+					break;
+				case RTA_NETMASK:
+					mask = sa;
+					break;
+				}
+				ADVANCE(cp, sa);
+			}
+	if (dst && mask)
+		mask->sa_family = dst->sa_family;	/* XXX */
+	if (dst)
+		(void)printf("destination: %s\n", routename(dst));
+	if (mask) {
+		int savenflag = nflag;
+
+		nflag = 1;
+		(void)printf("       mask: %s\n", routename(mask));
+		nflag = savenflag;
+	}
+	if (gate && rtm->rtm_flags & RTF_GATEWAY)
+		(void)printf("    gateway: %s\n", routename(gate));
+	(void)printf("      flags: ");
 	bprintf(stdout, rtm->rtm_flags, routeflags);
-	(void) printf("\nmetric values:\n  ");
-#define metric(f, e)\
-    printf("%s: %d%s", __STRING(f), rtm->rtm_rmx.__CONCAT(rmx_,f), e)
-	metric(recvpipe, ", ");
-	metric(sendpipe, ", ");
-	metric(ssthresh, ", ");
-	metric(rtt, "\n  ");
-	metric(rttvar, ", ");
-	metric(hopcount, ", ");
-	metric(mtu, ", ");
-	metric(expire, "\n");
-#undef metric
-	pmsg_common(rtm);
+
+#define lock(f)	((rtm->rtm_rmx.rmx_locks & __CONCAT(RTV_,f)) ? 'L' : ' ')
+#define msec(u)	(((u) + 500) / 1000)		/* usec to msec */
+
+	(void) printf("\n%s\n", "\
+ recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire");
+	printf("%8d%c ", rtm->rtm_rmx.rmx_recvpipe, lock(RPIPE));
+	printf("%8d%c ", rtm->rtm_rmx.rmx_sendpipe, lock(SPIPE));
+	printf("%8d%c ", rtm->rtm_rmx.rmx_ssthresh, lock(SSTHRESH));
+	printf("%8d%c ", msec(rtm->rtm_rmx.rmx_rtt), lock(RTT));
+	printf("%8d%c ", msec(rtm->rtm_rmx.rmx_rttvar), lock(RTTVAR));
+	printf("%8d%c ", rtm->rtm_rmx.rmx_hopcount, lock(HOPCOUNT));
+	printf("%8d%c ", rtm->rtm_rmx.rmx_mtu, lock(MTU));
+	if (rtm->rtm_rmx.rmx_expire)
+		rtm->rtm_rmx.rmx_expire -= time(0);
+	printf("%8d%c\n", rtm->rtm_rmx.rmx_expire, lock(EXPIRE));
+#undef lock
+#undef msec
+	if (verbose)
+		pmsg_common(rtm);
+	else if (rtm->rtm_addrs &~ (RTA_DST|RTA_GATEWAY|RTA_NETMASK)) {
+		(void) printf("sockaddrs: ");
+		bprintf(stdout, rtm->rtm_addrs,
+		    "\1DST\2GATEWAY\3NETMASK\4GENMASK\5IFP\6IFA\7AUTHOR");
+	}
 }
 
 void
@@ -1138,6 +1188,7 @@ sodump(su, which)
 	}
 	(void) fflush(stdout);
 }
+
 /* States*/
 #define VIRGIN	0
 #define GOTONE	1
@@ -1149,8 +1200,8 @@ sodump(su, which)
 
 void
 sockaddr(addr, sa)
-register char *addr;
-register struct sockaddr *sa;
+	register char *addr;
+	register struct sockaddr *sa;
 {
 	register char *cp = (char *)sa;
 	int size = sa->sa_len;
