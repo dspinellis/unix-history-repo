@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.68 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.69 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1833,7 +1833,7 @@ chownsafe(fd)
 	o_euid = geteuid();
 	o_gid = getgid();
 	o_egid = getegid();
-	fstat(fildes, &stbuf);
+	fstat(fd, &stbuf);
 	setresuid(stbuf.st_uid, stbuf.st_uid, -1);
 	setresgid(stbuf.st_gid, stbuf.st_gid, -1);
 	s = tmpnam(NULL);
