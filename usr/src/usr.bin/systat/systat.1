@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)systat.1	6.1 (Berkeley) %G%
+.\"	@(#)systat.1	6.2 (Berkeley) %G%
 .\"
 .TH SYSTAT 1 ""
 .UC 6
@@ -134,6 +134,102 @@ for particular uses, i.e. data, socket structures, etc.
 Take over the entire display and show a (rather crowded) compendium
 of statistics related to virtual memory usage, process scheduling,
 device interrupts, system name translation cacheing, disk i/o, etc.
+.PP
+The upper left quadrant of the screen shows the number
+of users logged in and the load average over the last one, five,
+and fifteen minute interval.
+Below this line are statistics on memory utilization.
+The first row of the table reports memory usage only among
+active process, that is process that have run in the previous 
+twenty seconds.
+The second row reports on memory usage of all processes.
+The first column reports on the number of physical pages
+claimed by processes.
+The second column reports the number of physical pages that
+are devoted to read only text pages.
+The third and fourth columns report the same two figures for
+virtual pages, that is the number of pages that would be
+needed if all processes had all of their pages.
+Finally the last column shows the number of physical pages
+on the free list.
+.PP
+Below the memory display is the disk usage display.
+It reports the number of seeks, transfers, and number
+of kilobyte blocks transferred per second averaged over the
+refresh period of the display (by default, five seconds).
+For some disks it also reports the average millisecond per seek.
+Note that the system only keeps statistics on at most four disks.
+.PP
+Below the disk display is a list of the
+average number of processes (over the last refresh interval)
+that are runable (`r'), in page wait (`p'),
+in disk wait other than paging (`d'),
+sleeping (`s'), and swapped out but desiring to run (`w').
+Below the queue length listing is a numerical listing and
+a bar graph showing the amount of
+system (shown as `='), user (shown as `>'),
+nice (shown as `-'), and idle time (shown as ` ').
+.PP
+At the bottom left are statistics on name translations.
+It lists the number names translated in the previous interval,
+the number and percentage of the translations that were
+handled by the system wide name translation cache, and
+the number and percentage of the translations that were
+handled by the per process name translation cache.
+.PP
+Under the date in the upper right hand quadrant are statistics
+on paging and swapping activity.
+The first two columns report the average number of pages
+brought in and out per second over the last refresh interval
+due to page faults and the paging daemon.
+The third and fourth columns report the average number of pages
+brought in and out per second over the last refresh interval
+due to swap requests initiated by the scheduler.
+The first row of the display shows the average
+number of disk transfers per second over the last refresh interval;
+the second row of the display shows the average
+number of pages transferred per second over the last refresh interval.
+.PP
+Below the paging statistics is a line listing the average number of
+total reclaims ('Rec'),
+intransit blocking page faults (`It'),
+swap text pages found in free list (`F/S'),
+file system text pages found in free list (`F/F'),
+reclaims from free list (`RFL'),
+pages freed by the clock daemon (`Fre'),
+and sequential process pages freed (`SFr') 
+per second over the refresh interval.
+.PP
+Below this line are statistics on the average number of
+zero filled pages (`zf') and demand filled text pages (`xf')
+per second over the refresh period.
+The first row indicates the number of requests that were
+resolved, the second row shows the number that were set up,
+and the last row shows the percentage of setup requests were
+actually used.
+Note that this percentage is usually less than 100%,
+however it may exceed 100% if a large number of requests
+are actually used long after they were set up during a
+period when no new pages are being set up. 
+Thus this figure is most interesting when observed over
+a long time period, such as from boot time
+(see below on getting such a display).
+.PP
+Below the page fill statistics is a column that
+lists the average number of context switches (`Csw'),
+traps (`Trp'), system calls (`Sys'), interrupts (`Int'),
+characters output to DZ ports using pseudo-DMA (`Pdm'),
+page faults (`Flt'), pages scanned by the page daemon (`Scn'),
+and revolutions of the page daemon's hand (`Rev')
+per second over the refresh interval.
+.PP
+Running down the right hand side of the display is a breakdown
+of the interrupts being handled by the system.
+At the top of the list is the total interrupts per second
+over the time interval.
+The rest of the column breaks down the total on a device
+by device basis. 
+Only devices that have interrupted at least once since boot time are shown.
 .IP netstat
 .br
 Display, in the lower window, network connections.  By default,
