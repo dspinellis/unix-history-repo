@@ -1,5 +1,5 @@
 #
-#	Makefile	1.17	87/12/11
+#	Makefile	1.18	88/09/22
 #
 # Makefile for PCC
 #
@@ -41,8 +41,8 @@ all: ccom sccom f1
 #
 # 'ccom' is a one-pass C compiler.
 #
-ccom:	${OBJS} ${DOBJS} rel.o
-	$(CC) $(LDFLAGS) ${OBJS} ${DOBJS} rel.o -o $(TESTDIR)/ccom
+ccom:	${OBJS} ${DOBJS}
+	$(CC) $(LDFLAGS) ${OBJS} ${DOBJS} -o $(TESTDIR)/ccom
 trees.o: $(P1ONEP) $M/trees.c
 	$(CC) -c $(COPTS) $M/trees.c
 optim.o: $(P1ONEP) $M/optim.c
@@ -91,8 +91,8 @@ allo.o: $(P2ONEP) $M/allo.c
 # 'sccom' is a C compiler that does single precision computations in
 #	single precision rather than double precision.
 #
-sccom:	${OBJS} ${SOBJS} rel.o
-	$(CC) $(LDFLAGS) ${OBJS} ${SOBJS} rel.o -o $(TESTDIR)/sccom
+sccom:	${OBJS} ${SOBJS}
+	$(CC) $(LDFLAGS) ${OBJS} ${SOBJS} -o $(TESTDIR)/sccom
 strees.o: $(P1ONEP) $M/trees.c
 	$(LN) $M/trees.c strees.c
 	$(CC) -c $(SCOPTS) strees.c
