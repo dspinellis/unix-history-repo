@@ -1,4 +1,4 @@
-/*	main.c	1.4	83/03/30
+/* main.c	1.5	83/05/13
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -31,28 +31,27 @@ extern POINT *PTInit(), *PTMakePoint();
 int	linethickness = 0;	/* brush styles */
 int	linmod = SOLID;
 char	chrtab[][16];
-char	*obuf;			/* output buffer DevRange x DevRange/8 */
+char	*obuf;			/* output buffer NumOfLin x DevRange/8 */
 int	bufsize;		/* output buffer size */
 int	lastx;
 int	lasty;
 int	angle, startx, starty, endx, endy;
-double	scale = 3.0;		/* Variables used to map gremlin screen */
+double	scale = 4.0;		/* Variables used to map gremlin screen */
 double	orgx = 0.0;		/* x and y origin of gremlin picture */
 double	orgy = 0.0;
 
 FILE	*pfp = stdout;		/* file descriptor of current picture */
 char	picture[] = "/usr/tmp/rastAXXXXXX";
 int	run = 13;		/* index of 'a' in picture[] */
-int	DevRange = 1536;	/* plot dimensions in pixels */
-int	DevRange8 = 1536/8;
-int	BytesPerLine = 264;	/* Bytes per raster line (different from range
-				   due to non-square paper). */
-int	lparg = 6;		/* index into lpargs */
+int	DevRange = Vxlen;	/* plot dimensions in pixels */
+int	DevRange8 = Vxlen/8;
+int	BytPrLin = Vbytperlin;	/* Bytes per raster line. (not DevRange8) */
+int	NumOfLin = Vylen;
 
+int	lparg = 6;		/* index into lpargs */
 char	*lpargs[50] = { "lpr", "-Pvarian", "-v", "-s", "-r", "-J", };
 
-/* variables used to print from font file */
-int	Orientation;
+int	Orientation;		/* variables used to print from font file */
 int	cfont = 0;
 int	csize = 0;
 struct	header header;
@@ -86,17 +85,19 @@ char *argv[];
 			file[gfil++] = arg;
 		else switch (*++arg) {
 		case 'W':	/* Print to wide (versatec) device */
-			scale = 4.0;
-			DevRange = 2048;
-			DevRange8 = 2048/8;
-			BytesPerLine = 880;
+			BytPrLin = Wbytperlin;
+			DevRange = Wxlen;
+			DevRange8 = Wxlen/8;
+			BytPrLin = Wbytperlin;
+			NumOfLin = Wylen;
 			lpargs[1] = "-Pversatec";
 			break;
 		case 'V':	/* Print to narrow (varian) device */
-			scale = 3.0;
-			DevRange = 1536;
-			DevRange8 = 1536/8;
-			BytesPerLine = 264;
+			BytPrLin = Vbytperlin;
+			DevRange = Vxlen;
+			DevRange8 = Vxlen/8;
+			BytPrLin = Vbytperlin;
+			NumOfLin = Vylen;
 			lpargs[1] = "-Pvarian";
 			break;
 		case '1':	/* select size 1 */
@@ -211,7 +212,7 @@ char *argv[];
 			}
 			break;
 		default:
-			fprintf(stderr, "unknown switch: %c", *arg);
+			fprintf(stderr, "unknown switch: %c\n", *arg);
 		}
 	}
 
@@ -219,7 +220,7 @@ char *argv[];
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, cleanup);
 	mktemp(picture);
-	if ((obuf = malloc(bufsize = DevRange * DevRange8)) == NULL) {
+	if ((obuf = malloc(bufsize = NumOfLin * DevRange8)) == NULL) {
 		fprintf(stderr, "gprint: ran out of memory for output buffer\n");
 		exit(1);
 	}
@@ -230,7 +231,7 @@ char *argv[];
 	for (k=0; k<gfil; k++) {
 		if (file[k] != NULL) {
 			if ((fp = fopen(file[k], "r")) == NULL) {
-				fprintf(stderr, "gprint: can't open %s", file[k]);
+				fprintf(stderr, "gprint: can't open %s\n", file[k]);
 				continue;
 			}
 			if (k == 0) {
@@ -276,20 +277,18 @@ char *argv[];
 		for (cp1 = obuf; cp1 < cp2; ) {
 			for (i = DevRange8; i--; cp1++)
 				putc(*cp1, pfp);
-			for (i = BytesPerLine - DevRange8; i--; )
+			for (i = BytPrLin - DevRange8; i--; )
 				putc('\0', pfp);
 		}
 		if (!WriteRaster)
 			fclose(pfp);
 	}
-/*
 	if (!WriteRaster) {
 		lpargs[lparg] = 0;
 		execv(LPR, lpargs);
 		fprintf(stderr, "gprint: can't exec %s\n", LPR);
 		cleanup();
 	}
-*/
 	exit(0);
 }
 
@@ -302,19 +301,18 @@ cleanup()
 }
 
 /*
- * Points should be in the range 0 <= x < DevRange, 0 <= y < DevRange.
+ * Points should be in the range 0 <= x < DevRange, 0 <= y < NumOfLin.
  * The origin is the top left-hand corner with increasing x towards the
  * right and increasing y going down.
- * The output array is DevRange x DevRange/8 pixels.
+ * The output array is NumOfLin x DevRange/8 pixels.
  */
 point(x, y)
 register int x, y;
 {
 	register unsigned byte;
 
-	if ((unsigned) x < DevRange && (unsigned) y < DevRange) {
+	if ((unsigned) x < DevRange && (unsigned) y < NumOfLin) {
 		byte = y * DevRange8 + (x >> 3);
 		obuf[byte] |= 1 << (7 - (x & 07));
-	} else
-		printf("(%d, %d) out of range\n", x, y);
+	}
 }
