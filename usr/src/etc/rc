@@ -1,5 +1,5 @@
 #
-#	@(#)rc	5.9 (Berkeley) %G%
+#	@(#)rc	5.10 (Berkeley) %G%
 #
 
 HOME=/; export HOME
@@ -47,20 +47,29 @@ fi
 swapon -a						>/dev/console 2>&1
 
 umount -a
-mount -a						>/dev/console 2>&1
+mount -a -t nonfs					>/dev/console 2>&1
 
 # clean up left-over files
 rm -f /etc/nologin
-rm -f /usr/spool/uucp/LCK.*
-rm -f /usr/spool/uucp/STST/*
-(cd /var/run; rm -rf *)
+rm -f /var/spool/uucp/LCK.*
+rm -f /var/spool/uucp/STST/*
+(cd /var/run; rm -rf *; : > utmp)
 
 # set hostname, turn on network
 . /etc/netstart
 
-echo 'starting system logger'				>/dev/console
+mount -a -t nfs &	# XXX shouldn't need background
+
+echo -n 'starting system logger'				>/dev/console
 rm -f /dev/log
 syslogd
+
+# $timedflags is imported from /etc/netstart;
+# if $timedflags == NO, timed isn't run.
+if [ X${timedflags} != X"NO" ]; then
+    echo -n ', time daemon'	>/dev/console;	timed $timedflags
+fi
+echo ""
 
 # /var/crash should be a directory or a symbolic link
 # to the crash directory if core dumps are to be saved.
@@ -88,7 +97,9 @@ fi
 
 echo preserving editor files  >/dev/console
 (cd /var/tmp; /usr/libexec/ex3.7preserve -a)
+
 echo clearing /tmp 	>/dev/console
+# prune quickly with one rm, then use find to clean up /tmp/[lq]*
 (cd /tmp; rm -rf [a-km-pr-zA-Z]* )
 (cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -r {} \; )
 
