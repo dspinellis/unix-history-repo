@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -41,12 +41,20 @@
  * routing and gateway routines maintaining information used to locate
  * interfaces.  These routines live in the files if.c and route.c
  */
+#ifndef _TIME_ /*  XXX fast fix for SNMP, going away soon */
+#ifdef KERNEL
+#include "../sys/time.h"
+#else
+#include <sys/time.h>
+#endif
+#endif
 
 /*
  * Structure defining a queue for a network interface.
  *
  * (Would like to call this struct ``if'', but C isn't PL/1.)
  */
+
 struct ifnet {
 	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
 	short	if_unit;		/* sub-unit for lower level driver */
@@ -81,6 +89,15 @@ struct ifnet {
 	u_char	if_type;		/* ethernet, tokenring, etc */
 	u_char	if_addrlen;		/* media address length */
 	u_char	if_hdrlen;		/* media header length */
+/* more statistics here to avoid recompiling netstat */
+	struct	timeval if_lastchange;	/* last updated */
+	int	if_ibytes;		/* total number of octets received */
+	int	if_obytes;		/* total number of octets sent */
+	int	if_imcasts;		/* packets received via multicast */
+	int	if_omcasts;		/* packets sent via multicast */
+	int	if_iqdrops;		/* dropped on input, this interface */
+	int	if_noproto;		/* destined for unsupported protocol */
+	int	if_baudrate;		/* linespeed */
 };
 
 #define	IFF_UP		0x1		/* interface is up */
