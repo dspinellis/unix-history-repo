@@ -1,4 +1,4 @@
-/*	if_imp.c	4.30	82/05/02	*/
+/*	if_imp.c	4.31	82/05/06	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -544,10 +544,10 @@ bad:
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 start:
-	splx(s);
 	icp = &imp_softc[ifp->if_unit].imp_cb;
 	if (icp->ic_oactive == 0)
 		(*icp->ic_start)(ifp->if_unit);
+	splx(s);
 	return (0);
 }
 
