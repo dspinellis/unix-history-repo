@@ -125,7 +125,7 @@ right_only: leapseconds ${TDATA}
 	    ../${OBJ}/zic -d ${TZDIR} -L leapseconds ${TDATA})
 
 other_two: leapseconds ${TDATA}
-	(cd ${.CURDIR}/datfiles;
+	(cd ${.CURDIR}/datfiles; \
 	    ../${OBJ}/zic -d ${TZDIR}/posix -L /dev/null ${TDATA})
 	(cd ${.CURDIR}/datfiles; \
 	    ../${OBJ}/zic -d ${TZDIR}/right -L leapseconds ${TDATA})
