@@ -1,4 +1,10 @@
-/*	if_ec.c	6.8	85/05/04	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)if_ec.c	6.9 (Berkeley) %G%
+ */
 
 #include "ec.h"
 
@@ -20,14 +26,23 @@
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+
+#ifdef INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
+#endif
+
 #ifdef PUP
 #include "../netpup/pup.h"
+#endif PUP
+
+#ifdef NS
+#include "../netns/ns.h"
+#include "../netns/ns_if.h"
 #endif
 
 #include "../vax/cpu.h"
@@ -491,6 +506,13 @@ ecread(unit)
 		arpinput(&es->es_ac, m);
 		goto setup;
 #endif
+#ifdef NS
+	case ETHERTYPE_NS:
+		schednetisr(NETISR_NS);
+		inq = &nsintrq;
+		break;
+
+#endif
 	default:
 		m_freem(m);
 		goto setup;
@@ -556,6 +578,24 @@ ecoutput(ifp, m0, dst)
 			goto gottrailertype;
 		}
 		type = ETHERTYPE_IP;
+		off = 0;
+		goto gottype;
+#endif
+#ifdef NS
+	case AF_NS:
+ 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
+		    (caddr_t)edst, sizeof (edst));
+
+		if (!bcmp((caddr_t)edst, (caddr_t)&ns_broadhost,
+			sizeof(edst))) {
+
+				mcopy = m_copy(m, 0, (int)M_COPYALL);
+		} else if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost,
+			sizeof(edst))) {
+
+				return(looutput(&loif, m, dst));
+		}
+		type = ETHERTYPE_NS;
 		off = 0;
 		goto gottype;
 #endif
@@ -782,11 +822,27 @@ ecioctl(ifp, cmd, data)
 		ecinit(ifp->if_unit);
 
 		switch (ifa->ifa_addr.sa_family) {
+#ifdef INET
 		case AF_INET:
 			((struct arpcom *)ifp)->ac_ipaddr =
 				IA_SIN(ifa)->sin_addr;
 			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
 			break;
+#endif
+#ifdef NS
+		case AF_NS:
+		    {
+			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+
+			if (ns_nullhost(*ina)) {
+				ina->x_host = * (union ns_host *) 
+				     (ec_softc[ifp->if_unit].es_addr);
+			} else {
+				ec_setaddr(ina->x_host.c_host,ifp->if_unit);
+			}
+			break;
+		    }
+#endif
 		}
 		break;
 
@@ -795,4 +851,43 @@ ecioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
+}
+
+ec_setaddr(physaddr,unit)
+u_char *physaddr;
+int unit;
+{
+	struct ec_softc *es = &ec_softc[unit];
+	struct uba_device *ui = ecinfo[unit];
+	register struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
+	register char nibble;
+	register int i, j;
+	/*
+	 * Use the ethernet address supplied
+	 * Routine Courtesy Bill Nesheim, Cornell University.
+	 */
+	
+	addr->ec_rcr = 0;
+	/* load address of first controller */
+	for (i = 0; i < 6; i++) { /* 6 bytes of address */
+	    es->es_addr[i] = physaddr[i];
+	    nibble = physaddr[i] & 0xf; /* lower nibble */
+	    addr->ec_rcr = (nibble << 8);
+	    addr->ec_rcr = (nibble << 8) + EC_ASTEP; /* latch nibble */
+	    addr->ec_rcr = (nibble << 8);
+	    for (j=0; j < 4; j++) {
+		addr->ec_rcr = 0;
+		addr->ec_rcr = EC_ASTEP; /* step counter */
+		addr->ec_rcr = 0;
+	    }
+	    nibble = (physaddr[i] >> 4) & 0xf; /* upper nibble */
+	    addr->ec_rcr = (nibble << 8);
+	    addr->ec_rcr = (nibble << 8) + EC_ASTEP; /* latch nibble */
+	    addr->ec_rcr = (nibble << 8);
+	    for (j=0; j < 4; j++) {
+		addr->ec_rcr = 0;
+		addr->ec_rcr = EC_ASTEP; /* step counter */
+		addr->ec_rcr = 0;
+	    }
+	}
 }
