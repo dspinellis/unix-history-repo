@@ -1,8 +1,10 @@
-/*	param.h	1.9	87/05/13	*/
+/*	param.h	1.9	87/05/21	*/
 
 /*
  * Machine dependent constants for TAHOE.
  */
+
+#define	MACHINE	"tahoe"
 
 #ifndef ENDIAN
 /*
