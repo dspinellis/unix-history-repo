@@ -1,0 +1,702 @@
+diff -rc ../gawk-2.11.orig/Makefile ./Makefile
+*** ../gawk-2.11.orig/Makefile	Mon Nov 13 13:51:42 1989
+--- ./Makefile	Fri Aug 17 15:50:18 1990
+***************
+*** 103,114 ****
+  # need to customize this file below this point.
+  #
+  
+! FLAGS= $(MISSING) $(DEBUG)
+  CFLAGS= $(FLAGS) $(DEBUGGER) $(PROFILE) $(OPTIMIZE) $(WARN)
+  
+  # object files
+  AWKOBJS = main.o eval.o builtin.o msg.o debug.o io.o field.o array.o node.o \
+! 		version.o missing.o
+  
+  ALLOBJS = $(AWKOBJS) awk.tab.o
+  
+--- 103,117 ----
+  # need to customize this file below this point.
+  #
+  
+! FLAGS= $(MISSING) $(DEBUG) -DSNMP
+  CFLAGS= $(FLAGS) $(DEBUGGER) $(PROFILE) $(OPTIMIZE) $(WARN)
++ SNMP-C	=	snmp.c
++ SNMP-O	=	snmp.o
++ SNMP-LIB=	-lisnmp -lisode
+  
+  # object files
+  AWKOBJS = main.o eval.o builtin.o msg.o debug.o io.o field.o array.o node.o \
+! 		version.o missing.o $(SNMP-O)
+  
+  ALLOBJS = $(AWKOBJS) awk.tab.o
+  
+***************
+*** 118,124 ****
+  
+  # source and documentation files
+  SRC =	main.c eval.c builtin.c msg.c \
+! 	debug.c io.c field.c array.c node.c missing.c
+  
+  ALLSRC= $(SRC) awk.tab.c
+  
+--- 121,127 ----
+  
+  # source and documentation files
+  SRC =	main.c eval.c builtin.c msg.c \
+! 	debug.c io.c field.c array.c node.c missing.c $(SNMP-C)
+  
+  ALLSRC= $(SRC) awk.tab.c
+  
+***************
+*** 154,160 ****
+  
+  # rules to build gawk
+  gawk: $(ALLOBJS) $(GNUOBJS)
+! 	$(CC) -o gawk $(CFLAGS) $(ALLOBJS) $(GNUOBJS) -lm
+  
+  $(AWKOBJS): awk.h
+  
+--- 157,163 ----
+  
+  # rules to build gawk
+  gawk: $(ALLOBJS) $(GNUOBJS)
+! 	$(CC) -o gawk $(CFLAGS) $(ALLOBJS) $(GNUOBJS) $(SNMP-LIB) -lm
+  
+  $(AWKOBJS): awk.h
+  
+diff -rc ../gawk-2.11.orig/array.c ./array.c
+*** ../gawk-2.11.orig/array.c	Mon Nov 13 13:51:44 1989
+--- ./array.c	Fri Aug 17 15:21:52 1990
+***************
+*** 35,41 ****
+--- 35,46 ----
+  #define MAKE_POS(v) (v & ~0x80000000)	/* make number positive */
+  
+  NODE *
++ #ifndef	SNMP
+  concat_exp(tree)
++ #else
++ concat_exp(tree,isnmp)
++ int	isnmp;
++ #endif
+  NODE *tree;
+  {
+  	NODE *r;
+***************
+*** 51,58 ****
+--- 56,73 ----
+  	r = force_string(tree_eval(tree->lnode));
+  	if (tree->rnode == NULL)
+  		return r;
++ #ifdef	SNMP
++ 	if (isnmp) {
++ 	    subseplen = Ndot_string -> stlen;
++ 	    subsep = Ndot_string -> stptr;
++ 	}
++ 	else {
++ #endif
+  	subseplen = SUBSEP_node->lnode->stlen;
+  	subsep = SUBSEP_node->lnode->stptr;
++ #ifdef	SNMP
++ 	}
++ #endif
+  	len = r->stlen + subseplen + 1;
+  	emalloc(str, char *, len, "concat_exp");
+  	memcpy(str, r->stptr, r->stlen+1);
+***************
+*** 89,94 ****
+--- 104,113 ----
+  	int i;
+  	NODE *bucket, *next;
+  
++ #ifdef	SNMP
++ 	if (symbol -> magic)
++ 	    fatal ("split into SNMP array variable not allowed");
++ #endif
+  	if (symbol->var_array == 0)
+  		return;
+  	for (i = 0; i < ASSOC_HASHSIZE; i++) {
+***************
+*** 132,137 ****
+--- 151,161 ----
+  {
+  	register NODE *bucket;
+  
++ #ifdef	SNMP
++ 	if (symbol -> magic)
++ 	    fatal ("assoc_find: internal error");
++ #endif
++ 
+  	for (bucket = symbol->var_array[hash1]; bucket; bucket = bucket->ahnext) {
+  		if (cmp_nodes(bucket->ahname, subs))
+  			continue;
+***************
+*** 151,159 ****
+--- 175,192 ----
+  
+  	if (symbol->type == Node_param_list)
+  		symbol = stack_ptr[symbol->param_cnt];
++ #ifdef	SNMP
++ 	if (symbol -> magic)
++ 	    return *assoc_lookup (symbol, concat_exp (subs, 1))
++ 			!= Nnull_string;
++ #endif
+  	if (symbol->var_array == 0)
+  		return 0;
++ #ifndef	SNMP
+  	subs = concat_exp(subs);
++ #else
++ 	subs = concat_exp(subs,0);
++ #endif
+  	hash1 = hash_calc(subs);
+  	if (assoc_find(symbol, subs, hash1) == NULL) {
+  		free_temp(subs);
+***************
+*** 180,185 ****
+--- 213,224 ----
+  
+  	hash1 = hash_calc(subs);
+  
++ #ifdef	SNMP
++ 	if (symbol -> magic) {
++ 	    snmp_get (symbol, force_string (subs) -> stptr);
++ 	    return &symbol -> var_value;
++ 	}
++ #endif
+  	if (symbol->var_array == 0) {	/* this table really should grow
+  					 * dynamically */
+  		emalloc(symbol->var_array, NODE **, (sizeof(NODE *) *
+***************
+*** 210,218 ****
+--- 249,265 ----
+  	register NODE *bucket, *last;
+  	NODE *subs;
+  
++ #ifdef	SNMP
++ 	if (symbol -> magic)
++ 	    fatal ("delete into SNMP array variable not allowed");
++ #endif
+  	if (symbol->var_array == 0)
+  		return;
++ #ifndef	SNMP
+  	subs = concat_exp(tree);
++ #else
++ 	subs = concat_exp(tree,0);
++ #endif
+  	hash1 = hash_calc(subs);
+  
+  	last = NULL;
+***************
+*** 234,244 ****
+--- 281,300 ----
+  }
+  
+  struct search *
++ #ifndef	SNMP
+  assoc_scan(symbol)
++ #else
++ assoc_scan(symbol,instance)
++ NODE *instance;
++ #endif
+  NODE *symbol;
+  {
+  	struct search *lookat;
+  
++ #ifdef	SNMP
++ 	if (symbol -> magic)
++ 	    return snmp_assoc_scan (symbol,instance);
++ #endif
+  	if (!symbol->var_array)
+  		return 0;
+  	emalloc(lookat, struct search *, sizeof(struct search), "assoc_scan");
+***************
+*** 245,257 ****
+--- 301,326 ----
+  	lookat->numleft = ASSOC_HASHSIZE;
+  	lookat->arr_ptr = symbol->var_array;
+  	lookat->bucket = symbol->var_array[0];
++ #ifndef	SNMP
+  	return assoc_next(lookat);
++ #else
++ 	return assoc_next(symbol, lookat);
++ #endif
+  }
+  
+  struct search *
++ #ifndef	SNMP
+  assoc_next(lookat)
++ #else
++ assoc_next(symbol, lookat)
++ NODE *symbol;
++ #endif
+  struct search *lookat;
+  {
++ #ifdef	SNMP
++ 	if (symbol -> magic)
++ 	    return snmp_assoc_next (lookat, 0);
++ #endif
+  	for (; lookat->numleft; lookat->numleft--) {
+  		while (lookat->bucket != 0) {
+  			lookat->retval = lookat->bucket->ahname;
+diff -rc ../gawk-2.11.orig/awk.h ./awk.h
+*** ../gawk-2.11.orig/awk.h	Mon Nov 13 13:51:46 1989
+--- ./awk.h	Fri Aug 17 15:21:53 1990
+***************
+*** 62,68 ****
+  #endif
+  
+  #ifdef __STDC__
+! extern void *malloc(unsigned), *realloc(void *, unsigned);
+  extern void free(char *);
+  extern char *getenv(char *);
+  
+--- 62,68 ----
+  #endif
+  
+  #ifdef __STDC__
+! extern char *malloc(unsigned), *realloc(void *, unsigned);
+  extern void free(char *);
+  extern char *getenv(char *);
+  
+***************
+*** 224,229 ****
+--- 224,235 ----
+  	Node_K_while,		/* lnode is condtional, rnode is stuff to run */
+  	Node_K_for,		/* lnode is for_struct, rnode is stuff to run */
+  	Node_K_arrayfor,	/* lnode is for_struct, rnode is stuff to run */
++ #ifdef	SNMP
++ 				/* init: target
++ 				   cond: instance (optional)
++ 				   incr: array
++ 				 */
++ #endif
+  	Node_K_break,		/* no subs */
+  	Node_K_continue,	/* no stuff */
+  	Node_K_print,		/* lnode is exp_list, rnode is redirect */
+***************
+*** 245,250 ****
+--- 251,259 ----
+  
+  	/* Variables */
+  	Node_var,		/* rnode is value, lnode is array stuff */
++ #ifdef	SNMP
++ 				/* magic is pointer to (OT) */
++ #endif
+  	Node_var_array,		/* array is ptr to elements, asize num of
+  				 * eles */
+  	Node_val,		/* node is a value - type in flags */
+***************
+*** 298,303 ****
+--- 307,315 ----
+  			char *name;
+  			short number;
+  			unsigned char recase;
++ #ifdef	SNMP
++ 			caddr_t cookie;
++ #endif
+  		} nodep;
+  		struct {
+  			AWKNUM fltnum;	/* this is here for optimal packing of
+***************
+*** 341,346 ****
+--- 353,361 ----
+  #define lnode	sub.nodep.l.lptr
+  #define nextp	sub.nodep.l.nextnode
+  #define rnode	sub.nodep.r.rptr
++ #ifdef	SNMP
++ #define	magic	sub.nodep.cookie
++ #endif
+  #define source_file	sub.nodep.name
+  #define	source_line	sub.nodep.number
+  #define	param_cnt	sub.nodep.number
+***************
+*** 533,539 ****
+--- 548,558 ----
+  extern	NODE **get_lhs(NODE *, int);
+  extern	void do_deref(void );
+  extern	struct search *assoc_scan(NODE *);
++ #ifndef	SNMP
+  extern	struct search *assoc_next(struct search *);
++ #else	SNMP
++ extern  struct search *assoc_next(NODE *symbol, struct search *lookat);
++ #endif	SNMP
+  extern	NODE **assoc_lookup(NODE *, NODE *);
+  extern	double r_force_number(NODE *);
+  extern	NODE *r_force_string(NODE *);
+***************
+*** 608,610 ****
+--- 627,658 ----
+  #endif
+  
+  extern char casetable[];	/* for case-independent regexp matching */
++ 
++ 
++ #ifdef	SNMP
++ extern	NODE   *AGENT_node,
++ 	       *COMMUNITY_node,
++ 	       *DIAGNOSTIC_node,
++ 	       *ERROR_node,
++ 	       *RETRIES_node,
++ 	       *TIMEOUT_node;
++ 
++ extern	NODE   *Ndot_string;
++ 
++ extern	int	snmp_enabled;
++ extern	char   *snmp_file;
++ 
++ 
++ #ifdef	__STDC__
++ int check_snmp(NODE *r, char *name);
++ int snmp_get(NODE *ptr, char *instname);
++ char *snmp_name(NODE *ptr);
++ struct search *snmp_assoc_scan(NODE *symbol);
++ struct search *snmp_assoc_next(struct search *lookat, int done);
++ #else
++ int	check_snmp ();
++ int	snmp_get ();
++ char   *snmp_name ();
++ struct search *snmp_assoc_scan (), *snmp_assoc_next ();
++ #endif
++ #endif
+diff -rc ../gawk-2.11.orig/builtin.c ./builtin.c
+*** ../gawk-2.11.orig/builtin.c	Mon Nov 13 13:51:49 1989
+--- ./builtin.c	Fri Aug 17 15:14:58 1990
+***************
+*** 533,538 ****
+--- 533,606 ----
+  		fflush(fp);
+  }
+  
++ #ifdef	SNMP
++ NODE   *do_band (tree)
++ NODE   *tree;
++ {
++ #ifdef	sun386
++     long	l;
++ #endif
++     unsigned long d1,
++ 		  d2;
++     NODE   *s1,
++ 	   *s2;
++ 
++     get_two (tree, &s1, &s2);
++ 
++ #ifdef	sun386
++     l = force_number (s1);
++     d1 = (unsigned long) l;
++ #else
++     d1 = (unsigned long) force_number (s1);
++ #endif
++ 
++ #ifdef	sun386
++     l = force_number (s2);
++     d2 = (unsigned long) l;
++ #else
++     d2 = (unsigned long) force_number (s2);
++ #endif
++ 
++     free_temp (s1);
++     free_temp (s2);
++ 
++     return tmp_number ((AWKNUM) ((unsigned long) (d1 & d2)));
++ }
++ 
++ NODE   *do_bor (tree)
++ NODE   *tree;
++ {
++ #ifdef	sun386
++     long	l;
++ #endif
++     unsigned long d1,
++ 		  d2;
++     NODE   *s1,
++ 	   *s2;
++ 
++     get_two (tree, &s1, &s2);
++ 
++ #ifdef	sun386
++     l = force_number (s1);
++     d1 = (unsigned long) l;
++ #else
++     d1 = (unsigned long) force_number (s1);
++ #endif
++ 
++ #ifdef	sun386
++     l = force_number (s2);
++     d2 = (unsigned long) l;
++ #else
++     d2 = (unsigned long) force_number (s2);
++ #endif
++ 
++     free_temp (s1);
++     free_temp (s2);
++ 
++     return tmp_number ((AWKNUM) ((unsigned long) (d1 | d2)));
++ }
++ #endif
++ 
+  NODE *
+  do_sqrt(tree)
+  NODE *tree;
+diff -rc ../gawk-2.11.orig/debug.c ./debug.c
+*** ../gawk-2.11.orig/debug.c	Mon Nov 13 13:51:51 1989
+--- ./debug.c	Fri Aug 17 15:14:59 1990
+***************
+*** 107,114 ****
+--- 107,122 ----
+  		{
+  		struct search *l;
+  
++ #ifndef	SNMP
+  		printf("(0x%x Array)\n", ptr);
+  		for (l = assoc_scan(ptr); l; l = assoc_next(l)) {
++ #else
++ 		printf("(0x%x Array%s)\n", ptr,
++ 		       ptr -> magic ? " {SNMP}": "");
++ 		if (ptr -> magic)
++ 		    return;
++ 		for (l = assoc_scan(ptr); l; l = assoc_next(ptr, l)) {
++ #endif
+  			printf("\tindex: ");
+  			print_parse_tree(l->retval);
+  			printf("\tvalue: ");
+***************
+*** 344,349 ****
+--- 352,361 ----
+  			for (buc = variables[n]; buc; buc = buc->hnext) {
+  				if (buc->hvalue == ptr) {
+  					printf("%.*s", buc->hlength, buc->hname);
++ #ifdef	SNMP
++ 					if (ptr -> magic)
++ 					    printf ("{SNMP}");
++ #endif
+  					n = HASHSIZE;
+  					break;
+  				}
+diff -rc ../gawk-2.11.orig/eval.c ./eval.c
+*** ../gawk-2.11.orig/eval.c	Mon Nov 13 13:51:53 1989
+--- ./eval.c	Fri Aug 17 15:21:52 1990
+***************
+*** 302,308 ****
+--- 302,314 ----
+  		if (t->type == Node_param_list)
+  			t = stack_ptr[t->param_cnt];
+  		stable_tree = tree;
++ #ifndef	SNMP
+  		for (l = assoc_scan(t); l; l = assoc_next((struct search *)l)) {
++ #else
++ 		for (l = assoc_scan (t, tree -> forloop -> cond);
++ 			    l;
++ 			    l = assoc_next (t, l)) {
++ #endif
+  			deref = *((NODE **) lhs);
+  			do_deref();
+  			*lhs = dupnode(l->retval);
+***************
+*** 318,323 ****
+--- 324,333 ----
+  				break;
+  
+  			case TAG_BREAK:
++ #ifdef	SNMP
++ 				if (t -> magic)
++ 				    (void) snmp_assoc_next (l, 1);
++ #endif
+  				RESTORE_BINDING(loop_tag_stack, loop_tag, loop_tag_valid);
+  				field_num = -1;
+  				return 1;
+***************
+*** 916,922 ****
+--- 926,936 ----
+  		 */
+  		if (arg->type == Node_param_list)
+  			arg = stack_ptr[arg->param_cnt];
++ #ifndef	SNMP
+  		if (arg->type == Node_var_array)
++ #else
++ 		if (arg -> type == Node_var_array && !arg -> magic)
++ #endif
+  			*r = *arg;
+  		else {
+  			n = tree_eval(arg);
+***************
+*** 984,989 ****
+--- 998,1008 ----
+  		arg = argp->lnode;
+  		n = *sp++;
+  		if (arg->type == Node_var && n->type == Node_var_array) {
++ #ifdef	SNMP
++ 			if (arg -> magic)
++ 			    fatal ("array assignment to SNMP scalar variable \"%s\"",
++ 				   snmp_name (arg));
++ #endif
+  			arg->var_array = n->var_array;
+  			arg->type = Node_var_array;
+  		}
+***************
+*** 1035,1040 ****
+--- 1054,1068 ----
+  	switch (ptr->type) {
+  	case Node_var:
+  	case Node_var_array:
++ #ifdef	SNMP
++ 	    if (ptr -> magic)
++ 		if (assign)
++ 		    fatal ("attempt to set SNMP %s variable \"%s\"",
++ 			   ptr -> type == Node_var ? "scalar" : "array",
++ 			   snmp_name (ptr));
++ 	        else
++ 		    snmp_get (ptr, (char *) NULL);
++ #endif
+  		if (ptr == NF_node && (int) NF_node->var_value->numbr == -1)
+  			(void) get_field(HUGE-1, assign); /* parse record */
+  		deref = ptr->var_value;
+***************
+*** 1071,1077 ****
+--- 1099,1113 ----
+  		n = ptr->lnode;
+  		if (n->type == Node_param_list)
+  			n = stack_ptr[n->param_cnt];
++ #ifdef	SNMP
++ 	        if (n -> magic && assign)
++ 		    fatal ("attempt to set SNMP array variable \"%s\"",
++ 			   snmp_name (n));
++ 		aptr = assoc_lookup(n,
++ 				    concat_exp(ptr->rnode, n -> magic ? 1 : 0));
++ #else
+  		aptr = assoc_lookup(n, concat_exp(ptr->rnode));
++ #endif
+  		deref = *aptr;
+  #ifdef DEBUG
+  		if (deref->type != Node_val)
+diff -rc ../gawk-2.11.orig/node.c ./node.c
+*** ../gawk-2.11.orig/node.c	Mon Nov 13 13:52:13 1989
+--- ./node.c	Fri Aug 17 15:15:01 1990
+***************
+*** 277,282 ****
+--- 277,285 ----
+  #endif
+  	it->type = ty;
+  	it->flags = MALLOC;
++ #ifdef	SNMP
++ 	it->magic = NULL;
++ #endif
+  #ifdef MEMDEBUG
+  	fprintf(stderr, "node: new: %0x\n", it);
+  #endif
+*** ../gawk-2.11.orig/awk.y	Mon Nov 13 13:51:48 1989
+--- awk.y	Fri Aug 17 16:57:20 1990
+***************
+*** 325,330 ****
+--- 325,335 ----
+  		{ $$ = node ($3, Node_K_while, $6); }
+  	| LEX_DO opt_nls statement LEX_WHILE '(' exp r_paren opt_nls
+  		{ $$ = node ($6, Node_K_do, $3); }
++ 	| LEX_FOR '(' NAME LEX_IN NAME comma exp r_paren opt_nls statement
++ 	  {
++ 		$$ = node ($10, Node_K_arrayfor, make_for_loop(variable($3),
++ 			$7, variable($5)));
++ 	  }
+  	| LEX_FOR '(' NAME LEX_IN NAME r_paren opt_nls statement
+  	  {
+  		$$ = node ($8, Node_K_arrayfor, make_for_loop(variable($3),
+***************
+*** 684,689 ****
+--- 689,697 ----
+  	*do_split(),	*do_system(),	*do_int(),	*do_close(),
+  	*do_atan2(),	*do_sin(),	*do_cos(),	*do_rand(),
+  	*do_srand(),	*do_match(),	*do_tolower(),	*do_toupper(),
++ #ifdef	SNMP
++ 	*do_band (),	*do_bor (),
++ #endif
+  	*do_sub(),	*do_gsub();
+  
+  /* Special functions for debugging */
+***************
+*** 697,702 ****
+--- 705,714 ----
+  	{ "BEGIN",	Node_illegal,		LEX_BEGIN,	0,	0 },
+  	{ "END",	Node_illegal,		LEX_END,	0,	0 },
+  	{ "atan2",	Node_builtin,		LEX_BUILTIN,	0,	do_atan2 },
++ #ifdef	SNMP
++ 	{ "bit_and",	Node_builtin,		LEX_BUILTIN,	0,	do_band },
++ 	{ "bit_or",	Node_builtin,		LEX_BUILTIN,	0,	do_bor },
++ #endif
+  #ifdef DEBUG
+  	{ "bp",		Node_builtin,		LEX_BUILTIN,	0,	do_bp },
+  #endif
+***************
+*** 1680,1686 ****
+--- 1692,1706 ----
+  	register NODE *r;
+  
+  	if ((r = lookup(variables, name)) == NULL)
++ #ifdef	SNMP
++ 	{
++ #endif
+  		r = install(variables, name,
+  			node(Nnull_string, Node_var, (NODE *) NULL));
++ #ifdef	SNMP
++ 		if (snmp_enabled && r)
++ 		    snmp_check (r, name);
++ 	}
++ #endif
+  	return r;
+  }
+*** ../gawk-2.11.orig/main.c	Mon Nov 13 13:52:08 1989
+--- main.c	Fri Aug 17 17:00:30 1990
+***************
+*** 94,101 ****
+--- 94,106 ----
+   */
+  #define EXTENSIONS	8	/* where to clear */
+  #ifdef DEBUG
++ #ifndef	SNMP
+  char awk_opts[] = "F:f:v:caeCVdD";
+  #else
++ char awk_opts[] = "F:f:v:caeCVdDsS";
++ extern int debug;
++ #endif
++ #else
+  char awk_opts[] = "F:f:v:caeCV";
+  #endif
+  
+***************
+*** 192,198 ****
+--- 197,213 ----
+  			debugging++;
+  			yydebug = 2;
+  			break;
++ 
++ #ifdef	SNMP
++ 		case 's':
++ 			debug = 1;
++ 			break;
++ 
++ 		case 'S':
++ 			debug = 2;
++ 			break;
+  #endif
++ #endif
+  
+  #ifndef STRICT
+  		case 'c':
+***************
+*** 483,488 ****
+--- 498,512 ----
+  	RSTART_node = spc_var("RSTART", make_number(0.0));
+  	SUBSEP_node = spc_var("SUBSEP", make_string("\034", 1));
+  	IGNORECASE_node = spc_var("IGNORECASE", make_number(0.0));
++ #ifdef	SNMP
++ 	if (snmp_init ())
++ 	    AGENT_node = spc_var ("AGENT", make_string ("localhost", 9));
++ 	COMMUNITY_node = spc_var ("COMMUNITY", make_string ("public", 6));
++ 	DIAGNOSTIC_node = spc_var ("DIAGNOSTIC", Nnull_string);
++ 	ERROR_node = spc_var ("ERROR", make_number (0.0));
++ 	RETRIES_node = spc_var ("RETRIES", make_number (3.0));
++ 	TIMEOUT_node = spc_var ("TIMEOUT", make_number (10.0));
++ #endif
+  
+  	ENVIRON_node = spc_var("ENVIRON", Nnull_string);
+  	for (i = 0; environ[i]; i++) {

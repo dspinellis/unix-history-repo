@@ -1,0 +1,304 @@
+function ip_stats() {
+	didone = 0;
+	for (i in ipForwarding) {
+	    didone = 1;
+
+	    printf "ip (acting as %s):\n",
+		    ipForwarding == 1 ? "gateway" : "host";
+		printf "%9s packets received\n", ipInReceives;
+		printf "%9s packets with header errors\n", ipInHdrErrors;
+		printf "%9s packets discarded due to congestion\n",
+		    ipInDiscards;
+		printf "%9s datagrams for unknown ULP\n", ipInUnknownProtos;
+		printf "%9s datagrams delivered to ULPs\n", ipInDelivers;
+	    printf "\n";
+		printf "%9s of %s datagrams reassembled\n",
+			ipReasmOKs, ipReasmReqds;
+		printf "%9s of %s+%s datagrams fragmented\n",
+			ipFragOKs, ipFragCreates, ipFragFails;
+	    printf "\n";
+		printf "%9s datagrams forwarded\n", ipForwDatagrams;
+		printf "%9s datagrams sent by ULPs\n", ipOutRequests;
+		printf "%9s packets discarded due to congestion\n",
+			ipOutDiscards;
+		printf "%9s packets discarded due to no route\n",
+			ipOutNoRoutes;
+	    printf "\n";
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "ip statistics: %s\n\n", DIAGNOSTIC;
+}
+
+function icmp_stats() {
+    didone = 0;
+    for (i in icmpInMsgs) {
+	didone = 1;
+
+	printf "icmp:\n";
+	    printf "%9s datagrams received\n", icmpInMsgs;
+	    printf "%9s datagrams received in error\n", icmpInErrors;
+	    printf "\tInput histogram:\n"
+	    if (i = icmpInDestUnreachs)
+		printf "\t\tdestination unreachable: %d\n", i;
+	    if (i = icmpInTimeExcds)
+		printf "\t\ttime exceeded: %d\n", i;
+	    if (i = icmpInParmProbs)
+		printf "\t\tparameter problem: %d\n", i;
+	    if (i = icmpInSrcQuenchs)
+		printf "\t\tsource quench: %d\n", i;
+	    if (i = icmpInRedirects)
+		printf "\t\tredirect: %d\n", i;
+	    if (i = icmpInEchos)
+		printf "\t\techo request: %d\n", i;
+	    if (i = icmpInEchoReps)
+		printf "\t\techo reply: %d\n", i;
+	    if (i = icmpInTimestamps)
+		printf "\t\ttimestamp request: %d\n", i;
+	    if (i = icmpInTimestampReps)
+		printf "\t\ttimestamp reply: %d\n", i;
+	    if (i = icmpInAddrMasks)
+		printf "\t\taddress mask request: %d\n", i;
+	    if (i = icmpInAddrMaskReps)
+		printf "\t\taddress mask reply: %d\n", i;
+	printf "\n";
+	    printf "%9s datagrams sent\n", icmpOutMsgs;
+	    printf "%9s datagrams discarded due to error\n", icmpOutErrors;
+	    printf "\tOutput histogram:\n"
+	    if (i = icmpOutDestUnreachs)
+		printf "\t\tdestination unreachable: %d\n", i;
+	    if (i = icmpOutTimeExcds)
+		printf "\t\ttime exceeded: %d\n", i;
+	    if (i = icmpOutParmProbs)
+		printf "\t\tparameter problem: %d\n", i;
+	    if (i = icmpOutSrcQuenchs)
+		printf "\t\tsource quench: %d\n", i;
+	    if (i = icmpOutRedirects)
+		printf "\t\tredirect: %d\n", i;
+	    if (i = icmpOutEchos)
+		printf "\t\techo request: %d\n", i;
+	    if (i = icmpOutEchoReps)
+		printf "\t\techo reply: %d\n", i;
+	    if (i = icmpOutTimestamps)
+		printf "\t\ttimestamp request: %d\n", i;
+	    if (i = icmpOutTimestampReps)
+		printf "\t\ttimestamp reply: %d\n", i;
+	    if (i = icmpOutAddrMasks)
+		printf "\t\taddress mask request: %d\n", i;
+	    if (i = icmpOutAddrMaskReps)
+		printf "\t\taddress mask reply: %d\n", i;
+	printf "\n";
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "icmp statistics: %s\n\n", DIAGNOSTIC;
+}
+
+function rtoa(r) {
+    if (r in to)
+	return to[r];
+
+    return (r ? r : "unknown");
+}
+
+function tcp_stats() {
+    didone = 0;
+    for (i in tcpRtoAlgorithm) {
+	didone = 1;
+
+	to[1] = "other"; to[2] = "constant" ; to[3] = "rsre"; to[4] = "vanj";
+	printf "tcp (using %s algorithm):\n", rtoa(tcpRtoAlgorithm);
+	    printf "%9s segments received\n", tcpInSegs;
+	    printf "%9s segments with header errors\n", tcpInErrs;
+	printf "\n";
+	    printf "%9s connection attempts failed\n", tcpAttemptFails;
+	    printf "%9s RSTs received on connections\n", tcpEstabResets;
+	printf "\n";
+	    printf "%9s segments sent\n", tcpOutSegs;
+	    printf "%9s segments retransmitted\n", tcpRetransSegs;
+	    printf "%9s RSTs sent\n", tcpOutRsts;
+	printf "\n";
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "tcp statistics: %s\n\n", DIAGNOSTIC;
+}
+
+function udp_stats() {
+    didone = 0;
+    for (i in udpInDatagrams) {
+	didone = 1;
+
+	printf "udp:\n";
+	    printf "%9s datagrams received\n", udpInDatagrams;
+	    printf "%9s datagrams for unknown port\n", udpNoPorts;
+	    printf "%9s datagrams with header errors\n", udpInErrors;
+	printf "\n";
+	    printf "%9s datagrams sent\n", udpOutDatagrams;
+	printf "\n";
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "udp statistics: %s\n\n", DIAGNOSTIC;
+}
+
+function clnp_stats() {
+    for (i in clnpForwarding) {
+	didone = 1;
+
+	printf "clnp (acting as %s-system):\n",
+		clnpForwarding == 1 ? "intermediate" : "end";
+	    printf "%9s packets received\n", clnpInReceives;
+	    printf "%9s packets with header errors\n", clnpInHdrErrors;
+	    printf "%9s packets discarded due to congestion\n", clnpInDiscards;
+	    printf "%9s datagrams for unknown ULP\n", clnpInUnknownULPs;
+	    printf "%9s datagrams delivered to ULPs\n", clnpInDelivers;
+	printf "\n";
+	    printf "%9s of %s datagrams reassembled\n",
+		    clnppReasmOKs, clnpReasmReqds;
+	    printf "%9s of %s+%s datagrams segmented\n",
+		    clnpSegOKs, clnpSegCreates, clnpSegFails;
+	printf "\n";
+	    printf "%9s datagrams forwarded\n", clnpForwPDUs;
+	    printf "%9s datagrams sent by ULPs\n", clnpOutRequests;
+	    printf "%9s packets discarded due to congestion\n", 
+		    clnpOutDiscards;
+	    printf "%9s packets discarded due to no route\n", clnpOutNoRoutes;
+	printf "\n";
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "clnp statistics: %s\n\n", DIAGNOSTIC;
+}
+
+function error_stats() {
+    didone = 0;
+    for (i in clnpInErrors) {
+	didone = 1;
+
+	printf "clnp error:\n";
+	    printf "%9s error PDUs received\n", clnpInErrors;
+	    printf "\tInput histogram:\n";
+	    if (i = clnpInErrUnspecs)
+		printf "\t\tclnpInErrUnspecs: %d\n", i;
+	    if (i = clnpInErrProcs)
+		printf "\t\tclnpInErrProcs: %d\n", i;
+	    if (i = clnpInErrCksums)
+		printf "\t\tclnpInErrCksums: %d\n", i;
+	    if (i = clnpInErrCongests)
+		printf "\t\tclnpInErrCongests: %d\n", i;
+	    if (i = clnpInErrHdrs)
+		printf "\t\tclnpInErrHdrs: %d\n", i;
+	    if (i = clnpInErrSegs)
+		printf "\t\tclnpInErrSegs: %d\n", i;
+	    if (i = clnpInErrIncomps)
+		printf "\t\tclnpInErrIncomps: %d\n", i;
+	    if (i = clnpInErrDups)
+		printf "\t\tclnpInErrDups: %d\n", i;
+	    if (i = clnpInErrUnreachDsts)
+		printf "\t\tclnpInErrUnreachDsts: %d\n", i;
+	    if (i = clnpInErrUnknownDsts)
+		printf "\t\tclnpInErrUnknownDsts: %d\n", i;
+	    if (i = clnpInErrSRUnspecs)
+		printf "\t\tclnpInErrSRUnspecs: %d\n", i;
+	    if (i = clnpInErrSRSyntaxes)
+		printf "\t\tclnpInErrSRSyntaxes: %d\n", i;
+	    if (i = clnpInErrSRUnkAddrs)
+		printf "\t\tclnpInErrSRUnkAddrs: %d\n", i;
+	    if (i = clnpInErrSRBadPaths)
+		printf "\t\tclnpInErrSRBadPaths: %d\n", i;
+	    if (i = clnpInErrHops)
+		printf "\t\tclnpInErrHops: %d\n", i;
+	    if (i = clnpInErrHopReassms)
+		printf "\t\tclnpInErrHopReassms: %d\n", i;
+	    if (i = clnpInErrUnsOptions)
+		printf "\t\tclnpInErrUnsOptions: %d\n", i;
+	    if (i = clnpInErrUnsVersions)
+		printf "\t\tclnpInErrUnsVersions: %d\n", i;
+	    if (i = clnpInErrUnsSecurities)
+		printf "\t\tclnpInErrUnsSecurities: %d\n", i;
+	    if (i = clnpInErrUnsSRs)
+		printf "\t\tclnpInErrUnsSRs: %d\n", i;
+	    if (i = clnpInErrUnsRRs)
+		printf "\t\tclnpInErrUnsRRs: %d\n", i;
+	    if (i = clnpInErrInterferences)
+		printf "\t\tclnpInErrInterferences: %d\n", i;
+	printf "\n";
+	    printf "%9s error PDUs sent\n", clnpOutErrors;
+	    printf "\tOutput histogram:\n";
+	    if (i = clnpOutErrUnspecs)
+		printf "\t\tclnpOutErrUnspecs: %d\n", i;
+	    if (i = clnpOutErrProcs)
+		printf "\t\tclnpOutErrProcs: %d\n", i;
+	    if (i = clnpOutErrCksums)
+		printf "\t\tclnpOutErrCksums: %d\n", i;
+	    if (i = clnpOutErrCongests)
+		printf "\t\tclnpOutErrCongests: %d\n", i;
+	    if (i = clnpOutErrHdrs)
+		printf "\t\tclnpOutErrHdrs: %d\n", i;
+	    if (i = clnpOutErrSegs)
+		printf "\t\tclnpOutErrSegs: %d\n", i;
+	    if (i = clnpOutErrIncomps)
+		printf "\t\tclnpOutErrIncomps: %d\n", i;
+	    if (i = clnpOutErrDups)
+		printf "\t\tclnpOutErrDups: %d\n", i;
+	    if (i = clnpOutErrUnreachDsts)
+		printf "\t\tclnpOutErrUnreachDsts: %d\n", i;
+	    if (i = clnpOutErrUnknownDsts)
+		printf "\t\tclnpOutErrUnknownDsts: %d\n", i;
+	    if (i = clnpOutErrSRUnspecs)
+		printf "\t\tclnpOutErrSRUnspecs: %d\n", i;
+	    if (i = clnpOutErrSRSyntaxes)
+		printf "\t\tclnpOutErrSRSyntaxes: %d\n", i;
+	    if (i = clnpOutErrSRUnkAddrs)
+		printf "\t\tclnpOutErrSRUnkAddrs: %d\n", i;
+	    if (i = clnpOutErrSRBadPaths)
+		printf "\t\tclnpOutErrSRBadPaths: %d\n", i;
+	    if (i = clnpOutErrHops)
+		printf "\t\tclnpOutErrHops: %d\n", i;
+	    if (i = clnpOutErrHopReassms)
+		printf "\t\tclnpOutErrHopReassms: %d\n", i;
+	    if (i = clnpOutErrUnsOptions)
+		printf "\t\tclnpOutErrUnsOptions: %d\n", i;
+	    if (i = clnpOutErrUnsVersions)
+		printf "\t\tclnpOutErrUnsVersions: %d\n", i;
+	    if (i = clnpOutErrUnsSecurities)
+		printf "\t\tclnpOutErrUnsSecurities: %d\n", i;
+	    if (i = clnpOutErrUnsSRs)
+		printf "\t\tclnpOutErrUnsSRs: %d\n", i;
+	    if (i = clnpOutErrUnsRRs)
+		printf "\t\tclnpOutErrUnsRRs: %d\n", i;
+	    if (i = clnpOutErrInterferences)
+		printf "\t\tclnpOutErrInterferences: %d\n", i;
+	printf "\n";
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "clnp error statistics: %s\n\n", DIAGNOSTIC;
+}
+
+function esis_stats() {
+    didone = 0;
+    for (i in esisESHins) {
+	didone = 1;
+
+	printf "es-is:\n";
+	    printf "%9s ESHs received\n", esisESHins;
+	    printf "%9s ISHs received\n", esisISHins;
+	    printf "%9s RDUs received\n", esisRDUins;
+	printf "\n";
+	    printf "%9s ESHs sent\n", esisESHouts;
+	    printf "%9s ISHs sent\n", esisISHouts;
+	    printf "%9s RDUs sent\n", esisRDUouts;
+	printf "\n";
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "es-is statistics: %s\n\n", DIAGNOSTIC;
+}
+
+BEGIN {
+	ip_stats();
+	icmp_stats();
+	tcp_stats();
+	udp_stats();
+	if (!oflag)
+	    exit(0);
+
+	clnp_stats();
+	error_stats();
+	esis_stats();
+      }
