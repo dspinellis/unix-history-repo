@@ -16,13 +16,19 @@ btree_open, hash_open, recno_open \- database access methods
 #include <db.h>
 
 DB *
-btree_open(const char *file, int flags, int mode, const BTREEINFO * openinfo);
+btree_open(const char *file, int flags, int mode,
+.ti +5
+const BTREEINFO * openinfo);
 
 DB *
-hash_open(const char *file, int flags, int mode, const HASHINFO * openinfo);
+hash_open(const char *file, int flags, int mode,
+.ti +5
+const HASHINFO * openinfo);
 
 DB *
-recno_open(const char *file, int flags, int mode, const RECNOINFO * openinfo);
+recno_open(const char *file, int flags, int mode,
+.ti +5
+const RECNOINFO * openinfo);
 .ft R
 .fi
 .SH DESCRIPTION
@@ -60,24 +66,22 @@ is a pointer to an access method specific structure described below.
 The open routines return a pointer to a DB structure on success and NULL
 on error.
 The DB structure contains at least the following fields:
-.PP
+.sp
+.nf
 typedef struct {
 .RS
-void *openinfo;
-.br
 int (*close)(const DB *db);
-.br
-int (*delete)(const DB *db, const DBT *key, u_long flag);
-.br
-int (*get)(const DB *db, DBT *key, DBT *data, u_long flag);
-.br
-int (*put)(const DB *db, const DBT *key, const DBT *data, u_long flag);
-.br
-int (*seq)(const DB *db, DBT *key, DBT *data, u_long flag);
-.br
 int (*sync)(const DB *db);
+int (*del)(const DB *db, const DBT *key, u_long flags);
+int (*get)(const DB *db, DBT *key, DBT *data, u_long flags);
+int (*put)(const DB *db, const DBT *key, const DBT *data,
+.ti +5
+u_long flags);
+int (*seq)(const DB *db, DBT *key, DBT *data, u_long flags);
+void *openinfo;
 .RE
 } DB;
+.fi
 .PP
 The elements of this structure consist of a pointer to an access method
 specific structure and a set of routines which perform various functions.
@@ -100,7 +104,7 @@ routines return -1 on error (setting
 .IR errno )
 and 0 on success.
 .TP
-delete
+del
 A pointer to a routine to remove key/data pairs from the database.
 .I Delete
 routines return -1 on error (setting
@@ -178,7 +182,7 @@ by
 .IP
 Sequential key/data pair retrieval may begin at any time, and the
 position of the ``cursor'' is not affected by calls to the
-.IR delete ,
+.IR del ,
 .IR get ,
 .IR put ,
 or
@@ -650,7 +654,7 @@ or
 .IR fsync (2).
 .PP
 The
-.IR delete ,
+.IR del ,
 .IR get ,
 .I put
 and
