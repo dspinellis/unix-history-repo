@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.2 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -50,6 +50,7 @@
  * nfs vfs operations.
  */
 int nfs_mount();
+int nfs_start();
 int nfs_unmount();
 int nfs_root();
 extern int nfs_statfs();
@@ -59,6 +60,7 @@ int nfs_vptofh();
 
 struct vfsops nfs_vfsops = {
 	nfs_mount,
+	nfs_start,
 	nfs_unmount,
 	nfs_root,
 	nfs_statfs,
@@ -225,6 +227,18 @@ bad:
 	m_freem(saddr);
 	free((caddr_t)nmp, M_NFSMNT);
 	return (error);
+}
+
+/*
+ * Make a filesystem operational.
+ * Nothing to do at the moment.
+ */
+nfs_start(mp, flags)
+	struct mount *mp;
+	int flags;
+{
+
+	return (0);
 }
 
 /*
