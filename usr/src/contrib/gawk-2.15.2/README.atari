@@ -1,0 +1,37 @@
+Gawk on Atari has been compiled and tested using gcc compiler
+(versions 1.4 and 2.2.2) both with and without -mshort flag.  Other
+compilers can be used but if sizeof(pointer) != sizeof(int) this
+code will not compile correctly with non-ANSI compiler (prototypes
+and library).
+
+Compiled executables were tested and with minor modifications, due
+to differences in environment and/or shell, succesfully completed
+at least the following tests:
+awf, pearls, resub, chem, swaplns, delete, messages, argarray,
+longwrds, getline, inftest, spiece2top, fstabplus, compare, arrayref,
+rs, fsrs, rand, fsbs, negexp, ugh2, asgext, anchgsub, splitargv,
+fieldwidths, ignorecase, posix, manyfiles, igncfs, lisp, regtest,
+awkpath, reparse, nfset.
+
+Nearly all of these test do not require any adjustments to run, but a
+modified test suite with a driving Makefile (for gulam) is available
+on a request from Michal Jaegermann, ntomczak@vm.ucs.ualberta.ca,
+via e-mail.
+
+TOS and MiNT
+-----------
+Setup for Atari assumes that gawk will be used under TOS.  In
+particular atari/system.c source is for a system function which nicely
+cooperates with gulam shell and pipes are simulated with temporary
+files.  If you plan to run gawk under MiNT then you likely want a
+different system function and real pipes.  For that purpose do not
+define SYSTEM_MISSING in a configuration file and do not define
+PIPES_SIMULATED in io.c file.  Please note that in the later case gawk
+calls, in gawk_popen(), a function execl() with a hard-coded name of
+"/bin/sh".  You want likely to change that to get a name and some
+arguments from an environment variable.  This was not done here in
+order to avoid changes which may prove troublesome in a general
+distribution.  Subdirectory ./atari contains also a file textrd.c with
+a bug fix for old versions of gcc libraries.  This bug is currently
+fixed and the file is not used, but it is left as a convenience for
+those who may not updated yet their libraries.
