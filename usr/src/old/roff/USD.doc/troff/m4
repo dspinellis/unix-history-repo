@@ -1,4 +1,4 @@
-.\"	@(#)m4	5.1 (Berkeley) %G%
+.\"	@(#)m4	6.1 (Berkeley) %G%
 .\"
 .tr |
 .mh
@@ -25,10 +25,10 @@ are \fIalways\fR subject to splitting after those characters,
 whether or not automatic hyphenation is on or off.
 .h1
 .bt
-\fB&nh\fR	hyphenate	-	E	\
+\fB&nh\fR	nohyphenate	-	E	\
 Automatic hyphenation is turned off.
 .bt
-\fB&hy\fIN\fR	on,\fIN=\fR1	on,\fIN=\fR1	E	\
+\fB&hy\fIN\fR	off,\fIN=\fR1	on,\fIN=\fR1	E	\
 Automatic hyphenation is turned on
 for \fIN\fR\|\(>=1, or off for \fIN=\fR\|0.
 If \fIN=\fR\|2, \fIlast\fR lines (ones that will cause a trap)
@@ -275,12 +275,16 @@ and causing the file containing the letter to reinvoke itself using \fBnx\fR (\(
 the process would ultimately be ended by an \fBex\fR in the insertion file.
 .mh
 Input\(slOutput File Switching
+.pg
+The (read-only) number register \fB.c\fR contains the input line number in
+the current input file.  The number register \fBc.\fR is a general register
+serving the same purpose.
 .h1
 .bt
 \fB&so\fI|filename\fR		-	-	Switch source file.
 The top input (file reading) level is switched to \fIfilename\fR.
 The effect of an \fBso\fR encountered in a macro
-is not felt until the input level returns to the file level.
+occurs immediately.
 When the new file ends,
 input is again taken from the original file.
 \fBso\fR's may be nested.
@@ -312,7 +316,7 @@ The margin character used with this paragraph was a 12-point box-rule.
 .bt
 \fB&tm\fI|string\fR	-	newline	-	\
 After skipping initial blanks, \fIstring\fR (rest of the line) is read in \fIcopy mode\fR
-and written on the user's terminal.
+and written on the user's terminal. (see \(sc21).
 .bt
 \fB&ig\fI|yy\fR	-	\fI.yy=\fB..\fR	-	Ignore \
 input lines.
@@ -329,6 +333,11 @@ if \fIt\fR is given, only the total of the sizes is printed.
 The sizes is given in \fIblocks\fR
 of 128 characters.
 .bt
+\fB&ab\fI|string\fR	-	-	-	\
+Print \fIstring\fR on standard error and terminate immediately.  The
+default \fIstring\fR is "User Abort". Does not cause a break.  Only output
+preceding the last break is written.
+.bt
 .lg0
 \fB&fl\fR	-	-	B	\c
 .lg
@@ -337,9 +346,9 @@ Used in interactive debugging to force output.
 .mh
 Output and Error Messages.
 .pg
-The output from \fBtm\fR, \fBpm\fR, and the prompt from \fBrd\fR,
+The output from \fBtm\fR, \fBpm\fR, \fBab\fR and the prompt from \fBrd\fR,
 as well as various \fIerror\fR messages are written onto
-\s-1UNIX\s+1's \fIstandard message\fR output.
+\s-1UNIX\s+1's \fIstandard error\fR output.
 The latter is different from the \fIstandard output\fR,
 where \*(NR formatted output goes.
 By default, both are written onto the user's terminal,
@@ -364,5 +373,3 @@ and an appropriate message is printed.
 Examples are the inability to create, read, or write files,
 and the exceeding of certain internal limits that
 make future output unlikely to be useful.
-.pg
-.bp
