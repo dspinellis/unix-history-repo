@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.31 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -145,7 +145,6 @@ malloc(size, type, flags)
 		 */
 		savedlist = kbp->kb_next;
 		rp = kbp->kb_next; /* returned while blocked in vmemall */
-		kbp->kb_next = va + (npg * NBPG) - allocsize;
 		for (cp = kbp->kb_next; cp >= va; cp -= allocsize) {
 			((caddr_t *)cp)[2] = (cp > va ? cp - allocsize : rp);
 			if (indx == 7) {
