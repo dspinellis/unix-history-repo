@@ -1,4 +1,4 @@
-/*	@(#)uucp.h	5.13	%G%	*/
+/*	@(#)uucp.h	5.14	%G%	*/
 
 #include <stdio.h>
 
@@ -57,30 +57,30 @@
  * Define the various kinds of connections to include.
  * The complete list is in the condevs array in condevs.c
  */
-/* #define ATT2224		/* AT&T 2224 */
-#define BSDTCP		/* 4.2bsd or 2.9bsd TCP/IP */
-/* #define CDS224		/* Concord Data Systems 2400 */
+#define ATT2224		/* AT&T 2224 */
+#define BSDTCP		/* 4.2bsd TCP/IP */
+#define CDS224		/* Concord Data Systems 2400 */
 /* #define DATAKIT	/* ATT's datakit */
-/* #define DF02		/* Dec's DF02/DF03 */
-/* #define DF112		/* Dec's DF112 */
-/* #define DN11		/* "standard" DEC dialer */
+#define DF02		/* Dec's DF02/DF03 */
+#define DF112		/* Dec's DF112 */
+#define DN11		/* "standard" DEC dialer */
 #define HAYES		/* Hayes' Smartmodem */
-/* #define HAYES2400	/* Hayes' 2400 baud Smartmodem */
+#define HAYES2400	/* Hayes' 2400 baud Smartmodem */
 /* #define MICOM	/* Micom Mux port */
-/* #define NOVATION	/* Novation modem */
-/* #define PAD		/* X.25 PAD */
-/* #define PENRIL		/* PENRIL Dialer */
+#define NOVATION	/* Novation modem */
+#define PAD		/* X.25 PAD */
+#define PENRIL		/* PENRIL Dialer */
 /* #define PNET		/* Purdue network */
-/* #define RVMACS		/* Racal-Vadic MACS  820 dialer, 831 adaptor */
+#define RVMACS		/* Racal-Vadic MACS  820 dialer, 831 adaptor */
 /* #define SYTEK	/* Sytek Local Area Net */
 /* #define UNETTCP	/* 3Com's UNET */
 #define USR2400		/* USRobotics Courier 2400 */
-/* #define VA212		/* Racal-Vadic 212 */
-/* #define VA811S		/* Racal-Vadic 811S dialer, 831 adaptor */
-/* #define VA820		/* Racal-Vadic 820 dialer, 831 adaptor */
-/* #define VADIC		/* Racal-Vadic 345x */
-/* #define VENTEL		/* Ventel Dialer */
-/* #define VMACS		/* Racal-Vadic MACS  811 dialer, 831 adaptor */
+#define VA212		/* Racal-Vadic 212 */
+#define VA811S		/* Racal-Vadic 811S dialer, 831 adaptor */
+#define VA820		/* Racal-Vadic 820 dialer, 831 adaptor */
+#define VADIC		/* Racal-Vadic 345x */
+#define VENTEL		/* Ventel Dialer */
+#define VMACS		/* Racal-Vadic MACS  811 dialer, 831 adaptor */
 
 #if defined(USR2400) && !defined(HAYES)
 #define HAYES
@@ -151,12 +151,12 @@
  *	If you want to use the same modem for dialing in and out define
  *	DIALINOUT to be the localtion of the acucntrl program
  */
-#define DIALINOUT	"/usr/lib/uucp/acucntrl" /**/
+/* #define DIALINOUT	"/usr/lib/uucp/acucntrl" /**/
 
 /*
  *	If you want all ACU lines to be DIALINOUT, define ALLACUINOUT
  */
-#define ALLACUINOUT	/**/
+/* #define ALLACUINOUT	/**/
 
 /* define the value of WFMASK - for umask call - used for all uucp work files */
 #define WFMASK 0137
@@ -186,8 +186,8 @@
  * know where the LCK files are kept, and you have to change your /etc/rc
  * if your rc cleans out the lock files (as it should).
  */
-#define	LOCKDIR	"LCK"	/**/
-/* #define LOCKDIR	"." /**/
+/* #define	LOCKDIR	"LCK"	/**/
+#define LOCKDIR	"." /**/
 
 /*
  * If you want uucp and uux to copy the data files by default,
@@ -209,7 +209,7 @@
  * of one file
  * define LOGBYSITE as the directory to put the files in
  */
-#define LOGBYSITE	"/usr/spool/uucp/LOG" /**/
+/* #define LOGBYSITE	"/usr/spool/uucp/LOG" /**/
 
 /*
  * define USE_SYSLOG if you want error messages to use SYSLOG instead
