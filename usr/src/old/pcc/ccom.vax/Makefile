@@ -1,13 +1,15 @@
 TESTDIR = .
 FRC =
-CFLAGS = -O -DASSTRINGS -DSTABDOT -DLCOMM -DBUFSTDERR -DFLEXNAMES
+CFLAGS = -O -I. -I${M} -DASSTRINGS -DSTABDOT -DLCOMM -DBUFSTDERR -DFLEXNAMES \
+    "-DFIXSTRUCT=outstruct"
+
 M=../mip
 all: comp fort
 comp: rodata.o cgram.o xdefs.o scan.o pftn.o trees.o optim.o code.o local.o \
-	reader.o local2.o order.o match.o allo.o comm1.o table.o
+	reader.o local2.o order.o match.o allo.o comm1.o table.o stab.o
 	$(CC) $(LDFLAGS) -z rodata.o cgram.o xdefs.o scan.o pftn.o trees.o \
 		optim.o code.o local.o reader.o local2.o order.o match.o \
-		allo.o comm1.o table.o -o $(TESTDIR)/comp
+		allo.o comm1.o table.o stab.o -o $(TESTDIR)/comp
 trees.o: $M/manifest macdefs $M/mfile1 $M/trees.c
 	$(CC) -c $(CFLAGS) -I$M -I.  $M/trees.c
 optim.o: $M/manifest macdefs $M/mfile1 $M/optim.c
@@ -26,19 +28,19 @@ cgram.o: $M/manifest $M/mfile1 macdefs cgram.c
 	$(CC) -c $(CFLAGS) -I$M -I. cgram.c
 rodata.o: rodata.c
 	$(CC) $(CFLAGS) -S rodata.c
-	./:rofix rodata.s
+	sh ./:rofix rodata.s
 	$(AS) -o rodata.o rodata.s
 	rm -f rodata.s
 rodata.c cgram.c: $M/cgram.y
 	$(YACC) $M/cgram.y
 	rm -f rodata.c
-	./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+	sh ./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
 	mv y.tab.c cgram.c
 comm1.o: $M/manifest $M/mfile1 $M/common macdefs $M/comm1.c
 	$(CC) -c $(CFLAGS) -I$M -I. $M/comm1.c
 table.o: $M/manifest $M/mfile2 mac2defs macdefs table.c
 	$(CC) $(CFLAGS) -S -I$M -I. table.c
-	./:rofix table.s
+	sh ./:rofix table.s
 	$(AS) -o table.o table.s
 	rm -f table.s
 reader.o: $M/manifest $M/mfile2 mac2defs macdefs $M/reader.c
