@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -634,10 +634,8 @@ allocinotab(ino, dip, seekpt)
 	if (mf == NULL)
 		return(itp);
 	node.ino = ino;
-	node.timep[0].tv_sec = dip->di_atime;
-	node.timep[0].tv_usec = 0;
-	node.timep[1].tv_sec = dip->di_mtime;
-	node.timep[1].tv_usec = 0;
+	node.timep[0] = dip->di_atime;
+	node.timep[1] = dip->di_mtime;
 	node.mode = dip->di_mode;
 	node.uid = dip->di_uid;
 	node.gid = dip->di_gid;

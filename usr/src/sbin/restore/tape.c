@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -442,10 +442,8 @@ extractfile(name)
 
 	curfile.name = name;
 	curfile.action = USING;
-	timep[0].tv_sec = curfile.dip->di_atime;
-	timep[0].tv_usec = 0;
-	timep[1].tv_sec = curfile.dip->di_mtime;
-	timep[1].tv_usec = 0;
+	timep[0] = curfile.dip->di_atime;
+	timep[1] = curfile.dip->di_mtime;
 	mode = curfile.dip->di_mode;
 	switch (mode & IFMT) {
 
@@ -951,9 +949,9 @@ gethead(buf)
 	buf->c_dinode.di_gid = u_ospcl.s_ospcl.c_dinode.odi_gid;
 	buf->c_dinode.di_size = u_ospcl.s_ospcl.c_dinode.odi_size;
 	buf->c_dinode.di_rdev = u_ospcl.s_ospcl.c_dinode.odi_rdev;
-	buf->c_dinode.di_atime = u_ospcl.s_ospcl.c_dinode.odi_atime;
-	buf->c_dinode.di_mtime = u_ospcl.s_ospcl.c_dinode.odi_mtime;
-	buf->c_dinode.di_ctime = u_ospcl.s_ospcl.c_dinode.odi_ctime;
+	buf->c_dinode.di_atime.tv_sec = u_ospcl.s_ospcl.c_dinode.odi_atime;
+	buf->c_dinode.di_mtime.tv_sec = u_ospcl.s_ospcl.c_dinode.odi_mtime;
+	buf->c_dinode.di_ctime.tv_sec = u_ospcl.s_ospcl.c_dinode.odi_ctime;
 	buf->c_count = u_ospcl.s_ospcl.c_count;
 	bcopy(u_ospcl.s_ospcl.c_addr, buf->c_addr, (long)256);
 	if (u_ospcl.s_ospcl.c_magic != OFS_MAGIC ||
