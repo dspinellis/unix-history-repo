@@ -1,4 +1,4 @@
-/*	hp.c	4.15	83/02/18	*/
+/*	hp.c	4.16	83/02/20	*/
 
 /*
  * RP??/RM?? disk driver
@@ -206,6 +206,8 @@ restart:
 	 */
 	if (++io->i_errcnt > 27 || (er1 & HPER1_HARD) ||
 	    (!ML11 && (er2 & HPER2_HARD))) {
+		if ((io->i_flgs&F_NBSF) == 0 && hpecc(io, BSE) == 0)
+			goto success;
 hard0:
 		io->i_error = EHER;
 		if (mba->mba_sr & (MBSR_WCKUP|MBSR_WCKLWR))
@@ -345,9 +347,13 @@ hpecc(io, flag)
 	int npf, bn, cn, tn, sn, bcr;
 
 	if (bcr = MASKREG(mbp->mba_bcr>>16))
-		bcr |= 0xffff0000;		/* sxt */
+		bcr |= 0xffff0000;		/* sign extend */
 	npf = (bcr + io->i_cc) / sectsiz;	/* # sectors read */
 	bn = io->i_bn + npf + ssect;		/* physical block #*/
+#ifdef HPECCDEBUG
+	printf("bcr %d npf %d ssect %d sectsiz %d i_cc %d\n", bcr, npf,
+		ssect, sectsiz, io->i_cc);
+#endif
 
 	/*
 	 * ECC correction logic.
@@ -355,32 +361,33 @@ hpecc(io, flag)
 	if (flag == ECC) {
 		register int i;
 		caddr_t addr;
-		int bit, byte, mask, ecccnt = 0;
+		int bit, o, mask, ecccnt = 0;
 
 		printf("hp%d: soft ecc sn%d\n", unit, bn);
 		mask = MASKREG(rp->hpec2);
 		i = MASKREG(rp->hpec1) - 1;	/* -1 makes 0 origin */
 		bit = i&07;
-		i = (i&~07)>>3;
-		byte = i;
+		o = (i&~07) >> 3;
 		rp->hpcs1 = HP_DCLR | HP_GO;
-		while (i <sectsiz && npf*sectsiz + i < io->i_cc && bit > -11) {
-			addr = io->i_ma + (npf*sectsiz) + byte;
+		while (o <sectsiz && npf*sectsiz + o < io->i_cc && bit > -11) {
+			addr = io->i_ma + (npf*sectsiz) + o;
 #ifdef HPECCDEBUG
 			printf("addr %x old:%x ",addr, (*addr&0xff));
 #endif
-			/* don't correct in-core copy during wcheck */
+			/*
+			 * No data transfer occurs with a write check,
+			 * so don't correct the resident copy of data.
+			 */
 			if ((io->i_flgs & (F_CHECK|F_HCHECK)) == 0)
 				*addr ^= (mask << bit);
 #ifdef HPECCDEBUG
 			printf("new:%x\n",(*addr&0xff));
 #endif
-			byte++, i++;
-			bit -= 8;
+			o++, bit -= 8;
 			if ((io->i_flgs & F_ECCLM) && ecccnt++ >= MAXECC)
 				return (1);
 		}
-		return(0);
+		return (0);
 	}
 
 	/*
