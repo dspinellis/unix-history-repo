@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_readwrite.c	8.3 (Berkeley) %G%
+ *	@(#)ufs_readwrite.c	8.4 (Berkeley) %G%
  */
 
 #ifdef LFS_READWRITE
@@ -43,7 +43,7 @@ READ(ap)
 	daddr_t lbn, nextlbn;
 	off_t bytesinfile;
 	long size, xfersize, blkoffset;
-	int type, nextsize, error;
+	int nextsize, error;
 	u_short mode;
 
 	vp = ap->a_vp;
@@ -148,7 +148,7 @@ WRITE(ap)
 	struct proc *p;
 	daddr_t lbn;
 	off_t osize;
-	int blkoffset, error, flags, ioflag, newblock, resid, size, xfersize;
+	int blkoffset, error, flags, ioflag, resid, size, xfersize;
 
 	ioflag = ap->a_ioflag;
 	uio = ap->a_uio;

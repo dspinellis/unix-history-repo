@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -62,7 +62,6 @@ struct vfsops nfs_vfsops = {
  */
 struct nfs_diskless nfs_diskless = { 0 };
 
-static u_char nfs_mntid;
 extern u_long nfs_procids[NFS_NPROCS];
 extern u_long nfs_prog, nfs_vers;
 void nfs_disconnect __P((struct nfsmount *));
@@ -150,7 +149,7 @@ nfs_mountroot()
 	struct socket *so;
 	struct vnode *vp;
 	struct proc *p = curproc;		/* XXX */
-	int error, i, s;
+	int error, i;
 
 	/*
 	 * XXX time must be non-zero when we init the interface or else
@@ -367,7 +366,6 @@ mountnfs(argp, mp, nam, pth, hst, vpp)
 	register struct nfsmount *nmp;
 	struct nfsnode *np;
 	int error;
-	fsid_t tfsid;
 
 	if (mp->mnt_flag & MNT_UPDATE) {
 		nmp = VFSTONFS(mp);

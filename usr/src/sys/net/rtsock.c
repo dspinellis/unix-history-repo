@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.2 (Berkeley) %G%
+ *	@(#)rtsock.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -54,6 +54,7 @@ route_usrreq(so, req, m, nam, control)
 	register int error = 0;
 	register struct rawcb *rp = sotorawcb(so);
 	int s;
+
 	if (req == PRU_ATTACH) {
 		MALLOC(rp, struct rawcb *, sizeof(*rp), M_PCB, M_WAITOK);
 		if (so->so_pcb = (caddr_t)rp)
@@ -274,7 +275,6 @@ flush:
 		else 
 			rtm->rtm_flags |= RTF_DONE;
 	}
-cleanup:
 	if (rt)
 		rtfree(rt);
     {
@@ -535,7 +535,6 @@ rt_missmsg(type, rtinfo, flags, error)
 {
 	register struct rt_msghdr *rtm;
 	register struct mbuf *m;
-	register int i;
 	struct sockaddr *sa = rtinfo->rti_info[RTAX_DST];
 
 	if (route_cb.any_count == 0)
@@ -649,9 +648,8 @@ sysctl_dumpentry(rn, w)
 	struct radix_node *rn;
 	register struct walkarg *w;
 {
-	register struct sockaddr *sa;
 	register struct rtentry *rt = (struct rtentry *)rn;
-	int n, error = 0, size;
+	int error = 0, size;
 	struct rt_addrinfo info;
 
 	if (w->w_op == NET_RT_FLAGS && !(rt->rt_flags & w->w_arg))
@@ -687,7 +685,6 @@ sysctl_iflist(af, w)
 	register struct ifnet *ifp;
 	register struct ifaddr *ifa;
 	struct	rt_addrinfo info;
-	struct	sockaddr *sa;
 	int	len, error = 0;
 
 	bzero((caddr_t)&info, sizeof(info));

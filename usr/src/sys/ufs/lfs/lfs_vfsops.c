@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.3 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -372,7 +372,6 @@ lfs_sync(mp, waitfor, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-	extern int syncprt;
 	int error;
 
 	/* All syncs must be checkpoints until roll-forward is implemented. */

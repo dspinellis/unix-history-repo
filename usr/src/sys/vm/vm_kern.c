@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_kern.c	8.1 (Berkeley) %G%
+ *	@(#)vm_kern.c	8.2 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -88,7 +88,6 @@ vm_offset_t kmem_alloc(map, size)
 	register vm_size_t	size;
 {
 	vm_offset_t		addr;
-	register int		result;
 	register vm_offset_t	offset;
 	extern vm_object_t	kernel_object;
 	vm_offset_t		i;
@@ -437,7 +436,6 @@ vm_offset_t kmem_alloc_wait(map, size)
 	vm_size_t	size;
 {
 	vm_offset_t	addr;
-	int		result;
 
 	size = round_page(size);
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	8.2 (Berkeley) %G%
+ *	@(#)if.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -292,7 +292,7 @@ link_rtrequest(cmd, rt, sa)
 {
 	register struct ifaddr *ifa;
 	struct sockaddr *dst;
-	struct ifnet *ifp, *oldifnet = ifnet;
+	struct ifnet *ifp;
 
 	if (cmd != RTM_ADD || ((ifa = rt->rt_ifa) == 0) ||
 	    ((ifp = ifa->ifa_ifp) == 0) || ((dst = rt_key(rt)) == 0))

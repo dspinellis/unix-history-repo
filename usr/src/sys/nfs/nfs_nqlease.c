@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	8.2 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -573,7 +573,6 @@ nqnfs_serverd()
 	struct nqlease *nextlp;
 	struct nqm *lphnext, *olphnext;
 	struct mbuf *n;
-	union nqsrvthead *lhp;
 	int i, len, ok;
 
 	lp = nqthead.th_chain[0];
@@ -681,7 +680,8 @@ nqnfsrv_getlease(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nfsm_dissect(tl, u_long *, 2*NFSX_UNSIGNED);
 	flags = fxdr_unsigned(int, *tl++);
 	nfsd->nd_duration = fxdr_unsigned(int, *tl);
-	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred, nfsd->nd_slp, nam, &rdonly))
+	if (error = nfsrv_fhtovp(fhp,
+	    TRUE, &vp, cred, nfsd->nd_slp, nam, &rdonly))
 		nfsm_reply(0);
 	if (rdonly && flags == NQL_WRITE) {
 		error = EROFS;
@@ -715,15 +715,12 @@ nqnfsrv_vacated(nfsd, mrep, md, dpos, cred, nam, mrq)
 	register struct nqlease *lp;
 	register struct nqhost *lph;
 	struct nqlease *tlp = (struct nqlease *)0;
-	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	register u_long *tl;
 	register long t1;
 	struct nqm *lphnext;
-	union nqsrvthead *lhp;
-	u_quad_t frev;
-	int error = 0, i, len, ok, rdonly, gotit = 0;
+	int error = 0, i, len, ok, gotit = 0;
 	char *cp2;
 
 	fhp = &nfh.fh_generic;
@@ -788,7 +785,7 @@ nqnfs_getlease(vp, rwflag, cred, p)
 	register u_long *tl;
 	register caddr_t cp;
 	register long t1;
-	register struct nfsnode *np, *tp;
+	register struct nfsnode *np;
 	struct nfsmount *nmp = VFSTONFS(vp->v_mount);
 	caddr_t bpos, dpos, cp2;
 	time_t reqtime;

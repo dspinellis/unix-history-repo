@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_icmp.c	8.1 (Berkeley) %G%
+ *	@(#)ip_icmp.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -138,7 +138,6 @@ freeit:
 	m_freem(n);
 }
 
-static struct sockproto icmproto = { AF_INET, IPPROTO_ICMP };
 static struct sockaddr_in icmpsrc = { sizeof (struct sockaddr_in), AF_INET };
 static struct sockaddr_in icmpdst = { sizeof (struct sockaddr_in), AF_INET };
 static struct sockaddr_in icmpgw = { sizeof (struct sockaddr_in), AF_INET };
@@ -559,9 +558,8 @@ icmp_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	extern int ip_ttl;
 
-	/* all sysctl names at this level are terminal */
+	/* All sysctl names at this level are terminal. */
 	if (namelen != 1)
 		return (ENOTDIR);
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.4 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -668,7 +668,6 @@ ffs_vget(mp, ino, vpp)
 	struct ufsmount *ump;
 	struct buf *bp;
 	struct vnode *vp;
-	union ihead *ih;
 	dev_t dev;
 	int i, type, error;
 

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_serv.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -77,7 +77,7 @@ nqnfsrv_access(nfsd, mrep, md, dpos, cred, nam, mrq)
 	caddr_t bpos;
 	int error = 0, rdonly, cache, mode = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2, *mreq;
+	struct mbuf *mb, *mreq;
 	u_quad_t frev;
 
 	fhp = &nfh.fh_generic;
@@ -154,7 +154,7 @@ nfsrv_setattr(nfsd, mrep, md, dpos, cred, nam, mrq)
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
-	int error = 0, rdonly, cache, duration2, cache2;
+	int error = 0, rdonly, cache;
 	char *cp2;
 	struct mbuf *mb, *mb2, *mreq;
 	u_quad_t frev, frev2;
@@ -253,7 +253,7 @@ nfsrv_lookup(nfsd, mrep, md, dpos, cred, nam, mrq)
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
-	int error = 0, rdonly, cache, duration2, cache2, len;
+	int error = 0, cache, duration2, cache2, len;
 	char *cp2;
 	struct mbuf *mb, *mb2, *mreq;
 	struct vattr va, *vap = &va;
@@ -1168,7 +1168,7 @@ nfsrv_mkdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
-	int error = 0, rdonly, cache, len;
+	int error = 0, cache, len;
 	char *cp2;
 	struct mbuf *mb, *mb2, *mreq;
 	struct vnode *vp;
@@ -1241,7 +1241,7 @@ nfsrv_rmdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
-	int error = 0, rdonly, cache, len;
+	int error = 0, cache, len;
 	char *cp2;
 	struct mbuf *mb, *mreq;
 	struct vnode *vp;
@@ -1351,7 +1351,6 @@ nfsrv_readdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	fhandle_t *fhp;
 	struct uio io;
 	struct iovec iv;
-	struct vattr va;
 	int len, nlen, rem, xfer, tsiz, i, error = 0;
 	int siz, cnt, fullsiz, eofflag, rdonly, cache;
 	u_quad_t frev;

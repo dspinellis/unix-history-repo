@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	8.3 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -45,7 +45,7 @@ lfs_valloc(ap)
 	daddr_t blkno;
 	ino_t new_ino;
 	u_long i, max;
-	int bb, error;
+	int error;
 
 	/* Get the head of the freelist. */
 	fs = VTOI(ap->a_pvp)->i_lfs;
@@ -185,7 +185,6 @@ lfs_vfree(ap)
 	struct lfs *fs;
 	daddr_t old_iaddr;
 	ino_t ino;
-	int error;
 
 	/* Get the inode number and file system. */
 	ip = VTOI(ap->a_pvp);
