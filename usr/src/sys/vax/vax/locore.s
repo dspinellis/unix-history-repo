@@ -1,10 +1,6 @@
-/*
- * Machine Language Assist for UC Berkeley Virtual Vax/Unix
- *
- *	locore.s		4.18	%G%
- */
+/*	locore.s	4.19	81/02/15	*/
 
-	.set	HIGH,31		# mask for total disable
+	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into Scbbase of machine check vector
 	.set	NBPG,512
 	.set	PGSHIFT,9
@@ -13,6 +9,12 @@
 	.set	BSIZE,NBPG*CLSIZE
 	.set	MAXNBUF,128
 	.set	UPAGES,6	# size of user area, in pages
+
+/*
+ * User structure is UPAGES at top of user space.
+ */
+	.globl	_u
+	.set	_u,0x80000000 - UPAGES*NBPG
 
 /*
  * Restart parameter block
@@ -30,6 +32,7 @@ erpb:
 _intstack:
 	.space	2048
 eintstack:
+
 /*
  * Do a dump.
  * Called by auto-restart.
@@ -39,8 +42,7 @@ eintstack:
 	.globl	_doadump
 _doadump:
 	nop; nop				# .word 0x0101
-/* ignore cpu for the time being ... */
-#define	_rpbmap	_Sysmap+4
+#define	_rpbmap	_Sysmap+8			# scb, UNIvec, rpb, istack*4
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KW,_rpbmap
 	mtpr	$0,$TBIA
@@ -56,257 +58,112 @@ _doadump:
 	halt
 
 /*
- * I/O interrupt vector routines
+ * Interrupt vector routines
  */ 
-
-/*
- * Physical i/o addresses
- */
-#if VAX==780
-	.set	PHYSMCR,0x20002000	# memory controller register
-	.set	PHYSUBA,0x20006000	# uba 0
-	.set	PHYSUMEM,0x2013e000	# unibus memory
-#else
-	.set	PHYSMCR,0xf20000
-	.set	PHYSUBA,0xf30000
-	.set	PHYSUMEM,0xfc0000+0760000
-#endif
-
-/*
- * Catch random or unexpected interrupts
- */
 	.globl	_waittime
-	.align	2
-Xmachcheck:
-	clrl	_waittime
-	pushab	Emachk
-	calls	$1,_panic
 
-	.align	2
-Xkspnotval:
-	clrl	_waittime
-	pushab	Eksp
-	calls	$1,_panic
+#define	SCBVEC(name)	.align 2; .globl _X/**/name; _X/**/name
+#define	PANIC(msg)	clrl _waittime; pushab 1f; \
+			calls $1,_panic; 1: .asciz msg
+#define	PRINTF(n,msg)	pushab 1f; calls $n+1,_printf; MSG(msg)
+#define	MSG(msg)	.data; 1: .asciz msg; .text
+#define	PUSHR		pushr $0x3f
+#define	POPR		popr $0x3f
+#define	REI		brw int_ret		/* will be rei when ast's... */
 
-	.align	2
-Xpowfail:
+SCBVEC(machcheck):
+	PANIC("Machine check");
+SCBVEC(kspnotval):
+	PANIC("KSP not valid");
+SCBVEC(powfail):
 	halt
-
-	.align	2
-Xchme:
-Xchms:
-Xchmu:
-	pushab	Echm
-	calls	$1,_panic
-
-Emachk:	.asciz	"Machine check"
-Eksp:	.asciz	"KSP not valid"
-Echm:	.asciz	"CHM? in kernel"
-
-	.align	2
-Xstray:
-	pushr	$0x3f
-	pushab	straym
-	calls	$1,_printf
-	popr	$0x3f
+SCBVEC(chme): SCBVEC(chms): SCBVEC(chmu):
+	PANIC("CHM? in kernel");
+SCBVEC(stray):
+	PUSHR; PRINTF(0,"Stray interrupt\n"); POPR;
 	rei
+SCBVEC(wtime):
+	PUSHR; pushl 6*4(sp); PRINTF(1,"Write timeout %x\n"); POPR;
+	PANIC("Write timeout");		/* should be rei? */
 
-#if VAX==750
-	.align	2
-___:
-	pushr	$0x3f
-	pushab	UBAstraym
-	calls	$1,_printf
-	popr	$0x3f
-	rei
-
-	.align	2
-Xwtime:
-	pushr	$0x3f
-	pushl	6*4(sp)			# push pc
-	pushab	wtime
-	calls	$2,_printf
-	popr	$0x3f
-	halt				### ?? like a machine check
-	rei
-
+#if VAX780
+SCBVEC(mba3int):
+	PUSHR; pushl $3; brb 1f
 #endif
-/*
- * Massbus 0 adapter interrupts
- */
-	.align	2
-	.globl	_mba0int
-_mba0int:
-	pushr	$0x3f			# save r0 - r5
-	pushl	$0
-	brb	1f
+SCBVEC(mba2int):
+	PUSHR; pushl $2; brb 1f
+SCBVEC(mba1int):
+	PUSHR; pushl $1; brb 1f
+SCBVEC(mba0int):
+	PUSHR; pushl $0
+1:	calls $1,_mbintr
+	POPR
+	REI
+
+#if VAX780
+/* Special register return of IPL and interrupt vector during configuration */
+SCBVEC(confuaint):
+	mfpr	$IPL,r11
+	movl	_curuba,r0
+	movl	UBA_BRRVR-0x14*4(r0)[r11],r10
+	rei
 
 /*
- * Massbus 1 adapter interrupts
+ * Registers for the uba handling code
  */
-	.align	2
-	.globl	_mba1int
-_mba1int:
-	pushr	$0x3f			# save r0 - r5
-	pushl	$1
-	brb	1f
+#define	rUBANUM	r0
+#define	rUBAHD	r1
+#define	rUVEC	r3
+#define	rUBA	r4
+/* r2,r5 are scratch */
 
-/*
- * Massbus 2 adapter interrupts
- */
-	.align	2
-	.globl	_mba2int
-_mba2int:
-	pushr	$0x3f			# save r0 - r5
-	pushl	$2
-	brb	1f
-
-#if VAX==780 || VAX==ANY
-/*
- * Massbus 3 adapter interrupts
- */
-	.align	2
-	.globl	_mba3int
-_mba3int:
-	pushr	$0x3f			# save r0 - r5
-	pushl	$3
+SCBVEC(ua3int):
+	PUSHR; movl $3,rUBANUM; moval _uba_hd+(3*UH_SIZE),rUBAHD; brb 1f
+SCBVEC(ua2int):
+	PUSHR; movl $2,rUBANUM; moval _uba_hd+(2*UH_SIZE),rUBAHD; brb 1f
+SCBVEC(ua1int):
+	PUSHR; movl $1,rUBANUM; moval _uba_hd+(1*UH_SIZE),rUBAHD; brb 1f
+SCBVEC(ua0int):
+	PUSHR; movl $0,rUBANUM; moval _uba_hd+(0*UH_SIZE),rUBAHD;
 1:
-	calls	$1,_mbintr
-	brw 	int_ret			# merge with common interrupt code
-
-/*
- * Unibus adapter interrupts
- */
-	.align	2
-	.globl	_ua0int
-_ua0int:
-	pushr	$0x3f  			# save regs 0-5
-	moval	_uba_hd,r1		# r1 = &uba_hd[0]
-	brb	1f
-
-	.align	2
-	.globl	_ua1int
-_ua1int:
-	pushr	$0x3f
-	moval	_uba_hd+24,r1		# r1 = &uba_hd[1]
-	brb	1f
-
-	.align	2
-	.globl	_ua2int
-_ua2int:
-	pushr	$0x3f
-	moval	_uba_hd+48,r1		# r1 = &uba_hd[2]
-	brb	1f
-
-	.align	2
-	.globl	_ua3int
-_ua3int:
-	pushr	$0x3f
-	moval	_uba_hd+72,r1		# r1 = &uba_hd[3]
-
-1:
-	mfpr	$IPL,r2			# get br level
-	movl	4(r1),r3		# r3 = uba_hd[?].uh_uba
-	movl	UBR_OFF-20*4(r3)[r2],r3	# get unibus device vector
-	bleq	ubasrv  		# branch if zero vector
-					# ... or UBA service required
-
-/*
- * Normal UBA interrupt point - device on a UBA has generated an
- * interrupt - r3 holds interrupt vector.  Get the service routine
- * address and controller code from the UNIBUS vector area
- * and service the interrupt.
- */
+	mfpr	$IPL,r2				/* r2 = mfpr(IPL); */
+	movl	UH_UBA(rUBAHD),rUBA		/* uba = uhp->uh_uba; */
+	movl	UBA_BRRVR-0x14*4(rUBA)[r2],rUVEC
+					/* uvec = uba->uba_brrvr[r2-0x14] */
 ubanorm:
-	addl2	0xc(r1),r3		# r3 += uba_hd[?].uh_vec
-	movl	*(r3),r1 
-	extzv	$27,$4,r1,r0  		# controller code is in 4 most
-					# significant bits-1 of ISR addr
-	bicl2	$0x78000000,r1		# clear code
-	jlbc	r1,ubanpdma		# no pseudo dma here
-	jmp 	-1(r1)			# branch to pseudo dma rtn
-ubanpdma:
-	pushl	r0			# controller code
-	calls	$1,(r1)  		# call ISR
-	brw	int_ret			# go to common interrupt return
-
-/*
- * Come here for zero or negative UBA interrupt vector.
- * Negative vector -> UBA requires service.
- */
-ubasrv:
-	jeql	ubapass
-/*
- * UBA service required.
- * The following 'printf' calls should probably be replaced
- * with calls to an error logger and/or some corrective action.
- */
-	bitl	$CFGFLT,UBA0+UCN_OFF  	# any SBI faults ?
-	beql	UBAflt
-	pushr	$0x3f  			# save regs 0-5
-	pushl	UBA0+UCN_OFF
-	pushl	UBA0+UST_OFF
-	pushab	SBIflt
-	calls	$3,_printf
-	movl	UBA0+UCN_OFF,UBA0+UCN_OFF
-	calls	$0,_ubareset
-	popr	$0x3f
-	brw	int_ret
-
-/*
- * No SBI fault bits set in UBA config reg - must be
- * some error bits set in UBA status reg.
- */
-UBAflt:
-	movl	UBA0+UST_OFF,r2  	# UBA status reg
-	pushr	$0x3f  			# save regs 0-5
-	mfpr	$IPL,-(sp)
-	mtpr	$HIGH,$IPL
-	pushl	UBA0+UFUBAR_OFF
-	ashl	$2,(sp),(sp)
-	pushl	UBA0+UFMER_OFF
-	pushl	r2
-	pushab	UBAmsg
-	calls	$4,_printf
-	mtpr	(sp)+,$IPL
-	popr	$0x3f
-	movl	r2,UBA0+UST_OFF		# clear error bits
-	bicl2	$0x80000000,r3  	# clear neg bit in vector
-	jneq	ubanorm  		# branch if normal UBA interrupt
-					# to process
-	brw 	int_ret			# restore regs and return
-/*
- * Zero interrupt vector - count 'em
- */
-ubapass:
-	incl	_zvcnt
-	cmpl	_zvcnt,$250000
-	jlss	int_ret
-	pushab	ZERmsg
-	calls	$1,_printf
-	clrl	_zvcnt
-	calls	$0,_ubareset
-	brw 	int_ret
+	bleq	ubaerror 
+	addl2	UH_VEC(rUBAHD),rUVEC		/* uvec += uh->uh_vec */
+	bicl3	$3,(rUVEC),r1 
+	jmp	2(r1)				/* 2 skips ``pushr $0x3f'' */
+ubaerror:
+	PUSHR; calls $0,_ubaerror; POPR		/* ubaerror r/w's r0-r5 */
+	tstl rUVEC; jneq ubanorm		/* rUVEC contains result */
+	POPR
+	rei
 #endif
-
-#if VAX==750
-/*
- * Console data storage
- */
-Xconsdin:
-Xconsdout:
-	.align	2
+SCBVEC(cnrint):
+	PUSHR; calls $0,_cnrint; POPR; REI
+SCBVEC(cnxint):
+	PUSHR; calls $0,_cnxint; POPR; REI
+SCBVEC(clockint):
+	PUSHR
+	pushl 4+6*4(sp); pushl 4+6*4(sp); calls $2,_clock	# clock(pc,psl)
+	POPR; REI
+SCBVEC(consdin):
 	halt
-#endif
+SCBVEC(consdout):
+	halt
 
-	.data
-#if VAX==780
-	.globl	_zvcnt
-_zvcnt:	.space	4
-#endif
-	.globl	_dzdcnt
-_dzdcnt:.space	4
-	.text
+/* THIS SHOULD BE GOTTEN RID OF... WE SHOULD USE AST'S TO FORCE RESCHEDS */
+int_ret:
+	incl	_cnt+V_INTR
+	bitl	$PSL_CURMOD,4(sp)	# CRUD
+	beql	1f			# CRUD
+	tstb	_runrun			# CRUD
+	beql	1f			# CRUD
+	mtpr	$0x18,$IPL		# CRUD
+	mtpr	$3,$SIRR		# CRUD
+1:	rei
 
 /*
  * DZ pseudo dma routine:
@@ -324,7 +181,6 @@ dzploop:
 	movzbl	1(r1),r2		# get line number
 	bitb	$0x80,r2		# TRDY on?
 	beql	dzprei			# no	
-	incl	_dzdcnt		## loop trips
 	bicb2	$0xf8,r2		# clear garbage bits
 	mull2	$20,r2
 	addl2	r2,r0			# point at line's pdma structure
@@ -335,7 +191,7 @@ dzploop:
 	movl	r2,-8(r0)
 	brb 	dzploop			# check for another line
 dzprei:
-	popr	$0x3f
+	POPR
 	incl	_cnt+V_PDMA
 	rei
 
@@ -347,461 +203,220 @@ dzpcall:
 	brb 	dzploop			# check for another line
 
 /*
- * Console receiver interrupt
+ * Stray UNIBUS interrupt catch routines
  */
+	.data
 	.align	2
-Xcnrint:
-	pushr	$0x3f			# save registers 0 - 5
-	calls	$0,_cnrint
-	brb 	int_ret			# merge
+	.globl	_catcher
+_catcher:
+	PUSHR
+	jsb	_Xustray		# this (& PUSHR) make exactly 8 bytes
+	.space	1016			# makes exactly 1 K bytes
+
+	.text
+SCBVEC(ustray):
+	PUSHR
+	mfpr	$IPL,-(sp)
+	subl3	$_catcher,28(sp),-(sp)
+	ashl	$-1,(sp),(sp)
+	PRINTF(2, "Stray unibus interrupt (%x) (IPL %x)\n")
+	POPR
+	tstl	(sp)+
+	REI
 
 /*
- * Console transmit interrupt
- */
-	.align	2
-Xcnxint:
-	pushr	$0x3f			# save registers 0 - 5
-	calls	$0,_cnxint
-	brb 	int_ret
-
-/*
- * Clock interrupt
- */
-	.align	2
-Xclockint:
-	pushr	$0x3f			# save regs 0 - 5
-	pushl	4+6*4(sp)		# push psl
-	pushl	4+6*4(sp)		# push pc
-	calls	$2,_clock
-	brb 	int_ret
-
-/*
- * Common code for interrupts.
- * At this point, the interrupt stack looks like:
- *
- *	r0	<- isp
- *	...
- *	r5
- *	pc
- *	psl
- */
-
-int_ret:
-	incl	_cnt+V_INTR
-	popr	$0x3f			# restore regs 0 - 5
-	bitl	$PSL_CURMOD,4(sp)	# interrupt from user mode?
-	beql	int_r1			# no, from kernel, just rei
-	tstb	_runrun			# should we reschedule?
-	beql	int_r1			# no, just rei
-/*
- * If here, interrupt from user mode, and time to reschedule.
- * To do this, we set a software level 3 interrupt to
- * change to kernel mode, switch stacks, and format
- * kernel stack for a `qswitch' trap to force a reschedule.
- */
-	mtpr	$0x18,$IPL
-	mtpr	$3,$SIRR		# request level 1 software interrupt
-int_r1:
-	rei 				# return to interrupted process
-
-/*
- * User area virtual addresses
+ * Trap and fault vector routines
  */ 
+#define	TRAP(a)	pushl $a; brw alltraps
 
-	.globl	_u
-	.set	_u,0x80000000 - UPAGES*NBPG
+/*					# CRUD
+ * Reschedule trap (Software level 3)	# CRUD
+ *					# CRUD
+ * SHOULD DO THIS WITH AST'S.		# CRUD
+ */
+SCBVEC(resched):			# CRUD
+	mtpr	$0,$IPL			# CRUD
+	pushl	$0			# CRUD
+	pushl	$RESCHED		# CRUD
+	bitl	$PSL_CURMOD,12(sp)	# CRUD
+	bneq	alltraps		# CRUD
+	addl2	$8,sp			# CRUD
+	mtpr	$HIGH,$IPL		# CRUD
+	rei				# CRUD
+
+SCBVEC(privinflt):
+	pushl $0; TRAP(PRIVINFLT)
+SCBVEC(xfcflt):
+	pushl $0; TRAP(XFCFLT)
+SCBVEC(resopflt):
+	pushl $0; TRAP(RESOPFLT)
+SCBVEC(resadflt):
+	pushl $0; TRAP(RESADFLT)
+SCBVEC(bptflt):
+	pushl $0; TRAP(BPTFLT)
+SCBVEC(compatflt):
+	TRAP(COMPATFLT);
+SCBVEC(tracep):
+	pushl $0; TRAP(TRCTRAP)
+SCBVEC(arithtrap):
+	TRAP(ARITHTRAP)
+SCBVEC(protflt):
+	blbs	(sp)+,segflt
+	TRAP(PROTFLT)
+segflt:
+	TRAP(SEGFLT)
+SCBVEC(transflt):
+	blbs	(sp)+,tableflt
+	TRAP(PAGEFLT)
+tableflt: 
+	TRAP(TABLEFLT)
+
+alltraps:
+	mfpr	$USP,-(sp); calls $0,_trap; mtpr (sp)+,$USP
+	incl	_cnt+V_TRAP
+	addl2	$8,sp			# pop type, code
+	mtpr	$HIGH,$IPL		## dont go to a higher IPL (GROT)
+	rei
+
+SCBVEC(syscall):
+	pushl	$SYSCALL
+	mfpr	$USP,-(sp); calls $0,_syscall; mtpr (sp)+,$USP
+	incl	_cnt+V_SYSCALL
+	addl2	$8,sp			# pop type, code
+	mtpr	$HIGH,$IPL		## dont go to a higher IPL (GROT)
+	rei
+
+/*
+ * System page table
+ */ 
 #define	vaddr(x)	((((x)-_Sysmap)/4)*NBPG+0x80000000)
-#define	MAP(mname, vname, npte)			\
-mname:	.globl	mname;				\
+#define	SYSMAP(mname, vname, npte)			\
+_/**/mname:	.globl	_/**/mname;		\
 	.space	npte*4;				\
 	.globl	_/**/vname;			\
-	.set	_/**/vname,vaddr(mname)
+	.set	_/**/vname,vaddr(_/**/mname)
 
 	.data
 	.align	2
-MAP(	_Sysmap		,Sysbase	,6*NBPG/4	)
-MAP(	UBA0map		,umabeg		,16		)
-MAP(	UMEMmap		,__junk1	,16		)
-MAP(	_Nexmap		,nexus		,16*16		)
-MAP(	umend		,umbaend	,0		)
-MAP(	_Usrptmap	,usrpt		,2*NBPG		)
-MAP(	_Forkmap	,forkutl	,UPAGES		)
-MAP(	_Xswapmap	,xswaputl	,UPAGES		)
-MAP(	_Xswap2map	,xswap2utl	,UPAGES		)
-MAP(	_Swapmap	,swaputl	,UPAGES		)
-MAP(	_Pushmap	,pushutl	,UPAGES		)
-MAP(	_Vfmap		,vfutl		,UPAGES		)
-MAP(	CMAP1		,CADDR1		,1		)
-MAP(	CMAP2		,CADDR2		,1		)
-MAP(	_mcrmap		,mcr		,1		)
-MAP(	_mmap		,vmmap		,1		)
-MAP(	_bufmap		,buffers	,MAXNBUF*CLSIZE	)
-MAP(	_msgbufmap	,msgbuf		,CLSIZE		)
-MAP(	_camap		,cabase		,32*CLSIZE	)
-MAP(	ecamap		,calimit	,0		)
+	SYSMAP(Sysmap	,Sysbase	,6*NBPG/4	)
+	SYSMAP(UMBAbeg	,umbabeg	,0		)
+	SYSMAP(Nexmap	,nexus		,16*16		)
+	SYSMAP(UMEMmap	,umem		,16*4		)
+	SYSMAP(UMBAend	,umbaend	,0		)
+	SYSMAP(Usrptmap	,usrpt		,2*NBPG		)
+	SYSMAP(Forkmap	,forkutl	,UPAGES		)
+	SYSMAP(Xswapmap	,xswaputl	,UPAGES		)
+	SYSMAP(Xswap2map,xswap2utl	,UPAGES		)
+	SYSMAP(Swapmap	,swaputl	,UPAGES		)
+	SYSMAP(Pushmap	,pushutl	,UPAGES		)
+	SYSMAP(Vfmap	,vfutl		,UPAGES		)
+	SYSMAP(CMAP1	,CADDR1		,1		)
+	SYSMAP(CMAP2	,CADDR2		,1		)
+	SYSMAP(mcrmap	,mcr		,1		)
+	SYSMAP(mmap	,vmmap		,1		)
+	SYSMAP(bufmap	,buffers	,MAXNBUF*CLSIZE	)
+	SYSMAP(msgbufmap,msgbuf		,CLSIZE		)
+	SYSMAP(camap	,cabase		,32*CLSIZE	)
+	SYSMAP(ecamap	,calimit	,0		)
 
 eSysmap:
 	.set	_Syssize,(eSysmap-_Sysmap)/4
 	.text
 
 /*
- * Trap and fault vector routines
- */ 
-
-/*
- * Reschedule trap (Software level 3 interrupt)
- */
-	.align	2
-Xresched:
-	mtpr	$0,$IPL			# lower ipl
-	pushl	$0			# dummy code
-	pushl	$RESCHED		# type
-	bitl	$PSL_CURMOD,12(sp)
-	bneq	alltraps
-	addl2	$8,sp
-	mtpr	$HIGH,$IPL
-	rei
-
-/*
- * Privileged instruction fault
- */
-	.align	2
-Xprivinflt:
-	pushl	$0			# push dummy code
-	pushl	$PRIVINFLT		# push type
-	brw 	alltraps		# merge
-
-/*
- * Xfc instruction fault
- */
-	.align	2
-Xxfcflt:
-	pushl	$0			# push dummy code value
-	pushl	$XFCFLT			# push type value
-	brw 	alltraps		# merge
-
-/*
- * Reserved operand fault
- */
-	.align	2
-Xresopflt:
-	pushl	$0			# push dummy code value
-	pushl	$RESOPFLT		# push type value
-	brw 	alltraps		# merge
-
-/*
- * Reserved addressing mode fault
- */
-	.align	2
-Xresadflt:
-	pushl	$0			# push dummy code value
-	pushl	$RESADFLT		# push type value
-	brw 	alltraps		# merge with common code
-
-/*
- * Bpt instruction fault
- */
-	.align	2
-Xbptflt:
-	pushl	$0			# push dummy code value
-	pushl	$BPTFLT			# push type value
-	brw 	alltraps		# merge with common code
-
-/*
- * Compatibility mode fault
- */
-	.align	2
-Xcompatflt:
-	pushl	$COMPATFLT		# push type value
-	brw 	alltraps		# merge with common code
-
-/*
- * Trace trap
- */
-	.align	2
-Xtracep:
-	pushl	$0			# push dummy code value
-	pushl	$TRCTRAP		# push type value
-	brw 	alltraps		# go do it
-
-/*
- * Arithmetic trap
- */
-	.align	2
-Xarithtrap:
-	pushl	$ARITHTRAP		# push type value
-	brw 	alltraps		# merge with common code
-
-/*
- * Protection and segmentation fault
- */
-	.align	2
-Xprotflt:
-	blbs	(sp),segflt		# check for pt length violation
-	addl2	$4,sp			# pop fault param word 
-	pushl	$PROTFLT
-	brw 	alltraps
-
-/*
- * Segmentation fault
- */
-segflt:
-	addl2	$4,sp
-	pushl	$SEGFLT
-	brb 	alltraps
-
-/*
- * Translation Not Valid Fault
- */
-	.align  2
-Xtransflt:
-	bbs	$1,(sp),tableflt	# check for page table fault
-	addl2	$4,sp			# pop fault parameter word
-	pushl	$PAGEFLT		# push type value
-	brb	alltraps
-
-/*
- * Page table fault
- */
-tableflt: 
-	addl2	$4,sp			# pop fault parameter word
-	pushl	$TABLEFLT		# push type value
-	brb	alltraps
-
-/*
- * all traps but syscalls...
- */
-alltraps:
-	mfpr	$USP,-(sp)		# get usp
-	calls	$0,_trap		# $0 so ret wont pop args
-	incl	_cnt+V_TRAP
-	mtpr	(sp)+,$USP		# restore usp
-	addl2	$8,sp			# pop type, code
-	mtpr	$HIGH,$IPL		# make sure we are not going to
-					# a higher IPL
-	rei
-
-/*
- * CHMK trap (syscall trap)
- *
- * Kernel stack on entry:
- *
- *	code	<- ksp
- *	pc
- *	psl
- *
- *
- * Stack (parameters) at calls to _trap or _syscall
- *
- *	usp	<- ksp
- *	type
- *	code
- *	pc
- *	psl
- */
-
-	.align	2
-Xsyscall:
-	pushl	$SYSCALL		# push type value
-	mfpr	$USP,-(sp)		# get usp
-	calls	$0,_syscall		# $0 so ret wont pop args
-	incl	_cnt+V_SYSCALL
-	mtpr	(sp)+,$USP		# restore usp
-	addl2	$8,sp			# pop type, code
-	mtpr	$HIGH,$IPL		# make sure we are not going to
-					# a higher IPL
-	rei
-
-/*
  * Initialization
  *
- *	IPL == 1F
- *	MAPEN == off
- *	SCBB, PCBB not set
- *	SBR, SLR not set
- *	ISP, KSP not set
+ * ipl 0x1f; mapen 0; scbb, pcbb, sbr, slr, isp, ksp not set
  */
 	.globl	start
 start:
-	.word	0x0000
-	mtpr	$HIGH,$IPL			## no interrupts yet
-	mtpr	$_Scbbase-0x80000000,$SCBB	# set SCBB
-	mtpr	$_Sysmap-0x80000000,$SBR	## set SBR
-	mtpr	$_Syssize,$SLR			## set SLR
-	mtpr	$_Sysmap,$P0BR			## set temp P0BR
-	mtpr	$_Syssize,$P0LR			## set temp P0LR
+	.word	0
+	mtpr	$_scb-0x80000000,$SCBB
+	mtpr	$_Sysmap-0x80000000,$SBR	## GROT ??
+	mtpr	$_Syssize,$SLR			## GROT ??
+	mtpr	$_Sysmap,$P0BR			## GROT ??
+	mtpr	$_Syssize,$P0LR			## GROT ??
 	movl	$_intstack+2048,sp		# set ISP
-/*
- * Initialize RPB
- */
+/* init RPB */
 	movab	_rpb,r0
 	movl	r0,(r0)+			# rp_selfref
 	movab	_doadump,r1
 	movl	r1,(r0)+			# rp_dumprout
 	movl	$0x1f,r2
 	clrl	r3
-1:
-	addl2	(r1)+,r3
-	sobgtr	r2,1b
+1:	addl2	(r1)+,r3; sobgtr r2,1b
 	movl	r3,(r0)+			# rp_chksum
-
-#if VAX==780
-/*
- * Initialize UBA
- */
-	movl	$0x78,PHYSUBA+4		# ienable
-#endif
-
-/*
- * Will now see how much memory there really is
- * in 64kb chunks.  Save number of bytes in r7.
- */
+/* count up memory */
 	clrl	r7
-1:
-	pushl	$4		# test long word access
-	pushl	r7		# to (r7)
-	calls	$2,_badaddr
-	tstl	r0
-	bneq	1f
+1:	pushl	$4; pushl r7; calls $2,_badaddr; tstl r0; bneq 9f
 	acbl	$8096*1024-1,$64*1024,r7,1b
-1:
-
-/*
- * calculate size of cmap[] based on available memory,
- * and allocate space for it
- */
+9:
+/* allocate space for cmap[] */
 	movab	_end,r5
-	movl	r5,_cmap
-	bbss	$31,_cmap,0f; 0:
+	movl	r5,_cmap; bbss $31,_cmap,0f; 0:
 	subl3	r5,r7,r1
 	divl2	$(NBPG*CLSIZE)+CMSIZE,r1
 	mull2	$CMSIZE,r1
 	addl3	_cmap,r1,_ecmap
-/*
- * Clear memory starting with kernel bss, and extra pages for
- * proc 0 u. and proc 0 paget.
- */
+/* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6
 	movl	_ecmap,r5		# clear to end of cmap[]
 	bbcc	$31,r5,0f; 0:
 	addl2	$(UPAGES*NBPG)+NBPG+NBPG,r5
-1:
-	clrq	(r6)
-	acbl	r5,$8,r6,1b
-
-/*
- * Finagle _trap and _syscall to save r0-r11 so
- * that it won't be necessary to pushr/popr what
- * the (already time consuming) calls is prepared to do.
- * The fact that this is done is well known (e.g. in the definition
- * of the stack offsets of the registers in ../h/reg.h)
- */ 
-	bisw2	$0x0fff,_trap		# so _trap saves r0-r11
-	bisw2	$0x0fff,_syscall	# so _syscall saves r0-r11
-
-/*
- * Initialize system page table
- *
- * First part (scb, unibus vectors and interrupt stack)
- * is r/w except for the rpb, which sits above the interrupt
- * stack acting as a red zone.  Then comes the kernel text
- * which is read only, and then the r/w kernel data.
- * (The scb and the unibus vector they are made read only after
- * they are filled in by the configuration code.)
- */
+1:	clrq	(r6); acbl r5,$8,r6,1b
+/* trap() and syscall() save r0-r11 in the entry mask (per ../h/reg.h) */
+	bisw2	$0x0fff,_trap
+	bisw2	$0x0fff,_syscall
+/* initialize system page table: scb and int stack writeable */
 	clrl	r2
-	movab	eintstack,r1
-	bbcc	$31,r1,0f; 0:
-	ashl	$-9,r1,r1
-1:
-	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]	# fill data entries
-	aoblss	r1,r2,1b
+	movab	eintstack,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
+1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
+/* make rpb read-only as red zone for interrupt stack */
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KR,_rpbmap
-	movab	_etext+NBPG-1,r1	# end of kernel text segment
-	bbcc	$31,r1,0f; 0:		# turn off high order bit
-	ashl	$-9,r1,r1		# last page of kernel text
-1:
-	bisl3	$PG_V|PG_KR,r2,_Sysmap[r2]	# initialize page table entry
-	aoblss	r1,r2,1b		# fill text entries
-	addl3	_ecmap,$NBPG-1,r1	# end of cmap[]
-	bbcc	$31,r1,0f; 0:		# turn off high order bit
-	ashl	$-9,r1,r1		# last page of kernel data
-1:
-	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]	# fill data entries
-	aoblss	r1,r2,1b
-/*
- * initialize memory controller mapping
- */
-	movl	$PHYSMCR/NBPG,r1
-	movab	_mcrmap,r2
-	bisl3	$PG_V|PG_KW,r1,(r2)
-/*
- * Initialize UNIBUS page table entries
- */
-	movl	$PHYSUBA/NBPG,r1	# page frame number for uba
-	movab	UBA0map,r2		# page table address
-	movab	15(r1),r3		# last pt entry
-1:
-	bisl3	$PG_V|PG_KW,r1,(r2)+	# init pt entry
-	aobleq	r3,r1,1b
-	movl	$PHYSUMEM/NBPG,r1
-	movab	UMEMmap,r2		# page table address
-	movab	15(r1),r3		# limit
-1:
-	bisl3	$PG_V|PG_KW,r1,(r2)+
-	aobleq	r3,r1,1b
-	mtpr	$1,$TBIA		# invalidate all trans buffer entries
-	mtpr	$1,$MAPEN		# turn on memory mapping
-	jmp 	*$0f			# put system virtual address in pc
-/*
- * Now we move forward, virtually.
- */
-0:
-	ashl	$-9,r7,_maxmem		# set maxmem = btoc(r7)
+/* make kernel text space read-only */
+	movab	_etext+NBPG-1,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
+1:	bisl3	$PG_V|PG_KR,r2,_Sysmap[r2]; aoblss r1,r2,1b
+/* make kernel data, bss, core map read-write */
+	addl3	_ecmap,$NBPG-1,r1; bbcc	$31,r1,0f; 0:; ashl $-PGSHIFT,r1,r1
+1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
+/* now go to mapped mode */
+	mtpr	$1,$TBIA; mtpr $1,$MAPEN; jmp *$0f; 0:
+/* init mem sizes */
+	ashl	$-PGSHIFT,r7,_maxmem
 	movl	_maxmem,_physmem
 	movl	_maxmem,_freemem
-
-/*
- * Setup context for proc[0] == Scheduler
- *
- * First page: paget for proc[0]
- * Next UPAGES: _u for proc[0]
- * Initialize (slightly) the pcb.
- */
+/* setup context for proc[0] == Scheduler */
 	addl3	_ecmap,$NBPG-1,r6
 	bicl2	$NBPG-1,r6		# make page boundary
-/*
- * set up u area page table
- */
+/* setup page table for proc[0] */
 	bbcc	$31,r6,0f; 0:
-	ashl	$-9,r6,r3			# r3 = btoc(r6)
+	ashl	$-PGSHIFT,r6,r3			# r3 = btoc(r6)
 	bisl3	$PG_V|PG_KW,r3,_Usrptmap	# init first upt entry
 	movab	_usrpt,r0
 	mtpr	r0,$TBIS
+/* init p0br, p0lr */
 	mtpr	r0,$P0BR
 	mtpr	$0,$P0LR
+/* init p1br, p1lr */
 	movab	NBPG(r0),r0
 	movl	$0x200000-UPAGES,r1
 	mtpr	r1,$P1LR
 	mnegl	r1,r1
 	moval	-4*UPAGES(r0)[r1],r2
 	mtpr	r2,$P1BR
-	movl	$UPAGES,r2
-	movab	_u+NBPG*UPAGES,r1
-	jbr	2f
-1:
-	incl	r3
-	moval	-NBPG(r1),r1
+/* setup mapping for UPAGES of _u */
+	movl	$UPAGES,r2; movab _u+NBPG*UPAGES,r1; jbr 2f
+1:	incl	r3
+	moval	-NBPG(r1),r1;
 	bisl3	$PG_V|PG_URKW,r3,-(r0)
 	mtpr	r1,$TBIS
-2:
-	sobgeq	r2,1b
-
-	movab	UPAGES*NBPG(r1),PCB_KSP(r1)	# init ksp
-	mnegl	$1,PCB_ESP(r1)			# invalidate esp
-	mnegl	$1,PCB_SSP(r1)			# invalidate ssp
-	movl	r1,PCB_USP(r1)			# set user sp
+2:	sobgeq r2,1b
+/* initialize (slightly) the pcb */
+	movab	UPAGES*NBPG(r1),PCB_KSP(r1)
+	mnegl	$1,PCB_ESP(r1)
+	mnegl	$1,PCB_SSP(r1)
+	movl	r1,PCB_USP(r1)
 	mfpr	$P0BR,PCB_P0BR(r1)
 	mfpr	$P0LR,PCB_P0LR(r1)
 	movb	$4,PCB_P0LR+3(r1)		# disable ast
@@ -809,48 +424,33 @@ start:
 	mfpr	$P1LR,PCB_P1LR(r1)
 	movl	$CLSIZE,PCB_SZPT(r1)		# init u.u_pcb.pcb_szpt
 	movl	r11,PCB_R11(r1)
-
 	movab	1f,PCB_PC(r1)			# initial pc
 	clrl	PCB_PSL(r1)			# mode(k,k), ipl=0
-	ashl	$9,r3,r3
+	ashl	$PGSHIFT,r3,r3
 	mtpr	r3,$PCBB			# first pcbb
-/*
- * set regs, p0br, p0lr, p1br, p1lr
- * astlvl, ksp and change to kernel mode
- */
+/* set regs, p0br, p0lr, p1br, p1lr, astlvl, ksp and change to kernel mode */
 	ldpctx
 	rei
-
-/*
- * put signal trampoline code in u. area
- */
-1:
-	movab	_u,r0
+/* put signal trampoline code in u. area */
+1:	movab	_u,r0
 	movc3	$12,sigcode,PCB_SIGC(r0)
+/* calculate firstaddr, and call main() */
+	addl3	_ecmap,$NBPG-1,r0; bbcc	$31,r0,0f; 0:; ashl $-PGSHIFT,r0,-(sp)
+	calls	$1,_main
+/* proc[1] == /etc/init now running here; run icode */
+	pushl	$PSL_CURMOD|PSL_PRVMOD
+	pushl	$0
+	rei
 
-	addl3	_ecmap,$NBPG-1,r0		# calculate firstaddr
-	bbcc	$31,r0,0f; 0:
-	ashl	$-9,r0,-(sp)			# convert to clicks and stack
-	calls	$1,_main			# startup, fork off /etc/init.vm
-/*
- * proc[1] == /etc/init now running here.
- * execute code at location 0, in user mode.
- */
-	pushl	$PSL_CURMOD|PSL_PRVMOD		# psl, user mode, ipl = 0
-	pushl	$0				# pc, $location 0
-	rei 					# do /etc/init.vm
-
-/*
- * signal trampoline code
- * it is known that this code takes exactly 12 bytes
- * in ../h/pcb.h and in the movc3 above
- */
+/* signal trampoline code: it is known that this code takes exactly 12 bytes */
+/* in ../h/pcb.h and in the movc3 above */
 sigcode:
 	calls	$3,1(pc)
 	rei
-	.word	0x7f
-	callg	(ap),*12(ap)			# registers 0-6 (6==sp/compat)
+	.word	0x7f				# registers 0-6 (6==sp/compat)
+	callg	(ap),*12(ap)
 	ret
+
 /*
  * Primitives
  */ 
@@ -1087,11 +687,11 @@ sw3:
 	.globl	_Resume		# <<<massaged to jsb by "asm.sed">>>
 _Resume:
 	mtpr	$0x18,$IPL			# no interrupts, please
-	movl	CMAP2,_u+PCB_CMAP2	# yech
+	movl	_CMAP2,_u+PCB_CMAP2	# yech
 	svpctx
 	mtpr	r0,$PCBB
 	ldpctx
-	movl	_u+PCB_CMAP2,CMAP2	# yech
+	movl	_u+PCB_CMAP2,_CMAP2	# yech
 res0:
 	tstl	_u+PCB_SSWAP
 	beql	res1
@@ -1146,7 +746,7 @@ _copyseg: 	.globl	_copyseg
 	.word	0x0000
 	mfpr	$IPL,r0		# get current pri level
 	mtpr	$HIGH,$IPL	# turn off interrupts
-	bisl3	$PG_V|PG_KW,8(ap),CMAP2
+	bisl3	$PG_V|PG_KW,8(ap),_CMAP2
 	mtpr	$_CADDR2,$TBIS	# invalidate entry for copy 
 	movc3	$NBPG,*4(ap),_CADDR2
 	mtpr	r0,$IPL		# restore pri level
@@ -1160,7 +760,7 @@ _clearseg: 	.globl	_clearseg
 	.word	0x0000
 	mfpr	$IPL,r0		# get current pri level
 	mtpr	$HIGH,$IPL	# extreme pri level
-	bisl3	$PG_V|PG_KW,4(ap),CMAP1
+	bisl3	$PG_V|PG_KW,4(ap),_CMAP1
 	mtpr	$_CADDR1,$TBIS
 	movc5	$0,(sp),$0,$NBPG,_CADDR1
 	mtpr	r0,$IPL		# restore pri level
@@ -1233,8 +833,8 @@ kacc3:
 kacc2:
 	addl3	8(ap),r0,r1	# ending virtual address
 	addl2	$NBPG-1,r1
-	ashl	$-9,r0,r0	# page number
-	ashl	$-9,r1,r1
+	ashl	$-PGSHIFT,r0,r0
+	ashl	$-PGSHIFT,r1,r1
 	bbs	$31,4(ap),kacc6
 	bbc	$30,4(ap),kacc6
 	cmpl	r0,r3		# user stack
@@ -1261,19 +861,3 @@ kacc5:
 kacerr:
 	clrl	r0		# error
 	ret
-
-/*
- * Error messages
- */ 
-
-	.data
-SBIflt:	.asciz	"UBA SBI Fault SR %x CNFGR %x\n"
-UBAmsg:	.asciz	"UBA error SR %x, FMER %x, FUBAR %o\n"
-straym:	.asciz	"Stray Interrupt\n"
-ZERmsg:	.asciz	"ZERO VECTOR "
-wtime:	.asciz	"write timeout %x\n"
-mbasmsg:.asciz	"stray interrupt mba %d\n"
-
-#if VAX==750
-UBAstraym: .asciz "Stray UBA Interrupt\n"
-#endif
