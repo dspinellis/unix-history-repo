@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)diskpart.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)diskpart.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -59,13 +59,13 @@ struct	defparam {
 	int	p_fsize;	/* frag size */
 } defparam[NPARTITIONS] = {
 	{ 8192, 1024 },		/* a */
-	{ 0 },			/* b */
-	{ 0 },			/* c */
-	{ 8192, 1024 },		/* d */
-	{ 4096, 512 },		/* e */
-	{ 4096, 1024 },		/* f */
-	{ 4096, 1024 },		/* g */
-	{ 4096, 512 }		/* h */
+	{ 8192, 1024 },		/* b */
+	{ 8192, 1024 },		/* c */
+	{ 4096, 512 },		/* d */
+	{ 8192, 1024 },		/* e */
+	{ 8192, 1024 },		/* f */
+	{ 8192, 1024 },		/* g */
+	{ 8192, 1024 }		/* h */
 };
 
 /*
@@ -166,6 +166,8 @@ main(argc, argv)
 	defpart[def][PART('f')] = numcyls[PART('f')] * spc - badsecttable;
 	defpart[def][PART('g')] = numcyls[PART('g')] * spc - badsecttable;
 	defpart[def][PART('c')] = numcyls[PART('c')] * spc;
+	if (!pflag)
+		defpart[def][PART('c')] -= badsecttable;
 
 	/*
 	 * Calculate starting cylinder number for each partition.
