@@ -2,7 +2,7 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * %G% (Berkeley) @(#)refresh.c	1.6
+ * %G% (Berkeley) @(#)refresh.c	1.7
  */
 
 # include	"curses.ext"
@@ -47,10 +47,14 @@ reg WINDOW	*win;
 	if (win->_clear || curscr->_clear || curwin) {
 		if ((win->_flags & _FULLWIN) || curscr->_clear) {
 			_puts(CL);
-			ly = lx = curscr->_curx = curscr->_cury = 0;
-			curscr->_clear = FALSE;
-			if (!curwin)
+			ly = 0;
+			lx = 0;
+			if (!curwin) {
+				curscr->_clear = FALSE;
+				curscr->_cury = 0;
+				curscr->_curx = 0;
 				werase(curscr);
+			}
 			touchwin(win);
 		}
 		win->_clear = FALSE;
@@ -75,7 +79,9 @@ reg WINDOW	*win;
 			else
 				win->_firstch[wy] = _NOCHANGE;
 	}
-	if (win->_leave) {
+	if (win == curscr)
+		domvcur(ly, lx, win->_cury, win->_curx);
+	else if (win->_leave) {
 		curscr->_cury = ly;
 		curscr->_curx = lx;
 		ly -= win->_begy;
@@ -241,6 +247,8 @@ static
 domvcur(oy, ox, ny, nx)
 int	oy, ox, ny, nx; {
 
+	if (ny == 0 && nx == 0)
+		abort();
 	if (curscr->_flags & _STANDOUT && !MS) {
 		_puts(SE);
 		curscr->_flags &= ~_STANDOUT;
