@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -497,7 +497,7 @@ ndbm_map_close(map)
 {
 	if (bitset(MF_WRITABLE, map->map_mflags))
 	{
-#ifdef YPCOMPAT
+#ifdef NIS
 		bool inclnull;
 		char buf[200];
 
@@ -1099,7 +1099,7 @@ impl_map_open(map, mode)
 	map->map_mflags |= MF_IMPL_HASH;
 	if (hash_map_open(map, mode))
 	{
-#if defined(NDBM) && defined(YPCOMPAT)
+#if defined(NDBM) && defined(NIS)
 		if (mode == O_RDONLY || access("/var/yp/Makefile", R_OK) != 0)
 #endif
 			return TRUE;
