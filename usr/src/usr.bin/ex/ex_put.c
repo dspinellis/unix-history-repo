@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	7.6	%G%";
+static char *sccsid = "@(#)ex_put.c	7.7	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -1023,7 +1023,7 @@ tostop()
 {
 	putpad(VE);
 	putpad(KE);
-	if (!value(MESG))
+	if (!value(MESG) && ttynbuf[0]>1)
 		chmod(ttynbuf, ttymesg);
 }
 
