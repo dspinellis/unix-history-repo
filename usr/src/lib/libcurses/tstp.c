@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tstp.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tstp.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<signal.h>
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)tstp.c	5.6 (Berkeley) %G%";
 /*
  * handle stop and start signals
  *
- * @(#)tstp.c	5.6 (Berkeley) %G%
+ * @(#)tstp.c	5.7 (Berkeley) %G%
  */
 void
 tstp() {
