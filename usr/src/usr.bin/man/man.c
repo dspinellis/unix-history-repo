@@ -19,16 +19,20 @@ static char sccsid[] = "@(#)man.c	5.7 (Berkeley) %G%";
 #include <ctype.h>
 
 #define	DEF_PAGER	"/usr/ucb/more -s"
-#define	DEF_PATH	"/usr/man:/usr/local/man"
+#define	DEF_PATH	"/usr/man:/usr/new/man:/usr/local/man"
+
 #define	LOCAL_PATH	"/usr/local/man"
 #define	LOCAL_NAME	"local"
+
+#define	NEW_PATH	"/usr/new/man"
+#define	NEW_NAME	"new"
+
 #define	NO		0
 #define	YES		1
 
 #define	NO_SECTION	0
 #define	S_THREEF	9
-#define	S_NEW		10
-#define	S_OLD		11
+#define	S_OLD		10
 
 /* this array maps a character (ex: '4') to an offset in stanlist */
 #define	secno(x)	(seclist[(int)(x - '0')])
@@ -44,12 +48,10 @@ DIR	stanlist[] = {		/* standard sub-directory list */
 	"notused", "",		"cat1", "1st",		"cat8", "8th",
 	"cat6", "6th",		"cat2", "2nd",		"cat3", "3rd",
 	"cat4", "4th",		"cat5", "5th", 		"cat7", "7th",
-	"cat3f", "3rd (F)",	"cat.new", "new",	"cat.old", "old",
-	NULL, NULL,
+	"cat3f", "3rd (F)",	"cat.old", "old",	NULL, NULL,
 },	sec1list[] = {		/* section one list */
 	"notused", "",		"cat1", "1st",		"cat8", "8th",
-	"cat6", "6th",		"cat.new", "new",	"cat.old", "old",
-	NULL, NULL,
+	"cat6", "6th",		"cat.old", "old",	NULL, NULL,
 };
 
 static DIR	*dirlist;		/* list of directories to search */
@@ -58,6 +60,7 @@ static char	*defpath,		/* default search path */
 		*locpath,		/* local search path */
 		*machine,		/* machine type */
 		*manpath,		/* current search path */
+		*newpath,		/* new search path */
 		*pager;			/* requested pager */
 
 main(argc, argv)
@@ -147,30 +150,21 @@ main(argc, argv)
 	if (!defpath && !(defpath = getenv("MANPATH")))
 		defpath = DEF_PATH;
 	locpath = LOCAL_PATH;
+	newpath = NEW_PATH;
 	for (; *defpath && *defpath == ':'; ++defpath);
 
 	/* Gentlemen... start your kludges! */
 	for (; *argv; ++argv) {
 		section = NO_SECTION;
 		manpath = defpath;
-		dirlist = stanlist;
 		switch(**argv) {
 		/*
-		 * Section 1 requests are really for section 1, 6, 8, new and
-		 * old.  Since new and old aren't broken up into a directory
-		 * of cat[1-8], we just pretend that they are a subdirectory
-		 * of /usr/man.  Should be fixed -- make new and old full
-		 * structures just like local is, get rid of "sec1list" and
-		 * dirlist.
+		 * Section 1 requests are really for section 1, 6, 8, in the
+		 * standard, local and new directories and section old. Since
+		 * old isn't broken up into a directory of cat[1-8], we just
+		 * treat it like a subdirectory of the others.
 		 */
-		case '1':
-			if (!(*argv)[1]) {
-				dirlist = sec1list;
-				goto numtest;
-			}
-			break;
-
-		case '2': case '4': case '5': case '6':
+		case '1': case '2': case '4': case '5': case '6':
 		case '7': case '8':
 			if (!(*argv)[1]) {
 				section = secno((*argv)[0]);
@@ -187,7 +181,7 @@ numtest:			if (!*++argv) {
 					exit(1);
 				}
 			}					/* "3[fF]" */
-			if (((*argv)[1] == 'f'  || (*argv)[1] == 'F') && !(*argv)[2]) {
+			else if (((*argv)[1] == 'f'  || (*argv)[1] == 'F') && !(*argv)[2]) {
 				section = S_THREEF;
 				if (!*++argv) {
 					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", stanlist[S_THREEF].msg);
@@ -196,8 +190,9 @@ numtest:			if (!*++argv) {
 			}
 			break;
 		/*
-		 * Requests for the local section can have subsection numbers
-		 * appended to them, i.e. "local3" is really local/cat3.
+		 * Requests for the new or local sections can have subsection
+		 * numbers appended to them, i.e. "local3" is really
+		 * local/cat3.
 		 */
 		case 'l':					/* local */
 			if (!(*argv)[1])			/* "l" */
@@ -221,21 +216,42 @@ numtest:			if (!*++argv) {
 			manpath = locpath;
 			break;
 		case 'n':					/* new */
-			if (!(*argv)[1] || !strcmp(*argv, stanlist[S_NEW].msg)) {
-				section = S_NEW;
-				goto strtest;
+			if (!(*argv)[1])			/* "n" */
+				section = NO_SECTION;		/* "n2" */
+			else if (isdigit((*argv)[1]) && !(*argv)[2])
+				section = secno((*argv)[1]);
+			else {
+				int	lex;
+				lex = strcmp(NEW_NAME, *argv);
+				if (!lex)			/* "new" */
+					section = NO_SECTION;	/* "new2" */
+				else if (lex < 0 && isdigit((*argv)[sizeof(NEW_NAME) - 1]) && !(*argv)[sizeof(NEW_NAME)])
+					section = secno((*argv)[sizeof(NEW_NAME) - 1]);
+				else
+					break;
 			}
+			if (!*++argv) {
+				fputs("man: what do you want from the new section of the manual?\n", stderr);
+				exit(1);
+			}
+			manpath = newpath;
 			break;
 		case 'o':					/* old */
 			if (!(*argv)[1] || !strcmp(*argv, stanlist[S_OLD].msg)) {
 				section = S_OLD;
-strtest:			if (!*++argv) {
+				if (!*++argv) {
 					fprintf(stderr, "man: what do you want from the %s section of the manual?\n", stanlist[section].msg);
 					exit(1);
 				}
 			}
 			break;
 		}
+		if (section == 1) {
+			dirlist = sec1list;
+			section = NO_SECTION;
+		}
+		else
+			dirlist = stanlist;
 		/*
 		 * This is really silly, but I wanted to put out rational
 		 * errors, not just "I couldn't find it."  This if statement
@@ -244,7 +260,15 @@ strtest:			if (!*++argv) {
 		 */
 		if (!manual(section, *argv))
 			if (manpath == locpath)
-				fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, stanlist[section].msg);
+				if (section == NO_SECTION)
+					fprintf(stderr, "No entry for %s in the local manual.\n", *argv);
+				else
+					fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, stanlist[section].msg);
+			else if (manpath == newpath)
+				if (section == NO_SECTION)
+					fprintf(stderr, "No entry for %s in the new manual.\n", *argv);
+				else
+					fprintf(stderr, "No entry for %s in the %s section of the new manual.\n", *argv, stanlist[section].msg);
 			else if (dirlist == sec1list)
 				fprintf(stderr, "No entry for %s in the 1st section of the manual.\n", *argv);
 			else if (section == NO_SECTION)
