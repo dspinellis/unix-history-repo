@@ -1,4 +1,4 @@
-/*	kdb_message.c	7.1	86/11/20	*/
+/*	kdb_message.c	7.2	86/11/20	*/
 
 #include "../kdb/redef.h"
 
@@ -20,3 +20,4 @@ char	*NOBKPT	=  "no breakpoint set";
 char	*SZBKPT	=  "bkpt command too long";
 char	*EXBKPT	=  "too many breakpoints";
 char	*BADMOD	=  "bad modifier";
+char	*BADRAD =  "invalid radix";
