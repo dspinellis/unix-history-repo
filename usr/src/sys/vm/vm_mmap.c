@@ -179,8 +179,18 @@ smmap(p, uap, retval)
 	    ((uap->flags & MAP_ANON) && uap->fd != -1))
 		return (EINVAL);
 	size = (vm_size_t) round_page(uap->len);
-	if ((uap->flags & MAP_FIXED) && (addr + size > VM_MAXUSER_ADDRESS))
-		return (EINVAL);
+	/*
+	 * Check for illegal addresses.  Watch out for address wrap...
+	 * Note that VM_*_ADDRESS are not constants due to casts (argh).
+	 */
+	if (uap->flags & MAP_FIXED) {
+		if (VM_MAXUSER_ADDRESS > 0 && addr + size >= VM_MAXUSER_ADDRESS)
+			return (EINVAL);
+		if (VM_MIN_ADDRESS > 0 && addr < VM_MIN_ADDRESS)
+			return (EINVAL);
+		if (addr > addr + size)
+			return (EINVAL);
+	}
 	/*
 	 * XXX if no hint provided for a non-fixed mapping place it after
 	 * the end of the largest possible heap.
@@ -330,7 +340,17 @@ munmap(p, uap, retval)
 	size = (vm_size_t) round_page(uap->len);
 	if (size == 0)
 		return(0);
-	if (!vm_map_is_allocated(&p->p_vmspace->vm_map, addr, addr+size,
+	/*
+	 * Check for illegal addresses.  Watch out for address wrap...
+	 * Note that VM_*_ADDRESS are not constants due to casts (argh).
+	 */
+	if (VM_MAXUSER_ADDRESS > 0 && addr + size >= VM_MAXUSER_ADDRESS)
+		return (EINVAL);
+	if (VM_MIN_ADDRESS > 0 && addr < VM_MIN_ADDRESS)
+		return (EINVAL);
+	if (addr > addr + size)
+		return (EINVAL);
+	if (!vm_map_is_allocated(&p->p_vmspace->vm_map, addr, addr + size,
 	    FALSE))
 		return(EINVAL);
 	/* returns nothing but KERN_SUCCESS anyway */
