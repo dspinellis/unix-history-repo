@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -176,18 +176,18 @@ control(pty, cp, n)
 	char *cp;
 	int n;
 {
-	struct winsize *wp;
+	struct winsize w;
 
-	if (n < 4+sizeof (*wp) || cp[2] != 's' || cp[3] != 's')
+	if (n < 4+sizeof (w) || cp[2] != 's' || cp[3] != 's')
 		return (0);
 	oobdata[0] &= ~TIOCPKT_WINDOW;	/* we know he heard */
-	wp = (struct winsize *)(cp+4);
-	wp->ws_row = ntohs(wp->ws_row);
-	wp->ws_col = ntohs(wp->ws_col);
-	wp->ws_xpixel = ntohs(wp->ws_xpixel);
-	wp->ws_ypixel = ntohs(wp->ws_ypixel);
-	(void)ioctl(pty, TIOCSWINSZ, wp);
-	return (4+sizeof (*wp));
+	bcopy(cp+4, (char *)&w, sizeof(w));
+	w.ws_row = ntohs(w.ws_row);
+	w.ws_col = ntohs(w.ws_col);
+	w.ws_xpixel = ntohs(w.ws_xpixel);
+	w.ws_ypixel = ntohs(w.ws_ypixel);
+	(void)ioctl(pty, TIOCSWINSZ, &w);
+	return (4+sizeof (w));
 }
 
 /*
