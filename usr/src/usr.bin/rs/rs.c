@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)rs.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)rs.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -30,6 +30,7 @@ long	flags;
 #define	ICOLBOUNDS	020000
 #define	OCOLBOUNDS	040000
 #define ONEPERCHAR	0100000
+#define NOARGS		0200000
 
 char	buf[BUFSIZ];
 short	*colwidths;
@@ -83,6 +84,8 @@ getfile()
 			puts(curline);
 	}
 	getline();
+	if (flags & NOARGS && curlen < owidth)
+		flags |= ONEPERLINE;
 	if (flags & ONEPERLINE)
 		icols = 1;
 	else				/* count cols on first line */
@@ -199,7 +202,9 @@ prepfile()
 		ocols = irows;
 	}
 	else if (orows == 0 && ocols == 0) {	/* decide rows and cols */
-		ocols = owidth / colw;		/* not a good idea */
+		ocols = owidth / colw;
+		if (ocols == 0)
+			fprintf(stderr, "Display width %d is less than column width %d\n", owidth, colw);
 		if (ocols > nelem)
 			ocols = nelem;
 		orows = nelem / ocols + (nelem % ocols ? 1 : 0);
@@ -335,7 +340,7 @@ char	**av;
 	char	*getnum(), *getlist();
 
 	if (ac == 1) {
-		flags |= ONEPERLINE | TRANSPOSE;
+		flags |= NOARGS | TRANSPOSE;
 	}
 	while (--ac && **++av == '-')
 		for (p = *av+1; *p; p++)
