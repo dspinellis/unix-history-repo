@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)hier.7	8.3 (Berkeley) %G%
+.\"	@(#)hier.7	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HIER 7
@@ -13,7 +13,7 @@
 .Nd layout of filesystems
 .Sh DESCRIPTION
 An outline of the filesystem hierarchy.
-.Bl -hang -width 3n
+.Bl -tag -width "/altroot/"
 .It Sy \&/
 root directory of the system
 .It Sy /COPYRIGHT
@@ -354,6 +354,7 @@ system C library archives; see
 .It Sy uucp/
 UUCP binaries and scripts (historically placed; to be moved)
 .El
+.Pp
 .It Sy libdata/
 miscellaneous utility data files
 .It Sy libexec/
@@ -445,6 +446,7 @@ terminal characteristics database;
 see
 .Xr termcap 5
 .El
+.Pp
 .It Sy mk/
 include files for
 .Xr make 1
@@ -470,8 +472,15 @@ timezone configuration information;
 see
 .Xr tzfile 5
 .El
+.It Sy usr.bin/
+source for utilities/files in
+.Pa /usr/bin
+.It Sy usr.sbin/
+source for utilities/files in
+.Pa /usr/sbin
+.El
 .Pp
-.It Sy src/
+.It Sy /usr/src/
 .Bx 4
 and local source files
 .Pp
@@ -512,7 +521,7 @@ source for utilities/files in
 source for files in
 .Pa /usr/share
 .Pp
-.Bl -tag -width "doc" -compact
+.Bl -tag -width "doc/" -compact
 .It Sy doc/
 .Pp
 .Bl -tag -width "papers/" -compact
@@ -551,10 +560,11 @@ support for ISO filesystems
 .It Sy cd9660/
 support for the ISO-9660 filesystem
 .El
+.Pp
 .It Sy kern/
 support for the high kernel (system calls)
 .It Sy libkern/
-C library style kernel routines
+C library routines used in the kernel
 .It Sy luna68k/
 Omron Luna 68000-based workstations
 .It Sy mips/
@@ -586,7 +596,7 @@ kernel standalone support
 .It Sy sys/
 kernel (and system) include files
 .It Sy tahoe/
-Computer Consoles Inc. Tahoe architecture support
+Computer Consoles Inc. Tahoe architecture (obsolete)
 .It Sy tests/
 kernel testing
 .It Sy ufs/
@@ -603,16 +613,9 @@ the in-memory file system
 shared UNIX file system support
 .El
 .It Sy vax/
-Digital Equipment Corp. VAX architecture support
+Digital Equipment Corp. VAX architecture (obsolete)
 .It Sy vm/
 virtual memory support
-.El
-.It Sy usr.bin/
-source for utilities/files in
-.Pa /usr/bin
-.It Sy usr.sbin/
-source for utilities/files in
-.Pa /usr/sbin
 .El
 .El
 .It Sy /var/
