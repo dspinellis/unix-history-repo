@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -426,8 +426,8 @@ safefile(fn, uid, gid, uname, mustown, mode)
 		*p = '\0';
 		if (stat(fn, &stbuf) < 0)
 			break;
-		if (stbuf.st_uid == uid && !bitset(S_IXUSR, stbuf.st_mode))
-			break;
+		if (stbuf.st_uid == uid && bitset(S_IXUSR, stbuf.st_mode))
+			continue;
 		if (stbuf.st_gid == gid && bitset(S_IXGRP, stbuf.st_mode))
 			continue;
 #ifndef NO_GROUP_SET
@@ -440,8 +440,8 @@ safefile(fn, uid, gid, uname, mustown, mode)
 			for (gp = gr->gr_mem; *gp != NULL; gp++)
 				if (strcmp(*gp, uname) == 0)
 					break;
-			if (*gp != NULL && !bitset(S_IXGRP, stbuf.st_mode))
-				break;
+			if (*gp != NULL && bitset(S_IXGRP, stbuf.st_mode))
+				continue;
 		}
 #endif
 		if (!bitset(S_IXOTH, stbuf.st_mode))
