@@ -1,4 +1,4 @@
-/*	mem.c	4.1	%G%	*/
+/*	mem.c	4.2	%G%	*/
 
 /*
  * Memory special file
@@ -47,14 +47,12 @@ mmread(dev)
 		return;
 
 	case 1:
-		if (u.u_uid != 0) {
-			if ((caddr_t)u.u_offset < (caddr_t)&umbabeg &&
-			    (caddr_t)u.u_offset + u.u_count >= (caddr_t)&umbabeg)
-				goto fault;
-			if ((caddr_t)u.u_offset >= (caddr_t)&umbabeg &&
-			    (caddr_t)u.u_offset < (caddr_t)&umbaend)
-				goto fault;
-		}
+		if ((caddr_t)u.u_offset < (caddr_t)&umbabeg &&
+		    (caddr_t)u.u_offset + u.u_count >= (caddr_t)&umbabeg)
+			goto fault;
+		if ((caddr_t)u.u_offset >= (caddr_t)&umbabeg &&
+		    (caddr_t)u.u_offset < (caddr_t)&umbaend)
+			goto fault;
 		if (!kernacc((caddr_t)u.u_offset, u.u_count, B_READ))
 			goto fault;
 		if (copyout((caddr_t)u.u_offset, u.u_base, u.u_count))

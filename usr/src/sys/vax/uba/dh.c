@@ -1,4 +1,4 @@
-/*	dh.c	4.25	81/02/26	*/
+/*	dh.c	4.26	81/02/27	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -245,7 +245,7 @@ dhopen(dev, flag)
 		/* 512+ is a kludge to try to get around a hardware problem */
 		dh_ubinfo[ui->ui_ubanum] =
 		    uballoc(ui->ui_ubanum, (caddr_t)cfree,
-			512+NCLIST*sizeof(struct cblock), 0);
+			512+nclist*sizeof(struct cblock), 0);
 		cbase[ui->ui_ubanum] = dh_ubinfo[ui->ui_ubanum]&0x3ffff;
 	}
 	if ((dhact&(1<<dh)) == 0) {
@@ -612,7 +612,7 @@ dhreset(uban)
 	printf(" dh");
 	ubarelse(uban, &dh_ubinfo[uban]);
 	dh_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
-	    512+NCLIST*sizeof (struct cblock), 0);
+	    512+nclist*sizeof (struct cblock), 0);
 	cbase[uban] = dh_ubinfo[uban]&0x3ffff;
 	dh = 0;
 	for (dh = 0; dh < NDH; dh++) {
