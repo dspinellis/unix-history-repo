@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.10 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.11 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -109,9 +109,6 @@ found:
 			pclrcurr(fp);
 		if (jobflags&PFOREGND) {
 			if (jobflags & (PSIGNALED|PSTOPPED|PPTIME) ||
-#ifdef IIASA
-			    jobflags & PAEXITED ||
-#endif
 			    !eq(dcwd->di_name, fp->p_cwd->di_name)) {
 				;	/* print in pjwait */
 			}
@@ -1085,6 +1082,8 @@ pfork(t, wanttty)
 		if (t->t_dflg & FNICE)
 			(void) setpriority(PRIO_PROCESS, 0, t->t_nice);
 	} else {
+		if (wanttty >= 0 && tpgrp >= 0)
+			(void) setpgrp(pid, pcurrjob ? pcurrjob->p_jobid : pid);
 		palloc(pid, t);
 		(void) sigsetmask(omask);
 	}
