@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hp.4	4.1 (Berkeley) %G%
+.\"	@(#)hp.4	5.1 (Berkeley) %G%
 .\"
-.TH HP 4 5/10/81
+.TH HP 4 "27 July 1983"
 .UC 4
 .SH NAME
-hp \- RP06, RM03, RM05, RM80, RP07 MASSBUS moving-head disk
+hp \- MASSBUS disk interface
 .SH SYNOPSIS
-disk hp0 at mba0 drive 0
+.B "disk hp0 at mba0 drive 0"
 .SH DESCRIPTION
 Files with minor device numbers 0 through 7 refer to various portions
 of drive 0;
@@ -18,72 +18,7 @@ The standard device names begin with ``hp'' followed by
 the drive number and then a letter a-h for partitions 0-7 respectively.
 The character ? stands here for a drive number in the range 0-7.
 .PP
-The origin and size of the pseudo-disks on each drive are
-as follows:
-.PP
-.nf
-.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u +\w'000000    'u
-RP06 partitions
-	disk	start	length	cyls
-	hp?a	0	15884	0-37
-	hp?b	15884	33440	38-117
-	hp?c	0	340670	0-814
-	hp?g	49324	291280	118-814	
-.PP
-.nf
-RM03 partitions
-	disk	start	length	cyls
-	hp?a	0	15884	0-99
-	hp?b	16000	33440	100-309
-	hp?c	0	131680	0-822
-	hp?g	49600	81984	310-822
-.PP
-.nf
-RM05 partitions
-	disk	start	length	cyls
-	hp?a	0	15884	0-26
-	hp?b	16416	33440	27-81
-	hp?c	0	500384	0-822
-	hp?d	341696	15884	562-588
-	hp?e	358112	55936	589-680
-	hp?f	414048	86240	681-822
-	hp?g	341696	158592	562-822
-	hp?h	49856	291346	82-561
-.PP
-.nf
-RM80 partitions
-	disk	start	length	cyls
-	hp?a	0	15884	0-36
-	hp?b	16058	33440	37-114
-	hp?c	0	242606	0-558
-	hp?g	49910	82080	115-304
-	hp?h	132370	110143	305-558
-.PP
-.nf
-RP07 partitions
-	disk	start	length	cyls
-	hp?a	0	15884	0-9
-	hp?b	16000	64000	10-49
-	hp?c	0	1008000	0-629
-	hp?d	528000	15884	330-339
-	hp?e	544000	258000	340-499
-	hp?f	800000	207850	500-629
-	hp?g	528000	479850	330-629
-	hp?h	80000	448000	50-329
-.fi
-.DT
-.PP
-It is unwise for all of these files to be present in one installation,
-since there is overlap in addresses and protection becomes
-a sticky matter.
-The hp?a partition is normally used for the root file system,
-the hp?b partition as a paging area,
-and the hp?c partition for pack-pack copying (it maps the entire disk).
-On rp06's and rm03's the hp?g partition maps the rest of the pack.
-On rm80's, rm05's and rp07's, both hp?g and hp?h are used to map the
-remaining cylinders.
-.PP
-The block files access the disk via the system's normal
+The block file's access the disk via the system's normal
 buffering mechanism and may be read and written without regard to
 physical disk records.  There is also a `raw' interface
 which provides for direct transmission between the disk
@@ -97,16 +32,165 @@ In raw I/O counts should be a multiple of 512 bytes (a disk sector).
 Likewise
 .I seek
 calls should specify a multiple of 512 bytes.
+.SH "DISK SUPPORT"
+This driver handles both standard DEC controllers and Emulex
+SC750 and SC780 controllers.  Standard DEC drive types are
+recognized according to the MASSBUS drive type register.  For
+the Emulex controller the drive type register should be configured
+to indicate the drive is an RM02.  When this is encountered,
+the driver checks the holding register to find out
+the disk geometry and, based on this information, decides what
+the drive type is.  The following disks are supported: RM03,
+RM05, RP06, RM80, RP05, RP07, ML11A, ML11B, CDC 9775, CDC 9730,
+AMPEX Capricorn (32 sectors/track), FUJITSU Eagle (48 sectors/track),
+and AMPEX 9300.  The origin and size (in sectors) of the pseudo-disks
+on each drive are as follows:
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u +\w'000000    'u
+.PP
+RM03 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-99
+	hp?b	16000	33440	100-309
+	hp?c	0	131680	0-822
+	hp?d	49600	15884	309-408
+	hp?e	65440	55936	409-758
+	hp?f	121440	10080	759-822
+	hp?g	49600	82080	309-822
+.PP
+RM05 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-26
+	hp?b	16416	33440	27-81
+	hp?c	0	500384	0-822
+	hp?d	341696	15884	562-588
+	hp?e	358112	55936	589-680
+	hp?f	414048	86176	681-822
+	hp?g	341696	158528	562-822
+	hp?h	49856	291346	82-561
+.PP
+RP06 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-37
+	hp?b	15884	33440	38-117
+	hp?c	0	340670	0-814
+	hp?d	49324	15884	118-155
+	hp?e	65208	55936	156-289
+	hp?f	121220	219296	290-814
+	hp?g	49324	291192	118-814	
+.PP
+RM80 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-36
+	hp?b	16058	33440	37-114
+	hp?c	0	242606	0-558
+	hp?d	49910	15884	115-151
+	hp?e	68096	55936	152-280
+	hp?f	125888	120466	281-558
+	hp?g	49910	192510	115-558
+.PP
+RP05 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-37
+	hp?b	15884	33440	38-117
+	hp?c	0	171798	0-410
+	hp?d	2242	15884	118-155
+	hp?e	65208	55936	156-289
+	hp?f	121220	50424	290-410
+	hp?g	2242	122320	118-410
+.PP
+RP07 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-9
+	hp?b	16000	66880	10-51
+	hp?c	0	1008000	0-629
+	hp?d	376000	15884	235-244
+	hp?e	392000	307200	245-436
+	hp?f	699200	308600	437-629
+	hp?g	376000	631800	235-629
+	hp?h	83200	291346	52-234
+.PP
+CDC 9775 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-12
+	hp?b	16640	66880	13-65
+	hp?c	0	1079040	0-842
+	hp?d	376320	15884	294-306
+	hp?e	392960	307200	307-546
+	hp?f	700160	378720	547-842
+	hp?g	376320	702560	294-842
+	hp?h	84480	291346	66-293
+.PP
+CDC 9730 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-49
+	hp?b	16000	33440	50-154
+	hp?c	0	263360	0-822
+	hp?d	49600	15884	155-204
+	hp?e	65600	55936	205-379
+	hp?f	121600	141600	380-822
+	hp?g	49600	213600	155-822
+.PP
+AMPEX Capricorn partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-31
+	hp?b	16384	33440	32-97
+	hp?c	0	524288	0-1023
+	hp?d	342016	15884	668-699
+	hp?e	358400	55936	700-809
+	hp?f	414720	109408	810-1023
+	hp?g	342016	182112	668-1023
+	hp?h	50176	291346	98-667
+.PP
+FUJITSU Eagle partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-16
+	hp?b	16320	66880	17-86
+	hp?c	0	808320	0-841
+	hp?d	375360	15884	391-407
+	hp?e	391680	55936	408-727
+	hp?f	698880	109248	728-841
+	hp?g	375360	432768	391-841
+	hp?h	83520	291346	87-390
+.PP
+AMPEX 9300 partitions
+	disk	start	length	cyl
+	hp?a	0	15884	0-26
+	hp?b	16416	33440	27-81
+	hp?c	0	495520	0-814
+	hp?d	341696	15884	562-588
+	hp?e	358112	55936	589-680
+	hp?f	414048	81312	681-814
+	hp?g	341696	153664	562-814
+	hp?h	49856	291346	82-561
+.DT
+.fi
+.PP
+It is unwise for all of these files to be present in one installation,
+since there is overlap in addresses and protection becomes
+a sticky matter.
+The hp?a partition is normally used for the root file system,
+the hp?b partition as a paging area,
+and the hp?c partition for pack-pack copying (it maps the entire disk).
+On disks larger than about 205 Megabytes, the hp?h partition
+is inserted prior to the hp?d or hp?g partition;
+the hp?g partition then maps the remainder of the pack.
+All disk partition tables are calculated using the
+.IR diskpart (8)
+program.
 .SH FILES
 .ta 2i
 /dev/hp[0-7][a-h]	block files
 .br
 /dev/rhp[0-7][a-h]	raw files
 .SH SEE ALSO
-hk(4), up(4)
+hk(4),
+uda(4),
+up(4)
 .SH DIAGNOSTICS
 \fBhp%d%c: hard error sn%d mbsr=%b er1=%b er2=%b\fR.  An unrecoverable
-error occured during transfer of the specified sector of the specified
+error occurred during transfer of the specified sector of the specified
 disk partition.  The MASSBUS status register is printed in hexadecimal and
 with the error bits decoded if any error bits other than MBEXC and DTABT
 are set.  In any case the contents of the two error registers are also printed
@@ -124,11 +208,26 @@ when a write was attempted.  The write operation is not recoverable.
 accessed.  The i/o operation is not recoverable.
 .PP
 \fBhp%d%c: soft ecc sn%d\fR.  A recoverable ECC error occurred on the
-specified sector of the specified disk partition.  This happens normally
+specified sector of the specified disk partition. 
+This happens normally
 a few times a week.  If it happens more frequently than
-this the sectors where the errors are occuring should be checked to see
+this the sectors where the errors are occurring should be checked to see
 if certain cylinders on the pack, spots on the carriage of the drive
 or heads are indicated.
+.PP
+During autoconfiguration one of the following messages may appear
+on the console indicating the appropriate drive type was recognized.
+The last message indicates the drive is of a unknown type.
+.PP
+.nf
+.BR "hp%d: 9775 (direct)" .
+.BR "hp%d: 9730 (direct)" .
+.BR "hp%d: 9300" .
+.BR "hp%d: 9762" .
+.BR "hp%d: capricorn" .
+.BR "hp%d: eagle" .
+.BR "hp%d: ntracks %d, nsectors %d: unknown device" .
+.fi
 .SH BUGS
 In raw I/O
 .I read
@@ -146,8 +245,6 @@ and
 should always deal in 512-byte multiples.
 .PP
 DEC-standard error logging should be supported.
-.PP
-Bad block forwarding is not yet supported on RP06's.
 .PP
 A program to analyze the logged error information (even in its
 present reduced form) is needed.
