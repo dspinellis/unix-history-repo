@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)scandir.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)scandir.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -47,7 +47,6 @@ scandir(dirname, namelist, select, dcomp)
 {
 	register struct dirent *d, *p, **names;
 	register int nitems;
-	register char *cp1, *cp2;
 	struct stat stb;
 	long arraysz;
 	DIR *dirp;
@@ -79,7 +78,7 @@ scandir(dirname, namelist, select, dcomp)
 		p->d_ino = d->d_ino;
 		p->d_reclen = d->d_reclen;
 		p->d_namlen = d->d_namlen;
-		for (cp1 = p->d_name, cp2 = d->d_name; *cp1++ = *cp2++; );
+		bcopy(d->d_name, p->d_name, p->d_namlen + 1);
 		/*
 		 * Check to make sure the array has space left and
 		 * realloc the maximum size.
