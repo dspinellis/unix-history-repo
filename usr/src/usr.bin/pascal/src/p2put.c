@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.6 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.7 %G%";
 
     /*
      *	functions to help pi put out
@@ -222,7 +222,7 @@ putRV( name , level , offset , type )
 
 	if ( !CGENNING )
 	    return;
-	if (level == cbn && whereis(offset) == REGVAR) {
+	if (whereis(offset) == REGVAR) {
 	    putleaf( P2REG , 0 , (-offset) >> 1 , type , 0 );
 	    return;
 	}
