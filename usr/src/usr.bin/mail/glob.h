@@ -4,7 +4,7 @@
  */
 
 /*
- * Sccs Id = "@(#)glob.h	2.8 %G%";
+ * Sccs Id = "@(#)glob.h	2.9 %G%;
  */
 
 int	msgCount;			/* Count of messages read in */
@@ -55,6 +55,7 @@ struct	var	*variables[HSHSIZE];	/* Pointer to active var list */
 struct	grouphead	*groups[HSHSIZE];/* Pointer to active groups */
 struct	ignore		*ignore[HSHSIZE];/* Pointer to ignored fields */
 char	**altnames;			/* List of alternate names for user */
+char	**localnames;			/* List of aliases for our local host */
 int	debug;				/* Debug flag set */
 int	rmail;				/* Being called as rmail */
 
