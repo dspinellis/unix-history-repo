@@ -1,3 +1,12 @@
+#!/bin/sh -
+#
+# Copyright (c) 1980 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.proprietary.sh%
+#
+#	@(#)testf77	5.2 (Berkeley) %G%
+#
 
 # This script will compile and test all of the f77 certification
 # tests in then given fcvs directories
