@@ -1,4 +1,4 @@
-/*	defs.h	4.5	85/09/09	*/
+/*	defs.h	4.6	86/03/26	*/
 
 /*
  * adb - vax string table version; common definitions
@@ -12,7 +12,7 @@
 
 #include <ctype.h>
 #include <a.out.h>
-#include <ptrace.h>
+#include <sys/ptrace.h>
 
 #include "mac.h"
 #include "mode.h"
@@ -46,7 +46,7 @@
 #define TBIT	020
 #define FD	0200
 
-/* puns from <ptrace.h> */
+/* puns from <sys/ptrace.h> */
 #define	CONTIN	PT_CONTINUE
 #define SINGLE	PT_STEP
 
