@@ -16,13 +16,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
 
 #include <net/if.h>
+#include <net/if_dl.h>
 #include <netinet/in.h>
 #include <netinet/in_var.h>
 #include <netns/ns.h>
@@ -82,7 +83,7 @@ intpr(interval, ifnetaddr)
 	while (ifnetaddr || ifaddraddr) {
 		struct sockaddr_in *sin;
 		register char *cp;
-		int n;
+		int n, m;
 		char *index();
 		struct in_addr inet_makeaddr();
 
@@ -149,6 +150,17 @@ intpr(interval, ifnetaddr)
 				printf("%-15s ", ns_phost(sns));
 				}
 				break;
+			case AF_LINK:
+				{
+				struct sockaddr_dl *sdl =
+					(struct sockaddr_dl *)sa;
+				printf("<Link>      ");
+				cp = (char *)LLADDR(sdl);
+				n = sdl->sdl_alen;
+				if (n > 0) goto hexprint;
+				printf("%-15s ", "");
+				}
+				break;
 			default:
 				printf("af%2d: ", sa->sa_family);
 				for (cp = sa->sa_data + sa->sa_len;
@@ -157,13 +169,13 @@ intpr(interval, ifnetaddr)
 						break;
 				n = cp - sa->sa_data + 1;
 				cp = sa->sa_data;
-				if (n <= 7)
-					while (--n)
-						printf("%02d.", *cp++ & 0xff);
-				else
-					while (--n)
-						printf("%02d", *cp++ & 0xff);
-				printf("%02d ", *cp & 0xff);
+			hexprint:
+				m = 12 - (3 * n);
+				while (--n)
+					printf("%02x.", *cp++ & 0xff);
+				printf("%02x ", *cp & 0xff);
+				while (m-- > 0)
+					putchar(' ');
 				break;
 			}
 			ifaddraddr = (off_t)ifaddr.ifa.ifa_next;
