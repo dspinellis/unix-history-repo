@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <math.h>
@@ -51,12 +51,13 @@ static char sccsid[] = "@(#)log.c	5.7 (Berkeley) %G%";
 */
 
 #if defined(vax) || defined(tahoe)
-#define _IEEE	0
-#define TRUNC(x) (double) (float) (x)
+#define _IEEE		0
+#define TRUNC(x)	x = (double) (float) (x)
 #else
 #define _IEEE	1
-#define TRUNC(x) *(((int *) &x) + 1) &= 0xf8000000
-#define infnan(x) 0.0
+#define endian		(((*(int *) &one)) ? 1 : 0)
+#define TRUNC(x)	*(((int *) &x) + endian) &= 0xf8000000
+#define infnan(x)	0.0
 #endif
 
 double
