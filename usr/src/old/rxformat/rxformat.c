@@ -12,11 +12,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rxformat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rxformat.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/file.h>
-#include <vaxuba/rxreg.h>
+#include <vax/uba/rxreg.h>
 #include <stdio.h>
 #include <errno.h>
 #include "pathnames.h"
