@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.10	81/03/09	*/
+/*	kern_proc.c	4.11	81/04/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -343,7 +343,7 @@ register struct inode *ip;
 			sleep((caddr_t)u.u_procp, PZERO - 1);
 		u.u_procp->p_flag &= ~(SVFDONE|SKEEP);
 	}
-	u.u_procp->p_flag &= ~(SPAGI|SANOM|SUANOM|SNUSIG);
+	u.u_procp->p_flag &= ~(SPAGI|SSEQL|SUANOM|SNUSIG);
 	u.u_procp->p_flag |= pagi;
 	u.u_dmap = u.u_cdmap;
 	u.u_smap = u.u_csmap;
