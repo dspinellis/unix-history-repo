@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -158,8 +158,7 @@ nfs_inactive(vp)
 
 	np = VTONFS(vp);
 	if (prtactive && vp->v_count != 0)
-		printf("nfs_inactive: pushing active fileid %d fsid 0x%x\n",
-			np->n_vattr.va_fileid, np->n_vattr.va_fsid);
+		vprint("nfs_inactive: pushing active", vp);
 	nfs_lock(vp);
 	sp = np->n_sillyrename;
 	np->n_sillyrename = (struct sillyrename *)0;
@@ -219,8 +218,7 @@ nfs_reclaim(vp)
 		nfs_unlock(vp);
 	}
 	if (prtactive && vp->v_count != 0)
-		printf("nfs_reclaim: pushing active fileid %d fsid 0x%x\n",
-			np->n_vattr.va_fileid, np->n_vattr.va_fsid);
+		vprint("nfs_reclaim: pushing active", vp);
 	/*
 	 * Remove the nfsnode from its hash chain.
 	 */
