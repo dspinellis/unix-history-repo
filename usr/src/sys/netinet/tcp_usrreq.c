@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.8 81/10/23 */
+/* tcp_usrreq.c 1.9 81/10/23 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -290,7 +290,7 @@ sss_snd(tp, m0)
 	last = tp->snd_off;
 	for (m = n = m0; m != NULL; m = m->m_next) {
 		up->uc_ssize++;
-		if (m->m_off > MSIZE)
+		if (m->m_off > MMAXOFF)
 			up->uc_ssize += NMBPG;
 		last += m->m_len;
 	}
@@ -301,11 +301,11 @@ sss_snd(tp, m0)
 			m = m->m_next;
 			last += m->m_len;
 		}
-		if (m->m_off <= MSIZE) {
+		if (m->m_off <= MMAXOFF) {
 			last += m->m_len;
 			off = m->m_off + m->m_len;
-			while (n && n->m_off <= MSIZE &&
-			    (MSIZE - off) >= n->m_len) {
+			while (n && n->m_off <= MMAXOFF &&
+			    (MMAXOFF - off) >= n->m_len) {
 				bcopy((caddr_t)((int)n + n->m_off),
 				      (caddr_t)((int)m + off), n->m_len);
 				m->m_len += n->m_len;

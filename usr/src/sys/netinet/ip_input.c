@@ -1,4 +1,4 @@
-/* ip_input.c 1.5 81/10/21 */
+/* ip_input.c 1.6 81/10/23 */
 
 #include "../h/param.h"
 #include "../bbnnet/net.h"
@@ -106,7 +106,7 @@ fragged:
 			return;
 		}
 
-		fp = (struct ipq *)((int)m + MHEAD);
+		fp = (struct ipq *)((int)m + MMINOFF);
 		fp->iqx.ip_next = fp->iqx.ip_prev = (struct ip *)fp;
 		bcopy(ip, &fp->iqh, min(MLEN-28, hlen));
 		fp->iqh.ip_ttl = MAXTTL;
