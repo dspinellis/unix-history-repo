@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	8.2 (Berkeley) %G%
+ *	@(#)vfs_conf.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -101,6 +101,12 @@ extern	struct vfsops kernfs_vfsops;
 #define KERNFS_VFSOPS	NULL
 #endif
 
+#ifdef PROCFS
+extern	struct vfsops procfs_vfsops;
+#define PROCFS_VFSOPS	&procfs_vfsops
+#else
+#define PROCFS_VFSOPS	NULL
+#endif
 
 struct vfsops *vfssw[] = {
 	NULL,			/* 0 = MOUNT_NONE */
@@ -115,6 +121,7 @@ struct vfsops *vfssw[] = {
 	NULL_VFSOPS,		/* 9 = MOUNT_NULL */
 	UMAP_VFSOPS,		/* 10 = MOUNT_UMAP */
 	KERNFS_VFSOPS,		/* 11 = MOUNT_KERNFS */
+	PROCFS_VFSOPS,		/* 12 = MOUNT_PROCFS */
 	0
 };
 
@@ -145,6 +152,7 @@ extern struct vnodeopv_desc portal_vnodeop_opv_desc;
 extern struct vnodeopv_desc null_vnodeop_opv_desc;
 extern struct vnodeopv_desc umap_vnodeop_opv_desc;
 extern struct vnodeopv_desc kernfs_vnodeop_opv_desc;
+extern struct vnodeopv_desc procfs_vnodeop_opv_desc;
 
 struct vnodeopv_desc *vfs_opv_descs[] = {
 	&ffs_vnodeop_opv_desc,
@@ -191,6 +199,9 @@ struct vnodeopv_desc *vfs_opv_descs[] = {
 #endif
 #ifdef KERNFS
 	&kernfs_vnodeop_opv_desc,
+#endif
+#ifdef PROCFS
+	&procfs_vnodeop_opv_desc,
 #endif
 	NULL
 };
