@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: hp300/hp300/pmap.c	7.16 (Berkeley) 5/20/93
+ * from: hp300/hp300/pmap.c	8.2 (Berkeley) 11/14/93
  *
- *	@(#)pmap.c	8.1 (Berkeley) %G%
+ *	@(#)pmap.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -1556,7 +1556,7 @@ pmap_copy_page(src, dst)
 	dkva = (vm_offset_t) CADDR2;
 	pmap_enter(kernel_pmap, skva, src, VM_PROT_READ, TRUE);
 	pmap_enter(kernel_pmap, dkva, dst, VM_PROT_READ|VM_PROT_WRITE, TRUE);
-	bcopy((caddr_t)skva, (caddr_t)dkva, PAGE_SIZE);
+	copypage((caddr_t)skva, (caddr_t)dkva);
 	/* CADDR1 and CADDR2 are virtually contiguous */
 	pmap_remove(kernel_pmap, skva, skva+2*PAGE_SIZE);
 }
