@@ -1,4 +1,4 @@
-/*	hp.c	6.1	83/07/29	*/
+/*	hp.c	6.2	83/09/25	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -101,11 +101,11 @@ struct	size {
 }, cdc9775_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 12 */
 	66880,	13,		/* B=cyl 13 thru 65 */
-	1079040, 0,		/* C=cyl 0 thru 842 */
+	1077760, 0,		/* C=cyl 0 thru 841 */
 	15884,	294,		/* D=cyl 294 thru 306 */
 	307200,	307,		/* E=cyl 307 thru 546 */
-	378784,	547,		/* F=cyl 547 thru 842 */
-	702624,	294,		/* G=cyl 294 thru 842 */
+	377440,	547,		/* F=cyl 547 thru 841 */
+	701280,	294,		/* G=cyl 294 thru 841 */
 	291346,	66,		/* H=cyl 66 thru 293 */
 }, cdc9730_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 49 */
