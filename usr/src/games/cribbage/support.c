@@ -79,33 +79,33 @@ plyrhand(hand, s)
 CARD		hand[];
 char		*s;
 {
-	register int		i, j;
-	BOOLEAN			win;
-	static char		prompt[BUFSIZ];
+    register int	i, j;
+    register BOOLEAN	win;
+    static char		prompt[BUFSIZ];
 
-	prhand(hand, CINHAND, Playwin, FALSE);
-	sprintf(prompt, "Your %s scores ", s);
-	i = scorehand(hand, turnover, CINHAND, FALSE, explain);	/* count */
-	if ((j = number(0, 29, prompt)) == 19)
-	    j = 0;
-	if (i != j) {
-	    if (i < j) {
-		win = chkscr(&pscore, i);
-		msg("It's really only %d points; I get %d", i, 2);
-		if (!win)
-		    win = chkscr(&cscore, 2);
-	    }
-	    else {
-		win = chkscr(&pscore, j);
-		msg("You should have taken %d, not %d!", i, j);
-	    }
-	    if (explain)
-		msg("Explanation: %s", expl);
-	    do_wait();
-	}
-	else
+    prhand(hand, CINHAND, Playwin, FALSE);
+    sprintf(prompt, "Your %s scores ", s);
+    i = scorehand(hand, turnover, CINHAND, strcmp(s, "crib"), explain);
+    if ((j = number(0, 29, prompt)) == 19)
+	j = 0;
+    if (i != j) {
+	if (i < j) {
 	    win = chkscr(&pscore, i);
-	return win;
+	    msg("It's really only %d points; I get %d", i, 2);
+	    if (!win)
+		win = chkscr(&cscore, 2);
+	}
+	else {
+	    win = chkscr(&pscore, j);
+	    msg("You should have taken %d, not %d!", i, j);
+	}
+	if (explain)
+	    msg("Explanation: %s", expl);
+	do_wait();
+    }
+    else
+	win = chkscr(&pscore, i);
+    return win;
 }
 
 /*
