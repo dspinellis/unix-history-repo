@@ -1,4 +1,4 @@
-/*	vm_machdep.c	5.6	83/05/27	*/
+/*	vm_machdep.c	5.7	83/06/14	*/
 
 #include "../machine/pte.h"
 
@@ -29,9 +29,7 @@ setredzone(pte, vaddr)
 		mtpr(TBIS, vaddr + sizeof (struct user));
 }
 
-/*
- *
- */
+#ifndef mapin
 mapin(pte, v, pfnum, count, prot)
 	struct pte *pte;
 	u_int v, pfnum;
@@ -46,6 +44,7 @@ mapin(pte, v, pfnum, count, prot)
 		count--;
 	}
 }
+#endif
 
 #ifdef notdef
 /*ARGSUSED*/
