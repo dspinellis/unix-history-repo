@@ -1,8 +1,13 @@
-#	@(#)Makefile	5.41 (Berkeley) %G%
+#	@(#)Makefile	5.42 (Berkeley) %G%
 
-SUBDIR=	awk compact cpp crypt ed eqn groups hostid lex make more ms od \
-	pr refer roff sed sh sort sum symorder tar tbl test tmac whereis \
-	which whoami yacc
+# These programs are the only ones in src/old that we believe are worth
+# installing on the system.  (Most of the other programs in src/old don't
+# even compile on 4.4BSD.)  They are installed into /usr/old in case their
+# replacements prove to have compatibility or stability problems.
+
+SUBDIR=	awk compact cpp crypt ed eqn lex make more ms od \
+	pr refer roff sed sh sort sum symorder tar tbl test \
+	tmac which yacc
 
 .if   (${MACHINE} == "hp300")
 SUBDIR+=adb as.hpux ld
