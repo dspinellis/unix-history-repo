@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.3 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.4 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -339,7 +339,7 @@ will attempt to determine if the hash function specified is the same as
 the one with which the database was created, and will fail if it is not.
 .PP
 Both key and data structures may reference byte strings of essentially
-unlimited length.
+unlimited length, however, the strings must fit into available memory.
 .PP
 Backward compatible interfaces to the routines described in
 .IR dbm (3),
@@ -422,7 +422,8 @@ The byte offset is valid.
 R_RECNO
 The record number is valid.
 .PP
-Data structures may reference byte strings of essentially unlimited length.
+Data structures may reference byte strings of essentially
+unlimited length, however, the strings must fit into available memory.
 .SH ERRORS
 The
 .I open
