@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.c	6.17 (Berkeley) %G%
+ *	@(#)ip_icmp.c	6.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -125,7 +125,7 @@ struct in_ifaddr *ifptoia();
  * Process a received ICMP message.
  */
 icmp_input(m, ifp)
-	struct mbuf *m;
+	register struct mbuf *m;
 	struct ifnet *ifp;
 {
 	register struct icmp *icp;
@@ -175,7 +175,7 @@ icmp_input(m, ifp)
 		    icp->icmp_code);
 #endif
 	if (icp->icmp_type > ICMP_MAXTYPE)
-		goto free;
+		goto raw;
 	icmpstat.icps_inhist[icp->icmp_type]++;
 	code = icp->icmp_code;
 	switch (icp->icmp_type) {
@@ -289,6 +289,7 @@ reflect:
 			rtredirect((struct sockaddr *)&icmpsrc,
 			  (struct sockaddr *)&icmpdst, RTF_GATEWAY,
 			  (struct sockaddr *)&icmpgw);
+			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 			pfctlinput(PRC_REDIRECT_NET,
 			  (struct sockaddr *)&icmpsrc);
 		} else {
@@ -313,6 +314,7 @@ reflect:
 		break;
 	}
 
+raw:
 	icmpsrc.sin_addr = ip->ip_src;
 	icmpdst.sin_addr = ip->ip_dst;
 	raw_input(m, &icmproto, (struct sockaddr *)&icmpsrc,
