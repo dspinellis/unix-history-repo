@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.24 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.25 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.24 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.25 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -542,7 +542,7 @@ myhostname(hostbuf, size)
 **		Sets RealHostName to the name of the host at the other end.
 */
 
-#ifdef IDENTPROTO
+#if IDENTPROTO
 
 static jmp_buf	CtxAuthTimeout;
 
@@ -561,7 +561,7 @@ getauthinfo(fd)
 	SOCKADDR fa;
 	int falen;
 	register char *p;
-#ifdef IDENTPROTO
+#if IDENTPROTO
 	SOCKADDR la;
 	int lalen;
 	register struct servent *sp;
@@ -588,7 +588,7 @@ getauthinfo(fd)
 	RealHostName = newstr(p);
 	RealHostAddr = fa;
 
-#ifdef IDENTPROTO
+#if IDENTPROTO
 	lalen = sizeof la;
 	if (fa.sa.sa_family != AF_INET ||
 	    getsockname(fd, &la.sa, &lalen) < 0 || lalen <= 0 ||
