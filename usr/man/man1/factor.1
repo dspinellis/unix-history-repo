@@ -1,0 +1,47 @@
+.TH FACTOR 1 
+.SH NAME
+factor, primes \- factor a number, generate large primes
+.SH SYNOPSIS
+.B factor
+[ number ]
+.PP
+.B primes
+.SH DESCRIPTION
+When
+.I factor
+is invoked without an argument, it waits for a number to be typed in.
+If you type in a positive
+number less than 2\u\s756\s0\d (about
+.if n 7.2e16)
+.if t 7.2\(mu10\u\s716\s0\d\|)
+it will factor the number and print its prime factors; each one is printed
+the proper number of times.
+Then it waits for another number.
+It exits if it encounters a zero or any non-numeric character.
+.PP
+If
+.I factor
+is invoked with an argument, it factors the number
+as above and then exits.
+.PP
+Maximum time to factor is proportional to
+.if n sqrt(n)
+.if t \(sr\o'\fIn\fR\(rn'
+and occurs when
+.I n
+is prime
+or the square of a prime.
+It takes 1 minute to factor a prime
+near
+10\u\s714\s0\d
+on a PDP11.
+.PP
+When
+.I primes
+is invoked, it waits for a number to be typed in.
+If you type in a positive
+number less than 2\u\s756\s0\d
+it will print all primes greater than or
+equal to this number.
+.SH DIAGNOSTICS
+`Ouch.' for input out of range or for garbage input.
