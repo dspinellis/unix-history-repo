@@ -1,4 +1,4 @@
-/*	vdfmt.h	1.5	87/11/23	*/
+/*	vdfmt.h	1.6	88/05/31	*/
 
 /*
  * VERSAbus disk controller (vd) disk formatter.
@@ -73,12 +73,9 @@ typedef struct {
 } fmt_err;
 
 /* utilities */
-int	blkcopy();
-int	blkzero();
 int	to_sector();
 int	to_track();
 int	data_ok();
-boolean	blkcmp();
 boolean	get_yes_no();
 boolean	is_in_map();
 boolean	is_formatted();
