@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -646,6 +646,6 @@ getfname(filename)
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: fstat [-u user] [-p pid] [filename ...]\n");
+	    "usage: fstat [-fnv] [-p pid] [-u user] [filename ...]\n");
 	exit(1);
 }
