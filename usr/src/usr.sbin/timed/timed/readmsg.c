@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.9 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -93,6 +93,7 @@ struct netinfo *netfrom;
 			if (ptr == tail) 
 				tail = prev;
 			free((char *)ptr);
+			fromnet = NULL;
 			if (netfrom == NULL)
 			    for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
 				    if ((ntp->mask & from.sin_addr.s_addr) ==
@@ -157,6 +158,14 @@ struct netinfo *netfrom;
 
 			bytehostorder(&msgin);
 
+			if (msgin.tsp_vers > TSPVERSION) {
+				if (trace) {
+				    fprintf(fd, "readmsg: version mismatch\n");
+				    /* should do a dump of the packet, but... */
+				}
+				continue;
+			}
+
 			fromnet = NULL;
 			for (ntp = nettab; ntp != NULL; ntp = ntp->next)
 				if ((ntp->mask & from.sin_addr.s_addr) ==
@@ -169,11 +178,23 @@ struct netinfo *netfrom;
 			 * drop packets from nets we are ignoring permanently
 			 */
 			if (fromnet == NULL) {
-				if (trace) {
-					fprintf(fd, "readmsg: discarded: ");
-					print(&msgin, &from);
+				/* 
+				 * The following messages may originate on
+				 * this host with an ignored network address
+				 */
+				if (msgin.tsp_type != TSP_TRACEON &&
+				    msgin.tsp_type != TSP_SETDATE &&
+				    msgin.tsp_type != TSP_MSITE &&
+#ifdef	TESTING
+				    msgin.tsp_type != TSP_TEST &&
+#endif
+				    msgin.tsp_type != TSP_TRACEOFF) {
+					if (trace) {
+					    fprintf(fd, "readmsg: discarded: ");
+					    print(&msgin, &from);
+					}
+					continue;
 				}
-				continue;
 			}
 
 			/*
@@ -209,6 +230,9 @@ struct netinfo *netfrom;
 				masterack();
 			else if (fromnet->status == SLAVE)
 				slaveack();
+			else
+				ignoreack();
+				
 			if (LOOKAT(msgin, type, machfrom, netfrom, from)) {
 				if (trace) {
 					fprintf(fd, "readmsg: ");
@@ -256,6 +280,41 @@ slaveack()
 		(void)strcpy(resp.tsp_name, hostname);
 		if (trace) {
 			fprintf(fd, "Slaveack: ");
+			print(&resp, &from);
+		}
+		bytenetorder(&resp);     /* this is not really necessary here */
+		if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0, 
+						&from, length) < 0) {
+			syslog(LOG_ERR, "sendto: %m");
+			exit(1);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+/*
+ * Certain packets may arrive from this machine on ignored networks.
+ * These packets should be acknowledged.
+ */
+
+ignoreack()
+{
+	int length;
+	struct tsp resp;
+
+	length = sizeof(struct sockaddr_in);
+	switch(msgin.tsp_type) {
+
+	case TSP_TRACEON:
+	case TSP_TRACEOFF:
+		resp = msgin;
+		resp.tsp_type = TSP_ACK;
+		resp.tsp_vers = TSPVERSION;
+		(void)strcpy(resp.tsp_name, hostname);
+		if (trace) {
+			fprintf(fd, "Ignoreack: ");
 			print(&resp, &from);
 		}
 		bytenetorder(&resp);     /* this is not really necessary here */
