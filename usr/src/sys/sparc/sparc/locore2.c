@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore2.c	8.3 (Berkeley) %G%
+ *	@(#)locore2.c	8.4 (Berkeley) %G%
  *
  * from: $Header: locore2.c,v 1.8 92/11/26 03:05:01 mccanne Exp $ (LBL)
  */
@@ -33,6 +33,7 @@ int	whichqs;
  * Put process p on the run queue indicated by its priority.
  * Calls should be made at splstatclock(), and p->p_stat should be SRUN.
  */
+void
 setrunqueue(p)
 	register struct proc *p;
 {
