@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.1 (Berkeley) %G%
+ *	@(#)conf.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -147,6 +147,14 @@ cdev_decl(rs);
 cdev_decl(vc);
 cdev_decl(cn);
 
+cdev_decl(ctty);
+/* open, read, write, ioctl, select -- XXX should be a tty */
+#define	cdev_ctty_init(c,n) { \
+	dev_init(c,n,open), (dev_type_close((*))) nullop, dev_init(c,n,read), \
+	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) nullop, \
+	(dev_type_reset((*))) nullop, 0, dev_init(c,n,select), \
+	(dev_type_map((*))) enodev, 0 }
+
 dev_type_read(mmrw);
 /* read/write */
 #define	cdev_mm_init(c,n) { \
@@ -284,7 +292,7 @@ struct cdevsw	cdevsw[] =
 {
 	cdev_vc_init(1,vc),		/* 0: virtual console */
 	cdev_tty_init(NRS,rs),		/* 1: rs232c */
-	cdev_notdef(),			/* 2: sy? */
+	cdev_ctty_init(1,ctty),		/* 2: controlling terminal */
 	cdev_mm_init(1,mm),		/* 3: /dev/{null,mem,kmem,...} */
 	cdev_disk_init(NSD,sd_c_),	/* 4: scsi disk */
 	cdev_disk_init(NFD,fd_c_),     	/* 5: floppy disk */
@@ -295,11 +303,7 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 10: md (sony memory disk) */
 	cdev_kb_init(NKB,kb),		/* 11: keyboard */
 	cdev_ms_init(NMS,ms),		/* 12: mouse */
-#ifdef notdef
 	cdev_fd_init(1,fd),		/* 13: file descriptor pseudo-dev */
-#else
-	cdev_notdef(),			/* 13 */
-#endif
 	cdev_fb_init(NFB,fb),		/* 14: frame buffer */
 	cdev_vn_init(NVN,vn),		/* 15: vnode disk */
 	cdev_tape_init(NST,st),		/* 16: scsi tape */
