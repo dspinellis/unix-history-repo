@@ -66,7 +66,7 @@ the user is prompted as to whether an existing file should be overwritten.
 .PP
 The
 .B \-c
-option makes
+(``cat'') option makes
 .I compress/uncompress
 write to the standard output; no files are changed.
 The nondestructive behavior of
@@ -138,10 +138,8 @@ reduction for each file compressed.
 Exit status is normally 0;
 if the last file is larger after (attempted) compression, the status is 2;
 if an error occurs, exit status is 1.
-.SH "SEE ALSO"
-pack(1), compact(1)
 .SH "DIAGNOSTICS"
-Usage: compress [-fvc] [-b maxbits] [file ...]
+Usage: compress [\-fvc] [\-b maxbits] [file ...]
 .in +8
 Invalid options were specified on the command line.
 .in -8
@@ -191,6 +189,11 @@ already exists; do you wish to overwrite (y or n)?
 .in +8
 Respond "y" if you want the output file to be replaced; "n" if not.
 .in -8
+uncompress: corrupt input
+.in +8
+A SIGSEGV violation was detected which usually means that the input file is
+corrupted.
+.in -8
 Compression: 
 .I "xx.xx%"
 .in +8
@@ -218,7 +221,7 @@ No savings is achieved by
 compression.  The input remains virgin.
 .in -8
 .SH "BUGS"
-Although compressed files are compatible between machines with virtual memory,
+Although compressed files are compatible between machines with large memory,
 .BR \-b \12
 should be used for file transfer to architectures with 
 a small process data space (64KB or less, as exhibited by the DEC PDP
