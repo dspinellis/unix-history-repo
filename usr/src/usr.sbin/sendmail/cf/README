@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.64 (Berkeley) %G%
+		@(#)README	8.65 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -526,7 +526,10 @@ local_procmail	Use procmail as the local mailer.  This mailer can
 bestmx_is_local	Accept mail as though locally addressed for any host that
 		lists us as the best possible MX record.  This generates
 		additional DNS traffic, but should be OK for low to
-		medium traffic hosts.
+		medium traffic hosts.  THIS FEATURE IS FUNDAMENTALLY
+		INCOMPATIBLE WITH WILDCARD MX RECORDS!!!  If you have
+		a wildcard MX record that matches your domain, you
+		cannot use this feature.
 
 smrsh		Use the SendMail Restricted SHell (smrsh) provided
 		with the distribution instead of /bin/sh for mailing
