@@ -1,4 +1,4 @@
-/*	draw.c	1.10	85/12/16
+/*	draw.c	1.11	86/01/12
  *
  *	This file contains the functions for producing the graphics
  *   images in the canon/imagen driver for ditroff.
@@ -139,7 +139,7 @@ register int vd;
 	hd = basex + (int) xs;
 	vd = basey + (int) ys;
 	word(xbound(hd));	/* put out a point on ellipse */
-	word(ybound(hd));
+	word(ybound(vd));
     }
     byte(ADRAW);		/* now draw the arc */
     byte(15);
