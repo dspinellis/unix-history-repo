@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -329,7 +329,7 @@ main(argc, argv)
 				goto next;
 
 			default:
-				fatal("-%c: unknown flag", cp);
+				fatal("-%c: unknown flag", *cp);
 			}
 next:
 		argc--, argv++;
