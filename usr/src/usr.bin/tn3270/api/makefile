@@ -57,7 +57,7 @@ ALLO = apilib$O api_bsd$O api_exch$O astosc$O asc_ebc$O dctype$O \
 .c.obj:
 	${CC} ${CFLAGS} -c $<
 
-apiliblib.a: ${ALLO}
+apilib.a: ${ALLO}
 	${RM} $@
 	for i in ${ALLO}; do (${AR} ${AR1} $@ ${AR2} $$i${AR3}); done
 	${RANLIB} $@
@@ -66,7 +66,7 @@ apiliblib.a: ${ALLO}
 	sccs get $<
 
 clean:
-	for i in ${ALLO} errs apiliblib.a makefile.bak \
+	for i in ${ALLO} errs apilib.a makefile.bak \
 		disp_out asc_disp.out astosc.out disp_asc.out \
 		test* test$O t1* t1$O t2* t2$O; \
 			do (${RM} $$i); done
@@ -78,14 +78,14 @@ sccsclean:
 action:
 	${ACTION}
 
-test:	apiliblib.a test$O
-	${CC} ${CFLAGS} -o $@ test$O apiliblib.a
+test:	apilib.a test$O
+	${CC} ${CFLAGS} -o $@ test$O apilib.a
 
-t1:	apiliblib.a t1$O
-	${CC} ${CFLAGS} -o $@ t1$O apiliblib.a
+t1:	apilib.a t1$O
+	${CC} ${CFLAGS} -o $@ t1$O apilib.a
 
-t2:	apiliblib.a t2$O
-	${CC} ${CFLAGS} -o $@ t2$O apiliblib.a
+t2:	apilib.a t2$O
+	${CC} ${CFLAGS} -o $@ t2$O apilib.a
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -129,9 +129,9 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-apilib$O: ../api/api.h apilib.h
-api_bsd$O: ../api/api.h api_exch.h
-api_exch$O: api_exch.h
+apilib$O: ../ctlr/api.h apilib.h
+api_bsd$O: ../ctlr/api.h api_exch.h
+api_exch$O: ../general/general.h api_exch.h
 asc_ebc$O: asc_ebc.h
 astosc$O: ../general/general.h ../ctlr/function.h astosc.h astosc.out
 dctype$O: dctype.h
