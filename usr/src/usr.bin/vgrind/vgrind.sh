@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)vgrind.sh	5.5 (Berkeley) %G%
+#	@(#)vgrind.sh	5.6 (Berkeley) %G%
 #
 set voptions=
 set options=
@@ -23,7 +23,7 @@ set files=
 set f=''
 set head=""
 set vf=/usr/libexec/vfontedpr
-set tm=/usr/share/lib/tmac
+set tm=/usr/share/tmac
 top:
 if ($#argv > 0) then
     switch ($1:q)
