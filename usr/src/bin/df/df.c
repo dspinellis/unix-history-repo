@@ -1,22 +1,19 @@
 #ifndef lint
-static	char *sccsid = "@(#)df.c	4.16 %G%";
+static	char *sccsid = "@(#)df.c	4.17 %G%";
 #endif
 
-#include <stdio.h>
-#include <fstab.h>
 #include <sys/param.h>
 #include <sys/fs.h>
 #include <sys/stat.h>
 
+#include <stdio.h>
+#include <fstab.h>
+#include <mtab.h>
+
 /*
  * df
  */
-#define NFS	20	/* Max number of filesystems */
-
-struct {
-	char path[32];
-	char spec[32];
-} mtab[NFS];
+struct	mtab mtab[NMOUNT];
 char	root[32];
 char	*mpath();
 
@@ -39,21 +36,21 @@ main(argc, argv)
 	int i;
 
 	while (argc > 1 && argv[1][0]=='-') {
-	switch (argv[1][1]) {
+		switch (argv[1][1]) {
 
-	case 'i':
-		iflag++;
-		break;
+		case 'i':
+			iflag++;
+			break;
 
-	default:
-		fprintf(stderr, "usage: df [ -i ] [ filsys... ]\n");
-		exit(0);
-	}
-	argc--, argv++;
+		default:
+			fprintf(stderr, "usage: df [ -i ] [ filsys... ]\n");
+			exit(0);
+		}
+		argc--, argv++;
 	}
 	i = open("/etc/mtab", 0);
 	if (i >= 0) {
-		(void) read(i, (char *)mtab, sizeof mtab);
+		(void) read(i, (char *)mtab, sizeof (mtab));
 		(void) close(i);
 	}
 	sync();
@@ -161,16 +158,17 @@ bread(bno, buf, cnt)
 /*
  * Given a name like /dev/rrp0h, returns the mounted path, like /usr.
  */
-char *mpath(file)
+char *
+mpath(file)
 	char *file;
 {
-	register int i;
+	register struct mtab *mp;
 
 	if (eq(file, root))
-		return "/";
-	for (i=0; i<NFS; i++)
-		if (eq(file, mtab[i].spec))
-			return (mtab[i].path);
+		return ("/");
+	for (mp = mtab; mp < mtab + NMOUNT; mp++)
+		if (eq(file, mp->m_dname))
+			return (mp->m_path);
 	return "";
 }
 
