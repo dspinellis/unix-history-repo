@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.9	85/03/12	*/
+/*	kern_exec.c	6.10	85/03/12	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -190,7 +190,7 @@ execve()
 	uap = (struct execa *)u.u_ap;
 	bno = rmalloc(argmap, (long)ctod(clrnd((int)btoc(NCARGS))));
 	if (bno == 0) {
-		swkill(u.u_procp, "exece");
+		swkill(u.u_procp, "exec: no swap space");
 		goto bad;
 	}
 	if (bno % CLSIZE)
@@ -423,7 +423,7 @@ getxfile(ip, ep, nargc, uid, gid)
 #endif
 
 	if (u.u_error)
-		swkill(u.u_procp, "i/o error mapping pages");
+		swkill(u.u_procp, "exec: I/O error mapping pages");
 	/*
 	 * set SUID/SGID protections, if no tracing
 	 */
