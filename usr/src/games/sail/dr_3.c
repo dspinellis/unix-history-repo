@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	2.4 83/12/17";
+static	char *sccsid = "@(#)dr_3.c	2.5 84/01/19";
 #endif
 
 #include "driver.h"
@@ -195,8 +195,8 @@ char *moved;
 		if (--sp->file->dir == 0)
 			sp->file->dir = 8;
 		break;
-	case '0': case '1': case '2': case '3':
-	case '4': case '5': case '6': case '7':
+		case '0': case '1': case '2': case '3':
+		case '4': case '5': case '6': case '7':
 		if (sp->file->dir % 2 == 0)
 			dist = dtab[com - '0'];
 		else
@@ -230,11 +230,11 @@ char isdefense;
 	register struct BP *bp;
 
 	bp = isdefense ? from->file->DBP : from->file->OBP;
-	for (n = 0; n < 3 && bp[n].turnsent; n++)
+	for (n = 0; n < NBP && bp[n].turnsent; n++)
 		;
-	if (n < 3 && sections) {
+	if (n < NBP && sections) {
 		Write(isdefense ? W_DBP : W_OBP, from, 0,
-			turn, to->file->index, sections, 0);
+			n, turn, to->file->index, sections);
 		if (isdefense)
 			makesignal(from, "repelling boarders",
 				(struct ship *)0);
