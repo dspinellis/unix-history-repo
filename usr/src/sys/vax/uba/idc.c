@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.8 (Berkeley) %G%
+ *	@(#)idc.c	7.9 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -27,7 +27,6 @@ int	*trp = idctrb;
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "map.h"
 #include "vm.h"

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.7 (Berkeley) %G%
+ *	@(#)rk.c	7.8 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -30,7 +30,6 @@ int	rkbdebug;
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "map.h"
 #include "vm.h"

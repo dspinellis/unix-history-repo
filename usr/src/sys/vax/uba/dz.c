@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.5 (Berkeley) %G%
+ *	@(#)dz.c	7.6 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -17,7 +17,6 @@
 #include "systm.h"
 #include "ioctl.h"
 #include "tty.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "map.h"

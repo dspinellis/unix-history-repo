@@ -114,19 +114,18 @@
 #include "../vax/pte.h"	/* page table values */
 #include "../vax/mtpr.h"	/* VAX register access stuff */
 
-#include "../h/param.h" 	/* general system params & macros */
-#include "../h/conf.h"		/* "linesw" tty driver dispatch */
-#include "../h/dir.h"		/* for directory handling */
-#include "../h/user.h"		/* user structure (what else?) */
+#include "../sys/param.h" 	/* general system params & macros */
+#include "../sys/conf.h"	/* "linesw" tty driver dispatch */
+#include "../sys/user.h"	/* user structure (what else?) */
 #include "qdioctl.h" 		/* ioctl call values */
-#include "../h/tty.h"
-#include "../h/map.h"		/* resource allocation map struct */
-#include "../h/buf.h"		/* buf structs */
-#include "../h/vm.h"		/* includes 'vm' header files */
-#include "../h/clist.h" 	/* char list handling structs */
-#include "../h/file.h"		/* file I/O definitions */
-#include "../h/uio.h"		/* write/read call structs */
-#include "../h/kernel.h"	/* clock handling structs */
+#include "../sys/tty.h"
+#include "../sys/map.h"		/* resource allocation map struct */
+#include "../sys/buf.h"		/* buf structs */
+#include "../sys/vm.h"		/* includes 'vm' header files */
+#include "../sys/clist.h" 	/* char list handling structs */
+#include "../sys/file.h"	/* file I/O definitions */
+#include "../sys/uio.h"		/* write/read call structs */
+#include "../sys/kernel.h"	/* clock handling structs */
 #include "../vax/cpu.h" 	/* per cpu (pcpu) struct */
 
 #include "../vaxuba/ubareg.h"	/* uba & 'qba' register structs */

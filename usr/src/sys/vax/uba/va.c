@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)va.c	7.2 (Berkeley) %G%
+ *	@(#)va.c	7.3 (Berkeley) %G%
  */
 
 #include "va.h"

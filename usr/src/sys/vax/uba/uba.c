@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uba.c	7.7 (Berkeley) %G%
+ *	@(#)uba.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,7 +22,6 @@
 #include "map.h"
 #include "buf.h"
 #include "vm.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "conf.h"
