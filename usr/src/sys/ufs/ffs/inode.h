@@ -4,10 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.22 (Berkeley) %G%
+ *	@(#)inode.h	7.23 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
+
+/*
+ * Theoretically, directories can be more than 2Gb in length,
+ * however, in practice this seems unlikely. So, we define
+ * the type doff_t as a long to keep down the cost of doing
+ * lookup on a 32-bit machine. If you are porting to a 64-bit
+ * architecture, you should make doff_t the same as off_t.
+ */
+#define doff_t	long
 
 /*
  * The inode is used to describe each active (or recently active)
@@ -42,9 +51,9 @@ struct inode {
 	/*
 	 * Side effects; used during directory lookup.
 	 */
-	off_t	i_endoff;	/* end of useful stuff in directory */
-	long	i_diroff;	/* offset in dir, where we found last entry */
-	long	i_offset;	/* offset of free space in directory */
+	doff_t	i_endoff;	/* end of useful stuff in directory */
+	doff_t	i_diroff;	/* offset in dir, where we found last entry */
+	doff_t	i_offset;	/* offset of free space in directory */
 	long	i_count;	/* size of free slot in directory */
 	ino_t	i_ino;		/* inode number of found directory */
 	u_long	i_reclen;	/* size of found directory entry */
