@@ -1,16 +1,16 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986, 1990 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)ttychars.h	7.3 (Berkeley) 10/18/88
+ * %sccs.include.redist.c%
+ *
+ *	@(#)ttychars.h	7.6 (Berkeley) %G%
  */
 
 /*
  * 4.3 COMPATIBILITY FILE
  *
- * User visible structures and constants
- * related to terminal handling.
+ * User visible structures and constants related to terminal handling.
  */
 #ifndef _TTYCHARS_H_
 #define	_TTYCHARS_H_
