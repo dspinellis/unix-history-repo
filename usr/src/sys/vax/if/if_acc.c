@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_acc.c	6.6 (Berkeley) %G%
+ *	@(#)if_acc.c	6.7 (Berkeley) %G%
  */
 
 #include "acc.h"
@@ -167,7 +167,7 @@ accinit(unit)
 	 * would asssume we handle it on input and output.
 	 */
 	if (if_ubainit(&sc->acc_ifuba, ui->ui_ubanum, 0,
-	     (int)btoc(IMPMTU)) == 0) {
+	     (int)btoc(IMPMTU+2)) == 0) {
 		printf("acc%d: can't initialize\n", unit);
 		ui->ui_alive = 0;
 		sc->acc_if->if_flags &= ~(IFF_UP | IFF_RUNNING);
@@ -196,7 +196,7 @@ accinit(unit)
 	 */
 	info = sc->acc_ifuba.ifu_r.ifrw_info;
 	addr->iba = (u_short)info;
-	addr->iwc = -(IMPMTU >> 1);
+	addr->iwc = -((IMPMTU + 2) >> 1);
 #ifdef LOOPBACK
 	addr->ocsr |= OUT_BBACK;
 #endif
@@ -334,9 +334,9 @@ accrint(unit)
 			sc->acc_flush = 0;
 		goto setup;
 	}
-	len = IMPMTU + (addr->iwc << 1);
-	if (len < 0 || len > IMPMTU) {
-		printf("acc%d: bad length=%d\n", len);
+	len = IMPMTU+2 + (addr->iwc << 1);
+	if (len < 0 || len > IMPMTU+2) {
+		printf("acc%d: bad length=%d\n", unit, len);
 		sc->acc_if->if_ierrors++;
 		goto setup;
 	}
@@ -368,7 +368,7 @@ setup:
 	 */
 	info = sc->acc_ifuba.ifu_r.ifrw_info;
 	addr->iba = (u_short)info;
-	addr->iwc = -(IMPMTU >> 1);
+	addr->iwc = -((IMPMTU + 2)>> 1);
 	addr->icsr =
 		IN_MRDY | ACC_IE | IN_WEN | ((info & 0x30000) >> 12) | ACC_GO;
 }
