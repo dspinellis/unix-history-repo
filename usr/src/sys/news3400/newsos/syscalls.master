@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.2 (Berkeley) %G%
+	@(#)syscalls.master	7.3 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from NEWS-OS).
 ; Processed to created news_sysent.c, news_syscalls.c and news_syscall.h.
 
@@ -158,8 +158,8 @@
 126	STD	2 osetreuid
 127	STD	2 osetregid
 128	STD	2 rename
-129	STD	2 truncate
-130	STD	2 ftruncate
+129	STD	2 otruncate
+130	STD	2 oftruncate
 131	STD	2 flock
 132	UNIMPL	0 nosys
 133	STD	6 sendto
@@ -173,8 +173,8 @@
 141	STD	3 ogetpeername
 142	STD	0 ogethostid
 143	STD	1 osethostid
-144	STD	2 getrlimit
-145	STD	2 setrlimit
+144	STD	2 ogetrlimit
+145	STD	2 osetrlimit
 146	STD	2 okillpg
 147	UNIMPL	0 nosys
 148	STD	4 quotactl
