@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uusnap.8	6.1 (Berkeley) %G%
+.\"	@(#)uusnap.8	6.2 (Berkeley) %G%
 .\"
 .TH UUSNAP 8C ""
 .UC 5
@@ -11,7 +11,8 @@ uusnap \- show snapshot of the UUCP system
 .SH SYNOPSIS
 .B uusnap
 .SH DESCRIPTION
-Uusnap displays in tabular format a synopsis of the current UUCP
+.I Uusnap
+displays in tabular format a synopsis of the current UUCP
 situation.  The format of each line is as follows:
 .PP
 .ti +10
@@ -23,10 +24,9 @@ and "Message" is the current status message for that
 site as found in the STST file.
 .PP
 Included in "Message" may be the time left before UUCP can re-try the
-call, and the count of the number of times that UUCP has tried to
-reach the site.
+call, and the count of the number of times that UUCP has tried
+(unsuccessfully) to reach the site.
 .SH SEE ALSO
-uucp(1C),
-UUCP Implementation Guide
-.SH AUTHOR
-Randy King
+uucp(1C), uux(1C), uuq(1C), uucico(8C)
+.br
+.I "UUCP Implementation Guide"
