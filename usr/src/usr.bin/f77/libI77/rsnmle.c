@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rsnmle.c	5.2	%G%
+ *	@(#)rsnmle.c	5.3	%G%
  */
 
 /*
@@ -15,7 +15,7 @@
 #include "nmlio.h"
 #include <ctype.h>
 
-LOCAL char nml_rd[] = "namelist read";
+LOCAL char *nml_rd;
 
 static int ch;
 LOCAL nameflag;
@@ -37,7 +37,7 @@ LOCAL	char var_name[VL+1];
 #define isrl(x)		(ltab[x+1]&RL)	/* 0-9, plus,  minus, period */
 #define islgc(x)	(ltab[x+1]&LGC)	/* 0-9, period, t, f, T, F */
 
-#define GETC(x) (x=t_getc())
+#define GETC (ch=t_getc())
 #define UNGETC() ungetc(ch,cf)
 
 LOCAL char *lchar;
@@ -59,11 +59,12 @@ LOCAL char ltab[128+1] =
 
 s_rsne(a) namelist_arglist *a;
 {
-	int n, first;
+	int n;
 	struct namelistentry *entry;
 	int nelem, vlen, vtype;
 	char *nmlist_nm, *addr;
 
+	nml_rd = "namelist read";
 	reading = YES;
 	formatted = NAMELIST;
 	fmtbuf = "ext namelist io";
@@ -75,19 +76,23 @@ s_rsne(a) namelist_arglist *a;
 
 	/* look for " &namelistname " */
 	nmlist_nm = a->namelist->namelistname;
-	while(isblnk(GETC(ch))) ;
+	while(isblnk(GETC)) ;
 	/* check for "&end" (like IBM) or "$end" (like DEC) */
 	if(ch != '&' && ch != '$') goto rderr;
 	/* save it - write out using the same character as used on input */
 	namelistkey_ = ch;
 	while( *nmlist_nm )
-		if( GETC(ch) != *nmlist_nm++ ) goto rderr;
-	if(!isblnk(GETC(ch))) goto rderr;
-	while(isblnk(GETC(ch))) ;
+		if( GETC != *nmlist_nm++ ) 
+			{
+				nml_rd = "incorrect namelist name";
+				goto rderr;
+			}
+	if(!isblnk(GETC)) goto rderr;
+	while(isblnk(GETC)) ;
 	if(leof) goto rderr;
 	UNGETC();
 
-	while( GETC(ch) != namelistkey_ )
+	while( GETC != namelistkey_ )
 	{
 	    UNGETC();
 	    /* get variable name */
@@ -100,38 +105,39 @@ s_rsne(a) namelist_arglist *a;
 		if( strcmp(entry->varname, var_name) == 0 ) goto got_name;
 		entry++;
 	    }
+	    nml_rd = "incorrect variable name";
 	    goto rderr;
 got_name:
 	    if( n = get_pars( entry, &addr, &nelem, &vlen, &vtype ))
 							goto rderr_n;
-	    while(isblnk(GETC(ch))) ;
+	    while(isblnk(GETC)) ;
 	    if(ch != '=') goto rderr;
 
 	    nameflag = NO;
-	    if(n = l_read( nelem, addr, vlen, vtype )) 
-		{
-rderr_n:
-			err(n<0?endflag:errflag,n,nml_rd)
-		}
-	    while(isblnk(GETC(ch)));
-	    if(ch == ',') while(isblnk(GETC(ch)));
+	    if(n = l_read( nelem, addr, vlen, vtype )) goto rderr_n;
+	    while(isblnk(GETC));
+	    if(ch == ',') while(isblnk(GETC));
 	    UNGETC();
 	    if(leof) goto rderr;
 	}
 	/* check for 'end' after '&' or '$'*/
-	if(GETC(ch)!='e' || GETC(ch)!='n' || GETC(ch)!='d' )
+	if(GETC!='e' || GETC!='n' || GETC!='d' )
 		goto rderr;
 	/* flush to next input record */
 flush:
-	while(GETC(ch) != '\n' && ch != EOF);
+	while(GETC != '\n' && ch != EOF);
 	return(ch == EOF ? EOF : OK);
 
 rderr:
 	if(leof)
-		err(endflag,EOF,nml_rd)
+		n = EOF;
 	else
-		err(errflag,F_ERNMLIST,nml_rd)
-	goto flush;
+		n = F_ERNMLIST;
+rderr_n:
+	if(n == EOF ) err(endflag,EOF,nml_rd);
+	/* flush after error in case restart I/O */
+	if(ch != '\n')  while(GETC != '\n' && ch != EOF) ;
+	err(errflag,n,nml_rd)
 }
 
 #define MAXSUBS 7
@@ -180,7 +186,7 @@ int	*nelem,		/* number of elements to read */
 		return(OK);
 	}
 
-	if( GETC(ch) != '(' ) 
+	if( GETC != '(' ) 
 	{		/* entire array */
 		*nelem = dimptr[1];
 		UNGETC();
@@ -197,7 +203,7 @@ int	*nelem,		/* number of elements to read */
 	while(ch!=')') {
 		if( ++subcnt > MAXSUBS-1 ) return F_ERNMLIST;
 		if(n=get_int(&subs[subcnt])) return n;
-		GETC(ch);
+		GETC;
 		if(leof) return EOF;
 		if(ch != ',' && ch != ')') return F_ERNMLIST;
 	}
@@ -221,12 +227,12 @@ int *subval;
 	int sign=0, value=0, cnt=0;
 
 	/* look for sign */
-	if(GETC(ch) == '-') sign = -1;
+	if(GETC == '-') sign = -1;
 	else if(ch == '+') ;
 	else UNGETC();
 	if(ch == EOF) return(EOF);
 
-	while(isdigit(GETC(ch)))
+	while(isdigit(GETC))
 	{
 		value = 10*value + ch-'0';
 		cnt++;
@@ -246,12 +252,12 @@ char *ptr;
 	/* read a variable name from the input stream */
 	char *init = ptr-1;
 
-	if(!isalpha(GETC(ch))) {
+	if(!isalpha(GETC)) {
 		UNGETC();
 		return(ERROR);
 	}
 	*ptr++ = ch;
-	while(isalnum(GETC(ch))) 
+	while(isalnum(GETC)) 
 	{
 		if(ptr-init > VL ) return(ERROR);
 		*ptr++ = ch;
@@ -303,7 +309,7 @@ l_read(number,ptr,len,type) ftnint number,type; flex *ptr; ftnlen len;
 			ltype = NULL;
 			if(i!=0)
 			{	/* skip to comma */
-				while(isblnk(GETC(ch)));
+				while(isblnk(GETC));
 				if(leof) return(EOF);
 				if(ch == namelistkey_) 
 				{	UNGETC();
@@ -311,7 +317,7 @@ l_read(number,ptr,len,type) ftnint number,type; flex *ptr; ftnlen len;
 				}
 				if(ch != ',' ) return(F_ERNMLIST);
 			}
-			while(isblnk(GETC(ch)));
+			while(isblnk(GETC));
 			if(leof) return(EOF);
 			UNGETC();
 			if(i!=0 && ch == namelistkey_) return(OK);
@@ -347,7 +353,7 @@ l_read(number,ptr,len,type) ftnint number,type; flex *ptr; ftnlen len;
 			if(leof) return(EOF);
  			/* peek at next character -
 				should be separator or namelistkey_ */
- 			GETC(ch); UNGETC();
+ 			GETC; UNGETC();
 			if(!issep(ch) && (ch != namelistkey_)) 
 			return( leof?EOF:F_ERNMLIST );
 		}
@@ -396,13 +402,13 @@ l_read(number,ptr,len,type) ftnint number,type; flex *ptr; ftnlen len;
 
 LOCAL
 get_repet()
-{	char ch;
+{
 	double lc;
-	if(isdigit(GETC(ch)))
+	if(isdigit(GETC))
 	{	UNGETC();
 		rd_int(&lc);
 		lcount = (int)lc;
-		if(GETC(ch)!='*')
+		if(GETC!='*')
 			if(leof) return(EOF);
 			else return(F_ERREPT);
 	}
@@ -417,14 +423,14 @@ LOCAL
 l_R(flg) int flg;
 {	double a,b,c,d;
 	int da,db,dc,dd;
-	int i,ch,sign=0;
+	int i,sign=0;
 	a=b=c=d=0;
 	da=db=dc=dd=0;
 
 	if( flg )		/* real */
 	{
 		da=rd_int(&a);	/* repeat count ? */
-		if(GETC(ch)=='*')
+		if(GETC=='*')
 		{
 			if (a <= 0.) return(F_ERNREP);
 			lcount=(int)a;
@@ -442,7 +448,7 @@ l_R(flg) int flg;
 		db=rd_int(&b);
 	}
 
-	if(GETC(ch)=='.' && isdigit(GETC(ch)))
+	if(GETC=='.' && isdigit(GETC))
 	{	UNGETC();
 		dc=rd_int(&c);	/* fractional part of number */
 	}
@@ -451,7 +457,7 @@ l_R(flg) int flg;
 		dc=0;
 		c=0.;
 	}
-	if(isexp(GETC(ch)))
+	if(isexp(GETC))
 		dd=rd_int(&d);	/* exponent */
 	else if (ch == '+' || ch == '-')
 	{	UNGETC();
@@ -478,12 +484,12 @@ l_R(flg) int flg;
 
 LOCAL
 rd_int(x) double *x;
-{	int ch,sign=0,i=0;
+{	int sign=0,i=0;
 	double y=0.0;
-	if(GETC(ch)=='-') sign = -1;
+	if(GETC=='-') sign = -1;
 	else if(ch=='+') sign=0;
 	else UNGETC();
-	while(isdigit(GETC(ch)))
+	while(isdigit(GETC))
 	{	i++;
 		y=10*y + ch-'0';
 	}
@@ -495,21 +501,21 @@ rd_int(x) double *x;
 
 LOCAL
 l_C()
-{	int ch,n;
+{	int n;
 	if(n=get_repet()) return(n);		/* get repeat count */
-	if(GETC(ch)!='(') err(errflag,F_ERNMLIST,"no (")
-	while(isblnk(GETC(ch)));
+	if(GETC!='(') err(errflag,F_ERNMLIST,"no (")
+	while(isblnk(GETC));
 	UNGETC();
 	l_R(0);		/* get real part */
 	ly = lx;
-	while(isblnk(GETC(ch)));  /* get comma */
+	while(isblnk(GETC));  /* get comma */
 	if(leof) return(EOF);
 	if(ch!=',') return(F_ERNMLIST);
-	while(isblnk(GETC(ch)));
+	while(isblnk(GETC));
 	UNGETC();
 	if(leof) return(EOF);
 	l_R(0);		/* get imag part */
-	while(isblnk(GETC(ch)));
+	while(isblnk(GETC));
 	if(ch!=')') err(errflag,F_ERNMLIST,"no )")
 	ltype = TYCOMPLEX;
 	return(OK);
@@ -518,15 +524,16 @@ l_C()
 LOCAL
 l_L()
 {
-	int n;
-	if(!isdigit(ch) && ch != '.')
+	int n, keychar=ch, scanned=NO;
+	if(ch=='f' || ch=='F' || ch=='t' || ch=='T')
 	{
+		scanned=YES;
 		if(rd_name(var_name))
 			return(leof?EOF:F_ERNMLIST);
-		while(isblnk(GETC(ch)));
+		while(isblnk(GETC));
+		UNGETC();
 		if(ch == '=' || ch == '(')
 		{  	/* found a name, not a value */
-			UNGETC();
 			nameflag = YES;
 			return(OK);
 		}
@@ -534,9 +541,10 @@ l_L()
 	else
 	{
 		if(n=get_repet()) return(n);		/* get repeat count */
-		if(GETC(ch)=='.') GETC(ch);
+		if(GETC=='.') GETC;
+		keychar = ch;
 	}
-	switch(ch)
+	switch(keychar)
 	{
 	case 't':
 	case 'T':
@@ -551,8 +559,11 @@ l_L()
 		else	err(errflag,F_ERNMLIST,"logical not T or F");
 	}
 	ltype=TYLOGICAL;
-	while(!issep(GETC(ch)) && ch!=EOF) ;
-	UNGETC();
+	if(scanned==NO)
+	{
+		while(!issep(GETC) && ch!=EOF) ;
+		UNGETC();
+	}
 	if(ch == EOF ) return(EOF);
 	return(OK);
 }
@@ -560,10 +571,10 @@ l_L()
 #define BUFSIZE	128
 LOCAL
 l_CHAR()
-{	int ch,size,i,n;
+{	int size,i,n;
 	char quote,*p;
 	if(n=get_repet()) return(n);		/* get repeat count */
-	if(isapos(GETC(ch))) quote=ch;
+	if(isapos(GETC)) quote=ch;
 	else if(ch == EOF) return EOF;
 	else return F_ERNMLIST;
 	ltype=TYCHAR;
@@ -572,7 +583,7 @@ l_CHAR()
 	p=lchar=(char *)malloc(BUFSIZE);
 	if(lchar==NULL) return (F_ERSPACE);
 	for(i=0;;)
-	{	while( GETC(ch)!=quote && ch!='\n' && ch!=EOF && ++i<size )
+	{	while( GETC!=quote && ch!='\n' && ch!=EOF && ++i<size )
 				*p++ = ch;
 		if(i==size)
 		{
@@ -587,7 +598,7 @@ l_CHAR()
 		else if(ch=='\n')
 		{	if(*(p-1) == '\\') *(p-1) = ch;
 		}
-		else if(GETC(ch)==quote)
+		else if(GETC==quote)
 		{	if(++i<size) *p++ = ch;
 			else goto newone;
 		}
