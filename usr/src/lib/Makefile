@@ -3,10 +3,17 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
+TAGSFILE=tags
+
+# Subdirectories whose routines are included in the making of the
+# master tags file (/usr/lib/tags); the Fortran libraries should
+# be on this list, but we don't control them....
+#
+TAGSDIR=libcurses libdbm libln libm libmp libpc libtermlib
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
@@ -41,8 +48,13 @@ install:
 	for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/usr/lib/$$i); done
 	install -c lib.b ${DESTDIR}/usr/lib/lib.b
 
+tags:
+	for i in ${TAGSDIR}; do \
+		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
+	done
+
 clean:
-	rm -f a.out core *.s *.o
+	rm -f a.out core *.s *.o tags
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f ${STD} ${NSTD}
 
