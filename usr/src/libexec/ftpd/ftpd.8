@@ -1,10 +1,10 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1985 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftpd.8	6.1 (Berkeley) %G%
+.\"	@(#)ftpd.8	6.2 (Berkeley) %G%
 .\"
-.TH FTPD 8C ""
+.TH FTPD 8C "April 27, 1985"
 .UC 5
 .SH NAME
 ftpd \- DARPA Internet File Transfer Protocol server
@@ -28,20 +28,13 @@ service specification; see
 If the 
 .B \-d
 option is specified,
-each socket created will have debugging turned
-on (SO_DEBUG).  With debugging enabled, the system
-will trace all TCP packets sent and received on a
-socket.  The program
-.IR trpt (8C)
-may then be used to interpret the packet traces.
+debugging information is included in the "/tmp/ftplog" file when the -l
+option is also specified.
 .PP
 If the
 .B \-l
 option is specified,
-each ftp session is logged on the standard output.
-This allows a line of the form 
-`/etc/ftpd -l > /tmp/ftplog''
-to be used to conveniently maintain a log of ftp sessions.
+each ftp session is logged in a file named "/tmp/ftplog".
 .PP
 The ftp server
 will timeout an inactive session after 60 seconds.
@@ -57,23 +50,30 @@ requests;  case is not distinguished.
 .nf
 .ta \w'Request        'u
 \fBRequest	Description\fP
+ABOR	abort previous command
 ACCT	specify account (ignored)
 ALLO	allocate storage (vacuously)
 APPE	append to a file
+CDUP	change to parent of current working directory
 CWD	change working directory
 DELE	delete a file
 HELP	give help information
 LIST	give list files in a directory (``ls -lg'')
+MKD	make a directory
 MODE	specify data transfer \fImode\fP
 NLST	give name list of files in directory (``ls'')
 NOOP	do nothing
 PASS	specify password
+PASV	prepare for server-to-server transfer
 PORT	specify data connection port
+PWD	print the current working directory
 QUIT	terminate session
 RETR	retrieve a file
+RMD	remove a directory
 RNFR	specify rename-from file name
 RNTO	specify rename-to file name
 STOR	store a file
+STOU	store a file with a unique name
 STRU	specify data transfer \fIstructure\fP
 TYPE	specify data transfer \fItype\fP
 USER	specify user name
@@ -84,8 +84,13 @@ XPWD	print the current working directory
 XRMD	remove a directory
 .fi
 .PP
-The remaining ftp requests specified in Internet RFC 765 are
+The remaining ftp requests specified in Internet RFC 959 are
 recognized, but not implemented.
+.PP
+The ftp server will abort an active file transfer only when the
+ABOR command is preceded by a Telnet "Interrupt Process" (IP)
+signal and a Telnet "Synch" signal in the command Telnet stream,
+as described in Internet RFC 959.
 .PP
 .I Ftpd
 interprets file names according to the ``globbing''
@@ -144,8 +149,6 @@ anonymous account in this directory.
 .SH "SEE ALSO"
 ftp(1C),
 .SH BUGS
-There is no support for aborting commands.
-.PP
 The anonymous account is inherently dangerous and should
 avoided when possible.
 .PP
