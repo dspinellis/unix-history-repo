@@ -59,7 +59,7 @@ clean:
 prt: interp.s
 	sed -f clean.sed <interp.s
 
-grind: sources
+grind: sources ${PSHDR} ${PCHDR}
 	${SRCDIR}/ctags -v *.h *.c *.s | sort -f >index
 	${SRCDIR}/vgrind -t -x index >lpr
 	${CC} ${CFLAGS} -o pic pic.c
@@ -90,6 +90,7 @@ depend:	sources
 # DEPENDENCIES MUST END AT END OF FILE
 int.o: whoami.h
 int.o: vars.h
+int.o: libpc.h
 int.o: objfmt.h
 interp.o: whoami.h
 interp.o: objfmt.h
@@ -98,7 +99,6 @@ interp.o: h02opcs.h
 interp.o: machdep.h
 interp.o: libpc.h
 opc.o: OPnames.h
-pic.o: OPnames.h
 utilities.o: whoami.h
 utilities.o: vars.h
 utilities.o: h02opcs.h
