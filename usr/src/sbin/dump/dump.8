@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)dump.8	6.6 (Berkeley) %G%
+.\"     @(#)dump.8	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DUMP 8
@@ -26,6 +26,12 @@ storage medium for safe keeping (see
 .Xr rdump 8
 for
 remote backups) .
+A dump that is larger than the output medium is broken into
+multiple volumes of a fixed size;
+the actual size is determined by the tape size and density and/or
+block count options below.
+By default, the same output file name is used for each volume
+after prompting the operator to change media.
 .Pp
 The following options are supported by
 .Nm dump:
@@ -54,6 +60,11 @@ an ordinary file,
 or
 .Ql Fl
 (the standard output).
+Multiple file names may be given as a single argument separated by commas.
+Each file will be used for one dump volume in the order listed;
+if the dump requires more volumes than the number of names given,
+the last file name will used for all remaining volumes after prompting
+for media changes.
 .It Cm d Ar density
 Set tape density to
 .Ar density .
