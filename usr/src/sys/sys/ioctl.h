@@ -3,9 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.10 (Berkeley) %G%
+ *	@(#)ioctl.h	6.11 (Berkeley) %G%
  */
 
+/*
  * Ioctl definitions
  */
 #ifndef	_IOCTL_
