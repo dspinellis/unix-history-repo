@@ -1,0 +1,33 @@
+.TH EXPAND UCB 2/24/79 UCB
+.SH NAME
+expand \- expand tabs to spaces
+.SH SYNOPSIS
+.B expand
+[
+\-tabstop
+] [
+\-tab1,tab2,...,tabn
+] [
+file ...
+]
+.SH DESCRIPTION
+.I Expand
+processes the named files or the standard input writing
+the standard output with tabs changed into blanks.
+Backspace characters are preserved into the output and decrement
+the column count for tab calculations.
+.I Expand
+is useful for pre-processing character files
+(before sorting, looking at specific columns, etc.) that
+contain tabs.
+.PP
+If a single
+.I tabstop
+argument is given then tabs are set
+.I tabstop
+spaces apart instead of the default 8.
+If multiple tabstops are given then the tabs are set at those
+specific columns.
+.SH AUTHOR
+Bill Joy
+.SH BUGS

@@ -1,0 +1,29 @@
+.TH PXREF UCB 4/8/79 UCB
+.SH NAME
+pxref \- Pascal cross-reference program
+.SH SYNOPSIS
+.B pxref
+[
+.BR \- ""
+]
+name
+.SH DESCRIPTION
+.I Pxref
+makes a line numbered listing and a cross-reference of identifier usage
+for the program in
+.I name.
+The optional `\fB\-\fR' argument suppresses the listing.
+The keywords
+.B goto
+and
+.B label
+are treated as identifiers for the purpose of the cross-reference.
+.B Include
+directives are not processed, but cause the placement of an entry
+indexed by `#include' in the cross-reference.
+.SH "SEE ALSO"
+Berkeley Pascal User's Manual
+.SH AUTHOR
+Niklaus Wirth
+.SH BUGS
+Identifiers are trimmed to 10 characters.
