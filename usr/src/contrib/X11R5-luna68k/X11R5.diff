@@ -1,0 +1,20 @@
+diff -c mit/include/Xosdefs.h.orig mit/include/Xosdefs.h
+*** mit/include/Xosdefs.h.orig	Fri Jul 19 23:23:05 1991
+--- mit/include/Xosdefs.h	Wed Jun  9 01:41:11 1993
+***************
+*** 62,68 ****
+  #endif
+  #endif
+  
+! #ifdef luna
+  #define X_NOT_POSIX
+  #define X_NOT_STDC_ENV
+  #endif
+--- 62,68 ----
+  #endif
+  #endif
+  
+! #if defined(luna) && !defined(luna68k)
+  #define X_NOT_POSIX
+  #define X_NOT_STDC_ENV
+  #endif
