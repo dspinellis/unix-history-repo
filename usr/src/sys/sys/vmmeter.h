@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vmmeter.h	7.1 (Berkeley) %G%
+ *	@(#)vmmeter.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -41,6 +41,10 @@ struct vmmeter
 	unsigned v_seqfree;	/* pages taken from sequential programs */
 	unsigned v_dfree;	/* pages freed by daemon */
 	unsigned v_fastpgrec;	/* fast reclaims in locore */
+#ifdef tahoe
+	unsigned v_fpe;		/* floating point emulation traps */
+	unsigned v_align;	/* alignment emulation traps */
+#endif
 #define	v_last v_fastpgrec
 	unsigned v_swpin;	/* swapins */
 	unsigned v_swpout;	/* swapouts */

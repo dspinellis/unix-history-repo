@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.1 (Berkeley) %G%
+ *	@(#)types.h	7.2 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
@@ -27,7 +27,7 @@ typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
 typedef	unsigned short	ushort;		/* sys III compat */
 
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 typedef	struct	_physadr { int r[1]; } *physadr;
 typedef	struct	label_t	{
 	int	val[14];

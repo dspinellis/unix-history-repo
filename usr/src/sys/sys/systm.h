@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.1 (Berkeley) %G%
+ *	@(#)systm.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -51,7 +51,7 @@ long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
 dev_t	argdev;			/* device for argument lists */
 
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
 #endif
