@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ndbm.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ndbm.c	5.5 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -13,7 +13,7 @@ static char sccsid[] = "@(#)ndbm.c	5.4 (Berkeley) %G%";
 #include <sys/file.h>
 #include <stdio.h>
 #include <errno.h>
-#include <ndbm.h>
+#include "ndbm.h"
 
 #define BYTESIZ 8
 #undef setbit
