@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_data.c	5.1.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_data.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -20,15 +20,17 @@ static char sccsid[] = "@(#)ex_data.c	5.1.1.1 (Berkeley) %G%";
  * to confuse xstr so it will leave them alone.
  */
 char	direct[ONMSZ] =
-	{ '/', 't', 'm', 'p' };
+	{'/', 't', 'm', 'p'}; 
 char	paragraphs[ONMSZ] = {
 	'I', 'P', 'L', 'P', 'P', 'P', 'Q', 'P',		/* -ms macros */
 	'P', ' ', 'L', 'I',				/* -mm macros */
+	'p', 'p', 'l', 'p', 'i', 'p',			/* -me macros */
 	'b', 'p'					/* bare nroff */
 };
 char	sections[ONMSZ] = {
 	'N', 'H', 'S', 'H',				/* -ms macros */
-	'H', ' ', 'H', 'U'				/* -mm macros */
+	'H', ' ', 'H', 'U',				/* -mm macros */
+	'n', 'h', 's', 'h'				/* -me macros */
 };
 char	shell[ONMSZ] =
 	{ '/', 'b', 'i', 'n', '/', 's', 'h' };
@@ -56,6 +58,7 @@ struct	option options[NOPTS + 1] = {
 	"list",		0,	ONOFF,		0,	0,	0,
 	"magic",	0,	ONOFF,		1,	1,	0,
 	"mesg",		0,	ONOFF,		1,	1,	0,
+	"modeline",	0,	ONOFF,		0,	0,	0,
 	"number",	"nu",	ONOFF,		0,	0,	0,
 	"open",		0,	ONOFF,		1,	1,	0,
 	"optimize",	"opt",	ONOFF,		0,	0,	0,

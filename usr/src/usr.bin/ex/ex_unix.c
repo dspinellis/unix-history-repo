@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_unix.c	5.2.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_unix.c	7.4 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -240,8 +240,9 @@ filter(mode)
 	register int mode;
 {
 	static int pvec[2];
-	register ttymode f;
+	ttymode f;	/* mjm: was register */
 	register int lines = lineDOL();
+	struct stat statb;
 
 	mode++;
 	if (mode & 2) {
@@ -259,7 +260,7 @@ filter(mode)
 			setrupt();
 			io = pvec[1];
 			close(pvec[0]);
-			putfile();
+			putfile(1);
 			exit(0);
 		}
 		close(pvec[1]);
@@ -274,7 +275,18 @@ filter(mode)
 	if (mode & 1) {
 		if(FIXUNDO)
 			undap1 = undap2 = addr2+1;
+		if (fstat(io, &statb) < 0)
+			bsize = LBSIZE;
+		else {
+			bsize = statb.st_blksize;
+			if (bsize <= 0)
+				bsize = LBSIZE;
+		}
 		ignore(append(getfile, addr2));
+#ifdef TRACE
+		if (trace)
+			vudump("after append in filter");
+#endif
 	}
 	close(io);
 	io = -1;

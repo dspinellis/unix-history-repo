@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_vmain.c	5.3.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_vmain.c	7.6 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -27,7 +27,7 @@ vmain()
 	register int c, cnt, i;
 	char esave[TUBECOLS];
 	char *oglobp;
-	char d;
+	short d;
 	line *addr;
 	int ind, nlput;
 	int shouldpo = 0;
@@ -69,6 +69,7 @@ vmain()
 		vglobp = 0;
 		vreg = 0;
 		hold = 0;
+		seenprompt = 1;
 		wcursor = 0;
 		Xhadcnt = hadcnt = 0;
 		Xcnt = cnt = 1;
@@ -154,8 +155,10 @@ reread:
 				ungetkey(c);
 				goto looptop;
 			}
-			if (!value(REMAP))
+			if (!value(REMAP)) {
+				c = op;
 				break;
+			}
 			if (++maphopcnt > 256)
 				error("Infinite macro loop");
 		} while (c != op);
@@ -314,6 +317,10 @@ reread:
 		 * ^D		Scroll down.  Like scroll up.
 		 */
 		case CTRL(d):
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "before vdown in ^D, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
+#endif
 			if (hadcnt)
 				vSCROLL = cnt;
 			cnt = vSCROLL;
@@ -323,7 +330,15 @@ reread:
 				ind = 0;
 			vmoving = 0;
 			vdown(cnt, ind, 1);
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "before vnline in ^D, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
+#endif
 			vnline(NOSTR);
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "after vnline in ^D, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
+#endif
 			continue;
 
 		/*
@@ -397,7 +412,9 @@ reread:
 		case CTRL(f):
 			vsave();
 			if (vcnt > 2) {
-				dot += (vcnt - vcline) - 2 + (cnt-1)*basWLINES;
+				addr = dot + (vcnt - vcline) - 2 + (cnt-1)*basWLINES;
+				forbid(addr > dol);
+				dot = addr;
 				vcnt = vcline = 0;
 			}
 			vzop(0, 0, '+');
@@ -410,7 +427,9 @@ reread:
 		case CTRL(b):
 			vsave();
 			if (one + vcline != dot && vcnt > 2) {
-				dot -= vcline - 2 + (cnt-1)*basWLINES;
+				addr = dot - vcline + 2 - (cnt-1)*basWLINES;
+				forbid (addr <= zero);
+				dot = addr;
 				vcnt = vcline = 0;
 			}
 			vzop(0, 0, '^');
@@ -498,8 +517,8 @@ reread:
 		 */
 		case 'O':
 		case 'o':
-			voOpen(c, cnt);
 			vmacchng(1);
+			voOpen(c, cnt);
 			continue;
 
 		/*
@@ -860,7 +879,8 @@ gogo:
 #ifdef SIGTSTP
 		/*
 		 * ^Z:	suspend editor session and temporarily return
-		 * 	to shell.  Only works on Berkeley tty driver.
+		 * 	to shell.  Only works with Berkeley/IIASA process
+		 *	control in kernel.
 		 */
 		case CTRL(z):
 			forbid(dosusp == 0 || !ldisc);
@@ -1110,7 +1130,11 @@ grabtag()
 			if (dp < &lasttag[sizeof lasttag - 2])
 				*dp++ = *cp;
 			cp++;
-		} while (isalpha(*cp) || isdigit(*cp) || *cp == '_');
+		} while (isalpha(*cp) || isdigit(*cp) || *cp == '_'
+#ifdef LISPCODE
+			|| (value(LISP) && *cp == '-')
+#endif LISPCODE
+			);
 		*dp++ = 0;
 	}
 }

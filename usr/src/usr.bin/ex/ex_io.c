@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_io.c	5.6.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_io.c	7.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -285,10 +285,10 @@ gscan()
 /*
  * Parse one filename into file.
  */
+struct glob G;
 getone()
 {
 	register char *str;
-	struct glob G;
 
 	if (getargs() == 0)
 		error("Missing filename");
@@ -317,8 +317,19 @@ rop(c)
 
 	io = open(file, 0);
 	if (io < 0) {
-		if (c == 'e' && errno == ENOENT)
+		if (c == 'e' && errno == ENOENT) {
 			edited++;
+			/*
+			 * If the user just did "ex foo" he is probably
+			 * creating a new file.  Don't be an error, since
+			 * this is ugly, and it screws up the + option.
+			 */
+			if (!seenprompt) {
+				printf(" [New file]");
+				noonl();
+				return;
+			}
+		}
 		syserror();
 	}
 	if (fstat(io, &stbuf))
@@ -349,30 +360,49 @@ rop(c)
 			break;
 		switch (magic) {
 
-		case 0405:
-		case 0407:
-		case 0410:
-		case 0411:
+		case 0405:	/* data overlay on exec */
+		case 0407:	/* unshared */
+		case 0410:	/* shared text */
+		case 0411:	/* separate I/D */
+		case 0413:	/* VM/Unix demand paged */
+		case 0430:	/* PDP-11 Overlay shared */
+		case 0431:	/* PDP-11 Overlay sep I/D */
 			error(" Executable");
 
+		/*
+		 * We do not forbid the editing of portable archives
+		 * because it is reasonable to edit them, especially
+		 * if they are archives of text files.  This is
+		 * especially useful if you archive source files together
+		 * and copy them to another system with ~%take, since
+		 * the files sometimes show up munged and must be fixed.
+		 */
 		case 0177545:
 		case 0177555:
 			error(" Archive");
 
 		default:
+#ifdef mbb
+			/* C/70 has a 10 bit byte */
+			if (magic & 03401600)
+#else
+			/* Everybody else has an 8 bit byte */
 			if (magic & 0100200)
+#endif
 				error(" Non-ascii file");
 			break;
 		}
 	}
-	if (value(READONLY) && denied) {
-		value(READONLY) = ovro;
-		denied = 0;
-	}
-	if (c != 'r' && ((stbuf.st_mode & 0222) == 0 || access(file, 2) < 0)) {
-		ovro = value(READONLY);
-		denied = 1;
-		value(READONLY) = 1;
+	if (c != 'r') {
+		if (value(READONLY) && denied) {
+			value(READONLY) = ovro;
+			denied = 0;
+		}
+		if ((stbuf.st_mode & 0222) == 0 || access(file, 2) < 0) {
+			ovro = value(READONLY);
+			denied = 1;
+			value(READONLY) = 1;
+		}
 	}
 	if (value(READONLY)) {
 		printf(" [Read only]");
@@ -390,10 +420,34 @@ rop(c)
 
 rop2()
 {
+	line *first, *last, *a;
+	struct stat statb;
 
 	deletenone();
 	clrstats();
+	first = addr2 + 1;
+	if (fstat(io, &statb) < 0)
+		bsize = LBSIZE;
+	else {
+		bsize = statb.st_blksize;
+		if (bsize <= 0)
+			bsize = LBSIZE;
+	}
 	ignore(append(getfile, addr2));
+	last = dot;
+	/*
+	 *	if the modeline variable is set,
+	 *	check the first and last five lines of the file
+	 *	for a mode line.
+	 */
+	if (value(MODELINE)) {
+		for (a=first; a<=last; a++) {
+			if (a==first+5 && last-first > 10)
+				a = last - 4;
+			getline(*a);
+			checkmodeline(linebuf);
+		}
+	}
 }
 
 rop3(c)
@@ -431,13 +485,6 @@ other:
 			vcline = 0;
 			vreplace(0, LINES, lineDOL());
 		}
-	}
-	if (laste) {
-#ifdef VMUNIX
-		tlaste();
-#endif
-		laste = 0;
-		sync();
 	}
 }
 
@@ -540,6 +587,7 @@ cre:
 #endif
 		if (io < 0)
 			syserror();
+		writing = 1;
 		if (hush == 0)
 			if (nonexist)
 				printf(" [New file]");
@@ -557,7 +605,7 @@ cre:
 		lseek(io, 0l, 2);
 		break;
 	}
-	putfile();
+	putfile(0);
 	ignore(iostats());
 	if (c != 2 && addr1 == one && addr2 == dol) {
 		if (eq(file, savedfile))
@@ -568,6 +616,7 @@ cre:
 		addr1 = saddr1;
 		addr2 = saddr2;
 	}
+	writing = 0;
 }
 
 /*
@@ -587,7 +636,7 @@ edfile()
 /*
  * Extract the next line from the io stream.
  */
-static	char *nextip;
+char *nextip;
 
 getfile()
 {
@@ -598,7 +647,7 @@ getfile()
 	fp = nextip;
 	do {
 		if (--ninbuf < 0) {
-			ninbuf = read(io, genbuf, LBSIZE) - 1;
+			ninbuf = read(io, genbuf, bsize) - 1;
 			if (ninbuf < 0) {
 				if (lp != linebuf) {
 					lp++;
@@ -608,13 +657,14 @@ getfile()
 				return (EOF);
 			}
 #ifdef CRYPT
-			fp = genbuf;
-			while(fp < &genbuf[ninbuf]) {
-				if (*fp++ & 0200) {
-					if (kflag)
+			if (kflag) {
+				fp = genbuf;
+				while(fp < &genbuf[ninbuf]) {
+					if (*fp++ & 0200) {
 						crblock(perm, genbuf, ninbuf+1,
-cntch);
-					break;
+	cntch);
+						break;
+					}
 				}
 			}
 #endif
@@ -646,18 +696,27 @@ cntch);
 /*
  * Write a range onto the io stream.
  */
-putfile()
+putfile(isfilter)
+int isfilter;
 {
 	line *a1;
 	register char *fp, *lp;
 	register int nib;
+	struct stat statb;
 
 	a1 = addr1;
 	clrstats();
 	cntln = addr2 - a1 + 1;
 	if (cntln == 0)
 		return;
-	nib = BUFSIZ;
+	if (fstat(io, &statb) < 0)
+		bsize = LBSIZE;
+	else {
+		bsize = statb.st_blksize;
+		if (bsize <= 0)
+			bsize = LBSIZE;
+	}
+	nib = bsize;
 	fp = genbuf;
 	do {
 		getline(*a1++);
@@ -666,14 +725,14 @@ putfile()
 			if (--nib < 0) {
 				nib = fp - genbuf;
 #ifdef CRYPT
-                		if(kflag)
+                		if(kflag && !isfilter)
                                         crblock(perm, genbuf, nib, cntch);
 #endif
 				if (write(io, genbuf, nib) != nib) {
 					wrerror();
 				}
 				cntch += nib;
-				nib = BUFSIZ - 1;
+				nib = bsize - 1;
 				fp = genbuf;
 			}
 			if ((*fp++ = *lp++) == 0) {
@@ -684,7 +743,7 @@ putfile()
 	} while (a1 <= addr2);
 	nib = fp - genbuf;
 #ifdef CRYPT
-	if(kflag)
+	if(kflag && !isfilter)
 		crblock(perm, genbuf, nib, cntch);
 #endif
 	if (write(io, genbuf, nib) != nib) {
@@ -719,9 +778,14 @@ source(fil, okfail)
 {
 	jmp_buf osetexit;
 	register int saveinp, ointty, oerrno;
+	char *saveglobp;
+	short savepeekc;
 
 	signal(SIGINT, SIG_IGN);
 	saveinp = dup(0);
+	savepeekc = peekc;
+	saveglobp = globp;
+	peekc = 0; globp = 0;
 	if (saveinp < 0)
 		error("Too many nested sources");
 	if (slevel <= 0)
@@ -759,6 +823,8 @@ source(fil, okfail)
 	close(0);
 	dup(saveinp);
 	close(saveinp);
+	globp = saveglobp;
+	peekc = savepeekc;
 	slevel--;
 	resexit(osetexit);
 }
@@ -782,6 +848,7 @@ clrstats()
 iostats()
 {
 
+	(void) fsync(io);
 	close(io);
 	io = -1;
 	if (hush == 0) {
@@ -805,4 +872,37 @@ iostats()
 		flush();
 	}
 	return (cntnull != 0 || cntodd != 0);
+}
+
+#if USG | USG3TTY
+/* It's so wonderful how we all speak the same language... */
+# define index strchr
+# define rindex strrchr
+#endif
+
+checkmodeline(line)
+char *line;
+{
+	char *beg, *end;
+	char cmdbuf[1024];
+	char *index(), *rindex();
+
+	beg = index(line, ':');
+	if (beg == NULL)
+		return;
+	if (&beg[-3] < line)
+		return;
+	if (!(  ( (beg[-3] == ' ' || beg[-3] == '\t')
+	        && beg[-2] == 'e'
+		&& beg[-1] == 'x')
+	     || ( (beg[-3] == ' ' || beg[-3] == '\t')
+	        && beg[-2] == 'v'
+		&& beg[-1] == 'i'))) return;
+	strncpy(cmdbuf, beg+1, sizeof cmdbuf);
+	end = rindex(cmdbuf, ':');
+	if (end == NULL)
+		return;
+	*end = 0;
+	globp = cmdbuf;
+	commands(1, 1);
 }

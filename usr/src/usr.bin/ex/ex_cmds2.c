@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_cmds2.c	5.1.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_cmds2.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -14,8 +14,8 @@ static char sccsid[] = "@(#)ex_cmds2.c	5.1.1.1 (Berkeley) %G%";
 #include "ex_tty.h"
 #include "ex_vis.h"
 
-bool	pflag, nflag;
-int	poffset;
+extern bool	pflag, nflag;		/* mjm: extern; also in ex_cmds.c */
+extern int	poffset;		/* mjm: extern; also in ex_cmds.c */
 
 /*
  * Subroutines for major command loop.
@@ -82,6 +82,10 @@ error(str, i)
 
 	error0();
 	merror(str, i);
+	if (writing) {
+		serror(" [Warning - %s is incomplete]", file);
+		writing = 0;
+	}
 	error1(str);
 }
 
@@ -112,13 +116,6 @@ erewind()
 error0()
 {
 
-	if (laste) {
-#ifdef VMUNIX
-		tlaste();
-#endif
-		laste = 0;
-		sync();
-	}
 	if (vcatch) {
 		if (splitw == 0)
 			fixech();

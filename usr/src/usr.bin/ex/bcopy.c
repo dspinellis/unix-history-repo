@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bcopy.c	5.1.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	7.2 (Berkeley) %G%";
 #endif not lint
 
 /* block copy from from to to, count bytes */
@@ -21,7 +21,7 @@ bcopy(from, to, count)
 	register char *from, *to;
 	register int count;
 {
-	while (count--)
+	while ((count--) > 0)	/* mjm */
 		*to++ = *from++;
 }
 #endif

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_subr.c	5.1.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_subr.c	7.9 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -360,7 +360,7 @@ merror(seekpt, i)
 	merror1(seekpt);
 	if (*cp == '\n')
 		putnl(), cp++;
-	if (inopen && CE)
+	if (inopen > 0 && CE)
 		vclreol();
 	if (SO && SE)
 		putpad(SO);
@@ -549,7 +549,7 @@ save(a1, a2)
 	more = (a2 - a1 + 1) - (unddol - dol);
 	while (more > (endcore - truedol))
 		if (morelines() < 0)
-			error("Out of memory@saving lines for undo - try using ed or re");
+			error("Out of memory@saving lines for undo - try using ed");
 	if (more)
 		(*(more > 0 ? copywR : copyw))(unddol + more + 1, unddol + 1,
 		    (truedol - unddol));
@@ -627,62 +627,6 @@ smerror(seekpt, cp)
 		putpad(SE);
 }
 
-#define	std_nerrs (sizeof std_errlist / sizeof std_errlist[0])
-
-#define	error(i)	i
-
-#ifdef lint
-char	*std_errlist[] = {
-#else
-# ifdef VMUNIX
-char	*std_errlist[] = {
-# else
-short	std_errlist[] = {
-# endif
-#endif
-	error("Error 0"),
-	error("Not super-user"),
-	error("No such file or directory"),
-	error("No such process"),
-	error("Interrupted system call"),
-	error("Physical I/O error"),
-	error("No such device or address"),
-	error("Argument list too long"),
-	error("Exec format error"),
-	error("Bad file number"),
-	error("No children"),
-	error("No more processes"),
-	error("Not enough core"),
-	error("Permission denied"),
-	error("Bad address"),
-	error("Block device required"),
-	error("Mount device busy"),
-	error("File exists"),
-	error("Cross-device link"),
-	error("No such device"),
-	error("Not a directory"),
-	error("Is a directory"),
-	error("Invalid argument"),
-	error("File table overflow"),
-	error("Too many open files"),
-	error("Not a typewriter"),
-	error("Text file busy"),
-	error("File too large"),
-	error("No space left on device"),
-	error("Illegal seek"),
-	error("Read-only file system"),
-	error("Too many links"),
-	error("Broken pipe")
-#ifndef QUOTA
-	, error("Math argument")
-	, error("Result too large")
-#else
-	, error("Quota exceeded")
-#endif
-};
-
-#undef	error
-
 char *
 strend(cp)
 	register char *cp;
@@ -703,11 +647,13 @@ strcLIN(dp)
 syserror()
 {
 	register int e = errno;
+	extern int sys_nerr;
+	extern char *sys_errlist[];
 
 	dirtcnt = 0;
 	putchar(' ');
-	if (e >= 0 && errno <= std_nerrs)
-		error(std_errlist[e]);
+	if (e >= 0 && e <= sys_nerr)
+		error(sys_errlist[e]);
 	else
 		error("System error %d", e);
 }
@@ -814,3 +760,185 @@ markit(addr)
 	if (addr != dot && addr >= one && addr <= dol)
 		markDOT();
 }
+
+/*
+ * The following code is defensive programming against a bug in the
+ * pdp-11 overlay implementation.  Sometimes it goes nuts and asks
+ * for an overlay with some garbage number, which generates an emt
+ * trap.  This is a less than elegant solution, but it is somewhat
+ * better than core dumping and losing your work, leaving your tty
+ * in a weird state, etc.
+ */
+int _ovno;
+onemt()
+{
+	int oovno;
+
+	signal(SIGEMT, onemt);
+	oovno = _ovno;
+	/* 2 and 3 are valid on 11/40 type vi, so */
+	if (_ovno < 0 || _ovno > 3)
+		_ovno = 0;
+	error("emt trap, _ovno is %d @ - try again");
+}
+
+/*
+ * When a hangup occurs our actions are similar to a preserve
+ * command.  If the buffer has not been [Modified], then we do
+ * nothing but remove the temporary files and exit.
+ * Otherwise, we sync the temp file and then attempt a preserve.
+ * If the preserve succeeds, we unlink our temp files.
+ * If the preserve fails, we leave the temp files as they are
+ * as they are a backup even without preservation if they
+ * are not removed.
+ */
+onhup()
+{
+
+	/*
+	 * USG tty driver can send multiple HUP's!!
+	 */
+	signal(SIGINT, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
+	if (chng == 0) {
+		cleanup(1);
+		exit(0);
+	}
+	if (setexit() == 0) {
+		if (preserve()) {
+			cleanup(1);
+			exit(0);
+		}
+	}
+	exit(1);
+}
+
+/*
+ * An interrupt occurred.  Drain any output which
+ * is still in the output buffering pipeline.
+ * Catch interrupts again.  Unless we are in visual
+ * reset the output state (out of -nl mode, e.g).
+ * Then like a normal error (with the \n before Interrupt
+ * suppressed in visual mode).
+ */
+onintr()
+{
+
+#ifndef CBREAK
+	signal(SIGINT, onintr);
+#else
+	signal(SIGINT, inopen ? vintr : onintr);
+#endif
+	alarm(0);	/* in case we were called from map */
+	draino();
+	if (!inopen) {
+		pstop();
+		setlastchar('\n');
+#ifdef CBREAK
+	}
+#else
+	} else
+		vraw();
+#endif
+	error("\nInterrupt" + inopen);
+}
+
+/*
+ * If we are interruptible, enable interrupts again.
+ * In some critical sections we turn interrupts off,
+ * but not very often.
+ */
+setrupt()
+{
+
+	if (ruptible) {
+#ifndef CBREAK
+		signal(SIGINT, onintr);
+#else
+		signal(SIGINT, inopen ? vintr : onintr);
+#endif
+#ifdef SIGTSTP
+		if (dosusp)
+			signal(SIGTSTP, onsusp);
+#endif
+	}
+}
+
+preserve()
+{
+
+#ifdef VMUNIX
+	tflush();
+#endif
+	synctmp();
+	pid = fork();
+	if (pid < 0)
+		return (0);
+	if (pid == 0) {
+		close(0);
+		dup(tfile);
+		execl(EXPRESERVE, "expreserve", (char *) 0);
+		exit(1);
+	}
+	waitfor();
+	if (rpid == pid && status == 0)
+		return (1);
+	return (0);
+}
+
+#ifndef V6
+exit(i)
+	int i;
+{
+
+# ifdef TRACE
+	if (trace)
+		fclose(trace);
+# endif
+	_exit(i);
+}
+#endif
+
+#ifdef SIGTSTP
+/*
+ * We have just gotten a susp.  Suspend and prepare to resume.
+ */
+onsusp()
+{
+	ttymode f;
+	int omask;
+	struct winsize win;
+
+	f = setty(normf);
+	vnfl();
+	putpad(TE);
+	flush();
+
+	(void) sigsetmask(0);
+	signal(SIGTSTP, SIG_DFL);
+	kill(0, SIGTSTP);
+
+	/* the pc stops here */
+
+	signal(SIGTSTP, onsusp);
+	vcontin(0);
+	setty(f);
+	if (!inopen)
+		error(0);
+	else {
+		if (ioctl(0, TIOCGWINSZ, &win) >= 0)
+			if (win.ws_row != winsz.ws_row ||
+			    win.ws_col != winsz.ws_col)
+				winch();
+		if (vcnt < 0) {
+			vcnt = -vcnt;
+			if (state == VISUAL)
+				vclear();
+			else if (state == CRTOPEN)
+				vcnt = 0;
+		}
+		vdirty(0, LINES);
+		vrepaint(cursor);
+	}
+}
+#endif

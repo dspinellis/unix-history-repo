@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_voper.c	5.1.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_voper.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -38,7 +38,7 @@ operate(c, cnt)
 	register line *addr;
 	line *odot;
 	static char lastFKND, lastFCHR;
-	char d;
+	short d;
 
 	moveop = vmove, deleteop = vdelete;
 	wcursor = cursor;
@@ -114,8 +114,8 @@ operate(c, cnt)
 	 *		character.
 	 */
 	case 'r':
-		vrep(cnt);
 		vmacchng(1);
+		vrep(cnt);
 		return;
 
 	default:
@@ -223,6 +223,10 @@ ein:
 	case '%':
 		vsave();
 		i = lmatchp((line *) 0);
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "after lmatchp in %, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
+#endif
 		getDOT();
 		forbid(!i);
 		if (opf != vmove)

@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_set.c	5.1.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_set.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
 #include "ex_temp.h"
+#include "ex_tty.h"
 
 /*
  * Set command.
@@ -101,8 +102,13 @@ printone:
 			op->ovalue = getnum();
 			if (value(TABSTOP) <= 0)
 				value(TABSTOP) = TABS;
-			if (op == &options[WINDOW])
+			if (value(HARDTABS) <= 0)
+				value(HARDTABS) = TABS;
+			if (op == &options[WINDOW]) {
+				if (value(WINDOW) >= LINES)
+					value(WINDOW) = LINES-1;
 				vsetsiz(value(WINDOW));
+			}
 			break;
 
 		case STRING:

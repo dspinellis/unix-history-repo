@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ex.c	5.3.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -95,6 +95,7 @@ main(ac, av)
 	bool ivis;
 	bool itag = 0;
 	bool fast = 0;
+	extern int onemt();
 #ifdef TRACE
 	register char *tracef;
 #endif
@@ -157,21 +158,8 @@ main(ac, av)
 	ruptible = signal(SIGINT, SIG_IGN) == SIG_DFL;
 	if (signal(SIGTERM, SIG_IGN) == SIG_DFL)
 		signal(SIGTERM, onhup);
-#ifdef SIGTSTP
-	if (signal(SIGTSTP, SIG_IGN) == SIG_DFL)
-		signal(SIGTSTP, onsusp), dosusp++;
-#endif
-
-	/*
-	 * Initialize end of core pointers.
-	 * Normally we avoid breaking back to fendcore after each
-	 * file since this can be expensive (much core-core copying).
-	 * If your system can scatter load processes you could do
-	 * this as ed does, saving a little core, but it will probably
-	 * not often make much difference.
-	 */
-	fendcore = (line *) sbrk(0);
-	endcore = fendcore - 2;
+	if (signal(SIGEMT, SIG_IGN) == SIG_DFL)
+		signal(SIGEMT, onemt);
 
 	/*
 	 * Process flag arguments.
@@ -202,9 +190,11 @@ main(ac, av)
 					tracef[9] = 0;
 			}
 			trace = fopen(tracef, "w");
+#define tracbuf NULL
 			if (trace == NULL)
 				printf("Trace create error\n");
-			setbuf(trace, tracbuf);
+			else
+				setbuf(trace, tracbuf);
 			break;
 
 #endif
@@ -253,6 +243,23 @@ main(ac, av)
 		}
 		ac--, av++;
 	}
+
+	/*
+	 * Initialize end of core pointers.
+	 * Normally we avoid breaking back to fendcore after each
+	 * file since this can be expensive (much core-core copying).
+	 * If your system can scatter load processes you could do
+	 * this as ed does, saving a little core, but it will probably
+	 * not often make much difference.
+	 */
+	fendcore = (line *) sbrk(0);
+	endcore = fendcore - 2;
+
+#ifdef SIGTSTP
+	if (!hush && signal(SIGTSTP, SIG_IGN) == SIG_DFL)
+		signal(SIGTSTP, onsusp), dosusp++;
+#endif
+
 	if (ac && av[0][0] == '+') {
 		firstpat = &av[0][1];
 		ac--, av++;
@@ -295,7 +302,6 @@ main(ac, av)
 	 * Initialize a temporary file (buffer) and
 	 * set up terminal environment.  Read user startup commands.
 	 */
-	init();
 	if (setexit() == 0) {
 		setrupt();
 		intty = isatty(0);
@@ -310,7 +316,7 @@ main(ac, av)
 				setterm(cp);
 		}
 	}
-	if (setexit() == 0 && !fast && intty)
+	if (setexit() == 0 && !fast && intty) {
 		if ((globp = getenv("EXINIT")) && *globp)
 			commands(1,1);
 		else {
@@ -318,6 +324,15 @@ main(ac, av)
 			if ((cp = getenv("HOME")) != 0 && *cp)
 				source(strcat(strcpy(genbuf, cp), "/.exrc"), 1);
 		}
+		/*
+		 * Allow local .exrc too.  This loses if . is $HOME,
+		 * but nobody should notice unless they do stupid things
+		 * like putting a version command in .exrc.  Besides,
+		 * they should be using EXINIT, not .exrc, right?
+		 */
+		source(".exrc", 1);
+	}
+	init();	/* moved after prev 2 chunks to fix directory option */
 
 	/*
 	 * Initial processing.  Handle tag, recover, and file argument
@@ -364,6 +379,7 @@ main(ac, av)
 	 * If you quit out of a 'vi' command by doing Q or ^\,
 	 * you also fall through to here.
 	 */
+	seenprompt = 1;
 	ungetchar(0);
 	globp = 0;
 	initev = 0;
@@ -389,14 +405,6 @@ init()
 	undkind = UNDNONE;
 	chng = 0;
 	edited = 0;
-#ifdef USG
-	signal (SIGHUP, SIG_IGN);
-#endif
-#ifdef USG3TTY
-#ifndef USG
-	signal (SIGHUP, SIG_IGN);
-#endif
-#endif
 	for (i = 0; i <= 'z'-'a'+1; i++)
 		names[i] = 1;
 	anymarks = 0;
@@ -407,122 +415,6 @@ init()
         }
 #endif
 }
-
-/*
- * When a hangup occurs our actions are similar to a preserve
- * command.  If the buffer has not been [Modified], then we do
- * nothing but remove the temporary files and exit.
- * Otherwise, we sync the temp file and then attempt a preserve.
- * If the preserve succeeds, we unlink our temp files.
- * If the preserve fails, we leave the temp files as they are
- * as they are a backup even without preservation if they
- * are not removed.
- */
-onhup()
-{
-
-	/*
-	 * USG tty driver can send multiple HUP's!!
-	 */
-	signal(SIGINT, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
-	if (chng == 0) {
-		cleanup(1);
-		exit(0);
-	}
-	if (setexit() == 0) {
-		if (preserve()) {
-			cleanup(1);
-			exit(0);
-		}
-	}
-	exit(1);
-}
-
-/*
- * An interrupt occurred.  Drain any output which
- * is still in the output buffering pipeline.
- * Catch interrupts again.  Unless we are in visual
- * reset the output state (out of -nl mode, e.g).
- * Then like a normal error (with the \n before Interrupt
- * suppressed in visual mode).
- */
-onintr()
-{
-
-#ifndef CBREAK
-	signal(SIGINT, onintr);
-#else
-	signal(SIGINT, inopen ? vintr : onintr);
-#endif
-	draino();
-	if (!inopen) {
-		pstop();
-		setlastchar('\n');
-#ifdef CBREAK
-	}
-#else
-	} else
-		vraw();
-#endif
-	error("\nInterrupt" + inopen);
-}
-
-/*
- * If we are interruptible, enable interrupts again.
- * In some critical sections we turn interrupts off,
- * but not very often.
- */
-setrupt()
-{
-
-	if (ruptible) {
-#ifndef CBREAK
-		signal(SIGINT, onintr);
-#else
-		signal(SIGINT, inopen ? vintr : onintr);
-#endif
-#ifdef SIGTSTP
-		if (dosusp)
-			signal(SIGTSTP, onsusp);
-#endif
-	}
-}
-
-preserve()
-{
-
-#ifdef VMUNIX
-	tflush();
-#endif
-	synctmp();
-	pid = fork();
-	if (pid < 0)
-		return (0);
-	if (pid == 0) {
-		close(0);
-		dup(tfile);
-		execl(EXPRESERVE, "expreserve", (char *) 0);
-		exit(1);
-	}
-	waitfor();
-	if (rpid == pid && status == 0)
-		return (1);
-	return (0);
-}
-
-#ifndef V6
-exit(i)
-	int i;
-{
-
-# ifdef TRACE
-	if (trace)
-		fclose(trace);
-# endif
-	_exit(i);
-}
-#endif
 
 /*
  * Return last component of unix path name p.
