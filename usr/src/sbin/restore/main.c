@@ -1,7 +1,7 @@
-/* Copyright (c) 1981 Regents of the University of California */
+/* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.4 %G%";
+char version[] = "@(#)main.c 2.5 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -24,12 +24,21 @@ char version[] = "@(#)main.c 2.4 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <fstab.h>
+#ifndef SIMFS
+#include <sys/param.h>
+#include <sys/inode.h>
+#include <sys/fs.h>
+#include <dir.h>
+#include <stat.h>
+#include <dumprestor.h>
+#else
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/stat.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
 #include "../h/dumprestor.h"
+#endif
 #include <sys/mtio.h>
 
 #define ODIRSIZ 14
@@ -62,7 +71,7 @@ daddr_t	seekpt;
 FILE	*df;
 DIR	*dirp;
 int	ofile;
-char	dirfile[] = "rstXXXXXX";
+char	dirfile[] = "/tmp/rstXXXXXX";
 char	lnkbuf[MAXPATHLEN + 1];
 int	pathlen;
 
@@ -130,7 +139,7 @@ usage:
 		/* s dumpnum (skip to) for multifile dump tapes */
 		case 's':
 			dumpnum = atoi(*argv++);
-			if(dumpnum <= 0) {
+			if (dumpnum <= 0) {
 				fprintf(stderr, "Dump number must be a positive integer\n");
 				done(1);
 			}
@@ -245,7 +254,7 @@ extractfiles(argc, argv)
 		}
 		if (mflag)
 			checkdir(*argv);
-		if(hflag)
+		if (hflag)
 			getleaves(d, *argv++);
 		else
 			allocxtr(d, *argv++, XINUSE);
@@ -263,7 +272,7 @@ extractfiles(argc, argv)
 		goto rbits;
 	}
 newvol:
-	resetmt();
+	close(mt);
 getvol:
 	fprintf(stderr, "Mount desired tape volume; Specify volume #: ");
 	if (gets(tbf) == NULL)
@@ -273,6 +282,12 @@ getvol:
 		fprintf(stderr, "Volume numbers are positive numerics\n");
 		goto getvol;
 	}
+	if ((mt = open(magtape, 0)) == -1) {
+		fprintf(stderr, "Cannot open tape!\n");
+		goto getvol;
+	}
+	if (dumpnum > 1)
+		resetmt();
 	if (readhdr(&spcl) == 0) {
 		fprintf(stderr, "tape is not dump tape\n");
 		goto newvol;
@@ -295,7 +310,7 @@ rbits:
 again:
 		if (ishead(&spcl) == 0) {
 			i = 0;
-			while(gethead(&spcl) == 0)
+			while (gethead(&spcl) == 0)
 				i++;
 			fprintf(stderr, "resync restor, skipped %i blocks\n",
 			    i);
@@ -323,7 +338,8 @@ again:
 				sprintf(name, "%u", xp->x_ino);
 			switch (mode & IFMT) {
 			default:
-				fprintf(stderr, "%s: unknown file type\n", name);
+				fprintf(stderr, "%s: unknown file mode 0%o\n",
+				    name, mode);
 				xp->x_flags |= XTRACTD;
 				xtrcnt--;
 				goto skipfile;
@@ -528,8 +544,9 @@ putdir(buf, size)
 				continue;
 			}
 			loc += dp->d_reclen;
-			if (dp->d_ino != 0)
+			if (dp->d_ino != 0) {
 				putent(dp, dirwrite);
+			}
 		}
 	}
 }
@@ -722,6 +739,7 @@ xtrfile(buf, size)
 	char	*buf;
 	long	size;
 {
+
 	if (write(ofile, buf, (int) size) == -1) {
 		perror("extract write");
 		done(1);
@@ -732,6 +750,7 @@ xtrskip(buf, size)
 	char *buf;
 	long size;
 {
+
 #ifdef lint
 	buf = buf;
 #endif
@@ -759,6 +778,7 @@ xtrcvtskip(buf, size)
 	char *buf;
 	long size;
 {
+
 	fprintf(stderr, "unallocated block in directory\n");
 	xtrskip(buf, size);
 }
@@ -767,6 +787,7 @@ xtrlnkfile(buf, size)
 	char	*buf;
 	long	size;
 {
+
 	pathlen += size;
 	if (pathlen > MAXPATHLEN) {
 		fprintf(stderr, "symbolic link name: %s; too long %d\n",
@@ -780,6 +801,7 @@ xtrlnkskip(buf, size)
 	char *buf;
 	long size;
 {
+
 #ifdef lint
 	buf = buf, size = size;
 #endif
@@ -797,7 +819,7 @@ readtape(b)
 	char *b;
 {
 	register long i;
-	struct s_spcl tmpbuf;
+	struct u_spcl tmpbuf;
 	char c;
 
 	if (bct >= NTREC) {
@@ -852,6 +874,7 @@ loop:
 
 flsht()
 {
+
 	bct = NTREC+1;
 }
 
@@ -859,6 +882,7 @@ blkcpy(from, to, size)
 	char *from, *to;
 	long size;
 {
+
 #ifdef lint
 	from = from, to = to, size = size;
 #endif
@@ -869,6 +893,7 @@ blkclr(buf, size)
 	char *buf;
 	long size;
 {
+
 #ifdef lint
 	buf = buf, size = size;
 #endif
@@ -879,7 +904,7 @@ resetmt()
 {
 	struct mtop tcom;
 
-	if(dumpnum > 1)
+	if (dumpnum > 1)
 		tcom.mt_op = MTBSF;
 	else
 		tcom.mt_op = MTREW;
@@ -900,6 +925,7 @@ checkvol(b, t)
 	struct s_spcl *b;
 	int t;
 {
+
 	if (b->c_volume == t)
 		return(1);
 	return(0);
@@ -908,6 +934,7 @@ checkvol(b, t)
 readhdr(b)
 	struct s_spcl *b;
 {
+
 	if (gethead(b) == 0)
 		return(0);
 	if (checktype(b, TS_TAPE) == 0)
@@ -922,6 +949,7 @@ readhdr(b)
 gethead(buf)
 	struct s_spcl *buf;
 {
+
 	readtape((char *)buf);
 	if (buf->c_magic != MAGIC || checksum((int *)buf) == 0)
 		return(0);
@@ -934,6 +962,7 @@ gethead(buf)
 ishead(buf)
 	struct s_spcl *buf;
 {
+
 	if (buf->c_magic != MAGIC || checksum((int *)buf) == 0)
 		return(0);
 	return(1);
@@ -943,6 +972,7 @@ checktype(b, t)
 	struct s_spcl *b;
 	int	t;
 {
+
 	return(b->c_type == t);
 }
 
@@ -1053,19 +1083,18 @@ putent(dp, wrtfunc)
 	struct direct *dp;
 	int (*wrtfunc)();
 {
+
 	if (dp->d_ino == 0)
 		return;
-	for (;;) {
-		if (dp->d_reclen < DIRBLKSIZ - dirloc) {
-			blkcpy((char *)dp, dirbuf + dirloc, (long)dp->d_reclen);
-			prev = dirloc;
-			dirloc += dp->d_reclen;
-			return;
-		}
-		((struct direct *)(dirbuf + prev))->d_reclen = DIRBLKSIZ - prev;
+	if (dirloc + dp->d_reclen > DIRBLKSIZ) {
+		((struct direct *)(dirbuf + prev))->d_reclen =
+		    DIRBLKSIZ - prev;
 		(*wrtfunc)(dirbuf, DIRBLKSIZ);
 		dirloc = 0;
 	}
+	blkcpy((char *)dp, dirbuf + dirloc, (long)dp->d_reclen);
+	prev = dirloc;
+	dirloc += dp->d_reclen;
 }
 
 /*
@@ -1074,6 +1103,7 @@ putent(dp, wrtfunc)
 flushent(wrtfunc)
 	int (*wrtfunc)();
 {
+
 	((struct direct *)(dirbuf + prev))->d_reclen = DIRBLKSIZ - prev;
 	(*wrtfunc)(dirbuf, dirloc);
 	dirloc = 0;
@@ -1083,6 +1113,7 @@ dirwrite(buf, size)
 	char *buf;
 	int size;
 {
+
 	fwrite(buf, 1, size, df);
 	seekpt = ftell(df);
 }
@@ -1091,6 +1122,7 @@ dcvt(odp, ndp)
 	register struct odirect *odp;
 	register struct direct *ndp;
 {
+
 	blkclr((char *)ndp, (long)(sizeof *ndp));
 	ndp->d_ino =  odp->d_ino;
 	strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
@@ -1139,6 +1171,7 @@ seekdir(dirp, loc, base)
 	register DIR *dirp;
 	daddr_t loc, base;
 {
+
 	if (loc == telldir(dirp))
 		return;
 	loc -= base;
@@ -1226,6 +1259,7 @@ allocxtr(ino, name, flags)
 done(exitcode)
 	int exitcode;
 {
+
 	unlink(dirfile);
 	exit(exitcode);
 }
