@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.c	7.1 (Berkeley) %G%
+ *	@(#)param.c	7.2 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -37,7 +37,14 @@ char copyright[] =
  * Compiled with -DHZ=xx -DTIMEZONE=x -DDST=x -DMAXUSERS=xx
  */
 
+#ifndef HZ
+#ifdef VAX
 #define	HZ 100
+#endif
+#ifdef TAHOE
+#define	HZ 60
+#endif
+#endif
 int	hz = HZ;
 int	tick = 1000000 / HZ;
 int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
