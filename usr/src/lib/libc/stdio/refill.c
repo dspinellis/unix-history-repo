@@ -9,11 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)refill.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)refill.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "local.h"
 
 static
