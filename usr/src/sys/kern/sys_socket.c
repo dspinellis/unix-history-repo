@@ -1,4 +1,4 @@
-/*	sys_socket.c	6.1	83/07/29	*/
+/*	sys_socket.c	6.2	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -120,16 +120,10 @@ soo_stat(so, ub)
 	register struct stat *ub;
 {
 
-#ifdef lint
-	so = so;
-#endif
 	bzero((caddr_t)ub, sizeof (*ub));
-#ifdef notdef
 	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE,
 	    (struct mbuf *)ub, (struct mbuf *)0, 
 	    (struct mbuf *)0));
-#endif
-	return (0);
 }
 
 soo_close(fp)
