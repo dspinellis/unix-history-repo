@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)outbound.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)outbound.c	4.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -392,6 +392,20 @@ int	control;				/* this buffer ended block? */
 	    case ORDER_RA:
 		Ensure(3);
 		i = Addr3270(buffer[0], buffer[1]);
+		if ((i < 0) || (i > HighestScreen())) {
+		    char s_buffer[200];
+
+		    sprintf(s_buffer, "tn3270:  %s%d.\n\t%s%d%s%d%s\n",
+			"Invalid 3270 order 'Repeat to Address' to address ",
+			i,
+			"(Screen currently set to ",
+			NumberLines,
+			" by ",
+			NumberColumns,
+			".)");
+		    ExitString(s_buffer, 1);
+		    /*NOTREACHED*/
+		}
 		c = buffer[2];
 		if (c == ORDER_GE) {
 		    Ensure(4);
@@ -416,6 +430,20 @@ int	control;				/* this buffer ended block? */
 		i = WhereAttrByte(BufferAddress);
 		c = FieldAttributes(i);
 		i = Addr3270(buffer[0], buffer[1]);
+		if ((i < 0) || (i > HighestScreen())) {
+		    char s_buffer[200];
+
+		    sprintf(s_buffer, "tn3270:  %s%d.\n\t%s%d%s%d%s\n",
+			"Invalid 3270 order 'Erase Unprotected to Address' to address ",
+			i,
+			"(Screen currently set to ",
+			NumberLines,
+			" by ",
+			NumberColumns,
+			".)");
+		    ExitString(s_buffer, 1);
+		    /*NOTREACHED*/
+		}
 		do {
 		    if (IsStartField(BufferAddress)) {
 			c = FieldAttributes(BufferAddress);
