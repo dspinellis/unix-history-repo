@@ -1,11 +1,16 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	5.12 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
 #
-DESTDIR=
+#	@(#)Makefile	5.13 (Berkeley) %G%
+#
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 TAGSFILE=tags
@@ -19,7 +24,7 @@ TAGSDIR=libcurses libdbm libln libm libmp libpc libtermlib
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR=	learn lib2648 libF77 libI77 libU77 libcurses libdbm libg libln \
-	libom libm libmp libpc libplot libtermlib liby lpr me sendmail
+	libm libmp libpc libplot libtermlib liby lpr me sendmail
 
 # C source that lives in the current directory
 #
