@@ -1,4 +1,4 @@
-/*	rk.c	6.1	83/07/29	*/
+/*	rk.c	6.2	83/10/11	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -623,10 +623,8 @@ rkecc(ui, flag)
 #endif
 		bp->b_flags &= ~B_BAD;
 		rk->rkwc = -((bp->b_bcount - (int)ptob(npf)) / sizeof (short));
-		if (rk->rkwc == 0) {
-			um->um_tab.b_active = 0;
+		if (rk->rkwc == 0)
 			return (0);
-		}
 		break;
 	}
 	rk->rkcs1 = RK_CCLR;
