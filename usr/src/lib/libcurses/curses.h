@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.25 (Berkeley) %G%
+ *	@(#)curses.h	5.23 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -41,14 +41,33 @@
 #define	ospeed		(cfgetospeed(&origtermio))
 #endif /* _CURSES_PRIVATE */
 
+extern char	 GT;			/* Gtty indicates tabs. */
+extern char	 NONL;			/* Term can't hack LF doing a CR. */
+extern char	 UPPERCASE;		/* Terminal is uppercase only. */
+
 extern int	 My_term;		/* Use Def_term regardless. */
 extern char	*Def_term;		/* Default terminal type. */
+
+/* Termcap capabilities. */
+extern char	AM, BS, CA, DA, EO, HC, HZ, IN, MI, MS, NC, NS, OS,
+		PC, UL, XB, XN, XT, XS, XX;
+extern char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
+		*DM, *DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6,
+		*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
+		*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
+		*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
+		*VE, *al, *dl, *sf, *sr,
+		*AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM, *LEFT_PARM,
+		*RIGHT_PARM;
 
 /* END BACKWARD COMPATIBILITY ONLY. */
 
 /* 7-bit ASCII characters. */
 #define	unctrl(c)		__unctrl[(c) & 0x7f]
 #define	unctrllen(ch)		__unctrllen[(ch) & 0x7f]
+
+extern char	*__unctrl[0x80];	/* Control strings. */
+extern char	 __unctrllen[0x80];	/* Control strings length. */
 
 /*
  * A window an array of __LINE structures pointed to by the 'lines' pointer.
@@ -60,7 +79,6 @@ extern char	*Def_term;		/* Default terminal type. */
  *  __LDATA structures.  This is to enable consistent use of bcmp, and bcopy
  * for comparing and copying arrays.
  */
-
 typedef struct {
 	char ch;			/* the actual character */
 
@@ -104,18 +122,6 @@ typedef struct __window {		/* Window structure. */
 	u_int flags;
 } WINDOW;
 
-/* Termcap capabilities. */
-extern char	AM, BS, CA, DA, EO, HC, HZ, IN, MI, MS, NC, NS, OS,
-		PC, UL, XB, XN, XT, XS, XX;
-extern char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
-		*DM, *DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6,
-		*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
-		*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
-		*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
-		*VE, *al, *dl, *sf, *sr,
-		*AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM, *LEFT_PARM,
-		*RIGHT_PARM;
-
 /* Curses external declarations. */
 extern WINDOW	*curscr;		/* Current screen. */
 extern WINDOW	*stdscr;		/* Standard screen. */
@@ -125,76 +131,72 @@ extern struct termios origtermio;	/* Original terminal modes. */
 extern int	 COLS;			/* Columns on the screen. */
 extern int	 LINES;			/* Lines on the screen. */
 
-extern char	 GT;			/* Gtty indicates tabs. */
-extern char	 NONL;			/* Term can't hack LF doing a CR. */
-extern char	 UPPERCASE;		/* Terminal is uppercase only. */
 extern char	*ttytype;		/* Full name of current terminal. */
-extern char	*__unctrl[0x80];	/* Control strings. */
-extern char	 __unctrllen[0x80];	/* Control strings length. */
 
 #define	ERR	(0)			/* Error return. */
 #define	OK	(1)			/* Success return. */
 
 /* Standard screen pseudo functions. */
-#define	addbytes(da, co)	waddbytes(stdscr, da, co)
-#define	addch(ch)		waddch(stdscr, ch)
-#define	addstr(str)		waddbytes(stdscr, str, strlen(str))
-#define	clear()			wclear(stdscr)
-#define	clrtobot()		wclrtobot(stdscr)
-#define	clrtoeol()		wclrtoeol(stdscr)
-#define	delch()			wdelch(stdscr)
-#define	deleteln()		wdeleteln(stdscr)
-#define	erase()			werase(stdscr)
-#define	getch()			wgetch(stdscr)
-#define	getstr(str)		wgetstr(stdscr, str)
-#define	inch()			winch(stdscr)
-#define	insch(ch))		winsch(stdscr, ch)
-#define	insertln()		winsertln(stdscr)
-#define	move(y, x)		wmove(stdscr, y, x)
-#define	refresh()		wrefresh(stdscr)
-#define	standend()		wstandend(stdscr)
-#define	standout()		wstandout(stdscr)
+#define	addbytes(da, co)		waddbytes(stdscr, da, co)
+#define	addch(ch)			waddch(stdscr, ch)
+#define	addstr(str)			waddbytes(stdscr, str, strlen(str))
+#define	clear()				wclear(stdscr)
+#define	clrtobot()			wclrtobot(stdscr)
+#define	clrtoeol()			wclrtoeol(stdscr)
+#define	delch()				wdelch(stdscr)
+#define	deleteln()			wdeleteln(stdscr)
+#define	erase()				werase(stdscr)
+#define	getch()				wgetch(stdscr)
+#define	getstr(str)			wgetstr(stdscr, str)
+#define	inch()				winch(stdscr)
+#define	insch(ch))			winsch(stdscr, ch)
+#define	insertln()			winsertln(stdscr)
+#define	move(y, x)			wmove(stdscr, y, x)
+#define	refresh()			wrefresh(stdscr)
+#define	standend()			wstandend(stdscr)
+#define	standout()			wstandout(stdscr)
 
 /* Standard screen plus movement pseudo functions. */
-#define	mvaddbytes(y, x, da, co) \
-				mvwaddbytes(stdscr, y, x, da, co)
-#define	mvaddch(y, x, ch)	mvwaddch(stdscr, y, x, ch)
-#define	mvaddstr(y, x, str)	mvwaddstr(stdscr, y, x, str)
-#define	mvdelch(y, x)		mvwdelch(stdscr, y, x)
-#define	mvgetch(y, x)		mvwgetch(stdscr, y, x)
-#define	mvgetstr(y, x, str)	mvwgetstr(stdscr, y, x, str)
-#define	mvinch(y, x)		mvwinch(stdscr, y, x)
-#define	mvinsch(y, x, c)	mvwinsch(stdscr, y, x, c)
+#define	mvaddbytes(y, x, da, co)	mvwaddbytes(stdscr, y, x, da, co)
+#define	mvaddch(y, x, ch)		mvwaddch(stdscr, y, x, ch)
+#define	mvaddstr(y, x, str)		mvwaddstr(stdscr, y, x, str)
+#define	mvdelch(y, x)			mvwdelch(stdscr, y, x)
+#define	mvgetch(y, x)			mvwgetch(stdscr, y, x)
+#define	mvgetstr(y, x, str)		mvwgetstr(stdscr, y, x, str)
+#define	mvinch(y, x)			mvwinch(stdscr, y, x)
+#define	mvinsch(y, x, c)		mvwinsch(stdscr, y, x, c)
 #define	mvwaddbytes(win, y, x, da, co) \
-				(wmove(win, y, x) == ERR ? \
-				    ERR : waddbytes(win, da, co))
-#define	mvwaddch(win, y, x, ch)	(wmove(win, y, x) == ERR ? \
-				    ERR : waddch(win, ch))
+	(wmove(win, y, x) == ERR ? ERR : waddbytes(win, da, co))
+#define	mvwaddch(win, y, x, ch) \
+	(wmove(win, y, x) == ERR ? ERR : waddch(win, ch))
 #define	mvwaddstr(win, y, x, str) \
-				(wmove(win, y, x) == ERR ? \
-				    ERR : waddbytes(win, str, strlen(str)))
-#define	mvwdelch(win, y, x)	(wmove(win, y, x) == ERR ? ERR : wdelch(win))
-#define	mvwgetch(win, y, x)	(wmove(win, y, x) == ERR ? ERR : wgetch(win))
+	(wmove(win, y, x) == ERR ? ERR : waddbytes(win, str, strlen(str)))
+#define	mvwdelch(win, y, x) \
+	(wmove(win, y, x) == ERR ? ERR : wdelch(win))
+#define	mvwgetch(win, y, x) \
+	(wmove(win, y, x) == ERR ? ERR : wgetch(win))
 #define	mvwgetstr(win, y, x, str) \
-				(wmove(win, y, x) == ERR ? \
-				    ERR : wgetstr(win, str))
-#define	mvwinch(win, y, x)	(wmove(win, y, x) == ERR ? ERR : winch(win))
-#define	mvwinsch(win, y, x, c)	(wmove(win, y, x) == ERR ? ERR : winsch(win, c))
+	(wmove(win, y, x) == ERR ? ERR : wgetstr(win, str))
+#define	mvwinch(win, y, x) \
+	(wmove(win, y, x) == ERR ? ERR : winch(win))
+#define	mvwinsch(win, y, x, c) \
+	(wmove(win, y, x) == ERR ? ERR : winsch(win, c))
 
-/* Random psuedo functions. */
-#define	clearok(win, bf)  ((bf) ? (win->flags |= __CLEAROK) : \
-				  (win->flags &= ~__CLEAROK))
-#define	flushok(win, bf)  ((bf) ? (win->flags |= __FLUSH) : \
-				  (win->flags &= ~__FLUSH))
-#define	scrollok(win, bf) ((bf) ? (win->flags |= __SCROLLOK) : \
-				  (win->flags &= ~__SCROLLOK))
-#define	leaveok(win, bf)  ((bf) ? (win->flags |= __LEAVEOK) : \
-				  (win->flags &= ~__LEAVEOK))
-#define	getyx(win, y, x)	(y) = win->cury, (x) = win->curx
-#define	winch(win)		(win->lines[win->cury]->line[win->curx].ch & 0177)
+/* Psuedo functions. */
+#define	clearok(win, bf) \
+	((bf) ? (win->flags |= __CLEAROK) : (win->flags &= ~__CLEAROK))
+#define	flushok(win, bf) \
+	((bf) ? (win->flags |= __FLUSH) : (win->flags &= ~__FLUSH))
+#define	getyx(win, y, x) \
+	(y) = win->cury, (x) = win->curx
+#define	leaveok(win, bf) \
+	((bf) ? (win->flags |= __LEAVEOK) : (win->flags &= ~__LEAVEOK))
+#define	scrollok(win, bf) \
+	((bf) ? (win->flags |= __SCROLLOK) : (win->flags &= ~__SCROLLOK))
+#define	winch(win) \
+	(win->lines[win->cury]->line[win->curx].ch & 0177)
 
 /* Public function prototypes. */
-void	 __cputchar __P((int));
 int	 box __P((WINDOW *, int, int));
 int	 cbreak __P((void));
 int	 delwin __P((WINDOW *));
@@ -236,6 +238,7 @@ int	 touchwin __P((WINDOW *));
 void	 tstp __P((int));
 int 	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 int      vwscanw __P((WINDOW *, const char *, _BSD_VA_LIST_));
+int	 waddbytes __P((WINDOW *, char *, int));
 int	 waddch __P((WINDOW *, int));
 int	 waddstr __P((WINDOW *, char *));
 int	 wclear __P((WINDOW *));
@@ -254,17 +257,19 @@ int	 wrefresh __P((WINDOW *));
 int	 wscanw __P((WINDOW *, const char *, ...));
 char	*wstandend __P((WINDOW *));
 char	*wstandout __P((WINDOW *));
+int	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 
 #ifdef _CURSES_PRIVATE
 /* Private function prototypes. */
+void	 __cputchar __P((int));
 void	 __TRACE __P((const char *, ...));
 void	 __id_subwins __P((WINDOW *));
 void	 __set_subwin __P((WINDOW *, WINDOW *));
 void	 __swflags __P((WINDOW *));
 int	 __touchline __P((WINDOW *, int, int, int, int));
 int	 __touchwin __P((WINDOW *));
-char	*tscroll __P((const char *, int));
-int	 waddbytes __P((WINDOW *, char *, int));
+char	*__tscroll __P((const char *, int));
+int	 __waddbytes __P((WINDOW *, char *, int, int));
 
 /* Private #defines. */
 #define	min(a,b)	(a < b ? a : b)
