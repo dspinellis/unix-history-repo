@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.27 (Berkeley) %G%
+#	@(#)MAKEDEV	4.28 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -64,7 +64,7 @@ std)
 	/etc/mknod klog		c 33 0	; chmod 600 klog
 	;;
 
-ht*|tm*|ts*|mt*|ut*)
+ht*|tm*|ts*|ut*)
 	umask 0 ; unit=`expr $i : '..\(.*\)'`
 	case $i in
 	ht*) blk=1; chr=5 ;;
@@ -94,6 +94,37 @@ ht*|tm*|ts*|mt*|ut*)
 			/etc/mknod mt$twenty	b $blk $twenty
 			/etc/mknod rmt$twenty	c $chr $twenty
 		fi
+		;;
+	*)
+		echo bad unit for tape in: $1
+		;;
+	esac
+	umask 77
+	;;
+
+mt*)
+	umask 0 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	mt*) blk=7; chr=19;;
+	esac
+	case $unit in
+	0|1|2|3|4|5|6|7)
+		eight=`expr $unit + 0`;
+		twelve=`expr $unit + 4`; 
+		sixteen=`expr $unit + 8`;
+		twenty=`expr $unit + 12`;
+		/etc/mknod mt8		b $blk $eight
+		/etc/mknod mt12		b $blk $twelve
+		/etc/mknod mt16		b $blk $sixteen
+		/etc/mknod mt20		b $blk $twenty
+		/etc/mknod nmt8		b $blk $twelve ;: ditto
+		/etc/mknod nrmt8	c $chr $twelve ;: ditto
+		/etc/mknod rmt8		c $chr $eight
+		/etc/mknod rmt12	c $chr $twelve
+		/etc/mknod rmt16	c $chr $sixteen
+		/etc/mknod rmt20	c $chr $twenty
+		/etc/mknod nmt16	b $blk $twenty ;: ditto
+		/etc/mknod nrmt16	c $blk $twenty ;: ditto
 		;;
 	*)
 		echo bad unit for tape in: $1
