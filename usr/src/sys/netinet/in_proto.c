@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_proto.c	6.12 (Berkeley) %G%
+ *	@(#)in_proto.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,7 +27,7 @@ int	udp_init();
 int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq(),tcp_ctloutput();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	rip_input(),rip_output();
+int	rip_input(),rip_output(),rip_ctloutput();
 extern	int raw_usrreq();
 /*
  * IMP protocol family: raw interface.
@@ -62,12 +62,12 @@ struct protosw inetsw[] = {
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
 },
 { SOCK_RAW,	&inetdomain,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	0,		0,
+  rip_input,	rip_output,	0,		rip_ctloutput,
   raw_usrreq,
   0,		0,		0,		0,
 },
 { SOCK_RAW,	&inetdomain,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
-  icmp_input,	rip_output,	0,		0,
+  icmp_input,	rip_output,	0,		rip_ctloutput,
   raw_usrreq,
   0,		0,		0,		0,
 },
@@ -80,7 +80,7 @@ struct protosw inetsw[] = {
 #endif
 	/* raw wildcard */
 { SOCK_RAW,	&inetdomain,	0,		PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	0,		0,
+  rip_input,	rip_output,	0,		rip_ctloutput,
   raw_usrreq,
   0,		0,		0,		0,
 },
