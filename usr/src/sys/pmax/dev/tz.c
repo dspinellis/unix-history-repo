@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tz.c	7.9 (Berkeley) %G%
+ *	@(#)tz.c	8.1 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/RCS/devSCSITape.c,
  *	v 8.14 89/07/31 17:26:13 mendel Exp $ SPRITE (Berkeley)

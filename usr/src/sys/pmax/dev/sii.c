@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sii.c	7.7 (Berkeley) %G%
+ *	@(#)sii.c	8.1 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devSII.c,
  *	v 9.2 89/09/14 13:37:41 jhh Exp $ SPRITE (DECWRL)";

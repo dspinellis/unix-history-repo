@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.11 (Berkeley) %G%
+ *	@(#)if_le.c	8.1 (Berkeley) %G%
  */
 
 #include <le.h>
