@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.63 (Berkeley) %G%
+#	@(#)termcap.src	5.64 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -1962,7 +1962,7 @@ dP|pro350|decpro|dec pro console:\
 #
 # From: Bracy H. Elton  <elton@lll-crg>
 dl|vt200|vt220|vt200-js|vt220-js|dec vt200 series with jump scroll:\
-	:im=\E[4h:ei=\E[4l:mi:dc=\E[P:dm=:ed=:al=\E[L:dl=\E[M:\
+	:im=\E[4h:ei=\E[4l:mi:dc=\E[P:dm=:ed=:al=\E[L:\
 	:cs=\E[%i%d;%dr:sf=\ED:sr=\EM:sb=\EM:\
 	:ce=\E[K:cl=\E[H\E[J:cd=\E[J:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:so=\E[7m:se=\E[27m:us=\E[4m:ue=\E[24m:\
@@ -2067,9 +2067,16 @@ hb|2640b|hp2640b|2644a|hp2644a|hp 264x series:\
 # 2621 using all 48 lines of memory, only 24 visible at any time.  Untested.
 hl|2621-48|48 line 2621:\
 	:li#48:ho=\EH:cm=\E&a%r%dc%dR:tc=2621:
-# Hp 110 computer is the same as 2621 except has 16 lines
-hm|hp110|110|hp 110 computer:\
-	:li#16:tc=2621:
+# From: mcvax!westc!ahof@seismo.css.gov (Anton Hofland) (ahof@westc.uucp)
+# For newer versions, :li should correspond to the actual number of lines.
+hm|hp110|HP110|HP110A|Hewlett Packard 110A Portable Computer:\
+	:co#80:li#16:am:db:cl=\E[2J:is=\E&j@\E[=7h:ch=\E&a%2C:cv=\E&a%2R:\
+	:cm=\E&a%2r%2C:ho=\Eh:cr=^M:nl=^J:ks=\E&s1A:ke=\E&s0A:kd=\EB:\
+	:ku=\EA:kr=\EC:kl=\ED:nd=\EC:up=\EA:le=^H:do=^J:bc=^H:bt=\Ei:\
+	:ta=\EI:sf=\E[s\EH\EM\E[u\EJ:sr=\ET:al=\EL:dl=\EM:kb=^H:bl=^G:\
+	:kh=\Eh:dc=\EP:im=\EQ:ei=\ER:mi:ms:xs:mr=\E[7m:mb=\E[5m:me=\E[0m:\
+	:so=\E[7m:se=\E[0m:rs=\E[0m\E&j@:cd=\EJ:ce=\EK:kn#8:k1=\Ep:k2=\Eq:\
+	:k3=\Er:k4=\Es:k5=\Et:k6=\Eu:k7=\Ev:k8=\Ew:
 # 2621 with no labels ever.  Also prevents vi delays on escape.
 hn|2621-nl|hp2621nl|2621nl|hp2621-nl|hp 2621 with no labels:\
 	:ks@:ke@:kh@:ku@:kl@:kr@:kd@:tc=hp2621-fl:
