@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.a	5.1 (Berkeley) %G%
+.\"	@(#)csh.a	6.1 (Berkeley) %G%
 .\"
 .SH
 Appendix \- Special characters
@@ -55,7 +55,7 @@ Expansion/substitution metacharacters
 $	3.4	indicates variable substitution
 !	2.3	indicates history substitution
 :	3.6	precedes substitution modifiers
-\(ua	2.3	used in special forms of history substitution
+^	2.3	used in special forms of history substitution
 \`	4.3	indicates command substitution
 .DE
 .LP
