@@ -94,8 +94,8 @@ ports/xv                Scott Mace              smace@freefall.cdrom.com
 ports/ytalk             Geoff Rehmet            csgr@cs.ru.ac.za
 ports/zircon            Jordan Hubbard          jkh@freefall.cdrom.com
 ports/zsh               Scott Mace              smace@freefall.cdrom.com
-prog/cc			Poul-Henning Kamp	phk@login.dkuug.dk
-prog/cc25		Poul-Henning Kamp	phk@login.dkuug.dk
+prog/cc			Poul-Henning Kamp	phk@freefall.cdrom.com
+prog/cc25		Poul-Henning Kamp	phk@freefall.cdrom.com
 prog/gdb                Gary Jennejohn          gj@pcs.dec.com
 prog/man                Jordan Hubbard          jkh@freefall.cdrom.com
 prog/telnet		Garrett Wollman		wollman@lcs.mit.edu
@@ -109,6 +109,7 @@ sys/lpt                 Geoff Rehmet            csgr@cs.ru.ac.za
 sys/net*                David Greenman          davidg@root.com
 sys/netinet             Garrett Wollman         wollman@lcs.mit.edu
 sys/netboot             Martin Renters          martin@innovus.com
+sys/pcmcia		Poul-Henning Kamp	phk@freefall.cdrom.com
 sys/scheduler           John Dyson              dyson@freefall.cdrom.com
 sys/syscons             So/ren Schmidt          sos@freefall.cdrom.com
 sys/vm                  David Greenman          davidg@root.com
