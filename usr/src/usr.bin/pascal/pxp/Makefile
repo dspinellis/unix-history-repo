@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	pxp
 SRCDIR=	${.CURDIR}/../src
@@ -11,7 +11,7 @@ SRCS=	TRdata.c Version.c call.c case.c const.c cset.c error.c fdec.c \
 	var.c y.tab.c yycomm.c yycopy.c yycosts.c yyerror.c yyget.c yyid.c \
 	yylex.c yymain.c yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c \
 	yyseman.c yytree.c
-CLEANFILES=opc y.tab.c y.tab.h opcode.h Version.c version
+CLEANFILES=opc y.tab.c y.tab.h opcode.h version
 
 y.tab.h y.tab.c: ${SRCDIR}/pas.y
 	/usr/libexec/pascal/eyacc ${SRCDIR}/pas.y > /dev/null
