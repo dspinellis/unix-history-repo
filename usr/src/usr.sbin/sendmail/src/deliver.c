@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.140 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.141 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1398,7 +1398,7 @@ tryhost:
 			(void) setsid();
 
 			/* try to execute the mailer */
-			execve(m->m_mailer, pv, env);
+			execve(m->m_mailer, (ARGV_T) pv, (ARGV_T) env);
 			saveerrno = errno;
 			syserr("Cannot exec %s", m->m_mailer);
 			if (bitnset(M_LOCALMAILER, m->m_flags) ||

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.143 (Berkeley) %G%
+ *	@(#)conf.h	8.144 (Berkeley) %G%
  */
 
 /*
@@ -182,6 +182,7 @@ extern int	syslog(int, char *, ...);
 # endif
 # define setpgid	BSDsetpgrp
 # define GIDSET_T	gid_t
+# define ARGV_T		const char **
 # define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # define SFS_BAVAIL	f_bfree		/* alternate field name */
 # define LA_TYPE	LA_INT
@@ -378,6 +379,7 @@ extern long	dgux_inet_addr();
 # endif
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define WAITUNION	1	/* use "union wait" as wait argument type */
+# define UID_T		int	/* compiler gripes on uid_t */
 # define sleep		sleepX
 # define setpgid	setpgrp
 # ifndef LA_TYPE
@@ -1252,6 +1254,14 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 # else
 #  define HASSETSIGMASK	0
 # endif
+#endif
+
+#ifndef UID_T
+# define UID_T		uid_t
+#endif
+
+#ifndef ARGV_T
+# define ARGV_T		char **
 #endif
 
 
