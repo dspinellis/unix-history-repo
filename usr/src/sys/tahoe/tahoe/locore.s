@@ -1,4 +1,4 @@
-/*	locore.s	1.11	86/11/25	*/
+/*	locore.s	1.12	87/02/17	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -171,12 +171,12 @@ _doadump:
 	.word 0
 0:	mtpr	$HIGH,$IPL
 #define	_rsstkmap _Sysmap+12	# powerfail storage, scb, rsstk, int stack
-	andl2	$~PG_PROT,_rsstkmap
-	orl2	$PG_KW,_rsstkmap		# Make dump stack r/w
 	tstl	dumpflag			# dump only once!
 	bneq	1f
-	movl	$1,dumpflag
+	andl2	$~PG_PROT,_rsstkmap
+	orl2	$PG_KW,_rsstkmap		# Make dump stack r/w
 	mtpr	$0,$TBIA
+	movl	$1,dumpflag
 	movab	dumpflag,sp
 	callf	$4,_dumpsys
 1:
@@ -456,14 +456,6 @@ SCBVEC(vstray):
 /*
  * Ast delivery (profiling and/or reschedule)
  */
-/*
- * When we want to reschedule we will force a
- * memory fault by setting the ASTBIT of P0LR.
- * Then, on memory fault if the ASTBIT of the
- * p0lr is set we will clear it and TRAP(astflt).
- */
-#define ASTBIT	0x00100000  	
-#define	P0MASK	0xc0000000
 
 SCBVEC(kspnotval):
 	CHECK_SFE(4)
@@ -680,9 +672,9 @@ start:
 	movab	eintstack,r1 
 	andl2	$~SYSTEM,r1
 	shrl 	$PGSHIFT,r1,r1			# r1-page number of eintstack
-/* make processor storage read/only */
+/* make 1st page processor storage read/only, 2nd read/write */
 	orl3	$PG_V|PG_KR,r2,_Sysmap[r2]; incl r2;
-	orl3	$PG_V|PG_KR,r2,_Sysmap[r2]; incl r2;
+	orl3	$PG_V|PG_KW,r2,_Sysmap[r2]; incl r2;
 /* other parts of the system are read/write for kernel */
 1:	orl3	$PG_V|PG_KW,r2,_Sysmap[r2];	# data:kernel write+phys=virtual
 	aoblss r1,r2,1b
@@ -1306,6 +1298,24 @@ _masterpaddr: .long	0
 
 	.text
 sw0:	.asciz	"swtch"
+
+/*
+ * When no processes are on the runq, swtch branches to idle
+ * to wait for something to come ready.
+ */
+	.globl  Idle
+Idle: idle:
+	mtpr	$0,$IPL			# must allow interrupts here
+1:
+	tstl	_whichqs		# look for non-empty queue
+	bneq	sw1
+	brb	1b
+
+badsw:	pushab	sw0
+	callf	$8,_panic
+	/* NOTREACHED */
+
+	.align	2
 /*
  * swtch(), using fancy tahoe instructions
  */
@@ -1315,40 +1325,35 @@ ENTRY(swtch, 0)
 	tstl	(sp)+
 	movpsl	4(sp)
 	movl	$1,_noproc
-	clrl	_runrun
-mtpr0:	mtpr	$0,$IPL			# must allow interrupts here
+	incl	_cnt+V_SWTCH
 sw1:	ffs	_whichqs,r0		# look for non-empty queue
-	bgeq	sw1a
-	brb	sw1			# this is an idle loop!
-sw1a:	mtpr	$0x18,$IPL		# lock out all so _whichqs==_qs
-	bbc	r0,_whichqs,mtpr0	# proc moved via lbolt interrupt
+	blss	idle			# if none, idle
+	mtpr	$0x18,$IPL		# lock out all so _whichqs==_qs
+	bbc	r0,_whichqs,sw1		# proc moved via interrupt
 	shal	$1,r0,r1
 	moval	_qs[r1],r1
 	movl	(r1),r2			# r2 = p = highest pri process
 	remque	*(r1)
-	bvc	sw2			# make sure something was there
-sw1b:	pushab	sw0
-	callf	$8,_panic
-sw2:	bneq	sw3
+	bvs	badsw			# make sure something was there
+	bneq	sw2
 	shal	r0,$1,r1
 	mcoml	r1,r1
 	andl2	r1,_whichqs		# no more procs in this queue
-sw3:
+sw2:
 	clrl	_noproc
+	clrl	_runrun
 	tstl	P_WCHAN(r2)		## firewalls
-	bneq	sw1b			##
+	bneq	badsw			##
 	cmpb	P_STAT(r2),$SRUN	##
-	bneq	sw1b			##
+	bneq	badsw			##
 	clrl	P_RLINK(r2)		##
 	movl	*P_ADDR(r2),r0
-	movl	r0,_masterpaddr
-	shal	$PGSHIFT,r0,r0		# r0 = pcbb(p)
 #ifdef notdef
-	mfpr	$PCBB,r1		# resume of current proc is easy
-	cmpl	r0,r1
+	cmpl	r0,_masterpaddr		# resume of current proc is easy
 	beql	res0
 #endif
-	incl	_cnt+V_SWTCH
+	movl	r0,_masterpaddr
+	shal	$PGSHIFT,r0,r0		# r0 = pcbb(p)
 	brb	swresume
 	/* fall into... */
 
