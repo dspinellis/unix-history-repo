@@ -70,7 +70,7 @@
  */
 
 /*
- *	$Id: if_ppp.c,v 1.7 1993/12/20 19:31:30 wollman Exp $
+ *	$Id: if_ppp.c,v 1.8 1994/03/02 20:28:53 guido Exp $
  * 	From: if_ppp.c,v 1.22 1993/08/31 23:20:40 paulus Exp
  *	From: if_ppp.c,v 1.21 1993/08/29 11:22:37 paulus Exp
  *	From: if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp 
@@ -296,7 +296,6 @@ pppclose(tp, flag)
     struct mbuf *m;
     int s;
 
-    ttywflush(tp);
     s = splimp();		/* paranoid; splnet probably ok */
     tp->t_line = 0;
     sc = (struct ppp_softc *)tp->t_sc;
