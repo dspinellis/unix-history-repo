@@ -6,7 +6,7 @@
 #  All rights reserved.  The Berkeley software License Agreement
 #  specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.3 (Berkeley) %G%
+#	@(#)Makefile	4.4 (Berkeley) %G%
 #
 DESTDIR =
 
@@ -24,7 +24,7 @@ FP_SYSO = 	runFp.o fpMain.o\
 		liszt -axq $<
 
 
-fp:		${FP_SYSO}
+all fp:		${FP_SYSO}
 		/bin/rm -f fp
 		echo "(progn (load 'runFp)\
 			     (dumplisp fp))" | lisp > junk.fp
