@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<curses.h>
@@ -27,7 +27,7 @@ static char sccsid[] = "@(#)io.c	5.11 (Berkeley) %G%";
 # ifdef CTRL
 # undef CTRL
 # endif
-# define	CTRL(X)			('X' - 'A' + 1)
+# define	CTRL(X)			(X - 'A' + 1)
 
 # ifdef	notdef				/* defined in curses.h */
 #	define	erasechar()	_tty.sg_erase
@@ -530,7 +530,7 @@ over:
 		bye();		/* quit the game */
 		exit(1);
 	}
-    if (c == CTRL(L)) {
+    if (c == CTRL('L')) {
 	wrefresh(curscr);
 	goto over;
     }
@@ -580,7 +580,7 @@ getline()
 	else if (sp == linebuf && c == ' ')
 	    continue;
 	if (sp >= &linebuf[LINESIZE-1] || !(isprint(c) || c == ' '))
-	    putchar(CTRL(G));
+	    putchar(CTRL('G'));
 	else {
 	    if (islower(c))
 		c = toupper(c);
