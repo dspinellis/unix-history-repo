@@ -1,4 +1,4 @@
-#	Makefile	4.10	83/06/25
+#	Makefile	4.11	83/06/25
 #
 # make file for intermachine communications package
 #
@@ -69,7 +69,8 @@ aculib/aculib.a: ${DRIVERS}
 
 install: tip
 	install -m 4711 -o ${OWNER} -g ${GROUP} tip ${DESTDIR}/usr/bin/tip
-	ln /usr/bin/tip /usr/bin/cu
+	rm -f ${DESTDIR}/usr/bin/cu
+	ln ${DESTDIR}/usr/bin/tip ${DESTDIR}/usr/bin/cu
 #	cp /dev/null ${DESTDIR}/${ADM}/aculog
 #	chown ${OWNER} ${DESTDIR}/${ADM}/aculog
 #	chmod 600 ${DESTDIR}/${ADM}/aculog
