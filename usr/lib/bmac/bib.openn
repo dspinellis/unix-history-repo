@@ -1,0 +1,11 @@
+#
+#  standard open numeric format
+#
+SAD-2
+C1
+I /usr/lib/bmac/bibinc.fullnames
+H
+T AT
+# a[ - amount to indent references
+.so \*(l]/bmac.open
+.nr a[ 5
