@@ -12,7 +12,6 @@ Summary: This posting contains a list of Frequently Asked Questions
 
 Archive-name: mail/sendmail-faq
 Posting-Frequency: monthly (first Monday)
-Last-modified: Sat Feb 11 03:26:18 EST 1995
 
 
 [The most recent copy of this document can be obtained via anonymous
@@ -725,5 +724,5 @@ RESOLVING PROBLEMS
 	directory and have them processed by the same uid that
 	submitted the job in the first place.
 ----------------------------------------------------------------------
-@(#)FAQ	8.13	(Berkeley)	%G%
+@(#)FAQ	8.14	(Berkeley)	%G%
 Send updates to sendmail@CS.Berkeley.EDU.
