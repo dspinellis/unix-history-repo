@@ -1,4 +1,4 @@
-/*	vd.c	7.7	87/04/06	*/
+/*	vd.c	7.8	87/11/12	*/
 
 /*
  * Stand alone driver for the VDDC/SMDE controller 
@@ -28,11 +28,12 @@ long	vdaddrs[NVD] = { 0xffff2000, 0xffff2100, 0xffff2200, 0xffff2300 };
 u_char	vdinit[NVD];			/* controller initialized */
 u_char	vdtype[NVD];			/* controller type */
 u_char	dkconfigured[NVD*NDRIVE];	/* unit configured */
-struct	disklabel dklabel[NVD*NDRIVE];	/* pack label */
+u_char	dkflags[NVD][NDRIVE];		/* unit flags */
 
-struct	mdcb mdcb;
-struct	dcb dcb;
-char	lbuf[DEV_BSIZE];
+static	struct disklabel dklabel[NVD*NDRIVE];	/* pack label */
+static	struct mdcb mdcb;
+static	struct dcb dcb;
+static	char lbuf[DEV_BSIZE];
 
 vdopen(io)
 	register struct iob *io;
@@ -55,11 +56,11 @@ vdopen(io)
 		/*
 		 * Read in the pack label.
 		 */
-		lp->d_secsize = 512;
-		lp->d_nsectors = 32;
+		lp->d_secsize = 1024;
+		lp->d_nsectors = 72;
 		lp->d_ntracks = 24;
 		lp->d_ncylinders = 711;
-		lp->d_secpercyl = 32*24;
+		lp->d_secpercyl = 72*24;
 		if (!vdreset_drive(io))
 			return (ENXIO);
 		tio = *io;
@@ -68,7 +69,7 @@ vdopen(io)
 		tio.i_cc = DEV_BSIZE;
 		tio.i_flgs |= F_RDDATA;
 		if (vdstrategy(&tio, READ) != DEV_BSIZE) {
-			printf("can't read disk label");
+			printf("dk%d: can't read disk label\n", io->i_unit);
 			return (EIO);
 		}
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
@@ -80,10 +81,11 @@ vdopen(io)
 			printf("dk%d: unlabeled\n", io->i_unit);
 			return (ENXIO);
 #endif
-		} else
+		} else {
 			*lp = *dlp;
-		if (!vdreset_drive(io))
-			return (ENXIO);
+			if (!vdreset_drive(io))
+				return (ENXIO);
+		}
 		dkconfigured[io->i_unit] = 1;
 	}
 	if (io->i_boff < 0 || io->i_boff >= lp->d_npartitions ||
@@ -146,24 +148,24 @@ vdreset_drive(io)
 	register struct iob *io;
 {
 	register int ctlr = VDCTLR(io->i_unit), slave = VDSLAVE(io->i_unit);
-	register struct disklabel *lp;
+	register struct disklabel *lp = &dklabel[io->i_unit];
 	register struct vddevice *vdaddr = VDADDR(ctlr);
 	int pass = 0, type = vdtype[ctlr], error;
+	int devflags = dkflags[ctlr][slave];		/* starts with 0 */
 
-	lp = &dklabel[io->i_unit];
 again:
 	dcb.opcode = VDOP_CONFIG;		/* command */
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta = 0;
-	dcb.devselect = slave;
+	dcb.devselect = slave | devflags;
 	dcb.trail.rstrail.ncyl = lp->d_ncylinders;
 	dcb.trail.rstrail.nsurfaces = lp->d_ntracks;
 	if (type == VDTYPE_SMDE) {
 		dcb.trailcnt = sizeof (struct treset) / sizeof (long);
 		dcb.trail.rstrail.nsectors = lp->d_nsectors;
-		dcb.trail.rstrail.slip_sec = 0;		/* XXX */
-		dcb.trail.rstrail.recovery = 0x18f;	/* ??? */
+		dcb.trail.rstrail.slip_sec = lp->d_trackskew;
+		dcb.trail.rstrail.recovery = VDRF_NORMAL;
 	} else
 		dcb.trailcnt = 2;	/* XXX */
 	mdcb.mdcb_head = &dcb;
@@ -179,8 +181,14 @@ again:
 			return (error);
 		goto again;
 	}
-	if ((dcb.operrsta & VDERR_HARD) == 0)		/* success */
+	if ((dcb.operrsta & VDERR_HARD) == 0) {		/* success */
+		dkflags[ctlr][slave] = devflags;
 		return (1);
+	}
+	if (devflags == 0) {
+		devflags = VD_ESDI;
+		goto again;
+	}
 	if (type == VDTYPE_SMDE && (vdaddr->vdstatus[slave] & STA_US) == 0) {
 		printf("dk%d: nonexistent drive\n", io->i_unit);
 		return (0);
@@ -189,6 +197,7 @@ again:
 		vderror(io->i_unit, "config", &dcb);
 		return (0);
 	}
+	devflags = 0;
 	if (pass++)			/* give up */
 		return (0);
 	/*
@@ -212,7 +221,7 @@ vdcmd(ctlr, unit, cmd, time)
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
-	dcb.devselect = unit;
+	dcb.devselect = unit | dkflags[ctlr][unit];
 	dcb.trailcnt = 0;
 	mdcb.mdcb_head = &dcb;
 	mdcb.mdcb_status = 0;
@@ -227,7 +236,7 @@ vdstrategy(io, cmd)
 	int cmd;
 {
 	register struct disklabel *lp;
-	int ctlr, cn, tn, sn;
+	int ctlr, cn, tn, sn, slave, retries = 0;
 	daddr_t bn;
 	struct vddevice *vdaddr;
 
@@ -244,11 +253,14 @@ vdstrategy(io, cmd)
 	tn = sn / lp->d_nsectors;
 	sn = sn % lp->d_nsectors;
 
+top:
 	dcb.opcode = (cmd == READ ? VDOP_RD : VDOP_WD);
 	dcb.intflg = DCBINT_NONE;
 	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
-	dcb.devselect = VDSLAVE(io->i_unit);
+	ctlr = VDCTLR(io->i_unit);
+	slave = VDSLAVE(io->i_unit);
+	dcb.devselect = slave | dkflags[ctlr][slave];
 	dcb.trailcnt = sizeof (struct trrw) / sizeof (int);
 	dcb.trail.rwtrail.memadr = (u_long)io->i_ma; 
 	dcb.trail.rwtrail.wcount = (io->i_cc + 1) / sizeof (short);
@@ -257,12 +269,14 @@ vdstrategy(io, cmd)
 	dcb.trail.rwtrail.disk.sector = sn;
 	mdcb.mdcb_head = &dcb;
 	mdcb.mdcb_status = 0;
-	ctlr = VDCTLR(io->i_unit);
 	vdaddr = VDADDR(ctlr);
 	VDGO(vdaddr, (u_long)&mdcb, vdtype[ctlr]);
 	if (!vdpoll(vdaddr, &dcb, 60, vdtype[ctlr]))
 		_stop(" during i/o operation.\n");
 	if (dcb.operrsta & VDERR_HARD) {
+		if (retries++ == 0 && vdreset_ctlr(ctlr, io->i_unit) == 0 &&
+		    vdreset_drive(io))
+			goto top;
 		vderror(io->i_unit, cmd == READ ? "read" : "write", &dcb);
 		io->i_error = EIO;
 		return (-1);
@@ -328,15 +342,17 @@ struct	dkcompat {
 	int	nsectors;		/* sectors per track */
 	int	ntracks;		/* tracks per cylinder */
 	int	ncylinders;		/* cylinders per drive */
+	int	secsize;		/* sector size */
 #define	NPART	2
 	int	poff[NPART];		/* [a+b] for bootstrapping */
 } dkcompat[] = {
-	{ 48, 24, 711, 0, 61056 },	/* xsd */
-	{ 44, 20, 842, 0, 52800 },	/* eagle */
-	{ 64, 10, 823, 0, 38400 },	/* fuji 360 */
-	{ 32, 24, 711, 0, 40704 },	/* xfd */
-	{ 32, 19, 823, 0, 40128 },	/* smd */
-	{ 32, 10, 823, 0, 19200 },	/* fsd */
+	{ 48, 24,  711,  512, 0, 61056 },	/* xsd */
+	{ 44, 20,  842,  512, 0, 52800 },	/* eagle */
+	{ 64, 10,  823,  512, 0, 38400 },	/* fuji 360 */
+	{ 32, 24,  711,  512, 0, 40704 },	/* xfd */
+	{ 32, 19,  823,  512, 0, 40128 },	/* smd */
+	{ 32, 10,  823,  512, 0, 19200 },	/* fsd */
+	{ 18, 15, 1224, 1024, 0, 21600 },	/* mxd */
 };
 #define	NDKCOMPAT	(sizeof (dkcompat) / sizeof (dkcompat[0]))
 
@@ -350,10 +366,11 @@ vdmaptype(io)
 {
 	register struct disklabel *lp = &dklabel[io->i_unit];
 	register struct dkcompat *dp;
-	int i, ctlr, type;
+	int i, ctlr, slave, type;
 	struct vddevice *vdaddr;
 
 	ctlr = VDCTLR(io->i_unit);
+	slave = VDSLAVE(io->i_unit);
 	vdaddr = VDADDR(ctlr);
 	type = vdtype[ctlr];
 	for (dp = dkcompat; dp < &dkcompat[NDKCOMPAT]; dp++) {
@@ -362,16 +379,17 @@ vdmaptype(io)
 		lp->d_nsectors = dp->nsectors;
 		lp->d_ntracks = dp->ntracks;
 		lp->d_ncylinders = dp->ncylinders;
+		lp->d_secsize = dp->secsize;
 		if (!vdreset_drive(io))		/* set drive parameters */
 			return (EIO);
 		dcb.opcode = VDOP_RD;
 		dcb.intflg = DCBINT_NONE;
 		dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
-		dcb.devselect = VDSLAVE(io->i_unit);
+		dcb.devselect = slave | dkflags[ctlr][slave];
 		dcb.operrsta = 0;
 		dcb.trailcnt = sizeof (struct trrw) / sizeof (long);
 		dcb.trail.rwtrail.memadr = (u_long)lbuf; 
-		dcb.trail.rwtrail.wcount = 512 / sizeof (short);
+		dcb.trail.rwtrail.wcount = lp->d_secsize / sizeof (short);
 		dcb.trail.rwtrail.disk.cylinder = dp->ncylinders - 2;
 		dcb.trail.rwtrail.disk.track = dp->ntracks - 1;
 		dcb.trail.rwtrail.disk.sector = dp->nsectors - 1;
