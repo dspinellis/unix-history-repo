@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.26 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)put.c 1.24 8/19/83";
+#endif
 
 #include "whoami.h"
 #include "opcode.h"
@@ -9,9 +11,9 @@ static char sccsid[] = "@(#)put.c 1.26 %G%";
 #ifdef PC
 #   include	"pc.h"
 #   include	"align.h"
-#endif PC
-
-short	*obufp	= obuf;
+#else
+    short	*obufp	= obuf;
+#endif
 
 /*
  * If DEBUG is defined, include the table
@@ -27,13 +29,14 @@ short	*obufp	= obuf;
  * generation.  Since the interpreter is specifically designed
  * for Pascal, little work is required here.
  */
+/*VARARGS*/
 put(a)
 {
 	register int *p, i;
 	register char *cp;
 	register short *sp;
 	register long *lp;
-	int n, subop, suboppr, op, oldlc, w;
+	int n, subop, suboppr, op, oldlc;
 	char *string;
 	static int casewrd;
 
@@ -45,7 +48,7 @@ put(a)
 	 * relational operators could be used
 	 * etc.
 	 */
-	oldlc = lc;
+	oldlc = (int) lc; /* its either this or change put to return a char * */
 	if ( !CGENNING )
 		/*
 		 * code disabled - do nothing
@@ -168,7 +171,7 @@ put(a)
 			break;
 		case O_CON8:
 		    {
-			short	*sp = &p[1];
+			short	*sp = (short *) (&p[1]);
 
 #ifdef	DEBUG
 			if ( opt( 'k' ) )
@@ -411,7 +414,10 @@ listnames(ap)
 	register struct nl *ap;
 {
 	struct nl *next;
-	register int oldlc, len;
+#ifdef OBJ
+	register int oldlc;
+#endif
+	register int len;
 	register unsigned w;
 	register char *strptr;
 
@@ -425,21 +431,21 @@ listnames(ap)
 		return( ap -> value[ NL_ELABEL ] );
 	}
 #	ifdef OBJ
-	    oldlc = lc;
-	    put(2, O_TRA, lc);
-	    ap->value[ NL_ELABEL ] = lc;
+	    oldlc = (int) lc; /* same problem as put */
+	    (void) put(2, O_TRA, lc);
+	    ap->value[ NL_ELABEL ] = (int) lc;
 #	endif OBJ
 #	ifdef PC
 	    putprintf("	.data", 0);
 	    aligndot(A_STRUCT);
-	    ap -> value[ NL_ELABEL ] = getlab();
-	    putlab( ap -> value[ NL_ELABEL ] );
+	    ap -> value[ NL_ELABEL ] = (int) getlab();
+	    (void) putlab((char *) ap -> value[ NL_ELABEL ] );
 #	endif PC
 	/* number of scalars */
 	next = ap->type;
 	len = next->range[1]-next->range[0]+1;
 #	ifdef OBJ
-	    put(2, O_CASE2, len);
+	    (void) put(2, O_CASE2, len);
 #	endif OBJ
 #	ifdef PC
 	    putprintf( "	.word %d" , 0 , len );
@@ -447,7 +453,7 @@ listnames(ap)
 	/* offsets of each scalar name */
 	len = (len+1)*sizeof(short);
 #	ifdef OBJ
-	    put(2, O_CASE2, len);
+	    (void) put(2, O_CASE2, len);
 #	endif OBJ
 #	ifdef PC
 	    putprintf( "	.word %d" , 0 , len );
@@ -458,7 +464,7 @@ listnames(ap)
 			continue;
 		len++;
 #		ifdef OBJ
-		    put(2, O_CASE2, len);
+		    (void) put(2, O_CASE2, len);
 #		endif OBJ
 #		ifdef PC
 		    putprintf( "	.word %d" , 0 , len );
@@ -482,10 +488,10 @@ listnames(ap)
 #		    endif DEC11
 		    if (!*strptr++)
 			    strptr = getnext(next, &next);
-		    word(w);
+		    word((int) w);
 	    } while (next);
 	    /* jump over the mess */
-	    patch(oldlc);
+	    patch((PTR_DCL) oldlc);
 #	endif OBJ
 #	ifdef PC
 	    while ( next ) {
@@ -504,6 +510,7 @@ listnames(ap)
 	return( ap -> value[ NL_ELABEL ] );
 }
 
+char *
 getnext(next, new)
 
 	struct nl *next, **new;
@@ -512,7 +519,7 @@ getnext(next, new)
 		next = next->chain;
 		*new = next;
 	}
-	if (next == NIL)
+	if (next == NLNIL)
 		return("");
 #ifdef OBJ
 	if (opt('k') && CGENNING )
@@ -536,7 +543,7 @@ putspace(n)
 		/*
 		 * code disabled - do nothing
 		 */
-		return(lc);
+		return;
 #ifdef DEBUG
 	if (opt('k'))
 		printf("%5d\t.=.+%d\n", lc - HEADER_BYTES, n);
@@ -558,7 +565,7 @@ putstr(sptr, padding)
 		/*
 		 * code disabled - do nothing
 		 */
-		return(lc);
+		return;
 #ifdef DEBUG
 	if (opt('k'))
 		printf("%5d\t\t\"%s\"\n", lc-HEADER_BYTES, strptr);
@@ -576,7 +583,7 @@ putstr(sptr, padding)
 #				else
 				    w |= *++strptr;
 #				endif DEC11
-			word(w);
+			word((int) w);
 		} while (*strptr++);
 	} else {
 #		ifdef DEC11
@@ -589,7 +596,7 @@ putstr(sptr, padding)
 					    w |= ' ' << 8;
 					    pad--;
 				    }
-				    word(w);
+				    word((int) w);
 			    }
 		    } while (*strptr++);
 #		else
@@ -626,6 +633,7 @@ putstr(sptr, padding)
 }
 #endif OBJ
 
+#ifndef PC
 lenstr(sptr, padding)
 
 	char *sptr;
@@ -641,6 +649,7 @@ lenstr(sptr, padding)
 	} while (*strptr++);
 	return((++cnt) & ~1);
 }
+#endif
 
 /*
  * Patch repairs the branch
@@ -651,18 +660,20 @@ lenstr(sptr, padding)
  *	lets here it for two pass assemblers.
  */
 patch(loc)
+    PTR_DCL loc;
 {
 
 #	ifdef OBJ
 	    patchfil(loc, (long)(lc-loc-2), 1);
 #	endif OBJ
 #	ifdef PC
-	    putlab( loc );
+	    (void) putlab((char *) loc );
 #	endif PC
 }
 
 #ifdef OBJ
 patch4(loc)
+PTR_DCL loc;
 {
 	patchfil(loc, (long)(lc - HEADER_BYTES), 2);
 }
@@ -677,6 +688,7 @@ patchfil(loc, jmploc, words)
 	int words;
 {
 	register i;
+	extern long lseek();
 	short val;
 
 	if ( !CGENNING )
@@ -699,9 +711,9 @@ patchfil(loc, jmploc, words)
 		if (i >= 0 && i < 1024) {
 			obuf[i] = val;
 		} else {
-			lseek(ofil, (long) loc+2, 0);
-			write(ofil, &val, 2);
-			lseek(ofil, (long) 0, 2);
+			(void) lseek(ofil, (long) loc+2, 0);
+			write(ofil, (char *) (&val), 2);
+			(void) lseek(ofil, (long) 0, 2);
 		}
 		loc += 2;
 #		ifdef DEC11
@@ -733,7 +745,7 @@ pflush()
 	register i;
 
 	i = (obufp - ( ( short * ) obuf ) ) * 2;
-	if (i != 0 && write(ofil, obuf, i) != i)
+	if (i != 0 && write(ofil, (char *) obuf, i) != i)
 		perror(obj), pexit(DIED);
 	obufp = obuf;
 }
@@ -744,6 +756,7 @@ pflush()
  * included here for the eventual code generator.
  *	for PC, thank you!
  */
+char *
 getlab()
 {
 #	ifdef OBJ
@@ -753,7 +766,7 @@ getlab()
 #	ifdef PC
 	    static long	lastlabel;
 
-	    return ( ++lastlabel );
+	    return ( (char *) ++lastlabel );
 #	endif PC
 }
 
@@ -761,12 +774,13 @@ getlab()
  * Putlab - lay down a label.
  *	for PC, just print the label name with a colon after it.
  */
+char *
 putlab(l)
-	int l;
+	char *l;
 {
 
 #	ifdef PC
-	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , l );
+	    putprintf( PREFIXFORMAT , 1 , (int) LABELPREFIX , (int) l );
 	    putprintf( ":" , 0 );
 #	endif PC
 	return (l);
