@@ -3,23 +3,25 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.7 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
+#include "syscontext.h"
 #include "proc.h"
 
 /*
  * Resource controls and accounting.
  */
 
-getpriority()
-{
-	register struct a {
+getpriority(curp, uap, retval)
+	struct proc *curp;
+	register struct args {
 		int	which;
 		int	who;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct proc *p;
 	register int low = PRIO_MAX + 1;
 
@@ -27,7 +29,7 @@ getpriority()
 
 	case PRIO_PROCESS:
 		if (uap->who == 0)
-			p = u.u_procp;
+			p = curp;
 		else
 			p = pfind(uap->who);
 		if (p == 0)
@@ -39,7 +41,7 @@ getpriority()
 		register struct pgrp *pg;
 
 		if (uap->who == 0)
-			pg = u.u_procp->p_pgrp;
+			pg = curp->p_pgrp;
 		else if ((pg = pgfind(uap->who)) == NULL)
 			break;
 		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt) {
@@ -51,7 +53,7 @@ getpriority()
 
 	case PRIO_USER:
 		if (uap->who == 0)
-			uap->who = u.u_uid;
+			uap->who = p->p_uid;
 		for (p = allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_uid == uap->who &&
 			    p->p_nice < low)
@@ -60,36 +62,37 @@ getpriority()
 		break;
 
 	default:
-		u.u_error = EINVAL;
-		return;
+		RETURN (EINVAL);
 	}
-	if (low == PRIO_MAX + 1) {
-		u.u_error = ESRCH;
-		return;
-	}
-	u.u_r.r_val1 = low;
+	if (low == PRIO_MAX + 1)
+		RETURN (ESRCH);
+	*retval = low;
+	RETURN (0);
 }
 
-setpriority()
-{
-	register struct a {
+/* ARGSUSED */
+setpriority(curp, uap, retval)
+	struct proc *curp;
+	register struct args {
 		int	which;
 		int	who;
 		int	prio;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct proc *p;
-	int found = 0;
+	int found = 0, error = 0;
 
 	switch (uap->which) {
 
 	case PRIO_PROCESS:
 		if (uap->who == 0)
-			p = u.u_procp;
+			p = curp;
 		else
 			p = pfind(uap->who);
 		if (p == 0)
 			break;
-		donice(p, uap->prio);
+		error = donice(curp, p, uap->prio);
 		found++;
 		break;
 
@@ -97,11 +100,11 @@ setpriority()
 		register struct pgrp *pg;
 		 
 		if (uap->who == 0)
-			pg = u.u_procp->p_pgrp;
+			pg = curp->p_pgrp;
 		else if ((pg = pgfind(uap->who)) == NULL)
 			break;
 		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt) {
-			donice(p, uap->prio);
+			error = donice(curp, p, uap->prio);
 			found++;
 		}
 		break;
@@ -109,66 +112,64 @@ setpriority()
 
 	case PRIO_USER:
 		if (uap->who == 0)
-			uap->who = u.u_uid;
+			uap->who = p->p_uid;
 		for (p = allproc; p != NULL; p = p->p_nxt)
 			if (p->p_uid == uap->who) {
-				donice(p, uap->prio);
+				error = donice(curp, p, uap->prio);
 				found++;
 			}
 		break;
 
 	default:
-		u.u_error = EINVAL;
-		return;
+		RETURN (EINVAL);
 	}
 	if (found == 0)
-		u.u_error = ESRCH;
+		RETURN (ESRCH);
+	RETURN (0);
 }
 
-donice(p, n)
-	register struct proc *p;
+donice(curp, chgp, n)
+	register struct proc *curp, *chgp;
 	register int n;
 {
 
-	if (u.u_uid && u.u_procp->p_ruid &&
-	    u.u_uid != p->p_uid && u.u_procp->p_ruid != p->p_uid) {
-		u.u_error = EPERM;
-		return;
-	}
+	if (curp->p_uid && curp->p_ruid &&
+	    curp->p_uid != chgp->p_uid && curp->p_ruid != chgp->p_uid)
+		return (EPERM);
 	if (n > PRIO_MAX)
 		n = PRIO_MAX;
 	if (n < PRIO_MIN)
 		n = PRIO_MIN;
-	if (n < p->p_nice && suser(u.u_cred, &u.u_acflag)) {
-		u.u_error = EACCES;
-		return;
-	}
-	p->p_nice = n;
-	(void) setpri(p);
+	if (n < chgp->p_nice && suser(u.u_cred, &u.u_acflag))
+		return (EACCES);
+	chgp->p_nice = n;
+	(void) setpri(chgp);
+	return (0);
 }
 
-setrlimit()
-{
-	register struct a {
+/* ARGSUSED */
+setrlimit(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		u_int	which;
 		struct	rlimit *lim;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct rlimit alim;
 	register struct rlimit *alimp;
 	extern unsigned maxdmap;
+	int error;
 
-	if (uap->which >= RLIM_NLIMITS) {
-		u.u_error = EINVAL;
-		return;
-	}
+	if (uap->which >= RLIM_NLIMITS)
+		RETURN (EINVAL);
 	alimp = &u.u_rlimit[uap->which];
-	u.u_error = copyin((caddr_t)uap->lim, (caddr_t)&alim,
-		sizeof (struct rlimit));
-	if (u.u_error)
-		return;
+	if (error =
+	    copyin((caddr_t)uap->lim, (caddr_t)&alim, sizeof (struct rlimit)))
+		RETURN (error);
 	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max)
-		if (u.u_error = suser(u.u_cred, &u.u_acflag))
-			return;
+		if (error = suser(u.u_cred, &u.u_acflag))
+			RETURN (error);
 	switch (uap->which) {
 
 	case RLIMIT_DATA:
@@ -187,32 +188,36 @@ setrlimit()
 	}
 	*alimp = alim;
 	if (uap->which == RLIMIT_RSS)
-		u.u_procp->p_maxrss = alim.rlim_cur/NBPG;
+		p->p_maxrss = alim.rlim_cur/NBPG;
+	RETURN (0);
 }
 
-getrlimit()
-{
-	register struct a {
+/* ARGSUSED */
+getrlimit(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		u_int	which;
 		struct	rlimit *rlp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
-	if (uap->which >= RLIM_NLIMITS) {
-		u.u_error = EINVAL;
-		return;
-	}
-	u.u_error = copyout((caddr_t)&u.u_rlimit[uap->which], (caddr_t)uap->rlp,
-	    sizeof (struct rlimit));
+	if (uap->which >= RLIM_NLIMITS)
+		RETURN (EINVAL);
+	RETURN (copyout((caddr_t)&u.u_rlimit[uap->which], (caddr_t)uap->rlp,
+	    sizeof (struct rlimit)));
 }
 
-getrusage()
-{
-	register struct a {
+/* ARGSUSED */
+getrusage(p, uap, retval)
+	register struct proc *p;
+	register struct args {
 		int	who;
 		struct	rusage *rusage;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct rusage *rup;
-	struct proc *p = u.u_procp;
 
 	switch (uap->who) {
 
@@ -232,11 +237,10 @@ getrusage()
 		break;
 
 	default:
-		u.u_error = EINVAL;
-		return;
+		RETURN (EINVAL);
 	}
-	u.u_error = copyout((caddr_t)rup, (caddr_t)uap->rusage,
-	    sizeof (struct rusage));
+	RETURN (copyout((caddr_t)rup, (caddr_t)uap->rusage,
+	    sizeof (struct rusage)));
 }
 
 ruadd(ru, ru2)
