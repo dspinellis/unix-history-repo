@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.95 (Berkeley) %G%
+#	@(#)termcap.src	5.96 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -2847,7 +2847,7 @@ wi|wyse925|Wyse-50 emulating tvi925:\
 # This termcap is a composite of entries submitted by Steve Van Domelen
 # (Wyse Tech, svd@bigboy.wyse.com) and Douglas Good (doug@cli.com).
 # Merged by Paul Vojta (vojta@math.berkeley.edu).
-w6|wy60|Wyse 60 in native mode:\
+w6|wy60|wyse60|Wyse 60 in native mode:\
 	:ae=\EH^C:al=4\EE:am:as=\EH^B:bl=^G:bs:bt=\EI:bw:cd=100\Ey:ce=\Et:\
 	:cl=100\E*:cm=\E=%+ %+ :co#80:ct=\E0:da:db:dc=11\EW:dl=5\ER:do=^J:\
 	:ds=\EF\r:ei=\Er:fs=\r:ho=^^:hs:if=/usr/share/tabset/std:im=\Eq:ip=3:\
