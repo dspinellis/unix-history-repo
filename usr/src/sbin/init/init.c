@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -58,7 +58,7 @@ void	idle(), merge(), reset();
 
 struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
 
-#if defined(vax) || defined(tahoe)
+#if defined(vax) || defined(tahoe) || defined(hp300)
 main()
 {
 #if defined(tahoe)
@@ -70,15 +70,27 @@ main(argc, argv)
 	char **argv;
 {
 #endif
+#ifdef __GNUC__
+	/* insure proper semantics for setjmp/longjmp */
+	static
+#endif
 	int howto, oldhowto, started;
 
-#if defined(vax) || defined(tahoe)
+#ifdef __GNUC__
+#ifdef hp300
+	asm("movl d7,%0" : "=rm" (howto));
+#else
+	asm("movl r11,%0" : "=rm" (howto));
+#endif
+#else
+#if defined(vax) || defined(tahoe) || defined(hp300)
 	howto = r11;
 #else
 	howto = 0;
 	if (argc > 1 && argv[1][0] == '-') {
 		char *cp;
 
+		howto = 0;
 		cp = &argv[1][1];
 		while (*cp) switch (*cp++) {
 		case 'a':
@@ -92,6 +104,7 @@ main(argc, argv)
 		howto = RB_SINGLE;
 	}
 #endif
+#endif /* !__GNUC__ */
 	if (getuid() != 0)
 		exit(1);
 	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
@@ -165,7 +178,7 @@ shutreset()
 
 shutend()
 {
-	register i, f;
+	register i;
 
 	acct(0);
 	signal(SIGALRM, SIG_DFL);
@@ -207,7 +220,7 @@ single()
 runcom(oldhowto)
 	int oldhowto;
 {
-	register pid, f;
+	register pid;
 	int status;
 
 	pid = fork();
