@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -68,7 +68,8 @@ hookup(host, port)
 	else {
 		hp = gethostbyname(host);
 		if (hp == NULL) {
-			printf("%s: unknown host\n", host);
+			fprintf(stderr, "ftp: %s: ", host);
+			herror((char *)NULL);
 			code = -1;
 			return((char *) 0);
 		}
