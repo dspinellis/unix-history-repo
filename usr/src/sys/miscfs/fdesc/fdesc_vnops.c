@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1992 The Regents of the University of California
- * Copyright (c) 1990, 1992 Jan-Simon Pendry
+ * Copyright (c) 1990, 1992, 1993 Jan-Simon Pendry
  * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -8,9 +8,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	7.3 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	7.4 (Berkeley) %G%
  *
- * $Id: fdesc_vnops.c,v 1.7 1992/05/30 10:05:34 jsp Exp jsp $
+ * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
 
 /*
@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/proc.h>
+#include <sys/kernel.h>	/* boottime */
 #include <sys/resourcevar.h>
 #include <sys/filedesc.h>
 #include <sys/vnode.h>
@@ -33,6 +34,68 @@
 #include <sys/buf.h>
 #include <sys/dirent.h>
 #include <miscfs/fdesc/fdesc.h>
+
+#define cttyvp(p) ((p)->p_flag&SCTTY ? (p)->p_session->s_ttyvp : NULL)
+
+#define FDL_WANT	0x01
+#define FDL_LOCKED	0x02
+static int fdescvplock;
+static struct vnode *fdescvp[FD_MAX];
+
+#if (FD_STDIN != FD_STDOUT-1) || (FD_STDOUT != FD_STDERR-1)
+FD_STDIN, FD_STDOUT, FD_STDERR must be a sequence n, n+1, n+2
+#endif
+
+fdesc_allocvp(ftype, ix, mp, vpp)
+	fdntype ftype;
+	int ix;
+	struct mount *mp;
+	struct vnode **vpp;
+{
+	struct vnode **nvpp = 0;
+	int error = 0;
+
+	/* get stashed copy of the vnode */
+	if (ix >= 0 && ix < FD_MAX) {
+		nvpp = &fdescvp[ix];
+		if (*nvpp) {
+			*vpp = *nvpp;
+			VREF(*nvpp);
+			return (error);
+		}
+	}
+
+	/*
+	 * otherwise lock the array while we call getnewvnode
+	 * since that can block.
+	 */ 
+	while (fdescvplock & FDL_LOCKED) {
+		fdescvplock |= FDL_WANT;
+		sleep((caddr_t) &fdescvplock, PINOD);
+	}
+	fdescvplock |= FDL_LOCKED;
+
+	error = getnewvnode(VT_UFS, mp, fdesc_vnodeop_p, vpp);
+	if (error)
+		goto out;
+	MALLOC((*vpp)->v_data, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
+	if (nvpp)
+		*nvpp = *vpp;
+	VTOFDESC(*vpp)->fd_type = ftype;
+	VTOFDESC(*vpp)->fd_fd = -1;
+	VTOFDESC(*vpp)->fd_link = 0;
+	VTOFDESC(*vpp)->fd_ix = ix;
+
+out:;
+	fdescvplock &= ~FDL_LOCKED;
+
+	if (fdescvplock & FDL_WANT) {
+		fdescvplock &= ~FDL_WANT;
+		wakeup((caddr_t) &fdescvplock);
+	}
+
+	return (error);
+}
 
 /*
  * vp is the current namei directory
@@ -53,6 +116,7 @@ fdesc_lookup(ap)
 	unsigned fd;
 	int error;
 	struct vnode *fvp;
+	char *ln;
 
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_lookup(%x)\n", ap);
@@ -65,46 +129,134 @@ fdesc_lookup(ap)
 	if (ap->a_cnp->cn_namelen == 1 && *pname == '.') {
 		*vpp = dvp;
 		VREF(dvp);	
-		/*VOP_LOCK(dvp);*/
+		VOP_LOCK(dvp);
 		return (0);
 	}
 
 	p = ap->a_cnp->cn_proc;
 	nfiles = p->p_fd->fd_nfiles;
 
-	fd = 0;
-	while (*pname >= '0' && *pname <= '9') {
-		fd = 10 * fd + *pname++ - '0';
-		if (fd >= nfiles)
+	switch (VTOFDESC(dvp)->fd_type) {
+	default:
+	case Flink:
+	case Fdesc:
+	case Fctty:
+		error = ENOTDIR;
+		goto bad;
+
+	case Froot:
+		if (ap->a_cnp->cn_namelen == 2 && bcmp(pname, "fd", 2) == 0) {
+			error = fdesc_allocvp(Fdevfd, FD_DEVFD, dvp->v_mount, &fvp);
+			if (error)
+				goto bad;
+			*vpp = fvp;
+			fvp->v_type = VDIR;
+			VOP_LOCK(fvp);
+#ifdef FDESC_DIAGNOSTIC
+			printf("fdesc_lookup: newvp = %x\n", fvp);
+#endif
+			return (0);
+		}
+
+		if (ap->a_cnp->cn_namelen == 3 && bcmp(pname, "tty", 3) == 0) {
+			struct vnode *ttyvp = cttyvp(p);
+			if (ttyvp == NULL) {
+				error = ENXIO;
+				goto bad;
+			}
+			error = fdesc_allocvp(Fctty, FD_CTTY, dvp->v_mount, &fvp);
+			if (error)
+				goto bad;
+			*vpp = fvp;
+			fvp->v_type = VFIFO;
+			VOP_LOCK(fvp);
+#ifdef FDESC_DIAGNOSTIC
+			printf("fdesc_lookup: ttyvp = %x\n", fvp);
+#endif
+			return (0);
+		}
+
+		ln = 0;
+		switch (ap->a_cnp->cn_namelen) {
+		case 5:
+			if (bcmp(pname, "stdin", 5) == 0) {
+				ln = "fd/0";
+				fd = FD_STDIN;
+			}
 			break;
-	}
+		case 6:
+			if (bcmp(pname, "stdout", 6) == 0) {
+				ln = "fd/1";
+				fd = FD_STDOUT;
+			} else
+			if (bcmp(pname, "stderr", 6) == 0) {
+				ln = "fd/2";
+				fd = FD_STDERR;
+			}
+			break;
+		}
+
+		if (ln) {
+#ifdef FDESC_DIAGNOSTIC
+			printf("fdesc_lookup: link -> %s\n", ln);
+#endif
+			error = fdesc_allocvp(Flink, fd, dvp->v_mount, &fvp);
+			if (error)
+				goto bad;
+			VTOFDESC(fvp)->fd_link = ln;
+			*vpp = fvp;
+			fvp->v_type = VLNK;
+			VOP_LOCK(fvp);
+#ifdef FDESC_DIAGNOSTIC
+			printf("fdesc_lookup: newvp = %x\n", fvp);
+#endif
+			return (0);
+		} else {
+			error = ENOENT;
+			goto bad;
+		}
+
+		/* fall through */
+
+	case Fdevfd:
+		if (ap->a_cnp->cn_namelen == 2 && bcmp(pname, "..", 2) == 0) {
+			error = fdesc_root(dvp->v_mount, vpp);
+			return (error);
+		}
+
+		fd = 0;
+		while (*pname >= '0' && *pname <= '9') {
+			fd = 10 * fd + *pname++ - '0';
+			if (fd >= nfiles)
+				break;
+		}
 
 #ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_lookup: fd = %d, *pname = %x\n", fd, *pname);
+		printf("fdesc_lookup: fd = %d, *pname = %x\n", fd, *pname);
 #endif
-	if (*pname != '\0') {
-		error = ENOENT;
-		goto bad;
-	}
+		if (*pname != '\0') {
+			error = ENOENT;
+			goto bad;
+		}
 
-	if (fd >= nfiles || p->p_fd->fd_ofiles[fd] == NULL) {
-		error = EBADF;
-		goto bad;
-	}
+		if (fd >= nfiles || p->p_fd->fd_ofiles[fd] == NULL) {
+			error = EBADF;
+			goto bad;
+		}
 
 #ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_lookup: allocate new vnode\n");
+		printf("fdesc_lookup: allocate new vnode\n");
 #endif
-	error = getnewvnode(VT_UFS, dvp->v_mount, fdesc_vnodeop_p, &fvp);
-	if (error)
-		goto bad;
-	MALLOC(fvp->v_data, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
-	VTOFDESC(fvp)->f_fd = fd;
-	*vpp = fvp;
+		error = fdesc_allocvp(Fdesc, FD_DESC+fd, dvp->v_mount, &fvp);
+		if (error)
+			goto bad;
+		VTOFDESC(fvp)->fd_fd = fd;
+		*vpp = fvp;
 #ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_lookup: newvp = %x\n", fvp);
+		printf("fdesc_lookup: newvp = %x\n", fvp);
 #endif
-	return (0);
+		return (0);
+	}
 
 bad:;
 	*vpp = NULL;
@@ -123,23 +275,28 @@ fdesc_open(ap)
 	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
+	int error = 0;
 
-	/*
-	 * Can always open the root (modulo perms)
-	 */
-	if (vp->v_flag & VROOT)
-		return (0);
+	switch (VTOFDESC(vp)->fd_type) {
+	case Fdesc:
+		/*
+		 * XXX Kludge: set p->p_dupfd to contain the value of the
+		 * the file descriptor being sought for duplication. The error 
+		 * return ensures that the vnode for this device will be
+		 * released by vn_open. Open will detect this special error and
+		 * take the actions in dupfdopen.  Other callers of vn_open or
+		 * VOP_OPEN will simply report the error.
+		 */
+		ap->a_p->p_dupfd = VTOFDESC(vp)->fd_fd;	/* XXX */
+		error = ENODEV;
+		break;
 
-	/*
-	 * XXX Kludge: set ap->a_p->p_dupfd to contain the value of the
-	 * the file descriptor being sought for duplication. The error 
-	 * return ensures that the vnode for this device will be released
-	 * by vn_open. Open will detect this special error and take the
-	 * actions in dupfdopen.  Other callers of vn_open or VOP_OPEN
-	 * will simply report the error.
-	 */
-	ap->a_p->p_dupfd = VTOFDESC(vp)->f_fd;	/* XXX */
-	return (ENODEV);
+	case Fctty:
+		error = cttyopen(devctty, ap->a_mode, 0, ap->a_p);
+		break;
+	}
+
+	return (error);
 }
 
 static int
@@ -201,23 +358,50 @@ fdesc_getattr(ap)
 	unsigned fd;
 	int error;
 
-	if (vp->v_flag & VROOT) {
 #ifdef FDESC_DIAGNOSTIC
-		printf("fdesc_getattr: stat rootdir\n");
+	printf("fdesc_getattr: stat type = %d\n", VTOFDESC(vp)->fd_type);
 #endif
+
+	switch (VTOFDESC(vp)->fd_type) {
+	case Froot:
+	case Fdevfd:
+	case Flink:
+	case Fctty:
 		bzero((caddr_t) vap, sizeof(*vap));
 		vattr_null(vap);
-		vap->va_type = VDIR;
-		vap->va_mode = S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH;
-		vap->va_nlink = 2;
+		vap->va_fileid = VTOFDESC(vp)->fd_ix;
+
+		switch (VTOFDESC(vp)->fd_type) {
+		case Flink:
+			vap->va_mode = S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH;
+			vap->va_type = VLNK;
+			vap->va_nlink = 1;
+			/* vap->va_qsize = strlen(VTOFDESC(vp)->fd_link); */
+			vap->va_size = strlen(VTOFDESC(vp)->fd_link);
+			break;
+
+		case Fctty:
+			vap->va_mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
+			vap->va_type = VFIFO;
+			vap->va_nlink = 1;
+			/* vap->va_qsize = 0; */
+			vap->va_size = 0;
+			break;
+
+		default:
+			vap->va_mode = S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH;
+			vap->va_type = VDIR;
+			vap->va_nlink = 2;
+			/* vap->va_qsize = 0; */
+			vap->va_size = DEV_BSIZE;
+			break;
+		}
 		vap->va_uid = 0;
 		vap->va_gid = 0;
 		vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
-		vap->va_fileid = 2;
-		/* vap->va_qsize = 0; */
-		vap->va_size = DEV_BSIZE;
 		vap->va_blocksize = DEV_BSIZE;
-		microtime(&vap->va_atime);
+		vap->va_atime.ts_sec = boottime.tv_sec;
+		vap->va_atime.ts_nsec = 0;
 		vap->va_mtime = vap->va_atime;
 		vap->va_ctime = vap->va_ctime;
 		vap->va_gen = 0;
@@ -225,13 +409,27 @@ fdesc_getattr(ap)
 		vap->va_rdev = 0;
 		/* vap->va_qbytes = 0; */
 		vap->va_bytes = 0;
-		return (0);
+		break;
+
+	case Fdesc:
+#ifdef FDESC_DIAGNOSTIC
+		printf("fdesc_getattr: stat desc #%d\n", VTOFDESC(vp)->fd_fd);
+#endif
+		fd = VTOFDESC(vp)->fd_fd;
+		error = fdesc_attr(fd, vap, ap->a_cred, ap->a_p);
+		break;
+
+	default:
+		panic("fdesc_getattr");
+		break;	
 	}
 
-	fd = VTOFDESC(vp)->f_fd;
-	error = fdesc_attr(fd, vap, ap->a_cred, ap->a_p);
 	if (error == 0)
 		vp->v_type = vap->va_type;
+
+#ifdef FDESC_DIAGNOSTIC
+	printf("fdesc_getattr: stat returns 0\n");
+#endif
 	return (error);
 }
 
@@ -251,10 +449,18 @@ fdesc_setattr(ap)
 	/*
 	 * Can't mess with the root vnode
 	 */
-	if (ap->a_vp->v_flag & VROOT)
-		return (EACCES);
+	switch (VTOFDESC(ap->a_vp)->fd_type) {
+	case Fdesc:
+		break;
 
-	fd = VTOFDESC(ap->a_vp)->f_fd;
+	case Fctty:
+		return (0);
+
+	default:
+		return (EACCES);
+	}
+
+	fd = VTOFDESC(ap->a_vp)->fd_fd;
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_setattr: fd = %d, nfiles = %d\n", fd, fdp->fd_nfiles);
 #endif
@@ -288,6 +494,22 @@ fdesc_setattr(ap)
 	return (error);
 }
 
+#define UIO_MX 16
+
+static struct dirtmp {
+	u_long d_fileno;
+	u_short d_reclen;
+	u_short d_namlen;
+	char d_name[8];
+} rootent[] = {
+	{ FD_DEVFD, UIO_MX, 2, "fd" },
+	{ FD_STDIN, UIO_MX, 5, "stdin" },
+	{ FD_STDOUT, UIO_MX, 6, "stdout" },
+	{ FD_STDERR, UIO_MX, 6, "stderr" },
+	{ FD_CTTY, UIO_MX, 3, "tty" },
+	{ 0 }
+};
+
 fdesc_readdir(ap)
 	struct vop_readdir_args /* {
 		struct vnode *a_vp;
@@ -300,9 +522,64 @@ fdesc_readdir(ap)
 	int i;
 	int error;
 
-#define UIO_MX 16
+	switch (VTOFDESC(ap->a_vp)->fd_type) {
+	case Fctty:
+		return (0);
+
+	case Fdesc:
+		return (ENOTDIR);
+
+	default:
+		break;
+	}
 
 	fdp = uio->uio_procp->p_fd;
+
+	if (VTOFDESC(ap->a_vp)->fd_type == Froot) {
+		struct dirent d;
+		struct dirent *dp = &d;
+		struct dirtmp *dt;
+
+		i = uio->uio_offset / UIO_MX;
+		error = 0;
+
+		while (uio->uio_resid > 0) {
+			dt = &rootent[i];
+			if (dt->d_fileno == 0) {
+				/**eofflagp = 1;*/
+				break;
+			}
+			i++;
+			
+			switch (dt->d_fileno) {
+			case FD_CTTY:
+				if (cttyvp(uio->uio_procp) == NULL)
+					continue;
+				break;
+
+			case FD_STDIN:
+			case FD_STDOUT:
+			case FD_STDERR:
+				if ((i-FD_STDIN) >= fdp->fd_nfiles)
+					continue;
+				if (fdp->fd_ofiles[i-FD_STDIN] == NULL)
+					continue;
+				break;
+			}
+			bzero(dp, UIO_MX);
+			dp->d_fileno = dt->d_fileno;
+			dp->d_namlen = dt->d_namlen;
+			dp->d_type = DT_UNKNOWN;
+			dp->d_reclen = dt->d_reclen;
+			bcopy(dt->d_name, dp->d_name, dp->d_namlen+1);
+			error = uiomove((caddr_t) dp, UIO_MX, uio);
+			if (error)
+				break;
+		}
+		uio->uio_offset = i * UIO_MX;
+		return (error);
+	}
+
 	i = uio->uio_offset / UIO_MX;
 	error = 0;
 	while (uio->uio_resid > 0) {
@@ -314,9 +591,6 @@ fdesc_readdir(ap)
 			struct dirent d;
 			struct dirent *dp = &d;
 			char *cp = dp->d_name;
-#ifdef FDESC_FILEID
-			struct vattr va;
-#endif
 			bzero((caddr_t) dp, UIO_MX);
 
 			dp->d_namlen = sprintf(dp->d_name, "%d", i);
@@ -325,18 +599,7 @@ fdesc_readdir(ap)
 			 */
 			dp->d_reclen = UIO_MX;
 			dp->d_type = DT_UNKNOWN;
-			dp->d_fileno = i + 3;
-#ifdef FDESC_FILEID
-			/*
-			 * If we want the file ids to match the
-			 * we must call getattr on the underlying file.
-			 * fdesc_attr may return an error, in which case
-			 * we ignore the returned file id.
-			 */
-			error = fdesc_attr(i, &va, ap->a_cred, p);
-			if (error == 0)
-				dp->d_ino = va.va_fileid;
-#endif
+			dp->d_fileno = i + FD_STDIN;
 			/*
 			 * And ship to userland
 			 */
@@ -348,6 +611,130 @@ fdesc_readdir(ap)
 	}
 
 	uio->uio_offset = i * UIO_MX;
+	return (error);
+}
+
+int
+fdesc_readlink(ap)
+	struct vop_readlink_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+	register struct vnode *vp = ap->a_vp;
+	int error;
+
+	if (vp->v_type != VLNK)
+		return (EPERM);
+
+	if (VTOFDESC(vp)->fd_type == Flink) {
+		char *ln = VTOFDESC(vp)->fd_link;
+		error = uiomove(ln, strlen(ln), ap->a_uio);
+	} else {
+		error = EOPNOTSUPP;
+	}
+
+	return (error);
+}
+
+fdesc_read(ap)
+	struct vop_read_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+	int error = EOPNOTSUPP;
+
+	switch (VTOFDESC(ap->a_vp)->fd_type) {
+	case Fctty:
+		error = cttyread(devctty, ap->a_uio, ap->a_ioflag);
+		break;
+
+	default:
+		error = EOPNOTSUPP;
+		break;
+	}
+	
+	return (error);
+}
+
+fdesc_write(ap)
+	struct vop_write_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
+{
+	int error = EOPNOTSUPP;
+
+	switch (VTOFDESC(ap->a_vp)->fd_type) {
+	case Fctty:
+		error = cttywrite(devctty, ap->a_uio, ap->a_ioflag);
+		break;
+
+	default:
+		error = EOPNOTSUPP;
+		break;
+	}
+	
+	return (error);
+}
+
+fdesc_ioctl(ap)
+	struct vop_ioctl_args /* {
+		struct vnode *a_vp;
+		int  a_command;
+		caddr_t  a_data;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	int error = EOPNOTSUPP;
+
+#ifdef FDESC_DIAGNOSTIC
+	printf("fdesc_ioctl: type = %d, command = %x\n",
+			VTOFDESC(ap->a_vp)->fd_type, ap->a_command);
+#endif
+	switch (VTOFDESC(ap->a_vp)->fd_type) {
+	case Fctty:
+		error = cttyioctl(devctty, ap->a_command, ap->a_data,
+					ap->a_fflag, ap->a_p);
+		break;
+
+	default:
+		error = EOPNOTSUPP;
+		break;
+	}
+	
+	return (error);
+}
+
+fdesc_select(ap)
+	struct vop_select_args /* {
+		struct vnode *a_vp;
+		int  a_which;
+		int  a_fflags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	int error = EOPNOTSUPP;
+
+	switch (VTOFDESC(ap->a_vp)->fd_type) {
+	case Fctty:
+		error = cttyselect(devctty, ap->a_fflags, ap->a_p);
+		break;
+
+	default:
+		error = EOPNOTSUPP;
+		break;
+	}
+	
 	return (error);
 }
 
@@ -375,7 +762,17 @@ fdesc_reclaim(ap)
 	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
+	int ix;
+
+#ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_reclaim(%x)\n", vp);
+#endif
+	ix = VTOFDESC(vp)->fd_ix;
+	if (ix >= 0 && ix < FD_MAX) {
+		if (fdescvp[ix] != vp)
+			panic("fdesc_reclaim");
+		fdescvp[ix] = 0;
+	}
 	if (vp->v_data) {
 		FREE(vp->v_data, M_TEMP);
 		vp->v_data = 0;
@@ -441,10 +838,6 @@ fdesc_nullop()
 #define fdesc_mknod ((int (*) __P((struct  vop_mknod_args *)))fdesc_enotsupp)
 #define fdesc_close ((int (*) __P((struct  vop_close_args *)))nullop)
 #define fdesc_access ((int (*) __P((struct  vop_access_args *)))nullop)
-#define fdesc_read ((int (*) __P((struct  vop_read_args *)))fdesc_enotsupp)
-#define fdesc_write ((int (*) __P((struct  vop_write_args *)))fdesc_enotsupp)
-#define fdesc_ioctl ((int (*) __P((struct  vop_ioctl_args *)))fdesc_enotsupp)
-#define fdesc_select ((int (*) __P((struct  vop_select_args *)))fdesc_enotsupp)
 #define fdesc_mmap ((int (*) __P((struct  vop_mmap_args *)))fdesc_enotsupp)
 #define fdesc_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
 #define fdesc_seek ((int (*) __P((struct  vop_seek_args *)))nullop)
@@ -454,8 +847,6 @@ fdesc_nullop()
 #define fdesc_mkdir ((int (*) __P((struct  vop_mkdir_args *)))fdesc_enotsupp)
 #define fdesc_rmdir ((int (*) __P((struct  vop_rmdir_args *)))fdesc_enotsupp)
 #define fdesc_symlink ((int (*) __P((struct vop_symlink_args *)))fdesc_enotsupp)
-#define fdesc_readlink \
-	((int (*) __P((struct  vop_readlink_args *)))fdesc_enotsupp)
 #define fdesc_abortop ((int (*) __P((struct  vop_abortop_args *)))nullop)
 #define fdesc_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
 #define fdesc_unlock ((int (*) __P((struct  vop_unlock_args *)))nullop)
