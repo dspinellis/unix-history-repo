@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.13 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -223,7 +223,7 @@ main(argc, argv)
 	SVCXPRT *udptransp, *tcptransp;
 	int c;
 
-	while ((c = getopt(argc, argv, "ntr")) != EOF)
+	while ((c = getopt(argc, argv, "nr")) != EOF)
 		switch (c) {
 		case 'n':
 			resvport_only = 0;
@@ -303,8 +303,11 @@ mntsrv(rqstp, transp)
 	u_long saddr;
 	u_short sport;
 	char rpcpath[RPCMNT_PATHLEN + 1], dirpath[MAXPATHLEN];
-	int bad = ENOENT, omask, defset, hostset;
+	int bad = ENOENT, defset, hostset;
+	sigset_t sighup_mask;
 
+	sigemptyset(&sighup_mask);
+	sigaddset(&sighup_mask, SIGHUP);
 	saddr = transp->xp_raddr.sin_addr.s_addr;
 	sport = ntohs(transp->xp_raddr.sin_port);
 	hp = (struct hostent *)NULL;
@@ -342,7 +345,7 @@ mntsrv(rqstp, transp)
 		}
 
 		/* Check in the exports list */
-		omask = sigblock(sigmask(SIGHUP));
+		sigprocmask(SIG_BLOCK, &sighup_mask, NULL);
 		ep = ex_search(&fsb.f_fsid);
 		hostset = defset = 0;
 		if (ep && (chk_host(ep->ex_defdir, saddr, &defset, &hostset) ||
@@ -363,7 +366,7 @@ mntsrv(rqstp, transp)
 				if (!svc_sendreply(transp, xdr_long,
 				    (caddr_t)&bad))
 					syslog(LOG_ERR, "Can't send reply");
-				sigsetmask(omask);
+				sigprocmask(SIG_UNBLOCK, &sighup_mask, NULL);
 				return;
 			}
 			if (!svc_sendreply(transp, xdr_fhs, (caddr_t)&fhr))
@@ -383,7 +386,7 @@ mntsrv(rqstp, transp)
 			if (!svc_sendreply(transp, xdr_long, (caddr_t)&bad))
 				syslog(LOG_ERR, "Can't send reply");
 		}
-		sigsetmask(omask);
+		sigprocmask(SIG_UNBLOCK, &sighup_mask, NULL);
 		return;
 	case RPCMNT_DUMP:
 		if (!svc_sendreply(transp, xdr_mlist, (caddr_t)NULL))
@@ -509,9 +512,12 @@ xdr_explist(xdrsp, cp)
 {
 	struct exportlist *ep;
 	int false = 0;
-	int omask, putdef;
+	int putdef;
+	sigset_t sighup_mask;
 
-	omask = sigblock(sigmask(SIGHUP));
+	sigemptyset(&sighup_mask);
+	sigaddset(&sighup_mask, SIGHUP);
+	sigprocmask(SIG_BLOCK, &sighup_mask, NULL);
 	ep = exphead;
 	while (ep) {
 		putdef = 0;
@@ -523,12 +529,12 @@ xdr_explist(xdrsp, cp)
 			goto errout;
 		ep = ep->ex_next;
 	}
-	sigsetmask(omask);
+	sigprocmask(SIG_UNBLOCK, &sighup_mask, NULL);
 	if (!xdr_bool(xdrsp, &false))
 		return (0);
 	return (1);
 errout:
-	sigsetmask(omask);
+	sigprocmask(SIG_UNBLOCK, &sighup_mask, NULL);
 	return (0);
 }
 
