@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.33 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -18,31 +18,33 @@ static char sccsid[] = "@(#)kvm.c	5.32 (Berkeley) %G%";
 #include <sys/proc.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <machine/vmparam.h>
-#include <fcntl.h>
-#include <nlist.h>
-#include <kvm.h>
-#include <db.h>
-#include <paths.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <ctype.h>
+#include <sys/sysctl.h>
 
-#include <vm/vm.h>	/* ??? kinfo_proc currently includes this*/
+#include <vm/vm.h>
 #include <vm/vm_param.h>
 #include <vm/swap_pager.h>
-#include <sys/kinfo_proc.h>
 
+#include <machine/vmparam.h>
+
+#include <ctype.h>
+#include <db.h>
+#include <fcntl.h>
+#include <kvm.h>
 #include <limits.h>
+#include <nlist.h>
+#include <paths.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "kvm_private.h"
 
-static int kvm_dbopen(kvm_t *, const char *);
+static int kvm_dbopen __P((kvm_t *, const char *));
 
 char *
-kvm_geterr(kvm_t *kd)
+kvm_geterr(kd)
+	kvm_t *kd;
 {
 	return (kd->errbuf);
 }
