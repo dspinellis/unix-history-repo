@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.20 1994/02/09 07:03:08 davidg Exp $
+ *	$Id: vm_object.c,v 1.21 1994/02/10 00:15:51 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -1600,7 +1600,6 @@ vm_object_coalesce(prev_object, next_object, prev_offset, next_offset, prev_size
 	 *	(any of which mean that the pages not mapped to
 	 *	prev_entry may be in use anyway)
 	 */
-
 	if (prev_object->ref_count > 1 ||
 		prev_object->pager != NULL ||
 		prev_object->shadow != NULL ||
@@ -1613,12 +1612,9 @@ vm_object_coalesce(prev_object, next_object, prev_offset, next_offset, prev_size
 	 *	Remove any pages that may still be in the object from
 	 *	a previous deallocation.
 	 */
-
-/*
 	vm_object_page_remove(prev_object,
 			prev_offset + prev_size,
 			prev_offset + prev_size + next_size);
-*/
 
 	/*
 	 *	Extend the object if necessary.
