@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	6.5 (Berkeley) %G%
+ *	@(#)kern_prot.c	6.6 (Berkeley) %G%
  */
 
 /*
@@ -142,7 +142,7 @@ setreuid()
 		qstart(getquota(ruid, 0, 0));
 	}
 #endif
-	u.u_procp->p_uid = ruid;
+	u.u_procp->p_uid = euid;
 	u.u_ruid = ruid;
 	u.u_uid = euid;
 }
