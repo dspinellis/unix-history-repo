@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n6.c	4.1 %G%";
+static char sccsid[] = "@(#)n6.c	4.2 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -70,7 +70,10 @@ int c;
 	if(j & ZBIT)goto rtn;
 	i = trtab[i] & BMASK;
 	if(i < 040)goto rtn;
-	k = (*(t.codetab[i-32]) & 0177) * t.Char;
+	if (t.codetab[i-32])
+		k = (*(t.codetab[i-32]) & 0177) * t.Char;
+	else
+		k = 0;
 	widthp = k;
 rtn:
 	return(k);
