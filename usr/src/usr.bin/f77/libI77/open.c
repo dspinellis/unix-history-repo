@@ -1,5 +1,5 @@
 /*
-char id_open[] = "@(#)open.c	1.8";
+char id_open[] = "@(#)open.c	1.9";
  *
  * open.c  -  f77 file open routines
  */
@@ -64,7 +64,7 @@ f_open(a) olist *a;
 	}
 	else
 	{	if((b->ufd = fopen(buf, "a")) != NULL)
-		{	if(opnbof)
+		{	if(!opneof)
 			{	if(freopen(buf, "r", b->ufd) != NULL)
 					b->uwrt = NO;
 				else
@@ -74,7 +74,7 @@ f_open(a) olist *a;
 				b->uwrt = YES;
 		}
 		else if((b->ufd = fopen(buf, "r")) != NULL)
-		{	if (!opnbof)
+		{	if (opneof)
 				fseek(b->ufd, 0L, 2);
 			b->uwrt = NO;
 		}
