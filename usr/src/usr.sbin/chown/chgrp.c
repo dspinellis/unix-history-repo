@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chgrp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)chgrp.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -93,7 +93,7 @@ ok:
 			continue;
 		}
 		if (rflag && ((stbuf.st_mode & S_IFMT) == S_IFDIR)) {
-			status += chownr(argv[c], stbuf.st_uid, gid);
+			status += chownr(argv[c]);
 			continue;
 		}
 		if (chown(argv[c], -1, gid)) {
@@ -115,7 +115,7 @@ isnumber(s)
 	return (1);
 }
 
-chownr(dir, uid, gid)
+chownr(dir)
 	char *dir;
 {
 	register DIR *dirp;
@@ -155,7 +155,7 @@ chownr(dir, uid, gid)
 			continue;
 		}
 		if ((st.st_mode & S_IFMT) == S_IFDIR) {
-			ecode = chownr(dp->d_name, st.st_uid, gid);
+			ecode = chownr(dp->d_name);
 			if (ecode)
 				break;
 			continue;
