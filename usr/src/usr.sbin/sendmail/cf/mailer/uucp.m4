@@ -11,7 +11,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(@(#)uucp.m4	2.2 (Berkeley) %G%)
+VERSIONID(@(#)uucp.m4	2.3 (Berkeley) %G%)
 
 Msuucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=mDFMhuU, S=12, R=12, M=100000
 	A=uux - -r -z -a$f -gC $h!rmail ($u)
@@ -19,10 +19,19 @@ Msuucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=mDFMhuU, S=12, R=
 Muucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=DFMhuU, S=12, R=12, M=100000
 	A=uux - -r -z -a$f -gC $h!rmail ($u)
 
+define(`_UUCP_LINKED_')dnl
 
 S12
 
 R$* < @ $w >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
-R$+				$: $U ! $1		prepend our name
+R$+				$: $V ! $1		prepend our name
+
+PUSHDIVERT(4)
+# resolve locally connected UUCP links
+R< @ $=V . UUCP > : $+		$#suucp $@ $1 $: $1:$2	@host.UUCP: ...
+R< @ $=U . UUCP > : $+		$#uucp $@ $1 $: $1:$2	@host.UUCP: ...
+R$+ < @ $=V . UUCP >		$#suucp $@ $2 $: $1	user@host.UUCP
+R$+ < @ $=U . UUCP >		$#uucp $@ $2 $: $1	user@host.UUCP
+POPDIVERT
