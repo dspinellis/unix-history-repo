@@ -16,11 +16,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	3.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
-#include <sys/signal.h>
 #include <paths.h>
 #include <stdio.h>
 #include "string.h"
@@ -83,8 +82,10 @@ char **argv;
 	}
 	if ((p = getenv("SHELL")) == 0)
 		p = _PATH_BSHELL;
-	if ((default_shellfile = str_cpy(p)) == 0)
-		nomem();
+	if ((default_shellfile = str_cpy(p)) == 0) {
+		(void) fprintf(stderr, "Out of memory.\n");
+		exit(1);
+	}
 	if (p = rindex(default_shellfile, '/'))
 		p++;
 	else
@@ -157,10 +158,4 @@ usage()
 	(void) fprintf(stderr, "Usage: window [-e escape-char] [-c command] [-t] [-f] [-d]\n");
 	exit(1);
 	return 0;			/* for lint */
-}
-
-nomem()
-{
-	(void) fprintf(stderr, "Out of memory.\n");
-	exit(1);
 }

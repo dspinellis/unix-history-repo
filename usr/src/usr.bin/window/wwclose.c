@@ -16,11 +16,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwclose.c	3.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwclose.c	3.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
-#include <signal.h>
 
 wwclose(w)
 register struct ww *w;
