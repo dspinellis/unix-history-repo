@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mmap.2	6.2 (Berkeley) %G%
+.\"	@(#)mmap.2	6.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt MMAP 2
@@ -50,7 +50,7 @@ deletes any previous mapping in the allocated address range.
 The protections (region accessibility) are specified in the
 .Fa prot
 argument by
-.Em or Ap ing
+.Em or Ns 'ing
 the following values:
 .Pp
 .Bl -tag -width MAP_FIXEDX
@@ -70,13 +70,15 @@ to the process or are to be shared with other references.
 Sharing, mapping type and options are specified in the
 .Fa flags
 argument by
-.Em or Ap ing
+.Em or Ns 'ing
 the following values:
 .Pp
 .Bl -tag -width MAP_FIXEDX
 .It Dv MAP_ANON
 Map anonymous memory not associated with any specific file.
-The file descriptor used for creating MAP_ANON regions is used only for
+The file descriptor used for creating
+.Dv MAP_ANON
+regions is used only for
 naming, and may be specified as \-1 if no name is associated with the
 region.
 .It Dv MAP_FILE
@@ -112,7 +114,9 @@ for further information.
 .Pp
 The current design does not allow a process to specify the location of
 swap space.
-In the future we may define an additional mapping type, MAP_SWAP, in which
+In the future we may define an additional mapping type,
+.Dv MAP_SWAP ,
+in which
 the file descriptor argument specifies a file or device to which swapping
 should be done.
 .Sh RETURN VALUES
@@ -127,12 +131,19 @@ is set to indicate the error.
 will fail if:
 .Bl -tag -width Er
 .It Bq Er EACCES
-The flag PROT_READ was specified as part of the
+The flag
+.Dv PROT_READ
+was specified as part of the
 .Fa prot
 parameter and
 .Fa fd
 was not open for reading.
-The flags PROT_WRITE, MAP_SHARED and MAP_WRITE were specified as part
+The flags
+.Dv PROT_WRITE ,
+.Dv MAP_SHARED
+and
+.Dv MAP_WRITE
+were specified as part
 of the
 .Fa flags
 and
@@ -144,19 +155,26 @@ was not open for writing.
 .Fa Fd
 is not a valid open file descriptor.
 .It Bq Er EINVAL
-One of MAP_ANON or MAP_FILE was not specified as part of the
+One of
+.Dv MAP_ANON
+or
+.Dv MAP_FILE
+was not specified as part of the
 .Fa flags
 parameter.
-MAP_FIXED was specified and the
+.Dv MAP_FIXED
+was specified and the
 .I addr
 parameter was not page aligned.
 .Fa Fd
 did not reference a regular or character special file.
 .It Bq Er ENOMEM
-MAP_FIXED was specified and the
+.Dv MAP_FIXED
+was specified and the
 .Fa addr
 parameter wasn't available.
-MAP_ANON was specified an insufficient memory was available.
+.Dv MAP_ANON
+was specified and insufficient memory was available.
 .Sh "SEE ALSO"
 .Xr getpagesize 2 ,
 .Xr msync 2 ,
