@@ -1,15 +1,24 @@
-/*	param.h	1.10	87/10/28	*/
+/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)param.h	1.11 (Berkeley) %G%
+ */
 
-#ifndef ENDIAN
 /*
  * Machine dependent constants for TAHOE.
  */
 #define	MACHINE	"tahoe"
 
+#ifndef ENDIAN
+#include <machine/endian.h>
+#endif
+
 #define	CHAR_BIT	NBBY
 #define	CHAR_MAX	0x7f
 #define	CHAR_MIN	0x80
-#define	CLK_TCK		UNDEFINED_FOR_NOW
+#define	CLK_TCK		60			/* for times() */
 #define	INT_MAX		0x7fffffff
 #define	INT_MIN		0x80000000
 #define	LONG_MAX	0x7fffffff
@@ -22,28 +31,6 @@
 #define	UINT_MAX	0xffffffff
 #define	ULONG_MAX	0xffffffff
 #define	USHRT_MAX	0xffff
-
-/*
- * Definitions for byte order,
- * according to byte significance from low address to high.
- */
-#define	LITTLE	1234		/* least-significant byte first (vax) */
-#define	BIG	4321		/* most-significant byte first */
-#define	PDP	3412		/* LSB first in word, MSW first in long (pdp) */
-#define	ENDIAN	BIG		/* byte order on tahoe */
-
-/*
- * Macros for network/external number representation conversion.
- */
-#if ENDIAN == BIG && !defined(lint)
-#define	ntohl(x)	(x)
-#define	ntohs(x)	(x)
-#define	htonl(x)	(x)
-#define	htons(x)	(x)
-#else
-unsigned short	ntohs(), htons();
-unsigned long	ntohl(), htonl();
-#endif
 
 #define	NBPG		1024		/* bytes/page */
 #define	PGOFSET		(NBPG-1)	/* byte offset into page */
@@ -136,4 +123,3 @@ unsigned long	ntohl(), htonl();
 #define	BASEPRI(ps)	(((ps) & PSL_IPL) == 0)
 
 #define	DELAY(n)	{ register int N = 3*(n); while (--N > 0); }
-#endif
