@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -48,6 +48,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	char c;
 	int lport = IPPORT_RESERVED - 1;
 	struct hostent *hp;
+	fd_set reads;
 
 	pid = getpid();
 	hp = gethostbyname(*ahost);
@@ -119,6 +120,20 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 			(void) close(s2);
 			goto bad;
 		}
+		FD_ZERO(&reads);
+		FD_SET(s, &reads);
+		FD_SET(s2, &reads);
+		errno = 0;
+		if (select(32, &reads, 0, 0, 0) < 1 ||
+		    !FD_ISSET(s2, &reads)) {
+			if (errno != 0)
+				perror("select: setting up stderr");
+			else
+			    fprintf(stderr,
+				"select: protocol failure in circuit setup.\n");
+			(void) close(s2);
+			goto bad;
+		}
 		s3 = accept(s2, &from, &len, 0);
 		(void) close(s2);
 		if (s3 < 0) {
@@ -129,7 +144,8 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 		*fd2p = s3;
 		from.sin_port = ntohs((u_short)from.sin_port);
 		if (from.sin_family != AF_INET ||
-		    from.sin_port >= IPPORT_RESERVED) {
+		    from.sin_port >= IPPORT_RESERVED ||
+		    from.sin_port < IPPORT_RESERVED / 2) {
 			fprintf(stderr,
 			    "socket: protocol failure in circuit setup.\n");
 			goto bad2;
@@ -168,7 +184,6 @@ rresvport(alport)
 	int s;
 
 	sin.sin_family = AF_INET;
-	sin.sin_len = sizeof(sin);
 	sin.sin_addr.s_addr = INADDR_ANY;
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
@@ -251,7 +266,7 @@ again:
 	return (-1);
 }
 
-static
+/* don't make static, used by lpd(8) */
 _validuser(hostf, rhost, luser, ruser, baselen)
 	char *rhost, *luser, *ruser;
 	FILE *hostf;
