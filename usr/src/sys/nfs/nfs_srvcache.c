@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_srvcache.c	7.16 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -243,7 +243,7 @@ loop:
 	/* insert into hash chain */
 	if (rq = *rpp)
 		rq->rc_back = &rp->rc_forw;
-	rp->rc_next = rq;
+	rp->rc_forw = rq;
 	rp->rc_back = rpp;
 	*rpp = rp;
 	rp->rc_flag &= ~RC_LOCKED;
