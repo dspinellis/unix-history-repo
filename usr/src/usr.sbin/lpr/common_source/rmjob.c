@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmjob.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmjob.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -17,10 +17,10 @@ extern int	requ[];			/* job number of spool entries */
 extern int	requests;		/* # of spool requests */
 extern char	*person;		/* name of person doing lprm */
 
-static char	root[] = "root";
-static int	all = 0;		/* eliminate all files (root only) */
-static int	cur_daemon;		/* daemon's pid */
-static char	current[40];		/* active control file name */
+char	root[] = "root";
+int	all = 0;		/* eliminate all files (root only) */
+int	cur_daemon;		/* daemon's pid */
+char	current[40];		/* active control file name */
 
 int	iscf();
 
@@ -99,7 +99,6 @@ rmjob()
  *  daemon and the file name of the active spool entry.
  * Return boolean indicating existence of a lock file.
  */
-static
 lockchk(s)
 	char *s;
 {
@@ -135,7 +134,6 @@ lockchk(s)
 /*
  * Process a control file.
  */
-static
 process(file)
 	char *file;
 {
@@ -145,7 +143,7 @@ process(file)
 		return;
 	if ((cfp = fopen(file, "r")) == NULL)
 		fatal("cannot open %s", file);
-	while (getline()) {
+	while (getline(cfp)) {
 		switch (line[0]) {
 		case 'U':  /* unlink associated files */
 			if (from != host)
@@ -163,7 +161,6 @@ process(file)
 /*
  * Do the dirty work in checking
  */
-static
 chk(file)
 	char *file;
 {
@@ -218,7 +215,6 @@ chk(file)
  * files sent from the remote machine to be removed.
  * Normal users can only remove the file from where it was sent.
  */
-static
 isowner(owner, file)
 	char *owner, *file;
 {
@@ -236,7 +232,6 @@ isowner(owner, file)
  * Check to see if we are sending files to a remote machine. If we are,
  * then try removing files on the remote machine.
  */
-static
 chkremote()
 {
 	register char *cp;
@@ -282,7 +277,6 @@ chkremote()
 /*
  * Return 1 if the filename begins with 'cf'
  */
-static
 iscf(d)
 	struct direct *d;
 {
