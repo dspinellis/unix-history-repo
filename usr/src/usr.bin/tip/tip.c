@@ -1,4 +1,4 @@
-/*	tip.c	4.2	81/05/10	*/
+/*	tip.c	4.3	81/05/18	*/
 /*
  * tip - Unix link to other systems
  *  tip [-v] [-speed] system-name
@@ -235,6 +235,18 @@ intprompt()
 tipin()
 {
 	char gch, bol = 1;
+
+	/*
+	 * Kinda klugey here...
+	 *   check for scripting being turned on from the .tiprc file,
+	 *   but be careful about just using setscript(), as we may
+	 *   send a SIGEMT before tipout has a chance to set up catching
+	 *   it; so wait a second, then setscript()
+	 */
+	if (boolean(value(SCRIPT))) {
+		sleep(1);
+		setscript();
+	}
 
 	while (1) {
 		gch = getchar()&0177;
