@@ -41,7 +41,7 @@ char copyright[] =
 #ifndef lint
 static char sccsid[] = "@(#)ifconfig.c	5.1 (Berkeley) 2/28/91";
 static const char rcsid[] = 
-  "$Id: ifconfig.c,v 1.4 1993/11/08 22:10:50 wollman Exp $";
+  "$Id: ifconfig.c,v 1.5 1994/01/10 18:01:52 ats Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -241,6 +241,12 @@ main(argc, argv)
 			p++;	/* got src, do dst */
 		if (p->c_func) {
 			if (p->c_parameter == NEXTARG) {
+				if (argv[1] == NULL) {
+					fprintf(stderr,
+						"ifconfig: '%s' requires argument.\n",
+						p->c_name);
+					exit(1);
+				}
 				(*p->c_func)(argv[1]);
 				argc--, argv++;
 			} else
@@ -603,7 +609,7 @@ in_getaddr(s, which)
 	else if (np = getnetbyname(s))
 		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
 	else {
-		fprintf(stderr, "%s: bad value\n", s);
+		fprintf(stderr, "ifconfig: %s: bad value\n", s);
 		exit(1);
 	}
 }
