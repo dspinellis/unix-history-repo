@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vdfmt.c	1.6 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)vdfmt.c	1.7 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -11,7 +11,7 @@ static char sccsid[] = "@(#)vdfmt.c	1.6 (Berkeley/CCI) %G%";
 main()
 {
 	exdent(-1);
-	print("VDFORMAT            Berkeley Version 1.6 \n\n");
+	print("VDFORMAT            Berkeley Version 1.7 \n\n");
 
 	for(;;) {
 		determine_controller_types();
@@ -169,7 +169,7 @@ init_environment()
 	operations[6].routine = exercise;
 	operations[6].op_name = "Exercise";
 	operations[6].op_action = "exercising";
-	bad_map = (bs_map *)bs_map_space;
+	bad_map = &norm_bad_map;
 }
 
 
