@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983, 1990 The Regents of the University of California.
+ * Copyright (c) 1983, 1990, 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1990 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1990, 1992 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -114,7 +114,6 @@ main(argc, argv)
 			iamremote = 1;
 			tflag = 1;
 			break;
-
 		case '?':
 		default:
 			usage();
@@ -300,7 +299,8 @@ tolocal(argc, argv)
 			(void)snprintf(bp, len, "%s%s%s %s %s", _PATH_CP,
 			    iamrecursive ? " -r" : "", pflag ? " -p" : "",
 			    argv[i], argv[argc - 1]);
-			(void)susystem(bp, userid);
+			if (susystem(bp, userid))
+				++errs;
 			(void)free(bp);
 			continue;
 		}
@@ -329,8 +329,10 @@ tolocal(argc, argv)
 #endif
 			rcmd(&host, port, pwd->pw_name, suser, bp, 0);
 		(void)free(bp);
-		if (rem < 0)
+		if (rem < 0) {
+			++errs;
 			continue;
+		}
 		(void)seteuid(userid);
 		tos = IPTOS_THROUGHPUT;
 		if (setsockopt(rem, IPPROTO_IP, IP_TOS, &tos, sizeof(int)) < 0)
@@ -352,10 +354,11 @@ source(argc, argv)
 	static BUF buffer;
 	BUF *bp;
 	off_t i;
-	int fd, readerr, amt;
+	int amt, fd, haderr, indx, result;
 	char *last, *name, buf[BUFSIZ];
 
-	while (name = *argv++) {
+	for (indx = 0; indx < argc; ++indx) {
+                name = argv[indx];
 		if ((fd = open(name, O_RDONLY, 0)) < 0)
 			goto syserr;
 		if (fstat(fd, &stb)) {
@@ -396,25 +399,36 @@ syserr:			err("%s: %s", name, strerror(errno));
 		(void)write(rem, buf, amt);
 		if (response() < 0)
 			goto next;
-		if ((bp = allocbuf(&buffer, fd, BUFSIZ)) == NULL)
-			goto next;
-		readerr = 0;
-		for (i = 0; i < stb.st_size; i += bp->cnt) {
+		if ((bp = allocbuf(&buffer, fd, BUFSIZ)) == NULL) {
+next:			(void)close(fd);
+			continue;
+		}
+
+		/* Keep writing after an error so that we stay sync'd up. */
+		for (haderr = i = 0; i < stb.st_size; i += bp->cnt) {
 			amt = bp->cnt;
 			if (i + amt > stb.st_size)
 				amt = stb.st_size - i;
-			if (read(fd, bp->buf, amt) != amt) {
-				readerr = 1;
-				err("%s: %s", name, strerror(errno));
-				break;
+			if (!haderr) {
+				result = read(fd, bp->buf, amt);
+				if (result != amt)
+					haderr = result >= 0 ? EIO : errno;
 			}
-			(void)write(rem, bp->buf, amt);
+			if (haderr)
+				(void)write(rem, bp->buf, amt);
+			else {
+				result = write(rem, bp->buf, amt);
+				if (result != amt)
+					haderr = result >= 0 ? EIO : errno;
+			}
 		}
-		if (!readerr)
+		if (close(fd) && !haderr)
+			haderr = errno;
+		if (!haderr)
 			(void)write(rem, "", 1);
+		else
+			err("%s: %s", name, strerror(haderr));
 		(void)response();
-
-next:		(void)close(fd);
 	}
 }
 
@@ -483,10 +497,9 @@ sink(argc, argv)
 	enum { YES, NO, DISPLAYED } wrerr;
 	BUF *bp;
 	off_t i, j;
-	char ch, *targ, *why;
-	int amt, count, exists, first, mask, mode;
-	int ofd, setimes, size, targisdir;
-	char *np, *vect[1], buf[BUFSIZ];
+	int amt, count, exists, first, mask, mode, ofd, omode;
+	int setimes, size, targisdir, wrerrno;
+	char ch, *np, *targ, *why, *vect[1], buf[BUFSIZ];
 
 #define	atime	tv[0]
 #define	mtime	tv[1]
@@ -596,11 +609,11 @@ sink(argc, argv)
 			(void)snprintf(namebuf, need, "%s%s%s", targ,
 			    *targ ? "/" : "", cp);
 			np = namebuf;
-		}
-		else
+		} else
 			np = targ;
 		exists = stat(np, &stb) == 0;
 		if (buf[0] == 'D') {
+			int mod_flag = pflag;
 			if (exists) {
 				if (!S_ISDIR(stb.st_mode)) {
 					errno = ENOTDIR;
@@ -608,8 +621,12 @@ sink(argc, argv)
 				}
 				if (pflag)
 					(void)chmod(np, mode);
-			} else if (mkdir(np, mode) < 0)
-				goto bad;
+			} else {
+				/* Handle copying from a read-only directory */
+				mod_flag = 1;
+				if (mkdir(np, mode | S_IRWXU) < 0)
+					goto bad;
+			}
 			vect[0] = np;
 			sink(1, vect);
 			if (setimes) {
@@ -618,23 +635,24 @@ sink(argc, argv)
 				    err("can't set times on %s: %s",
 					np, strerror(errno));
 			}
+			if (mod_flag)
+				(void)chmod(np, mode);
 			continue;
 		}
+		omode = mode;
+		mode |= S_IWRITE;
 		if ((ofd = open(np, O_WRONLY|O_CREAT, mode)) < 0) {
 bad:			err("%s: %s", np, strerror(errno));
 			continue;
 		}
-		if (exists && pflag)
-			(void)fchmod(ofd, mode);
 		(void)write(rem, "", 1);
 		if ((bp = allocbuf(&buffer, ofd, BUFSIZ)) == NULL) {
 			(void)close(ofd);
 			continue;
 		}
 		cp = bp->buf;
-		count = 0;
 		wrerr = NO;
-		for (i = 0; i < size; i += BUFSIZ) {
+		for (count = i = 0; i < size; i += BUFSIZ) {
 			amt = BUFSIZ;
 			if (i + amt > size)
 				amt = size - i;
@@ -650,9 +668,14 @@ bad:			err("%s: %s", np, strerror(errno));
 				cp += j;
 			} while (amt > 0);
 			if (count == bp->cnt) {
-				if (wrerr == NO &&
-				    write(ofd, bp->buf, count) != count)
-					wrerr = YES;
+				/* Keep reading so we stay sync'd up. */
+				if (wrerr == NO) {
+					j = write(ofd, bp->buf, count);
+					if (j != count) {
+						wrerr = YES;
+						wrerrno = j >= 0 ? EIO : errno; 
+					}
+				}
 				count = 0;
 				cp = bp->buf;
 			}
@@ -661,9 +684,15 @@ bad:			err("%s: %s", np, strerror(errno));
 		    write(ofd, bp->buf, count) != count)
 			wrerr = YES;
 		if (ftruncate(ofd, size)) {
-			err("can't truncate %s: %s", np,
-			    strerror(errno));
+			err("can't truncate %s: %s", np, strerror(errno));
 			wrerr = DISPLAYED;
+		}
+		if (pflag) {
+			if (exists || omode != mode)
+				(void)fchmod(ofd, omode);
+		} else {
+			if (!exists && omode != mode)
+				(void)fchmod(ofd, omode & ~mask);
 		}
 		(void)close(ofd);
 		(void)response();
@@ -677,7 +706,7 @@ bad:			err("%s: %s", np, strerror(errno));
 		}
 		switch(wrerr) {
 		case YES:
-			err("%s: %s", np, strerror(errno));
+			err("%s: %s", np, strerror(wrerrno));
 			break;
 		case NO:
 			(void)write(rem, "", 1);
@@ -687,7 +716,7 @@ bad:			err("%s: %s", np, strerror(errno));
 		}
 	}
 screwup:
-	err("protocol screwup: %s", why);
+	err("protocol error: %s", why);
 	exit(1);
 }
 
