@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)vmstat.c	5.18 (Berkeley) %G%";
 #include <paths.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "systat.h"
 #include "extern.h"
 
