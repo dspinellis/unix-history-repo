@@ -1,5 +1,8 @@
 #ifndef lint
+/*
 static char sccsid[] = "@(#)n1.c	2.2 (CWI) 88/03/31";
+*/
+static char sccsid[] = "@(#)n1.c	2.3 (Berkeley) %G%";
 #endif lint
 /*
  * n1.c
@@ -16,6 +19,7 @@ static char sccsid[] = "@(#)n1.c	2.2 (CWI) 88/03/31";
 #include <sgtty.h>
 
 #include "tdef.h"
+#include "pathnames.h"
 #include "ext.h"
 
 #include	<time.h>	/* See cvtime() (jaap) */
@@ -25,7 +29,6 @@ static char sccsid[] = "@(#)n1.c	2.2 (CWI) 88/03/31";
 #endif
 
 jmp_buf sjbuf;
-extern	char	*sprintf();
 filep	ipl[NSO];
 long	offl[NSO];
 long	ioff;
@@ -95,12 +98,21 @@ char	**argv;
 				stop++;
 			continue;
 		case 'r':
-			eibuf = sprintf(ibuf+strlen(ibuf), ".nr %c %s\n",
+			eibuf = ibuf+strlen(ibuf);
+			(void) sprintf(eibuf, ".nr %c %s\n",
 				argv[0][2], &argv[0][3]);
 			continue;
 		case 'c':
 		case 'm':
 			strcat(nextf, &argv[0][2]);
+			if (access(nextf, 4) < 0) {
+				char local[NS];
+
+				strcpy(local, _PATH_LOCAL_TMAC);
+				strcat(local, &argv[0][2]);
+				if (access(local, 4) == 0)
+					strcpy(nextf, local);
+			}
 			mflg++;
 			continue;
 		case 'o':
@@ -214,19 +226,8 @@ init0()
 init1(a)
 char	a;
 {
-	register char	*p;
-	char	*mktemp();
 	register i;
 
-	p = mktemp("/usr/tmp/trtmpXXXXX");
-	if (a == 'a')
-		p = &p[9];
-	if ((close(creat(p, 0600))) < 0) {
-		errprint("cannot create temp file.");
-		exit(-1);
-	}
-	ibf = open(p, 2);
-	unlkp = p;
 	for (i = NTRTAB; --i; )
 		trtab[i] = i;
 	trtab[UNPAD] = ' ';
@@ -236,8 +237,8 @@ char	a;
 init2()
 {
 	register i, j;
-	extern char	*setbrk();
 	extern char	*ttyname();
+	char *cp;
 
 	ttyod = 2;
 	if ((ttyp=ttyname(j=0)) != 0 || (ttyp=ttyname(j=1)) != 0 || (ttyp=ttyname(j=2)) != 0)
@@ -247,7 +248,6 @@ init2()
 	iflg = j;
 	if (ascii)
 		mesg(0);
-	obufp = obuf;
 	ptinit();
 	mchbits();
 	cvtime();
@@ -259,16 +259,18 @@ init2()
 	nfo = 0;
 	ifile = 0;
 	copyf = raw = 0;
-	eibuf = sprintf(ibuf+strlen(ibuf), ".ds .T %s\n", devname);
+	cp = ibuf + strlen(ibuf);
+	sprintf(cp, ".ds .T %s\n", devname);
+	eibuf = cp + strlen(cp);
 	numtab[CD].val = -1;	/* compensation */
 	cpushback(ibuf);
 	ibufp = ibuf;
 	nx = mflg;
-	frame = stk = (struct s *)setbrk(DELTA);
+	frame = stk = (struct s *)malloc(DELTA * sizeof(struct s));
 	dip = &d[0];
 	nxf = frame + 1;
-	for (i = NEV; i--; )
-		write(ibf, (char *) & env, sizeof(env));
+	for (i = 1; i < NEV; ++i)
+		env_array[i] = *env;
 }
 
 /*
@@ -331,169 +333,6 @@ errprint(s, s1, s2, s3, s4, s5)	/* error message printer */
 	fdprintf(stderr, "\n");
 	stackdump();
 }
-
-
-/*
- * Scaled down version of C Library printf.
- * Only %s %u %d (==%u) %o %c %x %D are recognized.
- */
-#define	putchar(n)	(*pfbp++ = (n))	/* NO CHECKING! */
-
-static char	pfbuf[NTM];
-static char	*pfbp = pfbuf;
-int	stderr	 = 2;	/* NOT stdio value */
-
-/* VARARGS2 */
-fdprintf(fd, fmt, x1)
-	int	fd;
-	register char	*fmt;
-	unsigned	x1;
-{
-	register c;
-	register unsigned int	*adx;
-	char	*s;
-	register i;
-
-	pfbp = pfbuf;
-	adx = &x1;
-loop:
-	while ((c = *fmt++) != '%') {
-		if (c == '\0') {
-			if (fd == stderr)
-				write(stderr, pfbuf, pfbp - pfbuf);
-			else {
-				*pfbp = 0;
-				pfbp = pfbuf;
-				while (*pfbp) {
-					*obufp++ = *pfbp++;
-					if (obufp >= &obuf[OBUFSZ])
-						flusho();
-				}
-			}
-			return;
-		}
-		putchar(c);
-	}
-	c = *fmt++;
-	if (c == 'd') {
-		i = *adx;
-		if (i < 0) {
-			putchar('-');
-			i = -i;
-		}
-		printn((long)i, 10);
-	} else if (c == 'u' || c == 'o' || c == 'x')
-		printn((long)*adx, c == 'o' ? 8 : (c == 'x' ? 16 : 10));
-	else if (c == 'c') {
-		if (c > 0177 || c < 040)
-			putchar('\\');
-		putchar(*adx & 0177);
-	} else if (c == 's') {
-		s = (char *) * adx;
-		while (c = *s++)
-			putchar(c);
-	} else if (c == 'D') {
-		printn(*(long *)adx, 10);
-		adx += (sizeof(long) / sizeof(int)) - 1;
-	} else if (c == 'O') {
-		printn(*(long *)adx, 8);
-		adx += (sizeof(long) / sizeof(int)) - 1;
-	}
-	adx++;
-	goto loop;
-}
-
-
-/*
- * Print an unsigned integer in base b.
- */
-static printn(n, b)
-	register long	n;
-{
-	register long	a;
-
-	if (n < 0) {	/* shouldn't happen */
-		putchar('-');
-		n = -n;
-	}
-	if (a = n / b)
-		printn(a, b);
-	putchar("0123456789ABCDEF"[(int)(n%b)]);
-}
-
-/* scaled down version of library sprintf */
-/* same limits as fdprintf */
-/* returns pointer to \0 that ends the string */
-
-/* VARARGS2 */
-char *sprintf(str, fmt, x1)
-	char	*str;
-	char	*fmt;
-	unsigned	x1;
-{
-	register c;
-	char *sprintn();
-	register unsigned int	*adx;
-	char	*s;
-	register i;
-
-	adx = &x1;
-loop:
-	while ((c = *fmt++) != '%') {
-		if (c == '\0') {
-			*str = 0;
-			return str;
-		}
-		*str++ = c;
-	}
-	c = *fmt++;
-	if (c == 'd') {
-		i = *adx;
-		if (i < 0) {
-			*str++ = '-';
-			i = -i;
-		}
-		str = sprintn(str, (long)i, 10);
-	} else if (c == 'u' || c == 'o' || c == 'x')
-		str = sprintn(str, (long)*adx, c == 'o' ? 8 : (c == 'x' ? 16 : 10));
-	else if (c == 'c') {
-		if (c > 0177 || c < 040)
-			*str++ = '\\';
-		*str++ = *adx & 0177;
-	} else if (c == 's') {
-		s = (char *) * adx;
-		while (c = *s++)
-			*str++ = c;
-	} else if (c == 'D') {
-		str = sprintn(str, *(long *)adx, 10);
-		adx += (sizeof(long) / sizeof(int)) - 1;
-	} else if (c == 'O') {
-		str = sprintn(str, *(long *)adx, 8);
-		adx += (sizeof(long) / sizeof(int)) - 1;
-	}
-	adx++;
-	goto loop;
-}
-
-/*
- * Print an unsigned integer in base b.
- */
-static char *sprintn(s, n, b)
-	register char *s;
-	register long n;
-{
-	register long	a;
-
-	if (n < 0) {	/* shouldn't happen */
-		*s++ = '-';
-		n = -n;
-	}
-	if (a = n / b)
-		s = sprintn(s, a, b);
-	*s++ = "0123456789ABCDEF"[(int)(n%b)];
-	return s;
-}
-
 
 control(a, b)
 register int	a, b;
@@ -803,8 +642,10 @@ setxon()	/* \X'...' for copy through */
 }
 
 
+#ifdef notdef
 char	ifilt[32] = {
 	0, 001, 002, 003, 0, 005, 006, 007, 010, 011, 012};
+#endif
 
 tchar getch0()
 {
@@ -855,8 +696,10 @@ g2:
 		ioff++;
 		if (i >= 040 && i < 0177)
 			goto g4;
+#ifdef notdef
 		if (i != 0177) 
 			i = ifilt[i];
+#endif
 	}
 	if (cbits(i) == IMP && !raw)
 		goto again;
@@ -1094,7 +937,7 @@ casecf()
 {	/* copy file without change */
 #ifndef NROFF
 	int	fd, n;
-	char	buf[512];
+	char	buf[8192];
 	extern int hpos, esc, po;
 	nextf[0] = 0;
 	if (skip() || !getname() || (fd = open(nextf, 0)) < 0) {
@@ -1111,7 +954,7 @@ casecf()
 	ptfont();
 	flusho();
 	while ((n = read(fd, buf, sizeof buf)) > 0)
-		write(ptid, buf, n);
+		write(fileno(ptid), buf, n);
 	close(fd);
 #endif
 }

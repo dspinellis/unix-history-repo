@@ -1,5 +1,8 @@
 #ifndef lint
+/*
 static char sccsid[] = "@(#)nii.c	2.1 (CWI) 85/07/18";
+*/
+static char sccsid[] = "@(#)nii.c	2.2 (Berkeley) %G%";
 #endif lint
 #include "tdef.h"
 #ifdef NROFF
@@ -46,7 +49,6 @@ int	ibf;
 int	ttyod;
 struct	sgttyb ttys;
 int	iflg;
-char	*enda;
 int	rargc;
 char	**argp;
 int	trtab[NTRTAB];

@@ -1,5 +1,8 @@
 #ifndef lint
+/*
 static char sccsid[] = "@(#)n2.c	2.1 (CWI) 85/07/18";
+*/
+static char sccsid[] = "@(#)n2.c	2.2 (Berkeley) %G%";
 #endif lint
 /*
  * n2.c
@@ -181,57 +184,12 @@ outascii(i)	/* print i in best-guess ascii */
 	}
 }
 
-
-/*
- * now a macro
-oput(i)
-	register int	i;
-{
-	*obufp++ = i;
-	if (obufp >= &obuf[OBUFSZ])
-		flusho();
-}
-*/
-
 oputs(i)
 register char	*i;
 {
 	while (*i != 0)
 		oput(*i++);
 }
-
-
-flusho()
-{
-	if (obufp == obuf)
-		return;
-	if (no_out == 0) {
-		if (!toolate) {
-			toolate++;
-#ifdef NROFF
-			if (t.bset || t.breset) {
-				if (ttysave == -1) {
-					gtty(1, &ttys);
-					ttysave = ttys.sg_flags;
-				}
-				ttys.sg_flags &= ~t.breset;
-				ttys.sg_flags |= t.bset;
-				stty(1, &ttys);
-			}
-			 {
-				char	*p = t.twinit;
-				while (*p++)
-					;
-				if (p - t.twinit > 1)
-					write(ptid, t.twinit, p - t.twinit - 1);
-			}
-#endif
-		}
-		toolate += write(ptid, obuf, obufp - obuf);
-	}
-	obufp = obuf;
-}
-
 
 done(x) 
 int	x;
@@ -308,7 +266,6 @@ int	x;
 	error |= x;
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
-	unlink(unlkp);
 #ifdef NROFF
 	twdone();
 #endif
@@ -342,7 +299,7 @@ casepi()
 		errprint("Pipe not created.");
 		return;
 	}
-	ptid = id[1];
+	ptid = fdopen(id[1], "w");
 	if (i > 0) {
 		close(id[0]);
 		toolate++;

@@ -1,5 +1,8 @@
 #ifndef lint
+/*
 static char sccsid[]="@(#)n10.c	1.2	(CWI)	86/08/15";
+*/
+static char sccsid[] = "@(#)n10.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -63,7 +66,6 @@ ptinit()
 	register char *p, *cp, *q;
 	int nread, fd;
 	extern char *skipstr(), *getstr(), *getint();
-	extern char *setbrk();
 	struct stat stbuf;
 	char check[50];
 
@@ -74,7 +76,7 @@ ptinit()
 	}
 
 	fstat(fd, &stbuf);
-	codestr = setbrk((int) stbuf.st_size);
+	codestr = malloc((int) stbuf.st_size);
 
 	nread = read(fd, codestr, (int) stbuf.st_size);
 	close(fd);
@@ -270,11 +272,10 @@ twdone()
 {
 	int waitf;
 
-	obufp = obuf;
 	oputs(t.twrest);
 	flusho();
 	if (pipeflg) {
-		close(ptid);
+		close(fileno(ptid));
 		wait(&waitf);
 	}
 	if (ttysave != -1) {
