@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.10 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.11 (Berkeley) %G%
  */
 
 #ifdef GPROF
@@ -83,9 +83,6 @@ kmstartup()
 /*
  * This routine is massaged so that it may be jsb'ed to on vax.
  */
-asm(".text");
-asm("#the beginning of mcount()");
-asm(".data");
 mcount()
 {
 	register char *selfpc;			/* r11 => r5 */
@@ -95,7 +92,6 @@ mcount()
 	register long toindex;			/* r7  => r1 */
 	static int s;
 
-	asm("	.text");		/* make sure we're in text space */
 	/*
 	 * Check that we are profiling.
 	 */
