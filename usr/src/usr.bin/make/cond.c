@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cond.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cond.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -1011,20 +1011,7 @@ Cond_Eval (line)
     Boolean 	    value;
     int	    	    level;  	/* Level at which to report errors. */
 
-    /*
-     * Set the error level. When SPECIAL_CHAR is #, there is an ambiguity
-     * because of the need to keep # as the comment character. In such a case
-     * it is impossible to tell, for example, if the user has simply begun
-     * a commented sentence with "else" or has forgotten the initial "if".
-     * For this reason, we make the errors only warnings. If the lead-in
-     * character is anything else, however, we can be certain the user
-     * is in error.
-     */
-#if SPECIAL_CHAR == '#'
-    level = PARSE_WARNING;
-#else
     level = PARSE_FATAL;
-#endif
 
     for (line++; *line == ' ' || *line == '\t'; line++) {
 	continue;

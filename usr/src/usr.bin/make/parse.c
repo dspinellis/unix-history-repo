@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -1574,8 +1574,7 @@ ParseDoInclude (file)
 
     if (*cp != endc) {
 	Parse_Error (PARSE_FATAL,
-		     "Unclosed %cinclude filename. '%c' expected",
-		     SPECIAL_CHAR, endc);
+		     "Unclosed .include filename. '%c' expected", endc);
 	return;
     }
     *cp = '\0';
@@ -1783,7 +1782,7 @@ ParseReadLine ()
     while(1) {
 	c = ParseReadc();
 
-	if ((c == '\t') || (c == SPECIAL_CHAR)) {
+	if ((c == '\t') || (c == '.')) {
 	    ignComment = ignDepOp = TRUE;
 	    break;
 	} else if (c == '\n') {
@@ -1920,7 +1919,7 @@ test_char:
 	line = (char *)Buf_GetAll (buf, &lineLength);
 	Buf_Destroy (buf, FALSE);
 	
-	if (line[0] == SPECIAL_CHAR) {
+	if (line[0] == '.') {
 	    /*
 	     * The line might be a conditional. Ask the conditional module
 	     * about it and act accordingly
@@ -1937,7 +1936,7 @@ test_char:
 		     * Skip lines until get to one that begins with a
 		     * special char.
 		     */
-		    while ((c != SPECIAL_CHAR) && (c != EOF)) {
+		    while ((c != '.') && (c != EOF)) {
 			while (((c != '\n') || (lastc == '\\')) &&
 			       (c != EOF))
 			{
@@ -2048,7 +2047,7 @@ Parse_File(name, stream)
 
     do {
 	while (line = ParseReadLine ()) {
-	    if (*line == SPECIAL_CHAR) {
+	    if (*line == '.') {
 		/*
 		 * Lines that begin with the special character are either
 		 * include or undef directives.
@@ -2076,10 +2075,7 @@ Parse_File(name, stream)
 		}
 	    }
 	    if (*line == '#') {
-		/*
-		 * If we're this far, the line must be a comment, even if
-		 * SPECIAL_CHAR is '#'
-		 */
+		/* If we're this far, the line must be a comment. */
 		goto nextLine;
 	    }
 	    

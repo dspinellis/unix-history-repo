@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)config.h	5.5 (Berkeley) %G%
+ *	@(#)config.h	5.6 (Berkeley) %G%
  */
 
 #define	DEFSHELL	1			/* Bourne shell */
@@ -50,13 +50,6 @@
  */
 #define INCLUDES
 #define LIBRARIES
-
-/*
- * SPECIAL_CHAR
- *	The character that leads into conditionals and include directives
- *	and the like.
- */
-#define SPECIAL_CHAR '#'
 
 /*
  * DEF_OLD_VARS
