@@ -4,7 +4,7 @@
  */
 
 /*
- * Sccs Id = "@(#)glob.h	2.2 %G%";
+ * Sccs Id = "@(#)glob.h	2.3 %G%";
  */
 
 int	msgCount;			/* Count of messages read in */
@@ -67,7 +67,7 @@ jmp_buf	srbuf;
  * twice as much, and so on.
  */
 
-#define	NSPACE	8			/* Total number of string spaces */
+#define	NSPACE	25			/* Total number of string spaces */
 struct strings {
 	char	*s_topFree;		/* Beginning of this area */
 	char	*s_nextFree;		/* Next alloctable place here */
