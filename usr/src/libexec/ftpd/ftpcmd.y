@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.11 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.12 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -99,12 +99,12 @@ cmd_list:	/* empty */
 
 cmd:		USER SP username CRLF
 		= {
-			extern struct passwd *getpwnam();
+			extern struct passwd *sgetpwnam();
 
 			logged_in = 0;
 			if (strcmp((char *) $3, "ftp") == 0 ||
 			  strcmp((char *) $3, "anonymous") == 0) {
-				if ((pw = getpwnam("ftp")) != NULL) {
+				if ((pw = sgetpwnam("ftp")) != NULL) {
 					guest = 1;
 					reply(331,
 				  "Guest login ok, send ident as password.");
@@ -114,7 +114,7 @@ cmd:		USER SP username CRLF
 				}
 			} else if (checkuser((char *) $3)) {
 				guest = 0;
-				pw = getpwnam((char *) $3);
+				pw = sgetpwnam((char *) $3);
 				if (pw == NULL) {
 					reply(530, "User %s unknown.", $3);
 				}

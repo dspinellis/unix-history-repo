@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -205,11 +205,67 @@ lostconn()
 
 static char ttyline[20];
 
+/*
+ * Helper function for sgetpwnam().
+ */
+char *
+sgetsave(s)
+	char *s;
+{
+#ifdef notdef
+	char *new = strdup(s);
+#else
+	char *malloc();
+	char *new = malloc((unsigned) strlen(s) + 1);
+#endif
+	
+	if (new == NULL) {
+		reply(553, "Local resource failure");
+		dologout(1);
+	}
+#ifndef notdef
+	(void) strcpy(new, s);
+#endif
+	return (new);
+}
+
+/*
+ * Save the result of a getpwnam.  Used for USER command, since
+ * the data returned must not be clobbered by any other command
+ * (e.g., globbing).
+ */
+struct passwd *
+sgetpwnam(name)
+	char *name;
+{
+	static struct passwd save;
+	register struct passwd *p;
+	char *sgetsave();
+
+	if ((p = getpwnam(name)) == NULL)
+		return (p);
+	if (save.pw_name) {
+		free(save.pw_name);
+		free(save.pw_passwd);
+		free(save.pw_comment);
+		free(save.pw_gecos);
+		free(save.pw_dir);
+		free(save.pw_shell);
+	}
+	save = *p;
+	save.pw_name = sgetsave(p->pw_name);
+	save.pw_passwd = sgetsave(p->pw_passwd);
+	save.pw_comment = sgetsave(p->pw_comment);
+	save.pw_gecos = sgetsave(p->pw_gecos);
+	save.pw_dir = sgetsave(p->pw_dir);
+	save.pw_shell = sgetsave(p->pw_shell);
+	return (&save);
+}
+
 pass(passwd)
 	char *passwd;
 {
-	char *xpasswd, *savestr();
-	static struct passwd save;
+	char *xpasswd;
 
 	if (logged_in || pw == NULL) {
 		reply(503, "Login with USER first.");
@@ -250,35 +306,11 @@ pass(passwd)
 	(void)sprintf(ttyline, "ftp%d", getpid());
 	logwtmp(ttyline, pw->pw_name, remotehost);
 	seteuid(pw->pw_uid);
-	/*
-	 * Save everything so globbing doesn't
-	 * clobber the fields.
-	 */
-	save = *pw;
-	save.pw_name = savestr(pw->pw_name);
-	save.pw_passwd = savestr(pw->pw_passwd);
-	save.pw_comment = savestr(pw->pw_comment);
-	save.pw_gecos = savestr(pw->pw_gecos);
-	save.pw_dir = savestr(pw->pw_dir);
-	save.pw_shell = savestr(pw->pw_shell);
-	pw = &save;
 	home = pw->pw_dir;		/* home dir for globbing */
 	return;
 bad:
 	seteuid(0);
 	pw = NULL;
-}
-
-char *
-savestr(s)
-	char *s;
-{
-	char *malloc();
-	char *new = malloc((unsigned) strlen(s) + 1);
-	
-	if (new != NULL)
-		(void) strcpy(new, s);
-	return (new);
 }
 
 retrieve(cmd, name)
@@ -800,28 +832,26 @@ checkuser(name)
 	register char *name;
 {
 	register char *cp;
-	char line[BUFSIZ], *index(), *getusershell();
 	FILE *fd;
-	struct passwd *pw;
+	struct passwd *p;
+	char *shell;
 	int found = 0;
+	char line[BUFSIZ], *index(), *getusershell();
 
-	pw = getpwnam(name);
-	if (pw == NULL)
+	if ((p = getpwnam(name)) == NULL)
 		return (0);
-	if (pw ->pw_shell == NULL || pw->pw_shell[0] == NULL)
-		pw->pw_shell = "/bin/sh";
+	if ((shell = p->pw_shell) == NULL || *shell == 0)
+		shell = "/bin/sh";
 	while ((cp = getusershell()) != NULL)
-		if (strcmp(cp, pw->pw_shell) == 0)
+		if (strcmp(cp, shell) == 0)
 			break;
 	endusershell();
 	if (cp == NULL)
 		return (0);
-	fd = fopen(FTPUSERS, "r");
-	if (fd == NULL)
+	if ((fd = fopen(FTPUSERS, "r")) == NULL)
 		return (1);
 	while (fgets(line, sizeof (line), fd) != NULL) {
-		cp = index(line, '\n');
-		if (cp)
+		if ((cp = index(line, '\n')) != NULL)
 			*cp = '\0';
 		if (strcmp(line, name) == 0) {
 			found++;
