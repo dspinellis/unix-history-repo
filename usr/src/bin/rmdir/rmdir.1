@@ -4,11 +4,10 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)rmdir.1	6.5 (Berkeley) %G%
+.\"	@(#)rmdir.1	6.6 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt RMDIR 1
 .Os
@@ -17,7 +16,7 @@
 .Nd remove directories
 .Sh SYNOPSIS
 .Nm rmdir
-.Op Fl p
+.\" .Op Fl p
 .Ar directory ...
 .Sh DESCRIPTION
 The rmdir utility removes the directory entry specified by
@@ -34,8 +33,8 @@ is empty when
 tries to remove it.
 .\" .Pp
 .\" The following option is available:
-.\" .Tw Ds
-.\" .Tp Fl p
+.\" .Bl -tag -width Ds
+.\" .It Fl p
 .\" Each
 .\" .Ar directory
 .\" argument is treated as a pathname of which all
@@ -44,21 +43,24 @@ tries to remove it.
 .\" (See
 .\" .Xr rm 1
 .\" for fully non-discriminant recursive removal).
+.\" .El
 .Pp
 The
 .Nm rmdir
 utility exits with one of the following values:
-.Tw Ds
-.Tp Li \&0
+.Bl -tag -width flag
+.It Li \&0
 Each directory entry specified by a dir operand
 referred to an empty directory and was removed
 successfully.
-.Tp Li \&>\&0
+.It Li \&>\&0
 An error occurred.
-.Tp
+.El
 .Sh SEE ALSO
 .Xr rm 1
 .Sh STANDARDS
 The
 .Nm rmdir
-function is expected to be POSIX 1003.2 compatible.
+command is expected to be
+.St -p1003.2
+compatible.

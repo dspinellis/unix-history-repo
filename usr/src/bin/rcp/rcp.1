@@ -1,15 +1,13 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)rcp.1	6.13 (Berkeley) %G%
+.\"	@(#)rcp.1	6.14 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt RCP 1
-.Os BSD 4.2
+.Os BSD 4.3r
 .Sh NAME
 .Nm rcp
 .Nd remote file copy
@@ -34,12 +32,13 @@ argument is either a remote file name of the
 form ``rname@rhost:path'', or a local file name (containing no `:' characters,
 or a `/' before any `:'s).
 .Pp
-.Tp Fl r
+.Bl -tag -width flag
+.It Fl r
 If any of the source files are directories,
 .Nm rcp
 copies each subtree rooted at that name; in this case
 the destination must be a directory.
-.Tp Fl p
+.It Fl p
 The
 .Fl p
 option causes
@@ -53,7 +52,7 @@ are preserved if it already existed; otherwise the mode of the source file
 modified by the
 .Xr umask  2
 on the destination host is used.
-.Tp Fl k
+.It Fl k
 The
 .Fl k
 option requests
@@ -63,14 +62,18 @@ for the remote host in realm
 .Ar realm
 instead of the remote host's realm as determined by
 .Xr krb_realmofhost  3  .
-.Tp Fl x
+.It Fl x
 The
 .Fl x
-option turns on DES encryption for all data passed by
+option turns on
+.Tn DES
+encryption for all data passed by
 .Nm rcp .
-This may impact response time and CPU utilization, but provides
+This may impact response time and
+.Tn CPU
+utilization, but provides
 increased security.
-.Tp
+.El
 .Pp
 If
 .Ar path
@@ -100,9 +103,15 @@ are on the current machine.
 .Xr rsh 1 ,
 .Xr rlogin 1
 .Sh HISTORY
-.Nm Rcp
-appeared in 4.2 BSD.  The version of rcp described here
-has been reimplemented with Kerberos in 4.3+Reno BSD.
+The
+.Nm rcp
+command appeared in
+.Bx 4.2 .
+The version of
+.Nm rcp
+described here
+has been reimplemented with Kerberos in
+.Bx 4.3 Reno .
 .Sh BUGS
 Doesn't detect all cases where the target of a copy might
 be a file in cases where only a directory should be legal.
@@ -115,6 +124,7 @@ or
 file on the remote host.
 .Pp
 The destination user and hostname may have to be specified as
-``rhost.rname'' when the destination machine is running the 4.2BSD
+``rhost.rname'' when the destination machine is running the
+.Bx 4.2
 version of
 .Nm rcp  .

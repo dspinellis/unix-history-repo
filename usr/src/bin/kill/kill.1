@@ -4,11 +4,10 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)kill.1	6.7 (Berkeley) %G%
+.\"	@(#)kill.1	6.8 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt KILL 1
 .Os
@@ -27,40 +26,44 @@
 .Nm kill
 .Op Fl l
 .Sh DESCRIPTION
-The kill utility sends the TERM signal to the processes specified
+The kill utility sends the
+.Dv TERM
+signal to the processes specified
 by the pid operand(s).
 .Pp
 Only the super-user may send signals to other users' processes.
 .Pp
 The options are as follows:
 .Pp
-.Tw Ds
-.Tp Fl l
+.Bl -tag -width Ds
+.It Fl l
 List the signal names.
-.Tp Fl signal_name
+.It Fl signal_name
 A symbolic signal name specifying the signal to be sent instead of the
-default TERM.
+default
+.Dv TERM .
 The
 .Fl l
 option displays the signal names.
-.Tp Fl signal_number
+.It Fl signal_number
 A non-negative decimal integer, specifying the signal to be sent instead
-of the default TERM.
-.Tp
+of the default
+.Dv TERM .
+.El
 .Pp
 Some of the more commonly used signals:
-.Ds I
-.Cw XXX TERM
-.Cl -1	-1	(broadcast to all processes, super-user only)
-.Cl 0	0	(sh(1) only, signals all members of process group)
-.Cl 2	INT	(interupt)
-.Cl 3	QUIT	(quit)
-.Cl 6	ABRT	(abort)
-.Cl 9	KILL	(non-catchable, non-ignorable kill)
-.Cl 14	ALRM	(alarm clock)
-.Cl 15	TERM	(software termination signal)
-.Cw
-.De
+.Bd -ragged -offset indent -compact
+.Bl -column XXX TERM
+.It -1	-1	(broadcast to all processes, super-user only)
+.It 0	0	(sh(1) only, signals all members of process group)
+.It 2	INT	(interupt)
+.It 3	QUIT	(quit)
+.It 6	ABRT	(abort)
+.It 9	KILL	(non-catchable, non-ignorable kill)
+.It 14	ALRM	(alarm clock)
+.It 15	TERM	(software termination signal)
+.El
+.Ed
 .Pp
 .Nm Kill
 is a built-in to
@@ -80,9 +83,10 @@ for details.
 .Sh HISTORY
 A
 .Nm kill
-command appeared in Version 6 AT&T Unix.
+command appeared in
+.At v6 .
 .Sh BUGS
-A replacement for
+A replacement for the command
 .Dq Li kill 0
 for
 .Xr csh  1

@@ -4,11 +4,10 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mkdir.1	6.9 (Berkeley) %G%
+.\"	@(#)mkdir.1	6.10 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt MKDIR 1
 .Os
@@ -28,11 +27,11 @@ modified by the current
 .Xr umask  2  .
 .Pp
 The options are as follows:
-.Tw Ds
-.Tp Fl p
+.Bl -tag -width Ds
+.It Fl p
 Create intermediate directories as required.  If this option is not
 specified, the full path prefix of each operand must already exist.
-.Tp
+.El
 .Pp
 The user must have write permission in the parent directory.
 .Pp
@@ -41,5 +40,11 @@ exits 0 if successful, and >0 if an error occurred.
 .Sh SEE ALSO
 .Xr rmdir 1
 .Sh STANDARDS
-Mkdir is POSIX 1003.2 compliant.
-This manual page is derived from the POSIX 1003.2 manual page.
+The
+.Nm mkdir
+command is
+.St -p1003.2
+compliant.
+This manual page is derived from the
+.St -p1003.2
+manual page.

@@ -4,11 +4,10 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ln.1	6.7 (Berkeley) %G%
+.\"	@(#)ln.1	6.8 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt LN 1
 .Os BSD 4
@@ -39,10 +38,10 @@ How a link `points' to a file is one of the differences
 between a hard or symbolic link.
 .Pp
 Option available:
-.Tw Ds
-.Tp Fl s
+.Bl -tag -width flag
+.It Fl s
 Create a symbolic link.
-.Tp
+.El
 .Pp
 By default
 .Nm ln
@@ -101,4 +100,5 @@ The links made will have the same name as the files being linked to.
 .Sh HISTORY
 A
 .Nm ln
-command appeared in Version 6 AT&T Unix.
+command appeared in
+.At v6 .
