@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.5 (Berkeley) %G%
+ *	@(#)trap.c	7.6 (Berkeley) %G%
  */
 
 #include "cpu.h"
@@ -461,9 +461,7 @@ copyfault:
 				goto dopanic;
 			}
 #endif
-			i = u.u_error;
 			pagein(v, 0);
-			u.u_error = i;
 			if (type == T_MMUFLT)
 				return;
 			goto out;
@@ -528,6 +526,7 @@ syscall(code, frame)
 	register struct sysent *callp;
 	register struct proc *p = u.u_procp;
 	int error, opc, numsys;
+	int args[8], rval[2];
 	struct timeval syst;
 	struct sysent *systab;
 #ifdef HPUXCOMPAT
@@ -540,7 +539,6 @@ syscall(code, frame)
 	if (!USERMODE(frame.f_sr))
 		panic("syscall");
 	u.u_ar0 = frame.f_regs;
-	u.u_error = 0;
 	opc = frame.f_pc - 2;
 	systab = sysent;
 	numsys = nsysent;
@@ -560,7 +558,7 @@ syscall(code, frame)
 	else
 		callp = &systab[code];
 	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (error = copyin(params, (caddr_t)u.u_arg, (u_int)i))) {
+	    (error = copyin(params, (caddr_t)args, (u_int)i))) {
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX)
 			error = bsdtohpuxerrno(error);
@@ -568,26 +566,24 @@ syscall(code, frame)
 		frame.f_regs[D0] = (u_char) error;
 		frame.f_sr |= PSL_C;	/* carry bit */
 #ifdef KTRACE
-                if (KTRPOINT(p, KTR_SYSCALL))
-                        ktrsyscall(p->p_tracep, code, callp->sy_narg);
+		if (KTRPOINT(p, KTR_SYSCALL))
+			ktrsyscall(p->p_tracep, code, callp->sy_narg, args);
 #endif
 		goto done;
 	}
 #ifdef KTRACE
-        if (KTRPOINT(p, KTR_SYSCALL))
-                ktrsyscall(p->p_tracep, code, callp->sy_narg);
+	if (KTRPOINT(p, KTR_SYSCALL))
+		ktrsyscall(p->p_tracep, code, callp->sy_narg, args);
 #endif
-	u.u_r.r_val1 = 0;
-	u.u_r.r_val2 = frame.f_regs[D0];
+	rval[0] = 0;
+	rval[1] = frame.f_regs[D1];
 #ifdef HPUXCOMPAT
 	/* debug kludge */
 	if (callp->sy_call == notimp)
-		error = notimp(u.u_procp, u.u_ap, &u.u_r.r_val1,
-			       code, callp->sy_narg);
+		error = notimp(u.u_procp, args, rval, code, callp->sy_narg);
 	else
 #endif
-	error = (*callp->sy_call)(u.u_procp, u.u_ap, &u.u_r.r_val1);
-	error = u.u_error;		/* XXX */
+	error = (*callp->sy_call)(u.u_procp, args, rval);
 	if (error == ERESTART)
 		frame.f_pc = opc;
 	else if (error != EJUSTRETURN) {
@@ -599,8 +595,8 @@ syscall(code, frame)
 			frame.f_regs[D0] = (u_char) error;
 			frame.f_sr |= PSL_C;	/* carry bit */
 		} else {
-			frame.f_regs[D0] = u.u_r.r_val1;
-			frame.f_regs[D1] = u.u_r.r_val2;
+			frame.f_regs[D0] = rval[0];
+			frame.f_regs[D1] = rval[1];
 			frame.f_sr &= ~PSL_C;
 		}
 	}
@@ -658,7 +654,7 @@ done:
 	}
 	curpri = p->p_pri;
 #ifdef KTRACE
-        if (KTRPOINT(p, KTR_SYSRET))
-                ktrsysret(p->p_tracep, code);
+	if (KTRPOINT(p, KTR_SYSRET))
+		ktrsysret(p->p_tracep, code, error, rval[0]);
 #endif
 }
