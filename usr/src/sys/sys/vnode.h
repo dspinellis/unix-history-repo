@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.19 (Berkeley) %G%
+ *	@(#)vnode.h	7.20 (Berkeley) %G%
  */
 
 /*
@@ -26,7 +26,7 @@
 /*
  * vnode types. VNON means no type.
  */
-enum vtype 	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VBAD };
+enum vtype 	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
 
 /*
  * Vnode tag types.
@@ -66,6 +66,7 @@ struct vnode {
 		struct socket	*vu_socket;	/* unix ipc (VSOCK) */
 		struct text	*vu_text;	/* text/mapped region (VREG) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
+		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
 	enum vtagtype	v_tag;			/* type of underlying data */
 	char v_data[VN_MAXPRIVATE];		/* private data for fs */
@@ -74,6 +75,7 @@ struct vnode {
 #define v_socket v_un.vu_socket
 #define v_text v_un.vu_text
 #define v_specinfo v_un.vu_specinfo
+#define v_fifoinfo v_un.vu_fifoinfo
 
 /*
  * vnode flags.
@@ -175,8 +177,6 @@ struct specinfo {
 	struct	vnode *si_specnext;
 	dev_t	si_rdev;
 };
-#define v_hashchain v_specinfo->si_hashchain
-#define v_specnext v_specinfo->si_specnext
 #define v_rdev v_specinfo->si_rdev
 
 /*
