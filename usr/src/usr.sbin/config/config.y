@@ -76,7 +76,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.y	5.16 (Berkeley) %G%
+ *	@(#)config.y	5.17 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -728,7 +728,8 @@ init_dev(dp)
 	dp->d_type = DEVICE;
 	dp->d_conn = 0;
 	dp->d_vec = 0;
-	dp->d_addr = dp->d_pri = dp->d_flags = dp->d_dk = 0;
+	dp->d_addr = dp->d_flags = dp->d_dk = 0;
+	dp->d_pri = -1;
 	dp->d_slave = dp->d_drive = dp->d_unit = UNKNOWN;
 	dp->d_port = (char *)0;
 	dp->d_portn = 0;
