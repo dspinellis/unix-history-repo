@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail.1	6.5 (Berkeley) %G%
+.\"	@(#)mail.1	6.6 (Berkeley) %G%
 .\"
 .TH MAIL 1 ""
 .UC 4
@@ -76,10 +76,11 @@ The
 flag inhibits the reading of /usr/lib/Mail.rc.
 .PP
 .I "Sending mail.\ "
-To send a message to one or more other people,
+To send a message to one or more people,
 .I mail
-can be invoked with arguments which are the names of people to
-send to.  You are then expected to type in your message, followed
+can be invoked with arguments which are the names of people to 
+whom the mail will be sent.  You are then expected to type in 
+your message, followed
 by an \s-2EOT\s0 (control\-D) at the beginning of a line.
 A subject may be specified on the command line by using the
 .B \-s
@@ -649,7 +650,7 @@ Options are controlled via the
 and
 .B unset
 commands.  Options may be either binary, in which case it is only
-significant to see whether they are set or not, or string, in which
+significant to see whether they are set or not; or string, in which
 case the actual value is of interest.
 The binary options include the following:
 .TP 15n
