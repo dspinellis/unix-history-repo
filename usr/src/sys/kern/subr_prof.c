@@ -1,4 +1,4 @@
-/*	subr_prof.c	6.2	84/07/28	*/
+/*	subr_prof.c	6.3	84/08/12	*/
 
 /* last integrated from: gmon.c	4.10 (Berkeley) 1/14/83 */
 
@@ -100,6 +100,7 @@ mcount()
 	register struct tostruct	*top;		/* r9  => r3 */
 	register struct tostruct	*prevtop;	/* r8  => r2 */
 	register long			toindex;	/* r7  => r1 */
+	static int s;
 
 #ifdef lint
 	selfpc = (char *)0;
@@ -115,12 +116,16 @@ mcount()
 #endif not lint
 	/*
 	 *	check that we are profiling
-	 *	and that we aren't recursively invoked.
 	 */
 	if (profiling) {
 		goto out;
 	}
-	profiling++;
+	/*
+	 *	insure that we cannot be recursively invoked.
+	 *	this requires that splhigh() and splx() below
+	 *	do NOT call mcount!
+	 */
+	s = splhigh();
 	/*
 	 *	check that frompcindex is a reasonable pc value.
 	 *	for example:	signal catchers get called from the stack,
@@ -202,7 +207,7 @@ mcount()
 
 	}
 done:
-	profiling--;
+	splx(s);
 	/* and fall through */
 out:
 	asm("	rsb");
