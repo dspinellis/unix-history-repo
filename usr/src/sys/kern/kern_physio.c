@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	7.20 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -83,16 +83,12 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			requested = bp->b_bcount;
 			p->p_flag |= SPHYSIO;
 			vslock(a = bp->b_un.b_addr, requested);
-#if defined(hp300) || defined(i386)
 			vmapbuf(bp);
-#endif
 			(*strat)(bp);
 			s = splbio();
 			while ((bp->b_flags & B_DONE) == 0)
 				sleep((caddr_t)bp, PRIBIO);
-#if defined(hp300) || defined(i386)
 			vunmapbuf(bp);
-#endif
 			vsunlock(a, requested, rw);
 			p->p_flag &= ~SPHYSIO;
 			if (bp->b_flags&B_WANTED)	/* rare */
