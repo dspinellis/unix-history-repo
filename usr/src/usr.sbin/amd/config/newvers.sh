@@ -2,15 +2,15 @@
 #
 # Copyright (c) 1989 Jan-Simon Pendry
 # Copyright (c) 1989 Imperial College of Science, Technology & Medicine
-# Copyright (c) 1989 The Regents of the University of California.
-# All Rights Reserved.
+# Copyright (c) 1989, 1993
+#	The Regents of the University of California.  All Rights Reserved.
 #
 # This code is derived from software contributed to Berkeley by
 # Jan-Simon Pendry at Imperial College, London.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)newvers.sh	5.5 (Berkeley) %G%
+#	@(#)newvers.sh	5.6 (Berkeley) %G%
 #
 # $Id: newvers.sh,v 5.2.2.1 1992/02/09 15:11:19 jsp beta $
 #
