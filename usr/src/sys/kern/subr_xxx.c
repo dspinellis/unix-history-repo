@@ -1,4 +1,6 @@
-/*	subr_xxx.c	4.9	81/11/20	*/
+/*	subr_xxx.c	4.10	82/04/19	*/
+
+/* merged into kernel:	@(#)subr.c 2.2 4/8/82 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,6 +10,7 @@
 #include "../h/user.h"
 #include "../h/buf.h"
 #include "../h/proc.h"
+#include "../h/fs.h"
 
 /*
  * Bmap defines the structure of file system storage
@@ -17,34 +20,79 @@
  * block number of the next block of the file in rablock
  * for use in read-ahead.
  */
+/*VARARGS3*/
 daddr_t
-bmap(ip, bn, rwflg)
-register struct inode *ip;
-daddr_t bn;
+bmap(ip, bn, rwflg, size)
+	register struct inode *ip;
+	daddr_t bn;
+	int rwflg;
+	int size;	/* supplied only when rwflg == B_WRITE */
 {
-	register i;
+	register int i;
+	int osize, nsize;
 	struct buf *bp, *nbp;
+	struct fs *fs;
 	int j, sh;
-	daddr_t nb, *bap;
-	dev_t dev;
+	daddr_t nb, *bap, pref, blkpref();
 
-	if(bn < 0) {
+	if (bn < 0) {
 		u.u_error = EFBIG;
-		return((daddr_t)0);
+		return ((daddr_t)0);
 	}
-	dev = ip->i_dev;
+	fs = ip->i_fs;
 	rablock = 0;
 
 	/*
-	 * blocks 0..NADDR-4 are direct blocks
+	 * If the next write will extend the file into a new block,
+	 * and the file is currently composed of a fragment
+	 * this fragment has to be extended to be a full block.
 	 */
-	if(bn < NADDR-3) {
+	nb = lblkno(fs, ip->i_size);
+	if (rwflg == B_WRITE && nb < NDADDR && nb < bn) {
+		osize = blksize(fs, ip, nb);
+		if (osize < fs->fs_bsize && osize > 0) {
+			bp = realloccg(ip, ip->i_db[nb],
+				nb == 0 ? 0 : ip->i_db[nb - 1] + fs->fs_frag,
+				osize, fs->fs_bsize);
+			ip->i_size = (nb + 1) * fs->fs_bsize;
+			ip->i_db[nb] = dbtofsb(fs, bp->b_blkno);
+			ip->i_flag |= IUPD|ICHG;
+			bdwrite(bp);
+		}
+	}
+	/*
+	 * The first NDADDR blocks are direct blocks
+	 */
+	if (bn < NDADDR) {
 		i = bn;
-		nb = ip->i_un.i_addr[i];
-		if(nb == 0) {
-			if(rwflg==B_READ || (bp = alloc(dev))==NULL)
-				return((daddr_t)-1);
-			nb = dbtofsb(bp->b_blkno);
+		nb = ip->i_db[i];
+		if (rwflg == B_READ) {
+			if (nb == 0)
+				return ((daddr_t)-1);
+			goto gotit;
+		}
+		if (nb == 0 || ip->i_size < (i + 1) * fs->fs_bsize) {
+			if (nb != 0) {
+				/* consider need to reallocate a frag */
+				osize = fragroundup(fs, blkoff(fs, ip->i_size));
+				nsize = fragroundup(fs, size);
+				if (nsize <= osize)
+					goto gotit;
+				bp = realloccg(ip, nb, i == 0 ?
+					0 : ip->i_db[i - 1] + fs->fs_frag,
+					osize, nsize);
+			} else {
+				if (ip->i_size < (i + 1) * fs->fs_bsize)
+					nsize = fragroundup(fs, size);
+				else
+					nsize = fs->fs_bsize;
+				bp = alloc(ip, i > 0 ?
+					ip->i_db[i - 1] + fs->fs_frag : 0,
+					nsize);
+			}
+			if (bp == NULL)
+				return ((daddr_t)-1);
+			nb = dbtofsb(fs, bp->b_blkno);
 			if ((ip->i_mode&IFMT) == IFDIR)
 				/*
 				 * Write directory blocks synchronously
@@ -54,72 +102,79 @@ daddr_t bn;
 				bwrite(bp);
 			else
 				bdwrite(bp);
-			ip->i_un.i_addr[i] = nb;
+			ip->i_db[i] = nb;
 			ip->i_flag |= IUPD|ICHG;
 		}
-		if(i < NADDR-4)
-			rablock = ip->i_un.i_addr[i+1];
-		return(nb);
+gotit:
+		if (i < NDADDR - 1)
+			rablock = ip->i_db[i+1];
+		return (nb);
 	}
 
 	/*
-	 * addresses NADDR-3, NADDR-2, and NADDR-1
-	 * have single, double, triple indirect blocks.
-	 * the first step is to determine
-	 * how many levels of indirection.
+	 * Determine how many levels of indirection.
 	 */
-	sh = 0;
-	nb = 1;
-	bn -= NADDR-3;
-	for(j=3; j>0; j--) {
-		sh += NSHIFT;
-		nb <<= NSHIFT;
-		if(bn < nb)
+	sh = 1;
+	bn -= NDADDR;
+	for (j = NIADDR; j>0; j--) {
+		sh *= NINDIR(fs);
+		if (bn < sh)
 			break;
-		bn -= nb;
+		bn -= sh;
 	}
-	if(j == 0) {
+	if (j == 0) {
 		u.u_error = EFBIG;
-		return((daddr_t)0);
+		return ((daddr_t)0);
 	}
 
 	/*
 	 * fetch the first indirect block
 	 */
-	nb = ip->i_un.i_addr[NADDR-j];
-	if(nb == 0) {
-		if(rwflg==B_READ || (bp = alloc(dev))==NULL)
-			return((daddr_t)-1);
-		nb = dbtofsb(bp->b_blkno);
+	nb = ip->i_ib[NIADDR - j];
+	if (nb == 0) {
+		if (rwflg==B_READ ||
+		    (bp = alloc(ip, (daddr_t)0, fs->fs_bsize)) == NULL)
+			return ((daddr_t)-1);
+		nb = dbtofsb(fs, bp->b_blkno);
 		/*
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
 		 */
 		bwrite(bp);
-		ip->i_un.i_addr[NADDR-j] = nb;
+		ip->i_ib[NIADDR - j] = nb;
 		ip->i_flag |= IUPD|ICHG;
 	}
 
 	/*
 	 * fetch through the indirect blocks
 	 */
-	for(; j<=3; j++) {
-		bp = bread(dev, nb);
-		if(bp->b_flags & B_ERROR) {
+	for (; j <= NIADDR; j++) {
+		bp = bread(ip->i_dev, fsbtodb(fs, nb), fs->fs_bsize);
+		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
-			return((daddr_t)0);
+			return ((daddr_t)0);
 		}
 		bap = bp->b_un.b_daddr;
-		sh -= NSHIFT;
-		i = (bn>>sh) & NMASK;
+		sh /= NINDIR(fs);
+		i = (bn / sh) % NINDIR(fs);
 		nb = bap[i];
-		if(nb == 0) {
-			if(rwflg==B_READ || (nbp = alloc(dev))==NULL) {
+		if (nb == 0) {
+			if (rwflg==B_READ) {
 				brelse(bp);
-				return((daddr_t)-1);
+				return ((daddr_t)-1);
 			}
-			nb = dbtofsb(nbp->b_blkno);
-			if (j < 3 || (ip->i_mode&IFMT) == IFDIR)
+			if (i % (fs->fs_fsize / sizeof(daddr_t)) == 0 ||
+			    bap[i - 1] == 0)
+				pref = blkpref(ip->i_fs);
+			else
+				pref = bap[i - 1] + fs->fs_frag;
+		        nbp = alloc(ip, pref, fs->fs_bsize);
+			if (nbp == NULL) {
+				brelse(bp);
+				return ((daddr_t)-1);
+			}
+			nb = dbtofsb(fs, nbp->b_blkno);
+			if (j < NIADDR || (ip->i_mode&IFMT) == IFDIR)
 				/*
 				 * Write synchronously so indirect blocks
 				 * never point at garbage and blocks
@@ -137,9 +192,9 @@ daddr_t bn;
 	/*
 	 * calculate read-ahead.
 	 */
-	if(i < NINDIR-1)
+	if (i < NINDIR(fs) - 1)
 		rablock = bap[i+1];
-	return(nb);
+	return (nb);
 }
 
 /*
@@ -153,17 +208,17 @@ register c;
 {
 	register id;
 
-	if((id = u.u_segflg) == 1)
+	if ((id = u.u_segflg) == 1)
 		*u.u_base = c;
 	else
-		if(id?suibyte(u.u_base, c):subyte(u.u_base, c) < 0) {
+		if (id?suibyte(u.u_base, c):subyte(u.u_base, c) < 0) {
 			u.u_error = EFAULT;
-			return(-1);
+			return (-1);
 		}
 	u.u_count--;
 	u.u_offset++;
 	u.u_base++;
-	return(u.u_count == 0? -1: 0);
+	return (u.u_count == 0? -1: 0);
 }
 
 #include "ct.h"
@@ -179,19 +234,19 @@ cpass()
 {
 	register c, id;
 
-	if(u.u_count == 0)
-		return(-1);
-	if((id = u.u_segflg) == 1)
+	if (u.u_count == 0)
+		return (-1);
+	if ((id = u.u_segflg) == 1)
 		c = *u.u_base;
 	else
-		if((c = id==0?fubyte(u.u_base):fuibyte(u.u_base)) < 0) {
+		if ((c = id==0?fubyte(u.u_base):fuibyte(u.u_base)) < 0) {
 			u.u_error = EFAULT;
-			return(-1);
+			return (-1);
 		}
 	u.u_count--;
 	u.u_offset++;
 	u.u_base++;
-	return(c&0377);
+	return (c&0377);
 }
 #endif
 
@@ -221,6 +276,22 @@ imin(a, b)
 }
 
 imax(a, b)
+{
+
+	return (a > b ? a : b);
+}
+
+unsigned
+min(a, b)
+	unsigned int a, b;
+{
+
+	return (a < b ? a : b);
+}
+
+unsigned
+max(a, b)
+	unsigned int a, b;
 {
 
 	return (a > b ? a : b);

@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.25	82/04/02	*/
+/*	kern_proc.c	4.26	82/04/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -46,7 +46,7 @@ exece()
 	char *sharg;
 	struct inode *ip;
 	swblk_t bno;
-	char cfname[DIRSIZ];
+	char cfname[MAXNAMLEN + 1];
 	char cfarg[SHSIZE];
 
 	if ((ip = namei(uchar, 0, 1)) == NULL)
@@ -151,7 +151,8 @@ exece()
 				sharg = cfarg;
 			}
 		}
-		bcopy((caddr_t)u.u_dbuf, (caddr_t)cfname, DIRSIZ);
+		bcopy((caddr_t)u.u_dent.d_name, (caddr_t)cfname,
+		    u.u_dent.d_namlen + 1);
 		indir = 1;
 		iput(ip);
 		ip = namei(schar, 0, 1);
@@ -188,7 +189,7 @@ exece()
 			uap->envp++;
 			ne++;
 		}
-		if (ap==NULL)
+		if (ap == NULL)
 			break;
 		na++;
 		if (ap == -1)
@@ -206,28 +207,31 @@ exece()
 				bp = 0;
 				goto badarg;
 			}
-			if ((nc&BMASK) == 0) {
+			if (nc % (CLSIZE*NBPG) == 0) {
 				if (bp)
 					bdwrite(bp);
-				bp = getblk(argdev,
-				    (daddr_t)(dbtofsb(bno)+(nc>>BSHIFT)));
+				bp = getblk(argdev, bno + nc / NBPG,
+				    CLSIZE*NBPG);
 				cp = bp->b_un.b_addr;
 			}
 			nc++;
 			*cp++ = c;
-		} while (c>0);
+		} while (c > 0);
 	}
 	if (bp)
 		bdwrite(bp);
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	if (indir)
-		bcopy((caddr_t)cfname, (caddr_t)u.u_dbuf, DIRSIZ);
+	if (indir) {
+		u.u_dent.d_namlen = strlen(cfname);
+		bcopy((caddr_t)cfname, (caddr_t)u.u_dent.d_name,
+		    u.u_dent.d_namlen + 1);
+	}
 	getxfile(ip, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
-		for (c = 0; c < nc; c += BSIZE)
-			if (bp = baddr(argdev, dbtofsb(bno)+(c>>BSHIFT))) {
+		for (c = 0; c < nc; c += CLSIZE*NBPG)
+			if (bp = baddr(argdev, bno + c / NBPG, CLSIZE*NBPG)) {
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				brelse(bp);
@@ -254,11 +258,11 @@ badarg:
 			break;
 		(void) suword((caddr_t)ap, ucp);
 		do {
-			if ((nc&BMASK) == 0) {
+			if (nc % (CLSIZE*NBPG) == 0) {
 				if (bp)
 					brelse(bp);
-				bp = bread(argdev,
-				    (daddr_t)(dbtofsb(bno)+(nc>>BSHIFT)));
+				bp = bread(argdev, bno + nc / NBPG,
+				    CLSIZE*NBPG);
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_un.b_addr;
@@ -435,7 +439,8 @@ setregs()
 	 * Remember file name for accounting.
 	 */
 	u.u_acflag &= ~AFORK;
-	bcopy((caddr_t)u.u_dbuf, (caddr_t)u.u_comm, DIRSIZ);
+	bcopy((caddr_t)u.u_dent.d_name, (caddr_t)u.u_comm,
+	    u.u_dent.d_namlen + 1);
 }
 
 /*

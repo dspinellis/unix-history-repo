@@ -1,4 +1,6 @@
-/*	ufs_inode.c	4.9	82/02/27	*/
+/*	ufs_inode.c	4.10	82/04/19	*/
+
+/* merged into kernel:	@(#)iget.c 2.2 4/8/82 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,8 +8,7 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/inode.h"
-#include "../h/ino.h"
-#include "../h/filsys.h"
+#include "../h/fs.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/inline.h"
@@ -35,25 +36,6 @@ ihinit()
 }
 
 /*
- * Find an inode if it is incore.
- * This is the equivalent, for inodes,
- * of ``incore'' in bio.c or ``pfind'' in subr.c.
- */
-struct inode *
-ifind(dev, ino)
-	dev_t dev;
-	ino_t ino;
-{
-	register struct inode *ip;
-
-	for (ip = &inode[inohash[INOHASH(dev,ino)]]; ip != &inode[-1];
-	    ip = &inode[ip->i_hlink])
-		if (ino==ip->i_number && dev==ip->i_dev)
-			return (ip);
-	return ((struct inode *)0);
-}
-
-/*
  * Look up an inode by device,inumber.
  * If it is in core (in the inode structure),
  * honor the locking protocol.
@@ -69,8 +51,9 @@ ifind(dev, ino)
  *	"cannot happen"
  */
 struct inode *
-iget(dev, ino)
+iget(dev, fs, ino)
 	dev_t dev;
+	register struct fs *fs;
 	ino_t ino;
 {
 	register struct inode *ip;
@@ -80,6 +63,8 @@ iget(dev, ino)
 	register int slot;
 
 loop:
+	if (getfs(dev) != fs)
+		panic("iget: bad fs");
 	slot = INOHASH(dev, ino);
 	ip = &inode[inohash[slot]];
 	while (ip != &inode[-1]) {
@@ -90,9 +75,10 @@ loop:
 				goto loop;
 			}
 			if ((ip->i_flag&IMOUNT) != 0) {
-				for(mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
+				for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
 				if (mp->m_inodp == ip) {
 					dev = mp->m_dev;
+					fs = mp->m_bufp->b_un.b_fs;
 					ino = ROOTINO;
 					goto loop;
 				}
@@ -114,11 +100,12 @@ loop:
 	ip->i_hlink = inohash[slot];
 	inohash[slot] = ip - inode;
 	ip->i_dev = dev;
+	ip->i_fs = fs;
 	ip->i_number = ino;
 	ip->i_flag = ILOCK;
 	ip->i_count++;
-	ip->i_un.i_lastr = 0;
-	bp = bread(dev, itod(ino));
+	ip->i_lastr = 0;
+	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), fs->fs_bsize);
 	/*
 	 * Check I/O errors
 	 */
@@ -128,32 +115,10 @@ loop:
 		return(NULL);
 	}
 	dp = bp->b_un.b_dino;
-	dp += itoo(ino);
-	iexpand(ip, dp);
+	dp += itoo(fs, ino);
+	ip->i_ic = dp->di_ic;
 	brelse(bp);
-	return(ip);
-}
-
-iexpand(ip, dp)
-	register struct inode *ip;
-	register struct dinode *dp;
-{
-	register char *p1, *p2;
-	register int i;
-
-	ip->i_mode = dp->di_mode;
-	ip->i_nlink = dp->di_nlink;
-	ip->i_uid = dp->di_uid;
-	ip->i_gid = dp->di_gid;
-	ip->i_size = dp->di_size;
-	p1 = (char *)ip->i_un.i_addr;
-	p2 = (char *)dp->di_addr;
-	for(i=0; i<NADDR; i++) {
-		*p1++ = *p2++;
-		*p1++ = *p2++;
-		*p1++ = *p2++;
-		*p1++ = 0;
-	}
+	return (ip);
 }
 
 /*
@@ -168,14 +133,16 @@ iput(ip)
 {
 	register int i, x;
 	register struct inode *jp;
+	int mode;
 
 	if (ip->i_count == 1) {
 		ip->i_flag |= ILOCK;
 		if (ip->i_nlink <= 0) {
 			itrunc(ip);
+			mode = ip->i_mode;
 			ip->i_mode = 0;
 			ip->i_flag |= IUPD|ICHG;
-			ifree(ip->i_dev, ip->i_number);
+			ifree(ip, ip->i_number, mode);
 		}
 		IUPDAT(ip, &time, &time, 0);
 		irele(ip);
@@ -217,40 +184,27 @@ iupdat(ip, ta, tm, waitfor)
 {
 	register struct buf *bp;
 	struct dinode *dp;
-	register char *p1, *p2;
-	register int i;
+	register struct fs *fp;
 
-	if ((ip->i_flag&(IUPD|IACC|ICHG)) != 0) {
-		if (getfs(ip->i_dev)->s_ronly)
+	fp = ip->i_fs;
+	if ((ip->i_flag & (IUPD|IACC|ICHG)) != 0) {
+		if (fp->fs_ronly)
 			return;
-		bp = bread(ip->i_dev, itod(ip->i_number));
+		bp = bread(ip->i_dev, fsbtodb(fp, itod(fp, ip->i_number)),
+			fp->fs_bsize);
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return;
 		}
-		dp = bp->b_un.b_dino;
-		dp += itoo(ip->i_number);
-		dp->di_mode = ip->i_mode;
-		dp->di_nlink = ip->i_nlink;
-		dp->di_uid = ip->i_uid;
-		dp->di_gid = ip->i_gid;
-		dp->di_size = ip->i_size;
-		p1 = (char *)dp->di_addr;
-		p2 = (char *)ip->i_un.i_addr;
-		for(i=0; i<NADDR; i++) {
-			*p1++ = *p2++;
-			*p1++ = *p2++;
-			*p1++ = *p2++;
-			if (*p2++ != 0)
-				printf("iaddress > 2^24\n");
-		}
 		if (ip->i_flag&IACC)
-			dp->di_atime = *ta;
+			ip->i_atime = *ta;
 		if (ip->i_flag&IUPD)
-			dp->di_mtime = *tm;
+			ip->i_mtime = *tm;
 		if (ip->i_flag&ICHG)
-			dp->di_ctime = time;
+			ip->i_ctime = time;
 		ip->i_flag &= ~(IUPD|IACC|ICHG);
+		dp = bp->b_un.b_dino + itoo(fp, ip->i_number);
+		dp->di_ic = ip->i_ic;
 		if (waitfor)
 			bwrite(bp);
 		else
@@ -274,19 +228,21 @@ itrunc(ip)
 	dev_t dev;
 	daddr_t bn;
 	struct inode itmp;
+	register struct fs *fs;
 
 	i = ip->i_mode & IFMT;
-	if (i!=IFREG && i!=IFDIR && i!=IFLNK)
+	if (i != IFREG && i != IFDIR && i != IFLNK)
 		return;
-
 	/*
 	 * Clean inode on disk before freeing blocks
 	 * to insure no duplicates if system crashes.
 	 */
 	itmp = *ip;
 	itmp.i_size = 0;
-	for (i = 0; i < NADDR; i++)
-		itmp.i_un.i_addr[i] = 0;
+	for (i = 0; i < NDADDR; i++)
+		itmp.i_db[i] = 0;
+	for (i = 0; i < NIADDR; i++)
+		itmp.i_ib[i] = 0;
 	itmp.i_flag |= ICHG|IUPD;
 	iupdat(&itmp, &time, &time, 1);
 	ip->i_flag &= ~(IUPD|IACC|ICHG);
@@ -296,28 +252,34 @@ itrunc(ip)
 	 * crashes, they will be harmless MISSING blocks.
 	 */
 	dev = ip->i_dev;
-	for(i=NADDR-1; i>=0; i--) {
-		bn = ip->i_un.i_addr[i];
+	fs = ip->i_fs;
+	/*
+	 * release double indirect block first
+	 */
+	bn = ip->i_ib[NIADDR-1];
+	if (bn != (daddr_t)0) {
+		ip->i_ib[NIADDR - 1] = (daddr_t)0;
+		tloop(ip, bn, 1);
+	}
+	/*
+	 * release single indirect blocks second
+	 */
+	for (i = NIADDR - 2; i >= 0; i--) {
+		bn = ip->i_ib[i];
+		if (bn != (daddr_t)0) {
+			ip->i_ib[i] = (daddr_t)0;
+			tloop(ip, bn, 0);
+		}
+	}
+	/*
+	 * finally release direct blocks
+	 */
+	for (i = NDADDR - 1; i>=0; i--) {
+		bn = ip->i_db[i];
 		if (bn == (daddr_t)0)
 			continue;
-		ip->i_un.i_addr[i] = (daddr_t)0;
-		switch(i) {
-
-		default:
-			free(dev, bn);
-			break;
-
-		case NADDR-3:
-			tloop(dev, bn, 0, 0);
-			break;
-
-		case NADDR-2:
-			tloop(dev, bn, 1, 0);
-			break;
-
-		case NADDR-1:
-			tloop(dev, bn, 1, 1);
-		}
+		ip->i_db[i] = (daddr_t)0;
+		fre(ip, bn, (off_t)blksize(fs, ip, i));
 	}
 	ip->i_size = 0;
 	/*
@@ -326,19 +288,22 @@ itrunc(ip)
 	 */
 }
 
-tloop(dev, bn, f1, f2)
-dev_t dev;
-daddr_t bn;
+tloop(ip, bn, indflg)
+	register struct inode *ip;
+	daddr_t bn;
+	int indflg;
 {
 	register i;
 	register struct buf *bp;
 	register daddr_t *bap;
+	register struct fs *fs;
 	daddr_t nb;
 
 	bp = NULL;
-	for(i=NINDIR-1; i>=0; i--) {
+	fs = ip->i_fs;
+	for (i = NINDIR(fs) - 1; i >= 0; i--) {
 		if (bp == NULL) {
-			bp = bread(dev, bn);
+			bp = bread(ip->i_dev, fsbtodb(fs, bn), fs->fs_bsize);
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
 				return;
@@ -348,16 +313,14 @@ daddr_t bn;
 		nb = bap[i];
 		if (nb == (daddr_t)0)
 			continue;
-		if (f1) {
-			brelse(bp);
-			bp = NULL;
-			tloop(dev, nb, f2, 0);
-		} else
-			free(dev, nb);
+		if (indflg)
+			tloop(ip, nb, 0);
+		else
+			fre(ip, nb, fs->fs_bsize);
 	}
 	if (bp != NULL)
 		brelse(bp);
-	free(dev, bn);
+	fre(ip, bn, fs->fs_bsize);
 }
 
 /*
@@ -365,16 +328,22 @@ daddr_t bn;
  */
 struct inode *
 maknode(mode)
+	int mode;
 {
 	register struct inode *ip;
+	ino_t ipref;
 
-	ip = ialloc(u.u_pdir->i_dev);
+	if ((mode & IFMT) == IFDIR)
+		ipref = dirpref(u.u_pdir->i_fs);
+	else
+		ipref = u.u_pdir->i_number;
+	ip = ialloc(u.u_pdir, ipref, mode);
 	if (ip == NULL) {
 		iput(u.u_pdir);
 		return(NULL);
 	}
 	ip->i_flag |= IACC|IUPD|ICHG;
-	if ((mode&IFMT) == 0)
+	if ((mode & IFMT) == 0)
 		mode |= IFREG;
 	ip->i_mode = mode & ~u.u_cmask;
 	ip->i_nlink = 1;
@@ -385,8 +354,17 @@ maknode(mode)
 	 * Make sure inode goes to disk before directory entry.
 	 */
 	iupdat(ip, &time, &time, 1);
-
 	wdir(ip);
+	if (u.u_error) {
+		/*
+		 * write error occurred trying to update directory
+		 * so must deallocate the inode
+		 */
+		ip->i_nlink = 0;
+		ip->i_flag |= ICHG;
+		iput(ip);
+		return(NULL);
+	}
 	return(ip);
 }
 
@@ -398,13 +376,82 @@ maknode(mode)
 wdir(ip)
 	struct inode *ip;
 {
+	register struct direct *dp, *ndp;
+	struct fs *fs;
+	struct buf *bp;
+	int lbn, bn, base;
+	int loc, dsize, spccnt, newsize;
+	char *dirbuf;
 
 	u.u_dent.d_ino = ip->i_number;
-	bcopy((caddr_t)u.u_dbuf, (caddr_t)u.u_dent.d_name, DIRSIZ);
-	u.u_count = sizeof(struct direct);
 	u.u_segflg = 1;
-	u.u_base = (caddr_t)&u.u_dent;
-	writei(u.u_pdir);
+	newsize = DIRSIZ(&u.u_dent);
+	/*
+	 * if u.u_count == 0, a new directory block must be allocated.
+	 */
+	if (u.u_count == 0) {
+		u.u_dent.d_reclen = DIRBLKSIZ;
+		u.u_count = newsize;
+		u.u_base = (caddr_t)&u.u_dent;
+		writei(u.u_pdir);
+		iput(u.u_pdir);
+		return;
+	}
+	/*
+	 * must read in an existing directory block
+	 * to prepare to place the new entry into it.
+	 */
+	fs = u.u_pdir->i_fs;
+	lbn = lblkno(fs, u.u_offset);
+	base = blkoff(fs, u.u_offset);
+	bn = fsbtodb(fs, bmap(u.u_pdir, lbn, B_WRITE, base + u.u_count));
+	if (u.u_offset + u.u_count > u.u_pdir->i_size)
+		u.u_pdir->i_size = u.u_offset + u.u_count;
+	bp = bread(u.u_pdir->i_dev, bn, blksize(fs, u.u_pdir, lbn));
+	if (bp->b_flags & B_ERROR) {
+		brelse(bp);
+		return;
+	}
+	dirbuf = bp->b_un.b_addr + base;
+	dp = (struct direct *)dirbuf;
+	dsize = DIRSIZ(dp);
+	spccnt = dp->d_reclen - dsize;
+	/*
+	 * if there is insufficient room to make an entry at this point
+	 * namei insures that compacting from u.u_offset for u.u_count
+	 * bytes will provide the necessary space.
+	 */
+	for (loc = dp->d_reclen; loc < u.u_count; ) {
+		ndp = (struct direct *)(dirbuf + loc);
+		if (dp->d_ino == 0) {
+			spccnt += dsize;
+		} else {
+			dp->d_reclen = dsize;
+			dp = (struct direct *)((char *)dp + dsize);
+		}
+		dsize = DIRSIZ(ndp);
+		spccnt += ndp->d_reclen - dsize;
+		loc += ndp->d_reclen;
+		bcopy(ndp, dp, dsize);
+	}
+	/*
+	 * Update the pointer fields in the previous entry (if any),
+	 * copy in the new entry, and write out the block.
+	 */
+	if (dp->d_ino == 0) {
+		if (spccnt + dsize < newsize)
+			panic("wdir: compact failed");
+		u.u_dent.d_reclen = spccnt + dsize;
+	} else {
+		if (spccnt < newsize)
+			panic("wdir: compact failed");
+		u.u_dent.d_reclen = spccnt;
+		dp->d_reclen = dsize;
+		dp = (struct direct *)((char *)dp + dsize);
+	}
+	bcopy(&u.u_dent, dp, newsize);
+	bwrite(bp);
+	u.u_pdir->i_flag |= IUPD|ICHG;
 	iput(u.u_pdir);
 }
 

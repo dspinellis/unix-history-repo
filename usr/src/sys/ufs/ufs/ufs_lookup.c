@@ -1,8 +1,11 @@
-/*	ufs_lookup.c	4.14	82/03/31	*/
+/*	ufs_lookup.c	4.15	82/04/19	*/
+
+/* merged into kernel:	@(#)nami.c 2.3 4/8/82 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/inode.h"
+#include "../h/fs.h"
 #include "../h/mount.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -29,34 +32,41 @@ namei(func, flag, follow)
 	register char *cp;
 	register struct buf *bp, *nbp;
 	register struct direct *ep;
+	register struct fs *fs;
 	struct inode *pdp;
-	int i, nlink;
+	enum {NONE, COMPACT, FOUND} slot;
+	int entryfree, entrysize;
+	int spccnt, size, newsize;
+	int loc, prevoff, curoff;
+	int i, nlink, bsize;
+	unsigned pathlen;
+	daddr_t lbn, bn;
 	dev_t d;
-	off_t eo;
 
 	/*
 	 * allocate name buffer; copy name
 	 */
-	nbp = geteblk();
+	nbp = geteblk(MAXPATHLEN);
 	nlink = 0;
-	for (i=0, cp = nbp->b_un.b_addr; *cp = (*func)(); i++) {
-		if ((*cp&0377) == ('/'|0200)) {
+	for (i = 0, cp = nbp->b_un.b_addr; *cp = (*func)(); i++) {
+		if ((*cp & 0377) == ('/'|0200)) {
 			u.u_error = EPERM;
 			break;
 		}
 #ifdef notdef
-		if (*cp++&0200 && flag==1 || cp >= nbp->b_un.b_addr+BSIZE) {
+		if (*cp++ & 0200 && flag == 1 ||
+		    cp >= nbp->b_un.b_addr + MAXPATHLEN) {
 #else
 		cp++;
-		if (cp >= nbp->b_un.b_addr+BSIZE) {
+		if (cp >= nbp->b_un.b_addr + MAXPATHLEN) {
 #endif
 			u.u_error = ENOENT;
 			break;
 		}
 	}
 	if (u.u_error) {
-		dp = NULL;
-		goto out1;
+		brelse(nbp);
+		return (NULL);
 	}
 	cp = nbp->b_un.b_addr;
 	/*
@@ -72,108 +82,199 @@ namei(func, flag, follow)
 	}
 	ilock(dp);
 	dp->i_count++;
-
+	fs = dp->i_fs;
+	newsize = 0;
+dirloop:
 	/*
 	 * dp must be a directory and
 	 * must have X permission.
 	 * cp is a path name relative to that directory.
 	 */
-
-dirloop:
 	if ((dp->i_mode&IFMT) != IFDIR)
 		u.u_error = ENOTDIR;
 	(void) access(dp, IEXEC);
 dirloop2:
-	for (i=0; *cp!='\0' && *cp!='/'; i++) {
+	for (i = 0; *cp != '\0' && *cp != '/'; cp++) {
 #ifdef notdef
-		if (i >= DIRSIZ) {
+		if (i >= MAXNAMLEN) {
 			u.u_error = ENOENT;
 			break;
 		}
-		u.u_dbuf[i] = *cp++;
+		u.u_dent.d_name[i] = *cp;
 #else
-		if (i < DIRSIZ)
-			u.u_dbuf[i] = *cp;
-		cp++;
+		if (i < MAXNAMLEN) {
+			u.u_dent.d_name[i] = *cp;
+			i++;
+		}
 #endif
 	}
-	if (u.u_error)
-		goto out;
-	u.u_pdir = dp;
-	while (i < DIRSIZ)
-		u.u_dbuf[i++] = '\0';
-	if (u.u_dbuf[0] == '\0') {		/* null name, e.g. "/" or "" */
-		if (flag) {
-			u.u_error = ENOENT;
-			goto out;
-		}
-		goto out1;
+	if (u.u_error) {
+		iput(dp);
+		brelse(nbp);
+		return (NULL);
 	}
+	u.u_dent.d_namlen = i;
+	u.u_dent.d_name[i] = '\0';
+	newsize = DIRSIZ(&u.u_dent);
+	u.u_pdir = dp;
+	if (u.u_dent.d_name[0] == '\0') {	/* null name, e.g. "/" or "" */
+		if (flag != 0) {
+			u.u_error = ENOENT;
+			iput(dp);
+			dp = NULL;
+		}
+		u.u_offset = 0;
+		u.u_count = newsize;
+		brelse(nbp);
+		return (dp);
+	}
+	/*
+	 * set up to search a directory
+	 */
+	if (flag == 1)
+		slot = NONE;
+	else
+		slot = FOUND;
+	u.u_offset = 0;
 	u.u_segflg = 1;
-	eo = -1;
 	bp = NULL;
-
-	for (u.u_offset=0; u.u_offset < dp->i_size;
-	   u.u_offset += sizeof(struct direct), ep++) {
+	spccnt = 0;
+	loc = 0;
+	while (u.u_offset < dp->i_size) {
+		/*
+		 * check to see if enough space has been accumulated to make
+		 * an entry by compaction. Reset the free space counter each
+		 * time a directory block is crossed.
+		 */
+		if (slot == NONE) {
+			if (spccnt >= newsize) {
+				slot = COMPACT;
+				entrysize = u.u_offset - entryfree;
+			} else if (loc % DIRBLKSIZ == 0) {
+				entryfree = NULL;
+				spccnt = 0;
+			}
+		}
 		/*
 		 * If offset is on a block boundary,
 		 * read the next directory block.
 		 * Release previous if it exists.
 		 */
-		if ((u.u_offset&BMASK) == 0) {
+		if (blkoff(fs, u.u_offset) == 0) {
 			if (bp != NULL)
 				brelse(bp);
-			bp = bread(dp->i_dev,
-				bmap(dp,(daddr_t)(u.u_offset>>BSHIFT), B_READ));
+			lbn = (daddr_t)lblkno(fs, u.u_offset);
+			bsize = blksize(fs, dp, lbn);
+			if ((bn = bmap(dp, lbn, B_READ)) < 0) {
+				printf("hole in dir: %s i = %d\n",
+				    fs->fs_fsmnt, dp->i_number);
+				if (fs->fs_ronly != 0 ||
+				    (bn = bmap(dp, lbn, B_WRITE, bsize)) < 0) {
+					u.u_offset += bsize;
+					bp = NULL;
+					continue;
+				}
+			}
+			bp = bread(dp->i_dev, fsbtodb(fs, bn), bsize);
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
-				goto out;
+				iput(dp);
+				brelse(nbp);
+				return (NULL);
 			}
-			ep = (struct direct *)bp->b_un.b_addr;
+			loc = 0;
+		} else {
+			loc += ep->d_reclen;
 		}
 		/*
-		 * Note first empty directory slot
-		 * in eo for possible creat.
-		 * String compare the directory entry
-		 * and the current component.
+		 * calculate the next directory entry and run
+		 * some rudimentary bounds checks to make sure
+		 * that it is reasonable. If the check fails
+		 * resync at the beginning of the next directory
+		 * block.
 		 */
-		if (ep->d_ino == 0) {
-			if (eo < 0)
-				eo = u.u_offset;
+		ep = (struct direct *)(bp->b_un.b_addr + loc);
+		i = DIRBLKSIZ - (loc & (DIRBLKSIZ - 1));
+		if (ep->d_reclen <= 0 || ep->d_reclen > i) {
+			loc += i;
+			u.u_offset += i;
 			continue;
 		}
-		if (strncmp(u.u_dbuf, ep->d_name, DIRSIZ) != 0)
+		/*
+		 * If an appropriate sized hole has not yet been found,
+		 * check to see if one is available. Also accumulate space
+		 * in the current block so that we can determine if
+		 * compaction is viable.
+		 */
+		if (slot != FOUND) {
+			size = ep->d_reclen;
+			if (ep->d_ino != 0)
+				size -= DIRSIZ(ep);
+			if (size > 0) {
+				if (size >= newsize) {
+					slot = FOUND;
+					entryfree = u.u_offset;
+					entrysize = DIRSIZ(ep) + newsize;
+				}
+				if (entryfree == NULL)
+					entryfree = u.u_offset;
+				spccnt += size;
+			}
+		}
+		/*
+		 * String compare the directory entry
+		 * and the current component.
+		 * If they do not match, continue to the next entry.
+		 */
+		prevoff = curoff;
+		curoff = u.u_offset;
+		u.u_offset += ep->d_reclen;
+		if (ep->d_ino == 0)
+			continue;
+		if (ep->d_namlen != u.u_dent.d_namlen)
+			continue;
+		if (bcmp(u.u_dent.d_name, ep->d_name, ep->d_namlen))
 			continue;
 		/*
 		 * Here a component matched in a directory.
 		 * If there is more pathname, go back to
 		 * dirloop, otherwise return.
 		 */
-		bcopy((caddr_t)ep, (caddr_t)&u.u_dent, sizeof(struct direct));
+		bcopy((caddr_t)ep, (caddr_t)&u.u_dent, DIRSIZ(ep));
 		brelse(bp);
-		if (flag==2 && *cp=='\0') {
-			if (access(dp, IWRITE))
-				goto out;
-			/* should fix unlink */
-			u.u_offset += sizeof(struct direct);
-			goto out1;
+		if (flag == 2 && *cp == '\0') {
+			brelse(nbp);
+			if (access(dp, IWRITE)) {
+				iput(dp);
+				return (NULL);
+			}
+			if (curoff % DIRBLKSIZ == 0) {
+				u.u_offset = curoff;
+				u.u_count = 0;
+				return (dp);
+			}
+			u.u_offset = prevoff;
+			u.u_count = DIRSIZ((struct direct *)
+			    (bp->b_un.b_addr + blkoff(fs, prevoff)));
+			return (dp);
 		}
 		/*
 		 * Special handling for ".."
 		 */
-		if (u.u_dent.d_name[0]=='.' && u.u_dent.d_name[1]=='.' &&
-		    u.u_dent.d_name[2]=='\0') {
+		if (u.u_dent.d_name[0] == '.' && u.u_dent.d_name[1] == '.' &&
+		    u.u_dent.d_name[2] == '\0') {
 			if (dp == u.u_rdir)
 				u.u_dent.d_ino = dp->i_number;
-			else if (u.u_dent.d_ino==ROOTINO &&
+			else if (u.u_dent.d_ino == ROOTINO &&
 			   dp->i_number == ROOTINO) {
-				for(i=1; i<NMOUNT; i++)
+				for (i = 1; i < NMOUNT; i++)
 					if (mount[i].m_bufp != NULL &&
 					   mount[i].m_dev == dp->i_dev) {
 						iput(dp);
 						dp = mount[i].m_inodp;
 						ilock(dp);
 						dp->i_count++;
+						fs = dp->i_fs;
 						cp -= 2;     /* back over .. */
 						goto dirloop2;
 					}
@@ -182,32 +283,44 @@ dirloop2:
 		d = dp->i_dev;
 		irele(dp);
 		pdp = dp;
-		dp = iget(d, u.u_dent.d_ino);
+		dp = iget(d, fs, u.u_dent.d_ino);
 		if (dp == NULL)  {
 			iput(pdp);
-			goto out1;
+			brelse(nbp);
+			return (NULL);
 		}
+		fs = dp->i_fs;
 		/*
 		 * Check for symbolic link
 		 */
-		if ((dp->i_mode&IFMT)==IFLNK && (follow || *cp=='/')) {
-			char *ocp;
-
-			ocp = cp;
-			while (*cp++)
-				;
-			if (dp->i_size + (cp-ocp) >= BSIZE-1 || ++nlink>8) {
+		if ((dp->i_mode & IFMT) == IFLNK && (follow || *cp == '/')) {
+			pathlen = strlen(cp) + 1;
+			if (dp->i_size + pathlen >= MAXPATHLEN - 1 ||
+			    ++nlink > MAXSYMLINKS) {
 				u.u_error = ELOOP;
 				iput(pdp);
-				goto out;
+				iput(dp);
+				brelse(nbp);
+				return (NULL);
 			}
-			bcopy(ocp, nbp->b_un.b_addr+dp->i_size,
-			  (unsigned)(cp-ocp));
-			bp = bread(dp->i_dev, bmap(dp, (daddr_t)0, B_READ));
+			bcopy(cp, nbp->b_un.b_addr + dp->i_size, pathlen);
+			bn =  bmap(dp, (daddr_t)0, B_READ);
+			if (bn < 0) {
+				printf("hole in symlink: %s i = %d\n",
+				    fs->fs_fsmnt, dp->i_number);
+				iput(pdp);
+				iput(dp);
+				brelse(nbp);
+				return (NULL);
+			}
+			bp = bread(dp->i_dev, fsbtodb(fs, bn),
+				   (int)blksize(fs, dp, (daddr_t)0));
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
 				iput(pdp);
-				goto out;
+				iput(dp);
+				brelse(nbp);
+				return (NULL);
 			}
 			bcopy(bp->b_un.b_addr, nbp->b_un.b_addr,
 			  (unsigned)dp->i_size);
@@ -226,6 +339,7 @@ dirloop2:
 				dp = pdp;
 				ilock(dp);
 			}
+			fs = dp->i_fs;
 			goto dirloop;
 		}
 		iput(pdp);
@@ -234,29 +348,39 @@ dirloop2:
 				cp++;
 			goto dirloop;
 		}
-		goto out1;
+		/*
+		 * End of path, so return name matched.
+		 */
+		u.u_offset -= ep->d_reclen;
+		u.u_count = newsize;
+		brelse(nbp);
+		return (dp);
 	}
 	/*
 	 * Search failed.
+	 * Report what is appropriate as per flag.
 	 */
 	if (bp != NULL)
 		brelse(bp);
-	if (flag==1 && *cp=='\0' && dp->i_nlink) {
-		if (access(dp, IWRITE))
-			goto out;
-		if (eo>=0)
-			u.u_offset = eo;
+	if (flag == 1 && *cp == '\0' && dp->i_nlink != 0) {
+		brelse(nbp);
+		if (access(dp, IWRITE)) {
+			iput(dp);
+			return (NULL);
+		}
+		if (slot == NONE) {
+			u.u_count = 0;
+		} else {
+			u.u_offset = entryfree;
+			u.u_count = entrysize;
+		}
 		dp->i_flag |= IUPD|ICHG;
-		dp = NULL;
-		goto out1;
+		return (NULL);
 	}
 	u.u_error = ENOENT;
-out:
 	iput(dp);
-	dp = NULL;
-out1:
 	brelse(nbp);
-	return (dp);
+	return (NULL);
 }
 
 /*
@@ -286,17 +410,24 @@ uchar()
 }
 
 #ifndef vax
-strncmp(s1, s2, len)
+bcmp(s1, s2, len)
 	register char *s1, *s2;
-	register len;
+	register int len;
 {
 
-	do {
-		if (*s1 != *s2++)
+	while (--len)
+		if (*s1++ != *s2++)
 			return (1);
-		if (*s1++ == '\0')
-			return (0);
-	} while (--len);
 	return (0);
+}
+
+strlen(s1)
+	register char *s1;
+{
+	register int len;
+
+	for (len = 0; *s1++ != '\0'; len++)
+		/* void */;
+	return (len);
 }
 #endif
