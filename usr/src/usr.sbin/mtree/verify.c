@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)verify.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)verify.c	5.3 (Berkeley) %G%";
 #include <stdio.h>
 #include "mtree.h"
 
-extern ENTRY *root;
+extern NODE *root;
 
 static char path[MAXPATHLEN];
 
@@ -33,7 +33,7 @@ vwalk()
 	extern int ftsoptions, dflag, eflag, rflag;
 	register FTS *t;
 	register FTSENT *p;
-	register ENTRY *ep, *level;
+	register NODE *ep, *level;
 
 	if (!(t = ftsopen(".", ftsoptions, (int (*)())NULL))) {
 		(void)fprintf(stderr,
@@ -81,12 +81,12 @@ vwalk()
 			    p->fts_name, FNM_PATHNAME|FNM_QUOTE) ||
 			    !strcmp(ep->name, p->fts_name)) {
 				ep->flags |= F_VISIT;
-				if (ep->info.flags&F_IGN) {
+				if (ep->flags & F_IGN) {
 					(void)ftsset(t, p, FTS_SKIP);
 					continue;
 				}
-				compare(ep->name, &ep->info, p);
-				if (ep->child && ep->info.type == F_DIR &&
+				compare(ep->name, ep, p);
+				if (ep->child && ep->type == F_DIR &&
 				    p->fts_info == FTS_D)
 					level = ep->child;
 				break;
@@ -109,7 +109,7 @@ vwalk()
 }
 
 miss(p, tail)
-	register ENTRY *p;
+	register NODE *p;
 	register char *tail;
 {
 	extern int dflag, uflag;
@@ -117,20 +117,20 @@ miss(p, tail)
 	register char *tp;
 
 	for (; p; p = p->next) {
-		if (p->info.type != F_DIR && (dflag || p->flags&F_VISIT))
+		if (p->type != F_DIR && (dflag || p->flags & F_VISIT))
 			continue;
 		(void)strcpy(tail, p->name);
-		if (!(p->flags&F_VISIT))
+		if (!(p->flags & F_VISIT))
 			(void)printf("missing: %s", path);
-		if (p->info.type != F_DIR) {
+		if (p->type != F_DIR) {
 			putchar('\n');
 			continue;
 		}
 
 		create = 0;
-		if (!(p->flags&F_VISIT) && uflag)
+		if (!(p->flags & F_VISIT) && uflag)
 #define	MINBITS	(F_GROUP|F_MODE|F_OWNER)
-			if ((p->info.flags & MINBITS) != MINBITS)
+			if ((p->flags & MINBITS) != MINBITS)
 				(void)printf(" (not created -- group, mode or owner not specified)");
 			else if (mkdir(path, S_IRWXU))
 				(void)printf(" (not created: %s)",
@@ -140,7 +140,7 @@ miss(p, tail)
 				(void)printf(" (created)");
 			}
 
-		if (!(p->flags&F_VISIT))
+		if (!(p->flags & F_VISIT))
 			(void)putchar('\n');
 
 		for (tp = tail; *tp; ++tp);
@@ -150,12 +150,12 @@ miss(p, tail)
 
 		if (!create)
 			continue;
-		if (chown(path, p->info.st_uid, p->info.st_gid)) {
+		if (chown(path, p->st_uid, p->st_gid)) {
 			(void)printf("%s: owner/group/mode not modified: %s\n",
 			    path, strerror(errno));
 			continue;
 		}
-		if (chmod(path, p->info.st_mode))
+		if (chmod(path, p->st_mode))
 			(void)printf("%s: permissions not set: %s\n",
 			    path, strerror(errno));
 	}

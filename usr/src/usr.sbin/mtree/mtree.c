@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mtree.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mtree.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)mtree.c	5.6 (Berkeley) %G%";
 #include <fts.h>
 #include "mtree.h"
 
-ENTRY *root;
+NODE *root;
 int exitval;
 int cflag, dflag, eflag, rflag, uflag;
 

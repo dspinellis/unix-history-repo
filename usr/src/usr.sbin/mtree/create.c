@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -138,7 +138,7 @@ cwalk()
 
 #define	MAXGID	5000
 #define	MAXUID	5000
-#define	MAXMODE	0777 + 1
+#define	MAXMODE	MBITS + 1
 
 static
 statdir(t, parent, puid, pgid, pmode, tabs)
@@ -174,7 +174,7 @@ statdir(t, parent, puid, pgid, pmode, tabs)
 	*tabs = 1;
 	maxuid = maxgid = maxmode = 0;
 	for (; p; p = p->fts_link) {
-		mode = p->fts_statb.st_mode&0777;
+		mode = p->fts_statb.st_mode & MBITS;
 		if (mode < MAXMODE && ++m[mode] > maxmode) {
 			savemode = mode;
 			maxmode = m[mode];
