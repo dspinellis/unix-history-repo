@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.23 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -83,16 +83,18 @@ getfh(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct nameidata *ndp = &u.u_nd;
+	register struct nameidata *ndp;
 	register struct vnode *vp;
 	fhandle_t fh;
 	int error;
+	struct nameidata nd;
 
 	/*
 	 * Must be super user
 	 */
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
+	ndp = &nd;
 	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
