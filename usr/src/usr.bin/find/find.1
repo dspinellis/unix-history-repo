@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)find.1	6.17 (Berkeley) %G%
+.\"     @(#)find.1	6.18 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FIND 1
@@ -257,6 +257,11 @@ This primary always evaluates to true.
 It causes
 .Nm find
 to not descend into the current file.
+Note, the
+.Ic prune
+primary has no effect if the
+.Op \-d
+option was specified.
 .Tp Cx Ic size
 .Cx \&\ \&
 .Ar n
