@@ -1,4 +1,4 @@
-/*	vm_machdep.c	1.4	86/01/24	*/
+/*	vm_machdep.c	1.5	86/04/03	*/
 
 #include "../machine/pte.h"
 
@@ -232,7 +232,7 @@ vtopte(p, v)
 	}
 	if (v < p->p_tsize + p->p_dsize)
 		return (p->p_p0br + v);
-	return (p->p_p0br + (p->p_szpt*NPTEPG + v - (BTOPUSRSTACK + UPAGES)));
+	return (p->p_addr + (v - BTOPUSRSTACK));
 }
 #endif
 
