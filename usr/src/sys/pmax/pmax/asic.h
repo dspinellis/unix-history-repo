@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asic.h	7.2 (Berkeley) %G%
+ *	@(#)asic.h	7.3 (Berkeley) %G%
  */
 
 /* 
@@ -212,4 +212,4 @@
  */
 #define	ASIC_SYS_ETHER_ADDRESS(base)	((base) + ASIC_SLOT_2_START)
 #define	ASIC_SYS_LANCE(base)		((base) + ASIC_SLOT_3_START)
-#endif	MIPS_ASIC_H
+#endif	/* MIPS_ASIC_H */
