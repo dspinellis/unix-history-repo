@@ -4,14 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kvm.h	5.2 (Berkeley) %G%
+ *	@(#)kvm.h	5.3 (Berkeley) %G%
  */
 
-#include <sys/cdefs.h>
+#ifndef _KVM_H_
+#define	_KVM_H_
 
 /* Default version symbol. */
 #define	VRS_SYM		"_version"
 #define	VRS_KEY		"VERSION"
+
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 char		*kvm_getargs __P((const struct proc *, const struct user *));
@@ -20,3 +23,5 @@ char		*kvm_geterr __P((void));
 struct user	*kvm_getu __P((const struct proc *));
 struct proc	*kvm_nextproc __P((void));
 __END_DECLS
+
+#endif /* !_KVM_H_ */

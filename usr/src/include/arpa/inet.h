@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inet.h	5.6 (Berkeley) %G%
+ *	@(#)inet.h	5.7 (Berkeley) %G%
  */
+
+#ifndef _INET_H_
+#define	_INET_H_
 
 /* External definitions for functions in inet(3) */
 
@@ -19,3 +22,5 @@ extern unsigned long	 inet_netof __P((struct in_addr));
 extern unsigned long	 inet_network __P((const char *));
 extern char		*inet_ntoa __P((struct in_addr));
 __END_DECLS
+
+#endif /* !_INET_H_ */

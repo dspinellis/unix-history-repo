@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftp.h	5.5 (Berkeley) %G%
+ *	@(#)ftp.h	5.6 (Berkeley) %G%
  */
 
-/*
- * Definitions for FTP
- * See RFC-765
- */
+#ifndef _FTP_H_
+#define	_FTP_H_
+
+/* Definitions for FTP; see RFC-765. */
 
 /*
  * Reply codes.
@@ -79,3 +79,5 @@ char *modenames[] =  {"0", "Stream", "Block", "Compressed" };
 #define	BLK_RESTART	0x10	/* Block is Restart Marker */
 
 #define	BLK_BYTECOUNT	2	/* Bytes in this block */
+
+#endif /* !_FTP_H_ */

@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)grp.h	5.3 (Berkeley) %G%
+ *	@(#)grp.h	5.4 (Berkeley) %G%
  */
+
+#ifndef _GRP_H_
+#define	_GRP_H_
 
 #ifndef _POSIX_SOURCE
 #define	_PATH_GROUP		"/etc/group"
@@ -31,3 +34,5 @@ void setgrfile __P((const char *));
 int setgroupent __P((int));
 #endif
 __END_DECLS
+
+#endif /* !_GRP_H_ */

@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pwd.h	5.10 (Berkeley) %G%
+ *	@(#)pwd.h	5.11 (Berkeley) %G%
  */
+
+#ifndef _PWD_H_
+#define	_PWD_H_
 
 #include <sys/types.h>
 
@@ -50,3 +53,5 @@ int		 setpwent __P((void));
 void		 endpwent __P((void));
 #endif
 __END_DECLS
+
+#endif /* !_PWD_H_ */

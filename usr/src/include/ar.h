@@ -7,8 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ar.h	5.3 (Berkeley) %G%
+ *	@(#)ar.h	5.4 (Berkeley) %G%
  */
+
+#ifndef _AR_H_
+#define	_AR_H_
 
 /* Pre-4BSD archives had these magic numbers in them. */
 #define	OARMAG1	0177555
@@ -29,3 +32,5 @@ struct ar_hdr {
 #define	ARFMAG	"`\n"
 	char ar_fmag[2];		/* consistency check */
 };
+
+#endif /* !_AR_H_ */

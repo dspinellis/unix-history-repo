@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)assert.h	4.3 (Berkeley) %G%
+ *	@(#)assert.h	4.4 (Berkeley) %G%
  */
+
+#ifndef _ASSERT_H_
+#define	_ASSERT_H_
 
 #ifdef NDEBUG
 #define	assert
@@ -21,3 +24,5 @@
 }
 #define	_assert(expression)	assert(expression)
 #endif
+
+#endif /* !_ASSERT_H_ */

@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fstab.h	5.11 (Berkeley) %G%
+ *	@(#)fstab.h	5.12 (Berkeley) %G%
  */
+
+#ifndef _FSTAB_H_
+#define _FSTAB_H_
 
 /*
  * File system table, see fstab(5).
@@ -46,3 +49,5 @@ struct fstab *getfsfile __P((const char *));
 int setfsent __P((void));
 void endfsent __P((void));
 __END_DECLS
+
+#endif /* !_FSTAB_H_ */

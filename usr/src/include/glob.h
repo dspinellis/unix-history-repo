@@ -7,8 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)glob.h	5.5 (Berkeley) %G%
+ *	@(#)glob.h	5.6 (Berkeley) %G%
  */
+
+#ifndef _GLOB_H_
+#define	_GLOB_H_
 
 typedef struct {
 	int gl_pathc;		/* count of total paths so far */
@@ -41,3 +44,5 @@ __BEGIN_DECLS
 int glob __P((const char *, int, int (*)(char *, int), glob_t *));
 void globfree __P((glob_t *));
 __END_DECLS
+
+#endif /* !_GLOB_H_ */
