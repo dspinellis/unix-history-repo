@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 # Configuration options
 #  
@@ -97,8 +97,6 @@ OBJS=	main.o object.o create.o tok.o display.o global.o data.o io.o \
 	monster.o store.o diag.o help.o config.o nap.o bill.o scores.o \
 	signal.o moreobj.o movem.o regen.o fortune.o savelev.o
 
-DOTFILES= .larn.help .larnmaze .larnopts .lfortune
-
 CFLAGS= -O ${OPTIONS} -DLARNHOME=\"${LARNHOME}/\"
 
 all: larn
@@ -112,10 +110,8 @@ install: ${MAN}
 	chown games.src ${DESTDIR}/usr/games/lib/larnfiles
 	install -s -o games -g bin -m 4700 larn ${DESTDIR}/usr/games/hide
 	(cd ${DESTDIR}/usr/games; rm -f larn; ln -s dm larn; chown games.bin larn)
-	install -c -o games -g bin -m 444 .larn.help ${DESTDIR}/usr/games/lib/larnfiles
-	install -c -o games -g bin -m 444 .larnmaze ${DESTDIR}/usr/games/lib/larnfiles
-	install -c -o games -g bin -m 444 .larnopts ${DESTDIR}/usr/games/lib/larnfiles
-	install -c -o games -g bin -m 444 .lfortune ${DESTDIR}/usr/games/lib/larnfiles
+	install -c -o games -g bin -m 444 larnmaze larnopts lfortune \
+		larn.help ${DESTDIR}/usr/games/lib/larnfiles
 
 clean:
 	rm -f ${OBJS} core larn
