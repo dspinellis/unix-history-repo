@@ -1,4 +1,4 @@
-/*	ioctl.h	4.18	82/03/03	*/
+/*	ioctl.h	4.19	82/03/11	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -98,11 +98,13 @@ struct ltchars {
 #define	TIOCSTI		(('t'<<8)|114)	/* simulate a terminal in character */
 #define	TIOCNOTTY	(('t'<<8)|113)	/* get rid of tty association */
 #define	TIOCPKT		(('t'<<8)|112)	/* on pty: set/clear packet mode */
-#define		TIOCPKT_DATA		0	/* data packet */
-#define		TIOCPKT_FLUSHREAD	1	/* flush packet */
-#define		TIOCPKT_FLUSHWRITE	2	/* flush packet */
-#define		TIOCPKT_STOP		4	/* stop output */
-#define		TIOCPKT_START		8	/* start output */
+#define		TIOCPKT_DATA		0x00	/* data packet */
+#define		TIOCPKT_FLUSHREAD	0x01	/* flush packet */
+#define		TIOCPKT_FLUSHWRITE	0x02	/* flush packet */
+#define		TIOCPKT_STOP		0x04	/* stop output */
+#define		TIOCPKT_START		0x08	/* start output */
+#define		TIOCPKT_NOSTOP		0x10	/* no more ^S, ^Q */
+#define		TIOCPKT_DOSTOP		0x20	/* now do ^S ^Q */
 #define	TIOCSTOP	(('t'<<8)|111)	/* stop output, like ^S */
 #define	TIOCSTART	(('t'<<8)|110)	/* start output, like ^Q */
 #define	TIOCMSET	(('t'<<8)|109)	/* set all modem bits */

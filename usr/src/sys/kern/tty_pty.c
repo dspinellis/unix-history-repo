@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.17	82/02/18	*/
+/*	tty_pty.c	4.18	82/03/11	*/
 
 /*
  * Pseudo-teletype Driver
@@ -40,6 +40,7 @@ struct	pt_ioctl {
 #define	PF_PKT		0x08		/* packet mode */
 #define	PF_STOPPED	0x10		/* user told stopped */
 #define	PF_REMOTE	0x20		/* remote and flow controlled input */
+#define	PF_NOSTOP	0x40
 
 /*ARGSUSED*/
 ptsopen(dev, flag)
@@ -259,7 +260,7 @@ ptsstop(tp, flush)
 	} else {
 		pti->pt_flags &= ~PF_STOPPED;
 	}
-	pti->pt_send = flush;
+	pti->pt_send |= flush;
 	ptcwakeup(tp);
 }
 
@@ -364,12 +365,11 @@ ptyioctl(dev, cmd, addr, flag)
 	caddr_t addr;
 	dev_t dev;
 {
-	register struct tty *tp;
+	register struct tty *tp = &pt_tty[minor(dev)];
+	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 
-	tp = &pt_tty[minor(dev)];
 	/* IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG ??? */
 	if (cdevsw[major(dev)].d_open == ptcopen) {
-		register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 		if (cmd == TIOCPKT) {
 			int packet;
 			if (copyin((caddr_t)addr, &packet, sizeof (packet))) {
@@ -412,5 +412,23 @@ ptyioctl(dev, cmd, addr, flag)
 	}
 	if (ttioctl(tp, cmd, addr, dev) == 0)
 		u.u_error = ENOTTY;
+	{ int stop = (tp->t_un.t_chr.t_stopc == ('s'&037) &&
+		      tp->t_un.t_chr.t_startc == ('q'&037));
+	if (pti->pt_flags & PF_NOSTOP) {
+		if (stop) {
+			pti->pt_send &= TIOCPKT_NOSTOP;
+			pti->pt_send |= TIOCPKT_DOSTOP;
+			pti->pt_flags &= ~PF_NOSTOP;
+			ptcwakeup(tp);
+		}
+	} else {
+		if (stop == 0) {
+			pti->pt_send &= ~TIOCPKT_DOSTOP;
+			pti->pt_send |= TIOCPKT_NOSTOP;
+			pti->pt_flags |= PF_NOSTOP;
+			ptcwakeup(tp);
+		}
+	}
+	}
 }
 #endif
