@@ -1,4 +1,4 @@
-#	Makefile	4.5	82/07/29
+#	Makefile	4.6	82/11/07
 #
 # makefile for intermachine communications package
 #
@@ -28,7 +28,7 @@
 #	VMUNIX			allow VMUNIX tty stuff and job control
 
 ADM=${DESTDIR}/usr/adm
-BIN=${DESTDIR}/usr/bin
+BIN=${DESTDIR}/usr/ucb
 OWNER=uucp
 CFLAGS=-O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG
 LDFLAGS=
@@ -37,9 +37,7 @@ OBJECTS=acu.o acutab.o biz22.o biz31.o cmds.o cmdtab.o cu.o df.o dn11.o hunt.o \
 SOURCES=acu.c acutab.c biz22.c biz31.c cmds.c cmdtab.c cu.c df.c dn11.c hunt.c \
 	lock.c log.c remcap.c remote.c tip.c tipout.c uucplock.c value.c  \
 	vars.c ventel.c
-MANS=tip.1 remote.5 phones.5
 CXREF=/usr/ucb/ctags -xw
-DIST=./dist
 
 tip:	${OBJECTS} remcap.o uucplock.o
 	${CC} -o tip ${LDFLAGS} ${OBJECTS} remcap.o uucplock.o
@@ -58,7 +56,7 @@ install: all
 #	cp /dev/null ${ADM}/aculog
 #	chown ${OWNER} ${ADM}/aculog
 #	chmod 600 ${ADM}/aculog
-#	@echo "create /etc/remote and /etc/phones"
+	@echo "create /etc/remote and /etc/phones"
 
 aculog:	aculog.c
 	${CC} -o aculog ${LDFLAGS} aculog.c
@@ -83,12 +81,3 @@ print:
 
 lint:
 	-lint -hbacvx ${CFLAGS} ${SOURCES}
-
-distribution:
-	-if test ! -d ${DIST} ; then mkdir ${DIST} ; else rm -f ${DIST}/* ; fi
-	cp ${SOURCES} tip.h makefile README TODO ${DIST}
-	cp remote-file phones-file ${MANS} ${DIST}
-
-tape:
-	cd ${DIST}; tar c README TODO tip.h ${SOURCES} makefile \
-		remote-file phones-file ${MANS}
