@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.20 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.21 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -618,7 +618,7 @@ dofile()
 		return;
 	}
 	printf("%d/%d open files\n", nf, nfile);
-	printf("   LOC   TYPE    FLG  CNT  MSG    DATA    OFFSET\n");
+	printf("   LOC   TYPE    FLG     CNT  MSG    DATA    OFFSET\n");
 	for (fp=xfile,loc=(int)afile; fp < &xfile[nfile]; fp++,loc+=sizeof(xfile[0])) {
 		if (fp->f_count==0)
 			continue;
@@ -630,6 +630,9 @@ dofile()
 		putf(fp->f_flag&FREAD, 'R');
 		putf(fp->f_flag&FWRITE, 'W');
 		putf(fp->f_flag&FAPPEND, 'A');
+		putf(fp->f_flag&FSHLOCK, 'S');
+		putf(fp->f_flag&FEXLOCK, 'X');
+		putf(fp->f_flag&FASYNC, 'I');
 		printf("  %3d", mask(fp->f_count));
 		printf("  %3d", mask(fp->f_msgcount));
 		printf("  %8.1x", fp->f_data);
