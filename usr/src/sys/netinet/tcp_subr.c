@@ -1,4 +1,4 @@
-/* tcp_subr.c 4.9 81/12/19 */
+/* tcp_subr.c 4.10 81/12/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -175,7 +175,6 @@ COUNT(TCP_DROP);
 	}
 	so->so_error = errno;
 	tcp_close(tp);
-	in_pcbdetach(tp->t_inpcb);
 }
 
 /*
@@ -203,7 +202,7 @@ COUNT(TCP_CLOSE);
 		(void) m_free(dtom(tp->t_ipopt));
 	(void) m_free(dtom(tp));
 	inp->inp_ppcb = 0;
-	in_pcbdisconnect(inp);
+	in_pcbdetach(inp);
 	soisdisconnected(so);
 }
 
