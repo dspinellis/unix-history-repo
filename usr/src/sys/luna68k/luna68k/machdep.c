@@ -13,7 +13,7 @@
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  * from: hp300/hp300/machdep.c	8.3 (Berkeley) 11/14/93
  *
- *	@(#)machdep.c	8.2 (Berkeley) %G%
+ *	@(#)machdep.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -218,7 +218,7 @@ again:
 	 */
 	size = MAXBSIZE * nbuf;
 	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t *)&buffers,
-				   &maxaddr, size, FALSE);
+				   &maxaddr, size, TRUE);
 	minaddr = (vm_offset_t)buffers;
 	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t)0,
 			&minaddr, size, FALSE) != KERN_SUCCESS)
