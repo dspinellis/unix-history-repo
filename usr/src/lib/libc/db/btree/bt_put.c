@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -252,7 +252,7 @@ bt_fast(t, key, data, exactp)
 			goto miss;
 		if ((cmp = __bt_cmp(t, key, &e)) < 0)
 			goto miss;
-		t->bt_last.index = ++e.index;
+		t->bt_last.index = cmp ? ++e.index : e.index;
 	} else {
 		if (e.page->prevpg != P_INVALID)
 			goto miss;
