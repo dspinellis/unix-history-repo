@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -53,7 +53,7 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 			checked += n + 1;
 			while (--n >= 0) {
 				if ((c = *cp++) == '.') {
-					if (dn+n+1 >= eom)
+					if (dn + n + 2 >= eom)
 						return (-1);
 					*dn++ = '\\';
 				}
