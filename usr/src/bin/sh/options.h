@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)options.h	5.1 (Berkeley) %G%
+ *	@(#)options.h	5.2 (Berkeley) %G%
  */
 
 struct shparam {
@@ -30,11 +30,12 @@ struct shparam {
 #define xflag optval[7]
 #define zflag optval[8]
 #define vflag optval[9]
+#define	Eflag optval[10]
 
-#define NOPTS	10
+#define NOPTS	11
 
 #ifdef DEFINE_OPTIONS
-const char optchar[NOPTS+1] = "efIijnsxzv";       /* shell flags */
+const char optchar[NOPTS+1] = "efIijnsxzvE";       /* shell flags */
 char optval[NOPTS+1];           /* values of option flags */
 #else
 extern const char optchar[NOPTS+1];
