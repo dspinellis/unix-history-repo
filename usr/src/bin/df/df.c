@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)df.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)df.c	4.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 #include <sys/param.h>
@@ -120,7 +120,8 @@ char *file;
 		fprintf(stderr,"cannot open %s\n", file);
 		return;
 	}
-	sync();
+	if (lflag)
+		sync();
 	bread(1L, (char *)&sblock, sizeof(sblock));
 	printf("%-12.12s%s", file, mp = mpath(file));
 	if (strlen(mp) < 4)
