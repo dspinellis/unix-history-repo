@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.106 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.107 (Berkeley) %G%
  */
 
 /*
@@ -84,6 +84,7 @@ struct vnodeopv_entry_desc nfsv2_vnodeop_entries[] = {
 	{ &vop_strategy_desc, nfs_strategy },	/* strategy */
 	{ &vop_print_desc, nfs_print },		/* print */
 	{ &vop_islocked_desc, nfs_islocked },	/* islocked */
+	{ &vop_pathconf_desc, nfs_pathconf },	/* pathconf */
 	{ &vop_advlock_desc, nfs_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, nfs_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, nfs_valloc },	/* valloc */
@@ -134,6 +135,7 @@ struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
 	{ &vop_strategy_desc, spec_strategy },	/* strategy */
 	{ &vop_print_desc, nfs_print },		/* print */
 	{ &vop_islocked_desc, nfs_islocked },	/* islocked */
+	{ &vop_pathconf_desc, spec_pathconf },	/* pathconf */
 	{ &vop_advlock_desc, spec_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, spec_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, spec_valloc },	/* valloc */
@@ -182,6 +184,7 @@ struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
 	{ &vop_strategy_desc, fifo_badop },	/* strategy */
 	{ &vop_print_desc, nfs_print },		/* print */
 	{ &vop_islocked_desc, nfs_islocked },	/* islocked */
+	{ &vop_pathconf_desc, fifo_pathconf },	/* pathconf */
 	{ &vop_advlock_desc, fifo_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, fifo_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, fifo_valloc },	/* valloc */
@@ -2124,6 +2127,24 @@ loop:
 		np->n_flag &= ~NWRITEERR;
 	}
 	return (error);
+}
+
+/*
+ * Return POSIX pathconf information applicable to nfs.
+ *
+ * Currently the NFS protocol does not support getting such
+ * information from the remote server.
+ */
+/* ARGSUSED */
+nfs_pathconf(ap)
+	struct vop_pathconf_args /* {
+		struct vnode *a_vp;
+		int a_name;
+		int *a_retval;
+	} */ *ap;
+{
+
+	return (EINVAL);
 }
 
 /*
