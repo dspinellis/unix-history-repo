@@ -1,0 +1,98 @@
+dnl Process this file with autoconf to produce a configure script for gzip
+dnl
+dnl Same as AC_RETSIGTYPE, but use a void default.
+dnl
+define(AC_RETSIGTYP,
+[AC_COMPILE_CHECK([return type of signal handlers],
+[#include <sys/types.h>
+#include <signal.h>
+#ifdef signal
+#undef signal
+#endif
+extern void (*signal ()) ();],
+[int i;],
+[],
+[AC_DEFINE(RETSIGTYPE, int)],
+)]
+)dnl
+dnl
+dnl End of local macros
+dnl
+AC_INIT(gzip.c)
+AC_PROG_CC
+AC_PROG_CPP
+dnl
+dnl Try to assemble match.S with and without leading underline.
+dnl cc -E produces incorrect asm files on SVR4, we must use /lib/cpp.
+dnl Also, "gcc -E match.s" ignores -E, so we must use match.S.
+echo checking for underline in external names
+test -z "$ASCPP" -a -f /lib/cpp && ASCPP=/lib/cpp
+test -z "$ASCPP" && ASCPP="$CC -E"
+cat > conftest.c <<EOF
+int foo() {return 0;}
+EOF
+eval "$CC -c conftest.c > /dev/null 2>&1"
+if nm conftest.o | grep _foo > /dev/null 2>&1 ; then
+  :
+else
+  ASCPP="${ASCPP} -DNO_UNDERLINE"
+fi
+rm -f _match.o conftest.c conftest.o
+if echo "$DEFS" | grep NO_ASM >/dev/null; then
+  :
+else
+  echo checking for assembler
+  OBJA=""
+  if eval "$ASCPP $srcdir/match.S > _match.s 2>/dev/null"; then
+    if test ! -s _match.s || grep error < _match.s > /dev/null; then
+      :
+    elif eval "$CC -c _match.s >/dev/null 2>&1" && test -f _match.o; then
+      DEFS="${DEFS} -DASMV"
+      OBJA=match.o
+    fi
+  fi
+  rm -f _match.s _match.o
+fi
+dnl
+AC_PROG_INSTALL
+AC_AIX
+AC_MINIX
+AC_ISC_POSIX
+AC_DYNIX_SEQ
+AC_STDC_HEADERS
+dnl if STDC_HEADERS can't be defined, look for special files:
+AC_HEADER_CHECK(string.h, ,AC_DEFINE(NO_STRING_H))
+AC_HEADER_CHECK(stdlib.h, ,AC_DEFINE(NO_STDLIB_H))
+AC_HEADER_CHECK(memory.h, ,AC_DEFINE(NO_MEMORY_H))
+AC_HEADER_CHECK(fcntl.h,  ,AC_DEFINE(NO_FCNTL_H))
+AC_HEADER_CHECK(time.h,   ,AC_DEFINE(NO_TIME_H))
+AC_HAVE_HEADERS(unistd.h)
+utime=0
+AC_HEADER_CHECK(utime.h, utime=1 ,AC_DEFINE(NO_UTIME_H))
+if test $utime -eq 0; then
+  AC_HAVE_HEADERS(sys/utime.h)
+fi
+AC_DIR_HEADER
+AC_XENIX_DIR
+AC_RETSIGTYP
+AC_SIZE_T
+AC_HEADER_EGREP(off_t, sys/types.h, ,AC_DEFINE(NO_OFF_T))
+AC_HAVE_POUNDBANG([SEDCMD="1d"], [SEDCMD=""])
+AC_PREFIX(gzip)
+if test -z "$G" -a -n "$prefix" -a -f $prefix/bin/gznew; then
+  G=g
+fi
+if test -z "$ZCAT"; then
+  if test -n "$prefix" -a -f $prefix/bin/gzcat; then
+    ZCAT=gzcat
+  else
+    ZCAT=${G}zcat
+  fi
+fi
+AC_SUBST(ZCAT)dnl
+AC_SUBST(G)dnl
+AC_SUBST(CFLAGS)dnl
+AC_SUBST(ASCPP)dnl
+AC_SUBST(OBJA)dnl
+AC_SUBST(SEDCMD)dnl
+AC_OUTPUT(Makefile)
