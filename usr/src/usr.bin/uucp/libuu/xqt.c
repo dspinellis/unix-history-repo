@@ -1,11 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)xqt.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)xqt.c	5.3 (Berkeley) %G%";
 #endif
 
-#include "uucp.h"
 #include <signal.h>
+#include "uucp.h"
 
 int LocalOnly = 0;
+
+/*LINTLIBRARY*/
 
 /*
  *	start up uucico for rmtname
@@ -34,7 +36,7 @@ char *rmtname;
 		signal(SIGQUIT, SIG_IGN);
 		signal(SIGKILL, SIG_IGN);
 		if (rmtname[0] != '\0')
-			sprintf(opt, "-s%.7s", rmtname);
+			sprintf(opt, "-s%s", rmtname);
 		else
 			opt[0] = '\0';
 #ifndef	VMS
