@@ -1,0 +1,8 @@
+#!/bin/sh
+: make APL manual, strip out underscores
+nroff -ms man.? | tr -d "\010_" > manual
+/bin/ed manual << !
+g/..*/s/^/	/
+w
+q
+!
