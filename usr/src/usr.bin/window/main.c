@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	1.5 83/07/20";
+static	char *sccsid = "@(#)main.c	1.6 83/07/22";
 #endif
 
 #include "defs.h"
@@ -17,13 +17,13 @@ main()
 		fprintf("Can't do windows on this terminal.\n");
 		exit(1);
 	}
-	if ((cmdwin = wwopen(WW_NONE, 0, 1, WCols, 0, 0)) == 0) {
+	if ((cmdwin = wwopen(WW_NONE, 0, 1, wwncol, 0, 0)) == 0) {
 		fflush(stdout);
 		fprintf(stderr, "Can't open command window.\r\n");
 		goto bad;
 	}
 	wwsetcurwin(cmdwin);
-	for (n = 0; n < WCols; n++)			/* XXX */
+	for (n = 0; n < wwncol; n++)			/* XXX */
 		Waputc(0, WINVERSE|WBUF, cmdwin->ww_win);
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
