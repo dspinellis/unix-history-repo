@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.117		%G%);
+SCCSID(@(#)deliver.c	3.118		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1489,7 +1489,7 @@ sendall(e, verifyonly)
 		}
 
 		/* if we did not find an owner, send to the sender */
-		if (qq == NULL)
+		if (qq == NULL && bitset(QBADADDR, q->q_flags))
 			sendto(e->e_from.q_paddr, qq, &e->e_errorqueue);
 	}
 }
