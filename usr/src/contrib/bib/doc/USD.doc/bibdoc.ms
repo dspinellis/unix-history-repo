@@ -1,8 +1,14 @@
-.\"	"@(#)bibdoc.ms	4.1	%G%";
-.LP
-.ce
-\fBBIB \- A Program for Formatting Bibliographies\fP
-.sp 2
+.\"	"@(#)bibdoc.ms	4.2	%G%";
+.if n .ND
+.TL
+BIB \- A Program for Formatting Bibliographies
+.AU
+Timothy A. Budd
+Gary M. Levin
+.AI
+Department of Computer Science
+University of Arizona
+Tucson, Arizona 85721
 .PP
 \fIBib\fP is a program for collecting and formatting reference lists in
 documents.  It is a preprocessor to the nroff/troff typesetting systems,
