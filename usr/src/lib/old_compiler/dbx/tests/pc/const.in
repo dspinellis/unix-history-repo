@@ -1,0 +1,10 @@
+whatis PI
+whatis N
+whatis MESSAGE
+whatis CH
+whatis p.R
+print "p.R =", p.R
+print "CH =", CH
+print "MESSAGE =", MESSAGE
+print "N =", N
+print "PI =", PI
