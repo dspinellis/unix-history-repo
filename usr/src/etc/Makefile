@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.2 (Berkeley) %G%
+#	@(#)Makefile	8.3 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -35,16 +35,16 @@ distribution:
 	-mtree -def mtree/4.4BSD.dist -p ${DESTDIR}/ -u
 	# install devices
 .if ${MACHINE} == "hp300"
-	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	(cd etc.hp300; install -c -o root -g wheel -m 444 \
 	    MAKEDEV.hpux ${DESTDIR}/dev)
 .endif
-	install -c -o ${BINOWN} -g ${BINGRP} -m 555 \
+	install -c -o root -g wheel -m 555 \
 	     MAKEDEV.local etc.${MACHINE}/MAKEDEV ${DESTDIR}/dev
 	(cd /dev && ./MAKEDEV std)
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 COPYRIGHT ${DESTDIR}/
+	install -c -o root -g wheel -m 444 COPYRIGHT ${DESTDIR}/
 	install -c -o root -g wheel -m 600 master.passwd ${DESTDIR}/etc
-	install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${BIN1} ${DESTDIR}/etc
-	install -c -o ${BINOWN} -g ${BINGRP} -m 666 ${BIN2} ${DESTDIR}/etc
+	install -c -o root -g wheel -m 644 ${BIN1} ${DESTDIR}/etc
+	install -c -o root -g wheel -m 666 ${BIN2} ${DESTDIR}/etc
 	(cd root; \
 		install -c -o root -g wheel -m 644 dot.cshrc \
 		    ${DESTDIR}/root/.cshrc; \
@@ -59,36 +59,36 @@ distribution:
 		rm -f ${DESTDIR}/.cshrc ${DESTDIR}/.profile; \
 		ln ${DESTDIR}/root/.cshrc ${DESTDIR}/.cshrc; \
 		ln ${DESTDIR}/root/.profile ${DESTDIR}/.profile)
-	(cd mtree; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${MTREE} \
+	(cd mtree; install -c -o root -g wheel -m 444 ${MTREE} \
 	    ${DESTDIR}/etc/mtree)
-	(cd namedb; install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${NAMEDB} \
+	(cd namedb; install -c -o root -g wheel -m 644 ${NAMEDB} \
 	    ${DESTDIR}/etc/namedb)
-	(cd kerberosIV; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${KRB} \
+	(cd kerberosIV; install -c -o root -g wheel -m 444 ${KRB} \
 	    ${DESTDIR}/etc/kerberosIV)
-	install -c -o ${BINOWN} -g operator -m 664 /dev/null \
+	install -c -o root -g operator -m 664 /dev/null \
 	    ${DESTDIR}/etc/dumpdates
 	install -c -o root -g staff -m 644 /dev/null \
 	    ${DESTDIR}/var/log/lastlog
-	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
+	install -c -o root -g wheel -m 644 /dev/null \
 	    ${DESTDIR}/var/log/messages
-	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
+	install -c -o root -g wheel -m 644 /dev/null \
 	    ${DESTDIR}/var/log/maillog
-	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
+	install -c -o root -g wheel -m 644 /dev/null \
 	    ${DESTDIR}/var/log/lpd-errs
-	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
+	install -c -o root -g utmp -m 664 /dev/null \
 	    ${DESTDIR}/var/run/utmp
-	(cd etc.${MACHINE}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	(cd etc.${MACHINE}; install -c -o root -g wheel -m 444 \
 	    fstab.* ${DESTDIR}/etc)
 .if ${MACHINE} == "hp300"
-	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${RBOOTD} \
+	(cd etc.hp300; install -c -o root -g wheel -m 444 ${RBOOTD} \
 	    ${DESTDIR}/etc)
 .endif
 .if ${MACHINE} == "tahoe"
-	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS1} \
+	(cd etc.tahoe; install -c -o root -g wheel -m 444 ${WCS1} \
 	    ${DESTDIR}/)
 .endif
 .if ${MACHINE} == "vax"
-	(cd etc.vax; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${PCS} \
+	(cd etc.vax; install -c -o root -g wheel -m 444 ${PCS} \
 	    ${DESTDIR}/)
 .endif
 	# There are certain symbolic links we have to have, and
@@ -108,7 +108,7 @@ distribution:
 .endif
 
 hcx9-distribution:
-	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS2} \
+	(cd etc.tahoe; install -c -o root -g wheel -m 444 ${WCS2} \
 	    ${DESTDIR}/)
 
 .include <bsd.prog.mk>
