@@ -1,4 +1,4 @@
-/*	if_ecreg.h	4.1	82/04/11	*/
+/*	if_ecreg.h	4.2	82/06/26	*/
 
 /*
  * 3Com Ethernet controller registers.
@@ -46,6 +46,7 @@ struct ecdevice {
  */
 #define	EC_READ		(EC_AROM|0x600|EC_RINTEN|EC_RWBN)
 #define	EC_WRITE	(EC_JINTEN|EC_XINTEN|EC_XWBN)
+#define	EC_CLEAR	(EC_JINTEN|EC_XINTEN|EC_JCLR)
 
 /*
  * Buffer number definitions
