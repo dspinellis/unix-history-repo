@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.9 (Berkeley) %G%
+ *	@(#)ht.c	7.10 (Berkeley) %G%
  */
 
 #include "tu.h"
@@ -23,6 +23,7 @@
 #include "conf.h"
 #include "file.h"
 #include "user.h"
+#include "proc.h"
 #include "map.h"
 #include "ioctl.h"
 #include "mtio.h"
@@ -67,7 +68,7 @@ struct	tu_softc {
 	u_short	sc_dsreg;
 	short	sc_resid;
 	short	sc_dens;
-	struct	tty *sc_ttyp;		/* record user's tty for errors */
+	caddr_t	sc_ctty;		/* record user's tty for errors */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
 } tu_softc[NTU];
@@ -148,7 +149,8 @@ htopen(dev, flag)
 	sc->sc_dens = dens;
 	sc->sc_blks = 0;
 	sc->sc_softerrs = 0;
-	sc->sc_ttyp = u.u_ttyp;
+	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ? 
+			u.u_procp->p_session->s_ttyp : 0);
 	return (0);
 }
 
@@ -346,7 +348,7 @@ htdtint(mi, mbsr)
 			    (mbs&MBSR_EBITS) == (MBSR_DTABT|MBSR_MBEXC) &&
 			    (ds&HTDS_MOL))
 				goto noprint;
-			tprintf(sc->sc_ttyp, "tu%d: hard error bn%d mbsr=%b er=%b ds=%b\n",
+			tprintf(sc->sc_ctty, "tu%d: hard error bn%d mbsr=%b er=%b ds=%b\n",
 			    TUUNIT(bp->b_dev), bp->b_blkno,
 			    mbsr, mbsr_bits,
 			    sc->sc_erreg, hter_bits,
@@ -412,7 +414,7 @@ htndtint(mi)
 	if ((ds & (HTDS_ERR|HTDS_MOL)) != HTDS_MOL) {
 		if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 			sc->sc_openf = -1;
-		tprintf(sc->sc_ttyp, "tu%d: hard error bn%d er=%b ds=%b\n",
+		tprintf(sc->sc_ctty, "tu%d: hard error bn%d er=%b ds=%b\n",
 		    TUUNIT(bp->b_dev), bp->b_blkno,
 		    sc->sc_erreg, hter_bits, sc->sc_dsreg, htds_bits);
 		bp->b_flags |= B_ERROR;
