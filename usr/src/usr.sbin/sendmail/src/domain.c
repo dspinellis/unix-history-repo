@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.38 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.39 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.38 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.39 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -308,8 +308,8 @@ punt:
 				*bp++ = '.';
 				*bp = '\0';
 			}
+			nmx = 1;
 		}
-		nmx = 1;
 	}
 
 	/* if we have a default lowest preference, include that */
