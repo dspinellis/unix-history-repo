@@ -1,0 +1,1438 @@
+Info file texinfo, produced by texinfo-format-buffer   -*-Text-*-
+from file texinfo.texinfo
+
+
+
+Distribution
+************
+
+Copyright (C) 1985 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the same conditions as for modified versions.
+
+
+File: texinfo  Node: top, Up: (DIR), Next: commands
+
+Texinfo Files
+*************
+
+Documentation for GNU utilities and libraries should be written in a format
+called "texinfo".  This format can be translated mechanically into either
+printed manuals or on-line readable Info files.
+
+* Menu:
+
+* info::       What Info files do.
+* commands::   What goes into a texinfo file.
+* make-info::  Making a texinfo file into an Info file.
+* manual::     Making a texinfo file into a printed manual.
+
+
+File: texinfo  Node: info, Prev: top, Up: top, Next: commands
+
+What Info Files Do
+==================
+
+An Info file is a file formatted so that the Info documentation reading
+program can operate on it.  Info files are divided into pieces called
+"nodes", each of which contains the discussion of one topic.  Each node
+has a name, and contains both text for the user to read and pointers to
+other nodes, which are identified by their names.  Info displays one node
+at a time, and provides commands with which the user can move to the other
+nodes that the current node points to.
+
+Normally most of the nodes are arranged in a tree which branches down.
+Each node may have any number of child nodes that describe subtopics of the
+node's topic.  The names of these child nodes, if any, are listed in a
+"menu" within the parent node; this allows certain Info commands to
+be used to move to one of the child nodes.  Each child node records the
+parent node name, as its `up' pointer.
+
+All the children of any one parent are linked together in a bidirectional
+chain of `next' and `previous' pointers.  Normally the order in this chain
+is the same as the order of the children in the parent's menu.  The last
+child has no `next' pointer, and the first child normally has the parent as
+its `previous' pointer (as well as its `up' pointer, of course).
+
+The root of the tree is the top node of the file, through which users
+enter the file from the Info directory.  By convention, this node is always
+called `top'.  This node normally contains just a brief summary of the
+file's purpose, and a large menu through which the rest of the file is
+reached.
+
+Structuring the nodes in a tree is a matter of convention, not a
+requirement.  In fact, the `up', `previous' and `next' pointers of a node
+can point to any other nodes, and the menu can contain any other nodes.
+The structure of nodes can be any directed graph.  But it is usually more
+comprehensible to the user to make it a tree.  Info provides another kind
+of pointer between nodes, called a reference, that can be sprinkled through
+the text of a node.  This is usually the best way to represent links that
+do not fit the tree structure.
+
+Most often the nodes fall into a strict tree structure, and most often this
+structure corresponds to the structure of chapters, sections, subsections,
+and so on of a printed manual.  But there are times when this is not right
+for the material being discussed.  Therefore, texinfo format uses separate
+commands to specify the node structure of the Info file and the section
+structure of the a printed manual.  Also, texinfo requires menus to be
+specified explicitly, rather than generating them automatically based on an
+assumed tree structure.
+
+
+File: texinfo  Node: commands, Prev: info, Up: top, Next: make-info
+
+General Syntactic Conventions
+=============================
+
+Texinfo files contain a strictly limited set of constructs for a TeX
+macro package quite different from plain TeX.  The strict limits make it
+possible for texinfo files to be understood also by the `texinfo'
+program, which converts them into Info files.
+
+In order to be made into an Info file, a texinfo file must start with a
+line that looks like
+     @setfilename INFO-FILE-NAME
+which specifies the name of the Info file to be generated.  In fact, there
+can be other things in the file before this line, but they are ignored in
+the generation of an Info file.  The `@setfilename' line is ignored
+when a printed manual is generated.
+
+All ASCII printing characters except `@', `{' and `}' can appear in body
+text in a texinfo file and stand for themselves.  `@' is the escape
+character which introduces commands.  `{' and `}' should be used only to
+surround arguments to certain commands.  `{' and `}' appearing anywhere
+else will be treated by TeX as a grouping but treated by texinfo as
+themselves; this inconsistency is undesirable, so don't let it occur.  To
+put one of these special characters into the document, put an `@' character
+in front of it.
+
+It is customary in TeX to use doubled single-quote characters to begin
+and end quotations.  This convention should be followed in texinfo files.
+
+TeX ignores the line-breaks in the input text, except for blank lines,
+which separate paragraphs.  Texinfo generally preserves the line breaks
+that are present in the input file.  Therefore, you break the lines in the
+texinfo file the way you want them to appear in the output Info file, and
+let TeX take care of itself.
+
+
+@-Command Syntax
+================
+
+The character @ is used to start special texinfo commands.  (It has the
+same meaning that \ has in plain TeX.)  Syntactically, there
+are three classes of @-commands:
+
+  1. Non-alphabetic commands, @ followed by a punctuation character.
+     These commands are always part of the text within a paragraph, and
+     never take any argument.  The two characters (@ and the other one)
+     are complete in themselves.
+  2. Alphabetic commands used within a paragraph.  These commands have @
+     followed by a word, followed by an argument within braces.  For
+     example, the command `@i' specifies italic font (for TeX
+     processing only); it is used as follows: `I do @i{not} want
+     to eat that.'
+  3. Alphabetic commands used outside of paragraphs.  Each such command
+     occupies an entire line.  The line starts with @, followed by the
+     name of the command (a word).  If no argument is needed, the word is
+     followed by the end of the line.  If there is an argument, it is
+     separated from the command name by a space.
+
+Thus, the alphabetic commands fall into two classes that have different
+argument syntax.  You cannot tell which class a command falls in by the
+appearance of its name, but you can tell by the command's meaning: if it
+makes sense to use the command together with other words as part of a
+paragraph, the command is in class 2 and must be followed by an argument in
+braces; otherwise, it is in class 3 and uses the rest of the line as its
+argument.
+
+The purpose of having different syntax for commands of classes 2 and 3 is
+to make the texinfo file easier to read, and also to help the Emacs
+paragraph and filling commands work properly.  There is only one exception
+to this rule: the command `@refill', which is always used at the end of a
+paragraph immediately following the final period or other punctuation
+character.  `@refill' takes no argument.  `@refill' never confuses the
+Emacs paragraph commands because it cannot start at the beginning of a
+line.
+
+
+Within-Paragraph Commands
+=========================
+
+The @-commands used within a paragraph either generate a small amount of
+text or modify the treatment of some text.
+
+
+@@
+--
+
+`@@' stands for a single @ in either printed or Info output.
+
+
+@{
+--
+
+`@{' stands for a single { in either printed or Info output.
+
+
+@}
+--
+
+`@}' stands for a single } in either printed or Info output.
+
+
+@:
+--
+
+`@:' is used after a character such as period or colon which
+normally causes TeX to increase the width of the following whitespace,
+to suppress that effect.  For example, it can be used after periods that
+end abbreviations and do not end sentences.  `@:' has no effect
+on the Info file output.
+
+     It displays @code{Foo:}@: at that time.
+
+produces
+
+     It displays `Foo:' at that time.
+
+Note that the meanings of `@:' and `@.' in texinfo are not compatible with
+their meanings in Scribe; in fact, they are nearly the opposite.  The
+meanings in texinfo were designed to work well with the Emacs sentence
+motion commands.
+
+
+@.
+--
+
+`@.' stands for a period that really does end a sentence, useful when
+TeX will assume by its heuristics that that is not so.  This happens
+when there is a single-capital-letter word at the end of a sentence: TeX
+normally guesses that it is an abbreviation.
+
+In the Info file output, `@.' is equivalent to a simple `.'.
+The texinfo program preserves the amount of space that you use, so put
+two spaces after a period if you intend it to be the end of a sentence
+(as well as using `@.', if necessary, for the printed manual's sake).
+
+     Give it to X. Give it to X@.  Give it to X@.
+
+produces
+
+     Give it to X. Give it to X.  Give it to X.
+
+
+@*
+--
+
+`@*' forces a line break in the printed manual.  It has no effect on
+the Info file output, where line breaks follow those in the source file.
+If you want a line break at a certain spot in both forms of output, break
+the line there in the source file and put `@*' at the end of the
+line.
+
+
+@dots
+-----
+
+`@dots{}' generates an ellipsis: three periods in a row, or `...'.
+Do not simply write three periods in the input file; that would work ok for
+the Info file output, but would produce the wrong amount of space between
+the periods in the printed manual.
+
+
+@bullet
+-------
+
+`@bullet{}' generates a large round dot, or the closest possible
+thing to one.
+
+
+@TeX
+----
+
+`@TeX{}' generates `TeX'.  In a printed manual, this is a special
+logo that is different from three ordinary letters.
+
+
+@copyright
+----------
+
+`@copyright{}' generates a `C' inside a circle.
+
+
+@code
+-----
+
+`@code' is used to indicate text that is a literal example of input
+to a program.  The text follows, enclosed in braces.  Any time you give a
+sample of an expression in C, or of a command for the shell, or any such
+thing, use `@code'.  In the printed manual, it puts the argument in
+bold face.  In the Info file, it uses `...' quotation.  Example:
+
+     To compare two files, showing text inserted or removed, use @code{diff}.
+
+produces
+
+     To compare two files, showing text inserted or removed, use `diff'.
+
+
+@samp
+-----
+
+`@samp' is used to indicate text that is a literal example of a
+sequence of characters in a file, string, pattern, etc.  The text follows,
+enclosed in braces.  The argument appears within `...' quotation in
+both the Info file and the printed manual; in addition, it is printed in
+a fixed-width font.
+
+     To match @samp{foo} at the end of the line, use the regexp @samp{foo$}.
+
+produces
+
+     To match `foo' at the end of the line, use the regexp `foo$'.
+
+
+@file
+-----
+
+`@file' is used to indicate text that is a file name.  Currently
+it is equivalent to `@samp' in its effects on the output.
+
+
+@kbd
+----
+
+`@kbd' is used much like `@code'.  The difference is that `@kbd' is for
+names of keys on the keyboard, or of characters you can type.  It has the
+same effect as `@code' in texinfo, but may produce a different font in a
+printed manual.
+
+     To give the @code{logout} command, type the characters @kbd{l o g o u t
+     @key{RET}}.
+
+produces
+
+     To give the `logout' command, type the characters `l o g o u t
+     RET'.
+
+
+@key
+----
+
+`@key' is used to indicate text that is the name of a key on
+the keyboard, as in
+
+     @key{RET}
+
+Often, `@key' is used within the argument of a `@kbd' command, whenever the
+sequence of characters to be typed includes one or more keys that are
+described by name.
+
+The recommended names to use for keys are
+
+SPC     
+     Space.
+RET     
+     Return.
+LFD     
+     Linefeed.
+TAB     
+     Tab.
+BS     
+     Backspace.
+ESC     
+     Escape.
+DEL     
+     Delete.
+SFT     
+     Shift.
+CTL     
+     Control.
+META     
+     Meta.
+
+
+@ctrl
+-----
+
+`@ctrl' is used to describe an ASCII control character.  The pattern
+of usage is `@ctrl{CH}', where CH is an ASCII character whose
+control-equivalent is wanted.
+
+In the Info file, this generates the specified control character, output
+literally into the file.
+
+In a printed manual, this generates text to describe or identify that
+control character: an uparrow followed by the character CH.
+
+
+@var
+----
+
+`@var' is used to indicate metasyntactic variables.  Its effect in
+the Info file is to upcase the argument; in the printed manual, to
+italicize it.  Example:
+
+     To delete file @var{file}, type @code{rm @var{file}}.
+
+produces
+
+     To delete file FILE, type `rm FILE'.
+
+
+@dfn
+----
+
+`@dfn' is used to identify the introductory or defining use of a
+technical term.  It generates italics in the printed manual, and double
+quotation marks in the Info file.  Example:
+
+     Getting rid of a file is called @dfn{deleting} it.
+
+produces
+
+     Getting rid of a file is called "deleting" it.
+
+
+@i or @b or @t
+--------------
+
+These three commands specify font change in the printed manual and have no
+effect in the Info file.  `@i' requests italic font (actually, slanted font
+is used by TeX), `@b' requests bold face, and `@t' requests the fixed-width
+font used by `@kbd'.  All three commands apply to an argument that follows,
+surrounded by braces.
+
+
+@w
+--
+
+In a printed manual, `@w{TEXT}' outputs TEXT and prohibits
+line breaks within TEXT.  `@w' has no effect on the Info file
+output; it is the same as would result from just TEXT.
+
+
+@refill
+-------
+
+If a paragraph contains sizeable @-constructs, it may look badly filled
+once texinfo is through with it.
+
+Put `@refill' at the end of the paragraph to tell texinfo to refill the
+paragraph after finishing all other processing on it.  `@refill' has no
+effect on TeX, which always fills everything that ought to be filled.
+Example:
+
+     To use @code{foo}, pass @samp{xx%$} and @var{flag} and type @kbd{x}
+     after running @code{make-foo}.@refill
+
+produces (in the Info file)
+
+     To use `foo', pass `xx%$' and FLAG and type `x' after running `make-foo'.
+
+whereas without the `@refill' it would produce
+
+     To use `foo', pass `xx%$' and FLAG and type `x'
+     after running `make-foo'.
+
+with the line broken at the same place as in the input.
+
+
+Chapter Structuring Commands
+============================
+
+The chapter structuring commands divide a document into a hierarchy of
+chapters, sections, subsections and subsubsections.  These commands
+generate large headings in the middle of the text.
+
+In a printed manual, the table of contents is based on the information
+specified by the chapter structuring commands.
+
+
+@chapter
+--------
+
+`@chapter' identifies a chapter in the document.  It is followed by a
+single argument which is the rest of the line, as in
+
+     @chapter Texinfo Files
+
+In TeX, it serves to create a chapter of the document, specifying the
+chapter title.
+
+In the Info file, `@chapter' causes its argument to appear on a line by
+itself, with a line of asterisks inserted underneath.  Thus, the above
+example produces the output
+
+     Texinfo Files
+     *************
+
+
+@unnumbered, @appendix
+----------------------
+
+These are equivalent to `@chapter' for Info file output.  In a
+printed manual, they generate chapters that are numbered differently in the
+table of contents.  `@unnumbered' chapters appear without chapter
+numbers of any kind, and `@appendix' chapters are given a letter
+instead of a number.
+
+
+@section
+--------
+
+`@section' is like `@chapter' except that in TeX it makes a section rather
+than a chapter.  Sections go within chapters.  In the Info file, `@chapter'
+and `@section' differ only in that `@section' underlines with `='.
+
+
+@unnumberedsec, @appendixsec
+----------------------------
+
+Use these constructs for sections within chapters made by
+`@unnumbered' or `@appendix'.
+
+
+@subsection
+-----------
+
+Subsections are to sections as sections are to chapters.  They are
+underlined with `-'.
+
+
+@unnumberedsubsec, @appendixsubsec
+----------------------------------
+
+Use these constructs for subsections within sections within chapters made
+by `@unnumbered' or `@appendix'.
+
+
+@subsubsection
+--------------
+
+Subsubsections are to subsections as subsections are to sections.  They are
+underlined with periods.
+
+
+Nodes and Cross References
+==========================
+
+"Nodes" are the points to which cross-references can refer.  The
+`@node' command is used to define them.  Each node must be, also, a
+chapter, section, subsection or subsubsection, and the `@node'
+command must always be followed by a chapter structuring command (with no
+blank line between them).
+
+In the Info file, nodes play a fundamental role.  Each node has a name,
+and other nodes can refer to it by that name.  The `@node' command
+specifies the name of the node that it defines, and also defines certain
+references to other nodes.  References to other nodes can also be defined
+with `@menu' and the variants of `@xref'.
+
+In a printed manual, nodes are not a fundamental concept, but the
+`@node' command still serves to define a cross-reference point
+and the variants of `@xref' still serve to make references.
+
+
+@node
+-----
+
+`@node' defines the beginning of a new node in the Info output file (*Note
+info: (info)top.).  It is followed by four arguments, separated by commas,
+making up the rest of the line.  For example,
+
+     @node info, tex, commands, top
+
+defines a node named `info', whose `next' pointer is to node `tex', whose
+`previous' pointer is to node `commands', and whose `up' pointer is to node
+`top'.  What this means is that texinfo changes `@node ARGS' into the
+special text string necessary to separate Info nodes and to identify the
+node that is starting and say what nodes it points to.
+
+The pointer names should be the names of nodes defined elsewhere.  For this
+example, nodes named `tex', `commands' and `top' should be defined
+elsewhere in the file with other `@node' commands.  It does not matter
+whether they are before or after the node that refers to them.
+
+Normally, node A's `up' should point at the node whose menu mentions node
+A.  Node A's `next' should point at the node that follows A in that menu,
+and node A's `previous' should point at the node that precedes A in that
+menu.
+
+The top node of the file, named `top', should have as its parent the
+name of a node in another file, where there is a menu that leads to this
+file.  Specify the file name in parentheses.  If this file is to be
+installed directly in the Info directory file, use `(dir)' as the
+parent of the top node; this is short for `(dir)top', the node `top'
+in the file `dir', which is the main menu of Info.
+
+In TeX, `@node' is nearly ignored.  It generates no text.  Its only
+function is to identify the name to use for cross-references to the
+following chapter or section which makes up the body of the node.  (Cross
+references are made with `@xref'.)
+
+`@node' should always be followed immediately by a
+chapter-structuring command such as `@chapter', `@section',
+`@subsection' or `@subsubsection'.
+
+
+@menu
+-----
+
+Info file nodes can contain "menus" which point to other nodes.  You must
+type the menus in by hand, and surround them with lines containing `@menu'
+and `@end menu'.  The `@menu' line changes into `* Menu:', which indicates
+the beginning of a menu to the Info program.  The contents are unchanged by
+texinfo, except for the processing of any other @ commands within.  The
+entire menu construct has no effect in the printed manual.
+
+     @menu
+     * foo::         The node named foo tells you how to go fooing.
+     * sw: switches. Type @code{m sw} to see node @code{switches}.
+                     which describes the switches available here.
+     @end menu
+
+produces
+
+     * menu:
+     
+     * foo::         The node named foo tells you how to go fooing.
+     * sw: switches. Type `m sw' to see node `switches'
+                     which describes the switches available here.
+
+In this example, the menu has two items.  `foo' is both a menu item name
+and the name of the node referred to by that item.  `sw' is the other
+menu item name, and it refers to the node named `switches'.  Since no
+file name is specified with `foo' or `switches', they must be the names
+of other nodes in the same Info file.  Nodes in other Info files can be
+referred to by putting the file name in parentheses at the beginning of the
+node name.
+
+
+@xref
+-----
+
+`@xref' generates a cross-reference.  In texinfo, it turns into
+an Info cross-reference which the Info `f' command can use
+to go directly to another node.  In TeX, it turns into a sentence
+of the form
+
+     See section SECTION [TOPIC], page PAGE
+
+but does not generate a period to end it.
+
+`@xref' must refer to an Info node created by `@node', by the
+node's name.  If I were in less of a rush, I would have made a node in this
+file for each texinfo command, and put in plenty of @xref's to
+cross-reference them together.  The big node named `commands' would
+actually contain a menu naming the nodes for individual commands.
+
+`@xref' is followed by an argument inside braces, since it is used
+within a paragraph; but actually the text inside the braces is treated as
+several arguments, separated by commas.  Whitespace after these commas is
+ignored.  The closing brace must be followed by a period or a comma, since
+one of those two is required to terminate an Info cross-reference.  This
+period or comma will appear in the output, both Info file and printed
+manual.
+
+The simplest form of `@xref' takes one argument, the name of another
+node in the same Info file.  Here we show the input text, followed after a
+blank line by the output text for Info files and the output text for
+printed manuals.
+
+     @xref{foo}, for more info.
+     
+     *note foo::, for more info.
+
+     See section NNN [foo], page PPP, for more info.
+
+With two arguments, the second one is used as the name of the Info
+cross-reference, while the first argument is still the node that the
+cross-reference points to:
+
+     @xref{foo node, foo}, for more info.
+     
+     *note foo: foo node, for more info.
+
+     See section NNN [foo node], page PPP, for more info.
+
+A third argument replaces the node name when it actually appears
+in the TeX output.  It should state the topic discussed by the
+section being referenced.  Use a third argument when the node
+name is unsuitable because of syntax, grammar or diction.
+
+     @xref{foo node, foo, using foo}, for more info.
+     
+     *note foo: foo node, for more info.
+
+     See section NNN [using foo], page PPP, for more info.
+
+If a third argument is given and the second one is empty,
+then the third argument serves both purposes:
+
+     @xref{foo node, , using foo}, for more info.
+     
+     *note using foo: foo node, for more info.
+
+     See section NNN [using foo], page PPP, for more info.
+
+A fourth argument specifies the name of the Info file in which
+the referenced node is located, assuming it is not the one which
+the reference appears in.  `@xref' with only four arguments
+is used when the reference is not within one Info file, but is
+within a single printed manual---when multiple texinfo files are
+incorporated into the same TeX run but make separate Info files.
+
+     @xref{foo node, foo, using foo, myinfofile}, for more info.
+     
+     *note foo: (myinfofile) foo node, for more info.
+
+     See section NNN [using foo], page PPP, for more info.
+
+A fifth argument is used when referencing another Info file
+which is also part of another printed manual.  It gives the
+title of that manual.
+
+     @xref{foo node, foo, using foo, myinfofile, Mymanual},
+     for more info.
+     
+     *note foo: (myinfofile) foo node, for more info.
+
+     See section NNN [using foo], page PPP
+     of Mymanual, for more info.
+
+
+@pxref
+------
+
+`@pxref' is nearly the same as `@xref'; it differs in only
+two ways:
+
+  1. The output starts with lower case `see' rather than `See'.
+  2. A period is generated automatically in the Info file output to end the
+     Info cross-reference.
+
+The purpose of `@pxref' is to be used inside parentheses as part of
+another sentence.  In the printed manual, no period is needed after the
+cross reference text itself (within the parentheses), but a period is
+needed there in the Info file because only thus can Info recognize the end
+of the cross-reference.  `@pxref' spares you the need to use complicated
+methods to put a period into one form of the output and not the other.
+
+
+@inforef
+--------
+
+`@inforef' is used for cross-references to Info files for which
+there are no printed manuals.  Even in a printed manual, `@inforef'
+generates a reference directing the user to look in an Info file.  The
+syntax is `@inforef{NODE, NAME, FILE}'.
+
+     @inforef{foo node, fooing, FOO}, to lose.
+     
+     *note fooing: (FOO) foo node, to lose.
+
+     See Info file `FOO', node `foo node', to lose.
+
+
+Insertions
+==========
+
+Insertions are blocks of text, consisting of one or more whole paragraphs
+that are set off from the bulk of the text and treated differently.  They
+are usually indented, and often not filled.
+
+In texinfo, an insertion is always begun by an @-command on a line by
+itself, and ended with an `@end' command.  For example, an "example"
+is a kind of insertion that is begun with `@example' and ended with
+`@end example'.
+
+
+@quotation
+----------
+
+`@quotation' is used to indicate text that is excerpted from another
+(real or hypothetical) printed work.  The inside of a quotation is
+processed normally except that
+
+  1. The margins are narrower.
+  2. Paragraphs are not indented.
+  3. Interline spacing and interparagraph spacing are reduced.
+
+Thus, the input
+
+     @quotation
+     This is
+     a foo.
+     @end quotation
+
+produces in the printed manual
+
+          This is a foo.
+
+and in the Info file
+
+          This is
+          a foo.
+
+
+@example
+--------
+
+`@example' is used to indicate an example that is not part of the
+running text.  In the printed manual, this is done by switching to
+a fixed width font, turning off filling, and making extra spaces
+and blank lines significant.  In the Info file, an analogous result
+is obtained by indenting each line with five extra spaces.
+
+`@example' should appear on a line by itself; this line will
+disappear from the output.  Mark the end of the example with a line
+containing `@end example', which will likewise disappear.
+Example:
+
+     @example
+     mv foo bar
+     @end example
+
+produces
+
+          mv foo bar
+
+Don't use tabs in lines of an example!
+
+
+@display
+--------
+
+`@display' is just like `@example' except that, in the printed manual,
+`@display' does not select the fixed-width font.  In fact, it does not
+specify the font at all, so that the text appears in the same font it would
+have appeared in without the `@display'.
+
+
+@itemize
+--------
+
+`@itemize' is used to produce sequences of indented paragraphs, with
+a mark inside the left margin at the beginning of each.  The rest of the
+line that starts with `@itemize' should contain the character or
+texinfo commands to generate such a mark.  It should ultimately result in a
+single character, or the indentation will come out wrong.  You may use
+the texinfo commands that are normally followed by `{}'; in fact, you 
+may omit the `{}' after the command if you use just one command
+and nothing else.
+
+The text of the indented paragraphs themselves come after the `@itemize',
+up to another line that says `@end @itemize'.
+
+Before each paragraph for which a mark in the margin is desired, place a
+line that says just `@item'.
+
+Here is an example of the use of `@itemize', followed by the output
+it produces.  Note that `@bullet' produces a `*' in texinfo and
+a round dot in TeX.
+
+     @itemize @bullet
+     @item
+     Some text for foo.
+     @item
+     Some text
+     for bar.
+     @end itemize
+
+produces
+
+        * Some text for foo.
+        * Some text
+          for bar.
+
+Texinfo indents the lines of the itemization by five additional columns,
+but it does not fill them.  If `@refill' is used, the paragraph is
+filled to the narrowed width.
+
+
+@enumerate
+----------
+
+`@enumerate' is like `@itemize' except that the marks in the left margin
+contain successive integers starting with 1.  Do not put any argument on
+the same line as `@enumerate'.
+
+     @enumerate
+     @item
+     Some text for foo.
+     @item
+     Some text
+     for bar.
+     @end enumerate
+
+produces
+
+       1. Some text for foo.
+       2. Some text
+          for bar.
+
+
+@table
+------
+
+`@table' is similar to `@itemize', but allows you to specify a
+name or heading line for each item.
+
+You must follow each use of `@item' inside of `@table' with
+text to serve as the heading line for that item.
+
+Also, `@table' itself must be followed by an argument that is a texinfo
+command such as `@code', `@var', `@kbd' or `@asis'.  This command will be
+applied to the text of each item.  `@asis' is a command that does nothing;
+in that case, each item will come out exactly as it specifies.  (Various
+other command names might work in this context.  Only commands that
+normally take arguments in braces may be used, but here you use the command
+name without an argument.  `@item' supplies the arguments.)
+
+     @table @samp
+     @item foo
+     This is the text for
+     @samp{foo}.
+     @item bar
+     Text for @samp{bar}.
+     @end table
+
+produces
+
+     `foo'     
+          This is the text for
+          `foo'.
+     `bar'     
+          Text for `bar'.
+
+
+@itemx
+------
+
+`@itemx' is used inside a `@table' when you have two or more named items
+for the same block of text.  Use `@itemx' for all but the first of the
+items.  It works exactly like `@item' except that it does not generate
+extra vertical space above the item text.  Example:
+
+     @table @code
+     @item upcase
+     @itemx downcase
+     These two functions accept a character or a string as argument,
+     and return the corresponding upper case (lower case) character
+     or string.
+     @end table
+
+produces
+
+     `upcase'     
+     `downcase'     
+          These two functions accept a character or a string as argument,
+          and return the corresponding upper case (lower case) character
+          or string.
+
+
+@noindent
+---------
+
+`@noindent' is not a kind of insertion, but it is normally used
+following an insertion.
+
+If you have text following an `@example' or other similar "special
+paragraph" that reads as a continuation of the text before the
+`@example', it is good to prevent this text from being indented as a
+new paragraph.  To accomplish this, put `@noindent' on a line by
+itself before the start of the text that should not be indented.
+
+To adjust the number of blank lines properly in the Info file output,
+remember that the line containing `@noindent' does not generate a
+blank line, and neither does the `@end example' line.
+
+In the texinfo source file for this documentation, each of the lines that
+says `produces' is preceded by a line containing `@noindent'.
+
+
+Other Paragraph-Separating Commands
+===================================
+
+
+@setfilename
+------------
+
+`@setfilename FILE' informs texinfo that the Info file being
+produced is named FILE.  This information is entered in every node
+header.  It also tells texinfo the name for the output file.
+
+
+@comment
+--------
+
+A line starting with `@comment' or `@c' is ignored in both
+printed and Info output.
+
+
+@ignore
+-------
+
+A line saying `@ignore' causes everything up to the following
+`@end ignore' to be ignored in both printed and Info output.
+
+
+@br
+---
+
+In a printed manual, a line containing `@br' forces a paragraph
+break; in the Info file output, it does nothing (not even a blank line
+results from it).
+
+
+@sp
+---
+
+A line containing `@sp N' generates N blank lines of space in either the
+printed manual or the Info file.
+
+
+@page
+-----
+
+A line containing `@page' starts a new page in a printed manual.  The
+line has no effect on Info files since they are not paginated.
+
+
+@group
+------
+
+A line containing `@group' begins an unsplittable vertical group,
+which must appear entirely on one page.  The group is terminated by a line
+containing `@end group'.  These two lines produce no output of their
+own, and in the Info file output they have no effect at all.
+
+
+@need
+-----
+
+A line containing `@need N' starts a new page in a printed manual if fewer
+than N mils (thousandths of an inch) remain on the current page.  The line
+has no effect on Info files since they are not paginated.
+
+
+@center
+-------
+
+A line containing `@center TEXT' produces a line of output containing TEXT,
+centered between the margins.
+
+
+Conditionals
+------------
+
+You may not always be able to use the same text for TeX and texinfo.
+Use the conditional commands to specify which text is for TeX and which
+is for texinfo.
+
+`@ifinfo' begins text that should be ignored by TeX.  It should appear on a
+line by itself.  End the texinfo-only text with a line containing `@end
+ifinfo'.
+
+Likewise, `@iftex' and `@end iftex' lines delimit code that should be
+ignored by texinfo.
+
+
+Generating Indices
+==================
+
+Texinfo files can generate indices automatically.  Each index covers
+a certain kind of entry (functions, or variables, or concepts, etc.)
+and lists all of those entries in alphabetical order, together with
+information on how to find the discussion of each entry.  In a printed
+manual, this information consists of page numbers.  In an Info file,
+it consists of a menu item leading to the node in which the entry
+is discussed.
+
+
+Normally, six indices are provided for:
+
+   * A "program index" listing names of programs and leading to the places
+     where those programs are documented.
+     
+   * A "function index" listing functions (such as, entry points of
+     libraries).
+     
+   * A "variables index" listing variables (such as, external variables of
+     libraries).
+     
+   * A "data type index" listing data types (such as, structures defined in
+     header files).
+     
+   * A "keystroke index" listing keyboard commands.
+     
+   * A "concept index" listing concepts that are discussed.
+
+Not every manual needs all of these.  Two or more indices can be combined
+into one using the `@synindex' command as described below.
+
+
+Defining the Entries of an Index
+--------------------------------
+
+The data to make an index comes from many individual commands scattered
+throughout the source file.  Each command says to add one entry to a
+particular index, giving the current page number or node name as the
+reference.
+
+`@cindex CONCEPT'     
+     Make an entry in the concept index for CONCEPT, referring to the
+     current page or node.
+`@findex FUNCTION'     
+     Make an entry in the function index for FUNCTION, referring to the
+     current page or node.
+`@vindex VARIABLE'     
+     Make an entry in the variable index for VARIABLE, referring to the
+     current page or node.
+`@pindex PROGRAM'     
+     Make an entry in the program index for PROGRAM, referring to the
+     current page or node.
+`@kindex KEY'     
+     Make an entry in the key index for KEY, referring to the
+     current page or node.
+`@tindex DATA TYPE'     
+     Make an entry in the data type index for DATA TYPE, referring to the
+     current page or node.
+
+If the same name is indexed on several pages, all the pages are listed
+in the printed manual's index.  However, only the first node referenced
+will appear in the index of an Info file.
+
+You are not actually required to use these indices for their canonical
+purposes.  For example, you might wish to index some C preprocessor macros.
+You could put them in the function index along with actual functions, just
+by writing `@findex' commands for them; then, when you print the
+"function index", you could give it the title `Function and Macro Index'
+and all will be consistent for the reader.  Or you could put the macros in
+with the data types by writing `@tindex' commands for them, and give
+that index a suitable title so the reader will understand.
+
+
+Combining Indices
+-----------------
+
+Sometimes you will want to combine two disparate indices such as functions
+and variables, perhaps because you have few enough of one of them that
+a separate index for them would look silly.
+
+You could put variables into the function index by writing `@findex'
+commands for them instead of `@vindex' commands, and produce a
+consistent manual by printing the function index with the title `Function
+and Variable Index' and not printing the "variable index" at all; but this
+is not a robust procedure.  It works only as long as your document is never
+included in part of or together with another document that is designed to
+have a separate variable index; if you did that, the variables from your
+document and those from the other would not end up together.
+
+What you should do instead when you want functions and variables in one
+index is to index the variables with `@vindex' as they should be,
+but in the overall file for the document use `@synindex' to redirect
+these `@vindex' commands to the function index.  `@synindex' takes two
+arguments: the name of an index to redirect, and the name of an index to
+redirect it to.  For this purpose, the indices are given two-letter names:
+
+`cp'     
+     the concept index.
+`vr'     
+     the variable index.
+`fn'     
+     the function index.
+`ky'     
+     the key index.
+`pg'     
+     the program index.
+`tp'     
+     the data type index.
+
+Thus, `@synindex vr fn' at the front of an overall manual file
+will cause all entries designated for the variable index to go to
+the function index as well.  But the included files of this manual
+could be used in some other manual, that does not do `@synindex',
+and generate a separate variable index.
+
+If the texinfo file containing `@synindex' is also to be made into
+an Info file itself, you should use `@iftex' around the `@synindex'
+commands.
+
+
+Printing an Index
+-----------------
+
+To print an index means to include it as part of a manual or Info file.
+This does not happen automatically just because you use `@cindex' or other
+index-entry generating commands in the input; those just cause the raw data
+for the index to be accumulated.  To print an index, you must include
+special texinfo commands at the place in the document where you want the
+index to appear.  Also, for the case of the printed manual, you must run a
+special program to sort the raw data to produce a sorted index file, which
+is what will actually be used to print the index.
+
+The texinfo command you need is `@printindex'.  It takes the two-letter
+index name (see table above) as an argument without braces, and reads the
+corresponding sorted index file and formats it appropriately into an index.
+
+`@printindex' does not generate a chapter heading for the index.  You
+should precede it with a suitable section or chapter command (usually
+`@unnumbered') to supply the chapter heading and put the index into the
+table of contents.  And before that, you probably need a `@node' command.
+For example,
+
+     @node Variables Index, Concept Index, Function Index, Top
+     @unnumbered Variable Index
+     
+     @printindex vr
+     
+     @node Concept index,, Variables Index, Top
+     @unnumbered Concept Index
+     
+     @printindex cp
+
+
+Sorting Indices
+---------------
+
+In TeX, `@printindex' needs a sorted index file to work from.
+TeX does not know how to do sorting; this is one of the main
+deficiencies of TeX.  You must invoke the program `texindex' to do
+so, giving it the names of the raw index files to be sorted as arguments.
+You do not have to run `texindex' on all of them; only the ones you
+are going to print.
+
+TeX outputs raw index files under names that obey a standard convention.
+These names are the name of your main input file to TeX, with everything
+after the first period thrown away, and the two letter names of indices
+added at the end.  For example, the raw index output files for the input
+file `foo.texinfo' would be `foo.cp', `foo.vr', `foo.fn', `foo.tp',
+`foo.pg' and `foo.ky'.  Those are exactly the arguments to give to
+`texindex'.
+
+For each file specified, `texindex' generates a sorted index file whose
+name is made by appending `s' to the input file name.  The `@printindex'
+command knows to look for a file of that name.  `texindex' does not alter
+the raw index output file.
+
+You need not run `texindex' after each TeX run.  If you don't, the
+next TeX run will use whatever sorted index files happen to exist from
+the previous use of `texindex'.  This is usually ok while you are
+debugging.
+
+
+File: texinfo  Node: make-info, Prev: commands, Up: top, Next: manual
+
+Converting Texinfo Files into Info Files
+========================================
+
+Just visit a texinfo file and invoke
+
+     `Meta-x texinfo-format-buffer'
+
+to convert it to an Info file.  A new buffer is created and the Info file
+text is generated there.  `C-x C-s' will save it under the name specified
+in the `@setfilename' command.
+
+If the file is large (more than 30 nodes) it is desirable to make a "tag
+table" for it.  To do this, load the `info' library into Emacs with `M-x
+load RET info RET' and then do `M-x Info-tagify'.
+
+To check your node structure for errors, load Info and then do
+`M-x Info-validate'.
+
+
+File: texinfo  Node: manual, Prev: make-info, Up: top
+
+Generating a Real Manual
+========================
+
+Most of the time a single printed manual will be made from several texinfo
+source files, each of which is made into a single Info file.  Also, the
+real manual should have a table of contents.  Several special commands are
+used for these purposes.
+
+Every texinfo file that is to be the top-level input to TeX must begin
+with a line that looks like
+
+     \input texinfo   @c -*-texinfo-*-
+
+This serves two functions.
+
+  1. When the file is processed by TeX, it loads the macros needed for
+     processing a texinfo file.
+  2. When the file is edited in Emacs, it causes Texinfo Mode to be used.
+
+Every such texinfo file must end with a line saying
+
+     @bye
+
+which terminates TeX processing and forces out unfinished pages.
+
+You might also want to include a line saying
+
+     @setchapternewpage odd
+
+to cause each chapter to start on a fresh odd-numbered page.
+
+Here is an example of a texinfo file used to generate a manual from two
+other texinfo files, `foo.texinfo' and `bar.texinfo', each of which makes a
+separate Info file.  The commands used in it are explained in the rest of
+this section.
+
+     \input texinfo @c -*-texinfo-*-
+     @settitle This Manual
+     
+     @c put entries intended for the data type index
+     @c into the variable index instead.
+     @synindex tp vr
+     @setchapternewpage odd
+     
+     @titlepage
+     @sp 10
+     @center @titlefont{This Manual}
+     @sp 3
+     @center by
+     @sp 3
+     @center @titlefont{Me}
+     @end titlepage
+     
+     @c Include the files with the actual text
+     @include foo.texinfo
+     @include bar.texinfo
+     
+     @c Print the indices
+     @unnumbered Function Index
+     @printindex fn
+     @unnumbered Variable and Data Type Index
+     @printindex vr
+     @unnumbered Program Index
+     @printindex pg
+     @unnumbered Concept Index
+     @printindex cp
+     
+     @c Print the tables of contents
+     @summarycontents
+     @contents
+     
+     @c That's all
+     @bye
+
+
+Title Page
+----------
+
+Start the material for the title page with `@titlepage' and follow it
+with `@end titlepage'.  Both of these commands should stand alone on
+a line.  They cause the title material to appear only in the printed
+manual, not in an info file.  Also, the `@end titlepage' command
+starts a new page and turns on page numbering (generation of headings).
+
+The within-paragraph command `@titlefont' can be used to select a
+large font suitable for the title itself.
+
+
+Headings
+--------
+
+Texinfo prints the manual title on every other page as a heading, and the
+current chapter title on the remaining pages.  It knows the chapter title
+automatically, but you must tell it the manual title with `@settitle':
+
+     @settitle TITLE
+
+on a line by itself causes TITLE to be used for the headings.
+
+The `@settitle' command should precede everything that generates
+actual output.
+
+Normally, headings start appearing after the `@end titlepage' command.
+(They are not wanted on the title page.)  However, you can turn headings on
+and off explicitly with the `@headings' command:
+
+     @headings on
+
+to start output of headings (starting with the page containing the command)
+or
+
+     @headings off
+
+to stop output of headings (starting also with the current page).
+
+
+@include
+--------
+
+A line of the form `@include FILENAME' is ignored when generating an
+Info file, but in a printed manual it causes the contents of the file
+FILENAME to be processed at that point.
+
+Normally, the file named FILENAME is made into a separate Info file.
+The file containing the `@include' may refer to the other Info file
+with Info cross-references or menus, since those fill the function of
+inclusion for the Info data base.
+
+Another technique is to have a special file, used only for making a
+comprehensive manual, containing nothing but the beginning, the end, and a
+bunch of `@include' commands.
+
+A file that is intended to be processed with `@include' should not
+start with `\input texinfo', as that has already been done by the
+outer file, and the character `\' has already been redefined to
+generate a backslash in the output.
+
+A file that is intended to be processed with `@include' should not
+end with `@bye', since that would terminate TeX processing immediately.
+
+
+Table of Contents
+-----------------
+
+The commands `@chapter', `@section', etc., supply the information to make
+up a table of contents, but they do not cause an actual table to be output.
+To do this, you must use the commands `@contents' and `@summarycontents'.
+
+`@contents', which should be used on a line by itself, outputs (into a
+printed manual) a complete table of contents, based on the `@chapter' and
+other sectioning commands already seen.
+
+`@summarycontents' generates a summary table of contents that lists
+only the chapters (and appendixes and unnumbered chapters); sections,
+subsections and subsubsections are omitted.
+
+You can use either one of these commands, or both.  Each one automatically
+generates a chapter-like heading at the top of the page.  Tables of
+contents should be generated at the very end of the manual, just before the
+`@bye' command; they should follow any indices that are output, so
+that the indices will appear in the contents.
+
+     INDICES...
+     @summarycontents
+     @contents
+     @bye
+
+The commands `@contents' and `@summarycontents' are ignored when an
+Info file is being generated.
+
+
+Tag table:
+Node: manual41468
+Node: make-info40775
+Node: commands3940
+Node: info1215
+Node: top725
+
+End tag table
