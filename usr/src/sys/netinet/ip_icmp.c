@@ -1,8 +1,9 @@
-/* ip_icmp.c 4.3 81/11/14 */
+/* ip_icmp.c 4.4 81/11/16 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
-#include "../h/inaddr.h"
+#include "../h/protosw.h"
+#include "../h/clock.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
 #include "../net/ip.h"
@@ -21,7 +22,7 @@ icmp_error(oip, type, code)
 	struct ip *oip;
 	int type;
 {
-	int oiplen = oip->ip_hl << 2;
+	unsigned oiplen = oip->ip_hl << 2;
 	struct icmp *icp = (struct icmp *)((int)oip + oiplen);
 	struct mbuf *m;
 	struct ip *nip;
@@ -109,7 +110,7 @@ icmp_input(m)
 		 */
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))
 			goto free;
-		icmp_advise(ip, icp);
+		icmp_ctlinput(ip);
 		goto free;
 
 	case ICMP_ECHO:
@@ -120,7 +121,7 @@ icmp_input(m)
 		if (icmplen < ICMP_TSLEN)
 			goto free;
 		icp->icmp_type = ICMP_TSTAMPREPLY;
-		ip_time(&icp->icmp_rtime);
+		icp->icmp_rtime = ip_time();
 		icp->icmp_ttime = icp->icmp_rtime;	/* bogus, do later! */
 		goto reflect;
 		
@@ -165,28 +166,27 @@ icmp_reflect(ip)
  * Send an icmp packet back to the ip level, after
  * supplying a checksum.
  */
-icmp_send(ip, icp)
+icmp_send(ip)
 	struct ip *ip;
-	struct icmp *icp;
 {
+	struct icmp *icp = 0;					/* XXX */
 
 	icp->icmp_cksum = 0;
 	icp->icmp_cksum = inet_cksum(dtom(ip), 0);		/* XXX */
 	/* what about ttl? */
-	ip_output(ip);
+	ip_output(dtom(ip));
 }
 
 /*
  * Advise a higher level protocol of a problem reported by
  * a gateway or another host.
  */
-icmp_advise(ip, icp)
+icmp_ctlinput(ip)
 	struct ip *ip;
-	struct icmp *icp;
 {
+	extern u_char ip_protox[];		/* XXX */
 
-	/* pass through protocol specific switch */
-	/* (*f)(ip, icp); */
+	(*protosw[ip_protox[ip->ip_p]].pr_ctlinput)(ip);
 }
 
 /*
@@ -205,7 +205,13 @@ icmp_drain()
 
 }
 
+n_time
 ip_time()
 {
+	int s = spl6();
+	long t;
 
+	t = (time % SECDAY) * 1000 + lbolt * hz;
+	splx(s);
+	return (htonl(t));
 }

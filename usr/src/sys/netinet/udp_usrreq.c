@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.4	81/11/15	*/
+/*	udp_usrreq.c	4.5	81/11/16	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -7,6 +7,7 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
+#include "../h/inaddr.h"
 #include "../net/inet.h"
 #include "../net/inet_host.h"
 #include "../net/inet_pcb.h"
@@ -29,8 +30,7 @@ udp_input(m)
 {
 	register struct udpiphdr *ui;
 	register struct inpcb *inp;
-	u_short lport, fport;
-	int ulen;
+	u_short lport, fport, ulen;
 
 	ui = mtod(m, struct udpiphdr *);
 	if (ui->ui_len > sizeof (struct ip))		/* XXX */
@@ -44,14 +44,14 @@ udp_input(m)
 	if (sizeof (struct udpiphdr) > m->m_len)
 	    { printf("udp header overflow\n"); m_freem(m); return; }
 	if (udpcksum) {
-		inet_cksum(m, sizeof (struct ip) + ulen);
+		(void) inet_cksum(m, sizeof (struct ip) + ulen);
 		if (ui->ui_sum) {
 			printf("udp cksum %x\n", ui->ui_sum);
 			m_freem(m);
 			return;
 		}
 	}
-	inp = inpcb_lookup(&ui->ui_src, fport, &ui->ui_dst, lport);
+	inp = in_pcblookup(&udb, &ui->ui_src, fport, &ui->ui_dst, lport);
 	if (inp == 0)
 		goto notwanted;
 	/* stuff on queue using some subroutine */
@@ -68,13 +68,14 @@ udp_ctlinput(m)
 	m_freem(m);
 }
 
-udp_advise(m)
+udp_ctlinput(m)
 	struct mbuf *m;
 {
 
 	m_freem(m);
 }
 
+/*ARGSUSED*/
 udp_output(raddr, rport, m)
 	int raddr, rport;
 	struct mbuf *m;
@@ -84,11 +85,12 @@ udp_output(raddr, rport, m)
 	ip_output(m);
 }
 
+/*ARGSUSED*/
 udp_usrreq(so, req, m, addr)
 	struct socket *so;
 	int req;
 	struct mbuf *m;
-	struct in_addr *addr;
+	caddr_t addr;
 {
 	struct inpcb *inp = sotoinpcb(so);
 	int error;
@@ -98,7 +100,7 @@ udp_usrreq(so, req, m, addr)
 	case PRU_ATTACH:
 		if (inp != 0)
 			return (EINVAL);
-		inp = inpcb_alloc();
+		inp = in_pcballoc();
 		if (inp == NULL)
 			return (ENOBUFS);
 		so->so_pcb = (caddr_t)inp;
@@ -107,14 +109,13 @@ udp_usrreq(so, req, m, addr)
 	case PRU_DETACH:
 		if (inp == 0)
 			return (ENOTCONN);
-		sofree(inp->inp_socket);
-		udp_detach(inp);
+		in_pcbfree(inp);
 		break;
 
 	case PRU_CONNECT:
 		if (inp->inp_fhost)
 			return (EISCONN);
-		inp->inp_fhost = in_hmake((struct in_addr *)addr, &error);
+		inp->inp_fhost = in_hosteval((struct inaddr *)addr, &error);
 		if (inp->inp_fhost == 0)
 			return (error);
 		soisconnected(so);
@@ -123,9 +124,16 @@ udp_usrreq(so, req, m, addr)
 	case PRU_DISCONNECT:
 		if (inp->inp_fhost == 0)
 			return (ENOTCONN);
-		h_free(inp->inp_fhost);
+		in_hostfree(inp->inp_fhost);
 		inp->inp_fhost = 0;
 		soisdisconnected(so);
+		break;
+
+	case PRU_FLUSH:
+		return (EOPNOTSUPP);
+
+	case PRU_SHUTDOWN:
+		socantsendmore(so);
 		break;
 
 	case PRU_SEND:
@@ -135,8 +143,8 @@ udp_usrreq(so, req, m, addr)
 				return (EISCONN);
 			udp_output(addr->in_fhost, addr->in_fport, m);
 		} else
-			udp_output(inp->inp_fhost->h_addr, ip->inp_fport, m);
 #endif
+			udp_output(inp->inp_fhost->h_addr, ip->inp_fport, m);
 		break;
 
 	case PRU_ABORT:

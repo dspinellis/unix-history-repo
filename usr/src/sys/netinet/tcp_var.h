@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.3	81/11/15	*/
+/*	tcp_var.h	4.4	81/11/16	*/
 
 /*
  * Kernel variables for tcp.
@@ -159,12 +159,12 @@ struct tcp_debug {
 
 #ifdef KERNEL
 seq_t	tcp_iss;			/* tcp initial send seq # */
-int	tcpconsdebug;			/* set to 1 traces on console */
 struct	inpcb tcb;
 #ifdef TCPDEBUG
+int	tcpconsdebug;			/* set to 1 traces on console */
 struct	tcp_debug tcp_debug[TDBSIZE];
-#endif
 int	tdbx;			/* rotating index into tcp_debug */
+#endif
 struct	tcpiphdr *tcp_template();
 #endif
 

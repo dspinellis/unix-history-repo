@@ -1,4 +1,4 @@
-/* in_systm.h 4.2 81/11/15 */
+/* in_systm.h 4.3 81/11/16 */
 
 /*
  * Miscellaneous internetwork
@@ -50,8 +50,7 @@ struct	net_stat {
 };
 
 #ifdef	KERNEL
-int	nnetpages;
-extern	struct net_stat netstat;		/* net statistics block */
+struct	net_stat netstat;		/* net statistics block */
 #endif
 
 #ifdef KPROF

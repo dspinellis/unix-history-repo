@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.28 81/11/15 */
+/* tcp_usrreq.c 1.29 81/11/16 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -63,8 +63,9 @@ COUNT(TCP_TIMEO);
 		tmp = &tp->t_init;
 		for (i = 0; i < TNTIMERS; i++) {
 			if (*tmp && --*tmp == 0)
-				tcp_usrreq(tp->t_inpcb->inp_socket,
-				    PRU_SLOWTIMO, 0, i);
+				(void) tcp_usrreq(tp->t_inpcb->inp_socket,
+				    PRU_SLOWTIMO, (struct mbuf *)0,
+				    (caddr_t)i);
 			tmp++;
 		}
 		tp->t_xmt++;
@@ -98,7 +99,7 @@ tcp_usrreq(so, req, m, addr)
 	caddr_t addr;
 {
 	register struct inpcb *inp = sotoinpcb(so);
-	register struct tcpcb *tp = intotcpcb(inp);
+	register struct tcpcb *tp;
 	int s = splnet();
 	register int nstate;
 #ifdef TCPDEBUG
@@ -111,56 +112,57 @@ COUNT(TCP_USRREQ);
 	 * Make sure attached.  If not,
 	 * only PRU_ATTACH is valid.
 	 */
-	if (tp) {
-		nstate = tp->t_state;
-		tp->tc_flags &= ~TC_NET_KEEP;
-	} else
+#ifdef TCPDEBUG
+	tdb.td_tod = 0;
+#endif
+	if (inp == 0) {
 		if (req != PRU_ATTACH) {
 			splx(s);
 			return (EINVAL);
 		}
-
-	/*
-	 * Do tracing and accounting.
-	 */
+	} else {
+		tp = intotcpcb(inp);
+		nstate = tp->t_state;
 #ifdef KPROF
-	acounts[nstate][req]++;
+		tcp_acounts[nstate][req]++;
 #endif
 #ifdef TCPDEBUG
-	if (tp && ((tp->t_socket->so_options & SO_DEBUG) || tcpconsdebug)) {
-		tdb_setup(tp, (struct tcpiphdr *)0, req, &tdb);
-		tdb.td_tim = timertype;
-	} else
-		tdb.td_tod = 0;
+		if (((tp->t_socket->so_options & SO_DEBUG) || tcpconsdebug)) {
+			tdb_setup(tp, (struct tcpiphdr *)0, req, &tdb);
+			tdb.td_tim = timertype;
+		}
 #endif
+		tp->tc_flags &= ~TC_NET_KEEP;
+	}
+
 	switch (req) {
 
 	case PRU_ATTACH:
-		if (tp)
+		if (tp) {
 			error = EISCONN;
-		else {
-			tcp_attach(so);
-			tp = sototcpcb(so);
+			break;
 		}
+		tcp_attach(so);
+		tp = sototcpcb(so);
 		if (so->so_options & SO_ACCEPTCONN) {
-			inp->inp_lhost = in_hmake(&n_lhost);
-			in_pcbgenport(&tcb, inp);
+			inp->inp_lhost = in_hostalloc(&n_lhost);	/*XXX*/
+			inp->inp_lport = in_pcbgenport(&tcb);
 			nstate = LISTEN;
 		} else
 			nstate = CLOSED;
 		break;
 
 	case PRU_DETACH:
-		tcp_detach(so);
+		tcp_detach(tp);
 		break;
 
 	case PRU_CONNECT:
 		if (tp->t_state != 0 && tp->t_state != CLOSED)
 			goto bad;
-		inp->inp_fhost = in_hmake((struct in_addr *)addr, &error);
+		inp->inp_fhost = in_hosteval((struct inaddr *)addr, &error);
 		if (inp->inp_fhost == 0)
 			break;
-		tcp_sndctl(tp);
+		(void) tcp_sndctl(tp);
 		nstate = SYN_SENT;
 		soisconnecting(so);
 		break;
@@ -169,13 +171,17 @@ COUNT(TCP_USRREQ);
 		if ((tp->tc_flags & TC_FIN_RCVD) == 0)
 			goto abort;
 		if (nstate < ESTAB)
-			tcp_disconnect(so);
+			tcp_disconnect(tp);
 		else {
 			tp->tc_flags |= TC_SND_FIN;
-			tcp_sendctl(tp);
+			(void) tcp_sndctl(tp);
 			tp->tc_flags |= TC_USR_CLOSED;
 			soisdisconnecting(so);
 		}
+		break;
+
+	case PRU_FLUSH:
+		error = EOPNOTSUPP;
 		break;
 
 	case PRU_SHUTDOWN:
@@ -191,7 +197,7 @@ COUNT(TCP_USRREQ);
 		case ESTAB:	
 		case CLOSE_WAIT:
 			tp->tc_flags |= TC_SND_FIN;
-			tcp_sndctl(tp);
+			(void) tcp_sndctl(tp);
 			tp->tc_flags |= TC_USR_CLOSED;
 			nstate = nstate != CLOSE_WAIT ? FIN_W1 : LAST_ACK;
 			break;
@@ -293,9 +299,9 @@ abort:
 }
 
 tcp_attach(so)
-	register struct socket *so;
+	struct socket *so;
 {
-	register struct tcpcb *tp;
+	register struct tcpcb *tp = sototcpcb(so);
 COUNT(TCP_ATTACH);
 
 	/*
@@ -313,24 +319,19 @@ COUNT(TCP_ATTACH);
 	tcp_iss += (ISSINCR >> 1) + 1;
 }
 
-tcp_detach(so)
-	register struct socket *so;
+tcp_detach(tp)
+	struct tcpcb *tp;
 {
-	register struct tcpcb *tp = (struct tcpcb *)so->so_pcb;
-	register struct tcpiphdr *t;
-	register struct mbuf *m;
 COUNT(TCP_DETACH);
 
-	wmemfree((caddr_t)tp, 1024);
-	m_release(so->so_rcv.sb_hiwat + so->so_snd.sb_hiwat + 2 * MSIZE);
+	in_pcbfree(tp->t_inpcb);
+	(void) m_free(dtom(tp));
 }
 
 tcp_disconnect(tp)
 	register struct tcpcb *tp;
 {
 	register struct tcpiphdr *t;
-	register struct mbuf *m;
-	register struct socket *so;
 
 	tcp_tcancel(tp);
 	t = tp->seg_next;
@@ -338,16 +339,15 @@ tcp_disconnect(tp)
 		m_freem(dtom(t));
 	tcp_drainunack(tp);
 	if (tp->t_template) {
-		m_free(dtom(tp->t_template));
+		(void) m_free(dtom(tp->t_template));
 		tp->t_template = 0;
 	}
 	in_pcbfree(tp->t_inpcb);
 }
 
-tcp_abort(so)
-	register struct socket *so;
+tcp_abort(tp)
+	register struct tcpcb *tp;
 {
-	register struct tcpcb *tp = sototcpcb(so);
 
 	switch (tp->t_state) {
 
@@ -359,21 +359,20 @@ tcp_abort(so)
 		tp->tc_flags |= TC_SND_RST;
 		tcp_sndnull(tp);
 	}
-	if (so)
-		soisdisconnected(so);
+	soisdisconnected(tp->t_inpcb->inp_socket);
 }
 
 /*
+/*###366 [cc] warning: struct/union or struct/union pointer required %%%*/
+/*###366 [cc] member of structure or union required %%%*/
+/*###366 [cc] tp_inpcb undefined %%%*/
  * Send data queue headed by m0 into the protocol.
  */
 tcp_usrsend(tp, m0)
 	register struct tcpcb *tp;
 	struct mbuf *m0;
 {
-	register struct mbuf *m, *n;
 	register struct socket *so = tp->t_inpcb->inp_socket;
-	register off;
-	seq_t last;
 COUNT(TCP_USRSEND);
 
 	sbappend(&so->so_snd, m0);
@@ -383,7 +382,7 @@ COUNT(TCP_USRSEND);
 		tp->snd_urp = tp->snd_off + so->so_snd.sb_cc + 1;
 		tp->tc_flags |= TC_SND_URG;
 	}
-	tcp_send(tp);
+	(void) tcp_send(tp);
 }
 
 /*
@@ -430,13 +429,13 @@ COUNT(TCP_TIMERS);
 			tp->t_xmtime = tp->t_xmtime << 1;
 			if (tp->t_xmtime > T_REMAX)
 				tp->t_xmtime = T_REMAX;
-			tcp_send(tp);
+			(void) tcp_send(tp);
 		}
 		return (SAME);
 
 	case TREXMTTL:		/* retransmit too long */
 		if (tp->t_rtl_val > tp->snd_una)		/* 36 */
-			tcp_error(EIO);		/* URXTIMO !?! */
+			tcp_error(tp, EIO);		/* URXTIMO !?! */
 		/*
 		 * If user has already closed, abort the connection.
 		 */
@@ -451,12 +450,14 @@ COUNT(TCP_TIMERS);
 		 * Force a byte send through closed window.
 		 */
 		tp->tc_flags |= TC_FORCE_ONE;
-		tcp_send(tp);
+		(void) tcp_send(tp);
 		return (SAME);
 	}
 	panic("tcp_timers");
+	/*NOTREACHED*/
 }
 
+/*ARGSUSED*/
 tcp_sense(m)
 	struct mbuf *m;
 {
@@ -464,11 +465,12 @@ tcp_sense(m)
 	return (EOPNOTSUPP);
 }
 
-tcp_error(so, errno)
-	struct socket *so;
+tcp_error(tp, errno)
+	struct tcpcb *tp;
 	int errno;
 {
-COUNT(TO_USER);
+	struct socket *so = tp->t_inpcb->inp_socket;
+COUNT(TCP_ERROR);
 
 	so->so_error = errno;
 	sorwakeup(so);
