@@ -1,0 +1,179 @@
+.TH LS 1L \" -*- nroff -*-
+.SH NAME
+ls, dir, vdir \- list contents of directories
+.SH SYNOPSIS
+.B ls
+[\-abcdgiklmnpqrstuxABCFLNQRSUX1] [\-w cols] [\-T cols] [\-I pattern]
+[\-\-all] [\-\-escape] [\-\-directory] [\-\-inode] [\-\-kilobytes]
+[\-\-numeric-uid-gid] [\-\-hide-control-chars] [\-\-reverse] [\-\-size]
+[\-\-width=cols] [\-\-tabsize=cols] [\-\-almost-all] [\-\-ignore-backups]
+[\-\-classify] [\-\-file-type] [\-\-ignore=pattern] [\-\-dereference]
+[\-\-literal] [\-\-quote-name] [\-\-recursive]
+[\-\-sort={none,time,size,extension}]
+[\-\-format={long,verbose,commas,across,vertical,single-column}]
+[\-\-time={atime,access,use,ctime,status}] [path...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR ls .
+.B dir
+and
+.B vdir
+are versions of
+.B ls
+with different default output formats.
+These programs list each given file or directory path.  Directory contents are
+sorted alphabetically.  For
+.BR ls ,
+files are by default listed in columns, sorted
+vertically, if the standard output is a terminal; otherwise they are
+listed one per line.  For
+.BR dir ,
+files are by default listed in columns, sorted vertically.  For
+.BR vdir ,
+files are by default listed in long format.
+.SS OPTIONS
+.TP
+.I "\-a, \-\-all"
+List all files in directories, including all files that start with `.'.
+.TP
+.I "\-b, \-\-escape"
+Quote nongraphic characters in file names using alphabetic and octal
+backslash sequences like those used in C.
+.TP
+.I "\-c, \-\-time=ctime, \-\-time=status"
+Sort directory contents according to the files' status change time
+instead of the modification time.  If the long listing format is being
+used, print the status change time instead of the modification time.
+.TP
+.I "\-d, \-\-directory"
+List directories like other files, rather than listing their contents.
+.TP
+.I \-g
+Ignored; for Unix compatibility.
+.TP
+.I "\-i, \-\-inode"
+Print the index number of each file to the left of the file name.
+.TP
+.I "\-k, \-\-kilobytes"
+If file sizes are being listed, print them in kilobytes.  This
+overrides the environment variable POSIXLY_CORRECT.
+.TP
+.I "\-l, \-\-format=long, \-\-format=verbose"
+In addition to the name of each file, print the file type,
+permissions, number of hard links, owner name, group name, size in
+bytes, and timestamp (the modification time unless other times are
+selected).  For files with a time that is more than 6 months old or
+more than 1 hour into the future, the timestamp contains the year
+instead of the time of day.
+.TP
+.I "\-m, \-\-format=commas"
+List files horizontally, with as many as will fit on each line,
+separated by commas.
+.TP
+.I "\-n, \-\-numeric-uid-gid"
+List the numeric UID and GID instead of the names.
+.TP
+.I \-p
+Append a character to each file name indicating the file type.
+.TP
+.I "\-q, \-\-hide-control-chars"
+Print question marks instead of nongraphic characters in file names.
+.TP
+.I "\-r, \-\-reverse"
+Sort directory contents in reverse order.
+.TP
+.I "\-s, \-\-size"
+Print the size of each file in 1K blocks to the left of the file name.
+If the environment variable POSIXLY_CORRECT is set, 512-byte blocks
+are used instead.
+.TP
+.I "\-t, \-\-sort=time"
+Sort directory contents by timestamp instead of alphabetically, with
+the newest files listed first.
+.TP
+.I "\-u, \-\-time=atime, \-\-time=access, \-\-time=use"
+Sort directory contents according to the files' last access time
+instead of the modification time.  If the long listing format is being
+used, print the last access time instead of the modification time.
+.TP
+.I "\-x, \-\-format=across, \-\-format=horizontal"
+List the files in columns, sorted horizontally.
+.TP
+.I "\-A, \-\-almost-all"
+List all files in directories except for `.' and `..'.
+.TP
+.I "\-B, \-\-ignore-backups"
+Do not list files that end with `~', unless they are given on the
+command line.
+.TP
+.I "\-C, \-\-format=vertical"
+List files in columns, sorted vertically.
+.TP
+.I "\-F, \-\-classify"
+Append a character to each file name indicating the file type.  For
+regular files that are executable, append a `*'.  The file type
+indicators are `/' for directories, `@' for symbolic links, `|' for
+FIFOs, `=' for sockets, and nothing for regular files.
+.TP
+.I "\-L, \-\-dereference"
+List the files linked to by symbolic links instead of listing the
+contents of the links.
+.TP
+.I "\-N, \-\-literal"
+Do not quote file names.
+.TP
+.I "\-Q, \-\-quote-name"
+Enclose file names in double quotes and quote nongraphic characters as
+in C.
+.TP
+.I "\-R, \-\-recursive"
+List the contents of all directories recursively.
+.TP
+.I "\-S, \-\-sort=size"
+Sort directory contents by file size instead of alaphabetically, with
+the largest files listed first.
+.TP
+.I "\-U, \-\-sort=none"
+Do not sort directory contennts.
+.TP
+.I "\-X, \-\-sort=extension"
+Sort directory contents alphabetically by file extension (characters
+after the last `.'); files with no extension are sorted first.
+.TP
+.I "\-1, \-\-format=single-column"
+List one file per line.
+.TP
+.I "\-w, \-\-width cols"
+Assume the screen is
+.I cols
+columns wide.  The default is taken from the terminal driver if
+possible; otherwise the environment variable
+.B COLUMNS
+is used if it is set; otherwise the default is 80.
+.TP
+.I "\-T, \-\-tabsize cols"
+Assume that each tabstop is
+.I cols
+columns wide.  The default is 8.
+.TP
+.I "\-I, \-\-ignore pattern"
+Do not list files whose names match the shell pattern
+.I pattern
+unless they are given on the command line.  As in the shell, an
+initial `.' in a filename does not match a wildcard at the start of
+.I pattern.
+.SH BUGS
+On BSD systems, the
+.I \-s
+option reports sizes that are half the correct values for files that
+are NFS-mounted from HP-UX systems.  On HP-UX systems, it reports
+sizes that are twice the correct values for files that are NFS-mounted
+from BSD systems.  This is due to a flaw in HP-UX; it also affects the
+HP-UX
+.B ls
+program.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
