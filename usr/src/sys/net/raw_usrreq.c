@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.13	82/04/10	*/
+/*	raw_usrreq.c	4.14	82/04/11	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -28,10 +28,10 @@ COUNT(RAW_INIT);
 /*
  * Raw protocol interface.
  */
-raw_input(m0, proto, dst, src)
+raw_input(m0, proto, src, dst)
 	struct mbuf *m0;
 	struct sockproto *proto;
-	struct sockaddr *dst, *src;
+	struct sockaddr *src, *dst;
 {
 	register struct mbuf *m;
 	struct raw_header *rh;
@@ -80,9 +80,8 @@ rawintr()
 	int s;
 	struct mbuf *m;
 	register struct rawcb *rp;
-	register struct sockaddr *laddr;
 	register struct protosw *lproto;
-	struct raw_header *rh;
+	register struct raw_header *rh;
 	struct socket *last;
 
 COUNT(RAWINTR);
@@ -93,13 +92,6 @@ next:
 	if (m == 0)
 		return;
 	rh = mtod(m, struct raw_header *);
-
-	/*
-	 * Find the appropriate socket(s) in which to place this
-	 * packet.  This is done by matching the protocol and
-	 * address information prepended by raw_input against
-	 * the info stored in the control block structures.
-	 */
 	last = 0;
 	for (rp = rawcb.rcb_next; rp != &rawcb; rp = rp->rcb_next) {
 		lproto = rp->rcb_socket->so_proto;
@@ -108,30 +100,21 @@ next:
 		if (lproto->pr_protocol &&
 		    lproto->pr_protocol != rh->raw_proto.sp_protocol)
 			continue;
-		laddr = &rp->rcb_laddr;
-		if (laddr->sa_family &&
-		    laddr->sa_family != rh->raw_dst.sa_family)
-			continue;
 		/*
 		 * We assume the lower level routines have
 		 * placed the address in a canonical format
 		 * suitable for a structure comparison.
 		 */
+#define equal(a1, a2) \
+	(bcmp((caddr_t)&(a1), (caddr_t)&(a2), sizeof (struct sockaddr)) == 0)
 		if ((rp->rcb_flags & RAW_LADDR) &&
-		    bcmp(laddr->sa_data, rh->raw_dst.sa_data, 14) != 0)
+		    !equal(rp->rcb_laddr, rh->raw_dst))
 			continue;
 		if ((rp->rcb_flags & RAW_FADDR) &&
-		    bcmp(rp->rcb_faddr.sa_data, rh->raw_src.sa_data, 14) != 0)
+		    !equal(rp->rcb_faddr, rh->raw_src))
 			continue;
-		/*
-		 * To avoid extraneous packet copies, we keep
-		 * track of the last socket the packet should be
-		 * placed in, and make copies only after finding a
-		 * socket which "collides".
-		 */
 		if (last) {
 			struct mbuf *n;
-
 			if (n = m_copy(m->m_next, 0, (int)M_COPYALL))
 				goto nospace;
 			if (sbappendaddr(&last->so_rcv, &rh->raw_src, n)==0) {
