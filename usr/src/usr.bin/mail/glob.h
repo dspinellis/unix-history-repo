@@ -4,7 +4,7 @@
  */
 
 /*
- * Sccs Id = "@(#)glob.h	2.6 %G%";
+ * Sccs Id = "@(#)glob.h	2.7 %G%";
  */
 
 int	msgCount;			/* Count of messages read in */
@@ -36,8 +36,7 @@ int	outtty;				/* True if standard output a tty */
 int	intty;				/* True if standard input a tty */
 int	baud;				/* Output baud rate */
 char	mbox[PATHSIZE];			/* Name of mailbox file */
-char	*mailname;			/* Name of system mailbox */
-char	mailspace[PATHSIZE];		/* Space norm alloc'd for name */
+char	mailname[PATHSIZE];		/* Name of system mailbox */
 int	uid;				/* The invoker's user id */
 char	mailrc[PATHSIZE];		/* Name of startup file */
 char	deadletter[PATHSIZE];		/* Name of #/dead.letter */
