@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	8.2 (Berkeley) %G%
+ *	@(#)conf.c	8.3 (Berkeley) %G%
  *
  * from: $Header: conf.c,v 1.17 93/10/31 05:37:39 torek Exp $ (LBL)
  */
@@ -371,6 +371,12 @@ iskmemdev(dev)
 {
 
 	return (major(dev) == 3 && minor(dev) < 2);
+}
+
+iszerodev(dev)
+	dev_t dev;
+{
+	return (major(dev) == 3 && minor(dev) == 12);
 }
 
 /*
