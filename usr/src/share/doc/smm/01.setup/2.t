@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.18 (Berkeley) %G%
+.\"	@(#)2.t	6.19 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -19,7 +19,7 @@ If you are not currently running \*(Ps you will
 have to do a full bootstrap.
 Section 3 describes how to upgrade a \*(Ps system.
 An understanding of the operations used in a full bootstrap
-is very helpful in performing an upgrade as well.
+is helpful in doing an upgrade as well.
 In either case, it is highly desirable to read and understand
 the remainder of this document before proceeding.
 .PP
@@ -133,7 +133,7 @@ TAPE's	T{
 Low-density CS80 cartridge (7914, 7946, 9144),
 high-density CS80 cartridge (9145),
 HP SCSI DAT and
-SCSI exabyte.
+SCSI Exabyte.
 T}
 _
 RS232	T{
@@ -168,7 +168,7 @@ and SCSI autochanger device.
 T}
 .TE
 .LP
-Major items which are not supported
+Major items that are not supported
 include the 310 and 332 CPU's, 400 series machines
 configured for Domain/OS, EISA and VME bus adaptors, audio, the centronics
 port, 1/2" tape drives (7980), CD-ROM, and the PVRX/TVRX 3D graphics displays.
@@ -189,7 +189,7 @@ The \fIdevice type\fP differentiates the various disks and tapes and is one of:
 ``rd'' for HP-IB CS80 disks,
 ``ct'' for HP-IB CS80 cartridge tapes, or
 ``sd'' for SCSI-I disks
-(SCSI-I tapes are not supported at this time).
+(SCSI-I tapes are currently not supported).
 The \fIadaptor\fP field is a logical HP-IB or SCSI bus adaptor card number.
 This will typically be
 0 for SCSI disks,
@@ -237,8 +237,8 @@ If you want to load an entire binary system
 (i.e., everything except /usr/src),
 on the single disk you will need a minimum of 290MB,
 ruling out anything smaller than a 7959B/S disk.
-The disklabel included in the bootstrap root image is layed out
-to accomodate this scenerio.
+The disklabel included in the bootstrap root image is laid out
+to accommodate this scenario.
 Note that an HP SCSI magneto-optical disk will work fine for this case.
 \*(4B will boot and run (albeit slowly) using one.
 If you want to load source on a single disk system,
@@ -246,12 +246,12 @@ you will need at least 640MB (at least a 2213A SCSI or 2203A HP-IB disk).
 A disk as small as the 7945A (54MB) can be used for the bootstrap
 procedure but will hold only the root and primary swap partitions.
 If you plan to use multiple disks,
-refer to section 2.5 for suggestions on paritioning.
+refer to section 2.5 for suggestions on partitioning.
 .PP
 After selecting a disk, you may need to format it.
 Since most HP disk drives come pre-formatted
-(with the exception of optical media)
-you probably won't but if necessary,
+(except optical media)
+you probably will not, but if necessary,
 you can format a disk under HP-UX using the
 .Xr mediainit (1m)
 program.
@@ -337,7 +337,7 @@ destroying the HP-UX disk.
 If you used a cartridge tape for booting you should also unload the tape
 at this point.
 Whether you booted from tape or copied from disk you should now reboot
-the machine and perform another assisted boot, this time with SYS_TBOOT.
+the machine and do another assisted boot, this time with SYS_TBOOT.
 Once loaded and running the boot program will display the CPU type and
 prompt for a kernel file to boot:
 .DS
@@ -349,7 +349,7 @@ Boot
 .DE
 .LP
 After providing the kernel name, the machine will boot \*(4B with
-output that looks approximately like this:
+output that looks about like this:
 .DS
 .B
 597316+34120+139288 start 0xfe8019ec
@@ -416,14 +416,14 @@ and paging area on any available disk drive.
 You will most likely respond to the root device question with ``sd0''
 if you are booting from a SCSI disk,
 or with ``rd0'' if you are booting from an HP-IB disk.
-This response indicates that that the disk it is running
+This response shows that the disk it is running
 on is drive 0 of type ``sd'' or ``rd'' respectively.
 If you have other disks attached to the system,
 it is possible that the drive you are using will not be configured
 as logical drive 0.
 Check the autoconfiguration messages printed out by the kernel to
 make sure.
-These messages will reveal the type of every logical drive
+These messages will show the type of every logical drive
 and their associated controller and slave addresses.
 You will later build a system tailored to your configuration
 that will not prompt you for a root device when it is bootstrapped.
@@ -437,8 +437,8 @@ that will not prompt you for a root device when it is bootstrapped.
 The \*(lqerase ...\*(rq message is part of the
 .Pn /.profile
 that was executed by the root shell when it started.  This message
-is present to inform you as to what values the character erase,
-line erase, and interrupt characters have been set.
+tells you about the settings of the character erase,
+line erase, and interrupt characters.
 .PP
 UNIX is now running,
 and the \fIUNIX Programmer's Manual\fP applies.  The ``#'' is the prompt
@@ -484,7 +484,7 @@ If you bootstrapped using the two disk method, you can
 overwrite your initial HP-UX disk, as it will no longer
 be needed (assuming you have no plans to run HP-UX again).
 .PP
-To actually create the root filesystem on drive 1
+To really create the root filesystem on drive 1
 you should first label the disk as described in step 5 below.
 Then run the following commands:
 .DS
@@ -513,14 +513,14 @@ The root image just loaded includes a ``generic'' label intended to allow
 easy installation of / and /usr and may not be suitable for the actual
 disk on which it was installed.
 In particular,
-it may make your disk appear larger or smaller than it actually is.
+it may make your disk appear larger or smaller than its real size.
 In the former case, you lose some capacity.
 In the latter, some of the partitions may map non-existent sectors
 leading to errors if those partitions are used.
 It is also possible that the defined geometry will interact poorly with
 the filesystem code resulting in reduced performance.
 However, as long as you are willing to give up a little space,
-not use certain partitions or suffer minor performance degredation,
+not use certain partitions or suffer minor performance degradation,
 you might want to avoid this step;
 especially if you do not know how to use
 .Xr ed (1).
@@ -547,7 +547,7 @@ Note the explicit use of the ``d'' partition.
 This partition includes the bootblock as does ``c''
 and using it allows you to change the size of ``c''.
 .PP
-If you wish to label any addtional disks, run the following command for each:
+If you wish to label any additional disks, run the following command for each:
 .DS
 \fB#\|\fP\fIdisklabel  -rw  \fBXX#  type\fP  \fI"optional_pack_name"\fP
 .DE
@@ -614,7 +614,7 @@ and audio device.
 T}
 .TE
 .LP
-Major items which are not supported include
+Major items that are not supported include
 anything VME-based,
 the GX (cgsix) display,
 the floppy disk, and SCSI tapes.
@@ -624,10 +624,10 @@ Limitations
 There are several important limitations on the \*(4B distribution
 for the SPARC:
 .IP 1)
-You MUST have SunOS 4.1.x or Solaris in order to bring up \*(4B.
+You MUST have SunOS 4.1.x or Solaris to bring up \*(4B.
 There is no SPARCstation bootstrap code in this distribution.  The
 Sun-supplied boot loader will be used to boot \*(4B; you must copy
-this from your SunOS distribution.  This imposes a number of
+this from your SunOS distribution.  This imposes several
 restrictions on the system, as detailed below.
 .IP 2)
 The \*(4B SPARC kernel does not remap SCSI IDs.  A SCSI disk at
@@ -644,7 +644,7 @@ You must have another system for tape reading and backups.
 .IP 4)
 Although the \*(4B SPARC kernel will handle existing SunOS shared
 libraries, it does not use or create them itself, and therefore
-requires quite a bit more disk space than SunOS does.
+requires much more disk space than SunOS does.
 .IP 5)
 It is currently difficult (though not completely impossible) to
 run \*(4B diskless.  These instructions assume you will have a local
@@ -733,7 +733,7 @@ ok boot disk3 -s			[for new proms]
 .LP
 To install the remaining filesystems, use the procedure described
 starting in section 2.5.
-In these instructions, /usr should be loaded into the ``e'' parition
+In these instructions, /usr should be loaded into the ``e'' partition
 and /var in the ``f'' partition.
 .LP
 After completing the filesystem installation you may want
@@ -752,7 +752,7 @@ superblock fields that are updated in \*(4B.  Running ``fsck \-b32''
 and letting it ``fix'' the superblock will take care of this.
 .sp 0.5
 If you wish to run SunOS binaries that use SunOS shared libraries, you
-simply need to copy all of the dynamic linker files from an existing
+simply need to copy all the dynamic linker files from an existing
 SunOS system:
 .DS
 .ft CW
@@ -808,7 +808,7 @@ internal and TURBOchannel PMAZ-AA SCSI interfaces.
 T}
 .TE
 .LP
-Major items which are not supported include the 5000/240
+Major items that are not supported include the 5000/240
 (there is code but not compiled in or tested),
 R4000 based machines, FDDI and audio interfaces.
 Diskless machines are not supported but booting kernels and bootstrapping
@@ -816,7 +816,7 @@ over the network is supported on the 5000 series.
 .NH 3
 The Procedure
 .PP
-The first file on the distribution tape is a tar file which contains
+The first file on the distribution tape is a tar file that contains
 four files.
 The first step requires a running UNIX (or ULTRIX) system that can
 be used to extract the tar archive from the first file on the tape.
@@ -855,7 +855,7 @@ The actual special file syntax will vary depending on unit numbers and
 the version of ULTRIX that is running.
 This system is now ready to boot. You can boot the kernel with one of the
 following PROM commands. If you are booting on a 3100, the disk must be SCSI
-id zero due to a bug.
+id zero because of a bug.
 .DS
 .ft CW
 DEC 3100:    boot \-f rz(0,0,0)vmunix
@@ -1179,7 +1179,7 @@ but the factors involved in choosing a block
 size and fragment size are many and interact in complex
 ways.  Larger block sizes result in better
 throughput to large files in the filesystem as
-larger I/O requests will then be performed by the
+larger I/O requests will then be done by the
 system.  However,
 consideration must be given to the average file sizes
 found in the filesystem and the performance of the
@@ -1503,7 +1503,7 @@ point on the 8mm tape.
 .PP
 If you received a distribution on 8mm Exabyte tape,
 there is one additional tape file on the distribution tape
-which has not been installed to this point; it contains the
+that has not been installed to this point; it contains the
 sources for X11R5 in
 .Xr tar (1)
 format.  As distributed, X11R5 should be placed in

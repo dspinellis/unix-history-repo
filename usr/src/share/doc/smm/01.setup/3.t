@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.20 (Berkeley) %G%
+.\"	@(#)3.t	6.21 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -47,14 +47,15 @@ The Reno filesystem code was somewhere between 4.3 and 4.4: the VFS switch
 had been added but many of the UFS features (e.g. ``inline'' symlinks)
 were missing.
 The filesystem hierarchy reorganization first appeared in this release.
-Be extremely careful following these instructions in this case.
+Be extremely careful following these instructions if you are
+upgrading from the Reno distribution.
 .IP 4)
 HPBSD 2.0 from Utah.
 .br
 As if things weren't bad enough already,
 this release has the 4.4 filesystem and networking code
 as well as some utilities, but still has a 4.3 hierarchy.
-No filesystem conversions are necessary in this case,
+No filesystem conversions are necessary for this upgrade,
 but files will still need to be moved around.
 .NH 2
 Installation overview
@@ -72,7 +73,7 @@ boot from the new system, then merge or restore existing
 configuration files and filesystems; or
 (3) extract the sources from the distribution tape onto an existing system,
 and use that system to cross-compile and install \*(4B.
-For this release, the second alternative is strongly advised if at all possible,
+For this release, the second alternative is strongly advised,
 with the third alternative reserved as a last resort.
 In general, older binaries will continue to run under \*(4B,
 but there are many exceptions that are on the critical path
@@ -121,7 +122,7 @@ This can serve as the backup documentation as needed.
 .IP \(bu
 Configure and boot a kernel for the local system.
 This can be delayed if the generic kernel from the distribution
-supports sufficient hardware to proceed.
+supports enough hardware to proceed.
 .IP \(bu
 Build a skeletal
 .Pn /var
@@ -224,7 +225,7 @@ lfC c l.
 .TE
 .DS
 \(dg\|Files that can be used from \*(Ps without change.
-\(dd\|Files that need local modifications merged into \*(4B files.
+\(dd\|Files that need local changes merged into \*(4B files.
 *\|Files that require special work to merge and are discussed in section 3.4.
 .DE
 .NH 2
@@ -343,7 +344,7 @@ spool/mqueue	(sendmail spooling directory)
 spool/news	(news spooling area)
 spool/output	(printer spooling area)
 spool/uucp	(uucp spooling area)
-tmp	(disk-based temp directory)
+tmp	(disk-based temporary directory)
 users	(root of per-machine user home directories)
 .TE
 .PP
@@ -406,7 +407,7 @@ will produce messages of the form:
 The defaults are to set \fIinterleave\fP to 1 and
 \fInpsect\fP to \fInsect\fP.
 This is correct on most drives;
-it affects only performance (and in most cases, virtually unmeasurably).
+it affects only performance (usually virtually unmeasurably).
 .FE
 Filesystems that have had their interleave and npsect values
 set will be diagnosed by the old
@@ -429,7 +430,7 @@ as soon as it is convenient
 by running
 .Xr fsck
 with the \fI\-c 2\fP option.
-The sequence \fIfsck \-p \-c 2\fP will update all of them,
+The sequence \fIfsck \-p \-c 2\fP will update them all,
 fix the interleave and npsect fields,
 fix any incorrect directory lengths,
 expand maximum uid's and gid's to 32-bits,
@@ -464,7 +465,7 @@ Those data files marked with a double dagger (\(dd) have syntax
 changes or substantial enhancements.
 You should start with the \*(4B version and carefully
 integrate any local changes into the new file.
-Usually these local modifications can be incorporated
+Usually these local changes can be incorporated
 without conflict into the new file;
 some exceptions are noted below.
 The files marked with an asterisk (*) require
@@ -476,11 +477,11 @@ Users of certain recent vendor releases have seen this general organization,
 although \*(4B takes the reorganization a bit further.
 The directories most affected are
 .Pn /etc ,
-which now contains only system configuration files;
+that now contains only system configuration files;
 .Pn /var ,
 a new filesystem containing per-system spool and log files; and
 .Pn /usr/share,
-which contains most of the text files shareable across architectures
+that contains most of the text files shareable across architectures
 such as documentation and macros.
 System administration programs formerly in
 .Pn /etc
@@ -553,7 +554,7 @@ directory
 .PP
 The
 .Pn /etc
-directory now contains nearly all of the host-specific configuration
+directory now contains nearly all the host-specific configuration
 files.
 Note that some file formats have changed,
 and those configuration files containing pathnames are nearly all affected
@@ -693,7 +694,7 @@ The format of the cron table,
 .Pn /etc/crontab ,
 has been changed to specify the user-id that should be used to run a process.
 The userid ``nobody'' is frequently useful for non-privileged programs.
-Local modification are now put in a separate file,
+Local changes are now put in a separate file,
 .Pn /etc/crontab.local .
 .PP
 Some of the commands previously in
@@ -739,12 +740,11 @@ are:
 \(bu Globally exported filesystems.
 \(bu Dangerous owners or permissions for special devices.
 .DE
-In addition, any modifications to setuid and setgid files, special
+In addition, it reports any changes to setuid and setgid files, special
 devices, or the files in
 .Pn /etc/changelist
 since the last run of
-.Pn /etc/security
-are noted.
+.Pn /etc/security .
 Backup copies of the files are saved in
 .Pn /var/backups .
 Finally, the system binaries are checksum'd and their permissions
@@ -758,7 +758,7 @@ are compiled with new versions of
 .Xr gethostbyname
 and
 .Xr gethostbyaddr
-which use the name server,
+that use the name server,
 .Xr named (8).
 If you have only a small network and are not connected
 to a large network, you can use the distributed library routines without
@@ -796,7 +796,7 @@ The actual password file is now stored in
 The hashed dbm password files do not contain encrypted passwords,
 but contain the file offset to the entry with the password in
 .Pn /etc/master.passwd
-(which is readable only by root).
+(that is readable only by root).
 Thus, the
 .Fn getpwnam
 and
@@ -957,7 +957,7 @@ and interrupted system calls no longer abort using non-local goto's (longjmp's).
 A new sleep interface separates signal handling from scheduling priority,
 returning characteristic errors to abort or restart the current system call.
 This sleep call also passes a string describing the process state,
-which is used by the ps(1) program.
+that is used by the ps(1) program.
 The old sleep interface can be used only for non-interruptible sleeps.
 The sleep interface (\fItsleep\fP) can be used at any priority,
 but is only interruptible if the PCATCH flag is set.
@@ -1063,7 +1063,7 @@ The semantics of the
 system call are slightly different.
 The synchronization between parent and child is preserved,
 but the memory sharing aspect is not.
-In practise this has been sufficient for backward compatibility,
+In practise this has been enough for backward compatibility,
 but newer code should just use
 .Xr fork (2).
 .NH 4
@@ -1080,7 +1080,7 @@ We also include support for ISO Connection-Oriented Network Service,
 X.25, TP-0.
 The session and presentation layers are provided outside
 the kernel using the ISO Development Environment by Marshall Rose,
-which is available via anonymous FTP
+that is available via anonymous FTP
 (but is not included on the distribution tape).
 Included in this development environment are file
 transfer and management (FTAM), virtual terminals (VT),
@@ -1107,7 +1107,7 @@ Additional information is provided in the manual page describing
 .PP
 The command
 .Xr route (8)
-has a new syntax and a number of new capabilities:
+has a new syntax and several new capabilities:
 it can install routes with a specified destination and mask,
 and can change route characteristics such as hop count, packet size
 and window size.
@@ -1173,7 +1173,7 @@ assuming the order and number of fields.
 Also, programs with use structures to describe a network packet format
 that contain embedded
 .I sockaddr
-structures also require modification; a definition of an
+structures also require change; a definition of an
 .I osockaddr
 structure is provided for this purpose.
 Finally, programs that use the
@@ -1182,8 +1182,8 @@ ioctl to get a complete list of interface addresses
 need to check the
 .I sa_len
 field when iterating through the array of addresses returned,
-as not all of the structures returned have the same length
-(in fact, this is nearly guaranteed by the presence of link-layer
+as not all the structures returned have the same length
+(this variance in length is nearly guaranteed by the presence of link-layer
 address structures).
 .NH 4
 Additions and changes to filesystems
@@ -1234,8 +1234,8 @@ filesystem checks of the root now use the raw device
 to access the root filesystem, and
 .IP 3)
 the root filesystem is initially mounted read-only
-so that nothing can be written back to disk during or after modification
-of the raw filesystem by
+so that nothing can be written back to disk during or after change to
+the raw filesystem by
 .Xr fsck .
 .LP
 The root filesystem may be made writable while in single-user mode
@@ -1262,7 +1262,7 @@ gateways and over long-haul networks.
 Using an extended protocol, it supports Leases to allow a limited
 callback mechanism that greatly reduces the network traffic necessary
 to maintain cache consistency between the server and its clients.
-Its use will be fairly familiar to users of other implementations of NFS.
+Its use will be familiar to users of other implementations of NFS.
 See the manual pages
 .Xr mount (8),
 .Xr mountd (8),
@@ -1285,7 +1285,7 @@ has been added to the system.
 It provides near disk-speed output and fast crash recovery.
 This work is based, in part, on the LFS file system created
 for the Sprite operating system at Berkeley.
-While the kernel implementation is fairly complete,
+While the kernel implementation is almost complete,
 only some of the utilities to support the
 filesystem have been written,
 so we do not recommend it for production use.
@@ -1305,7 +1305,7 @@ pageable memory, allowing large temporary filesystems without
 requiring dedicated physical memory.
 .PP
 The local ``fast filesystem'' has been enhanced to do 
-clustering which allows large pieces of files to be
+clustering that allows large pieces of files to be
 allocated contiguously resulting in near doubling
 of filesystem throughput.
 The filesystem interface has been extended to allow
@@ -1323,7 +1323,7 @@ marked as immutable or append only.
 Once set, these flags can only be cleared by the super-user
 when the system is running in insecure mode (normally, single-user).
 In addition to the immutable and append-only flags,
-the filsystem supports a new user-settable flag ``nodump''.
+the filesystem supports a new user-settable flag ``nodump''.
 (File flags are set using the
 .Xr chflags (1)
 utility.)
@@ -1378,7 +1378,7 @@ contains special files
 .Pn 0
 through
 .Pn 63
-which, when opened, duplicate the corresponding file descriptor.
+that, when opened, duplicate the corresponding file descriptor.
 The names
 .Pn /dev/stdin
 .Pn /dev/stdout
@@ -1406,13 +1406,13 @@ This emulation is expected to be unavailable in many vendors releases,
 so conversion to the new interface is encouraged.
 .PP
 \*(4B also adds the IEEE Std1003.1 job control interface,
-which is similar to the \*(Ps job control interface,
+that is similar to the \*(Ps job control interface,
 but adds a security model that was missing in the
 \*(Ps job control implementation.
 A new system call,
 .Fn setsid ,
-is used to create a job-control session consisting of a single process
-group with one member, the caller, which becomes a session leader.
+creates a job-control session consisting of a single process
+group with one member, the caller, that becomes a session leader.
 Only a session leader may acquire a controlling terminal.
 This is done explicitly via a
 .Sm TIOCSCTTY
@@ -1422,7 +1422,7 @@ call, not implicitly by an
 call.
 The call fails if the terminal is in use.
 Programs that allocate controlling terminals (or pseudo-terminals)
-require modification to work in this environment.
+require change to work in this environment.
 The versions of
 .Xr xterm
 provided in the X11R5 release includes the necessary changes.
@@ -1440,9 +1440,8 @@ Older job control shells (csh, ksh) will generally not operate correctly
 with the new system.
 .PP
 Most of the other kernel interfaces have been changed to correspond
-with the POSIX.1 interface, although that work is not quite complete.
-See the relevant manual pages, perhaps in conjunction with the IEEE POSIX
-standard.
+with the POSIX.1 interface, although that work is not complete.
+See the relevant manual pages and the IEEE POSIX standard.
 .NH 4
 Native operating system compatibility
 .PP
@@ -1454,8 +1453,8 @@ or a SPARC kernel with the COMPAT_SUNOS option will enable this feature
 (on by default in the generic kernel provided in the root filesystem image).
 Though this native operating system compatibility was provided by the
 developers as needed for their purposes and is by no means complete,
-it is sufficient to run a number of non-trivial applications including
-those which require HP-UX or SunOS shared libraries.
+it is complete enough to run several non-trivial applications including
+those that require HP-UX or SunOS shared libraries.
 For example, the vendor supplied X11 server and windowing environment
 can be used on both the HP300 and SPARC.
 .PP
@@ -1511,7 +1510,7 @@ The makefiles for the \*(4B sources make extensive use of the new
 facilities, especially conditionals and file inclusion, and are thus
 completely incompatible with older versions of
 .Xr make
-(but nearly all of the makefiles are now trivial!).
+(but nearly all the makefiles are now trivial!).
 The standard include files for
 .Xr make
 are in
@@ -1541,7 +1540,7 @@ as symbolic links to the corresponding directories in
 The command ``make obj'' builds both
 the local symlink and the shadow directory, using
 .Pn /usr/obj ,
-which may be a symbolic link, as the root of the shadow tree.
+that may be a symbolic link, as the root of the shadow tree.
 The use of
 .Pn /usr/obj
 is for historic reasons only, and the system make configuration files in
@@ -1562,7 +1561,7 @@ have been converted to use the new make and
 subdirectories;
 this change allows compilation for multiple
 architectures from the same source tree
-(which may be mounted read-only).
+(that may be mounted read-only).
 .NH 4
 Kerberos
 .PP
@@ -1593,14 +1592,14 @@ server machine.
 Users and hosts may be added to the server database manually with
 .Xr kdb_edit (8),
 or users on authorized hosts can add themselves and a Kerberos
-password upon verification of their ``local'' (passwd-file) password
+password after verification of their ``local'' (passwd-file) password
 using the
 .Xr register (1)
 program.
 .PP
 Note that by default the password-changing program
 .Xr passwd (1)
-changes the Kerberos password, which must exist.
+changes the Kerberos password, that must exist.
 The
 .Li \-l
 option to
@@ -1635,7 +1634,7 @@ program is not completely backward compatible with historic versions of
 although it is believed that all documented features are supported.
 .PP
 A system-call tracing facility is provided in \*(4B
-that records all of the system calls made by a process or group of processes
+that records all the system calls made by a process or group of processes
 and their outcomes.
 See
 .Xr ktrace (1)
@@ -1789,7 +1788,7 @@ The
 .Xr a.out
 header that was in the user structure is no longer present.
 Locally-written debuggers that try to check the magic number
-will need modification.
+will need to be changed.
 .PP
 The system now has a database of file names,
 constructed once a week from
@@ -1814,6 +1813,6 @@ and
 All publicly-writable directories should have their ``sticky'' bits set
 with ``chmod +t.''
 .PP
-The following two sections contain additional notes concerning
+The following two sections contain additional notes about
 changes in \*(4B that affect the installation of local files;
 be sure to read them as well.
