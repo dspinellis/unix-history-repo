@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)arff.c	4.10 (Berkeley) 82/06/27";
+static	char *sccsid = "@(#)arff.c	4.11 (Berkeley) 82/06/27";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -288,14 +288,23 @@ xcmd()
 	register int i;
 
 	rt_init();
-	if (namc == 0)
+	if (namc == 0) {
 		for (segnum = 0; segnum != -1;
 		     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg-1)
 			for (last = rt_last+(segnum*2*RT_BLOCK),
 			     de = ((char *)&rt_dir[segnum])+10; de <= last; 
 			     de += rt_entsiz)
-				sunrad50(name, rt(de)->rt_name), rtx(name);
-	else
+				switch (rt(de)->rt_stat) {
+				case RT_ESEG:
+					return;
+				case RT_TEMP:
+				case RT_FILE:
+					sunrad50(name,rt(de)->rt_name);
+					rtx(name);
+				case RT_NULL:
+				;
+				}
+	} else
 		for (i = 0; i < namc; i++)
 			if (rtx(namv[i]) == 0)
 				namv[i] = 0;
