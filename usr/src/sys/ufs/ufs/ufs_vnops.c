@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.82 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.83 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1040,7 +1040,7 @@ unlinkit:
 				if (dirbuf.dotdot_namlen != 2 ||
 				    dirbuf.dotdot_name[0] != '.' ||
 				    dirbuf.dotdot_name[1] != '.') {
-					ufs_dirbad(xp, 12,
+					ufs_dirbad(xp, (doff_t)12,
 					    "rename: mangled dir");
 				} else {
 					dirbuf.dotdot_ino = newparent;
