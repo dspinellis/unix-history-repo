@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.24 1994/05/10 19:52:54 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.25 1994/05/18 09:30:53 jkh Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both.
@@ -784,9 +784,50 @@ use either `ifconfig ed0 altphys' if it was off, or `ifconfig ed0
       Workstation / generic NFS appliance, where should I look first?
 
 Certain PC network cards are better than others (to put it mildly) and
-can sometimes cause problems with network intensive operations, like
+can sometimes cause problems with network intensive applications like
 NFS.  See /usr/src/contrib/FAQ/OTHER-FAQS/NFS for more information on this
 topic.
+
+8.8:  I want to enable IP multicast support on my FreeBSD box, how do I do it?
+      [Alternatively:  What the heck IS multicasting and what applications
+      make use if it?]
+
+First off, to you'll need to rebuild a kernel with muticast support in it - for
+this you'll need to sources to at least the kernel and the config utility.  See 
+/usr/src/sys/i386/conf/LINT for its comments on multicast; you'll need to
+set the MROUTING and MULTICAST options as shown there.  If you are running a
+1.1 system you may then find that things like rlogin and ftpd are whining
+to syslog about failures in setsockopt().  Don't worry as this is a harmless
+side-effect of putting FreeBSD into "compliance mode" with BSD/386 and NetBSD
+for certain network operations, necessary because many tools like `vat' (see
+below) are only distribted in binary form for BSDI systems and we wouldn't
+otherwise be able to run them.  If you have the full source dist, you may
+get rid of these warnings by doing a `make world'.  Users of FreeBSD 1.1.5
+will not experience these problems as the binaries there have already been
+set this way by default.
+
+Further reading/exploration for those interested in multicast:
+
+Product		Description		Where
+--------------- ----------------------- ---------------------------------------
+faq.txt		Mbone FAQ		ftp.isi.edu:/mbone/faq.txt
+imm/immserv	IMage Multicast 	ftp.hawaii.edu:/paccom/imm.src.tar.Z
+		for jpg/gif images.
+nv		Network Video.		ftp.parc.xerox.com:
+					/pub/net-reseach/exp/nv3.3alpha.tar.Z
+vat		LBL Visual Audio Tool.	ftp.ee.lbl.gov:
+					/conferencing/vat/i386-vat.tar.Z
+wb		LBL White Board.	ftp.ee.lbl.gov:
+					/conferencing/wb/i386-wb.tar.Z
+mmcc		MultiMedia Conference	ftp.isi.edu:
+		Control program		/confctrl/mmcc/mmcc-intel.tar.Z
+rtpqual		Tools for testing the	ftp.psc.edu:/pub/net_tools/rtpqual.c
+		quality of RTP packets.
+vat_nv_record	Recording tools for vat	ftp.sics.se:archive/vat_nv_record.tar.Z
+		and nv.
+
+[Many thanks to Jim Lowe for providing multicast support for FreeBSD, and this
+information]
 
 
 9 Serial Communications
