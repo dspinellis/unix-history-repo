@@ -1,4 +1,4 @@
-/*	hp.c	4.27	81/03/09	*/
+/*	hp.c	4.28	81/03/09	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -178,8 +178,11 @@ hpustart(mi)
 		return (MBU_BUSY);
 	if ((hpaddr->hpds & HPDS_VV) == 0) {
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		if (mi->mi_mba->mba_drv[0].mbd_as & (1<<mi->mi_drive))
+			printf("DCLR attn\n");
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
 		hpaddr->hpof = HPOF_FMT22;
+		mbclrattn(mi);
 	}
 	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1)
 		return (MBU_DODATA);
@@ -297,6 +300,9 @@ hpdtint(mi, mbsr)
 		mbclrattn(mi);
 	}
 	hpaddr->hpcs1 = HP_RELEASE|HP_GO;
+	if (mi->mi_mba->mba_drv[0].mbd_as & (1<<mi->mi_drive))
+		printf("REL attn\n");
+	mbclrattn(mi);
 	return (MBD_DONE);
 }
 
