@@ -103,26 +103,23 @@ remove( a, d, n )
 
 
 /*
- * sorthand sorts a hand of n cards
+ * sorthand:
+ *	Sort a hand of n cards
  */
-
-sorthand( h, n )
-
-    CARD		h[];
-    int			n;
+sorthand(h, n)
+register CARD		h[];
+int			n;
 {
-	register  int		i, j;
+	register CARD		*cp, *endp;
 	CARD			c;
 
-	for( i = 0; i < (n - 1); i++ )  {
-	    for( j = (i + 1); j < n; j++ )  {
-		if(  ( h[j].rank < h[i].rank )  ||
-		     ( h[j].rank == h[i].rank && h[j].suit < h[i].suit )  )  {
-		    c = h[i];
-		    h[i] = h[j];
-		    h[j] = c;
+	for (endp = &h[n]; h < endp - 1; h++)
+	    for (cp = h + 1; cp < endp; cp++)
+		if ((cp->rank < h->rank) ||
+		     (cp->rank == h->rank && cp->suit < h->suit)) {
+		    c = *h;
+		    *h = *cp;
+		    *cp = c;
 		}
-	    }
-	}
 }
 
