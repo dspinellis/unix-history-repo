@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.99 (Berkeley) %G%
+ *	@(#)sendmail.h	8.100 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.99		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.100		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -819,6 +819,9 @@ struct prival
 #define SFF_SETUIDOK		0x0020	/* setuid files are ok */
 #define SFF_CREAT		0x0040	/* ok to create file if necessary */
 #define SFF_REGONLY		0x0080	/* regular files only */
+
+/* flags that are actually specific to safefopen */
+#define SFF_OPENASROOT		0x1000	/* open as root instead of real user */
 
 
 /*
