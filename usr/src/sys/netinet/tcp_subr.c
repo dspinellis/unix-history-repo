@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.20	82/03/28	*/
+/*	tcp_subr.c	4.21	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,7 @@
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
 #include "../net/in.h"
+#include "../net/route.h"
 #include "../net/in_pcb.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
@@ -18,7 +19,6 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
-#include "../net/route.h"
 #include "../errno.h"
 
 /*
@@ -95,10 +95,13 @@ tcp_respond(tp, ti, ack, seq, flags)
 {
 	struct mbuf *m;
 	int win = 0, tlen;
+	struct route *ro = 0;
 
 COUNT(TCP_RESPOND);
-	if (tp)
+	if (tp) {
 		win = sbspace(&tp->t_inpcb->inp_socket->so_rcv);
+		ro = &tp->t_inpcb->inp_route;
+	}
 	if (flags == 0) {
 		m = m_get(M_DONTWAIT);
 		if (m == 0)
@@ -142,7 +145,7 @@ COUNT(TCP_RESPOND);
 	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + tlen);
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + tlen;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	(void) ip_output(m, (struct mbuf *)0, 0, 0);
+	(void) ip_output(m, (struct mbuf *)0, ro, 0);
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.36	82/03/28	*/
+/*	tcp_output.c	4.37	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,7 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../net/in.h"
+#include "../net/route.h"
 #include "../net/in_pcb.h"
 #include "../net/in_systm.h"
 #include "../net/ip.h"
@@ -19,7 +20,6 @@
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
 #include "../net/tcp_debug.h"
-#include "../net/route.h"
 #include "../errno.h"
 
 char *tcpstates[]; /* XXX */
@@ -309,7 +309,7 @@ noopt:
 	 */
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (ip_output(m, tp->t_ipopt, 0, 0) == 0)
+	if (ip_output(m, tp->t_ipopt, &tp->t_inpcb->inp_route, 0) == 0)
 		return (0);
 
 	/*

@@ -1,4 +1,4 @@
-/*	ip_output.c	1.27	82/03/28	*/
+/*	ip_output.c	1.28	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -20,9 +20,10 @@ ip_output(m, opt, ro, allowbroadcast)
 {
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct ifnet *ifp;
-	int len, hlen = sizeof (struct ip), off;
+	int len, hlen = sizeof (struct ip), off, direct;
 	struct sockaddr_in tempaddr;	/* temp kludge */
 	struct route iproute;
+	struct sockaddr *dst;
 
 COUNT(IP_OUTPUT);
 	if (opt)				/* XXX */
@@ -37,7 +38,10 @@ COUNT(IP_OUTPUT);
 
 #ifdef notdef
 	/*
-	 * Find interface for this packet.
+	 * Find interface for this packet in the routing
+	 * table.  Note each interface has placed itself
+	 * in there at boot time, so call on route degenerates
+	 * to if_ifonnetof(ip->ip_dst.s_net).
 	 */
 	if (ro == 0) {
 		ro = &iproute;
@@ -46,10 +50,12 @@ COUNT(IP_OUTPUT);
 	if (ro->ro_rt == 0) {
 		ro->ro_dest.sin_addr = ip->ip_dst;
 		ro->ro_dest.sin_family = AF_INET;
-		route(ro);
+		direct = allocroute(ro);
 	}
 	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0)
 		goto bad;
+	dst = direct ? (struct sockaddr *)&ro->ro_dest :
+		&ro->ro_rt->rt_gateway;
 #else
 	/* interim kludge before routing fallout */
 	ifp = if_ifonnetof(ip->ip_dst.s_net);
@@ -77,11 +83,11 @@ COUNT(IP_OUTPUT);
 #endif
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
-		return ((*ifp->if_output)(ifp, m,
 #ifdef notdef
-		  &ro->ro_rt->rt_dest));
+		return ((*ifp->if_output)(ifp, m, dst));
 #else
-		  (struct sockaddr *)&tempaddr));
+		return ((*ifp->if_output)(ifp, m,
+			(struct sockaddr *)&tempaddr));
 #endif
 	}
 
@@ -137,11 +143,11 @@ COUNT(IP_OUTPUT);
 #endif
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(mh, hlen);
-		if ((*ifp->if_output)(ifp, mh,
 #ifdef notdef
-		  &ro->ro_rt->rt_dest) == 0)
+		if ((*ifp->if_output)(ifp, mh, dst) == 0)
 #else
-		  (struct sockaddr *)&tempaddr) == 0)
+		if ((*ifp->if_output)(ifp, mh, 
+		    (struct sockaddr *)&tempaddr) == 0)
 #endif
 			goto bad;
 	}

@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.53 82/03/11 */
+/* tcp_usrreq.c 1.54 82/03/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,7 @@
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
 #include "../net/in.h"
+#include "../net/route.h"
 #include "../net/in_pcb.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"

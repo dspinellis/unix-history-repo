@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.22	82/03/28	*/
+/*	in_pcb.c	4.23	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,7 @@
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
+#include "../net/route.h"
 #include "../net/in_pcb.h"
 #include "../h/protosw.h"
 
@@ -68,9 +69,14 @@ COUNT(IN_PCBATTACH);
 	if (sin) {
 		if (sin->sin_family != AF_INET)
 			return (EAFNOSUPPORT);
-		if (sin->sin_addr.s_addr &&
-		    if_ifwithaddr((struct sockaddr *)sin) == 0)
-			return (EADDRNOTAVAIL);
+		if (sin->sin_addr.s_addr) {
+			int tport = sin->sin_port;
+
+			sin->sin_port = 0;		/* yech... */
+			if (if_ifwithaddr((struct sockaddr *)sin) == 0)
+				return (EADDRNOTAVAIL);
+			sin->sin_port = tport;
+		}
 		lport = sin->sin_port;
 		if (lport) {
 			u_short aport = lport;
@@ -195,6 +201,8 @@ in_pcbdetach(inp)
 
 	so->so_pcb = 0;
 	sofree(so);
+	if (inp->inp_route.ro_rt)
+		freeroute(inp->inp_route.ro_rt);
 	remque(inp);
 	(void) m_free(dtom(inp));
 }

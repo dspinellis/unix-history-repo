@@ -1,4 +1,4 @@
-/*	ip_input.c	1.35	82/03/28	*/
+/*	ip_input.c	1.36	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -130,13 +130,17 @@ next:
 		ip_dooptions(ip);
 
 	/*
-	 * Fast check on the first interface in the list.
+	 * Fast check on the first internet
+	 * interface in the list.
 	 */
 	if (ifinet) {
 		struct sockaddr_in *sin;
 
 		sin = (struct sockaddr_in *)&ifinet->if_addr;
 		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr)
+			goto ours;
+		if ((ifinet->if_flags & IFF_BROADCAST) &&
+		    sin->sin_addr.s_addr == ip->ip_dst.s_addr)
 			goto ours;
 	}
 	ipaddr.sin_addr = ip->ip_dst;
@@ -156,19 +160,7 @@ printf("forward: dst %x ttl %x\n", ip->ip_dst, ip->ip_ttl);
 			goto bad;
 		ip_stripoptions(ip, mopt);
 
-		/*
-		 * Check the routing table in case we should
-		 * munge the src address before it gets passed on.
-		 */
-		ipaddr.sin_addr = ip->ip_src;
-		rt = reroute(&ipaddr);
-		if (rt && (rt->rt_flags & RTF_MUNGE)) {
-			struct sockaddr_in *sin;
-
-			sin = (struct sockaddr_in *)&rt->rt_dst;
-			ip->ip_src = sin->sin_addr;
-		}
-		/* 0 here means no directed broadcast */
+		/* last 0 here means no directed broadcast */
 		(void) ip_output(m0, mopt, 0, 0);
 		goto next;
 	}

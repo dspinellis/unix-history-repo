@@ -1,4 +1,4 @@
-/*	tcp_debug.c	4.2	82/03/13	*/
+/*	tcp_debug.c	4.3	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,6 +8,7 @@
 #define PRUREQUESTS
 #include "../h/protosw.h"
 #include "../net/in.h"
+#include "../net/route.h"
 #include "../net/in_pcb.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
