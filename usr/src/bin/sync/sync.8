@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sync.8	4.1 (Berkeley) %G%
+.\"	@(#)sync.8	5.1 (Berkeley) %G%
 .\"
-.TH SYNC 8 "4/1/81"
+.TH SYNC 8  "4 February 1983"
 .UC 4
 .SH NAME
 sync \- update the super block
 .SH SYNOPSIS
-.B sync
+.B /etc/sync
 .SH DESCRIPTION
 .I Sync
 executes the
@@ -26,4 +26,4 @@ See
 .IR sync (2)
 for details on the system primitive.
 .SH "SEE ALSO"
-sync(2), halt(8), reboot(8), update(8)
+sync(2), fsync(2), halt(8), reboot(8), update(8)
