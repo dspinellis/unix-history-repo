@@ -1,0 +1,24 @@
+.KF
+.TS
+center;
+l l
+l | cw(15) |.
+	_
+\fIbool\fP:	2
+	_
+	6
+	_
+	12
+	_
+	17
+	_
+	"false"
+	_
+	"true"
+	_
+.TE
+.sp
+.ce
+Figure 3.3 \- Boolean type conversion structure
+.sp
+.KE
