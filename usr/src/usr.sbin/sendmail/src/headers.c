@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	4.2		%G%);
+SCCSID(@(#)headers.c	4.3		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -99,11 +99,10 @@ chompheader(line, def)
 		p += 7;
 	if (!def && !QueueRun && strcmp(fname, p) == 0)
 	{
+		ADDRESS fromaddr;
+
 		if (strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
 			return (hi->hi_flags);
-
-		/* different contents -- add a Sender: field */
-		addheader("sender", "$q", CurEnv);
 	}
 
 	/* delete default value for this header */
