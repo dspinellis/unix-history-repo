@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.13 (Berkeley) %G%
+ *	@(#)conf.h	6.14 (Berkeley) %G%
  */
 
 /*
@@ -53,7 +53,7 @@
 # define SMTP		1	/* enable user and server SMTP */
 # define QUEUE		1	/* enable queueing */
 # define UGLYUUCP	1	/* output ugly UUCP From lines */
-# define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
+# define NETINET	1	/* include internet support */
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # define MATCHGECOS	1	/* match user names from gecos field */
@@ -92,6 +92,17 @@
 # ifndef EX_CONFIG
 # define EX_CONFIG	78	/* configuration error */
 # endif
+
+/*
+**  Do some required dependencies
+*/
+
+#if defined(NETINET) || defined(NETISO)
+# define DAEMON		1
+# define SMTP		1
+# define QUEUE		1
+#endif
+
 
 /*
 **  Arrange to use either varargs or stdargs

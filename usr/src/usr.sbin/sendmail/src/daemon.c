@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.20 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.21 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.20 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.21 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -89,7 +89,7 @@ getrequests()
 	int on = 1;
 	bool refusingconnections = TRUE;
 	FILE *pidf;
-	struct sockaddr_in srvraddr;
+	SOCKADDR srvraddr;
 	extern void reapchild();
 
 	/*
@@ -102,16 +102,16 @@ getrequests()
 		syserr("554 server \"smtp\" unknown");
 		goto severe;
 	}
-	srvraddr.sin_family = AF_INET;
-	srvraddr.sin_addr.s_addr = INADDR_ANY;
-	srvraddr.sin_port = sp->s_port;
+	srvraddr.sin.sin_family = AF_INET;
+	srvraddr.sin.sin_addr.s_addr = INADDR_ANY;
+	srvraddr.sin.sin_port = sp->s_port;
 
 	/*
 	**  Try to actually open the connection.
 	*/
 
 	if (tTd(15, 1))
-		printf("getrequests: port 0x%x\n", srvraddr.sin_port);
+		printf("getrequests: port 0x%x\n", srvraddr.sin.sin_port);
 
 	/* get a socket for the SMTP connection */
 	DaemonSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -133,7 +133,7 @@ getrequests()
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
 
-	if (bind(DaemonSocket, (struct sockaddr *)&srvraddr, sizeof srvraddr) < 0)
+	if (bind(DaemonSocket, &srvraddr.sa, sizeof srvraddr) < 0)
 	{
 		syserr("getrequests: cannot bind");
 		(void) close(DaemonSocket);
@@ -232,9 +232,8 @@ makeconnection(host, port, mci, usesecureport)
 			usrerr("553 Invalid numeric domain spec \"%s\"", host);
 			return (EX_NOHOST);
 		}
-		addr.sa_family = AF_INET;
-		addr.sa_len = sizeof hid;
-		addr.sa_u.sa_inet.sin_addr.s_addr = hid;
+		addr.sin.sin_family = AF_INET;
+		addr.sin.sin_addr.s_addr = hid;
 	}
 	else
 	{
@@ -252,16 +251,23 @@ gothostent:
 #endif
 			return (EX_NOHOST);
 		}
-		addr.sa_family = hp->h_addrtype;
-		addr.sa_len = hp->h_length;
-		if (addr.sa_family == AF_INET)
+		addr.sa.sa_family = hp->h_addrtype;
+		switch (hp->h_addrtype)
+		{
+#ifdef NETINET
+		  case AF_INET:
 			bcopy(hp->h_addr,
-				&addr.sa_u.sa_inet.sin_addr,
+				&addr.sin.sin_addr,
 				hp->h_length);
-		else
+			break;
+#endif
+
+		  default:
 			bcopy(hp->h_addr,
-				addr.sa_u.sa_data,
+				addr.sa.sa_data,
 				hp->h_length);
+			break;
+		}
 		i = 1;
 	}
 
@@ -283,10 +289,10 @@ gothostent:
 		port = sp->s_port;
 	}
 
-	switch (addr.sa_family)
+	switch (addr.sa.sa_family)
 	{
 	  case AF_INET:
-		addr.sa_u.sa_inet.sin_port = port;
+		addr.sin.sin_port = port;
 		addrlen = sizeof (struct sockaddr_in);
 		break;
 
@@ -299,7 +305,7 @@ gothostent:
 #endif
 
 	  default:
-		syserr("Can't connect to address family %d", addr.sa_family);
+		syserr("Can't connect to address family %d", addr.sa.sa_family);
 		return (EX_NOHOST);
 	}
 
@@ -359,14 +365,22 @@ gothostent:
 			if (tTd(16, 1))
 				printf("Connect failed (%s); trying new address....\n",
 					errstring(sav_errno));
-			if (addr.sa_family == AF_INET)
+			switch (addr.sa.sa_family)
+			{
+#ifdef NETINET
+			  case AF_INET:
 				bcopy(hp->h_addr_list[i++],
-				      &addr.sa_u.sa_inet.sin_addr,
+				      &addr.sin.sin_addr,
 				      hp->h_length);
-			else
+				break;
+#endif
+
+			  default:
 				bcopy(hp->h_addr_list[i++],
-					addr.sa_u.sa_data,
+					addr.sa.sa_data,
 					hp->h_length);
+				break;
+			}
 			continue;
 		}
 
@@ -575,18 +589,20 @@ anynet_ntoa(sap)
 	int l;
 	static char buf[80];
 
-	if (sap->sa_family == AF_INET)
+#ifdef NETINET
+	if (sap->sa.sa_family == AF_INET)
 	{
 		extern char *inet_ntoa();
 
 		return inet_ntoa(((struct sockaddr_in *) sap)->sin_addr);
 	}
+#endif
 
 	/* unknown family -- just dump bytes */
-	(void) sprintf(buf, "Family %d: ", sap->sa_family);
+	(void) sprintf(buf, "Family %d: ", sap->sa.sa_family);
 	bp = &buf[strlen(buf)];
-	ap = sap->sa_u.sa_data;
-	for (l = sap->sa_len; --l >= 0; )
+	ap = sap->sa.sa_data;
+	for (l = sizeof sap->sa.sa_data; --l >= 0; )
 	{
 		(void) sprintf(bp, "%02x:", *ap++ & 0377);
 		bp += 3;
