@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.3 (Berkeley) %G%
+.\"	@(#)2.t	6.4 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -630,14 +630,14 @@ lw(2i) l.
 \fBRetype new password:\fP
 \fB#\fP \fIhostname mysitename\fP	(set your hostname)
 \fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user filesystem)
-(\fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP\c
+(\fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
 is the partition; this takes a few minutes)
 \fB#\fP \fImount /dev/\*(Dk#c /var\fP	(mount the var filesystem)
 \fB#\fP \fIcd /var\fP	(make /var the current directory)
 \fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of var)
 \fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user filesystem)
-(as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP\c
+(as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
 is the partition)
 \fB#\fP \fImount /dev/\*(Dk#c /usr\fP	(mount the usr filesystem)
 \fB#\fP \fIcd /usr\fP	(make /usr the current directory)
@@ -696,7 +696,7 @@ should look something like:
 .PP
 If there are inconsistencies in the filesystem, you may be prompted
 to apply corrective action; see the \fIfsck\fP(8) or \fIFsck \(en The UNIX
-File System Check Program\fP for more details.
+File System Check Program\fP (SMM:3) for more details.
 .PP
 To use the /usr filesystem, you should now remount it with:
 .DS
