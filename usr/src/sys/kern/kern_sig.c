@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.1	83/08/20	*/
+/*	kern_sig.c	6.2	83/09/08	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -205,8 +205,10 @@ kill1(ispgrp, signo, who)
 		return (EINVAL);
 	if (who > 0 && !ispgrp) {
 		p = pfind(who);
-		if (p == 0 || u.u_uid && u.u_uid != p->p_uid)
+		if (p == 0)
 			return (ESRCH);
+		if (u.u_uid && u.u_uid != p->p_uid)
+			return (EPERM);
 		if (signo)
 			psignal(p, signo);
 		return (0);
