@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)cmd3.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)cmd3.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -43,7 +43,7 @@ shell(str)
 		for (t = 2; t < 4; t++)
 			if (sig[t-2] != SIG_IGN)
 				sigsys(t, SIG_DFL);
-		execl(Shell, Shell, "-c", cmd, 0);
+		execl(Shell, Shell, "-c", cmd, (char *)0);
 		perror(Shell);
 		_exit(1);
 	}
@@ -77,7 +77,7 @@ dosh(str)
 		for (t = 2; t < 4; t++)
 			if (sig[t-2] != SIG_IGN)
 				sigsys(t, SIG_DFL);
-		execl(Shell, Shell, 0);
+		execl(Shell, Shell, (char *)0);
 		perror(Shell);
 		_exit(1);
 	}
@@ -187,12 +187,21 @@ schdir(str)
 	return(0);
 }
 
+respond(msgvec)
+	int *msgvec;
+{
+	if (value("Replyall") == NOSTR)
+		return (_respond(msgvec));
+	else
+		return (_Respond(msgvec));
+}
+
 /*
  * Reply to a list of messages.  Extract each name from the
  * message header and send them off to mail1()
  */
 
-respond(msgvec)
+_respond(msgvec)
 	int *msgvec;
 {
 	struct message *mp;
@@ -321,6 +330,22 @@ preserve(msgvec)
 }
 
 /*
+ * Mark all given messages as unread.
+ */
+unread(msgvec)
+	int	msgvec[];
+{
+	register int *ip;
+
+	for (ip = msgvec; *ip != NULL; ip++) {
+		dot = &message[*ip-1];
+		dot->m_flag &= ~(MREAD|MTOUCH);
+		dot->m_flag |= MSTATUS;
+	}
+	return(0);
+}
+
+/*
  * Print the size of each message.
  */
 
@@ -333,7 +358,7 @@ messize(msgvec)
 	for (ip = msgvec; *ip != NULL; ip++) {
 		mesg = *ip;
 		mp = &message[mesg-1];
-		printf("%d: %ld\n", mesg, mp->m_size);
+		printf("%d: %d/%ld\n", mesg, mp->m_lines, mp->m_size);
 	}
 	return(0);
 }
@@ -568,7 +593,7 @@ file(argv)
 		perror(cp);
 		return(-1);
 	}
-	newfileinfo();
+	announce(0);
 }
 
 /*
@@ -662,13 +687,22 @@ echo(argv)
 	return(0);
 }
 
+Respond(msgvec)
+	int *msgvec;
+{
+	if (value("Replyall") == NOSTR)
+		return (_Respond(msgvec));
+	else
+		return (_respond(msgvec));
+}
+
 /*
  * Reply to a series of messages by simply mailing to the senders
  * and not messing around with the To: and Cc: lists as in normal
  * reply.
  */
 
-Respond(msgvec)
+_Respond(msgvec)
 	int msgvec[];
 {
 	struct header head;
