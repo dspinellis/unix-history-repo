@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_mbuf.c	6.5 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	6.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -313,6 +313,13 @@ m_adj(mp, len)
 	}
 }
 
+/*
+ * Rearange an mbuf chain so that len bytes are contiguous
+ * and in the data area of an mbuf (so that mtod and dtom
+ * will work for a structure of size len).
+ * Returns the resulting mbuf chain on success,
+ * frees it and returns null on failure.
+ */
 struct mbuf *
 m_pullup(m0, len)
 	struct mbuf *m0;
@@ -329,19 +336,17 @@ m_pullup(m0, len)
 		goto bad;
 	m->m_len = 0;
 	do {
-		count = MIN(MLEN - m->m_len, len);
-		if (count > n->m_len)
-			count = n->m_len;
+		count = MIN(n->m_len, len);
 		bcopy(mtod(n, caddr_t), mtod(m, caddr_t)+m->m_len,
 		  (unsigned)count);
 		len -= count;
 		m->m_len += count;
-		n->m_off += count;
 		n->m_len -= count;
 		if (n->m_len)
-			break;
-		n = m_free(n);
-	} while (n);
+			n->m_off += count;
+		else
+			n = m_free(n);
+	} while (len && n);
 	if (len) {
 		(void) m_free(m);
 		goto bad;
