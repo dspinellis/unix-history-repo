@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	8.2 (Berkeley) %G%
+ *	@(#)config.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -106,3 +106,9 @@
 #define	DFL_LFSBLOCK		4096
 #define	DFL_LFSBLOCK_SHIFT	12
 #define	DFL_LFSBLOCK_MASK	0xFFF
+
+#define	DFL_LFSFRAG		4096
+#define	DFL_LFS_FFMASK		DFL_LFSBLOCK_MASK
+#define	DFL_LFS_FFSHIFT		DFL_LFSBLOCK_SHIFT
+#define	DFL_LFS_FBMASK		0
+#define DFL_LFS_FBSHIFT		0
