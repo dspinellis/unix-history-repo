@@ -1,4 +1,4 @@
-/*	ht.c	6.1	83/07/29	*/
+/*	ht.c	6.2	83/09/26	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -218,10 +218,13 @@ htustart(mi)
 	daddr_t blkno;
 
 	htaddr->httc = sc->sc_dens;
+#ifdef	notdef
+	/* unneeded, may hang controller */
 	if (bp == &chtbuf[HTUNIT(bp->b_dev)] && bp->b_command == HT_SENSE) {
 		htaddr->htcs1 = HT_SENSE|HT_GO;
 		mbclrattn(mi);
 	}
+#endif
 	sc->sc_dsreg = htaddr->htds;
 	sc->sc_erreg = htaddr->hter;
 	sc->sc_resid = htaddr->htfc;
