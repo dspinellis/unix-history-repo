@@ -1,7 +1,7 @@
 /*
  * acct [ -w wtmp ] [ -d ] [ -p ] [ people ]
  */
-static char *sccsid = "@(#)ac.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ac.c	4.2 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -71,7 +71,7 @@ char **argv;
 		fl = 0;
 		for (i=0; i<NMAX; i++) {
 			c = ibuf.ut_name[i];
-			if(isdigit(c) || isalpha(c)) {
+			if (isprint(c) && c != ' ') {
 				if (fl)
 					goto skip;
 				continue;
@@ -215,7 +215,7 @@ among(i)
 		p = pptr[j];
 		for (k=0; k<NMAX; k++) {
 			if (*p == ubuf[i].uname[k]) {
-				if (*p++ == '\0')
+				if (*p++ == '\0' || k == NMAX-1)
 					return(1);
 			} else
 				break;
