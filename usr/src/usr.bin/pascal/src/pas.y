@@ -88,7 +88,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 1.12 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 1.13 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -98,7 +98,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 1.12 %G%";
+static	char sccsid[] = "@(#)pas.y 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -320,7 +320,7 @@ param:
 	id_list ':' type
 		= $$.tr_entry = tree3(T_PVAL, (int) fixlist($1.tr_entry), $3.tr_entry);
 		|
-	YVAR id_list ':' type
+	YVAR id_list ':' vtype
 		= $$.tr_entry = tree3(T_PVAR, (int) fixlist($2.tr_entry), $4.tr_entry);
 		|
 	YFUNCTION id_list params ftype
@@ -340,6 +340,28 @@ ftype:
 	/* lambda */
 		= $$.tr_entry = TR_NIL;
 		;
+vtype:
+	type_id
+		|
+	c_ary
+		;
+c_ary:
+	YARRAY '[' i_type_list ']' YOF vtype
+		= $$.tr_entry = tree4(T_TYCARY, lineof($1.i_entry),
+				fixlist($3.tr_entry), $6.tr_entry);
+		;
+i_type_list:
+	i_type
+		= $$.tr_entry = newlist($1.tr_entry);
+		|
+	i_type_list ';' i_type
+		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
+		;
+i_type:
+	YID YDOTDOT YID ':' type_id
+		= $$.tr_entry = tree5(T_TYCRANG,lineof($2.i_entry), $1.tr_entry,
+				$3.tr_entry, $5.tr_entry);
+		;
 param_list:
 	param
 		= $$.tr_entry = newlist($1.tr_entry);
@@ -347,6 +369,7 @@ param_list:
 	param_list ';' param
 		= $$.tr_entry = addlist($1.tr_entry, $3.tr_entry);
 		;
+
 
 /*
  * CONSTANTS

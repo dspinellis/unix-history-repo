@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)fhdr.c 1.8 %G%";
+static char sccsid[] = "@(#)fhdr.c 1.9 %G%";
 #endif
 
 #include "whoami.h"
@@ -317,7 +317,7 @@ params(p, formalist)
 	struct nl *dp;
 	register struct tnode *formalp;	/* an element of the formal list */
 	register struct tnode *formal;	/* a formal */
-	struct tnode *typ, *idlist;
+	struct tnode *r, *s, *t, *typ, *idlist;
 	int w, o;
 
 	/*
@@ -358,12 +358,7 @@ params(p, formalist)
 			error("Procedures cannot have types");
 			p = NLNIL;
 		    } else {
-			if (typ->tag != T_TYID) {
-				error("Types for arguments can be specified only by using type identifiers");
-				p = NLNIL;
-			} else {
-				p = gtype(typ);
-			}
+			p = gtype(typ);
 		    }
 		}
 		for (idlist = formal->param.id_list; idlist != TR_NIL;
@@ -460,6 +455,51 @@ params(p, formalist)
 				chainp->chain = dp;
 				chainp = dp;
 			}
+		}
+		if (typ->tag == T_TYCARY) {
+#		    ifdef OBJ
+			w = -even(lwidth(p->chain));
+#			ifndef DEC11
+			    w = (w > -2)? w + 1 : w;
+#			endif
+#		    endif OBJ
+#		    ifdef PC
+			w = lwidth(p->chain);
+			o = roundup(o, (long)A_STACK);
+#		    endif PC
+		    /*
+		     * Allocate space for upper and
+		     * lower bounds and width.
+		     */
+		    for (s=typ; s->tag == T_TYCARY; s = s->ary_ty.type) {
+			for (r=s->ary_ty.type_list; r != TR_NIL;
+						r = r->list_node.next) {
+			    t = r->list_node.list;
+			    p = p->chain;
+#			    ifdef OBJ
+				o += w;
+#			    endif OBJ
+			    chainp->chain = defnl(t->crang_ty.lwb_var,
+								VAR, p, o);
+			    chainp = chainp->chain;
+			    chainp->nl_flags |= (NMOD | NUSED);
+			    p->nptr[0] = chainp;
+			    o += w;
+			    chainp->chain = defnl(t->crang_ty.upb_var,
+								VAR, p, o);
+			    chainp = chainp->chain;
+			    chainp->nl_flags |= (NMOD | NUSED);
+			    p->nptr[1] = chainp;
+			    o += w;
+			    chainp->chain  = defnl(0, VAR, p, o);
+			    chainp = chainp->chain;
+			    chainp->nl_flags |= (NMOD | NUSED);
+			    p->nptr[2] = chainp;
+#			    ifdef PC
+				o += w;
+#			    endif PC
+			}
+		    }
 		}
 	}
 	p = savedp;

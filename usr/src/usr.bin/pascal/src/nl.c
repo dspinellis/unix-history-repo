@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)nl.c 1.14 %G%";
+static	char sccsid[] = "@(#)nl.c 1.15 %G%";
 #endif
 
 #include "whoami.h"
@@ -499,7 +499,8 @@ char	*ctext[] =
 	"IMPROPER",
 	"VARNT",
 	"FPROC",
-	"FFUNC"
+	"FFUNC",
+	"CRANGE"
 };
 
 char	*stars	= "\t***";
@@ -597,6 +598,10 @@ con:
 			case SCAL:
 			case RANGE:
 				printf("\t%ld..%ld", p->range[0], p->range[1]);
+				break;
+			case CRANGE:
+				printf("\t%s..%s", p->nptr[0]->symbol,
+					p->nptr[1]->symbol);
 				break;
 			case RECORD:
 				printf("\t%d", v);
@@ -824,7 +829,8 @@ enter(np)
 	hp = disptab[i];
 	if (rp->class != BADUSE && rp->class != FIELD)
 	for (p = hp; p != NIL && (p->nl_block & 037) == cbn; p = p->nl_next)
-		if (p->symbol == rp->symbol && p->class != BADUSE && p->class != FIELD) {
+		if (p->symbol == rp->symbol && p->symbol != NIL &&
+		    p->class != BADUSE && p->class != FIELD) {
 #ifndef PI1
 			error("%s is already defined in this block", rp->symbol);
 #endif

@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)conv.c 1.6 %G%";
+static char sccsid[] = "@(#)conv.c 1.7 %G%";
 #endif
 
 #include "whoami.h"
@@ -176,7 +176,7 @@ rangechk(p, q)
 	    wq = width(q);
 	    wrp = width(rp);
 	    op = wq != wrp && (wq == 4 || wrp == 4);
-	    if (rp->class == TYPE)
+	    if (rp->class == TYPE || rp->class == CRANGE)
 		    rp = rp->type;
 	    switch (rp->class) {
 	    case RANGE:
@@ -249,6 +249,10 @@ precheck( p , name1 , name2 )
 	    p = p -> type;
 	}
 	switch ( p -> class ) {
+	    case CRANGE:
+		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+			    , name1);
+		break;
 	    case RANGE:
 		if ( p != nl + T4INT ) {
 		    putleaf( P2ICON , 0 , 0 ,
@@ -279,6 +283,7 @@ postcheck(need, have)
     struct nl	*need;
     struct nl	*have;
 {
+    struct nl	*p;
 
     if ( opt( 't' ) == 0 ) {
 	return;
@@ -304,6 +309,19 @@ postcheck(need, have)
 		putop( P2CALL , P2INT );
 		sconv(P2INT, p2type(have));
 	    }
+	    break;
+	case CRANGE:
+	    sconv(p2type(have), P2INT);
+	    p = need->nptr[0];
+	    putRV(p->symbol, (p->nl_block & 037), p->value[0],
+		    p->extra_flags, p2type( p ) );
+	    putop( P2LISTOP , P2INT );
+	    p = need->nptr[1];
+	    putRV(p->symbol, (p->nl_block & 037), p->value[0],
+		    p->extra_flags, p2type( p ) );
+	    putop( P2LISTOP , P2INT );
+	    putop( P2CALL , P2INT );
+	    sconv(P2INT, p2type(have));
 	    break;
 	case SCAL:
 	    break;

@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)type.c 1.11 %G%";
+static char sccsid[] = "@(#)type.c 1.12 %G%";
 #endif
 
 #include "whoami.h"
@@ -155,6 +155,9 @@ gtype(r)
 		case T_TYSCAL:
 			np = tyscal(r);
 			break;
+		case T_TYCRANG:
+			np = tycrang(r);
+			break;
 		case T_TYRANG:
 			np = tyrang(r);
 			break;
@@ -167,6 +170,7 @@ gtype(r)
 		case T_TYPACK:
 			np = gtype(r->comp_ty.type);
 			break;
+		case T_TYCARY:
 		case T_TYARY:
 			np = tyary(r);
 			break;
@@ -260,6 +264,25 @@ tyscal(r)
 }
 
 /*
+ * Declare a subrange for conformant arrays.
+ */
+tycrang(r)
+	register int *r;
+{
+	register struct nl *p, *op, *tp;
+
+	tp = gtype(r->crang_ty.type);
+	if ( tp == NIL )
+		return (NIL);
+	/*
+	 * Just make a new type -- the lower and upper bounds must be
+	 * set by params().
+	 */
+	p = defnl ( 0, CRANGE, tp, 0 );
+	return(p);
+}
+
+/*
  * Declare a subrange.
  */
 struct nl *
@@ -331,31 +354,39 @@ tyary(r)
 	struct tnode *r;
 {
 	struct nl *np;
-	register struct tnode *tl;
+	register struct tnode *tl, *s;
 	register struct nl *tp, *ltp;
-	int i;
+	int i, n;
 
-	tp = gtype(r->ary_ty.type);
+	s = r;
+	/* Count the dimensions */
+	for (n = 0; s->tag == T_TYARY || s->tag == T_TYCARY;
+					s = s->ary_ty.type, n++)
+		/* NULL STATEMENT */;
+	tp = gtype(s);
 	if (tp == NLNIL)
 		return (NLNIL);
 	np = defnl((char *) 0, ARRAY, tp, 0);
 	np->nl_flags |= (tp->nl_flags) & NFILES;
 	ltp = np;
 	i = 0;
-	for (tl = r->ary_ty.type_list; tl != TR_NIL; tl = tl->list_node.next) {
+	for (s = r; s->tag == T_TYARY || s->tag == T_TYCARY;
+					s = s->ary_ty.type) {
+	    for (tl = s->ary_ty.type_list; tl != TR_NIL; tl=tl->list_node.next){
 		tp = gtype(tl->list_node.list);
 		if (tp == NLNIL) {
 			np = NLNIL;
 			continue;
 		}
-		if (tp->class == RANGE && tp->type == nl+TDOUBLE) {
+		if ((tp->class == RANGE || tp->class == CRANGE) &&
+		    tp->type == nl+TDOUBLE) {
 #ifndef PI1
 			error("Index type for arrays cannot be real");
 #endif
 			np = NLNIL;
 			continue;
 		}
-		if (tp->class != RANGE && tp->class != SCAL) {
+		if (tp->class != RANGE && tp->class != SCAL && tp->class !=CRANGE){
 #ifndef PI1
 			error("Array index type is a %s, not a range or scalar as required", classes[tp->class]);
 #endif
@@ -370,10 +401,12 @@ tyary(r)
 			continue;
 		}
 #endif
-		tp = nlcopy(tp);
+		if (tp->class != CRANGE)
+			tp = nlcopy(tp);
 		i++;
 		ltp->chain = tp;
 		ltp = tp;
+	    }
 	}
 	if (np != NLNIL)
 		np->value[0] = i;

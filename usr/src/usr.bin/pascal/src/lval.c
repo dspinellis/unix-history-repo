@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)lval.c 1.11 %G%";
+static char sccsid[] = "@(#)lval.c 1.12 %G%";
 #endif
 
 #include "whoami.h"
@@ -34,7 +34,7 @@ lvalue(var, modflag , required )
 	register struct nl *p;
 	struct nl *firstp, *lastp;
 	register struct tnode *c, *co;
-	int f, o;
+	int f, o, s;
 	/*
 	 * Note that the local optimizations
 	 * done here for offsets would more
@@ -121,8 +121,13 @@ lvalue(var, modflag , required )
 			o = 0;
 			break;
 		case VAR:
-			f = 1;		/* no lv on stack yet */
-			o = p->value[0];
+			if (p->type->class != CRANGE) {
+			    f = 1;		/* no lv on stack yet */
+			    o = p->value[0];
+			} else {
+			    error("Conformant array bound %s found where variable required", p->symbol);
+			    return(NLNIL);
+			}
 			break;
 		default:
 			error("%s %s found where variable required", classes[p->class], p->symbol);
@@ -136,6 +141,7 @@ lvalue(var, modflag , required )
 		error("Can't modify the for variable %s in the range of the loop", p->symbol);
 		return (NLNIL);
 	}
+	s = 0;		/* subscripts seen */
 	for (; c != TR_NIL; c = c->list_node.next) {
 		co = c->list_node.list; /* co is a ptr to a tnode */
 		if (co == TR_NIL) {
@@ -145,6 +151,14 @@ lvalue(var, modflag , required )
 		p = p->type;
 		if (p == NLNIL) {
 			return (NLNIL);
+		}
+		/*
+		 * If we haven't seen enough subscripts, and the next
+		 * qualification isn't array reference, then it's an error.
+		 */
+		if (s && co->tag != T_ARY) {
+			error("Too few subscripts (%d given, %d required)",
+				s, p->value[0]);
 		}
 		switch (co->tag) {
 			case T_PTR:
@@ -225,11 +239,19 @@ lvalue(var, modflag , required )
 					    (void) put(2, O_OFF, o);
 					}
 				}
-				switch (arycod(p, co->ary_node.expr_list)) {
+				switch(s = arycod(p,co->ary_node.expr_list,s)) {
+					/*
+					 * This is the number of subscripts seen
+					 */
 					case 0:
 						return (NLNIL);
 					case -1:
 						goto bad;
+				}
+				if (s == p->value[0]) {
+					s = 0;
+				} else {
+					p = lastp;
 				}
 				f = o = 0;
 				continue;
@@ -272,6 +294,10 @@ lvalue(var, modflag , required )
 			default:
 				panic("lval2");
 		}
+	}
+	if (s) {
+		error("Too few subscripts (%d given, %d required)",
+			s, p->type->value[0]);
 	}
 	if (f) {
 		if (bn == 0)
@@ -324,10 +350,14 @@ int lptr(c)
  * Arycod does the
  * code generation
  * for subscripting.
+ * n is the number of
+ * subscripts already seen
+ * (CLN 09/13/83)
  */
-int arycod(np, el)
+int arycod(np, el, n)
 	struct nl *np;
 	struct tnode *el;
+	int n;
 {
 	register struct nl *p, *ap;
 	long sub;
@@ -341,16 +371,19 @@ int arycod(np, el)
 		return (0);
 	}
 	d = p->value[0];
+	for (i = 1; i <= n; i++) {
+		p = p->chain;
+	}
 	/*
 	 * Check each subscript
 	 */
-	for (i = 1; i <= d; i++) {
+	for (i = n+1; i <= d; i++) {
 		if (el == TR_NIL) {
-			error("Too few subscripts (%d given, %d required)", (char *) i-1, (char *) d);
-			return (-1);
+			return (i-1);
 		}
 		p = p->chain;
-		if (constsub = constval(el->list_node.list)) {
+		if ((p->class != CRANGE) &&
+			(constsub = constval(el->list_node.list))) {
 		    ap = con.ctype;
 		    sub = con.crval;
 		    if (sub < p->range[0] || sub > p->range[1]) {
@@ -378,7 +411,11 @@ int arycod(np, el)
 			}
 			return (-1);
 		}
-		w = aryconst(np, i);
+		if (p->class == CRANGE) {
+			constsub = 0;
+		} else {
+			w = aryconst(np, i);
+		}
 #		ifdef OBJ
 		    if (constsub) {
 			sub *= w;
@@ -390,7 +427,11 @@ int arycod(np, el)
 			el = el->list_node.next;
 			continue;
 		    }
-		    if (opt('t') == 0) {
+		    if (p->class == CRANGE) {
+			putcbnds(p, 0);
+			putcbnds(p, 1);
+			putcbnds(p, 2);
+		    } else if (opt('t') == 0) {
 			    switch (w) {
 			    case 8:
 				    w = 6;
@@ -402,8 +443,16 @@ int arycod(np, el)
 				    continue;
 			    }
 		    }
-		    (void) put(4, width(ap) != 4 ? O_INX2 : O_INX4, w,
-			(short)p->range[0], (short)(p->range[1]));
+		    if (p->class == CRANGE) {
+			if (width(p) == 4) {
+			    put(1, width(ap) != 4 ? O_VINX42 : O_VINX4);
+			} else {
+			    put(1, width(ap) != 4 ? O_VINX2 : O_VINX24);
+			}
+		    } else {
+			put(4, width(ap) != 4 ? O_INX2 : O_INX4, w,
+			    (short)p->range[0], (short)(p->range[1]));
+		    }
 		    el = el->list_node.next;
 		    continue;
 #		endif OBJ
@@ -420,16 +469,33 @@ int arycod(np, el)
 			el = el->list_node.next;
 			continue;
 		    }
-		    if ( p -> range[ 0 ] != 0 ) {
-			putleaf( P2ICON , (int) p -> range[0] , 0 , P2INT , (char *) 0 );
-			putop( P2MINUS , P2INT );
-		    }
+		    if (p->class == CRANGE) {
 			/*
-			 *	multiply by the width of the elements
+			 *	if conformant array, subtract off lower bound
 			 */
-		    if ( w != 1 ) {
-			putleaf( P2ICON , w , 0 , P2INT , (char *) 0 );
+			ap = p->nptr[0];
+			putRV(ap->symbol, (ap->nl_block & 037), ap->value[0], 
+				ap->extra_flags, p2type( ap ) );
+			putop( P2MINUS, P2INT );
+			/*
+			 *	and multiply by the width of the elements
+			 */
+			ap = p->nptr[2];
+			putRV( 0 , (ap->nl_block & 037), ap->value[0], 
+				ap->extra_flags, p2type( ap ) );
 			putop( P2MUL , P2INT );
+		    } else {
+			if ( p -> range[ 0 ] != 0 ) {
+			    putleaf( P2ICON , (int) p -> range[0] , 0 , P2INT , (char *) 0 );
+			    putop( P2MINUS , P2INT );
+			}
+			    /*
+			     *	multiply by the width of the elements
+			     */
+			if ( w != 1 ) {
+			    putleaf( P2ICON , w , 0 , P2INT , (char *) 0 );
+			    putop( P2MUL , P2INT );
+			}
 		    }
 			/*
 			 *	and add it to the base address
@@ -439,12 +505,44 @@ int arycod(np, el)
 #		endif PC
 	}
 	if (el != TR_NIL) {
+	    if (np->type->class != ARRAY) {
 		do {
 			el = el->list_node.next;
 			i++;
 		} while (el != TR_NIL);
 		error("Too many subscripts (%d given, %d required)", (char *) (i-1), (char *) d);
 		return (-1);
+	    } else {
+		return(arycod(np->type, el, d));
+	    }
 	}
-	return (1);
+	return (d);
 }
+
+#ifdef OBJ
+/*
+ * Put out the conformant array bounds (lower bound, upper bound or width)
+ * for conformant array type ctype.
+ * The value of i determines which is being put
+ * i = 0: lower bound, i=1: upper bound, i=2: width
+ */
+putcbnds(ctype, i)
+struct nl *ctype;
+int i;
+{
+	switch(width(ctype->type)) {
+	    case 1:
+		put(2, O_RV1 | (ctype->nl_block & 037) << 8+INDX,
+			(int)ctype->nptr[i]->value[0]);
+		break;
+	    case 2:
+		put(2, O_RV2 | (ctype->nl_block & 037) << 8+INDX,
+			(int)ctype->nptr[i]->value[0]);
+		break;
+	    case 4:
+	    default:
+		put(2, O_RV4 | (ctype->nl_block & 037) << 8+INDX,
+			(int)ctype->nptr[i]->value[0]);
+	}
+}
+#endif OBJ

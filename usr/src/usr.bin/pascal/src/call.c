@@ -57,8 +57,10 @@ call(p, argv_node, porf, psbn)
 	struct tnode	*argv_node;	/* list node */
 	int porf, psbn;
 {
-	register struct nl *p1, *q;
+	register struct nl *p1, *q, *p2;
+	register struct nl *ptype, *ctype;
 	struct tnode *rnode;
+	int i, j, d;
 	bool chk = TRUE;
  	struct nl	*savedispnp;	/* temporary to hold saved display */
 #	ifdef PC
@@ -197,6 +199,7 @@ call(p, argv_node, porf, psbn)
 	 * arguments to the proc/func.
 	 *	... ( ... args ... ) ...
 	 */
+	ptype = NIL;
 	for (p1 = plist(p); p1 != NLNIL; p1 = p1->chain) {
 	    if (argv_node == TR_NIL) {
 		    error("Not enough arguments to %s", p->symbol);
@@ -219,10 +222,103 @@ call(p, argv_node, porf, psbn)
 				chk = FALSE;
 				break;
 			}
-			if (q != p1->type) {
+			p2 = p1->type;
+			if (p2->chain->class != CRANGE) {
+			    if (q != p2) {
 				error("Parameter type not identical to type of var parameter %s of %s", p1->symbol, p->symbol);
 				chk = FALSE;
-				break;
+			    }
+			    break;
+			} else {
+			    /* conformant array */
+			    if (p1 == ptype) {
+				if (q != ctype) {
+				    error("Conformant array parameters in the same specification must be the same type.");
+				    goto conf_err;
+				}
+			    } else {
+				if (classify(q) != TARY && classify(q) != TSTR) {
+				    error("Array type required for var parameter %s of %s",p1->symbol,p->symbol);
+				    goto conf_err;
+				}
+				/* check base type of array */
+				if (p2->type != q->type) {
+				    error("Base type of array not identical to that of conformant array parameter %s of %s", p1->symbol, p->symbol);
+				    goto conf_err;
+				}
+				if (p2->value[0] != q->value[0]) {
+				    error("Subscript number mismatch on conformant array parameter %s of %s", p1->symbol, p->symbol);
+				    /* Don't process array bounds & width */
+conf_err:			    if (p1->chain->type->class == CRANGE) {
+					d = p1->value[0];
+					for (i = 1; i <= d; i++) {
+					    /* for each subscript, pass by
+					     * bounds and width
+					     */
+					    p1 = p1->chain->chain->chain;
+					}
+				    }
+				    ptype = ctype = NLNIL;
+				    chk = FALSE;
+				    break;
+				}
+				/*
+				 * Save array type for all parameters with same
+				 * specification.
+				 */
+				ctype = q;
+				ptype = p2;
+				/*
+				 * If at end of conformant array list,
+				 * get bounds.
+				 */
+				if (p1->chain->type->class == CRANGE) {
+				    /* check each subscript, put on stack */
+				    d = ptype->value[0];
+				    q = ctype;
+				    for (i = 1; i <= d; i++) {
+					p1 = p1->chain;
+					q = q->chain;
+					if (incompat(q, p1->type, TR_NIL)){
+					    error("Subscript type not conformable with parameter %s of %s", p1->symbol, p->symbol);
+					    chk = FALSE;
+					    break;
+					}
+					/* Put lower and upper bound & width */
+#					ifdef OBJ
+					if (q->type->class == CRANGE) {
+					    putcbnds(q->type);
+					} else {
+					    put(2, width(p1->type) <= 2 ? O_CON2
+						: O_CON4, q->range[0]);
+					    put(2, width(p1->type) <= 2 ? O_CON2
+						: O_CON4, q->range[1]);
+					    put(2, width(p1->type) <= 2 ? O_CON2
+						: O_CON4, aryconst(ctype,i));
+					}
+#					endif OBJ
+#					ifdef PC
+					if (q->type->class == CRANGE) {
+					    for (j = 1; j <= 3; j++) {
+						p2 = p->nptr[j];
+						putRV(p2->symbol, (p2->nl_block
+						    & 037), p2->value[0],
+						    p2->extra_flags,p2type(p2));
+						putop(P2LISTOP, P2INT);
+					    }
+					} else {
+					    putleaf(P2ICON, q->range[0], 0,P2INT,0);
+					    putop( P2LISTOP , P2INT );
+					    putleaf(P2ICON, q->range[1], 0,P2INT,0);
+					    putop( P2LISTOP , P2INT );
+					    putleaf(P2ICON,aryconst(ctype,i),0,P2INT,0);
+					    putop( P2LISTOP , P2INT );
+					}
+#					endif PC
+					p1 = p1->chain->chain;
+				    }
+				}
+			    }
 			}
 			break;
 		case VAR:

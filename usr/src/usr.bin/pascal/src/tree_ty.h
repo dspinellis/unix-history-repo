@@ -1,6 +1,6 @@
-/* Copyright (c) 1979 Regents of the University of California */
+/* Copyright (c) 1984 Regents of the University of California */
  
-/* static char sccsid[]="@(#)tree_ty.h	1.4	(Berkeley)	83/10/11"; */
+/* static char sccsid[]="@(#)tree_ty.h	1.5	(Berkeley)	84/02/08"; */
 
 typedef struct /* T_FORU, T_FORD */
 {
@@ -130,7 +130,14 @@ typedef struct		/* T_TYRANG */
     struct tnode	*const1;
     struct tnode	*const2;
 } RANG_TY;
-typedef struct		/* T_TYARY */
+typedef struct		/* T_TYCRANG */
+{
+    int			 line_no;
+    struct tnode	*lwb_var;
+    struct tnode	*upb_var;
+    struct tnode	*type;
+} CRANG_TY;
+typedef struct		/* T_TYARY, T_TYCARY */
 {
     int			 line_no;
     struct tnode	*type_list;
@@ -259,6 +266,7 @@ struct tnode
 	COMP_TY		t_comp_ty;
 	PTR_TY		t_ptr_ty;
 	RANG_TY		t_rang_ty;
+	CRANG_TY	t_crang_ty;
 	ARY_TY		t_ary_ty;
 	VARPT		t_varpt;
 	TYVARNT		t_tyvarnt;
@@ -299,6 +307,7 @@ struct tnode
 #define	comp_ty			tree_ele.t_comp_ty
 #define	ptr_ty			tree_ele.t_ptr_ty
 #define	rang_ty			tree_ele.t_rang_ty
+#define	crang_ty		tree_ele.t_crang_ty
 #define	ary_ty			tree_ele.t_ary_ty
 #define	varpt			tree_ele.t_varpt
 #define	tyvarnt			tree_ele.t_tyvarnt
