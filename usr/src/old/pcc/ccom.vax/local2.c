@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)local2.c	1.3 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.4 (Berkeley) %G%";
 # include "mfile2"
 # include "ctype.h"
 # ifdef FORT
@@ -986,9 +986,15 @@ optim2( p ) register NODE *p; {
 		break;
 
 	case SCONV:
+#ifdef FORT
+		if( p->in.type == FLOAT || p->in.type == DOUBLE ||
+		    (l = p->in.left)->in.type == FLOAT || l->in.type == DOUBLE )
+			break;
+#else
 		m = (p->in.type == FLOAT || p->in.type == DOUBLE);
 		ml = ((l = p->in.left)->in.type == FLOAT || l->in.type == DOUBLE);
 		if( m != ml ) break;
+#endif
 		m = p->in.type;
 		ml = l->in.type;
 		/* meaningful ones are conversion of int to char, int to short,
