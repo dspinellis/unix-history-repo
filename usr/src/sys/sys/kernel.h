@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernel.h	7.6 (Berkeley) %G%
+ *	@(#)kernel.h	7.7 (Berkeley) %G%
  */
 
 /* Global variables for the kernel. */
@@ -27,13 +27,6 @@ extern int tick;			/* usec per tick */
 extern int profhz;			/* profiling clock's frequency */
 extern int lbolt;			/* once a second sleep address */
 extern int realitexpire();
-
-struct clockinfo {
-	int hz;		/* clock frequency */
-	int tick;	/* micro-seconds per hz tick */
-	int phz;	/* alternate clock frequency */
-	int profhz;	/* profiling clock frequency */
-};
 
 struct loadavg {
 	fixpt_t ldavg[3];
