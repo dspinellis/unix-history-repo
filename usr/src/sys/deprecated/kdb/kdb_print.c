@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.14 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.15 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -14,8 +14,6 @@
 #include "tty.h"
 #include "vnode.h"
 #include "mount.h"
-#include "../ufs/inode.h"
-#include "../ufs/ufsmount.h"
 
 char	*BADRAD;
 
@@ -68,7 +66,7 @@ printtrace(modif)
 		printf("maxoff=%d", maxoff=(adrflg?adrval:MAXOFF));
 		break;
 
-	case 'v': case 'V':
+	case 'V':
 		printf("variables\n");
 		for (i=0;i<=35;i++)
 			if (var[i]) {
@@ -175,32 +173,6 @@ printtrace(modif)
 			}
 		break;
 
-	case 'i': {
-		register struct vnode *vp;
-		register struct inode *ip;
-		register struct ufsmount *ump;
-
-		printf("Locked inodes\n");
-		for (ump = &mounttab[0]; ump < &mounttab[NMOUNT]; ump++) {
-			if (ump->um_fs == NULL)
-				continue;
-			for (vp = ump->um_mountp->m_mounth;
-			     vp; vp = vp->v_mountf) {
-				ip = VTOI(vp);
-				if ((ip->i_flag & ILOCKED) == 0)
-					continue;
-				vprint((char *)0, vp);
-				if (ip->i_spare0 == 0)
-					continue;
-				printf("\towner pid %d", ip->i_spare0);
-				if (ip->i_spare1)
-					printf(" waiting pid %d", ip->i_spare1);
-				printf("\n");
-			}
-		}
-		break;
-	}
-
 	case 'k':
 		panic("kdb requested panic");
 		/* NOTREACHED */
@@ -255,6 +227,21 @@ printtrace(modif)
 				&T->t_rawq.c_cf);
 #undef T
 		}
+
+	case 'v': {
+		register struct mount *mp;
+		register struct vnode *vp;
+
+		printf("Locked vnodes\n");
+		mp = rootfs;
+		do {
+			for (vp = mp->m_mounth; vp; vp = vp->v_mountf)
+				if (VOP_ISLOCKED(vp))
+					vprint((char *)0, vp);
+			mp = mp->m_next;
+		} while (mp != rootfs);
+		break;
+	}
 
 	default:
 		error(BADMOD);
