@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_pcb.h	6.5 (Berkeley) %G%
+ *	@(#)ns_pcb.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -48,6 +48,6 @@ struct nspcb {
 
 
 #ifdef KERNEL
-extern struct nspcb nspcb;			/* head of list */
-extern struct nspcb *ns_pcblookup();
+struct	nspcb nspcb;			/* head of list */
+struct	nspcb *ns_pcblookup();
 #endif

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	6.9 (Berkeley) %G%
+ *	@(#)Locore.c	6.10 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -302,10 +302,18 @@ addupc(pc, prof, counts) int pc; struct uprof *prof; int counts; { }
  * Routines expanded by inline.
  */
 spl0() { }
+splsoftclock() { return (0); }
+splnet() { return (0); }
 spl4() { return (0); }
 spl5() { return (0); }
-spl6() { return (0); }
+splbio() { return (0); }
+spltty() { return (0); }
+#ifdef notdef
+spl6() { return (0); }		/* not currently used */
+#endif
+splclock() { return (0); }
 spl7() { return (0); }
+splhigh() { return (0); }
 
 /*ARGSUSED*/
 splx(s) int s; { }

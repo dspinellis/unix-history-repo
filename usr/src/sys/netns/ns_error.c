@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_error.c	6.7 (Berkeley) %G%
+ *	@(#)ns_error.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -233,6 +233,7 @@ free:
 	m_freem(m);
 }
 
+#ifdef notdef
 u_long
 nstime()
 {
@@ -243,6 +244,7 @@ nstime()
 	splx(s);
 	return (htonl(t));
 }
+#endif
 
 ns_echo(idp)
 register struct idp *idp;
@@ -265,7 +267,8 @@ register struct idp *idp;
 
 	if (idp->idp_sum != 0xffff) {
 		idp->idp_sum = 0;
-		idp->idp_sum = ns_cksum(m, (((ntohs(idp->idp_len) - 1)|1)+1));
+		idp->idp_sum = ns_cksum(m,
+		    (int)(((ntohs(idp->idp_len) - 1)|1)+1));
 	}
 	(void) ns_output(m, (struct route *)0, NS_FORWARDING);
 	return(0);

@@ -1,4 +1,4 @@
-/*	@(#)if_qe.c	6.2 (Berkeley) %G% */
+/*	@(#)if_qe.c	6.3 (Berkeley) %G% */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
  
@@ -191,7 +191,7 @@ struct	uba_device *qeinfo[NQE];
 extern struct timeval time;
 extern timeout();
  
-int	qeprobe(), qeattach(), qeint(), qewatch();
+int	qeprobe(), qeattach(), qeintr(), qewatch();
 int	qeinit(),qeoutput(),qeioctl(),qereset(),qewatch();
  
 u_short qestd[] = { 0 };
@@ -225,7 +225,7 @@ qeprobe(reg)
  
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
-	qeintr(i);
+	qeintr(0);
 #endif
 	/*
 	 * Set the address mask for the particular cpu
@@ -243,9 +243,9 @@ qeprobe(reg)
 	 * Map the communications area and the setup packet.
 	 */
 	sc->setupaddr =
-		uballoc(0, sc->setup_pkt, sizeof(sc->setup_pkt), 0);
-	sc->rringaddr = (struct qe_ring *)
-		uballoc(0, sc->rring, sizeof(struct qe_ring) * (NTOT+2), 0);
+		uballoc(0, (caddr_t)sc->setup_pkt, sizeof(sc->setup_pkt), 0);
+	sc->rringaddr = (struct qe_ring *) uballoc(0, (caddr_t)sc->rring,
+		sizeof(struct qe_ring) * (NTOT+2), 0);
 	prp = (struct qe_ring *)((int)sc->rringaddr & mask);
  
 	/*
@@ -254,8 +254,10 @@ qeprobe(reg)
 	 * receive & transmit ring descriptors and link the setup packet
 	 * to them.
 	 */
-	qeinitdesc( sc->tring, sc->setupaddr & mask, sizeof(sc->setup_pkt));
-	qeinitdesc( sc->rring, sc->setupaddr & mask, sizeof(sc->setup_pkt));
+	qeinitdesc(sc->tring, (caddr_t)(sc->setupaddr & mask),
+	    sizeof(sc->setup_pkt));
+	qeinitdesc(sc->rring, (caddr_t)(sc->setupaddr & mask),
+	    sizeof(sc->setup_pkt));
  
 	rp = (struct qe_ring *)sc->tring;
 	rp->qe_setup = 1;
@@ -291,7 +293,7 @@ qeprobe(reg)
 	 * All done with the bus resources.
 	 */
 	ubarelse(0, &sc->setupaddr);
-	ubarelse(0, &sc->rringaddr);
+	ubarelse(0, (int *)&sc->rringaddr);
 	if( cvec == j ) 
 		return 0;		/* didn't interrupt	*/
  
@@ -375,10 +377,11 @@ qeinit(unit)
 		/*
 		 * map the communications area onto the device 
 		 */
-		sc->rringaddr = (struct qe_ring *)((int)uballoc(0, sc->rring,
+		sc->rringaddr = (struct qe_ring *)
+		    ((int) uballoc(0, (caddr_t)sc->rring,
 		    sizeof(struct qe_ring) * (NTOT+2), 0) & mask);
 		sc->tringaddr = sc->rringaddr + NRCV + 1;
-		sc->setupaddr =	uballoc(0, sc->setup_pkt,
+		sc->setupaddr =	uballoc(0, (caddr_t)sc->setup_pkt,
 		    sizeof(sc->setup_pkt), 0) & mask;
 		/*
 		 * init buffers and maps
@@ -397,11 +400,11 @@ qeinit(unit)
 	 */
 	for (i = 0; i < NRCV; i++) {
 		qeinitdesc( &sc->rring[i],
-			sc->qe_ifr[i].ifrw_info & mask, MAXPACKETSIZE);
+		    (caddr_t)(sc->qe_ifr[i].ifrw_info & mask), MAXPACKETSIZE);
 		sc->rring[i].qe_flag = sc->rring[i].qe_status1 = QE_NOTYET;
 		sc->rring[i].qe_valid = 1;
 	}
-	qeinitdesc( &sc->rring[i], NULL, 0 );
+	qeinitdesc(&sc->rring[i], (caddr_t)NULL, 0);
  
 	sc->rring[i].qe_addr_lo = (short)sc->rringaddr;
 	sc->rring[i].qe_addr_hi = (short)((int)sc->rringaddr >> 16);
@@ -410,7 +413,7 @@ qeinit(unit)
 	sc->rring[i].qe_valid = 1;
  
 	for( i = 0 ; i <= NXMT ; i++ )
-		qeinitdesc( &sc->tring[i], NULL, 0 );
+		qeinitdesc(&sc->tring[i], (caddr_t)NULL, 0);
 	i--;
  
 	sc->tring[i].qe_addr_lo = (short)sc->tringaddr;
@@ -510,8 +513,10 @@ qestart(dev)
 		 * If the watchdog time isn't running kick it.
 		 */
 		sc->timeout=1;
-		if( !qewatchrun++ ) 
-			timeout(qewatch,0,QE_TIMEO);
+		if (qewatchrun == 0) { 
+			qewatchrun++; 
+			timeout(qewatch, (caddr_t)0, QE_TIMEO);
+		}
 			
 		/*
 		 * See if the xmit list is invalid.
@@ -574,7 +579,6 @@ qetint(unit)
 		 */
 		rp = &sc->tring[sc->otindex];
 		status1 = rp->qe_status1;
-		status2 = rp->qe_status2;
 		setupflag = rp->qe_setup;
 		len = (-rp->qe_buf_len) * 2;
 		if( rp->qe_odd_end )
@@ -582,7 +586,7 @@ qetint(unit)
 		/*
 		 * Init the buffer descriptor
 		 */
-		bzero( rp, sizeof(struct qe_ring));
+		bzero((caddr_t)rp, sizeof(struct qe_ring));
 		if( --sc->nxmit == 0 )
 			sc->timeout = 0;
 		if( !setupflag ) {
@@ -644,7 +648,7 @@ qerint(unit)
 		rp = &sc->rring[sc->rindex];
 		status1 = rp->qe_status1;
 		status2 = rp->qe_status2;
-		bzero( rp, sizeof(struct qe_ring));
+		bzero((caddr_t)rp, sizeof(struct qe_ring));
 		if( (status1 & QE_MASK) == QE_MASK )
 			panic("qe: chained packet");
 		len = ((status1 & QE_RBL_HI) | (status2 & QE_RBL_LO)) + 60;
@@ -846,7 +850,7 @@ qeioctl(ifp, cmd, data)
 			sc->qe_flags &= ~QEF_RUNNING;
 		} else if (ifp->if_flags & IFF_UP &&
 		    (sc->qe_flags & QEF_RUNNING) == 0)
-			qerestart(ifp->if_unit);
+			qerestart(sc);
 		break;
 
 	default:
@@ -865,8 +869,6 @@ qe_setaddr(physaddr, unit)
 	int unit;
 {
 	register struct qe_softc *sc = &qe_softc[unit];
-	struct uba_device *ui = qeinfo[unit];
-	struct qedevice *addr = (struct qedevice *)ui->ui_addr;
 	register int i;
 
 	for (i = 0; i < 6; i++)
@@ -881,15 +883,15 @@ qe_setaddr(physaddr, unit)
 /*
  * Initialize a ring descriptor with mbuf allocation side effects
  */
-qeinitdesc( rp, buf, len )
+qeinitdesc(rp, addr, len)
 	register struct qe_ring *rp;
-	char *addr; 			/* mapped address	*/
+	caddr_t addr; 			/* mapped address */
 	int len;
 {
 	/*
 	 * clear the entire descriptor
 	 */
-	bzero( rp, sizeof(struct qe_ring));
+	bzero((caddr_t)rp, sizeof(struct qe_ring));
  
 	if( len ) {
 		rp->qe_buf_len = -(len/2);
@@ -915,7 +917,7 @@ struct qe_softc *sc;
 	/*
 	 * Duplicate the first half.
 	 */
-	bcopy(sc->setup_pkt, sc->setup_pkt[8], 64);
+	bcopy((caddr_t)sc->setup_pkt[0], (caddr_t)sc->setup_pkt[8], 64);
 	/*
 	 * Fill in the broadcast address.
 	 */
@@ -1036,8 +1038,8 @@ qewatch()
 			} else
 				inprogress++;
 	}
-	if( inprogress ){
-		timeout(qewatch, 0, QE_TIMEO);
+	if (inprogress) {
+		timeout(qewatch, (caddr_t)0, QE_TIMEO);
 		qewatchrun++;
 	} else
 		qewatchrun=0;

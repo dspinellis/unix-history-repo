@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.h	6.11 (Berkeley) %G%
+ *	@(#)ns.h	6.12 (Berkeley) %G%
  */
 
 /*
@@ -103,8 +103,7 @@ struct sockaddr_ns {
 #define ns_nullhost(x) (((x).x_host.s_host[0]==0) && \
 	((x).x_host.s_host[1]==0) && ((x).x_host.s_host[2]==0))
 
-#if !defined(vax)
-#if !defined(INET)
+#if !defined(vax) && !defined(ntohl) && !defined(lint)
 /*
  * Macros for number representation conversion.
  */
@@ -113,14 +112,18 @@ struct sockaddr_ns {
 #define	htonl(x)	(x)
 #define	htons(x)	(x)
 #endif
+
+#if !defined(ntohl) && (defined(vax) || defined(lint))
+u_short	ntohs(), htons();
+u_long	ntohl(), htonl();
 #endif
 
 #ifdef KERNEL
 extern struct domain nsdomain;
-extern union ns_host ns_thishost;
-extern union ns_host ns_zerohost;
-extern union ns_host ns_broadhost;
-extern union ns_net ns_zeronet;
-extern union ns_net ns_broadnet;
+union ns_host ns_thishost;
+union ns_host ns_zerohost;
+union ns_host ns_broadhost;
+union ns_net ns_zeronet;
+union ns_net ns_broadnet;
 u_short ns_cksum();
 #endif

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.29 (Berkeley) %G%
+ *	@(#)machdep.c	6.30 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -1161,7 +1161,6 @@ microtime(tvp)
 	register struct timeval *tvp;
 {
 	int s = splhigh();
-	extern int adjtimedelta, tickadj;
 	static struct timeval lasttime;
 	register long t;
 

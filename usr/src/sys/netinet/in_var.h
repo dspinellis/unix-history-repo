@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_var.h	6.4 (Berkeley) %G%
+ *	@(#)in_var.h	6.5 (Berkeley) %G%
  */
 
 /*
- * Interface address, internet version.  One of these structures
- * is allocated for each interface with an internet address.
+ * Interface address, Internet version.  One of these structures
+ * is allocated for each interface with an Internet address.
  * The ifaddr structure contains the protocol-independent part
  * of the structure and is assumed to be first.
  */
@@ -37,6 +37,7 @@ struct in_ifaddr {
 #define	IFA_ROUTE	0x01		/* routing entry installed */
 
 #ifdef	KERNEL
-struct in_ifaddr *in_ifaddr;
-struct in_ifaddr *in_iaonnetof();
+struct	in_ifaddr *in_ifaddr;
+struct	in_ifaddr *in_iaonnetof();
+struct	ifqueue	ipintrq;		/* ip packet input queue */
 #endif

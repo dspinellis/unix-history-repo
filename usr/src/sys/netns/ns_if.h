@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_if.h	6.3 (Berkeley) %G%
+ *	@(#)ns_if.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@ struct nsip_req {
 #endif
 
 #ifdef	KERNEL
-extern	struct ns_ifaddr *ns_ifaddr;
-extern	struct ns_ifaddr *ns_iaonnetof();
-extern	struct ifqueue	nsintrq;	/* XNS input packet queue */
+struct	ns_ifaddr *ns_ifaddr;
+struct	ns_ifaddr *ns_iaonnetof();
+struct	ifqueue	nsintrq;	/* XNS input packet queue */
 #endif

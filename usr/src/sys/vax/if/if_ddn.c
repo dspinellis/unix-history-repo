@@ -1,4 +1,4 @@
-/*	@(#)if_ddn.c	6.5 (Berkeley) %G% */
+/*	@(#)if_ddn.c	6.6 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -274,7 +274,7 @@ caddr_t reg;
     register int delay_time;
 
 #ifdef lint
-    br = 0; cvec = br; br = cvec;
+    br = 0; cvec = br; br = cvec; ddnintr(0);
 #endif
 
     cvec = savevec = (uba_hd[numuba].uh_lastiv -= 4);	/* return vector */
@@ -1018,7 +1018,7 @@ register struct ddn_cb *dc;
 
     cb = mtod(m_callbfr, caddr_t);
 
-    convert_ip_addr(ds->ddn_ipaddr, cb_calling_addr);
+    (void)convert_ip_addr(ds->ddn_ipaddr, cb_calling_addr);
 
     cb_protocol[0] = 4;
     cb_protocol[1] = X25_PROTO_IP;	/* protocol = IP */
@@ -1419,11 +1419,11 @@ printf("\n");
     	    dc->dc_inaddr.s_addr = convert_x25_addr(cb_calling_addr);
     	    dc->dc_state = LC_DATA_IDLE;  /* set state */
     	    dc->dc_timer = TMO_DATA_IDLE; /* start timer */
-    	    send_supr(ds, ANSWER, lcn * 2, p[2]); /* send answer */
+    	    send_supr(ds, ANSWER, lcn * 2, (int)p[2]); /* send answer */
     	  }
     	else				/* if no free LCN's */
     	  {
-    	    send_supr(ds, CLEARVC, p[2], 0); /* clear call */
+    	    send_supr(ds, CLEARVC, (int)p[2], 0); /* clear call */
     	  }
     	break;
 
@@ -1432,7 +1432,7 @@ printf("\n");
     	dc = &(ds->ddn_cb[lcn]);
     	if (dc->dc_state != LC_CLR_PENDING) /* if no clear pending */
     	  {
-    	    send_supr(ds, CLEARLC, p[1], 0);      /*   ack the clear */
+    	    send_supr(ds, CLEARLC, (int)p[1], 0);      /*   ack the clear */
     	  }
     	dc->dc_state = LC_IDLE; /* set state */
     	dc->dc_timer = TMO_OFF; /* stop timer */
@@ -1445,11 +1445,11 @@ printf("\n");
     	break;
 
     case CLEARVC:			/* clear by VCN */
-    	send_supr(ds, CLEARVC, p[1], 0); /* send clear ack */
+    	send_supr(ds, CLEARVC, (int)p[1], 0); /* send clear ack */
     	break;
 
     case RESET:				/* X25 reset */
-	send_supr(ds, RESET_ACK, p[1], 0); /* send reset ack */
+	send_supr(ds, RESET_ACK, (int)p[1], 0); /* send reset ack */
     	printf("X25 RESET on lcn = %d\n", p[1] / 2); /* log it */
 	break;
 
@@ -1493,25 +1493,25 @@ printf("decode_ring()\n");
     /* called address */
     if ((cnt = *p + 1) > 16)	/* is called addr len legal? */
 	return(0);		/*   return false if not */
-    bcopy(p, cb_called_addr, cnt); /* copy field */
+    bcopy((caddr_t)p, (caddr_t)cb_called_addr, (unsigned)cnt); /* copy field */
     p += cnt;
 
     /* calling address */
     if ((cnt = *p + 1) > 16)	/* is calling addr len legal? */
 	return(0);		/*   return false if not */
-    bcopy(p, cb_calling_addr, cnt); /* copy field */
+    bcopy((caddr_t)p, (caddr_t)cb_calling_addr, (unsigned)cnt); /* copy field */
     p += cnt;
 
     /* protocol part of user data */
     if ((cnt = *p + 1) > 5)	/* is protocol len legal? */
 	return(0);		/*   return false if not */
-    bcopy(p, cb_protocol, cnt); /* copy field */
+    bcopy((caddr_t)p, (caddr_t)cb_protocol, (unsigned)cnt); /* copy field */
     p += cnt;
 
     /* facilities */
     if ((cnt = *p + 1) > 64)	/* is facilities len legal? */
 	return(0);		/*   return false if not */
-    bcopy(p, cb_facilities, cnt); /* copy field */
+    bcopy((caddr_t)p, (caddr_t)cb_facilities, (unsigned)cnt); /* copy field */
     p += cnt;
 
     /* ignore rest of user data for now */
@@ -1553,7 +1553,7 @@ printf("clear_lcn(%d)\n", dc->dc_lcn);
     	IF_DEQUEUE(&dc->dc_oq, m);
     	m_freem(m);
       }
-    send_supr(ds, CLEARLC, dc->dc_lcn * 2, 0);    /* send clear msg */
+    send_supr(ds, CLEARLC, (int)dc->dc_lcn * 2, 0);    /* send clear msg */
   }
 
 
