@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)dinode.h	7.10 (Berkeley) 5/8/91
- *	$Id: dinode.h,v 1.3 1993/10/16 18:17:35 rgrimes Exp $
+ *	$Id: dinode.h,v 1.4 1993/11/07 17:53:34 wollman Exp $
  */
 
 #ifndef _UFS_DINODE_H_
@@ -52,7 +52,10 @@ struct dinode {
 	short	di_nlink;	/*  2: number of links to file */
 	uid_t	di_uid;		/*  4: owner's user id */
 	gid_t	di_gid;		/*  6: owner's group id */
-	u_quad	di_qsize;	/*  8: number of bytes in file */
+	union {
+		u_quad_t v;
+		u_long val[2];
+	}	di_qsize;	/*  8: number of bytes in file */
 	time_t	di_atime;	/* 16: time last accessed */
 	long	di_atspare;
 	time_t	di_mtime;	/* 24: time last modified */
