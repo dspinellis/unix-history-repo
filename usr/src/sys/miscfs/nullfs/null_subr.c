@@ -24,11 +24,11 @@
 #include <lofs/lofs.h>
 
 #define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
-#define	NLOFSCACHE 16
-#define	LOFS_NHASH(vp) ((((u_long)vp)>>LOG2_SIZEVNODE) & (NLOFSCACHE-1))
+#define	NNULLNODECACHE 16
+#define	NULL_NHASH(vp) ((((u_long)vp)>>LOG2_SIZEVNODE) & (NNULLNODECACHE-1))
 
 /*
- * Loopback cache:
+ * Null layer cache:
  * Each cache entry holds a reference to the target vnode
  * along with a pointer to the alias vnode.  When an
  * entry is added the target vnode is VREF'd.  When the
@@ -38,165 +38,165 @@
 /*
  * Cache head
  */
-struct lofscache {
-	struct lofsnode	*ac_forw;
-	struct lofsnode	*ac_back;
+struct null_node_cache {
+	struct null_node	*ac_forw;
+	struct null_node	*ac_back;
 };
 
-static struct lofscache lofscache[NLOFSCACHE];
+static struct null_node_cache null_node_cache[NNULLNODECACHE];
 
 /*
  * Initialise cache headers
  */
-lofs_init()
+nullfs_init()
 {
-	struct lofscache *ac;
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_init\n");		/* printed during system boot */
+	struct null_node_cache *ac;
+#ifdef NULLFS_DIAGNOSTIC
+	printf("nullfs_init\n");		/* printed during system boot */
 #endif
 
-	for (ac = lofscache; ac < lofscache + NLOFSCACHE; ac++)
-		ac->ac_forw = ac->ac_back = (struct lofsnode *) ac;
+	for (ac = null_node_cache; ac < null_node_cache + NNULLNODECACHE; ac++)
+		ac->ac_forw = ac->ac_back = (struct null_node *) ac;
 }
 
 /*
  * Compute hash list for given target vnode
  */
-static struct lofscache *
-lofs_hash(targetvp)
+static struct null_node_cache *
+null_node_hash(targetvp)
 struct vnode *targetvp;
 {
-	return (&lofscache[LOFS_NHASH(targetvp)]);
+	return (&null_node_cache[NULL_NHASH(targetvp)]);
 }
 
 /*
- * Make a new lofsnode node.
+ * Make a new null_node node.
  * Vp is the alias vnode, lofsvp is the target vnode.
  * Maintain a reference to (targetvp).
  */
 static void
-lofs_alloc(vp, targetvp)
+null_node_alloc(vp, targetvp)
 	struct vnode *vp;
 	struct vnode *targetvp;
 {
-	struct lofscache *hd;
-	struct lofsnode *a;
+	struct null_node_cache *hd;
+	struct null_node *a;
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_alloc(%x, %x)\n", vp, targetvp);
+#ifdef NULLFS_DIAGNOSTIC
+	printf("null_node_alloc(%x, %x)\n", vp, targetvp);
 #endif
 
-	MALLOC(a, struct lofsnode *, sizeof(struct lofsnode), M_TEMP, M_WAITOK);
-	a->a_vnode = vp;
+	MALLOC(a, struct null_node *, sizeof(struct null_node), M_TEMP, M_WAITOK);
+	a->null_vnode = vp;
 	vp->v_data = a;
 	VREF(targetvp);
-	a->a_lofsvp = targetvp;
-	hd = lofs_hash(targetvp);
+	a->null_lowervp = targetvp;
+	hd = null_node_hash(targetvp);
 	insque(a, hd);
 
-#ifdef LOFS_DIAGNOSTIC
+#ifdef NULLFS_DIAGNOSTIC
 	vprint("alloc vp", vp);
 	vprint("alloc targetvp", targetvp);
 #endif
 }
 
-#ifdef LOFS_DIAGNOSTIC
+#ifdef NULLFS_DIAGNOSTIC
 void
-lofs_flushmp(mp)
+null_node_flushmp (mp)
 	struct mount *mp;
 {
-	struct lofscache *ac;
+	struct null_node_cache *ac;
 	int i = 0;
-	struct lofsnode *roota;
+	struct null_node *roota;
 
-	printf("lofs_flushmp(%x)\n", mp);
+	printf("null_node_flushmp (%x)\n", mp);
 
-	roota = LOFSP(VFSTOLOFS(mp)->rootvp);
+	roota = VTONULLNODE(MOUNTTONULLMOUNT(mp)->nullm_rootvp);
 
-	for (ac = lofscache; ac < lofscache + NLOFSCACHE; ac++) {
-		struct lofsnode *a = ac->ac_forw;
-		while (a != (struct lofsnode *) ac) {
-			if (a != roota && a->a_vnode->v_mount == mp) {
-				struct vnode *vp = a->a_lofsvp;
+	for (ac = null_node_cache; ac < null_node_cache + NNULLNODECACHE; ac++) {
+		struct null_node *a = ac->ac_forw;
+		while (a != (struct null_node *) ac) {
+			if (a != roota && a->null_vnode->v_mount == mp) {
+				struct vnode *vp = a->null_lowervp;
 				if (vp) {
-					a->a_lofsvp = 0;
+					a->null_lowervp = 0;
 					vprint("would vrele", vp);
 					/*vrele(vp);*/
 					i++;
 				}
 			}
-			a = a->a_forw;
+			a = a->null_forw;
 		}
 	}
 	if (i > 0)
-		printf("lofsnode: vrele'd %d aliases\n", i);
+		printf("null_node: vrele'd %d aliases\n", i);
 }
 #endif
 
 /*
  * Return alias for target vnode if already exists, else 0.
  */
-static struct lofsnode *
-lofs_find(mp, targetvp)
+static struct null_node *
+null_node_find(mp, targetvp)
 	struct mount *mp;
 	struct vnode *targetvp;
 {
-	struct lofscache *hd;
-	struct lofsnode *a;
+	struct null_node_cache *hd;
+	struct null_node *a;
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_find(mp = %x, target = %x)\n", mp, targetvp);
+#ifdef NULLFS_DIAGNOSTIC
+	printf("null_node_find(mp = %x, target = %x)\n", mp, targetvp);
 #endif
 
 	/*
 	 * Find hash base, and then search the (two-way) linked
-	 * list looking for a lofsnode structure which is referencing
-	 * the target vnode.  If found, the increment the lofsnode
+	 * list looking for a null_node structure which is referencing
+	 * the target vnode.  If found, the increment the null_node
 	 * reference count (but NOT the target vnode's VREF counter).
 	 */
-	hd = lofs_hash(targetvp);
+	hd = null_node_hash(targetvp);
 
-	for (a = hd->ac_forw; a != (struct lofsnode *) hd; a = a->a_forw) {
-		if (a->a_lofsvp == targetvp && a->a_vnode->v_mount == mp) {
-#ifdef LOFS_DIAGNOSTIC
-			printf("lofs_find(%x): found (%x,%x)->%x\n",
-				targetvp, mp, a->a_vnode, targetvp);
+	for (a = hd->ac_forw; a != (struct null_node *) hd; a = a->null_forw) {
+		if (a->null_lowervp == targetvp && a->null_vnode->v_mount == mp) {
+#ifdef NULLFS_DIAGNOSTIC
+			printf("null_node_find(%x): found (%x,%x)->%x\n",
+				targetvp, mp, a->null_vnode, targetvp);
 #endif
 			return (a);
 		}
 	}
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_find(%x, %x): NOT found\n", mp, targetvp);
+#ifdef NULLFS_DIAGNOSTIC
+	printf("null_node_find(%x, %x): NOT found\n", mp, targetvp);
 #endif
 
 	return (0);
 }
 
 static int
-lofs_alias(mp, targetvp, newvpp)
+null_node_alias(mp, targetvp, newvpp)
 	struct mount *mp;
 	struct vnode *targetvp;
 	struct vnode **newvpp;
 {
-	struct lofsnode *ap;
+	struct null_node *ap;
 	struct vnode *aliasvp;
 
-	if (targetvp->v_type != VDIR || targetvp->v_op == lofs_vnodeop_p) {
+	if (targetvp->v_type != VDIR || targetvp->v_op == null_vnodeop_p) {
 		*newvpp = targetvp;
 		return;
 	}
 
-	ap = lofs_find(mp, targetvp);
+	ap = null_node_find(mp, targetvp);
 
 	if (ap) {
 		/*
 		 * Take another reference to the alias vnode
 		 */
-#ifdef LOFS_DIAGNOSTIC
-		vprint("lofs_alias: exists", ap->a_vnode);
+#ifdef NULLFS_DIAGNOSTIC
+		vprint("null_node_alias: exists", ap->null_vnode);
 #endif
-		aliasvp = ap->a_vnode;
+		aliasvp = ap->null_vnode;
 		VREF(aliasvp);
 	} else {
 		int error;
@@ -204,10 +204,10 @@ lofs_alias(mp, targetvp, newvpp)
 		/*
 		 * Get new vnode.
 		 */
-#ifdef LOFS_DIAGNOSTIC
-		printf("lofs_alias: create new alias vnode\n");
+#ifdef NULLFS_DIAGNOSTIC
+		printf("null_node_alias: create new alias vnode\n");
 #endif
-		if (error = getnewvnode(VT_UFS, mp, lofs_vnodeop_p, &aliasvp))
+		if (error = getnewvnode(VT_UFS, mp, null_vnodeop_p, &aliasvp))
 			return (error);	/* XXX: VT_LOFS above */
 
 		/*
@@ -216,9 +216,9 @@ lofs_alias(mp, targetvp, newvpp)
 		aliasvp->v_type = VDIR;
 
 		/*
-		 * Make new vnode reference the lofsnode.
+		 * Make new vnode reference the null_node.
 		 */
-		lofs_alloc(aliasvp, targetvp);
+		null_node_alloc(aliasvp, targetvp);
 
 		/*
 		 * aliasvp is already VREF'd by getnewvnode()
@@ -227,9 +227,9 @@ lofs_alias(mp, targetvp, newvpp)
 
 	vrele(targetvp);
 
-#ifdef LOFS_DIAGNOSTIC
-	vprint("lofs_alias alias", aliasvp);
-	vprint("lofs_alias target", targetvp);
+#ifdef NULLFS_DIAGNOSTIC
+	vprint("null_node_alias alias", aliasvp);
+	vprint("null_node_alias target", targetvp);
 #endif
 
 	*newvpp = aliasvp;
@@ -237,11 +237,11 @@ lofs_alias(mp, targetvp, newvpp)
 }
 
 /*
- * Try to find an existing lofsnode vnode refering
- * to it, otherwise make a new lofsnode vnode which
+ * Try to find an existing null_node vnode refering
+ * to it, otherwise make a new null_node vnode which
  * contains a reference to the target vnode.
  */
-make_lofs(mp, vpp)
+make_null_node(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
@@ -249,8 +249,8 @@ make_lofs(mp, vpp)
 	struct vnode *aliasvp;
 	struct vnode *targetvp;
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("make_lofs(mp = %x, vp = %x\n", mp, *vpp);
+#ifdef NULLFS_DIAGNOSTIC
+	printf("make_null_node(mp = %x, vp = %x\n", mp, *vpp);
 #endif
 
 	/*
@@ -258,26 +258,26 @@ make_lofs(mp, vpp)
 	 */
 	targetvp = *vpp;
 
-#ifdef LOFS_DIAGNOSTIC
+#ifdef NULLFS_DIAGNOSTIC
 	if (targetvp == 0)
-		panic("make_lofs: null vp");
+		panic("make_null_node: null vp");
 #endif
 
 	/*
 	 * Try to find an existing reference to the target vnodes.
 	 */
-	return (lofs_alias(mp, targetvp, vpp));
+	return (null_node_alias(mp, targetvp, vpp));
 }
 
-#ifdef LOFS_DIAGNOSTIC
+#ifdef NULLFS_DIAGNOSTIC
 struct vnode *
-lofs_checkvp(vp, fil, lno)
+null_checkvp(vp, fil, lno)
 	struct vnode *vp;
 	char *fil;
 	int lno;
 {
-	struct lofsnode *a = LOFSP(vp);
-	if (a->a_lofsvp == 0) {
+	struct null_node *a = VTONULLNODE(vp);
+	if (a->null_lowervp == 0) {
 		int i; u_long *p;
 		printf("vp = %x, ZERO ptr\n", vp);
 #ifdef notdef
@@ -285,13 +285,13 @@ lofs_checkvp(vp, fil, lno)
 			printf(" %x", p[i]);
 		printf("\n");
 		DELAY(2000000);
-		panic("lofs_checkvp");
+		panic("null_checkvp");
 #endif
 	}
 	printf("aliasvp %x/%d -> %x/%d [%s, %d]\n",
-		a->a_vnode, a->a_vnode->v_usecount,
-		a->a_lofsvp, a->a_lofsvp ? a->a_lofsvp->v_usecount : -42,
+		a->null_vnode, a->null_vnode->v_usecount,
+		a->null_lowervp, a->null_lowervp ? a->null_lowervp->v_usecount : -42,
 		fil, lno);
-	return a->a_lofsvp;
+	return a->null_lowervp;
 }
 #endif
