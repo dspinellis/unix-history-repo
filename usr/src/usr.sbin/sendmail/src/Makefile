@@ -1,16 +1,16 @@
-#	@(#)Makefile	5.24 (Berkeley) %G%
+#	@(#)Makefile	5.25 (Berkeley) %G%
 
 PROG=	sendmail
 
 CFLAGS+=-I${.CURDIR}
 
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
-	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
+	deliver.c domain.c envelope.c err.c headers.c macro.c main.c mci.c \
 	parseaddr.c queue.c readcf.c recipient.c savemail.c srvrsmtp.c \
 	stab.c stats.c sysexits.c trace.c udb.c usersmtp.c \
 	util.c version.c
 DPADD=	${LIBDBM} ${LIBCOMPAT} ${LIBUTIL}
-LDADD=	-ldbm -lcompat -lutil
+LDADD=	-ldbm -lcompat -lutil -lkvm
 MAN1=	newaliases.0
 MAN5=	aliases.0
 MAN8=	sendmail.0 

@@ -7,12 +7,39 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
 
 /*
+**  Mail Connection Information (MCI) Caching Module.
+**
+**	There are actually two separate things cached.  The first is
+**	the set of all open connections -- these are stored in a
+**	(small) list.  The second is stored in the symbol table; it
+**	has the overall status for all hosts, whether or not there
+**	is a connection open currently.
+**
+**	There should never be too many connections open (since this
+**	could flood the socket table), nor should a connection be
+**	allowed to sit idly for too long.
+**
+**	MaxMciCache is the maximum number of open connections that
+**	will be supported.
+**
+**	MciCacheTimeout is the time (in seconds) that a connection
+**	is permitted to survive without activity.
+**
+**	We actually try any cached connections by sending a NOOP
+**	before we use them; if the NOOP fails we close down the
+**	connection and reopen it.  Note that this means that a
+**	server SMTP that doesn't support NOOP will hose the
+**	algorithm -- but that doesn't seem too likely.
+*/
+
+MCI	**MciCache;		/* the open connection cache */
+/*
 **  MCI_CACHE -- enter a connection structure into the open connection cache
 **
 **	This may cause something else to be flushed.
@@ -25,10 +52,10 @@ static char sccsid[] = "@(#)mci.c	5.1 (Berkeley) %G%";
 */
 
 mci_cache(mci)
-	register MCONINFO *mci;
+	register MCI *mci;
 {
-	register MCONINFO **mcislot;
-	extern MCONINFO **mci_scan();
+	register MCI **mcislot;
+	extern MCI **mci_scan();
 
 	if (MaxMciCache <= 0)
 	{
@@ -64,21 +91,19 @@ mci_cache(mci)
 **		The LRU (or empty) slot.
 */
 
-MCONINFO	**MciCache;
-
-MCONINFO **
+MCI **
 mci_scan(savemci)
-	MCONINFO *savemci;
+	MCI *savemci;
 {
 	time_t now;
-	register MCONINFO **bestmci;
-	register MCONINFO *mci;
+	register MCI **bestmci;
+	register MCI *mci;
 	register int i;
 
 	if (MciCache == NULL)
 	{
 		/* first call */
-		MciCache = (MCONINFO **) xalloc(MaxMciCache * sizeof *MciCache);
+		MciCache = (MCI **) xalloc(MaxMciCache * sizeof *MciCache);
 		return (&MciCache[0]);
 	}
 
@@ -119,9 +144,9 @@ mci_scan(savemci)
 */
 
 mci_uncache(mcislot)
-	register MCONINFO **mcislot;
+	register MCI **mcislot;
 {
-	register MCONINFO *mci;
+	register MCI *mci;
 	extern ENVELOPE *BlankEnvelope;
 
 	mci = *mcislot;
@@ -152,10 +177,29 @@ mci_flush()
 **  MCI_GET -- get information about a particular host
 */
 
-MCONINFO *
+MCI *
 mci_get(host, m)
 	char *host;
 	MAILER *m;
 {
-	return &(stab(host, ST_MCONINFO + m->m_mno, ST_ENTER))->s_mci;
+	register MCI *mci;
+
+	mci = &(stab(host, ST_MCI + m->m_mno, ST_ENTER))->s_mci;
+
+	if (tTd(42, 2))
+	{
+		printf("mci_get(%s %s): mci_state=%d, _flags=%x, _exitstat=%d, _errno=%d\n",
+			host, m->m_name, mci->mci_state, mci->mci_flags,
+			mci->mci_exitstat, mci->mci_errno);
+	}
+
+	/* try poking this to see if it is still usable */
+	switch (mci->mci_state)
+	{
+	  case MCIS_OPEN:
+		smtpnoop(mci);
+		break;
+	}
+
+	return mci;
 }

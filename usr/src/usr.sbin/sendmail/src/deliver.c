@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.57 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -55,6 +55,7 @@ deliver(e, firstto)
 	register char *p;
 	register MAILER *m;		/* mailer for this recipient */
 	ADDRESS *ctladdr;
+	register MCI *mci;
 	register ADDRESS *to = firstto;
 	bool clever = FALSE;		/* running user smtp to this mailer */
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
@@ -68,6 +69,7 @@ deliver(e, firstto)
 	extern bool checkcompat();
 	extern ADDRESS *getctladdr();
 	extern char *remotename();
+	extern MCI *openmailer();
 
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
@@ -109,7 +111,7 @@ deliver(e, firstto)
 			e->e_to = to->q_paddr;
 			message(Arpa_Info, "queued");
 			if (LogLevel > 4)
-				logdelivery("queued");
+				logdelivery("queued", e);
 		}
 		e->e_to = NULL;
 		return (0);
@@ -305,7 +307,7 @@ deliver(e, firstto)
 		{
 			if (user[0] == '/')
 			{
-				rcode = mailfile(user, getctladdr(to));
+				rcode = mailfile(user, getctladdr(to), e);
 				giveresponse(rcode, m, e);
 				if (rcode == EX_OK)
 					to->q_flags |= QSENT;
@@ -382,80 +384,104 @@ deliver(e, firstto)
 	if (ConfigLevel < 2)
 		_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);	/* XXX */
 #endif
-#ifdef SMTP
-	if (clever)
+	mci = openmailer(m, pv, ctladdr, clever, e);
+	if (mci == NULL)
 	{
-		register MCONINFO *mci;
-
-		rcode = EX_OK;
-#ifdef NAMED_BIND
-		if (host[0] && host[0] != '[')
+		/* catastrophic error */
+		rcode = -1;
+		goto give_up;
+	}
+	else if (mci->mci_state != MCIS_OPEN)
+	{
+		/* couldn't open the mailer */
+		rcode = mci->mci_exitstat;
+		if (rcode == EX_OK)
 		{
-			expand("\001j", buf, &buf[sizeof(buf) - 1], e);
-			Nmx = getmxrr(host, MxHosts, buf, &rcode);
+			/* shouldn't happen */
+			rcode = EX_SOFTWARE;
 		}
-		else
-#endif
-		{
-			Nmx = 1;
-			MxHosts[0] = host;
-		}
-		if (Nmx >= 0)
-		{
-			extern MCONINFO *smtpinit();
+	}
+	else if (!clever)
+	{
+		/*
+		**  Format and send message.
+		*/
 
-			mci = smtpinit(m, pv, e);
-			if (mci != NULL &&
-			    mci->mci_state == MCIS_OPEN &&
-			    mci->mci_exitstat == EX_OK &&
-			    smtpmailfrom(m, mci, e) == EX_OK)
-			{
-				register char *t = tobuf;
-				register int i;
+		putfromline(mci->mci_out, m, e);
+		(*e->e_puthdr)(mci->mci_out, m, e);
+		putline("\n", mci->mci_out, m);
+		(*e->e_putbody)(mci->mci_out, m, e);
 
-				/* send the recipient list */
-				tobuf[0] = '\0';
-				for (to = tochain; to != NULL; to = to->q_tchain)
-				{
-					e->e_to = to->q_paddr;
-					if ((i = smtprcpt(to, m, mci, e)) != EX_OK)
-					{
-						markfailure(e, to, i);
-						giveresponse(i, m, e);
-					}
-					else
-					{
-						*t++ = ',';
-						for (p = to->q_paddr; *p; *t++ = *p++);
-					}
-				}
-
-				/* now send the data */
-				if (tobuf[0] == '\0')
-					e->e_to = NULL;
-				else
-				{
-					e->e_to = tobuf + 1;
-					rcode = smtpdata(m, mci, e);
-				}
-
-				/* now close the connection */
-				smtpquit(m, mci, e);
-			}
-		}
+		/* get the exit status */
+		rcode = endmailer(mci, pv[0]);
 	}
 	else
-#endif /* SMTP */
+#ifdef SMTP
 	{
-		static int sendoff();
+		/*
+		**  Send the MAIL FROM: protocol
+		*/
 
-		message(Arpa_Info, "Connecting to %s (%s)...", host, m->m_name);
-		rcode = sendoff(e, m, pv, ctladdr);
+		rcode = smtpmailfrom(m, mci, e);
+		if (rcode == EX_OK)
+		{
+			register char *t = tobuf;
+			register int i;
+
+			/* send the recipient list */
+			tobuf[0] = '\0';
+			for (to = tochain; to != NULL; to = to->q_tchain)
+			{
+				e->e_to = to->q_paddr;
+				if ((i = smtprcpt(to, m, mci, e)) != EX_OK)
+				{
+					markfailure(e, to, i);
+					giveresponse(i, m, e);
+				}
+				else
+				{
+					*t++ = ',';
+					for (p = to->q_paddr; *p; *t++ = *p++)
+						continue;
+				}
+			}
+
+			/* now send the data */
+			if (tobuf[0] == '\0')
+			{
+				e->e_to = NULL;
+				if (bitset(MCIF_CACHED, mci->mci_flags))
+					smtprset(m, mci, e);
+			}
+			else
+			{
+				e->e_to = tobuf + 1;
+				rcode = smtpdata(m, mci, e);
+			}
+
+			/* now close the connection */
+			if (!bitset(MCIF_CACHED, mci->mci_flags))
+				smtpquit(m, mci, e);
+		}
 	}
+#else /* not SMTP */
+	{
+		syserr("deliver: need SMTP compiled to use clever mailer");
+		rcode = -1;
+		goto give_up;
+	}
+#endif /* SMTP */
 #ifdef NAMED_BIND
 	if (ConfigLevel < 2)
 		_res.options |= RES_DEFNAMES | RES_DNSRCH;	/* XXX */
 #endif
+
+	/* arrange a return receipt if requested */
+	if (e->e_receiptto != NULL && bitnset(M_LOCAL, m->m_flags))
+	{
+		e->e_flags |= EF_SENDRECEIPT;
+		/* do we want to send back more info? */
+	}
 
 	/*
 	**  Do final status disposal.
@@ -464,13 +490,20 @@ deliver(e, firstto)
 	**		addressees.
 	*/
 
+  give_up:
 	if (tobuf[0] != '\0')
 		giveresponse(rcode, m, e);
 	for (to = tochain; to != NULL; to = to->q_tchain)
+	{
 		if (rcode != EX_OK)
 			markfailure(e, to, rcode);
 		else
 			to->q_flags |= QSENT;
+	}
+
+	/*
+	**  Restore state and return.
+	*/
 
 	errno = 0;
 	define('g', (char *) NULL, e);
@@ -587,61 +620,6 @@ dofork()
 	return (pid);
 }
 /*
-**  SENDOFF -- send off call to mailer & collect response.
-**
-**	Parameters:
-**		e -- the envelope to mail.
-**		m -- mailer descriptor.
-**		pvp -- parameter vector to send to it.
-**		ctladdr -- an address pointer controlling the
-**			user/groupid etc. of the mailer.
-**
-**	Returns:
-**		exit status of mailer.
-**
-**	Side Effects:
-**		none.
-*/
-static
-sendoff(e, m, pvp, ctladdr)
-	register ENVELOPE *e;
-	MAILER *m;
-	char **pvp;
-	ADDRESS *ctladdr;
-{
-	register int i;
-	register MCONINFO *mci;
-	extern MCONINFO *openmailer();
-
-	/*
-	**  Create connection to mailer.
-	*/
-
-	mci = openmailer(m, pvp, ctladdr, FALSE);
-	if (mci == NULL)
-		return (-1);
-
-	/*
-	**  Format and send message.
-	*/
-
-	putfromline(mci->mci_out, m);
-	(*e->e_puthdr)(mci->mci_out, m, e);
-	putline("\n", mci->mci_out, m);
-	(*e->e_putbody)(mci->mci_out, m, e);
-
-	i = endmailer(mci, pvp[0]);
-
-	/* arrange a return receipt if requested */
-	if (e->e_receiptto != NULL && bitnset(M_LOCAL, m->m_flags))
-	{
-		e->e_flags |= EF_SENDRECEIPT;
-		/* do we want to send back more info? */
-	}
-
-	return (i);
-}
-/*
 **  ENDMAILER -- Wait for mailer to terminate.
 **
 **	We should never get fatal errors (e.g., segmentation
@@ -661,7 +639,7 @@ sendoff(e, m, pvp, ctladdr)
 */
 
 endmailer(mci, name)
-	register MCONINFO *mci;
+	register MCI *mci;
 	char *name;
 {
 	int st;
@@ -673,8 +651,6 @@ endmailer(mci, name)
 		(void) fclose(mci->mci_out);
 	mci->mci_in = mci->mci_out = NULL;
 	mci->mci_state = MCIS_CLOSED;
-	if (bitset(MCIF_TEMP, mci->mci_flags))
-		free(mci);
 
 	/* in the IPC case there is nothing to wait for */
 	if (mci->mci_pid == 0)
@@ -717,15 +693,16 @@ endmailer(mci, name)
 **		creates a mailer in a subprocess.
 */
 
-MCONINFO *
-openmailer(m, pvp, ctladdr, clever)
+MCI *
+openmailer(m, pvp, ctladdr, clever, e)
 	MAILER *m;
 	char **pvp;
 	ADDRESS *ctladdr;
 	bool clever;
+	ENVELOPE *e;
 {
 	int pid;
-	register MCONINFO *mci;
+	register MCI *mci;
 	int mpvect[2];
 	int rpvect[2];
 	extern FILE *fdopen();
@@ -751,222 +728,250 @@ openmailer(m, pvp, ctladdr, clever)
 	/* check for Local Person Communication -- not for mortals!!! */
 	if (strcmp(m->m_mailer, "[LPC]") == 0)
 	{
-		mci = (MCONINFO *) xalloc(sizeof *mci);
+		mci = (MCI *) xalloc(sizeof *mci);
 		mci->mci_in = stdin;
 		mci->mci_out = stdout;
 		mci->mci_pid = 0;
-		mci->mci_state = MCIS_OPEN;
+		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
 		mci->mci_mailer = m;
-		return mci;
+		mci->mci_flags = 0;
 	}
-
-	if (strcmp(m->m_mailer, "[IPC]") == 0 ||
-	    strcmp(m->m_mailer, "[TCP]") == 0)
+	else if (strcmp(m->m_mailer, "[IPC]") == 0 ||
+		 strcmp(m->m_mailer, "[TCP]") == 0)
 	{
 #ifdef DAEMON
 		register STAB *st;
 		extern STAB *stab();
 		register int i, j;
 		register u_short port;
+		int nmx;
+		char *mxhosts[MAXMXHOSTS + 1];
+		extern MCI *mci_get();
 
 		CurHostName = pvp[1];
+#ifdef NAMED_BIND
+		if (CurHostName != NULL && CurHostName[0] != '\0' &&
+		    CurHostName[0] != '[')
+		{
+			int rcode;
+			char buf[MAXNAME];
+
+			expand("\001j", buf, &buf[sizeof(buf) - 1], e);
+			nmx = getmxrr(CurHostName, mxhosts, buf, &rcode);
+			if (nmx < 0)
+			{
+				mci = mci_get(CurHostName, m);
+				mci->mci_exitstat = rcode;
+				mci->mci_errno = errno;
+			}
+		}
+		else
+#endif
+		{
+			nmx = 1;
+			mxhosts[0] = CurHostName;
+		}
+
 		if (!clever)
 			syserr("non-clever IPC");
 		if (pvp[2] != NULL)
 			port = atoi(pvp[2]);
 		else
 			port = 0;
-		for (j = 0; j < Nmx; j++)
+		for (j = 0; j < nmx; j++)
 		{
 			/* see if we already know that this host is fried */
-			CurHostName = MxHosts[j];
-			st = stab(CurHostName,
-				  ST_MCONINFO + m->m_mno,
-				  ST_ENTER);
-			mci = &st->s_mci;
-			if (mci->mci_state == MCIS_OPEN)
+			CurHostName = mxhosts[j];
+			mci = mci_get(CurHostName, m);
+			if (mci->mci_state != MCIS_CLOSED)
 				return mci;
 			mci->mci_mailer = m;
-			if (mci->mci_state == MCIS_CLOSED)
-			{
-				/* try the connection */
-				message(Arpa_Info, "Connecting to %s (%s)...",
-					MxHosts[j], m->m_name);
-				i = makeconnection(MxHosts[j], port, mci,
-					bitnset(M_SECURE_PORT, m->m_flags));
-				mci->mci_exitstat = i;
-				mci->mci_errno = errno;
-				if (i == EX_TEMPFAIL)
-					mci->mci_state = MCIS_TEMPFAIL;
-				else if (i != EX_OK)
-					mci->mci_state = MCIS_ERROR;
-				else
-					mci->mci_state = MCIS_OPENING;
-			}
-			else
-			{
-				i = mci->mci_exitstat;
-				errno = mci->mci_errno;
-			}
+			if (mci->mci_exitstat != EX_OK)
+				continue;
+
+			/* try the connection */
+			setproctitle("%s %s: %s", e->e_id, mxhosts[1], "user open");
+			message(Arpa_Info, "Connecting to %s (%s)...",
+				mxhosts[j], m->m_name);
+			i = makeconnection(mxhosts[j], port, mci,
+				bitnset(M_SECURE_PORT, m->m_flags));
+			mci->mci_exitstat = i;
+			mci->mci_errno = errno;
 			if (i == EX_OK)
-				return mci;
+			{
+				mci->mci_state = MCIS_OPENING;
+				mci_cache(mci);
+				break;
+			}
+			else if (tTd(11, 1))
+				printf("openmailer: makeconnection => stat=%d, errno=%d\n",
+					i, errno);
+
 
 			/* enter status of this host */
 			setstat(i);
 		}
-		return NULL;
-#else DAEMON
+#else /* no DAEMON */
 		syserr("openmailer: no IPC");
 		return NULL;
-#endif DAEMON
-	}
-
-	/* create a pipe to shove the mail through */
-	if (pipe(mpvect) < 0)
-	{
-		syserr("openmailer: pipe (to mailer)");
-		return NULL;
-	}
-
-#ifdef SMTP
-	/* if this mailer speaks smtp, create a return pipe */
-	if (clever && pipe(rpvect) < 0)
-	{
-		syserr("openmailer: pipe (from mailer)");
-		(void) close(mpvect[0]);
-		(void) close(mpvect[1]);
-		return NULL;
-	}
-#endif SMTP
-
-	/*
-	**  Actually fork the mailer process.
-	**	DOFORK is clever about retrying.
-	**
-	**	Dispose of SIGCHLD signal catchers that may be laying
-	**	around so that endmail will get it.
-	*/
-
-	if (CurEnv->e_xfp != NULL)
-		(void) fflush(CurEnv->e_xfp);		/* for debugging */
-	(void) fflush(stdout);
-# ifdef SIGCHLD
-	(void) signal(SIGCHLD, SIG_DFL);
-# endif SIGCHLD
-	DOFORK(FORK);
-	/* pid is set by DOFORK */
-	if (pid < 0)
-	{
-		/* failure */
-		syserr("openmailer: cannot fork");
-		(void) close(mpvect[0]);
-		(void) close(mpvect[1]);
-#ifdef SMTP
-		if (clever)
-		{
-			(void) close(rpvect[0]);
-			(void) close(rpvect[1]);
-		}
-#endif SMTP
-		return NULL;
-	}
-	else if (pid == 0)
-	{
-		int i;
-		extern int DtableSize;
-
-		/* child -- set up input & exec mailer */
-		/* make diagnostic output be standard output */
-		(void) signal(SIGINT, SIG_IGN);
-		(void) signal(SIGHUP, SIG_IGN);
-		(void) signal(SIGTERM, SIG_DFL);
-
-		/* arrange to filter standard & diag output of command */
-		if (clever)
-		{
-			(void) close(rpvect[0]);
-			(void) close(1);
-			(void) dup(rpvect[1]);
-			(void) close(rpvect[1]);
-		}
-		else if (OpMode == MD_SMTP || HoldErrs)
-		{
-			/* put mailer output in transcript */
-			(void) close(1);
-			(void) dup(fileno(CurEnv->e_xfp));
-		}
-		(void) close(2);
-		(void) dup(1);
-
-		/* arrange to get standard input */
-		(void) close(mpvect[1]);
-		(void) close(0);
-		if (dup(mpvect[0]) < 0)
-		{
-			syserr("Cannot dup to zero!");
-			_exit(EX_OSERR);
-		}
-		(void) close(mpvect[0]);
-		if (!bitnset(M_RESTR, m->m_flags))
-		{
-			if (ctladdr == NULL || ctladdr->q_uid == 0)
-			{
-				(void) setgid(DefGid);
-				(void) initgroups(DefUser, DefGid);
-				(void) setuid(DefUid);
-			}
-			else
-			{
-				(void) setgid(ctladdr->q_gid);
-				(void) initgroups(ctladdr->q_ruser?
-					ctladdr->q_ruser: ctladdr->q_user,
-					ctladdr->q_gid);
-				(void) setuid(ctladdr->q_uid);
-			}
-		}
-
-		/* arrange for all the files to be closed */
-		for (i = 3; i < DtableSize; i++) {
-			register int j;
-			if ((j = fcntl(i, F_GETFD, 0)) != -1)
-				(void)fcntl(i, F_SETFD, j|1);
-		}
-
-		/* try to execute the mailer */
-		execve(m->m_mailer, pvp, UserEnviron);
-		syserr("Cannot exec %s", m->m_mailer);
-		if (m == LocalMailer)
-			_exit(EX_TEMPFAIL);
-		switch (errno)
-		{
-		  case EIO:
-		  case EAGAIN:
-		  case ENOMEM:
-# ifdef EPROCLIM
-		  case EPROCLIM:
-# endif
-			_exit(EX_TEMPFAIL);
-		}
-		_exit(EX_UNAVAILABLE);
-	}
-
-	/*
-	**  Set up return value.
-	*/
-
-	mci = (MCONINFO *) xalloc(sizeof *mci);
-	mci->mci_mailer = m;
-	(void) close(mpvect[0]);
-	mci->mci_out = fdopen(mpvect[1], "w");
-	if (clever)
-	{
-		(void) close(rpvect[1]);
-		mci->mci_in = fdopen(rpvect[0], "r");
+#endif /* DAEMON */
 	}
 	else
 	{
-		mci->mci_flags |= MCIF_TEMP;
-		mci->mci_in = NULL;
+		/* create a pipe to shove the mail through */
+		if (pipe(mpvect) < 0)
+		{
+			syserr("openmailer: pipe (to mailer)");
+			return NULL;
+		}
+
+		/* if this mailer speaks smtp, create a return pipe */
+		if (clever && pipe(rpvect) < 0)
+		{
+			syserr("openmailer: pipe (from mailer)");
+			(void) close(mpvect[0]);
+			(void) close(mpvect[1]);
+			return NULL;
+		}
+
+		/*
+		**  Actually fork the mailer process.
+		**	DOFORK is clever about retrying.
+		**
+		**	Dispose of SIGCHLD signal catchers that may be laying
+		**	around so that endmail will get it.
+		*/
+
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);		/* for debugging */
+		(void) fflush(stdout);
+# ifdef SIGCHLD
+		(void) signal(SIGCHLD, SIG_DFL);
+# endif SIGCHLD
+		DOFORK(FORK);
+		/* pid is set by DOFORK */
+		if (pid < 0)
+		{
+			/* failure */
+			syserr("openmailer: cannot fork");
+			(void) close(mpvect[0]);
+			(void) close(mpvect[1]);
+			if (clever)
+			{
+				(void) close(rpvect[0]);
+				(void) close(rpvect[1]);
+			}
+			return NULL;
+		}
+		else if (pid == 0)
+		{
+			int i;
+			extern int DtableSize;
+
+			/* child -- set up input & exec mailer */
+			/* make diagnostic output be standard output */
+			(void) signal(SIGINT, SIG_IGN);
+			(void) signal(SIGHUP, SIG_IGN);
+			(void) signal(SIGTERM, SIG_DFL);
+
+			/* arrange to filter std & diag output of command */
+			if (clever)
+			{
+				(void) close(rpvect[0]);
+				(void) close(1);
+				(void) dup(rpvect[1]);
+				(void) close(rpvect[1]);
+			}
+			else if (OpMode == MD_SMTP || HoldErrs)
+			{
+				/* put mailer output in transcript */
+				(void) close(1);
+				(void) dup(fileno(e->e_xfp));
+			}
+			(void) close(2);
+			(void) dup(1);
+
+			/* arrange to get standard input */
+			(void) close(mpvect[1]);
+			(void) close(0);
+			if (dup(mpvect[0]) < 0)
+			{
+				syserr("Cannot dup to zero!");
+				_exit(EX_OSERR);
+			}
+			(void) close(mpvect[0]);
+			if (!bitnset(M_RESTR, m->m_flags))
+			{
+				if (ctladdr == NULL || ctladdr->q_uid == 0)
+				{
+					(void) setgid(DefGid);
+					(void) initgroups(DefUser, DefGid);
+					(void) setuid(DefUid);
+				}
+				else
+				{
+					(void) setgid(ctladdr->q_gid);
+					(void) initgroups(ctladdr->q_ruser?
+						ctladdr->q_ruser: ctladdr->q_user,
+						ctladdr->q_gid);
+					(void) setuid(ctladdr->q_uid);
+				}
+			}
+
+			/* arrange for all the files to be closed */
+			for (i = 3; i < DtableSize; i++)
+			{
+				register int j;
+				if ((j = fcntl(i, F_GETFD, 0)) != -1)
+					(void)fcntl(i, F_SETFD, j|1);
+			}
+
+			/* try to execute the mailer */
+			execve(m->m_mailer, pvp, UserEnviron);
+			syserr("Cannot exec %s", m->m_mailer);
+			if (m == LocalMailer)
+				_exit(EX_TEMPFAIL);
+			switch (errno)
+			{
+			  case EIO:
+			  case EAGAIN:
+			  case ENOMEM:
+# ifdef EPROCLIM
+			  case EPROCLIM:
+# endif
+				_exit(EX_TEMPFAIL);
+			}
+			_exit(EX_UNAVAILABLE);
+		}
+
+		/*
+		**  Set up return value.
+		*/
+
+		mci = (MCI *) xalloc(sizeof *mci);
+		mci->mci_mailer = m;
+		mci->mci_state = clever ? MCIS_OPENING : MCIS_OPEN;
+		(void) close(mpvect[0]);
+		mci->mci_out = fdopen(mpvect[1], "w");
+		if (clever)
+		{
+			(void) close(rpvect[1]);
+			mci->mci_in = fdopen(rpvect[0], "r");
+		}
+		else
+		{
+			mci->mci_flags |= MCIF_TEMP;
+			mci->mci_in = NULL;
+		}
+	}
+
+	/*
+	**  If we are in SMTP opening state, send initial protocol.
+	*/
+
+	if (clever && mci->mci_state != MCIS_CLOSED)
+	{
+		smtpinit(m, mci, e);
 	}
 
 	return mci;
@@ -1082,7 +1087,7 @@ giveresponse(stat, m, e)
 	*/
 
 	if (LogLevel > ((stat == 0 || stat == EX_TEMPFAIL) ? 3 : 2))
-		logdelivery(&statmsg[4]);
+		logdelivery(&statmsg[4], e);
 
 	if (stat != EX_TEMPFAIL)
 		setstat(stat);
@@ -1110,14 +1115,15 @@ giveresponse(stat, m, e)
 **		none
 */
 
-logdelivery(stat)
+logdelivery(stat, e)
 	char *stat;
+	register ENVELOPE *e;
 {
 	extern char *pintvl();
 
 # ifdef LOG
-	syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s", CurEnv->e_id,
-	       CurEnv->e_to, pintvl(curtime() - CurEnv->e_ctime, TRUE), stat);
+	syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s", e->e_id,
+	       e->e_to, pintvl(curtime() - e->e_ctime, TRUE), stat);
 # endif LOG
 }
 /*
@@ -1143,9 +1149,10 @@ logdelivery(stat)
 **		outputs some text to fp.
 */
 
-putfromline(fp, m)
+putfromline(fp, m, e)
 	register FILE *fp;
 	register MAILER *m;
+	ENVELOPE *e;
 {
 	char *template = "\001l\n";
 	char buf[MAXLINE];
@@ -1160,7 +1167,7 @@ putfromline(fp, m)
 		char *bang;
 		char xbuf[MAXLINE];
 
-		expand("\001<", buf, &buf[sizeof buf - 1], CurEnv);
+		expand("\001<", buf, &buf[sizeof buf - 1], e);
 		bang = index(buf, '!');
 		if (bang == NULL)
 			syserr("No ! in UUCP! (%s)", buf);
@@ -1172,7 +1179,7 @@ putfromline(fp, m)
 		}
 	}
 # endif UGLYUUCP
-	expand(template, buf, &buf[sizeof buf - 1], CurEnv);
+	expand(template, buf, &buf[sizeof buf - 1], e);
 	putline(buf, fp, m);
 }
 /*
@@ -1265,13 +1272,13 @@ putbody(fp, m, e)
 **		none.
 */
 
-mailfile(filename, ctladdr)
+mailfile(filename, ctladdr, e)
 	char *filename;
 	ADDRESS *ctladdr;
+	register ENVELOPE *e;
 {
 	register FILE *f;
 	register int pid;
-	ENVELOPE *e = CurEnv;
 	int mode;
 
 	/*
@@ -1354,7 +1361,7 @@ mailfile(filename, ctladdr)
 			exit(EX_CANTCREAT);
 		}
 
-		putfromline(f, ProgMailer);
+		putfromline(f, ProgMailer, e);
 		(*CurEnv->e_puthdr)(f, ProgMailer, CurEnv);
 		putline("\n", f, ProgMailer);
 		(*CurEnv->e_putbody)(f, ProgMailer, CurEnv);
@@ -1532,7 +1539,7 @@ sendall(e, mode)
 # ifdef LOG
 			if (LogLevel > 5)
 				syslog(LOG_NOTICE, "%s: lost lock: %m",
-					CurEnv->e_id);
+					e->e_id);
 # endif /* LOG */
 			exit(EX_OK);
 		}
