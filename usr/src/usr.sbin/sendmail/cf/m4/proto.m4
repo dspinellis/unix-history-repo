@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.4 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.5 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -562,19 +562,17 @@ R$+ . USENET		$# usenet $: $1',
 ifdef(`_LOCAL_RULES_',
 `# figure out what should stay in our local mail system
 R$* < @ $* > $*		$#smtp $@ $2 $: $1 @ $2 $3		user@host.domain')')
-ifdef(`SMART_HOST', `
-# pass names that still have a host to a smarthost
+ifdef(`SMART_HOST',
+`# pass names that still have a host to a smarthost
 R$* < @ $* > $*		$: < $S > $1 < @ $2 > $3	glue on smarthost name
 R< $- : $+ > $*		$# $1 $@ $2 $: $3		if non-null, use it
 R< $+ > $*		$#suucp $@ $1 $: $2		if non-null, use it
 R<> $*			$: $1				else strip off gunk',
 
-`ifdef(`_LOCAL_RULES_', `
-# reject messages that have host names we do not understand
-R$* < @ $* > $*		$#error $@ NOHOST $: Unrecognized host name $2',
-`ifdef(`_MAILER_smtp_',
 `# deal with other remote names
-R$* < @ $* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain')')')
+ifdef(`_MAILER_smtp_',
+`R$* < @$* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain',
+`R$* < @$* > $*		$#error $@NOHOST $: Unrecognized host name $2')')
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
