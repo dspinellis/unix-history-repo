@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.23 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -1478,4 +1478,10 @@ nfs_print(vp)
 	printf("tag VT_NFS, fileid %d fsid 0x%x%s\n",
 		np->n_vattr.va_fileid, np->n_vattr.va_fsid,
 		(np->n_flag & NLOCKED) ? " (LOCKED)" : "");
+	if (np->n_lockholder == 0)
+		return;
+	printf("\towner pid %d", np->n_lockholder);
+	if (np->n_lockwaiter)
+		printf(" waiting pid %d", np->n_lockwaiter);
+	printf("\n");
 }
