@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)collect.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.7 (Berkeley) %G%";
 #endif /* notdef */
 
 /*
@@ -677,19 +677,22 @@ transmit(mailp, fp)
 	long c, n;
 	int bol;
 	FILE *ibuf;
+	char *tabst;
 
 	mp = mailp;
 	ibuf = setinput(mp);
 	c = mp->m_size;
 	n = c;
 	bol = 1;
+	if ((tabst = value("tabstr")) == NOSTR)
+		tabst = "\t";
 	while (c-- > 0L) {
 		ch = getc(ibuf);
 		if (ch == '\n')
 			bol = 1;
 		else if (bol) {
 			bol = 0;
-			putc('\t', fp);
+			fputs(tabst, fp);
 			n++;
 		}
 		putc(ch, fp);
