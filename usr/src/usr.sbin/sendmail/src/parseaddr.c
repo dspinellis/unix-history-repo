@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.21	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.22	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -88,6 +88,8 @@ parse(addr, a, copyf)
 	*/
 
 	a = buildaddr(pvp, a);
+	if (a == NULL)
+		return (NULL);
 	m = Mailer[a->q_mailer];
 
 	/*
@@ -760,7 +762,8 @@ clrmatch(mlist)
 **			If NULL, one will be allocated.
 **
 **	Returns:
-**		'a'
+**		NULL if there was an error.
+**		'a' otherwise.
 **
 **	Side Effects:
 **		fills in 'a'
@@ -783,15 +786,35 @@ buildaddr(tv, a)
 
 	/* figure out what net/mailer to use */
 	if (**tv != CANONNET)
+	{
 		syserr("buildaddr: no net");
+		return (NULL);
+	}
 	tv++;
+	if (strcmp(*tv, "error") == 0)
+	{
+		if (**++tv != CANONUSER)
+			syserr("buildaddr: error: no user");
+		buf[0] = '\0';
+		while (*++tv != NULL)
+		{
+			if (buf[0] != '\0')
+				strcat(buf, " ");
+			strcat(buf, *tv);
+		}
+		usrerr(buf);
+		return (NULL);
+	}
 	for (mp = Mailer, i = 0; (m = *mp++) != NULL; i++)
 	{
 		if (strcmp(m->m_name, *tv) == 0)
 			break;
 	}
 	if (m == NULL)
+	{
 		syserr("buildaddr: unknown net %s", *tv);
+		return (NULL);
+	}
 	a->q_mailer = i;
 
 	/* figure out what host (if any) */
@@ -799,7 +822,10 @@ buildaddr(tv, a)
 	if (!bitset(M_LOCAL, m->m_flags))
 	{
 		if (**tv != CANONHOST)
+		{
 			syserr("buildaddr: no host");
+			return (NULL);
+		}
 		tv++;
 		a->q_host = *tv;
 		tv++;
@@ -809,7 +835,10 @@ buildaddr(tv, a)
 
 	/* figure out the user */
 	if (**tv != CANONUSER)
+	{
 		syserr("buildaddr: no user");
+		return (NULL);
+	}
 	cataddr(++tv, buf, sizeof buf);
 	a->q_user = buf;
 
