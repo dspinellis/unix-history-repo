@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.19 %G%";
+static	char sccsid[] = "@(#)cc.c 4.20 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -286,8 +286,6 @@ nocom:
 		}
 		while (i < nl)
 			av[na++] = llist[i++];
-		if (gflag || Gflag)
-			av[na++] = "-lg";
 		if (proflag)
 			av[na++] = "-lc_p";
 		else

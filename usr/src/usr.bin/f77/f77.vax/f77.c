@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char sccsid[] = "@(#)f77.c	5.6 (Berkeley) %G%";
+static	char sccsid[] = "@(#)f77.c	5.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -842,8 +842,6 @@ register char *v0[], *v[];
 char **p;
 int waitpid;
 
-if(sdbflag)
-	*v++ = "-lg";
 if (profileflag)
 	{
 	for(p = p_liblist ; *p ; *v++ = *p++)
