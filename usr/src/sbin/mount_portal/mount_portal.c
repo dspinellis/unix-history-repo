@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California
- * Copyright (c) 1990, 1992 Jan-Simon Pendry
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_portal.c	5.1 (Berkeley) %G%
+ *	@(#)mount_portal.c	8.1 (Berkeley) %G%
  *
  * $Id: portald.c,v 1.3 1992/05/27 07:09:27 jsp Exp jsp $
  */
