@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.8	%G%";
+static char SccsId[] = "@(#)recipient.c	3.9	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -147,6 +147,8 @@ recipient(a)
 		q->q_next = a;
 	}
 	a->q_next = NULL;
+	if (DontSend)
+		a->q_flags |= QDONTSEND;
 
 	/*
 	**  Alias the name and handle :include: specs.
