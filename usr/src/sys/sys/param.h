@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	6.15 (Berkeley) %G%
+ *	@(#)param.h	6.16 (Berkeley) %G%
  */
 
 #define	BSD	43		/* 4.3 * 10, as cpp doesn't do floats */
@@ -32,7 +32,7 @@
 #define	NCARGS	20480		/* # characters in exec arglist */
 #define	NGROUPS	16		/* max number groups */
 
-#define	NOGROUP	-1		/* marker for empty group set member */
+#define	NOGROUP	65535		/* marker for empty group set member */
 
 /*
  * Priorities
