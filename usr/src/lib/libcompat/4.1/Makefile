@@ -9,19 +9,21 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
-STDSRCS=ftime.c gtty.c nice.c pause.c rand.c stty.c tell.c \
-	times.c utime.c vlimit.c vtimes.c
-STD=	ftime.o gtty.o nice.o pause.o rand.o stty.o tell.o \
-	times.o utime.o vlimit.o vtimes.o
+
+STDSRCS=ftime.c gtty.c nice.c pause.c rand.c strcatn.c strcmpn.c strcpyn.c \
+	stty.c tell.c times.c utime.c vlimit.c vtimes.c
+STDOBJS=ftime.o gtty.o nice.o pause.o rand.o strcatn.o strcmpn.o strcpyn.o \
+	stty.o tell.o times.o utime.o vlimit.o vtimes.o
+
 # these should just be pitched, but in the interest of compatibility...
-TRASHSRC=getpw.c
-TRASH=	getpw.o 
+TRASHSRCS=getpw.c
+TRASHOBJS=getpw.o
 SRCS=	${STDSRCS} ${TRASHSRCS}
-OBJS=	${STD} ${TRASH}
+OBJS=	${STDOBJS} ${TRASHOBJS}
 TAGSFILE=tags
 
 .c.o:
@@ -63,6 +65,9 @@ nice.o: nice.c /usr/include/sys/time.h /usr/include/time.h
 nice.o: /usr/include/sys/resource.h
 pause.o: pause.c
 rand.o: rand.c
+strcatn.o: strcatn.c
+strcmpn.o: strcmpn.c
+strcpyn.o: strcpyn.c
 stty.o: stty.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
 stty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
 stty.o: /usr/include/sys/ttydev.h
@@ -74,5 +79,6 @@ vlimit.o: vlimit.c /usr/include/sys/time.h /usr/include/time.h
 vlimit.o: /usr/include/sys/resource.h /usr/include/errno.h
 vtimes.o: vtimes.c /usr/include/sys/time.h /usr/include/time.h
 vtimes.o: /usr/include/sys/resource.h
+getpw.o: getpw.c /usr/include/stdio.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
