@@ -1,0 +1,68 @@
+#
+# HOLGI -- Generic ISA kernel with X386 and CO device support
+#
+# for use with codrv-0.1.2
+#
+#
+machine		"i386"
+cpu		"i386"
+ident		CODRV
+timezone	-1 
+maxusers	16
+options		INET,NFS
+options		"COMPAT_43"
+options		"TCP_COMPAT_42"
+options		"NO_COM_FIFO"
+
+# the following line enables PC3 terminal emulation
+# this is downward compatible to pccons
+options		"PC3"
+
+config		"386bsd"	root on wd0 swap on wd0 and as0
+
+controller	isa0
+controller	wd0	at isa? port "IO_WD1" bio irq 14 vector wdintr
+disk		wd0	at wd0 drive 0
+disk		wd0	at wd0 drive 1
+
+controller	fd0	at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
+disk		fd0	at fd0 drive 0
+disk		fd1	at fd0 drive 1
+
+controller	as0	at isa? port 0x330 bio irq 11 drq 5 vector asintr
+disk		as0	at as0 drive 0
+disk		as1	at as0 drive 1
+
+# The following line enables codrv
+device		co0	at isa? port "IO_KBD" tty irq 1 vector cointr
+#device		pc0	at isa? port "IO_KBD" tty irq 1 vector pcrint
+device		npx0	at isa? port "IO_NPX" irq 13 vector npxintr
+device		com0	at isa? port "IO_COM1" tty irq 4 vector comintr
+device		com1	at isa? port "IO_COM2" tty irq 3 flags 0x01 vector comintr
+device		lpt0	at isa? port "IO_LPT1" tty irq 7 vector lptintr
+
+device		we0	at isa? port 0x280 net irq 9 iomem 0xd0000 iosiz 8192 vector weintr
+#device		ne0	at isa? port 0x300 net irq 9 vector neintr
+#device		ec0	at isa? port 0x250 net irq 9 iomem 0xd8000 iosiz 8192 vector ecintr
+#device		is0 	at isa? port 0x280 net irq 10 drq 7 vector isintr
+#device		wt0	at isa? port 0x300 bio irq 5 drq 1 vector wtintr
+
+pseudo-device	loop
+pseudo-device	ether
+pseudo-device	sl	2
+pseudo-device	log
+pseudo-device	pty	8
+
+# the following line sets the number of available virtual consoles
+# a maximum of 12 is possible, but 4 or 8 should be sufficient
+# note this does not relate to the number of ptys
+pseudo-device	vty	4
+
+# This line must be present with codrv for some reasons
+pseudo-device	vtemul
+
+#pseudo-device	ddb
+
+pseudo-device	swappager
+pseudo-device	vnodepager
+pseudo-device	devpager

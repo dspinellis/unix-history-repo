@@ -1,0 +1,93 @@
+.\" Contributed to 386bsd 0.1 and later versions
+.\"
+.\"	Copyright 1992 by Holger Veit
+.\"	May be freely used with Bill Jolitz's port of 
+.\"	386bsd and may be included in a 386bsd collection
+.\"	as long as binary and source are available and reproduce the above
+.\"	copyright.
+.\"	 
+.\"	You may freely modify this code and contribute improvements based
+.\"	on this code as long as you don't claim to be the original author.
+.\"	Commercial use of this source requires permittance of the copyright 
+.\"	holder. A general license for 386bsd will override this restriction.
+.\"
+.\"	Use at your own risk. The copyright holder or any person who makes
+.\"	this code available for the public (administrators of public archives
+.\"	for instance) are not responsible for any harm to hardware or software
+.\"	that might happen due to wrong application or program faults.
+.\"
+.\"	You must have the codriver driver in the same package generated
+.\"	into the 386bsd kernel, otherwise this program does not work.
+.\"
+.\"     @(#)setfont.3	1.0 (contributed to 386bsd) 10/25/92
+.\"
+.Dd October 25, 1992
+.Dt CONSUTIL 3
+.Os 386bsd 0.2
+.Sh NAME
+.Nm setfont
+.Nd font loading support routine
+.Sh SYNOPSIS
+.Fd #include <sys/ioctl.h>
+.Fd #include <sys/ioctl_pc.h>
+.Fn setfont "const char *path" "int verbose" "int fpage"
+.Sh DESCRIPTION
+.Fn Setfont
+is the recommended high level interface to load fonts into the new style
+console driver
+.Xr co 4 .
+The
+.Fn setfont
+routine loads a bdf font (bitmap distribution format, 
+as used by X11 Release 5), checks its validity, and then loads it
+into the console driver into the font page
+.Fa fpage .
+Currently, only pages 0 and 1 are valid. The argument
+.Fa verbose
+writes error messages, if any, to the
+.Dv stderr (see
+.Xr stdio 3 )
+output. If 
+.Fa verbose
+is 0, output is suppressed.
+.Sh RETURN VALUES
+On successful execution, 
+.Fn setfont
+returns 0, otherwise -1 is returned, and the global variable
+.Va errno 
+is set to hold the error code.
+.Sh ERRORS
+The following error codes are used:
+.Bl -tag -width Er
+.It Bq Er ENOENT
+The font file 
+.Fa path could not be opened.
+.It Bq Er EFTYPE
+The file contains an improper or unsupported entry, or is not a bdf file.
+.It Bq Er EINVAL
+One of the parameters of a proper entry is not in an acceptable range, e.g.
+the bitmap is larger than 8x16 pixels.
+.El
+There are more error codes which are related to the failure of the
+.Dv VGASFNTMAP 
+ioctl (see 
+.Xr co 4 ).
+These errors occur with an improper configured or outdated kernel.
+.Pp
+.Sh FILES
+.Bl -tag -width *.bdf -compact
+.It Pa /usr/lib/libconsutil.a
+.Fl l Ar consutil
+library containing setfont
+.El
+.Sh SEE ALSO
+.Xr co 4 ,
+.Xr vgafont 5
+.Sh HISTORY
+The
+.Nm
+font loading function
+.Fn setfont 
+is a new feature of the console driver 
+.Xr co 4
+of 386bsd 0.2 and later.

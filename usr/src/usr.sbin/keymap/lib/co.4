@@ -1,0 +1,262 @@
+.\" Contributed to 386bsd 0.1 and later versions
+.\"
+.\"	Copyright 1992,1993 by Holger Veit
+.\"	May be freely used with Bill Jolitz's port of 
+.\"	386bsd and may be included in a 386bsd collection
+.\"	as long as binary and source are available and reproduce the above
+.\"	copyright.
+.\"	 
+.\"	You may freely modify this code and contribute improvements based
+.\"	on this code as long as you don't claim to be the original author.
+.\"	Commercial use of this source requires permittance of the copyright 
+.\"	holder. A general license for 386bsd will override this restriction.
+.\"
+.\"	Use at your own risk. The copyright holder or any person who makes
+.\"	this code available for the public (administrators of public archives
+.\"	for instance) are not responsible for any harm to hardware or software
+.\"	that might happen due to wrong application or program faults.
+.\"
+.\"	You must have the codriver driver in the same package generated
+.\"	into the 386bsd kernel, otherwise this program does not work.
+.\"
+.\"     @(#)co.4	1.1 (contributed to 386bsd) 06/05/92
+.\"
+.Dd May 6, 1993
+.Dt CONSOLE 3
+.Os 386bsd 0.2
+.Sh NAME
+.Nm co
+.Nd new console driver
+.Sh SYNOPSIS
+.Cd device co0 at isa? port 0x60 tty "irq 1 vector cointr"
+.Pp
+.Fd #include <sys/ioctl.h>
+.Fd #include <sys/ioctl_pc.h>
+.Sh DESCRIPTION
+The
+.Em co
+console driver (also called
+.Em codrv )
+replaces the old outdated
+.Em pccons
+console driver. Several features and improvements have been built in:
+.Bl -bullet -compact
+.It
+IBM AT key numbering scheme, not the incompatible and complex 
+scan code handling
+.It
+/dev/kbd raw device
+.It
+XFree86 1.2 and greater support
+.It 
+National language keyboard support (see
+.Xr keycap 5 )
+including overloadable keys (any key, not only function keys)
+.It 
+Programmable keyboard repetition rate ("typematic")
+.It
+Programmable keyboard LEDs
+.It
+Programmable Beep (pitch and duration)
+.It
+Recognition of several SVGA cards, recognition of MDA/CGA/EGA/VGA
+.It
+Programmable cursor shape
+.It
+Standard ISO-Latin 1 character set
+.It
+Loadable national font (in addition to standard Latin 1)
+.It
+Programmable screen blanking
+.It
+Multiple virtual tty support
+.El
+.Pp
+The console driver is a single interrupt driver which is divided into a
+number of logical and physical devices:
+.Pp
+.Bl -tag -width /dev/console -compact
+.It Pa /dev/tty00
+The console interface. This device behaves like a tty device, and delivers
+7/8 bit ASCII characters on request.
+.It Pa /dev/tty01-XX
+Switchable virtual terminals (vty's, often also called
+virtual consoles). Up to 12 may be generated in the
+kernel. Any of them may be monitored by 
+.Xr getty 8 .
+.It Pa /dev/console
+The console redirector. This is the console switcher in the closer sense.
+When the keyboard/video is present, it redirects console requests to the 
+.Pa /dev/tty00
+device, otherwise to the first available serial interface. The
+.Pa /dev/tty00
+and 
+.Pa /dev/console
+devices should not be confused, the first is a physically existing unit, the
+second one is a logical redirecting device. When accessing the console,
+use 
+.Pa /dev/console
+only, but connect
+.Pa /dev/tty00 to a getty (e.g. in /etc/ttys).
+.It Pa /dev/kbd
+The raw keynum device. This device is noramlly opened by the XServer (see
+.Xr X 1 )
+only; this device is exclusive and suppresses input from
+.Pa /dev/console
+when opened.
+.It Pa /dev/vga
+The video device. In the current version of
+.Em codrv ,
+.Pa /dev/kbd
+and
+.Pa /dev/vga
+are basically the same device, however,
+.Pa /dev/vga 
+is not exclusive, but does not allow reading keystrokes from the keyboard.
+.El
+.Pp
+All devices share the same set of ioctl functions as described below, but
+this may change in the future. For compatibility, 
+.Em tty
+related ioctls (e.g. TIOC*, CONS*) should be applied to
+.Pa /dev/console
+only, 
+.Em keyboard 
+related ioctls (KBD*, CONS*) to 
+.Pa /dev/kbd ,
+and
+.Em video 
+related ones (VGA*, CONS*) to
+.Pa /dev/vga .
+.Pp
+The following set of ioctls is understood. For the exact calling convention
+see
+.Pa /usr/include/sys/ioctl_pc.h .
+Ioctls marked with 
+.Em #
+are not recommended for general use and lead to unexpected effects.
+.Pp
+.Bl -tag -width #CONSOLE_X_MODE_OFF -compact
+.It CONSGINFO
+Get console capabilities flags
+.Pp
+.It KBDCOLDRESET
+Reset the keyboard (default keymap, default repeat rate)
+.It #KBDWARMRESET
+Reset the keyboard controller only (not general use)
+.It KBDGTPMAT
+Get current key repetition rate information
+.It KBDSTPMAT
+Set new key repetition rate
+.It KBDGREPSW
+Get current key repetition flag (allows entirely disabling repetition)
+.It KBDSREPSW
+Set new key repetition flag (allows entirely disabling repetition)
+.It KBDGLEDS
+Get keyboard LED status (NumLock, CapsLock, ScrollLock)
+.It KBDSLEDS
+Set keyboard LED status (NumLock, CapsLock, ScrollLock)
+.It KBDGLOCK
+Get keyboard lock key status (NumLock, CapsLock, ScrollLock,
+AltGrLock, ShiftLock)
+.It KBDSLOCK
+Set keyboard lock key status (NumLock, CapsLock, ScrollLock,
+AltGrLock, ShiftLock)
+.It KBDGETBEEP
+Get the current beep pitch and duration (for actual or any vty)
+.It KBDSETBEEP
+Set the current beep pitch and duration (for actual or any vty)
+.It KBDBELL
+Play a tone of given pitch and duration
+.It KBDGCKEY
+Get current keymap for a single key
+.It KBDSCKEY
+Set new keymap for a single key
+.It KBDGOKEY
+Get original (default) keymap for a single key
+.It KBDRMKEY
+Remove a single key assignment
+.It KBDDEFAULT
+Remove all key assignments
+.It KBDSCLRLYR
+Clear a keyboard layer
+.It KBDGCAPSLED
+Get the behaviour of the CAPSLOCK LED.
+.It KBDSCAPSLED
+Set the behaviour of the CAPSLOCK LED to follow the CapsLock,
+ShiftLock or AltGrLock state.
+.It KBDGSPECF
+Get the behaviour of a "hot key" (a key processed before the
+normal ASCII interpretation)
+.It KBDSSPECF
+Set the behaviour of a "hot key"
+.Pp
+.It #CONSOLE_X_MODE
+Set XServer mode (priviledged and not for general use)
+.It #CONSOLE_X_MODE_ON
+Set XServer mode (priviledged, compatibility, may disappear in future)
+.It #CONSOLE_X_MODE_OFF
+Set XServer mode (priviledged, compatibility, may disappear in future)
+.Pp
+.It VGASCURSOR
+Set cursor shape
+.It VGAGCURSOR
+Get current cursor shape
+.It #VGAGINFO
+Get video information
+.It VGAGBLANK
+Get display blanking timeout
+.It VGASBLANK
+Set display blanking timeout
+.It VGAGBLOCK
+Get a rectangular area of text screen
+.It VGASBLOCK
+Set a rectangular area of text screen
+.It VGAGPAGE
+Get screen page data
+.It VGASPAGE
+Set screen page data
+.It #VGASFONTMAP
+Load a font into video memory (EGA or better only)
+.It #VGAGFONTMAP
+Read a font from video memory (EGA or better only)
+.It #VGATAKECTRL
+Signal to the kernel that process wants exclusive access to the video
+resource
+.It #VGAIVECTRL
+Signal to the kernel that process releases video resource
+.El
+.Sh FILES
+.Bl -tag -width /sys/i386/isa/codrv/co_codrv1.c -compact
+.It Pa /sys/i386/isa/codrv/co_cons.c
+Console tty support kernel routines
+.It Pa /sys/i386/isa/codrv/co_kbd.c
+Keyboard kernel routines
+.It Pa /sys/i386/isa/codrv/co_vga.c
+Video kernel routines
+.It Pa /sys/i386/isa/codrv/co_codrv1.c
+Ioctl processor
+.It Pa /sys/i386/isa/codrv/co_pc3.c
+PC3 Terminal emulation
+.It Pa /sys/i386/isa/codrv/co_vty.c
+Virtual terminal support
+.It Pa /usr/share/misc/keycap
+standard keyboard capability data base
+.El
+.Sh SEE ALSO
+.Xr keycap 5
+.Sh HISTORY
+The
+.Em codrv
+driver was derived from the
+.Em pccons
+driver and was heavily modified since then.
+.Sh BUGS
+The terminal emulation is still "pc3", for compatibility issues, and
+may be changed in future.
+.Pp
+The naming convention VGA* is misleading, although VGA cards have become
+cheap enough to be standard even in low cost systems.
+.Pp
+Much is still under construction.
+

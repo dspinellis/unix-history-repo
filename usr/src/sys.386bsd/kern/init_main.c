@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)init_main.c	7.41 (Berkeley) 5/15/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00162
+ * --------------------         -----   ----------------------
+ *
+ * 26 May 93	Holger Veit		Remove hard coded escapes
+ *		Rodney W. Grimes	Added two more \n to clean up output
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/kern/RCS/init_main.c,v 1.3 92/01/21 21:28:49 william Exp Locker: root $";
 
@@ -110,8 +118,16 @@ main()
 	 */
 	startrtclock();
 	consinit();
-	printf("\033[3;15x%s\033[0x [0.1.%s]\n", copyright1, version+9);
-	printf(copyright2);
+
+	/* -hv- 22 Apr 93 corrects a hack which prevents proper handling
+	 * of different terminal emulators
+	 * plain ESC codes in the kernel other than in the console part
+	 * should be a NO-NO! Fixed in pccons.c/co_vga.c
+	 */
+	cons_highlight();
+	printf(copyright1);
+	cons_normal();
+	printf("\n[0.1.%s]\n%s\n", version+9,copyright2);
 
 	vm_mem_init();
 	kmeminit();
