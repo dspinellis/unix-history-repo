@@ -1,4 +1,4 @@
-/*	tcp_timer.c	6.3	84/10/18	*/
+/*	tcp_timer.c	6.3	84/10/31	*/
 
 #include "param.h"
 #include "systm.h"
@@ -148,7 +148,11 @@ tcp_timers(tp, timer)
 			    TCPTV_MIN, TCPTV_MAX);
 		}
 		tp->snd_nxt = tp->snd_una;
-		/* this only transmits one segment! */
+		/*
+		 * If timing a segment in this window, stop the timer.
+		 */
+		if (tp->t_rtt && SEQ_GT(tp->t_rtseq, tp->snd_una))
+			tp->t_rtt = 0;
 		(void) tcp_output(tp);
 		break;
 
