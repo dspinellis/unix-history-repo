@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	8.2 (Berkeley) %G%
+ *	@(#)ufs_inode.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,8 +42,7 @@ ufs_init()
 }
 
 /*
- * Last reference to an inode, write the inode out and if necessary,
- * truncate and deallocate the file.
+ * Last reference to an inode.  If necessary, write or delete it.
  */
 int
 ufs_inactive(ap)
@@ -76,20 +75,20 @@ ufs_inactive(ap)
 	else
 		ip->i_lockholder = -1;
 #endif
-	ip->i_flag |= ILOCKED;
+	ip->i_flag |= IN_LOCKED;
 	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 #ifdef QUOTA
 		if (!getinoquota(ip))
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
 		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, NULL);
+		ip->i_rdev = 0;
 		mode = ip->i_mode;
 		ip->i_mode = 0;
-		ip->i_rdev = 0;
-		ip->i_flag |= IUPDATE | ICHANGE;
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		VOP_VFREE(vp, ip->i_number, mode);
 	}
-	if (ip->i_flag & (IMODIFIED | IACCESS | IUPDATE | ICHANGE)) {
+	if (ip->i_flag & (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) {
 		tv = time;
 		VOP_UPDATE(vp, &tv, &tv, 0);
 	}

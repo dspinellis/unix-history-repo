@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	8.2 (Berkeley) %G%
+ *	@(#)kern_physio.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -75,7 +75,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			bp->b_bcount = iov->iov_len;
 			(*mincnt)(bp);
 			requested = bp->b_bcount;
-			p->p_flag |= SPHYSIO;
+			p->p_flag |= P_PHYSIO;
 			vslock(a = bp->b_data, requested);
 			vmapbuf(bp);
 			(*strat)(bp);
@@ -84,7 +84,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 				sleep((caddr_t)bp, PRIBIO);
 			vunmapbuf(bp);
 			vsunlock(a, requested, rw);
-			p->p_flag &= ~SPHYSIO;
+			p->p_flag &= ~P_PHYSIO;
 			if (bp->b_flags&B_WANTED)	/* rare */
 				wakeup((caddr_t)bp);
 			splx(s);

@@ -10,7 +10,7 @@
  *	from: @(#)locore.s	7.3 (Berkeley) 5/13/91
  *	from NetBSD: Id: locore.s,v 1.12 1993/05/27 16:44:13 cgd Exp
  *
- *      @(#)locore.s	8.2 (Berkeley) %G%
+ *      @(#)locore.s	8.3 (Berkeley) %G%
  */
 
 
@@ -1090,8 +1090,8 @@ movl	8(%esp),%eax
  * The following primitives manipulate the run queues.  _whichqs tells which
  * of the 32 queues _qs have processes in them.  Setrunqueue puts processes
  * into queues, Remrq removes them from queues.  The running process is on
- * no queue, other processes are on a queue related to p->p_pri, divided by 4
- * actually to shrink the 0-127 range of priorities into the 32 available
+ * no queue, other processes are on a queue related to p->p_priority, divided
+ * by 4 actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
 	.globl	_whichqs,_qs,_cnt,_panic
@@ -1106,21 +1106,21 @@ movl	8(%esp),%eax
 	ALIGN32
 ENTRY(setrunqueue)
 	movl	4(%esp),%eax
-	cmpl	$0,P_RLINK(%eax)	# should not be on q already
+	cmpl	$0,P_BACK(%eax)		# should not be on q already
 	je	set1
 	pushl	$set2
 	call	_panic
 set1:
-	movzbl	P_PRI(%eax),%edx
+	movzbl	P_PRIORITY(%eax),%edx
 	shrl	$2,%edx
 	btsl	%edx,_whichqs		# set q full bit
 	shll	$3,%edx
 	addl	$_qs,%edx		# locate q hdr
-	movl	%edx,P_LINK(%eax)	# link process on tail of q
-	movl	P_RLINK(%edx),%ecx
-	movl	%ecx,P_RLINK(%eax)
-	movl	%eax,P_RLINK(%edx)
-	movl	%eax,P_LINK(%ecx)
+	movl	%edx,P_FORW(%eax)	# link process on tail of q
+	movl	P_BACK(%edx),%ecx
+	movl	%ecx,P_BACK(%eax)
+	movl	%eax,P_BACK(%edx)
+	movl	%eax,P_FORW(%ecx)
 	ret
 
 set2:	.asciz	"setrunqueue"
@@ -1133,7 +1133,7 @@ set2:	.asciz	"setrunqueue"
 	ALIGN32
 ENTRY(remrq)
 	movl	4(%esp),%eax
-	movzbl	P_PRI(%eax),%edx
+	movzbl	P_PRIORITY(%eax),%edx
 	shrl	$2,%edx
 	btrl	%edx,_whichqs		# clear full bit, panic if clear already
 	jb	rem1
@@ -1141,26 +1141,26 @@ ENTRY(remrq)
 	call	_panic
 rem1:
 	pushl	%edx
-	movl	P_LINK(%eax),%ecx	# unlink process
-	movl	P_RLINK(%eax),%edx
-	movl	%edx,P_RLINK(%ecx)
-	movl	P_RLINK(%eax),%ecx
-	movl	P_LINK(%eax),%edx
-	movl	%edx,P_LINK(%ecx)
+	movl	P_FORW(%eax),%ecx	# unlink process
+	movl	P_BACK(%eax),%edx
+	movl	%edx,P_BACK(%ecx)
+	movl	P_BACK(%eax),%ecx
+	movl	P_FORW(%eax),%edx
+	movl	%edx,P_FORW(%ecx)
 	popl	%edx
 	movl	$_qs,%ecx
 	shll	$3,%edx
 	addl	%edx,%ecx
-	cmpl	P_LINK(%ecx),%ecx	# q still has something?
+	cmpl	P_FORW(%ecx),%ecx	# q still has something?
 	je	rem2
 	shrl	$3,%edx			# yes, set bit as still full
 	btsl	%edx,_whichqs
 rem2:
-	movl	$0,P_RLINK(%eax)	# zap reverse link to indicate off list
+	movl	$0,P_BACK(%eax)		# zap reverse link to indicate off list
 	ret
 
 rem3:	.asciz	"remrq"
-sw0:	.asciz	"swtch"
+sw0:	.asciz	"Xswitch"
 
 /*
  * When no processes are on the runq, Swtch branches to idle
@@ -1176,7 +1176,7 @@ idle:
 	hlt		# wait for interrupt
 	jmp	idle
 
-	.align 4 /* ..so that profiling doesn't lump Idle with swtch().. */
+	.align 4 /* ..so that profiling doesn't lump Idle with Xswitch().. */
 badsw:
 	pushl	$sw0
 	call	_panic
@@ -1186,7 +1186,7 @@ badsw:
  * Swtch()
  */
 	ALIGN32
-ENTRY(swtch)
+ENTRY(Xswitch)
 
 	incl	_cnt+V_SWTCH
 
@@ -1248,17 +1248,17 @@ swfnd:
 	movl	%eax,%esi
 
 #ifdef	DIAGNOSTIC
-	cmpl	P_LINK(%eax),%eax # linked to self? (e.g. not on list)
+	cmpl	P_FORW(%eax),%eax # linked to self? (e.g. not on list)
 	je	badsw			# not possible
 #endif
 
-	movl	P_LINK(%eax),%ecx	# unlink from front of process q
-	movl	P_LINK(%ecx),%edx
-	movl	%edx,P_LINK(%eax)
-	movl	P_RLINK(%ecx),%eax
-	movl	%eax,P_RLINK(%edx)
+	movl	P_FORW(%eax),%ecx	# unlink from front of process q
+	movl	P_FORW(%ecx),%edx
+	movl	%edx,P_FORW(%eax)
+	movl	P_BACK(%ecx),%eax
+	movl	%eax,P_BACK(%edx)
 
-	cmpl	P_LINK(%ecx),%esi	# q empty
+	cmpl	P_FORW(%ecx),%esi	# q empty
 	je	3f
 	btsl	%ebx,%edi		# nope, set to indicate full
 3:
@@ -1274,7 +1274,7 @@ swfnd:
 	jne	badsw
 #endif
 
-	movl	%eax,P_RLINK(%ecx) /* isolate process to run */
+	movl	%eax,P_BACK(%ecx)	/* isolate process to run */
 	movl	P_ADDR(%ecx),%edx
 	movl	PCB_CR3(%edx),%ebx
 
@@ -1308,7 +1308,7 @@ swfnd:
 _mvesp:	movl	%esp,%eax
 	ret
 /*
- * struct proc *swtch_to_inactive(p) ; struct proc *p;
+ * struct proc *switch_to_inactive(p) ; struct proc *p;
  *
  * At exit of a process, move off the address space of the
  * process and onto a "safe" one. Then, on a temporary stack
@@ -1317,7 +1317,7 @@ _mvesp:	movl	%esp,%eax
  * pass it back as a return value.
  */
 	ALIGN32
-ENTRY(swtch_to_inactive)
+ENTRY(switch_to_inactive)
 	popl	%edx			# old pc
 	popl	%eax			# arg, our return value
 	movl	_IdlePTD,%ecx
@@ -1329,7 +1329,7 @@ ENTRY(swtch_to_inactive)
 /*
  * savectx(pcb, altreturn)
  * Update pcb, saving current processor state and arranging
- * for alternate return ala longjmp in swtch if altreturn is true.
+ * for alternate return ala longjmp in Xswitch if altreturn is true.
  */
 	ALIGN32
 ENTRY(savectx)
@@ -1454,7 +1454,7 @@ proffault:
 _cyloffset:	.long	0
 	.globl	_proc0paddr
 _proc0paddr:	.long	0
-LF:	.asciz "swtch %x"
+LF:	.asciz "Xswitch %x"
 
 .text
  # To be done:

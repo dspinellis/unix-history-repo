@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	8.2 (Berkeley) %G%
+ *	@(#)lfs_bio.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -79,9 +79,9 @@ lfs_bwrite(ap)
 			}
 		}
 		ip = VTOI((bp)->b_vp);
-		if (!(ip->i_flag & IMODIFIED))
+		if (!(ip->i_flag & IN_MODIFIED))
 			++fs->lfs_uinodes;
-		ip->i_flag |= IMODIFIED | ICHANGE | IUPDATE;
+		ip->i_flag |= IN_CHANGE | IN_MODIFIED | IN_UPDATE;
 		fs->lfs_avail -= fsbtodb(fs, 1);
 		++locked_queue_count;
 		bp->b_flags |= B_DELWRI | B_LOCKED;

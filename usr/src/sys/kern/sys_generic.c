@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	8.3 (Berkeley) %G%
+ *	@(#)sys_generic.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -515,7 +515,7 @@ select(p, uap, retval)
 		timo = 0;
 retry:
 	ncoll = nselcoll;
-	p->p_flag |= SSEL;
+	p->p_flag |= P_SELECT;
 	error = selscan(p, ibits, obits, uap->nd, retval);
 	if (error || *retval)
 		goto done;
@@ -526,17 +526,17 @@ retry:
 		splx(s);
 		goto done;
 	}
-	if ((p->p_flag & SSEL) == 0 || nselcoll != ncoll) {
+	if ((p->p_flag & P_SELECT) == 0 || nselcoll != ncoll) {
 		splx(s);
 		goto retry;
 	}
-	p->p_flag &= ~SSEL;
+	p->p_flag &= ~P_SELECT;
 	error = tsleep((caddr_t)&selwait, PSOCK | PCATCH, "select", timo);
 	splx(s);
 	if (error == 0)
 		goto retry;
 done:
-	p->p_flag &= ~SSEL;
+	p->p_flag &= ~P_SELECT;
 	/* select is not restarted after signals... */
 	if (error == ERESTART)
 		error = EINTR;
@@ -645,8 +645,8 @@ selwakeup(sip)
 				setrunnable(p);
 			else
 				unsleep(p);
-		} else if (p->p_flag & SSEL)
-			p->p_flag &= ~SSEL;
+		} else if (p->p_flag & P_SELECT)
+			p->p_flag &= ~P_SELECT;
 		splx(s);
 	}
 }

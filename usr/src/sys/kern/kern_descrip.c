@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	8.1 (Berkeley) %G%
+ *	@(#)kern_descrip.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -229,13 +229,13 @@ fcntl(p, uap, retval)
 		case F_RDLCK:
 			if ((fp->f_flag & FREAD) == 0)
 				return (EBADF);
-			p->p_flag |= SADVLCK;
+			p->p_flag |= P_ADVLOCK;
 			return (VOP_ADVLOCK(vp, (caddr_t)p, F_SETLK, &fl, flg));
 
 		case F_WRLCK:
 			if ((fp->f_flag & FWRITE) == 0)
 				return (EBADF);
-			p->p_flag |= SADVLCK;
+			p->p_flag |= P_ADVLOCK;
 			return (VOP_ADVLOCK(vp, (caddr_t)p, F_SETLK, &fl, flg));
 
 		case F_UNLCK:
@@ -702,7 +702,7 @@ closef(fp, p)
 	 * If the descriptor was in a message, POSIX-style locks
 	 * aren't passed with the descriptor.
 	 */
-	if (p && (p->p_flag & SADVLCK) && fp->f_type == DTYPE_VNODE) {
+	if (p && (p->p_flag & P_ADVLOCK) && fp->f_type == DTYPE_VNODE) {
 		lf.l_whence = SEEK_SET;
 		lf.l_start = 0;
 		lf.l_len = 0;

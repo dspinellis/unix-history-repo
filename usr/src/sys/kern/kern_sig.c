@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	8.3 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.4 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -72,7 +72,7 @@ sigaction(p, uap, retval)
 			sa->sa_flags |= SA_ONSTACK;
 		if ((ps->ps_sigintr & bit) == 0)
 			sa->sa_flags |= SA_RESTART;
-		if (p->p_flag & SNOCLDSTOP)
+		if (p->p_flag & P_NOCLDSTOP)
 			sa->sa_flags |= SA_NOCLDSTOP;
 		if (error = copyout((caddr_t)sa, (caddr_t)uap->osa,
 		    sizeof (vec)))
@@ -118,9 +118,9 @@ setsigvec(p, signum, sa)
 #endif
 	if (signum == SIGCHLD) {
 		if (sa->sa_flags & SA_NOCLDSTOP)
-			p->p_flag |= SNOCLDSTOP;
+			p->p_flag |= P_NOCLDSTOP;
 		else
-			p->p_flag &= ~SNOCLDSTOP;
+			p->p_flag &= ~P_NOCLDSTOP;
 	}
 	/*
 	 * Set bit in p_sigignore for signals that are set to SIG_IGN,
@@ -130,7 +130,7 @@ setsigvec(p, signum, sa)
 	 */
 	if (sa->sa_handler == SIG_IGN ||
 	    (sigprop[signum] & SA_IGNORE && sa->sa_handler == SIG_DFL)) {
-		p->p_sig &= ~bit;		/* never to be seen again */
+		p->p_siglist &= ~bit;		/* never to be seen again */
 		if (signum != SIGCONT)
 			p->p_sigignore |= bit;	/* easier in psignal */
 		p->p_sigcatch &= ~bit;
@@ -181,7 +181,7 @@ execsigs(p)
 		if (sigprop[nc] & SA_IGNORE) {
 			if (nc != SIGCONT)
 				p->p_sigignore |= mask;
-			p->p_sig &= ~mask;
+			p->p_siglist &= ~mask;
 		}
 		ps->ps_sigact[nc] = SIG_DFL;
 	}
@@ -246,7 +246,7 @@ sigpending(p, uap, retval)
 	int *retval;
 {
 
-	*retval = p->p_sig;
+	*retval = p->p_siglist;
 	return (0);
 }
 
@@ -286,7 +286,7 @@ osigvec(p, uap, retval)
 		if ((ps->ps_sigintr & bit) != 0)
 			sv->sv_flags |= SV_INTERRUPT;
 #ifndef COMPAT_SUNOS
-		if (p->p_flag & SNOCLDSTOP)
+		if (p->p_flag & P_NOCLDSTOP)
 			sv->sv_flags |= SA_NOCLDSTOP;
 #endif
 		if (error = copyout((caddr_t)sv, (caddr_t)uap->osv,
@@ -519,8 +519,8 @@ killpg1(cp, signum, pgid, all)
 		/* 
 		 * broadcast 
 		 */
-		for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
-			if (p->p_pid <= 1 || p->p_flag & SSYS || 
+		for (p = (struct proc *)allproc; p != NULL; p = p->p_next) {
+			if (p->p_pid <= 1 || p->p_flag & P_SYSTEM || 
 			    p == cp || !CANSIGNAL(cp, pc, p, signum))
 				continue;
 			nfound++;
@@ -539,7 +539,7 @@ killpg1(cp, signum, pgid, all)
 				return (ESRCH);
 		}
 		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
-			if (p->p_pid <= 1 || p->p_flag & SSYS ||
+			if (p->p_pid <= 1 || p->p_flag & P_SYSTEM ||
 			    p->p_stat == SZOMB ||
 			    !CANSIGNAL(cp, pc, p, signum))
 				continue;
@@ -577,7 +577,7 @@ pgsignal(pgrp, signum, checkctty)
 
 	if (pgrp)
 		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt)
-			if (checkctty == 0 || p->p_flag & SCTTY)
+			if (checkctty == 0 || p->p_flag & P_CONTROLT)
 				psignal(p, signum);
 }
 
@@ -596,7 +596,7 @@ trapsignal(p, signum, code)
 	int mask;
 
 	mask = sigmask(signum);
-	if ((p->p_flag & STRC) == 0 && (p->p_sigcatch & mask) != 0 &&
+	if ((p->p_flag & P_TRACED) == 0 && (p->p_sigcatch & mask) != 0 &&
 	    (p->p_sigmask & mask) == 0) {
 		p->p_stats->p_ru.ru_nsignals++;
 #ifdef KTRACE
@@ -642,7 +642,7 @@ psignal(p, signum)
 	/*
 	 * If proc is traced, always give parent a chance.
 	 */
-	if (p->p_flag & STRC)
+	if (p->p_flag & P_TRACED)
 		action = SIG_DFL;
 	else {
 		/*
@@ -663,11 +663,11 @@ psignal(p, signum)
 	}
 
 	if (p->p_nice > NZERO && action == SIG_DFL && (prop & SA_KILL) &&
-	    (p->p_flag & STRC) == 0)
+	    (p->p_flag & P_TRACED) == 0)
 		p->p_nice = NZERO;
 
 	if (prop & SA_CONT)
-		p->p_sig &= ~stopsigmask;
+		p->p_siglist &= ~stopsigmask;
 
 	if (prop & SA_STOP) {
 		/*
@@ -679,9 +679,9 @@ psignal(p, signum)
 		if (prop & SA_TTYSTOP && p->p_pgrp->pg_jobc == 0 &&
 		    action == SIG_DFL)
 		        return;
-		p->p_sig &= ~contsigmask;
+		p->p_siglist &= ~contsigmask;
 	}
-	p->p_sig |= mask;
+	p->p_siglist |= mask;
 
 	/*
 	 * Defer further processing for signals which are held,
@@ -699,14 +699,14 @@ psignal(p, signum)
 		 * be noticed when the process returns through
 		 * trap() or syscall().
 		 */
-		if ((p->p_flag & SSINTR) == 0)
+		if ((p->p_flag & P_SINTR) == 0)
 			goto out;
 		/*
 		 * Process is sleeping and traced... make it runnable
-		 * so it can discover the signal in issig() and stop
+		 * so it can discover the signal in issignal() and stop
 		 * for the parent.
 		 */
-		if (p->p_flag & STRC)
+		if (p->p_flag & P_TRACED)
 			goto run;
 		/*
 		 * If SIGCONT is default (or ignored) and process is
@@ -714,7 +714,7 @@ psignal(p, signum)
 		 * be awakened.
 		 */
 		if ((prop & SA_CONT) && action == SIG_DFL) {
-			p->p_sig &= ~mask;
+			p->p_siglist &= ~mask;
 			goto out;
 		}
 		/*
@@ -730,11 +730,11 @@ psignal(p, signum)
 			 * If a child holding parent blocked,
 			 * stopping could cause deadlock.
 			 */
-			if (p->p_flag & SPPWAIT)
+			if (p->p_flag & P_PPWAIT)
 				goto out;
-			p->p_sig &= ~mask;
+			p->p_siglist &= ~mask;
 			p->p_xstat = signum;
-			if ((p->p_pptr->p_flag & SNOCLDSTOP) == 0)
+			if ((p->p_pptr->p_flag & P_NOCLDSTOP) == 0)
 				psignal(p->p_pptr, SIGCHLD);
 			stop(p);
 			goto out;
@@ -747,7 +747,7 @@ psignal(p, signum)
 		 * If traced process is already stopped,
 		 * then no further action is necessary.
 		 */
-		if (p->p_flag & STRC)
+		if (p->p_flag & P_TRACED)
 			goto out;
 
 		/*
@@ -758,17 +758,17 @@ psignal(p, signum)
 
 		if (prop & SA_CONT) {
 			/*
-			 * If SIGCONT is default (or ignored), we continue
-			 * the process but don't leave the signal in p_sig,
-			 * as it has no further action.  If SIGCONT is held,
-			 * continue the process and leave the signal in p_sig.
-			 * If the process catches SIGCONT, let it handle
-			 * the signal itself.  If it isn't waiting on
+			 * If SIGCONT is default (or ignored), we continue the
+			 * process but don't leave the signal in p_siglist, as
+			 * it has no further action.  If SIGCONT is held, we
+			 * continue the process and leave the signal in
+			 * p_siglist.  If the process catches SIGCONT, let it
+			 * handle the signal itself.  If it isn't waiting on
 			 * an event, then it goes back to run state.
 			 * Otherwise, process goes back to sleep state.
 			 */
 			if (action == SIG_DFL)
-				p->p_sig &= ~mask;
+				p->p_siglist &= ~mask;
 			if (action == SIG_CATCH)
 				goto runfast;
 			if (p->p_wchan == 0)
@@ -782,7 +782,7 @@ psignal(p, signum)
 			 * Already stopped, don't need to stop again.
 			 * (If we did the shell could get confused.)
 			 */
-			p->p_sig &= ~mask;		/* take it away */
+			p->p_siglist &= ~mask;		/* take it away */
 			goto out;
 		}
 
@@ -792,7 +792,7 @@ psignal(p, signum)
 		 * runnable and can look at the signal.  But don't make
 		 * the process runnable, leave it stopped.
 		 */
-		if (p->p_wchan && p->p_flag & SSINTR)
+		if (p->p_wchan && p->p_flag & P_SINTR)
 			unsleep(p);
 		goto out;
 
@@ -812,8 +812,8 @@ runfast:
 	/*
 	 * Raise priority to at least PUSER.
 	 */
-	if (p->p_pri > PUSER)
-		p->p_pri = PUSER;
+	if (p->p_priority > PUSER)
+		p->p_priority = PUSER;
 run:
 	setrunnable(p);
 out:
@@ -825,21 +825,21 @@ out:
  * termination, should interrupt current syscall), return the signal number.
  * Stop signals with default action are processed immediately, then cleared;
  * they aren't returned.  This is checked after each entry to the system for
- * a syscall or trap (though this can usually be done without calling issig
+ * a syscall or trap (though this can usually be done without calling issignal
  * by checking the pending signal masks in the CURSIG macro.) The normal call
  * sequence is
  *
  *	while (signum = CURSIG(curproc))
- *		psig(signum);
+ *		postsig(signum);
  */
-issig(p)
+issignal(p)
 	register struct proc *p;
 {
 	register int signum, mask, prop;
 
 	for (;;) {
-		mask = p->p_sig &~ p->p_sigmask;
-		if (p->p_flag & SPPWAIT)
+		mask = p->p_siglist & ~p->p_sigmask;
+		if (p->p_flag & P_PPWAIT)
 			mask &= ~stopsigmask;
 		if (mask == 0)	 	/* no signal to send */
 			return (0);
@@ -848,13 +848,13 @@ issig(p)
 		prop = sigprop[signum];
 		/*
 		 * We should see pending but ignored signals
-		 * only if STRC was on when they were posted.
+		 * only if P_TRACED was on when they were posted.
 		 */
-		if (mask & p->p_sigignore && (p->p_flag & STRC) == 0) {
-			p->p_sig &= ~mask;
+		if (mask & p->p_sigignore && (p->p_flag & P_TRACED) == 0) {
+			p->p_siglist &= ~mask;
 			continue;
 		}
-		if (p->p_flag & STRC && (p->p_flag & SPPWAIT) == 0) {
+		if (p->p_flag & P_TRACED && (p->p_flag & P_PPWAIT) == 0) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
@@ -863,16 +863,15 @@ issig(p)
 			psignal(p->p_pptr, SIGCHLD);
 			do {
 				stop(p);
-				swtch();
-			} while (!procxmt(p) && p->p_flag & STRC);
+				mi_switch();
+			} while (!trace_req(p) && p->p_flag & P_TRACED);
 
 			/*
-			 * If the traced bit got turned off,
-			 * go back up to the top to rescan signals.
-			 * This ensures that p_sig* and ps_sigact
-			 * are consistent.
+			 * If the traced bit got turned off, go back up
+			 * to the top to rescan signals.  This ensures
+			 * that p_sig* and ps_sigact are consistent.
 			 */
-			if ((p->p_flag & STRC) == 0)
+			if ((p->p_flag & P_TRACED) == 0)
 				continue;
 
 			/*
@@ -880,18 +879,17 @@ issig(p)
 			 * then it will leave it in p->p_xstat;
 			 * otherwise we just look for signals again.
 			 */
-			p->p_sig &= ~mask;	/* clear the old signal */
+			p->p_siglist &= ~mask;	/* clear the old signal */
 			signum = p->p_xstat;
 			if (signum == 0)
 				continue;
 
 			/*
-			 * Put the new signal into p_sig.
-			 * If signal is being masked,
-			 * look for other signals.
+			 * Put the new signal into p_siglist.  If the
+			 * signal is being masked, look for other signals.
 			 */
 			mask = sigmask(signum);
-			p->p_sig |= mask;
+			p->p_siglist |= mask;
 			if (p->p_sigmask & mask)
 				continue;
 		}
@@ -926,15 +924,15 @@ issig(p)
 			 * process group, ignore tty stop signals.
 			 */
 			if (prop & SA_STOP) {
-				if (p->p_flag & STRC ||
+				if (p->p_flag & P_TRACED ||
 		    		    (p->p_pgrp->pg_jobc == 0 &&
 				    prop & SA_TTYSTOP))
 					break;	/* == ignore */
 				p->p_xstat = signum;
 				stop(p);
-				if ((p->p_pptr->p_flag & SNOCLDSTOP) == 0)
+				if ((p->p_pptr->p_flag & P_NOCLDSTOP) == 0)
 					psignal(p->p_pptr, SIGCHLD);
-				swtch();
+				mi_switch();
 				break;
 			} else if (prop & SA_IGNORE) {
 				/*
@@ -952,18 +950,19 @@ issig(p)
 			 * to take action on an ignored signal other
 			 * than SIGCONT, unless process is traced.
 			 */
-			if ((prop & SA_CONT) == 0 && (p->p_flag & STRC) == 0)
-				printf("issig\n");
+			if ((prop & SA_CONT) == 0 &&
+			    (p->p_flag & P_TRACED) == 0)
+				printf("issignal\n");
 			break;		/* == ignore */
 
 		default:
 			/*
 			 * This signal has an action, let
-			 * psig process it.
+			 * postsig() process it.
 			 */
 			return (signum);
 		}
-		p->p_sig &= ~mask;		/* take the signal! */
+		p->p_siglist &= ~mask;		/* take the signal! */
 	}
 	/* NOTREACHED */
 }
@@ -978,7 +977,7 @@ stop(p)
 {
 
 	p->p_stat = SSTOP;
-	p->p_flag &= ~SWTED;
+	p->p_flag &= ~P_WAITED;
 	wakeup((caddr_t)p->p_pptr);
 }
 
@@ -987,7 +986,7 @@ stop(p)
  * from the current set of pending signals.
  */
 void
-psig(signum)
+postsig(signum)
 	register int signum;
 {
 	register struct proc *p = curproc;
@@ -997,10 +996,10 @@ psig(signum)
 
 #ifdef DIAGNOSTIC
 	if (signum == 0)
-		panic("psig");
+		panic("postsig");
 #endif
 	mask = sigmask(signum);
-	p->p_sig &= ~mask;
+	p->p_siglist &= ~mask;
 	action = ps->ps_sigact[signum];
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_PSIG))
@@ -1021,7 +1020,7 @@ psig(signum)
 		 */
 #ifdef DIAGNOSTIC
 		if (action == SIG_IGN || (p->p_sigmask & mask))
-			panic("psig action");
+			panic("postsig action");
 #endif
 		/*
 		 * Set the new mask value and also defer further

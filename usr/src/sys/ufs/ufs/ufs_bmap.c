@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_bmap.c	8.3 (Berkeley) %G%
+ *	@(#)ufs_bmap.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -125,9 +125,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 	/* Get disk address out of indirect block array */
 	daddr = ip->i_ib[xap->in_off];
 
-	/* Fetch through the indirect blocks. */
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
-
 	for (bp = NULL, ++xap; --num; ++xap) {
 		/* 
 		 * Exit the loop if there is no disk address assigned yet and

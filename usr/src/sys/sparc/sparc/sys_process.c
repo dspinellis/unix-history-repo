@@ -13,7 +13,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	8.2 (Berkeley) %G%
+ *	@(#)sys_process.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -83,7 +83,7 @@ ptrace(curp, uap, retval)
 	register int error;
 
 	if (uap->req == PT_TRACE_ME) {
-		curp->p_flag |= STRC;
+		curp->p_flag |= P_TRACED;
 		return (0);
 	}
 	if ((p = pfind(uap->pid)) == NULL)
@@ -107,11 +107,11 @@ ptrace(curp, uap, retval)
 		 * privileges or does not belong to the real user.  Must
 		 * not be already traced.  Can't attach to ourselves.
 		 */
-		if ((p->p_flag & SUGID ||
+		if ((p->p_flag & P_SUGID ||
 		    p->p_cred->p_ruid != curp->p_cred->p_ruid) &&
 		    (error = suser(p->p_ucred, &p->p_acflag)) != 0)
 			return (error);
-		if (p->p_flag & STRC)
+		if (p->p_flag & P_TRACED)
 			return (EALREADY);	/* ??? */
 		if (p == curp)
 			return (EINVAL);
@@ -124,7 +124,7 @@ ptrace(curp, uap, retval)
 		 * The old parent is remembered so we can put things back
 		 * on a "detach".
 		 */
-		p->p_flag |= STRC;
+		p->p_flag |= P_TRACED;
 		p->p_oppid = p->p_pptr->p_pid;
 		proc_reparent(p, curp);
 		if (p->p_stat == SSTOP)
@@ -155,7 +155,7 @@ ptrace(curp, uap, retval)
 	default:
 		return (EINVAL);
 	}
-	if (p->p_stat != SSTOP || p->p_pptr != curp || !(p->p_flag & STRC))
+	if (p->p_stat != SSTOP || p->p_pptr != curp || !(p->p_flag & P_TRACED))
 		return (ESRCH);
 	while (ipc.ip_lock)
 		sleep((caddr_t)&ipc, IPCPRI);
@@ -180,7 +180,7 @@ ptrace(curp, uap, retval)
 	default:
 		panic("ptrace");
 	}
-	p->p_flag &= ~SWTED;
+	p->p_flag &= ~P_WAITED;
 	do {
 		if (p->p_stat == SSTOP)
 			setrunnable(p);
@@ -276,7 +276,7 @@ procxmt(p)
 			tf->tf_pc = pc;
 			tf->tf_npc = pc + 4;
 		}
-		p->p_xstat = sig;	/* see issig */
+		p->p_xstat = sig;	/* see issignal */
 		wakeup((caddr_t)&ipc);
 		return (1);
 
@@ -301,8 +301,8 @@ procxmt(p)
 			tf->tf_pc = pc;
 			tf->tf_npc = pc + 4;
 		}
-		p->p_xstat = sig;	/* see issig */
-		p->p_flag &= ~STRC;
+		p->p_xstat = sig;	/* see issignal */
+		p->p_flag &= ~P_TRACED;
 		if (p->p_oppid != p->p_pptr->p_pid) {
                         register struct proc *pp = pfind(p->p_oppid);
 

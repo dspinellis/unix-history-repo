@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.1 (Berkeley) %G%
+ *	@(#)machdep.c	8.2 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -77,7 +77,7 @@ int	physmem;		/* max supported memory, changes to actual */
 int	safepri = PSL_LOWIPL;
 
 struct	user *proc0paddr;
-struct	proc nullproc;		/* for use by swtch_exit() */
+struct	proc nullproc;		/* for use by switch_exit() */
 
 /*
  * Do all the stuff that locore normally does before calling main().
@@ -153,7 +153,7 @@ mach_init(x_boothowto, x_unkown, x_bootdev, x_maxmem)
 	MachSetPID(1);
 
 	/*
-	 * init nullproc for swtch_exit().
+	 * init nullproc for switch_exit().
 	 * init mapping for u page(s), pm_tlbpid 0
 	 * This could be used for an idle process.
 	 */

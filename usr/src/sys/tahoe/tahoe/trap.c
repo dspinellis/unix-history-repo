@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.13 (Berkeley) %G%
+ *	@(#)trap.c	7.14 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -103,9 +103,9 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	case T_ASTFLT + USER:		/* Allow process switch */
 	case T_ASTFLT:
 		astoff();
-		if ((u.u_procp->p_flag & SOWEUPC) && u.u_prof.pr_scale) {
+		if ((u.u_procp->p_flag & P_OWEUPC) && u.u_prof.pr_scale) {
 			addupc(pc, &u.u_prof, 1);
-			u.u_procp->p_flag &= ~SOWEUPC;
+			u.u_procp->p_flag &= ~P_OWEUPC;
 		}
 		goto out;
 
@@ -172,23 +172,23 @@ panic("ksp not valid - 2");
 out:
 	p = u.u_procp;
 	if (i = CURSIG(p))
-		psig(i);
-	p->p_pri = p->p_usrpri;
+		postsig(i);
+	p->p_priority = p->p_usrpri;
 	if (runrun) {
 		/*
 		 * Since we are u.u_procp, clock will normally just change
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we put ourselves on the run queue
-		 * but before we swtch()'ed, we might not be on the queue
+		 * but before we Xswitch()'ed, we might not be on the queue
 		 * indicated by our priority.
 		 */
 		(void) splclock();
 		setrunqueue(p);
 		u.u_ru.ru_nivcsw++;
-		swtch();
+		Xswitch();
 		if (i = CURSIG(p))
-			psig(i);
+			postsig(i);
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -199,7 +199,7 @@ out:
 		if (ticks)
 			addupc(locr0[PC], &u.u_prof, ticks);
 	}
-	curpriority = p->p_pri;
+	curpriority = p->p_priority;
 }
 
 /*
@@ -291,23 +291,23 @@ done:
 	 */
 	p = u.u_procp;
 	if (i = CURSIG(p))
-		psig(i);
-	p->p_pri = p->p_usrpri;
+		postsig(i);
+	p->p_priority = p->p_usrpri;
 	if (runrun) {
 		/*
 		 * Since we are u.u_procp, clock will normally just change
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we put ourselves on the run queue
-		 * but before we swtch()'ed, we might not be on the queue
+		 * but before we Xswitch()'ed, we might not be on the queue
 		 * indicated by our priority.
 		 */
 		(void) splclock();
 		setrunqueue(p);
 		u.u_ru.ru_nivcsw++;
-		swtch();
+		Xswitch();
 		if (i = CURSIG(p))
-			psig(i);
+			postsig(i);
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -318,7 +318,7 @@ done:
 		if (ticks)
 			addupc(locr0[PC], &u.u_prof, ticks);
 	}
-	curpriority = p->p_pri;
+	curpriority = p->p_priority;
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSRET))
 		ktrsysret(p->p_tracep, code, error, rval[0]);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -434,10 +434,10 @@ lfs_close(ap)
 	register struct inode *ip = VTOI(vp);
 	int mod;
 
-	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED)) {
-		mod = ip->i_flag & IMODIFIED;
+	if (vp->v_usecount > 1 && !(ip->i_flag & IN_LOCKED)) {
+		mod = ip->i_flag & IN_MODIFIED;
 		ITIMES(ip, &time, &time);
-		if (!mod && ip->i_flag & IMODIFIED)
+		if (!mod && ip->i_flag & IN_MODIFIED)
 			ip->i_lfs->lfs_uinodes++;
 	}
 	return (0);

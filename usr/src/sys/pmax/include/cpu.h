@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	8.1 (Berkeley) %G%
+ *	@(#)cpu.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _CPU_H_
@@ -56,7 +56,7 @@ struct clockframe {
  * buffer pages are invalid.  On the PMAX, request an ast to send us
  * through trap, marking the proc as needing a profiling tick.
  */
-#define	need_proftick(p)	{ (p)->p_flag |= SOWEUPC; aston(); }
+#define	need_proftick(p)	{ (p)->p_flag |= P_OWEUPC; aston(); }
 
 /*
  * Notify the current process (p) that it has a signal pending,

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.1 (Berkeley) %G%
+ *	@(#)machdep.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -372,7 +372,7 @@ setregs(p, entry, retval)
 		extern short sigcodetrap[];
 
 		if ((p->p_pptr->p_md.md_flags & MDP_HPUX) &&
-		    (p->p_flag & STRC)) {
+		    (p->p_flag & P_TRACED)) {
 			p->p_md.md_flags |= MDP_HPUXTRACE;
 			*sigcodetrap = 0x4E42;
 		} else {

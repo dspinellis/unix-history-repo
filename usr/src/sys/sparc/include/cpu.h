@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	8.1 (Berkeley) %G%
+ *	@(#)cpu.h	8.2 (Berkeley) %G%
  *
  * from: $Header: cpu.h,v 1.12 93/05/25 10:36:34 torek Exp $ (LBL)
  */
@@ -98,7 +98,7 @@ int	want_resched;		/* resched() was called */
  * buffer pages are invalid.  On the sparc, request an ast to send us 
  * through trap(), marking the proc as needing a profiling tick.
  */
-#define	need_proftick(p)	((p)->p_flag |= SOWEUPC, want_ast = 1)
+#define	need_proftick(p)	((p)->p_flag |= P_OWEUPC, want_ast = 1)
 
 /*
  * Notify the current process (p) that it has a signal pending,

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.5 (Berkeley) %G%
+ *	@(#)Locore.c	7.6 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -209,7 +209,7 @@ setrunqueue(p) struct proc *p; { }
 /*ARGSUSED*/
 remrq(p) struct proc *p; { }
 
-swtch() { if (whichqs) whichqs = 0; if (masterpaddr) masterpaddr = 0; }
+Xswitch() { if (whichqs) whichqs = 0; if (masterpaddr) masterpaddr = 0; }
 
 /*ARGSUSED*/
 resume(pcbpf) unsigned pcbpf; { }

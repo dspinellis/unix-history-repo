@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	8.2 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,13 +43,15 @@ ufs_ihashlookup(device, inum)
 	dev_t device;
 	ino_t inum;
 {
-	register struct inode **ipp, *ip;
+	register struct inode *ip;
 
-	ipp = &ihashtbl[INOHASH(device, inum)];
-	for (ip = *ipp; ip; ip = ip->i_next)
+	for (ip = ihashtbl[INOHASH(device, inum)];; ip = ip->i_next) {
+		if (ip == NULL)
+			return (NULL);
 		if (inum == ip->i_number && device == ip->i_dev)
 			return (ITOV(ip));
-	return (NULL);
+	}
+	/* NOTREACHED */
 }
 
 /*
@@ -61,23 +63,26 @@ ufs_ihashget(device, inum)
 	dev_t device;
 	ino_t inum;
 {
-	register struct inode **ipp, *ip;
+	register struct inode *ip;
 	struct vnode *vp;
 
-	ipp = &ihashtbl[INOHASH(device, inum)];
-retry:	for (ip = *ipp; ip != NULL; ip = ip->i_next)
-		if (inum == ip->i_number && device == ip->i_dev) {
-			if (ip->i_flag & ILOCKED) {
-				ip->i_flag |= IWANT;
-				sleep(ip, PINOD);
-				goto retry;
+	for (;;)
+		for (ip = ihashtbl[INOHASH(device, inum)];; ip = ip->i_next) {
+			if (ip == NULL)
+				return (NULL);
+			if (inum == ip->i_number && device == ip->i_dev) {
+				if (ip->i_flag & IN_LOCKED) {
+					ip->i_flag |= IN_WANTED;
+					sleep(ip, PINOD);
+					break;
+				}
+				vp = ITOV(ip);
+				if (!vget(vp))
+					return (vp);
+				break;
 			}
-			vp = ITOV(ip);
-			if (vget(vp))
-				goto retry;
-			return (vp);
 		}
-	return (NULL);
+	/* NOTREACHED */
 }
 
 /*
@@ -95,13 +100,13 @@ ufs_ihashins(ip)
 	ip->i_next = iq;
 	ip->i_prev = ipp;
 	*ipp = ip;
-	if ((ip->i_flag & ILOCKED) != 0)
+	if (ip->i_flag & IN_LOCKED)
 		panic("ufs_ihashins: already locked");
 	if (curproc)
 		ip->i_lockholder = curproc->p_pid;
 	else
 		ip->i_lockholder = -1;
-	ip->i_flag |= ILOCKED;
+	ip->i_flag |= IN_LOCKED;
 }
 
 /*

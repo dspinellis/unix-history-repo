@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	8.3 (Berkeley) %G%
+ *	@(#)vm_glue.c	8.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -294,9 +294,9 @@ loop:
 #endif
 	pp = NULL;
 	ppri = INT_MIN;
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
-		if (p->p_stat == SRUN && (p->p_flag & SLOAD) == 0) {
-			pri = p->p_time + p->p_slptime - p->p_nice * 8;
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_next) {
+		if (p->p_stat == SRUN && (p->p_flag & P_INMEM) == 0) {
+			pri = p->p_swtime + p->p_slptime - p->p_nice * 8;
 			if (pri > ppri) {
 				pp = p;
 				ppri = pri;
@@ -333,9 +333,9 @@ loop:
 		(void) splstatclock();
 		if (p->p_stat == SRUN)
 			setrunqueue(p);
-		p->p_flag |= SLOAD;
+		p->p_flag |= P_INMEM;
 		(void) spl0();
-		p->p_time = 0;
+		p->p_swtime = 0;
 		goto loop;
 	}
 	/*
@@ -357,8 +357,9 @@ loop:
 	goto loop;
 }
 
-#define	swappable(p) \
-	(((p)->p_flag & (SSYS|SLOAD|SKEEP|SWEXIT|SPHYSIO)) == SLOAD)
+#define	swappable(p)							\
+	(((p)->p_flag &							\
+	    (P_SYSTEM | P_INMEM | P_NOSWAP | P_WEXIT | P_PHYSIO)) == P_INMEM)
 
 /*
  * Swapout is driven by the pageout daemon.  Very simple, we find eligible
@@ -383,14 +384,14 @@ swapout_threads()
 #endif
 	outp = outp2 = NULL;
 	outpri = outpri2 = 0;
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_next) {
 		if (!swappable(p))
 			continue;
 		switch (p->p_stat) {
 		case SRUN:
-			if (p->p_time > outpri2) {
+			if (p->p_swtime > outpri2) {
 				outp2 = p;
-				outpri2 = p->p_time;
+				outpri2 = p->p_swtime;
 			}
 			continue;
 			
@@ -479,11 +480,11 @@ swapout(p)
 	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
 #endif
 	(void) splhigh();
-	p->p_flag &= ~SLOAD;
+	p->p_flag &= ~P_INMEM;
 	if (p->p_stat == SRUN)
 		remrq(p);
 	(void) spl0();
-	p->p_time = 0;
+	p->p_swtime = 0;
 }
 
 /*

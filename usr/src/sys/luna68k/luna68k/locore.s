@@ -13,7 +13,7 @@
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
  * from: hp300/hp300/locore.s	7.22 (Berkeley) 2/18/93
  *
- *	@(#)locore.s	8.2 (Berkeley) %G%
+ *	@(#)locore.s	8.3 (Berkeley) %G%
  */
 
 /*
@@ -558,7 +558,7 @@ _lev5intr:
 	.globl	_panicstr,_badkstack
 	cmpl	#_kstack+NBPG,sp	| are we still in stack page?
 	jcc	Lstackok		| yes, continue normally
-	tstl	_curproc		| if !curproc could have swtch_exit'ed,
+	tstl	_curproc		| if !curproc could have switch_exit'ed,
 	jeq	Lstackok		|     might be on tmpstk
 	tstl	_panicstr		| have we paniced?
 	jne	Lstackok		| yes, do not re-panic
@@ -1264,8 +1264,8 @@ ENTRY(longjmp)
  * The following primitives manipulate the run queues.  _whichqs tells which
  * of the 32 queues _qs have processes in them.  Setrunqueue puts processes
  * into queues, Remrq removes them from queues.  The running process is on
- * no queue, other processes are on a queue related to p->p_pri, divided by 4
- * actually to shrink the 0-127 range of priorities into the 32 available
+ * no queue, other processes are on a queue related to p->p_priority, divided
+ * by 4 actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
 	.globl	_whichqs,_qs,_cnt,_panic
@@ -1278,25 +1278,25 @@ ENTRY(longjmp)
  */
 ENTRY(setrunqueue)
 	movl	sp@(4),a0
-	tstl	a0@(P_RLINK)
+	tstl	a0@(P_BACK)
 	jeq	Lset1
 	movl	#Lset2,sp@-
 	jbsr	_panic
 Lset1:
 	clrl	d0
-	movb	a0@(P_PRI),d0
+	movb	a0@(P_PRIORITY),d0
 	lsrb	#2,d0
 	movl	_whichqs,d1
 	bset	d0,d1
 	movl	d1,_whichqs
 	lslb	#3,d0
 	addl	#_qs,d0
-	movl	d0,a0@(P_LINK)
+	movl	d0,a0@(P_FORW)
 	movl	d0,a1
-	movl	a1@(P_RLINK),a0@(P_RLINK)
-	movl	a0,a1@(P_RLINK)
-	movl	a0@(P_RLINK),a1
-	movl	a0,a1@(P_LINK)
+	movl	a1@(P_BACK),a0@(P_BACK)
+	movl	a0,a1@(P_BACK)
+	movl	a0@(P_BACK),a1
+	movl	a0,a1@(P_FORW)
 	rts
 
 Lset2:
@@ -1311,7 +1311,7 @@ Lset2:
 ENTRY(remrq)
 	movl	sp@(4),a0
 	clrl	d0
-	movb	a0@(P_PRI),d0
+	movb	a0@(P_PRIORITY),d0
 	lsrb	#2,d0
 	movl	_whichqs,d1
 	bclr	d0,d1
@@ -1320,27 +1320,27 @@ ENTRY(remrq)
 	jbsr	_panic
 Lrem1:
 	movl	d1,_whichqs
-	movl	a0@(P_LINK),a1
-	movl	a0@(P_RLINK),a1@(P_RLINK)
-	movl	a0@(P_RLINK),a1
-	movl	a0@(P_LINK),a1@(P_LINK)
+	movl	a0@(P_FORW),a1
+	movl	a0@(P_BACK),a1@(P_BACK)
+	movl	a0@(P_BACK),a1
+	movl	a0@(P_FORW),a1@(P_FORW)
 	movl	#_qs,a1
 	movl	d0,d1
 	lslb	#3,d1
 	addl	d1,a1
-	cmpl	a1@(P_LINK),a1
+	cmpl	a1@(P_FORW),a1
 	jeq	Lrem2
 	movl	_whichqs,d1
 	bset	d0,d1
 	movl	d1,_whichqs
 Lrem2:
-	clrl	a0@(P_RLINK)
+	clrl	a0@(P_BACK)
 	rts
 
 Lrem3:
 	.asciz	"remrq"
 Lsw0:
-	.asciz	"swtch"
+	.asciz	"switch"
 	.even
 
 	.globl	_curpcb
@@ -1356,15 +1356,15 @@ mdpflag:
 	.text
 
 /*
- * At exit of a process, do a swtch for the last time.
+ * At exit of a process, do a switch for the last time.
  * The mapping of the pcb at p->p_addr has already been deleted,
  * and the memory for the pcb+stack has been freed.
  * The ipl is high enough to prevent the memory from being reallocated.
  */
-ENTRY(swtch_exit)
+ENTRY(switch_exit)
 	movl	#nullpcb,_curpcb	| save state into garbage pcb
 	lea	tmpstk,sp		| goto a tmp stack
-	jra	_cpu_swtch
+	jra	_cpu_switch
 
 /*
  * When no processes are on the runq, Swtch branches to idle
@@ -1386,7 +1386,7 @@ Lbadsw:
 	/*NOTREACHED*/
 
 /*
- * cpu_swtch()
+ * cpu_switch()
  *
  * NOTE: On the mc68851 (318/319/330) we attempt to avoid flushing the
  * entire ATC.  The effort involved in selective flushing may not be
@@ -1396,7 +1396,7 @@ Lbadsw:
  * user's PTEs have been changed (formerly denoted by the SPTECHG p_flag
  * bit).  For now, we just always flush the full ATC.
  */
-ENTRY(cpu_swtch)
+ENTRY(cpu_switch)
 	movl	_curpcb,a0		| current pcb
 	movw	sr,a0@(PCB_PS)		| save sr before changing ipl
 #ifdef notyet
@@ -1440,13 +1440,13 @@ Lswok:
 	lslb	#3,d1			| convert queue number to index
 	addl	#_qs,d1			| locate queue (q)
 	movl	d1,a1
-	cmpl	a1@(P_LINK),a1		| anyone on queue?
+	cmpl	a1@(P_FORW),a1		| anyone on queue?
 	jeq	Lbadsw			| no, panic
-	movl	a1@(P_LINK),a0			| p = q->p_link
-	movl	a0@(P_LINK),a1@(P_LINK)		| q->p_link = p->p_link
-	movl	a0@(P_LINK),a1			| q = p->p_link
-	movl	a0@(P_RLINK),a1@(P_RLINK)	| q->p_rlink = p->p_rlink
-	cmpl	a0@(P_LINK),d1		| anyone left on queue?
+	movl	a1@(P_FORW),a0		| p = q->p_forw
+	movl	a0@(P_FORW),a1@(P_FORW)	| q->p_forw = p->p_forw
+	movl	a0@(P_FORW),a1		| q = p->p_forw
+	movl	a0@(P_BACK),a1@(P_BACK)	| q->p_back = p->p_back
+	cmpl	a0@(P_FORW),d1		| anyone left on queue?
 	jeq	Lsw2			| no, skip
 	movl	_whichqs,d1
 	bset	d0,d1			| yes, reset bit
@@ -1482,7 +1482,7 @@ Lswnofpsave:
 	cmpb	#SRUN,a0@(P_STAT)
 	jne	Lbadsw
 #endif
-	clrl	a0@(P_RLINK)		| clear back link
+	clrl	a0@(P_BACK)		| clear back link
 	movb	a0@(P_MDFLAG+3),mdpflag	| low byte of p_md.md_flags
 	movl	a0@(P_ADDR),a1		| get p_addr
 	movl	a1,_curpcb
@@ -1568,7 +1568,7 @@ Lresfprest:
 /*
  * savectx(pcb, altreturn)
  * Update pcb, saving current processor state and arranging
- * for alternate return ala longjmp in swtch if altreturn is true.
+ * for alternate return ala longjmp in switch if altreturn is true.
  */
 ENTRY(savectx)
 	movl	sp@(4),a1

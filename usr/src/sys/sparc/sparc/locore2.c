@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore2.c	8.2 (Berkeley) %G%
+ *	@(#)locore2.c	8.3 (Berkeley) %G%
  *
  * from: $Header: locore2.c,v 1.8 92/11/26 03:05:01 mccanne Exp $ (LBL)
  */
@@ -38,16 +38,16 @@ setrunqueue(p)
 {
 	register struct prochd *q;
 	register struct proc *oldlast;
-	register int which = p->p_pri >> 2;
+	register int which = p->p_priority >> 2;
 
-	if (p->p_rlink != NULL)
+	if (p->p_back != NULL)
 		panic("setrunqueue");
 	q = &qs[which];
 	whichqs |= 1 << which;
-	p->p_link = (struct proc *)q;
-	p->p_rlink = oldlast = q->ph_rlink;
+	p->p_forw = (struct proc *)q;
+	p->p_back = oldlast = q->ph_rlink;
 	q->ph_rlink = p;
-	oldlast->p_link = p;
+	oldlast->p_forw = p;
 }
 
 /*
@@ -57,14 +57,14 @@ setrunqueue(p)
 remrq(p)
 	register struct proc *p;
 {
-	register int which = p->p_pri >> 2;
+	register int which = p->p_priority >> 2;
 	register struct prochd *q;
 
 	if ((whichqs & (1 << which)) == 0)
 		panic("remrq");
-	p->p_link->p_rlink = p->p_rlink;
-	p->p_rlink->p_link = p->p_link;
-	p->p_rlink = NULL;
+	p->p_forw->p_back = p->p_back;
+	p->p_back->p_forw = p->p_forw;
+	p->p_back = NULL;
 	q = &qs[which];
 	if (q->ph_link == (struct proc *)q)
 		whichqs &= ~(1 << which);

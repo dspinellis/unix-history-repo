@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	8.1 (Berkeley) %G%
+ *	@(#)genassym.c	8.2 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -76,11 +76,11 @@ main()
 	def("MAXADDR", MAXADDR);
 
 	/* proc fields and values */
-	off("P_LINK", struct proc, p_link);
-	off("P_RLINK", struct proc, p_rlink);
+	off("P_FORW", struct proc, p_forw);
+	off("P_BACK", struct proc, p_back);
 	off("P_VMSPACE", struct proc, p_vmspace);
 	off("P_ADDR", struct proc, p_addr);
-	off("P_PRI", struct proc, p_pri);
+	off("P_PRIORITY", struct proc, p_priority);
 	off("P_STAT", struct proc, p_stat);
 	off("P_WCHAN", struct proc, p_wchan);
 	off("P_FLAG", struct proc, p_flag);

@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	8.2 (Berkeley) %G%
+ *	@(#)locore.s	8.3 (Berkeley) %G%
  */
 
 /*
@@ -686,7 +686,7 @@ END(CopyFromBuffer)
 
 /*
  * Copy the kernel stack to the new process and save the current context so
- * the new process will return nonzero when it is resumed by cpu_swtch().
+ * the new process will return nonzero when it is resumed by cpu_switch().
  *
  *	copykstack(up)
  *		struct user *up;
@@ -706,7 +706,7 @@ LEAF(copykstack)
 /*
  * Save registers and state so we can do a longjmp later.
  * Note: this only works if p != curproc since
- * cpu_swtch() will copy over pcb_context.
+ * cpu_switch() will copy over pcb_context.
  *
  *	savectx(up)
  *		struct user *up;
@@ -733,8 +733,8 @@ END(copykstack)
  * The following primitives manipulate the run queues.  _whichqs tells which
  * of the 32 queues _qs have processes in them.  Setrunqueue puts processes
  * into queues, Remrq removes them from queues.  The running process is on
- * no queue, other processes are on a queue related to p->p_pri, divided by 4
- * actually to shrink the 0-127 range of priorities into the 32 available
+ * no queue, other processes are on a queue related to p->p_priority, divided
+ * by 4 actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
  */
 /*
@@ -746,10 +746,10 @@ END(copykstack)
 NON_LEAF(setrunqueue, STAND_FRAME_SIZE, ra)
 	subu	sp, sp, STAND_FRAME_SIZE
 	.mask	0x80000000, (STAND_RA_OFFSET - STAND_FRAME_SIZE)
-	lw	t0, P_RLINK(a0)		## firewall: p->p_rlink must be 0
+	lw	t0, P_BACK(a0)		## firewall: p->p_back must be 0
 	sw	ra, STAND_RA_OFFSET(sp)	##
 	beq	t0, zero, 1f		##
-	lbu	t0, P_PRI(a0)		# put on queue which is p->p_pri / 4
+	lbu	t0, P_PRIORITY(a0)	# put on p->p_priority / 4 queue
 	PANIC("setrunqueue")		##
 1:
 	li	t1, 1			# compute corresponding bit
@@ -762,11 +762,11 @@ NON_LEAF(setrunqueue, STAND_FRAME_SIZE, ra)
 	sll	t0, t0, 3		# compute index into 'qs'
 	la	t1, qs
 	addu	t0, t0, t1		# t0 = qp = &qs[pri >> 2]
-	lw	t1, P_RLINK(t0)		# t1 = qp->ph_rlink
-	sw	t0, P_LINK(a0)		# p->p_link = qp
-	sw	t1, P_RLINK(a0)		# p->p_rlink = qp->ph_rlink
-	sw	a0, P_LINK(t1)		# p->p_rlink->p_link = p;
-	sw	a0, P_RLINK(t0)		# qp->ph_rlink = p
+	lw	t1, P_BACK(t0)		# t1 = qp->ph_rlink
+	sw	t0, P_FORW(a0)		# p->p_forw = qp
+	sw	t1, P_BACK(a0)		# p->p_back = qp->ph_rlink
+	sw	a0, P_FORW(t1)		# p->p_back->p_forw = p;
+	sw	a0, P_BACK(t0)		# qp->ph_rlink = p
 	j	ra
 	addu	sp, sp, STAND_FRAME_SIZE
 END(setrunqueue)
@@ -779,7 +779,7 @@ END(setrunqueue)
 NON_LEAF(remrq, STAND_FRAME_SIZE, ra)
 	subu	sp, sp, STAND_FRAME_SIZE
 	.mask	0x80000000, (STAND_RA_OFFSET - STAND_FRAME_SIZE)
-	lbu	t0, P_PRI(a0)		# get from queue which is p->p_pri / 4
+	lbu	t0, P_PRIORITY(a0)	# get from p->p_priority / 4 queue
 	li	t1, 1			# compute corresponding bit
 	srl	t0, t0, 2		# compute index into 'whichqs'
 	lw	t2, whichqs		# check corresponding bit
@@ -787,37 +787,37 @@ NON_LEAF(remrq, STAND_FRAME_SIZE, ra)
 	and	v0, t2, t1
 	sw	ra, STAND_RA_OFFSET(sp)	##
 	bne	v0, zero, 1f		##
-	lw	v0, P_RLINK(a0)		# v0 = p->p_rlink
+	lw	v0, P_BACK(a0)		# v0 = p->p_back
 	PANIC("remrq")			## it wasnt recorded to be on its q
 1:
-	lw	v1, P_LINK(a0)		# v1 = p->p_link
+	lw	v1, P_FORW(a0)		# v1 = p->p_forw
 	nop
-	sw	v1, P_LINK(v0)		# p->p_rlink->p_link = p->p_link;
-	sw	v0, P_RLINK(v1)		# p->p_link->p_rlink = p->r_rlink
+	sw	v1, P_FORW(v0)		# p->p_back->p_forw = p->p_forw;
+	sw	v0, P_BACK(v1)		# p->p_forw->p_back = p->r_rlink
 	sll	t0, t0, 3		# compute index into 'qs'
 	la	v0, qs
 	addu	t0, t0, v0		# t0 = qp = &qs[pri >> 2]
-	lw	v0, P_LINK(t0)		# check if queue empty
+	lw	v0, P_FORW(t0)		# check if queue empty
 	nop
 	bne	v0, t0, 2f		# No. qp->ph_link != qp
 	nop
 	xor	t2, t2, t1		# clear corresponding bit in 'whichqs'
 	sw	t2, whichqs
 2:
-	sw	zero, P_RLINK(a0)	## for firewall checking
+	sw	zero, P_BACK(a0)	## for firewall checking
 	j	ra
 	addu	sp, sp, STAND_FRAME_SIZE
 END(remrq)
 
 /*
- * swtch_exit()
+ * switch_exit()
  *
- * At exit of a process, do a cpu_swtch for the last time.
+ * At exit of a process, do a cpu_switch for the last time.
  * The mapping of the pcb at p->p_addr has already been deleted,
  * and the memory for the pcb+stack has been freed.
  * All interrupts should be blocked at this point.
  */
-LEAF(swtch_exit)
+LEAF(switch_exit)
 	la	v1, nullproc			# save state into garbage proc
 	lw	t0, P_UPTE+0(v1)		# t0 = first u. pte
 	lw	t1, P_UPTE+4(v1)		# t1 = 2nd u. pte
@@ -833,14 +833,14 @@ LEAF(swtch_exit)
 	mtc0	t1, MACH_COP_0_TLB_LOW		# init low entry
 	sw	zero, curproc
 	tlbwi					# Write the TLB entry.
-	b	cpu_swtch
+	b	cpu_switch
 	li	sp, KERNELSTACK - START_FRAME	# switch to standard stack
-END(swtch_exit)
+END(switch_exit)
 
 /*
- * When no processes are on the runq, cpu_swtch branches to idle
+ * When no processes are on the runq, cpu_switch branches to idle
  * to wait for something to come ready.
- * Note: this is really a part of cpu_swtch() but defined here for kernel
+ * Note: this is really a part of cpu_switch() but defined here for kernel
  * profiling.
  */
 LEAF(idle)
@@ -857,10 +857,10 @@ LEAF(idle)
 END(idle)
 
 /*
- * cpu_swtch()
+ * cpu_switch()
  * Find the highest priority process and resume it.
  */
-NON_LEAF(cpu_swtch, STAND_FRAME_SIZE, ra)
+NON_LEAF(cpu_switch, STAND_FRAME_SIZE, ra)
 	sw	sp, UADDR+U_PCB_CONTEXT+32	# save old sp
 	subu	sp, sp, STAND_FRAME_SIZE
 	sw	ra, STAND_RA_OFFSET(sp)
@@ -901,16 +901,16 @@ sw1:
 	sll	t0, t2, 3
 	la	t1, qs
 	addu	t0, t0, t1			# t0 = qp = &qs[highbit]
-	lw	a0, P_LINK(t0)			# a0 = p = highest pri process
+	lw	a0, P_FORW(t0)			# a0 = p = highest pri process
 	nop
-	lw	v0, P_LINK(a0)			# v0 = p->p_link
+	lw	v0, P_FORW(a0)			# v0 = p->p_forw
 	bne	t0, a0, 2f			# make sure something in queue
-	sw	v0, P_LINK(t0)			# qp->ph_link = p->p_link;
-	PANIC("cpu_swtch")			# nothing in queue
+	sw	v0, P_FORW(t0)			# qp->ph_link = p->p_forw;
+	PANIC("cpu_switch")			# nothing in queue
 2:
-	sw	t0, P_RLINK(v0)			# p->p_link->p_rlink = qp
+	sw	t0, P_BACK(v0)			# p->p_forw->p_back = qp
 	bne	v0, t0, 3f			# queue still not empty
-	sw	zero, P_RLINK(a0)		## for firewall checking
+	sw	zero, P_BACK(a0)		## for firewall checking
 	li	v1, 1				# compute bit in 'whichqs'
 	sll	v1, v1, t2
 	xor	t3, t3, v1			# clear bit in 'whichqs'
@@ -963,7 +963,7 @@ sw1:
 	mtc0	v0, MACH_COP_0_STATUS_REG
 	j	ra
 	li	v0, 1				# possible return to 'savectx()'
-END(cpu_swtch)
+END(cpu_switch)
 
 /*
  * {fu,su},{ibyte,isword,iword}, fetch or store a byte, short or word to
@@ -1058,7 +1058,7 @@ END(fswberr)
 /*
  * fuswintr and suswintr are just like fusword and susword except that if
  * the page is not in memory or would cause a trap, then we return an error.
- * The important thing is to prevent sleep() and swtch().
+ * The important thing is to prevent sleep() and switch().
  */
 LEAF(fuswintr)
 	blt	a0, zero, fswintrberr	# make sure address is in user space
@@ -1437,7 +1437,7 @@ END(MachUserGenException)
  *
  *	Handle an interrupt from kernel mode.
  *	Interrupts use the standard kernel stack.
- *	swtch_exit sets up a kernel stack after exit so interrupts won't fail.
+ *	switch_exit sets up a kernel stack after exit so interrupts won't fail.
  *
  * Results:
  *	None.
@@ -1535,7 +1535,7 @@ END(MachKernIntr)
  *	Note: we save minimal state in the u.u_pcb struct and use the standard
  *	kernel stack since there has to be a u page if we came from user mode.
  *	If there is a pending software interrupt, then save the remaining state
- *	and call softintr(). This is all because if we call swtch() inside
+ *	and call softintr(). This is all because if we call switch() inside
  *	interrupt(), not all the user registers have been saved in u.u_pcb.
  *
  * Results:

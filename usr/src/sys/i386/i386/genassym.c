@@ -7,11 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	8.1 (Berkeley) %G%
+ *	@(#)genassym.c	8.2 (Berkeley) %G%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #define KERNEL
@@ -45,12 +45,12 @@ main()
 
 	printf("#define\tI386_CR3PAT %d\n", I386_CR3PAT);
 	printf("#define\tUDOT_SZ %d\n", sizeof(struct user));
-	printf("#define\tP_LINK %d\n", &p->p_link);
-	printf("#define\tP_RLINK %d\n", &p->p_rlink);
+	printf("#define\tP_FORW %d\n", &p->p_forw);
+	printf("#define\tP_BACK %d\n", &p->p_back);
 	printf("#define\tP_VMSPACE %d\n", &p->p_vmspace);
 	printf("#define\tVM_PMAP %d\n", &vms->vm_pmap);
 	printf("#define\tP_ADDR %d\n", &p->p_addr);
-	printf("#define\tP_PRI %d\n", &p->p_pri);
+	printf("#define\tP_PRIORITY %d\n", &p->p_priority);
 	printf("#define\tP_STAT %d\n", &p->p_stat);
 	printf("#define\tP_WCHAN %d\n", &p->p_wchan);
 	printf("#define\tP_FLAG %d\n", &p->p_flag);

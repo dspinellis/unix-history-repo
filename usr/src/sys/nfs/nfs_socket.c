@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_socket.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -1325,7 +1325,8 @@ nfs_sigintr(nmp, rep, p)
 		return (EINTR);
 	if (!(nmp->nm_flag & NFSMNT_INT))
 		return (0);
-	if (p && p->p_sig && (((p->p_sig &~ p->p_sigmask) &~ p->p_sigignore) &
+	if (p && p->p_siglist &&
+	    (((p->p_siglist & ~p->p_sigmask) & ~p->p_sigignore) &
 	    NFSINT_SIGMASK))
 		return (EINTR);
 	return (0);

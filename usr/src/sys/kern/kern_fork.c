@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	8.2 (Berkeley) %G%
+ *	@(#)kern_fork.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -107,7 +107,7 @@ retry:
 		 */
 		p2 = (struct proc *)allproc;
 again:
-		for (; p2 != NULL; p2 = p2->p_nxt) {
+		for (; p2 != NULL; p2 = p2->p_next) {
 			while (p2->p_pid == nextpid ||
 			    p2->p_pgrp->pg_id == nextpid) {
 				nextpid++;
@@ -141,20 +141,19 @@ again:
 	Vp2->p_pid = nextpid;
 	/*
 	 * This is really:
-	 *	p2->p_nxt = allproc;
-	 *	allproc->p_prev = &p2->p_nxt;
+	 *	p2->p_next = allproc;
+	 *	allproc->p_prev = &p2->p_next;
 	 *	p2->p_prev = &allproc;
 	 *	allproc = p2;
 	 * The assignment via allproc is legal since it is never NULL.
 	 */
-	*(volatile struct proc **)&Vp2->p_nxt = allproc;
+	*(volatile struct proc **)&Vp2->p_next = allproc;
 	*(volatile struct proc ***)&allproc->p_prev =
-	    (volatile struct proc **)&Vp2->p_nxt;
+	    (volatile struct proc **)&Vp2->p_next;
 	*(volatile struct proc ***)&Vp2->p_prev = &allproc;
 	allproc = Vp2;
 #undef Vp2
-	p2->p_link = NULL;			/* shouldn't be necessary */
-	p2->p_rlink = NULL;			/* shouldn't be necessary */
+	p2->p_forw = p2->p_back = NULL;		/* shouldn't be necessary */
 
 	/* Insert on the hash chain. */
 	hash = &pidhash[PIDHASH(p2->p_pid)];
@@ -176,8 +175,8 @@ again:
 	 * Increase reference counts on shared objects.
 	 * The p_stats and p_sigacts substructs are set in vm_fork.
 	 */
-	p2->p_flag = SLOAD;
-	if (p1->p_flag & SPROFIL)
+	p2->p_flag = P_INMEM;
+	if (p1->p_flag & P_PROFIL)
 		startprofclock(p2);
 	MALLOC(p2->p_cred, struct pcred *, sizeof(struct pcred),
 	    M_SUBPROC, M_WAITOK);
@@ -199,10 +198,10 @@ again:
 		p2->p_limit->p_refcnt++;
 	}
 
-	if (p1->p_session->s_ttyvp != NULL && p1->p_flag & SCTTY)
-		p2->p_flag |= SCTTY;
+	if (p1->p_session->s_ttyvp != NULL && p1->p_flag & P_CONTROLT)
+		p2->p_flag |= P_CONTROLT;
 	if (isvfork)
-		p2->p_flag |= SPPWAIT;
+		p2->p_flag |= P_PPWAIT;
 	p2->p_pgrpnxt = p1->p_pgrpnxt;
 	p1->p_pgrpnxt = p2;
 	p2->p_pptr = p1;
@@ -226,7 +225,7 @@ again:
 	 * This begins the section where we must prevent the parent
 	 * from being swapped.
 	 */
-	p1->p_flag |= SKEEP;
+	p1->p_flag |= P_NOSWAP;
 	/*
 	 * Set return values for child before vm_fork,
 	 * so they can be copied to child stack.
@@ -259,16 +258,16 @@ again:
 	/*
 	 * Now can be swapped.
 	 */
-	p1->p_flag &= ~SKEEP;
+	p1->p_flag &= ~P_NOSWAP;
 
 	/*
-	 * Preserve synchronization semantics of vfork.
-	 * If waiting for child to exec or exit, set SPPWAIT
-	 * on child, and sleep on our proc (in case of exit).
+	 * Preserve synchronization semantics of vfork.  If waiting for
+	 * child to exec or exit, set P_PPWAIT on child, and sleep on our
+	 * proc (in case of exit).
 	 */
 	if (isvfork)
-		while (p2->p_flag & SPPWAIT)
-			tsleep((caddr_t)p1, PWAIT, "ppwait", 0);
+		while (p2->p_flag & P_PPWAIT)
+			tsleep(p1, PWAIT, "ppwait", 0);
 
 	/*
 	 * Return child pid to parent process,

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	8.2 (Berkeley) %G%
+ *	@(#)kern_exit.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -76,18 +76,18 @@ exit1(p, rv)
 #ifdef PGINPROF
 	vmsizmon();
 #endif
-	if (p->p_flag & SPROFIL)
+	if (p->p_flag & P_PROFIL)
 		stopprofclock(p);
 	MALLOC(p->p_ru, struct rusage *, sizeof(struct rusage),
 		M_ZOMBIE, M_WAITOK);
 	/*
 	 * If parent is waiting for us to exit or exec,
-	 * SPPWAIT is set; we will wakeup the parent below.
+	 * P_PPWAIT is set; we will wakeup the parent below.
 	 */
-	p->p_flag &= ~(STRC|SPPWAIT);
-	p->p_flag |= SWEXIT;
+	p->p_flag &= ~(P_TRACED | P_PPWAIT);
+	p->p_flag |= P_WEXIT;
 	p->p_sigignore = ~0;
-	p->p_sig = 0;
+	p->p_siglist = 0;
 	untimeout(realitexpire, (caddr_t)p);
 
 	/*
@@ -155,10 +155,10 @@ exit1(p, rv)
 	 * Remove proc from allproc queue and pidhash chain.
 	 * Place onto zombproc.  Unlink from parent's child list.
 	 */
-	if (*p->p_prev = p->p_nxt)
-		p->p_nxt->p_prev = p->p_prev;
-	if (p->p_nxt = zombproc)
-		p->p_nxt->p_prev = &p->p_nxt;
+	if (*p->p_prev = p->p_next)
+		p->p_next->p_prev = p->p_prev;
+	if (p->p_next = zombproc)
+		p->p_next->p_prev = &p->p_next;
 	p->p_prev = &zombproc;
 	zombproc = p;
 	p->p_stat = SZOMB;
@@ -188,8 +188,8 @@ done:
 		 * Traced processes are killed
 		 * since their existence means someone is screwing up.
 		 */
-		if (q->p_flag&STRC) {
-			q->p_flag &= ~STRC;
+		if (q->p_flag & P_TRACED) {
+			q->p_flag &= ~P_TRACED;
 			psignal(q, SIGKILL);
 		}
 	}
@@ -366,8 +366,8 @@ loop:
 			 * Unlink it from its process group and free it.
 			 */
 			leavepgrp(p);
-			if (*p->p_prev = p->p_nxt)	/* off zombproc */
-				p->p_nxt->p_prev = p->p_prev;
+			if (*p->p_prev = p->p_next)	/* off zombproc */
+				p->p_next->p_prev = p->p_prev;
 			if (q = p->p_ysptr)
 				q->p_osptr = p->p_osptr;
 			if (q = p->p_osptr)
@@ -385,9 +385,9 @@ loop:
 			nprocs--;
 			return (0);
 		}
-		if (p->p_stat == SSTOP && (p->p_flag & SWTED) == 0 &&
-		    (p->p_flag & STRC || uap->options & WUNTRACED)) {
-			p->p_flag |= SWTED;
+		if (p->p_stat == SSTOP && (p->p_flag & P_WAITED) == 0 &&
+		    (p->p_flag & P_TRACED || uap->options & WUNTRACED)) {
+			p->p_flag |= P_WAITED;
 			retval[0] = p->p_pid;
 #ifdef COMPAT_43
 			if (uap->compat) {
