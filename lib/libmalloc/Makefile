@@ -1,7 +1,4 @@
-#	$Id: Makefile,v 1.4 1993/12/28 07:54:51 smace Exp $
-
-SHLIB_MAJOR=1
-SHLIB_MINOR=0
+#	$Id: Makefile,v 1.1 1994/03/06 22:59:14 nate Exp $
 
 CFLAGS+= -I${.CURDIR} -DHAVE_MMAP -DSTDHEADERS -fno-builtin
 PFLAGS+= -DTRACE -DPROFILESIZES
