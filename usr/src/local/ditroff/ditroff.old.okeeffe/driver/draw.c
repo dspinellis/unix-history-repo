@@ -1,4 +1,4 @@
-/*	draw.c	1.1	83/09/07
+/*	draw.c	1.2	83/09/14
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
