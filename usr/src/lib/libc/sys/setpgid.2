@@ -2,20 +2,20 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setpgid.2	6.1 (Berkeley) %G%
+.\"	@(#)setpgid.2	6.2 (Berkeley) %G%
 .\"
 .TH SETPGRP 2 ""
 .UC 4
 .SH NAME
-setpgrp \- set process group
+setpgid, setpgrp \- set process group
 .SH SYNOPSIS
 .ft B
-setpgrp(pid, pgrp)
+setpgid(pid_t pid, pid_t pgrp);
 .br
-int pid, pgrp;
+setpgrp(pid_t pid, pid_t pgrp);
 .ft R
 .SH DESCRIPTION
-.I Setpgrp
+.I Setpgid
 sets the process group of the specified process
 .I pid
 to the specified
@@ -28,14 +28,13 @@ If the invoker is not the super-user, then the affected process
 must have the same effective user-id as the invoker or be a descendant
 of the invoking process.
 .SH "RETURN VALUE
-.I Setpgrp
-returns when the operation was successful.  If
-the request failed, \-1 is returned and the global
-variable
+.I Setpgid
+returns 0 when the operation was successful.
+If the request failed, \-1 is returned and the global variable
 .I errno
 indicates the reason.
 .SH ERRORS
-.I Setpgrp
+.I Setpgid
 will fail and the process group will not be altered if
 one of the following occur:
 .TP 15
@@ -48,3 +47,12 @@ from that of the caller and the process is not a descendent
 of the calling process.
 .SH "SEE ALSO"
 getpgrp(2)
+.SH STANDARDS
+.I Setpgid
+conforms to IEEE Std 1003.1-1988 (``POSIX'').
+.SH COMPATIBILITY
+.I Setpgrp
+is identical to
+.IR setpgid ,
+and is retained for calling convention compatibility with historical
+versions of BSD.
