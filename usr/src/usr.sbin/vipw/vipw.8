@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vipw.8	4.1 (Berkeley) %G%
+.\"	@(#)vipw.8	5.1 (Berkeley) %G%
 .\"
-.TH VIPW 8 "4/1/81"
+.TH VIPW 8 "4 July 1983"
 .UC 4
 .SH NAME
-vipw \- edit the password file with vi
+vipw \- edit the password file
 .SH SYNOPSIS
 .B vipw
 .SH DESCRIPTION
@@ -15,15 +15,16 @@ vipw \- edit the password file with vi
 edits the password file while setting the appropriate locks,
 and does any necessary processing after the password file is unlocked.
 If the password file is already being edited, then you will be told
-to try again later
+to try again later.  The 
+.I vi
+editor will be used unless the environment variable EDITOR indicates
+an alternate editor.  
+.I Vipw
+performs a number of consistency checks on the password entry for
+.IR root ,
+and will not allow a password file with a ``mangled'' root entry
+to be installed.
 .SH SEE ALSO
 chfn(1), chsh(1), passwd(1), passwd(5), adduser(8)
 .SH FILES
-/etc/vipw.lock
-.SH BUGS
-.I Vipw
-does not remove the vipw.lock file; this is not a bug, but people tend
-to think it is.
-.PP
-No one deals with left-over /etc/ptmp (the real lock) files after a system
-crash.
+/etc/ptmp
