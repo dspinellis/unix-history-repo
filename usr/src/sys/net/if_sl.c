@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_sl.c	7.16 (Berkeley) %G%
+ *	@(#)if_sl.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -90,7 +90,7 @@
  * IP input requires and, if we get a compressed packet, there's
  * enough extra room to expand the header into a max length tcp/ip
  * header (128 bytes).  So, SLMTU can be at most
- * 	MCLBYTES - sizeof(struct ifnet *) - 128 
+ * 	MCLBYTES - 128 
  *
  * To insure we get good interactive response, the MTU wants to be
  * the smallest size that amortizes the header cost.  (Remember
@@ -108,10 +108,12 @@
  * don't IP fragment when acting as a gateway to someone using a
  * stupid MTU).
  */
-#define	SLMTU	576
-#define BUFOFFSET (128+sizeof(struct ifnet **))
+#define	SLMTU		576
+#define BUFOFFSET	128
+#define	SLBUFSIZE	(SLMTU + BUFOFFSET)
 #define	SLIP_HIWAT	1024	/* don't start a new packet if HIWAT on queue */
 #define	CLISTRESERVE	1024	/* Can't let clists get too low */
+
 /*
  * SLIP ABORT ESCAPE MECHANISM:
  *	(inspired by HAYES modem escape arrangement)
@@ -127,10 +129,9 @@
 
 /*
  * The following disgusting hack gets around the problem that IP TOS
- * can't be set in BSD/Sun OS yet.  We want to put "interactive"
- * traffic on a high priority queue.  To decide if traffic is
- * interactive, we check that a) it is TCP and b) one of it's ports
- * if telnet, rlogin or ftp control.
+ * can't be set yet.  We want to put "interactive" traffic on a high
+ * priority queue.  To decide if traffic is interactive, we check that
+ * a) it is TCP and b) one of its ports is telnet, rlogin or ftp control.
  */
 static u_short interactive_ports[8] = {
 	0,	513,	0,	0,
@@ -179,7 +180,7 @@ slinit(sc)
 	if (sc->sc_ep == (u_char *) 0) {
 		MCLALLOC(p, M_WAIT);
 		if (p)
-			sc->sc_ep = (u_char *)p + (BUFOFFSET + SLMTU);
+			sc->sc_ep = (u_char *)p + SLBUFSIZE;
 		else {
 			printf("sl%d: can't allocate buffer\n", sc - sl_softc);
 			sc->sc_if.if_flags &= ~IFF_UP;
@@ -209,7 +210,7 @@ slopen(dev, tp)
 		return (error);
 
 	if (tp->t_line == SLIPDISC)
-		return (EBUSY);
+		return (0);
 
 	for (nsl = NSL, sc = sl_softc; --nsl >= 0; sc++)
 		if (sc->sc_ttyp == NULL) {
@@ -242,7 +243,7 @@ slclose(tp)
 		if_down(&sc->sc_if);
 		sc->sc_ttyp = NULL;
 		tp->t_sc = NULL;
-		MCLFREE((struct mbuf *)(sc->sc_ep - (SLMTU + BUFOFFSET)));
+		MCLFREE((caddr_t)(sc->sc_ep - SLBUFSIZE));
 		sc->sc_ep = 0;
 		sc->sc_mp = 0;
 		sc->sc_buf = 0;
@@ -290,11 +291,11 @@ sltioctl(tp, cmd, data, flag)
  * Queue a packet.  Start transmission if not active.
  */
 sloutput(ifp, m, dst)
-	register struct ifnet *ifp;
+	struct ifnet *ifp;
 	register struct mbuf *m;
 	struct sockaddr *dst;
 {
-	register struct sl_softc *sc;
+	register struct sl_softc *sc = &sl_softc[ifp->if_unit];
 	register struct ip *ip;
 	register struct ifqueue *ifq;
 	int s;
@@ -304,13 +305,12 @@ sloutput(ifp, m, dst)
 	 * the line protocol to support other address families.
 	 */
 	if (dst->sa_family != AF_INET) {
-		printf("sl%d: af%d not supported\n", ifp->if_unit,
+		printf("sl%d: af%d not supported\n", sc->sc_if.if_unit,
 			dst->sa_family);
 		m_freem(m);
 		return (EAFNOSUPPORT);
 	}
 
-	sc = &sl_softc[ifp->if_unit];
 	if (sc->sc_ttyp == NULL) {
 		m_freem(m);
 		return (ENETDOWN);	/* sort of */
@@ -319,7 +319,7 @@ sloutput(ifp, m, dst)
 		m_freem(m);
 		return (EHOSTUNREACH);
 	}
-	ifq = &ifp->if_snd;
+	ifq = &sc->sc_if.if_snd;
 	if ((ip = mtod(m, struct ip *))->ip_p == IPPROTO_TCP) {
 		register int p = ((int *)ip)[ip->ip_hl];
 
@@ -350,11 +350,9 @@ sloutput(ifp, m, dst)
 		return (ENOBUFS);
 	}
 	IF_ENQUEUE(ifq, m);
-	if (sc->sc_ttyp->t_outq.c_cc == 0) {
-		splx(s);
+	if (sc->sc_ttyp->t_outq.c_cc == 0)
 		slstart(sc->sc_ttyp);
-	} else
-		splx(s);
+	splx(s);
 	return (0);
 }
 
@@ -497,7 +495,6 @@ sl_btom(sc, len)
 	register struct sl_softc *sc;
 	register int len;
 {
-	register u_char *cp;
 	register struct mbuf *m;
 
 	MGETHDR(m, M_DONTWAIT, MT_DATA);
@@ -505,25 +502,27 @@ sl_btom(sc, len)
 		return (NULL);
 
 	/*
-	 * If we have more than MLEN bytes, it's cheaper to
+	 * If we have more than MHLEN bytes, it's cheaper to
 	 * queue the cluster we just filled & allocate a new one
 	 * for the input buffer.  Otherwise, fill the mbuf we
 	 * allocated above.  Note that code in the input routine
 	 * guarantees that packet will fit in a cluster.
 	 */
-	cp = sc->sc_buf;
 	if (len >= MHLEN) {
 		MCLGET(m, M_DONTWAIT);
 		if ((m->m_flags & M_EXT) == 0) {
-			/* we couldn't get a cluster - if memory's this
-			 * low, it's time to start dropping packets. */
-			m_freem(m);
+			/*
+			 * we couldn't get a cluster - if memory's this
+			 * low, it's time to start dropping packets.
+			 */
+			(void) m_free(m);
 			return (NULL);
 		}
-		sc->sc_ep = mtod(m, u_char *) + (BUFOFFSET + SLMTU);
-		m->m_data = (caddr_t)cp;
+		sc->sc_ep = mtod(m, u_char *) + SLBUFSIZE;
+		m->m_data = (caddr_t)sc->sc_buf;
+		m->m_ext.ext_buf = (caddr_t)((int)sc->sc_buf &~ MCLOFSET);
 	} else
-		bcopy((caddr_t)cp, mtod(m, caddr_t), len);
+		bcopy((caddr_t)sc->sc_buf, mtod(m, caddr_t), len);
 
 	m->m_len = len;
 	m->m_pkthdr.len = len;
