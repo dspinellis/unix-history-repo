@@ -1,0 +1,132 @@
+
+
+
+LPRM(1)             UNIX Programmer's Manual		  LPRM(1)
+
+
+
+NNAAMMEE
+     lprm - remove jobs from the line printer spooling queue
+
+SSYYNNOOPPSSIISS
+     llpprrmm [ --PP_p_r_i_n_t_e_r ] [ -- ] [ job # ...  ] [ user ...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_p_r_m will remove a job, or jobs, from a printer's spool
+     queue.  Since the spooling directory is protected from
+     users, using _l_p_r_m is normally the only method by which a
+     user may remove a job.
+
+     _L_p_r_m without any arguments will delete the currently active
+     job if it is owned by the user who invoked _l_p_r_m.
+
+     If the -- flag is specified, _l_p_r_m will remove all jobs which
+     a user owns.  If the super-user employs this flag, the spool
+     queue will be emptied entirely. The owner is determined by
+     the user's login name and host name on the machine where the
+     _l_p_r command was invoked.
+
+     Specifying a user's name, or list of user names, will cause
+     _l_p_r_m to attempt to remove any jobs queued belonging to that
+     user (or users).  This form of invoking _l_p_r_m is useful only
+     to the super-user.
+
+     A user may dequeue an individual job by specifying its job
+     number.  This number may be obtained from the _l_p_q(1) pro-
+     gram, e.g.
+
+	  % lpq -l
+
+	  1st: ken			    [job #013ucbarpa]
+	       (standard input)             100 bytes
+	  % lprm 13
+
+     _L_p_r_m will announce the names of any files it removes and is
+     silent if there are no jobs in the queue which match the
+     request list.
+
+     _L_p_r_m will kill off an active daemon, if necessary, before
+     removing any spooling files.  If a daemon is killed, a new
+     one is automatically restarted upon completion of file remo-
+     vals.
+
+     The --PP option may be usd to specify the queue associated
+     with a specific printer (otherwise the default printer, or
+     the value of the PRINTER variable in the environment is
+     used).
+
+FFIILLEESS
+     /etc/printcap	 printer characteristics file
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+LPRM(1)             UNIX Programmer's Manual		  LPRM(1)
+
+
+
+     /usr/spool/*	 spooling directories
+     /usr/spool/*/lock	 lock file used to obtain the pid of the current
+			 daemon and the job number of the currently active job
+
+SSEEEE AALLSSOO
+     lpr(1), lpq(1), lpd(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     ``Permission denied" if the user tries to remove files other
+     than his own.
+
+BBUUGGSS
+     Since there are race conditions possible in the update of
+     the lock file, the currently active job may be incorrectly
+     identified.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+

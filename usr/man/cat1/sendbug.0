@@ -1,0 +1,66 @@
+
+
+
+SENDBUG(1)	    UNIX Programmer's Manual	       SENDBUG(1)
+
+
+
+NNAAMMEE
+     sendbug - mail a system bug report to 4bsd-bugs
+
+SSYYNNOOPPSSIISS
+     sseennddbbuugg [[ aaddddrreessss ]]
+
+DDEESSCCRRIIPPTTIIOONN
+     Bug reports sent to `4bsd-bugs@Berkeley.EDU' are intercepted
+     by a program which expects bug reports to conform to a stan-
+     dard format.  _S_e_n_d_b_u_g is a shell script  to  help	the  user
+     compose and mail bug reports in the correct format.  _S_e_n_d_b_u_g
+     works by invoking the editor specified  by  the  environment
+     variable _E_D_I_T_O_R on a temporary copy of the bug report format
+     outline. The user must fill in the  appropriate  fields  and
+     exit the editor.  The default editor is _v_i(1).  _S_e_n_d_b_u_g then
+     mails the completed report  to  `4bsd-bugs@Berkeley.EDU'  or
+     the address specified on the command line.
+
+FFIILLEESS
+     /usr/ucb/bugformat       contains the bug report outline
+
+SSEEEE AALLSSOO
+     vi(1), environ(7), bugfiler(8), sendmail(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 26, 1987                         1
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+GRAPH(1G)	    UNIX Programmer's Manual		GRAPH(1G)
+
+
+
+NNAAMMEE
+     graph - draw a graph
+
+SSYYNNOOPPSSIISS
+     ggrraapphh [ option ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_r_a_p_h with no options takes pairs of numbers from the stan-
+     dard input as abscissas and ordinates of a graph.	Succes-
+     sive points are connected by straight lines.  The graph is
+     encoded on the standard output for display by the _p_l_o_t(1G)
+     filters.
+
+     If the coordinates of a point are followed by a nonnumeric
+     string, that string is printed as a label beginning on the
+     point.  Labels may be surrounded with quotes "...", in which
+     case they may be empty or contain blanks and numbers; labels
+     never contain newlines.
+
+     The following options are recognized, each as a separate
+     argument.
+
+     --aa   Supply abscissas automatically (they are missing from
+	  the input); spacing is given by the next argument
+	  (default 1).	A second optional argument is the start-
+	  ing point for automatic abscissas (default 0 or lower
+	  limit given by --xx).
+
+     --bb   Break (disconnect) the graph after each label in the
+	  input.
+
+     --cc   Character string given by next argument is default
+	  label for each point.
+
+     --gg   Next argument is grid style, 0 no grid, 1 frame with
+	  ticks, 2 full grid (default).
+
+     --ll   Next argument is label for graph.
+
+     --mm   Next argument is mode (style) of connecting lines: 0
+	  disconnected, 1 connected (default).	Some devices give
+	  distinguishable line styles for other small integers.
+
+     --ss   Save screen, don't erase before plotting.
+
+     --xx [ ll ]
+	  If ll is present, x axis is logarithmic.  Next 1 (or 2)
+	  arguments are lower (and upper) _x limits.  Third argu-
+	  ment, if present, is grid spacing on _x axis.	Normally
+	  these quantities are determined automatically.
+
+     --yy [ ll ]
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+GRAPH(1G)	    UNIX Programmer's Manual		GRAPH(1G)
+
+
+
+	  Similarly for _y.
+
+     --hh   Next argument is fraction of space for height.
+
+     --ww   Similarly for width.
+
+     --rr   Next argument is fraction of space to move right before
+	  plotting.
+
+     --uu   Similarly to move up before plotting.
+
+     --tt   Transpose horizontal and vertical axes.  (Option --xx now
+	  applies to the vertical axis.)
+
+     A legend indicating grid range is produced with a grid
+     unless the --ss option is present.
+
+     If a specified lower limit exceeds the upper limit, the axis
+     is reversed.
+
+SSEEEE AALLSSOO
+     spline(1G), plot(1G)
+
+BBUUGGSS
+     _G_r_a_p_h stores all points internally and drops those for which
+     there isn't room.
+     Segments that run out of bounds are dropped, not windowed.
+     Logarithmic axes may not be reversed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+VI(1)		    UNIX Programmer's Manual		    VI(1)
+
+
+
+NNAAMMEE
+     vi - screen oriented (visual) display editor based on ex
+
+SSYYNNOOPPSSIISS
+     vvii [ --tt tag ] [ --rr ] [ ++_c_o_m_m_a_n_d ] [ --ll ] [ --ww_n ] name ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _V_i (visual) is a display oriented text editor based on
+     _e_x(1).  _E_x and _v_i run the same code; it is possible to get
+     to the command mode of _e_x from within _v_i and vice-versa.
+
+     The _V_i _Q_u_i_c_k _R_e_f_e_r_e_n_c_e card and the _I_n_t_r_o_d_u_c_t_i_o_n _t_o _D_i_s_p_l_a_y
+     _E_d_i_t_i_n_g _w_i_t_h _V_i provide full details on using _v_i.
+
+FFIILLEESS
+     See _e_x(1).
+
+SSEEEE AALLSSOO
+     ex (1), edit (1), ``Vi Quick Reference'' card, ``An Intro-
+     duction to Display Editing with Vi''.
+
+AAUUTTHHOORR
+     William Joy
+     Mark Horton added macros to _v_i_s_u_a_l mode and is maintaining
+     version 3
+
+BBUUGGSS
+     Software tabs using ^^TT work only immediately after the
+     _a_u_t_o_i_n_d_e_n_t.
+
+     Left and right shifts on intelligent terminals don't make
+     use of insert and delete character operations in the termi-
+     nal.
+
+     The _w_r_a_p_m_a_r_g_i_n option can be fooled since it looks at output
+     columns when blanks are typed.  If a long word passes
+     through the margin and onto the next line without a break,
+     then the line won't be broken.
+
+     Insert/delete within a line can be slow if tabs are present
+     on intelligent terminals, since the terminals need help in
+     doing this correctly.
+
+     Saving text on deletes in the named buffers is somewhat
+     inefficient.
+
+     The _s_o_u_r_c_e command does not work when executed as ::ssoouurrccee;
+     there is no way to use the ::aappppeenndd, ::cchhaannggee, and ::iinnsseerrtt
+     commands, since it is not possible to give more than one
+     line of input to a :: escape.  To use these on a ::gglloobbaall you
+     must QQ to _e_x command mode, execute them, and then reenter
+     the screen editor with _v_i or _o_p_e_n.
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

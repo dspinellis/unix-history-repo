@@ -1,0 +1,132 @@
+
+
+
+UNIFDEF(1)	    UNIX Programmer's Manual	       UNIFDEF(1)
+
+
+
+NNAAMMEE
+     unifdef - remove ifdef'ed lines
+
+SSYYNNOOPPSSIISS
+     uunniiffddeeff [ --tt --ll --cc --DD_s_y_m --UU_s_y_m --iidd_s_y_m --iiuu_s_y_m ] ...  [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _U_n_i_f_d_e_f is useful for removing ifdef'ed lines from a file
+     while otherwise leaving the file alone.  _U_n_i_f_d_e_f is like a
+     stripped-down C preprocessor: it is smart enough to deal
+     with the nested ifdefs, comments, single and double quotes
+     of C syntax so that it can do its job, but it doesn't do any
+     including or interpretation of macros.  Neither does it
+     strip out comments, though it recognizes and ignores them.
+     You specify which symbols you want defined --DD_s_y_m or unde-
+     fined --UU_s_y_m and the lines inside those ifdefs will be copied
+     to the output or removed as appropriate.  The ifdef, ifndef,
+     else, and endif lines associated with _s_y_m will also be
+     removed.  Ifdefs involving symbols you don't specify are
+     untouched and copied out along with their associated ifdef,
+     else, and endif lines.  If an ifdef X occurs nested inside
+     another ifdef X, then the inside ifdef is treated as if it
+     were an unrecognized symbol.  If the same symbol appears in
+     more than one argument, only the first occurrence is signi-
+     ficant.
+
+     The --ll option causes _u_n_i_f_d_e_f to replace removed lines with
+     blank lines instead of deleting them.
+
+     If you use ifdefs to delimit non-C lines, such as comments
+     or code which is under construction, then you must tell
+     _u_n_i_f_d_e_f which symbols are used for that purpose so that it
+     won't try to parse for quotes and comments in those ifdef'ed
+     lines.  You specify that you want the lines inside certain
+     ifdefs to be ignored but copied out with --iidd_s_y_m and --iiuu_s_y_m
+     similar to --DD_s_y_m and --UU_s_y_m above.
+
+     If you want to use _u_n_i_f_d_e_f for plain text (not C code), use
+     the --tt option.  This makes _u_n_i_f_d_e_f refrain from attempting
+     to recognize comments and single and double quotes.
+
+     _U_n_i_f_d_e_f copies its output to _s_t_d_o_u_t and will take its input
+     from _s_t_d_i_n if no _f_i_l_e argument is given.  If the --cc argument
+     is specified, then the operation of _u_n_i_f_d_e_f is complemented,
+     i.e. the lines that would have been removed or blanked are
+     retained and vice versa.
+
+SSEEEE AALLSSOO
+     diff(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Premature EOF, inappropriate else or endif.
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+UNIFDEF(1)	    UNIX Programmer's Manual	       UNIFDEF(1)
+
+
+
+     Exit status is 0 if output is exact copy of input, 1 if not,
+     2 if trouble.
+
+BBUUGGSS
+     Does not know how to deal with _c_p_p consructs such as
+
+	  #if  defined(X) || defined(Y)
+
+
+AAUUTTHHOORR
+     Dave Yost
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+

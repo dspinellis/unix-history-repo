@@ -1,0 +1,66 @@
+
+
+
+TC(1)		    UNIX Programmer's Manual		    TC(1)
+
+
+
+NNAAMMEE
+     tc - photoypesetter simulator
+
+SSYYNNOOPPSSIISS
+     ttcc [ --tt ] [ --ssN ] [ --ppL ] [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_c interprets its input (standard input default) as device
+     codes for a Graphic Systems phototypesetter (cat).  The
+     standard output of _t_c is intended for a Tektronix 4015 (a
+     4014 terminal with ASCII and APL character sets).	The six-
+     teen typesetter sizes are mapped into the 4014's four sizes;
+     the entire TROFF character set is drawn using the 4014's
+     character generator, using overstruck combinations where
+     necessary.  Typical usage:
+
+		    troff -t file | tc
+
+     At the end of each page _t_c waits for a newline (empty line)
+     from the keyboard before continuing on to the next page.  In
+     this wait state, the command ee will suppress the screen
+     erase before the next page; ssN will cause the next N pages
+     to be skipped; and !!line will send line to the shell.
+
+     The command line options are:
+
+     --tt   Don't wait between pages; for directing output into a
+	  file.
+
+     --ssN  Skip the first N pages.
+
+     --ppL  Set page length to L.  L may include the scale factors
+	  pp (points), ii (inches), cc (centimeters), and PP (picas);
+	  default is picas.
+
+     ''--_l _w''
+	  Multiply the default aspect ratio, 1.5, of a displayed
+	  page by _l/_w.
+
+SSEEEE AALLSSOO
+     troff(1), plot(1G)
+
+BBUUGGSS
+     Font distinctions are lost.
+     _t_c's character set is limited to ASCII in just one size.
+     The aspect ratio option is unbelievable.
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

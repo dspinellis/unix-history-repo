@@ -1,0 +1,198 @@
+
+
+
+MSGS(1)             UNIX Programmer's Manual		  MSGS(1)
+
+
+
+NNAAMMEE
+     msgs - system messages and junk mail program
+
+SSYYNNOOPPSSIISS
+     mmssggss [ --ffhhllppqq ] [ number ] [ -number ]
+
+     mmssggss --ss
+
+     mmssggss --cc [ -days ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_s_g_s is used to read system messages.  These messages are
+     sent by mailing to the login `msgs' and should be short
+     pieces of information which are suitable to be read once by
+     most users of the system.
+
+     _M_s_g_s is normally invoked each time you login, by placing it
+     in the file ._l_o_g_i_n (._p_r_o_f_i_l_e if you use /_b_i_n/_s_h).	It will
+     then prompt you with the source and subject of each new mes-
+     sage.  If there is no subject line, the first few non-blank
+     lines of the message will be displayed.  If there is more to
+     the message, you will be told how long it is and asked
+     whether you wish to see the rest of the message.  The possi-
+     ble responses are:
+
+     yy	    type the rest of the message.
+
+     RETURN synonym for y.
+
+     nn	    skip this message and go on to the next message.
+
+     --	    redisplay the last message.
+
+     qq	    drops you out of _m_s_g_s; the next time you run the pro-
+	    gram it will pick up where you left off.
+
+     ss	    append the current message to the file ``Messages''
+	    in the current directory; `s-' will save the previ-
+	    ously displayed message. A `s' or `s-' may be fol-
+	    lowed by a space and a file name to receive the mes-
+	    sage replacing the default ``Messages''.
+
+     mm	    or `m-' causes a copy of the specified message to be
+	    placed in a temporary mailbox and _m_a_i_l(1) to be
+	    invoked on that mailbox.  Both `m' and `s' accept a
+	    numeric argument in place of the `-'.
+
+     _M_s_g_s keeps track of the next message you will see by a
+     number in the file ._m_s_g_s_r_c in your home directory.  In the
+     directory /_u_s_r/_m_s_g_s it keeps a set of files whose names are
+     the (sequential) numbers of the messages they represent.
+     The file /_u_s_r/_m_s_g_s/_b_o_u_n_d_s shows the low and high number of
+
+
+
+Printed 7/9/88		   May 9, 1986				1
+
+
+
+
+
+
+MSGS(1)             UNIX Programmer's Manual		  MSGS(1)
+
+
+
+     the messages in the directory so that _m_s_g_s can quickly
+     determine if there are no messages for you.  If the contents
+     of _b_o_u_n_d_s is incorrect it can be fixed by removing it; _m_s_g_s
+     will make a new _b_o_u_n_d_s file the next time it is run.
+
+     The --ss option is used for setting up the posting of mes-
+     sages.  The line
+
+	  msgs: "| /usr/ucb/msgs -s"
+
+     should be include in /_u_s_r/_l_i_b/_a_l_i_a_s_e_s to enable posting of
+     messages.
+
+     The --cc option is used for performing cleanup on /_u_s_r/_m_s_g_s.
+     An entry with the --cc option should be placed in
+     /_u_s_r/_l_i_b/_c_r_o_n_t_a_b to run every night.  This will remove all
+     messages over 21 days old.  A different expiration may be
+     specified on the command line to override the default.
+
+     Options when reading messages include:
+
+     --ff     which causes it not to say ``No new messages.''.
+	    This is useful in your ._l_o_g_i_n file since this is
+	    often the case here.
+
+     --qq     Queries whether there are messages, printing ``There
+	    are new messages.'' if there are.  The command ``msgs
+	    -q'' is often used in login scripts.
+
+     --hh     causes _m_s_g_s to print the first part of messages only.
+
+     --ll     option causes only locally originated messages to be
+	    reported.
+
+     _n_u_m    A message number can be given on the command line,
+	    causing _m_s_g_s to start at the specified message rather
+	    than at the next message indicated by your ._m_s_g_s_r_c
+	    file.  Thus
+
+		msgs -h 1
+
+	    prints the first part of all messages.
+
+     -_n_u_m_b_e_r
+	    will cause _m_s_g_s to start _n_u_m_b_e_r messages back from
+	    the one indicated by your ._m_s_g_s_r_c file, useful for
+	    reviews of recent messages.
+
+     --pp     causes long messages to be piped through _m_o_r_e(1).
+
+     Within _m_s_g_s you can also go to any specific message by typ-
+     ing its number when _m_s_g_s requests input as to what to do.
+
+
+
+Printed 7/9/88		   May 9, 1986				2
+
+
+
+
+
+
+MSGS(1)             UNIX Programmer's Manual		  MSGS(1)
+
+
+
+FFIILLEESS
+     /usr/msgs/*	 database
+     ~/.msgsrc		 number of next message to be presented
+
+AAUUTTHHOORRSS
+     William Joy
+     David Wasley
+
+SSEEEE AALLSSOO
+     aliases(5), crontab(5), mail(1), more(1)
+
+BBUUGGSS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 9, 1986				3
+
+
+
+
+
+

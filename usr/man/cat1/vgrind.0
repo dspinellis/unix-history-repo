@@ -1,0 +1,198 @@
+
+
+
+VGRIND(1)	    UNIX Programmer's Manual		VGRIND(1)
+
+
+
+NNAAMMEE
+     vgrind - grind nice listings of programs
+
+SSYYNNOOPPSSIISS
+     vvggrriinndd [ --ff ] [ -- ] [ --tt ] [ --nn ] [ --xx ] [ --WW ] [ --ssnn ] [ --hh
+     header ] [ --dd file ] [ --ll_l_a_n_g_u_a_g_e ] name ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _V_g_r_i_n_d formats the program sources which are arguments in a
+     nice style using _t_r_o_f_f(1) Comments are placed in italics,
+     keywords in bold face, and the name of the current function
+     is listed down the margin of each page as it is encountered.
+
+     _V_g_r_i_n_d runs in two basic modes, filter mode or regular mode.
+     In filter mode _v_g_r_i_n_d acts as a filter in a manner similar
+     to _t_b_l(1).  The standard input is passed directly to the
+     standard output except for lines bracketed by the _t_r_o_f_f-_l_i_k_e
+     macros:
+
+     .vS  - starts processing
+
+     .vE  - ends processing
+
+     These lines are formatted as described above.  The output
+     from this filter can be passed to _t_r_o_f_f for output.  There
+     need be no particular ordering with _e_q_n(1) or _t_b_l(1).
+
+     In regular mode _v_g_r_i_n_d accepts input files, processes them,
+     and passes them to _t_r_o_f_f(1) for output.
+
+     In both modes _v_g_r_i_n_d passes any lines beginning with a
+     decimal point without conversion.
+
+     The options are:
+
+     --ff   forces filter mode
+
+     --	  forces input to be taken from standard input (default
+	  if --ff is specified )
+
+     --tt   similar to the same option in _t_r_o_f_f causing formatted
+	  text to go to the standard output
+
+     --nn   forces no keyword bolding
+
+     --xx   outputs the index file in a ``pretty'' format. The
+	  index file itself is produced whenever _v_g_r_i_n_d is run
+	  with a file called _i_n_d_e_x in the current directory.  The
+	  index of function definitions can then be run off by
+	  giving _v_g_r_i_n_d the --xx option and the file _i_n_d_e_x as argu-
+	  ment.
+
+
+
+
+Printed 7/9/88		   May 5, 1986				1
+
+
+
+
+
+
+VGRIND(1)	    UNIX Programmer's Manual		VGRIND(1)
+
+
+
+     --WW   forces output to the (wide) Versatec printer rather
+	  than the (narrow) Varian
+
+     --ss   specifies a point size to use on output (exactly the
+	  same as the argument of a .ps)
+
+     --hh   specifies a particular header to put on every output
+	  page (default is the file name)
+
+     --dd   specifies an alternate language definitions file
+	  (default is /usr/lib/vgrindefs)
+
+     --ll   specifies the language to use.  Currently known are
+	  PASCAL (--llpp), MODEL (--llmm),CC (--llcc or the default), CSH
+	  (--llccsshh), SHELL (--llsshh), RATFOR (--llrr), MODULA2 (--llmmoodd22),
+	  YACC (--llyyaacccc), ISP (--lliisspp), and ICON (--llII).
+
+FFIILLEESS
+     index		 file where source for index is created
+     /usr/lib/tmac/tmac.vgrindmacro package
+     /usr/lib/vfontedpr  preprocessor
+     /usr/lib/vgrindefs  language descriptions
+
+AAUUTTHHOORR
+     Dave Presotto & William Joy
+
+SSEEEE AALLSSOO
+     vlp(1), vtroff(1), vgrindefs(5)
+
+BBUUGGSS
+     Vfontedpr assumes that a certain programming style is fol-
+     lowed:
+
+     For CC - function names can be preceded on a line only by
+     spaces, tabs, or an asterisk.  The parenthesized arguments
+     must also be on the same line.
+
+     For PPAASSCCAALL - function names need to appear on the same line
+     as the keywords _f_u_n_c_t_i_o_n or _p_r_o_c_e_d_u_r_e.
+
+     For MMOODDEELL - function names need to appear on the same line
+     as the keywords _i_s _b_e_g_i_n_p_r_o_c.
+
+     If these conventions are not followed, the indexing and mar-
+     ginal function name comment mechanisms will fail.
+
+     More generally, arbitrary formatting styles for programs
+     mostly look bad.  The use of spaces to align source code
+     fails miserably; if you plan to _v_g_r_i_n_d your program you
+     should use tabs.  This is somewhat inevitable since the font
+     used by _v_g_r_i_n_d is variable width.
+
+
+
+
+Printed 7/9/88		   May 5, 1986				2
+
+
+
+
+
+
+VGRIND(1)	    UNIX Programmer's Manual		VGRIND(1)
+
+
+
+     The mechanism of ctags in recognizing functions should be
+     used here.
+
+     Filter mode does not work in documents using the -me or -ms
+     macros.  (So what use is it anyway?)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 5, 1986				3
+
+
+

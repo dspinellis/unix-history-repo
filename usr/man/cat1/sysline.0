@@ -1,0 +1,198 @@
+
+
+
+SYSLINE(1)	    UNIX Programmer's Manual	       SYSLINE(1)
+
+
+
+NNAAMMEE
+     sysline - display system status on status line of a terminal
+
+SSYYNNOOPPSSIISS
+     ssyysslliinnee [ --bbccddeewwhhDDiillmmppqqrrssjj ] [ --HH rreemmoottee ] [ ++NN ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_y_s_l_i_n_e runs in the background and periodically displays
+     system status information on the status line of the termi-
+     nal.  Not all terminals contain a status line.  Those that
+     do include the h19, concept 108, Ann Arbor Ambassador,
+     vt100, Televideo 925/950 and Freedom 100.	If no flags are
+     given, _s_y_s_l_i_n_e displays the time of day, the current load
+     average, the change in load average in the last 5 minutes,
+     the number of users (followed by a `u'), the number of runn-
+     able  process (followed by a `r')[VAX only], the number of
+     suspended processes (followed by a `s')[VAX only], and the
+     users who have logged on and off since the last status
+     report.  Finally, if new mail has arrived, a summary of it
+     is printed.  If there is unread mail in your mailbox, an
+     asterisk will appear after the display of the number of
+     users.  The display is normally in reverse video (if your
+     terminal supports this in the status line) and is right jus-
+     tified to reduce distraction.  Every fifth display is done
+     in normal video to give the screen a chance to rest.
+
+     If you have a file named .who in your home directory, then
+     the contents of that file is printed first.  One common use
+     of this feature is to alias chdir, pushd, and popd  to place
+     the current directory stack in ~/.who after it changes the
+     new directory.
+
+     The following flags may be given on the command line.
+
+     --bb          Beep once every half hour and twice every hour,
+		 just like those obnoxious watches you keep hear-
+		 ing.
+
+     --cc          Clear the status line for 5 seconds before each
+		 redisplay.
+
+     --dd          Debug mode -- print status line data in human
+		 readable format.
+
+     --DD          Print out the current day/date before the time.
+
+     --ee          Print out only the information.  Do not print
+		 out the control commands necessary to put the
+		 information on the bottom line.  This option is
+		 useful for putting the output of _s_y_s_l_i_n_e onto
+		 the mode line of an emacs window.
+
+
+
+
+Printed 7/9/88		  June 5, 1986				1
+
+
+
+
+
+
+SYSLINE(1)	    UNIX Programmer's Manual	       SYSLINE(1)
+
+
+
+     --ww          Window mode -- print the status on the current
+		 line of the terminal, suitable for use inside a
+		 one line window.
+
+     --HH rreemmoottee	 Print the load average on the remote host _r_e_m_o_t_e
+		 [VAX only].  If the host is down, or is not
+		 sending out _r_w_h_o_d packets, then the down time is
+		 printed instead.  If the prefix "ucb" is
+		 present, then it is removed.
+
+     --hh          Print out the host machine's name after the time
+		 [VAX only].
+
+     --ll          Don't print the names of people who log in and
+		 out.
+
+     --mm          Don't check for mail.
+
+     --pp          Don't report the number of process which are
+		 runnable and suspended.
+
+     --rr          Don't display in reverse video.
+
+     ++NN          Update the status line every N seconds. The
+		 default is 60 seconds.
+
+     --qq          Don't print out diagnostic messages if something
+		 goes wrong when starting up.
+
+     --ii          Print out the process id of the _s_y_s_l_i_n_e process
+		 onto standard output upon startup.  With this
+		 information you can send the alarm signal to the
+		 _s_y_s_l_i_n_e process to cause it to update immedi-
+		 ately.  _s_y_s_l_i_n_e writes to the standard error, so
+		 you can redirect the standard output into a file
+		 to catch the process id.
+
+     --ss          Print "short" form of line by left-justifying
+		 _i_f_f escapes are not allowed in the status line.
+		 Some terminals (the Televideos and Freedom 100
+		 for example) do not allow cursor movement (or
+		 other "intelligent" operations) in the status
+		 line.	For these terminals, _s_y_s_l_i_n_e normally
+		 uses blanks to cause right-justification.  This
+		 flag will disable the adding of the blanks.
+
+     --jj          Force the sysline output to be left justified
+		 even on terminals capable of cursor movement on
+		 the status line.
+
+     If you have a file .syslinelock in your home directory, then
+     _s_y_s_l_i_n_e will not update its statistics and write on your
+
+
+
+Printed 7/9/88		  June 5, 1986				2
+
+
+
+
+
+
+SYSLINE(1)	    UNIX Programmer's Manual	       SYSLINE(1)
+
+
+
+     screen, it will just go to sleep for a minute.  This is use-
+     ful if you want to momentarily disable _s_y_s_l_i_n_e. Note that it
+     may take a few seconds from the time the lock file is
+     created until you are guaranteed that _s_y_s_l_i_n_e will not write
+     on the screen.
+
+FFIILLEESS
+     /etc/utmp		     names of people who are logged in
+     /dev/kmem		     contains process table [VAX only]
+     /usr/spool/rwho/whod.*  who/uptime information for remote hosts [VAX only]
+     ${HOME}/.who	     information to print on bottom line
+     ${HOME}/.syslinelock    when it exists, sysline will not print
+
+AAUUTTHHOORRSS
+     John Foderaro
+     Tom Ferrin converted it to use termcap.
+     Mark Horton added terminfo capability.
+
+BBUUGGSS
+     If you interrupt the display then you may find your cursor
+     missing or stuck  on the status line.  The best thing to do
+     is reset the terminal.
+     If there is too much for one line, the excess is thrown
+     away.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 5, 1986				3
+
+
+

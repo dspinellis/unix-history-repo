@@ -1,0 +1,198 @@
+
+
+
+M4(1)		    UNIX Programmer's Manual		    M4(1)
+
+
+
+NNAAMMEE
+     m4 - macro processor
+
+SSYYNNOOPPSSIISS
+     mm44 [ files ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_4 is a macro processor intended as a front end for Ratfor,
+     C, and other languages.  Each of the argument files is pro-
+     cessed in order; if there are no arguments, or if an argu-
+     ment is `-', the standard input is read.  The processed text
+     is written on the standard output.
+
+     Macro calls have the form
+
+	  name(arg1,arg2, . . . , argn)
+
+     The `(' must immediately follow the name of the macro.  If a
+     defined macro name is not followed by a `(', it is deemed to
+     have no arguments.  Leading unquoted blanks, tabs, and new-
+     lines are ignored while collecting arguments.  Potential
+     macro names consist of alphabetic letters, digits, and
+     underscore `_', where the first character is not a digit.
+
+     Left and right single quotes (`') are used to quote strings.
+     The value of a quoted string is the string stripped of the
+     quotes.
+
+     When a macro name is recognized, its arguments are collected
+     by searching for a matching right parenthesis.  Macro
+     evaluation proceeds normally during the collection of the
+     arguments, and any commas or right parentheses which happen
+     to turn up within the value of a nested call are as effec-
+     tive as those in the original input text.	After argument
+     collection, the value of the macro is pushed back onto the
+     input stream and rescanned.
+
+     _M_4 makes available the following built-in macros.	They may
+     be redefined, but once this is done the original meaning is
+     lost.  Their values are null unless otherwise stated.
+
+     ddeeffiinnee    The second argument is installed as the value of
+	       the macro whose name is the first argument.  Each
+	       occurrence of $_n in the replacement text, where _n
+	       is a digit, is replaced by the _n-th argument.
+	       Argument 0 is the name of the macro; missing argu-
+	       ments are replaced by the null string.
+
+     uunnddeeffiinnee  removes the definition of the macro named in its
+	       argument.
+
+     iiffddeeff     If the first argument is defined, the value is the
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+M4(1)		    UNIX Programmer's Manual		    M4(1)
+
+
+
+	       second argument, otherwise the third.  If there is
+	       no third argument, the value is null.  The word
+	       _u_n_i_x is predefined on UNIX versions of _m_4.
+
+     cchhaannggeeqquuoottee
+	       Change quote characters to the first and second
+	       arguments.  _C_h_a_n_g_e_q_u_o_t_e without arguments restores
+	       the original values (i.e., `').
+
+     ddiivveerrtt    _M_4 maintains 10 output streams, numbered 0-9.  The
+	       final output is the concatenation of the streams
+	       in numerical order; initially stream 0 is the
+	       current stream.	The _d_i_v_e_r_t macro changes the
+	       current output stream to its (digit-string) argu-
+	       ment.  Output diverted to a stream other than 0
+	       through 9 is discarded.
+
+     uunnddiivveerrtt  causes immediate output of text from diversions
+	       named as arguments, or all diversions if no argu-
+	       ment.  Text may be undiverted into another diver-
+	       sion.  Undiverting discards the diverted text.
+
+     ddiivvnnuumm    returns the value of the current output stream.
+
+     ddnnll       reads and discards characters up to and including
+	       the next newline.
+
+     iiffeellssee    has three or more arguments.  If the first argu-
+	       ment is the same string as the second, then the
+	       value is the third argument.  If not, and if there
+	       are more than four arguments, the process is
+	       repeated with arguments 4, 5, 6 and 7.  Otherwise,
+	       the value is either the fourth string, or, if it
+	       is not present, null.
+
+     iinnccrr      returns the value of its argument incremented by
+	       1.  The value of the argument is calculated by
+	       interpreting an initial digit-string as a decimal
+	       number.
+
+     eevvaall      evaluates its argument as an arithmetic expres-
+	       sion, using 32-bit arithmetic.  Operators include
+	       +, -, *, /, %, ^ (exponentiation); relationals;
+	       parentheses.
+
+     lleenn       returns the number of characters in its argument.
+
+     iinnddeexx     returns the position in its first argument where
+	       the second argument begins (zero origin), or -1 if
+	       the second argument does not occur.
+
+     ssuubbssttrr    returns a substring of its first argument.  The
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+
+
+
+
+M4(1)		    UNIX Programmer's Manual		    M4(1)
+
+
+
+	       second argument is a zero origin number selecting
+	       the first character; the third argument indicates
+	       the length of the substring.  A missing third
+	       argument is taken to be large enough to extend to
+	       the end of the first string.
+
+     ttrraannsslliitt  transliterates the characters in its first argu-
+	       ment from the set given by the second argument to
+	       the set given by the third.  No abbreviations are
+	       permitted.
+
+     iinncclluuddee   returns the contents of the file named in the
+	       argument.
+
+     ssiinncclluuddee  is identical to _i_n_c_l_u_d_e, except that it says noth-
+	       ing if the file is inaccessible.
+
+     ssyyssccmmdd    executes the UNIX command given in the first argu-
+	       ment.  No value is returned.
+
+     mmaakkeetteemmpp  fills in a string of XXXXX in its argument with
+	       the current process id.
+
+     eerrrrpprriinntt  prints its argument on the diagnostic output file.
+
+     dduummppddeeff   prints current names and definitions, for the
+	       named items, or for all if no arguments are given.
+
+SSEEEE AALLSSOO
+     B. W. Kernighan and D. M. Ritchie, _T_h_e _M_4 _M_a_c_r_o _P_r_o_c_e_s_s_o_r
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         3
+
+
+

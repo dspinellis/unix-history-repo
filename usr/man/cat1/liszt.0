@@ -1,0 +1,132 @@
+
+
+
+LISZT(1)	    UNIX Programmer's Manual		 LISZT(1)
+
+
+
+NNAAMMEE
+     liszt - compile a Franz Lisp program
+
+SSYYNNOOPPSSIISS
+     lliisszztt [ --mmppqqrruuwwxxCCQQSSTT ] [ --ee form ] [ --oo objfile ]	[ name ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_i_s_z_t takes a file whose names ends in `.l' and compiles the
+     FRANZ LISP code there leaving an object program on the file
+     whose name is that of the source with `.o' substituted for
+     `.l'.
+
+     The following options are interpreted by _l_i_s_z_t.
+
+     --ee   Evaluate the given form before compilation begins.
+
+     --mm   Compile a MACLISP file, by changing the readtable to
+	  conform to MACLISP syntax and including a macro-defined
+	  compatibility package.
+
+     --oo   Put the object code in the specified file, rather than
+	  the default `.o' file.
+
+     --pp   places profiling code at the beginning of each non-
+	  local function.  If the lisp system is also created
+	  with profiling in it, this allows function calling fre-
+	  quency to be determined (see _p_r_o_f(1).)
+
+     --qq   Only print warning and error messages.  Compilation
+	  statistics and notes on correct but unusual constructs
+	  will not be printed.
+
+     --rr   place bootstrap code at the beginning of the object
+	  file, which when the object file is executed will cause
+	  a lisp system to be invoked and the object file fasl'ed
+	  in.
+
+     --uu   Compile a UCI-lispfile, by changing the readtable to
+	  conform to UCI-Lisp syntax and including a macro-
+	  defined compatibility package.
+
+     --ww   Suppress warning diagnostics.
+
+     --xx   Create a lisp cross reference file with the same name
+	  as the source file but with  `.x' appended.  The pro-
+	  gram _l_x_r_e_f(1) reads this file and creates a human read-
+	  able cross reference listing.
+
+     --CC   put comments in the assembler output of the compiler.
+	  Useful for debugging the compiler.
+
+     --QQ   Print compilation statistics and warn of strange
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+LISZT(1)	    UNIX Programmer's Manual		 LISZT(1)
+
+
+
+	  constructs.  This is the default.
+
+     --SS   Compile the named program and leave the assembler-
+	  language output on the corresponding file suffixed
+	  `.s'.  This will also prevent the assembler language
+	  file from being assembled.
+
+     --TT   send the assembler output to standard output.
+
+     If no source file is specified, then the compiler will run
+     interactively.  You will find yourself talking to the
+     _l_i_s_p(1) top-level command interpreter.  You can compile a
+     file by using the function _l_i_s_z_t (an nlambda) with the same
+     arguments as you use on the command line.	For example to
+     compile `foo', a MACLISP file, you would use:
+
+	  (liszt -m foo)
+
+     Note that _l_i_s_z_t supplies the ``.l'' extension for you.
+
+FFIILLEESS
+     /usr/lib/lisp/machacks.lMACLISP compatibility package
+     /usr/lib/lisp/syscall.l macro definitions of Unix system calls
+     /usr/lib/lisp/ucifnc.l  UCI Lisp compatibility package
+
+AAUUTTHHOORR
+     John Foderaro
+
+SSEEEE AALLSSOO
+     lisp(1), lxref(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+TROFF(1)	    UNIX Programmer's Manual		 TROFF(1)
+
+
+
+NNAAMMEE
+     troff, nroff - text formatting and typesetting
+
+SSYYNNOOPPSSIISS
+     ttrrooffff [ option ] ...  [ file ] ...
+
+     nnrrooffff [ option ] ...  [ file ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_r_o_f_f formats text in the named _f_i_l_e_s for printing on a
+     Graphic Systems C/A/T phototypesetter; _n_r_o_f_f is used for for
+     typewriter-like devices.  Their capabilities are described
+     in the _N_r_o_f_f/_T_r_o_f_f _u_s_e_r'_s _m_a_n_u_a_l.
+
+     If no _f_i_l_e argument is present, the standard input is read.
+     An argument consisting of a single minus (--) is taken to be
+     a file name corresponding to the standard input.  The
+     options, which may appear in any order so long as they
+     appear before the files, are:
+
+     --oo_l_i_s_t Print only pages whose page numbers appear in the
+	    comma-separated _l_i_s_t of numbers and ranges.  A range
+	    _N--_M means pages _N through _M; an initial -_N means from
+	    the beginning to page _N; and a final _N- means from _N
+	    to the end.
+
+     --nn_N    Number first generated page _N.
+
+     --ss_N    Stop every _N pages.  _N_r_o_f_f will halt prior to every _N
+	    pages (default _N=1) to allow paper loading or chang-
+	    ing, and will resume upon receipt of a newline.
+	    _T_r_o_f_f will stop the phototypesetter every _N pages,
+	    produce a trailer to allow changing cassettes, and
+	    resume when the typesetter's start button is pressed.
+
+     --mm_n_a_m_e Prepend the macro file //uussrr//lliibb//ttmmaacc//ttmmaacc.._n_a_m_e to the
+	    input _f_i_l_e_s.
+
+     --rr_a_N   Set register _a (one-character) to _N.
+
+     --ii     Read standard input after the input files are
+	    exhausted.
+
+     --qq     Invoke the simultaneous input-output mode of the rrdd
+	    request.
+
+     _T_r_o_f_f _o_n_l_y
+
+     --tt     Direct output to the standard output instead of the
+	    phototypesetter.
+
+     --ff     Refrain from feeding out paper and stopping
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+TROFF(1)	    UNIX Programmer's Manual		 TROFF(1)
+
+
+
+	    phototypesetter at the end of the run.
+
+     --ww     Wait until phototypesetter is available, if currently
+	    busy.
+
+     --bb     Report whether the phototypesetter is busy or avail-
+	    able.  No text processing is done.
+
+     --aa     Send a printable ASCII approximation of the results
+	    to the standard output.
+
+     --ppN    Print all characters in point size _N while retaining
+	    all prescribed spacings and motions, to reduce photo-
+	    typesetter elapsed time.
+
+     --FF_f_o_n_t_d_i_r
+	    The directory _f_o_n_t_d_i_r contains the font width tables
+	    instead of the default directory /usr/lib/fonts. This
+	    option can be used to produce output for devices
+	    besides the phototypesetter.
+
+     If the file /_u_s_r/_a_d_m/_t_r_a_c_c_t is writable, _t_r_o_f_f keeps photo-
+     typesetter accounting records there.  The integrity of that
+     file may be secured by making _t_r_o_f_f a 'set user-id' program.
+
+FFIILLEESS
+     /tmp/ta*		   temporary file
+     /usr/lib/tmac/tmac.*  standard macro files
+     /usr/lib/term/*	   terminal driving tables for _n_r_o_f_f
+     /usr/lib/font/*	   font width tables for _t_r_o_f_f
+     /dev/cat		   phototypesetter
+     /usr/adm/tracct	   accounting statistics for /dev/cat
+
+SSEEEE AALLSSOO
+     J. F. Ossanna, _N_r_o_f_f/_T_r_o_f_f _u_s_e_r'_s _m_a_n_u_a_l
+     B. W. Kernighan, _A _T_R_O_F_F _T_u_t_o_r_i_a_l
+     eqn(1), tbl(1), ms(7), me(7), man(7), col(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+WHOIS(1)	    UNIX Programmer's Manual		 WHOIS(1)
+
+
+
+NNAAMMEE
+     whois - DARPA Internet user name directory service
+
+SSYYNNOOPPSSIISS
+     wwhhooiiss name
+
+DDEESSCCRRIIPPTTIIOONN
+     whois help
+	  Produces a helpful message similar to the following:
+
+     Please enter a name or a handle (``ident"), such as ``Smith"
+     or ``SRI-NIC".  Starting with a period forces a name-only
+     search; starting with exclamation point forces handle-only.
+     Examples:
+	  Smith               [looks for name or handle SMITH	 ]
+	  !SRI-NIC	      [looks for handle SRI-NIC only	 ]
+	  .Smith, John	      [looks for name JOHN SMITH only	 ]
+     Adding ``..." to the argument will match anything from that
+     point, e.g. ``ZU..." will match ZUL, ZUM, etc.
+
+     To have the ENTIRE membership list of a group or organiza-
+     tion, if you are asking about a group or org, shown with the
+     record, use an asterisk character `*' directly preceding the
+     given argument.  [CAUTION: If there are a lot of members
+     this will take a long time!] You may of course use exclama-
+     tion point and asterisk, or a period and asterisk together.
+
+SSEEEE AALLSSOO
+     RFC 812:  Nicname/Whois
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 6, 1985				1
+
+
+

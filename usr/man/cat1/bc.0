@@ -1,0 +1,198 @@
+
+
+
+BC(1)		    UNIX Programmer's Manual		    BC(1)
+
+
+
+NNAAMMEE
+     bc - arbitrary-precision arithmetic language and calculator
+
+SSYYNNOOPPSSIISS
+     bbcc [ --cc ] [ --ll ] [ file ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _B_c is an interactive processor for a language which resem-
+     bles C but provides unlimited precision arithmetic.  It
+     takes input from any files given, then reads the standard
+     input.  The --ll argument stands for the name of an arbitrary
+     precision math library.  The syntax for _b_c programs is as
+     follows; L means letter a-z, E means expression, S means
+     statement.
+
+     Comments
+	   are enclosed in /* and */.
+
+     Names
+	   simple variables: L
+	   array elements: L [ E ]
+	   The words `ibase', `obase', and `scale'
+
+     Other operands
+	   arbitrarily long numbers with optional sign and
+	   decimal point.
+	   ( E )
+	   sqrt ( E )
+	   length ( E )   number of significant decimal digits
+	   scale ( E )	  number of digits right of decimal point
+	   L ( E , ... , E )
+
+     Operators
+	   +  -  *  /  %  ^ (% is remainder; ^ is power)
+	   ++	--	   (prefix and postfix; apply to names)
+	   ==  <=  >=  !=  <  >
+	   =  +=  -=  *=  /=  %=  ^=
+
+     Statements
+	   E
+	   { S ; ... ; S }
+	   if ( E ) S
+	   while ( E ) S
+	   for ( E ; E ; E ) S
+	   null statement
+	   break
+	   quit
+
+     Function definitions
+	   define L ( L ,..., L ) {
+		auto L, ... , L
+		S; ... S
+
+
+
+Printed 7/9/88		  July 28, 1987                         1
+
+
+
+
+
+
+BC(1)		    UNIX Programmer's Manual		    BC(1)
+
+
+
+		return ( E )
+	   }
+
+     Functions in --ll math library
+	   s(x) sine
+	   c(x) cosine
+	   e(x) exponential
+	   l(x) log
+	   a(x) arctangent
+	   j(n,x)    Bessel function
+
+     All function arguments are passed by value.
+
+     The value of a statement that is an expression is printed
+     unless the main operator is an assignment.  Either semi-
+     colons or newlines may separate statements.  Assignment to
+     _s_c_a_l_e influences the number of digits to be retained on
+     arithmetic operations in the manner of _d_c(1).  Assignments
+     to _i_b_a_s_e or _o_b_a_s_e set the input and output number radix
+     respectively.
+
+     The same letter may be used as an array, a function, and a
+     simple variable simultaneously.  All variables are global to
+     the program.  `Auto' variables are pushed down during func-
+     tion calls.  When using arrays as function arguments or
+     defining them as automatic variables empty square brackets
+     must follow the array name.
+
+     For example
+
+     scale = 20
+     define e(x){
+	  auto a, b, c, i, s
+	  a = 1
+	  b = 1
+	  s = 1
+	  for(i=1; 1==1; i++){
+	       a = a*x
+	       b = b*i
+	       c = a/b
+	       if(c == 0) return(s)
+	       s = s+c
+	  }
+     }
+
+     defines a function to compute an approximate value of the
+     exponential function and
+
+	  for(i=1; i<=10; i++) e(i)
+
+     prints approximate values of the exponential function of the
+     first ten integers.
+
+
+
+Printed 7/9/88		  July 28, 1987                         2
+
+
+
+
+
+
+BC(1)		    UNIX Programmer's Manual		    BC(1)
+
+
+
+     _B_c is actually a preprocessor for _d_c(1), which it invokes
+     automatically, unless the --cc (compile only) option is
+     present.  In this case the _d_c input is sent to the standard
+     output instead.
+
+FFIILLEESS
+     /usr/lib/lib.b mathematical library
+     dc(1)	    desk calculator proper
+
+SSEEEE AALLSSOO
+     dc(1)
+     L. L. Cherry and R. Morris, _B_C - _A_n _a_r_b_i_t_r_a_r_y _p_r_e_c_i_s_i_o_n
+     _d_e_s_k-_c_a_l_c_u_l_a_t_o_r _l_a_n_g_u_a_g_e
+
+BBUUGGSS
+     No &&, ||, or ! operators.
+     _F_o_r statement must have all three E's.
+     _Q_u_i_t is interpreted when read, not when executed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 28, 1987                         3
+
+
+

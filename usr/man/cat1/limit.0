@@ -1,0 +1,2046 @@
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+NNAAMMEE
+     csh - a shell (command interpreter) with C-like syntax
+
+SSYYNNOOPPSSIISS
+     ccsshh [ --cceeffiinnssttvvVVxxXX ] [ arg ...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _C_s_h is a first implementation of a command language inter-
+     preter incorporating a history mechanism (see HHiissttoorryy SSuubb--
+     ssttiittuuttiioonnss), job control facilities (see JJoobbss), interactive
+     file name and user name completion (see FFiillee NNaammee CCoommppllee--
+     ttiioonn), and a C-like syntax.  So as to be able to use its job
+     control facilities, users of _c_s_h must (and automatically)
+     use the new tty driver fully described in _t_t_y(4).	This new
+     tty driver allows generation of interrupt characters from
+     the keyboard to tell jobs to stop.  See _s_t_t_y(1) for details
+     on setting options in the new tty driver.
+
+     An instance of _c_s_h begins by executing commands from the
+     file `.cshrc' in the _h_o_m_e directory of the invoker.  If this
+     is a login shell then it also executes commands from the
+     file `.login' there.  It is typical for users on crt's to
+     put the command ``stty crt'' in their ._l_o_g_i_n file, and to
+     also invoke _t_s_e_t(1) there.
+
+     In the normal case, the shell will then begin reading com-
+     mands from the terminal, prompting with `% '.  Processing of
+     arguments and the use of the shell to process files contain-
+     ing command scripts will be described later.
+
+     The shell then repeatedly performs the following actions: a
+     line of command input is read and broken into _w_o_r_d_s.  This
+     sequence of words is placed on the command history list and
+     then parsed.  Finally each command in the current line is
+     executed.
+
+     When a login shell terminates it executes commands from the
+     file `.logout' in the users home directory.
+
+     LLeexxiiccaall ssttrruuccttuurree
+
+     The shell splits input lines into words at blanks and tabs
+     with the following exceptions.  The characters `&' `|' `;'
+     `<' `>' `(' `)' form separate words.  If doubled in `&&',
+     `||', `<<' or `>>' these pairs form single words.	These
+     parser metacharacters may be made part of other words, or
+     prevented their special meaning, by preceding them with `\'.
+     A newline preceded by a `\' is equivalent to a blank.
+
+     In addition strings enclosed in matched pairs of quotations,
+     `'', ``' or `"', form parts of a word; metacharacters in
+     these strings, including blanks and tabs, do not form
+
+
+
+Printed 7/9/88		 April 24, 1988                         1
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     separate words.  These quotations have semantics to be
+     described subsequently.  Within pairs of `'' or `"' charac-
+     ters a newline preceded by a `\' gives a true newline char-
+     acter.
+
+     When the shell's input is not a terminal, the character `#'
+     introduces a comment which continues to the end of the input
+     line.  It is prevented this special meaning when preceded by
+     `\' and in quotations using ``', `'', and `"'.
+
+     CCoommmmaannddss
+
+     A simple command is a sequence of words, the first of which
+     specifies the command to be executed.  A simple command or a
+     sequence of simple commands separated by `|' characters
+     forms a pipeline.	The output of each command in a pipeline
+     is connected to the input of the next.  Sequences of pipe-
+     lines may be separated by `;', and are then executed sequen-
+     tially.  A sequence of pipelines may be executed without
+     immediately waiting for it to terminate by following it with
+     an `&'.
+
+     Any of the above may be placed in `(' `)' to form a simple
+     command (which may be a component of a pipeline, etc.) It is
+     also possible to separate pipelines with `||' or `&&' indi-
+     cating, as in the C language, that the second is to be exe-
+     cuted only if the first fails or succeeds respectively. (See
+     _E_x_p_r_e_s_s_i_o_n_s.)
+
+     JJoobbss
+
+     The shell associates a _j_o_b with each pipeline.  It keeps a
+     table of current jobs, printed by the _j_o_b_s command, and
+     assigns them small integer numbers.  When a job is started
+     asynchronously with `&', the shell prints a line which looks
+     like:
+
+	  [1] 1234
+
+     indicating that the job which was started asynchronously was
+     job number 1 and had one (top-level) process, whose process
+     id was 1234.
+
+     If you are running a job and wish to do something else you
+     may hit the key ^^ZZ (control-Z) which sends a STOP signal to
+     the current job.  The shell will then normally indicate that
+     the job has been `Stopped', and print another prompt.  You
+     can then manipulate the state of this job, putting it in the
+     background with the _b_g command, or run some other commands
+     and then eventually bring the job back into the foreground
+     with the foreground command _f_g.  A ^^ZZ takes effect immedi-
+     ately and is like an interrupt in that pending output and
+
+
+
+Printed 7/9/88		 April 24, 1988                         2
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     unread input are discarded when it is typed.  There is
+     another special key ^^YY which does not generate a STOP signal
+     until a program attempts to _r_e_a_d(2) it.  This can usefully
+     be typed ahead when you have prepared some commands for a
+     job which you wish to stop after it has read them.
+
+     A job being run in the background will stop if it tries to
+     read from the terminal.  Background jobs are normally
+     allowed to produce output, but this can be disabled by giv-
+     ing the command ``stty tostop''.  If you set this tty
+     option, then background jobs will stop when they try to pro-
+     duce output like they do when they try to read input.
+
+     There are several ways to refer to jobs in the shell.  The
+     character `%' introduces a job name.  If you wish to refer
+     to job number 1, you can name it as `%1'.	Just naming a job
+     brings it to the foreground; thus `%1' is a synonym for `fg
+     %1', bringing job 1 back into the foreground.  Similarly
+     saying `%1 &' resumes job 1 in the background.  Jobs can
+     also be named by prefixes of the string typed in to start
+     them, if these prefixes are unambiguous, thus `%ex' would
+     normally restart a suspended _e_x(1) job, if there were only
+     one suspended job whose name began with the string `ex'.  It
+     is also possible to say `%?string' which specifies a job
+     whose text contains _s_t_r_i_n_g, if there is only one such job.
+
+     The shell maintains a notion of the current and previous
+     jobs.  In output pertaining to jobs, the current job is
+     marked with a `+' and the previous job with a `-'.  The
+     abbreviation `%+' refers to the current job and `%-' refers
+     to the previous job.  For close analogy with the syntax of
+     the _h_i_s_t_o_r_y mechanism (described below), `%%' is also a
+     synonym for the current job.
+
+     SSttaattuuss rreeppoorrttiinngg
+
+     This shell learns immediately whenever a process changes
+     state.  It normally informs you whenever a job becomes
+     blocked so that no further progress is possible, but only
+     just before it prints a prompt.  This is done so that it
+     does not otherwise disturb your work.  If, however, you set
+     the shell variable _n_o_t_i_f_y, the shell will notify you immedi-
+     ately of changes of status in background jobs.  There is
+     also a shell command _n_o_t_i_f_y which marks a single process so
+     that its status changes will be immediately reported.  By
+     default _n_o_t_i_f_y marks the current process; simply say
+     `notify' after starting a background job to mark it.
+
+     When you try to leave the shell while jobs are stopped, you
+     will be warned that `You have stopped jobs.'  You may use
+     the _j_o_b_s command to see what they are.  If you do this or
+     immediately try to exit again, the shell will not warn you a
+
+
+
+Printed 7/9/88		 April 24, 1988                         3
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     second time, and the suspended jobs will be terminated.
+
+     FFiillee NNaammee CCoommpplleettiioonn
+
+     When the file name completion feature is enabled by setting
+     the shell variable _f_i_l_e_c (see sseett), _c_s_h will interactively
+     complete file names and user names from unique prefixes,
+     when they are input from the terminal followed by the escape
+     character (the escape key, or control-[).	For example, if
+     the current directory looks like
+	       DSC.OLD	 bin	   cmd	     lib       xmpl.c
+	       DSC.NEW	 chaosnet  cmtest    mail      xmpl.o
+	       bench	 class	   dev	     mbox      xmpl.out
+     and the input is
+	       % vi ch<escape>
+     _c_s_h will complete the prefix ``ch'' to the only matching
+     file name ``chaosnet'', changing the input line to
+	       % vi chaosnet
+     However, given
+	       % vi D<escape>
+     _c_s_h will only expand the input to
+	       % vi DSC.
+     and will sound the terminal bell to indicate that the expan-
+     sion is incomplete, since there are two file names matching
+     the prefix ``D''.
+
+     If a partial file name is followed by the end-of-file char-
+     acter (usually control-D), then, instead of completing the
+     name, _c_s_h will list all file names matching the prefix.  For
+     example, the input
+	       % vi D<control-D>
+     causes all files beginning with ``D'' to be listed:
+	       DSC.NEW	 DSC.OLD
+     while the input line remains unchanged.
+
+     The same system of escape and end-of-file can also be used
+     to expand partial user names, if the word to be completed
+     (or listed) begins with the character ``~''.  For example,
+     typing
+	       cd ~ro<escape>
+     may produce the expansion
+	       cd ~root
+
+     The use of the terminal bell to signal errors or multiple
+     matches can be inhibited by setting the variable _n_o_b_e_e_p.
+
+     Normally, all files in the particular directory are candi-
+     dates for name completion.  Files with certain suffixes can
+     be excluded from consideration by setting the variable _f_i_g_-
+     _n_o_r_e to the list of suffixes to be ignored.  Thus, if _f_i_g_-
+     _n_o_r_e is set by the command
+	       % set fignore = (.o .out)
+
+
+
+Printed 7/9/88		 April 24, 1988                         4
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     then typing
+	       % vi x<escape>
+     would result in the completion to
+	       % vi xmpl.c
+     ignoring the files "xmpl.o" and "xmpl.out".  However, if the
+     only completion possible requires not ignoring these suf-
+     fixes, then they are not ignored.	In addition, _f_i_g_n_o_r_e does
+     not affect the listing of file names by control-D.  All
+     files are listed regardless of their suffixes.
+
+     SSuubbssttiittuuttiioonnss
+
+     We now describe the various transformations the shell per-
+     forms on the input in the order in which they occur.
+
+     HHiissttoorryy ssuubbssttiittuuttiioonnss
+
+     History substitutions place words from previous command
+     input as portions of new commands, making it easy to repeat
+     commands, repeat arguments of a previous command in the
+     current command, or fix spelling mistakes in the previous
+     command with little typing and a high degree of confidence.
+     History substitutions begin with the character `!' and may
+     begin aannyywwhheerree in the input stream (with the proviso that
+     they ddoo nnoott nest.) This `!' may be preceded by an `\' to
+     prevent its special meaning; for convenience, a `!' is
+     passed unchanged when it is followed by a blank, tab, new-
+     line, `=' or `('.	(History substitutions also occur when an
+     input line begins with `^'.  This special abbreviation will
+     be described later.) Any input line which contains history
+     substitution is echoed on the terminal before it is executed
+     as it could have been typed without history substitution.
+
+     Commands input from the terminal which consist of one or
+     more words are saved on the history list.	The history sub-
+     stitutions reintroduce sequences of words from these saved
+     commands into the input stream.  The size of which is con-
+     trolled by the _h_i_s_t_o_r_y variable; the previous command is
+     always retained, regardless of its value.	Commands are num-
+     bered sequentially from 1.
+
+     For definiteness, consider the following output from the
+     _h_i_s_t_o_r_y command:
+
+	   9  write michael
+	  10  ex write.c
+	  11  cat oldwrite.c
+	  12  diff *write.c
+
+     The commands are shown with their event numbers.  It is not
+     usually necessary to use event numbers, but the current
+     event number can be made part of the _p_r_o_m_p_t by placing an
+
+
+
+Printed 7/9/88		 April 24, 1988                         5
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     `!' in the prompt string.
+
+     With the current event 13 we can refer to previous events by
+     event number `!11', relatively as in `!-2' (referring to the
+     same event), by a prefix of a command word as in `!d' for
+     event 12 or `!wri' for event 9, or by a string contained in
+     a word in the command as in `!?mic?' also referring to event
+     9.  These forms, without further modification, simply rein-
+     troduce the words of the specified events, each separated by
+     a single blank.  As a special case `!!' refers to the previ-
+     ous command; thus `!!' alone is essentially a _r_e_d_o.
+
+     To select words from an event we can follow the event
+     specification by a `:' and a designator for the desired
+     words.  The words of an input line are numbered from 0, the
+     first (usually command) word being 0, the second word (first
+     argument) being 1, etc.  The basic word designators are:
+
+	  0    first (command) word
+	  _n    _n'th argument
+	  ^    first argument,	i.e. `1'
+	  $    last argument
+	  %    word matched by (immediately preceding) ?_s? search
+	  _x-_y  range of words
+	  -_y   abbreviates `0-_y'
+	  *    abbreviates `^-$', or nothing if only 1 word in event
+	  _x*   abbreviates `_x-$'
+	  _x-   like `_x*' but omitting word `$'
+
+     The `:' separating the event specification from the word
+     designator can be omitted if the argument selector begins
+     with a `^', `$', `*' `-' or `%'.  After the optional word
+     designator can be placed a sequence of modifiers, each pre-
+     ceded by a `:'.  The following modifiers are defined:
+
+	  h	 Remove a trailing pathname component, leaving the head.
+	  r	 Remove a trailing `.xxx' component, leaving the root name.
+	  e	 Remove all but the extension `.xxx' part.
+	  s/_l/_r/ Substitute _l for _r
+	  t	 Remove all leading pathname components, leaving the tail.
+	  &	 Repeat the previous substitution.
+	  g	 Apply the change globally, prefixing the above, e.g. `g&'.
+	  p	 Print the new command line but do not execute it.
+	  q	 Quote the substituted words, preventing further substitutions.
+	  x	 Like q, but break into words at blanks, tabs and newlines.
+
+     Unless preceded by a `g' the modification is applied only to
+     the first modifiable word.  With substitutions, it is an
+     error for no word to be applicable.
+
+     The left hand side of substitutions are not regular expres-
+     sions in the sense of the editors, but rather strings.  Any
+
+
+
+Printed 7/9/88		 April 24, 1988                         6
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     character may be used as the delimiter in place of `/'; a
+     `\' quotes the delimiter into the _l and _r strings.  The
+     character `&' in the right hand side is replaced by the text
+     from the left.  A `\' quotes `&' also.  A null _l uses the
+     previous string either from a _l or from a contextual scan
+     string _s in `!?_s?'.  The trailing delimiter in the substitu-
+     tion may be omitted if a newline follows immediately as may
+     the trailing `?' in a contextual scan.
+
+     A history reference may be given without an event specifica-
+     tion, e.g. `!$'.  In this case the reference is to the pre-
+     vious command unless a previous history reference occurred
+     on the same line in which case this form repeats the previ-
+     ous reference.  Thus `!?foo?^ !$' gives the first and last
+     arguments from the command matching `?foo?'.
+
+     A special abbreviation of a history reference occurs when
+     the first non-blank character of an input line is a `^'.
+     This is equivalent to `!:s^' providing a convenient short-
+     hand for substitutions on the text of the previous line.
+     Thus `^lb^lib' fixes the spelling of `lib' in the previous
+     command.  Finally, a history substitution may be surrounded
+     with `{' and `}' if necessary to insulate it from the char-
+     acters which follow.  Thus, after `ls -ld ~paul' we might do
+     `!{l}a' to do `ls -ld ~paula', while `!la' would look for a
+     command starting `la'.
+
+     QQuuoottaattiioonnss wwiitthh '' aanndd ""
+
+     The quotation of strings by `'' and `"' can be used to
+     prevent all or some of the remaining substitutions.  Strings
+     enclosed in `'' are prevented any further interpretation.
+     Strings enclosed in `"' may be expanded as described below.
+
+     In both cases the resulting text becomes (all or part of) a
+     single word; only in one special case (see _C_o_m_m_a_n_d _S_u_b_s_t_i_t_i_-
+     _t_i_o_n below) does a `"' quoted string yield parts of more
+     than one word; `'' quoted strings never do.
+
+     AAlliiaass ssuubbssttiittuuttiioonn
+
+     The shell maintains a list of aliases which can be esta-
+     blished, displayed and modified by the _a_l_i_a_s and _u_n_a_l_i_a_s
+     commands.	After a command line is scanned, it is parsed
+     into distinct commands and the first word of each command,
+     left-to-right, is checked to see if it has an alias.  If it
+     does, then the text which is the alias for that command is
+     reread with the history mechanism available as though that
+     command were the previous input line.  The resulting words
+     replace the command and argument list.  If no reference is
+     made to the history list, then the argument list is left
+     unchanged.
+
+
+
+Printed 7/9/88		 April 24, 1988                         7
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     Thus if the alias for `ls' is `ls -l' the command `ls /usr'
+     would map to `ls -l /usr', the argument list here being
+     undisturbed.  Similarly if the alias for `lookup' was `grep
+     !^ /etc/passwd' then `lookup bill' would map to `grep bill
+     /etc/passwd'.
+
+     If an alias is found, the word transformation of the input
+     text is performed and the aliasing process begins again on
+     the reformed input line.  Looping is prevented if the first
+     word of the new text is the same as the old by flagging it
+     to prevent further aliasing.  Other loops are detected and
+     cause an error.
+
+     Note that the mechanism allows aliases to introduce parser
+     metasyntax.  Thus we can `alias print 'pr \!* | lpr'' to
+     make a command which _p_r'_s its arguments to the line printer.
+
+     VVaarriiaabbllee ssuubbssttiittuuttiioonn
+
+     The shell maintains a set of variables, each of which has as
+     value a list of zero or more words.  Some of these variables
+     are set by the shell or referred to by it.  For instance,
+     the _a_r_g_v variable is an image of the shell's argument list,
+     and words of this variable's value are referred to in spe-
+     cial ways.
+
+     The values of variables may be displayed and changed by
+     using the _s_e_t and _u_n_s_e_t commands.	Of the variables referred
+     to by the shell a number are toggles; the shell does not
+     care what their value is, only whether they are set or not.
+     For instance, the _v_e_r_b_o_s_e variable is a toggle which causes
+     command input to be echoed.  The setting of this variable
+     results from the --vv command line option.
+
+     Other operations treat variables numerically.  The `@' com-
+     mand permits numeric calculations to be performed and the
+     result assigned to a variable.  Variable values are, how-
+     ever, always represented as (zero or more) strings.  For the
+     purposes of numeric operations, the null string is con-
+     sidered to be zero, and the second and subsequent words of
+     multiword values are ignored.
+
+     After the input line is aliased and parsed, and before each
+     command is executed, variable substitution is performed
+     keyed by `$' characters.  This expansion can be prevented by
+     preceding the `$' with a `\' except within `"'s where it
+     aallwwaayyss occurs, and within `''s where it nneevveerr occurs.
+     Strings quoted by ``' are interpreted later (see _C_o_m_m_a_n_d
+     _s_u_b_s_t_i_t_u_t_i_o_n below) so `$' substitution does not occur there
+     until later, if at all.  A `$' is passed unchanged if fol-
+     lowed by a blank, tab, or end-of-line.
+
+
+
+
+Printed 7/9/88		 April 24, 1988                         8
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     Input/output redirections are recognized before variable
+     expansion, and are variable expanded separately.  Otherwise,
+     the command name and entire argument list are expanded
+     together.	It is thus possible for the first (command) word
+     to this point to generate more than one word, the first of
+     which becomes the command name, and the rest of which become
+     arguments.
+
+     Unless enclosed in `"' or given the `:q' modifier the
+     results of variable substitution may eventually be command
+     and filename substituted.	Within `"', a variable whose
+     value consists of multiple words expands to a (portion of) a
+     single word, with the words of the variables value separated
+     by blanks.  When the `:q' modifier is applied to a substitu-
+     tion the variable will expand to multiple words with each
+     word separated by a blank and quoted to prevent later com-
+     mand or filename substitution.
+
+     The following metasequences are provided for introducing
+     variable values into the shell input.  Except as noted, it
+     is an error to reference a variable which is not set.
+
+     $name
+     ${name}
+	  Are replaced by the words of the value of variable
+	  _n_a_m_e, each separated by a blank.  Braces insulate _n_a_m_e
+	  from following characters which would otherwise be part
+	  of it.  Shell variables have names consisting of up to
+	  20 letters and digits starting with a letter.  The
+	  underscore character is considered a letter.
+	  If _n_a_m_e is not a shell variable, but is set in the
+	  environment, then that value is returned (but :: modif-
+	  iers and the other forms given below are not available
+	  in this case).
+
+     $name[selector]
+     ${name[selector]}
+	  May be used to select only some of the words from the
+	  value of _n_a_m_e. The selector is subjected to `$' substi-
+	  tution and may consist of a single number or two
+	  numbers separated by a `-'.  The first word of a vari-
+	  ables value is numbered `1'.	If the first number of a
+	  range is omitted it defaults to `1'.	If the last
+	  member of a range is omitted it defaults to `$#name'.
+	  The selector `*' selects all words.  It is not an error
+	  for a range to be empty if the second argument is omit-
+	  ted or in range.
+
+     $#name
+     ${#name}
+	  Gives the number of words in the variable.  This is
+	  useful for later use in a `[selector]'.
+
+
+
+Printed 7/9/88		 April 24, 1988                         9
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     $0
+	  Substitutes the name of the file from which command
+	  input is being read.	An error occurs if the name is
+	  not known.
+
+     $number
+     ${number}
+	  Equivalent to `$argv[number]'.
+
+     $*
+	  Equivalent to `$argv[*]'.
+
+     The modifiers `:e', `:h', `:t', `:r', `:q' and `:x' may be
+     applied to the substitutions above as may `:gh', `:gt' and
+     `:gr'.  If braces `{' '}' appear in the command form then
+     the modifiers must appear within the braces.  TThhee ccuurrrreenntt
+     iimmpplleemmeennttaattiioonn aalllloowwss oonnllyy oonnee ``::'' mmooddiiffiieerr oonn eeaacchh ``$$''
+     eexxppaannssiioonn..
+
+     The following substitutions may not be modified with `:'
+     modifiers.
+
+     $?name
+     ${?name}
+	  Substitutes the string `1' if name is set, `0' if it is
+	  not.
+
+     $?0
+	  Substitutes `1' if the current input filename is known,
+	  `0' if it is not.
+
+     $$
+	  Substitute the (decimal) process number of the (parent)
+	  shell.
+
+     $<
+	  Substitutes a line from the standard input, with no
+	  further interpretation thereafter.  It can be used to
+	  read from the keyboard in a shell script.
+
+     CCoommmmaanndd aanndd ffiilleennaammee ssuubbssttiittuuttiioonn
+
+     The remaining substitutions, command and filename substitu-
+     tion, are applied selectively to the arguments of builtin
+     commands.	This means that portions of expressions which are
+     not evaluated are not subjected to these expansions.  For
+     commands which are not internal to the shell, the command
+     name is substituted separately from the argument list.  This
+     occurs very late, after input-output redirection is per-
+     formed, and in a child of the main shell.
+
+
+
+
+
+Printed 7/9/88		 April 24, 1988                        10
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     CCoommmmaanndd ssuubbssttiittuuttiioonn
+
+     Command substitution is indicated by a command enclosed in
+     ``'.  The output from such a command is normally broken into
+     separate words at blanks, tabs and newlines, with null words
+     being discarded, this text then replacing the original
+     string.  Within `"'s, only newlines force new words; blanks
+     and tabs are preserved.
+
+     In any case, the single final newline does not force a new
+     word.  Note that it is thus possible for a command substitu-
+     tion to yield only part of a word, even if the command out-
+     puts a complete line.
+
+     FFiilleennaammee ssuubbssttiittuuttiioonn
+
+     If a word contains any of the characters `*', `?', `[' or
+     `{' or begins with the character `~', then that word is a
+     candidate for filename substitution, also known as `glob-
+     bing'.  This word is then regarded as a pattern, and
+     replaced with an alphabetically sorted list of file names
+     which match the pattern.  In a list of words specifying
+     filename substitution it is an error for no pattern to match
+     an existing file name, but it is not required for each pat-
+     tern to match.  Only the metacharacters `*', `?' and `['
+     imply pattern matching, the characters `~' and `{' being
+     more akin to abbreviations.
+
+     In matching filenames, the character `.' at the beginning of
+     a filename or immediately following a `/', as well as the
+     character `/' must be matched explicitly.	The character `*'
+     matches any string of characters, including the null string.
+     The character `?' matches any single character.  The
+     sequence `[...]' matches any one of the characters enclosed.
+     Within `[...]', a pair of characters separated by `-'
+     matches any character lexically between the two.
+
+     The character `~' at the beginning of a filename is used to
+     refer to home directories.  Standing alone, i.e. `~' it
+     expands to the invokers home directory as reflected in the
+     value of the variable _h_o_m_e. When followed by a name consist-
+     ing of letters, digits and `-' characters the shell searches
+     for a user with that name and substitutes their home direc-
+     tory;  thus `~ken' might expand to `/usr/ken' and
+     `~ken/chmach' to `/usr/ken/chmach'.  If the character `~' is
+     followed by a character other than a letter or `/' or
+     appears not at the beginning of a word, it is left undis-
+     turbed.
+
+     The metanotation `a{b,c,d}e' is a shorthand for `abe ace
+     ade'.  Left to right order is preserved, with results of
+     matches being sorted separately at a low level to preserve
+
+
+
+Printed 7/9/88		 April 24, 1988                        11
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     this order.  This construct may be nested.  Thus
+     `~source/s1/{oldls,ls}.c' expands to `/usr/source/s1/oldls.c
+     /usr/source/s1/ls.c' whether or not these files exist
+     without any chance of error if the home directory for
+     `source' is `/usr/source'.  Similarly `../{memo,*box}' might
+     expand to `../memo ../box ../mbox'.  (Note that `memo' was
+     not sorted with the results of matching `*box'.) As a spe-
+     cial case `{', `}' and `{}' are passed undisturbed.
+
+     IInnppuutt//oouuttppuutt
+
+     The standard input and standard output of a command may be
+     redirected with the following syntax:
+
+     < name
+	  Open file _n_a_m_e (which is first variable, command and
+	  filename expanded) as the standard input.
+
+     << word
+	  Read the shell input up to a line which is identical to
+	  _w_o_r_d. _W_o_r_d is not subjected to variable, filename or
+	  command substitution, and each input line is compared
+	  to _w_o_r_d before any substitutions are done on this input
+	  line.  Unless a quoting `\', `"', `'' or ``' appears in
+	  _w_o_r_d variable and command substitution is performed on
+	  the intervening lines, allowing `\' to quote `$', `\'
+	  and ``'.  Commands which are substituted have all
+	  blanks, tabs, and newlines preserved, except for the
+	  final newline which is dropped.  The resultant text is
+	  placed in an anonymous temporary file which is given to
+	  the command as standard input.
+
+     > name
+     >! name
+     >& name
+     >&! name
+	  The file _n_a_m_e is used as standard output.  If the file
+	  does not exist then it is created; if the file exists,
+	  its is truncated, its previous contents being lost.
+
+	  If the variable _n_o_c_l_o_b_b_e_r is set, then the file must
+	  not exist or be a character special file (e.g. a termi-
+	  nal or `/dev/null') or an error results.  This helps
+	  prevent accidental destruction of files.  In this case
+	  the `!' forms can be used and suppress this check.
+
+	  The forms involving `&' route the diagnostic output
+	  into the specified file as well as the standard output.
+	  _N_a_m_e is expanded in the same way as `<' input filenames
+	  are.
+
+
+
+
+
+Printed 7/9/88		 April 24, 1988                        12
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     >> name
+     >>& name
+     >>! name
+     >>&! name
+	  Uses file _n_a_m_e as standard output like `>' but places
+	  output at the end of the file.  If the variable
+	  _n_o_c_l_o_b_b_e_r is set, then it is an error for the file not
+	  to exist unless one of the `!' forms is given.  Other-
+	  wise similar to `>'.
+
+     A command receives the environment in which the shell was
+     invoked as modified by the input-output parameters and the
+     presence of the command in a pipeline.  Thus, unlike some
+     previous shells, commands run from a file of shell commands
+     have no access to the text of the commands by default;
+     rather they receive the original standard input of the
+     shell.  The `<<' mechanism should be used to present inline
+     data.  This permits shell command scripts to function as
+     components of pipelines and allows the shell to block read
+     its input.  Note that the default standard input for a com-
+     mand run detached is nnoott modified to be the empty file
+     `/dev/null'; rather the standard input remains as the origi-
+     nal standard input of the shell.  If this is a terminal and
+     if the process attempts to read from the terminal, then the
+     process will block and the user will be notified (see JJoobbss
+     above).
+
+     Diagnostic output may be directed through a pipe with the
+     standard output.  Simply use the form `|&' rather than just
+     `|'.
+
+     EExxpprreessssiioonnss
+
+     A number of the builtin commands (to be described subse-
+     quently) take expressions, in which the operators are simi-
+     lar to those of C, with the same precedence.  These expres-
+     sions appear in the @, _e_x_i_t, _i_f, and _w_h_i_l_e commands.  The
+     following operators are available:
+
+	  ||  &&  |  ^	&  ==  !=  =~  !~  <=  >=  <  >  <<  >>
+     +	-  *  /  %  !  ~  (  )
+
+     Here the precedence increases to the right, `==' `!=' `=~'
+     and `!~', `<=' `>=' `<' and `>', `<<' and `>>', `+' and `-',
+     `*' `/' and `%' being, in groups, at the same level.  The
+     `==' `!=' `=~' and `!~' operators compare their arguments as
+     strings; all others operate on numbers.  The operators `=~'
+     and `!~' are like `!=' and `==' except that the right hand
+     side is a _p_a_t_t_e_r_n (containing, e.g. `*'s, `?'s and instances
+     of `[...]') against which the left hand operand is matched.
+     This reduces the need for use of the _s_w_i_t_c_h statement in
+     shell scripts when all that is really needed is pattern
+
+
+
+Printed 7/9/88		 April 24, 1988                        13
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     matching.
+
+     Strings which begin with `0' are considered octal numbers.
+     Null or missing arguments are considered `0'.  The result of
+     all expressions are strings, which represent decimal
+     numbers.  It is important to note that no two components of
+     an expression can appear in the same word; except when adja-
+     cent to components of expressions which are syntactically
+     significant to the parser (`&' `|' `<' `>' `(' `)') they
+     should be surrounded by spaces.
+
+     Also available in expressions as primitive operands are com-
+     mand executions enclosed in `{' and `}' and file enquiries
+     of the form `-_l  name' where _l is one of:
+
+	  r    read access
+	  w    write access
+	  x    execute access
+	  e    existence
+	  o    ownership
+	  z    zero size
+	  f    plain file
+	  d    directory
+
+     The specified name is command and filename expanded and then
+     tested to see if it has the specified relationship to the
+     real user.  If the file does not exist or is inaccessible
+     then all enquiries return false, i.e. `0'.  Command execu-
+     tions succeed, returning true, i.e. `1', if the command
+     exits with status 0, otherwise they fail, returning false,
+     i.e. `0'.	If more detailed status information is required
+     then the command should be executed outside of an expression
+     and the variable _s_t_a_t_u_s examined.
+
+     CCoonnttrrooll ffllooww
+
+     The shell contains a number of commands which can be used to
+     regulate the flow of control in command files (shell
+     scripts) and (in limited but useful ways) from terminal
+     input.  These commands all operate by forcing the shell to
+     reread or skip in its input and, due to the implementation,
+     restrict the placement of some of the commands.
+
+     The _f_o_r_e_a_c_h, _s_w_i_t_c_h, and _w_h_i_l_e statements, as well as the
+     _i_f-_t_h_e_n-_e_l_s_e form of the _i_f statement require that the major
+     keywords appear in a single simple command on an input line
+     as shown below.
+
+     If the shell's input is not seekable, the shell buffers up
+     input whenever a loop is being read and performs seeks in
+     this internal buffer to accomplish the rereading implied by
+     the loop.	(To the extent that this allows, backward goto's
+
+
+
+Printed 7/9/88		 April 24, 1988                        14
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     will succeed on non-seekable inputs.)
+
+     BBuuiillttiinn ccoommmmaannddss
+
+     Builtin commands are executed within the shell.  If a buil-
+     tin command occurs as any component of a pipeline except the
+     last then it is executed in a subshell.
+
+     aalliiaass
+     aalliiaass name
+     aalliiaass name wordlist
+	  The first form prints all aliases.  The second form
+	  prints the alias for name.  The final form assigns the
+	  specified _w_o_r_d_l_i_s_t as the alias of _n_a_m_e; _w_o_r_d_l_i_s_t is
+	  command and filename substituted.  _N_a_m_e is not allowed
+	  to be _a_l_i_a_s or _u_n_a_l_i_a_s.
+
+     aalllloocc
+	  Shows the amount of dynamic memory acquired, broken
+	  down into used and free memory.  With an argument shows
+	  the number of free and used blocks in each size
+	  category.  The categories start at size 8 and double at
+	  each step.  This command's output may vary across sys-
+	  tem types, since systems other than the VAX may use a
+	  different memory allocator.
+
+     bbgg
+     bbgg %%job ...
+	  Puts the current or specified jobs into the background,
+	  continuing them if they were stopped.
+
+     bbrreeaakk
+	  Causes execution to resume after the _e_n_d of the nearest
+	  enclosing _f_o_r_e_a_c_h or _w_h_i_l_e. The remaining commands on
+	  the current line are executed.  Multi-level breaks are
+	  thus possible by writing them all on one line.
+
+     bbrreeaakkssww
+	  Causes a break from a _s_w_i_t_c_h, resuming after the _e_n_d_s_w.
+
+     ccaassee label:
+	  A label in a _s_w_i_t_c_h statement as discussed below.
+
+     ccdd
+     ccdd name
+     cchhddiirr
+     cchhddiirr name
+	  Change the shell's working directory to directory _n_a_m_e.
+	  If no argument is given then change to the home direc-
+	  tory of the user.
+	  If _n_a_m_e is not found as a subdirectory of the current
+	  directory (and does not begin with `/', `./' or `../'),
+
+
+
+Printed 7/9/88		 April 24, 1988                        15
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+	  then each component of the variable _c_d_p_a_t_h is checked
+	  to see if it has a subdirectory _n_a_m_e. Finally, if all
+	  else fails but _n_a_m_e is a shell variable whose value
+	  begins with `/', then this is tried to see if it is a
+	  directory.
+
+     ccoonnttiinnuuee
+	  Continue execution of the nearest enclosing _w_h_i_l_e or
+	  _f_o_r_e_a_c_h. The rest of the commands on the current line
+	  are executed.
+
+     ddeeffaauulltt::
+	  Labels the default case in a _s_w_i_t_c_h statement.  The
+	  default should come after all _c_a_s_e labels.
+
+     ddiirrss
+	  Prints the directory stack; the top of the stack is at
+	  the left, the first directory in the stack being the
+	  current directory.
+
+     eecchhoo wordlist
+     eecchhoo --nn wordlist
+	  The specified words are written to the shells standard
+	  output, separated by spaces, and terminated with a new-
+	  line unless the --nn option is specified.
+
+     eellssee
+     eenndd
+     eennddiiff
+     eennddssww
+	  See the description of the _f_o_r_e_a_c_h, _i_f, _s_w_i_t_c_h, and
+	  _w_h_i_l_e statements below.
+
+     eevvaall arg ...
+	  (As in _s_h(1).) The arguments are read as input to the
+	  shell and the resulting command(s) executed in the con-
+	  text of the current shell.  This is usually used to
+	  execute commands generated as the result of command or
+	  variable substitution, since parsing occurs before
+	  these substitutions.	See _t_s_e_t(1) for an example of
+	  using _e_v_a_l.
+
+     eexxeecc command
+	  The specified command is executed in place of the
+	  current shell.
+
+     eexxiitt
+     eexxiitt(expr)
+	  The shell exits either with the value of the _s_t_a_t_u_s
+	  variable (first form) or with the value of the speci-
+	  fied _e_x_p_r (second form).
+
+
+
+
+Printed 7/9/88		 April 24, 1988                        16
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     ffgg
+     ffgg %%job ...
+	  Brings the current or specified jobs into the fore-
+	  ground, continuing them if they were stopped.
+
+     ffoorreeaacchh name (wordlist)
+	 ...
+     eenndd
+	  The variable _n_a_m_e is successively set to each member of
+	  _w_o_r_d_l_i_s_t and the sequence of commands between this com-
+	  mand and the matching _e_n_d are executed.  (Both _f_o_r_e_a_c_h
+	  and _e_n_d must appear alone on separate lines.)
+
+	  The builtin command _c_o_n_t_i_n_u_e may be used to continue
+	  the loop prematurely and the builtin command _b_r_e_a_k to
+	  terminate it prematurely.  When this command is read
+	  from the terminal, the loop is read up once prompting
+	  with `?' before any statements in the loop are exe-
+	  cuted.  If you make a mistake typing in a loop at the
+	  terminal you can rub it out.
+
+     gglloobb wordlist
+	  Like _e_c_h_o but no `\' escapes are recognized and words
+	  are delimited by null characters in the output.  Useful
+	  for programs which wish to use the shell to filename
+	  expand a list of words.
+
+     ggoottoo word
+	  The specified _w_o_r_d is filename and command expanded to
+	  yield a string of the form `label'.  The shell rewinds
+	  its input as much as possible and searches for a line
+	  of the form `label:' possibly preceded by blanks or
+	  tabs.  Execution continues after the specified line.
+
+     hhaasshhssttaatt
+	  Print a statistics line indicating how effective the
+	  internal hash table has been at locating commands (and
+	  avoiding _e_x_e_c's).  An _e_x_e_c is attempted for each com-
+	  ponent of the _p_a_t_h where the hash function indicates a
+	  possible hit, and in each component which does not
+	  begin with a `/'.
+
+     hhiissttoorryy
+     hhiissttoorryy _n
+     hhiissttoorryy --rr _n
+     hhiissttoorryy --hh _n
+	  Displays the history event list; if _n is given only the
+	  _n most recent events are printed.  The --rr option rev-
+	  erses the order of printout to be most recent first
+	  rather than oldest first.  The --hh option causes the
+	  history list to be printed without leading numbers.
+	  This is used to produce files suitable for sourceing
+
+
+
+Printed 7/9/88		 April 24, 1988                        17
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+	  using the -h option to _s_o_u_r_c_e.
+
+     iiff (expr) command
+	  If the specified expression evaluates true, then the
+	  single _c_o_m_m_a_n_d with arguments is executed.  Variable
+	  substitution on _c_o_m_m_a_n_d happens early, at the same time
+	  it does for the rest of the _i_f command.  _C_o_m_m_a_n_d must
+	  be a simple command, not a pipeline, a command list, or
+	  a parenthesized command list.  Input/output redirection
+	  occurs even if _e_x_p_r is false, when command is nnoott exe-
+	  cuted (this is a bug).
+
+     iiff (expr) tthheenn
+	 ...
+     eellssee iiff (expr2) tthheenn
+	 ...
+     eellssee
+	 ...
+     eennddiiff
+	  If the specified _e_x_p_r is true then the commands to the
+	  first _e_l_s_e are executed; otherwise if _e_x_p_r_2 is true
+	  then the commands to the second _e_l_s_e are executed, etc.
+	  Any number of _e_l_s_e-_i_f pairs are possible; only one
+	  _e_n_d_i_f is needed.  The _e_l_s_e part is likewise optional.
+	  (The words _e_l_s_e and _e_n_d_i_f must appear at the beginning
+	  of input lines; the _i_f must appear alone on its input
+	  line or after an _e_l_s_e.)
+
+     jjoobbss
+     jjoobbss --ll
+	  Lists the active jobs; given the --ll options lists pro-
+	  cess id's in addition to the normal information.
+
+     kkiillll %%job
+     kkiillll --sig %%job ...
+     kkiillll pid
+     kkiillll --sig pid ...
+     kkiillll --ll
+	  Sends either the TERM (terminate) signal or the speci-
+	  fied signal to the specified jobs or processes.  Sig-
+	  nals are either given by number or by names (as given
+	  in /_u_s_r/_i_n_c_l_u_d_e/_s_i_g_n_a_l._h, stripped of the prefix
+	  ``SIG'').  The signal names are listed by ``kill -l''.
+	  There is no default, saying just `kill' does not send a
+	  signal to the current job.  If the signal being sent is
+	  TERM (terminate) or HUP (hangup), then the job or pro-
+	  cess will be sent a CONT (continue) signal as well.
+
+     lliimmiitt
+     lliimmiitt _r_e_s_o_u_r_c_e
+     lliimmiitt _r_e_s_o_u_r_c_e _m_a_x_i_m_u_m-_u_s_e
+
+
+
+
+Printed 7/9/88		 April 24, 1988                        18
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     lliimmiitt --hh
+     lliimmiitt --hh _r_e_s_o_u_r_c_e
+     lliimmiitt --hh _r_e_s_o_u_r_c_e _m_a_x_i_m_u_m-_u_s_e
+	  Limits the consumption by the current process and each
+	  process it creates to not individually exceed _m_a_x_i_m_u_m-
+	  _u_s_e on the specified _r_e_s_o_u_r_c_e.  If no _m_a_x_i_m_u_m-_u_s_e is
+	  given, then the current limit is printed; if no
+	  _r_e_s_o_u_r_c_e is given, then all limitations are given.  If
+	  the --hh flag is given, the hard limits are used instead
+	  of the current limits.  The hard limits impose a ceil-
+	  ing on the values of the current limits.  Only the
+	  super-user may raise the hard limits, but a user may
+	  lower or raise the current limits within the legal
+	  range.
+
+	  Resources controllable currently include _c_p_u_t_i_m_e (the
+	  maximum number of cpu-seconds to be used by each pro-
+	  cess), _f_i_l_e_s_i_z_e (the largest single file which can be
+	  created), _d_a_t_a_s_i_z_e (the maximum growth of the
+	  data+stack region via _s_b_r_k(2) beyond the end of the
+	  program text), _s_t_a_c_k_s_i_z_e (the maximum size of the
+	  automatically-extended stack region), and _c_o_r_e_d_u_m_p_s_i_z_e
+	  (the size of the largest core dump that will be
+	  created).
+
+	  The _m_a_x_i_m_u_m-_u_s_e may be given as a (floating point or
+	  integer) number followed by a scale factor.  For all
+	  limits other than _c_p_u_t_i_m_e the default scale is `k' or
+	  `kilobytes' (1024 bytes); a scale factor of `m' or
+	  `megabytes' may also be used.  For _c_p_u_t_i_m_e the default
+	  scaling is `seconds', while `m' for minutes or `h' for
+	  hours, or a time of the form `mm:ss' giving minutes and
+	  seconds may be used.
+
+	  For both _r_e_s_o_u_r_c_e names and scale factors, unambiguous
+	  prefixes of the names suffice.
+
+     llooggiinn
+	  Terminate a login shell, replacing it with an instance
+	  of //bbiinn//llooggiinn.. This is one way to log off, included for
+	  compatibility with _s_h(1).
+
+     llooggoouutt
+	  Terminate a login shell.  Especially useful if
+	  _i_g_n_o_r_e_e_o_f is set.
+
+     nniiccee
+     nniiccee +number
+     nniiccee command
+     nniiccee +number command
+	  The first form sets the scheduling priority for this
+	  shell to 4.  The second form sets the priority to the
+
+
+
+Printed 7/9/88		 April 24, 1988                        19
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+	  given number.  The final two forms run command at
+	  priority 4 and _n_u_m_b_e_r respectively.  The greater the
+	  number, the less cpu the process will get.  The super-
+	  user may specify negative priority by using `nice
+	  -number ...'.  Command is always executed in a sub-
+	  shell, and the restrictions placed on commands in sim-
+	  ple _i_f statements apply.
+
+     nnoohhuupp
+     nnoohhuupp command
+	  The first form can be used in shell scripts to cause
+	  hangups to be ignored for the remainder of the script.
+	  The second form causes the specified command to be run
+	  with hangups ignored.  All processes detached with `&'
+	  are effectively _n_o_h_u_p'_e_d.
+
+     nnoottiiffyy
+     nnoottiiffyy %%job ...
+	  Causes the shell to notify the user asynchronously when
+	  the status of the current or specified jobs changes;
+	  normally notification is presented before a prompt.
+	  This is automatic if the shell variable _n_o_t_i_f_y is set.
+
+     oonniinnttrr
+     oonniinnttrr  -
+     oonniinnttrr  label
+	  Control the action of the shell on interrupts.  The
+	  first form restores the default action of the shell on
+	  interrupts which is to terminate shell scripts or to
+	  return to the terminal command input level.  The second
+	  form `onintr -' causes all interrupts to be ignored.
+	  The final form causes the shell to execute a `goto
+	  label' when an interrupt is received or a child process
+	  terminates because it was interrupted.
+
+	  In any case, if the shell is running detached and
+	  interrupts are being ignored, all forms of _o_n_i_n_t_r have
+	  no meaning and interrupts continue to be ignored by the
+	  shell and all invoked commands.
+
+     ppooppdd
+     ppooppdd +n
+	  Pops the directory stack, returning to the new top
+	  directory.  With an argument `+_n' discards the _nth
+	  entry in the stack.  The elements of the directory
+	  stack are numbered from 0 starting at the top.
+
+     ppuusshhdd
+     ppuusshhdd name
+     ppuusshhdd +n
+	  With no arguments, _p_u_s_h_d exchanges the top two elements
+	  of the directory stack.  Given a _n_a_m_e argument, _p_u_s_h_d
+
+
+
+Printed 7/9/88		 April 24, 1988                        20
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+	  changes to the new directory (ala _c_d) and pushes the
+	  old current working directory (as in _c_s_w) onto the
+	  directory stack.  With a numeric argument, rotates the
+	  _nth argument of the directory stack around to be the
+	  top element and changes to it.  The members of the
+	  directory stack are numbered from the top starting at
+	  0.
+
+     rreehhaasshh
+	  Causes the internal hash table of the contents of the
+	  directories in the _p_a_t_h variable to be recomputed.
+	  This is needed if new commands are added to directories
+	  in the _p_a_t_h while you are logged in.	This should only
+	  be necessary if you add commands to one of your own
+	  directories, or if a systems programmer changes the
+	  contents of one of the system directories.
+
+     rreeppeeaatt count command
+	  The specified _c_o_m_m_a_n_d which is subject to the same res-
+	  trictions as the _c_o_m_m_a_n_d in the one line _i_f statement
+	  above, is executed _c_o_u_n_t times.  I/O redirections occur
+	  exactly once, even if _c_o_u_n_t is 0.
+
+     sseett
+     sseett name
+     sseett name=word
+     sseett name[index]=word
+     sseett name=(wordlist)
+	  The first form of the command shows the value of all
+	  shell variables.  Variables which have other than a
+	  single word as value print as a parenthesized word
+	  list.  The second form sets _n_a_m_e to the null string.
+	  The third form sets _n_a_m_e to the single _w_o_r_d. The fourth
+	  form sets the _i_n_d_e_x'_t_h component of name to word; this
+	  component must already exist.  The final form sets _n_a_m_e
+	  to the list of words in _w_o_r_d_l_i_s_t. In all cases the
+	  value is command and filename expanded.
+
+	  These arguments may be repeated to set multiple values
+	  in a single set command.  Note however, that variable
+	  expansion happens for all arguments before any setting
+	  occurs.
+
+     sseetteennvv
+     sseetteennvv name value
+     sseetteennvv name
+	  The first form lists all current environment variables.
+	  The last form sets the value of environment variable
+	  _n_a_m_e to be _v_a_l_u_e, a single string.  The second form
+	  sets _n_a_m_e to an empty string.  The most commonly used
+	  environment variable USER, TERM, and PATH are automati-
+	  cally imported to and exported from the _c_s_h variables
+
+
+
+Printed 7/9/88		 April 24, 1988                        21
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+	  _u_s_e_r, _t_e_r_m, and _p_a_t_h; there is no need to use _s_e_t_e_n_v
+	  for these.
+
+     sshhiifftt
+     sshhiifftt variable
+	  The members of _a_r_g_v are shifted to the left, discarding
+	  _a_r_g_v[_1]. It is an error for _a_r_g_v not to be set or to
+	  have less than one word as value.  The second form per-
+	  forms the same function on the specified variable.
+
+     ssoouurrccee name
+     ssoouurrccee --hh name
+	  The shell reads commands from _n_a_m_e. _S_o_u_r_c_e commands may
+	  be nested; if they are nested too deeply the shell may
+	  run out of file descriptors.	An error in a _s_o_u_r_c_e at
+	  any level terminates all nested _s_o_u_r_c_e commands.  Nor-
+	  mally input during _s_o_u_r_c_e commands is not placed on the
+	  history list; the -h option causes the commands to be
+	  placed in the history list without being executed.
+
+     ssttoopp
+     ssttoopp %%job ...
+	  Stops the current or specified job which is executing
+	  in the background.
+
+     ssuussppeenndd
+	  Causes the shell to stop in its tracks, much as if it
+	  had been sent a stop signal with ^^ZZ.	This is most
+	  often used to stop shells started by _s_u(1).
+
+     sswwiittcchh (string)
+     ccaassee str1:
+	 ...
+       bbrreeaakkssww
+     ...
+     ddeeffaauulltt::
+	 ...
+       bbrreeaakkssww
+     eennddssww
+	  Each case label is successively matched, against the
+	  specified _s_t_r_i_n_g which is first command and filename
+	  expanded.  The file metacharacters `*', `?' and `[...]'
+	  may be used in the case labels, which are variable
+	  expanded.  If none of the labels match before a
+	  `default' label is found, then the execution begins
+	  after the default label.  Each case label and the
+	  default label must appear at the beginning of a line.
+	  The command _b_r_e_a_k_s_w causes execution to continue after
+	  the _e_n_d_s_w. Otherwise control may fall through case
+	  labels and default labels as in C.  If no label matches
+	  and there is no default, execution continues after the
+	  _e_n_d_s_w.
+
+
+
+Printed 7/9/88		 April 24, 1988                        22
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     ttiimmee
+     ttiimmee command
+	  With no argument, a summary of time used by this shell
+	  and its children is printed.	If arguments are given
+	  the specified simple command is timed and a time sum-
+	  mary as described under the _t_i_m_e variable is printed.
+	  If necessary, an extra shell is created to print the
+	  time statistic when the command completes.
+
+     uummaasskk
+     uummaasskk value
+	  The file creation mask is displayed (first form) or set
+	  to the specified value (second form).  The mask is
+	  given in octal.  Common values for the mask are 002
+	  giving all access to the group and read and execute
+	  access to others or 022 giving all access except no
+	  write access for users in the group or others.
+
+     uunnaalliiaass pattern
+	  All aliases whose names match the specified pattern are
+	  discarded.  Thus all aliases are removed by `unalias
+	  *'.  It is not an error for nothing to be _u_n_a_l_i_a_s_e_d.
+
+     uunnhhaasshh
+	  Use of the internal hash table to speed location of
+	  executed programs is disabled.
+
+     uunnlliimmiitt
+     uunnlliimmiitt _r_e_s_o_u_r_c_e
+     uunnlliimmiitt --hh
+     uunnlliimmiitt --hh _r_e_s_o_u_r_c_e
+	  Removes the limitation on _r_e_s_o_u_r_c_e.  If no _r_e_s_o_u_r_c_e is
+	  specified, then all _r_e_s_o_u_r_c_e limitations are removed.
+	  If --hh is given, the corresponding hard limits are
+	  removed.  Only the super-user may do this.
+
+     uunnsseett pattern
+	  All variables whose names match the specified pattern
+	  are removed.	Thus all variables are removed by `unset
+	  *'; this has noticeably distasteful side-effects.  It
+	  is not an error for nothing to be _u_n_s_e_t.
+
+     uunnsseetteennvv pattern
+	  Removes all variables whose name match the specified
+	  pattern from the environment.  See also the _s_e_t_e_n_v com-
+	  mand above and _p_r_i_n_t_e_n_v(1).
+
+     wwaaiitt
+	  All background jobs are waited for.  It the shell is
+	  interactive, then an interrupt can disrupt the wait, at
+	  which time the shell prints names and job numbers of
+	  all jobs known to be outstanding.
+
+
+
+Printed 7/9/88		 April 24, 1988                        23
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     wwhhiillee (expr)
+	 ...
+     eenndd
+	  While the specified expression evaluates non-zero, the
+	  commands between the _w_h_i_l_e and the matching end are
+	  evaluated.  _B_r_e_a_k and _c_o_n_t_i_n_u_e may be used to terminate
+	  or continue the loop prematurely.  (The _w_h_i_l_e and _e_n_d
+	  must appear alone on their input lines.) Prompting
+	  occurs here the first time through the loop as for the
+	  _f_o_r_e_a_c_h statement if the input is a terminal.
+
+     %%job
+	  Brings the specified job into the foreground.
+
+     %%job &&
+	  Continues the specified job in the background.
+
+     @@
+     @@ name = expr
+     @@ name[index] = expr
+	  The first form prints the values of all the shell vari-
+	  ables.  The second form sets the specified _n_a_m_e to the
+	  value of _e_x_p_r. If the expression contains `<', `>', `&'
+	  or `|' then at least this part of the expression must
+	  be placed within `(' `)'.  The third form assigns the
+	  value of _e_x_p_r to the _i_n_d_e_x'_t_h argument of _n_a_m_e. Both
+	  _n_a_m_e and its _i_n_d_e_x'_t_h component must already exist.
+
+	  The operators `*=', `+=', etc are available as in C.
+	  The space separating the name from the assignment
+	  operator is optional.  Spaces are, however, mandatory
+	  in separating components of _e_x_p_r which would otherwise
+	  be single words.
+
+	  Special postfix `++' and `--' operators increment and
+	  decrement _n_a_m_e respectively, i.e. `@	i++'.
+
+     PPrree--ddeeffiinneedd aanndd eennvviirroonnmmeenntt vvaarriiaabblleess
+
+     The following variables have special meaning to the shell.
+     Of these, _a_r_g_v, _c_w_d, _h_o_m_e, _p_a_t_h, _p_r_o_m_p_t, _s_h_e_l_l and _s_t_a_t_u_s
+     are always set by the shell.  Except for _c_w_d and _s_t_a_t_u_s this
+     setting occurs only at initialization; these variables will
+     not then be modified unless this is done explicitly by the
+     user.
+
+     This shell copies the environment variable USER into the
+     variable _u_s_e_r, TERM into _t_e_r_m, and HOME into _h_o_m_e, and
+     copies these back into the environment whenever the normal
+     shell variables are reset.  The environment variable PATH is
+     likewise handled; it is not necessary to worry about its
+     setting other than in the file ._c_s_h_r_c as inferior _c_s_h
+
+
+
+Printed 7/9/88		 April 24, 1988                        24
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     processes will import the definition of _p_a_t_h from the
+     environment, and re-export it if you then change it.
+
+     aarrggvv	    Set to the arguments to the shell, it is from
+		    this variable that positional parameters are
+		    substituted, i.e. `$1' is replaced by
+		    `$argv[1]', etc.
+
+     ccddppaatthh	    Gives a list of alternate directories
+		    searched to find subdirectories in _c_h_d_i_r com-
+		    mands.
+
+     ccwwdd	    The full pathname of the current directory.
+
+     eecchhoo	    Set when the --xx command line option is given.
+		    Causes each command and its arguments to be
+		    echoed just before it is executed.	For non-
+		    builtin commands all expansions occur before
+		    echoing.  Builtin commands are echoed before
+		    command and filename substitution, since
+		    these substitutions are then done selec-
+		    tively.
+
+     ffiilleecc	    Enable file name completion.
+
+     hhiissttcchhaarrss	    Can be given a string value to change the
+		    characters used in history substitution.  The
+		    first character of its value is used as the
+		    history substitution character, replacing the
+		    default character !.  The second character of
+		    its value replaces the character |^ in quick
+		    substitutions.
+
+     hhiissttoorryy	    Can be given a numeric value to control the
+		    size of the history list.  Any command which
+		    has been referenced in this many events will
+		    not be discarded.  Too large values of _h_i_s_-
+		    _t_o_r_y may run the shell out of memory.  The
+		    last executed command is always saved on the
+		    history list.
+
+     hhoommee	    The home directory of the invoker, initial-
+		    ized from the environment.	The filename
+		    expansion of `~~' refers to this variable.
+
+     iiggnnoorreeeeooff	    If set the shell ignores end-of-file from
+		    input devices which are terminals.	This
+		    prevents shells from accidentally being
+		    killed by control-D's.
+
+     mmaaiill	    The files where the shell checks for mail.
+		    This is done after each command completion
+
+
+
+Printed 7/9/88		 April 24, 1988                        25
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+		    which will result in a prompt, if a specified
+		    interval has elapsed.  The shell says `You
+		    have new mail.' if the file exists with an
+		    access time not greater than its modify time.
+
+		    If the first word of the value of _m_a_i_l is
+		    numeric it specifies a different mail check-
+		    ing interval, in seconds, than the default,
+		    which is 10 minutes.
+
+		    If multiple mail files are specified, then
+		    the shell says `New mail in _n_a_m_e' when there
+		    is mail in the file _n_a_m_e.
+
+     nnoocclloobbbbeerr	    As described in the section on _I_n_p_u_t/_o_u_t_p_u_t,
+		    restrictions are placed on output redirection
+		    to insure that files are not accidentally
+		    destroyed, and that `>>' redirections refer
+		    to existing files.
+
+     nnoogglloobb	    If set, filename expansion is inhibited.
+		    This is most useful in shell scripts which
+		    are not dealing with filenames, or after a
+		    list of filenames has been obtained and
+		    further expansions are not desirable.
+
+     nnoonnoommaattcchh	    If set, it is not an error for a filename
+		    expansion to not match any existing files;
+		    rather the primitive pattern is returned.  It
+		    is still an error for the primitive pattern
+		    to be malformed, i.e.  `echo [' still gives
+		    an error.
+
+     nnoottiiffyy	    If set, the shell notifies asynchronously of
+		    job completions.  The default is to rather
+		    present job completions just before printing
+		    a prompt.
+
+     ppaatthh	    Each word of the path variable specifies a
+		    directory in which commands are to be sought
+		    for execution.  A null word specifies the
+		    current directory.	If there is no _p_a_t_h vari-
+		    able then only full path names will execute.
+		    The usual search path is `.', `/bin' and
+		    `/usr/bin', but this may vary from system to
+		    system.  For the super-user the default
+		    search path is `/etc', `/bin' and `/usr/bin'.
+		    A shell which is given neither the --cc nor the
+		    --tt option will normally hash the contents of
+		    the directories in the _p_a_t_h variable after
+		    reading ._c_s_h_r_c, and each time the _p_a_t_h vari-
+		    able is reset.  If new commands are added to
+
+
+
+Printed 7/9/88		 April 24, 1988                        26
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+		    these directories while the shell is active,
+		    it may be necessary to give the _r_e_h_a_s_h or the
+		    commands may not be found.
+
+     pprroommpptt	    The string which is printed before each com-
+		    mand is read from an interactive terminal
+		    input.  If a `!' appears in the string it
+		    will be replaced by the current event number
+		    unless a preceding `\' is given.  Default is
+		    `% ', or `# ' for the super-user.
+
+     ssaavveehhiisstt	    is given a numeric value to control the
+		    number of entries of the history list that
+		    are saved in ~/.history when the user logs
+		    out.  Any command which has been referenced
+		    in this many events will be saved.	During
+		    start up the shell sources ~/.history into
+		    the history list enabling history to be saved
+		    across logins.  Too large values of _s_a_v_e_h_i_s_t
+		    will slow down the shell during start up.
+
+     sshheellll	    The file in which the shell resides.  This is
+		    used in forking shells to interpret files
+		    which have execute bits set, but which are
+		    not executable by the system.  (See the
+		    description of _N_o_n-_b_u_i_l_t_i_n _C_o_m_m_a_n_d _E_x_e_c_u_t_i_o_n
+		    below.) Initialized to the (system-dependent)
+		    home of the shell.
+
+     ssttaattuuss	    The status returned by the last command.  If
+		    it terminated abnormally, then 0200 is added
+		    to the status.  Builtin commands which fail
+		    return exit status `1', all other builtin
+		    commands set status `0'.
+
+     ttiimmee	    Controls automatic timing of commands.  If
+		    set, then any command which takes more than
+		    this many cpu seconds will cause a line giv-
+		    ing user, system, and real times and a utili-
+		    zation percentage which is the ratio of user
+		    plus system times to real time to be printed
+		    when it terminates.
+
+     vveerrbboossee	    Set by the --vv command line option, causes the
+		    words of each command to be printed after
+		    history substitution.
+
+     NNoonn--bbuuiillttiinn ccoommmmaanndd eexxeeccuuttiioonn
+
+     When a command to be executed is found to not be a builtin
+     command the shell attempts to execute the command via
+     _e_x_e_c_v_e(2).  Each word in the variable _p_a_t_h names a directory
+
+
+
+Printed 7/9/88		 April 24, 1988                        27
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     from which the shell will attempt to execute the command.
+     If it is given neither a --cc nor a --tt option, the shell will
+     hash the names in these directories into an internal table
+     so that it will only try an _e_x_e_c in a directory if there is
+     a possibility that the command resides there.  This greatly
+     speeds command location when a large number of directories
+     are present in the search path.  If this mechanism has been
+     turned off (via _u_n_h_a_s_h), or if the shell was given a --cc or
+     --tt argument, and in any case for each directory component of
+     _p_a_t_h which does not begin with a `/', the shell concatenates
+     with the given command name to form a path name of a file
+     which it then attempts to execute.
+
+     Parenthesized commands are always executed in a subshell.
+     Thus `(cd ; pwd) ; pwd' prints the _h_o_m_e directory; leaving
+     you where you were (printing this after the home directory),
+     while `cd ; pwd' leaves you in the _h_o_m_e directory.
+     Parenthesized commands are most often used to prevent _c_h_d_i_r
+     from affecting the current shell.
+
+     If the file has execute permissions but is not an executable
+     binary to the system, then it is assumed to be a file con-
+     taining shell commands and a new shell is spawned to read
+     it.
+
+     If there is an _a_l_i_a_s for _s_h_e_l_l then the words of the alias
+     will be prepended to the argument list to form the shell
+     command.  The first word of the _a_l_i_a_s should be the full
+     path name of the shell (e.g. `$shell').  Note that this is a
+     special, late occurring, case of _a_l_i_a_s substitution, and
+     only allows words to be prepended to the argument list
+     without modification.
+
+     AArrgguummeenntt lliisstt pprroocceessssiinngg
+
+     If argument 0 to the shell is `-' then this is a login
+     shell.  The flag arguments are interpreted as follows:
+
+     --bb   This flag forces a ``break'' from option processing,
+	  causing any further shell arguments to be treated as
+	  non-option arguments.  The remaining arguments will not
+	  be interpreted as shell options.  This may be used to
+	  pass options to a shell script without confusion or
+	  possible subterfuge.	The shell will not run a set-user
+	  ID script without this option.
+
+     --cc   Commands are read from the (single) following argument
+	  which must be present.  Any remaining arguments are
+	  placed in _a_r_g_v.
+
+     --ee   The shell exits if any invoked command terminates
+	  abnormally or yields a non-zero exit status.
+
+
+
+Printed 7/9/88		 April 24, 1988                        28
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     --ff   The shell will start faster, because it will neither
+	  search for nor execute commands from the file `.cshrc'
+	  in the invoker's home directory.
+
+     --ii   The shell is interactive and prompts for its top-level
+	  input, even if it appears to not be a terminal.  Shells
+	  are interactive without this option if their inputs and
+	  outputs are terminals.
+
+     --nn   Commands are parsed, but not executed.  This aids in
+	  syntactic checking of shell scripts.
+
+     --ss   Command input is taken from the standard input.
+
+     --tt   A single line of input is read and executed.	A `\' may
+	  be used to escape the newline at the end of this line
+	  and continue onto another line.
+
+     --vv   Causes the _v_e_r_b_o_s_e variable to be set, with the effect
+	  that command input is echoed after history substitu-
+	  tion.
+
+     --xx   Causes the _e_c_h_o variable to be set, so that commands
+	  are echoed immediately before execution.
+
+     --VV   Causes the _v_e_r_b_o_s_e variable to be set even before
+	  `.cshrc' is executed.
+
+     --XX   Is to --xx as --VV is to --vv..
+
+     After processing of flag arguments, if arguments remain but
+     none of the --cc,, --ii,, --ss,, or --tt options was given, the first
+     argument is taken as the name of a file of commands to be
+     executed.	The shell opens this file, and saves its name for
+     possible resubstitution by `$0'.  Since many systems use
+     either the standard version 6 or version 7 shells whose
+     shell scripts are not compatible with this shell, the shell
+     will execute such a `standard' shell if the first character
+     of a script is not a `#', i.e. if the script does not start
+     with a comment.  Remaining arguments initialize the variable
+     _a_r_g_v.
+
+     SSiiggnnaall hhaannddlliinngg
+
+     The shell normally ignores _q_u_i_t signals.  Jobs running
+     detached (either by `&' or the _b_g or %%...... && commands) are
+     immune to signals generated from the keyboard, including
+     hangups.  Other signals have the values which the shell
+     inherited from its parent.  The shells handling of inter-
+     rupts and terminate signals in shell scripts can be con-
+     trolled by _o_n_i_n_t_r. Login shells catch the _t_e_r_m_i_n_a_t_e signal;
+     otherwise this signal is passed on to children from the
+
+
+
+Printed 7/9/88		 April 24, 1988                        29
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     state in the shell's parent.  In no case are interrupts
+     allowed when a login shell is reading the file `.logout'.
+
+AAUUTTHHOORR
+     William Joy.  Job control and directory stack features first
+     implemented by J.E. Kulp of I.I.A.S.A, Laxenburg, Austria,
+     with different syntax than that used now.	File name comple-
+     tion code written by Ken Greer, HP Labs.
+
+FFIILLEESS
+     ~/.cshrc	      Read at beginning of execution by each shell.
+     ~/.login	      Read by login shell, after `.cshrc' at login.
+     ~/.logout	      Read by login shell, at logout.
+     /bin/sh	      Standard shell, for shell scripts not starting with a `#'.
+     /tmp/sh*	      Temporary file for `<<'.
+     /etc/passwd      Source of home directories for `~name'.
+
+LLIIMMIITTAATTIIOONNSS
+     Words can be no longer than 1024 characters.  The system
+     limits argument lists to 10240 characters.  The number of
+     arguments to a command which involves filename expansion is
+     limited to 1/6'th the number of characters allowed in an
+     argument list.  Command substitutions may substitute no more
+     characters than are allowed in an argument list.  To detect
+     looping, the shell restricts the number of _a_l_i_a_s substitu-
+     tions on a single line to 20.
+
+SSEEEE AALLSSOO
+     sh(1), access(2), execve(2), fork(2), killpg(2), pipe(2),
+     sigvec(2), umask(2), setrlimit(2), wait(2), tty(4),
+     a.out(5), environ(7), `An introduction to the C shell'
+
+BBUUGGSS
+     When a command is restarted from a stop, the shell prints
+     the directory it started in if this is different from the
+     current directory; this can be misleading (i.e. wrong) as
+     the job may have changed directories internally.
+
+     Shell builtin functions are not stoppable/restartable.  Com-
+     mand sequences of the form `a ; b ; c' are also not handled
+     gracefully when stopping is attempted.  If you suspend `b',
+     the shell will then immediately execute `c'.  This is espe-
+     cially noticeable if this expansion results from an _a_l_i_a_s.
+     It suffices to place the sequence of commands in ()'s to
+     force it to a subshell, i.e. `( a ; b ; c )'.
+
+     Control over tty output after processes are started is prim-
+     itive; perhaps this will inspire someone to work on a good
+     virtual terminal interface.  In a virtual terminal interface
+     much more interesting things could be done with output con-
+     trol.
+
+
+
+
+Printed 7/9/88		 April 24, 1988                        30
+
+
+
+
+
+
+CSH(1)		    UNIX Programmer's Manual		   CSH(1)
+
+
+
+     Alias substitution is most often used to clumsily simulate
+     shell procedures; shell procedures should be provided rather
+     than aliases.
+
+     Commands within loops, prompted for by `?', are not placed
+     in the _h_i_s_t_o_r_y list.  Control structure should be parsed
+     rather than being recognized as built-in commands.  This
+     would allow control commands to be placed anywhere, to be
+     combined with `|', and to be used with `&' and `;' metasyn-
+     tax.
+
+     It should be possible to use the `:' modifiers on the output
+     of command substitutions.	All and more than one `:' modif-
+     ier should be allowed on `$' substitutions.
+
+     The way the ffiilleecc facility is implemented is ugly and expen-
+     sive.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 24, 1988                        31
+
+
+

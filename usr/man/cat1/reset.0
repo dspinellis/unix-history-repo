@@ -1,0 +1,396 @@
+
+
+
+TSET(1)             UNIX Programmer's Manual		  TSET(1)
+
+
+
+NNAAMMEE
+     tset - terminal dependent initialization
+
+SSYYNNOOPPSSIISS
+     ttsseett [ options ] [ --mm [ident][test baudrate]:type ] ... [
+     type ]
+
+     rreesseett [ options ] [ --mm [ident][test baudrate]:type ] ... [
+     type ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_s_e_t sets up your terminal when you first log in to a UNIX
+     system.  It does terminal dependent processing such as set-
+     ting erase and kill characters, setting or resetting delays,
+     sending any sequences needed to properly initialized the
+     terminal, and the like.  It first determines the _t_y_p_e of
+     terminal involved, and then does necessary initializations
+     and mode settings.  The type of terminal attached to each
+     UNIX port is specified in the /_e_t_c/_t_t_y_s(5) database.  Type
+     names for terminals may be found in the _t_e_r_m_c_a_p(5) database.
+     If a port is not wired permanently to a specific terminal
+     (not hardwired) it will be given an appropriate generic
+     identifier such as _d_i_a_l_u_p.
+
+     In the case where no arguments are specified, _t_s_e_t simply
+     reads the terminal type out of the environment variable TERM
+     and re-initializes the terminal.  The rest of this manual
+     concerns itself with mode and environment initialization,
+     typically done once at login, and options used at initiali-
+     zation time to determine the terminal type and set up termi-
+     nal modes.
+
+     When used in a startup script (._p_r_o_f_i_l_e for _s_h(1) users or
+     ._l_o_g_i_n for _c_s_h(1) users) it is desirable to give information
+     about the type of terminal you will usually use on ports
+     which are not hardwired.  These ports are identified in
+     /_e_t_c/_t_t_y_s as _d_i_a_l_u_p or _p_l_u_g_b_o_a_r_d or _a_r_p_a_n_e_t, etc.	To
+     specify what terminal type you usually use on these ports,
+     the --mm (map) option flag is followed by the appropriate port
+     type identifier, an optional baud rate specification, and
+     the terminal type.  (The effect is to ``map'' from some con-
+     ditions to a terminal type, that is, to tell _t_s_e_t ``If I'm
+     on this kind of port, guess that I'm on that kind of termi-
+     nal''.) If more than one mapping is specified, the first
+     applicable mapping prevails.  A missing port type identifier
+     matches all identifiers.  Any of the alternate generic names
+     given in _t_e_r_m_c_a_p may be used for the identifier.
+
+     A _b_a_u_d_r_a_t_e is specified as with _s_t_t_y(1), and is compared
+     with the speed of the diagnostic output (which should be the
+     control terminal).  The baud rate _t_e_s_t may be any combina-
+     tion of: >>, @@, <<, and !!; @@ means ``at'' and !! inverts the
+
+
+
+Printed 7/9/88		   May 5, 1986				1
+
+
+
+
+
+
+TSET(1)             UNIX Programmer's Manual		  TSET(1)
+
+
+
+     sense of the test.  To avoid problems with metacharacters,
+     it is best to place the entire argument to --mm within ``'''
+     characters; users of _c_s_h(1) must also put a ``\'' before any
+     ``!'' used here.
+
+     Thus
+
+	  tset -m 'dialup>300:adm3a' -m dialup:dw2 -m
+	  'plugboard:?adm3a'
+
+     causes the terminal type to be set to an _a_d_m_3_a if the port
+     in use is a dialup at a speed greater than 300 baud; to a
+     _d_w_2 if the port is (otherwise) a dialup (i.e. at 300 baud or
+     less).  (NNOOTTEE:: the examples given here appear to take up
+     more than one line, for text processing reasons.  When you
+     type in real _t_s_e_t commands, you must enter them entirely on
+     one line.) If the _t_y_p_e finally determined by _t_s_e_t begins
+     with a question mark, the user is asked if s/he really wants
+     that type.  A null response means to use that type; other-
+     wise, another type can be entered which will be used
+     instead.  Thus, in the above case, the user will be queried
+     on a plugboard port as to whether they are actually using an
+     _a_d_m_3_a.
+
+     If no mapping applies and a final _t_y_p_e option, not preceded
+     by a --mm, is given on the command line then that type is
+     used; otherwise the type found in the /_e_t_c/_t_t_y_s database
+     will be taken to be the terminal type.  This should always
+     be the case for hardwired ports.
+
+     It is usually desirable to return the terminal type, as
+     finally determined by _t_s_e_t, and information about the
+     terminal's capabilities to a shell's environment.	This can
+     be done using the -- option; using the Bourne shell, _s_h(1):
+
+	  export TERM; TERM=`tset - _o_p_t_i_o_n_s...`
+
+     or using the C shell, _c_s_h(1):
+
+	  setenv TERM `tset - _o_p_t_i_o_n_s...`
+
+     With _c_s_h it is preferable to use the following command in
+     your .login file to initialize the TERM and TERMCAP environ-
+     ment variables at the same time.
+
+	  eval `tset -s _o_p_t_i_o_n_s...`
+
+     It is also convenient to make an alias in your .cshrc:
+
+	  alias tset 'eval `tset -s \!*`'
+
+
+
+
+
+Printed 7/9/88		   May 5, 1986				2
+
+
+
+
+
+
+TSET(1)             UNIX Programmer's Manual		  TSET(1)
+
+
+
+     This allows the command:
+
+	  tset 2621
+
+     to be invoked at any time to set the terminal and environ-
+     ment.  NNoottee ttoo BBoouurrnnee SShheellll uusseerrss:: It is nnoott possible to get
+     this aliasing effect with a shell script, because shell
+     scripts cannot set the environment of their parent.  (If a
+     process could set its parent's environment, none of this
+     nonsense would be necessary in the first place.)
+
+     These commands cause _t_s_e_t to place the name of your terminal
+     in the variable TERM in the environment; see _e_n_v_i_r_o_n(7).
+
+     Once the terminal type is known, _t_s_e_t engages in terminal
+     driver mode setting.  This normally involves sending an ini-
+     tialization sequence to the terminal, setting the single
+     character erase (and optionally the line-kill (full line
+     erase)) characters, and setting special character delays.
+     Tab and newline expansion are turned off during transmission
+     of the terminal initialization sequence.
+
+     On terminals that can backspace but not overstrike (such as
+     a CRT), and when the erase character is the default erase
+     character (`#' on standard systems), the erase character is
+     changed to BACKSPACE (Control-H).
+
+     The options are:
+
+     --ee_c  set the erase character to be the named character _c on
+	  all terminals, the default being the backspace charac-
+	  ter on the terminal, usually ^H.  The character _c can
+	  either be typed directly, or entered using the hat
+	  notation used here.
+
+     --kk_c  is similar to --ee but for the line kill character rather
+	  than the erase character; _c defaults to ^X (for purely
+	  historical reasons).	The kill characters is left alone
+	  if --kk is not specified.  The hat notation can also be
+	  used for this option.
+
+     --ii_c  is similar to --ee but for the interrupt character rather
+	  than the erase character; _c defaults to ^C.  The hat
+	  notation can also be used for this option.
+
+     --	  The name of the terminal finally decided upon is output
+	  on the standard output.  This is intended to be cap-
+	  tured by the shell and placed in the environment vari-
+	  able TERM.
+
+     --ss   Print the sequence of _c_s_h commands to initialize the
+	  environment variables TERM and TERMCAP based on the
+
+
+
+Printed 7/9/88		   May 5, 1986				3
+
+
+
+
+
+
+TSET(1)             UNIX Programmer's Manual		  TSET(1)
+
+
+
+	  name of the terminal finally decided upon.
+
+     --nn   On systems with the Berkeley 4BSD tty driver, specifies
+	  that the new tty driver modes should be initialized for
+	  this terminal.  For a CRT, the CRTERASE and CRTKILL
+	  modes are set only if the baud rate is 1200 or greater.
+	  See tty(4) for more detail.
+
+     --II   suppresses transmitting terminal initialization
+	  strings.
+
+     --QQ   suppresses printing the ``Erase set to'' and ``Kill set
+	  to'' messages.
+
+     If ttsseett is invoked as rreesseett, it will set cooked and echo
+     modes, turn off cbreak and raw modes, turn on newline trans-
+     lation, and restore special characters to a sensible state
+     before any terminal dependent processing is done.	Any spe-
+     cial character that is found to be NULL or ``-1'' is reset
+     to its default value.  All arguments to _t_s_e_t may be used
+     with reset.
+
+     This is most useful after a program dies leaving a terminal
+     in a funny state. You may have to type ``<LF>reset<LF>'' to
+     get it to work since <CR> may not work in this state. Often
+     none of this will echo.
+
+EEXXAAMMPPLLEESS
+     These examples all assume the Bourne shell and use the -
+     option.  If you use _c_s_h, use one of the variations described
+     above.  Note that a typical use of _t_s_e_t in a .profile or
+     .login will also use the --ee and --kk options, and often the --nn
+     or --QQ options as well.  These options have not been included
+     here to keep the examples small.  (NNOOTTEE:: some of the exam-
+     ples given here appear to take up more than one line, for
+     text processing reasons.  When you type in real _t_s_e_t com-
+     mands, you must enter them entirely on one line.)
+
+     At the moment, you are on a 2621.	This is suitable for typ-
+     ing by hand but not for a .profile, unless you are _a_l_w_a_y_s on
+     a 2621.
+
+	  export TERM; TERM=`tset - 2621`
+
+     You have an h19 at home which you dial up on, but your
+     office terminal is hardwired and known in /etc/ttys.
+
+	  export TERM; TERM=`tset - -m dialup:h19`
+
+     You have a switch which connects everything to everything,
+     making it nearly impossible to key on what port you are com-
+     ing in on.  You use a vt100 in your office at 9600 baud, and
+
+
+
+Printed 7/9/88		   May 5, 1986				4
+
+
+
+
+
+
+TSET(1)             UNIX Programmer's Manual		  TSET(1)
+
+
+
+     dial up to switch ports at 1200 baud from home on a 2621.
+     Sometimes you use someone elses terminal at work, so you
+     want it to ask you to make sure what terminal type you have
+     at high speeds, but at 1200 baud you are always on a 2621.
+     Note the placement of the question mark, and the quotes to
+     protect the greater than and question mark from interpreta-
+     tion by the shell.
+
+	  export TERM; TERM=`tset - -m 'switch>1200:?vt100' -m
+	  'switch<=1200:2621'
+
+     All of the above entries will fall back on the terminal type
+     specified in /_e_t_c/_t_t_y_s if none of the conditions hold.  The
+     following entry is appropriate if you always dial up, always
+     at the same baud rate, on many different kinds of terminals.
+     Your most common terminal is an adm3a.  It always asks you
+     what kind of terminal you are on, defaulting to adm3a.
+
+	  export TERM; TERM=`tset - ?adm3a`
+
+     If the file /_e_t_c/_t_t_y_s is not properly installed and you want
+     to key entirely on the baud rate, the following can be used:
+
+	  export TERM; TERM=`tset - -m '>1200:vt100' 2621`
+
+     Here is a fancy example to illustrate the power of _t_s_e_t and
+     to hopelessly confuse anyone who has made it this far.  You
+     dial up at 1200 baud or less on a concept100, sometimes over
+     switch ports and sometimes over regular dialups.  You use
+     various terminals at speeds higher than 1200 over switch
+     ports, most often the terminal in your office, which is a
+     vt100.  However, sometimes you log in from the university
+     you used to go to, over the ARPANET; in this case you are on
+     an ALTO emulating a dm2500.  You also often log in on vari-
+     ous hardwired ports, such as the console, all of which are
+     properly entered in /_e_t_c/_t_t_y_s.  You want your erase charac-
+     ter set to control H, your kill character set to control U,
+     and don't want _t_s_e_t to print the ``Erase set to Backspace,
+     Kill set to Control U'' message.
+
+	  export TERM; TERM=`tset -e -k^U -Q - -m
+	  'switch<=1200:concept100' -m 'switch:?vt100' -m
+	  dialup:concept100 -m arpanet:dm2500`
+
+FFIILLEESS
+     /etc/ttys port name to terminal type mapping database
+     /etc/termcap   terminal capability database
+
+SSEEEE AALLSSOO
+     csh(1), sh(1), stty(1), ttys(5), termcap(5), environ(7)
+
+
+
+
+
+Printed 7/9/88		   May 5, 1986				5
+
+
+
+
+
+
+TSET(1)             UNIX Programmer's Manual		  TSET(1)
+
+
+
+BBUUGGSS
+     The _t_s_e_t command is one of the first commands a user must
+     master when getting started on a UNIX system.  Unfor-
+     tunately, it is one of the most complex, largely because of
+     the extra effort the user must go through to get the
+     environment of the login shell set.  Something needs to be
+     done to make all this simpler, either the _l_o_g_i_n(1) program
+     should do this stuff, or a default shell alias should be
+     made, or a way to set the environment of the parent should
+     exist.
+
+     This program can't intuit personal choices for erase, inter-
+     rupt and line kill characters, so it leaves these set to the
+     local system standards.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 5, 1986				6
+
+
+

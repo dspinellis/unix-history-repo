@@ -1,0 +1,66 @@
+
+
+
+XSEND(1)	    UNIX Programmer's Manual		 XSEND(1)
+
+
+
+NNAAMMEE
+     xsend, xget, enroll - secret mail
+
+SSYYNNOOPPSSIISS
+     xxsseenndd person
+     xxggeett
+     eennrroollll
+
+DDEESSCCRRIIPPTTIIOONN
+     These commands implement a secure communication channel; it
+     is like _m_a_i_l(1), but no one can read the messages except the
+     intended recipient.  The method embodies a public-key cryp-
+     tosystem using knapsacks.
+
+     To receive messages, use _e_n_r_o_l_l; it asks you for a password
+     that you must subsequently quote in order to receive secret
+     mail.
+
+     To receive secret mail, use _x_g_e_t.	It asks for your pass-
+     word, then gives you the messages.
+
+     To send secret mail, use _x_s_e_n_d in the same manner as the
+     ordinary mail command.  (However, it will accept only one
+     target).  A message announcing the receipt of secret mail is
+     also sent by ordinary mail.
+
+FFIILLEESS
+     /usr/spool/secretmail/*.key: keys
+     /usr/spool/secretmail/*.[0-9]: messages
+
+SSEEEE AALLSSOO
+     mail (1)
+
+BBUUGGSS
+     It should be integrated with ordinary mail.  The announce-
+     ment of secret mail makes traffic analysis possible.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+LISP(1)             UNIX Programmer's Manual		  LISP(1)
+
+
+
+NNAAMMEE
+     lisp - lisp interpreter
+
+SSYYNNOOPPSSIISS
+     lliisspp
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_i_s_p is a lisp interpreter for a dialect which closely
+     resembles MIT's MACLISP.  This lisp, known as FRANZ LISP,
+     features an I/O facility which allows the user to change the
+     input and output syntax, add macro characters, and maintain
+     compatibility with upper-case only lisp systems; infinite
+     precision integer arithmetic, and an error facility which
+     allows the user to trap system errors in many different
+     ways.  Interpreted functions may be mixed with code compiled
+     by _l_i_s_z_t(1) and both may be debugged using the ``Joseph Lis-
+     ter'' trace package.  A _l_i_s_p containing compiled and inter-
+     preted code may be dumped into a file for later use.
+
+     There are too many functions to list here; one should refer
+     to the manuals listed below.
+
+AAUUTTHHOORRSS
+     An early version was written by Jeff Levinsky, Mike Curry,
+     and John Breedlove.  Keith Sklower wrote and is maintaining
+     the current version, with the assistance of John Foderaro.
+     The garbage collector was implemented by Bill Rowan.
+
+FFIILLEESS
+     /usr/lib/lisp/trace.l   Joseph Lister trace package
+     /usr/lib/lisp/toplevel.ltop level read-eval-print loop
+
+SSEEEE AALLSSOO
+     liszt(1), lxref(1)
+     `FRANZ LISP  Manual, Version 1' by John K. Foderaro
+     MACLISP Manual
+
+BBUUGGSS
+     The error system is in a state of flux and not all error
+     messages are as informative as they could be.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

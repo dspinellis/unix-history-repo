@@ -1,0 +1,246 @@
+
+
+
+EQN(1)		    UNIX Programmer's Manual		   EQN(1)
+
+
+
+NNAAMMEE
+     eqn, neqn, checkeq - typeset mathematics
+
+SSYYNNOOPPSSIISS
+     eeqqnn [ --ddxy ] [ --ppn ] [ --ssn ] [ --ffn ] [ file ] ...
+     cchheecckkeeqq [ file ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _E_q_n is a troff(1) preprocessor for typesetting mathematics
+     on a Graphic Systems phototypesetter, _n_e_q_n on terminals.
+     Usage is almost always
+
+	  eqn file ... | troff
+	  neqn file ... | nroff
+
+     If no files are specified, these programs reads from the
+     standard input.  A line beginning with `.EQ' marks the start
+     of an equation; the end of an equation is marked by a line
+     beginning with `.EN'.  Neither of these lines is altered, so
+     they may be defined in macro packages to get centering,
+     numbering, etc.  It is also possible to set two characters
+     as `delimiters'; subsequent text between delimiters is also
+     treated as _e_q_n input.  Delimiters may be set to characters _x
+     and _y with the command-line argument --dd_x_y or (more commonly)
+     with `delim _x_y' between .EQ and .EN.  The left and right
+     delimiters may be identical.  Delimiters are turned off by
+     `delim off'.  All text that is neither between delimiters
+     nor between .EQ and .EN is passed through untouched.
+
+     The program _c_h_e_c_k_e_q reports missing or unbalanced delimiters
+     and .EQ/.EN pairs.
+
+     Tokens within _e_q_n are separated by spaces, tabs, newlines,
+     braces, double quotes, tildes or circumflexes.  Braces {}
+     are used for grouping; generally speaking, anywhere a single
+     character like _x could appear, a complicated construction
+     enclosed in braces may be used instead.  Tilde ~ represents
+     a full space in the output, circumflex ^ half as much.
+
+     Subscripts and superscripts are produced with the keywords
+     ssuubb and ssuupp.. Thus _x _s_u_b _i makes _x_i, _a _s_u_b _i _s_u_p _2 produces
+     _a_i
+      2
+       , and _e _s_u_p {_x _s_u_p _2 + _y _s_u_p _2} gives _e
+						    _x2+_y2
+						      .
+
+
+     Fractions are made with oovveerr: _a _o_v_e_r _b yields
+						     _b
+
+						       _a_.
+
+
+     ssqqrrtt makes square roots: _1 _o_v_e_r _s_q_r_t {_a_x _s_u_p _2 +_b_x+_c}
+
+     results in
+                v/~~~~~~~~_a_x
+		      2
+			+_b_x+_c
+
+		     1_________ .
+
+
+
+
+
+Printed 7/9/88							1
+
+
+
+
+
+
+EQN(1)		    UNIX Programmer's Manual		   EQN(1)
+
+
+
+     The keywords ffrroomm and ttoo introduce lower and upper limits on
+
+     arbitrary things:
+			     _n->oo
+			    lim
+			       0
+				 _>_~
+				 _n
+				  _x_i is made with _l_i_m _f_r_o_m {_n-> _i_n_f }
+
+     _s_u_m _f_r_o_m _0 _t_o _n _x _s_u_b _i.
+
+     Left and right brackets, braces, etc., of the right height
+     are made with lleefftt and rriigghhtt:: _l_e_f_t [ _x _s_u_p _2 + _y _s_u_p _2 _o_v_e_r
+
+     _a_l_p_h_a _r_i_g_h_t ] ~=~_1 produces
+				 |
+				  |
+				  |
+				    _x
+				      2
+					+
+					   _o(
+
+                                      _y
+                                       2
+				      __
+					|
+					|
+					|
+					   = 1.	The rriigghhtt clause
+
+     is optional.  Legal characters after lleefftt and rriigghhtt are
+     braces, brackets, bars, cc and ff for ceiling and floor, and
+     "" for nothing at all (useful for a right-side-only
+     bracket).
+
+     Vertical piles of things are made with ppiillee, llppiillee, ccppiillee,
+
+     and rrppiillee: _p_i_l_e {_a _a_b_o_v_e _b _a_b_o_v_e _c} produces
+						   _c
+						     _b
+						     _a
+
+						      .  There can
+
+     be an arbitrary number of elements in a pile.  llppiillee left-
+     justifies, ppiillee and ccppiillee center, with different vertical
+     spacing, and rrppiillee right justifies.
+
+     Matrices are made with mmaattrriixx: _m_a_t_r_i_x { _l_c_o_l { _x _s_u_b _i _a_b_o_v_e
+
+     _y _s_u_b _2 } _c_c_o_l { _1 _a_b_o_v_e _2 } } produces
+						 _y2
+
+                                             _x_i
+
+
+                                                 2
+
+						   1
+
+						    .  In addition,
+
+     there is rrccooll for a right-justified column.
+
+     Diacritical marks are made with ddoott, ddoottddoott, hhaatt, ttiillddee,
+     bbaarr, vveecc, ddyyaadd, and uunnddeerr: _x _d_o_t = _f(_t) _b_a_r is _x.=_f(_t)~~~~, _y
+     _d_o_t_d_o_t _b_a_r ~=~ _n _u_n_d_e_r is _y..~ = _n_, and _x _v_e_c ~=~ _y _d_y_a_d is
+     _x->= _y<-->.
+
+     Sizes and font can be changed with ssiizzee _n or ssiizzee ++___n, rroommaann,
+     iittaalliicc, bboolldd, and ffoonntt _n. Size and fonts can be changed glo-
+     bally in a document by ggssiizzee _n and ggffoonntt _n, or by the
+     command-line arguments --ss_n and --ff_n.
+
+     Normally subscripts and superscripts are reduced by 3 point
+     sizes from the previous size; this may be changed by the
+     command-line argument --pp_n.
+
+     Successive display arguments can be lined up.  Place mmaarrkk
+     before the desired lineup point in the first equation; place
+     lliinneeuupp at the place that is to line up vertically in subse-
+     quent equations.
+
+     Shorthands may be defined or existing keywords redefined
+     with ddeeffiinnee: _d_e_f_i_n_e _t_h_i_n_g % _r_e_p_l_a_c_e_m_e_n_t % defines a new
+     token called _t_h_i_n_g which will be replaced by _r_e_p_l_a_c_e_m_e_n_t
+
+
+
+Printed 7/9/88							2
+
+
+
+
+
+
+EQN(1)		    UNIX Programmer's Manual		   EQN(1)
+
+
+
+     whenever it appears thereafter.  The % may be any character
+     that does not occur in _r_e_p_l_a_c_e_m_e_n_t.
+
+     Keywords like _s_u_m (_>_~) _i_n_t () _i_n_f (oo) and shorthands like >=
+     (>_) -> (->), and != (=/) are recognized.  Greek letters are
+     spelled out in the desired case, as in _a_l_p_h_a or _G_A_M_M_A.
+     Mathematical words like sin, cos, log are made Roman
+     automatically.  _T_r_o_f_f(1) four-character escapes like \(bs ()
+     can be used anywhere.  Strings enclosed in double quotes
+     "..." are passed through untouched; this permits keywords to
+     be entered as text, and can be used to communicate with
+     _t_r_o_f_f when all else fails.
+
+SSEEEE AALLSSOO
+     troff(1), tbl(1), ms(7), eqnchar(7)
+     B. W. Kernighan and L. L. Cherry, _T_y_p_e_s_e_t_t_i_n_g _M_a_t_h_e_m_a_t_i_c_s-
+     _U_s_e_r'_s _G_u_i_d_e
+     J. F. Ossanna, _N_R_O_F_F/_T_R_O_F_F _U_s_e_r'_s _M_a_n_u_a_l
+
+BBUUGGSS
+     To embolden digits, parens, etc., it is necessary to quote
+     them, as in `bold "12.3"'.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88							3
+
+
+

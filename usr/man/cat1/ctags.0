@@ -1,0 +1,198 @@
+
+
+
+CTAGS(1)	    UNIX Programmer's Manual		 CTAGS(1)
+
+
+
+NNAAMMEE
+     ctags - create a tags file
+
+SSYYNNOOPPSSIISS
+     ccttaaggss [ --BBFFaaddttuuwwvvxx ] [ --ff _t_a_g_s_f_i_l_e ] name ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _C_t_a_g_s makes a tags file for _e_x(1) from the specified C, Pas-
+     cal, Fortran, YACC, lex, and lisp sources.  A tags file
+     gives the locations of specified objects in a group of
+     files.  Each line of the tags file contains the object name,
+     the file in which it is defined, and a search pattern for
+     the object definition, separated by white-space.  Using the
+     _t_a_g_s file, _e_x(1) can quickly locate these object defini-
+     tions.  Depending on the options provided to _c_t_a_g_s, objects
+     will consist of subroutines, typedefs, defines, structs,
+     enums and unions.
+
+     Yacc and lex files each have a special tag.  _Y_y_p_a_r_s_e is the
+     start of the second section of the yacc file, and _y_y_l_e_x is
+     the start of the second section of the lex file.
+
+     If the --xx flag is given, _c_t_a_g_s produces a list of object
+     names, the line number and file name on which each is
+     defined, as well as the text of that line and prints this on
+     the standard output.  This is a simple index which can be
+     printed out as an off-line readable function index.
+
+     If the --vv flag is given, an index of the form expected by
+     _v_g_r_i_n_d(1) is produced on the standard output.  This listing
+     contains the object name, file name, and page number (assum-
+     ing 64 line pages).  Since the output will be sorted into
+     lexicographic order, it may be desired to run the output
+     through ssoorrtt --ff.  Sample use:
+	  ctags -v files | sort -f > index
+	  vgrind -x index
+
+     Normally _c_t_a_g_s places the tag descriptions in a file called
+     _t_a_g_s; this may be overridden with the --ff option.
+
+     Files whose names end in ..cc or ..hh are assumed to be C source
+     files and are searched for C style routine and macro defini-
+     tions.  Files whose names end in ..yy are assumed to be YACC
+     source files.  Files whose names end in ..ll are assumed to be
+     lisp files if their first non-blank character is `;', `(',
+     or `[', otherwise, they are treated as lex files.	Other
+     files are first examined to see if they contain any Pascal
+     or Fortran routine definitions, and, if not, are searched
+     for C style definitions.
+
+     Other options are:
+
+
+
+
+Printed 7/9/88		 March 16, 1987                         1
+
+
+
+
+
+
+CTAGS(1)	    UNIX Programmer's Manual		 CTAGS(1)
+
+
+
+     --FF   use forward searching patterns (/.../) (the default).
+
+     --BB   use backward searching patterns (?...?).
+
+     --aa   append to _t_a_g_s file.
+
+     --dd   create tags for #_d_e_f_i_n_e_s that don't take arguments;
+	  #_d_e_f_i_n_e_s that take arguments are tagged automatically.
+
+     --tt   create tags for typedefs, structs, unions, and enums.
+
+     --ww   suppress warning diagnostics.
+
+     --uu   update the specified files in the _t_a_g_s file, that is,
+	  all references to them are deleted, and the new values
+	  are appended to the file.  (Beware: this option is
+	  implemented in a way which is rather slow; it is usu-
+	  ally faster to simply rebuild the _t_a_g_s file.)
+
+     The tag _m_a_i_n is treated specially in C programs.  The tag
+     formed is created by prepending _M to the name of the file,
+     with the trailing ..cc and any leading pathname components
+     removed.  This makes use of _c_t_a_g_s practical in directories
+     with more than one program.
+
+FFIILLEESS
+     tags      default output tags file
+
+DDIIAAGGNNOOSSTTIICCSS
+     _C_t_a_g_s exits with a value of 1 if an error occurred, where
+     duplicate objects are not considered errors, 0 otherwise.
+
+SSEEEE AALLSSOO
+     ex(1), vi(1)
+
+AAUUTTHHOORR
+     Ken Arnold; FORTRAN added by Jim Kleckner; Bill Joy added
+     Pascal and --xx, replacing _c_x_r_e_f; C typedefs added by Ed
+     Pelegri-Llopart.
+
+BBUUGGSS
+     Recognition of ffuunnccttiioonnss, ssuubbrroouuttiinneess and pprroocceedduurreess for
+     FORTRAN and Pascal is done is a very simpleminded way.  No
+     attempt is made to deal with block structure; if you have
+     two Pascal procedures in different blocks with the same name
+     you lose.	_C_t_a_g_s doesn't understand about Pascal types.
+
+     The method of deciding whether to look for C, Pascal or FOR-
+     TRAN functions is a hack.
+
+     _C_t_a_g_s relies on the input being well formed, and any syntac-
+     tical errors will completely confuse it.  It also finds some
+
+
+
+Printed 7/9/88		 March 16, 1987                         2
+
+
+
+
+
+
+CTAGS(1)	    UNIX Programmer's Manual		 CTAGS(1)
+
+
+
+     legal syntax confusing; for example, as it doesn't under-
+     stand #_i_f_d_e_f's, (incidentally, that's a feature, not a bug)
+     any code with unbalanced braces inside #_i_f_d_e_f's will cause
+     it to become somewhat disoriented.  In a similar fashion,
+     multiple line changes within a definition will cause it to
+     enter the last line of the object, rather than the first, as
+     the searching pattern.  The last line of multiple line
+     _t_y_p_e_d_e_f's will similarly be noted.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 March 16, 1987                         3
+
+
+

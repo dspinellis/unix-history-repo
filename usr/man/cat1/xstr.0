@@ -1,0 +1,132 @@
+
+
+
+XSTR(1)             UNIX Programmer's Manual		  XSTR(1)
+
+
+
+NNAAMMEE
+     xstr - extract strings from C programs to implement shared
+     strings
+
+SSYYNNOOPPSSIISS
+     xxssttrr [ --cc ] [ -- ] [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _X_s_t_r maintains a file _s_t_r_i_n_g_s into which strings in com-
+     ponent parts of a large program are hashed.  These strings
+     are replaced with references to this common area.	This
+     serves to implement shared constant strings, most useful if
+     they are also read-only.
+
+     The command
+
+	  xxssttrr --cc name
+
+     will extract the strings from the C source in name, replac-
+     ing string references by expressions of the form
+     (&xstr[number]) for some number.  An appropriate declaration
+     of _x_s_t_r is prepended to the file.	The resulting C text is
+     placed in the file _x._c, to then be compiled.  The strings
+     from this file are placed in the _s_t_r_i_n_g_s data base if they
+     are not there already.  Repeated strings and strings which
+     are suffices of existing strings do not cause changes to the
+     data base.
+
+     After all components of a large program have been compiled a
+     file _x_s._c declaring the common _x_s_t_r space can be created by
+     a command of the form
+
+	  xxssttrr
+
+     This _x_s._c file should then be compiled and loaded with the
+     rest of the program.  If possible, the array can be made
+     read-only (shared) saving space and swap overhead.
+
+     _X_s_t_r can also be used on a single file.  A command
+
+	  xxssttrr name
+
+     creates files _x._c and _x_s._c as before, without using or
+     affecting any _s_t_r_i_n_g_s file in the same directory.
+
+     It may be useful to run _x_s_t_r after the C preprocessor if any
+     macro definitions yield strings or if there is conditional
+     code which contains strings which may not, in fact, be
+     needed.  _X_s_t_r reads from its standard input when the argu-
+     ment `-' is given.  An appropriate command sequence for run-
+     ning _x_s_t_r after the C preprocessor is:
+
+
+
+
+Printed 7/9/88		   May 7, 1986				1
+
+
+
+
+
+
+XSTR(1)             UNIX Programmer's Manual		  XSTR(1)
+
+
+
+	  cccc --EE name.c | xxssttrr --cc -
+	  cccc --cc x.c
+	  mmvv x.o name.o
+
+     _X_s_t_r does not touch the file _s_t_r_i_n_g_s unless new items are
+     added, thus _m_a_k_e can avoid remaking _x_s._o unless truly neces-
+     sary.
+
+FFIILLEESS
+     strings	    Data base of strings
+     x.c       Massaged C source
+     xs.c      C source for definition of array `xstr'
+     /tmp/xs*  Temp file when `xstr name' doesn't touch _s_t_r_i_n_g_s
+
+SSEEEE AALLSSOO
+     mkstr(1)
+
+BBUUGGSS
+     If a string is a suffix of another string in the data base,
+     but the shorter string is seen first by _x_s_t_r both strings
+     will be placed in the data base, when just placing the
+     longer one there will do.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 7, 1986				2
+
+
+

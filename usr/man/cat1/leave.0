@@ -1,0 +1,66 @@
+
+
+
+LEAVE(1)	    UNIX Programmer's Manual		 LEAVE(1)
+
+
+
+NNAAMMEE
+     leave - remind you when you have to leave
+
+SSYYNNOOPPSSIISS
+     lleeaavvee [ [+]hhmm ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_e_a_v_e waits until the specified time, then reminds you that
+     you have to leave.  You are reminded 5 minutes and 1 minute
+     before the actual time, at the time, and every minute
+     thereafter.  When you log off, _l_e_a_v_e exits just before it
+     would have printed the next message.
+
+     The time of day is in the form hhmm where hh is a time in
+     hours (on a 12 or 24 hour clock).	All times are converted
+     to a 12 hour clock, and assumed to be in the next 12 hours.
+
+     If the time is preceeded by `+', the alarm will go off in
+     hours and minutes from the current time.
+
+     If no argument is given, _l_e_a_v_e prompts with "When do you
+     have to leave?". A reply of newline causes _l_e_a_v_e to exit,
+     otherwise the reply is assumed to be a time.  This form is
+     suitable for inclusion in a ._l_o_g_i_n or ._p_r_o_f_i_l_e.
+
+     Leave ignores interrupts, quits, and terminates.  To get rid
+     of it you should either log off or use ``kill -9'' giving
+     its process id.
+
+SSEEEE AALLSSOO
+     calendar(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 7, 1986				1
+
+
+

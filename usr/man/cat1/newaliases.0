@@ -1,0 +1,66 @@
+
+
+
+NEWALIASES(1)	    UNIX Programmer's Manual	    NEWALIASES(1)
+
+
+
+NNAAMMEE
+     newaliases - rebuild the data base for the mail aliases file
+
+SSYYNNOOPPSSIISS
+     nneewwaalliiaasseess
+
+DDEESSCCRRIIPPTTIIOONN
+     _N_e_w_a_l_i_a_s_e_s rebuilds the random access data base for the mail
+     aliases file /_u_s_r/_l_i_b/_a_l_i_a_s_e_s.  It must be run each time
+     /_u_s_r/_l_i_b/_a_l_i_a_s_e_s is changed in order for the change to take
+     effect.
+
+SSEEEE AALLSSOO
+     aliases(5), sendmail(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 5, 1986				1
+
+
+

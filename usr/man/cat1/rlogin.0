@@ -1,0 +1,132 @@
+
+
+
+RLOGIN(1C)	    UNIX Programmer's Manual	       RLOGIN(1C)
+
+
+
+NNAAMMEE
+     rlogin - remote login
+
+SSYYNNOOPPSSIISS
+     rrllooggiinn rhost [ --ee_c ] [ --88 ] [ --LL ] [ --ll username ]
+     rhost [ --ee_c ] [ --88 ] [ --LL ] [ --ll username ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_l_o_g_i_n connects your terminal on the current local host sys-
+     tem _l_h_o_s_t to the remote host system _r_h_o_s_t.
+
+     Each host has a file /_e_t_c/_h_o_s_t_s._e_q_u_i_v which contains a list
+     of _r_h_o_s_t's with which it shares account names.  (The host
+     names must be the standard names as described in _r_s_h(1C).)
+     When you _r_l_o_g_i_n as the same user on an equivalent host, you
+     don't need to give a password.  Each user may also have a
+     private equivalence list in a file .rhosts in his login
+     directory.  Each line in this file should contain an _r_h_o_s_t
+     and a _u_s_e_r_n_a_m_e separated by a space, giving additional cases
+     where logins without passwords are to be permitted.  If the
+     originating user is not equivalent to the remote user, then
+     a login and password will be prompted for on the remote
+     machine as in _l_o_g_i_n(1).  To avoid some security problems,
+     the .rhosts file must be owned by either the remote user or
+     root.
+
+     The remote terminal type is the same as your local terminal
+     type (as given in your environment TERM variable).  The ter-
+     minal or window size is also copied to the remote system if
+     the server supports the option, and changes in size are
+     reflected as well.  All echoing takes place at the remote
+     site, so that (except for delays) the rlogin is transparent.
+     Flow control via ^S and ^Q and flushing of input and output
+     on interrupts are handled properly.  The optional argument
+     --88 allows an eight-bit input data path at all times; other-
+     wise parity bits are stripped except when the remote side's
+     stop and start characters are other than ^S/^Q.  The argu-
+     ment --LL allows the rlogin session to be run in litout mode.
+     A line of the form ``~.'' disconnects from the remote host,
+     where ``~'' is the escape character.  Similarly, the line
+     ``~^Z'' (where ^Z, control-Z, is the suspend character) will
+     suspend the rlogin session.  Substitution of the delayed-
+     suspend character (normally ^Y) for the suspend character
+     suspends the send portion of the rlogin, but allows output
+     from the remote system.  A different escape character may be
+     specified by the --ee option.  There is no space separating
+     this option flag and the argument character.
+
+SSEEEE AALLSSOO
+     rsh(1C)
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				1
+
+
+
+
+
+
+RLOGIN(1C)	    UNIX Programmer's Manual	       RLOGIN(1C)
+
+
+
+FFIILLEESS
+     /usr/hosts/*	 for _r_h_o_s_t version of the command
+
+BBUUGGSS
+     More of the environment should be propagated.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 12, 1986				2
+
+
+

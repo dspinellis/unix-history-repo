@@ -1,0 +1,132 @@
+
+
+
+SPELL(1)	    UNIX Programmer's Manual		 SPELL(1)
+
+
+
+NNAAMMEE
+     spell, spellin, spellout - find spelling errors
+
+SSYYNNOOPPSSIISS
+     ssppeellll [ --vv ] [ --bb ] [ --xx ] [ --dd hlist ] [ --ss hstop ] [ --hh
+     spellhist ] [ file ] ...
+
+     ssppeelllliinn [ list ]
+
+     ssppeelllloouutt [ --dd ] list
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_p_e_l_l collects words from the named documents, and looks
+     them up in a spelling list.  Words that neither occur among
+     nor are derivable (by applying certain inflections, prefixes
+     or suffixes) from words in the spelling list are printed on
+     the standard output.  If no files are named, words are col-
+     lected from the standard input.
+
+     _S_p_e_l_l ignores most _t_r_o_f_f, _t_b_l and _e_q_n(1) constructions.
+
+     Under the --vv option, all words not literally in the spelling
+     list are printed, and plausible derivations from spelling
+     list words are indicated.
+
+     Under the --bb option, British spelling is checked.	Besides
+     preferring _c_e_n_t_r_e, _c_o_l_o_u_r, _s_p_e_c_i_a_l_i_t_y, _t_r_a_v_e_l_l_e_d, etc., this
+     option insists upon -_i_s_e in words like _s_t_a_n_d_a_r_d_i_s_e, Fowler
+     and the OED to the contrary notwithstanding.
+
+     Under the --xx option, every plausible stem is printed with
+     `=' for each word.
+
+     The spelling list is based on many sources.  While it is
+     more haphazard than an ordinary dictionary, it is also more
+     effective with proper names and popular technical words.
+     Coverage of the specialized vocabularies of biology, medi-
+     cine and chemistry is light.
+
+     The auxiliary files used for the spelling list, stop list,
+     and history file may be specified by arguments following the
+     --dd, --ss, and --hh options.  The default files are indicated
+     below.  Copies of all output may be accumulated in the his-
+     tory file.  The stop list filters out misspellings (e.g.
+     thier=thy-y+ier) that would otherwise pass.
+
+     Two routines help maintain the hash lists used by _s_p_e_l_l.
+     Both expect a set of words, one per line, from the standard
+     input.  _S_p_e_l_l_i_n combines the words from the standard input
+     and the preexisting _l_i_s_t file and places a new list on the
+     standard output.  If no _l_i_s_t file is specified, the new list
+     is created from scratch.  _S_p_e_l_l_o_u_t looks up each word from
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+SPELL(1)	    UNIX Programmer's Manual		 SPELL(1)
+
+
+
+     the standard input and prints on the standard output those
+     that are missing from (or present on, with option --dd) the
+     hashed _l_i_s_t file.	For example, to verify that _h_o_o_k_e_y is not
+     on the default spelling list, add it to your own private
+     list, and then use it with _s_p_e_l_l,
+
+	  echo	hookey	|  spellout  /usr/dict/hlista
+	  echo	hookey	|  spellin  /usr/dict/hlista  >  myhlist
+	  spell  -d  myhlist  huckfinn
+
+FFIILLEESS
+     /usr/dict/hlist[ab] hashed spelling lists, American & Brit-
+     ish, default for --dd
+     /usr/dict/hstop	      hashed stop list, default for --ss
+     /dev/null	    history file, default for --hh
+     /tmp/spell.$$*	 temporary files
+     /usr/lib/spell
+
+SSEEEE AALLSSOO
+     deroff(1), sort(1), tee(1), sed(1)
+
+BBUUGGSS
+     The spelling list's coverage is uneven; new installations
+     will probably wish to monitor the output for several months
+     to gather local additions.
+     British spelling was done by an American.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+

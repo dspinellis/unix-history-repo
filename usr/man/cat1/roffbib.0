@@ -1,0 +1,66 @@
+
+
+
+ROFFBIB(1)	    UNIX Programmer's Manual	       ROFFBIB(1)
+
+
+
+NNAAMMEE
+     roffbib - run off bibliographic database
+
+SSYYNNOOPPSSIISS
+     rrooffffbbiibb [ --ee ] [ --hh ] [ --nn ] [ --oo ] [ --rr ] [ --ss ] [ --TT_t_e_r_m ]
+     [ --xx ] [ --mm _m_a_c ] [ --VV ] [ --QQ ] [ file ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_o_f_f_b_i_b prints out all records in a bibliographic database,
+     in bibliography format rather than as footnotes or endnotes.
+     Generally it is used in conjunction with _s_o_r_t_b_i_b:
+
+	  sortbib  database | roffbib
+
+     _R_o_f_f_b_i_b accepts most of the options understood by _n_r_o_f_f(1),
+     most importantly the --TT flag to specify terminal type.
+
+     If abstracts or comments are entered following the %X field
+     key, _r_o_f_f_b_i_b will format them into paragraphs for an anno-
+     tated bibliography.  Several %X fields may be given if
+     several annotation paragraphs are desired.  The --xx flag will
+     suppress the printing of these abstracts.
+
+     A user-defined set of macros may be specified after the --mm
+     option.  There should be a space between the --mm and the
+     macro filename.  This set of macros will replace the ones
+     defined in /usr/lib/tmac/tmac.bib.  The --VV flag will send
+     output to the Versatec; the --QQ flag will queue output for
+     the phototypesetter.
+
+     Four command-line registers control formatting style of the
+     bibliography, much like the number registers of _m_s(7).  The
+     command-line argument --rrN1 will number the references start-
+     ing at one (1).  The flag --rrV2 will double space the biblio-
+     graphy, while --rrV1 will double space references but single
+     space annotation paragraphs.  The line length can be changed
+     from the default 6.5 inches to 6 inches with the --rrL6i argu-
+     ment, and the page offset can be set from the default of 0
+     to one inch by specifying --rrO1i (capital O, not zero).
+     Note: with the --VV and --QQ flags the default page offset is
+     already one inch.
+
+FFIILLEESS
+     /usr/lib/tmac/tmac.bib  file of macros used by _n_r_o_f_f/_t_r_o_f_f
+
+SSEEEE AALLSSOO
+     refer(1), addbib(1), sortbib(1), indxbib(1), lookbib(1)
+
+BBUUGGSS
+     Users have to rewrite macros to create customized formats.
+
+
+
+
+
+Printed 7/9/88		   May 7, 1986				1
+
+
+

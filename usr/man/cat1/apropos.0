@@ -1,0 +1,66 @@
+
+
+
+APROPOS(1)	    UNIX Programmer's Manual	       APROPOS(1)
+
+
+
+NNAAMMEE
+     apropos - locate commands by keyword lookup
+
+SSYYNNOOPPSSIISS
+     aapprrooppooss [ --MM _p_a_t_h ] keyword ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_p_r_o_p_o_s shows which manual pages contain instances of any of
+     the given _k_e_y_w_o_r_d(s) in their title line.	Each word is con-
+     sidered separately and case of letters is ignored.  Words
+     which are part of other words are considered; when looking
+     for compile, _a_p_r_o_p_o_s will also find all instances of ``com-
+     piler''.
+
+     If the line output by _a_p_r_o_p_o_s starts ``name(section) ...''
+     you can enter ``man section name'' to get its documentation.
+
+     Normally _a_p_r_o_p_o_s checks in a standard location (/usr/man)
+     for its database ``whatis''.  This can be changed by supply-
+     ing a _p_a_t_h (a la the Bourne shell) with the --MM flag.  This
+     search path must be a colon (``:'') separated list of direc-
+     tories which _a_p_r_o_p_o_s will search for files named ``whatis''.
+     The path can also be set with the environmental variable
+     _M_A_N_P_A_T_H.
+
+FFIILLEESS
+     /usr/man/whatis	      data base
+
+SSEEEE AALLSSOO
+     man(1), whatis(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 30, 1987                         1
+
+
+

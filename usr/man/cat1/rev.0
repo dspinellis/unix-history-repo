@@ -1,0 +1,66 @@
+
+
+
+REV(1)		    UNIX Programmer's Manual		   REV(1)
+
+
+
+NNAAMMEE
+     rev - reverse lines of a file
+
+SSYYNNOOPPSSIISS
+     rreevv [ file ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_e_v copies the named files to the standard output, reversing
+     the order of characters in every line.  If no file is speci-
+     fied, the standard input is copied.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

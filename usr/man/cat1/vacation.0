@@ -1,0 +1,132 @@
+
+
+
+VACATION(1)	    UNIX Programmer's Manual	      VACATION(1)
+
+
+
+NNAAMMEE
+     vacation - return ``I am not here'' indication
+
+SSYYNNOOPPSSIISS
+     vvaaccaattiioonn --ii
+     vvaaccaattiioonn [ --aa alias ] login
+
+DDEESSCCRRIIPPTTIIOONN
+     _V_a_c_a_t_i_o_n returns a message to the sender of a message tel-
+     ling them that you are currently not reading your mail.  The
+     intended use is in a ._f_o_r_w_a_r_d file.  For example, your ._f_o_r_-
+     _w_a_r_d file might have:
+
+	  \eric, "|/usr/ucb/vacation -a allman eric"
+
+     which would send messages to you (assuming your login name
+     was eric) and reply to any messages for ``eric'' or ``all-
+     man''.
+
+     No message will be sent unless _l_o_g_i_n or an _a_l_i_a_s supplied
+     using the --aa option is a substring of either the ``To:'' or
+     ``Cc:'' headers of the mail.  No messages from ``???-
+     REQUEST'', ``Postmaster'', ``UUCP'', ``MAILER'', or
+     ``MAILER-DAEMON'' will be replied to, nor is a notification
+     sent if a ``Precedence: bulk'' or ``Precedence: junk'' line
+     is included in the mail headers.  Only one message per week
+     will be sent to each unique sender.  The people who have
+     sent you messages are maintained as an _n_d_b_m(3) database in
+     the files ._v_a_c_a_t_i_o_n._p_a_g and ._v_a_c_a_t_i_o_n._d_i_r in your home
+     directory.
+
+     The --ii flag initializes the vacation database files.  It
+     should be used before you modify your ._f_o_r_w_a_r_d file.
+
+     _V_a_c_a_t_i_o_n expects a file ._v_a_c_a_t_i_o_n._m_s_g, in your home direc-
+     tory, containing a message to be sent back to each sender.
+     It should be an entire message (including headers).  For
+     example, it might say:
+
+	  From: eric@ucbmonet.Berkeley.EDU (Eric Allman)
+	  Subject: I am on vacation
+	  Delivered-By-The-Graces-Of: The Vacation program
+	  Precedence: bulk
+
+	  I am on vacation until July 22.  If you have something urgent,
+	  please contact Joe Kalash <kalash@ucbingres.Berkeley.EDU>.
+	       --eric
+
+     _V_a_c_a_t_i_o_n reads the first line from the standard input for a
+     UNIX-style ``From'' line to determine the sender.	_S_e_n_d_-
+     _m_a_i_l(8) includes this ``From'' line automatically.
+
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+
+
+
+
+VACATION(1)	    UNIX Programmer's Manual	      VACATION(1)
+
+
+
+     Fatal errors, such as calling _v_a_c_a_t_i_o_n with incorrect argu-
+     ments, or with non-existent _l_o_g_i_ns, are logged in the system
+     log file, using _s_y_s_l_o_g(8).
+
+FFIILLEESS
+     ~/.vacation.dir	database file
+     ~/.vacation.msg	message to send
+     ~/.vacation.pag	database file
+
+SSEEEE AALLSSOO
+     sendmail(8), syslog(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				2
+
+
+

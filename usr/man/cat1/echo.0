@@ -1,0 +1,66 @@
+
+
+
+ECHO(1)             UNIX Programmer's Manual		  ECHO(1)
+
+
+
+NNAAMMEE
+     echo - echo arguments
+
+SSYYNNOOPPSSIISS
+     eecchhoo [ --nn ] [ arg ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _E_c_h_o writes its arguments separated by blanks and terminated
+     by a newline on the standard output.  If the flag --nn is
+     used, no newline is added to the output.
+
+     _E_c_h_o is useful for producing diagnostics in shell programs
+     and for writing constant data on pipes.  To send diagnostics
+     to the standard error file, do `echo ... 1>&2'.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+

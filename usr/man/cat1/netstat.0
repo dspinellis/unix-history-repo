@@ -1,0 +1,198 @@
+
+
+
+NETSTAT(1)	    UNIX Programmer's Manual	       NETSTAT(1)
+
+
+
+NNAAMMEE
+     netstat - show network status
+
+SSYYNNOOPPSSIISS
+     nneettssttaatt [ --AAaann ] [ --ff _a_d_d_r_e_s_s__f_a_m_i_l_y ] [ _s_y_s_t_e_m ] [ _c_o_r_e ]
+     nneettssttaatt [ --hhiimmnnrrss ] [ --ff _a_d_d_r_e_s_s__f_a_m_i_l_y ] [ _s_y_s_t_e_m ] [ _c_o_r_e
+     ]
+     nneettssttaatt [ --nn ] [ --II _i_n_t_e_r_f_a_c_e ] _i_n_t_e_r_v_a_l [ _s_y_s_t_e_m ] [ _c_o_r_e ]
+     nneettssttaatt [ --pp _p_r_o_t_o_c_o_l ] [ _s_y_s_t_e_m ] [ _c_o_r_e ]
+
+DDEESSCCRRIIPPTTIIOONN
+     The _n_e_t_s_t_a_t command symbolically displays the contents of
+     various network-related data structures.  There are a number
+     of output formats, depending on the options for the informa-
+     tion presented.  The first form of the command displays a
+     list of active sockets for each protocol.	The second form
+     presents the contents of one of the other network data
+     structures according to the option selected.  Using the
+     third form, with an _i_n_t_e_r_v_a_l specified, _n_e_t_s_t_a_t will con-
+     tinuously display the information regarding packet traffic
+     on the configured network interfaces.  The fourth form
+     displays statistics about the named protocol.
+
+     The options have the following meaning:
+
+     --AA   With the default display, show the address of any pro-
+	  tocol control blocks associated with sockets; used for
+	  debugging.
+
+     --aa   With the default display, show the state of all sock-
+	  ets; normally sockets used by server processes are not
+	  shown.  --dd With either interface display (option --ii or
+	  an interval, as described below), show the number of
+	  dropped packets.
+
+     --hh   Show the state of the IMP host table.
+
+     --ii   Show the state of interfaces which have been auto-
+	  configured (interfaces statically configured into a
+	  system, but not located at boot time are not shown).
+
+     --II _i_n_t_e_r_f_a_c_e
+	  Show information only about this interface; used with
+	  an _i_n_t_e_r_v_a_l as described below.
+
+     --mm   Show statistics recorded by the memory management rou-
+	  tines (the network manages a private pool of memory
+	  buffers).
+
+     --nn   Show network addresses as numbers (normally _n_e_t_s_t_a_t
+	  interprets addresses and attempts to display them sym-
+	  bolically).  This option may be used with any of the
+
+
+
+Printed 7/9/88		  May 14, 1988				1
+
+
+
+
+
+
+NETSTAT(1)	    UNIX Programmer's Manual	       NETSTAT(1)
+
+
+
+	  display formats.
+
+     --pp _p_r_o_t_o_c_o_l
+	  Show statistics about _p_r_o_t_o_c_o_l, which is either a
+	  well-known name for a protocol or an alias for it.
+	  Some protocol names and aliases are listed in the file
+	  /_e_t_c/_p_r_o_t_o_c_o_l_s.  A null response typically means that
+	  there are no interesting numbers to report.  The pro-
+	  gram will complain if _p_r_o_t_o_c_o_l is unknown or if there
+	  is no statistics routine for it.
+
+     --ss   Show per-protocol statistics.
+
+     --rr   Show the routing tables.  When --ss is also present, show
+	  routing statistics instead.
+
+     --ff _a_d_d_r_e_s_s__f_a_m_i_l_y
+	  Limit statistics or address control block reports to
+	  those of the specified _a_d_d_r_e_s_s _f_a_m_i_l_y.  The following
+	  address families are recognized: _i_n_e_t, for AAFF__IINNEETT, _n_s,
+	  for AAFF__NNSS, and _u_n_i_x, for AAFF__UUNNIIXX.
+
+     The arguments, _s_y_s_t_e_m and _c_o_r_e allow substitutes for the
+     defaults ``/vmunix'' and ``/dev/kmem''.
+
+     The default display, for active sockets, shows the local and
+     remote addresses, send and receive queue sizes (in bytes),
+     protocol, and the internal state of the protocol.	Address
+     formats are of the form ``host.port'' or ``network.port'' if
+     a socket's address specifies a network but no specific host
+     address.  When known the host and network addresses are
+     displayed symbolically according to the data bases
+     /_e_t_c/_h_o_s_t_s and /_e_t_c/_n_e_t_w_o_r_k_s, respectively.  If a symbolic
+     name for an address is unknown, or if the --nn option is
+     specified, the address is printed numerically, according to
+     the address family.  For more information regarding the
+     Internet ``dot format,'' refer to _i_n_e_t(3N).  Unspecified, or
+     ``wildcard'', addresses and ports appear as ``*''.
+
+     The interface display provides a table of cumulative statis-
+     tics regarding packets transferred, errors, and collisions.
+     The network addresses of the interface and the maximum
+     transmission unit (``mtu'') are also displayed.
+
+     The routing table display indicates the available routes and
+     their status.  Each route consists of a destination host or
+     network and a gateway to use in forwarding packets.  The
+     flags field shows the state of the route (``U'' if ``up''),
+     whether the route is to a gateway (``G''), whether the route
+     was created dynamically by a redirect (``D''), and whether
+     the route has been modified by a redirect (``M'').  Direct
+     routes are created for each interface attached to the local
+
+
+
+Printed 7/9/88		  May 14, 1988				2
+
+
+
+
+
+
+NETSTAT(1)	    UNIX Programmer's Manual	       NETSTAT(1)
+
+
+
+     host; the gateway field for such entries shows the address
+     of the outgoing interface.  The refcnt field gives the
+     current number of active uses of the route.  Connection
+     oriented protocols normally hold on to a single route for
+     the duration of a connection while connectionless protocols
+     obtain a route while sending to the same destination.  The
+     use field provides a count of the number of packets sent
+     using that route.	The interface entry indicates the network
+     interface utilized for the route.
+
+     When _n_e_t_s_t_a_t is invoked with an _i_n_t_e_r_v_a_l argument, it
+     displays a running count of statistics related to network
+     interfaces.  This display consists of a column for the pri-
+     mary interface (the first interface found during autoconfi-
+     guration) and a column summarizing information for all
+     interfaces.  The primary interface may be replaced with
+     another interface with the -_I option.  The first line of
+     each screen of information contains a summary since the sys-
+     tem was last rebooted.  Subsequent lines of output show
+     values accumulated over the preceding interval.
+
+SSEEEE AALLSSOO
+     iostat(1), vmstat(1), hosts(5), networks(5), protocols(5),
+     services(5), trpt(8C)
+
+BBUUGGSS
+     The notion of errors is ill-defined.  Collisions mean some-
+     thing else for the IMP.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 14, 1988				3
+
+
+

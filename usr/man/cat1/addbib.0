@@ -1,0 +1,132 @@
+
+
+
+ADDBIB(1)	    UNIX Programmer's Manual		ADDBIB(1)
+
+
+
+NNAAMMEE
+     addbib - create or extend bibliographic database
+
+SSYYNNOOPPSSIISS
+     aaddddbbiibb  [ --pp  promptfile ]  [ --aa ]  database
+
+DDEESSCCRRIIPPTTIIOONN
+     When this program starts up, answering ``y'' to the initial
+     ``Instructions?'' prompt yields directions; typing ``n'' or
+     RETURN skips them.  _A_d_d_b_i_b then prompts for various biblio-
+     graphic fields, reads responses from the terminal, and sends
+     output records to a _d_a_t_a_b_a_s_e. A null response (just RETURN)
+     means to leave out that field.  A minus sign (-) means to go
+     back to the previous field.  A trailing backslash allows a
+     field to be continued on the next line.  The repeating
+     ``Continue?'' prompt allows the user either to resume by
+     typing ``y'' or RETURN, to quit the current session by typ-
+     ing ``n'' or ``q'', or to edit the _d_a_t_a_b_a_s_e with any system
+     editor (_v_i, _e_x, _e_d_i_t, _e_d).
+
+     The --aa option suppresses prompting for an abstract; asking
+     for an abstract is the default.  Abstracts are ended with a
+     CTRL-d.  The --pp option causes _a_d_d_b_i_b to use a new prompting
+     skeleton, defined in _p_r_o_m_p_t_f_i_l_e. This file should contain
+     prompt strings, a tab, and the key-letters to be written to
+     the _d_a_t_a_b_a_s_e.
+
+     The most common key-letters and their meanings are given
+     below.  _A_d_d_b_i_b insulates you from these key-letters, since
+     it gives you prompts in English, but if you edit the
+     bibliography file later on, you will need to know this
+     information.
+
+	  %A   Author's name
+	  %B   Book containing article referenced
+	  %C   City (place of publication)
+	  %D   Date of publication
+	  %E   Editor of book containing article referenced
+	  %F   Footnote number or label (supplied by _r_e_f_e_r)
+	  %G   Government order number
+	  %H   Header commentary, printed before reference
+	  %I   Issuer (publisher)
+	  %J   Journal containing article
+	  %K   Keywords to use in locating reference
+	  %L   Label field used by --kk option of _r_e_f_e_r
+	  %M   Bell Labs Memorandum (undefined)
+	  %N   Number within volume
+	  %O   Other commentary, printed at end of reference
+	  %P   Page number(s)
+	  %Q   Corporate or Foreign Author (unreversed)
+	  %R   Report, paper, or thesis (unpublished)
+	  %S   Series title
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
+
+
+
+ADDBIB(1)	    UNIX Programmer's Manual		ADDBIB(1)
+
+
+
+	  %T   Title of article or book
+	  %V   Volume number
+	  %X   Abstract - used by _r_o_f_f_b_i_b, not by _r_e_f_e_r
+	  %Y,Z ignored by _r_e_f_e_r
+
+     Except for `A', each field should be given just once.  Only
+     relevant fields should be supplied.  An example is:
+
+	  %A   Bill Tuthill
+	  %T   Refer - A Bibliography System
+	  %I   Computing Services
+	  %C   Berkeley
+	  %D   1982
+	  %O   UNX 4.3.5.
+
+
+FFIILLEESS
+     promptfile     optional file to define prompting
+
+SSEEEE AALLSSOO
+     refer(1), sortbib(1), roffbib(1), indxbib(1), lookbib(1)
+
+AAUUTTHHOORRSS
+     Al Stangenberger, Bill Tuthill
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         2
+
+
+

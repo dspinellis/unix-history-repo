@@ -1,0 +1,66 @@
+
+
+
+CMP(1)		    UNIX Programmer's Manual		   CMP(1)
+
+
+
+NNAAMMEE
+     cmp - compare two files
+
+SSYYNNOOPPSSIISS
+     ccmmpp [ --ll ] [ --ss ] file1 file2 [ skip1 ] [ skip2 ]
+
+DDEESSCCRRIIPPTTIIOONN
+     The two files are compared.  (If _f_i_l_e_1 is `-', the standard
+     input is used.)  With no options, _c_m_p makes no comment if
+     the files are the same; if they differ, it reports the byte
+     and line number at which the difference occurred, or, that
+     one file is an initial subsequence of the other.  _S_k_i_p_1 and
+     _s_k_i_p_2 are initial byte offsets into _f_i_l_e_1 and _f_i_l_e_2 respec-
+     tively, and may be either octal or decimal; a leading ``0''
+     denotes octal.
+
+     Options:
+
+     --ss    Print nothing for differing files; set exit codes
+	   only.
+
+     --ll    Print the byte number (in decimal) and the differing
+	   bytes (in octal) for all differences between the two
+	   files.
+
+SSEEEE AALLSSOO
+     diff(1), comm(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Exit code 0 is returned for identical files, 1 for different
+     files, and 2 for an inaccessible or missing argument, or a
+     system error.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		November 18, 1987			1
+
+
+

@@ -1,0 +1,396 @@
+
+
+
+TIP(1C)             UNIX Programmer's Manual		  TIP(1C)
+
+
+
+NNAAMMEE
+     tip, cu - connect to a remote system
+
+SSYYNNOOPPSSIISS
+     ttiipp [ --vv ] [ --_s_p_e_e_d ] system-name
+     ttiipp [ --vv ] [ --_s_p_e_e_d ] phone-number
+     ccuu phone-number [ --tt ] [ --ss _s_p_e_e_d ] [  --aa _a_c_u ] [ --ll _l_i_n_e ]
+     [ --## ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_i_p and _c_u establish a full-duplex connection to another
+     machine, giving the appearance of being logged in directly
+     on the remote cpu.  It goes without saying that you must
+     have a login on the machine (or equivalent) to which you
+     wish to connect.  The preferred interface is _t_i_p.	The _c_u
+     interface is included for those people attached to the
+     ``call UNIX'' command of version 7.  This manual page
+     describes only _t_i_p.
+
+     Typed characters are normally transmitted directly to the
+     remote machine (which does the echoing as well).  A tilde
+     (`~') appearing as the first character of a line is an
+     escape signal; the following are recognized:
+
+     ~~^^DD ~~..    Drop the connection and exit (you may still be
+	       logged in on the remote machine).
+
+     ~~cc  [_n_a_m_e]
+	       Change directory to name (no argument implies
+	       change to your home directory).
+
+     ~~!!        Escape to a shell (exiting the shell will return
+	       you to tip).
+
+     ~~>>        Copy file from local to remote.	_T_i_p prompts for
+	       the name of a local file to transmit.
+
+     ~~<<        Copy file from remote to local.	_T_i_p prompts first
+	       for the name of the file to be sent, then for a
+	       command to be executed on the remote machine.
+
+     ~~pp _f_r_o_m [ _t_o ]
+	       Send a file to a remote UNIX host.  The put com-
+	       mand causes the remote UNIX system to run the com-
+	       mand string ``cat > 'to''', while _t_i_p sends it the
+	       ``from'' file.  If the ``to'' file isn't specified
+	       the ``from'' file name is used.	This command is
+	       actually a UNIX specific version of the ``~>''
+	       command.
+
+     ~~tt _f_r_o_m [ _t_o ]
+	       Take a file from a remote UNIX host. As in the put
+
+
+
+Printed 7/9/88		   May 5, 1986				1
+
+
+
+
+
+
+TIP(1C)             UNIX Programmer's Manual		  TIP(1C)
+
+
+
+	       command the ``to'' file defaults to the ``from''
+	       file name if it isn't specified. The remote host
+	       executes the command string ``cat 'from';echo ^A''
+	       to send the file to _t_i_p.
+
+     ~~||        Pipe the output from a remote command to a local
+	       UNIX process.  The command string sent to the
+	       local UNIX system is processed by the shell.
+
+     ~~$$        Pipe the output from a local UNIX process to the
+	       remote host.  The command string sent to the local
+	       UNIX system is processed by the shell.
+
+     ~~##        Send a BREAK to the remote system. For systems
+	       which don't support the necessary _i_o_c_t_l call the
+	       break is simulated by a sequence of line speed
+	       changes and DEL characters.
+
+     ~~ss        Set a variable (see the discussion below).
+
+     ~~^^ZZ       Stop _t_i_p (only available with job control).
+
+     ~~^^YY       Stop only the ``local side'' of _t_i_p (only avail-
+	       able with job control); the ``remote side'' of
+	       _t_i_p, the side that displays output from the remote
+	       host, is left running.
+
+     ~~??        Get a summary of the tilde escapes
+
+
+     _T_i_p uses the file /etc/remote to find how to reach a partic-
+     ular system and to find out how it should operate while
+     talking to the system; refer to _r_e_m_o_t_e(5) for a full
+     description.  Each system has a default baud rate with which
+     to establish a connection.  If this value is not suitable,
+     the baud rate to be used may be specified on the command
+     line, e.g. ``tip -300 mds''.
+
+     When _t_i_p establishes a connection it sends out a connection
+     message to the remote system; the default value, if any, is
+     defined in /etc/remote.
+
+     When _t_i_p prompts for an argument (e.g. during setup of a
+     file transfer) the line typed may be edited with the stan-
+     dard erase and kill characters.  A null line in response to
+     a prompt, or an interrupt, will abort the dialogue and
+     return you to the remote machine.
+
+     _T_i_p guards against multiple users connecting to a remote
+     system by opening modems and terminal lines with exclusive
+     access, and by honoring the locking protocol used by
+     _u_u_c_p(1C).
+
+
+
+Printed 7/9/88		   May 5, 1986				2
+
+
+
+
+
+
+TIP(1C)             UNIX Programmer's Manual		  TIP(1C)
+
+
+
+     During file transfers _t_i_p provides a running count of the
+     number of lines transferred.  When using the ~> and ~< com-
+     mands, the ``eofread'' and ``eofwrite'' variables are used
+     to recognize end-of-file when reading, and specify end-of-
+     file when writing (see below).  File transfers normally
+     depend on tandem mode for flow control.  If the remote sys-
+     tem does not support tandem mode, ``echocheck'' may be set
+     to indicate _t_i_p should synchronize with the remote system on
+     the echo of each transmitted character.
+
+     When _t_i_p must dial a phone number to connect to a system it
+     will print various messages indicating its actions.  _T_i_p
+     supports the DEC DN-11 and Racal-Vadic 831 auto-call-units;
+     the DEC DF02 and DF03, Ventel 212+, Racal-Vadic 3451, and
+     Bizcomp 1031 and 1032 integral call unit/modems.
+
+     VVAARRIIAABBLLEESS
+
+     _T_i_p maintains a set of _v_a_r_i_a_b_l_e_s which control its opera-
+     tion.  Some of these variable are read-only to normal users
+     (root is allowed to change anything of interest).	Variables
+     may be displayed and set through the ``s'' escape.  The syn-
+     tax for variables is patterned after _v_i(1) and _M_a_i_l(1).
+     Supplying ``all'' as an argument to the set command displays
+     all variables readable by the user.  Alternatively, the user
+     may request display of a particular variable by attaching a
+     `?' to the end.  For example ``escape?'' displays the
+     current escape character.
+
+     Variables are numeric, string, character, or boolean values.
+     Boolean variables are set merely by specifying their name;
+     they may be reset by prepending a `!' to the name.  Other
+     variable types are set by concatenating an `=' and the
+     value.  The entire assignment must not have any blanks in
+     it.  A single set command may be used to interrogate as well
+     as set a number of variables.  Variables may be initialized
+     at run time by placing set commands (without the ``~s'' pre-
+     fix in a file ._t_i_p_r_c in one's home directory).  The --vv
+     option causes _t_i_p to display the sets as they are made.
+     Certain common variables have abbreviations. The following
+     is a list of common variables, their abbreviations, and
+     their default values.
+
+     bbeeaauuttiiffyy
+	  (bool) Discard unprintable characters when a session is
+	  being scripted; abbreviated _b_e.
+
+     bbaauuddrraattee
+	  (num) The baud rate at which the connection was esta-
+	  blished; abbreviated _b_a.
+
+     ddiiaallttiimmeeoouutt
+
+
+
+Printed 7/9/88		   May 5, 1986				3
+
+
+
+
+
+
+TIP(1C)             UNIX Programmer's Manual		  TIP(1C)
+
+
+
+	  (num) When dialing a phone number, the time (in
+	  seconds) to wait for a connection to be established;
+	  abbreviated _d_i_a_l.
+
+     eecchhoocchheecckk
+	  (bool) Synchronize with the remote host during file
+	  transfer by waiting for the echo of the last character
+	  transmitted; default is _o_f_f.
+
+     eeooffrreeaadd
+	  (str) The set of characters which signify and end-of-
+	  tranmission during a ~< file transfer command; abbrevi-
+	  ated _e_o_f_r.
+
+     eeooffwwrriittee
+	  (str) The string sent to indicate end-of-transmission
+	  during a ~> file transfer command; abbreviated _e_o_f_w.
+
+     eeooll
+	  (str) The set of characters which indicate an end-of-
+	  line.  _T_i_p will recognize escape characters only after
+	  an end-of-line.
+
+     eessccaappee
+	  (char) The command prefix (escape) character; abbrevi-
+	  ated _e_s; default value is `~'.
+
+     eexxcceeppttiioonnss
+	  (str) The set of characters which should not be dis-
+	  carded due to the beautification switch; abbreviated
+	  _e_x; default value is ``\t\n\f\b''.
+
+     ffoorrccee
+	  (char) The character used to force literal data
+	  transmission; abbreviated _f_o; default value is `^P'.
+
+     ffrraammeessiizzee
+	  (num) The amount of data (in bytes) to buffer between
+	  file system writes when receiving files; abbreviated
+	  _f_r.
+
+     hhoosstt
+	  (str) The name of the host to which you are connected;
+	  abbreviated _h_o.
+
+     pprroommpptt
+	  (char) The character which indicates and end-of-line on
+	  the remote host; abbreviated _p_r; default value is `\n'.
+	  This value is used to synchronize during data
+	  transfers.  The count of lines transferred during a
+	  file transfer command is based on recipt of this char-
+	  acter.
+
+
+
+Printed 7/9/88		   May 5, 1986				4
+
+
+
+
+
+
+TIP(1C)             UNIX Programmer's Manual		  TIP(1C)
+
+
+
+     rraaiissee
+	  (bool) Upper case mapping mode; abbreviated _r_a; default
+	  value is _o_f_f.  When this mode is enabled, all lower
+	  case letters will be mapped to upper case by _t_i_p for
+	  transmission to the remote machine.
+
+     rraaiisseecchhaarr
+	  (char) The input character used to toggle upper case
+	  mapping mode; abbreviated _r_c; default value is `^A'.
+
+     rreeccoorrdd
+	  (str) The name of the file in which a session script is
+	  recorded; abbreviated _r_e_c; default value is
+	  ``tip.record''.
+
+     ssccrriipptt
+	  (bool) Session scripting mode; abbreviated _s_c; default
+	  is _o_f_f.  When _s_c_r_i_p_t is _t_r_u_e, _t_i_p will record every-
+	  thing transmitted by the remote machine in the script
+	  record file specified in _r_e_c_o_r_d.  If the _b_e_a_u_t_i_f_y
+	  switch is on, only printable ASCII characters will be
+	  included in the script file (those characters betwee
+	  040 and 0177).  The variable _e_x_c_e_p_t_i_o_n_s is used to
+	  indicate characters which are an exception to the nor-
+	  mal beautification rules.
+
+     ttaabbeexxppaanndd
+	  (bool) Expand tabs to spaces during file transfers;
+	  abbreviated _t_a_b; default value is _f_a_l_s_e.  Each tab is
+	  expanded to 8 spaces.
+
+     vveerrbboossee
+	  (bool) Verbose mode; abbreviated _v_e_r_b; default is _t_r_u_e.
+	  When verbose mode is enabled, _t_i_p prints messages while
+	  dialing, shows the current number of lines transferred
+	  during a file transfer operations, and more.
+
+     SSHHEELLLL
+	  (str) The name of the shell to use for the ~! command;
+	  default value is ``/bin/sh'', or taken from the
+	  environment.
+
+     HHOOMMEE
+	  (str) The home directory to use for the ~c command;
+	  default value is taken from the environment.
+
+FFIILLEESS
+     /etc/remote	      global system descriptions
+     /etc/phones	      global phone number data base
+     ${REMOTE}		      private system descriptions
+     ${PHONES}		      private phone numbers
+     ~/.tiprc		      initialization file.
+
+
+
+Printed 7/9/88		   May 5, 1986				5
+
+
+
+
+
+
+TIP(1C)             UNIX Programmer's Manual		  TIP(1C)
+
+
+
+     /usr/spool/uucp/LCK..*   lock file to avoid conflicts with _u_u_c_p
+
+DDIIAAGGNNOOSSTTIICCSS
+     Diagnostics are, hopefully, self explanatory.
+
+SSEEEE AALLSSOO
+     remote(5), phones(5)
+
+BBUUGGSS
+     The full set of variables is undocumented and should, prob-
+     ably, be paired down.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 5, 1986				6
+
+
+

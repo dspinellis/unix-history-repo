@@ -1,0 +1,66 @@
+
+
+
+MSET(1)             UNIX Programmer's Manual		  MSET(1)
+
+
+
+NNAAMMEE
+     mset - retrieve ASCII to IBM 3270 keyboard map
+
+SSYYNNOOPPSSIISS
+     mmsseett
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_s_e_t retrieves mapping information for the ASCII keyboard to
+     IBM 3270 terminal special functions.  Normally, these map-
+     pings are found in /_e_t_c/_m_a_p_3_2_7_0 (see _m_a_p_3_2_7_0(5)).	This
+     information is used by the _t_n_3_2_7_0 command (see _t_n_3_2_7_0(1)).
+
+     _M_s_e_t can be used store the mapping information in the pro-
+     cess environment in order to avoid scanning /_e_t_c/_m_a_p_3_2_7_0
+     each time _t_n_3_2_7_0 is invoked.  To do this, place the follow-
+     ing command in your ._l_o_g_i_n file:
+
+	  set noglob; setenv MAP3270 "`mset`"; unset noglob
+
+     _M_s_e_t first determines the user's terminal type from the
+     environment variable TTEERRMM.  Normally _m_s_e_t then uses the file
+     /_e_t_c/_m_a_p_3_2_7_0 to find the keyboard mapping for that terminal.
+     However, if the environment variable MMAAPP33227700 exists and con-
+     tains the entry for the specified terminal, then that defin-
+     ition is used.  If the value of MMAAPP33227700 begins with a slash
+     (`/') then it is assumed to be the full pathname of an
+     alternate mapping file and that file is searched first.  In
+     any case, if the mapping for the terminal is not found in
+     the environment, nor in an alternate map file, nor in the
+     standard map file, then the same search is performed for an
+     entry for a terminal type of uunnkknnoowwnn.. If that search also
+     fails, then a default mapping is used.
+
+FFIILLEESS
+     /etc/map3270	 keyboard mapping for known terminals
+
+SSEEEE AALLSSOO
+     tn3270(1), map3270(5)
+
+BBUUGGSS
+     If the entry for the specific terminal exceeds 1024 bytes,
+     _c_s_h(1) will fail to set the environment variable.	_M_s_e_t
+     should probably detect this case and output the path to the
+     _m_a_p_3_2_7_0 file instead of the terminal entry.
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		January 11, 1986			1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+IOSTAT(1)	    UNIX Programmer's Manual		IOSTAT(1)
+
+
+
+NNAAMMEE
+     iostat - report I/O statistics
+
+SSYYNNOOPPSSIISS
+     iioossttaatt [ drives ] [ interval [ count ] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _I_o_s_t_a_t iteratively reports the number of characters read and
+     written to terminals per second, and, for each disk, the
+     number of transfers per second, kilobytes transferred per
+     second, and the milliseconds per average seek.  It also
+     gives the percentage of time the system has spent in user
+     mode, in user mode running low priority (niced) processes,
+     in system mode, and idling.
+
+     To compute this information, for each disk, seeks and data
+     transfer completions and number of words transferred are
+     counted; for terminals collectively, the number of input and
+     output characters are counted.  Also, each sixtieth of a
+     second, the state of each disk is examined and a tally is
+     made if the disk is active.  From these numbers and given
+     the transfer rates of the devices it is possible to deter-
+     mine average seek times for each device.
+
+     The optional _i_n_t_e_r_v_a_l argument causes _i_o_s_t_a_t to report once
+     each _i_n_t_e_r_v_a_l seconds.  The first report is for  all time
+     since a reboot and each subsequent report is for the last
+     interval only.
+
+     The optional _c_o_u_n_t argument restricts the number of reports.
+
+     If more than 4 disk drives are configured in the system,
+     _i_o_s_t_a_t displays only the first 4 drives, with priority given
+     to Massbus disk drives (i.e. if both Unibus and Massbus
+     drives are present and the total number of drives exceeds 4,
+     then some number of Unibus drives will not be displayed in
+     favor of the Massbus drives).  To force _i_o_s_t_a_t to display
+     specific drives, their names may be supplied on the command
+     line.
+
+FFIILLEESS
+     /dev/kmem
+     /vmunix
+
+SSEEEE AALLSSOO
+     vmstat(1)
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 29, 1985                         1
+
+
+
