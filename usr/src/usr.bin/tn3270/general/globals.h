@@ -86,3 +86,9 @@ EXTERN int Initialized;	/* are we initialized? */
 
 #if	defined(INCLUDED_STATE)
 #endif
+
+#if	defined(INCLUDED_OIA)
+
+OIA OperatorInformationArea;
+
+#endif	/* defined(INCLUDED_OIA) */

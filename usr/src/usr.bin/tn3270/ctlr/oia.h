@@ -2,6 +2,8 @@
  * This file describes the Operator Information Area in the 3270.
  */
 
+#define	INCLUDED_OIA
+
 #define	OIA_READY_3274	0xF4
 #define	OIA_ONLINE_A	0xCC
 #define	OIA_OWNERSHIP_MYJOB	0xCF
