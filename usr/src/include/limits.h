@@ -14,18 +14,8 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)limits.h	5.1 (Berkeley) %G%
+ *	@(#)limits.h	5.2 (Berkeley) %G%
  */
 
 #include <machine/machlimits.h>
-
-#define	ARG_MAX		4096	/* max bytes for an exec function */
-#define	CHILD_MAX	6	/* max simultaneous processes */
-#define	OPEN_MAX	16	/* max open files per process */
-#define	LINK_MAX	8	/* max file link count */
-#define	MAX_CANON	255	/* max bytes in terminal canonical input line */
-#define	MAX_INPUT	255	/* max bytes in terminal input */
-#define	NAME_MAX	14	/* max number of bytes in a file name */
-#define	PATH_MAX	255	/* max number of bytes in pathname */
-#define	PIPE_BUF	512	/* max number of bytes for atomic pipe writes */
-#define	NGROUPS_MAX	0	/* max number of supplemental group id's */
+#include <sys/syslimits.h>
