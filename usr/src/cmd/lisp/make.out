@@ -1,0 +1,175 @@
+(cd franz; make LibDir=/nbsd//usr/lib/lisp  ObjDir=/nbsd//usr/ucb  domylisp)
+rm -f mylisp
+make LibDir=/nbsd//usr/lib/lisp Liszt=liszt ObjDir=/nbsd//usr/ucb mylisp
+as -o Orderit.o Orderit.s
+cc -c lisp.c
+cc -c eval.c
+cc -c eval2.c
+cc -c inits.c
+cc -c io.c
+cc -c error.c
+cc -c sysat.c
+cc -c lam1.c
+cc -c lam2.c
+cc -c lam3.c
+cc -c lam4.c
+cc -c lam5.c
+cc -c lam6.c
+cc -c lam7.c
+cc -c lam8.c
+cc -c lam9.c
+cc -c lamr.c
+cc -c fex1.c
+cc -c fex2.c
+cc -c fex3.c
+cc -c fex4.c
+cc -c fexr.c
+cc -c fpipe.c
+as -o bigmath.o bigmath.s
+cc -c subbig.c
+cc -c pbignum.c
+cc -c divbig.c
+as -o inewint.o inewint.s
+cc -c ffasl.c
+cc -c nfasl.c
+as -o vsyscall.o vsyscall.s
+cc -E  qfuncl.c | as -o qfuncl.o
+cc -c trace.c
+cc -c evalf.c
+cc -c frame.c
+cc -c lamgc.c
+cc -c vax.c
+cc -c Talloc.c
+cc -c data.c
+cc -c lamnop.c
+as -o dmcount.o dmcount.s
+rm -f tlisp
+ld -x -o tlisp -e start crt0.o Orderit.o lisp.o eval.o eval2.o inits.o io.o error.o sysat.o  lam1.o lam2.o lam3.o lam4.o lam5.o lam6.o lam7.o lam8.o lam9.o lamr.o  fex1.o fex2.o fex3.o fex4.o fexr.o fpipe.o bigmath.o subbig.o pbignum.o divbig.o inewint.o ffasl.o  nfasl.o vsyscall.o qfuncl.o trace.o evalf.o frame.o   lamgc.o vax.o Talloc.o data.o lamnop.o dmcount.o -lm -lc -ltermlib
+ls -l tlisp
+-rwxrwxr-x  1 root       158370 Jun 25 10:08 tlisp
+make tlisp
+`tlisp' is up to date.
+rm -f mylisp
+(cd /nbsd//usr/lib/lisp ; make Liszt=liszt required)
+liszt  -xaq charmac 
+liszt  -xaq common0 
+liszt  -xaq common1 
+liszt  -xaq common2 
+liszt  -xaq toplevel 
+liszt  -xaq syntax 
+liszt  -xaq macros 
+liszt  -xaq vector 
+liszt  -xaq array 
+liszt  -xaq pp 
+liszt  -xaq version 
+cc -O -o tackon tackon.c
+echo "(progn (setq build:map 'map  lisp-library-directory '/nbsd//usr/lib/lisp  build:dir '/nbsd//usr/lib/lisp  lisp-object-directory '/nbsd//usr/ucb)  (load '/nbsd//usr/lib/lisp/buildlisp) (dumplisp mylisp))" | tlisp
+Franz Lisp, Opus 38
+-> [fasl /nbsd//usr/lib/lisp/common0.o]
+[fasl /nbsd//usr/lib/lisp/syntax.o]
+[fasl /nbsd//usr/lib/lisp/charmac.o]
+[fasl /nbsd//usr/lib/lisp/macros.o]
+[fasl /nbsd//usr/lib/lisp/common1.o]
+[fasl /nbsd//usr/lib/lisp/common2.o]
+[fasl /nbsd//usr/lib/lisp/vector.o]
+[fasl /nbsd//usr/lib/lisp/array.o]
+[fasl /nbsd//usr/lib/lisp/pp.o]
+[fasl /nbsd//usr/lib/lisp/version.o]
+[fasl /nbsd//usr/lib/lisp/toplevel.o]
+nil
+-> /nbsd//usr/lib/lisp/tackon map mylisp
+mylisp built
+(cd liszt; make Lisp=../franz/mylisp nliszt)
+/usr/ucb/liszt -qa cmacros 
+/usr/ucb/liszt -qa array 
+/usr/ucb/liszt -qa datab 
+/usr/ucb/liszt -qa decl 
+/usr/ucb/liszt -qa expr 
+/usr/ucb/liszt -qa fixnum 
+/usr/ucb/liszt -qa funa 
+/usr/ucb/liszt -qa funb 
+/usr/ucb/liszt -qa func 
+/usr/ucb/liszt -qa io 
+/usr/ucb/liszt -qa tlev 
+/usr/ucb/liszt -qa util 
+/usr/ucb/liszt -qa lversion 
+echo "(load 'cmake.l)" | ../franz/mylisp 
+Franz Lisp, Opus 38.22
+-> [load cmake.l]
+[fasl decl.o]
+[fasl array.o]
+[fasl datab.o]
+[fasl expr.o]
+[fasl io.o]
+[fasl funa.o]
+[fasl funb.o]
+[fasl func.o]
+[fasl tlev.o]
+[fasl fixnum.o]
+[fasl util.o]
+[fasl lversion.o]
+t
+Liszt version 8.08 [.22]
+-> nliszt done
+(cd liszt; make Liszt=./nliszt lxref)
+./nliszt -xrq lxref
+/nbsd//usr/lib/lisp/as: Command not found.
+?Error: lxref.l: : Assembler detected error, code: 1
+cp lxref.o lxref
+cp: lxref.o: No such file or directory
+*** Error code 1
+
+Stop.
+*** Error code 1
+
+Stop.
+(cd /nbsd//usr/lib/lisp ; make as nld)
+Grabbing as from /bin
+cp /bin/as as
+Grabbing nld from /bin
+cp /bin/ld nld
+(cd franz; make LibDir=/nbsd//usr/lib/lisp  ObjDir=/nbsd//usr/ucb  domylisp)
+rm -f mylisp
+make LibDir=/nbsd//usr/lib/lisp Liszt=liszt ObjDir=/nbsd//usr/ucb mylisp
+make tlisp
+`tlisp' is up to date.
+rm -f mylisp
+(cd /nbsd//usr/lib/lisp ; make Liszt=liszt required)
+echo "(progn (setq build:map 'map  lisp-library-directory '/nbsd//usr/lib/lisp  build:dir '/nbsd//usr/lib/lisp  lisp-object-directory '/nbsd//usr/ucb)  (load '/nbsd//usr/lib/lisp/buildlisp) (dumplisp mylisp))" | tlisp
+Franz Lisp, Opus 38
+-> [fasl /nbsd//usr/lib/lisp/common0.o]
+[fasl /nbsd//usr/lib/lisp/syntax.o]
+[fasl /nbsd//usr/lib/lisp/charmac.o]
+[fasl /nbsd//usr/lib/lisp/macros.o]
+[fasl /nbsd//usr/lib/lisp/common1.o]
+[fasl /nbsd//usr/lib/lisp/common2.o]
+[fasl /nbsd//usr/lib/lisp/vector.o]
+[fasl /nbsd//usr/lib/lisp/array.o]
+[fasl /nbsd//usr/lib/lisp/pp.o]
+[fasl /nbsd//usr/lib/lisp/version.o]
+[fasl /nbsd//usr/lib/lisp/toplevel.o]
+nil
+-> /nbsd//usr/lib/lisp/tackon map mylisp
+mylisp built
+(cd liszt; make Lisp=../franz/mylisp nliszt)
+echo "(load 'cmake.l)" | ../franz/mylisp 
+Franz Lisp, Opus 38.22
+-> [load cmake.l]
+[fasl decl.o]
+[fasl array.o]
+[fasl datab.o]
+[fasl expr.o]
+[fasl io.o]
+[fasl funa.o]
+[fasl funb.o]
+[fasl func.o]
+[fasl tlev.o]
+[fasl fixnum.o]
+[fasl util.o]
+[fasl lversion.o]
+t
+Liszt version 8.08 [.22]
+-> nliszt done
+(cd liszt; make Liszt=./nliszt lxref)
+./nliszt -xrq lxref
+cp lxref.o lxref
