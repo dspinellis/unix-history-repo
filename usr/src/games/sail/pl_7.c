@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pl_7.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pl_7.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ttydefaults.h>
@@ -444,14 +444,3 @@ adjustview()
 	else if (mf->col > viewcol + (VIEW_X - VIEW_X/8))
 		viewcol = mf->col - VIEW_X/8;
 }
-
-#ifdef SIGTSTP
-void
-susp()
-{
-	blockalarm();
-	tstp(SIGTSTP);
-	(void) signal(SIGTSTP, susp);
-	unblockalarm();
-}
-#endif
