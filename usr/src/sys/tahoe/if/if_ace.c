@@ -1,4 +1,4 @@
-/*	if_ace.c	1.8	86/01/26	*/
+/*	if_ace.c	1.9	86/06/09	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -39,16 +39,6 @@
 #include "../tahoe/mtpr.h"
 #include "../tahoeif/if_acereg.h"
 #include "../tahoevba/vbavar.h"
-
-/* station address */
-char	ace_station[6] = { ~0x8, ~0x0, ~0x3, ~0x0, ~0x0, ~0x1 };
-/* multicast hash table initializer */
-char	ace_hash[8] = { ~0xF,~0xF,~0xF,~0xF,~0xF,~0xF,~0xF,~0xF };
-/* backoff table masks */
-short random_mask_tbl[16] = {
-	0x0040, 0x00C0, 0x01C0, 0x03C0, 0x07C0, 0x0FC0, 0x1FC0, 0x3FC0,
-	0x7FC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0
-};
 
 int	aceprobe(), aceattach(), acerint(), acecint();
 struct	vba_device *aceinfo[NACE];
@@ -133,19 +123,21 @@ aceattach(ui)
 	register struct ifnet *ifp = &is->is_if;
 	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
 	register short *wp, i;
+	char *cp;
 
 	ifp->if_unit = unit;
 	ifp->if_name = "ace";
 	ifp->if_mtu = ETHERMTU;
 	/*
-	 * Set station's addresses and multicast hash table.
+	 * Get station's addresses and set multicast hash table.
 	 */
-	ace_station[5] = ~(unit + 1);
-	acesetetaddr(unit, addr, ace_station);
+	for (wp = (short *)addr->station, i = 0; i < 6; i++)
+		is->is_addr[i] = ~*wp++;
+	printf("ace%d: hardware address %s\n", unit,
+	    ether_sprintf(is->is_addr));
 	is->is_promiscuous = 0;
-	wp = (short *)addr->hash;
-	for (i =  0; i < 8; i++)
-		movow(wp++, ace_hash[i]); 
+	for (wp = (short *)addr->hash, i =  0; i < 8; i++)
+		movow(wp++, ~0xf); 
 	movow(&addr->bcastena[0], ~0xffff); 
 	movow(&addr->bcastena[1], ~0xffff);
 	/*
@@ -159,25 +151,6 @@ aceattach(ui)
 	ifp->if_reset = acereset;
 	ifp->if_flags = IFF_BROADCAST;
 	if_attach(ifp);
-}
-
-acesetetaddr(unit, addr, station_addr)
-	short unit;
-	struct acedevice *addr;
-	char *station_addr;
-{
-	register short *wp, i;
-	register char *cp;
-	struct ace_softc *is = &ace_softc[unit];
-
-	wp = (short *)addr->station;
-	cp = station_addr;
-	for (i = 0; i < 6; i++)
-		movow(wp++, *cp++); 
-	wp = (short *)addr->station;
-	cp = (char *)is->is_addr;
-	for (i = 0; i < 6; i++)
-		*cp++ = ~(*wp++);
 }
 
 /*
@@ -742,6 +715,12 @@ bad:
 	return (0);
 }
 
+/* backoff table masks */
+short	random_mask_tbl[16] = {
+	0x0040, 0x00C0, 0x01C0, 0x03C0, 0x07C0, 0x0FC0, 0x1FC0, 0x3FC0,
+	0x7FC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0, 0xFFC0
+};
+
 acebakoff(is, txseg, retries)
 	struct ace_softc *is;
 	struct tx_segment *txseg;
@@ -796,7 +775,7 @@ aceioctl(ifp, cmd, data)
 				movow(&addr->csr, CSR_RESET);
 				DELAY(10000);
 				/* set station address & copy addr to arp */
-				acesetetaddr(ifp->if_unit, addr, 
+				acesetaddr(ifp->if_unit, addr, 
 				    ina->x_host.c_host);
 			} else
 				ina->x_host = *(union ns_host *)is->is_addr;
@@ -828,6 +807,30 @@ aceioctl(ifp, cmd, data)
 	return (error);
 }
 
+/*
+ * Set the on-board station address, then read it back
+ * to initialize the address used by ARP (among others).
+ */
+acesetaddr(unit, addr, station)
+	short unit;
+	struct acedevice *addr;
+	char *station;
+{
+	struct ace_softc *is = &ace_softc[unit];
+	register short *wp, i;
+
+	for (wp = (short *)addr->station, i = 0; i < 6; i++)
+		movow(wp++, ~*station++); 
+	for (wp = (short *)addr->station, i = 0; i < 6; i++)
+		is->is_addr[i] = ~*wp++;
+	printf("ace%d: hardware address %s\n", unit,
+	    ether_sprintf(is->is_addr));
+}
+
+/*
+ * Setup the device for use.  Initialize dual-ported memory,
+ * backoff parameters, and various other software state.
+ */
 acesetup(unit)
 	int unit;
 {
