@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)exec.c	5.6 (Berkeley) %G%";
+static char *sccsid = "@(#)exec.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include <sys/dir.h>
+#include <string.h>
 #include "pathnames.h"
 
 /*
@@ -196,7 +197,6 @@ texec(f, t)
 {
 	register struct varent *v;
 	register char **vp;
-	extern char *sys_errlist[];
 	char *lastsh[2];
 
 	execv(f, t);
@@ -237,7 +237,7 @@ texec(f, t)
 
 	default:
 		if (exerr == 0) {
-			exerr = sys_errlist[errno];
+			exerr = strerror(errno);
 			expath = savestr(f);
 		}
 	}
