@@ -1,4 +1,4 @@
-/*	llib-lc	1.10	84/03/15	*/
+/*	llib-lc	1.11	84/08/02	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -132,7 +132,7 @@ int	symlink( t, f) char *t, *f; { return 0;}
 int	truncate( p, l) char *p; { return 0;}
 int	umask( n ) { return n; }
 int	unlink(s) char *s; { return(0); }
-int	utimes( f, t ) char *f; struct timeval *t[2]; { return 0 ;}
+int	utimes( f, t ) char *f; struct timeval t[2]; { return 0 ;}
 int	vfork() { return(0); }
 int	wait(s) union wait *s; { return(1); }
 int	wait3( s, o, r) union wait *s; struct rusage *r; { return 1;}
