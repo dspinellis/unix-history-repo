@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	8.3 (Berkeley) %G%
+ *	@(#)malloc.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _SYS_MALLOC_H_
@@ -80,6 +80,9 @@
 #define	M_MRTABLE	56	/* multicast routing tables */
 #define M_ISOFSMNT	57	/* ISOFS mount structure */
 #define M_ISOFSNODE	58	/* ISOFS vnode private part */
+#define M_NFSRVDESC	59	/* NFS server socket descriptor */
+#define M_NFSDIROFF	60	/* NFS directory offset data */
+#define M_NFSBIGFH	61	/* NFS version 3 file handle */
 #define	M_TEMP		74	/* misc temporary data buffers */
 #define	M_LAST		75	/* Must be last type + 1 */
 
@@ -143,7 +146,10 @@
 	"mrt",		/* 56 M_MRTABLE */ \
 	"ISOFS mount",	/* 57 M_ISOFSMNT */ \
 	"ISOFS node",	/* 58 M_ISOFSNODE */ \
-	NULL, NULL, NULL, NULL, NULL, \
+	"NFSV3 srvdesc",/* 59 M_NFSRVDESC */ \
+	"NFSV3 diroff",	/* 60 M_NFSDIROFF */ \
+	"NFSV3 bigfh",	/* 61 M_NFSBIGFH */ \
+	NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
 	NULL, NULL, NULL, NULL, NULL, \
 	"temp",		/* 74 M_TEMP */ \
