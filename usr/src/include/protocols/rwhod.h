@@ -1,4 +1,4 @@
-/*	rwhod.h	4.2	82/11/14	*/
+/*	rwhod.h	4.3	82/12/24	*/
 
 struct	whod {
 	int	wd_sendtime;
@@ -11,3 +11,5 @@ struct	whod {
 		int	we_idle;
 	} wd_we[1024 / sizeof (struct whoent)];
 };
+
+#define	RWHODIR	"/usr/spool/rwho"	/* where data is stored */

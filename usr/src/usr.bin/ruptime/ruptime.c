@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.6 82/11/14";
+static char sccsid[] = "@(#)ruptime.c	4.7 82/12/24";
 #endif
 
 #include <sys/param.h>
@@ -64,8 +64,8 @@ again:
 		argc--, argv++;
 		goto again;
 	}
-	if (chdir("/etc") < 0) {
-		perror("/etc");
+	if (chdir(RWHODIR) < 0) {
+		perror(RWHODIR);
 		exit(1);
 	}
 	etc = opendir(".");
