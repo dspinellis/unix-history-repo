@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_subr.c	8.2 (Berkeley) %G%
+ *	@(#)lofs_subr.c	8.3 (Berkeley) %G%
  *
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -245,8 +245,6 @@ make_lofs(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	int error;
-	struct vnode *aliasvp;
 	struct vnode *targetvp;
 
 #ifdef LOFS_DIAGNOSTIC
