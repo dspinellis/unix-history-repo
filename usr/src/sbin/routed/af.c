@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)af.c	4.5 %G%";
+static char sccsid[] = "@(#)af.c	4.6 %G%";
 #endif
 
 #include <sys/types.h>
@@ -38,7 +38,7 @@ inet_hash(sin, hp)
 	struct afhash *hp;
 {
 
-	hp->afh_nethash = sin->sin_addr.s_net;
+	hp->afh_nethash = IN_NETOF(sin->sin_addr);
 	hp->afh_hosthash = sin->sin_addr.s_addr;
 #if vax || pdp11
 	hp->afh_hosthash = ntohl(hp->afh_hosthash);
@@ -50,7 +50,7 @@ inet_netmatch(sin1, sin2)
 	struct sockaddr_in *sin1, *sin2;
 {
 
-	return (sin1->sin_addr.s_net == sin2->sin_addr.s_net);
+	return (IN_NETOF(sin1->sin_addr) == IN_NETOF(sin2->sin_addr));
 }
 
 /*
@@ -113,7 +113,7 @@ inet_checkhost(sin)
 	extern struct in_addr if_makeaddr();
 	struct in_addr netaddr;
 
-	netaddr = if_makeaddr((int)sin->sin_addr.s_net, INADDR_ANY);
+	netaddr = if_makeaddr(IN_NETOF(sin->sin_addr), INADDR_ANY);
 	return (netaddr.s_addr != sin->sin_addr.s_addr);
 }
 
