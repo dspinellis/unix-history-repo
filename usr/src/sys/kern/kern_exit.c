@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.45 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.46 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -63,6 +63,7 @@ exit(p, rv)
 	register struct proc *q, *nq;
 	register struct proc **pp;
 	register struct vmspace *vm;
+	struct timeval tv;
 	int s;
 
 	if (p->p_pid == 1)
@@ -191,13 +192,16 @@ done:
 	p->p_cptr = NULL;
 
 	/*
-	 * Save exit status and final rusage info,
-	 * adding in child rusage info and self times.
+	 * Save exit status and final rusage info, adding in child rusage
+	 * info and self times.  Add its most recent runtime here; we are
+	 * not going to reach the usual code in swtch().
 	 */
 	p->p_xstat = rv;
 	*p->p_ru = p->p_stats->p_ru;
-	p->p_ru->ru_stime = p->p_stime;
-	p->p_ru->ru_utime = p->p_utime;
+	microtime(&tv);
+	timevalsub(&tv, &runtime);
+	timevaladd(&p->p_rtime, &tv);
+	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
 	ruadd(p->p_ru, &p->p_stats->p_cru);
 
 	/*
@@ -229,7 +233,7 @@ done:
 	 * The address space is released by "vmspace_free(p->p_vmspace)";
 	 * This is machine-dependent, as we may have to change stacks
 	 * or ensure that the current one isn't reallocated before we
-	 * finish.  cpu_exit will end with a call to swtch(), finishing
+	 * finish.  cpu_exit will end with a call to cpu_swtch(), finishing
 	 * our execution (pun intended).
 	 */
 	cpu_exit(p);
