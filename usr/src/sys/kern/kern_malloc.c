@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.28 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -160,7 +160,7 @@ malloc(size, type, flags)
 	if (bcmp(addrmask, va, copysize)) {
 		copysize >>= 2;
 		for (i = 0; i < copysize && addrmask[i] == ((int *)va)[i]; i++)
-			/* void */;
+			continue;
 		printf("%s %d of object 0x%x size %d %s %s (0x%x != 0x%x)\n",
 		    "Data modified on freelist: word", i, va, size,
 		    "previous type", memname[savedtype], ((int *)va)[i],
@@ -315,8 +315,8 @@ kmeminit()
 	npg = VM_KMEM_SIZE/ NBPG;
 	kmemusage = (struct kmemusage *) kmem_alloc(kernel_map,
 		(vm_size_t)(npg * sizeof(struct kmemusage)));
-	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t)&kmembase,
-		(vm_offset_t)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
+	kmem_map = kmem_suballoc(kernel_map, (vm_offset_t *)&kmembase,
+		(vm_offset_t *)&kmemlimit, (vm_size_t)(npg * NBPG), FALSE);
 #ifdef KMEMSTATS
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
 		if (1 << indx >= CLBYTES)
