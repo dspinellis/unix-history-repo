@@ -1,11 +1,13 @@
 # include <signal.h>
 # include <errno.h>
+# include <sys/types.h>
+# include <sys/stat.h>
 # include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.35	%G%";
+static char SccsId[] = "@(#)deliver.c	3.36	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -344,6 +346,7 @@ sendoff(m, pvp, editfcn)
 		return (-1);
 	}
 	DOFORK(XFORK);
+	/* pid is set by DOFORK */
 	if (pid < 0)
 	{
 		syserr("Cannot fork");
@@ -623,6 +626,11 @@ putmessage(fp, m)
 /*
 **  MAILFILE -- Send a message to a file.
 **
+**	If the file has the setuid/setgid bits set, but NO execute
+**	bits, sendmail will try to become the owner of that file
+**	rather than the real user.  Obviously, this only works if
+**	sendmail runs as root.
+**
 **	Parameters:
 **		filename -- the name of the file to send to.
 **
@@ -652,11 +660,20 @@ mailfile(filename)
 	else if (pid == 0)
 	{
 		/* child -- actually write to file */
-		(void) setuid(getuid());
-		(void) setgid(getgid());
+		struct stat stb;
+
 		(void) signal(SIGINT, SIG_DFL);
 		(void) signal(SIGHUP, SIG_DFL);
 		(void) signal(SIGTERM, SIG_DFL);
+		umask(OldUmask);
+		if (stat(filename, &stb) < 0)
+			stb.st_mode = 0;
+		if (bitset(0111, stb.st_mode))
+			exit(EX_CANTCREAT);
+		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
+			(void) setgid(getgid());
+		if (!bitset(S_ISUID, stb.st_mode) || setuid(stb.st_uid) < 0)
+			(void) setuid(getuid());
 		f = fopen(filename, "a");
 		if (f == NULL)
 			exit(EX_CANTCREAT);

@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.28	%G%";
+static char SccsId[] = "@(#)conf.c	3.29	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -219,6 +219,82 @@ index(s, c)
 	}
 	return (NULL);
 }
+/*
+**  UMASK -- fake the umask system call.
+**
+**	Since V6 always acts like the umask is zero, we will just
+**	assume the same thing.
+*/
+
+/*ARGSUSED*/
+umask(nmask)
+{
+	return (0);
+}
+
+
+/*
+**  GETRUID -- get real user id.
+*/
+
+getruid()
+{
+	return (getuid() & 0377);
+}
+
+
+/*
+**  GETRGID -- get real group id.
+*/
+
+getrgid()
+{
+	return (getgid() & 0377);
+}
+
+
+/*
+**  GETEUID -- get effective user id.
+*/
+
+geteuid()
+{
+	return ((getuid() >> 8) & 0377);
+}
+
+
+/*
+**  GETEGID -- get effective group id.
+*/
+
+getegid()
+{
+	return ((getgid() >> 8) & 0377);
+}
+
+# endif V6
+
+# ifndef V6
+
+/*
+**  GETRUID -- get real user id (V7)
+*/
+
+getruid()
+{
+	return (getuid());
+}
+
+
+/*
+**  GETRGID -- get real group id (V7).
+*/
+
+getrgid()
+{
+	return (getgid());
+}
+
 # endif V6
 /*
 **  TTYPATH -- Get the path of the user's tty

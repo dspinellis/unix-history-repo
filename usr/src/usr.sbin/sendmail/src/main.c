@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.33	%G%";
+static char	SccsId[] = "@(#)main.c	3.34	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -116,6 +116,7 @@ bool	Verbose;	/* set if blow-by-blow desired */
 bool	GrabTo;		/* if set, read recipient addresses from msg */
 bool	DontSend;	/* mark recipients as QDONTSEND */
 bool	NoReturn;	/* don't return content of letter to sender */
+int	OldUmask;	/* umask when called */
 int	Debug;		/* debug level */
 int	Errors;		/* count of errors */
 int	AliasLevel;	/* current depth of aliasing */
@@ -172,6 +173,7 @@ main(argc, argv)
 		(void) signal(SIGHUP, finis);
 	(void) signal(SIGTERM, finis);
 	setbuf(stdout, (char *) NULL);
+	OldUmask = umask(0);
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
@@ -413,7 +415,6 @@ main(argc, argv)
 
 	readcf(ConfFile, safecf);
 
-# ifndef V6
 	p = getenv("HOME");
 	if (p != NULL)
 	{
@@ -424,7 +425,6 @@ main(argc, argv)
 		if (access(cfbuf, 2) == 0)
 			readcf(cfbuf, FALSE);
 	}
-# endif V6
 
 	initaliases(AliasFile, aliasinit);
 # ifdef DBM
@@ -455,10 +455,7 @@ main(argc, argv)
 		extern struct passwd *getpwuid();
 		int uid;
 
-		uid = getuid();
-# ifdef V6
-		uid &= 0377;
-# endif
+		uid = getruid();
 		pw = getpwuid(uid);
 		if (pw == NULL)
 			syserr("Who are you? (uid=%d)", uid);
