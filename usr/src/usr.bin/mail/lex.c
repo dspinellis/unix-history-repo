@@ -567,7 +567,7 @@ announce(pr)
 newfileinfo()
 {
 	register struct message *mp;
-	register int u, n, mdot;
+	register int u, n, mdot, d, s;
 	char fname[BUFSIZ], zname[BUFSIZ], *ename;
 
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
@@ -581,11 +581,16 @@ newfileinfo()
 		mdot = mp - &message[0] + 1;
 	else
 		mdot = 1;
+	s = d = 0;
 	for (mp = &message[0], n = 0, u = 0; mp < &message[msgCount]; mp++) {
 		if (mp->m_flag & MNEW)
 			n++;
 		if ((mp->m_flag & MREAD) == 0)
 			u++;
+		if (mp->m_flag & MDELETED)
+			d++;
+		if (mp->m_flag & MSAVED)
+			s++;
 	}
 	ename = mailname;
 	if (getfold(fname) >= 0) {
@@ -604,6 +609,10 @@ newfileinfo()
 		printf(" %d new", n);
 	if (u-n > 0)
 		printf(" %d unread", u);
+	if (d > 0)
+		printf(" %d deleted", d);
+	if (s > 0)
+		printf(" %d saved", s);
 	if (readonly)
 		printf(" [Read only]");
 	printf("\n");
