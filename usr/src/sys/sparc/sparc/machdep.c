@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.6 (Berkeley) %G%
+ *	@(#)machdep.c	8.7 (Berkeley) %G%
  *
  * from: $Header: machdep.c,v 1.44 93/10/31 05:28:36 torek Exp $
  */
@@ -340,7 +340,7 @@ void
 sendsig(catcher, sig, mask, code)
 	sig_t catcher;
 	int sig, mask;
-	unsigned code;
+	u_long code;
 {
 	register struct proc *p = curproc;
 	register struct sigacts *psp = p->p_sigacts;
