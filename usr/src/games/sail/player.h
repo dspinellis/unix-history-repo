@@ -1,5 +1,5 @@
 /*
- * sccsid = "@(#)player.h	2.3 %G%";
+ * sccsid = "@(#)player.h	2.4 %G%";
  */
 #include <curses.h>
 #include "externs.h"
@@ -21,7 +21,7 @@
 #define BOX_R		(BOX_L+BOX_X-1)
 
 #define TURN_T		BOX_B
-#define TURN_X		8
+#define TURN_X		9
 #define TURN_L		((BOX_L+BOX_R-TURN_X)/2)
 #define TURN_Y		1
 #define TURN_B		(TURN_T+TURN_Y+1)
@@ -81,3 +81,6 @@ struct shipspecs *mc;		/* ms->specs */
 #define LEAVE_HURRICAN	2
 #define LEAVE_DRIVER	3
 #define LEAVE_FORK	4
+
+#define blockalarm()	((void) sigblock(1 << SIGALRM-1))
+#define unblockalarm()	((void) sigsetmask(sigblock(0) & ~(1 << SIGALRM-1)))

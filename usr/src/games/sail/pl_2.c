@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_2.c	2.2 83/11/08";
+static	char *sccsid = "@(#)pl_2.c	2.3 83/12/09";
 #endif
 
 #include "player.h"
@@ -47,8 +47,10 @@ play()
 			break;
 		case '\f':
 			centerview();
+			blockalarm();
 			draw_board();
 			draw_screen();
+			unblockalarm();
 			break;
 		case 'L':
 			mf->loadL = L_EMPTY;
@@ -76,31 +78,43 @@ play()
 			break;
 		case 'C':
 			centerview();
+			blockalarm();
 			draw_view();
+			unblockalarm();
 			break;
 		case 'U':
 			upview();
+			blockalarm();
 			draw_view();
+			unblockalarm();
 			break;
 		case 'D':
 		case 'N':
 			downview();
+			blockalarm();
 			draw_view();
+			unblockalarm();
 			break;
 		case 'H':
 			leftview();
+			blockalarm();
 			draw_view();
+			unblockalarm();
 			break;
 		case 'J':
 			rightview();
+			blockalarm();
 			draw_view();
+			unblockalarm();
 			break;
 		case 'F':
 			lookout();
 			break;
 		case 'S':
 			dont_adjust = !dont_adjust;
+			blockalarm();
 			draw_turn();
+			unblockalarm();
 			break;
 		}
 	}

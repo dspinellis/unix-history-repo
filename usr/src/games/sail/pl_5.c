@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_5.c	2.1 83/10/31";
+static	char *sccsid = "@(#)pl_5.c	2.2 83/12/09";
 #endif
 
 #include "player.h"
@@ -157,7 +157,9 @@ acceptboard()
 			(struct ship *)0, 1);
 		parties(crew, ms, 1, c);
 	}
+	blockalarm();
 	draw_slot();
+	unblockalarm();
 }
 
 parties(crew, to, isdefense, buf)
