@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,8 +28,10 @@ static char sccsid[] = "@(#)pstat.c	5.18 (Berkeley) %G%";
 #include <sys/text.h>
 #include <sys/inode.h>
 #include <sys/map.h>
+#define KERNEL
 #include <sys/ioctl.h>
 #include <sys/tty.h>
+#undef KERNEL
 #include <sys/conf.h>
 #include <sys/vm.h>
 #include <nlist.h>
@@ -116,9 +118,9 @@ struct nlist nl[] = {
 	{ "_vx_tty" },
 #define	SNVX	(SNPTY+2)
 	{ "_nvx" },
-#define	SMP	(SNPTY+3)
+#define SMP	(SNPTY+3)
 	{ "_mp_tty" },
-#define	SNMP	(SNPTY+4)
+#define SNMP	(SNPTY+4)
 	{ "_nmp" },
 #endif
 	{ "" }
@@ -446,7 +448,7 @@ doproc()
 }
 
 static char mesg[] =
-" # RAW CAN OUT     MODE     ADDR DEL COL     STATE  PGRP DISC\n";
+" #  DEV RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGRP DISC\n";
 static int ttyspace = 128;
 static struct tty *tty;
 
@@ -490,8 +492,8 @@ dotty()
 }
 
 /* 
- * Special case the qdss because there are 4 tty structs per qdss 
- * and only the first of each is used as a tty.  
+ * Special case the qdss: there are 4 ttys per qdss,
+ * but only the first of each is used as a tty.  
  */
 #ifdef vax
 doqdss()
@@ -544,13 +546,41 @@ char *name;
 		ttyprt(tp, tp - tty);
 }
 
+struct {
+	int flag;
+	char val;
+} ttystates[] = {
+	TS_WOPEN,	'W',
+	TS_ISOPEN,	'O',
+	TS_CARR_ON,	'C',
+	TS_TIMEOUT,	'T',
+	TS_FLUSH,	'F',
+	TS_BUSY,	'B',
+	TS_ASLEEP,	'A',
+	TS_XCLUDE,	'X',
+	TS_TTSTOP,	'S',
+	TS_HUPCLS,	'H',
+	TS_TBLOCK,	'K',
+	TS_RCOLL,	'R',
+	TS_WCOLL,	'I',	/* running short on letters ! */
+	TS_ASYNC,	'Y',
+	TS_BKSL,	'D',
+	TS_ERASE,	'E',
+	TS_LNCH,	'L',
+	TS_TYPEN,	'P',
+	TS_CNTTB,	'N',
+	0,	0
+};
+
 ttyprt(atp, line)
 struct tty *atp;
 {
 	register struct tty *tp;
+	char state[20];
+	register i, j;
 
-	printf("%2d", line);
 	tp = atp;
+	printf("%2d %2d/%-2d ", line, major(tp->t_dev), minor(tp->t_dev));
 	switch (tp->t_line) {
 
 #ifdef notdef
@@ -563,45 +593,37 @@ struct tty *atp;
 #endif
 
 	default:
-		printf("%4d%4d", tp->t_rawq.c_cc, tp->t_canq.c_cc);
+		printf("%2d %3d ", tp->t_rawq.c_cc, tp->t_canq.c_cc);
 	}
-	printf("%4d %8x %8x%4d%4d", tp->t_outq.c_cc, tp->t_flags,
-		tp->t_addr, tp->t_delct, tp->t_col);
-	putf(tp->t_state&TS_TIMEOUT, 'T');
-	putf(tp->t_state&TS_WOPEN, 'W');
-	putf(tp->t_state&TS_ISOPEN, 'O');
-	putf(tp->t_state&TS_FLUSH, 'F');
-	putf(tp->t_state&TS_CARR_ON, 'C');
-	putf(tp->t_state&TS_BUSY, 'B');
-	putf(tp->t_state&TS_ASLEEP, 'A');
-	putf(tp->t_state&TS_XCLUDE, 'X');
-	putf(tp->t_state&TS_TTSTOP, 'S');
-	putf(tp->t_state&TS_HUPCLS, 'H');
-	printf("%6d", tp->t_pgrp);
+	printf("%3d %6d %6d %6d %4d %3d %8x %3d ", tp->t_outq.c_cc, 
+		tp->t_rawcc, tp->t_cancc, tp->t_outcc, 
+		tp->t_hiwat, tp->t_lowat, tp->t_addr, tp->t_col);
+	for (i = j = 0; ttystates[i].flag; i++)
+		if (tp->t_state&ttystates[i].flag)
+			state[j++] = ttystates[i].val;
+	state[j] = '\0';
+	printf("%-5s ", state);
+	printf("%5d ", tp->t_pgid);
 	switch (tp->t_line) {
 
-	case OTTYDISC:
-		printf("\n");
-		break;
-
-	case NTTYDISC:
-		printf(" ntty\n");
+	case 0:
+		printf("term\n");
 		break;
 
 	case NETLDISC:
-		printf(" berknet\n");
+		printf("berknet\n");
 		break;
 
 	case TABLDISC:
-		printf(" tab\n");
+		printf("tab\n");
 		break;
 
 	case SLIPDISC:
-		printf(" slip\n");
+		printf("slip\n");
 		break;
 
 	default:
-		printf(" %d\n", tp->t_line);
+		printf("%d\n", tp->t_line);
 	}
 }
 
