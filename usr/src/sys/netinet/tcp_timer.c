@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	7.2 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -114,6 +114,12 @@ tcp_canceltimers(tp)
 
 int	tcp_backoff[TCP_MAXRXTSHIFT+1] =
     { 1, 2, 4, 6, 8, 10, 15, 20, 30, 30, 30, 30, 30 };
+#ifdef TCP_COMPAT_42
+int	tcp_keeplen = 1;
+#else
+int	tcp_keeplen = 0;
+#endif
+
 /*
  * TCP timer processing.
  */
@@ -215,8 +221,8 @@ tcp_timers(tp, timer)
 			 * correspondent TCP to respond.
 			 */
 			tcpstat.tcps_keepprobe++;
-			tcp_respond(tp,
-			    tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
+			tcp_respond(tp, tp->t_template,
+			    tp->rcv_nxt - tcp_keeplen, tp->snd_una - 1, 0);
 		}
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		break;
