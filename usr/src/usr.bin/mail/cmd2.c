@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	1.1 %G%";
+static char *SccsId = "@(#)cmd2.c	1.2 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -33,6 +33,12 @@ next(msgvec)
 		 */
 
 		mdot = dot - &message[0] + 1;
+
+		/*
+		 * Find the first message in the supplied
+		 * message list which follows dot.
+		 */
+
 		for (ip = msgvec; *ip != NULL; ip++)
 			if (*ip > mdot)
 				break;
@@ -40,15 +46,15 @@ next(msgvec)
 			ip = msgvec;
 		ip2 = ip;
 		do {
-			if (*ip2 != NULL)
-				ip2++;
-			if (*ip2 == NULL)
-				ip2 = msgvec;
 			mp = &message[*ip2 - 1];
 			if ((mp->m_flag & MDELETED) == 0) {
 				dot = mp;
 				goto hitit;
 			}
+			if (*ip2 != NULL)
+				ip2++;
+			if (*ip2 == NULL)
+				ip2 = msgvec;
 		} while (ip2 != ip);
 		printf("No messages applicable\n");
 		return(1);
