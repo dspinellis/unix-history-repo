@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)LLIMIT.c 1.2 %G%";
+static char sccsid[] = "@(#)LLIMIT.c 1.3 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 LLIMIT(curfile, limit)
 
@@ -14,7 +13,7 @@ LLIMIT(curfile, limit)
 		limit = 0x7fffffff;
 	curfile->llimit = limit;
 	if (curfile->lcount >= curfile->llimit) {
-		ERROR(ELLIMIT, curfile->pfname);
+		ERROR("%s: Line limit exceeded\n", curfile->pfname);
 		return;
 	}
 }

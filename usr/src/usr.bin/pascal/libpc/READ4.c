@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READ4.c 1.4 %G%";
+static char sccsid[] = "@(#)READ4.c 1.5 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 long
 READ4(curfile)
@@ -14,17 +13,18 @@ READ4(curfile)
 	int			retval;
 
 	if (curfile->funit & FWRITE) {
-		ERROR(EREADIT, curfile->pfname);
+		ERROR("%s: Attempt to read, but open for writing\n",
+			curfile->pfname);
 		return;
 	}
 	UNSYNC(curfile);
 	retval = fscanf(curfile->fbuf, "%ld", &data);
 	if (retval == EOF) {
-		ERROR(EPASTEOF, curfile->pfname);
+		ERROR("%s: Tried to read past end of file\n", curfile->pfname);
 		return;
 	}
 	if (retval == 0) {
-		ERROR(EBADINUM, curfile->pfname);
+		ERROR("%s: Bad data found on integer read\n", curfile->pfname);
 		return;
 	}
 	curfile->funit &= ~EOLN;

@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READC.c 1.1 %G%";
+static char sccsid[] = "@(#)READC.c 1.2 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 char
 READC(curfile)
@@ -13,12 +12,13 @@ READC(curfile)
 	char			data;
 
 	if (curfile->funit & FWRITE) {
-		ERROR(EREADIT, curfile->pfname);
+		ERROR("%s: Attempt to read, but open for writing\n",
+			curfile->pfname);
 		return;
 	}
 	IOSYNC(curfile);
 	if (curfile->funit & EOFF) {
-		ERROR(EPASTEOF, curfile->pfname);
+		ERROR("%s: Tried to read past end of file\n", curfile->pfname);
 		return;
 	}
 	curfile->funit |= SYNC;

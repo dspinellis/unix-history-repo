@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)APPEND.c 1.1 %G%";
+static char sccsid[] = "@(#)APPEND.c 1.2 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 APPEND(filep)
 
@@ -12,7 +11,7 @@ APPEND(filep)
 	filep = GETNAME (filep, 0, 0, 0);
 	filep->fbuf = fopen(filep->fname, "a");
 	if (filep->fbuf == NULL) {
-		ERROR(EOPEN, filep->pfname);
+		PERROR("Could not open ", filep->pfname);
 		return;
 	}
 	filep->funit |= (EOFF | FWRITE);

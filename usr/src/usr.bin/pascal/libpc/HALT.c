@@ -1,10 +1,10 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)HALT.c 1.1 %G%";
+static char sccsid[] = "@(#)HALT.c 1.2 %G%";
 
-#include "h01errs.h"
 
 HALT()
 {
-	ERROR(EHALT, 0);
+		ERROR("Call to procedure halt\n", 0);
+		PCEXIT(0);
 }

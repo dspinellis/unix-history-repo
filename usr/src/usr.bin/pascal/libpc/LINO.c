@@ -1,14 +1,13 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)LINO.c 1.1 %G%";
+static char sccsid[] = "@(#)LINO.c 1.2 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 LINO()
 {
 	if (++_stcnt >= _stlim) {
-		ERROR(ESTLIM, _stcnt);
+		ERROR("Statement count limit of %D exceeded\n", _stcnt);
 		return;
 	}
 }

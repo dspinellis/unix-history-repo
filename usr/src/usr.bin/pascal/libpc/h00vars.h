@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* sccsid[] = "@(#)h00vars.h 1.6 %G%"; */
+/* sccsid[] = "@(#)h00vars.h 1.7 %G%"; */
 
 #include <stdio.h>
 #include "whoami.h"
@@ -48,11 +48,6 @@ struct formalrtn {
 	struct display	fdisp[ MAXLVL ];	/* saved at first passing */
 };
 
-struct errentry {
-	long (*entryaddr)();
-};
-
-
 /*
  * program variables
  */
@@ -65,7 +60,6 @@ extern long		_seed;		/* random number seed */
 extern char		*_maxptr;	/* maximum valid pointer */
 extern char		*_minptr;	/* minimum valid pointer */
 extern long		_pcpcount[];	/* pxp buffer */
-extern struct errentry	_entry[MAXERRS];/* error entry catches */
 
 /*
  * file structures

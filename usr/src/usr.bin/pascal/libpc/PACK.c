@@ -1,8 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PACK.c 1.2 %G%";
+static char sccsid[] = "@(#)PACK.c 1.3 %G%";
 
-#include "h01errs.h"
 
 /*
  * pack(a,i,z)
@@ -39,7 +38,7 @@ PACK(i, a, z, size_a, lb_a, ub_a, size_z)
 
 	subscr = i - lb_a;
 	if (subscr < 0 || subscr > ub_a) {
-		ERROR(EPACK, i);
+		ERROR("i = %D: Bad i to pack(a,i,z)\n", i);
 		return;
 	}
 	cp = &a[subscr * size_a];

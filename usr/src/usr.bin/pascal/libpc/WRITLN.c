@@ -1,25 +1,25 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)WRITLN.c 1.1 %G%";
+static char sccsid[] = "@(#)WRITLN.c 1.2 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 WRITLN(curfile)
 
 	register struct iorec	*curfile;
 {
 	if (curfile->funit & FREAD) {
-		ERROR(EWRITEIT, curfile->pfname);
+		ERROR("%s: Attempt to write, but open for reading\n",
+			curfile->pfname);
 		return;
 	}
 	if (++curfile->lcount >= curfile->llimit) {
-		ERROR(ELLIMIT, curfile->pfname);
+		ERROR("%s: Line limit exceeded\n", curfile->pfname);
 		return;
 	}
 	fputc('\n', curfile->fbuf);
 	if (ferror(curfile->fbuf)) {
-		ERROR(EWRITE, curfile->pfname);
+		PERROR("Could not write to ", curfile->pfname);
 		return;
 	}
 }

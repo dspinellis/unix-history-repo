@@ -1,21 +1,21 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PAGE.c 1.1 %G%";
+static char sccsid[] = "@(#)PAGE.c 1.2 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 PAGE(curfile)
 
 	register struct iorec	*curfile;
 {
 	if (curfile->funit & FREAD) {
-		ERROR(EWRITEIT, curfile->pfname);
+		ERROR("%s: Attempt to write, but open for reading\n",
+			curfile->pfname);
 		return;
 	}
 	fputc('', curfile->fbuf);
 	if (ferror(curfile->fbuf)) {
-		ERROR(EWRITE, curfile->pfname);
+		PERROR("Could not write to ", curfile->pfname);
 		return;
 	}
 }

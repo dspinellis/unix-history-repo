@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.5 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.6 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 /*
  * GETNAME - activate a file
@@ -81,7 +80,7 @@ GETNAME(filep, name, namlim, datasize)
 			}
 			fclose(filep->fbuf);
 			if (ferror(filep->fbuf)) {
-				ERROR(ECLOSE, filep->pfname);
+				ERROR("%s: Close failed\n", filep->pfname);
 				return;
 			}
 			/*
@@ -89,7 +88,8 @@ GETNAME(filep, name, namlim, datasize)
 			 */
 			if ((filep->funit & TEMP) && name != NULL) {
 			    	if (unlink(filep->pfname)) {
-					ERROR(EREMOVE, filep->pfname);
+					PERROR("Could not remove ",
+						filep->pfname);
 					return;
 				}
 			}
@@ -120,7 +120,7 @@ GETNAME(filep, name, namlim, datasize)
 		if (name[cnt] == '\0' || name[cnt] == ' ')
 			break;
 	if (cnt >= NAMSIZ) {
-		ERROR(ENAMESIZE, name);
+		ERROR("%s: File name too long\n", name);
 		return;
 	}
 	maxnamlen = cnt;

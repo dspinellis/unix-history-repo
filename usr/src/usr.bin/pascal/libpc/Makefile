@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.7 %G%"
+SCCSID = "@(#)Makefile 1.8 %G%"
 CFLAGS = -O
 LIB = ${DESTDIR}/usr/lib
 SRCDIR = ${DESTDIR}/usr/ucb
@@ -19,12 +19,12 @@ CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c BUFF.c CARD.c CHR.c CLCK.c \
 	SUBSC.c SUBSCZ.c SUBT.c SUCC.c TEOF.c TEOLN.c TIME.c TRUNC.c \
 	UNIT.c UNPACK.c WRITEC.c WRITEF.c WRITES.c WRITLN.c
 
-SYS =	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c PFLUSH.c \
-	PMFLUSH.c RAND.s SETRACE.s UNSYNC.c UNWIND.c blkclr.c blkcpy.c
+SYS =	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c PERROR.c \
+	PFLUSH.c PMFLUSH.c RAND.s SETRACE.s UNSYNC.c UNWIND.c blkclr.c blkcpy.c
 
-EXTN =	APPEND.c CATCHERR.c SEEK.c TELL.c
+EXTN =	APPEND.c SEEK.c TELL.c
 
-HDRS =	whoami.h h00vars.h errdata make.ed1
+HDRS =	whoami.h h00vars.h
 
 OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o BUFF.o CARD.o CHR.o CLCK.o\
 	CTTOT.o DATE.o DEFNAME.o DISPOSE.o EXPO.o FCALL.o FLUSH.o\
@@ -37,10 +37,10 @@ OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o BUFF.o CARD.o CHR.o CLCK.o\
 	SUBSC.o SUBSCZ.o SUBT.o SUCC.o TEOF.o TEOLN.o TIME.o TRUNC.o\
 	UNIT.o UNPACK.o WRITEC.o WRITEF.o WRITES.o WRITLN.o
 
-SYOBJ =	ERROR.o GETNAME.o IOSYNC.o PCEXIT.o PCLOSE.o PCSTART.o PFLUSH.o\
-	PMFLUSH.o RAND.o SETRACE.o UNSYNC.o UNWIND.o blkclr.o blkcpy.o
+SYOBJ =	ERROR.o GETNAME.o IOSYNC.o PCEXIT.o PCLOSE.o PCSTART.o PERROR.o\
+	PFLUSH.o PMFLUSH.o RAND.o SETRACE.o UNSYNC.o UNWIND.o blkclr.o blkcpy.o
 
-EXOBJ =	APPEND.o CATCHERR.o SEEK.o TELL.o
+EXOBJ =	APPEND.o SEEK.o TELL.o
 
 sources: ${CMDS} ${SYS} ${EXTN} ${HDRS}
 
@@ -57,14 +57,10 @@ install: libpc
 	cp libpc ${LIB}/libpc.a
 	${RANLIB} ${LIB}/libpc.a
 
-libpc: h01errs.h ${OBJS} ${SYOBJ} ${EXOBJ}
+libpc: ${OBJS} ${SYOBJ} ${EXOBJ}
 	${RM} libpc
 	${AR} cr libpc ${OBJS} ${SYOBJ} ${EXOBJ}
 	${RANLIB} libpc
-
-h01errs.h: errdata make.ed1
-	ed - errdata <make.ed1
-	${RM} E.s *.o
 
 whoami.h:
 	cp ${PASDIR}/whoami.h whoami.h
@@ -105,119 +101,69 @@ depend:	sources
 # DEPENDENCIES MUST END AT END OF FILE
 ACTFILE.o: h00vars.h
 APPEND.o: h00vars.h
-APPEND.o: h01errs.h
 ARGV.o: h00vars.h
-ARGV.o: h01errs.h
-ASRT.o: h01errs.h
 BUFF.o: h00vars.h
 CATCHERR.o: h00vars.h
-CHR.o: h01errs.h
+CTTOT.o: whoami.h
 CTTOT.o: h00vars.h
-CTTOT.o: h01errs.h
 DEFNAME.o: h00vars.h
 DISPOSE.o: h00vars.h
-DISPOSE.o: h01errs.h
 ERROR.o: h00vars.h
-ERROR.o: h01errs.h
 FCALL.o: h00vars.h
 FLUSH.o: h00vars.h
-FLUSH.o: h01errs.h
 FNIL.o: h00vars.h
-FNIL.o: h01errs.h
 FRTN.o: h00vars.h
 FSAV.o: h00vars.h
 GET.o: h00vars.h
-GET.o: h01errs.h
 GETNAME.o: h00vars.h
-GETNAME.o: h01errs.h
-HALT.o: h01errs.h
 IN.o: h00vars.h
 INCT.o: h00vars.h
 IOSYNC.o: h00vars.h
-IOSYNC.o: h01errs.h
 LINO.o: h00vars.h
-LINO.o: h01errs.h
 LLIMIT.o: h00vars.h
-LLIMIT.o: h01errs.h
-LN.o: h01errs.h
 MAX.o: h00vars.h
-MAX.o: h01errs.h
 NAM.o: h00vars.h
-NAM.o: h01errs.h
 NEW.o: h00vars.h
-NEW.o: h01errs.h
 NEWZ.o: h00vars.h
-NEWZ.o: h01errs.h
 NIL.o: h00vars.h
-NIL.o: h01errs.h
-PACK.o: h01errs.h
 PAGE.o: h00vars.h
-PAGE.o: h01errs.h
 PCEXIT.o: h00vars.h
 PCLOSE.o: h00vars.h
-PCLOSE.o: h01errs.h
 PCSTART.o: h00vars.h
+PERROR.o: h00vars.h
 PFLUSH.o: h00vars.h
 PMFLUSH.o: h00vars.h
-PRED.o: h01errs.h
 PUT.o: h00vars.h
-PUT.o: h01errs.h
 RANDOM.o: h00vars.h
-RANG4.o: h01errs.h
 READ4.o: h00vars.h
-READ4.o: h01errs.h
 READ8.o: h00vars.h
-READ8.o: h01errs.h
 READC.o: h00vars.h
-READC.o: h01errs.h
 READE.o: h00vars.h
-READE.o: h01errs.h
 READLN.o: h00vars.h
-READLN.o: h01errs.h
 RELEQ.o: h00vars.h
 RELNE.o: h00vars.h
 RELSGE.o: h00vars.h
 RELSGT.o: h00vars.h
 RELSLE.o: h00vars.h
-RELSLT.o: h00vars.h
 RELTGE.o: h00vars.h
 RELTGT.o: h00vars.h
 RELTLE.o: h00vars.h
 RELTLT.o: h00vars.h
 REMOVE.o: h00vars.h
-REMOVE.o: h01errs.h
 RESET.o: h00vars.h
-RESET.o: h01errs.h
 REWRITE.o: h00vars.h
-REWRITE.o: h01errs.h
-RSNG4.o: h01errs.h
 SEED.o: h00vars.h
 SEEK.o: h00vars.h
-SEEK.o: h01errs.h
-SQRT.o: h01errs.h
 STLIM.o: h00vars.h
-STLIM.o: h01errs.h
-SUBSC.o: h01errs.h
-SUBSCZ.o: h01errs.h
-SUCC.o: h01errs.h
 TELL.o: h00vars.h
 TEOF.o: h00vars.h
-TEOF.o: h01errs.h
 TEOLN.o: h00vars.h
-TEOLN.o: h01errs.h
 UNIT.o: h00vars.h
-UNIT.o: h01errs.h
-UNPACK.o: h01errs.h
 UNSYNC.o: h00vars.h
-UNSYNC.o: h01errs.h
 WRITEC.o: h00vars.h
-WRITEC.o: h01errs.h
 WRITEF.o: h00vars.h
-WRITEF.o: h01errs.h
 WRITES.o: h00vars.h
-WRITES.o: h01errs.h
 WRITLN.o: h00vars.h
-WRITLN.o: h01errs.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above

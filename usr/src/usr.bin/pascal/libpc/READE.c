@@ -1,9 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READE.c 1.4 %G%";
+static char sccsid[] = "@(#)READE.c 1.5 %G%";
 
 #include "h00vars.h"
-#include "h01errs.h"
 
 long
 READE(curfile, name)
@@ -20,7 +19,8 @@ READE(curfile, name)
 	int		retval;
 
 	if (curfile->funit & FWRITE) {
-		ERROR(EREADIT, curfile->pfname);
+		ERROR("%s: Attempt to read, but open for writing\n",
+			curfile->pfname);
 		return;
 	}
 	UNSYNC(curfile);
@@ -28,13 +28,11 @@ READE(curfile, name)
 	    "%*[ \t\n]%74[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789]",
 	    namebuf);
 	if (retval == EOF) {
-		ERROR(EPASTEOF, curfile->pfname);
+		ERROR("%s: Tried to read past end of file\n", curfile->pfname);
 		return;
 	}
-	if (retval == 0) {
-		ERROR(ENUMNTFD, namebuf);
-		return;
-	}
+	if (retval == 0)
+		goto ename;
 	curfile->funit &= ~EOLN;
 	curfile->funit |= SYNC;
 	for (len = 0; len < NAMSIZ && namebuf[len]; len++)
@@ -51,5 +49,6 @@ READE(curfile, name)
 		}
 		cp += (int)nextlen;
 	} while (--cnt);
-	ERROR(ENUMNTFD, namebuf);
+ename:
+	ERROR("Unknown name \"%s\" found on enumerated type read\n", namebuf);
 }
