@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.6 82/03/31";
+static char sccsid[] = "@(#)telnetd.c	4.7 82/10/06";
 #endif
 
 /*
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)telnetd.c	4.6 82/03/31";
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/in.h>
+#include <netdb.h>
 #include "telnet.h"
 
 #define	INFINITY	10000000
@@ -40,7 +41,7 @@ int	inter;
 extern	int errno;
 char	line[] = "/dev/ptyp0";
 
-struct	sockaddr_in sin = { AF_INET, IPPORT_TELNET };
+struct	sockaddr_in sin = { AF_INET };
 int	options = SO_ACCEPTCONN|SO_KEEPALIVE;
 
 main(argc, argv)
@@ -48,13 +49,25 @@ main(argc, argv)
 {
 	int s, pid;
 	union wait status;
+	struct servent *sp;
 
+	sp = getservbyname("telnet", "tcp");
+	if (sp == 0) {
+		fprintf(stderr, "telnetd: tcp/telnet: unknown service\n");
+		exit(1);
+	}
+	sin.sin_port = sp->s_port;
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d"))
-		options |= SO_DEBUG;
-#if vax || pdp11
+		options |= SO_DEBUG, argc--, argv++;
+	if (argc > 0) {
+		sin.sin_port = atoi(*argv);
+		if (sin.sin_port <= 0) {
+			fprintf(stderr, "telnetd: %s: bad port #\n", *argv);
+			exit(1);
+		}
+	}
 	sin.sin_port = htons(sin.sin_port);
-#endif
 	for (;;) {
 		errno = 0;
 		if ((s = socket(SOCK_STREAM, 0, &sin, options)) < 0) {
@@ -497,8 +510,8 @@ ptyflush()
 
 	if ((n = pfrontp - pbackp) > 0)
 		n = write(pty, pbackp, n);
-	if (n < 0 && errno == EWOULDBLOCK)
-		n = 0;
+	if (n < 0)
+		return;
 	pbackp += n;
 	if (pbackp == pfrontp)
 		pbackp = pfrontp = ptyobuf;
@@ -510,8 +523,12 @@ netflush()
 
 	if ((n = nfrontp - nbackp) > 0)
 		n = write(net, nbackp, n);
-	if (n < 0 && errno == EWOULDBLOCK)
-		n = 0;
+	if (n < 0) {
+		if (errno == EWOULDBLOCK)
+			return;
+		/* should blow this guy away... */
+		return;
+	}
 	nbackp += n;
 	if (nbackp == nfrontp)
 		nbackp = nfrontp = netobuf;
