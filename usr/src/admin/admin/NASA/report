@@ -1,0 +1,42 @@
+.\"	@(#)report	5.1 (Berkeley) %G%
+.\" use -ms
+.\"
+.so ../4.3/HEADERS
+.FH
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.LP
+.ti 4.5i
+August 1, 1992
+.nf
+Thomas Woodrow
+Numerical Aerodynamic Simulation Division
+Systems Development Branch
+NASA Ames Research Center,
+Mail Stop 258-5, Moffett Field, CA 94035-1000
+.sp 1
+.LP
+Dear Dr. Woodward,
+.PP
+This letter and accompanying report consitute our semi-annual
+status update on NASA grant NAG 2-763, covering the period of
+February 1, 1992 through July 31, 1992.
+.PP
+During this period we have completed the alpha distribution
+of 4.4BSD. 
+The attached report is a letter sent to our past licensees
+describing this alpha distribution.
+During the remaining half year of the grant we plan to incorporate
+bug fixes and enhancements to this alpha distribution and prepare
+and release a polished 4.4BSD distribution.
+.sp 1
+.in +1.5i
+Sincerely,
+.sp .7i
+Professor Domenico Ferrari
+.in -1.5i
+.sp 2
+MKM/hp
