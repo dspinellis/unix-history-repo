@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -76,12 +76,12 @@ done:	argv += optind;
 
 	retval = 0;
 	if (rflag) {
-		if (!(fts = ftsopen(++argv,
+		if (!(fts = fts_open(++argv,
 		    oct ? FTS_NOSTAT|FTS_PHYSICAL : FTS_PHYSICAL, 0))) {
 			(void)fprintf(stderr, "chmod: %s.\n", strerror(errno));
 			exit(1);
 		}
-		while (p = ftsread(fts)) {
+		while (p = fts_read(fts)) {
 			if (p->fts_info == FTS_D)
 				continue;
 			if (p->fts_info == FTS_ERR) {
