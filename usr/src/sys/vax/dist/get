@@ -1,11 +1,11 @@
 #! /bin/sh
-#	@(#)get	4.5	%G%
+#	@(#)get	4.6	%G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
 # The file system created here is image copied onto
 # tape, then image copied onto disk as the "first"
-# step in a cold boot of 4.1b-4.2 systems.
+# step in a cold boot of 4.2 systems.
 #
 DISTROOT=/nbsd
 #
@@ -18,9 +18,9 @@ cp $DISTROOT/a/sys/GENERIC/vmunix .
 rm -rf bin; mkdir bin
 rm -rf etc; mkdir etc
 rm -rf a; mkdir a
-rm -fr tmp; mkdir tmp
-rm -fr usr; mkdir usr usr/mdec
-rm -fr floppy; mkdir floppy
+rm -rf tmp; mkdir tmp
+rm -rf usr; mkdir usr usr/mdec
+rm -rf sys; mkdir sys sys/floppy sys/cassette
 cp $DISTROOT/etc/disktab etc
 cp $DISTROOT/etc/newfs etc; strip etc/newfs
 cp $DISTROOT/etc/mkfs etc; strip etc/mkfs
@@ -46,9 +46,8 @@ cp $DISTROOT/bin/cp bin; strip bin/cp
 cp $DISTROOT/bin/expr bin; strip bin/expr
 cp $DISTROOT/bin/awk bin; strip bin/awk
 cp $DISTROOT/usr/mdec/* usr/mdec
-cp $DISTROOT/a/sys/floppy/*boo* floppy
-cp $DISTROOT/a/sys/floppy/format floppy
-cp $DISTROOT/a/sys/floppy/copy floppy
+cp $DISTROOT/a/sys/floppy/* sys/floppy
+cp $DISTROOT/a/sys/cassette/* sys/cassette
 cp $DISTROOT/a/sys/stand/boot boot
 cp $DISTROOT/.profile .profile
 cat >etc/passwd <<EOF
