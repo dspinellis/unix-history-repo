@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)resolver.3	6.7 (Berkeley) %G%
+.\"     @(#)resolver.3	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RESOLVER 3
-.Os BSD 4
+.Os BSD 4.3
 .Sh NAME
 .Nm res_query ,
 .Nm res_search ,
@@ -47,45 +47,50 @@ and are as follows.
 Options are stored as a simple bit mask containing the bitwise ``or''
 of the options enabled.
 .Bl -tag -width indent
-.It Em RES_INIT
+.It Dv RES_INIT
 True if the initial name server address and default domain name are
 initialized (i.e.,
 .Fn res_init
 has been called).
-.It Em RES_DEBUG
+.It Dv RES_DEBUG
 Print debugging messages.
-.It Em RES_AAONLY
+.It Dv RES_AAONLY
 Accept authoritative answers only.
 With this option,
 .Fn res_send
 should continue until it finds an authoritative answer or finds an error.
 Currently this is not implemented.
-.It Em RES_USEVC
-Use TCP connections for queries instead of
+.It Dv RES_USEVC
+Use
+.Tn TCP
+connections for queries instead of
 .Tn UDP
 datagrams.
-.It Em RES_STAYOPEN
-Used with RES_USEVC to keep the TCP connection open between
+.It Dv RES_STAYOPEN
+Used with RES_USEVC to keep the
+.Tn TCP
+connection open between
 queries.
 This is useful only in programs that regularly do many queries.
 .Tn UDP
 should be the normal mode used.
-.It Em RES_IGNTC
-Unused currently (ignore truncation errors, i.e., don't retry with TCP).
-.It Em RES_RECURSE
+.It Dv RES_IGNTC
+Unused currently (ignore truncation errors, i.e., don't retry with
+.Tn TCP ) .
+.It Dv RES_RECURSE
 Set the recursion-desired bit in queries.
 This is the default.
 (\c
 .Fn res_send
 does not do iterative queries and expects the name server
 to handle recursion.)
-.It Em RES_DEFNAMES
+.It Dv RES_DEFNAMES
 If set,
 .Fn res_search
 will append the default domain name to single-component names
 (those that do not contain a dot).
 This option is enabled by default.
-.It Em RES_DNSRCH
+.It Dv RES_DNSRCH
 If this option is set,
 .Fn res_search
 will search for host names in the current domain and in parent domains; see
@@ -106,7 +111,8 @@ If no server is configured, the host running
 the resolver is tried.
 The current domain name is defined by the hostname
 if not specified in the configuration file;
-it can be overridden by the environment variable LOCALDOMAIN.
+it can be overridden by the environment variable
+.Ev LOCALDOMAIN .
 Initialization normally occurs on the first call
 to one of the following routines.
 .Pp
@@ -132,7 +138,11 @@ The
 routine makes a query and awaits a response like
 .Fn res_query ,
 but in addition, it implements the default and search rules
-controlled by the RES_DEFNAMES and RES_DNSRCH options.
+controlled by the
+.Dv RES_DEFNAMES
+and
+.Dv RES_DNSRCH
+options.
 It returns the first successful reply.
 .Pp
 The remaining routines are lower-level routines used by
@@ -147,7 +157,9 @@ larger than
 .Fa buflen .
 The query type
 .Fa op
-is usually QUERY, but can be any of the query types defined in
+is usually
+.Dv QUERY ,
+but can be any of the query types defined in
 .Ao Pa arpa/nameser.h Ac .
 The domain name for the query is given by
 .Fa dname .
@@ -160,7 +172,9 @@ routine
 sends a pre-formatted query and returns an answer.
 It will call
 .Fn res_init
-if RES_INIT is not set, send the query to the local name server, and
+if
+.Dv RES_INIT
+is not set, send the query to the local name server, and
 handle timeouts and retries.
 The length of the reply message is returned, or
 \-1 if there were errors.
@@ -182,7 +196,8 @@ an array of pointers
 .Fa dnptrs
 to previously-compressed names in the current message.
 The first pointer points to
-to the beginning of the message and the list ends with NULL.
+to the beginning of the message and the list ends with
+.Dv NULL .
 The limit to the array is specified by
 .Fa lastdnptr .
 A side effect of
@@ -192,10 +207,13 @@ labels inserted into the message
 as the name is compressed.
 If
 .Em dnptr
-is NULL, names are not compressed.
+is
+.Dv NULL, names are not compressed.
 If
 .Fa lastdnptr
-is NULL, the list of labels is not updated.
+is
+.Dv NULL ,
+the list of labels is not updated.
 .Pp
 The
 .Fn dn_expand
@@ -214,7 +232,9 @@ The size of compressed name is returned or \-1 if there was an error.
 .Sh FILES
 .Bl -tag -width Pa
 /etc/resolv.conf
-see.Xr resolver 5
+The configuration file
+see
+.Xr resolver 5 .
 .El
 .Sh SEE ALSO
 .Xr gethostbyname 3 ,
@@ -230,7 +250,3 @@ The
 .Nm
 function appeared in 
 .Bx 4.3 .
-.\" /arch/4.3bsd/usr/man/man3/resolver.3
-.\" /arch/4.3tahoe/usr/network.1/man/man3/resolver.3
-.\" /arch/4.3tahoe/usr/src/man/man3/resolver.3
-.\" 4.4BSD
