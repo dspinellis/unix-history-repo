@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tz.c	8.3 (Berkeley) %G%
+ *	@(#)tz.c	8.4 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/RCS/devSCSITape.c,
  *	v 8.14 89/07/31 17:26:13 mendel Exp $ SPRITE (Berkeley)
@@ -416,7 +416,7 @@ tzdone(unit, error, resid, status)
 
 			default:
 			prerr:
-				tprintf(sc->sc_ctty, "tz%d: ", unit);
+				printf("tz%d: ", unit);
 				scsiPrintSense((ScsiClass7Sense *)
 					sc->sc_sense.sense,
 					sizeof(sc->sc_sense.sense) - resid);
