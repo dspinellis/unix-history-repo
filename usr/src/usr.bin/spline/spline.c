@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)spline.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)spline.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -307,7 +307,9 @@ again:		switch(argv[0][0]) {
 			x.ubf = 1;
 			break;
 		default:
-			fprintf(stderr, "Bad agrument\n");
+			(void)fprintf(stderr, "spline: illegal option -- %c\n",
+			    argv[0][0]);
+			(void)fprintf(stderr, "usage: spline [-aknpx]\n");
 			exit(1);
 		}
 	}
