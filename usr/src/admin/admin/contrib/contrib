@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.24 (Berkeley) %G%
+.\"	@(#)contrib	5.25 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -29,6 +29,7 @@ large subsystem.
 .sp
 .TS
 l l.
+Sparc I/II support	Computer Systems Engineering Group, Lawrence Berkeley Laboratory
 386/486 support	Bill Jolitz and TeleMuse
 ANSI C library	Chris Torek
 ANSI C prototypes	Donn Seeley and John Kohl
