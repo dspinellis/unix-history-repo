@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.70	82/06/26	*/
+/*	tcp_input.c	1.71	82/06/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -895,7 +895,7 @@ tcp_reass(tp, ti)
 		if (i > 0) {
 			if (i >= ti->ti_len)
 				goto drop;
-			m_adj(dtom(tp), i);
+			m_adj(dtom(ti), i);
 			ti->ti_len -= i;
 			ti->ti_seq += i;
 		}
