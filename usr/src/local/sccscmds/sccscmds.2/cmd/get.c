@@ -1,8 +1,8 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
-# include	<dir.h>
+# include	<sys/dir.h>
 
-SCCSID(@(#)get.c	4.4);
+SCCSID(@(#)get.c	4.5);
 USXALLOC();
 
 int	Debug	0;
