@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)init.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)init.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.local.h"
@@ -220,12 +220,12 @@ struct	mesg {
 	"ALRM",	"Alarm clock",
 	"TERM",	"Terminated",
 	"URG",	"Urgent I/O condition",
-	"STOP",	"Stopped (signal)",
-	"TSTP",	"Stopped",
+	"STOP",	"Suspended (signal)",
+	"TSTP",	"Suspended",
 	"CONT",	"Continued",
 	"CHLD",	"Child exited",
-	"TTIN", "Stopped (tty input)",
-	"TTOU", "Stopped (tty output)",
+	"TTIN", "Suspended (tty input)",
+	"TTOU", "Suspended (tty output)",
 	"IO",	"I/O possible",
 	"XCPU",	"Cputime limit exceeded",
 	"XFSZ", "Filesize limit exceeded",
