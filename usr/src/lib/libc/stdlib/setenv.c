@@ -16,11 +16,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setenv.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)setenv.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
-#include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 /*
  * setenv --
@@ -35,7 +35,7 @@ setenv(name, value, rewrite)
 	static int alloced;			/* if allocated space before */
 	register char *C;
 	int l_value, offset;
-	char *malloc(), *realloc(), *_findenv();
+	char *_findenv();
 
 	if (*value == '=')			/* no `=' in value */
 		++value;
@@ -55,13 +55,13 @@ setenv(name, value, rewrite)
 		for (P = environ, cnt = 0; *P; ++P, ++cnt);
 		if (alloced) {			/* just increase size */
 			environ = (char **)realloc((char *)environ,
-			    (u_int)(sizeof(char *) * (cnt + 2)));
+			    (size_t)(sizeof(char *) * (cnt + 2)));
 			if (!environ)
 				return(-1);
 		}
 		else {				/* get new space */
 			alloced = 1;		/* copy old entries into it */
-			P = (char **)malloc((u_int)(sizeof(char *) *
+			P = (char **)malloc((size_t)(sizeof(char *) *
 			    (cnt + 2)));
 			if (!P)
 				return(-1);
@@ -73,7 +73,7 @@ setenv(name, value, rewrite)
 	}
 	for (C = name; *C && *C != '='; ++C);	/* no `=' in name */
 	if (!(environ[offset] =			/* name + `=' + value */
-	    malloc((u_int)((int)(C - name) + l_value + 2))))
+	    malloc((size_t)((int)(C - name) + l_value + 2))))
 		return(-1);
 	for (C = environ[offset]; (*C = *name++) && *C != '='; ++C);
 	for (*C++ = '='; *C++ = *value++;);
@@ -88,9 +88,9 @@ void
 unsetenv(name)
 	char	*name;
 {
-	extern	char	**environ;
-	register char	**P;
-	int	offset;
+	extern char **environ;
+	register char **P;
+	int offset;
 
 	while (_findenv(name, &offset))		/* if set multiple times */
 		for (P = &environ[offset];; ++P)
