@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.3 %G%";
+static char *SccsId = "@(#)fio.c	1.4 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -21,9 +21,11 @@ setptr(ibuf)
 	FILE *ibuf;
 {
 	register int count, s, l;
+	register char *cp, *cp2;
 	off_t offset;
 	char linebuf[LINESIZE];
-	int maybe, mestmp, flag;
+	char wbuf[LINESIZE];
+	int maybe, mestmp, flag, inhead;
 	struct message this;
 	extern char tempSet[];
 
@@ -34,10 +36,11 @@ setptr(ibuf)
 	s = 0;
 	l = 0;
 	maybe = 1;
-	flag = MUSED;
+	flag = MUSED|MNEW;
 	for (;;) {
 		if ((count = readline(ibuf, linebuf)) == 0) {
 			this.m_flag = flag;
+			flag = MUSED|MNEW;
 			this.m_offset = offsetof(offset);
 			this.m_block = blockof(offset);
 			this.m_size = s;
@@ -55,9 +58,10 @@ setptr(ibuf)
 			perror("/tmp");
 			exit(1);
 		}
-		if (maybe && ishead(linebuf)) {
+		if (maybe && linebuf[0] == 'F' && ishead(linebuf)) {
 			msgCount++;
 			this.m_flag = flag;
+			flag = MUSED|MNEW;
 			this.m_block = blockof(offset);
 			this.m_offset = offsetof(offset);
 			this.m_size = s;
@@ -67,6 +71,23 @@ setptr(ibuf)
 			if (append(&this, mestmp)) {
 				perror(tempSet);
 				exit(1);
+			}
+		}
+		if (linebuf[0] == 0)
+			inhead = 0;
+		if (inhead && index(linebuf, ':')) {
+			cp = linebuf;
+			cp2 = wbuf;
+			while (isalpha(*cp))
+				*cp2++ = *cp++;
+			*cp2 = 0;
+			if (icequal(wbuf, "status")) {
+				cp = index(linebuf, ':');
+				if (index(cp, 'R'))
+					flag |= MREAD;
+				if (index(cp, 'O'))
+					flag &= ~MNEW;
+				inhead = 0;
 			}
 		}
 		offset += count;
@@ -175,6 +196,7 @@ makemessage(f)
 	for (m = &message[0]; m < &message[msgCount]; m++) {
 		m->m_size = (m+1)->m_size;
 		m->m_lines = (m+1)->m_lines;
+		m->m_flag = (m+1)->m_flag;
 	}
 	message[msgCount].m_size = 0;
 	message[msgCount].m_lines = 0;
