@@ -1,11 +1,10 @@
-/*	subr_prf.c	4.21	82/01/16	*/
+/*	subr_prf.c	4.22	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/seg.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
-#include "../h/mtpr.h"
 #include "../h/reboot.h"
 #include "../h/vm.h"
 #include "../h/msgbuf.h"
@@ -225,6 +224,7 @@ putchar(c, touser)
 		}
 		return;
 	}
+#include "../vax/mtpr.h"		/* XXX */
 	if (c != '\0' && c != '\r' && c != 0177 && mfpr(MAPEN)) {
 		if (msgbuf.msg_magic != MSG_MAGIC) {
 			msgbuf.msg_bufx = 0;

@@ -1,4 +1,4 @@
-/*	subr_rmap.c	4.5	82/04/11	*/
+/*	subr_rmap.c	4.6	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,7 +6,6 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/proc.h"
-#include "../h/mtpr.h"
 #include "../h/text.h"
 
 /*
