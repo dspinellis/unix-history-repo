@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)init.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)init.c	5.5 (Berkeley) %G%";
 #endif
 
-#include "sh.local.h"
+#include "sh.h"
 
 /*
  * C shell
@@ -74,11 +74,7 @@ extern	int dounsetenv();
 
 #define	INF	1000
 
-struct	biltins {
-	char	*bname;
-	int	(*bfunct)();
-	short	minargs, maxargs;
-} bfunc[] = {
+struct biltins bfunc[] = {
 	"@",		dolet,		0,	INF,
 	"alias",	doalias,	0,	INF,
 	"alloc",	showall,	0,	1,
@@ -140,30 +136,7 @@ struct	biltins {
 };
 int nbfunc = sizeof bfunc / sizeof *bfunc;
 
-#define	ZBREAK		0
-#define	ZBRKSW		1
-#define	ZCASE		2
-#define	ZDEFAULT 	3
-#define	ZELSE		4
-#define	ZEND		5
-#define	ZENDIF		6
-#define	ZENDSW		7
-#define	ZEXIT		8
-#define	ZFOREACH	9
-#define	ZGOTO		10
-#define	ZIF		11
-#define	ZLABEL		12
-#define	ZLET		13
-#define	ZSET		14
-#define	ZSWITCH		15
-#define	ZTEST		16
-#define	ZTHEN		17
-#define	ZWHILE		18
-
-struct srch {
-	char	*s_name;
-	short	s_value;
-} srchn[] = {
+struct srch srchn[] = {
 	"@",		ZLET,
 	"break",	ZBREAK,
 	"breaksw",	ZBRKSW,
@@ -184,10 +157,7 @@ struct srch {
 };
 int nsrchn = sizeof srchn / sizeof *srchn;
 
-struct	mesg {
-	char	*iname;
-	char	*pname;
-} mesg[] = {
+struct mesg mesg[] = {
 	0,	0,
 	"HUP",	"Hangup",
 	"INT",	"Interrupt",	
