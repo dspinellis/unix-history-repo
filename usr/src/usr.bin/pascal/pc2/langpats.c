@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.13 %G%";
+static char sccsid[] = "@(#)langpats.c 1.14 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -447,14 +447,14 @@ struct pats {
 "	movl	sp@,d1\n\
 	subl	sp@(4),d1\n\
 	cmpl	sp@(8),d1\n\
-	jbhi	1f\n\
+	jhi	1f\n\
 	movl	sp@(12),a0\n\
 	movl	d1,d0\n\
 	lsrl	#3,d0\n\
 	btst	d1,a0@(0,d0:l)\n\
-	jbne	1f\n\
+	jeq	1f\n\
 	moveq	#1,d0\n\
-	jbra	2f\n\
+	jra	2f\n\
 1:\n\
 	moveq	#0,d0\n\
 2:\n" },
