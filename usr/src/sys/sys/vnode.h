@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.41 (Berkeley) %G%
+ *	@(#)vnode.h	7.42 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -30,12 +30,9 @@ enum vtype 	{ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
 enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_LFS };
 
 /*
- * This defines the maximum size of the private data area for any file system
- * type.  A defined constant is used rather than a union structure to reduce
- * the number of header files that must be included.
+ * Each underlying filesystem allocates its own private area and hangs
+ * it from v_data. If non-null, this area is free in getnewvnode().
  */
-#define	VN_MAXPRIVATE	188
-
 struct vnode {
 	u_long		v_flag;			/* vnode flags (see below) */
 	short		v_usecount;		/* reference count of users */
@@ -60,8 +57,9 @@ struct vnode {
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
+	long		v_spare[14];		/* round to 128 bytes */
 	enum vtagtype	v_tag;			/* type of underlying data */
-	char v_data[VN_MAXPRIVATE];		/* private data for fs */
+	void 		*v_data;		/* private data for fs */
 };
 #define	v_mountedhere	v_un.vu_mountedhere
 #define	v_socket	v_un.vu_socket
@@ -100,6 +98,7 @@ struct vattr {
 	u_long		va_gen;		/* generation number of file */
 	u_long		va_flags;	/* flags defined for file */
 	dev_t		va_rdev;	/* device the special file represents */
+	short		va_pad;		/* pad out to long */
 	u_quad		va_qbytes;	/* bytes of disk space held by file */
 };
 #if BYTE_ORDER == LITTLE_ENDIAN
