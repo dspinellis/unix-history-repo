@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -48,8 +48,9 @@ depend: ${SRCS}
 install: ${MAN}
 	install -o games -g bin -m 400 crib.instr ${DESTDIR}/usr/games/lib/crib.instr
 	install -s -o games -g bin -m 4700 cribbage ${DESTDIR}/usr/games/hide
-	(cd ${DESTDIR}/usr/games; rm -f cribbage; ln -s dm cribbage; chown games.bin cribbage)
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/games/cat6
+	(cd ${DESTDIR}/usr/games; rm -f cribbage; ln -s dm cribbage; \
+	    chown games.bin cribbage)
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
