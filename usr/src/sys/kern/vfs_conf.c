@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	7.13 (Berkeley) %G%
+ *	@(#)vfs_conf.c	7.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -94,113 +94,14 @@ struct vfsops *vfssw[] = {
 
 
 /*
- * Vnode_op_descs lists all vnode operations supported.
- * At boot time vfs_op_init examines this list
- * to configure vnode operations vectors.
- */
-
-extern struct vnodeop_desc
-	vop_lookup_desc,
-	vop_create_desc,
-	vop_mknod_desc,
-	vop_open_desc,
-	vop_close_desc,
-	vop_access_desc,
-	vop_getattr_desc,
-	vop_setattr_desc,
-	vop_read_desc,
-	vop_write_desc,
-	vop_ioctl_desc,
-	vop_select_desc,
-	vop_mmap_desc,
-	vop_fsync_desc,
-	vop_seek_desc,
-	vop_remove_desc,
-	vop_link_desc,
-	vop_rename_desc,
-	vop_mkdir_desc,
-	vop_rmdir_desc,
-	vop_symlink_desc,
-	vop_readdir_desc,
-	vop_readlink_desc,
-	vop_abortop_desc,
-	vop_inactive_desc,
-	vop_reclaim_desc,
-	vop_lock_desc,
-	vop_unlock_desc,
-	vop_bmap_desc,
-	vop_strategy_desc,
-	vop_print_desc,
-	vop_islocked_desc,
-	vop_advlock_desc,
-	vop_blkatoff_desc,
-	vop_valloc_desc,
-	vop_vfree_desc,
-	vop_truncate_desc,
-	vop_update_desc,
-	vop_bwrite_desc,
-/* and the default */
-	vop_default_desc;
-
-struct vnodeop_desc *vfs_op_descs[] = {
-	&vop_default_desc,   /* must be first */
-	&vop_lookup_desc,
-	&vop_create_desc,
-	&vop_mknod_desc,
-	&vop_open_desc,
-	&vop_close_desc,
-	&vop_access_desc,
-	&vop_getattr_desc,
-	&vop_setattr_desc,
-	&vop_read_desc,
-	&vop_write_desc,
-	&vop_ioctl_desc,
-	&vop_select_desc,
-	&vop_mmap_desc,
-	&vop_fsync_desc,
-	&vop_seek_desc,
-	&vop_remove_desc,
-	&vop_link_desc,
-	&vop_rename_desc,
-	&vop_mkdir_desc,
-	&vop_rmdir_desc,
-	&vop_symlink_desc,
-	&vop_readdir_desc,
-	&vop_readlink_desc,
-	&vop_abortop_desc,
-	&vop_inactive_desc,
-	&vop_reclaim_desc,
-	&vop_lock_desc,
-	&vop_unlock_desc,
-	&vop_bmap_desc,
-	&vop_strategy_desc,
-	&vop_print_desc,
-	&vop_islocked_desc,
-	&vop_advlock_desc,
-	&vop_blkatoff_desc,
-	&vop_valloc_desc,
-	&vop_vfree_desc,
-	&vop_truncate_desc,
-	&vop_update_desc,
-	&vop_bwrite_desc,
-	NULL
-};
-
-
-
-
-/*
  *
- * vfs_opv_descs enumerates the list of vnode classes,
- * each with it's own vnode operation vector.
- * It is consulted at system
- * boot to build operation vectors.
- * It's also null terminated.
+ * vfs_opv_descs enumerates the list of vnode classes, each with it's own
+ * vnode operation vector.  It is consulted at system boot to build operation
+ * vectors.  It is NULL terminated.
  *
- * Out-of-kernel, someone else (more knowlegable about what file
- * systems live in this address space) must specify this table.
+ * Out-of-kernel, someone else (more knowlegable about what file systems live
+ * in this address space) must specify this table.
  */
-
 extern struct vnodeopv_desc ffs_vnodeop_opv_desc;
 extern struct vnodeopv_desc ffs_specop_opv_desc;
 extern struct vnodeopv_desc ffs_fifoop_opv_desc;
