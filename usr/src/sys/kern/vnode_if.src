@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	8.1 (Berkeley) %G%
+#	@(#)vnode_if.src	8.2 (Berkeley) %G%
 #
 vop_lookup {
 	IN struct vnode *dvp;
@@ -254,8 +254,8 @@ vop_truncate {
 
 vop_update {
 	IN struct vnode *vp;
-	IN struct timeval *ta;
-	IN struct timeval *tm;
+	IN struct timeval *access;
+	IN struct timeval *modify;
 	IN int waitfor;
 };
 
