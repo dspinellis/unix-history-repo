@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -511,7 +511,8 @@ print(format, file)
 		} else {
 			for (n = 0; n < 4; n++) {
 				if (fonts[n][0] != '/')
-					(void) write(fo, _PATH_VFONT, 15);
+					(void) write(fo, _PATH_VFONT,
+					    sizeof(_PATH_VFONT) - 1);
 				(void) write(fo, fonts[n], strlen(fonts[n]));
 				(void) write(fo, "\n", 1);
 			}
