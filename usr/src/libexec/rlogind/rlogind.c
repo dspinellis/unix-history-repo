@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.22.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -85,7 +85,7 @@ main(argc, argv)
 	openlog("rlogind", LOG_PID | LOG_AUTH, LOG_AUTH);
 
 	opterr = 0;
-	while ((ch = getopt(argc, argv, "ln")) != EOF)
+	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 		switch (ch) {
 		case 'l':
 			_check_rhosts_file = 0;
@@ -93,14 +93,29 @@ main(argc, argv)
 		case 'n':
 			keepalive = 0;
 			break;
+#ifdef KERBEROS
+		case 'k':
+			use_kerberos = 1;
+			break;
+		case 'v':
+			vacuous = 1;
+			break;
+#endif
 		case '?':
 		default:
-			syslog(LOG_ERR, "usage: rlogind [-l] [-n]");
+			usage();
 			break;
 		}
 	argc -= optind;
 	argv += optind;
 
+#ifdef	KERBEROS
+	if(use_kerberos && vacuous) {
+		fprintf(stderr, "%s: only one of -k and -v allowed\n", argv[0]);
+		usage();
+		exit(1);
+	}
+#endif
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
@@ -151,15 +166,28 @@ doit(f, fromp)
 		hp->h_name = inet_ntoa(fromp->sin_addr);
 	}
 
-	if (fromp->sin_family != AF_INET ||
-	    fromp->sin_port >= IPPORT_RESERVED ||
-	    fromp->sin_port < IPPORT_RESERVED/2)
-		fatal(f, "Permission denied");
-	write(f, "", 1);
+	if(use_kerberos) {
+		retval = do_krb_login(hp->h_name, fromp, encrypt);
+		write(f, &c, 1);
+		if (retval == 0) {
+			authenticated++;
+		} else {
+			if (retval > 0)
+				fatal(f, krb_err_txt[retval]);
+		}
+	} else
 #ifndef OLD_LOGIN
-	if (do_rlogin(hp->h_name) == 0)
-		authenticated++;
+		if (fromp->sin_family != AF_INET ||
+	    	    fromp->sin_port >= IPPORT_RESERVED ||
+	    	    fromp->sin_port < IPPORT_RESERVED/2)
+			fatal(f, "Permission denied");
+		else {
+			write(f, "", 1);
 #endif
+
+			if (do_rlogin(hp->h_name) == 0)
+				authenticated++;
+		}
 
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -213,11 +241,11 @@ gotpty:
 		execl("/bin/login", "login", "-r", hp->h_name, 0);
 #else /* OLD_LOGIN */
 		if (authenticated)
-			execl("/bin/login", "login", "-p", "-f",
-			    "-h", hp->h_name, lusername, 0);
+			execl("/bin/login", "login", "-p",
+			    "-h", hp->h_name, "-f", lusername, 0);
 		else
-			execl("/bin/login", "login", "-p", "-h", hp->h_name,
-			    lusername, 0);
+			execl("/bin/login", "login", "-p",
+			    "-h", hp->h_name, lusername, 0);
 #endif /* OLD_LOGIN */
 		fatalperror(2, "/bin/login");
 		/*NOTREACHED*/
