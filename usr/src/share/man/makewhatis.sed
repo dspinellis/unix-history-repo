@@ -15,14 +15,15 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makewhatis.sed	5.3 (Berkeley) %G%
+#	@(#)makewhatis.sed	5.4 (Berkeley) %G%
 #
 /(\([a-zA-Z0-9]*\).*UNIX Programmer's Manual/ {
 	s;.*(\([a-zA-Z0-9]*\).*UNIX.*;\1;
 	h
 	d
 }
-/^NAME/!d
+
+/^NNAAMMEE/!d
 
 :name
 	s;.*;;
@@ -42,4 +43,4 @@
 	s;\([a-zA-Z0-9,]\)[	 ][	 ]*;\1 ;g
 	s;[^a-zA-Z0-9]*\([a-zA-Z0-9]*\)[^a-zA-Z0-9]*\(.*\) - \(.*\);\2 (\1) - \3;
 	p
-	d
+	q
