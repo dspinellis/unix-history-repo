@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t6.c	4.1 %G%";
+static char sccsid[] = "@(#)t6.c	4.2 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -52,8 +52,8 @@ extern int lss1;
 extern int vflag;
 extern int ch0;
 extern int lg;
-char fontfile[] = "/usr/lib/font/ftXX";
-int ffi = 16;
+char *fontfile = "/usr/lib/font/ftXX";
+int ffi = 0;
 extern int bd;
 extern int level;
 extern int ch;
@@ -506,6 +506,9 @@ casefp(){
 	register i, j, k;
 	int x;
 
+	if (ffi == 0)
+		while (fontfile[ffi] != 'X')
+			ffi++;
 	skip();
 	if(((i = (getch() & CMASK) - '0' -1) < 0) || (i >3)){prstr("fp: bad font position\n"); return;}
 	if(skip() || !(j = getrq())){prstr("fp: no font name\n"); return;}
