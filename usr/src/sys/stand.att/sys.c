@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.11 (Berkeley) %G%
+ *	@(#)sys.c	7.12 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -332,7 +332,7 @@ read(fdesc, buf, count)
 	int lbn, off;
 
 	errno = 0;
-	if (fdesc >= 0 & fdesc <= 2) {
+	if (fdesc >= 0 && fdesc <= 2) {
 		i = count;
 		do {
 			*buf = getchar();
