@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)error.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)error.c	1.3 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 /*
  * pi - Pascal interpreter code translator
@@ -21,7 +21,7 @@ extern	int yyline;
 extern	char errout;
 #endif
 
-char	errpfx	'E';
+char	errpfx	= 'E';
 extern	int yyline;
 /*
  * Panic is called when impossible

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)const.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)const.c	1.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -11,7 +11,7 @@ static	char *sccsid = "@(#)const.c	1.1 (Berkeley) %G%";
 #include "0.h"
 #include "tree.h"
 
-STATIC	int constcnt -1;
+STATIC	int constcnt = -1;
 
 /*
  * The const declaration part
