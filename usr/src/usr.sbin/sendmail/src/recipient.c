@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.14	%G%";
+static char SccsId[] = "@(#)recipient.c	3.15	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -271,7 +271,11 @@ finduser(name)
 		for (p = buf; (p = index(p, ' ')) != NULL; )
 			*p++ = SPACESUB & 0177;
 		if (sameword(buf, name))
+		{
+			if (Verbose)
+				message(Arpa_Info, "sending to login name %s", pw->pw_name);
 			return (pw);
+		}
 	}
 	return (NULL);
 }
