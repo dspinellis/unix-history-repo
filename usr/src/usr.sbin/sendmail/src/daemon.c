@@ -2,14 +2,14 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.17		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.18		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.17		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.18		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -75,8 +75,10 @@ getrequests()
 			/*
 			**  CHILD -- return to caller.
 			**	Verify calling user id if possible here.
+			**	Make sure we reset state from parent.
 			*/
 
+			FatalErrors = FALSE;
 			InChannel = fdopen(port, "r");
 			OutChannel = fdopen(port, "w");
 			openxscrpt();

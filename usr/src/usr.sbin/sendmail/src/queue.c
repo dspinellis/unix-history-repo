@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.19		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.20		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.19		%G%);
+SCCSID(@(#)queue.c	3.20		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -441,6 +441,7 @@ dowork(w)
 		**  CHILD
 		*/
 
+		FatalErrors = FALSE;
 		QueueRun = TRUE;
 		MailBack = TRUE;
 		openxscrpt();
