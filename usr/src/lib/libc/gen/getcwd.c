@@ -1,4 +1,4 @@
-/*	@(#)getcwd.c	4.6	(Berkeley)	%G%	*/
+/*	@(#)getcwd.c	4.7	(Berkeley)	%G%	*/
 
 /*
  * getwd() returns the pathname of the current working directory. On error
@@ -12,7 +12,6 @@
 #define GETWDERR(s)	strcpy(pathname, (s));
 #define PARENTDIR	".."
 #define PATHSEP		"/"
-#define PATHSIZE	1024
 #define ROOTDIR		"/"
 
 static int pathsize;			/* pathname length */
@@ -21,7 +20,7 @@ char *
 getwd(pathname)
 	char *pathname;
 {
-	char pathbuf[PATHSIZE];		/* temporary pathname buffer */
+	char pathbuf[MAXPATHLEN];		/* temporary pathname buffer */
 	char *pnptr = &pathbuf[(sizeof pathbuf)-1]; /* pathname pointer */
 	char *prepend();		/* prepend dirname to pathname */
 	dev_t rdev;			/* root device number */
@@ -101,7 +100,7 @@ prepend(dirname, pathname)
 
 	for (i = 0; *dirname != '\0'; i++, dirname++)
 		continue;
-	if ((pathsize += i) < PATHSIZE)
+	if ((pathsize += i) < MAXPATHLEN)
 		while (i-- > 0)
 			*--pathname = *--dirname;
 	return (pathname);
