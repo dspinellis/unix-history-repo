@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_usrreq.c	7.8 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
