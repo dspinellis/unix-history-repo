@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.11 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -171,6 +171,8 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid)
 	struct iovec aiov;
 	int error;
 
+	if ((ioflg & IO_NODELOCKED) == 0)
+		VOP_LOCK(vp);
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
 	aiov.iov_base = base;
@@ -180,14 +182,16 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid)
 	auio.uio_segflg = segflg;
 	auio.uio_rw = rw;
 	if (rw == UIO_READ)
-		error = VOP_READ(vp, &auio, &offset, ioflg, cred);
+		error = VOP_READ(vp, &auio, ioflg, cred);
 	else
-		error = VOP_WRITE(vp, &auio, &offset, ioflg, cred);
+		error = VOP_WRITE(vp, &auio, ioflg, cred);
 	if (aresid)
 		*aresid = auio.uio_resid;
 	else
 		if (auio.uio_resid && error == 0)
 			error = EIO;
+	if ((ioflg & IO_NODELOCKED) == 0)
+		VOP_UNLOCK(vp);
 	return (error);
 }
 
@@ -196,9 +200,16 @@ vn_read(fp, uio, cred)
 	struct uio *uio;
 	struct ucred *cred;
 {
+	register struct vnode *vp = (struct vnode *)fp->f_data;
+	int count, error;
 
-	return (VOP_READ((struct vnode *)fp->f_data, uio, &(fp->f_offset),
-		(fp->f_flag & FNDELAY) ? IO_NDELAY : 0, cred));
+	VOP_LOCK(vp);
+	uio->uio_offset = fp->f_offset;
+	count = uio->uio_resid;
+	error = VOP_READ(vp, uio, (fp->f_flag & FNDELAY) ? IO_NDELAY : 0, cred);
+	fp->f_offset += count - uio->uio_resid;
+	VOP_UNLOCK(vp);
+	return (error);
 }
 
 vn_write(fp, uio, cred)
@@ -207,13 +218,22 @@ vn_write(fp, uio, cred)
 	struct ucred *cred;
 {
 	register struct vnode *vp = (struct vnode *)fp->f_data;
-	int ioflag = 0;
+	int count, error, ioflag = 0;
 
 	if (vp->v_type == VREG && (fp->f_flag & FAPPEND))
 		ioflag |= IO_APPEND;
 	if (fp->f_flag & FNDELAY)
 		ioflag |= IO_NDELAY;
-	return (VOP_WRITE(vp, uio, &(fp->f_offset), ioflag, cred));
+	VOP_LOCK(vp);
+	uio->uio_offset = fp->f_offset;
+	count = uio->uio_resid;
+	error = VOP_WRITE(vp, uio, ioflag, cred);
+	if (ioflag & IO_APPEND)
+		fp->f_offset = uio->uio_offset;
+	else
+		fp->f_offset += count - uio->uio_resid;
+	VOP_UNLOCK(vp);
+	return (error);
 }
 
 /*
