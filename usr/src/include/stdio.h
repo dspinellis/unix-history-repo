@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)stdio.h	5.5 (Berkeley) %G%
+ *	@(#)stdio.h	5.6 (Berkeley) %G%
  */
 
 # ifndef FILE
@@ -63,3 +63,5 @@ int	sprintf();	/* here until everyone does it right */
 # endif
 
 #define	L_cuserid	9	/* posix says it goes in stdio.h :( */
+char	*getlogin();
+char	*cuserid();
