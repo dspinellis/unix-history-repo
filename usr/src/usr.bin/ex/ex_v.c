@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_v.c	7.4 %G%";
+static char *sccsid = "@(#)ex_v.c	7.5 %G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -47,6 +47,9 @@ static char *sccsid = "@(#)ex_v.c	7.4 %G%";
  *		absolute motions, contextual displays, line depth determination
  */
 
+jmp_buf venv;
+int	winch();
+
 /*
  * Enter open mode
  */
@@ -60,7 +63,15 @@ oop()
 	char atube[TUBESIZE + LBSIZE];
 #endif
 	ttymode f;	/* mjm: was register */
+	int resize;
 
+	if (resize = setjmp(venv)) {
+		setsize();
+		initev = (char *)0;
+		inopen = 0;
+		addr1 = addr2 = dot;
+	}
+	(void)signal(SIGWINCH, winch);
 	ovbeg();
 	if (peekchar() == '/') {
 		ignore(compile(getchar(), 1));
@@ -117,6 +128,7 @@ oop()
 		vclean();
 	Command = "open";
 	ovend(f);
+	(void)signal(SIGWINCH, SIG_DFL);
 }
 
 ovbeg()
@@ -162,6 +174,7 @@ vop()
 	char atube[TUBESIZE + LBSIZE];
 #endif
 	ttymode f;	/* mjm: was register */
+	int resize;
 
 	if (!CA && UP == NOSTR) {
 		if (initev) {
@@ -188,6 +201,13 @@ toopen:
 			goto toopen;
 		error("Visual requires scrolling");
 	}
+	if (resize = setjmp(venv)) {
+		setsize();
+		initev = (char *)0;
+		inopen = 0;
+		addr1 = addr2 = dot;
+	}
+	(void)signal(SIGWINCH, winch);
 	ovbeg();
 	bastate = VISUAL;
 	c = 0;
@@ -210,6 +230,7 @@ toopen:
 	vmain();
 	Command = "visual";
 	ovend(f);
+	(void)signal(SIGWINCH, SIG_DFL);
 }
 
 /*
@@ -392,4 +413,10 @@ vsetsiz(size)
 		b = 0;
 	basWTOP = b;
 	basWLINES = WBOT - b + 1;
+}
+
+winch()
+{
+	vsave();
+	longjmp(venv, 1);
 }
