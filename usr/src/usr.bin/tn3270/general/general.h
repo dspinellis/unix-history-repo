@@ -1,9 +1,20 @@
 /*
- * Some general definitions.
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
  *
- * @(#)general.h	3.1 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)general.h	3.2 (Berkeley) %G%
  */
 
+/*
+ * Some general definitions.
+ */
 
 #define	numberof(x)	(sizeof x/sizeof x[0])
 #define	highestof(x)	(numberof(x)-1)
