@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -118,7 +118,7 @@ option(name)
 	char *name;
 {
 	OPTION tmp;
-	int typecompare();
+	int typecompare __P((const void *, const void *));
 
 	tmp.name = name;
 	return((OPTION *)bsearch(&tmp, options,
@@ -126,7 +126,7 @@ option(name)
 }
 	
 typecompare(a, b)
-	OPTION *a, *b;
+	const void *a, *b;
 {
-	return(strcmp(a->name, b->name));
+	return(strcmp(((OPTION *)a)->name, ((OPTION *)b)->name));
 }
