@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkpasswd.c	4.4 (Berkeley) 84/05/17";
+static	char *sccsid = "@(#)mkpasswd.c	4.5 (Berkeley) 84/10/26";
 #endif
 
 #include <sys/file.h>
@@ -34,13 +34,12 @@ main(argc, argv)
 		exit(1);
 	}
 	umask(0);
-	dp = ndbmopen(argv[1], O_WRONLY|O_CREAT|O_EXCL, 0644);
+	dp = dbm_open(argv[1], O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (dp == NULL) {
 		fprintf(stderr, "mkpasswd: ");
 		perror(argv[1]);
 		exit(1);
 	}
-	dp->db_maxbno = 0;
 	setpwfile(argv[1]);
 	while (pwd = getpwent()) {
 		cp = buf;
@@ -60,14 +59,23 @@ main(argc, argv)
 			printf("store %s, uid %d\n", pwd->pw_name, pwd->pw_uid);
 		key.dptr = pwd->pw_name;
 		key.dsize = strlen(pwd->pw_name);
-		dbmstore(dp, key, content, DB_INSERT);
+		if (dbm_store(dp, key, content, DBM_INSERT) < 0) {
+			fprintf(stderr, "mkpasswd: ");
+			perror("dbm_store failed");
+			exit(1);
+		}
 		key.dptr = (char *)&pwd->pw_uid;
 		key.dsize = sizeof (int);
-		dbmstore(dp, key, content, DB_INSERT);
+		if (dbm_store(dp, key, content, DBM_INSERT) < 0) {
+			fprintf(stderr, "mkpasswd: ");
+			perror("dbm_store failed");
+			exit(1);
+		}
 		entries++;
 		if (cp - buf > maxlen)
 			maxlen = cp - buf;
 	}
+	dbm_close(dp);
 	printf("%d password entries, maximum length %d\n", entries, maxlen);
 	exit(0);
 }
