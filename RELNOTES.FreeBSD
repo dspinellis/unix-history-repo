@@ -54,7 +54,7 @@ Adaptec 1542{A,B,C} ISA SCSI controller.
 
 Adaptec 174x EISA SCSI controller in standard and enhanced mode.
 
-DTC 3290 EISA SCSI controller in emulation mode.
+DTC 3290 EISA SCSI controller in 1542 emulation mode.
 
 Bustec 742A.
 
@@ -247,4 +247,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.10 1993/10/10 02:38:03 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.11 1993/10/10 21:43:07 jkh Exp $
