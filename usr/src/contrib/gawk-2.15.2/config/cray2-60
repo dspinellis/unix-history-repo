@@ -1,0 +1,6 @@
+Cray Research CRAY-2 system running Unicos 6.0 or 6.1
+BLKSIZE_MISSING	1
+SIGTYPE	void 
+RANDOM_MISSING	1 
+STDC_HEADERS	1 
+CHAR_UNSIGNED	1
