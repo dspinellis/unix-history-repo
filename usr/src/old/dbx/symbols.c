@@ -15,7 +15,7 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-static char sccsid[] = "@(#)symbols.c 5.6 %G%";
+static char sccsid[] = "@(#)symbols.c 5.7 %G%";
 /*
  * Symbol management.
  */
@@ -60,7 +60,7 @@ typedef enum { R_CONST, R_TEMP, R_ARG, R_ADJUST } Rangetype;
 #define STK 1
 #define EXT 2
 
-typedef unsigned integer Storage;
+typedef unsigned int Storage;
 
 struct Symbol {
     Name name;
