@@ -1,4 +1,4 @@
-/*	dmf.c	4.10	82/10/17	*/
+/*	dmf.c	4.11	82/10/17	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -402,8 +402,6 @@ dmfioctl(dev, cmd, data, flag)
 {
 	register struct tty *tp;
 	register int unit = minor(dev);
-	register int dmf = unit >> 3;
-	register struct device *dmfaddr;
 	int error;
  
 	tp = &dmf_tty[unit];
@@ -581,11 +579,10 @@ dmfstart(tp)
 	register struct tty *tp;
 {
 	register struct dmfdevice *addr;
-	register int car, dmf, unit, nch;
+	register int unit, nch;
 	int s;
 
 	unit = minor(tp->t_dev);
-	dmf = unit >> 3;
 	unit &= 07;
 	addr = (struct dmfdevice *)tp->t_addr;
 

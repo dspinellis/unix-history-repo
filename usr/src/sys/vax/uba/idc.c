@@ -1,4 +1,4 @@
-/*	idc.c	4.7	82/10/17	*/
+/*	idc.c	4.8	82/10/17	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -6,7 +6,7 @@ int	idcdebug = 0;
 #define	printd if(idcdebug)printf
 int	idctrb[1000];
 int	*trp = idctrb;
-#define	trace(a,b) {*trp++ = (int)a; *trp++ = (int)b; if(trp>&idctrb[998])trp=idctrb;}
+#define	trace(a,b) {*trp++ = *(int*)a; *trp++ = (int)b; if(trp>&idctrb[998])trp=idctrb;}
 /*
  * IDC (RB730) disk driver
  *
@@ -117,6 +117,7 @@ daddr_t	dkblock();
 
 int	idcwstart, idcwticks, idcwatch();
 
+/*ARGSUSED*/
 idcprobe(reg)
 	caddr_t reg;
 {
@@ -134,6 +135,7 @@ idcprobe(reg)
 	return (sizeof (struct idcdevice));
 }
 
+/*ARGSUSED*/
 idcslave(ui, reg)
 	struct uba_device *ui;
 	caddr_t reg;
@@ -156,6 +158,9 @@ idcslave(ui, reg)
 		return (0);
 	i = idcaddr->idcmpr;		/* read header word 1 */
 	i = idcaddr->idcmpr;		/* read header word 2 */
+#ifdef lint
+	i = i;
+#endif
 	if (idcaddr->idccsr&IDC_R80)
 		ui->ui_type = 1;
 	return (1);
@@ -220,11 +225,11 @@ idcstrategy(bp)
 		bn *= 2;
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
 	(void) spl5();
-	trace('strt',bp);
+	trace("strt",bp);
 	dp = &idcutab[ui->ui_unit];
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
-		trace('!act',dp);
+		trace("!act",dp);
 		(void) idcustart(ui);
 		bp = &ui->ui_mi->um_tab;
 		if (bp->b_actf && bp->b_active == 0)
@@ -256,25 +261,25 @@ idcustart(ui)
 	dp = &idcutab[ui->ui_unit];
 	um = ui->ui_mi;
 	unit = ui->ui_slave;
-	trace('ust', dp);
+	trace("ust", dp);
 	idcaddr = (struct idcdevice *)um->um_addr;
 	if (um->um_tab.b_active) {
 		idc_softc.sc_softas |= 1<<unit;
-		trace('umac',idc_softc.sc_softas);
+		trace("umac",idc_softc.sc_softas);
 		return (0);
 	}
 	if ((bp = dp->b_actf) == NULL) {
-		trace('!bp',0);
+		trace("!bp",0);
 		return (0);
 	}
 	if (dp->b_active) {
-		trace('dpac',dp->b_active);
+		trace("dpac",dp->b_active);
 		goto done;
 	}
 	dp->b_active = 1;
 	/* CHECK DRIVE READY? */
 	bn = dkblock(bp);
-	trace('seek', bn);
+	trace("seek", bn);
 	if (ui->ui_type == 0)
 		bn *= 2;
 	st = &idcst[ui->ui_type];
@@ -333,12 +338,12 @@ idcustart(ui)
 	return (1);
 done:
 	if (dp->b_active != 2) {
-		trace('!=2',dp->b_active);
+		trace("!=2",dp->b_active);
 		dp->b_forw = NULL;
 		if (um->um_tab.b_actf == NULL)
 			um->um_tab.b_actf = dp;
 		else {
-			trace('!NUL',um->um_tab.b_actl);
+			trace("!NUL",um->um_tab.b_actl);
 			um->um_tab.b_actl->b_forw = dp;
 		}
 		um->um_tab.b_actl = dp;
@@ -360,18 +365,18 @@ idcstart(um)
 
 loop:
 	if ((dp = um->um_tab.b_actf) == NULL) {
-		trace('nodp',um);
+		trace("nodp",um);
 		return (0);
 	}
 	if ((bp = dp->b_actf) == NULL) {
-		trace('nobp', dp);
+		trace("nobp", dp);
 		um->um_tab.b_actf = dp->b_forw;
 		goto loop;
 	}
 	um->um_tab.b_active = 1;
 	ui = idcdinfo[dkunit(bp)];
 	bn = dkblock(bp);
-	trace('star',bp);
+	trace("star",bp);
 	if (ui->ui_type == 0)
 		bn *= 2;
 	sc = &idc_softc;
@@ -427,7 +432,7 @@ idcdgo(um)
 	idcaddr->idcdar = sc->sc_dar;
 	printd("idcdgo, ubinfo 0x%x, cmd 0x%x\n", um->um_ubinfo, um->um_cmd);
 	idcaddr->idccsr = um->um_cmd;
-	trace('go', um);
+	trace("go", um);
 	um->um_tab.b_active = 2;
 	/*** CLEAR SPURIOUS ATTN ON R80? ***/
 }
@@ -446,7 +451,7 @@ idcintr(idc)
 	printd("idcintr, idccsr 0x%x", idcaddr->idccsr);
 top:
 	idcwticks = 0;
-	trace('intr', um->um_tab.b_active);
+	trace("intr", um->um_tab.b_active);
 	if (um->um_tab.b_active == 2) {
 		/*
 		 * Process a data transfer complete interrupt.
@@ -569,7 +574,7 @@ cont:
 		dp->b_active = 0;
 		dp->b_errcnt = 0;
 		dp->b_actf = bp->av_forw;
-		trace('done', dp); trace(um->um_tab.b_actf, dp->b_actf);
+		trace("done", dp); trace(&um->um_tab.b_actf, dp->b_actf);
 		bp->b_resid = sc->sc_resid;
 		printd(", iodone, resid 0x%x\n", bp->b_resid);
 		iodone(bp);
@@ -602,7 +607,7 @@ cont:
 	idcaddr->idccsr = IDC_IE|IDC_CRDY|(as&IDC_ATTN);
 	as = ((as >> 16) & 0xf) | sc->sc_softas;
 	sc->sc_softas = 0;
-	trace('as', as);
+	trace("as", as);
 	printd(", as %o", as);
 	for (unit = 0; unit < NRB; unit++)
 		if (as & (1<<unit)) {
@@ -622,21 +627,21 @@ cont:
 		}
 	printd("\n");
 	if (um->um_tab.b_actf && um->um_tab.b_active == 0) {
-		trace('stum',um->um_tab.b_actf);
+		trace("stum",um->um_tab.b_actf);
 		idcstart(um);
 	}
 }
 
-idcwait(addr, cnt)
+idcwait(addr, n)
 	register struct idcdevice *addr;
-	register int cnt;
+	register int n;
 {
 	register int i;
 
-	while (--cnt && (addr->idccsr & IDC_CRDY) == 0)
+	while (--n && (addr->idccsr & IDC_CRDY) == 0)
 		for (i = 10; i; i--)
 			;
-	return (cnt);
+	return (n);
 }
 
 idcread(dev, uio)
@@ -756,6 +761,7 @@ active:
 	}
 }
 
+/*ARGSUSED*/
 idcdump(dev)
 	dev_t dev;
 {

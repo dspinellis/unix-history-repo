@@ -1,4 +1,4 @@
-/*	uba.c	4.51	82/10/17	*/
+/*	uba.c	4.52	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -103,7 +103,7 @@ ubasetup(uban, bp, flags)
 	struct buf *bp;
 {
 	register struct uba_hd *uh = &uba_hd[uban];
-	register int temp, i;
+	register int temp;
 	int npf, reg, bdp;
 	unsigned v;
 	register struct pte *pte, *io;
@@ -549,13 +549,14 @@ ubaremap(uban, ubinfo, addr)
  * Returns > 0 if successful, 0 if not.
  */
 
-ubamem(uban, addr, size, alloc)
+ubamem(uban, addr, size, doalloc)
+	int uban, addr, size, doalloc;
 {
 	register struct uba_hd *uh = &uba_hd[uban];
 	register int *m;
 	register int i, a, s;
 
-	if (alloc) {
+	if (doalloc) {
 		s = spl6();
 		a = rmget(uh->uh_map, size, (addr>>9)+1); /* starts at ONE! */
 		splx(s);
