@@ -1,4 +1,5 @@
-static char *sccsid = "@(#)crypt.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)crypt.c	4.2 (Berkeley) %G%";
+
 /*
  *	A one-rotor machine designed along the lines of Enigma
  *	but considerably trivialized.
@@ -11,14 +12,15 @@ static char *sccsid = "@(#)crypt.c	4.1 (Berkeley) %G%";
 char	t1[ROTORSZ];
 char	t2[ROTORSZ];
 char	t3[ROTORSZ];
+char	deck[ROTORSZ];
 char	*getpass();
+char	buf[13];
 
 setup(pw)
 char *pw;
 {
 	int ic, i, k, temp, pf[2];
 	unsigned random;
-	char buf[13];
 	long seed;
 
 	strncpy(buf, pw, 8);
@@ -45,8 +47,10 @@ char *pw;
 	seed = 123;
 	for (i=0; i<13; i++)
 		seed = seed*buf[i] + i;
-	for(i=0;i<ROTORSZ;i++)
+	for(i=0;i<ROTORSZ;i++) {
 		t1[i] = i;
+		deck[i] = i;
+	}
 	for(i=0;i<ROTORSZ;i++) {
 		seed = 5*seed + buf[i%13];
 		random = seed % 65521;
@@ -69,8 +73,14 @@ char *pw;
 main(argc, argv)
 char *argv[];
 {
-	register i, n1, n2;
+	register i, n1, n2, nr1, nr2;
+	int secureflg = 0;
 
+	if (argc > 1 && argv[1][0] == '-' && argv[1][1] == 's') {
+		argc--;
+		argv++;
+		secureflg = 1;
+	}
 	if (argc != 2){
 		setup(getpass("Enter key:"));
 	}
@@ -78,15 +88,45 @@ char *argv[];
 		setup(argv[1]);
 	n1 = 0;
 	n2 = 0;
+	nr2 = 0;
 
 	while((i=getchar()) >=0) {
-		i = t2[(t3[(t1[(i+n1)&MASK]+n2)&MASK]-n2)&MASK]-n1;
+		if (secureflg) {
+			nr1 = deck[n1]&MASK;
+			nr2 = deck[nr1]&MASK;
+		} else {
+			nr1 = n1;
+		}
+		i = t2[(t3[(t1[(i+nr1)&MASK]+nr2)&MASK]-nr2)&MASK]-nr1;
 		putchar(i);
 		n1++;
 		if(n1==ROTORSZ) {
 			n1 = 0;
 			n2++;
 			if(n2==ROTORSZ) n2 = 0;
+			if (secureflg) {
+				shuffle(deck);
+			} else {
+				nr2 = n2;
+			}
 		}
+	}
+}
+
+shuffle(deck)
+	char deck[];
+{
+	int i, ic, k, temp;
+	unsigned random;
+	static long seed = 123;
+
+	for(i=0;i<ROTORSZ;i++) {
+		seed = 5*seed + buf[i%13];
+		random = seed % 65521;
+		k = ROTORSZ-1 - i;
+		ic = (random&MASK)%(k+1);
+		temp = deck[k];
+		deck[k] = deck[ic];
+		deck[ic] = temp;
 	}
 }
