@@ -1,4 +1,4 @@
-.\" @(#)window.1	3.3 83/08/25
+.\" @(#)window.1	3.4 84/03/02
 .TH WINDOW 1 local
 .SH NAME
 window \- multiple window shell
@@ -38,10 +38,16 @@ This window is indicated by displaying its labels in reverse video.
 Windows can overlap.  Some can be completely obscured by others.
 The current window is always on top of all others.
 .PP
+Windows need not be completely within the edges of the terminal screen.
+Thus a large window (possibly larger than the physical screen)
+can be placed to show only a portion of its full size.  This
+feature can in some situations replace the ability to change
+window sizes which is not supported.
+.PP
 With each newly created window, a shell program is spawned with its
 process environment tailored to that window.  In particular,
 a pseudo-terminal device (\fIpty (4)\fP) is allocated, and becomes
-the standard input, output and diagnostic output of the shell.  It's
+the standard input, output and diagnostic output of the shell.  Its
 special characters and modes (see \fIstty (1)\fP) are copied from
 the user's real terminal.  Also,
 a \fItermcap (5)\fP entry for this window is created
@@ -89,11 +95,11 @@ terminal screen becomes the command prompt window.
 There are two types of commands.  Short commands are
 usually one or two key strokes.  Long commands are entered
 in the command window and terminated with carriage return
-or line feed (see the ``:'' command below).  They consist
-of words separated by spaces or tabs.  Words can be quoted
-to include the spacing characters.  The ``\\'' convention
-of \fIC\fP applies.  Alternately, long commands can be read
-in from files and executed (see \fIsource\fP below).
+or line feed (see the ``:'' command below).  They are parsed
+much like conventional programming languages.  Arithematic
+and some string expressions are supported, as well as
+conditional statements.  The syntax is described below.  Alternately,
+long commands can be read in from files and executed (see \fIsource\fP below).
 .PP
 The short commands are
 .TP
@@ -120,6 +126,10 @@ mode sends one to the current window.  If the \fIwindow\fP
 escape is changed to some other character, that
 character takes the place of ^P here.
 .TP
+.B ^^
+Select the previous current window and return to conversation
+mode.  This is useful for toggling between two windows.
+.TP
 .B q
 Exit \fIwindow\fP.  Confirmation is requested.
 .TP
@@ -143,7 +153,8 @@ point cancels this command.
 This window becomes the current window,
 and is given the first available label.  The default buffer size
 is used (see \fIbuffer\fP command below).
-The
+.IP
+Note, only fully visible windows can be created this way.
 .TP
 .B c[1-9]
 Close window \fI[1-9]\fP.  The process in the window is sent
@@ -152,6 +163,14 @@ handle this signal correctly and cause no problems.
 .TP
 .B C
 Close all windows.
+.TP
+.B m[1-9]
+Move window \fI[1-9]\fP to another location.  The same keys as
+those for the ``w'' command are used to input the new position.  The
+window can be moved partially off-screen.
+.TP
+.B M[1-9]
+Move window \fI[1-9]\fP to its previous position.
 .TP
 .B S
 Show all windows.  Each window is brought to the top in sequence,
@@ -195,8 +214,58 @@ Move the cursor of the current window up by one line.
 .B l
 Move the cursor of the current window right by one column.
 .TP
+.B v
+List all variables.  All currently defined variables are listed
+with their values.
+.TP
 .B :
-Enter a long command.
+Enter a line of long command statements.
+.PP
+The simple long command consists of a command name followed by
+a list of arguments, terminated with newline or ``;''.  The arguments
+can be numeric or string expressions.  Boolean values are represented
+by a numeric value not equal to zero.  The supported operators in increasing
+precedence are
+.TP
+.B "boolean_expr ? expr1 : expr2"
+Returns \fIexpr1\fP
+if \fIboolean_expr\fP is true, \fIexpr2\fP otherwise.
+.TP
+.B boolean_expr1 || boolean_expr2
+Logical or.  Short circuit evaluation is supported.
+.TP
+.B boolean_expr1 && boolean_expr2
+Logical and, with short circuit evaluation.
+.TP
+.B numeric_expr1 | numeric_expr2
+Bitwise or.
+.TP
+.B numeric_expr1 ^ numeric_expr2
+Bitwise exclusive-or.
+.TP
+.B numeric_expr1 & numeric_expr2
+Bitwise and.
+.TP
+.B expr1 == expr2, expr1 != expr2
+Comparison (equal and not-equal, respectively).  The boolean
+result of the comparison is returned.  The arguments can be numeric
+or strings.
+.TP
+.B expr1 < expr2, expr1 > expr2, expr1 <= expr2, expr1 >= expr2
+Less than, greater than, less than or equal to, greater than or equal to.
+.TP
+.B numeric_expr1 << numeric_expr2, numeric_expr1 >> numeric_expr2,
+\fINumeric_expr1\fP is bit shifted left (or right) by \fInumeric_expr2\fP
+bits.
+.TP
+.B numeric_expr1 + numeric_expr2, numeric_expr1 - numeric_expr2
+Addition, subtraction.
+.TP
+.B numeric_expr1 * numeric_expr2, numeric_expr1 / numeric_expr2, numeric_expr1 % numeric_expr2
+Multiplication, division, modulo.
+.TP
+.B - numeric_expr, + numeric_expr, ~ numeric_expr, ! boolean_expr
+Unary minus, unary plus, bitwise complement, logical complement.
 .PP
 The long commands:
 .TP
@@ -246,9 +315,6 @@ Read and execute the long commands in \fIfile\fP.  Recursive
 .SH DIAGNOSTICS
 Should be self explanatory.
 .SH BUGS
-When all pseudo-terminal devices are used, the \fB``w''\fP
-command fails mysteriously.
-.PP
 When a window is scrolled or the cursor moved, output from
 the process in the window will be displayed at the new cursor
 position.  This is consistent with real terminals but
