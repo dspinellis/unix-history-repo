@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)openprom.c	7.1 (Berkeley) %G%
+ *	@(#)openprom.c	7.2 (Berkeley) %G%
  *
- * from: $Header: openprom.c,v 1.2 93/04/20 11:16:14 torek Exp $
+ * from: $Header: openprom.c,v 1.3 93/04/27 08:56:09 torek Exp $
  */
 
 #include <sys/param.h>
@@ -30,6 +30,7 @@
 
 static	int lastnode;			/* speed hack */
 extern	int optionsnode;		/* node ID of ROM's options */
+extern	int findroot();			/* returns node ID of top node */
 extern	struct promvec *promvec;
 
 int
@@ -50,6 +51,10 @@ openpromclose(dev, flags, mode)
 	return (0);
 }
 
+/*
+ * Verify target ID is valid (exists in the OPENPROM tree), as
+ * listed from node ID sid forward.
+ */
 static int
 openpromcheckid(sid, tid)
 	register int sid, tid;
@@ -57,7 +62,7 @@ openpromcheckid(sid, tid)
 	register struct nodeops *no;
 
 	no = promvec->pv_nodeops;
-	while ((sid = no->no_nextnode(sid)) != 0)
+	for (; sid != 0; sid = no->no_nextnode(sid))
 		if (sid == tid || openpromcheckid(no->no_child(sid), tid))
 			return (1);
 
@@ -107,7 +112,7 @@ openpromioctl(dev, cmd, data, flags, p)
 	if (node != 0 && node != lastnode && node != optionsnode) {
 		/* Not an easy one, must search for it */
 		s = splhigh();
-		ok = openpromcheckid(0, node);
+		ok = openpromcheckid(findroot(), node);
 		splx(s);
 		if (!ok)
 			return (EINVAL);
