@@ -1,9 +1,10 @@
 pmax/pmax/autoconf.c		standard
-pmax/pmax/clock.c		standard
+pmax/pmax/clock.c		standard device-driver
 pmax/pmax/conf.c		standard
 pmax/pmax/cons.c		standard
 pmax/pmax/fp.s			standard
 pmax/pmax/in_cksum.c		optional inet
+pmax/pmax/kadb.c		optional kadb
 pmax/pmax/machdep.c		standard config-dependent
 pmax/pmax/mem.c			standard
 pmax/pmax/ns_cksum.c		optional ns
@@ -12,6 +13,7 @@ pmax/pmax/sys_machdep.c		standard
 pmax/pmax/trap.c		standard
 pmax/pmax/vm_machdep.c		standard
 pmax/dev/scsi.c			standard
+pmax/dev/asc.c			optional asc device-driver
 pmax/dev/dc.c			optional dc device-driver
 pmax/dev/if_le.c		optional le
 pmax/dev/pm.c			optional pm
