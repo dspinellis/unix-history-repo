@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.2 (Berkeley) %G%
+#	@(#)daily	5.3 (Berkeley) %G%
 #
 
 PATH=/usr/local:/usr/ucb:/bin:/usr/bin:/etc:/sbin:/usr/sbin
@@ -79,7 +79,7 @@ calendar -
 
 echo ""
 echo "Rotating mail syslog:"
-cd /var/spool/mqueue
+cd /var/log
 rm -f syslog.7
 if [ -f syslog.6 ]; then mv -f syslog.6  syslog.7; fi
 if [ -f syslog.5 ]; then mv -f syslog.5  syslog.6; fi
