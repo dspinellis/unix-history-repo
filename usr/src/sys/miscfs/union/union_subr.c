@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	1.7 (Berkeley) %G%
+ *	@(#)union_subr.c	1.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -172,7 +172,7 @@ loop:
 	un->un_next = 0;
 	un->un_uppervp = uppervp;
 	un->un_lowervp = lowervp;
-	un->un_open = 0;
+	un->un_openl = 0;
 	un->un_flags = 0;
 	if (cnp && (lowervp != NULLVP) && (lowervp->v_type == VREG)) {
 		un->un_hash = cnp->cn_hash;
@@ -472,9 +472,11 @@ bad:
 }
 
 int
-union_vn_close(vp, fmode)
+union_vn_close(vp, fmode, cred, p)
 	struct vnode *vp;
 	int fmode;
+	struct ucred *cred;
+	struct proc *p;
 {
 	if (fmode & FWRITE)
 		--vp->v_writecount;
@@ -487,4 +489,18 @@ union_removed_upper(un)
 {
 	vrele(un->un_uppervp);
 	un->un_uppervp = NULLVP;
+}
+
+struct vnode *
+union_lowervp(vp)
+	struct vnode *vp;
+{
+	struct union_node *un = VTOUNION(vp);
+
+	if (un->un_lowervp && (vp->v_type == un->un_lowervp->v_type)) {
+		if (vget(un->un_lowervp, 0))
+			return (NULLVP);
+	}
+
+	return (un->un_lowervp);
 }
