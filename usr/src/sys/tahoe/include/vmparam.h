@@ -1,4 +1,4 @@
-/*	vmparam.h	1.4	86/01/20	*/
+/*	vmparam.h	1.5	86/04/11	*/
 
 /*
  * Machine dependent constants for tahoe.
@@ -26,7 +26,7 @@
 #define	DFLDSIZ		(6*1024*1024)		/* initial data size limit */
 #endif
 #ifndef MAXDSIZ
-#define	MAXDSIZ		(16*1024*1024)		/* max data size */
+#define	MAXDSIZ		(24*1024*1024)		/* max data size */
 #endif
 #ifndef	DFLSSIZ
 #define	DFLSSIZ		(512*1024)		/* initial stack size limit */
