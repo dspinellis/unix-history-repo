@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yymain.c 1.2 %G%";
+static char sccsid[] = "@(#)yymain.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -17,6 +17,12 @@ static char sccsid[] = "@(#)yymain.c 1.2 %G%";
 yymain()
 {
 
+#ifdef OBJ
+/*
+ * initialize symbol table temp files
+ */
+	startnlfile();
+#endif
 	/*
 	 * Initialize the scanner
 	 */
@@ -56,12 +62,19 @@ yymain()
 	yyparse();
 #ifdef PI
 #   ifdef OBJ
+
+	/*
+	 * save outermost block of namelist
+	 */
+	savenl(0);
+
 	magic2();
 #   endif OBJ
 #   ifdef DEBUG
 	dumpnl(0);
 #   endif
 #endif
+
 #ifdef PXP
 	prttab();
 	if (onefile) {
@@ -140,13 +153,15 @@ magic2()
 	if  (magichdr.a_magic != 0407)
 		panic ( "magic2" );
 	pflush();
-	lseek(ofil, 0l, 0);
 	magichdr.a_data = ( unsigned ) lc - magichdr.a_text;
 	magichdr.a_data -= sizeof (struct exec);
-	write(ofil, &magichdr, sizeof(struct exec));
 	pxhd.objsize = ( ( unsigned ) lc) - HEADER_BYTES;
+	pxhd.symtabsize = nlhdrsize();
+	magichdr.a_data += pxhd.symtabsize;
 	time(&pxhd.maketime);
 	pxhd.magicnum = MAGICNUM;
+	lseek(ofil, 0l, 0);
+	write(ofil, &magichdr, sizeof(struct exec));
 	lseek(ofil, ( long ) ( HEADER_BYTES - sizeof ( pxhd ) ) , 0);
 	write(ofil, &pxhd, sizeof (pxhd));
 }

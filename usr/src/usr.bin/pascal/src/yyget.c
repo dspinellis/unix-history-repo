@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyget.c 1.1 %G%";
+static	char sccsid[] = "@(#)yyget.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -226,6 +226,14 @@ includ()
 	ip = &incs[inclev];
 	ip->filename = filename;
 	filename = savestr(cp);
+
+#ifdef OBJ
+/*
+ * For the debugger pdx, we need to note that we've changed files.
+ */
+	newfile(filename, 1);
+#endif
+
 /*
  *	left over from before stdio
  *
@@ -313,6 +321,7 @@ uninclud()
 #endif
 	}
 	filename = ip->filename;
+
 	yyLinpt = ip->yyLinpt;
 	/*
 	 * If we printed out the nested name,

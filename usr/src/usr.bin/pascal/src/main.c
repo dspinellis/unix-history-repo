@@ -3,7 +3,7 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 1.4 %G%";
+static char sccsid[] = "@(#)main.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -109,7 +109,7 @@ main(argc, argv)
 		pexit(NOSTART);
 	}
 #	ifdef OBJ
-	    opt('p') = opt('t') = opt('b') = 1;
+	    opt('g') = opt('p') = opt('t') = opt('b') = 1;
 	    while (argc > 0) {
 		    cp = argv[0];
 		    if (*cp++ != '-')
@@ -150,6 +150,7 @@ main(argc, argv)
 				    if (pflstc == 0)
 					    goto usage;
 				    continue;
+			    case 'g':
 			    case 'l':
 			    case 'n':
 			    case 'p':
@@ -338,6 +339,11 @@ pexit(c)
 #			ifdef OBJ
 			    if (ofil > 0)
 				    unlink(obj);
+			/*
+			 * remove symbol table temp files
+			 */
+			    removenlfile();
+
 #			endif OBJ
 #			ifdef PC
 			    if ( pcstream != NULL ) {
@@ -348,6 +354,11 @@ pexit(c)
 		case AOK:
 #			ifdef OBJ
 			    pflush();
+			/*
+			 * copy symbol table temp files to obj file
+			 */
+			    copynlfile();
+
 #			endif OBJ
 #			ifdef PC
 			    puteof();

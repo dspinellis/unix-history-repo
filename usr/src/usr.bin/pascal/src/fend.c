@@ -579,6 +579,15 @@ funcend(fp, bundle, endline)
 #ifdef DEBUG
 	dumpnl(fp->ptr[2], fp->symbol);
 #endif
+
+#ifdef OBJ
+	/*
+	 * save the namelist for the debugger pdx
+	 */
+
+	savenl(fp->ptr[2], fp->symbol);
+#endif
+
 	/*
 	 * Restore the
 	 * (virtual) name list
