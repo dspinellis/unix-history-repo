@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ruptime.1	6.2 (Berkeley) %G%
+.\"	@(#)ruptime.1	6.3 (Berkeley) %G%
 .\"
 .TH RUPTIME 1 ""
 .UC 5
@@ -22,26 +22,17 @@ ruptime \- show host status of local machines
 .SH SYNOPSIS
 .B ruptime
 [
-.B \-a
-] [
-.B \-r
-] [
-.B \-l
-] [
-.B \-t
-] [
-.B \-u
+.B -alrtu
 ]
 .SH DESCRIPTION
 .I Ruptime
 gives a status line like
 .I uptime
-for each machine on the local network;
-these are formed from packets broadcast by each host
-on the network once a minute.
+for each machine on the local network; these are formed from packets
+broadcast by each host on the network once a minute.
 .PP
-Machines for which no
-status report has been received for 11 minutes are shown as being down.
+Machines for which no status report has been received for 11
+minutes are shown as being down.
 .PP
 Users idle an hour or more are not counted unless the
 .B \-a
@@ -49,14 +40,12 @@ flag is given.
 .PP
 Normally, the listing is sorted by host name.
 The
-.B \-l ,
-.B \-t ,
+.BR \-l ,
+.BR \-t ,
 and
-.B \-u
-flags specify sorting by
-load average,
-uptime,
-and number of users, respectively.
+.BR \-u
+flags specify sorting by load average, uptime, and number of users,
+respectively.
 The
 .B \-r
 flag reverses the sort order.
