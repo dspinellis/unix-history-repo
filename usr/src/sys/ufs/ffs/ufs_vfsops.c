@@ -4,18 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.61 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.62 (Berkeley) %G%
  */
 
 #include <sys/param.h>
+#include <net/radix.h>
+#include <sys/domain.h>
+#include <sys/socket.h>
+#include <sys/mbuf.h>
 #include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
-#include <sys/socket.h>
 #include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <netinet/in.h>
 
 #include <miscfs/specfs/specdev.h>
 #include "ioctl.h"
@@ -164,118 +165,82 @@ ufs_hang_addrlist(mp, argp)
 	struct mount *mp;
 	struct ufs_args *argp;
 {
-	register struct netaddrhash *np, **hnp;
+	register struct netcred *np;
+	register struct radix_node_head *rnh;
 	register int i;
+	struct radix_node *rn;
 	struct ufsmount *ump;
-	struct sockaddr *saddr;
-	struct mbuf *nam, *msk = (struct mbuf *)0;
-	union nethostaddr netmsk;
+	struct sockaddr *saddr, *smask = 0;
+	struct domain *dom;
 	int error;
 
-	if (error = sockargs(&nam, (caddr_t)argp->saddr, argp->slen, MT_SONAME))
-		return (error);
-	saddr = mtod(nam, struct sockaddr *);
-	ump = VFSTOUFS(mp);
-	if (saddr->sa_family == AF_INET &&
-		((struct sockaddr_in *)saddr)->sin_addr.s_addr == INADDR_ANY) {
-		m_freem(nam);
+	if (argp->slen == 0) {
 		if (mp->mnt_flag & MNT_DEFEXPORTED)
 			return (EPERM);
 		np = &ump->um_defexported;
-		np->neth_exflags = argp->exflags;
-		np->neth_anon = argp->anon;
-		np->neth_anon.cr_ref = 1;
+		np->netc_exflags = argp->exflags;
+		np->netc_anon = argp->anon;
+		np->netc_anon.cr_ref = 1;
 		mp->mnt_flag |= MNT_DEFEXPORTED;
 		return (0);
 	}
-	if (argp->msklen > 0) {
-		if (error = sockargs(&msk, (caddr_t)argp->smask, argp->msklen,
-		    MT_SONAME)) {
-			m_freem(nam);
-			return (error);
-		}
-
+	i = sizeof(struct netcred) + argp->slen + argp->msklen;
+	np = (struct netcred *)malloc(i, M_NETADDR, M_WAITOK);
+	bzero((caddr_t)np, i);
+	saddr = (struct sockaddr *)(np + 1);
+	if (error = copyin(argp->saddr, (caddr_t)saddr, argp->slen))
+		goto out;
+	if (saddr->sa_len > argp->slen)
+		saddr->sa_len = argp->slen;
+	if (argp->msklen) {
+		smask = (struct sockaddr *)((caddr_t)saddr + argp->slen);
+		if (error = copyin(argp->saddr, (caddr_t)smask, argp->msklen))
+			goto out;
+		if (smask->sa_len > argp->msklen)
+			smask->sa_len = argp->msklen;
+	}
+	ump = VFSTOUFS(mp);
+	i = saddr->sa_family;
+	if ((rnh = ump->um_rtable[i]) == 0) {
 		/*
-		 * Scan all the hash lists to check against duplications.
-		 * For the net list, try both masks to catch a subnet
-		 * of another network.
+		 * Seems silly to initialize every AF when most are not
+		 * used, do so on demand here
 		 */
-		hnp = &ump->um_netaddr[NETMASK_HASH];
-		np = *hnp;
-		if (saddr->sa_family == AF_INET)
-			netmsk.had_inetaddr =
-			    mtod(msk, struct sockaddr_in *)->sin_addr.s_addr;
-		else
-			netmsk.had_nam = msk;
-		while (np) {
-			if (netaddr_match(np->neth_family, &np->neth_haddr,
-			    &np->neth_hmask, nam) ||
-			    netaddr_match(np->neth_family, &np->neth_haddr,
-			    &netmsk, nam)) {
-				m_freem(nam);
-				m_freem(msk);
-				return (EPERM);
+		for (dom = domains; dom; dom = dom->dom_next)
+			if (dom->dom_family == i && dom->dom_rtattach) {
+				dom->dom_rtattach((void **)&ump->um_rtable[i],
+					dom->dom_rtoffset);
+				break;
 			}
-			np = np->neth_next;
-		}
-		for (i = 0; i < NETHASHSZ; i++) {
-			np = ump->um_netaddr[i];
-			while (np) {
-				if (netaddr_match(np->neth_family,
-				    &np->neth_haddr, &netmsk, nam)) {
-					m_freem(nam);
-					m_freem(msk);
-					return (EPERM);
-				}
-				np = np->neth_next;
-			}
-		}
-	} else {
-		hnp = &ump->um_netaddr[NETADDRHASH(saddr)];
-		np = ump->um_netaddr[NETMASK_HASH];
-		while (np) {
-			if (netaddr_match(np->neth_family, &np->neth_haddr,
-			    &np->neth_hmask, nam)) {
-				m_freem(nam);
-				return (EPERM);
-			}
-			np = np->neth_next;
-		}
-		np = *hnp;
-		while (np) {
-			if (netaddr_match(np->neth_family, &np->neth_haddr,
-			    (union nethostaddr *)0, nam)) {
-				m_freem(nam);
-				return (EPERM);
-			}
-			np = np->neth_next;
+		if ((rnh = ump->um_rtable[i]) == 0) {
+			error = ENOBUFS;
+			goto out;
 		}
 	}
-	np = (struct netaddrhash *) malloc(sizeof(struct netaddrhash),
-	    M_NETADDR, M_WAITOK);
-	np->neth_family = saddr->sa_family;
-	if (saddr->sa_family == AF_INET) {
-		np->neth_inetaddr =
-		    ((struct sockaddr_in *)saddr)->sin_addr.s_addr;
-		m_freem(nam);
-		if (msk) {
-			np->neth_inetmask = netmsk.had_inetaddr;
-			m_freem(msk);
-			if (np->neth_inetaddr &~ np->neth_inetmask)
-				return (EPERM);
-		} else
-			np->neth_inetmask = 0xffffffff;
-	} else {
-		np->neth_nam = nam;
-		np->neth_msk = msk;
+	rn = (*rnh->rnh_add)((caddr_t)saddr, (caddr_t)smask, rnh->rnh_treetop,
+	    np->netc_rnodes);
+	if (rn == 0 || np != (struct netcred *)rn) { /* already exists */
+		error = EPERM;
+		goto out;
 	}
-	np->neth_exflags = argp->exflags;
-	np->neth_anon = argp->anon;
-	np->neth_anon.cr_ref = 1;
-	np->neth_next = *hnp;
-	*hnp = np;
+	np->netc_exflags = argp->exflags;
+	np->netc_anon = argp->anon;
+	np->netc_anon.cr_ref = 1;
 	return (0);
+out:
+	free(np, M_NETADDR);
+	return (error);
 }
+
+/* ARGSUSED */
+static int
+ufs_free_netcred(rn, w)
+	struct radix_node *rn;
+	caddr_t w;
+{
+	free((caddr_t)rn, M_NETADDR);
+}
+	
 
 /*
  * Free the net address hash lists that are hanging off the mount points.
@@ -284,20 +249,82 @@ void
 ufs_free_addrlist(ump)
 	struct ufsmount *ump;
 {
-	register struct netaddrhash *np, *onp;
 	register int i;
+	register struct radix_node_head *rnh;
 
-	for (i = 0; i <= NETHASHSZ; i++) {
-		np = ump->um_netaddr[i];
-		ump->um_netaddr[i] = (struct netaddrhash *)0;
-		while (np) {
-			onp = np;
-			np = np->neth_next;
-			if (onp->neth_family != AF_INET) {
-				m_freem(onp->neth_nam);
-				m_freem(onp->neth_msk);
-			}
-			free((caddr_t)onp, M_NETADDR);
+	for (i = 0; i <= AF_MAX; i++)
+		if (rnh = ump->um_rtable[i]) {
+			(*rnh->rnh_walk)(rnh->rnh_treetop,
+				ufs_free_netcred, (caddr_t)0);
+			free((caddr_t)rnh, M_RTABLE);
+			ump->um_rtable[i] = 0;
+		}
+}
+
+/*
+ * This is the generic part of fhtovp called after the underlying
+ * filesystem has validated the file handle.
+ *
+ * Verify that a host should have access to a filesystem, and if so
+ * return a vnode for the presented file handle.
+ */
+int
+ufs_check_export(mp, fhp, nam, vpp, exflagsp, credanonp)
+	register struct mount *mp;
+	struct fid *fhp;
+	struct mbuf *nam;
+	struct vnode **vpp;
+	int *exflagsp;
+	struct ucred **credanonp;
+{
+	register struct ufid *ufhp;
+	register struct inode *ip;
+	register struct netcred *np;
+	register struct ufsmount *ump = VFSTOUFS(mp);
+	register struct radix_node_head *rnh;
+	struct vnode *nvp;
+	struct sockaddr *saddr;
+	int error;
+
+	/*
+	 * Get the export permission structure for this <mp, client> tuple.
+	 */
+	if ((mp->mnt_flag & MNT_EXPORTED) == 0)
+		return (EACCES);
+	if (nam == NULL) {
+		np = NULL;
+	} else {
+		saddr = mtod(nam, struct sockaddr *);
+		rnh = ump->um_rtable[saddr->sa_family];
+		if (rnh == NULL) {
+			np = NULL;
+		} else {
+			np = (struct netcred *)
+			    (*rnh->rnh_match)((caddr_t)saddr, rnh->rnh_treetop);
+			if (np->netc_rnodes->rn_flags & RNF_ROOT)
+				np = NULL;
 		}
 	}
+	if (np == NULL) {
+		/*
+		 * If no address match, use the default if it exists.
+		 */
+		if ((mp->mnt_flag & MNT_DEFEXPORTED) == 0)
+			return (EACCES);
+		np = &ump->um_defexported;
+	}
+	if (error = VFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
+		*vpp = NULLVP;
+		return (error);
+	}
+	ip = VTOI(nvp);
+	if (ip->i_mode == 0 || ip->i_gen != ufhp->ufid_gen) {
+		ufs_iput(ip);
+		*vpp = NULLVP;
+		return (ESTALE);
+	}
+	*vpp = nvp;
+	*exflagsp = np->netc_exflags;
+	*credanonp = &np->netc_anon;
+	return (0);
 }

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.75 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.76 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -13,6 +13,7 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/vnode.h>
+#include <sys/socket.h>
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/mbuf.h>
@@ -21,7 +22,6 @@
 #include <sys/ioctl.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
-#include <sys/socket.h>
 
 #include <miscfs/specfs/specdev.h>
 #include "ioctl.h"
@@ -623,76 +623,15 @@ ffs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	int *exflagsp;
 	struct ucred **credanonp;
 {
-	register struct inode *ip;
 	register struct ufid *ufhp;
-	register struct netaddrhash *np;
-	register struct ufsmount *ump = VFSTOUFS(mp);
 	struct fs *fs;
-	struct vnode *nvp;
-	struct sockaddr *saddr;
-	int error;
 
 	ufhp = (struct ufid *)fhp;
-	fs = ump->um_fs;
+	fs = VFSTOUFS(mp)->um_fs;
 	if (ufhp->ufid_ino < ROOTINO ||
 	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg)
 		return (ESTALE);
-	/*
-	 * Get the export permission structure for this <mp, client> tuple.
-	 */
-	if ((mp->mnt_flag & MNT_EXPORTED) == 0)
-		return (EACCES);
-	if (nam == NULL) {
-		np = (struct netaddrhash *)0;
-	} else {
-		/*
-		 * First search for a network match.
-		 */
-		np = ump->um_netaddr[NETMASK_HASH];
-		while (np) {
-			if (netaddr_match(np->neth_family, &np->neth_haddr,
-			    &np->neth_hmask, nam))
-				break;
-			np = np->neth_next;
-		}
-
-		/*
-		 * If not found, try for an address match.
-		 */
-		if (np == (struct netaddrhash *)0) {
-			saddr = mtod(nam, struct sockaddr *);
-			np = ump->um_netaddr[NETADDRHASH(saddr)];
-			while (np) {
-				if (netaddr_match(np->neth_family,
-				    &np->neth_haddr, (struct netaddrhash *)0,
-				    nam))
-					break;
-				np = np->neth_next;
-			}
-		}
-	}
-	if (np == (struct netaddrhash *)0) {
-		/*
-		 * If no address match, use the default if it exists.
-		 */
-		if ((mp->mnt_flag & MNT_DEFEXPORTED) == 0)
-			return (EACCES);
-		np = &ump->um_defexported;
-	}
-	if (error = VFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
-		*vpp = NULLVP;
-		return (error);
-	}
-	ip = VTOI(nvp);
-	if (ip->i_mode == 0 || ip->i_gen != ufhp->ufid_gen) {
-		ufs_iput(ip);
-		*vpp = NULLVP;
-		return (ESTALE);
-	}
-	*vpp = nvp;
-	*exflagsp = np->neth_exflags;
-	*credanonp = &np->neth_anon;
-	return (0);
+	return (ufs_check_export(mp, fhp, nam, vpp, exflagsp, credanonp));
 }
 
 /*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.82 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.83 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -487,7 +487,8 @@ lfs_vget(mp, ino, vpp)
  * - check that the inode number is valid
  * - call lfs_vget() to get the locked inode
  * - check for an unallocated inode (i_mode == 0)
- * - check that the generation number matches
+ * - check that the given client host has export rights and return
+ *   those rights via. exflagsp and credanonp
  *
  * XXX
  * use ifile to see if inode is allocated instead of reading off disk
@@ -503,73 +504,12 @@ lfs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	int *exflagsp;
 	struct ucred **credanonp;
 {
-	register struct inode *ip;
 	register struct ufid *ufhp;
-	register struct netaddrhash *np;
-	register struct ufsmount *ump = VFSTOUFS(mp);
-	struct vnode *nvp;
-	struct sockaddr *saddr;
-	int error;
 
 	ufhp = (struct ufid *)fhp;
 	if (ufhp->ufid_ino < ROOTINO)
 		return (ESTALE);
-	/*
-	 * Get the export permission structure for this <mp, client> tuple.
-	 */
-	if ((mp->mnt_flag & MNT_EXPORTED) == 0)
-		return (EACCES);
-	if (nam == NULL) {
-		np = (struct netaddrhash *)0;
-	} else {
-		/*
-		 * First search for a network match.
-		 */
-		np = ump->um_netaddr[NETMASK_HASH];
-		while (np) {
-			if (netaddr_match(np->neth_family, &np->neth_haddr,
-			    &np->neth_hmask, nam))
-				break;
-			np = np->neth_next;
-		}
-
-		/*
-		 * If not found, try for an address match.
-		 */
-		if (np == (struct netaddrhash *)0) {
-			saddr = mtod(nam, struct sockaddr *);
-			np = ump->um_netaddr[NETADDRHASH(saddr)];
-			while (np) {
-				if (netaddr_match(np->neth_family,
-				    &np->neth_haddr, (struct netaddrhash *)0,
-				    nam))
-					break;
-				np = np->neth_next;
-			}
-		}
-	}
-	if (np == (struct netaddrhash *)0) {
-		/*
-		 * If no address match, use the default if it exists.
-		 */
-		if ((mp->mnt_flag & MNT_DEFEXPORTED) == 0)
-			return (EACCES);
-		np = &ump->um_defexported;
-	}
-	if (error = VFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
-		*vpp = NULLVP;
-		return (error);
-	}
-	ip = VTOI(nvp);
-	if (ip->i_mode == 0 || ip->i_gen != ufhp->ufid_gen) {
-		ufs_iput(ip);
-		*vpp = NULLVP;
-		return (ESTALE);
-	}
-	*vpp = nvp;
-	*exflagsp = np->neth_exflags;
-	*credanonp = &np->neth_anon;
-	return (0);
+	return (ufs_check_export(mp, fhp, nam, vpp, exflagsp, credanonp));
 }
 
 /*
