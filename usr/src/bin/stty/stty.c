@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -170,6 +170,10 @@ struct modes lmodes[] = {
 	"-crt",		ECHOK, ECHOE|ECHOKE|ECHOCTL,
 	"newcrt",	ECHOE|ECHOKE|ECHOCTL, ECHOK|ECHOPRT,
 	"-newcrt",	ECHOK, ECHOE|ECHOKE|ECHOCTL, 
+	"nokerninfo",	NOKERNINFO, 0,
+	"-nokerninfo",	0, NOKERNINFO,
+	"kerninfo",	0, NOKERNINFO,
+	"-kerninfo",	NOKERNINFO, 0,
 	0
 };
 
@@ -214,6 +218,7 @@ int ldisc;
 int dodisc;
 int debug = 0;
 int trace, dotrace;
+int extproc;
 
 #define OUT	stdout		/* informational output stream */
 #define ERR	stderr		/* error message stream */
@@ -349,6 +354,13 @@ main(argc, argv)
 		if (eq("size", *argv)) {
 			put("%d %d\n", win.ws_row, win.ws_col);
 			exit(0);
+		}
+		if (eq("extrpc", *argv) || eq("-extproc", *argv)) {
+			if (**argv == '-')
+				extproc = 0;
+			else
+				extproc = 1;
+			ioctl(ctl, TIOCEXT, &extproc);
 		}
 		if (eq("speed", *argv)) {
 			put("%d\n", cfgetospeed(&t));
@@ -558,6 +570,8 @@ prmode(tp, ldisc, fmt)
 	lput("-mdmbuf ",MDMBUF, 0);
 	lput("-flusho ",FLUSHO, 0);
 	lput("-pendin ",PENDIN, 0);
+	lput("-nokerninfo ",NOKERNINFO, 0);
+	lput("-extproc ",EXTPROC, 0);
 	/*
 	 * input flags
 	 */
