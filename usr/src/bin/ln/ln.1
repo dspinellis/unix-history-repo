@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ln.1	6.2 (Berkeley) %G%
+.\"	@(#)ln.1	6.3 (Berkeley) %G%
 .\"
 .TH LN 1 ""
 .UC 4
@@ -34,8 +34,9 @@ makes hard links.
 A hard link to a file is indistinguishable from the
 original directory entry; any changes to a
 file are effective independent of the name used
-to reference the file.
-Hard links may not span file systems and may not refer to directories.
+to reference the file.  Hard links may not refer to directories
+(unless the proper incantations are supplied) and may not span
+file systems.
 .PP
 The
 .B \-s
