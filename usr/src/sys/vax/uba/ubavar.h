@@ -1,4 +1,4 @@
-/*	ubavar.h	4.11	81/02/23	*/
+/*	ubavar.h	4.12	81/02/23	*/
 
 /*
  * UNIBUS adaptor
@@ -143,7 +143,6 @@ struct uba_dinfo {
  * N.B.: THE SIZE AND SHAPE OF THIS STRUCTURE IS KNOWN IN uba.m.
  */
 struct	uba_hd {
-	int	uh_active;		/* bit per device transferring */
 	struct	uba_regs *uh_uba;	/* virt addr of uba */
 	struct	uba_regs *uh_physuba;	/* phys addr of uba */
 	int	(**uh_vec)();		/* interrupt vector */
