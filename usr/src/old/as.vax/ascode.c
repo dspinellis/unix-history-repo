@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)ascode.c 4.5 %G%";
+static	char sccsid[] = "@(#)ascode.c 4.6 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "assyms.h"
@@ -125,7 +125,7 @@ putins(op, ap, n)
 	register struct arg *ap;
 {
 	register struct exp 	*xp;
-	register int 		a;
+	register int 		argtype;
 	int 			i;
 	int			reloc_how;
 
@@ -137,15 +137,15 @@ putins(op, ap, n)
 
 	dotp->e_xvalue += n+1;		/* 1 for the opcode, at least 1 per arg */
 	for (i=0; i<n; i++,ap++) {	/* some args take more than 1 byte */
-	    a = ap->a_atype;
-	    if (a & AINDX)
+	    argtype = ap->a_atype;
+	    if (argtype & AINDX)
 		dotp->e_xvalue++;
-	    switch (a&~(AINDX|ASTAR)) {
+	    switch (argtype&~(AINDX|ASTAR)) {
 		case AEXP: 
-			a = fetcharg(itab[op], i);
-			if (a == ACCB+TYPB)
+			argtype = fetcharg(itab[op], i);
+			if (argtype == ACCB+TYPB)
 				break;
-			if (a==ACCB+TYPW){
+			if (argtype==ACCB+TYPW){
 				dotp->e_xvalue++;
 				break;
 			}
@@ -161,7 +161,7 @@ putins(op, ap, n)
 				dotp->e_xvalue += ap->a_dispsize;
 				break;
 			}
-			if (xp->e_xvalue==0 && !(a&ASTAR))
+			if (xp->e_xvalue==0 && !(argtype&ASTAR))
 				break;
 			dotp->e_xvalue++;
 			if ((xp->e_xvalue<MINBYTE) || (xp->e_xvalue>MAXBYTE))
@@ -171,25 +171,25 @@ putins(op, ap, n)
 			break;
 
 		case AIMM: 
-			if (ap->a_atype&ASTAR) a=TYPL;
+			if (ap->a_atype&ASTAR) argtype=TYPL;
 			else {
-				a = fetcharg(itab[op], i);
-				if (a&ACCA)
-					a = TYPL;
+				argtype = fetcharg(itab[op], i);
+				if (argtype&ACCA)
+					argtype = TYPL;
 				else
-					a &= TYPMASK;
+					argtype &= TYPMASK;
 				xp = ap->a_xp;
 				if (   ((xp->e_xtype&XTYPE)==XABS)
 				    && (!(xp->e_xtype&XFORW))
 				    && (xp->e_xvalue>=0)
 				    && (xp->e_xvalue<=63) 
 				    && (xp->e_yvalue == 0)
-				    && (a != TYPD)
-				    && (a != TYPF)
+				    && (argtype != TYPD)
+				    && (argtype != TYPF)
 				)
 						break;
 			}
-			switch (a) {
+			switch (argtype) {
 			case TYPD:
 			case TYPF:
 				if (   !(((xp->e_xtype&XTYPE)==XABS)
@@ -197,7 +197,7 @@ putins(op, ap, n)
 				    && (slitflt(xp)))
 				){
 				/* it is NOT short */
-					dotp->e_xvalue += ((a==TYPF)?
+					dotp->e_xvalue += ((argtype==TYPF)?
 						4 : 8);
 				}
 				break;
@@ -209,7 +209,7 @@ putins(op, ap, n)
 				dotp->e_xvalue += 2;break;
 			case TYPB: 
 				dotp->e_xvalue += 1;break;
-			}	/*end of the switch on a*/
+			}	/*end of the switch on argtype*/
 	    }	/*end of the switch on the type*/
 	}	/*end of looping for all arguments*/
 	return;
@@ -225,10 +225,10 @@ PASS2:
 #endif VMS
 
 	for (i=0; i<n; i++,ap++) {/* now for the arguments */
-		a=ap->a_atype;
+		argtype=ap->a_atype;
 		xp=ap->a_xp;
 		reloc_how = TYPNONE;
-		if (a&AINDX) {
+		if (argtype&AINDX) {
 #ifdef UNIX
 			{ outb(0x40 | ap->a_areg2); }
 #endif UNIX
@@ -237,13 +237,13 @@ PASS2:
 			  *vms_obj_ptr++ = (0x40 | ap->a_areg2);
 			  dotp->e_xvalue += 1; }
 #endif VMS
-			a &= ~AINDX;
+			argtype &= ~AINDX;
 		}
-		if (a&ASTAR) {
+		if (argtype&ASTAR) {
 			ap->a_areg1 |= 0x10;
-			a &= ~ASTAR;
+			argtype &= ~ASTAR;
 		}
-		switch (a) {
+		switch (argtype) {
 		case AREG:		/* %r */
 			ap->a_areg1 |= 0x50;
 			break; 
@@ -257,20 +257,20 @@ PASS2:
 			ap->a_areg1 |= 0x80;
 			break;
 		case AEXP: /* expr */
-			a = fetcharg(itab[op], i);
-			if (a == ACCB+TYPB) {
-				ap->a_areg1 = a = 
+			argtype = fetcharg(itab[op], i);
+			if (argtype == ACCB+TYPB) {
+				ap->a_areg1 = argtype = 
 					xp->e_xvalue - (dotp->e_xvalue + 1);
-				if (a<MINBYTE || a>MAXBYTE)
+				if (argtype<MINBYTE || argtype>MAXBYTE)
 					yyerror("Branch too far"); break;
 			}
-			if (a == ACCB+TYPW) {
-				ap->a_areg1 = a = xp->e_xvalue
+			if (argtype == ACCB+TYPW) {
+				ap->a_areg1 = argtype = xp->e_xvalue
 					-= dotp->e_xvalue + 2;
 				xp->e_xtype = XABS;
-				if (a<MINWORD || a>MAXWORD) 
+				if (argtype<MINWORD || argtype>MAXWORD) 
 					yyerror("Branch too far");
-				xp->e_xvalue = a>>8;
+				xp->e_xvalue = argtype>>8;
 				reloc_how = TYPB;
 				break;
 			}
@@ -303,26 +303,26 @@ PASS2:
 		
 		case AIMM:  /* $expr */
 			if (ap->a_atype&ASTAR)
-				a=TYPL;
+				argtype=TYPL;
 			else {
-				a = fetcharg(itab[op], i);
-				if (a&ACCA)
-					a=TYPL;
+				argtype = fetcharg(itab[op], i);
+				if (argtype&ACCA)
+					argtype=TYPL;
 				else
-					a &= TYPMASK;
+					argtype &= TYPMASK;
 				if (    ( (xp->e_xtype&XTYPE) == XABS) 
 				    && !(xp->e_xtype&XFORW)
 				    &&  (xp->e_xvalue >= 0)
 				    &&  (xp->e_xvalue <= 63)
 				    &&  (xp->e_yvalue == 0)
-				    &&  (a != TYPF)
-				    &&  (a != TYPD) ) {
+				    &&  (argtype != TYPF)
+				    &&  (argtype != TYPD) ) {
 					ap->a_areg1 = xp->e_xvalue;
 					break;
 				}
 			}
 			ap->a_areg1 |= 0x8F;
-			reloc_how = a;
+			reloc_how = argtype;
 			if (reloc_how == TYPD || reloc_how == TYPF){
 				if (   ((xp->e_xtype&XTYPE)==XABS)
 				    && (!(xp->e_xtype&XFORW))
@@ -334,7 +334,7 @@ PASS2:
 			}	
 			break;
 		
-		}	/*end of the switch on a*/
+		}	/*end of the switch on argtype*/
 		/*
 		 *	use the first byte to describe the argument
 		 */
