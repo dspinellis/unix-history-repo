@@ -131,7 +131,7 @@ init_telnet()
     ClearArray(hisopts);
     ClearArray(myopts);
 
-    connected = net = In3270 = ISend = donebinarytoggle = 0;
+    connected = In3270 = ISend = donebinarytoggle = 0;
     telnetport = 0;
 
 #if	defined(unix) && defined(TN3270)
@@ -147,6 +147,54 @@ init_telnet()
 
     flushline = 1;
     telrcv_state = TS_DATA;
+}
+
+
+#include <varargs.h>
+
+static void
+printring(va_alist)
+va_dcl
+{
+    va_list ap;
+    char buffer[100];		/* where things go */
+    char *ptr;
+    char *format;
+    char *string;
+    Ring *ring;
+    int i;
+
+    va_start(ap);
+
+    ring = va_arg(ap, Ring *);
+    format = va_arg(ap, char *);
+    ptr = buffer;
+
+    while ((i = *format++) != 0) {
+	if (i == '%') {
+	    i = *format++;
+	    switch (i) {
+	    case 'c':
+		*ptr++ = va_arg(ap, int);
+		break;
+	    case 's':
+		string = va_arg(ap, char *);
+		ring_supply_data(ring, buffer, ptr-buffer);
+		ring_supply_data(ring, string, strlen(string));
+		ptr = buffer;
+		break;
+	    case 0:
+		ExitString("printring: trailing %%.\n", 1);
+		/*NOTREACHED*/
+	    default:
+		ExitString("printring: unknown format character.\n", 1);
+		/*NOTREACHED*/
+	    }
+	} else {
+	    *ptr++ = i;
+	}
+    }
+    ring_supply_data(ring, buffer, ptr-buffer);
 }
 
 
@@ -199,7 +247,7 @@ willoption(option, reply)
 		fmt = dont;
 		break;
 	}
-	netoprint(fmt, option);
+	printring(&netoring, fmt, option);
 	if (reply)
 		printoption(">SENT", fmt, option, reply);
 	else
@@ -228,7 +276,7 @@ wontoption(option, reply)
 	default:
 		fmt = dont;
 	}
-	netoprint(fmt, option);
+	printring(&netoring, fmt, option);
 	if (reply)
 		printoption(">SENT", fmt, option, reply);
 	else
@@ -262,7 +310,7 @@ dooption(option)
 		fmt = wont;
 		break;
 	}
-	netoprint(fmt, option);
+	printring(&netoring, fmt, option);
 	printoption(">SENT", fmt, option, 0);
 }
 
@@ -303,7 +351,7 @@ suboption()
 	    if ((len + 4+2) < NETROOM()) {
 		strcpy(namebuf, name);
 		upcase(namebuf);
-		netoprint("%c%c%c%c%s%c%c", IAC, SB, TELOPT_TTYPE,
+		printring(&netoring, "%c%c%c%c%s%c%c", IAC, SB, TELOPT_TTYPE,
 				    TELQUAL_IS, namebuf, IAC, SE);
 		/* XXX */
 		/* printsub(">", nfrontp+2, 4+strlen(namebuf)+2-2-2); */
@@ -443,7 +491,7 @@ telrcv()
 		     */
 		SYNCHing = 1;
 		ttyflush(1);
-		SYNCHing = stilloob(net);
+		SYNCHing = stilloob();
 		settimer(gotDM);
 		break;
 
@@ -526,7 +574,7 @@ telrcv()
 	    printoption(">RCVD", dont, c, myopts[c]);
 	    if (myopts[c]) {
 		myopts[c] = 0;
-		netoprint(wont, c);
+		printring(&netoring, wont, c);
 		flushline = 1;
 		setconnmode();	/* set new tty mode (maybe) */
 		printoption(">SENT", wont, c, 0);
@@ -563,8 +611,7 @@ telrcv()
 }
 
 static int
-telsnd(ring)
-Ring	*ring;			/* Input ring */
+telsnd()
 {
     int tcc;
     int count;
@@ -718,7 +765,7 @@ int	block;			/* should we block in the select ? */
 	    ring_consumed(&ttyiring, c);
 	} else {
 #   endif /* defined(TN3270) */
-	    returnValue |= telsnd(&ttyiring);
+	    returnValue |= telsnd();
 #   if defined(TN3270)
 	}
 #   endif /* defined(TN3270) */
@@ -811,8 +858,117 @@ telnet()
 }
 
 /*
+ * nextitem()
+ *
+ *	Return the address of the next "item" in the TELNET data
+ * stream.  This will be the address of the next character if
+ * the current address is a user data character, or it will
+ * be the address of the character following the TELNET command
+ * if the current address is a TELNET IAC ("I Am a Command")
+ * character.
+ */
+
+static char *
+nextitem(current)
+char	*current;
+{
+    if ((*current&0xff) != IAC) {
+	return current+1;
+    }
+    switch (*(current+1)&0xff) {
+    case DO:
+    case DONT:
+    case WILL:
+    case WONT:
+	return current+3;
+    case SB:		/* loop forever looking for the SE */
+	{
+	    register char *look = current+2;
+
+	    for (;;) {
+		if ((*look++&0xff) == IAC) {
+		    if ((*look++&0xff) == SE) {
+			return look;
+		    }
+		}
+	    }
+	}
+    default:
+	return current+2;
+    }
+}
+
+/*
+ * netclear()
+ *
+ *	We are about to do a TELNET SYNCH operation.  Clear
+ * the path to the network.
+ *
+ *	Things are a bit tricky since we may have sent the first
+ * byte or so of a previous TELNET command into the network.
+ * So, we have to scan the network buffer from the beginning
+ * until we are up to where we want to be.
+ *
+ *	A side effect of what we do, just to keep things
+ * simple, is to clear the urgent data pointer.  The principal
+ * caller should be setting the urgent data pointer AFTER calling
+ * us in any case.
+ */
+
+static void
+netclear()
+{
+#if	0	/* XXX */
+    register char *thisitem, *next;
+    char *good;
+#define	wewant(p)	((nfrontp > p) && ((*p&0xff) == IAC) && \
+				((*(p+1)&0xff) != EC) && ((*(p+1)&0xff) != EL))
+
+    thisitem = netobuf;
+
+    while ((next = nextitem(thisitem)) <= netobuf.send) {
+	thisitem = next;
+    }
+
+    /* Now, thisitem is first before/at boundary. */
+
+    good = netobuf;	/* where the good bytes go */
+
+    while (netoring.add > thisitem) {
+	if (wewant(thisitem)) {
+	    int length;
+
+	    next = thisitem;
+	    do {
+		next = nextitem(next);
+	    } while (wewant(next) && (nfrontp > next));
+	    length = next-thisitem;
+	    memcpy(good, thisitem, length);
+	    good += length;
+	    thisitem = next;
+	} else {
+	    thisitem = nextitem(thisitem);
+	}
+    }
+
+#endif	/* 0 */
+}
+
+/*
  * These routines add various telnet commands to the data stream.
  */
+
+static void
+doflush()
+{
+    NET2ADD(IAC, DO);
+    NETADD(TELOPT_TM);
+    flushline = 1;
+    flushout = 1;
+    ttyflush(1);			/* Flush/drop output */
+    /* do printoption AFTER flush, otherwise the output gets tossed... */
+    printoption("<SENT", doopt, TELOPT_TM, 0);
+}
 
 void
 xmitAO()
@@ -850,18 +1006,6 @@ dosynch()
 #if	defined(NOT43)
     return 0;
 #endif	/* defined(NOT43) */
-}
-
-void
-doflush()
-{
-    NET2ADD(IAC, DO);
-    NETADD(TELOPT_TM);
-    flushline = 1;
-    flushout = 1;
-    ttyflush(1);			/* Flush/drop output */
-    /* do printoption AFTER flush, otherwise the output gets tossed... */
-    printoption("<SENT", doopt, TELOPT_TM, 0);
 }
 
 void
