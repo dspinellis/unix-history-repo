@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.7 (Berkeley) %G%
+ *	@(#)sysctl.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -55,6 +55,6 @@ extern struct kinfo_lock kinfo_lock;
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	getkerninfo __P((int, char *, int *, int));
+int	getkerninfo __P((int, void *, int *, int));
 __END_DECLS
 #endif
