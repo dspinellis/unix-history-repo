@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)macro.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)macro.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -314,7 +314,11 @@ macid(p, ep)
 	char mbuf[21];
 
 	if (tTd(35, 14))
-		printf("macid(%s) => ", p);
+	{
+		printf("macid(");
+		xputs(p);
+		printf(") => ");
+	}
 
 	if (*p == '\0' || (p[0] == '{' && p[1] == '}'))
 	{

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.104 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.105 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1430,12 +1430,12 @@ setoption(opt, val, sticky)
 	if (tTd(37, 1))
 	{
 		printf(isascii(opt) && isprint(opt) ?
-			    "setoption %s (%c).%s=%s" :
-			    "setoption %s (0x%x).%s=%s",
+			    "setoption %s (%c).%s=" :
+			    "setoption %s (0x%x).%s=",
 			o->o_name == NULL ? "<unknown>" : o->o_name,
 			opt,
-			subopt == NULL ? "" : subopt,
-			val);
+			subopt == NULL ? "" : subopt);
+		xputs(val);
 	}
 
 	/*
