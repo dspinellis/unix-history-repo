@@ -2,16 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ps.1	5.1 (Berkeley) %G%
+.\"	@(#)ps.1	6.1 (Berkeley) %G%
 .\"
-.TH PS 1 "13 April 1983"
+.TH PS 1 ""
 .UC 4
 .SH NAME
 ps \- process status
 .SH SYNOPSIS
 .B ps
 [
-.B acegklstuvwx#
+.B acegklstuvwxU#
 ]
 .SH DESCRIPTION
 .I Ps
@@ -131,6 +131,10 @@ This information is used to decide how much of long commands to print.
 .TP 5
 .B x
 asks even about processes with no terminal.
+.TP
+.B U
+causes ps to update a private database where is keeps system
+information.  Thus ``ps U'' should be included in the /etc/rc file.
 .TP 5
 .B #
 A process number may be given,
@@ -244,7 +248,7 @@ The method is inherently somewhat unreliable and in any event
 a process is entitled to destroy this information,
 so the names cannot be counted on too much.
 .SH FILES
-.ta \w'/usr/sys/core 'u
+.ta \w'/etc/psdatabase 'u
 /vmunix	system namelist
 .br
 /dev/kmem	kernel memory
@@ -254,6 +258,8 @@ so the names cannot be counted on too much.
 /vmcore	core file
 .br
 /dev	searched to find swap device and tty names
+.br
+/etc/psdatabase	system namelist and device information
 .SH "SEE ALSO"
 kill(1), w(1)
 .SH BUGS
