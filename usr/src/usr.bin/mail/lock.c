@@ -9,7 +9,7 @@
 #include "rcv.h"
 #include <sys/stat.h>
 
-static char *SccsId = "@(#)lock.c	2.1 %G%";
+static char *SccsId = "@(#)lock.c	2.2 %G%";
 
 char	*maillock	= ".mail";		/* Lock suffix for mailname */
 char	*lockname	= "/usr/spool/mail/tmXXXXXX";
@@ -22,7 +22,7 @@ static	int		locked;			/* To note that we locked it */
  * We must, of course, be careful to remove the lock file by a call
  * to unlock before we stop.  The algorithm used here is to see if
  * the lock exists, and if it does, to check its modify time.  If it
- * is older than 30 seconds, we assume error and set our own file.
+ * is older than 5 minutes, we assume error and set our own file.
  * Otherwise, we wait for 5 seconds and try again.
  */
 
@@ -53,7 +53,7 @@ char *file;
 		if (stat(curlock, &sbuf) < 0)
 			return(0);
 		time(&curtime);
-		if (curtime < sbuf.st_ctime + 30) {
+		if (curtime < sbuf.st_ctime + 300) {
 			sleep(5);
 			continue;
 		}
