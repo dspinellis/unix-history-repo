@@ -238,6 +238,7 @@ dounmount(mp, flags, p)
 	if (error = vfs_lock(mp))
 		return (error);
 
+	mp->mnt_flag &=~ MNT_ASYNC;
 	vnode_pager_umount(mp);	/* release cached vnodes */
 	cache_purgevfs(mp);	/* remove cache entries for this file sys */
 	if ((error = VFS_SYNC(mp, MNT_WAIT, p->p_ucred, p)) == 0 ||
@@ -277,6 +278,7 @@ sync(p, uap, retval)
 	int *retval;
 {
 	register struct mount *mp, *nmp;
+	int asyncflag;
 
 	for (mp = mountlist.tqh_first; mp != NULL; mp = nmp) {
 		nmp = mp->mnt_list.tqe_next;
@@ -286,7 +288,11 @@ sync(p, uap, retval)
 		 */
 		if ((mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY)) == 0 &&
 		    !vfs_busy(mp)) {
+			asyncflag = mp->mnt_flag & MNT_ASYNC;
+			mp->mnt_flag &= ~MNT_ASYNC;
 			VFS_SYNC(mp, MNT_NOWAIT, p->p_ucred, p);
+			if (asyncflag)
+				mp->mnt_flag |= MNT_ASYNC;
 			vfs_unbusy(mp);
 		}
 	}
