@@ -66,7 +66,7 @@
  * rights to redistribute these changes.
  */
 /*
- * $Id: vm_fault.c,v 1.15 1994/03/14 21:54:24 davidg Exp $
+ * $Id: vm_fault.c,v 1.16 1994/04/14 07:50:18 davidg Exp $
  */
 
 /*
@@ -82,9 +82,9 @@
 #include "resource.h"
 #include "resourcevar.h"
 
-#define VM_FAULT_READ_AHEAD 3
+#define VM_FAULT_READ_AHEAD 4
 #define VM_FAULT_READ_AHEAD_MIN 1
-#define VM_FAULT_READ_BEHIND 2
+#define VM_FAULT_READ_BEHIND 3
 #define VM_FAULT_READ (VM_FAULT_READ_AHEAD+VM_FAULT_READ_BEHIND+1)
 extern int swap_pager_full;
 extern int vm_pageout_proc_limit;

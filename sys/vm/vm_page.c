@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.15 1994/03/19 22:24:38 davidg Exp $
+ *	$Id: vm_page.c,v 1.16 1994/04/14 07:50:22 davidg Exp $
  */
 
 /*
@@ -745,7 +745,7 @@ vm_page_deactivate(m)
 	 *	Paul Mackerras (paulus@cs.anu.edu.au) 9-Jan-93.
 	 */
 
-	spl = splhigh();
+	spl = splimp();
 	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0 && m->hold_count == 0) {
 		pmap_clear_reference(VM_PAGE_TO_PHYS(m));
 		if (m->flags & PG_ACTIVE) {
@@ -756,7 +756,13 @@ vm_page_deactivate(m)
 		queue_enter(&vm_page_queue_inactive, m, vm_page_t, pageq);
 		m->flags |= PG_INACTIVE;
 		vm_page_inactive_count++;
+#define NOT_DEACTIVATE_PROTECTS
+#ifndef NOT_DEACTIVATE_PROTECTS
 		pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
+#else
+		if (pmap_is_modified(VM_PAGE_TO_PHYS(m)))
+			m->flags &= ~PG_CLEAN;
+#endif
 		if ((m->flags & PG_CLEAN) == 0)
 			m->flags |= PG_LAUNDRY;
 	} 
@@ -795,8 +801,10 @@ vm_page_activate(m)
 
 	spl = splimp();
 
-	if (m->wire_count)
+	if (m->wire_count) {
+		splx(spl);
 		return;
+	}
 
 	if ((m->flags & (PG_INACTIVE|PG_ACTIVE)) ==
 	    (PG_INACTIVE|PG_ACTIVE)) {
@@ -818,6 +826,7 @@ vm_page_activate(m)
 	queue_remove(&m->object->memq, m, vm_page_t, listq);
 	queue_enter(&m->object->memq, m, vm_page_t, listq);
 	vm_page_active_count++;
+	/* m->act_count = 10; */
 	m->act_count = 10;
 
 	splx(spl);

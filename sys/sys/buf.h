@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)buf.h	7.11 (Berkeley) 5/9/90
- *	$Id: buf.h,v 1.8 1994/03/23 09:16:16 davidg Exp $
+ *	$Id: buf.h,v 1.9 1994/04/05 03:23:35 davidg Exp $
  */
 
 #ifndef _SYS_BUF_H_
@@ -97,6 +97,7 @@ struct buf
 	    daddr_t *b_daddr;		/* indirect block */
 	} b_un;
 	daddr_t	b_lblkno;		/* logical block number */
+	daddr_t b_pblkno;		/* physical block number */
 	daddr_t	b_blkno;		/* block # on device */
 	long	b_resid;		/* words not transferred after error */
 #define	b_errcnt b_resid		/* while i/o in progress: # retries */

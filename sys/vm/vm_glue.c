@@ -520,7 +520,7 @@ swapout_threads()
 	if (didswap == 0 && (swapinreq && 
 			(vm_page_free_count + vm_page_inactive_count) <= (vm_page_free_min + vm_page_inactive_target))) {
 		if ((p = outp) == 0 &&
-			(vm_page_free_count <= vm_pageout_free_min))
+			(vm_page_free_count <= vm_page_free_reserved))
 			p = outp2;
 #ifdef DEBUG
 		if (swapdebug & SDB_SWAPOUT)
