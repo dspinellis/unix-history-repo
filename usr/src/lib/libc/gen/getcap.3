@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)getcap.3	5.2 (Berkeley) %G%
+.\"	@(#)getcap.3	5.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt GETCAP 3 
@@ -88,7 +88,18 @@ If
 .Fa ent 
 is
 .Dv NULL ,
-the current entry is removed from the database.
+the current entry is removed from the database.  
+.Nm Cgetset 
+must precede the database traversal.  It must be called before the 
+.Nm cgetent 
+call. If a sequential access is being performed (see below), it must be called
+before the first sequential access call (
+.Nm cgetfirst
+or
+.Nm cgetnext
+), or be directly preceded by a 
+.Nm cgetclose
+call.
 On success 0 is returned and \-1 on failure.
 .Pp
 .Nm Cgetmatch
@@ -161,8 +172,6 @@ character of the capability string literally.
 .Pp
 .Nm Cgetfirst ,
 .Nm cgetnext , 
-and
-.Nm cgetclose
 comprise a function group that provides for sequential
 access of the
 .Dv NULL
@@ -179,8 +188,6 @@ or
 .Nm cgetnext 
 call.  If there is no such previous call, the first record in the database is
 returned.
-.Nm Cgetclose 
-closes the access and frees any memory and file descriptors being used.
 Each record is returned in a
 .Xr malloc Ns \&'d 
 copy pointed to by 
@@ -196,6 +203,11 @@ is returned if a potential reference loop is detected (see
 .Ic tc=
 comments below).
 Upon completion of database (0 return) the database is closed.
+.Pp
+.Nm Cgetclose 
+closes the sequential access and frees any memory and file descriptors 
+being used.  Note that it does not erase the buffer pushed by a call to 
+.Nm cgetset .
 .Sh CAPABILITY DATABASE SYNTAX
 Capability databases are normally
 .Tn ASCII
@@ -454,3 +466,7 @@ There are no checks for
 .Ic tc= name
 loops in
 .Nm cgetent .
+.Pp
+The buffer added to the database by a call to 
+.Nm cgetset 
+is not unique to the database but is rather prepended to any database used.
