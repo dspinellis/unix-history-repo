@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.5.t	8.2 (Berkeley) %G%
+.\"	@(#)1.5.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 Descriptors
 .Sh 3 "The reference table
@@ -21,7 +21,7 @@ themselves thus have multiple references, and are reference counted by the
 system.
 .PP
 Each process has a limited size descriptor reference table, where
-the size is returned by the
+the current size is returned by the
 .Fn getdtablesize
 call:
 .DS
@@ -42,6 +42,8 @@ by the system and defined by its \fItype\fP.
 Each type supports a set of operations;
 some operations, such as reading and writing, are common to several
 abstractions, while others are unique.
+For those types that support random access, the current file offset
+is stored in the descriptor.
 The generic operations applying to many of these types are described
 in section
 .Xr 2.1 .
@@ -75,7 +77,8 @@ The
 call causes the system to deallocate the descriptor reference
 current occupying slot \fInew\fP, if any, replacing it with a reference
 to the same descriptor as old.
-This deallocation is also done by:
+.LP
+Descriptors are deallocated by:
 .DS
 .Fd close 1 "delete a descriptor
 close(old);
@@ -140,10 +143,17 @@ that would cause a SIGURG signal to be generated exists (see section
 .Xr 1.3.2 ),
 or other device-specific events have occurred.
 .LP
+For these tests, an operation is considered to be possible if a call
+to the operation would return without blocking even if the O_NONBLOCK
+flag were clear.
+For example, a descriptor would test as ready for reading if a read
+call would return immediately with data, an end-of-file indication,
+or an error other than EWOULDBLOCK.
+.LP
 If none of the specified conditions is true, the operation
 waits for one of the conditions to arise,
 blocking at most the amount of time specified by \fItvp\fP.
-If \fItvp\fP is given as 0, the
+If \fItvp\fP is given as NULL, the
 .Fn select
 waits indefinitely.
 .LP

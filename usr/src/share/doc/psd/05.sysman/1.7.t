@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.7.t	8.2 (Berkeley) %G%
+.\"	@(#)1.7.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 "System operation support
 .LP
@@ -32,9 +32,14 @@ Calls to
 .Fn sysctl
 are serialized to avoid deadlock.
 .PP
-The state is described using a ``Management Information Base'' (MIB)
+The object to be interrogated or set is named
+using a ``Management Information Base'' (MIB)
 style name, listed in \fIname\fP,
 which is a \fInamelen\fP length array of integers.
+This name is from a hierarchical name space,
+with the most significant component in the first element of the array.
+It is analogous to a file pathname, but with integers as components
+rather than slash-separated strings.
 .PP
 The information is copied into the buffer specified by \fIoldp\fP.
 The size of the buffer is given by the location specified by \fIoldlenp\fP
@@ -51,7 +56,8 @@ from which the requested value is to be taken.
 If a new value is not to be set, \fInewp\fP
 should be set to NULL and \fInewlen\fP set to 0.
 .PP
-The top level names are defined with a CTL_ prefix in \fI<sys/sysctl.h>\fP,
+The top level names (those used in the first element of the \fIname\fP array)
+are defined with a CTL_ prefix in \fI<sys/sysctl.h>\fP,
 and are as follows.
 The next and subsequent levels down are found
 in the include files listed here:
@@ -81,8 +87,9 @@ extends the name space. The
 .Fn mount
 call grafts a filesystem object onto the system file tree
 at the point specified in \fIdir\fP.
-The argument data describes the filesystem object to be mounted.
-The argument type tells the kernel how to interpret data.
+The argument \fItype\fP specifies the type of filesystem to be mounted.
+The argument \fIdata\fP describes the filesystem object to be mounted
+according to the \fItype\fP.
 The contents of the filesystem become available through the
 new mount point \fIdir\fP.
 Any files in \fIdir\fP at the time of a successful mount

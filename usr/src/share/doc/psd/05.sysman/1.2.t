@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.2.t	8.2 (Berkeley) %G%
+.\"	@(#)1.2.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 "Memory management
 .Sh 3 "Text, data, and stack
@@ -106,6 +106,7 @@ result caddr_t maddr; caddr_t addr; size_t len; int prot, flags, fd; off_t pos;
 causes the pages starting at \fIaddr\fP and continuing
 for at most \fIlen\fP bytes to be mapped from the object represented by
 descriptor \fIfd\fP, starting at byte offset \fIpos\fP.
+If \fIaddr\fP is NULL, the system picks an unused address for the region.
 The starting address of the region is returned;
 for the convenience of the system,
 it may differ from that supplied
@@ -140,9 +141,9 @@ would exceed the available memory plus swap resources.
 Such regions may get a SIGSEGV signal if they page fault and resources
 are not available to service their request;
 typically they would free up some resources via
-.Fn unmap
+.Fn munmap
 so that when they return from the signal the page
-fault could be successfully completed.
+fault could be completed successfully.
 .LP
 A facility is provided to synchronize a mapped region with the file
 it maps; the call:
@@ -151,16 +152,19 @@ it maps; the call:
 msync(addr, len);
 caddr_t addr; size_t len;
 .DE
-writes any modified pages back to the filesystem and updates
+causes any modified pages in the specified region to be synchronized
+with their source and other mappings.
+If necessary, it writes any modified pages back to the filesystem, and updates
 the file modification time.
 If \fIlen\fP is 0, all modified pages within the region containing \fIaddr\fP
 will be flushed;
-if \fIlen\fP is non-zero, only the pages containing \fIaddr\fP and \fIlen\fP
+this usage is provisional, and may be withdrawn.
+If \fIlen\fP is non-zero, only the pages containing \fIaddr\fP and \fIlen\fP
 succeeding locations will be examined.
 Any required synchronization of memory caches
 will also take place at this time.
 Filesystem operations on a file that is mapped for shared modifications
-are unpredictable except after an
+are currently unpredictable except after an
 .Fn msync .
 .LP
 A mapping can be removed by the call
@@ -204,7 +208,7 @@ MADV_RANDOM	/* expect random page references */
 MADV_SEQUENTIAL	/* expect sequential references */
 MADV_WILLNEED	/* will need these pages */
 MADV_DONTNEED	/* don't need these pages */
-MADV_SPACEAVAIL	/* insure that resources are reserved */
+MADV_SPACEAVAIL	/* ensure that resources are reserved */
 .TE
 .DE
 A process may obtain information about whether pages are

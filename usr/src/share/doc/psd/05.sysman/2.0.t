@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.0.t	8.2 (Berkeley) %G%
+.\"	@(#)2.0.t	8.3 (Berkeley) %G%
 .\"
 .Sh 1 "System facilities
 .LP
@@ -18,11 +18,14 @@ always specified relative to such a context.
 Files are used to store uninterpreted sequence of bytes on which
 random access \fIreads\fP and \fIwrites\fP may occur.
 Pages from files may also be mapped into process address space.
-A directory may be read as a file,
+A directory may be read as a file if permitted by the underlying
+storage facility,
 though it is usually accessed using
 .Fn getdirentries
 (see section
 .Xr 2.2.3.1 ).
+(Local filesystems permit directories to be read, although most
+NFS implementations do not allow reading of directories.)
 .IP "Communications domains
 .br
 A communications domain represents

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.1.t	8.2 (Berkeley) %G%
+.\"	@(#)2.1.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 "Generic operations
 .PP
@@ -44,6 +44,7 @@ size \fInbytes\fP.  The number of bytes transferred is
 returned in \fIcc\fP, which is \-1 if a return occurred before
 any data was transferred because of an error or use of non-blocking
 operations.
+A return value of 0 is used to indicate an end-of-file condition.
 .PP
 The
 .Fn write
@@ -55,7 +56,7 @@ call will accept some portion
 of the provided bytes; the user should resubmit the other bytes
 in a later request in this case.
 Error returns because of interrupted or otherwise incomplete operations
-are possible.
+are possible, in which case no data have been transferred.
 .PP
 Scattering of data on input or gathering of data for output
 is also possible using an array of input/output vector descriptors.
@@ -65,10 +66,15 @@ The type for the descriptors is defined in \fI<sys/uio.h>\fP as:
 l s s s
 l l l l.
 struct iovec {
-	caddr_t	iov_msg;	/* base of a component */
+	caddr_t	iov_base;	/* base of a component */
 	int	iov_len;	/* length of a component */
 };
 .TE
+.LP
+The \fIiov_base\fP field should be treated as if its type were
+``void *'' as POSIX and other versions of the structure may use
+that type.
+Thus, pointer arithmetic should not use this value without a cast.
 .DE
 The calls using an array of \fIiovec\fP structures are:
 .DS
@@ -127,7 +133,7 @@ length, or return an error indicating that the operation would block.
 More output can be performed as soon as a
 .Fn select
 call indicates
-the object is writeable.
+the object is writable.
 .PP
 Operations other than data input or output
 may be performed on a descriptor in a non-blocking fashion.
@@ -141,6 +147,6 @@ for
 to find out when the operation has been completed.
 When
 .Fn select
-indicates the descriptor is writeable, the operation has completed.
+indicates the descriptor is writable, the operation has completed.
 Depending on the nature of the descriptor and the operation,
 additional activity may be started or the new state may be tested.

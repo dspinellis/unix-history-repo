@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.2.t	8.2 (Berkeley) %G%
+.\"	@(#)2.2.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 "Filesystem
 .Sh 3 "Overview
@@ -18,7 +18,8 @@ Each file is organized as a linear array of bytes.  No record
 boundaries or system related information is present in
 a file.
 Files may be read and written in a random-access fashion.
-The user may read the data in a directory as though
+If permitted by the underlying storage mechanism,
+the user may read the data in a directory as though
 it were an ordinary file to determine the names of the contained files,
 but only the system may write into the directories.
 The filesystem stores only a small amount of ownership, protection and usage
@@ -41,6 +42,7 @@ If the path name does not begin with a ``/\^'' it is called
 a relative path name and interpreted relative to the current directory
 context.
 .PP
+The file name ``.'' in each directory refers to that directory.
 The file name ``..'' in each directory refers to
 the parent directory of that directory.
 The parent directory of the root of the filesystem is always that directory.
@@ -61,7 +63,7 @@ int fd;
 chroot(path)
 char *path;
 .DE
-change the current working directory and root directory context of a process.
+change the current working directory or root directory context of a process.
 Only the super-user can change the root directory context of a process.
 .LP
 Information about a filesystem that contains a particular
@@ -100,7 +102,8 @@ system call:
 rmdir(path);
 char *path;
 .DE
-A directory must be empty if it is to be deleted.
+A directory must be empty (other than the entries ``.'' and ``..'')
+if it is to be deleted.
 .LP
 Although directories can be read as files,
 the usual interface is to use the call:
@@ -120,9 +123,11 @@ and
 .Fn closedir
 that provide a more convenient interface to
 .Fn getdirentries .
+The \fIfts\fP package is provided
+for recursive directory traversal.
 .Sh 4 "File creation
 .LP
-Files are created with the
+Files are opened and/or created with the
 .Fn open
 system call:
 .DS
@@ -165,14 +170,37 @@ Specifying O_TRUNC causes the file to be truncated when opened.
 The flag O_CREAT causes the file to be created if it does not
 exist, owned by the current user
 and the group of the containing directory.
-The protection for the new file is specified in \fImode\fP.
-The file mode is used as a three digit octal number.
+The protection for the new file is specified in \fImode\fP
+as the OR of the appropriate permissions as defined in \fI<sys/stat.h>\fP:
+.DS
+.TS
+l l.
+S_IRWXU	/* RWX for owner */
+S_IRUSR	/* R for owner */
+S_IWUSR	/* W for owner */
+S_IXUSR	/* X for owner */
+S_IRWXG	/* RWX for group */
+S_IRGRP	/* R for group */
+S_IWGRP	/* W for group */
+S_IXGRP	/* X for group */
+S_IRWXO	/* RWX for other */
+S_IROTH	/* R for other */
+S_IWOTH	/* W for other */
+S_IXOTH	/* X for other */
+.TE
+.DE
+.LP
+Historically, the file mode has been used as a three digit octal number.
 Each digit encodes read access as 4, write access as 2 and execute
 access as 1, or'ed together.  The 0700 bits describe owner
 access, the 070 bits describe the access rights for processes in the same
 group as the file, and the 07 bits describe the access rights
 for other processes.
-The process \fIumask\fP clears specified permissions.
+The mode specified to
+.Fn open
+is modified by 
+the process \fIumask\fP; permissions specified in the
+\fIumask\fP are cleared in the mode of the created file.
 The \fIumask\fP can be changed with the call:
 .DS
 .Fd umask 1 "set file creation mode mask
@@ -207,12 +235,10 @@ device numbers.  The major device number determines the kind
 of peripheral it is, while the minor device number indicates
 one of possibly many peripherals of that kind.
 Structured devices have all operations done internally
-in ``block'' quantities while
-unstructured devices often have a number of
-special
-.Fn ioctl
-operations, and may have input and output
-done in varying units.
+in ``block'' quantities while unstructured devices
+may have input and output done in varying units, and
+may act as a non-seekable communications channel rather than a random-access
+device.
 The
 .Fn mknod
 call creates special entries:
@@ -246,6 +272,9 @@ char *path;
 .DE
 The caller must have write access to the directory in which
 the file is located for this call to be successful.
+When the last name for a file has been removed, the file may no longer
+be opened; the file itself is removed once any existing references
+have been closed.
 .LP
 All current access to a file can be revoked using the call:
 .DS
@@ -267,9 +296,11 @@ to the file had been closed.
 .Fn Open 's
 done after the
 .Fn revoke
-will succeed.
+may succeed.
 This call is most useful for revoking access to a terminal line after
 a hangup in preparation for reuse by a new login session.
+Access to a controlling terminal is automatically revoked
+when the session leader for the session exits.
 .Sh 3 "Reading and modifying file attributes
 .LP
 Detailed information about the attributes of a file
@@ -334,7 +365,7 @@ where \fImode\fP is a value indicating the new protection
 of the file, as listed in section
 .Xr 2.2.3.2 .
 .PP
-Each file has a set of thirty-two flags associated with it.
+Each file has a set of flags stored as a bit mask associated with it.
 These flags are returned in the \fIstat\fP structure and
 are set using the calls:
 .DS
@@ -358,7 +389,7 @@ SF_IMMUTABLE	The file may not be changed.
 SF_APPEND	The file may only be appended to.
 .TE
 .DE
-The UF_IMMUTABLE and UF_APPEND
+The UF_NODUMP, UF_IMMUTABLE and UF_APPEND
 flags may be set or unset by either the owner of a file or the super-user.
 The SF_IMMUTABLE and SF_APPEND
 flags may only be set or unset by the super-user.
@@ -381,11 +412,14 @@ Links exist independently of the file to which they are linked.
 Two types of links exist, \fIhard\fP links and \fIsymbolic\fP
 links.  A hard link is a reference counting mechanism that
 allows a file to have multiple names within the same filesystem.
+Each link to a file is equivalent, referring to the file independently
+of any other name.
 Symbolic links cause string substitution
-during the pathname interpretation process.
+during the pathname interpretation process, and refer to a file name
+rather than referring directly to a file.
 .PP
 Hard links and symbolic links have different
-properties.  A hard link ensures the target
+properties.  A hard link ensures that the target
 file will always be accessible, even after its original
 directory entry is removed; no such guarantee exists for a symbolic link.
 Symbolic links can span filesystems boundaries.
@@ -635,7 +669,8 @@ Q_SYNC	/* sync disk copy of a filesystems quotas */
 .DE
 .Sh 3 "Remote filesystems
 .LP
-There are two system calls intended to help support remote filesystems.
+There are two system calls intended to help support the remote filesystem
+implementation.
 The call:
 .DS
 .Fd nfssvc 2 "NFS services
