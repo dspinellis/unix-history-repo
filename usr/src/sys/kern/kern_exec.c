@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.18 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -302,8 +302,7 @@ badarg:
 				CLBYTES, NOCRED, &tbp);
 			bp = tbp;
 			if (bp) {
-				bp->b_flags |= B_AGE;		/* throw away */
-				bp->b_flags &= ~B_DELWRI;	/* cancel io */
+				bp->b_flags |= B_INVAL;		/* throw away */
 				brelse(bp);
 				bp = 0;
 			}
@@ -340,8 +339,7 @@ badarg:
 				    (daddr_t)(bno + ctod(nc / NBPG)), cc,
 				    NOCRED, &tbp);
 				bp = tbp;
-				bp->b_flags |= B_AGE;		/* throw away */
-				bp->b_flags &= ~B_DELWRI;	/* cancel io */
+				bp->b_flags |= B_INVAL;		/* throw away */
 				cp = bp->b_un.b_addr;
 			}
 			error = copyoutstr(cp, (caddr_t)ucp, (unsigned)cc,
