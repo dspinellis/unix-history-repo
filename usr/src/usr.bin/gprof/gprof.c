@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gprof.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)gprof.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -23,6 +23,8 @@ char	*whoami = "gprof";
      *	things which get -E excluded by default.
      */
 char	*defaultEs[] = { "mcount" , "__mcleanup" , 0 };
+
+static struct phdr	h;
 
 main(argc, argv)
     int argc;
@@ -124,15 +126,6 @@ main(argc, argv)
 	addlist( elist , *sp );
     }
 	/*
-	 *	how many ticks per second?
-	 *	if we can't tell, report time in ticks.
-	 */
-    hz = hertz();
-    if (hz == 0) {
-	hz = 1;
-	fprintf(stderr, "time is in ticks, not seconds\n");
-    }
-	/*
 	 *	get information about a.out file.
 	 */
     getnfile();
@@ -145,6 +138,14 @@ main(argc, argv)
 	    gmonname = *argv;
 	}
     } while ( *argv++ != 0 );
+	/*
+	 *	how many ticks per second?
+	 *	if we can't tell, report time in ticks.
+	 */
+    if (hz == 0) {
+	hz = 1;
+	fprintf(stderr, "time is in ticks, not seconds\n");
+    }
 	/*
 	 *	dump out a gmon.sum file if requested
 	 */
@@ -358,36 +359,57 @@ FILE *
 openpfile(filename)
     char *filename;
 {
-    struct hdr	tmp;
-    FILE	*pfile;
+    struct phdr		tmp;
+    FILE		*pfile;
+    int			size;
+    int			rate;
 
     if((pfile = fopen(filename, "r")) == NULL) {
 	perror(filename);
 	done();
     }
-    fread(&tmp, sizeof(struct hdr), 1, pfile);
-    if ( s_highpc != 0 && ( tmp.lowpc != h.lowpc ||
-	 tmp.highpc != h.highpc || tmp.ncnt != h.ncnt ) ) {
+    fread(&tmp, sizeof(struct phdr), 1, pfile);
+    if ( s_highpc != 0 && ( tmp.lpc != h.lpc ||
+	 tmp.hpc != h.hpc || tmp.ncnt != h.ncnt ) ) {
 	fprintf(stderr, "%s: incompatible with first gmon file\n", filename);
 	done();
     }
     h = tmp;
-    s_lowpc = (unsigned long) h.lowpc;
-    s_highpc = (unsigned long) h.highpc;
-    lowpc = (unsigned long)h.lowpc / sizeof(UNIT);
-    highpc = (unsigned long)h.highpc / sizeof(UNIT);
-    sampbytes = h.ncnt - sizeof(struct hdr);
+    if ( h.version == GMONVERSION ) {
+	size = sizeof(struct phdr);
+	rate = h.profrate;
+
+    } else {
+	size = sizeof(struct ophdr);
+	fseek(pfile, size, SEEK_SET);
+	h.profrate = rate = hertz();
+	h.version = GMONVERSION;
+    }
+    if (hz == 0) {
+	hz = rate;
+    } else if (hz != rate) {
+	fprintf(stderr,
+	    "%s: profile clock rate (%d) %s (%d) in first gmon file\n",
+	    filename, rate, "incompatible with clock rate", hz);
+	done();
+    }
+    s_lowpc = (unsigned long) h.lpc;
+    s_highpc = (unsigned long) h.hpc;
+    lowpc = (unsigned long)h.lpc / sizeof(UNIT);
+    highpc = (unsigned long)h.hpc / sizeof(UNIT);
+    sampbytes = h.ncnt - size;
     nsamples = sampbytes / sizeof (UNIT);
 #   ifdef DEBUG
 	if ( debug & SAMPLEDEBUG ) {
-	    printf( "[openpfile] hdr.lowpc 0x%x hdr.highpc 0x%x hdr.ncnt %d\n",
-		h.lowpc , h.highpc , h.ncnt );
+	    printf( "[openpfile] hdr.lpc 0x%x hdr.hpc 0x%x hdr.ncnt %d\n",
+		h.lpc , h.hpc , h.ncnt );
 	    printf( "[openpfile]   s_lowpc 0x%x   s_highpc 0x%x\n" ,
 		s_lowpc , s_highpc );
 	    printf( "[openpfile]     lowpc 0x%x     highpc 0x%x\n" ,
 		lowpc , highpc );
 	    printf( "[openpfile] sampbytes %d nsamples %d\n" ,
 		sampbytes , nsamples );
+	    printf( "[openpfile] sample rate %d\n" , hz );
 	}
 #   endif DEBUG
     return(pfile);
