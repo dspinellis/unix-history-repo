@@ -1,7 +1,7 @@
 #
 # Network services, Internet style
 #
-#	@(#)services	8.1 (Berkeley) %G%
+#	@(#)services	8.2 (Berkeley) %G%
 #
 tcpmux		1/tcp				# TCP port multiplexer (RFC1078)
 echo		7/tcp
@@ -30,7 +30,7 @@ mtp		57/tcp				# deprecated
 bootp		67/udp				# bootp server
 #bootpc		68/udp				# bootp client
 #
-tftp		69/udp
+# tftp		69/udp				# off by default for security
 rje		77/tcp		netrjs
 finger		79/tcp
 link		87/tcp		ttylink
