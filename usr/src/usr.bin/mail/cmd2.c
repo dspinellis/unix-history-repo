@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	1.3 %G%";
+static char *SccsId = "@(#)cmd2.c	1.4 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -311,8 +311,8 @@ delm(msgvec)
 		mesg = *ip;
 		touch(mesg);
 		mp = &message[mesg-1];
-		mp->m_flag |= MDELETED;
-		mp->m_flag &= ~(MPRESERVE|MSAVED);
+		mp->m_flag |= MDELETED|MTOUCH;
+		mp->m_flag &= ~(MPRESERVE|MSAVED|MBOX);
 		last = mesg;
 	}
 	if (last != NULL) {
