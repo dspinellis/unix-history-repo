@@ -1,4 +1,4 @@
-/*	cgram.y	4.6	87/04/22	*/
+/*	cgram.y	4.7	87/04/23	*/
 
 /*
  * Grammar for the C compiler.
@@ -70,7 +70,17 @@ external_def:	   data_def
 		;
 data_def:
 		   oattributes  SM
-			={  $1->in.op = FREE; }
+			={
+			    if ($1->in.type != STRTY &&
+				$1->in.type != UNIONTY &&
+				$1->in.type != ENUMTY &&
+				(curclass != SNULL ||
+				$1->in.type != INT ||
+				$1->fn.cdim != 0 ||
+				$1->fn.csiz != INT))
+					werror("null declaration");
+			    $1->in.op = FREE;
+			}
 		|  oattributes init_dcl_list  SM
 			={  $1->in.op = FREE; }
 		|  oattributes fdeclarator {
