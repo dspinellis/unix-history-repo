@@ -22,13 +22,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tc3.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tc3.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * tc3 [term]
- * Dummy program to test out termlib.
- * Input two numbers and it prints out the tgoto string generated.
+ * Dummy program to test out termlib.  Input two numbers (row and col)
+ * and it prints out the tgoto string generated.
  */
 #include <stdio.h>
 char buf[1024];
@@ -61,7 +61,7 @@ main(argc, argv) char **argv; {
 	for (;;) {
 		if (scanf("%d %d", &row, &col) < 2)
 			exit(0);
-		tgout = tgoto(CM, row, col);
+		tgout = tgoto(CM, col, row);
 		pr(tgout);
 		printf("\n");
 	}
@@ -75,25 +75,22 @@ register char *p;
 }
 
 /*
- * rdchar: returns a readable representation of an ASCII char, using ^ notation.
+ * rdchar() returns a readable representation of an ASCII character
+ * using ^ for control, ' for meta.
  */
 #include <ctype.h>
 char *rdchar(c)
 char c;
 {
 	static char ret[4];
-	register char *p;
+	register char *p = ret;
 
-	/*
-	 * Due to a bug in isprint, this prints spaces as ^`, but this is OK
-	 * because we want something to show up on the screen.
-	 */
-	ret[0] = ((c&0377) > 0177) ? '\'' : ' ';
+	if ((c&0377) > 0177)
+		*p++ = '\'';
 	c &= 0177;
-	ret[1] = isprint(c) ? ' ' : '^';
-	ret[2] = isprint(c) ?  c  : c^0100;
-	ret[3] = 0;
-	for (p=ret; *p==' '; p++)
-		;
-	return (p);
+	if (!isprint(c))
+		*p++ = '^';
+	*p++ = (isprint(c) ?  c  : c^0100);
+	*p = 0;
+	return (ret);
 }
