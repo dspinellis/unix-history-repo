@@ -1,4 +1,4 @@
-/*	dh.c	4.19	81/02/19	*/
+/*	dh.c	4.20	81/02/21	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -25,17 +25,17 @@
  * Definition of the driver for the auto-configuration program.
  * There is one definition for the dh and one for the dm.
  */
-int	dhcntrlr(), dhslave(), dhrint(), dhxint();
+int	dhprobe(), dhattach(), dhrint(), dhxint();
 struct	uba_dinfo *dhinfo[NDH11];
 u_short	dhstd[] = { 0 };
 struct	uba_driver dhdriver =
-	{ dhcntrlr, dhslave, 0, 0, dhstd, "dh", dhinfo };
+	{ dhprobe, 0, dhattach, 0, dhstd, "dh", dhinfo };
 
-int	dmcntrlr(), dmslave(), dmintr();
+int	dmprobe(), dmattach(), dmintr();
 struct	uba_dinfo *dminfo[NDH11];
 u_short	dmstd[] = { 0 };
 struct	uba_driver dmdriver =
-	{ dmcntrlr, dmslave, 0, 0, dmstd, "dm", dminfo };
+	{ dmprobe, 0, dmattach, 0, dmstd, "dm", dminfo };
 
 struct dhdevice
 {
@@ -140,14 +140,15 @@ int	cbase[MAXNUBA];			/* base address in unibus map */
  * Set to transmit at 9600 baud, and cause a transmitter interrupt.
  */
 /*ARGSUSED*/
-dhcntrlr(ui, reg)
-	struct uba_dinfo *ui;
+dhprobe(reg)
 	caddr_t reg;
 {
 	register int br, cvec;		/* these are ``value-result'' */
 	register struct dhdevice *dhaddr = (struct dhdevice *)reg;
-	int i;
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+#endif
 #ifdef notdef
 	dhaddr->un.dhcsr = DH_RIE|DH_MM|DH_RI;
 	DELAY(5);
@@ -168,11 +169,10 @@ dhcntrlr(ui, reg)
 }
 
 /*
- * Routine called to init slave tables.
+ * Routine called to attach a dh.
  */
-dhslave(ui, reg)
+dhattach(ui)
 	struct uba_dinfo *ui;
-	caddr_t reg;
 {
 
 	dhsoftCAR[ui->ui_unit] = ui->ui_flags;
@@ -181,22 +181,24 @@ dhslave(ui, reg)
 /*
  * Configuration routine to cause a dm to interrupt.
  */
-dmcntrlr(um, addr)
-	struct uba_minfo *um;
-	caddr_t addr;
+dmprobe(reg)
+	caddr_t reg;
 {
 	register int br, vec;			/* value-result */
-	register struct dmdevice *dmaddr = (struct dmdevice *)addr;
+	register struct dmdevice *dmaddr = (struct dmdevice *)reg;
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+#endif
 	dmaddr->dmcsr = DM_DONE|DM_IE;
 	DELAY(20);
 	dmaddr->dmcsr = 0;
+	return (1);
 }
 
-dmslave(ui, addr, slave)
+/*ARGSUSED*/
+dmattach(ui)
 	struct uba_dinfo *ui;
-	caddr_t addr;
-	int slave;
 {
 
 	/* no local state to set up */
@@ -320,7 +322,6 @@ dhrint(dh)
 	register struct dhdevice *addr;
 	register struct tty *tp0;
 	register struct uba_dinfo *ui;
-	int s;
 
 	ui = dhinfo[dh];
 	if (ui == 0 || ui->ui_alive == 0)
@@ -449,8 +450,7 @@ dhxint(dh)
 	short ttybit, bar, *sbar;
 	register struct uba_dinfo *ui;
 	register int unit;
-	int s;
-	u_short cnt;
+	u_short cntr;
 
 	ui = dhinfo[dh];
 	addr = (struct dhdevice *)ui->ui_addr;
@@ -478,9 +478,9 @@ dhxint(dh)
 				 * Do arithmetic in a short to make up
 				 * for lost 16&17 bits.
 				 */
-				cnt = addr->dhcar -
+				cntr = addr->dhcar -
 				    UBACVT(tp->t_outq.c_cf, ui->ui_ubanum);
-				ndflush(&tp->t_outq, cnt);
+				ndflush(&tp->t_outq, cntr);
 			}
 			if (tp->t_line)
 				(*linesw[tp->t_line].l_start)(tp);
