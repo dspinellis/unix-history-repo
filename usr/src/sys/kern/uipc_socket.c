@@ -3,29 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	7.3 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "systm.h"
 #include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "file.h"
-#include "inode.h"
-#include "buf.h"
 #include "mbuf.h"
-#include "un.h"
 #include "domain.h"
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "stat.h"
-#include "ioctl.h"
-#include "uio.h"
-#include "../net/route.h"
-#include "../netinet/in.h"
-#include "../net/if.h"
 
 /*
  * Socket operation routines.
