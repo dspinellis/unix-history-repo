@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -39,6 +39,7 @@ struct	passwd *getpwuid();
 int	errno;
 int	options;
 int	rfd2;
+int	nflag;
 int	sendsig();
 
 #define	mask(s)	(1 << ((s) - 1))
@@ -76,8 +77,7 @@ another:
 	}
 	if (argc > 0 && !strcmp(*argv, "-n")) {
 		argv++, argc--;
-		(void) close(0);
-		(void) open("/dev/null", 0);
+		nflag++;
 		goto another;
 	}
 	if (argc > 0 && !strcmp(*argv, "-d")) {
@@ -159,14 +159,16 @@ another:
 		signal(SIGQUIT, sendsig);
 	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
 		signal(SIGTERM, sendsig);
-        pid = fork();
-        if (pid < 0) {
-		perror("fork");
-                exit(1);
-        }
+	if (nflag == 0) {
+		pid = fork();
+		if (pid < 0) {
+			perror("fork");
+			exit(1);
+		}
+	}
 	ioctl(rfd2, FIONBIO, &one);
 	ioctl(rem, FIONBIO, &one);
-        if (pid == 0) {
+        if (nflag == 0 && pid == 0) {
 		char *bp; int rembits, wc;
 		(void) close(rfd2);
 	reread:
@@ -230,7 +232,8 @@ another:
 				(void) write(1, buf, cc);
 		}
         } while (readfrom);
-        (void) kill(pid, SIGKILL);
+	if (nflag == 0)
+		(void) kill(pid, SIGKILL);
 	exit(0);
 usage:
 	fprintf(stderr,
