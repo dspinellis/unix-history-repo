@@ -7,17 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.4 (Berkeley) %G%
+ *	@(#)boot.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include <sys/reboot.h>
 #include <sys/exec.h>
-
-#ifndef TEST
-#define DEF_MONFUNCS
-#include <machine/machMon.h>
-#endif
 
 char	line[1024];
 
@@ -30,36 +24,49 @@ char	line[1024];
  * The argument "-a" means vmunix should do an automatic reboot.
  */
 void
-main(argc, argv, argenv)
+main(argc, argv)
 	int argc;
 	char **argv;
-	char **argenv;
 {
 	register char *cp;
-	int howto, entry;
+	int ask, entry;
 	char *boot = "boot";
 
 #ifdef JUSTASK
-	howto = RB_ASKNAME;
+	ask = 1;
 #else
-	if (argc > 0 && strcmp(argv[0], boot) == 0) {
-		argc--;
-		argv++;
-		argv[0] = getenv(boot);
-	}
-	howto = 0;
+	ask = 0;
+#ifdef DS3100
 	for (cp = argv[0]; *cp; cp++) {
 		if (*cp == ')' && cp[1]) {
 			cp = argv[0];
 			goto fnd;
 		}
 	}
-	howto |= RB_ASKNAME;
+#endif
+#ifdef DS5000
+	if (argc > 1) {
+		argc--;
+		argv++;
+		/* look for second '/' as in '5/rz0/vmunix' */
+		for (cp = argv[0]; *cp; cp++) {
+			if (*cp == '/') {
+				while (*++cp) {
+					if (*cp == '/' && cp[1]) {
+						cp = argv[0];
+						goto fnd;
+					}
+				}
+			}
+		}
+	}
+#endif
+	ask = 1;
 fnd:
 	;
-#endif
+#endif /* JUSTASK */
 	for (;;) {
-		if (howto & RB_ASKNAME) {
+		if (ask) {
 			printf("Boot: ");
 			gets(line);
 			if (line[0] == '\0')
@@ -72,11 +79,10 @@ fnd:
 		entry = loadfile(cp);
 		if (entry != -1)
 			break;
-		howto = RB_ASKNAME;
+		ask = 1;
 	}
-#ifndef TEST
-	Boot_Transfer(argc, argv, argenv, entry);
-#endif
+	printf("Starting at 0x%x\n\n", entry);
+	((void (*)())entry)(argc, argv);
 }
 
 /*
@@ -89,11 +95,13 @@ loadfile(fname)
 	register int fd, i, n;
 	struct exec aout;
 
-	if ((fd = Open(fname, 0)) < 0)
+	if ((fd = open(fname, 0)) < 0) {
+		printf("Can't open '%s'\n", fname);
 		goto err;
+	}
 
 	/* read the COFF header */
-	i = Read(fd, (char *)&aout, sizeof(aout));
+	i = read(fd, (char *)&aout, sizeof(aout));
 	if (i != sizeof(aout)) {
 		printf("No a.out header\n");
 		goto cerr;
@@ -105,17 +113,17 @@ loadfile(fname)
 
 	/* read the code and initialized data */
 	printf("Size: %d+%d", aout.a_text, aout.a_data);
-	if (Lseek(fd, N_TXTOFF(aout), 0) < 0) {
+	if (lseek(fd, (off_t)N_TXTOFF(aout), 0) < 0) {
 		printf("\nSeek error\n");
 		goto cerr;
 	}
 	i = aout.a_text + aout.a_data;
 #ifndef TEST
-	n = Read(fd, (char *)aout.ex_aout.codeStart, i);
+	n = read(fd, (char *)aout.ex_aout.codeStart, i);
 #else
 	n = i;
 #endif
-	(void) Close(fd);
+	(void) close(fd);
 	if (n < 0) {
 		printf("\nRead error\n");
 		goto err;
@@ -131,7 +139,7 @@ loadfile(fname)
 	return ((int)aout.a_entry);
 
 cerr:
-	(void) Close(fd);
+	(void) close(fd);
 err:
 	return (-1);
 }
