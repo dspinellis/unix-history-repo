@@ -6,13 +6,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+
+#include <errno.h>
 #include <a.out.h>
 #include <stdio.h>
 #include <string.h>
@@ -44,7 +46,8 @@ __fdnlist(fd, list)
 	register caddr_t strtab;
 	register off_t stroff, symoff;
 	register u_long symsize;
-	register int nent, strsize, cc;
+	register int nent, cc;
+	size_t strsize;
 	struct nlist nbuf[1024];
 	struct exec exec;
 	struct stat st;
@@ -57,14 +60,20 @@ __fdnlist(fd, list)
 	symoff = N_SYMOFF(exec);
 	symsize = exec.a_syms;
 	stroff = symoff + symsize;
-	strsize = st.st_size - stroff;
+
+	/* Check for files too large to mmap. */
+	if (st.st_size - stroff > SIZE_T_MAX) {
+		errno = EFBIG;
+		return (-1);
+	}
 	/*
 	 * Map string table into our address space.  This gives us
 	 * an easy way to randomly access all the strings, without
 	 * making the memory allocation permanent as with malloc/free
 	 * (i.e., munmap will return it to the system).
 	 */
-	strtab = mmap(0, strsize, PROT_READ, MAP_FILE, fd, stroff);
+	strsize = st.st_size - stroff;
+	strtab = mmap(NULL, (size_t)strsize, PROT_READ, 0, fd, stroff);
 	if (strtab == (char *)-1)
 		return (-1);
 	/*
