@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)a.out.h	5.7 (Berkeley) %G%
+ *	@(#)a.out.h	5.8 (Berkeley) %G%
  */
 
 #ifndef	_AOUT_H_
@@ -12,7 +12,7 @@
 
 #include <sys/exec.h>
 
-#if defined(hp300) || defined(i386)
+#if defined(hp300) || defined(i386) || defined(mips)
 #define	__LDPGSZ	4096
 #endif
 #if defined(tahoe) || defined(vax)
@@ -25,6 +25,7 @@
 	    (ex).a_magic != ZMAGIC)
 
 /* Address of the bottom of the text segment. */
+#ifndef mips
 #define N_TXTADDR(X)	0
 
 /* Address of the bottom of the data segment. */
@@ -58,6 +59,9 @@ struct relocation_info {
 			r_extern :  1,	/* 1 if need to add symbol to value */
 				 :  4;	/* reserved */
 };
+#else /* mips */
+#define N_TXTADDR(X)	0x400000
+#endif /* mips */
 
 #define _AOUT_INCLUDE_
 #include <nlist.h>
