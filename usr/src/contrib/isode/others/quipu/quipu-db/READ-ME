@@ -1,0 +1,8 @@
+organisation/
+	An example of the first DSA of an organisation.
+national/
+	An example of the first DSA of a country.
+non-root/
+	An example a DSA not holding slave copies of the ROOT and
+	country EDBs, this is generally for organisation DSAs, but
+	not the first.
