@@ -14,22 +14,22 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	ps.c
-OBJS=
+SRCS= ps.c devname.c attime.c
+OBJS= ps.o devname.o attime.o
 MAN=	ps.0
 
 all: ps
 
-ps: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c -lm
+ps: ${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lm -lutil
 
 clean:
-	rm -f ${OBJS} core ps
+	rm -f ${OBJDIR}*.o core ps
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
