@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lookup.c	2.2	%G%";
+static char sccsid[] = "@(#)lookup.c	2.3	%G%";
 #endif not lint
 # include "stdio.h"
 # include "streams.h"
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)lookup.c	2.2	%G%";
 
 char *locate();
 
+int     fflag =   0;        /*  print out file names                    */
 int     max_klen =   6;     /*  max length of keys                      */
 char    *common =           /*  name of file of common words            */
             COMFILE;
@@ -64,6 +65,8 @@ flags()
     {   switch ((*argv)[1])
         {   case 'l':   max_klen= atoi(operand);
                         break;
+	    case 'f':	fflag++;
+			break;
             case 'c':   common=  operand;
                         break;
             case 'p':   strcpy(INDEX,operand);
