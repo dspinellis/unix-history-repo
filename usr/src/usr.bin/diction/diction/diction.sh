@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)diction.sh	4.4	(Berkeley)	82/11/06
+#	@(#)diction.sh	4.5	(Berkeley)	82/11/06
 #
 D=/usr/bin
 B=/usr/lib
@@ -9,7 +9,7 @@ rest=
 flag=
 nflag=
 mflag=-me
-lflag= -ml
+lflag=-ml
 kflag=
 file=
 for i
