@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 # ieee		- for most IEEE machines, we hope.
 # mc68881	- the, ahem, mc68881.
@@ -27,7 +27,7 @@ SRCS+=	atan2.c sincos.c tan.c
 # ieee
 SRCS+=	cabs.c cbrt.c support.c
 
-.elif (${MACHINE} == "hp300")
+.elif (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
 
 HARDWARE=mc68881
 .PATH:	${.CURDIR}/mc68881 ${.CURDIR}/common_source ${.CURDIR}/ieee

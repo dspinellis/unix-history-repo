@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.24 (Berkeley) %G%
+ *	@(#)sys_process.c	7.25 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -193,7 +193,7 @@ procxmt(p)
 #endif
 			goto ok;
 		}
-#if defined(hp300)
+#if defined(hp300) || defined(luna68k)
 #ifdef FPCOPROC
 		if (poff >= (int *)&((struct user *)kstack)->u_pcb.pcb_fpregs.fpf_regs &&
 		    poff <= (int *)&((struct user *)kstack)->u_pcb.pcb_fpregs.fpf_fpiar)
