@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)resolver.3	6.5 (Berkeley) %G%
+.\"	@(#)resolver.3	6.6 (Berkeley) %G%
 .\"
 .TH RESOLVER 3 ""
 .UC 4
@@ -78,7 +78,7 @@ res_query, res_search, res_mkquery, res_send, res_init, dn_comp, dn_expand \- re
 .PP
 .B dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 .br
-.B char *msg, *eomorig, *comp_dn, exp_dn;
+.B u_char *msg, *eomorig, *comp_dn, *exp_dn;
 .br
 .B int  length;
 .SH DESCRIPTION
