@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.12 %G%
+ *	@(#)as.h 4.13 %G%
  */
 #ifdef VMS
 # define	vax	1
@@ -40,27 +40,54 @@
 #define	NHASH		1103	/* hash table is dynamically extended */
 #define	TNAMESIZE	32	/* maximum length of temporary file names */
 #define	NLOC		4	/* number of location ctrs */
+/*
+ *	Sizes for character buffers.
+ *	what			size #define name	comments
+ *
+ *	source file reads	ASINBUFSIZ		integral of BUFSIZ
+ *	string assembly		NCPString		large for .stabs
+ *	name assembly		NCPName			depends on FLEXNAMES
+ *	string save		STRPOOLDALLOP	
+ *
+ *
+ *	-source file reads should be integral of BUFSIZ for efficient reads
+ *	-string saving is a simple first fit
+ */
+#ifndef ASINBUFSIZ
+#	define	ASINBUFSIZ	4096
+#endif not ASINBUFSIZ
+#ifndef STRPOOLDALLOP
+#	define STRPOOLDALLOP	8192
+#endif not STRPOOLDALLOP
+#ifndef NCPString
+#	define	NCPString	4080
+#endif not NCPString
 
+#define	NCPName	NCPS
 #ifdef UNIX
-# ifndef	FLEXNAMES
-#	ifndef	NCPS
-#		define	NCPS	8	/* number of characters per symbol*/
-#	endif
-# else
-#	ifdef NCPS
-#		undef	NCPS
-#	endif
-#	define	NCPS	4096	/* needed to allocate yytext */
-# endif
+# ifndef FLEXNAMES
+#	ifndef NCPS
+#		undef	NCPName
+#		define	NCPName	8
+#	endif not NCPS
+# else FLEXNAMES
+#	ifndef NCPS
+#		undef	NCPName
+#		define	NCPName	4096
+#	endif not NCPS
+# endif FLEXNAMES
 # endif UNIX
 
 # ifdef VMS
-# ifdef NCPS
-#	undef	NCPS
-# endif NCPS
-#	define	NCPS	15
+#	define	NCPName	15
 # endif VMS
 
+/*
+ *	Check sizes, and compiler error if sizes botch
+ */
+#if ((ASINBUFSIZ < NCPString) || (ASINBUFSIZ < NCPName) || (STRPOOLDALLOP < NCPString) || (STRPOOLDALLOP < NCPName))
+	$$$botch with definition sizes
+#endif test botches
 /*
  * Symbol types
  */
@@ -299,7 +326,7 @@ struct	Instab{
 #ifdef FLEXNAMES
 	char	*I_name;
 #else not FLEXNAMES
-	char	I_name[NCPS];
+	char	I_name[NCPName];
 #endif
 	u_char	I_popcode;		/* basic op code */
 	char	I_nargs;
@@ -406,7 +433,7 @@ struct	exp {
 	 *	The lexical analyzer builds up symbols in yytext.  Lookup
 	 *	expects its argument in this buffer
 	 */
-	extern	char	yytext[NCPS+2];		/* text buffer for lexical */
+	extern	char	yytext[NCPName+2];	/* text buffer for lexical */
 	/*
 	 *	Variables to manage the input assembler source file
 	 */

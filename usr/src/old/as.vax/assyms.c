@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assyms.c 4.9 %G%";
+static char sccsid[] = "@(#)assyms.c 4.10 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -42,10 +42,6 @@ int	nlabels;	/* number of label entries */
 
 /*
  *	Managers of the symbol literal storage.
- *	If we have flexible names, then we allocate BUFSIZ long
- *	string, and pack strings into that.  Otherwise, we allocate
- *	symbol storage in fixed hunks NCPS long when we allocate space
- *	for other symbol attributes.
  */
 struct	strpool		*strplhead = 0;
 
@@ -333,7 +329,7 @@ dumpsymtab()
 				tagstring(sp->s_tag));
 #else not FLEXNAMES
 			printf("\tSeg: %d \"%*.*s\" value: %d index: %d tag %s\n",
-				segno, NCPS, NCPS, sp->s_name,
+				segno, NCPName, NCPName, sp->s_name,
 				sp->s_value, sp->s_index,
 				tagstring(sp->s_tag));
 #endif not FLEXNAMES
@@ -432,10 +428,10 @@ struct symtab **lookup(instflg)
 			from = yytext;
 			to = (*hp)->s_name;
 #ifndef FLEXNAMES
-			for (len = 0; (len<NCPS) && *from; len++)
+			for (len = 0; (len<NCPName) && *from; len++)
 				if (*from++ != *to++)
 					goto nextprobe;
-			if (len >= NCPS)	/*both are maximal length*/
+			if (len >= NCPName)	/*both are maximal length*/
 				return(hp);
 			if (*to == 0)		/*assert *from == 0*/
 				return(hp);
@@ -467,7 +463,7 @@ struct symtab **lookup(instflg)
 		*hp = symalloc();
 		hdallop->h_nused++;
 #ifndef FLEXNAMES
-		strncpy((*hp)->s_name, yytext, NCPS);
+		strncpy((*hp)->s_name, yytext, NCPName);
 #else FLEXNAMES
 		for (from = yytext, len = 0; *from++; len++)
 			continue;

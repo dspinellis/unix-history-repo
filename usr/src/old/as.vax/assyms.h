@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)assyms.h 4.4 %G%
+ *	@(#)assyms.h 4.5 %G%
  */
 /*
  *	To speed up walks through symbols defined in a particular
@@ -32,10 +32,7 @@ extern	int	hshused;		/*how many hash slots used*/
 	    walkpointer = * ++ copointer)
 /*
  *	Symbols are allocated in non contiguous chunks by extending
- *	the data area.  This way, it is extremely easy to
- *	allow virtual memory temporary files, change the length
- *	of NCPS, and allows for a much more flexible storage
- *	allocation
+ *	the data area.
  */
 
 #define SYMDALLOP	200
@@ -45,10 +42,8 @@ struct 	allocbox{
 };
 
 /*
- *	Names are allocated in a string pool.  String pools are linked
- *	together and are allocated dynamically by Calloc.
+ *	Names are allocated in a dynamically extensible string pool.
  */
-#define	STRPOOLDALLOP	NCPS
 struct	strpool{
 	struct	strpool	*str_next;
 	int		str_nalloc;

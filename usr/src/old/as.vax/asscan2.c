@@ -2,13 +2,12 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.7 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.8 %G%";
 #endif not lint
 
 #include "asscanl.h"
 static	inttoktype	oval = NL;
 
-#define ASINBUFSIZ 4096
 #define	NINBUFFERS	2
 #define	INBUFLG		NINBUFFERS*ASINBUFSIZ + 2
 	/*
@@ -19,6 +18,16 @@ static	inttoktype	oval = NL;
 	 */
 static	char	inbuffer[INBUFLG];
 static	char	*InBufPtr = 0;
+
+#ifndef FLEXNAMES
+char	strtext[NCPString + 1];
+#else FLEXNAMES
+# if NCPName < NCPString
+char	strtext[NCPString + 1];
+# else
+#define	strtext yytext
+# endif
+#endif FLEXNAMES
 
 /*
  *	fill the inbuffer from the standard input.
@@ -308,7 +317,7 @@ scan_dot_s(bufferbox)
 		}
 		rcp = yytext;
 		do {
-			if (rcp < &yytext[NCPS])
+			if (rcp < &yytext[NCPName])
 				*rcp++ = ch;
 		} while (INCHARSET ( (ch = getchar()), ALPHA | DIGIT));
 		*rcp = '\0';
@@ -383,7 +392,7 @@ scan_dot_s(bufferbox)
 	case DQ:
 	   eatstr:
 		linescrossed = 0;
-		for(rcp = yytext, maxstrlg = NCPS; maxstrlg > 0; --maxstrlg){
+		for(rcp = strtext, maxstrlg = NCPString; maxstrlg > 0; --maxstrlg){
 		    switch(ch = getchar()){
 		    case '"':
 			goto tailDQ;
@@ -449,7 +458,7 @@ scan_dot_s(bufferbox)
 			pint(bufptr, linescrossed);
 		}
 		/*
-		 *	put the string in yytext into the string pool
+		 *	put the string in strtext into the string pool
 		 *
 		 *	The value in ryylval points to the string;
 		 *	the previous 2 bytes is the length of the string
@@ -461,7 +470,7 @@ scan_dot_s(bufferbox)
 		 */
 		val = STRING;
 		*rcp++ = 0;
-		ryylval = (int)savestr(yytext, rcp - yytext);
+		ryylval = (int)savestr(strtext, rcp - strtext);
 		STRLEN(((char *)ryylval)) -= 1;
 		goto ret;
 

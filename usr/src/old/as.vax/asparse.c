@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.12 %G%";
+static char sccsid[] = "@(#)asparse.c 4.13 %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -29,7 +29,7 @@ int	droppedLP;		/*one is analyzing an expression beginning with*/
 				/*a left parenthesis, which has already been*/
 				/*shifted. (Used to parse (<expr>)(rn)*/
 
-char	yytext[NCPS+2];		/*the lexical image*/
+char	yytext[NCPName+2];	/*the lexical image*/
 int	yylval;			/*the lexical value; sloppy typing*/
 struct	Opcode		yyopcode;	/* lexical value for an opcode */
 Bignum	yybignum;		/* lexical value for a big number */
@@ -135,7 +135,7 @@ yyparse()
 				yyerror("\"%s\" is not followed by a ':' for a label definition",
 #else not FLEXNAMES
 				yyerror("\"%.*s\" is not followed by a ':' for a label definition",
-					NCPS,
+					NCPName,
 #endif not FLEXNAMES
 					np->s_name);
 				goto  errorfix;
@@ -159,7 +159,7 @@ restlab:
 						  yyerror("%s redefined",
 #else not FLEXNAMES
 						  yyerror("%.*s redefined",
-							NCPS,
+							NCPName,
 #endif not FLEXNAMES 
 							np->s_name);
 						else
@@ -167,7 +167,7 @@ restlab:
 						  yyerror("%s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
 #else not FLEXNAMES
 						  yyerror("%.*s redefined: PHASE ERROR, 1st: %d, 2nd: %d",
-							NCPS,
+							NCPName,
 #endif not FLEXNAMES
 							np->s_name,
 							np->s_value,
@@ -259,7 +259,7 @@ restlab:
 #ifdef FLEXNAMES
 		stpt->s_name = np->s_name;
 #else
-		movestr(stpt->s_name, np->s_name, NCPS);
+		movestr(stpt->s_name, np->s_name, NCPName);
 #endif
 		np->s_tag = OBSOLETE;	/*invalidate original */
 		nforgotten++;
@@ -560,7 +560,7 @@ restlab:
  *		final expression is taken to be  the current
  *		location counter, and is patched by the 2nd pass
  *
- *	.stab{<expr>,}*NCPS,<expr>, <expr>, <expr>, <expr>
+ *	.stab{<expr>,}*NCPName,<expr>, <expr>, <expr>, <expr>
  *	.stabn		 <expr>, <expr>, <expr>, <expr>
  *	.stabs   STRING, <expr>, <expr>, <expr>, <expr>
  *	.stabd		 <expr>, <expr>, <expr> # . 
@@ -579,7 +579,7 @@ restlab:
 	(char *)stabstart -= sizeof(struct symtab *);
 	(char *)stabstart -= sizeof(bytetoktype);
 	shift;
-	for (argcnt = 0; argcnt < NCPS; argcnt++){
+	for (argcnt = 0; argcnt < NCPName; argcnt++){
 		expr(locxp, val);
 		stpt->s_name[argcnt] = locxp->e_xvalue;
 		xp = explist;
@@ -727,7 +727,7 @@ restlab:
 		stringp = (char *)yylval;
 		shiftover(STRING);
 #ifndef FLEXNAMES
-		movestr(stpt->s_name, stringp, min(STRLEN(stringp), NCPS));
+		movestr(stpt->s_name, stringp, min(STRLEN(stringp), NCPName));
 #else
 		stpt->s_name = stringp;
 		/*
@@ -740,8 +740,8 @@ restlab:
 		shiftover(CM);
 	} else {
 #ifndef FLEXNAMES
-		static char nullstr[NCPS];
-		movestr(stpt->s_name, nullstr, NCPS);
+		static char nullstr[NCPName];
+		movestr(stpt->s_name, nullstr, NCPName);
 #else
 		static char nullstr[1];
 		stpt->s_name = savestr(nullstr, 1);
@@ -766,7 +766,7 @@ restlab:
 		yyerror("Redefinition of %s",
 #else not FLEXNAMES
 		yyerror("Redefinition of %.*s",
-			NCPS,
+			NCPName,
 #endif not FLEXNAMES
 			np->s_name);
 	if (passno==1) {
