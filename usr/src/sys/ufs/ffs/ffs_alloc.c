@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_alloc.c	7.10 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -153,7 +153,7 @@ realloccg(ip, bprev, bpref, osize, nsize, bpp)
 	if (bno != 0) {
 		do {
 			error = bread(ip->i_devvp, fsbtodb(fs, bno),
-				osize, &bp);
+				osize, NOCRED, &bp);
 			if (error) {
 				brelse(bp);
 				return (error);
@@ -214,7 +214,8 @@ realloccg(ip, bprev, bpref, osize, nsize, bpp)
 	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, request,
 		(u_long (*)())alloccg);
 	if (bno > 0) {
-		error = bread(ip->i_devvp, fsbtodb(fs, bprev), osize, &obp);
+		error = bread(ip->i_devvp, fsbtodb(fs, bprev), 
+			osize, NOCRED, &obp);
 		if (error) {
 			brelse(obp);
 			return (error);
@@ -518,7 +519,7 @@ fragextend(ip, cg, bprev, osize, nsize)
 		return (NULL);
 	}
 	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
-		(int)fs->fs_cgsize, &bp);
+		(int)fs->fs_cgsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return (NULL);
@@ -581,7 +582,7 @@ alloccg(ip, cg, bpref, size)
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (NULL);
 	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
-		(int)fs->fs_cgsize, &bp);
+		(int)fs->fs_cgsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return (NULL);
@@ -782,7 +783,7 @@ ialloccg(ip, cg, ipref, mode)
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (NULL);
 	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
-		(int)fs->fs_cgsize, &bp);
+		(int)fs->fs_cgsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return (NULL);
@@ -869,7 +870,7 @@ blkfree(ip, bno, size)
 		return;
 	}
 	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
-		(int)fs->fs_cgsize, &bp);
+		(int)fs->fs_cgsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return;
@@ -964,7 +965,7 @@ ifree(ip, ino, mode)
 	}
 	cg = itog(fs, ino);
 	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
-		(int)fs->fs_cgsize, &bp);
+		(int)fs->fs_cgsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return;

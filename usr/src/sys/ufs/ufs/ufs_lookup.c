@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.12 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -733,7 +733,7 @@ blkatoff(ip, offset, res, bpp)
 		dirbad(ip, offset, "hole in dir");
 		return (EIO);
 	}
-	error = bread(ip->i_devvp, bn, bsize, &bp);
+	error = bread(ip->i_devvp, bn, bsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return (error);
