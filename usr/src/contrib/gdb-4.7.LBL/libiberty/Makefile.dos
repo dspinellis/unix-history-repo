@@ -1,0 +1,148 @@
+#
+# Makefile for libiberty directory
+#
+
+srcdir = .
+
+TARGETLIB = libiberty.a
+RANLIB = ar rvs
+AR = ar
+AR_FLAGS = crv
+CFLAGS = -O -I. -I$(srcdir)/../include $(HDEFINES)
+
+# NEEDED_OBJECTS is overridden by config/mh-default,
+# and also the recursive make in the rule for $(TARGETLIB).
+NEEDED_OBJECTS=getcwd.o msdos.o
+
+
+# The default target just invokes make recursively.
+# However, the automatic configuration (in config/mh_default).
+# first causes it to figure out the objects missing in libc.
+all:	$(TARGETLIB)
+all-info:
+install-info:
+
+#### Host and target-dependent makefile fragments come in here.
+HDEFINES=-D__MSDOS__ -D__GO32__
+### End of host and target-dependent makefile fragments.
+
+srcdir = .
+ddestdir = /usr/local
+
+libdir = $(ddestdir)/lib
+
+# NOTE: If you add new files to the library, edit 'functions.def'.
+CFILES = basename.c bcmp.c bcopy.c bzero.c getopt.c getopt1.c getpagesize.c \
+	getcwd.c index.c insque.c obstack.c rindex.c spaces.c strdup.c \
+	strerror.c strstr.c strtol.c strtoul.c vfork.c \
+	vfprintf.c vprintf.c vsprintf.c sigsetmask.c concat.c
+# These are always included in the library.
+REQUIRED_OFILES = basename.o spaces.o concat.o getopt.o getopt1.o obstack.o fdmatch.o argv.o
+OPTIONAL_OFILES = bcmp.o bcopy.o bzero.o getpagesize.o \
+	getcwd.o index.o insque.o rindex.o strdup.o \
+	strerror.o strstr.o strtol.o strtoul.o vfork.o \
+	vfprintf.o vprintf.o vsprintf.o  sigsetmask.o
+
+# Do we want/need any config overrides?
+#	 
+
+STAGESTUFF = $(TARGETLIB) *.o
+
+install: all
+	cp $(TARGETLIB) $(libdir)/$(TARGETLIB).n
+	$(RANLIB) $(libdir)/$(TARGETLIB).n
+	mv -f $(libdir)/$(TARGETLIB).n $(libdir)/$(TARGETLIB)
+
+# The default configuration adds to libiberty all those functions that are
+# missing in libc.  More precisely, it includes whatever $(CC) fails to find.
+# Then a sed+awk combination translates the ld error messages into
+# a list of .o files.
+
+needed-list: $(srcdir)/dummy.c $(EXTRA_OFILES) needed.awk
+	-($(CC) $(CFLAGS) $(LDFLAGS) $(srcdir)/dummy.c $(EXTRA_OFILES) $(LOADLIBES)) >errors 2>&1 || true
+	awk -f needed.awk <errors >needed-list
+	-rm -f a.out errors dummy.o
+
+# Generate an awk script that looks for functions in functions.def
+
+needed.awk: $(srcdir)/functions.def
+	echo "#*** Automatically generated from $(srcdir)/functions.def"\
+	  "- DO NOT EDIT ***" >needed.awk
+	grep '^DEF(' < $(srcdir)/functions.def \
+	    | sed -e '/DEF/s|DEF.\([^,]*\).*|/\1/ { printf \" \1\.o" }|' \
+	    >>needed.awk
+
+RULE1 = not-used
+$(RULE1): $(REQUIRED_OFILES) $(HOST_OFILES)
+	$(MAKE) RULE1=not-needed RULE2=$(TARGETLIB) \
+	     NEEDED_OBJECTS="$(NEEDED_OBJECTS)"\
+	    "CC=$(CC)" "CFLAGS=$(CFLAGS)" \
+	    "AR=$(AR)" "AR_FLAGS=$(AR_FLAGS)" "RANLIB=$(RANLIB)"
+
+# Rule invoked by recursive make in $(RULE1).
+RULE2 = $(TARGETLIB)
+$(RULE2): $(REQUIRED_OFILES) $(NEEDED_OBJECTS) $(EXTRA_OFILES)
+	-rm -rf $(TARGETLIB)
+	$(AR) $(AR_FLAGS) $(TARGETLIB) \
+	  $(REQUIRED_OFILES) $(NEEDED_OBJECTS) $(EXTRA_OFILES)
+	$(RANLIB) $(TARGETLIB)
+
+.always.:
+# Do nothing.
+
+.PHONEY: all etags tags ls clean stage1 stage2 .always.
+
+stage1: force
+	- mkdir stage1
+	- mv -f $(STAGESTUFF) stage1
+
+stage2: force
+	- mkdir stage2
+	- mv -f $(STAGESTUFF) stage2
+
+stage3: force
+	- mkdir stage3
+	- mv -f $(STAGESTUFF) stage3
+
+stage4: force
+	- mkdir stage4
+	- mv -f $(STAGESTUFF) stage4
+
+against=stage2
+
+comparison: force
+	for i in *.o ; do cmp $$i $(against)/$$i || exit 1 ; done
+
+de-stage1: force
+	- (cd stage1 ; mv -f * ..)
+	- rmdir stage1
+
+de-stage2: force
+	- (cd stage2 ; mv -f * ..)
+	- rmdir stage2
+
+de-stage3: force
+	- (cd stage3 ; mv -f * ..)
+	- rmdir stage3
+
+de-stage4: force
+	- (cd stage4 ; mv -f * ..)
+	- rmdir stage4
+
+etags tags: TAGS
+
+TAGS: $(CFILES)
+	etags $(HFILES) $(CFILES)
+
+ls:
+	@echo Makefile $(HFILES) $(CFILES)
+
+# Need to deal with profiled libraries, too.
+
+clean:
+	rm -f *.a *.o core errs *~ \#* TAGS *.E a.out needed.awk errors needed-list
+
+force:
+
+Makefile: $(srcdir)/Makefile.in $(host_makefile_frag) $(target_makefile_frag)
+	$(SHELL) ./config.status
