@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd_mkdb.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd_mkdb.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -99,6 +99,9 @@ main(argc, argv)
 	sigaddset(&set, SIGTERM);
 	(void)sigprocmask(SIG_BLOCK, &set, (sigset_t *)NULL);
 
+	/* We don't care what the user wants. */
+	(void)umask(0);
+
 	pname = *argv;
 	/* Open the original password file */
 	if (!(fp = fopen(pname, "r")))
@@ -117,14 +120,13 @@ main(argc, argv)
 	 * chance the file already existing, since someone (stupidly) might
 	 * still be using this for permission checking.  So, open it first and
 	 * fdopen the resulting fd.  The resulting file should be readable by
-	 * everyone, don't trust the user's umask.
+	 * everyone.
 	 */
 	if (makeold) {
 		(void)snprintf(buf, sizeof(buf), "%s.orig", pname);
 		if ((tfd = open(buf,
 		    O_WRONLY|O_CREAT|O_EXCL, PERM_INSECURE)) < 0)
 			error(buf);
-		(void)fchmod(tfd, PERM_INSECURE);
 		if ((oldfp = fdopen(tfd, "w")) == NULL)
 			error(buf);
 		clean = FILE_ORIG;
