@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpoptr.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpoptr.c	1.3 (Berkeley) %G%";
 #include "dump.h"
 
 /*
@@ -342,7 +342,8 @@ struct	fstab	*fstabsearch(key)
 /*
  *	Tell the operator what to do
  */
-lastdump()
+lastdump(arg)
+	char	arg;		/* w ==> just what to do; W ==> most recent dumps */
 {
 			char	*lastname;
 			char	*date;
@@ -359,7 +360,10 @@ lastdump()
 	inititimes();		/* /etc/dumpdates input */
 	qsort(idatev, nidates, sizeof(struct idates *), idatesort);
 
-	fprintf(stdout, "Last dump(s) done (Dump '*' file systems):\n");
+	if (arg == 'w')
+		fprintf(stdout, "Dump these file systems:\n");
+	else
+		fprintf(stdout, "Last dump(s) done (Dump '>' file systems):\n");
 	lastname = "??";
 	ITITERATE(i, itwalk){
 		if (strncmp(lastname, itwalk->id_name, sizeof(itwalk->id_name)) == 0)
@@ -371,8 +375,9 @@ lastdump()
 		dumpme = (  (dt != 0)
 			 && (dt->fs_freq != 0)
 			 && (itwalk->id_ddate < tnow - (dt->fs_freq*DAY)));
-		fprintf(stdout,"%c %8s\t(%6s) Last dump: Level %c, Date %s\n",
-			dumpme ? '*' : ' ',
+		if ( (arg != 'w') || dumpme)
+		  fprintf(stdout,"%c %8s\t(%6s) Last dump: Level %c, Date %s\n",
+			dumpme && (arg != 'w') ? '>' : ' ',
 			itwalk->id_name,
 			dt ? dt->fs_file : 0,
 			itwalk->id_incno,
