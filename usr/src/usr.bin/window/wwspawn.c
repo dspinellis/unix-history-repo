@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwspawn.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)wwspawn.c	3.1 83/08/11";
 #endif
 
 #include "ww.h"
@@ -11,6 +11,7 @@ register struct ww *wp;
 	case -1:
 		return -1;
 	case 0:
+		moncontrol(0);
 		wp->ww_state = WWS_INCHILD;
 		wwenviron(wp);
 		return 0;

@@ -1,16 +1,18 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)wwinit.c	3.1 83/08/11";
 #endif
 
 #include "ww.h"
 
 static char *kp = wwkeys;
+extern char _sobuf[];
 
 wwinit()
 {
 	register i, j;
 	int kn;
 
+	setbuf(stdout, _sobuf);
 	wwdtablesize = getdtablesize();
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;

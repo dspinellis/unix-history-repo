@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)main.c	3.1 83/08/11";
 #endif
 
 #include "defs.h"
@@ -155,5 +155,6 @@ bad:
 usage()
 {
 	(void) fprintf(stderr, "window: [-e escape] [-t] [-f]\n");
-	return exit(1);			/* for lint */
+	exit(1);
+	return 0;			/* for lint */
 }

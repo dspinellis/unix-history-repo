@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)wwwrite.c	3.1 83/08/11";
 #endif
 
 #include "ww.h"
@@ -23,19 +23,25 @@ register n;
 		c = *p++ & 0x7f;
 		switch (w->ww_wstate) {
 		case 0:
+			asm("_wwwrite1:");
 			if (c >= ' ' && c < 0x7f) {
 				register i, j, cc;
 
 				if (w->ww_insert)
-					wwinschar(w, 1);
-				cc = w->ww_buf[w->ww_scroll + w->ww_cur.r]
-					[w->ww_cur.c].c_w = c;
-				i = wwcurrow(w);
-				j = wwcurcol(w);
-				if (wwsmap[i][j] == w->ww_index) {
-					cc = wwns[i][j].c_w = cc
-						^ w->ww_win[w->ww_cur.r]
-						[w->ww_cur.c] << WWC_MSHIFT;
+					wwinschar(w, w->ww_scroll + w->ww_cur.r,
+						w->ww_cur.c, c);
+				else {
+					cc = w->ww_buf[w->ww_scroll
+						+ w->ww_cur.r]
+						[w->ww_cur.c].c_w = c;
+					i = wwcurrow(w);
+					j = wwcurcol(w);
+					if (wwsmap[i][j] == w->ww_index) {
+						cc = wwns[i][j].c_w = cc
+							^ w->ww_win[w->ww_cur.r]
+							[w->ww_cur.c]
+							<< WWC_MSHIFT;
+					}
 				}
 		right:
 				if (++w->ww_cur.c >= w->ww_w.nc) {
@@ -44,6 +50,7 @@ register n;
 				}
 				break;
 			}
+			asm("_wwwrite2:");
 			switch (c) {
 			case '\n':
 				if (w->ww_mapnl)
@@ -88,27 +95,30 @@ register n;
 			case 'C':
 				goto right;
 			case 'E':
+				w->ww_scroll = 0;
 				w->ww_cur.c = w->ww_cur.r = 0;
-				wwclreos(w);
+				wwclreos(w, 0, 0);
 				break;
 			case 'H':
 				w->ww_cur.c = w->ww_cur.r = 0;
 				break;
 			case 'J':
-				wwclreos(w);
+				wwclreos(w, w->ww_scroll + w->ww_cur.r,
+					w->ww_cur.c);
 				break;
 			case 'K':
 				wwclreol(w, w->ww_scroll + w->ww_cur.r,
-					w->ww_cur.c, 0);
+					w->ww_cur.c);
 				break;
 			case 'L':
-				wwinsline(w);
+				wwinsline(w, w->ww_scroll + w->ww_cur.r);
 				break;
 			case 'M':
 				wwdelline(w, w->ww_scroll + w->ww_cur.r);
 				break;
 			case 'N':
-				wwdelchar(w);
+				wwdelchar(w, w->ww_scroll + w->ww_cur.r,
+					w->ww_cur.c);
 				break;
 			case 'O':
 				w->ww_insert = 0;
