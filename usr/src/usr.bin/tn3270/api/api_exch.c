@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)api_exch.c	3.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)api_exch.c	3.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -71,7 +76,6 @@ iget(location, length)
 char	*location;
 int	length;
 {
-    int i;
     int count;
 
     if (OBUFAVAILABLE()) {
@@ -348,7 +352,7 @@ int
 char
     *location;
 {
-    int i, netleng = length;
+    int netleng = length;
 
     if (conversation != RECEIVE) {
 	if (enter_receive() == -1) {
@@ -372,7 +376,7 @@ char
 	return -1;
     }
     if (exch_state.length != netleng) {
-	fprintf(stderr, "Type 0x%x - expected length %d, received length %d.\n",
+	fprintf(stderr, "Type 0x%x - expected length %d, received length %u.\n",
 		type, length, exch_state.length);
 	return -1;
     }
@@ -393,8 +397,10 @@ api_exch_init(sock_number, ourname)
 int sock_number;
 char *ourname;
 {
+    extern char *strcpy();
+
     sock = sock_number;
-    strcpy(whoarewe, ourname);		/* For error messages */
+    (void) strcpy(whoarewe, ourname);		/* For error messages */
 
     my_sequence = your_sequence = 0;
 

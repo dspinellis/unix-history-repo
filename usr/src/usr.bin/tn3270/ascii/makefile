@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	3.5 (Berkeley) %G%
+#	@(#)makefile	3.6 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -72,7 +72,7 @@ KBD	= unix.kbd
 
 
 # The source files...
-ALLH = map3270.ext state.h termin.ext
+ALLH = state.h
 
 ALLC = map3270.c mset.c termin.c
 
@@ -150,9 +150,8 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-map3270$O: state.h ../general/globals.h map3270.ext default.map
-mset$O: ../ctlr/function.h state.h ../api/astosc.h ../general/globals.h
-mset$O: map3270.ext
-termin$O: ../general/general.h ../ctlr/function.h ../ctlr/inbound.ext
-termin$O: ../ctlr/outbound.ext ../telnet.ext termin.ext ../api/astosc.h state.h
-termin$O: ../general/globals.h
+map3270$O: state.h map3270.h ../general/globals.h default.map
+mset$O: ../ctlr/function.h state.h map3270.h ../api/astosc.h
+mset$O: ../general/globals.h
+termin$O: ../general/general.h ../ctlr/function.h ../ctlr/externs.h
+termin$O: ../ctlr/declare.h ../api/astosc.h state.h ../general/globals.h

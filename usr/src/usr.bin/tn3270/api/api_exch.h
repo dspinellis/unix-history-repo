@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)api_exch.h	3.3 (Berkeley) %G%
+ *	@(#)api_exch.h	3.4 (Berkeley) %G%
  */
 
 /*
@@ -58,8 +58,9 @@
 #define	EXCH_EXCH_TYPE		3	/* The following is a type */
 
 struct exch_exch {
+    char
+	opcode;			/* COMMAND, TURNAROUND, or TYPE */
     unsigned char
-	opcode,			/* COMMAND, TURNAROUND, or TYPE */
 	my_sequence,		/* 0-ff, initially zero */
 	your_sequence,		/* 0-ff, initially zero */
 	command_or_type;	/* Application level command or type */

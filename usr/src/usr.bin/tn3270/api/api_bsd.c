@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)api_bsd.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)api_bsd.c	3.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #if	defined(unix)
@@ -51,13 +51,14 @@ char	*string;		/* if non-zero, where to connect to */
     struct sockaddr_in server;
     struct hostent *hp;
     struct storage_descriptor sd;
-    char *getenv();
+    extern char *getenv();
+    extern unsigned short htons();
     char thehostname[100];
     char keyname[100];
     char inkey[100];
     FILE *keyfile;
     int sock;
-    int port;
+    unsigned int port;
     int i;
 
     if (string == 0) {
@@ -69,7 +70,8 @@ char	*string;		/* if non-zero, where to connect to */
 	}
     }
 
-    if (sscanf(string, "%[^:]:%d:%s", thehostname, &port, keyname) != 3) {
+    if (sscanf(string, "%[^:]:%d:%s", thehostname,
+				(int *)&port, keyname) != 3) {
 	fprintf(stderr, "API3270 environmental variable has bad format.\n");
 	return -1;
     }
@@ -85,10 +87,10 @@ char	*string;		/* if non-zero, where to connect to */
 	fprintf(stderr, "%s specifies bad host name.\n", string);
 	return -1;
     }
-    bcopy(hp->h_addr, &server.sin_addr, hp->h_length);
+    bcopy(hp->h_addr, (char *)&server.sin_addr, hp->h_length);
     server.sin_port = htons(port);
 
-    if (connect(sock, &server, sizeof server) < 0) {
+    if (connect(sock, (struct sockaddr *)&server, sizeof server) < 0) {
 	perror("connecting to API server");
 	return -1;
     }
@@ -230,7 +232,7 @@ int length;
 		return -1;
 	    }
 	    if (api_exch_outtype(EXCH_TYPE_BYTES, sd.length,
-			    sd.location) == -1) {
+			    (char *)sd.location) == -1) {
 		return -1;
 	    }
 	    break;
@@ -241,7 +243,7 @@ int length;
 	    }
 	    /* XXX Validty check HEREIS? */
 	    if (api_exch_intype(EXCH_TYPE_BYTES, sd.length,
-			    sd.location) == -1) {
+			    (char *)sd.location) == -1) {
 		return -1;
 	    }
 	    break;
