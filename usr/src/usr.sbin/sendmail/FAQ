@@ -15,8 +15,8 @@ Posting-Frequency: monthly (first Monday)
 
 
 [The most recent copy of this document can be obtained via anonymous
-FTP as rtfm.mit.edu:/pub/usenet/news.answers/mail/sendmail-faq.  If
-you do not have access to anonymous FTP, you can retrieve it by
+FTP from rtfm.mit.edu in /pub/usenet/news.answers/mail/sendmail-faq.
+If you do not have access to anonymous FTP, you can retrieve it by
 sending email to mail-server@rtfm.mit.edu with the command "send
 usenet/news.answers/mail/sendmail-faq" in the message.]
 
@@ -27,7 +27,7 @@ usenet/news.answers/mail/sendmail-faq" in the message.]
 		         Last updated %G%
 
 
-This FAQ is specific to Version 8.6.9 of sendmail.  Other questions,
+This FAQ is specific to Version 8.6.10 of sendmail.  Other questions,
 particularly regarding compilation and configuration, are answered in
 src/READ_ME and cf/README (found in the V8 sendmail distribution).
 
@@ -59,9 +59,9 @@ BEFORE YOU GO ANY FURTHER
 	3. Is the question about a sendmail-like program (e.g., Smail,
 	   Zmailer, MMDF, etc...)?
 
-	4. Is the question about an SMTP Gateway product for a LAN mail
-	   package (e.g., cc:Mail, MS-Mail WordPerfect Office/GroupWise,
-	   etc...)?
+	4. Is the question about an SMTP Gateway product for a LAN
+	   mail package (e.g., cc:Mail, MS-Mail, WordPerfect
+	   Office/GroupWise, etc...)?
 
 	If you answered "yes" to the question #1, then this is the
 	right place.
@@ -70,7 +70,7 @@ BEFORE YOU GO ANY FURTHER
 	seriously consider upgrading to the most recent version of
 	sendmail V8.
 
-	For question #2, If you're going to contiue using an older
+	For question #2, If you're going to continue using an older
 	version of sendmail, you may not find much help and will
 	probably get some responses that amount to "Get V8".
 	Otherwise, this is probably the best place to look for
@@ -89,9 +89,9 @@ BEFORE YOU GO ANY FURTHER
 	or comp.mail.smail.
 
 	If you couldn't answer "yes" to any of the above questions,
-	then you're DEFINITELY asking in the wrong place.  For the
-	sake of your sanity and ego, not to mention avoiding the
-	waste of your time and ours, try asking your System or E-Mail
+	then you're DEFINITELY in the wrong place.  For the sake of
+	your sanity and ego, not to mention avoiding the waste of
+	your time and ours, try asking your System or E-Mail
 	Administrator(s) before you post any questions publicly.
 ----------------------------------------------------------------------
   * Where can I find the latest version of this FAQ?
@@ -335,6 +335,9 @@ CONFIGURATION QUESTIONS
 	you don't explicitly test for unknown hosts in your domain,
 	you will get "config error: mail loops back to myself"
 	errors.
+
+	See RFCs 1535-1537 for more detail and other related (or
+	common) problems.
 ----------------------------------------------------------------------
   * How can I get sendmail to process messages sent to an account and
     send the results back to the originator?
@@ -353,8 +356,8 @@ CONFIGURATION QUESTIONS
 	Either modify your local mailer (source code will be
 	required) or change the program called in the "local" mailer
 	configuration description to be a new program that does this
-	local delivery.  I understand that "procmail" works well,
-	although I haven't used it myself.
+	local delivery.  One program that is capable of doing this is
+	"procmail", although there are probably many others as well.
 
 	You might be interested in reading the paper ``HLFSD:
 	Delivering Email to your $HOME'' available in the Proceedings
@@ -552,7 +555,7 @@ RESOLVING PROBLEMS
 
 	If you're wedded to the Intel x86 platform and want to run
 	sendmail, we suggest you look at commercial implementations
-	of Unix such as Interactive, UnixWare, Solaris, or 386BSD
+	of Unix such as Interactive, UnixWare, Solaris, or BSD/386
 	(just a sample of the dozens of different versions of Unix
 	for Intel x86).
 
@@ -571,7 +574,7 @@ RESOLVING PROBLEMS
 	versions of sendmail, in large part because the underlying OS
 	just doesn't have the necessary hooks to make it happen.
 	This port is so broken that we make no attempt to provide any
-	kind of support for it.  Try BSDI's 386BSD instead.
+	kind of support for it.  Try BSDI's BSD/386 instead.
 ----------------------------------------------------------------------
   * I'm connected to the network via a SLIP/PPP link.  Sometimes my
     sendmail process hangs (although it looks like part of the
@@ -724,5 +727,5 @@ RESOLVING PROBLEMS
 	directory and have them processed by the same uid that
 	submitted the job in the first place.
 ----------------------------------------------------------------------
-@(#)FAQ	8.14	(Berkeley)	%G%
+@(#)FAQ	8.15	(Berkeley)	%G%
 Send updates to sendmail@CS.Berkeley.EDU.
