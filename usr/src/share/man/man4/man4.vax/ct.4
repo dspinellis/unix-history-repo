@@ -2,19 +2,19 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ct.4	4.1 (Berkeley) %G%
+.\"	@(#)ct.4	5.1 (Berkeley) %G%
 .\"
-.TH CT 4 5/10/81
+.TH CT 4 "27 July 1983"
 .UC 4
 .SH NAME
 ct \- phototypesetter interface
 .SH SYNOPSIS
-device ct0 at uba0 csr 0167760 vector ctintr
+.B "device ct0 at uba0 csr 0167760 vector ctintr"
 .SH DESCRIPTION
-This provides the interfact to a Graphic Systems C/A/T phototypesetter.
+This provides an interface to a Graphic Systems C/A/T phototypesetter.
 Bytes written on the file specify font, size, and other control
 information as well as the characters to be flashed.  The
-coding will not be described here.
+coding is not described here.
 .PP
 Only one process may have this file open at a time.  It is write-only.
 .SH FILES
