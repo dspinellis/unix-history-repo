@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.29 (Berkeley) 85/06/03";
+static char sccsid[] = "@(#)rwhod.c	4.30 (Berkeley) 85/06/06";
 #endif
 
 #include <sys/types.h>
@@ -26,7 +26,6 @@ static char sccsid[] = "@(#)rwhod.c	4.29 (Berkeley) 85/06/03";
  * if this is changed.
  */
 #define AL_INTERVAL (3 * 60)
-#define	MAXTTYS	256			/* Max # of utmp entries examined */
 
 struct	sockaddr_in sin = { AF_INET };
 
@@ -229,7 +228,8 @@ verify(name)
 
 int	utmptime;
 int	utmpent;
-struct	utmp utmp[MAXTTYS];
+int	utmpsize = 0;
+struct	utmp *utmp;
 int	alarmcount;
 
 onalrm()
@@ -246,10 +246,22 @@ onalrm()
 		getkmem();
 	alarmcount++;
 	(void) fstat(utmpf, &stb);
-	if (stb.st_mtime != utmptime) {
+	if ((stb.st_mtime != utmptime) || (stb.st_size > utmpsize)) {
 		utmptime = stb.st_mtime;
+		if (stb.st_size > utmpsize) {
+			utmpsize = stb.st_size + 10 * sizeof(struct utmp);
+			if (utmp)
+				utmp = (struct utmp *)realloc(utmp, utmpsize);
+			else
+				utmp = (struct utmp *)malloc(utmpsize);
+			if (! utmp) {
+				fprintf(stderr, "rwhod: malloc failed\n");
+				utmpsize = 0;
+				goto done;
+			}
+		}
 		(void) lseek(utmpf, (long)0, L_SET);
-		cc = read(utmpf, (char *)utmp, sizeof (utmp));
+		cc = read(utmpf, (char *)utmp, stb.st_size);
 		if (cc < 0) {
 			perror("/etc/utmp");
 			goto done;
