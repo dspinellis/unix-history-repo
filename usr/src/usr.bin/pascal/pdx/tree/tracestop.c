@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tracestop.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tracestop.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -204,6 +204,9 @@ NODE *cond;
 {
 	SYM *s, *t;
 
+#ifdef lint
+	cmd = cmd;
+#endif
 	if (exp->op != O_RVAL && exp->op != O_CALL) {
 		error("can't trace expressions");
 	}
