@@ -10,14 +10,13 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.8 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.9 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.8 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.9 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
 # include <errno.h>
-# include <signal.h>
 
 # ifdef SMTP
 
@@ -469,8 +468,6 @@ smtp(e)
 			SmtpPhase = "collect";
 			HoldErrs = TRUE;
 			collect(TRUE, doublequeue, e);
-			if (Errors != 0)
-				goto abortmessage;
 
 			/*
 			**  Arrange to send to everyone.
