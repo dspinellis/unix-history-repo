@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.9 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -443,6 +443,21 @@ findpcb:
 				tp->snd_nxt = tp->snd_una;
 		}
 		tp->t_timer[TCPT_REXMT] = 0;
+		/*
+		 * If we didn't have to retransmit,
+		 * set the initial estimate of srtt.
+		 * Set the variance to half the rtt
+		 * (so our first retransmit happens at 2*rtt).
+		 */
+		if (tp->t_rtt) {
+			tp->t_srtt = tp->t_rtt << 3;
+			tp->t_rttvar = tp->t_rtt << 1;
+			tp->t_rtt = 0;
+			tp->t_rxtshift = 0;
+			TCPT_RANGESET(tp->t_rxtcur, 
+			    ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1,
+			    TCPTV_MIN, TCPTV_REXMTMAX);
+		}
 		tp->irs = ti->ti_seq;
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
@@ -503,10 +518,12 @@ trimthenstep6:
 #endif
 			tcpstat.tcps_rcvduppack++;
 			tcpstat.tcps_rcvdupbyte += ti->ti_len;
-			goto dropafterack;
+			todrop = ti->ti_len;
+			tp->t_flags |= TF_ACKNOW;
+		} else {
+			tcpstat.tcps_rcvpartduppack++;
+			tcpstat.tcps_rcvpartdupbyte += todrop;
 		}
-		tcpstat.tcps_rcvpartduppack++;
-		tcpstat.tcps_rcvpartdupbyte += todrop;
 		m_adj(m, todrop);
 		ti->ti_seq += todrop;
 		ti->ti_len -= todrop;
@@ -688,6 +705,9 @@ do_rst:
 		/*
 		 * If transmit timer is running and timed sequence
 		 * number was acked, update smoothed round trip time.
+		 * Since we now have an rtt measurement, cancel the
+		 * timer backoff (cf., Phil Karn's retransmit alg.).
+		 * Recompute the initial retransmit timer.
 		 */
 		if (tp->t_rtt && SEQ_GT(ti->ti_ack, tp->t_rtseq)) {
 			tcpstat.tcps_rttupdated++;
@@ -706,7 +726,8 @@ do_rst:
 				if ((tp->t_srtt += delta) <= 0)
 					tp->t_srtt = 1;
 				/*
-				 * We accumulate a smoothed rtt variance,
+				 * We accumulate a smoothed rtt variance
+				 * (actually, a smoothed mean difference),
 				 * then set the retransmit timer to smoothed
 				 * rtt + 2 times the smoothed variance.
 				 * rttvar is strored as fixed point
@@ -732,26 +753,26 @@ do_rst:
 				tp->t_rttvar = tp->t_rtt << 1;
 			}
 			tp->t_rtt = 0;
+			tp->t_rxtshift = 0;
+			TCPT_RANGESET(tp->t_rxtcur, 
+			    ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1,
+			    TCPTV_MIN, TCPTV_REXMTMAX);
 		}
 
 		/*
 		 * If all outstanding data is acked, stop retransmit
 		 * timer and remember to restart (more output or persist).
 		 * If there is more data to be acked, restart retransmit
-		 * timer; set to smoothed rtt + 2*rttvar.
+		 * timer, using current (possibly backed-off) value.
 		 */
 		if (ti->ti_ack == tp->snd_max) {
 			tp->t_timer[TCPT_REXMT] = 0;
 			needoutput = 1;
-		} else if (tp->t_timer[TCPT_PERSIST] == 0) {
-			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-			    ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1,
-			    TCPTV_MIN, TCPTV_REXMTMAX);
-			tp->t_rxtshift = 0;
-		}
+		} else if (tp->t_timer[TCPT_PERSIST] == 0)
+			tp->t_timer[TCPT_REXMT] = tp->t_rxtcur;
 		/*
 		 * When new data is acked, open the congestion window
-		 * by one max sized segment.
+		 * by one max-sized segment.
 		 */
 		tp->snd_cwnd = MIN(tp->snd_cwnd + tp->t_maxseg, 65535);
 		if (acked > so->so_snd.sb_cc) {
@@ -933,7 +954,7 @@ dodata:							/* XXX */
 		 * our window, in order to estimate the sender's
 		 * buffer size.
 		 */
-		len = so->so_rcv.sb_hiwat - (tp->rcv_nxt - tp->rcv_adv);
+		len = tp->rcv_nxt - tp->rcv_adv;
 		if (len > tp->max_rcvd)
 			tp->max_rcvd = len;
 	} else {
@@ -1135,6 +1156,9 @@ tcp_pulloutofband(so, ti)
  *  use a conservative size (512 or the default IP max size, but no more
  *  than the mtu of the interface through which we route),
  *  as we can't discover anything about intervening gateways or networks.
+ *  We also initialize the congestion/slow start window to be a single
+ *  segment if the destination isn't local; this information should
+ *  probably all be saved with the routing entry at the transport level.
  *
  *  This is ugly, and doesn't belong at this level, but has to happen somehow.
  */
@@ -1171,5 +1195,7 @@ tcp_mss(tp)
 #endif
 	if (in_localaddr(inp->inp_faddr))
 		return (mss);
-	return (MIN(mss, TCP_MSS));
+	mss = MIN(mss, TCP_MSS);
+	tp->snd_cwnd = mss;
+	return (mss);
 }
