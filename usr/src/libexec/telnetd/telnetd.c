@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnetd.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	4.4 (Berkeley) %G%";
 /*
  * Stripped-down telnet server.
  */
@@ -41,7 +41,7 @@ extern	int errno;
 char	line[] = "/dev/ptyp0";
 
 struct	sockaddr_in sin = { AF_INET, swab(IPPORT_TELNET) };
-int	options = SO_ACCEPTCONN;
+int	options = SO_ACCEPTCONN|SO_KEEPALIVE;
 
 /*
  * Debugging hooks.  Turned on with a SIGTERM.
