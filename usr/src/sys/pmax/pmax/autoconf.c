@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.10 (Berkeley) %G%
+ *	@(#)autoconf.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -293,7 +293,7 @@ makebootdev(cp)
 	if (*cp >= '0' && *cp <= '9') {
 		/* XXX should be able to specify controller */
 		if (cp[1] != '/' || cp[4] < '0' || cp[4] > '9')
-			 goto defdev;
+			goto defdev;
 		unit = cp[4] - '0';
 		if (cp[5] >= 'a' && cp[5] <= 'h')
 			part = cp[5] - 'a';
