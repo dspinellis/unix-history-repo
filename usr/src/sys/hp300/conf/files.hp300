@@ -15,6 +15,7 @@ hp300/hp300/sys_machdep.c	standard
 hp300/hp300/trap.c		standard
 hp300/hp300/vm_machdep.c	standard
 hp300/hp300/hpux_float.o	optional hpfplib
+hp300/hp300/procfs_machdep.c	optional procfs
 hp300/dev/cons_conf.c		standard
 hp300/dev/grf_conf.c		optional grf
 hp300/dev/grf_machdep.c		optional grf
