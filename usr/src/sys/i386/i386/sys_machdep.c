@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -8,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_machdep.c	5.5 (Berkeley) %G%
+ *	@(#)sys_machdep.c	5.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,12 +25,13 @@
 #ifdef TRACE
 int	nvualarm;
 
+struct vtrace_args {
+	int	request;
+	int	value;
+};
 vtrace(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	request;
-		int	value;
-	} *uap;
+	register struct args *uap;
 	int *retval;
 {
 	int vdoualarm();
