@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	8.1 (Berkeley) %G%
+ *	@(#)ffs_subr.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -49,7 +49,7 @@ ffs_blkatoff(ap)
 		return (error);
 	}
 	if (ap->a_res)
-		*ap->a_res = bp->b_un.b_addr + blkoff(fs, ap->a_offset);
+		*ap->a_res = (char *)bp->b_data + blkoff(fs, ap->a_offset);
 	*ap->a_bpp = bp;
 	return (0);
 }

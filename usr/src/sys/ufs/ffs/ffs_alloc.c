@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.1 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -70,7 +70,7 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	*bnp = 0;
 	fs = ip->i_fs;
 #ifdef DIAGNOSTIC
-	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
+	if ((u_int)size > fs->fs_bsize || fragoff(fs, size) != 0) {
 		printf("dev = 0x%x, bsize = %d, size = %d, fs = %s\n",
 		    ip->i_dev, fs->fs_bsize, size, fs->fs_fsmnt);
 		panic("ffs_alloc: bad size");
@@ -96,7 +96,7 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	    (u_long (*)())ffs_alloccg);
 	if (bno > 0) {
 		ip->i_blocks += btodb(size);
-		ip->i_flag |= IUPD|ICHG;
+		ip->i_flag |= IUPDATE | ICHANGE;
 		*bnp = bno;
 		return (0);
 	}
@@ -136,8 +136,8 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	*bpp = 0;
 	fs = ip->i_fs;
 #ifdef DIAGNOSTIC
-	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
-	    (unsigned)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0) {
+	if ((u_int)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
+	    (u_int)nsize > fs->fs_bsize || fragoff(fs, nsize) != 0) {
 		printf(
 		    "dev = 0x%x, bsize = %d, osize = %d, nsize = %d, fs = %s\n",
 		    ip->i_dev, fs->fs_bsize, osize, nsize, fs->fs_fsmnt);
@@ -174,10 +174,10 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 		if (bp->b_blkno != fsbtodb(fs, bno))
 			panic("bad blockno");
 		ip->i_blocks += btodb(nsize - osize);
-		ip->i_flag |= IUPD|ICHG;
+		ip->i_flag |= IUPDATE | ICHANGE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
-		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
+		bzero((char *)bp->b_data + osize, (u_int)nsize - osize);
 		*bpp = bp;
 		return (0);
 	}
@@ -248,10 +248,10 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 			ffs_blkfree(ip, bno + numfrags(fs, nsize),
 			    (long)(request - nsize));
 		ip->i_blocks += btodb(nsize - osize);
-		ip->i_flag |= IUPD|ICHG;
+		ip->i_flag |= IUPDATE | ICHANGE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
-		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
+		bzero((char *)bp->b_data + osize, (u_int)nsize - osize);
 		*bpp = bp;
 		return (0);
 	}
@@ -557,7 +557,7 @@ ffs_fragextend(ip, cg, bprev, osize, nsize)
 		return (NULL);
 	}
 #endif SECSIZE
-	cgp = bp->b_un.b_cg;
+	cgp = (struct cg *)bp->b_data;
 	if (!cg_chkmagic(cgp)) {
 		brelse(bp);
 		return (NULL);
@@ -625,7 +625,7 @@ ffs_alloccg(ip, cg, bpref, size)
 		return (NULL);
 	}
 #endif SECSIZE
-	cgp = bp->b_un.b_cg;
+	cgp = (struct cg *)bp->b_data;
 	if (!cg_chkmagic(cgp) ||
 	    (cgp->cg_cs.cs_nbfree == 0 && size == fs->fs_bsize)) {
 		brelse(bp);
@@ -834,7 +834,7 @@ ffs_ialloccg(ip, cg, ipref, mode)
 		return (NULL);
 	}
 #endif SECSIZE
-	cgp = bp->b_un.b_cg;
+	cgp = (struct cg *)bp->b_data;
 	if (!cg_chkmagic(cgp) || cgp->cg_cs.cs_nifree == 0) {
 		brelse(bp);
 		return (NULL);
@@ -905,13 +905,13 @@ ffs_blkfree(ip, bno, size)
 	register int i;
 
 	fs = ip->i_fs;
-	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
+	if ((u_int)size > fs->fs_bsize || fragoff(fs, size) != 0) {
 		printf("dev = 0x%x, bsize = %d, size = %d, fs = %s\n",
 		    ip->i_dev, fs->fs_bsize, size, fs->fs_fsmnt);
 		panic("blkfree: bad size");
 	}
 	cg = dtog(fs, bno);
-	if ((unsigned)bno >= fs->fs_size) {
+	if ((u_int)bno >= fs->fs_size) {
 		printf("bad block %d, ino %d\n", bno, ip->i_number);
 		ffs_fserr(fs, ip->i_uid, "bad block");
 		return;
@@ -927,7 +927,7 @@ ffs_blkfree(ip, bno, size)
 		return;
 	}
 #endif SECSIZE
-	cgp = bp->b_un.b_cg;
+	cgp = (struct cg *)bp->b_data;
 	if (!cg_chkmagic(cgp)) {
 		brelse(bp);
 		return;
@@ -1031,7 +1031,7 @@ ffs_vfree(ap)
 		return (0);
 	}
 #endif SECSIZE
-	cgp = bp->b_un.b_cg;
+	cgp = (struct cg *)bp->b_data;
 	if (!cg_chkmagic(cgp)) {
 		brelse(bp);
 		return (0);
@@ -1086,13 +1086,13 @@ ffs_mapsearch(fs, cgp, bpref, allocsiz)
 	else
 		start = cgp->cg_frotor / NBBY;
 	len = howmany(fs->fs_fpg, NBBY) - start;
-	loc = scanc((unsigned)len, (u_char *)&cg_blksfree(cgp)[start],
+	loc = scanc((u_int)len, (u_char *)&cg_blksfree(cgp)[start],
 		(u_char *)fragtbl[fs->fs_frag],
 		(u_char)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
 	if (loc == 0) {
 		len = start + 1;
 		start = 0;
-		loc = scanc((unsigned)len, (u_char *)&cg_blksfree(cgp)[0],
+		loc = scanc((u_int)len, (u_char *)&cg_blksfree(cgp)[0],
 			(u_char *)fragtbl[fs->fs_frag],
 			(u_char)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
 		if (loc == 0) {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	8.1 (Berkeley) %G%
+ *	@(#)dinode.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -20,28 +20,28 @@
  * This structure defines the on-disk format of a dinode.
  */
 
-#define	NDADDR	12		/* direct addresses in inode */
-#define	NIADDR	3		/* indirect addresses in inode */
+#define	NDADDR	12			/* Direct addresses in inode. */
+#define	NIADDR	3			/* Indirect addresses in inode. */
 
 struct dinode {
-	u_short		di_mode;	/*   0: mode and type of file */
-	short		di_nlink;	/*   2: number of links to file */
+	u_short		di_mode;	/*   0: IFMT and permissions. */
+	short		di_nlink;	/*   2: File link count. */
 	union {
-		u_short	oldids[2];	/*   4: ffs: old user and group ids */
-		ino_t	inumber;	/*   4: lfs: inode number */
+		u_short	oldids[2];	/*   4: Ffs: old user and group ids. */
+		ino_t	inumber;	/*   4: Lfs: inode number. */
 	} di_u;
-	u_quad_t	di_size;	/*   8: number of bytes in file */
-	struct timespec	di_atime;	/*  16: time last accessed */
-	struct timespec	di_mtime;	/*  24: time last modified */
-	struct timespec	di_ctime;	/*  32: last time inode changed */
-	daddr_t		di_db[NDADDR];	/*  40: disk block addresses */
-	daddr_t		di_ib[NIADDR];	/*  88: indirect blocks */
-	u_long		di_flags;	/* 100: status flags */
-	long		di_blocks;	/* 104: blocks actually held */
-	long		di_gen;		/* 108: generation number */
-	u_long		di_uid;		/* 112: owner's user id */
-	u_long		di_gid;		/* 116: owner's group id */
-	long		di_spare[2];	/* 120: reserved, currently unused */
+	u_quad_t	di_size;	/*   8: File byte count. */
+	struct timespec	di_atime;	/*  16: Last access time. */
+	struct timespec	di_mtime;	/*  24: Last modified time. */
+	struct timespec	di_ctime;	/*  32: Last inode change time. */
+	daddr_t		di_db[NDADDR];	/*  40: Direct disk blocks. */
+	daddr_t		di_ib[NIADDR];	/*  88: Indirect disk blocks. */
+	u_long		di_flags;	/* 100: Status flags (chflags). */
+	long		di_blocks;	/* 104: Blocks actually held. */
+	long		di_gen;		/* 108: Generation number. */
+	u_long		di_uid;		/* 112: File owner. */
+	u_long		di_gid;		/* 116: File group. */
+	long		di_spare[2];	/* 120: Reserved; currently unused */
 };
 
 /*
@@ -51,26 +51,27 @@ struct dinode {
  * dev_t value. Short symbolic links place their path in the
  * di_db area.
  */
-#define	di_ouid		di_u.oldids[0]
-#define	di_ogid		di_u.oldids[1]
 #define	di_inumber	di_u.inumber
+#define	di_ogid		di_u.oldids[1]
+#define	di_ouid		di_u.oldids[0]
 #define	di_rdev		di_db[0]
-#define di_shortlink	di_db
+#define	di_shortlink	di_db
 #define	MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(daddr_t))
 
-/* file modes */
-#define	IFMT		0170000		/* mask of file type */
-#define	IFIFO		0010000		/* named pipe (fifo) */
-#define	IFCHR		0020000		/* character special device */
-#define	IFDIR		0040000		/* directory */
-#define	IFBLK		0060000		/* block special device */
-#define	IFREG		0100000		/* regular file */
-#define	IFLNK		0120000		/* symbolic link */
-#define	IFSOCK		0140000		/* UNIX domain socket */
+/* File modes. */
+#define	IEXEC		0000100		/* Executable. */
+#define	IWRITE		0000200		/* Writeable. */
+#define	IREAD		0000400		/* Readable. */
+#define	ISVTX		0001000		/* Sticky bit. */
+#define	ISGID		0002000		/* Set-gid. */
+#define	ISUID		0004000		/* Set-uid. */
 
-#define	ISUID		04000		/* set user identifier when exec'ing */
-#define	ISGID		02000		/* set group identifier when exec'ing */
-#define	ISVTX		01000		/* save execution information on exit */
-#define	IREAD		0400		/* read permission */
-#define	IWRITE		0200		/* write permission */
-#define	IEXEC		0100		/* execute permission */
+/* File types. */
+#define	IFMT		0170000		/* Mask of file type. */
+#define	IFIFO		0010000		/* Named pipe (fifo). */
+#define	IFCHR		0020000		/* Character device. */
+#define	IFDIR		0040000		/* Directory file. */
+#define	IFBLK		0060000		/* Block device. */
+#define	IFREG		0100000		/* Regular file. */
+#define	IFLNK		0120000		/* Symbolic link. */
+#define	IFSOCK		0140000		/* UNIX domain socket. */

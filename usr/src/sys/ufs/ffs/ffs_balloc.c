@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	8.2 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -67,7 +67,7 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			ip->i_size = (nb + 1) * fs->fs_bsize;
 			vnode_pager_setsize(vp, (u_long)ip->i_size);
 			ip->i_db[nb] = dbtofsb(fs, bp->b_blkno);
-			ip->i_flag |= IUPD|ICHG;
+			ip->i_flag |= IUPDATE | ICHANGE;
 			if (flags & B_SYNC)
 				bwrite(bp);
 			else
@@ -123,7 +123,7 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 				clrbuf(bp);
 		}
 		ip->i_db[bn] = dbtofsb(fs, bp->b_blkno);
-		ip->i_flag |= IUPD|ICHG;
+		ip->i_flag |= IUPDATE | ICHANGE;
 		*bpp = bp;
 		return (0);
 	}
@@ -160,7 +160,7 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			return (error);
 		}
 		ip->i_ib[indirs[0].in_off] = newb;
-		ip->i_flag |= IUPD|ICHG;
+		ip->i_flag |= IUPDATE | ICHANGE;
 	}
 	/*
 	 * Fetch through the indirect blocks, allocating as necessary.
@@ -172,7 +172,7 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			brelse(bp);
 			return (error);
 		}
-		bap = bp->b_un.b_daddr;
+		bap = (daddr_t *)bp->b_data;
 		nb = bap[indirs[i].in_off];
 		if (i == num)
 			break;

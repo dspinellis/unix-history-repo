@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.2 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,13 +39,13 @@ ffs_init()
 }
 
 /*
- * Update the access, modified, and inode change times as specified
- * by the IACC, IUPD, and ICHG flags respectively. The IMOD flag
- * is used to specify that the inode needs to be updated but that
- * the times have already been set. The access and modified times
- * are taken from the second and third parameters; the inode change
- * time is always taken from the current time. If waitfor is set,
- * then wait for the disk write of the inode to complete.
+ * Update the access, modified, and inode change times as specified by the
+ * IACCESS, IUPDATE, and ICHANGE flags respectively. The IMODIFIED flag is
+ * used to specify that the inode needs to be updated but that the times have
+ * already been set. The access and modified times are taken from the second
+ * and third parameters; the inode change time is always taken from the current
+ * time. If waitfor is set, then wait for the disk write of the inode to
+ * complete.
  */
 int
 ffs_update(ap)
@@ -64,20 +64,20 @@ ffs_update(ap)
 
 	ip = VTOI(ap->a_vp);
 	if (ap->a_vp->v_mount->mnt_flag & MNT_RDONLY) {
-		ip->i_flag &= ~(IUPD | IACC | ICHG | IMOD);
+		ip->i_flag &= ~(IUPDATE | IACCESS | ICHANGE | IMODIFIED);
 		return (0);
 	}
-	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
+	if ((ip->i_flag & (IUPDATE | IACCESS | ICHANGE | IMODIFIED)) == 0)
 		return (0);
-	if (ip->i_flag & IACC)
+	if (ip->i_flag & IACCESS)
 		ip->i_atime.ts_sec = ap->a_access->tv_sec;
-	if (ip->i_flag & IUPD) {
+	if (ip->i_flag & IUPDATE) {
 		ip->i_mtime.ts_sec = ap->a_modify->tv_sec;
 		ip->i_modrev++;
 	}
-	if (ip->i_flag&ICHG)
+	if (ip->i_flag & ICHANGE)
 		ip->i_ctime.ts_sec = time.tv_sec;
-	ip->i_flag &= ~(IUPD | IACC | ICHG | IMOD);
+	ip->i_flag &= ~(IUPDATE | IACCESS | ICHANGE | IMODIFIED);
 	fs = ip->i_fs;
 	/*
 	 * Ensure that uid and gid are correct. This is a temporary
@@ -92,7 +92,7 @@ ffs_update(ap)
 		brelse(bp);
 		return (error);
 	}
-	dp = bp->b_un.b_dino + itoo(fs, ip->i_number);
+	dp = (struct dinode *)bp->b_data + itoo(fs, ip->i_number);
 	*dp = ip->i_din;
 	if (ap->a_waitfor)
 		return (bwrite(bp));
@@ -143,11 +143,11 @@ ffs_truncate(ap)
 #endif
 		bzero((char *)&oip->i_shortlink, (u_int)oip->i_size);
 		oip->i_size = 0;
-		oip->i_flag |= ICHG|IUPD;
+		oip->i_flag |= IUPDATE | ICHANGE;
 		return (VOP_UPDATE(ovp, &tv, &tv, 1));
 	}
 	if (oip->i_size == length) {
-		oip->i_flag |= ICHG|IUPD;
+		oip->i_flag |= IUPDATE | ICHANGE;
 		return (VOP_UPDATE(ovp, &tv, &tv, 0));
 	}
 #ifdef QUOTA
@@ -177,7 +177,7 @@ ffs_truncate(ap)
 			bwrite(bp);
 		else
 			bawrite(bp);
-		oip->i_flag |= ICHG|IUPD;
+		oip->i_flag |= IUPDATE | ICHANGE;
 		return (VOP_UPDATE(ovp, &tv, &tv, 1));
 	}
 	/*
@@ -201,7 +201,7 @@ ffs_truncate(ap)
 		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
 		(void) vnode_pager_uncache(ovp);
-		bzero(bp->b_un.b_addr + offset, (u_int)(size - offset));
+		bzero((char *)bp->b_data + offset, (u_int)(size - offset));
 		allocbuf(bp, size);
 		if (aflags & IO_SYNC)
 			bwrite(bp);
@@ -233,7 +233,7 @@ ffs_truncate(ap)
 		}
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
-	oip->i_flag |= ICHG|IUPD;
+	oip->i_flag |= IUPDATE | ICHANGE;
 	if (error = VOP_UPDATE(ovp, &tv, &tv, MNT_WAIT))
 		allerror = error;
 	/*
@@ -336,7 +336,7 @@ done:
 	oip->i_blocks -= blocksreleased;
 	if (oip->i_blocks < 0)			/* sanity */
 		oip->i_blocks = 0;
-	oip->i_flag |= ICHG;
+	oip->i_flag |= ICHANGE;
 #ifdef QUOTA
 	(void) chkdq(oip, -blocksreleased, NOCRED, 0);
 #endif
@@ -415,7 +415,7 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 		return (error);
 	}
 
-	bap = bp->b_un.b_daddr;
+	bap = (daddr_t *)bp->b_data;
 	MALLOC(copy, daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
 	bcopy((caddr_t)bap, (caddr_t)copy, (u_int)fs->fs_bsize);
 	bzero((caddr_t)&bap[last + 1],
