@@ -1,0 +1,3 @@
+usemymalloc=n
+mallocsrc=''
+mallocobj=''
