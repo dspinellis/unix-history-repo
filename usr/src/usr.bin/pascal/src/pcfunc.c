@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.9.1.1 %G%";
+static	char sccsid[] = "@(#)pcfunc.c 1.9.1.2 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -9,9 +9,10 @@ static	char sccsid[] = "@(#)pcfunc.c 1.9.1.1 %G%";
      */
 #include "0.h"
 #include "tree.h"
+#include "objfmt.h"
 #include "opcode.h"
-#include	"pc.h"
-#include	"pcops.h"
+#include "pc.h"
+#include "pcops.h"
 
 /*
  * Funccod generates code for
