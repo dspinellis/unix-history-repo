@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.69 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.70 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.69 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.70 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -572,6 +572,7 @@ getauthinfo(fd)
 	int s;
 	int i;
 	EVENT *ev;
+	int nleft;
 	static char hbuf[MAXNAME * 2 + 2];
 	extern char *hostnamebyanyaddr();
 	extern char RealUserName[];			/* main.c */
@@ -650,14 +651,21 @@ getauthinfo(fd)
 		goto closeident;
 
 	/* get result */
-	i = read(s, hbuf, sizeof hbuf);
+	p = &hbuf[0];
+	nleft = sizeof(hbuf);
+	while ((i = read(s, p, nleft)) > 0)
+	{
+		p += i;
+		nleft -= i;
+	}
 	(void) close(s);
 	clrevent(ev);
-	if (i <= 0)
+	if (i < 0 || p == &hbuf[0])
 		goto noident;
-	if (hbuf[--i] == '\n' && hbuf[--i] == '\r')
-		i--;
-	hbuf[++i] = '\0';
+
+	if (*--p == '\n' && *--p == '\r')
+		p--;
+	*++p = '\0';
 
 	if (tTd(9, 3))
 		printf("getauthinfo:  got %s\n", hbuf);
