@@ -1,4 +1,4 @@
-static char sccsid[] = "ifontinfo.c	1.4	(Berkeley)	85/02/04";
+static char sccsid[] = "ifontinfo.c	1.5	(Berkeley)	85/02/26";
 
 /* Font Information for Imagen-style fonts (RST format)
  *      taken from vfontinfo, by Andy Hertzfeld  4/79
@@ -8,7 +8,9 @@ static char sccsid[] = "ifontinfo.c	1.4	(Berkeley)	85/02/04";
 #include <ctype.h>
 #include "rst.h"
 
-#define  FONTDIR	"/usr/src/local/imagen/fonts/raster"
+#ifndef BITDIR
+#define  BITDIR	"/usr/src/local/imagen/fonts/raster"
+#endif
 
 char *	rdchar();
 char *	malloc();
@@ -19,7 +21,7 @@ double	fixtowdth;		/* "fix" and magnification conversion factor */
 glyph_dir g[DIRSIZ];		/* directory of glyph definitions */
 preamble p;			/* set of variables for preamble */
 
-char	*fontdir = FONTDIR;	/* place to look for fonts */
+char	*fontdir = BITDIR;	/* place to look for fonts */
 char	IName[100];		/* input file name put here */
 char	*rdchar ();		/* function makes strings for ascii */
 FILE *	FID;			/* input file number */
