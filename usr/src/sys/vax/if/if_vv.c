@@ -1,4 +1,4 @@
-/*	if_vv.c	6.7	85/05/22	*/
+/*	if_vv.c	6.8	85/06/03	*/
 
 #include "vv.h"
 
@@ -44,6 +44,7 @@
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 
@@ -87,14 +88,9 @@
  *   debugging and tracing stuff
  */
 int	vv_tracehdr = 0;	/* 1 => trace headers (slowly!!) */
-#ifndef proteon
-int	vv_logreaderrors = 1;	/* 1 => log all read errors */
-#else proteon
-int	vv_logerrors = 0;	/* 1 => log all i/o errors */
-#endif proteon
 
 #define vvtracehdr  if (vv_tracehdr) vvprt_hdr
-#define vvprintf    if (vv_logerrors && vs->vs_if.if_flags & IFF_DEBUG) printf
+#define vvprintf    if (vs->vs_if.if_flags & IFF_DEBUG) printf
 
 /*
  * externals, types, etc.
@@ -128,6 +124,7 @@ extern struct ifnet loif;
 struct	vv_softc {
 	struct	ifnet vs_if;		/* network-visible interface */
 	struct	ifuba vs_ifuba;		/* UNIBUS resources */
+	int	vs_host;
 	short	vs_oactive;		/* is output active */
 	short	vs_olen;		/* length of last output */
 	u_short	vs_lastx;		/* address of last packet sent */
@@ -188,6 +185,7 @@ vvattach(ui)
 	vs->vs_if.if_unit = ui->ui_unit;
 	vs->vs_if.if_name = "vv";
 	vs->vs_if.if_mtu = VVMTU;
+	vs->vs_if.if_flags = IFF_BROADCAST;
 	vs->vs_if.if_init = vvinit;
 	vs->vs_if.if_ioctl = vvioctl;
 	vs->vs_if.if_output = vvoutput;
@@ -229,18 +227,12 @@ vvinit(unit)
 	register struct vv_softc *vs;
 	register struct uba_device *ui;
 	register struct vvreg *addr;
-	register struct sockaddr_in *sin;
 	register int ubainfo, s;
 
 	vs = &vv_softc[unit];
 	ui = vvinfo[unit];
-	sin = (struct sockaddr_in *)&vs->vs_if.if_addr;
 
-	/*
-	 * If the network number is still zero, we've been
-	 * called too soon.
-	 */
-	if (in_netof(sin->sin_addr) == 0)
+	if (vs->vs_if.if_addrlist == (struct ifaddr *)0)
 		return;
 
 	addr = (struct vvreg *)ui->ui_addr;
@@ -255,12 +247,11 @@ vvinit(unit)
 	 * Now that the uba is set up, figure out our address and
 	 * update complete our host address.
 	 */
-	if ((vs->vs_if.if_host[0] = vvidentify(unit)) == -1) {
+	if ((vs->vs_host = vvidentify(unit)) == -1) {
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
-	printf("vv%d: host %d\n", unit, vs->vs_if.if_host[0]);
-	sin->sin_addr = if_makeaddr(vs->vs_if.if_net, vs->vs_if.if_host[0]);
+	printf("vv%d: host %d\n", unit, vs->vs_host);
 
 	/*
 	 * Reset the interface, and stay in the ring
@@ -291,10 +282,9 @@ vvinit(unit)
 	addr->vviwc = -(VVBUFSIZE) >> 1;
 	addr->vvicsr = VV_IEN | VV_HEN | VV_DEN | VV_ENB;
 	vs->vs_oactive = 1;
-	vs->vs_if.if_flags |= IFF_UP | IFF_RUNNING;
+	vs->vs_if.if_flags |= IFF_RUNNING;
 	vvxint(unit);
 	splx(s);
-	if_rtinit(&vs->vs_if, RTF_UP);
 }
 
 /*
@@ -412,7 +402,7 @@ vvidentify(unit)
 
 gotit:			/* we got something--is it any good? */
 			if ((addr->vvicsr & (VVRERR|VV_LDE)) ||
-			    (ADDR->vvocsr & (VVXERR|VV_RFS))) {
+			    (addr->vvocsr & (VVXERR|VV_RFS))) {
 				failures++;
 				continue;
 			}
@@ -581,7 +571,6 @@ vvxint(unit)
 
 	if (oc & VVXERR) {
 		vs->vs_if.if_oerrors++;
-		printf("vv%d: error vvocsr = %b\n", unit, 0xffff & oc,
 		vvprintf("vv%d: error vvocsr = %b\n", unit, 0xffff & oc,
 		    VV_OBITS);
 	}
@@ -837,13 +826,15 @@ vvoutput(ifp, m0, dst)
 
 #ifdef INET
 	case AF_INET:
-		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
+		if (in_broadcast(((struct sockaddr_in *)dst)->sin_addr))
+			dest = VV_BROADCAST;
+		else
+			dest = in_lnaof(((struct sockaddr_in *)dst)->sin_addr);
 #ifdef LOOPBACK
-		if ((dest == ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr) &&
-		   ((loif.if_flags & IFF_UP) != 0))
-			return(looutput(&loif, m0, dst));
+		if (dest == vs->vs_host && (loif.if_flags & IFF_UP))
+			return (looutput(&loif, m0, dst));
 #endif LOOPBACK
-		if ((dest = in_lnaof(*((struct in_addr *)&dest))) >= 0x100) {
+		if (dest >= 0x100) {
 			error = EPERM;
 			goto bad;
 		}
@@ -903,10 +894,8 @@ gottype:
 		m->m_len += sizeof (struct vv_header);
 	}
 	vv = mtod(m, struct vv_header *);
-	vv->vh_shost = ifp->if_host[0];
-	/* Map the destination address if it's a broadcast */
-	if ((vv->vh_dhost = dest) == INADDR_ANY)
-		vv->vh_dhost = VV_BROADCAST;
+	vv->vh_shost = vs->vs_host;
+	vv->vh_dhost = dest;
 	vv->vh_version = RING_VERSION;
 	vv->vh_type = type;
 	vv->vh_info = off;
@@ -943,63 +932,31 @@ vvioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	register struct ifreq *ifr;
-	register int s;
-	int error;
+	struct ifaddr *ifa = (struct ifaddr *) data;
+	int s = splimp(), error = 0;
 
-	ifr = (struct ifreq *)data;
-	error = 0;
-	s = splimp();
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		vvsetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, RTF_UP);
-		else
+		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			vvinit(ifp->if_unit);
+                /*
+                 * Attempt to check agreement of protocol address
+                 * and board address.
+                 */
+		switch (ifa->ifa_addr.sa_family) {
+                case AF_INET:
+			if (in_lnaof(IA_SIN(ifa)->sin_addr) !=
+			    vv_softc[ifp->if_unit].vs_host)
+				return (EADDRNOTAVAIL);
+			break;
+		}
+		ifp->if_flags |= IFF_UP;
 		break;
 
 	default:
 		error = EINVAL;
 	}
 	splx(s);
-	return(error);
-}
-
-/*
- * Set up the address for this interface. We use the network number
- * from the passed address and an invalid host number; vvinit() will
- * figure out the host number and insert it later.
- */
-vvsetaddr(ifp, sin)
-	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
-{
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = 256;			/* an invalid host number */
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
-}
-
-/*
- * vvprt_hdr(s, v) print the local net header in "v"
- *	with title is "s"
- */
-vvprt_hdr(s, v)
-	char *s;
-	register struct vv_header *v;
-{
-	printf("%s: dsvti: 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-		s,
-		0xff & (int)(v->vh_dhost), 0xff & (int)(v->vh_shost),
-		0xff & (int)(v->vh_version), 0xff & (int)(v->vh_type),
-		0xffff & (int)(v->vh_info));
+	return (error);
 }
