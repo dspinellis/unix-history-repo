@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.h	7.7 (Berkeley) %G%
+ *	@(#)vm_page.h	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -77,44 +77,40 @@ struct vm_page {
 	vm_object_t	object;		/* which object am I in (O,P)*/
 	vm_offset_t	offset;		/* offset into that object (O,P) */
 
-	unsigned int	wire_count:16,	/* how many wired down maps use me?
-					   (P) */
-	/* boolean_t */	inactive:1,	/* page is in inactive list (P) */
-			active:1,	/* page is in active list (P) */
-			laundry:1,	/* page is being cleaned now (P)*/
-#ifdef DEBUG
-			pagerowned:1,	/* async paging op in progress */
-			ptpage:1,	/* is a user page table page */
-#endif
-			:0;		/* (force to 'long' boundary) */
-#ifdef	ns32000
-	int		pad;		/* extra space for ns32000 bit ops */
-#endif	ns32000
-	boolean_t	clean;		/* page has not been modified */
-	unsigned int
-	/* boolean_t */	busy:1,		/* page is in transit (O) */
-			wanted:1,	/* someone is waiting for page (O) */
-			tabled:1,	/* page is in VP table (O) */
-			copy_on_write:1,/* page must be copied before being
-					   changed (O) */
-			fictitious:1,	/* physical page doesn't exist (O) */
-			absent:1,	/* virtual page doesn't exist (O) */
-			fake:1,		/* page is a placeholder for page-in
-					   (O) */
-			:0;
+	u_short		wire_count;	/* number wired down maps use me? (P) */
+	u_short		flags;		/* see below */
 
 	vm_offset_t	phys_addr;	/* physical address of page */
 	vm_prot_t	page_lock;	/* Uses prohibited by data manager */
 	vm_prot_t	unlock_request;	/* Outstanding unlock request */
 };
 
+/*
+ * These are the flags defined for vm_page.
+ */
+#define	PG_INACTIVE	0x0001		/* page is in inactive list (P) */
+#define	PG_ACTIVE	0x0002		/* page is in active list (P) */
+#define	PG_LAUNDRY	0x0004		/* page is being cleaned now (P)*/
+#define	PG_CLEAN	0x0008		/* page has not been modified */
+#define	PG_BUSY		0x0010		/* page is in transit (O) */
+#define	PG_WANTED	0x0020		/* someone is waiting for page (O) */
+#define	PG_TABLED	0x0040		/* page is in VP table (O) */
+#define	PG_COPYONWRITE	0x0080		/* must copy page before changing (O) */
+#define	PG_FICTITIOUS	0x0100		/* physical page doesn't exist (O) */
+#define	PG_ABSENT	0x0200		/* virtual page doesn't exist (O) */
+#define	PG_FAKE		0x0400		/* page is placeholder for pagein (O) */
+#define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
+#define	PG_PTPAGE	0x8000		/* DEBUG: is a user page table page */
+
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { \
-		if ( (((unsigned int) mem) < ((unsigned int) &vm_page_array[0])) || \
-		     (((unsigned int) mem) > ((unsigned int) &vm_page_array[last_page-first_page])) || \
-		     (mem->active && mem->inactive) \
-		    ) panic("vm_page_check: not valid!"); \
-		}
+	if ((((unsigned int) mem) < ((unsigned int) &vm_page_array[0])) || \
+	    (((unsigned int) mem) > \
+		((unsigned int) &vm_page_array[last_page-first_page])) || \
+	    ((mem->flags & (PG_ACTIVE | PG_INACTIVE)) == \
+		(PG_ACTIVE | PG_INACTIVE))) \
+		panic("vm_page_check: not valid!"); \
+}
 #else	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem)
 #endif	VM_PAGE_DEBUG
@@ -176,14 +172,14 @@ simple_lock_data_t	vm_page_queue_free_lock;
  */
 
 #define PAGE_ASSERT_WAIT(m, interruptible)	{ \
-				(m)->wanted = TRUE; \
+				(m)->flags |= PG_WANTED; \
 				assert_wait((int) (m), (interruptible)); \
 			}
 
 #define PAGE_WAKEUP(m)	{ \
-				(m)->busy = FALSE; \
-				if ((m)->wanted) { \
-					(m)->wanted = FALSE; \
+				(m)->flags &= ~PG_BUSY; \
+				if ((m)->flags & PG_WANTED) { \
+					(m)->flags &= ~PG_WANTED; \
 					thread_wakeup((int) (m)); \
 				} \
 			}
@@ -191,29 +187,20 @@ simple_lock_data_t	vm_page_queue_free_lock;
 #define	vm_page_lock_queues()	simple_lock(&vm_page_queue_lock)
 #define	vm_page_unlock_queues()	simple_unlock(&vm_page_queue_lock)
 
-#define vm_page_set_modified(m)	{ (m)->clean = FALSE; }
+#define vm_page_set_modified(m)	{ (m)->flags &= ~PG_CLEAN; }
 
 #ifdef DEBUG
-#define	VM_PAGE_DEBUG_INIT(m) ((m)->pagerowned = 0, (m)->ptpage = 0)
+#define	VM_PAGE_DEBUG_INIT(m)
 #else
 #define	VM_PAGE_DEBUG_INIT(m)
 #endif
 
 #define	VM_PAGE_INIT(mem, object, offset) { \
-	(mem)->busy = TRUE; \
-	(mem)->tabled = FALSE; \
+	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; \
 	vm_page_insert((mem), (object), (offset)); \
-	(mem)->absent = FALSE; \
-	(mem)->fictitious = FALSE; \
 	(mem)->page_lock = VM_PROT_NONE; \
 	(mem)->unlock_request = VM_PROT_NONE; \
-	(mem)->laundry = FALSE; \
-	(mem)->active = FALSE; \
-	(mem)->inactive = FALSE; \
 	(mem)->wire_count = 0; \
-	(mem)->clean = TRUE; \
-	(mem)->copy_on_write = FALSE; \
-	(mem)->fake = TRUE; \
 	VM_PAGE_DEBUG_INIT(mem); \
 }
 
