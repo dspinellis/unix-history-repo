@@ -6,7 +6,6 @@ divert(-1)
 #
 # %sccs.include.redist.sh%
 #
-VERSIONID(`@(#)riscos4.5.m4	2.3 (Berkeley) %G%')
-#
 
 divert(0)
+VERSIONID(`@(#)riscos4.5.m4	2.4 (Berkeley) %G%')
