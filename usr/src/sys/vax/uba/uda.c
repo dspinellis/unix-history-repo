@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uda.c	7.20 (Berkeley) %G%
+ *	@(#)uda.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -106,6 +106,7 @@ struct	uda_softc {
 	short	sc_flags;	/* flags; see below */
 	int	sc_micro;	/* microcode revision */
 	int	sc_ivec;	/* interrupt vector address */
+	short	sc_ipl;		/* interrupt priority, Q-bus */
 	struct	mscp_info sc_mi;/* MSCP info (per mscpvar.h) */
 #ifndef POLLSTATS
 	int	sc_wticks;	/* watchdog timer ticks */
@@ -255,7 +256,7 @@ udaprobe(reg, ctlr, um)
 	register struct uda_softc *sc;
 	register struct udadevice *udaddr;
 	register struct mscp_info *mi;
-	int timeout, tries;
+	int timeout, tries, s;
 
 #ifdef VAX750
 	/*
@@ -316,6 +317,9 @@ udaprobe(reg, ctlr, um)
 	 * initialise within ten seconds.  Or so I hear; I have not seen
 	 * this manual myself.
 	 */
+#ifdef QBA
+	s = spl6();
+#endif
 	tries = 0;
 again:
 	udaddr->udaip = 0;		/* start initialisation */
@@ -331,13 +335,13 @@ again:
 
 	/* should have interrupted by now */
 #ifdef QBA
-	if (cpu == VAX_630 || cpu == VAX_650)
-		br = 0x15;	/* screwy interrupt structure */
+	sc->sc_ipl = br = qbgetpri();
 #endif
 	return (sizeof (struct udadevice));
 bad:
 	if (++tries < 2)
 		goto again;
+	splx(s);
 	return (0);
 }
 
@@ -546,7 +550,7 @@ udaattach(ui)
 
 	if (uda_rainit(ui, 0))
 		printf(": offline");
-	else {
+	else if (ra_info[unit].ra_state == OPEN) {
 		printf(": %s, size = %d sectors",
 		    udalabel[unit].d_typename, ra_info[unit].ra_dsize);
 #ifdef notyet
@@ -579,7 +583,7 @@ udainit(ctlr)
 			printf("uda%d: uballoc map failed\n", ctlr);
 			return (-1);
 		}
-		sc->sc_uda = (struct uda *) (ubinfo & 0x3ffff);
+		sc->sc_uda = (struct uda *) UBAI_ADDR(ubinfo);
 		sc->sc_flags |= SC_MAPPED;
 	}
 
@@ -827,6 +831,8 @@ uda_rainit(ui, flags)
 	 */
 	lp->d_secpercyl = 1;
 	lp->d_npartitions = 1;
+	lp->d_secsize = 512;
+	lp->d_secperunit = ra->ra_dsize;
 	lp->d_partitions[0].p_size = lp->d_secperunit;
 	lp->d_partitions[0].p_offset = 0;
 
@@ -837,7 +843,7 @@ uda_rainit(ui, flags)
 		if (cold)
 			printf(": %s", msg);
 		else
-			log(LOG_ERR, "ra%d: %s\n", unit, msg);
+			log(LOG_ERR, "ra%d: %s", unit, msg);
 #ifdef COMPAT_42
 		if (udamaptype(unit, lp))
 			ra->ra_state = OPEN;
@@ -845,7 +851,7 @@ uda_rainit(ui, flags)
 			ra->ra_state = OPENRAW;
 #else
 		ra->ra_state = OPENRAW;
-		/* uda_makefakelabel(ra, lp); */
+		uda_makefakelabel(ra, lp);
 #endif
 	} else
 		ra->ra_state = OPEN;
@@ -1159,7 +1165,7 @@ udadgo(um)
 	 * I/O wait queue.  Mark the controller as no longer on
 	 * the resource queue, and remember to initiate polling.
 	 */
-	mp->mscp_seq.seq_buffer = (um->um_ubinfo & 0x3ffff) |
+	mp->mscp_seq.seq_buffer = UBAI_ADDR(um->um_ubinfo) |
 		(UBAI_BDP(um->um_ubinfo) << 24);
 	mscp_go(&sc->sc_mi, mp, um->um_ubinfo);
 	um->um_cmd = 0;	
@@ -1273,7 +1279,7 @@ udaintr(ctlr)
 	register int i;
 
 #ifdef QBA
-	(void) spl5();		/* Qbus interrupt protocol is odd */
+	splx(sc->sc_ipl);	/* Qbus interrupt protocol is odd */
 #endif
 	sc->sc_wticks = 0;	/* reset interrupt watchdog */
 
@@ -1541,8 +1547,9 @@ udaonline(ui, mp)
 
 	wakeup((caddr_t)&ui->ui_flags);
 	if ((mp->mscp_status & M_ST_MASK) != M_ST_SUCCESS) {
-		printf("uda%d: attempt to bring ra%d on line failed: ",
-			ui->ui_ctlr, ui->ui_unit);
+		if (!cold)
+			printf("uda%d: ra%d", ui->ui_ctlr, ui->ui_unit);
+		printf(": attempt to bring on line failed: ");
 		mscp_printevent(mp);
 		ra->ra_state = CLOSED;
 		return (MSCP_FAILED);
@@ -2080,28 +2087,6 @@ struct size {
 	192696,	49910,		/* G=sectors 49910 thru 242605 */
 	111202,	131404,		/* 4.2 H => H=sectors 131404 thru 242605 */
 }, ra81_sizes[8] ={
-#ifdef MARYLAND
-#ifdef ENEEVAX
-	30706,	0,		/* A=cyl    0 thru   42 + 2 sectors */
-	40696,	30706,		/* B=cyl   43 thru   99 - 2 sectors */
-	-1,	0,		/* C=cyl    0 thru 1247 */
-	-1,	71400,		/* D=cyl  100 thru 1247 */
-
-	15884,	0,		/* E=blk      0 thru  15883 */
-	33440,	15884,		/* F=blk  15884 thru  49323 */
-	82080,	49324,		/* G=blk  49324 thru 131403 */
-	-1,	131404,		/* H=blk 131404 thru    end */
-#else
-	67832,	0,		/* A=cyl    0 thru   94 + 2 sectors */
-	67828,	67832,		/* B=cyl   95 thru  189 - 2 sectors */
-	-1,	0,		/* C=cyl    0 thru 1247 */
-	-1,	135660,		/* D=cyl  190 thru 1247 */
-	0,	0,
-	0,	0,
-	0,	0,
-	0,	0,
-#endif ENEEVAX
-#else
 /*
  * These are the new standard partition sizes for ra81's.
  * An RA_COMPAT system is compiled with D, E, and F corresponding
@@ -2140,7 +2125,6 @@ struct size {
 	193282,	49324,		/* H=sectors 49324 thru 242605 */
 
 #endif UCBRA
-#endif MARYLAND
 }, ra82_sizes[8] = {
 	15884,	0,		/* A=blk 0 thru 15883 */
 	66880,	16245,		/* B=blk 16245 thru 83124 */
@@ -2225,38 +2209,25 @@ udamaptype(unit, lp)
 	register int i;
 	register struct ra_info *ra = &ra_info[unit];
 
-	lp->d_secsize = 512;
-	lp->d_secperunit = ra->ra_dsize;
 	i = MSCP_MEDIA_DRIVE(ra->ra_mediaid);
 	for (ut = udatypes; ut->ut_id; ut++)
-		if (ut->ut_id == i)
+		if (ut->ut_id == i &&
+		    ut->ut_nsectors == ra->ra_geom.rg_nsectors &&
+		    ut->ut_ntracks == ra->ra_geom.rg_ntracks &&
+		    ut->ut_ncylinders == ra->ra_geom.rg_ncyl)
 			goto found;
 
 	/* not one we know; fake up a label for the whole drive */
-	lp->d_nsectors = ra->ra_geom.rg_nsectors;
-	lp->d_ntracks = ra->ra_geom.rg_ntracks;
-	lp->d_ncylinders = ra->ra_geom.rg_ncyl;
+	uda_makefakelabel(ra, lp);
 	i = ra->ra_mediaid;	/* print the port type too */
-	if (!cold)
-		log(LOG_ERR, "ra%d", unit);
-	addlog(": don't have a partition table for %c%c %c%c%c%d;\n\
+	addlog(": no partition table for %c%c %c%c%c%d, size %d;\n\
 using (s,t,c)=(%d,%d,%d)",
 		MSCP_MID_CHAR(4, i), MSCP_MID_CHAR(3, i),
 		MSCP_MID_CHAR(2, i), MSCP_MID_CHAR(1, i),
-		MSCP_MID_CHAR(0, i), MSCP_MID_CHAR(0, i),
-		MSCP_MID_NUM(i), lp->d_nsectors,
-		lp->d_ntracks, lp->d_ncylinders);
+		MSCP_MID_CHAR(0, i), MSCP_MID_NUM(i), lp->d_secperunit,
+		lp->d_nsectors, lp->d_ntracks, lp->d_ncylinders);
 	if (!cold)
 		addlog("\n");
-	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
-	lp->d_typename[0] = 'r';
-	lp->d_typename[1] = 'a';
-	lp->d_typename[2] = '?';
-	lp->d_typename[3] = '?';
-	lp->d_typename[4] = 0;
-	lp->d_npartitions = 1;
-	lp->d_partitions[0].p_offset = 0;
-	lp->d_partitions[0].p_size = lp->d_secperunit;
 	return (0);
 found:
 	p = ut->ut_name;
@@ -2264,7 +2235,6 @@ found:
 		lp->d_typename[i] = *p++;
 	lp->d_typename[i] = 0;
 	sz = ut->ut_sizes;
-	/* GET nsectors, ntracks, ncylinders FROM SAVED GEOMETRY? */
 	lp->d_nsectors = ut->ut_nsectors;
 	lp->d_ntracks = ut->ut_ntracks;
 	lp->d_ncylinders = ut->ut_ncylinders;
@@ -2278,4 +2248,22 @@ found:
 	return (1);
 }
 #endif /* COMPAT_42 */
+
+/*
+ * Construct a label for a drive from geometry information
+ * if we have no better information.
+ */
+uda_makefakelabel(ra, lp)
+	register struct ra_info *ra;
+	register struct disklabel *lp;
+{
+	lp->d_nsectors = ra->ra_geom.rg_nsectors;
+	lp->d_ntracks = ra->ra_geom.rg_ntracks;
+	lp->d_ncylinders = ra->ra_geom.rg_ncyl;
+	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
+	bcopy("ra??", lp->d_typename, sizeof("ra??"));
+	lp->d_npartitions = 1;
+	lp->d_partitions[0].p_offset = 0;
+	lp->d_partitions[0].p_size = lp->d_secperunit;
+}
 #endif /* NUDA > 0 */
