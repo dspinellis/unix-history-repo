@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	1.10 83/10/10";
+static	char *sccsid = "@(#)pl_1.c	1.11 83/10/14";
 #endif
 
 #include "player.h"
@@ -108,7 +108,8 @@ char **argv;
 			break;
 		case 'I':
 			foreachship(sp)
-				eyeball(sp);
+				if (sp != ms)
+					eyeball(sp);
 			break;
 		case 'i':
 			eyeball(closestenemy(ms, 0, 1));
@@ -141,7 +142,6 @@ char **argv;
 			dont_adjust = !dont_adjust;
 			break;
 		}
-		signalflags();
 		lost();
 	}
 }
