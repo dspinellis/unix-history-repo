@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	8.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -406,6 +406,8 @@ hdestroy(hashp)
 
 	if (hashp->fp != -1)
 		(void)close(hashp->fp);
+
+	free(hashp);
 
 	if (save_errno) {
 		errno = save_errno;
