@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -161,8 +161,8 @@ main(argc, argv)
 
 	args = copyargs(argv);
 
-#ifdef KERBEROS
 	sp = NULL;
+#ifdef KERBEROS
 	if (use_kerberos) {
 		sp = getservbyname((encrypt ? "ekshell" : "kshell"), "tcp");
 		if (sp == NULL) {
