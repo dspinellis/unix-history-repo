@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.66 (Berkeley) %G%
+#	@(#)READ_ME	8.67 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -164,6 +164,8 @@ _SCO_unix_	Define this if you are on SCO UNIX.
 _SCO_unix_4_2	Define this if you are on SCO Open Server 3.2v4.
 DGUX		Define this if you are on DG/UX 5.4.3 or later
 DGUX_5_4_2	Define this if you are on DG/UX systems prior to 5.4.3.
+NonStop_UX_BXX	Define this if you are on a Tandem NonStop-UX release
+		Bxx system.
 
 If you are a system that sendmail has already been ported to, you
 probably won't have to touch these.  But if you are porting, you may
@@ -869,4 +871,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.66, last update %G% 07:34:08)
+(Version 8.67, last update %G% 08:53:39)
