@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.28 (Berkeley) %G%
+ *	@(#)sys_process.c	7.29 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -275,39 +275,5 @@ procxmt(p)
 		ipc.ip_req = -1;
 	}
 	wakeup((caddr_t)&ipc);
-	return (0);
-}
-
-/*
- * Process debugging system call.
- */
-/* ARGSUSED */
-profil(p, uap, retval)
-	struct proc *p;
-	register struct args {
-		short	*bufbase;
-		unsigned bufsize;
-		unsigned pcoffset;
-		unsigned pcscale;
-	} *uap;
-	int *retval;
-{
-	register struct uprof *upp;
-	int s;
-	
-	upp = &p->p_stats->p_prof;
-	s = splhigh();	/* block profile interrupts while changing state */
-	upp->pr_base = uap->bufbase;
-	upp->pr_size = uap->bufsize;
-	upp->pr_off = uap->pcoffset;
-	upp->pr_scale = uap->pcscale;
-	if (uap->pcscale) {
-		if ((p->p_flag & SPROFIL) == 0)
-			startprofclock(p);
-	} else {
-		if (p->p_flag & SPROFIL)
-			stopprofclock(p);
-	}
-	splx(s);
 	return (0);
 }
