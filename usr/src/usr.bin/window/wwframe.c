@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwframe.c	3.14 %G%";
+static char sccsid[] = "@(#)wwframe.c	3.15 %G%";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 
 #define frameok(w, r, c) (w1 = wwindex[wwsmap[r][c]], \
-	!w1->ww_hasframe || w1->ww_order > (w)->ww_order)
+	w1->ww_fmap || w1->ww_order > (w)->ww_order)
 
 wwframe(w, wframe)
 register struct ww *w;
