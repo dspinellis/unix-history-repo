@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 # -DSLOWSYS	invoke xread() for system time quirk on PDP, others?
 # -DNOKANJI	default is for Japanese Unix.  undef only for raw
@@ -7,7 +7,8 @@
 # -Dstrrchr=rindex, -Dstrchr=index	as necessary
 
 PROG=	egrep
-CFLAGS+=-Dstrrchr=rindex -Dstrchr=index -DNOKANJI
+CFLAGS+=-Dstrrchr=rindex -Dstrchr=index -DNOKANJI -g
+LDADD= -lcompat	# must search compat to get spencers early regexp package
 MAN1=	grep.0
 LINKS=	${BINDIR}/egrep ${BINDIR}/grep ${BINDIR}/egrep ${BINDIR}/fgrep
 MLINKS=	grep.1 egrep.1 grep.1 fgrep.1
