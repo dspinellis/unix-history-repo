@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	1.16.1.1 (Berkeley) %G%
+ *	@(#)machdep.c	1.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,10 +23,10 @@
 #include "clist.h"
 #include "callout.h"
 #include "cmap.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "quota.h"
-#include "malloc.h"
 
 #include "../tahoe/cpu.h"
 #include "../tahoe/reg.h"
@@ -56,6 +56,7 @@ int	bufpages = 0;
 #if NCY > 0
 #include "../tahoevba/cyreg.h"
 #endif
+int	msgbufmapped;		/* set when safe to use msgbuf */
 
 /*
  * Machine-dependent startup code
@@ -78,6 +79,7 @@ startup(firstaddr)
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
 		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
 	mtpr(TBIA, 1);
+	msgbufmapped = 1;
 #ifdef KDB
 	kdb_init();			/* startup kernel debugger */
 #endif
@@ -643,22 +645,6 @@ microtime(tvp)
 		tvp->tv_sec++;
 		tvp->tv_usec -= 1000000;
 	}
-	splx(s);
-}
-
-physstrat(bp, strat, prio)
-	struct buf *bp;
-	int (*strat)(), prio;
-{
-	int s;
-
-	(*strat)(bp);
-	/* pageout daemon doesn't wait for pushed pages */
-	if (bp->b_flags & B_DIRTY)
-		return;
-	s = spl8();
-	while ((bp->b_flags & B_DONE) == 0)
-		sleep((caddr_t)bp, prio);
 	splx(s);
 }
 
