@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fread.3	4.1 (Berkeley) %G%
+.\"	@(#)fread.3	5.1 (Berkeley) %G%
 .\"
-.TH FREAD 3S 
+.TH FREAD 3S  "19 January 1983"
 .UC 4
 .SH NAME
 fread, fwrite \- buffered binary input/output
@@ -25,7 +25,7 @@ fread, fwrite \- buffered binary input/output
 .SH DESCRIPTION
 .I Fread
 reads, into a block beginning at
-.I ptr,
+.IR ptr ,
 .I nitems
 of data of the type of
 .I *ptr
@@ -41,7 +41,7 @@ and the standard output is line buffered, then any partial output line
 will be flushed before any call to
 .IR read (2)
 to satisfy the
-.I fread.
+.IR fread .
 .PP
 .I Fwrite
 appends at most
@@ -54,11 +54,15 @@ to the named output
 .IR stream .
 It returns the number of items actually written.
 .SH "SEE ALSO"
-read(2), write(2),
-fopen(3),
-getc(3), putc(3),
-gets(3), puts(3),
-printf(3), scanf(3)
+read(2),
+write(2),
+fopen(3S),
+getc(3S),
+putc(3S),
+gets(3S),
+puts(3S),
+printf(3S),
+scanf(3S)
 .SH DIAGNOSTICS
 .I Fread
 and
@@ -66,4 +70,3 @@ and
 return
 0
 upon end of file or error.
-.SH BUGS
