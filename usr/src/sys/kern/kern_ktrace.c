@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_ktrace.c	7.19 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.20 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -185,15 +185,16 @@ ktrcsw(vp, out, user)
 /*
  * ktrace system call
  */
+struct ktrace_args {
+	char	*fname;
+	int	ops;
+	int	facs;
+	int	pid;
+};
 /* ARGSUSED */
 ktrace(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		char	*fname;
-		int	ops;
-		int	facs;
-		int	pid;
-	} *uap;
+	register struct ktrace_args *uap;
 	int *retval;
 {
 	register struct vnode *vp = NULL;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.16 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -69,15 +69,16 @@ kmstartup()
  * The scale factor is a fixed point number with 16 bits of fraction, so that
  * 1.0 is represented as 0x10000.  A scale factor of 0 turns off profiling.
  */
+struct profil_args {
+	caddr_t	buf;
+	u_int	bufsize;
+	u_int	offset;
+	u_int	scale;
+};
 /* ARGSUSED */
 profil(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		caddr_t	buf;
-		u_int	bufsize;
-		u_int	offset;
-		u_int	scale;
-	} *uap;
+	register struct profil_args *uap;
 	int *retval;
 {
 	register struct uprof *upp;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_acct.c	7.24 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,11 +47,12 @@ struct	vnode *savacctp;
  * accounting is resumed.
  */
 /* ARGSUSED */
+struct sysacct_args {
+	char	*fname;
+};
 sysacct(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*fname;
-	} *uap;
+	struct sysacct_args *uap;
 	int *retval;
 {
 	register struct vnode *vp;

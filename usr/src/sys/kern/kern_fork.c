@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.37 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,10 +20,13 @@
 #include "acct.h"
 #include "ktrace.h"
 
+struct fork_args {
+	int	dummy;
+};
 /* ARGSUSED */
 fork(p, uap, retval)
 	struct proc *p;
-	struct args *uap;
+	struct fork_args *uap;
 	int retval[];
 {
 
@@ -33,7 +36,7 @@ fork(p, uap, retval)
 /* ARGSUSED */
 vfork(p, uap, retval)
 	struct proc *p;
-	struct args *uap;
+	struct fork_args *uap;
 	int retval[];
 {
 
