@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -77,6 +77,15 @@ mci_cache(mci)
 	/* otherwise we may have to clear the slot */
 	if (*mcislot != NULL)
 		mci_uncache(mcislot, TRUE);
+
+	if (tTd(42, 5))
+		printf("mci_cache: caching %x (%s) in slot %d\n",
+			mci, mci->mci_host, mcislot - MciCache);
+#ifdef LOG
+	if (tTd(91, 100))
+		syslog(LOG_DEBUG, "%s: mci_cache: caching %x (%s) in slot %d",
+			CurEnv->e_id, mci, mci->mci_host, mcislot - MciCache);
+#endif
 
 	*mcislot = mci;
 	mci->mci_flags |= MCIF_CACHED;
@@ -158,6 +167,15 @@ mci_uncache(mcislot, doquit)
 	if (mci == NULL)
 		return;
 	*mcislot = NULL;
+
+	if (tTd(42, 5))
+		printf("mci_uncache: uncaching %x (%s) from slot %d (%d)\n",
+			mci, mci->mci_host, mcislot - MciCache, doquit);
+#ifdef LOG
+	if (tTd(91, 100))
+		syslog(LOG_DEBUG, "%s: mci_uncache: uncaching %x (%s) from slot %d (%d)",
+			CurEnv->e_id, mci, mci->mci_host, mcislot - MciCache, doquit);
+#endif
 
 	if (doquit)
 	{
