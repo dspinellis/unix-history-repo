@@ -1,4 +1,4 @@
-/*	res_mkquery.c	4.1	85/03/01	*/
+/*	res_mkquery.c	4.2	85/03/15	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -25,7 +25,6 @@ mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	register int n;
 	char dnbuf[MAXDNAME];
 	char *dnptrs[10], **dpp, **lastdnptr;
-	extern char *index();
 
 	if (_res.options & RES_DEBUG)
 		printf("mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
@@ -48,13 +47,13 @@ mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	dpp = dnptrs;
 	*dpp++ = buf;
 	*dpp++ = NULL;
-	lastdnptr = dnptrs + sizeof(dnptrs);
+	lastdnptr = dnptrs + sizeof(dnptrs)/sizeof(dnptrs[0]);
 	/*
-	 * If the domain name consists of a single label, then
+	 * If the domain name does not end in '.', then
 	 * append the default domain name to the one given.
 	 */
-	if ((_res.options & RES_DEFNAMES) && dname[0] != '\0' &&
-	    index(dname, '.') == NULL) {
+	if ((_res.options & RES_DEFNAMES) && (n = strlen(dname)) > 0 &&
+	    dname[n - 1] != '.') {
 		if (!(_res.options & RES_INIT))
 			res_init();
 		if (_res.defdname[0] != '\0')
