@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.10 (Berkeley) %G%
+ *	@(#)mount.h	8.11 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -85,7 +85,7 @@ struct statfs {
 	"procfs",	/* 12 MOUNT_PROCFS */ \
 	"afs",		/* 13 MOUNT_AFS */ \
 	"iso9660fs",	/* 14 MOUNT_CD9660 */ \
-	"union",	/* 15 MOUNT_CD9660 */ \
+	"union",	/* 15 MOUNT_UNION */ \
 	0,		/* 16 MOUNT_SPARE */ \
 }
 
