@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.7 %G%";
+static char sccsid[] = "@(#)stat.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -408,37 +408,52 @@ asgnop1(r, p)
 		cerror("Type of expression clashed with type of variable in assignment");
 		return (NIL);
 	}
-	switch (classify(p)) {
-		case TINT:
-		case TBOOL:
-		case TCHAR:
-		case TSCAL:
-#			ifdef OBJ
+#	ifdef OBJ
+	    switch (classify(p)) {
+		    case TINT:
+		    case TBOOL:
+		    case TCHAR:
+		    case TSCAL:
 			    rangechk(p, p1);
-#			endif OBJ
-#			ifdef PC
-			    postcheck( p );
-#			endif PC
-		case TDOUBLE:
-		case TPTR:
-#			ifdef OBJ
 			    gen(O_AS2, O_AS2, w, width(p1));
-#			endif OBJ
-#			ifdef PC
+			    break;
+		    case TDOUBLE:
+		    case TPTR:
+			    gen(O_AS2, O_AS2, w, width(p1));
+			    break;
+		    default:
+			    put(2, O_AS, w);
+			    break;
+	    }
+#	endif OBJ
+#	ifdef PC
+	    switch (classify(p)) {
+		    case TINT:
+		    case TBOOL:
+		    case TCHAR:
+		    case TSCAL:
+			    postcheck( p );
 			    putop( P2ASSIGN , p2type( p ) );
 			    putdot( filename , line );
-#			endif PC
-			break;
-		default:
-#			ifdef OBJ
-			    put(2, O_AS, w);
-#			endif OBJ
-#			ifdef PC
+			    break;
+		    case TPTR:
+			    putop( P2ASSIGN , p2type( p ) );
+			    putdot( filename , line );
+			    break;
+		    case TDOUBLE:
+			    if (isnta(p1,"d")) {
+				putop( P2SCONV , P2DOUBLE );
+			    }
+			    putop( P2ASSIGN , p2type( p ) );
+			    putdot( filename , line );
+			    break;
+		    default:
 			    putstrop( P2STASG , p2type( p )
 					, lwidth( p ) , align( p ) );
 			    putdot( filename , line );
-#			endif PC
-	}
+			    break;
+	    }
+#	endif PC
 	return (p);	/* Used by for statement */
 }
 
