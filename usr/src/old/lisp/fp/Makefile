@@ -14,12 +14,16 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 MAN=	fp.0
 
-all fp clean cleandir lint tags: FRC
+all fp clean lint tags: FRC
 	cd fp.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
+
+cleandir: clean
+	cd fp.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
+	rm -f ${MAN} tags .depend
 
 install: ${MAN}
 	cd fp.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
