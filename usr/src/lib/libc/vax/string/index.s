@@ -1,4 +1,4 @@
-/*	index.s	4.1	84/11/01	*/
+/*	index.s	4.2	84/11/01	*/
 
 /*
  * Find the first occurence of c in the string cp.
@@ -8,10 +8,9 @@
  * index(cp, c)
  *	char *cp, c;
  */
-	.globl	_index
+#include "DEFS.h"
 
-_index:
-	.word	0x0
+ENTRY(index, 0)
 	movq	4(ap),r1	# r1 = cp; r2 = c
 	tstl	r2		# check for special case c == '\0'
 	bneq	2f

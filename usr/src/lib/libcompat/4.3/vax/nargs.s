@@ -1,8 +1,8 @@
-/*	nargs.s	4.1	83/06/27	*/
+/*	nargs.s	4.2	84/11/01	*/
 /* C library -- nargs */
 
 #include "DEFS.h"
 
-ENTRY(nargs)
+ENTRY(nargs, 0)
 	movzbl	*8(fp),r0	/* 8(fp) is old ap */
 	ret

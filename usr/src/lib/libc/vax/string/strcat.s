@@ -1,4 +1,4 @@
-/*	strcat.s	4.1	84/11/01	*/
+/*	strcat.s	4.2	84/11/01	*/
 
 /*
  * Concatenate string s2 to the end of s1
@@ -8,10 +8,9 @@
  * strcat(s1, s2)
  *	char *s1, *s2;
  */
-	.globl	_strcat
+#include "DEFS.h"
 
-_strcat:
-	.word	0x1c0
+ENTRY(strcat, R6|R7)
 	movq	4(ap), r6	# r6 = s1; r7 = s2
 	movl	r6,r1
 0:

@@ -1,4 +1,4 @@
-/*	strncat.s	4.1	84/11/01	*/
+/*	strncat.s	4.2	84/11/01	*/
 
 /*
  * Concatenate string s2 on the end of s1
@@ -11,10 +11,9 @@
  *	char *s1, *s2;
  *	int n;
  */
-	.globl	_strncat
+#include "DEFS.h"
 
-_strncat:
-	.word	0x40
+ENTRY(strncat, R6)
 	movl	12(ap),r6	# r6 = n
 	bleq	done		# n <= 0
 	movl	4(ap),r3	# r3 = s1

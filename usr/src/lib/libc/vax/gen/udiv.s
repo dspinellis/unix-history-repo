@@ -1,4 +1,4 @@
-/*	udiv.s	4.2	83/06/27	*/
+/*	udiv.s	4.3	84/11/01	*/
 
 /*
  * udiv - unsigned division for vax-11
@@ -19,7 +19,7 @@
 
 #include "DEFS.h"
 
-ASENTRY(udiv)
+ASENTRY(udiv, 0)
 	movl	4(ap),r0	/* dividend */
 	movl	8(ap),r2	/* divisor */
 	jeql	1f		/* if divisor=0, force exception */

@@ -1,4 +1,4 @@
-/*	strncmp.s	4.1	84/11/01	*/
+/*	strncmp.s	4.2	84/11/01	*/
 
 /*
  * Compare at most n characters of string
@@ -12,10 +12,9 @@
  *	char *s1, *s2;
  *	int n;
  */
-	.globl	_strncmp
+#include "DEFS.h"
 
-_strncmp:
-	.word	0x0
+ENTRY(strncmp, 0)
 	movl	12(ap),r5	# r5 = n
 	movq	4(ap),r3	# r3 = s1; r4 = s2
 1:

@@ -1,4 +1,4 @@
-/*	strlen.s	4.1	84/11/01	*/
+/*	strlen.s	4.2	84/11/01	*/
 
 /*
  * Return the length of cp (not counting '\0').
@@ -6,10 +6,9 @@
  * strlen(cp)
  *	char *cp;
  */
-	.globl	_strlen
+#include "DEFS.h"
 
-_strlen:
-	.word	0x0
+ENTRY(strlen, 0)
 	movl	4(ap),r2
 0:
 	locc	$0,$65535,(r2)	# look for '\0'

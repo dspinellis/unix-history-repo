@@ -1,9 +1,9 @@
-/* @(#)bzero.s	4.2 %G% */
+/* @(#)bzero.s	4.3 %G% */
 /* bzero(base, length) */
 
 #include "DEFS.h"
 
-ENTRY(bzero)
+ENTRY(bzero, 0)
 	movl	4(ap),r3
 	jbr	2f
 1:

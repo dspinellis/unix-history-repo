@@ -1,4 +1,4 @@
-/*	strncpy.s	4.1	84/11/01	*/
+/*	strncpy.s	4.2	84/11/01	*/
 
 /*
  * Copy string s2 over top of string s1.
@@ -8,10 +8,9 @@
  * strncpy(s1, s2, n)
  *	char *s1, *s2;
  */
-	.globl	_strncpy
+#include "DEFS.h"
 
-_strncpy:
-	.word	0x40
+ENTRY(strncpy, R6)
 	movl	12(ap),r6	# r6 = n
 	bleq	done		# n <= 0
 	movl	4(ap),r3	# r3 = s1

@@ -1,4 +1,4 @@
-/*	urem.s	4.2	83/06/27	*/
+/*	urem.s	4.3	84/11/01	*/
 
 /*
  * urem - unsigned remainder for vax-11
@@ -18,7 +18,7 @@
  */
 #include "DEFS.h"
 
-ASENTRY(urem)
+ASENTRY(urem, 0)
 	movl	4(ap),r0	/* dividend */
 	movl	8(ap),r2	/* divisor */
 	jeql	1f		/* if divisor=0, force exception */
