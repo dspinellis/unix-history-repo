@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.11 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.12 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.11 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.12 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -212,7 +212,9 @@ smtp(e)
 				SmtpPhase = "server HELO";
 			}
 			sendinghost = newstr(p);
-			if (strcasecmp(p, RealHostName) != 0)
+			if (strcasecmp(p, RealHostName) != 0 &&
+			    (strcasecmp(RealHostName, "localhost") != 0 ||
+			     strcasecmp(p, MyHostName) != 0))
 			{
 				auth_warning(e, "Host %s claimed to be %s",
 					RealHostName, p);

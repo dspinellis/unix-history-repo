@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -95,7 +95,7 @@ sendto(list, copyf, ctladdr, qflags)
 		/* parse the address */
 		while ((isascii(*p) && isspace(*p)) || *p == ',')
 			p++;
-		a = parseaddr(p, (ADDRESS *) NULL, 1, delimiter, &delimptr, e);
+		a = parseaddr(p, NULLADDR, RF_COPYALL, delimiter, &delimptr, e);
 		p = delimptr;
 		if (a == NULL)
 			continue;

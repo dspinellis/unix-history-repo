@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -42,14 +42,8 @@ char	*DelimChar;		/* set to point to the delimiter */
 **		addr -- the address to parse.
 **		a -- a pointer to the address descriptor buffer.
 **			If NULL, a header will be created.
-**		copyf -- determines what shall be copied:
-**			-1 -- don't copy anything.  The printname
-**				(q_paddr) is just addr, and the
-**				user & host are allocated internally
-**				to parse.
-**			0 -- copy out the parsed user & host, but
-**				don't copy the printname.
-**			+1 -- copy everything.
+**		flags -- describe detail for parsing.  See RF_ definitions
+**			in sendmail.h.
 **		delim -- the character to terminate the address, passed
 **			to prescan.
 **		delimptr -- if non-NULL, set to the location of the
@@ -69,10 +63,10 @@ char	*DelimChar;		/* set to point to the delimiter */
 # define DELIMCHARS	"()<>,;\r\n"	/* default word delimiters */
 
 ADDRESS *
-parseaddr(addr, a, copyf, delim, delimptr, e)
+parseaddr(addr, a, flags, delim, delimptr, e)
 	char *addr;
 	register ADDRESS *a;
-	int copyf;
+	int flags;
 	int delim;
 	char **delimptr;
 	register ENVELOPE *e;
@@ -150,7 +144,7 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	**  Build canonical address from pvp.
 	*/
 
-	a = buildaddr(pvp, a, e);
+	a = buildaddr(pvp, a, flags, e);
 	if (a == NULL)
 		return (NULL);
 
@@ -159,7 +153,7 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	**  transport them out.
 	*/
 
-	allocaddr(a, copyf, addr, *delimptr);
+	allocaddr(a, flags, addr, *delimptr);
 
 	/*
 	**  If there was a parsing failure, mark it for queueing.
@@ -221,7 +215,8 @@ invalidaddr(addr)
 **
 **	Parameters:
 **		a -- the address to reallocate.
-**		copyf -- the copy flag (see parseaddr for description).
+**		flags -- the copy flag (see RF_ definitions in sendmail.h
+**			for a description).
 **		paddr -- the printname of the address.
 **		delimptr -- a pointer to the address delimiter.  Must be set.
 **
@@ -232,16 +227,16 @@ invalidaddr(addr)
 **		Copies portions of a into local buffers as requested.
 */
 
-allocaddr(a, copyf, paddr, delimptr)
+allocaddr(a, flags, paddr, delimptr)
 	register ADDRESS *a;
-	int copyf;
+	int flags;
 	char *paddr;
 	char *delimptr;
 {
 	if (tTd(24, 4))
-		printf("allocaddr(copyf=%d, paddr=%s)\n", copyf, paddr);
+		printf("allocaddr(flags=%o, paddr=%s)\n", flags, paddr);
 
-	if (copyf > 0 && paddr != NULL)
+	if (bitset(RF_COPYPADDR, flags) && paddr != NULL)
 	{
 		char savec = *delimptr;
 
@@ -259,7 +254,7 @@ allocaddr(a, copyf, paddr, delimptr)
 	if (a->q_host == NULL)
 		a->q_host = "";
 
-	if (copyf >= 0)
+	if (bitset(RF_COPYPARSE, flags))
 	{
 		a->q_host = newstr(a->q_host);
 		if (a->q_user != a->q_paddr)
@@ -1503,6 +1498,8 @@ callsubr(pvp)
 **		tv -- token vector.
 **		a -- pointer to address descriptor to fill.
 **			If NULL, one will be allocated.
+**		flags -- info regarding whether this is a sender or
+**			a recipient.
 **		e -- the current envelope.
 **
 **	Returns:
@@ -1533,9 +1530,10 @@ struct errcodes
 };
 
 static ADDRESS *
-buildaddr(tv, a, e)
+buildaddr(tv, a, flags, e)
 	register char **tv;
 	register ADDRESS *a;
+	int flags;
 	register ENVELOPE *e;
 {
 	struct mailer **mp;
@@ -2084,7 +2082,7 @@ maplocaluser(a, sendq, e)
 		return;
 
 	/* if non-null, mailer destination specified -- has it changed? */
-	a1 = buildaddr(pvp, NULL, e);
+	a1 = buildaddr(pvp, NULL, 0, e);
 	if (a1 == NULL || sameaddr(a, a1))
 		return;
 
@@ -2096,7 +2094,7 @@ maplocaluser(a, sendq, e)
 		printaddr(a, FALSE);
 	}
 	a1->q_alias = a;
-	allocaddr(a1, 1, NULL, delimptr);
+	allocaddr(a1, RF_COPYALL, NULL, delimptr);
 	(void) recipient(a1, sendq, e);
 }
 /*
