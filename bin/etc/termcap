@@ -1,0 +1,148 @@
+un|dumb|unknown:
+pb|dumb|unknown:
+cl|adm3|3|lsi adm3:\
+	:am:bs:cl=^Z:li#24:co#80:
+ca|adm3a|3a|lsi adm3a:\
+	:am:bs:cm=\E=%+ %+ :cl=^Z:co#80:ho=^^:li#24:ma=j^Jk^P^K^Pl :nd=^L:up=^K:
+C1|adm31|31|lsi adm31:is=\Eu\E0:\
+	:al=\EE:am:bs:ce=\ET:cm=\E=%+ %+ :cl=\E*:co#80:dc=\EW:dl=\ER:\
+	:ei=\Er:ho=^^:im=\Eq:li#24:mi:nd=^L:se=\EG0:so=\EG6:up=^K:
+ca|adm3b|3b|lsi adm3a:\
+	:am:bs:cl=^Z:co#80:ho=^^:li#24:ll=\E=7 :nd=^L:up=^K:so=DING :se= DONG:
+c1|c100|concept100:is=\EU\Ef\E7\E5\E8\El\ENH\EK\E\200\Eo&\200:\
+	:al=3*\E^R:am:bs:cd=16*\E^C:ce=16\E^S:cl=2*^L:cm=\Ea%+ %+ :co#80:\
+	:dc=16\E^A:dl=3*\E^B:ei=\E\200:eo:im=\E^P:in:ip=16*:li#24:mi:nd=\E=:\
+	:se=\Ed\Ee:so=\ED\EE:ta=8\t:ul:up=\E;:vb=\Ek\EK:xn:
+c1|c100rv|concept100rv:is=\EU\Ef\E7\E5\E8\El\ENH\Ek\E\200\Eo&\200:\
+	:al=3*\E^R:am:bs:cd=16*\E^C:ce=16\E^S:cl=2*^L:cm=\Ea%+ %+ :co#80:\
+	:dc=16\E^A:dl=3*\E^B:ei=\E\200:eo:im=\E^P:in:ip=16*:li#24:mi:nd=\E=:\
+	:se=\Ed\ED:so=\ED\Ed:ta=8\t:ul:up=\E;:vb=\EK\Ek:xn:
+cH|hp2645|2645:is=500\EE:if=/usr/lib/tabset/std:\
+	:al=\EL:am:bs:cd=\EJ:ce=\EK:ch=\E&a%2C:cl=\EH\EJ:cm=6\E&a%r%2c%2Y:\
+	:co#80:cv=\E&a%2Y:da:db:dc=\EP:dl=\EM:ei=\ER:gu:im=\EQ:\
+	:li#24:mi:nd=\EC:se=\E&d@:so=\E&dB:up=\EA:
+cm|dm1520|datamedia 1520:\
+	:am:bs:cd=^K:ce=^]:cl=^L:cm=^^%r%+ %.:co#80:ho=^Y:\
+	:li#24:nd=^\:up=^_:xn:
+c2|dm2500|datamedia 2500:\
+	:al=15^P\n\r^X^]:am:bs:ce=^W:cl=^^^^\177:cm=^L%r%n%.%.:co#80:\
+	:dc=10*\b:dl=10*^P^Z^X^]:dm=^P:ed=^X^]:ei=10\377\377^X^]:ho=^B:ic10*:\
+	:im=^P:li#24:nc:nd=^\:pc=\377:so=^N:se=^X^]:up=^Z:
+c3|dm3025|datamedia 3025a:is=\EQ\EU\EV:\
+	:al=130\EP\n\EQ:bs:cd=2\EJ:ce=\EK:cl=2\EM:cm=\EY%r%+ %+ :\
+	:co#80:dc=6\b:dl=130\EP\EA\EQ:dm=\EP:ed=\EQ:ei=\EQ:ho=\EH:\
+	:im=\EP:ip=6:li#24:nd=\EC:pt:so=\EOA:se=\EO@:up=\EA:
+g0|gt40|dec gt40:\
+	:bs:co#72:li#30:os:
+cc|carlock|klc:\
+	:al=^E:am:bs:ce=^U:cl=100^Z:cm=\E=%+ %+ :co#80:dc=\177:dl=^D:dm=:\
+	:ed=:ei=^T:ho=^^:im=^T:li#24:nd=^L:se=^V:so=^V:up=^K:vb=\EV\EV:
+g2|gt42|dec gt42:\
+	:bs:co#72:li#40:os:
+v0|vt50|dec vt50:\
+	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:co#80:li#12:nd=\EC:pt:up=\EA:
+vh|vt50h|dec vt50h:\
+	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#12:nd=\EC:\
+	:pt:sr=\EI:up=\EA:
+v2|vt52|dec vt52:\
+	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:nd=\EC:\
+	:pt:sr=\EI:up=\EA:
+dw|dw1|decwriter I:\
+	:bs:co#72:os
+td|dw2|decwriter II:\
+	:bs:co#132:os:
+pd|dtc300s|dtc|diablo 300s:\
+	:bs:co#132:hu=\EH:hd=\Eh:it:os:pl:pt:up=^Z:
+pg|gsi:\
+	:bs:co#132:hd=\Eh:hu=\EH:it:os:pl:pt:up=^Z:
+h5|h1500|hazeltine 1500:\
+	:al=~^Z:am:bs:cd=~^X:ce=~^O:cl=~^\:cm=~^Q%r%.%.:co#80:\
+	:dl=~^S:do=~^K:hz:li#24:nd=^P:se=~^Y:so=~^_:up=~^L:
+h6|h1510|hazeltine 1510:\
+	:al=\E^Z:am:bs:cd=\E^X:ce=\E^O:cl=\E^\:cm=\E^Q%r%.%.:co#80:\
+	:dl=\E^S:do=\E^K:hz:li#24:ma=j^Jk^P^K^Pl :nd=^P:se=\E^Y:so=\E^_:up=\E^L:
+h7|h2000|hazeltine 2000:\
+	:al=6~^z:am:bs:cl=6~^\:cm=~^q%r%.%.:co#74:\
+	:dl=6~^s:ho=~^r:li#27:nc:pc=\177:
+cl|i100|Infoton 100:cl=^L:cd=\EJ:ce\EK:li#24:co#80:\
+	:al=\EL:dl=\EM:up=\EA:nd=\EC:ho=\EH:cm=\Ef%r%+ %+ :vb=\Eb\Ea:am:bs
+i4|infoton|400|infoton 400:\
+	:al=\E[P:bs:ce=\E[0N:cl=\E2J:cm=%i\E%3;%3H:co#80:dl=\E[M:li#25:\
+	:nd=\EC:up=\E[A:
+ci|infotonKAS:\
+	:am:bc=^Z:cd=^K:cl=^L:co#80:li#24:nd=^Y:up=^\:ll=^H^\:
+si|addrinfo:\
+	:li#24:co#80:cl=^L:ho=^H:nd=^Y:cd=^K:\
+	:up=^\:am:bc=^Z:cm=\037%+\377%+\377:ll=^H^\:
+c6|mime|mime1|mime|mimei|mimeii:\
+	:al=80^A:am:bs:cd=^_:ce=^^:cl=\035^C:cm=^T%.%.:co#80:dl=80^W:li#24:\
+	:nd=^X:pt:up=^z:ho=\035:dn=^K:so=^N:se=^N:
+c4|microterm|act4:\
+	:am:bs:cd=^_:ce=^^:cl=^L:cm=^T%.%.:co#80:li#24:nd=^X:up=^z:
+c5|microterm5|act5:\
+	:am:bs:cd=^_:ce=^^:cl=^L:cm=^T%.%.:co#80:li#24:nd=^X:up=^Z:ho=^]:\
+	:dn=^K:SO=\EC:SE=\EB:ma=j^Jk^Pl 
+c8|swtp|ct82:\
+	:am:bs:al=^\^Y:cd=^V:ce=^F:cl=^L:cm=^K%.%.:co#82:li#16:\
+	dl=^Z:nd=^I:up=^A:so=^^^V:se=^^^F:dc=^\^H:ic=^\^X:ho=^P:
+cf|fox|fox 1100:if=/usr/lib/tabset/std:\
+	:am:bs:cl=\EK:co#80:li#24:nd=\EC:up=\EA:vb=^P^B^P^C:
+co|owl|owl 1200:if=/usr/lib/tabset/std:\
+	:al=5.5*\EL:am:bs:cd=5.5*\ED:ce=\EI:cl=132\EH\EJ:\
+	:cm=\EX%+ \EY%+ :co#80:dc=5.5*\EO:dl=5.5*\EM:ei=:ic=\EN:im=:ip=5.5*:\
+	:in:li#24:nd=\EC:up=\EA:se?=\E!\200:so?=\E!^H:vb=^P^B^P^C:
+gk|tk4014|4014|tektronix 4014:is=\E\::\
+	:bs:cl=\E^L:co#120:li#56:os:
+ct|t1061|teleray 1061:if=/usr/lib/tabset/teleray:\
+	:al=\EL:bs:cd=\EJ:ce=\EK:cl=\Ej:cm=\EY%+ %+ :co#80:dc=\EQ:\
+	:dl=\EM:ei=:ic=\EP:im=:li#24:nd=\EC:se=\ER@:so=\ERO:up=\EA:
+T2|1200|terminet 1200:\
+	co#120:os:
+T3|300|terminet 300:\
+	co#120:os:
+t3|tty33|33:\
+	:co#72:os:
+t7|tty37|37:\
+	:bs:hu?:hd?:up?:os:
+t4|tty43|43:\
+	:am:bs:os:co#132:
+ti|ti700|ti733|ti|ti silent 700:\
+	:bs:co#80:os:dC#162:
+tu|ubell|ubellchar:if=/usr/staff/michael/term/startup:\
+	:am:bs:pt:ce=\Ed:cl=^Z:cm=\E=%+ %+ :co#80:li#24:nd=^L:up=^K:
+cx|xitex|xitex sct-100:\
+	:bs:cd=2000^F^E:ce=1600^E:cl=400^L:cm=\E=%+@%+@:co#64:ho=^D:\
+	:li#16:nd=\t:pc=\200:su=\E=@@^K:up=^K:
+bh|bh3m|beehiveIIIm:if=/usr/lib/tabset/beehive:\
+	:al=160^S:am:bs:cd=^R:ce=^P:cl=^E^R:co#80:dl=300^Q:ho=^E:li#20:ll=^E^K:\
+	:nd=^L:pt:se= ^_:so=^] :up=^K:
+cT|tvi912|tvi920|tvisp:\
+	:al=\EE:am:bs:ce=\ET:cm=\E=%+ %+ :cl=^Z:co#80:dc=\EW:dl=\ER:\
+	:ei=:ho=^^:im=:ic=\EQ:li#24:nd=^L:pt:se=\Ek:so=\Ej:up=^K:
+cT|tvi912|tvi920|tvi:\
+	:al=\EE:am:bs:ce=\Et:cm=\E=%+ %+ :cl=\E*:co#80:dc=\EW:dl=\ER:\
+	:ei=:ho=^^:im=:ic=\EQ:in:li#24:nd=^L:pt:se=\Ek:so=\Ej:up=^K:
+dp|ttyWilliams:\
+	:co#80:li#12:bc=^Y:dn=^K:up=^Z:cl=^^:ce=^_:am:ho=^]:nd=^X:
+i4|infoton|400|infoton 400:\
+	:al=\E[P:bs:ce=\E[0N:cl=\E2J:cm=%i\E%3;%3H:co#80:dl=\E[M:li#25:\
+	:nd=\EC:up=\E[A:
+
+Problems remaining:
+dm2500	buggy
+gt40	untested
+gt42	untested
+vt50	untested
+vt50h	untested
+dw1	untested
+dtc300s	untested
+gsi	untested
+infoton	untested
+fox	untested
+tk4014	untested
+t1061	untested
+1200	untested
+300	untested
+tty33	untested
+tty37	untested
+tty43	untested
