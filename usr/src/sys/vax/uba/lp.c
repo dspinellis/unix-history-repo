@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lp.c	6.6 (Berkeley) %G%
+ *	@(#)lp.c	6.7 (Berkeley) %G%
  */
 
 #include "lp.h"
@@ -61,7 +61,7 @@ struct lp_softc {
 struct uba_device *lpinfo[NLP];
 
 int lpprobe(), lpattach(), lptout();
-u_short lpstd[] = { 0177514 };
+u_short lpstd[] = { 0177514, 0 };
 struct uba_driver lpdriver =
 	{ lpprobe, 0, lpattach, 0, lpstd, "lp", lpinfo };
 
@@ -70,8 +70,6 @@ struct uba_driver lpdriver =
 #define	TOUT		2	/* timeout is active */
 #define	MOD		4	/* device state has been modified */
 #define	ASLP		8	/* awaiting draining of printer */
-
-int	lptout();
 
 lpattach(ui)
 	struct uba_device *ui;

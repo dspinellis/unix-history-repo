@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	4.6 (Berkeley) %G%
+ *	@(#)dhu.c	4.7 (Berkeley) %G%
  */
 
 /*
@@ -50,7 +50,7 @@
  */
 int	dhuprobe(), dhuattach(), dhurint(), dhuxint();
 struct	uba_device *dhuinfo[NDHU];
-u_short dhustd[] = { 160440, 160500 };	/* some common addresses */
+u_short dhustd[] = { 160440, 160500, 0 };	/* some common addresses */
 struct	uba_driver dhudriver =
 	{ dhuprobe, 0, dhuattach, 0, dhustd, "dhu", dhuinfo };
 

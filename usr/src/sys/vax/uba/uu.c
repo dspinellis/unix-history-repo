@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uu.c	6.3 (Berkeley) %G%
+ *	@(#)uu.c	6.4 (Berkeley) %G%
  */
 
 #include "uu.h"
@@ -93,7 +93,7 @@ u_char	uuinit[2] = { TUF_INITF, TUF_INITF };	/* inits to send */
 struct	uba_device	*uudinfo[NUU];
 
 int uuprobe(), uuattach(), uurintr(), uuxintr(), uuwatch();
-u_short uustd[] = { 0176500 };
+u_short uustd[] = { 0176500, 0 };
 struct uba_driver uudriver =
     { uuprobe, 0, uuattach, 0, uustd, "uu", uudinfo };
 
