@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-bsd44.h	5.4 (Berkeley) %G%
+ *	@(#)os-bsd44.h	5.5 (Berkeley) %G%
  *
  * $Id: os-bsd44.h,v 5.2.2.1 1992/02/09 15:10:11 jsp beta $
  *
@@ -45,6 +45,11 @@
  * 4.4 doesn't provide NIS.
  */
 #undef HAS_NIS_MAPS
+
+/*
+ * OS provides strerror()
+ */
+#define HAS_STRERROR
 
 /*
  * The mount table is obtained from the kernel
