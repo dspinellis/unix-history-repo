@@ -13,32 +13,76 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)nfsd.8	5.3 (Berkeley) %G%
+.\"	@(#)nfsd.8	5.4 (Berkeley) %G%
 .\"
 .TH NFSD 8 ""
 .UC 7
 .SH NAME
 nfsd \- remote NFS server
-[
-.B numservers
-]
 .SH SYNOPSIS
 .B /sbin/nfsd
+[
+.B numdaemons
+[
+.B filtermask
+.B filtervalue
+] ]
 .SH DESCRIPTION
 .I Nfsd
-is the server for 
+runs on a server machine to service
 .SM NFS
-requests from other client machines.
-A host should typically run enough servers to handle
+requests from client machines.
+At least one
+.I nfsd
+must be running for a machine to operate as a server.
+The option
+.I numdaemons
+defines how many
+.I nfsd
+daemons to start;
+if unspecified, only a single daemon will be started.
+A server should typically run enough daemons to handle
 the maximum level of concurrency from its clients,
 typically four to six.
+.PP
+The options
+.I filtermask
+and
+.I filtervalue
+may be specified to restrict the clients serviced by filtering incoming
+source addresses.
+They are expressed in Internet standard "." notation.
+The algorithm is simply:
+.sp
+.RS
+if ((filtermask & source_addr) == filtervalue)
+.RS
+.I accept request
+.RE
+.RE
+.sp
+The default values for filtermask and filtervalue are 0, which accepts
+requests from all client source_addr's.
+Alternately, the most secure values you could use for
+.I filtermask
+and
+.I filtervalue
+would be:
+.sp
+.RS
+filtervalue = (inet_addr1 & inet_addr2 & ... & inet_addrN)
+.br
+filtermask = ~(inet_addr1 | inet_addr2 | ... | inet_addrN) | filtervalue
+.RE
+.sp
+although your subnet or net number and mask will be just as good
+in most cases.
+.PP
 .I Nfsd
 listens for service requests at the port indicated in the
 .SM NFS
 server specification; see
-``Network File System Protocol Specification''
-in the Sun Microsystems manual
-``Networking on the Sun Workstation'', Part #800-1324-03, Rev B.
+``Network File System Protocol Specification, RFC1094''
 .SH SEE ALSO
 .IR nfsstat (1),
 .IR nfssvc (2),
