@@ -1,0 +1,82 @@
+[ READ-ME - Fri Dec 21 18:22:14 1990 - Comments on others/ - /mtr ]
+
+
+     None of the programs which live under this directory need be
+     installed.  They are provided only in the case what you are
+     interested in trying the code out.
+
+
+X/		X-protocol onto the ISO Transport Service
+
+	Experimental.
+
+
+callback/	The ISODE callback demo
+
+	Used to demonstrate listening and dual session connections.
+
+
+idist/		ISODE idist utility
+
+	Just like the 4.3BSD rdist, but uses OSI
+
+
+listen/		The ISODE listen demo
+
+	Used to demonstrate network listening.
+
+
+lookup/		The ISODE password lookup demo
+
+	Described in the User's Manual, volume 4.
+
+
+mosy/		Managed Object Syntax-compiler (yacc-based)
+
+	An ASN.1 compiler that understand the OBJECT-TYPE macro used in
+	the Internet standard SMI.
+
+
+ntp/		NTP over OSI
+
+	The popular network time protocol mapped onto OSI remote
+	operations.
+
+
+osilookup/	ISODE/SunLink OSI conversion
+
+	A program to convert entries from the /etc/osi.hosts file into
+	network addresses formatted for the isoentities file.
+
+
+pingpong/	Asynchronous connection establishment
+
+	A program to test out the async connection establishment code.
+
+
+quipu/	Utility directory for the QUIPU Directory.
+
+        ...
+
+
+rfa/		Remote File Access
+
+	Access and Management for a partial file system tree that exists
+	at two side either as master files or slave files.
+
+
+rtf/		RT-file transfer utility
+
+	A simple file transfer utility which tests the new upcall
+	mechanisms in RTS.
+
+
+tsbridge/	ISODE TSB
+
+	A real transport service bridge.
+
+
+tp0bridge/	ISODE TCP/X.25 TP0 bridge
+
+	Permits a dual-stack host to gateway TP0 packets between a TCP
+	internet and an X.25 subnet.
