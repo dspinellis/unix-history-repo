@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.8.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -28,7 +28,7 @@ int	setascii(), setbell(), setbinary(), setdebug(), setform();
 int	setglob(), sethash(), setmode(), setpeer(), setport();
 int	setprompt(), setstruct();
 int	settenex(), settrace(), settype(), setverbose();
-int	disconnect(), restart(), reget(), syst();
+int	disconnect(), syst();
 int	cd(), lcd(), delete(), mdelete(), user();
 int	ls(), mls(), get(), mget(), help(), append(), put(), mput();
 int	quit(), renamefile(), status();
@@ -36,7 +36,10 @@ int	quote(), rmthelp(), shell();
 int	pwd(), makedir(), removedir(), setcr();
 int	account(), doproxy(), reset(), setcase(), setntrans(), setnmap();
 int	setsunique(), setrunique(), cdup(), macdef(), domacro();
-int	sizecmd(), modtime(), newer(), rmtstatus();
+int	sizecmd(), modtime(), rmtstatus();
+#ifdef RESTART
+int	restart(), reget(), newer();
+#endif
 
 char	accounthelp[] =	"send account command to remote server";
 char	appendhelp[] =	"append to a file";
@@ -64,11 +67,13 @@ char	mdeletehelp[] =	"delete multiple files";
 char	mdirhelp[] =	"list contents of multiple remote directories";
 char	mgethelp[] =	"get multiple files";
 char	mkdirhelp[] =	"make directory on the remote machine";
-char	mlshelp[] =	"list contents of multiple remote directories";
+char	mlshelp[] =	"nlist contents of multiple remote directories";
 char	modtimehelp[] = "show last modification time of remote file";
 char	modehelp[] =	"set file transfer mode";
 char	mputhelp[] =	"send multiple files";
+#ifdef RESTART
 char	newerhelp[] =	"get file if remote file is newer than local file ";
+#endif
 char	nlisthelp[] =	"nlist contents of remote directory";
 char	nmaphelp[] =	"set templates for default file name mapping";
 char	ntranshelp[] =	"set translation table for default file name mapping";
@@ -79,10 +84,14 @@ char	pwdhelp[] =	"print working directory on remote machine";
 char	quithelp[] =	"terminate ftp session and exit";
 char	quotehelp[] =	"send arbitrary ftp command";
 char	receivehelp[] =	"receive file";
+#ifdef RESTART
 char	regethelp[] =	"get file restarting at end of local file";
+#endif
 char	remotehelp[] =	"get help from remote server";
 char	renamehelp[] =	"rename file";
+#ifdef RESTART
 char	restarthelp[]=	"restart file transfer at bytecount";
+#endif
 char	rmdirhelp[] =	"remove directory on the remote machine";
 char	rmtstatushelp[]="show status of remote machine";
 char	runiquehelp[] = "toggle store unique for local files";
@@ -135,7 +144,9 @@ struct cmd cmdtab[] = {
 	{ "mode",	modehelp,	0,	1,	1,	setmode },
 	{ "modtime",	modtimehelp,	0,	1,	1,	modtime },
 	{ "mput",	mputhelp,	1,	1,	1,	mput },
+#ifdef RESTART
 	{ "newer",	newerhelp,	1,	1,	1,	newer },
+#endif
 	{ "nmap",	nmaphelp,	0,	0,	1,	setnmap },
 	{ "nlist",	nlisthelp,	1,	1,	1,	ls },
 	{ "ntrans",	ntranshelp,	0,	0,	1,	setntrans },
@@ -148,12 +159,17 @@ struct cmd cmdtab[] = {
 	{ "quit",	quithelp,	0,	0,	0,	quit },
 	{ "quote",	quotehelp,	1,	1,	1,	quote },
 	{ "recv",	receivehelp,	1,	1,	1,	get },
+	{ "remotehelp",	remotehelp,	0,	1,	1,	rmthelp },
+#ifdef RESTART
 	{ "reget",	regethelp,	1,	1,	1,	reget },
+#endif
 	{ "rstatus",	rmtstatushelp,	0,	1,	1,	rmtstatus },
 	{ "rhelp",	remotehelp,	0,	1,	1,	rmthelp },
 	{ "rename",	renamehelp,	0,	1,	1,	renamefile },
 	{ "reset",	resethelp,	0,	1,	1,	reset },
+#ifdef RESTART
 	{ "restart",	restarthelp,	1,	1,	1,	restart },
+#endif
 	{ "rmdir",	rmdirhelp,	0,	1,	1,	removedir },
 	{ "runique",	runiquehelp,	0,	0,	1,	setrunique },
 	{ "send",	sendhelp,	1,	1,	1,	put },
