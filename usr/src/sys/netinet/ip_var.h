@@ -1,0 +1,52 @@
+/*	ip_var.h	4.1	81/11/14	*/
+
+/*
+ * Overlay for ip header used by other protocols (tcp, udp).
+ */
+struct ipovly {
+	caddr_t	ipo_next, ipo_prev;	/* for protocol sequence q's */
+	u_char	ipo_x1;			/* (unused) */
+	u_char	ipo_pr;			/* protocol */
+	short	ipo_len;		/* protocol length */
+	struct	ip_addr ipo_s;		/* source internet address */
+	struct	ip_addr ipo_d;		/* destination internet address */
+};
+
+/*
+ * Ip reassembly queue structure.  Each fragment
+ * being reassembled is attached to one of these structures.
+ * They are timed out after ipq_ttl drops to 0, and may also
+ * be reclaimed if memory becomes tight.
+ */
+struct ipq {
+	struct	ipq *next,*prev;	/* to other reass headers */
+	u_char	ipq_ttl;		/* time for reass q to live */
+	u_char	ipq_p;			/* protocol of this fragment */
+	u_short	ipq_id;			/* sequence id for reassembly */
+	struct	ipasfrag *ipq_next,*ipq_prev;
+					/* to ip headers of fragments */
+	struct	ip_addr ipq_src,ipq_dst;
+};
+
+/*
+ * Ip header, when holding a fragment.
+ */
+struct	ipasfrag {
+	u_char	ip_hl:4,
+		ip_v:4;
+	u_char	ipf_mff;		/* copied from (ip_off&IP_MF) */
+	short	ip_len;
+	u_short	ip_id;
+	short	ip_off;
+	u_char	ip_ttl;
+	u_char	ip_p;
+	u_short	ip_sum;
+	struct	ipf *ipf_next;		/* next fragment */
+	struct	ipf *ipf_prev;		/* previous fragment */
+};
+
+#ifdef KERNEL
+struct	ipq	ipq;			/* ip reass. queue */
+struct	ipq	*ip_freef();
+u_short	ip_id;				/* ip packet ctr, for ids */
+#endif
