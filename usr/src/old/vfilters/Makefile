@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	6.7 (Berkeley) %G%
+#	@(#)Makefile	6.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -42,7 +42,8 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 ${ALL} ${DESTDIR}/usr/libexec/lpr
+	install -s -o bin -g bin -m 755 ${ALL} vplotf \
+	    ${DESTDIR}/usr/libexec/lpr
 	rm -f ${DESTDIR}/usr/libexec/lpr/vpfW
 	ln ${DESTDIR}/usr/libexec/lpr/vpf ${DESTDIR}/usr/libexec/lpr/vpfW
 
