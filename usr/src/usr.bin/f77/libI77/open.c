@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)open.c	5.1	%G%
+ *	@(#)open.c	5.2	%G%
  */
 
 /*
@@ -45,7 +45,9 @@ f_open(a) olist *a;
 	else st = 'u';
 	if(SCRATCH)
 	{	strcpy(buf,tmplate);
-		mktemp(buf);
+		/* make a new temp file name, err if mktemp fails */
+		if( strcmp( mktemp(buf), "/" ) == 0 )
+			err(errflag, F_ERSYS, "open")
 	}
 	else 
 	{
