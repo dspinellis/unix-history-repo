@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.31 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,6 +28,7 @@
  */
 /*ARGSUSED*/
 socreate(dom, aso, type, proto)
+	int dom;
 	struct socket **aso;
 	register int type;
 	int proto;
