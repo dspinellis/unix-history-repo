@@ -1,4 +1,4 @@
-/*	ip_input.c	1.45	82/06/20	*/
+/*	ip_input.c	1.46	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -455,6 +455,7 @@ ip_dooptions(ip)
 		 * address on directly accessible net.
 		 */
 		case IPOPT_LSRR:
+		case IPOPT_SSRR:
 			if (cp[2] < 4 || cp[2] > optlen - (sizeof (long) - 1))
 				break;
 			sin = (struct in_addr *)(cp + cp[2]);
