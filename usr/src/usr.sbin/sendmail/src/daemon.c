@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.42 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.43 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.42 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.43 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -200,9 +200,10 @@ getrequests()
 
 #ifdef XDEBUG
 	{
-		char *j = macvalue('j', CurEnv);
+		char jbuf[MAXHOSTNAMELEN];
 
-		j_has_dot = j != NULL && strchr(j, '.') != NULL;
+		expand("\201j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
+		j_has_dot = strchr(jbuf, '.') != NULL;
 	}
 #endif
 
@@ -531,18 +532,15 @@ myhostname(hostbuf, size)
 	hp = gethostbyname(hostbuf);
 	if (hp != NULL)
 	{
+		(void) strncpy(hostbuf, hp->h_name, size - 1);
+		hostbuf[size - 1] = '\0';
 #ifdef NAMED_BIND
-		if (strchr(hp->h_name, '.') == NULL)
+		/* if still no dot, try DNS directly (i.e., avoid NIS) */
+		if (strchr(hostbuf, '.') == NULL)
 		{
 			extern bool getcanonname();
 
 			(void) getcanonname(hostbuf, size, TRUE);
-		}
-		else
-#else
-		{
-			(void) strncpy(hostbuf, hp->h_name, size - 1);
-			hostbuf[size - 1] = '\0';
 		}
 #endif
 
