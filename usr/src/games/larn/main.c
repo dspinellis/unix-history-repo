@@ -1,4 +1,5 @@
 /*	main.c		*/
+#include <sys/types.h>
 #include "header.h"
 #include <pwd.h>
 static char copyright[]="\nLarn is copyrighted 1986 by Noah Morgan.\n";
