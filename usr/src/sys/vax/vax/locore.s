@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.4 (Berkeley) %G%
+ *	@(#)locore.s	7.5 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -1427,6 +1427,7 @@ sw0:	.asciz	"swtch"
  */
 	.globl	Idle
 Idle: idle:
+	movl	$1,_noproc
 	mtpr	$0,$IPL			# must allow interrupts here
 1:
 	tstl	_whichqs		# look for non-empty queue
@@ -1442,7 +1443,6 @@ badsw:	pushab	sw0
  */
 	.align	1
 JSBENTRY(Swtch, 0)
-	movl	$1,_noproc
 	incl	_cnt+V_SWTCH
 sw1:	ffs	$0,$32,_whichqs,r0	# look for non-empty queue
 	beql	idle			# if none, idle
@@ -1456,10 +1456,12 @@ sw1:	ffs	$0,$32,_whichqs,r0	# look for non-empty queue
 sw2:
 	clrl	_noproc
 	clrl	_runrun
+#ifdef notdef
 	tstl	P_WCHAN(r2)		## firewalls
 	bneq	badsw			##
 	cmpb	P_STAT(r2),$SRUN	##
 	bneq	badsw			##
+#endif
 	clrl	P_RLINK(r2)		##
 	movl	*P_ADDR(r2),r0
 #ifdef notdef
