@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.61 (Berkeley) %G%
+ *	@(#)vnode.h	7.62 (Berkeley) %G%
  */
 
 #ifndef KERNEL
 #include <machine/endian.h>
 #endif
+#include <sys/queue.h>
 
 /*
  * The vnode is the focus of all file activity in UNIX.  There is a
@@ -34,22 +35,22 @@ enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS, VT_LFS };
  * it from v_data.  If non-null, this area is free in getnewvnode().
  */
 struct vnode {
-	u_long		v_flag;			/* vnode flags (see below) */
-	short		v_usecount;		/* reference count of users */
-	short		v_writecount;		/* reference count of writers */
-	long		v_holdcnt;		/* page & buffer references */
-	daddr_t		v_lastr;		/* last read (read-ahead) */
-	u_long		v_id;			/* capability identifier */
-	struct mount	*v_mount;		/* ptr to vfs we are in */
-	int 		(**v_op)();		/* vnode operations vector */
-	struct vnode	*v_freef;		/* vnode freelist forward */
-	struct vnode	**v_freeb;		/* vnode freelist back */
-	struct vnode	*v_mountf;		/* vnode mountlist forward */
-	struct vnode	**v_mountb;		/* vnode mountlist back */
-	struct buf	*v_cleanblkhd;		/* clean blocklist head */
-	struct buf	*v_dirtyblkhd;		/* dirty blocklist head */
-	long		v_numoutput;		/* num of writes in progress */
-	enum vtype	v_type;			/* vnode type */
+	u_long	v_flag;				/* vnode flags (see below) */
+	short	v_usecount;			/* reference count of users */
+	short	v_writecount;			/* reference count of writers */
+	long	v_holdcnt;			/* page & buffer references */
+	daddr_t	v_lastr;			/* last read (read-ahead) */
+	u_long	v_id;				/* capability identifier */
+	struct	mount *v_mount;			/* ptr to vfs we are in */
+	int 	(**v_op)();			/* vnode operations vector */
+	struct	vnode *v_freef;			/* vnode freelist forward */
+	struct	vnode **v_freeb;		/* vnode freelist back */
+	struct	vnode *v_mountf;		/* vnode mountlist forward */
+	struct	vnode **v_mountb;		/* vnode mountlist back */
+	struct	list_entry v_cleanblkhd;	/* clean blocklist head */
+	struct	list_entry v_dirtyblkhd;	/* dirty blocklist head */
+	long	v_numoutput;			/* num of writes in progress */
+	enum	vtype v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;	/* unix ipc (VSOCK) */
@@ -57,10 +58,10 @@ struct vnode {
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
-	struct nqlease	*v_lease;		/* Soft reference to lease */
-	long		v_spare[13];		/* round to 128 bytes */
-	enum vtagtype	v_tag;			/* type of underlying data */
-	void 		*v_data;		/* private data for fs */
+	struct	nqlease *v_lease;		/* Soft reference to lease */
+	long	v_spare[13];			/* round to 128 bytes */
+	enum	vtagtype v_tag;			/* type of underlying data */
+	void 	*v_data;			/* private data for fs */
 };
 #define	v_mountedhere	v_un.vu_mountedhere
 #define	v_socket	v_un.vu_socket
