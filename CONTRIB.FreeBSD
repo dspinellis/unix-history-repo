@@ -41,6 +41,7 @@ Paul Richards <paul@isl.cf.ac.uk>
 Rich Murphey <rich@lamprey.utmb.edu>
 Rodney W. Grimes <rgrimes@cdrom.com>
 Scott Mace <smace@neosoft.com>
+Garrett A. Wollman <wollman@freefall.cdrom.com>
 
 
 Additional FreeBSD Contributors:
@@ -58,7 +59,6 @@ Dave Rivers <rivers@ponds.uucp>
 David Dawes <dawes@physics.su.OZ.AU>
 Frank Maclachlan <fpm@crash.cts.com>
 Gary A. Browning <gab10@griffcd.amdahl.com>
-Garrett A. Wollman <wollman@uvm-gen.EMBA.UVM.EDU>
 Gary Clark II <gclarkii@radon.gbdata.com>
 Guido van Rooij <guido@gvr.win.tue.nl>
 Havard Eidnes <Havard.Eidnes@runit.sintef.no>
@@ -158,7 +158,7 @@ Phil Sutherland <philsuth@mycroft.dialix.oz.au>
 Poul-Henning Kamp <phk@data.fls.dk>
 Ralf Friedl <friedl@informatik.uni-kl.de>
 Rich Murphey <rich@lamprey.utmb.edu>
-Rick "gopher I" <root@snowhite.cis.uoguelph.ca>
+Rick Macklem <root@snowhite.cis.uoguelph.ca>
 Robert D. Thrush <rd@phoenix.aii.com>
 Rodney W. Grimes <rgrimes@cdrom.com>
 Rog Egge

@@ -228,6 +228,7 @@ The FreeBSD "core" group:
 		Christoph Robitschko
 		Andreas Schulz
 		Nate Williams
+		Garrett A. Wollman
 
 
 Special mention to:
@@ -252,7 +253,6 @@ Special mention to:
 	Chris Provenzano			Dave Rivers
 	Guido van Rooij				Steven Wallace
 	Rick Weldon				Terry Williams
-	Garrett Wollman
 
 	And everyone at Montana State University for their initial support.
 
@@ -263,4 +263,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.17 1994/01/29 10:13:22 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.18 1994/01/29 15:10:12 jkh Exp $
