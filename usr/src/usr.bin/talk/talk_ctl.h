@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)talk_ctl.h	5.6 (Berkeley) %G%
+ *	@(#)talk_ctl.h	8.1 (Berkeley) %G%
  */
 
 extern	struct sockaddr_in daemon_addr;
