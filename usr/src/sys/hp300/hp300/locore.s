@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	7.21 (Berkeley) %G%
+ *	@(#)locore.s	7.22 (Berkeley) %G%
  */
 
 /*
@@ -617,24 +617,28 @@ Lstackok:
 #endif
 	moveml	#0xC0C0,sp@-		| save scratch registers
 	CLKADDR(a0)
-	lea	sp@(16),a1		| a1 = &clockframe
 	movb	a0@(CLKSR),d0		| read clock status
+Lclkagain:
+	btst	#0,d0			| clear timer1 int immediately to
+	jeq	Lnotim1			|  minimize chance of losing another
+	movpw	a0@(CLKMSB1),d1		|  due to statintr processing delay
+Lnotim1:
 	btst	#2,d0			| timer3 interrupt?
-	jeq	1f			| no, skip statintr
-	movb	a0@(CLKMSB3),d1		| clear timer3 interrupt
-	addql	#1,_intrcnt+32		| count statclock interrupts
+	jeq	Lnotim3			| no, skip statclock
+	movpw	a0@(CLKMSB3),d1		| clear timer3 interrupt
+	addql	#1,_intrcnt+32		| count clock interrupts
+	lea	sp@(16),a1		| a1 = &clockframe
 	movl	d0,sp@-			| save status
 	movl	a1,sp@-
 	jbsr	_statintr		| statintr(&frame)
 	addql	#4,sp
-	movl	sp@+,d0			| restore status
+	movl	sp@+,d0			| restore pre-statintr status
 	CLKADDR(a0)
-	lea	sp@(16),a1
-1:
+Lnotim3:
 	btst	#0,d0			| timer1 interrupt?
-	jeq	2f			| no, skip hardclock
-	movb	a0@(CLKMSB1),d1		| clear timer1 interrupt
+	jeq	Lrecheck		| no, skip hardclock
 	addql	#1,_intrcnt+28		| count hardclock interrupts
+	lea	sp@(16),a1		| a1 = &clockframe
 	movl	a1,sp@-
 #ifdef USELEDS
 	.globl	_ledaddr, _inledcontrol, _ledcontrol, _hz
@@ -661,9 +665,12 @@ Lnoled0:
 #endif
 	jbsr	_hardclock		| hardclock(&frame)
 	addql	#4,sp
-2:
-	moveml	sp@+,#0x0303		| restore scratch registers
+	CLKADDR(a0)
+Lrecheck:
 	addql	#1,_cnt+V_INTR		| chalk up another interrupt
+	movb	a0@(CLKSR),d0		| see if anything happened
+	jmi	Lclkagain		|  while we were in hardclock/statintr
+	moveml	sp@+,#0x0303		| restore scratch registers
 	jra	rei			| all done
 
 _lev7intr:
