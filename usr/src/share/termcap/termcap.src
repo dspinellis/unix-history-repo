@@ -1,7 +1,9 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.2	%G%
+#	Termcap source file @(#)termcap.src	1.3	(Berkeley) %G%
 #	Mark Horton, U.C. Berkeley
+#	Kevin Layer, Berkeley
+#	Craig Leres, Berkeley
 #
 # This file describes capabilities of various terminals, as needed by
 # software such as screen editors.  It does not attempt to describe
@@ -223,6 +225,13 @@ H7|h2000|hazeltine 2000:\
 	:do=^J:nl=^J:bl=^G:\
 	:al=6~^z:am:le=^H:bs:cl=6~^\:cm=~^q%r%.%.:co#74:\
 	:dl=6~^s:ho=~^r:li#27:nc:pc=\177:
+# Hazeltine esprit entries from Univ of Utah  Tue Feb  1 06:39:37 1983
+# J.Lepreau, lepreau@utah-cs, harpo!utah-cs!lepreau
+HE|esprit|hazeltine esprit:\
+	:al=40\E^Z:bs:cd=5\E^X:ce=\E^O:cl=\E^\:cm=\E^Q%r%>^^ %+`%+`:co#80:\
+	:dl=40\E^S:do=\E^K:ho=\E^R:li#24:nd=^P:se=\E^Y:so=\E^_:up=\E^L:
+HF|esprit-am|hazeltine esprit auto-margin:\
+	:am:tc=esprit:
 # # --------------------------------
 #
 # I: IBM, INTERACTIVE SYSTEMS, and INTECOLOR
@@ -384,7 +393,7 @@ MS|terminet1200|terminet300|tn1200|tn300|terminet|GE terminet 1200:\
 # AED 512
 # by giles Billingsley (ucbcad.gilesb@berkeley)
 # rewritten 8/82 for newer AEDs and better operation of vi,etc.
-ae|aed|AED|aed512|AED512|aed 512:\
+MT|aed|AED|aed512|AED512|aed 512:\
 	:db:co#64:li#40:cl=^L:\
 	:bs:nd=\Ei0800\001:\
 	:up=^K:ve=\E\E\E\E\E\E\E\072004=000200??\001:\
@@ -395,6 +404,56 @@ ae|aed|AED|aed512|AED512|aed 512:\
 	:te=\E\07200>8000100{804<0??00001000L80\072004=000200??\001:\
 	:so=\E\07200>8000140[80C00\001:se=\E[00C80\001:\
 	:is=\EG1MMM.`40K0001202080K8001????00^L\EC80L80{80^L\EK010100????K0601??0000c818100\EG1HHH.\07210000019A27FD006A280D002A200A52429FE8524861086118612861360N031B4C3F3F1800N041B0C1B4C38301800N001B3B313030301800N011B3B313030341800N021B3B313030381800N050800N061B3B313335301800\07211000015A58E8D5011A58F8D5111A5908D5211A5918D531160\07212000015AD5011858EAD5111858FAD52118590AD5311859160\0721300004B2071C5858E0A18658E0A0A858EA900858F268FA5278590A50A29018591A9F51865908590A90165918591A59038E58E8590A591E58F290185912071C5180A0A0A0901858EA900858F268F60\0721350000BA9472031DEA9502031DE60\E\E\E\EG1MMM.^A:
+# CIT 80  - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+Ma|cit80|cit 80|Citoh 80:\
+	:co#80:li#24:am:cl=\E[;H\EJ:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\EK:cd=\EJ:\
+	:is=\E>:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:
+# AlternateCIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+#	    Uses 23 lines so can run citsys (like h19sys).
+Ma|citc|cit 101|Citoh fast vt100:\
+	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:\
+	:dc=\E[P:al=\E[L:im=:ei=:dl=\E[M:ic=\E[@:
+# AlternateCIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+#	    Uses 23 lines so can run citsys (like h19sys).
+Ma|cita|cit 101|Citoh fast vt100:\
+	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:
+# CIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+Ma|cit101|cit 101|Citoh fast vt100:\
+	:co#80:li#24:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:
+# CIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100. (modified to remove bell?not working)...rex
+Ma|cit101b|cit 101b|Citoh fast vt100:\
+	:co#80:li#24:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:
 # Note several versions of blit.  I don't know exactly what is what
 # so please send me any corrections to this -- mrh
 # From research!ikeya!rob Tue Aug 31 23:41 EDT 1982
@@ -537,7 +596,7 @@ My|pty|psuedo teletype:\
 Mw|it2|intertube2|intertec data systems intertube 2:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:am:bs:cl=^L:co#80:ho=^A:li#25:up=^Z:ce=\EK:\
-	:cm=^K%.^P%\102%.:ch=^P%\102%.:cv=^K%.:nd=^F:do=\n:ll=^K^X\r:\
+	:cm=^N%+ %+ :ch=^P%\102%.:cv=^K%.:nd=^F:do=\n:ll=^K^X\r:\
 	:so=\E0P:se=\E0@:
 Mx|delta|dd5000|delta data 5000:\
 	:do=^J:nl=^J:bl=^G:\
@@ -1307,6 +1366,14 @@ d4|gt40|dec gt40:\
 d5|vt50|dec vt50:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:co#80:li#12:nd=\EC:ta=^I:pt:up=\EA:
+d6|vt125|vt125-am|vt125:\
+	:cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:cl=50\E[;H\E[2J:le=^H:am:bs:\
+	:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:ce=3\E[K:cd=50\E[J:so=2\E[7m:\
+	:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:\
+	:is=\E[1;24r\E[24;1H:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:\
+	:ke=\E[?1l\E>:rf=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+	:kb=^H:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:\
+	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
 dI|dw1|decwriter I:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:co#72:hc:os:
@@ -1715,6 +1782,21 @@ v6|tvi950-b|bare tvi950 no is:\
 	:is@:tc=tvi950:
 v7|tvi950-ns|tvi950 w/no standout:\
 	:so@:se@:us@:ue@:tc=tvi950:
+v8|tvi925|925|televideo model 925:\
+	:xn:am:bs:co#80:li#24:cm=\E=%+ %+ :cl=^Z:cd=\EY:ce=\ET:is=\El\E":\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=tabset.stdcrt:\
+	:ho=^^:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:sg#1:us=\EG8:ue=\EG0:ug#1:\
+	:up=^K:do=^V:kb=^H:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^V^J^L :\
+	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:\
+	:k8=^AG\r:k9=^AH\r:k0=^AI\r:ko=ic,dc,al,dl,cl,ce,cd,bt:
+# entry by Tim Curry 5/21/82 Univ. of Central Fla. duke!ucf-cs!tim
+v9|925a|tvi925a|TeleVideo Model 925:\
+        :al=\EE:am:bs:bt=\EI:bw:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:\
+        :dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/lib/tabset/stdcrt:im=:kb=^H:kd=^V:\
+        :kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg=#1:so=\EG4:\
+        :ue=\EG0:ug#1:ul:up=^K:us=\EG8:is=\El\
+        :vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
+        :ve=\E.4:vs=\E.2:
 # The following tvi descriptions from B:pjphar and virus!mike
 # is for all 950's.  It sets the following attributes:
 # full duplex (\EDF)		write protect off (\E()
@@ -1825,7 +1907,7 @@ y3|t3800|teleray 3800 series:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cd=\EJ:ce=\EK:cl=^L:cm=\EY%+ %+ :co#80: \
 	:do=\n:ho=\EH:li#24:ll=\EY7 :nd=\EC:ta=^I:pt:up=^K:
-y6|t1061|t10|teleray|teleray 1061:\
+y6|t1061|teleray|teleray 1061:\
 	:ct=\EG:st=\EF:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:al=2*\EL:am:le=^H:bs:cd=1\EJ:ce=\EK:cl=1^L:cm=\EY%+ %+ :co#80:\
@@ -1834,6 +1916,23 @@ y6|t1061|t10|teleray|teleray 1061:\
 	:li#24:nd=\EC:ta=^I:pt:se=\ER@:so= \ERD:\
 	:is=\Ee\EU01^Z1\EV\EU02^Z2\EV\EU03^Z3\EV\EU04^Z4\EV\EU05^Z5\EV\EU06^Z6\EV\EU07^Z7\EV\EU08^Z8\EV\Ef:\
 	:up=\EA:us=\ERH:ue=\ER@:xs:xt:sg#2:ug#1:
+# "Teleray Arpa Special", offically designated as
+# "Teleray Arpa network model 10" with "Special feature 720".
+# This is the new (1981) fast microcode updating the older "arpa" proms
+# (which gave meta-key and pgmmable-fxn keys).  720 is much much faster,
+# converts the keypad to programmable function keys, and has other goodies.
+# Standout mode is still broken (magic cookie, etc) so is suppressed as no
+# programs handle such lossage properly.
+# Note: this is NOT the old termcap's "t1061f with fast proms."
+# From Univ of Utah, J.Lepreau  Tue Feb  1 06:39:37 1983
+# lepreau@utah-cs, harpo!utah-cs!lepreau
+#
+y7|t10|teleray 10 special:\
+	:so@:se@:us@:ue@:\
+	:al=\EL:bs:cd=\EJ:ce=\EK:cl=30\Ej:cm=\EY%+ %+ :co#80:\
+	:dc=\EQ:dl=\EM:ei=:ho=\EH:ic=\EP:im=:km:li#24:nd=\EC:nl=\n:pc=\200:pt:\
+	:se=\ER@:so=\ERD:sf=\Eq:sg#2:sr=\Ep:up=\EA:ug#1:ue=\ER@:us=\ERH:\
+	:xs:xt:
 yf|t1061f|teleray 1061 with fast PROMs:\
 	:al=\EL:ip@:dl=\EM:tc=t1061:
 # # ------------------------
