@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.7 (Berkeley) %G%
+ *	@(#)pmap.h	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -71,7 +71,7 @@ void		pmap_reference __P((pmap_t));
 void		pmap_remove __P((pmap_t, vm_offset_t, vm_offset_t));
 void		pmap_page_protect __P((vm_offset_t, vm_prot_t));
 void		pmap_protect __P((pmap_t, vm_offset_t, vm_offset_t, vm_prot_t));
-void		pmap_enter __P((pmap_t, vm_offset_t, vm_prot_t, boolean_t));
+void		pmap_enter __P((pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t));
 void		pmap_change_wiring __P((pmap_t, vm_offset_t, boolean_t));
 vm_offset_t	pmap_extract __P((pmap_t, vm_offset_t));
 void		pmap_copy __P((pmap_t, pmap_t, vm_offset_t, vm_size_t,
