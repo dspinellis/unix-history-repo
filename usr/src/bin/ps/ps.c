@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -44,7 +44,6 @@ struct usave {
 	struct	timeval u_start;
 	struct	rusage u_ru;
 	struct	rusage u_cru;
-	short	u_cmask;
 	char	u_acflag;
 };
 
@@ -152,8 +151,6 @@ struct var {
 	{{"rss", "p_rss"}, "RSS", 0, p_rssize, 4},
 	{{"u_procp", "uprocp"}, "UPROCP",
 		USER, uvar, 6, UOFF(u_procp), KPTR, "x"},
-	{{"umask", "u_cmask"}, "UMASK",
-		USER, uvar, 3, UOFF(u_cmask), CHAR, "#o"},
 	{{"acflag", "acflg"}, "ACFLG",
 		USER, uvar, 3, UOFF(u_acflag), SHORT, "x"},
 	{{"start"}, "STARTED", USER|LJUST, started, 8},
@@ -265,7 +262,8 @@ fixpt_t	ccpu;
 
 #define USAGE	"ps [ -(o|O) fmt ] [ -wlvujnsaxSCLmcr ] [ -p pid ] [ -t tty ]"
 
-main (argc, argv)
+main(argc, argv)
+	int argc;
 	char *argv[];
 {
 	extern char *optarg;
@@ -433,10 +431,8 @@ main (argc, argv)
 	 * and adjusting header widths as appropiate.
 	 */
 	scanvars();
-#ifdef notdef
 	if (sortby == SORTCPU)
 		neednlist = 1;
-#endif
 	if (neednlist)
 		donlist();
 	/*
@@ -796,7 +792,6 @@ wchan(k, v)
 		(void) printf("%-*s", v->width, "-");
 }
 
-#define pgtok(a)        (((a)*NBPG)/1024)
 
 vsize(k, v)
 	struct kinfo *k;
@@ -1098,7 +1093,6 @@ saveuser(ki)
 		usp->u_start = up->u_start;
 		usp->u_ru = up->u_ru;
 		usp->u_cru = up->u_cru;
-		usp->u_cmask = up->u_cmask;
 		usp->u_acflag = up->u_acflag;
 	}
 }
@@ -1112,7 +1106,7 @@ pscomp(k1, k2)
 
 	if (sortby == SORTCPU)
 		return (getpcpu(k2) - getpcpu(k1));
-#ifdef notyet
+#ifdef notdef
 	if (sortby == SORTRUN)
 		return (proc_compare(k1->ki_p, k2->ki_p));
 #endif
