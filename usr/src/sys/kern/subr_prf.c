@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.36 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.37 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -338,7 +338,7 @@ kprintf(fmt, flags, tp, ap)
 	struct tty *tp;
 	va_list ap;
 {
-	register char *p;
+	register char *p, *q;
 	register int ch, n;
 	u_long ul;
 	int base, lflag, tmp, width;
@@ -372,7 +372,7 @@ reswitch:	switch (ch = *(u_char *)fmt++) {
 		case 'b':
 			ul = va_arg(ap, int);
 			p = va_arg(ap, char *);
-			for (p = ksprintn(ul, *p++, NULL); ch = *p--;)
+			for (q = ksprintn(ul, *p++, NULL); ch = *q--;)
 				putchar(ch, flags, tp);
 
 			if (!ul)
