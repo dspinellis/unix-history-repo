@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.23 (Berkeley) 83/07/02";
+static char sccsid[] = "@(#)telnetd.c	4.24 (Berkeley) 83/07/06";
 #endif
 
 /*
@@ -18,9 +18,9 @@ static char sccsid[] = "@(#)telnetd.c	4.23 (Berkeley) 83/07/02";
 #include <errno.h>
 #include <sgtty.h>
 #include <netdb.h>
-#include <getty.h>
 
-#define	BELL		'\07'
+#define	BELL	'\07'
+#define BANNER	"\r\n\r\n4.2 BSD UNIX (%s)\r\n\r\r\n\r%s"
 
 char	hisopts[256];
 char	myopts[256];
