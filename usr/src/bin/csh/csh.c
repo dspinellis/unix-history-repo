@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.16 %G%";
+static	char *sccsid = "@(#)csh.c 4.17 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -905,13 +905,17 @@ initdesc()
 	closem();
 }
 
+#ifdef PROF
+done(i)
+#else
 exit(i)
+#endif
 	int i;
 {
 
 	untty();
 #ifdef PROF
-	IEH3exit(i);
+	monitor(0);
 #else
 	_exit(i);
 #endif
@@ -921,7 +925,7 @@ printprompt()
 {
 	register char *cp;
 
-	if (whyles) {
+	if (!whyles) {
 		for (cp = value("prompt"); *cp; cp++)
 			if (*cp == HIST)
 				printf("%d", eventno + 1);
