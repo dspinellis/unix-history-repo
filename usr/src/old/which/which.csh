@@ -1,9 +1,9 @@
-#! /bin/csh
+#! /bin/csh -f
 #
-#	@(#)which.csh	4.1	(Berkeley)	83/02/14
+#	@(#)which.csh	4.2	(Berkeley)	83/02/14
 #
 #	which : tells you which program you get
-#	hacked to do aliases (from .cshrc file only!)
+#
 set noglob
 foreach arg ( $argv )
     set alius = `alias $arg`
