@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.10 1993/12/13 01:10:13 ache Exp $
+ *	$Id: tty.c,v 1.11 1993/12/19 00:51:38 wollman Exp $
  */
 
 #include "param.h"
@@ -1934,7 +1934,7 @@ ttyinfo(tp)
 		/* Print percentage cpu, resident set size. */
 		tmp = pick->p_pctcpu * 10000 + FSCALE / 2 >> FSHIFT;
 		ttyprintf(tp, "%d%% %dk\n",
-		   tmp / 100, pgtok(pick->p_vmspace->vm_rssize));
+		   tmp / 100, pgtok(pick->p_vmspace->vm_pmap.pm_stats.resident_count));
 	}
 	tp->t_rocount = 0;	/* so pending input will be retyped if BS */
 }
