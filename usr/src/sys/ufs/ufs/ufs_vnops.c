@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -731,7 +731,7 @@ ufs_rename(fndp, tndp)
 			dp->i_flag |= ICHG;
 			error = rdwri(UIO_READ, xp, (caddr_t)&dirbuf,
 				sizeof (struct dirtemplate), (off_t)0,
-				UIO_USERSPACE, tndp->ni_cred, (int *)0);
+				UIO_SYSSPACE, tndp->ni_cred, (int *)0);
 			if (error == 0) {
 				if (dirbuf.dotdot_namlen != 2 ||
 				    dirbuf.dotdot_name[0] != '.' ||
@@ -742,7 +742,7 @@ ufs_rename(fndp, tndp)
 					(void) rdwri(UIO_WRITE, xp,
 					    (caddr_t)&dirbuf,
 					    sizeof (struct dirtemplate),
-					    (off_t)0, UIO_USERSPACE,
+					    (off_t)0, UIO_SYSSPACE,
 					    tndp->ni_cred, (int *)0);
 					cache_purge(ITOV(dp));
 				}
