@@ -1,6 +1,8 @@
-/*	kdb_print.c	7.1	86/11/20	*/
+/*	kdb_print.c	7.2	86/11/20	*/
 
 #include "../kdb/defs.h"
+
+char	*BADRAD;
 
 ADDR	lastframe;
 ADDR	callpc;
@@ -50,22 +52,19 @@ printtrace(modif)
 
 	case 'd':
 		if (adrflg) {
-			if (!(adrval>=2 &&
-			      adrval<=16 || adrval<=-2 && adrval>=-16)) {
-				printf("illegal radix %d base ten", radix);
-				break;
-			}
-			radix=adrval;
+			if (adrval < 2 || adrval > 16)
+				error(BADRAD);
+			radix = adrval;
 		}
-		printf("radix=%d base ten",radix);
+		printf("radix=%d base ten", radix);
 		break;
 
 	case 'w': case 'W':
-		maxpos=(adrflg?adrval:MAXPOS);
+		printf("maxpos=%d", maxpos=(adrflg?adrval:MAXPOS));
 		break;
 
 	case 's': case 'S':
-		maxoff=(adrflg?adrval:MAXOFF);
+		printf("maxoff=%d", maxoff=(adrflg?adrval:MAXOFF));
 		break;
 
 	case 'v': case 'V':
@@ -78,7 +77,6 @@ printtrace(modif)
 		break;
 
 	case 0: case '?':
-
 	case 'r': case 'R':
 		printregs(modif);
 		return;
