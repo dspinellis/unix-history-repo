@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.184 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.185 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -3095,6 +3095,7 @@ struct hostent *
 sm_gethostbyname(name)
 	char *name;
 {
+	struct hostent *h;
 #if defined(SOLARIS) && SOLARIS < 204 || defined(sony_news) && defined(__svr4)
 	extern int h_errno;
 
@@ -3103,42 +3104,64 @@ sm_gethostbyname(name)
 	static char buf[1000];
 	extern struct hostent *_switch_gethostbyname_r();
 
-	return _switch_gethostbyname_r(name, &hp, buf, sizeof(buf), &h_errno);
+	if (tTd(61, 10))
+		printf("_switch_gethostbyname_r(%s)... ", name);
+	h = _switch_gethostbyname_r(name, &hp, buf, sizeof(buf), &h_errno);
 # else
 	extern struct hostent *__switch_gethostbyname();
 
-	return __switch_gethostbyname(name);
+	if (tTd(61, 10))
+		printf("__switch_gethostbyname(%s)... ", name);
+	h = __switch_gethostbyname(name);
 # endif
 #else
-	struct hostent *h;
+# if defined(NIS)
 	int nmaps;
 	char *maptype[MAXMAPSTACK];
 	short mapreturn[MAXMAPACTIONS];
 	char hbuf[MAXNAME];
+# endif
 
+	if (tTd(61, 10))
+		printf("gethostbyname(%s)... ", name);
 	h = gethostbyname(name);
 # if defined(NIS)
-	if (h != NULL)
-		return h;
-	nmaps = switch_map_find("hosts", maptype, mapreturn);
-	while (--nmaps >= 0)
-		if (strcmp(maptype[nmaps], "nis") == 0)
-			break;
-	if (nmaps >= 0)
+	if (h == NULL)
 	{
-		/* try short name */
-		if (strlen(name) > sizeof hbuf - 1)
-			return NULL;
-		strcpy(hbuf, name);
-		shorten_hostname(hbuf);
+		if (tTd(61, 10))
+			printf("failure\n");
 
-		/* if it hasn't been shortened, there's no point */
-		if (strcmp(hbuf, name) != 0)
-			return gethostbyname(hbuf);
+		nmaps = switch_map_find("hosts", maptype, mapreturn);
+		while (--nmaps >= 0)
+			if (strcmp(maptype[nmaps], "nis") == 0)
+				break;
+		if (nmaps >= 0)
+		{
+			/* try short name */
+			if (strlen(name) > sizeof hbuf - 1)
+				return NULL;
+			strcpy(hbuf, name);
+			shorten_hostname(hbuf);
+
+			/* if it hasn't been shortened, there's no point */
+			if (strcmp(hbuf, name) != 0)
+			{
+				if (tTd(61, 10))
+					printf("gethostbyname(%s)... ", hbuf);
+				h = gethostbyname(hbuf);
+			}
+		}
 	}
 # endif
-	return h;
 #endif
+	if (tTd(61, 10))
+	{
+		if (h == NULL)
+			printf("failure\n");
+		else
+			printf("%s\n", h->h_name);
+	}
+	return h;
 }
 
 struct hostent *
