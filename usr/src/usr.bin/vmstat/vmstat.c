@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)vmstat.c	4.17 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.18 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -107,12 +107,12 @@ double	etime;
 int 	mf;
 time_t	now, boottime;
 int	printhdr();
+int	lines = 1;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int lines;
 	extern char *ctime();
 	register i,j;
 	int iter, nintv, iflag = 0;
@@ -247,11 +247,9 @@ main(argc, argv)
 	if (argc > 1)
 		iter = atoi(argv[1]);
 	signal(SIGCONT, printhdr);
-reprint:
-	lines = 20;
-	/* s1 = z; */
-	printhdr();
 loop:
+	if (--lines == 0)
+		printhdr();
 	lseek(mf, (long)nl[X_CPTIME].n_value, L_SET);
  	read(mf, s.time, sizeof s.time);
 	lseek(mf, (long)nl[X_DKXFER].n_value, L_SET);
@@ -308,12 +306,8 @@ loop:
 	fflush(stdout);
 contin:
 	nintv = 1;
-	--iter;
-	if(iter)
-	if(argc > 0) {
+	if (--iter &&argc > 0) {
 		sleep(atoi(argv[0]));
-		if (--lines <= 0)
-			goto reprint;
 		goto loop;
 	}
 }
@@ -338,6 +332,7 @@ printhdr()
 		if (dr_select[i])
 			printf("%c%c ", dr_name[i][0], dr_name[i][2]);	
 	printf(" in  sy  cs us sy id\n");
+	lines = 19;
 }
 
 dotimes()
