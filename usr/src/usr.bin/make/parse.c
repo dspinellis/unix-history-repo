@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -138,6 +138,7 @@ typedef enum {
     Order,  	    /* .ORDER */
     ExPath,	    /* .PATH */
     Precious,	    /* .PRECIOUS */
+    Reserved,	    /* .RESERVED or .[A-Z]* */
     ExShell,	    /* .SHELL */
     Silent,	    /* .SILENT */
     SingleShell,    /* .SINGLESHELL */
@@ -165,32 +166,63 @@ static struct {
     ParseSpecial  spec;	    	/* Type when used as a target */
     int	    	  op;	    	/* Operator when used as a source */
 } parseKeywords[] = {
+#define DOT_BEGIN	0
 { ".BEGIN", 	  Begin,    	0 },
+#define	DOT_DEFAULT	1
 { ".DEFAULT",	  Default,  	0 },
-{ ".OPTIONAL",	  Attribute,   	OP_OPTIONAL },
+#define	DOT_END		2
 { ".END",   	  End,	    	0 },
+#define	DOT_EXEC	3
 { ".EXEC",	  Attribute,   	OP_EXEC },
+#define	DOT_IGNORE	4
 { ".IGNORE",	  Ignore,   	OP_IGNORE },
+#define	DOT_INCLUDES	5
 { ".INCLUDES",	  Includes, 	0 },
+#define	DOT_INTERRUPT	6
 { ".INTERRUPT",	  Interrupt,	0 },
+#define	DOT_INVISIBLE	7
 { ".INVISIBLE",	  Attribute,   	OP_INVISIBLE },
+#define	DOT_JOIN	8
 { ".JOIN",  	  Attribute,   	OP_JOIN },
+#define	DOT_LIBS	9
 { ".LIBS",  	  Libs,	    	0 },
+#define	DOT_MAIN	10
 { ".MAIN",	  Main,		0 },
+#define	DOT_MAKE	11
 { ".MAKE",  	  Attribute,   	OP_MAKE },
+#define	DOT_MAKEFLAGS	12
 { ".MAKEFLAGS",	  MFlags,   	0 },
+#define	DOT_MFLAGS	13
 { ".MFLAGS",	  MFlags,   	0 },
+#define	DOT_NOTMAIN	14
 { ".NOTMAIN",	  Attribute,   	OP_NOTMAIN },
+#define	DOT_NOTPARALLEL	15
 { ".NOTPARALLEL", NotParallel,	0 },
+#define	DOT_NULL	16
 { ".NULL",  	  Null,	    	0 },
+#define	DOT_OPTIONAL	17
+{ ".OPTIONAL",	  Attribute,   	OP_OPTIONAL },
+#define	DOT_ORDER	18
 { ".ORDER", 	  Order,    	0 },
+#define	DOT_PATH	19
 { ".PATH",	  ExPath,	0 },
+#define	DOT_PHONY	20
+{ ".PHONY",	  Attribute, 	OP_PHONY },
+#define	DOT_PRECIOUS	21
 { ".PRECIOUS",	  Precious, 	OP_PRECIOUS },
+#define	DOT_RECURSIVE	22
 { ".RECURSIVE",	  Attribute,	OP_MAKE },
+#define	DOT_RESERVED	23
+{ ".RESERVED",	  Reserved,	0 },
+#define	DOT_SHELL	24
 { ".SHELL", 	  ExShell,    	0 },
+#define	DOT_SILENT	25
 { ".SILENT",	  Silent,   	OP_SILENT },
+#define	DOT_SINGLESHELL	26
 { ".SINGLESHELL", SingleShell,	0 },
+#define	DOT_SUFFIXES	27
 { ".SUFFIXES",	  Suffixes, 	0 },
+#define	DOT_USE		28
 { ".USE",   	  Attribute,   	OP_USE },
 };
 
@@ -251,7 +283,12 @@ ParseFindKeyword (str)
 	    start = cur + 1;
 	}
     } while (start <= end);
-    return (-1);
+
+    cur = 0;
+    for (++str; *str; str++)
+	if (!isupper((unsigned char) *str))
+		break;
+    return *str ? -1 : DOT_RESERVED;
 }
 
 /*-
@@ -777,6 +814,12 @@ ParseDoDependency (line)
 		    case Order:
 			predecessor = NILGNODE;
 			break;
+		    case Reserved:
+			/*
+			 * A posix reserved target that we don't know
+			 * how to deal with.
+			 */
+			return;
 		    default:
 			break;
 		}
