@@ -51,6 +51,7 @@ static char sccsid[] = "@(#)function.c	5.17 (Berkeley) 5/24/91";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fnmatch.h>
 #include "find.h"
 
 #define	FIND_EQUAL	0
@@ -320,8 +321,7 @@ f_fstype(plan, entry)
 {
 	static dev_t curdev;	/* need a guaranteed illegal dev value */
 	static int first = 1;
-	struct statfs sb;
-	static short val;
+	static struct statfs sb;
 	char *p, save[2];
 
 	/* only check when we cross mount point */
@@ -355,10 +355,9 @@ f_fstype(plan, entry)
 		}
 
 		first = 0;
-		val = plan->flags == MOUNT_NONE ? sb.f_flags : sb.f_type;
 	}
 	return(plan->flags == MOUNT_NONE ?
-	    val & MNT_LOCAL : val == plan->flags);
+	    sb.f_flags & plan->m_flags : sb.f_type == plan->flags);
 }
  
 PLAN *
@@ -371,15 +370,36 @@ c_fstype(arg)
     
 	new = palloc(N_FSTYPE, f_fstype);
 	switch(*arg) {
+	case 'f':
+		if (!strcmp(arg, "fdesc")) {
+#ifdef MOUNT_FDESC
+			new->flags = MOUNT_FDESC;
+			return(new);
+#else
+			err("unknown file type %s", arg);
+#endif
+		}
+		break;
 	case 'i':
 		if (!strcmp(arg, "isofs")) {
 			new->flags = MOUNT_ISOFS;
 			return(new);
 		}
 		break;
+	case 'k':
+		if (!strcmp(arg, "kernfs")) {
+#ifdef MOUNT_KERNFS
+			new->flags = MOUNT_KERNFS;
+			return(new);
+#else
+			err("unknown file type %s", arg);
+#endif
+		}
+		break;
 	case 'l':
 		if (!strcmp(arg, "local")) {
 			new->flags = MOUNT_NONE;
+			new->m_flags = MNT_LOCAL;
 			return(new);
 		}
 		break;
@@ -396,6 +416,13 @@ c_fstype(arg)
 	case 'n':
 		if (!strcmp(arg, "nfs")) {
 			new->flags = MOUNT_NFS;
+			return(new);
+		}
+		break;
+	case 'r':
+		if (!strcmp(arg, "rdonly")) {
+			new->flags = MOUNT_NONE;
+			new->m_flags = MNT_RDONLY;
 			return(new);
 		}
 		break;
@@ -530,7 +557,7 @@ f_name(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(fnmatch(plan->c_data, entry->fts_name, FNM_QUOTE));
+	return(!fnmatch(plan->c_data, entry->fts_name, 0));
 }
  
 PLAN *
