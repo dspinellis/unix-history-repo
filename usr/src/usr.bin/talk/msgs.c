@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /* 
@@ -19,15 +19,10 @@ static char sccsid[] = "@(#)msgs.c	5.1 (Berkeley) %G%";
 #include "talk.h"
 
 #define MSG_INTERVAL 4
-#define LONG_TIME 100000
 
 char	*current_state;
 int	current_line = 0;
 
-static	struct itimerval itimer;
-static	struct timeval wait = { MSG_INTERVAL , 0};
-static	struct timeval undo = { LONG_TIME, 0};
-	
 disp_msg()
 {
 
@@ -36,18 +31,21 @@ disp_msg()
 
 start_msgs()
 {
+	struct itimerval itimer;
 
 	message(current_state);
 	signal(SIGALRM, disp_msg);
-	itimer.it_value = itimer.it_interval = wait;
+	itimer.it_value.tv_sec = itimer.it_interval.tv_sec = MSG_INTERVAL;
+	itimer.it_value.tv_usec = itimer.it_interval.tv_usec = 0;
 	setitimer(ITIMER_REAL, &itimer, (struct timerval *)0);
 }
 
 end_msgs()
 {
+	struct itimerval itimer;
 
-	signal(SIGALRM, SIG_IGN);
 	timerclear(&itimer.it_value);
 	timerclear(&itimer.it_interval);
 	setitimer(ITIMER_REAL, &itimer, (struct timerval *)0);
+	signal(SIGALRM, SIG_DFL);
 }

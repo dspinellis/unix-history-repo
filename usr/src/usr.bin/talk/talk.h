@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)talk.h	5.1 (Berkeley) %G%
+ *	@(#)talk.h	5.2 (Berkeley) %G%
  */
 
 #include <curses.h>
@@ -11,11 +11,7 @@
 
 #define forever		for(;;)
 
-#define BUF_SIZE	512
-
-FILE	*popen();
 int	quit();
-int	sleeper();
 
 extern	int sockt;
 extern	int curses_initialized;
