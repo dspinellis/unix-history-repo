@@ -1,6 +1,9 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.16  1993/11/04  03:51:31  paul
+# Added support for building shared libs.
+#
 # Revision 1.15  1993/10/31  15:43:03  ljo
 # bsd.dep.mk wasn't installed. bsd.lib.mk was missing a "\" line
 # continuation character in afterdepend target.
@@ -154,7 +157,7 @@ BINMODE?=	555
 
 .s.so:
 	${CPP} -E -DPIC ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
-	   {AS} -k -o ${.TARGET}
+	   ${AS} -k -o ${.TARGET}
 
 .if !defined(NOPROFILE)
 _LIBS=lib${LIB}.a lib${LIB}_p.a
