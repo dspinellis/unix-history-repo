@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dev.c	7.13 (Berkeley) %G%
+ *	@(#)dev.c	7.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,8 +28,10 @@ devread(io)
 	io->i_error = 0;
 	cc = (*devsw[io->i_dev].dv_strategy)(io, F_READ);
 	io->i_flgs &= ~F_TYPEMASK;
+#ifndef SMALL
 	if (scankbd())
 		_longjmp(exception, 1);
+#endif
 	return (cc);
 }
 
@@ -42,8 +44,10 @@ devwrite(io)
 	io->i_error = 0;
 	cc = (*devsw[io->i_dev].dv_strategy)(io, F_WRITE);
 	io->i_flgs &= ~F_TYPEMASK;
+#ifndef SMALL
 	if (scankbd())
 		_longjmp(exception, 1);
+#endif
 	return (cc);
 }
 
@@ -54,6 +58,9 @@ devopen(io)
 
 	if (!(ret = (*devsw[io->i_dev].dv_open)(io)))
 		return (0);
+#ifdef SMALL
+	printf("open error\n");
+#else
 	printf("%s(%d,%d,%d,%d): ", devsw[io->i_dev].dv_name,
 		io->i_adapt, io->i_ctlr, io->i_unit, io->i_part);
 	switch(ret) {
@@ -84,6 +91,7 @@ devopen(io)
 		printf("unknown open error\n");
 		break;
 	}
+#endif
 	return (ret);
 }
 
