@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.4 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.5 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -40,17 +40,22 @@ ifdef(`CSNET_RELAY',
 CONCAT(DC, CSNET_RELAY)
 
 ')dnl
-# my official hostname ($w or $w.$D)
-CONCAT(Dj$w, ifdef(`NEED_DOMAIN', .$D))
+ifdef(`SMART_HOST',
+`# "Smart" UUCP relay host
+CONCAT(DS, SMART_HOST)
 
-# who I masquerade as (can be $j)
-CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
-
+')dnl
 # who I send unqualified names to (null means deliver locally)
 CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
 
 # who gets all local email traffic ($R has precedence for unqualified names)
 CONCAT(DH, ifdef(`MAIL_HUB', MAIL_HUB))
+
+# my official hostname ($w or $w.$D)
+CONCAT(Dj$w, ifdef(`NEED_DOMAIN', .$D))
+
+# who I masquerade as (can be $j)
+CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
 
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
@@ -242,6 +247,7 @@ ifdef(`confWORK_TIME_FACTOR',
 
 Pfirst-class=0
 Pspecial-delivery=100
+Plist=-30
 Pbulk=-60
 Pjunk=-100
 
@@ -422,7 +428,8 @@ R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
 # short circuit local delivery so forwarded email works
 R$+ < @ $j . >		$: $1 < @ $j @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
-`R$+ < $+ @ $+ >		$#smtp $@ $3 $: $1 < $2 >	yep ....
+`R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 < $2 >	yep ....
+R$+ < $+ @ $+ >		$#smtp $@ $3 $: $1 < $2 >	yep ....
 R$+ < $+ @ >		$#local $: $1			nope, local address',
 `R$+ < $+ @ $+ >		$#local $: $1			yep ....
 R$+ < $+ @ >		$#local $: @ $1			nope, local address')
@@ -457,10 +464,22 @@ R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $1:$2			@host.UUCP:...
 R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1			user@host.UUCP',
 	`dnl')')
 
-ifdef(`_MAILER_smtp_',
+ifdef(`_LOCAL_RULES_',
+`# figure out what should stay in our local mail system
+undivert(1)',
+`ifdef(`_MAILER_smtp_',
 `# deal with other remote names
-R$* < @ $* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
-', `dnl')
+R$* < @ $* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain')')
+ifdef(`SMART_HOST', `
+# pass names that still have a host to a smarthost
+R$* < @ $* > $*		$: < $S > $1 < @ $2 > $3	glue on smarthost name
+R<$-:$+> $* < @$* > $*	$# $1 $@ $2 $: $3 < @ $4 > $5	if non-null, use it
+R<$+> $* < @$* > $*	$#suucp $@ $1 $: $2 < @ $3 > $4	if non-null, use it
+R<> $* < @ $* > $*	$1 < @ $2 > $3			else strip off gunk',
+`ifdef(`_LOCAL_RULES_', `
+# reject messages that have host names we do not understand
+R$* < @ $* > $*		$#error $@ NOHOST $: Unrecognized host name $2',
+`dnl')')
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
@@ -469,6 +488,7 @@ R$+			$: $1 < @ $R >			append relay
 R$+ < @ >		$: $1 < @ $H >			no relay, try hub
 R$+ < @ >		$#local $: $1			no relay or hub: local
 R$+ < @ $j  >		$#local $: $1			we are relay/hub: local
+R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		deliver to relay/hub
 R$+ < @ $+ >		$#smtp $@ $2 $: $1		deliver to relay/hub',
 `# handle locally delivered names
 R$=L			$#local $: @ $1			special local names
@@ -485,6 +505,7 @@ ifdef(`_MAILER_smtp_',
 `R$+			$: $1 < @ $R >
 R$+ < @ >		$: $1 < @ $H >			no relay, try hub
 R$+ < @ $j >		$@ $1				we are relay/hub: local
+R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		send to relay or hub
 R$+ < @ $+ >		$#smtp $@ $2 $: $1		send to relay or hub')')
 #
 ######################################################################
