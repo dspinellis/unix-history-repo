@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)file.h	7.3 (Berkeley) %G%
+ *	@(#)file.h	7.4 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -62,7 +62,7 @@ int	nfile;
 #define	FEXLOCK		00400		/* exclusive lock present */
 
 /* bits to save after open */
-#define	FMASK		01113
+#define	FMASK		(FASYNC|FAPPEND|FNDELAY|FWRITE|FREAD)
 #define	FCNTLCANT	(FREAD|FWRITE|FMARK|FDEFER|FSHLOCK|FEXLOCK)
 
 /* open only modes */
