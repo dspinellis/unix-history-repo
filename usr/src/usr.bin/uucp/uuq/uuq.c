@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuq.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuq.c	4.9	(Berkeley) %G%";
 #endif
 
 /*
@@ -67,7 +67,7 @@ int hflag;
 int lflag;
 
 char *malloc(), *calloc();
-float atof();
+double atof();
 float baudrate = 2400.;
 char Username[BUFSIZ];
 char Filename[BUFSIZ];
@@ -75,36 +75,38 @@ int Maxulen = 0;
 struct timeb Now;
 
 main(argc, argv)
+int argc;
 char **argv;
 {
-	register i;
+	register int i;
 	register struct sys *sp;
 	register struct job *jp;
 	struct job **sortjob;
 	int nsys;
+	extern char *optarg;
+	extern int optind;
 
 	strcpy(Progname, "uuq");
 	uucpname(Myname);
 
-	while (--argc > 0) {
-		argv++;
-		if (argv[0][0] == '-') switch (argv[0][1]) {
+	while ((i = getopt(argc, argv, "r:s:u:d:b:hl")) != EOF)
+		switch (i) {
 		case 'r':
-			Spool = &argv[0][2];
+			Spool = optarg;
 			break;
 		case 's':
-			sysname = &argv[0][2];
+			sysname = optarg;
 			if (strlen(sysname) > SYSNSIZE)
 				sysname[SYSNSIZE] = '\0';
 			break;
 		case 'u':
-			user = &argv[0][2];
+			user = optarg;
 			break;
 		case 'd':
-			rmjob = &argv[0][2];
+			rmjob = optarg;
 			break;
 		case 'b':
-			baudrate = atof(&argv[0][2]);
+			baudrate = atof(optarg);
 			break;
 		case 'h':
 			hflag++;
@@ -117,7 +119,6 @@ char **argv;
 	"usage: uuq [-l] [-h] [-ssystem] [-uuser] [-djobno] [-rspool] [-bbaudrate]\n");
 			exit(0);
 		}
-	}
 
 	subchdir(Spool);
 	baudrate *= 0.7;	/* reduce speed because of protocol overhead */
@@ -144,7 +145,7 @@ char **argv;
 				minutes -= 60 * hours;
 			}
 			printf("%3.1f minutes (@ effective baudrate of %d)",
-				minutes,(int)baudrate/6);
+				minutes,(int)(baudrate/6));
 		}
 		putchar('\n');
 		if (hflag)
@@ -203,7 +204,7 @@ gather()
 	 * Find all the spool files in the spooling directory
 	 */
 	if ((df = opendir(subdir(Spool, CMDPRE))) == NULL) {
-		fprintf(stderr, "can't examine spooling area");
+		fprintf(stderr, "can't examine spooling area\n");
 		exit(1);
 	}
 	for (;;) {
@@ -223,6 +224,7 @@ gather()
 /*
  * analjob does the grunge work of verifying jobs
  */
+#include <pwd.h>
 analjob(filename)
 char *filename;
 {
@@ -275,6 +277,18 @@ char *filename;
 		if (getargs(str, wrkvec, 20) <= 0)
 			continue;
 		if (rmjob) {
+			int myuid;
+			struct passwd *pw;
+			/*
+			 * Make sure person who is removing data files is
+			 * the person who created it or root.
+			 */
+			myuid = getuid();
+			pw = getpwnam(W_USER);
+			if (myuid && (pw == NULL || myuid != pw->pw_uid)) {
+				fprintf(stderr, "Permission denied.\n");
+				exit(1);
+			}
 			if (W_TYPE[0] == 'S' && !index(W_OPTNS, 'c')) {
 				unlink(subfile(W_DFILE));
 				fprintf(stderr, "Removing data file %s\n", W_DFILE);
