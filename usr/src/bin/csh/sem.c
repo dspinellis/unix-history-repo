@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sem.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)sem.c	5.8 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include "sh.proc.h"
+#include <sys/file.h>
 #include <sys/ioctl.h>
 #include "pathnames.h"
 
@@ -387,9 +388,7 @@ doio(t, pipein, pipeout)
 	if (cp = t->t_drit) {
 		cp = globone(Dfix1(cp));
 		xfree(cp);
-		if ((flags & FCAT) && open(cp, 1) >= 0)
-			(void) lseek(1, (off_t)0, 2);
-		else {
+		if (!(flags & FCAT) || open(cp, O_WRONLY|O_APPEND, 0) < 0) {
 			if (!(flags & FANY) && adrof("noclobber")) {
 				if (flags & FCAT)
 					Perror(cp);
