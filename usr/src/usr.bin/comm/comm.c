@@ -15,14 +15,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comm.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)comm.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/file.h>
 #include <limits.h>
 #include <stdio.h>
 
-#define	MAXLINELEN	(LINE_MAX + 1)
+#define	MAXLINELEN	(_BSD_LINE_MAX + 1)
 
 char *tabs[] = { "", "\t", "\t\t" };
 
