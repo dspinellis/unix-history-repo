@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.50 (Berkeley) %G%
+		@(#)README	8.51 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1184,6 +1184,13 @@ confALIAS_WAIT		AliasWait	[10m] Time to wait for alias file
 					rebuild failed.
 confMIN_FREE_BLOCKS	MinFreeBlocks	[100] Minimum number of free blocks on
 					queue filesystem to accept SMTP mail.
+					(Prior to 8.7 this was minfree/maxsize,
+					where minfree was the number of free
+					blocks and maxsize was the maximum
+					message size.  Use confMAX_MESSAGE_SIZE
+					for the second value now.)
+confMAX_MESSAGE_SIZE	MaxMessageSize	The maximum size of messages that will
+					be accepted (in bytes).
 confBLANK_SUB		BlankSub	[.] Blank (space) substitution
 					character.
 confCON_EXPENSIVE	HoldExpensive	[False] Avoid connecting immediately
