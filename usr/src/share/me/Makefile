@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.11 (Berkeley) %G%
+#	@(#)Makefile	6.12 (Berkeley) %G%
 
 MELIB=	${BINDIR}/me
 TMLIB=	${BINDIR}/tmac
@@ -21,5 +21,7 @@ beforeinstall:
 	done
 	cd ${.CURDIR}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 revisions \
 	    ${DESTDIR}${MELIB}/revisions
+
+BINDIR= /usr/old/lib
 
 .include <bsd.prog.mk>
