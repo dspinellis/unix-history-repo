@@ -1,8 +1,6 @@
-# include <stdio.h>
 # include "sendmail.h"
-# include <ctype.h>
 
-static char SccsId[] = "@(#)readcf.c	3.9	%G%";
+static char SccsId[] = "@(#)readcf.c	3.10	%G%";
 
 /*
 **  READCF -- read control file.

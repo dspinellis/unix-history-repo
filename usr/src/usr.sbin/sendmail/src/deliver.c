@@ -1,14 +1,11 @@
-# include <stdio.h>
-# include <pwd.h>
 # include <signal.h>
-# include <ctype.h>
 # include <errno.h>
 # include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.24	%G%";
+static char SccsId[] = "@(#)deliver.c	3.25	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -541,8 +538,8 @@ putmessage(fp, m)
 		fprintf(fp, "\n");
 
 	/* output the body of the message */
-	rewind(stdin);
-	while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, stdin)) > 0)
+	rewind(TempFile);
+	while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, TempFile)) > 0)
 		(void) fwrite(buf, 1, i, fp);
 
 	if (ferror(fp) && errno != EPIPE)
