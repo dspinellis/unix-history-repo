@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_acct.c	7.18 (Berkeley) 5/11/91
- *	$Id: kern_acct.c,v 1.3 1993/10/16 15:24:07 rgrimes Exp $
+ *	$Id: kern_acct.c,v 1.4 1993/10/19 01:07:21 nate Exp $
  */
 
 #include "param.h"
@@ -75,12 +75,14 @@ struct  vnode *savacctp = NULL;	/* file to which to do accounting when space */
 
 /* Mark Tinguely (tinguely@plains.NoDak.edu) 8/10/93 */
 
+struct sysacct_args {
+	char	*fname;
+};
+
 /* ARGSUSED */
 sysacct(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*fname;
-	} *uap;
+	struct sysacct_args *uap;
 	int *retval;
 {
 
