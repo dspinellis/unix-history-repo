@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	8.3 (Berkeley) %G%
+ *	@(#)nfs_bio.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,7 +30,6 @@
 #include <nfs/nqnfs.h>
 
 struct buf *incore(), *nfs_getcacheblk();
-extern struct queue_entry nfs_bufq;
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_numasync;
 
@@ -623,7 +622,7 @@ nfs_asyncio(bp, cred)
 			}
 		}
 	
-		queue_enter_tail(&nfs_bufq, bp, struct buf *, b_freelist);
+		TAILQ_INSERT_TAIL(&nfs_bufq, bp, b_freelist);
 		nfs_iodwant[i] = (struct proc *)0;
 		wakeup((caddr_t)&nfs_iodwant[i]);
 		return (0);
