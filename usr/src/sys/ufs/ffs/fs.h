@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	2.3	4/12/82	*/
+/*	fs.h	4.1	82/04/19	*/
 
 /*
  * Each disk drive contains some number of file systems.
