@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.22		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.23		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.22		%G%);
+SCCSID(@(#)queue.c	3.23		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -648,6 +648,9 @@ readqf(cf)
 timeout(w)
 	register WORK *w;
 {
+	char buf[MAXLINE];
+	extern char *TextTimeOut;
+
 # ifdef DEBUG
 	if (Debug > 0)
 		printf("timeout(%s)\n", w->w_name);
@@ -655,8 +658,8 @@ timeout(w)
 	message(Arpa_Info, "Message has timed out");
 
 	/* return message to sender */
-	(void) returntosender("Cannot send mail for three days",
-			      &CurEnv->e_from, TRUE);
+	(void) sprintf(buf, "Cannot send mail for %s", TextTimeOut);
+	(void) returntosender(buf, &CurEnv->e_from, TRUE);
 
 	/* arrange to remove files from queue */
 	CurEnv->e_queueup = FALSE;
