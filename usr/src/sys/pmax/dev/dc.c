@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	7.5 (Berkeley) %G%
+ *	@(#)dc.c	7.6 (Berkeley) %G%
  *
  * devDC7085.c --
  *
@@ -65,9 +65,9 @@ struct	driver dcdriver = {
 
 #define	NDCLINE 	(NDC*4)
 
-extern void dcstart();
-extern void dcxint();
-extern int ttrstrt();
+extern void dcstart __P((struct tty *));
+extern void dcxint __P((struct tty *));
+extern void ttrstrt __P((struct tty *));
 
 struct	tty dc_tty[NDCLINE];
 int	dc_cnt = NDCLINE;
@@ -77,6 +77,11 @@ void	(*dcMouseButtons)();	/* X windows mouse buttons event routine */
 #ifdef DEBUG
 int	debugChar;
 #endif
+
+static void dcscan __P((void));
+static int dcMapChar __P((int));
+static void dcKBDReset __P((void));
+static void MouseInit __P((void));
 
 /*
  * Software copy of brk register since it isn't readable
@@ -358,9 +363,6 @@ dcprobe(cp)
 	register struct pdma *pdp;
 	register struct tty *tp;
 	register int cntr;
-	extern dcscan();
-	extern void dcKBDReset();
-	extern void MouseInit();
 
 	if (cp->pmax_unit >= NDC)
 		return (0);
@@ -409,8 +411,10 @@ dcprobe(cp)
 	return (1);
 }
 
-dcopen(dev, flag)
+dcopen(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register int unit;
@@ -461,8 +465,10 @@ dcopen(dev, flag)
 }
 
 /*ARGSUSED*/
-dcclose(dev, flag)
+dcclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register int unit, bit;
@@ -474,7 +480,7 @@ dcclose(dev, flag)
 		dc_brk[unit >> 2] &= ~bit;
 		ttyoutput(0, tp);
 	}
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	if ((tp->t_cflag & HUPCL) || (tp->t_state & TS_WOPEN) ||
 	    !(tp->t_state & TS_ISOPEN))
 		(void) dcmctl(dev, 0, DMSET);
@@ -502,9 +508,11 @@ dcwrite(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-dcioctl(dev, cmd, data, flag)
+dcioctl(dev, cmd, data, flag, p)
 	dev_t dev;
 	caddr_t data;
+	int flag;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register int unit = minor(dev);
@@ -512,7 +520,7 @@ dcioctl(dev, cmd, data, flag)
 	int error;
 
 	tp = &dc_tty[unit];
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
+	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
@@ -931,6 +939,7 @@ dcmctl(dev, bits, how)
  * This is called by timeout() periodically.
  * Check to see if modem status bits have changed.
  */
+static void
 dcscan()
 {
 	register dcregs *dcaddr;
@@ -1077,10 +1086,13 @@ dcDebugGetc()
 {
 	register dcregs *dcaddr;
 	register int c;
+	int s;
 
 	dcaddr = dcpdma[KBD_PORT].p_addr;
 	if (!dcaddr)
 		return (0);
+
+	s = spltty();
 	if (c = debugChar)
 		debugChar = 0;
 	else {
@@ -1092,6 +1104,8 @@ dcDebugGetc()
 			c = 0;
 		}
 	}
+	splx(s);
+
 	return (c & 0xff);
 }
 #endif
