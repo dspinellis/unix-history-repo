@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -1241,7 +1241,7 @@ char *flds[];
 struct Devices *dev;
 {
 	int	dh = -1;
-	int	i, ok, er = 0;
+	int	i, ok, er = 0, delay;
 	extern errno;
 	char dcname[20];
 
@@ -1270,6 +1270,7 @@ struct Devices *dev;
 
 /* translate - to % and = to & for VenTel */
 	DEBUG(4, "calling %s -> ", telno);
+	delay = 0;
 	for (i = 0; i < strlen(telno); ++i) {
 		switch(telno[i]) {
 		case '=':	/* await dial tone */
