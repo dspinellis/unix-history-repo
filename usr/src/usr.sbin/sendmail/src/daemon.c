@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.65 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.66 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.65 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.66 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -971,8 +971,6 @@ myhostname(hostbuf, size)
 **		The user@host information associated with this descriptor.
 */
 
-#if IDENTPROTO
-
 static jmp_buf	CtxAuthTimeout;
 
 static
@@ -981,22 +979,18 @@ authtimeout()
 	longjmp(CtxAuthTimeout, 1);
 }
 
-#endif
-
 char *
 getauthinfo(fd)
 	int fd;
 {
 	int falen;
 	register char *p;
-#if IDENTPROTO
 	SOCKADDR la;
 	int lalen;
 	register struct servent *sp;
 	int s;
 	int i;
 	EVENT *ev;
-#endif
 	static char hbuf[MAXNAME * 2 + 2];
 	extern char *hostnamebyanyaddr();
 	extern char RealUserName[];			/* main.c */
@@ -1017,7 +1011,6 @@ getauthinfo(fd)
 		RealHostName = newstr(hostnamebyanyaddr(&RealHostAddr));
 	}
 
-#if IDENTPROTO
 	if (TimeOuts.to_ident == 0)
 		goto noident;
 
@@ -1137,8 +1130,6 @@ getauthinfo(fd)
 closeident:
 	(void) close(s);
 	clrevent(ev);
-
-#endif /* IDENTPROTO */
 
 noident:
 	if (RealHostName == NULL)
