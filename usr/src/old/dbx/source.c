@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)source.c 1.8 %G%";
+static char sccsid[] = "@(#)source.c 1.9 %G%";
 
 /*
  * Source file management.
@@ -116,27 +116,49 @@ Lineno l1, l2;
 }
 
 /*
+ * Search the sourcepath for a file.
+ */
+
+static char fileNameBuf[1024];
+
+public String findsource(filename)
+String filename;
+{
+    register File f;
+    register String src, dir;
+
+    if (filename[0] == '/') {
+	src = filename;
+    } else {
+	src = nil;
+	foreach (String, dir, sourcepath)
+	    sprintf(fileNameBuf, "%s/%s", dir, filename);
+	    f = fopen(fileNameBuf, "r");
+	    if (f != nil) {
+		fclose(f);
+		src = fileNameBuf;
+		break;
+	    }
+	endfor
+    }
+    return src;
+}
+
+/*
  * Open a source file looking in the appropriate places.
  */
 
 public File opensource(filename)
 String filename;
 {
-    register String dir;
-    char buf[256];
+    String s;
     File f;
 
-    f = nil;
-    if (filename[0] == '/') {
-	f = fopen(filename, "r");
+    s = findsource(filename);
+    if (s == nil) {
+	f = nil;
     } else {
-	foreach (String, dir, sourcepath)
-	    sprintf(buf, "%s/%s", dir, filename);
-	    f = fopen(buf, "r");
-	    if (f != nil) {
-		break;
-	}
-	endfor
+	f = fopen(s, "r");
     }
     return f;
 }
@@ -245,4 +267,47 @@ public printsrcpos()
     if (nlhdr.nfiles > 1) {
 	printf(" in file \"%s\"", cursource);
     }
+}
+
+#define DEF_EDITOR  "vi"
+
+/*
+ * Invoke an editor on the given file.  Which editor to use might change
+ * installation to installation.  For now, we use "vi".  In any event,
+ * the environment variable "EDITOR" overrides any default.
+ */
+
+public edit(filename)
+String filename;
+{
+    extern String getenv();
+    String ed, src, s;
+    Symbol f;
+    Address addr;
+    char lineno[10];
+
+    ed = getenv("EDITOR");
+    if (ed == nil) {
+	ed = DEF_EDITOR;
+    }
+    src = findsource((filename != nil) ? filename : cursource);
+    if (src == nil) {
+	f = which(identname(filename, true));
+	if (not isblock(f)) {
+	    error("can't read \"%s\"", filename);
+	}
+	addr = firstline(f);
+	if (addr == NOADDR) {
+	    error("no source for \"%s\"", filename);
+	}
+	src = srcfilename(addr);
+	s = findsource(src);
+	if (s != nil) {
+	    src = s;
+	}
+	sprintf(lineno, "+%d", srcline(addr));
+    } else {
+	sprintf(lineno, "+1");
+    }
+    call(ed, stdin, stdout, lineno, src, nil);
 }
