@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.8	(Berkeley)	83/04/19";
+static char sccsid[] = "@(#)dirs.c	3.9	(Berkeley)	83/05/03";
 #endif
 
 #include "restore.h"
@@ -422,7 +422,7 @@ setdirmodes()
 		if (feof(mf))
 			break;
 		ep = lookupino(node.ino);
-		if (ep == NIL || (ep->e_flags & NEW) == 0) {
+		if (ep == NIL) {
 			if (command != 'r' && command != 'R')
 				continue;
 			panic("cannot find directory inode %d\n", node.ino);
