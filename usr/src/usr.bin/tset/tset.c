@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -336,7 +336,7 @@ static char sccsid[] = "@(#)tset.c	5.13 (Berkeley) %G%";
 #define	CSUSP	CNTL('Z')
 #define	CDSUSP	CNTL('Y')
 #define	CRPRNT	CNTL('R')
-#define	CFLUSH	CNTL('O')
+#define	CDISCARD	CNTL('O')
 #define	CWERASE	CNTL('W')
 #define	CLNEXT	CNTL('V')
 #endif
@@ -612,7 +612,7 @@ char	*argv[];
 			ltc.t_suspc = CHK(ltc.t_suspc, CSUSP);
 			ltc.t_dsuspc = CHK(ltc.t_dsuspc, CDSUSP);
 			ltc.t_rprntc = CHK(ltc.t_rprntc, CRPRNT);
-			ltc.t_flushc = CHK(ltc.t_flushc, CFLUSH);
+			ltc.t_flushc = CHK(ltc.t_flushc, CDISCARD);
 			ltc.t_werasc = CHK(ltc.t_werasc, CWERASE);
 			ltc.t_lnextc = CHK(ltc.t_lnextc, CLNEXT);
 			(void) ioctl(FILEDES, TIOCSLTC, (char *)&ltc);
