@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.21 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -287,6 +287,18 @@ nfs_write(vp, uio, ioflag, cred)
 #endif
 	if (vp->v_type != VREG)
 		return (EIO);
+	if (ioflag & (IO_APPEND | IO_SYNC)) {
+		if (np->n_flag & NMODIFIED) {
+			np->n_flag &= ~NMODIFIED;
+			vinvalbuf(vp, TRUE);
+		}
+		if (ioflag & IO_APPEND) {
+			np->n_attrstamp = 0;
+			if (error = nfs_getattr(vp, &vattr, cred, p))
+				return (error);
+			uio->uio_offset = np->n_size;
+		}
+	}
 	nmp = VFSTONFS(vp->v_mount);
 	if (uio->uio_offset < 0)
 		return (EINVAL);
