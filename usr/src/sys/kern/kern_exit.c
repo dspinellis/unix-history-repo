@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.10 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -106,10 +106,11 @@ exit(rv)
 	}
 	if (SESS_LEADER(p)) {
 		p->p_session->s_leader = 0;
-		/* TODO: vhangup(); */
-		if (u.u_ttyp) {
-			u.u_ttyp->t_session = 0;
-			u.u_ttyp->t_pgid = 0;
+		if (p->p_session->s_ttyvp) {
+			vgone(p->p_session->s_ttyvp);
+			vrele(p->p_session->s_ttyvp);
+			p->p_session->s_ttyvp = NULL;
+			p->p_session->s_ttyp = NULL;
 		}
 	}
 	VOP_LOCK(u.u_cdir);
