@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	1.5 83/07/22";
+static	char *sccsid = "@(#)wwinit.c	1.6 83/07/26";
 #endif
 
 #include "ww.h"
@@ -12,11 +12,15 @@ struct ww_tty wwnewtty = {
 	0, 0, 0
 };
 int _wwdtablesize;
+char _wwtermcap[1024];
+char _wwkeys[512];
+static char *kp = _wwkeys;
 int wwncol, wwnrow;
 
 wwinit()
 {
 	static char done = 0;
+	int kn;
 
 	if (done)
 		return 0;
@@ -40,5 +44,47 @@ wwinit()
 		return -1;
 	WSetRealCursor = 1;
 	Wscreensize(&wwnrow, &wwncol);
+
+	if (tgetent(_wwtermcap, getenv("TERM")) != 1)
+		return -1;
+	addcap("kb");
+	addcap("ku");
+	addcap("kd");
+	addcap("kl");
+	addcap("kr");
+	addcap("kh");
+	if ((kn = tgetnum("kn")) >= 0) {
+		char cap[5];
+		int i;
+
+		sprintf(kp, "kn#%d:", kn);
+		for (; *kp; kp++)
+			;
+		for (i = 1; i <= kn; i++) {
+			sprintf(cap, "k%d", i);
+			addcap(cap);
+			cap[0] = 'l';
+			addcap(cap);
+		}
+	}
 	return 0;
+}
+
+addcap(cap)
+register char *cap;
+{
+	static char tbuf[512];
+	static char *tp = tbuf;
+	register char *str;
+	char *tgetstr();
+
+	if ((str = tgetstr(cap, &tp)) != 0) {
+		while (*kp++ = *cap++)
+			;
+		kp[-1] = '=';
+		while (*kp++ = *str++)
+			;
+		kp[-1] = ':';
+		*kp = 0;
+	}
 }

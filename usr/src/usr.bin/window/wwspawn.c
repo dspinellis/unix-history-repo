@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwspawn.c	1.5 83/07/22";
+static	char *sccsid = "@(#)wwspawn.c	1.6 83/07/26";
 #endif
 
 #include "ww.h"
 
 extern int _wwdtablesize;
+extern char _wwtermcap[];
 
 wwfork(wp)
 register struct ww *wp;
@@ -31,8 +32,9 @@ register struct ww *wp;
 	:co#%d:dc=\\EN:dl=\\EM:do=\\EB:ei=\\EO:ho=\\EH:li#%d:im=\\E@:mi:\
 	:nd=\\EC:ta=^I:pt:up=\\EA:"
 static char *env[100];
-static char buf[sizeof TERMCAP + 10];
+static char buf[1024];
 extern char **environ;
+extern char _wwkeys[];
 
 wwenviron(wp)
 register struct ww *wp;
@@ -64,5 +66,6 @@ register struct ww *wp;
 		termcap = q++;
 	*q = 0;
 	*termcap = sprintf(buf, TERMCAP, wp->ww_i.ncol, wp->ww_i.nrow);
+	strcat(buf, _wwkeys);
 	environ = env;
 }
