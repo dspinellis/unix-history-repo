@@ -25,7 +25,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -475,7 +475,7 @@ get_exportlist()
 		exit(2);
 	}
 	while (fgets(line, LINESIZ, inf)) {
-		exflags = M_EXPORTED;
+		exflags = MNT_EXPORTED;
 		rootuid = def_rootuid;
 		cp = line;
 		nextfield(&cp, &endcp);
@@ -499,7 +499,7 @@ get_exportlist()
 					cp++;
 					switch (*cp) {
 					case 'o':
-						exflags |= M_EXRDONLY;
+						exflags |= MNT_EXRDONLY;
 						break;
 					case 'r':
 						if (*++cp == '=')
@@ -557,7 +557,7 @@ get_exportlist()
 		args.fspec = 0;
 		args.exflags = exflags;
 		args.exroot = rootuid;
-		if (mount(MOUNT_UFS, ep->ex_dirp, M_UPDATE, &args) < 0) {
+		if (mount(MOUNT_UFS, ep->ex_dirp, MNT_UPDATE, &args) < 0) {
 			syslog(LOG_WARNING, "Can't export %s", ep->ex_dirp);
 			free((caddr_t)ep);
 		} else {

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -117,7 +117,7 @@ main(argc, argv, arge)
 			type = FSTAB_RO;
 			break;
 		case 'u':
-			updateflg = M_UPDATE;
+			updateflg = MNT_UPDATE;
 			break;
 		case 'v':
 			verbose = 1;
@@ -151,7 +151,7 @@ main(argc, argv, arge)
 				continue;
 			/* `/' is special, it's always mounted */
 			if (!strcmp(fs->fs_file, "/"))
-				flags = M_UPDATE;
+				flags = MNT_UPDATE;
 			else
 				flags = updateflg;
 			mnttype = getmnttype(fs->fs_vfstype);
@@ -248,8 +248,8 @@ mountfs(spec, name, flags, type, options, mntopts)
 			getufsopts(options, &flags);
 		args.fspec = spec;
 		args.exroot = DEFAULT_ROOTUID;
-		if (flags & M_RDONLY)
-			args.exflags = M_EXRDONLY;
+		if (flags & MNT_RDONLY)
+			args.exflags = MNT_EXRDONLY;
 		else
 			args.exflags = 0;
 		argp = (caddr_t)&args;
@@ -321,7 +321,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 			fprintf(stderr, "Mount table full\n");
 			break;
 		case EINVAL:
-			if (flags & M_UPDATE)
+			if (flags & MNT_UPDATE)
 				fprintf(stderr, "Specified device does %s\n",
 					"not match mounted device");
 			else
@@ -356,22 +356,22 @@ prmount(spec, name, flags)
 	if (opflags & ISBGRND)
 		return;
 	printf("%s on %s", spec, name);
-	if (flags & M_RDONLY)
+	if (flags & MNT_RDONLY)
 		printf(" (read-only)");
-	if (flags & M_NOEXEC)
+	if (flags & MNT_NOEXEC)
 		printf(" (noexec)");
-	if (flags & M_NOSUID)
+	if (flags & MNT_NOSUID)
 		printf(" (nosuid)");
-	if (flags & M_NODEV)
+	if (flags & MNT_NODEV)
 		printf(" (nodev)");
-	if (flags & M_SYNCHRONOUS)
+	if (flags & MNT_SYNCHRONOUS)
 		printf(" (synchronous)");
-	if (flags & M_QUOTA)
+	if (flags & MNT_QUOTA)
 		printf(" (with quotas)");
-	if (flags & M_LOCAL)
+	if (flags & MNT_LOCAL)
 		printf(" (local)");
-	if (flags & M_EXPORTED)
-		if (flags & M_EXRDONLY)
+	if (flags & MNT_EXPORTED)
+		if (flags & MNT_EXRDONLY)
 			printf(" (NFS exported read-only)");
 		else
 			printf(" (NFS exported)");
@@ -420,39 +420,39 @@ getstdopts(options, flagp)
 			negative = 0;
 		}
 		if (!negative && !strcasecmp(opt, FSTAB_RO)) {
-			*flagp |= M_RDONLY;
+			*flagp |= MNT_RDONLY;
 			continue;
 		}
 		if (!negative && !strcasecmp(opt, FSTAB_RW)) {
-			*flagp &= ~M_RDONLY;
+			*flagp &= ~MNT_RDONLY;
 			continue;
 		}
 		if (!strcasecmp(opt, "exec")) {
 			if (negative)
-				*flagp |= M_NOEXEC;
+				*flagp |= MNT_NOEXEC;
 			else
-				*flagp &= ~M_NOEXEC;
+				*flagp &= ~MNT_NOEXEC;
 			continue;
 		}
 		if (!strcasecmp(opt, "suid")) {
 			if (negative)
-				*flagp |= M_NOSUID;
+				*flagp |= MNT_NOSUID;
 			else
-				*flagp &= ~M_NOSUID;
+				*flagp &= ~MNT_NOSUID;
 			continue;
 		}
 		if (!strcasecmp(opt, "dev")) {
 			if (negative)
-				*flagp |= M_NODEV;
+				*flagp |= MNT_NODEV;
 			else
-				*flagp &= ~M_NODEV;
+				*flagp &= ~MNT_NODEV;
 			continue;
 		}
 		if (!strcasecmp(opt, "synchronous")) {
 			if (!negative)
-				*flagp |= M_SYNCHRONOUS;
+				*flagp |= MNT_SYNCHRONOUS;
 			else
-				*flagp &= ~M_SYNCHRONOUS;
+				*flagp &= ~MNT_SYNCHRONOUS;
 			continue;
 		}
 	}
