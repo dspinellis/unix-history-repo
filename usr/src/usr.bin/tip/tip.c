@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -47,8 +47,8 @@ main(argc, argv)
 	char sbuf[12];
 
 	if (equal(sname(argv[0]), "cu")) {
-		cumain(argc, argv);
 		cumode = 1;
+		cumain(argc, argv);
 		goto cucommon;
 	}
 
@@ -119,15 +119,6 @@ notnumber:
 	}
 	setbuf(stdout, NULL);
 	loginit();
-	/*
-	 * Now that we have the logfile and the ACU open
-	 *  return to the real uid and gid.  These things will
-	 *  be closed on exit.  Note that we can't run as root,
-	 *  because locking mechanism on the tty and the accounting
-	 *  will be bypassed.
-	 */
-	setgid(getgid());
-	setuid(getuid());
 
 	/*
 	 * Kludge, their's no easy way to get the initialization
@@ -144,6 +135,20 @@ notnumber:
 	}
 
 	/*
+	 * Now that we have the logfile and the ACU open
+	 *  return to the real uid and gid.  These things will
+	 *  be closed on exit.  Swap real and effective uid's
+	 *  so we can get the original permissions back
+	 *  for removing the uucp lock.
+	 */
+	gid = getgid();
+	egid = getegid();
+	uid = getuid();
+	euid = geteuid();
+	setregid(egid, gid);
+	setreuid(euid, uid);
+
+	/*
 	 * Hardwired connections require the
 	 *  line speed set before they make any transmissions
 	 *  (this is particularly true of things like a DF03-AC)
@@ -152,6 +157,8 @@ notnumber:
 		ttysetup(i);
 	if (p = connect()) {
 		printf("\07%s\n[EOT]\n", p);
+		setreuid(uid, euid);
+		setregid(gid, egid);
 		delock(uucplock);
 		exit(1);
 	}
@@ -162,6 +169,7 @@ cucommon:
 	 * From here down the code is shared with
 	 * the "cu" version of tip.
 	 */
+
 	ioctl(0, TIOCGETP, (char *)&defarg);
 	ioctl(0, TIOCGETC, (char *)&defchars);
 	ioctl(0, TIOCGLTC, (char *)&deflchars);
@@ -196,6 +204,10 @@ cucommon:
 cleanup()
 {
 
+	if (uid != getuid()) {
+		setreuid(uid, euid);
+		setregid(gid, egid);
+	}
 	delock(uucplock);
 	if (odisc)
 		ioctl(0, TIOCSETD, (char *)&odisc);
