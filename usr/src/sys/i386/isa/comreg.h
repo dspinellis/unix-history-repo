@@ -1,13 +1,10 @@
 /*-
- * Copyright (c) 1982, 1986, 1990, 1991 The Regents of the University of
- * California. All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * the University of Utah and William Jolitz.
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)comreg.h	7.1 (Berkeley) %G%
+ *	@(#)comreg.h	7.2 (Berkeley) %G%
  */
 
 
@@ -21,12 +18,24 @@
 #define	IER_EMSC	0x8
 
 /* interrupt identification register */
+#define	IIR_IMASK	0xf
+#define	IIR_RXTOUT	0xc
+#define	IIR_RLS		0x6
+#define	IIR_RXRDY	0x4
+#define	IIR_TXRDY	0x2
 #define	IIR_NOPEND	0x1
-#define	IIR_IMASK	0x6
-#define	IIR_RLS		6
-#define	IIR_RXRDY	4
-#define	IIR_TXRDY	2
-#define	IIR_MLSC	0
+#define	IIR_MLSC	0x0
+#define	IIR_FIFO_MASK	0xc0	/* set if FIFOs are enabled */
+
+/* fifo control register */
+#define	FIFO_ENABLE	0x01
+#define	FIFO_RCV_RST	0x02
+#define	FIFO_XMT_RST	0x04
+#define	FIFO_DMA_MODE	0x08
+#define	FIFO_TRIGGER_1	0x00
+#define	FIFO_TRIGGER_4	0x40
+#define	FIFO_TRIGGER_8	0x80
+#define	FIFO_TRIGGER_14	0xc0
 
 /* character format control register */
 #define	CFCR_DLAB	0x80
@@ -50,6 +59,7 @@
 #define	MCR_DTR		0x01
 
 /* line status register */
+#define	LSR_RCV_FIFO	0x80
 #define	LSR_TSRE	0x40
 #define	LSR_TXRDY	0x20
 #define	LSR_BI		0x10
@@ -57,6 +67,7 @@
 #define	LSR_PE		0x04
 #define	LSR_OE		0x02
 #define	LSR_RXRDY	0x01
+#define	LSR_RCV_MASK	0x1f
 
 /* modem status register */
 #define	MSR_DCD		0x80
@@ -68,3 +79,9 @@
 #define	MSR_DDSR	0x02
 #define	MSR_DCTS	0x01
 
+/*
+ * WARNING: Serial console is assumed to be at COM1 address
+ * and CONUNIT must be 0.
+ */
+#define	CONADDR	(0x3f8)
+#define	CONUNIT	(0)
