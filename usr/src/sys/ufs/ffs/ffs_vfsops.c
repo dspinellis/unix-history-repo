@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.23 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -98,7 +98,7 @@ ffs_mountroot()
 		free(mp, M_MOUNT);
 		return (error);
 	}
-	TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 	mp->mnt_vnodecovered = NULLVP;
 	vfsp->vfc_refcount++;
 	mp->mnt_stat.f_type = vfsp->vfc_typenum;
@@ -149,19 +149,28 @@ ffs_mount(mp, path, data, ndp, p)
 	if (mp->mnt_flag & MNT_UPDATE) {
 		ump = VFSTOUFS(mp);
 		fs = ump->um_fs;
-		error = 0;
 		if (fs->fs_ronly == 0 && (mp->mnt_flag & MNT_RDONLY)) {
 			flags = WRITECLOSE;
 			if (mp->mnt_flag & MNT_FORCE)
 				flags |= FORCECLOSE;
 			if (vfs_busy(mp))
 				return (EBUSY);
-			error = ffs_flushfiles(mp, flags, p);
+			if (error = ffs_flushfiles(mp, flags, p)) {
+				vfs_unbusy(mp);
+				return (error);
+			}
+			fs->fs_clean = 1;
+			fs->fs_ronly = 1;
+			if (error = ffs_sbupdate(ump, MNT_WAIT)) {
+				fs->fs_clean = 0;
+				fs->fs_ronly = 0;
+				vfs_unbusy(mp);
+				return (error);
+			}
 			vfs_unbusy(mp);
 		}
-		if (!error && (mp->mnt_flag & MNT_RELOAD))
-			error = ffs_reload(mp, ndp->ni_cnd.cn_cred, p);
-		if (error)
+		if ((mp->mnt_flag & MNT_RELOAD) &&
+		    (error = ffs_reload(mp, ndp->ni_cnd.cn_cred, p)))
 			return (error);
 		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR)) {
 			/*
@@ -179,6 +188,8 @@ ffs_mount(mp, path, data, ndp, p)
 				VOP_UNLOCK(devvp);
 			}
 			fs->fs_ronly = 0;
+			fs->fs_clean = 0;
+			(void) ffs_sbupdate(ump, MNT_WAIT);
 		}
 		if (args.fspec == 0) {
 			/*
@@ -423,8 +434,6 @@ ffs_mountfs(devvp, mp, p)
 	bp = NULL;
 	fs = ump->um_fs;
 	fs->fs_ronly = ronly;
-	if (ronly == 0)
-		fs->fs_fmod = 1;
 #ifdef SECSIZE
 	/*
 	 * If we have a disk label, force per-partition
@@ -497,6 +506,10 @@ ffs_mountfs(devvp, mp, p)
 	maxfilesize = (u_int64_t)0x40000000 * fs->fs_bsize - 1;	/* XXX */
 	if (fs->fs_maxfilesize > maxfilesize)			/* XXX */
 		fs->fs_maxfilesize = maxfilesize;		/* XXX */
+	if (ronly == 0) {
+		fs->fs_clean = 0;
+		(void) ffs_sbupdate(ump, MNT_WAIT);
+	}
 	return (0);
 out:
 	if (bp)
@@ -562,6 +575,13 @@ ffs_unmount(mp, mntflags, p)
 		return (error);
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
+	if (fs->fs_ronly == 0) {
+		fs->fs_clean = 1;
+		if (error = ffs_sbupdate(ump, MNT_WAIT)) {
+			fs->fs_clean = 0;
+			return (error);
+		}
+	}
 	ump->um_devvp->v_specflags &= ~SI_MOUNTEDON;
 	error = VOP_CLOSE(ump->um_devvp, fs->fs_ronly ? FREAD : FREAD|FWRITE,
 		NOCRED, p);
@@ -659,19 +679,9 @@ ffs_sync(mp, waitfor, cred, p)
 	int error, allerror = 0;
 
 	fs = ump->um_fs;
-	/*
-	 * Write back modified superblock.
-	 * Consistency check that the superblock
-	 * is still in the buffer cache.
-	 */
-	if (fs->fs_fmod != 0) {
-		if (fs->fs_ronly != 0) {		/* XXX */
-			printf("fs = %s\n", fs->fs_fsmnt);
-			panic("update: rofs mod");
-		}
-		fs->fs_fmod = 0;
-		fs->fs_time = time.tv_sec;
-		allerror = ffs_sbupdate(ump, waitfor);
+	if (fs->fs_ronly != 0) {		/* XXX */
+		printf("fs = %s\n", fs->fs_fsmnt);
+		panic("update: rofs mod");
 	}
 	/*
 	 * Write back each (modified) inode.
@@ -707,6 +717,15 @@ loop:
 #ifdef QUOTA
 	qsync(mp);
 #endif
+	/*
+	 * Write back modified superblock.
+	 */
+	if (fs->fs_fmod != 0) {
+		fs->fs_fmod = 0;
+		fs->fs_time = time.tv_sec;
+		if (error = ffs_sbupdate(ump, waitfor))
+			allerror = error;
+	}
 	return (allerror);
 }
 
@@ -923,8 +942,33 @@ ffs_sbupdate(mp, waitfor)
 	register struct buf *bp;
 	int blks;
 	caddr_t space;
-	int i, size, error = 0;
+	int i, size, error, allerror = 0;
 
+	/*
+	 * First write back the summary information.
+	 */
+	blks = howmany(fs->fs_cssize, fs->fs_fsize);
+	space = (caddr_t)fs->fs_csp[0];
+	for (i = 0; i < blks; i += fs->fs_frag) {
+		size = fs->fs_bsize;
+		if (i + fs->fs_frag > blks)
+			size = (blks - i) * fs->fs_fsize;
+		bp = getblk(mp->um_devvp, fsbtodb(fs, fs->fs_csaddr + i),
+		    size, 0, 0);
+		bcopy(space, bp->b_data, (u_int)size);
+		space += size;
+		if (waitfor != MNT_WAIT)
+			bawrite(bp);
+		else if (error = bwrite(bp))
+			allerror = error;
+	}
+	/*
+	 * Now write back the superblock itself. If any errors occurred
+	 * up to this point, then fail so that the superblock avoids
+	 * being written out as clean.
+	 */
+	if (allerror)
+		return (allerror);
 #ifdef SECSIZE
 	bp = getblk(mp->m_dev, (daddr_t)fsbtodb(fs, SBOFF / fs->fs_fsize),
 	    (int)fs->fs_sbsize, fs->fs_dbsize);
@@ -953,29 +997,9 @@ ffs_sbupdate(mp, waitfor)
 	bp->b_un.b_fs->fs_sparecon[0] = 0;
 #endif
 #endif SECSIZE
-	if (waitfor == MNT_WAIT)
-		error = bwrite(bp);
-	else
+	if (waitfor != MNT_WAIT)
 		bawrite(bp);
-	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	space = (caddr_t)fs->fs_csp[0];
-	for (i = 0; i < blks; i += fs->fs_frag) {
-		size = fs->fs_bsize;
-		if (i + fs->fs_frag > blks)
-			size = (blks - i) * fs->fs_fsize;
-#ifdef SECSIZE
-		bp = getblk(mp->m_dev, fsbtodb(fs, fs->fs_csaddr + i), size,
-		    fs->fs_dbsize);
-#else SECSIZE
-		bp = getblk(mp->um_devvp, fsbtodb(fs, fs->fs_csaddr + i),
-		    size, 0, 0);
-#endif SECSIZE
-		bcopy(space, bp->b_data, (u_int)size);
-		space += size;
-		if (waitfor == MNT_WAIT)
-			error = bwrite(bp);
-		else
-			bawrite(bp);
-	}
-	return (error);
+	else if (error = bwrite(bp))
+		allerror = error;
+	return (allerror);
 }
