@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.h	7.5 (Berkeley) %G%
+ *	@(#)if_ether.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -74,9 +74,31 @@ struct	arptab {
 	struct	mbuf *at_hold;		/* last packet until resolved/timeout */
 };
 
+struct llinfo_arp {				
+	struct	llinfo_arp *la_next;
+	struct	llinfo_arp *la_prev;
+	struct	rtentry *la_rt;
+	struct	mbuf *la_hold;		/* last packet until resolved/timeout */
+	long	la_asked;		/* last time we QUERIED for this addr */
+#define la_timer la_rt->rt_rmx.rmx_expire /* deletion time in seconds */
+};
+
+struct sockaddr_inarp {
+	u_char	sin_len;
+	u_char	sin_family;
+	u_short sin_port;
+	struct	in_addr sin_addr;
+	struct	in_addr sin_srcaddr;
+	u_short	sin_tos;
+	u_short	sin_other;
+#define SIN_PROXY 1
+};
+
 #ifdef	KERNEL
 u_char	etherbroadcastaddr[6];
-struct	arptab *arptnew();
-int	ether_output(), ether_input();
+struct	llinfo_arp *arptnew();
+struct	llinfo_arp llinfo_arp;		/* head of the llinfo queue */
+int	ether_output(), ether_input(), arp_rtrequest();
 char	*ether_sprintf();
+struct	ifqueue arpintrq;
 #endif
