@@ -1,0 +1,95 @@
+.\" 1.1	(CWI)	87/03/31
+.TH CHEM l "March 31, 1987"
+.SH NAME
+chem \- troff preprocessor for chemical structure diagrams
+.SH SYNOPSIS
+.br
+.B chem
+files
+.SH DESCRIPTION
+.I
+Chem
+is yet another preprocessor like eqn, pic, etc., 
+this time for producing chemical structure diagrams.
+Today's version is best suited for organic chemistry
+(bonds, rings) and it's excruciatingly slow sometimes.
+Who knows what the future may hold.
+.PP
+In a style reminiscent of
+.I eqn
+and
+.I pic,
+diagrams are
+written in a special language and occur in a document
+surrounded by lines beginning
+.br
+	.cstart
+.br
+and
+.br
+	.cend
+.br
+(in the first column, naturally).  Anything outside
+these is copied through intact;  whatever is between
+\&.cstart and .cend is converted into pic commands to
+draw the diagram.
+.PP
+So as a bare minimum,
+.nf
+	.cstart
+	CH3
+	bond
+	CH3
+	.cend
+.fi
+prints two CH3 groups with a bond between them.
+To actually print this, you must run chem, pic,
+troff, and your output filter on whatever file
+contains the input.
+.SH FILES
+.nf
+chem.awk	awkscript for chem
+chem.macros	pic(1) marcros
+.fi
+.SH SEE ALSO
+ditroff(1), dieqn(1), pic(1)
+.br
+.I
+John L. Bentley, Lynn W. Jelinsky, Brian W Kernighan,
+CHEM\-A Program for Typesetting Chemical Diagrams: User Manual, 17 April 1986
+.SH BUGS
+.I Chem
+needs the current version of awk;
+you will get some mysterious error messages from awk
+if your version is too old.  You will also profit from
+having sensible and consistent definitions for the PS
+and PE macros
+.SH WISH LIST
+.br
+It's too slow (but it's too early in the game to optimize).
+.br
+Error checking is minimal;  errors are usually detected
+and reported in an oblique fashion by pic.
+.br
+There's no library or file inclusion mechanism, and there's
+no shorthand for repetitive structures.
+.br
+The extension mechanism is to create pic macros, but these
+are tricky to get right and don't have all the properties
+of built-in objects.
+.br
+There's no in-line chemistry yet (e.g., analogous to
+the $...$ construct of eqn).
+.br
+There is no way to control entry point for bonds on groups.
+Normally a bond connects to the carbon atom if entering from
+the top or bottom and otherwise to the nearest corner.
+.br
+Bonds from substituted atoms on heterocycles do not join
+at the proper place without adding a bit of pic.
+.br
+There is no decent primitive for brackets.
+.br
+Text (quoted strings) doesn't work very well.
+.br
+A squiggle bond is needed.

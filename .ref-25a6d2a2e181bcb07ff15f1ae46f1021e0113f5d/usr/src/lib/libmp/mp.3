@@ -1,0 +1,159 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)mp.3	6.4 (Berkeley) %G%
+.\"
+.TH MP 3X ""
+.UC 6
+.SH NAME
+madd, msub, mult, mdiv, pow, gcd, invert, rpow, msqrt, mcmp,
+move, min, omin, fmin, m_in, mout, omout, fmout, m_out, sdiv, itom
+\- multiple precision integer arithmetic
+.SH SYNOPSIS
+.nf
+.B #include <mp.h>
+.B #include <stdio.h>
+.PP
+.B "typedef struct mint { int len; short *val; } MINT;"
+.PP
+.B madd(a, b, c)
+.B msub(a, b, c)
+.B mult(a, b, c)
+.B mdiv(a, b, q, r)
+.B pow(a, b, m, c)
+.B gcd(a, b, c)
+.B invert(a, b, c)
+.B rpow(a, n, c)
+.B msqrt(a, b, r)
+.B mcmp(a, b)
+.B move(a, b)
+.B min(a)
+.B omin(a)
+.B fmin(a, f)
+.B m_in(a, n, f)
+.B mout(a)
+.B omout(a)
+.B fmout(a, f)
+.B m_out(a, n, f)
+.B MINT *a, *b, *c, *m, "*q, *r;"
+.B FILE *f;
+.B int n;
+.PP
+.B sdiv(a, n, q, r)
+.B MINT *a, *q;
+.B short n;
+.B short *r;
+.PP
+.B MINT *itom(n)
+.SH DESCRIPTION
+These routines perform arithmetic on integers of
+arbitrary length.
+The integers are stored using the defined type
+.IR MINT .
+Pointers to a
+.I MINT
+can be initialized using the function
+.I itom
+which sets the initial value to
+.IR n .
+After that, space is managed automatically by the routines.
+.PP
+.IR madd , " msub " and " mult"
+assign to
+.I c
+the sum, difference and
+product, respectively, of
+.IR a " and " b .
+.I mdiv
+assigns to
+.IR q " and " r
+the quotient and remainder obtained
+from dividing
+.IR a " by " b.
+.I sdiv
+is like
+.I mdiv
+except that the divisor is a short integer
+.I n
+and the remainder is placed in a short
+whose address is given as
+.IR r .
+.I msqrt
+produces the integer square root of
+.IR a " in " b
+and places the remainder in
+.IR r .
+.I rpow
+calculates in
+.I c
+the value of
+.I a
+raised to the (``regular'' integral) power
+.IR n ,
+while
+.I pow
+calculates this with a full multiple precision exponent
+.I b
+and the result is reduced modulo
+.IR m .
+.I gcd
+returns the greatest common denominator of
+.IR a " and " b " in " c ,
+and
+.I invert
+computes
+.IR c " such that " a*c " mod " b " = 1,"
+for
+.IR a " and " b
+relatively prime.
+.I mcmp
+returns a negative, zero or positive integer value when
+.I a
+is less than, equal to or greater than
+.IR b ,
+respectively.
+.I move
+copies
+.IR a " to " b .
+.IR min " and " mout
+do decimal input and output while
+.IR omin " and " omout
+do octal input and output.
+More generally,
+.IR fmin " and " fmout
+do decimal input and output using file
+.IR f ,
+and
+.IR m_in " and " m_out
+do I/O with arbitrary radix
+.IR n .
+On input, records should have the form of
+strings of digits terminated by a newline;
+output records have a similar form.
+.PP
+Programs which use the multiple-precision arithmetic library
+must be loaded using the loader flag
+.IR \-lmp .
+.SH FILES
+.ta 2i
+/usr/include/mp.h	include file
+.br
+/usr/lib/libmp.a	object code library
+.SH SEE ALSO
+dc(1), bc(1)
+.SH DIAGNOSTICS
+Illegal operations and running out of memory
+produce messages and core images.
+.SH BUGS
+Bases for input and output should be <= 10.
+.PP
+.IR dc (1)
+and
+.IR bc (1)
+don't use this library.
+.PP
+The input and output routines are a crock.
+.PP
+.I pow
+is also the name of a standard math library routine.

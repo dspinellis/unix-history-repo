@@ -1,0 +1,320 @@
+''' $Header: patch.man,v 1.3 85/03/26 15:11:06 lwall Exp $
+''' 
+''' $Log:	patch.man,v $
+''' Revision 1.3  85/03/26  15:11:06  lwall
+''' Frozen.
+''' 
+''' Revision 1.2.1.4  85/03/12  16:14:27  lwall
+''' Documented -p.
+''' 
+''' Revision 1.2.1.3  85/03/12  16:09:41  lwall
+''' Documented -D.
+''' 
+''' Revision 1.2.1.2  84/12/05  11:06:55  lwall
+''' Added -l switch, and noted bistability bug.
+''' 
+''' Revision 1.2.1.1  84/12/04  17:23:39  lwall
+''' Branch for sdcrdcf changes.
+''' 
+''' Revision 1.2  84/12/04  17:22:02  lwall
+''' Baseline version.
+''' 
+.de Sh
+.br
+.ne 5
+.PP
+\fB\\$1\fR
+.PP
+..
+.de Sp
+.if t .sp .5v
+.if n .sp
+..
+'''
+'''     Set up \*(-- to give an unbreakable dash;
+'''     string Tr holds user defined translation string.
+'''     Bell System Logo is used as a dummy character.
+'''
+.ie n \{\
+.tr \(bs-\*(Tr
+.ds -- \(bs-
+.if (\n(.H=4u)&(1m=24u) .ds -- \(bs\h'-12u'\(bs\h'-12u'-\" diablo 10 pitch
+.if (\n(.H=4u)&(1m=20u) .ds -- \(bs\h'-12u'\(bs\h'-8u'-\" diablo 12 pitch
+.ds L" ""
+.ds R" ""
+.ds L' '
+.ds R' '
+'br\}
+.el\{\
+.ds -- \(em\|
+.tr \*(Tr
+.ds L" ``
+.ds R" ''
+.ds L' `
+.ds R' '
+'br\}
+.TH PATCH 1 "May 10, 1986" "Systems Development Corp"
+.SH NAME
+patch \- a program for applying a diff file to an original
+.SH SYNOPSIS
+.B patch
+[options] orig diff [+ [options] orig]
+.SH DESCRIPTION
+.I Patch
+will take a patch file containing any of the three forms of difference
+listing produced by the
+.I diff
+program and apply those differences to an original file, producing a patched
+version.
+By default, the patched version is put in place of the original, with
+the original file backed up to the same name with the
+extension \*(L".orig\*(R", or as specified by the
+.B -b
+switch.
+You may also specify where you want the output to go with a
+.B -o
+switch.
+If
+.I diff
+is omitted, or is a hyphen, the patch will be read from standard input.
+.PP
+Upon startup, patch will attempt to determine the type of the diff file,
+unless over-ruled by a
+.BR -c ,
+.BR -e ,
+or
+.B -n
+switch.
+Context diffs and normal diffs are applied by the
+.I patch
+program itself, while ed diffs are simply fed to the
+.I ed
+editor via a pipe.
+.PP
+.I Patch
+will try to skip any leading garbage, apply the diff,
+and then skip any trailing garbage.
+Thus you could feed an article or message containing a context or normal
+diff to
+.IR patch ,
+and it should work.
+If the entire diff is indented by a consistent amount,
+this will be taken into account.
+.PP
+With context diffs, and to a lesser extent with normal diffs,
+.I patch
+can detect when the line numbers mentioned in the patch are incorrect,
+and will attempt to find the correct place to apply each hunk of the patch.
+As a first guess, it takes the line number mentioned for the hunk, plus or
+minus any offset used in applying the previous hunk.
+If that is not the correct place,
+.I patch
+will scan both forwards and backwards for a set of lines matching the context
+given in the hunk.
+All lines of the context must match.
+If
+.I patch
+cannot find a place to install that hunk of the patch, it will put the
+hunk out to a reject file, which normally is the name of the output file
+plus \*(L".rej\*(R".
+(Note that the rejected hunk will come out in context diff form whether the
+input patch was a context diff or a normal diff.
+If the input was a normal diff, many of the contexts will simply be null.)
+.PP
+If no original file is specified on the command line,
+.I patch
+will try to figure out from the leading garbage what the name of the file
+to edit is.
+In the header of a context diff, the filename is found from lines beginning
+with \*(L"***\*(R" or \*(L"---\*(R", with the shortest name of an existing
+file winning.
+Only context diffs have lines like that, but if there is an \*(L"Index:\*(R"
+line in the leading garbage,
+.I patch
+will try to use the filename from that line.
+The context diff header takes precedence over an Index line.
+If no filename can be intuited from the leading garbage, you will be asked
+for the name of the file to patch.
+.PP
+(If the original file cannot be found, but a suitable SCCS or RCS file is
+handy,
+.I patch
+will attempt to get or check out the file.)
+.PP
+Additionally, if the leading garbage contains a \*(L"Prereq: \*(R" line,
+.I patch
+will take the first word from the prerequisites line (normally a version
+number) and check the input file to see if that word can be found.
+If not,
+.I patch
+will ask for confirmation before proceeding.
+.PP
+The upshot of all this is that you should be able to say, while in a news
+interface, the following:
+.Sp
+	| patch -d /usr/src/local/blurfl
+.Sp
+and patch a file in the blurfl directory directly from the article containing
+the patch.
+.PP
+If the patch file contains more than one patch,
+.I patch
+will try to apply each of them as if they came from separate patch files.
+This means, among other things, that it is assumed that separate patches
+will apply to separate files, and that the garbage before each patch will
+be examined for interesting things such as filenames and revision level, as
+mentioned previously.
+You can give switches (and another original file name) for the second and
+subsequent patches by separating the corresponding argument lists
+by a \*(L'+\*(R'.
+The argument list for a second or subsequent patch may not specify a new
+patch file, however.
+.PP
+.I Patch
+recognizes the following switches:
+.TP 5
+.B \-b
+causes the next argument to be interpreted as the backup extension, to be
+used in place of \*(L".orig\*(R".
+.TP 5
+.B \-c
+forces
+.I patch
+to interpret the patch file as a context diff.
+.TP 5
+.B \-d
+causes
+.I patch
+to interpret the next argument as a directory, and cd to it before doing
+anything else.
+.TP 5
+.B \-D
+causes
+.I patch
+to use the "#ifdef...#endif" construct to mark changes.
+The argument following will be used as the differentiating symbol.
+Note that, unlike the C compiler, there must be a space between the
+.B \-D
+and the argument.
+.TP 5
+.B \-e
+forces
+.I patch
+to interpret the patch file as an ed script.
+.TP 5
+.B \-l
+causes the pattern matching to be done loosely, in case the tabs and
+spaces have been munged in you input file.
+Any sequence of whitespace in the pattern line will match any sequence
+in the input file.
+Normal characters must still match exactly.
+Each line of the context must still match a line in the input file.
+.TP 5
+.B \-n
+forces
+.I patch
+to interpret the patch file as a normal diff.
+.TP 5
+.B \-N
+forces patch to not try and reverse the diffs if it thinks that they may have
+been swapped.  See the
+.B \-R
+option below.
+.TP 5
+.B \-o
+causes the next argument to be interpreted as the output file name.
+.TP 5
+.B \-p
+causes leading pathnames to be kept.
+If the diff is of the file \*(lqb/a.c\*(rq, patch will look for \*(lqa.c\*(rq
+in the \*(lqb\*(rq directory, instead of the current directory.
+This probably won't work if the diff has rooted pathnames.
+.TP 5
+.B \-r
+causes the next argument to be interpreted as the reject file name.
+.TP 5
+.B \-R
+tells
+.I patch
+that this patch was created with the old and new files swapped.
+(Yes, I'm afraid that does happen occasionally, human nature being what it
+is.)
+.I Patch
+will attempt to swap each hunk around before applying it.
+Rejects will come out in the swapped format.
+The
+.B \-R
+switch will not work with ed diff scripts because there is too little
+information to reconstruct the reverse operation.
+.Sp
+If the first hunk of a patch fails,
+.I patch
+will reverse the hunk to see if it can be applied that way unless the
+.B \-N
+option is supplied.
+If it can, the
+.B \-R
+switch will be set automatically.
+If it can't, the patch will continue to be applied normally.
+(Note: this method cannot detect a reversed patch if it is a normal diff
+and if the first command is an append (i.e. it should have been a delete)
+since appends always succeed.
+Luckily, most patches add lines rather than delete them, so most reversed
+normal diffs will begin with a delete, which will fail, triggering the
+heuristic.)
+.TP 5
+.B \-s
+makes
+.I patch
+do its work silently, unless an error occurs.
+.TP 5
+.B \-x<number>
+sets internal debugging flags, and is of interest only to
+.I patch
+patchers.
+.SH ENVIRONMENT
+No environment variables are used by
+.IR patch .
+.SH FILES
+/tmp/patch*
+.SH SEE ALSO
+diff(1)
+.SH DIAGNOSTICS
+Too many to list here, but generally indicative that
+.I patch
+couldn't parse your patch file.
+.PP
+The message \*(L"Hmm...\*(R" indicates that there is unprocessed text in
+the patch file and that
+.I patch
+is attempting to intuit whether there is a patch in that text and, if so,
+what kind of patch it is.
+.SH CAVEATS
+.I Patch
+cannot tell if the line numbers are off in an ed script, and can only detect
+bad line numbers in a normal diff when it finds a \*(L"change\*(R" command.
+Until a suitable interactive interface is added, you should probably do
+a context diff in these cases to see if the changes made sense.
+Of course, compiling without errors is a pretty good indication that it
+worked, but not always.
+.PP
+.I Patch
+usually produces the correct results, even when it has to do a lot of
+guessing.
+However, the results are guaranteed to be correct only when the patch is
+applied to exactly the same version of the file that the patch was
+generated from.
+.SH BUGS
+Could be smarter about partial matches, excessively \&deviant offsets and
+swapped code, but that would take an extra pass.
+.PP
+If code has been duplicated (for instance with #ifdef OLDCODE ... #else ...
+#endif),
+.I patch
+is incapable of patching both versions, and, if it works at all, will likely
+patch the wrong one, and tell you it succeeded to boot.
+.PP
+If you apply a patch you've already applied,
+.I patch
+will think it is a reversed patch, and un-apply the patch.
+This could be construed as a feature.

@@ -1,0 +1,807 @@
+.nr H1 1
+.NH
+Details on the shell for terminal users
+.NH 2
+Shell startup and termination
+.PP
+When you login, the shell is placed by the system in your
+.I home
+directory and begins by reading commands from a file
+.I \&.cshrc
+in this directory.
+All shells which you may create during your terminal session will
+read from this file.
+We will later see what kinds of commands are usefully placed there.
+For now we need not have this file and the shell does not complain about
+its absence.
+.PP
+A 
+.I login
+shell, executed after you login to the system,
+will, after it reads commands from
+.I \&.cshrc,
+read commands from a file
+.I \&.login
+also in your home directory.
+This file contains commands which you wish to do each time you login
+to the \s-2UNIX\s0 system.
+My
+.I \&.login
+file looks something like:
+.DS
+set ignoreeof mail=(/usr/spool/mail/bill)
+switch(\`tty\`)
+	case /dev/ttyd*:
+		setenv TERM 3a
+		breaksw
+endsw
+tset \-e \-Q
+echo "${prompt}users" ; users
+set time=15
+msgs -f
+if (-e $mail) then
+	echo "${prompt}mail"
+	mail
+endif
+.DE
+.PP
+This file contains several commands to be executed by \s-2UNIX\s0
+each time I login.
+The first is a
+.I set
+command which is interpreted directly by the shell.  It sets the shell
+variable
+.I ignoreeof
+which causes the shell to not log me off if I hit control-d.  Rather,
+I use the
+.I logout
+command to log off of the system.
+By setting the
+.I mail
+variable, I ask the shell to watch for incoming mail to me.  Every 5 minutes
+the shell looks for this file and tells me if more mail has arrived there.
+.PP
+The next series of commands causes the shell to examine the output
+of the `tty' command, and if this command returns a teletype path name of
+the form `/dev/ttyd*', then I have logged in on a dialup and the shell
+sets the terminal type in the environment to
+.I adm3a,
+since this is the type of terminal I normally dial in on.
+If I am not on a dialup, then the system attempts to set the terminal type
+from a table of types it has for hardwired ports.
+.PP
+The
+.I tset
+command next sets up any special initialization I require on the terminal
+I am using.  The
+`\-e' option forces
+.I tset
+to always use a control-h as my erase character (even on a hardcopy terminal),
+and the `\-Q' option causes it to be quiet, not printing any messages
+(since I am familiar with what it is doing, I don't need to be reminded.)
+.PP
+Next I set the shell variable `time' to `15' causing the shell to automatically
+print out statistics lines for commands which execute for at least 15 seconds
+of machine time.  I then run the `msgs' program, which provides me with any
+system messages which I haven't seen before; the `\-f' option here prevents
+it from telling me if there are no new messages.
+Finally, if my mailbox file exists, then I run the `mail' program to
+process my mail.
+.PP
+When the `mail' and `msgs' programs finish, the shell will complete
+execution of the
+.I \&.login
+script and begin reading commands from the terminal, prompting for each with
+`% '.
+When it receives an end-of-file from the terminal, the shell
+will print `logout' and execute commands from the file `.logout'
+in your home directory.
+After that the shell will die and \s-2UNIX\s0 will log you off the system.
+If the system is not going down, you will receive a new login message.
+In any case, after the `logout' message the shell is doomed
+and will take no further input from the terminal.
+.NH 2
+Shell variables
+.PP
+The shell maintains a set of
+.I variables.
+We saw above the variables
+.I history
+and
+.I time
+which had values `20' and `15'.
+In fact, each shell variable has as value an array of
+zero or more
+.I strings.
+Shell variables may be assigned values by the set command.  It has
+several forms, the most useful of which was given above and is
+.DS
+set name=value
+.DE
+.PP
+Shell variables may be used to store values which are to
+be reintroduced into commands later through a substitution mechanism.
+The shell variables most commonly referenced are, however, those which the
+shell itself refers to.
+By changing the values of these variables one can directly affect the
+behavior of the shell.
+.PP
+One of the most important variables is the variable
+.I path.
+This variable contains a sequence of directory names where the shell
+searches for commands.
+The
+.I set
+command
+shows the value of all variables currently defined (we usually say
+.I set)
+in the shell.
+The default value for path will be shown by
+.I set
+to be
+.DS
+% set
+.ta .75i
+argv	()
+home	/usr/bill
+path	(. /usr/ucb /bin /usr/bin)
+prompt	%
+shell	/bin/csh
+status	0
+%
+.DE
+This notation indicates that the variable path points to the current
+directory `.' and then `/bin' and `/usr/bin'.
+Commands which you may write might be in `.' (usually one of
+your directories).
+Other commands, developed at Berkeley, live in `/usr/ucb'
+while commands developed at Bell Laboratories live in `/bin' and `/usr/bin'.
+.PP
+A number of locally developed programs on the system live in the directory
+`/usr/local'.
+If we wish, as well we might, all shells which we invoke to have
+access to these new programs we can place the command
+.DS
+set path=(. /usr/ucb /bin /usr/bin /usr/local)
+.DE
+in our file
+.I \&.cshrc
+in our home directory.
+Try doing this and then logging out and back in and do
+.DS
+set
+.DE
+again to see that the value assigned to
+.I path
+has changed.*
+.FS
+*The current version of
+.I csh
+does not correctly export the path contained in `path'
+to the environment as the standard version 7 variable PATH, thus you should
+concoct a string consisting of the words of `path'
+and `setenv' it into the variable PATH, i.e.:
+.sp
+.ti +5
+setenv PATH .:/usr/ucb:/bin:/usr/bin:/usr/local
+.sp
+in the example above.
+.FE
+.PP
+One thing you should be aware of is that the shell examines each directory
+which you insert into your path and determines which commands are contained
+there.  Except for the current directory `.', which the shell treats specially,
+this means that if commands are added to a directory in your search path after
+you have started the shell, they will not necessarily be found by the shell.
+If you wish to use a command which has been added in this way, you should
+give the command
+.DS
+rehash
+.DE
+to the shell, which will cause it to recompute its internal table of command
+locations, so that it will find the newly added command.
+.PP
+Other useful built in variables are the variable
+.I home
+which shows your home directory,
+the variable
+.I ignoreeof
+which can be set in your
+.I \&.login
+file to tell the shell not to exit when it receives an end-of-file from
+a terminal (as described above).
+The variable `ignoreeof'
+is one of several variables which the shell does not care about the
+value of, only whether they are
+.I set
+or
+.I unset.
+Thus to set this variable you simply do
+.DS
+set ignoreeof
+.DE
+and to unset it do
+.DS
+unset ignoreeof
+.DE
+These give the variable `ignoreeof' no value, but none is desired or required.
+.PP
+Finally, some other built-in shell variables of use are the
+variables
+.I noclobber
+and
+.I mail.
+The metasyntax
+.DS
+> filename
+.DE
+which redirects the output of a command
+will overwrite and destroy the previous contents of the named file.
+In this way you may accidentally overwrite a file which is valuable.
+If you would prefer that the shell not overwrite files in this
+way you can
+.DS
+set noclobber
+.DE
+in your
+.I \&.login
+file.
+Then trying to do
+.DS
+date > now
+.DE
+would cause a diagnostic if `now' existed already.
+You could type
+.DS
+date >!  now
+.DE
+if you really wanted to overwrite the contents of `now'.
+The `>!' is a special metasyntax indicating that clobbering the
+file is ok.
+.B
+The space between the `!' and the word `now' is critical here, as `!now'
+would be a invocation of the
+.I history
+mechanism, and have a totally different effect.
+.R
+.NH 2
+The shell's history list
+.PP
+The shell can maintain a history list into which it places the words
+of previous commands.
+It is possible to use a metanotation to reintroduce commands or words
+from commands in forming new commands.
+This mechanism can be used to repeat previous commands or to
+correct minor typing mistakes in commands.
+.PP
+The following figure gives a sample session involving typical usage of the
+history mechanism of the shell.
+.KF
+.DS
+% cat bug.c
+main()
+{
+	printf("hello);
+}
+% cc !$
+cc bug.c 
+"bug.c", line 3: newline in string or char constant
+"bug.c", line 4: syntax error
+% ex !$
+ex bug.c 
+"bug.c" 4 lines, 28 characters
+:3s/);/"&
+        printf("hello");
+:wq
+"bug.c" 4 lines, 29 characters
+% !c
+cc bug.c 
+% a.out
+hello% !e
+ex bug.c 
+"bug.c" 4 lines, 29 characters
+:3s/lo/lo\e\en
+        printf("hello\en");
+:wq
+"bug.c" 4 lines, 31 characters
+% !c -o bug
+cc bug.c -o bug
+% size a.out bug
+a.out: 2784+364+1028 = 4176b = 0x1050b
+bug: 2784+364+1028 = 4176b = 0x1050b
+% ls \-l !*
+ls \-l a.out bug 
+-rwxr-xr-x 1 bill       3932 Dec 19 09:41 a.out
+-rwxr-xr-x 1 bill       3932 Dec 19 09:42 bug
+% bug
+hello
+% pr bug.c | sps
+sps: Command not found.
+% ^sps^ssp
+pr bug.c | ssp 
+Dec 19 09:41 1979  bug.c Page 1
+
+main()
+{
+	printf("hello\en");
+}
+
+% !! | lpr
+pr bug.c | ssp | lpr 
+% 
+.DE
+.KE
+In this example we have a very simple C program which has a bug (or two)
+in it in the file `bug.c', which we `cat' out on our terminal.  We then
+try to run the C compiler on it, referring to the file again as `!$',
+meaning the last argument to the previous command.  Here the `!' is the
+history mechanism invocation character, and the `$' stands for the last
+argument, by analogy to `$' in the editor which stands for the end of the line.
+The shell echoed the command, as it would have been typed without use of
+the history mechanism, and then executed it.
+The compilation yielded error diagnostics so we now run the editor on the
+file we were trying to compile, fix the bug, and run the C compiler again,
+this time referring to this command simply as `!c', which repeats the last
+command which started with the letter `c'.  If there were other
+commands starting with `c' done recently we could have said `!cc' or even
+`!cc:p' which would have printed the last command starting with `cc'
+without executing it.
+.PP
+After this recompilation, we ran the resulting `a.out' file, and then
+noting that there still was a bug, ran the editor again.  After fixing
+the program we ran the C compiler again, but tacked onto the command
+an extra `-o bug' telling the compiler to place the resultant binary in
+the file `bug' rather than `a.out'.  In general, the history mechanisms
+may be used anywhere in the formation of new commands and other characters
+may be placed before and after the substituted commands.
+.PP
+We then ran the `size' command to see how large the binary program images
+we have created were, and then an `ls \-l' command with the same argument
+list, denoting the argument list `\!*'.
+Finally we ran the program `bug' to see that its output is indeed correct.
+.PP
+To make a listing of the program we ran the `pr' command on the file `bug.c'.
+In order to compress out blank lines in the output of `pr' we ran the
+output through the filter `ssp', but misspelled it as sps.  To correct this
+we used a shell substitute, placing the old text and new text between `^'
+characters.  This is similar to the substitute command in the editor.
+Finally, we repeated the same command with `!!', but sent its output to the
+line printer.
+.PP
+There are other mechanisms available for repeating commands.  A
+.I history
+command will prints out a number of previous commands with numbers by which
+they can be referenced.  There is a way to refer to a previous command
+by searching for a string which appeared in in, and there are other,
+less useful, ways to select arguments to include in a new command.
+A complete description of all these mechanisms
+is given in the C shell manual pages in the \s-2UNIX\s0 Programmers Manual.
+.NH 2
+Aliases
+.PP
+The shell has an
+.I alias
+mechanism which can be used to make transformations on input commands.
+This mechanism can be used to simplify the commands you type,
+to supply default arguments to commands,
+or to perform transformations on commands and their arguments.
+The alias facility is similar to a macro facility.
+Some of the features obtained by aliasing can be obtained also
+using shell command files, but these take place in another instance
+of the shell and cannot directly affect the current shells environment
+or involve commands such as
+.I chdir
+which must be done in the current shell.
+.PP
+As an example, suppose that there is a new version of the mail program
+on the system called `newmail'
+you wish to use, rather than the standard mail program which is called
+`mail'.
+If you place the shell command
+.DS
+alias mail newmail
+.DE
+in your
+.I \&.cshrc
+file, the shell will transform an input line of the form
+.DS
+mail bill
+.DE
+into a call on `newmail'.
+More generally, suppose we wish the command `ls' to always show
+sizes of files, that is to always do `\-s'.
+We can do
+.DS
+alias ls ls \-s
+.DE
+or even
+.DS
+alias dir ls \-s
+.DE
+creating a new command syntax `dir'
+which does an `ls \-s'.
+If we say
+.DS
+dir ~bill
+.DE
+then the shell will translate this to
+.DS
+ls \-s /mnt/bill
+.DE
+.PP
+Thus the
+.I alias
+mechanism can be used to provide short names for commands,
+to provide default arguments,
+and to define new short commands in terms of other commands.
+It is also possible to define aliases which contain multiple
+commands or pipelines, showing where the arguments to the original
+command are to be substituted using the facilities of the
+history mechanism.
+Thus the definition
+.DS
+alias cd \'cd \e!* ; ls \'
+.DE
+would do an
+.I ls
+command after each change directory
+.I cd
+command.
+We enclosed the entire alias definition in `\'' characters to prevent
+most substitutions from occurring and the character `;' from being
+recognized as a parser metacharacter.
+The `!' here is escaped with a `\e' to prevent it from being interpreted
+when the alias command is typed in.
+The `\e!*' here substitutes the entire argument list to the pre-aliasing
+.I cd
+command, without giving an error if there were no arguments.
+The `;' separating commands is used here
+to indicate that one command is to be done and then the next.
+Similarly the definition
+.DS
+alias whois \'grep \e!\(ua /etc/passwd\'
+.DE
+defines a command which looks up its first argument in the password file.
+.PP
+.B Warning:
+The shell currently parses the
+.I \&.cshrc
+file each time it starts up.  If you place a large number of commands
+there, shells will tend to start slowly.  A mechanism for saving the shell
+environment after reading the \fI\&.cshrc\fR file and quickly restoring it is
+under development, but for now you should try to limit the number of
+aliases you have to a reasonable number... 10 or 15 is reasonable,
+50 or 60 will cause a noticeable delay in starting up shells, and make
+the system seem sluggish when you execute commands from within the editor
+and other programs.
+.NH 2
+Detached commands; >> and >& redirection
+.PP
+There are a few more metanotations useful to the terminal user
+which have not been introduced yet.
+The metacharacter `&' may be placed after a command, or after a sequence
+of commands separated by `;' or `|'.
+This causes the shell to not wait for the commands to terminate before
+prompting again.
+We say that they are
+.I detached
+or
+.I background
+processes.  Thus
+.DS
+% pr ~bill/csh/sh.c \||\| lpr &
+5120
+5121
+%
+.DE
+Here the shell printed two numbers and came back very quickly rather
+than waiting for the
+.I pr
+and
+.I lpr
+commands to finish.
+These numbers are the process numbers assigned by the system to the
+.I pr
+and
+.I lpr
+commands.
+.PP
+Since havoc would result if a command run in the background were to
+read from your terminal at the same time as the shell does, the
+default standard input for a command run in the background is
+not your terminal, but an empty file called `/dev/null'.
+Commands run in the background are also made immune to
+\s-2INTERRUPT\s0 and \s-2QUIT\s0 signals which you may subsequently
+generate at your terminal, and are not killed if you hang up a phone
+connection.
+.PP
+In addition to the standard output, commands also have a
+diagnostic output
+which is normally directed to the terminal even when the standard output
+is directed to a file or a pipe.
+It is occasionally desirable to direct the diagnostic output along with
+the standard output.
+For instance if you want to redirect the output of a long running command
+into a file and wish to have a record of any error diagnostic it produces
+you can do
+.DS
+command >& file
+.DE
+The `>&' here tells the shell to route both the diagnostic output and the
+standard output into `file'.
+Similarly you can give the command
+.DS
+command |\|& lpr
+.DE
+to route both standard and diagnostic output through the pipe
+to the line printer daemon
+.I lpr.#
+.FS
+#A command form
+.sp
+.ti +5
+command >&! file
+.sp
+exists, and is used when
+.I noclobber
+is set and
+.I file
+already exists.
+.FE
+.PP
+Finally, it is possible to use the form
+.DS
+command >> file
+.DE
+to place output at the end of an existing file.\(dg
+.FS
+\(dgIf
+.I noclobber
+is set, then an error will result if
+.I file
+does not exist, otherwise the shell will create
+.I file
+if it doesn't exist.
+A form
+.sp
+.ti +5
+command >>! file
+.sp
+makes it not be an error for file to not exist when
+.I noclobber
+is set.
+.FE
+.NH 2
+Useful built-in commands
+.PP
+We now give a few of the useful built-in commands of the shell describing
+how they are used.
+.PP
+The
+.I alias
+command described above is used to assign new aliases and to show the
+existing aliases.
+With no arguments it prints the current aliases.
+It may also be given an argument such as
+.DS
+alias ls
+.DE
+to show the current alias for, e.g., `ls'.
+.PP
+The
+.I cd
+and
+.I chdir
+commands are equivalent, and change the working directory of the shell.
+It is useful to make a directory for each project you wish to work on
+and to place all files related to that project in that directory.
+Thus after you login you can do
+.DS
+% pwd
+/usr/bill
+% mkdir newpaper
+% chdir newpaper
+% pwd
+/usr/bill/newpaper
+%
+.DE
+after which you will be in the directory
+.I newpaper.
+You can place a group of related files there.
+You can return to your `home' login directory by doing just
+.DS
+chdir
+.DE
+with no arguments.
+We used the
+.I pwd
+print working directory command to show the name of the current
+directory here.
+The current directory will usually be a subdirectory of your
+home directory, and have it (here `/usr/bill') at the start of it.
+.PP
+The
+.I echo
+command prints its arguments.
+It is often used in shell scripts or as an interactive command
+to see what filename expansions will yield.
+.PP
+The
+.I history
+command will show the contents of the history list.
+The numbers given with the history events can be used to reference
+previous events which are difficult to reference using the
+contextual mechanisms introduced above.
+There is also a shell variable called
+.I prompt.
+By placing a `!' character in its value the shell will there substitute
+the index of the current command in the history list.
+You can use this number to refer to this command in a history substitution.
+Thus you could
+.DS
+set prompt=\'\e! % \'
+.DE
+Note that the `!' character had to be escaped here even within `\'' characters.
+.PP
+The
+.I logout
+command can be used to terminate a login shell which has
+.I ignoreeof
+set.
+.PP
+The
+.I rehash
+command causes the shell to recompute a table of where commands are
+located.  This is necessary if you add a command to a directory
+in the current shells search path and wish the shell to find it,
+since otherwise the hashing algorithm may tell the shell that the
+command wasn't in that directory when the hash table was computed.
+.PP
+The
+.I repeat
+command can be used to repeat a command several times.
+Thus to make 5 copies of the file
+.I one
+in the file
+.I five
+you could do
+.DS
+repeat 5 cat one >> five
+.DE
+.PP
+The
+.I setenv
+command can be used, on version 7 \s-2UNIX\s0 systems,
+to set variables in the environment.
+Thus
+.DS
+setenv TERM adm3a
+.DE
+will set the value of the environment variable \s-2TERM\s0
+to
+`adm3a'.
+A user program
+.I printenv
+exists which will print out the environment.
+It might then show:
+.DS
+% printenv
+HOME=/
+SHELL=/bin/csh
+PATH=:/usr/ucb:/bin:/usr/bin:/usr/local
+TERM=3a
+%
+.DE
+.PP
+The
+.I source
+command can be used to force the current shell to read commands from
+a file.
+Thus
+.DS
+source .cshrc
+.DE
+can be used after editing in a change to the
+.I \&.cshrc
+file which you wish to take effect before the next time you login.
+.PP
+The
+.I time
+command can be used to cause a command to be timed no matter how much
+\s-2CPU\s0 time it takes.
+Thus
+.DS
+% time cp five five.save
+0.0u 0.3s 0:01 26%
+% time wc five.save
+   1200    6300   37650 five.save
+1.2u 0.5s 0:03 55%
+%
+.DE
+indicates that the
+.I cp
+command used less that 1/10th of a second of user time and only
+3/10th of a second of system time in copying the file `five' to
+`five.save'.
+The command word count
+`wc'
+on the other hand used 1.2 seconds of user time and 0.5 seconds of system
+time in 3 seconds of elapsed time in counting the number of words,
+character and lines in `five.save'.
+The percentage `55%' indicates that over this period of 3 seconds,
+our command `wc' used an average of 55 percent of the available \s-2CPU\s0
+cycles of the machine.
+This is a very high percentage and indicates that the system is lightly
+loaded.
+.PP
+The
+.I unalias
+and
+.I unset
+commands can be used
+to remove aliases and variable definitions from the shell.
+.PP
+The
+.I wait
+command can be used after starting processes with `&'
+to quickly see if they have finished.
+If the shell responds immediately with another prompt, they have.
+Otherwise you can wait for the shell to prompt at which point they
+will have finished, or interrupt the shell by sending a \s-2RUB\s0
+or \s-2DELETE\s0 character.
+If the shell is interrupted, it will print the names and numbers of the
+processes it knows to be unfinished.
+Thus:
+.DS
+% nroff paper \||\| lpr &
+2450
+2451
+% wait
+  2451  lpr
+  2450  nroff
+wait: Interrupted.
+%
+.DE
+.PP
+If you run a background process and decide you want to stop it for whatever
+reason you must use the
+.I kill
+program.
+You must use the number of the processes you wish to kill.
+Thus to stop the
+.I nroff
+in the above pipeline you would do
+.DS
+% kill 2450
+% wait
+2450: nroff: Terminated.
+%
+.DE
+Here the shell printed a diagnostic that we terminated `nroff' only
+after we did a
+.I wait.
+If we want the shell to discover the termination of all processes
+it has created we must, in general, use
+.I wait.
+.PP
+If you don't remember the number of a command you have executed, you
+call also issue a
+.I ps
+command, which will print out the numbers and names of the processes
+(other than shells) which you are running, showing with each the
+amount of processor time it has used so far.
+.NH 2
+What else?
+.PP
+This concludes the basic discussion of the shell for terminal users.
+There are more features of the shell to be discussed here, and all
+features of the shell are discussed in its manual pages.
+One useful feature which is discussed later is the
+.I foreach
+built-in command which can be used to run the same command
+sequence with a number of different arguments.
+.PP
+If you intend to use \s-2UNIX\s0 a lot you you should look through
+the rest of this document and the shell manual pages to become familiar
+with the other facilities which are available to you.
+.bp

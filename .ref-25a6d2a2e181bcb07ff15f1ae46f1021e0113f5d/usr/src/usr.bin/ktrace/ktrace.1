@@ -1,0 +1,146 @@
+.TH KTRACE 1
+.SH NAME
+.I ktrace
+\- enable kernel process tracing
+.SH SYNOPSIS
+.ll +1i \" XXX - don't want it to wrap
+.B ktrace
+[
+.B -Cica
+]
+[
+.B -p
+pid ]
+[
+.B -g
+pgrp ]
+[
+.B -f 
+trfile ]
+[
+.B -t 
+trstr ]
+.ll -1i
+.br
+.B ktrace
+[
+.B -ida
+] [
+.B -f
+trfile ] [ command ]
+.SH DESCRIPTION
+.I Ktrace
+enables kernel trace points on the indicated processes.  
+Kernel trace data is logged to the file "ktrace.data" in the
+current directory, or to the file named with the
+.B -f
+flag.
+The current set of trace points include: system calls, namei translations, and i/o.
+By default, system calls and namei translations
+are traced.  To enable specific trace points, use the
+.B -t
+flag as described below.  Once tracing is enabled on a process,
+trace data will be logged until either the process exits or the
+trace point is cleared with the
+.B -c
+flag.
+A traced process can log enormous amounts of data quickly, and compounded
+with the child inherit flag, \fB\-i\fP, tracing can become unwieldly.
+It is strongly recommended that one memorize
+how to globally disable all tracing before attempting
+to trace a process.  The following command is sufficient to
+disable tracing on all owned processes (if root, all processes in the system):
+.nf
+
+	$ trace -C
+
+.fi
+The trace records are binary format: use kdump(1) to display
+the trace records.
+Following is a description of the options:
+.br
+.TP
+.B \-C
+Disable tracing on all user owned processes (if root, all processes in the
+system).
+.TP
+.B \-f trfile
+Log trace records to \fBtrfile\fP instead of "trace.out".
+.TP
+.B \-t trstr
+The string argument represents the kernel trace points, one
+per letter.  The following table equates the letters with the tracepoints:
+.nf
+
+	c - trace system calls
+	n - trace namei translations
+	g - trace generic i/o (utilizing read(2)/write(2))
+	a - all currently implemented trace points
+	s - trace socket i/o (unimplemented)
+	l - trace receipt of signals (unimplemented)
+
+.fi
+.TP
+.B \-p pid
+Enable (disable) tracing on the indicated process id (only one -p
+flag allowed);
+.TP
+.B \-g pgid
+Enable (disable) tracing on all processes in the indicated
+process group.
+.TP
+.B \-a
+Append to the tracefile instead of truncating it.
+.TP
+.B \-c
+Clear the indicated trace points.
+.TP
+.B \-i
+Pass the trace flag to child processes on fork.  Also, descend
+to all children of the indicated processes and set (clear) the trace
+flags.  Be careful with this option.  For example, "ktrace -cip1"
+will enable tracing on \fIall\fP processes in the system.
+.TP
+.B command
+Run \fBcommand\fP with the specified trace flags.
+.LP
+The -p, -g, and \fBcommand\fP options are mutually exclusive.
+.SH EXAMPLES
+.nf
+# trace system calls and namei translations of process id 34
+
+	$ ktrace -p34
+
+# enable all trace points on processes in process group 15 and
+# pass the trace flags to all current and future children
+
+	$ ktrace -ta -ig15
+
+# disable all trace points on process 65
+
+	$ ktrace -ta -cp65
+
+# disable all trace points on process 70 and all children
+
+	$ ktrace -ta -cip70
+
+# enable tracing of generic i/o on process 67
+
+	$ ktrace -tg -p67
+
+# run the command "w" with all all trace points enabled
+
+	$ ktrace -ta w
+
+# disable all tracing to the file "tracedata"
+
+	$ ktrace -ta -c -f tracedata
+
+# disable tracing on all processes
+
+	$ ktrace -C
+
+.fi
+.SH SEE ALSO
+.IR kdump(1)
+\- display kernel trace data.

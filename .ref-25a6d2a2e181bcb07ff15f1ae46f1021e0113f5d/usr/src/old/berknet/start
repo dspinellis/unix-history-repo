@@ -1,0 +1,17 @@
+#! /bin/sh
+#
+#	@(#)start	4.2	(Berkeley)	%G%
+#
+cd /usr/spool/berknet
+rm -f rcv/*
+csh /usr/net/bin/setlength 50 plogfile? logfile
+/usr/net/bin/netstart -m ucbarpa
+/usr/net/bin/netstart -m ucbc70
+/usr/net/bin/netstart -m ucbcfo-g
+/usr/net/bin/netstart -m ucbcoke
+/usr/net/bin/netstart -m ucbcory
+/usr/net/bin/netstart -m ucbernie
+/usr/net/bin/netstart -m ucbingres
+/usr/net/bin/netstart -m ucbkim
+/usr/net/bin/netstart -m ucbmathstat
+/usr/net/bin/netstart -m ucbonyx

@@ -1,0 +1,16 @@
+/*
+ *	@(#)outbound.ext	3.1  10/29/86
+ */
+
+extern void
+	StartScreen(),
+	StopScreen(),
+	ConnectScreen(),
+	ClearScreen(),
+	LocalClearScreen(),
+	RefreshScreen(),
+	RingBell(),
+	AddHost();
+
+extern int
+	DoTerminalOutput();

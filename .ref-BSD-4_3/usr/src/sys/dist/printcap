@@ -1,0 +1,2 @@
+lp|local line printer:\
+	:lp=/dev/lp:sd=/usr/spool/lpd:lf=/usr/adm/lpd-errs:

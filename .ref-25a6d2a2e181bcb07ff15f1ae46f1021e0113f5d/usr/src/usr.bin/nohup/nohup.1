@@ -1,0 +1,49 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)nohup.1	6.3 (Berkeley) %G%
+.\"
+.TH NOHUP 1 ""
+.SH NAME
+nohup - run a utility immune to hangups and quits
+.SH SYNOPSIS
+.B nohup command
+.SH DESCRIPTION
+The
+.I nohup
+utility invokes a command with the signals SIGHUP and SIGQUIT
+initially ignored.
+If the standard output is a terminal, the standard output is
+appended to the file
+.I nohup.out
+in the current directory.
+If standard error is a terminal, it is directed to the same place
+as the standard output.
+.PP
+.I Nohup
+exits 1 if an error occurs, otherwise the exit status is that of
+.IR command .
+.SH "ENVIRONMENTAL VARIABLES"
+.TP
+.I HOME
+If the output file
+.I nohup.out
+cannot be created in the current directory, the
+.I nohup
+utility uses the directory named by
+.I HOME
+to create the file.
+.SH "SEE ALSO"
+signal(3)

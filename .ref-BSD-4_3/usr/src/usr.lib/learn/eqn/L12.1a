@@ -1,0 +1,53 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+The next step is to learn how to put big parentheses,
+brackets, braces or bars around equations, like this:
+.EQ
+left | a sup 2 over b sub i right |
+.EN
+
+This is done with two new words called "left" and "right".
+To put bars around something, you simply say, in the middle
+of an equation,
+  left |  something  right |
+and the job is done.
+"something" can indeed be anything, from a single letter
+up to some horribly complicated mess.
+The bars grow to the right height to cover the
+"something", automatically.
+To produce the example above, all that was needed was
+   .EQ
+   left | a sup 2 over b sub i right |
+   .EN
+
+For practice, modify file "Example" so it produces output
+that looks like this, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+left |
+{a over b ~+~ c over d} over 2
+right |
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+12.1b 10

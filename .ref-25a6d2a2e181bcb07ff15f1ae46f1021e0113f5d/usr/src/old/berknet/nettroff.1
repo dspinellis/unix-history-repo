@@ -1,0 +1,54 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)nettroff.1	6.1 (Berkeley) %G%
+.\"
+.TH NETTROFF 1 "%G%"
+.UC 4
+.SH NAME
+nettroff \- troff to the phototypesetter over the network
+.SH SYNOPSIS
+.B nettroff
+troff arguments
+.SH DESCRIPTION
+.I Nettroff
+runs
+.IR troff (1)
+and sends the output over the network to the machine at the Computer Center
+with the phototypesetter (currently the ``A'' machine.)
+It will prompt you for an account name and password on the A machine unless
+you have provided these in your
+.I \&.netrc
+file.
+The
+.I troff
+.B \-s
+option is unnecessary and not permitted.
+.LP
+.I Nettroff
+jobs are limited to 15 feet of typesetter output.
+It is also a good idea to limit the size of the individual files sent,
+as the network uses a shortest-job-first scheduling algorithm.
+Jobs of 25000 characters or less are preferable; in no case will the
+network accept jobs longer than 100000 characters.
+.SH SEE ALSO
+vtroff(1), net(1), troff(1)
+.SH BUGS
+There is no way to specify special font mounts on the A machine.
+.br
+The 
+.B \-l
+and 
+.B \-p
+options of the 
+.IR net (1)
+command may not be specified.
+.br
+This command is not supported by the Computer Center.
+.br
+If on a Computer Center machine (B, C, D, or E) use the
+.I troff
+command (see
+.IR troff (1))
+for more information.

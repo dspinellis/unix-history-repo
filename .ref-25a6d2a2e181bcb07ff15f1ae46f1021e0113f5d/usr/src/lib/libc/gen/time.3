@@ -1,0 +1,56 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)time.3	5.1 (Berkeley) %G%
+.\"
+.TH TIME 3 ""
+.UC 4
+.SH NAME
+time \- get time of day
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+
+.B time_t time(tloc)
+.B time_t *tloc;
+.fi
+.SH DESCRIPTION
+.PP
+.I Time
+returns the value of time in seconds since 0 hours, 0 minutes,
+0 seconds, January 1, 1970, Coordinated Universal Time.
+.PP
+The argument
+.I tloc
+points to an area where the return value is also stored.
+If
+.I tloc
+is a NULL pointer, no value is stored.
+.PP
+Upon successful completion,
+.IR time ()
+returns the value of time.
+Otherwise a value of ((\fItime_t\fR) -1)
+is returned and
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+The following error codes may be set in
+.IR errno :
+.TP 15
+[EFAULT]
+An argument address referenced invalid memory.
+.SH "SEE ALSO"
+gettimeofday(2), ctime(3)

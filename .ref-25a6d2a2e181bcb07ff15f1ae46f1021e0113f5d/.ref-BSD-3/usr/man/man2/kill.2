@@ -1,0 +1,47 @@
+.TH KILL 2 
+.SH NAME
+kill \- send signal to a process
+.SH SYNOPSIS
+.B kill(pid, sig);
+.SH DESCRIPTION
+.I Kill
+sends the signal
+.I sig
+to the process specified by the
+process number in r0.
+See
+.IR signal (2)
+for a list of signals.
+.PP
+The sending and receiving processes must
+have the same effective user ID, otherwise
+this call is restricted to the super-user.
+.PP
+If the process number is 0,
+the signal is sent to all other processes in the
+sender's process group;
+see
+.IR tty (4).
+.PP
+If the process number is \-1, and the user is the super-user,
+the signal is broadcast universally
+except to processes 0 and 1, the scheduler
+and initialization processes,
+see
+.IR init (8).
+.PP
+Proccesses may send signals to themselves.
+.SH "SEE ALSO"
+signal(2), kill(1)
+.SH DIAGNOSTICS
+Zero is returned if the process is killed;
+\-1 is returned if the process does not
+have the same effective user ID and the
+user is not super-user, or if the process
+does not exist.
+.SH "ASSEMBLER (PDP-11)"
+(kill = 37.)
+.br
+(process number in r0)
+.br
+.B sys kill; sig

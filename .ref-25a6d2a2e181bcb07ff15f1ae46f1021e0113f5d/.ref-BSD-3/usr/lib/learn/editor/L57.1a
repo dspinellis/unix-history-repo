@@ -1,0 +1,48 @@
+#print
+For symmetry, you can use
+
++
+
+instead of either ".+1p" or an empty
+line (just a newline).  The only advantage
+that + has is that you can repeat it:
+
+++
+
+prints the second following line, and 
+
++++
+
+the third.  The same is true of -.
+If the current line is line number 10,
+what line number is -- going to be?
+(Hint:  you can find out by editing a file
+such as "pres", saying "10p", and then
+saying "--", and then saying ".=" - remember
+the "=" command?)
+When you find out, type "answer N" where
+N is the number.
+#create pres
+George Washington
+John Adams
+Thomas Jefferson
+James Madison
+James Monroe
+John Quincy Adams
+Andrew Jackson
+Martin van Buren
+William Henry Harrison
+John Tyler
+James K. Polk
+Franklin Pierce
+Millard Fillmore
+James Buchanan
+Abraham Lincoln
+#copyin
+#user
+#uncopyin
+#match 8
+#log
+#next
+60.1a 10
+60.2a 5

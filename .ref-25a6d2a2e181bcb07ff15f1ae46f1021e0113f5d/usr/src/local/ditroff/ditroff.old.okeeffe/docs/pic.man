@@ -1,0 +1,2349 @@
+.\" refer -e pic.man | pic -Pxxx | eqn -Pxxx | ditroff -ms -Pxxx
+.TR 85
+.so ~mac
+.ND "Revised Edition, March, 1982"
+.TL
+PIC \(em A Graphics Language for Typesetting
+.br
+User Manual
+.AU "MH 2C-518" 6021
+Brian W. Kernighan
+.AI
+.MH
+.AB
+.PP
+.UC PIC
+is a language for drawing simple figures
+on a typesetter.
+The basic objects in
+.UC PIC
+are
+boxes,
+circles,
+ellipses,
+lines,
+arrows,
+arcs,
+spline curves,
+and text.
+These may be placed anywhere,
+at positions specified absolutely
+or in terms of previous objects.
+The example below illustrates the general capabilities
+of the language.
+.PS
+box invis wid .25
+ellipse "document"
+arrow
+box "PIC"
+arrow
+box "TBL/EQN" "(optional)" dashed
+arrow
+box "TROFF"
+arrow
+ellipse "typesetter"
+.PE
+This picture was created with the input
+.P1
+ellipse "document"
+arrow
+box "PIC"
+arrow
+box "TBL/EQN" "(optional)" dashed
+arrow
+box "TROFF"
+arrow
+ellipse "typesetter"
+.P2
+.PP
+.UC PIC 
+is another
+.UC TROFF
+processor;
+it passes most of its input through untouched, but translates
+commands between
+.UL .PS
+and
+.UL .PE
+into
+.UC TROFF
+commands that draw the pictures.
+.AE
+....CS 15 4 19 0 0 3
+.NH
+Introduction
+.PP
+.UC PIC
+is a language for drawing
+simple pictures.
+It operates as yet another
+.UC TROFF
+.[ [
+%r 54
+%K CSTR
+%R Comp. Sci. Tech. Rep. No. 54
+%I Bell Laboratories
+%C Murray Hill, New Jersey
+%A J. F. Ossanna
+%T N\s-2ROFF\s+2/T\s-2ROFF\s+2 User's Manual
+%K nroff troff
+%D October 1976
+%J UNIX Programmer's Manual
+%V 2
+%O Section 22
+%I Bell Laboratories
+%C Murray Hill, N.J.
+%D January 1979
+.]]
+preprocessor,
+(in the same style as
+.UC EQN
+.[ [
+%A Brian W. Kernighan
+%A Lorinda L. Cherry
+%T A System for Typesetting Mathematics
+%J Communications of the ACM
+%V 18
+%N 3
+%D 1975
+%P 151-157
+%K cacm acm
+.]],
+.UC TBL
+.[ [
+%r 49
+%K CSTR 
+%Q DNL
+%R Comp. Sci. Tech. Rep. No. 49
+%I Bell Laboratories
+%C Murray Hill, New Jersey
+%A M. E. Lesk
+%T Tbl \(em A Program to Format Tables
+%D September 1976
+%J UNIX Programmer's Manual
+%V 2
+%O Section 10
+%I Bell Laboratories
+%C Murray Hill, N.J.
+%D January 1979
+.]]
+and
+.UC REFER
+.[ [
+%r 69
+%R Comp. Sci. Tech. Rep. No. 69
+%K CSTR
+%Q DNL
+%A M. E. Lesk
+%T Some Applications of Inverted Indexes on the UNIX System
+%D 1978
+%J UNIX Programmer's Manual
+%V 2
+%O Section 11
+%I Bell Laboratories
+%C Murray Hill, N.J.
+%D January 1979
+.]]),
+with pictures marked by
+.UL .PS
+and
+.UL .PE .
+.PP
+.UC PIC
+was inspired partly by Chris Van Wyk's
+early work on
+.UC IDEAL
+.[ [
+%A Christopher J. Van Wyk
+%A C. J. Van Wyk
+%T A Graphics Typesetting Language
+%J SIGPLAN Symposium on Text Manipulation
+%C Portland, Oregon
+%D June, 1981
+.]];
+it has somewhat the same capabilities,
+but quite a different flavor.
+In particular,
+.UC PIC
+is much more procedural\(ema picture
+is drawn by specifying (sometimes in painful detail)
+the motions that one goes through to draw it.
+Other direct influences include the
+.UC PICTURE
+language
+.[ [
+%A John C. Beatty
+%T PICTURE \(em A picture-drawing language for the Trix/Red Report Editor
+%R Lawrence Livermore Laboratory Report UCID-30156
+%D April 1977
+.]]
+and
+the V viewgraph language
+.[ [
+%A Anon.
+%T V \(em A viewgraph generating language
+%R Bell Laboratories internal memorandum
+%D May 1979
+.]].
+.PP
+This paper is primarily a user's manual for
+.UC PIC ;
+a discussion of design issues and user experience
+may be found in
+.[ [
+%A B. W. Kernighan
+%T PIC \(em A Language for Typesetting Graphics
+%J Software Practice & Experience
+%D January, 1982
+%V 12
+%N 1
+%P 1-21
+.]].
+The next section shows how to use
+.UC PIC
+in the most simple way.
+Subsequent sections describe how to change
+the sizes of objects when the defaults are wrong,
+and how to change their positions when the standard positioning rules
+are wrong.
+An appendix describes the language succinctly and more or less precisely.
+.NH
+Basics
+.PP
+.UC PIC
+provides boxes, lines, arrows, circles, ellipses, arcs,
+and splines (arbitrary smooth curves),
+plus facilities for positioning
+and labeling them.
+The picture below shows all of the fundamental objects
+(except for splines)
+in their default sizes:
+.PS
+box "box"
+move
+line "line" above
+move
+arrow "arrow" above
+move
+circle "circle"
+move
+ellipse "ellipse"
+move
+arc cw "arc"
+.PE
+Each picture begins with
+.UL .PS
+and ends with
+.UL .PE ;
+between them are commands to describe the picture.
+Each command is typed on a line by itself.
+For example
+.P1
+\&.PS
+box "this is" "a box"
+\&.PE
+.P2
+creates a standard box (\(34 inch wide, \(12 inch high)
+and centers the two pieces of text in it:
+.PS
+	box "this is" "a box"
+.PE
+.PP
+Each line of text is a separate quoted string.
+Quotes are mandatory, even if the text contains no blanks.
+(Of course there needn't be any text at all.)
+Each line will be
+printed in the current size and font,
+centered horizontally, and separated
+vertically by the current
+.UC TROFF
+line spacing.
+.PP
+.UC PIC
+does
+not
+center the drawing itself,
+but the default definitions of
+.UL .PS
+and
+.UL .PE
+in the
+.UL -ms
+macro package do.
+.PP
+You can use
+.UL circle
+or
+.UL ellipse
+in place of
+.UL box :
+.PS
+circle "this is" "a box"
+move; move
+ellipse "this is" "a box"
+.PE
+.PP
+Text is centered on lines and arrows; if there is more than one
+line of text, the lines are centered above and below:
+.P1
+\&.PS
+arrow "this is" "an arrow"
+\&.PE
+.P2
+produces
+.PS
+arrow "this is" "an arrow"
+.PE
+and
+.P1
+line "this is" "a line"
+.P2
+gives
+.PS
+line "this is" "a line"
+.PE
+.PP
+Boxes and lines may be dashed or dotted;
+just add the word
+.UL dashed
+or
+.UL dotted
+after
+.UL box
+or
+.UL line .
+.PP
+Arcs by default turn 90 degrees counterclockwise from the current direction;
+you can make them turn clockwise by saying
+.UL arc
+.UL cw .
+So
+.P1
+line; arc; arc cw; arrow
+.P2
+produces
+.PS
+line; arc; arc cw; arrow
+.PE
+A spline might well do this job better; we will return to that shortly.
+.PP
+As you might guess,
+.P1
+arc; arc; arc; arc
+.P2
+draws a circle, though not very efficiently.
+.PP
+Objects are normally drawn one after another,
+left to right,
+and connected at the obvious places.
+Thus the input
+.P1
+arrow; box "input"; arrow; box "process"; arrow; box "output"; arrow
+.P2
+produces the figure
+.PS
+arrow; box "input"; arrow; box "process"; arrow; box "output"; arrow
+.PE
+If you want to leave a space at some place,
+use
+.UL move :
+.P1
+box; move; box; move; box
+.P2
+produces
+.PS
+box; move; box; move; box
+.PE
+.LP
+Notice that several commands can be put on a single line
+if they are separated by semicolons.
+.PP
+Although objects are normally connected left to right,
+this can be changed.
+If you specify a direction (as a separate object), subsequent objects
+will be joined in that direction.
+Thus
+.P1
+down; box; arrow; ellipse; arrow; circle
+.P2
+produces
+.PS
+down; box; arrow; ellipse; arrow; circle
+.PE
+and
+.P1
+left; box; arrow; ellipse; arrow; circle
+.P2
+produces
+.PS
+left; box; arrow; ellipse; arrow; circle
+.PE
+Each new picture begins going to the right.
+.PP
+Normally, figures are drawn at a fixed scale,
+with objects of a standard size.
+It is possible, however, to arrange that a figure be expanded
+to fit a particular width.
+If the
+.UL .PS
+line contains a number, the drawing is forced to be that many inches wide,
+with the height scaled proportionately.
+Thus
+.P1
+\&.PS 3.5i
+.P2
+causes the picture to be 3.5 inches wide.
+.PP
+.UC PIC
+is pretty dumb about the size of text in relation
+to the size of boxes, circles, and so on.
+There is as yet no way to say
+``make a box that just fits around this text''
+or ``make this text fit inside this circle''
+or ``draw a line as long as this text.''
+All of these facilities are useful,
+so the limitations may go away in the fullness of time,
+but don't hold your breath.
+In the meantime,
+tight fitting of text
+can generally only be done by trial and error.
+.PP
+Speaking of errors,
+if you make a grammatical error in the way you describe
+a picture,
+.UC PIC
+will complain and try to indicate where.
+For example, the invalid input
+.P1
+box arrow box
+.P2
+will draw the message
+.P1
+pic: syntax error near line 5, file -
+ context is
+        box arrow ^  box
+.P2
+The caret
+.UL ^
+marks the place where the error was first noted;
+it typically
+.IT  follows 
+the word in error.
+.NH
+Controlling Sizes
+.PP
+This section deals with how to
+control the sizes of objects
+when the ``default'' sizes are not what is wanted.
+The next section deals with positioning them
+when the default positions are not right.
+.PP
+Each object that
+.UC PIC
+knows about
+(boxes, circles, etc.)
+has associated dimensions, like height, width, radius, and so on.
+By default,
+.UC PIC
+tries to choose sensible default values for these dimensions,
+so that simple pictures can be drawn with a minimum
+of fuss and bother.
+All of the figures and motions shown so far
+have been in their default sizes:
+.DS
+.ta 1i
+box	\(34\(fm\(fm wide \(mu \(12\(fm\(fm high
+circle	\(12\(fm\(fm diameter
+ellipse	\(34\(fm\(fm wide \(mu \(12\(fm\(fm high
+arc	\(12\(fm\(fm radius
+line or arrow	\(12\(fm\(fm long
+move	\(12\(fm\(fm in the current direction
+.DE
+.PP
+When necessary,
+you can make any object any size you want.
+For example, the input
+.P1
+box width 3i height 0.1i
+.P2
+draws a long, flat box
+.PS
+	box wid 3i ht 0.1i
+.PE
+3 inches wide and 1/10 inch high.
+There must be no space between the number and the
+.UL i '' ``
+that indicates a measurement in inches.
+In fact, the
+.UL i '' ``
+is optional;
+all positions and dimensions are taken to be in inches.
+.PP
+Giving an attribute like 
+.UL width
+changes only the one instance of the object.
+You can also change the default size for all objects
+of a particular type, as discussed later.
+.PP
+The attributes of
+.UL height
+(which you can abbreviate to
+.UL ht )
+and
+.UL width
+(or
+.UL wid )
+apply to boxes, circles,
+ellipses,
+and to the head on an arrow.
+The attributes of
+.UL radius
+(or
+.UL rad )
+and
+.UL diameter
+(or
+.UL diam )
+can be used for circles and arcs if they seem more natural.
+.PP
+Lines and arrows are most easily drawn by specifying
+the amount of motion from where one is right now,
+in terms of directions.
+Accordingly the words
+.UL up ,
+.UL down ,
+.UL left
+and
+.UL right
+and an optional distance can be attached to
+.UL line ,
+.UL arrow ,
+and
+.UL move .
+For example,
+.P1
+\&.PS
+line up 1i right 2i
+arrow left 2i
+move left 0.1i
+line <-> down 1i "height"
+\&.PE
+.P2
+draws
+.PS
+line up 1i right 2i
+arrow left 2i
+move left 0.1i
+line <-> down 1i "height"
+.PE
+The notation
+.UL <->
+indicates a two-headed arrow;
+use
+.UL ->
+for a head on the end and
+.UL <-
+for one on the start.
+Lines and arrows are really the same thing;
+in fact,
+.UL arrow
+is a synonym for
+.UL line
+.UL -> .
+.PP
+If you don't put any distance after
+.UL up ,
+.UL down ,
+etc.,
+.UC PIC
+uses the standard distance.
+So
+.P1
+line up right; line down; line down left; line up
+.P2
+draws the parallelogram
+.PS
+line up right; line down; line down left; line up
+.PE
+.PP
+Warning:
+a very common error (which hints at a language defect)
+is to say
+.P1
+line 3i
+.P2
+A direction is needed:
+.P1
+line right 3i
+.P2
+.PP
+Boxes and lines may be dotted or dashed:
+.PS
+box dotted; line dotted; move; line dashed
+.PE
+comes from
+.P1
+box dotted; line dotted; move; line dashed
+.P2
+If there is a number after
+.UL dot ,
+the dots will be that far apart.
+You can also control the size of the dashes (at least somewhat):
+if there is a length after the word
+.UL dashed ,
+the dashes will be that long,
+and the intervening spaces will be as close as possible to that size.
+So, for instance,
+.PS
+line right 5i dashed
+.PE
+.PS
+line right 5i dashed 0.25i
+.PE
+.PS
+line right 5i dashed 0.5i
+.PE
+.PS
+line right 5i dashed 1i
+.PE
+comes from the inputs (as separate pictures)
+.P1
+line right 5i dashed
+line right 5i dashed 0.25i
+line right 5i dashed 0.5i
+line right 5i dashed 1i
+.P2
+.LP
+Sorry, but circles and arcs can't be dotted or dashed yet,
+and probably never will be.
+.LP
+.PP
+You can make any object invisible by adding the word
+.UL invis(ible)
+after it.
+This is particularly useful for positioning things correctly
+near text, as we will see later.
+.LP
+.PP
+Text may be positioned on lines and arrows:
+.P1
+\&.PS
+arrow "on top of"; move
+arrow "above" "below"; move
+arrow "above" above; move
+arrow "below" below; move
+arrow "above" "on top of" "below"
+\&.PE
+.P2
+produces
+.PS
+arrow "on top of"; move
+arrow "above" "below"; move
+arrow "above" above; move
+arrow "below" below; move
+arrow "above" "on top of" "below"
+.PE
+.LP
+.PP
+The ``width'' of an arrowhead is the distance across
+its tail;
+the ``height'' is the distance along the shaft.
+The arrowheads in this picture are default size.
+.PP
+As we said earlier, arcs go 90 degrees counterclockwise
+from where you are right now, and
+.UL arc
+.UL cw
+changes this to clockwise.
+The default radius is the same as for circles,
+but you can change it with the
+.UL rad
+attribute.
+It is also easy to draw arcs between specific places;
+this will be described in the next section.
+.PP
+To put an arrowhead on an arc, use one of
+.UL <- ,
+.UL ->
+or
+.UL <-> .
+.LP
+.PP
+In all cases,
+unless an explicit dimension for some object is specified,
+you will get the default size.
+If you want an object to have the same size
+as the previous one of that kind,
+add the word
+.UL same .
+Thus
+in the set of boxes given by
+.P1
+down; box ht 0.2i wid 1.5i; move down 0.15i; box same; move same; box same
+.P2
+.PS
+down; box ht 0.2i wid 1.5i; move down 0.15i; box same; move same; box same
+.PE
+the dimensions set by the first
+.UL box
+are used several times;
+similarly, the amount of motion for the second
+.UL move
+is the same as for the first one.
+.PP
+It is possible to change the default sizes of objects
+by assigning values to certain variables:
+.P1
+boxwid, boxht
+linewid, lineht
+dashwid
+circlerad
+arcrad
+ellipsewid, ellipseht
+movewid, moveht
+arrowwid, arrowht	\f1(These refer to the arrowhead.)\fP
+.P2
+So if you want all your boxes to be long and skinny, and relatively close together,
+.P1
+boxwid = 0.1i; boxht = 1i
+movewid = 0.2i
+box; move; box; move; box
+.P2
+gives
+.PS
+x = boxwid; y = boxht
+boxwid = 0.1i; boxht = 1i
+movewid = 0.2i
+box; move; box; move; box
+boxwid = x; boxht = y
+.PE
+.PP
+.UC PIC
+works internally in what it thinks are inches.
+Setting the variable
+.UL scale
+to some value causes all dimensions to be scaled down
+by that value.
+Thus, for example,
+.UL scale=2.54
+causes dimensions to be interpreted as centimeters.
+.PP
+The number given as a width in the
+.UL .PS
+line overrides the dimensions given in the picture;
+this can be used to force a picture to a particular size
+even when coordinates have been given in inches.
+Experience indicates that the easiest way to get a picture
+of the right size is to enter its dimensions in inches,
+then if necessary add a width to the
+.UL .PS
+line.
+.NH
+Controlling Positions
+.PP
+You can place things anywhere you want;
+.UC PIC
+provides a variety of ways to talk about places.
+.UC PIC
+uses a standard Cartesian coordinate system,
+so any point or object has an
+.IT x
+and
+.IT y
+position.
+The first object is placed with its start at position 0,0 by default.
+The
+.IT x,y
+position of a box, circle or ellipse is its geometrical center;
+the position of a line or motion is its beginning;
+the position of an arc is the center of the corresponding circle.
+.PP
+Position modifiers like
+.UL from ,
+.UL to ,
+.UL by
+and
+.UL at
+are followed by an
+.IT x,y
+pair, and
+can be attached to boxes, circles, lines, motions, and so on,
+to specify or modify a position.
+.PP
+You can also use
+.UL up ,
+.UL down ,
+.UL right ,
+and
+.UL left
+with
+.UL line
+and
+.UL move .
+Thus
+.P1
+\&.PS 2
+box ht 0.2 wid 0.2 at 0,0 "1"
+move to 0.5,0		# or "move right 0.5"
+box "2" same		# use same dimensions as last box
+move same			# use same motion as before
+box "3" same
+\&.PE
+.P2
+.LP
+draws three boxes, like this:
+.PS 2
+box ht 0.2 wid 0.2 at 0,0 "1"
+move to 0.5,0	# or "move right 0.5"
+box "2" same	# use same dimensions as last box
+move same		# use same motion as before
+box "3" same
+.PE
+.LP
+Note the use of
+.UL same
+to repeat the previous dimensions instead of reverting to the default values.
+.PP
+Comments can be used in pictures;
+they begin with a
+.UL #
+and end at the end of the line.
+.PP
+Attributes like
+.UL ht
+and
+.UL wid
+and positions like
+.UL at
+can be written out in any order.
+So
+.P1
+box ht 0.2 wid 0.2 at 0,0
+box at 0,0 wid 0.2 ht 0.2
+box ht 0.2 at 0,0 wid 0.2
+.P2
+are all equivalent, though the last is harder to read
+and thus less desirable.
+.PP
+The
+.UL from
+and
+.UL to
+attributes are particularly useful with arcs,
+to specify the endpoints.
+By default, arcs are drawn counterclockwise,
+.P1
+arc from 0.5i,0 to 0,0.5i
+.P2
+is the short arc
+and
+.P1
+arc at 2i,0 from 2i,0.5i to 2.5i,0
+.P2
+is the long one:
+.PS
+arc from 0.5i, 0 to 0, 0.5i
+arc at 2i,0 from 2i,0.5i to 2.5i,0
+circle rad .5i invis at 2i,0	# cheating
+.PE
+If the
+.UL from
+attribute is omitted,
+the arc starts where you are now and goes to the
+point given by
+.UL to .
+The radius can be made large to provide flat arcs:
+.P1
+arc -> cw from 0,0 to 2i,0 rad 15i
+.P2
+produces
+.PS
+arc -> cw from 0,0 to 2i,0 rad 15i
+.PE
+.LP
+.PP
+We said earlier that
+objects are normally connected left to right.
+This is an over-simplification.
+The truth is that objects are connected together
+in the direction specified by the most recent
+.UL up ,
+.UL down ,
+.UL left
+or
+.UL right
+(either alone or as part of some object).
+Thus, in
+.P1
+arrow left; box; arrow; circle; arrow
+.P2
+the
+.UL left
+implies connection towards the left:
+.PS
+arrow left; box; arrow; circle; arrow
+.PE
+This could also be written as
+.P1
+left; arrow; box; arrow; circle; arrow
+.P2
+.PP
+Objects are joined in the order determined by the last
+.UL up ,
+.UL down ,
+etc., with the entry point of the second object attached
+to the exit point of the first.
+Entry and exit points for boxes, circles and ellipses are
+on opposite sides, and the start and end of lines, motions and arcs.
+It's not entirely clear that this automatic connection and direction selection
+is the right design,
+but it seems to simplify many examples.
+.PP
+If a set of commands is enclosed in braces
+.UL {...} ,
+the current position and direction of motion when the group is finished
+will be exactly where it was when entered.
+Nothing else is restored.
+There is also a more general way to group objects,
+using
+.UL [
+and
+.UL ] ,
+which is discussed in a later section.
+.NH
+Labels and Corners
+.PP
+Objects can be labelled or named so that you can talk about them later.
+For example,
+.P1
+\&.PS
+Box1:
+	box ...
+	# ... other stuff ...
+	move to Box1
+\&.PE
+.P2
+Place names have to begin with an upper case letter
+(to distinguish them from variables,
+which begin with lower case letters).
+The name refers to the ``center''
+of the object,
+which is the geometric center for most things.
+It's the beginning for lines and motions.
+.PP
+Other combinations also work:
+.P1
+line from Box1 to Box2
+move to Box1 up 0.1 right 0.2
+move to Box1 + 0.2,0.1	# same as previous
+line to Box1 - 0.5,0
+.P2
+The reserved name
+.UL Here
+may be used to record the current position of some object,
+for example as
+.P1
+Box1:  Here
+.P2
+.PP
+Labels are variables \(em they can be reset several times in a single picture,
+so a line of the form
+.P1
+Box1:  Box1 + 1i,1i
+.P2
+is perfectly legal.
+.LP
+.PP
+You can also refer to previously drawn objects of each type,
+using the word
+.UL last .
+For example, given the input
+.P1
+box "A"; circle "B"; box "C"
+.P2
+then
+.UL last \& `
+.UL box '
+refers to box
+.UL C ,
+.UL last \& `
+.UL circle '
+refers to circle
+.UL B ,
+and
+.UL 2nd \& `
+.UL last
+.UL box '
+refers to box
+.UL A .
+Numbering of objects can also be done from the beginning,
+so boxes
+.UL A
+and
+.UL C
+are
+.UL 1st \& `
+.UL box '
+and
+.UL 2nd \& `
+.UL box '
+respectively.
+.PP
+To cut down the need for explicit coordinates,
+most objects have ``corners'' named by compass points:
+.PS 1.5
+B: box "B.c"
+" B.e" at B.e ljust
+" B.ne" at B.ne ljust
+" B.se" at B.se ljust
+"B.s" at B.s below
+"B.n" at B.n above
+"B.sw " at B.sw rjust
+"B.w " at B.w rjust
+"B.nw " at B.nw rjust
+.PE
+.LP
+The primary compass points may also be written as
+.UL .r ,
+.UL .b ,
+.UL .l ,
+and
+.UL .t ,
+for
+.IT right ,
+.IT bottom ,
+.IT left ,
+and
+.IT top .
+The box above was produced with
+.P1
+\&.PS
+B: box "B.c"
+" B.e" at B.e ljust
+" B.ne" at B.ne ljust
+" B.se" at B.se ljust
+"B.s" at B.s below
+"B.n" at B.n above
+"B.sw " at B.sw rjust
+"B.w " at B.w rjust
+"B.nw " at B.nw rjust
+\&.PE
+.P2
+Note the use of
+.UL ljust ,
+.UL rjust ,
+.UL above ,
+and
+.UL below
+to alter the default positioning of text,
+and of a blank with some strings to help space them away from a vertical line.
+.PP
+Lines and arrows have a
+.UL start ,
+an
+.UL end
+and a center in addition to corners.
+(Arcs have only a center, a start, and an end.)
+There are a host of (i.e., too many) ways to talk about the
+corners of an object.
+Besides the compass points,
+almost any sensible combination of
+.UL left ,
+.UL right ,
+.UL top ,
+.UL bottom ,
+.UL upper
+and
+.UL lower
+will work.
+Furthermore, if you don't like the
+.UL . ' `
+notation, as in
+.P1
+last box.ne
+.P2
+you can instead say
+.P1
+upper right of last box
+.P2
+Prolixity like
+.P1
+line from upper left of 2nd last box to bottom of 3rd last ellipse
+.P2
+begins to wear after a while,
+but it is descriptive.
+This part of the language is probably fat that will get trimmed.
+.LP
+.PP
+It is sometimes easiest to position objects by positioning
+some part of one at some part of another,
+for example the northwest corner of one at the southeast corner
+of another.
+The
+.UL with
+attribute in
+.UC PIC
+permits this kind of positioning.
+For example,
+.P1
+box ht 0.75i wid 0.75i
+box ht 0.5i wid 0.5i with .sw at last box.se
+.P2
+produces
+.PS
+box ht 0.75i wid 0.75i
+box ht 0.5i wid 0.5i with .sw at last box.se
+.PE
+Notice that the corner after
+.UL with
+is written
+.UL .sw .
+.PP
+As another example, consider
+.P1
+ellipse; ellipse with .nw at last ellipse.se
+.P2
+which makes
+.PS
+ellipse; ellipse with .nw at last ellipse.se
+.PE
+.LP
+.PP
+Sometimes it is desirable to have a line intersect a circle
+at a point which is not one of the eight compass points
+that
+.UC PIC
+knows about.
+In such cases, the proper visual effect can be obtained by using
+the attribute
+.UL chop
+to chop off part of the line:
+.P1
+circle "a"
+circle "b" at 1st circle - (0.75i, 1i)
+circle "c" at 1st circle + (0.75i, -1i)
+line from 1st circle to 2nd circle chop
+line from 1st circle to 3rd circle chop
+.P2
+produces
+.PS
+circle "a"
+circle "b" at 1st circle - (0.75i, 1i)
+circle "c" at 1st circle + (0.75i, -1i)
+line from 1st circle to 2nd circle chop
+line from 1st circle to 3rd circle chop
+.PE
+By default the line is chopped by
+.UL circlerad
+at each end.
+This may be changed:
+.P1
+line ... chop \f2r\fP
+.P2
+chops both ends by
+\f2r\fP, and
+.P1
+line ... chop \f2r1\fP chop \f2r2\fP
+.P2
+chops the beginning by
+.IT r1
+and the end by
+.IT r2 .
+.PP
+There is one other form of positioning that is sometimes useful,
+to refer to a point some fraction of the way between
+two other points.
+This can be expressed in 
+.UC PIC
+as
+.P1
+\f2fraction\fP of the way between \f2position1\fP and \f2position2\fP
+.P2
+.IT fraction
+is any expression, and
+.IT position1
+and
+.IT position2
+are any positions.
+You can abbreviate this rather windy phrase;
+``of the way'' is optional, and the whole thing can
+be written instead as
+.P1
+\f2fraction\fP < \f2position1\fP , \f2position2\fP >
+.P2
+As an example,
+.P1
+box
+arrow right from 1/3 of the way between last box.ne and last box.se
+arrow right from 2/3 <last box.ne, last box.se>
+.P2
+produces
+.PS
+box
+arrow right from 1/3 of the way between last box.ne and last box.se
+arrow right from 2/3 <last box.ne, last box.se>
+.PE
+Naturally,
+the distance given by
+.IT fraction
+can be greater than 1 or less than 0.
+.NH
+Variables and Expressions
+.PP
+It's generally a bad idea to write everything in 
+absolute coordinates if you are likely
+to change things.
+.UC PIC
+variables let you parameterize your picture:
+.P1
+a = 0.5;  b = 1
+
+box wid a ht b
+ellipse wid a/2 ht 1.5*b
+move to Box1 - (a/2, b/2)
+.P2
+.PP
+Expressions may use the standard operators
+.UL + ,
+.UL - ,
+.UL * ,
+.UL / ,
+and
+.UL % ,
+and parentheses for grouping.
+.PP
+Probably the most important variables are the predefined ones for
+controlling the default sizes of objects,
+listed in Section 3.
+These may be set at any time in any picture,
+and retain their values until reset.
+.PP
+You can use the height, width, radius,
+and
+.IT x
+and
+.IT y
+coordinates of any object or corner in an expression:
+.P1
+Box1.x		# the \f2x\fP coordinate of Box1
+Box1.ne.y		# the \f2y\fP coordinate of the northeast corner of Box1
+Box1.wid		# the width of Box1
+Box1.ht		# and its height
+2nd last circle.rad	# the radius of the 2nd last circle
+.P2
+.PP
+Any pair of expressions enclosed in parentheses
+defines a position;  furthermore such positions
+can be added or subtracted to yield new positions:
+.EQ
+delim $$
+gsize 9
+.EN
+.P1
+( \f2x\fP , \f2y\fP )
+( $x sub 1$ , $y sub 1$ ) + ( $x sub 2$ , $y sub 2$ )
+.P2
+If $p sub 1$ and $p sub 2$ are positions, then
+.P1
+( $p sub 1$ , $p sub 2$ )
+.P2
+refers to the point
+.P1
+( $p sub 1$.x , $p sub 2$.y )
+.P2
+.EQ
+delim off
+gsize 10
+.EN
+.NH
+More on Text
+.PP
+Normally, text is centered
+at the geometric center of the object it is associated with.
+The attribute
+.UL ljust
+causes the left end to be at the specified point
+(which means that the text lies to the right of the specified place!),
+and
+.UL rjust
+puts the right end at the place.
+.UL above
+and
+.UL below
+center the text one half line space in the given direction.
+.PP
+At the moment you can
+.ul
+not
+compound text attributes:
+however natural it might seem,
+it is illegal to say
+.UL \&"..."
+.UL above
+.UL ljust .
+This will be fixed eventually.
+.PP
+Text is most often an attribute of some other object,
+but you can also have self-standing text:
+.P1
+"this is some text" at 1,2 ljust
+.P2
+.NH
+Lines and Splines
+.PP
+A ``line'' may actually be a path,
+that is, it may consist of connected segments like this:
+.PS
+line right 1i then down .5i left 1i then right 1i
+.PE
+This line was produced by
+.P1
+line right 1i then down .5i left 1i then right 1i
+.P2
+.PP
+A spline is a smooth curve guided by a set of straight lines
+just like the line above.
+It begins at the same place, ends at the same place,
+and in between is tangent to the mid-point of each guiding line.
+The syntax for a spline is identical to a (path) line
+except for using
+.UL spline
+instead of
+.UL line .
+Thus:
+.P1
+line dashed right 1i then down .5i left 1i then right 1i
+spline from start of last line \e
+  right 1i then down .5i left 1i then right 1i
+.P2
+produces
+.PS
+line dashed right 1i then down .5i left 1i then right 1i
+spline from start of last line\
+  right 1i then down .5i left 1i then right 1i
+.PE
+(Long input lines can be split by ending each piece
+with a backslash.)
+.PP
+The elements of a path, whether for line or spline,
+are specified as a series of points,
+either in absolute terms or by
+.UL up ,
+.UL down , 
+etc.
+If necessary to disambiguate, the word
+.UL then
+can be used to separate components, as in
+.P1
+spline right then up then left then up
+.P2
+which is not the same as
+.P1
+spline right up left up
+.P2
+.PP
+At the moment, arrowheads may only be put on the ends
+of a line or spline;
+splines may not be dotted or dashed.
+.NH
+Blocks
+.PP
+Any sequence of
+.UC PIC
+statements may be enclosed in
+brackets
+.UL [...]
+to form
+a block,
+which can then be treated as a single object,
+and manipulated rather like an ordinary box.
+For example, if we say
+.P1
+box "1"
+[ box "2"; arrow "3" above; box "4" ] with .n at last box.s - (0,0.1)
+"thing" at last [].s
+.P2
+we get
+.PS
+box "1"
+[ box "2"; arrow "3" above; box "4" ] with .n at last box.s - (0,0.1)
+"thing" at last [].s
+.PE
+Notice that
+``last''-type constructs treat blocks as a unit and don't look
+inside for objects:
+.UL last "" ``
+.UL box.s ''
+refers to box 1, not box 2 or 4.
+You can use
+.UL last\ [] ,
+etc.,
+just like
+.UL last\ box .
+.PP
+Blocks have the same compass corners as
+boxes (determined by the bounding box).
+It is also
+possible to position a block by placing either an absolute 
+coordinate (like
+.UL 0,0 )
+or an internal label (like
+.UL A )
+at some
+external point, as in
+.P1
+[ ...; A: ...; ... ] with .A at ...
+.P2
+.PP
+Blocks join with other things like boxes do (i.e., at the
+center of the appropriate side).
+It's not clear that this
+is the right thing to do, so it may change.
+.PP
+Names of variables and places within a block are local
+to that block, and thus do not affect variables and places
+of the same name outside.
+You can get at the internal
+place names with constructs like
+.P1
+last [].A
+.P2
+or
+.P1
+B.A
+.P2
+where
+.UL B
+is a name attached to a block like so:
+.P1
+B : [ ... ;  A: ...;  ]
+.P2
+When combined with
+.UL define
+statements (next section), blocks provide
+a reasonable simulation of a procedure mechanism.
+.PP
+Although blocks nest,
+it is currently possible to look only one level deep
+with constructs like
+.UL B.A ,
+although
+.UL A
+may be
+further qualified (i.e.,
+.UL B.A.sw
+or
+.UL top
+.UL of
+.UL B.A
+are legal).
+.PP
+The following example illustrates most of the points made above
+about how blocks work:
+.P1
+h = .5i
+dh = .02i
+dw = .1i
+[
+	Ptr: [
+		boxht = h; boxwid = dw
+		A: box
+		B: box
+		C: box
+		box wid 2*boxwid "..."
+		D: box
+	]
+	Block: [
+		boxht = 2*dw; boxwid = 2*dw
+		movewid = 2*dh
+		A: box; move
+		B: box; move
+		C: box; move
+		box invis "..." wid 2*boxwid; move
+		D: box
+	] with .t at Ptr.s - (0,h/2)
+	arrow from Ptr.A to Block.A.nw
+	arrow from Ptr.B to Block.B.nw
+	arrow from Ptr.C to Block.C.nw
+	arrow from Ptr.D to Block.D.nw
+]
+box dashed ht last [].ht+dw wid last [].wid+dw at last []
+.P2
+This produces
+.PS
+h = .5i
+dh = .02i
+dw = .1i
+[
+	Ptr: [
+		boxht = h; boxwid = dw
+		A: box
+		B: box
+		C: box
+		box wid 2*boxwid "..."
+		D: box
+	]
+	Block: [
+		boxht = 2*dw; boxwid = 2*dw
+		movewid = 2*dh
+		A: box; move
+		B: box; move
+		C: box; move
+		box invis "..." wid 2*boxwid; move
+		D: box
+	] with .t at Ptr.s - (0,h/2)
+	arrow from Ptr.A to Block.A.nw
+	arrow from Ptr.B to Block.B.nw
+	arrow from Ptr.C to Block.C.nw
+	arrow from Ptr.D to Block.D.nw
+]
+box dashed ht last [].ht+dw wid last [].wid+dw at last []
+.PE
+.NH
+Macros
+.PP
+.UC PIC
+provides a rudimentary macro facility,
+the simple form of which is
+identical to that in
+.UC EQN :
+.P1
+define  \f2name\fP  X \f2replacement text\fP X
+.P2
+defines
+.IT name
+to be the
+.IT "replacement text" ;
+.UL X
+is any character that does not appear in the
+replacement.
+Any subsequent occurrence of
+.IT name
+will be replaced by
+.IT "replacement text" .
+.PP
+Macros with arguments are also available.
+The replacement text of a macro definition may contain occurrences of
+.UL $1
+through
+.UL $9 ;
+these will be replaced by the corresponding actual arguments
+when the macro is invoked.
+The invocation for a macro with arguments is
+.P1
+name(arg1, arg2, ...)
+.P2
+Non-existent arguments are replaced by null strings.
+.PP
+As an example, one might define a
+.UL square
+by
+.P1
+define square X box ht $1 wid $1  $2 X
+.P2
+Then
+.P1
+square(1i, "one" "inch")
+.P2
+calls for a one inch square with the obvious label,
+and
+.P1
+square(0.5i)
+.P2
+calls for a square with no label:
+.PS
+define square X box ht $1 wid $1  $2 X
+square(1i, "one" "inch")
+square(0.5i)
+.PE
+Coordinates like
+.IT x,y
+may be enclosed in parentheses,
+as in
+.IT x,y ), (
+so they can be included in a macro argument.
+.NH
+TROFF Interface
+.PP
+.UC PIC
+is usually run as a
+.UC TROFF
+preprocessor:
+.P1
+pic file | troff -ms
+.P2
+Run it before
+.UC EQN
+and
+.UC TBL
+if they are also present.
+.PP
+If the
+.UL .PS
+line looks like
+.P1
+\&.PS <file
+.P2
+then the contents of 
+.UL file
+are inserted in place of the
+.UL .PS
+line
+(whether or not the file contains
+.UL .PS
+or
+.UL .PE ).
+.PP
+Other than this file inclusion facility,
+.UC PIC
+copies the
+.UL .PS
+and
+.UL .PE
+lines from input to output intact,
+except that it adds two things right on the same line as the
+.UL .PS :
+.P1
+\&.PS h w
+.P2
+.UL h
+and
+.UL w
+are the picture height and width in units.
+The
+.UL -ms
+macro package has simple definitions for
+.UL .PS
+and
+.UL .PE
+that cause
+pictures to be centered and offset a bit from surrounding text.
+.PP
+If 
+.UL .PF '' ``
+is used instead of
+.UL .PE ,
+the position after printing is restored to where
+it was before the picture started, instead of being at the bottom.
+.UL F '' (``
+is for ``flyback.'')
+.PP
+Any input line that begins with a
+period is assumed to be a
+.UC TROFF
+command that makes sense at that point;
+it is copied to the output at that point in the document.
+It is asking for trouble to add spaces or in any way fiddle with
+the line spacing here,
+but point size, line thickness and font changes are generally harmless.
+So, for example,
+.P1
+"\eD't 20u'"
+circle radius .4i at 0,0
+"\eD't 13u'"
+circle radius .2i at 0,0
+"\eD't 6u'"
+circle radius .1i at 0,0
+"\eD't 1u'"
+circle radius .05i at 0,0
+"\eD't 3u'"
+\&.\e" don't forget to restore line thickness
+.P2
+gives
+.PS
+"\D't 20u'"
+circle radius .4i at 0,0
+"\D't 13u'"
+circle radius .2i at 0,0
+"\D't 6u'"
+circle radius .1i at 0,0
+"\D't 1u'"
+circle radius .05i at 0,0
+"\D't 3u'"
+.PE
+.PP
+Notice that the
+.UL \eD't
+.UL x'
+line thickness changes are in
+.I u
+units.  They may also be given in inches provided you want a
+certain line width measurement.
+.PP
+It is also safe to muck about with sizes and fonts and local motions
+within quoted strings
+.UL \&"..." ) (
+in
+.UC PIC ,
+so long as whatever changes are made are unmade before exiting the string.
+For example, to print text in Italics in size 6,
+use
+.P1
+ellipse "\es6\efISmile!\efP\es0"
+.P2
+This produces
+.PS
+ellipse "\s6\fISmile!\fP\s0"
+.PE
+This is essentially the same rule as applies in
+.UC EQN .
+.PP
+There is a subtle problem with complicated equations inside
+.UC PIC
+pictures \(em they come out wrong
+if
+.UC EQN
+has to leave extra vertical space for the equation.
+If your equation involves more than subscripts and superscripts,
+you must add to the beginning of each equation the extra information
+.UL "space 0" :
+.P1
+arrow
+box "$space 0 {H( omega )} over {1 - H( omega )}$"
+arrow
+.P2
+This produces
+.EQ
+delim $$
+.EN
+.PS
+arrow
+box "$space 0 {H( omega )} over {1 - H( omega )}$"
+arrow
+.PE
+.PP
+.UC PIC
+generates commands for the new version of
+.UC TROFF
+(ditroff) that has operators for drawing graphical objects
+like lines, circles, and so on.
+As distributed,
+.UC PIC
+assumes that its output is going to the Varian (or Versatec) raster
+printers unless told otherwise with the
+.UL -P
+option.
+At present, the other alternatives are
+.UL -Pip
+(or
+.UL imagen ,
+the canon/imagen laser printer) and
+.UL -Pter
+(a terminal or printer \(em which will do what it will with
+the graphical commands).
+.NH
+Some Examples
+.PP
+Herewith a handful of larger examples:
+.KS
+.PS
+define ndblock X
+	box wid boxwid/2 ht boxht/2
+	down;  box same with .t at bottom of last box;   box same
+X
+.ps -2
+.ft CW
+boxht = .2i; boxwid = .3i
+down; box; box; box; box ht 3*boxht "." "." "."
+L: box; box; box invis wid 2*boxwid "hashtab:" with .e at 1st box .w
+right
+Start: box wid .5i with .sw at 1st box.ne + (.4i,.2i) "..."
+N1: box wid .2i "n1";  D1: box wid .3i "d1"
+N3: box wid .4i "n3";  D3: box wid .3i "d3"
+box wid .4i "..."
+N2: box wid .5i "n2";  D2: box wid .2i "d2"
+
+arrow right from 2nd box 
+ndblock
+spline -> right .2i from 3rd last box then to N1.sw + (0.05i,0)
+spline -> right .3i from 2nd last box then to D1.sw + (0.05i,0)
+arrow right from last box
+ndblock
+spline -> right .2i from 3rd last box to N2.sw-(0.05i,.2i) to N2.sw+(0.05i,0)
+spline -> right .3i from 2nd last box to D2.sw-(0.05i,.2i) to D2.sw+(0.05i,0)
+arrow right 2*linewid from L
+ndblock
+spline -> right .2i from 3rd last box to N3.sw + (0.05i,0)
+spline -> right .3i from 2nd last box to D3.sw + (0.05i,0)
+
+circlerad = .3i
+circle invis "ndblock"  at last box.e + (.7i,.2i)
+arrow dotted from last circle to last box chop
+
+box invis wid 2*boxwid "ndtable:" with .e at Start.w
+.ps
+.ft
+.PE
+.KE
+.PP
+The input for the picture above was:
+.P1
+.ps -1
+.vs -2p
+define ndblock X
+	box wid boxwid/2 ht boxht/2
+	down;  box same with .t at bottom of last box;   box same
+X
+boxht = .2i; boxwid = .3i; circlerad = .3i
+down; box; box; box; box ht 3*boxht "." "." "."
+L: box; box; box invis wid 2*boxwid "hashtab:" with .e at 1st box .w
+right
+Start: box wid .5i with .sw at 1st box.ne + (.4i,.2i) "..."
+N1: box wid .2i "n1";  D1: box wid .3i "d1"
+N3: box wid .4i "n3";  D3: box wid .3i "d3"
+box wid .4i "..."
+N2: box wid .5i "n2";  D2: box wid .2i "d2"
+arrow right from 2nd box 
+ndblock
+spline -> right .2i from 3rd last box then to N1.sw + (0.05i,0)
+spline -> right .3i from 2nd last box then to D1.sw + (0.05i,0)
+arrow right from last box
+ndblock
+spline -> right .2i from 3rd last box to N2.sw-(0.05i,.2i) to N2.sw+(0.05i,0)
+spline -> right .3i from 2nd last box to D2.sw-(0.05i,.2i) to D2.sw+(0.05i,0)
+arrow right 2*linewid from L
+ndblock
+spline -> right .2i from 3rd last box to N3.sw + (0.05i,0)
+spline -> right .3i from 2nd last box to D3.sw + (0.05i,0)
+circle invis "ndblock"  at last box.e + (.7i,.2i)
+arrow dotted from last circle to last box chop
+box invis wid 2*boxwid "ndtable:" with .e at Start.w
+.P2
+.PP
+This is the second example:
+.KS
+.PS 5
+.ps 8
+boxht = .5i; boxwid = .75i
+circlerad = .25i
+	arrow "source" "code"
+LA:	box "lexical" "analyzer"
+	arrow "tokens" above
+P:	box "parser"
+	arrow "intermediate" "code"
+Sem:	box "semantic" "checker"
+	arrow
+
+	arrow <-> up from top of LA
+LC:	box "lexical" "corrector"
+	arrow <-> up from top of P
+Syn:	box "syntactic" "corrector"
+	arrow up
+DMP:	box "diagnostic" "message" "printer"
+	arrow <-> right  from right of DMP
+ST:	box "symbol" "table"
+	arrow from LC.ne to DMP.sw
+	arrow from Sem.nw to DMP.se
+	arrow <-> from Sem.top to ST.bot
+.PE
+.KE
+.LP
+This is the input for the picture:
+.P1
+\&.PS 5
+\&.ps 8
+\&	arrow "source" "code"
+\&LA:	box "lexical" "analyzer"
+\&	arrow "tokens" above
+\&P:	box "parser"
+\&	arrow "intermediate" "code"
+\&Sem:	box "semantic" "checker"
+\&	arrow
+\&
+\&	arrow <-> up from top of LA
+\&LC:	box "lexical" "corrector"
+\&	arrow <-> up from top of P
+\&Syn:	box "syntactic" "corrector"
+\&	arrow up
+\&DMP:	box "diagnostic" "message" "printer"
+\&	arrow <-> right  from right of DMP
+\&ST:	box "symbol" "table"
+\&	arrow from LC.ne to DMP.sw
+\&	arrow from Sem.nw to DMP.se
+\&	arrow <-> from Sem.top to ST.bot
+\&.PE
+.P2
+.PP
+There are eighteen objects (boxes and arrows) in the picture,
+and one line of
+.UC PIC
+input for each;
+this seems like an acceptable level of verbosity.
+.PP
+The next example is the following:
+.KS
+.PS 5i
+circle "DISK"
+arrow "character" "defns"
+box "CPU" "(16-bit mini)"
+{ arrow <- from top of last box up "input " rjust }
+arrow
+CRT: "   CRT" ljust
+line from CRT - 0,0.075 up 0.15 \
+then right 0.5 \
+then right 0.5 up 0.25 \
+then down 0.5+0.15 \
+then left 0.5 up 0.25 \
+then left 0.5
+
+Paper: CRT + 1.0+0.05,0
+arrow from Paper + 0,0.75 to Paper - 0,0.5
+{ move to start of last arrow down 0.25
+  { move left 0.015; circle rad 0.05 }
+  { move right 0.015; circle rad 0.05; "   rollers" ljust }
+}
+"  paper" ljust at end of last arrow right 0.25 up 0.25
+line left 0.2 dotted
+.PE
+.ce
+Basic Digital Typesetter
+.sp
+.KE
+.LP
+This is the input for example 3:
+.P1
+\&.KS
+\&.PS 5i
+circle "DISK"
+arrow "character" "defns"
+box "CPU" "(16-bit mini)"
+{ arrow <- from top of last box up "input " rjust }
+arrow
+CRT: "   CRT" ljust
+line from CRT - 0,0.075 up 0.15 \e
+then right 0.5 \e
+then right 0.5 up 0.25 \e
+then down 0.5+0.15 \e
+then left 0.5 up 0.25 \e
+then left 0.5
+
+Paper: CRT + 1.0+0.05,0
+arrow from Paper + 0,0.75 to Paper - 0,0.5
+{ move to start of last arrow down 0.25
+  { move left 0.015; circle rad 0.05 }
+  { move right 0.015; circle rad 0.05; "   rollers" ljust }
+}
+"  paper" ljust at end of last arrow right 0.25 up 0.25
+line left 0.2 dotted
+\&.PE
+\&.ce
+\&Basic Digital Typesetter
+\&.sp
+\&.KE
+.P2
+.NH
+Final Observations
+.PP
+.UC PIC
+is not a sophisticated tool.
+The fundamental approach \(em Cartesian coordinates
+and real measurements \(em is not the easiest thing
+in the world to work with,
+although it does have the merit of being in some sense sufficient.
+Much of the syntactic sugar
+(or corn syrup)
+\(em corners, joining things implicitly, etc. \(em
+is aimed at making positioning and sizing automatic,
+or at least relative to previous things,
+rather than explicit.
+.PP
+Nonetheless,
+.UC PIC
+does seem to offer some positive values.
+Most notably, it is integrated with the rest of the standard
+Unix document preparation software.
+In particular, it positions text correctly
+in relation to graphical objects;
+this is not true of any of the interactive graphical
+editors that I am aware of.
+It can even deal with equations in a natural manner,
+modulo the
+.UL "space 0"
+nonsense alluded to above.
+.PP
+A standard question is,
+``Wouldn't it be better if it were interactive?''
+The answer seems to be both yes and no.
+If one has a decent input device (which I do not),
+interaction is certainly better for sketching out a figure.
+But if one has only standard terminals (at home, for instance),
+then a linear representation of a figure is better.
+Furthermore, it is possible to generate
+.UC PIC
+input from a program: I have used
+.UC AWK
+.[ [
+%r 68
+%R Comp. Sci. Tech. Rep. No. 68
+%K CSTR
+%A A. V. Aho
+%A P. J. Weinberger
+%A B. W. Kernighan
+%T AWK - A Pattern Scanning and Processing Language
+%J UNIX Programmers' Manual
+%V 2, section 25
+%D July 1978
+%J Software Practice and Experience
+%V 9
+%P 267-280
+%D April 1979
+.]]
+to extract numbers from a report and generate the
+.UC PIC
+commands to make histograms.
+This is hard to imagine with most of the interactive systems
+I know of.
+.PP
+In any case, the issue is far from settled;
+comments and suggestions are welcome.
+(Note:  at Berkeley we have 
+.UC GREMLIN
+and
+.UC GRN
+(for ditroff preprocessing) for interactive graphics)
+.SH
+Acknowledgements
+.PP
+I am indebted to Chris Van Wyk for ideas from several versions of
+.UC IDEAL .
+He and Doug McIlroy have also contributed algorithms
+for line and circle drawing,
+and made useful suggestions on the design of
+.UC PIC .
+Theo Pavlidis contributed the basic spline algorithm.
+Charles Wetherell pointed out reference
+[2]
+to me, and made several valuable criticisms on an early
+draft of the language and manual.
+The exposition in this version has been greatly improved
+by suggestions from Jim Blinn.
+I am grateful to
+my early users \(em
+Brenda Baker,
+Dottie Luciani,
+and Paul Tukey
+\(em
+for their suggestions and cheerful use of
+an often shaky and clumsy system.
+.SH
+References
+.[
+$LIST$
+.]
+.sp 100
+.SH
+Appendix A:  PIC Reference Manual
+.SH
+Pictures
+.PP
+The top-level object in
+.UC PIC
+is the ``picture'':
+.P1
+\f2picture\fP:
+	.PS \f2optional-width\fP
+	\f2element-list\fP
+	.PE
+.P2
+If
+.IT optional-width
+is present, the picture is made that many inches wide,
+regardless of any dimensions used internally.
+The height is scaled in the same proportion.
+.PP
+If instead the line is
+.P1
+\&.PS <f
+.P2
+the file
+.UL f
+is inserted in place of the
+.UL .PS
+line.
+.PP
+If
+.UL .PF
+is used instead of
+.UL .PE ,
+the position after printing is restored to what it was
+upon entry.
+.SH
+Elements
+.PP
+An
+.IT element-list
+is a list of elements (what else?);
+the elements are
+.P1
+\f2element\fP:
+	\f2primitive  attribute-list\fP
+	\f2placename\fP : \f2element\fP
+	\f2placename\fP : \f2position\fP
+	\f2variable\fP = \f2expression\fP
+	\f2direction\fP
+	\f2troff-command\fP
+	{ \f2element-list\fP }
+	[ \f2element-list\fP ]
+.P2
+.PP
+Elements in a list must be separated by newlines or semicolons;
+a long element may be continued by ending the line with a backslash.
+Comments are introduced by a
+.UL #
+and terminated by a newline.
+.PP
+Variable names begin with a lower case letter;
+place names begin with upper case.
+Place and variable names retain their values
+from one picture to the next.
+.PP
+The current position and direction of motion are saved upon entry
+to a
+.UL {...}
+block and restored upon exit.
+.PP
+Elements within a block enclosed in
+.UL [...]
+are treated as a unit;
+the dimensions are determined by the extreme points
+of the contained objects.
+Names, variables, and direction of motion within a block are local to that block.
+.PP
+.IT troff-command
+is any line that begins with a period.
+Such lines are assumed to make sense in the context where they appear;
+accordingly,
+if it doesn't work, don't call.
+.SH
+Primitives
+.PP
+The primitive objects are
+.P1
+\f2primitive\fP:
+	box
+	circle
+	ellipse
+	arc
+	line
+	arrow
+	move
+	spline
+	"any text at all"
+.P2
+.UL arrow
+is a synonym for
+.UL line
+.UL -> .
+.SH
+Attributes
+.PP
+An
+.IT attribute-list
+is a sequence of zero or more attributes;
+each attribute consists of a keyword, perhaps followed by a value.
+In the following,
+.IT e
+is an expression and
+.IT opt-e
+an optional expression.
+.P1
+.ta .5i 2.5i
+\f2attribute\fP:
+	h(eigh)t \f2e\fP	wid(th) \f2e\fP
+	rad(ius) \f2e\fP	diam(eter) \f2e\fP
+	up \f2opt-e\fP	down \f2opt-e\fP
+	right \f2opt-e\fP	left \f2opt-e\fP
+	from \f2position\fP	to \f2position\fP
+	at \f2position\fP	with \f2corner\fP
+	by \f2e, e\fP	then
+	dotted \f2opt-e\fP	dashed \f2opt-e\fP
+	chop \f2opt-e\fP	->  <-  <->
+	same	invis
+	\f2text-list\fP
+.P2
+.PP
+Missing attributes and values are filled in from defaults.
+Not all attributes make sense for all primitives;
+irrelevant ones are silently ignored.
+These are the currently meaningful attributes:
+.P1
+box:
+	height, width, at, dotted, dashed, invis, same, \f2text\fP
+circle \f1and\fP ellipse:
+	radius, diameter, height, width, at, invis, same, \f2text\fP
+arc:
+	up, down, left, right, height, width, from, to, at, radius, 
+	invis, same, cw, <-, ->, <->, \f2text\fP
+line\f1, \fParrow
+	up, down, left, right, height, width, from, to, by, then,
+	dotted, dashed, invis, same, <-, ->, <->, \f2text\fP
+spline:
+	up, down, left, right, height, width, from, to, by, then,
+	invis, <-, ->, <->, \f2text\fP
+move:
+	up, down, left, right, to, by, same, \f2text\fP
+"text...":
+	at, \f2text\fP
+.P2
+The attribute
+.UL at
+implies placing the geometrical center at the specified place.
+For lines, splines and arcs,
+.UL height
+and
+.UL width
+refer to arrowhead size.
+.SH
+Text
+.PP
+Text is normally an attribute of some primitive;
+by default it is placed at the geometrical center of the object.
+Stand-alone text is also permitted.
+A
+.IT text-list
+is a list of text items; a text item is
+a quoted string optionally followed by a positioning request:
+.P1
+\f2text-item\fP:
+	"..."
+	"..." center
+	"..." ljust
+	"..." rjust
+	"..." above
+	"..." below
+.P2
+If there are multiple text items for some primitive,
+they are centered vertically except as qualified.
+Positioning requests apply to each item independently.
+.PP
+Text items can contain
+.UC TROFF
+commands for size and font changes, local motions, etc.,
+but make sure that these are balanced
+so that the entering state is restored before exiting.
+.SH
+Positions and places
+.PP
+A position is ultimately an
+.IT x,y
+coordinate pair, but it may be specified in other ways.
+.P1
+\f2position\fP:
+	\f2e, e\fP
+	place \(+- \f2e, e\fP
+	( \f2position\fP,\f2 position\fP )
+	\f2e\fP \f2[\fPof the way\f2]\fP between \f2position\fP and \f2position\fP
+	\f2e\fP < \f2position\fP , \f2position\fP >
+.P2
+The pair
+.IT e,\ e
+may be enclosed in parentheses.
+.P1
+\f2place\fP:
+	placename \f2optional-corner\fP
+	\f2corner\fP placename
+	Here
+	\f2corner\fP of \f2nth\fP \f2primitive\fP
+	\f2nth\fP \f2primitive\fP \f2optional-corner\fP
+.P2
+A
+.IT corner
+is one of the eight compass points
+or the center or the start or end of a primitive.
+(Not text!)
+.P1
+\f2corner\fP:
+	.n  .e  .w  .s  .ne  .se  .nw  .sw
+	.t  .b  .r  .l
+	.c  .start  .end
+.P2
+.PP
+Each object in a picture has an ordinal number;
+.IT nth
+refers to this.
+.P1
+\f2nth\fP:
+	\f2n\fPth
+	\f2n\fPth last
+.P2
+Since barbarisms like
+.UL 1th
+are barbaric,
+synonyms like
+.UL 1st
+and
+.UL 3st
+are accepted as well.
+.SH
+Variables
+.PP
+The built-in variables and their default values are:
+.P1
+.ta .5i 2.5i
+	boxwid 0.75i	boxht 0.5i
+	circlerad 0.25i
+	ellipsewid 0.75i	ellipseht 0.5i
+	arcrad 0.25i
+	linewid 0.5i	lineht 0.5i
+	movewid 0.5i	movewid 0.5i
+	arrowht 0.1i	arrowwid 0.05i
+	dashwid 0.1i
+	scale 1
+.P2
+These may be changed at any time,
+and the new values remain in force until changed again.
+Dimensions are divided by
+.UL scale
+during output.
+.SH
+Expressions
+.PP
+Expressions in
+.UC PIC
+are evaluated in floating point.
+All numbers representing dimensions are taken to be in inches.
+.P1
+\f2expression\fP:
+	\f2e\fP + \f2e\fP
+	\f2e\fP - \f2e\fP
+	\f2e\fP * \f2e\fP
+	\f2e\fP / \f2e\fP
+	\f2e\fP % \f2e\fP  \f1(modulus)\fP
+	- \f2e\fP
+	( \f2e\fP )
+	variable
+	number
+	\f2place\fP .x
+	\f2place\fP .y
+	\f2place\fP .ht
+	\f2place\fP .wid
+	\f2place\fP .rad
+.P2
+.SH
+Definitions
+.PP
+The
+.UL define
+statement is not part of the grammar.
+.P1
+define:
+	define \f2name\fP X \f2replacement text\fP X
+.P2
+.EQ
+delim off
+.EN
+Occurrences of
+.UL $1
+through
+.UL $9
+in the replacement text
+will be replaced by the corresponding arguments if
+.UL name
+is invoked as
+.P1
+name(\f2arg1\fP, \f2arg2\fP, ...)
+.P2
+Non-existent arguments are replaced by null strings.
+.IT Replacement
+.IT text
+may contain newlines.

@@ -1,0 +1,163 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)vmstat.8	6.5 (Berkeley) %G%
+.\"
+.TH VMSTAT 1 ""
+.UC 4
+.de s1
+.if n .sp
+.if t .sp .1i
+..
+.de t1
+.if n .ta 5n
+.if t .ta 1i
+..
+.SH NAME
+vmstat \- report virtual memory statistics
+.SH SYNOPSIS
+.B vmstat
+[
+.B \-fsim
+]
+[ drives ]
+[ interval [ count ] ]
+.SH DESCRIPTION
+.I Vmstat
+delves into the system and normally reports certain statistics kept about
+process, virtual memory, disk, trap and cpu activity.
+If given a
+.B \-f
+argument, it instead reports on the number of
+.I forks
+and
+.I vforks
+since system startup and the number of pages of virtual memory involved in each
+kind of fork.
+If given a
+.B \-s
+argument, it instead prints the contents
+of the
+.I sum
+structure, giving the total number of several kinds of paging related
+events which have occurred since boot.
+If given a
+.B \-i
+argument, it instead reports on the number of
+.I interrupts
+taken by each device since system startup.
+If given a
+.B \-m
+argument, it instead reports on the usage of
+kernel dynamic memory listed first by 
+.I size
+of allocation and then by
+.I type
+of usage.
+.PP
+If none of these options are given,
+.I vmstat
+will report in the first line a summary of the virtual memory activity 
+since the system has been booted.
+If
+.I interval
+is specified, then successive lines are summaries over the last
+.I interval
+seconds.
+``vmstat 5'' will print what the system is doing every five seconds;
+this is a good choice of printing interval since this is how often
+some of the statistics are sampled in the system; others vary every
+second, running the output for a while will make it apparent which
+are recomputed every second.
+If a
+.I count
+is given, the statistics are repeated
+.I count
+times.
+The format fields are:
+.PP
+Procs: information about numbers of processes in various states.
+.s1
+.t1
+.nf
+r	in run queue
+b	blocked for resources (i/o, paging, etc.)
+w	runnable or short sleeper (< 20 secs) but swapped
+.fi
+.s1
+Memory: information about the usage of virtual and real memory.
+Virtual pages are considered active if they belong to processes which
+are running or have run in the last 20 seconds.
+A ``page'' here is 1024 bytes.
+.s1
+.t1
+.nf
+avm	active virtual pages
+fre	size of the free list
+.fi
+.s1
+Page: information about page faults and paging activity.
+These are averaged each five seconds, and given in units per second.
+.s1
+.t1
+.nf
+re	page reclaims (simulating reference bits)
+at	pages attached (found in free list)
+pi	pages paged in
+po	pages paged out
+fr	pages freed per second
+de	anticipated short term memory shortfall
+sr	pages scanned by clock algorithm, per-second
+.fi
+.s1
+up/hp/rk/ra: Disk operations per second (this field is system dependent).
+Typically paging will be split across several of the available drives.
+The number under each of these is the unit number.
+.s1
+Faults: trap/interrupt rate averages per second over last 5 seconds.
+.s1
+.t1
+.nf
+in	(non clock) device interrupts per second
+sy	system calls per second
+cs	cpu context switch rate (switches/sec)
+.fi
+.s1
+Cpu: breakdown of percentage usage of CPU time
+.s1
+.nf
+us	user time for normal and low priority processes
+sy	system time
+id	cpu idle
+.fi
+.PP
+If more than 4 disk drives are configured in the system,
+.I vmstat
+displays only the first 4 drives, with priority given
+to Massbus disk drives (i.e. if both Unibus and Massbus
+drives are present and the total number of drives exceeds
+4, then some number of Unibus drives will not be displayed
+in favor of the Massbus drives).  To force
+.I vmstat
+to display specific drives, their names may be supplied on
+the command line.
+.SH FILES
+/dev/kmem, /vmunix
+.SH SEE ALSO
+.IR systat (1),
+.IR iostat (1)
+.PP
+The sections starting with ``Interpreting system activity'' in
+.IR "Installing and Operating 4.2bsd" .

@@ -1,0 +1,16 @@
+#
+#	@(#)initfile	4.1	(Berkeley)	%G%
+#
+default ucbc70
+machine ucbarpa local ucbvax link /dev/ttynr speed 13 time 3 count 1 length 758
+machine ucbc70 local ucbvax link /dev/ttynu speed 11 time 3 count 3
+machine ucbcfo-g local ucbvax link /dev/ttyng speed 13 time 5 count 1 length 758
+machine ucbcoke local ucbvax link /dev/ttynp speed 13 time 3 count 1 length 758
+machine ucbcory local ucbvax link /dev/ttyny speed 9 time 20 count 3
+machine ucbernie local ucbvax link /dev/ttynv speed 13 time 3 count 1 length 758
+machine ucbingres local ucbvax link /dev/ttynj speed 13 time 20 count 3 length 758
+machine ucbkim local ucbvax link /dev/ttynn speed 13 time 3 count 1 length 758
+machine ucbmathstat local ucbvax link /dev/ttynt speed 9 time 20 count 1 
+machine ucbonyx local ucbvax link /dev/ttynx speed 13 time 20 count 3
+machine ucbstatvax local ucbvax link /dev/null
+machine ucbvax local ucbvax link /dev/null

@@ -1,0 +1,44 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)intro.5	6.2 (Berkeley) %G%
+.\"
+.sh 1 "The Functions"
+.pp
+In the following definitions,
+.q \*m
+means that the
+.q function
+is really a
+.q #define
+macro with arguments.
+This means that it will not show up in stack traces in the debugger,
+or, in the case of such functions as
+.Fn addch ,
+it will show up as it's
+.Bq w
+counterpart.
+The arguments are given to show the order and type of each.
+Their names are not mandatory,
+just suggestive.
+.ta 11m,17m,25m,33m,41m,49m,57m,65m,73m
+.sh 2 "Output Functions"
+.so doc.I
+.sh 2 "Input Functions"
+.so doc.II
+.sh 2 "Miscellaneous Functions"
+.so doc.III
+.sh 2 Details
+.so doc.IV

@@ -1,0 +1,121 @@
+#
+#	@(#)rc	5.3 (Berkeley) %G%
+#
+
+HOME=/; export HOME
+PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/ucb
+export PATH
+
+if [ -r /fastboot ]
+then
+	rm -f /fastboot
+	echo Fast boot ... skipping disk checks >/dev/console
+elif [ $1x = autobootx ]
+then
+	echo Automatic reboot in progress... 		>/dev/console
+	date						>/dev/console
+	fsck -p						>/dev/console 2>&1
+	case $? in
+	0)
+		date >/dev/console
+		;;
+	2)
+		exit 1
+		;;
+	4)
+		reboot -n
+		;;
+	8)
+		echo "Automatic reboot failed... help!" >/dev/console
+		exit 1
+		;;
+	12)
+		echo "Reboot interrupted" >/dev/console
+		exit 1
+		;;
+	*)
+		echo "Unknown error in reboot" > /dev/console
+		exit 1
+		;;
+	esac
+else
+	date >/dev/console
+fi
+
+# check the password file
+if [ -f /etc/ptmp ]
+then
+	echo '/etc/ptmp -- password file may be incorrect' > /dev/console
+fi
+
+umount -a
+: >/etc/mtab
+swapon -a						>/dev/console 2>&1
+mount -a						>/dev/console 2>&1
+
+			echo -n 'checking quotas:'	>/dev/console
+quotacheck -a -p					>/dev/console 2>&1
+			echo ' done.'			>/dev/console
+quotaon -a
+
+# build ps data base
+ps -U							>/dev/console 2>&1
+
+# clean up left-over files
+rm -f /etc/nologin
+rm -f /usr/spool/uucp/LCK.*
+rm -f /usr/spool/uucp/STST/*
+
+chmod 666 /dev/tty[pqrs]*
+
+# set hostname, turn on network
+. /etc/netstart
+
+			echo 'starting system logger'	>/dev/console
+rm -f /dev/log
+syslogd
+
+# /var/crash should be a symbolic link to the crash directory
+# if core dumps are to be saved.
+if [ -d /var/crash ]; then
+	echo		'checking for core dump... '	>/dev/console
+	savecore /var/crash				>/dev/console 2>&1
+fi
+
+			echo preserving editor files 	>/dev/console
+(cd /tmp; /usr/lib/ex3.7preserve -a)
+			echo clearing /tmp 		>/dev/console
+(cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -r {} \; )
+			echo clearing /var/run
+(cd /var/run; rm -rf *)
+
+			echo -n standard daemons:	>/dev/console
+update;			echo -n ' update'		>/dev/console
+cron;			echo -n ' cron'			>/dev/console
+accton /usr/adm/acct;	echo -n ' accounting'		>/dev/console
+			echo '.'			>/dev/console
+
+echo -n starting network daemons:			>/dev/console
+
+# $routedflags is imported from /etc/netstart;
+# if $routedflags == NO, routed isn't run.
+if [ X${routedflags} != X"NO" ]; then
+	routed $routedflags; echo -n ' routed'		>/dev/console
+fi
+
+{ echo -n ' named'; named; }				>/dev/console
+inetd;			echo -n ' inetd'		>/dev/console
+
+# $rwhod is imported from /etc/netstart;
+# if $rwhod is set to something other than NO, rwhod is run.
+if [ ${rwhod-NO} != "NO" ]; then
+	rwhod;		echo -n ' rwhod'		>/dev/console
+fi
+
+/usr/lib/lpd;		echo -n ' printer'		>/dev/console
+			echo '.'			>/dev/console
+
+sh /etc/rc.local
+
+			date				>/dev/console
+exit 0

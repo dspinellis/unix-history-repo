@@ -1,0 +1,218 @@
+INSTALLATION GUIDE
+README	5.6	85/06/24
+
+This version is based on the "rti uucp" that was on the 4.2BSD tape.
+It contains many additional  features and fixes from Usenet,
+Tom Truscott, Guy Harris, Lou Salkind, and many others.
+
+A few new subdirectories have been added. Do a "make mkdirs" to make
+sure that you have all of them.
+
+I recommend that you change the uucp mail handler in your sendmail.cf
+to something like:
+
+	# Muucp, P=/usr/bin/uux, F=sDFMhuU, S=13, R=23, M=100000,
+	# 	A=uux - -r $h!rmail ($u)
+	Muucp, P=/usr/bin/uux, F=sDFMmhuU, S=13, R=23, M=100000,
+		A=uux - -r -z -a$g -gC $h!rmail ($u)
+
+The -a$g provides a return address in case mail fails (So It
+won't go to yourmachine!uucp anymore.) The -gC specifies a grade
+for mail. C is a good choice for mail. News should run at 'd'. This
+way, mail gets sent before news. The 'm' flag specifies that this
+mail can send to multiple addresses, which uux can.
+
+The man pages now describe all the options for the various commands.
+Make sure you read them. A list of the functional differences is in "Changes".
+
+You should also look through the UUAIDS directory. There are some useful
+programs and hints therein.
+
+The maximum length of a site name has been changed from the old 7 to the
+14. This is the be compatible with the HoneyDanBer uucp (aka BNU 1) which
+is as close to a standard uucp as there is. Sites which have sitenames
+longer than 7 characters that only send you the first 7 characters are
+broken and should be fixed. However, there is a way of compensating for
+this until they fix their problem. For each site you talk to that has a
+name longer that 7 characters, put a line in /usr/lib/uucp/L.aliases of
+the form:
+	fullname name-truncated-to-7-characters.
+E.g:
+	tektronix tektron
+	lbl-csam lbl-csa
+	rochester rochest
+	ut-sally ut-sall
+(See UUAIDS/L.aliases for more details on aliasing uucp names.) If the site
+name is <= 7 characters, you don't have to do anything.
+
+
+Rick Adams
+rick@seismo.ARPA
+June 19, 1985
+
+Tom Truscott, rti!trt,decvax!duke!trt (919)541-6488 Research Triangle Institute
+Bob Gray, gray@berkeley, duke!adiron!bob (315) 336-4989
+
+This is a variant of the uucp used at decvax, ittvax, rti, mcnc, adiron,
+duke and others.  There have been tons of bug fixes and enhancements
+from people on the usenet (thank you).  Speed is substantially
+improved.  This version fixes essentially all of the McGeady's bug list.
+
+Enhancements:
+
+Dialers			Lots of dialers included.
+
+Subdirectories		/usr/spool/uucp is now split into 7 subdirectories.
+			This is a huge help on busy systems.
+
+/usr/lib/uucp/L.cmds	List of commands permitted for remote execution.
+			A line of form 'PATH=...' sets the search path.
+
+expect-send sequence	Escape characters now permitted: \r, \n.
+			\r, not \n, is default char sent at end of string.
+			\c	(put at end of string). Dont send ending \r.
+			\d	pause 1 second (\d\d pauses 2 seconds)
+			"" P_ZERO  `expect nothing, start sending zero parity.'
+			P_EVEN (default), P_ODD, P_ONE other parity modes.
+			\05	Send a control-E
+			"" ""   `expect nothing, send a \r'.
+
+uupoll [sysname]	Polls named system.
+uusnap			Displays spooled files, and pending uuxqts.
+
+
+This version runs on all VAXen and PDPs under UNIX-V7 and 4.1bsd, 4.2BSD.
+It also runs on Gould/SEL Concept series machines (e.g. 32/8750), 
+DUAL 68000 unisoft.
+It also runns on BTL system III, IV, and V.
+
+UUCP installers should read the two papers (by Dave Nowitz)
+in Vol 2B of version 7 manuals and UUAIDS/setup.tblms.
+Understand each step below before executing.
+Some steps will vary slightly from system to system.
+
+**** INSTALLATION *******
+
+1. If you are currently running uucp, save the old programs!:
+	su root
+	cd /usr/bin
+	for i in uucp uux uulog uuname	     (csh: foreach i (uucp ....) )
+	do
+		cp $i $i.old
+	done					(csh: end )
+	cd /usr/lib/uucp
+	for i in uucico uuxqt uuclean
+	do
+		cp $i $i.old
+	done
+
+2. Editing Makefile and uucp.h
+	4.2 sites using the supported dialers are all set with defaults.
+
+	non-4.2
+		a) sites need to install the Berkeley directory reading library.
+			Try (cd libndir; make install).
+			Edit Makefile to have LIBNDIR= -lndir
+			define NDIR in uucp.h.
+		b) Check LDFLAGS, OWNER, GROUP, and LIBUUCICO.
+		c) pick a method to allow uucp to know its system:
+			Check out GETHOSTNAME/UNAME/WHOAMI/CCWHOAMI in uucp.h
+		d) define SYSIII if appropriate in uucp.h.
+		e) Your "make" may fail because the Makefile is so large.
+			If so, in /usr/src/cmds/make/defs, change
+			'#define NFLEFTS 60' to 512, and re-make make.
+
+3. Make the new commands.
+	make
+
+4. WAIT UNTIL THE UUCP SYSTEM IS IDLE!! Single-user is best.
+	su root  (it is important that chmod, chown and chgrp work below)
+
+5. Install the new commands:
+	make install
+	(If you are chicken, type 'make -n install' first).
+
+6. Edit and install the control files:
+	Look in UUAIDS.  Edit and install into /usr/lib/uucp if necessary
+	USERFILE, L.cmds, L.sys, L-devices, L-dialcodes.
+	THESE FILES MUST BE OWNED BY THE SAME OWNER AND GROUP AS
+	THE UUCP COMMANDS AND UUCP SPOOL FILES!!! (probably uucp, daemon).
+	The format for dialers is slightly different so that any dialer
+	can be handled.
+
+7. Make new subdirectories:
+	For safety:  cd /usr/spool/uucp; tar c .   (save Qed files on tape)
+	The following assumes your site name is produced by `uuname -l`.
+	make mkdirs
+		If your system is duke, then the subdirectories created are
+		named C., D., D.duke, D.dukeX, TM., XTMP and X..
+	rmdir /usr/lib/uucp/.XQTDIR
+		which is obsolete (XTMP replaces it).
+
+8. Move old Qed files:
+	If you have spooled files, they must be moved into the subdirectories.
+	Assuming all spool files are in /usr/spool/uucp
+	(i.e. you did not have subdirs before)
+	the following command will move the spool files
+	to the right subdirectories:
+    make mvspoolfiles; ??? does this work now??????????
+	Files beginning C. are put in the C. subdirectory, and so on.
+	Files begining D.dukeX are put in that directory, *not* D..
+	(Note: if you already had a subdirectory version of uucp,
+	you need only create the new subdirectories mentioned above
+	and move the relevant files there.
+    Delete other old directories if you had any (e.g. "LOG.")
+
+9. Compact /usr/spool/uucp:
+	cd /usr/spool
+	mkdir nuucp
+	chown uucp nuucp
+	chgrp daemon nuucp
+	for i in uucp/*    		(csh: foreach i (uucp/*) )
+	do
+		mv $i nuucp
+	done				(csh: end )
+	rmdir uucp
+	mv nuucp uucp
+		(Note: this does *not* work if a filesystem is mounted on
+		/usr/spool/uucp!  If that is the case, you should 'tar'
+		/usr/spool/uucp somewhere, unmount, re-mkfs, and re-mount
+		the filesystem, and tar the uucp files back.)
+
+10. Test the new system
+	Test by mailing a letter somewhere and back.
+	If it works, the new system is probably fine.
+	Otherwise, figure out what is wrong.
+	Start by examining LOGFILE.  Try /usr/lib/uucp/uucico -r1 -sname -x7
+	If things are no-go, you can back out the changes by restoring the
+	old uu programs and the spooled files.
+	NOTE: The subdirectories foul up a non-subdir version,
+	so be sure that subdirectories exist/do not exist as appropriate.
+
+
+11. Install handy UUAIDS
+	Look in uuaids for handy other stuff.  In particular, uu.* are
+	shell scripts that can be run via cron hourly, daily, and weekly
+	to keep uucp trim.  L-devices, L-dialcodes, L.cmds, L.sys, USERFILE
+	are sample files.  THEY MOST LIKELY NEED TO BE MODIFIED TO USE
+	THEM ON YOUR OWN SYSTEM!
+
+	uu.hourly		Makes sure sites are polled.
+	uu.daily		Runs uuclean to clean up /usr/spool/uucp.
+				**IT HANDLES SUBDIRECTORIES!!
+				Renames LOGFILE to LOGFILE.old.
+	uu.weekly		Renames SYSLOG to SYSLOG.old.
+	The above scripts should be run via cron.
+
+	uucpsummary
+		Summarizes LOGFILE and SYSLOG. It's very helpful in telling
+		what is going on and who is calling who.
+	uucp.daily
+		Daily shell script run at ittvax.  Manages SYSLOG files in
+		a convenient form for uuusage.  Not integrated in time
+		for this distribution.
+
+
+Comments, bug reports, *and improved code* are welcome.
+	Tom Truscott 
+	Bob Gray

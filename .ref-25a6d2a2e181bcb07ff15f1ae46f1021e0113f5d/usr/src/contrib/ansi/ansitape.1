@@ -1,0 +1,160 @@
+.TH ANSITAPE LOCAL "4/10/85 UCB Local"
+.SH NAME
+ansitape - ANSI standard tape handler
+.SH SYNOPSIS
+.B ansitape
+[key] [keyargs] [files]
+.SH DESCRIPTION
+.I Ansitape
+reads and writes magnetic tapes written in
+ANSI standard format
+(called ``Files-11'' by DEC).
+Tapes written by
+.I ansitape
+are labeled with the first 6 characters of the machine name by default.
+Actions are controlled by the
+.I key
+argument.
+The
+.I key
+is a string of characters containing at
+most one function letter.
+Other arguments to the command are
+a tape label and file names specifying which files are
+to be written onto or extracted from the tape.
+.PP
+The function portion of the key is
+specified by one of the following letters:
+.TP 8
+.B r
+The named files are written at the end of the tape.
+The
+.B c
+function implies this.
+.TP 8
+.B x
+The named files are extracted from the tape.
+If no file argument is given,
+the entire contents of the tape is extracted.
+Note that if the tape has duplicated file names,
+only the last file of a given name can
+be extracted.
+.TP 8
+.B t
+The names of the specified files are listed
+each time they occur on the tape.
+If no file argument is given,
+all files on the tape are listed.
+.TP 8
+.B c
+Create a new tape; writing begins at the
+beginning of the tape instead of after
+the last file.
+This command implies
+.B r.
+.PP
+The following characters may be used in
+addition to the letter which selects
+the function desired.
+.TP 8
+.B f
+This argument allows the selection of a different tape
+device.  
+The next word in the keyargs list is taken to be
+the full name of a device to write the tape on.
+The default is /dev/rmt12.
+.TP 8
+.B n
+The
+.B n
+option allows the user to specify as the next argument in the keyargs list,
+a control file 
+containing the names of files to put on the tape.  
+If the file name is '-', the control file will, instead, be read
+from standard input.
+The control file contains one line for each file
+to be placed on the tape.
+Each line has two names, the name of the file on
+the local machine, and the name it is to have when
+placed on the tape.  This allows for more convenient
+flattening of hierarchies when placing them on tape.
+If the second name is omitted, the UNIX file name will be
+used on the tape also.
+This argument can only be used with the 
+.B r 
+and 
+.B c
+functions.
+.TP 8
+.B l
+The 
+.B l
+option allows the user to specify the label to be placed on the tape. 
+The next argument in the keyargs list is taken as the tape label, which
+will be space padded or truncated to six characters.
+This option is meaningless unless 
+.B c
+is also specified.
+.TP 8
+.B v
+Normally
+.I ansitape
+works relatively silently.
+The
+.B v
+(verbose) option causes it to type 
+information about each file as it processes it.
+.TP 8
+.B b
+The
+.B b
+option allows the user to select the blocksize to be used for the
+tape.
+By default,
+.I ansitape
+uses the maximum block size permitted by the ANSI standard, 2048.
+Some systems will permit a much larger block size, and if large
+files are being put on the tape it may be advantageous to do so.
+.I Ansitape
+will take the next argument of the keyargs list as the blocksize for the tape.
+Values below 18 or above 32k will be limited to that range.
+The standard scale factors b=512 and k=1024 are accepted.
+.TP 8
+.B F
+The 
+.B F
+flag allows
+.I ansitape
+to write ansi 'D' format fixed record length tapes.
+The next two keyargs must be the recordsize and blocksize to be used,
+with the same scale factors and range limits as for the
+.B b
+option.
+The files to be written by the
+.B F
+flag must be in fixed format on the unix end - all lines should be
+.I EXACTLY
+.B recordsize
+bytes long plus a terminating newline (which will be discarded).
+Note that this is exactly the same format produced by
+.I ansitape
+when reading an ansi 'D' format tape.
+.PP
+.I Ansitape
+will not copy directories, character or block special files,
+symbolic links, sockets, or binary executables.  
+Attempts to put these on tape will result in warnings, and they will
+be skipped completely.
+.SH FILES
+/dev/rmt12
+.br
+.SH DIAGNOSTICS
+A warning message will be generated when a record exceeds the maximum record
+length and the affected file will be truncated.
+.br
+.SH BUGS
+Ansitape quietly truncates names longer than 17 characters.
+.br
+Multivolume tapes can be read (provided no files cross the
+volume boundary) but not written.
+.br

@@ -1,0 +1,32 @@
+.TH WTMP 5 
+.SH NAME
+wtmp \- user login history
+.SH DESCRIPTION
+This
+file records all logins and logouts.
+Its format is exactly like
+.IR utmp (5)
+except that
+a null user name indicates a logout on the associated
+typewriter.
+Furthermore, the typewriter name `~' indicates that the
+system was rebooted at the indicated time;
+the adjacent pair of entries with typewriter names
+`|' and `}' indicate the system-maintained time
+just before and just after a
+.I date
+command has changed the system's idea of the time.
+.PP
+.I Wtmp
+is maintained by
+.IR login (1)
+and
+.IR init (8).
+Neither of these programs creates the file,
+so if it is removed record-keeping is turned off.
+It is summarized by
+.IR ac (1).
+.SH FILES
+/usr/adm/wtmp
+.SH "SEE ALSO"
+utmp(5), login(1), init(8), ac(1), who(1)

@@ -1,0 +1,149 @@
+.TH ANALYZE 1M
+.UC
+.SH NAME
+analyze \- Virtual UNIX postmortem crash analyzer
+.SH SYNOPSIS
+.B analyze
+[
+.B \-s
+swapfile
+] [
+.B \-fmdDv
+] 
+corefile
+[ system ]
+.SH DESCRIPTION
+.I Analyze
+is the post-mortem analyzer for the state of the paging system.
+The following procedure should be followed when the paging system
+crashes:
+.IP 1)
+Following normal crash dump procedures, dump the PSL, registers
+and the top 40 or so locations of the kernel stack on the console,
+and then take a core image dump on tape.
+.IP 2)
+Boot a version of the system which pages or swaps in an area distinct
+from the paging system.
+.IP 3)
+Fix the root file system and then copy the mag tape into the file
+.I /vmcore
+(cp will do fine).
+.IP 4)
+Run the command ``analyze \-s /dev/drum /vmcore /vmunix'' and save
+the output for a systems programmer.
+.IP 5)
+Follow the normal reboot procedure to resume operations.
+.IP 6)
+When the system is up again, run the command ``pstat \-pxk /vmcore /vmunix''
+and route the output to a hardcopy device.
+.PP
+The outputs from the above procedure will get you started investigating
+the cause of the crash, if it was paging related.  For details
+on the internal data structures of the system see the document
+.I "Data Structures added in the Berkeley Virtual Memory Extensions to the UNIX System"
+A listing of the system will also be handy while examining the core dump.
+It is suggested that you save the file
+.I /vmcore
+in a less volatile place if you want to make sure it is not clobbered.
+.PP
+The
+.I analyze
+program reads the relevant system data structures from the core
+image file and coordinates these with the information on the disk
+to determine the state of the paging subsystem at the point of crash.
+It looks at each process in the system, and the resources each is
+using in an attempt to determine inconsistencies in the paging system
+state.  Normally, the output consists of a sequence of lines showing
+each active process, its state (whether swapped in or not), its
+.I p0br,
+and the number and location of its page table pages.
+Any pages which are locked while raw i/o is in progress, or which
+are locked because they are
+.I intransit
+are also printed.  (Intransit text pages often diagnose as duplicated;
+you will have to weed these out by hand.)
+.PP
+The program checks that any pages in core which are marked as not
+modified are, in fact, identical to the swap space copies.
+It also checks for non-overlap of the swap space, and that the core
+map entries correspond to the page tables.
+The state of the free list is also checked.
+.PP
+Options to
+.I analyze
+include
+.B \-m
+which causes the entire coremap state to be dumped,
+.B \-D
+which causes the diskmap for each process to be printed,
+.B \-d
+which causes the (sorted) paging area usage to be printed,
+.B \-v
+(long unused) which causes a hugely verbose output format to be used,
+and
+.B \-f
+which causes the free list to be dumped.
+.PP
+In general, the output from this program can be confused by processes
+which were forking, swapping, or exiting or
+happened to be in unusual states when the
+crash occurred.  You should examine the flags field of the output of
+.I pstat
+to help filter out such processes.
+.PP
+You can look at the core dump with
+.I adb
+if you do
+.IP
+adb /vmunix /vmcore
+.br
+.lg 0
+/m 80000000 #ffffffff
+.LP
+which fixes the map of
+.I vmcore
+so that symbols in data space will work.
+It will be necessary to do
+.IP
+.lg 0
+?m 80000000 #ffffffff
+.LP
+to get text symbols to work also.
+You can then look at the
+.I Umap
+array to see the
+.I u.
+pages of the process which was running at the point of the crash.
+Find the first number in the output of
+.I pstat.
+You should be able to find the kernel stack at the point of crash
+either as the stack in the
+.I u.
+area for this process or in the interrupt stack
+.I intstack.
+.PP
+Note that the debugger is looking at the physical memory at the point
+of crash; you will have to determine which pages of physical memory
+the stack is in if you wish to look at it by computing
+0x80000000 + Umap[i] * 0x200.
+A similar computation will give addresses of page table pages.  Thus
+if
+.I analyze
+says that a processes page tables are in page 218 (hex of course), then
+you can look at them by looking at address 0x80043000 in the dump, i.e.
+``80043000,80/X'' will print the page of page tables.
+.SH FILES
+/vmunix	default system namelist
+.SH SEE ALSO
+``Data Structures added in the Berkeley Virtual Memory Extensions to the UNIX System'',
+crash(8), pstat(1m), ps(1)
+.SH AUTHORS
+Ozalp Babaoglu and William Joy
+.SH DIAGNOSTICS
+Various diagnostics about overlaps in swap mappings, missing swap mappings,
+page table entries inconsistent with the core map, incore pages which
+are marked clean but differ from disk-image copies, pages which are
+locked or intransit, and inconsistencies in the free list.
+.PP
+It would be nice if this program analyzed the system in general, rather
+than just the paging system in particular.

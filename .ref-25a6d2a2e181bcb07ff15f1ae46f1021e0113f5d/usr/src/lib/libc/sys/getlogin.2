@@ -1,0 +1,75 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)getlogin.2	1.1 (Berkeley) %G%
+.\"
+.TH GETLOGNAME 2 ""
+.UC 5
+.SH NAME
+getlogname, setlogname \- get/set login name of process owner
+.SH SYNOPSIS
+.nf
+.ft B
+getlogname(name, namelen)
+char *name;
+int namelen;
+.PP
+.ft B
+setlogname(name, namelen)
+char *name;
+int namelen;
+.fi
+.SH DESCRIPTION
+.I Getlogname
+returns the login name of the owner of the current process, as
+previously set by
+.IR setlogname . 
+The parameter
+.I namelen
+specifies the size of the 
+.I name
+array.  The returned name is null-terminated unless insufficient
+space is provided.
+The preferred method for retrieving this information is through the
+.IR getlogin (3)
+library routine.
+.PP
+.I Setlogname
+sets the login name of the process owner to be
+.IR name ,
+which has length
+.IR namelen .
+This call is restricted to the super-user and
+is normally used only at login time, or when a remote shell
+is invoked.
+.SH "RETURN VALUE
+If the call succeeds, a value of 0 is returned.  If the call
+fails, then a value of \-1 is returned and an error code is
+placed in the global location \fIerrno\fP.
+.SH "ERRORS
+The following errors may be returned by these calls:
+.TP 15
+[EFAULT]
+The \fIname\fP or \fInamelen\fP parameter gave an
+invalid address.
+.TP 15
+[EPERM]
+The caller tried to set the hostname and was not the super-user.
+.SH SEE ALSO
+getlogin(3)
+.SH BUGS
+Host names are limited to MAXLOGNAME (from
+.IR <sys/user.h> )
+characters, currently 12.

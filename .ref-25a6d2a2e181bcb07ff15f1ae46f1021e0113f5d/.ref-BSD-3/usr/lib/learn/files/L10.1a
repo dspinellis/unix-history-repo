@@ -1,0 +1,21 @@
+#print
+When you are done with something, you will want to know
+how to get rid of the file it is on.  The command
+for that is "rm" (remove).  For example
+  rm junk
+throws away the file named "junk".  Once it
+is gone, it is really gone - there is no way
+to "undo" a remove command.  Hence this command
+should be used with caution.
+In this directory there is one file named
+for a baseball player.  Remove it.
+Then type "ready".
+#create kernighan
+#create yastrzemski
+#user
+test ! -r yastrzemski && test -r kernighan
+#log
+#next
+11.1a 10
+11.2a 5
+11.3a 2

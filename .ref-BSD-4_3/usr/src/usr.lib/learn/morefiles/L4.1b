@@ -1,0 +1,38 @@
+#print
+Is there a difference between
+  grep the memo[12]
+and
+  cat memo[12] >temp
+  grep the <temp
+Answer yes or no.
+
+If you want to experiment, there are two files named "memo1" and
+"memo2" in this directory.
+#create memo1
+   There is not room enough in the leaves to hold all the food
+that plants make.  Much of the food has to be stored in other parts
+of the plant.
+   We eat the parts of plants where the most food is stored.  The
+carrot plant stores food in its roots.  We eat the roots of carrots.
+The celery plant stores food in its leaf stalks.  They are the parts
+we eat.  Many kinds of plants store food in their fruits.  We eat
+the fruits of these plants to get the stored food in them.
+   Some kinds of plants have ways of protecting their stored food.
+#create memo2
+   Goldfish grow very slowly in an aquarium.  They grow so slowly
+that it is hard to know that they grow at all.  If they are kept
+outdoors in a pool, they grow much faster and they grow much larger,
+too.  Sometimes they grow to be more than a foot long in an outdoor
+pool.
+   When goldfish are kept in an aquarium they often do not live very
+long.  Sometimes they die in a few weeks, but they may live as long
+as ten years.  Some people have kept goldfish in an outdoor pool for
+thirty years.
+   There are many different colors of goldfish.
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+4.1c 10

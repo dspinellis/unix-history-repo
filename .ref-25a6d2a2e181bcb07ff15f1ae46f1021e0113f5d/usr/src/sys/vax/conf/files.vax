@@ -1,0 +1,94 @@
+vax/autoconf.c		standard device-driver
+vax/clock.c		standard
+vax/conf.c		standard
+vax/cons.c		standard
+vax/cpudata.c		standard
+vax/crl.c		standard
+vax/dkbad.c		standard
+vax/flp.c		standard
+vax/in_cksum.c		optional inet
+vax/ka650.c		standard
+vax/ka630.c		standard
+vax/ka730.c		standard
+vax/ka750.c		standard
+vax/ka780.c		standard
+vax/ka820.c		standard
+vax/ka860.c		standard
+vax/kdb_machdep.c	optional kadb
+vax/kdb_opset.c		optional kadb
+vax/machdep.c		standard config-dependent
+vax/mem.c		standard
+vax/mscp.c		optional ra
+vax/mscp.c		optional kra
+vax/ns_cksum.c		optional ns
+vax/rx50.c		standard device-driver
+vax/sys_machdep.c	standard
+vax/trap.c		standard
+vax/tu.c		standard
+vax/udiv.s		standard
+vax/ufs_machdep.c	standard
+vax/urem.s		standard
+vax/vm_machdep.c	standard
+vax/iidr.o		optional ii
+vax/iidrsys.o		optional ii
+vax/iidr_glob.o		optional ii
+vaxbi/bi.c		optional bi device-driver
+vaxbi/kdb.c		optional kra device-driver
+vaxif/if_acc.c		optional acc imp device-driver
+vaxif/if_css.c		optional css imp device-driver
+vaxif/if_de.c		optional de device-driver
+vaxif/if_ddn.c		optional ddn device-driver
+vaxif/if_dmc.c		optional dmc device-driver
+vaxif/if_dmv.c		optional dmv device-driver
+vaxif/if_ec.c		optional ec device-driver
+vaxif/if_en.c		optional en device-driver
+vaxif/if_ex.c		optional ex device-driver
+vaxif/if_hdh.c		optional hdh device-driver
+vaxif/if_hy.c		optional hy device-driver
+vaxif/if_il.c		optional il device-driver
+vaxif/if_ix.c		optional np device-driver
+vaxuba/np.c		optional np device-driver
+vaxif/if_pcl.c		optional pcl device-driver
+vaxif/if_qe.c		optional qe device-driver
+vaxif/if_uba.c		optional inet device-driver
+vaxif/if_uba.c		optional ns device-driver
+vaxif/if_vv.c		optional vv device-driver
+vaxif/raw_hy.c		optional hy device-driver
+vaxmba/hp.c		optional hp device-driver
+vaxmba/ht.c		optional tu device-driver
+vaxmba/mba.c		optional mba device-driver
+vaxmba/mt.c		optional mu device-driver
+vaxuba/ad.c		optional ad device-driver
+vaxuba/ct.c		optional ct device-driver
+vaxuba/dh.c		optional dh device-driver
+vaxuba/dhu.c		optional dhu device-driver
+vaxuba/dmf.c		optional dmf device-driver
+vaxuba/dmx.c		optional dmf device-driver
+vaxuba/dmz.c		optional dmz device-driver
+vaxuba/dmx.c		optional dmz device-driver
+vaxuba/dn.c		optional dn device-driver
+vaxuba/dz.c		optional dz device-driver
+vaxuba/idc.c		optional rb device-driver
+vaxuba/ik.c		optional ik device-driver
+vaxuba/kgclock.c	optional kg device-driver
+vaxuba/lp.c		optional lp device-driver
+vaxuba/lpa.c		optional lpa device-driver
+vaxuba/ps.c		optional ps device-driver
+vaxuba/rk.c		optional rk device-driver
+vaxuba/rl.c		optional rl device-driver
+vaxuba/rx.c		optional rx device-driver
+vaxuba/tm.c		optional te device-driver
+vaxuba/tmscp.c		optional tms device-driver
+vaxuba/ts.c		optional ts device-driver
+vaxuba/uba.c		optional uba device-driver
+vaxuba/uda.c		optional ra device-driver
+vaxuba/up.c		optional up device-driver
+vaxuba/ut.c		optional tj device-driver
+vaxuba/uu.c		optional uu device-driver
+vaxuba/va.c		optional va device-driver
+vaxuba/vp.c		optional vp device-driver
+vaxuba/vs.c		optional vs device-driver
+vaxuba/qv.c		optional qv device-driver
+vaxuba/qfont.c		optional qv device-driver
+vaxuba/qd.c		optional qd device-driver
+vaxuba/qfont.c		optional qd device-driver

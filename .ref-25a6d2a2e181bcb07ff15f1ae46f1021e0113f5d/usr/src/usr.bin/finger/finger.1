@@ -1,0 +1,126 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)finger.1	6.9 (Berkeley) %G%
+.\"
+.TH FINGER 1 ""
+.UC 4
+.SH NAME
+finger \- user information lookup program
+.SH SYNOPSIS
+.B finger
+[
+.B -lmsp
+] [user [@host] ...]
+.SH DESCRIPTION
+The
+.I finger
+command has two basic output formats providing essentially the same
+information.
+.PP
+The
+.I -s
+option of
+.I finger
+displays the user's login name, real name, terminal name and write
+status (as a ``*'' after the terminal name if write permission is
+denied), idle time, login time, office location and office phone
+number.
+.PP
+Idle time is in minutes if it is a single integer, hours and minutes
+if a ``:'' is present, or days if a ``d'' is present.
+Login time is displayed as month, day, hours and minutes, unless
+more than six months ago, in which case the year is displayed rather
+than the hours and minutes.
+.PP
+Unknown devices as well as nonexistent idle and login times are
+displayed as single asterisks.
+.PP
+The
+.I -l
+option produces a multi-line format displaying all of the information
+described for the
+.I -s
+option as well as the user's home directory, home phone number, login
+shell, and the contents of the files
+.I ``.plan''
+and
+.I ``.project''
+from the user's home directory.
+.PP
+If idle time is at least a minute and less than a day, it is
+presented in the form ``hh:mm''.
+Idle times greater than a day are presented as ``d day[s] hh:mm''.
+.PP
+Phone numbers specified as eleven digits are printed as ``+N-NNN-NNN-NNNN''.
+Numbers specified as ten or seven digits are printed as the appropriate
+subset of that string.
+Numbers specified as five digits are printed as ``xN-NNNN''.
+.PP
+If write permission is denied to the device, the phrase ``(messages off)''
+is appended to the line containing the device name.
+One entry per user is displayed with the
+.IR -l
+option; if a user is logged on multiple times, terminal information
+is repeated once per login.
+.PP
+The
+.I -p
+option prevents
+the
+.I -l
+option of
+.I finger
+from displaying the contents of the ``.plan'' and ``.project''
+files.
+.PP
+Note that some fields may be missing, in either format, if information
+is not available for them.
+.PP
+If no operands are specified,
+.I finger
+will print an entry for each user currently logged into the system.
+If no options are specified,
+.I finger
+defaults to the
+.I -l
+style output if operands are provided, otherwise to the
+.I -s
+style.
+.PP
+.I User
+is usually a login name; however, matching will also be done on the
+users' real names, unless the
+.I -m
+option is supplied.
+All name matching performed by
+.I finger
+is case insensitive.
+.PP
+.I Finger
+may be used to look up users on a remote machine.
+The format is to specify a
+.I user
+as ``user@host'', or ``@host'', where the default output
+format for the former is the
+.I -l
+style, and the default output format for the latter is the
+.IR -s
+style.
+The
+.I -l
+option is the only option that may be passed to a remote machine.
+.SH "SEE ALSO"
+chpass(1), w(1), who(1), getpwent(3)

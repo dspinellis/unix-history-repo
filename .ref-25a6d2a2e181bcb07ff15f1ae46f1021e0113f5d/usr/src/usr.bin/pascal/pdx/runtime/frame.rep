@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)frame.rep	5.2 (Berkeley) %G%
+ */
+
+/*
+ * Definitions for accessing stack frames.
+ */
+
+#define MAINBLK		1
+
+/*
+ * Structure of an activation record's block mark.  See the
+ * PX implementation notes for more details.
+ */
+
+struct frame {
+	ADDRESS stackref;	/* for px self-checking */
+	ADDRESS file;		/* current file information */
+	ADDRESS blockp;		/* pointer to current block name */
+	ADDRESS *save_loc;	/* saved local variable pointer */
+	ADDRESS *save_disp;	/* saved dp contents */
+	ADDRESS *save_dp;	/* saved dp */
+	ADDRESS save_pc;	/* saved location counter */
+	int save_lino;		/* saved source line number (never used) */
+};
+
+FRAME *curframe();		/* get the currently active frame */
+FRAME *nextframe();		/* go up the stack */
+FRAME *findframe();		/* find the frame for a given function */
+ADDRESS entry();		/* get the entry address for a frame */
+ADDRESS *dispval();		/* display associated with a given block */
+ADDRESS *curdp();		/* return current display pointer */
+ADDRESS *contents();		/* return the contents of display pointer */
+ADDRESS stkaddr();		/* stack address associated with a frame */

@@ -1,0 +1,37 @@
+#
+# Harris 7500 series
+#
+# The true resolution is 1445.4000 goobies (half decipoints) an inch
+#
+res 1445
+hor 1
+vert 1
+unitwidth 10
+sizes 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 0
+#
+fonts 10 R I B BI Vl vl V v S Sm
+#
+# for the time being
+# The complete charset of older versions of troff for a start.
+#
+# And more...
+#
+charset
+\| \^ \- \_
+hy bu sq ru em 12 14 34 13 23 18 38 58 78 ff fi fl Fi Fl de
+dg fm ct rg co pl mi eq ** sc aa ga ul sl *a *b *g *d *e *z
+*y *h *i *k *l *m *n *c *o *p *r *s ts *t *u *f *x *q *w *A
+*B *G *D *E *Z *Y *H *I *K *L *M *N *C *O *P *R *S *T *U *F
+*X *Q *W sr rn >= <= == ~= ap != -> <- ua da mu di +- cu ca
+sb sp ib ip if pd gr no is pt es mo br dd rh lh or ci lt lb
+rt rb lk rk bv lf rf lc rc
+-h
+AE OE ae oe a^ a. ad ab ac a~ ah a, ce ho "a -D /O /L -d /o
+/l .i .j r! r? sz Fo Fc fo fc
+oA oE c+ c. c* c- pp nm as ic ll cp || Dr <> Dl c> => =< c<
+|> cs =~ ~~ Cl Cr ~> |- |= an Ah Vh Gl bl OR AN
+>> << cn nc D> BP
+ne
+Ra La ra la sn ns nd sh -+ BU >~ <~ ft lr na
+*J
+Du Dd Db

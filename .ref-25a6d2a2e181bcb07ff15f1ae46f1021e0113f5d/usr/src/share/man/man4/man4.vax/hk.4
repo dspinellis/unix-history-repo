@@ -1,0 +1,142 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)hk.4	6.3 (Berkeley) %G%
+.\"
+.TH HK 4 ""
+.UC 4
+.SH NAME
+hk \- RK6-11/RK06 and RK07 moving head disk
+.SH SYNOPSIS
+.B "controller hk0 at uba? csr 0177440 vector rkintr"
+.br
+.B "disk rk0 at hk0 drive 0"
+.SH DESCRIPTION
+Files with minor device numbers 0 through 7 refer to various portions
+of drive 0;
+minor devices 8 through 15 refer to drive 1, etc.
+The standard device names begin with ``hk'' followed by
+the drive number and then a letter a-h for partitions 0-7 respectively.
+The character ? stands here for a drive number in the range 0-7.
+.PP
+The block files access the disk via the system's normal
+buffering mechanism and may be read and written without regard to
+physical disk records.  There is also a `raw' interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more efficient when
+many words are transmitted.  The names of the raw files
+conventionally begin with an extra `r.'
+.PP
+In raw I/O counts should be a multiple of 512 bytes (a disk sector).
+Likewise
+.I seek
+calls should specify a multiple of 512 bytes.
+.SH "DISK SUPPORT"
+The origin and size (in sectors) of the
+pseudo-disks on each drive are as follows:
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u
+RK07 partitions:
+	disk	start	length	cyl
+	hk?a	0	15884	0-240
+	hk?b	15906	10032	241-392
+	hk?c	0	53790	0-814
+	hk?d	25938	15884	393-633
+	hk?f	41844	11792	634-814
+	hk?g	25938	27786	393-813
+.PP
+RK06 partitions
+	disk	start	length	cyl
+	hk?a	0	15884	0-240
+	hk?b	15906	11154	241-409
+	hk?c	0	27126	0-410
+.DT
+.fi
+.PP
+On a dual RK-07 system
+partition hk?a is used
+for the root for one drive
+and partition hk?g for the /usr file system.
+If large jobs are to be run using
+hk?b on both drives as swap area provides a 10Mbyte paging area.
+Otherwise
+partition hk?c on the other drive
+is used as a single large file system.
+.SH FILES
+/dev/hk[0-7][a-h]	block files
+.br
+/dev/rhk[0-7][a-h]	raw files
+.SH SEE ALSO
+hp(4),
+uda(4),
+up(4),
+syslogd(8)
+.SH DIAGNOSTICS
+\fBhk%d%c: hard error %sing fsbn %d[-%d] cs2=%b ds=%b er=%b\fR.
+An unrecoverable error occurred during transfer of the specified
+filesystem block number(s),
+which are logical block numbers on the indicated partition.
+The contents of the cs2, ds and er registers are printed
+in octal and symbolically with bits decoded.
+The error was either unrecoverable, or a large number of retry attempts
+(including offset positioning and drive recalibration) could not
+recover the error.
+.PP
+\fBrk%d: write locked\fR.  The write protect switch was set on the drive
+when a write was attempted.  The write operation is not recoverable.
+.PP
+\fBrk%d: not ready\fR.  The drive was spun down or off line when it was
+accessed.  The i/o operation is not recoverable.
+.PP
+\fBrk%d: not ready (came back!)\fR.  The drive was not ready, but after
+printing the message about being not ready (which takes a fraction
+of a second) was ready.  The operation is recovered if no further
+errors occur.
+.PP
+\fBup%d%c: soft ecc reading fsbn %d[-%d]\fP.
+A recoverable ECC error occurred on the
+specified sector(s) in the specified disk partition. 
+This happens normally
+a few times a week.  If it happens more frequently than
+this the sectors where the errors are occurring should be checked to see
+if certain cylinders on the pack, spots on the carriage of the drive
+or heads are indicated.
+.PP
+\fBhk%d: lost interrupt\fR.  A timer watching the controller detected
+no interrupt for an extended period while an operation was outstanding.
+This indicates a hardware or software failure.  There is currently a
+hardware/software problem with spinning down drives while they are
+being accessed which causes this error to occur.
+The error causes a UNIBUS reset, and retry of the pending operations.
+If the controller continues to lose interrupts, this error will recur
+a few seconds later.
+.SH BUGS
+In raw I/O
+.I read
+and
+.IR write (2)
+truncate file offsets to 512-byte block boundaries,
+and
+.I write
+scribbles on the tail of incomplete blocks.
+Thus,
+in programs that are likely to access raw devices,
+.I read, write
+and
+.IR lseek (2)
+should always deal in 512-byte multiples.
+.PP
+DEC-standard error logging should be supported.
+.PP
+A program to analyze the logged error information (even in its
+present reduced form) is needed.
+.PP
+The partition tables for the file systems should be read off of each
+pack, as they are never quite what any single installation would prefer,
+and this would make packs more portable.
+.PP
+The rk07 g partition size in rk.c disagrees with that in /etc/disktab.
