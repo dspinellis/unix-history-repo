@@ -1,5 +1,5 @@
 #!/bin/sh
-#	@(#)plot.sh	4.3	(Berkeley)	%G%
+#	@(#)plot.sh	4.4	(Berkeley)	%G%
 #
 PATH=/bin:/usr/bin:/usr/ucb
 case $1 in
@@ -21,6 +21,7 @@ case $t in
 -Thp7221|-Thp7|-Th7)	exec hp7221plot $*;;
 -Thp|-T2648|-T2648a|-Thp2648|-Thp2648a|h8)
 			exec hpplot $*;;
+-Tip|-Timagen)		exec implot $*;;
 -Tcrt)			exec crtplot $*;;
 -Tdumb|un|unknown)	exec dumbplot $*;;
 *)  			exec crtplot $*;;
