@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.11 (Berkeley) %G%
+#	@(#)Makefile	4.12 (Berkeley) %G%
 
 CFLAGS=	-I${.CURDIR}/../common_source
 LIBC=	/usr/lib/libc.a
@@ -10,9 +10,9 @@ PROGS=	tab300 tab300-12 tab302 tab302-12 tab37 tab382 tab382-12 tab450 \
 OBJS=	${PROGS:=.o}
 SRCS=	${PROGS:=.c}
 LINKS=	${DEST}/tablpr ${DEST}/tabtn300 ${DEST}/tablpr ${DEST}/tabcrt \
-	${DEST}/tab302 ${DEST}/tab300s ${DEST}/tab300s-12 ${DEST}/tab302-12 \
-	${DEST}/tabdtc ${DEST}/tab302 ${DEST}/tabdtc12 ${DEST}/tab302-12 \
-	${DEST}/tabipsi ${DEST}/tab450 ${DEST}/tabipsi12 ${DEST}/tab450-12
+	${DEST}/tab302 ${DEST}/tab300s ${DEST}/tab302-12 ${DEST}/tab300s-12 \
+	${DEST}/tab302 ${DEST}/tabdtc ${DEST}/tab302-12 ${DEST}/tabdtc12 \
+	${DEST}/tab450 ${DEST}/tabipsi ${DEST}/tab450-12 ${DEST}/tabipsi12
 
 all: ${PROGS}
 
@@ -39,6 +39,6 @@ lint: ${SRCS}
 	${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC}
 
 tags: ${SRCS}
-	${CTAGS} -f ${.CURDIR}/tags ${.ALLSRC}
+	ctags -f ${.CURDIR}/tags ${.ALLSRC}
 
 .include <bsd.prog.mk>
