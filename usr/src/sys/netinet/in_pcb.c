@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	6.15 (Berkeley) %G%
+ *	@(#)in_pcb.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -135,46 +135,42 @@ in_pcbconnect(inp, nam)
 		    sin->sin_addr = satosin(&in_ifaddr->ia_broadaddr)->sin_addr;
 	}
 	if (inp->inp_laddr.s_addr == INADDR_ANY) {
-		ia = in_iaonnetof(in_netof(sin->sin_addr));
-		if (ia == (struct in_ifaddr *)0 ||
-		    (ia->ia_ifp->if_flags & IFF_UP) == 0) {
-			register struct route *ro;
-			struct ifnet *ifp;
+		register struct route *ro;
+		struct ifnet *ifp;
 
-			ia = (struct in_ifaddr *)0;
-			/* 
-			 * If route is known or can be allocated now,
-			 * our src addr is taken from the i/f, else punt.
-			 */
-			ro = &inp->inp_route;
-			if (ro->ro_rt &&
-			    satosin(&ro->ro_dst)->sin_addr.s_addr !=
-			    sin->sin_addr.s_addr) {
-				RTFREE(ro->ro_rt);
-				ro->ro_rt = (struct rtentry *)0;
-			}
-			if ((ro->ro_rt == (struct rtentry *)0) ||
-			    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0) {
-				/* No route yet, so try to acquire one */
-				ro->ro_dst.sa_family = AF_INET;
-				((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
-					sin->sin_addr;
-				rtalloc(ro);
-				if (ro->ro_rt == (struct rtentry *)0)
-					ifp = (struct ifnet *)0;
-				else
-					ifp = ro->ro_rt->rt_ifp;
-			}
-			if (ifp) {
-				for (ia = in_ifaddr; ia; ia = ia->ia_next)
-					if (ia->ia_ifp == ifp)
-						break;
-			}
-			if (ia == 0)
-				ia = in_ifaddr;
-			if (ia == 0)
-				return (EADDRNOTAVAIL);
+		ia = (struct in_ifaddr *)0;
+		/* 
+		 * If route is known or can be allocated now,
+		 * our src addr is taken from the i/f, else punt.
+		 */
+		ro = &inp->inp_route;
+		if (ro->ro_rt &&
+		    satosin(&ro->ro_dst)->sin_addr.s_addr !=
+		    sin->sin_addr.s_addr) {
+			RTFREE(ro->ro_rt);
+			ro->ro_rt = (struct rtentry *)0;
 		}
+		if ((ro->ro_rt == (struct rtentry *)0) ||
+		    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0) {
+			/* No route yet, so try to acquire one */
+			ro->ro_dst.sa_family = AF_INET;
+			((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
+				sin->sin_addr;
+			rtalloc(ro);
+			if (ro->ro_rt == (struct rtentry *)0)
+				ifp = (struct ifnet *)0;
+			else
+				ifp = ro->ro_rt->rt_ifp;
+		}
+		if (ifp) {
+			for (ia = in_ifaddr; ia; ia = ia->ia_next)
+				if (ia->ia_ifp == ifp)
+					break;
+		}
+		if (ia == 0)
+			ia = in_ifaddr;
+		if (ia == 0)
+			return (EADDRNOTAVAIL);
 		ifaddr = (struct sockaddr_in *)&ia->ia_addr;
 	}
 	if (in_pcblookup(inp->inp_head,
