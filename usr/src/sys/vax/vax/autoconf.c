@@ -1,4 +1,4 @@
-/*	autoconf.c	4.45	82/12/17	*/
+/*	autoconf.c	4.46	83/01/01	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -462,7 +462,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		}
 #endif
 		cvec = 0x200;
-		i = (*udp->ud_probe)(reg);
+		i = (*udp->ud_probe)(reg, um->um_ctlr);
 #if VAX780
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
@@ -543,7 +543,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		}
 #endif
 		cvec = 0x200;
-		i = (*udp->ud_probe)(reg, um->um_ctlr);
+		i = (*udp->ud_probe)(reg);
 #if VAX780
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
