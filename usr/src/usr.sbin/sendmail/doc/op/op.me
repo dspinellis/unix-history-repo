@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.35 (Berkeley) %G%
+.\"	@(#)op.me	6.36 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.35
+Version 6.36
 .sp
 For Sendmail Version 6.52
 .)l
@@ -1150,6 +1150,45 @@ This is not put in as a standard recipient line
 to warn any recipients that the list is not complete.
 .pp
 At least one recipient line is required under RFC 822.
+.sh 2 "IDENT Protocol Support"
+.pp
+.i Sendmail
+supports the IDENT protocol as defined in RFC 1413.
+Although this enhances authentication of email messages,
+it is in no sense perfect;
+a determined forger can easily spoof the IDENT protocol.
+The following description is excerpted from RFC 1413:
+.ba +5
+6.  Security Considerations
+.lp
+The information returned by this protocol is at most as trustworthy
+as the host providing it OR the organization operating the host.  For
+example, a PC in an open lab has few if any controls on it to prevent
+a user from having this protocol return any identifier the user
+wants.  Likewise, if the host has been compromised the information
+returned may be completely erroneous and misleading.
+.lp
+The Identification Protocol is not intended as an authorization or
+access control protocol.  At best, it provides some additional
+auditing information with respect to TCP connections.  At worst, it
+can provide misleading, incorrect, or maliciously incorrect
+information.
+.lp
+The use of the information returned by this protocol for other than
+auditing is strongly discouraged.  Specifically, using Identification
+Protocol information to make access control decisions - either as the
+primary method (i.e., no other checks) or as an adjunct to other
+methods may result in a weakening of normal host security.
+.lp
+An Identification server may reveal information about users,
+entities, objects or processes which might normally be considered
+private.  An Identification server provides service which is a rough
+analog of the CallerID services provided by some phone companies and
+many of the same privacy considerations and arguments that apply to
+the CallerID service apply to Identification.  If you wouldn't run a
+"finger" server due to privacy considerations you may not want to run
+this protocol.
+.ba
 .sh 1 "ARGUMENTS"
 .pp
 The complete list of arguments to
@@ -5400,6 +5439,16 @@ allows you to match the entire string
 .q hofmann.CS.Berkeley.EDU
 using the single construct
 .q $=S .
+.sh 2 "Deferred Macro Expansion"
+.pp
+The
+.b $& \c
+.i x
+construct has been adopted from
+.sm IDA .
+.sh 2 "IDENT Protocol Support"
+.pp
+The IDENT protocol as defined in RFC 1413 is supported.
 .sh 2 "Parsing Bug Fixes"
 .pp
 A number of small bugs having to do with things like
@@ -5964,7 +6013,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.35
+.\"Version 6.36
 .\".ce 0
 .pn 2
 .bp
