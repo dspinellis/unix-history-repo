@@ -1,17 +1,18 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.13	%G%
+#	@(#)makefile	1.14	%G%
 
+DESTDIR =
 LIB = libF77.a
 LPR = lpr
 
 # for the CFO 11's
-#LIBDIR = /usr/ucb/lib
+#LIBDIR = ${DESTDIR}/usr/ucb/lib
 #TAPE = /dev/nrmt1
 #OPTIONS = 
 
 # for the VAX
-LIBDIR = /usr/lib
+LIBDIR = ${DESTDIR}/usr/lib
 TAPE = /dev/rnmt0.1600
 OPTIONS = -DUCBVAX
 
@@ -43,9 +44,8 @@ ALL =	$(MISC) $(POW) $(CX) $(DCX) $(REAL) $(DBL) $(INT) $(HALF) \
 all:	$(LIB)
 
 $(LIB):	$(ALL)
-	@echo 'Loading...'
 	@rm -f $(LIB)
-	@ar rc $(LIB) $(ALL)
+	ar rc $(LIB) $(ALL)
 	@ls -l $(LIB)
 
 c_abs.o c_cos.o c_div.o c_div.o c_exp.o c_log.o c_sin.o c_sqrt.o d_cnjg.o d_imag.o pow_ci.o pow_zi.o pow_zz.o r_cnjg.o r_imag.o z_abs.o z_cos.o z_div.o z_div.o z_exp.o z_log.o z_sin.o z_sqrt.o:	complex
@@ -63,11 +63,13 @@ trapov_.o: trapov_.c
 	-ld -r -x $*.o
 	mv a.out $*.o
 
-install:	$(LIB)
+install:	$(LIBDIR)/$(LIB)
+
+$(LIBDIR)/$(LIB):	$(LIB)
 	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
 	cp $(LIB) $(LIBDIR)/$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
-	chmod 644 $(LIBDIR)/$(LIB)
+	@chmod 644 $(LIBDIR)/$(LIB)
 
 clean:
 	rm -f $(ALL) $(LIB)
@@ -106,7 +108,7 @@ mkindx:	mkindx.c
 	@cc mkindx.c -o mkindx
 
 # End of Makefile
-# Below this line is not normally distributed ...
+# Below this line normally is not distributed ...
 
 Makefile:	makefile
 	@sed -n -e "1,/End of Makefile/p" makefile > Makefile
@@ -115,7 +117,33 @@ tape:	Makefile
 	@-ln man/s.makefile man.s.makefile
 	@ls man.s.makefile > /dev/null
 	@rm -f man/s.makefile
-	@-tar cbf 20 $(TAPE) READ_ME Makefile man complex $(SOURCES) \
+	-tar cbf 20 $(TAPE) READ_ME Makefile man complex $(SOURCES) \
 		mkindx.c bit.c subout.c
 	@ln man.s.makefile man/s.makefile
 	@rm -f man.s.makefile
+
+# below here is SCCS stuff ...
+
+main.c:	SCCS/s.main.c
+	@rm -f main.c
+	get SCCS/s.main.c
+
+lnblnk_.c:	SCCS/s.lnblnk_.c
+	@rm -f lnblnk_.c
+	get SCCS/s.lnblnk_.c
+
+range.c:	SCCS/s.range.c
+	@rm -f range.c
+	get SCCS/s.range.c
+
+rindex_.c:	SCCS/s.rindex_.c
+	@rm -f rindex_.c
+	get SCCS/s.rindex_.c
+
+traper_.c:	SCCS/s.traper_.c
+	@rm -f traper_.c
+	get SCCS/s.traper_.c
+
+trapov_.c:	SCCS/s.trapov_.c
+	@rm -f trapov_.c
+	get SCCS/s.trapov_.c
