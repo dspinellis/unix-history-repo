@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.83 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.84 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.83 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.84 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -860,6 +860,7 @@ host_map_lookup(map, name, av, statp)
 				break;
 
 			  case HOST_NOT_FOUND:
+			  case NO_DATA:
 				*statp = EX_NOHOST;
 				break;
 
