@@ -1,4 +1,4 @@
-/*	kern_prot.c	6.2	84/08/29	*/
+/*	kern_prot.c	6.3	85/03/18	*/
 
 /*
  * System calls related to processes and protection
@@ -65,18 +65,22 @@ getgroups()
 		u_int	gidsetsize;
 		int	*gidset;
 	} *uap = (struct a *)u.u_ap;
-	register int *gp;
+	register gid_t *gp;
+	register int *lp;
+	int groups[NGROUPS];
 
 	for (gp = &u.u_groups[NGROUPS]; gp > u.u_groups; gp--)
-		if (gp[-1] >= 0)
+		if (gp[-1] != NOGROUP)
 			break;
 	if (uap->gidsetsize < gp - u.u_groups) {
 		u.u_error = EINVAL;
 		return;
 	}
 	uap->gidsetsize = gp - u.u_groups;
-	u.u_error = copyout((caddr_t)u.u_groups, (caddr_t)uap->gidset,
-	    uap->gidsetsize * sizeof (u.u_groups[0]));
+	for (lp = groups, gp = u.u_groups; lp < &groups[uap->gidsetsize]; )
+		*lp++ = *gp++;
+	u.u_error = copyout((caddr_t)groups, (caddr_t)uap->gidset,
+	    uap->gidsetsize * sizeof (groups[0]));
 	if (u.u_error)
 		return;
 	u.u_r.r_val1 = uap->gidsetsize;
@@ -171,7 +175,9 @@ setgroups()
 		u_int	gidsetsize;
 		int	*gidset;
 	} *uap = (struct a *)u.u_ap;
-	register int *gp;
+	register gid_t *gp;
+	register int *lp;
+	int groups[NGROUPS];
 
 	if (!suser())
 		return;
@@ -179,11 +185,13 @@ setgroups()
 		u.u_error = EINVAL;
 		return;
 	}
-	u.u_error = copyin((caddr_t)uap->gidset, (caddr_t)u.u_groups,
-	    uap->gidsetsize * sizeof (u.u_groups[0]));
+	u.u_error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
+	    uap->gidsetsize * sizeof (groups[0]));
 	if (u.u_error)
 		return;
-	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)
+	for (lp = groups, gp = u.u_groups; lp < &groups[uap->gidsetsize]; )
+		*gp++ = *lp++;
+	for ( ; gp < &u.u_groups[NGROUPS]; gp++)
 		*gp = NOGROUP;
 }
 
@@ -197,7 +205,7 @@ setgroups()
 leavegroup(gid)
 	int gid;
 {
-	register int *gp;
+	register gid_t *gp;
 
 	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
 		if (*gp == gid)
@@ -215,16 +223,16 @@ found:
 entergroup(gid)
 	int gid;
 {
-	register int *gp;
+	register gid_t *gp;
 
-	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
+	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++) {
 		if (*gp == gid)
 			return (0);
-	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
-		if (*gp < 0) {
+		if (*gp == NOGROUP) {
 			*gp = gid;
 			return (0);
 		}
+	}
 	return (-1);
 }
 
@@ -232,9 +240,9 @@ entergroup(gid)
  * Check if gid is a member of the group set.
  */
 groupmember(gid)
-	int gid;
+	gid_t gid;
 {
-	register int *gp;
+	register gid_t *gp;
 
 	if (u.u_gid == gid)
 		return (1);
