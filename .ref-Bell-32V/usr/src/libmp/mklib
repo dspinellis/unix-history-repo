@@ -1,1 +1,0 @@
-ar cr libmp.a pow.o gcd.o msqrt.o mdiv.o mout.o mult.o madd.o util.o

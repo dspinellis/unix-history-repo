@@ -1,3 +1,0 @@
-/*
-see agf for this source
-*/

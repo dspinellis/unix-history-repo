@@ -1,6 +1,0 @@
-November 13, 1977
-
-This directory contains the source for a floating point interpreter
-modified to work in separate i/d space with a system call "fetchi"
-as described in ../SETUP.  The interpreter assumes that the
-system call in number 61.

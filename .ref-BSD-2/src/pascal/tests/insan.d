@@ -1,5 +1,0 @@
-wbggrb
-wbrgrr
-wbgwrg
-wrgwbr
-

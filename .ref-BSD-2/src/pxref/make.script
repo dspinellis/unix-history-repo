@@ -1,3 +1,0 @@
-pi pxref.p
-mv obj pxref
-mv pxref /usr/ucb/pxref

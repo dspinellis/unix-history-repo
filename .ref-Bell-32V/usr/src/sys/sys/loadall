@@ -1,2 +1,0 @@
-ld -o unix -e start -x -T 80000000 locore.o acct.o alloc.o bio.o clock.o conf.o cons.o dkleave.o dsort.o dz.o fio.o hp.o ht.o iget.o machdep.o main.o malloc.o mba.o mem.o mx1.o mx2.o  nami.o partab.o pipe.o prf.o prim.o rdwri.o sig.o slp.o subr.o sys.o sys1.o sys2.o sys3.o sys4.o sysent.o tdump.o text.o trap.o tty.o uba.o univec.o
-ls -l unix

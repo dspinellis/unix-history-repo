@@ -1,8 +1,0 @@
-Thu Apr 19 13:01:06 PST 1979
-
-This directory contains utilities for Pascal.
-Make here first, and don't clean till you are done making Pascal
-	pi	pi for 11/70
-	pi[01]	pi for non sep I/D
-	px
-	pxp

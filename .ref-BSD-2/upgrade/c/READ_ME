@@ -1,9 +1,0 @@
-Mon Apr 16 23:33:04 PST 1979
-
-The C compiler modifications here given as diffs will change a phototypesetter
-C compiler to have a larger symbol table (change to c0.h) and to generate
-switch code in I space (c11.c).  We install the changed C compiler as
--t0 and -t1; see the source for cc.c.  You need make a modified C compiler
-only if you intend to recompile ex (-t0) or if you wish to compile with
-smaller data spaces per user; all code will work fine without -t1, and
-all programs but ex will compile with normal symbol table size.
