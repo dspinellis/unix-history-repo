@@ -1,0 +1,6 @@
+To create the jove manual (as opposed to the man pages)
+just do "nroff -ms jove.[12345]" (or ditroff or troff).
+That should do the trick.  The man pages will be installed
+automatically by "make install" in the previous directory.
+And the online/run-time documentation will be installed
+automatically, too.
