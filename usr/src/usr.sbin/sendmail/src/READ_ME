@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.39 (Berkeley) %G%
+#	@(#)READ_ME	8.40 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -174,6 +174,22 @@ HASLSTAT	Define this if you have symbolic links (and thus the
 		most other options, this one is on by default, so you
 		need to #undef it in conf.h if you don't have symbolic
 		links (these days everyone does).
+NEEDGETOPT	Define this if you need a reimplementation of getopt(3).
+		On some systems, getopt does very odd things if called
+		to scan the arguments twice.  This flag will ask sendmail
+		to compile in a local version of getopt that works
+		properly.
+NEEDSTRTOL	Define this if your standard C library does not define
+		strtol(3).  This will compile in a local version.
+NEEDVPRINTF	Define this if your standard C library does not define
+		vprintf(3).  Note that the resulting fake implementation
+		is not very elegant and may not even work on some
+		architectures.
+NEEDGETUSERSHELL
+		Define this if you do not have getusershell(3) in your
+		standard C library.  Currently it does not compile in
+		a new version -- instead, it just deletes the call;
+		a future version will supply a replacement implementation.
 GIDSET_T	The type of entries in a gidset passed as the second
 		argument to getgroups(2).  Historically this has been an
 		int, so this is the default, but some systems (such as
@@ -660,4 +676,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.39, last update %G% 05:24:20)
+(Version 8.40, last update %G% 06:29:20)
