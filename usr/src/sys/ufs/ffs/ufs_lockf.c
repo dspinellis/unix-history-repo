@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	7.3 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -355,6 +355,8 @@ lf_getlock(lock, fl)
 			fl->l_pid = ((struct proc *)(block->lf_id))->p_pid;
 		else
 			fl->l_pid = -1;
+	} else {
+		fl->l_type = F_UNLCK;
 	}
 	return (0);
 }
