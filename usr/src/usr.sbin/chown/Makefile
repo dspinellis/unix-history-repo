@@ -1,6 +1,7 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	chown
+CFLAGS+=-DSUPPORT_DOT
 MAN1=	chgrp.0
 MAN8=	chown.0
 LINKS=	${BINDIR}/chown /usr/bin/chgrp
