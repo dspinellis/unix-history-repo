@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	7.10 (Berkeley) %G%
+ *	@(#)tty.h	7.11 (Berkeley) %G%
  */
 
 #include <sys/termios.h>
@@ -30,8 +30,11 @@ struct tty {
 	struct	clist t_rawq;		/* queues */
 	struct	clist t_canq;
 	struct	clist t_outq;
-	int	(*t_oproc)();		/* device */
-	int	(*t_param)();		/* device */
+	void	(*t_oproc)();		/* device */
+#ifdef sun4c
+	void	(*t_stop)();		/* device */
+#endif
+	void	(*t_param)();		/* device */
 	struct	proc *t_rsel;		/* tty */
 	struct	proc *t_wsel;
 	caddr_t	T_LINEP; 		/* XXX */
