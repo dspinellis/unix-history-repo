@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1545,11 +1545,11 @@ bseek(l)
     switch (aret = l->type) {
     case E_SEEK:
 	evalvec = l->a_seek;
-	evalp = (Char *) l->f_seek;
+	evalp = l->c_seek;
 	return;
     case A_SEEK:
 	alvec = l->a_seek;
-	alvecp = (Char *) l->f_seek;
+	alvecp = l->c_seek;
 	return;
     case F_SEEK:
 	fseekp = l->f_seek;
@@ -1567,11 +1567,11 @@ btell(l)
     switch (l->type = aret) {
     case E_SEEK:
 	l->a_seek = evalvec;
-	l->f_seek = (off_t) evalp;
+	l->c_seek = evalp;
 	return;
     case A_SEEK:
 	l->a_seek = alvec;
-	l->f_seek = (off_t) alvecp;
+	l->c_seek = alvecp;
 	return;
     case F_SEEK:
 	l->f_seek = fseekp;
