@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1568,6 +1568,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 			(void) strcat(bp, p);
 		}
 	}
+	bp += strlen(bp);
 		
 	syslog(LOG_INFO, "%s: to=%s%s, stat=%s",
 	       e->e_id, e->e_to, buf, stat);
