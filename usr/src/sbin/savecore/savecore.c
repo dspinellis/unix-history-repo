@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -145,7 +145,7 @@ main(argc, argv)
 		system = argv[1];
 	openlog("savecore", LOG_ODELAY, LOG_AUTH);
 	if (access(dirname, W_OK) < 0) {
-		Perror(LOG_ERR, "%s: %m", dirname);
+		Perror(LOG_ERR, "%s: %m\n", dirname);
 		exit(1);
 	}
 	read_kmem();
@@ -277,7 +277,7 @@ check_kmem()
 
 	fp = fdopen(dumpfd, "r");
 	if (fp == NULL) {
-		log(LOG_ERR, "Can't fdopen dumpfd");
+		log(LOG_ERR, "Can't fdopen dumpfd\n");
 		exit(1);
 	}
 	fseek(fp, (off_t)(dumplo+ok(dump_nl[X_VERSION].n_value)), L_SET);
@@ -338,7 +338,7 @@ check_space()
 	struct fs fs;
 
 	if (stat(dirname, &dsb) < 0) {
-		Perror(LOG_ERR, "%s: %m", dirname);
+		Perror(LOG_ERR, "%s: %m\n", dirname);
 		exit(1);
 	}
 	ddev = find_dev(dsb.st_dev, S_IFBLK);
@@ -381,6 +381,7 @@ save_core()
 	register int n;
 	register char *cp;
 	register int ifd, ofd, bounds;
+	int ret;
 	char *bfile;
 	register FILE *fp;
 
@@ -414,12 +415,22 @@ save_core()
 		if (n <= 0) {
 			if (n == 0)
 				log(LOG_WARNING,
-				    "WARNING: vmcore may be incomplete\n");
+				    "WARNING: EOF on dump device; %s\n",
+				    "vmcore may be incomplete");
 			else
-				Perror(LOG_ERR, "read: %m", "read");
+				Perror(LOG_ERR, "read from dumpdev: %m",
+				    "read");
 			break;
 		}
-		Write(ofd, cp, n);
+		if ((ret = write(ofd, cp, n)) < n) {
+			if (ret < 0)
+				Perror(LOG_ERR, "write: %m", "write");
+			else
+				log(LOG_ERR, "short write: wrote %d of %d\n",
+				    ret, n);
+			log(LOG_WARNING, "WARNING: vmcore may be incomplete\n");
+			break;
+		}
 		dumpsize -= n;
 	}
 	close(ifd);
@@ -498,9 +509,13 @@ Write(fd, buf, size)
 	int fd, size;
 	char *buf;
 {
+	int n;
 
-	if (write(fd, buf, size) < size) {
-		Perror(LOG_ERR, "write: %m", "write");
+	if ((n = write(fd, buf, size)) < size) {
+		if (n < 0)
+			Perror(LOG_ERR, "write: %m", "write");
+		else
+			log(LOG_ERR, "short write: wrote %d of %d\n", n, size);
 		exit(1);
 	}
 }
