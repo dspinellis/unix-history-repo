@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	7.20 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -11,10 +11,28 @@
 #include <sys/kernel.h>
 #include <sys/proc.h>
 #include <sys/reboot.h>
+#include <sys/sysctl.h>
 
-char	hostname[MAXHOSTNAMELEN];
-int	hostnamelen;
-long	hostid;
+struct reboot_args {
+	int	opt;
+};
+/* ARGSUSED */
+reboot(p, uap, retval)
+	struct proc *p;
+	struct reboot_args *uap;
+	int *retval;
+{
+	int error;
+
+	if (error = suser(p->p_ucred, &p->p_acflag))
+		return (error);
+	boot(uap->opt);
+	return (0);
+}
+
+#ifdef COMPAT_43
+
+extern long hostid;
 
 struct gethostid_args {
 	int	dummy;
@@ -53,10 +71,10 @@ gethostname(p, uap, retval)
 	struct gethostname_args *uap;
 	int *retval;
 {
+	int name;
 
-	if (uap->len > hostnamelen + 1)
-		uap->len = hostnamelen + 1;
-	return (copyout((caddr_t)hostname, (caddr_t)uap->hostname, uap->len));
+	name = KERN_HOSTNAME;
+	return (kern_sysctl(&name, 1, uap->hostname, &uap->len, 0, 0));
 }
 
 struct sethostname_args {
@@ -69,35 +87,15 @@ sethostname(p, uap, retval)
 	register struct sethostname_args *uap;
 	int *retval;
 {
-	int error;
+	int name;
 
-	if (error = suser(p->p_ucred, &p->p_acflag))
-		return (error);
-	if (uap->len > sizeof (hostname) - 1)
-		return (EINVAL);
-	hostnamelen = uap->len;
-	error = copyin((caddr_t)uap->hostname, hostname, uap->len);
-	hostname[hostnamelen] = 0;
-	return (error);
+	name = KERN_HOSTNAME;
+	return (kern_sysctl(&name, 1, 0, 0, uap->hostname, uap->len));
 }
 
-struct reboot_args {
-	int	opt;
-};
-/* ARGSUSED */
-reboot(p, uap, retval)
-	struct proc *p;
-	struct reboot_args *uap;
-	int *retval;
-{
-	int error;
-
-}
-
-#ifdef COMPAT_43
 oquota()
 {
 
 	return (ENOSYS);
 }
-#endif
+#endif /* COMPAT_43 */
