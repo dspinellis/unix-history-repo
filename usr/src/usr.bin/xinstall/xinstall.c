@@ -22,23 +22,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-#include <a.out.h>
 #include <grp.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <paths.h>
-
-#define	PERROR(head, msg) { \
-	fputs(head, stderr); \
-	perror(msg); \
-}
+#include "pathnames.h"
 
 static struct passwd *pp;
 static struct group *gp;
@@ -150,93 +145,42 @@ install(from_name, to_name, isdir)
 			to_name = pathbuf;
 		}
 		devnull = 0;
-	}
-	else
+	} else
 		devnull = 1;
 
 	/* unlink now... avoid ETXTBSY errors later */
 	(void)unlink(to_name);
 
 	/* create target */
-	if ((to_fd = open(to_name, O_CREAT|O_WRONLY|O_TRUNC, 0)) < 0) {
-		PERROR("install: ", to_name);
+	if ((to_fd = open(to_name, O_CREAT|O_WRONLY|O_TRUNC, 0600)) < 0) {
+		error(to_name);
 		exit(1);
 	}
 	if (!devnull) {
 		if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
 			(void)unlink(to_name);
-			PERROR("install: open: ", from_name);
+			error(from_name);
 			exit(1);
 		}
-		if (dostrip)
-			strip(from_fd, from_name, to_fd, to_name);
-		else
-			copy(from_fd, from_name, to_fd, to_name);
+		copy(from_fd, from_name, to_fd, to_name);
 		(void)close(from_fd);
-		if (!docopy)
-			(void)unlink(from_name);
 	}
-	if ((group || owner) && fchown(to_fd, owner ? pp->pw_uid : -1,
-	    group ? gp->gr_gid : -1)) {
-		PERROR("install: fchown: ", to_name);
-		bad();
-	}
-	/* set owner, group, mode for target */
-	if (fchmod(to_fd, mode)) {
-		PERROR("install: fchmod: ", to_name);
-		bad();
+	if (dostrip)
+		strip(to_name);
+	/*
+	 * set owner, group, mode for target; do the chown first,
+	 * chown may lose the setuid bits.
+	 */
+	if ((group || owner) &&
+	    fchown(to_fd, owner ? pp->pw_uid : -1, group ? gp->gr_gid : -1) ||
+	    fchmod(to_fd, mode)) {
+		error(to_name);
+		bad(to_name);
 	}
 	(void)close(to_fd);
-}
-
-/*
- * strip --
- *	copy file, strip(1)'ing it at the same time
- */
-strip(from_fd, from_name, to_fd, to_name)
-	register int from_fd, to_fd;
-	char *from_name, *to_name;
-{
-	typedef struct exec EXEC;
-	register long size;
-	register int n;
-	EXEC head;
-	char buf[MAXBSIZE];
-	off_t lseek();
-
-	if (read(from_fd, (char *)&head, sizeof(head)) < 0 || N_BADMAG(head)) {
-		fprintf(stderr, "install: %s not in a.out format.\n", from_name);
-		bad();
-	}
-	if (head.a_syms || head.a_trsize || head.a_drsize) {
-		size = (long)head.a_text + head.a_data;
-		head.a_syms = head.a_trsize = head.a_drsize = 0;
-		if (head.a_magic == ZMAGIC)
-			size += getpagesize() - sizeof(EXEC);
-		if (write(to_fd, (char *)&head, sizeof(EXEC)) != sizeof(EXEC)) {
-			PERROR("install: write: ", to_name);
-			bad();
-		}
-		for (; size; size -= n)
-			/* sizeof(buf) guaranteed to fit in an int */
-			if ((n = read(from_fd, buf, (int)MIN(size, sizeof(buf)))) <= 0)
-				break;
-			else if (write(to_fd, buf, n) != n) {
-				PERROR("install: write: ", to_name);
-				bad();
-			}
-		if (size) {
-			fprintf(stderr, "install: read: %s: premature EOF.\n", from_name);
-			bad();
-		}
-		if (n == -1) {
-			PERROR("install: read: ", from_name);
-			bad();
-		}
-	}
-	else {
-		(void)lseek(from_fd, 0L, L_SET);
-		copy(from_fd, from_name, to_fd, to_name);
+	if (!docopy && !devnull && unlink(from_name)) {
+		error(from_name);
+		exit(1);
 	}
 }
 
@@ -253,12 +197,34 @@ copy(from_fd, from_name, to_fd, to_name)
 
 	while ((n = read(from_fd, buf, sizeof(buf))) > 0)
 		if (write(to_fd, buf, n) != n) {
-			PERROR("install: write: ", to_name);
-			bad();
+			error(to_name);
+			bad(to_name);
 		}
 	if (n == -1) {
-		PERROR("install: read: ", from_name);
-		bad();
+		error(from_name);
+		bad(to_name);
+	}
+}
+
+/*
+ * strip --
+ *	use strip(1) to strip the target file
+ */
+strip(to_name)
+	char *to_name;
+{
+	int status;
+
+	switch (vfork()) {
+	case -1:
+		error("fork");
+		bad(to_name);
+	case 0:
+		execl(_PATH_STRIP, "strip", to_name);
+		_exit(1);
+	default:
+		if (wait(&status) == -1 || status)
+			bad(to_name);
 	}
 }
 
@@ -277,12 +243,26 @@ atoo(str)
 }
 
 /*
+ * error --
+ *	print out an error message
+ */
+error(s)
+	char *s;
+{
+	extern int errno;
+	char *strerror();
+
+	(void)fprintf(stderr, "install: %s: %s\n", s, strerror(errno));
+}
+
+/*
  * bad --
  *	remove created target and die
  */
-bad()
+bad(fname)
+	char *fname;
 {
-	(void)unlink(pathbuf);
+	(void)unlink(fname);
 	exit(1);
 }
 
@@ -292,6 +272,7 @@ bad()
  */
 usage()
 {
-	fputs("usage: install [-cs] [-g group] [-m mode] [-o owner] file1 file2;\n\tor file1 ... fileN directory\n", stderr);
+	(void)fprintf(stderr,
+"usage: install [-cs] [-g group] [-m mode] [-o owner] file1 file2;\n\tor file1 ... fileN directory\n");
 	exit(1);
 }
