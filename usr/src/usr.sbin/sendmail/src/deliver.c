@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.111 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.112 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1840,7 +1840,7 @@ giveresponse(stat, m, mci, ctladdr, e)
 
 	if (tTd(11, 2))
 		printf("giveresponse: stat=%d, e->e_message=%s\n",
-			stat, e->e_message);
+			stat, e->e_message == NULL ? "<NULL>" : e->e_message);
 
 	if (stat != EX_TEMPFAIL)
 		setstat(stat);
