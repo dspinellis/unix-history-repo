@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.11 (Berkeley) %G% */
+/*	@(#)esis.c	7.12 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -100,20 +100,20 @@ extern char		all_es_snpa[], all_is_snpa[];
 esis_init()
 {
 	extern struct clnl_protosw clnl_protox[256];
-	int esis_input();
-	int	esis_config();
-	int snpac_age();
+	int	esis_input(), isis_input();
+	int	esis_config(), snpac_age();
 #ifdef	ISO_X25ESIS
-	x25esis_input();
+	int	x25esis_input();
 #endif	ISO_X25ESIS
 
 	esis_pcb.rcb_next = esis_pcb.rcb_prev = &esis_pcb;
 	llinfo_llc.lc_next = llinfo_llc.lc_prev = &llinfo_llc;
 
-	clnl_protox[ISO9542_ESIS].clnl_input = esis_input;
 	timeout(snpac_age, (caddr_t)0, hz);
 	timeout(esis_config, (caddr_t)0, hz);
 
+	clnl_protox[ISO9542_ESIS].clnl_input = esis_input;
+	clnl_protox[ISO10589_ISIS].clnl_input = isis_input;
 #ifdef	ISO_X25ESIS
 	clnl_protox[ISO9542X25_ESIS].clnl_input = x25esis_input;
 #endif	ISO_X25ESIS
