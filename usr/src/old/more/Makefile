@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -24,8 +24,8 @@ MAN=	more.0
 
 all: more
 
-more: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermcap
+more: ${LIBC}
+	${CC} -o $@ $@.c ${CFLAGS} -ltermcap
 
 clean:
 	rm -f ${OBJS} core more
@@ -37,13 +37,13 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 more ${DESTDIR}/usr/ucb/more
-	rm -f ${DESTDIR}/usr/ucb/page
-	ln ${DESTDIR}/usr/ucb/more ${DESTDIR}/usr/ucb/page
-	install -c -o bin -g bin -m 644 more.help ${DESTDIR}/usr/lib/more.help
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-	rm -f ${DESTDIR}/usr/man/cat1/page.0
-	ln ${DESTDIR}/usr/man/cat1/more.0 ${DESTDIR}/usr/man/cat1/page.0
+	install -s -o bin -g bin -m 755 more ${DESTDIR}/usr/old
+	rm -f ${DESTDIR}/usr/old/page
+	ln ${DESTDIR}/usr/old/more ${DESTDIR}/usr/old/page
+	install -c -o bin -g bin -m 644 more.help ${DESTDIR}/usr/lib/omore.help
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat.old
+	rm -f ${DESTDIR}/usr/man/cat.old/page.0
+	ln ${DESTDIR}/usr/man/cat.old/more.0 ${DESTDIR}/usr/man/cat.old/page.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
