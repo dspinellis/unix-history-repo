@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gettable.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gettable.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -34,7 +34,6 @@ main(argc, argv)
 	int s;
 	register len;
 	register FILE *sfi, *sfo, *hf;
-	register char *p;
 	char *host;
 	register struct hostent *hp;
 	struct servent *sp;
@@ -70,18 +69,18 @@ main(argc, argv)
 	if (argc > 0)
 		outfile = *argv;
 	sin.sin_family = hp->h_addrtype;
-	s = socket(hp->h_addrtype, SOCK_STREAM, 0, 0);
+	s = socket(hp->h_addrtype, SOCK_STREAM, 0);
 	if (s < 0) {
 		perror("gettable: socket");
 		exit(4);
 	}
-	if (bind(s, &sin, sizeof (sin), 0) < 0) {
+	if (bind(s, &sin, sizeof (sin)) < 0) {
 		perror("gettable: bind");
 		exit(5);
 	}
-	bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
+	bcopy(hp->h_addr, (char *)&sin.sin_addr, hp->h_length);
 	sin.sin_port = sp->s_port;
-	if (connect(s, &sin, sizeof (sin), 0) < 0) {
+	if (connect(s, &sin, sizeof (sin)) < 0) {
 		perror("gettable: connect");
 		exit(6);
 	}
