@@ -1,4 +1,4 @@
-@(#)README	2.2 (Berkeley) %G%
+@(#)README	2.3 (Berkeley) %G%
 
 This document describes the sendmail configuration files being used
 at Berkeley.  There have been several previous versions.  This file
@@ -85,10 +85,10 @@ local hostname.  This can also be effected by using:
 
 in the ".mc" file.
 
-	MAILER(local)
 	MAILER(smtp)
 
-These describe the mailers used at the default CS site site.  
+These describe the mailers used at the default CS site site.  The
+local mailer is always included automatically.
 
 Note that cf/cs-exposed.mc omits an OSTYPE macro -- this assumes
 default Computer Science Division environment.  There are several
@@ -134,7 +134,14 @@ respectively.
 
 Similarly, LOCAL_RULE_0 can be used to introduce new parsing rules.
 For example, new rules are needed to parse hostnames that you accept
-via MX records.
+via MX records.  For example, you might have:
+
+	LOCAL_RULE_0
+	R$+ < @ cnmat.Berkeley.EDU >	$#uucp $@ cnmat $: $1
+
+You would use this if you had installed an MX record for cnmat.Berkeley.EDU
+pointing at this host; this rule catches the message and forwards it on
+using UUCP.
 
 ????
 
@@ -235,11 +242,11 @@ MACROS
    R	Relay (for unqualified names)
    S
    T
-   U	UUCP Relay (all hosts)
-   V	my UUCP name (if I have a UUCP connection)
+   U	my UUCP name (if I have a UUCP connection)
+   V	UUCP Relay (class V hosts)
    W	UUCP Relay (class W hosts)
    X	UUCP Relay (class X hosts)
-   Y	UUCP Relay (class Y hosts)
+   Y	UUCP Relay (all other hosts)
    Z	Version number
 
 
@@ -266,10 +273,10 @@ CLASSES
    S
    T
    U	locally connected UUCP hosts
-   V	locally connected smart UUCP hosts
-   W	UUCP hosts connected to host $W
-   X	UUCP hosts connected to host $X
-   Y	UUCP hosts connected to host $Y
+   V	UUCP hosts connected to relay $V
+   W	UUCP hosts connected to relay $W
+   X	UUCP hosts connected to relay $X
+   Y	locally connected smart UUCP hosts
    Z
 
 
@@ -279,7 +286,7 @@ M4 DIVERSIONS
    2	Local Ruleset 0 additions
    3	Local Ruleset 3 additions
    4	UUCP Ruleset 0 additions
-   5
+   5	locally interpreted names (overrides $R)
    6
    7	mailer definitions
    8
