@@ -17,7 +17,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.18 (Berkeley) %G%
+#	@(#)Makefile	7.17 (Berkeley) 6/27/87
 #
 VERSION=3.7
 #
@@ -41,7 +41,7 @@ BINDIR=		/usr/ucb
 NBINDIR=	/usr/new
 LIBDIR=		/usr/lib
 OPTIONS=	-DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
-		-DFASTTAG -DUNIX_SBRK
+		-DFASTTAG -DUNIX_SBRK -DFLOCKFILE
 CFLAGS=		-DTABS=8 -O ${OPTIONS}
 LDFLAGS=	-z				# or -i or -n
 LIBC=		/lib/libc.a
