@@ -1,0 +1,38 @@
+#print
+To move around, you can use simple arithmetic
+when specifying what to print.  For example,
+  3+1p
+is the same as
+  4p
+as an editor command.  Now that's not very interesting;
+but if the '.' current line pointer is line 3,
+then using
+  .+1p
+instead of 4p is helpful.
+For example, print the 3rd and 4th
+lines of the familiar file using first "3p" to
+get to line 3 and then ".+1p" to print the next line.
+End as usual with w, q, and ready.
+#create Ref
+thomas jefferson
+james madison
+91
+#create file
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+john quincy adams
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+tail -3 .ocopy >X1
+#cmp Ref X1
+#log
+#next
+9.1a 10
+8.1b 7

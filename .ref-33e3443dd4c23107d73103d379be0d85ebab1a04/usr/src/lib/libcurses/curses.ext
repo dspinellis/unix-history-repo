@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)curses.ext	5.2 (Berkeley) 6/19/85
+ */
+
+/*
+ * External variables for the curses library
+ */
+
+/* LINTLIBRARY */
+
+# include	"curses.h"
+
+extern bool	_echoit, _rawmode, My_term, _endwin;
+
+extern char	ttytype[50], *_unctrl[];
+
+extern int	_tty_ch, LINES, COLS;
+
+extern SGTTY	_tty;
+
+char		_putchar();
+
+#ifdef DEBUG
+# define	outf	_outf
+
+FILE		*outf;
+#endif

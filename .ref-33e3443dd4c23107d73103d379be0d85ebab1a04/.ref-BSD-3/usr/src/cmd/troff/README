@@ -1,0 +1,18 @@
+The version of [nt]roff in this directory
+is changed somewhat from the version you
+may be used to.
+
+1. fonts are in /usr/lib/font/ftXX,
+where XX is the name of the font (e.g., HI).
+Source is in ./font/ftXX.c.
+
+2. macro files like -ms are searched for in
+/usr/lib/tmac/tmac.xxx.
+Your /usr/lib/tmac may have to be changed.
+The .so request has been modified to make it a
+fatal error to try .so non-existent-file;
+this should head off people who are explcitly 
+including /usr/lib/tmac.s, etc.
+
+3. terminal driving tables for nroff are
+in /usr/lib/term/tabxxx instead of /usr/lib/term/xxx.

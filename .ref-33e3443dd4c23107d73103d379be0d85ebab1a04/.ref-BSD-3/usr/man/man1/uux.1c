@@ -1,0 +1,84 @@
+.TH UUX 1C
+.SH NAME
+uux \- unix to unix command execution
+.SH SYNOPSIS
+.B uux
+[
+.B \-
+]
+command-string
+.SH DESCRIPTION
+.I Uux
+will gather 0 or more files from various systems,
+execute a command on a specified system
+and send standard output to a file on a specified
+system.
+.PP
+The command-string is made up of one or more arguments that look
+like a shell command line,
+except that the command and file names
+may be prefixed by system-name!.
+A null system-name is interpreted as the local system.
+.PP
+File names may be one of
+.IP
+(1) a full pathname;
+.IP
+(2) a pathname preceded by
+.IR ~xxx ;
+where
+.I xxx
+is a userid on the specified system
+and is replaced by that user's login directory;
+.br
+.IP
+(3) anything else is prefixed by the current directory.
+.PP
+The `\-' option will cause the standard input to the
+.I uux
+command to be the standard input to the command-string.
+.PP
+For example, the command
+.IP
+uux "!diff usg!/usr/dan/f1 pwba!/a4/dan/f1 > !fi.diff"
+.PP
+will get the f1 files from the usg and pwba machines,
+execute a
+.I diff
+command
+and put the results in f1.diff in the local directory.
+.PP
+Any special shell characters such as <>;| should be quoted either
+by quoting the entire command-string, or quoting the special
+characters as individual arguments.
+.SH FILES
+/usr/uucp/spool - spool directory
+.br
+/usr/uucp/* - other data and programs
+.SH SEE ALSO
+uucp(1)
+.br
+D. A. Nowitz,
+.I Uucp implementation description
+.SH WARNING
+An installation may, and for security reasons
+generally will, limit the list of
+commands executable on behalf of an incoming request from
+.I uux.
+Typically, a restricted site will permit little other than
+the receipt of mail via 
+.I uux.
+.SH BUGS
+Only the first command of a shell pipeline may
+have a system-name!.
+All other commands are executed on the system of the first
+command.
+.br
+The use of the shell metacharacter
+.B *
+will probably not do what you want it to do.
+.br
+The shell tokens << and >> are not implemented.
+.br
+There is no notification of denial of execution
+on the remote machine.

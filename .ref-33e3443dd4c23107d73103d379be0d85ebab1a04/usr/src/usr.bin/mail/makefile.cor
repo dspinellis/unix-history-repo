@@ -1,0 +1,54 @@
+#
+# Cory Hall Unix 11/70 Version 7
+#
+# Sccs Id = "@(#)makefile.cor	2.1 %G%";
+#
+
+CFLAGS=-O -DCORY
+DESTDIR=/usr/src
+CTAGS=/usr/bin/eecs/ctags -w
+RM=-rm
+OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o edit.o fio.o \
+	head.o c.local.o lex.o list.o main.o names.o optim.o \
+	quit.o send.o strings.o temp.o tty.o vars.o version.o
+
+SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c edit.c fio.c \
+	head.c c.local.c lex.c list.c main.c names.c optim.c \
+	quit.c send.c strings.c temp.c tty.c vars.c version.c
+
+all:	Mail fmt
+
+install:	all
+	cp Mail $(DESTDIR)
+	cp fmt $(DESTDIR)
+
+Mail:	$(OBJS) tags
+	$(CC) -n -o Mail $(OBJS) -lretro -lS
+	@size Mail
+
+tags:
+	${CTAGS} *.c;
+
+clean:
+	$(RM) -f *.o
+	rm -f Mail a.out fmt x.c xs.c tags core
+	cp /dev/null strings
+	cp /dev/null version.c
+
+lint:
+	lint $(CFLAGS) $(SRCS)
+
+fmt:	fmt.c head.c
+	$(CC) $(CFLAGS) fmt.c head.c -o fmt -lretro -lS
+	$(RM) fmt.o head.o
+	size fmt
+
+#
+# Make the version file.  /tmp is always changing.
+#
+version.c:	/tmp
+	/bin/sh version > version.c
+
+print:
+	@pr rcv.h def.h glob.h local.h c.local.h $(SRCS)
+	@pr fmt.c

@@ -1,0 +1,33 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)wait.3	6.1 (Berkeley) %G%
+.\"
+.TH WAIT 3F ""
+.UC 5
+.SH NAME
+wait \- wait for a process to terminate
+.SH SYNOPSIS
+.B integer function wait (status)
+.br
+.B integer status
+.SH DESCRIPTION
+.I Wait
+causes its caller to be suspended until a signal is received or one of
+its child processes terminates.
+If any child has terminated since the last
+.I wait,
+return is immediate; if there are no children, return is immediate
+with an error code.
+.PP
+If the returned value is positive, it is the process ID of the child and
+.I status
+is its termination status (see
+.IR wait (2)).
+If the returned value is negative, it is the negation of a system error code.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+wait(2), signal(3F), kill(3F), perror(3F)

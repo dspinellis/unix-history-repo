@@ -1,0 +1,68 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)pcl.4	6.2 (Berkeley) %G%
+.\"
+.TH PCL 4 ""
+.UC 5
+.SH NAME
+pcl \- DEC CSS PCL-11 B Network Interface
+.SH SYNOPSIS
+.B "device pcl0 at uba? csr 164200 vector pclxint pclrint"
+.SH DESCRIPTION
+The 
+.I pcl
+device provides an IP-only interface to the DEC CSS PCL-11
+time division multiplexed network bus.
+The controller itself is not accessible to users.
+.PP
+The hosts's address is specified with the SIOCSIFADDR ioctl.
+The interface will not transmit or receive any data before
+its address is defined.
+.PP
+As the PCL-11 hardware is only capable of having 15 interfaces per network,
+a single-byte host-on-network number is used, with range [1..15] to match
+the TDM bus addresses of the interfaces.
+.PP
+The interface currently only supports the Internet protocol family
+and only provides ``natural'' (header) encapsulation.
+.SH DIAGNOSTICS
+.BR "pcl%d: can't init" .
+Insufficient UNIBUS resources existed to initialize the device.
+This is likely to occur when the device is run on a buffered
+data path on an 11/750 and other network interfaces are also
+configured to use buffered data paths, or when it is configured
+to use buffered data paths on an 11/730 (which has none).
+.PP
+.BR "pcl%d: can't handle af%d" .
+The interface was handed a message with addresses formatted in an
+unsuitable address family;  the packet was dropped.
+.PP
+.BR "pcl%d: stray xmit interrupt" .
+An interrupt occurred when no output had previously been started.
+.PP
+.BR "pcl%d: master" .
+The TDM bus had no station providing ``bus master'' timing signals,
+so this interface has assumed the ``master'' role.  This message should
+only appear at most once per UNIBUS INIT on a single system.
+Unless there is a hardware failure, only one station may be master at at time.
+.PP
+.BR "pcl%d: send error, tcr=%b, tsr=%b" .
+The device indicated a problem sending data on output.
+If a ``receiver offline'' error is detected, it is not normally logged
+unless the option PCL_TESTING has been selected, as this causes a lot
+of console chatter when sending to a down machine.  However, this option
+is quite useful when debugging problems with the PCL interfaces.
+.PP
+.BR "pcl%d: rcv error, rcr=%b rsr=%b" .
+The device indicated a problem receiving data on input.
+.PP
+.BR "pcl%d: bad len=%d" .
+An input operation resulted in a data transfer of less than
+0 or more than 1008 bytes of
+data into memory (according to the word count register).
+This should never happen as the maximum size of a PCL message
+has been agreed upon to be 1008 bytes (same as ArpaNet message).
+.SH "SEE ALSO"
+intro(4N), inet(4F)

@@ -1,0 +1,11 @@
+#print
+Is the word "stop" changed by the command
+  s/to/xx/p
+Type "yes" or "no".
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+32.2e 5

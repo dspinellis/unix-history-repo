@@ -1,0 +1,10 @@
+tty	where		what	serial	baud	device	who
+---	-----		----	------	----	------	---
+0	570	Evans	patch		select	DZ  0
+1	570	Evans	patch		select	DZ  1
+2	570	Evans	patch		select	DZ  2
+3	570	Evans	patch		select	DZ  3
+4	570	Evans	patch		select	DZ  4
+5	187M	Cory	adm3a		9600	DZ  5	Bob Kridle's office
+6	570	Evans	patch		select	DZ  6
+7	570	Evans	patch		select	DZ  7

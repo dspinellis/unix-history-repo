@@ -1,0 +1,49 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)_exit.2	6.4 (Berkeley) %G%
+.\"
+.TH EXIT 2 ""
+.UC 4
+.SH NAME
+_exit \- terminate a process
+.SH SYNOPSIS
+.nf
+.ft B
+_exit(status)
+int status;
+.fi
+.SH DESCRIPTION
+.I _exit
+terminates a process with the following consequences:
+.in +5n
+.PP
+All of the descriptors open in the calling process are closed.
+This may entail delays, for example, waiting for output to drain;
+a process in this state may not be killed, as it is already dying.
+.PP
+If the parent process of the calling process is executing a
+.I wait
+or is interested in the SIGCHLD signal,
+then it is notified of the calling process's termination and
+the low-order eight bits of \fIstatus\fP are made available to it;
+see
+.IR wait (2).
+.PP
+The parent process ID of all of the calling process's existing child
+processes are also set to 1.  This means that the initialization process
+(see 
+.IR intro (2))
+inherits each of these processes as well.
+Any stopped children are restarted with a hangup signal (SIGHUP).
+.in -5n
+.PP
+Most C programs call the library routine
+.IR exit (3),
+which performs cleanup actions in the standard I/O library before
+calling \fI_exit\fP\|.
+.SH "RETURN VALUE"
+This call never returns.
+.SH "SEE ALSO"
+fork(2), sigvec(2), wait(2), exit(3)

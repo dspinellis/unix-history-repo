@@ -1,0 +1,29 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)crl.4	6.2 (Berkeley) %G%
+.\"
+.TH CRL 4 ""
+.UC 6
+.SH NAME
+crl \- VAX 8600 console RL02 interface
+.SH DESCRIPTION
+This is a simple interface to the DEC RL02
+disk unit which is part of the console
+subsystem on the VAX 8600 and 8650.
+Access is given to the entire
+RL02 disk; the pack format is the same
+as that of RL02 disks on other controllers.
+As on other VAX console media, transfers are done a word at a time
+using privileged registers (i.e., slowly).
+.PP
+All I/O is raw; the seek addresses in raw transfers should be a multiple
+of 512 bytes and a multiple of 512 bytes should be transferred,
+as in other ``raw'' disk interfaces.
+(Although the sector size is actually 256 bytes, the driver allows
+operations only on 512-byte boundaries.)
+.SH FILES
+/dev/crl
+.SH SEE ALSO
+arff(8V)

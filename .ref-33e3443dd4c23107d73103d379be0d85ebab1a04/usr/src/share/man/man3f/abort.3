@@ -1,0 +1,59 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)abort.3	6.2 (Berkeley) %G%
+.\"
+.TH ABORT 3F ""
+.UC 5
+.SH NAME
+abort \- abnormal termination
+.SH SYNOPSIS
+.B subroutine abort (string)
+.br
+.B character*(*) string
+.SH DESCRIPTION
+.I Abort
+cleans up the I/O buffers and then terminates execution.
+If
+.I string
+is given, it is written to logical unit 0 preceded by ``abort:''.
+.PP
+If the
+.B \(mig
+flag was specified during loading,
+then execution is terminated by calling
+.I abort
+(3)
+which aborts producing a
+.I core
+file in the current directory.
+If
+.B \-g
+was not specified while loading,
+then
+.I ***\ Execution terminated
+is written
+on logical unit 0 and execution is terminated.
+.PP
+If the
+.I f77_dump_flag
+environment variable
+has been set to a value which begins with
+.IR y , \ abort
+(3) is called whether or not
+.B \(mig
+was specified during loading.
+Similarly, if the value of
+.I f77_dump_flag
+begins with
+.IR n , \ abort
+is not called.
+.SH FILES
+.ie \nM /usr/ucb/lib/libF77.a
+.el /usr/lib/libF77.a
+.SH "SEE ALSO"
+abort(3)
+.SH BUGS
+.I String
+is ignored on the PDP11.

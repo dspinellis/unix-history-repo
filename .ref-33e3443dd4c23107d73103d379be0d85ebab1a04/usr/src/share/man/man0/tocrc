@@ -1,0 +1,109 @@
+#!/bin/sh -
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)tocrc	6.2 (Berkeley) %G%
+#
+tmp=/tmp/toc$$
+trap "rm $tmp ; exit" 2 3 15
+if [ $# -eq 2 -a $1 = "3" ]
+then
+	: create toc input files for section 3 only
+
+	( cd ../man3 ; /usr/lib/getNAME -t `ls *.3 *.3[mnsxc] | sort` | sed \
+			-e 's/.s-2//g' \
+			-e 's/.s-1//g' \
+			-e 's/.s0//g' \
+			-e 's/.s+1//g' \
+			-e 's/  *.-  */: /' \
+			-e 's/ *$/./' \
+			-e 's/.TH.*	//' \
+		> ../man0/tocx3 ;
+		/usr/lib/getNAME -t *.3f | sed \
+			-e 's/.s-2//g' \
+			-e 's/.s-1//g' \
+			-e 's/.s0//g' \
+			-e 's/.s+1//g' \
+			-e 's/  *.-  */: /' \
+			-e 's/ *$/./' \
+			-e 's/.TH.*	//' \
+		> ../man0/tocx3f
+	)
+elif [ $# -eq 2 ]
+then
+	: create toc input file for one section only
+
+	( cd ../man$1 ; /usr/lib/getNAME -t *.* |
+		sed \
+			-e 's/.s-2//g' \
+			-e 's/.s-1//g' \
+			-e 's/.s0//g' \
+			-e 's/.s+1//g' \
+			-e 's/  *.-  */: /' \
+			-e 's/ *$/./' \
+			-e 's/.TH.*	//' \
+		> ../man0/tocx$1
+	)
+else case $1 in
+	all )
+		:   tocx files for all sections and everything else
+
+		for x in 1 2 3 4 5 6 7 8
+			do
+			./$0 $x $x
+			done
+		./$0 t
+		;;
+	t )
+		:   permuted index and toc files
+
+		if [ ! -f tocx1 ]
+		then
+			echo "tocx* files missing; must run tocrc all first"
+			exit
+		fi
+		sed \
+			-e 's/(1c)/(1C)/' \
+			-e 's/(1g)/(1G)/' \
+			-e 's/(3c)/(3C)/' \
+			-e 's/(3m)/(3M)/' \
+			-e 's/(3n)/(3N)/' \
+			-e 's/(3s)/(3S)/' \
+			-e 's/(3x)/(3X)/' \
+			-e 's/(3f)/(3F)/' \
+			-e 's/(4f)/(4F)/' \
+			-e 's/(4n)/(4N)/' \
+			-e 's/(4p)/(4P)/' \
+			-e 's/(8c)/(8C)/' \
+			-e 's/(8v)/(8V)/' \
+			-e '/"\."/d' \
+			tocx* cshcmd \
+		> /tmp/cattoc
+
+		ptx -r -t -b break -f -w 108 -i ignore \
+		    /tmp/cattoc ptxx
+
+		for x in 1 2 3 3f 4 5 6 7 8
+		do
+			< tocx$x grep '^intro' >$tmp
+				sed \
+				-e '2,${' \
+				-e '/^intro/d' \
+				-e '}' \
+				-e 's/ .*://' \
+				-e 's/.$//' \
+				-e 's/([^)]*) /" "/' \
+				-e 's/.*/.xx "&"/' \
+				-e '/""/d' \
+				$tmp tocx$x \
+			>toc$x
+		done
+		;;
+	* )
+		./$0 $1 $1
+		;;
+	esac
+fi
+exit

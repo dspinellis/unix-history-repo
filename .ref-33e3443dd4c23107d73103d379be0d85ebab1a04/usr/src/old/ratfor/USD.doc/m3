@@ -1,0 +1,190 @@
+.\"	@(#)m3	6.1 (Berkeley) %G%
+.\"
+.NH
+IMPLEMENTATION
+.PP
+Ratfor
+was originally written in
+C[4]
+on the
+.UC UNIX
+operating system[5].
+The language is specified by a context free grammar
+and the compiler constructed using
+the
+.UC YACC
+compiler-compiler[6].
+.PP
+The
+Ratfor
+grammar is simple and straightforward, being essentially
+.P1
+prog	: stat 
+	| prog   stat
+stat	: \f3if\fP (...) stat 
+	| \f3if\fP (...) stat \f3else\fP stat
+	| \f3while\fP (...) stat
+	| \f3for\fP (...; ...; ...) stat
+	| \f3do\fP ... stat
+	| \f3repeat\fP stat
+	| \f3repeat\fP stat \f3until\fP (...)
+	| \f3switch\fP (...) { \f3case\fP ...: prog ...
+			\f3default\fP: prog }
+	| \f3return\fP
+	| \f3break\fP
+	| \f3next\fP
+	| digits   stat
+	| { prog }
+	| anything unrecognizable
+.P2
+The observation
+that
+Ratfor
+knows no Fortran
+follows directly from the rule that says a statement is
+``anything unrecognizable''.
+In fact most of Fortran falls into this category,
+since any statement that does not begin with one of the keywords
+is by definition ``unrecognizable.''
+.PP
+Code generation is also simple.
+If the first thing on a source line is
+not a keyword
+(like
+.UL if ,
+.UL else ,
+etc.)
+the entire statement is simply copied to the output
+with appropriate character translation and formatting.
+(Leading digits are treated as a label.)
+Keywords cause only slightly more complicated actions.
+For example, when
+.UL if
+is recognized, two consecutive labels L and L+1
+are generated and the value of L is stacked.
+The condition is then isolated, and the code
+.P1
+if (.not. (condition)) goto L
+.P2
+is output.
+The 
+.ul
+statement
+part of the
+.UL if
+is then translated.
+When the end of the 
+statement is encountered
+(which may be some distance away and include nested \f3if\fP's, of course),
+the code
+.P1
+L	continue
+.P2
+is generated, unless there is an
+.UL else
+clause, in which case
+the code is
+.P1
+	goto L+1
+L	continue
+.P2
+In this latter case,
+the code
+.P1
+L+1	continue
+.P2
+is produced after the
+.ul
+statement
+part of the
+.UL else.
+Code generation for the various loops is equally simple.
+.PP
+One might argue that more care should be taken
+in code generation.
+For example,
+if there is no trailing
+.UL else ,
+.P1
+	if (i > 0) x = a
+.P2
+should be left alone, not converted into
+.P1
+	if (.not. (i .gt. 0)) goto 100
+	x = a
+100	continue
+.P2
+But what are optimizing compilers for, if not to improve code?
+It is a rare program indeed where this kind of ``inefficiency''
+will make even a measurable difference.
+In the few cases where it is important,
+the offending lines can be protected by `%'.
+.PP
+The use of a compiler-compiler is definitely the preferred method
+of software development.
+The language is well-defined,
+with few syntactic irregularities.
+Implementation is quite simple;
+the original construction took under a week.
+The language
+is sufficiently simple, however, that an
+.ul
+ad hoc
+recognizer can be readily constructed to do the same job
+if no compiler-compiler is available.
+.PP
+The C version of 
+Ratfor
+is used on
+.UC UNIX
+and on the Honeywell
+.UC GCOS
+systems.
+C compilers are not as widely available as Fortran, however,
+so there is also a
+Ratfor
+written in itself
+and originally bootstrapped with the C version.
+The
+Ratfor
+version
+was written so as to translate into the portable subset
+of Fortran described in [1],
+so it is portable,
+having been run essentially without change
+on at least twelve distinct machines.
+(The main restrictions of the portable subset are:
+only one character per machine word;
+subscripts in the 
+form
+.ul
+c*v\(+-c;
+avoiding expressions in places like
+.UC DO
+loops;
+consistency in subroutine argument usage,
+and in 
+.UC COMMON
+declarations.
+Ratfor
+itself will not gratuitously generate non-standard Fortran.)
+.PP
+The
+Ratfor
+version is about 1500 lines of
+Ratfor
+(compared to about 1000 lines of C);
+this compiles into 2500 lines of Fortran.
+This expansion ratio is somewhat higher than average,
+since the compiled code contains unnecessary occurrences
+of
+.UC COMMON
+declarations.
+The execution time of the
+Ratfor
+version is dominated by
+two routines that read and write cards.
+Clearly these routines could be replaced
+by machine coded local versions;
+unless this is done, the efficiency of other parts of the translation process
+is largely irrelevant.
