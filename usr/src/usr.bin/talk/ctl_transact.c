@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ctl_transact.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctl_transact.c	1.3 (Berkeley) %G%";
 #endif
 
 #include "talk_ctl.h"
@@ -26,8 +26,6 @@ ctl_transact(target, msg, type, response)
 	int junk_size;
 	struct timeval wait;
 
-	wait.tv_sec = CTL_WAIT;
-	wait.tv_usec = 0;
 	msg.type = type;
 	daemon_addr.sin_addr = target;
 	daemon_addr.sin_port = daemon_port;
@@ -38,6 +36,9 @@ ctl_transact(target, msg, type, response)
 	 * type is obtained
 	 */
 	do {
+		wait.tv_sec = CTL_WAIT;
+		wait.tv_usec = 0;
+
 		/* keep sending the message until a response is obtained */
 		do {
 			cc = sendto(ctl_sockt, (char *)&msg, sizeof(CTL_MSG), 0,
@@ -48,8 +49,7 @@ ctl_transact(target, msg, type, response)
 				p_error("Error on write to talk daemon");
 			}
 			read_mask = ctl_mask;
-			nready = select(32, &read_mask, 0, 0, &wait);
-			while (nready < 0) {
+			if ((nready = select(32, &read_mask, 0, 0, &wait)) < 0) {
 				if (errno == EINTR)
 					continue;
 				p_error("Error waiting for daemon response");
