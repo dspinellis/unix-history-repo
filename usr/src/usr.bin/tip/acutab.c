@@ -1,15 +1,21 @@
-/*	acutab.c	4.1	81/05/09	*/
+/*	acutab.c	4.2	81/09/17	*/
 #include "tip.h"
 
 extern int df_dialer(), df_disconnect(), df_abort(),
-	   bizf_dialer(), biz_disconnect(), biz_abort(),
-	   bizw_dialer(), dn_dialer(), dn_disconnect(),
-	   dn_abort();
+	   biz31f_dialer(), biz31_disconnect(), biz31_abort(),
+	   biz31w_dialer(),
+	   biz22f_dialer(), biz22_disconnect(), biz22_abort(),
+	   biz22w_dialer(),
+	   dn_dialer(), dn_disconnect(), dn_abort();
 
 acu_t acutable[] = {
-#if BIZCOMP
-	"bizf",	bizf_dialer,	biz_disconnect,		biz_abort,
-	"bizw", bizw_dialer,	biz_disconnect,		biz_abort,
+#if BIZ1031
+	"biz31f", biz31f_dialer, biz31_disconnect,	biz31_abort,
+	"biz31w", biz31w_dialer, biz31_disconnect,	biz31_abort,
+#endif
+#if BIZ1022
+	"biz22f", biz22f_dialer, biz22_disconnect,	biz22_abort,
+	"biz22w", biz22w_dialer, biz22_disconnect,	biz22_abort,
 #endif
 #if DF02
 	"df02",	df_dialer,	df_disconnect,		df_abort,
