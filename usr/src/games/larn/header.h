@@ -1,12 +1,12 @@
 /*	header.h		Larn is copyrighted 1986 by Noah Morgan. */
 
-#define SCORENAME   ".lscore12.0"
-#define LOGFNAME    ".llog12.0"
-#define HELPNAME    ".larn.help"
-#define LEVELSNAME  ".larnmaze"
-#define FORTSNAME   ".lfortune"
-#define PLAYERIDS	".playerids"
-#define HOLIFILE	".holidays"
+#define SCORENAME	"lscore12.0"
+#define LOGFNAME	"llog12.0"
+#define HELPNAME	"larn.help"
+#define LEVELSNAME	"larnmaze"
+#define FORTSNAME	"lfortune"
+#define PLAYERIDS	"playerids"
+#define HOLIFILE	"holidays"
 
 #define MAXLEVEL 11
 	/*	max # levels in the dungeon			*/
