@@ -1,21 +1,22 @@
-#define IMPLOOP
-/*	ip_output.c	1.19	81/11/24	*/
+/*	ip_output.c	1.20	81/11/26	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/mtpr.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
-#include "../net/imp.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
+#include "../net/if.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 
-ip_output(m)
+ip_output(m, opt)
 	struct mbuf *m;
+	struct mbuf *opt;
 {
 	register struct ip *ip = mtod(m, struct ip *);
+	register struct ifnet *ifp;
 	int len, hlen = ip->ip_hl << 2, off;
 
 COUNT(IP_OUTPUT);
@@ -25,14 +26,27 @@ COUNT(IP_OUTPUT);
 	ip->ip_v = IPVERSION;
 	ip->ip_hl = hlen >> 2;
 	ip->ip_off &= IP_DF;
-	ip->ip_id = ip_id++;
+	ip->ip_id = htons(ip_id++);
+
+	/*
+	 * Find interface for this packet.
+	 */
+	ifp = if_ifonnetof(ip->ip_dst);
+	if (ifp == 0) {
+		ifp = if_gatewayfor(ip->ip_dst);
+		if (ifp == 0)
+			goto bad;
+	}
 
 	/*
 	 * If small enough for interface, can just send directly.
 	 */
-	if (ip->ip_len <= MTU) {
-		ip_send(ip);
-		return;
+	if (ip->ip_len <= ifp->if_mtu) {
+		ip->ip_len = htons((u_short)ip->ip_len);
+		ip->ip_off = htons((u_short)ip->ip_off);
+		ip->ip_sum = 0;
+		ip->ip_sum = in_cksum(m, hlen);
+		return ((*ifp->if_output)(ifp, m, PF_INET));
 	}
 
 	/*
@@ -41,7 +55,7 @@ COUNT(IP_OUTPUT);
 	 */
 	if (ip->ip_off & IP_DF)
 		goto bad;
-	len = (MTU-hlen) &~ 7;
+	len = (ifp->if_mtu - hlen) &~ 7;
 	if (len < 8)
 		goto bad;
 
@@ -73,16 +87,23 @@ COUNT(IP_OUTPUT);
 			mhip->ip_len = len;
 			mhip->ip_off |= IP_MF;
 		}
-		mhip->ip_len += sizeof (struct ip);
+		mhip->ip_len = htons((u_short)(mhip->ip_len + sizeof (struct ip)));
 		mh->m_next = m_copy(m, off, len);
 		if (mh->m_next == 0) {
 			(void) m_free(mh);
 			goto bad;
 		}
-		ip_send(mhip);
+		ip->ip_off = htons((u_short)ip->ip_off);
+		ip->ip_sum = 0;
+		ip->ip_sum = in_cksum(m, hlen);
+		if ((*ifp->if_output)(ifp, mh, PF_INET) == 0)
+			goto bad;
 	}
+	m_freem(m);
+	return (1);
 bad:
 	m_freem(m);
+	return (0);
 }
 
 /*
@@ -120,49 +141,3 @@ COUNT(IP_OPTCOPY);
 		*dp++ = IPOPT_EOL;
 	return (optlen);
 }
-
-/* REST OF CODE HERE IS GARBAGE */
-
-ip_send(ip)
-	register struct ip *ip;
-{
-	register struct mbuf *m;
-	register struct imp *l;
-	int hlen = ip->ip_hl << 2;
-	int s;
-COUNT(IP_SEND);
-
-	m = dtom(ip);
-	l = (struct imp *)(mtod(m, caddr_t) - L1822);
-	l->i_shost = ip->ip_src.s_host;
-	l->i_dhost = ip->ip_dst.s_host;
-	l->i_type = IPTYPE;
-	ip->ip_sum = 0;
-	ip->ip_len = htons((u_short)ip->ip_len);
-	ip->ip_id = htons(ip->ip_id);
-	ip->ip_off = htons((u_short)ip->ip_off);
-	ip->ip_sum = inet_cksum(m, hlen);
-	m->m_off -= L1822;
-	m->m_len += L1822;
-	m->m_act = NULL;
-#ifndef IMPLOOP
-	s = splimp();
-	if (imp_stat.outq_head != NULL)
-		imp_stat.outq_tail->m_act = m;
-	else
-		imp_stat.outq_head = m;
-	imp_stat.outq_tail = m;
-	splx(s);
-	if (!imp_stat.outactive)
-		enstart(0);
-#else
-	if (imp_stat.inq_head != NULL)
-		imp_stat.inq_tail->m_act = m;
-	else
-		imp_stat.inq_head = m;
-	imp_stat.inq_tail = m;
-	setsoftnet();
-#endif IMPLOOP
-}
-
-/* END GARBAGE */

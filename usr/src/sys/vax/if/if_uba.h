@@ -1,4 +1,4 @@
-/*	if_uba.h	4.1	81/11/25	*/
+/*	if_uba.h	4.2	81/11/26	*/
 
 /*
  * Structure and routine definitions
@@ -38,7 +38,15 @@ struct	ifuba {
 		caddr_t	ifrw_addr;		/* virt addr of header */
 	} ifu_r, ifu_w;
 	struct	pte ifu_wmap[IF_NUBAMR];	/* base pages for output */
+	short	ifu_hlen;
 /* ifu_xswapd is set when we have swapped write pte's to do direct output */
-/* bit i of ifu_xswapd 
+/* bit i of ifu_xswapd */
 	short	ifu_xswapd;			/* bit map of pages swapped */
+	int	ifu_ierrors;
+	int	ifu_oerrors;
+	int	ifu_collisions;
 };
+
+#ifdef 	KERNEL
+struct	mbuf *if_rubaget();
+#endif

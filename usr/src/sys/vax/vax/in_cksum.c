@@ -1,9 +1,9 @@
-/* in_cksum.c 1.10 81/11/18 */
+/* in_cksum.c 1.11 81/11/26 */
 
 #include <sys/types.h>
 #include "../h/mbuf.h"
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
 
 /*
  * Checksum routine for Internet Protocol family headers.
@@ -12,14 +12,14 @@
  */
 
 #if vax
-inet_cksum(m, len)
+in_cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
 	register u_short *w;		/* known to be r9 */
 	register int sum = 0;		/* known to be r8 */
 	register int mlen = 0;
-COUNT(INET_CKSUM);
+COUNT(IN_CKSUM);
 
 	for (;;) {
 		/*

@@ -1,4 +1,4 @@
-/* in_systm.h 4.5 81/11/20 */
+/* in_systm.h 4.6 81/11/26 */
 
 /*
  * Miscellaneous internetwork
@@ -15,12 +15,15 @@
  */
 typedef u_short n_short;		/* short as received from the net */
 typedef u_long	n_long;			/* long as received from the net */
-typedef u_long	seq_t;			/* sequence number */
 
 typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
 
 /*
- * The network runs as a software interrupt process.
+ * The internet code runs off software interrupts.
+ * There is one software interrupt level for each IP layer protocol
+ * (e.g. IP, PUP, etc), and each such interrupt traps to the lowest
+ * level routine for that protocol.
+ *
  * You can switch into the network by doing splnet() and return by splx().
  * The software interrupt level for the network is higher than the software
  * level for the clock (so you can enter the network in routines called
@@ -28,7 +31,7 @@ typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
  * While manipulating the mbuf buffer pool you have to block imps.
  */
 #define	splimp		spl5
-#define	setsoftnet()	mtpr(SIRR, 12)
+#define	setipintr()	mtpr(SIRR, 12)
 /* splnet is defined in ../sys/asm.sed */
 
 #ifdef	KERNEL

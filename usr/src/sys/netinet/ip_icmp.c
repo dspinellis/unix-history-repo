@@ -1,12 +1,12 @@
-/*	ip_icmp.c	4.7	81/11/23	*/
+/*	ip_icmp.c	4.8	81/11/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/clock.h"
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
 #include "../net/ip.h"
 #include "../net/ip_icmp.h"
 
@@ -27,6 +27,7 @@ icmp_error(oip, type, code)
 	struct icmp *icp = (struct icmp *)((int)oip + oiplen);
 	struct mbuf *m;
 	struct ip *nip;
+COUNT(ICMP_ERROR);
 
 	/*
 	 * Make sure that the old IP packet had 8 bytes of data to return;
@@ -81,6 +82,7 @@ icmp_input(m)
 	int hlen = ip->ip_hl << 2;
 	int icmplen = ip->ip_len - hlen;
 	int i;
+COUNT(ICMP_INPUT);
 
 	/*
 	 * Locate icmp structure in mbuf, and check
@@ -92,7 +94,7 @@ icmp_input(m)
 	icp = (struct icmp *)mtod(m, struct icmp *);
 	i = icp->icmp_cksum;
 	icp->icmp_cksum = 0;
-	if (i != inet_cksum(m, icmplen) || icmplen < ICMP_MINLEN)
+	if (i != in_cksum(m, icmplen) || icmplen < ICMP_MINLEN)
 		goto free;
 
 	/*
@@ -154,6 +156,7 @@ icmp_reflect(ip)
 	struct ip *ip;
 {
 	struct in_addr t;
+COUNT(ICMP_REFLECT);
 
 	t = ip->ip_src; ip->ip_dst = ip->ip_src; ip->ip_src = t;
 	/*
@@ -171,11 +174,12 @@ icmp_send(ip)
 	struct ip *ip;
 {
 	struct icmp *icp = 0;					/* XXX */
+COUNT(ICMP_SEND);
 
 	icp->icmp_cksum = 0;
-	icp->icmp_cksum = inet_cksum(dtom(ip), 0);		/* XXX */
+	icp->icmp_cksum = in_cksum(dtom(ip), 0);		/* XXX */
 	ip->ip_ttl = MAXTTL;
-	ip_output(dtom(ip));
+	ip_output(dtom(ip), (struct mbuf *)0);
 }
 
 /*
@@ -186,6 +190,7 @@ icmp_ctlinput(ip)
 	struct ip *ip;
 {
 	extern u_char ip_protox[];		/* XXX */
+COUNT(ICMP_CTLINPUT);
 
 	(*protosw[ip_protox[ip->ip_p]].pr_ctlinput)(ip);
 }
@@ -199,11 +204,13 @@ icmp_gotreply(icp)
 	struct icmp *icp;
 {
 
+COUNT(ICMP_GOTREPLY);
 }
 
 icmp_drain()
 {
 
+COUNT(ICMP_DRAIN);
 }
 
 n_time
@@ -212,6 +219,7 @@ iptime()
 	int s = spl6();
 	u_long t;
 
+COUNT(IPTIME);
 	t = (time % SECDAY) * 1000 + lbolt * hz;
 	splx(s);
 	return (htonl(t));
