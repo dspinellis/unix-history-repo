@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_acct.c	7.27 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -164,6 +164,7 @@ acct(p)
 	else
 		ap->ac_tty = NODEV;
 	ap->ac_flag = p->p_acflag;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf), (off_t)0,
 		UIO_SYSSPACE, IO_UNIT|IO_APPEND, p->p_ucred, (int *)0,
 		(struct proc *)0));
