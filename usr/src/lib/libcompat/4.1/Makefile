@@ -1,9 +1,15 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O ${DEFS}
 STDSRCS=ftime.c gtty.c nice.c pause.c rand.c stty.c tell.c \
@@ -18,18 +24,19 @@ OBJS=	${STD} ${TRASH}
 TAGSFILE=tags
 
 .c.o:
-	${CC} -p ${CFLAGS} -c $*.c
-	-ld -X -r $*.o
-	mv a.out profiled/$*.o
+	@${CC} -p ${CFLAGS} -c $*.c
+	@-ld -X -o profiled/$*.o -r $*.o
 	${CC} ${CFLAGS} -c $*.c
-	-ld -x -r $*.o
-	mv a.out $*.o
+	@-ld -x -r $*.o
+	@mv a.out $*.o
 
-compat-4.1lib compat-4.1lib_p: ${OBJS}
-	@echo "building profiled compat-4.1lib"
-	@cd profiled; ar cru ../compat-4.1lib_p ${OBJS}
-	@echo "building normal compat-4.1lib"
-	@ar cru compat-4.1lib ${OBJS}
+all: ${OBJS}
+
+link: ${OBJS}
+	(cd ../library; rm -f ${OBJS})
+	(cd ../profiled; rm -f ${OBJS})
+	ln ${OBJS} ../library
+	(cd profiled; ln ${OBJS} ../../profiled)
 
 tags:
 	cwd=`pwd`; \
@@ -38,7 +45,7 @@ tags:
 	done
 
 clean:
-	rm -f compat-4.1lib compat-4.1lib_p *.o profiled/*.o tags
+	rm -f *.o profiled/* a.out core ${TAGSFILE}
 
 depend:
 	mkdep ${CFLAGS} ${SRCS}
@@ -49,13 +56,15 @@ depend:
 ftime.o: ftime.c /usr/include/sys/types.h /usr/include/sys/time.h
 ftime.o: /usr/include/time.h
 gtty.o: gtty.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
-gtty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+gtty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+gtty.o: /usr/include/sys/ttydev.h
 nice.o: nice.c /usr/include/sys/time.h /usr/include/time.h
 nice.o: /usr/include/sys/resource.h
 pause.o: pause.c
 rand.o: rand.c
 stty.o: stty.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
-stty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+stty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+stty.o: /usr/include/sys/ttydev.h
 tell.o: tell.c
 times.o: times.c /usr/include/sys/time.h /usr/include/time.h
 times.o: /usr/include/sys/resource.h
