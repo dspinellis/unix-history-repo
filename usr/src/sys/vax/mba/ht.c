@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.1 (Berkeley) %G%
+ *	@(#)ht.c	7.2 (Berkeley) %G%
  */
 
 #include "tu.h"
@@ -17,8 +17,6 @@
  *	see how many rewind interrups we get if we kick when not at BOT
  *	fixup rle error on block tape code
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
@@ -33,6 +31,7 @@
 #include "uio.h"
 #include "tty.h"
 
+#include "../machine/pte.h"
 #include "../vax/cpu.h"
 #include "mbareg.h"
 #include "mbavar.h"
@@ -72,6 +71,8 @@ struct	tu_softc {
 	struct	mba_device *sc_mi;
 	int	sc_slave;
 	struct	tty *sc_ttyp;		/* record user's tty for errors */
+	int	sc_blks;	/* number of I/O operations since open */
+	int	sc_softerrs;	/* number of soft I/O errors since open */
 } tu_softc[NTU];
 short	tutoht[NTU];
 
@@ -125,6 +126,7 @@ htopen(dev, flag)
 		return (ENXIO);
 	if ((sc = &tu_softc[tuunit])->sc_openf)
 		return (EBUSY);
+	sc->sc_openf = 1;
 	olddens = sc->sc_dens;
 	dens = sc->sc_dens =
 	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
@@ -132,23 +134,27 @@ htopen(dev, flag)
 	htcommand(dev, HT_SENSE, 1);
 	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg & HTDS_MOL) == 0) {
+		sc->sc_openf = 0;
 		uprintf("tu%d: not online\n", tuunit);
 		return (EIO);
 	}
 	if ((flag&FWRITE) && (sc->sc_dsreg&HTDS_WRL)) {
+		sc->sc_openf = 0;
 		uprintf("tu%d: no write ring\n", tuunit);
 		return (EIO);
 	}
 	if ((sc->sc_dsreg & HTDS_BOT) == 0 && (flag&FWRITE) &&
 	    dens != sc->sc_dens) {
+		sc->sc_openf = 0;
 		uprintf("tu%d: can't change density in mid-tape\n", tuunit);
 		return (EIO);
 	}
-	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_flags = 0;
 	sc->sc_dens = dens;
+	sc->sc_blks = 0;
+	sc->sc_softerrs = 0;
 	sc->sc_ttyp = u.u_ttyp;
 	return (0);
 }
@@ -166,6 +172,9 @@ htclose(dev, flag)
 	}
 	if ((minor(dev)&H_NOREWIND) == 0)
 		htcommand(dev, HT_REW, 0);
+	if (sc->sc_blks > 100 && sc->sc_softerrs > sc->sc_blks / 100)
+		log(LOG_INFO, "tu%d: %d soft errors in %d blocks\n",
+		    TUUNIT(dev), sc->sc_softerrs, sc->sc_blks);
 	sc->sc_openf = 0;
 }
 
@@ -347,6 +356,9 @@ noprint:
 			return (MBD_RETRY);
 	}
 	bp->b_resid = 0;
+	sc->sc_blks++;
+	if (mi->mi_tab.b_errcnt)
+		sc->sc_softerrs++;
 	if (bp->b_flags & B_READ)
 		if (ds&HTDS_TM) {		/* must be a read, right? */
 			bp->b_resid = bp->b_bcount;

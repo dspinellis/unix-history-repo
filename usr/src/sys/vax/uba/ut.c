@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.1 (Berkeley) %G%
+ *	@(#)ut.c	7.2 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -16,8 +16,6 @@
  *	check out attention processing
  *	try reset code and dump code
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
@@ -32,7 +30,9 @@
 #include "uio.h"
 #include "kernel.h"
 #include "tty.h"
+#include "syslog.h"
 
+#include "../machine/pte.h"
 #include "../vax/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
@@ -76,6 +76,8 @@ struct	tj_softc {
 	daddr_t	sc_timo;	/* time until timeout expires */
 	short	sc_tact;	/* timeout is active flag */
 	struct	tty *sc_ttyp;	/* record user's tty for errors */
+	int	sc_blks;	/* number of I/O operations since open */
+	int	sc_softerrs;	/* number of soft I/O errors since open */
 } tj_softc[NTJ];
 
 /*
@@ -142,6 +144,7 @@ utopen(dev, flag)
 		return (ENXIO);
 	if ((sc = &tj_softc[tjunit])->sc_openf)
 		return (EBUSY);
+	sc->sc_openf = 1;
 	olddens = sc->sc_dens;
 	dens = sc->sc_dens =
 	    utdens[(minor(dev)&(T_1600BPI|T_6250BPI))>>3]|
@@ -154,22 +157,26 @@ get:
 	}
 	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg&UTDS_MOL) == 0) {
+		sc->sc_openf = 0;
 		uprintf("tj%d: not online\n", tjunit);
 		return (EIO);
 	}
 	if ((flag&FWRITE) && (sc->sc_dsreg&UTDS_WRL)) {
+		sc->sc_openf = 0;
 		uprintf("tj%d: no write ring\n", tjunit);
 		return (EIO);
 	}
 	if ((sc->sc_dsreg&UTDS_BOT) == 0 && (flag&FWRITE) &&
 	    dens != sc->sc_dens) {
+		sc->sc_openf = 0;
 		uprintf("tj%d: can't change density in mid-tape\n", tjunit);
 		return (EIO);
 	}
-	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
+	sc->sc_blks = 0;
+	sc->sc_softerrs = 0;
 	sc->sc_dens = dens;
 	sc->sc_ttyp = u.u_ttyp;
 	/*
@@ -199,6 +206,9 @@ utclose(dev, flag)
 	}
 	if ((minor(dev)&T_NOREWIND) == 0)
 		utcommand(dev, UT_REW, 0);
+	if (sc->sc_blks > 100 && sc->sc_softerrs > sc->sc_blks / 100)
+		log(LOG_INFO, "tj%d: %d soft errors in %d blocks\n",
+		    TJUNIT(dev), sc->sc_softerrs, sc->sc_blks);
 	sc->sc_openf = 0;
 }
 
@@ -582,6 +592,9 @@ ignoreerr:
 
 	case SIO:		/* read/write increments tape block # */
 		sc->sc_blkno++;
+		sc->sc_blks++;
+		if (um->um_tab.b_errcnt)
+			sc->sc_softerrs++;
 		break;
 
 	case SCOM:		/* motion commands update current position */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.1 (Berkeley) %G%
+ *	@(#)ts.c	7.2 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -14,8 +14,6 @@
  * TODO:
  *	write dump code
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
@@ -30,7 +28,9 @@
 #include "cmap.h"
 #include "uio.h"
 #include "tty.h"
+#include "syslog.h"
 
+#include "../machine/pte.h"
 #include "../vax/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
@@ -98,6 +98,8 @@ struct	ts_softc {
 	u_short	sc_uba;		/* Unibus addr of cmd pkt for tsdb */
 	short	sc_mapped;	/* is ts_sfotc mapped in Unibus space? */
 	struct	tty *sc_ttyp;	/* record user's tty for errors */
+	int	sc_blks;	/* number of I/O operations since open */
+	int	sc_softerrs;	/* number of soft I/O errors since open */
 } ts_softc[NTS];
 
 /*
@@ -183,21 +185,27 @@ tsopen(dev, flag)
 		return (ENXIO);
 	if ((sc = &ts_softc[tsunit])->sc_openf)
 		return (EBUSY);
-	if (tsinit(tsunit))
+	sc->sc_openf = 1;
+	if (tsinit(tsunit)) {
+		sc->sc_openf = 0;
 		return (ENXIO);
+	}
 	tscommand(dev, TS_SENSE, 1);
 	if ((sc->sc_sts.s_xs0&TS_ONL) == 0) {
+		sc->sc_openf = 0;
 		uprintf("ts%d: not online\n", tsunit);
 		return (EIO);
 	}
 	if ((flag&FWRITE) && (sc->sc_sts.s_xs0&TS_WLK)) {
+		sc->sc_openf = 0;
 		uprintf("ts%d: no write ring\n", tsunit);
 		return (EIO);
 	}
-	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
+	sc->sc_blks = 0;
+	sc->sc_softerrs = 0;
 	sc->sc_ttyp = u.u_ttyp;
 	return (0);
 }
@@ -229,6 +237,9 @@ tsclose(dev, flag)
 		 * preventing a TS_SENSE from completing.
 		 */
 		tscommand(dev, TS_REW, 0);
+	if (sc->sc_blks > 100 && sc->sc_softerrs > sc->sc_blks / 100)
+		log(LOG_INFO, "ts%d: %d soft errors in %d blocks\n",
+		    TSUNIT(dev), sc->sc_softerrs, sc->sc_blks);
 	sc->sc_openf = 0;
 }
 
@@ -645,6 +656,9 @@ ignoreerr:
 		 * Read/write increments tape block number
 		 */
 		sc->sc_blkno++;
+		sc->sc_blks++;
+		if (um->um_tab.b_errcnt)
+			sc->sc_softerrs++;
 		goto opdone;
 
 	case SCOM:

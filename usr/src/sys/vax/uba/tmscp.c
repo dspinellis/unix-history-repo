@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.1 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.2 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -122,8 +122,6 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #include "tms.h"
 #if NTMSCP > 0
 
-#include "../vax/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
@@ -140,6 +138,7 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #include "uio.h"
 #include "tty.h"
 
+#include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
 #include "ubareg.h"
@@ -703,6 +702,7 @@ tmscpopen(dev, flag)
 				{
 				printf("tmscp controller failed to init\n");
 				(void) splx(s);
+				tms->tms_openf = 0;
 				return(ENXIO);
 				}
 		/* 

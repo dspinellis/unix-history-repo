@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.1 (Berkeley) %G%
+ *	@(#)tm.c	7.2 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -19,8 +19,6 @@
  *	what happens if you offline tape during rewind?
  *	test using file system on tape
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
@@ -36,7 +34,9 @@
 #include "uio.h"
 #include "kernel.h"
 #include "tty.h"
+#include "syslog.h"
 
+#include "../machine/pte.h"
 #include "../vax/cpu.h"
 #include "ubareg.h"
 #include "ubavar.h"
@@ -110,6 +110,8 @@ struct	te_softc {
 	u_short	sc_dens;	/* prototype command with density info */
 	short	sc_tact;	/* timeout is active */
 	daddr_t	sc_timo;	/* time until timeout expires */
+	int	sc_blks;	/* number of I/O operations since open */
+	int	sc_softerrs;	/* number of soft I/O errors since open */
 	struct	tty *sc_ttyp;	/* record user's tty for errors */
 } te_softc[NTE];
 #ifdef unneeded
@@ -197,8 +199,8 @@ int	tmtimer();
 
 #ifdef AVIV
 int tmdens[4] = { 0x6000, 0x0000, 0x2000, 0 };
-int tmdiag;
 #endif AVIV
+int tmdiag;
 
 tmopen(dev, flag)
 	dev_t dev;
@@ -215,6 +217,7 @@ tmopen(dev, flag)
 		return (ENXIO);
 	if ((sc = &te_softc[teunit])->sc_openf)
 		return (EBUSY);
+	sc->sc_openf = 1;
 	olddens = sc->sc_dens;
 	dens = TM_IE | TM_GO | (ui->ui_slave << 8);
 #ifndef AVIV
@@ -233,22 +236,26 @@ get:
 	sc->sc_dens = olddens;
 	if ((sc->sc_erreg&(TMER_SELR|TMER_TUR)) != (TMER_SELR|TMER_TUR)) {
 		uprintf("te%d: not online\n", teunit);
+		sc->sc_openf = 0;
 		return (EIO);
 	}
 	if ((flag&FWRITE) && (sc->sc_erreg&TMER_WRL)) {
 		uprintf("te%d: no write ring\n", teunit);
+		sc->sc_openf = 0;
 		return (EIO);
 	}
 	if ((sc->sc_erreg&TMER_BOT) == 0 && (flag&FWRITE) &&
 	    dens != sc->sc_dens) {
 		uprintf("te%d: can't change density in mid-tape\n", teunit);
+		sc->sc_openf = 0;
 		return (EIO);
 	}
-	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
 	sc->sc_dens = dens;
+	sc->sc_blks = 0;
+	sc->sc_softerrs = 0;
 	sc->sc_ttyp = u.u_ttyp;
 	s = splclock();
 	if (sc->sc_tact == 0) {
@@ -287,7 +294,11 @@ tmclose(dev, flag)
 		 * preventing a TM_SENSE from completing.
 		 */
 		tmcommand(dev, TM_REW, 0);
+	if (sc->sc_blks > 100 && sc->sc_softerrs > sc->sc_blks / 100)
+		log(LOG_INFO, "te%d: %d soft errors in %d blocks\n",
+		    TEUNIT(dev), sc->sc_softerrs, sc->sc_blks);
 	sc->sc_openf = 0;
+	return (0);
 }
 
 /*
@@ -482,7 +493,8 @@ loop:
 	if ((blkno = sc->sc_blkno) == bdbtofsb(bp->b_blkno)) {
 		addr->tmbc = -bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0) {
-			if (um->um_tab.b_errcnt)
+			if (um->um_tab.b_errcnt &&
+			    (sc->sc_erreg & (TMER_HARD|TMER_SOFT)) != TMER_BGL)
 				cmd = TM_WIRG;
 			else
 				cmd = TM_WCOM;
@@ -635,6 +647,12 @@ tmintr(tm11)
 		 */
 		if ((addr->tmer&TMER_HARD)==0 && state==SIO) {
 			if (++um->um_tab.b_errcnt < 7) {
+				if (tmdiag)
+					log(LOG_DEBUG,
+					    "te%d: soft error bn%d er=%b\n",
+					    minor(bp->b_dev)&03,
+					    bp->b_blkno, sc->sc_erreg,
+					    TMER_BITS);
 				sc->sc_blkno++;
 				ubadone(um);
 				goto opcont;
@@ -683,6 +701,9 @@ ignoreerr:
 		 * Read/write increments tape block number
 		 */
 		sc->sc_blkno++;
+		sc->sc_blks++;
+		if (um->um_tab.b_errcnt)
+			sc->sc_softerrs++;
 		goto opdone;
 
 	case SCOM:
