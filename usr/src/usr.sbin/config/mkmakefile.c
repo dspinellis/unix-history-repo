@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.9	81/04/03
+ * mkmakefile.c	1.10	81/05/18
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -87,8 +87,10 @@ makefile()
 	  fprintf(ofp, " -D%s", op->op_name);
     fprintf(ofp, "\n");
     if (hz == 0) {
+#ifdef notdef
 	printf("hz not specified; 50hz assumed\n");
-	hz = 50;
+#endif
+	hz = 60;
     }
     if (hadtz == 0)
 	printf("timezone not specified; gmt assumed\n");

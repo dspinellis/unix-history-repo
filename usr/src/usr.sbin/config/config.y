@@ -2,7 +2,7 @@
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
 %token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA
 %{
-/*	config.y	1.8	81/04/28	*/
+/*	config.y	1.9	81/05/18	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -39,9 +39,8 @@ Config_spec:
 	IDENT ID { ident = ns($2); } |
 	CONFIG Save_id ID = { mkconf(temp_id, $3); free(temp_id); } |
 	HZ NUMBER = {
-		hz = $2;
-		if (hz != 50 && hz != 60)
-		    yyerror("strange value for HZ");
+		yyerror("HZ specification obsolete; delete");
+		hz = 60;
 		} |
 	TIMEZONE NUMBER = { timezone = 60 * $2; check_tz(); } |
 	TIMEZONE NUMBER DST = { timezone = 60 * $2; dst = 1; check_tz(); } |
