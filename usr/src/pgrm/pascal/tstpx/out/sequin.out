@@ -1,0 +1,26 @@
+table[1] =          1         2         3         4
+table[2] =          1         2         4         3
+table[3] =          1         3         2         4
+table[4] =          1         3         4         2
+table[5] =          1         4         2         3
+table[6] =          1         4         3         2
+table[7] =          2         1         3         4
+table[8] =          2         1         4         3
+table[9] =          2         3         1         4
+table[10] =          2         3         4         1
+table[11] =          2         4         1         3
+table[12] =          2         4         3         1
+table[13] =          3         1         2         4
+table[14] =          3         1         4         2
+table[15] =          3         2         1         4
+table[16] =          3         2         4         1
+table[17] =          3         4         1         2
+table[18] =          3         4         2         1
+table[19] =          4         1         2         3
+table[20] =          4         1         3         2
+table[21] =          4         2         1         3
+table[22] =          4         2         3         1
+table[23] =          4         3         1         2
+table[24] =          4         3         2         1
+
+966 statements executed in 0.22 seconds cpu time.
