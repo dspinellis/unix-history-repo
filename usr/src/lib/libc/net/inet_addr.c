@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_addr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_addr.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -34,10 +34,12 @@ again:
 	 * 0x=hex, 0=octal, other=decimal.
 	 */
 	val = 0; base = 10;
-	if (*cp == '0')
-		base = 8, cp++;
-	if (*cp == 'x' || *cp == 'X')
-		base = 16, cp++;
+	if (*cp == '0') {
+		if (*++cp == 'x' || *cp == 'X')
+			base = 16, cp++;
+		else
+			base = 8;
+	}
 	while (c = *cp) {
 		if (isdigit(c)) {
 			val = (val * base) + (c - '0');
