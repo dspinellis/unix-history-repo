@@ -3,7 +3,7 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Donn Seeley at UUNET Technologies, Inc.
+ * Donn Seeley at Berkeley Software Design, Inc.
  *
  * %sccs.include.redist.c%
  *
