@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)execve.2	6.7 (Berkeley) %G%
+.\"	@(#)execve.2	6.8 (Berkeley) %G%
 .\"
 .TH EXECVE 2 ""
 .UC 4
@@ -10,14 +10,16 @@
 execve \- execute a file
 .SH SYNOPSIS
 .ft B
-execve(name, argv, envp)
+execve(path, argv, envp)
 .br
-char *name, *argv[], *envp[];
+char *path, **argv, **envp;
 .fi
 .SH DESCRIPTION
 .I Execve
 transforms the calling process into a new process.
-The new process is constructed from an ordinary file
+The new process is constructed from an ordinary file,
+whose name is pointed to by
+.IR path ,
 called the \fInew process file\fP.
 This file is either an executable object file,
 or a file of data for an interpreter.
@@ -27,33 +29,48 @@ and initialized data pages.  Additional pages may be specified
 by the header to be initialized with zero data.  See
 .IR a.out (5).
 .PP
-An interpreter file begins with a line of the form ``#! \fIinterpreter\fP''.
+An interpreter file begins with a line of the form
+.RB `` "#! \fIinterpreter\fP [\fIarg\fP]" ''.
 When an interpreter file is
 .IR execve\| 'd,
-the system \fIexecve\fP\|'s the specified \fIinterpreter\fP, giving
-it the name of the originally exec'd file as an argument and
-shifting over the rest of the original arguments.
+the system \fIexecve\fP\|'s the specified \fIinterpreter\fP.
+If the optional
+.I arg
+is specified, it becomes the first argument to the
+.IR interpreter ,
+and the name of the originally
+.BR execve 'd
+file becomes the second argument;
+otherwise, the name of the originally
+.BR execve 'd
+file becomes the first argument.  The original arguments are shifted over to
+become the subsequent arguments.  The zeroth argument, normally the name of the
+.BR execve 'd
+file, is left unchanged.
 .PP
 There can be no return from a successful \fIexecve\fP because the calling
 core image is lost.
 This is the mechanism whereby different process images become active.
 .PP
-The argument \fIargv\fP is a null-terminated array of character pointers
-to null-terminated character strings.  These strings constitute
-the argument list to be made available to the new
+The argument \fIargv\fP is a pointer to a null-terminated array of
+character pointers to null-terminated character strings.
+These strings constitute the argument list to be made available to the new
 process.  By convention, at least one argument must be present in
 this array, and the first element of this array should be
-the name of the executed program (i.e., the last component of \fIname\fP).
+the name of the executed program (i.e., the last component of \fIpath\fP).
 .PP
-The argument \fIenvp\fP is also a null-terminated array of character pointers
-to null-terminated strings.  These strings pass information to the
+The argument \fIenvp\fP is also a pointer to a null-terminated array of
+character pointers to null-terminated strings.
+These strings pass information to the
 new process that is not directly an argument to the command (see
 .IR environ (7)).
 .PP
 Descriptors open in the calling process remain open in
 the new process, except for those for which the close-on-exec
 flag is set (see
-.IR close (2)).
+.IR close (2)
+and
+.IR fcntl (2)).
 Descriptors that remain open are unaffected by
 .IR execve .
 .PP
@@ -79,7 +96,7 @@ changes the effective user and group ID to
 the owner of the executed file if the file has the \*(lqset-user-ID\*(rq
 or \*(lqset-group-ID\*(rq modes.  The
 .I real
-user ID is not affected.
+user and group IDs are not affected.
 .PP
 The new process also inherits the following attributes from
 the calling process:
@@ -98,7 +115,7 @@ resource usages	see \fIgetrusage\fP\|(2)
 interval timers	see \fIgetitimer\fP\|(2)
 resource limits	see \fIgetrlimit\fP\|(2)
 file mode mask	see \fIumask\fP\|(2)
-signal mask	see \fIsigvec\fP\|(2), \fIsigmask\fP\|(2)
+signal mask	see \fIsigvec\fP\|(2), \fIsigsetmask\fP\|(2)
 .in -5n
 .fi
 .PP
@@ -117,7 +134,7 @@ is the number of elements in \fIargv\fP
 (the ``arg count'')
 and
 .I argv
-is the array of character pointers
+points to the array of character pointers
 to the arguments themselves.
 .PP
 .I Envp
