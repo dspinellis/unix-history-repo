@@ -292,18 +292,19 @@ getinterfaces()
 	}
 	bzero((char *)&net, sizeof (net));
 	net.sin_family = AF_INET;
+	lookforinterfaces = 0;
 	nets = 0;
 	while (ifp) {
 		if (lseek(kmem, (long)ifp, 0) == -1 ||
 		  read(kmem, (char *)&ifstruct, sizeof (ifstruct)) !=
 		  sizeof (ifstruct)) {
 			perror("read");
-			performnlist = 1;
+			lookforinterfaces = performnlist = 1;
 			break;
 		}
 		ifp = &ifstruct;
 		if ((ifp->if_flags & IFF_UP) == 0) {
-			lookforinterfaces++;
+			lookforinterfaces = 1;
 	skip:
 			ifp = ifp->if_next;
 			continue;
