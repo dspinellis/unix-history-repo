@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.8	%G%";
+char id_libF77[] = "@(#)main.c	2.9	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -95,7 +95,7 @@ f_exit();
 if (act->mesg)
 	{
 #ifdef UCBVAX
-	fprintf(units[STDERR].ufd, "%s", act->mesg);
+	fprintf(units[STDERR].ufd, "*** %s", act->mesg);
 	if (s == SIGFPE)
 		{
 		if (t >= 1 && t <= 10)
@@ -113,7 +113,7 @@ if (act->mesg)
 		}
 	putc('\n', units[STDERR].ufd);
 #else
-	fprintf(units[STDERR].ufd, "%s\n", act->mesg);
+	fprintf(units[STDERR].ufd, "*** %s\n", act->mesg);
 #endif
 	}
 _cleanup();
