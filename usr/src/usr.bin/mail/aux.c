@@ -11,7 +11,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	1.1 %G%";
+static char *SccsId = "@(#)aux.c	1.2 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -98,8 +98,14 @@ prs(str)
 
 touch(mesg)
 {
-	if (mesg >= 1 && mesg <= msgCount)
-		message[mesg-1].m_flag |= MTOUCH;
+	register struct message *mp;
+
+	if (mesg < 1 || mesg > msgCount)
+		return;
+	mp = &message[mesg-1];
+	mp->m_flag |= MTOUCH;
+	if ((mp->m_flag & MREAD) == 0)
+		mp->m_flag |= MREAD|MSTATUS;
 }
 
 /*
