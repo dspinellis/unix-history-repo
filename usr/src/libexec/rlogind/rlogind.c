@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.23 (Berkeley) 1/7/89";
+static char sccsid[] = "@(#)rlogind.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -111,7 +111,7 @@ main(argc, argv)
 	argv += optind;
 
 #ifdef	KERBEROS
-	if(use_kerberos && vacuous) {
+	if (use_kerberos && vacuous) {
 		fprintf(stderr, "%s: only one of -k and -v allowed\n", argv[0]);
 		usage();
 		exit(1);
@@ -143,13 +143,11 @@ doit(f, fromp)
 {
 	int i, p, t, pid, on = 1;
 #ifndef OLD_LOGIN
-	int authenticated = 0;
+	int authenticated = 0, hostok = 0;
 #endif
 	register struct hostent *hp;
-	char	remotehost[MAXHOSTNAMELEN];
-	char	localhost[MAXHOSTNAMELEN];
+	char remotehost[2 * MAXHOSTNAMELEN + 1];
 	struct hostent hostent;
-	char	*raddr;
 	char c;
 
 	alarm(60);
@@ -167,59 +165,53 @@ doit(f, fromp)
 		 */
 		hp = &hostent;
 		hp->h_name = inet_ntoa(fromp->sin_addr);
-	} else {
-		(void) gethostname(localhost, sizeof(localhost));
-		if(same_domain(hp->h_name, localhost)) {
-			bcopy(hp->h_name, remotehost, sizeof(remotehost));
-			hp = gethostbyname(remotehost);
-			authenticated = -10;	/* !authenticated */
-			if(hp == NULL) {
-				syslog(LOG_NOTICE, "Couldn't get entry for remote host %s\n",
-					remotehost);
-			} else {
-			    for(;;) {
-				if(!(raddr = hp->h_addr_list[0]))
-					break;
-
-				if(!bcmp(raddr, (caddr_t) &fromp->sin_addr,
-				    sizeof(struct in_addr))) {
-					authenticated = 0;
-					break;
-				}
-				hp->h_addr_list++;
-    			    }
-			    if(authenticated < 0) {
-				syslog(LOG_NOTICE,"Host address not listed for name %s",
-					remotehost);
-			    }
+	} else if (local_domain(hp->h_name)) {
+		/*
+		 * If name returned by gethostbyaddr is in our domain,
+		 * attempt to verify that we haven't been fooled by someone
+		 * in a remote net; look up the name and check that this
+		 * address corresponds to the name.
+		 */
+		strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
+		remotehost[sizeof(remotehost) - 1] = 0;
+		hp = gethostbyname(remotehost);
+		if (hp)
+		    for (; hp->h_addr_list[0]; hp->h_addr_list++) {
+			if (!bcmp(hp->h_addr_list[0], (caddr_t)&fromp->sin_addr,
+			    sizeof(fromp->sin_addr))) {
+				hostok++;
+				break;
 			}
 		}
 	}
 
-	if(use_kerberos) {
+	if (use_kerberos) {
 		retval = do_krb_login(hp->h_name, fromp, encrypt);
 		write(f, &c, 1);
-		if (retval == 0) {
+		if (retval == 0)
 			authenticated++;
-		} else {
-			if (retval > 0)
-				fatal(f, krb_err_txt[retval]);
-		}
+		else if (retval > 0)
+			fatal(f, krb_err_txt[retval]);
 	} else
 #ifndef OLD_LOGIN
-		if (fromp->sin_family != AF_INET ||
-	    	    fromp->sin_port >= IPPORT_RESERVED ||
-	    	    fromp->sin_port < IPPORT_RESERVED/2) {
-			syslog(LOG_NOTICE, "Connection from %s on illegal port",
-				inet_ntoa(fromp->sin_addr));
-			fatal(f, "Permission denied");
-		} else {
-			write(f, "", 1);
+	if (fromp->sin_family != AF_INET ||
+	    fromp->sin_port >= IPPORT_RESERVED ||
+	    fromp->sin_port < IPPORT_RESERVED/2) {
+		syslog(LOG_NOTICE, "Connection from %s on illegal port",
+			inet_ntoa(fromp->sin_addr));
+		fatal(f, "Permission denied");
+	} else {
+		write(f, "", 1);
 #endif
 
-			if (do_rlogin(hp->h_name) == 0)
-				authenticated++;
+		if (do_rlogin(hp->h_name) == 0) {
+			if (hostok)
+			    authenticated++;
+			else
+			    write(f, "rlogind: Host address mismatch.\r\n",
+			     sizeof("rlogind: Host address mismatch.\r\n") - 1);
 		}
+	}
 
 	for (c = 'p'; c <= 's'; c++) {
 		struct stat stb;
@@ -272,7 +264,7 @@ gotpty:
 #ifdef OLD_LOGIN
 		execl("/bin/login", "login", "-r", hp->h_name, 0);
 #else /* OLD_LOGIN */
-		if (authenticated > 0)
+		if (authenticated)
 			execl("/bin/login", "login", "-p",
 			    "-h", hp->h_name, "-f", lusername, 0);
 		else
