@@ -16,12 +16,8 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.25 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
-
-#if defined(lint) && !defined(DEBUG)
-#define DEBUG
-#endif
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -72,9 +68,7 @@ char *_res_resultcodes[] = {
 p_query(msg)
 	char *msg;
 {
-#ifdef DEBUG
 	fp_query(msg,stdout);
-#endif
 }
 
 /*
@@ -85,7 +79,6 @@ fp_query(msg,file)
 	char *msg;
 	FILE *file;
 {
-#ifdef DEBUG
 	register char *cp;
 	register HEADER *hp;
 	register int n;
@@ -168,7 +161,6 @@ fp_query(msg,file)
 				return;
 		}
 	}
-#endif
 }
 
 char *
@@ -176,7 +168,6 @@ p_cdname(cp, msg, file)
 	char *cp, *msg;
 	FILE *file;
 {
-#ifdef DEBUG
 	char name[MAXDNAME];
 	int n;
 
@@ -188,7 +179,6 @@ p_cdname(cp, msg, file)
 	}
 	fputs(name, file);
 	return (cp + n);
-#endif
 }
 
 /*
@@ -199,7 +189,6 @@ p_rr(cp, msg, file)
 	char *cp, *msg;
 	FILE *file;
 {
-#ifdef DEBUG
 	int type, class, dlen, n, c;
 	struct in_addr inaddr;
 	char *cp1;
@@ -210,7 +199,7 @@ p_rr(cp, msg, file)
 	cp += sizeof(u_short);
 	fprintf(file,", class = %s", p_class(class = _getshort(cp)));
 	cp += sizeof(u_short);
-	fprintf(file,", ttl = %s", p_time(cp));
+	fprintf(file,", ttl = %s", p_time(_getlong(cp)));
 	cp += sizeof(u_long);
 	fprintf(file,", dlen = %d\n", dlen = _getshort(cp));
 	cp += sizeof(u_short);
@@ -242,10 +231,6 @@ p_rr(cp, msg, file)
 		break;
 	case T_CNAME:
 	case T_MB:
-#ifdef OLDRR
-	case T_MD:
-	case T_MF:
-#endif /* OLDRR */
 	case T_MG:
 	case T_MR:
 	case T_NS:
@@ -271,15 +256,15 @@ p_rr(cp, msg, file)
 		cp = p_cdname(cp, msg, file);
 		fprintf(file,"\n\tmail addr = ");
 		cp = p_cdname(cp, msg, file);
-		fprintf(file,"\n\tserial=%ld", _getlong(cp));
+		fprintf(file,"\n\tserial = %ld", _getlong(cp));
 		cp += sizeof(u_long);
-		fprintf(file,", refresh=%s", p_time(cp));
+		fprintf(file,"\n\trefresh = %s", p_time(_getlong(cp)));
 		cp += sizeof(u_long);
-		fprintf(file,", retry=%s", p_time(cp));
+		fprintf(file,"\n\tretry = %s", p_time(_getlong(cp)));
 		cp += sizeof(u_long);
-		fprintf(file,", expire=%s", p_time(cp));
+		fprintf(file,"\n\texpire = %s", p_time(_getlong(cp)));
 		cp += sizeof(u_long);
-		fprintf(file,", min=%s\n", p_time(cp));
+		fprintf(file,"\n\tmin = %s\n", p_time(_getlong(cp)));
 		cp += sizeof(u_long);
 		break;
 
@@ -298,6 +283,7 @@ p_rr(cp, msg, file)
 		break;
 
 	case T_UINFO:
+	case T_TXT:
 		fprintf(file,"\t%s\n", cp);
 		cp += dlen;
 		break;
@@ -355,7 +341,6 @@ p_rr(cp, msg, file)
 		fprintf(file,"packet size error (%#x != %#x)\n", cp, cp1+dlen);
 	fprintf(file,"\n");
 	return (cp);
-#endif
 }
 
 static	char nbuf[40];
@@ -372,12 +357,6 @@ p_type(type)
 		return("A");
 	case T_NS:		/* authoritative server */
 		return("NS");
-#ifdef OLDRR
-	case T_MD:		/* mail destination */
-		return("MD");
-	case T_MF:		/* mail forwarder */
-		return("MF");
-#endif /* OLDRR */
 	case T_CNAME:		/* connonical name */
 		return("CNAME");
 	case T_SOA:		/* start of authority zone */
@@ -386,8 +365,6 @@ p_type(type)
 		return("MB");
 	case T_MG:		/* mail group member */
 		return("MG");
-	case T_MX:		/* mail routing info */
-		return("MX");
 	case T_MR:		/* mail rename name */
 		return("MR");
 	case T_NULL:		/* null resource record */
@@ -400,6 +377,10 @@ p_type(type)
 		return("HINFO");
 	case T_MINFO:		/* mailbox information */
 		return("MINFO");
+	case T_MX:		/* mail routing info */
+		return("MX");
+	case T_TXT:		/* text */
+		return("TXT");
 	case T_AXFR:		/* zone transfer */
 		return("AXFR");
 	case T_MAILB:		/* mail box */
@@ -435,6 +416,8 @@ p_class(class)
 	switch (class) {
 	case C_IN:		/* internet class */
 		return("IN");
+	case C_HS:		/* internet class */
+		return("HESIOD");
 	case C_ANY:		/* matches any class */
 		return("ANY");
 	default:
