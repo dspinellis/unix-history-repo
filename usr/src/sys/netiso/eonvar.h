@@ -23,7 +23,7 @@ SOFTWARE.
 
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
- *	@(#)eonvar.h	7.2 (Berkeley) %G%
+ *	@(#)eonvar.h	7.3 (Berkeley) %G%
  */
 
 #define EON_986_VERSION 0x3
@@ -89,6 +89,10 @@ struct eon_hdr {
 #define		EON_BROADCAST		0x3
 	u_short eonh_csum;  /* osi checksum (choke)*/
 };
+struct eon_iphdr {
+	struct	ip	ei_ip;
+	struct	eon_hdr	ei_eh;
+};
 #define EONIPLEN (sizeof(struct eon_hdr) + sizeof(struct ip))
 
 /* stole these 2 fields of the flags for I-am-ES and I-am-IS */
@@ -118,3 +122,14 @@ struct eon_stat {
 typedef struct qhdr {
 	struct qhdr *link, *rlink;
 } *queue_t;
+
+struct eon_llinfo {
+	struct	qhdr el_qhdr;		/* keep all in a list */
+	int	el_flags;		/* cache valid ? */
+	struct	rtentry *el_rt;		/* back pointer to parent route */
+	struct	eon_iphdr el_ei;	/* precomputed portion of hdr */
+	struct	route el_iproute;	/* if direct route cache IP info */
+					/* if gateway, cache secondary route */
+};
+#define el_iphdr el_ei.ei_ip
+#define el_eonhdr el_ei.ei_eh
