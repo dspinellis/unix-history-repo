@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	2.3 83/12/12";
+static	char *sccsid = "@(#)dr_3.c	2.4 83/12/17";
 #endif
 
 #include "driver.h"
@@ -8,7 +8,7 @@ moveall()		/* move all comp ships */
 {
 	register struct ship *sp, *sq;		/* r11, r10 */
 	register int n;				/* r9 */
-	register int k, l, m;			/* r8, r7, r6, */
+	register int k, l;			/* r8, r7 */
 	int row[NSHIP], col[NSHIP], dir[NSHIP], drift[NSHIP];
 	char moved[NSHIP];
 
@@ -28,12 +28,12 @@ moveall()		/* move all comp ships */
 			ma = maxmove(sp, sp->file->dir, 0);
 			closest = closestenemy(sp, 0, 0);
 			if (closest == 0)
-				*sp->file->last = '\0';
+				*sp->file->movebuf = '\0';
 			else
-				closeon(sp, closest, sp->file->last,
+				closeon(sp, closest, sp->file->movebuf,
 					ta, ma, af);
 		} else
-			*sp->file->last = '\0';
+			*sp->file->movebuf = '\0';
 	}
 	/*
 	 * Then execute the moves for ALL ships (dead ones too),
@@ -44,10 +44,10 @@ moveall()		/* move all comp ships */
 	n = 0;
 	foreachship(sp) {
 		if (snagged(sp))
-			strcpy(sp->file->last, "d");
+			(void) strcpy(sp->file->movebuf, "d");
 		else
-			if (*sp->file->last != 'd')
-				strcat(sp->file->last, "d");
+			if (*sp->file->movebuf != 'd')
+				(void) strcat(sp->file->movebuf, "d");
 		row[n] = sp->file->row;
 		col[n] = sp->file->col;
 		dir[n] = sp->file->dir;
@@ -62,14 +62,14 @@ moveall()		/* move all comp ships */
 	for (k = 0; stillmoving(k); k++) {
 		/*
 		 * Step once.
-		 * And propagate the nulls at the end of sp->file->last.
+		 * And propagate the nulls at the end of sp->file->movebuf.
 		 */
 		n = 0;
 		foreachship(sp) {
-			if (!sp->file->last[k])
-				sp->file->last[k+1] = '\0';
+			if (!sp->file->movebuf[k])
+				sp->file->movebuf[k+1] = '\0';
 			else if (sp->file->dir)
-				step(sp->file->last[k], sp, &moved[n]);
+				step(sp->file->movebuf[k], sp, &moved[n]);
 			n++;
 		}
 		/*
@@ -98,22 +98,14 @@ moveall()		/* move all comp ships */
 						makesignal(sp,
 							"fouled with %s (%c%c)",
 							sq);
-						for (m = 0; m < NSHIP && sp->file->fouls[m].turnfoul; m++)
-							;
-						if (m < NSHIP)
-							Write(W_FOUL, sp, 0,
-								m, turn, l, 0);
-						for (m = 0; m < NSHIP && sq->file->fouls[m].turnfoul; m++)
-							;
-						if (m < NSHIP)
-							Write(W_FOUL, sq, 0,
-								m, turn, n, 0);
+						Write(W_FOUL, sp, 0, l, 0, 0, 0);
+						Write(W_FOUL, sq, 0, n, 0, 0, 0);
 					}
 					snap++;
 				}
 				if (snap) {
-					sp->file->last[k + 1] = 0;
-					sq->file->last[k + 1] = 0;
+					sp->file->movebuf[k + 1] = 0;
+					sq->file->movebuf[k + 1] = 0;
 					sq->file->row = sp->file->row - 1;
 					if (sp->file->dir == 1
 					    || sp->file->dir == 5)
@@ -136,13 +128,13 @@ moveall()		/* move all comp ships */
 	n = 0;
 	foreachship(sp) {
 		if (sp->file->dir != 0) {
-			*sp->file->last = 0;
+			*sp->file->movebuf = 0;
 			if (row[n] != sp->file->row)
-				Write(W_SHIPROW, sp, 0, sp->file->row, 0, 0, 0);
+				Write(W_ROW, sp, 0, sp->file->row, 0, 0, 0);
 			if (col[n] != sp->file->col)
-				Write(W_SHIPCOL, sp, 0, sp->file->col, 0, 0, 0);
+				Write(W_COL, sp, 0, sp->file->col, 0, 0, 0);
 			if (dir[n] != sp->file->dir)
-				Write(W_SHIPDIR, sp, 0, sp->file->dir, 0, 0, 0);
+				Write(W_DIR, sp, 0, sp->file->dir, 0, 0, 0);
 			if (drift[n] != sp->file->drift)
 				Write(W_DRIFT, sp, 0, sp->file->drift, 0, 0, 0);
 		}
@@ -156,7 +148,7 @@ register int k;
 	register struct ship *sp;
 
 	foreachship(sp)
-		if (sp->file->last[k])
+		if (sp->file->movebuf[k])
 			return 1;
 	return 0;
 }
@@ -242,7 +234,7 @@ char isdefense;
 		;
 	if (n < 3 && sections) {
 		Write(isdefense ? W_DBP : W_OBP, from, 0,
-			turn, to-SHIP(0), sections, 0);
+			turn, to->file->index, sections, 0);
 		if (isdefense)
 			makesignal(from, "repelling boarders",
 				(struct ship *)0);

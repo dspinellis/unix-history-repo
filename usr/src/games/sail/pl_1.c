@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	2.4 83/12/09";
+static	char *sccsid = "@(#)pl_1.c	2.5 83/12/17";
 #endif
 
 #include "player.h"
@@ -90,6 +90,7 @@ reprint:
 			(void) puts("OUT OF MEMORY");
 			exit(0);
 		}
+		sp->file->index = sp - SHIP(0);
 		sp->file->stern = nat[sp->nationality]++;
 		sp->file->dir = sp->shipdir;
 		sp->file->row = sp->shiprow;
@@ -132,7 +133,7 @@ reprint:
 			printf("%s\n\n", cc->name);
 			foreachship(sp)
 				printf("  %2d:  %-10s %-15s  (%-2d pts)   %s\n",
-					sp - SHIP(0),
+					sp->file->index,
 					countryname[sp->nationality],
 					sp->shipname,
 					sp->specs->pts,
@@ -254,7 +255,6 @@ int conditions;
 	FILE *fp;
 	int persons;
 	float net;
-	char message[60];
 	register int n;
 	struct logs log[10], temp;
 

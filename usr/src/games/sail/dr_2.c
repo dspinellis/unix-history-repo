@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_2.c	2.3 83/12/13";
+static	char *sccsid = "@(#)dr_2.c	2.4 83/12/17";
 #endif
 
 #include "driver.h"
@@ -38,7 +38,6 @@ thinkofgrapples()
 
 checkup()
 {
-	register int k;
 	register struct ship *sp, *sq;
 	register char explode, sink;
 
@@ -52,20 +51,10 @@ checkup()
 		if (die() < 5)
 			continue;
 		Write(sink == 1 ? W_SINK : W_EXPLODE, sp, 0, 2, 0, 0, 0);
-		Write(W_SHIPDIR, sp, 0, 0, 0, 0, 0);
-		if (fouled(sp) || grappled(sp)) {
-			for (k = 0; k < NSHIP; k++) {
-				if (sp->file->fouls[k].turnfoul)
-					cleanfoul(sp,
-						sp->file->fouls[k].toship, k);
-			}
-			for (k = 0; k < NSHIP; k++) {
-				if (sp->file->grapples[k].turnfoul)
-					cleangrapple(sp,
-						sp->file->grapples[k].toship,
-						k);
-			}
-		}
+		Write(W_DIR, sp, 0, 0, 0, 0, 0);
+		if (snagged(sp))
+			foreachship(sq)
+				cleansnag(sp, sq, 1);
 		if (sink != 1) {
 			makesignal(sp, "exploding!", (struct ship *)0);
 			foreachship(sq) {

@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	2.2 83/11/03
+ * @(#)extern.h	2.3 83/12/17
  */
 #include <stdio.h>
 #include <signal.h>
@@ -11,15 +11,21 @@
 #define abs(a)		((a) > 0 ? (a) : -(a))
 #define min(a,b)	((a) < (b) ? (a) : (b))
 
-#define grappled(a)	Snagged(a, 1)
-#define fouled(a)	Snagged(a, 0)
-#define snagged(a)	(Snagged(a, 0) || Snagged(a, 1))
-#define grappled2(a,b)	Snagged2(a, b, 1, 0)
-#define fouled2(a,b)	Snagged2(a, b, 0, 0)
-#define snagged2(a,b)	(Snagged2(a, b, 0, 0) || Snagged2(a, b, 1, 0))
-#define Xgrappled2(a,b)	Snagged2(a, b, 1, 1)
-#define Xfouled2(a,b)	Snagged2(a, b, 0, 1)
-#define Xsnagged2(a,b)	(Snagged2(a, b, 0, 1) || Snagged2(a, b, 1, 1))
+#define grappled(a)	((a)->file->ngrap)
+#define fouled(a)	((a)->file->nfoul)
+#define snagged(a)	(grappled(a) + fouled(a))
+
+#define grappled2(a, b)	((a)->file->grap[(b)->file->index].sn_count)
+#define fouled2(a, b)	((a)->file->foul[(b)->file->index].sn_count)
+#define snagged2(a, b)	(grappled2(a, b) + fouled2(a, b))
+
+#define Xgrappled2(a, b) ((a)->file->grap[(b)->file->index].sn_turn < turn-1 ? grappled2(a, b) : 0)
+#define Xfouled2(a, b)	((a)->file->foul[(b)->file->index].sn_turn < turn-1 ? fouled2(a, b) : 0)
+#define Xsnagged2(a, b)	(Xgrappled2(a, b) + Xfouled2(a, b))
+
+#define cleangrapple(a, b, c)	Cleansnag(a, b, c, 1)
+#define cleanfoul(a, b, c)	Cleansnag(a, b, c, 2)
+#define cleansnag(a, b, c)	Cleansnag(a, b, c, 3)
 
 #define sterncolour(sp)	((sp)->file->stern+'0'-((sp)->file->captured?10:0))
 #define sternrow(sp)	((sp)->file->row + dr[(sp)->file->dir])
@@ -61,17 +67,17 @@
 #define W_GUNL		10
 #define W_GUNR		11
 #define W_HULL		12
-#define W_LAST		13
+#define W_MOVE		13
 #define W_OBP		14
 #define W_PCREW		15
-/* 16 */
+#define W_UNFOUL	16
 #define W_POINTS	17
 #define W_QUAL		18
-/* 19 */
+#define W_UNGRAP	19
 #define W_RIGG		20
-#define W_SHIPCOL	21
-#define W_SHIPDIR	22
-#define W_SHIPROW	23
+#define W_COL		21
+#define W_DIR		22
+#define W_ROW		23
 #define W_SIGNAL	24
 #define W_SINK		25
 #define W_STRUCK	26
@@ -103,8 +109,8 @@ struct BP {
 };
 
 struct snag {
-	short turnfoul;
-	struct ship *toship;
+	short sn_count;
+	short sn_turn;
 };
 
 #define NSCENE	nscene
@@ -122,6 +128,7 @@ struct snag {
 #define N_O	7
 
 struct File {
+	int index;
 	char captain[20];		/* 0 */
 	short points;			/* 20 */
 	char loadL;			/* 22 */
@@ -133,10 +140,12 @@ struct File {
 	char struck;			/* 66 */
 	struct ship *captured;		/* 68 */
 	short pcrew;			/* 70 */
-	char last[10];			/* 72 */
+	char movebuf[10];		/* 72 */
 	char drift;			/* 82 */
-	struct snag fouls[NSHIP];	/* 84 */
-	struct snag grapples[NSHIP];	/* 124 */
+	short nfoul;
+	short ngrap;
+	struct snag foul[NSHIP];	/* 84 */
+	struct snag grap[NSHIP];	/* 124 */
 	char RH;			/* 224 */
 	char RG;			/* 226 */
 	char RR;			/* 228 */

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_3.c	2.2 83/12/09";
+static	char *sccsid = "@(#)pl_3.c	2.3 83/12/17";
 #endif
 
 #include "player.h"
@@ -178,48 +178,31 @@ acceptcombat()
 grapungrap()
 {
 	register struct ship *sp;
-	register int n, k;
-	register struct snag *p;
-	int r;
+	register int i;
 
-	n = -1;
 	foreachship(sp) {
-		n++;
-		if (sp == ms)
+		if (sp == ms || sp->file->dir == 0)
 			continue;
-		r = range(ms, sp);
-		if ((r < 0 || r > 1) && !grappled2(ms, sp))
+		if (range(ms, sp) > 1 && !grappled2(ms, sp))
 			continue;
 		switch (sgetch("Attempt to grapple or ungrapple %s (%c%c): ",
 			sp, 1)) {
 		case 'g':
 			if (die() < 3
 			    || ms->nationality == capship(sp)->nationality) {
-				for (k = 0, p = mf->grapples;
-				     k < NSHIP && p->turnfoul; k++, p++)
-					;		/* XXX */
-				if (k < NSHIP)
-					Write(W_GRAP, ms, 0, k, turn, n, 0);
-				for (k = 0, p = sp->file->grapples;
-				     k < NSHIP && p->turnfoul; k++, p++)
-					;		/* XXX */
-				if (k < NSHIP)
-					Write(W_GRAP, sp, 0,
-						k, turn, player, 0);
+				Write(W_GRAP, ms, 0, sp->file->index, 0, 0, 0);
+				Write(W_GRAP, sp, 0, player, 0, 0, 0);
 				Signal("Attempt succeeds!", (struct ship *)0);
 				makesignal(ms, "grappled with %s (%c%c)", sp);
 			} else
 				Signal("Attempt fails.", (struct ship *)0);
 			break;
 		case 'u':
-			for (k = 0; k < NSHIP; k++) {
-				if (!mf->grapples[k].turnfoul)
-					continue;
-				if (sp != mf->grapples[k].toship)
-					continue;
-				if (die() < 3 || ms->nationality
-				    == capship(sp)->nationality) {
-					cleangrapple(ms, sp, k);
+			for (i = grappled2(ms, sp); --i >= 0;) {
+				if (ms->nationality
+					== capship(sp)->nationality
+				    || die() < 3) {
+					cleangrapple(ms, sp, 0);
 					Signal("Attempt succeeds!",
 						(struct ship *)0);
 					makesignal(ms,
@@ -229,24 +212,24 @@ grapungrap()
 					Signal("Attempt fails.",
 						(struct ship *)0);
 			}
+			break;
 		}
 	}
 }
 
 unfoulplayer()
 {
-	register struct snag *s = mf->fouls;
 	register struct ship *to;
-	int n;
+	register i;
 
-	for (n = 0; n < NSHIP; n++, s++) {
-		if (s->turnfoul == 0)
+	foreachship(to) {
+		if (fouled2(ms, to) == 0)
 			continue;
-		to = s->toship;
-		if (sgetch("Attempt to unfoul with the %s (%c%c)? ", to, 1)
-		    == 'y') {
-			if (die() < 3) {
-				cleanfoul(ms, to, n);
+		if (sgetch("Attempt to unfoul with the %s (%c%c)? ", to, 1) != 'y')
+			continue;
+		for (i = fouled2(ms, to); --i >= 0;) {
+			if (die() <= 2) {
+				cleanfoul(ms, to, 0);
 				Signal("Attempt succeeds!", (struct ship *)0);
 				makesignal(ms, "Unfouling %s (%c%c)", to);
 			} else

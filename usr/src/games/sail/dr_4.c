@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_4.c	2.1 83/10/31";
+static	char *sccsid = "@(#)dr_4.c	2.2 83/12/17";
 #endif
 #include "externs.h"
 
@@ -7,15 +7,14 @@ ungrap(from, to)
 register struct ship *from, *to;
 {
 	register k;
-	register struct snag *sp = from->file->grapples;
+	char friend;
 
-	if (grappled2(from, to)) {
-		for (k = 0; k < NSHIP; k++, sp++) {
-			if (sp->turnfoul == 0 || to != sp->toship)
-				continue;
-			if (from->nationality == to->nationality && die() >= 3)
-				continue;
-			cleangrapple(from, to, k);
+	if ((k = grappled2(from, to)) == 0)
+		return;
+	friend = capship(from)->nationality == capship(to)->nationality;
+	while (--k >= 0) {
+		if (friend || die() < 3) {
+			cleangrapple(from, to, 0);
 			makesignal(from, "ungrappling %s (%c%c)", to);
 		}
 	}
@@ -24,17 +23,9 @@ register struct ship *from, *to;
 grap(from, to)
 register struct ship *from, *to;
 {
-	register l;
-
-	if (from->nationality != capship(to)->nationality && die() >= 3)
+	if (capship(from)->nationality != capship(to)->nationality && die() > 2)
 		return;
-	for (l = 0; l < NSHIP && from->file->grapples[l].turnfoul; l++)
-		;
-	if (l < NSHIP)
-		Write(W_GRAP, from, 0, l, turn, to-SHIP(0), 0);
-	for (l = 0; l < NSHIP && to->file->grapples[l].turnfoul; l++)
-		;
-	if (l < NSHIP)
-		Write(W_GRAP, to, 0, l, turn, from-SHIP(0), 0);
+	Write(W_GRAP, from, 0, to->file->index, 0, 0, 0);
+	Write(W_GRAP, to, 0, from->file->index, 0, 0, 0);
 	makesignal(from, "grappled with %s (%c%c)", to);
 }

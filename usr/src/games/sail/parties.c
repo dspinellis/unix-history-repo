@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parties.c	2.1 83/10/31";
+static	char *sccsid = "@(#)parties.c	2.2 83/12/17";
 #endif
 
 #include "externs.h"
@@ -28,39 +28,6 @@ char isdefense;
 		if (p->turnsent)
 			return 1;
 	return 0;
-}
-
-Snagged(ship, isgrap)
-struct ship *ship;
-char isgrap;
-{
-	register int Snags = 0;
-	register struct snag *sp, *sq;
-
-	sp = isgrap ? ship->file->grapples : ship->file->fouls;
-	sq = sp + NSHIP;
-	for (; sp < sq; sp++)
-		if (sp->turnfoul)
-			Snags++;
-	return Snags;
-}
-
-Snagged2(ship, to, isgrap, isX)
-struct ship *ship, *to;
-char isgrap, isX;
-{
-	register Snags = 0;
-	register struct snag *sp, *sq;
-
-	sp = isgrap ? ship->file->grapples : ship->file->fouls;
-	sq = sp + NSHIP;
-	for (; sp < sq; sp++) {
-		if (sp->turnfoul && sp->toship == to
-		    && (!isX || sp->turnfoul < turn - 1
-				&& ship->file->loadwith==L_GRAPE))
-			Snags++;
-	}
-	return Snags;
 }
 
 unboard(ship, to, isdefense)
