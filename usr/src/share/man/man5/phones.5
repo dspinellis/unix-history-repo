@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)phones.5	6.1 (Berkeley) %G%
+.\"	@(#)phones.5	6.2 (Berkeley) %G%
 .\"
 .TH PHONES 5 ""
 .UC 5
@@ -17,8 +17,9 @@ privileged information.  The format of the file is a series of lines
 of the form: <system-name>[\ \et]*<phone-number>.  The system name is
 one of those defined in the
 .IR remote (5)
-file and the phone number is
-constructed from [0123456789-=*%].  The ``='' and ``*'' characters are
+file and the phone number is constructed from any sequence of
+characters terminated only by ``,'' or the end of the line.
+The ``='' and ``*'' characters are
 indicators to the auto call units to pause and wait for a second dial
 tone (when going through an exchange).  The ``='' is required by the
 DF02-AC and the ``*'' is required by the BIZCOMP 1030.
