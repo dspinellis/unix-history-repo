@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)st.c	7.2 (Berkeley) %G%
+ *	@(#)st.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -22,12 +22,13 @@
 #include "st.h"
 #if NST > 0
 
-#include "param.h"
-#include "buf.h"
-#include "file.h"
-#include "proc.h"
-#include "mtio.h"
-#include "tprintf.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/buf.h"
+#include "sys/file.h"
+#include "sys/proc.h"
+#include "sys/mtio.h"
+#include "sys/tprintf.h"
 
 #include "device.h"
 #include "scsireg.h"

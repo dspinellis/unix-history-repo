@@ -11,9 +11,9 @@
  *
  *	OMRON: $Id: pmap.c,v 1.2 92/06/14 06:19:40 moti Exp $
  *
- * from: hp300/hp300/pmap.c	7.9 (Berkeley) 6/5/92
+ * from: hp300/hp300/pmap.c	7.11 (Berkeley) 7/12/92
  *
- *	@(#)pmap.c	7.1 (Berkeley) %G%
+ *	@(#)pmap.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -51,6 +51,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "malloc.h"
 #include "user.h"
@@ -1893,7 +1894,7 @@ pmap_enter_ptpage(pmap, va)
 		kpt->kpt_next = kpt_used_list;
 		kpt_used_list = kpt;
 		ptpa = kpt->kpt_pa;
-		bzero(kpt->kpt_va, LUNA_PAGE_SIZE);
+		bzero((caddr_t)kpt->kpt_va, LUNA_PAGE_SIZE);
 		pmap_enter(pmap, va, ptpa, VM_PROT_DEFAULT, TRUE);
 #ifdef DEBUG
 		if (pmapdebug & (PDB_ENTER|PDB_PTPAGE)) {
