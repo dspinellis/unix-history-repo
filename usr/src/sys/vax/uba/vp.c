@@ -1,4 +1,4 @@
-/*	vp.c	4.19	82/10/10	*/
+/*	vp.c	4.20	82/10/10	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -172,9 +172,9 @@ brkout:
 	ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
 	sc->sc_state &= ~VPSC_BUSY;
 	sc->sc_bp = 0;
-	iodone(bp);
 	if (e)
-		u.u_error = EIO;
+		bp->b_flags |= B_ERROR;
+	iodone(bp);
 	wakeup((caddr_t)sc);
 }
 
@@ -215,7 +215,7 @@ vpwait(dev)
 			break;
 		sleep((caddr_t)sc, VPPRI);
 	}
-	/* I wish i could tell whether an error indicated an npr timeout */
+	/* I WISH I COULD TELL WHETHER AN ERROR INDICATED AN NPR TIMEOUT */
 	return (e & VP_ERROR);
 }
 
