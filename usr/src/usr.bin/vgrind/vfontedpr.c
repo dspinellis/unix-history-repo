@@ -21,7 +21,7 @@
 #define C 0
 #define PASCAL 1
 #define MODEL 2
-#define NLANG 3			/* total number of languages */
+#define NLANG 4			/* total number of languages */
 
 #define STRLEN 10		/* length of strings introducing things */
 #define PNAMELEN 40		/* length of a function/procedure name */
