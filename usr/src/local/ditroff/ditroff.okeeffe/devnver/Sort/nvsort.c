@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)nvsort.c	1.3 (CWI) 86/11/26";
+static char sccsid[] = "@(#)nvsort.c	1.4 (CWI) 87/03/05";
 #endif
 /* 
  * from (Berkeley):
@@ -722,8 +722,8 @@ oflush()	/* sort, then dump out contents of obuf */
 		if(dbg>1)fprintf(stderr,"oflush: u=%d, d=%d,%.60s\n",vp->u,vp->d,vp->p);
 #endif DEBUGABLE
 		if (vp->u <= botv && vp->d >= topv) {
-			if(vp->x)	/* doesn't need position, etc.		*/
-			    printf("%s", vp->p);
+			if(vp->x)	/* doesn't need font or size  */
+			    printf("H%dV%d\n%s", vp->h,vp->v,vp->p);
 			else
 			    printf("H%dV%ds%df%d\n%s", 
 					vp->h,vp->v,vp->s,vp->f,vp->p);
