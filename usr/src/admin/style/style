@@ -1,7 +1,7 @@
 /*
  * Style guide for the 4BSD KNF (Kernel Normal Form).
  *
- *	@(#)style	1.12 (Berkeley) %G%
+ *	@(#)style	1.13 (Berkeley) %G%
  */
 
 /*
@@ -45,21 +45,6 @@
 #include "pathnames.h"		/* Local includes in double quotes. */		
 
 /*
- * ANSI function declarations for private functions (i.e. functions not used
- * elsewhere) go at the top of the source module.  Use the __P macro from
- * the include file <sys/cdefs.h>.  Only the kernel has a name associated with
- * the types, i.e. in the kernel use:
- *
- *	void function __P((int a));
- *
- * in user land use:
- *
- *	void function __P((int));
- */
-static char	*function __P((int, const char *));
-static void	 usage __P((void));
-
-/*
  * Macros are capitalized, parenthesized, and should avoid side-effects.
  * If they are an inline expansion of a function, the function is defined
  * all in lowercase, the macro has the same name all in uppercase. If the
@@ -97,6 +82,21 @@ typedef struct _bar {
 	int	level;
 } BAR;
 	
+/*
+ * ANSI function declarations for private functions (i.e. functions not used
+ * elsewhere) go at the top of the first source module.  Use the __P macro
+ * from the include file <sys/cdefs.h>.  Only the kernel has a name associated
+ * with the types, i.e. in the kernel use:
+ *
+ *	void function __P((int fd));
+ *
+ * in user land use:
+ *
+ *	void function __P((int));
+ */
+static char	*function __P((int, const char *));
+static void	 usage __P((void));
+
 /*
  * All major routines should have a comment briefly describing what
  * they do.  The comment before the "main" routine should describe
@@ -254,8 +254,9 @@ function(a1, a2, fl, a4)
  * Don't use ANSI function declarations unless you absolutely have too,
  * i.e. you're declaring functions with variable numbers of arguments.
  *
- * ANSI function braces look like regular function braces.
+ * ANSI function return values and braces look like regular functions.
  */
+int
 function(int a1, int a2)
 {
 	...
