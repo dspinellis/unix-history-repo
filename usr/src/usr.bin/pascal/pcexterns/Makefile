@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.18 %G%
+SCCSID = @(#)Makefile 1.19 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
@@ -7,23 +7,19 @@ NM = nm -go
 RM = rm -f
 CFLAGS = -O -I${SRCDIR}
 
-PROGS =	pc pix pmerge
-FILES =	pc3 pcexterns.o how_pc how_pi how_pix how_pxp
+PROGS =	pc pix pmerge pc3
+FILES =	pcexterns.o how_pc how_pi how_pix how_pxp
 
 all: pix px_header pc pc2 pc3 pmerge pcexterns.o
 
 install: all pxref.p
 	dd if=px_header of=temp conv=sync
-	install temp ${INSTALLIB}/${PX_HEADER}
+	install -m 644 temp ${INSTALLIB}/${PX_HEADER}
 	for i in ${PROGS}; do (install $$i ${INSTALL}/$$i ); done
-	for i in ${FILES}; do (install $$i ${INSTALLIB}/$$i ); done
-	cd ${INSTALLIB}; chmod 644 how* pcexterns.o ${PX_HEADER}
-	strip ${INSTALLIB}/pc3
-	cd ${INSTALLIB}; chmod 555 pc3
+	for i in ${FILES}; do (install -m 644 -c $$i ${INSTALLIB}/$$i ); done
 	cd pc2; make install
 	-pc -w pxref.p
 	install a.out ${INSTALL}/pxref
-	cd ${INSTALL} ; chmod 555 pmerge pxref pc pix
 
 pix: pix.c config.o
 	${CC} ${CFLAGS} -o pix pix.c config.o
