@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)field.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)field.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)field.c	5.12 (Berkeley) %G%";
 p_login(p, pw, ep)
 	char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	if (!*p) {
 		(void)fprintf(stderr, "chpass: empty login field.\n");
@@ -53,7 +53,7 @@ p_login(p, pw, ep)
 p_passwd(p, pw, ep)
 	char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	if (!*p)
 		pw->pw_passwd = "";	/* "NOLOGIN"; */
@@ -69,7 +69,7 @@ p_passwd(p, pw, ep)
 p_uid(p, pw, ep)
 	register char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	int id;
 
@@ -95,7 +95,7 @@ p_uid(p, pw, ep)
 p_gid(p, pw, ep)
 	register char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	struct group *gr;
 	int id;
@@ -127,7 +127,7 @@ p_gid(p, pw, ep)
 p_class(p, pw, ep)
 	char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	if (!*p)
 		pw->pw_class = "";
@@ -143,7 +143,7 @@ p_class(p, pw, ep)
 p_change(p, pw, ep)
 	char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	if (!atot(p, &pw->pw_change))
 		return(0);
@@ -155,7 +155,7 @@ p_change(p, pw, ep)
 p_expire(p, pw, ep)
 	char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	if (!atot(p, &pw->pw_expire))
 		return(0);
@@ -167,7 +167,7 @@ p_expire(p, pw, ep)
 p_gecos(p, pw, ep)
 	char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	if (!*p)
 		ep->save = "";
@@ -182,7 +182,7 @@ p_gecos(p, pw, ep)
 p_hdir(p, pw, ep)
 	char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	if (!*p) {
 		(void)fprintf(stderr, "chpass: empty home directory field.\n");
@@ -199,7 +199,7 @@ p_hdir(p, pw, ep)
 p_shell(p, pw, ep)
 	register char *p;
 	struct passwd *pw;
-	struct entry *ep;
+	ENTRY *ep;
 {
 	char *t, *ok_shell();
 
