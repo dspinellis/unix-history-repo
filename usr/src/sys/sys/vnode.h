@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.16 (Berkeley) %G%
+ *	@(#)vnode.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -41,22 +41,25 @@ enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS };
  * is used rather than a union structure to cut down on the
  * number of header files that must be included.
  */
-#define VN_MAXPRIVATE	196
+#define VN_MAXPRIVATE	184
 
 struct vnode {
 	u_long		v_flag;			/* vnode flags (see below) */
-	long		v_count;		/* reference count */
+	long		v_usecount;		/* reference count of users */
+	long		v_holdcnt;		/* page & buffer references */
 	u_short		v_shlockc;		/* count of shared locks */
 	u_short		v_exlockc;		/* count of exclusive locks */
+	off_t		v_lastr;		/* last read (read-ahead) */
+	u_long		v_id;			/* capability identifier */
 	struct mount	*v_mount;		/* ptr to vfs we are in */
 	struct vnodeops	*v_op;			/* vnode operations */
-	u_long		v_id;			/* capability identifier */
 	struct vnode	*v_freef;		/* vnode freelist forward */
 	struct vnode	**v_freeb;		/* vnode freelist back */
 	struct vnode	*v_mountf;		/* vnode mountlist forward */
 	struct vnode	**v_mountb;		/* vnode mountlist back */
 	struct buf	*v_blockh;		/* logical blocklist head */
-	struct buf	**v_blockt;		/* logical blocklist tail */
+	long		v_spare0;
+	long		v_spare1;
 	enum vtype	v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
@@ -165,15 +168,13 @@ struct vnodeops {
  * in vgone.
  */
 struct specinfo {
-	dev_t	si_rdev;
-	daddr_t	si_lastr;
-	struct	mount *si_mounton;
+	struct	vnode **si_hashchain;
 	struct	vnode *si_specnext;
+	dev_t	si_rdev;
 };
-#define v_rdev v_specinfo->si_rdev
-#define v_lastr v_specinfo->si_lastr
-#define v_mounton v_specinfo->si_mounton
+#define v_hashchain v_specinfo->si_hashchain
 #define v_specnext v_specinfo->si_specnext
+#define v_rdev v_specinfo->si_rdev
 
 /*
  * flags for ioflag
@@ -245,9 +246,13 @@ extern void vgone();			/* completely recycle vnode */
 extern void vgoneall();			/* recycle vnode and all its aliases */
 
 #ifdef notdef
-#define VREF(vp)    (vp)->v_count++;	/* increase reference to a vnode */
+#define VREF(vp)    (vp)->v_usecount++;	/* increase reference to a vnode */
+#define VHOLD(vp)   (vp)->v_holdcnt++;	/* increase buf or page ref to vnode */
+#define HOLDRELE(vp) (vp)->v_holdcnt--;	/* decrease buf or page ref to vnode */
 #else
 #define VREF(vp)    vref(vp)
+#define VHOLD(vp)   vhold(vp)
+#define HOLDRELE(vp) holdrele(vp)
 #endif
 
 /*
