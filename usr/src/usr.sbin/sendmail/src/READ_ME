@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.57 (Berkeley) %G%
+#	@(#)READ_ME	8.58 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -723,6 +723,18 @@ GNU getopt
 	I'm told that GNU getopt has a problem in that it gets confused
 	by the double call.  Use the version in conf.c instead.
 
+BIND 4.9.2 and Ultrix
+	If you are running on Ultrix, be sure you read the conf/Info.Ultrix
+	carefully -- there is information in there that you need to know
+	in order to avoid errors of the form:
+
+		/lib/libc.a(gethostent.o): sethostent: multiply defined
+		/lib/libc.a(gethostent.o): endhostent: multiply defined
+		/lib/libc.a(gethostent.o): gethostbyname: multiply defined
+		/lib/libc.a(gethostent.o): gethostbyaddr: multiply defined
+
+	during the link stage.
+
 
 +--------------+
 | MANUAL PAGES |
@@ -823,4 +835,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.57, last update %G% 08:49:24)
+(Version 8.58, last update %G% 09:38:23)
