@@ -155,7 +155,7 @@ toascii(c)
 
 #undef tolower
 int
-tolower(c)
+toupper(c)
 	int c;
 {
         return((c & _CRMASK) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
@@ -163,7 +163,7 @@ tolower(c)
 
 #undef toupper
 int
-toupper(c)
+tolower(c)
 	int c;
 {
         return((c & _CRMASK) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
