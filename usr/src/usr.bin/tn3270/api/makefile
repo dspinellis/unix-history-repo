@@ -1,32 +1,39 @@
 # msdos versus unix defines
 O	= .o
-PC_O	= .obj
+#PC_O	= .obj
 
 X	=
-PC_X	= .exe
+#PC_X	= .exe
+
+L	=
+#PC_L	= -link
 
 CC	= cc
-PC_CC	= cl
+#PC_CC	= cl
 
 MV	= mv
-PC_MV	= rename
+#PC_MV	= rename
 
 RM	= rm -f
-PC_RM= erase
+#PC_RM= erase
 
 LINT_ARGS =
-PC_LINT_ARGS = -DLINT_ARGS
+#PC_LINT_ARGS = -DLINT_ARGS
 
 DEBUG_FLAGS = -g
-PC_DEBUG_FLAGS = -Zi -Od
+#PC_DEBUG_FLAGS = -Zi -Od
 
 AR	= ar
-C	=
-PC_AR	= lib
-PC_C	= +
+AR1	= cr
+AR2	=
+AR3	=
+#PC_AR	= lib
+#PC_AR1	=
+#PC_AR2	= +
+#PC_AR3	= ";"
 
 RANLIB	= ranlib
-PC_RANLIB = echo "Done with "
+#PC_RANLIB = echo "Done with "
 
 CFLAGS = ${DEBUG_FLAGS}
 
@@ -35,7 +42,8 @@ PRINT = lpr -p
 KBD	= 3270pc.kbd
 KBD	= unix.kbd
 
-ALLC = apilib.c api_bsd.c api_exch.c asc_ebc.c astosc.c dctype.c ebc_disp.c
+ALLC = apilib.c api_bsd.c api_exch.c asc_ebc.c astosc.c dctype.c \
+		disp_asc.c ebc_disp.c
 
 ALLH = apilib.h api_exch.h asc_ebc.h astosc.h disp_asc.h dctype.h ebc_disp.h
 
@@ -43,22 +51,22 @@ ALLPRINT = ${ALLH} ${ALLC}
 
 ALLSOURCE = ${ALLPRINT} makefile makefile.mak
 
-ALLO = apilib$O api_bsd$O api_exch$O astosc$O asc_ebc$O disp_asc$O \
-		dctype$O ebc_disp$O
+ALLO = apilib$O api_bsd$O api_exch$O astosc$O asc_ebc$O dctype$O \
+		disp_asc$O ebc_disp$O
 
 .c.obj:
 	${CC} ${CFLAGS} -c $<
 
-apilib.a: ${ALLO}
+apiliblib.a: ${ALLO}
 	${RM} $@
-	for i in ${ALLO}; do (${AR} cr $@ $C $$i); done
+	for i in ${ALLO}; do (${AR} ${AR1} $@ ${AR2} $$i${AR3}); done
 	${RANLIB} $@
 
 .DEFAULT:
 	sccs get $<
 
 clean:
-	for i in ${ALLO} errs apilib.a makefile.bak \
+	for i in ${ALLO} errs apiliblib.a makefile.bak \
 		disp_out asc_disp.out astosc.out disp_asc.out \
 		test* test$O t1* t1$O t2* t2$O; \
 			do (${RM} $$i); done
@@ -70,14 +78,14 @@ sccsclean:
 action:
 	${ACTION}
 
-test:	apilib.a test$O
-	${CC} ${CFLAGS} -o $@ test$O apilib.a
+test:	apiliblib.a test$O
+	${CC} ${CFLAGS} -o $@ test$O apiliblib.a
 
-t1:	apilib.a t1$O
-	${CC} ${CFLAGS} -o $@ t1$O apilib.a
+t1:	apiliblib.a t1$O
+	${CC} ${CFLAGS} -o $@ t1$O apiliblib.a
 
-t2:	apilib.a t2$O
-	${CC} ${CFLAGS} -o $@ t2$O apilib.a
+t2:	apiliblib.a t2$O
+	${CC} ${CFLAGS} -o $@ t2$O apiliblib.a
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -101,15 +109,6 @@ disp_asc.out:	ebc_disp$O
 	(cd ../tools; make mkdstoas )
 	${RM} $@
 	../tools/mkdstoas > $@
-
-disp_asc$O:	disp_asc.h asc_disp.out disp_asc.out
-	${RM} $@ TMPfunc.c
-	/bin/echo \#include \"disp_asc.h\" > TMPfunc.c
-	/bin/echo \#include \"asc_disp.out\" >> TMPfunc.c
-	/bin/echo \#include \"disp_asc.out\" >> TMPfunc.c
-	$(CC) $(CFLAGS) -c TMPfunc.c
-	${RM} TMPfunc.c
-	${MV} TMPfunc$O $@
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
@@ -136,3 +135,4 @@ api_exch$O: api_exch.h
 asc_ebc$O: asc_ebc.h
 astosc$O: ../general/general.h ../ctlr/function.h astosc.h astosc.out
 dctype$O: dctype.h
+disp_asc$O: disp_asc.h asc_disp.out disp_asc.out
