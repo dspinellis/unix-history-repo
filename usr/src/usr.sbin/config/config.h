@@ -1,16 +1,18 @@
 /*
- * config.h	1.6	82/07/21
+ * config.h	1.7	82/10/11
  * Definitions that everybody needs to know
  */
 
 #define eq(a,b) (strcmp(a,b) == 0)
-#define TRUE 1
-#define FALSE 0
-#define DRIVER 1
-#define NORMAL 2
-#define INVISIBLE 3
+#define TRUE		1
+#define FALSE		0
 
-#define TO_NEXUS -1
+#define DRIVER		1
+#define NORMAL		2
+#define INVISIBLE	3
+#define	PROFILING	4
+
+#define TO_NEXUS	-1
 
 struct file_list {
 	char *f_fn;
@@ -65,3 +67,4 @@ int yyline;
 struct file_list *ftab, *conf_list, *confp;
 char *PREFIX;
 int hz, timezone, hadtz, maxusers, dst;
+int	profiling;

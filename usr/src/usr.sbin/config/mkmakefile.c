@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.16	82/07/21
+ * mkmakefile.c	1.17	82/10/11
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -53,6 +53,7 @@ struct file_list *new_fent()
     return fp;
 }
 
+char	*COPTS;			/* pointer to ${COPTS} macro for gprof */
 /*
  * makefile:
  *	Build the makefile from the skeleton
@@ -77,6 +78,8 @@ makefile()
 	exit(1);
     }
     fprintf(ofp, "IDENT=-D%s", raise(ident));
+    if (profiling)
+	fprintf(ofp, " -DGPROF");
     if (cputype == NULL) {
 	printf("cpu type must be specified\n");
 	exit(1);
@@ -113,6 +116,25 @@ makefile()
     {
 	if (*line != '%')
 	{
+	    register char *cp;
+
+	    if (profiling && strncmp(line, "COPTS=", 6) == 0) {
+		fprintf(ofp, "CRT0.EX=/usr/src/libc/csu/crt0.ex\n");
+		cp = index(line, '\n');
+		if (cp)
+			*cp = '\0';
+		cp = line + 6;
+		while (*cp && (*cp == ' ' || *cp == '\t'))
+			cp++;
+		COPTS = malloc(strlen(cp) + 1);
+		if (COPTS == 0) {
+			fprintf(stderr, "config: out of memory\n");
+			exit(1);
+		}
+		strcpy(COPTS, cp);
+		fprintf(ofp, "%s -pg\n", line);
+		continue;
+	    }
 	    fprintf(ofp, "%s", line);
 	    continue;
 	}
@@ -207,7 +229,10 @@ read_files()
 	if (dev == 0 && wd != NULL)
 	{
 	    next_word(fp, wd);
-	    dev = (wd != NULL && eq(wd, "device-driver"));
+	    if (wd != NULL && eq(wd, "profiling-routine"))
+		type = PROFILING;
+	    else
+	        dev = (wd != NULL && eq(wd, "device-driver"));
 	}
 	if (type == 0)
 	    type = dev ? DEVICE : NORMAL;
@@ -333,7 +358,22 @@ FILE *f;
 		    tp, tp);
 	    fprintf(f, "\trm -f %ss\n\n", tp);
 	}
-	else
+	else if (ftp->f_type == PROFILING) {
+		if (!profiling)
+			continue;
+		if (COPTS == 0) {
+			fprintf(stderr,
+				"config: COPTS undefined in generic makefile");
+			COPTS = "";
+		}
+		fprintf(f,
+		  "\t${CC} -I. -c -S %s ../%sc\n", COPTS, np);
+		fprintf(f, "\tex - %ss < ${CRT0.EX}\n", tp);
+		fprintf(f,
+		  "\t/lib/cpp %ss | sed -f ../conf/asm.sed | ${AS} -o %so\n",
+			tp, tp);
+		fprintf(f, "\trm -f %ss\n\n", tp);
+	} else
 	    fprintf(stderr, "Don't know rules for %s", np);
 	*cp = och;
     }
