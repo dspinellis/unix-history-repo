@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clrtoeol.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)clrtoeol.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,6 +24,13 @@ wclrtoeol(win)
 
 	y = win->cury;
 	x = win->curx;
+	if (win->lines[y]->flags & __ISPASTEOL) {
+		if (y < win->maxy - 1) {
+			y++;
+			x = 0;
+		} else
+			return (OK);
+	}
 	end = &win->lines[y]->line[win->maxx];
 	minx = -1;
 	maxx = &win->lines[y]->line[x];
@@ -41,7 +48,7 @@ wclrtoeol(win)
 	    *win->lines[y]->lastchp);
 #endif
 	/* Update firstch and lastch for the line. */
-	return (__touchline(win, y, win->curx, win->maxx - 1, 0));
+	return (__touchline(win, y, x, win->maxx - 1, 0));
 }
 
 

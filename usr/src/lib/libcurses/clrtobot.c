@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clrtobot.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)clrtobot.c	5.13 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -19,11 +19,17 @@ int
 wclrtobot(win)
 	register WINDOW *win;
 {
-	register int minx, startx, y;
+	register int minx, startx, starty, y;
 	register __LDATA *sp, *end, *maxx;
 
-	startx = win->curx;
-	for (y = win->cury; y < win->maxy; y++) {
+	if (win->lines[win->cury]->flags & __ISPASTEOL) {
+		starty = win->cury + 1;
+		startx = 0;
+	} else {
+		starty = win->cury;
+		startx = win->curx;
+	}
+	for (y = starty; y < win->maxy; y++) {
 		minx = -1;
 		end = &win->lines[y]->line[win->maxx];
 		for (sp = &win->lines[y]->line[startx]; sp < end; sp++)
