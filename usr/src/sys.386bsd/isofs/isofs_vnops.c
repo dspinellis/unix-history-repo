@@ -1,3 +1,13 @@
+/*
+ *
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00040
+ * --------------------         -----   ----------------------
+ *
+ * 10 Aug 92	Scott Burris		Fixed "delete from CD-ROM" bug
+ */
 #include "param.h"
 #include "systm.h"
 #include "namei.h"
@@ -322,7 +332,7 @@ isofs_readdir(vp, uio, cred, eofflagp)
 			/* illegal entry, stop */
 			break;
 
-		if (entryoffsetinblock + reclen >= imp->logical_block_size)
+/* 10 Aug 92*/	if (entryoffsetinblock + reclen -1 >= imp->logical_block_size)
 			/* illegal directory, so stop looking */
 			break;
 
