@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.13	81/08/30	*/
+/*	vm_meter.c	4.14	82/03/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -90,7 +90,7 @@ setupclock()
 		fastscan = (LOOPPAGES/CLSIZE) / 200;
 	if (fastscan < 5)
 		fastscan = 5;
-	if (nswdev == 2)
+	if (nswdev >= 2)
 		maxpgio = (maxpgio * 3) / 2;
 
 	/*
