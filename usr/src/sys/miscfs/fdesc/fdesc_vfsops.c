@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)fdesc_vfsops.c	8.7 (Berkeley) %G%
  *
  * $Id: fdesc_vfsops.c,v 1.9 1993/04/06 15:28:33 jsp Exp $
  */
@@ -201,6 +201,16 @@ fdesc_sync(mp, waitfor)
 
 	return (0);
 }
+
+#define fdesc_fhtovp ((int (*) __P((struct mount *, struct fid *, \
+	    struct mbuf *, struct vnode **, int *, struct ucred **)))eopnotsupp)
+#define fdesc_quotactl ((int (*) __P((struct mount *, int, uid_t, caddr_t, \
+	    struct proc *)))eopnotsupp)
+#define fdesc_sysctl ((int (*) __P((int *, u_int, void *, size_t *, void *, \
+	    size_t, struct proc *)))eopnotsupp)
+#define fdesc_vget ((int (*) __P((struct mount *, ino_t, struct vnode **))) \
+	    eopnotsupp)
+#define fdesc_vptofh ((int (*) __P((struct vnode *, struct fid *)))eopnotsupp)
 
 struct vfsops fdesc_vfsops = {
 	fdesc_mount,
