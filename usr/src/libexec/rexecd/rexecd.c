@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	4.4 82/11/15";
+static char sccsid[] = "@(#)rexecd.c	4.5 82/12/25";
 #endif
 
 #include <sys/ioctl.h>
@@ -42,7 +42,7 @@ main(argc, argv)
 		fprintf(stderr, "tcp/exec: unknown service\n");
 		exit(1);
 	}
-	sin.sin_port = htons((u_short)sp->s_port);
+	sin.sin_port = sp->s_port;
 #ifndef DEBUG
 	if (fork())
 		exit(0);
