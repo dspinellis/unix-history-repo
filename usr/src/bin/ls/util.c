@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -17,6 +17,8 @@ static char sccsid[] = "@(#)util.c	5.9 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <fts.h>
+#include <errno.h>
 #include "ls.h"
 #include "extern.h"
 
@@ -40,7 +42,7 @@ emalloc(size)
 	void *retval;
 
 	if ((retval = malloc(size)) == NULL)
-		err("%s", strerror(errno));
+		err(1, "%s", strerror(errno));
 	return (retval);
 }
 
@@ -59,9 +61,10 @@ usage()
 
 void
 #if __STDC__
-err(const char *fmt, ...)
+err(int fatal, const char *fmt, ...)
 #else
-err(fmt, va_alist)
+err(fatal, fmt, va_alist)
+	int fatal;
 	char *fmt;
         va_dcl
 #endif
@@ -76,27 +79,6 @@ err(fmt, va_alist)
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
-}
-
-void
-#if __STDC__
-warn(const char *fmt, ...)
-#else
-warn(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "ls: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
+	if (fatal)
+		exit(1);
 }
