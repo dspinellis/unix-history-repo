@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.5	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.6	(Berkeley)	%G%";
 #endif lint
 
 # include "macdefs.h"
@@ -12,7 +12,7 @@ static char sccsid[] = "@(#)lpass2.c	1.5	(Berkeley)	%G%";
 # define RVAL 010
 # define VARARGS 0100
 
-# define NSZ 2048
+# define NSZ 4096
 # define TYSZ 3500
 # define FSZ 500
 # define NTY 50
