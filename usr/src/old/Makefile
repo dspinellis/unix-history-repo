@@ -1,8 +1,8 @@
-#	@(#)Makefile	5.34 (Berkeley) %G%
+#	@(#)Makefile	5.35 (Berkeley) %G%
 
 SUBDIR=	awk compact cpp crypt dbconv ed eqn groups hostid lex make \
-	mkpasswd more ms od refer roff sed sh sum symorder tbl test tmac \
-	whereis which whoami yacc
+	mkpasswd more ms od pr refer roff sed sh sum symorder tbl \
+	test tmac whereis which whoami yacc
 
 .if   (${MACHINE} == "hp300")
 SUBDIR+=adb as.hpux ld
