@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)rshd.c	5.6 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
+#include <sys/time.h>
 
 #include <netinet/in.h>
 
@@ -38,10 +38,11 @@ static char sccsid[] = "@(#)rshd.c	5.6 (Berkeley) %G%";
 #include <syslog.h>
 
 int	errno;
-char	*index(), *rindex();
-/* VARARGS 1 */
+char	*index(), *rindex(), *strncat();
+/*VARARGS1*/
 int	error();
 
+/*ARGSUSED*/
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -57,14 +58,14 @@ main(argc, argv)
 		perror("getpeername");
 		_exit(1);
 	}
-	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
+	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, (char *)&on,
+	    sizeof (on)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
-	}
 	linger.l_onoff = 1;
 	linger.l_linger = 60;			/* XXX */
-	if (setsockopt(0, SOL_SOCKET, SO_LINGER, &linger, sizeof (linger)) < 0) {
+	if (setsockopt(0, SOL_SOCKET, SO_LINGER, (char *)&linger,
+	    sizeof (linger)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_LINGER): %m");
-	}
 	doit(dup(0), &from);
 }
 
@@ -82,7 +83,7 @@ doit(f, fromp)
 	char cmdbuf[NCARGS+1], *cp;
 	char locuser[16], remuser[16];
 	struct passwd *pwd;
-	int s, backoff;
+	int s;
 	struct hostent *hp;
 	char *hostname;
 	short port;
@@ -122,7 +123,7 @@ doit(f, fromp)
 	}
 	(void) alarm(0);
 	if (port != 0) {
-		int lport = IPPORT_RESERVED - 1, retryshift;
+		int lport = IPPORT_RESERVED - 1;
 		s = rresvport(&lport);
 		if (s < 0) {
 			syslog(LOG_ERR, "can't get stderr port: %m");
@@ -133,7 +134,7 @@ doit(f, fromp)
 			exit(1);
 		}
 		fromp->sin_port = htons((u_short)port);
-		if (connect(s, fromp, sizeof (*fromp), 0) < 0) {
+		if (connect(s, fromp, sizeof (*fromp)) < 0) {
 			syslog(LOG_INFO, "connect second port: %m");
 			exit(1);
 		}
@@ -141,7 +142,7 @@ doit(f, fromp)
 	dup2(f, 0);
 	dup2(f, 1);
 	dup2(f, 2);
-	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
+	hp = gethostbyaddr((char *)&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
 	if (hp)
 		hostname = hp->h_name;
@@ -158,7 +159,7 @@ doit(f, fromp)
 	}
 	endpwent();
 	if (chdir(pwd->pw_dir) < 0) {
-		chdir("/");
+		(void) chdir("/");
 #ifdef notdef
 		error("No remote directory.\n");
 		exit(1);
@@ -188,7 +189,8 @@ doit(f, fromp)
 			/* should set s nbio! */
 			do {
 				ready = readfrom;
-				if (select(16, &ready, 0, 0, 0) < 0)
+				if (select(16, &ready, (fd_set *)0,
+				    (fd_set *)0, (struct timeval *)0) < 0)
 					break;
 				if (ready & (1<<s)) {
 					if (read(s, &sig, 1) <= 0)
@@ -215,9 +217,9 @@ doit(f, fromp)
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = "/bin/sh";
 	(void) close(f);
-	(void) setgid(pwd->pw_gid);
+	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
-	(void) setuid(pwd->pw_uid);
+	(void) setuid((uid_t)pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
@@ -230,12 +232,9 @@ doit(f, fromp)
 	execl(pwd->pw_shell, cp, "-c", cmdbuf, 0);
 	perror(pwd->pw_shell);
 	exit(1);
-protofail:
-	error("rsh: protocol failure detected by remote\n");
-	exit(1);
 }
 
-/* VARARGS 1 */
+/*VARARGS1*/
 error(fmt, a1, a2, a3)
 	char *fmt;
 	int a1, a2, a3;
