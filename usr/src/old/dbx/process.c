@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.4 %G%";
+static char sccsid[] = "@(#)process.c 1.5 %G%";
 
 /*
  * Process management.
@@ -513,8 +513,9 @@ Process p;
  * outside this module.
  *
  * They invoke "pio" which eventually leads to a call to "ptrace".
- * The system generates an I/O error when a ptrace fails, we catch
- * that here and assume its due to a misguided address.
+ * The system generates an I/O error when a ptrace fails, we assume
+ * during a read/write to the process that such an error is due to
+ * a misguided address and ignore it.
  */
 
 extern Intfunc *onsyserr();
@@ -611,7 +612,12 @@ int nbytes;
 
 private rwerr()
 {
+    /*
+     * Current response is to ignore the error and let the result
+     * (-1) ripple back up to the process.
+     *
     error("bad read/write process address 0x%x", badaddr);
+     */
 }
 
 /*
