@@ -1,4 +1,4 @@
-/*	if_uba.c	4.4	81/12/03	*/
+/*	if_uba.c	4.5	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,29 +34,31 @@ if_ubainit(ifu, uban, hlen, nmr)
 	register struct ifuba *ifu;
 	int uban, hlen, nmr;
 {
-	register caddr_t cp = (caddr_t)m_pgalloc(2 * (nmr + 1));
-	int i;
+	register caddr_t cp;
+	int i, ncl;
 
 COUNT(IF_UBAINIT);
+	ncl = clrnd(nmr + CLSIZE) / CLSIZE;
+	cp = m_clalloc(2 * ncl, MPG_SPACE);
 	if (cp == 0)
 		return (0);
 	ifu->ifu_hlen = hlen;
 	ifu->ifu_uban = uban;
 	ifu->ifu_uba = uba_hd[uban].uh_uba;
-	ifu->ifu_r.ifrw_addr = cp + NBPG - hlen;
-	ifu->ifu_w.ifrw_addr = ifu->ifu_r.ifrw_addr + (nmr + 1) * NBPG;
+	ifu->ifu_r.ifrw_addr = cp + CLBYTES - hlen;
+	ifu->ifu_w.ifrw_addr = ifu->ifu_r.ifrw_addr + ncl * CLBYTES;
 	if (if_ubaalloc(ifu, &ifu->ifu_r, nmr) == 0)
 		goto bad;
 	if (if_ubaalloc(ifu, &ifu->ifu_w, nmr) == 0)
 		goto bad2;
 	for (i = 0; i < nmr; i++)
-		ifu->ifu_wmap[i] = ifu->ifu_w.ifrw_mr[i+1];
+		ifu->ifu_wmap[i] = ifu->ifu_w.ifrw_mr[i];
 	ifu->ifu_xswapd = 0;
 	return (1);
 bad2:
 	ubarelse(ifu->ifu_uban, &ifu->ifu_r.ifrw_info);
 bad:
-	m_pgfree(cp, 2 * (nmr + 1));
+	m_pgfree(cp, 2 * ncl);
 	return (0);
 }
 
@@ -81,7 +83,7 @@ COUNT(IF_UBAALLOC);
 		return (0);
 	ifrw->ifrw_info = info;
 	ifrw->ifrw_bdp = UBAI_BDP(info);
-	ifrw->ifrw_proto = UBAMR_MRV | (UBAI_MR(info) << UBAMR_DPSHIFT);
+	ifrw->ifrw_proto = UBAMR_MRV | (UBAI_BDP(info) << UBAMR_DPSHIFT);
 	ifrw->ifrw_mr = &ifu->ifu_uba->uba_map[UBAI_MR(info) + 1];
 	return (1);
 }
@@ -103,10 +105,11 @@ if_rubaget(ifu, totlen, off0)
 {
 	struct mbuf *top, **mp, *m;
 	int off = off0, len;
-	register caddr_t cp;
+	register caddr_t cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen;
 
 COUNT(IF_RUBAGET);
 
+printf("if_rubaget totlen %d off0 %d cp %x\n", totlen, off0, cp);
 	top = 0;
 	mp = &top;
 	while (totlen > 0) {
@@ -118,7 +121,8 @@ COUNT(IF_RUBAGET);
 			cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen + off;
 		} else
 			len = totlen;
-		if (len >= CLSIZE) {
+printf("m %x len %d off %d cp %x\n", m, len, off, cp);
+		if (len >= CLBYTES) {
 			struct mbuf *p;
 			struct pte *cpte, *ppte;
 			int x, *ip, i;
@@ -126,7 +130,7 @@ COUNT(IF_RUBAGET);
 			MCLGET(p, 1);
 			if (p == 0)
 				goto nopage;
-			m->m_len = CLSIZE;
+			len = m->m_len = CLBYTES;
 			m->m_off = (int)p - (int)m;
 			if (!claligned(cp))
 				goto copy;
@@ -138,7 +142,7 @@ COUNT(IF_RUBAGET);
 			cpte = &Mbmap[mtocl(cp)*CLSIZE];
 			ppte = &Mbmap[mtocl(p)*CLSIZE];
 			x = btop(cp - ifu->ifu_r.ifrw_addr);
-			ip = (int *)&ifu->ifu_r.ifrw_mr[x+1];
+			ip = (int *)&ifu->ifu_r.ifrw_mr[x];
 			for (i = 0; i < CLSIZE; i++) {
 				struct pte t;
 				t = *ppte; *ppte++ = *cpte; *cpte = t;
@@ -154,7 +158,9 @@ COUNT(IF_RUBAGET);
 nopage:
 		m->m_len = MIN(MLEN, len);
 		m->m_off = MMINOFF;
+printf("nopage m->m_len %d, m %x\n", m->m_len, len);
 copy:
+printf("copy %d from %x to %x", m->m_len, cp, mtod(m, caddr_t));
 		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
 		cp += m->m_len;
 nocopy:
@@ -166,9 +172,10 @@ nocopy:
 			if (off == totlen) {
 				cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen;
 				off = 0;
-				totlen -= off0;
+				totlen = off0;
 			}
-		}
+		} else
+			totlen -= len;
 	}
 	return (top);
 bad:
@@ -198,15 +205,15 @@ COUNT(IF_WUBAPUT);
 	cp = ifu->ifu_w.ifrw_addr;
 	while (m) {
 		dp = mtod(m, char *);
-		if (claligned(cp) && claligned(dp)) {
+		if (claligned(cp) && claligned(dp) && m->m_len == CLBYTES) {
 			struct pte *pte; int *ip;
 			pte = &Mbmap[mtocl(dp)*CLSIZE];
 			x = btop(cp - ifu->ifu_w.ifrw_addr);
-			ip = (int *)&ifu->ifu_w.ifrw_mr[x + 1];
+			ip = (int *)&ifu->ifu_w.ifrw_mr[x];
 			for (i = 0; i < CLSIZE; i++)
 				*ip++ =
 				    ifu->ifu_w.ifrw_proto | pte++->pg_pfnum;
-			ifu->ifu_xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
+			xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
 			mp = m->m_next;
 			m->m_next = ifu->ifu_xtofree;
 			ifu->ifu_xtofree = m;
@@ -228,19 +235,19 @@ COUNT(IF_WUBAPUT);
 	 */
 	cc = cp - ifu->ifu_w.ifrw_addr;
 	x = ((cc - ifu->ifu_hlen) + CLBYTES - 1) >> CLSHIFT;
+	ifu->ifu_xswapd &= ~xswapd;
 	xswapd &= ~ifu->ifu_xswapd;
-	if (xswapd)
-		while (i = ffs(xswapd)) {
-			i--;
-			if (i >= x)
-				break;
-			xswapd &= ~(1<<i);
-			i *= CLSIZE;
-			for (x = 0; x < CLSIZE; x++) {
-				ifu->ifu_w.ifrw_mr[i] = ifu->ifu_wmap[i];
-				i++;
-			}
+	while (i = ffs(ifu->ifu_xswapd)) {
+		i--;
+		if (i >= x)
+			break;
+		ifu->ifu_xswapd &= ~(1<<i);
+		i *= CLSIZE;
+		for (x = 0; x < CLSIZE; x++) {
+			ifu->ifu_w.ifrw_mr[i] = ifu->ifu_wmap[i];
+			i++;
 		}
+	}
 	ifu->ifu_xswapd |= xswapd;
 	return (cc);
 }
