@@ -1,4 +1,4 @@
-/*	up.c	4.74	83/05/27	*/
+/*	up.c	4.75	83/05/30	*/
 
 #include "up.h"
 #if NSC > 0
@@ -87,16 +87,6 @@ struct	size {
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
-/*
- * On a 780 upSDIST could be 2, but
- * in the interest of 750's...
- */
-#define	_upSDIST	3		/* 1.5 msec */
-#define	_upRDIST	4		/* 2.0 msec */
-
-int	upSDIST = _upSDIST;
-int	upRDIST = _upRDIST;
-
 int	upprobe(), upslave(), upattach(), updgo(), upintr();
 struct	uba_ctlr *upminfo[NSC];
 struct	uba_device *updinfo[NUP];
@@ -111,17 +101,19 @@ char upinit[NUP];
 char upinit[NUP];
 
 struct	upst {
-	short	nsect;
-	short	ntrak;
-	short	nspc;
-	short	ncyl;
-	struct	size *sizes;
+	short	nsect;		/* # sectors/track */
+	short	ntrak;		/* # tracks/cylinder */
+	short	nspc;		/* # sectors/cylinder */
+	short	ncyl;		/* # cylinders */
+	struct	size *sizes;	/* partition tables */
+	short	sdist;		/* seek distance metric */
+	short	rdist;		/* rotational distance metric */
 } upst[] = {
-	32,	19,	32*19,	815,	up9300_sizes,	/* 9300 */
-	32,	19,	32*19,	823,	up9766_sizes,	/* 9766 */
-	32,	10,	32*10,	823,	up160_sizes,	/* fujitsu 160m */
-	32,	16,	32*16,	1024,	upam_sizes,	/* ampex capricorn */
-	0,	0,	0,	0,	0
+	{ 32,	19,	32*19,	815,	up9300_sizes,	3, 4 },	/* 9300 */
+	{ 32,	19,	32*19,	823,	up9766_sizes,	3, 4 },	/* 9766 */
+	{ 32,	10,	32*10,	823,	up160_sizes,	3, 4 },	/* fuji 160m */
+	{ 32,	16,	32*16,	1024,	upam_sizes,	7, 8 },	/* Capricorn */
+	{ 0,	0,	0,	0,	0,		0, 0 }
 };
 
 u_char	up_offset[16] = {
@@ -383,7 +375,7 @@ upustart(ui)
 	st = &upst[ui->ui_type];
 	bn = dkblock(bp);
 	sn = bn%st->nspc;
-	sn = (sn + st->nsect - upSDIST) % st->nsect;
+	sn = (sn + st->nsect - st->sdist) % st->nsect;
 	if (bp->b_cylin - upaddr->updc)
 		goto search;		/* Not on-cylinder */
 	else if (upseek)
@@ -391,7 +383,7 @@ upustart(ui)
 	csn = (upaddr->upla>>6) - sn - 1;
 	if (csn < 0)
 		csn += st->nsect;
-	if (csn > st->nsect - upRDIST)
+	if (csn > st->nsect - st->rdist)
 		goto done;
 search:
 	upaddr->updc = bp->b_cylin;
