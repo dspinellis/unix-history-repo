@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.51 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.52 (Berkeley) %G%
  */
 
 /*
@@ -155,8 +155,8 @@ nfsrv_setattr(nfsd, mrep, md, dpos, cred, nam, mrq)
 	 * sec and usec fields to -1 when not setting the atime.
 	 */
 	if (sp->sa_atime.tv_sec != nfs_xdrneg1) {
-		vap->va_atime.tv_sec = fxdr_unsigned(long, sp->sa_atime.tv_sec);
-		vap->va_atime.tv_usec = 0;
+		vap->va_atime.ts_sec = fxdr_unsigned(long, sp->sa_atime.tv_sec);
+		vap->va_atime.ts_nsec = 0;
 	}
 	if (sp->sa_atime.tv_usec != nfs_xdrneg1)
 		vap->va_flags = fxdr_unsigned(u_long, sp->sa_atime.tv_usec);

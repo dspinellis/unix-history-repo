@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.66 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.67 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -175,13 +175,13 @@ lfs_update (ap)
 	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
 		return (0);
 	if (ip->i_flag&IACC)
-		ip->i_atime.tv_sec = ap->a_ta->tv_sec;
+		ip->i_atime.ts_sec = ap->a_ta->tv_sec;
 	if (ip->i_flag&IUPD) {
-		ip->i_mtime.tv_sec = ap->a_tm->tv_sec;
+		ip->i_mtime.ts_sec = ap->a_tm->tv_sec;
 		INCRQUAD((ip)->i_modrev);
 	}
 	if (ip->i_flag&ICHG)
-		ip->i_ctime.tv_sec = time.tv_sec;
+		ip->i_ctime.ts_sec = time.tv_sec;
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
 
 	/* Push back the vnode and any dirty blocks it may have. */

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.53 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.54 (Berkeley) %G%
  */
 
 /*
@@ -726,12 +726,13 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * NFS_FABLKSIZE;
 	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
 	vap->va_fileid = fxdr_unsigned(long, fp->fa_fileid);
-	vap->va_atime.tv_sec = fxdr_unsigned(long, fp->fa_atime.tv_sec);
-	vap->va_atime.tv_usec = 0;
+	vap->va_atime.ts_sec = fxdr_unsigned(long, fp->fa_atime.tv_sec);
+	vap->va_atime.ts_nsec = 0;
 	vap->va_flags = fxdr_unsigned(u_long, fp->fa_atime.tv_usec);
-	vap->va_mtime = mtime;
-	vap->va_ctime.tv_sec = fxdr_unsigned(long, fp->fa_ctime.tv_sec);
-	vap->va_ctime.tv_usec = 0;
+	vap->va_mtime.ts_sec = mtime.tv_sec;
+	vap->va_mtime.ts_nsec = mtime.tv_usec * 1000;
+	vap->va_ctime.ts_sec = fxdr_unsigned(long, fp->fa_ctime.tv_sec);
+	vap->va_ctime.ts_nsec = 0;
 	vap->va_gen = fxdr_unsigned(u_long, fp->fa_ctime.tv_usec);
 #ifdef _NOQUAD
 	vap->va_size_rsv = 0;
@@ -745,10 +746,16 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		if ((np->n_flag & NMODIFIED) && (np->n_size > vap->va_size))
 			vaper->va_size = np->n_size;
 		if (np->n_flag & NCHG) {
-			if (np->n_flag & NACC)
-				vaper->va_atime = np->n_atim;
-			if (np->n_flag & NUPD)
-				vaper->va_mtime = np->n_mtim;
+			if (np->n_flag & NACC) {
+				vaper->va_atime.ts_sec = np->n_atim.tv_sec;
+				vaper->va_atime.ts_nsec =
+				    np->n_atim.tv_usec * 1000;
+			}
+			if (np->n_flag & NUPD) {
+				vaper->va_mtime.ts_sec = np->n_mtim.tv_sec;
+				vaper->va_mtime.ts_nsec =
+				    np->n_mtim.tv_usec * 1000;
+			}
 		}
 	}
 	return (0);
@@ -783,10 +790,14 @@ nfs_getattrcache(vp, vap)
 	} else if (np->n_size > vap->va_size)
 		vap->va_size = np->n_size;
 	if (np->n_flag & NCHG) {
-		if (np->n_flag & NACC)
-			vap->va_atime = np->n_atim;
-		if (np->n_flag & NUPD)
-			vap->va_mtime = np->n_mtim;
+		if (np->n_flag & NACC) {
+			vap->va_atime.ts_sec = np->n_atim.tv_sec;
+			vap->va_atime.ts_nsec = np->n_atim.tv_usec * 1000;
+		}
+		if (np->n_flag & NUPD) {
+			vap->va_mtime.ts_sec = np->n_mtim.tv_sec;
+			vap->va_mtime.ts_nsec = np->n_mtim.tv_usec * 1000;
+		}
 	}
 	return (0);
 }

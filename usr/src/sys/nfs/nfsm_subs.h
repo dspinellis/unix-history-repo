@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsm_subs.h	7.12 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -230,9 +230,9 @@ extern struct mbuf *nfsm_reqh();
 	fp->fa_blocks = txdr_unsigned(vap->va_bytes / NFS_FABLKSIZE); \
 	fp->fa_fsid = txdr_unsigned(vap->va_fsid); \
 	fp->fa_fileid = txdr_unsigned(vap->va_fileid); \
-	fp->fa_atime.tv_sec = txdr_unsigned(vap->va_atime.tv_sec); \
+	fp->fa_atime.tv_sec = txdr_unsigned(vap->va_atime.ts_sec); \
 	fp->fa_atime.tv_usec = txdr_unsigned(vap->va_flags); \
 	txdr_time(&vap->va_mtime, &fp->fa_mtime); \
-	fp->fa_ctime.tv_sec = txdr_unsigned(vap->va_ctime.tv_sec); \
+	fp->fa_ctime.tv_sec = txdr_unsigned(vap->va_ctime.ts_sec); \
 	fp->fa_ctime.tv_usec = txdr_unsigned(vap->va_gen)
 

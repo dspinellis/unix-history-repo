@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.26 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -93,14 +93,14 @@ nfs_bioread(vp, uio, ioflag, cred)
 			np->n_direofoffset = 0;
 			if (error = VOP_GETATTR(vp, &vattr, cred, uio->uio_procp))
 				return (error);
-			np->n_mtime = vattr.va_mtime.tv_sec;
+			np->n_mtime = vattr.va_mtime.ts_sec;
 		} else {
 			if (error = VOP_GETATTR(vp, &vattr, cred, uio->uio_procp))
 				return (error);
-			if (np->n_mtime != vattr.va_mtime.tv_sec) {
+			if (np->n_mtime != vattr.va_mtime.ts_sec) {
 				np->n_direofoffset = 0;
 				vinvalbuf(vp, TRUE);
-				np->n_mtime = vattr.va_mtime.tv_sec;
+				np->n_mtime = vattr.va_mtime.ts_sec;
 			}
 		}
 	}
