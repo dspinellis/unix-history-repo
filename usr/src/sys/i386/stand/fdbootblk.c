@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdbootblk.c	7.1 (Berkeley) %G%
+ *	@(#)fdbootblk.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -102,20 +102,6 @@ dodisk:
 	xorl	%ebx,%ebx
 	incb	%bl
 	incb	%bl
-#ifdef notdef
-	movb	$0x11,%al
-	outb	%al,$0x20
-	NOP
-	movb	$32,%al
-	outb	%al,$0x21
-	NOP
-	movb	$4,%al
-	outb	%al,$0x21
-	NOP
-	movb	$1,%al
-	outb	%al,$0x21
-	NOP
-#endif
 	movb	$0x20,%al	# do a eoi
 	outb	%al,$0x20
 
@@ -190,9 +176,6 @@ dodisk:
 	NOP
 	inb	%dx,%al
 	NOP
-#ifdef notdef
-	call	px
-#endif
 	andb	$0x7f,%al
 	cmpb	$6,%al
 	jne	2b
@@ -213,21 +196,9 @@ dodisk:
 	decb	%dx
 	loop	2b
 
-#ifdef notdef
-	inb	$0x61,%al
-	NOP
-	orb	$3,%al
-	outb	%al,$0x61
-	NOP
-#endif
-
 	/* extract the status bytes after the read. must we do this? */
 	addw	$0x200,%edi	# next addr to load to
 	incb	%bl
-#ifdef notdef
- movb %bl,%al
- call px
-#endif
 	cmpb	$16,%bl
 	jle	8b
 	
@@ -243,46 +214,6 @@ dodisk:
 	pushl $	start
 	ret	/* main (dev, unit, off) */
 
-#ifdef notdef
-hextab:	.ascii	"0123456789abcdef"
-curs:	.long	0xb8000
-kbc:	.byte 0
-
-px:
-	pushal
-	movl	curs,%edi
-	movl	%eax,%ebx
-	call	phd
-	movl	%ebx,%eax
-	shrl	$4,%eax
-	call	phd
-	movb	$0xe,%ah
-	movb	$32,%al
-	movw	%ax,(%edi)
-	# movw	$(0xe<<8)+' ',(%edi)
-	incl	%edi
-	incl	%edi
-	movl	%edi,curs
-
-2:	inb	$0x60,%al
-	NOP
-	cmpb	%al,kbc
-	je	2b
-	movb	%al,kbc
-	
-	popal
-	ret
-
-phd:	
-	andl	$0xf,%eax
-	movb	hextab(%eax),%al
-	movb	$0xe,%ah
-	movw	%ax,(%edi)
-	incl	%edi
-	incl	%edi
-	ret
-#endif
-	
 ebootblkcode:
 
 	/* remaining space usable for a disk label */
