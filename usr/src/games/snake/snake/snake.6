@@ -2,24 +2,23 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)snake.6	6.1 (Berkeley) %G%
+.\"	@(#)snake.6	6.2 (Berkeley) %G%
 .\"
 .TH SNAKE 6 ""
 .UC 4
 .SH NAME
 snake, snscore \- display chase game
 .SH SYNOPSIS
-.B /usr/games/snake
+.B snake
 [
-.BI \-w n
+.B -w width
 ] [
-.BI \-l n
+.B -l length
 ]
 .br
-.B /usr/games/snscore
+.B snscore
 .SH DESCRIPTION
-Snake is a display-based game which must be played on a CRT terminal
-from among those supported by vi(1).
+Snake is a display-based game which must be played on a CRT terminal.
 The object of the game is to make as much money as possible without
 getting eaten by the snake.  The
 .B \-l
@@ -56,11 +55,6 @@ This lets you quit the game at any time.
 Points in a direction you might want to go.
 .IP w
 Space warp to get out of tight squeezes, at a price.
-.IP !
-Shell escape
-.IP ^Z
-Suspend the snake game, on systems which support it.
-Otherwise an interactive shell is started up.
 .PP
 To earn money, move to the same square the money is on.
 A new $ will appear when you earn the current one.
@@ -75,13 +69,12 @@ As in pinball, matching the last digit of your score to the number
 which appears after the game is worth a bonus.
 .PP
 To see who wastes time playing snake, run
-.I /usr/games/snscore .
+.I snscore .
 .SH FILES
 .nf
 .ta \w'/usr/games/lib/snakerawscores 'u
 /usr/games/lib/snakerawscores	database of personal bests
 /usr/games/lib/snake.log	log of games played
-/usr/games/busy	program to determine if system too busy
 .DT
 .fi
 .SH BUGS
