@@ -1,14 +1,20 @@
 			    Sendmail Version 8
 			Frequently Asked Questions
-		         Version 8.3 of %G%
+		         Version 8.4 of %G%
 
 
-This FAQ is specific to Version 8 of sendmail.
+This FAQ is specific to Version 8 of sendmail.  Other questions,
+particularly regarding compilation and configuration, are answered
+in src/READ_ME and cf/README.
 
+----------------------------------------------------------------------
+  * Where can I get Version 8?
+
+	Via anonymous FTP from FTP.CS.Berkeley.EDU in /ucb/sendmail.
 ----------------------------------------------------------------------
   * What are the differences between Version 8 and other versions?
 
-	See CHANGES-R5-R8 in the anonymous FTP directory.
+	See doc/changes/changes.me in the sendmail distribution.
 ----------------------------------------------------------------------
   * What happened to sendmail 6.x and 7.x?
 
@@ -16,10 +22,6 @@ This FAQ is specific to Version 8 of sendmail.
 	Release 6.  Development continued in that tree until 4.4BSD
 	was released, when everything on the 4.4 tape was set to be
 	version 8.1.  Version 7.x never existed.
-----------------------------------------------------------------------
-  * Where can I get Version 8?
-
-	Via anonymous FTP from FTP.CS.Berkeley.EDU in /ucb/sendmail.
 ----------------------------------------------------------------------
   * Version 8 requires a new version of "make".  Where can I get this?
 
@@ -29,7 +31,7 @@ This FAQ is specific to Version 8 of sendmail.
 	porting to a new architecture, start with Makefile.dist.
 
 	If you really do want the new make, it is available on any of
-	the BSD Net2 distribution sites.  These include:
+	the BSD Net2 or 4.4-Lite distribution sites.  These include:
 
 		ftp.uu.net		/systems/unix/bsd-sources
 		gatekeeper.dec.com	/.0/BSD/net2
@@ -48,26 +50,28 @@ This FAQ is specific to Version 8 of sendmail.
 	under the old man macros.  Fortunately, old man pages will
 	format under the new mandoc macros.
 
-	Get the new macros with the BSD Net2 release.
+	Get the new macros with the BSD Net2 or 4.4-Lite release.
 
 	This macro set is also available with newer versions of groff.
 ----------------------------------------------------------------------
   * What books are available describing sendmail?
 
-	There is one book available devoted to sendmail, and
-	several books that have sendmail chapters.
+	There is one book available devoted to sendmail:
 
-	Nemeth, Snyder, and Seebass, _Unix System Administration
-		Handbook_.  Prentice-Hall.
-	Carl-Mitchell and Quarterman, _Practical Internetworking with
-		TCP/IP and UNIX_.  Addison-Wesley.
-	Hunt, _TCP/IP Network Administration_.  O'Reilly & Associates.
-	Costales, Allman, and Rickert, _Sendmail_.  O'Reilly &
+	    Costales, Allman, and Rickert, _Sendmail_.  O'Reilly &
 		Associates.
 
-	Another book is due out "soon":
+	Several books have sendmail chapters, for example:
 
-	Avolio & Vixie, _Sendmail Theory and Practice_.  Digital
+	    Nemeth, Snyder, and Seebass, _Unix System Administration
+		Handbook_.  Prentice-Hall.
+	    Carl-Mitchell and Quarterman, _Practical Internetworking with
+		TCP/IP and UNIX_.  Addison-Wesley.
+	    Hunt, _TCP/IP Network Administration_.  O'Reilly & Associates.
+
+	Another book about sendmail is due out "soon":
+
+	    Avolio & Vixie, _Sendmail Theory and Practice_.  Digital
 		Press (release date unknown).
 ----------------------------------------------------------------------
   * How do I make all my addresses appear to be from a single host?
