@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.84 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.85 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -751,6 +751,7 @@ fileclass(class, filename, fmt, safe, optional)
 **			   F -- the flags associated with the mailer
 **			   L -- the maximum line length
 **			   M -- the maximum message size
+**			   N -- the niceness at which to run
 **			   P -- the path to the mailer
 **			   R -- the recipient rewriting set
 **			   S -- the sender rewriting set
@@ -871,6 +872,10 @@ makemailer(line)
 
 		  case 'L':		/* maximum line length */
 			m->m_linelimit = atoi(p);
+			break;
+
+		  case 'N':		/* run niceness */
+			m->m_nice = atoi(p);
 			break;
 
 		  case 'D':		/* working directory */

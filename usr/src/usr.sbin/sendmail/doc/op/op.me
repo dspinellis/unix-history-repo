@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.48 (Berkeley) %G%
+.\"	@(#)op.me	8.49 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.48
+Version 8.49
 .sp
 For Sendmail Version 8.7
 .)l
@@ -3626,6 +3626,7 @@ Maxsize	The maximum message length to this mailer
 Linelimit	The maximum line length in the message body
 Directory	The working directory for the mailer
 Userid	The default user and group id to run as
+Nice	The nice(2) increment for the mailer
 Charset	The default character set for 8-bit characters
 Type	The MTS type information (used for error messages)
 .)b
@@ -7357,7 +7358,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.48
+.\"Version 8.49
 .\".ce 0
 .bp 2
 .rs
