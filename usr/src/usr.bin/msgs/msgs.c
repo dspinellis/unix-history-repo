@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	4.15 (Berkeley) %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)msgs.c	4.14 (Berkeley) %G%";
  *	s[-][<num>] [<filename>]	save message
  *	m[-][<num>]	mail with message in temp mbox
  *	x	exit without flushing this message
+ *	<num>	print message number <num>
  */
 
 #define V7		/* will look for TERM in the environment */
@@ -351,20 +352,31 @@ int argc; char *argv[];
 		newrc = NO;
 		fscanf(msgsrc, "%d\n", &nextmsg);
 		fclose(msgsrc);
-		if (!rcfirst)
+		if (nextmsg > lastmsg+1) {
+			printf("Warning: bounds have been reset (%d, %d)\n",
+				firstmsg, lastmsg);
+			ftruncate(fileno(msgsrc), 0);
+			newrc = YES;
+		}
+		else if (!rcfirst)
 			rcfirst = nextmsg - rcback;
 	}
-	else {
+	else
 		newrc = YES;
-		nextmsg = 0;
-	}
 	msgsrc = fopen(fname, "a");
 	if (msgsrc == NULL) {
 		perror(fname);
 		exit(errno);
 	}
-	if (rcfirst && rcfirst > firstmsg)
-		firstmsg = rcfirst;		/* don't set below first msg */
+	if (rcfirst) {
+		if (rcfirst > lastmsg+1) {
+			printf("Warning: the last message is number %d.\n",
+				lastmsg);
+			rcfirst = nextmsg;
+		}
+		if (rcfirst > firstmsg)
+			firstmsg = rcfirst;	/* don't set below first msg */
+	}
 	if (newrc) {
 		nextmsg = firstmsg;
 		fseek(msgsrc, 0L, 0);
