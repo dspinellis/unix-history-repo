@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	6.16 (Berkeley) %G%
+ *	@(#)dh.c	6.17 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -403,6 +403,7 @@ dhparam(unit)
 	if ((tp->t_ispeed)==0) {
 		tp->t_state |= TS_HUPCLS;
 		dmctl(unit, DML_OFF, DMSET);
+		splx(s);
 		return;
 	}
 	lpar = ((tp->t_ospeed)<<10) | ((tp->t_ispeed)<<6);
