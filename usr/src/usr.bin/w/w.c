@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -57,20 +57,20 @@ struct pr {
 int	nproc;
 
 struct	nlist nl[] = {
-	{ "_proc" },
-#define	X_PROC		0
-	{ "_swapdev" },
-#define	X_SWAPDEV	1
-	{ "_Usrptmap" },
-#define	X_USRPTMA	2
-	{ "_usrpt" },
-#define	X_USRPT		3
-	{ "_nswap" },
-#define	X_NSWAP		4
 	{ "_avenrun" },
-#define	X_AVENRUN	5
+#define	X_AVENRUN	0
 	{ "_boottime" },
-#define	X_BOOTTIME	6
+#define	X_BOOTTIME	1
+	{ "_proc" },
+#define	X_PROC		2
+	{ "_swapdev" },
+#define	X_SWAPDEV	3
+	{ "_Usrptmap" },
+#define	X_USRPTMA	4
+	{ "_usrpt" },
+#define	X_USRPT		5
+	{ "_nswap" },
+#define	X_NSWAP		6
 	{ "_nproc" },
 #define	X_NPROC		7
 	{ "_dmmin" },
@@ -189,8 +189,6 @@ main(argc, argv)
 		argc--; argv++;
 	}
 
-	if (ioctl(1, TIOCGWINSZ, &win) != -1 && win.ws_col > 70)
-		ttywidth = win.ws_col;
 	if ((kmem = open("/dev/kmem", 0)) < 0) {
 		fprintf(stderr, "No kmem\n");
 		exit(1);
@@ -201,8 +199,13 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (firstchar != 'u')	/* if this program is not "uptime(1)" */
-		readpr();	/* then read in procs */
+	if (firstchar == 'u')	/* uptime(1) */
+		nl[X_BOOTTIME+1].n_name = "";
+	else {			/* then read in procs, get window size */
+		readpr();
+		if (ioctl(1, TIOCGWINSZ, &win) != -1 && win.ws_col > 70)
+			ttywidth = win.ws_col;
+	}
 
 	ut = fopen("/etc/utmp","r");
 	time(&now);
