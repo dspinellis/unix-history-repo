@@ -1,4 +1,7 @@
-#	@(#)Files.xdoc	8.1 (Berkeley) %G%
+#	@(#)Files.xdoc	8.2 (Berkeley) %G%
+doc/changes/Makefile
+doc/changes/changes.me
+doc/changes/changes.ps
 doc/intro/Makefile
 doc/intro/intro.me
 doc/intro/intro.ps
