@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.56	82/04/10	*/
+/*	tcp_usrreq.c	1.57	82/04/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -276,7 +276,7 @@ printf("sendoob seq now %x oobc %x\n", tp->t_oobseq, tp->t_oobc);
 }
 
 int	tcp_sendspace = 1024*2;
-int	tcp_recvspace = 1024*3;
+int	tcp_recvspace = 1024*2;
 /*
  * Attach TCP protocol to socket, allocating
  * internet protocol control block, tcp control block,
