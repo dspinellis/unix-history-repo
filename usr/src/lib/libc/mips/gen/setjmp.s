@@ -8,12 +8,12 @@
  * %sccs.include.redist.c%
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)setjmp.s	5.1 (Berkeley) %G%")
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/syscall.h>
 #include "DEFS.h"
+
+#if defined(LIBC_SCCS) && !defined(lint)
+	ASMSTR("@(#)setjmp.s	5.2 (Berkeley) %G%")
+#endif /* LIBC_SCCS and not lint */
 
 /*
  * C library -- setjmp, longjmp
