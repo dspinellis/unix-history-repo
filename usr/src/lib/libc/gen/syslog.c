@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -140,8 +140,9 @@ vsyslog(pri, fmt, ap)
 	if ((fd = open(_PATH_CONSOLE, O_WRONLY, 0)) < 0)
 		return;
 	(void)strcat(tbuf, "\r\n");
+	cnt += 2;
 	p = index(tbuf, '>') + 1;
-	(void)write(fd, p, cnt + 1 - (p - tbuf));
+	(void)write(fd, p, cnt - (p - tbuf));
 	(void)close(fd);
 }
 
