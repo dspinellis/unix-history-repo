@@ -53,9 +53,6 @@ static char sccsid[] = "@(#)pwd_mkdb.c	5.5 (Berkeley) 5/6/91";
 #include <string.h>
 #include <stdlib.h>
 
-#define PW_COMPACT
-/* Compact pwd.db/spwd.db structure by Alex G. Bulushev, bag@demos.su */
-
 #define	INSECURE	1
 #define	SECURE		2
 #define	PERM_INSECURE	(S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
@@ -79,9 +76,6 @@ main(argc, argv)
 	DB *dp, *edp;
 	sigset_t set;
 	DBT data, key;
-#ifdef PW_COMPACT
-	DBT pdata, sdata;
-#endif
 	int ch, cnt, tfd;
 	char buf[MAX(MAXPATHLEN, LINE_MAX * 2)], tbuf[1024];
 	char buf2[MAXPATHLEN];
@@ -169,21 +163,13 @@ main(argc, argv)
 	data.data = (u_char *)buf;
 	key.data = (u_char *)tbuf;
 	for (cnt = 1; scan(fp, &pwd); ++cnt) {
-#ifdef PW_COMPACT
-	pdata.data = (u_char *)&pwd.pw_uid;
-	pdata.size = sizeof(int);
-	sdata.data = (u_char *)pwd.pw_passwd;
-	sdata.size = strlen(pwd.pw_passwd) + 1;
-#endif
 #define	COMPACT(e)	t = e; while (*p++ = *t++);
 		/* Create insecure data. */
 		p = buf;
 		COMPACT(pwd.pw_name);
-#ifndef PW_COMPACT
 		COMPACT("*");
 		bcopy((char *)&pwd.pw_uid, p, sizeof(int));
 		p += sizeof(int);
-#endif
 		bcopy((char *)&pwd.pw_gid, p, sizeof(int));
 		p += sizeof(int);
 		bcopy((char *)&pwd.pw_change, p, sizeof(time_t));
@@ -201,22 +187,14 @@ main(argc, argv)
 		len = strlen(pwd.pw_name);
 		bcopy(pwd.pw_name, tbuf + 1, len);
 		key.size = len + 1;
-#ifdef PW_COMPACT
-		if ((dp->put)(dp, &key, &pdata, R_NOOVERWRITE) == -1)
-#else
 		if ((dp->put)(dp, &key, &data, R_NOOVERWRITE) == -1)
-#endif
 			error("put");
 
 		/* Store insecure by number. */
 		tbuf[0] = _PW_KEYBYNUM;
 		bcopy((char *)&cnt, tbuf + 1, sizeof(cnt));
 		key.size = sizeof(cnt) + 1;
-#ifdef PW_COMPACT
-		if ((dp->put)(dp, &key, &pdata, R_NOOVERWRITE) == -1)
-#else
 		if ((dp->put)(dp, &key, &data, R_NOOVERWRITE) == -1)
-#endif
 			error("put");
 
 		/* Store insecure by uid. */
@@ -227,10 +205,6 @@ main(argc, argv)
 			error("put");
 
 		/* Create secure data. */
-#ifdef PW_COMPACT
-		if ((dp->put)(edp, &key, &sdata, R_NOOVERWRITE) == -1)
-			error("put");
-#else
 		p = buf;
 		COMPACT(pwd.pw_name);
 		COMPACT(pwd.pw_passwd);
@@ -269,7 +243,6 @@ main(argc, argv)
 		key.size = sizeof(pwd.pw_uid) + 1;
 		if ((dp->put)(edp, &key, &data, R_NOOVERWRITE) == -1)
 			error("put");
-#endif
 
 		/* Create original format password file entry */
 		if (makeold)
