@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.60 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -204,9 +204,8 @@ setdefuser()
 */
 
 bool
-host_map_init(map, mapname, args)
+host_map_init(map, args)
 	MAP *map;
-	char *mapname;
 	char *args;
 {
 	register char *p = args;
@@ -575,6 +574,7 @@ rlsesigs()
 #    define LA_AVENRUN		"avenrun"
 #  endif
 
+/* now do the guesses based on general OS type */
 #  ifndef LA_TYPE
 #   if defined(SYSTEM5)
 #    define LA_TYPE		LA_INT
@@ -899,6 +899,12 @@ setproctitle(fmt, va_alist)
 void
 reapchild()
 {
+# ifdef WIFEXITED
+	auto int status;
+
+	while (waitpid(-1, &status, WNOHANG) > 0)
+		continue;
+# else
 # ifdef WNOHANG
 	union wait status;
 
@@ -907,9 +913,10 @@ reapchild()
 # else /* WNOHANG */
 	auto int status;
 
-	while (wait((int *)&status) > 0)
+	while (wait(&status) > 0)
 		continue;
 # endif /* WNOHANG */
+# endif
 # ifdef SYSTEM5
 	(void) signal(SIGCHLD, reapchild);
 # endif
