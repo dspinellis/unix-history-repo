@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.67 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.68 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -70,6 +70,7 @@ readcf(cfname)
 {
 	FILE *cf;
 	int ruleset = 0;
+	int nextruleset = MAXRWSETS;
 	char *q;
 	struct rewrite *rwp = NULL;
 	char *bp;
@@ -369,17 +370,56 @@ readcf(cfname)
 		  case 'S':		/* select rewriting set */
 			for (p = &bp[1]; isascii(*p) && isspace(*p); p++)
 				continue;
-			if (!isascii(*p) || !isdigit(*p))
+			if (!isascii(*p))
 			{
 				syserr("invalid argument to S line: \"%.20s\"", 
 					&bp[1]);
 				break;
 			}
-			ruleset = atoi(p);
-			if (ruleset >= MAXRWSETS || ruleset < 0)
+			if (isdigit(*p))
 			{
-				syserr("bad ruleset %d (%d max)", ruleset, MAXRWSETS);
-				ruleset = 0;
+				ruleset = atoi(p);
+				if (ruleset >= MAXRWSETS / 2 || ruleset < 0)
+				{
+					syserr("bad ruleset %d (%d max)",
+						ruleset, MAXRWSETS / 2);
+					ruleset = 0;
+				}
+			}
+			else
+			{
+				STAB *s;
+				char delim;
+
+				q = p;
+				while (*p != '\0' && isascii(*p) &&
+				       (isalnum(*p) || strchr("-_$", *p) != NULL))
+					p++;
+				while (isascii(*p) && isspace(*p))
+					*p++ = '\0';
+				delim = *p;
+				if (delim != '\0')
+					*p++ = '\0';
+				s = stab(q, ST_RULESET, ST_ENTER);
+				if (s->s_ruleset != 0)
+					ruleset = s->s_ruleset;
+				else if (delim == '=')
+				{
+					ruleset = atoi(p);
+					if (ruleset >= MAXRWSETS / 2 || ruleset < 0)
+					{
+						syserr("bad ruleset %s = %d (%d max)",
+							q, ruleset, MAXRWSETS / 2);
+						ruleset = 0;
+					}
+				}
+				else if ((ruleset = --nextruleset) < MAXRWSETS / 2)
+				{
+					syserr("%s: too many named rulesets (%d max)",
+						q, MAXRWSETS / 2);
+					ruleset = 0;
+				}
+				s->s_ruleset = ruleset;
 			}
 			rwp = NULL;
 			break;
