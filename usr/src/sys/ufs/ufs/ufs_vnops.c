@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.29 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1233,19 +1233,16 @@ ufs_readlink(vp, uiop, cred)
 ufs_abortop(ndp)
 	register struct nameidata *ndp;
 {
-	register struct inode *ip;
 
-	if (ndp->ni_vp) {
-		ip = VTOI(ndp->ni_vp);
-		if (ip->i_flag & ILOCKED)
-			IUNLOCK(ip);
-		vrele(ndp->ni_vp);
-	}
 	if (ndp->ni_dvp) {
-		ip = VTOI(ndp->ni_dvp);
-		if (ip->i_flag & ILOCKED)
-			IUNLOCK(ip);
+		if (VOP_ISLOCKED(ndp->ni_dvp))
+			VOP_UNLOCK(ndp->ni_dvp);
 		vrele(ndp->ni_dvp);
+	}
+	if (ndp->ni_vp) {
+		if (VOP_ISLOCKED(ndp->ni_vp))
+			VOP_UNLOCK(ndp->ni_vp);
+		vrele(ndp->ni_vp);
 	}
 	return;
 }
