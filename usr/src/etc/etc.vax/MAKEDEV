@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.8	%G%
+#	@(#)MAKEDEV	4.9	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -17,7 +17,7 @@
 #	up*	other unibus devices (e.g. on Emulex sc-21v controller)
 #	ra*	unibus uda50 w/ ra??
 #	rb*	730 idc w/ rb80 and/or rb02
-#	rx*	unibus rx211 floppy disk (raw device only)
+#	rx*	unibus rx211 floppy disk 
 # Terminal multiplexors:
 #	dz*	unibus dz11 and dz32
 #	dh*	unibus dh11 and emulations (e.g. Able dmax, Emulex cs-11)
@@ -123,17 +123,25 @@ hp*|hk*|up*|ra*|rb*)
 
 rx*)
 	unit=`expr $i : '..\(.*\)'`
-	name=rx; chr=30
+	name=rx; chr=30; blk=12;
 	case $unit in
 	0|1|2|3|4|5|6|7)
-		/etc/mknod ${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
-		/etc/mknod ${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
-		/etc/mknod ${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
-		/etc/mknod ${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
-		/etc/mknod ${name}${unit}e	c $chr `expr $unit '*' 8 + 4`
-		/etc/mknod ${name}${unit}f	c $chr `expr $unit '*' 8 + 5`
-		/etc/mknod ${name}${unit}g	c $chr `expr $unit '*' 8 + 6`
-		/etc/mknod ${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
+		/etc/mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
+		/etc/mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
+		/etc/mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
+		/etc/mknod ${name}${unit}d	b $blk `expr $unit '*' 8 + 3`
+		/etc/mknod ${name}${unit}e	b $blk `expr $unit '*' 8 + 4`
+		/etc/mknod ${name}${unit}f	b $blk `expr $unit '*' 8 + 5`
+		/etc/mknod ${name}${unit}g	b $blk `expr $unit '*' 8 + 6`
+		/etc/mknod ${name}${unit}h	b $blk `expr $unit '*' 8 + 7`
+		/etc/mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
+		/etc/mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
+		/etc/mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
+		/etc/mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
+		/etc/mknod r${name}${unit}e	c $chr `expr $unit '*' 8 + 4`
+		/etc/mknod r${name}${unit}f	c $chr `expr $unit '*' 8 + 5`
+		/etc/mknod r${name}${unit}g	c $chr `expr $unit '*' 8 + 6`
+		/etc/mknod r${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
 		;;
 	*)
 		echo bad unit for floppy disk in: $i
