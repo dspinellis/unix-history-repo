@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cat.1	8.1 (Berkeley) %G%
+.\"     @(#)cat.1	6.17 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CAT 1
@@ -26,7 +26,7 @@ utility reads files sequentially, writing them to the standard output.
 The
 .Ar file
 operands are processed in command line order.
-A single dash represents standard input.
+A single dash represents the standard input.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
@@ -60,7 +60,7 @@ The
 option guarantees that the output is unbuffered.
 .It Fl v
 Displays non-printing characters so they are visible.
-Control characters print line
+Control characters print as
 .Ql ^X
 for control-X; the delete
 character (octal 0177) prints as
