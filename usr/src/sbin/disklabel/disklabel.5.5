@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)disklabel.5.5	6.6 (Berkeley) %G%
+.\"     @(#)disklabel.5.5	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DISKLABEL 5
@@ -91,8 +91,14 @@ is
 * to leave room for a bootstrap, etc.
 */
 
-#define	LABELSECTOR	0	/* sector containing label */
-#define LABELOFFSET	64	/* offset of label in sector */
+#ifndef	LABELSECTOR
+#define LABELSECTOR	0			/* sector containing label */
+#endif
+
+#ifndef	LABELOFFSET
+#define LABELOFFSET	64			/* offset of label in sector */
+#endif
+
 #define DISKMAGIC	((u_long) 0x82564557)	/* The disk magic number */
 #ifndef MAXPARTITIONS
 #define	MAXPARTITIONS	8
@@ -191,6 +197,12 @@ struct disklabel {
 		u_long	p_fsize;	/* filesystem basic fragment size */
 		u_char	p_fstype;	/* filesystem type, see below */
 		u_char	p_frag;	/* filesystem fragments per block */
+		union {
+			u_short	cpg;	/* UFS: FS cylinders per group */
+			u_short	sgs;	/* LFS: FS segment shift */
+		} __partition_u1;
+#define	p_cpg	__partition_u1.cpg
+#define	p_sgs	__partition_u1.sgs
 		u_short	p_cpg;	/* filesystem cylinders per group */
 	} d_partitions[MAXPARTITIONS];	/* actually may be more */
 };
@@ -202,6 +214,8 @@ struct disklabel {
 #define	DTYPE_SCSI	4	/* SCSI */
 #define	DTYPE_ESDI	5	/* ESDI interface */
 #define	DTYPE_ST506	6	/* ST506 etc. */
+#define	DTYPE_HPIB	7	/* CS/80 on HP-IB */
+#define	DTYPE_HPFL	8	/* HP Fiber-link */
 #define	DTYPE_FLOPPY	10	/* floppy */
 
 #ifdef DKTYPENAMES
@@ -212,9 +226,9 @@ static char *dktypenames[] = {
 	"old DEC",
 	"SCSI",
 	"ESDI",
-	"type 6",
-	"type 7",
-	"type 8",
+	"ST506",
+	"HP-IB",
+	"HP-FL",
 	"type 9",
 	"floppy",
 	0
@@ -235,6 +249,12 @@ static char *dktypenames[] = {
 #define	FS_V71K		5	/* V7 with 1K blocks (4.1, 2.9) */
 #define	FS_V8		6	/* Eighth Edition, 4K blocks */
 #define	FS_BSDFFS	7	/* 4.2BSD fast file system */
+#define	FS_MSDOS	8	/* MSDOS file system */
+#define	FS_BSDLFS	9	/* 4.4BSD log-structured file system */
+#define	FS_OTHER	10	/* in use, but unknown/unsupported */
+#define	FS_HPFS		11	/* OS/2 high-performance file system */
+#define	FS_ISO9660	12	/* ISO 9660, normally CD-ROM */
+#define	FS_BOOT		13	/* partition contains bootstrap */
 
 #ifdef	DKTYPENAMES
 static char *fstypenames[] = {
@@ -246,6 +266,12 @@ static char *fstypenames[] = {
 	"4.1BSD",
 	"Eighth Edition",
 	"4.2BSD",
+	"MSDOS",
+	"4.4LFS",
+	"unknown",
+	"HPFS",
+	"ISO9660",
+	"boot",
 	0
 };
 #define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
@@ -275,6 +301,11 @@ static char *fstypenames[] = {
 */
 #define d_precompcyl	d_drivedata[0]
 #define d_gap3		d_drivedata[1]	/* used only when formatting */
+
+/*
+ * Drive data for SCSI.
+ */
+#define	d_blind		d_drivedata[0]
 
 #ifndef LOCORE
 /*
