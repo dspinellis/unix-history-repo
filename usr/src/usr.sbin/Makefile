@@ -1,18 +1,17 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-# not ours?: gated
-# not converted: gated
+# not working:	gated
 SUBDIR=	ac accton arp arp_iso chown chroot config cron diskpart edquota \
-	gettable htable implog implogd inetd iostat kgmon kvm_mkdb lpr \
-	mkhosts mkpasswd mkproto mtree quot quotaon rmt rwhod sa sendmail \
-	sliplogin syslogd timed timedc traceroute trpt trsp update
+	gettable htable implog implogd inetd kgmon kvm_mkdb lpr mkhosts \
+	mkpasswd mkproto mtree named pstat quot quotaon repquota rmt \
+	rwhod sa sendmail sliplogin syslogd timed traceroute trpt trsp update
 
-.if ${MACHINE} == "tahoe" || make(clean) || make(cleandir)
-SUBDIR+=dlmpcc
-.endif
-
-.if ${MACHINE} == "vax" || make(clean) || make(cleandir)
-SUBDIR+=arff bad144 flcopy rxformat
+.if   make(clean) || make(cleandir)
+SUBDIR+=arff bad144 dlmpcc flcopy iostat rxformat
+.elif ${MACHINE} == "tahoe"
+SUBDIR+=dlmpcc iostat
+.elif ${MACHINE} == "vax"
+SUBDIR+=arff bad144 flcopy iostat rxformat
 .endif
 
 .include <bsd.subdir.mk>
