@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)fts.3	5.4 (Berkeley) %G%
+.\"	@(#)fts.3	5.5 (Berkeley) %G%
 .\"
 .TH FTS 3 ""
 .UC 7
@@ -27,12 +27,7 @@ fts \- traverse a file hierarchy
 #include <fts.h>
 
 FTS *
-ftsopen(path, options, compar)
-char *path;
-int options, (*compar)();
-
-FTS *
-ftsopen(path_argv, options | FTS_MULTIPLE, compar)
+ftsopen(path_argv, options, compar)
 char *path_argv[];
 int options, (*compar)();
 
@@ -64,8 +59,10 @@ hierarchy.
 .PP
 The
 .I ftsopen
-routine returns a pointer to a file hierarchy rooted at
-.IR path .
+routine takes a pointer to an array of character pointers (``argv'')
+naming the file hierarchies to be traversed.
+The array must be terminated by a pointer to a NULL string.
+.PP
 The 
 .I options
 specified are formed by
@@ -85,16 +82,6 @@ Either FTS_LOGICAL or FTS_PHYSICAL
 be provided to the 
 .I ftsopen
 routine.
-.TP
-FTS_MULTIPLE
-.I Ftsopen
-takes a single file name as a path argument by default.
-If the FTS_MULTIPLE option is specified, the path argument is a pointer
-to an array of character pointers (``argv'') to the paths to be traversed.
-The array must be terminated by a pointer to a NULL string.
-In this case the ``logical'' hierarchy is traversed, i.e. it's as if
-there's a virtual directory that contains the list of paths supplied,
-and the hierarchy is rooted in that directory.
 .TP
 FTS_NOCHDIR
 As a performance optimization,
@@ -158,19 +145,22 @@ takes two pointers to pointers to FTSENT structures as arguments and
 should return a negative value, zero, or a positive value to indicate
 if the file referenced by its first argument comes before, in any order
 with respect to, or after, the file referenced by its second argument.
-Note, the
+.PP
+The
 .I fts_accpath
 and
 .I fts_path
 fields of the FTSENT structures may not be used in this comparison.
+If the option
+.I FTS_NOSTAT
+is specified, the
+.I fts_stab
+field may not be used as well.
 If the
 .I compar
-argument is NULL the traversal order is undefined.
-.PP
-If both FTS_MULTIPLE and the user comparison routine are specified,
-the root paths are processed in sorted order.
-Otherwise, the root paths are processed in the order specified by
-the user.
+argument is NULL the directory traversal order is unspecified except
+for the root paths which are traversed in the order listed in
+.IR path_argv .
 .PP
 The
 .I ftsclose
