@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maktab.c	1.2 (CWI) 85/10/02";
+static char sccsid[] = "@(#)maktab.c	1.3 (CWI) 86/11/13";
 #endif lint
 
 
@@ -259,7 +259,7 @@ maktab()
 		printf(".nr TW +%d*\\n(%d\n", sep[ncol - 1], TMP);
 	printf(
 ".if t .if(\\n(TW+\\n(.o)>\\n(Tw .tm Table at line %d file %s is too wide - \\n(TW units\n",
-		iline - 1, ifile);
+		iline - 1, strlen(oldname) ? oldname : ifile);
 	return;
 }
 
