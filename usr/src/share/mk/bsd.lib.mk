@@ -57,17 +57,31 @@ lib${LIB}_p.a:: ${POBJS}
 llib-l${LIB}.ln: ${SRCS}
 	${LINT} -C${LIB} ${CFLAGS} ${.ALLSRC:M*.c}
 
-STDCLEAN:
+.if !target(clean)
+clean:
 	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} ${POBJS} \
 	    profiled/*.o lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
+.endif
 
-STDCLEANDIR:
+.if !target(cleandir)
+cleandir:
+	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} ${POBJS} \
+	    profiled/*.o lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
 	rm -f ${MANALL} tags .depend
+.endif
 
-STDDEPEND: ${SRCS} .USE
+.if !target(depend)
+depend: .depend
+.depend: ${SRCS}
 	mkdep ${CFLAGS:M-[ID]*} ${AINC} ${.ALLSRC}
+.endif
 
-STDINSTALL:
+.if !target(install)
+.if !target(beforeinstall)
+beforeinstall:
+.endif
+
+realinstall: beforeinstall
 	install -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} lib${LIB}.a \
 	    ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}.a
@@ -77,9 +91,16 @@ STDINSTALL:
 	install -c -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    llib-l${LIB}.ln ${DESTDIR}${LINTLIBDIR}
 
-STDLINT:
+install: afterinstall
+afterinstall: realinstall
+.endif
 
-STDTAGS: .USE
+.if !target(lint)
+lint:
+.endif
+
+.if !target(tags)
+tags:
 	tags ${.ALLSRC:M*.c}
 	sed -e 's;../gen/;/usr/src/lib/libc/gen/;' \
 	    -e 's;../compat-43/;/usr/src/lib/libc/gen/;' \
@@ -91,6 +112,6 @@ STDTAGS: .USE
 	sort tags.tmp -o tags.tmp
 .endif
 	mv tags.tmp tags
+.endif
 
 .include <bsd.own.mk>
-.include <bsd.stdtarg.mk>
