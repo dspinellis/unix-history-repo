@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	7.21 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,6 +22,7 @@
 #include "machine/cpu.h"
 
 u_char	curpri;			/* usrpri of curproc */
+int	lbolt;			/* once a second sleep address */
 
 /*
  * Force switch among equal priority processes every 100ms.
