@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -119,8 +119,8 @@ main(argc, argv)
 	 * everyone else thinks.
 	 */
 	rtinit();
-	gwkludge();
 	ifinit();
+	gwkludge();
 	if (gateway > 0)
 		rtdefault();
 	if (supplier < 0)
@@ -186,6 +186,9 @@ getsocket(domain, type, sin)
 		close(s);
 		return (-1);
 	}
+	on = 48*1024;
+	if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &on, sizeof (on)) < 0)
+		syslog(LOG_ERR, "setsockopt SO_RCVBUF: %m");
 	if (bind(s, sin, sizeof (*sin), 0) < 0) {
 		perror("bind");
 		syslog(LOG_ERR, "bind: %m");
