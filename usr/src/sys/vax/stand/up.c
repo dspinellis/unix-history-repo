@@ -1,5 +1,4 @@
-/*	up.c	4.9	83/02/27	*/
-#define	UPECCDEBUG
+/*	up.c	4.10	83/03/01	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -7,7 +6,6 @@
  * Also supports header operation and write
  * check for data and/or header.
  */
-
 #include "../h/param.h" 
 #include "../h/inode.h"
 #include "../h/fs.h"
@@ -24,13 +22,20 @@
 #define MAXBADDESC	126	/* max number of bad sectors recorded */
 #define SECTSIZ		512	/* sector size in bytes */
 #define HDRSIZ		4	/* number of bytes in sector header */
+
 #define MAXECC		5	/* max # bad bits allowed on ecc w/ F_ECCLM */
 
 u_short	ubastd[] = { 0776700 };
 
-char	up_gottype[MAXNUBA*8] = { 0 };
-char	up_type[MAXNUBA*8] = { 0 };
+char	up_gottype[MAXNUBA*8];
+char	up_type[MAXNUBA*8];
 extern	struct st upst[];
+
+struct  dkbad upbad[MAXNUBA*8];		/* bad sector table */
+int 	sectsiz;			/* real sector size */
+int	updebug[MAXNUBA*8];
+#define	UPF_BSEDEBUG	01	/* debugging bad sector forwarding */
+#define	UPF_ECCDEBUG	02	/* debugging ecc correction */
 
 u_char	up_offset[16] = {
 	UPOF_P400, UPOF_M400, UPOF_P400, UPOF_M400,
@@ -38,9 +43,6 @@ u_char	up_offset[16] = {
 	UPOF_P1200, UPOF_M1200, UPOF_P1200, UPOF_M1200,
 	0, 0, 0, 0
 };
-
-struct  dkbad upbad[MAXNUBA*8];		/* bad sector table */
-int 	sectsiz;			/* real sector size */
 
 upopen(io)
 	register struct iob *io;
@@ -65,10 +67,7 @@ upopen(io)
 		if (st->off[io->i_boff] == -1)
 			_stop("up bad unit");
 		/*
-		 * Read in the bad sector table:
-		 *	copy the contents of the io structure
-		 *	to tio for use during the bb pointer
-		 *	read operation.
+		 * Read in the bad sector table.
 		 */
 		tio = *io;
 		tio.i_bn = st->nspc * st->ncyl - st->nsect;
@@ -108,7 +107,7 @@ upstrategy(io, func)
 	sectsiz = SECTSIZ;
 	if (io->i_flgs & (F_HDR|F_HCHECK))
 		sectsiz += HDRSIZ;
-	upaddr->upcs2 = unit;
+	upaddr->upcs2 = unit % 8;
 	if ((upaddr->upds & UPDS_VV) == 0) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_PRESET|UP_GO;
@@ -127,9 +126,9 @@ restart:
 	o = io->i_cc + (upaddr->upwc * sizeof (short));
 	upaddr->upba = info + o;
 	bn = io->i_bn + o / sectsiz;
-	if (doprintf)
-		printf("upwc %d o %d i_bn %d bn %d\n", upaddr->upwc,
-			o, io->i_bn, bn);
+	if (updebug[unit] & (UPF_ECCDEBUG|UPF_BSEDEBUG))
+		printf("upwc=%d o=%d i_bn=%d bn=%d\n",
+			upaddr->upwc, o, io->i_bn, bn);
 	while((upaddr->upds & UPDS_DRY) == 0)
 		;
 	if (upstart(io, bn) != 0) {
@@ -147,12 +146,13 @@ restart:
 		ubafree(io, info);
 		return (io->i_cc);
 	}
-#ifdef LOGALLERRS
-	printf("uper: (c,t,s)=(%d,%d,%d) cs2=%b er1=%b er2=%b wc=%x\n",
-		upaddr->updc, upaddr->upda>>8, (upaddr->upda&0x1f-1),
-	    	upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
-		UPER1_BITS, upaddr->uper2, UPER2_BITS,-upaddr->upwc);
-#endif
+	if (updebug[unit] & (UPF_ECCDEBUG|UPF_BSEDEBUG)) {
+		printf("up error: (cyl,trk,sec)=(%d,%d,%d) ",
+		  upaddr->updc, upaddr->upda>>8, (upaddr->upda&0x1f-1));
+		printf("cs2=%b er1=%b er2=%b wc=%x\n",
+	    	  upaddr->upcs2, UPCS2_BITS, upaddr->uper1, 
+		  UPER1_BITS, upaddr->uper2, UPER2_BITS,-upaddr->upwc);
+	}
 	waitdry = 0;
 	while ((upaddr->upds & UPDS_DRY) == 0 && ++waitdry < sectsiz)
 		DELAY(5);
@@ -275,7 +275,7 @@ success:
 		goto restart;
 	}
 	/*
-	 * Release unibus 
+	 * Release UNIBUS 
 	 */
 	ubafree(io, info);
 	return (io->i_cc);
@@ -292,10 +292,10 @@ upecc(io, flag)
 	register struct iob *io;
 	int flag;
 {
+	register i, unit = io->i_unit;
 	register struct updevice *up = 
-		(struct updevice *)ubamem(io->i_unit, ubastd[0]);
+		(struct updevice *)ubamem(unit, ubastd[0]);
 	register struct st *st;
-	register int i;
 	caddr_t addr;
 	int bn, twc, npf, mask, cn, tn, sn;
 	daddr_t bbn;
@@ -307,12 +307,11 @@ upecc(io, flag)
 	 */
 	twc = up->upwc;
 	npf = ((twc * sizeof(short)) + io->i_cc) / sectsiz;
-#ifdef UPECCDEBUG
-	printf("npf %d mask 0x%x pos %d wc 0x%x\n",
-		npf, up->upec2, up->upec1, -twc);
-#endif
+	if (updebug[unit] & UPF_ECCDEBUG)
+		printf("npf=%d mask=0x%x pos=%d wc=0x%x\n",
+			npf, up->upec2, up->upec1, -twc);
 	bn = io->i_bn + npf;
-	st = &upst[up_type[io->i_unit]];
+	st = &upst[up_type[unit]];
 	cn = bn/st->nspc;
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
@@ -326,7 +325,7 @@ upecc(io, flag)
 
 		ecccnt = 0;
 		mask = up->upec2;
-		printf("up%d: soft ecc sn%d\n", io->i_unit, bn);
+		printf("up%d: soft ecc sn%d\n", unit, bn);
 		/*
 		 * Compute the byte and bit position of
 		 * the error.  o is the byte offset in
@@ -353,18 +352,18 @@ upecc(io, flag)
 			 *  (byte offset to incorrect data)
 			 */
 			addr = io->i_ma + (npf * sectsiz) + o;
-#ifdef UPECCDEBUG
-			printf("addr %x old: %x ", addr, (*addr&0xff));
-#endif
 			/*
 			 * No data transfer occurs with a write check,
 			 * so don't correct the resident copy of data.
 			 */
-			if ((io->i_flgs & (F_CHECK|F_HCHECK)) == 0)
+			if ((io->i_flgs & (F_CHECK|F_HCHECK)) == 0) {
+				if (updebug[unit] & UPF_ECCDEBUG)
+					printf("addr=0x%x old=0x%x ", addr,
+						(*addr&0xff));
 				*addr ^= (mask << bit);
-#ifdef UPECCDEBUG
-			printf("new: %x\n", (*addr&0xff));
-#endif
+				if (updebug[unit] & UPF_ECCDEBUG)
+					printf("new=0x%x\n", (*addr&0xff));
+			}
 			o++, bit -= 8;
 			if ((io->i_flgs&F_ECCLM) && ++ecccnt > MAXECC)
 				return (1);
@@ -381,14 +380,13 @@ upecc(io, flag)
 		 * indicate a hard error to caller.
 		 */
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
-		if ((bbn = isbad(&upbad[io->i_unit], cn, tn, sn)) < 0)
+		if ((bbn = isbad(&upbad[unit], cn, tn, sn)) < 0)
 			return (1);
 		bbn = st->ncyl * st->nspc -st->nsect - 1 - bbn;
 		twc = up->upwc + sectsiz;
 		up->upwc = - (sectsiz / sizeof (short));
-#ifdef UPECCDEBUG
-		printf("revector to block %d\n", bbn);
-#endif
+		if (updebug[unit] & UPF_BSEDEBUG)
+			printf("revector sn %d to %d\n", sn, bbn);
 		/*
 	 	 * Clear the drive & read the replacement
 		 * sector.  If this is in the middle of a
@@ -470,9 +468,18 @@ upioctl(io, cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-	struct st *st = &upst[up_type[io->i_unit]], *tmp;
+	int unit = io->i_unit, flag;
+	struct st *st = &upst[up_type[unit]], *tmp;
 
 	switch(cmd) {
+
+	case SAIODEBUG:
+		flag = (int)arg;
+		if (flag > 0)
+			updebug[unit] |= flag;
+		else
+			updebug[unit] &= ~flag;
+		return (0);
 
 	case SAIODEVDATA:
 		tmp = (struct st *)arg;
