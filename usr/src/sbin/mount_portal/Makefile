@@ -1,10 +1,14 @@
-#	@(#)Makefile	8.2 (Berkeley) %G%
+#	@(#)Makefile	8.3 (Berkeley) %G%
 
-CFLAGS+=-I/sys
 PROG=	mount_portal
-PTAL=	pt_conf.c pt_exec.c pt_file.c pt_tcp.c
-SRCS=	mount_portal.c conf.c activate.c ${PTAL}
+SRCS=	mount_portal.c activate.c conf.c getmntopts.c pt_conf.c \
+	pt_exec.c pt_file.c pt_tcp.c
 MAN8=	mount_portal.0
+
+MOUNT=	${.CURDIR}/../mount
+CFLAGS+= -I/sys -I${MOUNT}
+.PATH:	${MOUNT}
+
 DPADD=	$(LIBCOMPAT)
 LDADD=	-lcompat
 

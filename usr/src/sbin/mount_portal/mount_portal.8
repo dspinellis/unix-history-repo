@@ -1,5 +1,5 @@
 .\"
-.\" Copyright (c) 1993
+.\" Copyright (c) 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\" All rights reserved.
 .\"
@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_portal.8	8.2 (Berkeley) %G%
+.\"	@(#)mount_portal.8	8.3 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -19,9 +19,9 @@
 .Nd mount the portal daemon
 .Sh SYNOPSIS
 .Nm mount_portal
-.Op Fl F fsoptions
-.Pa /etc/portal.conf
-.Pa mount_point
+.Op Fl o Ar options
+.Ar /etc/portal.conf
+.Ar mount_point
 .Sh DESCRIPTION
 The
 .Nm mount_portal
@@ -33,6 +33,17 @@ The conventional mount point is
 This command is normally executed by
 .Xr mount 8
 at boot time.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl o
+Options are specified with a
+.Fl o
+flag followed by a comma separated string of options.
+See the
+.Xr mount 8
+man page for possible options and their meanings.
+.El
 .Pp
 The portal daemon provides an
 .Em open
@@ -89,7 +100,8 @@ fs/		file fs/
 .Sh SEE ALSO
 .Xr mount 2 ,
 .Xr unmount 2 ,
-.Xr fstab 5
+.Xr fstab 5 ,
+.Xr mount 8
 .Sh CAVEATS
 This filesystem may not be NFS-exported.
 .Sh HISTORY
