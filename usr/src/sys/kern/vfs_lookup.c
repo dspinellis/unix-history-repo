@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.24 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -85,7 +85,7 @@ namei(ndp)
 	 */
 	fdp = p->p_fd;
 	ndp->ni_dvp = NULL;
-	flag = ndp->ni_nameiop & OPFLAG;
+	flag = ndp->ni_nameiop & OPMASK;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
@@ -112,22 +112,30 @@ namei(ndp)
 			ndp->ni_vp = NULL;
 			return (error);
 		}
-		ndp->ni_ptr = ndp->ni_pnbuf;
 	}
+	ndp->ni_ptr = ndp->ni_pnbuf;
 	ndp->ni_loopcnt = 0;
-	dp = fdp->fd_cdir;
-	VREF(dp);
 #ifdef KTRACE
-	if (KTRPOINT(u.u_procp, KTR_NAMEI))
-		ktrnamei(u.u_procp->p_tracep, ndp->ni_pnbuf);
+	if (KTRPOINT(p, KTR_NAMEI))
+		ktrnamei(p->p_tracep, ndp->ni_pnbuf);
 #endif
 
+	/*
+	 * Get starting point for the translation.
+	 */
+	if (ndp->ni_nameiop & STARTDIR)
+		dp = ndp->ni_startdir;
+	else
+		dp = fdp->fd_cdir;
+	VREF(dp);
 start:
 	/*
 	 * Get starting directory.
 	 * Done at start of translation and after symbolic link.
 	 */
 	if (*ndp->ni_ptr == '/') {
+		if (ndp->ni_nameiop & STARTDIR)
+			panic("namei: illegal path");
 		vrele(dp);
 		while (*ndp->ni_ptr == '/') {
 			ndp->ni_ptr++;
