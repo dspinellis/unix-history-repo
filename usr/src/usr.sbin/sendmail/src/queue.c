@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.60		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.61		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.60		%G%);
+SCCSID(@(#)queue.c	3.61		%G%);
 
 /*
 **  Work queue.
@@ -238,7 +238,7 @@ runqueue(forkflag)
 	*/
 
 	/* order the existing work requests */
-	orderq();
+	(void) orderq();
 
 	/* process them once at a time */
 	while (WorkQ != NULL)
@@ -284,7 +284,7 @@ orderq()
 	DIR *f;
 	register int i;
 	WORK wlist[WLSIZE];
-	int wn = 0;
+	int wn = -1;
 	extern workcmpf();
 
 	/* clear out old WorkQ */
@@ -303,14 +303,14 @@ orderq()
 	if (f == NULL)
 	{
 		syserr("orderq: cannot open \"%s\" as \".\"", QueueDir);
-		return;
+		return (0);
 	}
 
 	/*
 	**  Read the work directory.
 	*/
 
-	while (wn < WLSIZE && (d = readdir(f)) != NULL)
+	while ((d = readdir(f)) != NULL)
 	{
 		FILE *cf;
 		char lbuf[MAXNAME];
@@ -325,7 +325,9 @@ orderq()
 		if (d->d_name[0] != 'q' || d->d_name[1] != 'f')
 			continue;
 
-		/* yes -- open control file */
+		/* yes -- open control file (if not too many files) */
+		if (++wn >= WLSIZE)
+			continue;
 		cf = fopen(d->d_name, "r");
 		if (cf == NULL)
 		{
@@ -345,7 +347,6 @@ orderq()
 				break;
 			}
 		}
-		wn++;
 		(void) fclose(cf);
 	}
 	(void) closedir(f);
@@ -379,6 +380,8 @@ orderq()
 			printf("%32s: pri=%ld\n", w->w_name, w->w_pri);
 	}
 # endif DEBUG
+
+	return (wn + 1);
 }
 /*
 **  WORKCMPF -- compare function for ordering work.
@@ -660,61 +663,78 @@ printqueue()
 {
 	register WORK *w;
 	FILE *f;
+	int nrequests;
 	char buf[MAXLINE];
 
 	/*
 	**  Read and order the queue.
 	*/
 
-	orderq();
+	nrequests = orderq();
 
 	/*
 	**  Print the work list that we have read.
 	*/
 
 	/* first see if there is anything */
-	if (WorkQ == NULL)
+	if (nrequests <= 0)
 	{
-		printf("\nMail queue is empty\n");
+		printf("Mail queue is empty\n");
 		return;
 	}
 
-	printf("\n\t\tMail Queue\n");
-	printf("--QID-- --Size-- -----Q Time----- --Sender/Recipient--\n");
+	printf("\t\tMail Queue (%d requests", nrequests);
+	if (nrequests > WLSIZE)
+		printf(", only %d printed", WLSIZE);
+	printf(")\n--QID-- --Size-- -----Q-Time----- ------------Sender/Recipient------------\n");
 	for (w = WorkQ; w != NULL; w = w->w_next)
 	{
 		struct stat st;
+		char lf[20];
+		auto time_t submittime = 0;
+		long dfsize = -1;
 
 		printf("%7s", w->w_name + 2);
+		strcpy(lf, w->w_name);
+		lf[0] = 'l';
+		if (stat(lf, &st) >= 0)
+			printf("*");
+		else
+			printf(" ");
+		errno = 0;
 		f = fopen(w->w_name, "r");
 		if (f == NULL)
 		{
 			printf(" (finished)\n");
+			errno = 0;
 			continue;
 		}
-		(void) fstat(fileno(f), &st);
-		printf(" %8ld", st.st_size);
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
-			auto long ti;
-
 			fixcrlf(buf, TRUE);
 			switch (buf[0])
 			{
 			  case 'S':	/* sender name */
-				printf(" %.20s", &buf[1]);
+				printf("%8d %.16s %.40s", dfsize,
+					ctime(&submittime), &buf[1]);
 				break;
 
 			  case 'R':	/* recipient name */
-				printf("\n\t\t\t\t  %.20s", &buf[1]);
+				printf("\n\t\t\t\t  %.40s", &buf[1]);
 				break;
 
 			  case 'T':	/* creation time */
-				sscanf(&buf[1], "%ld", &ti);
-				printf(" %.16s", ctime(&ti));
+				sscanf(&buf[1], "%ld", &submittime);
+				break;
+
+			  case 'D':	/* data file name */
+				if (stat(&buf[1], &st) >= 0)
+					dfsize = st.st_size;
 				break;
 			}
 		}
+		if (submittime == (time_t) 0)
+			printf(" (no control file)");
 		printf("\n");
 		fclose(f);
 	}
