@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -16,8 +16,8 @@ static char sccsid[] = "@(#)lprint.c	5.11 (Berkeley) %G%";
 #include <tzfile.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <paths.h>
 #include "finger.h"
-#include "pathnames.h"
 
 #define	LINE_LEN	80
 #define	TAB_LEN		8		/* 8 spaces between tabs */
