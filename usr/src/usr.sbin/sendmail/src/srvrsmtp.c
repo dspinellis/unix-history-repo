@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.18 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.19 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.18 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.19 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -54,6 +54,7 @@ struct cmd
 # define CMDQUIT	8	/* quit -- close connection and die */
 # define CMDHELO	9	/* helo -- be polite */
 # define CMDHELP	10	/* help -- give usage info */
+# define CMDEHLO	11	/* ehlo -- extended helo (RFC 1425) */
 /* non-standard commands */
 # define CMDONEX	16	/* onex -- sending one transaction only */
 # define CMDVERB	17	/* verb -- go into verbose mode */
@@ -74,6 +75,7 @@ static struct cmd	CmdTab[] =
 	"noop",		CMDNOOP,
 	"quit",		CMDQUIT,
 	"helo",		CMDHELO,
+	"ehlo",		CMDEHLO,
 	"verb",		CMDVERB,
 	"onex",		CMDONEX,
 	"hops",		CMDHOPS,
@@ -185,7 +187,17 @@ smtp(e)
 		switch (c->cmdcode)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
-			SmtpPhase = "HELO";
+		  case CMDEHLO:		/* extended hello */
+			if (c->cmdcode == CMDEHLO)
+			{
+				protocol = "ESMTP";
+				SmtpPhase = "EHLO";
+			}
+			else
+			{
+				protocol = "SMTP";
+				SmtpPhase = "HELO";
+			}
 			setproctitle("%s: %s", CurHostName, inp);
 			if (strcasecmp(p, MyHostName) == 0)
 			{
@@ -245,7 +257,9 @@ smtp(e)
 				break;
 			if (sendinghost != NULL)
 				define('s', sendinghost, e);
-			define('r', "SMTP", e);
+			if (protocol == NULL)
+				protocol = "SMTP";
+			define('r', protocol, e);
 			initsys(e);
 			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
 

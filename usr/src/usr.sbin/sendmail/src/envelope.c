@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -450,7 +450,7 @@ setsender(from, e)
 /*
 	SuprErrs = TRUE;
 */
-	if (from == NULL || parseaddr(from, &e->e_from, 1, '\0', e) == NULL)
+	if (from == NULL || parseaddr(from, &e->e_from, 1, ' ', e) == NULL)
 	{
 		/* log garbage addresses for traceback */
 # ifdef LOG
@@ -468,10 +468,10 @@ setsender(from, e)
 		if (from != NULL)
 			SuprErrs = TRUE;
 		if (from == realname ||
-		    parseaddr(from = newstr(realname), &e->e_from, 1, '\0', e) == NULL)
+		    parseaddr(from = newstr(realname), &e->e_from, 1, ' ', e) == NULL)
 		{
 			SuprErrs = TRUE;
-			if (parseaddr("postmaster", &e->e_from, 1, '\0', e) == NULL)
+			if (parseaddr("postmaster", &e->e_from, 1, ' ', e) == NULL)
 				syserr("553 setsender: can't even parse postmaster!");
 		}
 	}
