@@ -1,4 +1,4 @@
-/* ip_input.c 1.1 81/10/14 */
+/* ip_input.c 1.2 81/10/14 */
 #include "../h/param.h"
 #include "../bbnnet/net.h"
 #include "../bbnnet/tcp.h"
@@ -380,15 +380,6 @@ register struct ip *p;
 COUNT(IP_DEQ);
 	p->ip_prev->ip_next = p->ip_next;
 	p->ip_next->ip_prev = p->ip_prev;
-}
-
-ip_bswap(p)    /* byte swap ip header */
-register struct ip *p;
-{
-COUNT(IP_BSWAP);
-	p->ip_len = ntohs(p->ip_len);
-	p->ip_id = ntohs(p->ip_id);
-	p->ip_off = ntohs(p->ip_off);
 }
 
 ip_timeo()      /* frag reass.q timeout routine */
