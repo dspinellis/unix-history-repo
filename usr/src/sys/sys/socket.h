@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.18 (Berkeley) %G%
+ *	@(#)socket.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -144,6 +144,33 @@ struct sockproto {
  *
  * Further levels are defined by the individual families below.
  */
+#define NET_MAXID	AF_MAX
+
+#define CTL_NET_NAMES { \
+	"unspec", \
+	"unix", \
+	"inet", \
+	"implink", \
+	"pup", \
+	"chaos", \
+	"xerox_ns", \
+	"iso", \
+	"emca", \
+	"datakit", \
+	"ccitt", \
+	"ibm_sna", \
+	"decnet", \
+	"dec_dli", \
+	"lat", \
+	"hylink", \
+	"appletalk", \
+	"route", \
+	"link_layer", \
+	"xtp", \
+	"coip", \
+	"cnt", \
+}
+
 /*
  * PF_ROUTE - Routing table
  *
