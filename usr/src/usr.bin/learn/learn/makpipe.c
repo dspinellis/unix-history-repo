@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)makpipe.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)makpipe.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -14,7 +14,7 @@ makpipe()
 		close(0);
 		dup(f[0]);
 		close(f[0]);
-#if vax
+#if BSD4_2
 		execl ("/bin/sh", "sh", "-i", 0);
 		execl ("/usr/ucb/bin/sh", "sh", "-i", 0);
 #else

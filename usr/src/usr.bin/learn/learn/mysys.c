@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mysys.c	4.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mysys.c	4.5	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -30,7 +30,7 @@ chgenv()
 
 	sprintf(path, "PATH=%s/bin:/usr/cc/bin:/usr/ucb/bin:", direct);
 	sprintf(exinit, "EXINIT=set prompt noopt open window=23");
-#if vax
+#if BSD4_2
 	system("stty old");
 	for (p=environ,i=3; *p != 0 && i < EMAX; p++,i++)   {
 #else
@@ -43,7 +43,7 @@ chgenv()
 			sprintf(path, "PATH=%s/bin:%s", direct, &envp[i--][5]);
 		else if (strncmp(*p, "EXINIT=", 7) == 0)
 			sprintf(exinit, "%s|set prompt noopt open window=23", envp[i--]);
-#if vax
+#if BSD4_2
 		else if (strncmp(*p, "PS1=", 4) == 0)
 			i--;
 	}

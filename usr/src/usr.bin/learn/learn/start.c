@@ -1,13 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)start.c	4.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)start.c	4.5	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
 #include "lrnref.h"
 #include <sys/types.h>
+#ifndef DIR
 #include <sys/dir.h>
-
-#define BSD4_2	1
+#endif
 
 start(lesson)
 char *lesson;
@@ -17,11 +17,10 @@ char *lesson;
 	int c, n;
 	char where [100];
 
-#if BSD4_2
+#ifdef BSD4_2
 	DIR *dp;
 #define OPENDIR(s)	((dp = opendir(s)) != NULL)
 #define DIRLOOP(s)	for (s = readdir(dp); s != NULL; s = readdir(dp))
-#define PATHSIZE 256
 #define EPSTRLEN	ep->d_namlen
 #define CLOSEDIR	closedir(dp)
 #else
@@ -32,7 +31,10 @@ char *lesson;
 #define CLOSEDIR	close(f)
 #endif
 
-	OPENDIR(".");				/* clean up play directory */
+	if (!OPENDIR(".")) {		/* clean up play directory */
+		perror("Start:  play directory");
+		wrapup(1);
+	}
 	DIRLOOP(ep) {
 		if (ep->d_ino == 0)
 			continue;
