@@ -1,4 +1,4 @@
-/*	mt.c	4.2	82/01/17	*/
+/*	mt.c	4.3	82/03/14	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -77,7 +77,9 @@ char	mtds_bits[] = MTDS_BITS;
 mtattach(mi)
 	struct mba_device *mi;
 {
-
+#ifdef lint
+	mtread(0); mtwrite(0); mtioctl(0, 0, 0, 0);
+#endif
 }
 
 mtslave(mi, ms)
@@ -253,10 +255,12 @@ mtustart(mi)
 	}
 	if (blkno < dbtofsb(bp->b_blkno))
 		mtaddr->mtncs[MUUNIT(bp->b_dev)] =
-		  (min(dbtofsb(bp->b_blkno) - blkno, 0377)<<8)| MT_SFORW|MT_GO;
+		  (min((unsigned)(dbtofsb(bp->b_blkno) - blkno), 0377) << 8) |
+			MT_SFORW|MT_GO;
 	else
 		mtaddr->mtncs[MUUNIT(bp->b_dev)] =
-		  (min(blkno - dbtofsb(bp->b_blkno), 0377)<<8)| MT_SREV|MT_GO;
+		  (min((unsigned)(blkno - dbtofsb(bp->b_blkno)), 0377) << 8) |
+			MT_SREV|MT_GO;
 	return (MBU_STARTED);
 }
 
@@ -393,9 +397,9 @@ mtndtint(mi)
 		}
 		/* this is UGLY!  (but is it correct?) */
 		if ((fc = dbtofsb(bp->b_blkno) - sc->sc_blkno) < 0)
-			sc->sc_blkno -= min(0377, -fc);
+			sc->sc_blkno -= MIN(0377, -fc);
 		else
-			sc->sc_blkno += min(0377, fc);
+			sc->sc_blkno += MIN(0377, fc);
 		return (MBN_RETRY);
 
 	case MTER_RWDING:
@@ -496,7 +500,7 @@ mtioctl(dev, cmd, addr, flag)
 	register struct mu_softc *sc = &mu_softc[MUUNIT(dev)];
 	register struct buf *bp = &cmtbuf[MTUNIT(dev)];
 	register callcount;
-	register int n, op;
+	register int op;
 	int fcount;
 	struct mtop mtop;
 	struct mtget mtget;
@@ -542,7 +546,7 @@ mtioctl(dev, cmd, addr, flag)
 			register int n;
 
 			do {
-				n = min(fcount, 0xff);
+				n = MIN(fcount, 0xff);
 				mtcommand(dev, op, n);
 				fcount -= n;
 			} while (fcount);
@@ -588,8 +592,12 @@ mtdump()
 	mi = phys(mtinfo[0], struct mba_device *);
 	mp = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
 	mp->mba_cr = MBCR_IE;
-	mtaddr = (struct mtdevice *)&mp->mba_drv[mi->mi_drive];
+#if lint
+	blk = blk; num = num; start = start;
+	return (0);
+#endif
 #ifdef notyet
+	mtaddr = (struct mtdevice *)&mp->mba_drv[mi->mi_drive];
 	mtaddr->mttc = MTTC_PDP11|MTTC_1600BPI;
 	mtaddr->mtcs1 = MT_DCLR|MT_GO;
 	while (num > 0) {

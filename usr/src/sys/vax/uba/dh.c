@@ -1,4 +1,4 @@
-/*	dh.c	4.41	82/01/14	*/
+/*	dh.c	4.42	82/03/14	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -10,6 +10,7 @@
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/proc.h"
 #include "../h/tty.h"
 #include "../h/map.h"
 #include "../h/pte.h"
@@ -190,7 +191,7 @@ dmprobe(reg)
 
 #ifdef lint
 	br = 0; vec = br; br = vec;
-	dmintr();
+	dmintr(0);
 #endif
 	dmaddr->dmcsr = DM_DONE|DM_IE;
 	DELAY(20);

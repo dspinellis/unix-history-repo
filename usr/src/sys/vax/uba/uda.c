@@ -1,4 +1,4 @@
-/*	uda.c	4.2	82/01/17	*/
+/*	uda.c	4.3	82/03/14	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -112,7 +112,8 @@ udprobe(reg, ctlr)
 	register struct uda_softc *sc = &uda_softc[ctlr];
 
 #ifdef lint
-	br = 0; cvec = br; br = cvec;
+	br = 0; cvec = br; br = cvec; reg = reg;
+	udread(0); udwrite(0); udreset(0); udintr(0);
 #endif
 	/* SHOULD CHECK THAT IT REALLY IS A UDA */
 	br = 0x15;
@@ -129,6 +130,9 @@ udslave(ui, reg)
 	 * INITIALIZED.  WE'LL FIND OUT WHEN WE FIRST
 	 * TRY TO ACCESS IT.
 	 */
+#ifdef lint
+	ui = ui; reg = reg;
+#endif
 	return(1);
 }
 
@@ -156,6 +160,9 @@ udopen(dev, flag)
 	register struct uda_softc *sc;
 	int s;
 
+#ifdef lint
+	flag = flag;
+#endif
 	unit = minor(dev) >> 3;
 	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0) {
 		u.u_error = ENXIO;
@@ -166,7 +173,8 @@ udopen(dev, flag)
 	if (sc->sc_state != S_RUN) {
 		if (sc->sc_state == S_IDLE)
 			udinit(ui->ui_ctlr);
-		sleep(ui->ui_mi, 0); /* wait for initialization to complete */
+		/* wait for initialization to complete */
+		sleep((caddr_t)ui->ui_mi, 0);
 		if (sc->sc_state != S_RUN) {
 			u.u_error = EIO;
 			return;
@@ -275,7 +283,8 @@ udstrategy(bp)
 				printf("uda: ubinfo %x\n",um->um_ubinfo);
 			else
 				um->um_ubinfo =
-				uballoc(um->um_ubanum, 0, 0, UBA_NEEDBDP);
+				uballoc(um->um_ubanum, (caddr_t)0, 0,
+					UBA_NEEDBDP);
 		}
 #endif
 		(void) udstart(um);
@@ -315,7 +324,7 @@ loop:
 				ubarelse(um->um_ubanum, &um->um_ubinfo);
 		}
 #endif
-		return(0);
+		return (0);
 	}
 	if ((bp = dp->b_actf) == NULL) {
 		/*
@@ -334,7 +343,7 @@ loop:
 		printf("udasa %o, state %d\n", udaddr->udasa&0xffff, sc->sc_state);
 		udinit(um->um_ctlr);
 		/* SHOULD REQUEUE OUTSTANDING REQUESTS, LIKE UDRESET */
-		return;
+		return (0);
 	}
 	ui = uddinfo[dkunit(bp)];
 	/*
@@ -342,9 +351,9 @@ loop:
 	 * until some outstanding commands complete.
 	 */
 	if (sc->sc_credits < 2)
-		return(0);
+		return (0);
 	if ((mp = udgetcp(um)) == NULL)
-		return(0);
+		return (0);
 	sc->sc_credits--;	/* committed to issuing a command */
 	if (ui->ui_flags == 0) {	/* not online */
 		mp->mscp_opcode = M_OP_ONLIN;
@@ -442,7 +451,7 @@ udintr(d)
 #define	STEP1GOOD	(UDA_STEP2|UDA_IE|(NCMDL2<<3)|NRSPL2)
 		if ((udaddr->udasa&(UDA_ERR|STEP1GOOD)) != STEP1GOOD) {
 			sc->sc_state = S_IDLE;
-			wakeup(um);
+			wakeup((caddr_t)um);
 			return;
 		}
 		udaddr->udasa = ((int)&sc->sc_uda->uda_ca.ca_ringbase)|
@@ -454,7 +463,7 @@ udintr(d)
 #define	STEP2GOOD	(UDA_STEP3|UDA_IE|(sc->sc_ivec/4))
 		if ((udaddr->udasa&(UDA_ERR|STEP2GOOD)) != STEP2GOOD) {
 			sc->sc_state = S_IDLE;
-			wakeup(um);
+			wakeup((caddr_t)um);
 			return;
 		}
 		udaddr->udasa = ((int)&sc->sc_uda->uda_ca.ca_ringbase)>>16;
@@ -465,7 +474,7 @@ udintr(d)
 #define	STEP3GOOD	UDA_STEP4
 		if ((udaddr->udasa&(UDA_ERR|STEP3GOOD)) != STEP3GOOD) {
 			sc->sc_state = S_IDLE;
-			wakeup(um);
+			wakeup((caddr_t)um);
 			return;
 		}
 		udaddr->udasa = UDA_GO;
@@ -493,7 +502,7 @@ udintr(d)
 		sc->sc_lastrsp = 0;
 		if ((mp = udgetcp(um)) == NULL) {
 			sc->sc_state = S_IDLE;
-			wakeup(um);
+			wakeup((caddr_t)um);
 			return;
 		}
 		mp->mscp_opcode = M_OP_STCON;
@@ -515,7 +524,7 @@ udintr(d)
 	if (udaddr->udasa&UDA_ERR) {
 		printf("uda%d: fatal error (%o)\n", d, udaddr->udasa&0xffff);
 		udaddr->udaip = 0;
-		wakeup(um);
+		wakeup((caddr_t)um);
 	}
 
 	/*
@@ -561,7 +570,7 @@ udintr(d)
 		printd("uda: command ring transition\n");
 		ud->uda_ca.ca_cmdint = 0;
 	}
-	udstart(um);
+	(void) udstart(um);
 }
 
 /*
@@ -603,7 +612,7 @@ udrsp(um, ud, sc, i)
 		else
 			sc->sc_state = S_IDLE;
 		um->um_tab.b_active = 0;
-		wakeup(um);
+		wakeup((caddr_t)um);
 		break;
 
 	case M_OP_ONLIN|M_OP_END:
@@ -641,7 +650,7 @@ udrsp(um, ud, sc, i)
 	case M_OP_READ|M_OP_END:
 	case M_OP_WRITE|M_OP_END:
 		bp = (struct buf *)mp->mscp_cmdref;
-		ubarelse(um->um_ubanum, &bp->b_resid);
+		ubarelse(um->um_ubanum, (int *)&bp->b_resid);
 		/*
 		 * Unlink buffer from I/O wait queue.
 		 */
@@ -818,7 +827,7 @@ udreset(uban)
 		}
 		for (bp = udwtab[d].av_forw; bp != &udwtab[d]; bp = nbp) {
 			nbp = bp->av_forw;
-			ubarelse(uban, &bp->b_ubinfo);
+			ubarelse(uban, (int *)&bp->b_ubinfo);
 			/*
 			 * Link the buffer onto the drive queue
 			 */
