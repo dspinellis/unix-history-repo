@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)d.t	5.1 (Berkeley) %G%
+.\"	@(#)d.t	6.1 (Berkeley) %G%
 .\"
 .ds LH "Building Systems With Config
 .ds RH "Data Structure Sizing Rules
@@ -104,7 +104,7 @@ is the maximum number of mountable file systems.
 .LP
 In addition to the above values, the system page tables (used to
 map virtual memory in the kernel's address space) are sized at
-compile time by the SYSPTSIZE definition in the file /sys/vax/param.h.
+compile time by the SYSPTSIZE definition in the file /sys/vax/vmparam.h.
 This is defined to be 20 + MAXUSERS pages of page tables. 
 Its definition affects
 the size of many data structures allocated at boot time because
@@ -153,9 +153,12 @@ limit, and may be increased to 6M with the \fIsetrlimit\fP\|(2) system call.
 If these are insufficient, they
 can be increased by changing the constants MAXTSIZ, MAXDSIZ and MAXSSIZ
 in the file
-/sys/vax/vmparam.h, while
-changing the definitions in
-/sys/h/dmap.h and /sys/h/text.h.
+/sys/vax/vmparam.h.
+The size of the swap maps for these objects must also be increased;
+for text, the parameters are NXDAD (/sys/h/text.h)
+and DMTEXT (/sys/vax/autoconfig.c).
+The maps for data and swap are limited by NDMAP (/sys/h/dmap.h)
+and DMMAX (/sys/vax/autoconfig.c).
 You must be careful in doing this that you have adequate paging space.
 As normally configured , the system has only 16M bytes per paging area.
 The best way to get more space is to provide multiple, thereby
@@ -184,3 +187,7 @@ The maximum value NOFILE (open files per process limit)
 can be raised to
 is 30 because of a bit field in the page table entry in
 /sys/machine/pte.h.
+.PP
+The amount of physical memory is currently limited to 8 Mb
+by the size of the index fields in the core-map (/sys/h/cmap.h).
+This limit is also found in /sys/vax/locore.s.
