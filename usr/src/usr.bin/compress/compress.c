@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /* 
@@ -1029,6 +1029,9 @@ decompress() {
     register char_type *stackp;
     register int finchar;
     register code_int code, oldcode, incode;
+    int    n, nwritten, offset;		/* Variables for buffered write */
+    char buff[BUFSIZ];			/* Buffer for buffered write */
+
 
     /*
      * As above, initialize the first 256 entries in the table.
@@ -1043,9 +1046,11 @@ decompress() {
     finchar = oldcode = getcode();
     if(oldcode == -1)	/* EOF already? */
 	return;			/* Get out of here */
-    putchar( (char)finchar );		/* first code must be 8 bits = char */
-    if(ferror(stdout))		/* Crash if can't write */
-	writeerr();
+
+    /* first code must be 8 bits = char */
+    n=0;
+    buff[n++] = (char)finchar;
+
     stackp = de_stack;
 
     while ( (code = getcode()) > -1 ) {
@@ -1083,9 +1088,28 @@ decompress() {
 	/*
 	 * And put them out in forward order
 	 */
-	do
-	    putchar ( *--stackp );
-	while ( stackp > de_stack );
+	do {
+	    /*
+	     * About 60% of the time is spent in the putchar() call
+	     * that appeared here.  It was originally
+	     *		putchar ( *--stackp );
+	     * If we buffer the writes ourselves, we can go faster (about
+	     * 30%).
+	     *
+	     * At this point, the next line is the next *big* time
+	     * sink in the code.  It takes up about 10% of the time.
+	     */
+	     buff[n++] = *--stackp;
+	     if (n == BUFSIZ) {
+		 offset = 0;
+		 do {
+		     nwritten = write(fileno(stdout), &buff[offset], n);
+		     if (nwritten <= 0)
+			 writeerr();
+		     offset += nwritten;
+		 } while ((n -= nwritten) > 0);
+	      }
+	} while ( stackp > de_stack );
 
 	/*
 	 * Generate the new entry.
@@ -1100,9 +1124,16 @@ decompress() {
 	 */
 	oldcode = incode;
     }
-    fflush( stdout );
-    if(ferror(stdout))
-	writeerr();
+    /*
+     * Flush the stuff remaining in our buffer...
+     */
+    offset = 0;
+    do {
+	nwritten = write(fileno(stdout), &buff[offset], n);
+	if (nwritten <= 0)
+	    writeerr();
+	offset += nwritten;
+    } while ((n -= nwritten) > 0);
 }
 
 /*****************************************************************
@@ -1499,7 +1530,7 @@ long int num, den;
 
 version()
 {
-	fprintf(stderr, "%s, Berkeley 5.12 %G%\n", rcs_ident);
+	fprintf(stderr, "%s, Berkeley 5.13 %G%\n", rcs_ident);
 	fprintf(stderr, "Options: ");
 #ifdef vax
 	fprintf(stderr, "vax, ");
