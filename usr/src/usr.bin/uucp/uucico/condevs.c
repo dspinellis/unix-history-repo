@@ -6,11 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 extern int errno;
-extern char *sys_errlist[];
+extern const char *const sys_errlist[];
 
 /*
  * Here are various dialers to establish the machine-machine connection.
