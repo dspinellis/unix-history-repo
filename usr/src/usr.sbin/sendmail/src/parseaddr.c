@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.44		%G%);
+SCCSID(@(#)parseaddr.c	3.45		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -877,3 +877,127 @@ printaddr(a, follow)
 }
 
 # endif DEBUG
+/*
+**  REMOTENAME -- return the name relative to the current mailer
+**
+**	Parameters:
+**		name -- the name to translate.
+**		force -- if set, forces rewriting even if the mailer
+**			does not request it.  Used for rewriting
+**			sender addresses.
+**
+**	Returns:
+**		the text string representing this address relative to
+**			the receiving mailer.
+**
+**	Side Effects:
+**		none.
+**
+**	Warnings:
+**		The text string returned is tucked away locally;
+**			copy it if you intend to save it.
+*/
+
+char *
+remotename(name, m, force)
+	char *name;
+	struct mailer *m;
+	bool force;
+{
+	static char buf[MAXNAME];
+	char lbuf[MAXNAME];
+	extern char *macvalue();
+	char *oldf = macvalue('f');
+	char *oldx = macvalue('x');
+	char *oldg = macvalue('g');
+	extern char **prescan();
+	register char **pvp;
+	extern char *getxpart();
+	extern ADDRESS *buildaddr();
+
+	/*
+	**  See if this mailer wants the name to be rewritten.  There are
+	**  many problems here, owing to the standards for doing replies.
+	**  In general, these names should only be rewritten if we are
+	**  sending to another host that runs sendmail.
+	*/
+
+	if (!bitset(M_RELRCPT, m->m_flags) && !force)
+		return (name);
+
+	/*
+	**  Do general rewriting of name.
+	**	This will also take care of doing global name translation.
+	*/
+
+	define('x', getxpart(name));
+	pvp = prescan(name, '\0');
+	if (pvp == NULL)
+		return (name);
+	rewrite(pvp, 1);
+	rewrite(pvp, 3);
+	if (**pvp == CANONNET)
+	{
+		/* oops... resolved to something */
+		return (name);
+	}
+	cataddr(pvp, lbuf, sizeof lbuf);
+
+	/* make the name relative to the receiving mailer */
+	define('f', lbuf);
+	expand(m->m_from, buf, &buf[sizeof buf - 1], CurEnv);
+
+	/* rewrite to get rid of garbage we added in the expand above */
+	pvp = prescan(buf, '\0');
+	if (pvp == NULL)
+		return (name);
+	rewrite(pvp, 2);
+	cataddr(pvp, lbuf, sizeof lbuf);
+
+	/* now add any comment info we had before back */
+	define('g', lbuf);
+	expand("$q", buf, &buf[sizeof buf - 1], CurEnv);
+
+	define('f', oldf);
+	define('g', oldg);
+	define('x', oldx);
+
+# ifdef DEBUG
+	if (tTd(12, 1))
+		printf("remotename(%s) => `%s'\n", name, buf);
+# endif DEBUG
+	return (buf);
+}
+/*
+**  CANONNAME -- make name canonical
+**
+**	This is used for SMTP and misc. printing.  Given a print
+**	address, it strips out comments, etc., and puts on exactly
+**	one set of brackets.
+**
+**	Parameters:
+**		name -- the name to make canonical.
+**
+**	Returns:
+**		pointer to canonical name.
+**
+**	Side Effects:
+**		none.
+**
+**	Warning:
+**		result is saved in static buf; future calls will trash it.
+*/
+
+char *
+canonname(name)
+	char *name;
+{
+	static char nbuf[MAXNAME + 2];
+
+	if (name[0] == '<')
+		return (name);
+	strcpy(nbuf, "<");
+	strcat(nbuf, name);
+	strcat(nbuf, ">");
+	return (nbuf);
+}
