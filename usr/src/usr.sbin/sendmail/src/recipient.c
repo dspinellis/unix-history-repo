@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.32		%G%);
+SCCSID(@(#)recipient.c	3.33		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -327,8 +327,9 @@ recipient(a, sendq)
 		stripquotes(buf, TRUE);
 
 		/* see if this is to a file */
-		if ((p = rindex(buf, '/')) != NULL)
+		if (buf[0] == '/')
 		{
+			p = rindex(buf, '/');
 			/* check if writable or creatable */
 			if (a->q_alias == NULL && Debug == 0 && !QueueRun && !ForceMail)
 			{
