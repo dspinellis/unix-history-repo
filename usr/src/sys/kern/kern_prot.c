@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.27 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -223,9 +223,12 @@ setuid(p, uap, retval)
 	    (error = suser(pc->pc_ucred, &p->p_acflag)))
 		return (error);
 	/*
-	 * Everything's okay, do it.  Copy credentials so other references do
-	 * not see our changes.
+	 * Everything's okay, do it.
+	 * Transfer proc count to new user.
+	 * Copy credentials so other references do not see our changes.
 	 */
+	(void)chgproccnt(pc->p_ruid, -1);
+	(void)chgproccnt(uid, 1);
 	pc->pc_ucred = crcopy(pc->pc_ucred);
 	pc->pc_ucred->cr_uid = uid;
 	pc->p_ruid = uid;
