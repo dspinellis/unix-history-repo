@@ -2,12 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)doc.I	5.1 (Berkeley) %G%
+.\"	@(#)doc.I	6.1 (Berkeley) %G%
 .\"
 .Ds
 .Fd addch ch \*m
 char	ch;
-.sp .5
 .Fd waddch win\*,ch
 WINDOW	*win;
 char	ch;
@@ -36,7 +35,6 @@ every eight characters.
 .Ds
 .Fd addstr str \*m
 char	*str;
-.sp .5
 .Fd waddstr win\*,str
 WINDOW	*win;
 char	*str;
@@ -62,7 +60,6 @@ and the window encompasses the lower right-hand corner of the terminal,
 the corners are left blank to avoid a scroll.
 .Ds
 .Fd clear "" \*m
-.sp .5
 .Fd wclear win
 WINDOW	*win;
 .De
@@ -109,7 +106,6 @@ even if the window passed to
 is not a screen.
 .Ds
 .Fd clrtobot "" \*m
-.sp .5
 .Fd wclrtobot win
 WINDOW	*win;
 .De
@@ -119,7 +115,6 @@ under any circumstances.
 \*(Nm
 .Ds
 .Fd clrtoeol "" \*m
-.sp .5
 .Fd wclrtoeol win
 WINDOW	*win;
 .De
@@ -127,7 +122,6 @@ Wipes the window clear from the current \*y to the end of the line.
 \*(Nm
 .Ds
 .Fd delch
-.sp .5
 .Fd wdelch win
 WINDOW	*win;
 .De
@@ -136,7 +130,6 @@ Each character after it on the line shifts to the left,
 and the last character becomes blank.
 .Ds
 .Fd deleteln
-.sp .5
 .Fd wdeleteln win
 WINDOW	*win;
 .De
@@ -146,7 +139,6 @@ and the bottom line will become blank.
 The current \*y will remain unchanged.
 .Ds
 .Fd erase "" \*m
-.sp .5
 .Fd werase win
 WINDOW	*win;
 .De
@@ -158,9 +150,40 @@ on a
 .Fn refresh .
 \*(Nm
 .Ds
+.Fd flushok win\*,boolf \*m
+WINDOW	*win;
+bool	boolf;
+.De
+Normally,
+.Fn refresh
+.Fn fflush 's
+.Vn stdout
+when it is finished.
+.Fn flushok
+allows you to control this.
+if
+.Vn boolf
+is TRUE
+(\c
+.i i.e. ,
+non-zero)
+it will do the
+.Fn fflush ;
+if it is FALSE.
+it will not.
+.Ds
+.Fd idlok win\*,boolf
+WINDOW	*win;
+bool	boolf;
+.De
+Reserved for future use.
+This will eventually signal to
+.Fn refresh
+that it is all right to use the insert and delete line sequences
+when updating the window.
+.Ds
 .Fd insch c
 char	c;
-.sp .5
 .Fd winsch win\*,c
 WINDOW	*win;
 char	c;
@@ -173,7 +196,6 @@ and the last character disappears.
 \*(Es
 .Ds
 .Fd insertln
-.sp .5
 .Fd winsertln win
 WINDOW	*win;
 .De
@@ -183,11 +205,9 @@ will be shifted down,
 and the bottom line will disappear.
 The current line will become blank,
 and the current \*y will remain unchanged.
-\*(Es
 .Ds
 .Fd move y\*,x \*m
 int	y\*,x;
-.sp .5
 .Fd wmove win\*,y\*,x
 WINDOW	*win;
 int	y\*,x;
@@ -230,14 +250,14 @@ are placed on
 .Vn win2
 at their starting \*y.
 This is done destructively,
-i.e., blanks on
+.i i.e. ,
+blanks on
 .Vn win1
 become blank on
 .Vn win2 .
 .Ds
 .Fd printw fmt\*,arg1\*,arg2\*,...
 char	*fmt;
-.sp .5
 .Fd wprintw win\*,fmt\*,arg1\*,arg2\*,...
 WINDOW	*win;
 char	*fmt;
@@ -254,7 +274,6 @@ to avoid leaving things on the window from earlier calls.
 \*(Es
 .Ds
 .Fd refresh "" \*m
-.sp .5
 .Fd wrefresh win
 WINDOW	*win;
 .De
@@ -264,14 +283,21 @@ only that part covered by it is updated.
 \*(Es
 In this case, it will update whatever it can
 without causing the scroll.
+.sp
+As a special case,
+if
+.Fn wrefresh
+is called with the window
+.Vn curscr
+the screen is cleared
+and repainted as it is currently.
+This is very useful for allowing the redrawing of the screen
+when the user has garbage dumped on his terminal.
 .Ds
 .Fd standout "" \*m
-.sp .5
 .Fd wstandout win
 WINDOW	*win;
-.sp .5
 .Fd standend "" \*m
-.sp .5
 .Fd wstandend win
 WINDOW	*win;
 .De
