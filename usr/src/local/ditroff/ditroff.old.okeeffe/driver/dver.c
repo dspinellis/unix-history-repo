@@ -1,4 +1,4 @@
-/*	dver.c	1.9	83/10/22
+/*	dver.c	1.10	83/11/30
  *
  * Versatec driver for the new troff
  *
@@ -79,7 +79,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.9	83/10/22";
+char	SccsId[]= "dver.c	1.10	83/11/30";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -126,7 +126,7 @@ int	lastw;		/* width of last character printed */
 #define	RES		200		/* resolution of the device (dots/in) */
 #define RASTER_LENGTH	7040		/* device line length */
 #define BYTES_PER_LINE	(RASTER_LENGTH/8)
-#define BAND		2			/* length of a band in inches */
+#define BAND		1			/* length of a band in inches */
 #define NLINES		(int)(BAND * RES)	/* BAND" long bands */
 #define BUFFER_SIZE	(NLINES*BYTES_PER_LINE)	/* number of chars in picture */
 
@@ -426,7 +426,7 @@ register FILE *fp;
 				;
 			break;
 		case 'x':	/* device control */
-			devcntrl(fp);
+			if (devcntrl(fp)) return;
 			break;
 		default:
 			error(FATAL, "unknown input character %o %c", c, c);
@@ -434,8 +434,8 @@ register FILE *fp;
 	}
 }
 
-devcntrl(fp)	/* interpret device control functions */
-FILE *fp;
+int devcntrl(fp)	/* interpret device control functions */
+FILE *fp;		/* returns -1 apon recieving "stop" command */
 {
         char str[20], str1[50], buf[50];
 	int c, n;
@@ -453,7 +453,7 @@ FILE *fp;
 		break;
 	case 's':	/* stop */
 		t_reset('s');
-		break;
+		return -1;
 	case 'r':	/* resolution assumed when prepared */
 		fscanf(fp, "%d", &n);
 		if (n!=RES) error(FATAL,"Input computed with wrong resolution");
@@ -478,7 +478,8 @@ FILE *fp;
 	}
 	while ((c = getc(fp)) != '\n')	/* skip rest of input line */
 		if (c == EOF)
-			break;
+			return -1;
+	return 0;
 }
 
 /* fileinit:	read in font and code files, etc.
@@ -599,12 +600,30 @@ int n;
 char *s, *s1;
 {
 	char temp[60];
-	int fin, nw, norig;
+	register int fin;
+	register int nw;
+	register int norig;
 
 	if (n < 0 || n > NFONTS)
 		error(FATAL, "illegal fp command %d %s", n, s);
 	if (strcmp(s, fontbase[n]->namefont) == 0)
 		return;
+
+	for (fin = 1; fin <= NFONTS; fin++)	/* first check to see if the */
+	    if (strcmp(s, fontbase[fin]->namefont) == 0) {  /* font is loaded */
+		register char *c;			    /* somewhere else */
+
+#define ptrswap(x, y) { c = (char*) (x); x = y; y = c; }
+
+		ptrswap(fontbase[n], fontbase[fin]);
+		ptrswap(codetab[n], codetab[fin]);
+		ptrswap(widtab[n], widtab[fin]);
+		ptrswap(fitab[n], fitab[fin]);
+		t_fp(n, fontbase[n]->namefont, fontbase[n]->intname);
+		t_fp(fin, fontbase[fin]->namefont, fontbase[fin]->intname);
+		return;
+	    }
+
 	if (s1 == NULL || s1[0] == '\0')
 		sprintf(temp, "%s/devvp/%s.out", fontdir, s);
 	else
@@ -712,13 +731,13 @@ int page;
 
     if (page == PAGEEND) {		/* set outsize to inch boundary */
 	outsize = (maxv + (RES - 1) - pagelen) / RES;
+	vorigin = pagelen = 0;		/* reset for new page */
 	if (outsize < 1) return;	/* if outsize <= zero, forget it */
 
 	outsize *= RES * BYTES_PER_LINE;	/* are assured that outsize */
 	vwrite(buf0p, outsize);			/* will NOT be > BUFFER_SIZE */
 	vclear(buf0p, outsize);			/* since vsort makes sure of */
-	vorigin = pagelen = 0;			/* putting P commands in */
-    } else {
+    } else {					/* putting P commands in */
 	vorigin += NLINES;
 	pagelen += NLINES;
 	vwrite(buf0p, BUFFER_SIZE);
