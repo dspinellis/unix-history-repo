@@ -1,4 +1,4 @@
-/*	vm_swap.c	6.3	84/08/29	*/
+/*	vm_swap.c	6.4	85/01/29	*/
 
 #include "param.h"
 #include "systm.h"
@@ -105,11 +105,7 @@ swapon()
 		u.u_error = ENXIO;
 		return;
 	}
-	/*
-	 * Search starting at second table entry,
-	 * since first (primary swap area) is freed at boot.
-	 */
-	for (sp = &swdevt[1]; sp->sw_dev; sp++)
+	for (sp = &swdevt[0]; sp->sw_dev; sp++)
 		if (sp->sw_dev == dev) {
 			if (sp->sw_freed) {
 				u.u_error = EBUSY;
@@ -118,7 +114,7 @@ swapon()
 			swfree(sp - swdevt);
 			return;
 		}
-	u.u_error = ENODEV;
+	u.u_error = EINVAL;
 }
 
 /*
