@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.17.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -66,7 +66,7 @@ main(argc, argv)
 	int ch, on = 1, fromlen;
 	struct sockaddr_in from;
 
-	openlog("rsh", LOG_PID | LOG_ODELAY, LOG_DAEMON);
+	openlog("rshd", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 
 	opterr = 0;
 	while ((ch = getopt(argc, argv, "ln")) != EOF)
@@ -79,7 +79,7 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			syslog(LOG_ERR, "usage: rshd [-l]");
+			usage();
 			break;
 		}
 
@@ -215,8 +215,6 @@ doit(fromp)
 			shutdown(0, 1+1);
 			exit(1);
 		}
-		if (c == 0)
-			break;
 		port = port * 10 + c - '0';
 	}
 
@@ -433,4 +431,13 @@ local_domain(h)
 	if (p1 == NULL || p2 == NULL || !strcasecmp(p1, p2))
 		return(1);
 	return(0);
+}
+
+usage()
+{
+#ifdef	KERBEROS
+	syslog(LOG_ERR, "usage: rshd [-l] [-n]");
+#else
+	syslog(LOG_ERR, "usage: rshd [-l] [-n] [-k] [-v] [-e]");
+#endif
 }
