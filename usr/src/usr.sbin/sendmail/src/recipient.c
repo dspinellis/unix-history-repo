@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -60,8 +60,8 @@ sendtolist(list, ctladdr, sendq, e)
 
 	/* heuristic to determine old versus new style addresses */
 	if (ctladdr == NULL &&
-	    (index(list, ',') != NULL || index(list, ';') != NULL ||
-	     index(list, '<') != NULL || index(list, '(') != NULL))
+	    (strchr(list, ',') != NULL || strchr(list, ';') != NULL ||
+	     strchr(list, '<') != NULL || strchr(list, '(') != NULL))
 		e->e_flags &= ~EF_OLDSTYLE;
 	delimiter = ' ';
 	if (!bitset(EF_OLDSTYLE, e->e_flags) || ctladdr != NULL)
@@ -338,7 +338,7 @@ recipient(a, sendq, e)
 		struct stat stb;
 		extern bool writable();
 
-		p = rindex(buf, '/');
+		p = strrchr(buf, '/');
 		/* check if writable or creatable */
 		if (a->q_alias == NULL && !QueueRun && !ForceMail)
 		{
@@ -496,7 +496,7 @@ finduser(name, fuzzyp)
 		char buf[MAXNAME];
 
 		buildfname(pw->pw_gecos, pw->pw_name, buf);
-		if (index(buf, ' ') != NULL && !strcasecmp(buf, name))
+		if (strchr(buf, ' ') != NULL && !strcasecmp(buf, name))
 		{
 			if (tTd(29, 4))
 				printf("fuzzy matches %s\n", pw->pw_name);
@@ -648,7 +648,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	LineNumber = 0;
 	while (fgets(buf, sizeof buf, fp) != NULL)
 	{
-		register char *p = index(buf, '\n');
+		register char *p = strchr(buf, '\n');
 
 		LineNumber++;
 		if (p != NULL)

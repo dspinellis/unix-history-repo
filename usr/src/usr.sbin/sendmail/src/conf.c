@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -357,7 +357,7 @@ checkcompat(to, e)
 		/* NoReturn = TRUE; to supress return copy */
 		return (FALSE);
 	}
-# endif EXAMPLE_CODE
+# endif /* EXAMPLE_CODE */
 	return (TRUE);
 }
 /*

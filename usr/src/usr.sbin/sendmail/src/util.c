@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -115,7 +115,6 @@ xalloc(sz)
 	register int sz;
 {
 	register char *p;
-	extern char *malloc();
 
 	p = malloc((unsigned) sz);
 	if (p == NULL)
@@ -431,7 +430,7 @@ fixcrlf(line, stripnl)
 {
 	register char *p;
 
-	p = index(line, '\n');
+	p = strchr(line, '\n');
 	if (p == NULL)
 		return;
 	if (p > line && p[-1] == '\r')
@@ -520,7 +519,7 @@ putline(l, fp, m)
 	do
 	{
 		/* find the end of the line */
-		p = index(l, '\n');
+		p = strchr(l, '\n');
 		if (p == NULL)
 			p = &l[strlen(l)];
 
@@ -571,13 +570,13 @@ xunlink(f)
 # ifdef LOG
 	if (LogLevel > 20)
 		syslog(LOG_DEBUG, "%s: unlink %s\n", CurEnv->e_id, f);
-# endif LOG
+# endif /* LOG */
 
 	i = unlink(f);
 # ifdef LOG
 	if (i < 0 && LogLevel > 21)
 		syslog(LOG_DEBUG, "%s: unlink-fail %d", f, errno);
-# endif LOG
+# endif /* LOG */
 }
 /*
 **  SFGETS -- "safe" fgets -- times out and ignores random interrupts.
@@ -756,7 +755,7 @@ bool
 atobool(s)
 	register char *s;
 {
-	if (*s == '\0' || index("tTyY", *s) != NULL)
+	if (*s == '\0' || strchr("tTyY", *s) != NULL)
 		return (TRUE);
 	return (FALSE);
 }

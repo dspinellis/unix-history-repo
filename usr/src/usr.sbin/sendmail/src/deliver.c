@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.66 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -172,7 +172,7 @@ deliver(firstto, editfcn)
 
 	for (mvp = m->m_argv; (p = *++mvp) != NULL; )
 	{
-		while ((p = index(p, '\001')) != NULL)
+		while ((p = strchr(p, '\001')) != NULL)
 			if (*++p == 'u')
 				break;
 		if (p != NULL)
@@ -200,11 +200,11 @@ deliver(firstto, editfcn)
 # ifdef SMTP
 		clever = TRUE;
 		*pvp = NULL;
-# else SMTP
+# else /* SMTP */
 		/* oops!  we don't implement SMTP */
 		syserr("SMTP style mailer");
 		return (EX_SOFTWARE);
-# endif SMTP
+# endif /* SMTP */
 	}
 
 	/*
@@ -791,7 +791,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		(void) fflush(stdout);
 # ifdef SIGCHLD
 		(void) signal(SIGCHLD, SIG_DFL);
-# endif SIGCHLD
+# endif /* SIGCHLD */
 		DOFORK(FORK);
 		/* pid is set by DOFORK */
 		if (pid < 0)
@@ -999,9 +999,9 @@ giveresponse(stat, m, e)
 				extern char SmtpError[];
 
 				statmsg = SmtpError;
-#else SMTP
+#else /* SMTP */
 				statmsg = NULL;
-#endif SMTP
+#endif /* SMTP */
 			}
 		}
 		if (statmsg != NULL && statmsg[0] != '\0')
@@ -1073,7 +1073,7 @@ logdelivery(stat, e)
 # ifdef LOG
 	syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s", e->e_id,
 	       e->e_to, pintvl(curtime() - e->e_ctime, TRUE), stat);
-# endif LOG
+# endif /* LOG */
 }
 /*
 **  PUTMESSAGE -- output a message to the final mailer.
@@ -1121,7 +1121,7 @@ putmessage(fp, m, xdot)
 			char *bang = index(sys, '!');
 
 		expand("\001<", buf, &buf[sizeof buf - 1], e);
-		bang = index(buf, '!');
+		bang = strchr(buf, '!');
 			if (bang == NULL)
 				syserr("No ! in UUCP! (%s)", sys);
 			else
@@ -1392,7 +1392,7 @@ sendall(e, mode)
 	     (mode != SM_VERIFY && SuperSafe)) &&
 	    !bitset(EF_INQUEUE, e->e_flags))
 		queueup(e, TRUE, mode == SM_QUEUE);
-#endif QUEUE
+#endif /* QUEUE */
 
 	oldverbose = Verbose;
 	switch (mode)
