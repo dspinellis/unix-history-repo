@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -100,7 +100,7 @@ ifinit()
 		ifm = (struct if_msghdr *)cp;
 		if (ifm->ifm_type == RTM_IFINFO) {
 			bzero(&ifs, sizeof(ifs));
-			ifs.int_flags = flags = ifm->ifm_flags | IFF_INTERFACE;
+			ifs.int_flags = flags = (0xffff & ifm->ifm_flags) | IFF_INTERFACE;
 			if ((flags & IFF_UP) == 0 || no_ipaddr)
 				lookforinterfaces = 1;
 			sdl = (struct sockaddr_dl *) (ifm + 1);
