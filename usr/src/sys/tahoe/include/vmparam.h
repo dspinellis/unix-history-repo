@@ -1,4 +1,4 @@
-/*	vmparam.h	1.7	87/06/01	*/
+/*	vmparam.h	1.8	88/01/07	*/
 
 /*
  * Machine dependent constants for tahoe.
@@ -145,11 +145,8 @@
  */
 #define	LOTSOFMEM	2
 
-/*
- * BEWARE THIS DEFINITION WORKS ONLY WITH COUNT OF 1
- */
-#define	mapin(pte, v, pfnum, count, prot) \
-	(*(int *)(pte) = (pfnum) | (prot), mtpr(TBIS, ptob(v)))
+#define	mapin(pte, v, pfnum, prot) \
+	(*(int *)(pte) = (pfnum) | (prot), mtpr(TBIS, v))
 
 /*
  * Invalidate a cluster (optimized here for standard CLSIZE).
