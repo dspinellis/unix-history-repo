@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.20 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.21 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -155,7 +155,12 @@ obj: _PROGSUBDIR
 obj: _PROGSUBDIR
 	@cd ${.CURDIR}; rm -rf obj; \
 	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src/,,'`; \
-	echo "$$here -> $$dest"; ln -s $$dest obj
+	echo "$$here -> $$dest"; ln -s $$dest obj; \
+	if test -d /usr/obj -a ! -d $$dest; then \
+		mkdir -p $$dest; \
+	else \
+		true; \
+	fi;
 .endif
 .endif
 

@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.16 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.17 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -145,6 +145,11 @@ obj:
 obj:
 	@cd ${.CURDIR}; rm -rf obj; \
 	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src/,,'`; \
-	echo "$$here -> $$dest"; ln -s $$dest obj
+	echo "$$here -> $$dest"; ln -s $$dest obj; \
+	if test -d /usr/obj -a ! -d $$dest; then \
+		mkdir -p $$dest; \
+	else \
+		true; \
+	fi;
 .endif
 .endif
