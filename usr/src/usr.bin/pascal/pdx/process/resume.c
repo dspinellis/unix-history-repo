@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)resume.c 1.4 %G%";
+static char sccsid[] = "@(#)resume.c 1.5 %G%";
 
 /*
  * resume execution, first setting appropriate registers
@@ -75,6 +75,11 @@ resume()
 
 /*
  * Find the location in the Pascal object where execution was suspended.
+ *
+ * We basically walk back through the frames looking for saved
+ * register 11's.  Each time we find one, we remember it.  When we reach
+ * the frame associated with the interpreter procedure, the most recently
+ * saved register 11 is the one we want.
  */
 
 typedef struct {
@@ -89,6 +94,8 @@ typedef struct {
     int fr_savpc;           /* saved program counter */
 } Vaxframe;
 
+#define regsaved(frame, n) ((frame.fr_mask&(1 << n)) != 0)
+
 LOCAL ADDRESS fetchpc(framep)
 ADDRESS *framep;
 {
@@ -98,21 +105,24 @@ ADDRESS *framep;
     ADDRESS r;
 
     p = process;
+    r = p->reg[11];
     if (p->fp == (ADDRESS) framep) {
-	return(p->reg[11]);
+	return r;
     }
     savfp = (ADDRESS *) p->fp;
     dread(&vframe, savfp, sizeof(vframe));
     while (vframe.fr_savfp != (int) framep && vframe.fr_savfp != 0) {
+	if (regsaved(vframe, 11)) {
+	    dread(&r, savfp + 5, sizeof(r));
+	    r -= sizeof(char);
+	}
 	savfp = (ADDRESS *) vframe.fr_savfp;
 	dread(&vframe, savfp, sizeof(vframe));
     }
     if (vframe.fr_savfp == 0) {
 	panic("resume: can't find interpreter frame 0x%x", framep);
     }
-    if (vframe.fr_mask == 0) {
-	r = p->reg[11];
-    } else {
+    if (regsaved(vframe, 11)) {
 	dread(&r, savfp + 5, sizeof(r));
 	r -= sizeof(char);
     }
