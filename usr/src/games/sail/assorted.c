@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)assorted.c	2.2 83/11/01";
+static	char *sccsid = "@(#)assorted.c	2.3 83/12/17";
 #endif
 
 #include "externs.h"
@@ -179,7 +179,7 @@ int rig, shot, hittable, roll;
 		if (on->specs->qual <= 0) {
 			makesignal(on, "crew mutinying!", (struct ship *)0);
 			on->specs->qual = 5;
-			Write(W_CAPTURED, on, 0, on-SHIP(0), 0, 0, 0);
+			Write(W_CAPTURED, on, 0, on->file->index, 0, 0, 0);
 		} else 
 			makesignal(on, "crew demoralized", (struct ship *)0);
 		Write(W_QUAL, on, 0, on->specs->qual, 0, 0, 0);
@@ -189,53 +189,27 @@ int rig, shot, hittable, roll;
 		strike(on, from);
 }
 
-cleanfoul(from, to, which)
+Cleansnag(from, to, all, flag)
 register struct ship *from, *to;
-int which;
+char all, flag;
 {
-	register int n;
-	register struct snag *s = to->file->fouls;
-
-	Write(W_FOUL, from, 0, which, 0, 0, 0);
-	for (n = 0; n < NSHIP && (!s->turnfoul || s->toship != from); n++, s++)
-		;
-	if (n < NSHIP)
-		Write(W_FOUL, to, 0, n, 0, 0, 0);
-	if (!snagged2(from, to)) {
-		if (!fouled(from) && !grappled(from)) {
-			unboard(from, from, 1);		/* defense */
-			unboard(from, from, 0);		/* defense */
-		} else
-			unboard(from, to, 0);		/* defense */
-		if (!fouled(to) && !grappled(to)) {	/* defense */
-			unboard(to, to, 1);
-			unboard(to, to, 0);
-		} else
-			unboard(to, from, 0);		/* offense */
+	if (flag & 1) {
+		Write(W_UNGRAP, from, 0, to->file->index, all, 0, 0);
+		Write(W_UNGRAP, to, 0, from->file->index, all, 0, 0);
 	}
-}
-
-cleangrapple(from, to, which)
-register struct ship *from, *to;
-int which;
-{
-	register int n;
-	register struct snag *s = to->file->grapples;
-
-	Write(W_GRAP, from, 0, which, 0, 0, 0);
-	for (n = 0; n < NSHIP && (!s->turnfoul || s->toship != from); n++, s++)
-		;
-	if (n < NSHIP)
-		Write(W_GRAP, to, 0, n, 0, 0, 0);
+	if (flag & 2) {
+		Write(W_UNFOUL, from, 0, to->file->index, all, 0, 0);
+		Write(W_UNFOUL, to, 0, from->file->index, all, 0, 0);
+	}
 	if (!snagged2(from, to)) {
-		if (!fouled(from) && !grappled(from)) {
+		if (!snagged(from)) {
 			unboard(from, from, 1);		/* defense */
 			unboard(from, from, 0);		/* defense */
 		} else
-			unboard(from, to, 0);		/* defense */
-		if (!fouled(to) && !grappled(to)) {	/* defense */
-			unboard(to, to, 1);
-			unboard(to, to, 0);
+			unboard(from, to, 0);		/* offense */
+		if (!snagged(to)) {
+			unboard(to, to, 1);		/* defense */
+			unboard(to, to, 0);		/* defense */
 		} else
 			unboard(to, from, 0);		/* offense */
 	}

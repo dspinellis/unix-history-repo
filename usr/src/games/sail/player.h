@@ -1,5 +1,5 @@
 /*
- * sccsid = "@(#)player.h	2.4 %G%";
+ * sccsid = "@(#)player.h	2.5 %G%";
  */
 #include <curses.h>
 #include "externs.h"
@@ -68,7 +68,7 @@ char done_curses;
 char loaded, fired, changed, repaired;
 char dont_adjust;
 int viewrow, viewcol;
-char movebuf[10];
+char movebuf[sizeof SHIP(0)->file->movebuf];
 char version[];
 int player;
 struct ship *ms;		/* memorial structure, &cc->ship[player] */

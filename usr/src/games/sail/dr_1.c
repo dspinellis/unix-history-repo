@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.5 83/12/12";
+static	char *sccsid = "@(#)dr_1.c	2.6 83/12/17";
 #endif
 
 #include "driver.h"
@@ -34,6 +34,7 @@ char **argv;
 			(void) printf("driver: OUT OF MEMORY\n");
 			exit(0);
 		}
+		sp->file->index = sp - SHIP(0);
 		sp->file->loadL = L_ROUND;
 		sp->file->loadR = L_ROUND;
 		sp->file->readyR = R_LOADED|R_INITIAL;
@@ -65,23 +66,22 @@ char **argv;
 
 unfoul()
 {
-	register int k;
 	register struct ship *sp;
 	struct ship *to;
 	register int nat;
+	register i;
 
 	foreachship(sp) {
 		if (sp->file->captain[0])
 			continue;
 		nat = capship(sp)->nationality;
-		for (k = 0; k < NSHIP; k++) {
-			if (sp->file->fouls[k].turnfoul == 0)
+		foreachship(to) {
+			if (nat != capship(to)->nationality
+			    && !toughmelee(sp, to, 0, 0))
 				continue;
-			to = sp->file->fouls[k].toship;
-			if ((nat == capship(to)->nationality ||
-			     toughmelee(sp, to, 0, 0)) &&
-			    die() <= 2)
-				cleanfoul(sp, to, k);
+			for (i = fouled2(sp, to); --i >= 0;)
+				if (die() <= 2)
+					cleanfoul(sp, to, 0);
 		}
 	}
 }
@@ -94,11 +94,11 @@ boardcomp()
 	foreachship(sp) {
 		if (*sp->file->captain)
 			continue;
-		if (!fouled(sp) && !grappled(sp))
-			continue;
 		if (sp->file->dir == 0)
 			continue;
 		if (sp->file->struck || sp->file->captured != 0)
+			continue;
+		if (!snagged(sp))
 			continue;
 		crew[0] = sp->specs->crew1 != 0;
 		crew[1] = sp->specs->crew2 != 0;
@@ -168,7 +168,7 @@ int key;
 		fromcap = from;
 	if (tocap == 0)
 		tocap = to;
-	if (key) { 
+	if (key) {
 		if (!menfrom) {		 /* if crew surprised */
 			if (fromcap == from)
 				menfrom = from->specs->crew1
@@ -228,7 +228,7 @@ int key;
    I guess that what is going on here is that the pointer is multiplied
    or something. */
 
-			Write(W_CAPTURED, from, 0, to-SHIP(0), 0, 0, 0);
+			Write(W_CAPTURED, from, 0, to->file->index, 0, 0, 0);
 			topoints = 2 * from->specs->pts + to->file->points;
 			if (from->file->struck)
 				topoints -= from->specs->pts;
@@ -465,6 +465,7 @@ next()
 	}
 }
 
+/*ARGSUSED*/
 /*VARARGS2*/
 Signal(fmt, ship, a, b, c)
 char *fmt;

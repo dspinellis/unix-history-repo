@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	2.2 83/11/01";
+static	char *sccsid = "@(#)sync.c	2.3 83/12/17";
 #endif
 
 #include "externs.h"
@@ -39,11 +39,11 @@ sync_exists(game)
 	time_t t;
 
 	(void) sprintf(buf, SF, game);
-	time(&t);
+	(void) time(&t);
 	if (stat(buf, &s) < 0)
 		return 0;
 	if (s.st_mtime < t - 60*60*2) {		/* 2 hours */
-		unlink(buf);
+		(void) unlink(buf);
 		return 0;
 	} else
 		return 1;
@@ -87,10 +87,10 @@ int a, b, c, d;
 {
 	if (isstr)
 		(void) sprintf(sync_bufp, "%d %d %d %s\n",
-			type, ship-SHIP(0), isstr, a);
+			type, ship->file->index, isstr, a);
 	else
 		(void) sprintf(sync_bufp, "%d %d %d %d %d %d %d\n",
-			type, ship-SHIP(0), isstr, a, b, c, d);
+			type, ship->file->index, isstr, a, b, c, d);
 	while (*sync_bufp++)
 		;
 	sync_bufp--;
@@ -167,21 +167,50 @@ int a, b, c, d;
 		break;
 		}
 	case W_FOUL: {
-		register struct snag *p = &ship->file->fouls[a];
-		p->turnfoul = b;
-		p->toship = SHIP(c);
+		register struct snag *p = &ship->file->foul[a];
+		if (SHIP(a)->file->dir == 0)
+			break;
+		if (p->sn_count++ == 0)
+			p->sn_turn = turn;
+		ship->file->nfoul++;
 		break;
 		}
 	case W_GRAP: {
-		register struct snag *p = &ship->file->grapples[a];
-		p->turnfoul = b;
-		p->toship = SHIP(c);
+		register struct snag *p = &ship->file->grap[a];
+		if (SHIP(a)->file->dir == 0)
+			break;
+		if (p->sn_count++ == 0)
+			p->sn_turn = turn;
+		ship->file->ngrap++;
+		break;
+		}
+	case W_UNFOUL: {
+		register struct snag *p = &ship->file->foul[a];
+		if (p->sn_count > 0)
+			if (b) {
+				ship->file->nfoul -= p->sn_count;
+				p->sn_count = 0;
+			} else {
+				ship->file->nfoul--;
+				p->sn_count--;
+			}
+		break;
+		}
+	case W_UNGRAP: {
+		register struct snag *p = &ship->file->grap[a];
+		if (p->sn_count > 0)
+			if (b) {
+				ship->file->ngrap -= p->sn_count;
+				p->sn_count = 0;
+			} else {
+				ship->file->ngrap--;
+				p->sn_count--;
+			}
 		break;
 		}
 	case W_SIGNAL:
-		if (isplayer) {
+		if (isplayer)
 			Signal("\7%s (%c%c): %s", ship, a);
-		}
 		break;
 	case W_CREW: {
 		register struct shipspecs *s = ship->specs;
@@ -229,10 +258,10 @@ int a, b, c, d;
 	case W_HULL:
 		ship->specs->hull = a;
 		break;
-	case W_LAST:
-		(void) strncpy(ship->file->last, (char *)a,
-			sizeof ship->file->last - 1);
-		ship->file->last[sizeof ship->file->last - 1] = 0;
+	case W_MOVE:
+		(void) strncpy(ship->file->movebuf, (char *)a,
+			sizeof ship->file->movebuf - 1);
+		ship->file->movebuf[sizeof ship->file->movebuf - 1] = 0;
 		break;
 	case W_PCREW:
 		ship->file->pcrew = a;
@@ -263,13 +292,13 @@ int a, b, c, d;
 	case W_RIG4:
 		ship->specs->rig4 = a;
 		break;
-	case W_SHIPCOL:
+	case W_COL:
 		ship->file->col = a;
 		break;
-	case W_SHIPDIR:
+	case W_DIR:
 		ship->file->dir = a;
 		break;
-	case W_SHIPROW:
+	case W_ROW:
 		ship->file->row = a;
 		break;
 	case W_SINK:
