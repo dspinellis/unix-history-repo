@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mtio.h	6.3 (Berkeley) %G%
+ *	@(#)mtio.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,8 @@ struct	mtop	{
 #define MTREW	5	/* rewind */
 #define MTOFFL	6	/* rewind and put the drive offline */
 #define MTNOP	7	/* no operation, sets status only */
+#define MTCACHE	8	/* enable controller cache */
+#define MTNOCACHE 9	/* disable controller cache */
 
 /* structure for MTIOCGET - mag tape get status command */
 
@@ -42,15 +44,17 @@ struct	mtget	{
 };
 
 /*
- * Constants for mt_type byte
+ * Constants for mt_type byte.  These are the same
+ * for controllers compatible with the types listed.
  */
-#define	MT_ISTS		0x01
-#define	MT_ISHT		0x02
-#define	MT_ISTM		0x03
-#define	MT_ISMT		0x04
-#define	MT_ISUT		0x05
-#define	MT_ISCPC	0x06
-#define	MT_ISAR		0x07
+#define	MT_ISTS		0x01		/* TS-11 */
+#define	MT_ISHT		0x02		/* TM03 Massbus: TE16, TU45, TU77 */
+#define	MT_ISTM		0x03		/* TM11/TE10 Unibus */
+#define	MT_ISMT		0x04		/* TM78/TU78 Massbus */
+#define	MT_ISUT		0x05		/* SI TU-45 emulation on Unibus */
+#define	MT_ISCPC	0x06		/* SUN */
+#define	MT_ISAR		0x07		/* SUN */
+#define	MT_ISTMSCP	0x08		/* DEC TMSCP protocol (TU81, TK50) */
 
 /* mag tape io control commands */
 #define	MTIOCTOP	_IOW(m, 1, struct mtop)		/* do a mag tape op */
