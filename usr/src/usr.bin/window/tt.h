@@ -1,5 +1,5 @@
 /*
- *	@(#)tt.h	3.6 83/08/17
+ *	@(#)tt.h	3.7 83/08/24
  */
 
 struct tt {
@@ -21,6 +21,7 @@ struct tt {
 	int tt_ncol;
 	char tt_availmodes;
 	char tt_wrap;			/* has auto wrap around */
+	char tt_retain;			/* can retain below (db flag) */
 	char *tt_frame;
 };
 
