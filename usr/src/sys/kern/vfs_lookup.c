@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.16 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -359,34 +359,15 @@ nextname:
 		goto dirloop;
 	}
 	/*
-	 * Check for read-only file systems and executing texts
+	 * Check for read-only file systems.
 	 */
-	if (flag != LOOKUP) {
+	if (flag == DELETE || flag == RENAME) {
 		/*
-		 * Disallow write attempts on read-only file systems;
-		 * unless the file is a socket or a block or character
-		 * device resident on the file system.
+		 * Disallow directory write attempts on read-only
+		 * file systems.
 		 */
-		if ((dp->v_mount->m_flag & M_RDONLY) &&
-		    dp->v_type != VCHR &&
-		    dp->v_type != VBLK &&
-		    dp->v_type != VSOCK) {
-			error = EROFS;
-			goto bad2;
-		}
-		/*
-		 * If there's shared text associated with
-		 * the inode, try to free it up once.  If
-		 * we fail, we can't allow writing.
-		 */
-		if (dp->v_flag & VTEXT)
-			xrele(dp);
-		if (dp->v_flag & VTEXT) {
-			error = ETXTBSY;
-			goto bad2;
-		}
-		if (wantparent && flag != CREATE &&
-		    (ndp->ni_dvp->v_mount->m_flag & M_RDONLY)) {
+		if ((dp->v_mount->m_flag & M_RDONLY) ||
+		    (wantparent && (ndp->ni_dvp->v_mount->m_flag & M_RDONLY))) {
 			error = EROFS;
 			goto bad2;
 		}
