@@ -1,10 +1,10 @@
-#	@(#)Makefile.inc	5.3 (Berkeley) %G%
+#	@(#)Makefile.inc	5.4 (Berkeley) %G%
 
 # locale sources
 .PATH: ${.CURDIR}/${MACHINE}/locale ${.CURDIR}/locale
 
-SRCS+=	ansi.c euc.c frune.c isctype.c lconv.c localeconv.c mbrune.c \
-	none.c rune.c setlocale.c table.c utf2.c
+SRCS+=	ansi.c ctype.c euc.c frune.c isctype.c lconv.c localeconv.c \
+	mbrune.c none.c rune.c setlocale.c table.c utf2.c
 
 MAN3+=	ctype.0
 MAN3+=	isalnum.0 isalpha.0 isascii.0 isblank.0 iscntrl.0 isdigit.0 \
