@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmc.c	7.7 (Berkeley) %G%
+ *	@(#)bmc.c	7.8 (Berkeley) %G%
  */
 
 #include "bmc.h"
@@ -283,7 +283,7 @@ bmcprobe(hd)
 		pc = sc->sc_pc;
 		printf("bmc%d: port %d, address 0x%x, intr 0x%x (console)\n",
 		       pc->pc_unit, pc->pc_port, pc->pc_addr, pc->pc_intr);
-		return(0);
+		return(1);
 	}
 
 	/*
