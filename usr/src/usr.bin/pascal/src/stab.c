@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 2.1 %G%";
+static	char sccsid[] = "@(#)stab.c 2.2 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -258,6 +258,7 @@ stabinclude(filename, firsttime)
 	    return;
     }
     label = (int) getlab();
+    putprintf( "	.stabs	\"" , 1 );
     putprintf( NAMEFORMAT , 1 , (int) filename );
     putprintf( "\",0x%x,0,0," , 1 , N_SOL );
     putprintf( PREFIXFORMAT , 0 , (int) LLABELPREFIX , label );
