@@ -1,4 +1,4 @@
-/*	buf.h	4.5	%G%	*/
+/*	buf.h	4.6	%G%	*/
 
 /*
  * Each buffer in the pool is usually doubly linked into 2 lists:
@@ -20,6 +20,12 @@
  * Most of the routines which manipulate these things
  * are in bio.c.
  */
+struct bufhd
+{
+	long	b_flags;		/* see defines below */
+	struct	buf *b_forw;		/* headed by d_tab of conf.c */
+	struct	buf *b_back;		/*  "  */
+};
 struct buf
 {
 	long	b_flags;		/* see defines below */
@@ -45,6 +51,9 @@ struct buf
 };
 
 #define	BQUEUES		3		/* number of free buffer queues */
+#define	BQ_LOCKED	0		/* super-blocks &c */
+#define	BQ_LRU		1		/* lru, useful buffers */
+#define	BQ_AGE		2		/* rubbish */
 
 #ifdef	KERNEL
 extern	struct buf buf[];		/* The buffer pool itself */
