@@ -1,9 +1,9 @@
-static char *sccsid = "@(#)ctags.c	4.2 (Berkeley) 10/3/80";
+static char *sccsid = "@(#)ctags.c	4.3 (Berkeley) 11/24/80";
 #include <stdio.h>
 #include <ctype.h>
 
 /*
- * ctags
+ * ctags: create a tags file
  */
 
 #define	reg	register
@@ -57,6 +57,7 @@ int	file_num;		/* current file number			*/
 int	aflag;			/* -a: append to tags */
 int	uflag;			/* -u: update tags */
 int	wflag;			/* -w: suppress warnings */
+int	vflag;			/* -v: create vgrind style index output */
 int	xflag;			/* -x: create cxref style output */
 
 char	lbuf[BUFSIZ];
@@ -88,6 +89,10 @@ char	*av[];
 					break;
 				case 'w':
 					wflag++;
+					break;
+				case 'v':
+					vflag++;
+					xflag++;
 					break;
 				case 'x':
 					xflag++;
@@ -493,6 +498,8 @@ reg NODE	*node;
 				putc(*sp, outf);
 		fprintf(outf, "%c\n", searchar);
 	}
+	else if (vflag)
+		fprintf(stdout, "%s %s %d\n", node->func, node->file, (node->lno+63)/64);
 	else
 		fprintf(stdout, "%-16s%4d %-16s %s\n",
 		    node->func, node->lno, node->file, node->pat);
