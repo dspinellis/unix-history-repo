@@ -5,7 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Hugh Smith at The University of Guelph.
  *
- *	@(#)archive.h	5.6 (Berkeley) %G%
+ *	@(#)archive.h	5.7 (Berkeley) %G%
  */
 
 /* Ar(1) options. */
@@ -18,8 +18,8 @@
 #define	AR_P	0x0040
 #define	AR_Q	0x0080
 #define	AR_R	0x0100
-#define	AR_S	0x0200
-#define	AR_T	0x0400
+#define	AR_T	0x0200
+#define	AR_TR	0x0400
 #define	AR_U	0x0800
 #define	AR_V	0x1000
 #define	AR_X	0x2000

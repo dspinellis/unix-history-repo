@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ar.1	6.9 (Berkeley) %G%
+.\"	@(#)ar.1	6.10 (Berkeley) %G%
 .\"
 .TH AR 1 ""
 .AT 3
@@ -15,15 +15,15 @@ ar \- create and maintain library archives
 .SH SYNOPSIS
 .nf
 .ft B
-ar -d [-sv] archive file ...
-ar -m [-sv] archive file ...
-ar -m [-abisv] position archive file ...
-ar -p [-sv] archive [file ...]
-ar -q [-csv] archive file ...
-ar -r [-cusv] archive file ...
-ar -r [-abciusv] position archive file ...
-ar -t [-sv] archive [file ...]
-ar -x [-ousv] archive [file ...]
+ar -d [-Tv] archive file ...
+ar -m [-Tv] archive file ...
+ar -m [-abiTv] position archive file ...
+ar -p [-Tv] archive [file ...]
+ar -q [-cTv] archive file ...
+ar -r [-cuTv] archive file ...
+ar -r [-abciuTv] position archive file ...
+ar -t [-Tv] archive [file ...]
+ar -x [-ouTv] archive [file ...]
 .fi
 .ft R
 .SH DESCRIPTION
@@ -118,7 +118,7 @@ within the archive.
 New files are appended to the archive unless one of the options \-a, \-b
 or \-i is specified.
 .TP
-\-s
+\-T
 Select and/or name archive members using only the first fifteen characters
 of the archive member or command line file name.
 The historic archive format had sixteen bytes for the name, but some
@@ -215,8 +215,8 @@ This implementation of
 .I ar
 is backward compatible with previous versions of
 .I ar
-in that it can read and write (using the \-s option) historic archives.
-The \-s option is provided for compatibility only, and will be deleted
+in that it can read and write (using the \-T option) historic archives.
+The \-T option is provided for compatibility only, and will be deleted
 in a future release.
 See
 .IR ar (5)
