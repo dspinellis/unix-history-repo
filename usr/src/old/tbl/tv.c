@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)tv.c	4.3 %G%";
-#endif
+static char sccsid[] = "@(#)tv.c	4.4 (Berkeley) %G%";
+#endif /* not lint */
 
  /* tv.c: draw vertical lines */
 # include "t..c"

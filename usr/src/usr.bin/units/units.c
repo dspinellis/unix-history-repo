@@ -1,4 +1,11 @@
-static char *sccsid = "@(#)units.c	4.2 (Berkeley) %G%";
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)units.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <stdio.h>
 #include "pathnames.h"
 

@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char mkfont1sccsid[] = "@(#)mkfont1.c	4.3 %G%";
-#endif lint
+static char sccsid[] = "@(#)mkfont1.c	4.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #define BYTE 8
 #define PAIR(a,b) ((a)|((b)<<BYTE))

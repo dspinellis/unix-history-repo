@@ -1,4 +1,8 @@
-/*	sed.h	4.3	87/12/21	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)sed.h	4.4 (Berkeley) %G%
+ */
 
 /*
  * sed -- stream  editor

@@ -1,4 +1,10 @@
-/*	sed0.c	4.6	91/03/01	*/
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)sed0.c	4.7 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <stdio.h>
