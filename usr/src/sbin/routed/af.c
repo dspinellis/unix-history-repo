@@ -105,9 +105,11 @@ inet_checkhost(sin)
 {
 	u_long i = ntohl(sin->sin_addr.s_addr);
 
-#define	IN_BADCLASS(i)	(((long) (i) & 0xe0000000) == 0xe0000000)
+#ifndef IN_EXPERIMENTAL
+#define	IN_EXPERIMENTAL(i)	(((long) (i) & 0xe0000000) == 0xe0000000)
+#endif
 
-	if (IN_BADCLASS(i) || sin->sin_port != 0)
+	if (IN_EXPERIMENTAL(i) || sin->sin_port != 0)
 		return (0);
 	if (i != 0 && (i & 0xff000000) == 0)
 		return (0);
