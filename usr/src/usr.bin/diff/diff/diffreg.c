@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.18 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.19 %G%";
 
 #include "diff.h"
 /*
@@ -776,7 +776,7 @@ change(a,b,c,d)
 	if ((opt ==D_EDIT || opt == D_REVERSE) && c<=d)
 		prints(".\n");
 	if (inifdef) {
-		fprintf(stdout, "#endif %s\n", endifname);
+		fprintf(stdout, "#endif /* %s */\n", endifname);
 		inifdef = 0;
 	}
 }
@@ -816,7 +816,7 @@ char *s;
 		return;
 	if (opt == D_IFDEF) {
 		if (inifdef)
-			fprintf(stdout, "#else %s%s\n", oneflag && oldfile==1 ? "!" : "", ifdef2);
+			fprintf(stdout, "#else /* %s%s */\n", oneflag && oldfile==1 ? "!" : "", ifdef2);
 		else {
 			if (oneflag) {
 				/* There was only one ifdef given */
@@ -854,7 +854,7 @@ char *s;
 	}
 
 	if (inifdef && !wantelses) {
-		fprintf(stdout, "#endif %s\n", endifname);
+		fprintf(stdout, "#endif /* %s */\n", endifname);
 		inifdef = 0;
 	}
 }
