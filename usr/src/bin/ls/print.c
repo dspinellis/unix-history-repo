@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -158,7 +158,10 @@ printtime(ftime)
 		(void)putchar(longstring[i]);
 
 #define	SIXMONTHS	((DAYSPERNYEAR / 2) * SECSPERDAY)
-	if (f_sectime || ftime + SIXMONTHS > time((time_t *)NULL))
+	if (f_sectime)
+		for (i = 11; i < 24; i++)
+			(void)putchar(longstring[i]);
+	else if (ftime + SIXMONTHS > time((time_t *)NULL))
 		for (i = 11; i < 16; ++i)
 			(void)putchar(longstring[i]);
 	else {
