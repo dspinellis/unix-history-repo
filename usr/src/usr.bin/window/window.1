@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)window.1	6.1 (Berkeley) %G%
+.\"	@(#)window.1	6.2 (Berkeley) %G%
 .\"
 .TH WINDOW 1 ""
 .UC 6
@@ -22,13 +22,15 @@ window \- window environment
 .B \-c command
 ]
 .SH DESCRIPTION
-\fIWindow\fP provides a window oriented environment
-on ordinary CRT terminals.
+\fIWindow\fP implements a window environment on
+ASCII terminals.
 .PP
 A window is a rectangular portion of the physical terminal
-screen associated with a set of processes.  These processes
-communicate with the window in the same way they normally
-interact with a terminal.  The window program handles the
+screen associated with a set of processes.  Its size and
+position can be changed by the user at any time.  Processes
+communicate with their window in the same way they normally
+interact with a terminal--through their standard input, output,
+and diagnostic file descriptors.  The window program handles the
 details of redirecting input an output to and from the
 windows.  At any one time, only one window can receive
 input from the keyboard, but all windows can simultaneously send output
@@ -40,36 +42,32 @@ identifier, as well as a user definable label string, are displayed
 with the window on the top edge of its frame.  A window can be
 designated to be in the \fIforeground\fP, in which case it will always be
 on top of all normal, non-foreground windows, and can be covered
-only by other foreground windows.
+only by other foreground windows.  A window need not be completely
+within the edges of the terminal screen.  Thus a large window
+(possibly larger than the screen) may be positioned to show only
+a portion of its full size.
 .PP
-A window need not be completely within the edges of the terminal screen.
-Thus a large window (possibly larger than the screen)
-can be positioned to show only a portion of its full size.  In addition,
-both the size and the position of a window can be changed by
-the user at any time.
-.PP
-Windows are designed to have the appearance of real terminals
-both to the user and to the processes running in them.  Each window
-has a cursor and a set of control functions.  Most intelligent
-terminal functions such as line and
+Each window has a cursor and a set of control functions.  Most intelligent
+terminal operations such as line and
 character deletion and insertion are supported.  Display modes
-such as underlining and reverse video are available if the terminal
-allows them.  Also, similar to terminals with multiple pages of memory,
-each window has a text buffer which can be larger than the window.
-Different parts of the buffer can be displayed by scrolling.
+such as underlining and reverse video are available if they are
+supported by the terminal.  In addition,
+similar to terminals with multiple pages of memory,
+each window has a text buffer which can have more lines then the window
+itself.
 .SH OPTIONS
-When \fIwindow\fP starts up, the file \fI.windowrc\fP in the
-user's home directory is checked.  If it exists, then the
-commands contained in it are executed (see \fIsource\fP command below).
-Otherwise, two equal sized windows are created by default.
+When \fIwindow\fP starts up, the commands (see long commands below)
+contained in the file \fI.windowrc\fP in the user's home directory are
+executed.  If it does not exist, two equal sized windows spanning
+the terminal screen are created by default.
 .PP
-The command line arguments are
+The command line options are
 .TP
 .B \-t
 Turn on terse mode (see \fIterse\fP command below).
 .TP
 .B \-f
-Don't perform any startup action.
+Fast.  Don't perform any startup action.
 .TP
 .B \-d
 Ignore \fI.windowrc\fP and create the two default
@@ -96,15 +94,13 @@ and passed as environment (\fIenviron\fP (5)) variable
 characteristics as well as information from the physical terminal,
 such as the existence of underline, reverse video, and other display
 modes, and the codes produced by the terminal's function keys,
-if any.  In addition to the termcap entry, a window size structure is
-associated with the pseudo-terminal (and indeed with any terminal).  It
-is initialized by \fIwindow\fP at creation time, and updated whenever the
-size of the window changes, using the \fIioctl\fP (2) call
-\fITIOCSWINSZ\fP.  In particular, the editor \fIvi\fP (1) uses
+if any.  In addition, the window size attributes of the pseudo-terminal
+are set to reflect the size of this window, and updated whenever
+it is changed by the user.  In particular, the editor \fIvi\fP (1) uses
 this information to redraw its display.
 .SH OPERATION
 .PP
-During normal execution, \fIwindow\fP can be in one of two modes:
+During normal execution, \fIwindow\fP can be in one of two states:
 conversation mode and command mode.  In conversation mode, the
 terminal's real cursor is placed at the cursor position of a particular
 window--called the current window--and input from the keyboard is sent
