@@ -1,0 +1,16 @@
+Sat Nov 20 18:27:14 PST 1982
+make
+cc -O -DDEBUG -c errormain.c
+cc -O -DDEBUG -c errorinput.c
+cc -O -DDEBUG -c errorpi.c
+cc -O -DDEBUG -c errorsubr.c
+cc -O -DDEBUG -c errorfilter.c
+cc -O -DDEBUG -c errortouch.c
+"errortouch.c", line 558: name undefined
+"errortouch.c", line 583: illegal function
+"errortouch.c", line 583: illegal function
+"errortouch.c", line 622: declared argument nchars is missing
+*** Error code 1
+
+Stop.
+done
