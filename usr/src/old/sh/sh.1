@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)sh.1	6.6 (Berkeley) %G%
+.\"     @(#)sh.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SH 1
@@ -24,8 +24,8 @@ shell.
 .Pp
 Command line options:
 .Pp
-If the first character of argument 0 if
-.Fl ,
+If the first character of argument 0 is
+.Fl \& ,
 commands are read from
 .Pa $HOME/.profile ,
 if such a file exists.
@@ -943,7 +943,7 @@ the last command executed (see also
 .Sh HISTORY
 The
 .Nm Sh
-shell appeared in Version 6 AT&Y UNIX.
+shell appeared in Version 6 AT&T UNIX.
 .SH BUGS
 If
 .Ic \&<\&<
