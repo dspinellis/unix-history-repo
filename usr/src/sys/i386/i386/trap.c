@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)trap.c	5.5 (Berkeley) %G%
+ *	@(#)trap.c	5.6 (Berkeley) %G%
  */
 
 /*

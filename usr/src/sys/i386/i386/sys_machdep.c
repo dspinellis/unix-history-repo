@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)sys_machdep.c	5.3 (Berkeley) %G%
+ *	@(#)sys_machdep.c	5.4 (Berkeley) %G%
  */
 
 #include "param.h"

@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)conf.c	5.3 (Berkeley) %G%
+ *	@(#)conf.c	5.4 (Berkeley) %G%
  */
 
 #include "param.h"
