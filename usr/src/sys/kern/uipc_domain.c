@@ -1,4 +1,4 @@
-/*	uipc_domain.c	6.3	84/08/29	*/
+/*	uipc_domain.c	6.4	85/04/27	*/
 
 #include "param.h"
 #include "socket.h"
@@ -22,6 +22,9 @@ domaininit()
 	ADDDOMAIN(unix);
 #ifdef INET
 	ADDDOMAIN(inet);
+#endif
+#ifdef NS
+	ADDDOMAIN(ns);
 #endif
 #ifdef PUP
 	ADDDOMAIN(pup);
