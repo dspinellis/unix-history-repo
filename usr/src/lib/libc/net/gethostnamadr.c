@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.32 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -266,7 +266,7 @@ gethostbyaddr(addr, len, type)
 			printf("res_query failed\n");
 #endif
 		if (errno == ECONNREFUSED)
-			hp = _gethtbyaddr(addr, len, type);
+			return (_gethtbyaddr(addr, len, type));
 		return ((struct hostent *) NULL);
 	}
 	hp = getanswer(&buf, n, 1);
