@@ -1,6 +1,6 @@
 .\"
 .\"	Copyright (c) 1982 Regents of the University of California
-.\"	@(#)asdocs1.me 1.5 %G%
+.\"	@(#)asdocs1.me 1.6 %G%
 .\"
 .EQ
 delim $$
@@ -187,7 +187,7 @@ If file arguments occur,
 then the input is taken sequentially from the files
 $name sub 1$,
 $name sub 2~...~name sub n$
-This is not to say that the files are assembled seperately;
+This is not to say that the files are assembled separately;
 $name sub 1$ is effectively concatenated to $name sub 2$,
 so multiple definitions cannot occur amongst the input sources.
 .pp
@@ -225,7 +225,7 @@ and
 dollar
 .q "\*(DL" ).
 The first character may not be numeric.
-Identifier may be (practically) arbitrary long;
+Identifiers may be (practically) arbitrary long;
 all characters are significant.
 .SH 2 "Constants"
 .SH 3 "Scalar constants"
@@ -240,7 +240,7 @@ In addition,
 .i As
 supports 64 and 128 bit integers 
 only so they can be used as immediate constants
-or to fill intialized data space.
+or to fill initialized data space.
 .i As
 can not perform arithmetic on constants larger than 32 bits.
 .pp
@@ -281,8 +281,8 @@ Using the meta notation that
 .q "fFdDhHgG" ),
 [expe] is a exponent delimiter and type specification character (\c,
 .q "eEfFdDhHgG" ),
-$x sup roman "*"$ means 0 or more occurances of $x$,
-$x sup +$ means 1 or more occurances of $x$,
+$x sup roman "*"$ means 0 or more occurences of $x$,
+$x sup +$ means 1 or more occurences of $x$,
 then the general lexical form of a floating point number is:
 .ce 1
 0[expe]([+-])$roman "[dec]" sup +$(.)($roman "[dec]" sup roman "*"$)([expt]([+-])($roman "dec]" sup +$))
@@ -347,7 +347,7 @@ a 32 bit scalar quantity may also be used.
 .SH 3 "String Constants"
 .pp
 A string constant is defined using
-the same syntax and semantics as the \*(CL langauge uses.
+the same syntax and semantics as the \*(CL language uses.
 Strings begin and end with a
 .q "''"
 (double quote).
@@ -378,7 +378,7 @@ introduces a comment,
 which extends through the end of the line on which it appears.
 Comments starting in column 1,
 having the format
-.q "# $expression~~string$"
+.q "# $expression~~string$" ,
 are interpreted as an indication that the assembler is now assembling
 file
 .i string
@@ -392,7 +392,7 @@ and
 preprocessor directives.
 (Note that there may not be an assembler comment starting in column
 1 if the assembler source is given to the \*(CL preprocessor,
-as it will be intrepreted by the preprocessor in a way not intended.)
+as it will be interpreted by the preprocessor in a way not intended.)
 Comments are otherwise ignored by the assembler.
 .SH 2 "\*(CL Style Comments"
 .pp

@@ -1,6 +1,6 @@
 .\"
 .\"	Copyright (c) 1982 Regents of the University of California
-.\"	@(#)asdocs2.me 1.4 %G%
+.\"	@(#)asdocs2.me 1.5 %G%
 .\"
 .EQ
 delim $$
@@ -156,7 +156,7 @@ and
 .q ")".
 .SH 2 "Data Types"
 .pp
-The assembler manipulaes several different
+The assembler manipulates several different
 types of expressions.
 The types likely to be met explicitly are:
 .nr ii \w'undefined\ \ 'u
@@ -218,7 +218,7 @@ the value of a bss symbol
 may change during a subsequent link-editor run,
 since previously loaded programs may have bss segments.
 .ip "external\ absolute,\ text,\ data,\ or\ bss" 
-symbols declared
+Symbols declared
 .b .globl
 but defined within an assembly as absolute,
 text,
@@ -242,7 +242,7 @@ In addition, the
 .q "%"
 operator converts the following absolute expression whose
 value is between 0 and 15 into a register reference.
-.ip "other\ types" 
+.ip "other\ types\ \ " 
 Each keyword known to the assembler has a type which
 is used to select the routine which processes
 the associated keyword statement.
