@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cd.c 1.6 90/11/28$
  *
- *	@(#)cd.c	7.6 (Berkeley) %G%
+ *	@(#)cd.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -22,6 +22,7 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/proc.h>
 #include <sys/errno.h>
 #include <sys/dkstat.h>
 #include <sys/buf.h>
@@ -43,12 +44,11 @@ int cddebug = 0x00;
 #define CDB_IO		0x04
 #endif
 
-struct	buf cdbuf[NCD];
 struct	buf *cdbuffer();
 char	*cddevtostr();
-int	cdiodone();
+void	cdiodone();
 
-#define	cdunit(x)	((minor(x) >> 3) & 0x7)	/* for consistency */
+#define	cdunit(x)	((minor(x) >> 3) & 0xf)	/* for consistency */
 
 #define	getcbuf()	\
 	((struct buf *)malloc(sizeof(struct buf), M_DEVBUF, M_WAITOK))
@@ -63,13 +63,63 @@ struct cd_softc {
 	struct cdcinfo	 sc_cinfo[NCDISKS];	/* component info */
 	struct cdiinfo	 *sc_itable;		/* interleave table */
 	int		 sc_usecnt;		/* number of requests active */
-	struct buf	 *sc_bp;		/* "current" request */
 	int		 sc_dk;			/* disk index */
-} cd_softc[NCD];
+};
 
 /* sc_flags */
 #define	CDF_ALIVE	0x01
 #define CDF_INITED	0x02
+
+struct cd_softc *cd_softc;
+int numcd;
+
+/*
+ * Since this is called after auto-configuration of devices,
+ * we can handle the initialization here.
+ *
+ * XXX this will not work if you want to use a cd as your primary
+ * swap device since swapconf() has been called before now.
+ */
+void
+cdattach(num)
+	int num;
+{
+	char *mem;
+	register u_long size;
+	register struct cddevice *cd;
+	extern int dkn;
+
+	if (num <= 0)
+		return;
+	size = num * sizeof(struct cd_softc);
+	mem = malloc(size, M_DEVBUF, M_NOWAIT);
+	if (mem == NULL) {
+		printf("WARNING: no memory for concatonated disks\n");
+		return;
+	}
+	bzero(mem, size);
+	cd_softc = (struct cd_softc *)mem;
+	numcd = num;
+	for (cd = cddevice; cd->cd_unit >= 0; cd++) {
+		/*
+		 * XXX
+		 * Assign disk index first so that init routine
+		 * can use it (saves having the driver drag around
+		 * the cddevice pointer just to set up the dk_*
+		 * info in the open routine).
+		 */
+		if (dkn < DK_NDRIVE)
+			cd->cd_dk = dkn++;
+		else
+			cd->cd_dk = -1;
+		if (cdinit(cd))
+			printf("cd%d configured\n", cd->cd_unit);
+		else if (cd->cd_dk >= 0) {
+			cd->cd_dk = -1;
+			dkn--;
+		}
+	}
+}
 
 cdinit(cd)
 	struct cddevice *cd;
@@ -82,6 +132,7 @@ cdinit(cd)
 	dev_t dev;
 	struct bdevsw *bsw;
 	int error;
+	struct proc *p = curproc; /* XXX */
 
 #ifdef DEBUG
 	if (cddebug & (CDB_FOLLOW|CDB_INIT))
@@ -105,7 +156,8 @@ cdinit(cd)
 		/*
 		 * Open the partition
 		 */
-		if (bsw->d_open && (error = (*bsw->d_open)(dev, 0, S_IFBLK))) {
+		if (bsw->d_open &&
+		    (error = (*bsw->d_open)(dev, 0, S_IFBLK, p))) {
 			printf("cd%d: component %s open failed, error = %d\n",
 			       cd->cd_unit, cddevtostr(dev), error);
 			return(0);
@@ -141,7 +193,7 @@ cdinit(cd)
 			if (i != nchrdev && cdevsw[i].d_ioctl) {
 				flag = 1;
 				(void)(*cdevsw[i].d_ioctl)(dev, DIOCWLABEL,
-							   &flag, FWRITE);
+					(caddr_t)&flag, FWRITE, p);
 			}
 		}
 #endif
@@ -185,6 +237,7 @@ cdinit(cd)
 
 /*
  * XXX not really cd specific.
+ * Could be called something like bdevtostr in machine/conf.c.
  */
 char *
 cddevtostr(dev)
@@ -192,17 +245,21 @@ cddevtostr(dev)
 {
 	static char dbuf[5];
 
-	dbuf[1] = 'd';
 	switch (major(dev)) {
+#ifdef hp300
 	case 2:
-		dbuf[0] = 'r';
+		dbuf[0] = 'r'; dbuf[1] = 'd';
 		break;
 	case 4:
-		dbuf[0] = 's';
+		dbuf[0] = 's'; dbuf[1] = 'd';
 		break;
 	case 5:
-		dbuf[0] = 'c';
+		dbuf[0] = 'c'; dbuf[1] = 'd';
 		break;
+	case 6:
+		dbuf[0] = 'v'; dbuf[1] = 'n';
+		break;
+#endif
 	default:
 		dbuf[0] = dbuf[1] = '?';
 		break;
@@ -330,7 +387,7 @@ cdopen(dev, flags)
 	if (cddebug & CDB_FOLLOW)
 		printf("cdopen(%x, %x)\n", dev, flags);
 #endif
-	if (unit >= NCD || (cs->sc_flags & CDF_ALIVE) == 0)
+	if (unit >= numcd || (cs->sc_flags & CDF_ALIVE) == 0)
 		return(ENXIO);
 	return(0);
 }
@@ -370,23 +427,19 @@ cdstrategy(bp)
 	bp->b_resid = bp->b_bcount;
 	/*
 	 * "Start" the unit.
-	 * XXX: the use of sc_bp is just to retain the "traditional"
-	 * interface to the start routine.
 	 */
 	s = splbio();
-	cs->sc_bp = bp;
-	cdstart(unit);
+	cdstart(cs, bp);
 	splx(s);
 	return;
 done:
 	biodone(bp);
 }
 
-cdstart(unit)
-	int unit;
+cdstart(cs, bp)
+	register struct cd_softc *cs;
+	register struct buf *bp;
 {
-	register struct cd_softc *cs = &cd_softc[unit];
-	register struct buf *bp = cs->sc_bp;
 	register long bcount, rcount;
 	struct buf *cbp;
 	caddr_t addr;
@@ -394,7 +447,7 @@ cdstart(unit)
 
 #ifdef DEBUG
 	if (cddebug & CDB_FOLLOW)
-		printf("cdstart(%d)\n", unit);
+		printf("cdstart(%x, %x)\n", cs, bp);
 #endif
 	/*
 	 * Instumentation (not real meaningful)
@@ -497,7 +550,7 @@ cdbuffer(cs, bp, bn, addr, bcount)
 	if (cbp->b_bcount > bcount)
 		cbp->b_bcount = bcount;
 	/*
-	 * XXX: context for cdiodone
+	 * XXX context for cdiodone
 	 */
 	cbp->b_saveaddr = (caddr_t)bp;
 	cbp->b_pfcent = ((cs - cd_softc) << 16) | (ci - cs->sc_cinfo);
@@ -510,15 +563,14 @@ cdbuffer(cs, bp, bn, addr, bcount)
 	return(cbp);
 }
 
-cdintr(unit)
-	int unit;
+cdintr(cs, bp)
+	register struct cd_softc *cs;
+	register struct buf *bp;
 {
-	register struct cd_softc *cs = &cd_softc[unit];
-	register struct buf *bp = cs->sc_bp;
 
 #ifdef DEBUG
 	if (cddebug & CDB_FOLLOW)
-		printf("cdintr(%d): bp %x\n", unit, bp);
+		printf("cdintr(%x, %x)\n", cs, bp);
 #endif
 	/*
 	 * Request is done for better or worse, wakeup the top half.
@@ -535,6 +587,7 @@ cdintr(unit)
  * Mark the component as done and if all components are done,
  * take a cd interrupt.
  */
+void
 cdiodone(cbp)
 	register struct buf *cbp;
 {
@@ -568,15 +621,12 @@ cdiodone(cbp)
 
 	/*
 	 * If all done, "interrupt".
-	 * Again, sc_bp is only used to preserve the traditional interface.
 	 */
 	bp->b_resid -= count;
 	if (bp->b_resid < 0)
 		panic("cdiodone: count");
-	if (bp->b_resid == 0) {
-		cd_softc[unit].sc_bp = bp;
-		cdintr(unit);
-	}
+	if (bp->b_resid == 0)
+		cdintr(&cd_softc[unit], bp);
 	splx(s);
 }
 
@@ -590,7 +640,7 @@ cdread(dev, uio)
 	if (cddebug & CDB_FOLLOW)
 		printf("cdread(%x, %x)\n", dev, uio);
 #endif
-	return(physio(cdstrategy, &cdbuf[unit], dev, B_READ, minphys, uio));
+	return(physio(cdstrategy, NULL, dev, B_READ, minphys, uio));
 }
 
 cdwrite(dev, uio)
@@ -603,7 +653,7 @@ cdwrite(dev, uio)
 	if (cddebug & CDB_FOLLOW)
 		printf("cdwrite(%x, %x)\n", dev, uio);
 #endif
-	return(physio(cdstrategy, &cdbuf[unit], dev, B_WRITE, minphys, uio));
+	return(physio(cdstrategy, NULL, dev, B_WRITE, minphys, uio));
 }
 
 cdioctl(dev, cmd, data, flag)
@@ -621,7 +671,7 @@ cdsize(dev)
 	int unit = cdunit(dev);
 	register struct cd_softc *cs = &cd_softc[unit];
 
-	if (unit >= NCD || (cs->sc_flags & CDF_INITED) == 0)
+	if (unit >= numcd || (cs->sc_flags & CDF_INITED) == 0)
 		return(-1);
 	return(cs->sc_size);
 }
