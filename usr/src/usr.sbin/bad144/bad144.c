@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #ifdef vax
@@ -573,14 +573,14 @@ format(fd, blk)
 		Perror("ioctl");
 	if ((n = read(fd, buf, fp->f_bufsize)) < 0)
 		bzero(buf, fp->f_bufsize);
+	if (fp->f_routine)
+		if ((*fp->f_routine)(fp, dp, blk, buf, n) != 0)
+			return;
 	if (fp->f_bic) {
 		struct hpuphdr *xp = (struct hpuphdr *)buf;
 
 		xp->hpup_cyl &= ~fp->f_bic;
 	}
-	if (fp->f_routine)
-		if ((*fp->f_routine)(fp, dp, blk, buf, n) != 0)
-			return;
 	if (lseek(fd, (long)blk * dp->d_secsize, L_SET) < 0)
 		Perror("lseek");
 	if (nflag)
