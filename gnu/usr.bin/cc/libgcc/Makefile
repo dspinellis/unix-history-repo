@@ -1,4 +1,4 @@
-#	$Id: Makefile,v 1.4 1993/10/27 04:06:13 paul Exp $
+#	$Id: Makefile,v 1.5 1993/10/30 17:24:36 paul Exp $
 
 LIB=	gcc
 NOPROFILE=
@@ -40,18 +40,5 @@ ${LIB1SOBJS}: libgcc1.c
 
 ${LIB2SOBJS}: libgcc2.c
 	${CC} -c -fpic ${CFLAGS} -DL${.PREFIX} -o ${.TARGET} ${.CURDIR}/libgcc2.c
-
-.if !target(depend)
-depend: .depend
-.depend: libgcc1.c libgcc2.c
-	rm -f .depend
-	files="${.ALLSRC:M*.c}"; \
-	if [ "$$files" != "" ]; then \
-	mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} $$files; \
-	fi
-	@(TMP=/tmp/_depend$$$$; \
-	sed -e 's/^\([^\.]*\).o[ ]*:/\1.o \1.po \1.so:/' < .depend > $$TMP; \
-	mv $$TMP .depend)
-.endif
 
 .include <bsd.lib.mk>
