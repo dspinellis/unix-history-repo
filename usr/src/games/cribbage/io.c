@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)io.c	5.10 (Berkeley) %G%";
 # include	<curses.h>
 # include	<ctype.h>
 # include	<signal.h>
+# include       <termios.h>
 # if __STDC__
 # include	<stdarg.h>
 # else
