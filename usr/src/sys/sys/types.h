@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.5 (Berkeley) %G%
+ *	@(#)types.h	7.6 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
@@ -49,6 +49,7 @@ typedef	u_short	gid_t;
 typedef	short	pid_t;
 typedef	short	nlink_t;
 typedef	u_short	mode_t;
+typedef u_long	fixpt_t;
 
 #define	NBBY	8		/* number of bits in a byte */
 /*

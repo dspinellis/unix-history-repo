@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)symbols.raw	7.1 (Berkeley) %G%
+#	@(#)symbols.raw	7.2 (Berkeley) %G%
 #
 	_version
 #dmesg
@@ -17,7 +17,7 @@
 	_tk_nout
 	_dk_seek
 	_cp_time
-	_dk_mspw
+	_dk_wpms
 #	_io_info
 #ps
 	_proc
@@ -63,7 +63,7 @@
 	_Usrptmap
 	_usrpt
 	_nswap
-	_avenrun
+	_averunnable
 	_boottime
 #netstat
 	_mbstat
@@ -82,5 +82,6 @@
 #routed
 	_ifnet
 #rwho
-	_avenrun
 	_boottime
+#deprecated
+	_avenrun

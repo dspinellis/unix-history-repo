@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uda.c	7.22 (Berkeley) %G%
+ *	@(#)uda.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -517,7 +517,7 @@ try_another:
 
 /*
  * Attach a found slave.  Make sure the watchdog timer is running.
- * If this disk is being profiled, fill in the `mspw' value (used by
+ * If this disk is being profiled, fill in the `wpms' value (used by
  * what?).  Set up the inverting pointer, and attempt to bring the
  * drive on line and read its label.
  */
@@ -545,7 +545,7 @@ udaattach(ui)
 		return;
 	}
 	if (ui->ui_dk >= 0)
-		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);	/* approx */
+		dk_wpms[ui->ui_dk] = (60 * 31 * 256);	/* approx */
 	udaip[ui->ui_ctlr][ui->ui_slave] = ui;
 
 	if (uda_rainit(ui, 0))

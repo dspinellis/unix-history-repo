@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.8 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.9 (Berkeley) %G%
  */
 
 #include "machine/pte.h"
@@ -92,19 +92,36 @@ roundrobin()
  *      loadav: 1       2       3       4
  *      power:  5.68    10.32   14.94   19.55
  */
-#define	filter(loadav) ((2 * (loadav)) / (2 * (loadav) + 1))
 
-double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
+/* calculations for digital decay to forget 90% of usage in 5*loadav sec */
+#define	get_b(loadav)		(2 * (loadav))
+#define	get_pcpu(b, cpu)	(((b) * ((cpu) & 0377)) / ((b) + FSCALE))
+
+/* decay 95% of `p_pctcpu' in 60 seconds; see CCPU_SHIFT before changing */
+fixpt_t	ccpu = 0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
+
+/*
+ * If `ccpu' is not equal to `exp(-1/20)' and you still want to use the
+ * faster/more-accurate formula, you'll have to estimate CCPU_SHIFT below
+ * and possibly adjust FSHIFT in "param.h" so that (FSHIFT >= CCPU_SHIFT).
+ *
+ * To estimate CCPU_SHIFT for exp(-1/20), the following formula was used:
+ *	1 - exp(-1/20) ~= 0.0487 ~= 0.0488 == 1 (fixed pt, *11* bits).
+ *
+ * If you dont want to bother with the faster/more-accurate formula, you
+ * can set CCPU_SHIFT to (FSHIFT + 1) which will use a slower/less-accurate
+ * (more general) method of calculating the %age of CPU used by a process.
+ */
+#define	CCPU_SHIFT	11
 
 /*
  * Recompute process priorities, once a second
  */
 schedcpu()
 {
-	register double ccpu1 = (1.0 - ccpu) / (double)hz;
+	register fixpt_t b = get_b(averunnable[0]);
 	register struct proc *p;
 	register int s, a;
-	float scale = filter(avenrun[0]);
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -113,20 +130,27 @@ schedcpu()
 		if (p->p_stat==SSLEEP || p->p_stat==SSTOP)
 			if (p->p_slptime != 127)
 				p->p_slptime++;
+		p->p_pctcpu = (p->p_pctcpu * ccpu) >> FSHIFT;
 		/*
 		 * If the process has slept the entire second,
 		 * stop recalculating its priority until it wakes up.
 		 */
-		if (p->p_slptime > 1) {
-			p->p_pctcpu *= ccpu;
+		if (p->p_slptime > 1)
 			continue;
-		}
 		/*
 		 * p_pctcpu is only for ps.
 		 */
-		p->p_pctcpu = ccpu * p->p_pctcpu + ccpu1 * p->p_cpticks;
+#if	(FSHIFT >= CCPU_SHIFT)
+		p->p_pctcpu += (hz == 100)?
+			((fixpt_t) p->p_cpticks) << (FSHIFT - CCPU_SHIFT):
+                	100 * (((fixpt_t) p->p_cpticks)
+				<< (FSHIFT - CCPU_SHIFT)) / hz;
+#else
+		p->p_pctcpu += ((FSCALE - ccpu) *
+			(p->p_cpticks * FSCALE / hz)) >> FSHIFT;
+#endif
 		p->p_cpticks = 0;
-		a = (int) (scale * (p->p_cpu & 0377)) + p->p_nice;
+		a = (int) get_pcpu(b, p->p_cpu) + p->p_nice;
 		if (a < 0)
 			a = 0;
 		if (a > 255)
@@ -165,11 +189,11 @@ updatepri(p)
 	register struct proc *p;
 {
 	register int a = p->p_cpu & 0377;
-	float scale = filter(avenrun[0]);
+	register fixpt_t b = get_b(averunnable[0]);
 
 	p->p_slptime--;		/* the first time was done in schedcpu */
 	while (a && --p->p_slptime)
-		a = (int) (scale * a) /* + p->p_nice */;
+		a = (int) get_pcpu(b, a) /* + p->p_nice */;
 	p->p_slptime = 0;
 	if (a < 0)
 		a = 0;

@@ -1,4 +1,4 @@
-#	symbols.raw	7.1	88/05/21
+#	symbols.raw	7.2	89/05/29
 	_version
 #dmesg
 	_msgbuf
@@ -11,7 +11,7 @@
 	_tk_nout
 	_dk_seek
 	_cp_time
-	_dk_mspw
+	_dk_wpms
 #	_io_info
 #ps
 	_proc
@@ -57,7 +57,7 @@
 	_Usrptmap
 	_usrpt
 	_nswap
-	_avenrun
+	_averunnable
 	_boottime
 #netstat
 	_mbstat
@@ -76,5 +76,6 @@
 #routed
 	_ifnet
 #rwho
-	_avenrun
 	_boottime
+#deprecated
+	_avenrun
