@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmdsub.c	7.4	%G%";
+static char *sccsid = "@(#)ex_cmdsub.c	7.5	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -470,17 +470,9 @@ tagfind(quick)
 	int omagic;
 	char *fn, *fne;
 	struct stat sbuf;
-#ifdef STDIO		/* mjm: was VMUNIX */
-	/*
-	 * We have lots of room so we bring in stdio and do
-	 * a binary search on the tags file.
-	 */
-# undef EOF
-# include <stdio.h>
-# undef getchar
-# undef putchar
-	FILE *iof;
-	char iofbuf[BUFSIZ];
+#ifdef FASTTAG
+	int iof;
+	char iofbuf[MAXBSIZE];
 	long mid;	/* assumed byte offset */
 	long top, bot;	/* length of tag file */
 #endif
@@ -520,15 +512,14 @@ badtag:
 			fne = 0;	/* done, quit after this time */
 		else
 			*fne = 0;	/* null terminate filename */
-#ifdef STDIO		/* mjm: was VMUNIX */
-		iof = fopen(fn, "r");
-		if (iof == NULL)
+#ifdef FASTTAG
+		iof = topen(fn, iofbuf);
+		if (iof == -1)
 			continue;
 		tfcount++;
-		setbuf(iof, iofbuf);
-		fstat(fileno(iof), &sbuf);
+		fstat(iof, &sbuf);
 		top = sbuf.st_size;
-		if (top == 0L || iof == NULL)
+		if (top == 0L )
 			top = -1L;
 		bot = 0L;
 		while (top >= bot) {
@@ -554,22 +545,25 @@ badtag:
 			register char *lp = lasttag;
 			char *oglobp;
 
-#ifdef STDIO		/* mjm: was VMUNIX */
+#ifdef FASTTAG
 			mid = (top + bot) / 2;
-			fseek(iof, mid, 0);
+			tseek(iof, mid);
 			if (mid > 0)	/* to get first tag in file to work */
 				/* scan to next \n */
-				if(fgets(linebuf, sizeof linebuf, iof)==NULL)
+				if(tgets(linebuf, sizeof linebuf, iof)==NULL)
 					goto goleft;
 			/* get the line itself */
-			if(fgets(linebuf, sizeof linebuf, iof)==NULL)
+			if(tgets(linebuf, sizeof linebuf, iof)==NULL)
 				goto goleft;
-			linebuf[strlen(linebuf)-1] = 0;	/* was '\n' */
+#ifdef TDEBUG
+			printf("tag: %o %o %o %s\n", bot, mid, top, linebuf);
+#endif
 #endif
 			while (*cp && *lp == *cp)
 				cp++, lp++;
-			if ((*lp || !iswhite(*cp)) && (value(TAGLENGTH)==0 || lp-lasttag < value(TAGLENGTH))) {
-#ifdef STDIO		/* mjm: was VMUNIX */
+			if ((*lp || !iswhite(*cp)) && (value(TAGLENGTH)==0 ||
+			    lp-lasttag < value(TAGLENGTH))) {
+#ifdef FASTTAG
 				if (*lp > *cp)
 					bot = mid + 1;
 				else
@@ -583,8 +577,8 @@ goleft:
 			/*
 			 * We found the tag.  Decode the line in the file.
 			 */
-#ifdef STDIO		/* mjm: was VMUNIX */
-			fclose(iof);
+#ifdef FASTTAG
+			tclose(iof);
 #else
 			close(io);
 #endif
@@ -665,8 +659,8 @@ badtags:
 		/*
 		 * No such tag in this file.  Close it and try the next.
 		 */
-#ifdef STDIO		/* mjm: was VMUNIX */
-		fclose(iof);
+#ifdef FASTTAG
+		tclose(iof);
 #else
 		close(io);
 #endif
