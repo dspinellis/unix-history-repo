@@ -1,0 +1,117 @@
+How I built (parts of) BIND 4.9.3-BETA9 under Amdahl UTS 2.1.5.
+Janet Jackson <janet@dialix.oz.au> 1994-12-28
+
+Introductory notes:
+
+   I built libresolv.a (and other files) for the UTS but left them in the
+   source directory; I then linked Sendmail 8 using it.  For various reasons
+   you'd rather not hear about, I didn't want to change the UTS system's
+   resolver library.  I just wanted to get sendmail 8 working.
+
+I made the following changes in the BIND 4.9 source directory
+(to re-create, apply the patch "patch.bind-4.9.3-BETA9"):
+
+   Created a UTS section in Makefile.
+
+   In Makefile, changed SUBDIRS list to contain only "res", "include" and
+   "compat", since they're the only parts I wanted.
+
+   In include/arpa/nameser.h, added defined(UTS) || defined(_UTS) to select
+   big-endian byte order.
+
+   In res/res_send.c, added #ifndef TIME_H_INCLUDED around
+   #include <sys/time.h>, which doesn't have it's own #ifdef and is included
+   again in conf/portability.h unless TIME_H_INCLUDED.
+
+I also made the following change, which must be recreated by hand:
+
+   mkdir include/sys
+   cp /usr/include/sys/param.h include/sys/param.h
+   Added "#include <sys/types.h>" to include/sys/param.h (as close as possible
+   to the beginning, ie, after "#define PARAM_H"), because the BIND code
+   assumes that param.h includes sys/types.h, and I wasn't going to alter the
+   system's header file in /usr/include.
+
+Build procedure:
+
+   I just typed "make".
+
+The actual patch follows:
+
+
+*** ./Makefile	Sun Jul 24 08:59:37 1994
+--- ../bind/Makefile	Mon Dec 12 16:20:55 1994
+***************
+*** 93,98 ****
+--- 93,118 ----
+  INSTALL = install
+  RANLIB = ranlib
+  
++ #(Amdahl UTS 2.1.5 (a more-or-less SVr3-based system))
++ CC = cc -eft
++ INDOT =
++ LEX = lex
++ LIBS = -ll
++ PIDDIR = /etc
++ DESTBIN = /usr/bin
++ DESTSBIN = /etc
++ DESTEXEC = /etc
++ DESTMAN = /usr/man
++ DESTHELP = /usr/lib
++ DESTLIB = /usr/lib
++ DESTINC = /usr/include
++ COMPINCL = compat/include
++ LDS = 
++ CATEXT = $$$$N
++ INSTALL_COMPAT = install
++ INSTALL = install
++ RANLIB = :
++ 
+  #(Linux)
+  #CC = gcc -DSYSV
+  #LIBS = -lfl
+***************
+*** 355,361 ****
+  DST = $(MACHINE).b
+  SRC = ..
+  
+! SUBDIRS = res include compat named tools man $(SHRES)
+  
+  all clean depend:: FRC
+  	@for x in $(SUBDIRS); do \
+--- 375,382 ----
+  DST = $(MACHINE).b
+  SRC = ..
+  
+! SUBDIRS = res include compat
+! #SUBDIRS = res include compat named tools man $(SHRES)
+  
+  all clean depend:: FRC
+  	@for x in $(SUBDIRS); do \
+*** ./include/arpa/nameser.h	Wed Jul 20 06:51:32 1994
+--- ../bind/include/arpa/nameser.h	Mon Dec 12 13:46:49 1994
+***************
+*** 207,212 ****
+--- 207,213 ----
+      defined(apollo) || defined(__convex__) || defined(_CRAY) || \
+      defined(__hppa) || defined(__hp9000) || \
+      defined(__hp9000s300) || defined(__hp9000s700) || \
++     defined(UTS) || defined(_UTS) || \
+      defined (BIT_ZERO_ON_LEFT)
+  #define BYTE_ORDER	BIG_ENDIAN
+  #endif
+*** ./res/res_send.c	Sun Jun 26 12:00:20 1994
+--- ../bind/res/res_send.c	Mon Dec 12 14:01:25 1994
+***************
+*** 70,76 ****
+--- 70,79 ----
+   */
+  
+  #include <sys/param.h>
++ #ifndef TIME_H_INCLUDED
+  #include <sys/time.h>
++ #define TIME_H_INCLUDED
++ #endif
+  #include <sys/socket.h>
+  #include <sys/uio.h>
+  #include <netinet/in.h>
