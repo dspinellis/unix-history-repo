@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983,1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983,1986 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)shutdown.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)shutdown.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -19,9 +19,10 @@ static char sccsid[] = "@(#)shutdown.c	5.5 (Berkeley) %G%";
 #include <signal.h>
 #include <setjmp.h>
 #include <utmp.h>
+#include <pwd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/syslog.h>
 
 /*
@@ -43,7 +44,7 @@ static char sccsid[] = "@(#)shutdown.c	5.5 (Berkeley) %G%";
 #define	NOLOGTIME	5 MINUTES
 #define IGNOREUSER	"sleeper"
 
-char	hostname[32];
+char	hostname[MAXHOSTNAMELEN];
 
 int	timeout();
 time_t	getsdt();
@@ -110,10 +111,13 @@ main(argc,argv)
 	int h, m;
 	int first;
 	FILE *termf;
+	struct passwd *pw, *getpwuid();
 	extern char *strcat();
 	extern uid_t geteuid();
 
 	shutter = getlogin();
+	if (shutter == 0 && (pw = getpwuid(getuid())))
+		shutter = pw->pw_name;
 	if (shutter == 0)
 		shutter = "???";
 	(void) gethostname(hostname, sizeof (hostname));
@@ -245,7 +249,10 @@ main(argc,argv)
 		}
 		if (stogo <= 0) {
 			printf("\n\007\007System shutdown time has arrived\007\007\n");
-			syslog(LOG_CRIT, "%s!%s: %s", hostname, shutter, nolog2);
+			syslog(LOG_CRIT, "%s by %s: %s",
+			    doreboot ? "reboot" : halt ? "halt" : "shutdown",
+			    shutter, nolog2);
+			sleep(2);
 			(void) unlink(nologin);
 			if (!killflg) {
 				printf("but you'll have to do it yourself\n");
@@ -254,25 +261,22 @@ main(argc,argv)
 			if (fast)
 				doitfast();
 #ifndef DEBUG
-			(void) kill(-1, SIGTERM);	/* terminate everyone */
-			sleep(5);		/* & wait while they die */
 			if (doreboot)
-				execle(REBOOT, "reboot", nosync, 0, 0);
+				execle(REBOOT, "reboot", "-l", nosync, 0, 0);
 			if (halt)
-				execle(HALT, "halt", nosync, 0, 0);
-			(void) kill(1, SIGTERM);	/* sync */
-			(void) kill(1, SIGTERM);	/* sync */
-			sleep(20);
+				execle(HALT, "halt", "-l", nosync, 0, 0);
+			(void) kill(1, SIGTERM);	/* to single user */
 #else
-			printf("EXTERMINATE EXTERMINATE\n");
 			if (doreboot)
 				printf("REBOOT");
 			if (halt)
 				printf(" HALT");
 			if (fast)
-				printf(" %s (without fsck's)\n", nosync);
+				printf(" -l %s (without fsck's)\n", nosync);
 			else
-				printf(" %s\n", nosync);
+				printf(" -l %s\n", nosync);
+			else
+				printf("kill -HUP 1\n");
 
 #endif
 			finish();

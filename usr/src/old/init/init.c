@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980,1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)init.c	5.5 (Berkeley) %G%";
 #include <errno.h>
 #include <sys/file.h>
 #include <ttyent.h>
-#include <syslog.h>
+#include <sys/syslog.h>
 #include <sys/stat.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
@@ -133,6 +133,8 @@ shutdown()
 	}
 	itab = (struct tab *)0;
 	signal(SIGALRM, shutreset);
+	(void) kill(-1, SIGTERM);	/* one chance to catch it */
+	sleep(5);
 	alarm(30);
 	for (i = 0; i < 5; i++)
 		kill(-1, SIGKILL);
