@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.44	83/02/10	*/
+/*	udp_usrreq.c	4.45	83/02/16	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -213,13 +213,17 @@ udp_usrreq(so, req, m, nam)
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
 
-	if (inp == 0 && req != PRU_ATTACH)
-		return (EINVAL);
+	if (inp == NULL && req != PRU_ATTACH) {
+		error = EINVAL;
+		goto release;
+	}
 	switch (req) {
 
 	case PRU_ATTACH:
-		if (inp != 0)
-			return (EINVAL);
+		if (inp != NULL) {
+			error = EINVAL;
+			break;
+		}
 		error = in_pcballoc(so, &udb);
 		if (error)
 			break;
@@ -229,8 +233,10 @@ udp_usrreq(so, req, m, nam)
 		break;
 
 	case PRU_DETACH:
-		if (inp == 0)
-			return (ENOTCONN);
+		if (inp == NULL) {
+			error = ENOTCONN;
+			break;
+		}
 		in_pcbdetach(inp);
 		break;
 
@@ -243,19 +249,24 @@ udp_usrreq(so, req, m, nam)
 		break;
 
 	case PRU_CONNECT:
-		if (inp->inp_faddr.s_addr != INADDR_ANY)
-			return (EISCONN);
+		if (inp->inp_faddr.s_addr != INADDR_ANY) {
+			error = EISCONN;
+			break;
+		}
 		error = in_pcbconnect(inp, nam);
 		if (error == 0)
 			soisconnected(so);
 		break;
 
 	case PRU_ACCEPT:
-		return (EOPNOTSUPP);
+		error = EOPNOTSUPP;
+		break;
 
 	case PRU_DISCONNECT:
-		if (inp->inp_faddr.s_addr == INADDR_ANY)
-			return (ENOTCONN);
+		if (inp->inp_faddr.s_addr == INADDR_ANY) {
+			error = ENOTCONN;
+			break;
+		}
 		in_pcbdisconnect(inp);
 		soisdisconnected(so);
 		break;
@@ -269,16 +280,21 @@ udp_usrreq(so, req, m, nam)
 
 		if (nam) {
 			laddr = inp->inp_laddr;
-			if (inp->inp_faddr.s_addr != INADDR_ANY)
-				return (EISCONN);
+			if (inp->inp_faddr.s_addr != INADDR_ANY) {
+				error = EISCONN;
+				break;
+			}
 			error = in_pcbconnect(inp, nam);
 			if (error)
 				break;
 		} else {
-			if (inp->inp_faddr.s_addr == INADDR_ANY)
-				return (ENOTCONN);
+			if (inp->inp_faddr.s_addr == INADDR_ANY) {
+				error = ENOTCONN;
+				break;
+			}
 		}
 		error = udp_output(inp, m);
+		m = NULL;
 		if (nam) {
 			in_pcbdisconnect(inp);
 			inp->inp_laddr = laddr;
@@ -293,7 +309,8 @@ udp_usrreq(so, req, m, nam)
 		break;
 
 	case PRU_CONTROL:
-		return (EOPNOTSUPP);
+		error =  EOPNOTSUPP;
+		break;
 
 	case PRU_SOCKADDR:
 		in_setsockaddr(inp, nam);
@@ -302,5 +319,8 @@ udp_usrreq(so, req, m, nam)
 	default:
 		panic("udp_usrreq");
 	}
+release:
+	if (m != NULL)
+		m_freem(m);
 	return (error);
 }
