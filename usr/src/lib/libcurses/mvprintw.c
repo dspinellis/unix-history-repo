@@ -7,25 +7,27 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)mvprintw.c	5.9 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
+
+#include <curses.h>
 
 #if __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
-#include "curses.ext"
 
 /*
- * implement the mvprintw commands.  Due to the variable number of
- * arguments, they cannot be macros.  Sigh....
+ * mvprintw, mvwprintw --
+ *	Implement the mvprintw commands.  Due to the variable number of
+ *	arguments, they cannot be macros.  Sigh....
  */
 
 #if __STDC__
-mvprintw(reg int y, reg int x, const char *fmt, ...)
+mvprintw(register int y, register int x, const char *fmt, ...)
 #else
 mvprintw(y, x, fmt, va_alist)
-	reg int y, x;
+	register int y, x;
 	char *fmt;
 	va_dcl
 #endif
@@ -34,23 +36,24 @@ mvprintw(y, x, fmt, va_alist)
 	int ret;
 
 	if (move(y, x) != OK)
-		return ERR;
+		return (ERR);
 #if __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
 #endif
-	ret = _sprintw(stdscr, fmt, ap);
+	ret = __sprintw(stdscr, fmt, ap);
 	va_end(ap);
-	return ret;
+	return (ret);
 }
 
 #if __STDC__
-mvwprintw(reg WINDOW *win, reg int y, reg int x, const char *fmt, ...)
+mvwprintw(register WINDOW * win, register int y, register int x,
+    const char *fmt, ...)
 #else
 mvwprintw(win, y, x, fmt, va_alist)
-	reg WINDOW *win;
-	reg int y, x;
+	register WINDOW *win;
+	register int y, x;
 	char *fmt;
 	va_dcl
 #endif
@@ -59,7 +62,7 @@ mvwprintw(win, y, x, fmt, va_alist)
 	int ret;
 
 	if (wmove(win, y, x) != OK)
-		return ERR;
+		return (ERR);
 #if __STDC__
 	va_start(ap, fmt);
 #else
@@ -67,5 +70,5 @@ mvwprintw(win, y, x, fmt, va_alist)
 #endif
 	ret = _sprintw(win, fmt, ap);
 	va_end(ap);
-	return ret;
+	return (ret);
 }
