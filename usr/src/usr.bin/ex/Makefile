@@ -3,14 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.18 (Berkeley) %G%
+#	@(#)Makefile	7.19 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.18 (Berkeley) %G%
+#	@(#)Makefile	7.19 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
@@ -122,7 +122,7 @@ install: a.out exrecover expreserve
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/view
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/usr/bin/ex
 # The following line normally fails.  This is OK.
-	-mkdir ${DESTDIR}/usr/preserve
+	-mkdir ${DESTDIR}/usr/preserve > /dev/null 2>&1
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
