@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)maketape	4.11	%G%
+#	@(#)maketape	4.12	%G%
 #
 miniroot=hp0g
 #
@@ -27,7 +27,7 @@ echo "Add tar image of system sources"
 cd /nbsd/a/sys; tar cf /dev/rmt12 .
 echo "Add tar image of /usr"
 cd /nbsd/usr; tar cf /dev/rmt12 adm bin dict doc games \
-	hosts include lib local man mdec msgs new \
+	guest hosts include lib local man mdec msgs new \
 	preserve pub spool tmp ucb
 echo "Add varian fonts"
 cd /usr/lib/vfont; tar cFFf /dev/rmt12 .
