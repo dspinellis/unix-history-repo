@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ix.c	7.1 (Berkeley) %G%
+ *	@(#)if_ix.c	7.2 (Berkeley) %G%
  */
 
 #include "np.h"
@@ -79,6 +79,8 @@ struct	ix_softc {
 #define	IXF_SETADDR	0x10		/* physical address is changed */
 #define	IXF_STATPENDING	0x20		/* stat cmd pending */
 #define	IXF_GOTCQE	0x40		/* np resources available */
+#define	IXF_OWATCH	0x80		/* is output hung? */
+#define	IXF_RWATCH	0x100		/* is input hung? */
 	struct	ifuba ix_ifuba;		/* unibus resources */
 	u_short	ix_aid;			/* Access Id returned by open DDL */
 	u_short ix_badcqe;
@@ -166,10 +168,11 @@ ix_DoReq(mp, rp, cmd, addr, len, rpb, routine)
 	u_short cnt = *rpb++;
 	extern long NpDebug;
 	int pri;
+	int result = 0;
 
 	ep->cqe_ust0 = ep->cqe_ust1 = NPCLEAR;	/* Clear status */
 	ep->cqe_bcnt = len;			/* Byte count */
-	rp->flags = KERNREQ;			/* Clear flags */
+	rp->flags = KERNREQ | REQALOC;			/* Clear flags */
 	rp->bufaddr = (caddr_t) (UBADDRMASK & (int) addr);/* mapped buffer */
 	rp->intr = routine;
 	rp->user = (caddr_t) (ep->cqe_func = cmd);/* In case pissed on in CQE */
@@ -194,9 +197,11 @@ ix_DoReq(mp, rp, cmd, addr, len, rpb, routine)
 		    || ep->cqe_ust0 != NPDONE
 		    || ep->cqe_ust1 != NPOK) {
 			struct ix_softc *ix = (struct ix_softc *)ep->cqe_famid;
-			printf("ix%d: Req failed, cmd %x, stat %x, ",
-				ix->ix_if.if_unit, rp->user, ep->cqe_sts);
+			printf("ix%d: Req failed, cmd %x, stat %x, flags %x, ",
+				ix->ix_if.if_unit, rp->user,
+				ep->cqe_sts, rp->flags);
 			printf("ust error %x,%x\n", ep->cqe_ust0, ep->cqe_ust1);
+			result = 1;
 		}
 		NpRemReq(rp);			/* Clear request */
 	} else {
@@ -204,6 +209,7 @@ ix_DoReq(mp, rp, cmd, addr, len, rpb, routine)
 		NpAddCQE(ep, &mp->shmemp->devcq, mp);
 		splx(pri);
 	}
+	return(result);
 }
 
 /*
@@ -352,6 +358,7 @@ ixreset(unit, uban, softp)
 	ix_softc[unit].ix_flags &= mask;
 }
 
+int ix_MacLoop = 1;
 
 /*
  * Initialization of interface; clear recorded pending
@@ -371,9 +378,8 @@ ixinit(unit)
 	int s;
 
 	/* not yet, if address still unknown */
-	if (ifp->if_addrlist == (struct ifaddr *)0)
-		return;
-	if (ix->ix_flags & IXF_RUNNING)
+	if ((ifp->if_addrlist == (struct ifaddr *)0) ||
+	    (ix->ix_flags & IXF_RUNNING))
 		return;
 	if ((mp->flags & AVAILABLE) == 0 || (*dpmp & PROTOMASK(NPDLA)) == 0) {
 		ifp->if_flags &= ~IFF_UP;
@@ -407,10 +413,21 @@ ixinit(unit)
 		register char *cp = (char *) &ix->ix_stats;
 		int spincount;
 		int x;
+		/* Try Issuing an open channel request before reprogramming
+		   the physical address */
+		rpb[0] = 6;		/* RPB length */
+		rpb[2] = 0x10;		/* Share with any smart users */
+		rpb[3] = 0;		/* Take (a copy of) all frames */
+		rpb[5] = 8;		/* On board rcv queue length */
+		rpb[6] = 0;		/* XMT packets as is */
+		if (ix_DoReq(mp, rp, IXC_OPEN, 0, 0, rpb, 0))
+			return;
+		/* Proceed with LDPA */
 		*cp++ = 1;
 		bcopy(ix->ix_addr, (caddr_t)cp, 6);
 		rpb[0] = 1;				/* RPB length */
-		ix_DoReq(mp, rp, IXC_LDPA, ix->ix_ubaddr, 7, rpb, 0);
+		if (ix_DoReq(mp, rp, IXC_LDPA, ix->ix_ubaddr, 7, rpb, 0))
+			return;
 #ifndef TheyFinallyFixedTheBoard
 		/* Board requires some time to reinitialize its protocols */
 		x = spl1();
@@ -427,10 +444,13 @@ ixinit(unit)
 	}
 	rpb[0] = 6;		/* RPB length */
 	rpb[2] = 0x10;		/* Share with any smart users */
+	if (ix_MacLoop) rpb[2] |= 0x8;
+				/* Enable software loopback on board */
 	rpb[3] = 0;		/* Take (a copy of) all frames */
 	rpb[5] = 8;		/* On board rcv queue length */
 	rpb[6] = 0;		/* XMT packets as is */
-	ix_DoReq(mp, rp, IXC_OPEN, 0, 0, rpb, 0);
+	if (ix_DoReq(mp, rp, IXC_OPEN, 0, 0, rpb, 0))
+		return;
 
 	ix->ix_aid = ep->rpb1;
 
@@ -439,9 +459,10 @@ ixinit(unit)
 		rpb[0] = 2;
 		rpb[1] = ix->ix_aid;
 		rpb[2] = 0;		/* get all stats */
-		ix_DoReq(mp, rp, IXC_GSTAT,	/* Get Stats */
+		if (ix_DoReq(mp, rp, IXC_GSTAT,	/* Get Stats */
 			 (caddr_t) ix->ix_ubaddr, sizeof(ix->ix_stats) - 8,
-			 rpb, 0);
+			 rpb, 0))
+				return;
 		bcopy((caddr_t) &ix->ix_stats, (caddr_t) ix->ix_addr, 6);
 	}
 	ix->ix_if.if_flags |= IFF_RUNNING;
@@ -516,32 +537,46 @@ ixcint(mp, rp)
 
 	ep = rp->element;
 	ix = (struct ix_softc *)ep->cqe_famid;
+	ix->ix_flags &= ~IXF_OWATCH;
 	if ((ix->ix_flags & IXF_OACTIVE) == 0) {
 		printf("ix%d: stray xmit interrupt, npreq=%x\n",
 			ix->ix_if.if_unit, rp);
 	}
 	ix->ix_flags &= ~IXF_OACTIVE;
-
-	switch (ep->cqe_func) {
+	if (rp->flags & IOABORT || ep->cqe_sts != NPDONE
+	    || ep->cqe_ust0 != NPDONE || ep->cqe_ust1 != NPOK) {
+		if (ep->cqe_ust1 == 0x48)
+			ix->ix_if.if_oerrors++;
+		else {
+			struct ix_softc *ix = (struct ix_softc *)ep->cqe_famid;
+			printf(
+			   "ix%d: ixcint failed, cmd %x, stat %x, flags %x, ",
+				ix->ix_if.if_unit, rp->user,
+				ep->cqe_sts, rp->flags);
+			printf("ust error %x,%x\n", ep->cqe_ust0, ep->cqe_ust1);
+			if (++ix->ix_badcqe > 65) {
+				ix->ix_badcqe = 0;
+				printf("ixcint: shutting down unix dla\n");
+				ix->ix_if.if_flags &= ~IFF_UP;
+			}
+		 }
+	}
+	else switch (ep->cqe_func) {
 
 	case IXC_XMIT:
-		if (ep->cqe_sts == 1)
-			ix->ix_if.if_opackets++;
-		else
-			ix->ix_if.if_oerrors++;
+		ix->ix_if.if_opackets++;
 		break;
 
 	case IXC_GSTAT:
-		if (ep->cqe_sts == 1)
-			ix->ix_if.if_collisions = ix->ix_stats.ixg.macg_xrty;
-		break;
+		ix->ix_if.if_collisions += ix->ix_stats.ixg.macg_xrty;
 	}
+done:
 	if (ix->ix_ifuba.ifu_xtofree) {
 		m_freem(ix->ix_ifuba.ifu_xtofree);
 		ix->ix_ifuba.ifu_xtofree = 0;
 	}
-done:
-	ixstart(ix->ix_if.if_unit);
+	if ((ix->ix_if.if_flags & (IFF_UP|IFF_RUNNING)) == (IFF_UP|IFF_RUNNING))
+		ixstart(ix->ix_if.if_unit);
 	splx(s);
 }
 
@@ -569,19 +604,20 @@ ixrint(mp, rp)
 		return;
 	if (rp == 0)
 		goto setup;
-	ix->ix_flags &= ~IXF_RCVPENDING;
+	ix->ix_flags &= ~(IXF_RCVPENDING|IXF_RWATCH);
 	ep = rp->element;
 	ix->ix_if.if_ipackets++;
 	if (ix->ix_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(ix->ix_ifuba.ifu_uba, ix->ix_ifuba.ifu_r.ifrw_bdp);
 	il = (struct ether_header *)(ix->ix_ifuba.ifu_r.ifrw_addr);
 	len = ep->cqe_bcnt - sizeof (struct ether_header);
-	if (ep->cqe_sts != NPDONE
+	if (ep->cqe_sts != NPDONE || rp->flags & IOABORT
 	    || ep->cqe_ust0 != NPDONE
 	    || ep->cqe_ust1 != NPOK) {
-		printf("ixrint: cqe error %x, %x, %x\n",
-			ep->cqe_sts, ep->cqe_ust0, ep->cqe_ust1);
-		if (++ix->ix_badcqe > 100) {
+		printf("ix%drint: cqe error, cmd %x, stat %x, flags %x, ",
+			ix->ix_if.if_unit, rp->user, ep->cqe_sts, rp->flags);
+		printf("ust error %x,%x\n", ep->cqe_ust0, ep->cqe_ust1);
+		if (++ix->ix_badcqe > 50) {
 			ix->ix_badcqe = 0;
 			printf("ixrint: shutting down unix dla\n");
 			ix->ix_if.if_flags &= ~IFF_UP;
@@ -701,6 +737,7 @@ setup:
 }
 
 
+long ixwatchcount;
 /*
  * Watchdog routine, request statistics from board.
  */
@@ -711,14 +748,25 @@ ixwatch(unit)
 	register struct ifnet *ifp = &ix->ix_if;
 	int s;
 
-	if (ix->ix_flags & IXF_STATPENDING) {
-		ifp->if_timer = ix->ix_scaninterval;
-		return;
+	ixwatchcount++;
+	if (ix->ix_badcqe > 1) {
+		ix->ix_badcqe--; /* If errors aren't happening too fast,
+				give the board a reprieve */
 	}
 	s = splimp();
+	if (ix->ix_flags & IXF_STATPENDING) {
+		ifp->if_timer = ix->ix_scaninterval;
+		ix->ix_flags |= IXF_OWATCH;
+		splx(s);
+		return;
+	}
 	ix->ix_flags |= IXF_STATPENDING;
 	if ((ix->ix_flags & IXF_OACTIVE) == 0)
 		ixstart(ifp->if_unit);
+	else
+		ix->ix_flags |= IXF_OWATCH;
+	if (ix->ix_flags & IXF_RCVPENDING)
+		ix->ix_flags |= IXF_RWATCH;
 	splx(s);
 	ifp->if_timer = ix->ix_scaninterval;
 }
@@ -807,5 +855,8 @@ int unit;
 	ix->ix_flags |= IXF_SETADDR;
 	ixinit(unit);
 	NpKill(ix->ix_mp, ix->ix_rrp);
+}
+static showme() {
+	return ((int) &(ix_softc->ix_badcqe));
 }
 #endif
