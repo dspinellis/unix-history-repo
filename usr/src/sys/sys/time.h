@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	8.3 (Berkeley) %G%
+ *	@(#)time.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
@@ -25,8 +25,8 @@ struct timeval {
  * Structure defined by POSIX.4 to be like a timeval.
  */
 struct timespec {
-	int32_t	ts_sec;		/* seconds */
-	int32_t	ts_nsec;	/* and nanoseconds */
+	time_t	ts_sec;		/* seconds */
+	long	ts_nsec;	/* and nanoseconds */
 };
 
 #define	TIMEVAL_TO_TIMESPEC(tv, ts) {					\
