@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.3 */
+/* %G% (Berkeley) @(#)curses.h	1.4 */
 # ifndef WINDOW
 
 # include	<stdio.h>
