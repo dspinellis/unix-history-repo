@@ -1,4 +1,4 @@
-/*	locore.s	4.61	82/01/30	*/
+/*	locore.s	4.62	82/02/18	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -764,6 +764,7 @@ _Resume:
 	mtpr	r0,$PCBB
 	ldpctx
 	movl	_u+PCB_CMAP2,_CMAP2	# yech
+	mtpr	$_CADDR2,$TBIS
 res0:
 	tstl	_u+PCB_SSWAP
 	beql	res1
