@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)DFDISPOSE.c	4.1	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)DFDISPOSE.c	4.2	(Berkeley)	%G%";
 
 /*
  * Close all active files within a dynamic record,
@@ -26,7 +26,7 @@ DFDISPOSE(var, size)
 		next = next->fchain;
 	}
 	while(next != FILNIL && next < end)
-		next = PFCLOSE(next);
+		next = PFCLOSE(next, TRUE);
 	prev->fchain = next;
 	DISPOSE(var, size);
 }
