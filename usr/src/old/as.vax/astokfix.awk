@@ -1,6 +1,6 @@
 #
 #	Copyright (c) 1982 Regents of the University of California */
-#	@(#)astokfix.awk 4.1 %G%
+#	@(#)astokfix.awk 4.2 %G%
 #
 /AWKFIXESME/{
 	if ($4 == "AWKFIXESME")
