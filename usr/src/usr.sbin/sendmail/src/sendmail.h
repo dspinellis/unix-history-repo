@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.12	%G%
+**	@(#)sendmail.h	3.13	%G%
 */
 
 
@@ -163,6 +163,28 @@ struct rewrite	*RewriteRules;
 # define CANONNET	'\025'	/* canonical net, next token */
 # define CANONHOST	'\026'	/* canonical host, next token */
 # define CANONUSER	'\027'	/* canonical user, next N tokens */
+
+
+
+/*
+**  Symbol table definitions
+*/
+
+struct symtab
+{
+	char		*s_name;	/* name to be entered */
+	char		s_type;		/* general type (unused) */
+	long		s_class;	/* bit-map of word classes */
+	struct symtab	*s_next;	/* pointer to next in chain */
+};
+
+typedef struct symtab	STAB;
+
+extern STAB	*stab();
+
+/* opcodes to stab */
+# define ST_FIND	0	/* find entry */
+# define ST_ENTER	1	/* enter if not there */
 
 
 
