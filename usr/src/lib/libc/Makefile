@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 #
 # All library objects contain sccsid strings by default; they may be
 # excluded as a space-saving measure.  To produce a library that does
@@ -26,7 +26,7 @@ CLEANFILES+=tags
 KQSRCS=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
 	lshldi3.c lshrdi3.c moddi3.c muldi3.c negdi2.c notdi2.c qdivrem.c \
 	subdi3.c ucmpdi2.c udivdi3.c umoddi3.c xordi3.c
-KSRCS=	bcmp.c ffs.c mcount.c rindex.c strcat.c strcmp.c strcpy.c \
+KSRCS=	bcmp.c ffs.c index.c mcount.c rindex.c strcat.c strcmp.c strcpy.c \
 	strlen.c strncpy.c
 
 libkern: libkern.gen libkern.${MACHINE}
