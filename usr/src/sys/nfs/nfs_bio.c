@@ -7,24 +7,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.22 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.23 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "resourcevar.h"
-#include "proc.h"
-#include "buf.h"
-#include "vnode.h"
-#include "trace.h"
-#include "mount.h"
-#include "kernel.h"
-#include "machine/endian.h"
-#include "nfsnode.h"
-#include "rpcv2.h"
-#include "nfsv2.h"
-#include "nfs.h"
-#include "nfsmount.h"
-#include "nqnfs.h"
+#include <sys/param.h>
+#include <sys/resourcevar.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/vnode.h>
+#include <sys/trace.h>
+#include <sys/mount.h>
+#include <sys/kernel.h>
+#include <machine/endian.h>
+#include <vm/vm.h>
+#include <nfs/nfsnode.h>
+#include <nfs/rpcv2.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfs.h>
+#include <nfs/nfsmount.h>
+#include <nfs/nqnfs.h>
 
 /* True and false, how exciting */
 #define	TRUE	1
@@ -347,7 +348,7 @@ nfs_write(vp, uio, ioflag, cred)
 		n = MIN((unsigned)(biosize - on), uio->uio_resid);
 		if (uio->uio_offset + n > np->n_size) {
 			np->n_size = uio->uio_offset + n;
-			vnode_pager_setsize(vp, np->n_size);
+			vnode_pager_setsize(vp, (u_long)np->n_size);
 		}
 		bn = lbn * (biosize / DEV_BSIZE);
 again:

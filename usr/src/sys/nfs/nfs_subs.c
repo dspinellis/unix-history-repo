@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.48 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.49 (Berkeley) %G%
  */
 
 /*
@@ -15,32 +15,34 @@
  * the nfs op functions. They do things like create the rpc header and
  * copy data between mbuf chains and uio lists.
  */
-#include "param.h"
-#include "proc.h"
-#include "filedesc.h"
-#include "systm.h"
-#include "kernel.h"
-#include "mount.h"
-#include "file.h"
-#include "vnode.h"
-#include "namei.h"
-#include "mbuf.h"
-#include "map.h"
-#include "socket.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/filedesc.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/mount.h>
+#include <sys/file.h>
+#include <sys/vnode.h>
+#include <sys/namei.h>
+#include <sys/mbuf.h>
+#include <sys/map.h>
+#include <sys/socket.h>
 
-#include "ufs/ufs/quota.h"
-#include "ufs/ufs/inode.h"
-#include "ufs/ufs/ufsmount.h"
+#include <vm/vm.h>
 
-#include "rpcv2.h"
-#include "nfsv2.h"
-#include "nfsnode.h"
-#include "nfs.h"
-#include "xdr_subs.h"
-#include "nfsm_subs.h"
-#include "nfsmount.h"
-#include "nqnfs.h"
-#include "nfsrtt.h"
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
+
+#include <nfs/rpcv2.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfsnode.h>
+#include <nfs/nfs.h>
+#include <nfs/xdr_subs.h>
+#include <nfs/nfsm_subs.h>
+#include <nfs/nfsmount.h>
+#include <nfs/nqnfs.h>
+#include <nfs/nfsrtt.h>
 
 #define TRUE	1
 #define	FALSE	0
@@ -716,7 +718,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_size = fxdr_unsigned(u_long, fp->fa_size);
 	if ((np->n_flag & NMODIFIED) == 0 || vap->va_size > np->n_size) {
 		np->n_size = vap->va_size;
-		vnode_pager_setsize(vp, np->n_size);
+		vnode_pager_setsize(vp, (u_long)np->n_size);
 	}
 	vap->va_blocksize = fxdr_unsigned(long, fp->fa_blocksize);
 	vap->va_rdev = (dev_t)rdev;
@@ -770,7 +772,7 @@ nfs_getattrcache(vp, vap)
 	bcopy((caddr_t)&np->n_vattr,(caddr_t)vap,sizeof(struct vattr));
 	if ((np->n_flag & NMODIFIED) == 0) {
 		np->n_size = vap->va_size;
-		vnode_pager_setsize(vp, np->n_size);
+		vnode_pager_setsize(vp, (u_long)np->n_size);
 	} else if (np->n_size > vap->va_size)
 		vap->va_size = np->n_size;
 	return (0);
