@@ -6,14 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sprint.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)sprint.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <time.h>
 #include <tzfile.h>
+#include <db.h>
 #include <pwd.h>
+#include <errno.h>
 #include <utmp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,15 +97,21 @@ office:			if (pn->office)
 static PERSON **
 sort()
 {
-	register PERSON *pn, **lp;
+	register PERSON **lp;
+	register int sflag, r;
 	PERSON **list;
+	DBT data, key;
 
-	if (!(list = (PERSON **)malloc((u_int)(entries * sizeof(PERSON *))))) {
-		(void)fprintf(stderr, "finger: out of space.\n");
-		exit(1);
+	if ((list = malloc((u_int)(entries * sizeof(PERSON *)))) == NULL)
+		err("%s", strerror(errno));
+	for (sflag = R_FIRST, lp = list;; sflag = R_NEXT) {
+		r = (*db->seq)(db, &key, &data, sflag);
+		if (r == -1)
+			err("db seq: %s", strerror(errno));
+		if (r == 1)
+			break;
+		*lp++ = *(PERSON **)data.data;
 	}
-	for (lp = list, pn = phead; pn != NULL; pn = pn->next)
-		*lp++ = pn;
 	(void)qsort(list, entries, sizeof(PERSON *), psort);
 	return(list);
 }
@@ -112,7 +120,7 @@ sort()
 psort(a, b)
 	const void *a, *b;
 {
-	return(strcmp(((PERSON *)a)->name, ((PERSON *)b)->name));
+	return(strcmp((*(PERSON **)a)->name, (*(PERSON **)b)->name));
 }
 
 static void

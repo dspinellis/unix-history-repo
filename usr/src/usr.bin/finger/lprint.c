@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -15,8 +15,10 @@ static char sccsid[] = "@(#)lprint.c	5.15 (Berkeley) %G%";
 #include <fcntl.h>
 #include <time.h>
 #include <tzfile.h>
+#include <db.h>
 #include <pwd.h>
 #include <utmp.h>
+#include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -40,8 +42,18 @@ lflag_print()
 {
 	extern int pplan;
 	register PERSON *pn;
+	register int sflag, r;
+	DBT data, key;
 
-	for (pn = phead;;) {
+	for (sflag = R_FIRST;; sflag = R_NEXT) {
+		r = (*db->seq)(db, &key, &data, sflag);
+		if (r == -1)
+			err("db seq: %s", strerror(errno));
+		if (r == 1)
+			break;
+		pn = *(PERSON **)data.data;
+		if (sflag != R_FIRST)
+			putchar('\n');
 		lprint(pn);
 		if (!pplan) {
 			(void)show_text(pn->dir,
@@ -50,9 +62,6 @@ lflag_print()
 			if (!show_text(pn->dir, _PATH_PLAN, "Plan"))
 				(void)printf("No Plan.\n");
 		}
-		if (!(pn = pn->next))
-			break;
-		putchar('\n');
 	}
 }
 
