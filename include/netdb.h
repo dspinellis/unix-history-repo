@@ -99,7 +99,7 @@ void		endnetent __P((void));
 void		endprotoent __P((void));
 void		endservent __P((void));
 struct hostent	*gethostbyaddr __P((const char *, int, int));
-struct hostent	*gethostbyname __P((char *));
+struct hostent	*gethostbyname __P((const char *));
 struct hostent *gethostent __P((void));
 struct netent	*getnetbyaddr __P((long, int)); /* u_long? */
 struct netent	*getnetbyname __P((const char *));
