@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,13 +31,62 @@ static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
 #include <tzfile.h>
 #include "ls.h"
 
-printdir(stats, num)
-	LS *stats;		/* the statted, sorted directory */
+printscol(stats, num)
+	register LS *stats;
 	register int num;
 {
-	extern int (*lengthfcn)();
-	register int entry;
-	long blocks;		/* sum of blocks in longform listing */
+	for (; num--; ++stats) {
+		(void)printaname(stats);
+		(void)putchar('\n');
+	}
+}
+
+printlong(stats, num)
+	LS *stats;
+	register int num;
+{
+	register long blocks;	/* sum of blocks */
+	register int i;
+
+	for (i = 0, blocks = 0; i < num; ++i)
+		blocks += stats[i].lstat.st_blocks;
+	(void)printf("total %ld\n", blocks);
+	for (; num--; ++stats) {
+		if (f_inode)
+			(void)printf("%6lu ", stats->lstat.st_ino);
+		if (f_size)
+			(void)printf("%4ld ", stats->lstat.st_blocks / 2);
+		printperms(stats->lstat.st_mode);
+		(void)printf("%3d ", stats->lstat.st_nlink);
+		printowner(stats->lstat.st_uid);
+		if (f_group)
+			printgrp(stats->lstat.st_gid);
+		if (S_ISCHR(stats->lstat.st_mode) ||
+		    S_ISBLK(stats->lstat.st_mode))
+			(void)printf("%3d,%4d ", major(stats->lstat.st_rdev),
+			    minor(stats->lstat.st_rdev));
+		else
+			(void)printf("%8ld ", stats->lstat.st_size);
+		if (f_accesstime)
+			printtime(stats->lstat.st_atime);
+		else if (f_statustime)
+			printtime(stats->lstat.st_ctime);
+		else
+			printtime(stats->lstat.st_mtime);
+		(void)printf("%s", stats->name);
+		if (f_type)
+			(void)printtype(stats->lstat.st_mode);
+		if (S_ISLNK(stats->lstat.st_mode))
+			printlink(stats->name);
+		(void)putchar('\n');
+	}
+}
+
+printcol(stats, num)
+	LS *stats;
+	register int num;
+{
+	extern int (*lengthfcn)(), termwidth;
 	int i;			/* subscript to stats */
 	int maxlen;		/* length of longest name string */
 	int colwidth;		/* width of a printing column */
@@ -47,59 +96,10 @@ printdir(stats, num)
 	int offset;		/* delta from base to next column */
 	int chcnt;		/* character count printed */
 
-	if (f_singlecol) {
-		for (entry = 0; entry < num; ++entry) {
-			(void)printaname(&stats[entry]);
-			(void)putchar('\n');
-		}
-		return;
-	}
-
-	if (f_longform) {
-		if (!f_firsttime) {
-			for (i = 0, blocks = 0; i < num; ++i)
-				blocks += stats[i].lstat.st_blocks;
-			(void)printf("total %ld\n", blocks / 2);
-		}
-		for (i = 0; i < num; ++i) {
-			if (f_inode)
-				(void)printf("%6lu ", stats[i].lstat.st_ino);
-			if (f_size)
-				(void)printf("%4ld ",
-				    stats[i].lstat.st_blocks / 2);
-			printperms(stats[i].lstat.st_mode);
-			(void)printf("%3d ", stats[i].lstat.st_nlink);
-			printowner(stats[i].lstat.st_uid);
-			if (f_group)
-				printgrp(stats[i].lstat.st_gid);
-			if (S_ISCHR(stats[i].lstat.st_mode) ||
-			    S_ISBLK(stats[i].lstat.st_mode))
-				(void)printf("%3d,%4d ",
-				    major(stats[i].lstat.st_rdev),
-				    minor(stats[i].lstat.st_rdev));
-			else
-				(void)printf("%8ld ", stats[i].lstat.st_size);
-			if (f_accesstime)
-				printtime(stats[i].lstat.st_atime);
-			else if (f_statustime)
-				printtime(stats[i].lstat.st_ctime);
-			else
-				printtime(stats[i].lstat.st_mtime);
-			(void)printf("%s", stats[i].name);
-			if (f_type)
-				(void)printtype(stats[i].lstat.st_mode);
-			if (S_ISLNK(stats[i].lstat.st_mode))
-				printlink(stats[i].name);
-			(void)putchar('\n');
-		}
-		return;
-	}
-
 	/*
 	 * assume tabs every 8 columns WARNING: bad code (hard coded
 	 * constants) follows:
 	 */
-
 	/* figure out max width */
 	maxlen = -1;
 	for (i = 0; i < num; ++i) {
@@ -144,18 +144,19 @@ printdir(stats, num)
  * print [inode] [size] name
  * return # of characters printed, no trailing characters
  */
-printaname(entry)
-	LS *entry;
+printaname(lp)
+	LS *lp;
 {
-	int chcnt = 0;
+	int chcnt;
 
+	chcnt = 0;
 	if (f_inode)
-		chcnt += printf("%5lu ", entry->lstat.st_ino);
+		chcnt += printf("%5lu ", lp->lstat.st_ino);
 	if (f_size)
-		chcnt += printf("%4ld ", entry->lstat.st_blocks / 2);
-	chcnt += printf("%s", entry->name);
+		chcnt += printf("%4ld ", lp->lstat.st_blocks / 2);
+	chcnt += printf("%s", lp->name);
 	if (f_type)
-		chcnt += printtype(entry->lstat.st_mode);
+		chcnt += printtype(lp->lstat.st_mode);
 	return(chcnt);
 }
 
