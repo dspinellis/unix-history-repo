@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.40	82/06/11	*/
+/*	tcp_output.c	4.41	82/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -301,6 +301,8 @@ noopt:
 		if (flags & (TH_SYN|TH_FIN))
 			tp->snd_nxt++;
 		tp->snd_nxt += len;
+		if (SEQ_GT(tp->snd_nxt, tp->snd_max))
+			tp->snd_max = tp->snd_nxt;
 
 		/*
 		 * Time this transmission if not a retransmission and
@@ -325,6 +327,9 @@ noopt:
 			tp->t_rxtshift = 0;
 		}
 		tp->t_timer[TCPT_PERSIST] = 0;
+	} else {
+		if (SEQ_GT(tp->snd_una+1, tp->snd_max))
+			tp->snd_max = tp->snd_una+1;
 	}
 
 	/*
@@ -352,8 +357,6 @@ noopt:
 	if (win > 0 && SEQ_GT(tp->rcv_nxt+win, tp->rcv_adv))
 		tp->rcv_adv = tp->rcv_nxt + win;
 	tp->t_flags &= ~(TF_ACKNOW|TF_DELACK);
-	if (SEQ_GT(tp->snd_nxt, tp->snd_max))
-		tp->snd_max = tp->snd_nxt;
 	if (sendalot && tp->t_force == 0)
 		goto again;
 	return (0);
