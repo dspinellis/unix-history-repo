@@ -1,175 +1,47 @@
 # include <ctype.h>
 # include <wellknown.h>
 # include <sysexits.h>
-# include <stdio.h>
-# include <useful.h>
+# include "sendmail.h"
 
-static char	SccsId[] =	"@(#)usersmtp.c	3.3	%G%";
+static char	SccsId[] =	"@(#)usersmtp.c	3.4	%G%";
 
 /*
-**  TCP -- TCP/Ethernet/ARPAnet mailer
+**  SMTPINIT -- initialize SMTP.
 **
-**	This arranges to send a message over the TCP connection.
-*/
-
-# define MAXLINE	200
-
-char	*MailCommand =	"/usr/lib/sendmail";
-char	*MailUser =	"network";
-char	*MailPassword =	"mailhack";
-FILE	*InConnection;
-FILE	*OutConnection;
-bool	Verbose;
-bool	Debug;
-int	Status;			/* exit status */
-
-main(argc, argv)
-	int argc;
-	char **argv;
-{
-	while (argc > 1 && argv[1][0] == '-')
-	{
-		register char *p = *++argv;
-
-		argc--;
-		switch (p[1])
-		{
-		  case 'v':
-			Verbose = TRUE;
-			break;
-
-		  case 'd':
-			Debug = TRUE;
-			break;
-		}
-	}
-
-	if (argc < 4)
-	{
-		if (Debug)
-			printf("Usage\n");
-		exit(EX_USAGE);
-	}
-
-	if (openconnection(argv[2]) < 0)
-		exit(Status);
-
-	Status = runsmtp(argv[1], &argv[3]);
-
-	closeconnection();
-
-	if (Debug)
-		printf("Finishing with stat %d\n", Status);
-
-	exit(Status);
-}
-/*
-**  OPENCONNECTION -- open connection to SMTP socket
+**	Opens the connection and sends the initial protocol.
 **
 **	Parameters:
-**		host -- the name of the host to connect to.  This
-**			will be replaced by the canonical name of
-**			the host.
+**		m -- mailer to create connection to.
+**		pvp -- pointer to parameter vector to pass to
+**			the mailer.
+**		ctladdr -- controlling address for this mailer.
 **
 **	Returns:
-**		File descriptor of connection.
-**		-1 on error.
+**		appropriate exit status -- EX_OK on success.
 **
 **	Side Effects:
-**		sets 'Status' to represent the problem on error.
-*/
-
-openconnection(host)
-	char *host;
-{
-	char cmdbuf[100];
-	register int fd;
-
-	/* create the command name */
-	sprintf(cmdbuf, "%s -as%s%s", MailCommand,
-					Verbose ? " -v" : "",
-					Debug ? " -d" : "");
-
-	if (Debug)
-		printf("Creating connection to \"%s\" on %s\n", cmdbuf, host);
-
-	/* verify host name */
-	if (rhost(&host) < 0)
-	{
-		if (Debug)
-			printf("Unknown host %s\n", host);
-		Status = EX_NOHOST;
-		return (-1);
-	}
-
-	/* create connection (we hope) */
-	fd = rexec(&host, SHELLSERVER, cmdbuf, MailUser, MailPassword);
-	if (fd < 0)
-	{
-		Status = EX_TEMPFAIL;
-		return (-1);
-	}
-	InConnection = fdopen(fd, "r");
-	OutConnection = fdopen(fd, "w");
-	if (InConnection == NULL || OutConnection == NULL)
-	{
-		Status = EX_SOFTWARE;
-		return (-1);
-	}
-
-	if (Debug)
-		printf("Connection open to %s\n", host);
-
-	return (0);
-}
-/*
-**	CLOSECONNECTION -- close the connection to the SMTP server.
-**
-**	This routine also sends a handshake.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Closes the connection.
-*/
-
-closeconnection()
-{
-	register int r;
-
-	message("QUIT");
-	r = reply();
-
-	if (Debug)
-		printf("Closing connection, reply = %d\n", r);
-}
-/*
-**  RUNSMTP -- run the SMTP protocol over connection.
-**
-**	Parameters:
-**		fr -- from person.
-**		tolist -- list of recipients.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Sends the mail via SMTP.
+**		creates connection and sends initial protocol.
 */
 
 # define REPLYTYPE(r)	((r) / 100)
 
-runsmtp(fr, tolist)
-	char *fr;
-	char **tolist;
+static FILE	*SmtpOut;	/* output file */
+static FILE	*SmtpIn;	/* input file */
+static int	SmtpPid;	/* pid of mailer */
+
+smtpinit(m, pvp, ctladdr)
+	struct mailer *m;
+	char **pvp;
+	ADDRESS *ctladdr;
 {
 	register int r;
-	register char **t;
-	char buf[MAXLINE];
+	char buf[MAXNAME];
+
+	/*
+	**  Open the connection to the mailer.
+	*/
+
+	SmtpPid = openmailer(m, pvp, ctladdr, TRUE, &SmtpOut, &SmtpIn);
 
 	/*
 	**  Get the greeting message.
@@ -185,48 +57,77 @@ runsmtp(fr, tolist)
 	**	Designates the sender.
 	*/
 
-	message("MAIL From:<%s>", fr);
+	(void) expand("$g", buf, &buf[sizeof buf - 1]);
+	smtpmessage("MAIL From:<%s>", buf);
 	r = reply();
 	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	if (r != 250)
 		return (EX_SOFTWARE);
+	return (EX_OK);
+}
+/*
+**  SMTPMRCP -- designate recipient.
+**
+**	Parameters:
+**		to -- address of recipient.
+**
+**	Returns:
+**		exit status corresponding to recipient status.
+**
+**	Side Effects:
+**		Sends the mail via SMTP.
+*/
 
-	/*
-	**  Send the recipients.
-	*/
+smtpmrcp(to)
+	ADDRESS *to;
+{
+	register int r;
 
-	for (t = tolist; *t != NULL; t++)
-	{
-		message("MRCP To:<%s>", *t);
-		r = reply();
-		if (REPLYTYPE(r) == 4)
-			return (EX_TEMPFAIL);
-		if (r != 250)
-			return (EX_NOUSER);
-	}
+	smtpmessage("MRCP To:<%s>", to->q_user);
+
+	r = reply();
+	if (REPLYTYPE(r) == 4)
+		return (EX_TEMPFAIL);
+	if (r != 250)
+		return (EX_NOUSER);
+
+	return (EX_OK);
+}
+/*
+**  SMTPFINISH -- finish up sending all the SMTP protocol.
+**
+**	Parameters:
+**		m -- mailer being sent to.
+**		editfcn -- a function to call to output the
+**			text of the message with.
+**
+**	Returns:
+**		exit status corresponding to DOIT command.
+**
+**	Side Effects:
+**		none.
+*/
+
+smtpfinish(m, editfcn)
+	struct mailer *m;
+	int (*editfcn)();
+{
+	register int r;
 
 	/*
 	**  Send the data.
 	**	Dot hiding is done here.
 	*/
 
-	message("DATA");
+	smtpmessage("DATA");
 	r = reply();
 	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	if (r != 354)
 		return (EX_SOFTWARE);
-	while (fgets(buf, sizeof buf, stdin) != NULL)
-	{
-		/* change trailing newline to crlf */
-		register char *p = index(buf, '\n');
-
-		if (p != NULL)
-			*p = '\0';
-		message("%s%s", buf[0] == '.' ? "." : "", buf);
-	}
-	message(".");
+	(*editfcn)(SmtpOut, m, TRUE);
+	smtpmessage(".");
 	r = reply();
 	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
@@ -237,12 +138,37 @@ runsmtp(fr, tolist)
 	**  Make the actual delivery happen.
 	*/
 
-	message("DOIT");
+	smtpmessage("DOIT");
 	r = reply();
 	if (r != 250)
 		return (EX_TEMPFAIL);
 
 	return (EX_OK);
+}
+/*
+**  SMTPQUIT -- close the SMTP connection.
+**
+**	Parameters:
+**		name -- name of mailer we are quitting.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		sends the final protocol and closes the connection.
+*/
+
+smtpquit(name)
+	char *name;
+{
+	register int i;
+
+	smtpmessage("QUIT");
+	(void) reply();
+	(void) fclose(SmtpIn);
+	(void) fclose(SmtpOut);
+	i = endmailer(SmtpPid, name);
+	giveresponse(i, TRUE, LocalMailer);
 }
 /*
 **  REPLY -- read arpanet reply
@@ -259,7 +185,7 @@ runsmtp(fr, tolist)
 
 reply()
 {
-	fflush(OutConnection);
+	(void) fflush(SmtpOut);
 
 	if (Debug)
 		printf("reply\n");
@@ -270,7 +196,7 @@ reply()
 		char buf[MAXLINE];
 		register int r;
 
-		if (fgets(buf, sizeof buf, InConnection) == NULL)
+		if (fgets(buf, sizeof buf, SmtpIn) == NULL)
 			return (-1);
 		if (Verbose)
 			fputs(buf, stdout);
@@ -283,7 +209,7 @@ reply()
 	}
 }
 /*
-**  MESSAGE -- send message to server
+**  SMTPMESSAGE -- send message to server
 **
 **	Parameters:
 **		f -- format
@@ -293,17 +219,18 @@ reply()
 **		none.
 **
 **	Side Effects:
-**		writes message to OutChannel.
+**		writes message to SmtpOut.
 */
 
-message(f, a, b, c)
+/*VARARGS1*/
+smtpmessage(f, a, b, c)
 	char *f;
 {
 	char buf[100];
 
-	sprintf(buf, f, a, b, c);
+	(void) sprintf(buf, f, a, b, c);
 	strcat(buf, "\r\n");
 	if (Debug)
 		fputs(buf, stdout);
-	fputs(buf, OutConnection);
+	fputs(buf, SmtpOut);
 }

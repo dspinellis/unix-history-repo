@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.22	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.23	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -215,6 +215,7 @@ returntosender(msg)
 **	Parameters:
 **		xfile -- the transcript file.
 **		fp -- the output file.
+**		xdot -- if set, use smtp hidden dot algorithm.
 **
 **	Returns:
 **		none
@@ -224,9 +225,10 @@ returntosender(msg)
 **		error header.
 */
 
-errhdr(fp, m)
+errhdr(fp, m, xdot)
 	register FILE *fp;
 	register struct mailer *m;
+	bool xdot;
 {
 	char buf[MAXLINE];
 	register FILE *xfile;
@@ -298,7 +300,7 @@ errhdr(fp, m)
 	{
 		fprintf(fp, "\n   ----- Unsent message follows -----\n");
 		(void) fflush(fp);
-		putmessage(fp, Mailer[1]);
+		putmessage(fp, Mailer[1], xdot);
 	}
 	else
 		fprintf(fp, "\n  ----- No message was collected -----\n\n");
