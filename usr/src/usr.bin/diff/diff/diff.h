@@ -1,4 +1,4 @@
-/* @(#)diff.h 4.3 %G%" */
+/*	diff.h	4.4	83/07/01	*/
 
 /*
  * diff - common declarations
@@ -8,8 +8,8 @@
 #include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/dir.h>
 #include <signal.h>
-#include <dir.h>
 
 /*
  * Output format options
