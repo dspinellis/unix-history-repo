@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input_lines.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)input_lines.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -124,7 +124,7 @@ eof_mk:
 					strcpy(help_msg, "out of memory error");
 					return (0L);
 				}
-				bcopy(l_text2, l_text, l_nn);
+				memmove(l_text, l_text2, l_nn);
 				free(l_text2);
 			}
 	}

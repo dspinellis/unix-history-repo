@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)re.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)re.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -155,9 +155,9 @@ re_replace(line, num_subexp, repmatch, replacer, offset)
 			return (NULL);
 		}
 #ifdef REG_STARTEND
-		bcopy(line, l_string, (int) l_len_before);
+		memmove(l_string, line, (int) l_len_before);
 #else
-		bcopy(line, l_string, (int) l_len_before + offset);
+		memmove(l_string, line, (int) l_len_before + offset);
 #endif
 #ifdef REG_STARTEND
 		l_string[l_len_before] = '\0';
@@ -209,9 +209,9 @@ re_replace(line, num_subexp, repmatch, replacer, offset)
 	}
 	/* Copy over what doesn't change before the chars to be replaced. */
 #ifdef REG_STARTEND
-	bcopy(line, l_string, (int) l_len_before);
+	memmove(l_string, line, (size_t)l_len_before);
 #else
-	bcopy(line, l_string, l_len_before + offset);
+	memmove(l_string, line, l_len_before + offset);
 #endif
 #ifdef REG_STARTEND
 	l_string[l_len_before] = '\0';

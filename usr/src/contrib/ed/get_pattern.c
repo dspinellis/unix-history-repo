@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_pattern.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_pattern.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -91,7 +91,7 @@ leap:		if (l_cnt > l_max) {
 				strcpy(help_msg, "out of memory error");
 				return (NULL);
 			}
-			bcopy(l_pat_tmp, l_pat, l_cnt);
+			memmove(l_pat, l_pat_tmp, l_cnt);
 			free(l_pat_tmp);
 		}
 		l_cnt++;

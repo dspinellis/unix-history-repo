@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)g.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)g.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -177,7 +177,7 @@ g(inputt, errnum)
 		}
 	}
 	/* set up the STDIO command list file */
-	bcopy("/tmp/_4.4bsd_ed_g_XXXXXX\0", l_template_g, 24);
+	memmove(l_template_g, "/tmp/_4.4bsd_ed_g_XXXXXX\0", 24);
 	mktemp(l_template_g);
 
 	if ((ss == 'v') || (ss == 'V'))
