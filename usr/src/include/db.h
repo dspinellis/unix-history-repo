@@ -4,14 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.1 (Berkeley) %G%
+ *	@(#)db.h	5.2 (Berkeley) %G%
  */
+
+#ifndef _DB_H_
+#define	_DB_H_
 
 /* flags for DB.put() call */
 #define	R_IBEFORE	1		/* RECNO */
 #define	R_IAFTER	2		/* RECNO */
 #define	R_NOOVERWRITE	3		/* BTREE, HASH, RECNO */
-#define	R_PUT		4
+#define	R_PUT		4		/* BTREE, HASH, RECNO */
 
 /* flags for DB.seq() call */
 #define	R_CURSOR	1		/* BTREE, RECNO */
@@ -38,6 +41,7 @@ typedef struct {
 } DB;
 
 #define	BTREEMAGIC	0x053162
+#define	BTREEVERSION	2
 
 /* structure used to pass parameters to the btree routines */
 typedef struct {
@@ -46,9 +50,11 @@ typedef struct {
 	int cachesize;		/* bytes to cache */
 	int psize;		/* page size */
 	int (*compare)();	/* compare function */
+	int lorder;		/* byte order */
 } BTREEINFO;
 
 #define	HASHMAGIC	0x061561
+#define	HASHVERSION	1
 
 /* structure used to pass parameters to the hashing routines */
 typedef struct {
@@ -57,6 +63,7 @@ typedef struct {
 	int nelem;		/* number of elements */
 	int ncached;		/* bytes to cache */
 	int (*hash)();		/* hash function */
+	int lorder;		/* byte order */
 } HASHINFO;
 
 /* structure used to pass parameters to the record routines */
@@ -79,12 +86,44 @@ typedef struct {
 	u_char valid;
 } RECNOKEY;
 
-#if __STDC__ || c_plusplus
-DB *btree_open(const char *file, int flags, int mode, const BTREEINFO *private);
-DB *hash_open(const char *file, int flags, int mode, const HASHINFO *private);
-DB *recno_open(const char *file, int flags, int mode, const RECNOINFO *private);
-#else
-DB *btree_open();
-DB *hash_open();
-DB *recno_open();
-#endif
+/* Little endian <--> big endian long swap macros. */
+#define BLSWAP(a) { \
+	u_long _tmp = a; \
+	((char *)&a)[0] = ((char *)&_tmp)[3]; \
+	((char *)&a)[1] = ((char *)&_tmp)[2]; \
+	((char *)&a)[2] = ((char *)&_tmp)[1]; \
+	((char *)&a)[3] = ((char *)&_tmp)[0]; \
+}
+#define	BLSWAP_COPY(a,b) { \
+	((char *)&(b))[0] = ((char *)&(a))[3]; \
+	((char *)&(b))[1] = ((char *)&(a))[2]; \
+	((char *)&(b))[2] = ((char *)&(a))[1]; \
+	((char *)&(b))[3] = ((char *)&(a))[0]; \
+}
+
+
+/* Little endian <--> big endian short swap macros. */
+#define BSSWAP(a) { \
+	u_short _tmp = a; \
+	((char *)&a)[0] = ((char *)&_tmp)[1]; \
+	((char *)&a)[1] = ((char *)&_tmp)[0]; \
+}
+#define BSSWAP_COPY(a,b) { \
+	((char *)&(b))[0] = ((char *)&(a))[1]; \
+	((char *)&(b))[1] = ((char *)&(a))[0]; \
+}
+
+#include <sys/cdefs.h>
+__BEGIN_DECLS
+DB	*btree_open
+	    __P((const char *file, int flags, int mode,
+	    const BTREEINFO *private));
+DB	*hash_open
+	    __P((const char *file, int flags, int mode,
+	    const HASHINFO *private));
+DB	*recno_open
+	    __P((const char *file, int flags, int mode,
+	    const RECNOINFO *private));
+__END_DECLS
+
+#endif /* !_DB_H_ */
