@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	1.3 %G%";
+# Sccs Id = "@(#)Makefile	1.4 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -35,6 +35,7 @@ S = $(SRCS) $(HDRS)
 	mv x.o $*.o
 
 Mail:	$S $(OBJS) tags
+	$(RM) -f Mail
 	$(CC) -n -o Mail $(OBJS) $(LIBES)
 	@size Mail
 
