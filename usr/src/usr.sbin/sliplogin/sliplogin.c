@@ -4,6 +4,7 @@ static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18";
 
 /*
  * sliplogin.c
+ * [MUST BE RUN SUID, SLOPEN DOES A SUSER()!]
  *
  * This program initializes its own tty port to be an async TCP/IP interface.
  * It merely sets up the SLIP module all by its lonesome on the STREAMS stack,
@@ -44,6 +45,7 @@ static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18";
 
 #include <netinet/in.h>
 #include <net/if.h>
+#include <net/if_slvar.h>	/* XXX */
 
 #include <stdio.h>
 #include <errno.h>
@@ -60,7 +62,7 @@ static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18";
 #define ADDR	1
 #define MASK	2
 
-#define	DCD_CHECK_INTERVAL 0	/* if > 0, time between automatic DCD checks */
+#define	DCD_CHECK_INTERVAL 5	/* if > 0, time between automatic DCD checks */
 #define	DCD_SETTLING_TIME 1	/* time between DCD change and status check */
 
 int gotalarm = 0;
@@ -69,9 +71,9 @@ int timeleft = DCD_CHECK_INTERVAL;
 void
 alarm_handler()
 {
-	if (timeleft > DCD_SETTLING_TIME)
+	/*if (timeleft > DCD_SETTLING_TIME)
 		(void) alarm(timeleft-DCD_SETTLING_TIME);
-	else
+	else */
 		(void) alarm(DCD_CHECK_INTERVAL);
 	gotalarm = 1;
 	timeleft = 0;
@@ -102,19 +104,53 @@ lowdcd(fd)
 	return !(mbits & TIOCM_CAR);
 }
 
+/* Use TIOCMGET to test if DTR is low on the port of the passed descriptor */
+
+int
+lowdtr(fd)
+	int fd;
+{
+	int mbits;
+
+	if (ioctl(fd, TIOCMGET, (caddr_t)&mbits) < 0)
+		return 1;	/* port is dead, we die */
+	return ((mbits & TIOCM_DTR) == TIOCM_DTR);
+}
+
 char	*Accessfile = "/etc/hosts.slip";
 
 extern char *malloc(), *ttyname();
 extern struct passwd *getpwuid();
 
 char	*dstaddr, *localaddr, *netmask;
+int	slip_mode, unit;
+
+struct slip_modes {
+	char	*sm_name;
+	int	sm_value;
+}	 modes[] = {
+	"normal",	0,		/* slip "standard" ala Rick Adams */
+	"compress",	SC_COMPRESS,	/* Van Jacobsen's tcp header comp. */
+	"noicmp",	SC_NOICMP,	/* Sam's(?) ICMP suppression */
+} ;
+
+/*
+ * If we are uncerimoniously dumped, bitch
+ */
+void
+hup_handler()
+{
+syslog(LOG_NOTICE, "connection closed: process aborted %s%d: remote %s\n",
+		SLIPIFNAME, unit, dstaddr);
+	exit(1) ;
+}
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int	fd, s, unit, ldisc;
-	struct	termios tios;
+	int	fd, s, ldisc, odisc;
+	struct	termios tios, otios;
 	struct	ifreq ifr;
 
 	s = getdtablesize();
@@ -147,36 +183,43 @@ main(argc, argv)
 		}
 	} else
 		findid((char *)0);
-	/* disassociate from current controlling terminal */
+	/* ensure that the slip line is our controlling terminal */
 	if ((fd = open("/dev/tty", O_RDONLY, 0)) >= 0) {
 		(void) ioctl(fd, TIOCNOTTY, 0);
 		(void) close(fd);
+		fd = open(ttyname(0), O_RDWR, 0);
+		if (fd >= 0)
+			(void) close(fd);
+		(void) setpgrp(0, getpid());
 	}
-	/* ensure that the slip line is our new controlling terminal */
-	(void) setpgrp(0, getpid());
-	(void) ioctl(0, TIOCSCTTY, 0);
 	fchmod(0, 0600);
 	/* set up the line parameters */
 	if (ioctl(0, TCGETA, (caddr_t)&tios) < 0) {
 		syslog(LOG_ERR, "ioctl (TCGETA): %m");
 		exit(1);
 	}
+	otios = tios ;
 	tios.c_cflag &= 0xf;	/* only save the speed */
 	tios.c_cflag |= CS8|CREAD|HUPCL;
 	tios.c_iflag = IGNBRK;
 	tios.c_oflag = tios.c_lflag = 0;
 	if (ioctl(0, TCSETA, (caddr_t)&tios) < 0) {
-		syslog(LOG_ERR, "ioctl (TCSETA): %m");
+		syslog(LOG_ERR, "ioctl (TCSETA) (1): %m");
+		exit(1);
+	}
+	/* find out what ldisc we started with */
+	if (ioctl(0, TIOCGETD, (caddr_t)&odisc) < 0) {
+		syslog(LOG_ERR, "ioctl(TIOCGETD) (1): %m");
 		exit(1);
 	}
 	ldisc = SLIPDISC;
 	if (ioctl(0, TIOCSETD, (caddr_t)&ldisc) < 0) {
-		syslog(LOG_ERR, "ioctl(TIOCSETD): %m");
+		syslog(LOG_ERR, "ioctl(TIOCSETD) (1): %m");
 		exit(1);
 	}
 	/* find out what unit number we were assigned */
 	if (ioctl(0, TIOCGETD, (caddr_t)&unit) < 0) {
-		syslog(LOG_ERR, "ioctl (TIOCGETD): %m");
+		syslog(LOG_ERR, "ioctl (TIOCGETD) (2): %m");
 		exit(1);
 	}
 	syslog(LOG_NOTICE, "attaching %s%d: local %s remote %s mask %s\n",
@@ -212,6 +255,10 @@ main(argc, argv)
 	      SLIPIFNAME, unit, localaddr, dstaddr, netmask);
 	  system(cmd);
 	}
+	if (ioctl(0, SLIOCSFLAGS, (caddr_t)&slip_mode) < 0) {
+		syslog(LOG_ERR, "ioctl (SLIOCSFLAGS): %m");
+		exit(1);
+	}
 #endif
 
 	/* set up signal handlers */
@@ -221,8 +268,11 @@ main(argc, argv)
 	(void) sigblock(sigmask(SIGALRM));
 	(void) signal(SIGALRM, alarm_handler);
 	/* a SIGHUP will kill us */
+	(void) signal(SIGHUP, hup_handler);
+	(void) signal(SIGTERM, hup_handler);
 
 	/* timeleft = 60 * 60 * 24 * 365 ; (void) alarm(timeleft); */
+	(void) alarm(DCD_CHECK_INTERVAL);
 
 	/* twiddle thumbs until we get a signal */
 	while (1) {
@@ -230,10 +280,28 @@ main(argc, argv)
 		(void) sigblock(sigmask(SIGALRM));
 		if (gotalarm && lowdcd(0))
 			break;
+		if (gotalarm && lowdtr(0))
+			break;
 		gotalarm = 0;
 	}
 
-	/* closing the descriptor should pop the slip module */
+	if (lowdcd(0))
+		syslog(LOG_NOTICE,
+			"connection closed: loss of carrier %s%d: remote %s\n",
+			SLIPIFNAME, unit, dstaddr);
+	else if (lowdtr(0))
+		syslog(LOG_NOTICE,
+			"connection closed by foreign host %s%d: remote %s\n",
+			SLIPIFNAME, unit, dstaddr);
+
+	if (ioctl(0, TIOCSETD, (caddr_t)&odisc) < 0) {
+		syslog(LOG_ERR, "ioctl(TIOCSETD) (2): %m");
+		exit(1);
+	}
+	if (ioctl(0, TCSETA, (caddr_t)&otios) < 0) {
+		syslog(LOG_ERR, "ioctl (TCSETA) (2): %m");
+		exit(1);
+	}
 	exit(0);
 }
 
@@ -269,7 +337,27 @@ findid(name)
 		if (user[0] == '#' || n != 5)
 			continue;
 		if (strcmp(user, name) == 0) {
-			/* eventually deal with "mode" */
+			char *p,*q; int val, i, domore;
+
+			p = q = mode;	val = 0;
+		loop:
+			while (isalnum(*p)) p++;
+			if(ispunct(*p) || *p == '\0') {
+				if(ispunct(*p)) domore = 1; else domore = 0;
+				*p++ = '\0' ; 
+				for (i = 0; i <
+					sizeof(modes)/sizeof(struct slip_modes)
+					 ; i++) {
+					if (strcmp(modes[i].sm_name, q) == 0) {
+						val |= modes[i].sm_value ;
+						break;
+					} ;
+}
+				q = p;
+				if(domore)goto loop;
+			}
+
+			slip_mode = val ;
 			localaddr = laddr;
 			dstaddr = raddr;
 			netmask = mask;
