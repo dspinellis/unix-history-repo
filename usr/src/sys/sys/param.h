@@ -3,11 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.6 (Berkeley) %G%
+ *	@(#)param.h	7.7 (Berkeley) %G%
  */
 
 #define	BSD	198810		/* system version  (year & month) */
 #define BSD4_3	1
+
+#include <sys/syslimits.h>
 
 /*
  * Machine-independent constants
@@ -15,12 +17,12 @@
 #define	NMOUNT	20		/* number of mountable file systems */
 /* NMOUNT must be <= 255 unless c_mdev (cmap.h) is expanded */
 #define	MSWAPX	NMOUNT		/* pseudo mount table index for swapdev */
-#define	MAXUPRC	40		/* max processes per user */
-#define	NOFILE	64		/* max open files per process */
+#define	MAXUPRC	CHILD_MAX	/* max processes per user */
+#define	NOFILE	OPEN_MAX	/* max open files per process */
 #define	CANBSIZ	256		/* max size of typewriter line */
-#define	NCARGS	20480		/* # characters in exec arglist */
+#define	NCARGS	ARG_MAX		/* # characters in exec arglist */
 #define	MAXINTERP	32	/* maximum interpreter file name length */
-#define	NGROUPS	16		/* max number groups */
+#define	NGROUPS	NGROUPS_MAX	/* max number groups */
 #define MAXHOSTNAMELEN	64	/* maximum hostname size */
 
 #define	NOGROUP	65535		/* marker for empty group set member */
@@ -139,7 +141,7 @@
  * enough to allow all legitimate uses, but halt infinite loops
  * reasonably quickly.
  */
-#define MAXPATHLEN	1024
+#define	MAXPATHLEN	PATH_MAX
 #define MAXSYMLINKS	8
 
 /*
