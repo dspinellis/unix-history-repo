@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,7 +24,6 @@ static char sccsid[] = "@(#)sys_bsd.c	1.21 (Berkeley) %G%";
  * (at least between 4.x and dos) which is used in telnet.c.
  */
 
-#if	defined(unix)
 
 #include <fcntl.h>
 #include <sys/types.h>
@@ -53,14 +52,10 @@ struct	ltchars oltc = { 0 }, nltc = { 0 };
 struct	sgttyb ottyb = { 0 }, nttyb = { 0 };
 int	olmode = 0;
 
-#define	ISPEED	ottyb.sg_ispeed
-#define	OSPEED	ottyb.sg_ospeed
 #else	/* USE_TERMIO */
 struct	termio old_tc = { 0 };
 extern struct termio new_tc;
 
-#define	ISPEED	(old_tc.c_cflag&CBAUD)
-#define	OSPEED	ISPEED
 #endif	/* USE_TERMIO */
 
 static fd_set ibits, obits, xbits;
@@ -173,7 +168,7 @@ int	c;
 void
 TerminalFlushOutput()
 {
-#ifndef	USE_TERMIO
+#ifdef	TIOCFLUSH
     (void) ioctl(fileno(stdout), TIOCFLUSH, (char *) 0);
 #else
     (void) ioctl(fileno(stdout), TCFLSH, (char *) 0);
@@ -207,25 +202,26 @@ TerminalSaveState()
 #endif	/* USE_TERMIO */
 }
 
+unsigned
 char *
 tcval(func)
 register int func;
 {
     switch(func) {
-    case SLC_IP:	return(&termIntChar);
-    case SLC_ABORT:	return(&termQuitChar);
-    case SLC_EOF:	return(&termEofChar);
-    case SLC_EC:	return(&termEraseChar);
-    case SLC_EL:	return(&termKillChar);
-    case SLC_XON:	return(&termStartChar);
-    case SLC_XOFF:	return(&termStopChar);
-#ifndef	CRAY
-    case SLC_AO:	return(&termFlushChar);
-    case SLC_SUSP:	return(&termSuspChar);
-    case SLC_EW:	return(&termWerasChar);
-    case SLC_RP:	return(&termRprntChar);
-    case SLC_LNEXT:	return(&termLiteralNextChar);
-#endif	/* CRAY */
+    case SLC_IP:	return((unsigned char *)&termIntChar);
+    case SLC_ABORT:	return((unsigned char *)&termQuitChar);
+    case SLC_EOF:	return((unsigned char *)&termEofChar);
+    case SLC_EC:	return((unsigned char *)&termEraseChar);
+    case SLC_EL:	return((unsigned char *)&termKillChar);
+    case SLC_XON:	return((unsigned char *)&termStartChar);
+    case SLC_XOFF:	return((unsigned char *)&termStopChar);
+#ifndef	SYSV_TERMIO
+    case SLC_AO:	return((unsigned char *)&termFlushChar);
+    case SLC_SUSP:	return((unsigned char *)&termSuspChar);
+    case SLC_EW:	return((unsigned char *)&termWerasChar);
+    case SLC_RP:	return((unsigned char *)&termRprntChar);
+    case SLC_LNEXT:	return((unsigned char *)&termLiteralNextChar);
+#endif	/* SYSV_TERMIO */
 
     case SLC_SYNCH:
     case SLC_BRK:
@@ -234,7 +230,7 @@ register int func;
     case SLC_FORW1:
     case SLC_FORW2:
     default:
-	return((char *)0);
+	return((unsigned char *)0);
     }
 }
 
@@ -248,12 +244,24 @@ TerminalDefaultChars()
     nttyb.sg_erase = ottyb.sg_erase;
 #else	/* USE_TERMIO */
     memcpy(new_tc.c_cc, old_tc.c_cc, sizeof(old_tc.c_cc));
+# ifndef	VFLUSHO
     termFlushChar = 'O'&0x37;
+# endif
+# ifndef	VWERASE
     termWerasChar = 'W'&0x37;
+# endif
+# ifndef	VREPRINT
     termRprntChar = 'R'&0x37;
+# endif
+# ifndef	VLNEXT
     termLiteralNextChar = 'V'&0x37;
+# endif
+# ifndef	VSTART
     termStartChar = 'Q'&0x37;
+# endif
+# ifndef	VSTOP
     termStopChar = 'S'&0x37;
+# endif
 #endif	/* USE_TERMIO */
 }
 
@@ -349,7 +357,9 @@ register int f;
 #else
 	tmp_tc.c_lflag |= ECHO;
 	tmp_tc.c_oflag |= ONLCR;
+# ifdef notdef
 	tmp_tc.c_iflag |= ICRNL;
+# endif
 #endif
     } else {
 #ifndef	USE_TERMIO
@@ -357,7 +367,9 @@ register int f;
 #else
 	tmp_tc.c_lflag &= ~ECHO;
 	tmp_tc.c_oflag &= ~ONLCR;
+# ifdef notdef
 	tmp_tc.c_iflag &= ~ICRNL;
+# endif
 #endif
     }
 
@@ -416,46 +428,70 @@ register int f;
 	onoff = 0;
     } else {
 #ifndef	USE_TERMIO
-	if (his_want_state_is_will(TELOPT_BINARY))
+	if (f & MODE_OUTBIN)
 		lmode |= LLITOUT;
 	else
 		lmode &= ~LLITOUT;
-	if (my_want_state_is_will(TELOPT_BINARY))
+
+	if (f & MODE_INBIN)
 		lmode |= LPASS8;
 	else
 		lmode &= ~LPASS8;
 #else
-	if (my_want_state_is_will(TELOPT_BINARY))
-		tmp.tc.c_lflag &= ~ISTRIP;
+	if (f & MODE_OUTBIN)
+		tmp_tc.c_lflag &= ~ISTRIP;
 	else
-		tmp.tc.c_lflag |= ISTRIP;
+		tmp_tc.c_lflag |= ISTRIP;
+	if (f & MODE_INBIN) {
+		tmp_tc.c_cflag &= ~(CSIZE|PARENB);
+		tmp_tc.c_cflag |= CS8;
+		tmp_tc.c_cflag &= ~OPOST;
+	} else {
+		tmp_tc.c_cflag &= ~CSIZE;
+		tmp_tc.c_cflag |= CS7|PARENB;
+		tmp_tc.c_cflag |= OPOST;
+	}
 #endif
 	onoff = 1;
     }
 
-#ifndef	USE_TERMIO
     if (f != -1) {
+#ifdef	SIGTSTP
 	if (f&MODE_EDIT) {
 	    void doescape();
 
+# ifndef USE_TERMIO
 	    ltc.t_suspc = escape;
+# else
+	    tmp_tc.c_cc[VSUSP] = escape;
+# endif
 	    (void) signal(SIGTSTP, (int (*)())doescape);
 	} else if (old&MODE_EDIT) {
 	    (void) signal(SIGTSTP, SIG_DFL);
 	    sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
 	}
-	ioctl(tin, TIOCLSET, (char *)&lmode);
-	ioctl(tin, TIOCSLTC, (char *)&ltc);
-	ioctl(tin, TIOCSETC, (char *)&tc);
-	ioctl(tin, TIOCSETP, (char *)&sb);
+#endif	/* SIGTSTP */
     } else {
+#ifdef	SIGTSTP
 	(void) signal(SIGTSTP, SIG_DFL);
 	sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
-	ioctl(tin, TIOCLSET, (char *)&lmode);
-	ioctl(tin, TIOCSLTC, (char *)&oltc);
-	ioctl(tin, TIOCSETC, (char *)&otc);
-	ioctl(tin, TIOCSETP, (char *)&ottyb);
+#endif	/* SIGTSTP */
+#ifndef USE_TERMIO
+	ltc = oltc;
+	tc = otc;
+	sb = ottyb;
+#endif
     }
+#ifndef USE_TERMIO
+    ioctl(tin, TIOCLSET, (char *)&lmode);
+    ioctl(tin, TIOCSLTC, (char *)&ltc);
+    ioctl(tin, TIOCSETC, (char *)&tc);
+    ioctl(tin, TIOCSETP, (char *)&sb);
+#else
+    if (ioctl(tin, TCSETAW, &tmp_tc) < 0)
+	ioctl(tin, TCSETA, &tmp_tc);
+#endif
+
 #if	(!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR))
     ioctl(tin, FIONBIO, (char *)&onoff);
     ioctl(tout, FIONBIO, (char *)&onoff);
@@ -465,37 +501,62 @@ register int f;
 	ioctl(tin, FIOASYNC, (char *)&onoff);
     }
 #endif	/* defined(TN3270) */
-#else	/* USE_TERMIO */
-    if (ioctl(tin, TCSETAW, &tmp_tc) < 0)
-	ioctl(tin, TCSETA, &tmp_tc);
-#endif	/* USE_TERMIO */
 }
+
+#ifndef	B19200
+# define B19200 B9600
+#endif
+
+#ifndef	B38400
+# define B38400 B19200
+#endif
+
+/*
+ * This code assumes that the values B0, B50, B75...
+ * are in ascending order.  They do not have to be
+ * contiguous.
+ */
+struct termspeeds {
+	long speed;
+	long value;
+} termspeeds[] = {
+	{ 0,     B0 },     { 50,    B50 },   { 75,    B75 },
+	{ 110,   B110 },   { 134,   B134 },  { 150,   B150 },
+	{ 200,   B200 },   { 300,   B300 },  { 600,   B600 },
+	{ 1200,  B1200 },  { 1800,  B1800 }, { 2400,  B2400 },
+	{ 4800,  B4800 },  { 9600,  B9600 }, { 19200, B19200 },
+	{ 38400, B38400 }, { -1,    B38400 }
+};
+
+#ifndef	USE_TERMIO
+# define	ISPEED	ottyb.sg_ispeed
+# define	OSPEED	ottyb.sg_ospeed
+#else
+# ifdef	SYSV_TERMIO
+#  define	ISPEED	(old_tc.c_cflag&CBAUD)
+#  define	OSPEED	ISPEED
+# else
+#  define	ISPEED	old_tc.c_ispeed
+#  define OSPEED	old_tc.c_ospeed
+# endif
+#endif
 
 void
 TerminalSpeeds(ispeed, ospeed)
 long *ispeed;
 long *ospeed;
 {
-    /*
-     * The order here is important.  The index of each speed needs to
-     * correspond with the sgtty structure value for that speed.
-     *
-     * Additionally, the search algorithm assumes the table is in
-     * ascending sequence.
-     */
-    static int ttyspeeds[] = {
-	    0, 50, 75, 110, 134, 150, 200, 300,
-	    600, 1200, 1800, 2400, 4800, 9600, 19200, 38400 };
-#define NUMSPEEDS sizeof ttyspeeds/sizeof ttyspeeds[0]
+    register struct termspeeds *tp;
 
-    if ((OSPEED < 0) || (OSPEED > NUMSPEEDS) ||
-	(ISPEED < 0) || (ISPEED > NUMSPEEDS)) {
-	ExitString("Invalid terminal speed.");
-	/*NOTREACHED*/
-    } else {
-	*ispeed = ttyspeeds[ISPEED];
-	*ospeed = ttyspeeds[OSPEED];
-    }
+    tp = termspeeds;
+    while ((tp->speed != -1) && (tp->value < ISPEED))
+	tp++;
+    *ispeed = tp->speed;
+
+    tp = termspeeds;
+    while ((tp->speed != -1) && (tp->value < OSPEED))
+	tp++;
+    *ospeed = tp->speed;
 }
 
 int
@@ -605,7 +666,7 @@ doescape()
 void
 sys_telnet_init()
 {
-#ifndef	CRAY
+#ifndef	VOID_SIGNAL
     (void) signal(SIGINT, (int (*)())intr);
     (void) signal(SIGQUIT, (int (*)())intr2);
     (void) signal(SIGPIPE, (int (*)())deadpeer);
@@ -846,4 +907,3 @@ int poll;		/* If 0, then block until something to do */
 
     return returnValue;
 }
-#endif	/* defined(unix) */

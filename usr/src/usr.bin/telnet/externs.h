@@ -14,20 +14,29 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)externs.h	1.19 (Berkeley) %G%
+ *	@(#)externs.h	1.20 (Berkeley) %G%
  */
 
-#ifdef	CRAY
-#define	USE_TERMIO
+#ifndef	BSD
+# define BSD 43
+#endif
+
+#if (BSD > 43 || defined(SYSV_TERMIO)) && !defined(USE_TERMIO)
+# define USE_TERMIO
 #endif
 
 #include <stdio.h>
 #include <setjmp.h>
 #include <sys/ioctl.h>
 #ifdef	USE_TERMIO
-#ifndef	VINTR
-#include <sys/termio.h>
-#endif
+# ifndef	VINTR
+#  ifdef SYSV_TERMIO
+#   include <sys/termio.h>
+#  else
+#   include <sys/termios.h>
+#   define termio termios
+#  endif
+# endif
 #endif
 
 #define	SUBBUFSIZE	256
@@ -69,16 +78,18 @@ extern int
 #endif	/* defined(unix) */
     debug;			/* Debug level */
 
+extern unsigned char
+    echoc,		/* Toggle local echoing */
+    escape,		/* Escape to command mode */
+    *prompt;		/* Prompt for command. */
+
 extern char
-    echoc,			/* Toggle local echoing */
-    escape,			/* Escape to command mode */
     doopt[],
     dont[],
     will[],
     wont[],
     options[],		/* All the little options */
-    *hostname,		/* Who are we connected to? */
-    *prompt;		/* Prompt for command. */
+    *hostname;		/* Who are we connected to? */
 
 /*
  * We keep track of each side of the option negotiation.
@@ -145,7 +156,7 @@ extern char
 
 extern FILE
     *NetTrace;		/* Where debugging output goes */
-extern char
+extern unsigned char
     NetTraceFile[];	/* Name of file where debugging output goes */
 extern void
     SetNetTrace();	/* Function to change where debugging goes */
@@ -184,72 +195,90 @@ extern int
     dosynch();
 #endif	/* defined(NOT43) */
 
-#if	!defined(MSDOS)
-# ifndef	USE_TERMIO
+#ifndef	USE_TERMIO
 
 extern struct	tchars ntc;
 extern struct	ltchars nltc;
 extern struct	sgttyb nttyb;
 
-#  define termEofChar		ntc.t_eofc
-#  define termEraseChar		nttyb.sg_erase
-#  define termFlushChar		nltc.t_flushc
-#  define termIntChar		ntc.t_intrc
-#  define termKillChar		nttyb.sg_kill
-#  define termLiteralNextChar	nltc.t_lnextc
-#  define termQuitChar		ntc.t_quitc
-#  define termSuspChar		nltc.t_suspc
-#  define termRprntChar		nltc.t_rprntc
-#  define termWerasChar		nltc.t_werasc
-#  define termStartChar		ntc.t_startc
-#  define termStopChar		ntc.t_stopc
+# define termEofChar		ntc.t_eofc
+# define termEraseChar		nttyb.sg_erase
+# define termFlushChar		nltc.t_flushc
+# define termIntChar		ntc.t_intrc
+# define termKillChar		nttyb.sg_kill
+# define termLiteralNextChar	nltc.t_lnextc
+# define termQuitChar		ntc.t_quitc
+# define termSuspChar		nltc.t_suspc
+# define termRprntChar		nltc.t_rprntc
+# define termWerasChar		nltc.t_werasc
+# define termStartChar		ntc.t_startc
+# define termStopChar		ntc.t_stopc
 
-#  define termEofCharp		&ntc.t_eofc
-#  define termEraseCharp	&nttyb.sg_erase
-#  define termFlushCharp	&nltc.t_flushc
-#  define termIntCharp		&ntc.t_intrc
-#  define termKillCharp		&nttyb.sg_kill
-#  define termLiteralNextCharp	&nltc.t_lnextc
-#  define termQuitCharp		&ntc.t_quitc
-#  define termSuspCharp		&nltc.t_suspc
-#  define termRprntCharp	&nltc.t_rprntc
-#  define termWerasCharp	&nltc.t_werasc
-#  define termStartCharp	&ntc.t_startc
-#  define termStopCharp		&ntc.t_stopc
+# define termEofCharp		(unsigned char *)&ntc.t_eofc
+# define termEraseCharp		(unsigned char *)&nttyb.sg_erase
+# define termFlushCharp		(unsigned char *)&nltc.t_flushc
+# define termIntCharp		(unsigned char *)&ntc.t_intrc
+# define termKillCharp		(unsigned char *)&nttyb.sg_kill
+# define termLiteralNextCharp	(unsigned char *)&nltc.t_lnextc
+# define termQuitCharp		(unsigned char *)&ntc.t_quitc
+# define termSuspCharp		(unsigned char *)&nltc.t_suspc
+# define termRprntCharp		(unsigned char *)&nltc.t_rprntc
+# define termWerasCharp		(unsigned char *)&nltc.t_werasc
+# define termStartCharp		(unsigned char *)&ntc.t_startc
+# define termStopCharp		(unsigned char *)&ntc.t_stopc
 
 # else
 
 extern struct	termio new_tc;
 
-#  define termEofChar		new_tc.c_cc[VEOF]
-#  define termEraseChar		new_tc.c_cc[VERASE]
-#  define termIntChar		new_tc.c_cc[VINTR]
-#  define termKillChar		new_tc.c_cc[VKILL]
-#  define termQuitChar		new_tc.c_cc[VQUIT]
+# define termEofChar		new_tc.c_cc[VEOF]
+# define termEraseChar		new_tc.c_cc[VERASE]
+# define termIntChar		new_tc.c_cc[VINTR]
+# define termKillChar		new_tc.c_cc[VKILL]
+# define termQuitChar		new_tc.c_cc[VQUIT]
 
-extern char
-    termSuspChar,
-    termFlushChar,
-    termWerasChar,
-    termRprntChar,
-    termLiteralNextChar,
-    termStartChar,
-    termStopChar;
+# ifndef	VSUSP
+extern char termSuspChar;
+# else
+#  define termSuspChar		new_tc.c_cc[VSUSP]
+# endif
+# ifndef	VFLUSHO
+extern char termFlushChar;
+# else
+#  define termFlushChar		new_tc.c_cc[VFLUSHO]
+# endif
+# ifndef VWERASE
+extern char termWerasChar;
+# else
+#  define termWerasChar		new_tc.c_cc[VWERASE]
+# endif
+# ifndef	VREPRINT
+extern char termRprntChar;
+# else
+#  define termRprntChar		new_tc.c_cc[VREPRINT]
+# endif
+# ifndef	VLNEXT
+extern char termLiteralNextChar;
+# else
+#  define termLiteralNextChar	new_tc.c_cc[VLNEXT]
+# endif
+# ifndef	VSTART
+extern char termStartChar;
+# else
+#  define termStartChar		new_tc.c_cc[VSTART]
+# endif
+# ifndef	VSTOP
+extern char termStopChar;
+# else
+#  define termStopChar		new_tc.c_cc[VSTOP]
+# endif
 
 # ifndef CRAY
-#  define termEofCharp		&new_tc.c_cc[VEOF]
-#  define termEraseCharp	&new_tc.c_cc[VERASE]
-#  define termIntCharp		&new_tc.c_cc[VINTR]
-#  define termKillCharp		&new_tc.c_cc[VKILL]
-#  define termQuitCharp		&new_tc.c_cc[VQUIT]
-# else
-	/* Work around a compiler bug */
-#  define termEofCharp		0
-#  define termEraseCharp	0
-#  define termIntCharp		0
-#  define termKillCharp		0
-#  define termQuitCharp		0
-# endif
+#  define termEofCharp		&termEofChar
+#  define termEraseCharp	&termEraseChar
+#  define termIntCharp		&termIntChar
+#  define termKillCharp		&termKillChar
+#  define termQuitCharp		&termQuitChar
 #  define termSuspCharp		&termSuspChar
 #  define termFlushCharp	&termFlushChar
 #  define termWerasCharp	&termWerasChar
@@ -257,24 +286,21 @@ extern char
 #  define termLiteralNextCharp	&termLiteralNextChar
 #  define termStartCharp	&termStartChar
 #  define termStopCharp		&termStopChar
+# else
+	/* Work around a compiler bug */
+#  define termEofCharp		0
+#  define termEraseCharp	0
+#  define termIntCharp		0
+#  define termKillCharp		0
+#  define termQuitCharp		0
+#  define termSuspCharp		0
+#  define termFlushCharp	0
+#  define termWerasCharp	0
+#  define termRprntCharp	0
+#  define termLiteralNextCharp	0
+#  define termStartCharp	0
+#  define termStopCharp		0
 # endif
-
-#else	/* MSDOS */
-
-extern char
-    termEofChar,
-    termEraseChar,
-    termIntChar,
-    termKillChar,
-    termQuitChar,
-    termSuspChar,
-    termFlushChar,
-    termWerasChar,
-    termRprntChar,
-    termLiteralNextChar,
-    termStartChar,
-    termStopChar;
-
 #endif
 
 

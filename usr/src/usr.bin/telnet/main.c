@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -68,7 +68,7 @@ main(argc, argv)
 
     TerminalSaveState();
 
-    prompt = argv[0];
+    prompt = (unsigned char *)argv[0];
     while ((argc > 1) && (argv[1][0] == '-')) {
 	if (!strcmp(argv[1], "-d")) {
 	    debug = 1;
