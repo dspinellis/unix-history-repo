@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.32 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.33 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,9 @@
 
 sysctlfn kern_sysctl;
 sysctlfn hw_sysctl;
+#ifdef DEBUG
+sysctlfn debug_sysctl;
+#endif
 extern sysctlfn vm_sysctl;
 extern sysctlfn fs_sysctl;
 extern sysctlfn net_sysctl;
@@ -93,11 +96,13 @@ sysctl(p, uap, retval)
 	case CTL_FS:
 		fn = fs_sysctl;
 		break;
-	case CTL_DEBUG:
-		fn = debug_sysctl;
-		break;
 	case CTL_MACHDEP:
 		fn = cpu_sysctl;
+		break;
+#endif
+#ifdef DEBUG
+	case CTL_DEBUG:
+		fn = debug_sysctl;
 		break;
 #endif
 	default:
@@ -253,6 +258,50 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	}
 	/* NOTREACHED */
 }
+
+#ifdef DEBUG
+/*
+ * Debugging related system variables.
+ */
+struct ctldebug debug0, debug1, debug2, debug3, debug4;
+struct ctldebug debug5, debug6, debug7, debug8, debug9;
+struct ctldebug debug10, debug11, debug12, debug13, debug14;
+struct ctldebug debug15, debug16, debug17, debug18, debug19;
+static struct ctldebug *debugvars[CTL_DEBUG_MAXID] = {
+	&debug0, &debug1, &debug2, &debug3, &debug4,
+	&debug5, &debug6, &debug7, &debug8, &debug9,
+	&debug10, &debug11, &debug12, &debug13, &debug14,
+	&debug15, &debug16, &debug17, &debug18, &debug19,
+};
+int
+debug_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct proc *p;
+{
+	struct ctldebug *cdp;
+
+	/* all sysctl names at this level are name and field */
+	if (namelen != 2)
+		return (ENOTDIR);		/* overloaded */
+	cdp = debugvars[name[0]];
+	if (cdp->debugname == 0)
+		return (EOPNOTSUPP);
+	switch (name[1]) {
+	case CTL_DEBUG_NAME:
+		return (sysctl_rdstring(oldp, oldlenp, newp, cdp->debugname));
+	case CTL_DEBUG_VALUE:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, cdp->debugvar));
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
+}
+#endif /* DEBUG */
 
 /*
  * Validate parameters and get old / set new parameters

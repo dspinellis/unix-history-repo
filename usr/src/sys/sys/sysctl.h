@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.17 (Berkeley) %G%
+ *	@(#)sysctl.h	7.18 (Berkeley) %G%
  */
 
 /*
@@ -139,7 +139,40 @@ struct ctlname {
 	{ "diskstats", CTLTYPE_STRUCT }, \
 }
 
+/*
+ * CTL_DEBUG definitions
+ *
+ * Second level identifier specifies which debug variable.
+ * Third level identifier specifies which stucture component.
+ */
+#define	CTL_DEBUG_NAME		0	/* string: variable name */
+#define	CTL_DEBUG_VALUE		1	/* int: variable value */
+#define	CTL_DEBUG_MAXID		20
+
 #ifdef KERNEL
+#ifdef DEBUG
+/*
+ * CTL_DEBUG variables.
+ *
+ * These are declared as separate variables so that they can be
+ * individually initialized at the location of their associated
+ * variable. The loader prevents multiple use by issuing errors
+ * if a variable is initialized in more than one place. They are
+ * aggregated into an array in debug_sysctl(), so that it can
+ * conveniently locate them when querried. If more debugging
+ * variables are added, they must also be declared here and also
+ * entered into the array.
+ */
+struct ctldebug {
+	char	*debugname;	/* name of debugging variable */
+	int	*debugvar;	/* pointer to debugging variable */
+};
+extern struct ctldebug debug0, debug1, debug2, debug3, debug4;
+extern struct ctldebug debug5, debug6, debug7, debug8, debug9;
+extern struct ctldebug debug10, debug11, debug12, debug13, debug14;
+extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
+#endif /* DEBUG */
+
 /*
  * Internal sysctl function calling convention:
  *
