@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tablet.h	7.1 (Berkeley) %G%
+ *	@(#)tablet.h	7.2 (Berkeley) %G%
  */
 
 #ifndef _TABLET_
@@ -55,13 +55,15 @@ struct	polpos {
 #define		TBSTOP		0x0020		/* shut-up */
 #define		TBGO		0x0000		/* ~TBSTOP */
 #define	TBTYPE		0x000f		/* tablet type: */
-#define		TBUNUSED	0x0000
-#define		TBHITACHI	0x0001		/* hitachi tablet */
-#define		TBTIGER		0x0002		/* hitachi tiger */
-#define		TBGTCO		0x0003		/* gtco */
-#define		TBPOL		0x0004		/* polhemus 3space */
-#define		TBHDG		0x0005		/* hdg-1111b, low res */
-#define		TBHDGHIRES	0x0006		/* hdg-1111b, high res */
+#define		TBUNUSED	0x0
+#define		TBHITACHI	0x1		/* hitachi tablet */
+#define		TBTIGER		0x2		/* hitachi tiger */
+#define		TBGTCO		0x3		/* gtco */
+#define		TBPOL		0x4		/* polhemus 3space */
+#define		TBHDG		0x5		/* hdg-1111b, low res */
+#define		TBHDGHIRES	0x6		/* hdg-1111b, high res */
+#define		TBDIGI		0x7		/* gtco digi-pad, low res */
+#define		TBDIGIHIRES	0x8		/* gtco digi-pad, high res */
 #define BIOSTYPE	_IOW(b, 3, int)		/* set tablet type */
 #define BIOGTYPE	_IOR(b, 4, int)		/* get tablet type*/
 #endif
