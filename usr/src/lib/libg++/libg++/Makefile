@@ -1,4 +1,12 @@
 #	@(#)Makefile	6.2 (Berkeley) 4/24/91
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00118
+# --------------------         -----   ----------------------
+#
+# 30 Mar 93	Rodney W. Grimes	Add CFLAGS so that make depend works
+#
 
 #
 # Define g++ compilation rules.
@@ -7,6 +15,7 @@
 .SUFFIXES:
 .SUFFIXES: .out .o .po .s .c .f .y .cc .l .8 .7 .6 .5 .4 .3 .2 .1 .0
 
+CFLAGS+=-I$(.CURDIR)/../g++-include -+
 GXX=		g++
 GXXFLAGS=	-O -felide-constructors
 LDXX=		/usr/libexec/ld++
