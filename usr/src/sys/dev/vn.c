@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: fd.c 1.3 89/12/03$
+ * from: Utah $Hdr: fd.c 1.1 90/07/09$
  *
- *	@(#)vn.c	7.1 (Berkeley) %G%
+ *	@(#)vn.c	7.2 (Berkeley) %G%
  */
 
 /*

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: cd.c 1.4 89/09/17$
+ * from: Utah $Hdr: cd.c 1.1 90/07/09$
  *
- *	@(#)cd.c	7.1 (Berkeley) %G%
+ *	@(#)cd.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -266,8 +266,8 @@ cdstrategy(bp)
 {
 	register int unit = cdunit(bp->b_dev);
 	register struct cd_softc *cs = &cd_softc[unit];
-	register int bn, sz;
-	int s;
+	register daddr_t bn;
+	register int sz, s;
 
 #ifdef DEBUG
 	if (cddebug & CDB_FOLLOW)
@@ -275,17 +275,25 @@ cdstrategy(bp)
 #endif
 	if ((cs->sc_flags & CDF_INITED) == 0) {
 		bp->b_error = ENXIO;
-		goto bad;
+		bp->b_flags |= B_ERROR;
+		goto done;
 	}
 	bn = bp->b_blkno;
-	sz = (bp->b_bcount + (DEV_BSIZE - 1)) >> DEV_BSHIFT;
-	bp->b_resid = bp->b_bcount;
+	sz = howmany(bp->b_bcount, DEV_BSIZE);
 	if (bn < 0 || bn + sz > cs->sc_size) {
-		if (bn == cs->sc_size)
+		sz = cs->sc_size - bn;
+		if (sz == 0) {
+			bp->b_resid = bp->b_bcount;
 			goto done;
-		bp->b_error = EINVAL;
-		goto bad;
+		}
+		if (sz < 0) {
+			bp->b_error = EINVAL;
+			bp->b_flags |= B_ERROR;
+			goto done;
+		}
+		bp->b_bcount = dbtob(sz);
 	}
+	bp->b_resid = bp->b_bcount;
 	/*
 	 * "Start" the unit.
 	 * XXX: the use of sc_bp is just to retain the "traditional"
@@ -296,10 +304,8 @@ cdstrategy(bp)
 	cdstart(unit);
 	splx(s);
 	return;
-bad:
-	bp->b_flags |= B_ERROR;
 done:
-	iodone(bp);
+	biodone(bp);
 }
 
 cdstart(unit)
@@ -409,6 +415,7 @@ cdbuffer(cs, bp, bn, addr, bcount)
 	cbp->b_dev = ci->ci_dev;
 	cbp->b_blkno = cbn + cboff;
 	cbp->b_un.b_addr = addr;
+	cbp->b_vp = 0;
 	if (cs->sc_ileave == 0)
 		cbp->b_bcount = dbtob(ci->ci_size - cbn);
 	else
@@ -418,7 +425,7 @@ cdbuffer(cs, bp, bn, addr, bcount)
 	/*
 	 * XXX: context for cdiodone
 	 */
-	cbp->b_vp = (struct vnode *)bp;
+	cbp->b_saveaddr = (caddr_t)bp;
 	cbp->b_pfcent = ((cs - cd_softc) << 16) | (ci - cs->sc_cinfo);
 #ifdef DEBUG
 	if (cddebug & CDB_IO)
@@ -437,7 +444,7 @@ cdintr(unit)
 
 #ifdef DEBUG
 	if (cddebug & CDB_FOLLOW)
-		printf("cdintr(%d)\n", unit);
+		printf("cdintr(%d): bp %x\n", unit, bp);
 #endif
 	/*
 	 * Request is done for better or worse, wakeup the top half.
@@ -446,18 +453,18 @@ cdintr(unit)
 		dk_busy &= ~(1 << cs->sc_dk);
 	if (bp->b_flags & B_ERROR)
 		bp->b_resid = bp->b_bcount;
-	iodone(bp);
+	biodone(bp);
 }
 
 /*
- * Called by iodone at interrupt time.
+ * Called by biodone at interrupt time.
  * Mark the component as done and if all components are done,
  * take a cd interrupt.
  */
 cdiodone(cbp)
 	register struct buf *cbp;
 {
-	register struct buf *bp = (struct buf *)cbp->b_vp;	/* XXX */
+	register struct buf *bp = (struct buf *)cbp->b_saveaddr;/* XXX */
 	register int unit = (cbp->b_pfcent >> 16) & 0xFFFF;	/* XXX */
 	int count, s;
 
@@ -476,7 +483,7 @@ cdiodone(cbp)
 
 	if (cbp->b_flags & B_ERROR) {
 		bp->b_flags |= B_ERROR;
-		bp->b_error = geterror(cbp);
+		bp->b_error = biowait(cbp);
 #ifdef DEBUG
 		printf("cd%d: error %d on component %d\n",
 		       unit, bp->b_error, cbp->b_pfcent & 0xFFFF);
