@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,98 +16,130 @@ static char sccsid[] = "@(#)process.c	5.2 (Berkeley) %G%";
  *		  in the table for the local user
  *	DELETE - delete invitation
  */
-#include "ctl.h"
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <syslog.h>
+#include <netdb.h>
+#include <netinet/in.h>
 
-char *strcpy();
+#include <protocols/talkd.h>
+
+char	*strcpy();
 CTL_MSG *find_request();
 CTL_MSG *find_match();
 
-process_request(request, response)
-	CTL_MSG *request;
-	CTL_RESPONSE *response;
+process_request(mp, rp)
+	register CTL_MSG *mp;
+	register CTL_RESPONSE *rp;
 {
-	CTL_MSG *ptr;
+	register CTL_MSG *ptr;
+	extern int debug;
 
-	response->type = request->type;
-	response->id_num = 0;
+	rp->vers = TALK_VERSION;
+	rp->type = mp->type;
+	rp->id_num = htonl(0);
+	if (mp->vers != TALK_VERSION) {
+		syslog(LOG_WARNING, "Bad protocol version %d", mp->vers);
+		rp->answer = BADVERSION;
+		return;
+	}
+	mp->id_num = ntohl(mp->id_num);
+	mp->addr.sa_family = ntohs(mp->addr.sa_family);
+	if (mp->addr.sa_family != AF_INET) {
+		syslog(LOG_WARNING, "Bad address, family %d",
+		    mp->addr.sa_family);
+		rp->answer = BADADDR;
+		return;
+	}
+	mp->ctl_addr.sa_family = ntohs(mp->ctl_addr.sa_family);
+	if (mp->ctl_addr.sa_family != AF_INET) {
+		syslog(LOG_WARNING, "Bad control address, family %d",
+		    mp->ctl_addr.sa_family);
+		rp->answer = BADCTLADDR;
+		return;
+	}
+	mp->pid = ntohl(mp->pid);
+	if (debug)
+		print_request("process_request", mp);
+	switch (mp->type) {
 
-	switch (request->type) {
-
-	case ANNOUNCE :
-		do_announce(request, response);
+	case ANNOUNCE:
+		do_announce(mp, rp);
 		break;
 
-	case LEAVE_INVITE :
-		ptr = find_request(request);
-		if (ptr != (CTL_MSG *) 0) {
-			response->id_num = ptr->id_num;
-			response->answer = SUCCESS;
+	case LEAVE_INVITE:
+		ptr = find_request(mp);
+		if (ptr != (CTL_MSG *)0) {
+			rp->id_num = htonl(ptr->id_num);
+			rp->answer = SUCCESS;
 		} else
-			insert_table(request, response);
+			insert_table(mp, rp);
 		break;
 
-	case LOOK_UP :
-		ptr = find_match(request);
-		if (ptr != (CTL_MSG *) 0) {
-			response->id_num = ptr->id_num;
-			response->addr = ptr->addr;
-			response->answer = SUCCESS;
+	case LOOK_UP:
+		ptr = find_match(mp);
+		if (ptr != (CTL_MSG *)0) {
+			rp->id_num = htonl(ptr->id_num);
+			rp->addr = ptr->addr;
+			rp->addr.sa_family = htons(ptr->addr.sa_family);
+			rp->answer = SUCCESS;
 		} else
-			response->answer = NOT_HERE;
+			rp->answer = NOT_HERE;
 		break;
 
-	case DELETE :
-		response->answer = delete_invite(request->id_num);
+	case DELETE:
+		rp->answer = delete_invite(mp->id_num);
 		break;
 
-	default :
-		response->answer = UNKNOWN_REQUEST;
+	default:
+		rp->answer = UNKNOWN_REQUEST;
 		break;
 	}
+	if (debug)
+		print_response("process_request", rp);
 }
 
-struct hostent *gethostbyaddr();
-
-do_announce(request, response)
-	CTL_MSG *request;
-	CTL_RESPONSE *response;
+do_announce(mp, rp)
+	register CTL_MSG *mp;
+	CTL_RESPONSE *rp;
 {
 	struct hostent *hp;
 	CTL_MSG *ptr;
 	int result;
 
 	/* see if the user is logged */
-	result = find_user(request->r_name, request->r_tty);
+	result = find_user(mp->r_name, mp->r_tty);
 	if (result != SUCCESS) {
-		response->answer = result;
+		rp->answer = result;
 		return;
 	}
-	hp = gethostbyaddr(&request->ctl_addr.sin_addr,
-		sizeof(struct in_addr), AF_INET);
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
+	hp = gethostbyaddr(&satosin(&mp->ctl_addr)->sin_addr,
+		sizeof (struct in_addr), AF_INET);
 	if (hp == (struct hostent *)0) {
-		response->answer = MACHINE_UNKNOWN;
+		rp->answer = MACHINE_UNKNOWN;
 		return;
 	}
-	ptr = find_request(request);
+	ptr = find_request(mp);
 	if (ptr == (CTL_MSG *) 0) {
-		insert_table(request,response);
-		response->answer = announce(request, hp->h_name);
+		insert_table(mp, rp);
+		rp->answer = announce(mp, hp->h_name);
 		return;
 	}
-	if (request->id_num > ptr->id_num) {
+	if (mp->id_num > ptr->id_num) {
 		/*
-		 * this is an explicit re-announce, so update the id_num
-		 * field to avoid duplicates and re-announce the talk 
+		 * This is an explicit re-announce, so update the id_num
+		 * field to avoid duplicates and re-announce the talk.
 		 */
-		ptr->id_num = response->id_num = new_id();
-		response->answer = announce(request, hp->h_name);
-		return;
+		ptr->id_num = new_id();
+		rp->id_num = htonl(ptr->id_num);
+		rp->answer = announce(mp, hp->h_name);
+	} else {
+		/* a duplicated request, so ignore it */
+		rp->id_num = htonl(ptr->id_num);
+		rp->answer = SUCCESS;
 	}
-	/* a duplicated request, so ignore it */
-	response->id_num = ptr->id_num;
-	response->answer = SUCCESS;
 }
 
 #include <utmp.h>
@@ -116,8 +148,7 @@ do_announce(request, response)
  * Search utmp for the local user
  */
 find_user(name, tty)
-	char *name;
-	char *tty;
+	char *name, *tty;
 {
 	struct utmp ubuf;
 	int status;

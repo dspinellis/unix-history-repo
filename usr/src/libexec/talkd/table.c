@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)table.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -18,8 +18,9 @@ static char sccsid[] = "@(#)table.c	5.1 (Berkeley) %G%";
  */
 #include <stdio.h>
 #include <sys/time.h>
+#include <syslog.h>
 
-#include "ctl.h"
+#include <protocols/talkd.h>
 
 #define MAX_ID 16000	/* << 2^15 so I don't have sign troubles */
 
@@ -38,7 +39,7 @@ struct table_entry {
 	TABLE_ENTRY *last;
 };
 
-TABLE_ENTRY	*table = NIL;
+TABLE_ENTRY *table = NIL;
 CTL_MSG *find_request();
 CTL_MSG *find_match();
 char	*malloc();
@@ -49,31 +50,26 @@ char	*malloc();
  */
 CTL_MSG *
 find_match(request)
-	CTL_MSG *request;
+	register CTL_MSG *request;
 {
-	TABLE_ENTRY *ptr;
-	extern FILE *debugout;
+	register TABLE_ENTRY *ptr;
 	long current_time;
 
 	gettimeofday(&tp, &txp);
 	current_time = tp.tv_sec;
-	if (debug) {
-		fprintf(debugout, "Entering Look-Up with : \n");
-		print_request(request);
-	}
+	if (debug)
+		print_request("find_match", request);
 	for (ptr = table; ptr != NIL; ptr = ptr->next) {
 		if ((ptr->time - current_time) > MAX_LIFE) {
 			/* the entry is too old */
-			if (debug) {
-				fprintf(debugout
-					,"Deleting expired entry : \n");
-				print_request(&ptr->request);
-			}
+			if (debug)
+				print_request("deleting expired entry",
+				    &ptr->request);
 			delete(ptr);
 			continue;
 		}
 		if (debug)
-			print_request(&ptr->request);
+			print_request("", &ptr->request);
 		if (strcmp(request->l_name, ptr->request.r_name) == 0 &&
 		    strcmp(request->r_name, ptr->request.l_name) == 0 &&
 		     ptr->request.type == LEAVE_INVITE)
@@ -88,10 +84,9 @@ find_match(request)
  */
 CTL_MSG *
 find_request(request)
-	CTL_MSG *request;
+	register CTL_MSG *request;
 {
-	TABLE_ENTRY *ptr;
-	extern FILE *debugout;
+	register TABLE_ENTRY *ptr;
 	long current_time;
 
 	gettimeofday(&tp, &txp);
@@ -100,23 +95,19 @@ find_request(request)
 	 * See if this is a repeated message, and check for
 	 * out of date entries in the table while we are it.
 	 */
-	if (debug) {
-		fprintf(debugout, "Entering find_request with : \n");
-		print_request(request);
-	}
+	if (debug)
+		print_request("find_request", request);
 	for (ptr = table; ptr != NIL; ptr = ptr->next) {
 		if ((ptr->time - current_time) > MAX_LIFE) {
 			/* the entry is too old */
-			if (debug) {
-				fprintf(debugout
-					, "Deleting expired entry : \n");
-				print_request(&ptr->request);
-			}
+			if (debug)
+				print_request("deleting expired entry",
+				    &ptr->request);
 			delete(ptr);
 			continue;
 		}
 		if (debug)
-			print_request(&ptr->request);
+			print_request("", &ptr->request);
 		if (strcmp(request->r_name, ptr->request.r_name) == 0 &&
 		    strcmp(request->l_name, ptr->request.l_name) == 0 &&
 		    request->type == ptr->request.type &&
@@ -133,17 +124,18 @@ insert_table(request, response)
 	CTL_MSG *request;
 	CTL_RESPONSE *response;
 {
-	TABLE_ENTRY *ptr;
+	register TABLE_ENTRY *ptr;
 	long current_time;
 
 	gettimeofday(&tp, &txp);
 	current_time = tp.tv_sec;
-	response->id_num = request->id_num = new_id();
+	request->id_num = new_id();
+	response->id_num = htonl(request->id_num);
 	/* insert a new entry into the top of the list */
 	ptr = (TABLE_ENTRY *)malloc(sizeof(TABLE_ENTRY));
 	if (ptr == NIL) {
-		fprintf(stderr, "malloc in insert_table");
-		exit(1);
+		syslog(LOG_ERR, "insert_table: Out of memory");
+		_exit(1);
 	}
 	ptr->time = current_time;
 	ptr->request = *request;
@@ -174,18 +166,16 @@ new_id()
 delete_invite(id_num)
 	int id_num;
 {
-	TABLE_ENTRY *ptr;
-	extern FILE *debugout;
+	register TABLE_ENTRY *ptr;
 
 	ptr = table;
-
 	if (debug)
-		fprintf(debugout,"Entering delete_invite with %d\n", id_num);
+		syslog(LOG_DEBUG, "delete_invite(%d)", id_num);
 	for (ptr = table; ptr != NIL; ptr = ptr->next) {
 		if (ptr->request.id_num == id_num)
 			break;
 		if (debug)
-			print_request(&ptr->request);
+			print_request("", &ptr->request);
 	}
 	if (ptr != NIL) {
 		delete(ptr);
@@ -198,14 +188,11 @@ delete_invite(id_num)
  * Classic delete from a double-linked list
  */
 delete(ptr)
-	TABLE_ENTRY *ptr;
+	register TABLE_ENTRY *ptr;
 {
-	extern FILE *debugout;
 
-	if (debug) {
-		fprintf(debugout, "Deleting : ");
-		print_request(&ptr->request);
-	}
+	if (debug)
+		print_request("delete", &ptr->request);
 	if (table == ptr)
 		table = ptr->next;
 	else if (ptr->last != NIL)

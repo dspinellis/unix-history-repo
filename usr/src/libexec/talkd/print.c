@@ -5,34 +5,54 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /* debug print routines */
 
 #include <stdio.h>
-#include "ctl.h"
+#include <syslog.h>
 
-print_request(request)
-	CTL_MSG *request;
+#include <protocols/talkd.h>
+
+static	char *types[] =
+    { "leave_invite", "look_up", "delete", "announce" };
+#define	NTYPES	(sizeof (types) / sizeof (types[0]))
+static	char *answers[] = 
+    { "success", "not_here", "failed", "machine_unknown", "permission_denied",
+      "unknown_request", "badversion", "badaddr", "badctladdr" };
+#define	NANSWERS	(sizeof (answers) / sizeof (answers[0]))
+
+print_request(cp, mp)
+	char *cp;
+	register CTL_MSG *mp;
 {
-    	extern FILE *debugout;
+	char tbuf[80], *tp;
 	
-	fprintf(debugout
-		, "type is %d, l_user %s, r_user %s, r_tty %s\n"
-		, request->type, request->l_name, request->r_name
-		, request->r_tty);
-	fprintf(debugout, "		id = %d\n", request->id_num);
-	fflush(debugout);
+	if (mp->type > NTYPES) {
+		sprintf(tbuf, "type %d", mp->type);
+		tp = tbuf;
+	} else
+		tp = types[mp->type];
+	syslog(LOG_DEBUG, "%s: %s: id %d, l_user %s, r_user %s, r_tty %s",
+	    cp, tp, mp->id_num, mp->l_name, mp->r_name, mp->r_tty);
 }
 
-print_response(response)
-	CTL_RESPONSE *response;
+print_response(cp, rp)
+	char *cp;
+	register CTL_RESPONSE *rp;
 {
-    	extern FILE *debugout;
+	char tbuf[80], *tp, abuf[80], *ap;
 	
-	printf(debugout
-		, "type is %d, answer is %d, id = %d\n\n", response->type
-		, response->answer, response->id_num);
-	fflush(debugout);
+	if (rp->type > NTYPES) {
+		sprintf(tbuf, "type %d", rp->type);
+		tp = tbuf;
+	} else
+		tp = types[rp->type];
+	if (rp->answer > NANSWERS) {
+		sprintf(abuf, "answer %d", rp->answer);
+		ap = abuf;
+	} else
+		ap = answers[rp->answer];
+	syslog(LOG_DEBUG, "%s: %s: %s, id %d", cp, tp, ap, ntohl(rp->id_num));
 }
