@@ -1,4 +1,4 @@
-.\"	@(#)Cover	1.1 (Berkeley) %G%
+.\"	@(#)Cover	1.2 (Berkeley) %G%
 .\" use -ms
 .\"
 .so HEADERS
@@ -9,33 +9,34 @@
 Dear Colleague:
 .sp
 .PP
-We are happy to send you information about our April 1994
-release of 4.4BSD-Lite.
-The University and Novell/USL (formerly UNIX System Laboratories)
-have settled their lawsuit (see attached press release).
-The settlement agreement allows the university to release
-4.4BSD-Lite under terms that are similar to those of the second BSD
-Networking Release (Net/2).
+We are delighted, at long last, to send you information about
+our April 1994 release of 4.4BSD-Lite.
+The University and UNIX System Laboratories
+have resolved the issues surrounding the second BSD Networking
+Release (Net/2) distribution (see attached press release),
+and the University is now able to release
+4.4BSD-Lite under terms similar to those of Net/2.
+.PP
 The 4.4BSD-Lite software is copyrighted by the University of California
-and others, but may be freely redistributed.
-It is available to anyone and requires no previous license, either from
-AT&T, Novell/USL, or The Regents of the University of California.
+and others, but may be freely redistributed without fee.
+It is available to anyone and requires no previous license
+from AT&T, Novell/USL, or The Regents of the University of California.
 The distribution includes both software developed at Berkeley
 and much software contributed by authors outside of Berkeley.
 The code in this distribution may be redistributed and used
-in released products provided that you abide by the due credit
-requirements listed in your license agreement or the source files.
+in released products without fee, provided that the due credit
+requirements described in the license and the source files are met.
 .PP
-This packet is designed to serve two purposes.
+This packet is intended to serve two purposes.
 The first is to acquaint you with the details of our distribution
 so you may decide if you wish to purchase it.
-The second purpose is to tell you how to obtain our distribution.
+The second is to inform you how to obtain our distribution.
 .SH
 Distribution contents
 .PP
 .B "The distribution is a source distribution only,"
 .B "and does not contain program binaries for any architecture."
-Thus, it will not be possible to compile or run this software
+It will not be possible to compile or run this software
 without a pre-existing system that is already installed and running.
 In addition, the distribution does not include sources for a complete system.
 It includes source code and manual pages for the C library,
@@ -44,21 +45,20 @@ and most of the kernel (the same subsystems that were deleted in Net/2
 are still missing in 4.4BSD-Lite \(em support for executing files,
 doing physical I/O, managing the buffer cache,
 handling process tracing, terminal character I/O, and doing accounting).
-Because of the shutdown of the CSRG,
-there will not be anyone available at Berkeley to assist
-with problems, so it should not be used by sites without enough local
-expertise to find and fix any problems that are encountered.
+Because of the CSRG will be closing down after this release,
+there will not be anyone available at Berkeley to assist with problems,
+so sites are encouraged to ensure sufficient local expertise to
+find and fix any problems that are encountered.
 .PP
-We have attempted to make the system as compliant with the
-POSIX 1003.1 and 1003.2 standards as was possible at the time
+We have attempted to make the system as compliant with the ANSI C and
+IEEE POSIX 1003.1 and 1003.2 standards as was possible at the time
 of its release.
-We have not been able to run it through any of the
-verification test suites, thus,
+We have not run it through any of the verification test suites, thus,
 you should not claim conformance with either standard without
 first validing the code.
 .PP
-This software distribution is provided on two 6250bpi 1/2'' 9-track tapes
-or one 8mm Exabyte cassette only.
+This software distribution is only available on two 6250bpi 1/2''
+9-track tapes or one 8mm Exabyte cassette.
 The 4.4BSD-Lite distribution contains source
 for the following architectures:
 .IP \(bu
@@ -67,7 +67,9 @@ HP 9000/300 68000-based workstations.
 DECstation 3100 and 5000 MIPS-based workstations.
 .IP \(bu
 Sparcstation I & II SPARC-based workstations.
-Please note that the distribution does not support the Sparcstation 10.
+(Please note that the distribution does
+.B not
+support the Sparcstation 10.)
 .IP \(bu
 Sony News MIPS-based workstations
 .IP \(bu
@@ -85,6 +87,8 @@ people outside the university.
 Consequently, we are not able to directly test or maintain these 
 other architectures, so cannot comment on their robustness,
 reliability, or completeness.
+More specifically, the support for the x86 architectures is known to
+be unstable.
 .PP
 The major new facilities available in the 4.4BSD-Lite release are
 a new virtual memory system, 
@@ -98,8 +102,7 @@ an ISO CDROM 9660 filesystem with Rockridge extensions,
 enhanced security and system management support,
 and the conversion to and addition of the IEEE Std1003.1 (``POSIX'')
 facilities and many of the IEEE Std1003.2 facilities.
-In addition, many new utilities and additions to the C
-library are present.
+In addition, many new tools and additions to the C library are present.
 The kernel sources have been reorganized to collect all machine-dependent
 files for each architecture under one directory,
 and most of the machine-independent code is now free of code
@@ -108,20 +111,19 @@ The user structure and process structure have been reorganized
 to eliminate the statically-mapped user structure and to make most
 of the process resources shareable by multiple processes.
 The system and include files have been converted to be compatible
-with ANSI C, including function prototypes for most of the exported
-functions.
+with ANSI C, including function prototypes for the exported functions.
 There are numerous other changes throughout the system.
 .PP
 The new virtual memory implementation is derived from the MACH
-operating system developed at Carnegie-Mellon,
+operating system developed at Carnegie-Mellon University,
 and was ported to the BSD kernel at the University of Utah.
 The MACH virtual memory system call interface has been replaced with the
 ``mmap''-based interface described in the ``Berkeley Software
-Architecture Manual'' (see UNIX Programmer's Manual, 
+Architecture Manual'' (see the UNIX Programmer's Manual, 
 Supplementary Documents, PSD:5).
 The interface is similar to the interfaces shipped
 by several commercial vendors such as Sun, Novell/USL,
-and Convex Computer Corp.
+and Convex Computer Corp., and as described by POSIX 1003.4.
 The integration of the new virtual memory is functionally complete,
 but still has serious performance problems under heavy memory load.
 The internal kernel interfaces have not yet been completed
@@ -140,7 +142,8 @@ The session and presentation layers are provided outside
 the kernel by the ISO development environment (ISODE).
 Included in this development environment are file
 transfer and management (FTAM), virtual terminals (VT),
-a directory services implementation (X.500), and miscellaneous other utilities.
+a directory services implementation (X.500), and miscellaneous other
+utilities.
 .PP
 A new virtual filesystem interface has been added to the
 kernel to support multiple filesystems.
@@ -218,9 +221,9 @@ and allows compilation for multiple architectures from the same source tree
 (which may be mounted read-only).
 Notable additions to the libraries include functions to traverse a
 filesystem hierarchy, database interfaces to btree and hashing functions,
-a new, fast implementation of stdio and a radix sort function.
+a new, fast implementation of stdio and radix and merge sort functions.
 The additions to the utility suite include greatly enhanced versions of
-programs that display system status information, implementations of
+programs that display system status information, new implementations of
 various traditional tools described in the IEEE Std1003.2 standard,
 and many others.
 .PP
