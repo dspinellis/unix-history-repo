@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c.1	4.10 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)login.c.1	4.11 (Berkeley) 81/07/05";
 /*
  * login [ name ]
  */
@@ -271,6 +271,7 @@ char **argv;
 	
 	signal(SIGQUIT, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
+	signal(SIGTSTP, SIG_IGN);
 	execlp(pwd->pw_shell, minusnam, 0);
 	perror(pwd->pw_shell);
 	printf("No shell\n");
