@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)run.test	8.7 (Berkeley) %G%
+#	@(#)run.test	8.6 (Berkeley) %G%
 #
 
 # db regression tests
@@ -180,15 +180,24 @@ test4()
 	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
 	awk '{
 		for (i = 37; i <= 37 + 88 * 17; i += 17) {
-			s = substr($0, 1, i % 41);
+			if (i % 41)
+				s = substr($0, 1, i % 41);
+			else
+				s = substr($0, 1);
 			printf("input key %d: %s\n", i, s);
 		}
 		for (i = 1; i <= 15; ++i) {
-			s = substr($0, 1, i % 41);
+			if (i % 41)
+				s = substr($0, 1, i % 41);
+			else
+				s = substr($0, 1);
 			printf("input key %d: %s\n", i, s);
 		}
 		for (i = 19234; i <= 19234 + 61 * 27; i += 27) {
-			s = substr($0, 1, i % 41);
+			if (i % 41)
+				s = substr($0, 1, i % 41);
+			else
+				s = substr($0, 1);
 			printf("input key %d: %s\n", i, s);
 		}
 		exit
@@ -235,7 +244,10 @@ test5()
 	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
 	awk ' {
 		for (i = 1500; i; --i) {
-			s = substr($0, 1, i % 34);
+			if (i % 34)
+				s = substr($0, 1, i % 34);
+			else
+				s = substr($0, 1);
 			printf("input key %d: %s\n", i, s);
 		}
 		exit;
@@ -268,11 +280,17 @@ test6()
 	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
 	awk ' {
 		for (i = 1; i < 1200; i += 2) {
-			s = substr($0, 1, i % 34);
+			if (i % 34)
+				s = substr($0, 1, i % 34);
+			else
+				s = substr($0, 1);
 			printf("input key %d: %s\n", i, s);
 		}
 		for (i = 2; i < 1200; i += 2) {
-			s = substr($0, 1, i % 34);
+			if (i % 34)
+				s = substr($0, 1, i % 34);
+			else
+				s = substr($0, 1);
 			printf("input key %d: %s\n", i, s);
 		}
 		exit;
@@ -560,16 +578,27 @@ test20()
 {
 	echo\
     "Test 20: hash: bucketsize, fill factor; nelem 25000 cachesize 65536"
-	awk 'BEGIN {
-		for (i = 1; i <= 10000; ++i)
-			printf("%.*s\n", i % 34,
-		    "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg");
+	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
+	awk '{
+		for (i = 1; i <= 10000; ++i) {
+			if (i % 34)
+				s = substr($0, 1, i % 34);
+			else
+				s = substr($0, 1);
+			printf("%s\n", s);
+		}
+		exit;
 	}' > $TMP1
 	sed 10000q $DICT |
-	awk '{
-		++i;
-		printf("p\nk%s\nd%.*s\n", $0, i % 34,
-		    "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg");
+	awk 'BEGIN {
+		ds="abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg"
+	}
+	{
+		if (++i % 34)
+			s = substr(ds, 1, i % 34);
+		else
+			s = substr(ds, 1);
+		printf("p\nk%s\nd%s\n", $0, s);
 	}' > $TMP2
 	sed 10000q $DICT |
 	awk '{
