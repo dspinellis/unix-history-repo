@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -403,7 +403,7 @@ recipient(a, sendq, e)
 			if (e->e_message == NULL)
 				e->e_message = newstr("Deferred: user database error");
 # ifdef LOG
-			if (LogLevel > 3)
+			if (LogLevel > 8)
 				syslog(LOG_INFO, "%s: deferred: udbexpand",
 					e->e_id);
 # endif
@@ -735,7 +735,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		message(Arpa_Info, "%s to %s",
 			forwarding ? "forwarding" : "sending", buf);
 #ifdef LOG
-		if (forwarding && LogLevel >= 10)
+		if (forwarding && LogLevel > 9)
 			syslog(LOG_INFO, "%s: forward %s => %s",
 				e->e_id, oldto, buf);
 #endif

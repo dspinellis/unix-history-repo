@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -395,7 +395,7 @@ returntosender(msg, returnq, sendbody, e)
 	}
 
 # ifdef LOG
-	if (LogLevel >= 3)
+	if (LogLevel > 5)
 		syslog(LOG_INFO, "%s: %s: return to sender: %s",
 			e->e_id, ee->e_id, msg);
 # endif

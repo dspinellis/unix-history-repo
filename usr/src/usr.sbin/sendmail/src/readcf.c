@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -554,6 +554,7 @@ makemailer(line)
 	register STAB *s;
 	int i;
 	char fcode;
+	auto char *endp;
 	extern int NextMailer;
 	extern char **makeargv();
 	extern char *munchstring();
@@ -608,16 +609,32 @@ makemailer(line)
 
 		  case 'S':		/* sender rewriting ruleset */
 		  case 'R':		/* recipient rewriting ruleset */
-			i = atoi(p);
+			i = strtol(p, &endp, 10);
 			if (i < 0 || i >= MAXRWSETS)
 			{
 				syserr("invalid rewrite set, %d max", MAXRWSETS);
 				return;
 			}
 			if (fcode == 'S')
-				m->m_s_rwset = i;
+				m->m_sh_rwset = m->m_se_rwset = i;
 			else
-				m->m_r_rwset = i;
+				m->m_rh_rwset = m->m_re_rwset = i;
+
+			p = endp;
+			if (*p == '/')
+			{
+				i = strtol(p, NULL, 10);
+				if (i < 0 || i >= MAXRWSETS)
+				{
+					syserr("invalid rewrite set, %d max",
+						MAXRWSETS);
+					return;
+				}
+				if (fcode == 'S')
+					m->m_sh_rwset = i;
+				else
+					m->m_rh_rwset = i;
+			}
 			break;
 
 		  case 'E':		/* end of line string */

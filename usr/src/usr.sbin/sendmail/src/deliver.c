@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -111,7 +111,7 @@ deliver(e, firstto)
 			to->q_flags |= QQUEUEUP|QDONTSEND;
 			e->e_to = to->q_paddr;
 			message(Arpa_Info, "queued");
-			if (LogLevel > 4)
+			if (LogLevel > 8)
 				logdelivery("queued", e);
 		}
 		e->e_to = NULL;
@@ -130,14 +130,16 @@ deliver(e, firstto)
 	*/
 
 	/* rewrite from address, using rewriting rules */
-	(void) strcpy(rpathbuf, remotename(e->e_returnpath, m, TRUE, TRUE, e));
+	(void) strcpy(rpathbuf, remotename(e->e_returnpath, m, TRUE, FALSE,
+					   TRUE, e));
 	if (e->e_returnpath == e->e_sender)
 	{
 		from = rpathbuf;
 	}
 	else
 	{
-		(void) strcpy(tfrombuf, remotename(e->e_sender, m, TRUE, TRUE, e));
+		(void) strcpy(tfrombuf, remotename(e->e_sender, m, TRUE, FALSE,
+						   TRUE, e));
 		from = tfrombuf;
 	}
 
@@ -1115,7 +1117,7 @@ giveresponse(stat, m, e)
 	**	that.
 	*/
 
-	if (LogLevel > ((stat == 0 || stat == EX_TEMPFAIL) ? 3 : 2))
+	if (LogLevel > ((stat == EX_TEMPFAIL) ? 8 : (stat == EX_OK) ? 7 : 6))
 		logdelivery(&statmsg[4], e);
 
 	if (stat != EX_TEMPFAIL)
@@ -1590,7 +1592,7 @@ sendall(e, mode)
 		{
 			/* oops....  lost it */
 # ifdef LOG
-			if (LogLevel > 5)
+			if (LogLevel > 29)
 				syslog(LOG_NOTICE, "%s: lost lock: %m",
 					e->e_id);
 # endif /* LOG */

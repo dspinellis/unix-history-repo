@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -664,9 +664,9 @@ main(argc, argv, envp)
 
 			if (m == NULL)
 				continue;
-			printf("mailer %d (%s): P=%s S=%d R=%d M=%ld F=", i, m->m_name,
-				m->m_mailer, m->m_s_rwset, m->m_r_rwset,
-				m->m_maxsize);
+			printf("mailer %d (%s): P=%s S=%d/%d R=%d/%d M=%ld F=", i, m->m_name,
+				m->m_mailer, m->m_se_rwset, m->m_sh_rwset,
+				m->m_re_rwset, m->m_rh_rwset, m->m_maxsize);
 			for (j = '\0'; j <= '\177'; j++)
 				if (bitnset(j, m->m_flags))
 					(void) putchar(j);
@@ -922,7 +922,7 @@ finis()
 
 	/* and exit */
 # ifdef LOG
-	if (LogLevel > 11)
+	if (LogLevel > 78)
 		syslog(LOG_DEBUG, "finis, pid=%d", getpid());
 # endif /* LOG */
 	if (ExitStat == EX_TEMPFAIL)
@@ -1273,7 +1273,7 @@ disconnect(fulldrop)
 	}
 
 # ifdef LOG
-	if (LogLevel > 11)
+	if (LogLevel > 71)
 		syslog(LOG_DEBUG, "in background, pid=%d", getpid());
 # endif /* LOG */
 

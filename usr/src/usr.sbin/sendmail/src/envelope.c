@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -91,7 +91,7 @@ dropenvelope(e)
 		id = "(none)";
 
 #ifdef LOG
-	if (LogLevel > 12)
+	if (LogLevel > 84)
 		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
 				  id, e->e_flags, getpid());
 #endif /* LOG */
@@ -160,7 +160,7 @@ dropenvelope(e)
 	e->e_dfp = NULL;
 
 #ifdef LOG
-	if (LogLevel >= 10)
+	if (LogLevel > 74)
 		syslog(LOG_INFO, "%s: done", id);
 #endif /* LOG */
 }
@@ -471,7 +471,7 @@ setsender(from, e)
 	{
 		/* log garbage addresses for traceback */
 # ifdef LOG
-		if (from != NULL && LogLevel >= 1)
+		if (from != NULL && LogLevel > 2)
 		{
 			char *host = RealHostName;
 
@@ -575,7 +575,7 @@ setsender(from, e)
 	if (pvp == NULL)
 	{
 # ifdef LOG
-		if (LogLevel >= 1)
+		if (LogLevel > 2)
 			syslog(LOG_NOTICE, "cannot prescan from (%s)", from);
 # endif
 		usrerr("cannot prescan from (%s)", from);

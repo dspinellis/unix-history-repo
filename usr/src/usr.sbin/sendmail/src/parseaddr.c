@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1791,8 +1791,11 @@ printaddr(a, follow)
 **			to.
 **		senderaddress -- if set, uses the sender rewriting rules
 **			rather than the recipient rewriting rules.
+**		header -- set if this address is in the header, rather
+**			than an envelope header.
 **		canonical -- if set, strip out any comment information,
 **			etc.
+**		e -- the current envelope.
 **
 **	Returns:
 **		the text string representing this address relative to
@@ -1807,16 +1810,18 @@ printaddr(a, follow)
 */
 
 char *
-remotename(name, m, senderaddress, canonical, e)
+remotename(name, m, senderaddress, header, canonical, e)
 	char *name;
 	MAILER *m;
 	bool senderaddress;
+	bool header;
 	bool canonical;
 	register ENVELOPE *e;
 {
 	register char **pvp;
 	char *fancy;
 	char *oldg = macvalue('g', e);
+	int rwset;
 	static char buf[MAXNAME];
 	char lbuf[MAXNAME];
 	char pvpbuf[PSBUFSIZE];
@@ -1878,17 +1883,9 @@ remotename(name, m, senderaddress, canonical, e)
 	*/
 
 	if (senderaddress)
-	{
-		rewrite(pvp, 1);
-		if (m->m_s_rwset > 0)
-			rewrite(pvp, m->m_s_rwset);
-	}
 	else
-	{
-		rewrite(pvp, 2);
-		if (m->m_r_rwset > 0)
-			rewrite(pvp, m->m_r_rwset);
-	}
+	if (rwset > 0)
+		rewrite(pvp, rwset);
 
 	/*
 	**  Do any final sanitation the address may require.

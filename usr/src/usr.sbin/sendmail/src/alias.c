@@ -29,15 +29,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.9 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.10 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.9 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.10 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.9 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.10 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.9 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.10 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -145,7 +145,7 @@ alias(a, sendq, e)
 		    a->q_paddr, a->q_host, a->q_user, p);
 	message(Arpa_Info, "aliased to %s", p);
 #ifdef LOG
-	if (LogLevel >= 10)
+	if (LogLevel > 9)
 		syslog(LOG_INFO, "%s: alias %s => %s", e->e_id, a->q_paddr, p);
 #endif
 	AliasLevel++;
@@ -388,14 +388,14 @@ initaliases(aliasfile, init, e)
 			automatic = TRUE;
 			message(Arpa_Info, "rebuilding alias database");
 #ifdef LOG
-			if (LogLevel >= 7)
+			if (LogLevel > 14)
 				syslog(LOG_INFO, "rebuilding alias database");
 #endif /* LOG */
 		}
 		else
 		{
 #ifdef LOG
-			if (LogLevel >= 7)
+			if (LogLevel > 3)
 				syslog(LOG_INFO, "alias database out of date");
 #endif /* LOG */
 			message(Arpa_Info, "Warning: alias database out of date");
@@ -411,7 +411,7 @@ initaliases(aliasfile, init, e)
 	if (init)
 	{
 #ifdef LOG
-		if (LogLevel >= 6)
+		if (LogLevel > 7)
 		{
 			extern char *username();
 
@@ -805,7 +805,7 @@ readaliases(aliasfile, init, e)
 	message(Arpa_Info, "%d aliases, longest %d bytes, %d bytes total",
 			naliases, longest, bytes);
 # ifdef LOG
-	if (LogLevel >= 8)
+	if (LogLevel > 7)
 		syslog(LOG_INFO, "%d aliases, longest %d bytes, %d bytes total",
 			naliases, longest, bytes);
 # endif /* LOG */

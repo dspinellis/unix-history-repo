@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -564,13 +564,13 @@ xunlink(f)
 	register int i;
 
 # ifdef LOG
-	if (LogLevel > 20)
-		syslog(LOG_DEBUG, "%s: unlink %s\n", CurEnv->e_id, f);
+	if (LogLevel > 98)
+		syslog(LOG_DEBUG, "%s: unlink %s", CurEnv->e_id, f);
 # endif /* LOG */
 
 	i = unlink(f);
 # ifdef LOG
-	if (i < 0 && LogLevel > 21)
+	if (i < 0 && LogLevel > 97)
 		syslog(LOG_DEBUG, "%s: unlink-fail %d", f, errno);
 # endif /* LOG */
 }
