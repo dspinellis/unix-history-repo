@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ec.c	6.10 (Berkeley) %G%
+ *	@(#)if_ec.c	6.11 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -88,6 +88,17 @@ struct	ec_softc {
 	short	es_oactive;		/* is output active? */
 	u_char	*es_buf[16];		/* virtual addresses of buffers */
 } ec_softc[NEC];
+
+#ifdef DEBUG
+ether_addr(s)
+char *s;
+{
+
+	printf("%x:%x:%x:%x:%x:%x\n",
+		s[0]&0xff, s[1]&0xff, s[2]&0xff,
+		s[3]&0xff, s[4]&0xff, s[5]&0xff);
+}
+#endif
 
 /*
  * Configure on-board memory for an interface.
@@ -213,7 +224,7 @@ ecattach(ui)
 	/*
 	 * Read the ethernet address off the board, one nibble at a time.
 	 */
-	addr->ec_xcr = EC_UECLR;
+	addr->ec_xcr = EC_UECLR; /* zero address pointer */
 	addr->ec_rcr = EC_AROM;
 	cp = es->es_addr;
 #define	NEXTBIT	addr->ec_rcr = EC_AROM|EC_ASTEP; addr->ec_rcr = EC_AROM
@@ -225,13 +236,10 @@ ecattach(ui)
 		}
 		cp++;
 	}
-	/*
-	 * Now write it into the address recognition ROM so we can
-	 * always use the same EC_READ bits (referencing ROM),
-	 * in case we change the address sometime
-	 */
-	ec_setaddr(es->es_addr, ui->ui_unit);
-
+#ifdef DEBUG
+	printf("ecattach %d: addr=",ui->ui_unit);
+	ether_addr(es->es_addr);
+#endif
 	ifp->if_init = ecinit;
 	ifp->if_ioctl = ecioctl;
 	ifp->if_output = ecoutput;
@@ -284,6 +292,16 @@ ecinit(unit)
 	if ((ifp->if_flags & IFF_RUNNING) == 0) {
 		addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 		s = splimp();
+		/*
+		 * write our ethernet address into the address recognition ROM 
+		 * so we can always use the same EC_READ bits (referencing ROM),
+		 * in case we change the address sometime.
+		 * Note that this is safe here as the reciever is NOT armed.
+		 */
+		ec_setaddr(es->es_addr, unit);
+		/*
+		 * Arm the reciever
+		 */
 		for (i = ECRHBF; i >= ECRLBF; i--)
 			addr->ec_rcr = EC_READ | i;
 		es->es_oactive = 0;
@@ -421,7 +439,7 @@ ecdocoll(unit)
 /*
  * Ethernet interface receiver interrupt.
  * If input error just drop packet.
- * Otherwise purge input buffered data path and examine 
+ * Otherwise examine 
  * packet to determine type.  If can't determine length
  * from type, then have to drop packet.  Othewise decapsulate
  * packet based on type and pass to type specific higher-level
@@ -826,11 +844,11 @@ ecioctl(ifp, cmd, data)
 
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
-		ecinit(ifp->if_unit);
 
 		switch (ifa->ifa_addr.sa_family) {
 #ifdef INET
 		case AF_INET:
+			ecinit(ifp->if_unit); /* before, so we can send the ARP packet */
 			((struct arpcom *)ifp)->ac_ipaddr =
 				IA_SIN(ifa)->sin_addr;
 			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
@@ -845,8 +863,18 @@ ecioctl(ifp, cmd, data)
 				ina->x_host = * (union ns_host *) 
 				     (ec_softc[ifp->if_unit].es_addr);
 			} else {
-				ec_setaddr(ina->x_host.c_host,ifp->if_unit);
+				/* 
+				 * The manual says we can't change the address 
+				 * while the reciever is armed so reset everything
+				 */
+				struct ec_softc *es = &ec_softc[ifp->if_unit];
+				struct uba_device *ui = ecinfo[ifp->if_unit];
+				struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
+				
+				es->es_if.if_flags &= ~IFF_RUNNING; 
+				bcopy(ina->x_host.c_host, es->es_addr, sizeof(es->es_addr));
 			}
+			ecinit(ifp->if_unit); /* does ec_setaddr() */
 			break;
 		    }
 #endif
@@ -869,18 +897,26 @@ int unit;
 	register struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
 	register char nibble;
 	register int i, j;
+	char *cp;
 	/*
 	 * Use the ethernet address supplied
-	 * Routine Courtesy Bill Nesheim, Cornell University.
+	 * NOte that we do a UECLR here, so the recieve buffers
+	 * must be requeued.
 	 */
 	
+#ifdef DEBUG
+	printf("ec_setaddr: setting address for unit %d = ",
+		unit);
+	ether_addr(physaddr); 
+#endif
+	addr->ec_xcr = EC_UECLR;
 	addr->ec_rcr = 0;
-	/* load address of first controller */
+	/* load requested address */
 	for (i = 0; i < 6; i++) { /* 6 bytes of address */
 	    es->es_addr[i] = physaddr[i];
 	    nibble = physaddr[i] & 0xf; /* lower nibble */
 	    addr->ec_rcr = (nibble << 8);
-	    addr->ec_rcr = (nibble << 8) + EC_ASTEP; /* latch nibble */
+	    addr->ec_rcr = (nibble << 8) + EC_AWCLK; /* latch nibble */
 	    addr->ec_rcr = (nibble << 8);
 	    for (j=0; j < 4; j++) {
 		addr->ec_rcr = 0;
@@ -889,7 +925,7 @@ int unit;
 	    }
 	    nibble = (physaddr[i] >> 4) & 0xf; /* upper nibble */
 	    addr->ec_rcr = (nibble << 8);
-	    addr->ec_rcr = (nibble << 8) + EC_ASTEP; /* latch nibble */
+	    addr->ec_rcr = (nibble << 8) + EC_AWCLK; /* latch nibble */
 	    addr->ec_rcr = (nibble << 8);
 	    for (j=0; j < 4; j++) {
 		addr->ec_rcr = 0;
@@ -897,4 +933,24 @@ int unit;
 		addr->ec_rcr = 0;
 	    }
 	}
+#ifdef DEBUG
+	/*
+	 * Read the ethernet address off the board, one nibble at a time.
+	 */
+	addr->ec_xcr = EC_UECLR;
+	addr->ec_rcr = 0; /* read RAM */
+	cp = es->es_addr;
+#undef NEXTBIT
+#define	NEXTBIT	addr->ec_rcr = EC_ASTEP; addr->ec_rcr = 0
+	for (i=0; i < sizeof (es->es_addr); i++) {
+		*cp = 0;
+		for (j=0; j<=4; j+=4) {
+			*cp |= ((addr->ec_rcr >> 8) & 0xf) << j;
+			NEXTBIT; NEXTBIT; NEXTBIT; NEXTBIT;
+		}
+		cp++;
+	}
+	printf("ec_setaddr %d: ROM addr=",ui->ui_unit);
+	ether_addr(es->es_addr);
+#endif
 }
