@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.14 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -45,6 +45,7 @@ res_send(buf, buflen, answer, anslen)
 	HEADER *hp = (HEADER *) buf;
 	HEADER *anhp = (HEADER *) answer;
 	struct iovec iov[2];
+	int terrno = ETIMEDOUT;
 
 #ifdef DEBUG
 	if (_res.options & RES_DEBUG) {
@@ -75,6 +76,7 @@ res_send(buf, buflen, answer, anslen)
 			if (s < 0) {
 				s = socket(AF_INET, SOCK_STREAM, 0);
 				if (s < 0) {
+					terrno = errno;
 #ifdef DEBUG
 					if (_res.options & RES_DEBUG)
 					    perror("socket failed");
@@ -83,6 +85,7 @@ res_send(buf, buflen, answer, anslen)
 				}
 				if (connect(s, &(_res.nsaddr_list[ns]),
 				   sizeof(struct sockaddr)) < 0) {
+					terrno = errno;
 #ifdef DEBUG
 					if (_res.options & RES_DEBUG)
 					    perror("connect failed");
@@ -101,6 +104,7 @@ res_send(buf, buflen, answer, anslen)
 			iov[1].iov_base = buf;
 			iov[1].iov_len = buflen;
 			if (writev(s, iov, 2) != sizeof(len) + buflen) {
+				terrno = errno;
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					perror("write failed");
@@ -120,6 +124,7 @@ res_send(buf, buflen, answer, anslen)
 				len -= n;
 			}
 			if (n <= 0) {
+				terrno = errno;
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					perror("read failed");
@@ -136,6 +141,7 @@ res_send(buf, buflen, answer, anslen)
 				len -= n;
 			}
 			if (n <= 0) {
+				terrno = errno;
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					perror("read failed");
@@ -260,12 +266,17 @@ wait:
 		}
 	   }
 	}
-	(void) close(s);
-	s = -1;
-	if (v_circuit == 0 && gotsomewhere == 0)
-		errno = ECONNREFUSED;
+	if (s >= 0) {
+		(void) close(s);
+		s = -1;
+	}
+	if (v_circuit == 0)
+		if (gotsomewhere == 0)
+			errno = ECONNREFUSED;
+		else
+			errno = ETIMEDOUT;
 	else
-		errno = ETIMEDOUT;
+		errno = terrno;
 	return (-1);
 }
 
