@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)bcd.6	6.3 (Berkeley) %G%
+.\"	@(#)bcd.6	6.4 (Berkeley) %G%
 .\"
 .TH "BCD PPT" 6 ""
 .UC 7
@@ -21,10 +21,15 @@
 bcd \- format input as punch cards
 .br
 ppt \- format input as paper tape
-.SH SYNOPSIS
-\fBbcd\fP [ string ]
 .br
-\fBppt\fP [ string ]
+morse \- format input as morse code
+.SH SYNOPSIS
+\fBbcd\fP [string ...]
+.br
+\fBppt\fP [string ...]
+.br
+\fBmorse\fP [-s] [string ...]
 .SH DESCRIPTION
-\fIBcd\fP and \fIppt\fP convert command line arguments, if
-provided, or standard input into a form familiar to old-timers.
+\fIBcd\fP, \fIppt\fP and \fImorse\fP convert command line arguments, if
+provided, or standard input into a form familiar to old-timers.  The
+\fI-s\fP option for morse produces dots and dashes rather than words.
