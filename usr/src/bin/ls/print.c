@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -225,9 +225,12 @@ static int
 printtype(mode)
 	u_int mode;
 {
-	switch(mode & S_IFMT) {
+	switch (mode & S_IFMT) {
 	case S_IFDIR:
 		(void)putchar('/');
+		return (1);
+	case S_IFIFO:
+		(void)putchar('|');
 		return (1);
 	case S_IFLNK:
 		(void)putchar('@');
