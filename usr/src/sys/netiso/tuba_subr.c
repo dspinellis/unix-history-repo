@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_subr.c	7.2 (Berkeley) %G%
+ *	@(#)tuba_subr.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,6 +40,7 @@
 #include "netiso/iso_var.h"
 
 #include "tuba_addr.h"
+static struct sockaddr_iso null_siso = { sizeof(null_siso), AF_ISO, };
 /*
  * Tuba initialization
  */
@@ -50,6 +51,8 @@ tuba_init()
 	extern struct isopcb tuba_isopcb;
 
 	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;
+	tuba_isopcb.isop_faddr = &tuba_isop.isop_sfaddr;
+	tuba_isopcb.isop_laddr = &tuba_isop.isop_sladdr;
 	if (max_protohdr < TUBAHDRSIZE)
 		max_protohdr = TUBAHDRSIZE;
 	if (max_linkhdr + TUBAHDRSIZE > MHLEN)
@@ -57,27 +60,56 @@ tuba_init()
 	tuba_timer_init();
 }
 
-tuba_output(tp, m)
-	struct tcpcb *tp;
-	register struct mbuf *m;
+static void
+tuba_getaddr(error, sum, siso, index)
+	int *error;
+	u_long *sum;
+	struct sockaddr_iso *siso;
+	u_long index;
 {
-	struct isopcb *isop = (struct isopcb *)tp->t_tuba_pcb;
-	register struct tcpiphdr *n = tp->tp_template;
+	register struct tuba_cache *tc;
+	if (index < tuba_table_size && (tc = tuba_table[index])) {
+		if (siso) {
+			*siso = null_siso;
+			siso->siso_addr = tc->tc_addr;
+		}
+		sum += tc->tc_sum_out
+	} else
+		*error = 1;
+}
 
-	if (n->ni_sum == 0) {
-		register struct inpcb *inp = tp->tp_inpcb;
-		register struct tuba_cache *tc;
-		u_long cksum_fixup;
+tuba_output(m, tp)
+	register struct mbuf *m;
+	struct tcpcb *tp;
+{
+	struct isopcb *isop;
+	register struct tcpiphdr *n;
+	u_long sum, i;
 
-		if ((tc = tuba_table[inp->in_faddr.s_addr]) == 0)
-			return (ENOBUFS);
-		cksum_fixup = tc->tc_sum_out; /* includes -index */
-		if ((tc = tuba_table[inp->in_laddr.s_addr]) == 0)
-			return (ENOBUFS);
-		ICKSUM(cksum_fixup, cksum_fixup + tc->tc_sum_out);
-		n->ti_sum = cksum_fixup;
+	if (tp == 0 || (n = tp->tp_template) == 0) {
+		isop = &tuba_isopcb;
+		i = sum = 0;
 		n = mtod(m, struct tcpiphdr *);
-		ICKSUM(n->ti_sum, cksum_fixup + n->ti_sum);
+		tuba_getaddr(&i, &sum, tuba_isop.isop_faddr, n->ti_dst.s_addr);
+		tuba_getaddr(&i, &sum, tuba_isop.isop_laddr, n->ti_src.s_addr);
+		goto adjust;
+	}
+	isop = (struct isopcb *)tp->t_tuba_pcb;
+	if (n->ni_sum == 0) {
+		i = sum = 0;
+		tuba_getaddr(&i, &sum, (struct sockaddr_iso *)0,
+				n->ti_dst.s_addr);
+		tuba_getaddr(&i, &sum, (struct sockaddr_iso *)0,
+				n->ti_src.s_addr);
+		ICKSUM(sum, sum);
+		n->ti_sum = sum;
+		n = mtod(m, struct tcpiphdr *);
+	adjust:
+		if (i) {
+			m_freem(m);
+			return (ENOBUFS);
+		}
+		ICKSUM(n->ti_sum, sum + n->ti_sum);
 	}
 	m->m_len -= sizeof (struct ip);
 	m->m_pkthdr.len -= sizeof (struct ip);
@@ -89,7 +121,7 @@ tuba_refcnt(isop, delta)
 	struct isopcb *isop;
 {
 	register struct tuba_cache *tc;
-	unsigned index;
+	unsigned index, sum;
 
 	if (delta != 1)
 		delta = -1;
@@ -116,7 +148,6 @@ tuba_pcbdetach(isop)
 	iso_pcbdetach(isop);
 }
 
-static struct sockaddr_iso null_siso = { sizeof(null_siso), AF_ISO, };
 /*
  * Avoid  in_pcbconnect in faked out tcp_input()
  */
