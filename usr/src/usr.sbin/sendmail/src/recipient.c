@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.80 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.81 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -560,7 +560,7 @@ recipient(a, sendq, aliaslevel, e)
 		if (q == NULL)
 		{
 			a->q_flags |= QBADADDR;
-			a->q_flags = "5.4.6";
+			a->q_status = "5.4.6";
 			usrerr("554 aliasing/forwarding loop broken");
 		}
 	}
