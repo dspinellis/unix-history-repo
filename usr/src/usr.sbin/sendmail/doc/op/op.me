@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.10 (Berkeley) %G%
+.\"	@(#)op.me	6.11 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.10
+Version 6.11
 .sp
-For Sendmail Version 6.11
+For Sendmail Version 6.23
 .)l
 .sp 2
 .pp
@@ -797,10 +797,12 @@ even the most mundane and uninteresting events
 are recorded for posterity.
 As a convention,
 log levels under ten
-are considered
+are considered generally
 .q useful;
-log levels above ten
-are usually for debugging purposes.
+log levels above 64
+are reserved for debugging purposes.
+Levels from 11\-64 are reserved for verbose information
+that some sites might want.
 .pp
 A complete description of the log levels
 is given in section 4.6.
@@ -1541,34 +1543,39 @@ The levels are as follows:
 .ip 0
 No logging.
 .ip 1
-Major problems only.
+Serious system failures and potential security problems.
 .ip 2
-Message collections and failed deliveries.
+Lost communications (network problems) and protocol failures.
 .ip 3
-Successful deliveries.
+Other serious failures.
 .ip 4
+Minor failures.
+.ip 5
+Message collection statistics.
+.ip 6
+Creation of error messages,
+VRFY and EXPN commands.
+.ip 7
+Delivery failures (host or user unknown, etc.).
+.ip 8
+Successful deliveries.
+.ip 9
 Messages being deferred
 (due to a host being down, etc.).
-.ip 5
-Normal message queueups.
-.ip 6
-Unusual but benign incidents,
-e.g.,
-trying to process a locked queue file.
-.ip 9
-Log internal queue id to external message id mappings.
-This can be useful for tracing a message
-as it travels between several hosts.
-Also logs any VRFY or EXPN requests.
-.ip 11
+.ip 10
+Database expansion (alias, forward, and userdb lookups).
+.ip 15
+Automatic alias database rebuilds.
+.ip 20
 Logs attempts to run locked queue files.
 These are not errors,
 but can be useful to note if your queue appears to be clogged.
-.ip 12
-Several messages that are basically only of interest
-when debugging.
-.ip 16
-Verbose information regarding the queue.
+.ip 30
+Lost locks (only if using lockf instead of flock).
+.lp
+Additionally,
+values above 64 are reserved for extremely verbose debuggging output.
+No normal site would ever set these.
 .sh 2 "File Modes"
 .pp
 There are a number of files
@@ -2763,6 +2770,13 @@ Mprog, P=/bin/sh, F=lsD, A=sh \-c $u
 M*file*, F=lsDEu, A=NULL
 M*include*, F=su, A=NULL
 .)b
+.pp
+The Sender and Recipient rewriting sets
+may either be a simple integer
+or may be two integers separated by a slash;
+if so, the first rewriting set is applied to envelope
+addresses
+and the second is applied to headers.
 .sh 3 "H \*- define header"
 .pp
 The format of the header lines that sendmail inserts into the message
@@ -4916,6 +4930,16 @@ these have both been made visible;
 the
 .b $<
 macro gives access to the envelope sender information.
+.sh 2 "Separate Envelope/Header Processing"
+.pp
+The
+.b S enderRWSet
+and
+.b R ecipientRWset
+arguments for mailers
+can be specified as
+.i envelope/header
+to give different rewritings for envelope versus header addresses.
 .sh 2 "Dynamic Header Allocation"
 .pp
 The fixed size limit on header lines has been eliminated.
@@ -5341,7 +5365,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.10
+.\"Version 6.11
 .\".ce 0
 .pn 2
 .bp
