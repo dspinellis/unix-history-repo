@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)makemap.8	5.1 (Berkeley) %G%
+.\"     @(#)makemap.8	5.2 (Berkeley) %G%
 .\"
 .TH MAKEMAP 8 November\ 16,\ 1992
 .UC 6
@@ -13,6 +13,8 @@ makemap \- create database maps for sendmail
 .B makemap
 [
 \-N
+] [
+\-f
 ] [
 \-o
 ] [
@@ -70,6 +72,14 @@ Include the null byte that terminates strings
 in the map.
 This must match the \-N flag in the sendmail.cf
 ``K'' line.
+.IP \-f
+Fold all upper case letters in the key
+to lower case;
+this is intended to mesh with the
+\-f flag in the
+.B K
+line in sendmail.cf.
+The value is not case folded.
 .IP \-o
 Append to an old file.
 This allows you to augment an existing file.
