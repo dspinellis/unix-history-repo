@@ -1,4 +1,4 @@
-/*	vfs_bio.c	3.7	%G%	*/
+/*	vfs_bio.c	3.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -584,8 +584,6 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		bp->b_bcount = c;
 		bp->b_blkno = dblkno;
 		bp->b_dev = dev;
-		if (dev == swapdev)
-			bp->b_blkno += swplo;
 		(*bdevsw[major(dev)].d_strategy)(bp);
 		if (flag & B_DIRTY) {
 			if (c < nbytes)

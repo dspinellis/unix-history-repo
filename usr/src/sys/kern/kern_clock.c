@@ -1,4 +1,4 @@
-/*	kern_clock.c	3.11	%G%	*/
+/*	%H%	3.12	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -46,7 +46,7 @@ caddr_t pc;
 	register struct callo *p1, *p2;
 	register struct proc *pp;
 	register int s;
-	int a;
+	int a, cpstate;
 
 	/*
 	 * reprime clock
@@ -125,19 +125,20 @@ out:
 		if (s > u.u_vm.vm_maxrss)
 			u.u_vm.vm_maxrss = s;
 	}
-	a = dk_busy&07;
 	if (USERMODE(ps)) {
 		u.u_vm.vm_utime++;
 		if(u.u_procp->p_nice > NZERO)
-			a += 8;
+			cpstate = CP_NICE;
+		else
+			cpstate = CP_USER;
 	} else {
-		a += 16;
+		cpstate = CP_SYS;
 		if (noproc)
-			a += 8;
+			cpstate = CP_IDLE;
 		else
 			u.u_vm.vm_stime++;
 	}
-	dk_time[a]++;
+	dk_time[cpstate][dk_busy&(DK_NSTATES-1)]++;
 	if (!noproc) {
 		pp = u.u_procp;
 		if(++pp->p_cpu == 0)

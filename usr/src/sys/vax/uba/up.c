@@ -1,6 +1,6 @@
-/*	%H%	3.13	%G%	*/
+/*	%H%	3.14	%G%	*/
 
-#define	spl5	spl6
+#define	spl5	spl6		/* block clock, for delay loop's sake */
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
@@ -29,11 +29,14 @@
  * but we have previously experienced problems with it set this way.
  * We intend to try this again in the near future.
  *
- *	wnj	June 14, 1980
+ * NB: OUR SYSTEM CURRENTLY GETS UBA ERRORS WHEN RUNNING THIS DRIVER
+ *     AND THE BUS OCCASIONALLY HANGS, NECESSITATING THE DEVIE RESET
+ *     CODE WHICH RE-INITS THE UNIBUS.  YECHHH.
  */
 
 #include "../h/param.h"
 #include "../h/systm.h"
+#include "../h/dk.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
@@ -54,8 +57,8 @@
  * If DK_N+NUP > DK_NMAX, then transfer stats are divided per drive.
  * If DK_NMAX is yet smaller, some drives are not monitored.
  */
-#define	DK_N	1
-#define	DK_NMAX	2
+#define	DK_N	2
+#define	DK_NMAX	3
 
 #define	ushort	unsigned short
 
@@ -106,21 +109,18 @@ int	upseek;
 /*
  * Constants controlling on-cylinder SEARCH usage.
  *
- * 	SDIST/2 msec		time needed to start transfer
- * 	IDIST/2 msec		slop for interrupt latency
- * 	RDIST/2 msec		tolerable rotational latency when on-cylinder
+ * 	upSDIST/2 msec		time needed to start transfer
+ * 	upRDIST/2 msec		tolerable rotational latency when on-cylinder
  *
- * If we are no closer than SDIST sectors and no further than SDIST+RDIST
+ * If we are no closer than upSDIST sectors and no further than upSDIST+upRDIST
  * and in the driver then we take it as it is.  Otherwise we do a SEARCH
- * requesting an interrupt SDIST+IDIST sectors in advance.
+ * requesting an interrupt upSDIST sectors in advance.
  */
-#define	_SDIST	6		/* 3.0 msec */
-#define	_RDIST	6		/* 2.5 msec */
-#define	_IDIST	1		/* 0.5 msec */
+#define	_upSDIST	6		/* 3.0 msec */
+#define	_upRDIST	6		/* 3.0 msec */
 
-int	SDIST = _SDIST;
-int	RDIST = _RDIST;
-int	IDIST = _IDIST;
+int	upSDIST = _upSDIST;
+int	upRDIST = _upRDIST;
 
 /*
  * To fill a 300M drive:
@@ -363,14 +363,14 @@ register unit;
 	 * Do enough of the disk address decoding to determine
 	 * which cylinder and sector the request is on.
 	 * If we are on the correct cylinder and the desired sector
-	 * lies between SDIST and SDIST+RDIST sectors ahead of us, then
+	 * lies between upSDIST and upSDIST+upRDIST sectors ahead of us, then
 	 * we don't bother to SEARCH but just begin the transfer asap.
-	 * Otherwise ask for a interrupt SDIST+IDIST sectors ahead.
+	 * Otherwise ask for a interrupt upSDIST sectors ahead.
 	 */
 	bn = dkblock(bp);
 	cn = bp->b_cylin;
 	sn = bn%(NSECT*NTRAC);
-	sn = (sn+NSECT-SDIST)%NSECT;
+	sn = (sn+NSECT-upSDIST)%NSECT;
 
 	if (cn - upaddr->updc)
 		goto search;		/* Not on-cylinder */
@@ -379,7 +379,7 @@ register unit;
 	csn = (upaddr->upla>>6) - sn - 1;
 	if (csn < 0)
 		csn += NSECT;
-	if (csn > NSECT-RDIST)
+	if (csn > NSECT-upRDIST)
 		goto done;
 
 search:
