@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.10	82/07/24	*/
+/*	kern_resource.c	4.11	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,7 @@
 #include "../h/proc.h"
 #include "../h/seg.h"
 #include "../h/fs.h"
+#include "../h/uio.h"
 
 struct	inode *acctp;
 struct	inode *savacctp;
@@ -100,13 +101,10 @@ acct()
 		ap->ac_tty = NODEV;
 	ap->ac_flag = u.u_acflag;
 	siz = ip->i_size;
-	u.u_offset = siz;
-	u.u_base = (caddr_t)ap;
-	u.u_count = sizeof(acctbuf);
-	u.u_segflg = 1;
-	u.u_error = 0;
-	writei(ip);
-	if(u.u_error)
+	u.u_error =
+	    rdwri(UIO_WRITE, ip, (caddr_t)ap, sizeof (acctbuf), siz,
+		1, (int *)0);
+	if (u.u_error)
 		ip->i_size = siz;
 	iunlock(ip);
 }
