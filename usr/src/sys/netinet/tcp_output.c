@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.43	82/08/02	*/
+/*	tcp_output.c	4.44	82/08/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -279,7 +279,6 @@ noopt:
 	 * (This will keep happy those implementations which only
 	 * give data to the user when a buffer fills or a PUSH comes in.
 	 */
-/*	if (len && (ti->ti_flags & (TH_FIN|TH_RST|TH_SYN)) == 0) */
 	if (len && off+len == so->so_snd.sb_cc)
 		ti->ti_flags |= TH_PUSH;
 
