@@ -18,28 +18,31 @@
  * 
  */
 
-#if HERE!=VAX || TARGET!=VAX || FAMILY!=PCC
+#if HERE!=TARGET || FAMILY!=PCC || (HERE!=VAX && HERE!=TAHOE)
 	Wrong Definitions File!
 #endif
 
-#define PASS1NAME	"/usr/libexec/f77pass1"
-#define PASS2NAME	"/usr/libexec/f1"
-#define PASS2OPT	"/usr/libexec/c2"
-#define ASMNAME		"/usr/bin/as"
-#define LDNAME		"/usr/bin/ld"
+#define	PASS1NAME	"/usr/libexec/f77pass1"
+#define	PASS2NAME	"/usr/libexec/f1"
+#ifdef INLINE
+#define	PASS2INAME	"/usr/libexec/if1"
+#endif
+#define	PASS2OPT	"/usr/libexec/c2"
+#define	ASMNAME		"/usr/bin/as"
+#define	LDNAME		"/usr/bin/ld"
 #define	CATNAME		"/bin/cat"
-#define FOOTNAME	"/usr/lib/crt0.o"
-#define PROFFOOT	"/usr/lib/mcrt0.o"
+#define	FOOTNAME	"/usr/lib/crt0.o"
+#define	PROFFOOT	"/usr/lib/mcrt0.o"
 #define	GPRFFOOT	"/usr/lib/gcrt0.o"
-#define TEMPPREF	"fort"
+#define	TEMPPREF	"fort"
 
 static char *liblist [] = {
 	"-lU77",
 	"-lF77",
 	"-lI77",
 	"-lm",
-	"-lc",
 	"-lcompat",
+	"-lc",
 	NULL
 };
 static char *p_liblist [] = {
@@ -47,8 +50,8 @@ static char *p_liblist [] = {
 	"-lF77_p",
 	"-lI77_p",
 	"-lm_p",
-	"-lc_p",
 	"-lcompat_p",
+	"-lc_p",
 	NULL
 };
 
