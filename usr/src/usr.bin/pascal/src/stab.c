@@ -329,8 +329,8 @@ stabglabel( label , line )
     /*
      *	global constants
      */
-stabgconst( const , line )
-    char	*const;
+stabgconst( constant , line )
+    char	*constant;
     int		line;
     {
 
