@@ -296,6 +296,7 @@ pppclose(tp, flag)
     struct mbuf *m;
     int s;
 
+    ttywflush(tp);
     s = splimp();		/* paranoid; splnet probably ok */
     tp->t_line = 0;
     sc = (struct ppp_softc *)tp->t_sc;

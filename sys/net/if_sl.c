@@ -332,6 +332,7 @@ slclose(tp)
 	register struct sl_softc *sc;
 	int s;
 
+	ttywflush(tp);
 	s = splimp();		/* actually, max(spltty, splnet) */
 	tp->t_line = 0;
 	sc = (struct sl_softc *)tp->t_sc;
