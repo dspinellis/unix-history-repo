@@ -160,6 +160,8 @@ netinet/tcp_subr.c	optional inet
 netinet/tcp_timer.c	optional inet
 netinet/tcp_usrreq.c	optional inet
 netinet/udp_usrreq.c	optional inet
+netinet/igmp.c		optional inet multicast
+netinet/ip_mroute.c	optional inet multicast mrouting
 netns/idp_usrreq.c	optional ns
 netns/ns.c		optional ns
 netns/ns_error.c	optional ns
