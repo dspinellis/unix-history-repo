@@ -1,0 +1,178 @@
+.DA
+.ds RF Company Confidential
+.ds LF Sun Microsystems
+.nr PS 12
+.nr VS 14
+.ps 12
+.vs 14
+.TL
+Fortran Benchmarks from General Electric
+.AU
+Evan Adams
+.LP
+Walter Sawka from the New York office sent a memo
+on June 21, 1983 detailing fortran performance.
+It included the source and results to three fortran
+benchmarks.
+.LP
+I ran the benchmarks on the following configurations:
+.TS
+center;
+l l l l.
+CPU	Unix	Fortran	Memory
+.sp 4p
+Sun 1	Version 7	SVS	1 Meg
+Sun 1.5	Sun 0.4	Berkeley	2 Meg
+Sun 2	Sun 0.3	Berkeley	2 Meg
+Sun 2	Sun 0.3	Berkeley/Optimizer	2 Meg
+VAX 750	4.1cBSD	Berkeley/Optimizer	4 Meg
+.TE
+.LP
+The benchmarks are:
+.IP 1)
+Matrix inversion of double precision values.
+.IP 2)
+A bubble sort of integers.
+.IP 3)
+A prime number generator.
+.LP
+.TS
+center;
+ c|c|c s|c s|
+ c|c|c s|c s|
+ c|c|c s|c s|
+ c|c|c s|c s|
+|l|n|n|n|n|n|.
+	_	_	_	_	_
+.sp 4p
+	Matrix Inversion	Bubble Sort	Prime Numbers
+.sp 4p
+	_	_	_	_	_
+.sp 4p
+	Dimension	Number of Elements	Highest N
+.sp 4p
+_	_	_	_	_	_
+.sp 4p
+Configuration	50	1000	2000	10000	50000
+.sp 4p
+=
+.sp 3p
+Version 7	91.7	23.1	88.9	24.3	180.1
+.sp 3p
+_
+.sp 3p
+Sun 1.5	74.9	29.0	112.7	49.0/28.5\(dg	290.3/188.6\(dg
+.sp 3p
+_
+.sp 3p
+Sun 2	60.5	22.8	88.0	39.1/22.7\(dg	231.4/150.6\(dg
+.sp 3p
+_
+.sp 3p
+Sun 2 (OPT)	55.9	15.8	59.9	38.3/22.7\(dg	227.6/150.6\(dg
+.sp 3p
+_
+.sp 3p
+Apollo 68000	61	30	122	19	164
+.sp 3p
+_
+.sp 3p
+Apollo DN300	51	25	94	16	130
+.sp 3p
+_
+.sp 3p
+Apollo (PE)	28	22	88	14	127
+.sp 3p
+_
+.sp 3p
+VAX (OPT)	19.3	12.1	46.4	14.5	87.2
+.sp 3p
+_
+.TE
+.LP
+\(dg using a single precision square root function
+.LP
+All times are in seconds.
+The times for the Apollo machines are from Walt's memo.
+His memo claims the times are elapsed (wall clock) time.
+This seems silly since most of the programs prompt for some information.
+The times for V7 and 4.2 are user time as given by the /bin/time command.
+The Apollo is a 68000 at 10Mhz,
+the Apollo DN300 is a 68010 at 10MHz, and
+the Apollo (PE) is a 68000 at 10Mhz with the performance enhancement option.
+.LP
+The Apollo numbers for the prime number generator 
+with a highest N of 10000 look suspect.
+I find it difficult to believe that the Apollo (PE)
+beat the VAX in this benchmark while it was
+consistently beaten badly in the other benchmarks.
+.LP
+Berkeley fortran fared poorly in the prime number generator.
+This program makes many calls to the square root function.
+The square root function is part of the math library and is written
+in C.
+To take the square root of a single precision number
+it is converted to doubled precision and passed to sqrt().
+A double precision square root is calculated and returned where
+it is promptly converted to single precision.
+Approximately 75% of the execution time was spent in sqrt() and its
+descendants.
+.LP
+I wrote a single precision sqrt() routine in 
+fortran and the prime number generator ran 43% faster on 
+the Sun 2.
+.LP
+The fortran optimizer mainly improves array references within 
+inner loops.
+The bubble sort improves by 30%; the prime number generator
+does not change at all.
+.LP
+It should also be noted that the system times on the 4.2 systems were
+2 to 7 times greater than the system times for the version 7 system.
+On version 7, the system time averaged 2.4% of the user time.
+On the Sun 2, the system time averaged 8.2% of the user time.
+.SH
+Conclusions
+.LP
+The same object code ran on the Sun 1.5 and the Sun 2.
+The Sun 2 execution times averaged 20.6% less than the Sun 1.5.
+There was speculation that the Sun 2 performance would improve
+by as much as 30% as compared to Sun 1.5.
+Some people may be disappointed by these numbers.
+.LP
+The Sun 2 with the fortran optimizer beats the best Apollo
+time by 28% for the sorting program.
+I believe that the Apollo performance enhancement option includes
+hardware floating point.
+Still, the Sun 2 is 9% slower than the Apollo DN300 on the matrix
+inversion program and a factor of two slower on the prime number
+generator.
+Taking into account the double precision/single precision problem
+for the prime number generator, the Sun 2 is 13% slower
+than the Apollo DN300.
+.LP
+The fortran optimizer is still in a developement stage and
+is not very reliable yet.
+It is not ready for release!
+.SH
+Future
+.LP
+The benchmark numbers give us a reflection of where
+we are at today.
+The ultimate goal is
+.IP 1)
+A Sun 2 CPU,
+.IP 2)
+Unix 4.2BSD (not 4.1c),
+.IP 3)
+the SKY floating point board,
+.IP 4)
+the fortran optimizer,
+.IP 5)
+a single precision and double precision math library, and
+.IP 6)
+an improved fortran I/O library.
+.LP
+Development is in progress for everything but the libraries.
+It is conjecture, but with each of these components in place
+we should beat Apollo consistently. 
