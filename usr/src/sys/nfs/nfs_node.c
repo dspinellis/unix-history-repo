@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	8.5 (Berkeley) %G%
+ *	@(#)nfs_node.c	8.6 (Berkeley) %G%
  */
 
 
@@ -128,6 +128,7 @@ int
 nfs_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
+		struct proc *a_p;
 	} */ *ap;
 {
 	register struct nfsnode *np;
@@ -155,6 +156,7 @@ nfs_inactive(ap)
 	}
 	np->n_flag &= (NMODIFIED | NFLUSHINPROG | NFLUSHWANT | NQNFSEVICTED |
 		NQNFSNONCACHE | NQNFSWRITE);
+	VOP_UNLOCK(ap->a_vp, 0, ap->a_p);
 	return (0);
 }
 
