@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -203,6 +203,8 @@ lostconn()
 	dologout(-1);
 }
 
+static char ttyline[20];
+
 pass(passwd)
 	char *passwd;
 {
@@ -245,7 +247,8 @@ pass(passwd)
 	else
 		reply(230, "Guest login ok, access restrictions apply.");
 	logged_in = 1;
-	dologin(pw);
+	(void)sprintf(ttyline, "ftp%d", getpid());
+	logwtmp(ttyline, pw->pw_name, remotehost);
 	seteuid(pw->pw_uid);
 	/*
 	 * Save everything so globbing doesn't
@@ -773,34 +776,6 @@ dolog(sin)
 	syslog(LOG_INFO,"FTPD: connection from %s at %s", remotehost, ctime(&t));
 }
 
-#include <utmp.h>
-
-#define	SCPYN(a, b)	(void) strncpy(a, b, sizeof (a))
-struct	utmp utmp;
-
-/*
- * Record login in wtmp file.
- */
-dologin(pw)
-	struct passwd *pw;
-{
-	char line[32];
-
-	if (wtmp >= 0) {
-		/* hack, but must be unique and no tty line */
-		(void) sprintf(line, "ftp%d", getpid());
-		SCPYN(utmp.ut_line, line);
-		SCPYN(utmp.ut_name, pw->pw_name);
-		SCPYN(utmp.ut_host, remotehost);
-		utmp.ut_time = (long) time((time_t *) 0);
-		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
-		if (!guest) {		/* anon must hang on */
-			(void) close(wtmp);
-			wtmp = -1;
-		}
-	}
-}
-
 /*
  * Record logout in wtmp file
  * and exit with supplied status.
@@ -808,129 +783,12 @@ dologin(pw)
 dologout(status)
 	int status;
 {
-
 	if (logged_in) {
 		(void) seteuid(0);
-		if (wtmp < 0)
-			wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
-		if (wtmp >= 0) {
-			SCPYN(utmp.ut_name, "");
-			SCPYN(utmp.ut_host, "");
-			utmp.ut_time = (long) time((time_t *) 0);
-			(void) write(wtmp, (char *)&utmp, sizeof (utmp));
-			(void) close(wtmp);
-		}
+		logwtmp(ttyline, "", "");
 	}
 	/* beware of flushing buffers after a SIGPIPE */
 	_exit(status);
-}
-
-/*
- * Special version of popen which avoids
- * call to shell.  This insures noone may 
- * create a pipe to a hidden program as a side
- * effect of a list or dir command.
- */
-#define	tst(a,b)	(*mode == 'r'? (b) : (a))
-#define	RDR	0
-#define	WTR	1
-static	int popen_pid[5];
-
-static char *
-nextarg(cpp)
-	char *cpp;
-{
-	register char *cp = cpp;
-
-	if (cp == 0)
-		return (cp);
-	while (*cp && *cp != ' ' && *cp != '\t')
-		cp++;
-	if (*cp == ' ' || *cp == '\t') {
-		*cp++ = '\0';
-		while (*cp == ' ' || *cp == '\t')
-			cp++;
-	}
-	if (cp == cpp)
-		return ((char *)0);
-	return (cp);
-}
-
-FILE *
-popen(cmd, mode)
-	char *cmd, *mode;
-{
-	int p[2], ac, gac;
-	register myside, hisside, pid;
-	char *av[20], *gav[512];
-	register char *cp;
-
-	if (pipe(p) < 0)
-		return (NULL);
-	cp = cmd, ac = 0;
-	/* break up string into pieces */
-	do {
-		av[ac++] = cp;
-		cp = nextarg(cp);
-	} while (cp && *cp && ac < 20);
-	av[ac] = (char *)0;
-	gav[0] = av[0];
-	/* glob each piece */
-	for (gac = ac = 1; av[ac] != NULL; ac++) {
-		char **pop;
-		extern char **glob(), **copyblk();
-
-		pop = glob(av[ac]);
-		if (pop == (char **)NULL) {	/* globbing failed */
-			char *vv[2];
-
-			vv[0] = av[ac];
-			vv[1] = 0;
-			pop = copyblk(vv);
-		}
-		av[ac] = (char *)pop;		/* save to free later */
-		while (*pop && gac < 512)
-			gav[gac++] = *pop++;
-	}
-	gav[gac] = (char *)0;
-	myside = tst(p[WTR], p[RDR]);
-	hisside = tst(p[RDR], p[WTR]);
-	if ((pid = fork()) == 0) {
-		/* myside and hisside reverse roles in child */
-		(void) close(myside);
-		(void) dup2(hisside, tst(0, 1));
-		(void) close(hisside);
-		execv(gav[0], gav);
-		_exit(1);
-	}
-	for (ac = 1; av[ac] != NULL; ac++)
-		blkfree((char **)av[ac]);
-	if (pid == -1)
-		return (NULL);
-	popen_pid[myside] = pid;
-	(void) close(hisside);
-	return (fdopen(myside, mode));
-}
-
-pclose(ptr)
-	FILE *ptr;
-{
-	register f, r, (*hstat)(), (*istat)(), (*qstat)();
-	int status;
-
-	f = fileno(ptr);
-	(void) fclose(ptr);
-	istat = signal(SIGINT, SIG_IGN);
-	qstat = signal(SIGQUIT, SIG_IGN);
-	hstat = signal(SIGHUP, SIG_IGN);
-	while ((r = wait(&status)) != popen_pid[f] && r != -1)
-		;
-	if (r == -1)
-		status = -1;
-	(void) signal(SIGINT, istat);
-	(void) signal(SIGQUIT, qstat);
-	(void) signal(SIGHUP, hstat);
-	return (status);
 }
 
 /*
