@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *	$Id: vm_mmap.c,v 1.8 1993/10/16 16:20:39 rgrimes Exp $
+ *	$Id: vm_mmap.c,v 1.9 1993/11/20 22:27:44 davidg Exp $
  */
 
 /*
@@ -489,11 +489,10 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 		vp = (struct vnode *)handle;
 		if (vp->v_type == VCHR) {
 			type = PG_DEVICE;
-			handle = (caddr_t)vp;
 		} else
 			type = PG_VNODE;
 	}
-	pager = vm_pager_allocate(type, handle, size, prot);
+	pager = vm_pager_allocate(type, handle, size, prot, foff);
 	if (pager == NULL)
 		return (type == PG_DEVICE ? EINVAL : ENOMEM);
 	/*
