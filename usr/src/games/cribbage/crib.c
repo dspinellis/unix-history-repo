@@ -53,10 +53,10 @@ char	*argv[];
 	signal(SIGINT, bye);
 	crmode();
 	noecho();
-	Playwin = subwin(stdscr, PLAY_Y, PLAY_X, 0, X_SCORE_SZ);
-	Tablewin = subwin(stdscr, TABLE_Y, TABLE_X, 0, PLAY_X + X_SCORE_SZ);
-	Compwin = subwin(stdscr, COMP_Y, COMP_X, 0, TABLE_X + PLAY_X + X_SCORE_SZ);
-	Msgwin = subwin(stdscr, MSG_Y, MSG_X, Y_SCORE_SZ + 1, 0);
+	Playwin = subwin(stdscr, PLAY_Y, PLAY_X, 0, 0);
+	Tablewin = subwin(stdscr, TABLE_Y, TABLE_X, 0, PLAY_X);
+	Compwin = subwin(stdscr, COMP_Y, COMP_X, 0, TABLE_X + PLAY_X);
+	Msgwin = subwin(stdscr, MSG_Y, MSG_X, Y_MSG_START, SCORE_X + 1);
 	leaveok(Playwin, TRUE);
 	leaveok(Tablewin, TRUE);
 	leaveok(Compwin, TRUE);
@@ -77,6 +77,7 @@ char	*argv[];
 	}
 	playing = TRUE;
 	do {
+	    wclrtobot(Msgwin);
 	    msg(quiet ? "L or S? " : "Long (to 121) or Short (to 61)? ");
 	    if (glimit == SGAME)
 		glimit = (getuchar() == 'L' ? LGAME : SGAME);
@@ -192,7 +193,7 @@ game()
 	    wrefresh(Tablewin);
 	    werase(Compwin);
 	    wrefresh(Compwin);
-	    msg("Loser (%s) gets first crib.",  (iwon ? "you" : "me"));
+	    msg("Loser (%s) gets first crib",  (iwon ? "you" : "me"));
 	    compcrib = !iwon;
 	}
 
@@ -343,7 +344,7 @@ int		pos;
 	    msgcard(turnover, FALSE);
 	    endmsg();
 	    if (turnover.rank == JACK) {
-		msg("I get two for his heels.");
+		msg("I get two for his heels");
 		win = chkscr(&cscore,2 );
 	    }
 	}
@@ -354,7 +355,7 @@ int		pos;
 	    msgcard(turnover, FALSE);
 	    endmsg();
 	    if (turnover.rank == JACK) {
-		msg("You get two for his heels.");
+		msg("You get two for his heels");
 		win = chkscr(&pscore, 2);
 	    }
 	}
@@ -375,13 +376,13 @@ BOOLEAN		mycrib, blank;
 	if (mycrib)
 	    cardx = CRIB_X;
 	else
-	    cardx = X_SCORE_SZ;
+	    cardx = 0;
 
 	mvaddstr(CRIB_Y, cardx + 1, "CRIB");
 	prcard(stdscr, CRIB_Y + 1, cardx, turnover, blank);
 
 	if (mycrib)
-	    cardx = X_SCORE_SZ;
+	    cardx = 0;
 	else
 	    cardx = CRIB_X;
 
@@ -425,13 +426,13 @@ BOOLEAN		mycrib;
 	    if (myturn) {				/* my tyrn to play */
 		if (!anymove(ch, cnum, sum)) {		/* if no card to play */
 		    if (!mego && cnum) {		/* go for comp? */
-			msg("GO.");
+			msg("GO");
 			mego = TRUE;
 		    }
 		    if (anymove(ph, pnum, sum))		/* can player move? */
 			myturn = !myturn;
 		    else {				/* give him his point */
-			msg(quiet ? "You get one." : "You get one point.");
+			msg(quiet ? "You get one" : "You get one point");
 			if (chkscr(&pscore, 1))
 			    return TRUE;
 			sum = 0;
@@ -470,13 +471,14 @@ BOOLEAN		mycrib;
 	    else {
 		if (!anymove(ph, pnum, sum)) {		/* can player move? */
 		    if (!ugo && pnum) {			/* go for player */
-			msg("You have a GO.");
+			msg("You have a GO");
 			ugo = TRUE;
 		    }
 		    if (anymove(ch, cnum, sum))		/* can computer play? */
 			myturn = !myturn;
 		    else {
-			msg(quiet ? "I get one." : "I get one point.");
+			msg(quiet ? "I get one" : "I get one point");
+			do_wait();
 			if (chkscr(&cscore, 1))
 			    return TRUE;
 			sum = 0;
@@ -497,7 +499,7 @@ BOOLEAN		mycrib;
 			    if (sum + VAL(crd.rank) <= 31)
 				break;
 			    else
-				msg("Total > 31 -- try again.");
+				msg("Total > 31 -- try again");
 			}
 		    makeknown(&crd, 1);
 		    remove(crd, ph, pnum--);
@@ -513,6 +515,8 @@ BOOLEAN		mycrib;
 		}
 	    }
 	    if (sum >= 31) {
+		if (!myturn)
+		    do_wait();
 		sum = 0;
 		mego = ugo = FALSE;
 		Tcnt = 0;
@@ -527,6 +531,7 @@ BOOLEAN		mycrib;
 	if (last)
 	    if (played) {
 		msg(quiet ? "I get one for last" : "I get one point for last");
+		do_wait();
 		if (chkscr(&cscore, 1))
 		    return TRUE;
 	    }
@@ -564,6 +569,7 @@ BOOLEAN		mycrib;
 		return TRUE;
 	    if (comphand(chand, "hand"))
 		return TRUE;
+	    do_wait();
 	    if (comphand(crib, "crib"))
 		return TRUE;
 	}

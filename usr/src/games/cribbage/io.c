@@ -360,24 +360,29 @@ int	args;
  * endmsg:
  *	Display a new msg.
  */
+
+int	Lineno = 0;
+
 endmsg()
 {
     register int	len;
     register char	*mp, *omp;
-    static int		lineno = 0;
+    static int		lastline = 0;
 
     /*
-     * All messages should start with uppercase, except ones that
-     * start with a pack addressing character
+     * All messages should start with uppercase
      */
+    mvaddch(lastline + Y_MSG_START, SCORE_X, ' ');
     if (islower(Msgbuf[0]) && Msgbuf[1] != ')')
 	Msgbuf[0] = toupper(Msgbuf[0]);
     mp = Msgbuf;
     len = strlen(mp);
-    if (len / MSG_X + lineno > MSG_Y)
-	lineno = 0;
+    if (len / MSG_X + Lineno >= MSG_Y)
+	Lineno = 0;
+    mvaddch(Lineno + Y_MSG_START, SCORE_X, '*');
+    lastline = Lineno;
     do {
-	mvwaddstr(Msgwin, lineno, 0, mp);
+	mvwaddstr(Msgwin, Lineno, 0, mp);
 	if ((len = strlen(mp)) > MSG_X) {
 	    omp = mp;
 	    for (mp = &mp[MSG_X-1]; *mp != ' '; mp--)
@@ -385,14 +390,14 @@ endmsg()
 	    while (*mp == ' ')
 		mp--;
 	    mp++;
-	    wmove(Msgwin, lineno, mp - omp);
+	    wmove(Msgwin, Lineno, mp - omp);
 	    wclrtoeol(Msgwin);
 	}
-	if (++lineno >= MSG_Y)
-	    lineno = 0;
+	if (++Lineno >= MSG_Y)
+	    Lineno = 0;
     } while (len > MSG_X);
     wclrtoeol(Msgwin);
-    Mpos = Newpos;
+    Mpos = Newpos % MSG_X;
     Newpos = 0;
     wrefresh(Msgwin);
     refresh();
@@ -418,6 +423,28 @@ int	*args;
     _doprnt(fmt, args, &junk);
     putc('\0', &junk);
     Newpos = strlen(Msgbuf);
+}
+
+/*
+ * do_wait:
+ *	Wait for the user to type ' ' before doing anything else
+ */
+do_wait()
+{
+    register int line;
+    static char prompt[] = { '-', '-', 'M', 'o', 'r', 'e', '-', '-', '\0' };
+
+    if (Mpos + sizeof prompt < MSG_X)
+	wmove(Msgwin, Lineno > 0 ? Lineno - 1 : MSG_Y - 1, Mpos);
+    else {
+	mvwaddch(Msgwin, Lineno, 0, ' ');
+	wclrtoeol(Msgwin);
+	if (++Lineno >= MSG_Y)
+	    Lineno = 0;
+    }
+    waddstr(Msgwin, prompt);
+    wrefresh(Msgwin);
+    wait_for(' ');
 }
 
 /*
