@@ -1,9 +1,10 @@
-.\"     @(#)V2B.t	1.1     89/02/23
+.\"     @(#)V2B.t	1.2     89/02/24
+.nr PS 10
+.nr VS 12
 .LP
 \fB\s+4B. Budget\fP\s-4
 .LP
-.ce2
-SECURITY BUDGET
+.ce
 April 1, 1989 - March 31, 1990
 .sp2
 .TS
@@ -25,17 +26,18 @@ C. EQUIPMENT
 
      1. 2 ea. DEC/Sun 8MB Workstations	$ 19,390
      2. 3 ea. SMD Disk Drives	$ 33,000
-     3. 3 Ethernet Interfaces	$ 9,000
+     3. 4 ea. Ethernet Interfaces	$ 12,000
      4. 4 ea. 9600 Baud Telebit Modems	$ 6,400
      5. 3 ea. 4 Mb Upgrades for Sun Workstations	$ 9,000
-     6. 2 ea. 16 Mb Upgrades for Micro VAX	$ 16,000
-     7. 3 ea. SCSI Disks	$9,600
-     8. 4 ea. Interphase 4400 Disk Controllers	$ 20,000
+     6. 3 ea. 16 Mb Upgrades for VAX	$ 24,000
+     7. 1 ea. SCSI Disks	$3,200
+     8. 3 ea. Interphase 4400 Disk Controllers	$ 15,000
      9. 4 ea. High-speed Network Interfaces	$ 30,000
-    10. 2 ea. X.25 Network Interfaces	$ 10,000
-    11. 2 Exabyte 8mm Tape Backup Systems	$ 15,000
+    10. 1 ea. X.25 Network Interfaces	$ 5,000
+    11. 2 ea. Exabyte 8mm Tape Backup Systems	$ 15,000
+    12. 1 ea. MicroVAX Gateway	$ 15,000
 
-     TOTAL EQUIPMENT	$ 177,390
+     TOTAL EQUIPMENT	$ 186,990
 
 D. TRAVEL
 
@@ -52,9 +54,9 @@ E. SUPPLIES AND EXPENSES
 
      TOTAL SUPPLIES AND EXPENSES	$ 49,358
 
-F. TOTAL DIRECT COSTS	$ 381,008
+F. TOTAL DIRECT COSTS	$ 390,690
 
-G. INDIRECT COSTS (47% of $203,618 Modified Total Direct Costs)	$ 95,700
+G. INDIRECT COSTS (48.5% of $203,619 Modified Total Direct Costs)	$ 98,755
 
-H.  TOTAL COST OF PROJECT	$ 476,708
+H.  TOTAL COST OF PROJECT	$ 489,364
 .TE

@@ -1,4 +1,4 @@
-.\"     @(#)F.t	1.2     89/02/23
+.\"     @(#)F.t	1.3     89/02/24
 .LP
 \fB\s+4F. Statement of Work\fP\s-4
 .PP
@@ -12,6 +12,6 @@ utilities to check for and eliminate unintended system access mechanisms.
 Identification, evaluation, and incorporation of an authentication mechanism
 into the system.
 .IP \(bu
-Complete conformance with the Internet Host Requirements
+Complete conformance with the Internet Host Requirements RFC
 when that standard is released.
 .bp
