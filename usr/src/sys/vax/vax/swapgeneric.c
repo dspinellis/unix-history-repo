@@ -1,4 +1,4 @@
-/*	swapgeneric.c	4.8	83/08/05	*/
+/*	swapgeneric.c	6.1	83/08/05	*/
 
 #include "mba.h"
 
