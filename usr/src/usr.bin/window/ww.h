@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ww.h	3.56 (Berkeley) %G%
+ *	@(#)ww.h	3.57 (Berkeley) %G%
  */
 
 #include <sgtty.h>
@@ -256,6 +256,7 @@ jmp_buf wwjmpbuf;	/* jmpbuf for above */
 #define WWT_USR		"XE=\\Er`:XS=\\Es`:"
 #define WWT_ALDL	"al=\\EL:dl=\\EM:"
 #define WWT_IMEI	"im=\\E@:ei=\\EO:ic=:mi:" /* XXX, ic for emacs bug */
+#define WWT_IC		"ic=\\EP:"
 #define WWT_DC		"dc=\\EN:"
 char wwwintermcap[1024];	/* terminal-specific but window-independent
 				   part of the window termcap */
