@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# Copyright (c) 1990 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1990, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # This code is derived from software contributed to Berkeley by
 # the Systems Programming Group of the University of Utah Computer
@@ -9,7 +9,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cpp.sh	6.6 (Berkeley) %G%
+#	@(#)cpp.sh	8.1 (Berkeley) %G%
 #
 # Transitional front end to CCCP to make it behave like (Reiser) CCP:
 #	specifies -traditional
