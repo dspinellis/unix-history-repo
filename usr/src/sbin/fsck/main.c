@@ -1,4 +1,4 @@
-char version[] = "@(#)main.c	2.20	(Berkeley)	%G%";
+char version[] = "@(#)main.c	2.21	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -34,6 +34,8 @@ typedef struct direct	DIRECT;
 #define	BLK	((dp->di_mode & IFMT) == IFBLK)
 #define	CHR	((dp->di_mode & IFMT) == IFCHR)
 #define	LNK	((dp->di_mode & IFMT) == IFLNK)
+#define	SOCK	((dp->di_mode & IFMT) == IFSOCK)
+#define	BADBLK	((dp->di_mode & IFMT) == IFMT)
 #define	SPECIAL	(BLK || CHR)
 
 ino_t	startinum;		/* blk num of first in raw area */
@@ -583,7 +585,12 @@ pass1()
 				}
 				n--;
 				lastino = inum;
-				if (ftypeok(dp) == 0)
+				if (!preen && BADBLK &&
+				    reply("HOLD BAD BLOCK") == 1) {
+					dp->di_size = sblock.fs_fsize;
+					dp->di_mode = IFREG|0600;
+					inodirty();
+				} else if (ftypeok(dp) == 0)
 					goto unknown;
 				if (dp->di_size < 0) {
 					if (debug)
@@ -597,7 +604,8 @@ pass1()
 				for (j = ndb; j < NDADDR; j++)
 					if (dp->di_db[j] != 0) {
 						if (debug)
-							printf("bad direct addr:");
+							printf("bad direct addr: %d\n",
+								dp->di_db[j]);
 						goto unknown;
 					}
 				for (j = 0, ndb -= NDADDR; ndb > 0; j++)
@@ -605,7 +613,8 @@ pass1()
 				for (; j < NIADDR; j++)
 					if (dp->di_ib[j] != 0) {
 						if (debug)
-							printf("bad indirect addr:");
+							printf("bad indirect addr: %d\n",
+								dp->di_ib[j]);
 						goto unknown;
 					}
 				n_files++;
@@ -624,8 +633,9 @@ pass1()
 				ckinode(dp, ADDR);
 				continue;
 		unknown:
-				pfatal("UNKNOWN FILE TYPE I=%u", inum);
-				if (reply("CLEAR") == 1) {
+				if (!SOCK)
+					pfatal("UNKNOWN FILE TYPE I=%u", inum);
+				if ((preen && SOCK) || reply("CLEAR") == 1) {
 					zapino(dp);
 					inodirty();
 					inosumbad++;
@@ -1956,7 +1966,7 @@ errexit(s1, s2, s3, s4)
 
 /*
  * An inconsistency occured which shouldn't during normal operations.
- * Die if preening, otw just printf.
+ * Die if preening, otherwise just printf.
  */
 /* VARARGS1 */
 pfatal(s, a1, a2, a3)
