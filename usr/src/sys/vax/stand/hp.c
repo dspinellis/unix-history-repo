@@ -275,6 +275,7 @@ badsect:
 	} else if (RM80 && er2&HPER2_SSE) {
 	/* skip sector error */
 		(void) hpecc(io, SSE);
+		startblock++;		/* since one sector was skipped */
 		goto success;
 	} else if ((er1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
 		if ( hpecc(io, ECC) == 0)
@@ -357,6 +358,7 @@ hpecc(io, flag)
 	if (bcr = MASKREG(mbp->mba_bcr>>16))
 		bcr |= 0xffff0000;		/* sxt */
 	npf = (bcr + io->i_cc)/sectsiz;		/* number of sectors read */
+	bn = io->i_bn + npf;
 	switch (flag) {
 	case ECC:
 		{
@@ -364,7 +366,7 @@ hpecc(io, flag)
 		caddr_t addr;
 		int bit, byte, mask, ecccnt = 0;
 
-		printf("hp%d: soft ecc sn%d\n", unit, io->i_bn + npf);
+		printf("hp%d: soft ecc sn%d\n", unit, bn);
 		mask = MASKREG(rp->hpec2);
 		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */
 		bit = i&07;
@@ -391,13 +393,12 @@ hpecc(io, flag)
 		return(0);
 		}
 
-	case SSE:		/* skip sector error */
-				/* -----this section must be fixed------*/
+	case SSE:	/* skip sector error */
+			/* set skip-sector-inhibit and read next sector */
 		rp->hpcs1 = HP_DCLR | HP_GO;
+		while(rp->hpds & HPDS_DRY == 0)
+			;			/* avoid RMR error */
 		rp->hpof |= HPOF_SSEI;
-		mbp->mba_bcr = -(io->i_cc - npf*sectsiz);
-		/* presumably the disk address has already
-		 * been incremented to point to the next sector	*/
 		return(0);	
 
 #ifndef NOBADSECT
@@ -406,17 +407,17 @@ hpecc(io, flag)
 		printf("hpecc: BSE @ bn %d\n", bn);
 #endif
 		rp->hpcs1 = HP_DCLR | HP_GO;
-		bcr += SECTSIZ;
+		bcr += sectsiz;
 		tad = rp->hpda;
-		if ((bn = isbad(&hpbad[unit], bcr, tad>>8, tad&0x7f)) < 0)
+		if ((bn = isbad(&hpbad[unit], bn/st->nspc,tad>>8,tad&0x7f)) < 0)
 			return(1);
 		bn = st->ncyl*st->nspc - st->nsect - 1 - bn;
 		cn = bn/st->nspc;
 		sn = bn%st->nspc;
 		tn = sn/st->nsect;
 		sn %= st->nsect;
-		io->i_cc = -SECTSIZ;
-		io->i_ma = (char *)((io->i_bn + npf -1)*SECTSIZ);
+		io->i_cc = -sectsiz;
+		io->i_ma += ((io->i_bn + npf -1)*sectsiz);
 #ifdef HPDEBUG
 		printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
 #endif
@@ -425,8 +426,6 @@ hpecc(io, flag)
 		mbp->mba_sr = -1;
 		mbastart(io,io->i_flgs);
 		io->i_errcnt = 0;	/* error has been corrected */
-		while(rp->hpds & HPDS_DRY == 0)
-			;
 		if (rp->hpds&HPDS_ERR)
 			return(1);
 		else
@@ -459,33 +458,3 @@ hpioctl(io, cmd, arg)
 	}
 }
 
-/* this routine is common to up & hp, move to a separate file */
-
-/*
- * Search the bad sector table looking for
- * the specified sector.  Return index if found.
- * Return -1 if not found.
- */
-
-isbad(bt, st, blno)
-	register struct dkbad *bt;
-	register struct st *st;
-{
-	register int i;
-	register long blk, bblk;
-	int trk, sec;
-
-	sec = blno % st->nspc;
-	trk = sec / st->nsect;
-	sec %= st->nsect;
-	blk = ((long)(blno/st->nspc) << 16) + (trk << 8) + sec;
-	for (i = 0; i < MAXBADDESC; i++) {
-		bblk = ((long)bt->bt_bad[i].bt_cyl << 16) +
-			bt->bt_bad[i].bt_trksec;
-		if (blk == bblk)
-			return (i);
-		if (blk < bblk || bblk < 0)
-			break;
-	}
-	return (-1);
-}
