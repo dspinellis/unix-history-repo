@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.43 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.44 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.43 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.44 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -85,7 +85,6 @@ int		TcpSndBufferSize = 0;		/* size of TCP send buffer */
 getrequests()
 {
 	int t;
-	int on = 1;
 	bool refusingconnections = TRUE;
 	FILE *pidf;
 	int socksize;
@@ -124,60 +123,7 @@ getrequests()
 		printf("getrequests: port 0x%x\n", DaemonAddr.sin.sin_port);
 
 	/* get a socket for the SMTP connection */
-	DaemonSocket = socket(DaemonAddr.sa.sa_family, SOCK_STREAM, 0);
-	if (DaemonSocket < 0)
-	{
-		/* probably another daemon already */
-		syserr("getrequests: can't create socket");
-	  severe:
-# ifdef LOG
-		if (LogLevel > 0)
-# endif /* LOG */
-		finis();
-	}
-
-	/* turn on network debugging? */
-	if (tTd(15, 101))
-		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
-
-	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
-	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
-
-#ifdef SO_RCVBUF
-	if (TcpRcvBufferSize > 0)
-	{
-		if (setsockopt(DaemonSocket, SOL_SOCKET, SO_RCVBUF,
-			       (char *) &TcpRcvBufferSize,
-			       sizeof(TcpRcvBufferSize)) < 0)
-			syserr("getrequests: setsockopt(SO_RCVBUF)");
-	}
-#endif
-
-	switch (DaemonAddr.sa.sa_family)
-	{
-# ifdef NETINET
-	  case AF_INET:
-		socksize = sizeof DaemonAddr.sin;
-		break;
-# endif
-
-# ifdef NETISO
-	  case AF_ISO:
-		socksize = sizeof DaemonAddr.siso;
-		break;
-# endif
-
-	  default:
-		socksize = sizeof DaemonAddr;
-		break;
-	}
-
-	if (bind(DaemonSocket, &DaemonAddr.sa, socksize) < 0)
-	{
-		syserr("getrequests: cannot bind");
-		(void) close(DaemonSocket);
-		goto severe;
-	}
+	socksize = opendaemonsocket();
 
 	(void) setsignal(SIGCHLD, reapchild);
 
@@ -219,27 +165,24 @@ getrequests()
 		CurrentLA = getla();
 		if (refuseconnections())
 		{
-			if (!refusingconnections)
+			if (DaemonSocket >= 0)
 			{
-				/* don't queue so peer will fail quickly */
-				(void) listen(DaemonSocket, 0);
-				refusingconnections = TRUE;
+				/* close socket so peer will fail quickly */
+				(void) close(DaemonSocket);
+				DaemonSocket = -1;
 			}
+			refusingconnections = TRUE;
 			setproctitle("rejecting connections: load average: %d",
 				CurrentLA);
-			sleep(5);
+			sleep(15);
 			continue;
 		}
 
 		if (refusingconnections)
 		{
 			/* start listening again */
-			if (listen(DaemonSocket, ListenQueueSize) < 0)
-			{
-				syserr("getrequests: cannot listen");
-				(void) close(DaemonSocket);
-				goto severe;
-			}
+			if (DaemonSocket < 0)
+				(void) opendaemonsocket();
 			setproctitle("accepting connections");
 			refusingconnections = FALSE;
 		}
@@ -356,6 +299,95 @@ getrequests()
 		(void) close(t);
 	}
 	/*NOTREACHED*/
+}
+/*
+**  OPENDAEMONSOCKET -- open the SMTP socket
+**
+**	Deals with setting all appropriate options.  DaemonAddr must
+**	be set up in advance.
+**
+**	Parameters:
+**		none
+**
+**	Returns:
+**		Size in bytes of the daemon socket addr.
+**
+**	Side Effects:
+**		Leaves DaemonSocket set to the open socket.
+**		Exits if the socket cannot be created.
+*/
+
+int
+opendaemonsocket()
+{
+	int on = 1;
+	int socksize;
+
+	if (tTd(15, 2))
+		printf("opendaemonsocket()\n");
+
+	DaemonSocket = socket(DaemonAddr.sa.sa_family, SOCK_STREAM, 0);
+	if (DaemonSocket < 0)
+	{
+		/* probably another daemon already */
+		syserr("opendaemonsocket: can't create server SMTP socket");
+	  severe:
+# ifdef LOG
+		if (LogLevel > 0)
+			syslog(LOG_ALERT, "problem creating SMTP socket");
+# endif /* LOG */
+		finis();
+	}
+
+	/* turn on network debugging? */
+	if (tTd(15, 101))
+		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
+
+	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
+	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
+
+#ifdef SO_RCVBUF
+	if (TcpRcvBufferSize > 0)
+	{
+		if (setsockopt(DaemonSocket, SOL_SOCKET, SO_RCVBUF,
+			       (char *) &TcpRcvBufferSize,
+			       sizeof(TcpRcvBufferSize)) < 0)
+			syserr("getrequests: setsockopt(SO_RCVBUF)");
+	}
+#endif
+
+	switch (DaemonAddr.sa.sa_family)
+	{
+# ifdef NETINET
+	  case AF_INET:
+		socksize = sizeof DaemonAddr.sin;
+		break;
+# endif
+
+# ifdef NETISO
+	  case AF_ISO:
+		socksize = sizeof DaemonAddr.siso;
+		break;
+# endif
+
+	  default:
+		socksize = sizeof DaemonAddr;
+		break;
+	}
+
+	if (bind(DaemonSocket, &DaemonAddr.sa, socksize) < 0)
+	{
+		syserr("getrequests: cannot bind");
+		(void) close(DaemonSocket);
+		goto severe;
+	}
+	if (listen(DaemonSocket, ListenQueueSize) < 0)
+	{
+		syserr("getrequests: cannot listen");
+		(void) close(DaemonSocket);
+		goto severe;
+	}
+	return socksize;
 }
 /*
 **  CLRDAEMON -- reset the daemon connection
