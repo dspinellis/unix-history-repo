@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cp.1	6.1 (Berkeley) %G%
+.\"	@(#)cp.1	6.2 (Berkeley) %G%
 .\"
 .TH CP 1 ""
 .UC 4
@@ -11,26 +11,29 @@ cp \- copy
 .SH SYNOPSIS
 .B cp
 [
-.B \-i
-] [
-.B \-r
+.B \-ip
 ] file1 file2
 .PP
 .B cp
 [
-.B \-i
-] [
-.B \-r
+.B \-ipr
 ] file ... directory
 .SH DESCRIPTION
 .I File1
 is copied onto
 .IR file2 .
-The mode and owner of  
+By default, the mode and owner of  
 .I file2
 are preserved if it already
-existed; the mode of the source file
-is used otherwise.
+existed; otherwise the mode of the source file modified by the current
+.IR umask (2)
+is used.  The
+.B \-p
+option causes
+.I cp
+to attempt to preserve (duplicate) in its copies the modification
+times and modes of the source files, ignoring the present
+.IR umask .
 .PP
 In the second form, one or more
 .I files
@@ -59,4 +62,4 @@ option is specified and any of the source files are directories,
 copies each subtree rooted at that name; in this case
 the destination must be a directory.
 .SH "SEE ALSO"
-cat(1), pr(1), mv(1)
+cat(1), mv(1), rcp(1C)

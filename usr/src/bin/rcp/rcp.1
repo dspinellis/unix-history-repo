@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rcp.1	6.1 (Berkeley) %G%
+.\"	@(#)rcp.1	6.2 (Berkeley) %G%
 .\"
 .TH RCP 1C ""
 .UC 5
@@ -10,11 +10,13 @@
 rcp \- remote file copy
 .SH SYNOPSIS
 .B rcp
-file1 file2
+[
+.B \-p
+] file1 file2
 .br
 .B rcp
 [
-.B \-r
+.B \-rp
 ] file ... directory
 .SH DESCRIPTION
 .I Rcp
@@ -28,10 +30,25 @@ or a `/' before any `:'s.)
 .PP
 If the
 .B \-r
+option
 is specified and any of the source files are directories,
 .I rcp
 copies each subtree rooted at that name; in this case
 the destination must be a directory.
+.PP
+By default, the mode and owner of
+.I file2
+are preserved if it already existed; otherwise the mode of the source file
+modified by the
+.IR umask (2)
+on the destination host is used.
+The
+.B \-p
+option causes
+.I rcp
+to attempt to preserve (duplicate) in its copies the modification
+times and modes of the source files, ignoring the
+.IR umask .
 .PP
 If
 .I path
@@ -57,7 +74,7 @@ Hostnames may also take the form ``rhost.rname'' to use
 .I rname
 rather than the current user name on the remote host.
 .SH SEE ALSO
-ftp(1C), rsh(1C), rlogin(1C)
+cp(1), ftp(1C), rsh(1C), rlogin(1C)
 .SH BUGS
 Doesn't detect all cases where the target of a copy might
 be a file in cases where only a directory should be legal.
