@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: pcb.h 1.13 89/04/23$
  *
- *	@(#)pcb.h	7.2 (Berkeley) %G%
+ *	@(#)pcb.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -22,6 +22,7 @@ struct pcb
 	int	pcb_regs[69];	/* saved CPU and floating point registers */
 	label_t	pcb_context;	/* kernel context for resume */
 	int	pcb_onfault;	/* for copyin/copyout faults */
+	void	*pcb_segtab;	/* copy of pmap pm_segtab */
 };
 
 /*
