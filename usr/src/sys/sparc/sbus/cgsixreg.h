@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cgsixreg.h	8.2 (Berkeley) %G%
+ *	@(#)cgsixreg.h	8.3 (Berkeley) %G%
  *
  * from: $Header: cgsixreg.h,v 1.1 93/10/12 15:29:24 torek Exp $
  */
@@ -33,7 +33,7 @@
  *	FHC - fbc hardware configuration / control? register (32 bits)
  *	DHC - ???
  *	TEC - transform engine control?
- *	THC - TEC Hardware Configuration (this is where our action goes)
+ *	THC - TEC Hardware Configuration
  *	ROM - a 64Kbyte ROM with who knows what in it.
  *	colormap - see below
  *	frame buffer memory (video RAM)
@@ -111,6 +111,15 @@ struct cg6_thc {
 #define	THC_CURSOFF	(65536-32)	/* i.e., USHRT_MAX+1-32 */
 
 /*
+ * Partial description of TEC (needed to get around FHC rev 1 bugs).
+ */
+struct cg6_tec_xxx {
+	u_int	tec_mv;		/* matrix stuff */
+	u_int	tec_clip;	/* clipping stuff */
+	u_int	tec_vdc;	/* ??? */
+};
+
+/*
  * This structure exists only to compute the layout of the CG6
  * hardware.  Each of the individual substructures lives on a
  * separate `page' (where a `page' is at least 4K), and many are
@@ -162,6 +171,7 @@ struct cg6_layout {
 	/* TEC at 0x701000 */
 	union {
 		char un_pad[0x100000 - 0x1000];
+		struct cg6_tec_xxx un_tec;
 	} cg6_tec_un;
 
 	/* Video RAM at 0x800000 */
