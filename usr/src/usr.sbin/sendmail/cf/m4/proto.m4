@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.61 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.62 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -318,7 +318,7 @@ ifdef(`confWORK_TIME_FACTOR',
 O BrokenSmtpPeers=confBROKEN_SMTP_PEERS
 
 # shall we sort the queue by hostname first?
-O SortQueueByHost=confSORT_QUEUE_BY_HOST
+O QueueSortOrder=confQUEUE_SORT_ORDER
 
 ###########################
 #   Message precedences   #
