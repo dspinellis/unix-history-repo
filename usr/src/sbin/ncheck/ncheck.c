@@ -1,19 +1,17 @@
-static	char *sccsid = "@(#)ncheck.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)ncheck.c	1.7 (Berkeley) %G%";
 /*
  * ncheck -- obtain file names from reading filesystem
  */
 
 #define	NB		500
 #define	HSIZE		2503
-#define	NDIR(fs)	((fs)->fs_bsize/sizeof(struct direct))
-#define	MAXNDIR		(MAXBSIZE/sizeof(struct direct))
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
-#include <stdio.h>
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/dir.h"
 #include "../h/fs.h"
+#include <stdio.h>
+#include <ndir.h>
 
 struct	fs	sblock;
 struct	dinode	itab[MAXIPG];
@@ -23,8 +21,16 @@ struct	htab
 {
 	ino_t	h_ino;
 	ino_t	h_pino;
-	char	h_name[DIRSIZ];
+	char	*h_name;
 } htab[HSIZE];
+char strngtab[30 * HSIZE];
+int strngloc;
+
+struct dirstuff {
+	int loc;
+	struct dinode *ip;
+	char dbuf[MAXBSIZE];
+};
 
 int	aflg;
 int	sflg;
@@ -154,92 +160,89 @@ pass1(ip)
 pass2(ip)
 	register struct dinode *ip;
 {
-	struct direct dbuf[MAXNDIR];
-	long doff;
-	struct direct *dp;
-	register i, j;
-	int k;
+	register struct direct *dp;
+	struct dirstuff dirp;
 	struct htab *hp;
-	daddr_t d;
-	ino_t kno;
 
 	if((ip->di_mode&IFMT) != IFDIR)
 		return;
+	dirp.loc = 0;
+	dirp.ip = ip;
 	gip = ip;
-	doff = 0;
-	for(i=0;; i++) {
-		if(doff >= ip->di_size)
-			break;
-		d = bmap(i);
-		if(d == 0)
-			break;
-		bread(fsbtodb(&sblock, d), (char *)dbuf, sizeof(dbuf));
-		for(j=0; j < NDIR(&sblock); j++) {
-			if(doff >= ip->di_size)
-				break;
-			doff += sizeof(struct direct);
-			dp = dbuf+j;
-			kno = dp->d_ino;
-			if(kno == 0)
-				continue;
-			hp = lookup(kno, 0);
-			if(hp == 0)
-				continue;
-			if(dotname(dp))
-				continue;
-			hp->h_pino = ino;
-			for(k=0; k<DIRSIZ; k++)
-				hp->h_name[k] = dp->d_name[k];
-		}
+	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+		if(dp->d_ino == 0)
+			continue;
+		hp = lookup(dp->d_ino, 0);
+		if(hp == 0)
+			continue;
+		if(dotname(dp))
+			continue;
+		hp->h_pino = ino;
+		hp->h_name = &strngtab[strngloc];
+		strngloc += strlen(dp->d_name) + 1;
+		strcpy(hp->h_name, dp->d_name);
 	}
 }
 
 pass3(ip)
 	register struct dinode *ip;
 {
-	struct direct dbuf[MAXNDIR];
-	long doff;
-	struct direct *dp;
-	register i, j;
+	register struct direct *dp;
+	struct dirstuff dirp;
 	int k;
-	daddr_t d;
-	ino_t kno;
 
 	if((ip->di_mode&IFMT) != IFDIR)
 		return;
+	dirp.loc = 0;
+	dirp.ip = ip;
 	gip = ip;
-	doff = 0;
-	for(i=0;; i++) {
-		if(doff >= ip->di_size)
-			break;
-		d = bmap(i);
-		if(d == 0)
-			break;
-		bread(fsbtodb(&sblock, d), (char *)dbuf, sizeof(dbuf));
-		for(j=0; j < NDIR(&sblock); j++) {
-			if(doff >= ip->di_size)
-				break;
-			doff += sizeof(struct direct);
-			dp = dbuf+j;
-			kno = dp->d_ino;
-			if(kno == 0)
-				continue;
-			if(aflg==0 && dotname(dp))
-				continue;
-			if(ilist[0] == 0)
-				goto pr;
-			for(k=0; ilist[k] != 0; k++)
-				if(ilist[k] == kno)
-					goto pr;
+	for(dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+		if(dp->d_ino == 0)
 			continue;
-		pr:
-			printf("%u	", kno);
-			pname(ino, 0);
-			printf("/%.14s", dp->d_name);
-			if (lookup(kno, 0))
-				printf("/.");
-			printf("\n");
+		if(aflg==0 && dotname(dp))
+			continue;
+		if(ilist[0] == 0)
+			goto pr;
+		for(k = 0; ilist[k] != 0; k++)
+			if(ilist[k] == dp->d_ino)
+				goto pr;
+		continue;
+	pr:
+		printf("%u	", dp->d_ino);
+		pname(ino, 0);
+		printf("/%s", dp->d_name);
+		if (lookup(dp->d_ino, 0))
+			printf("/.");
+		printf("\n");
+	}
+}
+
+/*
+ * get next entry in a directory.
+ */
+struct direct *
+readdir(dirp)
+	register struct dirstuff *dirp;
+{
+	register struct direct *dp;
+	daddr_t lbn, d;
+
+	for(;;) {
+		if (dirp->loc >= dirp->ip->di_size)
+			return NULL;
+		if ((lbn = dirp->loc / sblock.fs_bsize) == 0) {
+			d = bmap(lbn);
+			if(d == 0)
+				return NULL;
+			bread(fsbtodb(&sblock, d), dirp->dbuf,
+			    dblksize(&sblock, dirp->ip, lbn));
 		}
+		dp = (struct direct *)
+		    (dirp->dbuf + dirp->loc % sblock.fs_bsize);
+		dirp->loc += dp->d_reclen;
+		if (dp->d_ino == 0)
+			continue;
+		return (dp);
 	}
 }
 
@@ -248,7 +251,8 @@ dotname(dp)
 {
 
 	if (dp->d_name[0]=='.')
-		if (dp->d_name[1]==0 || (dp->d_name[1]=='.' && dp->d_name[2]==0))
+		if (dp->d_name[1]==0 ||
+		   (dp->d_name[1]=='.' && dp->d_name[2]==0))
 			return(1);
 	return(0);
 }
@@ -270,7 +274,7 @@ pname(i, lev)
 		return;
 	}
 	pname(hp->h_pino, ++lev);
-	printf("/%.14s", hp->h_name);
+	printf("/%s", hp->h_name);
 }
 
 struct htab *
