@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asparse.c 4.3 %G%";
+static	char sccsid[] = "@(#)asparse.c 4.4 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "asexpr.h"
@@ -71,6 +71,8 @@ int	yyparse()
 			int		seg_type; 	/*the kind of segment: data or text*/
 			int		seg_number;	/*the segment number*/
 			int		space_value;	/*how much .space needs*/
+			int		fill_rep;	/*how many reps for .fill */
+			int		fill_size;	/*how many bytes for .fill */
 
 			int		field_width;	/*how wide a field is to be*/
 			int		field_value;	/*the value to stuff in a field*/
@@ -422,20 +424,35 @@ restlab:
 	break;
 
 #ifdef UNIX
-   case	IFILL:	/* .fill count, value */
-		/* fill count bytes with value */
+	/*
+	 *	.fill rep, size, value
+	 *	repeat rep times: fill size bytes with (truncated) value
+	 *	size must be between 1 and 8
+	 */
+   case	IFILL:
 	shift;
 	expr(locxp, val);
 	if (locxp->e_xtype != XABS)
 		yyerror("Fill repetition count not absolute");
-	space_value = locxp->e_xvalue;
+	fill_rep = locxp->e_xvalue;
 	shiftover(CM);
 	expr(locxp, val);
 	if (locxp->e_xtype != XABS)
-		yyerror("Fill value not absolute");
+		yyerror("Fill size not absolute");
+	fill_size = locxp->e_xvalue;
+	if (fill_size <= 0 || fill_size > 8)
+		yyerror("Fill count not in in 1..8");
+	shiftover(CM);
+	expr(locxp, val);
+	if (passno == 2 && locxp->e_xtype != XABS)
+			yyerror("Fill value not absolute");
 	flushfield(NBPW/4);
-	while(space_value-- > 0)
-		outb(locxp->e_xvalue & 0xFF);
+	if (passno == 1) {
+		locxp->e_xvalue += fill_rep * fill_size;
+	} else {
+		while(fill_rep-- > 0)
+			bwrite(&locxp->e_xvalue, fill_size, txtfil);
+	}
 	break;
 #endif UNIX
 
