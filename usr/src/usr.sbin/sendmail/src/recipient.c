@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)recipient.c	5.9 (Berkeley) %G%";
+static char	SccsId[] = "@(#)recipient.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -375,10 +375,9 @@ finduser(name)
 	while ((pw = getpwent()) != NULL)
 	{
 		char buf[MAXNAME];
-		extern bool sameword();
 
 		buildfname(pw->pw_gecos, pw->pw_name, buf);
-		if (index(buf, ' ') != NULL && sameword(buf, name))
+		if (index(buf, ' ') != NULL && !strcasecmp(buf, name))
 		{
 			message(Arpa_Info, "sending to login name %s", pw->pw_name);
 			return (pw);
@@ -527,11 +526,10 @@ sendtoargv(argv)
 	register char **argv;
 {
 	register char *p;
-	extern bool sameword();
 
 	while ((p = *argv++) != NULL)
 	{
-		if (argv[0] != NULL && argv[1] != NULL && sameword(argv[0], "at"))
+		if (argv[0] != NULL && argv[1] != NULL && !strcasecmp(argv[0], "at"))
 		{
 			char nbuf[MAXNAME];
 

@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)parseaddr.c	5.6 (Berkeley) %G%";
+static char	SccsId[] = "@(#)parseaddr.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -513,7 +513,6 @@ rewrite(pvp, ruleset)
 	register struct rewrite *rwr;	/* pointer to current rewrite rule */
 	struct match mlist[MAXMATCH];	/* stores match on LHS */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
-	extern bool sameword();
 
 	if (OpMode == MD_TEST || tTd(21, 2))
 	{
@@ -601,7 +600,7 @@ rewrite(pvp, ruleset)
 
 			  default:
 				/* must have exact match */
-				if (!sameword(rp, ap))
+				if (strcasecmp(rp, ap))
 					goto backup;
 				avp++;
 				break;
@@ -856,7 +855,6 @@ buildaddr(tv, a)
 	static char buf[MAXNAME];
 	struct mailer **mp;
 	register struct mailer *m;
-	extern bool sameword();
 
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);
@@ -869,7 +867,7 @@ buildaddr(tv, a)
 		return (NULL);
 	}
 	tv++;
-	if (sameword(*tv, "error"))
+	if (!strcasecmp(*tv, "error"))
 	{
 		if (**++tv == CANONHOST)
 		{
@@ -890,7 +888,7 @@ buildaddr(tv, a)
 	}
 	for (mp = Mailer; (m = *mp++) != NULL; )
 	{
-		if (sameword(m->m_name, *tv))
+		if (!strcasecmp(m->m_name, *tv))
 			break;
 	}
 	if (m == NULL)

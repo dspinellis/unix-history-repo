@@ -12,12 +12,12 @@
 
 #ifndef MXDOMAIN
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.7 (Berkeley) %G% (no MXDOMAIN)";
+static char	SccsId[] = "@(#)domain.c	5.8 (Berkeley) %G% (no MXDOMAIN)";
 #endif not lint
 #else MXDOMAIN
 
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)domain.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 # include <sys/param.h>
@@ -151,7 +151,7 @@ getmxrr(host, mxhosts, maxmx, localhost)
 		if ((n = dn_expand((char *)&answer, eom, cp, bp, buflen)) < 0)
 			break;
 		cp += n;
-		if (sameword(bp, localhost))
+		if (!strcasecmp(bp, localhost))
 		{
 			seenlocal = 1;
 			localpref = pref;
