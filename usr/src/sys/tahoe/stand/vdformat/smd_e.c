@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)smd_e.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)smd_e.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -26,15 +26,15 @@ fmt_err smd_e_decode_position(bad_entry)
 bs_entry bad_entry;
 {
 	fmt_err	error;
-	int	sector_length = CURRENT->vc_traksize / CURRENT->vc_nsec;
+	int	sector_length = lab->d_traksize / lab->d_nsectors;
 	int	offset = (bad_entry.bs_offset-2) % sector_length;
 	int	bytes = (bad_entry.bs_length / 8) + 4;
 
 	error.err_adr.cylinder = bad_entry.bs_cyl;
 	error.err_adr.track = bad_entry.bs_trk;
 	error.err_adr.sector = (bad_entry.bs_offset-2) / sector_length;
-	if(error.err_adr.sector >= CURRENT->vc_nsec) {
-		error.err_adr.sector = CURRENT->vc_nsec - 1;
+	if(error.err_adr.sector >= lab->d_nsectors) {
+		error.err_adr.sector = lab->d_nsectors - 1;
 		error.err_stat = DATA_ERROR;
 	}
 	else if((offset < 45) || ((offset+bytes) > sector_length))
@@ -52,7 +52,7 @@ bs_entry bad_entry;
 bs_entry smd_e_code_position(error)
 fmt_err	error;
 {
-	int		sector_length = CURRENT->vc_traksize / CURRENT->vc_nsec;
+	int		sector_length = lab->d_traksize / lab->d_nsectors;
 	bs_entry	temp;
 
 	temp.bs_length = 1;
@@ -71,24 +71,3 @@ fmt_err	error;
 	temp.bs_how = scanning;
 	return	temp;
 }
-
-
-/*
-**
-*/
-
-int smd_e_cyl_skew()
-{
-	return 0;
-}
-
-
-/*
-**
-*/
-
-int smd_e_trk_skew()
-{
-	return 0;
-}
-

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maps.c	1.4 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)maps.c	1.5 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -17,7 +17,7 @@ unsigned long	sync;
 	register int	i, shift;
 
 	/* find shift amount */
-	for(shift=0; shift<32; shift++) {
+	for(shift=0; shift < 32; shift++) {
 		if((*buf >> shift ) == sync) {
 			for(i=(512/sizeof(long))-1; i >= 0; i--) {
 				*(buf+i+1) |= *(buf+i) << (32 - shift);
@@ -41,27 +41,27 @@ short	flags;
 	register int	trk, i;
 	dskadr		dskaddr;
 
-	dskaddr.cylinder = (CURRENT->vc_ncyl - 1) | flags;
-	for(i=0; i<100; i++)
+	dskaddr.cylinder = (lab->d_ncylinders - 1) | flags;
+	for(i=0; i < 100; i++)
 		scratch[i] = -1;
-	for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
+	for(trk=0; trk < lab->d_ntracks; trk++) {
 		dskaddr.track = trk;
 		dskaddr.sector = 0;
 		if(access_dsk((char *)save,&dskaddr, VDOP_RD,
-		    CURRENT->vc_nsec,1)& VDERR_HARD)
+		    lab->d_nsectors,1)& VDERR_HARD)
 			continue;
 		if(blkcmp((char *)scratch, (char *)save, bytes_trk) == true) {
 			blkcopy((char *)save, (char *)bad_map, bytes_trk);
 			if(bad_map->bs_count <= MAX_FLAWS) {
-				for(i=0; i<bad_map->bs_count; i++) {
+				for(i=0; i < bad_map->bs_count; i++) {
 					if(bad_map->list[i].bs_cyl >=
-					    CURRENT->vc_ncyl)
+					    lab->d_ncylinders)
 						break;
 					if(bad_map->list[i].bs_trk >=
-					    CURRENT->vc_ntrak)
+					    lab->d_ntracks)
 						break;
 					if(bad_map->list[i].bs_offset >=
-					    CURRENT->vc_traksize)
+					    lab->d_traksize)
 						break;
 				}
 				if(i == bad_map->bs_count) {
@@ -87,14 +87,14 @@ boolean read_bad_sector_map()
 {
 	dskadr		dskaddr;
 
-	dskaddr.cylinder = CURRENT->vc_ncyl - 1;
+	dskaddr.cylinder = lab->d_ncylinders - 1;
 	dskaddr.track = 0;
 	dskaddr.sector = 0;
 	/* start with nothing in map */
 	blkzero(bad_map, bytes_trk);
 	bad_map->bs_id = 0;
 	bad_map->bs_max = MAX_FLAWS;
-	if (C_INFO.type == VDTYPE_SMDE) {
+	if (C_INFO->type == VDTYPE_SMDE) {
 		access_dsk((char *)save, &dskaddr, VDOP_RDRAW, 1, 1);
 		if (align_buf((unsigned long *)save, CDCSYNC) == true) {
 			read_flaw_map();
@@ -128,12 +128,12 @@ get_relocations_the_hard_way()
 
 	dskaddr.sector = 0;
 	/* scan each sector to see if it is relocated and take note if it is */
-	for(cyl=0; cyl<CURRENT->vc_ncyl-NUMSYS; cyl++) {
+	for(cyl=0; cyl < lab->d_ncylinders - NUMSYS; cyl++) {
 		dskaddr.cylinder = cyl;
-		for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
+		for(trk=0; trk < lab->d_ntracks; trk++) {
 			dskaddr.track = trk;
 			status=access_dsk((char *)scratch, &dskaddr,
-			    VDOP_RD, CURRENT->vc_nsec, 1);
+			    VDOP_RD, lab->d_nsectors, 1);
 			if(status & DCBS_ATA)
 				get_track_relocations(dskaddr);
 		}
@@ -153,12 +153,12 @@ dskadr	dskaddr;
 	bs_entry	temp;
 	fmt_err		error;
 	
-	for(dskaddr.sector=0; dskaddr.sector<CURRENT->vc_nsec; dskaddr.sector++) {
+	for(dskaddr.sector=0; dskaddr.sector < lab->d_nsectors; dskaddr.sector++) {
 		status = access_dsk((char *)scratch, &dskaddr, VDOP_RD, 1, 1);
 		if(status & DCBS_ATA) {
 			error.err_adr = dskaddr;
 			error.err_stat = DATA_ERROR;
-			temp = (*C_INFO.code_pos)(error);
+			temp = (*C_INFO->code_pos)(error);
 			temp.bs_how = operator;
 			add_flaw(&temp);
 		}
@@ -178,11 +178,11 @@ bs_entry	entry;
 	fmt_err		error;
 	bs_entry	*ptr;	
 
-	error = (*C_INFO.decode_pos)(entry);
+	error = (*C_INFO->decode_pos)(entry);
 	if(is_in_map(&error.err_adr) == true) {
 		ptr = bad_map->list;
-		for(i=0; i<bad_map->bs_count; i++) {
-			temp = (*C_INFO.decode_pos)(*ptr);
+		for(i=0; i < bad_map->bs_count; i++) {
+			temp = (*C_INFO->decode_pos)(*ptr);
 			if((ptr->bs_how == operator) &&
 			    (temp.err_adr.cylinder == error.err_adr.cylinder) &&
 			    (temp.err_adr.track == error.err_adr.track) &&
@@ -191,7 +191,7 @@ bs_entry	entry;
 					remove_track(temp, ptr);
 				else
 					remove_sector(temp, ptr);
-				for(j=i+1; j<bad_map->bs_count; j++)
+				for(j=i+1; j < bad_map->bs_count; j++)
 					bad_map->list[j-1] = bad_map->list[j];
 				bad_map->bs_count--;
 				return;
@@ -229,8 +229,8 @@ remove_track(error, entry)
 fmt_err		error;
 bs_entry	*entry;
 {
-	format_sectors(&error.err_adr,&error.err_adr,NRM,(long)CURRENT->vc_nsec);
-	format_sectors(&entry->bs_alt,&entry->bs_alt,NRM,(long)CURRENT->vc_nsec);
+	format_sectors(&error.err_adr,&error.err_adr,NRM,(long)lab->d_nsectors);
+	format_sectors(&entry->bs_alt,&entry->bs_alt,NRM,(long)lab->d_nsectors);
 }
 
 
@@ -243,11 +243,11 @@ write_bad_sector_map()
 	register int	trk, sec;
 	dskadr		dskaddr;
 
-	dskaddr.cylinder = (CURRENT->vc_ncyl - NUMMAP);
-	for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
-		for(sec = 0; sec < CURRENT->vc_nsec; sec++) {
-			blkcopy((char *)bs_map_space + (sec * SECSIZ),
-			    (char *)scratch, SECSIZ);
+	dskaddr.cylinder = (lab->d_ncylinders - NUMMAP);
+	for(trk=0; trk < lab->d_ntracks; trk++) {
+		for(sec = 0; sec < lab->d_nsectors; sec++) {
+			blkcopy((char *)bs_map_space + (sec * lab->d_secsize),
+			    (char *)scratch, lab->d_secsize);
 			dskaddr.track = trk;
 			dskaddr.sector = sec;
 			format_sectors(&dskaddr, &dskaddr, WPT, 1);
@@ -269,7 +269,7 @@ zero_bad_sector_map()
 	zero.cylinder = 0;
 	zero.track = 0;
 	zero.sector = 0;
-	for(i=0; i<bm->bs_count; i++)
+	for(i=0; i < bm->bs_count; i++)
 		bm->list[i].bs_alt = zero;
 	load_free_table();
 }
@@ -286,9 +286,9 @@ read_flaw_map()
 	flaw		buffer;
 
 	dskaddr.sector = 0;
-	for  (cyl=0; cyl<CURRENT->vc_ncyl; cyl++) {
+	for  (cyl=0; cyl < lab->d_ncylinders; cyl++) {
 		dskaddr.cylinder = cyl;
-		for  (trk=0; trk<CURRENT->vc_ntrak; trk++) {
+		for  (trk=0; trk < lab->d_ntracks; trk++) {
 			dskaddr.track = trk;
 			access_dsk(&buffer, &dskaddr, VDOP_RDRAW, 1, 1);
 			if(align_buf(&buffer, CDCSYNC) == true) {
@@ -315,12 +315,12 @@ get_smde_relocations()
 	boolean		bad_track;
 
 	/* Read any old drive relocations */
-	for(cyl=0; cyl<NUMREL; cyl++) {
-		dskaddr.cylinder = CURRENT->vc_ncyl - NUMSYS + cyl;
-		for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
+	for(cyl=0; cyl < NUMREL; cyl++) {
+		dskaddr.cylinder = lab->d_ncylinders - NUMSYS + cyl;
+		for(trk=0; trk < lab->d_ntracks; trk++) {
 			dskaddr.track = trk;
 			bad_track = true;
-			for(sec=0; sec<CURRENT->vc_nsec; sec++) {
+			for(sec=0; sec < lab->d_nsectors; sec++) {
 				dskaddr.sector = sec;
 				access_dsk(&buffer, &dskaddr, VDOP_RDRAW, 1, 1);
 				if(align_buf(&buffer, SMDE1SYNC) == false) {
@@ -334,13 +334,13 @@ get_smde_relocations()
 				bad.err_adr.track = buffer.alt_trk;
 				bad.err_adr.sector = 0;
 				bad.err_stat = HEADER_ERROR;
-				temp = (*C_INFO.code_pos)(bad);
+				temp = (*C_INFO->code_pos)(bad);
 				temp.bs_alt = dskaddr;
 				temp.bs_how = scanning;
 				add_flaw(&temp);
 				continue;
 			}
-			for(sec=0; sec<CURRENT->vc_nsec; sec++) {
+			for(sec=0; sec < lab->d_nsectors; sec++) {
 				dskaddr.sector = sec;
 				access_dsk(&buffer, &dskaddr, VDOP_RDRAW, 1, 1);
 				if(align_buf(&buffer, SMDE1SYNC) == true) {
@@ -348,7 +348,7 @@ get_smde_relocations()
 					bad.err_adr.track = buffer.alt_trk;
 					bad.err_adr.sector = buffer.alt_sec;
 					bad.err_stat = DATA_ERROR;
-					temp = (*C_INFO.code_pos)(bad);
+					temp = (*C_INFO->code_pos)(bad);
 					temp.bs_alt = dskaddr;
 					temp.bs_how = scanning;
 					add_flaw(&temp);
@@ -372,7 +372,7 @@ flaw	*buffer;
 
 	temp.bs_cyl = buffer->flaw_cyl & 0x7fff; /* clear off bad track bit */
 	temp.bs_trk = buffer->flaw_trk;
-	for(i=0; i<4; i++) {
+	for(i=0; i < 4; i++) {
 		if(buffer->flaw_pos[i].flaw_length != 0) {
 			temp.bs_offset = buffer->flaw_pos[i].flaw_offset;
 			temp.bs_length = buffer->flaw_pos[i].flaw_length;
@@ -415,11 +415,11 @@ bs_entry	*entry;
 
 	if(bm->bs_count > MAX_FLAWS)
 		return;
-	if (entry->bs_cyl >= CURRENT->vc_ncyl ||
-	    entry->bs_trk >= CURRENT->vc_ntrak ||
-	    entry->bs_offset >= CURRENT->vc_traksize)
+	if (entry->bs_cyl >= lab->d_ncylinders ||
+	    entry->bs_trk >= lab->d_ntracks ||
+	    entry->bs_offset >= lab->d_traksize)
 		return;
-	for(i=0; i<bm->bs_count; i++) {
+	for(i=0; i < bm->bs_count; i++) {
 		if(((bm->list[i].bs_cyl == entry->bs_cyl)) &&
 		    (bm->list[i].bs_trk == entry->bs_trk) &&
 		    (bm->list[i].bs_offset == entry->bs_offset)) {
@@ -448,8 +448,8 @@ dskadr	*dskaddr;
 	register int	i;
 	fmt_err		temp;
 
-	for(i=0; i<bad_map->bs_count; i++) {
-		temp = (*C_INFO.decode_pos)(bad_map->list[i]);
+	for(i=0; i < bad_map->bs_count; i++) {
+		temp = (*C_INFO->decode_pos)(bad_map->list[i]);
 		if((temp.err_adr.cylinder == dskaddr->cylinder) &&
 		    (temp.err_adr.track == dskaddr->track) &&
 		    (temp.err_adr.sector == dskaddr->sector)) {
@@ -476,13 +476,13 @@ print_bad_sector_list()
 	print("The following sector%s known to be bad:\n",
 	    (bad_map->bs_count == 1) ? " is" : "s are");
 	indent();
-	for(i=0; i<bad_map->bs_count; i++) {
+	for(i=0; i < bad_map->bs_count; i++) {
 		print("cyl %d, head %d, pos %d, len %d ",
 			bad_map->list[i].bs_cyl,
 			bad_map->list[i].bs_trk,
 			bad_map->list[i].bs_offset,
 			bad_map->list[i].bs_length);
-		errloc = (*C_INFO.decode_pos)(bad_map->list[i]);
+		errloc = (*C_INFO->decode_pos)(bad_map->list[i]);
 		if(errloc.err_stat & HEADER_ERROR) {
 			printf("(Track #%d)", to_track(errloc.err_adr));
 		}
@@ -521,15 +521,15 @@ load_free_table()
 	fmt_err		temp;
 
 	/* Clear free table before starting */
-	for(i = 0; i < (CURRENT->vc_ntrak * NUMREL); i++) {
-		for(j=0; j < CURRENT->vc_nsec; j++)
+	for(i = 0; i < (lab->d_ntracks * NUMREL); i++) {
+		for(j=0; j < lab->d_nsectors; j++)
 			free_tbl[i][j].free_status = NOTALLOCATED;
 	}
-	for(i=0; i<bad_map->bs_count; i++)
+	for(i=0; i < bad_map->bs_count; i++)
 		if((bad_map->list[i].bs_alt.cylinder != 0) ||
 		    (bad_map->list[i].bs_alt.track != 0) ||
 		    (bad_map->list[i].bs_alt.sector != 0)) {
-			temp = (*C_INFO.decode_pos)(bad_map->list[i]);
+			temp = (*C_INFO->decode_pos)(bad_map->list[i]);
 			allocate(&(bad_map->list[i].bs_alt), temp.err_stat);
 		}
 }
@@ -545,13 +545,13 @@ long	status;
 {
 	register int	trk, sec;
 
-	trk = dskaddr->cylinder - (CURRENT->vc_ncyl - NUMSYS);
+	trk = dskaddr->cylinder - (lab->d_ncylinders - NUMSYS);
 	if((trk < 0) || (trk >= NUMREL))
 		return;
-	trk *= CURRENT->vc_ntrak;
+	trk *= lab->d_ntracks;
 	trk += dskaddr->track;
 	if(status & HEADER_ERROR)
-		for(sec=0; sec<CURRENT->vc_nsec; sec++)
+		for(sec=0; sec < lab->d_nsectors; sec++)
 			free_tbl[trk][sec].free_status = ALLOCATED;
 	else
 		free_tbl[trk][dskaddr->sector].free_status = ALLOCATED;
@@ -568,15 +568,15 @@ bs_entry	*entry;
 	register int	trk, sec;
 	fmt_err		temp;
 
-	trk = entry->bs_cyl - (CURRENT->vc_ncyl - NUMSYS);
+	trk = entry->bs_cyl - (lab->d_ncylinders - NUMSYS);
 	if((trk < 0) || (trk >= NUMREL))
 		return false;
-	trk *= CURRENT->vc_ntrak;
+	trk *= lab->d_ntracks;
 	trk += entry->bs_trk;
-	temp = (*C_INFO.decode_pos)(*entry);
+	temp = (*C_INFO->decode_pos)(*entry);
 	/* if this relocation should take up the whole track */
 	if(temp.err_stat & HEADER_ERROR) {
-		for(sec=0; sec<CURRENT->vc_nsec; sec++)
+		for(sec=0; sec < lab->d_nsectors; sec++)
 			if(free_tbl[trk][sec].free_status == ALLOCATED)
 				return true;
 	}
@@ -612,7 +612,7 @@ bs_entry	*entry;
 {
 	fmt_err		error;
 	
-	error = (*C_INFO.decode_pos)(*entry);
+	error = (*C_INFO->decode_pos)(*entry);
 	if(is_in_map(&error.err_adr) == false) {
 		if(mapping_collision(entry) == true)
 			report_collision();
@@ -648,60 +648,60 @@ bs_entry	*entry;
 	newaddr.cylinder = 0;
 	newaddr.track = 0;
 	newaddr.sector = 0;
-	temp = (*C_INFO.decode_pos)(*entry);
+	temp = (*C_INFO->decode_pos)(*entry);
 	/* If it is ouside of the user's data area */
-	if(entry->bs_cyl >= CURRENT->vc_ncyl-NUMSYS) {
+	if(entry->bs_cyl >= lab->d_ncylinders-NUMSYS) {
 		/* if it is in the relocation area */
-		if(entry->bs_cyl < (CURRENT->vc_ncyl - NUMMAP - NUMMNT)) {
+		if(entry->bs_cyl < (lab->d_ncylinders - NUMMAP - NUMMNT)) {
 			/* mark space as allocated */
 			allocate(&temp.err_adr, temp.err_stat);
 			return &temp.err_adr;
 		}
 		/* if it is in the map area forget about it */
-		if(entry->bs_cyl != (CURRENT->vc_ncyl - NUMMAP - NUMMNT))
+		if(entry->bs_cyl != (lab->d_ncylinders - NUMMAP - NUMMNT))
 			return &temp.err_adr;
 		/* otherwise treat maintainence cylinder normally */
 	}
 	if(temp.err_stat & (HEADER_ERROR)) {
-		for(i = 0; i < (CURRENT->vc_ntrak * NUMREL); i++) {
-			for(sec=0; sec < CURRENT->vc_nsec; sec++) {
+		for(i = 0; i < (lab->d_ntracks * NUMREL); i++) {
+			for(sec=0; sec < lab->d_nsectors; sec++) {
 				if(free_tbl[i][sec].free_status == ALLOCATED)
 					break;
 			}
-			if(sec == CURRENT->vc_nsec) {
-				for(sec = 0; sec < CURRENT->vc_nsec; sec++)
+			if(sec == lab->d_nsectors) {
+				for(sec = 0; sec < lab->d_nsectors; sec++)
 					free_tbl[i][sec].free_status=ALLOCATED;
-				newaddr.cylinder = i / CURRENT->vc_ntrak +
-				    (CURRENT->vc_ncyl - NUMSYS);
-				newaddr.track = i % CURRENT->vc_ntrak;
+				newaddr.cylinder = i / lab->d_ntracks +
+				    (lab->d_ncylinders - NUMSYS);
+				newaddr.track = i % lab->d_ntracks;
 				break;
 			}
 		}
 	}
-	else if(C_INFO.type == VDTYPE_VDDC) {
-		for(i = 0; i < (CURRENT->vc_ntrak * NUMREL); i++) {
+	else if(C_INFO->type == VDTYPE_VDDC) {
+		for(i = 0; i < (lab->d_ntracks * NUMREL); i++) {
 			if(free_tbl[i][temp.err_adr.sector].free_status !=
 			    ALLOCATED) {
 				free_tbl[i][temp.err_adr.sector].free_status =
 				    ALLOCATED;
-				newaddr.cylinder = i / CURRENT->vc_ntrak +
-				    (CURRENT->vc_ncyl - NUMSYS);
-				newaddr.track = i % CURRENT->vc_ntrak;
+				newaddr.cylinder = i / lab->d_ntracks +
+				    (lab->d_ncylinders - NUMSYS);
+				newaddr.track = i % lab->d_ntracks;
 				newaddr.sector = temp.err_adr.sector;
 				break;
 			}	
 		}
 	}
 	else {
-		for(i = 0; i < (CURRENT->vc_ntrak * NUMREL); i++) {
-			for(sec=0; sec < CURRENT->vc_nsec; sec++)
+		for(i = 0; i < (lab->d_ntracks * NUMREL); i++) {
+			for(sec=0; sec < lab->d_nsectors; sec++)
 				if(free_tbl[i][sec].free_status != ALLOCATED)
 					break;
-			if(sec < CURRENT->vc_nsec) {
+			if(sec < lab->d_nsectors) {
 				free_tbl[i][sec].free_status = ALLOCATED;
-				newaddr.cylinder = i / CURRENT->vc_ntrak +
-				    (CURRENT->vc_ncyl - NUMSYS);
-				newaddr.track = i % CURRENT->vc_ntrak;
+				newaddr.cylinder = i / lab->d_ntracks +
+				    (lab->d_ncylinders - NUMSYS);
+				newaddr.track = i % lab->d_ntracks;
 				newaddr.sector = sec;
 				break;
 			}

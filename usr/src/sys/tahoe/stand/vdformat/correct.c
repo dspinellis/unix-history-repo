@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)correct.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)correct.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -14,7 +14,7 @@ correct()
 	cur.state = cor;
 	print("Making corrections to bad sector map on ");
 	printf("controller %d, drive %d, ", cur.controller, cur.drive);
-	printf("type %s.\n",CURRENT->vc_name);
+	printf("type %s.\n", lab->d_typename);
 
 	indent();
 	if(is_formatted() == true)
@@ -62,8 +62,8 @@ get_corrections()
 	dskadr		dskaddr;
 	int		max_track;
 
-	dskaddr.cylinder = CURRENT->vc_ncyl - 1;
-	dskaddr.cylinder = CURRENT->vc_ntrak - 1;
+	dskaddr.cylinder = lab->d_ncylinders - 1;
+	dskaddr.cylinder = lab->d_ntracks - 1;
 	max_track = to_track(dskaddr);
 	indent();
 	for(;;) {
@@ -89,7 +89,7 @@ get_corrections()
 				if(temp > 0)
 					break;
 			}
-			D_INFO.id = bad_map->bs_id = temp;
+			D_INFO->id = bad_map->bs_id = temp;
 		}
 		else if((*ptr  >= 'a') && (*ptr <= 'h')) {
 			register char	par = *ptr++;
@@ -103,7 +103,7 @@ get_corrections()
 			}
 			print("Confirm block %d on file-system '%c'",block,par);
 			if(get_yes_no("") == true) {
-				entry=(*C_INFO.code_pos)(dskaddr,HEADER_ERROR);
+				entry=(*C_INFO->code_pos)(dskaddr,HEADER_ERROR);
 				remove_user_relocations(entry);
 			}
 		}
@@ -117,22 +117,22 @@ get_corrections()
 			print("Confirm track %d", trk);
 			if(get_yes_no("") == true) {
 				dskaddr = *from_track(trk);
-				entry=(*C_INFO.code_pos)(dskaddr,HEADER_ERROR);
+				entry=(*C_INFO->code_pos)(dskaddr,HEADER_ERROR);
 				remove_user_relocations(entry);
 			}
 		}
 		else if(!strncmp(ptr, "se", 2)) {
 			register int	sec = get_next_digit(ptr);
 
-			if((sec == -1) ||
-			    ((CURRENT->vc_nsec*CURRENT->vc_ntrak*CURRENT->vc_ncyl)<sec)){
+			if (sec == -1 ||
+			    sec > lab->d_nsectors*lab->d_ntracks*lab->d_ncylinders) {
 				print("Invalid sector number!\n");
 				goto	next;
 			}
 			print("Confirm sector %d", sec);
 			if(get_yes_no("") == true) {
 				dskaddr = *from_sector((unsigned int)sec);
-				entry = (*C_INFO.code_pos)(dskaddr, DATA_ERROR);
+				entry = (*C_INFO->code_pos)(dskaddr, DATA_ERROR);
 				remove_user_relocations(entry);
 			}
 		}
@@ -149,11 +149,11 @@ get_corrections()
 			entry.bs_length = get_next_digit(ptr);
 			if((entry.bs_trk != -1) && (entry.bs_offset != -1) &&
 			    (entry.bs_length != -1)) {
-				if(entry.bs_cyl >= CURRENT->vc_ncyl)
+				if(entry.bs_cyl >= lab->d_ncylinders)
 					print("Cylinder number to high!\n");
-				else if(entry.bs_trk >= CURRENT->vc_ntrak)
+				else if(entry.bs_trk >= lab->d_ntracks)
 					print("Head number to high!\n");
-				else if(entry.bs_offset >= CURRENT->vc_traksize)
+				else if(entry.bs_offset >= lab->d_traksize)
 					print("Offset too long!\n");
 				else if(entry.bs_length == 0)
 					print("Can't have a 0 length error!\n");

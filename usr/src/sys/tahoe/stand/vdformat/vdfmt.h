@@ -1,4 +1,4 @@
-/*	vdfmt.h	1.4	87/06/01	*/
+/*	vdfmt.h	1.5	87/11/23	*/
 
 /*
  * VERSAbus disk controller (vd) disk formatter.
@@ -7,6 +7,7 @@
 #include "tahoe/mtpr.h"
 #include "param.h"
 #include "buf.h"
+#include "disklabel.h" 
 #include "inode.h" 
 #include "fs.h"
 #include "tahoevba/vbaparam.h"
@@ -33,11 +34,10 @@ extern	struct cpdcb_i cpin;		/* found in prf.c */
 #define	NUMSYS	(NUMREL+NUMMNT+NUMMAP)	/* Total cyls used by system */
 
 #define	MAXTRKS		24
-#define	MAXSECS_PER_TRK	64
+#define	MAXSECS_PER_TRK	72		/* at 512 bytes/sector */
 #define	MAXERR		1000
-#define SECSIZ		512
-#define	TRKSIZ		((SECSIZ/sizeof(long)) * MAXSECS_PER_TRK)
-#define bytes_trk	(CURRENT->vc_nsec * SECSIZ)
+#define	MAXTRKSIZ	((512/sizeof(long)) * MAXSECS_PER_TRK)
+#define bytes_trk 	(lab->d_nsectors * lab->d_secsize)
 
 #define	HARD_ERROR \
     (DCBS_NRDY|DCBS_IVA|DCBS_NEM|DCBS_DPE|DCBS_OAB|DCBS_WPT|DCBS_SKI|DCBS_OCYL)
@@ -193,12 +193,10 @@ typedef struct {
 	int		type;
 	fmt_err		(*decode_pos)();
 	bs_entry	(*code_pos)();
-	int		(*cylinder_skew)();
-	int		(*track_skew)();
 } ctlr_info;
 
-#define	C_INFO	 c_info[cur.controller]
 ctlr_info	c_info[MAXCTLR];
+ctlr_info	*C_INFO;
 
 /*
  * Drive specific information
@@ -206,16 +204,19 @@ ctlr_info	c_info[MAXCTLR];
 typedef struct {
 	uncertain	alive;
 	int		id;
-	struct	vdconfig *info;
-	int		trk_size;
-	int		num_slip;
-	int		track_skew;
+	struct		disklabel label;
 	drv_stat	condition;
 } drive_info;
+#define	d_traksize	d_drivedata[1]
+#define	d_pat		d_drivedata[2]
 
-#define	D_INFO	 d_info[cur.controller][cur.drive]
-#define	CURRENT	 D_INFO.info
 drive_info	d_info[MAXCTLR][MAXDRIVE];
+drive_info	*D_INFO;
+struct disklabel *lab;
+
+struct	disklabel vdproto[];
+int	ndrives;
+int	smddrives;
 
 typedef struct {
 	unsigned int	bs_id;		/* Pack id */
@@ -224,9 +225,9 @@ typedef struct {
 	bs_entry	list[1];
 } bs_map;
 
-#define MAX_FLAWS (((TRKSIZ*sizeof(long))-sizeof(bs_map))/sizeof(bs_entry))
+#define MAX_FLAWS (((MAXTRKSIZ*sizeof(long))-sizeof(bs_map))/sizeof(bs_entry))
 
-long	bs_map_space[TRKSIZ];
+long	bs_map_space[MAXTRKSIZ];
 bs_map	*bad_map;
 
 boolean	kill_processes;
@@ -240,14 +241,14 @@ fmt_free	free_tbl[NUMREL*MAXTRKS][MAXSECS_PER_TRK];
 struct	mdcb	mdcb;		/* Master device control block */
 struct	dcb	dcb;		/* Device control blocks */
 
-long	pattern_0[TRKSIZ],  pattern_1[TRKSIZ];
-long	pattern_2[TRKSIZ],  pattern_3[TRKSIZ];
-long	pattern_4[TRKSIZ],  pattern_5[TRKSIZ];
-long	pattern_6[TRKSIZ],  pattern_7[TRKSIZ];
-long	pattern_8[TRKSIZ],  pattern_9[TRKSIZ];
-long	pattern_10[TRKSIZ], pattern_11[TRKSIZ];
-long	pattern_12[TRKSIZ], pattern_13[TRKSIZ];
-long	pattern_14[TRKSIZ], pattern_15[TRKSIZ];
+long	pattern_0[MAXTRKSIZ],  pattern_1[MAXTRKSIZ];
+long	pattern_2[MAXTRKSIZ],  pattern_3[MAXTRKSIZ];
+long	pattern_4[MAXTRKSIZ],  pattern_5[MAXTRKSIZ];
+long	pattern_6[MAXTRKSIZ],  pattern_7[MAXTRKSIZ];
+long	pattern_8[MAXTRKSIZ],  pattern_9[MAXTRKSIZ];
+long	pattern_10[MAXTRKSIZ], pattern_11[MAXTRKSIZ];
+long	pattern_12[MAXTRKSIZ], pattern_13[MAXTRKSIZ];
+long	pattern_14[MAXTRKSIZ], pattern_15[MAXTRKSIZ];
 
 long	*pattern_address[16];	/* pointers to pattern_* */
 
@@ -255,8 +256,8 @@ long	*pattern_address[16];	/* pointers to pattern_* */
  * Double buffer for scanning existing
  * file systems and general scratch
  */
-long	scratch[TRKSIZ];
-long	save[TRKSIZ];
+long	scratch[MAXTRKSIZ];
+long	save[MAXTRKSIZ];
 
 /* XXX */
 /*
@@ -287,21 +288,61 @@ typedef struct {
 	char		smde_junk[1024];
 } smde_hdr;
 
+/* for MAXTOR */
+
+typedef struct {
+	unsigned long	esdi_flaw_sync;
+	unsigned short	esdi_flaw_cyl;
+	unsigned char	esdi_flaw_trk;
+	unsigned char	esdi_flaw_sec;
+	unsigned char	esdi_flags;
+	unsigned char	esdi_ecc_1[2];
+	unsigned char	esdi_pad_1[2];
+	unsigned char	esdi_plo_sync[26];
+} esdi_flaw_header;
+
+typedef struct {
+	unsigned long	esdi_data_sync;
+	unsigned char	esdi_month;
+	unsigned char	esdi_day;
+	unsigned char	esdi_year;
+	unsigned char	esdi_head;
+	unsigned char	esdi_pad_2[2];
+	unsigned char	esdi_flaws[50][5];  /* see esdi_flaw_entry */
+	unsigned char	esdi_ecc_2[2];
+	unsigned char	esdi_pad_3[2];
+	char		esdi_flaw_junk[1024]; /* Fill up block */
+} esdi_flaw_data;
+
+
+
+typedef struct {
+	esdi_flaw_header	esdi_header;
+	esdi_flaw_data		esdi_data;
+} esdi_flaw;
+
+
+
+/*
+**  since each flaw entry is 5 bytes and this forces alignment problems we
+** define a structure here so that the entries can be BCOPYed into a
+** reasonable work area before access.
+*/
+
+typedef struct {
+	unsigned short	esdi_flaw_cyl;
+	unsigned short	esdi_flaw_offset;
+	unsigned char	esdi_flaw_length;
+} esdi_flaw_entry;
+
 #define	CDCSYNC		0x1919
 #define	SMDSYNC		0x0019
 #define	SMDESYNC	0x0009
 #define	SMDE1SYNC	0x000d
+#define	ESDISYNC	0x00fe
+#define	ESDI1SYNC	0x00fe /* 0x00f8 */
 
 /* XXX */
-
-/*
- * Disk drive geometry definition.
- */
-struct	geometry {
-	u_short	g_nsec;		/* sectors/track */
-	u_short	g_ntrak;	/* tracks/cylinder */
-	u_int	g_ncyl;		/* cylinders/drive */
-};
 
 /*
  * Flaw testing patterns.
@@ -309,22 +350,3 @@ struct	geometry {
 struct	flawpat {
 	u_int	fp_pat[16];
 };
-
-/*
- * Disk drive configuration information.
- */
-struct	vdconfig {
-	char	*vc_name;		/* drive name for selection */
-	struct	geometry vc_geometry;	/* disk geometry */
-#define	vc_nsec	vc_geometry.g_nsec
-#define	vc_ntrak vc_geometry.g_ntrak
-#define	vc_ncyl	vc_geometry.g_ncyl
-	int	vc_nslip;		/* # of slip sectors */
-	int	vc_rpm;			/* revolutions/minute */
-	int	vc_traksize;		/* bits/track for flaw map interp */
-	struct	flawpat *vc_pat;	/* flaw testing patterns */
-	char	*vc_type;		/* informative description */
-};
-struct	vdconfig vdconfig[];
-int	ndrives;
-int	smddrives;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)list.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)list.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -48,7 +48,7 @@ register int	ctlr, drive;
 {
 	print_op_list(ops_to_do[ctlr][drive].op);
 	printf(": Controller %d, drive %d", ctlr, drive);
-	printf(", type %s.\n", d_info[ctlr][drive].info->vc_name);
+	printf(", type %s.\n", d_info[ctlr][drive].label.d_typename);
 }
 
 

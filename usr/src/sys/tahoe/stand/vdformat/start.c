@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)start.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)start.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -19,10 +19,14 @@ start_commands()
 				if(ops_to_do[ctlr][drive].op & (1<<cur_op)) {
 					cur.controller = ctlr;
 					cur.drive = drive;
+					C_INFO = &c_info[ctlr];
+					D_INFO = &d_info[ctlr][drive];
+					lab = &D_INFO->label;
 					if(!_setjmp(abort_environ)) {
 						cur.state = setup;
 						load_verify_patterns();
-						spin_up_drive();
+						if (D_INFO->alive != u_true)
+							spin_up_drive();
 						(*operations[cur_op].routine)();
 					}
 					ops_to_do[ctlr][drive].op&=~(1<<cur_op);
@@ -31,4 +35,3 @@ start_commands()
 		}
 	exdent(1);
 }
-
