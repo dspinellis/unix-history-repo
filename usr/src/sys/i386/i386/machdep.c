@@ -7,9 +7,16 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)machdep.c	5.1 (Berkeley) %G%
+ *	@(#)machdep.c	5.2 (Berkeley) %G%
  */
 
+/*
+ * Copyright (c) 1982,1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)machdep.c	1.16.1.1 (Berkeley) 11/24/87
+ */
 
 #include "param.h"
 #include "systm.h"
@@ -89,15 +96,28 @@ kernel and run-time configured storage (e.g. valloc), using memory
 above 0x100000 for the cmap, and wasting the stuff left over after
 valloc-end up to 0xa0000 (640K). Will have to fix this before beta,
 and will have to somehow move this out into per bus adapter directory
-(e.g. configurable). For now, punt */
+(e.g. configurable). For now, punt
+
+How about starting cmap normally following valloc space, and then
+write a routine than allocs only phys pages in the 0xa0000-0x100000
+hole?
+
+*/
 	kernmem = 640/4;
 	kernmem -= btoc(sizeof (struct msgbuf));
-/*pg("kern %x, msgbufmap", kernmem);*/
 	pte = msgbufmap;
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
 		*(int *)pte++ = PG_V | PG_KW | ctob(kernmem + i);
-/*XXX*/	maxmem = freemem = physmem = 1024/4+kernmem;
-	cmaxmem = 1024/4;
+/*XXX*/	maxmem = freemem = physmem = 2048/4+kernmem;
+	cmaxmem = 2048/4;
+
+/* unmap particular region being written into, so we can find offending ptr */
+/*{ extern char b_uregion[], e_uregion[];
+#define	ptidx(s)	((s - sbase)/NBPG)
+	pte = Sysmap + ptidx(b_uregion) + 1 ;
+	for (i = ptidx(b_uregion) + 1 ; i < ptidx (e_uregion) ; i++)
+		*(int *)pte++ = 0 ;
+}*/
 	load_cr3(_cr3());
 
 #ifdef KDB
@@ -121,7 +141,6 @@ and will have to somehow move this out into per bus adapter directory
 	 */
 	v = (caddr_t)(sbase + (firstaddr * NBPG));
 	/*v = sbase + (firstaddr * NBPG);*/
-/*pg("vallocs %x", v);*/
 #define	valloc(name, type, num) \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
@@ -237,7 +256,6 @@ and will have to somehow move this out into per bus adapter directory
 		mapaddr += MAXBSIZE / NBPG;
 	}
 
-	/*unixsize = btoc((int)(v - sbase));*/
 	unixsize = btoc((int)(v - sbase));
 	if (firstaddr >= physmem - 8*UPAGES)
 		panic("no memory");
@@ -258,7 +276,7 @@ and will have to somehow move this out into per bus adapter directory
 	 * THE USER PAGE TABLE MAP IS CALLED ``kernelmap''
 	 * WHICH IS A VERY UNDESCRIPTIVE AND INCONSISTENT NAME.
 	 */
-firstaddr = 0x100; maxmem = 0x200;		/*XXX*/
+firstaddr = 0x100; maxmem = 0x300;		/*XXX*/
 	meminit(firstaddr, maxmem);
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
@@ -270,7 +288,8 @@ firstaddr = 0x100; maxmem = 0x200;		/*XXX*/
  * PTEs for mapping user space into kernel for phyio operations.
  * One page is enough to handle 4Mb of simultaneous raw IO operations.
  */
-#define USRIOSIZE	(30)
+#undef USRIOSIZE
+#define USRIOSIZE 30
 	rminit(useriomap, (long)USRIOSIZE, (long)1, "usrio", nproc);
 	rminit(mbmap, (long)(nmbclusters * CLSIZE), (long)CLSIZE,
 	    "mbclusters", nmbclusters/4);
@@ -366,6 +385,7 @@ sendsig(p, sig, mask, frmtrp)
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
 		 */
+printf("sendsig: failed to grow stack %x\n", fp);
 		u.u_signal[SIGILL] = SIG_DFL;
 		sig = sigmask(SIGILL);
 		u.u_procp->p_sigignore &= ~sig;
@@ -797,7 +817,7 @@ struct region_descriptor r_idt = {
 	sizeof(idt)-1,(char *)idt
 };
 
-setidt(idx, func, typ) char *func; {
+setidt(idx, func, typ, dpl) char *func; {
 	struct gate_descriptor *ip = idt + idx;
 
 	ip->gd_looffset = (int)func;
@@ -805,7 +825,7 @@ setidt(idx, func, typ) char *func; {
 	ip->gd_stkcpy = 0;
 	ip->gd_xx = 0;
 	ip->gd_type = typ;
-	ip->gd_dpl = 0;
+	ip->gd_dpl = dpl;
 	ip->gd_p = 1;
 	ip->gd_hioffset = ((int)func)>>16 ;
 }
@@ -879,58 +899,58 @@ init386() { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 /* Note. eventually want private ldts per process */
 
 /* exceptions */
-	setidt(0, &IDTVEC(div),  SDT_SYS386TGT);
-	setidt(1, &IDTVEC(dbg),  SDT_SYS386TGT);
-	setidt(2, &IDTVEC(nmi),  SDT_SYS386TGT);
-	setidt(3, &IDTVEC(bpt),  SDT_SYS386TGT);
-	setidt(4, &IDTVEC(ofl),  SDT_SYS386TGT);
-	setidt(5, &IDTVEC(bnd),  SDT_SYS386TGT);
-	setidt(6, &IDTVEC(ill),  SDT_SYS386TGT);
-	setidt(7, &IDTVEC(dna),  SDT_SYS386TGT);
-	setidt(8, &IDTVEC(dble),  SDT_SYS386TGT);
-	setidt(9, &IDTVEC(fpusegm),  SDT_SYS386TGT);
-	setidt(10, &IDTVEC(tss),  SDT_SYS386TGT);
-	setidt(11, &IDTVEC(missing),  SDT_SYS386TGT);
-	setidt(12, &IDTVEC(stk),  SDT_SYS386TGT);
-	setidt(13, &IDTVEC(prot),  SDT_SYS386TGT);
-	setidt(14, &IDTVEC(page),  SDT_SYS386TGT);
-	setidt(15, &IDTVEC(rsvd),  SDT_SYS386TGT);
-	setidt(16, &IDTVEC(fpu),  SDT_SYS386TGT);
-	setidt(17, &IDTVEC(rsvd0),  SDT_SYS386TGT);
-	setidt(18, &IDTVEC(rsvd1),  SDT_SYS386TGT);
-	setidt(19, &IDTVEC(rsvd2),  SDT_SYS386TGT);
-	setidt(20, &IDTVEC(rsvd3),  SDT_SYS386TGT);
-	setidt(21, &IDTVEC(rsvd4),  SDT_SYS386TGT);
-	setidt(22, &IDTVEC(rsvd5),  SDT_SYS386TGT);
-	setidt(23, &IDTVEC(rsvd6),  SDT_SYS386TGT);
-	setidt(24, &IDTVEC(rsvd7),  SDT_SYS386TGT);
-	setidt(25, &IDTVEC(rsvd8),  SDT_SYS386TGT);
-	setidt(26, &IDTVEC(rsvd9),  SDT_SYS386TGT);
-	setidt(27, &IDTVEC(rsvd10),  SDT_SYS386TGT);
-	setidt(28, &IDTVEC(rsvd11),  SDT_SYS386TGT);
-	setidt(29, &IDTVEC(rsvd12),  SDT_SYS386TGT);
-	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT);
-	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT);
+	setidt(0, &IDTVEC(div),  SDT_SYS386TGT, SEL_KPL);
+	setidt(1, &IDTVEC(dbg),  SDT_SYS386TGT, SEL_KPL);
+	setidt(2, &IDTVEC(nmi),  SDT_SYS386TGT, SEL_KPL);
+	  setidt(3, &IDTVEC(bpt),  SDT_SYS386TGT, SEL_UPL);
+	setidt(4, &IDTVEC(ofl),  SDT_SYS386TGT, SEL_KPL);
+	setidt(5, &IDTVEC(bnd),  SDT_SYS386TGT, SEL_KPL);
+	setidt(6, &IDTVEC(ill),  SDT_SYS386TGT, SEL_KPL);
+	setidt(7, &IDTVEC(dna),  SDT_SYS386TGT, SEL_KPL);
+	setidt(8, &IDTVEC(dble),  SDT_SYS386TGT, SEL_KPL);
+	setidt(9, &IDTVEC(fpusegm),  SDT_SYS386TGT, SEL_KPL);
+	setidt(10, &IDTVEC(tss),  SDT_SYS386TGT, SEL_KPL);
+	setidt(11, &IDTVEC(missing),  SDT_SYS386TGT, SEL_KPL);
+	setidt(12, &IDTVEC(stk),  SDT_SYS386TGT, SEL_KPL);
+	setidt(13, &IDTVEC(prot),  SDT_SYS386TGT, SEL_KPL);
+	setidt(14, &IDTVEC(page),  SDT_SYS386TGT, SEL_KPL);
+	setidt(15, &IDTVEC(rsvd),  SDT_SYS386TGT, SEL_KPL);
+	setidt(16, &IDTVEC(fpu),  SDT_SYS386TGT, SEL_KPL);
+	setidt(17, &IDTVEC(rsvd0),  SDT_SYS386TGT, SEL_KPL);
+	setidt(18, &IDTVEC(rsvd1),  SDT_SYS386TGT, SEL_KPL);
+	setidt(19, &IDTVEC(rsvd2),  SDT_SYS386TGT, SEL_KPL);
+	setidt(20, &IDTVEC(rsvd3),  SDT_SYS386TGT, SEL_KPL);
+	setidt(21, &IDTVEC(rsvd4),  SDT_SYS386TGT, SEL_KPL);
+	setidt(22, &IDTVEC(rsvd5),  SDT_SYS386TGT, SEL_KPL);
+	setidt(23, &IDTVEC(rsvd6),  SDT_SYS386TGT, SEL_KPL);
+	setidt(24, &IDTVEC(rsvd7),  SDT_SYS386TGT, SEL_KPL);
+	setidt(25, &IDTVEC(rsvd8),  SDT_SYS386TGT, SEL_KPL);
+	setidt(26, &IDTVEC(rsvd9),  SDT_SYS386TGT, SEL_KPL);
+	setidt(27, &IDTVEC(rsvd10),  SDT_SYS386TGT, SEL_KPL);
+	setidt(28, &IDTVEC(rsvd11),  SDT_SYS386TGT, SEL_KPL);
+	setidt(29, &IDTVEC(rsvd12),  SDT_SYS386TGT, SEL_KPL);
+	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL);
+	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL);
 
 /* first icu */
-	setidt(32, &IDTVEC(intr0),  SDT_SYS386IGT);
-	setidt(33, &IDTVEC(intr1),  SDT_SYS386IGT);
-	setidt(34, &IDTVEC(intr9),  SDT_SYS386IGT); /* note: never happens */
-	setidt(35, &IDTVEC(intr3),  SDT_SYS386IGT);
-	setidt(36, &IDTVEC(intr4),  SDT_SYS386IGT);
-	setidt(37, &IDTVEC(intr5),  SDT_SYS386IGT);
-	setidt(38, &IDTVEC(intr6),  SDT_SYS386IGT);
-	setidt(39, &IDTVEC(intr7),  SDT_SYS386IGT);
+	setidt(32, &IDTVEC(intr0),  SDT_SYS386IGT, SEL_KPL);
+	setidt(33, &IDTVEC(intr1),  SDT_SYS386IGT, SEL_KPL);
+	setidt(34, &IDTVEC(intr9),  SDT_SYS386IGT, SEL_KPL); /* note: never happens */
+	setidt(35, &IDTVEC(intr3),  SDT_SYS386IGT, SEL_KPL);
+	setidt(36, &IDTVEC(intr4),  SDT_SYS386IGT, SEL_KPL);
+	setidt(37, &IDTVEC(intr5),  SDT_SYS386IGT, SEL_KPL);
+	setidt(38, &IDTVEC(intr6),  SDT_SYS386IGT, SEL_KPL);
+	setidt(39, &IDTVEC(intr7),  SDT_SYS386IGT, SEL_KPL);
 
 /* second icu */
-	setidt(40, &IDTVEC(intr8),  SDT_SYS386IGT);
-	setidt(41, &IDTVEC(intr9),  SDT_SYS386IGT);
-	setidt(42, &IDTVEC(intr10),  SDT_SYS386IGT);
-	setidt(43, &IDTVEC(intr11),  SDT_SYS386IGT);
-	setidt(44, &IDTVEC(intr12),  SDT_SYS386IGT);
-	setidt(45, &IDTVEC(intr13),  SDT_SYS386IGT);
-	setidt(46, &IDTVEC(intr14),  SDT_SYS386IGT);
-	setidt(47, &IDTVEC(intr15),  SDT_SYS386IGT);
+	setidt(40, &IDTVEC(intr8),  SDT_SYS386IGT, SEL_KPL);
+	setidt(41, &IDTVEC(intr9),  SDT_SYS386IGT, SEL_KPL);
+	setidt(42, &IDTVEC(intr10),  SDT_SYS386IGT, SEL_KPL);
+	setidt(43, &IDTVEC(intr11),  SDT_SYS386IGT, SEL_KPL);
+	setidt(44, &IDTVEC(intr12),  SDT_SYS386IGT, SEL_KPL);
+	setidt(45, &IDTVEC(intr13),  SDT_SYS386IGT, SEL_KPL);
+	setidt(46, &IDTVEC(intr14),  SDT_SYS386IGT, SEL_KPL);
+	setidt(47, &IDTVEC(intr15),  SDT_SYS386IGT, SEL_KPL);
 
 	lgdt(gdt, sizeof(gdt)-1);
 	lidt(idt, sizeof(idt)-1);
@@ -1041,56 +1061,80 @@ vmunaccess() {}
  */
 copyinstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 	char *toaddr; {
-	int c;
-	char *t = toaddr;
+	int c,tally;
 
-/*printf("\ncpyinstr(%x,%x) %x|", fromaddr, toaddr, *(((int *) &fromaddr) - 1) );*/
-	*lencopied = 0;
+	tally = 0;
 	while (maxlength--) {
 		c = fubyte(fromaddr++);
-		if (c == -1) return(EFAULT);
-c &= 0xff;
-		(*lencopied)++;
+		if (c == -1) {
+			if(lencopied) *lencopied = tally;
+			return(EFAULT);
+		}
+		tally++;
 		*toaddr++ = (char) c;
 		if (c == 0){
-/* if(*lencopied < 50 && *t > 0) printf("%s|\n", t);*/
-return(0);
-}
+			if(lencopied) *lencopied = tally;
+			return(0);
+		}
 	}
+	if(lencopied) *lencopied = tally;
 	return(ENOENT);
 }
 
 copyoutstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 	u_char *fromaddr; {
 	int c;
-	u_char *f = fromaddr;
+	int tally;
 
-/*printf("\ncpyoutstr(%x,%x)%x|", fromaddr, toaddr, maxlength, 
-	*(((int *) &fromaddr) - 1) );*/
-
-	*lencopied = 0;
+	tally = 0;
 	while (maxlength--) {
 		c = subyte(toaddr++,*fromaddr);
 		if (c == -1) return(EFAULT);
-		(*lencopied)++;
+		tally++;
 		if (*fromaddr++ == 0){
-/*if(*lencopied < 50 && *f < 127) printf("%s|\n", f);*/
+			if(lencopied) *lencopied = tally;
 			return(0);
-}
+		}
 	}
+	if(lencopied) *lencopied = tally;
 	return(ENOENT);
 }
 
 copystr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 	u_char *fromaddr, *toaddr; {
-	int c;
+	int tally;
 
-	*lencopied = 0;
+	tally = 0;
 	while (maxlength--) {
 		*toaddr = *fromaddr++;
-		(*lencopied)++;
-		if (*toaddr++ == 0)
+		tally++;
+		if (*toaddr++ == 0) {
+			if(lencopied) *lencopied = tally;
 			return(0);
+		}
 	}
+	if(lencopied) *lencopied = tally;
 	return(ENOENT);
+}
+
+/* 
+ * ovbcopy - like bcopy, but recognizes overlapping ranges and handles 
+ *           them correctly.
+ */
+ovbcopy(from, to, bytes)
+	char *from, *to;
+	int bytes;			/* num bytes to copy */
+{
+	/* Assume that bcopy copies left-to-right (low addr first). */
+	if (from + bytes <= to || to + bytes <= from || to == from)
+		bcopy(from, to, bytes);	/* non-overlapping or no-op*/
+	else if (from > to)
+		bcopy(from, to, bytes);	/* overlapping but OK */
+	else {
+		/* to > from: overlapping, and must copy right-to-left. */
+		from += bytes - 1;
+		to += bytes - 1;
+		while (bytes-- > 0)
+			*to-- = *from--;
+	}
 }
