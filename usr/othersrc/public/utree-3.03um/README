@@ -1,0 +1,225 @@
+
+	    UTREE - screen oriented filesystem utility
+	      README, klin, Mon Apr 13 15:38:54 1992
+
+------------------------------------------------------------------------------
+
+Utree is a screen oriented filesystem utility for navigation thru fileystems
+and doing some default and user defined commands on directories and files.
+
+For usage and documentation see the manual pages utree and utree.prlist.
+
+For copyright notice, warranty and distribution conditions see COPYRIGHT.
+
+------------------------------------------------------------------------------
+
+Utree is first implemented and tested on a PCS CADMUS 9230 (Motorola MC68010)
+running MUNIX V.2/07 (System V.2) and then ported to, compiled and tested on
+some others machines running UNIX System V.3, BSD4.2 and BSD4.3 or look alikes.
+The release utree 3.03-um is developed on a MIPS RC3230 running RISC/os 4.51.
+
+    + MIPS RC3230, RISC/os 4.51 (System V.3, MIPS R3000)
+    + PCS Cadmus 9600, MUNIX V.3M3.2 (System V.3, MC68020)
+    + PCS Cadmus 9900, MUNIX V.3R3.2 (RISC/os 4.0 like System V.3, MIPS R[23]000)
+    + SUN SPARCstation2, SunOS 4.1.1 (BSD4.3, SPARC)
+    + Silicon Graphics 4D, IRIX V.3.2.2 (System V.3, MIPS R[23]000)
+    + IBM 520, AIX 3.1 (System V.3, RS/6000)
+    + HP Vectra, SCO UNIX/386 V.3.2 (System V.3, i486)
+    + NoName-AT386, SCO XENIX SysV 2.3.2 386 GT (by Rolf Gebhardt)
+    + Sequent Symmetrie, Dynix i386 2.0v2 (BSD 4.2, 10 x i386)
+    + Convex C120, ConvexOS 8.1 (BSD 4.2)
+    + Nixdorf TARGON/35, TOS 3.2-03 (BSD 4.2)
+    + DEC Decstation 5000/200, Ultrix-32 1.3 (Rev. 54) (BSD 4.3, MIPS R3000)
+    + DEC Vaxstation 3100, Ultrix-32 1.3 (Rev. 9) (BSD 4.3, VAX)
+    + Apollo Domain DN4500, DomainIX 9.5 (BSD4.2 and System V)
+    + DEC VAX/750, 4.3 BSD UNIX
+    + UNIX/386 System V.4 (Consensys)
+
+Other known ports are done to a lot of other boxes and UNIXes.
+
+------------------------------------------------------------------------------
+
+    If you wish to install utree on your system do the following steps:
+
+    1 CHECK if you have all source files. The file MANIFEST contains a
+      list of all distributed files with a short description.
+
+    2 CHECK AND CHANGE Makefile AND src/Makefile FOR YOUR SYSTEM IF NEEDED.
+      The Makefiles should be self explanatory enough for changes you have
+      to do. There are some example Makefiles for different systems contained
+      in the directory sys. For a complete list of defines and some hints
+      see below.
+
+    3 CHECK AND CHANGE src/conf.h FOR YOUR SYSTEM IF NEEDED.
+      See below for the meaning of some defines in conf.h you may have to
+      change for your system. There are some example configuration files
+      conf.h for different systems contained in the directory sys.
+      If your system doesn't support vsprintf(3) for formatted output to
+      a string with variable number of arguments (most BSD systems don't)
+      and you wish to use this function look at directory sup containing
+      a public domain version of vsprintf(3) and vfprintf(3).
+      Copy vsprintf.c to directory src and change your Makefile for
+      compiling vsprintf and linking vsprintf into utree. For a complete
+      list of defines in conf.h and some hints see below.
+
+    4 Call 'make all' or 'make' to compile and link utree and utree.prlist.
+
+    5 Call 'bin/utree .' for testing utree.
+
+    6 Check and edit bin/utree.backup if you wish to allow filesystem or
+      directory backups from within utree. Check and edit bin/utree.mklist
+      for creating directory tree lists from without utree (this is normally
+      not needed).
+
+    7 See the example startup file lib/utree.startup and the example
+      key binding file lib/utree.binding for usage of startup files
+      and key binding files.
+
+    8 Call 'make install' to install the utree executables into a public bin
+      directory defined in the Makefile. May be you have to login as root
+      before.
+
+    9 Have fun and enjoy.
+
+------------------------------------------------------------------------------
+
+    Currently distributed Makefiles and configuration files conf.h in sys are
+
+    sys/*.286  - UNIX V/286/386 compatibility mode (MSC under SCO)
+    sys/*.AIX  - AIX 3.1 (IBM 520, RS/6000)
+    sys/*.APP  - DomainIX 9.5 (Apollo Domain DN4500)
+    sys/*.BSD  - Generic BSD4.2 and BSD4.3
+    sys/*.CON  - ConvexOS 8.1 (Convex C120)
+    sys/*.M16  - MUNIX V2/07 (PCS Cadmus 9230, MC68010)
+    sys/*.M32  - MUNIX V3.2 (PCS Cadmus 9600, MC68020)
+    sys/*.MIPS - RISC/os 4.51 (MIPS RC3230, R3000)
+    sys/*.RCU  - MUNIX V3.2 (PCS Cadmus 99xx, MIPS R2000/3000)
+    sys/*.SCO  - SCO UNIX System V/386 3.2 (HP Vectra)
+    sys/*.SEQ  - Dynix i386 (Sequent Symmetrie, 10xi386)
+    sys/*.SGI  - IRIX V.3.2 (Silicon Graphics 4D, MIPS R3000)
+    sys/*.SUN  - SunOS 4.1.1 (SUN4, SPARC)
+    sys/*.ULT  - Ultrix-32 3.1 (DECstation, VAXstation)
+    sys/*.V.2  - Generic System V.2
+    sys/*.V.3  - Generic System V.3
+    sys/*.V.4  - UNIX/386 System V.4
+    sys/*.VAX  - 4.3 BSD UNIX (DEC VAX/750)
+    sys/*.X23  - SCO XENIX SysV 2.3.2 386GT (NoName-AT386)
+
+------------------------------------------------------------------------------
+
+    Utree is written in standard K&R C, not in ANSI C. If you are using an
+    ANSI C compiler check and set the appropiate compiler option for accepting
+    standard C code. The other compile and link options in the Makefile are
+
+    CFLAGS   normal compiler flags and defines (for utree and utree.prlist)
+    MFLAGS   floating point compiler flag (for utree.prlist)
+    LFLAGS   loader flags (for utree and utree.prlist)
+    LIBS     needed libraries (for utree and utree.prlist)
+    MLIBS    floating point library (for utree.prlist)
+    LLIBS    local libraries (i.e. shared libraries)
+    CC       the C compiler command
+    SRCS     list of utree source files
+    OBJS     list of utree object files
+
+    If your system is BSD or BSD-like and doesn't support the getopt(3)
+    commandline parser function, copy getopt.c from directory sup to the
+    source directory sys and add getopt.c and getopt.o to the SRCS and
+    OBJS variables in src/Makefile. See sys/Makefile.BSD for and example.
+    The tree list program utree.prlist also uses getopt().
+
+    Possible defines in the makefile src/Makefile
+
+    define BSD for BSD systems (default: SYSV)
+    define AIX for IBMs UNIX version AIX
+    define XENIX for XENIX system
+    define APOLLO for adding some special stuff for APOLLO networks
+    define VOID=int if your compiler doen't support void
+    define UTLIB=libdir if not defined in conf.h (see below)
+    define USEANSICOLORS for using colors on ANSI compatible terminals
+
+------------------------------------------------------------------------------
+
+    Meaning of some defines in the system configuration file conf.h:
+
+    #define HASVPRINTF if your system is BSD or BSD-like and supports
+      the varargs vsprintf(3) function. Some BSD systems need additional
+      libraries at link time for vsprintf(). The directory sup contains
+      a public domain version of vsprintf() which you can compile and
+      link into utree. If you want to use this function copy vsprintf.c
+      from directory sup to src and change the makefile to include
+      vsprintf.c and vsprintf.o in SRCS and OBJS. But you should test
+      vsprintf before because usage vsprintf may not work or result in
+      core dumps! SYSV needs not to define HASVPRINTF.
+
+    #define HASFIONREAD if your system is SYSV and supports the FIONREAD
+      call to ioctl(2) to get the number of characters to read i.e. for
+      typeahead(). Check if ioctl(0, FIONREAD, &n) sets n to the correct
+      number of characters already typed in. My own system (MUNIX V.2/07)
+      i.e. fails, but most SYSV, especially those which support sockets,
+      return the correct result in n. The directory tst contains a simple
+      test program fionread.c for testing the ioctl-call. BSD needs not
+      to define HASFIONREAD.
+
+    #define HASVFORK if your system is SYSV and supports the vfork(2)
+      systemcall. My own system i.e. supports the vfork(2) systemcall.
+      AIX otherwise supports vfork(2) when linking in the BSD compatibility
+      library libbsd.a (-lbsd) but in this case the signal handling
+      is also BSD-like and resizing the screen may not work correctly.
+      BSD needs not to define HASVFORK.
+
+    #define NODIRENT if your system is SYSV or another older system
+      and doesn't support the directory type struct dirent and the
+      directory access functions opendir(3), closedir(3) and readdir(3).
+      Check the include file /usr/sys/dirent.h for struct dirent or
+      the manual pages for the directory access functions. If your
+      system doesn't support struct dirent utree assumes a standard
+      UNIX filesystem with struct direct and filename length of at least
+      14 characters and emulates the directory functions with file
+      access functions. BSD needs not to define NODIRENT.
+
+    #undefine NOWINCHG to permit resizing of the screen at runtime, i.e.
+      after resizing a xterm under X. Your system has to support the
+      signal SIGWINCH after resizing the screen and the ioctl(2) call
+      TIOCGWINSZ to get the new screen size in a record winsize. Not
+      all systems defining SIGWINCH and TIOCGWINSZ fill the winsize
+      record in a correct manner, i.e. SCO UNIX V.3.2/386. Check the
+      include files /usr/signal.h or /usr/sys/signal.h for SIGWINCH
+      and /usr/include/sys/ioctl.h, /usr/include/termio.h or
+      /usr/include/sys/termio.h for TIOCGWINSZ and struct winsize.
+      The directory tst contains a simple test program winsize.c
+      for testing resizing and properly signal and winsize handling.
+
+    #define STRUCTCOPY(from, to) to an appropiate memory copy function
+      if your compiler doesn't support assignments of a struct variables
+      like struct_variable_to = struct_variable_from. On SYSV define as
+      memcpy(to, from, sizeof(from)), on BSD as bcopy(from, to, sizeof(from)).
+      (See conf.h).
+
+    #define UTCLOCK to allow clock display/update every second.
+
+    #define UTLIB as a directory containing utree startup files for
+      global definitions (utree), key bindings (utree-$TERM) and the
+      tree help pages (utree.help). The default name of this global
+      library directory is defined as /usr/local/lib. But this directory
+      may also be set in the environment variable $UTLIB.
+
+      Last but not least check the pre-defined system commands defined
+      in cmds.h and change them to your preferred commands, for example
+      the editor, pager or hexdumper. But all these commands may also be
+      set in the global startup file $UTLIB/utree or in user's startupfile
+      $HOME/.utree.
+
+------------------------------------------------------------------------------
+
+If you find bugs (there are some bugs - i'm sure) or make changes to utree
+please send me bug reports (and bug fixes) and/or your changes. The file TODO
+denotes some extensions to utree which should be done in the next time.
+If you have questions about utree feel free to send me your questions.
+I hope I have the time to answer to you.
+
+My address:     Peter Klingebiel
+		Busdorfwall 18
+		D-4790 Paderborn
+Internet:       klin@iat.uni-paderborn.de
+
+------------------------------------------------------------------------------

@@ -1,0 +1,13 @@
+:
+#
+#       QTREE.SH
+#       Quick startup utree
+#       3.03-um klin, Sun Feb 16 16:07:25 1992
+#       Usage:          like utree
+#       Options:        like utree
+#       Directory:      /usr/local/bin
+#
+#       SCCSID = @(#) utree 3.03-um (klin) Feb 16 1992 bin/qtree.sh
+#       USAGE  = @(#) Usage: qtree [utree_options]
+
+exec utree -q $@

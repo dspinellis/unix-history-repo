@@ -1,0 +1,44 @@
+Portable vsprintf, vfprintf, and vprintf  by Robert A. Larson
+	<blarson@skat.usc.edu>
+
+Copyright 1989 Robert A. Larson.
+Distribution in any form is allowed as long as the author
+retains credit, changes are noted by their author and the
+copyright message remains intact.  This program comes as-is
+with no warentee of fitness for any purpouse.
+
+Thanks to Doug Gwen, Chris Torek, and others who helped clarify
+the ansi printf specs.
+
+Please send any bug fixes and improvments to blarson@skat.usc.edu .
+The use of goto is NOT a bug.
+
+
+Feb  9, 1989		blarson		First usenet release
+
+This code implements the vsprintf function, without relying on
+the existance of _doprint or other system specific code.
+
+Define NOVOID if void * is not a supported type.
+
+Two compile options are available for efficency:
+	INTSPRINTF	should be defined if sprintf is int and returns
+			the number of chacters formated.
+	LONGINT		should be defined if sizeof(long) == sizeof(int)
+
+	They only make the code smaller and faster, they need not be 
+	defined.
+
+UNSIGNEDSPECIAL should be defined if unsigned is treated differently
+than int in argument passing.  If this is definded, and LONGINT is not,
+the compiler must support the type unsigned long.
+
+Most quirks and bugs of the available sprintf and fprintf fuction are
+duplicated, however * in the width and precision fields will work
+correctly even if sprintf does not support this, and the %n format
+will always work in vsprintf.  %n and return count will work properly
+in vfprintf and vprintf only if fprintf returns the number of
+characters formatted.
+
+Bad format strings, or those with very long width and precision
+fields (including expanded * fields) will cause undesired results.

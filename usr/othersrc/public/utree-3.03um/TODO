@@ -1,0 +1,24 @@
+
+	    UTREE - screen oriented filesystem utility
+	       TODO, klin, Mon Feb 24 20:05:49 1992
+
+->      The system configuration file conf.h and the Makefiles could be
+	configured automatically!
+
+->      Instead of really removing files use save-remove with possibility
+	to restore so save-removed files, i.e.
+		'mv filename .#filename' (instead of 'rm filename')
+		'rm .#filename' before exiting utree
+
+->      Extend file patterns, i.e. file mode ...
+
+->      More sophisticated removing of subtrees
+
+->      More sophisticated menu handling
+
+->      Use colors instead of video attributes on color terminals
+
+->      Use of the curses library for screen dependent functions
+	instead of own coded functions (???)
+
+->      Port to X11/Motif (???)

@@ -1,0 +1,104 @@
+
+	      UTREE - screen oriented filesystem utility
+     COPYRIGHT and distribution notice, klin, Sun Feb 16 16:28:43 1992
+
+------------------------------------------------------------------------------
+
+		   UTREE version 3.03-um
+	Copyright (c) 1991/92 Peter Klingebiel & UNIX Magazin
+		    All rights reserved.
+
+------------------------------------------------------------------------------
+
+Remember, you get what you pay for. The author and UNIX Magazin are not liable
+for any bugs or consequential damages arising from the use of this software.
+However, they may fix bugs if they are asked nicely.
+
+------------------------------------------------------------------------------
+
+			*** NO WARRANTY ***
+
+BECAUSE THIS PROGRAM IS LICENSED FREE OF CHARGE, THE AUTHOR AND UNIX MAGAZIN
+PROVIDE ABSOLUTELY NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE
+LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING, THE AUTHORS AND/OR OTHER
+PARTIES PROVIDE THIS PROGRAM "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO
+THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD THE PROGRAM
+PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
+CORRECTION.
+
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL THE AUTHORS AND/OR ANY
+OTHER PARTY WHO MAY MODIFY AND/OR REDISTRIBUTE THIS PROGRAM BE LIABLE TO YOU
+FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR OTHER SPECIAL,
+INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
+(INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE
+OR LOSSES SUSTAINED BY THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE
+WITH ANY OTHER PROGRAMS) THIS PROGRAM, EVEN IF YOU HAVE BEEN ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
+
+------------------------------------------------------------------------------
+
+		  *** GENERAL PUBLIC LICENSE TO COPY ***
+
+1. You may copy and distribute verbatim copies of this program as you receive
+it, in any medium, provided that you conspicuously and appropriately publish on
+each copy a valid copyright notice,
+
+	   "Copyright (c) 1991 Peter Klingebiel & UNIX Magazin"
+
+and include following the copyright notice a verbatim copy of the above
+disclaimer of warranty and of this License. You may charge a distribution fee
+for the physical act of transferring a copy.
+
+2. You may modify your copy or copies of this source file or any portion of it,
+and copy and distribute such modifications under the terms of Paragraph 1 above,
+provided that you also do the following:
+
+  a) cause the modified files to carry prominent notices stating that you
+     changed the files and the date of any change, and
+
+  b) cause the whole of any work that you distribute or publish, that in
+     whole or in part contains or is a derivative of this program or any part
+     thereof, to be licensed at no charge to all third parties on terms
+     identical to those contained in this License Agreement (except that you
+     may choose to grant more extensive warranty protection to third parties,
+     at your option).
+
+  c) You may charge a distribution fee for the physical act of transferring
+     a copy, and you may at your option offer warranty protection in
+     exchange for a fee.
+
+3. You may copy and distribute this program or any portion of it in compiled,
+executable or object code form under the terms of Paragraphs 1 and 2 above
+provided that you do the following:
+
+  a) cause each such copy to be accompanied by the corresponding
+     machine-readable source code, which must be distributed under the terms
+     of Paragraphs 1 and 2 above, or
+
+  b) cause each such copy to be accompanied by a written offer, with no time
+     limit, to give any third party free (except possibly for a nominal
+     shipping charge) a machine readable copy of the corresponding source
+     code, to be distributed under the terms of Paragraphs 1 and 2 above, or
+
+  c) in the case of a recipient of this program in compiled, executable or
+     object code form (without the corresponding source code), you shall
+     cause copies you distribute to be accompanied by a copy of the written
+     offer of source code which you received along with the copy you received.
+
+4. You may not copy, sublicense, distribute or transfer this program except as
+expressly provided under this License Agreement. Any attempt otherwise to copy,
+sublicense, distribute or transfer this program is void and your rights to use
+the program under this License Agreement shall be automatically terminated.
+However, parties who have received computer software programs from you with
+this License Agreement will not have their licenses terminated so long as such
+parties remain in full compliance.
+
+------------------------------------------------------------------------------
+
+In other words, you are welcome to use, share and improve this program. You
+are forbidden to forbid anyone else to use, share and improve what you
+give them. Help stamp out software-hoarding!
+
+------------------------------------------------------------------------------

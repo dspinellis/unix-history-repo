@@ -1,0 +1,56 @@
+:
+#
+#       UTREE.BACKUP.SH
+#       UTREE backup directories and/or filesystems
+#       3.03-um klin, Sun Feb 16 16:07:46 1992
+#       Usage:          utree.backup backup_listfile
+#       Directory:      /usr/local/bin
+#       Version:        CADMUS MUNIX V.xx and RISC/os 4.xx
+#
+#       Copyright (c) 1991/92 by Peter Klingebiel & UNIX Magazin Muenchen.
+#       For copying and distribution information see the file COPYRIGHT.
+#
+#       SCCSID = @(#) utree 3.03-um (klin) Feb 16 1992 bin/utree.backup.sh
+#       USAGE  = @(#) Usage: utree.backup backup_listfile
+
+if    test -w /dev/ris0         # Backup device on MUNIX V.3
+then
+  DEVICE=/dev/ris0
+  OPTION=DS
+  isctrl -i
+  isctrl -N
+elif test -w /dev/rst1          # Backup device on SunOs 4.x.x
+then
+  DEVICE=/dev/rst1
+  OPTION=
+elif test -w /dev/rst0          # Backup device on MUNIX V.2
+then
+  DEVICE=/dev/rst0
+  OPTION=DS
+elif test -w /dev/rmt/ctape0    # Backup device on RISC/os 4.xx
+then
+  DEVICE=/dev/rmt/ctape0
+  OPTION=
+else
+  echo "utree.backup: No tape device found"
+  exit 1
+fi
+
+if test $# -eq 1
+then
+  LIST=$1
+else
+  echo "Usage: utree.backup backup_listfile"
+  exit 1
+fi
+
+echo
+echo "UTREE.BACKUP from file $LIST to $DEVICE"
+echo
+<$DEVICE                        # Rewind
+if [ $? -ne 0 ]
+then
+  exit 1
+fi
+cpio -ov$OPTION >$DEVICE <$LIST # Backup
+exit $?

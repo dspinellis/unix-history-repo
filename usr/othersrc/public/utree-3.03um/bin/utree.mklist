@@ -1,0 +1,44 @@
+:
+#
+#       UTREE.MKLIST.SH
+#       UTREE create tree directory list for quicker startup
+#       3.03-um klin, Sun Feb 16 16:08:03 1992
+#       Usage:          utree.mklist [-a] [root_directory list_file]
+#       Options:        -a      Read in all (including hidden) directories
+#       Directory:      /usr/local/bin
+#
+#       Copyright (c) 1991/92 by Peter Klingebiel & UNIX Magazin Muenchen.
+#       For copying and distribution information see the file COPYRIGHT.
+#
+#       SCCSID = @(#) utree 3.03-um (klin) Feb 16 1992 bin/utree.mklist.sh
+#       USAGE  = @(#) Usage: utree.mklist [-a] [root_directory list_file]
+
+if test $# -ne 0 -a "$1" = "-a" # Option given ?
+then
+  AFLAG=-a
+  shift
+else
+  AFLAG=
+fi
+
+if   test $# -eq 2              # Rootdirectory given ?
+then
+  ROOT=$1
+  LIST=$2
+elif test $# -eq 0              # Rootdirectory is homedirectory
+then
+  ROOT=$HOME
+  LIST=$HOME/.utreelist
+else
+  echo "Usage: utree.mklist [-a] [root_directory list_file]"
+  exit 1
+fi
+
+echo "# UTREE tree list created at `date`" >$LIST
+if test "$AFLAG" = "-a"
+then
+  find $ROOT -type d -print | sort >>$LIST
+else
+  find $ROOT -type d -print | grep -v "/\." | sort >>$LIST
+fi
+exit 0
