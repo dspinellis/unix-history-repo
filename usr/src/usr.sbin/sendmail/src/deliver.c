@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.138		%G%);
+SCCSID(@(#)deliver.c	3.139		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -369,10 +369,7 @@ deliver(firstto, editfcn)
 				i = smtprcpt(to);
 				if (i != EX_OK)
 				{
-					if (i == EX_TEMPFAIL)
-						to->q_flags |= QQUEUEUP;
-					else
-						to->q_flags |= QBADADDR;
+					markfailure(e, to, i);
 					giveresponse(i, m);
 				}
 				else
@@ -411,17 +408,51 @@ deliver(firstto, editfcn)
 	if (rcode != EX_OK)
 	{
 		for (to = tochain; to != NULL; to = to->q_tchain)
-		{
-			if (rcode == EX_TEMPFAIL)
-				to->q_flags |= QQUEUEUP;
-			else
-				to->q_flags |= QBADADDR;
-		}
+			markfailure(e, to, rcode);
 	}
 
 	errno = 0;
 	define('g', (char *) NULL, e);
 	return (rcode);
+}
+/*
+**  MARKFAILURE -- mark a failure on a specific address.
+**
+**	Parameters:
+**		e -- the envelope we are sending.
+**		q -- the address to mark.
+**		rcode -- the code signifying the particular failure.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		marks the address (and possibly the envelope) with the
+**			failure so that an error will be returned or
+**			the message will be queued, as appropriate.
+*/
+
+markfailure(e, q, rcode)
+	register ENVELOPE *e;
+	register ADDRESS *q;
+	int rcode;
+{
+	if (rcode == EX_OK)
+		return;
+	else if (rcode != EX_TEMPFAIL)
+		q->q_flags |= QBADADDR;
+	else if (curtime() > e->e_ctime + TimeOut)
+	{
+		extern char *pintvl();
+
+		if (!bitset(EF_TIMEOUT, e->e_flags))
+			message(Arpa_Info, "Cannot send message for %s",
+				pintvl(TimeOut, FALSE));
+		q->q_flags |= QBADADDR;
+		e->e_flags |= EF_TIMEOUT;
+	}
+	else
+		q->q_flags |= QQUEUEUP;
 }
 /*
 **  DOFORK -- do a fork, retrying a couple of times on failure.
