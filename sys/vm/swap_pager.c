@@ -38,7 +38,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.15 1994/01/31 04:19:55 davidg Exp $
+ * $Id: swap_pager.c,v 1.16 1994/02/09 07:03:06 davidg Exp $
  */
 
 /*
@@ -179,16 +179,22 @@ swap_pager_alloc(handle, size, prot, offset)
 			
 	if (require_swap_init) {
 		register swp_clean_t spc;
-		if (npendingio > nswbuf)
-			npendingio = nswbuf;
+		struct buf *bp;
 		/*
 		 * kva's are allocated here so that we dont need to keep
 		 * doing kmem_alloc pageables at runtime
 		 */
 		for (i = 0, spc = swcleanlist; i < npendingio ; i++, spc++) {
 			spc->spc_kva = kmem_alloc_pageable(pager_map, NBPG);
-			if (!spc->spc_kva)
+			if (!spc->spc_kva) {
 				break;
+			}
+			spc->spc_bp = malloc(sizeof( *bp), M_TEMP,
+					M_NOWAIT);
+			if (!spc->spc_bp) {
+				kmem_free_wakeup(pager_map, spc->spc_kva, NBPG);
+				break;
+			}
 			spc->spc_flags = 0;
 			queue_enter(&swap_pager_free, spc, swp_clean_t, spc_list);
 		}
@@ -1049,7 +1055,13 @@ retrygetspace:
 	/*
 	 * Get a swap buffer header and perform the IO
 	 */
-	bp = getpbuf();
+	if (spc) {
+		bp = spc->spc_bp;
+		bzero(bp, sizeof *bp);
+		bp->b_spc = spc;
+	} else {
+		bp = getpbuf();
+	}
 	bp->b_flags = B_BUSY | (flags & B_READ);
 	bp->b_proc = &proc0;	/* XXX (but without B_PHYS set this is ok) */
 	bp->b_rcred = bp->b_wcred = bp->b_proc->p_ucred;
@@ -1069,7 +1081,6 @@ retrygetspace:
 	 */
 	if ((flags & (B_READ|B_ASYNC)) == B_ASYNC) {
 		spc->spc_flags = 0;
-		spc->spc_bp = bp;
 		spc->spc_swp = swp;
 		spc->spc_m = m[reqpage];
 		/*
@@ -1079,10 +1090,6 @@ retrygetspace:
 		bp->b_iodone = swap_pager_iodone;
 		bp->b_dirtyoff = 0;
 		bp->b_dirtyend = bp->b_bcount;
-		/*
-		 * allow the struct buf to refer back to the spc
-		 */
-		bp->b_spc = (void *) spc;
 		swp->sw_poip++;
 		queue_enter(&swap_pager_inuse, spc, swp_clean_t, spc_list);
 		/*
@@ -1146,7 +1153,8 @@ retrygetspace:
 	/*
 	 * release the physical I/O buffer
 	 */
-	relpbuf(bp);
+	if (!spc)
+		relpbuf(bp);
 
 	splx(s);
 
@@ -1328,7 +1336,6 @@ swap_pager_iodone(bp)
 		printf("error %d blkno %d sz %d ",
 			bp->b_error, bp->b_blkno, bp->b_bcount);
 	}
-	spc->spc_bp = NULL;
 
 	if ((bp->b_flags & B_READ) == 0)
 		vwakeup(bp);
@@ -1338,7 +1345,6 @@ swap_pager_iodone(bp)
 		brelvp(bp);
 	}
 
-	relpbuf(bp);
 	nswiodone++;
 	if (--spc->spc_swp->sw_poip == 0) {
 		wakeup((caddr_t)spc->spc_swp);

@@ -65,7 +65,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * $Id: vm_pageout.c,v 1.11 1994/01/17 09:33:57 davidg Exp $
+ * $Id: vm_pageout.c,v 1.12 1994/01/31 04:21:28 davidg Exp $
  */
 
 /*
@@ -595,9 +595,6 @@ rescanproc1:
 	 *	we have scanned through the entire queue.  If we
 	 *	encounter dirty pages, we start cleaning them.
 	 */
-
-	if (!swap_pager_ready())
-		goto skipfree;
 
 	maxlaunder = (vm_page_free_target - vm_page_free_count);
 rescan:
