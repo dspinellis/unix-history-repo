@@ -1,0 +1,166 @@
+%    Copyright (C) 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% timing.ps
+% Time the computational and I/O operations of the Ghostscript interpreter.
+
+% Iterate through a string.
+(
+usertime
+/s 10000 string def
+10 { s { pop } forall } repeat
+usertime exch sub (forall, 100000 string elements\n) print == flush
+)
+	pop
+
+% Iterate through integers.
+usertime
+0 1 1 60000 { add } for pop
+usertime exch sub (for, 60000 integers\n) print == flush
+
+% Read short identifiers from a file.
+/a 0 def
+/rpt
+ { cleartomark exch 1 sub exch 1 index 0 ne
+    { dup currentfile exch setfileposition } if
+ } bind def
+(
+usertime
+500 currentfile fileposition
+
+mark
+a a a a a   a a a a a   a a a a a   a a a a a   a a a a a
+a a a a a   a a a a a   a a a a a   a a a a a   a a a a a
+a a a a a   a a a a a   a a a a a   a a a a a   a a a a a
+a a a a a   a a a a a   a a a a a   a a a a a   a a a a a
+
+a a a a a   a a a a a   a a a a a   a a a a a   a a a a a
+a a a a a   a a a a a   a a a a a   a a a a a   a a a a a
+a a a a a   a a a a a   a a a a a   a a a a a   a a a a a
+a a a a a   a a a a a   a a a a a   a a a a a   a a a a a
+rpt
+pop pop
+usertime exch sub (read 100000 1-char names\n) print == flush
+)
+	pop
+
+% Read short numbers from a file.
+(
+usertime
+500 currentfile fileposition
+
+mark
+0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0
+0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0
+0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0
+0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0
+0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0
+0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0
+0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0
+0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 0 0
+rpt
+pop pop
+usertime exch sub (read 100000 1-digit numbers\n) print == flush
+)
+	pop
+
+% Read long names from a file.
+(
+/tenletters 0 def
+usertime
+500 currentfile fileposition
+
+mark
+tenletters   tenletters   tenletters   tenletters   tenletters
+tenletters   tenletters   tenletters   tenletters   tenletters
+tenletters   tenletters   tenletters   tenletters   tenletters
+tenletters   tenletters   tenletters   tenletters   tenletters
+
+tenletters   tenletters   tenletters   tenletters   tenletters
+tenletters   tenletters   tenletters   tenletters   tenletters
+tenletters   tenletters   tenletters   tenletters   tenletters
+tenletters   tenletters   tenletters   tenletters   tenletters
+rpt
+pop pop
+usertime exch sub (read 20000 10-char names\n) print == flush
+)
+	pop
+
+% Read long numbers from a file.
+(
+usertime
+500 currentfile fileposition
+
+mark
+123.45   123.45   123.45   123.45   123.45
+123.45   123.45   123.45   123.45   123.45
+123.45   123.45   123.45   123.45   123.45
+123.45   123.45   123.45   123.45   123.45
+
+123.45   123.45   123.45   123.45   123.45
+123.45   123.45   123.45   123.45   123.45
+123.45   123.45   123.45   123.45   123.45
+123.45   123.45   123.45   123.45   123.45
+rpt
+pop pop
+usertime exch sub (read 20000 6-digit numbers\n) print == flush
+)
+	pop
+
+% Render text at 300 dpi.
+/onelinedevice
+ { [ 300 72 div 0 0 300 72 div neg 0 60 ] 2550 100 <ff 00>
+     makeimagedevice setdevice
+ } def
+/s50 (The rain in Spain stays mainly in the plain. -Shaw) def
+(
+gsave
+onelinedevice
+/Times-Roman findfont 10 scalefont setfont
+0 8 moveto s50 show		% preload the cache
+usertime
+600 { 0 8 moveto s50 show } repeat
+usertime exch sub (display 30000 10-point characters at 300 dpi\n) print == flush
+grestore
+)
+	pop
+
+% Process an entire page of text at 300 dpi.
+(
+(_temp_.ps) (w) file
+600
+ { dup (0 8 moveto \() writestring
+   dup s50 writestring
+   dup (\) show\n) writestring
+ } repeat
+closefile
+gsave
+onelinedevice
+/Times-Roman findfont 10 scalefont setfont
+0 8 moveto s50 show		% preload the cache
+(_temp_.ps) (r) file
+usertime
+exch cvx exec
+usertime exch sub (display 30000 10-point characters (from a file) at 300 dpi\n) print == flush
+grestore
+(_temp_.ps) deletefile
+)
+	pop
+
+quit
