@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1006,6 +1006,7 @@ netfinger(name)
 	if (hp == NULL) {
 		static struct hostent def;
 		static struct in_addr defaddr;
+		char *alist[1];
 		static char namebuf[128];
 		int inet_addr();
 
@@ -1016,7 +1017,7 @@ netfinger(name)
 		}
 		strcpy(namebuf, host);
 		def.h_name = namebuf;
-		def.h_addr = (char *)&defaddr;
+		def.h_addr_list = alist, def.h_addr = (char *)&defaddr;
 		def.h_length = sizeof (struct in_addr);
 		def.h_addrtype = AF_INET;
 		def.h_aliases = 0;
