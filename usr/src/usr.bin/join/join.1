@@ -1,0 +1,93 @@
+.TH JOIN 1L \" -*- nroff -*-
+.SH NAME
+join \- join lines of two files on a common field
+.SH SYNOPSIS
+.B join
+[\-a 1|2] [\-v 1|2] [\-e empty-string] [\-o field-list...] [\-t char]
+[\-j[1|2] field] [\-1 field] [\-2 field] file1 file2
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR join .
+.B join
+prints to the standard output a line for each pair of input lines, one
+each from
+.I file1
+and
+.IR file2 ,
+that have identical join fields.  Either filename (but not both) can
+be `\-', meaning the standard input.
+.I file1
+and
+.I file2
+should be already sorted in increasing order (not numerically) on the
+join fields; unless the
+.I \-t
+option is given, they should be sorted ignoring blanks at the start of
+the line, as
+.B sort
+does when given the
+.I \-b
+option.
+.PP
+The defaults are: the join field is the first field in each line;
+fields in the input are separated by one or more blanks, with leading
+blanks on the line ignored; fields in the output are separated by a
+space; each output line consists of the join field, the remaining
+fields from
+.IR file1 ,
+then the remaining fields from
+.IR file2 .
+.SS OPTIONS
+.TP
+.I "\-a file-number"
+Print a line for each unpairable line in file
+.I file-number
+(either 1 or 2), in addition to the normal output.
+.TP
+.I "\-e string"
+Replace empty output fields (those that are missing in the input) with
+.IR string .
+.TP
+.I "\-1, \-j1 field"
+Join on field
+.I field
+(a positive integer) of file 1.
+.TP
+.I "\-2, \-j2 field"
+Join on field
+.I field
+(a positive integer) of file 2.
+.TP
+.I "\-j field"
+Equivalent to
+.IR "\-1 field \-2 field" .
+.TP
+.I "\-o field-list..."
+Construct each output line according to the format in
+.IR field-list .
+Each element in
+.I field-list
+consists of a file number (either 1 or 2), a period, and a field
+number (a positive integer).  The elements in the list are separated
+by commas or blanks.  Multiple
+.I field-list
+arguments can be given after a single
+.I \-o
+option; the values of all lists given with
+.I \-o
+are concatenated together.
+.TP
+.I "\-t char"
+Use character
+.I char
+as the input and output field separator.
+.TP
+.I "\-v file-number"
+Print a line for each unpairable line in file
+.I file-number
+(either 1 or 2), instead of the normal output.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.

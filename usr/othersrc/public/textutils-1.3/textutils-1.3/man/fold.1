@@ -1,0 +1,38 @@
+.TH FOLD 1L \" -*- nroff -*-
+.SH NAME
+fold \- wrap each input line to fit in specified width
+.SH SYNOPSIS
+.B fold
+[\-bs] [\-w width] [\-\-bytes] [\-\-spaces] [\-\-width=width] [file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR fold .
+.B fold
+prints the specified files, or the standard input when no files are
+given or the filename `\-' is encountered, on the standard output.  It
+breaks long lines into multiple shorter lines by inserting a newline
+at column 80.  It counts screen columns, so tab characters usually
+take more than one column, backspace characters decrease the column
+count, and carriage return characters set the column count back to zero.
+.SS OPTIONS
+.TP
+.I "\-b, \-\-bytes"
+Count bytes rather than columns, so that tabs, backspaces, and
+carriage returns are each counted as taking up one column, just like
+other characters.
+.TP
+.I "\-s, \-\-spaces"
+Break at word boundaries.  If the line contains any blanks, the line
+is broken after the last blank that falls within the maximum line
+length.  If there are no blanks, the line is broken at the maximum
+line length, as usual.
+.TP
+.I "\-w, \-\-width width"
+Use a maximum line length of
+.I width
+columns instead of 80.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
