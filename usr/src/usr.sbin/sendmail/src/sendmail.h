@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.87 (Berkeley) %G%
+ *	@(#)sendmail.h	8.88 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.87		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.88		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -633,6 +633,7 @@ struct symtab
 		MCI		sv_mci;		/* mailer connection info */
 		NAMECANON	sv_namecanon;	/* canonical name cache */
 		int		sv_macro;	/* macro name => id mapping */
+		int		sv_ruleset;	/* ruleset index */
 	}	s_value;
 };
 
@@ -649,6 +650,7 @@ typedef struct symtab	STAB;
 # define ST_HOSTSIG	7	/* host signature */
 # define ST_NAMECANON	8	/* cached canonical name */
 # define ST_MACRO	9	/* macro name to id mapping */
+# define ST_RULESET	10	/* ruleset index */
 # define ST_MCI		16	/* mailer connection info (offset) */
 
 # define s_class	s_value.sv_class
