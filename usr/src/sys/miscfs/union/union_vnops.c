@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.14 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1109,17 +1109,20 @@ union_readdir(ap)
 		struct vnode *a_vp;
 		struct uio *a_uio;
 		struct ucred *a_cred;
+		int *a_eofflag;
+		u_long *a_cookies;
+		int a_ncookies;
 	} */ *ap;
 {
-	int error = 0;
-	struct union_node *un = VTOUNION(ap->a_vp);
+	register struct union_node *un = VTOUNION(ap->a_vp);
+	register struct vnode *uvp = un->un_uppervp;
 
-	if (un->un_uppervp != NULLVP) {
-		FIXUP(un);
-		error = VOP_READDIR(un->un_uppervp, ap->a_uio, ap->a_cred);
-	}
+	if (uvp == NULLVP)
+		return (0);
 
-	return (error);
+	FIXUP(un);
+	ap->a_vp = uvp;
+	return (VOCALL(uvp->v_op, VOFFSET(vop_readdir), ap));
 }
 
 int

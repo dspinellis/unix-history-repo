@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.6 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.7 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -75,7 +75,12 @@ static pid_t atopid __P((const char *, u_int));
  * memory images.
  */
 procfs_open(ap)
-	struct vop_open_args *ap;
+	struct vop_open_args /* {
+		struct vnode *a_vp;
+		int  a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
@@ -109,7 +114,12 @@ procfs_open(ap)
  * any exclusive open flag (see _open above).
  */
 procfs_close(ap)
-	struct vop_close_args *ap;
+	struct vop_close_args /* {
+		struct vnode *a_vp;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
@@ -128,7 +138,14 @@ procfs_close(ap)
  * (vp) is not locked on entry or exit.
  */
 procfs_ioctl(ap)
-	struct vop_ioctl_args *ap;
+	struct vop_ioctl_args /* {
+		struct vnode *a_vp;
+		int a_command;
+		caddr_t a_data;
+		int a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 
 	return (ENOTTY);
@@ -145,7 +162,12 @@ procfs_ioctl(ap)
  * (EIO) would be a reasonable alternative.
  */
 procfs_bmap(ap)
-	struct vop_bmap_args *ap;
+	struct vop_bmap_args /* {
+		struct vnode *a_vp;
+		daddr_t  a_bn;
+		struct vnode **a_vpp;
+		daddr_t *a_bnp;
+	} */ *ap;
 {
 
 	if (ap->a_vpp != NULL)
@@ -172,7 +194,9 @@ procfs_bmap(ap)
  * (vp) is not locked on entry or exit.
  */
 procfs_inactive(ap)
-	struct vop_inactive_args *ap;
+	struct vop_inactive_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
@@ -190,7 +214,9 @@ procfs_inactive(ap)
  * from any private lists.
  */
 procfs_reclaim(ap)
-	struct vop_reclaim_args *ap;
+	struct vop_reclaim_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	int error;
 
@@ -240,7 +266,9 @@ procfs_pathconf(ap)
  * of (vp).
  */
 procfs_print(ap)
-	struct vop_print_args *ap;
+	struct vop_print_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
@@ -256,7 +284,10 @@ procfs_print(ap)
  * this will always include freeing the pathname buffer.
  */
 procfs_abortop(ap)
-	struct vop_abortop_args *ap;
+	struct vop_abortop_args /* {
+		struct vnode *a_dvp;
+		struct componentname *a_cnp;
+	} */ *ap;
 {
 
 	if ((ap->a_cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
@@ -283,7 +314,12 @@ procfs_badop()
  * this is relatively minimal for procfs.
  */
 procfs_getattr(ap)
-	struct vop_getattr_args *ap;
+	struct vop_getattr_args /* {
+		struct vnode *a_vp;
+		struct vattr *a_vap;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 	struct vattr *vap = ap->a_vap;
@@ -398,7 +434,12 @@ procfs_getattr(ap)
 }
 
 procfs_setattr(ap)
-	struct vop_setattr_args *ap;
+	struct vop_setattr_args /* {
+		struct vnode *a_vp;
+		struct vattr *a_vap;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	/*
 	 * just fake out attribute setting
@@ -426,7 +467,12 @@ procfs_setattr(ap)
  * that the operation really does make sense.
  */
 procfs_access(ap)
-	struct vop_access_args *ap;
+	struct vop_access_args /* {
+		struct vnode *a_vp;
+		int a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	struct vattr *vap;
 	struct vattr vattr;
@@ -477,7 +523,11 @@ found:
  * read and inwardly digest ufs_lookup().
  */
 procfs_lookup(ap)
-	struct vop_lookup_args *ap;
+	struct vop_lookup_args /* {
+		struct vnode * a_dvp;
+		struct vnode ** a_vpp;
+		struct componentname * a_cnp;
+	} */ *ap;
 {
 	struct componentname *cnp = ap->a_cnp;
 	struct vnode **vpp = ap->a_vpp;
@@ -587,7 +637,14 @@ procfs_lookup(ap)
  * this should just be done through read()
  */
 procfs_readdir(ap)
-	struct vop_readdir_args *ap;
+	struct vop_readdir_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		struct ucred *a_cred;
+		int *a_eofflag;
+		u_long *a_cookies;
+		int a_ncookies;
+	} */ *ap;
 {
 	struct uio *uio = ap->a_uio;
 	struct pfsdent d;
@@ -596,6 +653,13 @@ procfs_readdir(ap)
 	int error;
 	int count;
 	int i;
+
+	/*
+	 * We don't allow exporting procfs mounts, and currently local
+	 * requests do not need cookies.
+	 */
+	if (ap->a_ncookies)
+		panic("procfs_readdir: not hungry");
 
 	pfs = VTOPFS(ap->a_vp);
 

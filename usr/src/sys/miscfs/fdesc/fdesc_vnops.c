@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.10 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -521,12 +521,22 @@ fdesc_readdir(ap)
 		struct vnode *a_vp;
 		struct uio *a_uio;
 		struct ucred *a_cred;
+		int *a_eofflag;
+		u_long *a_cookies;
+		int a_ncookies;
 	} */ *ap;
 {
 	struct uio *uio = ap->a_uio;
 	struct filedesc *fdp;
 	int i;
 	int error;
+
+	/*
+	 * We don't allow exporting fdesc mounts, and currently local
+	 * requests do not need cookies.
+	 */
+	if (ap->a_ncookies)
+		panic("fdesc_readdir: not hungry");
 
 	switch (VTOFDESC(ap->a_vp)->fd_type) {
 	case Fctty:
