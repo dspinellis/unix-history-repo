@@ -1,21 +1,33 @@
-.\" Copyright (c) 1980, 1990 Regents of the University of California.
+.\" Copyright (c) 1980, 1990, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)users.1	6.5 (Berkeley) %G%
+.\"     @(#)users.1	6.6 (Berkeley) %G%
 .\"
-.TH USERS 1 "%Q"
-.UC
-.SH NAME
-users \- list of current users
-.SH SYNOPSIS
-.B users
-.SH DESCRIPTION
-.I Users
+.Dd 
+.Dt USERS 1
+.Os BSD 3
+.Sh NAME
+.Nm users
+.Nd list current users
+.Sh SYNOPSIS
+.Nm users
+.Sh DESCRIPTION
+.Nm Users
 lists the login names of the users currently on the system,
 in sorted order, space separated, on a single line.
-.SH FILES
-/etc/utmp
-.SH SEE ALSO
-finger(1), last(1), who(1), utmp(5)
+.Sh FILES
+.Bl -tag -width /etc/utmp
+.It Pa /etc/utmp
+.El
+.Sh SEE ALSO
+.Xr finger 1 ,
+.Xr last 1 ,
+.Xr who 1 ,
+.Xr utmp 5
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .
