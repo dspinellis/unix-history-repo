@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)reboot.h	6.3 (Berkeley) %G%
+ *	@(#)reboot.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -27,13 +27,16 @@
  * Constants for converting boot-style device number to type,
  * adaptor (uba, mba, etc), unit number and partition number.
  * Type (== major device number) is in the low byte
- * for backward compatibility.
+ * for backward compatibility.  Except for that of the "magic
+ * number", each mask applies to the shifted value.
  */
 #define	B_ADAPTORSHIFT	24
-#define	B_ADAPTORMASK	0xff
+#define	B_ADAPTORMASK	0x0f
 #define B_UNITSHIFT	16
 #define B_UNITMASK	0xff
 #define B_PARTITIONSHIFT 8
 #define B_PARTITIONMASK	0xff
 #define	B_TYPESHIFT	0
 #define	B_TYPEMASK	0xff
+#define	B_MAGICMASK	0xf0000000
+#define	B_DEVMAGIC	0xa0000000
