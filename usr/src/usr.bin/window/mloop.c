@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)mloop.c	3.5 %G%";
+static char sccsid[] = "@(#)mloop.c	3.6 %G%";
 #endif
 
 #include "defs.h"
 
 mloop()
 {
+	wwrint();		/* catch typeahead before we set ASYNC */
 	while (!quit) {
 		if (incmd) {
 			docmd();

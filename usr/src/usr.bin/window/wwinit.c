@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.21 %G%";
+static char sccsid[] = "@(#)wwinit.c	3.22 %G%";
 #endif
 
 #include "ww.h"
@@ -58,8 +58,7 @@ wwinit()
 	wwnewtty.ww_lmode = wwoldtty.ww_lmode | LLITOUT;
 	wwnewtty.ww_ldisc = wwoldtty.ww_ldisc;
 	wwnewtty.ww_fflags = wwoldtty.ww_fflags | FASYNC;
-
-	if (wwsettty(0, &wwnewtty) < 0)
+	if (wwsettty(0, &wwnewtty, &wwoldtty) < 0)
 		return -1;
 	if (Winit(2, 1) != 0)
 		return -1;
