@@ -1,5 +1,6 @@
 HOME=/; export HOME
-PATH=/etc:/bin:/usr/ucb:/usr/bin; export PATH
+PATH=/bin:/sbin:/usr/sbin:/usr/bin
+export PATH
 
 if [ -r /fastboot ]
 then
@@ -38,20 +39,9 @@ else
 fi
 
 # attempt to rationally recover the passwd file if needed
-if [ -s /etc/ptmp ]
+if [ -f /etc/ptmp ]
 then
-	if [ -s /etc/passwd ]
-	then
-		ls -l /etc/passwd /etc/ptmp >/dev/console
-		rm -f /etc/ptmp		# should really remove the shorter
-	else
-		echo 'passwd file recovered from ptmp' >/dev/console
-		mv /etc/ptmp /etc/passwd
-	fi
-elif [ -r /etc/ptmp ]
-then
-	echo 'removing passwd lock file' >/dev/console
-	rm -f /etc/ptmp
+	echo 'password file may be incorrect' > /dev/console
 fi
 
 umount -a
