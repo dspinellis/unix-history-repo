@@ -1,4 +1,4 @@
-/*	dvar.c	1.14	85/04/29
+/*	dvar.c	1.15	85/08/05
  *
  * Varian driver for the new troff
  *
@@ -87,7 +87,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.14	85/04/29";
+char	SccsId[]= "dvar.c	1.15	85/08/05";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -1350,7 +1350,15 @@ clear(lp, nbytes)
 int *lp;
 int nbytes;
 {
+#ifdef vax
 	asm("movc5 $0,(sp),$0,8(ap),*4(ap)");
+#else
+	register int i = nbytes;
+	register int *cp = lp;
+
+	while (i-- > 0)
+		*(cp++) = 0;
+#endif
 }
 
 char *
