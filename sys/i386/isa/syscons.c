@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from:@(#)syscons.c	1.3 940129
- *	$Id: syscons.c,v 1.48 1994/05/22 20:15:01 sos Exp $
+ *	$Id: syscons.c,v 1.49 1994/05/27 06:52:44 sos Exp $
  *
  */
 
@@ -479,7 +479,6 @@ int pcopen(dev_t dev, int flag, int mode, struct proc *p)
 	tp->t_param = pcparam;
 	tp->t_dev = dev;
 	if (!(tp->t_state & TS_ISOPEN)) {
-		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
 		tp->t_iflag = TTYDEF_IFLAG;
 		tp->t_oflag = TTYDEF_OFLAG;
@@ -1131,18 +1130,9 @@ void pcstart(struct tty *tp)
 	s = spltty();
 	if (!(tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))) {
 		for (;;) {
-			if (RB_LEN(tp->t_out) <= tp->t_lowat) {
-				if (tp->t_state & TS_ASLEEP) {
-					tp->t_state &= ~TS_ASLEEP;
-					wakeup((caddr_t)tp->t_out);
-				}
-				if (tp->t_wsel) {
-					selwakeup(tp->t_wsel, 
-						  tp->t_state & TS_WCOLL);
-					tp->t_wsel = 0;
-					tp->t_state &= ~TS_WCOLL;
-				}
-			}
+			if (tp->t_state & (TS_SO_OCOMPLETE | TS_SO_OLOWAT)
+			    || tp->t_wsel)
+				ttwwakeup(tp);
 			if (RB_LEN(tp->t_out) == 0)
 				break;
 			if (scp->status & SLKED) 
