@@ -14,12 +14,15 @@ D COMPSUR Computing Surveys
 D I&C Inf. and Control
 D IBMJRD IBM J. of R&D
 D IBMSJ IBM Systems J.
+D IEEESW Software
 D IEEETSE IEEE Trans. on Software Eng.
 D IEEETC IEEE Trans. on Computers
 D IJCIS Int. J. of Computer and Info. Sciences
+D IJMMS Int. J. of Man-Machine Studies
 D IPL Inf. Proc. Letters
 D JACM J. ACM
 D JCSS J. Computer and System Sciences
+D JS&S J. of Systems and Software
 D MATHST Math Systems Theory
 D NMATH Numerical Math.
 D SIAMJC Siam J. on Computing
@@ -32,6 +35,7 @@ D SPE Software\(emPractice & Experience
 D TOCS Trans. Computer Systems
 D TODS Trans. Database Systems
 D TOMS Trans. Math. Software
+D TOOIS Trans. on Office Info. Systems
 D TOPLAS Trans. Prog. Lang and Systems
 #
 # CONFs
@@ -47,6 +51,19 @@ D CCC82 PROC SI\&GPLAN 1982 SYMP on Compiler Const.\
 %D JUN 1982
 D CCC84 PROC SI\&GPLAN 1984 SYMP on Compiler Const.\
 %D JUN 1984
+D CHI83 PROC S\&IGCHI CONF on Human Factors in Computing Systems\
+%D DEC 1983
+D ICSE Int. CONF on Software Eng.
+D ICSE3 PROC 3rd ICSE\
+%D MAY 1978
+D ICSE4 PROC 4th ICSE\
+%D 1979
+D ICSE5 PROC 5th ICSE\
+%D MAR 1981
+D ICSE6 PROC 6th ICSE\
+%D SEP 1982
+D ICSE7 PROC 7th ICSE\
+%D APR 1984
 D PLISS83 PROC SI\&GPLAN 1983 SYMP on Prog. Lang. Issues in Software Systems\
 %D JUN 1983
 D POPL ACM SYMP on Prin. of Prog. Lang.
@@ -66,10 +83,13 @@ D POPL13 CONF Rec. 13th POPL
 D POPL14 CONF Rec. 14th POPL
 D POPL15 CONF Rec. 15th POPL
 D POPL16 CONF Rec. 16th POPL
+D PSDE84 PROC ACM S\&IGSOFT/S\&IGPLAN Software Eng. SYMP on Practical Software Development Environments\
+%D APR 1984
+D TEXT81 PROC ACM S\&IGPLAN S\&IGOA SYMP on Text Manipulation\
+%D JUN 1981
 D STOC Annual ACM SYMP on Theory of Computing
 D FOCS Annual SYMP on Foundations of Computer Science
 D SOSP SYMP on Operating System Prin.
-D ICSE Int. CONF on Software Eng.
 D JICAI Joint Int. CONF on Artificial Intelligence
 D HICSS Hawaii Int. CONF on System Science
 D ADA80 PROC of the ACM-SI\&GPLAN SYMO on the Ada Prog. Lang.
