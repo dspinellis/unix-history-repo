@@ -1,4 +1,4 @@
-/*	hp.c	4.11	83/02/16	*/
+/*	hp.c	4.12	83/02/17	*/
 
 /*
  * RP??/RM?? disk driver
@@ -103,11 +103,11 @@ hpopen(io)
 				goto found;
 		_stop("unknown drive type");
 found:
-		hp_type[unit] = hpmaptype(hpaddr, i, unit);
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;		/* init drive */
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
 		if (!ML11)
 			hpaddr->hpof = HPOF_FMT22;
+		hp_type[unit] = hpmaptype(hpaddr, i, unit);
 		/*
 		 * Read in the bad sector table:
 		 *	copy the contents of the io structure
@@ -181,6 +181,7 @@ hpmaptype(hpaddr, type, unit)
 		if (ntracks == 16)
 			return (10);	/* AMPEX capricorn */
 		hpaddr->hphr = HPHR_MAXSECT;
+		ntracks = MASKREG(hpaddr->hphr) + 1;
 		if (ntracks == 48)
 			return (12);	/* 48 sector Eagle */
 		if (ntracks == 43)
