@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.45 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1571,17 +1571,52 @@ sameaddr(a, b)
 **		none.
 */
 
+struct qflags
+{
+	char	*qf_name;
+	u_long	qf_bit;
+};
+
+struct qflags	AddressFlags[] =
+{
+	"QDONTSEND",		QDONTSEND,
+	"QBADADDR",		QBADADDR,
+	"QGOODUID",		QGOODUID,
+	"QPRIMARY",		QPRIMARY,
+	"QQUEUEUP",		QQUEUEUP,
+	"QSENT",		QSENT,
+	"QNOTREMOTE",		QNOTREMOTE,
+	"QSELFREF",		QSELFREF,
+	"QVERIFIED",		QVERIFIED,
+	"QREPORT",		QREPORT,
+	"QBOGUSSHELL",		QBOGUSSHELL,
+	"QUNSAFEADDR",		QUNSAFEADDR,
+	"QPINGONSUCCESS",	QPINGONSUCCESS,
+	"QPINGONFAILURE",	QPINGONFAILURE,
+	"QPINGONDELAY",		QPINGONDELAY,
+	"QHAS_RET_PARAM",	QHAS_RET_PARAM,
+	"QRET_HDRS",		QRET_HDRS,
+	"QRELAYED",		QRELAYED,
+	NULL
+};
+
 printaddr(a, follow)
 	register ADDRESS *a;
 	bool follow;
 {
-	bool first = TRUE;
 	register MAILER *m;
 	MAILER pseudomailer;
+	register struct qflags *qfp;
+	bool firstone;
+
+	if (a == NULL)
+	{
+		printf("[NULL]\n");
+		return;
+	}
 
 	while (a != NULL)
 	{
-		first = FALSE;
 		printf("%x=", a);
 		(void) fflush(stdout);
 
@@ -1598,8 +1633,20 @@ printaddr(a, follow)
 		       a->q_paddr, m->m_mno, m->m_name,
 		       a->q_host == NULL ? "<null>" : a->q_host, a->q_user,
 		       a->q_ruser == NULL ? "<null>" : a->q_ruser);
-		printf("\tnext=%x, flags=%x, alias %x, uid %d, gid %d\n",
-		       a->q_next, a->q_flags, a->q_alias, a->q_uid, a->q_gid);
+		printf("\tnext=%x, alias %x, uid %d, gid %d\n",
+		       a->q_next, a->q_alias, a->q_uid, a->q_gid);
+		printf("\tflags=%lx<", a->q_flags);
+		firstone = TRUE;
+		for (qfp = AddressFlags; qfp->qf_name != NULL; qfp++)
+		{
+			if (!bitset(qfp->qf_bit, a->q_flags))
+				continue;
+			if (!firstone)
+				printf(",");
+			firstone = FALSE;
+			printf("%s", qfp->qf_name);
+		}
+		printf(">\n");
 		printf("\towner=%s, home=\"%s\", fullname=\"%s\"\n",
 		       a->q_owner == NULL ? "(none)" : a->q_owner,
 		       a->q_home == NULL ? "(none)" : a->q_home,
@@ -1614,8 +1661,6 @@ printaddr(a, follow)
 			return;
 		a = a->q_next;
 	}
-	if (first)
-		printf("[NULL]\n");
 }
 /*
 **  EMPTYADDR -- return TRUE if this address is empty (``<>'')
