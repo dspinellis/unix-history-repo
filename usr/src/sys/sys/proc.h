@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	8.8 (Berkeley) %G%
+ *	@(#)proc.h	8.9 (Berkeley) %G%
  */
 
 #ifndef _SYS_PROC_H_
@@ -135,7 +135,6 @@ struct	proc {
 	u_short	p_xstat;	/* Exit status for wait; also stop signal. */
 	u_short	p_acflag;	/* Accounting flags. */
 	struct	rusage *p_ru;	/* Exit information. XXX */
-
 };
 
 #define	p_session	p_pgrp->pg_session
@@ -163,7 +162,7 @@ struct	proc {
 #define	P_TRACED	0x00800	/* Debugged process being traced. */
 #define	P_WAITED	0x01000	/* Debugging process has waited for child. */
 #define	P_WEXIT		0x02000	/* Working on exiting. */
-#define P_EXEC		0x04000	/* Process called exec. */
+#define	P_EXEC		0x04000	/* Process called exec. */
 
 /* Should probably be changed into a hold count. */
 #define	P_NOSWAP	0x08000	/* Another flag to prevent swap out. */
@@ -211,7 +210,7 @@ extern struct proc proc0;		/* Process slot for swapper. */
 extern int nprocs, maxproc;		/* Current and max number of procs. */
 extern int pidhashmask;			/* In param.c. */
 
-volatile struct proc *allproc; 		/* List of active procs. */
+volatile struct proc *allproc;		/* List of active procs. */
 struct proc *zombproc;			/* List of zombie procs. */
 struct proc *initproc, *pageproc;	/* Process slots for init, pager. */
 
