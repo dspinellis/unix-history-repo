@@ -11,13 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
  * rlogin - remote login
  */
 #include <sys/types.h>
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 
@@ -399,8 +400,8 @@ reader()
 
 	signal(SIGURG, oob);
 	signal(SIGTTOU, SIG_IGN);
-	{ int pid = -getpid();
-	  ioctl(rem, SIOCSPGRP, (char *)&pid); }
+	{ int pid = getpid();
+	  fcntl(rem, F_SETOWN, pid); }
 	for (;;) {
 		cnt = read(rem, rb, sizeof (rb));
 		if (cnt == 0)
