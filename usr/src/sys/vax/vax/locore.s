@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s	3.3	%H%
+#	locore.s		3.4	%H%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -225,6 +225,7 @@ _coresw:
 # Catch random or unexpected interrupts
 #
 	.align	2
+Xrandom:
 Xmachcheck:
 Xkspnotval:
 Xpowfail:
@@ -1010,37 +1011,33 @@ coshort:
 #
 # non-local goto's
 #
-	.globl	_setjmp
-_setjmp:
-	.word	0xfc0				# r6-r11
-	movl	4(ap),r0			# address save area
-	movl	sp,(r0)+			# frame location
-	movc3	$13*4,(fp),(r0)			# frame itself
-	ret					# movc3 sets r0=0
+	.globl	_Setjmp
+_Setjmp:
+	movq	r6,(r0)+
+	movq	r8,(r0)+
+	movq	r10,(r0)+
+	movq	r12,(r0)+
+	addl3	$4,sp,(r0)+
+	movl	(sp),(r0)
+	clrl	r0
+	rsb
 
-	.globl	_longjmp
-_longjmp:
-	.word	0x0
-	movq	4(ap),r6			# addr save area, value
-lj1:
-	movl	(r6)+,r8
-	movl	11*4(r6),r0			# no. params to be popped
-	moval	12*4(r8)[r0],r0			# sp value after ret
-	cmpl	r0,sp				# must be a pop
-	bgequ	lj3
-	pushab	lj2
+	.globl	_Longjmp
+_Longjmp:
+	movq	(r0)+,r6
+	movq	(r0)+,r8
+	movq	(r0)+,r10
+	movq	(r0)+,r12
+	movl	(r0)+,r1
+	cmpl	r1,sp				# must be a pop
+	bgequ	lj2
+	pushab	lj1
 	calls	$1,_panic
-lj3:
-	movl	r8,r9
-	movq	r8,fp				# new fp, sp
-	movc3	$13*4,(r6),(fp)			# recreate frame
-	movl	r7,r0
-	bneq	_ret				# must be != 0
-	incl	r0
-_ret:
-	ret
+lj2:
+	movl	r1,sp
+	jmp	*(r0)				# ``rsb''
 
-lj2:	.asciz	"longjmp"
+lj1:	.asciz	"longjmp"
 
 	.globl	_whichqs
 	.globl	_qs
@@ -1155,9 +1152,9 @@ _Resume:
 res0:
 	tstl	_u+PCB_SSWAP
 	beql	res1
-	movl	_u+PCB_SSWAP,r6
+	movl	_u+PCB_SSWAP,r0
 	clrl	_u+PCB_SSWAP
-	movab	lj1,(sp)
+	movab	_Longjmp,(sp)
 	movl	$PSL_PRVMOD,4(sp)		# ``cheating'' (jfr)
 res1:
 	rei
