@@ -9,8 +9,62 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_var.h	7.6.1.3 (Berkeley) %G%
+ *	@(#)tcp_var.h	7.7 (Berkeley) %G%
  */
+
+/*
+ * TCP configuration:  This is a half-assed attempt to make TCP
+ * self-configure for a few varieties of 4.2 and 4.3-based unixes.
+ * If you don't have a) a 4.3bsd vax or b) a 3.x Sun (x<6), check
+ * this carefully (it's probably not right).  Please send me mail
+ * if you run into configuration problems.
+ *  - Van Jacobson (van@lbl-csam.arpa)
+ */
+
+#ifndef BSD
+#define BSD 42	/* if we're not 4.3, pretend we're 4.2 */
+#define OLDSTAT	/* set if we have to use old netstat binaries */
+#endif
+
+/* #define OLDSTAT	/* set if we have to use old netstat binaries */
+
+#if sun || BSD < 43
+#define TCP_COMPAT_42	/* set if we have to interop w/4.2 systems */
+#endif
+
+#ifndef SB_MAX
+#ifdef	SB_MAXCOUNT
+#define	SB_MAX	SB_MAXCOUNT	/* Sun has to be a little bit different... */
+#else
+#define SB_MAX	32767		/* XXX */
+#endif	SB_MAXCOUNT
+#endif	SB_MAX
+
+#ifndef IP_MAXPACKET
+#define	IP_MAXPACKET	65535		/* maximum packet size */
+#endif
+
+/*
+ * Bill Nowicki pointed out that the page size (CLBYTES) has
+ * nothing to do with the mbuf cluster size.  So, we followed
+ * Sun's lead and made the new define MCLBYTES stand for the mbuf
+ * cluster size.  The following define makes up backwards compatible
+ * with 4.3 and 4.2.  If CLBYTES is >1024 on your machine, check
+ * this against the mbuf cluster definitions in /usr/include/sys/mbuf.h.
+ */
+#ifndef MCLBYTES
+#define	MCLBYTES CLBYTES	/* XXX */
+#endif
+
+/*
+ * The routine in_localaddr is broken in Sun's 3.4.  We redefine ours
+ * (in tcp_input.c) so we use can it but won't have a name conflict.
+ */
+#ifdef sun
+#define in_localaddr tcp_in_localaddr
+#endif
+
+/* --------------- end of TCP config ---------------- */
 
 /*
  * TCP configuration:  This is a half-assed attempt to make TCP
@@ -163,6 +217,22 @@ struct	tcpstat {
 #define	tcps_hdrops	tcps_rcvshort
 
 #endif OLDSTAT
+#ifdef OLDSTAT
+	/*
+	 * Declare statistics the same as in 4.3
+	 * at the start of tcpstat (same size and
+	 * position) for netstat.
+	 */
+	int	tcps_rcvbadsum;
+	int	tcps_rcvbadoff;
+	int	tcps_rcvshort;
+	int	tcps_badsegs;
+	int	tcps_unack;
+#define	tcps_badsum	tcps_rcvbadsum
+#define	tcps_badoff	tcps_rcvbadoff
+#define	tcps_hdrops	tcps_rcvshort
+
+#endif OLDSTAT
 	u_long	tcps_connattempt;	/* connections initiated */
 	u_long	tcps_accepts;		/* connections accepted */
 	u_long	tcps_connects;		/* connections established */
@@ -194,9 +264,11 @@ struct	tcpstat {
 	u_long	tcps_rcvpack;		/* packets received in sequence */
 	u_long	tcps_rcvbyte;		/* bytes received in sequence */
 #ifndef OLDSTAT
+#ifndef OLDSTAT
 	u_long	tcps_rcvbadsum;		/* packets received with ccksum errs */
 	u_long	tcps_rcvbadoff;		/* packets received with bad offset */
 	u_long	tcps_rcvshort;		/* packets received too short */
+#endif
 #endif
 	u_long	tcps_rcvduppack;	/* duplicate-only packets received */
 	u_long	tcps_rcvdupbyte;	/* duplicate-only bytes received */
