@@ -3,7 +3,9 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#ifndef lint
 _sccsid:.asciz	"@(#)reset.s	5.3 (Berkeley) %G%"
+#endif not lint
 
 /*
  * C library -- reset, setexit
