@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 PROG=	rcp
 SRCS=	rcp.c
