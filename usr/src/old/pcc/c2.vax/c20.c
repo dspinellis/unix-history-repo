@@ -1,5 +1,5 @@
 #
-static	char sccsid[] = "@(#)c20.c 4.2 %G%";
+static	char sccsid[] = "@(#)c20.c 4.3 %G%";
 /* char C20[] = {"@(#)c20.c 1.35 80/08/26 14:13:40"}; /* sccs ident */
 /*
  *	 C object code improver
@@ -26,8 +26,6 @@ alloc(an)
 	n = an;
 	n+=sizeof(char *)-1;
 	n &= ~(sizeof(char *)-1);
-	n++;
-	n &= ~01;
 	if (lasta+n >= lastr) {
 		if (sbrk(2000) == -1) {
 			fprintf(stderr, "Optimizer: out of space\n");
