@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.8 %G%";
+static char sccsid[] = "@(#)rval.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -224,7 +224,7 @@ cstrng:
 					putstr(cp1, w - c);
 #				    endif OBJ
 #				    ifdef PC
-					putCONG( cp1 , c , required );
+					putCONG( cp1 , w , required );
 #				    endif PC
 				    /*
 				     * Define the string temporarily
