@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)crypt.c	8.1.1.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
