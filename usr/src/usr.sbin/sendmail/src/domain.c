@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.6 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.7 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.6 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.7 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -107,6 +107,10 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 		}
 		firsttime = FALSE;
 	}
+
+	/* efficiency hack -- numeric or non-MX lookups */
+	if (host[0] == '[')
+		goto punt;
 
 	errno = 0;
 	n = res_search(host, C_IN, T_MX, (char *)&answer, sizeof(answer));
@@ -249,7 +253,23 @@ punt:
 			*rcode = EX_CONFIG;
 			return -1;
 		}
-		mxhosts[0] = strcpy(MXHostBuf, host);
+		strcpy(MXHostBuf, host);
+		mxhosts[0] = MXHostBuf;
+		if (host[0] == '[')
+		{
+			register char *p;
+
+			/* this may be an MX suppression-style address */
+			p = strchr(MXHostBuf, ']');
+			if (p != NULL)
+			{
+				*p = '\0';
+				if (inet_addr(&MXHostBuf[1]) != -1)
+					*p = ']';
+				else
+					mxhosts[0]++;
+			}
+		}
 		if (trycanon && getcanonname(MXHostBuf, sizeof MXHostBuf - 1, FALSE))
 		{
 			bp = &MXHostBuf[strlen(MXHostBuf)];
