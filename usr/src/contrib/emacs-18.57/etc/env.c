@@ -88,6 +88,7 @@
 #endif /* EMACS */
 
 #include <stdio.h>
+#include <errno.h>
 
 extern int execvp ();
 extern char *index ();
@@ -196,8 +197,10 @@ main (argc, argv, envp)
     }
   else
     {
+#ifndef BSD4_4
       extern int errno, sys_nerr;
       extern char *sys_errlist[];
+#endif
 
       environ = nenv;
       (void) execvp (*argv, argv);
