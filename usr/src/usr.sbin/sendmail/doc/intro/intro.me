@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.9,
+version 3.10,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -169,52 +169,26 @@ and hopefully UUCP mail
 [Nowitz78a, Nowitz78b].
 ARPANET mail
 [Crocker77a, Postel77]
-was also required,
-and the difference in format
-influenced the decision to put all such formatting
-into the low-level mailer.
+was also required.
 .np
 Because of time constraints,
-utilize as much existing software as possible.
-The changes to the existing software were minimal:
-Berkeley mail,
-BerkNet,
-UUCP, and the ARPANET FTP server
-were modified to call
-.i delivermail
-as their server instead of
-/bin/mail
-(or in the case of the ARPANET,
-instead of
-writing the mail into a file
-which has no meaning to standard UNIX mailers).
-The only major modifications
-were to /bin/mail,
-which was maintained both as a user interface sender
-and as a
-.i delivermail
-mailer.
-As a sender,
-it calls
-.i delivermail .
-.i Delivermail
-calls it in turn to do local delivery,
-so a
-.b \-d
-flag was added to avoid loops.
 .np
-Reliability was considered essential
+Reliability, in the sense of guaranteeing
+that every message is correctly delivered
+or at least brought to the attention of a human
+for correct disposal;
+no message should ever be completely lost.
+This was considered essential
 because of the emphasis on mail in our environment.
 This turned out to be one of the hardest goals to satisfy,
 especially in the face of the many anomalous message formats
 produced by various ARPANET sites.
 For example,
-MIT and CMU allow mail from people who are not logged in
-(and which have meaningless from addresses),
+certain sites generate incorrect from addresses
 which caused error message loops.
-CMU also puts blanks in names,
-which created amazing problems,
-since many UNIX mail programs assume that an address
+Some hosts use blanks in names,
+which created problems with
+UNIX mail programs that assume that an address
 is one word.
 And at least one person lists his address as
 .q "From: the TTY of ..." ,
@@ -238,26 +212,26 @@ which confused error processing.
 Degenerate cases such as this
 must be handled gracefully.
 .pp
-There were certain non-goals in
-.i delivermail
-also.
-Many of these resulted from the expectation that
+There were certain other non-goals in
+.i delivermail .
+These resulted from the expectation that
 it would only be used at Berkeley,
 and probably only at a few sites at Berkeley.
 .np
 It was fair game to compile configuration information
 into the code,
-even to assume that they were running BerkNet.
+even to assume that every host was running BerkNet.
 .np
-The problem of multiple connections to a single network
+The problem of multiple gateways to a single network
 was not foreseen.
 For example,
-on a host with no UUCP connection,
-all UUCP mail was sent to a single host.
+all UUCP mail was sent to a single gateway host.
 In fact,
-Berkeley is running UUCP on at least three hosts.
+Berkeley has at least three UUCP gateway hosts.
 .np
-No attempt was made to reduce the volume of mail across a network link.
+No attempt was made to reduce the volume of mail across a network link
+by sending only one copy of a message
+to multiple recipients on the same host.
 Besides the difficulty of doing this,
 we failed to appreciate how much volume there would be.
 .np
@@ -265,6 +239,48 @@ Existing software to do actual delivery
 should be used whenever possible.
 This resulted as much from political and practical considerations
 as technical.
+.pp
+This resulted in an architecture illustrated in figure 1.
+.(z
+.hl
+.ie t \
+.	sp 18
+.el \{\
+.(c
++---------+   +---------+   +---------+
+| sender1 |   | sender2 |   | sender3 |
++---------+   +---------+   +---------+
+     |  	   |             |
+     +----------+  +  +----------+
+		|  |  |
+		v  v  v
+            +-------------+
+            | delivermail |
+            +-------------+
+		|  |  |
+     +----------+  +  +----------+
+     |  	   |             |
+     v             v             v
++---------+   +---------+   +---------+
+| mailer1 |   | mailer2 |   | mailer3 |
++---------+   +---------+   +---------+
+.)c
+.\}
+
+.ce
+Figure 1 \*- Delivermail System Structure.
+.hl
+.)z
+The user interacts with a mail generating and sending program.
+When the mail is created,
+generator calls
+.i delivermail ,
+which routes the message to the correct mailer(s).
+Since some of the senders may be network servers
+and some of the mailers may be network users,
+.i delivermail
+is referred to as an
+.q "internet mailer" .
 .pp
 .i Sendmail
 maintained the goals of
@@ -289,12 +305,17 @@ including multiple
 connections to a single network type
 (such as with multiple UUCP or Ether nets
 [Metcalfe76]),
-requiring that the contents of a host field
-be considered,
-as well as just the syntax of an address,
+requiring that the contents of an address
+be considered
+as well as the syntax,
 in order to determine the gateway to use.
-This results both from a desire to simplify use by other sites,
-and to anticipate the environment Berkeley is moving towards.
+For example,
+the ARPANET is bringing up a new protocol
+called TCP to replace the old NCP protocol.
+No host at Berkeley runs both TCP and NCP,
+so it is necessary to look at the ARPANET host name
+to determine whether to route mail to an NCP gateway
+or a TCP gateway.
 .np
 Configuration should not be compiled into the code.
 A single binary should be able to run as is at any site
@@ -310,16 +331,17 @@ with anything that they will be recompiling anyway.
 .i Delivermail
 only knows about one alias file
 and per-user forwarding is unsupported.
-Berkeley is a sufficiently open environment
-that this can be writable by everyone,
+Berkeley is a sufficiently relaxed environment
+that the system alias file can be writable by everyone,
 but other environments are not so lax.
 Thus,
 .i sendmail
 must be able to let various groups maintain their own mailing lists,
-and individuals their own forwarding,
+and let individuals specify their own forwarding,
 without writing the system alias file.
 .np
-Customized incoming mailers should be supported.
+Each user should be able to specify the mailer to execute
+to process mail being delivered for them.
 This allows users who are using specialized mailers
 that want to use a different format to build their environment
 without changing the system,
@@ -348,46 +370,48 @@ or MH
 [Borden79],
 edits the message as required by the destination network,
 and calls appropriate mailers
-to do mail delivery or queueing for network transmission
-(the exception is when mailing to a file).
+to do mail delivery or queueing for network transmission\**.
+.(f
+\**except when mailing to a file,
+when
+.i sendmail
+does the delivery directly.
+.)f
 This discipline allows the insertion of new mailers
 at minimum cost.
 In this sense 
 .i sendmail
 resembles the Message Processing Module (MPM)
 of [Postel79b].
-See Figure 1.
-.(z
-.hl
-.ie t \
-.	sp 18
-.el \{\
-.(c
-	       +-------+
-	       | user  |
-	       +-------+
-		   |
-	        +-----+
-	        | UIP |
-	        +-----+
-		   |
-             +-----------+
-             | sendmail  |
-             +-----------+
-		|  |  |
-     +----------+  +  +----------+
-     |  	   |             |
-+---------+   +---------+   +---------+
-| mailer1 |   | mailer2 |   | mailer3 |
-+---------+   +---------+   +---------+
-.)c
-.\}
-
-.ce
-Figure 1 \*- System Structure.
-.hl
-.)z
 .sh 2 "Operational Description"
+.pp
+When an agent wants to send a message,
+it does a normal program call to
+.i sendmail .
+The arguments it passes include flags giving options
+and a list of addresses of intended recipients.
+It then writes the message to be sent to the standard input
+of
+.i sendmail .
+.i Sendmail
+delivers the message if possible,
+saving a copy of it if there were errors,
+and returns an exit status code
+telling what (if anything) went wrong.
+.pp
+The message should have a header at the beginning.
+The header is formatted as a series of lines
+of the form
+.(b
+field-name: field-value
+.)b
+Field-value can be split across lines by starting the following
+lines with a space or a tab.
+The header is separated from the body of the message
+by a blank line.
+No formatting requirements are imposed on the message
+except that they must be lines of text
+(i.e., binary data is not allowed).
 .sh 3 "Argument processing and address parsing"
 .pp
 The arguments are first scanned,
@@ -425,7 +449,7 @@ The header is stored in memory,
 and the body of the message is saved
 in a temporary file.
 .pp
-Collection occurs even if no addresses were valid
+The message is still collected even if no addresses were valid
 to simplify program interface.
 The message will be returned with an error.
 .sh 3 "Message delivery"
@@ -433,22 +457,20 @@ The message will be returned with an error.
 For each unique mailer and host in the send list,
 .i sendmail
 calls the appropriate mailer.
-Each call contains the users on that host.
-Mailers that only accept one recipient at a time
+Each mailer invocation sends to all users receiving the message on one host.
+Mailers that only accept one user at a time
 are handled properly.
 .pp
 The message is sent to the mailer
 (which must read its standard input)
 prepended by a customized header.
-The mailer exit code is caught and checked,
+The mailer exit status code is caught and checked,
 and a suitable error message given as appropriate.
 The exit code must conform to a system standard
 or a meaningless message
 (\c
 .q "Service unavailable" )
 is given.
-.pp
-Delivery to files executes directly.
 .sh 3 "Return to sender"
 .pp
 If errors occurred during processing,
@@ -471,10 +493,17 @@ function is always handled in one of these two ways.
 Almost all configuration information is read at runtime
 from an ASCII file,
 encoding
-macro definitions,
-header declarations,
-mailer definitions,
-and address rewriting rules.
+macro definitions
+(defining the value of macros used internally),
+header declarations
+(telling sendmail the format of header lines that it will process specially,
+i.e., lines that it will add or reformat),
+mailer definitions
+(giving information such as the location and characteristics
+of each mailer),
+and address rewriting rules
+(a limited production system to rewrite addresses
+which is used to effectively parse the addresses).
 .sh 3 Macros
 .pp
 Macros can be used in three ways.
@@ -529,14 +558,17 @@ The heart of address parsing in
 .i sendmail
 is a set of rewriting rules.
 These are an ordered list of pattern-replacement rules,
-somewhat like a production system,
-except that order is critical.
-Each address is applied successively to these rules
-being rewritten into a different (textual) form
-until it resolves into a canonical address
+(somewhat like a production system,
+except that order is critical),
+which are applied to each address.
+The address is rewritten textually until it is either rewritten
+into a special canonical form
 (i.e.,
-a [mailer, host, user]
-3-tuple),
+a (mailer, host, user)
+3-tuple,
+such as (arpanet, usc-isif, postel)
+representing the address
+.q "postel@usc-isif" ),
 or it falls off the end.
 When a pattern matches,
 the rule is reapplied until it fails.
@@ -569,8 +601,18 @@ In brief, the format is:
 Anything in parentheses is thrown away
 (as a comment).
 .np
-Anything in angle brackets (\ <>\ ) is preferred
+Anything in angle brackets (\c
+.q "<>" )
+is preferred
 over anything else.
+This implements the ARPANET standard that addresses of the form
+.(b
+username <machine-address>
+.)b
+will send to the electronic
+.q machine-address
+rather than the human
+.q username.
 .np
 Double quotes
 (\ "\ )
@@ -788,13 +830,17 @@ should not need to be recomplied except
 To change operating systems
 (V6, V7/32V, 4BSD).
 .np
-To remove or insert the DBM library.
+To remove or insert the DBM
+(UNIX database)
+library.
 .np
 To change ARPANET reply codes.
 .np
 To add headers requiring special processing.
 .lp
-Adding mailers or changing parsing or routing information
+Adding mailers or changing parsing
+(i.e., rewriting)
+or routing information
 does not require recompilation.
 .pp
 If the mail is being sent by a local user,
