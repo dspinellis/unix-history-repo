@@ -1,4 +1,6 @@
+#ifndef lint
 static char *sccsid = "@(#) (Berkeley) 82/10/19";
+#endif
 /*
  * Print system stuff
  */
@@ -8,7 +10,9 @@ static char *sccsid = "@(#) (Berkeley) 82/10/19";
 
 #include <sys/param.h>
 #include <sys/dir.h>
+#define	KERNEL
 #include <sys/file.h>
+#undef	KERNEL
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/text.h>
@@ -19,8 +23,7 @@ static char *sccsid = "@(#) (Berkeley) 82/10/19";
 #include <sys/vm.h>
 #include <nlist.h>
 #include <sys/pte.h>
-#define	KERNEL
-#undef	KERNEL
+#include <sys/descrip.h>
 
 char	*fcore	= "/dev/kmem";
 char	*fnlist	= "/vmunix";
@@ -73,8 +76,6 @@ int	txtf;
 int	prcf;
 int	ttyf;
 int	usrf;
-int	mpxf;
-int	groupf;
 long	ubase;
 int	filf;
 int	swpf;
@@ -91,6 +92,7 @@ main(argc, argv)
 char **argv;
 {
 	register char *argp;
+	int allflags;
 
 	argc--, argv++;
 	while (argc > 0 && **argv == '-') {
@@ -143,27 +145,29 @@ char **argv;
 		case 's':
 			swpf++;
 			break;
-		case 'm':
-			mpxf++;
-			break;
-		case 'g':
-			groupf++;
-			break;
+		default:
+			usage();
+			exit(1);
 		}
 	}
-	if (argc>0)
-		fcore = argv[0];
+	if (argc>1)
+		fcore = argv[1];
 	if ((fc = open(fcore, 0)) < 0) {
 		printf("Can't find %s\n", fcore);
 		exit(1);
 	}
-	if (argc>1)
-		fnlist = argv[1];
+	if (argc>0)
+		fnlist = argv[0];
 	nlist(fnlist, nl);
 	usrpt = (struct pte *)nl[USRPT].n_value;
 	Usrptma = (struct pte *)nl[USRPTMA].n_value;
 	if (nl[0].n_type == 0) {
 		printf("no namelist\n");
+		exit(1);
+	}
+	allflags = filf | totflg | inof | prcf | txtf | ttyf | usrf | swpf;
+	if (allflags == 0) {
+		printf("pstat: one or more of -[aixptfsu] is required\n");
 		exit(1);
 	}
 	if (filf||totflg)
@@ -180,6 +184,12 @@ char **argv;
 		dousr();
 	if (swpf||totflg)
 		doswap();
+}
+
+usage()
+{
+
+	printf("usage: pstat -[aixptfs] [-u [ubase]] [system] [core]\n");
 }
 
 doinode()
@@ -202,7 +212,7 @@ doinode()
 		return;
 	}
 	printf("%d/%d active inodes\n", nin, ninode);
-	printf("   LOC    FLAGS  CNT DEVICE   INO  MODE  NLK UID   SIZE/DEV\n");
+printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\n");
 	for (ip = xinode; ip < &xinode[ninode]; ip++) {
 		if (ip->i_count == 0)
 			continue;
@@ -213,8 +223,14 @@ doinode()
 		putf(ip->i_flag&IMOUNT, 'M');
 		putf(ip->i_flag&IWANT, 'W');
 		putf(ip->i_flag&ITEXT, 'T');
+		putf(ip->i_flag&ICHG, 'C');
+		putf(ip->i_flag&ISHLOCK, 'S');
+		putf(ip->i_flag&IEXLOCK, 'E');
+		putf(ip->i_flag&ILWAIT, 'Z');
 		printf("%4d", ip->i_count&0377);
 		printf("%4d,%3d", major(ip->i_dev), minor(ip->i_dev));
+		printf("%4d", ip->i_rdlockc&0377);
+		printf("%4d", ip->i_wrlockc&0377);
 		printf("%6d", ip->i_number);
 		printf("%6x", ip->i_mode & 0xffff);
 		printf("%4d", ip->i_nlink);
@@ -586,6 +602,10 @@ dofile()
 	register struct file *fp;
 	register nf;
 	int loc;
+	static char *dtypes[] = {
+		"???", "kernel", "fsys", "file", "dir", "bdev",
+		"cdev", "proc", "socket", "domain", "tty"
+	};
 
 	nf = 0;
 	nfile = getw(nl[SNFILE].n_value);
@@ -600,17 +620,21 @@ dofile()
 		return;
 	}
 	printf("%d/%d open files\n", nf, nfile);
-	printf("   LOC   FLG  CNT   INO    OFFS|SOCK\n");
+	printf("   LOC   TYPE    FLG  CNT   INO    OFFS|SOCK\n");
 	for (fp=xfile,loc=(int)afile; fp < &xfile[nfile]; fp++,loc+=sizeof(xfile[0])) {
 		if (fp->f_count==0)
 			continue;
 		printf("%8x ", loc);
+		if (fp->f_type <= DTYPE_TERMINAL)
+			printf("%-8.8s", dtypes[fp->f_type]);
+		else
+			printf("8d", fp->f_type);
 		putf(fp->f_flag&FREAD, 'R');
 		putf(fp->f_flag&FWRITE, 'W');
-		putf(fp->f_flag&FSOCKET, 'S');
+		putf(fp->f_flag&FAPPEND, 'A');
 		printf("%4d", mask(fp->f_count));
 		printf("%9.1x", fp->f_inode);
-		if (fp->f_flag&FSOCKET)
+		if (fp->f_type == DTYPE_SOCKET)
 			printf("  %x\n", fp->f_socket);
 		else
 			printf("  %ld\n", fp->f_offset);
@@ -701,4 +725,3 @@ struct text *xp;
 		return (clrnd(xp->x_size + ctopt(xp->x_size)));
 	return (xp->x_size);
 }
-
