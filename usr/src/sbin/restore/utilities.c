@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.11	(Berkeley)	83/04/19";
+static char sccsid[] = "@(#)utilities.c	3.12	(Berkeley)	83/05/06";
 #endif
 
 #include "restore.h"
@@ -332,6 +332,7 @@ reply(question)
 	fprintf(stderr, "%s? ", question);
 	do	{
 		fprintf(stderr, "[yn] ");
+		fflush(stderr);
 		c = getc(terminal);
 		while (c != '\n' && getc(terminal) != '\n')
 			/* void */;
