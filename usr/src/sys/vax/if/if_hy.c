@@ -1,4 +1,4 @@
-/*	if_hy.c	4.6	83/06/12	*/
+/*	if_hy.c	4.7	83/06/13	*/
 
 #include "hy.h"
 #if NHY > 0
@@ -195,7 +195,6 @@ hyattach(ui)
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "hy";
 	ifp->if_mtu = HYMTU;
-	ifp->if_net = ui->ui_flags;
 	is->hy_state = STARTUP;		/* don't allow state transitions yet */
 	ifp->if_init = hyinit;
 	ifp->if_ioctl = hyioctl;
@@ -235,8 +234,12 @@ hyinit(unit)
 {
 	register struct hy_softc *is = &hy_softc[unit];
 	register struct uba_device *ui = hyinfo[unit];
+	struct sockaddr_in *sin;
 	int s;
 
+	sin = (struct sockaddr_in *)&is->is_if.if_addr;
+	if (in_netof(sin->sin_addr) == 0)
+		return;
 	if (if_ubainit(&is->hy_ifuba, ui->ui_ubanum,
 	    sizeof (struct hy_hdr), (int)btoc(HYMTU)) == 0) { 
 #ifdef DEBUG
@@ -788,7 +791,7 @@ actloop:
 				is->hy_flags &= ~RQ_MARKUP;
 				is->hy_retry = 0;
 				/*
-				 * Fill in the Internet address
+				 * Fill in the host number
 				 * from the status buffer
 				 */
 				printf(
@@ -803,7 +806,6 @@ actloop:
 				ifp->if_host[0] =
 				  (is->hy_stat.hyc_uaddr << 8) |
 					PORTNUM(&is->hy_status);
-				sin->sin_family = AF_INET;
 				sin->sin_addr =
 				   if_makeaddr(ifp->if_net, ifp->if_host[0]);
 				ifp->if_flags |= IFF_UP;
@@ -1230,9 +1232,24 @@ hyioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t	data;
 {
+	struct sockaddr_in *sin;
 	int s = splimp(), error = 0;
 
 	switch(cmd) {
+
+	case SIOCSIFADDR:
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);
+		sin = (struct sockaddr_in *)&ifr->ifr_addr;
+		ifp->if_net = in_netof(sin->sin_addr);
+		sin = (struct sockaddr_in *)&ifp->if_addr;
+		sin->sin_family = AF_INET;
+		sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, RTF_UP);
+		else
+			hyinit(ifp->if_unit);
+		break;
 
 	case HYSETROUTE:
 		if (!suser()) {
