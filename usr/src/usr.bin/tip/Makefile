@@ -1,24 +1,25 @@
-#	Makefile	4.8	83/06/15
+#	Makefile	4.9	83/06/25
 #
-# makefile for intermachine communications package
+# make file for intermachine communications package
 #
 # Files are:
 #	/etc/remote		remote host description file
 #	/etc/phones		phone number file, owned by ${OWNER} and
-#				  mode 644
+#				  mode 6??
 #	${ADM}/aculog		ACU accounting file, owned by ${OWNER} and
-#				  mode 644 {if ACULOG defined}
+#				  mode 6?? {if ACULOG defined}
 # Presently supports:
 #	BIZCOMP
 #	DEC DF02-AC, DF03-AC
 #	DEC DN-11/Able Quadracall
-#	VENTEL intelligent modem
-#	VADIC 831 semi-smart modem
+#	VENTEL 212+
+#	VADIC 831 RS232 adaptor
 #	VADIC 3451
+# (drivers are located in aculib.a)
 #
 # Configuration defines:
 #	DF02, DF03, DN11	ACU's supported
-#	  BIZ1031, BIZ1022, VENTEL, V831, VADIC
+#	  BIZ1031, BIZ1022, VENTEL, V831, V3451
 #	ACULOG			turn on tip logging of ACU use
 #	PRISTINE		no phone #'s put in ACU log file
 #	CONNECT			worthless command
@@ -27,57 +28,63 @@
 #				writes on local side
 #	BUFSIZ			buffer sizing from stdio, must be fed
 #				explicitly to remcap.c if not 1024
-#	VMUNIX			allow VMUNIX tty stuff and job control
 
 ADM=	usr/adm
 OWNER=	uucp
 GROUP=	daemon
-CFLAGS=	-O -DDEFBR=300 -DDEFFS=BUFSIZ -DVMUNIX -DACULOG -DV831
+CONFIG=	-DV831 -DVENTEL
+CFLAGS=	-O -DDEFBR=300 -DDEFFS=BUFSIZ -DACULOG
 LDFLAGS=
-OBJECTS=acu.o acutab.o biz22.o biz31.o cmds.o cmdtab.o cu.o df.o dn11.o hunt.o \
-	lock.o log.o remote.o tip.o tipout.o value.o vars.o ventel.o v831.o \
-	chartab.o
-SOURCES=acu.c acutab.c biz22.c biz31.c cmds.c cmdtab.c cu.c df.c dn11.c hunt.c \
-	lock.c log.c remcap.c remote.c tip.c tipout.c uucplock.c value.c  \
-	vars.c ventel.c v831.c chartab.c
+OBJS=	acu.o cmds.o cmdtab.o cu.o hunt.o \
+	log.o partab.o remote.o tip.o tipout.o value.o vars.o
+SPECIAL=acutab.c remcap.c uucplock.c
+DRIVERS=aculib/*.c
+SOURCES=acu.c acutab.c cmds.c cmdtab.c cu.c hunt.c \
+	log.c partab.c remote.c tip.c tipout.c value.c vars.c \
+	${SPECIAL} ${DRIVERS}
 CXREF=	/usr/ucb/ctags -xw
 
-tip:	${OBJECTS} remcap.o uucplock.o
-	${CC} -o tip ${LDFLAGS} ${OBJECTS} remcap.o uucplock.o
-	rm -f cu
-	ln tip cu
+tip:	${OBJS} acutab.o remcap.o uucplock.o aculib/aculib.a
+	${CC} -o tip ${LDFLAGS} ${OBJS} acutab.o remcap.o uucplock.o \
+		aculib/aculib.a
 
-all:	tip aculog
-
-install: all
-	install -m 4711 -o ${OWNER} -g ${GROUP} tip ${DESTDIR}/usr/bin/tip
-	ln /usr/bin/tip /usr/bin/cu
-#	install aculog ${DESTDIR}/etc/aculog
-#	chown ${OWNER} ${DESTDIR}/etc/aculog
-#	chmod 4711 ${DESTDIR}/etc/aculog
-#	cp /dev/null ${DESTDIR}/${ADM}/aculog
-#	chown ${OWNER} ${DESTDIR}/${ADM}/aculog
-#	chmod 600 ${DESTDIR}/${ADM}/aculog
-	@echo "create /etc/remote and /etc/phones"
-
-aculog:	aculog.c
-	${CC} -o aculog ${LDFLAGS} aculog.c
-
-${OBJECTS}: tip.h
+${OBJS}: tip.h
 
 remcap.o: remcap.c
 	${CC} -c -DBUFSIZ=1024 ${CFLAGS} remcap.c
+
+# acutab is configuration dependent, and so depends on the makefile
+acutab.o: Makefile
+acutab.o: acutab.c
+	${CC} -c ${CFLAGS} ${CONFIG} acutab.c
+
+# remote.o depends on the makefile because of DEFBR and DEFFS
+remote.o: Makefile
+
+# log.o depends on the makefile because of ACULOG
+log.o:	Makefile
+
+aculib/aculib.a: ${DRIVERS}
+	cd aculib; make ${MFLAGS}
+
+install: tip
+	install -m 4711 -o ${OWNER} -g ${GROUP} tip ${DESTDIR}/usr/bin/tip
+	ln /usr/bin/tip /usr/bin/cu
+#	cp /dev/null ${DESTDIR}/${ADM}/aculog
+#	chown ${OWNER} ${DESTDIR}/${ADM}/aculog
+#	chmod 600 ${DESTDIR}/${ADM}/aculog
+#	@echo "create /etc/remote and /etc/phones"
 
 tags:	${SOURCES} tip.h
 	ctags -w ${SOURCES} tip.h
 
 clean:
-	rm -f aculog tip cu *.o
+	rm -f tip cu *.o
 
 print:
 	@pr README TODO makefile
 	@size *.o | pr -h SIZES
-	@${CXREF} ${SOURCES} tip.h | pr -h XREF
+	@${CXREF} tip.h ${SOURCES} | pr -h XREF
 	@ls -l | pr 
 	@pr tip.h ${SOURCES}
 
