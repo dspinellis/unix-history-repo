@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.4 (Berkeley) %G%
+ *	@(#)param.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -71,22 +71,15 @@
 #define	NKMEMCLUSTERS	(512*1024/CLBYTES)
 #endif
 
-/*
- * Some macros for units conversion
- */
-/* Core clicks (4096 bytes) to segments and vice versa */
-#define	ctos(x)	(x)
-#define	stoc(x)	(x)
-
-/* Core clicks (4096 bytes) to disk blocks */
+/* pages ("clicks") (4096 bytes) to disk blocks */
 #define	ctod(x)	((x)<<(PGSHIFT-DEV_BSHIFT))
 #define	dtoc(x)	((x)>>(PGSHIFT-DEV_BSHIFT))
 #define	dtob(x)	((x)<<DEV_BSHIFT)
 
-/* clicks to bytes */
+/* pages to bytes */
 #define	ctob(x)	((x)<<PGSHIFT)
 
-/* bytes to clicks */
+/* bytes to pages */
 #define	btoc(x)	(((unsigned)(x)+(NBPG-1))>>PGSHIFT)
 
 #define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
