@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.14 81/10/29 */
+/* tcp_usrreq.c 1.15 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -255,9 +255,7 @@ COUNT(T_CLOSE);
 		m_free(dtom(up->uc_template));
 		up->uc_template = 0;
 	}
-	m = dtom(tp);
-	m->m_off = 0;
-	m_free(m);
+	wmemfree((caddr_t)tp, 1024);
 	up->uc_tcb = NULL;
 
 	/* lower buffer allocation and decrement host entry */
@@ -435,5 +433,41 @@ COUNT(TCP_PRT);
 		    tdp->td_sno, tdp->td_ano, tdp->td_wno, tdp->td_lno, tdp->td_flg);
 	}
 	printf("\n");
+}
+#endif
+#ifdef TCPDEBUG
+tdb_setup(tp, n, input, tdp)
+	struct tcb *tp;
+	register struct th *n;
+	int input;
+	register struct tcp_debug *tdp;
+{
+
+	tdp->td_tod = time;
+	tdp->td_tcb = tp;
+	tdp->td_old = tp->t_state;
+	tdp->td_inp = input;
+	tdp->td_tim = 0;
+	tdp->td_new = -1;
+	if (n) {
+		tdp->td_sno = n->t_seq;
+		tdp->td_ano = n->t_ackno;
+		tdp->td_wno = n->t_win;
+		tdp->td_lno = n->t_len;
+		tdp->td_flg = n->th_flags;
+	} else
+		tdp->td_sno = tdp->td_ano = tdp->td_wno = tdp->td_lno =
+		    tdp->td_flg = 0;
+}
+
+tdb_stuff(tdp, nstate)
+	struct tcp_debug *tdp;
+	int nstate;
+{
+
+	tdp->td_new = nstate;
+	tcp_debug[tdbx++ % TDBSIZE] = *tdp;
+	if (tcpconsdebug & 2)
+		tcp_prt(tdp);
 }
 #endif
