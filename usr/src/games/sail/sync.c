@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	2.7 85/03/04";
+static	char *sccsid = "@(#)sync.c	2.8 85/04/06";
 #endif
 
 #include "externs.h"
@@ -57,18 +57,18 @@ sync_exists(game)
 
 sync_open()
 {
-	if (sync_fp == NULL) {
-		(void) sprintf(sync_lock, LF, game);
-		(void) sprintf(sync_file, SF, game);
-		if (access(sync_file, 0) < 0) {
-			int omask = umask(issetuid ? 077 : 011);
-			sync_fp = fopen(sync_file, "w+");
-			(void) umask(omask);
-		} else
-			sync_fp = fopen(sync_file, "r+");
-		if (sync_fp == NULL)
-			return -1;
-	}
+	if (sync_fp != NULL)
+		(void) fclose(sync_fp);
+	(void) sprintf(sync_lock, LF, game);
+	(void) sprintf(sync_file, SF, game);
+	if (access(sync_file, 0) < 0) {
+		int omask = umask(issetuid ? 077 : 011);
+		sync_fp = fopen(sync_file, "w+");
+		(void) umask(omask);
+	} else
+		sync_fp = fopen(sync_file, "r+");
+	if (sync_fp == NULL)
+		return -1;
 	sync_seek == 0;
 	return 0;
 }
