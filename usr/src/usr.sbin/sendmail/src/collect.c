@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -302,6 +302,7 @@ nextstate:
 			mstate = MS_HEADER;
 			if (strncmp(buf, "From ", 5) == 0)
 			{
+				bp = buf;
 				eatfrom(buf, e);
 				continue;
 			}
