@@ -1,0 +1,35 @@
+stop in p2
+run
+cont
+where
+func
+print i
+up
+func
+print i
+up
+func
+print i
+up
+func
+print i
+up
+func
+up
+down
+func
+down
+func
+down
+func
+down
+func
+down
+return
+func; return
+func; return
+func; return
+func; return
+func; return
+func; return
+func; return
