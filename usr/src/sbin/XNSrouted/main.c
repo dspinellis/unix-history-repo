@@ -14,7 +14,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -29,7 +29,6 @@ static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #include <errno.h>
 #include <nlist.h>
 #include <signal.h>
-#include <syslog.h>
 
 int	supplier = -1;		/* process should supply updates */
 extern int gateway;
@@ -58,6 +57,11 @@ main(argc, argv)
 			argv++, argc--;
 			continue;
 		}
+		if (strcmp(*argv, "-R") == 0) {
+			noteremoterequests++;
+			argv++, argc--;
+			continue;
+		}
 		if (strcmp(*argv, "-t") == 0) {
 			tracepackets++;
 			argv++, argc--;
@@ -80,6 +84,7 @@ main(argc, argv)
 		exit(1);
 	}
 	
+	
 #ifndef DEBUG
 	if (!tracepackets) {
 		int t;
@@ -98,6 +103,8 @@ main(argc, argv)
 		}
 	}
 #endif
+	openlog("XNSrouted", LOG_PID, LOG_DAEMON);
+
 	addr.sns_family = AF_NS;
 	addr.sns_port = htons(IDPPORT_RIF);
 	s = getsocket(SOCK_DGRAM, 0, &addr);
@@ -131,18 +138,9 @@ main(argc, argv)
 	timer();
 	
 
-	for (;;) {
-		int ibits;
-		register int n;
-
-		/*ibits = 1 << s;
-		n = select(20, &ibits, 0, 0, 0);
-		if (n < 0)
-			continue;
-		if (ibits & (1 << s)) */
-			process(s);
-		/* handle ICMP redirects */
-	}
+	for (;;) 
+		process(s);
+	
 }
 
 process(fd)
@@ -155,24 +153,17 @@ process(fd)
 	cc = recvfrom(fd, packet, sizeof (packet), 0, &from, &fromlen);
 	if (cc <= 0) {
 		if (cc < 0 && errno != EINTR)
-			perror("recvfrom");
+			syslog("recvfrom: %m");
 		return;
 	}
-	if (tracepackets > 1) {
+	if (tracepackets > 1 && ftrace) {
 	    fprintf(ftrace,"rcv %d bytes on %s ", cc, xns_ntoa(&idp->idp_dna));
 	    fprintf(ftrace," from %s\n", xns_ntoa(&idp->idp_sna));
 	}
-	if (tracepackets > 0) {
-	    if (ns_netof(idp->idp_sna) != ns_netof(idp->idp_dna)) {
-		    fprintf(ftrace,
-			    "XNSrouted: net of interface (%d) ",
-			    ns_netof(idp->idp_dna));
-		    fprintf(ftrace,
-			    "!= net on ether (%d)!\n", ns_netof(idp->idp_sna));
-	    }
-	    if (fromlen != sizeof (struct sockaddr_ns))
-		    fprintf(ftrace, "fromlen is %d instead of %d\n",
-		    fromlen, sizeof (struct sockaddr_ns));
+	
+	if (noteremoterequests && ns_netof(idp->idp_sna) && 
+	    ns_netof(idp->idp_sna) != ns_netof(idp->idp_dna)) {
+		syslog(LOG_ERR, "net of interface (%d) != net on ether (%d)!\n",  ns_netof(idp->idp_dna), ns_netof(idp->idp_sna));
 	}
 			
 	/* We get the IDP header in front of the RIF packet*/
@@ -192,14 +183,14 @@ getsocket(type, proto, sns)
 
 	retry = 1;
 	while ((s = socket(domain, type, proto)) < 0 && retry) {
-		perror("socket");
+		syslog("socket: %m");
 		sleep(5 * retry);
 		retry <<= 1;
 	}
 	if (retry == 0)
 		return (-1);
 	while (bind(s, sns, sizeof (*sns), 0) < 0 && retry) {
-		perror("bind");
+		syslog("bind: %m");
 		sleep(5 * retry);
 		retry <<= 1;
 	}
@@ -208,17 +199,17 @@ getsocket(type, proto, sns)
 	if (domain==AF_NS) {
 		struct idp idp;
 		if (setsockopt(s, 0, SO_HEADERS_ON_INPUT, &on, sizeof(on))) {
-			perror("setsockopt SEE HEADERS");
+			syslog("setsockopt SEE HEADERS: %m");
 			exit(1);
 		}
 		idp.idp_pt = NSPROTO_RI;
 		if (setsockopt(s, 0, SO_DEFAULT_HEADERS, &idp, sizeof(idp))) {
-			perror("setsockopt SET HEADERS");
+			syslog("setsockopt SET HEADER: %m");
 			exit(1);
 		}
 	}
 	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
-		perror("setsockopt SO_BROADCAST");
+		syslog("setsockopt SO_BROADCAST: %m");
 		exit(1);
 	}
 	return (s);

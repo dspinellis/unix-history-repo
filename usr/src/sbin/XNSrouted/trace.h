@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trace.h	5.3 (Berkeley) %G%";
+ *	@(#)trace.h	5.4 (Berkeley) %G%";
  *
  * Includes material written at Cornell University by Bill Nesheim,
  * by permission of the author.
@@ -55,8 +55,8 @@ FILE	*ftrace;		/* output trace file */
 			trace(&ifp->int_input, src, &packet[sizeof(struct idp)], size, \
 				ntohl(ifp->int_metric)); \
 	  } \
-	  if (tracepackets) \
-		dumppacket(stdout, "from", src, &packet[sizeof(struct idp)], size); \
+	  if (tracepackets && ftrace) \
+		dumppacket(ftrace, "from", src, &packet[sizeof(struct idp)], size); \
 	}
 #define	TRACE_OUTPUT(ifp, dst, size) { \
 	  if (tracing) { \
@@ -64,6 +64,6 @@ FILE	*ftrace;		/* output trace file */
 		if (ifp) \
 		    trace(&ifp->int_output, dst, &packet[sizeof(struct idp)], size, ifp->int_metric); \
 	  } \
-	  if (tracepackets) \
-		dumppacket(stdout, "to", dst, &packet[sizeof(struct idp)], size); \
+	  if (tracepackets && ftrace) \
+		dumppacket(ftrace, "to", dst, &packet[sizeof(struct idp)], size); \
 	}

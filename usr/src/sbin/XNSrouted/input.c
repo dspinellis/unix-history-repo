@@ -9,7 +9,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -79,7 +79,7 @@ rip_input(from, size)
 			 * request for specific nets
 			 */
 			rt = rtlookup(xns_nettosa(n->rip_dst));
-			if (tracepackets > 1) {
+			if (ftrace) {
 				fprintf(ftrace,
 					"specific request for %d",
 					ntohl(xnnet(n->rip_dst[0])));
@@ -95,9 +95,9 @@ rip_input(from, size)
 			msg->rip_cmd = htons(RIPCMD_RESPONSE);
 			newsize += sizeof (u_short);
 			/* should check for if with dstaddr(from) first */
-			(ifp = if_ifwithnet(from));
 			(*afp->af_output)(0, from, newsize);
-			if (tracepackets > 1) {
+			(ifp = if_ifwithnet(from));
+			if (ftrace) {
 				fprintf(ftrace,
 					", request arriving on interface %x\n",
 					ifp);
@@ -124,10 +124,10 @@ rip_input(from, size)
 		 * in the routing tables, (re-)add the route.
 		 */
 		if ((rt = rtfind(from)) && (rt->rt_state & RTS_INTERFACE)) {
-			if(tracepackets > 1) fprintf(ftrace, "Got route\n");
+			if(ftrace) fprintf(ftrace, "Got route\n");
 			rt->rt_timer = 0;
 		} else if (ifp = if_ifwithdstaddr(from)) {
-			if(tracepackets > 1) fprintf(ftrace, "Got partner\n");
+			if(ftrace) fprintf(ftrace, "Got partner\n");
 			addrouteforif(ifp);
 		}
 		for (; size > 0; size -= sizeof (struct netinfo), n++) {

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.3 (Berkeley) %G%";
+ *	@(#)defs.h	5.4 (Berkeley) %G%";
  */
 
 #include <sys/types.h>
@@ -16,6 +16,7 @@
 #define	IDPPORT_RIF	1
 
 #include <stdio.h>
+#include <syslog.h>
 
 #include "protocol.h"
 #include "trace.h"
@@ -44,6 +45,7 @@ int	lookforinterfaces;	/* if 1 probe kernel for new up interfaces */
 int	performnlist;		/* if 1 check if /vmunix has changed */
 int	externalinterfaces;	/* # of remote and local interfaces */
 int	timeval;		/* local idea of time */
+int	noteremoterequests;	/* squawk on requests from non-local nets */
 
 char	packet[MAXPACKETSIZE+sizeof(struct idp)+1];
 struct	rip *msg;

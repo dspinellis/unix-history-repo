@@ -7,7 +7,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -142,7 +142,7 @@ rtadd(dst, gate, metric, state)
 	 * occur because of an incorrect entry in /etc/gateways.
 	 */
 	if (install && ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
-		perror("SIOCADDRT");
+		syslog(LOG_ERR,"SIOCADDRT: %m");
 		if (errno == ENETUNREACH) {
 			TRACE_ACTION(DELETE, rt);
 			remque(rt);
@@ -178,10 +178,10 @@ rtchange(rt, gate, metric)
 	}
 	if (doioctl && install) {
 		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-			perror("SIOCADDRT");
+			syslog(LOG_ERR,"SIOCADDRT %m");
 		if (delete)
 		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-			perror("SIOCDELRT");
+			syslog(LOG_ERR,"SIOCDELRT %m");
 	}
 }
 
@@ -191,7 +191,7 @@ rtdelete(rt)
 
 	TRACE_ACTION(DELETE, rt);
 	if (install && delete && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
-		perror("SIOCDELRT");
+		syslog(LOG_ERR,"SIOCDELR %m");
 	remque(rt);
 	free((char *)rt);
 }
