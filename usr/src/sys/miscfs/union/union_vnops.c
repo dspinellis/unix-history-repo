@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	1.8 (Berkeley) %G%
+ *	@(#)union_vnops.c	1.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,8 +43,13 @@ union_lookup1(udvp, dvp, vpp, cnp)
 	 */
 	if (cnp->cn_flags & ISDOTDOT) {
 		for (;;) {
-			if ((dvp->v_flag & VROOT) == 0 ||
-			    (cnp->cn_flags & NOCROSSMOUNT))
+			/*
+			 * Don't do the NOCROSSMOUNT check
+			 * at this level.  By definition,
+			 * union fs deals with namespaces, not
+			 * filesystems.
+			 */
+			if ((dvp->v_flag & VROOT) == 0)
 				break;
 
 			tdvp = dvp;
@@ -71,12 +76,11 @@ union_lookup1(udvp, dvp, vpp, cnp)
 
 	/*
 	 * Lastly check if the current node is a mount point in
-	 * which cse walk up the mount hierarchy making sure not to
+	 * which case walk up the mount hierarchy making sure not to
 	 * bump into the root of the mount tree (ie. dvp != udvp).
 	 */
 	while (dvp != udvp && (dvp->v_type == VDIR) &&
-	       (mp = dvp->v_mountedhere) &&
-	       (cnp->cn_flags & NOCROSSMOUNT) == 0) {
+	       (mp = dvp->v_mountedhere)) {
 
 		if (mp->mnt_flag & MNT_MLOCK) {
 			mp->mnt_flag |= MNT_MWAIT;

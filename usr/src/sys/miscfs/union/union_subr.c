@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	1.8 (Berkeley) %G%
+ *	@(#)union_subr.c	1.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -330,12 +330,10 @@ union_mkshadow(um, dvp, cnp, vpp)
 
 	/*
 	 * policy: when creating the shadow directory in the
-	 * upper layer, create it owned by the current user,
-	 * group from parent directory, and mode 777 modified
-	 * by umask (ie mostly identical to the mkdir syscall).
-	 * (jsp, kb)
-	 * TODO: create the directory owned by the user who
-	 * did the mount (um->um_cred).
+	 * upper layer, create it owned by the user who did
+	 * the mount, group from parent directory, and mode
+	 * 777 modified by umask (ie mostly identical to the
+	 * mkdir syscall).  (jsp, kb)
 	 */
 
 	/*
@@ -356,7 +354,7 @@ union_mkshadow(um, dvp, cnp, vpp)
 	cn.cn_nameiop = CREATE;
 	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|ISLASTCN);
 	cn.cn_proc = cnp->cn_proc;
-	cn.cn_cred = cnp->cn_cred;
+	cn.cn_cred = um->um_cred;
 	cn.cn_nameptr = cn.cn_pnbuf;
 	cn.cn_namelen = cnp->cn_namelen;
 	cn.cn_hash = cnp->cn_hash;
@@ -377,7 +375,7 @@ union_mkshadow(um, dvp, cnp, vpp)
 
 	VATTR_NULL(&va);
 	va.va_type = VDIR;
-	va.va_mode = UN_DIRMODE & ~p->p_fd->fd_cmask;
+	va.va_mode = um->um_cmode;
 
 	/* LEASE_CHECK: dvp is locked */
 	LEASE_CHECK(dvp, p, p->p_ucred, LEASE_WRITE);
@@ -413,6 +411,15 @@ union_vn_create(vpp, un, p)
 
 	*vpp = NULLVP;
 
+	/*
+	 * Build a new componentname structure (for the same
+	 * reasons outlines in union_mkshadow).
+	 * The difference here is that the file is owned by
+	 * the current user, rather than by the person who
+	 * did the mount, since the current user needs to be
+	 * able to write the file (that's why it is being
+	 * copied in the first place).
+	 */
 	cn.cn_namelen = strlen(un->un_path);
 	cn.cn_pnbuf = (caddr_t) malloc(cn.cn_namelen, M_NAMEI, M_WAITOK);
 	bcopy(un->un_path, cn.cn_pnbuf, cn.cn_namelen+1);
@@ -430,6 +437,16 @@ union_vn_create(vpp, un, p)
 	vrele(un->un_dirvp);
 
 	if (vp == NULLVP) {
+		/*
+		 * Good - there was no race to create the file
+		 * so go ahead and create it.  The permissions
+		 * on the file will be 0666 modified by the
+		 * current user's umask.  Access to the file, while
+		 * it is unioned, will require access to the top *and*
+		 * bottom files.  Access when not unioned will simply
+		 * require access to the top-level file.
+		 * TODO: confirm choice of access permissions.
+		 */
 		VATTR_NULL(vap);
 		vap->va_type = VREG;
 		vap->va_mode = cmode;
