@@ -1,0 +1,43 @@
+#print
+Line 0 is a legitimate address for a few commands;
+you can append text at the beginning of a file
+by typing
+   0a
+and you can move lines to the beginning of a files
+by using
+   m0
+Move the last three lines of file "tax" to the beginning,
+then type "ready".
+#create Ref
+If you sustain an "overall foreign loss"
+for any taxable year,
+a recapture provision
+will treat a part of
+foreign income realized
+in a later year
+as income from
+U. S. sources.
+
+These rules generally apply
+to losses sustained in taxable
+years beginning after
+December 31, 1975.
+#create tax
+will treat a part of
+foreign income realized
+in a later year
+as income from
+U. S. sources.
+
+These rules generally apply
+to losses sustained in taxable
+years beginning after
+December 31, 1975.
+If you sustain an "overall foreign loss"
+for any taxable year,
+a recapture provision
+#user
+#cmp Ref tax
+#log
+#next
+63.1b 10

@@ -1,0 +1,108 @@
+#print
+After the global command has selected the lines
+to which the second command is to be applied, it sets '.' (the
+current line) to each of these lines in turn as it executes
+the controlled command.  Thus you can reference the line
+before or after the selected line.  For example,
+  g/xx/.-1s/ab/cd/
+changes 'ab' to 'cd' on the line BEFORE each line with xx.
+And
+  g/xx/$t.+1
+inserts a copy of the last line in the file two lines
+after each line with 'xx' on it.
+In this directory, the file 'memo' has paragraphs indicated
+by lines beginning ".PP".  Add two blanks to the beginning of
+the line after each ".PP", and then delete the ".PP" lines.
+This should take only two commands.  Rewrite the file and then
+type "ready".
+#create Ref
+The Ascent of the Riffelberg
+by Mark Twain
+
+  I sat silent some time, then turned to Harris and said:
+``My mind is made up.''
+Something in my tone struck him; and when he glanced
+at my eye and read what was written there, his face paled
+perceptibly.  He hesitated a moment, then said:
+``Speak.''
+  I answered, with perfect calmness:
+``I WILL ASCEND THE RIFFELBERG.''
+  If I had shot my poor friend he could not have fallen from
+his chair more suddenly.  If I had been his father he
+could not have pleaded harder to get me to give up my
+purpose.  But I turned a deaf ear to all he said.  When he
+perceived at last that nothing could alter my determination,
+he ceased to urge, and for a while the deep silence was broken only
+by his sobs.  I sat in marble resolution, with my
+eyes fixed upon vacancy, for in spirit I was already
+wrestling with the perils of the mountains, and my friend sat
+gazing at me in adoring admiration through his tears.  At
+last he threw himself upon me in a loving embrace and
+exclaimed in broken tones:
+``Your Harris will never desert you.  We will die together!''
+  I cheered the noble fellow with praises, and soon his fears
+were forgotten and he was eager for the adventure.  He
+wanted to summon the guides at once and leave at two in
+the morning, as he supposed the custom was; but I explained that nobody
+was looking at that hour; and that the start in the dark
+was not usually made from the village but
+from the first night's resting-place on the mountainside.  I
+said we would leave the village at 3 or 4 p.m. on the morrow;
+meantime he could notify the guides, and also let the public
+know of the attempt which we proposed to make.
+  I went to bed, but not to sleep.  No man can sleep when
+he is about to undertake one of these Alpine exploits.  I
+tossed feverishly all night long, and was glad enough when
+I heard the clock strike half past eleven and knew it was
+time to get up for dinner.
+#create memo
+The Ascent of the Riffelberg
+by Mark Twain
+
+.PP
+I sat silent some time, then turned to Harris and said:
+``My mind is made up.''
+Something in my tone struck him; and when he glanced
+at my eye and read what was written there, his face paled
+perceptibly.  He hesitated a moment, then said:
+``Speak.''
+.PP
+I answered, with perfect calmness:
+``I WILL ASCEND THE RIFFELBERG.''
+.PP
+If I had shot my poor friend he could not have fallen from
+his chair more suddenly.  If I had been his father he
+could not have pleaded harder to get me to give up my
+purpose.  But I turned a deaf ear to all he said.  When he
+perceived at last that nothing could alter my determination,
+he ceased to urge, and for a while the deep silence was broken only
+by his sobs.  I sat in marble resolution, with my
+eyes fixed upon vacancy, for in spirit I was already
+wrestling with the perils of the mountains, and my friend sat
+gazing at me in adoring admiration through his tears.  At
+last he threw himself upon me in a loving embrace and
+exclaimed in broken tones:
+``Your Harris will never desert you.  We will die together!''
+.PP
+I cheered the noble fellow with praises, and soon his fears
+were forgotten and he was eager for the adventure.  He
+wanted to summon the guides at once and leave at two in
+the morning, as he supposed the custom was; but I explained that nobody
+was looking at that hour; and that the start in the dark
+was not usually made from the village but
+from the first night's resting-place on the mountainside.  I
+said we would leave the village at 3 or 4 p.m. on the morrow;
+meantime he could notify the guides, and also let the public
+know of the attempt which we proposed to make.
+.PP
+I went to bed, but not to sleep.  No man can sleep when
+he is about to undertake one of these Alpine exploits.  I
+tossed feverishly all night long, and was glad enough when
+I heard the clock strike half past eleven and knew it was
+time to get up for dinner.
+#user
+#cmp memo Ref
+#log
+#next
+72.1a 10
+72.2a 5

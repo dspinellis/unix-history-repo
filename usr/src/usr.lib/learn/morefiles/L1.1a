@@ -1,0 +1,243 @@
+#print
+One of the more useful programs on Unix is "spell", which
+looks for spelling mistakes in a set of files.  Although spell
+is not perfect, it does a reasonable job of presenting you
+with a list of possibilities.  To look for mistakes in a set
+of files, you simply say
+
+   spell filenames
+
+and of course you can use shorthands like *, ? and [] to name
+the files.  For practice, there are some files whose names begin
+with "memo" in this directory; somewhere in one of them
+is a legitimate spelling mistake.  Use spell to find it, then
+type "answer word", where "word" is the mistake.
+Spell may also output a number of words
+that aren't mistakes; you may have to select real errors
+from the false ones.
+
+By the way, spell takes a minute to run;
+go get a cup of coffee or something while you wait.
+#create memo1
+(This comes from a federalist paper by alexander hamilton.)
+   It has been mentioned as one of the advantages to be expected
+from the cooperation of the Senate, in the business
+of appointments, that it would contribute to the
+stability of the administration.  The consent of that body
+would be necessary to displace as well as to appoint.  A
+change of the Chief Magistrate, therefore, would not occasion
+so violent or so general a revolution in the officers
+of the government as might be expected if he were the
+sole disposer of offices.  Where a man in any station had
+given satisfactory evidence of his fitness for it, a new
+President would be restrained from attempting a change
+in favor of a person more agreeable to him by the apprehension
+that a discountenance of the Senate might frustrate
+the attempt, and bring some degree of discredit
+upon himself.  Those who can best estimate the value of
+a steady administration will be most disposed to prize a
+provision which connects the official existence of public
+men with the approbation or disapprobation of that body
+which, from the greater permanency of its own composition,
+will in all probability be less subject to inconstancy
+than any other member of the government.
+   To this union of the Senate with the President, in the
+article of appointments, it has in some cases been suggested
+that it would serve to give the President an undue
+influence over the Senate, and in others that it would
+have an opposite tendency - a strong proof that neither
+suggestion is true.
+   To state the first in its proper form is to refute it.  It
+amounts to this:  the President would have an improper
+influence over the Senate, because the Senate would
+have the power of restraining him.  This is an absurdity in
+terms.  It cannot admit of a doubt that the entire power
+of appointment would enable him much more effectually
+to establish a dangerous empire over that body than a
+mere power of nomination subject to their control.
+    Let us take a view of the converse of the proposition:
+"the Senate would influence the executive."  As I have
+had occasion to remark in several other instances, the indistinctness
+of the objection forbids a precise answer.  In
+what manner is this influence to be exerted?  In relation
+to what objects?  The power of influencing a person, in
+the sense in which it is here used, must imply a power of
+conferring a benefit upon him.  How could the Senate
+confer a benefit upon the President by the manner of employing
+their right of negative upon his nominations?  If it
+be said they might sometimes gratify him by an acquiescence
+in a favorite choice, when public motives might dictate a
+different conduct, I answer that the instances in which the
+President could be personally interested in the result would
+be too few to admit of his being materially affected by the
+#create memo2
+compliances of the Senate.  Besides this, it is evident that
+the POWER which can originate the disposition of honors
+and emoluments is more likely to attract than to be attracted
+by the POWER which can merely obstruct their
+course.  If by influencing the President be want restraining
+him, this is precisely what must have been intended.
+And it has been shown that the restraint would be salutary,
+at the same time that it would not be such as to
+destroy a single advantage to be looked for from the uncontrolled
+agency of that magistrate.  The right of nomination
+would produce all the good, without the ill.
+   Upon a comparison of the plan for the appointment of
+the officers of the proposed government with that which
+is established by the constitution of this State, a decided
+preference must be given to the former.  In that plan the
+power of nomination is unequivocally vested in the executive.
+And as there would be a necessity for submitting
+each nomination to the judgment of an entire branch of
+the legislature, the circumstances attending an appointment,
+from the mode of conducting it, would naturally
+become matters of notoriety, and the public would
+be at no loss to determine what part had been performed
+by the different actors.  The blame of a bad nomination
+would fall upon the President singly and absolutely.  The
+censure of rejecting a good one would lie entirely at the
+door of the senate, aggravated by the consideration
+of their having counteracted the good intentions of the
+executive.  If an ill appointment should be made, the executive,
+for nominating, and the Senate, for approving,
+would participate, though in different degrees, in the
+opprobrium and disgrace.
+   The reverse of all this characterizes the manner of appointment
+in this State.  The council of appointment consists
+of from three to five persons, of whom the governor
+is always one.  This small body, shut up in a private
+apartment, impenetrable to the public eye, proceed to the
+execution of the trust committed to them.  It is known
+that the governor claims the right of nomination upon
+the strength of some ambiguous expressions in the Constitution;
+but it is not known to what extent, or in what
+manner he exercises it; nor upon what occasions he is
+contradicted or opposed.  The censure of a bad appointment,
+on account of the uncertainty of its author and for
+want of a determinate object, has neither poignancy nor
+duration.  And while an unbounded field for cabal and intrigue
+lies open, all idea of responsibility is lost.  The
+most that the public can know is that the governor
+claims the right of nomination; that two out of the inconsiderable
+number of four men can too often be managed
+without much difficulty; that if some of the members of a
+#create memo3
+particular council should happen to be of an uncomplying
+character, it is frequently not impossible to get rid of their
+opposition by regulating the times of meeting in such a
+manner as to render their attendance inconvenient; and
+that from whatever cause it may proceed, a great
+number of very improper appointments are from time to
+time made.  Whether a governor of this State avails himself
+of the ascendant, he must necessarily have in this
+delicate and important part of the administration to prefer
+to offices men who are best qualified for them; or
+whether he prostitutes that advantage to the advancement
+of persons whose chief merit is their implicit devotion to
+his will and to the support of a despicable and dangerous
+system of personal influence are questions which, unfortunately
+for the community, can only be the subjects
+of speculation and conjecture.
+   Every mere council of appointment, however constituted,
+will be a conclave in which cabal and intrigue will
+have their full scope.  Their number, without an unwarrantable
+increase of expense, cannot be large enough to
+preclude a facility of combination.  And as each member
+will have his friends and connections to provide for,
+the desire of mutual gratification will beget a scandalous
+bartering of votes and bargaining for places.  The private
+attachments of one man might easily be satisfied, but to
+satisfy the private attachments of a dozen, or of twenty
+men, would occasion a monopoly of all the principal employments
+of the government in a few families and
+would lead more directly to an aristocracy or an oligarchy
+than any measure that could be contrived.  If, to avoid an
+accumulation of offices, there was to be a frequent change
+in the persons who were to be a frequent change
+in the persons who were to compose the council, this
+would involve the mischiefs of a mutable administration
+in their full extent.  Such a council would also be more
+liable to executive influence than the Senate, because
+they would be fewer in number, and would act less immediately
+under the public inspection.  Such a council, in
+fine, as a substitute for the plan of the convention, would
+be productive of an increase of expense, a multiplication
+of the evils which spring from favoritism and intrigue in
+the distribution of public honors, a decrease of stability
+in the administration of the government, and a diminution
+of the security against an undue influence of the
+executive.  And yet such a council has been warmly contended
+for as an essential amendment in the proposed
+Constitution.
+   I could not with propriety conclude my observations
+on the subject of appointments without taking notice of
+a scheme for which there have appeared some, though
+#create memo4
+but a few advocates; I mean that of uniting the House of
+Representatives in the power of making them.  I shall,
+however, do little more than mention it, as I cannot
+imagine that it is likely to gain the countenance of any
+considerable part of the community.  A body so fluctuating
+and at the same time so numerous can never be
+deemed proper for the exercise of that power.  Its unfitness
+will appear manifest to all when it is recollected that
+in half a century it may consist of three or four hundred
+persons.  All the advantages of the stability, both of the
+Executive and of the Senate, would be defeated by this
+union, and infinite delays and embarrassments would be
+occasioned.  The exampled of most of the States in their
+local constitutions encourages us to reprobate the idea.
+   The only remaining powers of the executive are comprehended
+in giving information to Congress of the state
+of the Union; in recommending to their consideration
+such measures as he shall judge expedient; in convening
+them, or either branch, upon extraordinary occasions; in
+adjourning them when they cannot themselves agree upon
+the time of adjournment; in receiving ambassadors and
+other public ministers; in faithfully executing the laws;
+and in commissioning all the officers of the United States.
+   Except some cavils about the power of convening either
+house of the legislature, and that of receiving ambassadors,
+no objection has been made to this class of
+authorities; nor could they possibly admit of any.  It required,
+indeed, an insatiable avidity for censure to invent
+exceptions to the parts which have been excepted to.  In
+regard to the power of convening either house of the legislature
+I shall barely remark that in respect to the Senate,
+at least, we can readily discover a good reason for it.  As
+this body has a concurrent power with the executive in
+the article of treaties, it might often be necessary to call
+it together with a view to this object, when it would be
+unnecessary and improper to convene the House of Representatives.
+As to the reception of ambassadors, what I
+have said in a former paper will furnish a sufficient answer.
+   We have now completed a survy of the structure and
+powers of the executive department which, I have endeavored
+to show, combines, as far as republican principles
+will admit, all the requisites to energy.  The
+remaining inquiry is:  does it also combine the requisites
+to safety, in the republican sense - due dependence on
+the people, a due responsibility?  The answer to this question
+has been anticipated in the investigation of its other
+characteristics, and is satisfactorily deducible from these
+circumstances; the election of the President once in four
+years by persons immediately chosen by the people for
+that purpose, and his being at all times liable to impeachment,
+trial, dismission from office, incapacity to serve
+in any other, and to the forfeiture of life and estate by subsequent
+prosecution in the common course of law.  But
+these precautions, great as they are, are not the only
+ones which the plan of the convention has provided in
+favor of the public security.  In the only instances in which
+the abuse of the executive authority was materially to be
+feared, the chief Magistrate of the United States, would,
+by that plan, be subjected to the control of a branch of
+the legislative body.  What more can an enlightened and
+reasonable people desire?
+#copyin
+#user
+#uncopyin
+#match survy
+#log
+#next
+1.1b 10

@@ -1,0 +1,14 @@
+#print
+Is the file "ref" bigger than the file "ref1"?
+Answer yes or no.
+#create ref
+now is the time.
+#create ref1
+now is the time for all good men.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+0.1e 10
