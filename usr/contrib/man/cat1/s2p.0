@@ -1,0 +1,132 @@
+
+
+
+S2P(1)                 BSD Reference Manual                S2P(1)
+
+
+NNAAMMEE
+       s2p - Sed to Perl translator
+
+SSYYNNOOPPSSIISS
+       ss22pp [[ooppttiioonnss]] ffiilleennaammee
+
+DDEESSCCRRIIPPTTIIOONN
+       _S_2_p  takes  a sed script specified on the command line (or
+       from standard input) and produces a comparable _p_e_r_l script
+       on the standard output.
+
+       OOppttiioonnss
+
+       Options include:
+
+       --DD<<nnuummbbeerr>>
+            sets debugging flags.
+
+       --nn   specifies  that  this  sed  script was always invoked
+            with  a  sed  -n.   Otherwise  a  switch  parser   is
+            prepended to the front of the script.
+
+       --pp   specifies that this sed script was never invoked with
+            a sed -n.  Otherwise a switch parser is prepended  to
+            the front of the script.
+
+       CCoonnssiiddeerraattiioonnss
+
+       The perl script produced looks very sed-ish, and there may
+       very well be better ways to express what you want to do in
+       perl.   For  instance,  s2p  does  not make any use of the
+       split operator, but you might want to.
+
+       The perl script you end up with may be  either  faster  or
+       slower  than  the  original  sed  script.   If you're only
+       interested in speed you'll just have to try it both  ways.
+       Of course, if you want to do something sed doesn't do, you
+       have no choice.  It's often possible to speed up the  perl
+       script by various methods, such as deleting all references
+       to $\ and chop.
+
+EENNVVIIRROONNMMEENNTT
+       S2p uses no environment variables.
+
+AAUUTTHHOORR
+       Larry Wall <lwall@jpl-devvax.Jpl.Nasa.Gov>
+
+FFIILLEESS
+SSEEEE AALLSSOO
+       perl The perl compiler/interpreter
+       a2p  awk to perl translator
+
+
+
+4.4BSD                         NEW                              1
+
+
+
+
+
+
+
+
+S2P(1)                 BSD Reference Manual                S2P(1)
+
+
+DDIIAAGGNNOOSSTTIICCSS
+BBUUGGSS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.4BSD                         NEW                              2
+
+
+
+
+
