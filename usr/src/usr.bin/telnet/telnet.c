@@ -1,9 +1,10 @@
-static char sccsid[] = "@(#)telnet.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.15 (Berkeley) %G%";
 /*
  * User telnet program.
  */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 
 #include <netinet/in.h>
 
@@ -11,14 +12,12 @@ static char sccsid[] = "@(#)telnet.c	4.14 (Berkeley) %G%";
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
-#include <sgtty.h>
 #include <setjmp.h>
 #include <netdb.h>
 
 #define	TELOPTS
 #include "telnet.h"
 
-#define	ctrl(x)		((x) & 037)
 #define	strip(x)	((x)&0177)
 
 char	ttyobuf[BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
@@ -34,10 +33,11 @@ char	wont[] = { IAC, WONT, '%', 'c', 0 };
 
 int	connected;
 int	net;
-int	showoptions;
+int	showoptions = 0;
 int	options;
+int	crmod = 0;
 char	*prompt;
-char	escape = ctrl(']');
+char	escape = CTRL(]);
 
 char	line[200];
 int	margc;
@@ -50,6 +50,7 @@ extern	int errno;
 
 int	tn(), quit(), suspend(), bye(), help();
 int	setescape(), status(), toggle(), setoptions();
+int	setcrmod();
 
 #define HELPINDENT (sizeof ("connect"))
 
@@ -67,6 +68,7 @@ char	ehelp[] = "set escape character";
 char	shelp[] = "print status information";
 char	hhelp[] = "print help information";
 char	phelp[] = "toggle viewing of options processing";
+char	rhelp[] = "toggle mapping of received carriage returns";
 
 struct cmd cmdtab[] = {
 	{ "open",	ohelp,		tn },
@@ -76,20 +78,20 @@ struct cmd cmdtab[] = {
 	{ "escape",	ehelp,		setescape },
 	{ "status",	shelp,		status },
 	{ "options",	phelp,		setoptions },
+	{ "crmod",	rhelp,		setcrmod },
 	{ "?",		hhelp,		help },
 	0
 };
 
-struct sockaddr_in sin = { AF_INET };
+struct sockaddr_in sin;
 
 int	intr(), deadpeer();
 char	*control();
 struct	cmd *getcmd();
 struct	servent *sp;
 
-struct	sgttyb ostbuf;
-struct	tchars otchars;
-int	odisc;
+struct	ttychars otc;
+int	oflags;
 
 main(argc, argv)
 	int argc;
@@ -100,9 +102,8 @@ main(argc, argv)
 		fprintf(stderr, "telnet: tcp/telnet: unknown service\n");
 		exit(1);
 	}
-	ioctl(0, TIOCGETP, (char *)&ostbuf);
-	ioctl(0, TIOCGETC, (char *)&otchars);
-	ioctl(0, TIOCGETD, (char *)&odisc);
+	ioctl(0, TIOCGET, (char *)&oflags);
+	ioctl(0, TIOCCGET, (char *)&otc);
 	setbuf(stdin, 0);
 	setbuf(stdout, 0);
 	prompt = argv[0];
@@ -200,6 +201,7 @@ status()
 	else
 		printf("No connection.\n");
 	printf("Escape character is '%s'.\n", control(escape));
+	fflush(stdout);
 }
 
 makeargv()
@@ -232,9 +234,8 @@ suspend()
 	save = mode(0);
 	kill(0, SIGTSTP);
 	/* reget parameters in case they were changed */
-	ioctl(0, TIOCGETP, (char *)&ostbuf);
-	ioctl(0, TIOCGETC, (char *)&otchars);
-	ioctl(0, TIOCGETD, (char *)&odisc);
+	ioctl(0, TIOCGET, (char *)&oflags);
+	ioctl(0, TIOCCGET, (char *)&otc);
 	(void) mode(save);
 }
 
@@ -246,9 +247,7 @@ bye()
 
 	(void) mode(0);
 	if (connected) {
-#ifndef notdef
 		ioctl(net, SIOCDONE, &how);
-#endif
 		printf("Connection closed.\n");
 		close(net);
 		connected = 0;
@@ -310,42 +309,47 @@ call(routine, args)
 	(*routine)(argc, &args);
 }
 
+struct	ttychars notc = {
+	-1,	-1,	-1,	-1,	-1,
+	-1,	-1,	-1,	-1,	-1,
+	-1,	-1,	-1,	-1
+};
+
 mode(f)
 	register int f;
 {
-	struct sgttyb stbuf;
 	static int prevmode = 0;
-	struct tchars tchars;
-	int onoff, disc, old;
+	struct ttychars *tc;
+	int onoff, old, flags;
 
 	if (prevmode == f)
 		return (f);
 	old = prevmode;
 	prevmode = f;
-	stbuf = ostbuf;
-	tchars = otchars;
+	flags = oflags;
 	switch (f) {
 
 	case 0:
-		disc = odisc;
 		onoff = 0;
+		tc = &otc;
 		break;
 
 	case 1:
 	case 2:
-		stbuf.sg_flags |= CBREAK;
+		flags |= CBREAK;
 		if (f == 1)
-			stbuf.sg_flags &= ~ECHO;
+			flags &= ~(ECHO|CRMOD);
 		else
-			stbuf.sg_flags |= ECHO;
-		tchars.t_intrc = tchars.t_quitc = -1;
-		tchars.t_stopc = tchars.t_startc = -1;
-		disc = OTTYDISC;
+			flags |= ECHO|CRMOD;
+		tc = &notc;
 		onoff = 1;
+		break;
+
+	default:
+		return;
 	}
-	ioctl(fileno(stdin), TIOCSETD, &disc);
-	ioctl(fileno(stdin), TIOCSETC, &tchars);
-	ioctl(fileno(stdin), TIOCSETN, &stbuf);
+	ioctl(fileno(stdin), TIOCCSET, (char *)tc);
+	ioctl(fileno(stdin), TIOCSET, (char *)&flags);
 	ioctl(fileno(stdin), FIONBIO, &onoff);
 	ioctl(fileno(stdout), FIONBIO, &onoff);
 	return (old);
@@ -495,10 +499,20 @@ telrcv()
 		switch (state) {
 
 		case TS_DATA:
-			if (c == IAC)
+			if (c == IAC) {
 				state = TS_IAC;
-			else
-				*tfrontp++ = c;
+				continue;
+			}
+			*tfrontp++ = c;
+			/*
+			 * This hack is needed since we can't set
+			 * CRMOD on output only.  Machines like MULTICS
+			 * like to send \r without \n; since we must
+			 * turn off CRMOD to get proper input, the mapping
+			 * is done here (sigh).
+			 */
+			if (c == '\r' && crmod)
+				*tfrontp++ = '\n';
 			continue;
 
 		case TS_IAC:
@@ -664,13 +678,25 @@ setescape(argc, argv)
 	if (arg[0] != '\0')
 		escape = arg[0];
 	printf("Escape character is '%s'.\n", control(escape));
+	fflush(stdout);
 }
 
 /*VARARGS*/
 setoptions()
 {
+
 	showoptions = !showoptions;
 	printf("%s show option processing.\n", showoptions ? "Will" : "Wont");
+	fflush(stdout);
+}
+
+/*VARARGS*/
+setcrmod()
+{
+
+	crmod = !crmod;
+	printf("%s map carriage return on output.\n", crmod ? "Will" : "Wont");
+	fflush(stdout);
 }
 
 /*
