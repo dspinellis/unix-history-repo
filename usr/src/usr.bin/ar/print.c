@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
 #include <dirent.h>
 #include <stdio.h>
 #include "archive.h"
+#include "extern.h"
 
 extern CHDR chdr;			/* converted header */
 extern char *archive;			/* archive name */
@@ -32,7 +33,6 @@ print(argv)
 {
 	CF cf;
 	register int afd, all;
-	int eval;
 	char *file;
 
 	afd = open_archive(O_RDONLY);
@@ -42,12 +42,9 @@ print(argv)
 	for (all = !*argv; get_header(afd);) {
 		if (all)
 			file = chdr.name;
-		else {
-			file = *argv;
-			if (!files(argv)) {
-				skipobj(afd);
-				continue;
-			}
+		else if (!(file = files(argv))) {
+			skipobj(afd);
+			continue;
 		}
 		if (options & AR_V) {
 			(void)printf("\n<%s>\n\n", file);
@@ -57,8 +54,11 @@ print(argv)
 		if (!all && !*argv)
 			break;
 	}
-	eval = 0;
-	ORPHANS;
 	close_archive(afd);
-	return(eval);
+
+	if (*argv) {
+		orphans(argv);
+		return(1);
+	}
+	return(0);
 }
