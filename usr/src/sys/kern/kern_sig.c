@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.19	83/06/02	*/
+/*	kern_sig.c	5.20	83/06/09	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -23,49 +23,77 @@
 #include "../h/kernel.h"
 #include "../h/nami.h"
 
+#define	mask(s)	(1 << ((s)-1))
+#define	cantmask	(mask(SIGKILL)|mask(SIGCONT)|mask(SIGSTOP))
+
 sigvec()
 {
-	struct a {
+	register struct a {
 		int	signo;
-		int	(*sighandler)();
-		int	sigmask;
+		struct	sigvec *nsv;
+		struct	sigvec *osv;
 	} *uap = (struct a  *)u.u_ap;
+	struct sigvec vec;
+	register struct sigvec *sv;
 	register int sig;
 
 	sig = uap->signo;
-	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP ||
-	    (sig == SIGCONT && uap->sighandler == SIG_IGN)) {
+	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP) {
 		u.u_error = EINVAL;
 		return;
 	}
-	setsignal(sig, uap->sighandler, uap->sigmask);
+	sv = &vec;
+	if (uap->osv) {
+		sv->sv_handler = u.u_signal[sig];
+		sv->sv_mask = u.u_sigmask[sig];
+		sv->sv_onstack = (u.u_sigonstack & mask(sig)) != 0;
+		u.u_error =
+		    copyout((caddr_t)sv, (caddr_t)uap->osv, sizeof (vec));
+		if (u.u_error)
+			return;
+	}
+	if (uap->nsv) {
+		u.u_error =
+		    copyin((caddr_t)uap->nsv, (caddr_t)sv, sizeof (vec));
+		if (u.u_error)
+			return;
+		if (sig == SIGCONT && sv->sv_handler == SIG_IGN) {
+			u.u_error = EINVAL;
+			return;
+		}
+		setsigvec(sig, sv);
+	}
 }
 
-setsignal(sig, action, sigmask)
-	int sig, (*action)(), sigmask;
+setsigvec(sig, sv)
+	int sig;
+	register struct sigvec *sv;
 {
 	register struct proc *p;
-	register int mask;
+	register int bit;
 
-	u.u_r.r_val1 = (int)u.u_signal[sig];
-	mask = 1 << (sig - 1);
+	bit = mask(sig);
 	p = u.u_procp;
 	/*
 	 * Change setting atomically.
 	 */
 	(void) spl6();
-	u.u_signal[sig] = action;
-	u.u_sigmask[sig] = sigmask;
-	if (action == SIG_IGN) {
-		p->p_sig &= ~mask;		/* never to be seen again */
-		p->p_sigignore |= mask;
-		p->p_sigcatch &= ~mask;
+	u.u_signal[sig] = sv->sv_handler;
+	u.u_sigmask[sig] = sv->sv_mask &~ cantmask;
+	if (sv->sv_onstack)
+		u.u_sigonstack |= bit;
+	else
+		u.u_sigonstack &= ~bit;
+	if (sv->sv_handler == SIG_IGN) {
+		p->p_sig &= ~bit;		/* never to be seen again */
+		p->p_sigignore |= bit;
+		p->p_sigcatch &= ~bit;
 	} else {
-		p->p_sigignore &= ~mask;
-		if (action == SIG_DFL)
-			p->p_sigcatch &= ~mask;
+		p->p_sigignore &= ~bit;
+		if (sv->sv_handler == SIG_DFL)
+			p->p_sigcatch &= ~bit;
 		else
-			p->p_sigcatch |= mask;
+			p->p_sigcatch |= bit;
 	}
 	(void) spl0();
 }
@@ -73,33 +101,33 @@ setsignal(sig, action, sigmask)
 sigblock()
 {
 	struct a {
-		int	mask;
+		int	sigmask;
 	} *uap = (struct a *)u.u_ap;
-	struct proc *p = u.u_procp;
+	register struct proc *p = u.u_procp;
 
 	(void) spl6();
 	u.u_r.r_val1 = p->p_sigmask;
-	p->p_sigmask |= uap->mask;
+	p->p_sigmask |= uap->sigmask &~ cantmask;
 	(void) spl0();
 }
 
 sigsetmask()
 {
 	struct a {
-		int	mask;
+		int	sigmask;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p = u.u_procp;
 
 	(void) spl6();
 	u.u_r.r_val1 = p->p_sigmask;
-	p->p_sigmask = uap->mask;
+	p->p_sigmask = uap->sigmask &~ cantmask;
 	(void) spl0();
 }
 
 sigpause()
 {
 	struct a {
-		int	mask;
+		int	sigmask;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p = u.u_procp;
 
@@ -112,21 +140,35 @@ sigpause()
 	 */
 	u.u_oldmask = p->p_sigmask;
 	p->p_flag |= SOMASK;
-	p->p_sigmask = uap->mask;
+	p->p_sigmask = uap->sigmask &~ cantmask;
 	for (;;)
 		sleep((caddr_t)&u, PSLEP);
 	/*NOTREACHED*/
 }
+#undef cantmask
+#undef mask
 
 sigstack()
 {
-	struct a {
+	register struct a {
 		caddr_t	asp;
-		int	onsigstack;
+		struct	sigstack *nss;
+		struct	sigstack *oss;
 	} *uap = (struct a *)u.u_ap;
+	struct sigstack ss;
 
-	u.u_sigstack = uap->asp;
-	u.u_onsigstack = uap->onsigstack;
+	if (uap->oss) {
+		u.u_error = copyout((caddr_t)&u.u_sigstack, (caddr_t)uap->oss, 
+		    sizeof (struct sigstack));
+		if (u.u_error)
+			return;
+	}
+	if (uap->nss) {
+		u.u_error =
+		    copyin((caddr_t)uap->nss, (caddr_t)&ss, sizeof (ss));
+		if (u.u_error == 0)
+			u.u_sigstack = ss;
+	}
 }
 
 kill()
@@ -533,6 +575,7 @@ issig()
 			case SIGCONT:
 			case SIGCHLD:
 			case SIGURG:
+			case SIGIO:
 				/*
 				 * These signals are normally not
 				 * sent if the action is the default.
@@ -642,7 +685,7 @@ psig()
 			p->p_flag &= ~SOMASK;
 		} else
 			returnmask = p->p_sigmask;
-		p->p_sigmask = u.u_sigmask[sig] | sigmask;
+		p->p_sigmask |= u.u_sigmask[sig] | sigmask;
 		(void) spl0();
 		u.u_ru.ru_nsignals++;
 		sendsig(action, sig, returnmask);

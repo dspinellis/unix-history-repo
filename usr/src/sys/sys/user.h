@@ -1,14 +1,17 @@
-/*	user.h	4.27	83/06/02	*/
+/*	user.h	4.28	83/06/09	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
 #include "../h/dmap.h"
+#include "../h/time.h"
+#include "../h/resource.h"
 #else
 #include <machine/pcb.h>
 #include <sys/dmap.h>
-#endif
 #include <time.h>
 #include <resource.h>
+#endif
+
 /*
  * Per process structure containing data that
  * isn't needed in core when the process is swapped out.
@@ -62,10 +65,12 @@ struct	user {
 /* 1.3 - signal management */
 	int	(*u_signal[NSIG])();	/* disposition of signals */
 	int	u_sigmask[NSIG];	/* signals to be blocked */
+	int	u_sigonstack;		/* signals to take on sigstack */
 	int	u_oldmask;		/* saved mask from before sigpause */
 	int	u_code;			/* ``code'' to trap */
-	caddr_t	u_sigstack;		/* 0 means no sigstack */
-	int	u_onsigstack;
+	struct	sigstack u_sigstack;	/* sp & on stack state variable */
+#define	u_onstack	u_sigstack.ss_onstack
+#define	u_sigsp		u_sigstack.ss_sp
 
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */

@@ -1,4 +1,4 @@
-/*	kern_xxx.c	4.3	83/06/02	*/
+/*	kern_xxx.c	4.4	83/06/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -329,26 +329,32 @@ ossig()
 		int	signo;
 		int	(*fun)();
 	} *uap = (struct a *)u.u_ap;
-	register int a, (*f)();
+	register int a;
+	struct sigvec vec;
+	register struct sigvec *sv = &vec;
 	struct proc *p = u.u_procp;
 
-	f = uap->fun;
 	a = uap->signo;
+	sv->sv_handler = uap->fun;
 	/*
 	 * Kill processes trying to use job control facilities
 	 * (this'll help us find any vestiges of the old stuff).
 	 */
 	if ((a &~ 0377) ||
-	    (f != SIG_DFL && f != SIG_IGN && ((int)f) & 1)) {
+	    (sv->sv_handler != SIG_DFL && sv->sv_handler != SIG_IGN &&
+	     ((int)sv->sv_handler) & 1)) {
 		psignal(p, SIGSYS);
 		return;
 	}
 	if (a <= 0 || a >= NSIG || a == SIGKILL || a == SIGSTOP ||
-	    a == SIGCONT && (f == SIG_IGN || f == SIG_HOLD)) {
+	    a == SIGCONT && sv->sv_handler == SIG_IGN) {
 		u.u_error = EINVAL;
 		return;
 	}
-	setsignal(a, f, 0);
+	sv->sv_mask = 0;
+	sv->sv_onstack = 0;
+	u.u_r.r_val1 = (int)u.u_signal[a];
+	setsigvec(a, sv);
 	p->p_flag |= SOUSIG;		/* mark as simulating old stuff */
 }
 #endif
