@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1650,13 +1650,14 @@ text_map_open(map, mode)
 		map->map_valcolno = atoi(map->map_valcolnm);
 	}
 
-	if (map->map_coldelim == '\0')
-		map->map_coldelim = ':';
-
 	if (tTd(38, 2))
 	{
-		printf("text_map_open(%s): delimiter = %c\n",
-			map->map_file, map->map_coldelim);
+		printf("text_map_open(%s): delimiter = ",
+			map->map_file);
+		if (map->map_coldelim == '\0')
+			printf("(white space)\n");
+		else
+			printf("%c\n", map->map_coldelim);
 	}
 
 	return TRUE;
