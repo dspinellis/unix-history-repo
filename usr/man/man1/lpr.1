@@ -1,0 +1,131 @@
+.TH LPR 1 "25 February 1983"
+.UC 4
+.ad
+.SH NAME
+lpr \- off line print
+.SH SYNOPSIS
+.B lpr
+[\-Pprinter] [\-#num] [\-C class] [\-J job] [\-T title] [-i [numcols]]
+[\-w#] [\-pltvcrmhs] [name ...]
+.SH DESCRIPTION
+.B lpr
+uses a spooling daemon to print the named files when facilities
+become available.  If no names appear, the standard input is assumed.
+The
+.B \-P
+option may be used to force output to a specific printer.  Normally,
+the default printer is used (site dependent), or the value of the
+environment variable PRINTER is used.
+.PP
+The single letter options have the following meaning:
+.IP \-p 5
+Use
+.IR pr (1)
+to format the files (equivalent to
+.IR print ).
+.IP \-l 5
+Use a filter which allows control characters to be printed and supresses
+page breaks.
+.IP \-t 5
+The files are assumed to contain data from
+.IR troff (1).
+.IP \-v 5
+The files are assumed to contain data from
+.IR vplot (1).
+.IP \-c 5
+The files are assumed to contain data produced by
+.I cifplot.
+.IP \-r 5
+Remove the file upon completion of spooling.
+.IP \-m 5
+Send mail upon completion.
+.IP \-h 5
+Suppress the printing of the burst page.
+.IP \-s 5
+Use symbolic links. Usually files are copied to the spool directory.
+.PP 
+The
+.B \-C
+option takes the following argument as a classification
+for use on the burst page.  For example,
+.PP
+.ti +0.5i
+lpr \-C ``Lincoln Labs" foo.c
+.PP
+would cause the system name to be replaced on the burst page by 
+.IR "Lincoln Labs" ,
+and the file foo.c to be printed.
+.PP
+The
+.B \-J
+option takes the following argument as the job name to print on the burst page.
+Normally, the first file name is used.
+.PP
+The
+.B \-T
+option uses the next argument as the title used by
+.IR pr (1)
+instead of the file name.
+.PP
+To get multiple copies of output, use the
+.B \-#num
+option,
+where
+.B num
+is the number of copies desired of each file named.  For example,
+.PP
+.ti +0.5i
+lpr -#3 foo.c bar.c more.c
+.PP
+would result in 3 copies of the file foo.c, followed by 3 copies
+of the file bar.c, etc.  On the other hand, 
+.PP
+.ti +0.5i
+cat foo.c bar.c more.c | lpr -#3
+.PP
+will give three copies of the concatenation of the files.
+.PP
+The
+.B \-i
+option causes the output to be indented. If the next argument
+is numeric, it is used as the number of blanks to be printed before each
+line; otherwise, 8 characters are printed.
+.PP
+.B \-w
+option takes the number following the `w' to be the page width for
+.I pr.
+.PP
+The
+.B \-s
+option will use
+.IR symlink (2)
+to link data files rather than trying to copy them so large files can be
+printed.  This means the files should
+not be modified or removed until they have been printed.
+.SH FILES
+.nf
+.ta \w'/usr/spool/*/cf*       'u
+/etc/passwd	personal identification
+/etc/printcap	printer capabilities data base
+/usr/lib/lpd*	line printer daemons
+/usr/spool/*	directories used for spooling
+/usr/spool/*/cf*	daemon control files
+/usr/spool/*/df*	data files specified in "cf" files
+/usr/spool/*/tf*	temproary copies of "cf" files
+.fi
+.SH "SEE ALSO"
+lpq(1),
+lprm(1),
+pr(1),
+symlink(2),
+printcap(5),
+lpd(8)
+.SH DIAGNOSTICS
+If you try to spool too large a file, it will be truncated.
+.I lpr
+will object to printing binary files.
+Diagnostics may be printed in the daemon's log file
+regarding missing spool files by
+.IR lpd (8).
+.SH BUGS
+Currently the -i option is not implemented.
