@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.5 (Berkeley) %G%
+ *	@(#)extern.h	5.6 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -65,6 +65,7 @@ void	stderror __P((int, ...));
 void	doexec __P((Char **, struct command *));
 void	dohash __P((Char **, struct command *));
 void	dounhash __P((Char **, struct command *));
+void	dowhich __P((Char **, struct command *));
 void	execash __P((Char **, struct command *));
 void	hashstat __P((Char **, struct command *));
 void	xechoit __P((Char **));
@@ -103,6 +104,7 @@ void	dologin __P((Char **, struct command *));
 void	dologout __P((Char **, struct command *));
 void	donohup __P((Char **, struct command *));
 void	doonintr __P((Char **, struct command *));
+void	doprintf __P((Char **, struct command *));
 void	dorepeat __P((Char **, struct command *));
 void	dosetenv __P((Char **, struct command *));
 void	dosuspend __P((Char **, struct command *));
