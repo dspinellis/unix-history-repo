@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)map.h	7.1 (Berkeley) %G%
+ *	@(#)map.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -47,4 +47,5 @@ struct	map *argmap;
 #define	ARGMAPSIZE	16
 struct	map *kernelmap;
 struct	map *mbmap;
+struct	map *kmemmap;
 #endif
