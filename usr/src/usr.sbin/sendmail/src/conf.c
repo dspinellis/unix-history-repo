@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -358,7 +358,18 @@ rlsesigs()
 **		none.
 */
 
-#ifdef VMUNIX
+#ifndef sun
+
+getla()
+{
+	double avenrun[3];
+
+	if (getloadavg(avenrun, sizeof(avenrun) / sizeof(avenrun[0])) < 0)
+		return (0);
+	return ((int) (avenrun[0] + 0.5));
+}
+
+#else /* sun */
 
 #include <nlist.h>
 
@@ -372,7 +383,6 @@ struct	nlist Nl[] =
 getla()
 {
 	static int kmem = -1;
-	double avenrun[3];
 
 	if (kmem < 0)
 	{
@@ -390,14 +400,6 @@ getla()
 		/* thank you Ian */
 		return (-1);
 	}
-	return ((int) (avenrun[0] + 0.5));
 }
 
-#else VMUNIX
-
-getla()
-{
-	return (0);
-}
-
-#endif VMUNIX
+#endif /* sun */

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)machdep.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -55,6 +55,8 @@ static char sccsid[] = "@(#)machdep.c	5.2 (Berkeley) %G%";
 # include	<sys/types.h>
 # include	<sys/stat.h>
 # include	<sys/file.h>
+
+# undef LOADAV		/* use getloadavg() by default */
 
 # ifdef	SCOREFILE
 
@@ -224,7 +226,12 @@ too_much()
 # endif	MAXUSERS
 
 # ifdef MAXLOAD
+# ifdef LOADAV
 	loadav(avec);
+# else
+	if (getloadavg(avec, sizeof(avec)/sizeof(avec[0])) < 0)
+		avec[0] = avec[1] = avec[2] = 0.0;
+# endif
 	if (avec[1] > MAXLOAD)
 		return TRUE;
 # endif	MAXLOAD

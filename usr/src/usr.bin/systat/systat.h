@@ -3,15 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systat.h	5.2 (Berkeley) %G%
+ *	@(#)systat.h	5.3 (Berkeley) %G%
  */
 
 #include <netdb.h>
 #include <nlist.h>
 #include <signal.h>
 #include <curses.h>
+#include <math.h>
 
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/file.h>
 #include <sys/dkstat.h>
 
@@ -65,6 +67,7 @@ int     naptime, col;
 long	ntext, textp;
 struct	text *xtext;
 
+int	fscale;
 double  lccpu;
 double	avenrun[3];
 
