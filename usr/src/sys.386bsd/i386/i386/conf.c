@@ -37,12 +37,16 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00080
+ * CURRENT PATCH LEVEL:         3       00097
  * --------------------         -----   ----------------------
  *
  * 10 Feb 93	Jordan K. Hubbard	Added select entry for com driver
  * 10 Feb 93    Julian Elischer		Add empty table entries
  *					so we can allocate numbers
+ * 15 Feb 93    Julian Elischer		Add basic SCSI device entries
+ * 16 Feb 93    Julian Elischer		add entries for scsi media changer
+ * 01 Mar 93	Jordan K. Hubbard	Reserve major numbers for codrv, fd, bpf
+ * 10 Mar 83	Rodney W. Grimes	General clean up of the above patches
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/conf.c,v 1.2 92/01/21 14:21:57 william Exp Locker: toor $";
 
@@ -81,6 +85,58 @@ int	/*asdump(),*/assize();
 #define	asioctl		enxio
 #define	asdump		enxio
 #define	assize		NULL
+#endif
+
+#include "sd.h"
+#if NSD > 0
+int	sdopen(),sdclose(),sdstrategy(),sdioctl();
+int	/*sddump(),*/sdsize();
+#define	sddump		enxio
+#else
+#define	sdopen		enxio
+#define	sdclose		enxio
+#define	sdstrategy	enxio
+#define	sdioctl		enxio
+#define	sddump		enxio
+#define	sdsize		NULL
+#endif
+
+#include "st.h"
+#if NST > 0
+int	stopen(),stclose(),ststrategy(),stioctl();
+/*int	stdump(),stsize();*/
+#define	stdump		enxio
+#define	stsize		NULL
+#else
+#define	stopen		enxio
+#define	stclose		enxio
+#define	ststrategy	enxio
+#define	stioctl		enxio
+#define	stdump		enxio
+#define	stsize		NULL
+#endif
+
+#include "cd.h"
+#if NCD > 0
+int	cdopen(),cdclose(),cdstrategy(),cdioctl();
+int	/*cddump(),*/cdsize();
+#define	cddump		enxio
+#else
+#define	cdopen		enxio
+#define	cdclose		enxio
+#define	cdstrategy	enxio
+#define	cdioctl		enxio
+#define	cddump		enxio
+#define	cdsize		NULL
+#endif
+
+#include "ch.h"
+#if NCH > 0
+int	chopen(),chclose(),chioctl();
+#else
+#define	chopen		enxio
+#define	chclose		enxio
+#define	chioctl		enxio
 #endif
 
 #include "wt.h"
@@ -123,20 +179,22 @@ struct bdevsw	bdevsw[] =
 	  fddump,	fdsize,		NULL },
 	{ wtopen,	wtclose,	wtstrategy,	wtioctl,	/*3*/
 	  wtdump,	wtsize,		B_TAPE },
+#if NSD > 0
+	{ sdopen,	sdclose,	sdstrategy,	sdioctl,	/*4*/
+	  sddump,	sdsize,		NULL },
+#else NSD > 0
 	{ asopen,	asclose,	asstrategy,	asioctl,	/*4*/
 	  asdump,	assize,		NULL },
-	{ enxio,	enxio,		enxio,		enxio,		/*5*/
-	  enxio,	NULL,		NULL },
-	{ enxio,	enxio,		enxio,		enxio,		/*6*/
-	  enxio,	NULL,		NULL },
-	{ enxio,	enxio,		enxio,		enxio,		/*7*/
-	  enxio,	NULL,		NULL },
-	{ enxio,	enxio,		enxio,		enxio,		/*8*/
-	  enxio,	NULL,		NULL },
-	{ enxio,	enxio,		enxio,		enxio,		/*9*/
-	  enxio,	NULL,		NULL },
-	{ enxio,	enxio,		enxio,		enxio,		/*A*/
-	  enxio,	NULL,		NULL },
+#endif NSD > 0
+	{ stopen,	stclose,	ststrategy,	stioctl,	/*5*/
+	  stdump,	stsize,		NULL },
+	{ cdopen,	cdclose,	cdstrategy,	cdioctl,	/*6*/
+	  cddump,	cdsize,		NULL },
+/*
+ * If you need a bdev major number, please contact the 386bsd patchkit
+ * coordinator by sending mail to "patches@whisker.lotus.ie". 
+ * If you assign one yourself it may conflict with someone else.
+ */
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -191,6 +249,40 @@ int	logopen(),logclose(),logread(),logioctl(),logselect();
 
 int	ttselect(), seltrue();
 
+#include "lpt.h"
+#if NLPT > 0
+int	lptopen(),lptclose(),lptwrite(),lptioctl();
+#else
+#define	lptopen		enxio
+#define	lptclose	enxio
+#define	lptwrite	enxio
+#define	lptioctl	enxio
+#endif
+
+int	fdopen();
+
+#include "bpfilter.h"
+#if NBPFILTER > 0
+int	bpfopen(),bpfclose(),bpfread(),bpfwrite(),bpfselect(),bpfioctl();
+#else
+#define	bpfopen		enxio
+#define	bpfclose	enxio
+#define	bpfread		enxio
+#define	bpfwrite	enxio
+#define	bpfselect	enxio
+#define	bpfioctl	enxio
+#endif
+
+#include "lpa.h"
+#if NLPT > 0
+int	lpaopen(),lpaclose(),lpawrite(),lpaioctl();
+#else
+#define lpaopen		enxio
+#define lpaclose	enxio
+#define lpawrite	enxio
+#define lpaioctl	enxio
+#endif
+
 
 struct cdevsw	cdevsw[] =
 {
@@ -222,74 +314,67 @@ struct cdevsw	cdevsw[] =
 	  comioctl,	enodev,		comreset,	com_tty,
 	  comselect,	enodev,		NULL },
 	{ Fdopen,	fdclose,	rawread,	rawwrite,	/*9*/
-	  fdioctl,	enodev,		nullop,		NULL,
+	  fdioctl,	enodev,		nullop,		NULL,	/* Fd (!=fd) */
 	  seltrue,	enodev,		fdstrategy },
-	{ wtopen,	wtclose,	rawread,	rawwrite,	/*A*/
+	{ wtopen,	wtclose,	rawread,	rawwrite,	/*10*/
 	  wtioctl,	enodev,		nullop,		NULL,
 	  seltrue,	enodev,		wtstrategy },
-	{ enodev,	enodev,		enodev,		enodev,		/*B*/
+	{ enodev,	enodev,		enodev,		enodev,		/*11*/
 	  enodev,	enodev,		nullop,		NULL,
 	  seltrue,	enodev,		enodev },
-	{ pcopen,	pcclose,	pcread,		pcwrite,	/*C*/
+	{ pcopen,	pcclose,	pcread,		pcwrite,	/*12*/
 	  pcioctl,	nullop,		nullop,		&pccons,
 	  ttselect,	pcmmap,		NULL },
-	{ asopen,	asclose,	rawread,	rawwrite,	/*D*/
-	  asioctl,	enodev,		nullop,		NULL,	/* scsi disk*/
+#if	NSD > 0
+	{ sdopen,	sdclose,	rawread,	rawwrite,	/*13*/
+	  sdioctl,	enodev,		nullop,		NULL,	/* scsi disk */
+	  seltrue,	enodev,		sdstrategy },
+#else	NSD > 0
+	{ asopen,	asclose,	rawread,	rawwrite,	/*13*/
+	  asioctl,	enodev,		nullop,		NULL,	/* scsi disk */
 	  seltrue,	enodev,		asstrategy },
-	{ enxio,	enxio,		enxio,		enxio,		/*E*/
-	  enxio,	enxio,		enxio,		NULL,	/* scsi tape*/
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*F*/
-	  enxio,	enxio,		enxio,		NULL,	/* scsi cdrom*/
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*10*/
-	  enxio,	enxio,		enxio,		NULL,	/* lpr*/
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*11*/
-	  enxio,	enxio,		enxio,		NULL,	/* scsi 'changer'*/
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*12*/
-	  enxio,	enxio,		enxio,		NULL,	/* scsi generic */
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*13*/
-	  enxio,	enxio,		enxio,		NULL,	/* xten power ctrlr*/
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*14*/
-	  enxio,	enxio,		enxio,		NULL,	/* soundblaster?*/
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*15*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*16*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*17*/
-	  enxio,	enxio,		enxio,		NULL,
+#endif	NSD > 0
+	{ stopen,	stclose,	rawread,	rawwrite,	/*14*/
+	  stioctl,	enodev,		nullop,		NULL,	/* scsi tape */
+	  seltrue,	enodev,		ststrategy },
+	{ cdopen,	cdclose,	rawread,	enodev,		/*15*/
+	  cdioctl,	enodev,		nullop,		NULL,	/* scsi cdrom */
+	  seltrue,	enodev,		cdstrategy },
+	{ lptopen,	lptclose,	nullop,		lptwrite,	/*16*/
+	  lptioctl,	nullop,		nullop,		NULL,	/* lpt */
+	  seltrue,	enodev,		enodev},
+	{ chopen,	chclose,	enxio,		enxio,		/*17*/
+	  chioctl,	enxio,		enxio,		NULL,	/* scsi 'changer'*/
 	  enxio,	enxio,		enxio },
 	{ enxio,	enxio,		enxio,		enxio,		/*18*/
-	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio,		NULL,	/* scsi generic */
 	  enxio,	enxio,		enxio },
 	{ enxio,	enxio,		enxio,		enxio,		/*19*/
+	  enxio,	enxio,		enxio,		NULL,	/* xten power ctrlr*/
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*20*/
+	  enxio,	enxio,		enxio,		NULL,	/* soundblaster?*/
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*21*/
+	  enxio,	enxio,		enxio,		NULL,	/* codrv */
+	  enxio,	enxio,		enxio },
+	{ fdopen,	enxio,		enxio,		enxio,		/*22*/
+	  enxio,	enxio,		enxio,		NULL,	/* fd (!=Fd) */
+	  enxio,	enxio,		enxio },
+ 	{ bpfopen,	bpfclose,	bpfread,	bpfwrite,	/*23*/
+ 	  bpfioctl,	enodev,		nullop,		NULL,	/* bpf */
+ 	  bpfselect,	enodev,		NULL },
+	{ enxio,	enxio,		enxio,		enxio,		/*24*/
 	  enxio,	enxio,		enxio,		NULL,
 	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*1A*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*1B*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*1C*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*1D*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*1E*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*1F*/
-	  enxio,	enxio,		enxio,		NULL,
-	  enxio,	enxio,		enxio },
+	{ lpaopen,	lpaclose,	nullop,		lpawrite,	/*25*/
+	  lpaioctl,	nullop,		nullop,		NULL,	/* lpa */
+	  seltrue,	enodev,		enodev},
+/*
+ * If you need a cdev major number, please contact the 386bsd patchkit 
+ * coordinator by sending mail to "patches@whisker.lotus.ie".
+ * If you assign one yourself it may then conflict with someone else.
+ */
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 

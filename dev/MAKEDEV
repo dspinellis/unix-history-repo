@@ -27,12 +27,20 @@
 #
 # Tapes:
 #	wt*	QIC-interfaced (e.g. not SCSI) 3M cartridge tape
+#	st*	"NEW type scsi tapes" (old driver uses the
+#		block devices of the disks to get access)
 #
 # Disks:
 #	wd*	"winchester" disk drives (ST506,IDE,ESDI,RLL,...)
 #	fd*	"floppy" disk drives (3 1/2", 5 1/4")
 #	as*	"SCSI" disk/tape/CDROM drives
+#	sd*	"NEW type scsi disks"
 #
+# Console ports:
+#	vga	stock pccons vga (note it has no keyboard name or minor!)
+#	vgaco	codrv vga
+#	kbdco	codrv kbd
+# 
 # Terminal ports:
 #	com*	standard PC COM ports
 #
@@ -40,11 +48,25 @@
 #	pty*	set of 16 master and slave pseudo terminals
 #
 # Printers:
+#	lpt*	stock lp
+#	lpa*	interruptless lp
 #
 # Call units:
 #
 # Special purpose devices:
-#	flog*	kernel logging device
+#	bpf*	packet filter
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00097
+# --------------------         -----   ----------------------
+#
+# 16 Feb 93	Julian Elischer		ADDED for SCSI system
+# 16 Feb 93	Julian Elischer		media changer device
+# 10 Mar 93	Rodney W. Grimes	general clean up of above patches
+#					typo in rm of kmem (was kmdem)
+#					major number for /dev/fd/* and /dev/std*
+#					added lpt, lpa, bpf, vga, vgaco, kbdco
 #
 
 PATH=/sbin:/bin/:/usr/bin:/usr/sbin:
@@ -54,7 +76,7 @@ do
 case $i in
 
 std)
-	rm -f console drum mem kmdem null tty klog stdin stdout stderr
+	rm -f console drum mem kmem null tty klog stdin stdout stderr
 	mknod console		c 0 0
 	mknod drum		c 4 0	; chmod 640 drum ; chgrp kmem drum
 	mknod kmem		c 2 1	; chmod 640 kmem ; chgrp kmem kmem
@@ -62,14 +84,14 @@ std)
 	mknod null		c 2 2	; chmod 666 null
 	mknod tty		c 1 0	; chmod 666 tty
 	mknod klog		c 7 0	; chmod 600 klog
-	mknod stdin		c 53 0	; chmod 666 stdin
-	mknod stdout		c 53 1	; chmod 666 stdout
-	mknod stderr		c 53 2	; chmod 666 stderr
+	mknod stdin		c 22 0	; chmod 666 stdin
+	mknod stdout		c 22 1	; chmod 666 stdout
+	mknod stderr		c 22 2	; chmod 666 stderr
 	rm -f fd/*
 	mkdir fd > /dev/null 2>&1
 	(cd fd && eval `echo "" | awk ' BEGIN { \
 		for (i = 0; i < 64; i++) \
-	 		printf("mknod %d c 53 %d;", i, i)}'`)
+	 		printf("mknod %d c 22 %d;", i, i)}'`)
 	chown -R bin.bin fd
 	chmod 555 fd
 	chmod 666 fd/*
@@ -82,16 +104,17 @@ wt*)
 	umask 77
 	;;
 
-fd*|wd*|as*)
+fd*|wd*|as*|sd*)
 	umask 2 ; unit=`expr $i : '..\(.*\)'`
 	case $i in
 	fd*) name=fd; blk=2; chr=9;;
 	wd*) name=wd; blk=0; chr=3;;
 	as*) name=as; blk=4; chr=13;;
+	sd*) name=sd; blk=4; chr=13;;
 	esac
 	rm -f $name$unit? r$name$unit?
 	case $unit in
-	0|1)
+	0|1|2|3|4|5|6)
 		mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
 		mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
 		mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
@@ -149,6 +172,111 @@ pty*)
 		fi
 		;;
 	esac
+	;;
+
+st*)
+	umask 2 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	st*) name=st;  chr=14; blk=5;;
+	esac
+	rm -f $name$unit n$name$unit e$name$unit en$name$unit \
+		r$name$unit nr$name$unit er$name$unit enr$name$unit 
+	case $unit in
+	0|1|2|3|4|5|6)
+		mknod ${name}${unit}	b $blk `expr $unit '*' 16 + 0`
+		mknod n${name}${unit}	b $blk `expr $unit '*' 16 + 1`
+		mknod e${name}${unit}	b $blk `expr $unit '*' 16 + 2`
+		mknod en${name}${unit}	b $blk `expr $unit '*' 16 + 3`
+		mknod r${name}${unit}	c $chr `expr $unit '*' 16 + 0`
+		mknod nr${name}${unit}	c $chr `expr $unit '*' 16 + 1`
+		mknod er${name}${unit}	c $chr `expr $unit '*' 16 + 2`
+		mknod enr${name}${unit}	c $chr `expr $unit '*' 16 + 3`
+		chgrp operator ${name}${unit} n${name}${unit} \
+			e$name$unit en$name$unit \
+			r${name}${unit} nr${name}${unit} \
+			er${name}${unit} enr${name}${unit} 
+		chmod 640 ${name}${unit} n${name}${unit} \
+			e$name$unit en$name$unit \
+			r${name}${unit} nr${name}${unit} \
+			er${name}${unit} enr${name}${unit} 
+		;;
+	*)
+		echo bad unit for tape in: $i
+		;;
+	esac
+	umask 77
+	;;
+
+ch*)
+	umask 2 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	ch*) name=ch;  chr=17;;
+	esac
+	rm -f $name$unit
+	case $unit in
+	0|1|2|3|4|5|6)
+		mknod ${name}${unit}	c $chr `expr $unit '*' 16 + 0`
+		chgrp operator ${name}${unit}
+		chmod 640 ${name}${unit}
+		;;
+	*)
+		echo bad unit for media changer in: $i
+		;;
+	esac
+	umask 77
+	;;
+
+cd*)
+	umask 2 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	cd*) name=cd; blk=6; chr=15;;
+	esac
+	rm -f $name$unit? r$name$unit?
+	case $unit in
+	0|1|2|3|4|5|6)
+		mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
+		mknod ${name}${unit}d	b $blk `expr $unit '*' 8 + 3`
+		mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
+		mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
+		chgrp operator ${name}${unit}[a-h] r${name}${unit}[a-h]
+		chmod 640 ${name}${unit}[a-h] r${name}${unit}[a-h]
+		;;
+	*)
+		echo bad unit for disk in: $i
+		;;
+	esac
+	umask 77
+	;;
+
+lpt*)
+	unit=`expr $i : 'lpt\(.*\)'`
+	rm -f lpt$unit
+	mknod lpt$unit c 16 $unit
+	;;
+
+# Note: the stock pccons driver does not have a minor for the keyboard
+vga|vgaco|kbdco)
+	chr=21
+	device=`expr ${i} : '\(.*\)co'`
+	case ${i} in
+	vga) name=vga; chr=12; minor=0;;
+	kbdco) name=kbdco; chr=21; minor=0;;
+	vgaco) name=vgaco; chr=21; minor=128;;
+	esac
+	rm -f ${name}
+	mknod ${name} c ${chr} ${minor}
+	;;
+
+bpf*)
+	unit=`expr $i : 'bpf\(.*\)'`
+	rm -f bpf$unit
+	mknod bpf$unit c 23 $unit
+	;;
+
+lpa*)
+	unit=`expr $i : 'lpa\(.*\)'`
+	rm -f lpa$unit
+	mknod lpa$unit c 25 $unit
 	;;
 
 local)
