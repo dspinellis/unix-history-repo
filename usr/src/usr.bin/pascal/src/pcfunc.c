@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.4 %G%";
+static	char sccsid[] = "@(#)pcfunc.c 1.5 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -32,7 +32,6 @@ pcfunccod( r )
 	long		tempoff;
 	long		temptype;
 	struct nl	*rettype;
-	struct tmps soffset;
 
 	/*
 	 * Verify that the given name
@@ -242,7 +241,6 @@ mathfunc:
 			error("%s's argument must be an integer or real, not %s", p->symbol, nameof(p1));
 			return NIL;
 	    case O_SQR2:
-			soffset = sizes[cbn].curtmps;
 			if ( isa( p1 , "d" ) ) {
 			    temptype = P2DOUBLE;
 			    rettype = nl + TDOUBLE;
@@ -262,7 +260,6 @@ mathfunc:
 			putRV( 0 , cbn , tempoff , temptype , 0 );
 			putop( P2MUL , temptype );
 			putop( P2COMOP , temptype );
-			tmpfree(&soffset);
 			return rettype;
 	    case O_ORD2:
 			p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
