@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,6 +45,8 @@ printlong(stats, num)
 	LS *stats;
 	register int num;
 {
+	char *user_from_uid(), *group_from_gid();
+
 	if (f_total)
 		(void)printf("total %lu\n", f_kblocks ?
 		    howmany(stats[0].lstat.st_btotal, 2) :
@@ -57,10 +59,11 @@ printlong(stats, num)
 			    howmany(stats->lstat.st_blocks, 2) :
 			    stats->lstat.st_blocks);
 		printperms(stats->lstat.st_mode);
-		(void)printf("%3u ", stats->lstat.st_nlink);
-		printowner(stats->lstat.st_uid);
+		(void)printf("%3u %-*s ", stats->lstat.st_nlink, UT_NAMESIZE,
+		    user_from_uid(stats->lstat.st_uid)); 
 		if (f_group)
-			printgrp(stats->lstat.st_gid);
+			(void)printf("%-*s ", UT_NAMESIZE,
+			    group_from_gid(stats->lstat.st_gid));
 		if (S_ISCHR(stats->lstat.st_mode) ||
 		    S_ISBLK(stats->lstat.st_mode))
 			(void)printf("%3d, %3d ", major(stats->lstat.st_rdev),
@@ -150,54 +153,6 @@ printaname(lp)
 	if (f_type)
 		chcnt += printtype(lp->lstat.st_mode);
 	return(chcnt);
-}
-
-#define	NCACHE	64		/* power of 2 */
-#define	LSMASK	NCACHE - 1	/* bits to store with */
-printowner(uid)
-	uid_t uid;
-{
-	static struct ncache {
-		uid_t	uid;
-		char	name[UT_NAMESIZE];
-	} c_uid[NCACHE];
-	register struct passwd *pw;
-	register struct ncache *cp;
-
-	cp = c_uid + (uid & LSMASK);
-	if (cp->uid != uid || !*cp->name) {
-		/* if can't find owner, print out number instead */
-		if (!(pw = getpwuid(uid))) {
-			(void)printf("%-*u ", UT_NAMESIZE, uid);
-			return;
-		}
-		cp->uid = uid;
-		(void)strncpy(cp->name, pw->pw_name, UT_NAMESIZE);
-	}
-	(void)printf("%-*.*s ", UT_NAMESIZE, UT_NAMESIZE, cp->name);
-}
-
-printgrp(gid)
-	gid_t gid;
-{
-	static struct ncache {
-		gid_t	gid;
-		char	name[UT_NAMESIZE];
-	} c_gid[NCACHE];
-	register struct group *gr;
-	register struct ncache *cp;
-
-	cp = c_gid + (gid & LSMASK);
-	if (cp->gid != gid || !*cp->name) {
-		/* can't find group, print out number instead */
-		if (!(gr = getgrgid(gid))) {
-			(void)printf("%-*u ", UT_NAMESIZE, gid);
-			return;
-		}
-		cp->gid = gid;
-		(void)strncpy(cp->name, gr->gr_name, UT_NAMESIZE);
-	}
-	(void)printf("%-*.*s ", UT_NAMESIZE, UT_NAMESIZE, cp->name);
 }
 
 printtime(ftime)
