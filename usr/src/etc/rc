@@ -1,4 +1,4 @@
-#	@(#)rc	8.1 (Berkeley) %G%
+#	@(#)rc	5.33 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -159,9 +159,8 @@ echo -n ' inetd';		inetd
 echo -n ' amd';
 	cd /; amd -l /var/log/amd -r -a /amd -p > /var/run/amd.pid \
 	/home /etc/amd-home \
+	/n /etc/amd-n \
 	&
-#	/n /etc/amd-n \
-#	/vol /etc/amd-vol \
 
 echo '.'
 
