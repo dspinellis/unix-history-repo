@@ -1,5 +1,7 @@
-/*	types.h	6.1	83/07/29	*/
+/*	types.h	6.2	84/06/09	*/
 
+#ifndef _TYPES_
+#define	_TYPES_
 /*
  * Basic system types and major/minor device constructing/busting macros.
  */
@@ -36,3 +38,4 @@ typedef	short	dev_t;
 typedef	int	off_t;
 
 typedef	struct	fd_set { int fds_bits[1]; } fd_set;
+#endif
