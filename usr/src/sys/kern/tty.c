@@ -1,4 +1,4 @@
-/*	tty.c	3.15	%G%	*/
+/*	tty.c	3.16	%G%	*/
 
 /*
  * general TTY subroutines
@@ -186,6 +186,10 @@ ioctl()
 	uap = (struct a *)u.u_ap;
 	if ((fp = getf(uap->fdes)) == NULL)
 		return;
+	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
+		u.u_error = EBADF;
+		return;
+	}
 	if (uap->cmd==FIOCLEX) {
 		u.u_pofile[uap->fdes] |= EXCLOSE;
 		return;
@@ -384,15 +388,19 @@ caddr_t addr;
 			nread = tp->t_rec ? tp->t_inbuf : 0;
 			break;
 
+		case 0:
+			(void) spl5();
+			while (canon(tp)>=0)
+				;
+			(void) spl0();
+			/* fall into ... */
+
 		case NTTYDISC:
 			nread = tp->t_canq.c_cc;
 			if (tp->t_flags & (RAW|CBREAK))
 				nread += tp->t_rawq.c_cc;
 			break;
 
-		case 0:
-			/* do something here ... */
-			;
 		}
 		if (copyout((caddr_t)&nread, addr, sizeof (off_t)))
 			u.u_error = EFAULT;
