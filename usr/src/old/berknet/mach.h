@@ -175,11 +175,11 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # define NUID (501)
 # endif H
 
-/* CSSG - ing70 */
-# ifdef ING70
+/* CSSG - ucberl70 */
+# ifdef ERL70
 # define LOCAL 'i'
 # define NUID (174)
-# endif ING70
+# endif ERL70
 
 /* Ingres Group - ucbingres */
 # ifdef INGVAX
