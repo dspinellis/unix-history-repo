@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.8 (Berkeley) %G%
+ *	@(#)conf.h	6.9 (Berkeley) %G%
  */
 
 /*
@@ -134,4 +134,20 @@ struct utsname
 
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN	256
+#endif
+
+#if !defined(SIGCHLD) && defined(SIGCLD)
+# define SIGCHLD	SIGCLD
+#endif
+
+#ifndef STDIN_FILENO
+#define STDIN_FILENO	0
+#endif
+
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO	1
+#endif
+
+#ifndef STDERR_FILENO
+#define STDERR_FILENO	2
 #endif

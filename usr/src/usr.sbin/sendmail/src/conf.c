@@ -7,11 +7,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
 # include <sys/param.h>
+# include <signal.h>
 # include <pwd.h>
 # include "sendmail.h"
 # include "pathnames.h"
@@ -1037,7 +1038,13 @@ initgroups(name, basegid)
 #  if defined(sun) || defined(hpux)
 #   include <sys/vfs.h>
 #  else
-#   include <sys/mount.h>
+#   if defined(HASUSTAT)
+#    include <sys/types.h>
+#    include <sys/stat.h>
+#    include ustat.h>
+#   else
+#    include <sys/mount.h>
+#   endif
 #  endif
 # endif
 #endif
@@ -1050,7 +1057,13 @@ enoughspace()
 	struct fs_data fs;
 #  define f_bavail	fd_bfreen
 # else
+#  if defined(HASUSTAT)
+	struct ustat fs;
+	struct stat statbuf;
+#   define f_bavail	f_tfree
+#  else
 	struct statfs fs;
+#  endif
 # endif
 	extern int errno;
 	extern char *errstring();
@@ -1067,7 +1080,11 @@ enoughspace()
 #  if defined(ultrix)
 	if (statfs(QueueDir, &fs) > 0)
 #  else
+#   if defined(HASUSTAT)
+	if (stat(QueueDir, &statbuf) == 0 && ustat(statbuf.st_dev, &fs) == 0)
+#   else
 	if (statfs(QueueDir, &fs) == 0)
+#   endif
 #  endif
 # endif
 	{
