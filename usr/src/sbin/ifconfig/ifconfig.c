@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -91,8 +91,8 @@ setifaddr(addr, param)
 		Perror("ioctl (SIOCSIFADDR)");
 }
 
-setifflags(name, value)
-	char *name;
+setifflags(vname, value)
+	char *vname;
 	int value;
 {
 
@@ -103,7 +103,7 @@ setifflags(name, value)
 		ifr.ifr_flags |= value;
 	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	if (ioctl(s, SIOCSIFFLAGS, (caddr_t)&ifr) < 0)
-		Perror(name);
+		Perror(vname);
 }
 
 status()
