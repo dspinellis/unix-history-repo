@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -345,6 +345,10 @@ settime(e)
 **		Creates the transcript file.
 */
 
+#ifndef O_APPEND
+#define O_APPEND	0
+#endif
+
 openxscript(e)
 	register ENVELOPE *e;
 {
@@ -354,7 +358,7 @@ openxscript(e)
 	if (e->e_xfp != NULL)
 		return;
 	p = queuename(e, 'x');
-	fd = open(p, O_WRONLY|O_CREAT, 0644);
+	fd = open(p, O_WRONLY|O_CREAT|O_APPEND, 0644);
 	if (fd < 0)
 		syserr("Can't create %s", p);
 	else
