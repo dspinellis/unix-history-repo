@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: ite_hy.c 1.1 92/01/22$
  *
- *	@(#)ite_hy.c	7.3 (Berkeley) %G%
+ *	@(#)ite_hy.c	7.4 (Berkeley) %G%
  */
 
 #include <hp300/stand/samachdep.h>
@@ -65,7 +65,8 @@ hyper_ite_fontinit(ip)
 	int c, l, b;
 	int stride, width;
 
-	dp = (u_char *)getword(ip, getword(ip, FONTROM) + FONTADDR) + FONTDATA;
+	dp = (u_char *)(getword(ip, getword(ip, FONTROM) + FONTADDR) +
+	    ip->regbase) + FONTDATA;
 	stride = ip->fbwidth >> 3;
 	width = (ip->ftwidth + 7) / 8;
 
