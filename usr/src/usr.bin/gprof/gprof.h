@@ -1,4 +1,4 @@
-/*	gprof.h	1.19	83/08/11	*/
+/*	gprof.h	1.20	84/08/07	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -189,7 +189,7 @@ bool		dfn_numbered();
 		dfn_post_visit();
 		dfn_pre_visit();
 		dfn_self_cycle();
-		doarcs();
+nltype		**doarcs();
 		done();
 		findcalls();
 		flatprofheader();
