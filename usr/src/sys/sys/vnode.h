@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.8 (Berkeley) %G%
+ *	@(#)vnode.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -212,12 +212,18 @@ struct vattr {
 extern int vn_open();			/* open vnode */
 extern int vn_rdwr();			/* read or write vnode */
 extern int vn_close();			/* close vnode */
-extern void vref();			/* reference vnode */
+extern void vattr_null();		/* set attributes to null */
+extern int getnewvnode();		/* allocate a new vnode */
+extern int bdevvp();			/* allocate a new special dev vnode */
+extern struct vnode *checkalias();	/* check for special device aliases */
+extern int vget();			/* get first reference to a vnode */
+extern void vref();			/* increase reference to a vnode */
 extern void vput();			/* unlock and release vnode */
 extern void vrele();			/* release vnode */
-extern void vattr_null();		/* set attributes to null */
-extern struct vnode *checkalias();	/* check for block device aliases */
-#define VREF(vp)    (vp)->v_count++;	/* increment vnode reference count */
+extern void vclean();			/* clean out filesystem data in vnode */
+extern void vgone();			/* completely recycle vnode */
+
+#define VREF(vp)    (vp)->v_count++;	/* increase reference to a vnode */
 
 /*
  * Global vnode data.
