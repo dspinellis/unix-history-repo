@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.96		%G%);
+SCCSID(@(#)deliver.c	3.97		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -873,7 +873,7 @@ giveresponse(stat, force, m)
 	}
 
 # ifdef LOG
-	if (LogLevel > 1)
+	if (LogLevel > ((stat == 0 || stat == EX_TEMPFAIL) ? 3 : 2))
 		syslog(LOG_INFO, "%s: to=%s, stat=%s", MsgId, CurEnv->e_to, statmsg);
 # endif LOG
 # ifdef QUEUE
@@ -1214,97 +1214,6 @@ isatword(p)
 	    p[2] != '\0' && isspace(p[2]))
 		return (TRUE);
 	return (FALSE);
-}
-/*
-**  REMOTENAME -- return the name relative to the current mailer
-**
-**	Parameters:
-**		name -- the name to translate.
-**		force -- if set, forces rewriting even if the mailer
-**			does not request it.  Used for rewriting
-**			sender addresses.
-**
-**	Returns:
-**		the text string representing this address relative to
-**			the receiving mailer.
-**
-**	Side Effects:
-**		none.
-**
-**	Warnings:
-**		The text string returned is tucked away locally;
-**			copy it if you intend to save it.
-*/
-
-char *
-remotename(name, m, force)
-	char *name;
-	struct mailer *m;
-	bool force;
-{
-	static char buf[MAXNAME];
-	char lbuf[MAXNAME];
-	extern char *macvalue();
-	char *oldf = macvalue('f');
-	char *oldx = macvalue('x');
-	char *oldg = macvalue('g');
-	extern char **prescan();
-	register char **pvp;
-	extern char *getxpart();
-	extern ADDRESS *buildaddr();
-
-	/*
-	**  See if this mailer wants the name to be rewritten.  There are
-	**  many problems here, owing to the standards for doing replies.
-	**  In general, these names should only be rewritten if we are
-	**  sending to another host that runs sendmail.
-	*/
-
-	if (!bitset(M_RELRCPT, m->m_flags) && !force)
-		return (name);
-
-	/*
-	**  Do general rewriting of name.
-	**	This will also take care of doing global name translation.
-	*/
-
-	define('x', getxpart(name));
-	pvp = prescan(name, '\0');
-	if (pvp == NULL)
-		return (name);
-	rewrite(pvp, 1);
-	rewrite(pvp, 3);
-	if (**pvp == CANONNET)
-	{
-		/* oops... resolved to something */
-		return (name);
-	}
-	cataddr(pvp, lbuf, sizeof lbuf);
-
-	/* make the name relative to the receiving mailer */
-	define('f', lbuf);
-	expand(m->m_from, buf, &buf[sizeof buf - 1], CurEnv);
-
-	/* rewrite to get rid of garbage we added in the expand above */
-	pvp = prescan(buf, '\0');
-	if (pvp == NULL)
-		return (name);
-	rewrite(pvp, 2);
-	cataddr(pvp, lbuf, sizeof lbuf);
-
-	/* now add any comment info we had before back */
-	define('g', lbuf);
-	expand("$q", buf, &buf[sizeof buf - 1], CurEnv);
-
-	define('f', oldf);
-	define('g', oldg);
-	define('x', oldx);
-
-# ifdef DEBUG
-	if (tTd(12, 1))
-		printf("remotename(%s) => `%s'\n", name, buf);
-# endif DEBUG
-	return (buf);
 }
 /*
 **  SAMEFROM -- tell if two text addresses represent the same from address.
