@@ -1,0 +1,26 @@
+GETLOADAVG(3)               BSD Programmer's Manual              GETLOADAVG(3)
+
+NNAAMMEE
+     ggeettllooaaddaavvgg - get system load averages
+
+SSYYNNOOPPSSIISS
+     ggeettllooaaddaavvgg(_d_o_u_b_l_e _l_o_a_d_a_v_g_[_], _i_n_t _n_e_l_e_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettllooaaddaavvgg() function returns the number of processes in the system
+     run queue averaged over various periods of time.  Up to _n_e_l_e_m samples are
+     retrieved and assigned to successive elements of _l_o_a_d_a_v_g[]. The system
+     imposes a maximum of 3 samples, representing averages over the last 1, 5,
+     and 15 minutes, respectively.
+
+DDIIAAGGNNOOSSTTIICCSS
+     If the load average was unobtainable, -1 is returned; otherwise, the num-
+     ber of samples actually retrieved is returned.
+
+SSEEEE AALLSSOO
+     uptime(1),  sysctl(2),  kvm_getloadavg(3)
+
+HHIISSTTOORRYY
+     The ggeettllooaaddaavvgg() function appeared in 4.3BSD-Reno.
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,179 @@
+SETLOCALE(3)                BSD Programmer's Manual               SETLOCALE(3)
+
+NNAAMMEE
+     sseettllooccaallee, llooccaalleeccoonnvv - natural language formatting for C
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<llooccaallee..hh>>
+
+     _c_h_a_r _*
+     sseettllooccaallee(_i_n_t _c_a_t_e_g_o_r_y, _c_o_n_s_t _c_h_a_r _*_l_o_c_a_l_e);
+
+     _s_t_r_u_c_t _l_c_o_n_v _*
+     llooccaalleeccoonnvv(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The sseettllooccaallee() function sets the C library's notion of natural language
+     formatting style for particular sets of routines.  Each such style is
+     called a `locale' and is invoked using an appropriate name passed as a C
+     string.  The llooccaalleeccoonnvv() routine returns the current locale's parameters
+     for formatting numbers.
+
+     The sseettllooccaallee() function recognizes several categories of routines.
+     These are the categories and the sets of routines they select:
+
+     LC_ALL       Set the entire locale generically.
+
+     LC_COLLATE   Set a locale for string collation routines.  This controls
+                  alphabetic ordering in ssttrrccoollll() and ssttrrxxffrrmm().
+
+     LC_CTYPE     Set a locale for the ctype(3),  mbrune(3),  multibyte(3) and
+                  rune(3) functions.  This controls recognition of upper and
+                  lower case, alphabetic or non-alphabetic characters, and so
+                  on.  The real work is done by the sseettrruunneellooccaallee() function.
+
+     LC_MONETARY  Set a locale for formatting monetary values; this affects
+                  the llooccaalleeccoonnvv() function.
+
+     LC_NUMERIC   Set a locale for formatting numbers.  This controls the for-
+                  matting of decimal points in input and output of floating
+                  point numbers in functions such as pprriinnttff() and ssccaannff(), as
+                  well as values returned by llooccaalleeccoonnvv().
+
+     LC_TIME      Set a locale for formatting dates and times using the
+                  ssttrrffttiimmee() function.
+
+     Only three locales are defined by default, the empty string "" which de-
+     notes the native environment, and the "C" and locales, which denote the C
+     language environment.  A _l_o_c_a_l_e argument of NULL causes sseettllooccaallee() to
+     return the current locale.  By default, C programs start in the "C" lo-
+     cale.  The only function in the library that sets the locale is
+     sseettllooccaallee(); the locale is never changed as a side effect of some other
+     routine.
+
+     The llooccaalleeccoonnvv() function returns a pointer to a structure which provides
+     parameters for formatting numbers, especially currency values:
+
+           struct lconv {
+                   char    *decimal_point;
+                   char    *thousands_sep;
+                   char    *grouping;
+                   char    *int_curr_symbol;
+                   char    *currency_symbol;
+                   char    *mon_decimal_point;
+                   char    *mon_thousands_sep;
+                   char    *mon_grouping;
+                   char    *positive_sign;
+                   char    *negative_sign;
+                   char    int_frac_digits;
+                   char    frac_digits;
+                   char    p_cs_precedes;
+                   char    p_sep_by_space;
+                   char    n_cs_precedes;
+                   char    n_sep_by_space;
+                   char    p_sign_posn;
+                   char    n_sign_posn;
+           };
+
+     The individual fields have the following meanings:
+
+     _d_e_c_i_m_a_l___p_o_i_n_t      The decimal point character, except for currency val-
+                        ues.
+
+     _t_h_o_u_s_a_n_d_s___s_e_p      The separator between groups of digits before the dec-
+                        imal point, except for currency values.
+
+     _g_r_o_u_p_i_n_g           The sizes of the groups of digits, except for currency
+                        values.  This is a pointer to a vector of integers,
+                        each of size _c_h_a_r, representing group size from low
+                        order digit groups to high order (right to left).  The
+                        list may be terminated with 0 or CHAR_MAX. If the list
+                        is terminated with 0, the last group size before the 0
+                        is repeated to account for all the digits.  If the
+                        list is terminated with CHAR_MAX, no more grouping is
+                        performed.
+
+     _i_n_t___c_u_r_r___s_y_m_b_o_l    The standardized international currency symbol.
+
+     _c_u_r_r_e_n_c_y___s_y_m_b_o_l    The local currency symbol.
+
+     _m_o_n___d_e_c_i_m_a_l___p_o_i_n_t  The decimal point character for currency values.
+
+     _m_o_n___t_h_o_u_s_a_n_d_s___s_e_p  The separator for digit groups in currency values.
+
+     _m_o_n___g_r_o_u_p_i_n_g       Like _g_r_o_u_p_i_n_g but for currency values.
+
+     _p_o_s_i_t_i_v_e___s_i_g_n      The character used to denote nonnegative currency val-
+                        ues, usually the empty string.
+
+     _n_e_g_a_t_i_v_e___s_i_g_n      The character used to denote negative currency values,
+                        usually a minus sign.
+
+     _i_n_t___f_r_a_c___d_i_g_i_t_s    The number of digits after the decimal point in an in-
+                        ternational-style currency value.
+
+     _f_r_a_c___d_i_g_i_t_s        The number of digits after the decimal point in the
+                        local style for currency values.
+
+     _p___c_s___p_r_e_c_e_d_e_s      1 if the currency symbol precedes the currency value
+                        for nonnegative values, 0 if it follows.
+
+     _p___s_e_p___b_y___s_p_a_c_e     1 if a space is inserted between the currency symbol
+                        and the currency value for nonnegative values, 0 oth-
+                        erwise.
+
+     _n___c_s___p_r_e_c_e_d_e_s      Like _p___c_s___p_r_e_c_e_d_e_s but for negative values.
+
+     _n___s_e_p___b_y___s_p_a_c_e     Like _p___s_e_p___b_y___s_p_a_c_e but for negative values.
+
+     _p___s_i_g_n___p_o_s_n        The location of the _p_o_s_i_t_i_v_e___s_i_g_n with respect to a
+                        nonnegative quantity and the _c_u_r_r_e_n_c_y___s_y_m_b_o_l, coded as
+
+                        follows:
+                        0    Parentheses around the entire string.
+                        1    Before the string.
+                        2    After the string.
+                        3    Just before _c_u_r_r_e_n_c_y___s_y_m_b_o_l.
+                        4    Just after _c_u_r_r_e_n_c_y___s_y_m_b_o_l.
+
+     _n___s_i_g_n___p_o_s_n        Like _p___s_i_g_n___p_o_s_n but for negative currency values.
+
+     Unless mentioned above, an empty string as a value for a field indicates
+     a zero length result or a value that is not in the current locale.  A
+     CHAR_MAX result similarly denotes an unavailable value.
+
+RREETTUURRNN VVAALLUUEESS
+     The sseettllooccaallee() function returns NULL and fails to change the locale if
+     the given combination of _c_a_t_e_g_o_r_y and _l_o_c_a_l_e makes no sense.  The
+     llooccaalleeccoonnvv() function returns a pointer to a static object which may be
+     altered by later calls to sseettllooccaallee() or llooccaalleeccoonnvv().
+
+FFIILLEESS
+     $PATH_LOCALE/_l_o_c_a_l_e/_c_a_t_e_g_o_r_y
+     /usr/share/locale/_l_o_c_a_l_e/_c_a_t_e_g_o_r_y  locale file for the locale _l_o_c_a_l_e and
+                                        the category _c_a_t_e_g_o_r_y.
+
+SSEEEE AALLSSOO
+     euc(4),  mbrune(3),  multibyte(3),  rune(3),  strcoll(3),  strxfrm(3),
+     utf2(4)
+
+SSTTAANNDDAARRDDSS
+     The sseettllooccaallee() and llooccaalleeccoonnvv() functions conform to ANSI C X3.159-1989
+     (``ANSI C '').
+
+HHIISSTTOORRYY
+     The sseettllooccaallee() and llooccaalleeccoonnvv() functions first appeared in 4.4BSD.
+
+BBUUGGSS
+     The current implementation supports only the "C" and "POSIX" locales for
+     all but the LC_CTYPE locale.
+
+     In spite of the gnarly currency support in llooccaalleeccoonnvv(), the standards
+     don't include any functions for generalized currency formatting.
+
+     LC_COLLATE does not make sense for many languages.  Use of LC_MONETARY
+     could lead to misleading results until we have a real time currency con-
+     version function.  LC_NUMERIC and LC_TIME are personal choices and should
+     not be wrapped up with the other categories.
+
+4.4BSD                           June 9, 1993                                3

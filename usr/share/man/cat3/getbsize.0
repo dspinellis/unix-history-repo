@@ -1,0 +1,33 @@
+GETBSIZE(3)                 BSD Programmer's Manual                GETBSIZE(3)
+
+NNAAMMEE
+     ggeettbbssiizzee - get user block size
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _c_h_a_r _*
+     ggeettbbssiizzee(_i_n_t _*_h_e_a_d_e_r_l_e_n_p, _l_o_n_g _*_b_l_o_c_k_s_i_z_e_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettbbssiizzee function determines the user's preferred block size based on
+     the value of the ``BLOCKSIZE'' environment variable; see environ(7) for
+     details on its use and format.
+
+     The ggeettbbssiizzee function returns a pointer to a null-terminated string de-
+     scribing the block size, something like ``1K-blocks''. The memory refer-
+     enced by _h_e_a_d_e_r_l_e_n_p is filled in with the length of the string (not in-
+     cluding the terminating null).  The memory referenced by _b_l_o_c_k_s_i_z_e_p is
+     filled in with block size, in bytes.
+
+     If the user's block size is unreasonable, a warning message is written to
+     standard error and the returned information reflects a block size of 512
+     bytes.
+
+SSEEEE AALLSSOO
+     df(1),  du(1),  ls(1),  systat(1),  environ(7)
+
+HHIISSTTOORRYY
+     The ggeettbbssiizzee function call appeared in 4.4BSD.
+
+4.4BSD                           June 4, 1993                                1

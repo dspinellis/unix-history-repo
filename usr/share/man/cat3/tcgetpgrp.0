@@ -1,0 +1,35 @@
+TCGETPGRP(3)                BSD Programmer's Manual               TCGETPGRP(3)
+
+NNAAMMEE
+     ttccggeettppggrrpp - get foreground process group ID
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _p_i_d___t
+     ttccggeettppggrrpp(_i_n_t _f_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttccggeettppggrrpp function returns the value of the process group ID of the
+     foreground process group associated with the terminal device.  If there
+     is no foreground process group, ttccggeettppggrrpp returns an invalid process ID.
+
+EERRRROORRSS
+     If an error occurs, ttccggeettppggrrpp returns -1 and the global variable _e_r_r_n_o is
+     set to indicate the error, as follows:
+
+     [EBADF]       The _f_d argument is not a valid file descriptor.
+
+     [ENOTTY]      The calling process does not have a controlling terminal or
+                   the underlying terminal device represented by _f_d is not the
+                   controlling terminal.
+
+SSEEEE AALLSSOO
+     setpgid(3),  setsid(2),  tcsetpgrp(3)
+
+SSTTAANNDDAARRDDSS
+     The ttccggeettppggrrpp function is expected to be compliant with the IEEE
+     Std1003.1-1988 (``POSIX'') specification.
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,36 @@
+GETUID(2)                   BSD Programmer's Manual                  GETUID(2)
+
+NNAAMMEE
+     ggeettuuiidd, ggeetteeuuiidd - get user identification
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+
+     _u_i_d___t
+     ggeettuuiidd(_v_o_i_d);
+
+     _u_i_d___t
+     ggeetteeuuiidd(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettuuiidd() function returns the real user ID of the calling process.
+     The ggeetteeuuiidd() function returns the effective user ID of the calling pro-
+     cess.
+
+     The real user ID is that of the user who has invoked the program.  As the
+     effective user ID gives the process additional permissions during execu-
+     tion of ``_s_e_t_-_u_s_e_r_-_I_D'' mode processes, ggeettuuiidd() is used to determine the
+     real-user-id of the calling process.
+
+EERRRROORRSS
+     The ggeettuuiidd() and ggeetteeuuiidd() functions are always successful, and no return
+     value is reserved to indicate an error.
+
+SSEEEE AALLSSOO
+     getgid(2),  setreuid(2)
+
+SSTTAANNDDAARRDDSS
+     GGeetteeuuiidd() and ggeettuuiidd() conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                1

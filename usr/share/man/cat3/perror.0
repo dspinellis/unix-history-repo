@@ -1,0 +1,52 @@
+STRERROR(3)                 BSD Programmer's Manual                STRERROR(3)
+
+NNAAMMEE
+     ppeerrrroorr, ssttrreerrrroorr, ssyyss__eerrrrlliisstt, ssyyss__nneerrrr - system error messages
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _v_o_i_d
+     ppeerrrroorr(_c_o_n_s_t _c_h_a_r _*_s_t_r_i_n_g);
+
+     _e_x_t_e_r_n _c_h_a_r _*_s_y_s___e_r_r_l_i_s_t_[_]_;
+     _e_x_t_e_r_n _i_n_t _s_y_s___n_e_r_r_;
+
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _c_h_a_r _*
+     ssttrreerrrroorr(_i_n_t _e_r_r_n_u_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrreerrrroorr() and ppeerrrroorr() functions look up the error message string
+     corresponding to an error number.
+
+     The ssttrreerrrroorr() function accepts an error number argument _e_r_r_n_u_m and re-
+     turns a pointer to the corresponding message string.
+
+     The ppeerrrroorr() function finds the error message corresponding to the cur-
+     rent value of the global variable _e_r_r_n_o (intro(2))  and writes it, fol-
+     lowed by a newline, to the standard error file descriptor.  If the argu-
+     ment _s_t_r_i_n_g is non-NULL, it is prepended to the message string and sepa-
+     rated from it by a colon and space (`: '). If _s_t_r_i_n_g is NULL, only the
+     error message string is printed.
+
+     If _e_r_r_n_u_m is not a recognized error number, the error message string will
+     contain ``Unknown error: '' followed by the error number in decimal.
+
+     The message strings can be accessed directly using the external array
+     _s_y_s___e_r_r_l_i_s_t. The external value _s_y_s___n_e_r_r contains a count of the messages
+     in _s_y_s___e_r_r_l_i_s_t. The use of these variables is deprecated; ssttrreerrrroorr()
+     should be used instead.
+
+SSEEEE AALLSSOO
+     intro(2),  psignal(3)
+
+HHIISSTTOORRYY
+     The ssttrreerrrroorr() and ppeerrrroorr() functions first appeared in 4.4BSD.
+
+BBUUGGSS
+     For unknown error numbers, the ssttrreerrrroorr() function will return its result
+     in a static buffer which may be overwritten by subsequent calls.
+
+4th Berkeley Distribution        June 9, 1993                                1

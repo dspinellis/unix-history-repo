@@ -1,0 +1,52 @@
+SIGINTERRUPT(3)             BSD Programmer's Manual            SIGINTERRUPT(3)
+
+NNAAMMEE
+     ssiiggiinntteerrrruupptt - allow signals to interrupt system calls
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+
+     _i_n_t
+     ssiiggiinntteerrrruupptt(_i_n_t _s_i_g, _i_n_t _f_l_a_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssiiggiinntteerrrruupptt() function is used to change the system call restart be-
+     havior when a system call is interrupted by the specified signal.  If the
+     flag is false (0), then system calls will be restarted if they are inter-
+     rupted by the specified signal and no data has been transferred yet.
+     System call restart is the default behavior on 4.2BSD.
+
+     If the flag is true (1), then restarting of system calls is disabled.  If
+     a system call is interrupted by the specified signal and no data has been
+     transferred, the system call will return -1 with the global variable
+     _e_r_r_n_o set to EINTR. Interrupted system calls that have started transfer-
+     ring data will return the amount of data actually transferred.  System
+     call interrupt is the signal behavior found on 4.1BSD and AT&T System V
+     UNIX systems.
+
+     Note that the new 4.2BSD signal handling semantics are not altered in any
+     other way.  Most notably, signal handlers always remain installed until
+     explicitly changed by a subsequent sigaction(2) call, and the signal mask
+     operates as documented in sigaction(2).  Programs may switch between
+     restartable and interruptible system call operation as often as desired
+     in the execution of a program.
+
+     Issuing a ssiiggiinntteerrrruupptt(_3) call during the execution of a signal handler
+     will cause the new action to take place on the next signal to be caught.
+
+NNOOTTEESS
+     This library routine uses an extension of the sigaction(2) system call
+     that is not available in 4.2BSD, hence it should not be used if backward
+     compatibility is needed.
+
+RREETTUURRNN VVAALLUUEESS
+     A 0 value indicates that the call succeeded.  A -1 value indicates that
+     an invalid signal number has been supplied.
+
+SSEEEE AALLSSOO
+     sigaction(2),  sigblock(2),  sigpause(2),  sigsetmask(2).
+
+HHIISSTTOORRYY
+     The ssiiggiinntteerrrruupptt() function appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

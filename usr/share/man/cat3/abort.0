@@ -1,0 +1,28 @@
+ABORT(3)                    BSD Programmer's Manual                   ABORT(3)
+
+NNAAMMEE
+     aabboorrtt - cause abnormal program termination
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _v_o_i_d
+     aabboorrtt(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The aabboorrtt() function causes abnormal program termination to occur, unless
+     the signal SIGABRT is being caught and the signal handler does not re-
+     turn.
+
+     No open streams are closed or flushed.
+
+RREETTUURRNN VVAALLUUEESS
+     The aabboorrtt function never returns.
+
+SSEEEE AALLSSOO
+     sigaction(2),  exit(2)
+
+SSTTAANNDDAARRDDSS
+     The aabboorrtt() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,30 @@
+SYSTEM(3)                   BSD Programmer's Manual                  SYSTEM(3)
+
+NNAAMMEE
+     ssyysstteemm - pass a command to the shell
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _i_n_t
+     ssyysstteemm(_c_o_n_s_t _c_h_a_r _*_s_t_r_i_n_g);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssyysstteemm() function hands the argument _s_t_r_i_n_g to the command inter-
+     preter sh(1).  The calling process waits for the shell to finish execut-
+     ing the command, ignoring SIGINT and SIGQUIT, and blocking SIGCHLD.
+
+     If _s_t_r_i_n_g is a NULL pointer, ssyysstteemm() will return non-zero if the command
+     interpreter sh(1) is available, and zero if it is not.
+
+     The ssyysstteemm() function returns the exit status of the shell, or -1 if the
+     wait(3) for the shell failed.  A return value of 127 means the execution
+     of the shell failed.
+
+SSEEEE AALLSSOO
+     sh(1),  execve(2),  wait(2),  popen(3)
+
+SSTTAANNDDAARRDDSS
+     The ssyysstteemm() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

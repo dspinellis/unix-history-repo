@@ -1,0 +1,37 @@
+SYSCALL(2)                  BSD Programmer's Manual                 SYSCALL(2)
+
+NNAAMMEE
+     ssyyssccaallll, ____ssyyssccaallll - indirect system call
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssyyssccaallll..hh>>
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     ssyyssccaallll(_i_n_t _n_u_m_b_e_r, _._._.);
+
+     _i_n_t
+     ____ssyyssccaallll(_q_u_a_d___t _n_u_m_b_e_r, _._._.);
+
+DDEESSCCRRIIPPTTIIOONN
+     SSyyssccaallll() performs the system call whose assembly language interface has
+     the specified _n_u_m_b_e_r with the specified arguments.  Symbolic constants
+     for system calls can be found in the header file <_s_y_s_/_s_y_s_c_a_l_l_._h>. The
+     ____ssyyssccaallll form should be used when one or more of the parameters is a
+     64-bit argument to ensure that argument alignment is correct.  This sys-
+     tem call is useful for testing new system calls that do not have entries
+     in the C library.
+
+RREETTUURRNN VVAALLUUEESS
+     The return values are defined by the system call being invoked.  In gen-
+     eral, a 0 return value indicates success.  A -1 return value indicates an
+     error, and an error code is stored in _e_r_r_n_o.
+
+BBUUGGSS
+     There is no way to simulate system calls that have multiple return values
+     such as pipe(2).
+
+HHIISSTTOORRYY
+     The ssyyssccaallll function call appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 16, 1993                               1

@@ -1,0 +1,55 @@
+SIGPROCMASK(2)              BSD Programmer's Manual             SIGPROCMASK(2)
+
+NNAAMMEE
+     ssiiggpprrooccmmaasskk - manipulate current signal mask
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+
+     _i_n_t
+     ssiiggpprrooccmmaasskk(_i_n_t _h_o_w, _c_o_n_s_t _s_i_g_s_e_t___t _*_s_e_t, _s_i_g_s_e_t___t _*_o_s_e_t);
+
+     ssiiggmmaasskk(_s_i_g_n_u_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssiiggpprrooccmmaasskk() function examines and/or changes the current signal
+     mask (those signals that are blocked from delivery).  Signals are blocked
+     if they are members of the current signal mask set.
+
+     If _s_e_t is not null, the action of ssiiggpprrooccmmaasskk() depends on the value of
+     the parameter _h_o_w. The signal mask is changed as a function of the speci-
+     fied _s_e_t and the current mask.  The function is specified by _h_o_w using
+     one of the following values from <_s_i_g_n_a_l_._h>:
+
+     SIG_BLOCK    The new mask is the union of the current mask and the speci-
+                  fied _s_e_t.
+
+     SIG_UNBLOCK  The new mask is the intersection of the current mask and the
+                  complement of the specified _s_e_t.
+
+     SIG_SETMASK  The current mask is replaced by the specified _s_e_t.
+
+     If _o_s_e_t is not null, it is set to the previous value of the signal mask.
+     When _s_e_t is null, the value of _h_o_w is insignificant and the mask remains
+     unset providing a way to examine the signal mask without modification.
+
+     The system quietly disallows SIGKILL or SIGSTOP to be blocked.
+
+RREETTUURRNN VVAALLUUEESS
+     A 0 value indicated that the call succeeded.  A -1 return value indicates
+     an error occurred and _e_r_r_n_o is set to indicated the reason.
+
+EERRRROORRSS
+     The ssiiggpprrooccmmaasskk() call will fail and the signal mask will be unchanged if
+     one of the following occurs:
+
+     [EINVAL]      _h_o_w has a value other than those listed here.
+
+SSEEEE AALLSSOO
+     kill(2),  sigaction(2),  sigsetops(3),  sigsuspend(2)
+
+SSTTAANNDDAARRDDSS
+     The ssiiggpprrooccmmaasskk function call is expected to conform to IEEE
+     Std1003.1-1988 (``POSIX'').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,31 @@
+GETPID(2)                   BSD Programmer's Manual                  GETPID(2)
+
+NNAAMMEE
+     ggeettppiidd, ggeettppppiidd - get parent or calling process identification
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _p_i_d___t
+     ggeettppiidd(_v_o_i_d);
+
+     _p_i_d___t
+     ggeettppppiidd(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     GGeettppiidd() returns the process ID of the calling process.  The ID is guar-
+     anteed to be unique and is useful for constructing temporary file names.
+
+     GGeettppppiidd() returns the process ID of the parent of the calling process.
+
+EERRRROORRSS
+     The ggeettppiidd() and ggeettppppiidd() functions are always successful, and no return
+     value is reserved to indicate an error.
+
+SSEEEE AALLSSOO
+     gethostid(2)
+
+SSTTAANNDDAARRDDSS
+     GGeettppiidd() and ggeettppppiidd() conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                1

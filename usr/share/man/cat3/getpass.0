@@ -1,0 +1,44 @@
+GETPASS(3)                  BSD Programmer's Manual                 GETPASS(3)
+
+NNAAMMEE
+     ggeettppaassss - get a password
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ppwwdd..hh>>
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _c_h_a_r _*
+     ggeettppaassss(_c_o_n_s_t _c_h_a_r _*_p_r_o_m_p_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettppaassss() function displays a prompt to, and reads in a password
+     from, _/_d_e_v_/_t_t_y. If this file is not accessible, ggeettppaassss displays the
+     prompt on the standard error output and reads from the standard input.
+
+     The password may be up to _PASSWORD_LEN (currently 128) characters in
+     length.  Any additional characters and the terminating newline character
+     are discarded.
+
+     GGeettppaassss turns off character echoing while reading the password.
+
+RREETTUURRNN VVAALLUUEESS
+     GGeettppaassss returns a pointer to the null terminated password.
+
+FFIILLEESS
+     /dev/tty
+
+SSEEEE AALLSSOO
+     crypt(3)
+
+HHIISSTTOORRYY
+     A ggeettppaassss function appeared in Version 7 AT&T UNIX.
+
+BBUUGGSS
+     The ggeettppaassss function leaves its result in an internal static object and
+     returns a pointer to that object.  Subsequent calls to ggeettppaassss will modi-
+     fy the same object.
+
+     The calling process should zero the password as soon as possible to avoid
+     leaving the cleartext password visible in the process's address space.
+
+4.4BSD                           June 4, 1993                                1

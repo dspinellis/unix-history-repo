@@ -1,0 +1,28 @@
+SIGPAUSE(2)                 BSD Programmer's Manual                SIGPAUSE(2)
+
+NNAAMMEE
+     ssiiggppaauussee - atomically release blocked signals and wait for interrupt
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+
+     _i_n_t
+     ssiiggppaauussee(_i_n_t _s_i_g_m_a_s_k);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss mmaaddee oobbssoolleettee bbyy sigsuspend(2).
+
+     SSiiggppaauussee() assigns _s_i_g_m_a_s_k to the set of masked signals and then waits
+     for a signal to arrive; on return the set of masked signals is restored.
+     _S_i_g_m_a_s_k is usually 0 to indicate that no signals are to be blocked.
+     SSiiggppaauussee() always terminates by being interrupted, returning -1 with
+     _e_r_r_n_o set to EINTR
+
+SSEEEE AALLSSOO
+     sigsuspend(2),  kill(2),  sigaction(2),  sigprocmask(2),  sigblock(2),
+     sigvec(2)
+
+HHIISSTTOORRYY
+     The ssiiggppaauussee function call appeared in 4.2BSD and has been deprecated.
+
+4th Berkeley Distribution        June 2, 1993                                1

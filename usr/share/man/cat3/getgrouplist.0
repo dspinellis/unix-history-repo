@@ -1,0 +1,42 @@
+GETGROUPLIST(3)             BSD Programmer's Manual            GETGROUPLIST(3)
+
+NNAAMMEE
+     ggeettggrroouupplliisstt - calculate group access list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     ggeettggrroouupplliisstt(_c_o_n_s_t _c_h_a_r _*_n_a_m_e, _i_n_t _b_a_s_e_g_i_d, _i_n_t _*_g_r_o_u_p_s, _i_n_t _*_n_g_r_o_u_p_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettggrroouupplliisstt() function reads through the group file and calculates
+     the group access list for the user specified in _n_a_m_e. The _b_a_s_e_g_i_d is au-
+     tomatically included in the groups list.  Typically this value is given
+     as the group number from the password file.
+
+     The resulting group list is returned in the integer array pointed to by
+     _g_r_o_u_p_s. The caller specifies the size of the _g_r_o_u_p_s array in the integer
+     pointed to by _n_g_r_o_u_p_s; the actual number of groups found is returned in
+     _n_g_r_o_u_p_s.
+
+RREETTUURRNN VVAALLUUEESS
+     The ggeettggrroouupplliisstt() function returns -1 if the size of the group list is
+     too small to hold all the user's groups.  Here, the group array will be
+     filled with as many groups as will fit.
+
+FFIILLEESS
+     /etc/group  group membership list
+
+SSEEEE AALLSSOO
+     setgroups(2),  initgroups(3)
+
+HHIISSTTOORRYY
+     The ggeettggrroouupplliisstt() function first appeared in 4.4BSD.
+
+BBUUGGSS
+     The ggeettggrroouupplliisstt() function uses the routines based on getgrent(3).  If
+     the invoking program uses any of these routines, the group structure will
+     be overwritten in the call to ggeettggrroouupplliisstt().
+
+4.4BSD                           June 9, 1993                                1

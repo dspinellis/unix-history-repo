@@ -1,0 +1,48 @@
+GETHOSTNAME(3)              BSD Programmer's Manual             GETHOSTNAME(3)
+
+NNAAMMEE
+     ggeetthhoossttnnaammee, sseetthhoossttnnaammee - get/set name of current host
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     ggeetthhoossttnnaammee(_c_h_a_r _*_n_a_m_e, _i_n_t _n_a_m_e_l_e_n);
+
+     _i_n_t
+     sseetthhoossttnnaammee(_c_o_n_s_t _c_h_a_r _*_n_a_m_e, _i_n_t _n_a_m_e_l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     GGeetthhoossttnnaammee() returns the standard host name for the current processor,
+     as previously set by sseetthhoossttnnaammee().  The parameter _n_a_m_e_l_e_n specifies the
+     size of the _n_a_m_e array.  The returned name is null-terminated unless in-
+     sufficient space is provided.
+
+     SSeetthhoossttnnaammee() sets the name of the host machine to be _n_a_m_e, which has
+     length _n_a_m_e_l_e_n. This call is restricted to the super-user and is normally
+     used only when the system is bootstrapped.
+
+RREETTUURRNN VVAALLUUEESS
+     If the call succeeds a value of 0 is returned.  If the call fails, a val-
+     ue of -1 is returned and an error code is placed in the global location
+     _e_r_r_n_o.
+
+EERRRROORRSS
+     The following errors may be returned by these calls:
+
+     [EFAULT]      The _n_a_m_e or _n_a_m_e_l_e_n parameter gave an invalid address.
+
+     [EPERM]       The caller tried to set the hostname and was not the super-
+                   user.
+
+SSEEEE AALLSSOO
+     sysctl(2) gethostid(3)
+
+BBUUGGSS
+     Host names are limited to MAXHOSTNAMELEN (from <_s_y_s_/_p_a_r_a_m_._h>) characters,
+     currently 256.
+
+HHIISSTTOORRYY
+     The ggeetthhoossttnnaammee function call appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

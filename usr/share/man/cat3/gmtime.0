@@ -1,0 +1,131 @@
+CTIME(3)                    BSD Programmer's Manual                   CTIME(3)
+
+NNAAMMEE
+     aassccttiimmee, ccttiimmee, ddiiffffttiimmee, ggmmttiimmee, llooccaallttiimmee, mmkkttiimmee - transform binary
+     date and time value to ASCII
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ttiimmee..hh>>
+
+     _e_x_t_e_r_n _c_h_a_r _*_t_z_n_a_m_e_[_2_]_;
+
+     _c_h_a_r _*
+     ccttiimmee(_c_o_n_s_t _t_i_m_e___t _*_c_l_o_c_k);
+
+     _d_o_u_b_l_e
+     ddiiffffttiimmee(_t_i_m_e___t _t_i_m_e_1, _t_i_m_e___t _t_i_m_e_0);
+
+     _c_h_a_r _*
+     aassccttiimmee(_c_o_n_s_t _s_t_r_u_c_t _t_m _*_t_m);
+
+     _s_t_r_u_c_t _t_m _*
+     llooccaallttiimmee(_c_o_n_s_t _t_i_m_e___t _*_c_l_o_c_k);
+
+     _s_t_r_u_c_t _t_m _*
+     ggmmttiimmee(_c_o_n_s_t _t_i_m_e___t _*_c_l_o_c_k);
+
+     _t_i_m_e___t
+     mmkkttiimmee(_s_t_r_u_c_t _t_m _*_t_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The functions ccttiimmee(), ggmmttiimmee() and llooccaallttiimmee() all take as an argument a
+     time value representing the time in seconds since the Epoch (00:00:00
+     UTC, January 1, 1970; see time(3)).
+
+     The function llooccaallttiimmee() converts the time value pointed at by _c_l_o_c_k, and
+     returns a pointer to a ``_s_t_r_u_c_t _t_m'' (described below) which contains the
+     broken-out time information for the value after adjusting for the current
+     time zone (and any other factors such as Daylight Saving Time).  Time
+     zone adjustments are performed as specified by the TZ environmental vari-
+     able (see tzset(3)).  The function llooccaallttiimmee() uses tzset to initialize
+     time conversion information if tzset has not already been called by the
+     process.
+
+     After filling in the tm structure, llooccaallttiimmee() sets the _t_m___i_s_d_s_t'th ele-
+     ment of _t_z_n_a_m_e to a pointer to an ASCII string that's the time zone ab-
+     breviation to be used with llooccaallttiimmee()'s return value.
+
+     The function ggmmttiimmee() similarly converts the time value, but without any
+     time zone adjustment, and returns a pointer to a tm structure (described
+     below).
+
+     The ccttiimmee() function adjusts the time value for the current time zone in
+     the same manner as llooccaallttiimmee(), and returns a pointer to a 26-character
+     string of the form:
+
+           Thu Nov 24 18:22:48 1986\n\0
+
+     All the fields have constant width.
+
+     The aassccttiimmee() function converts the broken down time in the structure _t_m
+     pointed at by _*_t_m to the form shown in the example above.
+
+     The function mmkkttiimmee() converts the broken-down time, expressed as local
+     time, in the structure pointed to by tm into a time value with the same
+     encoding as that of the values returned by the time(3) function, that is,
+     seconds from the Epoch, UTC.
+
+     The original values of the _t_m___w_d_a_y and _t_m___y_d_a_y components of the struc-
+     ture are ignored, and the original values of the other components are not
+     restricted to their normal ranges.  (A positive or zero value for
+     _t_m___i_s_d_s_t causes mmkkttiimmee() to presume initially that summer time (for exam-
+     ple, Daylight Saving Time) is or is not in effect for the specified time,
+     respectively.  A negative value for _t_m___i_s_d_s_t causes the mmkkttiimmee() function
+     to attempt to divine whether summer time is in effect for the specified
+     time.)
+
+     On successful completion, the values of the _t_m___w_d_a_y and _t_m___y_d_a_y compo-
+     nents of the structure are set appropriately, and the other components
+     are set to represent the specified calendar time, but with their values
+     forced to their normal ranges; the final value of _t_m___m_d_a_y is not set un-
+     til _t_m___m_o_n and _t_m___y_e_a_r are determined.  MMkkttiimmee() returns the specified
+     calendar time; if the calendar time cannot be represented, it returns -1;
+
+     The ddiiffffttiimmee() function returns the difference between two calendar
+     times, (_t_i_m_e_1 - _t_i_m_e_0), expressed in seconds.
+
+     External declarations as well as the tm structure definition are in the
+     <_t_i_m_e_._h> include file.  The tm structure includes at least the following
+     fields:
+
+           int tm_sec;     /* seconds (0 - 60) */
+           int tm_min;     /* minutes (0 - 59) */
+           int tm_hour;    /* hours (0 - 23) */
+           int tm_mday;    /* day of month (1 - 31) */
+           int tm_mon;     /* month of year (0 - 11) */
+           int tm_year;    /* year - 1900 */
+           int tm_wday;    /* day of week (Sunday = 0) */
+           int tm_yday;    /* day of year (0 - 365) */
+           int tm_isdst;   /* is summer time in effect? */
+           char *tm_zone;  /* abbreviation of timezone name */
+           long tm_gmtoff; /* offset from UTC in seconds */
+
+     The field _t_m___i_s_d_s_t is non-zero if summer time is in effect.
+
+     The field _t_m___g_m_t_o_f_f is the offset (in seconds) of the time represented
+     from UTC, with positive values indicating east of the Prime Meridian.
+
+SSEEEE AALLSSOO
+     date(1),  gettimeofday(2),  getenv(3),  time(3),  tzset(3),  tzfile(5)
+
+HHIISSTTOORRYY
+     This manual page is derived from the time package contributed to Berkeley
+     by Arthur Olsen and which appeared in 4.3BSD.
+
+BBUUGGSS
+     Except for ddiiffffttiimmee() and mmkkttiimmee(), these functions leaves their result
+     in an internal static object and return a pointer to that object. Subse-
+     quent calls to these function will modify the same object.
+
+     The _t_m___z_o_n_e field of a returned tm structure points to a static array of
+     characters, which will also be overwritten by any subsequent calls (as
+     well as by subsequent calls to tzset(3) and tzsetwall(3)).
+
+     Use of the external variable _t_z_n_a_m_e is discouraged; the _t_m___z_o_n_e entry in
+     the tm structure is preferred.
+
+     Avoid using out-of-range values with mmkkttiimmee() when setting up lunch with
+     promptness sticklers in Riyadh.
+
+4.3 Berkeley Distribution        June 4, 1993                                2

@@ -1,0 +1,46 @@
+REALPATH(3)                 BSD Programmer's Manual                REALPATH(3)
+
+NNAAMMEE
+     rreeaallppaatthh - returns the canonicalized absolute pathname
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ppaarraamm..hh>>
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _c_h_a_r _*
+     rreeaallppaatthh(_c_o_n_s_t _c_h_a_r _*_p_a_t_h_n_a_m_e, _c_h_a_r _r_e_s_o_l_v_e_d_n_a_m_e_[_M_A_X_P_A_T_H_L_E_N_]);
+
+DDEESSCCRRIIPPTTIIOONN
+     The rreeaallppaatthh() function resolves all symbolic links, extra ``/'' charac-
+     ters and references to _/_._/ and _/_._._/ in _p_a_t_h_n_a_m_e, and copies the resulting
+     absolute pathname into the memory referenced by _r_e_s_o_l_v_e_d_n_a_m_e. The
+     _r_e_s_o_l_v_e_d_n_a_m_e argument _m_u_s_t refer to a buffer capable of storing at least
+     MAXPATHLEN characters.
+
+     The rreeaallppaatthh() function will resolve both absolute and relative paths and
+     return the absolute pathname corresponding to _p_a_t_h_n_a_m_e. All but the last
+     component of _p_a_t_h_n_a_m_e must exist when rreeaallppaatthh() is called.
+
+RREETTUURRNN VVAALLUUEESS
+     The rreeaallppaatthh() function returns _r_e_s_o_l_v_e_d___n_a_m_e on success.  If an error
+     occurs, rreeaallppaatthh() returns NULL, and _r_e_s_o_l_v_e_d___n_a_m_e contains the pathname
+     which caused the problem.
+
+EERRRROORRSS
+     The function rreeaallppaatthh() may fail and set the external variable _e_r_r_n_o for
+     any of the errors specified for the library functions chdir(2),
+     close(2),  fchdir(2),  lstat(2),  open(2),  readlink(2) and getcwd(3).
+
+CCAAVVEEAATTSS
+     This implementation of rreeaallppaatthh() differs slightly from the Solaris im-
+     plementation.  The 4.4BSD version always returns absolute pathnames,
+     whereas the Solaris implementation will, under certain circumstances, re-
+     turn a relative _r_e_s_o_l_v_e_d___p_a_t_h when given a relative _p_a_t_h_n_a_m_e.
+
+SSEEEE AALLSSOO
+     getcwd(3)
+
+HHIISSTTOORRYY
+     The rreeaallppaatthh() function call first appeared in 4.4BSD.
+
+4.4BSD                         February 16, 1994                             1

@@ -1,0 +1,98 @@
+FOPEN(3)                    BSD Programmer's Manual                   FOPEN(3)
+
+NNAAMMEE
+     ffooppeenn, ffddooppeenn, ffrreeooppeenn - stream open functions
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _F_I_L_E _*
+     ffooppeenn(_c_h_a_r _*_p_a_t_h, _c_h_a_r _*_m_o_d_e);
+
+     _F_I_L_E _*
+     ffddooppeenn(_i_n_t _f_i_l_d_e_s, _c_h_a_r _*_m_o_d_e);
+
+     _F_I_L_E _*
+     ffrreeooppeenn(_c_h_a_r _*_p_a_t_h, _c_h_a_r _*_m_o_d_e, _F_I_L_E _*_s_t_r_e_a_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffooppeenn() function opens the file whose name is the string pointed to
+     by _p_a_t_h and associates a stream with it.
+
+     The argument _m_o_d_e points to a string beginning with one of the following
+     sequences (Additional characters may follow these sequences.):
+
+     ``r''   Open text file for reading.  The stream is positioned at the be-
+             ginning of the file.
+
+     ``r+''  Open for reading and writing.  The stream is positioned at the
+             beginning of the file.
+
+     ``w''   Truncate file to zero length or create text file for writing.
+             The stream is positioned at the beginning of the file.  It ``w+''
+             Open for reading and writing.  The file is created if it does not
+             exist, otherwise it is truncated.  The stream is positioned at
+             the beginning of the file.
+
+     ``a''   Open for writing.  The file is created if it does not exist.  The
+             stream is positioned at the end of the file.
+
+     ``a+''  Open for reading and writing.  The file is created if it does not
+             exist.  The stream is positioned at the end of the file.
+
+     The _m_o_d_e string can also include the letter ``b'' either as a third char-
+     acter or as a character between the characters in any of the two-
+     character strings described above.  This is strictly for compatibility
+     with ANSI C X3.159-1989 (``ANSI C '') and has no effect; the ``b'' is ig-
+     nored.
+
+     Any created files will have mode "S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+     S_IROTH | S_IWOTH" (0666), as modified by the process' umask value (see
+     umask(2)).
+
+     Reads and writes may be intermixed on read/write streams in any order,
+     and do not require an intermediate seek as in previous versions of _s_t_d_i_o.
+     This is not portable to other systems, however; ANSI C requires that a
+     file positioning function intervene between output and input, unless an
+     input operation encounters end-of-file.
+
+     The ffddooppeenn() function associates a stream with the existing file descrip-
+     tor, _f_i_l_d_e_s. The _m_o_d_e of the stream must be compatible with the mode of
+     the file descriptor.
+
+     The ffrreeooppeenn() function opens the file whose name is the string pointed to
+     by _p_a_t_h and associates the stream pointed to by _s_t_r_e_a_m with it.  The
+     original stream (if it exists) is closed.  The _m_o_d_e argument is used just
+     as in the fopen function.  The primary use of the ffrreeooppeenn() function is
+     to change the file associated with a standard text stream (_s_t_d_e_r_r, _s_t_d_i_n,
+     or _s_t_d_o_u_t).
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion ffooppeenn(), ffddooppeenn() and ffrreeooppeenn() return a FILE
+     pointer.  Otherwise, NULL is returned and the global variable _e_r_r_n_o is
+     set to indicate the error.
+
+EERRRROORRSS
+     [EINVAL]  The _m_o_d_e provided to ffooppeenn(), ffddooppeenn(), or ffrreeooppeenn() was in-
+               valid.
+
+     The ffooppeenn(), ffddooppeenn() and ffrreeooppeenn() functions may also fail and set _e_r_r_n_o
+     for any of the errors specified for the routine malloc(3).
+
+     The ffooppeenn() function may also fail and set _e_r_r_n_o for any of the errors
+     specified for the routine open(2).
+
+     The ffddooppeenn() function may also fail and set _e_r_r_n_o for any of the errors
+     specified for the routine fcntl(2).
+
+     The ffrreeooppeenn() function may also fail and set _e_r_r_n_o for any of the errors
+     specified for the routines open(2),  fclose(3) and fflush(3).
+
+SSEEEE AALLSSOO
+     open(2),  fclose(3),  fseek(3),  funopen(3)
+
+SSTTAANNDDAARRDDSS
+     The ffooppeenn() and ffrreeooppeenn() functions conform to ANSI C X3.159-1989 (``ANSI
+     C ''). The ffddooppeenn() function conforms to IEEE Std1003.1-1988 (``POSIX'').
+
+4.4BSD                           June 4, 1993                                2

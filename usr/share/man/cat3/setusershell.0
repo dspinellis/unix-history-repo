@@ -1,0 +1,42 @@
+GETUSERSHELL(3)             BSD Programmer's Manual            GETUSERSHELL(3)
+
+NNAAMMEE
+     ggeettuusseerrsshheellll, sseettuusseerrsshheellll, eenndduusseerrsshheellll - get legal user shells
+
+SSYYNNOOPPSSIISS
+     _c_h_a_r _*
+     ggeettuusseerrsshheellll(_v_o_i_d);
+
+     _v_o_i_d
+     sseettuusseerrsshheellll(_v_o_i_d);
+
+     _v_o_i_d
+     eenndduusseerrsshheellll(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettuusseerrsshheellll() function returns a pointer to a legal user shell as
+     defined by the system manager in the file _/_e_t_c_/_s_h_e_l_l_s. If _/_e_t_c_/_s_h_e_l_l_s is
+     unreadable or does not exist, ggeettuusseerrsshheellll() behaves as if _/_b_i_n_/_s_h and
+     _/_b_i_n_/_c_s_h were listed in the file.
+
+     The ggeettuusseerrsshheellll() function reads the next line (opening the file if nec-
+     essary); sseettuusseerrsshheellll() rewinds the file; eenndduusseerrsshheellll() closes it.
+
+FFIILLEESS
+     /etc/shells
+
+DDIIAAGGNNOOSSTTIICCSS
+     The routine ggeettuusseerrsshheellll() returns a null pointer (0) on EOF.
+
+SSEEEE AALLSSOO
+     shells(5)
+
+HHIISSTTOORRYY
+     The ggeettuusseerrsshheellll() function appeared in 4.3BSD.
+
+BBUUGGSS
+     The ggeettuusseerrsshheellll() function leaves its result in an internal static ob-
+     ject and returns a pointer to that object. Subsequent calls to
+     ggeettuusseerrsshheellll() will modify the same object.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

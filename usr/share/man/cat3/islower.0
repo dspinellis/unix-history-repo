@@ -1,0 +1,34 @@
+ISLOWER(3)                  BSD Programmer's Manual                 ISLOWER(3)
+
+NNAAMMEE
+     iisslloowweerr - lower-case character test
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ccttyyppee..hh>>
+
+     _i_n_t
+     iisslloowweerr(_i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The iisslloowweerr() function tests for any lower-case letters.  In the ASCII
+     character set, this includes the following characters:
+
+
+     141 ``a''     142 ``b''     143 ``c''     144 ``d''     145 ``e''
+     146 ``f''     147 ``g''     150 ``h''     151 ``i''     152 ``j''
+     153 ``k''     154 ``l''     155 ``m''     156 ``n''     157 ``o''
+     160 ``p''     161 ``q''     162 ``r''     163 ``s''     164 ``t''
+     165 ``u''     166 ``v''     167 ``w''     170 ``x''     171 ``y''
+     172 ``z''
+
+RREETTUURRNN VVAALLUUEESS
+     The iisslloowweerr() function returns zero if the character tests false and re-
+     turns non-zero if the character tests true.
+
+SSEEEE AALLSSOO
+     ctype(3),  ascii(7)
+
+SSTTAANNDDAARRDDSS
+     The iisslloowweerr() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

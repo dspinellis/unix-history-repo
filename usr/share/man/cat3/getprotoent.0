@@ -1,0 +1,75 @@
+GETPROTOENT(3)              BSD Programmer's Manual             GETPROTOENT(3)
+
+NNAAMMEE
+     ggeettpprroottooeenntt, ggeettpprroottoobbyynnuummbbeerr, ggeettpprroottoobbyynnaammee, sseettpprroottooeenntt, eennddpprroottooeenntt -
+     get protocol entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nneettddbb..hh>>
+
+     _s_t_r_u_c_t _p_r_o_t_o_e_n_t _*
+     ggeettpprroottooeenntt();
+
+     _s_t_r_u_c_t _p_r_o_t_o_e_n_t _*
+     ggeettpprroottoobbyynnaammee(_c_h_a_r _*_n_a_m_e);
+
+     _s_t_r_u_c_t _p_r_o_t_o_e_n_t _*
+     ggeettpprroottoobbyynnuummbbeerr(_i_n_t _p_r_o_t_o);
+
+     sseettpprroottooeenntt(_i_n_t _s_t_a_y_o_p_e_n);
+
+     eennddpprroottooeenntt();
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettpprroottooeenntt(), ggeettpprroottoobbyynnaammee(), and ggeettpprroottoobbyynnuummbbeerr() functions
+     each return a pointer to an object with the following structure contain-
+     ing the broken-out fields of a line in the network protocol data base,
+     _/_e_t_c_/_p_r_o_t_o_c_o_l_s.
+
+
+           struct  protoent {
+                   char    *p_name;        /* official name of protocol */
+                   char    **p_aliases;    /* alias list */
+                   int     p_proto;        /* protocol number */
+           };
+
+     The members of this structure are:
+
+     _p___n_a_m_e     The official name of the protocol.
+
+     _p___a_l_i_a_s_e_s  A zero terminated list of alternate names for the protocol.
+
+     _p___p_r_o_t_o    The protocol number.
+
+     The ggeettpprroottooeenntt() function reads the next line of the file, opening the
+     file if necessary.
+
+     The sseettpprroottooeenntt() function opens and rewinds the file.  If the _s_t_a_y_o_p_e_n
+     flag is non-zero, the net data base will not be closed after each call to
+     ggeettpprroottoobbyynnaammee() or ggeettpprroottoobbyynnuummbbeerr().
+
+     The eennddpprroottooeenntt() function closes the file.
+
+     The ggeettpprroottoobbyynnaammee() function and ggeettpprroottoobbyynnuummbbeerr() sequentially search
+     from the beginning of the file until a matching protocol name or protocol
+     number is found, or until EOF is encountered.
+
+RREETTUURRNN VVAALLUUEESS
+     Null pointer (0) returned on EOF or error.
+
+FFIILLEESS
+     /etc/protocols
+
+SSEEEE AALLSSOO
+     protocols(5)
+
+HHIISSTTOORRYY
+     The ggeettpprroottooeenntt(), ggeettpprroottoobbyynnuummbbeerr(), ggeettpprroottoobbyynnaammee(), sseettpprroottooeenntt(),
+     and eennddpprroottooeenntt() functions appeared in 4.2BSD.
+
+BBUUGGSS
+     These functions use a static data space; if the data is needed for future
+     use, it should be copied before any subsequent calls overwrite it.  Only
+     the Internet protocols are currently understood.
+
+4.2 Berkeley Distribution        June 4, 1993                                2

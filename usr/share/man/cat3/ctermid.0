@@ -1,0 +1,42 @@
+CTERMID(3)                  BSD Programmer's Manual                 CTERMID(3)
+
+NNAAMMEE
+     cctteerrmmiidd - generate terminal pathname
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _c_h_a_r _*
+     cctteerrmmiidd(_c_h_a_r _*_b_u_f);
+
+DDEESSCCRRIIPPTTIIOONN
+     The cctteerrmmiidd() function generates a string, that, when used as a pathname,
+     refers to the current controlling terminal of the calling process.
+
+     If _b_u_f is the NULL pointer, a pointer to a static area is returned.  Oth-
+     erwise, the pathname is copied into the memory referenced by _b_u_f. The ar-
+     gument _b_u_f is assumed to be at least L_ctermid (as defined in the include
+     file <_s_t_d_i_o_._h>) bytes long.
+
+     The current implementation simply returns `/dev/tty'.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a non-NULL pointer is returned.  Otherwise, a
+     NULL pointer is returned and the global variable _e_r_r_n_o is set to indicate
+     the error.
+
+EERRRROORRSS
+     The current implementation detects no error conditions.
+
+SSEEEE AALLSSOO
+     ttyname(3)
+
+SSTTAANNDDAARRDDSS
+     The ctermid function conforms to IEEE Std1003.1-1988 (``POSIX'').
+
+BBUUGGSS
+     By default the cctteerrmmiidd() function writes all information to an internal
+     static object.  Subsequent calls to cctteerrmmiidd() will modify the same ob-
+     ject.
+
+4.4BSD                           June 4, 1993                                1

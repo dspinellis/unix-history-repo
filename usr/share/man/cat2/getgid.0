@@ -1,0 +1,36 @@
+GETGID(2)                   BSD Programmer's Manual                  GETGID(2)
+
+NNAAMMEE
+     ggeettggiidd, ggeetteeggiidd - get group process identification
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+
+     _g_i_d___t
+     ggeettggiidd(_v_o_i_d);
+
+     _g_i_d___t
+     ggeetteeggiidd(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettggiidd() function returns the real group ID of the calling process,
+     ggeetteeggiidd() returns the effective group ID of the calling process.
+
+     The real group ID is specified at login time.
+
+     The real group ID is the group of the user who invoked the program.  As
+     the effective group ID gives the process additional permissions during
+     the execution of ``_s_e_t_-_g_r_o_u_p_-_I_D'' mode processes, ggeettggiidd() is used to de-
+     termine the real-user-id of the calling process.
+
+EERRRROORRSS
+     The ggeettggiidd() and ggeetteeggiidd() functions are always successful, and no return
+     value is reserved to indicate an error.
+
+SSEEEE AALLSSOO
+     getuid(2),  setregid(2),  setgid(3)
+
+SSTTAANNDDAARRDDSS
+     GGeettggiidd() and ggeetteeggiidd() conform to IEEE Std 1003.1-1988 (``POSIX'').
+
+4.2 Berkeley Distribution        June 4, 1993                                1

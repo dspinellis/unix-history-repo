@@ -1,0 +1,35 @@
+USLEEP(3)                   BSD Programmer's Manual                  USLEEP(3)
+
+NNAAMMEE
+     uusslleeeepp - suspend execution for interval of microseconds
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _v_o_i_d
+     uusslleeeepp(_u___i_n_t _m_i_c_r_o_s_e_c_o_n_d_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The uusslleeeepp() function suspends execution of the calling process for
+     _m_i_c_r_o_s_e_c_o_n_d_s of time.  System activity or time spent in processing the
+     call may lengthen the sleep slightly.
+
+     If a timer is already running on the process its state is saved.  If the
+     value _m_i_c_r_o_s_e_c_o_n_d_s is more than or equal to the remaining clock time for
+     the saved timer, the sleep time is set to the remaining clock time.  The
+     state of the previous timer is restored after _m_i_c_r_o_s_e_c_o_n_d_s has passed.
+
+     This routine is implemented using setitimer(2);  it requires eight system
+     calls each time it is invoked.  A similar but less compatible function
+     can be obtained with a single select(2);  such a function would not
+     restart after signals, but would not interfere with other uses of
+     setitimer.
+
+SSEEEE AALLSSOO
+     setitimer(2),  getitimer(2),  sigpause(2),  ualarm(3),  sleep(3),
+     alarm(3)
+
+HHIISSTTOORRYY
+     The uusslleeeepp() function appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 4, 1993                                1

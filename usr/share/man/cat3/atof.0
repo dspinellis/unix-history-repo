@@ -1,0 +1,36 @@
+ATOF(3)                     BSD Programmer's Manual                    ATOF(3)
+
+NNAAMMEE
+     aattooff - convert ASCII string to double
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _d_o_u_b_l_e
+     aattooff(_c_o_n_s_t _c_h_a_r _*_n_p_t_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The aattooff() function converts the initial portion of the string pointed to
+     by _n_p_t_r to _d_o_u_b_l_e representation.
+
+     It is equivalent to:
+
+           strtod(nptr, (char **)NULL);
+
+SSEEEE AALLSSOO
+     atoi(3),  atol(3),  strtod(3),  strtol(3),  strtoul(3)
+
+SSTTAANNDDAARRDDSS
+     The aattooff() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+BBUUGGSS
+     This manual page represents intent instead of actual practice.  While it
+     is intended that aattooff() be implemented using strtod(3),  this has not yet
+     happened.  In the current system, aattooff() translates a string in the fol-
+     lowing form to a double: a string of leading white space, possibly fol-
+     lowed by a sign (``+'' or ``-''), followed by a digit string which may
+     contain one decimal point (``.''), which may be followed by either of the
+     exponent flags (``E'' or ``e''), and lastly, followed by a signed or un-
+     signed integer.
+
+4.4BSD                           June 4, 1993                                1

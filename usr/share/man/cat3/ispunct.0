@@ -1,0 +1,36 @@
+ISPUNCT(3)                  BSD Programmer's Manual                 ISPUNCT(3)
+
+NNAAMMEE
+     iissppuunncctt - punctuation character test
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ccttyyppee..hh>>
+
+     _i_n_t
+     iissppuunncctt(_i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The iissppuunncctt() function tests for any printing character except for space
+     (' ') or a character for which isalnum(3) is true.  In the ASCII charac-
+     ter set, this includes the following characters:
+
+
+     041 ``!''     042 ``"''     043 ``#''     044 ``$''     045 ``%''
+     046 ``&''     047 ``'''     050 ``(''     051 ``)''     052 ``*''
+     053 ``+''     054 ``,''     055 ``-''     056 ``.''     057 ``/''
+     072 ``:''     073 ``;''     074 ``<''     075 ``=''     076 ``>''
+     077 ``?''     100 ``@''     133 ``[''     134 ``''      135 ``]''
+     136 ``^''     137 ``_''     140 ```''     173 ``{''     174 ``|''
+     175 ``}''     176 ``~''
+
+RREETTUURRNN VVAALLUUEESS
+     The iissppuunncctt() function returns zero if the character tests false and re-
+     turns non-zero if the character tests true.
+
+SSEEEE AALLSSOO
+     ctype(3),  ascii(7)
+
+SSTTAANNDDAARRDDSS
+     The iissppuunncctt() function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

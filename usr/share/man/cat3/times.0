@@ -1,0 +1,63 @@
+TIMES(3)                    BSD Programmer's Manual                   TIMES(3)
+
+NNAAMMEE
+     ttiimmeess - process times
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttiimmeess..hh>>
+
+     _c_l_o_c_k___t
+     ttiimmeess(_s_t_r_u_c_t _t_m_s _*_t_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss oobbssoolleetteedd bbyy ggeettrruussaaggee((22)) aanndd ggeettttiimmeeooffddaayy((33))..
+
+     The ttiimmeess() function returns the value of time in CLK_TCK's of a second
+     since 0 hours, 0 minutes, 0 seconds, January 1, 1970, Coordinated Univer-
+     sal Time.
+
+     It also fills in the structure pointed to by _t_p with time-accounting in-
+     formation.
+
+     The _t_m_s structure is defined as follows:
+
+           typedef struct {
+                   clock_t tms_utime;
+                   clock_t tms_stime;
+                   clock_t tms_cutime;
+                   clock_t tms_cstime;
+           }
+
+     The elements of this structure are defined as follows:
+
+     _t_m_s___u_t_i_m_e   The CPU time charged for the execution of user instructions.
+
+     _t_m_s___s_t_i_m_e   The CPU time charged for execution by the system on behalf of
+                 the process.
+
+     _t_m_s___c_u_t_i_m_e  The sum of the _t_m_s___u_t_i_m_e _s and _t_m_s___c_u_t_i_m_e _s of the child pro-
+                 cesses.
+
+     _t_m_s___c_s_t_i_m_e  The sum of the _t_m_s___s_t_i_m_es and _t_m_s___c_s_t_i_m_es of the child pro-
+                 cesses.
+
+     All times are in CLK_TCK's of a second.
+
+     The times of a terminated child process are included in the _t_m_s___c_u_t_i_m_e
+     and _t_m_s___c_s_t_i_m_e elements of the parent when one of the wait(2) functions
+     returns the process ID of the terminated child to the parent.  If an er-
+     ror occurs, ttiimmeess() returns the value ((clock_t)-1), and sets errno to
+     indicate the error.
+
+EERRRROORRSS
+     The ttiimmeess() function may fail and set the global variable _e_r_r_n_o for any
+     of the errors specified for the library routines getrusage(2) and
+     gettimeofday(2).
+
+SSEEEE AALLSSOO
+     time(1),  getrusage(2),  gettimeofday(2),  wait(2)
+
+SSTTAANNDDAARRDDSS
+     The ttiimmeess() function conforms to IEEE Std1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                1
