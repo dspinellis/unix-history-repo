@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)cy.c	7.2 (Berkeley) %G%
+ *	@(#)cy.c	7.3 (Berkeley) %G%
  */
 
 #include "yc.h"
@@ -1032,7 +1032,16 @@ cyioctl(dev, cmd, data, flag)
 				break;
 		}
 		bp->b_resid = callcount + 1;
-		return (geterror(bp));
+		/*
+		 * Pick up the device's error number and pass it
+		 * to the user; if there is an error but the number
+		 * is 0 set a generalized code.
+		 */
+		if ((bp->b_flags & B_ERROR) == 0)
+			return (0);
+		if (bp->b_error)
+			return (bp->b_error);
+		return (EIO);
 
 	case MTIOCGET:
 		cycommand(dev, CY_SENSE, 1);
