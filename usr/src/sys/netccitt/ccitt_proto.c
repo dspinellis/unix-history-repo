@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ccitt_proto.c	7.3 (Berkeley) %G%
+ *	@(#)ccitt_proto.c	7.4 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -35,7 +35,7 @@ int	xe_output (), xe_ctlinput (), xe_init(), xe_timer();
 #ifdef HDLC
 int	hd_output (), hd_ctlinput (), hd_init (), hd_timer ();
 #endif
-int	pk_usrreq (), pk_timer ();
+int	pk_usrreq (), pk_timer (), pk_init ();
 
 struct protosw ccittsw[] = {
 #ifdef XE
@@ -55,7 +55,7 @@ struct protosw ccittsw[] = {
  {	SOCK_STREAM,	DOMAIN,		CCITTPROTO_X25,	PR_CONNREQUIRED|PR_ATOMIC|PR_WANTRCVD,
 	0,		0,		0,		0,
 	pk_usrreq,
-	0,		0,		pk_timer,	0,
+	pk_init,	0,		pk_timer,	0,
  }
 };
 

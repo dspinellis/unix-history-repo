@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.4 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -53,14 +53,13 @@ struct socket *so;
 		bzero((caddr_t)lcp, sizeof(*lcp));
 		if (so) {
 			error = soreserve (so, pk_sendspace, pk_recvspace);
-			so -> so_snd.sb_mbmax = pk_sendspace;
 			lcp -> lcd_so = so;
 			if (so -> so_options & SO_ACCEPTCONN)
 				lcp -> lcd_state = LISTEN;
 			else
 				lcp -> lcd_state = READY;
-		}
-
+		} else
+			sbreserve (&lcp -> lcd_sb, pk_sendpace);
 	}
 	if (so) {
 		so -> so_pcb = (caddr_t) lcp;
@@ -593,8 +592,8 @@ unsigned pr;
 
 	if (so && ((so -> so_snd.sb_flags & SB_WAIT) || so -> so_snd.sb_sel))
 		sowwakeup (so);
-	if (lcp -> lcd_downq.pq_unblock)
-		(*lcp -> lcd_downq.pq_unblock)(lcp);
+	if (lcp -> lcd_upper)
+		(*lcp -> lcd_upper)(lcp, 0);
 
 	return (PACKET_OK);
 }

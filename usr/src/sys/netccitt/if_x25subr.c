@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.4 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -102,19 +102,18 @@ register struct	rtentry *rt;
 		rtx->rtx_lcd = lcp;
 		rtx->rtx_rt = rt;
 		rtx->rtx_ia = ia;
-		lcp->lcd_upq.pq_next = (caddr_t)rtx;
-		lcp->lcd_upq.pq_put = x25_ifinput;
+		lcp->lcd_upnext = (caddr_t)rtx;
+		lcp->lcd_upper = x25_ifinput;
 	}
-	pq = &lcp->lcd_downq;
 	switch (rtx->rtx_state) {
 
 	case XRS_CONNECTED:
 		lcd->lcd_dg_timer = ia->ia_xc.xc_dg_idletimo;
 		/* FALLTHROUGH */
 	case XRS_CONNECTING:
-		if (pq->pq_space < 0)
+		if (sbspace(&lcp->lcd_sb) < 0)
 			senderr(ENOBUFS);
-		pq->pq_put(pq, m);
+		lcp->lcd_send(lcp, m);
 		break;
 
 	case XRS_NEWBORN:
@@ -122,7 +121,6 @@ register struct	rtentry *rt;
 		    ia->xc_if.if_type == IFT_DDN &&
 		    rt->rt_gateway->sa_family != AF_CCITT)
 			x25_ddnip_to_ccitt(dst, rt->rt_gateway);
-		pq->pq_space = 2048;  /* XXX: bogus pq before if_start called */
 		lcp->lcd_flags |= X25_DG_CIRCUIT;
 		rtx->rtx_state = XRS_FREE;
 		if (rt->rt_gateway->sa_family != AF_CCITT) {
@@ -139,21 +137,14 @@ register struct	rtentry *rt;
 			rtx->rtx_state = XRS_RESOLVING;
 			/* FALLTHROUGH */
 	case XRS_RESOLVING:
-			if (pq->pq_space < 0)
+			if (sbspace(&lcp->lcd_sb) < 0)
 				senderr(ENOBUFS);
-			pq->pq_space -= m->m_pkthdr.len;
-			if (pq->pq_data == 0)
-				pq->pq_data = m;
-			else {
-				for (m = pq->pq_data; m->m_nextpkt; )
-					m = m->m_nextpkt;
-				m->m_nextpkt = m0;
-			}
+			sbappendrecord(&lcp->lcd_sb, m);
 			break;
 		}
 		/* FALLTHROUGH */
 	case XRS_FREE:
-		lcp->lcd_downq.pq_data = m;
+		sbappendrecord(&lcp->lcd_sb, m);
 		lcp->lcd_pkcb = &(rtx->rtx_ia->ia_pkcb);
 		pk_connect(lcp, (struct mbuf *)0,
 				(struct sockaddr_x25 *)rt->rt_gateway);
@@ -211,7 +202,7 @@ struct ifnet *ifp;
 				register struct rtextension_x25 *rtx;
 				pk_disconnect(lcp);
 				rtx = (struct rtextension_x25 *)
-						lcp->lcp_upq.pq_next;
+						lcp->lcp_upnext;
 				if (rtx)
 					rtx->rtx_state = XRS_DISCONNECTING;
 			    }
@@ -221,14 +212,12 @@ struct ifnet *ifp;
 /*
  * Process a x25 packet as datagram;
  */
-x25_ifinput(pq, m)
-struct pq *pq;
+x25_ifinput(lcp, m)
+struct pklcd *lcp;
 struct mbuf *m;
 {
-	struct rtentry *rt = (struct rtentry *)pq->pq_next;
-	struct pklcd *xl = (struct pklcd *)rt->rt_llinfo;
-	register struct ifnet *ifp = &xl->xl_xc.xc_if;
-	register struct llc *l;
+	struct rtextension *rtx = (struct rtentry *)lcp->lcd_upnext;
+	register struct ifnet *ifp = &rtx->rtx_rt->rt_ifp;
 	int s;
 
 	ifp->if_lastchange = time;
@@ -350,7 +339,7 @@ struct sockaddr *dst;
 	register struct x25_ifaddr *ia;
 	register struct sockaddr *sa2;
 	struct mbuf *m, *mold;
-	int x25_ifrtree();
+	int x25_ifrtfree();
 
 	if (rtx == 0)
 		return;
@@ -364,7 +353,7 @@ struct sockaddr *dst;
 	case caseof(XRS_CONNECTING, RTM_DELETE):
 	case caseof(XRS_CONNECTING, RTM_CHANGE):
 		pk_disconnect(lcp);
-		lcp->lcd_upq.pq_unblock = x25_ifrtfree;
+		lcp->lcd_upper = x25_ifrtfree;
 		rt->rt_refcnt++;
 		break;
 
@@ -375,12 +364,8 @@ struct sockaddr *dst;
 		break;
 
 	case caseof(XRS_RESOLVING, RTM_DELETE):
-		for (m = lcp->lcd_downq.pq_data; m;) {
-			mold = m;
-			m = m->m_nextpkt;
-			m_freem(mold);
-		}
-		m_free(dtom(rtx->rtx_lcd));
+		sbflush(&(rtx->rtx_lcd->lcd_sb));
+		free((caddr_t)rtx->rtx_lcd, M_PCB);
 		rtx->rtx_lcd = 0;
 		break;
 
@@ -394,7 +379,7 @@ struct sockaddr *dst;
 	sa2 = SA(rt->rt_key);
 	if (cmd == RTM_CHANGE) {
 		if (sa->sa_family == AF_CCITT) {
-			sa->sa_rfamily = sa2->sa_family;
+			sa->x25_opts.op_speed = sa2->sa_family;
 			(void) rtrequest(RTM_DELETE, SA(sa), sa2,
 			       SA(0), RTF_HOST, (struct rtentry **)0);
 		}
@@ -402,12 +387,13 @@ struct sockaddr *dst;
 		cmd = RTM_ADD;
 	}
 	if (sa->sa_family == AF_CCITT) {
-		sa->sa_rfamily = sa2->sa_family;
+		sa->x25_opts.op_speed = sa2->sa_family;
 		(void) rtrequest(cmd, SA(sa), sa2, SA(0), RTF_HOST,
 							(struct rtentry **)0);
-		sa->sa_rfamily = 0;
+		sa->x25_opts.op_speed = 0;
 	}
 }
+
 static struct sockaddr sin = {sizeof(sin), AF_INET};
 /*
  * This is a utility routine to be called by x25 devices when a
@@ -487,12 +473,12 @@ register struct x25com *ia;
 		 * This uses the X25 routing table to do inverse
 		 * lookup of x25 address to sockaddr.
 		 */
-		dst->sa_rfamily = af;
+		dst->x25_opts.op_speed = af;
 		if (rt = rtalloc1(dst, 0)) {
 			sa = rt->rt_gateway;
 			rt->rt_refcnt--;
 		}
-		dst->sa_rfamily = 0;
+		dst->x25_opts.op_speed = 0;
 	}
 	/* 
 	 * Call to rtalloc1 will create rtentry for reverse path
@@ -501,4 +487,15 @@ register struct x25com *ia;
 	 */
 	if (sa && rt = rtalloc1(sa, 1))
 		rt->rt_refcnt--;
+}
+
+struct radix_tree_head *x25_rnhead;
+
+pk_init()
+{
+	/*
+	 * warning, sizeof (struct sockaddr_x25) > 32,
+	 * but contains no data of interest beyond 32
+	 */
+	rn_inithead(&x25_rnhead, 16, AF_CCITT);
 }
