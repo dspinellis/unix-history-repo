@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc_compare.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc_compare.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,9 +38,9 @@ static char sccsid[] = "@(#)proc_compare.c	5.3 (Berkeley) %G%";
 #define isrun(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
 
 #define	TESTAB(a, b)	((a)<<1 | (b))
-#define	ONLYA	0x10
-#define	ONLYB	0x01
-#define	BOTH	0x11
+#define	ONLYA	2
+#define	ONLYB	1
+#define	BOTH	3
 
 proc_compare(p1, p2)
 	register struct proc *p1, *p2;
@@ -53,9 +53,9 @@ proc_compare(p1, p2)
 	 */
 	switch (TESTAB(isrun(p1), isrun(p2))) {
 	case ONLYA:
-		return (1);
-	case ONLYB:
 		return (0);
+	case ONLYB:
+		return (1);
 	case BOTH:
 		/*
 		 * tie - favor one with highest recent cpu utilization
