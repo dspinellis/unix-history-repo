@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.72		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.73		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.72		%G%);
+SCCSID(@(#)queue.c	3.73		%G%);
 
 /*
 **  Work queue.
@@ -159,9 +159,18 @@ queueup(e, queueall, announce)
 	{
 		extern bool bitzerop();
 
+		/* don't output null headers */
 		if (h->h_value == NULL || h->h_value[0] == '\0')
 			continue;
+
+		/* don't output resent headers on non-resent messages */
+		if (bitset(H_RESENT, h->h_flags) && !bitset(EF_RESENT, e->e_flags))
+			continue;
+
+		/* output this header */
 		fprintf(tfp, "H");
+
+		/* if conditional, output the set of conditions */
 		if (!bitzerop(h->h_mflags) && bitset(H_CHECK|H_ACHECK, h->h_flags))
 		{
 			int j;
@@ -172,6 +181,8 @@ queueup(e, queueall, announce)
 					putc(j, tfp);
 			putc('?', tfp);
 		}
+
+		/* output the header: expand macros, convert addresses */
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
 			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
