@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.17 (Berkeley) %G%
+ *	@(#)socket.h	7.18 (Berkeley) %G%
  */
 
 /*
@@ -135,6 +135,33 @@ struct sockproto {
 #define	PF_CNT		AF_CNT
 
 #define	PF_MAX		AF_MAX
+
+/*
+ * Definitions for network related sysctl, CTL_NET.
+ *
+ * Second level is protocol family.
+ * Third level is protocol number.
+ *
+ * Further levels are defined by the individual families below.
+ */
+/*
+ * PF_ROUTE - Routing table
+ *
+ * Three additional levels are defined:
+ *	Fourth: address family, 0 is wildcard
+ *	Fifth: type of info, defined below
+ *	Sixth: flag(s) to mask with for NET_RT_FLAGS
+ */
+#define NET_RT_DUMP	1		/* dump; may limit to a.f. */
+#define NET_RT_FLAGS	2		/* by flags, e.g. RESOLVING */
+#define NET_RT_IFLIST	3		/* survey interface list */
+
+#define CTL_NET_RT_NAMES { \
+	"unspec", \
+	"dump", \
+	"flags", \
+	"iflist", \
+}
 
 /*
  * Maximum queue length specifiable by listen.
