@@ -53,7 +53,7 @@ register char *string;
     register struct astosc *this;
 
     for (this = astosc; this <= &astosc[highestof(astosc)]; this++) {
-	if (ustrcmp(this->name, string) == 0) {
+	if ((this->name != 0) && (ustrcmp(this->name, string) == 0)) {
 	    return this-astosc;
 	}
     }
