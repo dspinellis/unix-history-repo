@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer7.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)refer7.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -36,7 +36,7 @@ dumpold()
 	fo = NULL;
 	if (sort) {
 		char comm[100];
-		sprintf(comm, "sort %s -o %s", tfile, tfile);
+		sprintf(comm, "sort -f %s -o %s", tfile, tfile);
 		system(comm);
 	}
 	fi = fopen(tfile, "r");
