@@ -1,7 +1,7 @@
 %{
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Paul Borman at Krystal Technologies.
@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)yacc.y	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)yacc.y	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <ctype.h>
