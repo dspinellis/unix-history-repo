@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)ioctl.h	7.19 (Berkeley) 6/26/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00163
- * --------------------         -----   ----------------------
- *
- * 27 Nov 1992	Scott Reynolds		Completed V7 ioctl compatablity
- * 27 May 93	Guido van Rooij		Comcontrol ioctls
+ *	from: @(#)ioctl.h	7.19 (Berkeley) 6/26/91
+ *	$Id$
  */
 
 #ifndef	_IOCTL_H_
@@ -84,7 +77,7 @@ struct ttysize {
 #define	IOC_INOUT	(IOC_IN|IOC_OUT)
 #define	IOC_DIRMASK	0xe0000000	/* mask for IN/OUT/VOID */
 
-#define _IOC(inout,group,num,len) \
+#define	_IOC(inout,group,num,len) \
 	(inout | ((len & IOCPARM_MASK) << 16) | ((group) << 8) | (num))
 #define	_IO(g,n)	_IOC(IOC_VOID,	(g), (n), 0)
 #define	_IOR(g,n,t)	_IOC(IOC_OUT,	(g), (n), sizeof(t))
@@ -148,21 +141,24 @@ struct ttysize {
 #define	TIOCSWINSZ	_IOW('t', 103, struct winsize)	/* set window size */
 #define	TIOCUCNTL	_IOW('t', 102, int)	/* pty: set/clr usr cntl mode */
 #define		UIOCCMD(n)	_IO('u', n)		/* usr cntl op "n" */
-#define TIOCSTAT	_IOW('t', 101, int)	/* generate status message */
+#define	TIOCSTAT	_IOW('t', 101, int)	/* generate status message */
 #define	TIOCCONS	_IOW('t', 98, int)		/* become virtual console */
 #define	TIOCSCTTY	_IO('t', 97)		/* become controlling tty */
 #define	TIOCEXT		_IOW('t', 96, int)	/* pty: external processing */
 #define	TIOCSIG		_IO('t', 95)		/* pty: generate signal */
-#define TIOCDRAIN	_IO('t', 94)		/* wait till output drained */
-#define TIOCMSBIDIR	_IOW('t', 93, int)	/* modem: set bidir cap. */
-#define TIOCMGBIDIR	_IOR('t', 92, int)	/* modem: get bidir cap. */
+#define	TIOCDRAIN	_IO('t', 94)		/* wait till output drained */
+#define	TIOCMSBIDIR	_IOW('t', 93, int)	/* modem: set bidir cap. */
+#define	TIOCMGBIDIR	_IOR('t', 92, int)	/* modem: get bidir cap. */
 
-#define TTYDISC		0		/* termios tty line discipline */
-#define	TABLDISC	3		/* tablet discipline */
+#define	TTYDISC		0		/* termios tty line discipline */
+#define	NETLDISC	1		/* line discip for berk net */
+#define	NTTYDISC	2		/* new tty discipline */
+#define	TABLDISC	3		/* hitachi tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 #define	PPPDISC		5		/* PPP discipline */
-#define	MOUSEDISC	6		/* Mouse discipline */
-
+#define	MOUSELDISC	6		/* mouse discipline */
+#define	KBDLDISC	7		/* up/down keyboard trans (console) */
+#define	NTABLDISC	8		/* gtco tablet discipline */
 
 #define	FIOCLEX		_IO('f', 1)		/* set close on exec on fd */
 #define	FIONCLEX	_IO('f', 2)		/* remove close on exec */
