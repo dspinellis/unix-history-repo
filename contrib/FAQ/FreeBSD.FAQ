@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.16 1994/04/21 22:25:10 wollman Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.17 1994/04/23 11:30:18 jkh Exp $
 
 
 Table of Contents
@@ -270,6 +270,7 @@ Adaptec              AH-1542 Series <ISA>
 Buslogic             BT-445 Series <VLB> (but see section 1.5)
                      BT-545 Series <ISA>
                      BT-742 Series <EISA>
+                     BT-747 Series <EISA>
 UltraStor            UH-14f Series <ISA>
                      UH-34f Series <EISA/VLB>
 
@@ -772,7 +773,7 @@ ACKNOWLEDGMENTS:
 Gary Clark II           - Our head FreeBSD FAQ maintenance man
 Jordan Hubbard          - Janitorial services (I don't do windows)
 Garrett Wollman         - Networking and formatting
-Robert Oliver, Jr.      - Invaluable feedback and contributions
+Ollivier Robert         - Invaluable feedback and contributions
 The FreeBSD Team        - Kvetching, moaning, submitting data
 
 And to any others we've forgotten, apologies and heartfelt thanks!
