@@ -4,7 +4,7 @@
 # include <sys/timeb.h>
 # endif
 
-static char SccsId[] = "@(#)arpadate.c	3.3	%G%";
+static char SccsId[] = "@(#)arpadate.c	3.4	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -35,6 +35,41 @@ static char SccsId[] = "@(#)arpadate.c	3.3	%G%";
 
 # define NULL		0
 
+struct cvttab
+{
+	char	*old;
+	char	*new;
+};
+
+struct cvttab	DowTab[] =
+{
+	"Sun",		"Sunday",
+	"Mon",		"Monday",
+	"Tue",		"Tuesday",
+	"Wed",		"Wednesday",
+	"Thu",		"Thursday",
+	"Fri",		"Friday",
+	"Sat",		"Saturday",
+	NULL,		NULL
+};
+
+struct cvttab	MonthTab[] =
+{
+	"Jan",		"January",
+	"Feb",		"February",
+	"Mar",		"March",
+	"Apr",		"April",
+	"May",		"May",
+	"Jun",		"June",
+	"Jul",		"July",
+	"Aug",		"August",
+	"Sep",		"September",
+	"Oct",		"October",
+	"Nov",		"November",
+	"Dec",		"December",
+	NULL,		NULL
+};
+
 char *
 arpadate(ud)
 	register char *ud;
@@ -44,6 +79,7 @@ arpadate(ud)
 	static char b[40];
 	extern char *ctime();
 	register int i;
+	struct cvttab *c;
 	extern struct tm *localtime();
 # ifdef V6
 	long t;
@@ -65,12 +101,22 @@ arpadate(ud)
 
 	q = b;
 
-	p = &ud[0];		/* Mon */
-	*q++ = *p++;
-	*q++ = *p++;
-	*q++ = *p++;
-	*q++ = ',';
-	*q++ = ' ';
+	p = NULL;		/* Mon */
+	for (c = DowTab; c->old != NULL; c++)
+	{
+		if (strncmp(&ud[0], c->old, 3) == 0)
+		{
+			p = c->new;
+			break;
+		}
+	}
+	if (p != NULL)
+	{
+		while (*p != '\0')
+			*q++ = *p++;
+		*q++ = ',';
+		*q++ = ' ';
+	}
 
 	p = &ud[8];		/* 16 */
 	if (*p == ' ')
@@ -80,10 +126,27 @@ arpadate(ud)
 	*q++ = *p++;
 	*q++ = ' ';
 
-	p = &ud[4];		/* Sep */
-	*q++ = *p++;
-	*q++ = *p++;
-	*q++ = *p++;
+	p = NULL;		/* Sep */
+	for (c = MonthTab; c->old != NULL; c++)
+	{
+		if (strncmp(&ud[4], c->old, 3) == 0)
+		{
+			p = c->new;
+			break;
+		}
+	}
+	if (p != NULL)
+	{
+		while (*p != '\0')
+			*q++ = *p++;
+	}
+	else
+	{
+		p = &ud[4];
+		*q++ = *p++;
+		*q++ = *p++;
+		*q++ = *p++;
+	}
 	*q++ = ' ';
 
 	p = &ud[20];		/* 1979 */
