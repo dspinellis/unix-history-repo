@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.70 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.71 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,8 +30,8 @@
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
 
-static int ufs_chmod __P((struct vnode *, int, struct proc *));
-static int ufs_chown __P((struct vnode *, u_int, u_int, struct proc *));
+int ufs_chmod __P((struct vnode *, int, struct proc *));
+int ufs_chown __P((struct vnode *, u_int, u_int, struct proc *));
 
 enum vtype iftovt_tab[16] = {
 	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,
@@ -40,6 +40,28 @@ enum vtype iftovt_tab[16] = {
 int	vttoif_tab[9] = {
 	0, IFREG, IFDIR, IFBLK, IFCHR, IFLNK, IFSOCK, IFIFO, IFMT,
 };
+
+#ifdef _NOQUAD
+#define	SETHIGH(q, h)	(q).val[_QUAD_HIGHWORD] = (h)
+#define	SETLOW(q, l)	(q).val[_QUAD_LOWWORD] = (l)
+#else /* QUAD */
+union _qcvt {
+	quad_t qcvt;
+	long val[2];
+};
+#define SETHIGH(q, h) { \
+	union _qcvt tmp; \
+	tmp.qcvt = (q); \
+	tmp.val[_QUAD_HIGHWORD] = (h); \
+	(q) = tmp.qcvt; \
+}
+#define SETLOW(q, l) { \
+	union _qcvt tmp; \
+	tmp.qcvt = (q); \
+	tmp.val[_QUAD_LOWWORD] = (l); \
+	(q) = tmp.qcvt; \
+}
+#endif /* QUAD */
 
 /*
  * Create a regular file
@@ -236,8 +258,11 @@ ufs_getattr(vp, vap, cred, p)
 	else
 		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
 	vap->va_bytes = dbtob(ip->i_blocks);
+#ifdef _NOQUAD
 	vap->va_bytes_rsv = 0;
+#endif
 	vap->va_type = vp->v_type;
+	vap->va_filerev = ip->i_modrev;
 	return (0);
 }
 
@@ -1519,6 +1544,11 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 	}
 	if (ip->i_number == ROOTINO)
                 vp->v_flag |= VROOT;
+	/*
+	 * Initialize modrev times
+	 */
+	SETHIGH(ip->i_modrev, mono_time.tv_sec);
+	SETLOW(ip->i_modrev, mono_time.tv_usec * 4294);
 	*vpp = vp;
 	return (0);
 }
