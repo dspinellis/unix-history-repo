@@ -1,0 +1,4 @@
+sh load -i
+cp a.out /usr/bin/pxp
+cp how_pxp /usr/lib
+echo New pxp installed
