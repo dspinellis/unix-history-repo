@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dm.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)dm.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -158,7 +158,7 @@ c_day(s_day, s_start, s_stop)
 		return;
 	start = atoi(s_start);
 	stop = atoi(s_stop);
-	if (ct->tm_hour >= start && ct->tm_hour <= stop) {
+	if (ct->tm_hour >= start && ct->tm_hour < stop) {
 		fputs("dm: Sorry, games are not available from ", stderr);
 		hour(start);
 		fputs(" to ", stderr);
