@@ -1,7 +1,6 @@
 #	@(#)Makefile	5.11 (Berkeley) 9/6/90
 
 .PATH: ${.CURDIR}/rpc ${.CURDIR}/.
-LIB=	rpc
 CFLAGS+=-I${.CURDIR} -I${.CURDIR}/rpc
 SRCS+=	auth_none.c auth_unix.c  authunix_prot.c bindresvport.c \
 	clnt_generic.c clnt_perror.c clnt_raw.c clnt_simple.c clnt_tcp.c \
