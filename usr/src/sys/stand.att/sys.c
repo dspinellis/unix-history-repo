@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.10 (Berkeley) %G%
+ *	@(#)sys.c	7.11 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -686,10 +686,14 @@ _stop(s)
 	char *s;
 {
 	int i;
+	static int stopped = 0;
 
-	for (i = 0; i < NFILES; i++)
-		if (iob[i].i_flgs != 0)
-			close(i);
+	if (!stopped) {
+		stopped++;
+		for (i = 0; i < NFILES; i++)
+			if (iob[i].i_flgs != 0)
+				close(i);
+	}
 	printf("%s\n", s);
 	_rtt();
 }
