@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.7 %G%";
+static char sccsid[] = "@(#)var.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -94,9 +94,9 @@ var(vline, vidl, vtype)
 	op = &sizes[cbn];
 	for (; vidl != NIL; vidl = vidl[2]) {
 #		ifdef OBJ
-		    op->curtmp.om_off =
-			roundup((int)(op->curtmp.om_off-w), (long)align(np));
-		    o2 = op -> curtmp.om_off;
+		    op->curtmps.om_off =
+			roundup((int)(op->curtmps.om_off-w), (long)align(np));
+		    o2 = op -> curtmps.om_off;
 #		endif OBJ
 #		ifdef PC
 		    if ( cbn == 1 ) {
