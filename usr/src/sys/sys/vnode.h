@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.27 (Berkeley) %G%
+ *	@(#)vnode.h	7.28 (Berkeley) %G%
  */
 
 #include <machine/endian.h>
@@ -256,13 +256,15 @@ extern void vgoneall();			/* recycle vnode and all its aliases */
 #define	DOCLOSE		0x0004		/* vclean: close active files */
 
 #ifndef DIAGNOSTIC
-#define VREF(vp)    (vp)->v_usecount++;	/* increase reference to a vnode */
-#define VHOLD(vp)   (vp)->v_holdcnt++;	/* increase buf or page ref to vnode */
-#define HOLDRELE(vp) (vp)->v_holdcnt--;	/* decrease buf or page ref to vnode */
+#define VREF(vp)    (vp)->v_usecount++	/* increase reference to a vnode */
+#define VHOLD(vp)   (vp)->v_holdcnt++	/* increase buf or page ref to vnode */
+#define HOLDRELE(vp) (vp)->v_holdcnt--	/* decrease buf or page ref to vnode */
+#define	VATTR_NULL(vap) *(vap) = va_null /* initialize a vattr stucture */
 #else /* DIAGNOSTIC */
 #define VREF(vp)    vref(vp)
 #define VHOLD(vp)   vhold(vp)
 #define HOLDRELE(vp) holdrele(vp)
+#define	VATTR_NULL(vap) vattr_null(vap)
 #endif
 
 #define	NULLVP	((struct vnode *)0)
@@ -272,4 +274,5 @@ extern void vgoneall();			/* recycle vnode and all its aliases */
  */
 extern	struct vnode *rootdir;		/* root (i.e. "/") vnode */
 extern	int desiredvnodes;		/* number of vnodes desired */
+extern	struct vattr va_null;		/* predefined null vattr structure */
 #endif
