@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.2 (Berkeley) %G%
+#	@(#)Makefile	1.3 (Berkeley) %G%
 # lib/ditroff.font/Makefile
 #
 # Copyright (c) 1984 Adobe Systems Incorporated. All Rights Reserved.
@@ -78,7 +78,7 @@ DESC: afmdit.awk Makefile charset devspecs
 	echo stipples `echo $(STIPPLES) | wc -w` $(STIPPLES) >> DESC
 	cat devspecs >> DESC
 	echo "charset" >> DESC
-	cat charset >> DESC
+	sed -e "/^#/d" charset >> DESC
 
 clean:
 	rm -f $(LOADFONTS) $(MOREFONTS) core DESC *.out *.aux temp.* \
