@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)math.h	5.9 (Berkeley) %G%
+ *	@(#)math.h	5.10 (Berkeley) %G%
  */
 
 #ifndef	_MATH_H_
@@ -28,7 +28,6 @@
 #else
 #define	HUGE	HUGE_VAL
 #endif
-#endif
 
 #define	M_E		2.7182818284590452354	/* e */
 #define	M_LOG2E		1.4426950408889634074	/* log 2e */
@@ -43,6 +42,7 @@
 #define	M_2_SQRTPI	1.12837916709551257390	/* 2/sqrt(pi) */
 #define	M_SQRT2		1.41421356237309504880	/* sqrt(2) */
 #define	M_SQRT1_2	0.70710678118654752440	/* 1/sqrt(2) */
+#endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 
 #include <sys/cdefs.h>
 
