@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.16 %G%";
+static char sccsid[] = "@(#)put.c 1.17 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -667,12 +667,12 @@ patch4(loc)
 }
 
 /*
- * Patchfil makes loc+2 have value
+ * Patchfil makes loc+2 have jmploc
  * as its contents.
  */
-patchfil(loc, value, words)
+patchfil(loc, jmploc, words)
 	PTR_DCL loc;
-	long value;
+	long jmploc;
 	int words;
 {
 	register i;
@@ -684,15 +684,15 @@ patchfil(loc, value, words)
 		panic("patchfil");
 #ifdef DEBUG
 	if (opt('k'))
-		printf("\tpatch %u %D\n", loc - HEADER_BYTES, value);
+		printf("\tpatch %u %D\n", loc - HEADER_BYTES, jmploc);
 #endif
-	val = value;
+	val = jmploc;
 	do {
 #		ifndef DEC11
 		    if (words > 1)
-			    val = value >> 16;
+			    val = jmploc >> 16;
 		    else
-			    val = value;
+			    val = jmploc;
 #		endif DEC11
 		i = ((unsigned) loc + 2 - ((unsigned) lc & ~01777))/2;
 		if (i >= 0 && i < 1024)
@@ -704,7 +704,7 @@ patchfil(loc, value, words)
 		}
 		loc += 2;
 #		ifdef DEC11
-		    val = value >> 16;
+		    val = jmploc >> 16;
 #		endif DEC11
 	} while (--words);
 }
