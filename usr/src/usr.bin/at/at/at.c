@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)at.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)at.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -43,13 +43,14 @@ static char sccsid[] = "@(#)at.c	5.3 (Berkeley) %G%";
 #define DAY		2		/* day requested is a weekday */
 #define MONTH		3		/* day requested is a month */
 
-#define BOURNE		0		/* run commands with Bourne shell*/
-#define CSHELL		1		/* run commands with C shell */
+#define BOURNE		"/bin/sh"	/* run commands with Bourne shell*/
+#define CSHELL		"/bin/csh"	/* run commands with C shell */
 
 #define NODATEFOUND	-1		/* no date was given on command line */
 
 #define ATDIR		"/usr/spool/at"		/* spooling area */
 
+#define LINSIZ		256		/* length of input buffer */
 
 /*
  * A table to identify potential command line values for "time". 
@@ -134,10 +135,9 @@ char **argv;
 	int c;				/* scratch variable */
 	int usage();			/* print usage info and exit */
 	int cleanup();			/* do cleanup on an interrupt signal */
-	int dateindex;			/* if a day is specified, what option
+	int dateindex = NODATEFOUND;	/* if a day is specified, what option
 					   is it? (mon day, week, dayofweek) */
-	int shell = 0;			/* what shell do we use to run job?   
-					   BOURNE = 0	CSHELL = 1 */
+	char *shell = BOURNE;		/* what shell do we use to run job? */
 	int shflag = 0;			/* override the current shell and run
 					   job using the Bourne Shell */
 	int cshflag = 0;		/* override the current shell and run 
@@ -145,7 +145,7 @@ char **argv;
 	int mailflag = 0;		/* send mail after a job has been run?*/
 	int standardin = 0;		/* are we reading from stardard input */
 	char *tmp;			/* scratch pointer */
-	char line[100];			/* a line from input file */
+	char line[LINSIZ];		/* a line from input file */
 	char pwbuf[MAXPATHLEN];		/* the current working directory */
 	char *jobfile = "stdin";	/* file containing job to be run */
 	char *getname();		/* get the login name of a user */
@@ -196,7 +196,7 @@ char **argv;
 	printit();
 #endif
 
-	if (!(*argv))
+	if (argc <= 0)
 		usage();
 
 	/*
@@ -212,18 +212,7 @@ char **argv;
 #endif
 
 	/*
-	 * If no argv[2] exists, then we are reading from standard input
-	 * and only a time of day has been specified. Therefore, we set
-	 * the standard input flag, and indicate that a date was not
-	 * specified (NODATEFOUND).
-	 */
-	if (!*argv) {
-		++standardin;
-		dateindex = NODATEFOUND;
-	} else {
-
-	/*
-	 * Otherwise, we are dealing with a request to run a job on a certain
+	 * If argv[(2)] exists, this is a request to run a job on a certain
 	 * day of year or a certain day of week.
 	 *
 	 * We send  argv to the function "getdateindex" which returns the 
@@ -233,6 +222,7 @@ char **argv;
 	 * this means that the argument is a "filename"). If the requested 
 	 * day is found, we continue to process command line arguments.
 	 */
+	if (argc > 0) {
 		if ((dateindex = getdateindex(*argv)) != NODATEFOUND) {
 
 			++argv; --argc;
@@ -241,30 +231,7 @@ char **argv;
 			 * Determine the day of year that the job will be run
 			 * depending on the value of argv.
 			 */
-			makedayofyear(dateindex, argv);
-
-			/*
-			 * If we were dealing with the <month day> format,
-			 * we need to skip over the next argv (the day of
-			 * month).
-			 */
-			if (dates_info[dateindex].type == MONTH)
-				++argv; --argc;
-
-			/*
-			 * If 'week' was requested, we need to skip over 
-			 * the next argv ('week').
-			 */
-			if (strcmp(*argv,"week") == 0) 
-				++argv; --argc;
-
-			/*
-			 * If no more arguments exist, then we are reading
-			 * from standard input. Thus, we set the standard
-			 * input flag (++standardin).
-			 */
-			if (!(*argv))
-				++standardin;
+			makedayofyear(dateindex, &argv, &argc);
 		}
 	}
 
@@ -279,10 +246,10 @@ char **argv;
 	 */
 	if (dateindex == NODATEFOUND) {
 		int daysinyear;
-		if (strncmp(*argv,"week",4) == 0)
+		if ((argc > 0) && (strcmp(*argv,"week") == 0)) {
 			attime.yday += 7;
-
-		else if (istomorrow())
+			++argv; --argc;
+		} else if (istomorrow())
 			++attime.yday;
 
 		daysinyear = isleap(attime.year) ? 366 : 365;
@@ -291,6 +258,14 @@ char **argv;
 			++attime.year;
 		}
 	}
+
+	/*
+	 * If no more arguments exist, then we are reading
+	 * from standard input. Thus, we set the standard
+	 * input flag (++standardin).
+	 */
+	if (argc <= 0)
+		++standardin;
 
 
 #ifdef DEBUG
@@ -384,24 +359,33 @@ char **argv;
 	}
 		
 	/*
+	 * If the inputfile is not from a tty then turn off standardin
+	 * If the inputfile is a tty, put out a prompt now, instead of
+	 * waiting for a lot of file activity to complete.
+	 */
+	if (!(isatty(fileno(inputfile)))) 
+		standardin = 0 ;
+	if (standardin) {
+		fputs("at> ", stdout);
+		fflush(stdout);
+	}
+
+	/*
 	 * Determine what shell we should use to run the job. If the user
 	 * didn't explicitly request that his/her current shell be over-
 	 * ridden (shflag of cshflag) then we use the current shell.
 	 */
-	if ((!shflag) && (!cshflag)) {
-		tmp = getenv("SHELL");
-		shell = ((strcmp(tmp+strlen(tmp)-3, "csh") == 0) ? 
-							CSHELL : BOURNE);
-	}
+	if ((!shflag) && (!cshflag) && (getenv("SHELL") != NULL))
+		shell = "$SHELL";
 
 	/*
 	 * Put some standard information at the top of the spoolfile.
 	 * This info is used by the other "at"-oriented programs (atq,
 	 * atrm, atrun).
 	 */
-	fprintf(spoolfile, "# owner: %s\n",getname(getuid()));
-	fprintf(spoolfile, "# jobname: %s\n",jobfile);
-	fprintf(spoolfile, "# shell: %s\n",(shell == 1) ? "csh" : "sh");
+	fprintf(spoolfile, "# owner: %.127s\n",getname(getuid()));
+	fprintf(spoolfile, "# jobname: %.127s\n",jobfile);
+	fprintf(spoolfile, "# shell: sh\n");
 	fprintf(spoolfile, "# notify by mail: %s\n",(mailflag) ? "yes" : "no");
 	fprintf(spoolfile, "\n");
 
@@ -426,14 +410,16 @@ char **argv;
 	 * Copy the user's environment to the spoolfile.
 	 */
 	if (environ) {
-		copyenvironment(shell,&spoolfile);
+		copyenvironment(&spoolfile);
 	}
 
 	/*
-	 * If the inputfile is not from a tty then turn off standardin
+	 * Put in a line to run the proper shell using the rest of
+	 * the file as input.  Note that 'exec'ing the shell will
+	 * cause sh() to leave a /tmp/sh### file around.
 	 */
-	if (!(isatty(fileno(inputfile)))) 
-		standardin = 0 ;
+	fprintf(spoolfile,
+	    "%s << '...the rest of this file is shell input'\n", shell);
 
 	/*
 	 * Now that we have all the files set up, we can start reading in
@@ -443,10 +429,13 @@ char **argv;
 	 * message that said it was waiting for input if it was reading
 	 * form standard input).
 	 */
-	while(fputs((standardin) ? "at> " : "",stdout) != EOF
-				&& (fgets(line,100,inputfile) != NULL)) {
+	while (fgets(line, LINSIZ, inputfile) != NULL) {
 		fputs(line, spoolfile);
+		if (standardin)
+			fputs("at> ", stdout);
 	}
+	if (standardin)
+		fputs("<EOT>\n", stdout);	/* clean up the final output */
 
 	/*
 	 * Close all files and change the mode of the spoolfile.
@@ -459,47 +448,35 @@ char **argv;
 }
 
 /*
- * Copy the user's environment to the spoolfile. Depending on the value of
- * "shell" we convert the environment values so they correspond to the syntax 
- * of the Cshell (1) or the Bourne shell (0). This thing DOES work, although 
- * it may look a bit kludgey.
+ * Copy the user's environment to the spoolfile in the syntax of the
+ * Bourne shell.  After the environment is set up, the proper shell
+ * will be invoked.
  */
-copyenvironment(shell,spoolfile)
-int shell;
+copyenvironment(spoolfile)
 FILE **spoolfile;
 {
 	char *tmp;			/* scratch pointer */
 	char **environptr = environ;	/* pointer to an environment setting */
 
-	if (shell == CSHELL) {
-		fprintf(*spoolfile, "if ($?histchars) then\n");
-		fprintf(*spoolfile, "set xxhist=$histchars\nendif\n");
-		fprintf(*spoolfile, "set histchars=''\n");
-		fprintf(*spoolfile, "set noglob\n");
-	}
 	while(*environptr) {
 		tmp = *environptr;
 
 		/*
 		 * We don't want the termcap or terminal entry so skip them.
 		 */
-		if (strncmp(tmp,"TERM",4) == 0) {
+		if ((strncmp(tmp,"TERM=",5) == 0) ||
+		    (strncmp(tmp,"TERMCAP=",8) == 0)) {
 			++environptr;
 			continue;
 		}
 
 		/*
-		 * Set up the proper syntax. ("setenv xx yy" for the Cshell
-		 * and "xx = 'yy'" for the Bourne shell).
+		 * Set up the proper syntax.
 		 */
-		if (shell == CSHELL)
-			fputs("setenv ",*spoolfile);
 		while (*tmp != '=')
 			fputc(*tmp++,*spoolfile);
-		if (shell == BOURNE) {
-			fputc('=', *spoolfile);
-		}
-		fputs((shell == CSHELL) ? " \"" : "'" , *spoolfile);
+		fputc('=', *spoolfile);
+		fputc('\'' , *spoolfile);
 		++tmp;
 
 		/*
@@ -514,30 +491,18 @@ FILE **spoolfile;
 				fputc(*tmp, *spoolfile);
 			++tmp;
 		}
-		fputc((shell == CSHELL) ? '"' : '\'' , *spoolfile);
+		fputc('\'' , *spoolfile);
 
 		/*
-		 * If it's the Bourne shell, we need to "export" environment
-		 * settings.
+		 * We need to "export" environment settings.
 		 */
-		if (shell == BOURNE) {
-			fprintf(*spoolfile, "\nexport ");
-			tmp = *environptr;
-			while (*tmp != '=')
-				fputc(*tmp++,*spoolfile);
-		}
+		fprintf(*spoolfile, "\nexport ");
+		tmp = *environptr;
+		while (*tmp != '=')
+			fputc(*tmp++,*spoolfile);
 		fputc('\n',*spoolfile);
 		++environptr;
 	}
-	if (shell == CSHELL) {
-		fprintf(*spoolfile, "unset noglob\n");
-		fprintf(*spoolfile, "if ($?xxhist) then\n");
-		fprintf(*spoolfile, "set histchars=$xxhist\nelse\n");
-		fprintf(*spoolfile, "unset histchars\nendif\n");
-	}
-	/*
-	 * My god, it worked! (I hope)
-	 */
 	return;
 }
 
@@ -598,12 +563,15 @@ printit()
 
 /*
  * Calculate the day of year that the job will be executed.
+ * The av,ac arguments are ptrs to argv,argc; updated as necessary.
  */
-makedayofyear(dateindex,argv)
-char **argv;
+makedayofyear(dateindex, av, ac)
 int dateindex;
+char ***av;
+int *ac;
 {
-	
+	char **argv = *av;	/* imitate argc,argv and update args at end */
+	int argc = *ac;
 	char *ptr;				/* scratch pointer */
 	struct datetypes *daterequested;	/* pointer to information about
 						   the type of date option
@@ -634,7 +602,7 @@ int dateindex;
 		 * If a day of month isn't specified, print a message
 		 * and exit.
 		 */
-		if (!*argv) {
+		if (argc <= 0) {
 			fprintf(stderr,"day of month not specified.\n");
 			exit(1);
 		}
@@ -675,14 +643,16 @@ int dateindex;
 		 * Finally, we determine the day of year.
 		 */
 		attime.yday = (countdays());
-		++argv;
+		++argv; --argc;
 	}
 
 	/*
 	 * If 'week' is specified, add 7 to the day of year.
 	 */
-	if (strncmp(*argv,"week",4) == 0)
+	if ((argc > 0) && (strcmp(*argv,"week") == 0)) {
 		attime.yday += 7;
+		++argv; --argc;
+	}
 
 	/*
 	 * Now that all that is done, see if the requested execution time
@@ -691,6 +661,12 @@ int dateindex;
 	 */
 	if (isnextyear())
 		++attime.year;
+	
+	/*
+	 * Finally, reflect the updated argc,argv to the caller
+	 */
+	*av = argv;
+	*ac = argc;
 }
 
 /*
@@ -775,7 +751,7 @@ char *date;
 		if (isprefix(date, ptr->name))
 			return(i);
 	}
-	return(-1);
+	return(NODATEFOUND);
 }
 
 isprefix(prefix, fullname)
@@ -877,12 +853,18 @@ struct times *attime;
 
 		case 'n':
 		case 'N':
-			val = HALFDAY;
+			if ((val == 0) || (val == HALFDAY))
+				val = HALFDAY;
+			else
+				val = FULLDAY+1;  /* illegal */
 			break;
 
 		case 'M':
 		case 'm':
-			val = 0;
+			if ((val == 0) || (val == HALFDAY))
+				val = 0;
+			else
+				val = FULLDAY+1;  /* illegal */
 			break;
 
 
@@ -908,8 +890,8 @@ struct times *attime;
 		fprintf(stderr, "illegal minute field\n");
 		exit(1);
 	}
-	attime->hour = val/100;
-	attime->min = val%100;
+	attime->hour = val/HOUR;
+	attime->min = val%HOUR;
 }
 
 /*
@@ -944,8 +926,7 @@ cleanup()
  */
 usage()
 {
-	fprintf(stderr,"usage: at [-c] [-s] [-m] ");
-	fprintf(stderr,"time [filename]\n");
+	fprintf(stderr,"usage: at [-csm] time [date] [filename]\n");
 	exit(1);
 }
 

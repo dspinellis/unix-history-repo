@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrm.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -75,13 +75,12 @@ char **argv;
 
 	/*
 	 * Process command line flags.
+	 * Special case the "-" option so that others may be grouped.
 	 */
-	while (**argv == '-') {
-		(*argv)++;
-		switch (**argv) {
-
-			case '\0':	++allflag;
-					break;
+	while (argc > 0 && **argv == '-') {
+		if (*(++(*argv)) == '\0') {
+			++allflag;
+		} else while (**argv) switch (*(*argv)++) {
 
 			case 'f':	++fflag;
 					break;
@@ -159,7 +158,7 @@ char **argv;
 		for (i = 0; i < numjobs; ++i) { 
 			if (user == SUPERUSER || isowner(getname(user),
 							namelist[i]->d_name)) 
-				removentry(namelist[i]->d_name,
+				(void) removentry(namelist[i]->d_name,
 						(int)stbuf[i]->st_ino,
 							user);
 		}
@@ -186,6 +185,10 @@ char **argv;
 		isuname = isusername(*argv);
 		for (i = 0; i < numjobs; ++i) {
 
+			/* if the inode number is 0, this entry was removed */
+			if (stbuf[i]->st_ino == 0)
+				continue;
+
 			/* 
 			 * if argv is a username, compare his/her uid to
 			 * the uid of the owner of the file......
@@ -203,15 +206,21 @@ char **argv;
 					continue;
 			}
 			++jobexists;
-			removentry(namelist[i]->d_name, (int)stbuf[i]->st_ino,
-					user);
+			/*
+			 * if the entry is ultimately removed, don't
+			 * try to remove it again later.
+			 */
+			if (removentry(namelist[i]->d_name,
+			    (int)stbuf[i]->st_ino, user)) {
+				stbuf[i]->st_ino = 0;
+			}
 		}
 
 		/*
 		 * If a requested argument doesn't exist, print a message.
 		 */
 		if (!jobexists && !fflag && !isuname) {
-			printf("%6s: no such job number\n", *argv);
+			fprintf(stderr, "%6s: no such job number\n", *argv);
 		}
 		++argv;
 	}
@@ -271,8 +280,9 @@ char *string;
  * check (either "permission denied" or "removed"). If we are running 
  * interactively (iflag), prompt the user before we unlink the file. If 
  * the super-user is removing jobs, inform him/her who owns each file before 
- * it is removed.
+ * it is removed.  Return TRUE if file removed, else FALSE.
  */
+int
 removentry(filename,inode,user)
 char *filename;
 int inode;
@@ -287,28 +297,29 @@ int user;
 		if (!fflag) {
 			printf("permission denied\n");
 		}
+		return (0);
 
 	} else {
 		if (iflag) {
 			if (user == SUPERUSER) {
 				printf("\t(owned by ");
 				powner(filename);
-				printf(")");
+				printf(") ");
 			}
 			printf("remove it? ");
 			if (!yes())
-				return;
+				return (0);
 		}
 		if (unlink(filename) < 0) {
 			if (!fflag) {
-				fputs("FATAL ERROR (unlink fails): ",stdout);
-				fflush(stdout);
+				fputs("could not remove\n", stdout);
 				perror(filename);
 			}
-			return;
+			return (0);
 		}
 		if (!fflag && !iflag)
 			printf("removed\n");
+		return (1);
 	}
 }
 
@@ -319,22 +330,22 @@ isowner(name,job)
 char *name;
 char *job;
 {
-	char buf[30];			/* buffer for 1st line of spoolfile 
+	char buf[128];			/* buffer for 1st line of spoolfile 
 					   header */
 	FILE *infile;			/* I/O stream to spoolfile */
 
 	if ((infile = fopen(job,"r")) == NULL) {
-		fprintf(stderr,"Couldn't open spoolfile");
+		fprintf(stderr,"Couldn't open spoolfile ");
 		perror(job);
 		return(0);
 	}
 
-	if (fscanf(infile,"# owner: %s\n",buf) != 1) {
+	if (fscanf(infile,"# owner: %127s%*[^\n]\n",buf) != 1) {
 		fclose(infile);
 		return(0);
 	}
 
-	close(infile);
+	fclose(infile);
 	return((strcmp(name,buf) == 0) ? 1 : 0);
 }
 
@@ -345,7 +356,7 @@ char *job;
 powner(file)
 char *file;
 {
-	char owner[80];				/* the owner */
+	char owner[128];			/* the owner */
 	FILE *infile;				/* I/O stream to spoolfile */
 
 	/*
@@ -358,9 +369,8 @@ char *file;
 		return;
 	}
 
-	if (fscanf(infile,"# owner: %s",owner) != 1) {
+	if (fscanf(infile,"# owner: %127s%*[^\n]\n",owner) != 1) {
 		printf("%s","???");
-		perror(file);
 		fclose(infile);
 		return;
 	}
@@ -382,6 +392,8 @@ yes()
 	ch = ch1 = getchar();
 	while (ch1 != '\n' && ch1 != EOF)
 		ch1 = getchar();
+	if (isupper(ch))
+		ch = tolower(ch);
 	return(ch == 'y');
 }
 
