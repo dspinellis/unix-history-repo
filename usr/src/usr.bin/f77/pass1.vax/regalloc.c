@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)regalloc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)regalloc.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,8 +15,28 @@ static char sccsid[] = "@(#)regalloc.c	5.3 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
- * $History$
  * $Log:	regalloc.c,v $
+ * Revision 5.6  86/01/04  22:35:44  donn
+ * More hacking on GOTOs and loops.  Fixed a bug in rev 5.4.  Changed
+ * regalloc() so that sibling loops behave like nested loops, eliminating
+ * problems with GOTOs and different registers used for the same variable.
+ * This decreases the flexibility of the allocator quite a bit, but it was
+ * doing the job wrong before, so we come out ahead.
+ * 
+ * Revision 5.5  86/01/04  19:54:28  donn
+ * Pick up redundant register moves when address registers (STGPREG) are
+ * involved.
+ * 
+ * Revision 5.4  86/01/04  18:28:34  donn
+ * Patching over some more design problems...  If there is a GOTO that jumps
+ * from an inner loop into an outer loop and there is a variable which is set
+ * in the inner loop and is in register in the outer loop but is not in
+ * register in the inner loop (or is in a different register), we get into
+ * trouble because the register version of the variable in the outer loop
+ * is 'dead' and we don't maintain enough information to be able to restore
+ * it.  The change causes a variable that is set in an inner loop but is not
+ * put in register there to be ineligible for a register in the outer loop.
+ * 
  * Revision 5.3  85/09/27  19:58:16  root
  * Ended PCC confusion with sizes of objects in registers by forcing SHORT
  * values in registers to be converted to INT.
@@ -161,6 +181,7 @@ typedef
       int memno;
       unsigned istemp : 1;
       unsigned isset : 1;
+      unsigned loopset : 1;
       unsigned freeuse : 1;
       unsigned mixedtype : 1;
       unsigned fixed : 1;
@@ -211,6 +232,7 @@ LOCAL REGDATA *regtab[MAXREGVAR];
 LOCAL REGDATA *rt[TABLELIMIT];
 LOCAL int tabletop;
 LOCAL int linearcode;
+LOCAL int docount;
 LOCAL int globalbranch;
 LOCAL int commonunusable;
 LOCAL int regdefined[MAXREGVAR];
@@ -511,7 +533,6 @@ LOCAL alreg()
   Slotp sp1, sp2;
   ADDRNODE *addrinfo;
   VARNODE *varinfo;
-  int docount;
   struct Labelblock **lp;
   int toptrack;
   int track[MAXREGVAR];
@@ -523,6 +544,7 @@ LOCAL alreg()
   if (nregvar >= maxregvar) return;
 
   commonvars = NULL;
+  docount = 0;
 
   for (sp = dohead; sp != doend->next; sp = sp->next)
     switch (sp->type)
@@ -544,10 +566,16 @@ LOCAL alreg()
 	scanvars(sp->expr);
 	break;
 
+      case SKDOHEAD:
+	++docount;
+	break;
+
+      case SKENDDO:
+	--docount;
+	break;
+
       case SKNULL:
       case SKGOTO:
-      case SKDOHEAD:
-      case SKENDDO:
       case SKASSIGN:
 	break;
 
@@ -721,7 +749,8 @@ LOCAL alreg()
       for (p = vartable[i]; p; p = p->link)
 	{
 	  entableaddr(p);
-	  if ((!p->mixedtype) &&
+	  if ((!p->loopset) &&
+	      (!p->mixedtype) &&
 	      (p->vstg != STGARG) &&
 	      !((p->vstg == STGCOMMON) && ((!p->fixed) || commonunusable)))
 	    for (q = p->varlist; q; q = q->link)
@@ -1131,6 +1160,8 @@ Exprp ep;
 	{
           addrinfo = getaddr(lhs);
           addrinfo->isset = YES;
+	  if (docount > 1)
+	    addrinfo->loopset = YES;
           if (fixedaddress(lhs) && ISREGTYPE(lhs->vtype))
 	    {
 	      varinfo = getvar(addrinfo, lhs);
@@ -1167,6 +1198,8 @@ Exprp ep;
 	{
           addrinfo = getaddr(lhs);
           addrinfo->isset = YES;
+	  if (docount > 1)
+	    addrinfo->loopset = YES;
           if (fixedaddress(lhs))
 	    {
 	      if (ISREGTYPE(lhs->vtype))
@@ -1216,6 +1249,8 @@ Exprp ep;
 
 	      addrinfo = getaddr(ap);
 	      addrinfo->isset = YES;
+	      if (docount > 1)
+		addrinfo->loopset = YES;
 	      if (fixedaddress(ap) && ISREGTYPE(ap->vtype))
 		{
 		  varinfo = getvar(addrinfo, ap);
@@ -1950,6 +1985,13 @@ Slotp sp;
       (r->addrblock.memno == l->addrblock.memno))
     return YES;
 
+  if ((r->tag == TEXPR) &&
+      (r->exprblock.opcode == OPADDR) &&
+      (r->exprblock.leftp->tag == TADDR) &&
+      (r->exprblock.leftp->addrblock.vstg == STGPREG) &&
+      (r->exprblock.leftp->addrblock.memno == l->addrblock.memno))
+    return YES;
+
   return NO;
 }
 
@@ -2082,6 +2124,7 @@ Slotp	lastlabslot;
 
 if (! optimflag) return;
 
+docount = 0;
 lastlabslot = NULL;
 for (sl1 = firstslot; sl1; sl1 = nextslot)
 	{
@@ -2105,10 +2148,12 @@ for (sl1 = firstslot; sl1; sl1 = nextslot)
 ----- */
 
 	    case SKDOHEAD:
+		++docount;
 		pushq (sl1);
 		break;
 
 	    case SKENDDO:
+		--docount;
 		match = 0;
 		for (sl2 = sl1; sl2; sl2 = sl2->prev)
 			{
@@ -2135,18 +2180,26 @@ for (sl1 = firstslot; sl1; sl1 = nextslot)
 		/*  sl1 now points to the SKENDDO slot; the SKNULL slot
 		 *  is reached through sl1->nullslot
 		 */
-		doend = (Slotp) sl1->nullslot;
+		dqptr->doend = (Slotp) sl1->nullslot;
 
-		alreg ();
+		if (docount == 0)
+			{
+			for (dqptr = dqbottom; dqptr; dqptr = dqptr->up)
+				{
+				dohead = dqptr->dohead;
+				doend = dqptr->doend;
+				alreg();
+				}
+			while (dqtop)
+				popq (dqtop->dohead);
+			docount = 0;
+			}
 		break;
 
 	    default:
 		break;
 	    }
 	}
-
-while (dqtop)
-	popq (dqtop->dohead);
 
 return;
 }
