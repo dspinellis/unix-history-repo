@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.25 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -69,7 +69,6 @@ fork1(p1, isvfork, retval)
 	 * nprocs is the current number of processes,
 	 * maxproc is the limit.
 	 */
-	retval[1] = 0;
 	if (nprocs >= maxproc || uid == 0 && nprocs >= maxproc + 1) {
 		tablefull("proc");
 		return (EAGAIN);
@@ -151,6 +150,7 @@ again:
 	/*
 	 * Duplicate sub-structures as needed.
 	 * Increase reference counts on shared objects.
+	 * The p_stats and p_sigacts substructs are set in vm_fork.
 	 */
 	MALLOC(p2->p_cred, struct pcred *, sizeof(struct pcred),
 	    M_SUBPROC, M_WAITOK);
@@ -158,7 +158,6 @@ again:
 	crhold(p1->p_ucred);
 
 	p2->p_fd = fdcopy(p1);
-	p2->p_stats = p1->p_stats;		/* XXX move; in u. */
 	/*
 	 * If p_limit is still copy-on-write, bump refcnt,
 	 * otherwise get a copy that won't be modified.
@@ -171,9 +170,8 @@ again:
 		p2->p_limit = p1->p_limit;
 		p2->p_limit->p_refcnt++;
 	}
-	p2->p_sigacts = p1->p_sigacts;		/* XXX move; in u. */
 
-	p2->p_flag = SLOAD | (p1->p_flag & (SPAGV|SHPUX));
+	p2->p_flag = SLOAD | (p1->p_flag & SHPUX);
 	if (p1->p_session->s_ttyvp != NULL && p1->p_flag & SCTTY)
 		p2->p_flag |= SCTTY;
 	if (isvfork)
@@ -215,16 +213,20 @@ again:
 	 * from being swapped.
 	 */
 	p1->p_flag |= SKEEP;
+	/*
+	 * Set return values for child before vm_fork,
+	 * so they can be copied to child stack.
+	 * We return parent pid, and mark as child in retval[1].
+	 */
+	retval[0] = p1->p_pid;
+	retval[1] = 1;
 	if (vm_fork(p1, p2, isvfork)) {
 		/*
-		 * Child process.  Set start time, return parent pid,
-		 * and mark as child in retval[1].
+		 * Child process.  Set start time and get to work.
 		 */
 		(void) splclock();
 		p2->p_stats->p_start = time;
 		(void) spl0();
-		retval[0] = p1->p_pid;
-		retval[1] = 1;
 		p2->p_acflag = AFORK;
 		return (0);
 	}
@@ -249,12 +251,13 @@ again:
 	 */
 	if (isvfork)
 		while (p2->p_flag & SPPWAIT)
-			sleep((caddr_t)p1, PZERO - 1);
+			tsleep((caddr_t)p1, PWAIT, "ppwait", 0);
 
 	/*
-	 * Return child pid to parent process.
-	 * retval[1] was set above.
+	 * Return child pid to parent process,
+	 * marking us as parent via retval[1].
 	 */
 	retval[0] = p2->p_pid;
+	retval[1] = 0;
 	return (0);
 }
