@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_user.c	7.3 (Berkeley) %G%
+ *	@(#)vm_user.c	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -40,12 +40,11 @@
  *	User-exported virtual memory functions.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
 
-#include "vm.h"
-#include "vm_page.h"
+#include <vm/vm.h>
 
 simple_lock_data_t	vm_alloc_lock;	/* XXX */
 
@@ -55,6 +54,7 @@ simple_lock_data_t	vm_alloc_lock;	/* XXX */
  * All return MACH return values.
  */
 /* ARGSUSED */
+int
 svm_allocate(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -82,6 +82,7 @@ svm_allocate(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 svm_deallocate(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -99,6 +100,7 @@ svm_deallocate(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 svm_inherit(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -117,6 +119,7 @@ svm_inherit(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 svm_protect(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -140,6 +143,7 @@ svm_protect(p, uap, retval)
  *	vm_allocate allocates "zero fill" memory in the specfied
  *	map.
  */
+int
 vm_allocate(map, addr, size, anywhere)
 	register vm_map_t	map;
 	register vm_offset_t	*addr;
@@ -171,6 +175,7 @@ vm_allocate(map, addr, size, anywhere)
  *	vm_deallocate deallocates the specified range of addresses in the
  *	specified address map.
  */
+int
 vm_deallocate(map, start, size)
 	register vm_map_t	map;
 	vm_offset_t		start;
@@ -189,6 +194,7 @@ vm_deallocate(map, start, size)
  *	vm_inherit sets the inheritence of the specified range in the
  *	specified map.
  */
+int
 vm_inherit(map, start, size, new_inheritance)
 	register vm_map_t	map;
 	vm_offset_t		start;
@@ -206,6 +212,7 @@ vm_inherit(map, start, size, new_inheritance)
  *	specified map.
  */
 
+int
 vm_protect(map, start, size, set_maximum, new_protection)
 	register vm_map_t	map;
 	vm_offset_t		start;
