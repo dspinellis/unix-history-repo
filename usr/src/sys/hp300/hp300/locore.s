@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	7.25 (Berkeley) %G%
+ *	@(#)locore.s	7.26 (Berkeley) %G%
  */
 
 /*
@@ -1537,16 +1537,16 @@ ENTRY(swtch_exit)
 	jra	_cpu_swtch
 
 /*
- * When no processes are on the runq, Swtch branches to idle
+ * When no processes are on the runq, Swtch branches to Idle
  * to wait for something to come ready.
  */
 	.globl	idle
-Lidle:
-	stop	#PSL_LOWIPL
 idle:
+	stop	#PSL_LOWIPL
+Idle:
 	movw	#PSL_HIGHIPL,sr
 	tstl	_whichqs
-	jeq	Lidle
+	jeq	idle
 	movw	#PSL_LOWIPL,sr
 	jra	Lsw1
 
@@ -1589,7 +1589,7 @@ Lswchk:
 	addqb	#1,d0
 	cmpb	#32,d0
 	jne	Lswchk
-	jra	idle
+	jra	Idle
 Lswfnd:
 	movw	#PSL_HIGHIPL,sr		| lock out interrupts
 	movl	a0@,d1			| and check again...
