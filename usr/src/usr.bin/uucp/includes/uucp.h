@@ -1,4 +1,4 @@
-/*	uucp.h	5.8	85/06/24	*/
+/*	uucp.h	5.9	85/10/24	*/
 
 #include <stdio.h>
 
@@ -57,25 +57,26 @@
  * Define the various kinds of connections to include.
  * The complete list is in the condevs array in condevs.c
  */
-#define DN11		/* standard dialer */
-/*#define DATAKIT	/* ATT's datakit */
-/*#define PNET		/* Purdue network */
+#define BSDTCP		/* 4.2bsd or 2.9bsd TCP/IP */
+/* #define DATAKIT	/* ATT's datakit */
 #define DF02		/* Dec's DF02/DF03 */
 #define DF112		/* Dec's DF112 */
+#define DN11		/* "standard" DEC dialer */
 #define HAYES		/* Hayes' Smartmodem */
-#define VENTEL		/* Ventel Dialer */
+/* #define MICOM	/* Micom Mux port */
+#define NOVATION	/* Novation modem */
+#define PAD		/* X.25 PAD */
 #define PENRIL		/* PENRIL Dialer */
-#define VADIC		/* Racal-Vadic 345x */
+/* #define PNET		/* Purdue network */
+#define RVMACS		/* Racal-Vadic MACS  820 dialer, 831 adaptor */
+/* #define SYTEK	/* Sytek Local Area Net */
+/* #define UNETTCP	/* 3Com's UNET */
 #define VA212		/* Racal-Vadic 212 */
 #define VA811S		/* Racal-Vadic 811S dialer, 831 adaptor */
 #define VA820		/* Racal-Vadic 820 dialer, 831 adaptor */
-#define RVMACS		/* Racal-Vadic MACS  820 dialer, 831 adaptor */
+#define VADIC		/* Racal-Vadic 345x */
+#define VENTEL		/* Ventel Dialer */
 #define VMACS		/* Racal-Vadic MACS  811 dialer, 831 adaptor */
-/*#define UNETTCP	/* 3Com's UNET */
-#define BSDTCP		/* 4.2bsd or 2.9bsd TCP/IP */
-#define PAD		/* X.25 PAD */
-/*#define MICOM		/* micom mux port */
-#define NOVATION	/* Novation modem */
 
 #if defined(UNETTCP) || defined(BSDTCP)
 #define TCPIP
@@ -91,6 +92,9 @@
  * Look at uucpdelay() in condevs.c for details.
  */
 #define	INTERVALTIMER
+/*#define FASTTIMER /**/
+/*#define FTIME /**/
+/*#define BUSYLOOP /**/
 #endif VENTEL || NOVATION || DF112 || PENRIL
 
 /*
@@ -169,7 +173,7 @@
 /*
  * Traditionally LCK (lock) files have been kept in /usr/spool/uucp.
  * If you want that define LOCKDIR to be ".".
- * If you want the locks kept in a subdirectory, define LOCKDIR as "LCK.".
+ * If you want the locks kept in a subdirectory, define LOCKDIR as "LCK".
  * Good news about LCK. subdirectory: the directory can be mode 777 so
  * unprivileged programs can share the uucp locking system,
  * and the subdirectory keeps down clutter in the main directory.
@@ -177,10 +181,10 @@
  * know where the LCK files are kept, and you have to change your /etc/rc
  * if your rc cleans out the lock files (as it should).
  */
-/*#define	LOCKDIR	"LCK."	/**/
+/*#define	LOCKDIR	"LCK"	/**/
 #define LOCKDIR	"." /**/
 
-/* 
+/*
  * If you want uucp and uux to copy the data files by default,
  * don't define DONTCOPY (This is the way older 4bsd uucps worked)
  * If you want uucp and uux to use the original files instead of
@@ -215,11 +219,11 @@
 #define	ALIASFILE	"/usr/lib/uucp/L.aliases"
 
 #define SPOOL		"/usr/spool/uucp"
-#define SQLOCK		"LCK.SQ"
+#define SQLOCK		"SQ"
 #define SYSLOG		"/usr/spool/uucp/SYSLOG"
 #define PUBDIR		"/usr/spool/uucppublic"
 
-#define SEQLOCK		"LCK.SEQL"
+#define SEQLOCK		"SEQL"
 #define CMDPRE		'C'
 #define DATAPRE		'D'
 #define XQTPRE		'X'
@@ -241,6 +245,9 @@
 #define DEBUG(l, f, s) if (Debug >= l) fprintf(stderr, f, s); else
 
 #define ASSERT(e, s1, s2, i1) if (!(e)) {assert(s1, s2, i1);cleanup(FAIL);}else
+
+#define delock(dev)	rmlock(dev)
+#define mlock(dev)	ulockf(dev, SLCKTIME)
 
 #define SAME		0
 #define ANYREAD		0004
@@ -330,7 +337,7 @@ struct Devices {
 #define	X_NONOTI	'N'
 #define X_RETURNTO	'R'
 #define	X_NONZERO	'Z'
-#define X_LOCK		"LCK.XQT"
+#define X_LOCK		"XQT"
 #define X_LOCKTIME	3600L
 
 #define WKDSIZE		100	/*  size of work dir name  */
@@ -368,7 +375,6 @@ extern int IsTcpIp;
 extern char Progname[];
 extern int (*CU_end)();
 extern struct condev condevs[];
-extern int nologinflag;
 extern char NOLOGIN[];
 
 extern	char DLocal[], DLocalX[], *subfile(), *subdir();
