@@ -1,4 +1,4 @@
-/*	uba.c	4.12	%G%	*/
+/*	uba.c	4.13	%G%	*/
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
 
@@ -17,11 +17,6 @@
 #include "../h/mtpr.h"
 #include "../h/nexus.h"
 #include "../h/dk.h"
-
-#include "rk.h"
-#if NRK11 > 0
-extern	struct uba_driver hkdriver;
-#endif
 
 /*
  * Do transfer on device argument.  The controller
@@ -45,19 +40,15 @@ ubago(ui)
 
 	uh = &uba_hd[um->um_ubanum];
 	s = spl6();
-#if NRK11 > 0
-	if (um->um_driver == &hkdriver && uh->uh_users > 0 || uh->uh_xclu)
+	if (um->um_driver->ud_xclu && uh->uh_users > 0 || uh->uh_xclu)
 		goto rwait;
-#endif
 	um->um_ubinfo = ubasetup(um->um_ubanum, um->um_tab.b_actf->b_actf,
 	    UBA_NEEDBDP|UBA_CANTWAIT);
 	if (um->um_ubinfo == 0)
 		goto rwait;
-#if NRK11 > 0
 	uh->uh_users++;
-	if (um->um_driver == &hkdriver)
+	if (um->um_driver->ud_xclu)
 		uh->uh_xclu = 1;
-#endif
 	splx(s);
 	if (ui->ui_dk >= 0) {
 		unit = ui->ui_dk;
@@ -89,11 +80,9 @@ ubadone(um)
 {
 	register struct uba_hd *uh = &uba_hd[um->um_ubanum];
 
-#if NRK11 > 0
-	if (um->um_driver == &hkdriver)
+	if (um->um_driver->ud_xclu)
 		uh->uh_xclu = 0;
 	uh->uh_users--;
-#endif
 	ubarelse(um->um_ubanum, &um->um_ubinfo);
 }
 
