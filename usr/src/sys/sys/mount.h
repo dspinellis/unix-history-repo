@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.6 (Berkeley) %G%
+ *	@(#)mount.h	8.7 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -64,6 +64,7 @@ struct statfs {
 #define MOUNT_UMAP	10	/* User/Group Identifer Remapping Filesystem */
 #define MOUNT_KERNFS	11	/* Kernel Information Filesystem */
 #define MOUNT_PROCFS	12	/* /proc Filesystem */
+#define MOUNT_AFS	13	/* Andrew Filesystem */
 #define MOUNT_ISOFS	14	/* ISO9660 (aka CDROM) Filesystem */
 #define	MOUNT_MAXTYPE	14
 
