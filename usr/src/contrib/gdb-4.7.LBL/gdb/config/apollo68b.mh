@@ -1,0 +1,4 @@
+# Host: Apollo 68k, BSD mode.
+
+XM_FILE= xm-apollo68b.h
+XDEPFILES= infptrace.o inftarg.o fork-child.o a68v-xdep.o ser-bsd.o
