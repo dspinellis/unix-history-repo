@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: rd.c 1.30 89/09/17$
+ * from: Utah $Hdr: rd.c 1.3 90/10/12$
  *
- *	@(#)rd.c	7.5 (Berkeley) %G%
+ *	@(#)rd.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -282,6 +282,25 @@ struct size rd7945A_sizes[8] = {
 	RDSZ(207900),	1022,		/* F=cyl 1022 thru 1571 */
 	RDSZ(528444),	174,		/* G=cyl 174 thru 1571 */
 	RDSZ(511812),	218,		/* H=cyl 218 thru 1571 */
+}, rd2200A_sizes[8] = {
+	RDSZ(16272),	1,		/* A=cyl 1 thru 36 */
+	RDSZ(49720),	37,		/* B=cyl 37 thru 146 */
+	RDSZ(654948),	0,		/* C=cyl 0 thru 1448 */
+	RDSZ(65992),	37,		/* D=cyl 37 thru 182 */
+	RDSZ(304648),	183,		/* E=cyl 183 thru 856 */
+	RDSZ(267584),	857,		/* F=cyl 857 thru 1448 */
+	RDSZ(588504),	147,		/* G=cyl 147 thru 1448 */
+	RDSZ(572232),	183,		/* H=cyl 183 thru 1448 */
+}, rd2203A_sizes[8] = {
+	/* modelled after the 7937; i.e. bogus */
+	RDSZ(16272),	1,		/* A=cyl 1 thru 18 */
+	RDSZ(67800),	19,		/* B=cyl 19 thru 93 */
+	RDSZ(1309896),	0,		/* C=cyl 0 thru 1448 */
+	RDSZ(16272),	94,		/* D=cyl 19 thru 111 */
+	RDSZ(305552),	112,		/* E=cyl 112 thru 449 */
+	RDSZ(305552),	450,		/* F=cyl 450 thru 787 */
+	RDSZ(1224920),	94,		/* G=cyl 94 thru 1448 */
+	RDSZ(597544),	788,		/* H=cyl 788 thru 1448 */
 
 #if DEV_BSIZE == 512
 /*
@@ -365,6 +384,10 @@ struct rdinfo rdinfo[] = {
 	rd7958B_sizes,	RD7958BID,	0,	"7958B",
 	NRD7959BBPT,	NRD7959BTRK,	NRD7959BBPT * NRD7959BTRK,
 	rd7959B_sizes,	RD7959BID,	0,	"7959B",
+	NRD2200ABPT,	NRD2200ATRK,	NRD2200ABPT * NRD2200ATRK,
+	rd2200A_sizes,	RD2200AID,	0,	"2200A",
+	NRD2203ABPT,	NRD2203ATRK,	NRD2203ABPT * NRD2203ATRK,
+	rd2203A_sizes,	RD2203AID,	0,	"2203A",
 };
 int nrdinfo = sizeof(rdinfo) / sizeof(rdinfo[0]);
 
@@ -426,6 +449,10 @@ rdident(rs, hd)
 	 * 3. If it is a 7946, we are accessing the disk unit (0)
 	 */
 	id = hpibid(ctlr, slave);
+#ifdef DEBUG
+	if (rddebug & RDB_IDENT)
+		printf("hpibid(%d, %d) -> %x\n", ctlr, slave, id);
+#endif
 	if ((id & 0x200) == 0)
 		return(-1);
 	for (i = 0; i < nrdinfo; i++)

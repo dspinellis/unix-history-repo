@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: rdreg.h 1.1 90/07/09$
+ * from: Utah $Hdr: rdreg.h 1.2 90/10/12$
  *
- *	@(#)rdreg.h	7.2 (Berkeley) %G%
+ *	@(#)rdreg.h	7.3 (Berkeley) %G%
  */
 
 struct	rd_iocmd {
@@ -137,6 +137,8 @@ struct rd_describe {
 #define RD7957BID	0x22C	/* another guess based on 7958B */
 #define RD7958BID	0x22D
 #define RD7959BID	0x22E	/* another guess based on 7958B */
+#define RD2200AID	0x22F
+#define RD2203AID	0x230	/* yet another guess */
 
 #define	NRD7945ABPT	(32 >> (DEV_BSHIFT-8))
 #define	NRD7945ATRK	7
@@ -164,15 +166,18 @@ struct rd_describe {
  * DISK		REAL (256 BPS)		HPUX (1024 BPS)		BSD (512 BPS)
  * 		SPT x HD x CYL		SPT x HD x CYL		SPT x HD x CYL
  * -----	---------------		---------------		--------------
- * 7936:	123 x  7 x 1396		25 x  7 x 1716		123 x  7 x  698
- * 7937:	123 x 13 x 1396		25 x 16 x 1395		123 x 13 x  698
+ * 7936:	123 x  7 x 1396		 25 x  7 x 1716		123 x  7 x  698
+ * 7937:	123 x 13 x 1396		 25 x 16 x 1395		123 x 13 x  698
  *
- * 7957A:	 63 x  5 x 1013		11 x  7 x 1036		 22 x  7 x 1036
- * 7958A:	 63 x  8 x 1013		21 x  6 x 1013		 36 x  7 x 1013
+ * 7957A:	 63 x  5 x 1013		 11 x  7 x 1036		 22 x  7 x 1036
+ * 7958A:	 63 x  8 x 1013		 21 x  6 x 1013		 36 x  7 x 1013
  *
- * 7957B:	 63 x  4 x 1269		 9 x  7 x 1269		 18 x  7 x 1269
- * 7958B:	 63 x  6 x 1572		21 x  9 x  786		 42 x  9 x  786
- * 7959B:	 63 x 12 x 1572		21 x  9 x 1572		 42 x  9 x 1572
+ * 7957B:	 63 x  4 x 1269		  9 x  7 x 1269		 18 x  7 x 1269
+ * 7958B:	 63 x  6 x 1572		 21 x  9 x  786		 42 x  9 x  786
+ * 7959B:	 63 x 12 x 1572		 21 x  9 x 1572		 42 x  9 x 1572
+ *
+ * 2200A:	113 x  8 x 1449		113 x  2 x 1449		113 x  4 x 1449
+ * 2203A:	113 x 16 x 1449		113 x  4 x 1449		113 x  8 x 1449
  */
 #if DEV_BSIZE == 512
 #	define	NRD7936HBPT	123
@@ -189,6 +194,10 @@ struct rd_describe {
 #	define	NRD7958BTRK	9
 #	define	NRD7959BBPT	42
 #	define	NRD7959BTRK	9
+#	define	NRD2200ABPT	113
+#	define	NRD2200ATRK	4
+#	define	NRD2203ABPT	113
+#	define	NRD2203ATRK	8
 #endif
 #if DEV_BSIZE == 1024
 #	define	NRD7957ABPT	11
@@ -201,6 +210,10 @@ struct rd_describe {
 #	define	NRD7958BTRK	9
 #	define	NRD7959BBPT	21
 #	define	NRD7959BTRK	9
+#	define	NRD2200ABPT	113
+#	define	NRD2200ATRK	2
+#	define	NRD2203ABPT	113
+#	define	NRD2203ATRK	4
 #endif
 
 /* controller "unit" number */
