@@ -35,13 +35,12 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)machdep.c	7.4 (Berkeley) 6/3/91
- *	$Id: machdep.c,v 1.41 1994/03/30 02:31:11 davidg Exp $
+ *	$Id: machdep.c,v 1.42 1994/04/02 07:00:26 davidg Exp $
  */
 
 #include "npx.h"
 #include "isa.h"
 
-#include <stddef.h>
 #include "param.h"
 #include "systm.h"
 #include "signalvar.h"
@@ -141,6 +140,8 @@ extern cyloffset;
 int cpu_class;
 
 void dumpsys __P((void));
+
+#define offsetof(type, member)	((size_t)(&((type *)0)->member))
 
 void
 cpu_startup()
