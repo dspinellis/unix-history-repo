@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.4 (Berkeley) %G%
+#	@(#)Makefile	4.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -25,7 +25,9 @@ MAN=	mp.0
 all: libmp.a
 
 libmp.a: ${OBJS}
-	ar cr $@ ${OBJS}
+	@echo building normal libmp
+	@ar cr $@ ${OBJS}
+	ranlib libmp.a
 
 clean:
 	rm -f ${OBJS} core libmp.a
@@ -38,7 +40,7 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -o bin -g bin -m 644 libmp.a ${DESTDIR}/usr/lib/libmp.a
-	ranlib ${DESTDIR}/usr/lib/libmp.a
+	ranlib -t ${DESTDIR}/usr/lib/libmp.a
 	install -c -o bin -g bin -m 444 mp.0 ${DESTDIR}/usr/man/cat3
 
 lint: ${SRCS}
