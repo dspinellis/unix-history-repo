@@ -58,6 +58,7 @@ main()
 	printf("#define\tV_TRAP %d\n", &vm->v_trap);
 	printf("#define\tV_SYSCALL %d\n", &vm->v_syscall);
 	printf("#define\tV_INTR %d\n", &vm->v_intr);
+	printf("#define\tV_SOFT %d\n", &vm->v_soft);
 	printf("#define\tV_PDMA %d\n", &vm->v_pdma);
 	printf("#define\tV_FAULTS %d\n", &vm->v_faults);
 	printf("#define\tV_PGREC %d\n", &vm->v_pgrec);

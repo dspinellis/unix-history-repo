@@ -1,4 +1,4 @@
-/*	locore.s	6.14	84/08/12	*/
+/*	locore.s	6.15	84/08/21	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -105,13 +105,13 @@ SCBVEC(wtime):
 
 #if NMBA > 0
 SCBVEC(mba3int):
-	PUSHR; pushl $3; brb 1f
+	PUSHR; incl _intrcnt+I_MBA3; pushl $3; brb 1f
 SCBVEC(mba2int):
-	PUSHR; pushl $2; brb 1f
+	PUSHR; incl _intrcnt+I_MBA2; pushl $2; brb 1f
 SCBVEC(mba1int):
-	PUSHR; pushl $1; brb 1f
+	PUSHR; incl _intrcnt+I_MBA1; pushl $1; brb 1f
 SCBVEC(mba0int):
-	PUSHR; pushl $0
+	PUSHR; incl _intrcnt+I_MBA0; pushl $0
 1:	calls $1,_mbintr
 	POPR
 	incl	_cnt+V_INTR
@@ -148,15 +148,22 @@ ubanorm:
 	bicl3	$3,(rUVEC),r1 
 	jmp	2(r1)				/* 2 skips ``pushr $0x3f'' */
 ubaerror:
+	incl _intrcnt+I_UBA[rUBA]
 	PUSHR; calls $0,_ubaerror; POPR		/* ubaerror r/w's r0-r5 */
 	tstl rUVEC; jneq ubanorm		/* rUVEC contains result */
 	POPR
 	rei
 #endif
 SCBVEC(cnrint):
-	PUSHR; calls $0,_cnrint; POPR; incl _cnt+V_INTR; rei
+	PUSHR; calls $0,_cnrint; POPR
+	incl _cnt+V_INTR
+	incl _intrcnt+I_CNR
+	rei
 SCBVEC(cnxint):
-	PUSHR; calls $0,_cnxint; POPR; incl _cnt+V_INTR; rei
+	PUSHR; calls $0,_cnxint; POPR
+	incl _cnt+V_INTR
+	incl _intrcnt+I_CNX
+	rei
 SCBVEC(hardclock):
 	PUSHR
 	mtpr $ICCS_RUN|ICCS_IE|ICCS_INT|ICCS_ERR,$ICCS
@@ -167,13 +174,15 @@ SCBVEC(hardclock):
 	calls	$2,_psextsync
 #endif
 	POPR;
-	incl	_cnt+V_INTR		## temp so not to break vmstat -= HZ
+	incl	_cnt+V_INTR
+	incl	_intrcnt+I_CLOCK
 	rei
 SCBVEC(softclock):
 	PUSHR
 	pushl	4+6*4(sp); pushl 4+6*4(sp);
 	calls	$2,_softclock			# softclock(pc,psl)
 	POPR; 
+	incl	_cnt+V_SOFT
 	rei
 #include "../net/netisr.h"
 	.globl	_netisr
@@ -188,10 +197,12 @@ SCBVEC(netintr):
 	bbcc	$NETISR_NS,_netisr,1f; calls $0,_nsintr; 1:
 #endif
 	POPR
+	incl	_cnt+V_SOFT
 	rei
 #if defined(VAX750) || defined(VAX730)
 SCBVEC(consdin):
 	PUSHR;
+	incl _intrcnt+I_TUR
 #if defined(VAX750) && !defined(VAX730) && !defined(MRSP)
 	jsb	tudma
 #endif
@@ -200,7 +211,10 @@ SCBVEC(consdin):
 	incl _cnt+V_INTR;
 	rei
 SCBVEC(consdout):
-	PUSHR; calls $0,_tuxintr; POPR; incl _cnt+V_INTR; rei
+	PUSHR; calls $0,_tuxintr; POPR
+	incl _cnt+V_INTR
+	incl _intrcnt+I_TUX
+	rei
 #else
 SCBVEC(consdin):
 	halt
