@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.8 1993/11/14 03:07:03 jkh Exp $
+ *	$Id: vm_object.c,v 1.9 1993/11/25 01:39:10 wollman Exp $
  */
 
 /*
@@ -693,8 +693,16 @@ void vm_object_copy(src_object, src_offset, size,
 	 */
 
 	vm_object_lock(src_object);
+
+/*
+ * we can simply add a reference to the object if we have no
+ * pager or are using the swap pager or we have an internal object
+ *
+ * John Dyson 24 Nov 93
+ */
 	if (src_object->pager == NULL ||
-	    src_object->internal) {
+	    (src_object->pager->pg_type == PG_SWAP) ||
+	    	src_object->internal) {
 
 		/*
 		 *	Make another reference to the object
