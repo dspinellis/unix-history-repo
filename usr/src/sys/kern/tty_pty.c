@@ -1,4 +1,4 @@
-/*	tty_pty.c	6.6	84/08/29	*/
+/*	tty_pty.c	6.7	84/09/10	*/
 
 /*
  * Pseudo-teletype Driver
@@ -443,7 +443,7 @@ ptyioctl(dev, cmd, data, flag)
 				;
 			break;
 		}
-	error = ttioctl(tp, cmd, data, dev);
+	error = ttioctl(tp, cmd, data, flag);
 	if (error < 0)
 		error = ENOTTY;
 	{ int stop = (tp->t_stopc == ('s'&037) &&
