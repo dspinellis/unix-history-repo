@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.5 (Berkeley) %G%
+ *	@(#)machdep.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1540,7 +1540,7 @@ extern char kstack[];
 
 dumpmem(ptr, sz, ustack)
 	register int *ptr;
-	int sz;
+	int sz, ustack;
 {
 	register int i, val;
 	extern char *hexstr();
@@ -1567,6 +1567,7 @@ dumpmem(ptr, sz, ustack)
 char *
 hexstr(val, len)
 	register int val;
+	int len;
 {
 	static char nbuf[9];
 	register int x, i;
