@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.14 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.15 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.14 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.15 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -426,6 +426,10 @@ orderq(doall)
 		}
 		wlist[wn].w_name = newstr(d->d_name);
 
+		/* make sure jobs in creation don't clog queue */
+		wlist[wn].w_pri = 0x7fffffff;
+		wlist[wn].w_ctime = 0;
+
 		/* extract useful information */
 		while (fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
@@ -821,19 +825,19 @@ printqueue()
 
 			  case 'S':	/* sender name */
 				if (Verbose)
-					printf("%8ld %10ld %.16s %.37s", dfsize,
-					    w->w_pri, ctime(&submittime),
+					printf("%8ld %10ld %.12s %.38s", dfsize,
+					    w->w_pri, ctime(&submittime) + 4,
 					    &buf[1]);
 				else
 					printf("%8ld %.16s %.45s", dfsize,
 					    ctime(&submittime), &buf[1]);
 				if (message[0] != '\0')
-					printf("\n\t\t (%.62s)", message);
+					printf("\n\t\t (%.60s)", message);
 				break;
 
 			  case 'R':	/* recipient name */
 				if (Verbose)
-					printf("\n\t\t\t\t\t     %.37s", &buf[1]);
+					printf("\n\t\t\t\t\t %.38s", &buf[1]);
 				else
 					printf("\n\t\t\t\t  %.45s", &buf[1]);
 				break;

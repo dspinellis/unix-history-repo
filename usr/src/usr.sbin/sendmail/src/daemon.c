@@ -15,7 +15,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.11 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.12 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -26,7 +26,7 @@ static char	SccsId[] = "@(#)daemon.c	5.11 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.11 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.12 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -87,6 +87,7 @@ getrequests()
 {
 	int t;
 	register struct servent *sp;
+	int on = 1;
 	extern reapchild();
 
 	/*
@@ -128,11 +129,11 @@ getrequests()
 #ifdef DEBUG
 	/* turn on network debugging? */
 	if (tTd(15, 15))
-	{
-		int on = 1;
 		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
-	}
 #endif DEBUG
+
+	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
+	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
 
 	if (bind(DaemonSocket, &SendmailAddress, sizeof SendmailAddress) < 0)
 	{
