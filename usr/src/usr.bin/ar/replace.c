@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)replace.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)replace.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,7 +20,9 @@ static char sccsid[] = "@(#)replace.c	5.5 (Berkeley) %G%";
 #include <unistd.h>
 #include <ar.h>
 #include <stdio.h>
+#include <string.h>
 #include "archive.h"
+#include "extern.h"
 
 extern CHDR chdr;			/* converted header */
 extern char *archive;			/* archive name */
@@ -70,7 +72,7 @@ replace(argv)
 	 */
 	mods = (options & (AR_A|AR_B));
 	for (err = 0, curfd = tfd1; get_header(afd);) {
-		if ((file = *argv) && files(argv)) {
+		if (*argv && (file = files(argv))) {
 			if ((sfd = open(file, O_RDONLY)) < 0) {
 				err = 1;
 				(void)fprintf(stderr, "ar: %s: %s.\n",
