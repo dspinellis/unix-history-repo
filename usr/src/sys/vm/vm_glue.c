@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	8.1 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.26 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -59,7 +59,7 @@ kernacc(addr, len, rw)
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
 	saddr = trunc_page(addr);
-	eaddr = round_page(addr+len-1);
+	eaddr = round_page(addr+len);
 	rv = vm_map_check_protection(kernel_map, saddr, eaddr, prot);
 	/*
 	 * XXX there are still some things (e.g. the buffer cache) that
@@ -85,7 +85,7 @@ useracc(addr, len, rw)
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
 	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map,
-	    trunc_page(addr), round_page(addr+len-1), prot);
+	    trunc_page(addr), round_page(addr+len), prot);
 	return(rv == TRUE);
 }
 
@@ -111,7 +111,7 @@ chgkprot(addr, len, rw)
 	vm_offset_t pa, sva, eva;
 
 	prot = rw == B_READ ? VM_PROT_READ : VM_PROT_READ|VM_PROT_WRITE;
-	eva = round_page(addr + len - 1);
+	eva = round_page(addr + len);
 	for (sva = trunc_page(addr); sva < eva; sva += PAGE_SIZE) {
 		/*
 		 * Extract physical address for the page.
@@ -133,7 +133,7 @@ vslock(addr, len)
 	u_int	len;
 {
 	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			round_page(addr+len-1), FALSE);
+			round_page(addr+len), FALSE);
 }
 
 void
@@ -146,7 +146,7 @@ vsunlock(addr, len, dirtied)
 	dirtied++;
 #endif
 	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			round_page(addr+len-1), TRUE);
+			round_page(addr+len), TRUE);
 }
 
 /*
