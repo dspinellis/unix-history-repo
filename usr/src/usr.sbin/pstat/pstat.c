@@ -57,8 +57,8 @@ static char sccsid[] = "@(#)pstat.c	5.35 (Berkeley) 6/26/91";
 #define mask(x)		(x&0377)
 #define	clear(x)	((int)x &~ KERNBASE)
 
-char	*fnlist	= NULL;
-char	*fcore	= NULL;
+char	*nlistf	= NULL;
+char	*memf	= NULL;
 
 struct nlist nl[] = {
 #define	SWAPMAP	0
@@ -156,19 +156,16 @@ int	nflg;
 u_long	getword();
 off_t	mkphys();
 
-char	*Program;
-
 #define V(x)	(void *)(x)
 
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern char *optarg;
 	extern int optind;
 	int ch, ret;
 
-        Program = argv[0];
 	while ((ch = getopt(argc, argv, "TafvikptU:sxnu")) != EOF)
 		switch (ch) {
 		case 'T':
@@ -215,10 +212,18 @@ main(argc, argv)
 	argv += optind;
 
 	if (argc > 1)
-		fcore = argv[1];
+		memf = argv[1];
 	if (argc > 0)
-		fnlist = argv[0];
-	if (kvm_openfiles(fnlist, fcore, NULL) == -1) {
+		nlistf = argv[0];
+
+	/*
+	 * Discard setgid privileges if not the running kernel so that bad
+	 * guys can't print interesting stuff from kernel memory.
+	 */
+	if (nlistf != NULL || memf != NULL)
+		setgid(getgid());
+
+	if (kvm_openfiles(nlistf, memf, NULL) == -1) {
 		error("kvm_openfiles: %s", kvm_geterr());
 		exit(1);
 	}
@@ -643,7 +648,7 @@ loadvnodes(avnodes)
 	struct e_vnode *vnodebase;
 	struct e_vnode *kinfo_vnodes();
 
-	if (fcore != NULL) {
+	if (memf != NULL) {
 		/*
 		 * do it by hand
 		 */
@@ -1181,7 +1186,7 @@ getfiles(abuf, alen)
 	char *buf;
 	int len;
 
-	if (fcore != NULL) {
+	if (memf != NULL) {
 		/*
 		 * add emulation of KINFO_FILE here
 		 */
@@ -1547,7 +1552,7 @@ error(va_alist)
 	va_list ap;
 	extern errno;
 
-	fprintf(stderr, "%s: ", Program);
+	fprintf(stderr, "pstat: ");
 	va_start(ap);
 	fmt = va_arg(ap, char *);
 	(void) vfprintf(stderr, fmt, ap);
@@ -1562,7 +1567,7 @@ syserror(va_alist)
 	va_list ap;
 	extern errno;
 
-	fprintf(stderr, "%s: ", Program);
+	fprintf(stderr, "pstat: ");
 	va_start(ap);
 	fmt = va_arg(ap, char *);
 	(void) vfprintf(stderr, fmt, ap);
