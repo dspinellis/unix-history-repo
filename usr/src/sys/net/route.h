@@ -1,4 +1,10 @@
-/*	route.h	6.3	84/08/29	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)route.h	6.4 (Berkeley) %G%
+ */
 
 /*
  * Kernel resident routing tables.
