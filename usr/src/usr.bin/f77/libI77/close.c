@@ -1,5 +1,5 @@
 /*
-char id_close[] = "@(#)close.c	1.3";
+char id_close[] = "@(#)close.c	1.4";
  *
  * close.c  -  f77 file close, flush, exit routines
  */
@@ -62,7 +62,11 @@ f_exit()
 ftnint
 flush_(u) ftnint *u;
 {
-	FILE *F = units[*u].ufd;
+	FILE *F;
+
+	if(not_legal(*u))
+		return(F_ERUNIT);
+	F = units[*u].ufd;
 	if(F)
 		return(fflush(F));
 	else
