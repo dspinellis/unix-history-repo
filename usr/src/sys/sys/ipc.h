@@ -14,7 +14,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ipc.h	8.3 (Berkeley) %G%
+ *	@(#)ipc.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -22,8 +22,6 @@
  */
 #ifndef _SYS_IPC_H_
 #define _SYS_IPC_H_
-
-typedef	long	key_t;	/* XXX should be in types.h */
 
 struct ipc_perm {
 	ushort	cuid;	/* creator user id */
