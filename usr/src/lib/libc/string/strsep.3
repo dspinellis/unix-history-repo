@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)strsep.3	5.4 (Berkeley) %G%
+.\"	@(#)strsep.3	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRSEP 3
@@ -21,23 +21,29 @@
 .Sh DESCRIPTION
 The
 .Fn strsep
-function locates in the null-terminated string at
-.Fa *stringp
-the first occurence of any character in
-.Fa delim
-and replaces this with a
-.Ql \e0 ,
-records the location of the immediate following character in
+function locates, in the string referenced by
 .Fa *stringp ,
-then returns the original value of
+the first occurrence of any character in the string
+.Fa delim
+(or the terminating
+.Ql \e0
+character) and replaces it with a
+.Ql \e0 .
+The location of the next character after the delimiter character
+(or NULL, if the end of the string was reached) is stored in
 .Fa *stringp .
-If no delimiter characters are found,
-.Fn strsep
-sets
+The original value of
+.Fa *stringp
+is returned.
+.Pp
+An ``empty'' field, i.e. one caused by two adjacent delimiter characters,
+can be detected by comparing the location referenced by the pointer returned
+in
 .Fa *stringp
 to
-.Dv NULL ;
-if
+.Ql \e0 .
+.Pp
+If
 .Fa *stringp
 is initially
 .Dv NULL ,
@@ -47,19 +53,29 @@ returns
 .Sh EXAMPLES
 The following uses
 .Fn strsep
-to parse strings containing runs of white space,
-making up an argument vector:
+to parse a string, containing tokens delimited by white space, into an
+argument vector:
 .Bd -literal -offset indent
-char inputstring[100];
-char **argv[51], **ap = argv, *p, *val;
-/* set up inputstring */
-for (p = inputstring; p != NULL; ) {
-	while ((val = strsep(&p, " \et")) != NULL && *val == '\e0');
-	*ap++ = val;
-}
-*ap = 0;
+char **ap, *argv[10], *inputstring;
+
+for (ap = argv; (*ap = strsep(&inputstring, " \et")) != NULL;)
+	if (**ap != '\e0')
+		++ap;
 .Ed
 .Sh HISTORY
+The
+.Fn strsep
+function
+is intended as a replacement for the
+.Fn strtok
+function.
+While the
+.Fn strtok
+function should be preferred for portability reasons (it conforms to
+.St -ansiC )
+it is unable to handle empty fields, i.e. detect fields delimited by
+two adjacent delimiter characters, or to be used for more than a single
+string at a time.
 The
 .Fn strsep
 function is
