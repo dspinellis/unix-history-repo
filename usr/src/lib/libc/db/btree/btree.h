@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.8 (Berkeley) %G%
+ *	@(#)btree.h	5.9 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -284,20 +284,20 @@ typedef struct BTREE {
 	u_char	bt_bval;		/* R: delimiting byte/pad character */
 
 #define	BTF_DELCRSR	0x001		/* cursor has been deleted */
-#define	BTF_FIXEDLEN	0x002		/* fixed length records */
-#define	BTF_INMEM	0x004		/* in-memory tree */
+#define	BTF_FIXEDLEN	0x002		/* R: fixed length records */
+#define	BTF_INMEM	0x004		/* B: in-memory tree */
 #define	BTF_METADIRTY	0x008		/* B: need to write metadata */
 #define	BTF_MODIFIED	0x010		/* tree modified */
 #define	BTF_NODUPS	0x020		/* B: no duplicate keys permitted */
 #define	BTF_RDONLY	0x040		/* read-only tree */
-#define	BTF_RECNO	0x080		/* record oriented tree */
-#define	BTF_SEQINIT	0x100		/* sequential scan initialized */
+#define	BTF_RECNO	0x080		/* R: record oriented tree */
+#define	BTF_RINMEM	0x100		/* R: in-memory tree */
+#define	BTF_SEQINIT	0x200		/* sequential scan initialized */
 	u_long		bt_flags;	/* btree state */
 } BTREE;
 
-#define	ISSET(t, f)	((t)->bt_flags & (f))
-#define	NOTSET(t, f)	(!((t)->bt_flags & (f)))
 #define	SET(t, f)	((t)->bt_flags |= (f))
-#define	UNSET(t, f)	((t)->bt_flags &= ~(f))
+#define	CLR(t, f)	((t)->bt_flags &= ~(f))
+#define	ISSET(t, f)	((t)->bt_flags & (f))
 
 #include "extern.h"
