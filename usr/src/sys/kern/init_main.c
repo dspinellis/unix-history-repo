@@ -1,21 +1,30 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)init_main.c	7.9 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)init_main.c	7.5.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
-#include "fs.h"
 #include "mount.h"
 #include "map.h"
 #include "proc.h"
-#include "inode.h"
+#include "vnode.h"
 #include "seg.h"
 #include "conf.h"
 #include "buf.h"
@@ -25,14 +34,18 @@
 #include "clist.h"
 #include "malloc.h"
 #include "protosw.h"
-#include "quota.h"
 #include "reboot.h"
 
 #include "machine/pte.h"
 #include "machine/reg.h"
 #include "machine/cpu.h"
 
+#include "machine/pte.h"
+#include "machine/reg.h"
+#include "machine/cpu.h"
+
 int	cmask = CMASK;
+extern	int (*mountroot)();
 /*
  * Initialization code.
  * Called from cold start routine as
@@ -97,14 +110,12 @@ main(firstaddr)
 	 * to the same virtual address. Otherwise must be
 	 * handled when copying the u. area in newproc().
 	 */
-	u.u_nd.ni_iov = &u.u_nd.ni_iovec;
+	u.u_nd.ni_iov = &u.u_nd.ni_nd.nd_iovec;
 	u.u_ap = u.u_arg;
 	u.u_nd.ni_iovcnt = 1;
 
 	u.u_cmask = cmask;
 	u.u_lastfile = -1;
-	for (i = 1; i < NGROUPS; i++)
-		u.u_groups[i] = NOGROUP;
 	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
 		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
 		    RLIM_INFINITY;
@@ -113,6 +124,22 @@ main(firstaddr)
 	 * set vm rlimits
 	 */
 	vminit();
+
+	/*
+	 * Get vnodes for swapdev, argdev, and rootdev.
+	 */
+	ihinit();
+	nchinit();
+	if (bdevvp(swapdev, &swapdev_vp) ||
+	    bdevvp(argdev, &argdev_vp) ||
+	    bdevvp(rootdev, &rootvp))
+		panic("can't setup bdevvp's");
+
+	/*
+	 * Setup credentials
+	 */
+	u.u_cred = crget();
+	u.u_ngroups = 1;
 
 #if defined(QUOTA)
 	qtinit();
@@ -148,20 +175,13 @@ main(firstaddr)
 	splx(s);
 	pqinit();
 	xinit();
-	ihinit();
 	swapinit();
-	nchinit();
 #ifdef GPROF
 	kmstartup();
 #endif
-
-	fs = mountfs(rootdev, boothowto & RB_RDONLY, (struct inode *)0);
-	if (fs == 0)
-		panic("iinit");
-	bcopy("/", fs->fs_fsmnt, 2);
-
-	inittodr(fs->fs_time);
-	boottime = time;
+#ifdef NFS
+	nfsinit();
+#endif
 
 /* kick off timeout driven events by calling first time */
 	roundrobin();
@@ -169,11 +189,19 @@ main(firstaddr)
 	schedpaging();
 
 /* set up the root file system */
-	rootdir = iget(rootdev, fs, (ino_t)ROOTINO);
-	iunlock(rootdir);
-	u.u_cdir = iget(rootdev, fs, (ino_t)ROOTINO);
-	iunlock(u.u_cdir);
+	if ((*mountroot)())
+		panic("cannot mount root");
+	/*
+	 * Get vnode for '/'.
+	 * Setup rootdir and u.u_cdir to point to it.
+	 */
+	if (VFS_ROOT(rootfs, &rootdir))
+		panic("cannot find root vnode");
+	u.u_cdir = rootdir;
+	u.u_cdir->v_count++;
+	vop_unlock(rootdir);
 	u.u_rdir = NULL;
+	boottime = time;
 
 	u.u_dmap = zdmap;
 	u.u_smap = zdmap;
@@ -295,6 +323,8 @@ swapinit()
 	 */
 	if (nswdev > 1)
 		maxpgio = (maxpgio * (2 * nswdev - 1)) / 2;
+	if (bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
+		panic("swapvp");
 	if (error = swfree(0)) {
 		printf("swfree errno %d\n", error);	/* XXX */
 		panic("swapinit swfree 0");
