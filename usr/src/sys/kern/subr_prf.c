@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.22 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,10 +47,10 @@ int	(*v_poll)() = cnpoll;		/* kdb hook to enable input polling */
 extern	cnputc();			/* standard console putc */
 int	(*v_putc)() = cnputc;          	/* routine to putc on virtual console */
 
-static void logpri __P((int));
-static void putchar __P((int, int, struct tty *));
-static void kprintf __P((const char *, int, struct tty *, ...));
-static void kprintn __P((u_long, int));
+static void logpri __P((int level));
+static void putchar __P((int ch, int flags, struct tty *tp));
+static void kprintf __P((const char *fmt, int flags, struct tty *tp, va_list));
+static void kprintn __P((u_long num, int base, int flags, struct tty *tp));
 
 extern	cnputc();			/* standard console putc */
 extern	struct tty cons;		/* standard console tty */
@@ -310,10 +310,10 @@ printf(fmt /*, va_alist */)
  *	kprintf("prefix: %r, other stuff\n", fmt, ap);
  */
 static void
-kprintf(fmt, flags, ttyp, ap)
-	register char *fmt;
+kprintf(fmt, flags, tp, ap)
+	register const char *fmt;
 	int flags;
-	struct tty *ttyp;
+	struct tty *tp;
 	va_list ap;
 {
 	register char *p;
@@ -325,7 +325,7 @@ kprintf(fmt, flags, ttyp, ap)
 		while ((ch = *fmt++) != '%') {
 			if (ch == '\0')
 				return;
-			putchar(ch, flags, ttyp);
+			putchar(ch, flags, tp);
 		}
 		lflag = 0;
 reswitch:	switch (ch = *fmt++) {
@@ -335,34 +335,34 @@ reswitch:	switch (ch = *fmt++) {
 		case 'b':
 			ul = va_arg(ap, int);
 			p = va_arg(ap, char *);
-			kprintn(ul, *p++);
+			kprintn(ul, *p++, flags, tp);
 
 			if (!ul)
 				break;
 
 			for (set = 0; n = *p++;) {
 				if (ul & (1 << (n - 1))) {
-					putchar(set ? ',' : '<', flags, ttyp);
+					putchar(set ? ',' : '<', flags, tp);
 					for (; (n = *p) > ' '; ++p)
-						putchar(n, flags, ttyp);
+						putchar(n, flags, tp);
 					set = 1;
 				} else
 					for (; *p > ' '; ++p);
 			}
 			if (set)
-				putchar('>', flags, ttyp);
+				putchar('>', flags, tp);
 			break;
 		case 'c':
-			putchar(va_arg(ap, int), flags, ttyp);
+			putchar(va_arg(ap, int), flags, tp);
 			break;
 		case 'r':
 			p = va_arg(ap, char *);
-			kprintf(p, flags, ttyp, va_arg(ap, va_list));
+			kprintf(p, flags, tp, va_arg(ap, va_list));
 			break;
 		case 's':
 			p = va_arg(ap, char *);
 			while (ch = *p++)
-				putchar(ch, flags, ttyp);
+				putchar(ch, flags, tp);
 			break;
 		case 'D':
 			lflag = 1;
@@ -371,10 +371,10 @@ reswitch:	switch (ch = *fmt++) {
 			ul = lflag ?
 			    va_arg(ap, long) : va_arg(ap, int);
 			if ((long)ul < 0) {
-				putchar('-', flags, ttyp);
+				putchar('-', flags, tp);
 				ul = -(long)ul;
 			}
-			kprintn(ul, 10);
+			kprintn(ul, 10, flags, tp);
 			break;
 		case 'O':
 			lflag = 1;
@@ -382,7 +382,7 @@ reswitch:	switch (ch = *fmt++) {
 		case 'o':
 			ul = lflag ?
 			    va_arg(ap, u_long) : va_arg(ap, u_int);
-			kprintn(ul, 8);
+			kprintn(ul, 8, flags, tp);
 			break;
 		case 'U':
 			lflag = 1;
@@ -390,7 +390,7 @@ reswitch:	switch (ch = *fmt++) {
 		case 'u':
 			ul = lflag ?
 			    va_arg(ap, u_long) : va_arg(ap, u_int);
-			kprintn(ul, 10);
+			kprintn(ul, 10, flags, tp);
 			break;
 		case 'X':
 			lflag = 1;
@@ -398,22 +398,23 @@ reswitch:	switch (ch = *fmt++) {
 		case 'x':
 			ul = lflag ?
 			    va_arg(ap, u_long) : va_arg(ap, u_int);
-			kprintn(ul, 16);
+			kprintn(ul, 16, flags, tp);
 			break;
 		default:
-			putchar('%', flags, ttyp);
+			putchar('%', flags, tp);
 			if (lflag)
-				putchar('l', flags, ttyp);
-			putchar(ch, flags, ttyp);
+				putchar('l', flags, tp);
+			putchar(ch, flags, tp);
 		}
 	}
 	va_end(ap);
 }
 
 static void
-kprintn(ul, base)
+kprintn(ul, base, flags, tp)
 	u_long ul;
-	int base;
+	int base, flags;
+	struct tty *tp;
 {
 					/* hold a long in base 8 */
 	char *p, buf[(sizeof(long) * NBBY >> 3) + 1];
@@ -423,7 +424,7 @@ kprintn(ul, base)
 		*p++ = "0123456789abcdef"[ul % base];
 	} while (ul /= base);
 	do {
-		putchar(*--p);
+		putchar(*--p, flags, tp);
 	} while (p > buf);
 }
 
@@ -433,26 +434,26 @@ kprintn(ul, base)
  * inspection later.
  */
 static void
-putchar(c, flags, ttyp)
+putchar(c, flags, tp)
 	register int c;
 	int flags;
-	struct tty *ttyp;
+	struct tty *tp;
 {
 	extern int msgbufmapped;
 	register struct msgbuf *mbp;
 
 	if (panicstr)
 		constty = NULL;
-	if ((flags & TOCONS) && ttyp == NULL && constty) {
-		ttyp = constty;
+	if ((flags & TOCONS) && tp == NULL && constty) {
+		tp = constty;
 		flags |= TOTTY;
 	}
 	if ((flags & TOCONS) && panicstr == 0 && tp == 0 && constty) {
 		tp = constty;
 		flags |= TOTTY;
 	}
-	if ((flags & TOTTY) && ttyp && tputchar(c, ttyp) < 0 &&
-	    (flags & TOCONS) && ttyp == constty)
+	if ((flags & TOTTY) && tp && tputchar(c, tp) < 0 &&
+	    (flags & TOCONS) && tp == constty)
 		constty = NULL;
 	if ((flags & TOLOG) &&
 	    c != '\0' && c != '\r' && c != 0177 && msgbufmapped) {
