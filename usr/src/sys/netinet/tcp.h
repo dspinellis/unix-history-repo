@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp.h	6.3 (Berkeley) %G%
+ *	@(#)tcp.h	6.4 (Berkeley) %G%
  */
 
 typedef	u_long	tcp_seq;
@@ -42,3 +42,9 @@ struct tcphdr {
  *  but 512 is probably more convenient.
  */
 #define	TCP_MSS	MIN(512, IP_MSS - sizeof (struct tcpiphdr))
+
+/*
+ * User-settable options (used with setsockopt).
+ */
+#define	TCP_NODELAY	0x01	/* don't delay send to coalesce packets */
+#define	TCP_MAXSEG	0x02	/* set maximum segment size */
