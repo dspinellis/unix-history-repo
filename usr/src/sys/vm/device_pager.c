@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	7.4 (Berkeley) %G%
+ *	@(#)device_pager.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -184,7 +184,7 @@ dev_pager_dealloc(pager)
 #endif
 	while (!queue_empty(&object->memq))
 		vm_page_remove((vm_page_t)queue_first(&object->memq));
-	kmem_free(kernel_map, devp->devp_pages,
+	kmem_free(kernel_map, (vm_offset_t)devp->devp_pages,
 		  devp->devp_npages * sizeof(struct vm_page));
 	free((caddr_t)devp, M_VMPGDATA);
 	pager->pg_data = 0;
