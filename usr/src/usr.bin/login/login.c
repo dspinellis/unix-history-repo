@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.47 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -254,7 +254,7 @@ main(argc, argv)
 #ifdef	KERBEROS
 
 		/*
-		 * If not present in pw file, act as we normally would.
+		 * If not present in pw file, act as old login would.
 		 * If we aren't Kerberos-authenticated, try the normal
 		 * pw file for a password.  If that's ok, log the user
 		 * in without issueing any tickets.
@@ -265,7 +265,8 @@ main(argc, argv)
 			/*
 			 * get TGT for local realm
 			 *	convention: store tickets in file
-			 *	associated with tty name
+			 *	associated with tty name, which should
+			 *	be available
 			 */
 
 			(void)sprintf(tkfile, "%s_%s", TKT_ROOT, tty);
@@ -273,22 +274,17 @@ main(argc, argv)
 			if (setenv("KRBTKFILE", tkfile, 1) < 0)
 				syslog(LOG_ERR, "couldn't set tkfile environ");
 			else {
-				setreuid(pwd->pw_uid, 0);
+				(void) unlink(tkfile);
 				kerror = krb_get_pw_in_tkt(
-					PRINCIPAL_NAME, PRINCIPAL_INST, realm,
-					INITIAL_TICKET, realm, DEFAULT_TKT_LIFE,
+					PRINCIPAL_NAME,	/* user */
+					PRINCIPAL_INST,	/* (null) */
+					realm,
+					INITIAL_TICKET, realm,
+					DEFAULT_TKT_LIFE,
 					pp);
-				setuid(0);
-				if ((kerror == KSUCCESS) &&
-				    (chown(tkfile, pwd->pw_uid) < 0)) {
-					syslog(LOG_ERR,
-						"couldn't chown tkfile: %m");
-					kerror = INTK_ERR;
-				} else if (kerror != KSUCCESS) {
-					syslog(LOG_ERR,
-						"problem getting intkt: %s\n",
-						krb_err_txt[kerror]);
-				}
+
+				if (chown(tkfile, pwd->pw_uid, pwd->pw_gid) < 0)
+					syslog(LOG_ERR, "chown tkfile: %m");
 			}
 			/*
 			 * If we got a TGT, get a local "rcmd" ticket and
@@ -309,8 +305,8 @@ main(argc, argv)
 				kerror = krb_mk_req(&ticket, VERIFY_SERVICE,
 					savehost, realm, 33);
 				/*
-				 * if the "VERIFY_SERVICE" doesn't exist in the
-				 * KDC for this host, still allow login,
+				 * if the "VERIFY_SERVICE" doesn't exist in
+				 * the KDC for this host, still allow login,
 				 * but log the error condition
 				 */
 				if (kerror == KDC_PR_UNKNOWN) {
@@ -330,7 +326,8 @@ main(argc, argv)
 					/* fall thru: no login */
 				} else {
 					if (!(hp = gethostbyname(localhost))) {
-						syslog(LOG_ERR, "couldn't get local host address");
+						syslog(LOG_ERR,
+						    "couldn't get local host address");
 					} else {
 					    bcopy((char *) hp->h_addr,
 						(char *) &faddr, sizeof(faddr));
@@ -363,6 +360,12 @@ main(argc, argv)
 					}
 				}
 
+			} else {
+				(void) unlink(tkfile);
+				if (kerror != INTK_BADPW)
+					syslog(LOG_ERR,
+						"Kerberos intkt error: %s",
+						krb_err_txt[kerror]);
 			}
 		}
 
