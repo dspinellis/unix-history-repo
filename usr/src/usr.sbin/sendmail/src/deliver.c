@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.37	%G%";
+static char SccsId[] = "@(#)deliver.c	3.38	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -49,7 +49,6 @@ deliver(to, editfcn)
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE];
 	char buf[MAXNAME];
-	bool firstone;
 
 	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
 		return (0);
@@ -124,12 +123,11 @@ deliver(to, editfcn)
 	*/
 
 	tobuf[0] = '\0';
-	firstone = TRUE;
 	To = tobuf;
 	for (; to != NULL; to = to->q_next)
 	{
 		/* avoid sending multiple recipients to dumb mailers */
-		if (!firstone && !bitset(M_MUSER, m->m_flags))
+		if (tobuf[0] != '\0' && !bitset(M_MUSER, m->m_flags))
 			break;
 
 		/* if already sent or not for this host, don't send */
