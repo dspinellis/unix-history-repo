@@ -1,4 +1,4 @@
-/*	tip.h	4.6	81/12/16	*/
+/*	tip.h	4.7	82/07/29	*/
 /*
  * tip - terminal interface program
  *
@@ -92,8 +92,8 @@ typedef
 typedef
 	union {
 		int	zz_number;
-		short	zz_boolean;
-		char	zz_character;
+		int	zz_boolean;
+		int	zz_character;
 		int	*zz_address;
 	}
 	zzhack;

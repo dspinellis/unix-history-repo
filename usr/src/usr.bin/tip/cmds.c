@@ -1,4 +1,4 @@
-/*	cmds.c	4.8	82/01/06	*/
+/*	cmds.c	4.9	82/07/29	*/
 #include "tip.h"
 /*
  * tip
@@ -233,7 +233,7 @@ transmit(fd, eofchars, command)
 	FILE *fd;
 	char *eofchars, *command;
 {
-	char *pc, lastc;
+	char *pc, lastc, rc;
 	int c, ccount, lcount;
 	time_t start_t, stop_t;
 
@@ -279,7 +279,7 @@ transmit(fd, eofchars, command)
 							send(' ');
 						continue;
 					}
-				} else
+				} else if (!any(c, value(EXCEPTIONS)))
 					continue;
 			}
 			send(c);
@@ -290,14 +290,14 @@ transmit(fd, eofchars, command)
 			alarm(10);
 			timedout = 0;
 			do {	/* wait for prompt */
-				read(FD, (char *)&c, 1);
+				read(FD, (char *)&rc, 1);
 				if (timedout || stop) {
 					if (timedout)
 						printf("\r\ntimed out at eol\r\n");
 					alarm(0);
 					goto out;
 				}
-			} while ((c&0177) != character(value(PROMPT)));
+			} while ((rc&0177) != character(value(PROMPT)));
 			alarm(0);
 		}
 	}
@@ -351,7 +351,7 @@ cu_put(cc)
 send(c)
 	char c;
 {
-	int cc;
+	char cc;
 	int retry = 0;
 
 	cc = c;
