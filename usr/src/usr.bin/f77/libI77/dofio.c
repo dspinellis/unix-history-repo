@@ -17,20 +17,32 @@ en_fio()
 	return(do_fio(&one,NULL,0L));
 }
 
+/* OP_TYPE_TAB is defined in format.h,
+		  it is NED for X,SLASH,APOS,H,TL,TR,T
+		  ED  for I,IM,F,E,EE,D,DE,G,GE,L,A,AW
+		  and returns op for other values 
+ */
+static int optypes[] = { OP_TYPE_TAB };
 static int rep_count, in_mid;
 
 do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 {	struct syl *p;
-	int n,i,more;
+	int n,i,more,optype;
 	more = *number;
-	for(;;)
-	switch(type_f((p= &syl_ptr[pc])->op))
-	{
-	case NED:
+	for(;;) {
+	  if( (optype = ((p= &syl_ptr[pc])->op)) > LAST_TERM )
+		err(errflag,F_ERFMT,"impossible code");
+#ifdef DEBUG
+	  fprintf(stderr," pc=%d, cnt[%d]=%d, ret[%d]=%d, op=%d\n",
+		pc,cp,cnt[cp],rp,ret[rp],optype); /*for debug*/
+#endif
+	  switch(optypes[optype])
+	  {
+	  case NED:
 		DO((*doned)(p,ptr))
 		pc++;
 		break;
-	case ED:
+	  case ED:
 		if(in_mid == NO) rep_count = p->rpcnt;
 		in_mid = YES;
 		while (rep_count > 0 ) {
@@ -47,17 +59,17 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		pc++;
 		in_mid = NO;
 		break;
-	case STACK:		/* repeat count */
+	  case STACK:		/* repeat count */
 		if(++cp==STKSZ) err(errflag,F_ERFMT,"too many nested ()")
 		cnt[cp]=p->p1;
 		pc++;
 		break;
-	case RET:		/* open paren */
+	  case RET:		/* open paren */
 		if(++rp==STKSZ) err(errflag,F_ERFMT,"too many nested ()")
 		ret[rp]=p->p1;
 		pc++;
 		break;
-	case GOTO:		/* close paren */
+	  case GOTO:		/* close paren */
 		if(--cnt[cp]<=0)
 		{	cp--;
 			rp--;
@@ -65,7 +77,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		}
 		else pc = ret[rp--] + 1;
 		break;
-	case REVERT:		/* end of format */
+	  case REVERT:		/* end of format */
 		if(ptr==NULL)
 		{	DO((*doend)('\n'))
 			return(OK);
@@ -75,9 +87,9 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		pc = p->p1;
 		DO((*dorevert)())
 		break;
-	case COLON:
+	  case COLON:
 #ifndef KOSHER
-	case DOLAR:				/*** NOT STANDARD FORTRAN ***/
+	  case DOLAR:				/*** NOT STANDARD FORTRAN ***/
 #endif
 		if (ptr == NULL)
 		{	DO((*doend)((char)p->p1))
@@ -87,35 +99,36 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		pc++;
 		break;
 #ifndef KOSHER
-	case SU:				/*** NOT STANDARD FORTRAN ***/
+	  case SU:				/*** NOT STANDARD FORTRAN ***/
 #endif
-	case SS:
-	case SP:
-	case S: cplus = p->p1;
+	  case SS:
+	  case SP:
+	  case S: cplus = p->p1;
 		signit = p->p2;
 		pc++;
 		break;
-	case P:
+	  case P:
 		scale = p->p1;
 		pc++;
 		break;
 #ifndef KOSHER
-	case R:					/*** NOT STANDARD FORTRAN ***/
+	  case R:					/*** NOT STANDARD FORTRAN ***/
 		radix = p->p1;
 		pc++;
 		break;
-	case B:					/*** NOT STANDARD FORTRAN ***/
+	  case B:					/*** NOT STANDARD FORTRAN ***/
 		if (external) cblank = curunit->ublnk;
 		else cblank = 0;		/* blank = 'NULL' */
 		pc++;
 		break;
 #endif
-	case BNZ:
+	  case BNZ:
 		cblank = p->p1;
 		pc++;
 		break;
-	default:
+	  default:
 		err(errflag,F_ERFMT,"impossible code")
+	  }
 	}
 }
 
@@ -124,30 +137,4 @@ fmt_bg()
 	in_mid = NO;
 	cp=rp=pc=cursor=0;
 	cnt[0]=ret[0]=0;
-}
-
-type_f(n)
-{
-#ifdef DEBUG
-	fprintf(stderr," pc=%d, cnt[%d]=%d, ret[%d]=%d, op=%d\n",
-		pc,cp,cnt[cp],rp,ret[rp],n); /*for debug*/
-#endif
-	switch(n)
-	{
-	case X:			/* non-editing specifications */
-	case SLASH:
-	case APOS: case H:
-	case T: case TL: case TR:
-				return(NED);
-
-	case F:			/* editing conversions */
-	case I: case IM:
-	case A: case AW:
-	case L:
-	case E: case EE: case D: case DE:
-	case G: case GE:
-				return(ED);
-
-	default: return(n);
-	}
 }

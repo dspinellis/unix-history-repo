@@ -9,6 +9,10 @@ struct syl
 	short op,p1,p2,rpcnt;
 };
 
+/*	do NOT change this defines or add new ones without
+ *	changing the value of the follow define for OP_TYPE_TAB
+ */
+
 #define RET	1
 #define REVERT 	2
 #define GOTO 	3
@@ -44,6 +48,26 @@ struct syl
 #define R	33		/*** NOT STANDARD FORTRAN ***/
 #define DOLAR	34		/*** NOT STANDARD FORTRAN ***/
 #define SU	35		/*** NOT STANDARD FORTRAN ***/
+
+#define LAST_TERM SU
+
+/* OP_TYPE_TAB is used in dofio.c .
+	  Each value corresponds to a value above, and must be
+	  ED for editing terms: I,IM,F,E,EE,D,DE,G,GE,L,A,AW
+	  NED for nonediting terms which change the I/O stream:
+			X,SLASH,APOS,H,TL,TR,T
+	  and just the value of the term for all others.
+
+	  E.g. SP is defined above as 17, so the element 17 of
+	  OP_TYPE_TAB (counting from zero) is SP since SP does not
+	  read or write data;
+	  IM is defined as 10 so the element 10 of OP_TYPE_TAB
+	  is ED since IM edits data from the i/o list.
+ */
+#define OP_TYPE_TAB {0, RET, REVERT, GOTO, NED, NED, STACK, ED, ED, NED, \
+			ED, NED, NED, NED, NED, NED, COLON, S, SP, SS, P, \
+			BNZ, B, ED, ED, ED, ED, ED, ED, ED, ED, ED, ED, \
+			R, DOLAR, SU }
 
 #define	FMTUNKN	-1
 #define FMTOK	1
