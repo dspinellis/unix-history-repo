@@ -1,7 +1,10 @@
-#	Makefile	4.1	82/05/11
+#	Makefile	4.2	82/10/24
 
+DESTDIR=
 CFILES=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
 OBJS=	done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
+HFILES = hdr.h
+SRCS = $(CFILES) $(HFILES) glorkz
 CFLAGS=	-O
 LDFLAGS=-n	# should be -i on small machines, -n on a vax
 
@@ -19,7 +22,7 @@ save.o:	save.c	# vax C optimizer bug - infinite loop
 okplay.o: /tmp
 
 install: advent
-	cp advent /usr/games/adventure
+	install advent ${DESTDIR}/usr/games/adventure
 #	cp okplay /usr/games/adventure
 #	cp advsaver /usr/games/lib
 #	dd if=/usr/games/lib/adventure of=/usr/games/lib/advheader bs=1 count=16
@@ -42,3 +45,8 @@ lint:
 
 clean:
 	rm -f ${OBJS} a.out advent core errs
+
+sources: $(SRCS)
+
+$(SRCS):
+	sccs get $@
