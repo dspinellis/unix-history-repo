@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)fend.c 2.1 %G%";
+static char sccsid[] = "@(#)fend.c 1.22.1.1 %G%";
 #endif
 
 #include "whoami.h"
@@ -142,7 +142,6 @@ funcend(fp, bundle, endline)
 	    stabfunc( fp -> symbol , fp -> class , 
 		bundle->stmnt_blck.line_no , (long) (cbn - 1) );
 	    for ( p = fp -> chain ; p != NIL ; p = p -> chain ) {
-		stabparam( p -> symbol , p2type( p -> type )
 			    , p -> value[ NL_OFFS ] ,
 				 (int) lwidth( p -> type ) );
 	    }
@@ -151,7 +150,6 @@ funcend(fp, bundle, endline)
 		     *	stab the function variable
 		     */
 		p = fp -> ptr[ NL_FVAR ];
-		stablvar( p -> symbol , p2type( p -> type ) , cbn 
 			, p -> value[ NL_OFFS ] , (int) lwidth( p -> type ) );
 	    }
 		/*
@@ -164,13 +162,8 @@ funcend(fp, bundle, endline)
 			break;
 		    }
 		    /*
-		     *	stab local variables
-		     *	that's named variables, but not params
+		     *	stab locals (not parameters)
 		     */
-		    if (   ( p -> symbol != NIL ) 
-			&& ( p -> class == VAR )
-			&& ( p -> value[ NL_OFFS ] < 0 ) ) {
-			stablvar( p -> symbol , p2type( p -> type ) , cbn 
 			    , p -> value[ NL_OFFS ] , (int) lwidth( p -> type ) );
 		    }
 		}
@@ -728,6 +721,7 @@ fp_exitcode(eecookiep)
 fp_epilogue(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
+    stabline(line);
     putprintf("	ret" , 0 );
 	/*
 	 *	set the register save mask.
@@ -988,3 +982,4 @@ fp_formalentry(eecookiep)
 }
 #endif mc68000
 #endif PC
+
