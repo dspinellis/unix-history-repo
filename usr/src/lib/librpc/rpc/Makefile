@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 
 LIB=	rpc
 CFLAGS+=-I${.CURDIR}/..
@@ -19,6 +19,10 @@ HDRS=	auth.h auth_unix.h clnt.h pmap_clnt.h \
 all: librpc.a
 
 beforeinstall: ${HDRS}
+	rm -rf ${DESTDIR}/usr/include/rpc
+	mkdir ${DESTDIR}/usr/include/rpc
+	chown bin.bin ${DESTDIR}/usr/include/rpc
+	chmod 755 ${DESTDIR}/usr/include/rpc
 	cd ${.CURDIR}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${HDRS} \
 	    ${DESTDIR}/usr/include/rpc
 
