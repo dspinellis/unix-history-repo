@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)names.c 1.2 %G%";
+static char sccsid[] = "@(#)names.c 1.3 %G%";
 
 /*
  * Name are the internal representation for identifiers.
@@ -39,7 +39,7 @@ private Name nametable[HASHTABLESIZE];
  * doesn't cause many a page fault.
  */
 
-#define CHUNKSIZE 1000
+#define CHUNKSIZE 200
 
 typedef struct Namepool {
     struct Name name[CHUNKSIZE];
@@ -48,7 +48,6 @@ typedef struct Namepool {
 
 private Namepool namepool = nil;
 private Integer nleft = 0;
-private struct Namepool zeropool;
 
 /*
  * Given an identifier, convert it to a name.
@@ -102,7 +101,7 @@ Boolean isallocated;
      */
     if (nleft <= 0) {
 	newpool = new(Namepool);
-	*newpool = zeropool;
+	bzero(newpool, sizeof(newpool));
 	newpool->prevpool = namepool;
 	namepool = newpool;
 	nleft = CHUNKSIZE;
