@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)termios.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)termios.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -115,8 +115,6 @@ cfsetspeed(t, speed)
 	speed_t speed;
 {
 	t->c_ispeed = t->c_ospeed = speed;
-
-	return (0)
 }
 
 /*
@@ -199,9 +197,9 @@ tcflow(fd, action)
 	case TCIOFF:
 	case TCION: {		/* these posix functions are STUPID */
 		struct termios term;
-		char c;
+		unsigned char c;
 
-		if (tcgetattr(fd, &term) == -1);
+		if (tcgetattr(fd, &term) == -1)
 			return (-1);
 		c = term.c_cc[action == TCIOFF ? VSTOP : VSTART];
 		if (c != _POSIX_VDISABLE && write(fd, &c, 1) == -1)
