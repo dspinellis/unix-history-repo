@@ -4,9 +4,13 @@
 # import/ checkout.  These need to be made by the Makefiles, this
 # is just here as a stop gap solution.
 #
-# $Header: /home/cvs/386BSD/src/FixLinks,v 1.1 93/06/19 14:50:18 rgrimes Exp $
+# $Header: /home/cvs/386BSD/src/FixLinks,v 1.2 1993/06/20 12:02:09 rgrimes Exp $
 #
-# $Log:	FixLinks,v $
+# $Log: FixLinks,v $
+# Revision 1.2  1993/06/20  12:02:09  rgrimes
+# Put back in the ones that usr.bin/Makefile should do, it needs fixed
+# as it does not work for a make obj.
+#
 # Revision 1.1  93/06/19  14:50:18  rgrimes
 # Added my silly little FixLinks script until someone fixes all
 # the make files.
@@ -42,3 +46,4 @@ pushd usr.bin ; ln -s ../gnu/gcc2 gcc2 ; popd
 pushd usr.bin ; ln -s ../gnu/groff groff ; popd
 pushd usr.bin ; ln -s ../gnu/gzip gzip ; popd
 pushd usr.bin ; ln -s ../gnu/tar tar ; popd
+pushd usr.bin ; ln -s ../gnu/rcs rcs ; popd
