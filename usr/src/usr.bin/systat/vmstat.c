@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -481,11 +481,13 @@ showkre()
 		, 2
 		, 1
 	);
-	c = 0;
-	for (i = 0; i < dk_ndrive && c < MAXDRIVES; i++)
-		if (dk_select[i])
+	mvprintw(DISKROW,DISKCOL+5,"                              ");
+	for (i = 0, c = 0; i < dk_ndrive && c < MAXDRIVES; i++)
+		if (dk_select[i]) {
+			mvprintw(DISKROW, DISKCOL + 5 + 5 * c,
+				"  %3.3s", dr_name[i]);
 			dinfo(i, ++c);
-
+		}
 	putint(s.nchcount, NAMEIROW + 2, NAMEICOL, 9);
 	putint(nchtotal.ncs_goodhits, NAMEIROW + 2, NAMEICOL + 9, 9);
 #define nz(x)	((x) ? (x) : 1)
