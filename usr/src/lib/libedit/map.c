@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)map.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	5.4 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /*
@@ -1000,6 +1000,7 @@ map_init_vi(el)
 	map_init_nls(el);
 #endif
 
+    tty_bind_char(el, 1);
     term_bind_arrow(el);
 }
 
@@ -1037,7 +1038,8 @@ map_init_emacs(el)
     buf[2] = 0;
     buf[1] = CONTROL('X');
     key_add(el, buf, key_map_cmd(el, EM_EXCHANGE_MARK), XK_CMD);
-
+    
+    tty_bind_char(el, 1);
     term_bind_arrow(el);
 }
 
