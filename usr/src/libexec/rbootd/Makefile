@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	rbootd
 SRCS=	bpf.c conf.c parseconf.c rbootd.c rmpproto.c utils.c
