@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.7 %G%";
+static char sccsid[] = "@(#)object.c 1.8 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -38,6 +38,9 @@ private Language curlang;
 private Symbol curmodule;
 private Symbol curparam;
 private Boolean warned;
+private Symbol curcomm;
+private Symbol commchain;
+private Boolean strip_ = false;
 
 private Filetab *filep;
 private Linetab *linep, *prevlinep;
@@ -161,9 +164,21 @@ Fileid f;
 	index = np->n_un.n_strx;
 	if (index != 0) {
 	    name = &stringtab[index - 4];
+	    /*
+             *  if the program contains any .f files a trailing _ is stripped
+       	     *  from the name on the assumption it was added by the compiler.
+	     *  This only affects names that follow the sdb N_SO entry with
+             *  the .f name. 
+             */
+            if(strip_ && *name != '\0' ) {
+                 register char *p, *q;
+                 for(p=name,q=(name+1); *q != '\0'; p=q++);
+                 if (*p == '_')  *p = '\0';
+            }
+
 	} else {
 	    name = nil;
-	}
+	} 
 	/*
 	 * assumptions:
 	 *	not an N_STAB	==> name != nil
@@ -171,6 +186,7 @@ Fileid f;
 	 *	name[0] != '_'	==> filename or invisible
 	 *
 	 * The "-lg" signals the beginning of global loader symbols.
+         *
 	 */
 	if ((np->n_type&N_STAB) != 0) {
 	    enter_nl(name, np);
@@ -259,6 +275,32 @@ register struct nlist *np;
 	n = identname(name, true);
     }
     switch (np->n_type) {
+
+/* Build a symbol for the common; all GSYMS that follow will be chained;
+ * the head of this list is kept in common.offset, the tail in common.chain
+ */
+ 	case N_BCOMM:
+ 	    if(curcomm) {
+	    curcomm->symvalue.common.chain = commchain;
+	    }
+	    curcomm = lookup(n);
+	    if (  curcomm == nil) {
+		  curcomm = insert(n);
+		  curcomm->class = COMMON;
+		  curcomm->block = curblock;
+		  curcomm->level = program->level;
+		  curcomm->symvalue.common.chain = nil;
+	    }
+	    commchain = curcomm->symvalue.common.chain;
+	break;
+
+	case N_ECOMM:
+	    if(curcomm) {
+	    curcomm->symvalue.common.chain = commchain;
+	    curcomm = nil;
+	    }
+	    break;
+				   
 	case N_LBRAC:
 	    s = symbol_alloc();
 	    s->class = PROC;
@@ -289,6 +331,9 @@ register struct nlist *np;
 	    }
 	    suffix = rindex(mname, '.');
 	    curlang = findlanguage(suffix);
+	    if(curlang == findlanguage(".f")) {
+                            strip_ = true;
+            } 
 	    if (suffix != nil) {
 		*suffix = '\0';
 	    }
@@ -381,7 +426,7 @@ String name;
 register struct nlist *np;
 {
     register Name n;
-    register Symbol t;
+    register Symbol t, u;
 
     if (not streq(name, "end")) {
 	n = identname(name, true);
@@ -401,7 +446,18 @@ register struct nlist *np;
 	    t->symvalue.funcv.beginaddr = np->n_value;
 	    newfunc(t);
 	    findbeginning(t);
-	} else {
+	}  else if ( (np->n_type&N_TYPE) == N_BSS ){
+	    find(t, n) where
+		t->class  == COMMON
+	    endfind(t);
+	    if(t != nil) {
+		for(u= (Symbol) t->symvalue.common.offset;
+                        u != nil ;u=u->symvalue.common.chain){
+		   u->symvalue.offset = u->symvalue.common.offset + np->n_value;
+		   }
+            }
+        }
+        else {
 	    find(t, n) where
 		t->class == VAR and t->level == program->level
 	    endfind(t);
@@ -627,8 +683,23 @@ struct nlist *np;
 	    s->block = curmodule;
 	    break;
 
+/*
+ *  keep global BSS variables chained so can resolve when get the start
+ *  of common; keep the list in order so f77 can display all vars in a COMMON
+*/
 	case 'V':	/* own variable */
 	    s->level = 2;
+	    if (curcomm) {
+	      if (commchain != nil) {
+ 		  commchain->symvalue.common.chain = s;
+	      }			  
+	      else {
+		  curcomm->symvalue.common.offset = (int) s;
+	      }			  
+              commchain = s;
+              s->symvalue.common.offset = np->n_value;
+              s->symvalue.common.chain = nil;
+	    }
 	    break;
 
 	case 'r':	/* register variable */
@@ -718,14 +789,63 @@ Symbol type;
 	}
 	t->language = curlang;
 	t->level = b;
+	t->block = curblock;
 	class = *curchar++;
 	switch (class) {
+
 	    case 'r':
 		t->class = RANGE;
 		t->type = constype(nil);
 		skipchar(curchar, ';');
-		t->symvalue.rangev.lower = getint();
+                /* some letters indicate a dynamic bound, ie what follows
+                   is the offset from the fp which contains the bound; this will
+                   need a different encoding when pc a['A'..'Z'] is
+                   added; J is a special flag to handle fortran a(*) bounds
+                */
+		switch(*curchar) {
+			case 'A':
+				t->symvalue.rangev.lowertype = R_ARG;
+                  		curchar++;
+			        break;
+
+			case 'T':
+				t->symvalue.rangev.lowertype = R_TEMP;
+                  		curchar++;
+			        break;
+
+			case 'J': 
+				t->symvalue.rangev.lowertype = R_ADJUST;
+                  		curchar++;
+			  	break;
+
+			default:
+				 t->symvalue.rangev.lowertype = R_CONST;
+			  	 break;
+
+		}
+	        t->symvalue.rangev.lower = getint();
 		skipchar(curchar, ';');
+		switch(*curchar) {
+			case 'A':
+				t->symvalue.rangev.uppertype = R_ARG;
+                  		curchar++;
+			        break;
+
+			case 'T':
+				t->symvalue.rangev.uppertype = R_TEMP;
+                  		curchar++;
+			        break;
+
+			case 'J': 
+				t->symvalue.rangev.uppertype = R_ADJUST;
+                  		curchar++;
+			  	break;
+
+			default:
+				 t->symvalue.rangev.uppertype = R_CONST;
+			  	 break;
+
+		}
 		t->symvalue.rangev.upper = getint();
 		break;
 
