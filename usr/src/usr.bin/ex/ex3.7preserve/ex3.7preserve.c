@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7preserve.c	7.4	%G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.5	%G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -43,7 +43,7 @@ char xstr[1];			/* make loader happy */
 
 struct 	header {
 	time_t	Time;			/* Time temp file last updated */
-	short	Uid;			/* This users identity */
+	int	Uid;			/* This users identity */
 #ifndef VMUNIX
 	short	Flines;			/* Number of lines in file */
 #else

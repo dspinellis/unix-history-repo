@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_temp.h	7.2	%G%  */
+/* sccs id:	@(#)ex_temp.h	7.3	%G%  */
 /*
  * The editor uses a temporary file for files being edited, in a structure
  * similar to that of ed.  The first block of the file is used for a header
@@ -99,7 +99,7 @@ var char	obuff[BUFSIZ];
 /* This definition also appears in expreserve.c... beware */
 struct 	header {
 	time_t	Time;			/* Time temp file last updated */
-	short	Uid;
+	int	Uid;
 #ifndef VMUNIX
 	short	Flines;			/* Number of lines in file */
 #else
