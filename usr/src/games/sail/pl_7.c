@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pl_7.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pl_7.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "player.h"
@@ -136,9 +136,11 @@ struct ship *ship;
 {
 	static char buf[60];
 
-	if (ship != 0)
-		p = sprintf(buf, p, ship->shipname, colours(ship),
+	if (ship != 0) {
+		(void)sprintf(buf, p, ship->shipname, colours(ship),
 			sterncolour(ship));
+		p = buf;
+	}
 	sc_prompt = p;
 	sc_buf = "";
 	sc_hasprompt = 1;
