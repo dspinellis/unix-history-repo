@@ -1,4 +1,4 @@
-/*	scb.s	4.2	%G%	*/
+/*	scb.s	4.3	%G%	*/
 
 /*
  * System control block
@@ -6,156 +6,37 @@
 	.set	INTSTK,1	# handle this interrupt on the interrupt stack
 	.set	HALT,3		# halt if this interrupt occurs
 
-/*	.align	PGSHIFT	*/
-	.globl	_Scbbase
-_Scbbase:
-	.long	Xstray + INTSTK		# unused
-	.long	Xmachcheck + INTSTK	# machine check interrupt
-	.long	Xkspnotval + INTSTK	# kernel stack not valid
-	.long	Xpowfail + HALT		# power fail
-	.long	Xprivinflt		# privileged instruction 
-	.long	Xxfcflt			# xfc instruction 
-	.long	Xresopflt		# reserved operand 
-	.long	Xresadflt		# reserved addressing 
-	.long	Xprotflt		# protection and pt length violation
-	.long	Xtransflt		# address translation not valid fault 
-	.long	Xtracep			# trace pending
-	.long	Xbptflt			# bpt instruction
-	.long	Xcompatflt		# compatibility mode fault
-	.long	Xarithtrap		# arithmetic trap
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xsyscall		# chmk
-	.long	Xchme+INTSTK		# chme
-	.long	Xchms+INTSTK		# chms
-	.long	Xchmu+INTSTK		# chmu
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-#if VAX==750 || VAX==ANY
-	.long	Xwtime + INTSTK		# write timeout
-#else
-	.long	Xstray + INTSTK		# unused
-#endif
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# software level 1
-	.long	Xstray + INTSTK		# software level 2 (asts)
-	.long	Xresched		# reschedule nudge
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-ubabase:
-	.long	Xclockint		# clock
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-#if VAX==750
-	.long	Xconsdin + INTSTK	# tu58 receiver
-	.long	Xconsdout + INTSTK	# tu58 transmitter
-#else
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-#endif
-	.long	Xcnrint + INTSTK	# console receiver 
-	.long	Xcnxint + INTSTK	# console transmitter
+_scb:	.globl	_scb
+_Scbbase: .globl	_Scbbase
 
-/*
- * I/O vectors
- */
+#define	STRAY	.long	_Xstray+HALT
+#define	STRAY8	STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY;STRAY
+#define	STRAY16	STRAY8;STRAY8
+#define	KS(a)	.long	_X/**/a
+#define	IS(a)	.long	_X/**/a+INTSTK
+#define	STOP(a)	.long	_X/**/a+HALT
 
-/* IPL 14 */
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
+/* 000 */	STRAY;		IS(machcheck);	IS(kspnotval);	STOP(powfail);
+/* 010 */	KS(privinflt);	KS(xfcflt);	KS(resopflt);	KS(resadflt);
+/* 020 */	KS(protflt);	KS(transflt);	KS(tracep);	KS(bptflt);
+/* 030 */	KS(compatflt);	KS(arithtrap);	STRAY;		STRAY;
+/* 040 */	KS(syscall);	KS(chme);	KS(chms);	KS(chmu);
+/* 050 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 060 */	IS(wtime);	STRAY;		STRAY;		STRAY;
+/* 070 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 080 */	STRAY;		STRAY;		STRAY;		KS(resched);
+/* 090 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 0a0 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 0b0 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 0c0 */	KS(clockint);	STRAY;		STRAY;		STRAY;
+/* 0d0 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 0e0 */	STRAY;		STRAY;		STRAY;		STRAY;
+/* 0f0 */	IS(consdin);	IS(consdout);	IS(cnrint);	IS(cnxint);
+/* 100 */	STRAY16;		/* ipl 0x14, nexus 0-15 */
+/* 140 */	STRAY16;		/* ipl 0x15, nexus 0-15 */
+/* 180 */	STRAY16;		/* ipl 0x16, nexus 0-15 */
+/* 1c0 */	STRAY16;		/* ipl 0x17, nexus 0-15 */
 
-/* IPL 15 */
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-
-/* IPL 16 */
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-
-/* IPL 17 */
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
-	.long	Xstray + INTSTK		# unused
+	.globl	_UNIvec
+_UNIvec:	.space	512		# 750 unibus intr vector
+					# 1st UBA jump table on 780's
