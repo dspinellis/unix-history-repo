@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)trek.me	5.1 (Berkeley) %G%
+.\"	@(#)trek.me	6.1 (Berkeley) %G%
 .\"
 .if n .na
 .de pp
@@ -13,10 +13,13 @@
 .el .ds f \fI
 .de he
 '	sp
-'	tl 'STAR TREK''%'
+'	tl 'Star Trek''USD:34-%'
 'sp 3
 ..
-.wh 0 he
+.oh 'Star Trek''USD:34-%'
+.eh 'USD:34-%''Star Trek'
+
+\" .wh 0 he
 .de fo
 '	bp
 ..
@@ -60,7 +63,7 @@ Eric Allman
 University of California
 Berkeley
 .ce 0
-.bp
+\".bp
 .ce
 \*fINTRODUCTION\fR
 .pp
@@ -80,7 +83,7 @@ Each sector contains one object
 .pp
 Navigation is handled in degrees,
 with zero being straight up
-and ninty being to the right.
+and ninety being to the right.
 Distances are measured in quadrants.
 One tenth quadrant is one sector.
 .pp
@@ -104,7 +107,7 @@ have inhabited planets.
 Klingons can attack inhabited planets
 and enslave the populace,
 which they then put to work building more Klingon battle cruisers.
-.bp
+\".bp
 .ce
 \*fSTARTING UP THE GAME\fR
 .pp
@@ -116,13 +119,13 @@ To request the game, issue the command
 .ft
 .sp
 from the shell.
-If a filename is stated,
+If a filename is supplied,
 a log of the game is written onto that file.
-If omitted,
-the file is not written.
+(Otherwise, no
+file is written.)
 If the
 ``\fB\-a\fP'' flag is stated before the filename,
-thata file is appended to rather than created.
+the log of the game is appended to the file.
 .pp
 The game will ask you what length game
 you would like.
@@ -136,7 +139,7 @@ but currently the shorter games tend to be harder than the longer ones.
 You will then be prompted for the skill,
 to which you must respond
 "novice", "fair", "good", "expert",
-"commadore", or "impossible".
+"commodore", or "impossible".
 You should start out with a novice
 and work up,
 but if you really want to see
@@ -149,7 +152,7 @@ if you forget what is appropriate
 the game will tell you what it expects
 if you just type in
 a question mark.
-.bp
+\".bp
 .ce
 \*fISSUING COMMANDS\fR
 .pp
@@ -227,7 +230,7 @@ As soon as you consume anything though -- POW!
 \*fTHE COMMANDS\fR
 .bl "Short Range Scan"
 Mnemonic: srscan
-Shortest Appreviation: s
+Shortest Abbreviation: s
 Full Commands: srscan
 	srscan yes/no
 Consumes: nothing
@@ -590,7 +593,7 @@ to fire at you
 until you do something
 which consumes time.
 .bl "Fire Phasers"
-Mnmemonic: phasers
+Mnemonic: phasers
 Shortest Abbreviation: p
 Full Commands: phasers automatic amount
 	phasers manual amt1 course1 spread1 ...
@@ -679,7 +682,7 @@ Computer requests are:
 .qq
 score -- Shows your current score.
 .qq
-course quad/sect -- Computes the course and distance from whereever
+course quad/sect -- Computes the course and distance from wherever
 you are to the given location.
 If you type "course /x,y"
 you will be given the course
@@ -718,7 +721,7 @@ and starsystems.
 .pp
 More than one request may be stated
 on a line
-by seperating them
+by separating them
 with semicolons.
 .bl "Dock at Starbase"
 Mnemonic: dock
@@ -735,7 +738,7 @@ with energy, photon torpedoes, and life support reserves.
 Repairs are also done faster at starbase.
 Any prisoners you have taken
 are unloaded.
-You do not recieve points
+You do not receive points
 for taking prisoners
 until this time.
 .pp
@@ -869,9 +872,9 @@ Shortest Abbreviation: shell
 .FF
 .pp
 Temporarily escapes to the shell.
-When you log out of the shell
+When you exit the shell
 you will return to the game.
-.bp
+\".bp
 .ce
 \*fSCORING\fR
 .in +4
