@@ -14,13 +14,15 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.3 (Berkeley) %G%
+# @(#)Makefile	5.4 (Berkeley) %G%
 #
 
 DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
-SRCS=	login.c logout.c logwtmp.c
-OBJS=	login.o logout.o logwtmp.o
+SRCS=	login.c logout.c logwtmp.c kvm.c pwcache.c
+OBJS=	login.o logout.o logwtmp.o kvm.o pwcache.o
+MAN=	pwcache.0
+MDIR=	${DESTDIR}/usr/man/cat3
 
 .c.o:
 	@${CC} -p ${CFLAGS} -c $*.c
@@ -51,12 +53,13 @@ cleandir: clean
 depend:
 	mkdep ${CFLAGS} ${SRCS}
 
-install:
+install: ${MAN}
 	install -o bin -g bin -m 644 libutil.a ${DESTDIR}/usr/lib
 	ranlib -t ${DESTDIR}/usr/lib/libutil.a
 	install -o bin -g bin -m 644 libutil_p.a ${DESTDIR}/usr/lib
 	ranlib -t ${DESTDIR}/usr/lib/libutil_p.a
 	install -o bin -g bin -m 644 llib-lutil.ln ${DESTDIR}/usr/libexec/lint
+	install -c -o bin -g bin -m 444 ${MAN} ${MDIR}
 
 tags:
 	ctags ${SRCS}
