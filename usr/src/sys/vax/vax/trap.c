@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.4 (Berkeley) %G%
+ *	@(#)trap.c	7.5 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -20,7 +20,7 @@
 #include "acct.h"
 #include "kernel.h"
 #ifdef SYSCALLTRACE
-#include "../sys/syscalls.c"
+#include "../kern/syscalls.c"
 #endif
 
 #include "mtpr.h"
@@ -60,6 +60,7 @@ trap(sp, type, code, pc, psl)
 {
 	register int *locr0 = ((int *)&psl)-PS;
 	register int i;
+	unsigned ucode = code;
 	register struct proc *p;
 	struct timeval syst;
 
@@ -87,8 +88,8 @@ trap(sp, type, code, pc, psl)
 
 	case T_PRIVINFLT+USER:	/* privileged instruction fault */
 	case T_RESADFLT+USER:	/* reserved addressing fault */
-	case T_RESOPFLT+USER:	/* resereved operand fault */
-		u.u_code = type &~ USER;
+	case T_RESOPFLT+USER:	/* reserved operand fault */
+		ucode = type &~ USER;
 		i = SIGILL;
 		break;
 
@@ -101,7 +102,6 @@ trap(sp, type, code, pc, psl)
 		goto out;
 
 	case T_ARITHTRAP+USER:
-		u.u_code = code;
 		i = SIGFPE;
 		break;
 
@@ -140,11 +140,10 @@ trap(sp, type, code, pc, psl)
 
 	case T_COMPATFLT+USER:	/* compatibility mode fault */
 		u.u_acflag |= ACOMPAT;
-		u.u_code = code;
 		i = SIGILL;
 		break;
 	}
-	psignal(u.u_procp, i);
+	trapsignal(i, ucode);
 out:
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
@@ -163,6 +162,8 @@ out:
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
+		if (ISSIG(p))
+			psig();
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -198,10 +199,6 @@ syscall(sp, type, code, pc, psl)
 	if (!USERMODE(locr0[PS]))
 		panic("syscall");
 	u.u_ar0 = locr0;
-	if (code == 139) {			/* XXX 4.2 COMPATIBILITY */
-		osigcleanup();			/* XXX 4.2 COMPATIBILITY */
-		goto done;			/* XXX 4.2 COMPATIBILITY */
-	}					/* XXX 4.2 COMPATIBILITY */
 	params = (caddr_t)locr0[AP] + NBPW;
 	u.u_error = 0;
 	opc = pc - 2;
@@ -296,16 +293,4 @@ done:
 			addupc(locr0[PC], &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
-}
-
-/*
- * nonexistent system call-- signal process (may want to handle it)
- * flag error if process won't see signal immediately
- * Q: should we do that all the time ??
- */
-nosys()
-{
-	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
-		u.u_error = EINVAL;
-	psignal(u.u_procp, SIGSYS);
 }
