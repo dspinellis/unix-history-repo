@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	7.3 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.4 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -80,7 +80,6 @@ ktrsysret(vp, code)
 	if (kth == NULL)
 		return;
 	ktp.ktr_code = code;
-	ktp.ktr_eosys = u.u_eosys;
 	ktp.ktr_error = u.u_error;
 	ktp.ktr_retval = u.u_r.r_val1;		/* what about val2 ? */
 
