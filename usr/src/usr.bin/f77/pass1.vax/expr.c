@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid[] = "@(#)expr.c	5.2 (Berkeley) %G%";
+static char *sccsid[] = "@(#)expr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,9 @@ static char *sccsid[] = "@(#)expr.c	5.2 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	expr.c,v $
+ * Revision 3.16  85/06/21  16:38:09  donn
+ * The fix to mkprim() didn't handle null substring parameters (sigh).
+ * 
  * Revision 3.15  85/06/04  04:37:03  donn
  * Changed mkprim() to force substring parameters to be integral types.
  * 
@@ -1648,8 +1651,12 @@ p->namep = (Namep) v;
 p->argsp = args;
 if(substr)
 	{
-	p->fcharp = mkconv(tyint, substr->datap);
-	p->lcharp = mkconv(tyint, substr->nextp->datap);
+	p->fcharp = (expptr) substr->datap;
+	if (p->fcharp != ENULL && ! ISINT(p->fcharp.headblock->vtype))
+		p->fcharp = mkconv(TYINT, p->fcharp);
+	p->lcharp = (expptr) substr->nextp->datap;
+	if (p->lcharp != ENULL && ! ISINT(p->lcharp.headblock->vtype))
+		p->lcharp = mkconv(TYINT, p->lcharp);
 	frchain(&substr);
 	}
 return( (expptr) p);
