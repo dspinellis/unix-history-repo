@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.11 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -115,18 +115,18 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 		if (rabp->b_flags & (B_DONE|B_DELWRI)) {
 			brelse(rabp);
 			trace(TR_BREADHITRA,
-			    pack(vp->v_mount->m_fsid[0], rabsize), blkno);
+			    pack(vp->v_mount->m_fsid[0], rabsize), rablkno);
 		} else {
 			rabp->b_flags |= B_READ|B_ASYNC;
 			if (rabp->b_bcount > rabp->b_bufsize)
 				panic("breadrabp");
-			if (bp->b_rcred == NOCRED && cred != NOCRED) {
+			if (rabp->b_rcred == NOCRED && cred != NOCRED) {
 				crhold(cred);
-				bp->b_rcred = cred;
+				rabp->b_rcred = cred;
 			}
 			VOP_STRATEGY(rabp);
 			trace(TR_BREADMISSRA,
-			    pack(vp->v_mount->m_fsid[0], rabsize), rablock);
+			    pack(vp->v_mount->m_fsid[0], rabsize), rablkno);
 			u.u_ru.ru_inblock++;		/* pay in advance */
 		}
 	}
