@@ -1,4 +1,4 @@
-/*	telnet.h	4.5	85/03/24	*/
+/*	telnet.h	4.6	85/03/24	*/
 /*
  * Definitions for the TELNET protocol.
  */
@@ -21,8 +21,14 @@
 
 #define SYNCH	242		/* for telfunc calls */
 
-/* telnet options */
+#ifdef TELCMDS
+char *telcmds[] = {
+	"SE", "NOP", "DMARK", "BRK", "IP", "AO", "AYT", "EC",
+	"EL", "GA", "SB", "WILL", "WONT", "DO", "DONT", "IAC",
+};
+#endif
 
+/* telnet options */
 #define TELOPT_BINARY	0	/* 8-bit data path */
 #define TELOPT_ECHO	1	/* echo */
 #define	TELOPT_RCP	2	/* prepare to reconnect */
@@ -45,16 +51,11 @@
 #define	TELOPT_BM	19	/* byte macro */
 #define	TELOPT_DET	20	/* data entry terminal */
 #define	TELOPT_SUPDUP	21	/* supdup protocol */
-/* 22-23 are assigned */
+#define	TELOPT_SUPDUPOUTPUT 22	/* supdup output */
+#define	TELOPT_SNDLOC	23	/* send location */
 #define	TELOPT_TTYPE	24	/* terminal type */
+#define	TELOPT_EOR	25	/* end or record */
 #define TELOPT_EXOPL	255	/* extended-options-list */
-
-#ifdef TELCMDS
-char *telcmds[] = {
-	"SE", "NOP", "DMARK", "BRK", "IP", "AO", "AYT", "EC",
-	"EL", "GA", "SB", "WILL", "WONT", "DO", "DONT", "IAC",
-};
-#endif
 
 #ifdef TELOPTS
 #define	NTELOPTS	25
@@ -63,6 +64,11 @@ char *telopts[NTELOPTS] = {
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
 	"NAOCRD", "NAOHTS", "NAOHTD", "NAOFFD", "NAOVTS",
 	"NAOVTD", "NAOLFD", "EXTEND ASCII", "LOGOUT", "BYTE MACRO",
-	"DATA ENTRY TERMINAL", "SUPDUP", "#22", "#23", "TTYPE",
+	"DATA ENTRY TERMINAL", "SUPDUP", "SUPDUP OUTPUT", "SEND LOCATION",
+	"TERMINAL TYPE", "END OF RECORD",
 };
 #endif
+
+/* sub-option qualifiers */
+#define	TELQUAL_IS	0	/* option is... */
+#define	TELQUAL_SEND	1	/* send option */
