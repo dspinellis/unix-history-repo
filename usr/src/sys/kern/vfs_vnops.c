@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.5	%G%	*/
+/*	vfs_vnops.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -251,7 +251,7 @@ ufalloc()
 	return(-1);
 }
 
-struct	file *lastf = &file[0];
+struct	file *lastf;
 /*
  * Allocate a user file descriptor
  * and a file structure.
@@ -268,21 +268,23 @@ falloc()
 	register i;
 
 	i = ufalloc();
-	if(i < 0)
+	if (i < 0)
 		return(NULL);
-	for(fp = lastf; fp < fileNFILE; fp++)
-		if(fp->f_count == 0)
+	if (lastf == 0)
+		lastf = file;
+	for (fp = lastf; fp < fileNFILE; fp++)
+		if (fp->f_count == 0)
 			goto slot;
-	for(fp = &file[0]; fp < lastf; fp++)
-		if(fp->f_count == 0)
+	for (fp = file; fp < lastf; fp++)
+		if (fp->f_count == 0)
 			goto slot;
 	printf("no file\n");
 	u.u_error = ENFILE;
-	return(NULL);
+	return (NULL);
 slot:
 	u.u_ofile[i] = fp;
 	fp->f_count++;
 	fp->f_un.f_offset = 0;
 	lastf = fp + 1;
-	return(fp);
+	return (fp);
 }
