@@ -1,16 +1,15 @@
-/*
- * Copyright (c) 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- */
-
-#ifndef lint
-static char sccsid[] = "@(#)strfile.c	5.1 (Berkeley) %G%";
-#endif not lint
+/* $Header: strfile.c,v 1.19 89/05/05 16:07:46 arnold Exp $ */
 
 # include	<stdio.h>
 # include	<ctype.h>
+# include	<sys/types.h>
+# include	<sys/param.h>
 # include	"strfile.h"
+# include	"random.h"
+
+# ifndef MAXPATHLEN
+# define	MAXPATHLEN	1024
+# endif	/* MAXPATHLEN */
 
 /*
  *	This program takes a file composed of strings seperated by
@@ -44,15 +43,36 @@ static char sccsid[] = "@(#)strfile.c	5.1 (Berkeley) %G%";
 # define	TRUE	1
 # define	FALSE	0
 
-# define	DELIM_CH	'-'
+# define	STORING_PTRS	(Oflag || Rflag)
+# define	CHUNKSIZE	512
+
+#ifdef lint
+# define	ALWAYS	atoi("1")
+#else
+# define	ALWAYS	1
+#endif
+# define	ALLOC(ptr,sz)	if (ALWAYS) { \
+			if (ptr == NULL) \
+				ptr = malloc((unsigned int) (CHUNKSIZE * sizeof *ptr)); \
+			else if (((sz) + 1) % CHUNKSIZE == 0) \
+				ptr = realloc((void *) ptr, ((unsigned int) ((sz) + CHUNKSIZE) * sizeof *ptr)); \
+			if (ptr == NULL) { \
+				fprintf(stderr, "out of space\n"); \
+				exit(1); \
+			} \
+		} else
+
+#ifdef NO_VOID
+# define	void	char
+#endif
 
 typedef struct {
 	char	first;
-	long	pos;
+	off_t	pos;
 } STR;
 
 char	*Infile		= NULL,		/* input file name */
-	Outfile[100]	= "",		/* output file name */
+	Outfile[MAXPATHLEN] = "",	/* output file name */
 	Delimch		= '%',		/* delimiting character */
 	*Usage[]	= {		/* usage summary */
        "usage:	strfile [ - ] [ -cC ] [ -sv ] [ -oir ] inputfile [ datafile ]",
@@ -64,16 +84,15 @@ char	*Infile		= NULL,		/* input file name */
        "	i - ignore case in ordering",
        "	r - randomize the order of the strings",
        "	Default \"datafile\" is inputfile.dat",
-	NULL
 	};
 
 int	Sflag		= FALSE;	/* silent run flag */
 int	Oflag		= FALSE;	/* ordering flag */
 int	Iflag		= FALSE;	/* ignore case flag */
 int	Rflag		= FALSE;	/* randomize order flag */
-int	Delim		= 0;		/* current delimiter number */
+int	Num_pts		= 0;		/* number of pointers/strings */
 
-long	*Seekpts;
+off_t	*Seekpts;
 
 FILE	*Sort_1, *Sort_2;		/* pointers for sorting */
 
@@ -81,108 +100,83 @@ STRFILE	Tbl;				/* statistics table */
 
 STR	*Firstch;			/* first chars of each string */
 
-char	*fgets(), *malloc(), *strcpy(), *strcat();
+char	*fgets(), *strcpy(), *strcat();
 
-long	ftell();
+void	*malloc(), *realloc();
 
+/*
+ * main:
+ *	Drive the sucker.  There are two main modes -- either we store
+ *	the seek pointers, if the table is to be sorted or randomized,
+ *	or we write the pointer directly to the file, if we are to stay
+ *	in file order.  If the former, we allocate and re-allocate in
+ *	CHUNKSIZE blocks; if the latter, we just write each pointer,
+ *	and then seek back to the beginning to write in the table.
+ */
 main(ac, av)
 int	ac;
 char	**av;
 {
 	register char		*sp, dc;
-	register long		*lp;
-	register unsigned int	curseek;	/* number of strings */
-	register long		*seekpts, li;	/* table of seek pointers */
 	register FILE		*inf, *outf;
+	register off_t		last_off, length, pos;
 	register int		first;
 	register char		*nsp;
 	register STR		*fp;
 	static char		string[257];
 
 	getargs(ac, av);		/* evalute arguments */
-
-	/*
-	 * initial counting of input file
-	 */
-
 	dc = Delimch;
 	if ((inf = fopen(Infile, "r")) == NULL) {
 		perror(Infile);
 		exit(-1);
 	}
-	for (curseek = 0; (sp = fgets(string, 256, inf)) != NULL; )
-		if (*sp++ == dc && (*sp == dc || *sp == DELIM_CH))
-			curseek++;
-	curseek++;
-
-	/*
-	 * save space at begginning of file for tables
-	 */
 
 	if ((outf = fopen(Outfile, "w")) == NULL) {
 		perror(Outfile);
 		exit(-1);
 	}
+	if (!STORING_PTRS)
+		(void) fseek(outf, sizeof Tbl, 0);
 
 	/*
-	 * Allocate space for the pointers, adding one to the end so the
-	 * length of the final string can be calculated.
-	 */
-	++curseek;
-	seekpts = (long *) malloc(sizeof *seekpts * curseek);	/* NOSTRICT */
-	if (seekpts == NULL) {
-		perror("calloc");
-		exit(-1);
-	}
-	if (Oflag) {
-		Firstch = (STR *) malloc(sizeof *Firstch * curseek);
-		if (Firstch == NULL) {
-			perror("calloc");
-			exit(-1);
-		}
-	}
-
-	(void) fseek(outf, (long) (sizeof Tbl + sizeof *seekpts * curseek), 0);
-	(void) fseek(inf, (long) 0, 0);		/* goto start of input */
-
-	/*
-	 * write the strings onto the file
+	 * Write the strings onto the file
 	 */
 
 	Tbl.str_longlen = 0;
 	Tbl.str_shortlen = (unsigned int) 0xffffffff;
-	lp = seekpts;
+	Tbl.str_delim = dc;
 	first = Oflag;
-	*seekpts = ftell(outf);
-	fp = Firstch;
+	add_offset(outf, ftell(inf));
+	last_off = 0;
 	do {
+		if (Num_pts > 508)
+			atoi("1");
 		sp = fgets(string, 256, inf);
-		if (sp == NULL ||
-		    (*sp == dc && (sp[1] == dc || sp[1] == DELIM_CH))) {
-			putc('\0', outf);
-			*++lp = ftell(outf);
-			li = ftell(outf) - lp[-1] - 1;
-			if (Tbl.str_longlen < li)
-				Tbl.str_longlen = li;
-			if (Tbl.str_shortlen > li)
-				Tbl.str_shortlen = li;
-			if (sp && sp[1] == DELIM_CH && Delim < MAXDELIMS)
-				Tbl.str_delims[Delim++] = lp - seekpts;
+		if (sp == NULL || (sp[0] == dc && sp[1] == dc)) {
+			pos = ftell(inf);
+			add_offset(outf, pos);
+			length = pos - last_off - strlen(sp);
+			last_off = pos;
+			if (Tbl.str_longlen < length)
+				Tbl.str_longlen = length;
+			if (Tbl.str_shortlen > length)
+				Tbl.str_shortlen = length;
 			first = Oflag;
 		}
 		else {
 			if (first) {
 				for (nsp = sp; !isalnum(*nsp); nsp++)
 					continue;
+				ALLOC(Firstch, Num_pts);
+				fp = &Firstch[Num_pts - 1];
 				if (Iflag && isupper(*nsp))
 					fp->first = tolower(*nsp);
 				else
 					fp->first = *nsp;
-				fp->pos = *lp;
-				fp++;
+				fp->pos = Seekpts[Num_pts - 1];
 				first = FALSE;
 			}
-			fputs(sp, outf);
 		}
 	} while (sp != NULL);
 
@@ -191,30 +185,32 @@ char	**av;
 	 */
 
 	(void) fclose(inf);
-	Tbl.str_numstr = curseek - 1;
+	Tbl.str_numstr = Num_pts - 1;
 
 	if (Oflag)
-		do_order(seekpts, outf);
+		do_order();
 	else if (Rflag)
-		randomize(seekpts);
+		randomize();
 
-	(void) fseek(outf, (long) 0, 0);
+	(void) fseek(outf, (off_t) 0, 0);
 	(void) fwrite((char *) &Tbl, sizeof Tbl, 1, outf);
-	(void) fwrite((char *) seekpts, sizeof *seekpts, curseek, outf);
+	if (STORING_PTRS)
+		(void) fwrite((char *) Seekpts, sizeof *Seekpts, (int) Num_pts, outf);
 	(void) fclose(outf);
 
 	if (!Sflag) {
-		printf("\"%s\" converted to \"%s\"\n", Infile, Outfile);
-		if (curseek == 0)
+		printf("\"%s\" created\n", Outfile);
+		if (Num_pts == 2)
 			puts("There was 1 string");
 		else
-			printf("There were %u strings\n", curseek - 1);
+			printf("There were %u strings\n", Num_pts - 1);
 		printf("Longest string: %u byte%s\n", Tbl.str_longlen,
 		       Tbl.str_longlen == 1 ? "" : "s");
 		printf("Shortest string: %u byte%s\n", Tbl.str_shortlen,
 		       Tbl.str_shortlen == 1 ? "" : "s");
 	}
 	exit(0);
+	/* NOTREACHED */
 }
 
 /*
@@ -238,8 +234,7 @@ register char	**av;
 						--sp;
 						Delimch = *av[++i];
 					}
-					if (Delimch <= 0 || Delimch > '~' ||
-					    Delimch == DELIM_CH) {
+					if (!isascii(Delimch)) {
 						printf("bad delimiting character: '\\%o\n'",
 						       Delimch);
 						bad++;
@@ -290,25 +285,38 @@ register char	**av;
 }
 
 /*
+ * add_offset:
+ *	Add an offset to the list, or write it out, as appropriate.
+ */
+add_offset(fp, off)
+FILE	*fp;
+off_t	off;
+{
+	if (!STORING_PTRS)
+		fwrite(&off, 1, sizeof off, fp);
+	else {
+		ALLOC(Seekpts, Num_pts + 1);
+		Seekpts[Num_pts] = off;
+	}
+	Num_pts++;
+}
+
+/*
  * do_order:
  *	Order the strings alphabetically (possibly ignoring case).
  */
-do_order(seekpts, outf)
-long	*seekpts;
-FILE	*outf;
+do_order()
 {
 	register int	i;
-	register long	*lp;
+	register off_t	*lp;
 	register STR	*fp;
 	extern int	cmp_str();
 
-	(void) fflush(outf);
-	Sort_1 = fopen(Outfile, "r");
-	Sort_2 = fopen(Outfile, "r");
-	Seekpts = seekpts;
-	qsort((char *) Firstch, Tbl.str_numstr, sizeof *Firstch, cmp_str);
+	Sort_1 = fopen(Infile, "r");
+	Sort_2 = fopen(Infile, "r");
+	qsort((char *) Firstch, (int) Tbl.str_numstr, sizeof *Firstch, cmp_str);
 	i = Tbl.str_numstr;
-	lp = seekpts;
+	lp = Seekpts;
 	fp = Firstch;
 	while (i--)
 		*lp++ = fp++->pos;
@@ -321,10 +329,35 @@ FILE	*outf;
  * cmp_str:
  *	Compare two strings in the file
  */
+char *
+unctrl(c)
+char c;
+{
+	static char	buf[3];
+
+	if (isprint(c)) {
+		buf[0] = c;
+		buf[1] = '\0';
+	}
+	else if (c == 0177) {
+		buf[0] = '^';
+		buf[1] = '?';
+	}
+	else {
+		buf[0] = '^';
+		buf[1] = c + 'A' - 1;
+	}
+	return buf;
+}
+
 cmp_str(p1, p2)
 STR	*p1, *p2;
 {
 	register int	c1, c2;
+	register int	n1, n2;
+
+# define	SET_N(nf,ch)	(nf = (ch == '\n'))
+# define	IS_END(ch,nf)	(ch == Delimch && nf)
 
 	c1 = p1->first;
 	c2 = p2->first;
@@ -334,12 +367,14 @@ STR	*p1, *p2;
 	(void) fseek(Sort_1, p1->pos, 0);
 	(void) fseek(Sort_2, p2->pos, 0);
 
+	n1 = FALSE;
+	n2 = FALSE;
 	while (!isalnum(c1 = getc(Sort_1)) && c1 != '\0')
-		continue;
+		SET_N(n1, c1);
 	while (!isalnum(c2 = getc(Sort_2)) && c2 != '\0')
-		continue;
+		SET_N(n2, c2);
 
-	while (c1 != '\0' && c2 != '\0') {
+	while (!IS_END(c1, n1) && !IS_END(c2, n2)) {
 		if (Iflag) {
 			if (isupper(c1))
 				c1 = tolower(c1);
@@ -348,9 +383,17 @@ STR	*p1, *p2;
 		}
 		if (c1 != c2)
 			return c1 - c2;
+		if (c1 == '\n' || c2 == '\n')
+			atoi("1");
+		SET_N(n1, c1);
+		SET_N(n2, c2);
 		c1 = getc(Sort_1);
 		c2 = getc(Sort_2);
 	}
+	if (IS_END(c1, n1))
+		c1 = 0;
+	if (IS_END(c2, n2))
+		c2 = 0;
 	return c1 - c2;
 }
 
@@ -360,45 +403,24 @@ STR	*p1, *p2;
  *	not to randomize across delimiter boundaries.  All
  *	randomization is done within each block.
  */
-randomize(seekpts)
-register long	*seekpts;
+randomize()
 {
-	register int	cnt, i, j, start;
-	register long	tmp;
-	register long	*origsp;
+	register int	cnt, i;
+	register off_t	tmp;
+	register off_t	*sp;
+	extern time_t	time();
 
 	Tbl.str_flags |= STR_RANDOM;
-	srnd(time((long *) NULL) + getpid());
-	origsp = seekpts;
-	for (j = 0; j <= Delim; j++) {
+	cnt = Tbl.str_numstr;
 
-		/*
-		 * get the starting place for the block
-		 */
+	/*
+	 * move things around randomly
+	 */
 
-		if (j == 0)
-			start = 0;
-		else
-			start = Tbl.str_delims[j - 1];
-
-		/*
-		 * get the ending point
-		 */
-
-		if (j == Delim)
-			cnt = Tbl.str_numstr;
-		else
-			cnt = Tbl.str_delims[j];
-
-		/*
-		 * move things around randomly
-		 */
-
-		for (seekpts = &origsp[start]; cnt > start; cnt--, seekpts++) {
-			i = rnd(cnt - start);
-			tmp = seekpts[0];
-			seekpts[0] = seekpts[i];
-			seekpts[i] = tmp;
-		}
+	for (sp = Seekpts; cnt > 0; cnt--, sp++) {
+		i = rnd((long) cnt);
+		tmp = sp[0];
+		sp[0] = sp[i];
+		sp[i] = tmp;
 	}
 }
