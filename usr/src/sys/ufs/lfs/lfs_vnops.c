@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.72 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.73 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -293,12 +293,12 @@ lfs_write(vp, uio, ioflag, cred)
 #endif
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
-		on = blkoff(fs, uio->uio_offset);		/* LFS */
+		on = blkoff(fs, uio->uio_offset);
 		n = MIN((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
-		if (n < fs->lfs_bsize)				/* LFS */
+		if (n < fs->lfs_bsize)
 			flags |= B_CLRBUF;
 		else
-			flags &= ~B_CLRBUF;			/* LFS */
+			flags &= ~B_CLRBUF;
 		if (error = bread(vp, lbn, fs->lfs_bsize, NOCRED, &bp))
 			break;
 		bn = bp->b_blkno;
@@ -320,8 +320,8 @@ lfs_write(vp, uio, ioflag, cred)
 			bdwrite(bp);
 #else
 		/*
-		 * Update segment usage information; call segment
-		 * writer if necessary.
+		 * XXX
+		 * This doesn't handle ioflag & IO_SYNC.
 		 */
 		lfs_bwrite(bp);
 #endif
@@ -330,15 +330,12 @@ lfs_write(vp, uio, ioflag, cred)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (error && (ioflag & IO_UNIT)) {
-#ifdef NOTLFS
-	/* This just doesn't work... */
-		(void) lfs_itrunc(vp, osize, ioflag & IO_SYNC);
-#endif
+		(void)lfs_truncate(vp, osize, ioflag & IO_SYNC);
 		uio->uio_offset -= resid - uio->uio_resid;
 		uio->uio_resid = resid;
 	}
 	if (!error && (ioflag & IO_SYNC))
-		ITIMES(ip, &time, &time);			/* LFS */
+		error = lfs_update(vp, &time, &time, 1);
 	return (error);
 }
 
