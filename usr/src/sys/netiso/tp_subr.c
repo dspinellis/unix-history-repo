@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.11 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -725,10 +725,8 @@ tp_stash( tpcb, e )
 			E.e_seq, tpcb->tp_rcvnxt, tpcb->tp_lcredit, 0);
 		ENDTRACE
 
-		if (tpcb->tp_rsyq == 0 ||
-			(tpcb->tp_rsycnt == 0 &&
-			 (tpcb->tp_sbmax != tpcb->tp_sock->so_rcv.sb_hiwat)))
-				tp_rsyset(tpcb);
+		if (tpcb->tp_rsyq == 0)
+			tp_rsyset(tpcb);
 		uwe = SEQ(tpcb, tpcb->tp_rcvnxt + tpcb->tp_maxlcredit);
 		if (tpcb->tp_rsyq == 0 ||
 						!IN_RWINDOW(tpcb, E.e_seq, tpcb->tp_rcvnxt, uwe)) {
@@ -841,12 +839,14 @@ register struct tp_pcb *tpcb;
 {
 	register struct socket *so = tpcb->tp_sock;
 	int maxcredit  = tpcb->tp_xtd_format ? 0xffff : 0xf;
-	caddr_t rsyq;
+	int old_credit = tpcb->tp_maxlcredit;
+	caddr_t	rsyq;
 
-	tpcb->tp_sbmax = so->so_rcv.sb_hiwat;
 	tpcb->tp_maxlcredit = maxcredit = min(maxcredit,
 		  (so->so_rcv.sb_hiwat + tpcb->tp_l_tpdusize)/ tpcb->tp_l_tpdusize);
 
+	if (old_credit == tpcb->tp_maxlcredit && tpcb->tp_rsyq != 0)
+		return;
 	maxcredit *= sizeof(struct mbuf *);
 	if (tpcb->tp_rsyq)
 		tp_rsyflush(tpcb);
