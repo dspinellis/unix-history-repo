@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.74 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.75 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -73,6 +73,7 @@ char		*UserEnviron[MAXUSERENVIRON + 2];
 char		RealUserName[256];	/* the actual user id on this host */
 char		*CommandLineArgs;	/* command line args for pid file */
 bool		Warn_Q_option = FALSE;	/* warn about Q option use */
+char		**SaveArgv;	/* argument vector for re-execing */
 
 /*
 **  Pointers for setproctitle.
@@ -129,6 +130,7 @@ main(argc, argv, envp)
 	extern char *optarg;
 	extern char **environ;
 	extern void sigusr1();
+	extern void sighup();
 
 	/*
 	**  Check to see if we reentered.
@@ -148,8 +150,8 @@ main(argc, argv, envp)
 	/* do machine-dependent initializations */
 	init_md(argc, argv);
 
-	/* arrange to dump state on signal */
 #ifdef SIGUSR1
+	/* arrange to dump state on user-1 signal */
 	setsignal(SIGUSR1, sigusr1);
 #endif
 
@@ -219,15 +221,18 @@ main(argc, argv, envp)
 	i = 0;
 	for (av = argv; *av != NULL; )
 		i += strlen(*av++) + 1;
+	SaveArgv = (char **) xalloc(sizeof (char *) * (argc + 1));
 	CommandLineArgs = xalloc(i);
 	p = CommandLineArgs;
-	for (av = argv; *av != NULL; )
+	for (av = argv, i = 0; *av != NULL; )
 	{
+		SaveArgv[i++] = newstr(*av);
 		if (av != argv)
 			*p++ = ' ';
 		strcpy(p, *av++);
 		p += strlen(p);
 	}
+	SaveArgv[i] = NULL;
 
 	/* Handle any non-getoptable constructions. */
 	obsolete(argv);
@@ -286,8 +291,6 @@ main(argc, argv, envp)
 
 	if (setsignal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) setsignal(SIGINT, intsig);
-	if (setsignal(SIGHUP, SIG_IGN) != SIG_IGN)
-		(void) setsignal(SIGHUP, intsig);
 	(void) setsignal(SIGTERM, intsig);
 	(void) setsignal(SIGPIPE, SIG_IGN);
 	OldUmask = umask(022);
@@ -697,13 +700,21 @@ main(argc, argv, envp)
 
 	switch (OpMode)
 	{
-	  case MD_INITALIAS:
-		Verbose = TRUE;
-		break;
-
 	  case MD_DAEMON:
 		/* remove things that don't make sense in daemon mode */
 		FullName = NULL;
+
+		/* arrange to restart on hangup signal */
+		setsignal(SIGHUP, sighup);
+		break;
+
+	  case MD_INITALIAS:
+		Verbose = TRUE;
+		/* fall through... */
+
+	  default:
+		/* arrange to exit cleanly on hangup signal */
+		setsignal(SIGHUP, intsig);
 		break;
 	}
 
@@ -1349,7 +1360,6 @@ disconnect(droplev, e)
 	}
 
 	/* be sure we don't get nasty signals */
-	(void) setsignal(SIGHUP, SIG_IGN);
 	(void) setsignal(SIGINT, SIG_IGN);
 	(void) setsignal(SIGQUIT, SIG_IGN);
 
@@ -1537,4 +1547,20 @@ void
 sigusr1()
 {
 	dumpstate("user signal");
+}
+
+
+void
+sighup()
+{
+#ifdef LOG
+	if (LogLevel > 3)
+		syslog(LOG_INFO, "restarting %s on signal", SaveArgv[0]);
+#endif
+	execv(SaveArgv[0], SaveArgv);
+#ifdef LOG
+	if (LogLevel > 0)
+		syslog(LOG_ALERT, "could not exec %s: %m", SaveArgv[0]);
+#endif
+	exit(EX_OSFILE);
 }
