@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfs_vnops.c	7.60 (Berkeley) 5/24/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00090
+ * --------------------         -----   ----------------------
+ *
+ * 02 Mar 93	Greg Hackney		Make NFS client POSIX compliant (anon)
+ *
  */
 
 /*
@@ -255,7 +263,7 @@ nfs_access(vp, mode, cred, p)
 found:
 		;
 	}
-	if ((vap->va_mode & mode) != 0)
+	if ((vap->va_mode & mode) == mode)
 		return (0);
 	return (EACCES);
 }

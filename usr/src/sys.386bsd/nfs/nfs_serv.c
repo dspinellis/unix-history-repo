@@ -37,11 +37,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00053
+ * CURRENT PATCH LEVEL:         3       00090
  * --------------------         -----   ----------------------
  *
  * 08 Sep 92	Rick "gopher I"		Fix "truncate" (conflicting?)
  * 28 Aug 92	Arne Henrik Juul	Fixed NFS "create" bug
+ * 02 Mar 92	Greg Hackney		Make NFS POSIX compliant (anon fix)
  */
 
 /*
@@ -373,7 +374,8 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	nfsm_srvstrsiz(cnt, NFS_MAXDATA);
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
-	if (error = nfsrv_access(vp, VREAD | VEXEC, cred, p)) {
+	if ((error = nfsrv_access(vp, VREAD, cred, p)) &&
+		(error = nfsrv_access(vp, VEXEC, cred, p))) {
 		vput(vp);
 		nfsm_reply(0);
 	}
