@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)vax.c 1.6 %G%";
+static char sccsid[] = "@(#)vax.c 1.7 %G%";
 
 /*
  * Target machine dependent stuff.
@@ -591,11 +591,19 @@ Boolean isnext;
 		pstep(process);
 		addr = reg(PROGCTR);
 		pc = addr;
-		callnews(/* iscall = */ true);
+		curfunc = whatblock(pc);
 		if (not isbperr()) {
 		    printstatus();
+		    /* NOTREACHED */
+		}
+		bpact();
+		if (nosource(curfunc) and canskip(curfunc) and
+		  nlhdr.nlines != 0) {
+		    addrstatus = KNOWN;
+		    addr = return_addr();
+		    stepto(addr);
 		} else {
-		    bpact();
+		    callnews(/* iscall = */ true);
 		}
 	    }
 	    break;
