@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)gethostbyname.3	6.14 (Berkeley) %G%
+.\"     @(#)gethostbyname.3	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETHOSTBYNAME 3
@@ -187,17 +187,20 @@ opening the file if necessary.
 The
 .Fn sethostent
 function
-is redefined to open and rewind the file.  If the
+opens and/or rewinds the file
+.Pa /etc/hosts .
+If the
 .Fa stayopen
 argument is non-zero,
-the hosts data base will not be closed after each call to
+the file will not be closed after each call to
 .Fn gethostbyname
 or
 .Fn gethostbyaddr .
+.Pp
 The
 .Fn endhostent
 function
-is redefined to close the file.
+closes the file.
 .Sh HISTORY
 The
 .Fn herror
