@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.62 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -623,17 +623,20 @@ struct	nlist Nl[] =
 	{ 0 },
 };
 
-#if defined(unixpc)
-# define FSHIFT		5
-#endif
+#ifndef FSHIFT
+# if defined(unixpc)
+#  define FSHIFT	5
+# endif
 
-#if defined(__alpha)
-# define FSHIFT		10
-#endif
+# if defined(__alpha)
+#  define FSHIFT	10
+# endif
 
-#if (LA_TYPE == LA_INT) && !defined(FSHIFT)
+# if (LA_TYPE == LA_INT)
 #  define FSHIFT	8
+# endif
 #endif
+
 #if (LA_TYPE == LA_INT) && !defined(FSCALE)
 #  define FSCALE	(1 << FSHIFT)
 #endif
