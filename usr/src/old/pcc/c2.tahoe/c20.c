@@ -63,12 +63,13 @@ char **argv;
 		} else if (infound==0) {
 			if (freopen(*argv, "r", stdin) ==NULL)
 				error("C2: can't find %s\n", *argv);
-			setbuf(stdin,_sibuf); ++infound;
+			++infound;
 		} else if (freopen(*argv, "w", stdout) ==NULL)
 			error("C2: can't create %s\n", *argv);
-		setbuf(stdout,_sobuf);
 		argc--; argv++;
 	}
+	setbuf(stdin,_sibuf);
+	setbuf(stdout,_sobuf);
 	lasta = lastr = (char *)sbrk(2);
 	opsetup();
 	lasta = firstr = lastr = (char *)alloc(0);
