@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gcos.c	4.3 (Berkeley) 85/08/30";
+static	char *sccsid = "@(#)gcos.c	4.4 (Berkeley) 87/12/04";
 /* GCOS DEPENDENT PROCEDURES */
 
 
@@ -112,9 +112,9 @@ getcat() {
 	gtcalled = 1;
 
 	sp1 = ar;
-	sp1 =>> 18;
+	sp1 >>= 18;
 	sp2 = filbuf;
-	sp2 =>>18;
+	sp2 >>= 18;
 	sp2.lhs = 19;
 
 	b.cat1 = b.cat2 = b.file1 = -1;
@@ -233,7 +233,7 @@ for(i=0;i<catsiz;++i)
 	intp2 = n13;
 	f6to9(*intp1, *intp2, 12);
 	for(p1=n13; p1<n13end && *p1!=' ' ; ++p1) 
-		if('A'<=*p1 && *p1<='Z') *p1 =+ ('a'-'A');
+		if('A'<=*p1 && *p1<='Z') *p1 += ('a'-'A');
 		*p1 = '\0';
 
 	if( amatch(n13,filepat) )
@@ -280,7 +280,7 @@ char *s, *p;
 					return(0);
 
 			case '-':
-				k =| lc <= scc & scc <= (cc=p[1]);
+				k |= lc <= scc & scc <= (cc=p[1]);
 			}
 			if (scc==(lc=cc)) k++;
 		}
