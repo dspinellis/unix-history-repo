@@ -1,4 +1,4 @@
-/*	up.c	3.23	%G%	*/
+/*	up.c	3.24	%G%	*/
 
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -494,7 +494,7 @@ loop:
 	 * If this is a retry, then with the 16'th retry we
 	 * begin to try offsetting the heads to recover the data.
 	 */
-	if (uptab.b_errcnt >= 16 && (bp->b_flags&B_WRITE)) {
+	if (uptab.b_errcnt >= 16 && (bp->b_flags&B_WRITE) == 0) {
 		upaddr->upof = up_offset[uptab.b_errcnt & 017] | FMT22;
 		upaddr->upcs1 = IE|OFFSET|GO;
 		DELAY(idelay);
