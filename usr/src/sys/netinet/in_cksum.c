@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1992 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_cksum.c	7.3 (Berkeley) %G%
+ *	@(#)in_cksum.c	7.4 (Berkeley) %G%
  */
 
-#include "../h/types.h"
-#include "../h/mbuf.h"
+#include "param.h"
+#include "mbuf.h"
 
 /*
  * Checksum routine for Internet Protocol family headers (Portable Version).
@@ -20,7 +20,7 @@
 #define ADDCARRY(x)  (x > 65535 ? x -= 65535 : x)
 #define REDUCE {l_util.l = sum; sum = l_util.s[0] + l_util.s[1]; ADDCARRY(sum);}
 
-in_cksum_c(m, len)
+in_cksum(m, len)
 	register struct mbuf *m;
 	register int len;
 {
