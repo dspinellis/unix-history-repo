@@ -3,7 +3,7 @@
 /*
  * NE2000 Ethernet driver
  * Copyright (C) 1990 W. Jolitz
- * @(#)if_ne.c	1.1 (Berkeley) %G%
+ * @(#)if_ne.c	1.2 (Berkeley) %G%
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
@@ -36,19 +36,16 @@
 #include "../netns/ns_if.h"
 #endif
 
-#include "../machine/device.h"
+#include "machine/isa/device.h"
 #include "if_nereg.h"
 #include "icu.h"
 
 int	neprobe(), neattach(), neintr();
 int	neinit(), neoutput(), neioctl();
 
-struct	driver nedriver = {
+#include "dbg.h"
+struct	isa_driver nedriver = {
 	neprobe, neattach, "ne",
-};
-
-u_short	neaddr[NNE] = {
-	0x360
 };
 
 struct	mbuf *neget();
@@ -81,7 +78,7 @@ int nec;
 u_short boarddata[16];
  
 neprobe(dvp)
-	struct device *dvp;
+	struct isa_device *dvp;
 {
 	int val,i,s;
 	register struct ne_softc *ns = &ne_softc[0];
@@ -90,7 +87,7 @@ neprobe(dvp)
 	neintr(0);
 #endif
 
-	nec = dvp->ioa;
+	nec = dvp->id_iobase;
 	s = splimp();
 
 	/* reset the bastard */
@@ -99,15 +96,23 @@ neprobe(dvp)
 	outb(nec+ne_reset,val);
 
 	outb(nec+ds_cmd, DSCM_STOP|DSCM_NODMA);
-/* install timeout and return 0 if error */
-	while ((inb(nec+ds0_isr)&DSIS_RESET) == 0);
+	
+	i = 1000000;
+	while ((inb(nec+ds0_isr)&DSIS_RESET) == 0 && i-- > 0) nulldev();
+	if (i < 0) return (0);
+
 	outb(nec+ds0_isr, 0xff);
 
 	/* Word Transfers, Burst Mode Select, Fifo at 8 bytes */
 	outb(nec+ds0_dcr, DSDC_WTS|DSDC_BMS|DSDC_FT1);
 
 	outb(nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
-/* check cmd reg and fail if not right */
+	DELAY(10000);
+
+	/* check cmd reg and fail if not right */
+	if ((i=inb(nec+ds_cmd)) != (DSCM_NODMA|DSCM_PG0|DSCM_STOP))
+		return(0);
+
 	outb(nec+ds0_tcr, 0);
 	outb(nec+ds0_rcr, DSRC_MON);
 	outb(nec+ds0_pstart, RBUF/DS_PGSIZE);
@@ -119,6 +124,7 @@ neprobe(dvp)
 	outb(nec+ds1_curr, RBUF/DS_PGSIZE);
 	outb(nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
 	fetchrom (boarddata, 0, sizeof(boarddata));
+#ifdef NEDEBUG
 /*{ int i,rom;
 	rom=1;
 printf("ne ram ");
@@ -137,11 +143,10 @@ printf("ne ram ");
 	}
 printf("\n");
 }*/
+#endif
 /* checksum data? */
 	/* extract board address */
 	for(i=0; i < 6; i++)  ns->ns_addr[i] = boarddata[i];
-	INTREN(IRQ9);
-	INTREN(0x2);
 	splx(s);
 	return (1);
 }
@@ -158,14 +163,17 @@ fetchrom (up, ad, len) u_short *up; {
 	outb (nec+ds0_rsar1, (ad>>8)&0xff);
 	outb (nec+ds_cmd, DSCM_RREAD|DSCM_PG0|DSCM_START);
 	insw (nec+ne_data, up, len/2);
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) nulldev();
+	pausestr ("x",1);
+	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) pausestr("fetchrom",0);
 	outb (nec+ds0_isr, DSIS_RDC);
 	outb (nec+ds_cmd, cmd);
 }
 
+static recur;
 fetchram (up, ad, len) caddr_t up; {
 	u_char cmd;
 
+	recur++;
 	cmd = inb(nec+ds_cmd);
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
 	outb (nec+ds0_isr, DSIS_RDC);
@@ -175,14 +183,17 @@ fetchram (up, ad, len) caddr_t up; {
 	outb (nec+ds0_rsar1, (ad>>8)&0xff);
 	outb (nec+ds_cmd, DSCM_RREAD|DSCM_PG0|DSCM_START);
 	insw (nec+ne_data, up, len/2);
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) nulldev();
+	pausestr ("x",1);
+	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) pausestr("fetchram",0);
 	outb (nec+ds0_isr, DSIS_RDC);
 	outb (nec+ds_cmd, cmd);
+	recur--;
 }
 
 putram (up, ad, len) caddr_t up; {
 	u_char cmd;
 
+	recur++;
 	cmd = inb(nec+ds_cmd);
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
 	outb (nec+ds0_isr, DSIS_RDC);
@@ -193,9 +204,12 @@ putram (up, ad, len) caddr_t up; {
 	outb (nec+ds0_rsar1, (ad>>8)&0xff);
 	outb (nec+ds_cmd, DSCM_RWRITE|DSCM_PG0|DSCM_START);
 	outsw (nec+ne_data, up, len/2);
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) nulldev();
+	pausestr ("x",1);
+	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0)
+		if(pausestr("putram",0)<0) break;
 	outb (nec+ds0_isr, DSIS_RDC);
 	outb (nec+ds_cmd, cmd);
+	recur--;
 }
 
 /*
@@ -217,9 +231,9 @@ nereset(unit, uban)
  * to accept packets.  We get the ethernet address here.
  */
 neattach(dvp)
-	struct device *dvp;
+	struct isa_device *dvp;
 {
-	int unit = dvp->unit;
+	int unit = dvp->id_unit;
 	register struct ne_softc *ns = &ne_softc[unit];
 	register struct ifnet *ifp = &ns->ns_if;
 
@@ -307,6 +321,9 @@ nestart(ns)
 	 */
 	outb(nec+ds_cmd,DSCM_NODMA|DSCM_START);
 
+	if (ns->ns_flags & DSF_LOCK)
+		return;
+
 	if (inb(nec+ds_cmd) & DSCM_TRANS)
 		return;
 
@@ -322,6 +339,7 @@ nestart(ns)
 	 * Copy the mbuf chain into the transmit buffer
 	 */
 
+	ns->ns_flags |= DSF_LOCK;	/* prevent entering nestart */
 	buffer = TBUF; len = i = 0;
 	for (m0 = m; m != 0; m = m->m_next) {
 /*int j;*/
@@ -350,7 +368,12 @@ printf("|"); */
 	 * Init transmit length registers, and set transmit start flag.
 	 */
 
-if (len < 60) len = 60;
+#ifdef NEDEBUG
+if(len < 0 || len > 1536)
+pg("T Bogus Length %d\n", len);
+dprintf(DEXPAND,"snd %d ", len);
+#endif
+	if (len < 60) len = 60;
 	outb(nec+ds0_tbcr0,len&0xff);
 	outb(nec+ds0_tbcr1,(len>>8)&0xff);
 	outb(nec+ds0_tpsr, TBUF/DS_PGSIZE);
@@ -362,20 +385,25 @@ if (len < 60) len = 60;
 /*
  * Controller interrupt.
  */
-neintr(vec)
+neintr(vec, ppl)
 	int vec;
 {
 	register struct ne_softc *ns = &ne_softc[0];
 	u_char cmd,isr;
+static cnt;
 
-	/* check cmd, clear interrupt */
-redo:
+redstack();
+	/* save cmd, clear interrupt */
 	cmd = inb (nec+ds_cmd);
-	outb(nec+ds_cmd,DSCM_NODMA|DSCM_STOP);
+loop:
 	isr = inb (nec+ds0_isr);
+#ifdef NEDEBUG
+dprintf(DEXPAND,"|ppl %x isr %x ", ppl, isr);
+#endif
+
+	outb(nec+ds_cmd,DSCM_NODMA|DSCM_START);
 	outb (nec+ds0_isr, isr);
 
-	ns->ns_flags |= DSF_LOCK;	/* prevent entering nestart */
 
 	if (isr & (/*DSIS_RXE|*/DSIS_TXE|DSIS_ROVRN))
 		log(LOG_ERR, "ne%d: error: isr %x\n", ns-ne_softc, isr/*, DSIS_BITS*/);
@@ -389,7 +417,9 @@ redo:
 		pend = inb(nec+ds1_curr);
 		outb(nec+ds_cmd, DSCM_STOP|DSCM_NODMA|DSCM_PG0);
 		lastfree = inb(nec+ds0_bnry);
+#ifdef NEDEBUG
 printf("Cur %x pend %x lastfree %x ", ns->ns_cur, pend, lastfree);
+#endif
 		/* have we wrapped */
 		if (lastfree > RBUFEND/DS_PGSIZE)
 			lastfree = RBUF/DS_PGSIZE;
@@ -404,7 +434,9 @@ printf("Cur %x pend %x lastfree %x ", ns->ns_cur, pend, lastfree);
 				nerecv (ns);
 
 			nxt = ns->ns_ph.pr_nxtpg ;
+#ifdef NEDEBUG
 printf("nxt %x ", nxt);
+#endif
 			/* sanity check */
 			if ( nxt >= RBUF/DS_PGSIZE
 			&& nxt <= RBUFEND/DS_PGSIZE && nxt <= pend)
@@ -421,8 +453,9 @@ printf("nxt %x ", nxt);
 		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
 		outb (nec+ds0_rcr, DSRC_AB);
 		outb(nec+ds0_tcr,0);
+#ifdef NEDEBUG
 printf("\n");
-		goto redo;
+#endif
 	}
 
 	/* receiver error */
@@ -442,23 +475,35 @@ printf("\n");
 		pend = inb(nec+ds1_curr);
 		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG0);
 		lastfree = inb(nec+ds0_bnry);
-#include "dbg.h"
-dprintf(DEXPAND,"cur %x pend %x lastfree %x ", ns->ns_cur, pend, lastfree);
+#ifdef NEDEBUG
+dprintf(DEXPAND,"cur %x pnd %x lfr %x ", ns->ns_cur, pend, lastfree);
+#endif
 		/* have we wrapped */
 		if (lastfree > RBUFEND/DS_PGSIZE)
 			lastfree = RBUF/DS_PGSIZE;
 		/* something in the buffer? */
-		while (pend != succ(lastfree)) {
+		if (pend != succ(lastfree)) {
 			u_char nxt;
 
 			fetchram(&ns->ns_ph,ns->ns_cur*DS_PGSIZE, sizeof(ns->ns_ph));
 			ns->ns_ba = ns->ns_cur*DS_PGSIZE+sizeof(ns->ns_ph);
 
-			if (ns->ns_ph.pr_status & DSRS_RPC)
+			if (ns->ns_ph.pr_status == DSRS_RPC ||
+				ns->ns_ph.pr_status == 0x21)
 				nerecv (ns);
+#ifdef NEDEBUG
+			else  {
+printf("cur %x pnd %x lfr %x ", ns->ns_cur, pend, lastfree);
+printf("nxt %x len %x ", ns->ns_ph.pr_nxtpg, (ns->ns_ph.pr_sz1<<8)+
+	ns->ns_ph.pr_sz0);
+pg("Bogus Sts %x ", ns->ns_ph.pr_status);	
+			}
+#endif
 
 			nxt = ns->ns_ph.pr_nxtpg ;
+#ifdef NEDEBUG
 dprintf(DEXPAND,"nxt %x ", nxt);
+#endif
 			/* sanity check */
 			if ( nxt >= RBUF/DS_PGSIZE
 			&& nxt <= RBUFEND/DS_PGSIZE && nxt <= pend)
@@ -466,27 +511,39 @@ dprintf(DEXPAND,"nxt %x ", nxt);
 			else	ns->ns_cur = nxt = pend;
 			lastfree = pred(nxt);
 			outb(nec+ds0_bnry, lastfree);
-		}/* else ns->ns_cur = pend;*/
+			pend = inb(nec+ds1_curr);
+		} else ns->ns_cur = pend;
 		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
-		goto redo;
 	}
 	if (isr & DSIS_TXE) {
+	ns->ns_flags &= ~DSF_LOCK;
+#ifdef NEDEBUG
+dprintf(DEXPAND," clsn");
+#endif
 		/* need to read these registers to clear status */
 		ns->ns_if.if_collisions += inb(nec+ds0_tbcr0);
 		ns->ns_if.if_oerrors++;
 	}
-	if (isr & (DSIS_TXE| DSIS_TX)) {
+	if (isr & DSIS_TX) {
+#ifdef NEDEBUG
+dprintf(DEXPAND,"tx ");
+#endif
+	ns->ns_flags &= ~DSF_LOCK;
 		++ns->ns_if.if_opackets;
-		inb(nec+ds0_bnry);
 		ns->ns_if.if_collisions +=
 		    inb(nec+ds0_tbcr0);
 	}
-dprintf(DEXPAND,"\n");
-	ns->ns_flags &= ~DSF_LOCK;
+
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
 	nestart(ns);
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
+	outb (nec+ds_cmd, cmd);
 	outb (nec+ds0_imr, 0xff);
+	isr = inb (nec+ds0_isr);
+	if(isr) goto loop;
+	
+#ifdef NEDEBUG
+	if(++cnt % 10 == 0) dprintf(DEXPAND,"\n");
+#endif
 }
 
 /*
@@ -504,18 +561,28 @@ nerecv(ns)
 
 	ns->ns_if.if_ipackets++;
 	len = ns->ns_ph.pr_sz0 + (ns->ns_ph.pr_sz1<<8);
+if(len < 60 || len > 1536) {
+#ifdef NEDEBUG
+pg(DEXPAND,"R Bogus Length %d", len);
+#endif
+return;
+}
 	fetchram(ns->ns_pb,ns->ns_ba,min(len,DS_PGSIZE-sizeof(ns->ns_ph)));
+#ifdef NEDEBUG
 if (!bcmp((caddr_t)ns->ns_pb, (caddr_t)ns->ns_addr, 6)
 && !bcmp((caddr_t)ns->ns_pb, (caddr_t)etherbroadcastaddr, 6)) {
 printf("G%x ", ns->ns_cur);
 return;
 }/* else 
 printf("P%x ", ns->ns_cur);*/
+#endif
 	if(len > DS_PGSIZE-sizeof(ns->ns_ph)) {
 		int l = len - (DS_PGSIZE-sizeof(ns->ns_ph)), b ;
 		u_char *p = ns->ns_pb + (DS_PGSIZE-sizeof(ns->ns_ph));
 
-dprintf(DEXPAND,"len %d( %d| ", len, p - ns->ns_pb);
+#ifdef NEDEBUG
+dprintf(DEXPAND,"len %d(%d|", len, p - ns->ns_pb);
+#endif
 		if(++ns->ns_cur > 0x7f) ns->ns_cur = 0x46;
 		b = ns->ns_cur*DS_PGSIZE;
 		
@@ -524,9 +591,13 @@ dprintf(DEXPAND,"len %d( %d| ", len, p - ns->ns_pb);
 			p += DS_PGSIZE; l -= DS_PGSIZE;
 		if(++ns->ns_cur > 0x7f) ns->ns_cur = 0x46;
 		b = ns->ns_cur*DS_PGSIZE;
-dprintf(DEXPAND,"%d| ", p - ns->ns_pb);
+#ifdef NEDEBUG
+dprintf(DEXPAND,"%d|", p - ns->ns_pb);
+#endif
 		}
-dprintf(DEXPAND,". %d)\n", l);
+#ifdef NEDEBUG
+dprintf(DEXPAND,"%d) ", l);
+#endif
 		if (l > 0)
 			fetchram(p,b,l);
 	}
@@ -537,6 +608,18 @@ dprintf(DEXPAND,". %d)\n", l);
 
 	neread(ns,(caddr_t)(ns->ns_pb), len);
 }
+
+pausestr(s,n) char *s; {
+static downcnt;
+
+	if(n) { downcnt = 0xffff; return(0); }
+	if(--downcnt > 0) return(0);
+#ifdef NEDEBUG
+	pg(" <%s> recur %d sts %x ", s, recur, inb (nec+ds0_isr));
+#endif
+	return(-1);
+}
+	
 
 /*
  * Pass a packet to the higher levels.
@@ -658,6 +741,7 @@ neoutput(ifp, m0, dst)
 		    sizeof(edst)))
                         mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+
 
 		/* need per host negotiation */
 		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
