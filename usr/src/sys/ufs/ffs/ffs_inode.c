@@ -1,4 +1,4 @@
-/*	ffs_inode.c	6.5	84/06/27	*/
+/*	ffs_inode.c	6.6	84/07/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -107,6 +107,8 @@ iget(dev, fs, ino)
 	register struct buf *bp;
 	register struct dinode *dp;
 	register struct inode *iq;
+	struct inode *xp;
+
 
 loop:
 	ih = &ihead[INOHASH(dev, ino)];
@@ -176,10 +178,11 @@ loop:
 	ip->i_id = ++nextinodeid;	/* also used in rename */
 	/*
 	 * At an absurd rate of 100 calls/second,
-	 * this should occur once every 16 months.
+	 * this should occur once every 8 months.
 	 */
-	if (nextinodeid == 0)
-		panic("iget: wrap");
+	if (nextinodeid < 0)
+		for (nextinodeid = 0, xp = inode; xp < inodeNINODE; xp++)
+			xp->i_id = 0;
 	ip->i_flag = ILOCKED;
 	ip->i_count++;
 	ip->i_lastr = 0;
