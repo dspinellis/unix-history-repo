@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.6 %G%";
+static char sccsid[] = "@(#)routed.c	4.7 %G%";
 #endif
 
 /*
@@ -70,7 +70,7 @@ main(argc, argv)
 		(void) dup2(fileno(stdout), 2);
 		setbuf(stdout, NULL);
 	}
-#ifdef vax
+#ifdef vax || pdp11
 	myaddr.sin_port = htons(myaddr.sin_port);
 #endif
 again:
@@ -140,7 +140,7 @@ getothers()
 		rtadd((struct sockaddr *)&dst, (struct sockaddr *)&gate, 1);
 		rt = rtlookup((struct sockaddr *)&dst);
 		if (rt)
-			rt->rt_flags |= RTF_SILENT;
+			rt->rt_state |= RTS_SILENT;
 	}
 	fclose(fp);
 }
@@ -176,7 +176,7 @@ again:
 			 * from the initialization file),
 			 * don't time out it's entry.
 			 */
-			if ((rt->rt_flags & RTF_SILENT) == 0)
+			if ((rt->rt_state & RTS_SILENT) == 0)
 				rt->rt_timer += TIMER_RATE;
 			log("", rt);
 
@@ -185,10 +185,9 @@ again:
 			 * attempt to do so and reclaim space.
 			 */
 			if (rt->rt_timer >= GARBAGE_TIME ||
-			  (rt->rt_flags & RTF_DELRT)) {
-				rt = rt->rt_forw;
-				rtdelete(rt->rt_back);
+			  (rt->rt_state & RTS_DELRT)) {
 				rt = rt->rt_back;
+				rtdelete(rt->rt_forw);
 				continue;
 			}
 
@@ -199,10 +198,10 @@ again:
 			 */
 			if (rt->rt_timer >= EXPIRE_TIME)
 				rt->rt_metric = HOPCNT_INFINITY;
-			if (rt->rt_flags & RTF_CHGRT)
+			if (rt->rt_state & RTS_CHGRT)
 				if (!ioctl(s, SIOCCHGRT,(char *)&rt->rt_rt) ||
 				  --rt->rt_retry == 0)
-					rt->rt_flags &= ~RTF_CHGRT;
+					rt->rt_state &= ~RTS_CHGRT;
 
 			/*
 			 * Try to add the route to the kernel tables.
@@ -212,11 +211,11 @@ again:
 			 * fails otherwise (likely because the entry is
 			 * in use), retry the operation a few more times.
 			 */
-			if (rt->rt_flags & RTF_ADDRT) {
+			if (rt->rt_state & RTS_ADDRT) {
 				if (!ioctl(s, SIOCADDRT,(char *)&rt->rt_rt)) {
 					if (errno == EEXIST) {
-						rt->rt_flags &= ~RTF_ADDRT;
-						rt->rt_flags |= RTF_CHGRT;
+						rt->rt_state &= ~RTS_ADDRT;
+						rt->rt_state |= RTS_CHGRT;
 						rt->rt_retry =
 						    (EXPIRE_TIME/TIMER_RATE);
 						continue;
@@ -224,7 +223,7 @@ again:
 					if (--rt->rt_retry)
 						continue;
 				}
-				rt->rt_flags &= ~RTF_ADDRT;
+				rt->rt_state &= ~RTS_ADDRT;
 			}
 		}
 	}
@@ -396,7 +395,7 @@ sendall()
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-		if ((rt->rt_flags & RTF_SILENT) || rt->rt_metric > 0)
+		if ((rt->rt_state & RTS_SILENT) || rt->rt_metric > 0)
 			continue;
 		if (rt->rt_ifp && (rt->rt_ifp->if_flags & IFF_BROADCAST))
 			dst = &rt->rt_ifp->if_broadaddr;
@@ -426,7 +425,7 @@ supplyall()
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-		if ((rt->rt_flags & RTF_SILENT) || rt->rt_metric > 0)
+		if ((rt->rt_state & RTS_SILENT) || rt->rt_metric > 0)
 			continue;
 		if (rt->rt_ifp && (rt->rt_ifp->if_flags & IFF_BROADCAST))
 			dst = &rt->rt_ifp->if_broadaddr;
@@ -528,16 +527,20 @@ rip_input(from, size)
 	struct rt_entry *rt;
 	struct netinfo *n;
 
-	if (msg->rip_cmd != RIPCMD_RESPONSE &&
-	    msg->rip_cmd != RIPCMD_REQUEST)
+	switch (msg->rip_cmd) {
+
+	default:
 		return;
 
-	if (msg->rip_cmd == RIPCMD_RESPONSE &&
-	    (*afswitch[from->sa_family].af_portmatch)(from) == 0)
-		return;
-	if (msg->rip_cmd == RIPCMD_REQUEST) {
+	case RIPCMD_REQUEST:
 		rip_respond(from, size);
 		return;
+
+	case RIPCMD_RESPONSE:
+		/* verify message came from a priviledged port */
+		if ((*afswitch[from->sa_family].af_portmatch)(from) == 0)
+			return;
+		break;
 	}
 
 	/*
@@ -696,6 +699,7 @@ rtadd(dst, gate, metric)
 	rt->rt_metric = metric;
 	rt->rt_timer = 0;
 	rt->rt_flags = RTF_UP | flags;
+	rt->rt_state = 0;
 	rt->rt_ifp = if_ifwithnet(&rt->rt_gateway);
 	if (metric == 0)
 		rt->rt_flags |= RTF_DIRECT;
@@ -706,7 +710,7 @@ rtadd(dst, gate, metric)
 	if (supplier)
 		broadcast(rt);
 	if (install) {
-		rt->rt_flags |= RTF_ADDRT;
+		rt->rt_state |= RTS_ADDRT;
 		rt->rt_retry = EXPIRE_TIME/TIMER_RATE;
 	}
 }
@@ -748,7 +752,7 @@ rtchange(rt, gate, metric)
 		broadcast(rt);
 	log("change", rt);
 	if (install) {
-		rt->rt_flags |= RTF_CHGRT;
+		rt->rt_state |= RTS_CHGRT;
 		rt->rt_retry = EXPIRE_TIME/TIMER_RATE;
 	}
 }
@@ -763,7 +767,7 @@ rtdelete(rt)
 	if (install)
 		if (ioctl(s, SIOCDELRT, (char *)&rt->rt_rt) &&
 		  errno == EBUSY)
-			rt->rt_flags |= RTF_DELRT;
+			rt->rt_state |= RTS_DELRT;
 	remque(rt);
 	free((char *)rt);
 }
@@ -774,19 +778,21 @@ log(operation, rt)
 {
 	time_t t = time(0);
 	struct sockaddr_in *dst, *gate;
-	static struct flagbits {
+	static struct bits {
 		int	t_bits;
 		char	*t_name;
-	} bits[] = {
+	} flagbits[] = {
 		{ RTF_UP,	"UP" },
 		{ RTF_DIRECT,	"DIRECT" },
 		{ RTF_HOST,	"HOST" },
-		{ RTF_DELRT,	"DELETE" },
-		{ RTF_CHGRT,	"CHANGE" },
-		{ RTF_SILENT,	"SILENT" },
+		{ 0 }
+	}, statebits[] = {
+		{ RTS_DELRT,	"DELETE" },
+		{ RTS_CHGRT,	"CHANGE" },
+		{ RTS_SILENT,	"SILENT" },
 		{ 0 }
 	};
-	register struct flagbits *p;
+	register struct bits *p;
 	register int first;
 	char *cp;
 
@@ -795,11 +801,22 @@ log(operation, rt)
 	printf("%s ", operation);
 	dst = (struct sockaddr_in *)&rt->rt_dst;
 	gate = (struct sockaddr_in *)&rt->rt_gateway;
-	printf("dst %x, router %x, metric %d, flags ",
+	printf("dst %x, router %x, metric %d, flags",
 		dst->sin_addr, gate->sin_addr, rt->rt_metric);
-	cp = "%s";
-	for (first = 1, p = bits; p->t_bits > 0; p++) {
+	cp = " %s";
+	for (first = 1, p = flagbits; p->t_bits > 0; p++) {
 		if ((rt->rt_flags & p->t_bits) == 0)
+			continue;
+		printf(cp, p->t_name);
+		if (first) {
+			cp = "|%s";
+			first = 0;
+		}
+	}
+	printf(" state");
+	cp = " %s";
+	for (first = 1, p = statebits; p->t_bits > 0; p++) {
+		if ((rt->rt_state & p->t_bits) == 0)
 			continue;
 		printf(cp, p->t_name);
 		if (first) {

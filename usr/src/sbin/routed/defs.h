@@ -1,4 +1,4 @@
-/*	defs.h	4.2	82/05/25	*/
+/*	defs.h	4.3	82/05/26	*/
 
 /*
  * Internal data structure definitions for
@@ -9,8 +9,10 @@
 #include <net/route.h>
 
 /*
- * Internal routing table structure.
- * Differs a bit from kernel tables.
+ * Routing table structure; differs a bit from kernel tables.
+ *
+ * Note: the union below must agree in the first 4 members
+ * so the ioctl's will work.
  */
 struct rthash {
 	struct	rt_entry *rt_forw;
@@ -28,7 +30,8 @@ struct rt_entry {
 			struct	sockaddr rtu_gateway;
 			short	rtu_flags;
 			short	rtu_retry;
-			int	rtu_timer;
+			short	rtu_timer;
+			short	rtu_state;
 			int	rtu_metric;
 			struct	ifnet *rtu_ifp;
 		} rtu_entry;
@@ -39,48 +42,44 @@ struct rt_entry {
 #define	rt_hash		rt_rtu.rtu_entry.rtu_hash	/* for net or host */
 #define	rt_dst		rt_rtu.rtu_entry.rtu_dst	/* match value */
 #define	rt_gateway	rt_rtu.rtu_entry.rtu_gateway	/* who to forward to */
-#define	rt_flags	rt_rtu.rtu_entry.rtu_flags	/* see below */
+#define	rt_flags	rt_rtu.rtu_entry.rtu_flags	/* kernel flags */
 #define	rt_retry	rt_rtu.rtu_entry.rtu_retry	/* retries of ioctl */
 #define	rt_timer	rt_rtu.rtu_entry.rtu_timer	/* for invalidation */
+#define	rt_state	rt_rtu.rtu_entry.rtu_state	/* see below */
 #define	rt_metric	rt_rtu.rtu_entry.rtu_metric	/* cost of route */
 #define	rt_ifp		rt_rtu.rtu_entry.rtu_ifp	/* interface to take */
 
 #define	ROUTEHASHSIZ	19
 
 /*
- * Flags used by routing process are not
- * interpreted by kernel.
+ * "State" of routing table entry.
  */
-#define	RTF_DELRT	0x8		/* delete pending */
-#define	RTF_CHGRT	0x10		/* change command pending */
-#define	RTF_ADDRT	0x20		/* add command pending */
-#define	RTF_SILENT	0x40		/* don't send to router */
+#define	RTS_DELRT	0x1		/* delete pending */
+#define	RTS_CHGRT	0x2		/* change command pending */
+#define	RTS_ADDRT	0x4		/* add command pending */
+#define	RTS_SILENT	0x8		/* don't send to router */
 
 struct	rthash nethash[ROUTEHASHSIZ], hosthash[ROUTEHASHSIZ];
 struct	rt_entry *rtlookup();
 
 /*
- * Per address family routines.  Hash returns hash key based
- * on address; netmatch verifies net # matching, output interprets
- * an address in preparation for sending; portmatch interprets
- * an address in verifying incoming packets were sent from the
- * appropriate port; checkhost is used to decide whether an
- * address is for a host, or for a network (e.g. broadcast);
- * canon purges any extraneous stuff from a sender's address
- * before pattern matching is performed (e.g. Internet ports).
+ * Per address family routines.
  */
 struct afswitch {
-	int	(*af_hash)();
-	int	(*af_netmatch)();
-	int	(*af_output)();
-	int	(*af_portmatch)();
-	int	(*af_checkhost)();
-	int	(*af_canon)();
+	int	(*af_hash)();		/* returns keys based on address */
+	int	(*af_netmatch)();	/* verifies net # matching */
+	int	(*af_output)();		/* interprets address for sending */
+	int	(*af_portmatch)();	/* interprets address on receipt */
+	int	(*af_checkhost)();	/* tells if address for host or net */
+	int	(*af_canon)();		/* purges extraneous part of address */
 };
 
+/*
+ * Structure returned by af_hash routines.
+ */
 struct afhash {
-	u_int	afh_hosthash;
-	u_int	afh_nethash;
+	u_int	afh_hosthash;		/* host based hash */
+	u_int	afh_nethash;		/* network based hash */
 };
 
-struct	afswitch afswitch[AF_MAX];
+struct	afswitch afswitch[AF_MAX];	/* table proper */
