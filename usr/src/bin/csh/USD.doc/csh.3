@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.3	5.1 (Berkeley) %G%
+.\"	@(#)csh.3	6.1 (Berkeley) %G%
 .\"
 .nr H1 2
 .NH
@@ -203,7 +203,7 @@ set a=($<)
 .DE
 would write out the prompt `yes or no?' without a newline and then
 read the answer into the variable `a'.  In this case `$#a' would be
-`0' if either a blank line or end-of-file (\(uaD) was typed.
+`0' if either a blank line or end-of-file (^D) was typed.
 .PP
 One minor difference between `$\fIn\fR\|' and `$argv[\fIn\fR\|]'
 should be noted here.
@@ -425,15 +425,15 @@ the head `:h' or all but the last component of a pathname leaving the
 tail `:t'.
 These modifiers are fully described in the
 .I csh
-manual pages in the programmers manual.
+manual pages in the User's Reference Manual.
 It is also possible to use the
 .I "command substitution"
 mechanism described in the next major section to perform modifications
-on strings to then reenter the shells environment.
+on strings to then reenter the shell's environment.
 Since each usage of this mechanism involves the creation of a new process,
-it is much more expensive to use than the `:' modification mechanism.#
+it is much more expensive to use than the `:' modification mechanism.\(dd
 .FS
-#It is also important to note that
+\(dd It is also important to note that
 the current implementation of the shell limits the number of `:' modifiers
 on a `$' substitution to 1.
 Thus
@@ -532,13 +532,13 @@ inline data.
 Thus we need a metanotation for supplying inline data to commands in
 shell scripts.
 As an example, consider this script which runs the editor to
-delete leading blanks from the lines in each argument file
+delete leading blanks from the lines in each argument file:
 .DS
 % cat deblank
 # deblank \-\- remove leading blanks
 foreach i ($argv)
 ed \- $i << \'EOF\'
-1,$s/\(ua[ ]*//
+1,$s/^[ ]*//
 w
 q
 \&\'EOF\'
@@ -561,7 +561,7 @@ we needed to insure that this `$' was not variable substituted.
 We could also have insured this by preceding the `$' here with a `\e',
 i.e.:
 .DS
-1,\e$s/\(ua[ ]*//
+1,\e$s/^[ ]*//
 .DE
 but quoting the `EOF' terminator is a more reliable way of achieving the
 same thing.
