@@ -1,0 +1,67 @@
+.TH PEPSY 1 "24 Jun 1990"
+.\" $Header: /f/osi/pepsy/RCS/pepsy.1,v 7.1 91/02/22 09:49:37 mrose Interim $
+.\"
+.\"
+.\" $Log:	pepsy.1,v $
+.\" Revision 7.1  91/02/22  09:49:37  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  90/07/01  19:54:47  mrose
+.\" *** empty log message ***
+.\" 
+.SH NAME
+pepsy \- table driven replacement for posy/pepy
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B pepsy
+\%[\-A]
+\%[\-a]
+\%[\-f]
+\%[\-h\fIoption\fP]
+\%[\-s]
+\fImodule.py\fR
+.in -.5i
+.SH DESCRIPTION
+The \fIpepsy\fR program reads a description of a \fIpresentation\fR module and
+produces definitions and tables for use with the \fIC\fR programming language.
+It is meant to be backwards-compatible with the \fIposy\fR system.
+(So, \fIpepsy\fR will ignore any \fIpepy\fR-style augmentations in the
+input file.)
+.PP
+The `\-A' (All) switch directs \fIpepsy\fR to generate tables for encoders,
+decoders, and printers.
+.PP
+The `\-a' switch directs \fIpepsy\fR to augment the #include file with
+commentary text.
+.PP
+The `\-f' switch directs \fIpepsy\fR to generate \fIC\fR macros to deallocate
+the structures it defines.
+.PP
+The `\-h' switch enables additional heuristics when \fIpepsy\fR generates a
+\fIC\fR language structure definition.
+Option `0' enables the default heuristics.
+Enabling any other option also results in enabling option `0'.
+Option `1' enables \*(lqclever\*(rq but non\-unique structure naming.
+Option `2' enables the generation of arrays rather than linked-lists
+whenever possible.
+.PP
+Normally, \fIpepsy\fR prints the name of each type as it works.
+The `\-s' switch disables this behavior.
+.SH FILES
+.nf
+.ta \w'\fImodule\fR_pre_defs.h  'u
+\fImodule\fR.ph	extern type definitions from \fImodule\fR
+\fImodule\fR_tables.c	initialised tables for processing \fImodule\fR
+\fImodule\fR-types.h	\fIC\fR structure definitions from \fImodule\fR
+\fImodule\fR_pre_defs.h	Preprocessor constants for each type in \fImodule\fR
+\fImodule\fR_defs.h	macros to support pepy routines for \fImodule\fR's types
+.re
+.fi
+.SH "SEE ALSO"
+pepy(1), posy(1),
+.br
+\fIThe ISO Development Environment: User's Manual\fR
+.SH AUTHOR
+Andrew Worsley,
+CSIRO and UCL
