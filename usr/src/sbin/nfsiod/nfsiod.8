@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)nfsiod.8	8.1 (Berkeley) %G%
+.\"     @(#)nfsiod.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NFSIOD 8
@@ -15,7 +15,7 @@
 asynchronous I/O server
 .Sh SYNOPSIS
 .Nm nfsiod
-.Op Ar numdaemons
+.Op Fl n Ar num_servers
 .Sh DESCRIPTION
 .Nm Nfsiod
 runs on an
@@ -23,20 +23,20 @@ runs on an
 client machine to service asynchronous I/O requests to its server.
 It improves performance but is not required for correct operation.
 .Pp
-Available options:
+Unless otherwise specified, a single server is started.
 .Pp
+The options are as follows:
 .Bl -tag -width Ds
-.It Ar numdaemons
-The option
-.Ar numdaemons
-defines how many
-.Nm nfsiod
-daemons to start;
-if unspecified, only a single daemon will be started.
-A client should typically run enough daemons to handle
-their maximum level of concurrency,
-typically four to six.
+.It Fl n
+Specify how many servers are to be started.
 .El
+.Pp
+A client should run enough daemons to handle its maximum
+level of concurrency, typically four to six.
+.Pp
+The
+.Nm nfsiod
+utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
 .Xr nfsstat 1 ,
 .Xr nfssvc 2 ,
