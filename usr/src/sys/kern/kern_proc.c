@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.23	82/02/27	*/
+/*	kern_proc.c	4.24	82/03/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -409,7 +409,7 @@ setregs()
 			if ((int)*rp & 1)
 				u.u_procp->p_siga0 |= sigmask;
 			else
-				u.u_procp->p_siga1 &= ~sigmask;
+				u.u_procp->p_siga0 &= ~sigmask;
 			if ((int)*rp & 2)
 				u.u_procp->p_siga1 |= sigmask;
 			else
