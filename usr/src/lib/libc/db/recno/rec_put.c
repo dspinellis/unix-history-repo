@@ -6,15 +6,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <errno.h>
+
 #include <db.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "recno.h"
 
 /*
@@ -24,7 +26,7 @@ static char sccsid[] = "@(#)rec_put.c	5.4 (Berkeley) %G%";
  *	dbp:	pointer to access method
  *	key:	key
  *	data:	data
- *	flag:	R_APPEND, R_IAFTER, R_IBEFORE, R_NOOVERWRITE
+ *	flag:	R_CURSORLOG, R_CURSOR, R_IAFTER, R_IBEFORE, R_NOOVERWRITE
  *
  * Returns:
  *	RET_ERROR, RET_SUCCESS and RET_SPECIAL if the key is already in the
@@ -33,7 +35,8 @@ static char sccsid[] = "@(#)rec_put.c	5.4 (Berkeley) %G%";
 int
 __rec_put(dbp, key, data, flags)
 	const DB *dbp;
-	const DBT *key, *data;
+	DBT *key;
+	const DBT *data;
 	u_int flags;
 {
 	BTREE *t;
@@ -44,13 +47,18 @@ __rec_put(dbp, key, data, flags)
 	t = dbp->internal;
 
 	switch (flags) {
-	case R_APPEND:
-		nrec = t->bt_nrecs + 1;
-		break;
 	case R_CURSOR:
-		if (ISSET(t, BTF_DELCRSR))
+		if (!ISSET(t, BTF_SEQINIT))
 			goto einval;
 		nrec = t->bt_rcursor;
+		break;
+	case R_CURSORLOG:
+		nrec = t->bt_rcursor + 1;
+		SET(t, BTF_SEQINIT);
+		break;
+	case R_SETCURSOR:
+		if ((nrec = *(recno_t *)key->data) == 0)
+			goto einval;
 		break;
 	case R_IAFTER:
 		if ((nrec = *(recno_t *)key->data) == 0) {
@@ -79,7 +87,7 @@ einval:		errno = EINVAL;
 	 * already in the database.  If skipping records, create empty ones.
 	 */
 	if (nrec > t->bt_nrecs) {
-		if (t->bt_irec(t, nrec) == RET_ERROR)
+		if (!ISSET(t, BTF_RINMEM) && t->bt_irec(t, nrec) == RET_ERROR)
 			return (RET_ERROR);
 		if (nrec > t->bt_nrecs + 1) {
 			tdata.data = NULL;
@@ -90,10 +98,21 @@ einval:		errno = EINVAL;
 					return (RET_ERROR);
 		}
 	}
-	--nrec;
-	if ((status = __rec_iput(t, nrec, data, flags)) == RET_SUCCESS)
-		SET(t, BTF_MODIFIED);
-	return (status);
+
+	if ((status = __rec_iput(t, nrec - 1, data, flags)) != RET_SUCCESS)
+		return (status);
+
+	SET(t, BTF_MODIFIED);
+	switch(flags) {
+	case R_CURSORLOG:
+		++t->bt_rcursor;
+		break;
+	case R_SETCURSOR:
+		t->bt_rcursor = nrec;
+		break;
+	}
+	
+	return (__rec_ret(t, NULL, nrec, key, NULL));
 }
 
 /*
