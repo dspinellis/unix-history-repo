@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.57 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.58 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -235,13 +235,22 @@ ffs_truncate (ap)
 	struct inode tip;
 	off_t osize;
 
-	vnode_pager_setsize(ovp, (u_long)ap->a_length);
 	oip = VTOI(ovp);
+	if (ovp->v_type == VLNK && ovp->v_mount->mnt_maxsymlinklen > 0) {
+#ifdef DIAGNOSTIC
+		if (ap->a_length != 0)
+			panic("ffs_truncate: partial truncate of symlink");
+#endif
+		bzero((char *)&oip->i_shortlink, (u_int)oip->i_size);
+		oip->i_size = 0;
+		oip->i_flag |= ICHG|IUPD;
+		return (VOP_UPDATE(ovp, &time, &time, 1));
+	}
 	if (oip->i_size <= ap->a_length) {
 		oip->i_flag |= ICHG|IUPD;
-		error = VOP_UPDATE(ovp, &time, &time, 1);
-		return (error);
+		return (VOP_UPDATE(ovp, &time, &time, 1));
 	}
+	vnode_pager_setsize(ovp, (u_long)ap->a_length);
 	/*
 	 * Calculate index into inode's block list of
 	 * last direct and indirect blocks (if any)
