@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.4 %G%";
+static char *SccsId = "@(#)lex.c	1.5 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -85,7 +85,7 @@ setfile(name, isedit)
 	for (i = SIGINT; i <= SIGQUIT; i++)
 		signal(i, sigs[i - SIGINT]);
 	printf("%s: ", name);
-	announce(!edit);
+	shudann = 1;
 	sawcom = 0;
 	return(0);
 }
@@ -126,13 +126,11 @@ commands()
 		 * go off and print the headers!
 		 */
 
-#ifdef CRAZYWOW
-		if (firstsw == 0 && !sourcing) {
-			firstsw = -1;
+		if (shudann && !sourcing) {
+			shudann = 0;
 			if (rcvmode)
-				announce(1);
+				announce(edit);
 		}
-#endif
 
 		/*
 		 * Print the prompt, if needed.  Clear out
@@ -485,9 +483,6 @@ announce(pr)
 	extern char *version;
 	register struct message *mp;
 
-	if (value("hold") != NOSTR)
-		for (mp = &message[0]; mp < &message[msgCount]; mp++)
-			mp->m_flag |= MPRESERVE;
 	vec[0] = 1;
 	vec[1] = 0;
 	if (pr && value("quiet") == NOSTR)
