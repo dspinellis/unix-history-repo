@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_re.c	6.1 %G%";
+static char *sccsid = "@(#)ex_re.c	6.2 %G%";
 #include "ex.h"
 #include "ex_re.h"
 
@@ -81,6 +81,14 @@ out:
 		if (a1 >= addr1 && a1 <= addr2 && execute(0, a1) == k)
 			*a1 |= 01;
 	}
+#ifdef notdef
+/*
+ * This code is commented out for now.  The problem is that we don't
+ * fix up the undo area the way we should.  Basically, I think what has
+ * to be done is to copy the undo area down (since we shrunk everything)
+ * and move the various pointers into it down too.  I will do this later
+ * when I have time. (Mark, 10-20-80)
+ */
 	/*
 	 * Special case: g/.../d (avoid n^2 algorithm)
 	 */
@@ -88,6 +96,7 @@ out:
 		gdelete();
 		return;
 	}
+#endif
 	if (inopen)
 		inopen = -1;
 	/*

@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_temp.c	6.1 %G%";
+static char *sccsid = "@(#)ex_temp.c	6.2 %G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_vis.h"
@@ -559,6 +559,7 @@ YANKreg(c)
 	struct rbuf arbuf;
 	register line *addr;
 	register struct strreg *sp;
+	char savelb[LBSIZE];
 
 	if (isdigit(c))
 		kshift();
@@ -575,6 +576,7 @@ YANKreg(c)
 		rblock = 0;
 		rnleft = 0;
 	}
+	CP(savelb,linebuf);
 	for (addr = addr1; addr <= addr2; addr++) {
 		getline(*addr);
 		if (sp->rg_flags) {
@@ -587,6 +589,7 @@ YANKreg(c)
 	}
 	rbflush();
 	killed();
+	CP(linebuf,savelb);
 }
 
 kshift()

@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops3.c	6.1 %G%";
+static char *sccsid = "@(#)ex_vops3.c	6.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -415,8 +415,10 @@ lskipbal(parens)
 	register int c;
 
 	do {
-		if (!lnext())
+		if (!lnext()) {
+			wdot = NOLINE;
 			return (0);
+		}
 		c = *wcursor;
 		if (c == parens[1])
 			level--;

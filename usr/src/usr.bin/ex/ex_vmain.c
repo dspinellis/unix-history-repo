@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vmain.c	6.1 %G%";
+static char *sccsid = "@(#)ex_vmain.c	6.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -309,6 +309,10 @@ reread:
 		 * ^D		Scroll down.  Like scroll up.
 		 */
 		case CTRL(d):
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "before vdown in ^D, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
+#endif
 			if (hadcnt)
 				vSCROLL = cnt;
 			cnt = vSCROLL;
@@ -318,7 +322,15 @@ reread:
 				ind = 0;
 			vmoving = 0;
 			vdown(cnt, ind, 1);
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "before vnline in ^D, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
+#endif
 			vnline(NOSTR);
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "after vnline in ^D, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
+#endif
 			continue;
 
 		/*

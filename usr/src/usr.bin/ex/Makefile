@@ -25,7 +25,7 @@ LIBDIR=	/usr/lib
 FOLD=	${BINDIR}/fold
 CTAGS=	${BINDIR}/ctags
 XSTR=	${BINDIR}/xstr
-DEBUGFLAGS=	-DMDEBUG -DTRACE -g
+DEBUGFLAGS=	-DTRACE -g
 NONDEBUGFLAGS=	-O
 DEB=	${NONDEBUGFLAGS}	# or ${DEBUGFLAGS} to to debug
 # NOTE: TIMEBOMB is NOT intended for production use, or even to
