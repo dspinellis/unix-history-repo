@@ -1,4 +1,4 @@
-/*	if_imp.c	4.12	82/03/10	*/
+/*	if_imp.c	4.13	82/03/12	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -130,7 +130,6 @@ impinput(unit, m)
 	int unit;
 	register struct mbuf *m;
 {
-	int s;
 	register struct imp_leader *ip;
 	register struct imp_softc *sc = &imp_softc[unit];
 	register struct host *hp;
@@ -374,7 +373,7 @@ impoutput(ifp, m0, pf)
 {
 	register struct imp_leader *imp;
 	register struct mbuf *m = m0;
-	int x, dhost, dimp, dlink, len, dnet;
+	int x, dhost, dimp, dlink, len;
 
 COUNT(IMPOUTPUT);
 	/*
@@ -390,7 +389,6 @@ COUNT(IMPOUTPUT);
 	case PF_INET: {
 		register struct ip *ip = mtod(m0, struct ip *);
 
-		dnet = ip->ip_dst.s_net;
 		dhost = ip->ip_dst.s_host;
 		dimp = ip->ip_dst.s_imp;
 		dlink = IMPLINK_IP;
@@ -426,11 +424,7 @@ COUNT(IMPOUTPUT);
 	imp = mtod(m, struct imp_leader *);
 	imp->il_format = IMP_NFF;
 	imp->il_mtype = IMPTYPE_DATA;
-#ifdef notdef
-	imp->il_network = dnet;
-#else
 	imp->il_network = 0;
-#endif
 	imp->il_host = dhost;
 	imp->il_imp = dimp;
 	imp->il_length = htons((len + sizeof(struct imp_leader)) << 3);
@@ -496,7 +490,6 @@ COUNT(IMPSND);
 				goto start;
 			}
 		}
-drop:
 		m_freem(m);
 		splx(x);
 		return (0);
