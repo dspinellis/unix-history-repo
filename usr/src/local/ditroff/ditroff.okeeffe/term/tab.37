@@ -24,6 +24,7 @@ up	""
 down	""
 right	""
 left	""
+eject	""
 
 charset
 em 1 -
