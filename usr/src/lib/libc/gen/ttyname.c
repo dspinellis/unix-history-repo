@@ -49,8 +49,10 @@ ttyname(fd)
 		if (!(db->get)(db, &key, &data, 0)) {
 			bcopy(data.data,
 			    buf + sizeof(_PATH_DEV) - 1, data.size);
+			(void)(db->close)(db);
 			return(buf);
 		}
+		(void)(db->close)(db);
 	}
 	return(__oldttyname(fd, &sb));
 }
