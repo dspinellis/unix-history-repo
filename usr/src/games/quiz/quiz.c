@@ -1,5 +1,5 @@
 
-static char sccsid[] = "	quiz.c	4.2	85/01/09	";
+static char sccsid[] = "	quiz.c	4.3	87/06/17	";
 
 #include <stdio.h>
 #include <signal.h>
@@ -422,10 +422,12 @@ next()
 
 done()
 {
-	printf("\nRights %d, wrongs %d, ", rights, wrongs);
-	if(guesses)
-		printf("extra guesses %d, ", guesses);
-	printf("score %d%%\n",100*rights/(rights+wrongs));
+	if (rights + wrongs) {
+		printf("\nRights %d, wrongs %d, ", rights, wrongs);
+		if (guesses)
+			printf("extra guesses %d, ", guesses);
+		printf("score %d%%\n",100 * rights / (rights + wrongs));
+	}
 	exit(0);
 }
 instruct(info)
