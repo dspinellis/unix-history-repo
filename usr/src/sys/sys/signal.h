@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	8.3 (Berkeley) %G%
+ *	@(#)signal.h	8.4 (Berkeley) %G%
  */
 
 #ifndef	_SYS_SIGNAL_H_
@@ -74,12 +74,10 @@
 #define	SIG_DFL		(void (*)(int))0
 #define	SIG_IGN		(void (*)(int))1
 #define	SIG_ERR		(void (*)(int))-1
-#define	_SIGARG		int		/* one int parameter */
 #else
 #define	SIG_DFL		(void (*)())0
 #define	SIG_IGN		(void (*)())1
 #define	SIG_ERR		(void (*)())-1
-#define	_SIGARG		void	/* unspecified parameters */
 #endif
 
 #ifndef _ANSI_SOURCE
@@ -89,7 +87,7 @@ typedef unsigned int sigset_t;
  * Signal vector "template" used in sigaction call.
  */
 struct	sigaction {
-	void	(*sa_handler)(_SIGARG);	/* signal handler */
+	void	(*sa_handler)(int);	/* signal handler */
 	sigset_t sa_mask;		/* signal mask to apply */
 	int	sa_flags;		/* see signal options below */
 };
@@ -132,7 +130,7 @@ struct	sigaltstack {
  * Signal vector "template" used in sigvec call.
  */
 struct	sigvec {
-	void	(*sv_handler)(_SIGARG);	/* signal handler */
+	void	(*sv_handler)(int);	/* signal handler */
 	int	sv_mask;		/* signal mask to apply */
 	int	sv_flags;		/* see signal options below */
 };
