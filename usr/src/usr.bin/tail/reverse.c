@@ -9,12 +9,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reverse.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)reverse.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+
+#include <limits.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -88,9 +90,14 @@ r_reg(fp, style, off, sbp)
 	if (!(size = sbp->st_size))
 		return;
 
+	if (size > SIZE_T_MAX) {
+		err(0, "%s: %s", fname, strerror(EFBIG));
+		return;
+	}
+
 	if ((p = mmap(NULL, (size_t)size,
-	    PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1) {
-		err(0, "%s", strerror(errno));
+	    PROT_READ, 0, fileno(fp), (off_t)0)) == (caddr_t)-1) {
+		err(0, "%s: %s", fname, strerror(EFBIG));
 		return;
 	}
 	p += size - 1;
