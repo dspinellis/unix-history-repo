@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)syslog.conf.5	5.1 (Berkeley) %G%
+.\"	@(#)syslog.conf.5	5.2 (Berkeley) %G%
 .\"
 .TH SYSLOG.CONF 5 ""
 .UC 7
@@ -84,6 +84,9 @@ Multiple
 may be specified for a single
 .I action
 by separating them with semicolon (``;'') characters.
+It is important to note, however, that each
+.I selector
+can modify the ones preceding it.
 .PP
 Multiple
 .I facilities
@@ -169,5 +172,9 @@ uucp,news.crit						/var/log/spoolerr
 .fi
 .SH FILES
 /etc/syslog.conf	\fIsyslogd\fP(8) configuration file
+.SH BUGS
+The effects of multiple selectors are sometimes not intuitive.
+For example ``mail.crit,*.err'' will select ``mail'' facility messages at
+the level of ``err'' or higher, not at the level of ``crit'' or higher.
 .SH "SEE ALSO"
 syslog(3), syslogd(8)
