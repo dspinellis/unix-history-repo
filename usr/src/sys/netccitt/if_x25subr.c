@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.8 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -96,15 +96,6 @@ register struct	rtentry *rt;
     }
 	switch (lx->lx_state) {
 
-	case LXS_CONNECTED:
-		lcp->lcd_dg_timer = ia->ia_xc.xc_dg_idletimo;
-		/* FALLTHROUGH */
-	case LXS_CONNECTING:
-		if (sbspace(&lcp->lcd_sb) < 0)
-			senderr(ENOBUFS);
-		lcp->lcd_send(lcp, m);
-		break;
-
 	case LXS_NEWBORN:
 		if (dst->sa_family == AF_INET &&
 		    ia->ia_ifp->if_type == IFT_X25DDN &&
@@ -120,24 +111,25 @@ register struct	rtentry *rt;
 				senderr(ENETUNREACH);
 			lx->lx_flags |= flags;
 			flags = 0;
-			rt_missmsg(RTM_RESOLVE, dst,
-			    (struct sockaddr *)0, (struct sockaddr *)0,
-			    (struct sockaddr *)0, 0, 0);
 			lx->lx_state = LXS_RESOLVING;
 			/* FALLTHROUGH */
+	case LXS_CONNECTED:
+			lcp->lcd_dg_timer = ia->ia_xc.xc_dg_idletimo;
+			/* FALLTHROUGH */
+	case LXS_CONNECTING:
 	case LXS_RESOLVING:
 			if (sbspace(&lcp->lcd_sb) < 0)
 				senderr(ENOBUFS);
-			pk_fragment(lcp, m, 0, 0, 0);
+			pk_send(lcp, m);
 			break;
 		}
 		/* FALLTHROUGH */
 	case LXS_FREE:
 		lcp->lcd_pkp = &(lx->lx_ia->ia_pkcb);
-		pk_fragment(lcp, m, 0, 0, 0);
 		pk_connect(lcp, (struct sockaddr_x25 *)rt->rt_gateway);
+		pk_send(lcp, m);
 		break;
-		/* FALLTHROUGH */
+
 	default:
 		/*
 		 * We count on the timer routine to close idle
@@ -204,7 +196,7 @@ register struct mbuf *m;
 	struct ifqueue *inq;
 	struct rtentry *rt;
 	extern struct timeval time;
-	int s, len;
+	int s, len, isr;
 
 	if (m == 0)
 		goto trouble;
@@ -228,21 +220,21 @@ register struct mbuf *m;
 	switch (lx->lx_family) {
 #ifdef INET
 	case AF_INET:
-		schednetisr(NETISR_IP);
+		isr = NETISR_IP;
 		inq = &ipintrq;
 		break;
 
 #endif
 #ifdef NS
 	case AF_NS:
-		schednetisr(NETISR_NS);
+		isr = NETISR_NS;
 		inq = &nsintrq;
 		break;
 
 #endif
 #ifdef	ISO
 	case AF_ISO:
-		schednetisr(NETISR_ISO);
+		isr = NETISR_ISO;
 		inq = &clnlintrq;
 		break;
 #endif
@@ -252,6 +244,7 @@ register struct mbuf *m;
 		return;
 	}
 	s = splimp();
+	schednetisr(isr);
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
@@ -275,9 +268,26 @@ struct sockaddr *dst;
 	register struct pklcd *lcp;
 	register struct x25_ifaddr *ia;
 	register struct sockaddr *sa2;
+	struct rtentry *rt2;
 	int x25_ifinput();
 #define SA(p) ((struct sockaddr *)(p))
 
+	if (cmd == RTM_DELETE) {
+		if (rt->rt_flags & RTF_GATEWAY) {
+			rt = (struct rtentry *)rt->rt_llinfo;
+		} else {
+			if (lx) {
+				if (lcp = lx->lx_lcd)
+					pk_disconnect(lcp);
+				FREE(lx, M_PCB);
+			}
+			rtrequest(RTM_DELETE, rt->rt_gateway, rt_key(rt),
+				SA(0), 0, (struct rtentry **) 0);
+		}
+		rt->rt_refcnt--;
+		rt->rt_llinfo = 0;
+		return;
+	}
 	if (lx == 0) {
 		MALLOC(lx, struct llinfo_x25 *, sizeof (*lx), M_PCB, M_NOWAIT);
 		if (lx == 0)
@@ -288,13 +298,12 @@ struct sockaddr *dst;
 		lx->lx_rt = rt;
 		lx->lx_ia = (struct x25_ifaddr *)rt->rt_ifa;
 	}
-	lcp = lx->lx_lcd;
-	if (cmd == RTM_DELETE) {
-		if (lcp)
-			pk_disconnect(lcp);
-		rt->rt_refcnt--;
-		rt->rt_llinfo = 0;
-		FREE(lx, M_PCB);
+	if (rt->rt_flags & RTF_GATEWAY) {
+		rt2 = rtalloc1(rt_key(rt), 1);
+		if (rt2) {
+			rt->rt_refcnt++;
+			rt->rt_llinfo = (caddr_t)rt2;
+		}
 		return;
 	}
 	if (lcp && lcp->lcd_state != READY) {
@@ -316,6 +325,11 @@ struct sockaddr *dst;
 	pk_connect(lcp, sa);
 	if (rt->rt_ifp->if_type == IFT_X25DDN)
 		return;
+	rtrequest(cmd, rt->rt_gateway, rt_key(rt), rt_mask(rt), rt->rt_flags,
+			&rt2);
+	if (rt2) {
+		rt2->rt_llinfo = (caddr_t) rt;
+	}
 	sa2 = rt_key(rt);
 	if (cmd == RTM_CHANGE) {
 		if (sa->x25_family == AF_CCITT) {
@@ -502,5 +516,5 @@ pk_init()
 	 * warning, sizeof (struct sockaddr_x25) > 32,
 	 * but contains no data of interest beyond 32
 	 */
-	rn_inithead(&x25_rnhead, 16, AF_CCITT);
+	rn_inithead(&x25_rnhead, 32, AF_CCITT);
 }
