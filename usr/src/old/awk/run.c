@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)run.c	4.5 %G%";
+static char sccsid[] = "@(#)run.c	4.6 %G%";
 #endif
 
 #include "awk.def"
-#include	"math.h"
+#include "math.h"
 #include "awk.h"
 #include "stdio.h"
+#include "fcntl.h"
 #define RECSIZE BUFSIZ
 
 #define FILENUM	10
@@ -873,6 +874,8 @@ redirprint(s, a, b) char *s; node *b;
 		files[i].fp = fopen(x.optr->sval, "w");
 	if (files[i].fp == NULL)
 		error(FATAL, "can't open file %s", x.optr->sval);
+	if (fcntl(fileno(files[i].fp), F_SETFD, 1) < 0)
+		error(FATAL, "close on exec failure");
 	files[i].fname = tostring(x.optr->sval);
 	files[i].type = a;
 doit:
