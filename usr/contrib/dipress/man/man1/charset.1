@@ -1,0 +1,62 @@
+.TH CHARSET 1 5/23/85
+.UC 4
+.tr -\-
+.\" differences between troff and nroff compensated here:
+.ie t .ds sc \(sc
+.el .ds sc section\ 
+.ds lq \&"\"
+.ds rq \&"\"
+.if t \
+.	ds lq ``
+.if t \
+.	ds rq ''
+.SH NAME
+charset - print all characters within a given character subset of an interpress font
+.SH SYNOPSIS
+.B charset
+[
+.BI \-p subset
+] [
+.BI \-s pointsize
+] [
+.BI \-o outputfile
+]  fontname
+.SH DESCRIPTION
+.I Charset
+will create an interpress master which will print a specified character subset
+of an interpress font at a given point size.
+.PP
+The specification for fontname is treated as the final identifier of the 
+universal naming scheme in \(sc3.2.2 in
+.I Interpress Electronic Printing Standard
+(\s8XSIS\s0 048404).  The name specified is appended to "Xerox/XC1-1-1/" to
+form the full interpress name.
+.PP
+The following options are understood:
+.TP
+.BI \-p subset
+The number of the character subset to be printed.  This is specified in
+octal and defaults to character subset 0.
+.TP
+.BI \-s pointsize
+The point size to be used for the font to be printed.  This is specified in
+decimal and defaults to 10.
+.TP
+.BI \-o outputfile
+The name of the file to be created as the interpress master.
+If the option is omitted, the interpress master will be created on the
+standard ouptut, so it is best to redirect this to a file or pipe to the
+queueing software. Note that
+.IR outputfile
+may directly follow the
+.B \-o
+or it may be the next argument in the list.
+.SH FILES
+.DT
+/usr/local/lib/font/devipress	device and font information
+.SH SEE ALSO
+Interpress Electronic Printing Standard, \s8XSIS\s0 048404
+.SH AUTHOR
+William LeFebvre, Webster Research Center, Xerox Corporation
+.SH BUGS
+The output file is not automatically queued for printing.
