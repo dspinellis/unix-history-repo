@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)ex.h	7.13 (Berkeley) %G%
+ *	@(#)ex.h	7.13.1.1 (Berkeley) %G%
  */
 
 #ifdef V6
