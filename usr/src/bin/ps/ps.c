@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.27 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.28 (Berkeley) %G%";
 #endif
 
 /*
@@ -956,7 +956,7 @@ retucomm:
 }
 
 char	*lhdr =
-"      F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN STAT TT  TIME";
+"      F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN  STAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
@@ -967,7 +967,7 @@ lpr(sp)
 	    ap->a_flag, ap->a_uid,
 	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, ap->a_pri-PZERO,
 	    ap->a_nice-NZERO, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
-	printf(lp->l_wchan ? " %5x" : "      ", (int)lp->l_wchan&0xfffff);
+	printf(lp->l_wchan ? " %6x" : "       ", (int)lp->l_wchan&0xffffff);
 	printf(" %4.4s ", state(ap));
 	ptty(ap->a_tty);
 	ptime(ap);
