@@ -41,7 +41,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)conf.c	5.8 (Berkeley) 5/12/91
- *	$Id: conf.c,v 1.24 1994/04/21 14:10:31 sos Exp $
+ *	$Id: conf.c,v 1.25 1994/05/04 08:24:02 rgrimes Exp $
  */
 
 #include "param.h"
@@ -402,18 +402,15 @@ d_ioctl_t bpfioctl;
 #define	bpfioctl	(d_ioctl_t *)enxio
 #endif
 
-#include "lpa.h"
-#if NLPA > 0
-d_open_t lpaopen;
-d_close_t lpaclose;
-d_rdwr_t lpawrite;
-d_ioctl_t lpaioctl;
-#else
+/*
+ * lpa has been removed from the tree,
+ * but the major dev no for it still remains.
+ * (lpt now provides all the functionality which lpa used to.)
+ */
 #define lpaopen		(d_open_t *)enxio
 #define lpaclose	(d_close_t *)enxio
 #define lpawrite	(d_rdwr_t *)enxio
 #define lpaioctl	(d_ioctl_t *)enxio
-#endif
 
 #include "speaker.h"
 #if NSPEAKER > 0
