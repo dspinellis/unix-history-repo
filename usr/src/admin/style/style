@@ -1,7 +1,7 @@
 /*
  * Style guide for the 4BSD KNF (Kernel Normal Form).
  *
- *	@(#)style	1.11 (Berkeley) %G%
+ *	@(#)style	1.12 (Berkeley) %G%
  */
 
 /*
@@ -184,7 +184,7 @@ main(argc, argv)
 		exit(error);
 
 	/*
-	 * Unary operators dno't require spaces, binary operators do. Don't
+	 * Unary operators don't require spaces, binary operators do. Don't
 	 * use parenthesis unless they're required for precedence, or the
 	 * statement is really confusing without them.
 	 */
