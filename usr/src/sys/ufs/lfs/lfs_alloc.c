@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_alloc.c	6.16 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	6.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -151,10 +151,49 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
-	if (fs->fs_optim == FS_OPTSPACE)
+	switch (fs->fs_optim) {
+	case FS_OPTSPACE:
+		/*
+		 * Allocate an exact sized fragment. Although this makes 
+		 * best use of space, we will waste time relocating it if 
+		 * the file continues to grow. If the fragmentation is
+		 * less than half of the minimum free reserve, we choose
+		 * to begin optimizing for time.
+		 */
 		request = nsize;
-	else /* if (fs->fs_optim == FS_OPTTIME) */
+		if (fs->fs_minfree < 5 ||
+		    fs->fs_cstotal.cs_nffree >
+		    fs->fs_dsize * fs->fs_minfree / (2 * 100))
+			break;
+		log(LOG_NOTICE, "%s: optimization changed from SPACE to TIME\n",
+			fs->fs_fsmnt);
+		fs->fs_optim = FS_OPTTIME;
+		break;
+	case FS_OPTTIME:
+		/*
+		 * At this point we have discovered a file that is trying
+		 * to grow a small fragment to a larger fragment. To save
+		 * time, we allocate a full sized block, then free the 
+		 * unused portion. If the file continues to grow, the 
+		 * `fragextend' call above will be able to grow it in place
+		 * without further copying. If aberrant programs cause
+		 * disk fragmentation to grow within 2% of the free reserve,
+		 * we choose to begin optimizing for space.
+		 */
 		request = fs->fs_bsize;
+		if (fs->fs_cstotal.cs_nffree <
+		    fs->fs_dsize * (fs->fs_minfree - 2) / 100)
+			break;
+		log(LOG_NOTICE, "%s: optimization changed from TIME to SPACE\n",
+			fs->fs_fsmnt);
+		fs->fs_optim = FS_OPTSPACE;
+		break;
+	default:
+		printf("dev = 0x%x, optim = %d, fs = %s\n",
+		    ip->i_dev, fs->fs_optim, fs->fs_fsmnt);
+		panic("realloccg: bad optim");
+		/* NOTREACHED */
+	}
 	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, request,
 		(u_long (*)())alloccg);
 	if (bno > 0) {
