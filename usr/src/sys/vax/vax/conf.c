@@ -1,4 +1,4 @@
-/*	conf.c	4.27	81/03/11	*/
+/*	conf.c	4.28	81/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -148,12 +148,11 @@ struct	tty dz_tty[];
 
 #include "lp.h"
 #if NLP > 0
-int	lpopen(),lpclose(),lpwrite(),lpioctl(),lpreset();
+int	lpopen(),lpclose(),lpwrite(),lpreset();
 #else
 #define	lpopen		nodev
 #define	lpclose		nodev
 #define	lpwrite		nodev
-#define	lpioctl		nodev
 #define	lpreset		nulldev
 #endif
 
@@ -243,7 +242,7 @@ struct cdevsw	cdevsw[] =
 	tmopen,		tmclose,	tmread,		tmwrite,	/*14*/
 	tmioctl,	nodev,		tmreset,	0,
 	lpopen,		lpclose,	nodev,		lpwrite,	/*15*/
-	lpioctl,	nodev,		lpreset,	0,
+	nodev,		nodev,		lpreset,	0,
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
 	nodev,		nodev,		nulldev,	0,
 	nodev,		nodev,		nodev,		nodev,		/*17*/
