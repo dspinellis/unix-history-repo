@@ -1,4 +1,4 @@
-/*	@(#)Paths.h	4.1	(Berkeley)	%G%	*/
+/*	@(#)Paths.h	4.2	(Berkeley)	%G%	*/
 
 /* sccs id variable */
 static char *Paths_h_sid= "@(#)Paths.h	1.6";
@@ -62,7 +62,7 @@ static char *Paths_h_sid= "@(#)Paths.h	1.6";
 # define MWRITECMD	"/usr/net/bin/mwrite"
 # define NETCPCMD	"/usr/net/bin/netcp"
 # define PRMAIL		"/usr/net/bin/prmail"
-# define STATADDR	"CSVAX:/usr/spool/berknet/statallnet"
+# define STATADDR	"ucbvax:/usr/spool/berknet/statallnet"
 # endif BERKELEY
 
 
