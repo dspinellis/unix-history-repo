@@ -12,7 +12,7 @@
 #include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)_setjmp.s	5.6 (Berkeley) %G%")
+	ASMSTR("@(#)_setjmp.s	5.7 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -72,9 +72,9 @@ LEAF(_longjmp)
 	lw	s5, ((S5 + 3) * 4)(a0)
 	lw	s6, ((S6 + 3) * 4)(a0)
 	lw	s7, ((S7 + 3) * 4)(a0)
+	lw	v0, ((32 + 38) * 4)(a0)		# get fpu status
 	lw	sp, ((SP + 3) * 4)(a0)
 	lw	s8, ((S8 + 3) * 4)(a0)
-	lw	v0, ((32 + 38) * 4)(a0)		# get fpu status
 	ctc1	v0, $31
 	lwc1	$f20, ((20 + 38) * 4)(a0)
 	lwc1	$f21, ((21 + 38) * 4)(a0)
