@@ -15,7 +15,7 @@
  *
  * from: hp300/hp300/clock.c    7.14 (Berkeley) 7/8/92
  *
- *	@(#)clock.c	7.2 (Berkeley) %G%
+ *	@(#)clock.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -56,6 +56,9 @@ cpu_initclocks()
 {
 	static char *rtcstrings = "RTC";     /* For compat */
 
+	/* set flag for clockintr. */
+	clock_on = 1;
+
 	batterychk();
 	if (!battery_clock)
 	  return;
@@ -74,9 +77,6 @@ cpu_initclocks()
 	bbc->cal_hour &= ~BBC_KICK;
 	bbc->cal_ctl &= ~BBC_WRT;
 	strcpy(bbc->nvram,rtcstrings);
-
-	/* set flag for clockintr. */
-	clock_on = 1;
 }
 
 void
