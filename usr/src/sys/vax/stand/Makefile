@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.29 (Berkeley) %G%
+#	@(#)Makefile	7.30 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -32,8 +32,8 @@ SRCS=	boot.c bootxx.c cat.c copy.c drtest.c format.c format.c machdep.c \
 	prf.c qfont.c conf.c ../vax/dkbad.c ${DRIVERS}
 DUMMIES=confxx.c
 SMOBJ=	bootxx.o sm_autoconf.o 
-LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
-SMLIBS=	${STAND}/small/obj/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+LIBS=	libsa/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+SMLIBS=	libsmsa/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
 
 
 # These drivers don't have ecc correction and bad sector forwarding;
@@ -47,10 +47,10 @@ ALL=	boot tpboot cat copy tpcopy format tpformat drtest ls \
 
 all: ${ALL}
 
-${STAND}/obj/libsa.a:
-	cd ${STAND}; make
-${STAND}/obj/libsmsa.a:
-	cd ${STAND}/small; make
+libsa/libsa.a::
+	cd libsa; make
+libsmsa/libsmsa.a::
+	cd libsa; make
 
 libdrive.a: conf.o dkbad.o machdep.o prf.o qfont.o ${DOBJS}
 	ar crv $@ $?
