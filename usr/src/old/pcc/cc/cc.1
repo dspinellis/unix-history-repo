@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cc.1	6.1 (Berkeley) %G%
+.\"	@(#)cc.1	6.2 (Berkeley) %G%
 .\"
 .TH CC 1 ""
 .UC 4
@@ -167,7 +167,9 @@ Use an alternate compiler which does not convert expressions involving
 only floats to double. This does not conform to the standard which states
 that all intermediate results should be converted to double but does
 provide a speed improvement for programs which don't require full double
-precision.
+precision.  This option also makes
+.B "register float"
+variables work appropriately.
 .TP
 .SM
 .BI \-B \*Sstring
@@ -264,5 +266,7 @@ or loader.
 .SH BUGS
 The compiler currently ignores advice to put 
 \fBchar\fR, \fBunsigned char\fR,
-\fBshort\fR or \fBunsigned short\fR variables in registers.  It previously
+\fBshort\fR, \fBunsigned short\fR,
+\fBfloat\fR, or \fBdouble\fR
+variables in registers, except as noted above.  It previously
 produced poor, and in some cases incorrect, code for such declarations.
