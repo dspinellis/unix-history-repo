@@ -22,7 +22,6 @@ char *table_name = (char *)NULL;
 FILE *hfile, *cfile;
      
 /* C library */
-extern char *malloc();
 extern int errno;
      
 /* lex stuff */
