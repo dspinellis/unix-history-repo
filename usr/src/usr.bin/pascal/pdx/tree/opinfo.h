@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)opinfo.h 1.2 %G%"; */
+/* static char sccsid[] = "@(#)opinfo.h 1.3 %G%"; */
 
 /*
- * tree operator definitions
+ * Tree operator definitions.
  */
 
 struct opinfo {
@@ -96,8 +96,9 @@ OPINFO opinfo[];
 #define O_WHICH 60
 #define O_QLINE 61		/* filename : linenumber */
 #define O_ALIAS 62
+#define O_GRIPE 63
 
-#define O_LASTOP 62		/* must be number of last operator */
+#define O_LASTOP 63		/* must be number of last operator */
 
 /*
  * operator flags and predicates
