@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -255,7 +255,7 @@ MainParseArgs(argc, argv)
 			Parse_DoVar(*argv, VAR_CMD);
 		else {
 			if (!**argv)
-				Punt("Bogus argument in MainParseArgs");
+				Punt("illegal (null) argument.");
 			(void)Lst_AtEnd(create, (ClientData)*argv);
 		}
 }
@@ -285,6 +285,8 @@ Main_ParseArgLine(line)
 	if (line == NULL)
 		return;
 	for (; *line == ' '; ++line);
+	if (!*line)
+		return;
 
 	argv = brk_string(line, &argc);
 	MainParseArgs(argc, argv);
@@ -314,7 +316,7 @@ main(argc, argv)
 	Lst targs;	/* target nodes to create -- passed to Make_Init */
 	Boolean outOfDate; 	/* FALSE if all targets up to date */
 	struct stat sb;
-	char *path, *getenv();
+	char *p, *path, *getenv();
 
 	/*
 	 * if the MAKEOBJDIR (or by default, the _PATH_OBJDIR) directory
@@ -451,10 +453,11 @@ main(argc, argv)
 	Var_Append("MFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL), VAR_GLOBAL);
 
 	/* Install all the flags into the MAKE envariable. */
+	if ((p = Var_Value(MAKEFLAGS, VAR_GLOBAL)) && *p)
 #ifdef POSIX
-	setenv("MAKEFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL));
+		setenv("MAKEFLAGS", p, 1);
 #else
-	setenv("MAKE", Var_Value(MAKEFLAGS, VAR_GLOBAL));
+		setenv("MAKE", p, 1);
 #endif
 
 	/*
@@ -671,6 +674,7 @@ Punt(va_alist)
 	va_list ap;
 	char *fmt;
 
+	(void)fprintf(stderr, "make: ");
 	va_start(ap);
 	fmt = va_arg(ap, char *);
 	(void)vfprintf(stderr, fmt, ap);
