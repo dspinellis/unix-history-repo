@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prof.c	7.3 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.4 (Berkeley) %G%
  */
 
 #ifdef GPROF
@@ -53,6 +53,7 @@ kmstartup()
 		printf("No space for monitor buffer(s)\n");
 		return;
 	}
+	bzero(sbuf, ssiz);
 	fromssize = s_textsize / HASHFRACTION;
 	froms = (u_short *)malloc(fromssize, M_GPROF, M_WAITOK);
 	if (froms == 0) {
@@ -61,6 +62,7 @@ kmstartup()
 		sbuf = 0;
 		return;
 	}
+	bzero(froms, fromsize);
 	tolimit = s_textsize * ARCDENSITY / 100;
 	if (tolimit < MINARCS)
 		tolimit = MINARCS;
@@ -74,6 +76,7 @@ kmstartup()
 		free(froms, M_GPROF), froms = 0;
 		return;
 	}
+	bzero(tos, tossize);
 	tos[0].link = 0;
 	((struct phdr *)sbuf)->lpc = s_lowpc;
 	((struct phdr *)sbuf)->hpc = s_highpc;
