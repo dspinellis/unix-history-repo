@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.14 (Berkeley) %G%
+ *	@(#)param.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -16,6 +16,13 @@
 #endif
 
 #include <machine/machlimits.h>
+
+/*
+ * Round p (pointer or byte index) up to a correctly-aligned value
+ * for all data types (int, long, ...).   The result is u_int and
+ * must be cast to any desired pointer type.
+ */
+#define	ALIGN(p)	(((u_int)(p) + (sizeof(int) - 1)) &~ (sizeof(int) - 1))
 
 #define	KERNBASE	0x80000000	/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
