@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)protosw.h	6.5 (Berkeley) %G%
+ *	@(#)protosw.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -140,8 +140,9 @@ char *prurequests[] = {
 #define	PRC_TIMXCEED_INTRANS	18	/* packet lifetime expired in transit */
 #define	PRC_TIMXCEED_REASS	19	/* lifetime expired on reass q */
 #define	PRC_PARAMPROB		20	/* header incorrect */
+#define PRC_GWDOWN		21	/* gateway down */
 
-#define	PRC_NCMDS		21
+#define	PRC_NCMDS		22
 
 #ifdef PRCREQUESTS
 char	*prcrequests[] = {
