@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	6.10 (Berkeley) %G%
+ *	@(#)in.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -307,9 +307,11 @@ in_ifinit(ifp, ia, sin)
 	if (ia->ia_flags & IFA_ROUTE) {
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0) {
 		    netaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
-		    rtinit((struct sockaddr *)&netaddr, &ia->ia_addr, -1);
+		    rtinit((struct sockaddr *)&netaddr, &ia->ia_addr, 
+			    (int)SIOCDELRT, 0);
 		} else
-		    rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr, -1);
+		    rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr,
+			    (int)SIOCDELRT, RTF_HOST);
 		ia->ia_flags &= ~IFA_ROUTE;
 	}
 	ia->ia_addr = *(struct sockaddr *)sin;
@@ -350,10 +352,11 @@ in_ifinit(ifp, ia, sin)
 	 */
 	if ((ifp->if_flags & IFF_POINTOPOINT) == 0) {
 		netaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
-		rtinit((struct sockaddr *)&netaddr, &ia->ia_addr, RTF_UP);
+		rtinit((struct sockaddr *)&netaddr, &ia->ia_addr,
+			(int)SIOCADDRT, RTF_UP);
 	} else
 		rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr,
-			RTF_HOST|RTF_UP);
+			(int)SIOCADDRT, RTF_HOST|RTF_UP);
 	ia->ia_flags |= IFA_ROUTE;
 	return (0);
 }
