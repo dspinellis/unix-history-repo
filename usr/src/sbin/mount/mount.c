@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -603,7 +603,19 @@ getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 		if (!strcmp(cp, "bg")) {
 			*opflagsp |= BGRND;
 		} else if (!strcmp(cp, "soft")) {
+			if (nfsargsp->flags & NFSMNT_SPONGY) {
+				fprintf(stderr,
+					"Options soft, spongy mutually exclusive\n");
+				exit(1);
+			}
 			nfsargsp->flags |= NFSMNT_SOFT;
+		} else if (!strcmp(cp, "spongy")) {
+			if (nfsargsp->flags & NFSMNT_SOFT) {
+				fprintf(stderr,
+					"Options soft, spongy mutually exclusive\n");
+				exit(1);
+			}
+			nfsargsp->flags |= NFSMNT_SPONGY;
 		} else if (!strcmp(cp, "intr")) {
 			nfsargsp->flags |= NFSMNT_INT;
 		} else if (!strcmp(cp, "tcp")) {
@@ -626,6 +638,12 @@ getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 			nfsargsp->flags |= NFSMNT_RETRANS;
 		}
 		cp = nextcp;
+	}
+	if (nfsargsp->sotype == SOCK_DGRAM) {
+		if (nfsargsp->rsize > NFS_MAXDGRAMDATA)
+			nfsargsp->rsize = NFS_MAXDGRAMDATA;
+		if (nfsargsp->wsize > NFS_MAXDGRAMDATA)
+			nfsargsp->wsize = NFS_MAXDGRAMDATA;
 	}
 }
 
