@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.140 (Berkeley) %G%
+ *	@(#)sendmail.h	8.141 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.140		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.141		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -46,19 +46,19 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.140		%G%";
 # ifdef DAEMON
 # include <sys/socket.h>
 # endif
-# ifdef NETUNIX
+# if NETUNIX
 # include <sys/un.h>
 # endif
-# ifdef NETINET
+# if NETINET
 # include <netinet/in.h>
 # endif
-# ifdef NETISO
+# if NETISO
 # include <netiso/iso.h>
 # endif
-# ifdef NETNS
+# if NETNS
 # include <netns/ns.h>
 # endif
-# ifdef NETX25
+# if NETX25
 # include <netccitt/x25.h>
 # endif
 
@@ -903,19 +903,19 @@ struct prival
 union bigsockaddr
 {
 	struct sockaddr		sa;	/* general version */
-#ifdef NETUNIX
+#if NETUNIX
 	struct sockaddr_un	sunix;	/* UNIX family */
 #endif
-#ifdef NETINET
+#if NETINET
 	struct sockaddr_in	sin;	/* INET family */
 #endif
-#ifdef NETISO
+#if NETISO
 	struct sockaddr_iso	siso;	/* ISO family */
 #endif
-#ifdef NETNS
+#if NETNS
 	struct sockaddr_ns	sns;	/* XNS family */
 #endif
-#ifdef NETX25
+#if NETX25
 	struct sockaddr_x25	sx25;	/* X.25 family */
 #endif
 };

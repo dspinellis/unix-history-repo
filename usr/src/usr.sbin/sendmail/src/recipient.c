@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.92 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.93 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -683,7 +683,7 @@ finduser(name, fuzzyp)
 		return (pw);
 	}
 
-#ifdef MATCHGECOS
+#if MATCHGECOS
 	/* see if fuzzy matching allowed */
 	if (!MatchGecos)
 	{

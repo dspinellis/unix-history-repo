@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.54 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.55 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.54 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.55 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -884,7 +884,7 @@ reply(m, mci, e, timeout, pfunc)
 				pause();
 			mci->mci_state = MCIS_ERROR;
 			smtpquit(m, mci, e);
-#ifdef XDEBUG
+#if XDEBUG
 			{
 				char wbuf[MAXLINE];
 				char *p = wbuf;

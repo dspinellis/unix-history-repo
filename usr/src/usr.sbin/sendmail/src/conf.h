@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.187 (Berkeley) %G%
+ *	@(#)conf.h	8.188 (Berkeley) %G%
  */
 
 /*
@@ -53,32 +53,33 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 
 /**********************************************************************
 **  Compilation options.
-**
-**	#define these if they are available; comment them out otherwise.
-**********************************************************************/
-
-# define LOG		1	/* enable logging */
-# define UGLYUUCP	1	/* output ugly UUCP From lines */
-# define NETUNIX	1	/* include unix domain support */
-# define NETINET	1	/* include internet support */
-# define MATCHGECOS	1	/* match user names from gecos field */
-# define XDEBUG		1	/* enable extended debugging */
-# if (defined(NEWDB) || defined(HESIOD)) && !defined(USERDB)
-#  define USERDB	1	/* look in user database */
-# endif
-
-/**********************************************************************
-**  0/1 Compilation options.
 **	#define these to 1 if they are available;
 **	#define them to 0 otherwise.
+**  All can be overridden from Makefile.
 **********************************************************************/
+
+# ifndef NETINET
+#  define NETINET	1	/* include internet support */
+# endif
 
 # ifndef NAMED_BIND
 #  define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # endif
 
+# ifndef XDEBUG
+#  define XDEBUG	1	/* enable extended debugging */
+# endif
+
+# ifndef MATCHGECOS
+#  define MATCHGECOS	1	/* match user names from gecos field */
+# endif
+
 # ifndef DSN
 #  define DSN		1	/* include delivery status notification code */
+# endif
+
+# if !defined(USERDB) && (defined(NEWDB) || defined(HESIOD))
+#  define USERDB	1	/* look in user database */
 # endif
 
 # ifndef MIME8TO7
@@ -89,14 +90,19 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 #  define MIME7TO8	1	/* 7->8 bit MIME conversions */
 # endif
 
-/*
-**  Most systems have symbolic links today, so default them on.  You
-**  can turn them off by #undef'ing this below.
-*/
+/**********************************************************************
+**  "Hard" compilation options.
+**	#define these if they are available; comment them out otherwise.
+**  These cannot be overridden from the Makefile, and should really not
+**  be turned off unless absolutely necessary.
+**********************************************************************/
 
-# define HASLSTAT	1	/* has lstat(2) call */
+# define LOG			/* enable logging -- don't turn off */
 
-/*
+/**********************************************************************
+**  End of site-specific configuration.
+**********************************************************************/
+/*
 **  General "standard C" defines.
 **
 **	These may be undone later, to cope with systems that claim to
@@ -110,13 +116,18 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 #ifdef __STDC__
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
 #endif
+
+/*
+**  Assume you have standard calls; can be #undefed below if necessary.
+*/
+
+# define HASLSTAT	1	/* has lstat(2) call */
 /**********************************************************************
 **  Operating system configuration.
 **
 **	Unless you are porting to a new OS, you shouldn't have to
 **	change these.
 **********************************************************************/
-
 
 /*
 **  HP-UX -- tested for 8.07, 9.00, and 9.01.
@@ -617,7 +628,7 @@ extern int		errno;
 # define SFS_TYPE	SFS_4ARGS	/* use <sys/statfs.h> 4-arg impl */
 # define SFS_BAVAIL	f_bfree		/* alternate field name */
 # define TZ_TYPE	TZ_TM_NAME	/* use tm->tm_name */
-# undef NETUNIX			/* no unix domain socket support */
+# define NETUNIX	0	/* no unix domain socket support */
 #endif
 
 
@@ -636,7 +647,7 @@ extern int		errno;
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define NEEDFSYNC	1	/* needs the fsync(2) call stub */
-# undef NETUNIX			/* no unix domain socket support */
+# define NETUNIX	0	/* no unix domain socket support */
 # define FORK		fork
 # define MAXPATHLEN	1024
 # define LA_TYPE	LA_SHORT
@@ -673,7 +684,7 @@ typedef short		pid_t;
 # define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
 # define SFS_BAVAIL	f_bfree		/* alternate field name */
 # define TZ_TYPE	TZ_TM_NAME	/* use tm->tm_name */
-# undef NETUNIX			/* no unix domain socket support */
+# define NETUNIX	0	/* no unix domain socket support */
 # undef WIFEXITED
 # undef WEXITSTATUS
 # define strtoul	strtol	/* gcc library bogosity */
@@ -1116,7 +1127,7 @@ extern int	syslog(int, char *, ...);
 
 #ifdef _UTS
 # include <sys/sysmacros.h>
-# undef HASLSTAT	/* has symlinks, but they cause problems */
+# undef HASLSTAT		/* has symlinks, but they cause problems */
 # define NEEDFSYNC	1	/* system fsync(2) fails on non-EFS filesys */
 # define SYS5SIGNALS	1	/* System V signal semantics */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
@@ -1413,6 +1424,10 @@ extern int	errno;
 
 #ifndef HASGETUSERSHELL
 # define HASGETUSERSHELL 1	/* libc has getusershell(3) call */
+#endif
+
+#ifndef NETUNIX
+# define NETUNIX	1	/* include unix domain support */
 #endif
 
 #ifndef HASFLOCK

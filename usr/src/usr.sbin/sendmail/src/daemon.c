@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.101 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.102 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.101 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.102 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -94,7 +94,7 @@ getrequests()
 	bool refusingconnections = TRUE;
 	FILE *pidf;
 	int socksize;
-#ifdef XDEBUG
+#if XDEBUG
 	bool j_has_dot;
 #endif
 	extern void reapchild();
@@ -149,7 +149,7 @@ getrequests()
 		fclose(pidf);
 	}
 
-#ifdef XDEBUG
+#if XDEBUG
 	{
 		char jbuf[MAXHOSTNAMELEN];
 
@@ -229,7 +229,7 @@ makeconnection(host, port, mci, usesecureport)
 		if (p != NULL)
 		{
 			*p = '\0';
-#ifdef NETINET
+#if NETINET
 			hid = inet_addr(&host[1]);
 			if (hid == -1)
 #endif
@@ -261,7 +261,7 @@ makeconnection(host, port, mci, usesecureport)
 			mci->mci_status = "5.1.2";
 			return (EX_NOHOST);
 		}
-#ifdef NETINET
+#if NETINET
 		addr.sin.sin_family = AF_INET;		/*XXX*/
 		addr.sin.sin_addr.s_addr = hid;
 #endif
@@ -302,7 +302,7 @@ gothostent:
 		addr.sa.sa_family = hp->h_addrtype;
 		switch (hp->h_addrtype)
 		{
-#ifdef NETINET
+#if NETINET
 		  case AF_INET:
 			bcopy(hp->h_addr,
 				&addr.sin.sin_addr,
@@ -341,14 +341,14 @@ gothostent:
 
 	switch (addr.sa.sa_family)
 	{
-#ifdef NETINET
+#if NETINET
 	  case AF_INET:
 		addr.sin.sin_port = port;
 		addrlen = sizeof (struct sockaddr_in);
 		break;
 #endif
 
-#ifdef NETISO
+#if NETISO
 	  case AF_ISO:
 		/* assume two byte transport selector */
 		bcopy((char *) &port, TSEL((struct sockaddr_iso *) &addr), 2);
@@ -445,7 +445,7 @@ gothostent:
 					errstring(sav_errno));
 			switch (addr.sa.sa_family)
 			{
-#ifdef NETINET
+#if NETINET
 			  case AF_INET:
 				bcopy(hp->h_addr_list[i++],
 				      &addr.sin.sin_addr,
@@ -1036,7 +1036,7 @@ host_map_lookup(map, name, av, statp)
 **		A printable version of that sockaddr.
 */
 
-#ifdef NETLINK
+#if NETLINK
 # include <net/if_dl.h>
 #endif
 
@@ -1057,7 +1057,7 @@ anynet_ntoa(sap)
 
 	switch (sap->sa.sa_family)
 	{
-#ifdef NETUNIX
+#if NETUNIX
 	  case AF_UNIX:
 	  	if (sap->sunix.sun_path[0] != '\0')
 	  		sprintf(buf, "[UNIX: %.64s]", sap->sunix.sun_path);
@@ -1066,12 +1066,12 @@ anynet_ntoa(sap)
 		return buf;
 #endif
 
-#ifdef NETINET
+#if NETINET
 	  case AF_INET:
 		return inet_ntoa(sap->sin.sin_addr);
 #endif
 
-#ifdef NETLINK
+#if NETLINK
 	  case AF_LINK:
 		sprintf(buf, "[LINK: %s]",
 			link_ntoa((struct sockaddr_dl *) &sap->sa));
@@ -1123,7 +1123,7 @@ hostnamebyanyaddr(sap)
 
 	switch (sap->sa.sa_family)
 	{
-#ifdef NETINET
+#if NETINET
 	  case AF_INET:
 		hp = sm_gethostbyaddr((char *) &sap->sin.sin_addr,
 			INADDRSZ,
@@ -1131,7 +1131,7 @@ hostnamebyanyaddr(sap)
 		break;
 #endif
 
-#ifdef NETISO
+#if NETISO
 	  case AF_ISO:
 		hp = sm_gethostbyaddr((char *) &sap->siso.siso_addr,
 			sizeof sap->siso.siso_addr,
