@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	6.11 (Berkeley) %G%
+ *	@(#)in.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -184,17 +184,7 @@ in_control(so, cmd, data, ifp)
 
 	switch (cmd) {
 
-	case SIOCGIFADDR:
-	case SIOCGIFBRDADDR:
-	case SIOCGIFDSTADDR:
-	case SIOCGIFNETMASK:
-		if (ia == (struct in_ifaddr *)0)
-			return (EADDRNOTAVAIL);
-		break;
-
 	case SIOCSIFADDR:
-	case SIOCSIFDSTADDR:
-	case SIOCSIFBRDADDR:
 	case SIOCSIFNETMASK:
 		if (!suser())
 			return (u.u_error);
@@ -223,6 +213,17 @@ in_control(so, cmd, data, ifp)
 			if (ifp != &loif)
 				in_interfaces++;
 		}
+		break;
+
+	case SIOCSIFBRDADDR:
+	case SIOCSIFDSTADDR:
+		if (!suser())
+			return (u.u_error);
+		/* FALLTHROUGH */
+
+	default:
+		if (ia == (struct in_ifaddr *)0)
+			return (EADDRNOTAVAIL);
 		break;
 	}
 
@@ -296,25 +297,38 @@ in_ifinit(ifp, ia, sin)
 	struct sockaddr_in *sin;
 {
 	register u_long i = ntohl(sin->sin_addr.s_addr);
-	struct sockaddr_in netaddr;
+	struct sockaddr_in tmpaddr;
 	int s = splimp(), error;
 
-	bzero((caddr_t)&netaddr, sizeof (netaddr));
-	netaddr.sin_family = AF_INET;
+	tmpaddr = *(struct sockaddr_in *)&ia->ia_addr;
+	ia->ia_addr = *(struct sockaddr *)sin;
+
+	/*
+	 * Give the interface a chance to initialize
+	 * if this is its first address,
+	 * and to validate the address if necessary.
+	 */
+	if (ifp->if_ioctl && (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia))) {
+		splx(s);
+		ia->ia_addr = *(struct sockaddr *)&tmpaddr;
+		return (error);
+	}
+
+	bzero((caddr_t)&tmpaddr, sizeof (tmpaddr));
+	tmpaddr.sin_family = AF_INET;
 	/*
 	 * Delete any previous route for an old address.
 	 */
 	if (ia->ia_flags & IFA_ROUTE) {
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0) {
-		    netaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
-		    rtinit((struct sockaddr *)&netaddr, &ia->ia_addr, 
+		    tmpaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
+		    rtinit((struct sockaddr *)&tmpaddr, &ia->ia_addr, 
 			    (int)SIOCDELRT, 0);
 		} else
 		    rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr,
 			    (int)SIOCDELRT, RTF_HOST);
 		ia->ia_flags &= ~IFA_ROUTE;
 	}
-	ia->ia_addr = *(struct sockaddr *)sin;
 	if (IN_CLASSA(i))
 		ia->ia_netmask = IN_CLASSA_NET;
 	else if (IN_CLASSB(i))
@@ -335,24 +349,13 @@ in_ifinit(ifp, ia, sin)
 		ia->ia_netbroadcast.s_addr =
 		    htonl(ia->ia_net | (INADDR_BROADCAST &~ ia->ia_netmask));
 	}
-
-	/*
-	 * Give the interface a chance to initialize
-	 * if this is its first address,
-	 * and to validate the address if necessary.
-	 */
-	if (ifp->if_ioctl && (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia))) {
-		splx(s);
-		bzero((caddr_t)&ia->ia_addr, sizeof(ia->ia_addr));
-		return (error);
-	}
 	splx(s);
 	/*
 	 * Add route for the network.
 	 */
 	if ((ifp->if_flags & IFF_POINTOPOINT) == 0) {
-		netaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
-		rtinit((struct sockaddr *)&netaddr, &ia->ia_addr,
+		tmpaddr.sin_addr = in_makeaddr(ia->ia_subnet, INADDR_ANY);
+		rtinit((struct sockaddr *)&tmpaddr, &ia->ia_addr,
 			(int)SIOCADDRT, RTF_UP);
 	} else
 		rtinit((struct sockaddr *)&ia->ia_dstaddr, &ia->ia_addr,
