@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -157,7 +157,6 @@ preadbuffer() {
 	register int i;
 	register int something;
 	extern EditLine *el;
-	extern int is_interactive;
 
 	if (parsefile->strpush) {
 		popstring();
