@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffdir.c 4.1 %G%";
+static	char sccsid[] = "@(#)diffdir.c 4.2 %G%";
 
 #include "diff.h"
 /*
@@ -365,6 +365,8 @@ calldiff(wantpr)
 */
 }
 
+#include <a.out.h>
+
 ascii(f)
 	int f;
 {
@@ -374,6 +376,12 @@ ascii(f)
 
 	lseek(f, (long)0, 0);
 	cnt = read(f, buf, BUFSIZ);
+	if (cnt >= sizeof (struct exec)) {
+		struct exec hdr;
+		hdr = *(struct exec *)buf;
+		if (!N_BADMAG(hdr))
+			return (0);
+	}
 	cp = buf;
 	while (--cnt >= 0)
 		if (*cp++ & 0200)
