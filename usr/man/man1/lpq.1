@@ -1,0 +1,79 @@
+.TH LPQ 1 "25 February 1983"
+.UC 4
+.ad
+.SH NAME
+lpq \- spool queue examination program
+.SH SYNOPSIS
+.B lpq
+[ +[ n ] ] [ \-Pprinter ] [ job # ... ] [ user ... ]
+.SH DESCRIPTION
+.PP
+.I lpq
+will examine the spooling area used by
+.IR lpd (8)
+for printing
+files on the line printer, and report the status of the specified jobs or
+all jobs associated with a user. 
+.I lpq
+invoked without any arguments
+will report on any jobs currently in the queue.  A
+.B \-P
+flag may be used
+to specify a particular printer, otherwise the default line printer
+is used (or the value of the PRINTER variable in the environment).
+If a
+.B \+
+argument is supplied,
+.I lpq
+will display the spool queue until it empties.  Supplying a number
+immediately after the
+.B \+
+sign indicates that
+.I lpq
+should sleep \fIn\fR seconds in between scans of the queue.
+Any other arguments supplied will
+be interpreted as user names or job numbers to filter out only those
+jobs of interest.
+.PP
+For each job submitted (i.e. invocation of 
+.IR lpr (1))
+.I lpq
+reports the user's name, current rank in the queue, the
+names of files comprising the job, and the job identifier (a number which
+may be supplied to
+.IR lprm (1)
+for removing a specific job).
+Job ordering is dependent on
+the algorithm used to scan the spooling directory and is supposed
+to be FIFO (First in First Out).
+File names comprising a job may be unavailable
+(when
+.IR lpr (1)
+is used as a sink in a pipeline) in which case the file
+is indicated as ``(standard input)".
+The size of a file is reported in bytes.
+.SH FILES
+.nf
+.ta \w'/etc/passwd             'u
+/etc/passwd	for user names
+/etc/termcap	for manipulating the screen for
+	repeated display
+/etc/printcap	to determine printer characteristics
+/usr/spool/*	the spooling directory, as determined
+	from printcap
+/usr/spool/*/cf*	control files specifying jobs
+/usr/spool/*/lock	the lock file to obtain the pid of
+	the currently active job 
+.fi
+.SH "SEE ALSO"
+lpr(1),
+lprm(1),
+lpd(8)
+.SH BUGS
+Due to the dynamic nature of the information in the spooling directory
+lpq may report unreliably.
+Output formatting is sensitive to the line length of the terminal;
+this can results in widely spaced columns.
+.SH DIAGNOSTICS
+Unable to open various files.  The lock file being malformed.  Garbage
+files when there is no daemon active, but files in the spooling directory.
