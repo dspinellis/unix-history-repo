@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)du.1	6.9 (Berkeley) %G%
+.\"     @(#)du.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DU 1
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 .Nm du
 .Op Fl aksx
-.Op Ar pathname ...
+.Op Ar file ...
 .Sh DESCRIPTION
 The
 .Nm du
@@ -43,6 +43,11 @@ Generate only the grand total.
 .It Fl x
 Don't traverse any mount points.
 .El
+.Pp
+Symbolic links are not followed unless they are specified as a command
+line
+.Ar file
+argument.
 .Pp
 Files having multiple hard links are counted (and displayed) a single
 time per
