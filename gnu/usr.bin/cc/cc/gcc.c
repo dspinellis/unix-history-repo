@@ -35,6 +35,7 @@ compilation is specified by a string called a "spec".  */
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/file.h>   /* May get R_OK, etc. on some systems.  */
+#include <sys/errno.h>
 
 #include "config.h"
 #include "obstack.h"
@@ -102,9 +103,6 @@ compilation is specified by a string called a "spec".  */
 
 extern void free ();
 extern char *getenv ();
-
-extern int errno, sys_nerr;
-extern char *sys_errlist[];
 
 extern int execv (), execvp ();
 
