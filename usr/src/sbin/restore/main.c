@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.6	(Berkeley)	83/01/16";
+static char sccsid[] = "@(#)main.c	3.1	(Berkeley)	83/02/18";
 #endif
 
 /*
@@ -33,26 +33,24 @@ char	*dumpmap;
 char	*clrimap;
 ino_t	maxino;
 time_t	dumptime;
-time_t	dumpdate;
+struct	entry **entry;
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
 	register char *cp;
-	ino_t ino;
 	char *inputdev = "/dev/rmt8";
-	char *symtbl = "./restoresymtable";
-	char *dirmodefile = "./dirmodes";
-	char name[BUFSIZ];
+	char *symtbl = "./lost+found/restoresymtable";
+	char *dirmodefile = "./lost+found/dirmodes";
 	int (*signal())();
 	extern int onintr();
+	ino_t ino;
 
 	if (signal(SIGINT, onintr) == SIG_IGN)
-		(void) signal(SIGINT, SIG_IGN);
+		signal(SIGINT, SIG_IGN);
 	if (signal(SIGTERM, onintr) == SIG_IGN)
-		(void) signal(SIGTERM, SIG_IGN);
-	setlinebuf(stderr);
+		signal(SIGTERM, SIG_IGN);
 	if (argc < 2) {
 usage:
 		fprintf(stderr, "Usage: restor xtfhmsvy file file... or restor rRfsvy\n");
@@ -84,10 +82,6 @@ usage:
 			yflag++;
 			break;
 		case 'f':
-			if (argc < 1) {
-				fprintf(stderr, "missing device specifier\n");
-				done(1);
-			}
 			inputdev = *argv++;
 			argc--;
 			break;
@@ -95,10 +89,6 @@ usage:
 			/*
 			 * dumpnum (skip to) for multifile dump tapes
 			 */
-			if (argc < 1) {
-				fprintf(stderr, "missing dump number\n");
-				done(1);
-			}
 			dumpnum = atoi(*argv++);
 			if (dumpnum <= 0) {
 				fprintf(stderr, "Dump number must be a positive integer\n");
@@ -107,16 +97,37 @@ usage:
 			argc--;
 			break;
 		case 't':
+			if (command != '\0') {
+				fprintf(stderr,
+					"t and %c are mutually exclusive\n",
+					command);
+				goto usage;
+			}
+			command = 't';
 		case 'R':
+			if (command != '\0') {
+				fprintf(stderr,
+					"R and %c are mutually exclusive\n",
+					command);
+				goto usage;
+			}
+			command = 'R';
 		case 'r':
+			if (command != '\0') {
+				fprintf(stderr,
+					"r and %c are mutually exclusive\n",
+					command);
+				goto usage;
+			}
+			command = 'r';
 		case 'x':
 			if (command != '\0') {
 				fprintf(stderr,
-					"%c and %c are mutually exclusive\n",
-					*cp, command);
+					"x and %c are mutually exclusive\n",
+					command);
 				goto usage;
 			}
-			command = *cp;
+			command = 'x';
 			break;
 		default:
 			fprintf(stderr, "Bad key character %c\n", *cp);
@@ -138,39 +149,37 @@ usage:
 		setup();
 		extractdirs((char *)0);
 		while (argc--) {
-			canon(*argv++, name);
-			if ((ino = psearch(name)) == 0 ||
+			if ((ino = psearch(*argv)) == 0 ||
 			    BIT(ino, dumpmap) == 0) {
-				fprintf(stderr, "%s: not on tape\n", name);
+				fprintf(stderr, "%s: not on tape\n", *argv++);
 				continue;
 			}
-			if (hflag)
-				treescan(name, ino, listfile);
-			else
-				listfile(name, ino, inodetype(ino));
+			treescan(*argv++, ino, listfile);
 		}
 		done(0);
 
 	case 'x':
 		setup();
 		extractdirs(dirmodefile);
-		initsymtable((char *)0);
+		entry = (struct entry **)
+			calloc((int)maxino, sizeof(struct entry *));
+		if (entry == (struct entry **)NIL)
+			panic("no memory for entry table\n");
+		(void)addentry(".", ROOTINO, NODE);
 		while (argc--) {
-			canon(*argv++, name);
-			if ((ino = psearch(name)) == 0 ||
+			if ((ino = psearch(*argv)) == 0 ||
 			    BIT(ino, dumpmap) == 0) {
-				fprintf(stderr, "%s: not on tape\n", name);
+				fprintf(stderr, "%s: not on tape\n", *argv++);
 				continue;
 			}
 			if (mflag)
-				pathcheck(name);
+				pathcheck(*argv, NEW);
 			if (hflag)
-				treescan(name, ino, addfile);
+				treescan(*argv++, ino, addfile);
 			else
-				addfile(name, ino, inodetype(ino));
+				addfile(*argv++, ino, LEAF);
 		}
 		createfiles();
-		createlinks();
 		setdirmodes(dirmodefile);
 		if (dflag)
 			checkrestore();
@@ -178,28 +187,27 @@ usage:
 
 	case 'r':
 		setup();
+		extractdirs(dirmodefile);
 		if (dumptime > 0) {
-			/*
-			 * This is an incremental dump tape.
-			 */
-			vprintf(stdout, "Begin incremental restore\n");
 			initsymtable(symtbl);
-			extractdirs(dirmodefile);
-			removeoldleaves();
-			vprintf(stdout, "Calculate node updates.\n");
-			treescan(".", ROOTINO, nodeupdates);
-			findunreflinks();
-			removeoldnodes();
 		} else {
-			/*
-			 * This is a level zero dump tape.
-			 */
-			vprintf(stdout, "Begin level 0 restore\n");
-			initsymtable((char *)0);
-			extractdirs(dirmodefile);
-			vprintf(stdout, "Calculate extraction list.\n");
-			treescan(".", ROOTINO, nodeupdates);
+			entry = (struct entry **)
+				calloc((int)maxino, sizeof(struct entry *));
+			if (entry == (struct entry **)NIL)
+				panic("no memory for entry table\n");
+			(void)addentry(".", ROOTINO, NODE);
 		}
+		markremove();
+		if ((ino = psearch(".")) == 0 || BIT(ino, dumpmap) == 0)
+			panic("Root directory is not on tape\n");
+		vprintf(stdout, "Calculate extraction list.\n");
+		treescan(".", ino, markfile);
+		findunref();
+		removeleaves();
+		renamenodes();
+		createnodes();
+		renameleaves();
+		removenodes();
 		createleaves(symtbl);
 		createlinks();
 		setdirmodes(dirmodefile);
@@ -213,8 +221,6 @@ usage:
 
 	case 'R':
 		initsymtable(symtbl);
-		skipmaps();
-		skipdirs();
 		createleaves(symtbl);
 		createlinks();
 		setdirmodes(dirmodefile);
