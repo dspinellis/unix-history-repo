@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1367,7 +1367,6 @@ globulize(cpp)
 }
 
 account(argc,argv)
-
 	int argc;
 	char **argv;
 {
@@ -1377,7 +1376,7 @@ account(argc,argv)
 		++argv;
 		--argc;
 		(void) strncpy(acct,*argv,49);
-		acct[50] = '\0';
+		acct[49] = '\0';
 		while (argc > 1) {
 			--argc;
 			++argv;
