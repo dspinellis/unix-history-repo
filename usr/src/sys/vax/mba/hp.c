@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.8 (Berkeley) %G%
+ *	@(#)hp.c	7.9 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -105,7 +105,6 @@ u_char	hp_offset[16] = {
     0, 0, 0, 0,
 };
 
-struct	buf	rhpbuf[NHP];
 struct	disklabel hplabel[NHP];
 struct	dkbad	hpbad[NHP];
 
@@ -322,7 +321,6 @@ hpinit(dev, flags)
 	 * Set up dummy label with all that's needed.
 	 */
 	if (mi->mi_type == MBDT_ML11A || mi->mi_type == MBDT_ML11B) {
-		register struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 		register int trt;
 
 		sc->sc_mlsize = hpaddr->hpmr & HPMR_SZ;
@@ -784,28 +782,6 @@ hpwait(mi)
 	return (i);
 }
 
-hpread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = hpunit(dev);
-
-	if (unit >= NHP)
-		return (ENXIO);
-	return (physio(hpstrategy, &rhpbuf[unit], dev, B_READ, minphys, uio));
-}
-
-hpwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = hpunit(dev);
-
-	if (unit >= NHP)
-		return (ENXIO);
-	return (physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys, uio));
-}
-
 hpioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
@@ -815,7 +791,6 @@ hpioctl(dev, cmd, data, flag)
 	int unit = hpunit(dev);
 	register struct disklabel *lp;
 	register struct hpsoftc *sc = &hpsoftc[unit];
-	register struct format_op *fop;
 	int error = 0, wlab;
 	int hpformat();
 
@@ -882,6 +857,7 @@ hpioctl(dev, cmd, data, flag)
 	case DIOCRFORMAT:
 	case DIOCWFORMAT:
 	    {
+		register struct format_op *fop;
 		struct uio auio;
 		struct iovec aiov;
 
@@ -902,7 +878,7 @@ hpioctl(dev, cmd, data, flag)
 		 * out if we return nonzero.  Callers must check the returned
 		 * count.
 		 */
-		(void) physio(hpformat, &rhpbuf[unit], dev,
+		(void) physio(hpformat, (struct buf *)NULL, dev,
 		    (cmd == DIOCWFORMAT ? B_WRITE : B_READ), minphys, &auio);
 		fop->df_count -= auio.uio_resid;
 		fop->df_reg[0] = sc->sc_status;
@@ -928,9 +904,8 @@ hpioctl(dev, cmd, data, flag)
 hpformat(bp)
 	struct buf *bp;
 {
-
 	bp->b_flags |= B_FORMAT;
-	return (hpstrategy(bp));
+	hpstrategy(bp);
 }
 
 hpecc(mi, flag)
