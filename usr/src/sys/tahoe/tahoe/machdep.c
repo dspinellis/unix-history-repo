@@ -1,4 +1,4 @@
-/*	machdep.c	1.7	86/11/25	*/
+/*	machdep.c	1.8	86/11/25	*/
 
 #include "param.h"
 #include "systm.h"
@@ -515,6 +515,8 @@ int	dumpsize = 0;		/* also for savecore */
 dumpsys()
 {
 
+	if (dumpdev == NODEV)
+		return;
 #ifdef notdef
 	if ((minor(dumpdev)&07) != 1)
 		return;
