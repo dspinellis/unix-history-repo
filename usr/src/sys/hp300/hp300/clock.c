@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	8.2 (Berkeley) %G%
+ *	@(#)clock.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -194,6 +194,7 @@ statintr(fp)
 /*
  * Return the best possible estimate of the current time.
  */
+void
 microtime(tvp)
 	register struct timeval *tvp;
 {
