@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 304				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.18	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.19	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.18	%G%
+.\"	@(#)tmac.orig_me	2.19	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -501,7 +501,11 @@
 ..
 .de np			\" *** numbered paragraph
 .nr $p +1
-.ip (\\n($p)
+.ip "\0(\\n($p)" \w'\0(000)\0'u
+..
+.de bu			\" *** bulleted paragraph
+.ns
+.ip "\0\(bu" \w'\0\(bu\0'u
 ..
 .de @p			\" --- initialize for paragraph
 .@I				\" initialize macro processor
@@ -775,6 +779,9 @@
 .de bx			\" *** enter boxed word
 .ie \\n($T \&\f2\\$1\fP\\$2
 .el \k~\(br\|\\$1\|\(br\l'|\\n~u\(rn'\l'|\\n~u\(ul'\^\\$2
+..
+.de sm			\" *** print in smaller font
+\s-1\\$1\\s0\\$2
 ..
 .de @F			\" --- change font (8 -> underlined, 0 -> no change)
 .nr ~ \\$1
