@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.5 (Berkeley) %G%
+ *	@(#)trap.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,6 @@
 #include "systm.h"
 #include "proc.h"
 #include "user.h"
-#include "seg.h"
 #include "acct.h"
 #include "kernel.h"
 #ifdef KTRACE
