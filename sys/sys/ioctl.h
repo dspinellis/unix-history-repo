@@ -161,6 +161,7 @@ struct ttysize {
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 #define	PPPDISC		5		/* PPP discipline */
+#define	MOUSEDISC	6		/* Mouse discipline */
 
 
 #define	FIOCLEX		_IO('f', 1)		/* set close on exec on fd */
