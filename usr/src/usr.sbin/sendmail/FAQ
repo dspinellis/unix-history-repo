@@ -52,7 +52,7 @@ BEFORE YOU GO ANY FURTHER
     to my questions?
 
 	1. Do you know, for a fact, that the question is related to
-	   sendmail V8 or IDA sendmail?
+	   sendmail V8?
 
 	2. Do you know, for a fact, that the question is related to an
 	   older version of sendmail?
@@ -536,10 +536,10 @@ RESOLVING PROBLEMS
     have some problems.  Specifically, I have....
 
 	The current versions of Linux are generally considered to be
-	great for hobbiests and anyone else who wants to learn Unix
+	great for hobbyists and anyone else who wants to learn Unix
 	inside and out, or wants to always have something to do, or
-	just wants a machine for themselves and not a whole bunch of
-	other users.
+	wants a machine for light-duty mostly personal use and not
+	high-volume multi-user purposes.
 
 	However, for those who want a system that will just sit in
 	the background and work without a fuss handling thousands of
@@ -548,13 +548,21 @@ RESOLVING PROBLEMS
 
 	Unfortunately, there are no known shareware/freeware
 	implementations of any operating system that provides the
-	level of stability necessary to handle that kind of load.  If
-	you're wedded to the Intel x86 platform, you need to look at
-	commercial implementations of Unix such as Interactive,
-	UnixWare, Solaris, or BSDI's 386BSD.  Of the commercial
-	implementations, BSDI's 386BSD is the only one known to
-	currently ship with sendmail V8 and a recent version of BIND
-	pre-installed.  It is also the least expensive.
+	level of stability necessary to handle that kind of load
+	(i.e., there are no free lunches).
+
+	If you're wedded to the Intel x86 platform and want to run
+	sendmail, we suggest you look at commercial implementations
+	of Unix such as Interactive, UnixWare, Solaris, or 386BSD
+	(just a sample of the dozens of different versions of Unix
+	for Intel x86).
+
+	Of all known vendor supported versions of Unix for Intel x86,
+	BSDI's BSD/386 is least expensive and the only one known to
+	currently ship with sendmail V8 pre-installed.  Since sendmail
+	V8 is continuing to be developed at UC Berkeley, and BSD/386
+	is a full BSD 4.4 implementation, this is obviously be the most
+	"native" sendmail V8 environment.
 ----------------------------------------------------------------------
   * When I use sendmail on an Intel x86 machine running OS/2, I have
     some problems.  Specifically, I have....
@@ -684,5 +692,5 @@ RESOLVING PROBLEMS
 	directory and have them processed by the same uid that
 	submitted the job in the first place.
 ----------------------------------------------------------------------
-@(#)FAQ	8.11	(Berkeley)	%G%
+@(#)FAQ	8.12	(Berkeley)	%G%
 Send updates to sendmail@CS.Berkeley.EDU.
