@@ -1,4 +1,7 @@
-/*	printcap.c	1.5	83/05/13	*/
+#ifndef lint
+static char sccsid[] = "@(#)printcap.c	1.6 (Berkeley) %G%";
+#endif
+
 /* Copyright (c) 1979 Regents of the University of California */
 #define	BUFSIZ	1024
 #define MAXHOP	32	/* max number of tc= indirections */

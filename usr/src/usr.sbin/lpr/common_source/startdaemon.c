@@ -1,4 +1,7 @@
-/*	startdaemon.c	4.6	83/06/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)startdaemon.c	4.7 (Berkeley) %G%";
+#endif
+
 /*
  * Tell the printer daemon that there are new files in the spool directory.
  */
