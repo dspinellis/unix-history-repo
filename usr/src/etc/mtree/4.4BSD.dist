@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.11 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.12 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -1241,6 +1241,10 @@ devps
 # ./usr/share/groff_font
 ..
 
+# ./usr/share/locale
+locale
+# ./usr/share/locale
+..
 
 # ./usr/share/man
 man
