@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -326,6 +326,7 @@ int	infil;			/* current input file descriptor */
 char	*filname;		/* and its name */
 
 #define	NDIRS	25
+#define NDEFDIRS 3		/* number of default directories in dirs[] */
 char	*dirs[NDIRS];		/* directories for library search */
 int	ndir;			/* number of directories */
 
@@ -368,7 +369,7 @@ char **argv;
 		if (ap[0] == '-' && ap[1] == 'L') {
 			if (ap[2] == 0)
 				error(1, "-L: pathname missing");
-			if (ndir >= NDIRS)
+			if (ndir >= NDIRS - NDEFDIRS)
 				error(1, "-L: too many directories");
 			dirs[ndir++] = &ap[2];
 		}
