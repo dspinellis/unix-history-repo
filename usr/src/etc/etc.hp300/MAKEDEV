@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)MAKEDEV	5.3 (Berkeley) %G%
+#	@(#)MAKEDEV	5.4 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -30,7 +30,7 @@
 #	ite*	terminal emulator interface to HP300 graphics devices
 #	hil	HP300 HIL input devices
 
-PATH=/sbin:/bin/:/usr/bin:/etc
+PATH=/sbin:/bin/:/usr/bin:/usr/sbin
 umask 77
 for i
 do
