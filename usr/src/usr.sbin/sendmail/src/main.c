@@ -13,12 +13,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.62.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.63 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
 
-#include <sys/param.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -96,6 +95,8 @@ char		*LastArgv = NULL;	/* end of argv */
 
 char		*RcptLogFile = NULL;	/* file name */
 
+static void	obsolete();
+
 #ifdef DAEMON
 #ifndef SMTP
 ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
@@ -103,8 +104,6 @@ ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
 #endif /* DAEMON */
 
 #define MAXCONFIGLEVEL	3	/* highest config version level known */
-
-static void obsolete();
 
 main(argc, argv, envp)
 	int argc;
@@ -128,7 +127,8 @@ main(argc, argv, envp)
 	bool safecf = TRUE;
 	static bool reenter = FALSE;
 	char jbuf[MAXHOSTNAMELEN];	/* holds MyHostName */
-	extern int DtableSize, optind;
+	extern int DtableSize;
+	extern int optind;
 	extern bool safefile();
 	extern time_t convtime();
 	extern putheader(), putbody();
@@ -137,6 +137,7 @@ main(argc, argv, envp)
 	extern char **myhostname();
 	extern char *arpadate();
 	extern char **environ;
+	extern char *optarg;
 
 	/*
 	**  Check to see if we reentered.
@@ -208,14 +209,10 @@ main(argc, argv, envp)
 	**	the argument processing applies to this run rather than
 	**	to the run that froze the configuration.
 	*/
-#ifdef DBM
-#define	GETOPTSTR	"b:C:c:d:e:F:f:h:I:i:m:no:p:q:R:r:s:T:tv:"
-#else
-#define	GETOPTSTR	"b:C:c:d:e:F:f:h:i:m:no:p:q:R:r:s:T:tv:"
-#endif
 	nothaw = FALSE;
-	while ((j = getopt(argc, argv, GETOPTSTR)) != EOF)
-		switch(j)
+	while ((j = getopt(argc, argv, "b:C:d:")) != EOF)
+	{
+		switch (j)
 		{
 		  case 'b':
 			if (optarg[0] == 'z' && optarg[1] == '\0')
@@ -236,18 +233,8 @@ main(argc, argv, envp)
 			setbuf(stdout, (char *) NULL);
 			printf("Version %s\n", Version);
 			break;
-		  case 'c': case 'e': case 'F': case 'f': case 'h': case 'i': 
-		  case 'm': case 'n': case 'o': case 'p': case 'q': case 'R': 
-		  case 'r': case 's': case 'T': case 't': case 'v': 
-#ifdef DBM
-		  case 'I': 
-#endif
-			break;
-		  default:
-			ExitStat = EX_USAGE;
-			finis();
-			break;
 		}
+	}
 
 	InChannel = stdin;
 	OutChannel = stdout;
@@ -255,15 +242,14 @@ main(argc, argv, envp)
 	if (!nothaw)
 		readconfig = !thaw(FreezeFile);
 
-	/* reset the environment after the thaw */
-	
 	/* strip out "dangerous" environment variables */
 	(void) unsetenv("FS");
 	for (i = 1; (p = envp[i++]) != NULL;)
 	{
 		if (strncmp(p, "LD_", 3) == 0)
 		{
-			p[0] = '\1';
+			/* hack: change this name to be non-special */
+			p[0] = '\201';
 			continue;
 		}
 	}
@@ -350,11 +336,12 @@ main(argc, argv, envp)
 		OpMode = MD_DAEMON;
 
 	optind = 1;
-	while ((j = getopt(argc, argv, GETOPTSTR)) != EOF)
-		switch(j)
+	while ((j = getopt(argc, argv, "b:C:c:d:e:F:f:h:I:i:m:no:p:q:R:r:s:T:tv:")) != EOF)
+	{
+		switch (j)
 		{
 		  case 'b':	/* operations mode */
-			switch(j = *optarg)
+			switch (j = *optarg)
 			{
 			  case MD_DAEMON:
 # ifdef DAEMON
@@ -501,6 +488,7 @@ main(argc, argv, envp)
 			finis();
 			break;
 		}
+	}
 	av += optind;
 
 #ifdef NAMED_BIND
@@ -1220,22 +1208,18 @@ obsolete(argv)
 
 		/* If -C doesn't have an argument, use sendmail.cf. */
 #define	__DEFPATH	"sendmail.cf"
-		if (ap[1] == 'C' &&
-		    !ap[2] && (argv[0] == NULL || argv[0][0] == '-'))
+		if (ap[1] == 'C' && ap[2] == '\0' &&
+		    (argv[1] == NULL || argv[1][0] == '-'))
 		{
 			*argv = xalloc(sizeof(__DEFPATH) + 2);
 			argv[0][0] = '-';
 			argv[0][1] = 'C';
 			(void)strcpy(&argv[0][2], __DEFPATH);
 		}
-		if (ap[1] == 'q' &&
-		    !ap[2] && (argv[0] == NULL || argv[0][0] == '-'))
-		{
-			*argv = xalloc(4);
-			argv[0][0] = '-';
-			argv[0][1] = 'C';
-			argv[0][2] = '1';
-			argv[0][3] = '\0';
-		}
+
+		/* If -q doesn't have an argument, run it once. */
+		if (ap[1] == 'q' && ap[2] == '\0' &&
+		    (argv[1] == NULL || argv[1][0] == '-'))
+			*argv = "-q0";
 	}
 }
