@@ -11,17 +11,17 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.28 (Berkeley) %G%";
 #endif not lint
 
 /*
- * Modify a field in the password file (either
- * password, login shell, or gecos field).
- * This program should be suid with an owner
- * with write permission on /etc/passwd.
+ * Modify a field in the password file (either password, login shell, or
+ * gecos field).  This program should be suid with an owner with write
+ * permission on /etc/passwd.
  */
 #include <sys/types.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -37,115 +37,112 @@ static char sccsid[] = "@(#)passwd.c	4.27 (Berkeley) %G%";
  * This should be the first thing returned from a getloginshells()
  * but too many programs know that it is /bin/sh.
  */
-#define DEFSHELL "/bin/sh"
+#define	DEFSHELL	"/bin/sh"
 
-char	temp[] = "/etc/ptmp";
-char	passwd[] = "/etc/passwd";
-char	*getpass();
-char	*getfingerinfo();
-char	*getloginshell();
-char	*getnewpasswd();
-char	*malloc();
-char	*getusershell();
-extern	int errno;
+#define	DICT		"/usr/dict/words"
+#define	PASSWD		"/etc/passwd"
+#define	PTEMP		"/etc/ptmp"
+
+#define	EOS		'\0';
 
 main(argc, argv)
-	char *argv[];
+	int	argc;
+	char	**argv;
 {
-	struct passwd *pwd;
-	char *cp, *uname, *progname;
-	uid_t u;
-	int fd, dochfn, dochsh, err;
-	FILE *tf;
-	DBM *dp;
-	char *getlogin();
+	extern char	*optarg;
+	extern int	errno, optind;
+	struct passwd	*pwd;
+	FILE	*tf;
+	DBM	*dp;
+	uid_t	uid, getuid();
+	int	ch, fd, dochfn, dochsh;
+	char	*cp, *uname, *progname, *umsg,
+		*getfingerinfo(), *getloginshell(), *getnewpasswd(), *malloc();
 
-	if ((progname = rindex(argv[0], '/')) == NULL)
-		progname = argv[0];
+	progname = (cp = rindex(*argv, '/')) ? cp + 1 : *argv;
+	dochfn = dochsh = 0;
+	if (!strcmp(progname, "chfn")) {
+		dochfn = 1;
+		umsg = "usage: chfn [username]\n";
+	}
+	else if (!strcmp(progname, "chsh")) {
+		dochsh = 1;
+		umsg = "usage: chsh [username]\n";
+	}
 	else
-		progname++;
-	dochfn = 0, dochsh = 0;
-	argc--, argv++;
-	while (argc > 0 && argv[0][0] == '-') {
-		for (cp = &argv[0][1]; *cp; cp++) switch (*cp) {
+		umsg = "usage: passwd [-fs] [username]\n";
 
+	while ((ch = getopt(argc, argv, "fs")) != EOF)
+		switch((char)ch) {
 		case 'f':
 			if (dochsh)
-				goto bad;
+				goto usage;
 			dochfn = 1;
 			break;
-
 		case 's':
-			if (dochfn) {
-		bad:
-				fprintf(stderr,
-				   "passwd: Only one of -f and -s allowed.\n"); 
-				exit(1);
-			}
+			if (dochfn)
+				goto usage;
 			dochsh = 1;
 			break;
-
+		case '?':
 		default:
-			fprintf(stderr, "passwd: -%c: unknown option.\n", *cp);
+usage:			fputs(umsg, stderr);
 			exit(1);
 		}
-		argc--, argv++;
+
+	uid = getuid();
+	if (argc - optind < 1) {
+		if (!(pwd = getpwuid(uid))) {
+			fprintf(stderr, "%s: %u: unknown user uid.\n", progname, uid);
+			exit(1);
+		}
+		if (!(uname = malloc((u_int)(strlen(pwd->pw_name) + 1)))) {
+			fprintf(stderr, "%s: out of space.\n", progname);
+			exit(1);
+		}
+		(void)strcpy(uname, pwd->pw_name);
 	}
-	if (!dochfn && !dochsh) {
-		if (strcmp(progname, "chfn") == 0)
-			dochfn = 1;
-		else if (strcmp(progname, "chsh") == 0)
-			dochsh = 1;
+	else {
+		uname = *(argv + optind);
+		if (!(pwd = getpwnam(uname))) {
+			fprintf(stderr, "%s: %s: unknown user.\n", progname, uname);
+			exit(1);
+		}
 	}
-	if (argc < 1) {
-		if (uname = getlogin())
-			printf("Changing %s for %s.\n", dochfn ? "finger information" : dochsh ? "login shell" : "password", uname);
-	}
-	else
-		uname = *argv++;
-	u = getuid();
-	if (!(pwd = uname ? getpwnam(uname) : getpwuid(u))) {
-		fprintf(stderr, "passwd: %s: unknown user.\n", uname);
+	if (uid && uid != pwd->pw_uid) {
+		fputs("Permission denied.\n", stderr);
 		exit(1);
 	}
-	if (u != 0 && u != pwd->pw_uid) {
-		printf("Permission denied.\n");
-		exit(1);
-	}
+	printf("Changing %s for %s.\n", dochfn ? "finger information" : dochsh ? "login shell" : "password", uname);
 	if (dochfn)
 		cp = getfingerinfo(pwd);
 	else if (dochsh)
-		cp = getloginshell(pwd, u, *argv);
+		cp = getloginshell(pwd, uid);
 	else
-		cp = getnewpasswd(pwd, u);
+		cp = getnewpasswd(pwd, uid);
 	(void) signal(SIGHUP, SIG_IGN);
 	(void) signal(SIGINT, SIG_IGN);
 	(void) signal(SIGQUIT, SIG_IGN);
 	(void) signal(SIGTSTP, SIG_IGN);
 	(void) umask(0);
-	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0644);
-	if (fd < 0) {
-		err = errno;
-
-		fprintf(stderr, "passwd: ");
-		if (err == EEXIST)
-			fprintf(stderr, "password file busy - try again.\n");
+	if ((fd = open(PTEMP, O_WRONLY|O_CREAT|O_EXCL, 0644)) < 0) {
+		if (errno == EEXIST)
+			fprintf(stderr, "%s: password file busy - try again.\n", progname);
 		else {
-			errno = err;
-			perror(temp);
+			fprintf(stderr, "%s: %s: ", progname, PTEMP);
+			perror((char *)NULL);
 		}
 		exit(1);
 	}
 	if ((tf = fdopen(fd, "w")) == NULL) {
-		fprintf(stderr, "passwd: fdopen failed?\n");
+		fprintf(stderr, "%s: fdopen failed.\n", progname);
 		exit(1);
 	}
-	if ((dp = dbm_open(passwd, O_RDWR, 0644)) == NULL) {
-		err = errno;
-		fprintf(stderr, "Warning: dbm_open failed: ");
-		errno = err;
-		perror(passwd);
-	} else if (flock(dp->dbm_dirf, LOCK_EX) < 0) {
+	if ((dp = dbm_open(PASSWD, O_RDWR, 0644)) == NULL) {
+		fprintf(stderr, "Warning: dbm_open failed: %s: ", PASSWD);
+		perror((char *)NULL);
+	}
+	else if (flock(dp->dbm_dirf, LOCK_EX) < 0) {
 		perror("Warning: lock failed");
 		dbm_close(dp);
 		dp = NULL;
@@ -157,9 +154,9 @@ main(argc, argv)
 	 * with new password.
 	 */
 	while ((pwd = getpwent()) != NULL) {
-		if (strcmp(pwd->pw_name, uname) == 0) {
-			if (u && u != pwd->pw_uid) {
-				fprintf(stderr, "passwd: permission denied.\n");
+		if (!strcmp(pwd->pw_name, uname)) {
+			if (uid && uid != pwd->pw_uid) {
+				fprintf(stderr, "%s: permission denied.\n", progname);
 				goto out;
 			}
 			if (dochfn)
@@ -172,7 +169,7 @@ main(argc, argv)
 				pwd->pw_gecos++;
 			replace(dp, pwd);
 		}
-		fprintf(tf,"%s:%s:%d:%d:%s:%s:%s\n",
+		fprintf(tf, "%s:%s:%d:%d:%s:%s:%s\n",
 			pwd->pw_name,
 			pwd->pw_passwd,
 			pwd->pw_uid,
@@ -182,32 +179,33 @@ main(argc, argv)
 			pwd->pw_shell);
 	}
 	endpwent();
-	if (dp != NULL && dbm_error(dp))
-		fprintf(stderr, "Warning: dbm_store failed\n");
+	if (dp && dbm_error(dp))
+		fputs("Warning: dbm_store failed.\n", stderr);
 	(void) fflush(tf);
 	if (ferror(tf)) {
-		fprintf(stderr, "Warning: %s write error, %s not updated\n",
-		    temp, passwd);
+		fprintf(stderr, "Warning: %s write error, %s not updated.\n",
+		    PTEMP, PASSWD);
 		goto out;
 	}
-	(void) fclose(tf);
+	(void)fclose(tf);
 	if (dp != NULL)
 		dbm_close(dp);
-	if (rename(temp, passwd) < 0) {
-		perror("passwd: rename");
+	if (rename(PTEMP, PASSWD) < 0) {
+		perror(progname);
 	out:
-		(void) unlink(temp);
+		(void)unlink(PTEMP);
 		exit(1);
 	}
 	exit(0);
 }
 
 unlimit(lim)
+	int	lim;
 {
 	struct rlimit rlim;
 
 	rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
-	(void) setrlimit(lim, &rlim);
+	(void)setrlimit(lim, &rlim);
 }
 
 /*
@@ -251,68 +249,41 @@ replace(dp, pwd)
 char *
 getnewpasswd(pwd, u)
 	register struct passwd *pwd;
-	int u;
+	uid_t u;
 {
-	char saltc[2];
-	long salt;
-	int i, insist = 0, ok, flags;
-	int c, pwlen;
-	static char pwbuf[10];
-	long time();
-	char *crypt(), *pw, *p;
+	time_t	salt, time();
+	int	c, i, insist;
+	char	*pw, pwbuf[10], pwcopy[10], saltc[2],
+		*crypt(), *getpass();
 
 	if (pwd->pw_passwd[0] && u != 0) {
-		(void) strcpy(pwbuf, getpass("Old password:"));
+		(void)strcpy(pwbuf, getpass("Old password:"));
 		pw = crypt(pwbuf, pwd->pw_passwd);
 		if (strcmp(pw, pwd->pw_passwd) != 0) {
-			printf("Sorry.\n");
+			puts("Sorry.");
 			exit(1);
 		}
 	}
-tryagain:
-	(void) strcpy(pwbuf, getpass("New password:"));
-	pwlen = strlen(pwbuf);
-	if (pwlen == 0) {
-		printf("Password unchanged.\n");
-		exit(1);
-	}
-	/*
-	 * Insure password is of reasonable length and
-	 * composition.  If we really wanted to make things
-	 * sticky, we could check the dictionary for common
-	 * words, but then things would really be slow.
-	 */
-	ok = 0;
-	flags = 0;
-	p = pwbuf;
-	while (c = *p++) {
-		if (c >= 'a' && c <= 'z')
-			flags |= 2;
-		else if (c >= 'A' && c <= 'Z')
-			flags |= 4;
-		else if (c >= '0' && c <= '9')
-			flags |= 1;
-		else
-			flags |= 8;
-	}
-	if (flags >= 7 && pwlen >= 4)
-		ok = 1;
-	if ((flags == 2 || flags == 4) && pwlen >= 6)
-		ok = 1;
-	if ((flags == 3 || flags == 5 || flags == 6) && pwlen >= 5)
-		ok = 1;
-	if (!ok && insist < 2) {
-		printf("Please use %s.\n", flags == 1 ?
-			"at least one non-numeric character" :
-			"a longer password");
-		insist++;
-		goto tryagain;
+	for(;;) {
+		(void)strcpy(pwbuf, getpass("New password:"));
+		if (!*pwbuf) {
+			puts("Password unchanged.");
+			exit(1);
+		}
+		if (strcmp(pwbuf, pwcopy)) {
+			insist = 1;
+			(void)strcpy(pwcopy, pwbuf);
+		}
+		else if (++insist == 4)
+			break;
+		if (checkpass(pwbuf))
+			break;
 	}
 	if (strcmp(pwbuf, getpass("Retype new password:")) != 0) {
-		printf("Mismatch - password unchanged.\n");
+		puts("Mismatch - password unchanged.");
 		exit(1);
 	}
-	(void) time(&salt);
+	(void)time(&salt);
 	salt = 9 * getpid();
 	saltc[0] = salt & 077;
 	saltc[1] = (salt>>6) & 077;
@@ -324,14 +295,13 @@ tryagain:
 			c += 6;
 		saltc[i] = c;
 	}
-	return (crypt(pwbuf, saltc));
+	return(crypt(pwbuf, saltc));
 }
 
 char *
-getloginshell(pwd, u, arg)
+getloginshell(pwd, u)
 	struct passwd *pwd;
-	int u;
-	char *arg;
+	uid_t u;
 {
 	static char newshell[BUFSIZ];
 	char *cp, *valid, *getusershell();
@@ -348,19 +318,14 @@ getloginshell(pwd, u, arg)
 			}
 		} while (strcmp(pwd->pw_shell, valid) != 0);
 	}
-	if (arg != 0) {
-		(void) strncpy(newshell, arg, sizeof newshell - 1);
-		newshell[sizeof newshell - 1] = '\0';
-	} else {
-		printf("Old shell: %s\nNew shell: ", pwd->pw_shell);
-		(void)fgets(newshell, sizeof (newshell) - 1, stdin);
-		cp = index(newshell, '\n');
-		if (cp)
-			*cp = '\0';
-		if (newshell[0] == 0) {
-			puts("Login shell unchanged.");
-			exit(1);
-		}
+	printf("Old shell: %s\nNew shell: ", pwd->pw_shell);
+	(void)fgets(newshell, sizeof (newshell) - 1, stdin);
+	cp = index(newshell, '\n');
+	if (cp)
+		*cp = '\0';
+	if (newshell[0] == 0) {
+		puts("Login shell unchanged.");
+		exit(1);
 	}
 	/*
 	 * Allow user to give shell name w/o preceding pathname.
@@ -388,9 +353,9 @@ getloginshell(pwd, u, arg)
 					cp++;
 			}
 		} while (strcmp(newshell, cp) != 0);
-	} else {
-		valid = newshell;
 	}
+	else
+		valid = newshell;
 	if (strcmp(valid, pwd->pw_shell) == 0) {
 		puts("Login shell unchanged.");
 		exit(1);
@@ -424,15 +389,15 @@ getfingerinfo(pwd)
 
 	answer[0] = '\0';
 	defaults = get_defaults(pwd->pw_gecos);
-	printf("Default values are printed inside of '[]'.\n");
-	printf("To accept the default, type <return>.\n");
-	printf("To have a blank entry, type the word 'none'.\n");
+	puts("Default values are printed inside of '[]'.");
+	puts("To accept the default, type <return>.");
+	puts("To have a blank entry, type the word 'none'.");
 	/*
 	 * Get name.
 	 */
 	do {
 		printf("\nName [%s]: ", defaults->name);
-		(void) fgets(in_str, BUFSIZ, stdin);
+		(void) fgets(in_str, BUFSIZ - 1, stdin);
 		if (special_case(in_str, defaults->name)) 
 			break;
 	} while (illegal_input(in_str));
@@ -443,7 +408,7 @@ getfingerinfo(pwd)
 	do {
 		printf("Room number (Exs: 597E or 197C) [%s]: ",
 			defaults->office_num);
-		(void) fgets(in_str, BUFSIZ, stdin);
+		(void) fgets(in_str, BUFSIZ - 1, stdin);
 		if (special_case(in_str, defaults->office_num))
 			break;
 	} while (illegal_input(in_str) || illegal_building(in_str));
@@ -455,7 +420,7 @@ getfingerinfo(pwd)
 	do {
 		printf("Office Phone (Ex: 6426000) [%s]: ",
 			defaults->office_phone);
-		(void) fgets(in_str, BUFSIZ, stdin);
+		(void) fgets(in_str, BUFSIZ - 1, stdin);
 		if (special_case(in_str, defaults->office_phone))
 			break;
 		remove_hyphens(in_str);
@@ -467,14 +432,14 @@ getfingerinfo(pwd)
 	 */
 	do {
 		printf("Home Phone (Ex: 9875432) [%s]: ", defaults->home_phone);
-		(void) fgets(in_str, BUFSIZ, stdin);
+		(void) fgets(in_str, BUFSIZ - 1, stdin);
 		if (special_case(in_str, defaults->home_phone))
 			break;
 		remove_hyphens(in_str);
 	} while (illegal_input(in_str) || not_all_digits(in_str));
 	(void) strcat(strcat(answer, ","), in_str);
 	if (strcmp(answer, pwd->pw_gecos) == 0) {
-		printf("Finger information unchanged.\n");
+		puts("Finger information unchanged.");
 		exit(1);
 	}
 	return (answer);
@@ -498,7 +463,7 @@ illegal_input(input_str)
 	int length = strlen(input_str);
 
 	if (index(input_str, ':')) {
-		printf("':' is not allowed.\n");
+		puts("':' is not allowed.");
 		error_flag = 1;
 	}
 	if (input_str[length-1] != '\n') {
@@ -517,13 +482,12 @@ illegal_input(input_str)
 	/*
 	 * Don't allow control characters, etc in input string.
 	 */
-	for (ptr=input_str; *ptr != '\0'; ptr++) {
-		if ((int) *ptr < 040) {
-			printf("Control characters are not allowed.\n");
+	for (ptr = input_str; *ptr; ptr++)
+		if (!isprint(*ptr)) {
+			puts("Control characters are not allowed.");
 			error_flag = 1;
 			break;
 		}
-	}
 	return (error_flag);
 }
 
@@ -544,16 +508,14 @@ remove_hyphens(str)
  *  an error message is printed and '1' is returned.
  */
 not_all_digits(str)
-	char *str;
+	register char *str;
 {
-	char *ptr;
-
-	for (ptr = str; *ptr != '\0'; ++ptr)
-		if (!isdigit(*ptr)) {
-			printf("Phone numbers can only contain digits.\n");
-			return (1);
+	for (; *str; ++str)
+		if (!isdigit(*str)) {
+			puts("Phone numbers may only contain digits.");
+			return(1);
 		}
-	return (0);
+	return(0);
 }
 
 /*
@@ -606,12 +568,12 @@ get_defaults(str)
 	char *str;
 {
 	struct default_values *answer;
+	char	*malloc();
 
 	answer = (struct default_values *)
 		malloc((unsigned)sizeof(struct default_values));
 	if (answer == (struct default_values *) NULL) {
-		fprintf(stderr,
-			"\nUnable to allocate storage in get_defaults!\n");
+		fputs("\nUnable to allocate storage in get_defaults!\n", stderr);
 		exit(1);
 	}
 	/*
