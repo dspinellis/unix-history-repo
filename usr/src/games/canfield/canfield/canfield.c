@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)canfield.c 4.1 %G%";
+static char sccsid[] = "@(#)canfield.c 4.2 %G%";
 
 /*
  * The canfield program
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)canfield.c 4.1 %G%";
  *	Originally written: Steve Levine
  *	Converted to use curses and debugged: Steve Feldman
  *	Card counting: Kirk McKusick and Mikey Olson
+ *	User interface cleanups: Eric Allman and Kirk McKusick
  */
 
 #include <curses.h>
@@ -21,11 +22,11 @@ static char sccsid[] = "@(#)canfield.c 4.1 %G%";
 #define	basecol		1
 #define	boxcol		42
 #define	tboxrow		2
-#define	bboxrow		16
+#define	bboxrow		17
 #define	movecol		43
-#define	moverow		15
+#define	moverow		16
 #define	msgcol		43
-#define	msgrow		14
+#define	msgrow		15
 #define	titlecol	30
 #define	titlerow	0
 #define	sidecol		1
@@ -108,7 +109,7 @@ char srcpile, destpile;
 int mtforigin, tempbase;
 int coldcol, cnewcol, coldrow, cnewrow;
 bool errmsg, done;
-bool mtfdone, Cflag = FALSE;
+bool mtfdone, Cflag = FALSE, Iflag = TRUE;
 
 
 
@@ -119,6 +120,20 @@ bool mtfdone, Cflag = FALSE;
  */
 /* procedure to set the move command box */
 movebox()
+{
+	    printtopinstructions();
+	    move(moverow, boxcol);
+	    printw("|                          |");
+	    move(msgrow, boxcol);
+	    printw("|                          |");
+	    printbottominstructions();
+	    refresh();
+}
+
+/*
+ * print directions above move box
+ */
+printtopinstructions()
 {
 	    move(tboxrow, boxcol);
 	    printw("*--------------------------*");
@@ -141,25 +156,59 @@ movebox()
 	    move(tboxrow + 9, boxcol);
 	    printw("|c = toggle card counting  |");
 	    move(tboxrow + 10, boxcol);
-	    printw("|q = quit to end the game  |");
+	    printw("|i = toggle instructions   |");
 	    move(tboxrow + 11, boxcol);
+	    printw("|q = quit to end the game  |");
+	    move(tboxrow + 12, boxcol);
 	    printw("|==========================|");
-	    move(moverow, boxcol);
-	    printw("|                          |");
-	    move(msgrow, boxcol);
-	    printw("|                          |");
-	    move(bboxrow, boxcol);
-	    printw("|Replace the # with the    |");
-	    move(bboxrow + 1, boxcol);
-	    printw("|number of the tableau you |");
-	    move(bboxrow + 2, boxcol);
-	    printw("|want, 1, 2, 3, or 4.      |");
-	    move(bboxrow + 3, boxcol);
-	    printw("*--------------------------*");
-	    refresh();
 }
 
-/* procedure to put the board on the screen using addressable cursor */
+/*
+ * clear directions above move box
+ */
+cleartopinstructions()
+{
+	int i;
+
+	for (i = 0; i <= 11; i++) {
+		move(tboxrow + i, boxcol);
+		printw("                            ");
+	}
+	move(tboxrow + 12, boxcol);
+	printw("*--------------------------*");
+}
+
+/*
+ * print instructions below move box
+ */
+printbottominstructions()
+{
+	    move(bboxrow, boxcol);
+	    printw("|Replace # with the number |");
+	    move(bboxrow + 1, boxcol);
+	    printw("|of the tableau you want.  |");
+	    move(bboxrow + 2, boxcol);
+	    printw("*--------------------------*");
+}
+
+/*
+ * clear directions below move box
+ */
+clearbottominstructions()
+{
+	int i;
+
+	move(bboxrow, boxcol);
+	printw("*--------------------------*");
+	for (i = 1; i <= 2; i++) {
+		move(bboxrow + i, boxcol);
+		printw("                            ");
+	}
+}
+
+/*
+ * procedure to put the board on the screen using addressable cursor
+ */
 makeboard()
 {
 	clear();
@@ -1000,6 +1049,16 @@ movecard()
 			case 'q':
 				showcards();
 				done = TRUE;
+				break;
+			case 'i':
+				Iflag = !Iflag;
+				if (Iflag) {
+					printtopinstructions();
+					printbottominstructions();
+				} else {
+					cleartopinstructions();
+					clearbottominstructions();
+				}
 				break;
 			case 'c':
 				Cflag = !Cflag;
