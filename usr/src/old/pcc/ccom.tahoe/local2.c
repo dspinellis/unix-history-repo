@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.23 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -1297,6 +1297,7 @@ optim2( p ) register NODE *p; {
 # define nncon(p)	((p)->in.op == ICON && (p)->in.name[0] == 0)
 	register int o, i;
 	register NODE *l, *r;
+	int lower, upper, result;
 
 	switch (o = p->in.op) {
 
@@ -1384,6 +1385,95 @@ optim2( p ) register NODE *p; {
 				p->in.right = r->in.left;
 				r->in.op = FREE;
 			}
+		}
+		return;
+
+	case ULE:
+	case ULT:
+	case UGE:
+	case UGT:
+		o -= (UGE-GE);
+	case EQ:
+	case NE:
+	case LE:
+	case LT:
+	case GE:
+	case GT:
+		/*
+		 * Optimize comparisons against constants which are
+		 * out of the range of a variable's precision.
+		 * This saves some labor out in the code table
+		 * handling ridiculous comparisons...
+		 */
+		r = p->in.right;
+		l = p->in.left;
+		if (r->in.op != ICON ||
+		    r->tn.name[0] != '\0' ||
+		    tlen(l) >= tlen(r))
+			return;
+		switch (l->in.type) {
+		case CHAR:
+			lower = -(1 << SZCHAR - 1);
+			upper = (1 << SZCHAR - 1) - 1;
+			break;
+		case UCHAR:
+			lower = 0;
+			upper = (1 << SZCHAR) - 1;
+			break;
+		case SHORT:
+			lower = -(1 << SZSHORT - 1);
+			upper = (1 << SZSHORT - 1) - 1;
+			break;
+		case USHORT:
+			lower = 0;
+			upper = (1 << SZSHORT) - 1;
+			break;
+		default:
+			cerror("unsupported OPLOG in optim2");
+		}
+		result = -1;
+		i = r->tn.lval;
+		switch (o) {
+		case EQ:
+		case NE:
+			if (lower == 0 && (unsigned) i > upper)
+				result = o == NE;
+			else if (i < lower || i > upper)
+				result = o == NE;
+			break;
+		case LT:
+		case GE:
+			if (lower == 0 && (unsigned) i > upper)
+				result = o == LT;
+			else if (i <= lower)
+				result = o != LT;
+			else if (i > upper)
+				result = o == LT;
+			break;
+		case LE:
+		case GT:
+			if (lower == 0 && (unsigned) i >= upper)
+				result = o == LE;
+			else if (i < lower)
+				result = o != LE;
+			else if (i >= upper)
+				result = o == LE;
+			break;
+		}
+		if (result == -1)
+			return;
+
+		if (tshape(l, SAREG|SNAME|SCON|SOREG|STARNM)) {
+			l->in.op = FREE;
+			ncopy(p, r);
+			r->in.op = FREE;
+			p->tn.type = INT;
+			p->tn.lval = result;
+		} else {
+			p->in.op = COMOP;
+			p->in.type = INT;
+			r->tn.type = INT;
+			r->tn.lval = result;
 		}
 		return;
 	}
