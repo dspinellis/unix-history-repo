@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_subr.c	7.4 (Berkeley) %G%
+ *	@(#)tty_subr.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -359,7 +359,6 @@ unputc(p)
 	register struct cblock *bp;
 	register int c, s;
 	struct cblock *obp;
-	register int first = 1;
 
 	s = spltty();
 	if (p->c_cc <= 0)
