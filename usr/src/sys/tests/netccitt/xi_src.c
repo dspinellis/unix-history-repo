@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xi_src.c	7.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)xi_src.c	7.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,13 +33,19 @@ static char sccsid[] = "@(#)xi_src.c	7.5 (Berkeley) %G%";
 
 
 #define dbprintf if(verbose)printf
-#define try(a,b,c) {x = (a b);dbprintf("%s%s returns %d\n",c,"a",x);\
-		    if (x < 0) {perror("a"); exit(1);}}
+#ifdef __STDC__
+#define try(a,b,c) {x = (a b); dbprintf("%s%s returns %d\n",c,#a,x);\
+		if(x<0) {perror(#a); exit(1);}}
+#else
+#define try(a,b,c) {x = (a b); dbprintf("%s%s returns %d\n",c,"a",x);\
+		if(x<0) {perror("a"); exit(1);}}
+#endif
 
 fd_set	readfds, writefds, exceptfds;
 long size, count = 10;
 int verbose = 1, selectp, type = SOCK_STREAM, nobuffs, errno, playtag = 0;
-int verify = 0, mqdata;
+int verify = 0, mqdata, protolisten = 0, echop = 0;
+unsigned char protodata[2] = {0, 1};
 short portnumber = 3000;
 struct sockaddr_x25 to;
 char your_it[] = "You're it!";
@@ -76,7 +82,21 @@ char *argv[];
 		} else if (strcmp(*av,"size")==0) {
 			av++;
 			sscanf(*av,"%ld",&size);
-		}
+			argc--;
+		} else if (strcmp(*av,"protolisten")==0) {
+			av++;
+			protolisten = 1;
+			sscanf(*av,"%ld",&handy);
+			argc--;
+			protodata[0] = handy;
+		} else if (strcmp(*av,"protonolisten")==0) {
+			av++;
+			protolisten = 1;
+			sscanf(*av,"%ld",&handy);
+			argc--;
+			protodata[0] = handy;
+			protodata[1] = 0;
+		} 
 	}
 	xisrc();
 }
@@ -88,6 +108,12 @@ xisrc() {
 	s = x;
 
 	/*try(setsockopt, (s, SOL_SOCKET, SO_DEBUG, &on, sizeof (on)), "");*/
+
+	if (protolisten) {
+		try(setsockopt, (s, CCITTPROTO_X25, PK_PRLISTEN,
+					protodata, sizeof (protodata)), "");
+	    exit(0);
+	}
 
 	to.x25_opts.op_flags |= X25_MQBIT;
 	try(connect, (s, (struct sockaddr *) &to, to.x25_len), "");
@@ -128,6 +154,44 @@ xisrc() {
 int localsize;
 char dupbuf[4096];
 
+struct savebuf {
+	struct savebuf *s_next;
+	struct savebuf *s_prev;
+	int	s_n;
+	int	s_flags;
+} savebuf = {&savebuf, &savebuf};
+
+void
+savedata(n, flags)
+int n;
+{
+	register struct savebuf *s = (struct savebuf *)malloc(n + sizeof *s);
+	if (s == 0)
+		return;
+	insque(s, savebuf.s_prev);
+	s->s_n = n;
+	s->s_flags = flags;
+	if (verify)
+		bcopy(iov->iov_base, (char *)(s + 1), n);
+}
+
+checkback(ns)
+int ns;
+{
+	int n;
+	register struct savebuf *s = savebuf.s_next, *t;
+	while (s != &savebuf) {
+		iov->iov_len = s->s_n;
+		n = recvmsg(ns, &msg, s->s_flags);
+		dbprintf("echoed %d\n", n);
+		if (verify && 
+		    (n != s->s_n || bcmp((char *)(s + 1), iov->iov_base, n)))
+			dbprintf("mismatched data or length was %d got %d\n",
+				s->s_n, n);
+		t = s; s = s->s_next; remque(t); free((char *)t);
+	}
+}
+
 put_record(s, flags)
 int s, flags;
 {
@@ -158,19 +222,12 @@ int s, flags;
 			putchar ('\n');
 		}
 	}
-	if (verify) {
-		buflen = iov->iov_len;
-		bcopy(iov->iov_base, dupbuf, buflen);
-	}
+	if (echop)
+		savedata(iov->iov_len, flags);
 	try(sendmsg, (s, &msg, flags), " put_record ");
 	saved_x = x;
-	while (verify && buflen > 0) {
-		iov->iov_len = buflen;
-		iov->iov_base = dupbuf;
-		try(recvmsg, (s, &msg, flags), " put_record ");
-		printf("verify got %d\n", x);
-		buflen -= x;
-	}
+	if (echop && (iov->iov_base[0] & 0x80))
+		checkback(s);
 	msg.msg_control = 0;
 	return (saved_x);
 }
