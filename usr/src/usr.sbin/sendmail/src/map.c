@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -89,6 +89,14 @@ dbm_map_lookup(map, buf, bufsiz, av)
 
 	key.dptr = buf;
 	key.dsize = strlen(buf);
+	if (bitset(MF_FOLDCASE, map->map_flags))
+	{
+		register char *p;
+
+		for (p = buf; *p != '\0'; p++)
+			if (isupper(*p))
+				*p = tolower(*p);
+	}
 	if (bitset(MF_INCLNULL, map->map_flags))
 		key.dsize++;
 	val = dbm_fetch(map->map_db, key);
