@@ -16,13 +16,13 @@ extern int	lp[];
 extern int	used[];		/* available registers */
 extern int	ps;		/* dflt init pt size */
 extern int	deltaps;	/* default change in ps */
+extern int	dps_set;	/* 1 => -p option used */
 extern int	gsize;		/* global size */
 extern int	ft;		/* default font */
 extern int	display;	/* 1 => inline, 0 => .EQ/.EN */
 extern int	synerr;		/* 1 if syntax error in this eqn */
 
 extern char	*typesetter;	/* typesetter name for -T... */
-extern int	res;		/* resolution of output device */
 extern int	minsize;	/* min size it can print */
 extern int	ttype;		/* actual type of typesetter: */
 
@@ -92,6 +92,6 @@ extern	int	nszstack;
 extern	Infile	infile[10];
 extern	Infile	*curfile;
 extern	char	*grow(), *malloc(), *realloc(), *strsave();
-extern	char	*DPS();
+extern	char	*DPS(), *ABSPS();
 extern	double	EM(), REL();
 extern	tbl	*lookup(), *keytbl[], *deftbl[], *restbl[];

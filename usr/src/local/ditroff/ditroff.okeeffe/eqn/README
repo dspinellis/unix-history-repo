@@ -1,8 +1,8 @@
+The following is a quick synopsis of changes
+to eqn since the last version.
 Most of these changes owe thanks to Mary Carter,
 whose efforts during the summer of 1984 provided
-some code and the impetus to start thinking about
-eqn again.
-
+the impetus to start thinking about eqn again.
 
 1.  Fixed long-standing bug involving nested
 from-to constructs.
@@ -54,3 +54,12 @@ The proper TYPESETTER name is defined already.
 12. Error messages are somewhat better as well.  Errors
 passed on to troff will be identified by source file and
 line number in the eqn input.
+
+13. Tunable parameters have been (mostly) collected into
+a single file, tuning.c, to make it easier to adapt eqn
+to a new typesetter.
+
+14. As an interim fix, "lowbar" and "highbar" are synonymous
+with "bar", but force the bar to be either low (as over x)
+or high (as over X) regardless of the apparent height of
+the object.  This copes with {x sub 1} bar.

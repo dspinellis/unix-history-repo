@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)matrix.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)matrix.c	2.2 (CWI) 87/04/01";
 #endif lint
 #include "e.h"
 
@@ -36,8 +36,9 @@ matrix(oct)	/* matrix is list of columns */
 	int nrow, ncol, i, j, k, val[100];
 	float b, hb;
 	char *space;
+	extern char *Matspace;
 
-	space = "\\ \\ ";	/* between columns of matrix */
+	space = Matspace;	/* between columns of matrix */
 	nrow = lp[oct+1];	/* disaster if rows inconsistent */
 				/* also assumes just columns */
 				/* fix when add other things */

@@ -11,7 +11,7 @@
 %right	SIZE FONT ROMAN ITALIC BOLD FAT
 %right	UP DOWN BACK FWD
 %left	LEFT RIGHT
-%right	DOT DOTDOT HAT TILDE BAR UNDER VEC DYAD UTILDE
+%right	DOT DOTDOT HAT TILDE BAR LOWBAR HIGHBAR UNDER VEC DYAD UTILDE
 
 %{
 #include "e.h"
@@ -87,6 +87,8 @@ diacrit	: HAT		{ $$ = HAT; }
 	| VEC		{ $$ = VEC; }
 	| DYAD		{ $$ = DYAD; }
 	| BAR		{ $$ = BAR; }
+	| LOWBAR	{ $$ = LOWBAR; }
+	| HIGHBAR	{ $$ = HIGHBAR; }
 	| UNDER		{ $$ = UNDER; }	/* underbar */
 	| DOT		{ $$ = DOT; }
 	| TILDE		{ $$ = TILDE; }

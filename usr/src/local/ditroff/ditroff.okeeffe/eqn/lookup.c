@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)lookup.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)lookup.c	2.2 (CWI) 87/04/01";
 #endif lint
 # include "e.h"
-#include "e.def"
+#include "y.tab.h"
 
 #define	TBLSIZE	100
 
@@ -27,6 +27,8 @@ struct {
 	"dot", 		DOT, 
 	"dotdot", 	DOTDOT, 
 	"bar", 		BAR, 
+	"lowbar",	LOWBAR,
+	"highbar",	HIGHBAR,
 	"tilde", 	TILDE, 
 	"utilde", 	UTILDE, 
 	"under", 	UNDER, 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)font.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)font.c	2.2 (CWI) 87/04/01";
 #endif lint
 # include "e.h"
 
@@ -69,8 +69,8 @@ globfont()
 fatbox(p)
 	int p;
 {
+	extern float Fatshift;
+
 	yyval = p;
-	/* nrwid(p, ps, p); */
-	/* printf(".ds %d \\*(%d\\h'-\\n(%du+0.05m'\\*(%d\n", p, p, p, p); */
-	printf(".ds %d \\*(%d\\h'-\\w'\\*(%d'u+0.05m'\\*(%d\n", p, p, p, p);
+	printf(".ds %d \\*(%d\\h'-\\w'\\*(%d'u+%gm'\\*(%d\n", p, p, p, Fatshift, p);
 }
