@@ -16,13 +16,29 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
-/* 
- * Compress - data compression program 
+/*
+ * compress.c - File compression ala IEEE Computer, June 1984.
+ *
+ * Authors:	Spencer W. Thomas	(decvax!utah-cs!thomas)
+ *		Jim McKie		(decvax!mcvax!jim)
+ *		Steve Davies		(decvax!vax135!petsd!peora!srd)
+ *		Ken Turkowski		(decvax!decwrl!turtlevax!ken)
+ *		James A. Woods		(decvax!ihnp4!ames!jaw)
+ *		Joe Orost		(decvax!vax135!petsd!joe)
  */
-#define	min(a,b)	((a>b) ? b : a)
+
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <utime.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * Set USERMEM to the maximum amount of physical user memory available
@@ -120,25 +136,6 @@ char_type magic_header[] = { "\037\235" };	/* 1F 9D */
 */
 #define INIT_BITS 9			/* initial number of bits/code */
 
-/*
- * compress.c - File compression ala IEEE Computer, June 1984.
- *
- * Authors:	Spencer W. Thomas	(decvax!utah-cs!thomas)
- *		Jim McKie		(decvax!mcvax!jim)
- *		Steve Davies		(decvax!vax135!petsd!peora!srd)
- *		Ken Turkowski		(decvax!decwrl!turtlevax!ken)
- *		James A. Woods		(decvax!ihnp4!ames!jaw)
- *		Joe Orost		(decvax!vax135!petsd!joe)
- */
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <stdio.h>
-#include <ctype.h>
-
-#define ARGVAL() (*++(*argv) || (--argc && *++argv))
-
 int n_bits;				/* number of bits/code */
 int maxbits = BITS;			/* user settable max # bits/code */
 code_int maxcode;			/* maximum code, given n_bits */
@@ -176,15 +173,6 @@ int perm_stat = 0;			/* permanent status */
 
 code_int getcode();
 
-Usage() {
-#ifdef DEBUG
-fprintf(stderr,"Usage: compress [-dDVfc] [-b maxbits] [file ...]\n");
-}
-int debug = 0;
-#else
-fprintf(stderr,"Usage: compress [-fvc] [-b maxbits] [file ...]\n");
-}
-#endif /* DEBUG */
 int nomagic = 0;	/* Use a 3-byte magic number header, unless old file */
 int zcat_flg = 0;	/* Write output on stdout, suppress messages */
 int precious = 1;	/* Don't unlink output file on interrupt */
@@ -209,16 +197,14 @@ count_int checkpoint = CHECK_GAP;
 int force = 0;
 char ofname [100];
 #ifdef DEBUG
-int verbose = 0;
-#endif /* DEBUG */
+int debug, verbose;
+#endif
 sig_t oldint;
 int bgnd_flag;
 
 int do_decomp = 0;
 
-/*****************************************************************
- * TAG( main )
- *
+/*-
  * Algorithm from "A Technique for High Performance Data Compression",
  * Terry A. Welch, IEEE Computer Vol 17, No 6 (June 1984), pp 8-19.
  *
@@ -253,130 +239,111 @@ int do_decomp = 0;
  * procedure needs no input table, but tracks the way the table was built.
  */
 
-main( argc, argv )
-register int argc; char **argv;
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-    int overwrite = 0;	/* Do not overwrite unless given -f flag */
-    char tempname[100];
-    char **filelist, **fileptr;
-    char *cp, *rindex(), *malloc();
-    struct stat statbuf;
-    void onintr(), oops();
+	extern int optind;
+	extern char *optarg;
+	struct stat statbuf;
+	int ch, overwrite;
+	char **filelist, **fileptr, *cp, tempname[MAXPATHLEN];
+	void onintr(), oops();
 
-    /* This bg check only works for sh. */
-    if ( (oldint = signal ( SIGINT, SIG_IGN )) != SIG_IGN ) {
-	signal ( SIGINT, onintr );
-	signal ( SIGSEGV, oops );
-    }
-    bgnd_flag = oldint != SIG_DFL;
-#ifdef notdef     /* This works for csh but we don't want it. */
-    { int tgrp;
-    if (bgnd_flag == 0 && ioctl(2, TIOCGPGRP, (char *)&tgrp) == 0 &&
-      getpgrp(0) != tgrp)
-	bgnd_flag = 1;
-    }
-#endif
+	/* This bg check only works for sh. */
+	if ((oldint = signal(SIGINT, SIG_IGN)) != SIG_IGN) {
+		(void)signal(SIGINT, onintr);
+		(void)signal(SIGSEGV, oops);		/* XXX */
+	}
+	bgnd_flag = oldint != SIG_DFL;
     
 #ifdef COMPATIBLE
-    nomagic = 1;	/* Original didn't have a magic number */
-#endif /* COMPATIBLE */
+	nomagic = 1;		/* Original didn't have a magic number */
+#endif
 
-    filelist = fileptr = (char **)(malloc(argc * sizeof(*argv)));
-    *filelist = NULL;
+	if (cp = rindex(argv[0], '/'))
+		++cp;
+	else
+		cp = argv[0];
+	if (strcmp(cp, "uncompress") == 0)
+		do_decomp = 1;
+	else if(strcmp(cp, "zcat") == 0) {
+		do_decomp = 1;
+		zcat_flg = 1;
+	}
 
-    if((cp = rindex(argv[0], '/')) != 0) {
-	cp++;
-    } else {
-	cp = argv[0];
-    }
-    if(strcmp(cp, "uncompress") == 0) {
-	do_decomp = 1;
-    } else if(strcmp(cp, "zcat") == 0) {
-	do_decomp = 1;
-	zcat_flg = 1;
-    }
-
-#ifdef BSD4_2
-    /* 4.2BSD dependent - take it out if not */
-    setlinebuf( stderr );
-#endif /* BSD4_2 */
-
-    /* Argument Processing
-     * All flags are optional.
-     * -D => debug
-     * -V => print Version; debug verbose
-     * -d => do_decomp
-     * -v => unquiet
-     * -f => force overwrite of output file
-     * -n => no header: useful to uncompress old files
-     * -b maxbits => maxbits.  If -b is specified, then maxbits MUST be
-     *	    given also.
-     * -c => cat all output to stdout
-     * -C => generate output compatible with compress 2.0.
-     * if a string is left, must be an input filename.
-     */
-    for (argc--, argv++; argc > 0; argc--, argv++) {
-	if (**argv == '-') {	/* A flag argument */
-	    while (*++(*argv)) {	/* Process all flags in this arg */
-		switch (**argv) {
+	/*
+	 * -b maxbits => maxbits.
+	 * -C => generate output compatible with compress 2.0.
+	 * -c => cat all output to stdout
+	 * -D => debug
+	 * -d => do_decomp
+	 * -f => force overwrite of output file
+	 * -n => no header: useful to uncompress old files
+	 * -V => print Version; debug verbose
+	 * -v => unquiet
+	 */
+	
+	overwrite = 0;
 #ifdef DEBUG
-		    case 'D':
+	while ((ch = getopt(argc, argv, "b:CcDdfnVv")) != EOF)
+#else
+	while ((ch = getopt(argc, argv, "b:Ccdfnv")) != EOF)
+#endif
+		switch(ch) {
+		case 'b':
+			maxbits = atoi(optarg);
+			break;
+		case 'C':
+			block_compress = 0;
+			break;
+		case 'c':
+			zcat_flg = 1;
+			break;
+#ifdef DEBUG
+		case 'D':
 			debug = 1;
 			break;
-		    case 'V':
-			verbose = 1;
-			version();
-			break;
 #endif
-		    case 'v':
-			quiet = 0;
-			break;
-		    case 'd':
+		case 'd':
 			do_decomp = 1;
 			break;
-		    case 'f':
-		    case 'F':
+		case 'f':
 			overwrite = 1;
 			force = 1;
 			break;
-		    case 'n':
+		case 'n':
 			nomagic = 1;
 			break;
-		    case 'C':
-			block_compress = 0;
-			break;
-		    case 'b':
-			if (!ARGVAL()) {
-			    fprintf(stderr, "Missing maxbits\n");
-			    Usage();
-			    exit(1);
-			}
-			maxbits = atoi(*argv);
-			goto nextarg;
-		    case 'c':
-			zcat_flg = 1;
-			break;
-		    case 'q':
+		case 'q':
 			quiet = 1;
 			break;
-		    default:
-			fprintf(stderr, "Unknown flag: '%c'; ", **argv);
-			Usage();
-			exit(1);
+#ifdef DEBUG
+		case 'V':
+			verbose = 1;
+			break;
+#endif
+		case 'v':
+			quiet = 0;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-	    }
-	}
-	else {		/* Input file name */
-	    *fileptr++ = *argv;	/* Build input file list */
-	    *fileptr = NULL;
-	    /* process nextarg; */
-	}
-	nextarg: continue;
-    }
+	argc -= optind;
+	argv += optind;
 
-    if(maxbits < INIT_BITS) maxbits = INIT_BITS;
-    if (maxbits > BITS) maxbits = BITS;
-    maxmaxcode = 1 << maxbits;
+	if (maxbits < INIT_BITS)
+		maxbits = INIT_BITS;
+	if (maxbits > BITS)
+		maxbits = BITS;
+	maxmaxcode = 1 << maxbits;
+
+	/* Build useless input file list. */
+	filelist = fileptr = (char **)(malloc(argc * sizeof(*argv)));
+	while (*argv)
+		*fileptr++ = *argv++;
+	*fileptr = NULL;
 
     if (*filelist != NULL) {
 	for (fileptr = filelist; *fileptr; fileptr++) {
@@ -438,26 +405,18 @@ register int argc; char **argv;
 		 */
 		hsize = HSIZE;
 		if ( fsize < (1 << 12) )
-		    hsize = min ( 5003, HSIZE );
+		    hsize = MIN ( 5003, HSIZE );
 		else if ( fsize < (1 << 13) )
-		    hsize = min ( 9001, HSIZE );
+		    hsize = MIN ( 9001, HSIZE );
 		else if ( fsize < (1 << 14) )
-		    hsize = min ( 18013, HSIZE );
+		    hsize = MIN ( 18013, HSIZE );
 		else if ( fsize < (1 << 15) )
-		    hsize = min ( 35023, HSIZE );
+		    hsize = MIN ( 35023, HSIZE );
 		else if ( fsize < 47000 )
-		    hsize = min ( 50021, HSIZE );
+		    hsize = MIN ( 50021, HSIZE );
 
 		/* Generate output filename */
 		strcpy(ofname, *fileptr);
-#ifndef BSD4_2		/* Short filenames */
-		if ((cp=rindex(ofname,'/')) != NULL)	cp++;
-		else					cp = ofname;
-		if (strlen(cp) > 12) {
-		    fprintf(stderr,"%s: filename too long to tack on .Z\n",cp);
-		    continue;
-		}
-#endif  /* BSD4_2		Long filenames allowed */
 		strcat(ofname, ".Z");
 	    }
 	    /* Check for overwrite of existing file */
@@ -1152,7 +1111,7 @@ char *ifname, *ofname;
 {
     struct stat statbuf;
     int mode;
-    time_t timep[2];
+    struct utimbuf tp;
 
     fclose(stdout);
     if (stat(ifname, &statbuf)) {		/* Get stat on input file */
@@ -1181,9 +1140,9 @@ char *ifname, *ofname;
 	if (chmod(ofname, mode))		/* Copy modes */
 	    perror(ofname);
 	chown(ofname, statbuf.st_uid, statbuf.st_gid);	/* Copy ownership */
-	timep[0] = statbuf.st_atime;
-	timep[1] = statbuf.st_mtime;
-	utime(ofname, timep);	/* Update last accessed and modified times */
+	tp.actime = statbuf.st_atime;
+	tp.modtime = statbuf.st_mtime;
+	utime(ofname, &tp);	/* Update last accessed and modified times */
 	if (unlink(ifname))	/* Remove input file */
 	    perror(ifname);
 	if(!quiet)
@@ -1302,4 +1261,15 @@ long int num, den;
 		q = -q;
 	}
 	fprintf(stream, "%d.%02d%%", q / 100, q % 100);
+}
+
+usage()
+{
+	(void)fprintf(stderr,
+#ifdef DEBUG
+	    "compress [-CDVcdfnv] [-b maxbits] [file ...]\n");
+#else
+	    "compress [-Ccdfnv] [-b maxbits] [file ...]\n");
+#endif
+	exit(1);
 }
