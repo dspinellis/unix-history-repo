@@ -1,4 +1,14 @@
-/*	Kfp.h	1.2	86/01/03	*/
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)Kfp.h	7.1 (Berkeley) %G%
+ */
 
 /*
  * Opcodes to be emulated by kernel software.

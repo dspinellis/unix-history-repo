@@ -1,6 +1,16 @@
-/*
- *	@(#)FP.h	5.1 (Berkeley) %G%
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)FP.h	7.1 (Berkeley) %G%
+ */
+
+/*
  * General definitions of the floating point stuff on Power 6/32.
  * The floating point format definition is:
  *

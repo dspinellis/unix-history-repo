@@ -1,4 +1,14 @@
-/*	Kdivd.s	1.4	90/12/04	*/
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)Kdivd.s	7.1 (Berkeley) %G%
+ */
 
 #include "../math/fp.h"
 #include "../math/Kfp.h"
