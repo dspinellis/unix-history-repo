@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rdist.1	6.3 (Berkeley) %G%
+.\"	@(#)rdist.1	6.4 (Berkeley) %G%
 .\"
 .TH RDIST 1 ""
 .UC 6
@@ -225,6 +225,10 @@ the destination name is not specified,
 the source file name is used.
 Directories in the path name will be created if they
 do not exist on the remote host.
+To help prevent disasters, a non-empty directory on a target host will
+never be replaced with a regular file or a symbolic link.
+However, under the `\-R' option a non-empty directory will be removed
+if the corresponding filename is completely absent on the master host.
 The
 .I options
 are `\-R', `\-h', `\-i', `\-v', `\-w', `\-y', and `\-b'
@@ -247,7 +251,7 @@ The
 command is used to update all of the files in the source list
 .B except
 for the files listed in \fIname list\fP.
-This is mostly used to copy everything in a directory except certain files.
+This is usually used to copy everything in a directory except certain files.
 .PP
 The
 .I except_pat
@@ -259,10 +263,10 @@ command except that \fIpattern list\fP is a list of regular expressions
 for details).
 If one of the patterns matches some string within a file name, that file will
 be ignored.
-Note that since `\\' is a quote character, it must be doubled to become
-part of the regular expression. Variables are expanded in \fIpattern list\fP
-but not shell file pattern matching characters. To include a `$', it
-must be escaped with `\\'.
+Note that since `\e' is a quote character, it must be doubled to become
+part of the regular expression.  Variables are expanded in \fIpattern list\fP
+but not shell file pattern matching characters.  To include a `$', it
+must be escaped with `\e'.
 .PP
 The
 .I special
@@ -306,7 +310,7 @@ ${FILES} -> ${HOSTS}
 
 srcs:
 /usr/src/bin -> arpa
-	except_pat ( \e\e.o$ /SCCS$ ) ;
+	except_pat ( \e\e.o\e$ /SCCS\e$ ) ;
 
 IMAGEN = (ips dviimp catdvi)
 
@@ -328,11 +332,21 @@ distfile	input command file
 .fi
 .SH "SEE ALSO"
 sh(1), csh(1), stat(2)
+.SH DIAGNOSTICS
+A complaint about mismatch of rdist version numbers may really stem
+from some problem with starting your shell, e.g., you are in too many groups.
 .SH BUGS
 Source files must reside on the local host where rdist is executed.
 .PP
 There is no easy way to have a special command executed after all files
 in a directory have been updated.
 .PP
-Variable expansion only works for name lists. Should be a general macro
+Variable expansion only works for name lists; there should be a general macro
 facility.
+.PP
+.I Rdist
+aborts on files which have a negative mtime (before Jan 1, 1970).
+.PP
+There should be a `force' option to allow replacement of non-empty directories
+by regular files or symlinks.  A means of updating file modes and owners
+of otherwise identical files is also needed.
