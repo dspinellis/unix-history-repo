@@ -19,10 +19,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)crypt.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
+#include <pwd.h>
 
 /*
  * UNIX password, and DES, encryption.
@@ -469,12 +470,8 @@ crypt(key, setting)
 	des_setkey((char *)keyblock.b);	/* also initializes "a64toi" */
 
 	encp = &cryptresult[0];
-	if (*setting != '_') {	/* old style */
-		num_iter = 25;
-		salt_size = 2;
-		key_size = 8;
-	}
-	else {			/* new style */
+	switch (*setting) {
+	case _PASSWORD_EFMT1:
 		*encp++ = *setting++;
 
 		/* get iteration count */
@@ -489,6 +486,11 @@ crypt(key, setting)
 		encp += 4;
 		salt_size = 4;
 		key_size = 128;
+		break;
+	default:
+		num_iter = 25;
+		salt_size = 2;
+		key_size = 8;
 	}
 
 	salt = 0;
@@ -933,13 +935,13 @@ prtab(s, t, num_rows)
 {
 	register int i, j;
 
-	printf("%s:\n", s);
+	(void)printf("%s:\n", s);
 	for (i = 0; i < num_rows; i++) {
 		for (j = 0; j < 8; j++) {
-			 printf("%3d", t[i*8+j]);
+			 (void)printf("%3d", t[i*8+j]);
 		}
-		printf("\n");
+		(void)printf("\n");
 	}
-	printf("\n");
+	(void)printf("\n");
 }
 #endif
