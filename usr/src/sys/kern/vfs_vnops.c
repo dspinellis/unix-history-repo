@@ -1,4 +1,4 @@
-/*	fio.c	4.25	82/07/17	*/
+/*	vfs_vnops.c	4.26	82/08/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,21 +14,13 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/proc.h"
-#ifdef EFS
-#include "../net/in.h"
-#include "../h/efs.h"
-#endif
 
 /*
  * Openi called to allow handler
  * of special files to initialize and
  * validate before actual IO.
  */
-#ifdef EFS
-openi(ip, rw, trf)
-#else
-openi(ip, rw)
-#endif
+openi(ip, mode)
 	register struct inode *ip;
 {
 	dev_t dev;
@@ -41,17 +33,13 @@ openi(ip, rw)
 	case IFCHR:
 		if (maj >= nchrdev)
 			goto bad;
-#ifdef EFS
-		(*cdevsw[maj].d_open)(dev, rw, trf);
-#else
-		(*cdevsw[maj].d_open)(dev, rw);
-#endif
+		(*cdevsw[maj].d_open)(dev, mode);
 		break;
 
 	case IFBLK:
 		if (maj >= nblkdev)
 			goto bad;
-		(*bdevsw[maj].d_open)(dev, rw);
+		(*bdevsw[maj].d_open)(dev, mode);
 	}
 	return;
 
@@ -123,14 +111,6 @@ owner(follow)
 	ip = namei(uchar, 0, follow);
 	if (ip == NULL)
 		return (NULL);
-#ifdef EFS
-	/*
-	 * References to extended file system are
-	 * returned to the caller.
-	 */
-	if (efsinode(ip))
-		return (ip);
-#endif
 	if (u.u_uid == ip->i_uid)
 		return (ip);
 	if (suser())
