@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.15 (Berkeley) %G%
+ *	@(#)tp.trans	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.15 (Berkeley) %G% */
+/* @(#)tp.trans	7.16 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -366,14 +366,12 @@ TP_AKWAIT		<==		 TP_CONFIRMING  							T_ACPT_req
 TP_CLOSED		<==		 TP_CONFIRMING								T_ACPT_req
 	DEFAULT /* emit failed */
 	{
-		register struct tp_ref *r = $P.tp_refp;
-
 		IFDEBUG(D_CONN)
 			printf("event: CR_TPDU emit CC failed done " );
 		ENDDEBUG
 		soisdisconnected($P.tp_sock);
-		tp_recycle_tsuffix( $P );
-		tp_freeref(r);
+		tp_recycle_tsuffix($P);
+		tp_freeref($P.tp_lref);
 		tp_detach($P);
 	}
 ;
@@ -1045,7 +1043,7 @@ TP_REFWAIT 		<==		TP_CLOSING									TM_retrans
 TP_CLOSED 		<==		TP_REFWAIT 									TM_reference
 	DEFAULT
 	{
-		tp_freeref($P.tp_refp);
+		tp_freeref($P.tp_lref);
 		tp_detach($P);
 	}
 ;

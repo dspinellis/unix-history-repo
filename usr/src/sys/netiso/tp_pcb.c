@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.18 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -472,25 +472,28 @@ tp_soisdisconnected(tpcb)
  * NOTES:	better be called at clock priority !!!!!
  */
 void
-tp_freeref(r)
-	register struct tp_ref *r;
+tp_freeref(n)
+RefNum n;
 {
-	register struct tp_pcb *tpcb = r->tpr_pcb;
+	register struct tp_ref *r = tp_ref + n;
+	register struct tp_pcb *tpcb;
+
+	tpcb = r->tpr_pcb;
 	IFDEBUG(D_TIMER)
-		printf("tp_freeref called for ref %d maxrefopen %d\n", 
-		r - tp_ref, tp_refinfo.tpr_maxopen);
+		printf("tp_freeref called for ref %d pcb %x maxrefopen %d\n", 
+		n, tpcb, tp_refinfo.tpr_maxopen);
 	ENDDEBUG
 	IFTRACE(D_TIMER)
-		tptrace(TPPTmisc, "tp_freeref ref maxrefopen",
-		r - tp_ref, tp_refinfo.tpr_maxopen, 0, 0);
+		tptrace(TPPTmisc, "tp_freeref ref maxrefopen pcb",
+		n, tp_refinfo.tpr_maxopen, tpcb, 0);
 	ENDTRACE
-	r->tpr_state = REF_FREE;
+	if (tpcb == 0)
+		return;
 	IFDEBUG(D_CONN)
-		printf("tp_freeref: CLEARING tpr_pcb 0x%x\n", r->tpr_pcb);
+		printf("tp_freeref: CLEARING tpr_pcb 0x%x\n", tpcb);
 	ENDDEBUG
 	r->tpr_pcb = (struct tp_pcb *)0;
-	if (tpcb)
-		tpcb->tp_refp = 0;
+	tpcb->tp_refstate = REF_FREE;
 
 	for (r = tp_ref + tp_refinfo.tpr_maxopen; r > tp_ref; r--)
 		if (r->tpr_pcb)
@@ -551,12 +554,11 @@ tp_getref(tpcb)
 
 got_one:
 	r->tpr_pcb = tpcb;
-	r->tpr_state = REF_OPENING;
-	tpcb->tp_refp = r;
+	tpcb->tp_refstate = REF_OPENING;
 	i = r - tp_refinfo.tpr_base;
 	if (tp_refinfo.tpr_maxopen < i) 
 		tp_refinfo.tpr_maxopen = i;
-	return i;
+	return (u_long)i;
 }
 
 /*
@@ -705,7 +707,7 @@ bad4:
 	IFDEBUG(D_CONN)
 		printf("BAD4 in tp_attach, so 0x%x\n", so);
 	ENDDEBUG
-	tp_freeref(tpcb->tp_refp);
+	tp_freeref(tpcb->tp_lref);
 
 bad3:
 	IFDEBUG(D_CONN)
@@ -818,14 +820,13 @@ tp_detach(tpcb)
 		else
 			printf("tp_detach from listen: should panic\n");
 	}
-	if (tpcb->tp_refp && tpcb->tp_refp->tpr_state == REF_OPENING ) {
+	if (tpcb->tp_refstate == REF_OPENING ) {
 		/* no connection existed here so no reference timer will be called */
 		IFDEBUG(D_CONN)
-			printf("SETTING ref %d, 0x%x to REF_FREE\n", tpcb->tp_lref,
-			tpcb->tp_refp - &tp_ref[0]);
+			printf("SETTING ref %d to REF_FREE\n", tpcb->tp_lref);
 		ENDDEBUG
 
-		tp_freeref(tpcb->tp_refp);
+		tp_freeref(tpcb->tp_lref);
 	}
 #ifdef TP_PERF_MEAS
 	/* 
