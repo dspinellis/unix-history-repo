@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <fstab.h>
@@ -34,6 +34,7 @@ fstabscan()
 	static char line[MAXLINELENGTH];
 	char subline[MAXLINELENGTH];
 	char *fgets(), *strtok();
+	int typexx;
 
 	for (;;) {
 		if (!(cp = fgets(line, sizeof(line), _fs_fp)))
@@ -52,7 +53,7 @@ fstabscan()
 				_fs_fstab.fs_passno = atoi(cp);
 		}
 		strcpy(subline, _fs_fstab.fs_mntops);
-		for (cp = strtok(subline, ","); cp;
+		for (typexx = 0, cp = strtok(subline, ","); cp;
 		     cp = strtok((char *)NULL, ",")) {
 			if (strlen(cp) != 2)
 				continue;
@@ -74,9 +75,12 @@ fstabscan()
 			}
 			if (!strcmp(cp, FSTAB_XX)) {
 				_fs_fstab.fs_type = FSTAB_XX;
+				typexx++;
 				break;
 			}
 		}
+		if (typexx)
+			continue;
 		if (cp != NULL)
 			return(1);
 	bad:
