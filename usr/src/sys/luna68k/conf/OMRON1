@@ -1,11 +1,11 @@
-#	@(#)OMRON1	8.1 (Berkeley) %G%
+#	@(#)OMRON1	8.2 (Berkeley) %G%
 #
 
 machine		"luna68k"
 cpu		"LUNA1"
 ident		"OMRON1"
 
-timezone	5
+timezone	-9
 maxusers	16
 
 # Standard options
