@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1662,6 +1662,43 @@ shortenstring(s, m)
 	strcpy(buf + m, "...");
 	strcpy(buf + m + 3, s + l - m);
 	return buf;
+}
+/*
+**  SHORTEN_HOSTNAME -- strip local domain information off of hostname.
+**
+**	Parameters:
+**		host -- the host to shorten (stripped in place).
+**
+**	Returns:
+**		none.
+*/
+
+void
+shorten_hostname(host)
+	char host[];
+{
+	register char *p;
+	char *mydom;
+	int i;
+
+	/* strip off final dot */
+	p = &host[strlen(host) - 1];
+	if (*p == '.')
+		*p = '\0';
+
+	/* see if there is any domain at all -- if not, we are done */
+	p = strchr(host, '.');
+	if (p == NULL)
+		return;
+
+	/* yes, we have a domain -- see if it looks like us */
+	mydom = macvalue('m', CurEnv);
+	if (mydom == NULL)
+		mydom = "";
+	i = strlen(++p);
+	if (strncasecmp(p, mydom, i) == 0 &&
+	    (mydom[i] == '.' || mydom[i] == '\0'))
+		*--p = '\0';
 }
 /*
 **  GET_COLUMN  -- look up a Column in a line buffer

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	8.2 (Berkeley) %G%
+ *	@(#)pathnames.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _PATH_SENDMAILCF
@@ -17,4 +17,8 @@
 # else
 #  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
 # endif
+#endif
+
+#ifndef _PATH_HOSTS
+# define _PATH_HOSTS		"/etc/hosts"
 #endif
