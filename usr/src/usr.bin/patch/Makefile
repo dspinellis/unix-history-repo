@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	patch
 SRCS=	patch.c pch.c inp.c version.c util.c
