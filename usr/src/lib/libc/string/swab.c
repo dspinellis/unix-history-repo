@@ -1,17 +1,24 @@
-/* @(#)swab.c	4.1 (Berkeley) %G% */
+/*	swab.c	4.2	83/06/27	*/
+
 /*
- * Swap bytes in 16-bit [half-]words
- * for going between the 11 and the interdata
+ * Swab bytes
+ * Jeffrey Mogul, Stanford
  */
 
-swab(pf, pt, n)
-register short *pf, *pt;
-register n;
+swab(from, to, n)
+	register char *from, *to;
+	register int n;
 {
-
-	n /= 2;
+	register unsigned long temp;
+	
+	n >>= 1; n++;
+#define	STEP	temp = *from++,*to++ = *from++,*to++ = temp
+	/* round to multiple of 8 */
+	while ((--n) & 07)
+		STEP;
+	n >>= 3;
 	while (--n >= 0) {
-		*pt++ = (*pf << 8) + ((*pf >> 8) & 0377);
-		pf++;
+		STEP; STEP; STEP; STEP;
+		STEP; STEP; STEP; STEP;
 	}
 }
