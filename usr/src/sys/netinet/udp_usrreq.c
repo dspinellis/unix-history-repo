@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.9	84/09/05	*/
+/*	udp_usrreq.c	6.10	85/03/18	*/
 
 #include "param.h"
 #include "dir.h"
@@ -223,6 +223,9 @@ udp_output(inp, m0)
 	    so->so_options & SO_BROADCAST));
 }
 
+int	udp_sendspace = 2048;		/* really max datagram size */
+int	udp_recvspace = 4 * (1024+sizeof(struct sockaddr_in)); /* 4 1K dgrams */
+
 /*ARGSUSED*/
 udp_usrreq(so, req, m, nam, rights)
 	struct socket *so;
@@ -232,6 +235,9 @@ udp_usrreq(so, req, m, nam, rights)
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
 
+	if (req == PRU_CONTROL)
+		return (in_control(so, (int)m, (caddr_t)nam,
+			(struct ifnet *)rights));
 	if (rights && rights->m_len) {
 		error = EINVAL;
 		goto release;
@@ -250,7 +256,7 @@ udp_usrreq(so, req, m, nam, rights)
 		error = in_pcballoc(so, &udb);
 		if (error)
 			break;
-		error = soreserve(so, 2048, 2048);
+		error = soreserve(so, udp_sendspace, udp_recvspace);
 		if (error)
 			break;
 		break;
@@ -331,8 +337,8 @@ udp_usrreq(so, req, m, nam, rights)
 		m = NULL;
 		if (nam) {
 			in_pcbdisconnect(inp);
-			splx(s);
 			inp->inp_laddr = laddr;
+			splx(s);
 		}
 		}
 		break;
@@ -365,7 +371,6 @@ udp_usrreq(so, req, m, nam, rights)
 		error =  EOPNOTSUPP;
 		break;
 
-	case PRU_CONTROL:
 	case PRU_RCVD:
 	case PRU_RCVOOB:
 		return (EOPNOTSUPP);	/* do not free mbuf's */
