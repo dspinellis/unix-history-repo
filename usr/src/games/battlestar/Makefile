@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	battlestar
 SRCS=	battlestar.c com1.c com2.c com3.c com4.c com5.c com6.c com7.c \
