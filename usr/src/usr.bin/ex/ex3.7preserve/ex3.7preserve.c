@@ -6,8 +6,8 @@ static char *sccsid = "@(#)ex3.7preserve.c	7.7	%G%";
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include <pwd.h>
-#include "local/uparm.h"
-				/* mjm: "/tmp" --> TMP */
+#include "uparm.h"
+
 #define TMP	"/tmp"
 
 #ifdef VMUNIX
@@ -23,7 +23,8 @@ char xstr[1];			/* make loader happy */
  * Bill Joy UCB November 13, 1977
  *
  * This routine is very naive - it doesn't remove anything from
- * usrpath(preserve)... this may mean that we  * stuff there... the danger in doing anything with usrpath(preserve)
+ * usrpath(preserve)... this may mean that we leave
+ * stuff there... the danger in doing anything with usrpath(preserve)
  * is that the clock may be screwed up and we may get confused.
  *
  * We are called in two ways - first from the editor with no argumentss
@@ -106,13 +107,8 @@ main(argc)
 		exit(1);
 	}
 	while ((dirent = readdir(tf)) != NULL) {
-		/*
-		 * Ex temporaries must begin with Ex;
-		 * we check that the 10th character of the name is null
-		 * so we won't have to worry about non-null terminated names
-		 * later on.
-		 */
-		if (dirent->d_name[0] != 'E' || dirent->d_name[1] != 'x' || dirent->d_name[10])
+		/* Ex temporaries must begin with Ex. */
+		if (dirent->d_name[0] != 'E' || dirent->d_name[1] != 'x')
 			continue;
 		if (stat(dirent->d_name, &stbuf))
 			continue;
