@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.31		%G%);
+SCCSID(@(#)collect.c	3.32		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -45,7 +45,6 @@ maketemp(from)
 	extern char *hvalue();
 	extern char *mktemp();
 	static char tempfname[40];
-	extern char *QueueDir;
 	extern char *macvalue();
 	extern char *index();
 
@@ -60,7 +59,8 @@ maketemp(from)
 	if ((tf = fopen(tempfname, "w")) == NULL)
 	{
 		syserr("Cannot create %s", tempfname);
-		return;
+		NoReturn = TRUE;
+		finis();
 	}
 	InFileName = tempfname;
 
@@ -68,7 +68,7 @@ maketemp(from)
 	**  Create the Mail-From line if we want to.
 	*/
 
-	if (macvalue('s') != NULL)
+	if (Smtp && macvalue('s') != NULL)
 	{
 		char xbuf[50];
 
@@ -385,12 +385,15 @@ eatfrom(fm)
 	if (*p != NULL)
 	{
 		char *q;
+		extern char *arpadate();
 
 		/* we have found a date */
 		q = xalloc(25);
 		strncpy(q, p, 25);
 		q[24] = '\0';
 		define('d', q);
+		q = arpadate(q);
+		define('a', newstr(q));
 	}
 }
 
