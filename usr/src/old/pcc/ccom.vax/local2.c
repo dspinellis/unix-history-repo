@@ -1,15 +1,16 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.28 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.29 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
-# include "ctype.h"
+# include <ctype.h>
+
+# define putstr(s)	fputs((s), stdout)
+
 # ifdef FORT
 int ftlab1, ftlab2;
 # endif
 /* a lot of the machine dependent parts of the second pass */
-
-# define putstr(s)	fputs((s), stdout)
 
 # define BITMASK(n) ((1L<<n)-1)
 
@@ -25,12 +26,16 @@ lineid( l, fn ) char *fn; {
 
 
 eobl2(){
-	OFFSZ spoff;	/* offset from stack pointer */
-#ifdef FORT
+	register OFFSZ spoff;	/* offset from stack pointer */
+#ifndef FORT
+	extern int ftlab1, ftlab2;
+#endif
+
 	spoff = maxoff;
 	if( spoff >= AUTOINIT ) spoff -= AUTOINIT;
 	spoff /= SZCHAR;
 	SETOFF(spoff,4);
+#ifdef FORT
 #ifndef FLEXNAMES
 	printf( "	.set	.F%d,%ld\n", ftnno, spoff );
 #else
@@ -38,12 +43,6 @@ eobl2(){
 	printf( "	.set	LF%d,%ld\n", ftnno, spoff );
 #endif
 #else
-	extern int ftlab1, ftlab2;
-
-	spoff = maxoff;
-	if( spoff >= AUTOINIT ) spoff -= AUTOINIT;
-	spoff /= SZCHAR;
-	SETOFF(spoff,4);
 	printf( "L%d:\n", ftlab1);
 	if( spoff!=0 )
 		if( spoff < 64 )
@@ -57,13 +56,6 @@ eobl2(){
 
 struct hoptab { int opmask; char * opstring; } ioptab[] = {
 
-	ASG PLUS, "add",
-	ASG MINUS, "sub",
-	ASG MUL, "mul",
-	ASG DIV, "div",
-	ASG OR, "bis",
-	ASG ER,	"xor",
-	ASG AND, "bic",
 	PLUS,	"add",
 	MINUS,	"sub",
 	MUL,	"mul",
@@ -78,25 +70,11 @@ hopcode( f, o ){
 
 	register struct hoptab *q;
 
+	if(asgop(o))
+		o = NOASG o;
 	for( q = ioptab;  q->opmask>=0; ++q ){
 		if( q->opmask == o ){
-			putstr( q->opstring );
-/* tbl
-			if( f == 'F' ) putchar( 'e' );
-			else if( f == 'D' ) putchar( 'd' );
-   tbl */
-/* tbl */
-			switch( f ) {
-				case 'L':
-				case 'W':
-				case 'B':
-				case 'D':
-				case 'F':
-					putchar(tolower(f));
-					break;
-
-				}
-/* tbl */
+			printf( "%s%c", q->opstring, tolower(f));
 			return;
 			}
 		}
@@ -110,7 +88,6 @@ rnames[] = {  /* keyed to register number tokens */
 	"r2", "r3", "r4", "r5",
 	"r6", "r7", "r8", "r9", "r10", "r11",
 	"ap", "fp", "sp", "pc",
-
 	};
 
 int rstatus[] = {
@@ -118,7 +95,6 @@ int rstatus[] = {
 	SAREG|STAREG, SAREG|STAREG, SAREG|STAREG, SAREG|STAREG,
 	SAREG, SAREG, SAREG, SAREG, SAREG, SAREG,
 	SAREG, SAREG, SAREG, SAREG,
-
 	};
 
 tlen(p) NODE *p;
@@ -155,6 +131,7 @@ prtype(n) NODE *n;
 {
 	switch (n->in.type)
 		{
+
 		case DOUBLE:
 			putchar('d');
 			return;
@@ -190,7 +167,7 @@ prtype(n) NODE *n;
 }
 
 zzzcode( p, c ) register NODE *p; {
-	register m;
+	register int m;
 	int val;
 	switch( c ){
 
@@ -202,184 +179,14 @@ zzzcode( p, c ) register NODE *p; {
 		deflab( m );
 		return;
 
-	case 'I':
 	case 'P':
 		cbgen( p->in.op, p->bn.label, c );
 		return;
 
 	case 'A':
-		{
-		register NODE *l, *r;
-
-		if (xdebug) eprint(p, 0, &val, &val);
-		r = getlr(p, 'R');
-		if (p->in.op == ASSIGN)
-			l = getlr(p, 'L');
-		else if (p->in.op == SCONV) {
-			l = resc;
-#if defined(FORT) || defined(SPRECC)
-			l->in.type = r->in.type;
-#else
-			l->in.type = r->in.type==FLOAT ? DOUBLE : r->in.type;
-#endif
-			r = getlr(p, 'L');
-			}
-		else {		/* OPLTYPE */
-			l = resc;
-#if defined(FORT) || defined(SPRECC)
-			l->in.type = (r->in.type==FLOAT || r->in.type==DOUBLE ? r->in.type : INT);
-#else
-			l->in.type = (r->in.type==FLOAT || r->in.type==DOUBLE ? DOUBLE : INT);
-#endif
-			}
-		if (r->in.op == ICON)
-			if (r->in.name[0] == '\0') {
-				if (r->tn.lval == 0) {
-					putstr("clr");
-					prtype(l);
-					putchar('\t');
-					adrput(l);
-					return;
-					}
-				if (r->tn.lval < 0 && r->tn.lval >= -63) {
-					putstr("mneg");
-					prtype(l);
-					r->tn.lval = -r->tn.lval;
-					goto ops;
-					}
-				if (r->tn.lval < 0)
-					r->in.type = r->tn.lval >= -128 ? CHAR
-						: (r->tn.lval >= -32768 ? SHORT
-						: INT);
-				else if (l->in.type == FLOAT ||
-				    l->in.type == DOUBLE)
-					r->in.type = r->tn.lval <= 63 ? INT
-						: (r->tn.lval <= 127 ? CHAR
-						: (r->tn.lval <= 32767 ? SHORT
-						: INT));
-				else
-					r->in.type = r->tn.lval <= 63 ? INT
-						: (r->tn.lval <= 127 ? CHAR
-						: (r->tn.lval <= 255 ? UCHAR
-						: (r->tn.lval <= 32767 ? SHORT
-						: (r->tn.lval <= 65535 ? USHORT
-						: INT))));
-				}
-			else {
-				putstr("moval");
-				putchar('\t');
-				acon(r);
-				putchar(',');
-				adrput(l);
-				return;
-				}
-
-		if (p->in.op == SCONV &&
-		    !(l->in.type == FLOAT || l->in.type == DOUBLE) &&
-		    !mixtypes(l, r)) {
-			/*
-			 * Because registers must always contain objects
-			 * of the same width as INTs, we may have to
-			 * perform two conversions to get an INT.  Can
-			 * the conversions be collapsed into one?
-			 */
-			if (m = collapsible(l, r))
-				r->in.type = m;
-			else {
-				/*
-				 * Two steps are required.
-				 */
-				NODE *x = &resc[1];
-
-				*x = *l;
-				if (tlen(x) > tlen(r) && ISUNSIGNED(r->in.type))
-					putstr("movz");
-				else
-					putstr("cvt");
-				prtype(r);
-				prtype(x);
-				putchar('\t');
-				adrput(r);
-				putchar(',');
-				adrput(x);
-				putchar('\n');
-				putchar('\t');
-				r = x;
-				}
-			l->in.type = (ISUNSIGNED(l->in.type) ? UNSIGNED : INT);
-			}
-
-		if ((r->in.type == UNSIGNED || r->in.type == ULONG) &&
-		    mixtypes(l, r)) {
-			int label1, label2;
-
-			label1 = getlab();
-			label2 = getlab();
-
-			putstr("movl\t");
-			adrput(r);
-			putchar(',');
-			adrput(l);
-			putstr("\n\tjbsc\t$31,");
-			adrput(l);
-			printf(",L%d\n\tcvtl", label1);
-			prtype(l);
-			putchar('\t');
-			adrput(l);
-			putchar(',');
-			adrput(l);
-			printf("\n\tjbr\tL%d\nL%d:\n\tcvtl", label2, label1);
-			prtype(l);
-			putchar('\t');
-			adrput(l);
-			putchar(',');
-			adrput(l);
-			putstr("\n\tadd");
-			prtype(l);
-			putstr("2\t$0");
-			prtype(l);
-			putstr("2.147483648e9,");
-			adrput(l);
-			printf("\nL%d:", label2);
-
-			return;
-			}
-
-		if (!mixtypes(l,r)) {
-			if (tlen(l) == tlen(r)) {
-				putstr("mov");
-#ifdef FORT
-				if (Oflag)
-					prtype(l);
-				else {
-					if (l->in.type == DOUBLE)
-						putchar('q');
-					else if(l->in.type == FLOAT)
-						putchar('l');
-					else
-						prtype(l);
-					}
-#else
-				prtype(l);
-#endif FORT
-				goto ops;
-				}
-			else if (tlen(l) > tlen(r) && ISUNSIGNED(r->in.type))
-				putstr("movz");
-			else
-				putstr("cvt");
-			}
-		else
-			putstr("cvt");
-		prtype(r);
-		prtype(l);
-	ops:
-		putchar('\t');
-		adrput(r);
-		putchar(',');
-		adrput(l);
+	case 'V':
+		sconv( p, c == 'V' );
 		return;
-		}
 
 	case 'G':	/* i *= f; asgops with int lhs and float rhs */
 		{
@@ -463,7 +270,7 @@ zzzcode( p, c ) register NODE *p; {
 		if( tlen(r) == sizeof(int) && r->in.type != FLOAT )
 			putstr("movl");
 		else {
-			putstr("cvt");
+			putstr(ISUNSIGNED(r->in.type) ? "movz" : "cvt");
 			prtype(r);
 			putchar('l');
 			}
@@ -489,13 +296,13 @@ zzzcode( p, c ) register NODE *p; {
 	case 'E':	/* INCR and DECR, FOREFF */
 		if (p->in.right->in.op == ICON && p->in.right->tn.lval == 1)
 			{
-			putstr( p->in.op == INCR ? "inc" : "dec" );
+			putstr(p->in.op == INCR ? "inc" : "dec");
 			prtype(p->in.left);
 			putchar('\t');
 			adrput(p->in.left);
 			return;
 			}
-		putstr( p->in.op == INCR ? "add" : "sub" );
+		putstr(p->in.op == INCR ? "add" : "sub");
 		prtype(p->in.left);
 		putchar('2');
 		putchar('\t');
@@ -553,64 +360,278 @@ zzzcode( p, c ) register NODE *p; {
 		}
 
 	case 'S':  /* structure assignment */
-		{
-			register NODE *l, *r;
-			register size;
-
-			if( p->in.op == STASG ){
-				l = p->in.left;
-				r = p->in.right;
-
-				}
-			else if( p->in.op == STARG ){  /* store an arg into a temporary */
-				r = p->in.left;
-				}
-			else cerror( "STASG bad" );
-
-			if( r->in.op == ICON ) r->in.op = NAME;
-			else if( r->in.op == REG ) r->in.op = OREG;
-			else if( r->in.op != OREG ) cerror( "STASG-r" );
-
-			size = p->stn.stsize;
-
-			if( size <= 0 || size > 65535 )
-				cerror("structure size <0=0 or >65535");
-
-			switch(size) {
-				case 1:
-					putstr("	movb	");
-					break;
-				case 2:
-					putstr("	movw	");
-					break;
-				case 4:
-					putstr("	movl	");
-					break;
-				case 8:
-					putstr("	movq	");
-					break;
-				default:
-					printf("	movc3	$%d,", size);
-					break;
-			}
-			adrput(r);
-			if( p->in.op == STASG ){
-				putchar(',');
-				adrput(l);
-				putchar('\n');
-				}
-			else
-				putstr(",(sp)\n");
-
-			if( r->in.op == NAME ) r->in.op = ICON;
-			else if( r->in.op == OREG ) r->in.op = REG;
-
-			}
+		stasg(p);
 		break;
 
 	default:
 		cerror( "illegal zzzcode" );
 		}
+	}
+
+stasg(p)
+	register NODE *p;
+{
+	register NODE *l, *r;
+	register size;
+
+	if( p->in.op == STASG ){
+		l = p->in.left;
+		r = p->in.right;
+
+		}
+	else if( p->in.op == STARG ){  /* store an arg into a temporary */
+		r = p->in.left;
+		}
+	else cerror( "STASG bad" );
+
+	if( r->in.op == ICON ) r->in.op = NAME;
+	else if( r->in.op == REG ) r->in.op = OREG;
+	else if( r->in.op != OREG ) cerror( "STASG-r" );
+
+	size = p->stn.stsize;
+
+	if( size <= 0 || size > 65535 )
+		cerror("structure size <0=0 or >65535");
+
+	switch(size) {
+		case 1:
+			putstr("	movb	");
+			break;
+		case 2:
+			putstr("	movw	");
+			break;
+		case 4:
+			putstr("	movl	");
+			break;
+		case 8:
+			putstr("	movq	");
+			break;
+		default:
+			printf("	movc3	$%d,", size);
+			break;
+	}
+	adrput(r);
+	if( p->in.op == STASG ){
+		putchar(',');
+		adrput(l);
+		putchar('\n');
+		}
+	else
+		putstr(",(sp)\n");
+
+	if( r->in.op == NAME ) r->in.op = ICON;
+	else if( r->in.op == OREG ) r->in.op = REG;
+	}
+
+NODE *makearg( ty ) int ty; {
+	register NODE *p, *q;
+
+	/* build a -(sp) operand */
+	p = talloc();
+	p->in.op = REG;
+	/* the type needn't be right, just consistent */
+	p->in.type = INCREF(ty);
+	p->tn.rval = SP;
+	p->tn.lval = 0;
+	q = talloc();
+	q->in.op = ASG MINUS;
+	q->in.type = INCREF(ty);
+	q->in.left = p;
+	p = talloc();
+	p->in.op = ICON;
+	p->in.type = INT;
+	p->tn.name = "";
+	p->tn.lval = tlen(ty);
+	q->in.right = p;
+	p = talloc();
+	p->in.op = UNARY MUL;
+	p->in.left = q;
+	return( p );
+	}
+
+sconv( p, forarg ) register NODE *p; {
+	register NODE *l, *r;
+	int m, val;
+
+	if (xdebug) eprint(p, 0, &val, &val);
+	r = getlr(p, 'R');
+	if (p->in.op == ASSIGN)
+		l = getlr(p, 'L');
+	else if (p->in.op == SCONV) {
+#if defined(FORT) || defined(SPRECC)
+		m = r->in.type;
+#else
+		m = r->in.type==FLOAT ? DOUBLE : r->in.type;
+#endif
+		if (forarg)
+			l = makearg( m );
+		else
+			l = resc;
+		l->in.type = m;
+		r = getlr(p, 'L');
+		}
+	else {		/* OPLTYPE */
+#if defined(FORT) || defined(SPRECC)
+		m = (r->in.type==FLOAT || r->in.type==DOUBLE ? r->in.type : INT);
+#else
+		m = (r->in.type==FLOAT || r->in.type==DOUBLE ? DOUBLE : INT);
+#endif
+		if (forarg)
+			l = makearg( m );
+		else
+			l = resc;
+		l->in.type = m;
+		}
+	if (r->in.op == ICON)
+		if (r->in.name[0] == '\0') {
+			if (r->tn.lval == 0) {
+				putstr("clr");
+				prtype(l);
+				putchar('\t');
+				adrput(l);
+				goto cleanup;
+				}
+			if (r->tn.lval < 0 && r->tn.lval >= -63) {
+				putstr("mneg");
+				prtype(l);
+				r->tn.lval = -r->tn.lval;
+				goto ops;
+				}
+			if (r->tn.lval < 0)
+				r->in.type = r->tn.lval >= -128 ? CHAR
+					: (r->tn.lval >= -32768 ? SHORT
+					: INT);
+			else if (l->in.type == FLOAT ||
+			    l->in.type == DOUBLE)
+				r->in.type = r->tn.lval <= 63 ? INT
+					: (r->tn.lval <= 127 ? CHAR
+					: (r->tn.lval <= 32767 ? SHORT
+					: INT));
+			else
+				r->in.type = r->tn.lval <= 63 ? INT
+					: (r->tn.lval <= 127 ? CHAR
+					: (r->tn.lval <= 255 ? UCHAR
+					: (r->tn.lval <= 32767 ? SHORT
+					: (r->tn.lval <= 65535 ? USHORT
+					: INT))));
+			}
+		else {
+			putstr("moval");
+			putchar('\t');
+			acon(r);
+			putchar(',');
+			adrput(l);
+			goto cleanup;
+			}
+
+	if (p->in.op == SCONV &&
+	    !(l->in.type == FLOAT || l->in.type == DOUBLE) &&
+	    !mixtypes(l, r)) {
+		/*
+		 * Because registers must always contain objects
+		 * of the same width as INTs, we may have to
+		 * perform two conversions to get an INT.  Can
+		 * the conversions be collapsed into one?
+		 */
+		if (m = collapsible(l, r))
+			r->in.type = m;
+		else {
+			/*
+			 * Two steps are required.
+			 */
+			NODE *x = &resc[1];
+
+			*x = *l;
+			if (tlen(x) > tlen(r) && ISUNSIGNED(r->in.type))
+				putstr("movz");
+			else
+				putstr("cvt");
+			prtype(r);
+			prtype(x);
+			putchar('\t');
+			adrput(r);
+			putchar(',');
+			adrput(x);
+			putchar('\n');
+			putchar('\t');
+			r = x;
+			}
+		l->in.type = (ISUNSIGNED(l->in.type) ? UNSIGNED : INT);
+		}
+
+	if ((r->in.type == UNSIGNED || r->in.type == ULONG) &&
+	    mixtypes(l, r)) {
+		int label1, label2;
+
+		label1 = getlab();
+		label2 = getlab();
+
+		putstr("movl\t");
+		adrput(r);
+		putchar(',');
+		adrput(l);
+		putstr("\n\tjbsc\t$31,");
+		adrput(l);
+		printf(",L%d\n\tcvtl", label1);
+		prtype(l);
+		putchar('\t');
+		adrput(l);
+		putchar(',');
+		adrput(l);
+		printf("\n\tjbr\tL%d\nL%d:\n\tcvtl", label2, label1);
+		prtype(l);
+		putchar('\t');
+		adrput(l);
+		putchar(',');
+		adrput(l);
+		putstr("\n\tadd");
+		prtype(l);
+		putstr("2\t$0");
+		prtype(l);
+		putstr("2.147483648e9,");
+		adrput(l);
+		printf("\nL%d:", label2);
+
+		goto cleanup;
+		}
+
+	if (!mixtypes(l,r)) {
+		if (tlen(l) == tlen(r)) {
+			putstr("mov");
+#ifdef FORT
+			if (Oflag)
+				prtype(l);
+			else {
+				if (l->in.type == DOUBLE)
+					putchar('q');
+				else if(l->in.type == FLOAT)
+					putchar('l');
+				else
+					prtype(l);
+				}
+#else
+			prtype(l);
+#endif FORT
+			goto ops;
+			}
+		else if (tlen(l) > tlen(r) && ISUNSIGNED(r->in.type))
+			putstr("movz");
+		else
+			putstr("cvt");
+		}
+	else
+		putstr("cvt");
+	prtype(r);
+	prtype(l);
+ops:
+	putchar('\t');
+	adrput(r);
+	putchar(',');
+	adrput(l);
+
+cleanup:
+	if (forarg)
+		tfree(l);
 	}
 
 /*
@@ -677,7 +698,6 @@ respref[] = {
 
 setregs(){ /* set up temporary registers */
 	fregs = 6;	/* tbl- 6 free regs on VAX (0-5) */
-	;
 	}
 
 /*ARGSUSED*/
@@ -789,9 +809,11 @@ canaddr( p ) NODE *p; {
 	return(0);
 	}
 
-flshape( p ) register NODE *p; {
-	return( p->in.op == REG || p->in.op == NAME || p->in.op == ICON ||
-		(p->in.op == OREG && (!R2TEST(p->tn.rval) || tlen(p) == 1)) );
+flshape( p ) NODE *p; {
+	register int o = p->in.op;
+
+	return( o == REG || o == NAME || o == ICON ||
+		(o == OREG && (!R2TEST(p->tn.rval) || tlen(p) == 1)) );
 	}
 
 /* INTEMP shapes must not contain any temporary registers */
@@ -821,7 +843,7 @@ shtemp( p ) register NODE *p; {
 	}
 
 shumul( p ) register NODE *p; {
-	register o;
+	register int o;
 	extern int xdebug;
 
 	if (xdebug) {
@@ -965,18 +987,6 @@ adrput( p ) register NODE *p; {
 		else {	/* STARREG - really auto inc or dec */
 			register NODE *q;
 
-/* tbl
-			p = p->in.left;
-			p->in.left->in.op = OREG;
-			if( p->in.op == INCR ) {
-				adrput( p->in.left );
-				putchar( '+' );
-				}
-			else {
-				putchar( '-' );
-				adrput( p->in.left );
-				}
-   tbl */
 			q = p->in.left;
 			if( q->in.right->tn.lval != tlen(p) )
 				cerror("adrput: bad auto-increment/decrement");
@@ -1005,55 +1015,20 @@ adrput( p ) register NODE *p; {
 
 acon( p ) register NODE *p; { /* print out a constant */
 
-	if( p->in.name[0] == '\0' ){
+	if( p->in.name[0] == '\0' )
 		printf( CONFMT, p->tn.lval);
-		}
-	else if( p->tn.lval == 0 ) {
+	else {
 #ifndef FLEXNAMES
 		printf( "%.8s", p->in.name );
 #else
 		putstr( p->in.name );
 #endif
-		}
-	else {
-#ifndef FLEXNAMES
-		printf( "%.8s+", p->in.name );
-#else
-		printf( "%s+", p->in.name );
-#endif
-		printf( CONFMT, p->tn.lval );
+		if( p->tn.lval != 0 ) {
+			putchar( '+' );
+			printf( CONFMT, p->tn.lval );
+			}
 		}
 	}
-
-/*
-aacon( p ) register NODE *p; { /* print out a constant */
-/*
-
-	if( p->in.name[0] == '\0' ){
-		printf( CONFMT, p->tn.lval);
-		return( 0 );
-		}
-	else if( p->tn.lval == 0 ) {
-#ifndef FLEXNAMES
-		printf( "$%.8s", p->in.name );
-#else
-		printf( "$%s", p->in.name );
-#endif
-		return( 1 );
-		}
-	else {
-		printf( "$(" );
-		printf( CONFMT, p->tn.lval );
-		printf( "+" );
-#ifndef FLEXNAMES
-		printf( "%.8s)", p->in.name );
-#else
-		printf( "%s)", p->in.name );
-#endif
-		return(1);
-		}
-	}
- */
 
 genscall( p, cookie ) register NODE *p; {
 	/* structure valued call */
@@ -1068,8 +1043,8 @@ int gc_numbytes;
 gencall( p, cookie ) register NODE *p; {
 	/* generate the call given by p */
 	register NODE *p1;
-	register temp, temp1;
-	register m;
+	register int temp, temp1;
+	register int m;
 
 	if( p->in.right ) temp = argsize( p->in.right );
 	else temp = 0;
@@ -1099,11 +1074,6 @@ gencall( p, cookie ) register NODE *p; {
 			}
 		}
 
-/*
-	if( p1->in.op == REG && p->tn.rval == R5 ){
-		cerror( "call register overwrite" );
-		}
- */
 /* tbl
 	setup gc_numbytes so reference to ZC works */
 
@@ -1118,49 +1088,31 @@ gencall( p, cookie ) register NODE *p; {
 	if (temp >= 1024)
 		printf("	addl2	$%d,sp\n", (temp&(~0x3ff)));
 
-/* tbl
-	switch( temp ) {
-	case 0:
-		break;
-	case 2:
-		printf( "	tst	(sp)+\n" );
-		break;
-	case 4:
-		printf( "	cmp	(sp)+,(sp)+\n" );
-		break;
-	default:
-		printf( "	add	$%d,sp\n", temp);
-		}
-   tbl */
 	return(m != MDONE);
 	}
 
 /* tbl */
 char *
 ccbranches[] = {
-	"	jeql	L%d\n",
-	"	jneq	L%d\n",
-	"	jleq	L%d\n",
-	"	jlss	L%d\n",
-	"	jgeq	L%d\n",
-	"	jgtr	L%d\n",
-	"	jlequ	L%d\n",
-	"	jlssu	L%d\n",
-	"	jgequ	L%d\n",
-	"	jgtru	L%d\n",
+	"eql",
+	"neq",
+	"leq",
+	"lss",
+	"geq",
+	"gtr",
+	"lequ",
+	"lssu",
+	"gequ",
+	"gtru",
 	};
 /* tbl */
 
 /*ARGSUSED*/
 cbgen( o, lab, mode ) { /*   printf conditional and unconditional branches */
 
-/* tbl */
-	if( o == 0 ) printf( "	jbr	L%d\n", lab );
-/* tbl */
-	else {
-		if( o > UGT ) cerror( "bad conditional branch: %s", opst[o] );
-		printf( ccbranches[o-EQ], lab );
-		}
+	if( o != 0 && ( o < EQ || o > UGT ) )
+		cerror( "bad conditional branch: %s", opst[o] );
+	printf( "	j%s	L%d\n", o == 0 ? "br" : ccbranches[o-EQ], lab );
 	}
 
 nextcook( p, cookie ) NODE *p; {
@@ -1381,8 +1333,14 @@ optim2( p ) register NODE *p; {
 		    !ISUNSIGNED(l->in.type) )
 			/* can't optimize signed right shifts */
 			break;
-		if( i < tlen(l) * SZCHAR )
-			break;
+		if( o == LS ) {
+			if( i < SZINT )
+				break;
+			}
+		else {
+			if( i < tlen(l) * SZCHAR )
+				break;
+			}
 	zero:
 		if( !asgop( o ) )
 			if( tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
@@ -1508,29 +1466,6 @@ degenerate(p) register NODE *p; {
 
 	return (1);
 	}
-
-/*ARGSUSED*/
-NODE * addroreg(l) NODE *l;
-				/* OREG was built in clocal()
-				 * for an auto or formal parameter
-				 * now its address is being taken
-				 * local code must unwind it
-				 * back to PLUS/MINUS REG ICON
-				 * according to local conventions
-				 */
-{
-	cerror("address of OREG taken");
-	/*NOTREACHED*/
-}
-
-
-
-# ifndef ONEPASS
-main( argc, argv ) char *argv[]; {
-	return( mainp2( argc, argv ) );
-	}
-# endif
-
 
 /* added by jwf */
 struct functbl {
@@ -1669,7 +1604,7 @@ hardops(p)  register NODE *p; {
 zappost(p) NODE *p; {
 	/* look for ++ and -- operators and remove them */
 
-	register o, ty;
+	register int o, ty;
 	register NODE *q;
 	o = p->in.op;
 	ty = optype( o );
@@ -1692,7 +1627,7 @@ zappost(p) NODE *p; {
 
 fixpre(p) NODE *p; {
 
-	register o, ty;
+	register int o, ty;
 	o = p->in.op;
 	ty = optype( o );
 
@@ -1709,6 +1644,28 @@ fixpre(p) NODE *p; {
 	if( ty == BITYPE ) fixpre( p->in.right );
 	if( ty != LTYPE ) fixpre( p->in.left );
 }
+
+/*ARGSUSED*/
+NODE * addroreg(l) NODE *l;
+				/* OREG was built in clocal()
+				 * for an auto or formal parameter
+				 * now its address is being taken
+				 * local code must unwind it
+				 * back to PLUS/MINUS REG ICON
+				 * according to local conventions
+				 */
+{
+	cerror("address of OREG taken");
+	/*NOTREACHED*/
+}
+
+
+
+# ifndef ONEPASS
+main( argc, argv ) char *argv[]; {
+	return( mainp2( argc, argv ) );
+	}
+# endif
 
 strip(p) register NODE *p; {
 	NODE *q;
@@ -1733,5 +1690,4 @@ myreader(p) register NODE *p; {
 	canon( p );		/* expands r-vals for fields */
 	walkf( p, hardops );	/* convert ops to function calls */
 	walkf( p, optim2 );
-	/* jwf toff = 0;  /* stack offset swindle */
 	}
