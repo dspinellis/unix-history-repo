@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.4 (Berkeley) %G%
+ *	@(#)conf.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -515,6 +515,14 @@ struct tty dmz_tty[];
 #define dmz_tty 0
 #endif
 
+#if defined(INGRES)
+int	iiioctl(), iiclose(), iiopen();
+#else
+#define iiopen nodev
+#define iiclose nodev
+#define iiioctl nodev
+#endif
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
@@ -650,6 +658,9 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nodev,		nodev,		/*42*/
 	nodev,		nulldev,	nulldev,	0,
 	nodev,		nodev,
+	iiopen,		iiclose,	nulldev,	nulldev,	/*43*/
+	iiioctl,	nulldev,	nulldev,	0,
+	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
