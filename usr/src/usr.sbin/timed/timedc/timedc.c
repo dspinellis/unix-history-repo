@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timedc.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)timedc.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -55,6 +55,10 @@ main(argc, argv)
 		}
 		if (c == 0) {
 			printf("?Invalid command\n");
+			exit(1);
+		}
+		if (c->c_priv && getuid()) {
+			printf("?Privileged command\n");
 			exit(1);
 		}
 		(*c->c_handler)(argc, argv);
