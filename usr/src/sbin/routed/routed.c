@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.8 %G%";
+static char sccsid[] = "@(#)routed.c	4.9 %G%";
 #endif
 
 /*
@@ -37,7 +37,7 @@ int	s;
 int	kmem = -1;
 int	supplier;		/* process should supply updates */
 int	initializing;		/* stem off broadcast() calls */
-int	install = 0;		/* if 1 call kernel */
+int	install = 1;		/* if 1 call kernel */
 int	lookforinterfaces = 1;
 int	performnlist = 1;
 int	timeval;
