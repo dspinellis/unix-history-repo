@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.85		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.86		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -99,9 +99,9 @@ struct mailer
 	u_long	m_flags;	/* status flags, see below */
 	short	m_badstat;	/* the status code to use on unknown error */
 	short	m_mno;		/* mailer number internally */
-	char	*m_from;	/* pattern for From: header */
 	char	**m_argv;	/* template argument vector */
-	short	m_rwset;	/* apply this rewriting set to addresses */
+	short	m_s_rwset;	/* rewriting set for sender addresses */
+	short	m_r_rwset;	/* rewriting set for recipient addresses */
 };
 
 typedef struct mailer	MAILER;
@@ -118,7 +118,6 @@ typedef struct mailer	MAILER;
 # define M_NEEDFROM	000000400L	/* need arpa-style From: line */
 # define M_NEEDDATE	000001000L	/* need arpa-style Date: line */
 # define M_MSGID	000002000L	/* need Message-Id: field */
-# define M_RELRCPT	000004000L	/* make recipient addresses relative */
 # define M_USR_UPPER	000010000L	/* preserve user case distinction */
 # define M_HST_UPPER	000020000L	/* preserve host case distinction */
 # define M_FULLNAME	000040000L	/* want Full-Name field */
@@ -171,7 +170,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_CHECK	00020	/* check h_mflags against m_flags */
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
 # define H_FORCE	00100	/* force this field, even if default */
-# define H_ADDR		00200	/* this field contains addresses */
+# define H_TRACE	00200	/* this field contains trace information */
 # define H_FROM		00400	/* this is a from-type field */
 /*
 **  Envelope structure.
@@ -190,10 +189,9 @@ struct envelope
 	bool		e_queueup;	/* queue this message */
 	bool		e_dontqueue;	/* override queueing */
 	bool		e_oldstyle;	/* use spaces (not commas) in hdrs */
-	bool		e_retreceipt;	/* give a return receipt */
 	bool		e_sendreceipt;	/* actually send a receipt back */
-	char		*e_origfrom;	/* the From: line first read */
 	char		*e_to;		/* the target person */
+	char		*e_receiptto;	/* return receipt address */
 	ADDRESS		e_from;		/* the person it is from */
 	ADDRESS		*e_returnto;	/* place to return the message to */
 	ADDRESS		*e_sendqueue;	/* list of message recipients */
