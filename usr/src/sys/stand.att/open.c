@@ -4,12 +4,12 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)open.c	7.2 (Berkeley) %G%
+ *	@(#)open.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/reboot.h>
-#include <ufs/dir.h>
+#include <ufs/ufs/dir.h>
 #include "saio.h"
 
 int	firstopen;
