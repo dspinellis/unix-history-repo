@@ -1,0 +1,3 @@
+procedure symop(arg1,op,arg2)
+   return op || "(" || arg1 || "," || arg2 || ")"
+end
