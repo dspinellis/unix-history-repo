@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getopt.3	6.13 (Berkeley) %G%
+.\"	@(#)getopt.3	6.14 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -54,6 +54,13 @@ index of the next argument to be processed.
 and
 .I optind
 are both initialized to 1.
+In order to use
+.I getopt
+to evaluate multiple sets of arguments, or to evaluate a single set of
+arguments multiple times,
+.I optind
+must be initialized to the number of argv entries to be skipped in each
+evaluation.
 .PP
 When all options have been processed (i.e., up to the first non-option
 argument),
