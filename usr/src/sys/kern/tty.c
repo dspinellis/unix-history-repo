@@ -1,4 +1,4 @@
-/*	tty.c	4.19	82/01/24	*/
+/*	tty.c	4.20	82/01/25	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -86,7 +86,8 @@ wflushtty(tp)
 {
 
 	(void) spl5();
-	while (tp->t_outq.c_cc && tp->t_state&TS_CARR_ON) {
+	while (tp->t_outq.c_cc && tp->t_state&TS_CARR_ON
+	    && tp->t_oproc) {		/* kludge for pty */
 		(*tp->t_oproc)(tp);
 		tp->t_state |= TS_ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
@@ -178,7 +179,8 @@ register struct tty *tp;
 	register s;
 
 	s = spl5();
-	if((tp->t_state&(TS_TIMEOUT|TS_TTSTOP|TS_BUSY)) == 0)
+	if((tp->t_state&(TS_TIMEOUT|TS_TTSTOP|TS_BUSY)) == 0 &&
+	    tp->t_oproc)		/* kludge for pty */
 		(*tp->t_oproc)(tp);
 	splx(s);
 }
