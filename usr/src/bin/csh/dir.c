@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -810,7 +810,7 @@ dcanon(cp, p)
     /*
      * See if we're not in a subdir of STRhome
      */
-    if (p1 && *p1 &&
+    if (p1 && *p1 == '/' &&
 	(Strncmp(p1, cp, cc) != 0 || (cp[cc] != '/' && cp[cc] != '\0'))) {
 	static ino_t home_ino = -1;
 	static dev_t home_dev = -1;
