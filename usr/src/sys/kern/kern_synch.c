@@ -1,17 +1,18 @@
 /*
- * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990, 1991 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.14 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "proc.h"
 #include "kernel.h"
 #include "buf.h"
+#include "signalvar.h"
+#include "resourcevar.h"
 
 #include "machine/cpu.h"
 
@@ -156,7 +157,7 @@ schedcpu()
 		s = splhigh();	/* prevent state changes */
 		if (p->p_pri >= PUSER) {
 #define	PPQ	(128 / NQS)		/* priorities per queue */
-			if ((p != curproc || noproc) &&
+			if ((p != curproc) &&
 			    p->p_stat == SRUN &&
 			    (p->p_flag & SLOAD) &&
 			    (p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
@@ -233,7 +234,7 @@ tsleep(chan, pri, wmesg, timo)
 	char *wmesg;
 	int timo;
 {
-	register struct proc *p = curproc;		/* XXX */
+	register struct proc *p = curproc;
 	register struct slpque *qp;
 	register s;
 	int sig, catch = pri & PCATCH;
@@ -340,7 +341,7 @@ sleep(chan, pri)
 	caddr_t chan;
 	int pri;
 {
-	register struct proc *p = curproc;		/* XXX */
+	register struct proc *p = curproc;
 	register struct slpque *qp;
 	register s;
 	extern int cold;
