@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -120,18 +120,16 @@ setup(dev)
 	if (sblock.fs_interleave < 1) {
 		pfatal("IMPOSSIBLE INTERLEAVE=%d IN SUPERBLOCK",
 			sblock.fs_interleave);
-		if (reply("SET TO DEFAULT") == 1) {
-			sblock.fs_interleave = 1;
+		sblock.fs_interleave = 1;
+		if (reply("SET TO DEFAULT") == 1)
 			sbdirty();
-		}
 	}
 	if (sblock.fs_npsect < sblock.fs_nsect) {
 		pfatal("IMPOSSIBLE NPSECT=%d IN SUPERBLOCK",
 			sblock.fs_npsect);
-		if (reply("SET TO DEFAULT") == 1) {
-			sblock.fs_npsect = sblock.fs_nsect;
+		sblock.fs_npsect = sblock.fs_nsect;
+		if (reply("SET TO DEFAULT") == 1)
 			sbdirty();
-		}
 	}
 	/*
 	 * read in the summary info.
