@@ -1,0 +1,18 @@
+#! /bin/sh -
+echo "Subject: monthly run output"
+
+# echo ""
+# echo "Doing login accounting:"
+# /etc/ac -p | sort -nr +1
+
+echo ""
+echo "Rotating wtmp file:"
+cd /usr/adm
+mv wtmp.5 wtmp.6
+mv wtmp.4 wtmp.5
+mv wtmp.3 wtmp.4
+mv wtmp.2 wtmp.3
+mv wtmp.1 wtmp.2
+mv wtmp.0 wtmp.1
+mv wtmp   wtmp.0
+cp /dev/null wtmp

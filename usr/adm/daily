@@ -1,0 +1,76 @@
+#! /bin/sh -
+PATH=/usr/local:/usr/ucb:/bin:/usr/bin:/etc
+echo "Subject: daily run output"
+
+echo ""
+echo "Removing scratch and junk files:"
+find /tmp		-atime +3	-exec rm -f {} \;
+
+cd /tmp; find		. ! -name . ! -name lost+found -type d \
+			-mtime +1	-exec rmdir {} \;
+
+cd /usr/tmp; find	. ! -name . ! -name lost+found \
+			-mtime +7 -exec rm -f {} \;
+
+cd /usr/tmp; find	. ! -name . ! -name lost+found -type d \
+			-mtime +1 -exec rmdir {} \;
+
+find /usr/preserve	-mtime +7	-exec rm -f {} \;
+
+find /			\( -name '[#,]*' -o -name '.#*' -o -name a.out -o -name core -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
+			-a -atime +3 -exec rm -f {} \;
+msgs -c
+/usr/new/lib/news/expire
+
+echo ""
+echo "Purging accounting records:"
+/etc/sa -s > /dev/null
+
+echo ""
+echo "Running calendar:"
+calendar -
+
+echo ""
+echo "Rotating mail syslog:"
+cd /usr/spool/mqueue
+rm syslog.7
+mv syslog.6  syslog.7
+mv syslog.5  syslog.6
+mv syslog.4  syslog.5
+mv syslog.3  syslog.4
+mv syslog.2  syslog.3
+mv syslog.1  syslog.2
+mv syslog.0  syslog.1
+mv syslog    syslog.0
+cp /dev/null syslog
+chmod 644    syslog
+kill -1 `cat /etc/syslog.pid`
+cd /
+
+echo ""
+echo "Cleaning up UUCP:"
+su uucp << EOF
+	/usr/lib/uucp/clean.daily
+EOF
+
+echo ""
+echo "Running rdist:"
+rdist -f /usr/local/lib/Distfile > /usr/adm/rdist-errs 2>&1
+
+echo ""
+echo "Checking filesystems:"
+sync
+/etc/fsck -n | grep -v '^\*\* Phase'
+
+echo "Checking subsystem status:"
+echo ""
+echo "disks:"
+df
+
+echo ""
+echo "mail:"
+mailq
+
+echo ""
+echo "uucp:"
+uusnap
