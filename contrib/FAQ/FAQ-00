@@ -1,0 +1,30 @@
+
+
+0.0 Preface
+-----------
+
+Welcome to the FreeBSD 1.1 FAQ!  This document tries to answer some of
+the most frequently asked questions about FreeBSD 1.1 (or later, unless
+specifically indicated).  If there's something you're having trouble
+with and you just don't see it here, then please send mail to:
+
+	freebsd-questions@freefall.cdrom.com
+
+Or, if it's a bug you wish to report, to:
+
+	freebsd-bugs@freefall.cdrom.com
+
+Some of the instructions here will also refer to auxilliary utilities
+in the /usr/src/share/FAQ directory.  CDROM purchasers and net folks who've
+grabbed the FreeBSD 1.1 `srcdist' will have these files.  If you don't have
+the source distribution, then you can either grab the whole thing from:
+
+	freebsd.cdrom.com:~ftp/pub/FreeBSD/FreeBSD-1.1
+
+Or you can grab only those files you're interested in straight out of the
+FreeBSD-current distribution in:
+
+	freebsd.cdrom.com:~ftp/pub/FreeBSD/FreeBSD-current/src
+
+Thanks!
+

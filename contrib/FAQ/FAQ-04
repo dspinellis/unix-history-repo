@@ -1,0 +1,65 @@
+
+
+4.0 User Applications
+---------------------
+
+4.0.1:	I want to run X, how do I go about it?
+
+First, get the XFree86 distribution of X11R5 from XFree86.cdrom.com.  The
+version you want for FreeBSD 1.1 and later is XFree86 2.1.  Follow the
+instructions for installation carefully. You may then wish to read the
+documentation for the ConfigXF86 tool, which assists you in configuring
+XFree86 for your particular graphics card/mouse/etc.
+
+
+4.0.1:	I've been trying to run ghostscript on a 386 with no math-co but
+        keep getting errors.  Whats up?
+
+The problem here is due to the current FreeBSD math-emulator.  You need to
+pick up the package in /usr/src/share/FAQ/programs/math-emulator.tar.gz
+
+Run the install program, recompile your kernel and install the new kernel.
+This is a port of an older Linux math-emulator.  At some point, FreeBSD's
+default math emulator will be good enough to enable you to forget about
+having to do this.
+
+
+4.0.2:	If I want something like seyon, term, kermit, emacs or any one of
+	hundreds of popular freeware utilities, is there a good place to
+	search through first?
+
+Yes, the FreeBSD `ports collection' was put together for just that purpose.
+It contains some of the most often requested languages, editors, mail and
+news reading programs, network software and many many megabytes of other
+types of useful goodies.  CDROM people will probably have the ports collection
+already in /usr/ports, other folks can get at the latest snapshot of the
+entire collection in:
+
+	freebsd.cdrom.com:~ftp/pub/FreeBSD/FreeBSD-current/ports
+
+Note that freebsd's ftp server permits getting entire directories as one
+(optionally gzip'd or compressed) tar file.  Read the ftp welcome banner
+carefully for details.
+
+
+4.0.3:	I want all this neat software, but I haven't got the space or
+	CPU power to compile it all myself.  Is there any way of getting
+	binaries?
+
+Yes.  FreeBSD supports the concept of a `package', which is
+essentially a gzip'd binary distribution with a little extra
+intelligence imbeded in it for doing any custom installation work
+required.  Packages can also be installed or deinstalled again easily
+without having to know the gory details.  CDROM people will have a
+packages/ directory on their CD, others can get the currently
+available packages from:
+
+	freebsd.cdrom.com:~ftp/pub/FreeBSD/packages-1.1
+
+Note that all ports may not be available as packages, and that new
+packages are constantly being added.  It is always a good idea to
+check periodically to see which packages are available.  A README
+file in the packages directory provides more details on the care
+and feeding of the package software, so no explicit details will
+be given here.
+

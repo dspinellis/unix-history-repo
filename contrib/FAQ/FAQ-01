@@ -1,0 +1,65 @@
+
+
+
+1.0 Installation
+----------------
+
+1.0.1:	I just installed my system and rebooted.  Now I can't find the
+	extract or configure programs, where did they go?
+
+
+These two commands are just shell builtins.  To get these back, either
+create a account [adding a user] with /.profile as its profile or
+boot FreeBSD with a '-s' at the boot prompt.
+
+
+1.0.2:  I want to install FreeBSD unto a SCSI disk that has more than
+        1024 cylinders.  How do I do it?
+
+This depends.  If you don't have DOS (or another operating system) on the
+system, you can just keep the drive in native mode and simply make sure that
+your root partition is below 1024 so the bios can boot the kernel from it.
+It you also have DOS/some other OS on the drive then your best bet is to find
+out what parameters that it thinks you have before installing FreeBSD.  When
+FreeBSD's installation procedure prompts you for these values, you should then
+enter them rather than simply going with the defaults.
+
+There is a freely available utility distributed with FreeBSD called `pfdisk'
+(located in the tools/ subdirectory) which can be used for this purpose.
+
+
+1.0.3:	When I boot FreeBSD it says "Missing Operating System".
+
+See above (1.0.2).  This is classicaly a case of FreeBSD and DOS or some other
+OS conflicting over their ideas of disk geometry.  You will have to reinstall
+FreeBSD, but obeying the instructions given above will almost always get you
+going.
+
+
+1.0.4:	I have an IDE drive with lots of bad blocks on it and FreeBSD doesn't
+	seem to install properly.
+
+FreeBSD's bad block (bad144) handling is still not 100% (to put it charitably)
+and it must unfortunately be said that if you've got an IDE or ESDI drive
+with lots of bad blocks, then FreeBSD is probably not for you!  That said, it
+does work on thousands of IDE based systems, so you'd do well to try it first
+before simply iving up.
+
+
+1.0.5:	I have 32MB of memory, should I expect any special problems?
+
+If you have an IDE controller, no.  Likewise, if you have a full EISA system
+with EISA disk controller or a working local bus controller (read further)
+you'll have no problems. If you have an ISA system, or an EISA system with an
+ISA disk controller then you will most certainly have problems with the upper
+16MB of memory due to the ISA 24 bit DMA limitation (which ISA cards in EISA
+systems will also exhibit).  If you have a local bus disk controller, and it's
+NOT a Buslogic Bt445S with a revision less than `D' (BIOS 3.36 or earlier),
+then you should be OK.  Never fear, however, as all is not lost.
+FreeBSD-current (and the upcoming FreeBSD 1.2) have bounce-buffer support that
+make all of the above scenarios work with a full 32MB of memory or more.  You
+are therefore advised to simply pull 16MB of memory out, install, and then see
+about upgrading to FreeBSD-current or FreeBSD 1.2 (when it comes out) so that
+you can put it back. 
+
+
