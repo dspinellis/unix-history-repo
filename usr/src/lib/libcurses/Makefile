@@ -1,7 +1,7 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.11 (Berkeley) %G%
+# @(#)Makefile	1.12 (Berkeley) %G%
 #
 HEADERS=curses.h unctrl.h cr_ex.h curses.ext
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
