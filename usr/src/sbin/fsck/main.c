@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
 #include <fstab.h>
 #include <strings.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "fsck.h"
 
 void	catch(), catchquit(), voidquit();
@@ -40,24 +41,23 @@ main(argc, argv)
 	int	argc;
 	char	*argv[];
 {
+	char ch;
 	int ret, maxrun = 0;
-	extern int (docheck)(), (checkfilesys)();
+	extern int docheck(), checkfilesys();
+	extern char *optarg;
+	extern int optind;
 
 	sync();
-	while (--argc > 0 && **++argv == '-') {
-		switch (*++*argv) {
-
+	while ((ch = getopt(argc, argv, "cdpnNyYb:l:m:")) != EOF) {
+		switch (ch) {
 		case 'p':
 			preen++;
 			break;
 
 		case 'b':
-			if (argv[0][1] != '\0') {
-				bflag = atoi(argv[0]+1);
-			} else {
-				bflag = atoi(*++argv);
-				argc--;
-			}
+			if (!isdigit(*optarg))
+				errexit("-b flag requires a number\n");
+			bflag = atoi(optarg);
 			printf("Alternate super block location: %d\n", bflag);
 			break;
 
@@ -70,19 +70,17 @@ main(argc, argv)
 			break;
 
 		case 'l':
-			if (!isdigit(argv[1][0]))
+			if (!isdigit(*optarg))
 				errexit("-l flag requires a number\n");
-			maxrun = atoi(*++argv);
-			argc--;
+			maxrun = atoi(optarg);
 			break;
 
 		case 'm':
-			if (!isdigit(argv[1][0]))
+			if (!isdigit(*optarg))
 				errexit("-m flag requires a mode\n");
-			sscanf(*++argv, "%o", &lfmode);
+			sscanf(optarg, "%o", &lfmode);
 			if (lfmode &~ 07777)
 				errexit("bad mode to -m: %o\n", lfmode);
-			argc--;
 			printf("** lost+found creation mode %o\n", lfmode);
 			break;
 
@@ -99,18 +97,18 @@ main(argc, argv)
 			break;
 
 		default:
-			errexit("%c option?\n", **argv);
+			errexit("%c option?\n", ch);
 		}
 	}
+	argc -= optind;
+	argv += optind;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void)signal(SIGINT, catch);
 	if (preen)
 		(void)signal(SIGQUIT, catchquit);
 	if (argc) {
-		while (argc-- > 0) {
-			hotroot = 0;
+		while (argc-- > 0)
 			checkfilesys(*argv++);
-		}
 		exit(0);
 	}
 	ret = checkfstab(preen, maxrun, docheck, checkfilesys);
