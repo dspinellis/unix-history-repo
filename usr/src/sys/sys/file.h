@@ -1,4 +1,4 @@
-/*	file.h	4.17	83/06/09	*/
+/*	file.h	4.18	83/06/12	*/
 
 #ifdef KERNEL
 /*
@@ -14,7 +14,6 @@ struct	file {
 		int	(*fo_rw)();
 		int	(*fo_ioctl)();
 		int	(*fo_select)();
-		int	(*fo_stat)();
 		int	(*fo_close)();
 	} *f_ops;
 	caddr_t	f_data;		/* inode */
