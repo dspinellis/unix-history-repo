@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)warshall.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)warshall.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -28,54 +28,52 @@ transitive_closure(R, n)
 unsigned *R;
 int n;
 {
-  register int rowsize;
-  register unsigned mask;
-  register unsigned *rowj;
-  register unsigned *rp;
-  register unsigned *rend;
-  register unsigned *ccol;
+    register int rowsize;
+    register unsigned mask;
+    register unsigned *rowj;
+    register unsigned *rp;
+    register unsigned *rend;
+    register unsigned *ccol;
+    register unsigned *relend;
+    register unsigned *cword;
+    register unsigned *rowi;
 
-  unsigned *relend;
-  unsigned *cword;
-  unsigned *rowi;
+    rowsize = WORDSIZE(n);
+    relend = R + n*rowsize;
 
-  rowsize = ROWSIZE(n);
-  relend = (unsigned *) ((unsigned) R + n*rowsize);
-
-  cword = R;
-  mask = 1;
-  rowi = R;
-  while (rowi < relend)
+    cword = R;
+    mask = 1;
+    rowi = R;
+    while (rowi < relend)
     {
-      ccol = cword;
-      rowj = R;
+	ccol = cword;
+	rowj = R;
 
-      while (rowj < relend)
+	while (rowj < relend)
 	{
-	  if (*ccol & mask)
+	    if (*ccol & mask)
 	    {
-	      rp = rowi;
-	      rend = (unsigned *) ((unsigned) rowj + rowsize);
-
-	      while (rowj < rend)
-		*rowj++ |= *rp++;
+		rp = rowi;
+		rend = rowj + rowsize;
+		while (rowj < rend)
+		    *rowj++ |= *rp++;
 	    }
-	  else
+	    else
 	    {
-	      rowj = (unsigned *) ((unsigned) rowj + rowsize);
+		rowj += rowsize;
 	    }
 
-	  ccol = (unsigned *) ((unsigned) ccol + rowsize);
+	    ccol += rowsize;
 	}
 
-      mask <<= 1;
-      if (mask == 0)
+	mask <<= 1;
+	if (mask == 0)
 	{
-	  mask = 1;
-	  cword++;
+	    mask = 1;
+	    cword++;
 	}
 
-      rowi = (unsigned *) ((unsigned) rowi + rowsize);
+	rowi += rowsize;
     }
 }
 
@@ -83,29 +81,28 @@ reflexive_transitive_closure(R, n)
 unsigned *R;
 int n;
 {
-  register int rowsize;
-  register unsigned mask;
-  register unsigned *rp;
-  register unsigned *relend;
+    register int rowsize;
+    register unsigned mask;
+    register unsigned *rp;
+    register unsigned *relend;
 
-  transitive_closure(R, n);
+    transitive_closure(R, n);
 
-  rowsize = ROWSIZE(n);
-  relend = (unsigned *) ((unsigned) R + n*rowsize);
+    rowsize = WORDSIZE(n);
+    relend = R + n*rowsize;
 
-  mask = 1;
-  rp = R;
-  while (rp < relend)
+    mask = 1;
+    rp = R;
+    while (rp < relend)
     {
-      *rp |= mask;
-
-      mask <<= 1;
-      if (mask == 0)
+	*rp |= mask;
+	mask <<= 1;
+	if (mask == 0)
 	{
-	  mask = 1;
-	  rp++;
+	    mask = 1;
+	    rp++;
 	}
 
-      rp = (unsigned *) ((unsigned) rp + rowsize);
+	rp += rowsize;
     }
 }
