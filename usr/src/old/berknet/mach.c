@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)mach.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mach.c	4.2	(Berkeley)	%G%";
 
 /* sccs id variable */
 static char *mach_sid = "@(#)mach.c	1.6";
@@ -22,12 +22,12 @@ int debugflg;
 # ifndef CC
 # ifndef SRC
 submit(a) {}
-# endif SRC
-# endif CC
+# endif
+# endif
 
 # ifdef FUID
 setgid() {};
-# endif FUID
+# endif
 
 /* 
    Set the owner uid/gid of a file.
@@ -44,15 +44,15 @@ mchown(sfn,uid,gid)
 {
 # ifndef V6
 	chown(sfn,uid,gid);
-# else V6
+# else
 # ifndef FUID
 		uid = uidmask(uid);
 		uid = ((gid&0377) << 8) | (uid & 0377);
-# endif FUID
+# endif
 	chown(sfn,uid);
 	if(debugflg)
 		fprintf(stderr, "chown %s to %d(%o)\n",sfn,uid,uid);
-# endif V6
+# endif
 }
 	
 
@@ -78,7 +78,7 @@ char *SnFromUid(uid)
 		ouid = uid;
 		return(oresult);
 	}
-# endif HPASSWD
+# endif
 	pwd = getpwuid(uid);
 	if(pwd != NULL){
 		strcpy(oresult,pwd->pw_name);
@@ -94,7 +94,7 @@ register char *sn;
 	register struct passwd *pwd;
 # ifdef HPASSWD
 	him = getuserid(sn);
-# endif HPASSWD
+# endif
 	if(him == -1){
 		pwd = getpwnam(sn);
 		if(pwd != NULL)him = guid(pwd->pw_uid,pwd->pw_gid);
@@ -104,16 +104,14 @@ register char *sn;
 
 /* handle the regular unix and local mods difference for user id's */
 /* this call returns the 1 word uid = to what getuid will return */
-guid(uid,gid)
-unsigned uid, gid;
-{
+guid(uid,gid){
 	uid = uidmask(uid);
 # ifdef FUID
 	return((uid & 0377) | (gid << 8));
-# else FUID
+# else
 	return(uid);
-# endif FUID
-}
+# endif
+	}
 
 # ifdef OLDTTY
 isatty(i){
@@ -126,7 +124,7 @@ char *ttyname(i){		/* return NULL if not TTY */
 	ttystr[8] = c;
 	return(c == 'x' ? NULL : ttystr);
 	}
-# endif OLDTTY
+# endif
 
 # ifdef CCTTY
 # undef ttyname()
@@ -139,7 +137,7 @@ char *myttyname(i){		/* return NULL for non tty */
 	return(s);
 	}
 # define ttyname(S) myttyname(S)
-# endif  CCTTY
+# endif
 
 /* expand control chars in string s */
 expandcc(s)
@@ -189,8 +187,8 @@ getpwdf(pwd)
 	/*
 	debug("user %s passwd %s %s",pwd->pw_name,pwd->pw_passwd);
 	*/
-# endif TESTING
-# endif PASSWDF
+# endif
+# endif
 	}
 /*
 	getutmp()
@@ -210,7 +208,7 @@ char *sttyname;
 		long v6ut_time;
 		int  v6ut_fl1;
 		} v6utmpstr;
-# endif OLDTTY
+# endif
 	static struct utmp utmpstr;
 	FILE *fdutmp;
 
@@ -226,7 +224,7 @@ char *sttyname;
 			fclose(fdutmp);
 			return(&utmpstr);
 		}
-# else OLDTTY
+# else
 	while(fread(&v6utmpstr,1,sizeof v6utmpstr,fdutmp) == sizeof v6utmpstr)
 		if(v6utmpstr.v6ut_tty == sttyname[8]){
 			strcpy(utmpstr.ut_name,v6utmpstr.v6ut_name);
@@ -236,7 +234,7 @@ char *sttyname;
 			fclose(fdutmp);
 			return(&utmpstr);
 		}
-# endif OLDTTY
+# endif
 	fclose(fdutmp);
 	return(NULL);
 }
@@ -289,13 +287,13 @@ char *getenv(){
 	if(it == 'x')it = ttyn(1);
 	if(it == 'x')it = ttyn(0);
 	if(it != 'x' && hget(it) == 0)shdir = hgethome();
-# endif OLDTTY
+# endif
 # ifdef CCTTY
 	if(it == -1)it = ttyn(1);
 	if(it == -1)it = ttyn(0);
 	if(it != -1 && hget(it) == 0)shdir = hgethome();
-# endif OLDTTY
-# endif BERKELEY
+# endif
+# endif
 	if(shdir == NULL){
 		pwd = PwdCurrent();
 		if(pwd != NULL)shdir = pwd->pw_dir;
@@ -538,25 +536,8 @@ register n;
 
 umask(n){}
 
-/*
- * Return the ptr in sp at which the character c appears;
- * NULL if not found
- */
-
-#define	NULL	0
-
-char *
-index(sp, c)
-register char *sp, c;
-{
-	do {
-		if (*sp == c)
-			return(sp);
-	} while (*sp++);
-	return(NULL);
-}
 /* end of non-vax v7 routines */
-# endif V6
+# endif
 /*
 	PwdCurrent()
 
@@ -589,7 +570,7 @@ PwdCurrent()
 		pwd = getpwnam(sn);
 		if(pwd != NULL)return(pwd);
 	}
-# endif MULTNAMS
+# endif
 
 	return(getpwuid(uidmask(getuid())));
 }
