@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -368,6 +368,7 @@ returntosender(msg, sendbody)
 	ErrorMessage = msg;
 	SendBody = sendbody;
 	define('g', "\001f", CurEnv);
+	define('<', "\001f", CurEnv);
 
 	/* fake up an address header for the from person */
 	bmove((char *) &CurEnv->e_from, (char *) &to_addr, sizeof to_addr);

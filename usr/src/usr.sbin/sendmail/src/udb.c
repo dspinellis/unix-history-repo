@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.14 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.15 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.14 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.15 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -36,6 +36,7 @@ struct udbent
 {
 	char	*udb_spec;		/* string version of spec */
 	int	udb_type;		/* type of entry */
+	char	*udb_default;		/* default host for outgoing mail */
 	union
 	{
 		/* type UE_REMOTE -- do remote call for lookup */
@@ -54,7 +55,7 @@ struct udbent
 		} udb_forward;
 #define udb_fwdhost	udb_u.udb_forward._udb_fwdhost
 
-		/* type UE_LOOKUP -- lookup in local database */
+		/* type UE_FETCH -- lookup in local database */
 		struct
 		{
 			char	*_udb_dbname;	/* pathname of database */
@@ -68,7 +69,7 @@ struct udbent
 #define UDB_EOLIST	0	/* end of list */
 #define UDB_SKIP	1	/* skip this entry */
 #define UDB_REMOTE	2	/* look up in remote database */
-#define UDB_LOOKUP	3	/* look up in local database */
+#define UDB_DBFETCH	3	/* look up in local database */
 #define UDB_FORWARD	4	/* forward to remote host */
 
 #define MAXUDBENT	10	/* maximum number of UDB entries */
@@ -98,8 +99,9 @@ struct option
 int	UdbPort = 1616;
 int	UdbTimeout = 10;
 
-struct udbent	UdbEnts[MAXUDBENT + 1];
-int		UdbSock = -1;
+STATIC struct udbent	UdbEnts[MAXUDBENT + 1];
+STATIC int		UdbSock = -1;
+STATIC bool		UdbInitialized = FALSE;
 
 int
 udbexpand(a, sendq)
@@ -110,7 +112,6 @@ udbexpand(a, sendq)
 	register char *p;
 	DBT key;
 	DBT info;
-	static bool firstcall = TRUE;
 	bool breakout;
 	register struct udbent *up;
 	int keylen;
@@ -126,13 +127,12 @@ udbexpand(a, sendq)
 	CurEnv->e_to = a->q_paddr;
 
 	/* on first call, locate the database */
-	if (firstcall)
+	if (!UdbInitialized)
 	{
 		extern int _udbx_init();
 
 		if (_udbx_init() == EX_TEMPFAIL)
 			return EX_TEMPFAIL;
-		firstcall = FALSE;
 	}
 
 	/* short circuit the process if no chance of a match */
@@ -169,7 +169,7 @@ udbexpand(a, sendq)
 
 		switch (up->udb_type)
 		{
-		  case UDB_LOOKUP:
+		  case UDB_DBFETCH:
 			key.data = keybuf;
 			key.size = keylen;
 			i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_CURSOR);
@@ -240,16 +240,176 @@ udbexpand(a, sendq)
 	}
 	return EX_OK;
 }
+/*
+**  UDBSENDER -- return canonical external name of sender, given local name
+**
+**	Parameters:
+**		sender -- the name of the sender on the local machine.
+**
+**	Returns:
+**		The external name for this sender, if derivable from the
+**			database.
+**		NULL -- if nothing is changed from the database.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+udbsender(sender)
+	char *sender;
+{
+	register char *p;
+	register struct udbent *up;
+	int i;
+	int keylen;
+	DBT key, info;
+	char keybuf[128];
+
+	if (tTd(28, 1))
+		printf("udbsender(%s)\n", sender);
+
+	if (!UdbInitialized)
+	{
+		if (_udbx_init() == EX_TEMPFAIL)
+			return NULL;
+	}
+
+	/* short circuit if no spec */
+	if (UdbSpec == NULL || UdbSpec[0] == '\0')
+		return NULL;
+
+	/* long names can never match and are a pain to deal with */
+	if (strlen(sender) > sizeof keybuf - 12)
+		return NULL;
+
+	/* names beginning with colons indicate metadata */
+	if (sender[0] == ':')
+		return NULL;
+
+	/* build database key */
+	(void) strcpy(keybuf, sender);
+	(void) strcat(keybuf, ":mailname");
+	keylen = strlen(keybuf);
+
+	for (up = UdbEnts; up->udb_type != UDB_EOLIST; up++)
+	{
+		/*
+		**  Select action based on entry type.
+		*/
+
+		switch (up->udb_type)
+		{
+		  case UDB_DBFETCH:
+			key.data = keybuf;
+			key.size = keylen;
+			i = (*up->udb_dbp->get)(up->udb_dbp, &key, &info, 0);
+			if (i != 0 || info.size <= 0)
+			{
+				if (tTd(28, 2))
+					printf("udbsender: no match on %s\n",
+							keybuf);
+				continue;
+			}
+
+			p = xalloc(info.size + 1);
+			bcopy(info.data, p, info.size);
+			p[info.size] = '\0';
+			if (tTd(28, 1))
+				printf("udbsender ==> %s\n", p);
+			return p;
+		}
+	}
+
+	/*
+	**  Nothing yet.  Search again for a default case.  But only
+	**  use it if we also have a forward (:maildrop) pointer already
+	**  in the database.
+	*/
+
+	/* build database key */
+	(void) strcpy(keybuf, sender);
+	(void) strcat(keybuf, ":maildrop");
+	keylen = strlen(keybuf);
+
+	for (up = UdbEnts; up->udb_type != UDB_EOLIST; up++)
+	{
+		switch (up->udb_type)
+		{
+		  case UDB_DBFETCH:
+			/* get the default case for this database */
+			if (up->udb_default == NULL)
+			{
+				key.data = ":default:mailname";
+				key.size = strlen(key.data);
+				i = (*up->udb_dbp->get)(up->udb_dbp, &key, &info, 0);
+				if (i != 0 || info.size <= 0)
+				{
+					/* no default case */
+					up->udb_default = "";
+					continue;
+				}
+
+				/* save the default case */
+				up->udb_default = xalloc(info.size + 1);
+				bcopy(info.data, up->udb_default, info.size);
+				up->udb_default[info.size] = '\0';
+			}
+			else if (up->udb_default[0] == '\0')
+				continue;
+
+			/* we have a default case -- verify user:maildrop */
+			key.data = keybuf;
+			key.size = keylen;
+			i = (*up->udb_dbp->get)(up->udb_dbp, &key, &info, 0);
+			if (i != 0 || info.size <= 0)
+			{
+				/* nope -- no aliasing for this user */
+				continue;
+			}
+
+			/* they exist -- build the actual address */
+			p = xalloc(strlen(sender) + strlen(up->udb_default) + 2);
+			(void) strcpy(p, sender);
+			(void) strcat(p, "@");
+			(void) strcat(p, up->udb_default);
+			if (tTd(28, 1))
+				printf("udbsender ==> %s\n", p);
+			return p;
+		}
+	}
+
+	/* still nothing....  too bad */
+	return NULL;
+}
+/*
+**  _UDBX_INIT -- parse the UDB specification, opening any valid entries.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		EX_TEMPFAIL -- if it appeared it couldn't get hold of a
+**			database due to a host being down or some similar
+**			(recoverable) situation.
+**		EX_OK -- otherwise.
+**
+**	Side Effects:
+**		Fills in the UdbEnts structure from UdbSpec.
+*/
 
 #define MAXUDBOPTS	27
 
-int
+STATIC int
 _udbx_init()
 {
 	register char *p;
 	int i;
 	register struct udbent *up;
 	char buf[8192];
+
+	if (UdbInitialized)
+		return EX_OK;
 
 # ifdef UDB_DEFAULT_SPEC
 	if (UdbSpec == NULL)
@@ -360,10 +520,13 @@ _udbx_init()
 			if (up->udb_dbp == NULL)
 			{
 				if (errno != ENOENT && errno != EACCES)
-					return EX_TEMPFAIL;
+				{
+					up->udb_type = UDB_EOLIST;
+					goto tempfail;
+				}
 				break;
 			}
-			up->udb_type = UDB_LOOKUP;
+			up->udb_type = UDB_DBFETCH;
 			up++;
 			break;
 		}
@@ -372,21 +535,18 @@ _udbx_init()
 
 	if (tTd(28, 4))
 	{
-		for (up = UdbEnts; ; up++)
+		for (up = UdbEnts; up->udb_type != UDB_EOLIST; up++)
 		{
 			switch (up->udb_type)
 			{
-			  case UDB_EOLIST:
-				return EX_OK;
-
 			  case UDB_REMOTE:
 				printf("REMOTE: addr %s, timeo %d\n",
 					inet_ntoa(up->udb_addr.sin_addr),
 					up->udb_timeout);
 				break;
 
-			  case UDB_LOOKUP:
-				printf("LOOKUP: file %s\n",
+			  case UDB_DBFETCH:
+				printf("FETCH: file %s\n",
 					up->udb_dbname);
 				break;
 
@@ -401,6 +561,23 @@ _udbx_init()
 			}
 		}
 	}
+
+	UdbInitialized = TRUE;
+	return EX_OK;
+
+	/*
+	**  On temporary failure, back out anything we've already done
+	*/
+
+  tempfail:
+	for (up = UdbEnts; up->udb_type != UDB_EOLIST; up++)
+	{
+		if (up->udb_type == UDB_DBFETCH)
+		{
+			(*up->udb_dbp->close)(up->udb_dbp);
+		}
+	}
+	return EX_TEMPFAIL;
 }
 
 int

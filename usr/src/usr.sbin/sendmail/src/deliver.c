@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.51 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -61,11 +61,13 @@ deliver(firstto, editfcn)
 	register ADDRESS *to = firstto;
 	bool clever = FALSE;		/* running user smtp to this mailer */
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
-	int rcode;		/* response code */
+	int rcode;			/* response code */
+	char *from;			/* pointer to from person */
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE-50];		/* text line of to people */
 	char buf[MAXNAME];
 	char tfrombuf[MAXNAME];		/* translated from person */
+	char rpathbuf[MAXNAME];		/* translated return path */
 	extern bool checkcompat();
 	extern ADDRESS *getctladdr();
 	extern char *remotename();
@@ -129,9 +131,20 @@ deliver(firstto, editfcn)
 
 	/* rewrite from address, using rewriting rules */
 	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
-	(void) strcpy(tfrombuf, remotename(buf, m, TRUE, TRUE));
+	(void) strcpy(rpathbuf, remotename(e->e_returnpath, m, TRUE, TRUE));
+	if (e->e_returnpath == e->e_sender)
+	{
+		from = rpathbuf;
+	}
+	else
+	{
+		(void) strcpy(tfrombuf, remotename(e->e_sender, m, TRUE, TRUE));
+		from = tfrombuf;
+	}
 
-	define('g', tfrombuf, e);		/* translated sender address */
+	define('f', e->e_returnpath, e);	/* raw return path */
+	define('<', rpathbuf, e);		/* translated return path */
+	define('g', from, e);			/* translated sender */
 	define('h', host, e);			/* to host */
 	Errors = 0;
 	pvp = pv;
@@ -145,7 +158,7 @@ deliver(firstto, editfcn)
 		else
 			*pvp++ = "-r";
 		(void) expand("$g", buf, &buf[sizeof buf - 1]);
-		*pvp++ = newstr(buf);
+		*pvp++ = newstr(rpathbuf);
 	}
 
 	/*
@@ -342,6 +355,7 @@ deliver(firstto, editfcn)
 	if (tobuf[0] == '\0')
 	{
 		define('g', (char *) NULL, e);
+		define('<', (char *) NULL, e);
 		return (0);
 	}
 
@@ -438,6 +452,7 @@ deliver(firstto, editfcn)
 
 	errno = 0;
 	define('g', (char *) NULL, e);
+	define('<', (char *) NULL, e);
 	return (rcode);
 }
 /*
@@ -1114,7 +1129,7 @@ putmessage(fp, m, xdot)
 			char *sys = macvalue('g');
 			char *bang = index(sys, '!');
 
-		expand("\001g", buf, &buf[sizeof buf - 1], CurEnv);
+		expand("\001<", buf, &buf[sizeof buf - 1], CurEnv);
 		bang = index(buf, '!');
 			if (bang == NULL)
 				syserr("No ! in UUCP! (%s)", sys);
