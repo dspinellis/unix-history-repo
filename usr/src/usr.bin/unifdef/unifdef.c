@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)unifdef.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)unifdef.c	4.3	(Berkeley)	%G%";
 
 #ifdef COMMENT
 
@@ -56,8 +56,8 @@ char **argv;
 	}
 	else
 	    ignorethis = NO;
-	if (   (   *cp1 == 'd'
-		|| *cp1 == 'u'
+	if (   (   *cp1 == 'D'
+		|| *cp1 == 'U'
 	       )
 	    && cp1[1] != '\0'
 	   ) {
@@ -67,7 +67,7 @@ char **argv;
 		exit (2);
 	    }
 	    ignore[nsyms] = ignorethis;
-	    true[nsyms] = *cp1 == 'd' ? YES : NO;
+	    true[nsyms] = *cp1 == 'D' ? YES : NO;
 	    sym[nsyms++] = &cp1[1];
 	}
 	else if (ignorethis)
@@ -88,8 +88,8 @@ char **argv;
     if (nsyms == 0) {
  usage:
 	fprintf (stderr, "\
-Usage: %s [-l] [-t] [-c] [[-dsym] [-usym] [-idsym] [-iusym]]... [file]\n\
-    At least one arg from [-d -u -id -iu] is required\n", progname);
+Usage: %s [-l] [-t] [-c] [[-Dsym] [-Usym] [-idsym] [-iusym]]... [file]\n\
+    At least one arg from [-D -U -id -iu] is required\n", progname);
 	exit (2);
     }
 
