@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)arcv.c 4.1 %G%";
+static	char sccsid[] = "@(#)arcv.c 4.2 %G%";
 /*
  * arcv - convert old to new archive format
  */
@@ -17,7 +17,7 @@ struct	oar_hdr {
 
 struct	ar_hdr nh;
 struct	oar_hdr oh;
-char	*tmp;
+char	tmp[] = "/usr/tmp/arcXXXXXX";
 char	*mktemp();
 int	f;
 char	buf[512];
@@ -28,11 +28,12 @@ char *argv[];
 	register i;
 
 	if (argc>1 && strcmp(argv[1], "-t")==0) {
-		tmp = mktemp("/usr/tmp/arcXXXXXX");
 		argc--;
 		argv++;
-	} else
-		tmp = mktemp("/tmp/arcXXXXXX");
+	} else {
+		strcpy(tmp, "/tmp/arcXXXXXX");
+	}
+	mktemp(tmp);
 	for(i=1; i<4; i++)
 		signal(i, SIG_IGN);
 	for(i=1; i<argc; i++) {
