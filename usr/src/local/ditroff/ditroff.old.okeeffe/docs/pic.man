@@ -1,4 +1,4 @@
-.\" refer -e pic.man | pic -Pxxx | eqn -Pxxx | ditroff -msd -Pxxx
+.\" refer -e pic.man | pic -Pxxx | eqn -Pxxx | ditroff -ms -Pxxx
 .TR 85
 .so ~mac
 .ND "Revised Edition, March, 1982"
