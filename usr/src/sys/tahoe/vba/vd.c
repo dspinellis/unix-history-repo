@@ -1,4 +1,4 @@
-/*	vd.c	1.20	87/09/17	*/
+/*	vd.c	1.21	87/11/01	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -69,12 +69,12 @@ struct vdsoftc {
  */
 struct	dksoftc {
 	u_short	dk_state;	/* open fsm */
-	u_short	dk_copenpart;	/* character units open on this drive */
-	u_short	dk_bopenpart;	/* block units open on this drive */
-	u_short	dk_openpart;	/* all units open on this drive */
 #ifndef SECSIZE
 	u_short	dk_bshift;	/* shift for * (DEV_BSIZE / sectorsize) XXX */
 #endif SECSIZE
+	u_long	dk_copenpart;	/* character units open on this drive */
+	u_long	dk_bopenpart;	/* block units open on this drive */
+	u_long	dk_openpart;	/* all units open on this drive */
 	u_int	dk_curcyl;	/* last selected cylinder */
 	struct	skdcb dk_dcb;	/* seek command block */
 	u_long	dk_dcbphys;	/* physical address of dk_dcb */
@@ -291,8 +291,7 @@ vdopen(dev, flags, fmt)
 	 * unless one is the "raw" partition (whole disk).
 	 */
 #define	RAWPART		8		/* 'x' partition */	/* XXX */
-	if ((dk->dk_openpart & (1 << part)) == 0 &&
-	    part != RAWPART) {
+	if ((dk->dk_openpart & mask) == 0 && part != RAWPART) {
 		pp = &lp->d_partitions[part];
 		start = pp->p_offset;
 		end = pp->p_offset + pp->p_size;
@@ -837,7 +836,7 @@ vdioctl(dev, cmd, data, flag)
 	caddr_t data;
 	int flag;
 {
-	int unit = vdunit(dev);
+	register int unit = vdunit(dev);
 	register struct disklabel *lp = &dklabel[unit];
 	int error = 0;
 
@@ -857,43 +856,17 @@ vdioctl(dev, cmd, data, flag)
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else
-			*lp = *(struct disklabel *)data;
+			error = setdisklabel(lp, (struct disklabel *)data,
+			    dksoftc[unit].dk_openpart);
 		break;
 
-	case DIOCWDINFO: {
-		struct buf *bp;
-		struct disklabel *dlp;
-
-		if ((flag & FWRITE) == 0) {
+	case DIOCWDINFO:
+		if ((flag & FWRITE) == 0)
 			error = EBADF;
-			break;
-		}
-		*lp = *(struct disklabel *)data;
-		bp = geteblk(lp->d_secsize);
-		bp->b_dev = makedev(major(dev), vdminor(vdunit(dev), 0));
-		bp->b_blkno = LABELSECTOR;
-		bp->b_bcount = lp->d_secsize;
-		bp->b_flags = B_READ;
-		dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-		vdstrategy(bp);
-		biowait(bp);
-		if (bp->b_flags & B_ERROR) {
-			error = u.u_error;		/* XXX */
-			u.u_error = 0;
-			goto bad;
-		}
-		*dlp = *lp;
-		bp->b_flags = B_WRITE;
-		vdstrategy(bp);
-		biowait(bp);
-		if (bp->b_flags & B_ERROR) {
-			error = u.u_error;		/* XXX */
-			u.u_error = 0;
-		}
-bad:
-		brelse(bp);
+		else if ((error = setdisklabel(lp, (struct disklabel *)data,
+			    dksoftc[unit].dk_openpart)) == 0)
+			error = writedisklabel(dev, vdstrategy, lp);
 		break;
-	}
 
 	default:
 		error = ENOTTY;
