@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -135,6 +135,7 @@ find_execute(plan, paths)
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
+			(void)fflush(stdout);
 			(void)fprintf(stderr, "find: %s: %s\n", 
 			    entry->fts_path, strerror(errno));
 			continue;
@@ -148,6 +149,7 @@ find_execute(plan, paths)
 
 #define	BADCH	" \t\n\\'\""
 		if (isxargs && strpbrk(entry->fts_path, BADCH)) {
+			(void)fflush(stdout);
 			(void)fprintf(stderr,
 			    "find: illegal path: %s\n", entry->fts_path);
 			continue;
