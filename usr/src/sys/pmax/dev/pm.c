@@ -1,14 +1,16 @@
-/* 
- * Copyright (c) 1992 Regents of the University of California.
+/*-
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Ralph Campbell.
+ * Ralph Campbell and Rick Macklem.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pm.c	7.7 (Berkeley) %G%
- *
+ *	@(#)pm.c	7.8 (Berkeley) %G%
+ */
+
+/* 
  *  devGraphics.c --
  *
  *     	This file contains machine-dependent routines for the graphics device.
@@ -25,8 +27,12 @@
  *	v 9.2 90/02/13 22:16:24 shirriff Exp $ SPRITE (DECWRL)";
  */
 
-#include "pm.h"
+#include <pm.h>
+#include <dc.h>
 #if NPM > 0
+#if NDC == 0
+pm needs dc device
+#else
 
 #include <sys/param.h>
 #include <sys/time.h>
@@ -40,81 +46,46 @@
 #include <vm/vm.h>
 
 #include <machine/machConst.h>
-#include <machine/machMon.h>
 #include <machine/dc7085cons.h>
 #include <machine/pmioctl.h>
 
+#include <pmax/pmax/kn01.h>
+#include <pmax/pmax/pmaxtype.h>
+#include <pmax/pmax/cons.h>
+
 #include <pmax/dev/device.h>
 #include <pmax/dev/pmreg.h>
-#include <pmax/dev/font.c>
-
-#define MAX_ROW	56
-#define MAX_COL	80
-
-/*
- * Macro to translate from a time struct to milliseconds.
- */
-#define TO_MS(tv) ((tv.tv_sec * 1000) + (tv.tv_usec / 1000))
-
-static u_short	curReg;		/* copy of PCCRegs.cmdr since it's read only */
-static int	isMono;		/* true if B&W frame buffer */
-static int	initialized;	/* true if 'probe' was successful */
-static int	GraphicsOpen;	/* true if the graphics device is open */
-static int	row, col;	/* row and col for console cursor */
-static struct	selinfo pm_selp;/* process waiting for select */
+#include <pmax/dev/fbreg.h>
 
 /*
  * These need to be mapped into user space.
  */
-static struct pmuaccess {
-	PM_Info		scrInfo;
-	pmEvent		events[PM_MAXEVQ];	
-	pmTimeCoord	tcs[MOTION_BUFFER_SIZE];
-} pmu;
-
-/*
- * Font mask bits used by Blitc().
- */
-static unsigned int fontmaskBits[16] = {
-	0x00000000,
-	0x00000001,
-	0x00000100,
-	0x00000101,
-	0x00010000,
-	0x00010001,
-	0x00010100,
-	0x00010101,
-	0x01000000,
-	0x01000001,
-	0x01000100,
-	0x01000101,
-	0x01010000,
-	0x01010001,
-	0x01010100,
-	0x01010101
-};
+struct fbuaccess pmu;
+struct pmax_fb pmfb;
+static u_short curReg;		/* copy of PCCRegs.cmdr since it's read only */
 
 /*
  * Forward references.
  */
-static void Scroll();
-static void Blitc();
+extern void fbScroll();
 
-static void ScreenInit();
-static void LoadCursor();
-static void RestoreCursorColor();
-static void CursorColor();
-static void PosCursor();
-static void InitColorMap();
-static void VDACInit();
-static void LoadColorMap();
-static void EnableVideo();
-static void DisableVideo();
+static void pmScreenInit();
+static void pmLoadCursor();
+static void pmRestoreCursorColor();
+static void pmCursorColor();
+void pmPosCursor();
+static void pmInitColorMap();
+static void pmVDACInit();
+static void pmLoadColorMap();
 
-extern void dcKBDPutc();
+extern void dcPutc(), fbKbdEvent(), fbMouseEvent(), fbMouseButtons();
+void pmKbdEvent(), pmMouseEvent(), pmMouseButtons();
 extern void (*dcDivertXInput)();
 extern void (*dcMouseEvent)();
 extern void (*dcMouseButtons)();
+extern int pmax_boardtype;
+extern u_short defCursor[32];
+extern struct consdev cn_tab;
 
 int	pmprobe();
 struct	driver pmdriver = {
@@ -129,508 +100,17 @@ struct	driver pmdriver = {
 pmprobe(cp)
 	register struct pmax_ctlr *cp;
 {
+	register struct pmax_fb *fp = &pmfb;
 
-	if (!initialized && !pminit())
+	if (pmax_boardtype != DS_PMAX)
 		return (0);
-	if (isMono)
+	if (!fp->initialized && !pminit())
+		return (0);
+	if (fp->isMono)
 		printf("pm0 (monochrome display)\n");
 	else
 		printf("pm0 (color display)\n");
 	return (1);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * pmKbdEvent --
- *
- *	Process a received character.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Events added to the queue.
- *
- *----------------------------------------------------------------------
- */
-void
-pmKbdEvent(ch)
-	int ch;
-{
-	register pmEvent *eventPtr;
-	int i;
-
-	if (!GraphicsOpen)
-		return;
-
-	/*
-	 * See if there is room in the queue.
-	 */
-	i = PM_EVROUND(pmu.scrInfo.qe.eTail + 1);
-	if (i == pmu.scrInfo.qe.eHead)
-		return;
-
-	/*
-	 * Add the event to the queue.
-	 */
-	eventPtr = &pmu.events[pmu.scrInfo.qe.eTail];
-	eventPtr->type = BUTTON_RAW_TYPE;
-	eventPtr->device = KEYBOARD_DEVICE;
-	eventPtr->x = pmu.scrInfo.mouse.x;
-	eventPtr->y = pmu.scrInfo.mouse.y;
-	eventPtr->time = TO_MS(time);
-	eventPtr->key = ch;
-	pmu.scrInfo.qe.eTail = i;
-	selwakeup(&pm_selp);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * pmMouseEvent --
- *
- *	Process a mouse event.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	An event is added to the event queue.
- *
- *----------------------------------------------------------------------
- */
-void
-pmMouseEvent(newRepPtr) 
-	register MouseReport *newRepPtr;
-{
-	unsigned milliSec;
-	int i;
-	pmEvent *eventPtr;
-
-	if (!GraphicsOpen)
-		return;
-
-	milliSec = TO_MS(time);
-
-	/*
-	 * Check to see if we have to accelerate the mouse
-	 */
-	if (pmu.scrInfo.mscale >= 0) {
-		if (newRepPtr->dx >= pmu.scrInfo.mthreshold) {
-			newRepPtr->dx +=
-				(newRepPtr->dx - pmu.scrInfo.mthreshold) *
-				pmu.scrInfo.mscale;
-		}
-		if (newRepPtr->dy >= pmu.scrInfo.mthreshold) {
-			newRepPtr->dy +=
-				(newRepPtr->dy - pmu.scrInfo.mthreshold) *
-				pmu.scrInfo.mscale;
-		}
-	}
-
-	/*
-	 * Update mouse position
-	 */
-	if (newRepPtr->state & MOUSE_X_SIGN) {
-		pmu.scrInfo.mouse.x += newRepPtr->dx;
-		if (pmu.scrInfo.mouse.x > pmu.scrInfo.max_cur_x)
-			pmu.scrInfo.mouse.x = pmu.scrInfo.max_cur_x;
-	} else {
-		pmu.scrInfo.mouse.x -= newRepPtr->dx;
-		if (pmu.scrInfo.mouse.x < pmu.scrInfo.min_cur_x)
-			pmu.scrInfo.mouse.x = pmu.scrInfo.min_cur_x;
-	}
-	if (newRepPtr->state & MOUSE_Y_SIGN) {
-		pmu.scrInfo.mouse.y -= newRepPtr->dy;
-		if (pmu.scrInfo.mouse.y < pmu.scrInfo.min_cur_y)
-			pmu.scrInfo.mouse.y = pmu.scrInfo.min_cur_y;
-	} else {
-		pmu.scrInfo.mouse.y += newRepPtr->dy;
-		if (pmu.scrInfo.mouse.y > pmu.scrInfo.max_cur_y)
-			pmu.scrInfo.mouse.y = pmu.scrInfo.max_cur_y;
-	}
-
-	/*
-	 * Move the hardware cursor.
-	 */
-	PosCursor(pmu.scrInfo.mouse.x, pmu.scrInfo.mouse.y);
-
-	/*
-	 * Store the motion event in the motion buffer.
-	 */
-	pmu.tcs[pmu.scrInfo.qe.tcNext].time = milliSec;
-	pmu.tcs[pmu.scrInfo.qe.tcNext].x = pmu.scrInfo.mouse.x;
-	pmu.tcs[pmu.scrInfo.qe.tcNext].y = pmu.scrInfo.mouse.y;
-	if (++pmu.scrInfo.qe.tcNext >= MOTION_BUFFER_SIZE)
-		pmu.scrInfo.qe.tcNext = 0;
-	if (pmu.scrInfo.mouse.y < pmu.scrInfo.mbox.bottom &&
-	    pmu.scrInfo.mouse.y >=  pmu.scrInfo.mbox.top &&
-	    pmu.scrInfo.mouse.x < pmu.scrInfo.mbox.right &&
-	    pmu.scrInfo.mouse.x >=  pmu.scrInfo.mbox.left)
-		return;
-
-	pmu.scrInfo.mbox.bottom = 0;
-	if (PM_EVROUND(pmu.scrInfo.qe.eTail + 1) == pmu.scrInfo.qe.eHead)
-		return;
-
-	i = PM_EVROUND(pmu.scrInfo.qe.eTail - 1);
-	if ((pmu.scrInfo.qe.eTail != pmu.scrInfo.qe.eHead) && 
-	    (i != pmu.scrInfo.qe.eHead)) {
-		pmEvent *eventPtr;
-
-		eventPtr = &pmu.events[i];
-		if (eventPtr->type == MOTION_TYPE) {
-			eventPtr->x = pmu.scrInfo.mouse.x;
-			eventPtr->y = pmu.scrInfo.mouse.y;
-			eventPtr->time = milliSec;
-			eventPtr->device = MOUSE_DEVICE;
-			return;
-		}
-	}
-	/*
-	 * Put event into queue and wakeup any waiters.
-	 */
-	eventPtr = &pmu.events[pmu.scrInfo.qe.eTail];
-	eventPtr->type = MOTION_TYPE;
-	eventPtr->time = milliSec;
-	eventPtr->x = pmu.scrInfo.mouse.x;
-	eventPtr->y = pmu.scrInfo.mouse.y;
-	eventPtr->device = MOUSE_DEVICE;
-	pmu.scrInfo.qe.eTail = PM_EVROUND(pmu.scrInfo.qe.eTail + 1);
-	selwakeup(&pm_selp);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * pmMouseButtons --
- *
- *	Process mouse buttons.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-pmMouseButtons(newRepPtr)
-	MouseReport *newRepPtr;
-{
-	static char temp, oldSwitch, newSwitch;
-	int i, j;
-	pmEvent *eventPtr;
-	static MouseReport lastRep;
-
-	if (!GraphicsOpen)
-		return;
-
-	newSwitch = newRepPtr->state & 0x07;
-	oldSwitch = lastRep.state & 0x07;
-
-	temp = oldSwitch ^ newSwitch;
-	if (temp == 0)
-		return;
-	for (j = 1; j < 8; j <<= 1) {
-		if ((j & temp) == 0)
-			continue;
-
-		/*
-		 * Check for room in the queue
-		 */
-		i = PM_EVROUND(pmu.scrInfo.qe.eTail+1);
-		if (i == pmu.scrInfo.qe.eHead)
-			return;
-
-		/*
-		 * Put event into queue.
-		 */
-		eventPtr = &pmu.events[pmu.scrInfo.qe.eTail];
-
-		switch (j) {
-		case RIGHT_BUTTON:
-			eventPtr->key = EVENT_RIGHT_BUTTON;
-			break;
-
-		case MIDDLE_BUTTON:
-			eventPtr->key = EVENT_MIDDLE_BUTTON;
-			break;
-
-		case LEFT_BUTTON:
-			eventPtr->key = EVENT_LEFT_BUTTON;
-		}
-		if (newSwitch & j)
-			eventPtr->type = BUTTON_DOWN_TYPE;
-		else
-			eventPtr->type = BUTTON_UP_TYPE;
-		eventPtr->device = MOUSE_DEVICE;
-
-		eventPtr->time = TO_MS(time);
-		eventPtr->x = pmu.scrInfo.mouse.x;
-		eventPtr->y = pmu.scrInfo.mouse.y;
-	}
-	pmu.scrInfo.qe.eTail = i;
-	selwakeup(&pm_selp);
-
-	lastRep = *newRepPtr;
-	pmu.scrInfo.mswitches = newSwitch;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Scroll --
- *
- *	Scroll the screen.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static void
-Scroll()
-{
-	register int *dest, *src;
-	register int *end;
-	register int temp0, temp1, temp2, temp3;
-	register int i, scanInc, lineCount;
-	int line;
-
-	/*
-	 * If the mouse is on we don't scroll so that the bit map remains sane.
-	 */
-	if (GraphicsOpen) {
-		row = 0;
-		return;
-	}
-
-	/*
-	 *  The following is an optimization to cause the scrolling 
-	 *  of text to be memory limited.  Basically the writebuffer is 
-	 *  4 words (32 bits ea.) long so to achieve maximum speed we 
-	 *  read and write in multiples of 4 words. We also limit the 
-	 *  size to be MAX_COL characters for more speed. 
-	 */
-	if (isMono) {
-		lineCount = 5;
-		line = 1920 * 2;
-		scanInc = 44;
-	} else {
-		lineCount = 40;
-		scanInc = 96;
-		line = 1920 * 8;
-	}
-	src = (int *)(MACH_UNCACHED_FRAME_BUFFER_ADDR + line);
-	dest = (int *)(MACH_UNCACHED_FRAME_BUFFER_ADDR);
-	end = (int *)(MACH_UNCACHED_FRAME_BUFFER_ADDR + (60 * line) - line);
-	do {
-		i = 0;
-		do {
-			temp0 = src[0];
-			temp1 = src[1];
-			temp2 = src[2];
-			temp3 = src[3];
-			dest[0] = temp0;
-			dest[1] = temp1;
-			dest[2] = temp2;
-			dest[3] = temp3;
-			dest += 4;
-			src += 4;
-			i++;
-		} while (i < lineCount);
-		src += scanInc;
-		dest += scanInc;
-	} while (src < end);
-
-	/* 
-	 * Now zero out the last two lines 
-	 */
-	bzero(MACH_UNCACHED_FRAME_BUFFER_ADDR + (row * line), 3 * line);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * pmPutc --
- *
- *	Write a character to the console.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-pmPutc(c)
-	register int c;
-{
-	int s;
-
-	s = splhigh();	/* in case we do any printf's at interrupt time */
-	if (initialized) {
-#ifdef DEBUG
-		/*
-		 * If the HELP key is pressed, wait for another
-		 * HELP key press to start/stop output.
-		 */
-		if (dcDebugGetc() == LK_HELP) {
-			while (dcDebugGetc() != LK_HELP)
-				;
-		}
-#endif
-		Blitc(c);
-	} else {
-		void (*f)() = (void (*)())MACH_MON_PUTCHAR;
-
-		(*f)(c);
-	}
-	splx(s);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Blitc --
- *
- *	Write a character to the screen.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static void
-Blitc(c)
-	register int c;
-{
-	register char *bRow, *fRow;
-	register int i;
-	register int ote = isMono ? 256 : 1024; /* offset to table entry */
-	int colMult = isMono ? 1 : 8;
-
-	c &= 0xff;
-
-	switch (c) {
-	case '\t':
-		for (i = 8 - (col & 0x7); i > 0; i--)
-			Blitc(' ');
-		break;
-
-	case '\r':
-		col = 0;
-		break;
-
-	case '\b':
-		col--;
-		if (col < 0)
-			col = 0;
-		break;
-
-	case '\n':
-		if (row + 1 >= MAX_ROW)
-			Scroll();
-		else
-			row++;
-		col = 0;
-		break;
-
-	case '\007':
-		dcKBDPutc(LK_RING_BELL);
-		break;
-
-	default:
-		/*
-		 * 0xA1 to 0xFD are the printable characters added with 8-bit
-		 * support.
-		 */
-		if (c < ' ' || c > '~' && c < 0xA1 || c > 0xFD)
-			break;
-		/*
-		 * If the next character will wrap around then 
-		 * increment row counter or scroll screen.
-		 */
-		if (col >= MAX_COL) {
-			col = 0;
-			if (row + 1 >= MAX_ROW)
-				Scroll();
-			else
-				row++;
-		}
-		bRow = (char *)(MACH_UNCACHED_FRAME_BUFFER_ADDR +
-			(row * 15 & 0x3ff) * ote + col * colMult);
-		i = c - ' ';
-		/*
-		 * This is to skip the (32) 8-bit 
-		 * control chars, as well as DEL 
-		 * and 0xA0 which aren't printable
-		 */
-		if (c > '~')
-			i -= 34; 
-		i *= 15;
-		fRow = (char *)((int)pmFont + i);
-
-		/* inline expansion for speed */
-		if (isMono) {
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-		} else {
-			register int j;
-			register unsigned int *pInt;
-
-			pInt = (unsigned int *)bRow;
-			for (j = 0; j < 15; j++) {
-				/*
-				 * fontmaskBits converts a nibble
-				 * (4 bytes) to a long word 
-				 * containing 4 pixels corresponding
-				 * to each bit in the nibble.  Thus
-				 * we write two longwords for each
-				 * byte in font.
-				 * 
-				 * Remember the font is 8 bits wide
-				 * and 15 bits high.
-				 *
-				 * We add 256 to the pointer to
-				 * point to the pixel on the 
-				 * next scan line
-				 * directly below the current
-				 * pixel.
-				 */
-				pInt[0] = fontmaskBits[(*fRow) & 0xf];
-				pInt[1] = fontmaskBits[((*fRow) >> 4) & 0xf];
-				fRow++; 
-				pInt += 256;
-			}
-		}
-		col++; /* increment column counter */
-	}
-	if (!GraphicsOpen)
-		PosCursor(col * 8, row * 15);
 }
 
 /*ARGSUSED*/
@@ -638,24 +118,25 @@ pmopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
+	register struct pmax_fb *fp = &pmfb;
 	int s;
 
-	if (!initialized)
+	if (!fp->initialized)
 		return (ENXIO);
-	if (GraphicsOpen)
+	if (fp->GraphicsOpen)
 		return (EBUSY);
 
-	GraphicsOpen = 1;
-	if (!isMono)
-		InitColorMap();
+	fp->GraphicsOpen = 1;
+	if (!fp->isMono)
+		pmInitColorMap();
 	/*
 	 * Set up event queue for later
 	 */
-	pmu.scrInfo.qe.eSize = PM_MAXEVQ;
-	pmu.scrInfo.qe.eHead = pmu.scrInfo.qe.eTail = 0;
-	pmu.scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
-	pmu.scrInfo.qe.tcNext = 0;
-	pmu.scrInfo.qe.timestamp_ms = TO_MS(time);
+	fp->fbu->scrInfo.qe.eSize = PM_MAXEVQ;
+	fp->fbu->scrInfo.qe.eHead = fp->fbu->scrInfo.qe.eTail = 0;
+	fp->fbu->scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
+	fp->fbu->scrInfo.qe.tcNext = 0;
+	fp->fbu->scrInfo.qe.timestamp_ms = TO_MS(time);
 	s = spltty();
 	dcDivertXInput = pmKbdEvent;
 	dcMouseEvent = pmMouseEvent;
@@ -669,24 +150,25 @@ pmclose(dev, flag)
 	dev_t dev;
 	int flag;
 {
+	register struct pmax_fb *fp = &pmfb;
 	int s;
 
-	if (!GraphicsOpen)
+	if (!fp->GraphicsOpen)
 		return (EBADF);
 
-	GraphicsOpen = 0;
-	if (!isMono)
-		InitColorMap();
+	fp->GraphicsOpen = 0;
+	if (!fp->isMono)
+		pmInitColorMap();
 	s = spltty();
 	dcDivertXInput = (void (*)())0;
 	dcMouseEvent = (void (*)())0;
 	dcMouseButtons = (void (*)())0;
 	splx(s);
-	ScreenInit();
+	pmScreenInit();
 	vmUserUnmap();
-	bzero((caddr_t)MACH_UNCACHED_FRAME_BUFFER_ADDR,
-		(isMono ? 1024 / 8 : 1024) * 864);
-	PosCursor(col * 8, row * 15);
+	bzero((caddr_t)fp->fr_addr,
+		(fp->isMono ? 1024 / 8 : 1024) * 864);
+	pmPosCursor(fp->col * 8, fp->row * 15);
 	return (0);
 }
 
@@ -695,7 +177,8 @@ pmioctl(dev, cmd, data, flag)
 	dev_t dev;
 	caddr_t data;
 {
-	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
+	register PCCRegs *pcc = (PCCRegs *)MACH_PHYS_TO_UNCACHED(KN01_SYS_PCC);
+	register struct pmax_fb *fp = &pmfb;
 	int s;
 
 	switch (cmd) {
@@ -708,27 +191,28 @@ pmioctl(dev, cmd, data, flag)
 		 * Map the all the data the user needs access to into
 		 * user space.
 		 */
-		addr = vmUserMap(sizeof(pmu), (unsigned)&pmu);
+		addr = vmUserMap(sizeof(struct fbuaccess), (unsigned)fp->fbu);
 		if (addr == (caddr_t)0)
 			goto mapError;
-		*(PM_Info **)data = &((struct pmuaccess *)addr)->scrInfo;
-		pmu.scrInfo.qe.events = ((struct pmuaccess *)addr)->events;
-		pmu.scrInfo.qe.tcs = ((struct pmuaccess *)addr)->tcs;
+		*(PM_Info **)data = &((struct fbuaccess *)addr)->scrInfo;
+		fp->fbu->scrInfo.qe.events = ((struct fbuaccess *)addr)->events;
+		fp->fbu->scrInfo.qe.tcs = ((struct fbuaccess *)addr)->tcs;
 		/*
 		 * Map the plane mask into the user's address space.
 		 */
-		addr = vmUserMap(4, (unsigned)MACH_PLANE_MASK_ADDR);
+		addr = vmUserMap(4, (unsigned)
+			MACH_PHYS_TO_UNCACHED(KN01_PHYS_COLMASK_START));
 		if (addr == (caddr_t)0)
 			goto mapError;
-		pmu.scrInfo.planemask = (char *)addr;
+		fp->fbu->scrInfo.planemask = (char *)addr;
 		/*
 		 * Map the frame buffer into the user's address space.
 		 */
-		addr = vmUserMap(isMono ? 256*1024 : 1024*1024,
-			(unsigned)MACH_UNCACHED_FRAME_BUFFER_ADDR);
+		addr = vmUserMap(fp->isMono ? 256*1024 : 1024*1024,
+			(unsigned)fp->fr_addr);
 		if (addr == (caddr_t)0)
 			goto mapError;
-		pmu.scrInfo.bitmap = (char *)addr;
+		fp->fbu->scrInfo.bitmap = (char *)addr;
 		break;
 
 	mapError:
@@ -741,15 +225,15 @@ pmioctl(dev, cmd, data, flag)
 		/*
 		 * Set mouse state.
 		 */
-		pmu.scrInfo.mouse = *(pmCursor *)data;
-		PosCursor(pmu.scrInfo.mouse.x, pmu.scrInfo.mouse.y);
+		fp->fbu->scrInfo.mouse = *(pmCursor *)data;
+		pmPosCursor(fp->fbu->scrInfo.mouse.x, fp->fbu->scrInfo.mouse.y);
 		break;
 
 	case QIOCINIT:
 		/*
 		 * Initialize the screen.
 		 */
-		ScreenInit();
+		pmScreenInit();
 		break;
 
 	case QIOCKPCMD:
@@ -760,32 +244,32 @@ pmioctl(dev, cmd, data, flag)
 		kpCmdPtr = (pmKpCmd *)data;
 		if (kpCmdPtr->nbytes == 0)
 			kpCmdPtr->cmd |= 0x80;
-		if (!GraphicsOpen)
+		if (!fp->GraphicsOpen)
 			kpCmdPtr->cmd |= 1;
-		dcKBDPutc((int)kpCmdPtr->cmd);
+		(*fp->KBDPutc)(fp->kbddev, (int)kpCmdPtr->cmd);
 		cp = &kpCmdPtr->par[0];
 		for (; kpCmdPtr->nbytes > 0; cp++, kpCmdPtr->nbytes--) {
 			if (kpCmdPtr->nbytes == 1)
 				*cp |= 0x80;
-			dcKBDPutc((int)*cp);
+			(*fp->KBDPutc)(fp->kbddev, (int)*cp);
 		}
 		break;
 	    }
 
 	case QIOCADDR:
-		*(PM_Info **)data = &pmu.scrInfo;
+		*(PM_Info **)data = &fp->fbu->scrInfo;
 		break;
 
 	case QIOWCURSOR:
-		LoadCursor((unsigned short *)data);
+		pmLoadCursor((unsigned short *)data);
 		break;
 
 	case QIOWCURSORCOLOR:
-		CursorColor((unsigned int *)data);
+		pmCursorColor((unsigned int *)data);
 		break;
 
 	case QIOSETCMAP:
-		LoadColorMap((ColorMap *)data);
+		pmLoadColorMap((ColorMap *)data);
 		break;
 
 	case QIOKERNLOOP:
@@ -805,16 +289,16 @@ pmioctl(dev, cmd, data, flag)
 		break;
 
 	case QIOVIDEOON:
-		if (!isMono)
-			RestoreCursorColor();
+		if (!fp->isMono)
+			pmRestoreCursorColor();
 		curReg |= PCC_ENPA;
 		curReg &= ~PCC_FOPB;
 		pcc->cmdr = curReg;
 		break;
 
 	case QIOVIDEOOFF:
-		if (!isMono)
-			VDACInit();
+		if (!fp->isMono)
+			pmVDACInit();
 		curReg |= PCC_FOPB;
 		curReg &= ~PCC_ENPA;
 		pcc->cmdr = curReg;
@@ -832,12 +316,13 @@ pmselect(dev, flag, p)
 	int flag;
 	struct proc *p;
 {
+	struct pmax_fb *fp = &pmfb;
 
 	switch (flag) {
 	case FREAD:
-		if (pmu.scrInfo.qe.eHead != pmu.scrInfo.qe.eTail)
+		if (fp->fbu->scrInfo.qe.eHead != fp->fbu->scrInfo.qe.eTail)
 			return (1);
-		selrecord(p, &pm_selp);
+		selrecord(p, &fp->selp);
 		break;
 	}
 
@@ -848,28 +333,24 @@ static u_char	bg_RGB[3];	/* background color for the cursor */
 static u_char	fg_RGB[3];	/* foreground color for the cursor */
 
 /*
- * The default cursor.
- */
-unsigned short defCursor[32] = { 
-/* plane A */ 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
-	      0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
-/* plane B */ 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
-              0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF
-
-};
-
-/*
  * Test to see if device is present.
  * Return true if found and initialized ok.
  */
 pminit()
 {
-	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
+	register PCCRegs *pcc = (PCCRegs *)MACH_PHYS_TO_UNCACHED(KN01_SYS_PCC);
+	register struct pmax_fb *fp = &pmfb;
 
-	isMono = *(u_short *)MACH_SYS_CSR_ADDR & MACH_CSR_MONO;
-	if (isMono) {
+	fp->isMono = *(volatile u_short *)MACH_PHYS_TO_UNCACHED(KN01_SYS_CSR) &
+		KN01_CSR_MONO;
+	fp->fr_addr = (char *)MACH_PHYS_TO_UNCACHED(KN01_PHYS_FBUF_START);
+	fp->fbu = &pmu;
+	fp->posCursor = pmPosCursor;
+	fp->KBDPutc = dcPutc;
+	fp->kbddev = makedev(DCDEV, DCKBD_PORT);
+	if (fp->isMono) {
 		/* check for no frame buffer */
-		if (badaddr((char *)MACH_UNCACHED_FRAME_BUFFER_ADDR, 4))
+		if (badaddr((char *)fp->fr_addr, 4))
 			return (0);
 	}
 
@@ -886,38 +367,40 @@ pminit()
 	/*
 	 * Initialize screen info.
 	 */
-	pmu.scrInfo.max_row = 56;
-	pmu.scrInfo.max_col = 80;
-	pmu.scrInfo.max_x = 1024;
-	pmu.scrInfo.max_y = 864;
-	pmu.scrInfo.max_cur_x = 1023;
-	pmu.scrInfo.max_cur_y = 863;
-	pmu.scrInfo.version = 11;
-	pmu.scrInfo.mthreshold = 4;	
-	pmu.scrInfo.mscale = 2;
-	pmu.scrInfo.min_cur_x = -15;
-	pmu.scrInfo.min_cur_y = -15;
-	pmu.scrInfo.qe.timestamp_ms = TO_MS(time);
-	pmu.scrInfo.qe.eSize = PM_MAXEVQ;
-	pmu.scrInfo.qe.eHead = pmu.scrInfo.qe.eTail = 0;
-	pmu.scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
-	pmu.scrInfo.qe.tcNext = 0;
+	fp->fbu->scrInfo.max_row = 56;
+	fp->fbu->scrInfo.max_col = 80;
+	fp->fbu->scrInfo.max_x = 1024;
+	fp->fbu->scrInfo.max_y = 864;
+	fp->fbu->scrInfo.max_cur_x = 1023;
+	fp->fbu->scrInfo.max_cur_y = 863;
+	fp->fbu->scrInfo.version = 11;
+	fp->fbu->scrInfo.mthreshold = 4;	
+	fp->fbu->scrInfo.mscale = 2;
+	fp->fbu->scrInfo.min_cur_x = -15;
+	fp->fbu->scrInfo.min_cur_y = -15;
+	fp->fbu->scrInfo.qe.timestamp_ms = TO_MS(time);
+	fp->fbu->scrInfo.qe.eSize = PM_MAXEVQ;
+	fp->fbu->scrInfo.qe.eHead = fp->fbu->scrInfo.qe.eTail = 0;
+	fp->fbu->scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
+	fp->fbu->scrInfo.qe.tcNext = 0;
 
 	/*
 	 * Initialize the color map, the screen, and the mouse.
 	 */
-	InitColorMap();
-	ScreenInit();
-	Scroll();
+	pmInitColorMap();
+	pmScreenInit();
+	fbScroll(fp);
 
-	initialized = 1;
+	fp->initialized = 1;
+	if (cn_tab.cn_fb == (struct pmax_fb *)0)
+		cn_tab.cn_fb = fp;
 	return (1);
 }	
 
 /*
  * ----------------------------------------------------------------------------
  *
- * ScreenInit --
+ * pmScreenInit --
  *
  *	Initialize the screen.
  *
@@ -930,28 +413,29 @@ pminit()
  * ----------------------------------------------------------------------------
  */
 static void
-ScreenInit()
+pmScreenInit()
 {
+	register struct pmax_fb *fp = &pmfb;
 
 	/*
 	 * Home the cursor.
 	 * We want an LSI terminal emulation.  We want the graphics
 	 * terminal to scroll from the bottom. So start at the bottom.
 	 */
-	row = 55;
-	col = 0;
+	fp->row = 55;
+	fp->col = 0;
 
 	/*
 	 * Load the cursor with the default values
 	 *
 	 */
-	LoadCursor(defCursor);
+	pmLoadCursor(defCursor);
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * LoadCursor --
+ * pmLoadCursor --
  *
  *	Routine to load the cursor Sprite pattern.
  *
@@ -964,10 +448,10 @@ ScreenInit()
  * ----------------------------------------------------------------------------
  */
 static void
-LoadCursor(cur)
+pmLoadCursor(cur)
 	unsigned short *cur;
 {
-	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
+	register PCCRegs *pcc = (PCCRegs *)MACH_PHYS_TO_UNCACHED(KN01_SYS_PCC);
 	register int i;
 
 	curReg |= PCC_LODSA;
@@ -983,7 +467,7 @@ LoadCursor(cur)
 /*
  * ----------------------------------------------------------------------------
  *
- * RestoreCursorColor --
+ * pmRestoreCursorColor --
  *
  *	Routine to restore the color of the cursor.
  *
@@ -996,9 +480,9 @@ LoadCursor(cur)
  * ----------------------------------------------------------------------------
  */
 static void
-RestoreCursorColor()
+pmRestoreCursorColor()
 {
-	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
+	register VDACRegs *vdac = (VDACRegs *)MACH_PHYS_TO_UNCACHED(KN01_SYS_VDAC);
 	register int i;
 
 	vdac->overWA = 0x04;
@@ -1028,7 +512,7 @@ RestoreCursorColor()
 /*
  * ----------------------------------------------------------------------------
  *
- * CursorColor --
+ * pmCursorColor --
  *
  *	Set the color of the cursor.
  *
@@ -1041,7 +525,7 @@ RestoreCursorColor()
  * ----------------------------------------------------------------------------
  */
 static void
-CursorColor(color)
+pmCursorColor(color)
 	unsigned int color[];
 {
 	register int i, j;
@@ -1052,13 +536,13 @@ CursorColor(color)
 	for (i = 3, j = 0; i < 6; i++, j++)
 		fg_RGB[j] = (u_char)(color[i] >> 8);
 
-	RestoreCursorColor();
+	pmRestoreCursorColor();
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * InitColorMap --
+ * pmInitColorMap --
  *
  *	Initialize the color map.
  *
@@ -1072,15 +556,16 @@ CursorColor(color)
  * ----------------------------------------------------------------------------
  */
 static void
-InitColorMap()
+pmInitColorMap()
 {
-	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
+	register VDACRegs *vdac = (VDACRegs *)MACH_PHYS_TO_UNCACHED(KN01_SYS_VDAC);
+	struct pmax_fb *fp = &pmfb;
 	register int i;
 
-	*(char *)MACH_PLANE_MASK_ADDR = 0xff;
+	*(volatile char *)MACH_PHYS_TO_UNCACHED(KN01_PHYS_COLMASK_START) = 0xff;
 	MachEmptyWriteBuffer();
 
-	if (isMono) {
+	if (fp->isMono) {
 		vdac->mapWA = 0; MachEmptyWriteBuffer();
 		for (i = 0; i < 256; i++) {
 			vdac->map = (i < 128) ? 0x00 : 0xff;
@@ -1107,13 +592,13 @@ InitColorMap()
 		bg_RGB[i] = 0x00;
 		fg_RGB[i] = 0xff;
 	}
-	RestoreCursorColor();
+	pmRestoreCursorColor();
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * VDACInit --
+ * pmVDACInit --
  *
  *	Initialize the VDAC.
  *
@@ -1126,9 +611,9 @@ InitColorMap()
  * ----------------------------------------------------------------------------
  */
 static void
-VDACInit()
+pmVDACInit()
 {
-	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
+	register VDACRegs *vdac = (VDACRegs *)MACH_PHYS_TO_UNCACHED(KN01_SYS_VDAC);
 
 	/*
 	 *
@@ -1151,7 +636,7 @@ VDACInit()
 /*
  * ----------------------------------------------------------------------------
  *
- * LoadColorMap --
+ * pmLoadColorMap --
  *
  *	Load the color map.
  *
@@ -1164,10 +649,10 @@ VDACInit()
  * ----------------------------------------------------------------------------
  */
 static void
-LoadColorMap(ptr)
+pmLoadColorMap(ptr)
 	ColorMap *ptr;
 {
-	register VDACRegs *vdac = (VDACRegs *)MACH_COLOR_MAP_ADDR;
+	register VDACRegs *vdac = (VDACRegs *)MACH_PHYS_TO_UNCACHED(KN01_SYS_VDAC);
 
 	if (ptr->index > 256)
 		return;
@@ -1181,7 +666,7 @@ LoadColorMap(ptr)
 /*
  *----------------------------------------------------------------------
  *
- * PosCursor --
+ * pmPosCursor --
  *
  *	Postion the cursor.
  *
@@ -1193,19 +678,45 @@ LoadColorMap(ptr)
  *
  *----------------------------------------------------------------------
  */
-static void
-PosCursor(x, y)
+void
+pmPosCursor(x, y)
 	register int x, y;
 {
-	register PCCRegs *pcc = (PCCRegs *)MACH_CURSOR_REG_ADDR;
+	register PCCRegs *pcc = (PCCRegs *)MACH_PHYS_TO_UNCACHED(KN01_SYS_PCC);
+	register struct pmax_fb *fp = &pmfb;
 
-	if (y < pmu.scrInfo.min_cur_y || y > pmu.scrInfo.max_cur_y)
-		y = pmu.scrInfo.max_cur_y;
-	if (x < pmu.scrInfo.min_cur_x || x > pmu.scrInfo.max_cur_x)
-		x = pmu.scrInfo.max_cur_x;
-	pmu.scrInfo.cursor.x = x;		/* keep track of real cursor */
-	pmu.scrInfo.cursor.y = y;		/* position, indep. of mouse */
+	if (y < fp->fbu->scrInfo.min_cur_y || y > fp->fbu->scrInfo.max_cur_y)
+		y = fp->fbu->scrInfo.max_cur_y;
+	if (x < fp->fbu->scrInfo.min_cur_x || x > fp->fbu->scrInfo.max_cur_x)
+		x = fp->fbu->scrInfo.max_cur_x;
+	fp->fbu->scrInfo.cursor.x = x;		/* keep track of real cursor */
+	fp->fbu->scrInfo.cursor.y = y;		/* position, indep. of mouse */
 	pcc->xpos = PCC_X_OFFSET + x;
 	pcc->ypos = PCC_Y_OFFSET + y;
 }
-#endif
+
+/*
+ * pm keyboard and mouse input. Just punt to the generic ones in fb.c
+ */
+void
+pmKbdEvent(ch)
+	int ch;
+{
+	fbKbdEvent(ch, &pmfb);
+}
+
+void
+pmMouseEvent(newRepPtr)
+	MouseReport *newRepPtr;
+{
+	fbMouseEvent(newRepPtr, &pmfb);
+}
+
+void
+pmMouseButtons(newRepPtr)
+	MouseReport *newRepPtr;
+{
+	fbMouseButtons(newRepPtr, &pmfb);
+}
+#endif /* NDC */
+#endif /* NPM */
