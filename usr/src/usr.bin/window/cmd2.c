@@ -1,53 +1,61 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	3.31 %G%";
+static char sccsid[] = "@(#)cmd2.c	3.32 %G%";
 #endif
 
 #include "defs.h"
 
 char *help_shortcmd[] = {
-	"#       Select window # and return to conversation mode.",
-	"%#      Select window # but stay in command mode.",
-	"escape  Return to conversation mode without changing window.",
-	"^^      Return to conversation mode and change to previous window.",
-	"c#      Close window #.",
-	"w       Open a new window.",
-	"m#      Move window #.",
-	"M#      Move window # to its previous position.",
-	"s#      Change the size of window #.",
-	"S#      Change window # to its previous size.",
-	"^Y,^E   Scroll up, down one line.",
-	"^U,^D   Scroll up, down half a window.",
-	"^B,^F   Scroll up, down a full window.",
-	"h,j,k,l Move cursor left, down, up, right.",
-	"^S,^Q   Stop, start output in current window.",
-	"^L      Redraw screen.",
-	"^Z      Suspend.",
-	"q       Quit.",
-	":       Enter a long command.",
+	"#       Select window # and return to conversation mode",
+	"%#      Select window # but stay in command mode",
+	"escape  Return to conversation mode without changing window",
+	"^^      Return to conversation mode and change to previous window",
+	"c#      Close window #",
+	"w       Open a new window",
+	"m#      Move window #",
+	"M#      Move window # to its previous position",
+	"s#      Change the size of window #",
+	"S#      Change window # to its previous size",
+	"^Y      Scroll up one line",
+	"^E      Scroll down one line",
+	"^U      Scroll up half a window",
+	"^D      Scroll down half a window",
+	"^B      Scroll up a full window",
+	"^F      Scroll down a full window",
+	"h       Move cursor left",
+	"j       Move cursor down",
+	"k       Move cursor up",
+	"l       Move cursor right",
+	"^S      Stop output in current window",
+	"^Q      Restart output in current window",
+	"^L      Redraw screen",
+	"^Z      Suspend",
+	"q       Quit",
+	":       Enter a long command",
 	0
 };
 char *help_longcmd[] = {
-	":%#                   Select window #.",
-	":close # . . .        Close windows.",
-	":close all            Close all windows.",
-	":cursor modes         Set the cursor modes.",
-	":echo # string . . .  Print ``string . . .'' in window #.",
-	":escape C             Set escape character to C.",
-	":foreground # [off]   Make # a foreground window.",
-	":label # string       Set label of window # to ``string''.",
-	":list                 Give a list of all windows.",
-	":nline lines          Set the default number of lines",
-	"                      in window text buffers.",
-	":shell string . . .   Set default shell program to ``string . . .''",
-	":source filename      Execute commands in ``filename.''",
-	":terse [off]          Turn on (or off) terse mode.",
-	":unset variable       Deallocate ``variable''.",
-	":variable             List all variables.",
+	":alias name string ...  Make `name' an alias for `string ...'",
+	":alias                  Show all aliases",
+	":close # ...            Close windows",
+	":close all              Close all windows",
+	":cursor modes           Set the cursor modes",
+	":echo # string ...      Print `string ...' in window #",
+	":escape c               Set escape character to `c'",
+	":foreground # flag      Make # a foreground window, if `flag' is true",
+	":label # string         Set label of window # to `string'",
+	":list                   List all open windows",
+	":nline lines            Set default window buffer size to `lines'",
+	":select #               Select window #",
+	":shell string ...       Set default shell program to `string ...'",
+	":source filename        Execute commands in `filename'",
+	":terse flag             Set terse mode",
+	":unalias name           Undefine `name' as an alias",
+	":unset variable         Deallocate `variable'",
+	":variable               List all variables",
 	":window row col nrow ncol [nline label pty frame shell]",
-	"                      Open a window at ``row'', ``col''",
-	"                      of size ``nrow'', ``ncol'',",
-	"                      with ``nline'', and ``label''.",
-	":write # string . . . Write ``string . . .'' to window #.",
+	"                        Open a window at `row', `col' of size `nrow', `ncol',",
+	"                        with `nline' lines in the buffer, and `label'",
+	":write # string ...     Write `string ...' to window # as input",
 	0
 };
 
@@ -60,7 +68,7 @@ c_help()
 		return;
 	}
 	wwprintf(w, "The escape character is %c.\n", escapec);
-	wwprintf(w, "(Below, # is one of the digits from 1 to 9.)\n\n");
+	wwprintf(w, "(# represents one of the digits from 1 to 9.)\n\n");
 	if (help_print(w, "Short commands", help_shortcmd) >= 0)
 		(void) help_print(w, "Long commands", help_longcmd);
 	closeiwin(w);
