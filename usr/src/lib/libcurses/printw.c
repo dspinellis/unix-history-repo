@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,12 +24,14 @@ static char sccsid[] = "@(#)printw.c	5.9 (Berkeley) %G%";
  * is not in effect.
  */
 
+static int __sprintw __P((WINDOW *, const char *, ...));
 static int __winwrite __P((void *, const char *, int));
 
 /*
  * printw --
  *	Printf on the standard screen.
  */
+int
 #if __STDC__
 printw(const char *fmt, ...)
 #else
@@ -46,7 +48,7 @@ printw(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = _sprintw(stdscr, fmt, ap);
+	ret = __sprintw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -55,6 +57,7 @@ printw(fmt, va_alist)
  * wprintw --
  *	Printf on the given window.
  */
+int
 #if __STDC__
 wprintw(WINDOW * win, const char *fmt, ...)
 #else
@@ -72,7 +75,64 @@ wprintw(win, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = _sprintw(win, fmt, ap);
+	ret = __sprintw(win, fmt, ap);
+	va_end(ap);
+	return (ret);
+}
+
+/*
+ * mvprintw, mvwprintw --
+ *	Implement the mvprintw commands.  Due to the variable number of
+ *	arguments, they cannot be macros.  Sigh....
+ */
+int
+#if __STDC__
+mvprintw(register int y, register int x, const char *fmt, ...)
+#else
+mvprintw(y, x, fmt, va_alist)
+	register int y, x;
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+	int ret;
+
+	if (move(y, x) != OK)
+		return (ERR);
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	ret = __sprintw(stdscr, fmt, ap);
+	va_end(ap);
+	return (ret);
+}
+
+int
+#if __STDC__
+mvwprintw(register WINDOW * win, register int y, register int x,
+    const char *fmt, ...)
+#else
+mvwprintw(win, y, x, fmt, va_alist)
+	register WINDOW *win;
+	register int y, x;
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+	int ret;
+
+	if (wmove(win, y, x) != OK)
+		return (ERR);
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	ret = __sprintw(win, fmt, ap);
 	va_end(ap);
 	return (ret);
 }
@@ -101,15 +161,17 @@ __winwrite(cookie, buf, n)
  *	It must not be declared static as it is used in mvprintw.c.
  *	THIS SHOULD BE RENAMED vwprintw AND EXPORTED
  */
+static int
+#if __STDC__
+__sprintw(WINDOW *win, const char *fmt, ...)
+#else
 __sprintw(win, fmt, ap)
 	WINDOW *win;
-#if __STDC__
-	const char *fmt;
-#else
 	char *fmt;
+	va_dcl;
 #endif
-	va_list ap;
 {
+	va_list ap;
 	FILE *f;
 
 	if ((f = funopen(win, NULL, __winwrite, NULL, NULL)) == NULL)
