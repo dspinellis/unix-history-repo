@@ -1,0 +1,35 @@
+
+source/conf/SCCS/s.version.c:
+
+D 7.10	81/10/27 16:42:29	eric	10	9	00000/00000/00016
+added shorts and fixed long strings in EQUEL preprocessor;
+this code done by john in version 8 and stolen here.
+
+D 7.9	81/09/12 22:31:57	eric	9	8	00000/00000/00016
+fix i2 bug in copy; fix problem scanning all databases in
+purge & restore; fix f4/f8 conversion in ovqp/typecheck
+
+D 7.8	81/04/17 16:13:19	eric	8	7	00000/00000/00016
+fix botch in purge
+
+D 7.7	81/03/07 12:23:04	eric	7	6	00000/00000/00016
+fix stack alignment problem in ovqp
+
+D 7.6	81/03/06 15:54:47	eric	6	5	00000/00000/00016
+do stack push/pop correctly in ovqp/interp.c
+
+D 7.5	81/03/06 13:50:39	eric	5	4	00000/00000/00016
+various ovqp fixes: prsym fixed up, catch stack overflow,
+pop stack on AOP to not leave trash
+
+D 7.4	81/03/05 14:23:34	eric	4	3	00000/00000/00016
+catch too many aggs (more than MAXAGG)
+
+D 7.3	81/02/17 10:23:57	eric	3	2	00000/00000/00016
+fix bug in ndxsearch with large linenos
+
+D 7.2	81/02/16 19:15:45	eric	2	1	00000/00000/00016
+fix NUMEROUS equel problems
+
+D 7.1	81/02/05 18:47:46	eric	1	0	00016/00000/00000
+date and time created 81/02/05 18:47:46 by eric
