@@ -208,7 +208,7 @@ lint:
 				${TNMAIN} -lcurses
 	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} ${MSMAIN} map3270.c -lcurses
 
-makefile.mak:	makefile
+makefiles.pc:
 	for i in . ${SUBDIR} ${EXTRADIR}; \
 	do (sed -e "s/lib\.a/.lib/g" -e "s/^PC_//" < $$i/makefile | \
 			    mkmake | sed -e "sx/x\\\\x" > $$i/makefile.mak); \
