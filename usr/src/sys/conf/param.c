@@ -1,4 +1,4 @@
-/*	param.c	4.13	82/08/01	*/
+/*	param.c	4.14	82/09/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,6 +14,7 @@
 #include "../h/cmap.h"
 #include "../h/mbuf.h"
 #include "../h/quota.h"
+#include "../h/kernel.h"
 /*
  * System parameter formulae.
  *
@@ -24,9 +25,10 @@
  * Compiled with -DHZ=xx -DTIMEZONE=x -DDST=x -DMAXUSERS=xx
  */
 
+#define	HZ 100
 int	hz = HZ;
-int	timezone = TIMEZONE;
-int	dstflag = DST;
+int	tick = 1000000 / HZ;
+struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
 int	nproc = NPROC;
 int	ntext = 24 + MAXUSERS;
