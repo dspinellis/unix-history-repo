@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -560,11 +560,11 @@ cspace(sp, p, len, spflag)
  * Close all cached opened files and report any errors
  */
 void
-cfclose(cp)
-	register struct s_command *cp;
+cfclose(cp, end)
+	register struct s_command *cp, *end;
 {
 
-	for (; cp != NULL; cp = cp->next)
+	for (; cp != end; cp = cp->next)
 		switch(cp->code) {
 		case 's':
 			if (cp->u.s->wfd != -1 && close(cp->u.s->wfd))
@@ -578,7 +578,7 @@ cfclose(cp)
 			cp->u.fd = -1;
 			break;
 		case '{':
-			cfclose(cp->u.c);
+			cfclose(cp->u.c, cp->next);
 			break;
 		}
 }
