@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	mkastosc
 SRCS=	mkastosc.c dohits.c asc_ebc.c ebc_disp.c
