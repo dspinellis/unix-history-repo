@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if.h	7.11 (Berkeley) 3/19/91
- *	$Id: if.h,v 1.7 1993/11/13 03:22:12 wollman Exp $
+ *	$Id: if.h,v 1.8 1993/11/14 20:02:20 wollman Exp $
  */
 
 #ifndef _NET_IF_H_
@@ -138,7 +138,6 @@ struct ifnet {
 #define	IFF_LLC0	0x1000		/* IEEE 802.2 LLC class 0 */
 #define	IFF_LLC1	0x2000		/* IEEE 802.2 LLC class 1 */
 #define	IFF_LLC2	0x4000		/* IEEE 802.2 LLC class 2 */
-#ifdef notyet
 #define IFF_ALTPHYS	0x8000	/* alternative physical connection */
 #define IFF_MULTICAST	0x10000	/* i'face supports multicast */
 #define IFF_VIRTUAL	0x20000	/* i'face is really a VIF */
@@ -146,13 +145,7 @@ struct ifnet {
 /* flags set internally only: */
 #define	IFF_CANTCHANGE \
 	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX\
-	 IFF_MULTICAST|IFF_VIRTUAL)
-#else /* current code */
-/* flags set internally only: */
-#define	IFF_CANTCHANGE \
-	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX)
-#endif /* not notyet */
-
+	 |IFF_MULTICAST|IFF_VIRTUAL)
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
