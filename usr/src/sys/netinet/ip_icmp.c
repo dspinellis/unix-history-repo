@@ -1,20 +1,20 @@
-/*	ip_icmp.c	6.6	84/08/28	*/
+/*	ip_icmp.c	6.7	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "time.h"
+#include "kernel.h"
 
 #include "../net/route.h"
 
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_icmp.h"
-#include "../netinet/icmp_var.h"
+#include "in.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "ip_icmp.h"
+#include "icmp_var.h"
 
 #ifdef ICMPPRINTFS
 /*

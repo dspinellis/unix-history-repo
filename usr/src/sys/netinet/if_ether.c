@@ -1,23 +1,23 @@
-/*	if_ether.c	6.5	84/07/08	*/
+/*	if_ether.c	6.6	84/08/29	*/
 
 /*
  * Ethernet address resolution protocol.
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
-#include "../h/errno.h"
-#include "../h/ioctl.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "time.h"
+#include "kernel.h"
+#include "errno.h"
+#include "ioctl.h"
 
 #include "../net/if.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
+#include "in.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "if_ether.h"
 
 #define	ARPTAB_BSIZ	5		/* bucket size */
 #define	ARPTAB_NB	19		/* number of buckets */

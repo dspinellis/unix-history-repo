@@ -1,15 +1,15 @@
-/*	raw_cb.c	6.2	84/08/28	*/
+/*	raw_cb.c	6.2	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/raw_cb.h"
+#include "if.h"
+#include "route.h"
+#include "raw_cb.h"
 #include "../netinet/in.h"
 #include "../netpup/pup.h"
 

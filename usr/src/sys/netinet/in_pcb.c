@@ -1,18 +1,18 @@
-/*	in_pcb.c	6.1	83/07/29	*/
+/*	in_pcb.c	6.2	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "in.h"
+#include "in_systm.h"
 #include "../net/if.h"
 #include "../net/route.h"
-#include "../netinet/in_pcb.h"
-#include "../h/protosw.h"
+#include "in_pcb.h"
+#include "protosw.h"
 
 struct	in_addr zeroin_addr;
 
