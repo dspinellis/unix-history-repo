@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_compat.c	7.1 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -1094,7 +1094,7 @@ hpuxdumpu(vp, cred)
  */
 /* #ifdef COMPAT */
 
-#include "../h/times.h"
+#include "../sys/times.h"
 
 /* from old timeb.h */
 struct hpuxtimeb {
