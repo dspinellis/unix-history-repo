@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.c	7.12 (Berkeley) %G%
+ *	@(#)vm_object.c	7.13 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -1414,7 +1414,7 @@ void vm_object_print(object, full)
 	       (int) object->pager, (int) object->paging_offset,
 	       (int) object->shadow, (int) object->shadow_offset);
 	printf("cache: next=0x%x, prev=0x%x\n",
-	       object->cached_list.next, object->cached_list.prev);
+	       object->cached_list.qe_next, object->cached_list.qe_prev);
 
 	if (!full)
 		return;
