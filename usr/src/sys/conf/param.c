@@ -1,4 +1,4 @@
-/*	param.c	4.4	81/05/12	*/
+/*	param.c	4.5	81/05/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,7 +34,7 @@ int	dstflag = DST;
 int	nproc = NPROC;
 int	ntext = 24 + MAXUSERS;
 int	ninode = (NPROC + 16 + MAXUSERS) + 32;
-int	nfile = 8 * (NPROC + 16 + MAXUSERS) / 10;
+int	nfile = 8 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + MAXUSERS;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
