@@ -3,18 +3,18 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	6.15 (Berkeley) %G%
+#	@(#)Makefile.vax	6.16 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
 # This makefile is constructed from a machine description:
-#	config machine
+#	config machineid
 # Most changes should be made in the machine description
 #	/sys/conf/``machineid''
 # after which you should do
 #	 config machineid
 # Generic makefile changes should be made in
-#	/sys/conf/makefile
+#	/sys/conf/Makefile.``machinetype''
 # after which config should be rerun for all machines.
 #
 # N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE VISIBLE TO MAKEFILE
@@ -71,16 +71,18 @@ locore.o: assym.s ${AHEADS} ../vax/rpb.s ../vax/scb.s ../vax/locore.s \
 	@rm locore.i
 
 # the following is necessary because autoconf.o depends on #if GENERIC
-autoconf.o tu.o: makefile
+autoconf.o tu.o: Makefile
 
 # the following are necessary because the files depend on the types of
 # vax cpu's included in the system configuration
-clock.o machdep.o autoconf.o conf.o cons.o cpudata.o : makefile
-crl.o flp.o mba.o uba.o vaxcpu.o : makefile
+clock.o machdep.o autoconf.o conf.o cons.o cpudata.o : Makefile
+crl.o flp.o mba.o uba.o vaxcpu.o : Makefile
+
 # depend on network configuration
-af.o : makefile
+af.o uipc_proto.o locore.o: Makefile
+
 # depend on maxusers
-assym.s: makefile
+assym.s: Makefile
 
 assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h \
@@ -102,8 +104,8 @@ depend:
 	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
-	cp makefile makefile.bak
-	ex - makefile < eddep
+	cp Makefile Makefile.bak
+	ex - Makefile < eddep
 	rm eddep makedep
 
 
@@ -121,7 +123,7 @@ tags:
 	/usr/ucb/ctags ${CFILES}
 
 print:
-	@pr -f makefile ../sys/TODO linterrs
+	@pr -f Makefile ../sys/TODO linterrs
 	@/usr/ucb/ctags -x ${CFILES} | pr -f -h XREF
 	@(size vmunix *.o) | pr -f -h sizes
 	@ls -ls | pr -f
@@ -138,10 +140,9 @@ ioconf.o: ioconf.c ../h/param.h ../machine/pte.h ../h/buf.h ../h/map.h \
 	rm -f ioconf.s
 
 param.c: ../conf/param.c
-	rm -f param.c
 	cp ../conf/param.c .
 
-param.o: param.c makefile
+param.o: param.c Makefile
 	${CC} -c ${CFLAGS} ${PARAM} param.c
 
 %RULES
