@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.9 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -13,6 +13,8 @@ static char sccsid[] = "@(#)slave.c	2.8 (Berkeley) %G%";
 #include <setjmp.h>
 
 extern jmp_buf jmpenv;
+
+extern short sequence;
 
 slave()
 {
@@ -36,6 +38,7 @@ slave()
 	int ind;
 	struct tsp resp;
 	extern int Mflag;
+	extern int justquit;
 #ifdef MEASURE
 	int tempstat;
 	extern FILE *fp;
@@ -64,6 +67,7 @@ slave()
 		for (ntp = nettab; ntp != NULL; ntp = ntp->next)
 			if (ntp->status == MASTER)
 				masterup(ntp);
+
 	} else {
 		syslog(LOG_NOTICE, "THIS MACHINE IS A SLAVE");
 		if (trace) {
@@ -77,8 +81,11 @@ slave()
 
 	(void)gettimeofday(&time, (struct timezone *)0);
 	electiontime = time.tv_sec + delay2;
-	if (Mflag && nignorednets > 0)
-		looktime = time.tv_sec + delay2;
+	if (Mflag)
+		if (justquit)
+			looktime = time.tv_sec + delay2;
+		else 
+			looktime = 1;
 	else
 		looktime = 0;
 
@@ -92,36 +99,52 @@ loop:
 	}
 	if (looktime && time.tv_sec > looktime) {
 		if (trace) 
-			fprintf(fd, "Looking for nets to master\n");
-		
-		for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-			if (ntp->status == IGNORE) {
-				lookformaster(ntp);
-				if (ntp->status == MASTER)
-					masterup(ntp);
-				else
-					ntp->status = IGNORE;
-			}
-		}
-#ifdef MEASURE
-		tempstat = status;
-#endif
-		setstatus();
-#ifdef MEASURE
-		/*
-		 * Check to see if we just became master
-		 */
-		if ((status & MASTER) && !(tempstat & MASTER)) {
-			fp = fopen("/usr/adm/timed.masterlog", "w");
-			setlinebuf(fp);
-		}
-#endif
+			fprintf(fd, "Looking for nets to master and loops\n");
 		
 		if (nignorednets > 0) {
-			(void)gettimeofday(&time, (struct timezone *)0);
-			looktime = time.tv_sec + delay2;
-		} else
-			looktime = 0;
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				if (ntp->status == IGNORE) {
+					lookformaster(ntp);
+					if (ntp->status == MASTER)
+						masterup(ntp);
+					else
+						ntp->status = IGNORE;
+				}
+			}
+#ifdef MEASURE
+			tempstat = status;
+#endif
+			setstatus();
+#ifdef MEASURE
+			/*
+			 * Check to see if we just became master
+			 */
+			if ((status & MASTER) && !(tempstat & MASTER)) {
+				fp = fopen("/usr/adm/timed.masterlog", "w");
+				setlinebuf(fp);
+			}
+#endif
+		}
+
+		for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+		    if (ntp->status == MASTER) {
+			to.tsp_type = TSP_LOOP;
+			to.tsp_vers = TSPVERSION;
+			to.tsp_seq = sequence;
+			to.tsp_hopcnt = 10;
+			(void)strcpy(to.tsp_name, hostname);
+			bytenetorder(&to);
+			if (sendto(sock, (char *)&to, sizeof(struct tsp), 0,
+			    &ntp->dest_addr, sizeof(struct sockaddr_in)) < 0) {
+				syslog(LOG_ERR, "sendto: %m");
+				exit(1);
+			if (++sequence > MAXSEQ)
+				sequence = 1;
+			}
+		    }
+		}
+		(void)gettimeofday(&time, (struct timezone *)0);
+		looktime = time.tv_sec + delay2;
 	}
 	wait.tv_sec = electiontime - time.tv_sec + 10;
 	wait.tv_usec = 0;
@@ -277,7 +300,7 @@ loop:
 			syslog(LOG_NOTICE,
 			    "forwarding date change request for %s",
 			    msg->tsp_name);
-			strcpy(msg->tsp_name, hostname);
+			(void)strcpy(msg->tsp_name, hostname);
 			answer = acksend(msg, &ntp->dest_addr, (char *)ANYADDR,
 			    TSP_DATEACK, ntp);
 			if (answer != NULL) {
@@ -378,7 +401,8 @@ loop:
                                 if (msg == NULL) {
                                         syslog(LOG_ERR, "error on sending QUIT");
                                 } else {
-                                        (void) addmach(answer->tsp_name, &from);                                }
+                                        (void) addmach(answer->tsp_name, &from);
+				}
                         }
                         masterup(fromnet);
                         break;
@@ -426,6 +450,78 @@ loop:
 			if (trace) {
 				fprintf(fd, "garbage: ");
 				print(msg, &from);
+			}
+			break;
+
+		case TSP_LOOP:
+			/* looking for loops of masters */
+			if ( !(status & MASTER))
+				break;
+			if (fromnet->status == SLAVE) {
+			    if ( !strcmp(msg->tsp_name, hostname)) {
+				  for(;;) {
+				    to.tsp_type = TSP_RESOLVE;
+				    answer = acksend(&to, &fromnet->dest_addr,
+					(char *)ANYADDR, TSP_MASTERACK,
+					fromnet);
+				    if (answer == NULL)
+					    break;
+				    to.tsp_type = TSP_QUIT;
+				    (void)strcpy(to.tsp_name, hostname);
+				    server = from;
+				    answer = acksend(&to, &server,
+					answer->tsp_name, TSP_ACK,
+					(struct netinfo *)NULL);
+				    if (answer == NULL) {
+					syslog(LOG_ERR, "loop kill error");
+				    } else {
+					electiontime = 0;
+				    }
+				  }
+			    } else {
+				if (msg->tsp_hopcnt-- <= 0)
+				    break;
+				(void)strcpy(loopname, msg->tsp_name);
+				rloopseq = msg->tsp_seq;
+				bytenetorder(msg);
+				ntp = nettab;
+				for (; ntp != NULL; ntp = ntp->next)
+				    if (ntp->status == MASTER)
+					if (sendto(sock, (char *)msg, 
+					    sizeof(struct tsp), 0,
+					    &ntp->dest_addr, length) < 0) {
+						syslog(LOG_ERR, "sendto: %m");
+						exit(1);
+					}
+			    }
+			} else {
+			    /*
+			     * We should not have received this from a net
+			     * we are master on.  There must be two masters
+			     * in this case.
+			     */
+			    if (trace)
+				fprintf(fd, "loop kill %x %x\n", fromnet->my_addr.s_addr, from.sin_addr.s_addr);
+			    if (fromnet->my_addr.s_addr == from.sin_addr.s_addr)
+				break;
+			    for (;;) {
+				to.tsp_type = TSP_RESOLVE;
+				answer = acksend(&to, &fromnet->dest_addr,
+				    (char *)ANYADDR, TSP_MASTERACK,
+				    fromnet);
+				if (answer == NULL)
+					break;
+				to.tsp_type = TSP_QUIT;
+				(void)strcpy(to.tsp_name, hostname);
+				server = from;
+				answer = acksend(&to, &server, answer->tsp_name,
+				    TSP_ACK, (struct netinfo *)NULL);
+				if (answer == NULL) {
+					syslog(LOG_ERR, "loop kill error2");
+				} else {
+					(void)addmach(msg->tsp_name, &from);
+				}
+			    }
 			}
 			break;
 		default:
