@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.63 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.64 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1603,9 +1603,14 @@ nisplus_getcanonname(name, hbsize, statp)
 			printf("nisplus_getcanonname(%s), found %s\n",
 				name, vp);
 		domain = macvalue('m', CurEnv);
-		if (hbsize > (vsize + ((int) strlen(domain))))
+		if (domain == NULL)
+			domain = "";
+		if (hbsize > vsize + (int) strlen(domain) + 1)
 		{
-			sprintf(name, "%s.%s", vp, domain);
+			if (domain[0] == '\0')
+				strcpy(name, vp);
+			else
+				sprintf(name, "%s.%s", vp, domain);
 			*statp = EX_OK;
 		}
 		else
@@ -1620,9 +1625,7 @@ nisplus_getcanonname(name, hbsize, statp)
 		else if (result->status == NIS_TRYAGAIN)
 			*statp = EX_TEMPFAIL;
 		else
-		{
 			*statp = EX_UNAVAILABLE;
-		}
 	}
 	if (tTd(38, 20))
 		printf("nisplus_getcanonname(%s), failed, status=%d, nsw_stat=%d\n",
