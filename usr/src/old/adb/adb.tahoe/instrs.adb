@@ -1,8 +1,10 @@
-/*
- * Copyright (c) 1980 The Regents of the University of California
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
  * All rights reserved.
  *
- *	@(#)instrs.adb	1.1 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)instrs.adb	5.1 (Berkeley) %G%
  */
 
 OP("adda",0x8e,2,ACCR+TYPL,ACCM+TYPL,0,0,0,0),
