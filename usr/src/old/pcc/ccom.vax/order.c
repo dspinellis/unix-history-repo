@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)order.c	1.17 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.18 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -264,21 +264,27 @@ rallo( p, down ) NODE *p; {
 
 offstar( p ) register NODE *p; {
 	if( p->in.op == PLUS ) {
-		if( p->in.left->in.su == fregs ) {
-			order( p->in.left, INTAREG|INAREG );
-			return;
-		} else if( p->in.right->in.su == fregs ) {
-			order( p->in.right, INTAREG|INAREG );
-			return;
-		}
+		/* try to create index expressions */
 		if( p->in.left->in.op==LS && 
-		  (p->in.left->in.left->in.op!=REG || tlen(p->in.left->in.left)!=SZINT/SZCHAR ) ) {
+		    p->in.left->in.left->in.op!=REG &&
+		    p->in.left->in.right->in.op==ICON &&
+		    p->in.left->in.right->tn.lval<=3 ){
 			order( p->in.left->in.left, INTAREG|INAREG );
 			return;
 		}
-		if( p->in.right->in.op==LS &&
-		  (p->in.right->in.left->in.op!=REG || tlen(p->in.right->in.left)!=SZINT/SZCHAR ) ) {
+		if( p->in.left->in.su == fregs ) {
+			order( p->in.left, INTAREG|INAREG );
+			return;
+		}
+		if( p->in.right->in.op==LS && 
+		    p->in.right->in.left->in.op!=REG &&
+		    p->in.right->in.right->in.op==ICON &&
+		    p->in.right->in.right->tn.lval<=3 ){
 			order( p->in.right->in.left, INTAREG|INAREG );
+			return;
+		}
+		if( p->in.right->in.su == fregs ) {
+			order( p->in.right, INTAREG|INAREG );
 			return;
 		}
 		if( p->in.type == (PTR|CHAR) || p->in.type == (PTR|UCHAR) ) {
