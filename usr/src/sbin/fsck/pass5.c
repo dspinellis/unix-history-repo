@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -133,7 +133,13 @@ pass5()
 			newcg->cg_cs.cs_nffree++;
 		}
 		if (frags != d) {
+#ifdef tahoe
+			/* tahoe compiler workaround */
+			int x = frags - dbase;
+			blk = blkmap(&sblock, newcg->cg_free, x);
+#else
 			blk = blkmap(&sblock, newcg->cg_free, (frags - dbase));
+#endif
 			fragacct(&sblock, blk, newcg->cg_frsum, 1);
 		}
 		cstotal.cs_nffree += newcg->cg_cs.cs_nffree;
