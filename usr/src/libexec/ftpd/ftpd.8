@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ftpd.8	6.9 (Berkeley) %G%
+.\"     @(#)ftpd.8	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTPD 8
@@ -15,8 +15,7 @@
 Internet File Transfer Protocol server
 .Sh SYNOPSIS
 .Nm ftpd
-.Op Fl d
-.Op Fl l
+.Op Fl dl
 .Op Fl t Ar timeout
 .Op Fl T Ar maxtimeout
 .Sh DESCRIPTION
@@ -181,22 +180,25 @@ user.
 In order that system security is not breached, it is recommended
 that the
 .Dq ftp
-subtree be constructed with care;  the following
-rules are recommended.
+subtree be constructed with care, following these rules:
 .Bl -tag -width "~ftp/pub" -offset indent
 .It Pa ~ftp
 Make the home directory owned by
-.Dq ftp
+.Dq root
 and unwritable by anyone.
 .It Pa ~ftp/bin
-Make this directory owned by the super-user and unwritable by
-anyone.  The program
+Make this directory owned by
+.Dq root
+and unwritable by anyone.
+The program
 .Xr ls 1
-must be present to support the list command.  This
-program should have mode 111.
+must be present to support the list command.
+This program should be mode 111.
 .It Pa ~ftp/etc
-Make this directory owned by the super-user and unwritable by
-anyone.  The files
+Make this directory owned by
+.Dq root
+and unwritable by anyone.
+The files
 .Xr passwd 5
 and
 .Xr group 5
@@ -205,23 +207,20 @@ must be present for the
 command to be able to produce owner names rather than numbers.
 The password field in
 .Xr passwd
-is not used, and should not contain real encrypted passwords.
+is not used, and should not contain real passwords.
 These files should be mode 444.
 .It Pa ~ftp/pub
 Make this directory mode 777 and owned by
 .Dq ftp .
-Users
-should then place files which are to be accessible via the
-anonymous account in this directory.
+Guests
+can then place files which are to be accessible via the anonymous
+account in this directory.
 .El
 .Sh SEE ALSO
 .Xr ftp 1 ,
 .Xr getusershell 3 ,
 .Xr syslogd 8
 .Sh BUGS
-The anonymous account is inherently dangerous and should
-avoided when possible.
-.Pp
 The server must run as the super-user
 to create sockets with privileged port numbers.  It maintains
 an effective user id of the logged in user, reverting to
