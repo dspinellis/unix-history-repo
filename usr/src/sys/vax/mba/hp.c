@@ -1,4 +1,4 @@
-/*	hp.c	6.3	84/03/22	*/
+/*	hp.c	6.4	84/07/31	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -460,7 +460,7 @@ hpustart(mi)
 	register struct hpst *st;
 	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	daddr_t bn;
-	int sn, dist;
+	int sn, tn, dist;
 
 	st = &hpst[mi->mi_type];
 	hpaddr->hpcs1 = 0;
@@ -496,7 +496,9 @@ hpustart(mi)
 	if ((hpaddr->hpds & HPDS_DREADY) != HPDS_DREADY)
 		return (MBU_DODATA);
 	bn = dkblock(bp);
-	sn = bn%st->nspc;
+	sn = bn % st->nspc;
+	tn = sn / st->nsect;
+	sn = sn % st->nsect;
 	if (bp->b_cylin == MASKREG(hpaddr->hpdc)) {
 		if (sc->sc_doseeks)
 			return (MBU_DODATA);
@@ -511,7 +513,7 @@ hpustart(mi)
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
 	else {
 		sn = (sn + st->nsect - st->sdist) % st->nsect;
-		hpaddr->hpda = sn;
+		hpaddr->hpda = (tn << 8) + sn;
 		hpaddr->hpcs1 = HP_SEARCH|HP_GO;
 	}
 	return (MBU_STARTED);
@@ -582,25 +584,37 @@ hpdtint(mi, mbsr)
 			er1 &= ~(HPER1_HCE|HPER1_FER);
 			er2 &= ~HPER2_BSE;
 		}
-		if (er1&HPER1_WLE) {
+		if (er1 & HPER1_WLE) {
 			printf("hp%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
-		} else if (MASKREG(er1) == HPER1_FER && RP06 && !sc->sc_hdr) {
+		} else if (sc->sc_hdr) {
+			goto hard;
+		} else if ((er2 & HPER2_BSE) && !ML11) {
 			if (hpecc(mi, BSE))
 				return (MBD_RESTARTED);
 			goto hard;
+		} else if (MASKREG(er1) == HPER1_FER && RP06) {
+			if (hpecc(mi, BSE))
+				return (MBD_RESTARTED);
+			goto hard;
+		} else if (RM80 && er2&HPER2_SSE) {
+			(void) hpecc(mi, SSE);
+			return (MBD_RESTARTED);
+		} else if ((er1 & (HPER1_DCK | HPER1_ECH)) == HPER1_DCK) {
+			if (hpecc(mi, ECC))
+				return (MBD_RESTARTED);
+			/* else done */
 		} else if (++mi->mi_tab.b_errcnt > 27 ||
+		    (ML11 && mi->mi_tab.b_errcnt > 15) ||
 		    mbsr & MBSR_HARD ||
 		    er1 & HPER1_HARD ||
-		    sc->sc_hdr ||
 		    (!ML11 && (er2 & HPER2_HARD))) {
  			/*
  			 * HCRC means the header is screwed up and the sector
  			 * might well exist in the bad sector table, 
 			 * better check....
  			 */
- 			if ((er1&HPER1_HCRC) && 
-			    !ML11 && !sc->sc_hdr && hpecc(mi, BSE))
+ 			if ((er1 & HPER1_HCRC) && !ML11 && hpecc(mi, BSE))
 				return (MBD_RESTARTED);
 hard:
 			if (ML11)
@@ -631,32 +645,14 @@ hard:
 				printf(" (hdr i/o)");
 			printf("\n");
 			bp->b_flags |= B_ERROR;
-			retry = 0;
-			sc->sc_recal = 0;
-		} else if ((er2 & HPER2_BSE) && !ML11) {
-			if (hpecc(mi, BSE))
-				return (MBD_RESTARTED);
-			goto hard;
-		} else if (RM80 && er2&HPER2_SSE) {
-			(void) hpecc(mi, SSE);
-			return (MBD_RESTARTED);
-		} else if ((er1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
-			if (hpecc(mi, ECC))
-				return (MBD_RESTARTED);
-			/* else done */
 		} else
 			retry = 1;
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
-		if (ML11) {
-			if (mi->mi_tab.b_errcnt >= 16)
-				goto hard;
-		} else if ((mi->mi_tab.b_errcnt&07) == 4) {
+		if ((mi->mi_tab.b_errcnt & 07) == 4) {
 			hpaddr->hpcs1 = HP_RECAL|HP_GO;
 			sc->sc_recal = 1;
 			return (MBD_RESTARTED);
 		}
-		if (retry)
-			sc->sc_recal = 2;
 	}
 #ifdef HPDEBUG
 	else
@@ -677,16 +673,20 @@ hard:
 		sc->sc_recal++;
 		return (MBD_RESTARTED);
 	case 2:
-		if (mi->mi_tab.b_errcnt < 16 ||
-		    (bp->b_flags & B_READ) == 0)
-			goto donerecal;
-		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
-		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-		while ((hpaddr->hpds & (HPDS_DRY | HPDS_PIP)) != HPDS_DRY)
-			;
-		mbclrattn(mi);
-	donerecal:
-		sc->sc_recal = 0;
+		retry = 1;
+		break;
+	}
+	sc->sc_recal = 0;
+	if (retry) {
+		if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags & B_READ)) {
+			hpaddr->hpof =
+			    hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
+			hpaddr->hpcs1 = HP_OFFSET|HP_GO;
+			while ((hpaddr->hpds & (HPDS_DRY | HPDS_PIP)) !=
+			    HPDS_DRY)
+				DELAY(10);
+			mbclrattn(mi);
+		}
 		return (MBD_RETRY);
 	}
 	sc->sc_hdr = 0;
@@ -698,7 +698,7 @@ hard:
 		 */
 		hpaddr->hpcs1 = HP_RTC|HP_GO;
 		while ((hpaddr->hpds & (HPDS_DRY | HPDS_PIP)) != HPDS_DRY)
-			;
+			DELAY(10);
 		mbclrattn(mi);
 	}
 	if (!ML11) {
@@ -911,7 +911,7 @@ hpdump(dev)
 		mba->mba_var = 0;
 		hpaddr->hpcs1 = HP_WCOM | HP_GO;
 		while ((hpaddr->hpds & HPDS_DRY) == 0)
-			;
+			DELAY(10);
 		if (hpaddr->hpds&HPDS_ERR)
 			return (EIO);
 		start += blk*NBPG;
