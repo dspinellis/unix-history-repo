@@ -1,0 +1,3 @@
+Mapply	apply.c	/^main(argc, argv)$/
+system	apply.c	/^system(command)$/
+usage	apply.c	/^usage()$/
