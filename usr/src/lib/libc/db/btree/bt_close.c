@@ -9,16 +9,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_close.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_close.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
-#include <errno.h>
+
 #include <db.h>
-#include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "btree.h"
 
 static int bt_meta __P((BTREE *));
@@ -87,8 +89,7 @@ __bt_sync(dbp)
 
 	t = dbp->internal;
 
-	if (ISSET(t, BTF_INMEM) || ISSET(t, BTF_RDONLY) ||
-	    NOTSET(t, BTF_MODIFIED))
+	if (ISSET(t, BTF_INMEM | BTF_RDONLY) || !ISSET(t, BTF_MODIFIED))
 		return (RET_SUCCESS);
 
 	if (ISSET(t, BTF_METADIRTY) && bt_meta(t) == RET_ERROR)
@@ -101,19 +102,19 @@ __bt_sync(dbp)
 	 * contents.
 	 */
 	if (ISSET(t, BTF_DELCRSR)) {
+		if ((p = malloc(t->bt_psize)) == NULL)
+			return (RET_ERROR);
 		if ((h = mpool_get(t->bt_mp, t->bt_bcursor.pgno, 0)) == NULL)
 			return (RET_ERROR);
-		if ((p = malloc(t->bt_psize)) == NULL) {
-			mpool_put(t->bt_mp, h, 0);
-			return (RET_ERROR);
-		}
 		bcopy(h, p, t->bt_psize);
-		if (__bt_dleaf(t, h, t->bt_bcursor.index) == RET_ERROR)
+		if (status =
+		    __bt_dleaf(t, h, t->bt_bcursor.index) == RET_ERROR)
 			goto ecrsr;
 	}
 		
 	if ((status = mpool_sync(t->bt_mp)) == RET_SUCCESS)
-		UNSET(t, BTF_MODIFIED);
+		CLR(t, BTF_MODIFIED);
+
 ecrsr:	if (ISSET(t, BTF_DELCRSR)) {
 		bcopy(p, h, t->bt_psize);
 		free(p);
