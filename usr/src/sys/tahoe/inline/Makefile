@@ -33,7 +33,7 @@ ${OBJS}:
 	cc ${CFLAGS} ${INCPATH} -c $*.c
 
 install: ${PROG}
-	install ${PROG} ../inline
+#	install ${PROG} ../inline
 
 clean:
 	rm -f a.out core ${OBJS} ${PROG}
