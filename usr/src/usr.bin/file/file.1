@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)file.1	6.4 (Berkeley) %G%
+.\"     @(#)file.1	6.5 (Berkeley) %G%
 .\"
 .Vx
 .Vx
@@ -25,15 +25,14 @@ the file type is text,
 it attempts to determine
 the type of text (e.g.
 .Xr csh 1
-commands or C code)
-.Pp
-As several tests
-are used and
-.Nm file
+commands or C code).
+.Sh BUGS
+As many tests are used and
+.Nm
 stops testing on the first successful one,
 it can make mistakes.
-.Pp
-.Nm File
+In particular, 
+.Nm
 does not recognize Pascal or LISP.
 .\" .Sh ENVIRONMENT
 .Sh HISTORY
