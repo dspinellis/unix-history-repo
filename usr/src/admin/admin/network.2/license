@@ -1,4 +1,4 @@
-.\" @(#)license	1.6 (CSRG - distribution) %G%
+.\" @(#)license	1.7 (CSRG - distribution) %G%
 .nr LL 6.8i
 .OF '30 April 1991'''
 .EF '30 April 1991'''
@@ -39,12 +39,13 @@ hereby grants to LICENSEE a non-exclusive, non-transferable, and
 perpetual license to use the LICENSED MATERIAL upon the terms and
 conditions hereinafter set forth:
 .sp
-.IP 1. 
-.I Other Contributors. The term "Other Contributors" as used herein
-refers to persons or entities not employed or affiliated with THE
-REGENTS who have contributed software included in the LICENSED
-MATERIAL."
-.sp
+.IP 1.
+.I Other  
+.I Contributors.
+The term "Other Contributors" as used herein refers to persons or
+entities not employed by or affiliated with THE REGENTS 
+who have contributed software included in the    
+LICENSED MATERIAL."
 .IP 2.
 .I Term.
 The term of this Agreement shall commence on the
@@ -60,9 +61,10 @@ such breach within that time.
 .IP 3.
 .I Fee.
 LICENSEE shall pay THE REGENTS the sum of $895.00
-as the fee for the LICENSED MATERIAL as set forth in Exhibit A,
-unless indicated otherwise on Exhibit A, which is incorporated
-into this Agreement. Payment shall
+as the fee for the LICENSED MATERIAL
+unless indicated otherwise on Exhibit A, which is incorporated into
+this Agreement.
+Payment shall
 be made by LICENSEE upon execution of this Agreement by check
 or money order
 made payable to: The Regents of the University of California and mailed
@@ -169,9 +171,8 @@ California.  We acknowledge the
 role of the
 Computer Systems Research Group and the
 Electrical Engineering and Computer Sciences Department
-of the University of California at Berkeley and the
-Other Contributors
-in its development."
+of the University of California at Berkeley and the Other
+Contributors in its development."
 Advertisements or other promotional literature for
 products or features based on LICENSED MATERIAL
 should acknowledge the role of the University
@@ -220,7 +221,7 @@ must be in writing and signed by both parties.
 This Agreement will not be assigned by
 LICENSEE to third parties without the prior written
 consent of  THE REGENTS.
-.sp 2
+.sp 
 .ft HB
 .HB
 .ps 10
@@ -231,7 +232,7 @@ on the dates specified below.  The
 effective date of this Agreement shall be the date of execution by
 THE REGENTS.
 .ft
-.sp 2
+.sp 
 .TS
 expand tab(~);
 lw(2.9375i) lw(0.4i) lw(2.9375i).
