@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.20 (Berkeley) %G%
+.\"     @(#)fts.3	5.21 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -230,12 +230,6 @@ not modified by the
 .Nm fts
 functions.
 It is initialized to 0.
-The
-.Fa fts_number
-and
-.Fa fts_pointer
-fields occupy the same physical location; using both may cause undefined
-results.
 .It Fa fts_pointer
 This field is provided for the use of the application program and is
 not modified by the
@@ -243,12 +237,6 @@ not modified by the
 functions.
 It is initialized to
 .Dv NULL .
-The
-.Fa fts_number
-and
-.Fa fts_pointer
-fields occupy the same physical location; using both may cause undefined
-results.
 .It Fa fts_parent
 A pointer to the
 .Fa FTSENT
