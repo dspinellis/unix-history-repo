@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.45		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.46		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.45		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.46		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -343,7 +343,7 @@ readaliases(aliasfile, init)
 
 		for (p = line; *p != '\0' && *p != ':' && *p != '\n'; p++)
 			continue;
-		if (*p == '\0' || *p == '\n')
+		if (*p++ != ':')
 		{
 			syserr("%s, line %d: syntax error", aliasfile, lineno);
 			continue;
