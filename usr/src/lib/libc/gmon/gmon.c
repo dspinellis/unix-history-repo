@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gmon.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #ifdef DEBUG
@@ -134,10 +134,6 @@ mcount()
 	register struct tostruct	*prevtop;	/* r8  => r2 */
 	register long			toindex;	/* r7  => r1 */
 
-#ifdef lint
-	selfpc = (char *)0;
-	frompcindex = 0;
-#else not lint
 	/*
 	 *	find the return address for mcount,
 	 *	and the return address for mcount's caller.
@@ -145,7 +141,6 @@ mcount()
 	asm("	.text");		/* make sure we're in text space */
 	asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
 	asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
-#endif not lint
 	/*
 	 *	check that we are profiling
 	 *	and that we aren't recursively invoked.
