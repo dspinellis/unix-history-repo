@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_acc.c	6.4 (Berkeley) %G%
+ *	@(#)if_acc.c	6.5 (Berkeley) %G%
  */
 
 #include "acc.h"
-#ifdef NACC > 0
+#if NACC > 0
 
 /*
  * ACC LH/DH ARPAnet IMP interface driver.
