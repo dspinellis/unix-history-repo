@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -96,7 +96,7 @@ alias(a, sendq, e)
 	AliasLevel++;
 	naliases = sendtolist(p, a, sendq, e);
 	AliasLevel--;
-	if (naliases > 0 && !bitset(QSELFREF, a->q_flags))
+	if (!bitset(QSELFREF, a->q_flags))
 	{
 		if (tTd(27, 5))
 		{
