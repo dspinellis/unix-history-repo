@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /* Many bug fixes are from Jim Guyton <guyton@rand-unix> */
@@ -108,7 +108,7 @@ main(argc, argv)
 		fprintf(stderr, "tftp: udp/tftp: unknown service\n");
 		exit(1);
 	}
-	f = socket(AF_INET, SOCK_DGRAM, 0, 0);
+	f = socket(AF_INET, SOCK_DGRAM, 0);
 	if (f < 0) {
 		perror("tftp: socket");
 		exit(3);
@@ -410,6 +410,7 @@ get(argc, argv)
 }
 
 getusage(s)
+char * s;
 {
 	printf("usage: %s host:file host:file ... file, or\n", s);
 	printf("       %s file file ... file if connected\n", s);
