@@ -1,5 +1,5 @@
 %{
-static	char *sccsid = "@(#)bc.y	4.5 (Berkeley) 88/04/24";
+static	char *sccsid = "@(#)bc.y	4.6 (Berkeley) 89/05/10";
 	int *getout();
 %}
 %right '='
@@ -18,6 +18,7 @@ static	char *sccsid = "@(#)bc.y	4.5 (Berkeley) 88/04/24";
 %{
 #include <stdio.h>
 #include <varargs.h>
+#include "pathnames.h"
 FILE *in;
 char cary[1000], *cp = { cary };
 char string[1000], *str = {string};
@@ -593,7 +594,7 @@ char **argv;
 			fflush(stdout);
 			exit(1);
 		}
-		argv[1] = "/usr/lib/lib.b";
+		argv[1] = _PATH_LIBB;
 	}
 	pipe(p);
 	if (fork()==0) {
@@ -609,8 +610,7 @@ char **argv;
 	dup(p[0]);
 	close(p[0]);
 	close(p[1]);
-	execl("/bin/dc", "dc", "-", (char *)0);
-	execl("/usr/bin/dc", "dc", "-", (char *)0);
+	execl(_PATH_DC, "dc", "-", (char *)0);
 	perror("bc: can't find dc");
 	exit(1);
 }

@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)getlesson.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)getlesson.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
 #include "lrnref.h"
+#include "pathnames.h"
 
 char *
 getlesson()
@@ -41,8 +42,8 @@ getlesson()
 		close(fd[0]);
 		dup2(fd[1], 1);
 		sprintf(ans,"cd %s/%s ; fgrep '%s' L?.* L??.* L???.*", direct, sname, level);
-		execl("/bin/csh", "csh", "-cf", ans, 0);
-		perror("/bin/csh");
+		execl(_PATH_CSHELL, "csh", "-cf", ans, 0);
+		perror(_PATH_CSHELL);
 		fprintf(stderr, "Getlesson:  can't do %s\n", ans);
 	}
 	close(fd[1]);

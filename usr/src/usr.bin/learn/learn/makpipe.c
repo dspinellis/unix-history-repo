@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)makpipe.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)makpipe.c	4.4	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
+#include "pathnames.h"
 
 makpipe()
 {
@@ -15,11 +16,9 @@ makpipe()
 		dup(f[0]);
 		close(f[0]);
 #if BSD4_2
-		execl ("/bin/sh", "sh", "-i", 0);
-		execl ("/usr/ucb/bin/sh", "sh", "-i", 0);
+		execl (_PATH_BSHELL, "sh", "-i", 0);
 #else
-		execlp("/bin/csh", "csh", "-if", 0);
-		/*execl ("/usr/ucb/bin/csh", "csh", "-if", 0);*/
+		execlp(_PATH_CSHELL, "csh", "-if", 0);
 #endif
 		write(2, "Exec error\n", 11);
 	}

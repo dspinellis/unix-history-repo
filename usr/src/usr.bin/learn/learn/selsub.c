@@ -1,12 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)selsub.c	4.5	(Berkeley)	%G%";
+static char sccsid[] = "@(#)selsub.c	4.6	(Berkeley)	%G%";
 #endif not lint
 
-#include "stdio.h"
-#include "sys/types.h"
-#include "sys/file.h"
-#include "sys/stat.h"
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <stdio.h>
 #include "lrnref.h"
+#include "pathnames.h"
 
 char learnrc[100];
 
@@ -108,8 +109,8 @@ char *argv[];
 	}
 
 	/* make new directory for user to play in */
-	if (chdir("/tmp") != 0) {
-		perror("/tmp");
+	if (chdir(_PATH_TMP) != 0) {
+		perror(_PATH_TMP);
 		fprintf(stderr, "Selsub:  couldn't cd to public directory\n");
 		exit(1);
 	}

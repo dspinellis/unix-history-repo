@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)mysys.c	4.5	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mysys.c	4.6	(Berkeley)	%G%";
 #endif not lint
 
+#include <sys/signal.h>
 #include "stdio.h"
-#include "signal.h"
+#include "pathnames.h"
 
 #define	EASY	1
 #define	MEDIUM	2
@@ -28,7 +29,7 @@ chgenv()
 	char path[BUFSIZ], exinit[BUFSIZ];
 	char *malloc();
 
-	sprintf(path, "PATH=%s/bin:/usr/cc/bin:/usr/ucb/bin:", direct);
+	sprintf(path, _PATH_DEFPATH, direct);
 	sprintf(exinit, "EXINIT=set prompt noopt open window=23");
 #if BSD4_2
 	system("stty old");
@@ -115,15 +116,6 @@ char *s;
 				np[nv] = 0;
 				execvp(t, np);
 				perror(t);
-			/*	sprintf(b, "/usr/ucb/bin/%s", t);
-				execv(b, np);
-				sprintf(b, "/usr/ucb/%s", t);
-				execv(b, np);
-				sprintf(b, "/bin/%s", t);
-				execv(b, np);
-				sprintf(b, "/usr/bin/%s", t);
-				execv(b, np);
-				perror(b); */
 				fprintf(stderr, "Mysys:  execv failed on %s\n", np);
 				exit(1);
 			}
@@ -152,7 +144,7 @@ char *s;
 	if ((pid = fork()) == 0) {
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
-		execl("/bin/csh", "csh", "-cf", s, 0);
+		execl(_PATH_CSHELL, "csh", "-cf", s, 0);
 		_exit(127);
 	}
 	while ((w = wait(&status)) != pid && w != -1)
