@@ -22,11 +22,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.32.1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * login [ name ]
+ * login -r hostname	(for rlogind)
  * login -h hostname	(for telnetd, etc.)
  * login -f name	(for pre-authenticated login: datakit, xterm, etc.)
  */
@@ -50,16 +51,15 @@ static char sccsid[] = "@(#)login.c	5.37 (Berkeley) %G%";
 #include <setjmp.h>
 #include <stdio.h>
 #include <strings.h>
-#include "pathnames.h"
-
-#ifdef	KERBEROS
-#include <kerberos/krb.h>
-#include <sys/termios.h>
-char	realm[REALM_SZ];
-int	kerror = KSUCCESS, notickets = 1;
-#endif
 
 #define	TTYGRPNAME	"tty"		/* name of group to own ttys */
+
+#define	MOTDFILE	"/etc/motd"
+#define	MAILDIR		"/usr/spool/mail"
+#define	NOLOGIN		"/etc/nologin"
+#define	HUSHLOGIN	".hushlogin"
+#define	LASTLOG		"/usr/adm/lastlog"
+#define	BSHELL		"/bin/sh"
 
 /*
  * This bounds the time given to login.  Not a define so it can
@@ -94,7 +94,7 @@ main(argc, argv)
 	struct group *gr;
 	register int ch;
 	register char *p;
-	int ask, fflag, hflag, pflag, cnt;
+	int ask, fflag, hflag, pflag, rflag, cnt;
 	int quietlog, passwd_req, ioctlval, timedout();
 	char *domain, *salt, *envinit[1], *ttyn, *pp;
 	char tbuf[MAXPATHLEN + 2];
@@ -111,6 +111,7 @@ main(argc, argv)
 
 	/*
 	 * -p is used by getty to tell login not to destroy the environment
+	 * -r is used by rlogind to cause the autologin protocol;
  	 * -f is used to skip a second login authentication 
 	 * -h is used by other servers to pass the name of the remote
 	 *    host to login so that it may be placed in utmp and wtmp
@@ -118,17 +119,27 @@ main(argc, argv)
 	(void)gethostname(tbuf, sizeof(tbuf));
 	domain = index(tbuf, '.');
 
-	fflag = hflag = pflag = 0;
+	fflag = hflag = pflag = rflag = 0;
 	passwd_req = 1;
-	while ((ch = getopt(argc, argv, "fh:p")) != EOF)
+	while ((ch = getopt(argc, argv, "fh:pr:")) != EOF)
 		switch (ch) {
 		case 'f':
+			if (rflag) {
+				fprintf(stderr,
+				    "login: only one of -r and -f allowed.\n");
+				exit(1);
+			}
 			fflag = 1;
 			break;
 		case 'h':
 			if (getuid()) {
 				fprintf(stderr,
 				    "login: -h for super-user only.\n");
+				exit(1);
+			}
+			if (rflag) {
+				fprintf(stderr,
+				    "login: only one of -r and -h allowed.\n");
 				exit(1);
 			}
 			hflag = 1;
@@ -139,6 +150,29 @@ main(argc, argv)
 			break;
 		case 'p':
 			pflag = 1;
+			break;
+		case 'r':
+			if (hflag || fflag) {
+				fprintf(stderr,
+				    "login: -f and -h not allowed with -r.\n");
+				exit(1);
+			}
+			if (getuid()) {
+				fprintf(stderr,
+				    "login: -r for super-user only.\n");
+				exit(1);
+			}
+			/* "-r hostname" must be last args */
+			if (optind != argc) {
+				fprintf(stderr, "Syntax error.\n");
+				exit(1);
+			}
+			rflag = 1;
+			passwd_req = (doremotelogin(optarg) == -1);
+			if (domain && (p = index(optarg, '.')) &&
+			    !strcmp(p, domain))
+				*p = '\0';
+			hostname = optarg;
 			break;
 		case '?':
 		default:
@@ -152,12 +186,21 @@ main(argc, argv)
 		ask = 0;
 	} else
 		ask = 1;
+	if (rflag)
+		ask = 0;
 
 	ioctlval = 0;
 	(void)ioctl(0, TIOCLSET, &ioctlval);
 	(void)ioctl(0, TIOCNXCL, 0);
 	(void)fcntl(0, F_SETFL, ioctlval);
 	(void)ioctl(0, TIOCGETP, &sgttyb);
+
+	/*
+	 * If talking to an rlogin process, propagate the terminal type and
+	 * baud rate across the network.
+	 */
+	if (rflag)
+		doremoteterm(&sgttyb);
 	sgttyb.sg_erase = CERASE;
 	sgttyb.sg_kill = CKILL;
 	(void)ioctl(0, TIOCSLTC, &ltc);
@@ -229,32 +272,6 @@ main(argc, argv)
 		p = crypt(pp, salt);
 		setpriority(PRIO_PROCESS, 0, 0);
 
-#ifdef	KERBEROS
-
-		/*
-		 * If not present in pw file, act as we normally would.
-		 * If we aren't Kerberos-authenticated, try the normal
-		 * pw file for a password.  If that's ok, log the user
-		 * in without issueing any tickets.
-		 */
-
-		if (pwd && !krb_get_lrealm(realm,1)) {
-			/* get TGT for local realm
-			 * be careful about uid's here for ticket
-			 * file ownership
-			 */
-			(void) setreuid(geteuid(),pwd->pw_uid);
-			kerror = krb_get_pw_in_tkt(
-				pwd->pw_name, "", realm,
-				"krbtgt", realm, DEFAULT_TKT_LIFE, pp);
-			(void) setuid(0);
-			if (kerror == INTK_OK) {
-				bzero(pp, strlen(pp));
-				notickets = 0;	/* user got ticket */
-				break;
-			}
-		}
-#endif
 		(void) bzero(pp, strlen(pp));
 		if (pwd && !strcmp(p, pwd->pw_passwd))
 			break;
@@ -313,13 +330,6 @@ main(argc, argv)
 		printf("Logging in with home = \"/\".\n");
 	}
 
-	quietlog = access(_PATH_HUSHLOGIN, F_OK) == 0;
-
-#ifdef KERBEROS
-	if (notickets && !quietlog)
-		printf("Warning: no Kerberos tickets issued\n");
-#endif
-
 #define	TWOWEEKS	(14*24*60*60)
 	if (pwd->pw_change || pwd->pw_expire)
 		(void)gettimeofday(&tp, (struct timezone *)NULL);
@@ -328,7 +338,7 @@ main(argc, argv)
 			printf("Sorry -- your password has expired.\n");
 			sleepexit(1);
 		}
-		else if (tp.tv_sec - pwd->pw_change < TWOWEEKS && !quietlog) {
+		else if (tp.tv_sec - pwd->pw_change < TWOWEEKS) {
 			ttp = localtime(&pwd->pw_change);
 			printf("Warning: your password expires on %s %d, 19%d\n",
 			    months[ttp->tm_mon], ttp->tm_mday, ttp->tm_year);
@@ -338,7 +348,7 @@ main(argc, argv)
 			printf("Sorry -- your account has expired.\n");
 			sleepexit(1);
 		}
-		else if (tp.tv_sec - pwd->pw_expire < TWOWEEKS && !quietlog) {
+		else if (tp.tv_sec - pwd->pw_expire < TWOWEEKS) {
 			ttp = localtime(&pwd->pw_expire);
 			printf("Warning: your account expires on %s %d, 19%d\n",
 			    months[ttp->tm_mon], ttp->tm_mday, ttp->tm_year);
@@ -357,9 +367,10 @@ main(argc, argv)
 		login(&utmp);
 	}
 
+	quietlog = access(HUSHLOGIN, F_OK) == 0;
 	dolastlog(quietlog);
 
-	if (!hflag) {					/* XXX */
+	if (!hflag && !rflag) {					/* XXX */
 		static struct winsize win = { 0, 0, 0, 0 };
 
 		(void)ioctl(0, TIOCSWINSZ, &win);
@@ -376,9 +387,9 @@ main(argc, argv)
 	(void)setuid(pwd->pw_uid);
 
 	if (*pwd->pw_shell == '\0')
-		pwd->pw_shell = _PATH_BSHELL;
+		pwd->pw_shell = BSHELL;
 	/* turn on new line discipline for the csh */
-	else if (!strcmp(pwd->pw_shell, _PATH_CSHELL)) {
+	else if (!strcmp(pwd->pw_shell, "/bin/csh")) {
 		ioctlval = NTTYDISC;
 		(void)ioctl(0, TIOCSETD, &ioctlval);
 	}
@@ -407,7 +418,7 @@ main(argc, argv)
 		struct stat st;
 
 		motd();
-		(void)sprintf(tbuf, "%s/%s", _PATH_MAILDIR, pwd->pw_name);
+		(void)sprintf(tbuf, "%s/%s", MAILDIR, pwd->pw_name);
 		if (stat(tbuf, &st) == 0 && st.st_size != 0)
 			printf("You have %smail.\n",
 			    (st.st_mtime > st.st_atime) ? "new " : "");
@@ -477,7 +488,7 @@ motd()
 	int (*oldint)(), sigint();
 	char tbuf[8192];
 
-	if ((fd = open(_PATH_MOTDFILE, O_RDONLY, 0)) < 0)
+	if ((fd = open(MOTDFILE, O_RDONLY, 0)) < 0)
 		return;
 	oldint = signal(SIGINT, sigint);
 	if (setjmp(motdinterrupt) == 0)
@@ -497,7 +508,7 @@ checknologin()
 	register int fd, nchars;
 	char tbuf[8192];
 
-	if ((fd = open(_PATH_NOLOGIN, O_RDONLY, 0)) >= 0) {
+	if ((fd = open(NOLOGIN, O_RDONLY, 0)) >= 0) {
 		while ((nchars = read(fd, tbuf, sizeof(tbuf))) > 0)
 			(void)write(fileno(stdout), tbuf, nchars);
 		sleepexit(0);
@@ -511,7 +522,7 @@ dolastlog(quiet)
 	int fd;
 	char *ctime();
 
-	if ((fd = open(_PATH_LASTLOG, O_RDWR, 0)) >= 0) {
+	if ((fd = open(LASTLOG, O_RDWR, 0)) >= 0) {
 		(void)lseek(fd, (off_t)pwd->pw_uid * sizeof(ll), L_SET);
 		if (!quiet) {
 			if (read(fd, (char *)&ll, sizeof(ll)) == sizeof(ll) &&
@@ -584,4 +595,47 @@ sleepexit(eval)
 {
 	sleep((u_int)5);
 	exit(eval);
+}
+
+doremotelogin(host)
+	char *host;
+{
+	static char lusername[UT_NAMESIZE+1];
+	char rusername[UT_NAMESIZE+1];
+
+	getstr(rusername, sizeof(rusername), "remuser");
+	getstr(lusername, sizeof(lusername), "locuser");
+	getstr(term, sizeof(term), "Terminal type");
+	username = lusername;
+	pwd = getpwnam(username);
+	if (pwd == NULL)
+		return(-1);
+	return(ruserok(host, (pwd->pw_uid == 0), rusername, username));
+}
+
+char *speeds[] = {
+	"0", "50", "75", "110", "134", "150", "200", "300", "600",
+	"1200", "1800", "2400", "4800", "9600", "19200", "38400",
+};
+#define	NSPEEDS	(sizeof(speeds) / sizeof(speeds[0]))
+
+doremoteterm(tp)
+	struct sgttyb *tp;
+{
+	register char *cp = index(term, '/'), **cpp;
+	char *speed;
+
+	if (cp) {
+		*cp++ = '\0';
+		speed = cp;
+		cp = index(speed, '/');
+		if (cp)
+			*cp++ = '\0';
+		for (cpp = speeds; cpp < &speeds[NSPEEDS]; cpp++)
+			if (strcmp(*cpp, speed) == 0) {
+				tp->sg_ispeed = tp->sg_ospeed = cpp-speeds;
+				break;
+			}
+	}
+	tp->sg_flags = ECHO|CRMOD|ANYP|XTABS;
 }
