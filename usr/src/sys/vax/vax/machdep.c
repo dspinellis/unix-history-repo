@@ -1,4 +1,4 @@
-/*	machdep.c	4.25	81/03/09	*/
+/*	machdep.c	4.26	81/03/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,7 +28,7 @@
 #include "../h/cmap.h"
 #include <frame.h>
 
-char	version[] = "VAX/UNIX (Berkeley Version 4.25) 81/03/09 01:47:29 \n";
+char	version[] = "VAX/UNIX (Berkeley Version 4.26) 81/03/17 05:49:33 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -106,6 +106,8 @@ startup(firstaddr)
 	ncmap = (physmem*NBPG - ((int)v &~ 0x80000000)) /
 		    (NBPG*CLSIZE + sizeof (struct cmap));
 	valloclim(cmap, struct cmap, ncmap, ecmap);
+	if ((((int)ecmap)&~0x80000000) > SYSPTSIZE*NBPG)
+		panic("sys pt too small");
 
 	/*
 	 * Clear allocated space, and make r/w entries
