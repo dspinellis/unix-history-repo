@@ -115,7 +115,6 @@ int n;
 							w->ww_cur.r + 1);
 				}
 			}
-			
 		chklf:
 			if (w->ww_cur.c >= w->ww_w.r)
 				goto crlf;
@@ -215,23 +214,11 @@ int n;
 			case 'Y':
 				w->ww_wstate = 2;
 				break;
-			case 'p':
-				w->ww_modes |= WWM_REV;
-				break;
-			case 'q':
-				w->ww_modes &= ~WWM_REV;
+			case 's':
+				w->ww_wstate = 4;
 				break;
 			case 'r':
-				w->ww_modes |= WWM_UL;
-				break;
-			case 's':
-				w->ww_modes &= ~WWM_UL;
-				break;
-			case 'F':
-				w->ww_modes |= WWM_GRP;
-				break;
-			case 'G':
-				w->ww_modes &= ~WWM_GRP;
+				w->ww_wstate = 5;
 				break;
 			}
 			break;
@@ -243,6 +230,14 @@ int n;
 		case 3:
 			w->ww_cur.c = w->ww_w.l +
 				(unsigned)(*p++ - ' ') % w->ww_w.nc;
+			w->ww_wstate = 0;
+			break;
+		case 4:
+			w->ww_modes |= *p++ & wwavailmodes;
+			w->ww_wstate = 0;
+			break;
+		case 5:
+			w->ww_modes &= ~*p++;
 			w->ww_wstate = 0;
 			break;
 		}

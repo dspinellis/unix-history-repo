@@ -116,7 +116,9 @@ union ww_char {
 #define WWM_BLK		0x02	/* blinking */
 #define WWM_UL		0x04	/* underlined */
 #define WWM_GRP		0x08	/* graphics */
-#define WWM_GLS		0x10	/* window only, glass, i.e. transparent */
+#define WWM_DIM		0x10	/* half intensity */
+#define WWM_USR		0x20	/* user specified mode */
+#define WWM_GLS		0x40	/* window only, glass, i.e., transparent */
 
 	/* ww_state values */
 #define WWS_INITIAL	0	/* just opened */
@@ -217,14 +219,17 @@ char *wwibq;		/* current write position in buffer */
 
 	/* the window virtual terminal */
 #define WWT_TERM	"TERM=window"
-#define WWT_TERMCAP	"WW|window|window package:\
+#define WWT_TERMCAP	"WW|window|window program:\
 	:cr=^M:nl=^J:bl=^G:\
 	:al=\\EL:am:le=^H:bs:cd=\\EJ:ce=\\EK:cl=\\EE:cm=\\EY%+ %+ :\
 	:da:db:dc=\\EN:dl=\\EM:do=\\EB:ei=\\EO:ho=\\EH:im=\\E@:mi:\
-	:nd=\\EC:ta=^I:pt:up=\\EA:"
-#define WWT_REV		"se=\\Eq:so=\\Ep:"
-#define WWT_UL		"ue=\\Es:us=\\Er:"
-#define WWT_GRP		"ae=\\EG:as=\\EF:"
+	:nd=\\EC:ta=^I:pt:up=\\EA:me=\\Er^?:"
+#define WWT_REV		"se=\\ErA:so=\\EsA:mr=\\EsA:"
+#define WWT_BLK		"BE=\\ErB:BS=\\EsB:mb=\\EsB:"
+#define WWT_UL		"ue=\\ErD:us=\\EsD:"
+#define WWT_GRP		"ae=\\ErH:as=\\EsH:"
+#define WWT_DIM		"HE=\\ErP:HS=\\EsP:mh=\\EsP:"
+#define WWT_USR		"XE=\\Er`:XS=\\Es`:"
 
 	/* our functions */
 struct ww *wwopen();

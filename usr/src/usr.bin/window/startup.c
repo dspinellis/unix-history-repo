@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	3.17 %G%";
+static char sccsid[] = "@(#)startup.c	3.18 %G%";
 #endif
 
 /*
@@ -54,6 +54,8 @@ setvars()
 	(void) var_setnum("m_blk", WWM_BLK);
 	(void) var_setnum("m_ul", WWM_UL);
 	(void) var_setnum("m_grp", WWM_GRP);
+	(void) var_setnum("m_dim", WWM_DIM);
+	(void) var_setnum("m_usr", WWM_USR);
 	(void) var_setstr("term", wwterm);
 	(void) var_setnum("modes", wwavailmodes);
 }
