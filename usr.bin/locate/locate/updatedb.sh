@@ -42,9 +42,8 @@
 SRCHPATHS="/"				# directories to be put in the database
 LIBDIR="/usr/libexec"			# for subprograms
 FCODES="/var/db/locate.database"	# the database
-
 if [ "$TMPDIR" = "" ]; then
-	TMPDIR="/var/tmp"		# for temp files
+    TMPDIR="/var/tmp"			# for temp files
 fi
 
 PATH=/bin:/usr/bin
@@ -78,4 +77,3 @@ else
 	chmod 644 $FCODES
 	rm $BIGRAMS $FILELIST $ERRS
 fi
-exit
