@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stat.c 1.2 %G%";
+static char sccsid[] = "@(#)stat.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -179,7 +179,7 @@ inccnt( counter )
     {
 
 #	ifdef OBJ
-	    put2(O_COUNT, counter );
+	    put(2, O_COUNT, counter );
 #	endif OBJ
 #	ifdef PC
 	    putRV( PCPCOUNT , 0 , counter * sizeof (long) , P2INT );
@@ -194,7 +194,7 @@ putline()
 
 #	ifdef OBJ
 	    if (opt('p') != 0)
-		    put2(O_LINO, line);
+		    put(2, O_LINO, line);
 #	endif OBJ
 #	ifdef PC
 	    static lastline;
@@ -246,7 +246,7 @@ withop(s)
 		if (sizes[cbn].om_off < sizes[cbn].om_max)
 			sizes[cbn].om_max = sizes[cbn].om_off;
 #		ifdef OBJ
-		    put2(O_LV | cbn <<8+INDX, i );
+		    put(2, O_LV | cbn <<8+INDX, i );
 #		endif OBJ
 #		ifdef PC
 		    putlbracket( ftnno , -sizes[cbn].om_off );
@@ -316,7 +316,7 @@ asgnop(r)
 				return;
 			}
 #			ifdef OBJ
-			    put2(O_LV | bn << 8+INDX, p->value[NL_OFFS]);
+			    put(2, O_LV | bn << 8+INDX, (int)p->value[NL_OFFS]);
 			    if (isa(p->type, "i") && width(p->type) == 1)
 				    asgnop1(r, nl+T2INT);
 			    else
@@ -353,12 +353,14 @@ asgnop1(r, p)
 	register struct nl *p;
 {
 	register struct nl *p1;
+	int w;
 
 	if (r == NIL)
 		return (NIL);
 	if (p == NIL) {
 #	    ifdef OBJ
 		p = lvalue(r[2], MOD|ASGN|NOUSE , LREQ );
+		w = width(p);
 #	    endif OBJ
 #	    ifdef PC
 		    /*
@@ -374,6 +376,15 @@ asgnop1(r, p)
 	    }
 	}
 #	ifdef OBJ
+	    /*
+	     * assigning to the return value, which is at least
+	     * of width two since it resides on the stack
+	     */
+	    else {
+		w = width(p);
+		if (w < 2)
+		    w = 2;
+	    }
 	    p1 = rvalue(r[3], p , RREQ );
 #	endif OBJ
 #	ifdef PC
@@ -419,7 +430,7 @@ asgnop1(r, p)
 		case TDOUBLE:
 		case TPTR:
 #			ifdef OBJ
-			    gen(O_AS2, O_AS2, width(p), width(p1));
+			    gen(O_AS2, O_AS2, w, width(p1));
 #			endif OBJ
 #			ifdef PC
 			    putop( P2ASSIGN , p2type( p ) );
@@ -428,7 +439,7 @@ asgnop1(r, p)
 			break;
 		default:
 #			ifdef OBJ
-			    put2(O_AS, width(p));
+			    put(2, O_AS, w);
 #			endif OBJ
 #			ifdef PC
 			    putstrop( P2STASG , p2type( p )
@@ -447,7 +458,8 @@ ifop(r)
 {
 	register struct nl *p;
 	register l1, l2;	/* l1 is start of else, l2 is end of else */
-	int nr, goc;
+	int goc;
+	bool nr;
 
 	goc = gocnt;
 	if (r == NIL)
@@ -470,7 +482,7 @@ ifop(r)
 		return;
 	}
 #	ifdef OBJ
-	    l1 = put2(O_IF, getlab());
+	    l1 = put(2, O_IF, getlab());
 #	endif OBJ
 #	ifdef PC
 	    l1 = getlab();
@@ -489,7 +501,7 @@ ifop(r)
 		ungoto();
 		++level;
 #		ifdef OBJ
-		    l2 = put2(O_TRA, getlab());
+		    l2 = put(2, O_TRA, getlab());
 #		endif OBJ
 #		ifdef PC
 		    l2 = getlab();
@@ -498,7 +510,7 @@ ifop(r)
 		patch(l1);
 		noreach = 0;
 		statement(r[4]);
-		noreach &= nr;
+		noreach = (noreach && nr);
 		l1 = l2;
 	} else
 		noreach = 0;
@@ -536,7 +548,7 @@ whilop(r)
 	}
 	l2 = getlab();
 #	ifdef OBJ
-	    put2(O_IF, l2);
+	    put(2, O_IF, l2);
 #	endif OBJ
 #	ifdef PC
 	    putleaf( P2ICON , l2 , 0 , P2INT , 0 );
@@ -546,7 +558,7 @@ whilop(r)
 	putcnt();
 	statement(r[3]);
 #	ifdef OBJ
-	    put2(O_TRA, l1);
+	    put(2, O_TRA, l1);
 #	endif OBJ
 #	ifdef PC
 	    putjbr( l1 );
@@ -581,7 +593,7 @@ repop(r)
 		return;
 	}
 #	ifdef OBJ
-	    put2(O_IF, l);
+	    put(2, O_IF, l);
 #	endif OBJ
 #	ifdef PC
 	    putleaf( P2ICON , l , 0 , P2INT , 0 );
@@ -620,7 +632,7 @@ asrtop(r)
 	if (isnta(q, "b"))
 		error("Assert expression must be Boolean, not %ss", nameof(q));
 #	ifdef OBJ
-	    put1(O_ASRT);
+	    put(1, O_ASRT);
 #	endif OBJ
 #	ifdef PC
 	    putop( P2CALL , P2INT );

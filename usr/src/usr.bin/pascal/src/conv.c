@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)conv.c 1.1 %G%";
+static char sccsid[] = "@(#)conv.c 1.2 %G%";
 
 #include "whoami.h"
 #ifdef PI
@@ -24,14 +24,14 @@ convert(p1, p2)
 	switch (width(p1) - width(p2)) {
 		case -7:
 		case -6:
-			put1(O_STOD);
+			put(1, O_STOD);
 			return;
 		case -4:
-			put1(O_ITOD);
+			put(1, O_ITOD);
 			return;
 		case -3:
 		case -2:
-			put1(O_STOI);
+			put(1, O_STOI);
 			return;
 		case -1:
 		case 0:
@@ -39,7 +39,7 @@ convert(p1, p2)
 			return;
 		case 2:
 		case 3:
-			put1(O_ITOS);
+			put(1, O_ITOS);
 			return;
 		default:
 			panic("convert");

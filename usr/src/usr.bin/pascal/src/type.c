@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)type.c 1.5 %G%";
+static char sccsid[] = "@(#)type.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -109,7 +109,8 @@ gtype(r)
 {
 	register struct nl *np;
 	register char *cp;
-	register int oline, w;
+	register int oline;
+	long w;
 
 	if (r == NIL)
 		return (NIL);
@@ -202,8 +203,8 @@ gtype(r)
 	w = lwidth(np);
 #ifndef PC
 	if (w >= TOOMUCH) {
-		error("Storage requirement of %s exceeds the implementation limit of %d by %d bytes",
-			nameof(np), TOOMUCH-1, w-TOOMUCH+1);
+		error("Storage requirement of %s exceeds the implementation limit of %D by %D bytes",
+			nameof(np), (long)(TOOMUCH-1), (long)(w-TOOMUCH+1));
 		np = NIL;
 	}
 #endif

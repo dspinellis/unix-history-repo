@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)case.c 1.2 %G%";
+static char sccsid[] = "@(#)case.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -34,7 +34,8 @@ caseop(r)
 	char *brtab0;
 	char *csend;
 	int w, i, j, m, n;
-	int nr, goc;
+	int goc;
+	bool nr;
 
 	goc = gocnt;
 	/*
@@ -137,7 +138,10 @@ caseop(r)
 		putspace(n * 2);
 		put(1, O_CASEBEG);
 		for (i=0; i<m; i++)
-			put( 2 , O_CASE1 + (w >> 1), ctab[i].clong);
+			if (w <= 2)
+				put(2 ,O_CASE1 + (w >> 1), (int)ctab[i].clong);
+			else
+				put(2 ,O_CASE4, ctab[i].clong);
 		put(1, O_CASEEND);
 	}
 	csend = getlab();
@@ -155,21 +159,21 @@ caseop(r)
 	 * statement with a branch back
 	 * to the TRA above.
 	 */
-	nr = 1;
+	nr = TRUE;
 	for (cl = r[3]; cl != NIL; cl = cl[2]) {
 		cs = cl[1];
 		if (cs == NIL)
 			continue;
 		if (p != NIL)
 			for (cs = cs[2]; cs != NIL; cs = cs[2]) {
-				patchfil(brtab - 1, lc - brtab0, 1);
+				patchfil(brtab - 1, (long)(lc - brtab0), 1);
 				brtab++;
 			}
 		cs = cl[1];
 		putcnt();
 		level++;
 		statement(cs[3]);
-		nr &= noreach;
+		nr = (noreach && nr);
 		noreach = 0;
 		put(2, O_TRA, csend);
 		level--;

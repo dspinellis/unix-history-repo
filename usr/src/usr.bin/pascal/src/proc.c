@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)proc.c 1.4 %G%";
+static char sccsid[] = "@(#)proc.c 1.5 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -378,7 +378,10 @@ proc(r)
 				error("Writing scalars to text files is non-standard");
 			case TBOOL:
 				stkrval(alv, NIL , RREQ );
-				put(2, O_NAM, listnames(ap));
+				put(2, O_NAM, (long)listnames(ap));
+#				ifdef PDP11
+					put(2, O_CON2, 0);  /* long align ptr */
+#				endif PDP11
 				stkcnt++;
 				fmt = 's';
 				break;
@@ -388,19 +391,27 @@ proc(r)
 			     tdouble:
 				switch (fmtspec) {
 				case NIL:
-					field = 21;
+#					ifdef DEC11
+					    field = 21;
+#					else
+					    field = 22;
+#					endif DEC11
 					prec = 14;
-					fmt = 'E';
+					fmt = 'e';
 					fmtspec = CONWIDTH + CONPREC;
 					break;
 				case CONWIDTH:
 					if (--field < 1)
 						field = 1;
-					prec = field - 7;
+#					ifdef DEC11
+					    prec = field - 7;
+#					else
+					    prec = field - 8;
+#					endif DEC11
 					if (prec < 1)
 						prec = 1;
 					fmtspec += CONPREC;
-					fmt = 'E';
+					fmt = 'e';
 					break;
 				case CONWIDTH + CONPREC:
 				case CONWIDTH + VARPREC:
@@ -443,6 +454,9 @@ proc(r)
 				 */
 				put(2, O_LVCON, 2);
 				putstr("", 0);
+#				ifdef PDP11
+					put(2, O_CON2, 0);  /* long align ptr */
+#				endif PDP11
 				stkcnt++;
 				break;
 			default:
@@ -473,7 +487,7 @@ proc(r)
 			if (fmtspec & VARWIDTH) {
 				if ( ( typ == TDOUBLE && fmtspec == VARWIDTH )
 				    || typ == TSTR ) {
-					i = sizes[cbn].om_off -= sizeof(int);
+					i = sizes[cbn].om_off -= sizeof(long);
 					if (i < sizes[cbn].om_max)
 						sizes[cbn].om_max = i;
 					put(2, O_LV | cbn << 8 + INDX, i);
@@ -493,10 +507,14 @@ proc(r)
 				switch (typ) {
 				case TDOUBLE:
 					if (fmtspec == VARWIDTH) {
-						fmt = 'E';
+						fmt = 'e';
 						put(1, O_AS4);
 						put(2, O_RV4 | cbn << 8 + INDX, i);
-						put(3, O_MAX, 8, 1);
+#						ifdef DEC11
+						    put(3, O_MAX, 8, 1);
+#						else
+						    put(3, O_MAX, 9, 1);
+#						endif DEC11
 						put(2, O_RV4 | cbn << 8 + INDX, i);
 						stkcnt++;
 						fmtspec += VARPREC;
@@ -527,19 +545,19 @@ proc(r)
 				sprintf(&format[1], "%%%c", fmt);
 				goto fmtgen;
 			case CONWIDTH:
-				sprintf(&format[1], "%%%1D%c", field, fmt);
+				sprintf(&format[1], "%%%d%c", field, fmt);
 				goto fmtgen;
 			case VARWIDTH:
 				sprintf(&format[1], "%%*%c", fmt);
 				goto fmtgen;
 			case CONWIDTH + CONPREC:
-				sprintf(&format[1], "%%%1D.%1D%c", field, prec, fmt);
+				sprintf(&format[1], "%%%d.%d%c", field, prec, fmt);
 				goto fmtgen;
 			case CONWIDTH + VARPREC:
-				sprintf(&format[1], "%%%1D.*%c", field, fmt);
+				sprintf(&format[1], "%%%d.*%c", field, fmt);
 				goto fmtgen;
 			case VARWIDTH + CONPREC:
-				sprintf(&format[1], "%%*.%1D%c", prec, fmt);
+				sprintf(&format[1], "%%*.%d%c", prec, fmt);
 				goto fmtgen;
 			case VARWIDTH + VARPREC:
 				sprintf(&format[1], "%%*.*%c", fmt);
@@ -671,7 +689,7 @@ proc(r)
 				if (file != NIL)
 					stklval(file, NIL , LREQ );
 				else /* Magic */
-					put(2, PTR_RV, input->value[0]);
+					put(2, PTR_RV, (int)input->value[0]);
 				put(1, O_FNIL);
 				put(2, O_IND, width(filetype));
 				convert(filetype, ap);
@@ -693,7 +711,7 @@ proc(r)
 			if (op != O_READE)
 				put(1, op);
 			else {
-				put(2, op, listnames(ap));
+				put(2, op, (long)listnames(ap));
 				warning();
 				if (opt('s')) {
 					standard();
@@ -781,7 +799,7 @@ proc(r)
 			al = stkrval(al[1], NOFLAGS , RREQ );
 		} else {
 			put(2, O_CON24, 0);
-			put(2, O_CON24, NIL);
+			put(2, PTR_CON, NIL);
 		}
 		ap = stklval(argv[1], MOD|NOUSE);
 		put(1, op);
@@ -966,9 +984,11 @@ proc(r)
 			return;
 		}
 		pu = "pack(a,i,z)";
-		pua = (al = argv)[1];
-		pui = (al = al[2])[1];
-		puz = (al = al[2])[1];
+		pua = argv[1];
+		al = argv[2];
+		pui = al[1];
+		alv = al[2];
+		puz = alv[1];
 		goto packunp;
 	case O_UNPACK:
 		if (argc != 3) {
@@ -976,9 +996,11 @@ proc(r)
 			return;
 		}
 		pu = "unpack(z,a,i)";
-		puz = (al = argv)[1];
-		pua = (al = al[2])[1];
-		pui = (al = al[2])[1];
+		puz = argv[1];
+		al = argv[2];
+		pua = al[1];
+		alv = al[2];
+		pui = alv[1];
 packunp:
 		codeoff();
 		ap = stklval(pua, op == O_PACK ? NOFLAGS : MOD|NOUSE);

@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)flvalue.c 1.4 %G%";
+static char sccsid[] = "@(#)flvalue.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -57,7 +57,7 @@ flvalue( r , formalp )
 			return NIL;
 		    }
 #		    ifdef OBJ
-			put( 2 , PTR_RV | bn << 8+INDX , p -> value[NL_OFFS] );
+			put(2, PTR_RV | bn << 8+INDX, (int)p->value[NL_OFFS]);
 #		    endif OBJ
 #		    ifdef PC
 			putRV( p -> symbol , bn , p -> value[ NL_OFFS ] , 
@@ -93,9 +93,9 @@ flvalue( r , formalp )
 			sizes[ cbn ].om_max = tempoff;
 		    }
 #		    ifdef OBJ
-			put( 2 , O_LV | cbn << 8 + INDX , tempoff );
-			/* put( 2 , O_FSAV | bn << 8 + INDX , p -> entloc ); */
-			put( 2 , O_FSAV | bn << 8 , p -> entloc );
+			put(2 , O_LV | cbn << 8 + INDX , (int)tempoff );
+			/* put(2, O_FSAV | bn << 8 + INDX, (long)p->entloc); */
+			put(2, O_FSAV | bn << 8, (long)p->entloc);
 #		    endif OBJ
 #		    ifdef PC
 			putlbracket( ftnno , -tempoff );

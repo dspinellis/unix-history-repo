@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.13 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.13 1/24/81";
 
 #include "whoami.h"
 #include "0.h"
@@ -44,7 +44,7 @@ funchdr(r)
 	register *il, **rl;
 	int *rll;
 	struct nl *cp, *dp, *sp;
-	int s, o, *pp;
+	int w, s, o, *pp;
 
 	if (inpflist(r[2])) {
 		opush('l');
@@ -103,9 +103,9 @@ funchdr(r)
 	 */
 	switch (r[0]) {
 	    case T_PROG:
-		    progseen++;
+		    progseen = TRUE;
 		    if (opt('z'))
-			    monflg++;
+			    monflg = TRUE;
 		    program = p = defnl(r[2], PROG, 0, 0);
 		    p->value[3] = r[1];
 		    break;
@@ -184,9 +184,9 @@ funchdr(r)
 				 * with the offset kept in the fvar.
 				 */
 
-			    cp = defnl( r[2] , FVAR , p -> type
-				      , -( roundup( DPOFF1+width( p -> type )
-						  , align( p -> type ) ) ) );
+			    cp = defnl(r[2], FVAR, p->type,
+				    -(roundup((int)(DPOFF1+lwidth(p->type)),
+					(long)align(p->type))));
 #			endif PC
 			cp->chain = p;
 			p->ptr[NL_FVAR] = cp;
@@ -237,11 +237,18 @@ funchdr(r)
 								    nameof(p));
 					    }
 #					    ifdef OBJ
-						dp = defnl(il[1], VAR, p, o -= even(width(p)));
+						w = width(p);
+						o -= even(w);
+#						ifdef DEC11
+						    dp = defnl(il[1], VAR, p, o);
+#						else
+						    dp = defnl(il[1], VAR, p,
+							(w < 2) ? o + 1 : o);
+#						endif DEC11
 #					    endif OBJ
 #					    ifdef PC
 						dp = defnl( il[1] , VAR , p 
-							, o = roundup( o , A_STACK ) );
+							, o = roundup( o , (long)A_STACK ) );
 						o += width( p );
 #					    endif PC
 					    dp->nl_flags |= NMOD;
@@ -252,7 +259,7 @@ funchdr(r)
 #					    endif OBJ
 #					    ifdef PC
 						dp = defnl( il[1] , REF , p
-							, o = roundup( o , A_STACK ) );
+							, o = roundup( o , (long)A_STACK ) );
 						o += sizeof(char *);
 #					    endif PC
 					    break;
@@ -262,7 +269,7 @@ funchdr(r)
 #					    endif OBJ
 #					    ifdef PC
 						dp = defnl( il[1] , FFUNC , p
-							, o = roundup( o , A_STACK ) );
+							, o = roundup( o , (long)A_STACK ) );
 						o += sizeof(char *);
 #					    endif PC
 					    dp -> nl_flags |= NMOD;
@@ -273,7 +280,7 @@ funchdr(r)
 #					    endif OBJ
 #					    ifdef PC
 						dp = defnl( il[1] , FPROC , p
-							, o = roundup( o , A_STACK ) );
+							, o = roundup( o , (long)A_STACK ) );
 						o += sizeof(char *);
 #					    endif PC
 					    dp -> nl_flags |= NMOD;
@@ -298,7 +305,7 @@ funchdr(r)
 			    il->value[NL_OFFS] += p->value[NL_OFFS];
 #		endif OBJ
 #		ifdef PC
-		    p -> value[ NL_OFFS ] = roundup( o , A_STACK );
+		    p -> value[ NL_OFFS ] = roundup( o , (long)A_STACK );
 #		endif PC
 	} else { 
 		/*
@@ -308,8 +315,8 @@ funchdr(r)
 #		ifdef OBJ
 		    if (monflg) {
 			    put(1, O_PXPBUF);
-			    cntpatch = put(2, O_CASE4, 0);
-			    nfppatch = put(2, O_CASE4, 0);
+			    cntpatch = put(2, O_CASE4, (long)0);
+			    nfppatch = put(2, O_CASE4, (long)0);
 		    }
 #		endif OBJ
 		cp = p;
@@ -332,7 +339,7 @@ funchdr(r)
 		p->value[ NL_CNTR ] = 0;
 	}
 #	ifdef OBJ
-	    put(2, O_TRA4, p->entloc);
+	    put(2, O_TRA4, (long)p->entloc);
 #	endif OBJ
 #	ifdef PTREE
 	    {
@@ -475,7 +482,8 @@ funcend(fp, bundle, endline)
 {
 	register struct nl *p;
 	register int i, b;
-	int var, inp, out, chkref, *blk;
+	int var, inp, out, *blk;
+	bool chkref;
 	struct nl *iop;
 	char *cp;
 	extern int cntstat;
@@ -512,26 +520,23 @@ funcend(fp, bundle, endline)
 	/*	struct hdr {
 	/*		long framesze;	/* number of bytes of local vars */
 	/*		long nargs;	/* number of bytes of arguments */
-	/*		short tests;	/* TRUE => perform runtime tests */
+	/*		bool tests;	/* TRUE => perform runtime tests */
 	/*		short offset;	/* offset of procedure in source file */
 	/*		char name[1];	/* name of active procedure */
 	/*	};
 	 */
-#	define HDRSZE 12
-	var = put(2, (lenstr(fp->symbol,0) + HDRSZE << 8)
-			| (cbn == 1 && opt('p') == 0 ? O_NODUMP: O_BEG), 0);
+#	define HDRSZE (2 * sizeof(long) + sizeof(short) + sizeof(bool))
+	var = put(2, ((lenstr(fp->symbol,0) + HDRSZE) << 8)
+		| (cbn == 1 && opt('p') == 0 ? O_NODUMP: O_BEG), (long)0);
 	    /*
 	     *  output the number of bytes of arguments
 	     *  this is only checked on formal calls.
 	     */
-	put(2, O_CASE4, cbn == 1 ? 0 : fp->value[NL_OFFS]-DPOFF2);
+	put(2, O_CASE4, cbn == 1 ? (long)0 : (long)(fp->value[NL_OFFS]-DPOFF2));
 	    /*
 	     *	Output the runtime test mode for the routine
 	     */
-	if (opt('t'))
-		put(2, O_CASE2, TRUE);
-	else
-		put(2, O_CASE2, FALSE);
+	put(2, sizeof(bool) == 2 ? O_CASE2 : O_CASE4, opt('t') ? TRUE : FALSE);
 	    /*
 	     *	Output line number and routine name
 	     */
@@ -745,7 +750,7 @@ funcend(fp, bundle, endline)
 			    put(2, O_CON24, i);
 			    put(2, O_LVCON, i);
 			    putstr(p->symbol, 0);
-			    put(2, O_LV | bn << 8+INDX, iop->value[NL_OFFS]);
+			    put(2, O_LV | bn<<8+INDX, (int)iop->value[NL_OFFS]);
 			    put(1, O_DEFNAME);
 #			endif OBJ
 #			ifdef PC
@@ -788,8 +793,8 @@ funcend(fp, bundle, endline)
 #	endif PTREE
 #	ifdef OBJ
 	    if (cbn== 1 && monflg != 0) {
-		    patchfil(cntpatch - 2, cnts, 2);
-		    patchfil(nfppatch - 2, pfcnt, 2);
+		    patchfil(cntpatch - 2, (long)cnts, 2);
+		    patchfil(nfppatch - 2, (long)pfcnt, 2);
 	    }
 #	endif OBJ
 #	ifdef PC
@@ -1017,7 +1022,7 @@ funcend(fp, bundle, endline)
 	if (Fp == NIL)
 		elineon();
 #	ifdef OBJ
-	    patchfil(var, -sizes[cbn].om_max, 2);
+	    patchfil(var, (long)(-sizes[cbn].om_max), 2);
 #	endif OBJ
 	cbn--;
 	if (inpflist(fp->symbol)) {
@@ -1112,7 +1117,7 @@ level1()
 	errcnt[cbn] = syneflg;
 	parts[ cbn ] = NIL;
 	dfiles[ cbn ] = FALSE;
-	progseen++;
+	progseen = TRUE;
 }
 
 

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyprint.c 1.1 %G%";
+static	char sccsid[] = "@(#)yyprint.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -8,7 +8,7 @@ static	char sccsid[] = "@(#)yyprint.c 1.1 %G%";
 
 char	*tokname();
 
-STATIC	bool bounce;
+STATIC	short bounce;
 
 /*
  * Printing representation of a

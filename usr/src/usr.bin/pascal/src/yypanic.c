@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yypanic.c 1.1 %G%";
+static	char sccsid[] = "@(#)yypanic.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -116,7 +116,7 @@ yyPerror(cp, kind)
 			 * warnings.
 			 */
 			case YID:
-				syneflg++;
+				syneflg = TRUE;
 				continue;
 #endif
 		}

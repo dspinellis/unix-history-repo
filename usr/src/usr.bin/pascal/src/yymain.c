@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yymain.c 1.1 %G%";
+static char sccsid[] = "@(#)yymain.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -8,8 +8,6 @@ static	char sccsid[] = "@(#)yymain.c 1.1 %G%";
 #include <a.out.h>
 #include "objfmt.h"
 #include <signal.h>
-
-short	line = 1;
 
 /*
  * Yymain initializes each of the utility
@@ -39,6 +37,8 @@ yymain()
 	magic();
 #   endif OBJ
 #endif
+	line = 1;
+	errpfx = 'E';
 	/*
 	 * Initialize the clusters
 	 *
@@ -145,7 +145,7 @@ magic2()
 	magichdr.a_data -= sizeof (struct exec);
 	write(ofil, &magichdr, sizeof(struct exec));
 	pxhd.objsize = ( ( unsigned ) lc) - HEADER_BYTES;
-	pxhd.maketime = time(0);
+	time(&pxhd.maketime);
 	pxhd.magicnum = MAGICNUM;
 	lseek(ofil, ( long ) ( HEADER_BYTES - sizeof ( pxhd ) ) , 0);
 	write(ofil, &pxhd, sizeof (pxhd));

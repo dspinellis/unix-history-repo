@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)func.c 1.6 %G%";
+static char sccsid[] = "@(#)func.c 1.7 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -78,7 +78,7 @@ funccod(r)
 				rvlist(argv);
 				return (NIL);
 			}
-			put1(op);
+			put(1, op);
 			return (nl+T4INT);
 		case O_EOF:
 		case O_EOLN:
@@ -129,7 +129,7 @@ funccod(r)
 				error("%s's argument must be integer or real, not %s", p->symbol, nameof(p1));
 				return (NIL);
 			}
-			put1(op);
+			put(1, op);
 			if (op == O_UNDEF)
 				return (nl+TBOOL);
 			else if (op == O_EXPO)
@@ -141,7 +141,7 @@ funccod(r)
 				error("seed's argument must be an integer, not %s", nameof(p1));
 				return (NIL);
 			}
-			put1(op);
+			put(1, op);
 			return (nl+T4INT);
 		case O_ROUND:
 		case O_TRUNC:
@@ -149,16 +149,16 @@ funccod(r)
 				error("%s's argument must be a real, not %s", p->symbol, nameof(p1));
 				return (NIL);
 			}
-			put1(op);
+			put(1, op);
 			return (nl+T4INT);
 		case O_ABS2:
 		case O_SQR2:
 			if (isa(p1, "d")) {
-				put1(op + O_ABS8-O_ABS2);
+				put(1, op + O_ABS8-O_ABS2);
 				return (nl+TDOUBLE);
 			}
 			if (isa(p1, "i")) {
-				put1(op + (width(p1) >> 2));
+				put(1, op + (width(p1) >> 2));
 				return (nl+T4INT);
 			}
 			error("%s's argument must be an integer or real, not %s", p->symbol, nameof(p1));
@@ -180,14 +180,17 @@ funccod(r)
 				return NIL;
 			}
 			if (isa(p1, "i")) {
-				if (width(p1) <= 2)
+				if (width(p1) <= 2) {
 					op += O_PRED24 - O_PRED2;
-				else
+					put(3, op, (int)p1->range[0],
+						(int)p1->range[1]);
+				} else {
 					op++;
-				put(3, op, p1->range[0], p1->range[1]);
+					put(3, op, p1->range[0], p1->range[1]);
+				}
 				return nl + T4INT;
 			} else {
-				put(3, op, p1->range[0], p1->range[1]);
+				put(3, op, (int)p1->range[0], (int)p1->range[1]);
 				return p1;
 			}
 		case O_ODD2:
@@ -195,35 +198,35 @@ funccod(r)
 				error("odd's argument must be an integer, not %s", nameof(p1));
 				return (NIL);
 			}
-			put1(op + (width(p1) >> 2));
+			put(1, op + (width(p1) >> 2));
 			return (nl+TBOOL);
 		case O_CHR2:
 			if (isnta(p1, "i")) {
 				error("chr's argument must be an integer, not %s", nameof(p1));
 				return (NIL);
 			}
-			put1(op + (width(p1) >> 2));
+			put(1, op + (width(p1) >> 2));
 			return (nl+TCHAR);
 		case O_CARD:
 			if (isnta(p1, "t")) {
 			    error("Argument to card must be a set, not %s", nameof(p1));
 			    return (NIL);
 			}
-			put2(O_CARD, width(p1));
+			put(2, O_CARD, width(p1));
 			return (nl+T2INT);
 		case O_EOLN:
 			if (!text(p1)) {
 				error("Argument to eoln must be a text file, not %s", nameof(p1));
 				return (NIL);
 			}
-			put1(op);
+			put(1, op);
 			return (nl+TBOOL);
 		case O_EOF:
 			if (p1->class != FILET) {
 				error("Argument to eof must be file, not %s", nameof(p1));
 				return (NIL);
 			}
-			put1(op);
+			put(1, op);
 			return (nl+TBOOL);
 		case 0:
 			error("%s is an unimplemented 6000-3.4 extension", p->symbol);
