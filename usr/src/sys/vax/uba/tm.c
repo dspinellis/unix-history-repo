@@ -1,4 +1,4 @@
-/*	tm.c	4.14	%G%	*/
+/*	tm.c	4.15	%G%	*/
 
 #include "tm.h"
 #if NTM03 > 0
@@ -396,7 +396,7 @@ next:
 	 * the transfer and continue processing this slave.
 	 */
 	if (um->um_ubinfo)
-		ubarelse(um->um_ubanum, &um->um_ubinfo);
+		ubadone(um);
 	um->um_tab.b_errcnt = 0;
 	dp->b_actf = bp->av_forw;
 	iodone(bp);
@@ -492,7 +492,7 @@ tmintr(tm03)
 				if((addr->tmer&TM_SOFT) == TM_NXM)
 					printf("TM UBA late error\n");
 				sc->sc_blkno++;
-				ubarelse(um->um_ubanum, &um->um_ubinfo);
+				ubadone(um);
 				goto opcont;
 			}
 		} else
@@ -565,7 +565,7 @@ opdone:
 	um->um_tab.b_errcnt = 0;
 	dp->b_actf = bp->av_forw;
 	bp->b_resid = -addr->tmbc;
-	ubarelse(um->um_ubanum, &um->um_ubinfo);
+	ubadone(um);
 	iodone(bp);
 	/*
 	 * Circulate slave to end of controller
@@ -659,7 +659,7 @@ tmreset(uban)
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubarelse(um->um_ubanum, &um->um_ubinfo);
+			ubadone(um);
 		}
 		((struct device *)(um->um_addr))->tmcs = TM_DCLR;
 		for (unit = 0; unit < NTM11; unit++) {

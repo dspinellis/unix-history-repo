@@ -1,4 +1,4 @@
-/*	dh.c	4.20	81/02/21	*/
+/*	dh.c	4.21	81/02/22	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -552,10 +552,10 @@ dhstart(tp)
 	if (nch) {
 		car = UBACVT(tp->t_outq.c_cf, dhinfo[dh]->ui_ubanum);
 		addr->un.dhcsrl = unit|((car>>12)&0x30)|DH_IE;
-		DELAY(5);
 		unit = 1 << unit;
 		dhsar[dh] |= unit;
 		addr->dhcar = car;
+		DELAY(5);
 		addr->dhbcr = -nch;
 		addr->dhbar |= unit;
 		tp->t_state |= BUSY;

@@ -1,11 +1,14 @@
-/*	rk.c	4.6	%G%	*/
+/*	rk.c	4.7	%G%	*/
 
 #include "rk.h"
-#if NRK > 0
-/*
- * RK disk driver
- */
+#if NRK11 > 0
 
+int	rkflags;
+int	rkerrs;
+/*
+ * RK11/RK07 disk driver
+ */
+#define	DELAY(i)		{ register int j; j = i; while (--j > 0); }
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -14,283 +17,622 @@
 #include "../h/user.h"
 #include "../h/pte.h"
 #include "../h/map.h"
+#include "../h/vm.h"
 #include "../h/uba.h"
 #include "../h/dk.h"
+#include "../h/cpu.h"
+#include "../h/cmap.h"
 
-#define NCYL 815
-#define NSECT 22
-#define NTRK 3
-#define NBLK (NTRK*NSECT*NCYL)
+#include "../h/rkreg.h"
 
-/* rkcs1 */
-#define CCLR	0100000		/* controller clear */
-#define	DI	040000		/* drive interrupt */
-#define	CTO	04000		/* controller timeout */
-#define	CDT	02000		/* drive type (rk07/rk06) */
-#define	RDY	0200		/* controller ready */
-#define	IEN	0100		/* interrupt enable */
+struct	rk_softc {
+	int	sc_softas;
+	int	sc_ndrive;
+	int	sc_wticks;
+	int	sc_recal;
+} rk_softc[NRK11];
 
-
-/* rkcs2 */
-#define	DLT	0100000		/* data late */
-#define	WCE	040000		/* write check */
-#define	UPE	020000		/* unibus parity */
-#define	NED	010000		/* non-existant drive */
-#define	NEM	04000		/* non-existant memory */
-#define	PGE	02000		/* software error */
-#define	MDS	01000		/* multiple drive select */
-#define	UFE	0400		/* unit field error */
-#define	SCLR	040		/* subsystem clear */
-#define	cs2abort	(NED|NEM|PGE|UFE)
-
-/* rkds */
-#define	SVAL	0100000		/* status valid */
-#define	CDA	040000		/* current drive attention */
-#define	PIP	020000		/* positioning in progress */
-#define	WRL	04000		/* write lock */
-#define	DDT	0400		/* disk drive type */
-#define	DRDY	0200		/* drive ready */
-#define	VV	0100		/* volume valid */
-#define	DROT	040		/* drive off track */
-#define	SPLS	020		/* speed loss */
-#define	ACLO	010		/* ac low */
-#define	OFFSET	04		/* offset mode */
-#define	DRA	01		/* drive available */
-#define	dsabort		(ACLO|SPLS)
-
-
-/* commands */
-#define SELECT 0
-#define PACK 2
-#define DCLR 4
-#define	RESET	012
-#define	WCOM	022
-#define	RCOM	020
-#define	GO	01
-#define	DRESET	012
-
-struct	device
+/* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
+struct	size
 {
-	short rkcs1;
-	short rkwc;
-	unsigned short rkba;
-	short rkda;
-	short rkcs2;
-	short rkds;
-	short rker;
-	short rkatt;
-	short rkcyl;
-	short rkdb;
-	short rkmr1;
-	short rkecps;
-	short rkecpt;
-	short rkmr2;
-	short rkmr3;
-} ;
-
-struct	buf	rktab;
-struct	buf	rrkbuf;
-
-struct	devsize {
-	unsigned int nblocks;
+	daddr_t	nblocks;
 	int	cyloff;
-} rk_sizes [] ={
-	9614, 0,	/* 0 - 145 */
-	6600, 146,	/* 146 - 245 */
-	37554, 246,	/* 246 - 815 */
+} rk7_sizes[] ={
+	15884,	0,		/* A=cyl 0 thru 240 */
+	10032,	146,		/* B=cyl 241 thru 392 */
+	53790,	246,		/* C=cyl 0 thru 814 */
 	0,	0,
 	0,	0,
 	0,	0,
+	27786,	393,		/* G=cyl 393 thru 813 */
 	0,	0,
-	53790,	0,
+};
+/* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
+
+int	rkprobe(), rkslave(), rkattach(), rkdgo(), rkintr();
+struct	uba_minfo *rkminfo[NRK11];
+struct	uba_dinfo *rkdinfo[NRK07];
+struct	uba_dinfo *rkip[NRK11][4];
+
+u_short	rkstd[] = { 0777440, 0 };
+struct	uba_driver hkdriver =
+  { rkprobe, rkslave, rkattach, rkdgo, rkstd, "rk", rkdinfo, "hk", rkminfo };
+struct	buf rkutab[NRK07];
+short	rkcyl[NRK07];
+
+struct	rkst {
+	short	nsect;
+	short	ntrak;
+	short	nspc;
+	short	ncyl;
+	struct	size *sizes;
+} rkst[] = {
+	NRKSECT, NRKTRK, NRKSECT*NRKTRK,	NRK7CYL,	rk7_sizes,
 };
 
+u_char 	rk_offset[16] =
+  { P400,M400,P400,M400,P800,M800,P800,M800,P1200,M1200,P1200,M1200,0,0,0,0 };
+
+struct	buf rrkbuf[NRK07];
+
+#define	b_cylin	b_resid
+
+#ifdef INTRLVE
+daddr_t	dkblock();
+#endif
+
+int	rkwstart, rkwatch();
+
+rkprobe(reg)
+	caddr_t reg;
+{
+	register int br, cvec;
+
+#ifdef lint	
+	br = 0; cvec = br; br = cvec;
+#endif
+	((struct rkdevice *)reg)->rkcs1 = RK_CDT|RK_IE|RK_CRDY;
+	DELAY(10);
+	((struct rkdevice *)reg)->rkcs1 = RK_CDT;
+	return (1);
+}
+
+rkslave(ui, reg)
+	struct uba_dinfo *ui;
+	caddr_t reg;
+{
+	register struct rkdevice *rkaddr = (struct rkdevice *)reg;
+
+	rkaddr->rkcs1 = RK_CDT;
+	rkaddr->rkcs2 = ui->ui_slave;
+	if (rkaddr->rkcs2&RK_NED) {
+		rkaddr->rkcs1 = RK_CDT|RK_CCLR;
+		return (0);
+	}
+	return (1);
+}
+
+rkattach(ui)
+	register struct uba_dinfo *ui;
+{
+
+	if (rkwstart == 0) {
+		timeout(rkwatch, (caddr_t)0, HZ);
+		rkwstart++;
+	}
+	if (ui->ui_dk >= 0)
+		dk_mspw[ui->ui_dk] = 1.0 / (HZ * NRKSECT * 256);
+	rkip[ui->ui_ctlr][ui->ui_slave] = ui;
+	rk_softc[ui->ui_ctlr].sc_ndrive++;
+	rkcyl[ui->ui_unit] = -1;
+}
+ 
 rkstrategy(bp)
-register struct buf *bp;
-{
-register dn, sz;
-
-	dn = minor(bp->b_dev);
-	sz = ((bp->b_bcount+511)>>9);
-	if (dn > (NRK<<3) || sz+bp->b_blkno > rk_sizes[dn&07].nblocks) {
-		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		return;
-	}
-	bp->av_forw = (struct buf *)NULL;
-	spl5();
-	if(rktab.b_actf == NULL)
-		rktab.b_actf = bp;
-	else
-		rktab.b_actl->av_forw = bp;
-	rktab.b_actl = bp;
-	if(rktab.b_active == NULL)
-		rkstart();
-	spl0();
-}
-
-int rk_info;
-int tcn, ttn, tsn;
-
-rkstart()
-{
 	register struct buf *bp;
-	register com;
-	register struct device *rkaddr = RKADDR;
-	daddr_t bn;
-	int dn, cn, sn, tn;
-
-	if ((bp = rktab.b_actf) == NULL)
-		return;
-	rktab.b_active++;
-	rk_info = ubasetup(bp, 1);
-	bn = bp->b_blkno;
-	dn = minor(bp->b_dev);
-	cn = bn/(NTRK*NSECT);
-	cn += rk_sizes[dn&07].cyloff;
-	dn >>= 3;
-	if (dn != (rkaddr->rkcs2&07)) {
-		rkaddr->rkcs2 = dn;
-		rkaddr->rkcs1 = CDT | GO;
-		while ((rkaddr->rkcs1&RDY)==0)
-			;
-	}
-	if ((rkaddr->rkds & VV) == 0) {
-		rkaddr->rkcs1 = PACK | CDT | GO;
-		while ((rkaddr->rkcs1&RDY)==0)
-			;
-	}
-	tn = bn%(NTRK*NSECT);
-	tn = tn/NSECT;
-	sn = bn%NSECT;
-	rkaddr->rkcs2 = dn;
-	rkaddr->rkcyl = cn;
-	rkaddr->rkda = (tn << 8) | sn;
-	ttn = tn; tcn = cn; tsn = sn;
-	rkaddr->rkba = rk_info;
-	rkaddr->rkwc = -(bp->b_bcount>>1);
-	com = ((rk_info &0x30000) >> 8) | CDT | IEN | GO;
-	if(bp->b_flags & B_READ)
-		com |= RCOM; else
-		com |= WCOM;
-	rkaddr->rkcs1 = com;
-	dk_busy |= 1<<RKDK_N;
-	dk_xfer[RKDK_N] += 1;
-	com = bp->b_bcount>>6;
-	dk_wds[RKDK_N] += com;
-}
-
-rkintr()
 {
-	register struct buf *bp;
-	register d, x;
-	register struct device *rkaddr = RKADDR;
-	int ds, er;
+	register struct uba_dinfo *ui;
+	register struct rkst *st;
+	register int unit;
+	register struct buf *dp;
+	int xunit = minor(bp->b_dev) & 07;
+	long bn, sz;
 
-	if (rktab.b_active == NULL)
-		return;
-	dk_busy &= ~(1<<RKDK_N);
-	bp = rktab.b_actf;
-	rktab.b_active = NULL;
-	if (rkaddr->rkcs1 < 0) {		/* error bit */
-		d = (minor(bp->b_dev)>>3);
-		x = 1;
-		if (rkaddr->rkcs1&DI) {
-			printf("rkintr: DI\n");
-		}
-		if (rkaddr->rkds&CDA)
-			printf("rkintr: CDA\n");
-		if ((rkaddr->rkds&CDA) || (rkaddr->rkcs1&DI)) {
-			er = (unsigned short)rkaddr->rker;
-			ds = (unsigned short)rkaddr->rkds;
-			rkaddr->rkcs1 = CDT | DCLR | GO;
-		} else {
-			if ((rkaddr->rkds&SVAL)==0) {
-				x = 0x8000 - rkselect(rkaddr, d);
-				printf("rkintr: no SVAL, delay %d\n", x);
-			}
-			er = (unsigned short)rkaddr->rker;
-			ds = (unsigned short)rkaddr->rkds;
-		}
-		if (rkaddr->rkds&dsabort) {
-			printf("rk %d is down\n", d);
-			rktab.b_errcnt = 10;
-		}
-		if (rkaddr->rkcs2&cs2abort) {
-			printf("cs2 abort %o\n", rkaddr->rkcs2);
-			rktab.b_errcnt = 10;
-		}
-		if (rktab.b_errcnt >= 10) {
-			deverror(bp, er, ds);
-			printf("cn %d tn %d sn %d\n", tcn, ttn, tsn);
-		}
-		rkaddr->rkcs1 = CDT | DCLR | GO;
-		while ((rkaddr->rkcs1&RDY)==0)
-			;
-		rkaddr->rkcs2 = SCLR;
-		while ((rkaddr->rkcs1&RDY)==0)
-			;
-		if ((x=rkselect(rkaddr, d)) == 0) {
-			printf("after clears\n");
-			goto bad;
-		}
-		rkaddr->rkcs1 = CDT | RESET | GO;
-		while (rkaddr->rkds & PIP)
-			;
-		if (++rktab.b_errcnt <= 10) {
-			ubarelse(&rk_info);
-			rkstart();
-			return;
-		}
+	sz = (bp->b_bcount+511) >> 9;
+	unit = dkunit(bp);
+	if (unit >= NRK07)
+		goto bad;
+	ui = rkdinfo[unit];
+	if (ui == 0 || ui->ui_alive == 0)
+		goto bad;
+	st = &rkst[ui->ui_type];
+	if (bp->b_blkno < 0 ||
+	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
+		goto bad;
+	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
+	(void) spl5();
+	dp = &rkutab[ui->ui_unit];
+	disksort(dp, bp);
+	if (dp->b_active == 0) {
+		(void) rkustart(ui);
+		bp = &ui->ui_mi->um_tab;
+		if (bp->b_actf && bp->b_active == 0)
+			(void) rkstart(ui->ui_mi);
+	}
+	(void) spl0();
+	return;
+
 bad:
-		bp->b_flags |= B_ERROR;
-	}
-	rktab.b_errcnt = 0;
-	rktab.b_actf = bp->av_forw;
-	bp->b_resid = 0;
-	ubarelse(&rk_info);
+	bp->b_flags |= B_ERROR;
 	iodone(bp);
-	rkstart();
+	return;
 }
 
-
-rkselect(rkaddr, d)
-register struct device *rkaddr;
+rkustart(ui)
+	register struct uba_dinfo *ui;
 {
-	rkaddr->rkcs2 = d;
-	rkaddr->rkcs1 = CDT|GO;
-	return(rkwait(rkaddr));
+	register struct buf *bp, *dp;
+	register struct uba_minfo *um;
+	register struct rkdevice *rkaddr;
+	register struct rkst *st;
+	daddr_t bn;
+	int sn, csn;
+	int didie = 0;
+
+	if (ui == 0)
+		return (0);
+	dk_busy &= ~(1<<ui->ui_dk);
+	dp = &rkutab[ui->ui_unit];
+	if ((bp = dp->b_actf) == NULL)
+		goto out;
+	um = ui->ui_mi;
+	if (um->um_tab.b_active) {
+		rk_softc[um->um_ctlr].sc_softas |= 1<<ui->ui_slave;
+		return (0);
+	}
+	rkaddr = (struct rkdevice *)um->um_addr;
+	rkaddr->rkcs1 = RK_CDT|RK_CERR;
+	rkaddr->rkcs2 = ui->ui_slave;
+	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
+	rkwait(rkaddr);
+	if (dp->b_active)
+		goto done;
+	dp->b_active = 1;
+	if ((rkaddr->rkds & RK_VV) == 0) {
+		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
+		rkaddr->rkcs1 = RK_CDT|RK_IE|RK_PACK|RK_GO;
+		rkwait(rkaddr);
+		didie = 1;
+	}
+	if (rk_softc[um->um_ctlr].sc_ndrive == 1)
+		goto done;
+	if (bp->b_cylin == rkcyl[ui->ui_unit])
+		goto done;
+	rkaddr->rkcyl = bp->b_cylin;
+	rkcyl[ui->ui_unit] = bp->b_cylin;
+	rkaddr->rkcs1 = RK_CDT|RK_IE|RK_SEEK|RK_GO;
+	didie = 1;
+	if (ui->ui_dk >= 0) {
+		dk_busy |= 1<<ui->ui_dk;
+		dk_seek[ui->ui_dk]++;
+	}
+	goto out;
+done:
+	if (dp->b_active != 2) {
+		dp->b_forw = NULL;
+		if (um->um_tab.b_actf == NULL)
+			um->um_tab.b_actf = dp;
+		else
+			um->um_tab.b_actl->b_forw = dp;
+		um->um_tab.b_actl = dp;
+		dp->b_active = 2;
+	}
+out:
+	return (didie);
 }
 
-rkwait(rkaddr)
-register struct device *rkaddr;
+rkstart(um)
+	register struct uba_minfo *um;
 {
-register t;
+	register struct buf *bp, *dp;
+	register struct uba_dinfo *ui;
+	register struct rkdevice *rkaddr;
+	struct rkst *st;
+	daddr_t bn;
+	int sn, tn, cmd;
 
-	for(t=0x8000; t && ((rkaddr->rkds&DRDY)==0); t--)
+loop:
+	if ((dp = um->um_tab.b_actf) == NULL)
+		return (0);
+	if ((bp = dp->b_actf) == NULL) {
+		um->um_tab.b_actf = dp->b_forw;
+		goto loop;
+	}
+	um->um_tab.b_active++;
+	ui = rkdinfo[dkunit(bp)];
+	bn = dkblock(bp);
+	st = &rkst[ui->ui_type];
+	sn = bn%st->nspc;
+	tn = sn/st->nsect;
+	sn %= st->nsect;
+	rkaddr = (struct rkdevice *)ui->ui_addr;
+	rkaddr->rkcs1 = RK_CDT|RK_CERR;
+	rkaddr->rkcs2 = ui->ui_slave;
+	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
+	rkwait(rkaddr);
+	if (um->um_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
+		rkaddr->rkatt = rk_offset[um->um_tab.b_errcnt & 017];
+		rkaddr->rkcs1 = RK_CDT|RK_OFFSET|RK_GO;
+		rkwait(rkaddr);
+	}
+	rkaddr->rkcyl = bp->b_cylin;
+	rkcyl[ui->ui_unit] = bp->b_cylin;
+	rkaddr->rkda = (tn << 8) + sn;
+	rkaddr->rkwc = -bp->b_bcount / sizeof (short);
+	if (bp->b_flags & B_READ)
+		cmd = RK_CDT|RK_IE|RK_READ|RK_GO;
+	else
+		cmd = RK_CDT|RK_IE|RK_WRITE|RK_GO;
+	um->um_cmd = cmd;
+	ubago(ui);
+	return (1);
+}
+
+rkdgo(um)
+	register struct uba_minfo *um;
+{
+	register struct rkdevice *rkaddr = (struct rkdevice *)um->um_addr;
+
+	rkaddr->rkba = um->um_ubinfo;
+	rkaddr->rkcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300);
+}
+
+hkintr(rk11)
+	int rk11;
+{
+	register struct uba_minfo *um = rkminfo[rk11];
+	register struct uba_dinfo *ui;
+	register struct rkdevice *rkaddr = (struct rkdevice *)um->um_addr;
+	register struct buf *bp, *dp;
+	int unit;
+	struct rk_softc *sc = &rk_softc[um->um_ctlr];
+	int as = (rkaddr->rkatt >> 8) | sc->sc_softas;
+	int needie = 1;
+
+	sc->sc_wticks = 0;
+	sc->sc_softas = 0;
+	if (um->um_tab.b_active) {
+		dp = um->um_tab.b_actf;
+		bp = dp->b_actf;
+		ui = rkdinfo[dkunit(bp)];
+		dk_busy &= ~(1 << ui->ui_dk);
+		if (rkaddr->rkcs1 & RK_CERR) {
+			int recal;
+			u_short ds = rkaddr->rkds;
+			u_short cs2 = rkaddr->rkcs2;
+			u_short er = rkaddr->rker;
+			if (sc->sc_recal)
+				printf("recal CERR\n");
+			rkerrs++;
+			if (rkflags&1)
+			printf("%d ds %o cs2 %o er %o\n", um->um_tab.b_errcnt,
+			    ds, cs2, er);
+			if (er & RK_WLE)	
+				printf("rk%d is write locked\n", dkunit(bp));
+			if (ds & RKDS_HARD)
+				printf("rk%d is down\n", dkunit(bp));
+			if (++um->um_tab.b_errcnt > 28 ||
+			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD)
+				bp->b_flags |= B_ERROR;
+			else
+				um->um_tab.b_active = 0;
+			if (um->um_tab.b_errcnt > 27)
+				deverror(bp, cs2, (ds<<8)|er);
+			if (cs2&RK_MDS) {
+				rkaddr->rkcs2 = RK_SCLR;
+				goto retry;
+			}
+			recal = 0;
+			if (ds&RK_DROT || er&(RK_OPI|RK_SKI|RK_UNS) ||
+			    (um->um_tab.b_errcnt&07) == 4)
+				recal = 1;
+			if ((er & (RK_DCK|RK_ECH)) == RK_DCK)
+				if (rkecc(ui))
+					return;
+			rkaddr->rkcs1 = RK_CDT|RK_CCLR;
+			rkaddr->rkcs2 = ui->ui_slave;
+			rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+			rkwait(rkaddr);
+			if (recal && um->um_tab.b_active == 0) {
+				rkaddr->rkcs1 = RK_CDT|RK_IE|RK_RECAL|RK_GO;
+				rkcyl[ui->ui_unit] = -1;
+				rkwait(rkaddr);
+				um->um_tab.b_active = 1;
+				sc->sc_recal = 1;
+				return;
+			}
+		}
+retry:
+		if (sc->sc_recal) {
+			sc->sc_recal = 0;
+			um->um_tab.b_active = 0;
+		}
+		ubadone(um);
+		if (um->um_tab.b_active) {
+			um->um_tab.b_active = 0;
+			um->um_tab.b_errcnt = 0;
+			um->um_tab.b_actf = dp->b_forw;
+			dp->b_active = 0;
+			dp->b_errcnt = 0;
+			dp->b_actf = bp->av_forw;
+			bp->b_resid = -rkaddr->rkwc * sizeof(short);
+			iodone(bp);
+			if (dp->b_actf)
+				if (rkustart(ui))
+					needie = 0;
+		}
+		as &= ~(1<<ui->ui_slave);
+	}
+	for (unit = 0; as; as >>= 1, unit++)
+		if (as & 1)
+			if (rkustart(rkip[rk11][unit]))
+				needie = 0;
+	if (um->um_tab.b_actf && um->um_tab.b_active == 0)
+		if (rkstart(um))
+			needie = 0;
+	if (needie)
+		rkaddr->rkcs1 = RK_CDT|RK_IE;
+}
+
+rkwait(addr)
+	register struct rkdevice *addr;
+{
+
+	while ((addr->rkcs1 & RK_CRDY) == 0)
 		;
-	if (t==0)
-		printf("rk not ready\n");
-	return(t);
 }
 
 rkread(dev)
-dev_t dev;
+	dev_t dev;
 {
+	register int unit = minor(dev) >> 3;
 
-	physio(rkstrategy, &rrkbuf, dev, B_READ, minphys);
+	if (unit >= NRK07)
+		u.u_error = ENXIO;
+	else
+		physio(rkstrategy, &rrkbuf[unit], dev, B_READ, minphys);
 }
 
 rkwrite(dev)
-dev_t dev;
+	dev_t dev;
 {
+	register int unit = minor(dev) >> 3;
 
-	physio(rkstrategy, &rrkbuf, dev, B_WRITE, minphys);
+	if (unit >= NRK07)
+		u.u_error = ENXIO;
+	else
+		physio(rkstrategy, &rrkbuf[unit], dev, B_WRITE, minphys);
 }
 
-rkdump()
+rkecc(ui)
+	register struct uba_dinfo *ui;
 {
+	register struct rkdevice *rk = (struct rkdevice *)ui->ui_addr;
+	register struct buf *bp = rkutab[ui->ui_unit].b_actf;
+	register struct uba_minfo *um = ui->ui_mi;
+	register struct rkst *st;
+	struct uba_regs *ubp = ui->ui_hd->uh_uba;
+	register int i;
+	caddr_t addr;
+	int reg, bit, byte, npf, mask, o, cmd, ubaddr;
+	int bn, cn, tn, sn;
 
-	printf("don't know how to dump to rk (yet)\n");
+	npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount) - 1;
+	reg = btop(um->um_ubinfo&0x3ffff) + npf;
+	o = (int)bp->b_un.b_addr & PGOFSET;
+	printf("%D ", bp->b_blkno+npf);
+	prdev("ECC", bp->b_dev);
+	mask = rk->rkec2;
+	if (mask == 0) {
+		rk->rkatt = 0;
+		return (0);
+	}
+	ubp->uba_dpr[(um->um_ubinfo>>28)&0x0f] |= UBA_BNE;
+	i = rk->rkec1 - 1;		/* -1 makes 0 origin */
+	bit = i&07;
+	i = (i&~07)>>3;
+	byte = i + o;
+	while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
+		addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
+		    (byte & PGOFSET);
+		putmemc(addr, getmemc(addr)^(mask<<bit));
+		byte++;
+		i++;
+		bit -= 8;
+	}
+	um->um_tab.b_active++;	/* Either complete or continuing... */
+	if (rk->rkwc == 0)
+		return (0);
+	rk->rkcs1 = RK_CDT|RK_CCLR;
+	rk->rkcs2 = ui->ui_slave;
+	rk->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+	rkwait(rk);
+	bn = dkblock(bp);
+	st = &rkst[ui->ui_type];
+	cn = bp->b_cylin;
+	sn = bn%st->nspc + npf + 1;
+	tn = sn/st->nsect;
+	sn %= st->nsect;
+	cn += tn/st->ntrak;
+	tn %= st->ntrak;
+	rk->rkcyl = cn;
+	rk->rkda = (tn << 8) | sn;
+	ubaddr = (int)ptob(reg+1) + o;
+	rk->rkba = ubaddr;
+	cmd = (ubaddr >> 8) & 0x300;
+	cmd |= RK_CDT|RK_IE|RK_GO|RK_READ;
+	rk->rkcs1 = cmd;
+	return (1);
+}
+
+/*
+ * Reset driver after UBA init.
+ * Cancel software state of all pending transfers
+ * and restart all units and the controller.
+ */
+rkreset(uban)
+{
+	register struct uba_minfo *um;
+	register struct uba_dinfo *ui;
+	register rk11, unit;
+	int any = 0;
+
+	for (rk11 = 0; rk11 < NRK11; rk11++) {
+		if ((um = rkminfo[rk11]) == 0 || um->um_ubanum != uban ||
+		    um->um_alive == 0)
+			continue;
+		if (any == 0) {
+			printf(" rk");
+			any++;
+		}
+		um->um_tab.b_active = 0;
+		um->um_tab.b_actf = um->um_tab.b_actl = 0;
+		rk_softc[um->um_ctlr].sc_recal = 0;
+		if (um->um_ubinfo) {
+			printf("<%d>", (um->um_ubinfo>>28)&0xf);
+			ubadone(um);
+		}
+		((struct rkdevice *)(um->um_addr))->rkcs1 = RK_CDT|RK_CCLR;
+		rkwait((struct rkdevice *)(um->um_addr));
+		for (unit = 0; unit < NRK11; unit++) {
+			if ((ui = rkdinfo[unit]) == 0)
+				continue;
+			if (ui->ui_alive == 0)
+				continue;
+			rkutab[unit].b_active = 0;
+			(void) rkustart(ui);
+		}
+		(void) rkstart(um);
+	}
+}
+
+/*
+ * Wake up every second and if an interrupt is pending
+ * but nothing has happened increment a counter.
+ * If nothing happens for 20 seconds, reset the controller
+ * and begin anew.
+ */
+rkwatch()
+{
+	register struct uba_minfo *um;
+	register rk11, unit;
+	register struct rk_softc *sc;
+
+	timeout(rkwatch, (caddr_t)0, HZ);
+	for (rk11 = 0; rk11 < NRK11; rk11++) {
+		um = rkminfo[rk11];
+		if (um == 0 || um->um_alive == 0)
+			continue;
+		sc = &rk_softc[rk11];
+		if (um->um_tab.b_active == 0) {
+			for (unit = 0; unit < NRK07; unit++)
+				if (rkdinfo[unit]->ui_mi == um &&
+				    rkutab[unit].b_active)
+					goto active;
+			sc->sc_wticks = 0;
+			continue;
+		}
+active:
+		sc->sc_wticks++;
+		if (sc->sc_wticks >= 20) {
+			sc->sc_wticks = 0;
+			printf("LOST INTERRUPT RESET");
+			/* SHOULD JUST RESET ONE CTLR, NOT ALL ON UBA */
+			rkreset(um->um_ubanum);
+			printf("\n");
+		}
+	}
+}
+
+#define	DBSIZE	20
+
+rkdump(dev)
+	dev_t dev;
+{
+	struct rkdevice *rkaddr;
+	char *start;
+	int num, blk, unit;
+	struct size *sizes;
+	register struct uba_regs *uba;
+	register struct uba_dinfo *ui;
+	register short *rp;
+	struct rkst *st;
+
+	unit = minor(dev) >> 3;
+	if (unit >= NRK07) {
+		printf("bad unit\n");
+		return (-1);
+	}
+#define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
+	ui = phys(struct uba_dinfo *, rkdinfo[unit]);
+	if (ui->ui_alive == 0) {
+		printf("dna\n");
+		return(-1);
+	}
+	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
+#if VAX780
+	if (cpu == VAX_780)
+		ubainit(uba);
+#endif
+	rkaddr = (struct rkdevice *)ui->ui_physaddr;
+	num = maxfree;
+	start = 0;
+	rkaddr->rkcs1 = RK_CDT|RK_CERR;
+	rkaddr->rkcs2 = unit;
+	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+	rkwait(rkaddr);
+	if ((rkaddr->rkds & RK_VV) == 0) {
+		rkaddr->rkcs1 = RK_CDT|RK_IE|RK_PACK|RK_GO;
+		rkwait(rkaddr);
+	}
+	st = &rkst[ui->ui_type];
+	sizes = phys(struct size *, st->sizes);
+	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks) {
+		printf("oor\n");
+		return (-1);
+	}
+	while (num > 0) {
+		register struct pte *io;
+		register int i;
+		int cn, sn, tn;
+		daddr_t bn;
+
+		blk = num > DBSIZE ? DBSIZE : num;
+		io = uba->uba_map;
+		for (i = 0; i < blk; i++)
+			*(int *)io++ = (btop(start)+i) | (1<<21) | UBA_MRV;
+		*(int *)io = 0;
+		bn = dumplo + btop(start);
+		cn = bn/st->nspc + sizes[minor(dev)&07].cyloff;
+		sn = bn%st->nspc;
+		tn = sn/st->nsect;
+		sn = sn%st->nsect;
+		rkaddr->rkcyl = cn;
+		rp = (short *) &rkaddr->rkda;
+		*rp = (tn << 8) + sn;
+		*--rp = 0;
+		*--rp = -blk*NBPG / sizeof (short);
+		*--rp = RK_CDT|RK_GO|RK_WRITE;
+		rkwait(rkaddr);
+		if (rkaddr->rkcs1 & RK_CERR) {
+	printf("rk dump dsk err: (%d,%d,%d) cs1=%x, ds=%x, er1=%x\n",
+			    cn, tn, sn,
+			    rkaddr->rkcs1&0xffff, rkaddr->rkds&0xffff,
+			    rkaddr->rker&0xffff);
+			return (-1);
+		}
+		start += blk*NBPG;
+		num -= blk;
+	}
+	return (0);
 }
 #endif
