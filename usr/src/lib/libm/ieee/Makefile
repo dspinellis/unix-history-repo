@@ -1,9 +1,15 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	1.6	(ucb.elefunt)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific written prior permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	1.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -30,12 +36,15 @@ depend: FRC
 tags: FRC
 	ctags ${SRCS}
 
+clean:
+	rm -f ${OBJS} a.out
+
 FRC:
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
 cbrt.o: cbrt.c
-support.o: support.c
+support.o: support.c /usr/include/errno.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
