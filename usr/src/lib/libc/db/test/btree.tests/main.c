@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -75,7 +75,7 @@ cmd_table commands[] = {
 	"in",	2, 1, insert, "insert key def", "insert key with data def",
 	"la",	0, 0, last, "last", "move cursor to last record",
 	"li",	1, 1, list, "list file", "list to a file",
-	"loa",	1, 1, load, "load file", NULL,
+	"loa",	1, 0, load, "load file", NULL,
 	"loc",	1, 1, get, "get key", NULL,
 	"m",	0, 0, mstat, "mstat", "stat memory pool",
 	"n",	0, 0, next, "next", "move cursor forward one record",
@@ -576,6 +576,7 @@ list(db, argv)
 		perror("list/seq");
 }
 
+DB *BUGdb;
 void
 load(db, argv)
 	DB *db;
@@ -584,23 +585,32 @@ load(db, argv)
 	register char *p, *t;
 	FILE *fp;
 	DBT data, key;
+	recno_t cnt;
+	size_t len;
 	int status;
-	char b1[256], b2[256];
+	char *lp, buf[16 * 1024];
 
+	BUGdb = db;
 	if ((fp = fopen(argv[1], "r")) == NULL) {
-		perror(argv[1]);
+		(void)fprintf(stderr, "%s: %s\n", argv[1], strerror(errno));
 		return;
 	}
-	(void)printf("loading %s...\n", dict);
+	(void)printf("loading %s...\n", argv[1]);
 
-	key.data = b1;
-	data.data = b2;
-	while (fgets(b1, sizeof(b1), fp) != NULL) {
-		data.size = strlen(b1);
-		b1[data.size - 1] = '\0';
-		for (p = &b1[data.size - 2], t = b2; p >= b1; *t++ = *p--);
-		b2[data.size - 1] = '\0';
-		key.size = data.size;
+	for (cnt = 1; (lp = fgetline(fp, &len)) != NULL; ++cnt) {
+		if (recno) {
+			key.data = &cnt;
+			key.size = sizeof(recno_t);
+			data.data = lp;
+			data.size = len + 1;
+		} else { 
+			key.data = lp;
+			key.size = len + 1;
+			for (p = lp + len - 1, t = buf; p >= lp; *t++ = *p--);
+			*t = '\0';
+			data.data = buf;
+			data.size = len + 1;
+		}
 
 		status = (*db->put)(db, &key, &data, R_NOOVERWRITE);
 		switch (status) {
@@ -608,7 +618,12 @@ load(db, argv)
 			perror("load/put");
 			exit(1);
 		case RET_SPECIAL:
-			(void)fprintf(stderr, "duplicate: %s\n", key.data);
+			if (recno)
+				(void)fprintf(stderr,
+				    "duplicate: %ld {%s}\n", cnt, data.data);
+			else
+				(void)fprintf(stderr,
+				    "duplicate: %ld {%s}\n", cnt, key.data);
 			exit(1);
 		case RET_SUCCESS:
 			break;
