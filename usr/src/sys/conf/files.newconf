@@ -1,4 +1,4 @@
-#	@(#)files.newconf	7.4 (Berkeley) %G%
+#	@(#)files.newconf	7.5 (Berkeley) %G%
 
 # generic attributes
 define	disk
@@ -77,6 +77,7 @@ file	kern/uipc_syscalls.c
 file	kern/uipc_usrreq.c
 file	kern/vfs_bio.c
 file	kern/vfs_cache.c
+file	kern/vfs_cluster.c
 file	kern/vfs_conf.c
 file	kern/vfs_init.c
 file	kern/vfs_lookup.c
