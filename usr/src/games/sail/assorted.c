@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)assorted.c	2.3 83/12/17";
+static	char *sccsid = "@(#)assorted.c	2.4 84/02/03";
 #endif
 
 #include "externs.h"
@@ -70,11 +70,11 @@ int rig, shot, hittable, roll;
 	if (rig && !rigg[2] && (!rigg[3] || rigg[3] == -1))
 		makesignal(on, "dismasted!", (struct ship *)0);
 	if (portside(from, on, 0)) {
-		guns = on->specs->gunL;
-		car = on->specs->carL;
-	} else {
 		guns = on->specs->gunR;
 		car = on->specs->carR;
+	} else {
+		guns = on->specs->gunL;
+		car = on->specs->carL;
 	}
 	if (ghits > car) {
 		ghits -= car;
@@ -92,7 +92,7 @@ int rig, shot, hittable, roll;
 	}
 	hull -= ghits;
 	if (Ghit)
-		Write(portside(from, on, 0) ? W_GUNL : W_GUNR,
+		Write(portside(from, on, 0) ? W_GUNR : W_GUNL,
 			on, 0, guns, car, 0, 0);
 	hull -= hhits;
 	hull = hull < 0 ? 0 : hull;
