@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -176,14 +176,14 @@ install(from_name, to_name, isdir)
 		if (!docopy)
 			(void)unlink(from_name);
 	}
-	/* set owner, group, mode for target */
-	if (fchmod(to_fd, mode)) {
-		PERROR("install: fchmod: ", to_name);
-		bad();
-	}
 	if ((group || owner) && fchown(to_fd, owner ? pp->pw_uid : -1,
 	    group ? gp->gr_gid : -1)) {
 		PERROR("install: fchown: ", to_name);
+		bad();
+	}
+	/* set owner, group, mode for target */
+	if (fchmod(to_fd, mode)) {
+		PERROR("install: fchmod: ", to_name);
 		bad();
 	}
 	(void)close(to_fd);
