@@ -170,5 +170,16 @@ ${TREEOBJ}:	${TREE}tree.rep
 ${OBJOBJ}:	${OBJECT}objsym.rep
 ${OBJECT}readobj.o ${OBJECT}readsym.o: ${PASCAL}objfmt.h
 
-install:
+install: a.out
 	mv a.out ${INSTALL}
+
+clean:
+	rm a.out */*.o
+
+#
+# Warning:  This will produce a very long listing.  You would be better
+#           off just looking at things on-line.
+#
+
+print:
+	pr *.h [a-z]*/*.{h,rep,c}
