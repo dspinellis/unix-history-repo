@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.47 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1015,7 +1015,7 @@ cfline(line, f)
 		hp = gethostbyname(p);
 		if (hp == NULL) {
 			extern int h_errno, h_nerr;
-			extern char **h_errlist;
+			extern char *h_errlist[];
 
 			logerror((u_int)h_errno < h_nerr ?
 			    h_errlist[h_errno] : "Unknown error");
