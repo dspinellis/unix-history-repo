@@ -1,0 +1,31 @@
+model|mod|m:\
+	:pb=\p\dis\dbeginproc:bb=\dbeginproc\d:be=\dendproc\d|;:\
+	:cb=\$:ce=\$|$:sb=":se=":lb=':le=':\
+	:kw=abs and array beginproc boolean by case cdnl char copied dispose\
+	div do dynamic else elsif end endproc entry external f FALSE false\
+	fi file for formal fortran global if in integer include inline is lbnd\
+	max min mod new NIL nil noresult not notin od of or procedure public\
+	read readln readonly record recursive rem rep repeat result return set\
+	space string subscript such then TRUE true type ubnd union until\
+	varies while width write writeln:
+pascal|pasc|p:\
+	:pb=(^\d?procedure|function|program\d\p\d|\(|;|\:)|(=\d?record\d):\
+	:bb=\dcase|begin\d:be=\dend|forward\d|;:\
+	:cb={|\(*:ce=}|*\):sb=':se=\e':\
+	:kw=and array assert begin case const div do downto else end file for\
+	forward function goto if in label mod nil not of or packed procedure\
+	program record repeat set then to type until var while with oct hex\
+	external:
+C|c:\
+	:pb=^\d?*?\d?\p\d?\(\a?\):bb={:be=}:cb=/*:ce=*/:sb=":se=\e":lb=':\
+	:le=\e':tl:\
+	:kw=asm auto break case char continue default do double else enum\
+	extern float for fortran goto if int long register return short\
+	sizeof static struct switch typedef union unsigned while #define\
+	#else #endif #if #ifdef #ifndef #include #undef # define else endif\
+	if ifdef ifndef include undef:
+ISP|isp|i\
+	:pb=\d?\p\d?\:=\d?begin:bb=^begin:be=^end:cb=^!:ce=!:oc:\
+	:kw=and begin decode define end eql eqv geq gtr if leave leq lss mod\
+	neq next not or otherwise repeat restart resume sr0 sr1 srd srr sl0 sl1\
+	sld slr tst xor:
