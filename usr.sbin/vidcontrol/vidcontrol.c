@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id$
+ *	$Id: vidcontrol.c,v 1.1 1994/05/20 12:20:38 sos Exp $
  */
 
 #include <ctype.h>
@@ -89,11 +89,11 @@ void
 load_scrnmap(char *filename)
 {
 	FILE *fd;
-	int i;
+	int i, size;
 	char *name;
 	scrmap_t scrnmap;
-	char *prefix[]  = {"", "", SCRNMAP_PATH, NULL};
-	char *postfix[] = {"", ".scm", ".scm"};
+	char *prefix[]  = {"", "", SCRNMAP_PATH, SCRNMAP_PATH, NULL};
+	char *postfix[] = {"", ".scm", "", ".scm"};
 
 	for (i=0; prefix[i]; i++) {
 		name = mkfullname(prefix[i], filename, postfix[i]);
@@ -101,16 +101,34 @@ load_scrnmap(char *filename)
 			break;
 	}
 	if (fd == NULL) {
-		perror("font file not found");
+		perror("screenmap file not found");
 		return;
 	}
-	if (decode(fd, scrnmap) != sizeof(scrnmap)) {
-		fprintf(stderr, "bad scrnmap file\n");
-		close(fd);
-		return;
+	size = sizeof(scrnmap);
+	if (decode(fd, &scrnmap) != size) {
+		rewind(fd);
+		if (fread(&scrnmap, 1, size, fd) != size) {
+			fprintf(stderr, "bad scrnmap file\n");
+			close(fd);
+			return;
+		}
 	}
-	if (ioctl(0, PIO_SCRNMAP, scrnmap) < 0)
+	if (ioctl(0, PIO_SCRNMAP, &scrnmap) < 0)
 		perror("can't load screenmap");
+	close(fd);
+}
+
+
+void
+load_default_scrnmap()
+{
+	int i;
+	scrmap_t scrnmap;
+
+	for (i=0; i<256; i++)
+		scrnmap[i] = i;
+	if (ioctl(0, PIO_SCRNMAP, &scrnmap) < 0)
+		perror("can't load default screenmap");
 	close(fd);
 }
 
@@ -144,8 +162,8 @@ load_font(char *type, char *filename)
 	FILE	*fd;
 	int	i, io, size;
 	char	*name, *fontmap;
-	char	*prefix[]  = {"", "", FONT_PATH, NULL};
-	char	*postfix[] = {"", ".fnt", ".fnt"};
+	char	*prefix[]  = {"", "", FONT_PATH, FONT_PATH, NULL};
+	char	*postfix[] = {"", ".fnt", "", ".fnt"};
 
 	for (i=0; prefix[i]; i++) {
 		name = mkfullname(prefix[i], filename, postfix[i]);
@@ -175,10 +193,13 @@ load_font(char *type, char *filename)
 	}
 	fontmap = (char*) malloc(size);
 	if (decode(fd, fontmap) != size) {
-		fprintf(stderr, "bad font file\n");
-		close(fd);
-		free(fontmap);
-		return;
+		rewind(fd);
+		if (fread(fontmap, 1, size, fd) != size) {
+			fprintf(stderr, "bad font file\n");
+			close(fd);
+			free(fontmap);
+			return;
+		}
 	}
 	if (ioctl(0, io, fontmap) < 0)
 		perror("can't load font");
@@ -373,9 +394,10 @@ usage()
 "                  -b color         (set border color)\n"
 "                  -c n.m           (set cursor start line n & end line m)\n"
 #if 0
-"                  -d               (dump scrnmap map to stdout)\n"
+"                  -d               (dump screenmap to stdout)\n"
 #endif
-"                  -l filename      (load scrnmap map file)\n"
+"                  -l filename      (load srceenmap file filename)\n"
+"                  -L               (load default screenmap)\n"
 "                  -f DxL filename  (load font, D dots wide & L lines high)\n"
 "                  -s saver | help  (set screensaver type or help for a list)\n"
 "                  -t N             (set screensaver timeout in seconds)\n"
@@ -396,7 +418,7 @@ main(int argc, char **argv)
 		perror("Must be on a vty");
 		exit(1);
 	}
-	while((opt = getopt(argc, argv, "b:c:df:l:r:s:t:vx")) != -1)
+	while((opt = getopt(argc, argv, "b:c:df:l:Lr:s:t:vx")) != -1)
 		switch(opt) {
 			case 'c':
 				set_cursor_values(optarg);
@@ -413,6 +435,9 @@ main(int argc, char **argv)
 				break;
 			case 'l':
 				load_scrnmap(optarg);
+				break;
+			case 'L':
+				load_default_scrnmap();
 				break;
 			case 'r':
 				set_reverse_colors(argc, argv, &optind);

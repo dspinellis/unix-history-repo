@@ -75,12 +75,16 @@ and ends on scanline
 Install screen output map file from
 .I scrmap
 .TP
+.BI "\-L\ " 
+Install default screen output map.
+.TP
 .BI "\-f\ " size\ file
 Load font
 .I file
 for
 .I size
 (currently, only 8x8, 8x14 or 8x16).
+The fontfile can be either uuencoded or in raw binary format.
 .TP
 .BI "\-t\ " N|off
 Sets the screensaver timeout to
