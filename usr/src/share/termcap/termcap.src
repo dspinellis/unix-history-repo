@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.13	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.14	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1262,14 +1262,13 @@ cA|avt|concept avt w/4 or 8 pages, 80 columns:\
 	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119;205l\E[=107;118;207h\E)1\E[1Q\EW\E[!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:\
 	:ae=^O:al=\E[L:am:as=^N:bs:bt=\E[Z:cd=\E[J:ce=\E[K:ch=\E[%i%2G:\
 	:cl=\E[H\E[J:cm=\E[%i%2;%2H:co#80:cv=\E[%i%2d:dc=\E[P:dl=\E[M:\
-	:do=\E[B:ei=\E1:eo:ho=\E[H:im=\E1:kb=^H:kd=\E[B:ke=\E[!z:kh=\E[H:\
-	:kl=\E[D:ko=do,ho,nd,up:kr=\E[C:\
-	:ks=\E[!z\E[1;4!z\E[1;8!z\E[1;10!z\E[1;11!z\E[1;12!z\E[1;14!z\E[3;7!z\E[3;9!z:\
+	:do=\E[B:ei=\E1:eo:ho=\E[H:im=\E1:kb=^H:kd=\E[B:\
+	:kh=\E[H:kl=\E[D:ko=do,ho,nd,up:kr=\E[C:\
 	:ku=\E[A:li#24:mi:nd=\E[C:pt:se=\E[7!{:so=\E[7m:te=\E[w\E2\r\n:\
 	:ti=\E[1;24w\E2\r:ue=\E[4!{:ul:up=\E[A:us=\E[4m:\
-	:ve=\E[=4;119l\E[8V:vs=\E[8U\E[=4l\E[=119h:xn:
+	:ve=\E[=4l\E[8V:vs=\E[8U\E[=4l:xn:
 cB|avt-rv|concept avt w/4 or 8 pages, reverse video, 80 columns:\
-	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;205;207h\E)1\E[1Q\EW\E[7!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:tc=avt
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;205;207h\E)1\E[1Q\EW\E[!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:tc=avt
 #
 # Concepts have only window relative cursor addressing, not screen relative.
 # To get it to work right here, ti/te (which were invented for the concept)
