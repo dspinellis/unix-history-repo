@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yyrecover.c 1.2 %G%";
+static char sccsid[] = "@(#)yyrecover.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -199,7 +199,11 @@ yyrecover(Ps0, idfail)
 		printf("States %d %d ...", Ps0[0], Ps0[-1]);
 		if (idfail)
 			printf(" [Idfail]");
+#ifdef PXP
+		putchar('\n');
+#else
 		pchr('\n');
+#endif
 		printf("Input %s%s", tokname(&Y , 0)
 				   , tokname(&Y , 1));
 	}
