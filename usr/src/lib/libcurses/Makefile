@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -30,6 +30,7 @@ OBJS=	addbytes.o addch.o addstr.o box.o clear.o clrtobot.o clrtoeol.o \
 	insch.o insertln.o longname.o move.o mvprintw.o mvscanw.o mvwin.o \
 	newwin.o overlay.o overwrite.o printw.o putchar.o refresh.o scanw.o \
 	scroll.o toucholap.o standout.o touchwin.o tstp.o unctrl.o
+MAN=	curses.0
 
 .c.o:
 	@${CC} -c -pg ${CFLAGS} $*.c
@@ -57,7 +58,8 @@ cleandir: clean
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install:
+install: ${MAN}
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat3
 	install -o bin -g bin -m 644 libcurses ${DESTDIR}/usr/lib/libcurses.a
 	ranlib ${DESTDIR}/usr/lib/libcurses.a
 	install -o bin -g bin -m 644 libcurses_p ${DESTDIR}/usr/lib/libcurses_p.a
