@@ -1,6 +1,6 @@
-/*	dkbad.c	4.1	81/05/08	*/
+/*	dkbad.c	4.2	81/05/09	*/
 
-#ifdef DKBAD
+#ifndef NOBADBLOCK
 #include "../h/param.h"
 #include "../h/buf.h"
 #include "../h/dkbad.h"
@@ -17,16 +17,18 @@ isbad(bt, cyl, trk, sec)
 	register int i;
 	register long blk, bblk;
 
+#ifdef BADMAGIC
 	if (bt->bt_magic != BADMAGIC)
-		return(-1);
+		return (-1);
+#endif
 	blk = ((long)cyl << 16) + (trk << 8) + sec;
 	for (i = 0; i < 126; i++) {
 		bblk = ((long)bt->bt_bad[i].bt_cyl << 16) + bt->bt_bad[i].bt_trksec;
 		if (blk == bblk)
-			return(i);
+			return (i);
 		if (blk < bblk || bblk < 0)
 			break;
 	}
-	return(-1);
+	return (-1);
 }
 #endif
