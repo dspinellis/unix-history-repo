@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.20 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -40,50 +40,36 @@ ftypeok(dp)
 	}
 }
 
-reply(mesg)
-	char *mesg;
+reply(question)
+	char *question;
 {
-	char line[80];
-	int cont = (strcmp(mesg, "CONTINUE") == 0);
+	int persevere;
+	char c;
 
 	if (preen)
 		pfatal("INTERNAL ERROR: GOT TO reply()");
-	printf("\n%s? ", mesg);
-	if (!cont && (nflag || fswritefd < 0)) {
-		printf(" no\n\n");
-		return (0);
-	}
-	if (yflag || (cont && nflag)) {
-		printf(" yes\n\n");
-		return (1);
-	}
-	if (getline(stdin, line, sizeof(line)) == EOF)
-		errexit("\n");
+	persevere = !strcmp(question, "CONTINUE");
 	printf("\n");
-	if (line[0] == 'y' || line[0] == 'Y')
-		return (1);
-	else
+	if (!persevere && (nflag || fswritefd < 0)) {
+		printf("%s? no\n\n", question);
 		return (0);
-}
-
-getline(fp, loc, maxlen)
-	FILE *fp;
-	char *loc;
-	int maxlen;
-{
-	register long n;
-	register char *p, *lastloc;
-
-	p = loc;
-	lastloc = &p[maxlen-1];
-	while ((n = getc(fp)) != '\n') {
-		if (n == EOF)
-			return (EOF);
-		if (!isspace(n) && p < lastloc)
-			*p++ = n;
 	}
-	*p = 0;
-	return (p - loc);
+	if (yflag || (persevere && nflag)) {
+		printf("%s? yes\n\n", question);
+		return (1);
+	}
+	do	{
+		printf("%s? [yn] ", question);
+		(void) fflush(stdout);
+		c = getc(stdin);
+		while (c != '\n' && getc(stdin) != '\n')
+			if (feof(stdin))
+				return (0);
+	} while (c != 'y' && c != 'Y' && c != 'n' && c != 'N');
+	printf("\n");
+	if (c == 'y' || c == 'Y')
+		return (1);
+	return (0);
 }
 
 /*
