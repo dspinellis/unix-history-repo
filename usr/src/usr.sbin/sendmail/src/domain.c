@@ -12,12 +12,12 @@
 
 #ifndef MXDOMAIN
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.8 (Berkeley) %G% (no MXDOMAIN)";
+static char	SccsId[] = "@(#)domain.c	5.9 (Berkeley) %G% (no MXDOMAIN)";
 #endif not lint
 #else MXDOMAIN
 
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.8 (Berkeley) %G%";
+static char	SccsId[] = "@(#)domain.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 # include <sys/param.h>
@@ -32,7 +32,7 @@ typedef union {
 
 static char	hostbuf[BUFSIZ];
 int		h_errno;
-extern u_short	getshort();
+extern u_short	_getshort();
 
 getmxrr(host, mxhosts, maxmx, localhost)
 	char *host, **mxhosts;
@@ -129,13 +129,13 @@ getmxrr(host, mxhosts, maxmx, localhost)
 		if ((n = dn_expand((char *)&answer, eom, cp, bp, buflen)) < 0)
 			break;
 		cp += n;
-		type = getshort(cp);
+		type = _getshort(cp);
  		cp += sizeof(u_short);
 		/*
-		class = getshort(cp);
+		class = _getshort(cp);
 		*/
  		cp += sizeof(u_short) + sizeof(u_long);
-		n = getshort(cp);
+		n = _getshort(cp);
 		cp += sizeof(u_short);
 		if (type != T_MX)  {
 #ifdef DEBUG
@@ -146,7 +146,7 @@ getmxrr(host, mxhosts, maxmx, localhost)
 			cp += n;
 			continue;
 		}
-		pref = getshort(cp);
+		pref = _getshort(cp);
 		cp += sizeof(u_short);
 		if ((n = dn_expand((char *)&answer, eom, cp, bp, buflen)) < 0)
 			break;
@@ -269,10 +269,10 @@ getcanonname(host, hbsize)
 			first = 0;
 		}
 		cp += n;
-		type = getshort(cp);
+		type = _getshort(cp);
  		cp += sizeof(u_short);
  		cp += sizeof(u_short) + sizeof(u_long);
-		n = getshort(cp);
+		n = _getshort(cp);
 		cp += sizeof(u_short);
 		if (type == T_CNAME)  {
 			/*
@@ -291,16 +291,4 @@ getcanonname(host, hbsize)
 	}
 	return;
 }
-
-u_short
-getshort(msgp)
-	char *msgp;
-{
-	register u_char *p = (u_char *) msgp;
-	register int u;
-
-	u = *p++ << 8;
-	return ((u_short)(u | *p));
-}
-
 #endif MXDOMAIN
