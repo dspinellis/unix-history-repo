@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.22	81/06/11	*/
+/*	kern_clock.c	4.23	81/07/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -157,6 +157,7 @@ hardclock(pc, ps)
  * the previous algorithm degenerated to round-robin with poor response
  * time when there was a high load average.
  */
+#undef ave
 #define	ave(a,b) ((int)(((int)(a*b))/(b+1)))
 int	nrscale = 2;
 double	avenrun[];
