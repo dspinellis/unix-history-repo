@@ -27,11 +27,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: strncmp.s,v 1.4 1993/08/16 17:06:42 jtc Exp $
+ *	$Id: strncmp.s,v 1.1 1993/08/16 18:40:48 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: strncmp.s,v 1.4 1993/08/16 17:06:42 jtc Exp $"
+        .asciz "$Id: strncmp.s,v 1.1 1993/08/16 18:40:48 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
@@ -70,7 +70,7 @@ L1:	incl	%eax
 L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
 	jle	L4			/* Yes, strings are equal */
 	movb	(%eax),%bl
-	cmpb	$0,%bl
+	testb	%bl,%bl
 	je	L3
 	cmpb	%bl,(%ecx)
 	jne	L3
@@ -80,7 +80,7 @@ L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
 	testl	%edx,%edx
 	jle	L4
 	movb	(%eax),%bl
-	cmpb	$0,%bl
+	testb	%bl,%bl
 	je	L3
 	cmpb	%bl,(%ecx)
 	jne	L3
@@ -90,7 +90,7 @@ L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
 	testl	%edx,%edx
 	jle	L4
 	movb	(%eax),%bl
-	cmpb	$0,%bl
+	testb	%bl,%bl
 	je	L3
 	cmpb	%bl,(%ecx)
 	jne	L3
@@ -100,7 +100,7 @@ L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
 	testl	%edx,%edx
 	jle	L4
 	movb	(%eax),%bl
-	cmpb	$0,%bl
+	testb	%bl,%bl
 	je	L3
 	cmpb	%bl,(%ecx)
 	jne	L3
@@ -110,7 +110,7 @@ L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
 	testl	%edx,%edx
 	jle	L4
 	movb	(%eax),%bl
-	cmpb	$0,%bl
+	testb	%bl,%bl
 	je	L3
 	cmpb	%bl,(%ecx)
 	jne	L3
@@ -120,7 +120,7 @@ L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
 	testl	%edx,%edx
 	jle	L4
 	movb	(%eax),%bl
-	cmpb	$0,%bl
+	testb	%bl,%bl
 	je	L3
 	cmpb	%bl,(%ecx)
 	jne	L3
@@ -130,7 +130,7 @@ L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
 	testl	%edx,%edx
 	jle	L4
 	movb	(%eax),%bl
-	cmpb	$0,%bl
+	testb	%bl,%bl
 	je	L3
 	cmpb	%bl,(%ecx)
 	jne	L3
@@ -140,7 +140,7 @@ L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
 	testl	%edx,%edx
 	jle	L4
 	movb	(%eax),%bl
-	cmpb	$0,%bl
+	testb	%bl,%bl
 	je	L3
 	cmpb	%bl,(%ecx)
 	je	L1
