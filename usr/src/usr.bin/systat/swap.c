@@ -1,18 +1,15 @@
 #ifndef lint
-static char *sccsid = "@(#)swap.c	1.7 (Berkeley) %G%";
+static char *sccsid = "@(#)swap.c	1.8 (Berkeley) %G%";
 #endif
 
 #include "systat.h"
-#include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/text.h>
 #include <sys/conf.h>
-#include <sys/file.h>
 #include <sys/vmmac.h>
 #include <machine/pte.h>
-#include <nlist.h>
 
 WINDOW *
 openswap()

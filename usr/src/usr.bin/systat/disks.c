@@ -1,29 +1,96 @@
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	1.2 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)disks.c	1.3 (Berkeley) %G%";
 #endif
 
 #include "systat.h"
-#include <sys/param.h>
 #include <sys/buf.h>
-#include <sys/file.h>
-#ifdef vax
-#include <vaxuba/ubavar.h>
-#include <vaxmba/mbavar.h>
-#endif
-#ifdef sun
-#include <sundev/mbvar.h>
-#endif
 #include <ctype.h>
 
-char dr_name[DK_NDRIVE][10];
+static struct nlist nlst[] = {
+#define	X_DK_NDRIVE	0
+	{ "_dk_ndrive" },
+#define	X_DK_MSPW	1
+	{ "_dk_mspw" },
+#ifdef vax
+#define	X_MBDINIT	2
+	{ "_mbdinit" },
+#define	X_UBDINIT	3
+	{ "_ubdinit" },
+#endif
+#ifdef sun
+#define	X_MBDINIT	2
+	{ "_mbdinit" },
+#endif
+	{ "" },
+};
+
+dkinit()
+{
+	register int i;
+	register char *cp;
+	static int once = 0;
+	static char buf[1024];
+
+	if (once)
+		return;
+	once = 1;
+	nlist("/vmunix", nlst);
+	if (nlst[X_DK_NDRIVE].n_value == 0) {
+		error("dk_ndrive undefined in kernel");
+		return;
+	}
+	dk_ndrive = getw(nlst[X_DK_NDRIVE].n_value);
+	if (dk_ndrive <= 0) {
+		error("dk_ndrive=%d according to /vmunix", dk_ndrive);
+		return;
+	}
+	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
+	lseek(kmem, nlst[X_DK_MSPW].n_value, L_SET);
+	read(kmem, dk_mspw, dk_ndrive * sizeof (float));
+	dr_name = (char **)calloc(dk_ndrive, sizeof (char *));
+	dk_select = (int *)calloc(dk_ndrive, sizeof (int));
+	for (cp = buf, i = 0; i < dk_ndrive; i++) {
+		dr_name[i] = cp;
+		sprintf(dr_name[i], "dk%d", i);
+		cp += strlen(dr_name[i]) + 1;
+		if (dk_mspw[i] != 0.0)
+			dk_select[i] = 1;
+	}
+	read_names();
+}
+
+dkcmd(cmd, args)
+	char *cmd, *args;
+{
+
+        if (prefix(cmd, "display") || prefix(cmd, "add")) {
+                dkselect(args, 1, dk_select);
+		return (1);
+        }
+        if (prefix(cmd, "ignore") || prefix(cmd, "delete")) {
+                dkselect(args, 0, dk_select);
+		return (1);
+        }
+        if (prefix(cmd, "drives")) {
+		register int i;
+
+                move(CMDLINE, 0); clrtoeol();
+                for (i = 0; i < dk_ndrive; i++)
+                        if (dk_mspw[i] != 0.0)
+                                printw("%s ", dr_name[i]);
+                return (1);
+        }
+	return (0);
+}
 
 #define steal(where, var) \
 	lseek(kmem, where, L_SET); read(kmem, &var, sizeof var);
 
 #ifdef vax
-read_names(mp, up)
-	register struct mba_device *mp;
-	register struct uba_device *up;
+#include <vaxuba/ubavar.h>
+#include <vaxmba/mbavar.h>
+
+read_names()
 {
 	static int once = 0;
 	struct mba_device mdev;
@@ -32,11 +99,12 @@ read_names(mp, up)
 	char *cp = (char *)&two_char;
 	struct uba_device udev;
 	struct uba_driver udrv;
+	register struct mba_device *mp;
+	register struct uba_device *up;
 
-	if (once)
-		return;
-	once++;
-	if (up == 0) {
+	mp = (struct mba_device *)nlst[X_MBDINIT].n_value;
+	up = (struct uba_device *)nlst[X_UBDINIT].n_value;
+	if (mp == 0 && up == 0) {
 		error("Disk init info not in namelist\n");
 		return;
 	}
@@ -66,19 +134,18 @@ read_names(mp, up)
 #endif
 
 #ifdef sun
-/*VARARGS*/
-read_names(mp)
-	register struct mb_device *mp;
+#include <sundev/mbvar.h>
+
+read_names()
 {
 	static int once = 0;
 	struct mb_device mdev;
 	struct mb_driver mdrv;
 	short two_char;
 	char *cp = (char *) &two_char;
+	register struct mb_device *mp;
 
-	if (once)
-		return;
-	once++;
+	mp = (struct mb_device *)nlst[X_MBDINIT].n_value;
 	if (mp == 0) {
 		error("Disk init info not in namelist\n");
 		return;
@@ -118,17 +185,16 @@ dkselect(args, truefalse, selections)
 			*cp++ = '\0';
 		if (cp - args == 0)
 			break;
-		for (i = 0; i < DK_NDRIVE; i++)
+		for (i = 0; i < dk_ndrive; i++)
 			if (strcmp(args, dr_name[i]) == 0) {
-				selections[i] = truefalse;
 				if (dk_mspw[i] != 0.0)
-					if (truefalse == 0)
-						ndrives--;
-					else
-						ndrives++;
+					selections[i] = truefalse;
+				else
+					error("%s: drive not configured",
+					    dr_name[i]);
 				break;
 			}
-		if (i >= DK_NDRIVE)
+		if (i >= dk_ndrive)
 			error("%s: unknown drive", args);
 		args = cp;
 	}

@@ -1,22 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.8 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)main.c	1.9 (Berkeley) %G%";
 #endif
 
 #include "systat.h"
-#include <sys/file.h>
-#include <nlist.h>
-#include <signal.h>
 
 static struct nlist nlst[] = {
 #define X_CCPU          0
         { "_ccpu" },
 #define X_AVENRUN       1
         { "_avenrun" },
-#define	X_DK_MSPW	2
-	{ "_dk_mspw" },
-#define	X_HZ		3
+#define	X_HZ		2
 	{ "_hz" },
-#define	X_PHZ		4
+#define	X_PHZ		3
 	{ "_phz" },
         { "" }
 };
@@ -109,12 +104,8 @@ main(argc, argv)
         lseek(kmem, nlst[X_CCPU].n_value, L_SET);
         read(kmem, &ccpu, sizeof (ccpu));
         lccpu = log(ccpu);
-	lseek(kmem, nlst[X_DK_MSPW].n_value, L_SET);
-	read(kmem, dk_mspw, sizeof (dk_mspw));
-	lseek(kmem, nlst[X_HZ].n_value, L_SET);
-	read(kmem, &hz, sizeof (hz));
-	lseek(kmem, nlst[X_PHZ].n_value, L_SET);
-	read(kmem, &phz, sizeof (phz));
+	hz = getw(nlst[X_HZ].n_value);
+	phz = getw(nlst[X_PHZ].n_value);
 	(*curcmd->c_init)();
 	curcmd->c_flags |= CF_INIT;
         labels();
