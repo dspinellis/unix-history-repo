@@ -1,4 +1,4 @@
-/* @(#)main.c	1.4	%G%
+/* @(#)main.c	1.5	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -78,7 +78,7 @@ extern char *malloc(), *sprintf(), *strcat(), *strcpy();
 
 /* Version number */
 
-char SccsId [] = "@(#)main.c	1.4	(Berkeley)	%G%";
+char SccsId [] = "@(#)main.c	1.5	(Berkeley)	%G%";
 
 #ifdef SIGTINT
 static int lintrup = LINTRUP;    /* Constant for local mode bit */
@@ -200,13 +200,13 @@ char *argv[];
 
     /* Ignore quit signals, catch interrupts and stops. */
 
-    sigset(SIGINT, SIG_IGN);
-    sigset(SIGTSTP, OnStop);
-    sigset(SIGTTIN, OnStop);
-    sigset(SIGTTOU, OnStop);
+    signal(SIGINT, SIG_IGN);
+    signal(SIGTSTP, OnStop);
+    signal(SIGTTIN, OnStop);
+    signal(SIGTTOU, OnStop);
 
 #ifdef SIGTINT
-    sigset(SIGTINT, OnCommand);
+    signal(SIGTINT, OnCommand);
     sighold(SIGTINT);
 #endif SIGTINT
 
@@ -394,9 +394,10 @@ int signo;
 
 {
     TxClose();
-    sigset(signo, SIG_DFL);
+    signal(signo, SIG_DFL);
+    sigsetmask(0);
     (void) kill(0, signo);
-    sigset(signo, OnStop);
+    signal(signo, OnStop);
     SHRedis();
 }
 
