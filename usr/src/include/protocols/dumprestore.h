@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/* "@(#)dumprestore.h 2.2 %G%" */
+/* "@(#)dumprestore.h 2.3 %G%" */
 
 /*
  * TP_BSIZE is the size of file blocks on the dump tapes.
@@ -48,12 +48,6 @@ union u_spcl {
 } u_spcl;
 
 #define spcl u_spcl.s_spcl
-
-struct	idates {
-	char	id_name[16];
-	char	id_incno;
-	time_t	id_ddate;
-};
 
 #define	DUMPOUTFMT	"%-16s %c %s"		/* for printf */
 						/* name, incno, ctime(date) */
