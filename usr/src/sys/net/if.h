@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.18 (Berkeley) %G%
+ *	@(#)if.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -297,7 +297,6 @@ struct	ifconf {
 		(ifa)->ifa_refcnt--;
 
 #include "../net/if_arp.h"
-struct	ifqueue rawintrq;		/* raw packet input queue */
 struct	ifnet	*ifnet;
 struct	ifaddr	*ifa_ifwithaddr __P((struct sockaddr *)),
 		*ifa_ifwithnet __P((struct sockaddr *)),
