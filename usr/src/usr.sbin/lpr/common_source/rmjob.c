@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmjob.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmjob.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -170,6 +170,12 @@ chk(file)
 	register int *r, n;
 	register char **u, *cp;
 	FILE *cfp;
+
+	/*
+	 * Check for valid cf file name (mostly checking current).
+	 */
+	if (strlen(file) < 7 || file[0] != 'c' || file[1] != 'f')
+		return(0);
 
 	if (all && (from == host || !strcmp(from, file+6)))
 		return(1);
