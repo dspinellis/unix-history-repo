@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.34 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.35 (Berkeley) %G%
  */
 
 /*
@@ -1090,6 +1090,7 @@ nfs_rmdir(ndp)
  * order so that it looks more sensible. This appears consistent with the
  * Ultrix implementation of NFS.
  */
+int direof = 0;
 nfs_readdir(vp, uiop, cred, eofflagp)
 	register struct vnode *vp;
 	struct uio *uiop;
@@ -1119,6 +1120,7 @@ nfs_readdir(vp, uiop, cred, eofflagp)
 	/*
 	 * First, check for hit on the EOF offset cache
 	 */
+	if (direof)
 	if (uiop->uio_offset != 0 && uiop->uio_offset == np->n_direofoffset &&
 	    (time.tv_sec - np->n_direofstamp) < NFS_ATTRTIMEO) {
 		*eofflagp = 1;
