@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.4	6.2 (Berkeley) %G%
+.\"	@(#)intro.4	6.3 (Berkeley) %G%
 .\"
 .TH INTRO 4 ""
 .UC 7
@@ -22,13 +22,6 @@ and in the system error log
 .I /usr/adm/messages
 due to errors in device operation.
 .PP
-This section contains both devices
-which may be configured into the system, ``4'' entries,
-and network related information,
-``4N'', ``4P'', and ``4F'' entries;
-The networking support is introduced in
-.IR intro (4N).
-.PP
 A hardware device is identified to the system at configuration time
 and the appropriate device or network interface driver is then compiled
 into the system.  When the resultant system is booted, the
@@ -42,8 +35,7 @@ be rebooted.
 The autoconfiguration system is described in
 .IR autoconf (4).
 .SH SEE ALSO
-autoconf(4),
-config(8)
+autoconf(4), netintro(4), config(8)
 .SH "LIST OF DEVICES"
 The devices listed below are supported in this incarnation of
 the system.  Devices are indicated by their functional interface.
