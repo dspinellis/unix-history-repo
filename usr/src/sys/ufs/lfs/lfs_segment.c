@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.20 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -91,23 +91,14 @@ lfs_vflush(vp)
 {
 	struct inode *ip;
 	struct lfs *fs;
-	struct mount *mp;
 	struct segment *sp;
 	int error, s;
 
 #ifdef VERBOSE
 	printf("lfs_vflush\n");
 #endif
-	mp = vp->v_mount;
-	fs = VFSTOUFS(mp)->um_lfs;
-
-	/*
-	 * XXX
-	 * check flags?
-	 * mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY) ||
-	 */
-	if (vfs_busy(mp))
-		return (0);
+	fs = VFSTOUFS(vp->v_mount)->um_lfs;
+	lfs_seglock(fs);
 
 	/*
 	 * Allocate a segment structure and enough space to hold pointers to
@@ -136,7 +127,7 @@ lfs_vflush(vp)
 	(void) lfs_writeinode(fs, sp, ip);
 	ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
 
-	(void) lfs_writeseg(fs, sp);
+	(void)lfs_writeseg(fs, sp);
 
 	/*
 	 * If the I/O count is non-zero, sleep until it reaches zero.  At the
@@ -150,7 +141,7 @@ lfs_vflush(vp)
 		return (error);
 	}
 	splx(s);
-	vfs_unbusy(mp);
+	lfs_segunlock(fs);
 
 	/*
 	 * XXX
@@ -214,7 +205,6 @@ lfs_segwrite(mp, do_ckp)
 	struct mount *mp;
 	int do_ckp;			/* Do a checkpoint. */
 {
-	USES_VOP_ISLOCKED;
 	struct inode *ip;
 	struct lfs *fs;
 	struct segment *sp;
@@ -225,6 +215,7 @@ lfs_segwrite(mp, do_ckp)
 	printf("lfs_segwrite\n");
 #endif
 	fs = VFSTOUFS(mp)->um_lfs;
+	lfs_seglock(fs);
 
 	/*
 	 * Allocate a segment structure and enough space to hold pointers to
@@ -307,6 +298,8 @@ redo:
 		lfs_writesuper(fs, sp);
 	} else 
 		splx(s);
+
+	lfs_segunlock(fs);
 
 	free(sp->bpp, M_SEGMENT);
 	free(sp, M_SEGMENT);
@@ -548,7 +541,6 @@ lfs_updatemeta(fs, sp, vp, lbp, bpp, nblocks)
 	struct buf **bpp;
 	int nblocks;
 {
-	USES_VOP_BWRITE;
 	SEGUSE *sup;
 	struct buf *bp;
 	INDIR a[NIADDR], *ap;
@@ -732,7 +724,6 @@ lfs_writeseg(fs, sp)
 	struct lfs *fs;
 	struct segment *sp;
 {
-	USES_VOP_STRATEGY;
 	struct buf **bpp, *bp, *cbp;
 	SEGUSE *sup;
 	SEGSUM *ssp;
@@ -741,6 +732,7 @@ lfs_writeseg(fs, sp)
 	u_long *datap, *dp;
 	int ch_per_blk, do_again, i, nblocks, num, s;
 	int (*strategy)__P((struct vop_strategy_args *));
+	struct vop_strategy_args vop_strategy_a;
 	char *p;
 
 #ifdef VERBOSE
@@ -839,10 +831,10 @@ lfs_writesuper(fs, sp)
 	struct lfs *fs;
 	struct segment *sp;
 {
-	USES_VOP_STRATEGY;
 	struct buf *bp;
 	dev_t i_dev;
 	int (*strategy) __P((struct vop_strategy_args *));
+	struct vop_strategy_args vop_strategy_a;
 
 #ifdef VERBOSE
 	printf("lfs_writesuper\n");
