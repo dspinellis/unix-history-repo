@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.4	%G%
+#	@(#)makefile	1.5	%G%
 
 LIB = libU77.a
 LPR = lpr
@@ -17,6 +17,7 @@ CFLAGS = -O
 
 SOURCES = \
 	access_.c \
+	alarm_.c \
 	chdir_.c \
 	ctime_.c \
 	dtime_.c \
@@ -61,6 +62,7 @@ SOURCES = \
 
 OBJECTS = \
 	access_.o \
+	alarm_.o \
 	chdir_.o \
 	ctime_.o \
 	dtime_.o \
