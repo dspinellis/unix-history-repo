@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)screen.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)screen.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -180,16 +180,6 @@ raw_mode(on)
 #endif
 }
 
-static
-cannot(s)
-	char *s;
-{
-	char message[100];
-
-	(void)sprintf(message, "WARNING: terminal cannot \"%s\"", s);
-	error(message);
-}
-
 /*
  * Get terminal capabilities via termcap.
  */
@@ -286,14 +276,12 @@ get_term()
 	sc_eol_clear = tgetstr("ce", &sp);
 	if (hard || sc_eol_clear == NULL || *sc_eol_clear == '\0')
 	{
-		cannot("clear to end of line");
 		sc_eol_clear = "";
 	}
 
 	sc_clear = tgetstr("cl", &sp);
 	if (hard || sc_clear == NULL || *sc_clear == '\0')
 	{
-		cannot("clear screen");
 		sc_clear = "\n\n";
 	}
 
@@ -341,7 +329,6 @@ get_term()
 	{
 		if (*sc_move == '\0')
 		{
-			cannot("home cursor");
 			/*
 			 * This last resort for sc_home is supposed to
 			 * be an up-arrow suggesting moving to the 
@@ -349,7 +336,7 @@ get_term()
 			 * your imagination as you try to use this on
 			 * a hard copy terminal.)
 			 */
-			sc_home = "|\b^";		
+			sc_home = "|\b^";
 		} else
 		{
 			/* 
@@ -367,7 +354,6 @@ get_term()
 	{
 		if (*sc_move == '\0')
 		{
-			cannot("move cursor to lower left of screen");
 			sc_lower_left = "\r";
 		} else
 		{
@@ -391,7 +377,6 @@ get_term()
 
 	if (hard || sc_addline == NULL || *sc_addline == '\0')
 	{
-		cannot("scroll backwards");
 		sc_addline = "";
 		/* Force repaint on any backward movement */
 		back_scroll = 0;
