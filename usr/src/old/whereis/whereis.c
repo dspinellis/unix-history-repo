@@ -1,9 +1,9 @@
-static char *sccsid = "@(#)whereis.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)whereis.c	4.5 (Berkeley) %G%";
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/dir.h>
-#include <whoami.h>
 
 static char *bindirs[] = {
 	"/etc",
@@ -61,12 +61,6 @@ main(argc, argv)
 	char *argv[];
 {
 
-#ifdef CORY
-	if (getuid() == 0)
-		nice(-20);
-	if (((getuid() >> 8) & 0377) > 10)
-		setuid(getuid());
-#endif
 	argc--, argv++;
 	if (argc == 0) {
 usage:
