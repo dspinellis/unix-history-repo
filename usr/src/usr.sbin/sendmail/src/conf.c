@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.85 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.86 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -559,7 +559,7 @@ struct	nlist Nl[] =
 #  define FSHIFT	5
 # endif
 
-# if defined(__alpha)
+# if defined(__alpha) || defined(IRIX)
 #  define FSHIFT	10
 # endif
 
@@ -602,6 +602,9 @@ getla()
 					_PATH_UNIX, LA_AVENRUN);
 			return (-1);
 		}
+#ifdef IRIX
+		Nl[X_AVENRUN].n_value &= 0x7fffffff;
+#endif
 	}
 	if (tTd(3, 20))
 		printf("getla: symbol address = %#x\n", Nl[X_AVENRUN].n_value);
