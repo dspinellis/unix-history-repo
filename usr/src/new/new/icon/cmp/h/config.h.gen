@@ -1,0 +1,5 @@
+/*
+ * Icon configuration
+ */
+#define VERSION		"Icon, Version 5.7 compiler, March 1983"
+#define CMP
