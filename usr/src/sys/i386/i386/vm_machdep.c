@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)vm_machdep.c	5.6 (Berkeley) %G%
+ *	@(#)vm_machdep.c	5.7 (Berkeley) %G%
  */
 
 /*
@@ -29,18 +29,19 @@
  *	@(#)vm_machdep.c	7.1 (Berkeley) 6/5/86
  */
 
-#include "machine/pte.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/user.h"
+#include "sys/proc.h"
+#include "sys/cmap.h"
+#include "sys/malloc.h"
+#include "sys/buf.h"
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "proc.h"
-#include "cmap.h"
-#include "mount.h"
-#include "vm.h"
-#include "text.h"
+#include "machine/cpu.h"
 
-#include "buf.h"
+#include "vm/vm_param.h"
+#include "vm/pmap.h"
+#include "vm/vm_map.h"
 
 /*
  * Set a red zone in the kernel stack after the u. area.
@@ -60,137 +61,6 @@ setredzone(pte, vaddr)
 }
 
 /*
- * Check for valid program size
- * NB - Check data and data growth separately as they may overflow 
- * when summed together.
- */
-chksize(ts, ids, uds, ss)
-	unsigned ts, ids, uds, ss;
-{
-	extern unsigned maxtsize;
-
-	if (ctob(ts) > maxtsize ||
-	    ctob(ids) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
-	    ctob(uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
-	    ctob(ids + uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
-	    ctob(ss) > u.u_rlimit[RLIMIT_STACK].rlim_cur) {
-		return (ENOMEM);
-	}
-	return (0);
-}
-
-/*ARGSUSED*/
-newptes(pte, v, size)
-	struct pte *pte;
-	u_int v;
-	register int size;
-{
-	register caddr_t a;
-
-#ifdef lint
-	pte = pte;
-#endif
-	load_cr3(u.u_pcb.pcb_cr3);
-}
-
-/*
- * Change protection codes of text segment.
- * Have to flush translation buffer since this
- * affect virtual memory mapping of current process.
- */
-chgprot(addr, tprot)
-	caddr_t addr;
-	long tprot;
-{
-	unsigned v;
-	int tp;
-	register struct pte *pte;
-	register struct cmap *c;
-
-	v = clbase(btop(addr));
-	if (!isatsv(u.u_procp, v))
-		return (EFAULT);
-	tp = vtotp(u.u_procp, v);
-	pte = tptopte(u.u_procp, tp);
-	if (pte->pg_fod == 0 && pte->pg_pfnum) {
-		c = &cmap[pgtocm(pte->pg_pfnum)];
-		if (c->c_blkno)
-			munhash(c->c_vp, (daddr_t)(u_long)c->c_blkno);
-	}
-	*(u_int *)pte &= ~PG_PROT;
-	*(u_int *)pte |= tprot;
-	load_cr3(u.u_pcb.pcb_cr3);
-	return (0);
-}
-
-settprot(tprot)
-	long tprot;
-{
-	register u_int *ptaddr, i;
-
-	ptaddr = (u_int *)u.u_procp->p_p0br;
-	for (i = 0; i < u.u_tsize; i++) {
-		ptaddr[i] &= ~PG_PROT;
-		ptaddr[i] |= tprot;
-	}
-	load_cr3(u.u_pcb.pcb_cr3);
-}
-
-/*
- * Simulate effect of VAX region length registers.
- * The one case where we must do anything is if a region has shrunk.
- * In that case we must invalidate all the PTEs for the no longer valid VAs.
- */
-setptlr(region, nlen)
-	int nlen;
-{
-	register struct pte *pte;
-	register int change;
-	int olen;
-
-	if (region == 0) {
-		olen = u.u_pcb.pcb_p0lr;
-		u.u_pcb.pcb_p0lr = nlen;
-	} else {
-		olen = P1PAGES - u.u_pcb.pcb_p1lr;
-		u.u_pcb.pcb_p1lr = nlen;
-		nlen = P1PAGES - nlen;
-	}
-	if ((change = olen - nlen) <= 0)
-		return;
-	if (region == 0)
-		pte = u.u_pcb.pcb_p0br + u.u_pcb.pcb_p0lr;
-	else
-		pte = u.u_pcb.pcb_p1br + u.u_pcb.pcb_p1lr - change;
-	do {
-		*(u_int *)pte++ = 0;
-	} while (--change);
-	/* short cut newptes */
-	load_cr3(u.u_pcb.pcb_cr3);
-}
-
-/*
- * Map `size' bytes of physical memory starting at `paddr' into
- * kernel VA space using PTEs starting at `pte'.  Read/write and
- * cache-inhibit status are specified by `prot'.
- */ 
-physaccess(pte, paddr, size, prot)
-	register struct pte *pte;
-	caddr_t paddr;
-	register int size;
-{
-	register u_int page;
-
-	page = (u_int)paddr & PG_FRAME;
-	for (size = btoc(size); size; size--) {
-		*(int *)pte = PG_V | prot | page;
-		page += NBPG;
-		pte++;
-	}
-	load_cr3(u.u_pcb.pcb_cr3);
-}
-
-/*
  * Move pages from one kernel virtual address to another.
  * Both addresses are assumed to reside in the Sysmap,
  * and size must be a multiple of CLSIZE.
@@ -203,8 +73,8 @@ pagemove(from, to, size)
 
 	if (size % CLBYTES)
 		panic("pagemove");
-	fpte = &Sysmap[btop(from -0xfe000000)];
-	tpte = &Sysmap[btop(to -0xfe000000)];
+	fpte = kvtopte(from);
+	tpte = kvtopte(to);
 	while (size > 0) {
 		*tpte++ = *fpte;
 		*(int *)fpte++ = 0;
@@ -215,6 +85,21 @@ pagemove(from, to, size)
 	load_cr3(u.u_pcb.pcb_cr3);
 }
 
+/*
+ * Convert kernel VA to physical address
+ */
+kvtop(addr)
+	register caddr_t addr;
+{
+	vm_offset_t va;
+
+	va = pmap_extract(kernel_pmap, (vm_offset_t)addr);
+	if (va == 0)
+		panic("kvtop: zero page frame");
+	return((int)va);
+}
+
+#ifdef notdef
 /*
  * The probe[rw] routines should probably be redone in assembler
  * for efficiency.
@@ -302,144 +187,9 @@ useracc(addr, count, rw)
 	} while (addr2 < addr);
 	return(1);
 }
-
-/*
- * Convert kernel VA to physical address
- */
-kvtop(addr)
-	register u_int addr;
-{
-	register int pf;
-
-	pf = Sysmap[btop(addr-0xfe000000)].pg_pfnum;
-	if (pf == 0)
-		panic("kvtop: zero page frame");
-	return((u_int)ptob(pf) + (addr & PGOFSET));
-}
-
-struct pde *
-vtopde(p, va)
-	register struct proc *p;
-	register u_int va;
-{
-	register struct pde *pde;
-
-	pde = (struct pde *)((u_int)p->p_p0br + p->p_szpt * NBPG);
-	return(pde + ((va & PD_MASK) >> PD_SHIFT));
-}
-
-
-initcr3(p)
-	register struct proc *p;
-{
-	return(ctob(Usrptmap[btokmx(p->p_p0br+p->p_szpt*NPTEPG)].pg_pfnum));
-}
-
-/*
- * Initialize page directory table to reflect PTEs in Usrptmap.
- * Page directory table address is given by Usrptmap index of p_szpt.
- * [used by vgetpt for kernal mode entries, and ptexpand for user mode entries]
- */
-initpdt(p)
-	register struct proc *p;
-{
-	register int i, k, sz;
-	register struct pde *pde, *toppde;
-	extern struct pde *vtopde();
-	extern Sysbase;
-
-	/* clear entire map */
-	pde = vtopde(p, 0);
-	/*bzero(pde, NBPG);*/
-	/* map kernel */
-	pde = vtopde(p, &Sysbase);
-	for (i = 0; i < 5; i++, pde++) {
-		*(int *)pde = PG_UW | PG_V;
-		pde->pd_pfnum = btoc((unsigned) Sysmap & ~0xfe000000)+i;
-	}
-	/* map u dot */
-	pde = vtopde(p, &u);
-	*(int *)pde = PG_UW | PG_V;
-	pde->pd_pfnum = Usrptmap[btokmx(p->p_addr)].pg_pfnum;
-/*printf("%d.u. pde %x pfnum %x virt %x\n", p->p_pid, pde, pde->pd_pfnum,
-p->p_addr);*/
-
-	/* otherwise, fill in user map */
-	k = btokmx(p->p_p0br);
-	pde = vtopde(p, 0);
-	toppde = vtopde(p, &u);
-
-	/* text and data */
-	sz = ctopt(p->p_tsize + p->p_dsize);
-/*dprintf(DEXPAND,"textdata 0 to %d\n",sz-1);*/
-	for (i = 0; i < sz; i++, pde++) {
-		*(int *)pde = PG_UW | PG_V;
-		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
-/*dprintf(DEXPAND,"%d.pde %x pf %x\n", p->p_pid, pde, *(int *)pde);*/
-	}
-	/*
-	 * Bogus!  The kernelmap may map unused PT pages
-	 * (since we don't shrink PTs) so we need to skip over
-	 * those PDEs.  We should really free the unused PT
-	 * pages in expand().
-	 */
-	sz += ctopt(p->p_ssize+UPAGES);
-	if (sz < p->p_szpt)
-		k += p->p_szpt - sz;
-	/* hole */
-	sz = NPTEPG - ctopt(p->p_ssize + UPAGES + btoc(&Sysbase));
-/*dprintf(DEXPAND,"zero %d upto %d\n", i, sz-1);*/
-	for ( ; i < sz; i++, pde++)
-/* definite bug here... does not hit all entries, but point moot due
-to bzero above XXX*/
-{
-		*(int *)pde = 0;
-/*pg("pde %x pf %x", pde, *(int *)pde);*/
-}
-	/* stack and u-area */
-	sz = NPTEPG - ctopt(UPAGES + btoc(&Sysbase));
-/*dprintf(DEXPAND,"stack %d upto %d\n", i, sz-1);*/
-	for ( ; i < sz; i++, pde++) {
-		*(int *)pde = PG_UW | PG_V;
-		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
-/*pg("pde %x pf %x", pde, *(int *)pde);*/
-	}
-	return(initcr3(p));
-}
-
-#ifdef notdef
-/*
- * Allocate wired-down, non-paged, cache-inhibited pages in kernel
- * virtual memory and clear them
- */
-caddr_t
-cimemall(n)
-	int n;
-{
-	register int npg, a;
-	register struct pte *pte;
-	extern struct map *kernelmap;
-
-	npg = clrnd(btoc(n));
-	a = rmalloc(kernelmap, (long)npg);
-	if (a == 0)
-		return ((caddr_t)0);
-	pte = &Usrptmap[a];
-	(void) vmemall(pte, npg, &proc[0], CSYS);
-	while (--npg >= 0) {
-		*(int *)pte |= (PG_V|PG_KW|PG_CI);
-		clearseg((unsigned)pte->pg_pfnum);
-		pte++;
-	}
-	TBIAS();
-	return ((caddr_t)kmxtob(a));
-}
 #endif
 
-extern char usrio[];
-extern struct pte Usriomap[];
-struct map *useriomap;
-int usriowanted;
+extern vm_map_t phys_map;
 
 /*
  * Map an IO request into kernel virtual address space.  Requests fall into
@@ -462,47 +212,31 @@ int usriowanted;
 vmapbuf(bp)
 	register struct buf *bp;
 {
-	register int npf, a;
+	register int npf;
 	register caddr_t addr;
-	register struct pte *pte, *iopte;
 	register long flags = bp->b_flags;
 	struct proc *p;
-	int off, s;
+	int off;
+	vm_offset_t kva;
+	register vm_offset_t pa;
 
 	if ((flags & B_PHYS) == 0)
 		panic("vmapbuf");
-	/*
-	 * Find PTEs for the area to be mapped
-	 */
-	p = flags&B_DIRTY ? &proc[2] : bp->b_proc;
-	addr = bp->b_un.b_addr;
-	if (flags & B_UAREA)
-		pte = &p->p_addr[btop(addr)];
-	else if (flags & B_PAGET)
-		pte = &Usrptmap[btokmx((struct pte *)addr)];
-	else
-		pte = vtopte(p, btop(addr));
-
-	/*
-	 * Allocate some kernel PTEs and load them
-	 */
+	addr = bp->b_saveaddr = bp->b_un.b_addr;
 	off = (int)addr & PGOFSET;
-	npf = btoc(bp->b_bcount + off);
-	s = splbio();
-	while ((a = rmalloc(useriomap, npf)) == 0) {
-		usriowanted = 1;
-		sleep((caddr_t)useriomap, PSWP);
-	}
-	splx(s);
-	iopte = &Usriomap[a];
-	bp->b_saveaddr = bp->b_un.b_addr;
-	addr = bp->b_un.b_addr = (caddr_t)(usrio + (a << PGSHIFT)) + off;
+	p = bp->b_proc;
+	npf = btoc(round_page(bp->b_bcount + off));
+	kva = kmem_alloc_wait(phys_map, ctob(npf));
+	bp->b_un.b_addr = (caddr_t) (kva + off);
 	while (npf--) {
-		mapin(iopte, (u_int)addr, pte->pg_pfnum, PG_KW|PG_V);
-		iopte++, pte++;
-		addr += NBPG;
+		pa = pmap_extract(vm_map_pmap(p->p_map), (vm_offset_t)addr);
+		if (pa == 0)
+			panic("vmapbuf: null page frame");
+		pmap_enter(vm_map_pmap(phys_map), kva, trunc_page(pa),
+			   VM_PROT_READ|VM_PROT_WRITE, TRUE);
+		addr += PAGE_SIZE;
+		kva += PAGE_SIZE;
 	}
-	load_cr3(u.u_pcb.pcb_cr3);
 }
 
 /*
@@ -512,29 +246,15 @@ vmapbuf(bp)
 vunmapbuf(bp)
 	register struct buf *bp;
 {
-	register int a, npf;
+	register int npf;
 	register caddr_t addr = bp->b_un.b_addr;
-	register struct pte *pte;
-	int s;
+	vm_offset_t kva;
 
 	if ((bp->b_flags & B_PHYS) == 0)
 		panic("vunmapbuf");
-	a = (int)(addr - usrio) >> PGSHIFT;
-	npf = btoc(bp->b_bcount + ((int)addr & PGOFSET));
-	s = splbio();
-	rmfree(useriomap, npf, a);
-	if (usriowanted) {
-		usriowanted = 0;
-		wakeup((caddr_t)useriomap); 
-	}
-	splx(s);
-	pte = &Usriomap[a];
-	while (npf--) {
-		*(int *)pte = 0;
-		addr += NBPG;
-		pte++;
-	}
-	load_cr3(u.u_pcb.pcb_cr3);
+	npf = btoc(round_page(bp->b_bcount + ((int)addr & PGOFSET)));
+	kva = (vm_offset_t)((int)addr & ~PGOFSET);
+	kmem_free_wakeup(phys_map, kva, ctob(npf));
 	bp->b_un.b_addr = bp->b_saveaddr;
 	bp->b_saveaddr = NULL;
 }
