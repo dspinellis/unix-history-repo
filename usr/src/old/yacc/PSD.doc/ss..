@@ -1,6 +1,8 @@
-.\"	@(#)ss..	5.1 (Berkeley) %G%
+.\"	@(#)ss..	6.1 (Berkeley) %G%
 .\"
-.RP
+.EH 'PS1:15-%''Yacc: Yet Another Compiler-Compiler'
+.OH 'Yacc: Yet Another Compiler-Compiler''PS1:15-%'
+.\".RP
 .ND "July 31, 1978"
 .TL
 Yacc:
@@ -48,7 +50,7 @@ including a phototypesetter language, several desk calculator languages, a docum
 and a Fortran debugging system.
 .AE
 .OK
-Computer Languages
-Compilers
-Formal Language Theory
+.\"Computer Languages
+.\"Compilers
+.\"Formal Language Theory
 .CS 23 11 34 0 0 8
