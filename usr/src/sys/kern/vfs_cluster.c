@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.42	83/04/04	*/
+/*	vfs_cluster.c	4.43	83/05/01	*/
 
 #include "../machine/pte.h"
 
@@ -599,6 +599,7 @@ loop:
 	if (dp == bfreelist) {		/* no free blocks */
 		dp->b_flags |= B_WANTED;
 		sleep((caddr_t)dp, PRIBIO+1);
+		splx(s);
 		goto loop;
 	}
 	splx(s);
