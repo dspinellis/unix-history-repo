@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_2.c	1.3 83/10/05";
+static	char *sccsid = "@(#)dr_2.c	1.4 83/10/10";
 #endif
 
 #include "driver.h"
@@ -42,7 +42,9 @@ checkup()
 	register struct ship *sp, *sq;
 	register char explode, sink;
 
+	/*
 	readpos();
+	*/
 	foreachship(sp) {
 		explode = sp->file->explode;
 		sink = sp->file->sink;
@@ -162,22 +164,24 @@ moveship(ship, movement)
 struct ship *ship;
 char *movement;
 {
-	char drift;
 	register struct File *fp = ship->file;
+	int drift = fp->drift;
+	int row = fp->row;
+	int col = fp->col;
+	int dir = fp->dir;
 
 	if (fp->dir == 0)
 		return;
-	drift = fp->drift;
 	move(movement, ship, &fp->dir, &fp->row, &fp->col, &drift);
 	if (drift > 2 || *movement == 0)
 		(void) strcat(movement, "d");
-	if (drift != fp->drift)
+	if (fp->drift != drift)
 		Write(W_DRIFT, ship, 0, drift, 0, 0, 0);
-	if (fp->row != ship->shiprow)
+	if (fp->row != row)
 		Write(W_SHIPROW, ship, 0, fp->row, 0, 0, 0);
-	if (fp->col != ship->shipcol)
+	if (fp->col != col)
 		Write(W_SHIPCOL, ship, 0, fp->col, 0, 0, 0);
-	if (fp->dir != ship->shipdir)
+	if (fp->dir != dir)
 		Write(W_SHIPDIR, ship, 0, fp->dir, 0, 0, 0);
 }
 

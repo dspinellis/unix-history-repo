@@ -1,10 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	1.9 83/07/20";
+static	char *sccsid = "@(#)pl_1.c	1.10 83/10/10";
 #endif
 
 #include "player.h"
 #include <sys/types.h>
-#include <wait.h>
+#include <sys/wait.h>
 
 int choke(), child();
 
@@ -14,8 +14,9 @@ int argc;
 char **argv;
 {
 	register struct ship *sp;
-	int aheadfirst, ma;
 	int ta;
+	char aheadfirst;
+	int ma;
 	char nodrive = 0, randomize = 0, debug = 0;
 	char *badstring();
 	extern char _sobuf[];
@@ -49,10 +50,8 @@ char **argv;
 		case 'm':
 			if (mc->crew3 && !snagged(ms)
 			    && windspeed != 0) {
-				ta = maxturns(ms);
-				aheadfirst = ta & 0100000;
+				ta = maxturns(ms, &aheadfirst);
 				ma = maxmove(ms, mf->dir, 0);
-				ta &= 077777;
 				acceptmove(ma, ta, aheadfirst);
 			} else
 				Signal("Unable to move", (struct ship *)0);
@@ -152,10 +151,10 @@ char randomize, nodriver, debug;
 {
 	register struct File *fp;
 	register struct ship *sp;
-	char captain[80], file[25];
+	char captain[80];
 	char message[60];
 	int load;
-	int people = 0;
+	int active;
 	register int n;
 	char *nameptr;
 	int nat[NNATION];
@@ -166,13 +165,10 @@ char randomize, nodriver, debug;
 		(void) puts("Choose a scenario:\n");
 		(void) puts("\n\tNUMBER\tSHIPS\tIN PLAY\tTITLE");
 		for (n = 0; n < NSCENE; n++) {
-			printf("\t%d):\t%d", n, scene[n].vessels);
-			(void) sprintf(file, "/tmp/.%d", n);
-			if (access(file, 0) >= 0)
-				printf("\tYES");
-			else
-				printf("\tno");
-			printf("\t%s\n", scene[n].name);
+			/* ( */
+			printf("\t%d):\t%d\t%s\t%s\n", n, scene[n].vessels,
+				sync_exists(n) ? "YES" : "no",
+				scene[n].name);
 		}
 reprint:
 		printf("\nScenario number? ");
@@ -188,21 +184,11 @@ reprint:
 	cc = &scene[game];
 	ls = cc->ship + cc->vessels;
 
-	(void) sprintf(file, "/tmp/.%d", game);
-	if (access(file, 0) < 0) {
-		int omask;
-#ifdef SETUID
-		omask = umask(077);
-#else
-		omask = umask(011);
-#endif
-		syncfile = fopen(file, "w+");
-		(void) umask(omask);
-	} else {
-		syncfile = fopen(file, "r+");
-		people = 1;
+	active = sync_exists(game);
+	if (sync_open() < 0) {
+		perror("sail: syncfile");
+		exit(1);
 	}
-	lastsync = 0;
 
 	for (n = 0; n < NNATION; n++)
 		nat[n] = 0;
@@ -214,54 +200,56 @@ reprint:
 		}
 		sp->file->stern = nat[sp->nationality]++;
 	}
-	if (people > 0) {
+
+	if (active) {
 		(void) puts("Synchronizing with the other players...");
 		(void) fflush(stdout);
 		Sync();
-		foreachship(sp) {
-			if (sp->file->captain[0]
-			    || sp->file->struck || sp->file->captured != 0)
+	}
+	for (;;) {
+		foreachship(sp)
+			if (sp->file->captain[0] == 0 && !sp->file->struck
+			    && sp->file->captured == 0)
 				break;
-		}
 		if (sp >= ls) {
 			(void) puts("All ships taken in that scenario.");
 			foreachship(sp)
 				free((char *)sp->file);
+			sync_close(0);
 			people = 0;
-			(void) fclose(syncfile);
 			goto reprint;
 		}
-		player = sp - cc->ship;
-	} else
-		player = 0;
-
-	while (randomize) {
-		printf("%s\n\n", cc->name);
-		foreachship(sp) {
-			printf("  %2d:  %-10s %-15s  (%-2d pts)   %s\n",
-				sp - SHIP(0),
-				countryname[sp->nationality],
-				sp->shipname,
-				sp->specs->pts,
-				saywhat(sp, 1));
-		}
-		printf("\nWhich ship do you want (0-%d)? ", cc->vessels-1);
-		(void) fflush(stdout);
-		if (scanf("%d", &player) != 1 || player < 0
-		    || player >= cc->vessels) {
-			while (getchar() != '\n')
-				;
-			(void) puts("Say what?");
+		if (!randomize) {
+			player = sp - cc->ship;
 		} else {
-			while (getchar() != '\n')
-				;
-			Sync();
-			fp = SHIP(player)->file;
-			if (fp->captain[0] || fp->struck || fp->captured != 0)
-				(void) puts("Sorry, that ship is taken.");
-			else
-				break;
+			printf("%s\n\n", cc->name);
+			foreachship(sp)
+				printf("  %2d:  %-10s %-15s  (%-2d pts)   %s\n",
+					sp - SHIP(0),
+					countryname[sp->nationality],
+					sp->shipname,
+					sp->specs->pts,
+					saywhat(sp, 1));
+			printf("\nWhich ship (0-%d)? ", cc->vessels-1);
+			(void) fflush(stdout);
+			if (scanf("%d", &player) != 1 || player < 0
+			    || player >= cc->vessels) {
+				while (getchar() != '\n')
+					;
+				(void) puts("Say what?");
+				player = -1;
+			} else
+				while (getchar() != '\n')
+					;
 		}
+		if (player < 0)
+			continue;
+		Sync();
+		fp = SHIP(player)->file;
+		if (fp->captain[0] || fp->struck || fp->captured != 0)
+			(void) puts("That ship is taken.");
+		else
+			break;
 	}
 
 	ms = SHIP(player);
@@ -273,9 +261,7 @@ reprint:
 	(void) signal(SIGQUIT, choke);
 	(void) signal(SIGCHLD, child);
 
-	Write(W_CAPTAIN, ms, 1, (int) "begin", 0, 0, 0);
-	if (people)
-		Write(W_PEOPLE, SHIP(0), 0, cc->people + 1, 0, 0, 0);
+	Write(W_BEGIN, ms, 0, 0, 0, 0, 0);
 	Sync();
 	printf("Your ship is the %s, a %d gun %s (%s crew).\n",
 		ms->shipname, mc->guns, classname[mc->class],
@@ -290,12 +276,15 @@ reprint:
 			(void) strcpy(captain, "no name");
 	}
 	captain[sizeof captain - 1] = '\0';
+	Write(W_CAPTAIN, ms, 1, (int)captain, 0, 0, 0);
 	for (n = 0; n < 2; n++) {
+		char buf[10];
+
 		printf("\nInitial broadside %s (grape, chain, round, double): ",
 			n ? "right" : "left");
 		(void) fflush(stdout);
-		(void) scanf("%s", file);
-		switch (*file) {
+		(void) scanf("%s", buf);
+		switch (*buf) {
 		case 'g':
 			load = L_GRAPE;
 			break;
@@ -319,8 +308,7 @@ reprint:
 			mf->readyL = R_LOADED|R_INITIAL;
 		}
 	}
-	Write(W_CAPTAIN, ms, 1, (int)captain, 0, 0, 0);
-	if (!people && !nodriver) {
+	if (!active && !nodriver) {
 		char num[10];
 		(void) sprintf(num, "%d", game);
 		if (!fork()) {
@@ -332,6 +320,14 @@ reprint:
 			exit(1);
 		}
 	}
+
+	foreachship(sp) {
+		sp->file->dir = sp->shipdir;
+		sp->file->row = sp->shiprow;
+		sp->file->col = sp->shipcol;
+	}
+	windspeed = cc->windspeed;
+	winddir = cc->winddir;
 
 	initscreen();
 
@@ -348,7 +344,6 @@ int conditions;
 	FILE *fp;
 	int people;
 	float net;
-	char * capn;
 	char message[60];
 	register int n;
 	struct logs log[10], temp;
@@ -360,9 +355,10 @@ int conditions;
 	(void) signal(SIGCHLD, SIG_IGN);
 
 	if (conditions != -1) {
-		capn = mf->captain;
-		(void) sprintf(message,"Captain %s relinquishing.",capn);
+		(void) sprintf(message,"Captain %s relinquishing.",
+			mf->captain);
 		Write(W_SIGNAL, ms, 1, (int)message, 0, 0, 0);
+		Write(W_END, ms, 0, 0, 0, 0, 0);
 
 		if (fp = fopen(LOGFILE, "r+")) {
 			net = (float)mf->points / mc->pts;
@@ -383,7 +379,7 @@ int conditions;
 				if (net > (float) log[n].l_netpoints / scene[log[n].l_gamenum].ship[log[n].l_shipnum].specs->pts) {
 					(void) fwrite((char *)log,
 						sizeof (struct logs), n, fp);
-					(void) strcpy(temp.l_name, capn);
+					(void) strcpy(temp.l_name, mf->captain);
 					temp.l_uid = getuid();
 					temp.l_shipnum = player;
 					temp.l_gamenum = game;
@@ -396,8 +392,6 @@ int conditions;
 				}
 			(void) fclose(fp);
 		}
-		Write(W_CAPTAIN, ms, 1, (int)" ", 0, 0, 0);
-		Write(W_PEOPLE, SHIP(0), 0, cc->people - 1, 0, 0, 0);
 		if (done_curses) {
 			screen();
 			Signal("It looks like you've had it!",
@@ -426,7 +420,7 @@ int conditions;
 			else
 				printf("leave: unknown code %d\n", conditions);
 		}
-		(void) fclose(syncfile);
+		Sync();
 	}
 	if (done_curses) {
 		lastline();

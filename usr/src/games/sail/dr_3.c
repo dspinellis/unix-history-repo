@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	1.4 83/07/20";
+static	char *sccsid = "@(#)dr_3.c	1.5 83/10/10";
 #endif
 
 #include "driver.h"
@@ -10,7 +10,8 @@ moveall()		/* move all comp ships */
 	register int n;				/* r9 */
 	struct ship *closest;
 	register int k, l, m, ma;		/* r8, r7, r6, */
-	int ta, af;
+	int ta;
+	char af;
 	int row[NSHIP], col[NSHIP], dir[NSHIP], r1, r2, c1, c2, d1, d2;
 	char clast[NSHIP][sizeof SHIP(0)->file->last];
 
@@ -18,13 +19,11 @@ moveall()		/* move all comp ships */
 	 * first try to create moves for OUR ships
 	 */
 	foreachship(sp) {
-		if (sp->file->captain[0] || sp->shipdir == 0)
+		if (sp->file->captain[0] || sp->file->dir == 0)
 			continue;
 		if (!sp->file->struck && windspeed && !snagged(sp)
 		    && sp->specs->crew3) {
-			ta = maxturns(sp);
-			af = ta & 0100000;
-			ta &= 077777;
+			ta = maxturns(sp, &af);
 			ma = maxmove(sp, sp->file->dir, 0);
 			closest = closestenemy(sp, 0, 0);
 			if (closest == 0)

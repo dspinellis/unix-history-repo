@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_2.c	1.4 83/10/05";
+static	char *sccsid = "@(#)pl_2.c	1.5 83/10/10";
 #endif
 
 #include "player.h"
@@ -127,11 +127,11 @@ doboarding()
 	crew[0] = mc->crew1;
 	crew[1] = mc->crew2;
 	crew[2] = mc->crew3;
-	for (n=0; n < 3; n++) {
+	for (n = 0; n < NBP; n++) {
 		if (mf->OBP[n].turnsent)
 			    men += mf->OBP[n].turnsent;
 	}
-	for (n=0; n < 3; n++) {
+	for (n = 0; n < NBP; n++) {
 		if (mf->DBP[n].turnsent)
 			    men += mf->DBP[n].turnsent;
 	}
@@ -145,14 +145,14 @@ doboarding()
 		crew[2] = crew[2] != 0;
 	}
 	foreachship(sp) {
-		if (sp == ms || sp->file->dir == 0 || range(ms, sp) > 0)
+		if (sp == ms || sp->file->dir == 0 || range(ms, sp) > 1)
 			continue;
 		if (ms->nationality == capship(sp)->nationality)
 			continue;
 		if (meleeing(ms, sp) && crew[2]) {
 			Signal("How many more to board the %s (%c%c)? ", sp);
 			parties(crew, sp, 0);
-		} else if (grappled2(ms, sp) && crew[2]) {
+		} else if ((fouled2(ms, sp) || grappled2(ms, sp)) && crew[2]) {
 			Signal("Crew sections to board the %s (%c%c) (3 max) ?",
 				sp);
 			parties(crew, sp, 0);
