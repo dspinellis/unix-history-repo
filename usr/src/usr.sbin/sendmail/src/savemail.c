@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -566,6 +566,16 @@ errbody(fp, m, e)
 	}
 
 	/*
+	**  Output introductory information.
+	*/
+
+	sprintf(buf, "The original message was received at %s", arpadate(NULL));
+	putline(buf, fp, m);
+	expand("from \201_", buf, &buf[sizeof buf - 1], e);
+	putline(buf, fp, m);
+	putline("", fp, m);
+
+	/*
 	**  Output error message header (if specified and available).
 	*/
 
@@ -658,7 +668,7 @@ errbody(fp, m, e)
 	if (e->e_parent->e_df != NULL)
 	{
 		if (SendBody)
-			putline("   ----- Unsent message follows -----\n", fp, m);
+			putline("   ----- Original message follows -----\n", fp, m);
 		else
 			putline("   ----- Message header follows -----\n", fp, m);
 		(void) fflush(fp);
