@@ -14,8 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)utmp.h	5.4 (Berkeley) %G%
+ *	@(#)utmp.h	5.5 (Berkeley) %G%
  */
+
+#define	_PATH_UTMP	"/etc/utmp"
 
 #define	UT_NAMESIZE	8
 #define	UT_LINESIZE	8
