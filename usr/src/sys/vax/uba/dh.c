@@ -1,4 +1,4 @@
-/*	dh.c	4.30	81/03/09	*/
+/*	dh.c	4.31	81/04/02	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -75,7 +75,11 @@ struct dhdevice
 #define	OPAR	040
 #define	HDUPLX	040000
 
+#if NBK == 0
+#define	DH_IE	(DH_TIE|DH_RIE)
+#else
 #define	DH_IE	(DH_TIE|DH_SIE|DH_RIE)
+#endif
 
 /* Bits in dhrcr */
 #define	DH_PE		0010000		/* parity error */
@@ -152,7 +156,7 @@ dhprobe(reg)
 #endif
 #ifndef notdef
 	dhaddr->un.dhcsr = DH_RIE|DH_MM|DH_RI;
-	DELAY(5);
+	DELAY(25);
 	dhaddr->un.dhcsr = 0;
 #else
 	dhaddr->un.dhcsr = DH_TIE;
