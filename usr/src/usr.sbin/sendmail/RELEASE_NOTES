@@ -1,3 +1,47 @@
+8.3/8.3		93/07/13
+	Fix setuid problems introduced in 8.2 that caused messages
+		like "Cannot create qfXXXXXX: Invalid argument"
+		or "Cannot reopen dfXXXXXX: Permission denied".  This
+		involved a new compile flag "HASSETEUID" that takes
+		the place of the old _POSIX_SAVED_IDS -- it turns out
+		that the POSIX interface is broken enough to break
+		some systems badly.  This includes some fixes for
+		HP-UX.  Also fixes problems where the real uid is
+		not reset properly on startup (from Neil Rickert).
+	Fix a problem that caused timed out messages to not report the
+		addresses that timed out.  Error messages are also more
+		"user friendly".
+	Drop required bandwidth on connections from 64 bytes/sec to
+		16 bytes/sec.
+	Further Solaris portability changes -- doesn't require the BSD
+		compatibility library.  This also adds a new
+		"HASGETDTABLESIZE" compile flag which can be used if
+		you want to use getdtablesize(2) instead of sysconf(2).
+		These are loosely based on changes from David Meyer at
+		University of Oregon.  This now seems to work, at least
+		for quick test cases.
+	Fix a problem that can cause duplicate error messages to be
+		sent if you are in SMTP, you send to multiple addresses,
+		and at least one of those addresses is good and points
+		to an account that has a .forward file (whew!).
+	Fix a problem causing messages to be discarded if checkcompat()
+		returned EX_TEMPFAIL (because it didn't properly mark
+		the "to" address).  Problem noted by John Myers.
+	Fix dfopen to return NULL if the open failed; I was depending
+		on fdopen(-1) returning NULL, which isn't the case.  This
+		isn't serious, but does result in wierd error diagnoses.
+		From Michael Corrigan.
+	CONFIG: add UUCP_MAX_SIZE M4 macro to set the maximum size of
+		messages sent through UUCP-family mailers.  Suggested
+		by Bill Wisner of The Well.
+	CONFIG: if both MAILER(uucp) and MAILER(smtp) are specified,
+		include a "uucp-dom" mailer that uses domain-style
+		addressing.  Suggested by Bill Wisner.
+	CONFIG: Add LOCAL_SHELL_FLAGS and LOCAL_SHELL_ARGS to match
+		LOCAL_MAILER_FLAGS and LOCAL_MAILER_ARGS.  Suggested by
+		Christophe Wolfhugel.
+	CONFIG: Add OSTYPE(aix3).  From Christophe Wolfhugel.
+
 8.2/8.2		93/07/11
 	Don't drop out on config file parse errors in -bt mode.
 	On older configuration files, assume option "l" (use Errors-To
