@@ -8,14 +8,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.3 (Berkeley) %G%
+ *	@(#)extern.h	5.4 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
 
 void block __P((void));
 void block_close __P((void));
-void dd_close __P((void));
 void dd_out __P((int));
 void def __P((void));
 void def_close __P((void));
@@ -23,7 +22,6 @@ void err __P((const char *, ...));
 void jcl __P((char **));
 void pos_in __P((void));
 void pos_out __P((void));
-void setup __P((void));
 void summary __P((int));
 void terminate __P((int));
 void unblock __P((void));
