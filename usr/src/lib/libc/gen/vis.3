@@ -13,166 +13,219 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)vis.3	5.2 (Berkeley) %G%
+.\"	@(#)vis.3	5.3 (Berkeley) %G%
 .\"
-.TH <CENCODE> <3> ""
+.TH CENCODE 3 ""
 .UC 7
-.AT 3
 .SH NAME
 cencode, cdecode \- encode (decode) non-printing characters
 .SH SYNOPSIS
 .nf
-.B #include <cencode.h>
-.PP
-.B char *cencode(c, cflag)
-.B char c;
-.B int flag;
-.PP
-.B cdecode(c, cp, dflag)
-.B char c, *cp;
-.B int flag;
+.ft B
+#include <cencode.h>
+
+char *cencode(character, cflag)
+char character;
+int flag;
+
+cdecode(character, store, dflag)
+char character, *store;
+int flag;
+.ft R
+.fi
 .SH DESCRIPTION
-\fICencode\fP converts a non-printing character into a printable,
-invertable representation; \fIcdecode\fP inverts
-from that representation back to the original character.
-Both functions pass through printable characters, and
-are useful for filtering a stream of characters
-to and from a visual representation.
+.I Cencode
+converts a non-printing character into a printable, invertible
+representation;
+.I cdecode
+converts that representation back into the original character.
+These functions are useful for filtering a stream of characters to
+and from a visual representation.
 .PP
-By default, \fIcencode\fP considers isgraph(c), space, tab, and
-newline as printable characters.  Setting CENC_WHITE in
-cflag causes space, tab, and newline to be
-encoded as well.
+.I Cencode
+returns a pointer to a string that contains the printable
+representation of the character passed as the argument
+.IR character .
+By default,
+.I cencode
+considers characters selected by
+.IR isgraph (3),
+space, tab, and newline to be printable characters.
 .PP
-There are 3 forms of representation, and all
-three can be requested, independent of each other, 
-since some encode only a subset
-of the non-printable characters.  
-All
-forms use the backslash character to introduce the visual
-sequence; two backslashs are used to represent a
-real backslash.  The following lists the name of the form
-(specified in the cflag), and a description:
+There are three possible forms of representation, as specified by the
+.I cflags
+argument.
+All forms use the backslash character (``\e'') to introduce a special
+sequence; two backslashes are used to represent a real backslash.
+.I Cflags
+is specified by
+.IR or 'ing
+one or more of the following values:
 .TP
-.I CENC_CTYPE
-Use C-style backslash sequences where possible.  The following
-sequences are used to represent the indicated character:
+CENC_WHITE
+Setting
+.I CENC_WHITE
+in
+.I cflag
+causes space, tab, and newline characters to be considered non-printable,
+and therefore encoded.
+.TP
+CENC_CSTYLE
+Use C-style backslash sequences to represent standard non-printable
+characters.
+The following sequences are used to represent the indicated characters:
+.sp
 .nf
-
-\\n - NL  (012)
-\\r - CR  (015)	
-\\b - BS  (010)
-\\a - BEL (007)
-\\v - VT  (013)
-\\t - HT  (011)
-\\f - NP  (014)
-\\000 - NUL (000)
-
+\ea   - BEL (007)
+\eb   - BS  (010)
+\ef   - NP  (014)
+\en   - NL  (012)
+\er   - CR  (015)
+\et   - HT  (011)
+\ev   - VT  (013)
+\e000 - NUL (000)
 .fi
-These are the only characters that are converted using CDEC_CTYPE.
-The more familiar abbreviation of \\0 for NULL cannot be used since
-it could be confused as another octal number if the sequence
-is laid ahead of other octal digits.
+.sp
+These are the only characters that are converted using
+.IR CENC_CSTYLE .
+The more familiar abbreviation of ``\e0'' for NULL cannot be used
+as it could be confused with other octal numbers if the sequence
+preceded other digits.
+.TP
+CENC_GRAPH
+Use an ``M'' to represent meta characters (characters with the 8th
+bit set), and use carat (``^'') to represent control characters see
+(\fIiscntrl\fP(3)).
+The following formats are used:
+.RS
+.TP
+\e^C
+Represents the control character ``C''.
+Spans characters \e000 through \e037, and \e0177 (as ``\e^?'').
+.TP
+\eM-C
+Represents character ``C'' with the 8th bit set.
+Spans characters \e0240 (\e0241 if
+.I CENC_WHITE
+is set) through \e0376.
+.TP
+\eM^C
+Represents control character ``C'' with the 8th bit set.
+Spans characters \e0200 through \e0237, and \e0377 (as ``\eM^?'').
+.sp
+.RE
+.RS
+The only characters that cannot be displayed using
+.I CDEC_GRAPH
+are space and meta-space, and only when
+.I CENC_WHITE
+is set.
+.RE
+.TP
+CENC_OCTAL
+Use a three digit octal sequence.  The form is ``\eddd'' where
+d represents an octal digit.
+All non-printing characters may be displayed in this form.
 .PP
-.TP
-.I CENC_GRAPHIC
-Use an M to represent meta characters (chars with the 8th bit set),
-and use hat (^) to represent control characters (iscntrl(c)).  The
-following forms are possible:
-.nf
-
-\\^C  - Represents control character 'C'.  Spans 
-	  characters 000 through 037, and 0177 (as \\^?).
-\\M-C - Represents character 'C' with the 8th bit set.  
-	  Spans characters 0240 (241 if CENC_WHITE is set)
-	  through 0376.
-\\M^C - Represents control character 'C' with the 8th 
-	  bit set.  Spans characters 0200 through 0237, 
-	  and 0377 (as \\M^?).
-
-.fi
-The only characters that cannot be displayed using CDEC_GRAPHIC
-are space and meta-space, and only when CENC_WHITE is set.
-.TP
+If the supplied character could not be encoded (because the selected
+formats were unable encode that character) it is placed in the return
+string unaltered.
+Note that if NULL's are not encoded, it is placed in the string as two
+NULL's.
+If the caller expects to encounter this situation, it suffices to always
+extract one character from the returned string before checking for NULL.
+If
 .I CENC_OCTAL
-Use a three digit octal sequence.  The form is:
+is selected, in addition to any other formats, this situation can never
+arise.
+.PP
+Calling
+.I cencode
+with no requested formats results in no encoding being done; however,
+backslashes are still doubled.
+.PP
+.I Cdecode
+is used decode data encoded by
+.IR cencode .
+Characters are passed to
+.I cdecode
+until the decoder recognizes a character to return.
+.I Dflags
+is specified by
+.IR or 'ing
+one or more of the following values:
+.TP
+CDEC_HAT
+Treat the carat (``^'') character specially, i.e. decode the sequence
+``^C'' as the control character ``C''.
+This is separate from the sequence ``\e^C'' as output by
+.I cencode
+with the
+.I CENC_GRAPH
+flag set as it does not require the preceding backslash character.
+.TP
+CDEC_END
+Reset the state of the decoder to the initial state, and flush out
+any characters have been retained in the decoder.
+.PP
+There are five possible return values from
+.IR cdecode :
+.TP
+CDEC_NEEDMORE
+The decoder has not yet recognized a control sequence; supply it
+with more characters.
+.TP
+CDEC_NOCHAR
+A valid sequence which did not result in a character was decoded.
+.TP
+CDEC_OK
+A character was recognized and has been placed in the location
+pointed to by
+.IR store .
+.TP
+CDEC_OKPUSH
+A character was recognized and has been placed in the location
+pointed to by
+.IR store ;
+however, the character that was just supplied to
+.I cdecode
+has not yet been used.
+When processing a stream of characters, the current character should be
+supplied to
+.I cdecode
+again.
+.TP
+CDEC_SYNBAD
+An unrecognized backslash sequence was detected.
+The decoder was automatically reset to a normal state.
+All characters since the last un-escaped backslash character constitute
+the unrecognized sequence.
+The following code fragment illustrates the use of
+.IR cdecode :
+.PP
 .nf
+int ch;
+char nc;
 
-\\ddd
-
-.fi
-where d represents an octal digit.  All non-printing characters
-can be displayed in this form.
-.PP
-\fICencode\fP returns a pointer to a string that contains the
-printable representation of the character passed in c.  If the character
-could not be encoded (because none of the selected formats can
-encode that character), it is placed in the returned
-string un-encoded.  Note that if NULL is not encoded, it is placed
-in the string as two nulls.  If the caller expects to encounter
-this situation, it suffices to always extract one character from
-the returned string before checking for NULL.  If CDEC_OCTAL
-is selected, in addition to any other formats, this situation
-can never arrise.  Also, calling \fIcencode\fP with no requested formats
-results in no encoding being done; however, backslashes are
-still doubled.
-.PP
-Using \fIcdecode\fP to decode previously encoded data is a little
-trickier.  Essentially, characters are passed to \fIcdecode\fP
-until the decoder recognizes a character to return.  There are
-five return codes which need to be handled:
-.TP
-.I CDEC_NEEDMORE
-The decoder is not done recognizing a control sequence; pass it
-another character in c.
-.TP
-.I CDEC_OK
-A character was recognized and has been placed in *cp.
-.TP
-.I CDEC_OKPUSH
-A character was recognized and has been placed in *cp; however,
-the character that was just passed in c is not yet needed.
-When processing a stream of characters, the current character
-should be used again.
-.TP
-.I CDEC_NOCHAR
-A sequence which represents no character was detected.
-.TP
-.I CDEC_SYNBAD
-An unrecognized backslash sequence was detected.  The decoder
-was automatically reset to a normal state.  All characters since
-the last un-escaped backslash character constitute the 
-unrecognized sequence.
-.PP
-When the caller is finished feeding characters to \fIcdecode\fP,
-it
-should be called one last time with dflag set to CDEC_END.  This will extract
-any remaining character.
-A sample code fragment
-is given to illustrate using cdecode:
-.nf
-
-	char nc;
-	while ((c = getchar()) != EOF) {
-		again:
-		switch(cdecode((char)c, &nc, 0)) {
-		case CDEC_NEEDMORE:
-		case CDEC_NOCHAR:
-			break;
-		case CDEC_OK:
-			putchar(nc);
-			break;
-		case CDEC_OKPUSH:
-			putchar(nc);
-			goto again;
-		case CDEC_SYNBAD:
-			fprintf(stderr, "Bad sequence\n");
-			exit(1);
-		}
+while ((ch = getchar()) != EOF) {
+again:
+	switch(cdecode((char)ch, &nc, 0)) {
+	case CDEC_NEEDMORE:
+	case CDEC_NOCHAR:
+		break;
+	case CDEC_OK:
+		(void)putchar(nc);
+		break;
+	case CDEC_OKPUSH:
+		(void)putchar(nc);
+		goto again;
+	case CDEC_SYNBAD:
+		(void)fprintf(stderr, "bad sequence!\n");
+		exit(1);
 	}
-	if (cdecode((char)0, &nc, CDEC_END) == CDEC_OK)
-		putchar(nc);
-
+}
+if (cdecode((char)0, &nc, CDEC_END) == CDEC_OK)
+	(void)putchar(nc);
 .fi
 .SH "SEE ALSO"
 vis(1)
