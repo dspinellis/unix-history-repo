@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.6 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -998,6 +998,7 @@ nqnfs_clientd(nmp, cred, ncd, flag, argp, p)
 	caddr_t argp;
 	struct proc *p;
 {
+	USES_VOP_FSYNC;
 	register struct nfsnode *np;
 	struct vnode *vp;
 	int error, vpid;
@@ -1059,11 +1060,13 @@ if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash3");
 				    && vp->v_type == VREG) {
 					np->n_flag &= ~NMODIFIED;
 					if (np->n_flag & NQNFSEVICTED) {
-						vinvalbuf(vp, TRUE);
+						(void) vinvalbuf(vp, TRUE,
+						    cred, p);
 						np->n_flag &= ~NQNFSEVICTED;
 						(void) nqnfs_vacated(vp, cred);
 					} else
-						vflushbuf(vp, B_SYNC);
+						(void) VOP_FSYNC(vp, cred,
+						    MNT_WAIT, p);
 				}
 			      }
 			      vrele(vp);
