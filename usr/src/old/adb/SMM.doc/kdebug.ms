@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kdebug.ms	6.3 (Berkeley) %G%
+.\"	@(#)kdebug.ms	6.4 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -17,6 +17,12 @@
 .el is a Trademark of Bell Laboratories.
 .FE
 .nr GA 1\}
+..
+.de cw
+.ft CW
+..
+.de pw
+.ft P
 ..
 .TL
 Using ADB to Debug the
@@ -73,11 +79,8 @@ Revised
 .LP
 .OH 'Using ADB to Debug the Kernel''SMM:3-%'
 .EH 'SMM:3-%''Using ADB to Debug the Kernel'
-.ds LH "Using ADB on the UNIX Kernel
 .ds RH Introduction
-.ds CF \*(DY
 .LP
-.ds CH "
 .ne 2i
 .NH
 Introduction
@@ -107,7 +110,9 @@ When examining post-mortem dumps of the
 kernel the
 \fB\-k\fP option should be used, e.g.
 .DS
-\f(CW% adb \-k vmunix.? vmcore.?\fP
+.cw
+% adb \-k vmunix.? vmcore.?
+.pw
 .DE
 where the appropriate version of the saved operating system
 image and core dump are supplied in place of ``?''.
@@ -125,7 +130,9 @@ kernel explicitly for debugging\(dd.
 A running kernel may be examined in a similar
 fashion,
 .DS
-\f(CW% adb \-k /vmunix /dev/mem\fP
+.cw
+% adb \-k /vmunix /dev/mem
+.pw
 .DE
 .FS
 \(dd If the \-k flag is not used when invoking
@@ -187,7 +194,9 @@ the last executing process.  If
 is able to locate a valid stack frame using this procedure
 the command
 .DS
-\f(CW$c\fP
+.cw
+$c
+.pw
 .DE
 will generate a stack trace from the last point at which
 the kernel was executing on behalf of the user process
@@ -232,7 +241,7 @@ contains a dump of a faulty process's state
 (our typing is shown emboldened).
 .ID
 .DT
-.ft CW
+.cw
 % \fBadb \-k vmunix.175 vmcore.175\fP
 sbr 5868 slr 2770
 p0br 5a00 p0lr 236 p1br	6600 p1lr fff0
@@ -428,6 +437,7 @@ _u+f8:		rv1		rv2		error	eosys
 
 		rssize	swrss	count	ccount	flag	slptim	poip
 		22	0	0100	031	0	0	0
+.pw
 .DE
 The cause of the crash was a ``panic''
 (see the stack trace) due to an inconsistency recognized
@@ -441,12 +451,12 @@ data structures.  Let's quickly examine the ``text'' script (the
 script has been broken into a number of lines for convenience
 here; in actuality it is a single line of text).
 .DS
-.ft CW
+.cw
 \&./"forw"16t"back"n2Xn\e
 "daddr"n12Xn\e
 "ptdaddr"16t"size"16t"caddr"16t"iptr"n4Xn\e
 "rssize"8t"swrss"8t"count"8t"ccount"8t"flag"8t"slptim"8t"poip"n2x4bx++n
-.ft P
+.pw
 .DE
 The first line displays the pointers associated with the doubly
 linked list used in managing text segments.
@@ -469,12 +479,12 @@ with a single format to allow subsequent reuse when interrogating
 arrays of structures.  That is, the previous script could have
 been written
 .DS
-.ft CW
+.cw
 \&./"forw"16t"back"n2Xn
 +/"daddr"n12Xn
 +/"ptdaddr"16t"size"16t"caddr"16t"iptr"n4Xn
 +/"rssize"8t"swrss"8t"count"8t"ccount"8t"flag"8t"slptim"8t"poip"n2x4bx++n
-.ft P
+.pw
 .DE
 but then reuse of the format would have invoked only the last
 line of the format.
@@ -494,7 +504,7 @@ in the stack frame after a trap.
 The following example illustrates their use.
 .ID
 .DT
-.ft CW
+.cw
 % \fBadb -k vmunix.188 vmcore.188\fP
 sbr 7068 slr 2770
 p0br 5a00 p0lr 74 p1br 5e00 p1lr fff0
@@ -552,6 +562,7 @@ _Swtch+2b:	remque	*0(r1),r2
 \fB80046988/X\fP
 _qs:
 _qs:		2a50b6ca
+.pw
 .DE
 .PP
 The example shows a panic due to a segmentation fault.
@@ -594,7 +605,7 @@ along the way.
 For instance, the queue of processes awaiting timer events,
 the callout queue, is printed with the following two scripts:
 .ID
-.ft CW
+.cw
 .in +5
 .ne 3
 .ti -5
@@ -610,6 +621,7 @@ calltodo/"time"16t"arg"16t"func"12+
 ,#<l$<
 <l$<callout.next
 .in -5
+.pw
 .DE
 The first line of the script \fBcallout\fP starts the traversal
 at the global symbol
@@ -638,14 +650,16 @@ operator ``#'', the
 variable ``<l'', and the ``$<'' operator
 creates a statement of the form,
 .DS
-\f(CWif (!link) exit;\fP
+.cw
+if (!link) exit;
+.pw
 .DE
 The remaining line of \fBcallout.next\fP simply reapplies the
 script on the next element in the linked list.
 .LP
 A sample \fIcallout\fP dump is shown below.
 .ID
-.ft CW
+.cw
 % \fBadb \-k /vmunix /dev/mem\fP
 sbr 8001f864 slr d9c
 p0br 800efa00 p0lr 8e p1br 7f8efe00 p1lr 1ffff2
@@ -660,6 +674,7 @@ _calltodo:	time		arg			func
 8004ecfc:	52		0			_dzscan
 8004ed2c:	68		_Syssize+70	_tmtimer
 8004ed3c:	2920		0			_memenable
+.pw
 .DE
 .NH 2
 Supplying Parameters
@@ -671,25 +686,29 @@ command as parameters.  An example of
 this is the \fBsetproc\fP script used to switch to the
 context of a process with a known process-id;
 .DS
-\f(CW0t99$<setproc\fP
+.cw
+0t99$<setproc
+.pw
 .DE
 The body of \fBsetproc\fP is
 .DS
-.ft CW
+.cw
 \&.>4
 *nproc>l
 *proc>f
 $<setproc.nxt
+.pw
 .DE
 while \fBsetproc.nxt\fP is
 .DS
-.ft CW
+.cw
 (*(<f+0t52))&0xffff="pid "D
 ,#((*(<f+0t52)&0xffff)-<4)$<setproc.done
 <l-1>l
 <f+0t164>f
 ,#<l$<
 $<setproc.nxt
+.pw
 .DE
 The process-id, supplied as the parameter, is stored in the
 variable ``<4'', the number of processes is placed in ``<l'',
