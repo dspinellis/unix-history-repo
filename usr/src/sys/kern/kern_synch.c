@@ -1,4 +1,4 @@
-/*	kern_synch.c	6.2	84/05/22	*/
+/*	kern_synch.c	6.3	84/07/31	*/
 
 #include "../machine/pte.h"
 
@@ -38,6 +38,7 @@ double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
  */
 schedcpu()
 {
+	register double ccpu1 = (1.0 - ccpu) / (double)hz;
 	register struct proc *p;
 	register int s, a;
 
@@ -49,8 +50,7 @@ schedcpu()
 			if (p->p_slptime != 127)
 				p->p_slptime++;
 		if (p->p_flag&SLOAD)
-			p->p_pctcpu = ccpu * p->p_pctcpu +
-			    (1.0 - ccpu) * (p->p_cpticks/(float)hz);
+			p->p_pctcpu = ccpu * p->p_pctcpu + ccpu1 * p->p_cpticks;
 		p->p_cpticks = 0;
 		a = ave((p->p_cpu & 0377), avenrun[0]*nrscale) +
 		     p->p_nice - NZERO;
@@ -62,10 +62,11 @@ schedcpu()
 		(void) setpri(p);
 		s = spl6();	/* prevent state changes */
 		if (p->p_pri >= PUSER) {
+#define	PPQ	(128 / NQS)
 			if ((p != u.u_procp || noproc) &&
 			    p->p_stat == SRUN &&
 			    (p->p_flag & SLOAD) &&
-			    p->p_pri != p->p_usrpri) {
+			    (p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
 				remrq(p);
 				p->p_pri = p->p_usrpri;
 				setrq(p);
@@ -138,6 +139,7 @@ sleep(chan, pri)
 		u.u_ru.ru_nvcsw++;
 		swtch();
 	}
+	curpri = rp->p_usrpri;
 out:
 	splx(s);
 	return;
@@ -197,10 +199,12 @@ restart:
 				p->p_stat = SRUN;
 				if (p->p_flag & SLOAD)
 					setrq(p);
-				if (p->p_pri < curpri) {
-					runrun++;
-					aston();
-				}
+				/*
+				 * Since curpri is a usrpri,
+				 * p->p_pri is always better than curpri.
+				 */
+				runrun++;
+				aston();
 				if ((p->p_flag&SLOAD) == 0) {
 					if (runout != 0) {
 						runout = 0;
