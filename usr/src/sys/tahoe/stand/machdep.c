@@ -1,10 +1,10 @@
-/*	machdep.c	1.1	86/01/12	*/
+/*	machdep.c	1.2	86/12/18	*/
 
 #include "../tahoe/mem.h"
 #include "../tahoe/mtpr.h"
 #include "../tahoe/SYS.h"
 
-	.set	_scb, 0x0	# mask for total disable
+	.set	_scb, 0x0
 	.set	HIGH, 0x1f	# mask for total disable
 	.set	BERVEC, 0x80	# offset into scb of the bus error vector 
 	.set	RESTVEC, 0x8	# offset into scb of the restart vector 
@@ -68,5 +68,5 @@ ENTRY(movow, 0)
 	ret
 
 ENTRY(movob, 0)
-	movob	9(fp),*4(fp)
+	movob	11(fp),*4(fp)
 	ret
