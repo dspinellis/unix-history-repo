@@ -1,4 +1,4 @@
-/*	lp.c	4.3	%G%	*/
+/*	lp.c	4.4	%G%	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -90,7 +90,8 @@ lpclose(dev, flag)
 
 	brelse(lp11.inbuf);
 	lp11.state &= ~OPEN;
-	lpcanon('\f');
+	lpcanon('\r');
+	lpoutput('\f');
 }
 
 lpwrite()
@@ -157,26 +158,19 @@ register c;
 		break;
 
 	case '\n':
-		lp11.physline++;
-		if (lp11.physline >= lp11.ejline)
+		if (lp11.physline >= lp11.ejline && (lp11.flags & SKIPFOLD))
 			c = '\f';
 		/* fall through */
 
 	case '\f':
+		if (lp11.physline == 0 && physcol == 0 && (lp11.flags & SKIPFOLD))
+			break;
 		physcol = 0;
-		if (lp11.physline == 0 && (lp11.flags&SAVEPAPER))
-			;
-		else {
-			lpoutput(c);
-			if (c == '\f') {
-				lp11.physline = 0;
-				if (lp11.flags & SKIPFOLD) {
-					int i;
-					for (i = 0; i < lp11.skpline; i++)
-						lpoutput('\n');
-				}
-			}
-		}
+		lpoutput(c);
+		if (c == '\f')
+			lp11.physline = 0;
+		else
+			lp11.physline++;
 		/* fall into ... */
 
 	case '\r':
@@ -192,6 +186,12 @@ register c;
 		break;
 
 	default:
+		if (lp11.physline == 0 && (lp11.flags & SKIPFOLD)) {
+			int i;
+			lp11.physline = lp11.skpline;
+			for (i = 0; i < lp11.skpline; i++)
+				lpoutput('\n');
+		}
 		if (logcol < physcol) {
 			lpoutput('\r');
 			physcol = 0;
@@ -243,7 +243,6 @@ lpintr()
 		LPADDR->lpbuf = lpchar;
 		lpchar = getc(&lp11);
 	}
-nomore:
 	lp11.state |= MOD;
 	if (lp11.outq.c_cc > 0 && (LPADDR->lpsr&ERROR)==0)
 		LPADDR->lpsr |= IENABLE;	/* ok and more to do later */
