@@ -1,12 +1,23 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1985 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)errlst.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)errlst.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 char	*sys_errlist[] = {
 	"Error 0",
@@ -79,9 +90,9 @@ char	*sys_errlist[] = {
 	"Socket is already connected",		/* 56 - EISCONN */
 	"Socket is not connected",		/* 57 - ENOTCONN */
 	"Can't send after socket shutdown",	/* 58 - ESHUTDOWN */
-	"Too many references: can't splice",	/* 59 - ETOOMANYREFS */
+	"Error 59",				/* 59 - unused */
 	"Connection timed out",			/* 60 - ETIMEDOUT */
-	"Connection refused",			/* 61 - EREFUSED */
+	"Connection refused",			/* 61 - ECONNREFUSED */
 	"Too many levels of symbolic links",	/* 62 - ELOOP */
 	"File name too long",			/* 63 - ENAMETOOLONG */
 	"Host is down",				/* 64 - EHOSTDOWN */
