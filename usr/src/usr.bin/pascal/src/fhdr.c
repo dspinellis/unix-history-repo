@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)fhdr.c 2.1 %G%";
+static char sccsid[] = "@(#)fhdr.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -131,22 +131,16 @@ funchdr(r)
 		    {
 			register struct tnode *il;
 		    il = r->p_dec.type;
-		    if (il == TR_NIL)
+		    if (il == TR_NIL) {
+			    temp = NLNIL;
 			    error("Function type must be specified");
-		    else if (il->tag != T_TYID) {
+		    } else if (il->tag != T_TYID) {
 			    temp = NLNIL;
 			    error("Function type can be specified only by using a type identifier");
 		    } else
 			    temp = gtype(il);
 		    }
-		    {
-			register struct nl *il;
-
-		    il = temp;
-		    p = enter(defnl(r->p_dec.id_ptr, FUNC, il, NIL));
-
-		    }
-
+		    p = enter(defnl(r->p_dec.id_ptr, FUNC, temp, NIL));
 		    p->nl_flags |= NMOD;
 		    /*
 		     * An arbitrary restriction
