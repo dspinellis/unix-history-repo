@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.19 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.20 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -17,7 +17,7 @@ BINGRP?=	bin
 BINOWN?=	bin
 BINMODE?=	555
 
-LIBC?=		/lib/libc.a
+LIBC?=		/usr/lib/libc.a
 LIBCOMPAT?=	/usr/lib/libcompat.a
 LIBCURSES?=	/usr/lib/libcurses.a
 LIBDBM?=	/usr/lib/libdbm.a
