@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.6 (Berkeley) %G%
+.\"	@(#)0.t	6.7 (Berkeley) %G%
 .\"
 .ds Ux \s-1UNIX\s0
 .ds Bs \s-1BSD\s0
@@ -76,11 +76,14 @@ UNIX is a registered trademark of USL in the USA and some other countries.
 .PP
 It discusses procedures for installing UNIX on a new machine,
 and for upgrading an existing \*(Ps UNIX system to the new release.
-An explanation of how to lay out filesystems on available disks,
-how to set up terminal lines and user accounts,
+An explanation of how to lay out filesystems on available disks
+and the space requirements for various parts of the system are given.
+A brief overview of the major changes to
+the system between \*(Ps and \*(4B are outlined.
+An explanation of how to set up terminal lines and user accounts,
 and how to do system-specific tailoring is provided.
-A description of how to install and configure the networking
-facilities included with \*(4B is included.
+A description of how to install and configure the \*(4B networking
+facilities is included.
 Finally, the document details system operation procedures:
 shutdown and startup, filesystem backup procedures,
 resource control, performance monitoring, and procedures for recompiling
