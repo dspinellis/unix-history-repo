@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_fault.c	7.6 (Berkeley) 5/7/91
- *	$Id: vm_fault.c,v 1.9 1993/12/19 00:55:59 wollman Exp $
+ *	$Id: vm_fault.c,v 1.10 1993/12/21 05:51:00 davidg Exp $
  */
 
 /*
@@ -500,7 +500,6 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 
 			vm_page_lock_queues();
 			vm_page_activate(m);
-			vm_page_deactivate(m);
 			pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 			vm_page_unlock_queues();
 
