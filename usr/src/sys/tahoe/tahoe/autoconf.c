@@ -1,4 +1,4 @@
-/*	autoconf.c	1.11	87/01/04	*/
+/*	autoconf.c	1.12	87/02/18	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -130,7 +130,7 @@ vbafind(vban, vumem, memmap)
 	long addr, *ap;
 	struct vba_hd *vhp;
 	struct vba_driver *udp;
-	int i, (**ivec)();
+	int i, octlr, (**ivec)();
 	caddr_t valloc, zmemall();
 	extern long catcher[SCB_LASTIV*2];
 
@@ -220,6 +220,7 @@ vbafind(vban, vumem, memmap)
 			    ui->ui_ctlr != um->um_ctlr && ui->ui_ctlr != '?' ||
 			    ui->ui_vbanum != vban && ui->ui_vbanum != '?')
 				continue;
+			octlr = ui->ui_ctlr, ui->ui_ctlr = um->um_ctlr;
 			if ((*udp->ud_slave)(ui, reg)) {
 				ui->ui_alive = 1;
 				ui->ui_ctlr = um->um_ctlr;
@@ -240,7 +241,8 @@ vbafind(vban, vumem, memmap)
 				    ui->ui_slave);
 				(*udp->ud_attach)(ui);
 				printf("\n");
-			}
+			} else
+				ui->ui_ctlr = octlr;
 		}
 		break;
 	    }
@@ -381,7 +383,8 @@ swapconf()
 		if (bdevsw[major(swp->sw_dev)].d_psize) {
 			nblks =
 			  (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
-			if (swp->sw_nblks == 0 || swp->sw_nblks > nblks)
+			if (nblks != -1 &&
+			    (swp->sw_nblks == 0 || swp->sw_nblks > nblks))
 				swp->sw_nblks = nblks;
 		}
 	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
