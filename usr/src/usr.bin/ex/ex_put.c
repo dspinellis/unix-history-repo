@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_put.c	7.11 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_put.c	7.12 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -1113,7 +1113,7 @@ ex_gTTY(i)
 {
 
 #ifndef USG3TTY
-	ignore(gtty(i, &tty));
+	ignore(ioctl(i, TIOCGETP, &tty));
 # ifdef TIOCGETC
 	ioctl(i, TIOCGETC, (char *) &ottyc);
 	nttyc = ottyc;
