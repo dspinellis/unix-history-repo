@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -2088,5 +2088,5 @@ newer(argc, argv)
 {
 	if (getit(argc, argv, -1, "w"))
 		printf("Local file \"%s\" is newer than remote file \"%s\"\n",
-			argv[1], argv[2]);
+			argv[2], argv[1]);
 }
