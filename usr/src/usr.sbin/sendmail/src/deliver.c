@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.33	%G%";
+static char SccsId[] = "@(#)deliver.c	3.34	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -42,7 +42,7 @@ deliver(to, editfcn)
 	char buf[MAXNAME];
 	bool firstone;
 
-	if (bitset(QDONTSEND, to->q_flags))
+	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
 		return (0);
 
 # ifdef DEBUG
@@ -124,7 +124,8 @@ deliver(to, editfcn)
 			break;
 
 		/* if already sent or not for this host, don't send */
-		if (bitset(QDONTSEND, to->q_flags) || strcmp(to->q_host, host) != 0)
+		if ((!ForceMail && bitset(QDONTSEND, to->q_flags)) ||
+		    strcmp(to->q_host, host) != 0)
 			continue;
 		user = to->q_user;
 		To = to->q_paddr;
