@@ -446,57 +446,30 @@ untimeout(func, arg)
  * Used to compute third argument to timeout() from an
  * absolute time.
  */
-
-/* XXX clock_t */
 hzto(tv)
 	struct timeval *tv;
 {
-	register unsigned long ticks;
+	register long ticks;
 	register long sec;
-	register long usec;
-	int s;
+	int s = splhigh();
 
 	/*
-	 * If the number of usecs in the whole seconds part of the time
-	 * difference fits in a long, then the total number of usecs will
-	 * fit in an unsigned long.  Compute the total and convert it to
-	 * ticks, rounding up and adding 1 to allow for the current tick
-	 * to expire.  Rounding also depends on unsigned long arithmetic
-	 * to avoid overflow.
+	 * If number of milliseconds will fit in 32 bit arithmetic,
+	 * then compute number of milliseconds to time and scale to
+	 * ticks.  Otherwise just compute number of hz in time, rounding
+	 * times greater than representible to maximum value.
 	 *
-	 * Otherwise, if the number of ticks in the whole seconds part of
-	 * the time difference fits in a long, then convert the parts to
-	 * ticks separately and add, using similar rounding methods and
-	 * overflow avoidance.  This method would work in the previous
-	 * case but it is slightly slower and assumes that hz is integral.
-	 *
-	 * Otherwise, round the time difference down to the maximum
-	 * representable value.
-	 *
-	 * Maximum value for any timeout in 10ms ticks is 248 days.
+	 * Delta times less than 25 days can be computed ``exactly''.
+	 * Maximum value for any timeout in 10ms ticks is 250 days.
 	 */
-	s = splhigh();
 	sec = tv->tv_sec - time.tv_sec;
-	usec = tv->tv_usec - time.tv_usec;
-	splx(s);
-	if (usec < 0) {
-		sec--;
-		usec += 1000000;
-	}
-	if (sec < 0) {
-		printf("hzto: negative time difference %ld sec %ld usec\n",
-		       sec, usec);
-		ticks = 1;
-	} else if (sec <= LONG_MAX / 1000000)
-		ticks = (sec * 1000000 + (unsigned long)usec + (tick - 1))
-			/ tick + 1;
-	else if (sec <= LONG_MAX / hz)
-		ticks = sec * hz
-			+ ((unsigned long)usec + (tick - 1)) / tick + 1;
+	if (sec <= 0x7fffffff / 1000 - 1000)
+		ticks = ((tv->tv_sec - time.tv_sec) * 1000 +
+			(tv->tv_usec - time.tv_usec) / 1000) / (tick / 1000);
+	else if (sec <= 0x7fffffff / hz)
+		ticks = sec * hz;
 	else
-		ticks = LONG_MAX;
-#define	CLOCK_T_MAX	INT_MAX	/* XXX should be ULONG_MAX */
-	if (ticks > CLOCK_T_MAX)
-		ticks = CLOCK_T_MAX;
+		ticks = 0x7fffffff;
+	splx(s);
 	return (ticks);
 }
