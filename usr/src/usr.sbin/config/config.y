@@ -2,7 +2,7 @@
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
 %token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA MINUS
 %{
-/*	config.y	1.10	81/05/18	*/
+/*	config.y	1.11	81/05/22	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
@@ -142,9 +142,15 @@ Info:
 	;
 
 Int_spec:
-	VECTOR Save_id = { cur.d_vec1 = $2; } |
-	VECTOR Save_id ID = { cur.d_vec1 = $2; cur.d_vec2 = ns($3); } |
-	;
+	VECTOR Id_list = { cur.d_vec = $2; } | ;
+
+Id_list:
+	Save_id =
+	    { struct idlst *a = (struct idlst *)malloc(sizeof(struct idlst));
+	      a->id = $1; a->id_next = 0; $$ = a; } |
+	Save_id Id_list =
+	    { struct idlst *a = (struct idlst *)malloc(sizeof(struct idlst));
+	      a->id = $1; a->id_next = $2; $$ = a; } ;
 %%
 
 yyerror(s)
@@ -310,7 +316,7 @@ register struct device *dp;
     dp->d_name = "OHNO!!!";
     dp->d_type = DEVICE;
     dp->d_conn = NULL;
-    dp->d_vec1 = dp->d_vec2 = NULL;
+    dp->d_vec = NULL;
     dp->d_addr = dp->d_flags = dp->d_dk = 0;
     dp->d_slave = dp->d_drive = dp->d_unit = UNKNOWN;
 }
