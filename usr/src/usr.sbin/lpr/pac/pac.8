@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pac.8	5.1 (Berkeley) %G%
+.\"	@(#)pac.8	6.1 (Berkeley) %G%
 .\"
-.TH PAC 8 "21 February 1981"
+.TH PAC 8 ""
 .UC 5
 .SH NAME
 pac \- printer/ploter accounting information
@@ -65,6 +65,10 @@ busy system, the accounting file can grow by several lines per day.
 /usr/adm/?acct	raw accounting files
 .br
 /usr/adm/?_sum	summary accounting files
+.br
+/etc/printcap	printer capability data base
+.SH SEE ALSO
+printcap(5)
 .SH BUGS
 The relationship between the computed price and reality is
 as yet unknown.
