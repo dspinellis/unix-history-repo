@@ -1,5 +1,5 @@
 /*
- * @(#)char.h	3.3 %G%
+ * @(#)char.h	3.4 %G%
  */
 
 /*
@@ -23,7 +23,7 @@
 
 char *_unctrl[];
 char _cmap[];
-#define ctrl(c)		('c' & 0x1f)
+#define ctrl(c)		(c & 0x1f)
 #define unctrl(c)	(_unctrl[(unsigned char) (c)])
 #define _C		0x01
 #define _P		0x02

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwwrite.c	3.25 %G%";
+static char sccsid[] = "@(#)wwwrite.c	3.26 %G%";
 #endif
 
 /*
@@ -54,7 +54,7 @@ int n;
 			case '\b':
 			case '\r':
 				break;
-			case ctrl([):
+			case ctrl('['):
 				w->ww_wstate = 1;
 				break;
 			}
