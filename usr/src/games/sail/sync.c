@@ -1,10 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	2.6 84/04/28";
+static	char *sccsid = "@(#)sync.c	2.7 85/03/04";
 #endif
 
 #include "externs.h"
 #include <sys/file.h>
 #include <sys/errno.h>
+
+#define BUFSIZE 4096
 
 static char sync_buf[BUFSIZE];
 static char *sync_bp = sync_buf;
@@ -17,9 +19,9 @@ static FILE *sync_fp;
 
 /*VARARGS3*/
 makesignal(from, fmt, ship, a, b, c)
-struct ship *from;
-char *fmt;
-register struct ship *ship;
+	struct ship *from;
+	char *fmt;
+	register struct ship *ship;
 {
 	char message[80];
 
@@ -55,27 +57,24 @@ sync_exists(game)
 
 sync_open()
 {
-	(void) sprintf(sync_lock, LF, game);
-	(void) sprintf(sync_file, SF, game);
-	if (access(sync_file, 0) < 0) {
-		int omask;
-#ifdef SETUID
-		omask = umask(077);
-#else
-		omask = umask(011);
-#endif
-		sync_fp = fopen(sync_file, "w+");
-		(void) umask(omask);
-	} else
-		sync_fp = fopen(sync_file, "r+");
-	if (sync_fp == 0)
-		return -1;
+	if (sync_fp == NULL) {
+		(void) sprintf(sync_lock, LF, game);
+		(void) sprintf(sync_file, SF, game);
+		if (access(sync_file, 0) < 0) {
+			int omask = umask(issetuid ? 077 : 011);
+			sync_fp = fopen(sync_file, "w+");
+			(void) umask(omask);
+		} else
+			sync_fp = fopen(sync_file, "r+");
+		if (sync_fp == NULL)
+			return -1;
+	}
 	sync_seek == 0;
 	return 0;
 }
 
 sync_close(remove)
-char remove;
+	char remove;
 {
 	if (sync_fp != 0)
 		(void) fclose(sync_fp);
@@ -84,10 +83,10 @@ char remove;
 }
 
 Write(type, ship, isstr, a, b, c, d)
-int type;
-struct ship *ship;
-char isstr;
-int a, b, c, d;
+	int type;
+	struct ship *ship;
+	char isstr;
+	int a, b, c, d;
 {
 	if (isstr)
 		(void) sprintf(sync_bp, "%d %d %d %s\n",
@@ -191,9 +190,9 @@ out:
 }
 
 sync_update(type, ship, a, b, c, d)
-int type;
-register struct ship *ship;
-int a, b, c, d;
+	int type;
+	register struct ship *ship;
+	int a, b, c, d;
 {
 	switch (type) {
 	case W_DBP: {
@@ -253,7 +252,7 @@ int a, b, c, d;
 		break;
 		}
 	case W_SIGNAL:
-		if (isplayer)
+		if (mode == MODE_PLAYER)
 			Signal("\7%s (%c%c): %s", ship, a);
 		break;
 	case W_CREW: {
