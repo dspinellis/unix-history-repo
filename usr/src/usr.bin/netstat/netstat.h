@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netstat.h	5.5 (Berkeley) %G%
+ *	@(#)netstat.h	8.1 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
