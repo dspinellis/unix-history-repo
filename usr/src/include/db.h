@@ -4,11 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.5 (Berkeley) %G%
+ *	@(#)db.h	5.6 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
 #define	_DB_H_
+
+#include <sys/cdefs.h>
 
 /* flags for DB.put() call */
 #define	R_IBEFORE	1		/* RECNO */
@@ -30,14 +32,17 @@ typedef struct {
 } DBT;
 
 /* access method description structure */
-typedef struct {
-	char *internal;		/* access method private; really void * */
-	int (*close)();
-	int (*del)();
-	int (*get)();
-	int (*put)();
-	int (*seq)();
-	int (*sync)();
+typedef struct __db {
+	void *internal;		/* access method private; really void * */
+__BEGIN_DECLS
+	int (*close) __P((const struct __db *));
+	int (*del) __P((const struct __db *, const DBT *, unsigned int));
+	int (*get) __P((const struct __db *, DBT *, DBT *, unsigned int));
+	int (*put) __P((const struct __db *, const DBT *, const DBT *,
+		unsigned int));
+	int (*seq) __P((const struct __db *, DBT *, DBT *, unsigned int));
+	int (*sync) __P((const struct __db *));
+__END_DECLS
 } DB;
 
 #define	BTREEMAGIC	0x053162
@@ -113,7 +118,6 @@ typedef struct {
 	((char *)&(b))[1] = ((char *)&(a))[0]; \
 }
 
-#include <sys/cdefs.h>
 __BEGIN_DECLS
 DB	*btree_open
 	    __P((const char *, int, int, const BTREEINFO *));
