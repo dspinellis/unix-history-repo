@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)utime.3	6.5 (Berkeley) %G%
+.\"     @(#)utime.3	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UTIME 3
@@ -21,15 +21,24 @@
 This interface is obsoleted by utimes(2) .
 .Ef
 .Pp
-.Sh DESCRIPTION
 The
 .Fn utime
 function sets the access and modification times of the named file from
 the structures in the argument array
 .Fa timep .
 .Pp
-The calling process's effective user ID must match the owner of the
-file or must be the super-user.
+If the times are specified (the
+.Fa timep
+argument is
+.Pf non- Dv NULL )
+the caller must be the owner of the file or be the super-user.
+.Pp
+If the times are not specified (the
+.Fa timep
+argument is
+.Dv NULL )
+the caller must be the owner of the file, have permission to write
+the file, or be the super-user.
 .Sh SEE ALSO
 .Xr utimes 2 ,
 .Xr stat 2
