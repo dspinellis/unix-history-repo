@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.13	82/01/15	*/
+/*	tty_pty.c	4.14	82/01/17	*/
 
 /*
  * Pseudo-teletype Driver
@@ -28,15 +28,17 @@
  */
 struct	tty pt_tty[NPTY];
 struct	pt_ioctl {
-	int	pti_flags;
-	struct	clist pti_ioctl, pti_ioans;
-	int	pti_gensym;
-	struct	proc *pti_selr, *pti_selw;
+	int	pt_flags;
+	int	pt_gensym;
+	struct	proc *pt_selr, *pt_selw;
+	int	pt_send;
 } pt_ioctl[NPTY];
 
-#define	PTCRCOLL	0x01
-#define	PTCWCOLL	0x02
-#define	PTCNBIO		0x04
+#define	PF_RCOLL	0x01
+#define	PF_WCOLL	0x02
+#define	PF_NBIO		0x04
+#define	PF_PKT		0x08		/* packet mode */
+#define	PF_FLOWCTL	0x10		/* peers flow control mode */
 
 /*ARGSUSED*/
 ptsopen(dev, flag)
@@ -85,10 +87,10 @@ ptsread(dev)
 		(*linesw[tp->t_line].l_read)(tp);
 		wakeup((caddr_t)&tp->t_rawq.c_cf);
 		if (tp->t_rawq.c_cc < TTYHOG/2 &&
-		    (pti = &pt_ioctl[minor(tp->t_dev)])->pti_selw) {
-			selwakeup(pti->pti_selw, pti->pti_flags & PTCWCOLL);
-			pti->pti_selw = 0;
-			pti->pti_flags &= ~PTCWCOLL;
+		    (pti = &pt_ioctl[minor(tp->t_dev)])->pt_selw) {
+			selwakeup(pti->pt_selw, pti->pt_flags & PF_WCOLL);
+			pti->pt_selw = 0;
+			pti->pt_flags &= ~PF_WCOLL;
 		}
 	}
 }
@@ -119,10 +121,10 @@ ptsstart(tp)
 
 	if (tp->t_state & TS_TTSTOP)
 		return;
-	if (pti->pti_selr) {
-		selwakeup(pti->pti_selr, pti->pti_flags & PTCRCOLL);
-		pti->pti_selr = 0;
-		pti->pti_flags &= ~PTCRCOLL;
+	if (pti->pt_selr) {
+		selwakeup(pti->pt_selr, pti->pt_flags & PF_RCOLL);
+		pti->pt_selr = 0;
+		pti->pt_flags &= ~PF_RCOLL;
 	}
 	wakeup((caddr_t)&tp->t_outq.c_cf);
 }
@@ -133,6 +135,7 @@ ptcopen(dev, flag)
 	int flag;
 {
 	register struct tty *tp;
+	struct pt_ioctl *pti;
 
 	if (minor(dev) >= NPTY) {
 		u.u_error = ENXIO;
@@ -147,6 +150,9 @@ ptcopen(dev, flag)
 	if (tp->t_state & TS_WOPEN)
 		wakeup((caddr_t)&tp->t_rawq);
 	tp->t_state |= TS_CARR_ON;
+	pti = &pt_ioctl[minor(dev)];
+	pti->pt_flags = 0;
+	pti->pt_send = 0;
 }
 
 ptcclose(dev)
@@ -163,15 +169,25 @@ ptcclose(dev)
 }
 
 ptcread(dev)
-dev_t dev;
+	dev_t dev;
 {
 	register struct tty *tp;
+	struct pt_ioctl *pti;
 
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
 		return;
+	pti = &pt_ioctl[minor(dev)];
+	if (pti->pt_flags & PF_PKT) {
+		if (pti->pt_send) {
+			passc(pti->pt_send);
+			pti->pt_send = 0;
+			return;
+		}
+		passc(0);
+	}
 	while (tp->t_outq.c_cc == 0 || (tp->t_state&TS_TTSTOP)) {
-		if (pt_ioctl[minor(dev)].pti_flags&PTCNBIO) {
+		if (pti->pt_flags&PF_NBIO) {
 			u.u_error = EWOULDBLOCK;
 			return;
 		}
@@ -192,6 +208,18 @@ dev_t dev;
 	}
 }
 
+ptsstop(tp, flush)
+	register struct tty *tp;
+	int flush;
+{
+	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
+
+	if (flush == 0)
+		return;
+	pti->pt_send |= TIOCPKT_FLUSH;
+	ptsstart(tp);
+}
+
 ptcselect(dev, rw)
 	dev_t dev;
 	int rw;
@@ -208,20 +236,20 @@ ptcselect(dev, rw)
 		if (tp->t_outq.c_cc)
 			return (1);
 		pti = &pt_ioctl[minor(dev)];
-		if ((p = pti->pti_selr) && p->p_wchan == (caddr_t)&selwait)
-			pti->pti_flags |= PTCRCOLL;
+		if ((p = pti->pt_selr) && p->p_wchan == (caddr_t)&selwait)
+			pti->pt_flags |= PF_RCOLL;
 		else
-			pti->pti_selr = u.u_procp;
+			pti->pt_selr = u.u_procp;
 		return (0);
 
 	case FWRITE:
 		if (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG/2)
 			return (1);
 		pti = &pt_ioctl[minor(dev)];
-		if ((p = pti->pti_selw) && p->p_wchan == (caddr_t)&selwait)
-			pti->pti_flags |= PTCWCOLL;
+		if ((p = pti->pt_selw) && p->p_wchan == (caddr_t)&selwait)
+			pti->pt_flags |= PF_WCOLL;
 		else
-			pti->pti_selw = u.u_procp;
+			pti->pt_selw = u.u_procp;
 	}
 }
 
@@ -273,18 +301,29 @@ ptyioctl(dev, cmd, addr, flag)
 	tp = &pt_tty[minor(dev)];
 	/* IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG ??? */
 	if (cdevsw[major(dev)].d_open == ptcopen) {
+		register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+		if (cmd == TIOCPKT) {
+			int packet;
+			if (copyin((caddr_t)addr, &packet, sizeof (packet))) {
+				u.u_error = EFAULT;
+				return;
+			}
+			if (packet)
+				pti->pt_flags |= PF_PKT;
+			else
+				pti->pt_flags &= ~PF_PKT;
+			return;
+		}
 		if (cmd == FIONBIO) {
 			int nbio;
-			register struct pt_ioctl *pti;
 			if (copyin(addr, &nbio, sizeof (nbio))) {
 				u.u_error = EFAULT;
 				return;
 			}
-			pti = &pt_ioctl[minor(dev)];
 			if (nbio)
-				pti->pti_flags |= PTCNBIO;
+				pti->pt_flags |= PF_NBIO;
 			else
-				pti->pti_flags &= ~PTCNBIO;
+				pti->pt_flags &= ~PF_NBIO;
 			return;
 		}
 		if (cmd == TIOCSETP)
