@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.4 (Berkeley) %G%
+ *	@(#)pmap.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -1413,7 +1413,7 @@ vm_page_alloc1()
 	if (cnt.v_free_count < cnt.v_free_min ||
 	    (cnt.v_free_count < cnt.v_free_target &&
 	     cnt.v_inactive_count < cnt.v_inactive_target))
-		thread_wakeup((int)&vm_pages_needed);
+		thread_wakeup(&vm_pages_needed);
 	return (mem);
 }
 

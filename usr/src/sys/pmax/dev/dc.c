@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	8.4 (Berkeley) %G%
+ *	@(#)dc.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -248,6 +248,9 @@ dcopen(dev, flag, mode, p)
 	} else if ((tp->t_state & TS_XCLUDE) && curproc->p_ucred->cr_uid != 0)
 		return (EBUSY);
 	(void) dcmctl(dev, DML_DTR | DML_RTS, DMSET);
+	if ((dcsoftCAR[unit >> 2] & (1 << (unit & 03))) ||
+	    (dcmctl(dev, 0, DMGET) & DML_CAR))
+		tp->t_state |= TS_CARR_ON;
 	s = spltty();
 	while (!(flag & O_NONBLOCK) && !(tp->t_cflag & CLOCAL) &&
 	       !(tp->t_state & TS_CARR_ON)) {
@@ -270,14 +273,18 @@ dcclose(dev, flag, mode, p)
 {
 	register struct tty *tp;
 	register int unit, bit;
+	int s;
 
 	unit = minor(dev);
 	tp = &dc_tty[unit];
 	bit = 1 << ((unit & 03) + 8);
+	s = spltty();
+	/* turn off the break bit if it is set */
 	if (dc_brk[unit >> 2] & bit) {
 		dc_brk[unit >> 2] &= ~bit;
 		ttyoutput(0, tp);
 	}
+	splx(s);
 	(*linesw[tp->t_line].l_close)(tp, flag);
 	if ((tp->t_cflag & HUPCL) || (tp->t_state & TS_WOPEN) ||
 	    !(tp->t_state & TS_ISOPEN))
@@ -313,7 +320,7 @@ dcwrite(dev, uio, flag)
 /*ARGSUSED*/
 dcioctl(dev, cmd, data, flag, p)
 	dev_t dev;
-	int cmd;
+	u_long cmd;
 	caddr_t data;
 	int flag;
 	struct proc *p;
@@ -775,8 +782,6 @@ dcmctl(dev, bits, how)
 			dcaddr->dc_tcr = tcr;
 		}
 	}
-	if ((mbits & DML_DTR) && (dcsoftCAR[unit >> 2] & b))
-		dc_tty[unit].t_state |= TS_CARR_ON;
 	(void) splx(s);
 	return (mbits);
 }
@@ -802,7 +807,7 @@ dcscan(arg)
 	for (unit = 2; unit <= limit; unit++, dtr >>= 2, dsr >>= 8) {
 		tp = &dc_tty[unit];
 		dcaddr = (dcregs *)dcpdma[unit].p_addr;
-		if (dcaddr->dc_msr & dsr) {
+		if ((dcaddr->dc_msr & dsr) || (dcsoftCAR[0] & (1 << unit))) {
 			/* carrier present */
 			if (!(tp->t_state & TS_CARR_ON))
 				(void)(*linesw[tp->t_line].l_modem)(tp, 1);

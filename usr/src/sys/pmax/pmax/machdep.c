@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.4 (Berkeley) %G%
+ *	@(#)machdep.c	8.5 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -35,6 +35,8 @@
 #include <sys/user.h>
 #include <sys/exec.h>
 #include <sys/sysctl.h>
+#include <sys/mount.h>
+#include <sys/syscallargs.h>
 #ifdef SYSVSHM
 #include <sys/shm.h>
 #endif
@@ -586,7 +588,7 @@ mach_init(argc, argv, code, cv)
 	 * Determine how many buffers to allocate.
 	 * We allocate more buffer space than the BSD standard of
 	 * using 10% of memory for the first 2 Meg, 5% of remaining.
-	 * We just allocate a flat 10%.  Insure a minimum of 16 buffers.
+	 * We just allocate a flat 10%.  Ensure a minimum of 16 buffers.
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
 	if (bufpages == 0)
@@ -929,7 +931,7 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 setregs(p, entry, retval)
 	register struct proc *p;
 	u_long entry;
-	int retval[2];
+	register_t retval[2];
 {
 	int sp = p->p_md.md_regs[SP];
 	extern struct proc *machFPCurProcPtr;
@@ -970,7 +972,7 @@ void
 sendsig(catcher, sig, mask, code)
 	sig_t catcher;
 	int sig, mask;
-	unsigned code;
+	u_long code;
 {
 	register struct proc *p = curproc;
 	register struct sigframe *fp;
@@ -1070,21 +1072,20 @@ sendsig(catcher, sig, mask, code)
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
-struct sigreturn_args {
-	struct sigcontext *sigcntxp;
-};
 /* ARGSUSED */
 sigreturn(p, uap, retval)
 	struct proc *p;
-	struct sigreturn_args *uap;
-	int *retval;
+	struct sigreturn_args /* {
+		syscallarg(struct sigcontext *) sigcntxp;
+	} */ *uap;
+	register_t *retval;
 {
 	register struct sigcontext *scp;
 	register int *regs;
 	struct sigcontext ksc;
 	int error;
 
-	scp = uap->sigcntxp;
+	scp = SCARG(uap, sigcntxp);
 #ifdef DEBUG
 	if (sigdebug & SDB_FOLLOW)
 		printf("sigreturn: pid %d, scp %x\n", p->p_pid, scp);
@@ -1130,6 +1131,7 @@ int	waittime = -1;
 boot(howto)
 	register int howto;
 {
+	struct proc *p = curproc;	/* XXX */
 
 	/* take a snap shot before clobbering any registers */
 	if (curproc)
@@ -1159,7 +1161,7 @@ boot(howto)
 		fdshutdown();
 #endif
 #endif
-		sync(&proc0, (void *)NULL, (int *)NULL);
+		sync(p, (void *)NULL, (int *)NULL);
 		/*
 		 * Unmount filesystems
 		 */
@@ -1288,8 +1290,9 @@ dumpsys()
  * We guarantee that the time will be greater than the value obtained by a
  * previous call.
  */
+void
 microtime(tvp)
-	register struct timeval *tvp;
+	struct timeval *tvp;
 {
 	int s = splclock();
 	static struct timeval lasttime;
@@ -1466,6 +1469,7 @@ struct drivers_map {
 	{ "PMAZ-AA ",	"asc"},		/* SCSI */
 	{ "PMAG-AA ",	"mfb"},		/* Mono Frame Buffer */
 	{ "PMAG-BA ",	"cfb"},		/* Color Frame Buffer */
+	{ "PMAGB-BA",	"sfb"},		/* Smart Frame Buffer */
 	{ "PMAG-CA ",	"ga"},		/* 2D graphic board */
 	{ "PMAG-DA ",	"gq"},		/* 3D graphic board (LM) */
 	{ "PMAG-FA ",	"gq"},		/* 3D graphic board (HE) */
@@ -1476,6 +1480,13 @@ struct drivers_map {
 	{ "DTOP    ",	"dtop"},	/* (*) maxine desktop bus */
 	{ "AMD79c30",	"isdn"},	/* (*) maxine ISDN chip */
 	{ "XINE-FRC",	"frc"},		/* (*) maxine free-running counter */
+	{ "PMAF-AA ",   "fza"},		/* slow FDDI */
+	{ "T3PKT   ",   "tt"},		/* DECWRL turbochannel T3 */
+	{ "T1D4PKT ",   "ds"},		/* DECWRL turbochannel T1 */
+	{ "FORE_ATM",   "fa"},		/* Fore t??-100 ATM */
+	{ "LoFi    ",	"lofi"},	/* DEC audio board */
+	{ "AV01A-AA",	"lofi"},	/* DEC audio board */
+	{ "AV01B-AA",	"lofi"},	/* DEC audio board */
 	{ "", 0}			/* list end */
 };
 

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)xcfb.c	8.1 (Berkeley) %G%
+ *	@(#)xcfb.c	8.2 (Berkeley) %G%
  */
 
 /* 
@@ -194,6 +194,7 @@ xcfbclose(dev, flag)
 /*ARGSUSED*/
 xcfbioctl(dev, cmd, data, flag, p)
 	dev_t dev;
+	u_long cmd;
 	caddr_t data;
 	struct proc *p;
 {
