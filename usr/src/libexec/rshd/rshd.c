@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -27,6 +27,8 @@ static char sccsid[] = "@(#)rshd.c	5.3 (Berkeley) %G%";
 #include <sys/wait.h>
 
 #include <netinet/in.h>
+
+#include <arpa/inet.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -82,6 +84,7 @@ doit(f, fromp)
 	struct passwd *pwd;
 	int s, backoff;
 	struct hostent *hp;
+	struct hostent hostent;
 	short port;
 	int pv[2], pid, ready, readfrom, cc;
 	char buf[BUFSIZ], sig;
@@ -141,8 +144,11 @@ doit(f, fromp)
 	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
 	if (hp == 0) {
-		error("Host name for your address unknown\n");
-		exit(1);
+		/*
+		 * Only the name is used below
+		 */
+		hp = &hostent;
+		hp->h_name = inet_ntoa(fromp->sin_addr);
 	}
 	getstr(remuser, sizeof(remuser), "remuser");
 	getstr(locuser, sizeof(locuser), "locuser");
