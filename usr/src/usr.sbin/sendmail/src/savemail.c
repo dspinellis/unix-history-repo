@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	2.1	%G%";
+static char	SccsId[] = "@(#)savemail.c	2.2	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -26,8 +26,6 @@ static char	SccsId[] = "@(#)savemail.c	2.1	%G%";
 **		WARNING: the user id is reset to the original user.
 */
 
-# define MY_NAME	"~MAILER~DAEMON~"
-
 savemail()
 {
 	register struct passwd *pw;
@@ -44,6 +42,7 @@ savemail()
 	extern char *ctime();
 	extern addrq *parse();
 	static int exclusive;
+	extern char *DaemonName;
 
 	if (exclusive++)
 		return;
@@ -97,7 +96,7 @@ savemail()
 			xfile = fopen(Transcript, "r");
 			if (xfile == NULL)
 				syserr("Cannot open %s", Transcript);
-			printf("\r\nMessage from %s\r\n", MY_NAME);
+			printf("\r\nMessage from %s\r\n", DaemonName);
 			printf("Errors occurred while sending mail, transcript follows:\r\n");
 			while (fgets(buf, sizeof buf, xfile) && !ferror(stdout))
 				fputs(buf, stdout);
@@ -126,7 +125,7 @@ savemail()
 
 		/* fake up an address header for the from person */
 		bmove((char *) &From, (char *) &to_addr, sizeof to_addr);
-		if (parse(MY_NAME, &From, -1) == NULL)
+		if (parse(DaemonName, &From, -1) == NULL)
 		{
 			syserr("Can't parse myself!");
 			ExitStat = EX_SOFTWARE;
