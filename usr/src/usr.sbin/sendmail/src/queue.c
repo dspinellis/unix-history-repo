@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.55		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.56		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.55		%G%);
+SCCSID(@(#)queue.c	3.56		%G%);
 
 /*
 **  Work queue.
@@ -77,6 +77,7 @@ queueup(e, queueall, announce)
 	if (e->e_df == NULL)
 	{
 		register FILE *dfp;
+		extern putbody();
 
 		e->e_df = newstr(queuename(e, 'd'));
 		dfp = fopen(e->e_df, "w");
@@ -89,6 +90,7 @@ queueup(e, queueall, announce)
 		(void) chmod(e->e_df, FileMode);
 		(*e->e_putbody)(dfp, ProgMailer, FALSE);
 		(void) fclose(dfp);
+		e->e_putbody = putbody;
 	}
 
 	/*

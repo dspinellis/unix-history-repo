@@ -3,12 +3,29 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.28		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.29		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.28		%G%);
+SCCSID(@(#)usersmtp.c	3.29		%G%);
+
+
 
 /*
+**  USERSMTP -- run SMTP protocol from the user end.
+**
+**	This protocol is described in RFC821.
+*/
+
+#define REPLYTYPE(r)	((r) / 100)		/* first digit of reply code */
+#define REPLYCLASS(r)	(((r) / 10) % 10)	/* second digit of reply code */
+#define SMTPCLOSING	421			/* "Service Shutting Down" */
+
+static char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
+static FILE	*SmtpOut;			/* output file */
+static FILE	*SmtpIn;			/* input file */
+static int	SmtpPid;			/* pid of mailer */
+static bool	SmtpClosing;			/* set on a forced close */
+/*
 **  SMTPINIT -- initialize SMTP.
 **
 **	Opens the connection and sends the initial protocol.
@@ -25,14 +42,6 @@ SCCSID(@(#)usersmtp.c	3.28		%G%);
 **	Side Effects:
 **		creates connection and sends initial protocol.
 */
-
-# define REPLYTYPE(r)	((r) / 100)
-# define REPLYCLASS(r)	(((r) / 10) % 10)
-
-static FILE	*SmtpOut;	/* output file */
-static FILE	*SmtpIn;	/* input file */
-static int	SmtpPid;	/* pid of mailer */
-static int	SmtpErrstat;	/* error status if open fails */
 
 smtpinit(m, pvp, ctladdr)
 	struct mailer *m;
@@ -51,11 +60,10 @@ smtpinit(m, pvp, ctladdr)
 	SmtpPid = openmailer(m, pvp, ctladdr, TRUE, &SmtpOut, &SmtpIn);
 	if (SmtpPid < 0)
 	{
-		SmtpErrstat = ExitStat;
 # ifdef DEBUG
 		if (tTd(18, 1))
-			printf("smtpinit: cannot open: Errstat %d errno %d\n",
-			   SmtpErrstat, errno);
+			printf("smtpinit: cannot open %s: stat %d errno %d\n",
+			   pvp[0], ExitStat, errno);
 # endif DEBUG
 		return (ExitStat);
 	}
@@ -155,9 +163,6 @@ smtprcpt(to)
 	register int r;
 	extern char *canonname();
 
-	if (SmtpPid < 0)
-		return (SmtpErrstat);
-
 	smtpmessage("RCPT To:<%s>", canonname(to->q_user, 2));
 
 	r = reply();
@@ -191,9 +196,6 @@ smtpfinish(m, e)
 {
 	register int r;
 
-	if (SmtpPid < 0)
-		return (SmtpErrstat);
-
 	/*
 	**  Send the data.
 	**	Dot hiding is done here.
@@ -225,7 +227,6 @@ smtpfinish(m, e)
 **
 **	Parameters:
 **		name -- name of mailer we are quitting.
-**		showresp -- if set, give a response message.
 **
 **	Returns:
 **		none.
@@ -234,21 +235,26 @@ smtpfinish(m, e)
 **		sends the final protocol and closes the connection.
 */
 
-smtpquit(name, showresp)
+smtpquit(name)
 	char *name;
-	bool showresp;
 {
-	register int i;
+	int i;
 
-	if (SmtpPid < 0)
+	if (SmtpClosing)
+	{
+		SmtpClosing = FALSE;
 		return;
+	}
+
 	smtpmessage("QUIT");
-	(void) reply();
+	i = reply();
+	if (i != 221)
+		syserr("smtpquit %s: reply %d", name, i);
 	(void) fclose(SmtpIn);
 	(void) fclose(SmtpOut);
 	i = endmailer(SmtpPid, name);
-	if (showresp)
-		giveresponse(i, LocalMailer);
+	if (i != EX_OK)
+		syserr("smtpquit %s: stat %d", name, i);
 }
 /*
 **  REPLY -- read arpanet reply
@@ -276,34 +282,43 @@ reply()
 
 	for (;;)
 	{
-		char buf[MAXLINE];
 		register int r;
 		register char *p;
 
 		/* actually do the read */
 		if (Xscript != NULL)
 			(void) fflush(Xscript);		/* for debugging */
-		p = sfgets(buf, sizeof buf, SmtpIn);
-		if (p == NULL)
-			return (-1);
-		fixcrlf(buf, TRUE);
+		if (!SmtpClosing)
+		{
+			p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, SmtpIn);
+			if (p == NULL)
+				return (-1);
+			fixcrlf(SmtpReplyBuffer, TRUE);
+		}
 
 		/* log the input in the transcript for future error returns */
 		if (Verbose && !HoldErrs)
-			nmessage(Arpa_Info, "%s", buf);
+			nmessage(Arpa_Info, "%s", SmtpReplyBuffer);
 		if (Xscript != NULL)
-			fprintf(Xscript, "%s\n", buf);
+			fprintf(Xscript, "%s\n", SmtpReplyBuffer);
 
 		/* if continuation is required, we can go on */
-		if (buf[3] == '-' || !isdigit(buf[0]))
+		if (SmtpReplyBuffer[3] == '-' || !isdigit(SmtpReplyBuffer[0]))
 			continue;
 
 		/* decode the reply code */
-		r = atoi(buf);
+		r = atoi(SmtpReplyBuffer);
 
 		/* extra semantics: 0xx codes are "informational" */
 		if (r < 100)
 			continue;
+
+		/* reply code 421 is "Service Shutting Down" */
+		if (r == SMTPCLOSING && !SmtpClosing)
+		{
+			smtpquit("SMTP Shutdown");
+			SmtpClosing = TRUE;
+		}
 
 		return (r);
 	}
@@ -333,7 +348,8 @@ smtpmessage(f, a, b, c)
 		nmessage(Arpa_Info, ">>> %s", buf);
 	if (Xscript != NULL)
 		fprintf(Xscript, ">>> %s\n", buf);
-	fprintf(SmtpOut, "%s\r\n", buf);
+	if (!SmtpClosing)
+		fprintf(SmtpOut, "%s\r\n", buf);
 }
 
 # endif SMTP

@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.134		%G%);
+SCCSID(@(#)deliver.c	3.135		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -286,8 +286,7 @@ deliver(e, firstto)
 		tochain = to;
 
 		/* create list of users for error messages */
-		if (tobuf[0] != '\0')
-			(void) strcat(tobuf, ",");
+		(void) strcat(tobuf, ",");
 		(void) strcat(tobuf, to->q_paddr);
 		define('u', user, e);		/* to user */
 		define('z', to->q_home, e);	/* user's home */
@@ -316,7 +315,7 @@ deliver(e, firstto)
 	}
 
 	/* print out messages as full list */
-	e->e_to = tobuf;
+	e->e_to = tobuf + 1;
 
 	/*
 	**  Fill out any parameters after the $u parameter.
@@ -349,45 +348,66 @@ deliver(e, firstto)
 		/* send the initial SMTP protocol */
 		rcode = smtpinit(m, pv, (ADDRESS *) NULL);
 
-		/* send the recipient list */
-		for (to = tochain; to != NULL; to = to->q_tchain)
-		{
-			int i;
-
-			if (rcode == EX_OK)
-				i = smtprcpt(to);
-			else
-				i = rcode;
-			if (i != EX_OK)
-			{
-				if (i == EX_TEMPFAIL)
-					to->q_flags |= QQUEUEUP;
-				else
-					to->q_flags |= QBADADDR;
-				giveresponse(rcode, m);
-			}
-		}
-
-		/* now send the closing protocol */
 		if (rcode == EX_OK)
-			rcode = smtpfinish(m, e);
-		if (rcode != EX_OK)
-			giveresponse(rcode, m);
-		smtpquit(pv[0], rcode == EX_OK);
+		{
+			/* send the recipient list */
+			tobuf[0] = '\0';
+			for (to = tochain; to != NULL; to = to->q_tchain)
+			{
+				int i;
+
+				e->e_to = to->q_paddr;
+				i = smtprcpt(to);
+				if (i != EX_OK)
+				{
+					if (i == EX_TEMPFAIL)
+						to->q_flags |= QQUEUEUP;
+					else
+						to->q_flags |= QBADADDR;
+					giveresponse(i, m);
+				}
+				else
+				{
+					strcat(tobuf, ",");
+					strcat(tobuf, to->q_paddr);
+				}
+			}
+
+			/* now send the data */
+			if (tobuf[0] == '\0')
+				e->e_to = NULL;
+			else
+			{
+				e->e_to = tobuf + 1;
+				rcode = smtpfinish(m, e);
+			}
+
+			/* now close the connection */
+			smtpquit(pv[0]);
+		}
 	}
 	else
 # endif SMTP
 		rcode = sendoff(e, m, pv, ctladdr);
 
 	/*
-	**  If we got a temporary failure, arrange to queue the
-	**  addressees.
+	**  Do final status disposal.
+	**	We check for something in tobuf for the SMTP case.
+	**	If we got a temporary failure, arrange to queue the
+	**		addressees.
 	*/
 
-	if (rcode == EX_TEMPFAIL)
+	if (tobuf[0] != '\0')
+		giveresponse(rcode, m);
+	if (rcode != EX_OK)
 	{
 		for (to = tochain; to != NULL; to = to->q_tchain)
-			to->q_flags |= QQUEUEUP;
+		{
+			if (rcode == EX_TEMPFAIL)
+				to->q_flags |= QQUEUEUP;
+			else
+				to->q_flags |= QBADADDR;
+		}
 	}
 
 	errno = 0;
@@ -508,15 +528,11 @@ sendoff(e, m, pvp, ctladdr)
 	(void) fclose(mfile);
 
 	i = endmailer(pid, pvp[0]);
-	giveresponse(i, m);
 
 	/* arrange a return receipt if requested */
 	if (e->e_receiptto != NULL && bitset(M_LOCAL, m->m_flags))
 	{
 		e->e_flags |= EF_SENDRECEIPT;
-		if (ExitStat == EX_OK && Xscript != NULL)
-			fprintf(Xscript, "%s... successfully delivered\n",
-				e->e_to);
 		/* do we want to send back more info? */
 	}
 
@@ -842,7 +858,6 @@ giveresponse(stat, m)
 	{
 		Errors++;
 		usrerr(statmsg);
-		CurEnv->e_flags |= EF_FATALERRS;
 	}
 
 	/*
