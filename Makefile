@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.48 1994/05/10 23:12:33 jkh Exp $
+#	$Id: Makefile,v 1.49 1994/05/14 19:45:28 ache Exp $
 #
 
 SUBDIR=
@@ -166,15 +166,14 @@ bootstrapld:	directories cleandist mk includes
 	cd ${.CURDIR}/lib/libc;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/usr.bin/ld/rtld;	make depend all install ${CLEANDIR} obj
 
-# Standard  database  make  routines are slow especially for
-# big passwd files.  You can have much faster routines,  but
-# loose binary compatibility with previous versions and with
-# other BSD-like systems.  If you want to setup much  faster
-# routines,  define  PW_COMPACT  envirnoment  variable (f.e.
-# 'setenv PW_COMPACT' in csh) and  use  bootstrappwd  target
-# into  /usr/src/Makefile.   If you will want to return this
-# changes  back,  use  the  same  target  without   defining
-# PW_COMPACT.
+#    Standard database make routines are slow especially for big passwd files.
+#    Moreover, *pwd.db bases are too big and waste root space.  You can have
+#    much faster routines with small *pwd.db, but loose binary compatibility
+#    with previous versions and with other BSD-like systems.  If you want to
+#    setup much faster routines, define envirnoment variable (f.e. 'setenv
+#    PW_COMPACT' in csh) and use target into /usr/src/Makefile.  If you will
+#    want to return this changes back, use the same target without defining
+#    PW_COMPACT.
 
 bootstrappwd:   #directories
 	-rm -f ${.CURDIR}/lib/libc/obj/getpwent.o ${.CURDIR}/lib/libc/getpwent.o
