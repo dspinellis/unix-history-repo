@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	1.2 (Berkeley) %G%
+ *	@(#)union_vfsops.c	1.3 (Berkeley) %G%
  */
 
 /*
@@ -161,10 +161,14 @@ union_unmount(mp, mntflags, p)
 
 	if (error = union_root(mp, &um_rootvp))
 		return (error);
-	if (um_rootvp->v_usecount > 1)
+	if (um_rootvp->v_usecount > 1) {
+		vput(um_rootvp);
 		return (EBUSY);
-	if (error = vflush(mp, um_rootvp, flags))
+	}
+	if (error = vflush(mp, um_rootvp, flags)) {
+		vput(um_rootvp);
 		return (error);
+	}
 
 #ifdef UNION_DIAGNOSTIC
 	vprint("alias root of lower", um_rootvp);
@@ -178,7 +182,7 @@ union_unmount(mp, mntflags, p)
 	/*
 	 * Release reference on underlying root vnode
 	 */
-	vrele(um_rootvp);
+	vput(um_rootvp);
 	/*
 	 * And blow it away for future re-use
 	 */
@@ -208,12 +212,19 @@ union_root(mp, vpp)
 	/*
 	 * Return locked reference to root.
 	 */
+	VREF(um->um_uppervp);
+	VREF(um->um_lowervp);
 	error = union_allocvp(vpp, mp, (struct vnode *) 0,
 			      (struct componentname *) 0,
 			      um->um_uppervp,
 			      um->um_lowervp);
-	if (error == 0)
+
+	if (error) {
+		vrele(um->um_uppervp);
+		vrele(um->um_lowervp);
+	} else {
 		(*vpp)->v_flag |= VROOT;
+	}
 
 	return (error);
 }

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	1.2 (Berkeley) %G%
+ *	@(#)union_subr.c	1.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,7 +33,14 @@ union_init()
 
 /*
  * allocate a union_node/vnode pair.  the vnode is
- * referenced and locked.
+ * referenced and locked.  the new vnode is returned
+ * via (vpp).  (mp) is the mountpoint of the union filesystem,
+ * (dvp) is the parent directory where the upper layer object
+ * should exist (but doesn't) and (cnp) is the componentname
+ * information which is partially copied to allow the upper
+ * layer object to be created at a later time.  (uppervp)
+ * and (lowervp) reference the upper and lower layer objects
+ * being mapped.  either, but not both, can be nil.
  *
  * all union_nodes are maintained on a singly-linked
  * list.  new nodes are only allocated when they cannot
@@ -64,6 +71,15 @@ union_allocvp(vpp, mp, dvp, cnp, uppervp, lowervp)
 	int error;
 	struct union_node *un;
 	struct union_node **pp;
+	struct vnode *xlowervp = 0;
+
+	if (uppervp == 0 && lowervp == 0)
+		panic("union: unidentifiable allocation");
+
+	if (uppervp && lowervp && (uppervp->v_type != lowervp->v_type)) {
+		xlowervp = lowervp;
+		lowervp = 0;
+	}
 
 loop:
 	for (un = unhead; un != 0; un = un->un_next) {
@@ -74,8 +90,10 @@ loop:
 		    (UNIONTOV(un)->v_mount == mp)) {
 			if (vget(un->un_vnode, 1))
 				goto loop;
-			un->un_lowervp = lowervp;
 			un->un_uppervp = uppervp;
+			if ((lowervp == 0) && un->un_lowervp)
+				vrele(un->un_lowervp);
+			un->un_lowervp = lowervp;
 			*vpp = un->un_vnode;
 			return (0);
 		}
@@ -99,19 +117,25 @@ loop:
 	MALLOC((*vpp)->v_data, void *, sizeof(struct union_node),
 		M_TEMP, M_WAITOK);
 
+	if (uppervp)
+		(*vpp)->v_type = uppervp->v_type;
+	else
+		(*vpp)->v_type = lowervp->v_type;
 	un = VTOUNION(*vpp);
 	un->un_next = 0;
-	un->un_dirvp = dvp;
 	un->un_uppervp = uppervp;
 	un->un_lowervp = lowervp;
 	un->un_vnode = *vpp;
 	un->un_flags = 0;
-	if (cnp) {
+	if (uppervp == 0 && cnp) {
 		un->un_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
 		bcopy(cnp->cn_nameptr, un->un_path, cnp->cn_namelen);
 		un->un_path[cnp->cn_namelen] = '\0';
+		VREF(dvp);
+		un->un_dirvp = dvp;
 	} else {
 		un->un_path = 0;
+		un->un_dirvp = 0;
 	}
 
 #ifdef DIAGNOSTIC
@@ -123,6 +147,12 @@ loop:
 		continue;
 	*pp = un;
 
+	if (un)
+		un->un_flags |= UN_LOCKED;
+
+	if (xlowervp)
+		vrele(xlowervp);
+
 out:
 	unvplock &= ~UN_LOCKED;
 
@@ -130,9 +160,6 @@ out:
 		unvplock &= ~UN_WANT;
 		wakeup((caddr_t) &unvplock);
 	}
-
-	if (un)
-		VOP_LOCK(UNIONTOV(un));
 
 	return (error);
 }
