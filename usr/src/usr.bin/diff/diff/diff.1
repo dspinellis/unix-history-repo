@@ -1,9 +1,9 @@
 .\" Copyright (c) 1980, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)diff.1	6.6 (Berkeley) %G%
+.\"     @(#)diff.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DIFF 1
@@ -39,8 +39,8 @@ convert one file into the other.
 No output is produced if the files are identical.
 .Pp
 Output options (mutually exclusive):
-.Tw Fl
-.Tp Fl c
+.Bl -tag -width Ds
+.It Fl c
 produces a diff with lines of context.
 The default is to present 3 lines of context and may be changed, e.g to 10, by
 .Fl c10 .
@@ -59,7 +59,7 @@ file to the other are marked in both files with with `! '.
 Changes which lie within <context> lines of each other are grouped
 together on output.  (This is a change from the previous ``diff -c''
 but the resulting output is usually much easier to interpret.)
-.Tp Fl e
+.It Fl e
 produces output in a form suitable as input for the editor utility,
 .Xr ed 1 ,
 which can then be used to convert file1 into file2.
@@ -73,26 +73,24 @@ from their state in
 .Ar dir1
 to their state in
 .Ar dir2 .
-.Tp Fl f
+.It Fl f
 identical output of the
 .Fl e
 flag, but in reverse order.  It cannot
 be digested by
 .Xr ed 1 .
-.Tp Fl h
+.It Fl h
 Invokes an alternate algorithm which can handle files of very long lengths.
 There is a trade off. The algorithm can only deal with changes which are
 clearly delimited and brief. Long sections of changes and overlaps will
 confuse it.
-.Tp Fl n
+.It Fl n
 produces a script similar to that of
 .Fl e ,
 but in the opposite order and with a count of changed lines on each
 insert or delete command.  This is the form used by
 .Xr rcsdiff  1  .
-.Tc Fl D
-.Ar string
-.Cx
+.It D Ns Ar string
 creates a merged version of
 .Ar file1
 and
@@ -107,54 +105,53 @@ while defining
 .Ar string
 will yield
 .Ar file2 .
-.Tp
+.El
 .Pp
 Comparison options:
-.Tp Fl b
+.Bl -tag -width Ds
+.It Fl b
 causes trailing blanks (spaces and tabs) to be ignored, and other
 strings of blanks to compare equal.
-.Tp Fl i
+.It Fl i
 ignores the case of letters.  E.g., ``A'' will compare equal to ``a''.
-.Tp Fl t
+.It Fl t
 will expand tabs in output lines.  Normal or
 .Fl c
 output adds character(s) to the front of each line which may screw up
 the indentation of the original source lines and make the output listing
 difficult to interpret.  This option will preserve the original source's
 indentation.
-.Tp Fl w
+.It Fl w
 is similar to
 .Fl b
 but causes whitespace (blanks and tabs) to be totally ignored.  E.g.,
 ``if\ (\ a\ ==\ b\ )'' will compare equal to ``if(a==b)''.
-.Tp
+.El
 .Pp
 Directory comparison options:
-.Tw Fl
-.Tp Fl l
+.Bl -tag -width Ds
+.It Fl l
 long output format; each text file
-.Sf Nm diff \'d
+.Nm diff \'d
 is piped through
 .Xr pr  1
 to paginate it,
 other differences are remembered and summarized
 after all text file differences are reported.
-.Tp Fl r
+.It Fl r
 causes application of
 .Nm diff
 recursively to common subdirectories encountered.
-.Tp Fl s
+.It Fl s
 causes
 .Nm diff
 to report files which are the same, which are otherwise not mentioned.
-.Tc Fl S
-.Ar name
-.Cx
+.It S Ns Ar name
 re-starts a directory
 .Nm diff
 in the middle beginning with file
 .Ar name .
-.Tp
+.El
 .Pp
 If both arguments are directories,
 .Nm diff
@@ -182,7 +179,7 @@ If either the
 or
 .Ar file2
 is
-.Fl ,
+.Sq Fl ,
 the standard input is
 used in its place.
 .Ss Output Style
@@ -197,10 +194,8 @@ output contains lines of these forms, where
 .Va XX , YY , ZZ , QQ
 are line numbers respective of file order.
 .Pp
-.Dp Cx Li XX
-.Ic a
-.Li YY
-.Cx
+.Bl -tag -width "XX,YYcZZ,QQ" -compact
+.It Li XX Ns Ic a Ns Li YY
 At (the end of) line
 .Va XX
 of
@@ -211,11 +206,7 @@ of line
 of
 .Ar file2
 to make them equal.
-.Dp Cx Li XX
-.Ic a
-.Li YY ,
-.Li ZZ
-.Cx
+.It Li XX Ns Ic a Ns Li YY,ZZ
 Same as above, but append the range of lines,
 .Va YY
 through
@@ -225,10 +216,7 @@ of
 to line
 .Va XX
 of file1.
-.Dp Cx Li XX
-.Ic d
-.Li YY
-.Cx
+.It Li XX Ns Ic d Ns Li YY
 At line
 .Va XX
 delete
@@ -239,21 +227,14 @@ would bring
 .Ar file1
 in line with
 .Ar file1 .
-.Dp Cx Li XX ,
-.Li YY
-.Ic d
-.Li ZZ
-.Cx
+.It Li XX,YY Ns Ic d Ns Li ZZ
 Delete the range of lines
 .Va XX
 through
 .Va YY
 in
 .Ar file1 .
-.Dp Cx Li XX
-.Ic c
-.Li YY
-.Cx
+.It Li XX Ns Ic c Ns Li YY
 Change the line
 .Va XX
 in
@@ -262,32 +243,19 @@ to the line
 .Va YY
 in
 .Ar file2.
-.Dp Cx Li XX ,
-.Li YY
-.Ic c
-.Li ZZ
-.Cx
+.It Li XX,YY Ns Ic c Ns Li ZZ
 Replace the range of specified lines with the line
 .Va ZZ .
-.Dp Cx Li XX ,
-.Li YY
-.Ic c
-.Li ZZ ,
-.Li QQ
-.Cx
+.It Li XX,YY Ns Ic c Ns Li ZZ,QQ
 Replace the range
-.Cx Va XX ,
-.Va YY
-.Cx
+.Va XX , Ns YY
 from
 .Ar file1
 with the range
-.Cx Va ZZ ,
-.Va QQ
-.Cx
+.Va ZZ , Ns QQ
 from
 .Ar file2 .
-.Dp
+.El
 .Pp
 These lines resemble
 .Xr ed 1
@@ -314,52 +282,48 @@ identical
 pairs (where num1 = num2) are abbreviated as a single
 number.
 .Sh ENVIRONMENT
-.Tw Fl
-.Tp Ev TMPDIR
+.Bl -tag -width TMPDIR
+.It Ev TMPDIR
 If the environment variable
 .Ev TMPDIR
 exists,
-.Nm Diff
-will use the name specified by
+.Nm diff
+will use the directory specified by
 .Ev TMPDIR
-as an alternate temporary directory.
-.Tp
+as the temporary directory.
+.El
 .Sh FILES
-.Dw /usr/bin/diffh
-.Di L
-.Dp Pa /tmp/d?????
-.br
-.Dp Pa /usr/bin/diffh
+.Bl -tag -width /usr/bin/diffh -compact
+.It Pa /tmp/d?????
+.It Pa /usr/bin/diffh
 Alternate algorithm version (used by option
 .Fl h ) .
-.Dp Pa /usr/bin/diff
+.It Pa /usr/bin/diff
 for directory diffs
-.Dp Pa /usr/bin/pr
+.It Pa /usr/bin/pr
 used by the
 .Fl l
 option.
-.Dp
+.El
 .Sh SEE ALSO
 .Xr cmp 1 ,
 .Xr cc 1 ,
 .Xr comm 1 ,
 .Xr ed 1 ,
 .Xr diff3 1
-.Sh HISTORY
-.Nm Diff
-appeared in Version 6 AT&T Unix.
 .Sh DIAGNOSTICS
 The
 .Nm diff
 utility exits with one of the following values:
-.Dw Ds
-.Dp \&0
+.Pp
+.Bl -tag -width Ds -compact -offset indent
+.It \&0
 No differences were found.
-.Dp \&1
+.It \&1
 Differences were found.
-.Dp \&>\&1
+.It "\&>\&1"
 An error occurred.
-.Dp
+.El
 .Sh BUGS
 The
 .Fl f
@@ -387,4 +351,8 @@ algorithm if they are not equal.
 This may cause a small amount of spurious output if the files
 then turn out to be identical because the only differences are
 insignificant white space or case differences.
-.\" .Sh STANDARDS
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v6 .
