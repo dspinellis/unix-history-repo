@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mt.c	4.7 (Berkeley) 83/02/09";
+static	char *sccsid = "@(#)mt.c	4.8 (Berkeley) 83/05/08";
 /*
  * mt --
  *   magnetic tape manipulation program
@@ -41,17 +41,17 @@ main(argc, argv)
 	register char *cp;
 	register struct commands *comp;
 
-	if (argc < 2) {
-		fprintf(stderr, "usage: mt [ -f device ] command [ count ]\n");
-		exit(1);
-	}
-	if ((equal(argv[1], "-t") || equal(argv[1], "-f")) && argc > 2) {
+	if (argc > 2 && (equal(argv[1], "-t") || equal(argv[1], "-f"))) {
 		argc -= 2;
 		tape = argv[2];
 		argv += 2;
 	} else
 		if ((tape = getenv("TAPE")) == NULL)
 			tape = DEFTAPE;
+	if (argc < 2) {
+		fprintf(stderr, "usage: mt [ -f device ] command [ count ]\n");
+		exit(1);
+	}
 	cp = argv[1];
 	for (comp = com; comp->c_name != NULL; comp++)
 		if (strncmp(cp, comp->c_name, strlen(cp)) == 0)
