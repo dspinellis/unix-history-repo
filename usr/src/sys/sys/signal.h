@@ -1,4 +1,4 @@
-/*	signal.h	6.1	83/08/14	*/
+/*	signal.h	6.2	84/08/30	*/
 
 #ifndef	NSIG
 #define NSIG	32
@@ -90,3 +90,9 @@ struct	sigcontext {
 #define	SIG_HOLD	(int (*)())3
 #endif
 #endif
+
+/*
+ * Macro for converting signal number to a mask suitable for
+ * sigblock().
+ */
+#define sigmask(m)	(1 << ((m)-1))
