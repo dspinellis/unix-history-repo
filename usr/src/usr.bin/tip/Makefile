@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # make file for intermachine communications package
 #
@@ -17,6 +17,8 @@
 #	BIZCOMP
 #	DEC DF02-AC, DF03-AC
 #	DEC DN-11/Able Quadracall
+#	HAYES and Hayes emulators
+#	USR COURIER (2400 baud)
 #	VENTEL 212+
 #	VADIC 831 RS232 adaptor
 #	VADIC 3451
@@ -24,7 +26,7 @@
 #
 # Configuration defines:
 #	DF02, DF03, DN11	ACU's supported
-#	  BIZ1031, BIZ1022, VENTEL, V831, V3451
+#	  BIZ1031, BIZ1022, VENTEL, V831, V3451, HAYES, COURIER
 #	ACULOG			turn on tip logging of ACU use
 #	PRISTINE		no phone #'s put in ACU log file
 #	CONNECT			worthless command
@@ -37,8 +39,8 @@
 ADM=	usr/adm
 OWNER=	uucp
 GROUP=	daemon
-CONFIG=	-DV831 -DVENTEL -DHAYES
-CFLAGS=	-O -DDEFBR=300 -DDEFFS=BUFSIZ -DACULOG -DPRISTINE
+CONFIG=	-DV831 -DVENTEL -DHAYES -DCOURIER
+CFLAGS=	-O -DDEFBR=1200 -DDEFFS=BUFSIZ -DACULOG -DPRISTINE
 LDFLAGS=
 OBJS=	acu.o cmds.o cmdtab.o cu.o hunt.o \
 	log.o partab.o remote.o tip.o tipout.o value.o vars.o
