@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.10	85/03/12	*/
+/*	kern_exec.c	6.11	85/05/27	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -337,7 +337,7 @@ getxfile(ip, ep, nargc, uid, gid)
 	register struct exec *ep;
 	int nargc, uid, gid;
 {
-	register size_t ts, ds, ss;
+	size_t ts, ds, ids, uds, ss;
 	int pagi;
 
 	if (ep->a_magic == 0413)
@@ -365,11 +365,15 @@ getxfile(ip, ep, nargc, uid, gid)
 
 	/*
 	 * Compute text and data sizes and make sure not too large.
+	 * NB - Check data and bss separately as they may overflow 
+	 * when summed together.
 	 */
 	ts = clrnd(btoc(ep->a_text));
+	ids = clrnd(btoc(ep->a_data));
+	uds = clrnd(btoc(ep->a_bss));
 	ds = clrnd(btoc(ep->a_data + ep->a_bss));
 	ss = clrnd(SSIZE + btoc(nargc));
-	if (chksize((unsigned)ts, (unsigned)ds, (unsigned)ss))
+	if (chksize((unsigned)ts, (unsigned)ids, (unsigned)uds, (unsigned)ss))
 		goto bad;
 
 	/*
