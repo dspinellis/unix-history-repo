@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.19 (Berkeley) %G%
+ *	@(#)if_loop.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -102,9 +102,10 @@ looutput(ifp, m, dst, rt)
 #endif
 	m->m_pkthdr.rcvif = ifp;
 
-	if (rt && rt->rt_flags & RTF_REJECT) {
+	if (rt && rt->rt_flags & (RTF_REJECT|RTF_BLACKHOLE)) {
 		m_freem(m);
-		return (rt->rt_flags & RTF_HOST ? EHOSTUNREACH : ENETUNREACH);
+		return (rt->rt_flags & RTF_BLACKHOLE ? 0 :
+		        rt->rt_flags & RTF_HOST ? EHOSTUNREACH : ENETUNREACH);
 	}
 	ifp->if_opackets++;
 	ifp->if_obytes += m->m_pkthdr.len;
