@@ -1,8 +1,9 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)qsort.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)qsort.3	6.3 (Berkeley) %G%
 .\"
 .TH QSORT 3  ""
 .UC 4
@@ -10,23 +11,44 @@
 qsort \- quicker sort
 .SH SYNOPSIS
 .nf
-.B qsort(base, nel, width, compar)
-.B char *base;
-.B int (*compar)();
+.ft B
+#include <stdlib.h>
+
+void
+qsort(void *base, size_t nmemb, size_t size,
+int (*compar)(const void *, const void *));
+.ft R
 .fi
 .SH DESCRIPTION
 .I Qsort
-is an implementation of the quicker-sort algorithm.
-The first argument is a pointer to the base of the data;
-the second is the number of elements;
-the third is the width of an element in bytes;
-the last is the name of the comparison routine
-to be called with two arguments which are pointers
-to the elements being compared.
-The routine must return an integer less than, equal to, or greater than 0
-according as the first argument is to be considered
+is an implementation of C.A.R. Hoare's ``quicksort'' algorithm.
+.PP
+The
+.I qsort 
+function sorts an array of
+.I nmemb
+objects, the initial member of which is pointed to by
+.IR base .
+The size of each object is specified by
+.IR size .
+.PP
+The contents of the array are sorted in ascending order according to
+a comparison function pointed to by
+.IR compar ,
+which is called with two arguments that point to the objects being
+compared.
+.PP
+The comparison function must return an integer less than, equal to, or
+greater than zero if the first argument is considered to be respectively
 less than, equal to, or greater than the second.
+.PP
+If two members compare as equal, their order in the sorted array is
+undefined.
 .SH "SEE ALSO"
 sort(1)
+.SH STANDARDS
+.B Qsort
+conforms to ANSI X3.159-1989 (``ANSI C'').
 .SH BUGS
-The comparison routine may not itself call \fIqsort\fP.
+The comparison routine may not itself call
+.IR qsort (3).
