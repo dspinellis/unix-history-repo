@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.14 %G%";
+static	char sccsid[] = "@(#)call.c 1.15 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -311,7 +311,7 @@ call(p, argv, porf, psbn)
 		 *	space into which to save the display.
 		 */
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
-		putRV( 0 , cbn , p -> value[ NL_OFFS ] ,
+		putRV( 0 , psbn , p -> value[ NL_OFFS ] ,
 			p -> extra_flags , P2PTR|P2STRTY );
 		if ( !noarguments ) {
 		    putop( P2LISTOP , P2INT );
