@@ -1,4 +1,4 @@
-/*	vdreg.h	1.8	87/02/18	*/
+/*	vdreg.h	1.9	87/03/10	*/
 
 /*
  * Versabus VDDC/SMDE disk controller definitions.
@@ -174,18 +174,19 @@ typedef struct {
  */
 /* read/write trailer */
 typedef struct {
-	char	*memadr;	/* memory address */
+	u_long	memadr;		/* memory address */
 	u_long	wcount;		/* 16 bit word count */
 	dskadr	disk;		/* disk address */
 } trrw;
 
 /* scatter/gather trailer */
+#define	VDMAXPAGES	32
 typedef struct {
 	trrw	start_addr;
 	struct {
-		char	*nxt_addr;
+		u_long	nxt_addr;
 		u_long	nxt_len;
-	} addr_chain[126];
+	} addr_chain[VDMAXPAGES+1];
 } trsg;
 
 /* seek trailer format */
@@ -230,9 +231,7 @@ struct dcb {
 	short	err_cyl;	/* error cylinder adr */
 	union {
 		trseek	sktrail;	/* seek command trailer */
-#ifdef notdef
 		trsg	sgtrail;	/* scatter/gather trailer */
-#endif
 		trrw	rwtrail;	/* read/write trailer */
 		trfmt	fmtrail;	/* format trailer */
 		treset	rstrail;	/* reset/configure trailer */
@@ -309,10 +308,10 @@ struct dcb {
 /* controller related errors */
 #define	VDERR_CTLR	(DCBS_CHE|DCBS_OAB|DCBS_IVC|DCBS_NEM)
 /* potentially recoverable errors */
-#define	VDERR_SOFT \
+#define	VDERR_RETRY \
     (VDERR_DRIVE|VDERR_CTLR|DCBS_DCE|DCBS_DPE|DCBS_HCRC|DCBS_HCE)
 /* uncorrected data errors */
-#define	VDERR_HARD	(VDERR_SOFT|DCBS_WPT|DCBS_UDE)
+#define	VDERR_HARD	(VDERR_RETRY|DCBS_WPT|DCBS_UDE)
 
 /*
  * DCB status codes.

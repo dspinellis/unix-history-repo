@@ -1,4 +1,4 @@
-/*	vd.c	1.16	87/03/01	*/
+/*	vd.c	1.17	87/03/10	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -32,7 +32,7 @@
 
 #define	COMPAT_42
 
-#define	VDMAXIO		(MAXBPTE*NBPG)
+#define	VDMAXIO		(VDMAXPAGES * NBPG)
 
 #define vdunit(dev)	(minor(dev) >> 3)
 #define vdpart(dev)	(minor(dev) & 0x07)
@@ -59,9 +59,7 @@ struct vdsoftc {
 	u_long	vd_mdcbphys;	/* physical address of vd_mdcb */
 	struct	dcb vd_dcb;	/* i/o command block */
 	u_long	vd_dcbphys;	/* physical address of vd_dcb */
-	struct	pte *vd_map;	/* i/o page map */
-	caddr_t	vd_utl;		/* mapped i/o space */
-	caddr_t	vd_rawbuf;	/* buffer for raw+swap i/o */
+	struct	vb_buf vd_rbuf;	/* vba resources */
 } vdsoftc[NVD];
 
 /*
@@ -151,8 +149,8 @@ vdprobe(reg, vm)
 	/*
 	 * Allocate page tables and i/o buffer.
 	 */
-	vbmapalloc(btoc(VDMAXIO)+1, &vd->vd_map, &vd->vd_utl);
-	vd->vd_rawbuf = calloc(VDMAXIO);
+	vbainit(&vd->vd_rbuf, VDMAXIO,
+	    vd->vd_type == VDTYPE_VDDC ? VB_24BIT : VB_32BIT);
 	br = 0x17, cvec = 0xe0 + vm->um_ctlr;	/* XXX */
 	return (sizeof (struct vddevice));
 }
@@ -185,6 +183,9 @@ vdslave(vi, addr)
 	 * at attach time.
 	 */
 	lp->d_secsize = DEV_BSIZE / 2;		/* XXX */
+if (vi->ui_ctlr)
+lp->d_nsectors = 48;
+else
 	lp->d_nsectors = 32;
 	lp->d_ntracks = 24;
 	lp->d_ncylinders = 711;
@@ -192,9 +193,6 @@ vdslave(vi, addr)
 	return (vdreset_drive(vi));
 }
 
-/*
- * Read pack label.
- */
 vdattach(vi)
 	register struct vba_device *vi;
 {
@@ -202,13 +200,6 @@ vdattach(vi)
 	register struct dksoftc *dk = &dksoftc[unit];
 	register struct disklabel *lp;
 
-	/*
-	 * Try to initialize device and read pack label.
-	 */
-	if (vdinit(vdminor(unit, 0), 0) != 0) {
-		printf(": unknown drive type");
-		return;
-	}
 	/*
 	 * Initialize invariant portion of
 	 * dcb used for overlapped seeks.
@@ -219,6 +210,13 @@ vdattach(vi)
 	dk->dk_dcb.trailcnt = sizeof (trseek) / sizeof (long);
 	dk->dk_dcb.trail.sktrail.skaddr.sector = 0;
 	dk->dk_dcbphys = vtoph((struct proc *)0, (unsigned)&dk->dk_dcb);
+	/*
+	 * Try to initialize device and read pack label.
+	 */
+	if (vdinit(vdminor(unit, 0), 0) != 0) {
+		printf(": unknown drive type");
+		return;
+	}
 	lp = &dklabel[unit];
 	printf(": %s <ntrak %d, ncyl %d, nsec %d>",
 	    lp->d_typename, lp->d_ntracks, lp->d_ncylinders, lp->d_nsectors);
@@ -301,8 +299,8 @@ vdclose(dev, flags)
 {
 	register int unit = vdunit(dev);
 	register struct dksoftc *dk = &dksoftc[unit];
+	int part = vdpart(dev);
 
-	dk->dk_openpart &= ~(1 << vdpart(dev));
 	/*
 	 * Should wait for i/o to complete on this partition
 	 * even if others are open, but wait for work on blkflush().
@@ -316,6 +314,9 @@ vdclose(dev, flags)
 	}
 }
 
+/*
+ * Read pack label.
+ */
 vdinit(dev, flags)
 	dev_t dev;
 	int flags;
@@ -326,6 +327,7 @@ vdinit(dev, flags)
 	struct vba_device *vi;
 	struct disklabel *dlp;
 	int unit = vdunit(dev), error = 0;
+	char *msg = "no disk label";
 	extern int cold;
 
 	dk = &dksoftc[unit];
@@ -373,10 +375,13 @@ vdinit(dev, flags)
 		else
 			dk->dk_state = OPEN;
 	} else {
+		if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC)
+			msg = "disk label corrupted";
 		if (cold)
-			printf(": no disk label");
+			printf(": %s", msg);
 		else
-			log(LOG_ERR, "dk%d: no disk label\n", vi->ui_unit);
+			log(LOG_ERR, "dk%d: %s\n", vi->ui_unit, msg);
+printf("data %x %x %x, magic %x\n", bp->b_un.b_words[0], bp->b_un.b_words[1], bp->b_un.b_words[2], dlp->d_magic);
 #ifdef COMPAT_42
 		if (!vdmaptype(vi, lp)) {
 			error = ENXIO;
@@ -415,8 +420,6 @@ vdstrategy(bp)
 	daddr_t sz, maxsz;
 	int part, s;
 
-	sz = bp->b_bcount;
-	sz = (sz + DEV_BSIZE - 1) >> DEV_BSHIFT;
 	unit = vdunit(bp->b_dev);
 	if (unit > NDK) {
 		bp->b_error = ENXIO;
@@ -428,6 +431,7 @@ vdstrategy(bp)
 		bp->b_error = ENXIO;
 		goto bad;
 	}
+	sz = (bp->b_bcount + lp->d_secsize - 1) / lp->d_secsize;
 	dk = &dksoftc[unit];
 	if (dk->dk_state < OPEN)
 		goto q;
@@ -452,7 +456,6 @@ vdstrategy(bp)
 	}
 	bp->b_cylin = (sn + lp->d_partitions[part].p_offset) / lp->d_secpercyl;
 q:
-	vbasetup(bp, lp->d_secsize);
 	s = spl7();
 	dp = &dkutab[vi->ui_unit];
 	disksort(dp, bp);
@@ -544,7 +547,10 @@ loop:
 	    (dp = vm->um_tab.b_seekf) == NULL)
 		return;
 	if ((bp = dp->b_actf) == NULL) {
-		vm->um_tab.b_actf = dp->b_forw;
+		if (dp == vm->um_tab.b_actf)
+			vm->um_tab.b_actf = dp->b_forw;
+		else
+			vm->um_tab.b_seekf = dp->b_forw;
 		goto loop;
 	}
 
@@ -572,8 +578,8 @@ loop:
 	vd->vd_dcb.operrsta = 0;
 	vd->vd_dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	vd->vd_dcb.trailcnt = sizeof (trrw) / sizeof (long);
-	vd->vd_dcb.trail.rwtrail.memadr = (char *)
-	    vbastart(bp, vd->vd_rawbuf, (long *)vd->vd_map, vd->vd_utl);
+	vd->vd_dcb.trail.rwtrail.memadr =
+		vbasetup(bp, &vd->vd_rbuf, lp->d_secsize);
 	vd->vd_dcb.trail.rwtrail.wcount = (bp->b_bcount+1) >> 1;
 	vd->vd_dcb.trail.rwtrail.disk.cylinder = bp->b_cylin;
 	vd->vd_dcb.trail.rwtrail.disk.track = tn;
@@ -622,9 +628,9 @@ loop:
 		vm->um_tab.b_actl->b_forw = vm->um_tab.b_seekf;
 	else
 		vm->um_tab.b_actf = vm->um_tab.b_seekf;
-	vm->um_tab.b_actl = vm->um_tab.b_seekl;
+	if (vm->um_tab.b_seekf)
+		vm->um_tab.b_actl = vm->um_tab.b_seekl;
 	vm->um_tab.b_seekf = 0;
-	vm->um_tab.b_seekl = 0;
 
 	/*
 	 * Initiate operation.
@@ -645,6 +651,7 @@ vdintr(ctlr)
 	register struct vba_device *vi;
 	register struct vdsoftc *vd = &vdsoftc[ctlr];
 	register status;
+	int ecode;
 	struct dksoftc *dk;
 
 	vd->vd_wticks = 0;
@@ -668,6 +675,10 @@ vdintr(ctlr)
 	uncache(&vd->vd_dcb.operrsta);
 	status = vd->vd_dcb.operrsta;
 	if (status & VDERR_HARD) {
+		if (vd->vd_type == VDTYPE_SMDE) {
+			uncache(&vd->vd_dcb.err_code);
+			ecode = vd->vd_dcb.err_code;
+		}
 		if (status & DCBS_WPT) {
 			/*
 			 * Give up on write locked devices immediately.
@@ -693,10 +704,8 @@ vdintr(ctlr)
 			harderr(bp, "dk");
 			printf("status %x (%b)", status,
 			   status &~ DONTCARE, VDERRBITS);
-			if (vd->vd_type == VDTYPE_SMDE) {
-				uncache(&vd->vd_dcb.err_code);
-				printf(" ecode %x", vd->vd_dcb.err_code);
-			}
+			if (vd->vd_type == VDTYPE_SMDE)
+				printf(" ecode %x", ecode);
 			printf("\n");
 		}
 	} else if (status & DCBS_SOFT)
@@ -709,7 +718,7 @@ vdintr(ctlr)
 		dp->b_errcnt = 0;
 		dp->b_actf = bp->av_forw;
 		bp->b_resid = 0;
-		vbadone(bp, vd->vd_rawbuf, (long *)vd->vd_map, vd->vd_utl);
+		vbadone(bp, &vd->vd_rbuf);
 		biodone(bp);
 		/*
 		 * If this unit has more work to do,
@@ -724,7 +733,7 @@ vdintr(ctlr)
 	 * If there are devices ready to
 	 * transfer, start the controller.
 	 */
-	if (vm->um_tab.b_actf)
+	if (vm->um_tab.b_actf || vm->um_tab.b_seekf)
 		vdstart(vm);
 }
 
@@ -736,7 +745,7 @@ vdsofterr(vd, bp, dcb)
 	int unit = vdunit(bp->b_dev), status = dcb->operrsta;
 	char part = 'a' + vdpart(bp->b_dev);
 
-	if (status != (DCBS_DCE|DCBS_CCD|DCBS_SOFT|DCBS_ERR)) {
+	if (status != (DCBS_CCD|DCBS_SOFT|DCBS_ERR|DCBS_DONE)) {
 		if (vd->vd_type == VDTYPE_SMDE)
 			uncache(&dcb->err_code);
 		log(LOG_WARNING, "dk%d%c: soft error sn%d status %b ecode %x\n",
@@ -854,17 +863,7 @@ vdwatch()
 		if (vm == 0 || vm->um_alive == 0)
 			continue;
 		vd = &vdsoftc[ctlr];
-		if (!vm->um_tab.b_active) {
-			for (unit = 0; unit < NDK; unit++)
-				if (dkutab[unit].b_active &&
-				    vddinfo[unit]->ui_mi == vm)
-					goto active;
-			vd->vd_wticks = 0;
-			continue;
-		}
-active:
-		vd->vd_wticks++;
-		if (vd->vd_wticks >= 20) {
+		if (vm->um_tab.b_active && vd->vd_wticks++ >= 20) {
 			vd->vd_wticks = 0;
 			printf("vd%d: lost interrupt\n", ctlr);
 			/* abort pending dcb's and restart controller */
@@ -885,7 +884,7 @@ vddump(dev)
 	register struct vdsoftc *vd;
 	struct dksoftc *dk;
 	int part, unit, num;
-	caddr_t start;
+	u_long start;
 
 	start = 0;
 	unit = vdunit(dev);
@@ -918,7 +917,7 @@ vddump(dev)
 		int nsec, cn, sn, tn;
 
 		nsec = MIN(num, DBSIZE);
-		sn = dumplo + (unsigned)start / lp->d_secsize;
+		sn = dumplo + start / lp->d_secsize;
 		cn = (sn + lp->d_partitions[vdpart(dev)].p_offset) /
 		    lp->d_secpercyl;
 		sn %= lp->d_secpercyl;
@@ -1012,7 +1011,7 @@ top:
 	if (vd->vd_type == VDTYPE_SMDE) {
 		vd->vd_dcb.trailcnt = sizeof (treset) / sizeof (long);
 		vd->vd_dcb.trail.rstrail.nsectors = lp->d_nsectors;
-		vd->vd_dcb.trail.rstrail.slip_sec = lp->d_trackskew;
+		vd->vd_dcb.trail.rstrail.slip_sec = lp->d_sparespertrack;
 		vd->vd_dcb.trail.rstrail.recovery = 0x18f;
 	} else
 		vd->vd_dcb.trailcnt = 2;		/* XXX */
@@ -1127,14 +1126,14 @@ struct	vdst {
 		{349056, 57600}		/* h cyl 606 - 705 */
 	},
 	{ 44, 20, 842, "egl",
-		{0,	 26400},	/* egl0a cyl   0 - 59 */
-		{26400,	 33000},	/* egl0b cyl  60 - 134 */
-		{59400,	 308880}, 	/* egl0c cyl 135 - 836 */
-		{368280, 2640}, 	/* egl0d cyl 837 - 842 */
-		{0, 368280},		/* egl0e cyl 0 - 836 */
-		{0, 370920}, 		/* egl0f cyl 0 - 842 */
-		{59400, 155320},	/* egl0g cyl 135 - 487 */
-		{214720, 153560}	/* egl0h cyl 488 - 836 */
+		{0,	 52800},	/* egl0a cyl   0 - 59 */
+		{52800,	 66000},	/* egl0b cyl  60 - 134 */
+		{118800, 617760}, 	/* egl0c cyl 135 - 836 */
+		{736560, 5280}, 	/* egl0d cyl 837 - 842 */
+		{0, 	 736560},	/* egl0e cyl 0 - 836 */
+		{0, 	 741840}, 	/* egl0f cyl 0 - 842 */
+		{118800, 310640},	/* egl0g cyl 135 - 487 */
+		{429440, 307120}	/* egl0h cyl 488 - 836 */
 	},
 	{ 64, 10, 823, "fuj",
 		{0,	 19200},	/* fuj0a cyl   0 - 59 */
@@ -1208,8 +1207,8 @@ vdmaptype(vi, lp)
 		vd->vd_dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 		vd->vd_dcb.devselect = vi->ui_slave;
 		vd->vd_dcb.trailcnt = sizeof (trrw) / sizeof (long);
-		vd->vd_dcb.trail.rwtrail.memadr = (char *)
-		    vtoph((struct proc *)0, (unsigned)vd->vd_rawbuf);
+		vd->vd_dcb.trail.rwtrail.memadr =
+		    vtoph((struct proc *)0, (unsigned)vd->vd_rbuf.vb_rawbuf);
 		vd->vd_dcb.trail.rwtrail.wcount = 512 / sizeof(short);
 		vd->vd_dcb.operrsta = 0;
 		vd->vd_dcb.trail.rwtrail.disk.cylinder = p->ncyl - 2;

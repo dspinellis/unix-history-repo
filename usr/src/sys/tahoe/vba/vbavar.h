@@ -1,4 +1,4 @@
-/*	vbavar.h	1.4	86/12/15	*/
+/*	vbavar.h	1.5	87/03/10	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -98,6 +98,53 @@ struct vba_driver {
 	struct	vba_ctlr **ud_minfo;	/* backpointers to vbminit structs */
 };
 
+/*
+ * Common state for Versabus driver I/O resources,
+ * including memory for intermediate buffer and page map,
+ * allocated by vbainit.
+ */
+struct vb_buf {
+	/* these fields set up once by vbainit */
+	int	vb_flags;		/* device parameters */
+	struct	pte *vb_map;		/* private page entries */
+	caddr_t	vb_utl;			/* virtual addresses mapped by vb_map */
+	caddr_t	vb_rawbuf;		/* intermediate buffer */
+	u_long	vb_physbuf;		/* phys addr of intermediate buffer */
+	u_long	vb_maxphys;		/* physical address limit */
+	/* remaining fields apply to current transfer: */
+	int	vb_copy;		/* copy to/from intermediate buffer */
+	int	vb_iskernel;		/* is to/from kernel address space */
+};
+
+/*
+ * flags to vbainit
+ */
+#define	VB_32BIT	0x00		/* device uses 32-bit addressing */
+#define	VB_24BIT	0x01		/* device uses 24-bit addressing */
+#define	VB_20BIT	0x02		/* device uses 20-bit addressing */
+#define	VB_SCATTER	0x04		/* device does scatter-gather */
+
+/*
+ * hardware addressing limits
+ */
+#define	VB_MAXADDR20	0x000fffff	/* highest addr for 20-bit */
+#define	VB_MAXADDR24	0x007fffff	/* highest addr for 23/24-bit */
+#define	VB_MAXADDR32	0x3effffff	/* highest addr for 32-bit */
+
+/*
+ * Statistics on vba operations.
+ */
+struct vbastat {
+	u_long	kw_raw;			/* wrote from kernel DMA buffer */
+	u_long	uw_raw;			/* wrote from user DMA buffer */
+	u_long	kw_copy;		/* write copied from kernel */
+	u_long	uw_copy;		/* write copied from user */
+	u_long	kr_raw;			/* read, purged kernel DMA buffer */
+	u_long	ur_raw;			/* invalidated key on user DMA buffer */
+	u_long	kr_copy;		/* read copied to kernel */
+	u_long	ur_copy;		/* read copied to user & inval'd key */
+};
+
 #ifndef LOCORE
 #ifdef KERNEL
 /*
@@ -105,6 +152,7 @@ struct vba_driver {
  */
 int	numvba;					/* number of uba's */
 struct	vba_hd vba_hd[];
+struct	vbastat vbastat;
 
 /*
  * Vbminit and vbdinit initialize the mass storage controller and
@@ -119,5 +167,6 @@ extern	struct	vba_device vbdinit[];
  */
 extern	struct pte VMEMmap[];	/* vba device addr pte's */
 extern	caddr_t vmem;		/* vba device addr space */
+u_long	vbasetup();
 #endif KERNEL
 #endif !LOCORE
