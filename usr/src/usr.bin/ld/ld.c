@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -2336,11 +2336,7 @@ digest_symbols ()
   /* If necessary, pad text section to full page in the file.
      Include the padding in the text segment size.  */
 
-#ifdef NMAGIC
-  if (magic == ZMAGIC || magic == NMAGIC)
-#else
   if (magic == ZMAGIC)
-#endif
     {
       int text_end = text_size + N_TXTOFF (outheader);
       text_pad = ((text_end + page_size - 1) & (- page_size)) - text_end;
@@ -4204,7 +4200,7 @@ write_file_syms (entry, syms_written_addr)
     {
       struct nlist nl;
 
-      nl.n_type = N_TEXT;
+      nl.n_type = N_FN | N_EXT;
       nl.n_un.n_strx = assign_string_table_index (entry->local_sym_name);
       nl.n_value = entry->text_start_address;
       nl.n_desc = 0;
