@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	7.4 (Berkeley) %G%
+#	@(#)vnode_if.src	7.5 (Berkeley) %G%
 #
 vop_lookup {
 	IN struct vnode *dvp;
@@ -195,6 +195,7 @@ vop_bmap {
 	IN daddr_t bn;
 	OUT struct vnode **vpp;
 	IN daddr_t *bnp;
+	OUT int *runp;
 };
 
 #vop_strategy {
