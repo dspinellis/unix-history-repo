@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9.1.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	rlogind
 SRCS=	rlogind.c
