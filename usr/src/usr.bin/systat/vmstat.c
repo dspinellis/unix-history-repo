@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,7 +20,6 @@ static char sccsid[] = "@(#)vmstat.c	5.11 (Berkeley) %G%";
 #include <sys/vm.h>
 #include <sys/buf.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
@@ -135,24 +134,36 @@ static	enum state { BOOT, TIME, RUN } state = TIME;
 /*
  * These constants define where the major pieces are laid out
  */
-#define PROCSROW	13	/* uses 2 rows and 20 cols */
-#define PROCSCOL	 0
-#define NAMEIROW	20	/* uses 3 rows and 38 cols */
-#define NAMEICOL	 0
-#define GRAPHROW	16	/* uses 3 rows and 51 cols */
-#define GRAPHCOL	 0
-#define GENSTATROW	14	/* uses 9 rows and 11 cols */
-#define GENSTATCOL	51
-#define INTSROW		 2	/* uses all rows to bottom and 17 cols */
-#define INTSCOL		63
 #define STATROW		 0	/* uses 1 row and 68 cols */
 #define STATCOL		 2
-#define PAGEROW		 2	/* uses 11 rows and 26 cols */
-#define PAGECOL		36
 #define MEMROW		 2	/* uses 4 rows and 31 cols */
 #define MEMCOL		 0
-#define DISKROW		 7	/* uses 5 rows and 35 cols */
+#define PAGEROW		 2	/* uses 4 rows and 26 cols */
+#define PAGECOL		36
+#define INTSROW		 2	/* uses all rows to bottom and 17 cols */
+#define INTSCOL		63
+#define PROCSROW	 7	/* uses 2 rows and 20 cols */
+#define PROCSCOL	 0
+#define VMSTATROW	 7	/* uses 2 rows and 26 cols */
+#define VMSTATCOL	25
+#define FILLSTATROW	 7	/* uses 6 rows and 10 cols */
+#define FILLSTATCOL	53
+#define GRAPHROW	10	/* uses 3 rows and 51 cols */
+#define GRAPHCOL	 0
+#define NAMEIROW	14	/* uses 3 rows and 38 cols */
+#define NAMEICOL	 0
+#define GENSTATROW	14	/* uses 9 rows and 11 cols */
+#define GENSTATCOL	52
+#define DISKROW		18	/* uses 5 rows and 50 cols (for 9 drives) */
 #define DISKCOL		 0
+
+#define	DRIVESPACE	 9	/* max # for space */
+
+#if DK_NDRIVE > DRIVESPACE
+#define	MAXDRIVES	DRIVESPACE	 /* max # to display */
+#else
+#define	MAXDRIVES	DK_NDRIVE	 /* max # to display */
+#endif
 
 initkre()
 {
@@ -229,8 +240,6 @@ fetchkre()
 	getinfo(&s, state);
 }
 
-#define	MAXDRIVES	6		/* max # to display */
-
 labelkre()
 {
 	register i, j;
@@ -244,12 +253,12 @@ labelkre()
 
 	mvprintw(MEMROW + 1, MEMCOL + 28, "Free");
 
-	mvprintw(PAGEROW, PAGECOL, "        PAGING    SWAPING ");
+	mvprintw(PAGEROW, PAGECOL,     "        PAGING   SWAPPING ");
 	mvprintw(PAGEROW + 1, PAGECOL, "        in  out   in  out ");
 	mvprintw(PAGEROW + 2, PAGECOL, "count");
 	mvprintw(PAGEROW + 3, PAGECOL, "pages");
 
-	mvprintw(INTSROW, INTSCOL, " Interrupts");
+	mvprintw(INTSROW, INTSCOL + 3, " Interrupts");
 	mvprintw(INTSROW + 1, INTSCOL + 9, "total");
 
 	mvprintw(GENSTATROW, GENSTATCOL + 8, "Csw");
@@ -262,14 +271,14 @@ labelkre()
 	mvprintw(GENSTATROW + 7, GENSTATCOL + 8, "Scn");
 	mvprintw(GENSTATROW + 8, GENSTATCOL + 8, "Rev");
 
-	mvprintw(PAGEROW + 5, PAGECOL, "Rec It F/S F/F RFL Fre SFr");
+	mvprintw(VMSTATROW, VMSTATCOL, "Rec It F/S F/F RFL Fre SFr");
 
-	mvprintw(PAGEROW + 8, PAGECOL + 9, " zf");
-	mvprintw(PAGEROW + 9, PAGECOL + 9, "nzf");
-	mvprintw(PAGEROW + 10, PAGECOL + 9, "%%zf");
-	mvprintw(PAGEROW + 8, PAGECOL + 23, " xf");
-	mvprintw(PAGEROW + 9, PAGECOL + 23, "nxf");
-	mvprintw(PAGEROW + 10, PAGECOL + 23, "%%xf");
+	mvprintw(FILLSTATROW, FILLSTATCOL + 7, " zf");
+	mvprintw(FILLSTATROW + 1, FILLSTATCOL + 7, "nzf");
+	mvprintw(FILLSTATROW + 2, FILLSTATCOL + 7, "%%zf");
+	mvprintw(FILLSTATROW + 3, FILLSTATCOL + 7, " xf");
+	mvprintw(FILLSTATROW + 4, FILLSTATCOL + 7, "nxf");
+	mvprintw(FILLSTATROW + 5, FILLSTATCOL + 7, "%%xf");
 
 	mvprintw(GRAPHROW, GRAPHCOL,
 		"    . %% Sys    . %% User    . %% Nice    . %% Idle");
@@ -435,25 +444,27 @@ showkre()
 		PAGECOL + 15, 5);
 	putrate(rate.v_pswpout, oldrate.v_pswpout, PAGEROW + 3,
 		PAGECOL + 20, 5);
-	putrate(rate.v_pgrec, oldrate.v_pgrec, PAGEROW + 6, PAGECOL, 3);
-	putrate(rate.v_intrans, oldrate.v_intrans, PAGEROW + 6,
-		PAGECOL + 4, 2);
-	putrate(rate.v_xsfrec, oldrate.v_xsfrec, PAGEROW + 6,
-		PAGECOL + 7, 3);
-	putrate(rate.v_xifrec, oldrate.v_xifrec, PAGEROW + 6,
-		PAGECOL + 11, 3);
-	putrate(rate.v_pgfrec, oldrate.v_pgfrec, PAGEROW + 6,
-		PAGECOL + 15, 3);
-	putrate(rate.v_dfree, oldrate.v_dfree, PAGEROW + 6,
-		PAGECOL + 19, 3);
-	putrate(rate.v_seqfree, oldrate.v_seqfree, PAGEROW + 6,
-		PAGECOL + 23, 3);
-	putrate(rate.v_zfod, oldrate.v_zfod, PAGEROW + 8, PAGECOL, 8);
-	putrate(rate.v_nzfod, oldrate.v_nzfod, PAGEROW + 9, PAGECOL, 8);
-	putrate(rate.v_exfod, oldrate.v_exfod, PAGEROW + 8,
-		PAGECOL + 14, 8);
-	putrate(rate.v_nexfod, oldrate.v_nexfod, PAGEROW + 9,
-		PAGECOL + 14, 8);
+
+	putrate(rate.v_pgrec, oldrate.v_pgrec, VMSTATROW + 1, VMSTATCOL, 3);
+	putrate(rate.v_intrans, oldrate.v_intrans, VMSTATROW + 1,
+		VMSTATCOL + 4, 2);
+	putrate(rate.v_xsfrec, oldrate.v_xsfrec, VMSTATROW + 1,
+		VMSTATCOL + 7, 3);
+	putrate(rate.v_xifrec, oldrate.v_xifrec, VMSTATROW + 1,
+		VMSTATCOL + 11, 3);
+	putrate(rate.v_pgfrec, oldrate.v_pgfrec, VMSTATROW + 1,
+		VMSTATCOL + 15, 3);
+	putrate(rate.v_dfree, oldrate.v_dfree, VMSTATROW + 1,
+		VMSTATCOL + 19, 3);
+	putrate(rate.v_seqfree, oldrate.v_seqfree, VMSTATROW + 1,
+		VMSTATCOL + 23, 3);
+
+	putrate(rate.v_zfod, oldrate.v_zfod, FILLSTATROW, FILLSTATCOL, 6);
+	putrate(rate.v_nzfod, oldrate.v_nzfod, FILLSTATROW + 1, FILLSTATCOL, 6);
+	putrate(rate.v_exfod, oldrate.v_exfod, FILLSTATROW + 3,
+		FILLSTATCOL, 6);
+	putrate(rate.v_nexfod, oldrate.v_nexfod, FILLSTATROW + 4,
+		FILLSTATCOL, 6);
 	putfloat (
 		rate.v_nzfod == 0 ?
 			0.0
@@ -464,9 +475,9 @@ showkre()
 		:
 			( 100.0 * (rate.v_zfod-oldrate.v_zfod)
 			/ (rate.v_nzfod-oldrate.v_nzfod) )
-		, PAGEROW + 10
-		, PAGECOL
-		, 8
+		, FILLSTATROW + 2
+		, FILLSTATCOL
+		, 6
 		, 2
 		, 1
 	);
@@ -480,12 +491,13 @@ showkre()
 		:
 			( 100.0 * (rate.v_exfod-oldrate.v_exfod)
 			/ (rate.v_nexfod-oldrate.v_nexfod) )
-		, PAGEROW + 10
-		, PAGECOL + 14
-		, 8
+		, FILLSTATROW + 5
+		, FILLSTATCOL
+		, 6
 		, 2
 		, 1
 	);
+
 	mvprintw(DISKROW,DISKCOL+5,"                              ");
 	for (i = 0, c = 0; i < dk_ndrive && c < MAXDRIVES; i++)
 		if (dk_select[i]) {
