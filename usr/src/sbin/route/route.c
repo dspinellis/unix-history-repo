@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,7 +52,7 @@ union	sockunion {
 } so_dst, so_gate, so_mask, so_genmask, so_ifa, so_ifp, *so_addrs[] =
 { &so_dst, &so_gate, &so_mask, &so_genmask, &so_ifp, &so_ifa, 0}; 
 typedef union sockunion *sup;
-int	pid, rtm_addrs;
+int	pid, rtm_addrs, uid;
 int	s;
 int	forcehost, forcenet, doflush, nflag, af, qflag, Cflag, keyword();
 int	iflag, verbose, aflen = sizeof (struct sockaddr_in);
@@ -74,11 +74,14 @@ char *cp;
 	exit(1);
 }
 
+#define ROUNDUP(a) \
+	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+#define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
+
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-
 	char *argvp;
 	if (argc < 2)
 		usage((char *)0);
@@ -100,6 +103,7 @@ main(argc, argv)
 			}
 	}
 	pid = getpid();
+	uid = getuid();
 	if (Cflag)
 		s = socket(AF_INET, SOCK_RAW, 0);
 	else
@@ -110,8 +114,13 @@ main(argc, argv)
 	}
 	if (argc > 0) switch (keyword(*argv)) {
 		case K_GET:
-		case K_ADD:
+			uid = 0;
+			/* FALLTHROUGH */
 		case K_CHANGE:
+			if (Cflag)
+				usage("change or get with -C");
+			/* FALLTHROUGH */
+		case K_ADD:
 		case K_DELETE:
 			newroute(argc, argv);
 		case K_MONITOR:
@@ -133,6 +142,8 @@ char *argv[];
 	char *buf, *next, *lim;
 	register struct rt_msghdr *rtm;
 
+	if (uid)
+		usage("must be root to alter routing table");
 	shutdown(s, 0); /* Don't want to read back our messages */
 	if (argc > 1) {
 		argv++;
@@ -395,6 +406,8 @@ newroute(argc, argv)
 	struct hostent *hp = 0;
 	extern int errno;
 
+	if (uid)
+		usage("must be root to alter routing table");
 	cmd = argv[0];
 	if (*cmd != 'g')
 		shutdown(s, 0); /* Don't want to read back our messages */
@@ -717,8 +730,6 @@ getaddr(which, s, hpp)
 	fprintf(stderr, "%s: bad value\n", s);
 	exit(1);
 do_xns:
-	if (val == 0)
-		return(0);
 	if (which == RTA_DST) {
 		extern short ns_bh[3];
 		struct sockaddr_ns *sms = &(so_mask.sns);
@@ -828,10 +839,11 @@ rtmsg(cmd, flags)
 	register char *cp = m_rtmsg.m_space;
 	register int l;
 
-#define ROUND(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
-#define NEXTADDR(w, u) { if (rtm_addrs & (w)) {l = (u).sa.sa_len;\
-	if(verbose)sodump(&(u),"u");if(l == 0) l = sizeof(int); l = ROUND(l);\
-		bcopy((char *)&(u), cp, l); cp += l;}}
+#define NEXTADDR(w, u) \
+	if (rtm_addrs & (w)) {\
+	    l = ROUNDUP(u.sa.sa_len); bcopy((char *)&(u), cp, l); cp += l;\
+	    if (verbose) sodump(&(u),"u");\
+	}
 
 	errno = 0;
 	bzero((char *)&m_rtmsg, sizeof(m_rtmsg));
@@ -899,7 +911,6 @@ char metricnames[] =
 char routeflags[] = 
 "\1UP\2GATEWAY\3HOST\4REJECT\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT\011CLONING\012XRESOLVE";
 
-#define ROUNDUP(a) ((char *)(1 + (((((int)a)) - 1) | (sizeof(long) - 1))))
 
 print_rtmsg(rtm, msglen)
 register struct rt_msghdr *rtm;
@@ -926,10 +937,9 @@ register struct rt_msghdr *rtm;
 							    rtm->rtm_version);
 		return;
 	}
-	if (rtm->rtm_msglen != msglen) {
+	if (rtm->rtm_msglen > msglen) {
 		printf("get length mismatch, in packet %d, returned %d\n",
 			rtm->rtm_msglen, msglen);
-		return;
 	}
 	printf("RTM_GET: errno %d, flags:", rtm->rtm_errno); 
 	bprintf(stdout, rtm->rtm_flags, routeflags);
@@ -966,7 +976,7 @@ register struct rt_msghdr *rtm;
 		if (i & rtm->rtm_addrs) {
 			sa = (struct sockaddr *)cp;
 			printf(" %s", routename(sa));
-			cp = ROUNDUP(cp + sa->sa_len);
+			ADVANCE(cp, sa);
 		}
 	putchar('\n');
 	fflush(stdout);
