@@ -1,0 +1,61 @@
+# $Id: PORTS,v 5.2 90/06/23 22:21:34 jsp Rel $
+#
+# Who did what port...
+# What is the current status.
+#
+acis43		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Working as of 5/90.
+
+aix3		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Working on 9013 as of 5/90.
+
+aux		Julian Onions <jpo@cs.nott.ac.uk>
+	Working when ported - status unknown.
+
+bsd44		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Working on alpha as of 5/90.
+
+concentrix	Sjoerd Mullender <sjoerd@cwi.nl>
+	Working as of 5/90.
+
+convex		Eitan Mizrotsky <eitan@shumuji.ac.il>
+	Working as of 5/90.
+
+fpx4		Stephen Pope <scp@grizzly.acl.lanl.gov>
+	Working as of 5/90.
+
+hlh42		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Working as of 5/90.
+
+hpux		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Working on 6.5 and 7.0 as of 5/90.
+
+NeXT		Tim Reed <cmcl2!dasys1!lissie!treed@rutgers.edu>
+	Working as of 5/90, waiting for diffs.
+
+pyrOSx		Stefan Petri <petri@tubsibr.UUCP>
+	Not tested as of 6/90.
+
+riscix		Piete Brooks <pb@cam.cl.ac.uk>
+	Working as of 5/90.
+
+sos3		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Working as of 5/90.
+
+sos4		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Working on 4.0.* as of 5/90.  Status of 4.1 unknown.
+
+u2_2		Piete Brooks <pb@cam.cl.ac.uk>
+	Broken - bug in Ultrix.
+
+u3_0		Piete Brooks <pb@cam.cl.ac.uk>
+	Broken - bug in Ultrix.  Thought to work with 4.0.
+
+umax43		Sjoerd Mullender <sjoerd@cwi.nl>
+	Working as of 5/90.
+
+utx32		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Broken - problems with UTX.
+
+xinu43		Jan-Simon Pendry <jsp@doc.ic.ac.uk>
+	Working as of 5/90.
