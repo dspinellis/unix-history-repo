@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 LIBDB=	libdb.a
 OBJ1=	bt_close.o bt_conv.o bt_debug.o bt_delete.o bt_get.o bt_open.o \
@@ -43,7 +43,7 @@ ${OBJ5}:
 	${CC} -c -O -I. -Iinclude -I../recno ../recno/*.c
 
 memmove.o:
-	${CC} -c -O -I. -Iinclude clib/memmove.c
+	${CC} -DMEMMOVE -c -O -I. -Iinclude clib/memmove.c
 mktemp.o:
 	${CC} -c -O -I. -Iinclude clib/mktemp.c
 realloc.o:
