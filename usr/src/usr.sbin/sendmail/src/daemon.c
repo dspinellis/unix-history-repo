@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.3 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.4 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.3 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.4 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -170,7 +170,15 @@ getrequests()
 	pidf = fopen(PidFile, "w");
 	if (pidf != NULL)
 	{
+		extern char *CommandLineArgs;
+
+		/* write the process id on line 1 */
 		fprintf(pidf, "%d\n", getpid());
+
+		/* line 2 contains all command line flags */
+		fprintf(pidf, "%s\n", CommandLineArgs);
+
+		/* flush and close */
 		fclose(pidf);
 	}
 
