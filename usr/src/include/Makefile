@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.40 (Berkeley) %G%
+#	@(#)Makefile	5.41 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -7,25 +7,28 @@
 #
 all clean cleandir depend lint tags:
 
-SUBDIRS=arpa protocols
-STD=	a.out.h ar.h assert.h bitstring.h ctype.h dirent.h disktab.h \
+FILES=	a.out.h ar.h assert.h bitstring.h ctype.h db.h dirent.h disktab.h \
 	fstab.h fts.h glob.h grp.h kvm.h limits.h math.h memory.h mp.h \
 	ndbm.h netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h regexp.h \
 	resolv.h setjmp.h sgtty.h stab.h stdarg.h stddef.h stdio.h \
 	stdlib.h string.h strings.h struct.h sysexits.h time.h ttyent.h \
 	tzfile.h utmp.h varargs.h vfont.h vis.h
-LMCH=	float.h frame.h
-LSYS=	errno.h fcntl.h signal.h syslog.h termios.h unistd.h
-NOOBJ=	noobj
+MFILES=	float.h frame.h
+LFILES=	errno.h fcntl.h signal.h syslog.h termios.h unistd.h
 
-DIRS=	sys net netimp netinet netiso netns ufs nfs
-.if   (${MACHINE} == "hp300")
-DIRS+=	hp300 hpdev
+DIRS=arpa protocols
+LDIRS=	sys net netimp netinet netiso netns ufs nfs
+.if   (${MACHINE} == "i386")
+MDIRS=	i386
+.elif   (${MACHINE} == "hp300")
+MDIRS=	hp300 dev
 .elif (${MACHINE} == "tahoe")
-DIRS+=	tahoe tahoemath tahoevba tahoeif
+MDIRS=	tahoe math vba if
 .elif (${MACHINE} == "vax")
-DIRS+=	vax vaxbi vaxif vaxmba vaxuba
+MDIRS=	vax bi if mba uba
 .endif
+
+NOOBJ=	noobj
 
 # Define SHARED to indicate whether you want symbolic links to the system
 # source (``symlinks''), or a separate copy (``copies''); (latter useful
@@ -34,14 +37,14 @@ DIRS+=	vax vaxbi vaxif vaxmba vaxuba
 SHARED=	symlinks
 
 install: ${SHARED}
-	@echo installing ${STD}
-	@-for i in ${STD}; do \
+	@echo installing ${FILES}
+	@-for i in ${FILES}; do \
 		cmp -s $$i ${DESTDIR}/usr/include/$$i || \
 		    install -c -o ${BINOWN} -g ${BINGRP} -m 444 $$i \
 		    ${DESTDIR}/usr/include/$$i; \
 	done
-	@echo installing ${SUBDIRS}
-	@-for i in ${SUBDIRS}; do \
+	@echo installing ${DIRS}
+	@-for i in ${DIRS}; do \
 		if [ ! -d ${DESTDIR}/usr/include/$$i ]; \
 		then \
 			mkdir ${DESTDIR}/usr/include/$$i; \
@@ -54,51 +57,47 @@ install: ${SHARED}
 			    ${DESTDIR}/usr/include/$$i/$$j; \
 		done); \
 	done
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 Makefile.install \
-	    ${DESTDIR}/usr/include/Makefile
-	rm -f ${DESTDIR}/usr/include/machine
-	ln -s ./${MACHINE} ${DESTDIR}/usr/include/machine
-	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/machine
-	@echo installing ${LSYS}
-	@-for i in ${LSYS}; do \
+	@echo installing ${LFILES}
+	@-for i in ${LFILES}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
 		ln -s sys/$$i ${DESTDIR}/usr/include/$$i; \
 		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 	done
-	@echo installing ${LMCH}
-	@-for i in ${LMCH}; do \
+	@echo installing ${MFILES}
+	@-for i in ${MFILES}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
 		ln -s machine/$$i ${DESTDIR}/usr/include/$$i; \
 		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 	done
 
 copies:
-	@echo copies: ${DIRS}
-	@-for i in ${DIRS}; do \
+	@echo copies: ${LDIRS} ${MDIRS}
+	@-for i in ${LDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		cd /sys; \
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
 	done
+	@-for i in ${MDIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i; \
+		cd /sys/${MACHINE}; \
+		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+	done
+	rm -f ${DESTDIR}/usr/include/machine
+	mkdir ${DESTDIR}/usr/include/machine
+	cd /sys/${MACHINE}/include; \
+	tar cf - *.h | (cd ${DESTDIR}/usr/include/machine; tar xpfB -); \
 
 		rm -rf ${DESTDIR}/usr/include/$$i; \
-		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
-		then \
-			ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
-			chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
-		else \
-			echo ${DESTDIR}/usr/include/$$i not removed; \
-		fi; \
+		ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
+		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 	done
-
-		if [ ! -d $$i ]; \
-		then \
-			mkdir $$i; \
-		fi; \
-		for j in `cd /sys/$$i; echo *.h`; do \
-			cmp -s /sys/$$i/$$j $$i/$$j || \
-			install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-			    ${SYS}/$$i/$$j $$i/$$j; \
-		done; \
+	@for i in ${MDIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i; \
+		ln -s /sys/${MACHINE}/$$i ${DESTDIR}/usr/include/$$i; \
+		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 	done
+	rm -f ${DESTDIR}/usr/include/machine
+	ln -s /sys/${MACHINE}/include ${DESTDIR}/usr/include/machine
+	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/machine
 
 .include <bsd.prog.mk>
