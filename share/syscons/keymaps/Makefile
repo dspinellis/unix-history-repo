@@ -2,7 +2,7 @@ KEYMAPS = danish.cp865.map danish.iso.map fff.map german.cp850.map \
 	german.iso.map swedish.cp850.map swedish.iso.map uk.cp850.map \
 	uk.iso.map us.iso.map
 KEYMAPS_MK = ${KEYMAPS:R:S/$/.mk/g}
-MAPSDIR = /usr/share/syscons.keymaps
+MAPSDIR = /usr/share/syscons/keymaps
 NOMAN = noman
 
 
