@@ -58,7 +58,7 @@ OLDAR_FLAGS = qc
 AR_FLAGS = rc
 SHELL = /bin/sh
 # on sysV, define this as cp.
-INSTALL = /usr/sww/etc/install -c
+INSTALL = install -c
 # These permit overriding just for certain files.
 INSTALL_PROGRAM = $(INSTALL) -m 775
 INSTALL_DATA = $(INSTALL) -m 664
@@ -132,35 +132,37 @@ version=`sed -e 's/.*\"\([^ \"]*\)[ \"].*/\1/' < $(srcdir)/version.c`
 srcdir = .
 # Common prefix for installation directories.
 # NOTE: This directory must exist when you start installation.
-prefix = /usr/local
+prefix = /usr/libexec
 # Directory in which to put host dependent programs and libraries
-exec_prefix = $(prefix)
+exec_prefix = $(prefix)/gcc2
 # Directory in which to put the executable for the command `gcc'
-bindir = $(exec_prefix)/bin
+bindir = $(exec_prefix)
 # Directory in which to put the directories used by the compiler.
-libdir = $(exec_prefix)/lib
+libdir = $(exec_prefix)
 # Directory in which the compiler finds executables, libraries, etc.
-libsubdir = $(libdir)/gcc-lib/$(target)/$(version)
+libsubdir = $(exec_prefix)
 # Directory for header file assert.h.
-includedir = $(prefix)/include
+#includedir =
 # assertdir is overridden in cross-make.
 assertdir = $(includedir)
 # Extension (if any) to put in installed man-page filename.
-manext = .1
+manext = .0
 # Directory in which to put man pages.
-mandir = $(prefix)/man/man1
+mandir = /usr/contrib/man/cat1
 # Directory in which to find other cross-compilation tools and headers.
 # Used in install-cross.
 tooldir = $(prefix)/$(target)
 # Dir for temp files.
 tmpdir = /tmp
 
+GROFF=nroff -man
+
 # Additional system libraries to link with.
 CLIB=
 
 # Change this to a null string if obstacks are installed in the
 # system library.
-OBSTACK=obstack.o
+OBSTACK= obstack.o
 
 # Specify the rule for actually making libgcc1.a.
 # The value may be empty; that means to do absolutely nothing
@@ -215,7 +217,7 @@ LIBCONVERT =
 # Control whether header files are installed.
 # We will change this to install-fixincludes eventually.
 # It would be useful for people to try this now.
-INSTALL_HEADERS=install-headers
+#INSTALL_HEADERS=install-headers
 
 # Select which version of fixincludes to use (I.E. regular versus SVR4)
 FIXINCLUDES=fixincludes
@@ -779,11 +781,12 @@ collect2 : collect2.o version.o $(LIBDEPS)
 	-rm -f collect2
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o collect2 collect2.o version.o $(LIBS)
 
+#  -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc-lib/\" \
 collect2.o : collect2.c $(CONFIG_H) gstab.h
 	$(CC) $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
   -DSTANDARD_STARTFILE_PREFIX=\"$(libdir)/\" \
   -DSTANDARD_BIN_PREFIX=\"$(bindir)/\" \
-  -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc-lib/\" \
+  -DSTANDARD_EXEC_PREFIX=\"/usr/libexec/gcc2/\" \
   -DDEFAULT_TARGET_MACHINE=\"$(target)\" \
   -c `echo $(srcdir)/collect2.c | sed 's,^\./,,'`
 
@@ -806,10 +809,11 @@ c-common.o : c-common.c $(CONFIG_H) $(TREE_H) c-tree.h c-lex.h flags.h
 
 # Language-independent files.
 
+#  -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc-lib/\" \
 gcc.o: gcc.c $(CONFIG_H) gvarargs.h obstack.h
 	$(CC) $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
   -DSTANDARD_STARTFILE_PREFIX=\"$(libdir)/\" \
-  -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc-lib/\" \
+  -DSTANDARD_EXEC_PREFIX=\"/usr/libexec/gcc2/\" \
   -DDEFAULT_TARGET_MACHINE=\"$(target)\" \
   -DTOOLDIR=\"$(tooldir)/\" \
   -c `echo $(srcdir)/gcc.c | sed 's,^\./,,'`
@@ -1171,6 +1175,8 @@ cccp.o: cccp.c $(CONFIG_H) pcp.h version.c
 	  -DGCC_INCLUDE_DIR=\"$(libsubdir)/include\" \
 	  -DGPLUSPLUS_INCLUDE_DIR=\"$(libdir)/g++-include\" \
 	  -DLOCAL_INCLUDE_DIR=\"$(prefix)/include\" \
+	  -DGPLUSPLUS_INCLUDE_DIR=\"$(libdir)/g++-include\" \
+	  -DLOCAL_INCLUDE_DIR=\"$(prefix)/include\" \
 	  -DCROSS_INCLUDE_DIR=\"$(libsubdir)/sys-include\" \
 	  -DTOOLDIR=\"$(tooldir)/\" \
 	  -c `echo $(srcdir)/cccp.c | sed 's,^\./,,'`
@@ -1356,8 +1362,7 @@ realclean: distclean
 install: $(INSTALL_TARGET) ;
 
 # Copy the files of native compiler into directories where they will be run.
-install-native: install-common install-libgcc $(INSTALL_HEADERS) \
-   install-man
+install-native: install-common install-man install-libgcc
 
 # Copy the files of cross compiler into directories where they will be run.
 install-cross: install-common install-common-headers \
@@ -1459,7 +1464,8 @@ install-dir:
 # Install the compiler executables built during cross compilation.
 # Deps on  $(srcdir)/g++ $(srcdir)/c++  would be natural here,
 # but the latter would get confused with the target `c++'.
-install-common: native install-dir xgcc $(EXTRA_PARTS)
+#install-common: native install-dir xgcc $(EXTRA_PARTS)
+install-common: install-dir xgcc $(EXTRA_PARTS)
 	for file in $(COMPILERS); do \
 	  if [ -f $$file ] ; then \
 	    rm -f $(libsubdir)/$$file; \
@@ -1489,6 +1495,7 @@ install-common: native install-dir xgcc $(EXTRA_PARTS)
 	else \
 	  rm -f $(bindir)/gcc; \
 	  $(INSTALL_PROGRAM) xgcc $(bindir)/gcc-2.3.3; \
+	  ln -s /usr/bin/gcc $(bindir)/gcc-2.3.3 \
 	  rm -f $(bindir)/gcc-$(target)-1; \
 	  ln $(bindir)/gcc-2.3.3 $(bindir)/gcc-$(target)-1; \
 	  mv $(bindir)/gcc-$(target)-1 $(bindir)/gcc-$(target); \
@@ -1514,12 +1521,16 @@ install-common: native install-dir xgcc $(EXTRA_PARTS)
 # Install the man pages.
 install-man: install-dir $(srcdir)/gcc.1 $(srcdir)/cccp.1 $(srcdir)/g++.1
 	-rm -f $(mandir)/gcc$(manext)
-	-$(INSTALL_DATA) $(srcdir)/gcc.1 $(mandir)/gcc$(manext)
+	$(GROFF) gcc.1 > gcc.0
+	$(GROFF) cccp.1 > cccp.0
+	$(GROFF) g++.1 > g++.0
+	-$(INSTALL_DATA) $(srcdir)/gcc.0 $(mandir)/gcc$(manext)
 	-chmod a-x $(mandir)/gcc$(manext)
-	-rm -f $(mandir)/cccp$(manext)
-	-$(INSTALL_DATA) $(srcdir)/cccp.1 $(mandir)/cccp$(manext)
+	-rm -f $(mandir)/cccp$(manext) $(mandir)/cpp$(manext)
+	-$(INSTALL_DATA) $(srcdir)/cccp.0 $(mandir)/cccp$(manext)
 	-chmod a-x $(mandir)/cccp$(manext)
-	-$(INSTALL_DATA) $(srcdir)/g++.1 $(mandir)/g++$(manext)
+	ln -s $(mandir)/cccp$(manext) $(mandir)/cpp$(manext)
+	-$(INSTALL_DATA) $(srcdir)/g++.0 $(mandir)/g++$(manext)
 	-chmod a-x $(mandir)/g++$(manext)
 
 # Install the library.
