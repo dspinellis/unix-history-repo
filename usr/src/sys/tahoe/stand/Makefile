@@ -1,4 +1,4 @@
-#	Makefile	7.4	86/11/16
+#	Makefile	7.5	86/11/16
 #
 DESTDIR=
 LIBS=	libsa.a ${DESTDIR}/lib/libc.a
@@ -28,7 +28,7 @@ install: all
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install) \
 	done
-	rm -f ${DESTDIR}/boot; cp ${DESTDIR}/stand/boot.fsd ${DESTDIR}/boot
+	rm -f ${DESTDIR}/boot; cp ${DESTDIR}/stand/boot ${DESTDIR}/boot
 
 clean:
 	rm -f ${ALL} *.o *.map *.bak a.out ncy.c libsa.a
