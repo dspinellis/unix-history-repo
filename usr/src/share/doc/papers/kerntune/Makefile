@@ -3,16 +3,18 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.1 (Berkeley) %G%
+#	@(#)Makefile	1.2 (Berkeley) %G%
 #
 SRCS=	0.t 1.t 2.t 3.t 4.t
-TBL=	tbl
-EQN=	eqn
-TROFF=	itroff
-TYPE=	-t
+PIC=	pic ${PRINTER}
+TBL=	dtbl ${PRINTER}
+EQN=	deqn ${PRINTER}
+TROFF=	ditroff ${PRINTER}
+PRINTER=-Plz
+TYPE=	-n
 
 paper:	perf
-	lpr -Pimagen ${TYPE} perf
+	lpr ${PRINTER} ${TYPE} perf
 
 perf:	${SRCS} Makefile
-	${TBL} ${SRCS} | ${EQN} | ${TROFF} -ms -t > perf
+	soelim ${SRCS} | ${PIC} | ${TBL} | ${EQN} | ${TROFF} -ms -t > perf
