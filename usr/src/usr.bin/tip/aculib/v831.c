@@ -1,114 +1,97 @@
-/*	831.c	4.1	83/5/10	*/
+/*	v831.c	4.2	83/06/15	*/
 
-#if V831
+#ifdef V831
 /*
  * Routines for dialing up on Vadic 831
  */
-#include "tip.h"
+#include <sys/file.h>
+#include <sys/time.h>
+
 #include <setjmp.h>
 #include <errno.h>
 #include <sgtty.h>
-#include <sys/file.h>
-#include <time.h>
 
-static char *sccsid = "@(#)v831.c	4.1 %G%";
+#include "tip.h"
 
-struct mx_leaves {
-    char    *name;
-    char    rack,modem;
-} pdevs[] = {{"/dev/cua0",'4','0'}, {"/dev/cua1",'4','1'}, {0}};
+static char *sccsid = "@(#)v831.c	4.2 %G%";
 
-struct timeval zerotime = {0L, 0L};
-
-#define unlike(a,b) (strcmp(a,b))
-#define pc(x) (c = x, write(AC,&c,1))
-#define ABORT	01
-#define SI	017
-#define STX	02
-#define ETX	03
-
-int v831_abort();
-
-int alarmtr();
+int	v831_abort();
+int	alarmtr();
+extern	errno;
 
 static jmp_buf jmpbuf;
 static int child = -1;
 
 v831_dialer(num, acu)
-	char *num, *acu;
+        char *num, *acu;
 {
-	extern errno;
-	char *p, *q, phone[40];
-	char char_rv;
-	int lt, nw, connected = 1;
-	register int timelim;
+        int status, pid, connected = 1;
+        register int timelim;
 
-	if (boolean(value(VERBOSE)))
-		printf("\nstarting call...");
+        if (boolean(value(VERBOSE)))
+                printf("\nstarting call...");
 #ifdef DEBUG
-	printf ("(acu=%s)", acu);
+        printf ("(acu=%s)\n", acu);
 #endif
-	if ((AC = open(acu, FRDWR)) < 0) {
-		if (errno == EBUSY)
-			printf("line busy...");
-		else
-			printf("acu open error...");
-		return (0);
-	}
-	if (setjmp(jmpbuf)) {
-		kill(child, SIGKILL);
-		close(AC);
-		return (0);
-	}
-	signal(SIGALRM, alarmtr);
-	timelim = 5 * strlen(num);
-	alarm(timelim < 30 ? 30 : timelim);
-	if ((child = fork()) == 0) {
-		/*
-		 * ignore this stuff for aborts
-		 */
-		signal(SIGALRM, SIG_IGN);
+        if ((AC = open(acu, FRDWR)) < 0) {
+                if (errno == EBUSY)
+                        printf("line busy...");
+                else
+                        printf("acu open error...");
+                return (0);
+        }
+        if (setjmp(jmpbuf)) {
+                kill(child, SIGKILL);
+                close(AC);
+                return (0);
+        }
+        signal(SIGALRM, alarmtr);
+        timelim = 5 * strlen(num);
+        alarm(timelim < 30 ? 30 : timelim);
+        if ((child = fork()) == 0) {
+                /*
+                 * ignore this stuff for aborts
+                 */
+                signal(SIGALRM, SIG_IGN);
 		signal(SIGINT, SIG_IGN);
-		signal(SIGQUIT, SIG_IGN);
-		sleep(2);
-		/*nw = write(AC, num, lt = strlen(num));*/
-		char_rv = dialit (num, acu);
-		exit(char_rv != 'A');
-	}
-	/*
-	 * open line - will return on carrier
-	 */
-	if ((FD = open(DV, 2)) < 0) {
+                signal(SIGQUIT, SIG_IGN);
+                sleep(2);
+                exit(dialit(num, acu) != 'A');
+        }
+        /*
+         * open line - will return on carrier
+         */
+        if ((FD = open(DV, 2)) < 0) {
 #ifdef DEBUG
-		printf("(after open, errno=%d)", errno);
+                printf("(after open, errno=%d)\n", errno);
 #endif
-		if (errno == EIO)
-			printf("lost carrier...");
-		else
-			printf("dialup line open failed...");
-		alarm(0);
-		kill(child, SIGKILL);
-		close(AC);
-		return (0);
-	}
-	alarm(0);
-	/*ioctl(AC, TIOCHPCL, 0);*/
-	signal(SIGALRM, SIG_DFL);
-	while ((nw = wait(&lt)) != child && nw != -1)
-		;
-	fflush(stdout);
-	/*close(AC);*/
-	if (lt != 0) {
-		close(AC);
-		return (0);
-	}
-	return (1);
+                if (errno == EIO)
+                        printf("lost carrier...");
+                else
+                        printf("dialup line open failed...");
+                alarm(0);
+                kill(child, SIGKILL);
+                close(AC);
+                return (0);
+        }
+        alarm(0);
+#ifdef notdef
+        ioctl(AC, TIOCHPCL, 0);
+#endif
+        signal(SIGALRM, SIG_DFL);
+        while ((pid = wait(&status)) != child && pid != -1)
+                ;
+        if (status) {
+                close(AC);
+                return (0);
+        }
+        return (1);
 }
 
 alarmtr()
 {
-	alarm(0);
-	longjmp(jmpbuf, 1);
+        alarm(0);
+        longjmp(jmpbuf, 1);
 }
 
 /*
@@ -117,134 +100,135 @@ alarmtr()
  */
 v831_disconnect()
 {
-	struct sgttyb cntrl;
-	sleep(2);
+        struct sgttyb cntrl;
+
+        sleep(2);
 #ifdef VMUNIX
 #ifdef DEBUG
-	printf ("[disconnect: FD=%d]", FD);
+        printf("[disconnect: FD=%d]\n", FD);
 #endif
-	if (FD > 0)
-	{
-		ioctl (FD, TIOCCDTR, 0);
-		ioctl (FD, TIOCGETP, &cntrl);
-		cntrl.sg_ispeed = 0;
-		cntrl.sg_ospeed = 0;
-		ioctl (FD, TIOCSETP, &cntrl);
-		ioctl (FD, TIOCNXCL, (struct sgttyb *)NULL);
-	}
+        if (FD > 0) {
+                ioctl(FD, TIOCCDTR, 0);
+                ioctl(FD, TIOCGETP, &cntrl);
+                cntrl.sg_ispeed = cntrl.sg_ospeed = 0;
+                ioctl(FD, TIOCSETP, &cntrl);
+                ioctl(FD, TIOCNXCL, (struct sgttyb *)NULL);
+        }
 #endif
-	close(FD);
+        close(FD);
 }
 
 v831_abort()
 {
 #ifdef DEBUG
-	printf ("[abort: AC=%d]", AC);
+        printf("[abort: AC=%d]\n", AC);
 #endif
-	sleep(2);
-	if (child > 0)
-		kill(child, SIGKILL);
-	if (AC > 0)
-		ioctl (FD, TIOCNXCL, (struct sgttyb *)NULL);
-		close(AC);
+        sleep(2);
+        if (child > 0)
+                kill(child, SIGKILL);
+        if (AC > 0)
+                ioctl(FD, TIOCNXCL, (struct sgttyb *)NULL);
+                close(AC);
 #ifdef VMUNIX
-	if (FD > 0)
-		ioctl(FD, TIOCCDTR, 0);
+        if (FD > 0)
+                ioctl(FD, TIOCCDTR, 0);
 #endif
-	close(FD);
+        close(FD);
 }
 #endif
 
-static struct sgttyb cntrl;
-dialit(string, acu)
-register char *string;
-char *acu;
+/*
+ * Sigh, this probably must be changed at each site.
+ */
+struct vaconfig {
+	char	*vc_name;
+	char	vc_rack;
+	char	vc_modem;
+} vaconfig[] = {
+	{ "/dev/cua0",'4','0' },
+	{ "/dev/cua1",'4','1' },
+	{ 0 }
+};
+
+#define pc(x)	(c = x, write(AC,&c,1))
+#define ABORT	01
+#define SI	017
+#define STX	02
+#define ETX	03
+
+dialit(phonenum, acu)
+	register char *phonenum;
+	char *acu;
 {
-	char c, cc, *sanitize();
-	int i;
-	register struct mx_leaves *lp = pdevs;
-	int test;
-	int nfds, fdsmask;
+        register struct vaconfig *vp;
+	struct sgttyb cntrl;
+        char c, *sanitize();
+        int i, two = 2;
 
-	string = sanitize(string);
+        phonenum = sanitize(phonenum);
 #ifdef DEBUG
-	printf ("(dial string=%s)", string);
+        printf ("(dial phonenum=%s)\n", phonenum);
 #endif
-	if(*string=='<' && string[1]==0) {
-		return('Z');
-	}
-
-	while(test = unlike(lp->name,acu))
-	    if(lp->name==0) {
+        if (*phonenum == '<' && phonenum[1] == 0)
+                return ('Z');
+	for (vp = vaconfig; vp->vc_name; vp++)
+		if (strcmp(vp->vc_name, acu) == 0)
+			break;
+	if (vp->vc_name == 0) {
 		printf("Unable to locate dialer (%s)\n", acu);
-		return('K');
-	    } else lp++;
-
-
-	gtty (AC,&cntrl);	/* set raw, -echo, 2400 Baud */
-	cntrl.sg_ispeed = cntrl.sg_ospeed = B2400;
-	cntrl.sg_flags = RAW | EVENP | ODDP;
-	stty (AC,&cntrl);
-
-	/* check for characters waiting from dialer (throw them away) */
-
-	fdsmask = 1<<AC;
-#ifdef DEBUG
-	printf ("{select returns=%d}", select (20, &fdsmask, 0, 0, &zerotime));
-#endif
-
-	pc (STX); pc (lp->rack); pc (lp->modem);
-	for (;*string && *string!='<'; string++)
-	{
-#ifdef DEBUG
-	    printf ("%c", *string);
-#endif
-	    pc(*string);
+		return ('K');
 	}
-	pc(SI); pc(ETX);
-
-	sleep (1);
-	i = read (AC, &c, 1);
+        ioctl(AC, TIOCGETP, &cntrl);
+        cntrl.sg_ispeed = cntrl.sg_ospeed = B2400;
+        cntrl.sg_flags = RAW | EVENP | ODDP;
+        ioctl(AC, TIOCSETP, &cntrl);
+	ioctl(AC, TIOCFLUSH, &two);
+        pc(STX);
+	pc(vp->vc_rack);
+	pc(vp->vc_modem);
+	while (*phonenum && *phonenum != '<')
+		pc(*phonenum++);
+        pc(SI);
+	pc(ETX);
+        sleep(1);
+        i = read(AC, &c, 1);
 #ifdef DEBUG
-	printf ("read response of %d chars, char = %c\n", i, c);
-	printf ("and errno is %d\n", errno);
+        printf("read %d chars, char=%c, errno %d\n", i, c, errno);
 #endif
+        if (i != 1)
+		c = 'M';
+        if (c == 'B' || c == 'G') {
+                char cc, oc = c;
 
-	if (i !=1) c = 'M';
-	if (c=='B' || c=='G') {
-		char oc = c;
-		pc(ABORT);
-		read (AC, &cc, 1);
+                pc(ABORT);
+                read(AC, &cc, 1);
 #ifdef DEBUG
-		printf ("abort response=%c\n", cc);
+                printf("abort response=%c\n", cc);
 #endif
-		c = oc;
-		v831_disconnect ();
-	}
-
-	close(AC);
+                c = oc;
+                v831_disconnect();
+        }
+        close(AC);
 #ifdef DEBUG
-	printf ("dialit: returns %c\n", c);
+        printf("dialit: returns %c\n", c);
 #endif
-	return(c);
+        return (c);
 }
-char *
-sanitize(string)
-register char *string;
+
+static char *
+sanitize(s)
+	register char *s;
 {
-	static char buf[512];
-	register char *cp = buf;
-	for(;*string; string++) {
-	    switch(*string) {
-	    case '0': case '1': case '2': case '3': case '4':
-	    case '5': case '6': case '7': case '8': case '9': case '<':
-		*cp++ = *string;
-		break;
-	    case '_':
-		*cp++ = '=';
-		break;
-	    }
+        static char buf[128];
+        register char *cp;
+
+        for (cp = buf; *s; s++) {
+		if (!isdigit(*s) && *s == '<' && *s != '_')
+			continue;
+		if (*s == '_')
+			*s = '=';
+		*cp++ = *s;
 	}
-	*cp++ = 0;
-	return(buf);
+        *cp++ = 0;
+        return (buf);
 }
