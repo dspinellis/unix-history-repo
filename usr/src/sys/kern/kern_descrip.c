@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.28 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -581,6 +581,8 @@ fdfree(p)
 /*
  * Internal form of close.
  * Decrement reference count on file structure.
+ * Note: p may be NULL when closing a file
+ * that was being passed in a message.
  */
 closef(fp, p)
 	register struct file *fp;
@@ -597,8 +599,10 @@ closef(fp, p)
 	 * locks owned by this process.  This is handled by setting
 	 * a flag in the unlock to free ONLY locks obeying POSIX
 	 * semantics, and not to free BSD-style file locks.
+	 * If the descriptor was in a message, POSIX-style locks
+	 * aren't passed with the descriptor.
 	 */
-	if ((p->p_flag & SADVLCK) && fp->f_type == DTYPE_VNODE) {
+	if (p && (p->p_flag & SADVLCK) && fp->f_type == DTYPE_VNODE) {
 		lf.l_whence = SEEK_SET;
 		lf.l_start = 0;
 		lf.l_len = 0;
