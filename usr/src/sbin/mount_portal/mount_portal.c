@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_portal.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_portal.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -204,7 +204,6 @@ main(argc, argv)
 		/*
 		 * Now fork a new child to deal with the connection
 		 */
-#ifdef notdef
 	eagain:;
 		switch (pid = fork()) {
 		case -1:
@@ -222,8 +221,6 @@ main(argc, argv)
 			(void) close(so2);
 			break;
 		}
-#endif
-		activate(&q, so2);
 	}
 	syslog(LOG_INFO, "%s unmounted", mountpt);
 	exit(0);
