@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.23 84/03/03";
+static	char *sccsid = "@(#)cmd2.c	3.24 84/04/05";
 #endif
 
 #include "defs.h"
@@ -237,10 +237,6 @@ dolist()
 
 doquit()
 {
-	if (terse)
-		Wunhide(cmdwin->ww_win);
-	wwputs("Really quit [yn]? ", cmdwin);
-	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
 	while (wwpeekc() < 0)
 		wwiomux();
 	if (wwgetc() == 'y') {

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mloop.c	3.3 84/03/03";
+static	char *sccsid = "@(#)mloop.c	3.4 84/04/05";
 #endif
 
 #include "defs.h"
@@ -7,10 +7,10 @@ static	char *sccsid = "@(#)mloop.c	3.3 84/03/03";
 mloop()
 {
 	while (!quit) {
-		if (wwcurwin == 0) {
+		if (incmd) {
 			docmd();
 		} else if (wwcurwin->ww_state != WWS_HASPROC) {
-			wwcurwin = 0;
+			setcmd(1);
 			if (wwpeekc() == escapec)
 				(void) wwgetc();
 			error("Process died.");
@@ -29,8 +29,8 @@ mloop()
 					wwibp = p;
 				}
 				if (wwpeekc() == escapec) {
-					wwcurwin = 0;
 					(void) wwgetc();
+					setcmd(1);
 				}
 			}
 		}

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	3.8 84/03/03";
+static	char *sccsid = "@(#)cmd4.c	3.9 84/04/05";
 #endif
 
 #include "defs.h"
@@ -58,15 +58,11 @@ out:
 
 docolon()
 {
+	char oldterse = terse;
 	char buf[512];
 
-	if (terse)
-		Wunhide(cmdwin->ww_win);
-	wwputc(':', cmdwin);
 	wwgets(buf, wwncol - 3, cmdwin);
 	wwputs("\r\n", cmdwin);
-	if (terse)
-		Whide(cmdwin->ww_win);
 	if (dolongcmd(buf) < 0)
 		error("Out of memory.");
 }
