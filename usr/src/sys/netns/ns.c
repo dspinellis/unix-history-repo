@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns.c	8.4 (Berkeley) %G%
+ *	@(#)ns.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -145,7 +145,8 @@ ns_control(so, cmd, data, ifp)
 			ia->ia_flags &= ~IFA_ROUTE;
 		}
 		if (ifp->if_ioctl) {
-			error = (*ifp->if_ioctl)(ifp, SIOCSIFDSTADDR, ia);
+			error = (*ifp->if_ioctl)
+				        (ifp, SIOCSIFDSTADDR, (caddr_t)ia);
 			if (error)
 				return (error);
 		}
