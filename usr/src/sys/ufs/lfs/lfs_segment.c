@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.26 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -110,7 +110,6 @@ lfs_vflush(vp)
 	sp->bpp = malloc(((LFS_SUMMARY_SIZE - sizeof(SEGSUM)) /
 	    sizeof(daddr_t) + 1) * sizeof(struct buf *), M_SEGMENT, M_WAITOK);
 	sp->seg_flags = SEGM_CKP;
-	lfs_initseg(fs, sp);
 
 	/*
 	 * Keep a cumulative count of the outstanding I/O operations.  If the
@@ -124,6 +123,7 @@ lfs_vflush(vp)
 
 	ip = VTOI(vp);
 	do {
+		lfs_initseg(fs, sp);
 		do {
 			if (vp->v_dirtyblkhd != NULL)
 				lfs_writefile(fs, sp, vp);
@@ -451,7 +451,7 @@ lfs_writeinode(fs, sp, ip)
 	 * or if the last inode address is in the current partial segment.
 	 */
 	if (daddr != LFS_UNUSED_DADDR && 
-	    !(daddr >= fs->lfs_curseg && daddr <= ifp->if_daddr) ) {
+	    !(daddr >= fs->lfs_lastpseg && daddr <= bp->b_blkno)) {
 		LFS_SEGENTRY(sup, fs, datosn(fs, daddr), bp);
 #ifdef DIAGNOSTIC
 		if (sup->su_nbytes < sizeof(struct dinode)) {
@@ -772,7 +772,7 @@ lfs_writeseg(fs, sp)
 		*dp++ = (*++bpp)->b_un.b_words[0];
 	ssp = (SEGSUM *)sp->segsum;
 	ssp->ss_create = time.tv_sec;
-	ssp->ss_datasum = cksum(datap, nblocks * sizeof(u_long));
+	ssp->ss_datasum = cksum(datap, (nblocks - 1) * sizeof(u_long));
 	ssp->ss_sumsum =
 	    cksum(&ssp->ss_datasum, LFS_SUMMARY_SIZE - sizeof(ssp->ss_sumsum));
 	free(datap, M_SEGMENT);
@@ -782,6 +782,7 @@ lfs_writeseg(fs, sp)
 	ninos = (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs);
 	sup->su_nbytes += nblocks - 1 - ninos << fs->lfs_bshift;
 	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
+	sup->su_nbytes += LFS_SUMMARY_SIZE;
 	sup->su_lastmod = time.tv_sec;
 	sup->su_flags |= SEGUSE_ACTIVE;
 	sup->su_ninos += ninos;
