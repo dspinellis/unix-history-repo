@@ -6,7 +6,7 @@
  * Bill Joy UCB February 6, 1978
  */
 
-static char sccsid[] = "@(#)px_header.c 1.2 %G%";
+static char sccsid[] = "@(#)px_header.c 1.3 %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)px_header.c 1.2 %G%";
 
 #define	ETXTBSY	26
 #define	ADDR_LC	HEADER_BYTES - sizeof (struct exec) - sizeof (struct pxhdr)
+#define MAXARGS 512
 
 extern	errno;
 
@@ -23,52 +24,92 @@ main(argc, argv)
 	register int argc;
 	register char *argv[];
 {
-	register int i, j;
-	register unsigned short *ip;
-	char *largv[512];
-	int pv[2];
+	register int i;
+	int codesiz, symtabsiz;
+	register char *cp;
+	char *largv[MAXARGS];
+	int fd, pv[2], pid;
 
-	if (argc > 510) {
-		error("Too many arguments.\n");
-		exit(1);
+	cp = (char *)(ADDR_LC);
+	codesiz = ((struct pxhdr *)(cp))->objsize + sizeof(struct pxhdr);
+	symtabsiz = ((struct pxhdr *)(cp))->symtabsize;
+	if (argc > MAXARGS - 3)
+		error(2, "Too many arguments.\n");
+	if (symtabsiz != 0) {
+		largv[0] = "pxhdr";
+		largv[1] = "/tmp/px00000";
+		cp = &largv[1][11];
+		for (i = getpid(); i > 0; i /= 10)
+			*cp-- = '0' + i % 10;
+		fd = creat(largv[1], 0444);
+		if (fd < 0)
+			error(3, "Cannot create /tmp file\n");
+		for (i = 0; i < argc; i++)
+			largv[i + 2] = argv[i];
+		largv[argc + 2] = 0;
+		writeobj(fd, codesiz, symtabsiz);
+		run(PX_DEBUG, largv);
+		/* no return */
 	}
-	largv[0] = argv[0];
-	largv[1] = "-";
-	for (i = 1; i < argc; i++)
+	largv[0] = "pipe";
+	for (i = 0; i < argc; i++)
 		largv[i + 1] = argv[i];
 	largv[argc + 1] = 0;
 	pipe(pv);
-	i = fork();
-	if (i == -1)
-		error("Try again.\n");
-	if (i == 0) {
-		close(pv[0]);
-		ip = (unsigned short *)(ADDR_LC);
-		i = ((struct pxhdr *)(ip))->objsize + sizeof(struct pxhdr);
-		while (i != 0) {
-			j = (i > 0 && i < BUFSIZ) ? i : BUFSIZ;
-			write(pv[1], ip, j);
-			ip += BUFSIZ / sizeof ( unsigned short );
-			i -= j;
+	pid = fork();
+	if (pid != 0) {
+		if (pv[0] != 3) {
+			close(3);
+			dup(pv[0]);
+			close(pv[0]);
 		}
-		exit(1);
+		close(pv[1]);
+		run(PX_INTRP, largv);
+		/* no return */
 	}
-	close(pv[1]);
-	if (pv[0] != 3) {
-		close(3);
-		dup(pv[0]);
-		close(pv[0]);
+	writeobj(pv[1], codesiz, symtabsiz);
+	exit(0);
+}
+
+writeobj(fd, codesiz, symtabsiz)
+	int fd;
+	int codesiz, symtabsiz;
+{
+	int i;
+	register char *cp;
+
+	cp = (char *)(ADDR_LC);
+	while (codesiz != 0) {
+		i = (codesiz < BUFSIZ) ? codesiz : BUFSIZ;
+		write(fd, cp, i);
+		cp += i;
+		codesiz -= i;
 	}
+	while (symtabsiz != 0) {
+		i = (symtabsiz < BUFSIZ) ? symtabsiz : BUFSIZ;
+		write(fd, cp, i);
+		cp += i;
+		symtabsiz -= i;
+	}
+	close(fd);
+}
+
+run(prog, args)
+	char *prog;
+	char **args;
+{
 	for (;;) {
-		execv(PX_INTRP, largv);
+		execv(prog, args);
 		if (errno != ETXTBSY)
 			break;
 		sleep(2);
 	}
-	error("Px not found.\n");
+	error(0, prog);
+	error(1, " not found.\n");
 }
 
-error(cp)
+error(errcode, cp)
+	int errcode;
 	register char *cp;
 {
 	register int i;
@@ -79,7 +120,8 @@ error(cp)
 	while (*dp++)
 		i++;
 	write(2, cp, i);
-	exit(1);
+	if (errcode)
+		exit(errcode);
 }
 
 exit(i)
