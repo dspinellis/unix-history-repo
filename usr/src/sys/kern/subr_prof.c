@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.13 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.14 (Berkeley) %G%
  */
 
 #ifdef GPROF
@@ -79,12 +79,8 @@ kmstartup()
 	((struct phdr *)sbuf)->hpc = s_highpc;
 	((struct phdr *)sbuf)->ncnt = ssiz;
 	((struct phdr *)sbuf)->version = GMONVERSION;
-#ifdef PROFTIMER
-	initprofclock();
+	startprofclock(&proc0);
 	((struct phdr *)sbuf)->profrate = profhz;
-#else
-	((struct phdr *)sbuf)->profrate = hz;
-#endif
 	kcount = (u_short *)(((int)sbuf) + sizeof (struct phdr));
 }
 
