@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.1 (Berkeley) %G%
+ *	@(#)rtsock.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,7 +16,6 @@
 #include <sys/domain.h>
 #include <sys/protosw.h>
 
-#include <net/af.h>
 #include <net/if.h>
 #include <net/route.h>
 #include <net/raw_cb.h>
