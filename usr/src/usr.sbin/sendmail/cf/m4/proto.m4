@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.25 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.26 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -48,6 +48,11 @@ CONCAT(DF, FAX_RELAY)
 ifdef(`SMART_HOST',
 `# "Smart" UUCP relay host
 CONCAT(DS, SMART_HOST)
+
+')dnl
+ifdef(`MAILER_TABLE',
+`# Mailer table (overriding domains)
+Kmailertable MAILER_TABLE
 
 ')dnl
 # who I send unqualified names to (null means deliver locally)
@@ -444,6 +449,12 @@ R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	numeric internet spec',
 R$* < @ > $*		$@ $>7 $1			user@ => user
 R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
 R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
+ifdef(`MAILER_TABLE',
+`
+# try mailer table lookup
+R$* < @ $+ > $*		$: $1 < @ $(mailertable $2 $) $3
+R$* < @ $-:$+ > $*	$# $2 $@ $3 $: $1 < @ $3 > $4	found a match',
+`dnl')
 
 # short circuit local delivery so forwarded email works
 ifdef(`_LOCAL_NOT_STICKY_',
