@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwenviron.c	3.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwenviron.c	3.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -42,9 +42,16 @@ register struct ww *wp;
 	(void) close(i);
 #endif
 	if ((i = wp->ww_socket) < 0) {
+		struct winsize winsize;
+
 		if ((i = open(wp->ww_ttyname, 2)) < 0)
 			goto bad;
 		if (wwsettty(i, &wwwintty, (struct ww_tty *)0) < 0)
+			goto bad;
+		winsize.ws_row = wp->ww_w.nr;
+		winsize.ws_col = wp->ww_w.nc;
+		winsize.ws_xpixel = winsize.ws_ypixel = 0;
+		if (ioctl(i, TIOCSWINSZ, (char *)&winsize) < 0)
 			goto bad;
 	}
 	(void) dup2(i, 0);
