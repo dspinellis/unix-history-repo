@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.33		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.34		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.33		%G%);
+SCCSID(@(#)srvrsmtp.c	3.34		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -39,10 +39,11 @@ struct cmd
 # define CMDQUIT	9	/* quit -- close connection and die */
 # define CMDMRSQ	10	/* mrsq -- for old mtp compat only */
 # define CMDHELO	11	/* helo -- be polite */
-# define CMDDBGSHOWQ	12	/* _showq -- show send queue (DEBUG) */
-# define CMDDBGDEBUG	13	/* _debug -- set debug mode */
-# define CMDDBGVERBOSE	14	/* _verbose -- go into verbose mode */
-# define CMDDBGKILL	15	/* _kill -- kill sendmail */
+# define CMDDBGSHOWQ	12	/* showq -- show send queue (DEBUG) */
+# define CMDDBGDEBUG	13	/* debug -- set debug mode */
+# define CMDVERB	14	/* verb -- go into verbose mode */
+# define CMDDBGKILL	15	/* kill -- kill sendmail */
+# define CMDDBGWIZ	16	/* wiz -- become a wizard */
 
 static struct cmd	CmdTab[] =
 {
@@ -59,21 +60,26 @@ static struct cmd	CmdTab[] =
 	"quit",		CMDQUIT,
 	"mrsq",		CMDMRSQ,
 	"helo",		CMDHELO,
+	"verb",		CMDVERB,
 	"hops",		CMDHOPS,
 # ifdef DEBUG
-	"_showq",	CMDDBGSHOWQ,
-	"_debug",	CMDDBGDEBUG,
-	"_verbose",	CMDDBGVERBOSE,
-	"_kill",	CMDDBGKILL,
+	"showq",	CMDDBGSHOWQ,
+	"debug",	CMDDBGDEBUG,
+	"kill",		CMDDBGKILL,
+	"wiz",		CMDDBGWIZ,
 # endif DEBUG
 	NULL,		CMDERROR,
 };
 
+# ifdef DEBUG
+bool	IsWiz = FALSE;			/* set if we are a wizard */
+char	*WizWord = NULL;		/* the wizard word to compare against */
+# endif DEBUG
+
 smtp()
 {
-	char inp[MAXLINE];
 	register char *p;
-	struct cmd *c;
+	register struct cmd *c;
 	char *cmd;
 	extern char *skipword();
 	extern bool sameword();
@@ -283,6 +289,11 @@ smtp()
 				message("200", "Hop count ok");
 			break;
 
+		  case CMDVERB:		/* set verbose mode */
+			Verbose = TRUE;
+			message("200", "Verbose mode");
+			break;
+
 # ifdef DEBUG
 		  case CMDDBGSHOWQ:	/* show queues */
 			printf("Send Queue=");
@@ -295,16 +306,30 @@ smtp()
 			message("200", "Debug set");
 			break;
 
-		  case CMDDBGVERBOSE:	/* set verbose mode */
-			Verbose = TRUE;
-			message("200", "Verbose mode");
-			break;
-
 		  case CMDDBGKILL:	/* kill the parent */
+			if (!iswiz())
+				break;
 			if (kill(MotherPid, SIGTERM) >= 0)
 				message("200", "Mother is dead");
 			else
 				message("500", "Can't kill Mom");
+			break;
+
+		  case CMDDBGWIZ:	/* become a wizard */
+			if (WizWord != NULL)
+			{
+				char seed[3];
+				extern char *crypt();
+
+				strncpy(seed, WizWord, 2);
+				if (strcmp(WizWord, crypt(p, seed)) != 0)
+				{
+					message("500", "You are no wizard!");
+					break;
+				}
+			}
+			IsWiz = TRUE;
+			message("200", "Please pass, oh mighty wizard");
 			break;
 # endif DEBUG
 
@@ -422,6 +447,29 @@ help(topic)
 	else
 		message("214", "End of HELP info");
 	(void) fclose(hf);
+}
+/*
+**  ISWIZ -- tell us if we are a wizard
+**
+**	If not, print a nasty message.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		TRUE if we are a wizard.
+**		FALSE if we are not a wizard.
+**
+**	Side Effects:
+**		Prints a 500 exit stat if we are not a wizard.
+*/
+
+bool
+iswiz()
+{
+	if (!IsWiz)
+		message("500", "Mere mortals musn't mutter that mantra");
+	return (IsWiz);
 }
 /*
 **  PADDRTREE -- print address tree

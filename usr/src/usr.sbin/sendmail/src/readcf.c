@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.36		%G%);
+SCCSID(@(#)readcf.c	3.37		%G%);
 
 /*
 **  READCF -- read control file.
@@ -527,7 +527,8 @@ mfdecode(flags, f)
 **		Sets options as implied by the arguments.
 */
 
-static int	StickyOpt[128 / sizeof (int)];
+static int	StickyOpt[128 / sizeof (int)];	/* set if option is stuck */
+extern char	*WizWord;			/* the stored wizard password */
 
 setoption(opt, val, safe, sticky)
 	char opt;
@@ -738,6 +739,14 @@ setoption(opt, val, safe, sticky)
 		if (Verbose)
 			NoConnect = FALSE;
 		break;
+
+# ifdef DEBUG
+	  case 'W':		/* set the wizards password */
+		if (!safe)
+			goto syntax;
+		WizWord = val;
+		break;
+# endif DEBUG
 
 	  default:
 	  syntax:
