@@ -1,4 +1,4 @@
-/*	dh.c	4.54	82/12/05	*/
+/*	dh.c	4.55	82/12/10	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -784,7 +784,7 @@ dmintr(dm)
 			tp = &dh11[(dm<<4)+(addr->dmcsr&0xf)];
 			wakeup((caddr_t)&tp->t_rawq);
 			if ((tp->t_state&TS_WOPEN) == 0 &&
-			    (tp->t_mode & MDMBUF)) {
+			    (tp->t_flags & MDMBUF)) {
 				if (addr->dmlstat & DML_CAR) {
 					tp->t_state &= ~TS_TTSTOP;
 					ttstart(tp);
@@ -794,7 +794,7 @@ dmintr(dm)
 				}
 			} else if ((addr->dmlstat&DML_CAR)==0) {
 				if ((tp->t_state&TS_WOPEN)==0 &&
-				    (tp->t_mode & NOHANG) == 0) {
+				    (tp->t_flags & NOHANG) == 0) {
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					addr->dmlstat = 0;

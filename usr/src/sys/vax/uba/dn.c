@@ -1,4 +1,4 @@
-/*	dn.c	4.13	82/10/21	*/
+/*	dn.c	4.14	82/12/10	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -14,7 +14,6 @@
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/conf.h"
-#include "../h/ioctl.h"
 #include "../h/uio.h"
 
 #include "../vaxuba/ubavar.h"
