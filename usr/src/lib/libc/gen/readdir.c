@@ -12,7 +12,12 @@ struct direct *
 readdir(dirp)
 	register DIR *dirp;
 {
-	struct direct *dp;
+	register struct olddirect *dp;
+	static union {
+		struct direct un_dir;
+		char pad[MAXDIRSIZ];
+	} dirun;
+#define dir dirun.un_dir
 
 	for (;;) {
 		if (dirp->dd_loc == 0) {
@@ -25,9 +30,15 @@ readdir(dirp)
 			dirp->dd_loc = 0;
 			continue;
 		}
-		dp = (struct direct *)(dirp->dd_buf + dirp->dd_loc);
-		dirp->dd_loc += sizeof(struct direct);
-		if (dp->d_ino != 0)
-			return dp;
+		dp = (struct olddirect *)(dirp->dd_buf + dirp->dd_loc);
+		dirp->dd_loc += sizeof(struct olddirect);
+		if (dp->d_ino == 0)
+			continue;
+		dir.d_ino = dp->d_ino;
+		strncpy(dir.d_name, dp->d_name, DIRSIZ);
+		dir.d_namlen = strlen(dir.d_name);
+		dir.d_reclen = ((sizeof(struct direct) + dir.d_namlen)
+		    + 4) & ~03;
+		return (&dir);
 	}
 }
