@@ -1,6 +1,6 @@
-.\"	@(#)rand.3	4.1 (Berkeley) %G%
+.\"	@(#)rand.3	5.1 (Berkeley) %G%
 .\"
-.TH RAND 3 VAX-11
+.TH RAND 3C "19 January 1983"
 .AT 3
 .SH NAME
 rand, srand \- random number generator
@@ -12,6 +12,11 @@ rand, srand \- random number generator
 .B rand()
 .fi
 .SH DESCRIPTION
+.ft B
+The newer random(3) should be used in new applications;
+rand remains for compatibilty.
+.ft R
+.PP
 .I Rand
 uses a multiplicative congruential
 random number generator
@@ -25,3 +30,5 @@ with 1 as argument.
 It can be set to a random starting point by calling
 .I srand
 with whatever you like as argument.
+.SH "SEE ALSO"
+random(3)
