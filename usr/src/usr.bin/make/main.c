@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -374,8 +374,8 @@ main(argc, argv)
 	if (!(path = getenv("MAKEOBJDIR")))
 		path = _PATH_OBJDIR;
 	
-	if (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode)) {
-
+	if (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode) &&
+	    lstat(path, &sb) == 0) {
 		if (chdir(path)) {
 			(void)fprintf(stderr, "make: %s: %s.\n",
 			    path, strerror(errno));
