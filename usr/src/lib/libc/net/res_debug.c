@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -54,12 +54,19 @@ char *rcodes[] = {
 	"NOCHANGE",
 };
 
+p_query(msg)
+	char *msg;
+{
+	fp_query(msg,stdout);
+}
+
 /*
  * Print the contents of a query.
  * This is intended to be primarily a debugging routine.
  */
-p_query(msg)
+fp_query(msg,file)
 	char *msg;
+	FILE *file;
 {
 	register char *cp;
 	register HEADER *hp;
@@ -70,40 +77,40 @@ p_query(msg)
 	 */
 	hp = (HEADER *)msg;
 	cp = msg + sizeof(HEADER);
-	printf("HEADER:\n");
-	printf("\topcode = %s", opcodes[hp->opcode]);
-	printf(", id = %d", ntohs(hp->id));
-	printf(", rcode = %s\n", rcodes[hp->rcode]);
-	printf("\theader flags: ");
+	fprintf(file,"HEADER:\n");
+	fprintf(file,"\topcode = %s", opcodes[hp->opcode]);
+	fprintf(file,", id = %d", ntohs(hp->id));
+	fprintf(file,", rcode = %s\n", rcodes[hp->rcode]);
+	fprintf(file,"\theader flags: ");
 	if (hp->qr)
-		printf(" qr");
+		fprintf(file," qr");
 	if (hp->aa)
-		printf(" aa");
+		fprintf(file," aa");
 	if (hp->tc)
-		printf(" tc");
+		fprintf(file," tc");
 	if (hp->rd)
-		printf(" rd");
+		fprintf(file," rd");
 	if (hp->ra)
-		printf(" ra");
+		fprintf(file," ra");
 	if (hp->pr)
-		printf(" pr");
-	printf("\n\tqdcount = %d", ntohs(hp->qdcount));
-	printf(", ancount = %d", ntohs(hp->ancount));
-	printf(", nscount = %d", ntohs(hp->nscount));
-	printf(", arcount = %d\n\n", ntohs(hp->arcount));
+		fprintf(file," pr");
+	fprintf(file,"\n\tqdcount = %d", ntohs(hp->qdcount));
+	fprintf(file,", ancount = %d", ntohs(hp->ancount));
+	fprintf(file,", nscount = %d", ntohs(hp->nscount));
+	fprintf(file,", arcount = %d\n\n", ntohs(hp->arcount));
 	/*
 	 * Print question records.
 	 */
 	if (n = ntohs(hp->qdcount)) {
-		printf("QUESTIONS:\n");
+		fprintf(file,"QUESTIONS:\n");
 		while (--n >= 0) {
-			printf("\t");
-			cp = p_cdname(cp, msg);
+			fprintf(file,"\t");
+			cp = p_cdname(cp, msg, file);
 			if (cp == NULL)
 				return;
-			printf(", type = %s", p_type(getshort(cp)));
+			fprintf(file,", type = %s", p_type(getshort(cp)));
 			cp += sizeof(u_short);
-			printf(", class = %s\n\n", p_class(getshort(cp)));
+			fprintf(file,", class = %s\n\n", p_class(getshort(cp)));
 			cp += sizeof(u_short);
 		}
 	}
@@ -111,10 +118,10 @@ p_query(msg)
 	 * Print authoritative answer records
 	 */
 	if (n = ntohs(hp->ancount)) {
-		printf("ANSWERS:\n");
+		fprintf(file,"ANSWERS:\n");
 		while (--n >= 0) {
-			printf("\t");
-			cp = p_rr(cp, msg);
+			fprintf(file,"\t");
+			cp = p_rr(cp, msg, file);
 			if (cp == NULL)
 				return;
 		}
@@ -123,10 +130,10 @@ p_query(msg)
 	 * print name server records
 	 */
 	if (n = ntohs(hp->nscount)) {
-		printf("NAME SERVERS:\n");
+		fprintf(file,"NAME SERVERS:\n");
 		while (--n >= 0) {
-			printf("\t");
-			cp = p_rr(cp, msg);
+			fprintf(file,"\t");
+			cp = p_rr(cp, msg, file);
 			if (cp == NULL)
 				return;
 		}
@@ -135,10 +142,10 @@ p_query(msg)
 	 * print additional records
 	 */
 	if (n = ntohs(hp->arcount)) {
-		printf("ADDITIONAL RECORDS:\n");
+		fprintf(file,"ADDITIONAL RECORDS:\n");
 		while (--n >= 0) {
-			printf("\t");
-			cp = p_rr(cp, msg);
+			fprintf(file,"\t");
+			cp = p_rr(cp, msg, file);
 			if (cp == NULL)
 				return;
 		}
@@ -146,8 +153,9 @@ p_query(msg)
 }
 
 char *
-p_cdname(cp, msg)
+p_cdname(cp, msg, file)
 	char *cp, *msg;
+	FILE *file;
 {
 	char name[MAXDNAME];
 	int n;
@@ -158,7 +166,7 @@ p_cdname(cp, msg)
 		name[0] = '.';
 		name[1] = '\0';
 	}
-	fputs(name, stdout);
+	fputs(name, file);
 	return (cp + n);
 }
 
@@ -166,22 +174,23 @@ p_cdname(cp, msg)
  * Print resource record fields in human readable form.
  */
 char *
-p_rr(cp, msg)
+p_rr(cp, msg, file)
 	char *cp, *msg;
+	FILE *file;
 {
 	int type, class, dlen, n, c;
 	struct in_addr inaddr;
 	char *cp1;
 
-	if ((cp = p_cdname(cp, msg)) == NULL)
+	if ((cp = p_cdname(cp, msg, file)) == NULL)
 		return (NULL);			/* compression error */
-	printf("\n\ttype = %s", p_type(type = getshort(cp)));
+	fprintf(file,"\n\ttype = %s", p_type(type = getshort(cp)));
 	cp += sizeof(u_short);
-	printf(", class = %s", p_class(class = getshort(cp)));
+	fprintf(file,", class = %s", p_class(class = getshort(cp)));
 	cp += sizeof(u_short);
-	printf(", ttl = %ld", getlong(cp));
+	fprintf(file,", ttl = %ld", getlong(cp));
 	cp += sizeof(u_long);
-	printf(", dlen = %d\n", dlen = getshort(cp));
+	fprintf(file,", dlen = %d\n", dlen = getshort(cp));
 	cp += sizeof(u_short);
 	cp1 = cp;
 	/*
@@ -193,14 +202,14 @@ p_rr(cp, msg)
 		case C_IN:
 			bcopy(cp, (char *)&inaddr, sizeof(inaddr));
 			if (dlen == 4) {
-				printf("\tinternet address = %s\n",
+				fprintf(file,"\tinternet address = %s\n",
 					inet_ntoa(inaddr));
 				cp += dlen;
 			} else if (dlen == 7) {
-				printf("\tinternet address = %s",
+				fprintf(file,"\tinternet address = %s",
 					inet_ntoa(inaddr));
-				printf(", protocol = %d", cp[4]);
-				printf(", port = %d\n",
+				fprintf(file,", protocol = %d", cp[4]);
+				fprintf(file,", port = %d\n",
 					(cp[5] << 8) + cp[6]);
 				cp += dlen;
 			}
@@ -215,55 +224,55 @@ p_rr(cp, msg)
 	case T_MR:
 	case T_NS:
 	case T_PTR:
-		printf("\tdomain name = ");
-		cp = p_cdname(cp, msg);
-		printf("\n");
+		fprintf(file,"\tdomain name = ");
+		cp = p_cdname(cp, msg, file);
+		fprintf(file,"\n");
 		break;
 
 	case T_HINFO:
 		if (n = *cp++) {
-			printf("\tCPU=%.*s\n", n, cp);
+			fprintf(file,"\tCPU=%.*s\n", n, cp);
 			cp += n;
 		}
 		if (n = *cp++) {
-			printf("\tOS=%.*s\n", n, cp);
+			fprintf(file,"\tOS=%.*s\n", n, cp);
 			cp += n;
 		}
 		break;
 
 	case T_SOA:
-		printf("\torigin = ");
-		cp = p_cdname(cp, msg);
-		printf("\n\tmail addr = ");
-		cp = p_cdname(cp, msg);
-		printf("\n\tserial=%ld", getlong(cp));
+		fprintf(file,"\torigin = ");
+		cp = p_cdname(cp, msg, file);
+		fprintf(file,"\n\tmail addr = ");
+		cp = p_cdname(cp, msg, file);
+		fprintf(file,"\n\tserial=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		printf(", refresh=%ld", getlong(cp));
+		fprintf(file,", refresh=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		printf(", retry=%ld", getlong(cp));
+		fprintf(file,", retry=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		printf(", expire=%ld", getlong(cp));
+		fprintf(file,", expire=%ld", getlong(cp));
 		cp += sizeof(u_long);
-		printf(", min=%ld\n", getlong(cp));
+		fprintf(file,", min=%ld\n", getlong(cp));
 		cp += sizeof(u_long);
 		break;
 
 	case T_MINFO:
-		printf("\trequests = ");
-		cp = p_cdname(cp, msg);
-		printf("\n\terrors = ");
-		cp = p_cdname(cp, msg);
+		fprintf(file,"\trequests = ");
+		cp = p_cdname(cp, msg, file);
+		fprintf(file,"\n\terrors = ");
+		cp = p_cdname(cp, msg, file);
 		break;
 
 	case T_UINFO:
-		printf("\t%s\n", cp);
+		fprintf(file,"\t%s\n", cp);
 		cp += dlen;
 		break;
 
 	case T_UID:
 	case T_GID:
 		if (dlen == 4) {
-			printf("\t%ld\n", getlong(cp));
+			fprintf(file,"\t%ld\n", getlong(cp));
 			cp += sizeof(int);
 		}
 		break;
@@ -273,27 +282,27 @@ p_rr(cp, msg)
 			break;
 		bcopy(cp, (char *)&inaddr, sizeof(inaddr));
 		cp += sizeof(u_long);
-		printf("\tinternet address = %s, protocol = %d\n\t",
+		fprintf(file,"\tinternet address = %s, protocol = %d\n\t",
 			inet_ntoa(inaddr), *cp++);
 		n = 0;
 		while (cp < cp1 + dlen) {
 			c = *cp++;
 			do {
 				if (c & 1)
-					printf(" %d", n);
+					fprintf(file," %d", n);
 				c >>= 1;
 			} while (++n & 07);
 		}
-		putchar('\n');
+		putc('\n',file);
 		break;
 
 	default:
-		printf("\t???\n");
+		fprintf(file,"\t???\n");
 		cp += dlen;
 	}
 	if (cp != cp1 + dlen)
-		printf("packet size error (%#x != %#x)\n", cp, cp1+dlen);
-	printf("\n");
+		fprintf(file,"packet size error (%#x != %#x)\n", cp, cp1+dlen);
+	fprintf(file,"\n");
 	return (cp);
 }
 
@@ -375,3 +384,4 @@ p_class(class)
 		return (sprintf(nbuf, "%d", class));
 	}
 }
+
