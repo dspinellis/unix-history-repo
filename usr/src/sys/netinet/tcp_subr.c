@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	6.6 (Berkeley) %G%
+ *	@(#)tcp_subr.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -190,13 +190,6 @@ tcp_drop(tp, errno)
 	return (tcp_close(tp));
 }
 
-tcp_abort(inp)
-	struct inpcb *inp;
-{
-
-	(void) tcp_close((struct tcpcb *)inp->inp_ppcb);
-}
-
 /*
  * Close a TCP control block:
  *	discard all space held by the tcp
@@ -223,8 +216,6 @@ tcp_close(tp)
 		(void) m_free(dtom(tp->t_template));
 	if (tp->t_tcpopt)
 		(void) m_free(dtom(tp->t_tcpopt));
-	if (tp->t_ipopt)
-		(void) m_free(dtom(tp->t_ipopt));
 	(void) m_free(dtom(tp));
 	inp->inp_ppcb = 0;
 	soisdisconnected(so);
@@ -237,47 +228,41 @@ tcp_drain()
 
 }
 
-tcp_ctlinput(cmd, arg)
+tcp_ctlinput(cmd, sa)
 	int cmd;
-	caddr_t arg;
+	struct sockaddr *sa;
 {
-	struct in_addr *in;
 	extern u_char inetctlerrmap[];
+	struct sockaddr_in *sin;
 	int tcp_quench(), in_rtchange();
 
-	if (cmd < 0 || cmd > PRC_NCMDS)
+	if ((unsigned)cmd > PRC_NCMDS)
 		return;
+	if (sa->sa_family != AF_INET && sa->sa_family != AF_IMPLINK)
+		return;
+	sin = (struct sockaddr_in *)sa;
+	if (sin->sin_addr.s_addr == INADDR_ANY)
+		return;
+
 	switch (cmd) {
 
-	case PRC_ROUTEDEAD:
-		break;
-
 	case PRC_QUENCH:
-		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
-		in_pcbnotify(&tcb, in, 0, tcp_quench);
+		in_pcbnotify(&tcb, &sin->sin_addr, 0, tcp_quench);
 		break;
 
+	case PRC_ROUTEDEAD:
 	case PRC_REDIRECT_NET:
 	case PRC_REDIRECT_HOST:
-		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
-		in_pcbnotify(&tcb, in, 0, in_rtchange);
+	case PRC_REDIRECT_TOSNET:
+	case PRC_REDIRECT_TOSHOST:
+		in_pcbnotify(&tcb, &sin->sin_addr, 0, in_rtchange);
 		break;
-
-	case PRC_IFDOWN:
-		in = &((struct sockaddr_in *)arg)->sin_addr;
-		goto notify;
-
-	case PRC_HOSTDEAD:
-	case PRC_HOSTUNREACH:
-		in = (struct in_addr *)arg;
-		goto notify;
 
 	default:
 		if (inetctlerrmap[cmd] == 0)
 			return;		/* XXX */
-		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
-notify:
-		in_pcbnotify(&tcb, in, (int)inetctlerrmap[cmd], tcp_abort);
+		in_pcbnotify(&tcb, &sin->sin_addr, (int)inetctlerrmap[cmd],
+			(int (*)())0);
 	}
 }
 
@@ -290,5 +275,7 @@ tcp_quench(inp)
 {
 	struct tcpcb *tp = intotcpcb(inp);
 
-	tp->snd_cwnd = MAX(8 * (tp->snd_nxt - tp->snd_una) / 10, tp->t_maxseg);
+	if (tp)
+	    tp->snd_cwnd = MAX(8 * (tp->snd_nxt - tp->snd_una) / 10,
+		tp->t_maxseg);
 }
