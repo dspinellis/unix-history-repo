@@ -4,9 +4,13 @@
 # import/ checkout.  These need to be made by the Makefiles, this
 # is just here as a stop gap solution.
 #
-# $Header$
+# $Header: /home/cvs/386BSD/src/FixLinks,v 1.1 93/06/19 14:50:18 rgrimes Exp $
 #
-# $Log$
+# $Log:	FixLinks,v $
+# Revision 1.1  93/06/19  14:50:18  rgrimes
+# Added my silly little FixLinks script until someone fixes all
+# the make files.
+# 
 
 pushd sys.386bsd/netccitt ; ln -s x25.h x25_sockaddr.h ; popd
 pushd lib/libc/db ; ln -s VERSION README ; popd
@@ -31,3 +35,10 @@ pushd share/doc/usd/10.etiq ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
 pushd share/doc/usd/09.newsread ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
 pushd games/chess ; ln -s DOCUMENTATION/MAN-PAGE chess.6 ; popd
 pushd games/fortune/datfiles ; ln -s fortunes-o.real.rot13 fortunes-o ; popd
+pushd usr.bin ; ln -s ../gnu/bc bc ; popd
+pushd usr.bin ; ln -s ../gnu/gawk awk ; popd
+pushd usr.bin ; ln -s ../gnu/gcc1 gcc1 ; popd
+pushd usr.bin ; ln -s ../gnu/gcc2 gcc2 ; popd
+pushd usr.bin ; ln -s ../gnu/groff groff ; popd
+pushd usr.bin ; ln -s ../gnu/gzip gzip ; popd
+pushd usr.bin ; ln -s ../gnu/tar tar ; popd
