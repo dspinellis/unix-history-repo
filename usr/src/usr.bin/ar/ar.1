@@ -1,164 +1,194 @@
-.\" Copyright (c) 1990 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"     @(#)ar.1	6.4 (Berkeley) %G%
+.\" This code is derived from software contributed to Berkeley by
+.\" Hugh Smith at The University of Guelph.
 .\"
-.Dd 
-.Dt AR 1
-.Os ATT 7th
-.Sh NAME
-.Nm ar
-.Nd archive and library maintainer
-.Sh SYNOPSIS
-.Nm ar
-.Cm key
-.Op Ar posname
-.Ar afile name ...
-.Sh DESCRIPTION
-.Nm Ar
-maintains groups of files
-combined into a single archive file.
-Its main use
-is to create and update library files as used by the loader.
-It can be used, though, for any similar purpose.
-.Sy N.B.:
-This version of
-.Nm ar
-uses a ASCII-format archive which is portable among the various
-machines running UNIX.
-Programs for dealing with older formats are available: see
-.Xr arcv 8 .
-.Pp
-.Cm Key
-is one character from the set
-.Fl drqtpmx
-optionally concatenated with
-one or more of
-.Fl vuaibclo .
-.Ar Afile
-is the archive file.
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ar.1	6.5 (Berkeley) %G%
+.\"
+.TH AR 1 ""
+.AT 3
+.SH NAME
+ar \- create and maintain library archives
+.SH SYNOPSIS
+.nf
+.ft B
+ar -d [-v] archive file ...
+ar -m [-v] archive file ...
+ar -m [-abiv] position archive file ...
+ar -p [-v] archive [file ...]
+ar -q [-cv] archive file ...
+ar -r [-cuv] archive file ...
+ar -r [-abciuv] position archive file ...
+ar -t [-v] archive [file ...]
+ar -x [-ouv] archive [file ...]
+.fi
+.ft R
+.SH DESCRIPTION
 The
-.Ar names
-are constituent files in the archive file.
-The meanings of the
-.Fl key
-characters are:
-.Tp Fl d
-Delete the named files from the archive file.
-.Tp Fl r
-Replace the named files in the archive file.
-If the optional character
-.Fl u
-is used with
-.Fl r
-then only those files with
-.Li last-modified
-dates later than
-the archive files are replaced.
-If an optional positioning character from the set
-.Fl abi
-is used, then the
-.Ar posname
-argument must be present
-and specifies that new files are to be placed
-after
-.Fl a
-or before
-.Fl b
-or
-.Fl i
-.Ar posname .
-Otherwise
-new files are placed at the end.
-.Tp Fl q
-Quickly append the named files to the end of the archive file.
-Optional positioning characters are invalid.
-The command does not check whether the added members
-are already in the archive.
-Useful only to avoid quadratic behavior when creating a large
-archive piece-by-piece.
-.Tp Fl t
-Print a table of contents of the archive file.
-If no names are given, all files in the archive are tabled.
-If names are given, only those files are tabled.
-.Tp Fl p
-Print the named files in the archive.
-.Tp Fl m
-Move the named files to the end of the archive.
-If a positioning character is present,
-then the
-.Ar posname
-argument must be present and,
-as in
-.Fl r
-specifies where the files are to be moved.
-.Tp Fl x
-Extract the named files.
-If no names are given, all files in the archive are
-extracted.
-In neither case does
-.Fl x
-alter the archive file. Normally the `last-modified' date of each
-extracted file is the date when it is extracted. However, if
-.Fl o
-is used, the `last-modified' date is reset to the date recorded in the
-archive.
-.Tp Fl v
-Verbose.
-Under the verbose option,
-.Nm ar
-gives a file-by-file
-description of the making of a
-new archive file from the old archive and the constituent files.
-When used with
-.Fl t
-it gives a long listing of all information about the files.
-When used with
-.Fl p ,
-it precedes each file with a name.
-.Tp Fl c
-Create.
-Normally
-.Nm ar
-will create
-.Ar afile
-when it needs to.
-The create option suppresses the
-normal message that is produced when
-.Ar afile
-is created.
-.Tp Fl l
-Local.
-Normally
-.Nm ar
-places its temporary files in the directory /tmp.
-This option causes them to be placed in the local directory.
-.Tp
-.Sh FILES
-.Dw /tmp/v*
-.Di L
-.Dp Pa tmp/v*
-temporaries
-.Dp
-.Sh SEE ALSO
-.Xr lorder 1 ,
-.Xr ld 1 ,
-.Xr ranlib 1 ,
-.Xr ar 5 ,
-.Xr arcv 8
-.Sh HISTORY
-.Nm Ar
-appeared in vanilla Version 6 AT&T UNIX.  The Version 7
-.Nm ar
-appeared
-in 2.0 BSD.
-.Sh BUGS
-If the same file is mentioned twice in an argument list,
-it may be put in the archive twice.
-.Pp
+.I ar
+utility creates and maintains groups of files combined into an archive.
+Once an archive has been created, new files can be added and existing
+files can be extracted, deleted, or replaced.
+.PP
+Files are named in the archive by a single component, i.e., if a file
+referenced by a path containing a slash (``/'') is archived it will be
+named by the last component of that path.
+When matching paths listed on the command line against file names stored
+in the archive, only the last component of the path will be compared.
+All informational and error messages use the file name as found in the
+archive, not the path listed on the command line.
+If multiple files in the archive have the same name, and paths are listed
+on the command line to ``select'' archive files for an operation, only the
+.B first
+file with a matching name will be selected.
+.PP
+The normal use of
+.I ar
+is for the creation and maintenance of libraries suitable for use with
+the loader (see
+.IR ld (1))
+although it is not restricted to this purpose.
+The options are as follows:
+.TP
+\-a
+A positioning modifier used with the options \-r and \-m.
+The files are entered or moved
+.B after
+the archive member
+.IR position ,
+which must be specified.
+.TP
+\-b
+A positioning modifier used with the options \-r and \-m.
+The files are entered or moved
+.B before
+the archive member
+.IR position ,
+which must be specified.
+.TP
+\-c
+Whenever an archive is created, an informational message to that effect
+is written to standard error.
+If the \-c option is specified,
+.I ar
+creates the archive silently.
+.TP
+\-d
+Delete the specified archive files.
+.TP
+\-i
+Identical to the \-b option.
+.TP
+\-m
+Move the specified archive files within the archive.
+If one of the options \-a, \-b or \-i are specified, the files are moved
+before or after the
+.I position
+file in the archive.
+If none of those options are specified, the files are moved
+to the end of the archive.
+.TP
+\-o
+Set the access and modification times of extracted files to the
+modification time of the file when it was entered into the archive.
+This will fail if the user is not the owner of the extracted file
+or the super-user.
+.TP
+\-p
+Write the contents of the specified archive files to the standard output.
+If no files are specified, the contents of all the files in the archive
+are written in the order they appear in the archive.
+.TP
+\-q
+(Quickly) append the specified files to the archive.
+If the archive does not exist a new archive file is created.
+Much faster than the \-r option, when creating a large archive
+piece-by-piece, as no checking is done to see if the files already
+exist in the archive.
+.TP
+\-r
+Replace or add the specified files to the archive.
+If the archive does not exist a new archive file is created.
+Files that replace existing files do not change the order of the files
+within the archive.
+New files are appended to the archive unless one of the options \-a, \-b
+or \-i is specified.
+.TP
+\-t
+List the specified files in the order in which they appear in the archive,
+each on a separate line.
+If no files are specified, all files in the archive are listed.
+.TP
+\-u
+Update files.
+When used with the \-r option, files in the archive will be replaced
+only if the disk file has a newer modification time than the file in
+the archive.
+When used with the \-x option, files in the archive will be extracted
+only if the archive file has a newer modification time than the file
+on disk.
+.TP
+\-v
+Provide verbose output.
+When used with the \-d, \-m, \-q or \-x options,
+.I ar
+gives a file-by-file description of the archive modification.
+This description consists of three, white-space separated fields: the
+option letter, a dash (``-'') and the file name.
+When used with the \-r option,
+.I ar
+displays the description as above, but the initial letter is an ``a'' if
+the file is added to the archive and an ``r'' if the file replaces a file
+already in the archive.
+.IP
+When used with the \-p option,
+the name of each printed file is written to the standard output before
+the contents of the file, on a line by itself, enclosed in less-than
+(``<'') and greater-than (``>'') characters.
+.IP
+When used with the \-t option,
+.I ar
+displays an ``ls -l'' style listing of information about the files in
+the archive.
+This listing consists of eight, white-space separated fields:
+the file permissions (see
+.IR strmode (3)),
+the decimal user and group ID's, separated by a single slash (``/''),
+the file size (in bytes), the file modification time (in the
+.IR date (1)
+format ``%b %e %H:%M %Y''), and the name of the file.
+.TP
+\-x
+Extract the specified files into the files named by the command line
+arguments.
+If no files are specified, all the files in the archive are extracted into
+the current directory.
+.IP
+If the file does not exist, it is created; if it does exist, the owner
+and group will be unchanged.
+The file access and modification times are the time of the extraction
+(but see the \-o option).
+The file permissions will be set to those of the file when it was entered
+into the archive; this will fail if the user is not the owner of the
+extracted file or the super-user.
+.PP
 The
-.Li last-modified
-date of a file will not be altered by the
-.Fl o
-option if the user is not the owner of the extracted file, or the super-user.
+.I ar
+utility exits 0 on success, and >0 if an error occurs.
+.SH ENVIRONMENT
+.TP
+TMPDIR
+The pathname of the directory to use when creating temporary files.
+.PP
+.SH FILES
+.TP 14
+/tmp
+default temporary file directory
+.TP 14
+ar.XXXXXX
+temporary file names
+.SH "SEE ALSO"
+date(1), ld(1), ranlib(1), strmode(3), ar(5)
