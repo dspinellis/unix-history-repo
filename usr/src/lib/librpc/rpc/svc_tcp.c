@@ -42,10 +42,10 @@ static char sccsid[] = "@(#)svc_tcp.c 1.21 87/08/11 Copyr 1984 Sun Micro";
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <rpc/rpc.h>
 #include <sys/socket.h>
 #include <errno.h>
-extern bool_t abort();
 extern errno;
 
 /*
@@ -76,9 +76,9 @@ static enum xprt_stat	rendezvous_stat();
 static struct xp_ops svctcp_rendezvous_op = {
 	rendezvous_request,
 	rendezvous_stat,
-	abort,
-	abort,
-	abort,
+	(bool_t (*)())abort,
+	(bool_t (*)())abort,
+	(bool_t (*)())abort,
 	svctcp_destroy
 };
 
