@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.5.1.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,7 @@
 #include "disklabel.h"
 #endif SECSIZE
 
+#include "pte.h"
 #include "pte.h"
 #include "cpu.h"
 #include "mem.h"

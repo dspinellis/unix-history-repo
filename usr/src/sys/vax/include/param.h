@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.4.1.1 (Berkeley) %G%
+ *	@(#)param.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -36,6 +36,9 @@ u_long	ntohl(), htonl();
 #define	KERNBASE	0x80000000	/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
+#define	KERNBASE	0x80000000	/* start of kernel virtual */
+#define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
+
 #define	NBPG		512		/* bytes/page */
 #define	PGOFSET		(NBPG-1)	/* byte offset into page */
 #define	PGSHIFT		9		/* LOG2(NBPG) */
@@ -45,6 +48,7 @@ u_long	ntohl(), htonl();
 #define	DEV_BSIZE	512
 #define	DEV_BSHIFT	9		/* log2(DEV_BSIZE) */
 #define BLKDEV_IOSIZE	2048
+#define	MAXPHYS		(63 * 1024)	/* max raw I/O transfer size */
 #else SECSIZE
 /*
  * Devices without disk labels and the swap virtual device
