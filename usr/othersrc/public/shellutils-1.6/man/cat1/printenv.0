@@ -1,0 +1,66 @@
+
+
+
+PRINTENV(1L)                                         PRINTENV(1L)
+
+
+NNAAMMEE
+       printenv - print all or part of environment
+
+SSYYNNOOPPSSIISS
+       pprriinntteennvv [variable...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents the GNU version of pprriinntteennvv.
+       If no arguments are  given,  pprriinntteennvv  prints  the  entire
+       environment.   If one or more variable names are given, it
+       prints the value of each one that is set, and nothing  for
+       each one that is not set.
+
+       The exit status is:
+       0 if all variables specified were found
+       1 otherwise
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

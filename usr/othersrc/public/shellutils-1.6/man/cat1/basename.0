@@ -1,0 +1,66 @@
+
+
+
+BASENAME(1L)                                         BASENAME(1L)
+
+
+NNAAMMEE
+       basename - strip directory and suffix from filenames
+
+SSYYNNOOPPSSIISS
+       bbaasseennaammee name [suffix]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents the GNU version of bbaasseennaammee.
+       The bbaasseennaammee command removes any leading path  from  _n_a_m_e;
+       If  _s_u_f_f_i_x  is  specified  and  is identical to the end of
+       _n_a_m_e, it is removed from _n_a_m_e as  well.   bbaasseennaammee  prints
+       the resulting name on the standard output.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

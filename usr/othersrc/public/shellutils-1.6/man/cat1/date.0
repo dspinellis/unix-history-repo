@@ -1,0 +1,198 @@
+
+
+
+DATE(1L)                                                 DATE(1L)
+
+
+NNAAMMEE
+       date - print or set the system date and time
+
+SSYYNNOOPPSSIISS
+       ddaattee [-u] [-s new-date] [+FORMAT] [MMDDhhmm[[CC]YY][.ss]]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual page documents the GNU version of ddaattee.  ddaattee
+       with no arguments prints the current time and date (in the
+       format  of  the `%c' directive described below).  If given
+       an argument that starts with a `+', it prints the  current
+       time  and  date  in  a format controlled by that argument,
+       which has the same format as the format string  passed  to
+       the `strftime' function.  Except for directives that start
+       with `%', characters in that string are printed unchanged.
+
+       The directives are:
+
+       %      a literal %
+
+       n      a newline
+
+       t      a horizontal tab
+
+       Time fields:
+
+       %H     hour (00..23)
+
+       %I     hour (00..12)
+
+       %M     minute (00..59)
+
+       %p     locale's AM or PM
+
+       %r     time, 12-hour (hh:mm:ss [AP]M)
+
+       %S     second (00..61)
+
+       %T     time, 24-hour (hh:mm:ss)
+
+       %X     locale's time representation (%H:%M:%S)
+
+       %Z     time  zone  (e.g., EDT), or nothing if no time zone
+              is determinable
+
+       Date fields:
+
+       %a     locale's abbreviated weekday name (Sun..Sat)
+
+       %A     locale's full weekday name, variable  length  (Sun-
+              day..Saturday)
+
+       %b     locale's abbreviated month name (Jan..Dec)
+
+
+
+
+                                                                1
+
+
+
+
+
+DATE(1L)                                                 DATE(1L)
+
+
+       %B     locale's  full  month  name,  variable length (Jan-
+              uary..December)
+
+       %c     locale's date and time (Sat  Nov  04  12:02:33  EST
+              1989)
+
+       %d     day of month (01..31)
+
+       %D     date (mm/dd/yy)
+
+       %h     same as %b
+
+       %j     day of year (001..366)
+
+       %m     month (01..12)
+
+       %U     week  number  of  year  with Sunday as first day of
+              week (00..53)
+
+       %w     day of week (0..6)
+
+       %W     week number of year with Monday  as  first  day  of
+              week (00..53)
+
+       %x     locale's date representation (mm/dd/yy)
+
+       %y     last two digits of year (00..99)
+
+       %Y     year (1970...)
+
+       If  given  an  argument that does not start with `+', ddaattee
+       sets the system clock to the time and  date  specified  by
+       that argument.  The argument must consist entirely of dig-
+       its, which have the following meaning:
+
+       MM     month
+
+       DD     day within month
+
+       hh     hour
+
+       mm     minute
+
+       CC     first two digits of year (optional)
+
+       YY     last two digits of year (optional)
+
+       ss     second (optional)
+
+       Only the superuser can set the system clock.
+
+   OOPPTTIIOONNSS
+       -_s _n_e_w-_d_a_t_e
+              Set the time and date to _n_e_w-_d_a_t_e, which can be  in
+
+
+
+                                                                2
+
+
+
+
+
+DATE(1L)                                                 DATE(1L)
+
+
+              almost  any  common  format.   It can contain month
+              names, timezones, `am' and `pm', etc.
+
+       -_u     Print or set the time and date in Universal Coordi-
+              nated  Time  (also  known  as  Greenwich Mean Time)
+              instead of in local (wall clock) time.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                3
+
+

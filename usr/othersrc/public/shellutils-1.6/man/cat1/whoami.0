@@ -1,0 +1,66 @@
+
+
+
+WHOAMI(1L)                                             WHOAMI(1L)
+
+
+NNAAMMEE
+       whoami - print effective userid
+
+SSYYNNOOPPSSIISS
+       wwhhooaammii
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents  the  GNU version of wwhhooaammii.
+       wwhhooaammii prints the user name associated  with  the  current
+       effective  user  ID.   It is equivalent to the command `id
+       -un'.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+
