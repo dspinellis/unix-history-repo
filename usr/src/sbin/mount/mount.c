@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,7 +56,7 @@ main(argc, argv)
 	struct statfs *mntbuf;
 	FILE *pidfile;
 	long mntsize;
-	int all, ch, i, pid, ret, rval, updateflg;
+	int all, ch, i, ret, rval, updateflg;
 	char *cp, *type, *options, **vfslist;
 
 	mntname = "ufs";
@@ -201,12 +201,18 @@ main(argc, argv)
 		}
 		ret = mountfs(argv[0], argv[1], updateflg, type, options, NULL);
 	}
-	if ((pidfile = fopen(_PATH_MOUNTDPID, "r")) != NULL) {
-		pid = 0;
-		(void)fscanf(pidfile, "%ld", &pid);
-		(void)fclose(pidfile);
-		if (pid > 0 && kill(pid, SIGHUP))
-			err(1, "signal mountd");
+	/*
+	 * If the mount succeeded, and we're running as root,
+	 * then tell mountd the good news.
+	 */
+	if ((ret == 0) && (getuid() == 0)) {
+		if ((pidfile = fopen(_PATH_MOUNTDPID, "r")) != NULL) {
+			pid_t pid = 0;
+			(void)fscanf(pidfile, "%ld", &pid);
+			(void)fclose(pidfile);
+			if (pid > 0 && kill(pid, SIGHUP))
+				err(1, "signal mountd");
+		}
 	}
 
 	exit(ret);
