@@ -127,7 +127,7 @@ action:	white_space command_list NL
 for_statement: maybe_at_minus FOR white_space token
 		in tokens semi_colon
     {
-	$$ = for_statement($1, $4, expand_variables($6, 0));
+	$$ = for_statement($1, $4, ws_merge(expand_variables($6, 0)));
     }
     ;
 
@@ -667,14 +667,14 @@ int	free;
 	char *string = token->string->string;
 	same_t *tmp = same_unlink(token);
 
-	if ((string[0] == '$') && (string[1] == '{')) {/* '}' Expand time */
+	if ((string[0] == '$') && (string[1] == '{')) {	/* Expand time */
 	    int len = strlen(string);
 
 	    string[len-1] = 0;
 	    head = same_cat(head, expand_variables(
 			value_of(same_item(string_lookup(string+2))), 1));
 	    string[len-1] = '}';
-	} else if (!isspace(string[0])) {
+	} else {
 	    head = same_cat(head, token);
 	}
 	token = tmp;
