@@ -1,5 +1,5 @@
 /*
- * @(#)ww.h	3.40 %G%	
+ * @(#)ww.h	3.41 %G%	
  */
 
 /*
@@ -171,7 +171,6 @@ struct ww_tty wwwintty;		/* the terminal settings for windows */
 char *wwterm;			/* the terminal name */
 char wwtermcap[1024];		/* place for the termcap */
 char wwkeys[512];		/* termcap fields for the function keys */
-char wwwintermcap[1024];	/* termcap for windows */
 
 	/* generally useful variables */
 int wwnrow, wwncol;		/* the screen size */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.26 %G%";
+static char sccsid[] = "@(#)wwinit.c	3.27 %G%";
 #endif
 
 /*
@@ -18,9 +18,6 @@ wwinit()
 {
 	register i, j;
 	char *kp;
-	register char **p, **q;
-	char **env, **termcap = 0;
-	extern char **environ;
 	int s;
 
 	wwdtablesize = getdtablesize();
@@ -138,21 +135,12 @@ wwinit()
 			wwaddcap(cap, &kp);
 		}
 	}
-	for (i = 0, p = environ; *p++; i++)
-		;
-	if ((env = (char **)malloc((unsigned)(i + 3) * sizeof (char *))) == 0)
-		goto bad;
-	for (p = environ, q = env; *p; p++, q++) {
-		if (strncmp(*p, "TERM=", 5) == 0)
-			*q = WWT_TERM;
-		else if (strncmp(*p, "TERMCAP=", 8) == 0)
-			termcap = q;
-		else
-			*q = *p;
-	}
-	*(termcap ? termcap : q++) = wwwintermcap;
-	*q = 0;
-	environ = env;
+	/*
+	 * It's ok to do this here even if setenv() is destructive
+	 * since tt_init() has already made its own copy of it and
+	 * wwterm now points to the copy.
+	 */
+	(void) setenv("TERM", "window", 1);
 
 	(void) signal(SIGPIPE, SIG_IGN);
 	(void) sigsetmask(s);
