@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	4.8		%G%);
+SCCSID(@(#)util.c	4.9		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -326,14 +326,18 @@ bool
 sameword(a, b)
 	register char *a, *b;
 {
-	while (lower(*a) == lower(*b))
+	char ca, cb;
+
+	do
 	{
-		if (*a == '\0')
-			return (TRUE);
-		a++;
-		b++;
-	}
-	return (FALSE);
+		ca = *a++;
+		cb = *b++;
+		if (isascii(ca) && isupper(ca))
+			ca = ca - 'A' + 'a';
+		if (isascii(cb) && isupper(cb))
+			cb = cb - 'A' + 'a';
+	} while (ca != '\0' && ca == cb);
+	return (ca == cb);
 }
 /*
 **  FULLNAME -- extract full name from a passwd file entry.
@@ -689,19 +693,32 @@ fgetfolded(buf, n, f)
 	register int i;
 
 	n--;
-	while (fgets(p, n, f) != NULL)
+	while ((i = getc(f)) != EOF)
 	{
-		LineNumber++;
-		fixcrlf(p, TRUE);
-		i = fgetc(f);
-		if (i != EOF)
-			ungetc(i, f);
-		if (i != ' ' && i != '\t')
-			return (buf);
-		i = strlen(p);
-		p += i;
-		*p++ = '\n';
-		n -= i + 1;
+		if (i == '\r')
+		{
+			i = getc(f);
+			if (i != '\n')
+			{
+				if (i != EOF)
+					ungetc(i, f);
+				i = '\r';
+			}
+		}
+		if (--n > 0)
+			*p++ = i;
+		if (i == '\n')
+		{
+			LineNumber++;
+			i = getc(f);
+			if (i != EOF)
+				ungetc(i, f);
+			if (i != ' ' && i != '\t')
+			{
+				*--p = '\0';
+				return (buf);
+			}
+		}
 	}
 	return (NULL);
 }
