@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	%G%
+#	@(#)Makefile	4.4	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -15,7 +15,7 @@ SCRIPT=	makewhatis
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	getNAME makekey
+STD=	atrun getNAME makekey
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -63,6 +63,12 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
+atrun: atrun.c
+atrun: /usr/include/stdio.h
+atrun: /usr/include/sys/param.h
+atrun: /usr/include/sys/dir.h
+atrun: /usr/include/time.h
+atrun: /usr/include/sys/stat.h
 getNAME: getNAME.c
 getNAME: /usr/include/stdio.h
 makekey: makekey.c
