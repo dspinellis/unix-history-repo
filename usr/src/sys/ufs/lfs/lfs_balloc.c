@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_balloc.c	7.6 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -87,8 +87,6 @@ bmap(ip, bn, bnp)
 			brelse(bp);
 			return (error);
 		}
-		if ((bp->b_flags & B_CACHE) == 0)
-			reassignbuf(bp, ITOV(ip));
 		bap = bp->b_un.b_daddr;
 		sh /= NINDIR(fs);
 		i = (bn / sh) % NINDIR(fs);
@@ -230,8 +228,6 @@ balloc(ip, bn, size, bpp, flags)
 		nb = newb;
 		bp = getblk(ip->i_devvp, fsbtodb(fs, nb), fs->fs_bsize);
 		clrbuf(bp);
-		if ((bp->b_flags & B_CACHE) == 0)
-			reassignbuf(bp, vp);
 		/*
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
@@ -253,8 +249,6 @@ balloc(ip, bn, size, bpp, flags)
 			brelse(bp);
 			return (error);
 		}
-		if ((bp->b_flags & B_CACHE) == 0)
-			reassignbuf(bp, vp);
 		bap = bp->b_un.b_daddr;
 		sh /= NINDIR(fs);
 		i = (bn / sh) % NINDIR(fs);
@@ -274,8 +268,6 @@ balloc(ip, bn, size, bpp, flags)
 		nb = newb;
 		nbp = getblk(ip->i_devvp, fsbtodb(fs, nb), fs->fs_bsize);
 		clrbuf(nbp);
-		if ((nbp->b_flags & B_CACHE) == 0)
-			reassignbuf(nbp, vp);
 		/*
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
@@ -286,10 +278,20 @@ balloc(ip, bn, size, bpp, flags)
 			return (error);
 		}
 		bap[i] = nb;
-		if (flags & B_SYNC)
+		/*
+		 * If required, write synchronously, otherwise use
+		 * delayed write. If this is the first instance of
+		 * the delayed write, reassociate the buffer with the
+		 * file so it will be written if the file is sync'ed.
+		 */
+		if (flags & B_SYNC) {
 			bwrite(bp);
-		else
+		} else if (bp->b_flags & B_DELWRI) {
 			bdwrite(bp);
+		} else {
+			bdwrite(bp);
+			reassignbuf(bp, vp);
+		}
 	}
 	/*
 	 * Get the data block, allocating if necessary.
@@ -306,10 +308,20 @@ balloc(ip, bn, size, bpp, flags)
 		if (flags & B_CLRBUF)
 			clrbuf(nbp);
 		bap[i] = nb;
-		if (flags & B_SYNC)
+		/*
+		 * If required, write synchronously, otherwise use
+		 * delayed write. If this is the first instance of
+		 * the delayed write, reassociate the buffer with the
+		 * file so it will be written if the file is sync'ed.
+		 */
+		if (flags & B_SYNC) {
 			bwrite(bp);
-		else
+		} else if (bp->b_flags & B_DELWRI) {
 			bdwrite(bp);
+		} else {
+			bdwrite(bp);
+			reassignbuf(bp, vp);
+		}
 		*bpp = nbp;
 		return (0);
 	}
