@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_vfsops.c	7.5 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,6 +20,7 @@
 #include "ioctl.h"
 #include "disklabel.h"
 #include "stat.h"
+#include "malloc.h"
 #include "ioctl.h"
 #include "disklabel.h"
 #include "stat.h"
@@ -119,33 +120,32 @@ mountfs(dev, ronly, ip)
 	if (tp->b_flags & B_ERROR)
 		goto out;
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_bufp != 0 && dev == mp->m_dev) {
+		if (mp->m_fs != NULL && dev == mp->m_dev) {
 			mp = 0;
 			error = EBUSY;
 			goto out;
 		}
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_bufp == 0)
+		if (mp->m_fs == NULL)
 			goto found;
 	mp = 0;
 	error = EMFILE;		/* needs translation */
 	goto out;
 found:
-	mp->m_bufp = tp;	/* just to reserve this slot */
+	mp->m_fs = tp->b_un.b_fs;	/* just to reserve this slot */
 	mp->m_dev = NODEV;
-	fs = tp->b_un.b_fs;
+	fs = mp->m_fs;
 	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE ||
 	    fs->fs_bsize < sizeof(struct fs)) {
 		error = EINVAL;		/* also needs translation */
 		goto out;
 	}
-	bp = geteblk((int)fs->fs_sbsize);
-	mp->m_bufp = bp;
-	bcopy((caddr_t)tp->b_un.b_addr, (caddr_t)bp->b_un.b_addr,
+	mp->m_fs = (struct fs *)malloc(fs->fs_sbsize, M_SUPERBLK, M_WAITOK);
+	bcopy((caddr_t)tp->b_un.b_addr, (caddr_t)mp->m_fs,
 	   (u_int)fs->fs_sbsize);
 	brelse(tp);
 	tp = 0;
-	fs = bp->b_un.b_fs;
+	fs = mp->m_fs;
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
 		fs->fs_fmod = 1;
@@ -182,7 +182,7 @@ found:
 		fs->fs_dbsize = size;
 	}
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	space = wmemall(vmemall, (int)fs->fs_cssize);
+	space = (caddr_t)malloc(fs->fs_cssize, M_SUPERBLK, M_WAITOK);
 	if (space == 0) {
 		error = ENOMEM;
 		goto out;
@@ -198,7 +198,7 @@ found:
 		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size);
 #endif SECSIZE
 		if (tp->b_flags&B_ERROR) {
-			wmemfree(space, (int)fs->fs_cssize);
+			free(space, M_SUPERBLK);
 			goto out;
 		}
 		bcopy((caddr_t)tp->b_un.b_addr, space, (u_int)size);
@@ -231,10 +231,8 @@ out:
 		    ronly? FREAD : FREAD|FWRITE);
 	if (ip)
 		iput(ip);
-	if (mp)
-		mp->m_bufp = 0;
-	if (bp)
-		brelse(bp);
+	if (mp && mp->m_fs)
+		free((caddr_t)mp->m_fs, M_SUPERBLK);
 	if (tp)
 		brelse(tp);
 	u.u_error = error;
@@ -266,7 +264,7 @@ unmount1(fname, forcibly)
 	if (error)
 		return (error);
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_bufp != NULL && dev == mp->m_dev)
+		if (mp->m_fs != NULL && dev == mp->m_dev)
 			goto found;
 	return (EINVAL);
 found:
@@ -289,10 +287,10 @@ found:
 #endif
 	ip = mp->m_inodp;
 	ip->i_flag &= ~IMOUNT;
-	fs = mp->m_bufp->b_un.b_fs;
-	wmemfree((caddr_t)fs->fs_csp[0], (int)fs->fs_cssize);
-	brelse(mp->m_bufp);
-	mp->m_bufp = 0;
+	fs = mp->m_fs;
+	free((caddr_t)fs->fs_csp[0], M_SUPERBLK);
+	free((caddr_t)mp->m_fs, M_SUPERBLK);
+	mp->m_fs = 0;
 	mp->m_dev = 0;
 	mpurge(mp - &mount[0]);
 	error = closei(dev, IFBLK, fs->fs_ronly? FREAD : FREAD|FWRITE);
@@ -303,7 +301,7 @@ found:
 sbupdate(mp)
 	struct mount *mp;
 {
-	register struct fs *fs = mp->m_bufp->b_un.b_fs;
+	register struct fs *fs = mp->m_fs;
 	register struct buf *bp;
 	int blks;
 	caddr_t space;
