@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbuf.h	6.8 (Berkeley) %G%
+ *	@(#)mbuf.h	6.9 (Berkeley) %G%
  */
 
 /*
@@ -72,6 +72,12 @@ struct mbuf {
 
 /* length to m_copy to copy all */
 #define	M_COPYALL	1000000000
+
+/*
+ * m_pullup will pull up additional length if convenient;
+ * should be enough to hold headers of second-level and higher protocols. 
+ */
+#define	MPULL_EXTRA	32
 
 #define	MGET(m, i, t) \
 	{ int ms = splimp(); \
