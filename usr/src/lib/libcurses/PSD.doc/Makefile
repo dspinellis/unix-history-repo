@@ -1,14 +1,11 @@
-#	@(#)Makefile	6.4 (Berkeley) %G%
+#	@(#)Makefile	6.5 (Berkeley) %G%
 
 DIR=	ps1/18.curses
-SRCS=	Master macros appen.A appen.B appen.C intro.0 intro.1 \
-	intro.2 intro.3 intro.4 intro.5
+SRCS=	Master
 MACROS=	-me
 
-CLEANFILES+=win_st.gr twinkle1.gr twinkle2.gr life.gr intro.2.tbl appen.A.tbl
-
-paper.${PRINTER}: ${SRCS}
-	${ROFF} ${SRCS} > ${.TARGET}
+CLEANFILES+=win_st.gr twinkle1.gr twinkle2.gr life.gr intro.2.tbl appen.A.tbl \
+	ex1.gr ex2.gr
 
 .SUFFIXES:
 .SUFFIXES: .c .gr
@@ -24,14 +21,15 @@ VFONT=	/usr/libexec/vfontedpr
 .c.gr:
 	${VFONT} $*.c | grep -v "^'wh" > $*.gr
 
-intro.5: doc.I doc.II doc.III doc.IV
-appen.B: win_st.gr
-appen.C: twinkle1.gr life.gr twinkle2.gr
+paper.ps: ${SRCS}
+	${ROFF} ${SRCS} > ${.TARGET}
+
+Master: twinkle1.gr twinkle2.gr life.gr ex1.gr ex2.gr
+Master: fns.doc intro.5 intro.2.tbl intro.0 intro.1 intro.3 intro.4 intro.6
 
 intro.2.tbl: intro.2
 	${TBL} intro.2 > intro.2.tbl
 
-appen.A.tbl: appen.A
-	${TBL} appen.A > appen.A.tbl
-
 .include <bsd.doc.mk>
+
+
