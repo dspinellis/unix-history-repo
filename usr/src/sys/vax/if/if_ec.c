@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ec.c	7.5 (Berkeley) %G%
+ *	@(#)if_ec.c	7.6 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -645,6 +645,7 @@ ecget(ecbuf, totlen, off0, ifp)
 			} else
 				len = m->m_len;
 		}
+		mcp = mtod(m, u_char *);
 		if (words = (len >> 1)) {
 			register u_short *to, *from;
 
