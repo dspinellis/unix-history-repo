@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -579,10 +579,10 @@ getdatasock(mode)
 
 	if (data >= 0)
 		return (fdopen(data, mode));
+	(void) seteuid((uid_t)0);
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
-		return (NULL);
-	(void) seteuid((uid_t)0);
+		goto bad;
 	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
 	    (char *) &on, sizeof (on)) < 0)
 		goto bad;
