@@ -28,6 +28,8 @@
 int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
 int	acctresume = 4;		/* resume when free space risen to > 4% */
 struct	timeval chk = { 15, 0 };/* frequency to check space for accounting */
+struct  vnode *acctp;		/* file to which to do accounting */
+struct  vnode *savacctp;	/* file to which to do accounting when space */
 
 /*
  * Enable or disable process accounting.
