@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,7 +42,7 @@ main(argc, argv)
 	char *mark, *prog, **xargs, *malloc();
 
 	nargs = DEF_ARGC;
-	nline = LINE_MAX;
+	nline = _BSD_LINE_MAX;
 
 	while ((ch = getopt(argc, argv, "n:s:t")) != EOF)
 		switch(ch) {

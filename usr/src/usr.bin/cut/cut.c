@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cut.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cut.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <limits.h>
@@ -88,7 +88,7 @@ main(argc, argv)
 
 int autostart, autostop, maxval;
 
-char positions[LINE_MAX + 1];
+char positions[_BSD_LINE_MAX + 1];
 
 get_list(list)
 	char *list;
@@ -129,10 +129,10 @@ get_list(list)
 			badlist("illegal list value");
 		if (!stop || !start)
 			badlist("values may not include zero");
-		if (stop > LINE_MAX) {
+		if (stop > _BSD_LINE_MAX) {
 			/* positions used rather than allocate a new buffer */
 			(void)sprintf(positions, "%d too large (max %d)",
-			    stop, LINE_MAX);
+			    stop, _BSD_LINE_MAX);
 			badlist(positions);
 		}
 		if (maxval < stop)
@@ -184,7 +184,7 @@ f_cut(fp, fname)
 	register int ch, field, isdelim;
 	register char *pos, *p, sep;
 	int output;
-	char lbuf[LINE_MAX + 1];
+	char lbuf[_BSD_LINE_MAX + 1];
 
 	for (sep = dchar, output = 0; fgets(lbuf, sizeof(lbuf), fp);) {
 		for (isdelim = 0, p = lbuf;; ++p) {

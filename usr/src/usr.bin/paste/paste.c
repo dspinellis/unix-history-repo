@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)paste.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)paste.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -78,7 +78,7 @@ parallel(argv)
 	register char ch, *p;
 	LIST *head, *tmp;
 	int opencnt, output;
-	char buf[LINE_MAX + 1], *malloc();
+	char buf[_BSD_LINE_MAX + 1], *malloc();
 
 	for (cnt = 0, head = NULL; p = *argv; ++argv, ++cnt) {
 		if (!(lp = (LIST *)malloc((u_int)sizeof(LIST)))) {
@@ -151,7 +151,7 @@ sequential(argv)
 	register FILE *fp;
 	register int cnt;
 	register char ch, *p, *dp;
-	char buf[LINE_MAX + 1];
+	char buf[_BSD_LINE_MAX + 1];
 
 	for (; p = *argv; ++argv) {
 		if (p[0] == '-' && !p[1])
