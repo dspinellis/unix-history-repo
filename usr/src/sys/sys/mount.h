@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.26 (Berkeley) %G%
+ *	@(#)mount.h	7.27 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -66,7 +66,7 @@ struct mount {
 	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
 	struct vnode	*mnt_mounth;		/* list of vnodes this mount */
 	int		mnt_flag;		/* flags */
-	uid_t		mnt_exroot;		/* exported mapping for uid 0 */
+	uid_t		mnt_exroot;		/* XXX - deprecated */
 	struct statfs	mnt_stat;		/* cache of filesystem stats */
 	qaddr_t		mnt_data;		/* private data */
 };
@@ -83,8 +83,11 @@ struct mount {
 /*
  * exported mount flags.
  */
+#define	MNT_EXRDONLY	0x00000080	/* exported read only */
 #define	MNT_EXPORTED	0x00000100	/* file system is exported */
-#define	MNT_EXRDONLY	0x00000200	/* exported read only */
+#define	MNT_DEFEXPORTED	0x00000200	/* exported to the world */
+#define	MNT_EXPORTANON	0x00000400	/* use anon uid mapping for everyone */
+#define	MNT_EXKERB	0x00000800	/* exported with Kerberos uid mapping */
 
 /*
  * Flags set by internal operations.
@@ -105,6 +108,7 @@ struct mount {
  * and unmounts.
  */
 #define	MNT_UPDATE	0x00010000	/* not a real mount, just an update */
+#define	MNT_DELEXPORT	0x00020000	/* delete export host lists */
 #define	MNT_MLOCK	0x00100000	/* lock so that subtree is stable */
 #define	MNT_MWAIT	0x00200000	/* someone is waiting for lock */
 #define MNT_MPBUSY	0x00400000	/* scan of mount point in progress */
@@ -172,12 +176,17 @@ struct fhandle {
 typedef struct fhandle	fhandle_t;
 
 /*
- * Arguments to mount LFS/UFS
+ * Arguments to mount UFS-based filesystems
  */
 struct ufs_args {
 	char	*fspec;		/* block special device to mount */
 	int	exflags;	/* export related flags */
 	uid_t	exroot;		/* mapping for root uid */
+	struct	ucred anon;	/* mapping for anonymous user */
+	struct	sockaddr *saddr;/* net address to which exported */
+	int	slen;		/* and the net address length */
+	struct	sockaddr *smask;/* mask of valid bits in saddr */
+	int	msklen;		/* and the smask length */
 };
 
 #ifdef MFS
