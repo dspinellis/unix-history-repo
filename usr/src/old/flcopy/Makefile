@@ -1,6 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	flcopy
-NOMAN=	noman
+MANSUBDIR=/vax
+MAN8=	flcopy.0
 
 .include <bsd.prog.mk>
