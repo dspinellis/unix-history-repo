@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strerror.3	6.10 (Berkeley) %G%
+.\"     @(#)strerror.3	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRERROR 3
@@ -19,15 +19,11 @@
 .Nm sys_nerr
 .Nd system error messages
 .Sh SYNOPSIS
-.Fd #include <errno.h>
-.Vt extern int errno;
-.Fd #include <stdio.h>
-.Vt extern int sys_nerr;
-.Vt extern char *sys_errlist[];
 .Fd #include <stdio.h>
 .Ft void
 .Fn perror "const char *string"
-.Fd #include <errno.h>
+.Vt extern char *sys_errlist[];
+.Vt extern int sys_nerr;
 .Fd #include <string.h>
 .Ft char *
 .Fn strerror "int errnum"
@@ -36,11 +32,11 @@ The
 .Fn strerror
 and
 .Fn perror
-functions lookup the error message string affiliated with an
+functions look up the error message string corresponding to an
 error number.
 .Pp
 The
-.Fn sterror
+.Fn strerror
 function accepts an error number argument
 .Fa errnum
 and
@@ -52,24 +48,32 @@ The
 function finds the error message corresponding to the current
 value of the global variable
 .Va errno
-and writes it, followed by a new-line, to the
-.Em stderr .
+.Pq Xr intro 2
+and writes it, followed by a newline, to the
+standard error file descriptor.
 If the argument
 .Fa string
 is
-.Pf non- Dv NULL
-it is pre-appended to the message
+.Pf non- Dv NULL ,
+it is prepended to the message
 string and separated from it by
 a colon and space
 .Pq Ql \&:\ \& .
 If
 .Fa string
 is
-.Dv NULL
+.Dv NULL ,
 only the error message string is printed.
 .Pp
+If
+.Fa errnum
+is not a recognized error number,
+the error message string will contain
+.Dq Li "Unknown error:\0
+followed by the error number in decimal.
+.Pp
 The message strings can be accessed directly using the external
-character array
+array
 .Fa sys_errlist .
 The external value
 .Fa sys_nerr
@@ -88,3 +92,8 @@ and
 .Fn perror
 functions are
 .Ud .
+.Sh BUGS
+For unknown error numbers, the
+.Fn strerror
+function will return its result in a static buffer which
+may be overwritten by subsequent calls.
