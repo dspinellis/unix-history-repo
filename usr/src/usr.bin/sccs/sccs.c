@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.23.1.1 %G%";
+static char SccsId[] = "@(#)sccs.c	1.24 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -73,6 +73,7 @@ struct pfile
 };
 
 char	*SccsPath = "SCCS";	/* pathname of SCCS files */
+char	*SccsDir = "";		/* directory to begin search from */
 bool	RealUser;		/* if set, running as real user */
 # ifdef DEBUG
 bool	Debug;			/* turn on tracing */
@@ -111,6 +112,10 @@ main(argc, argv)
 
 			  case 'p':		/* path of sccs files */
 				SccsPath = ++p;
+				break;
+
+			  case 'd':		/* directory to search from */
+				SccsDir = ++p;
 				break;
 
 # ifdef DEBUG
@@ -386,8 +391,10 @@ makefile(name)
 	register char *p;
 	register char c;
 	char buf[512];
+	struct stat stbuf;
 	extern char *malloc();
 	extern char *rindex();
+	extern bool safepath();
 	extern bool isdir();
 	register char *q;
 
@@ -398,24 +405,22 @@ makefile(name)
 		p++;
 
 	/*
-	**  See if the name can be used as-is.
+	**  Check to see that the path is "safe", i.e., that we
+	**  are not letting some nasty person use the setuid part
+	**  of this program to look at or munge some presumably
+	**  hidden files.
 	*/
 
-	if (SccsPath[0] != '/' || name[0] == '/' || strncmp(name, "./", 2) == 0)
-	{
-		if (strncmp(p, "s.", 2) == 0)
-			return (name);
-		if (isdir(name))
-			return (name);
-	}
+	if (SccsDir[0] == '/' && !safepath(name))
+		return (NULL);
 
 	/*
-	**  Create the actual pathname.
+	**  Create the base pathname.
 	*/
 
-	if (name[0] != '/')
+	if (SccsDir[0] != '\0' && name[0] != '/' && strncmp(name, "./", 2) != 0)
 	{
-		strcpy(buf, SccsPath);
+		strcpy(buf, SccsDir);
 		strcat(buf, "/");
 	}
 	else
@@ -425,23 +430,23 @@ makefile(name)
 	strcpy(q, p);
 	if (strncmp(p, "s.", 2) != 0 && !isdir(buf))
 	{
-		strcpy(q, "");
-		if (SccsPath[0] != '/' && name[0] == '/')
-		{
-			strcat(buf, SccsPath);
-			strcat(buf, "/");
-		}
-		strcat(buf, "s.");
+		strcpy(q, SccsPath);
+		strcat(buf, "/s.");
 		strcat(buf, p);
 	}
 
-	p = malloc(strlen(buf) + 1);
-	if (p == NULL)
+	if (strcmp(buf, name) == 0)
+		p = name;
+	else
 	{
-		perror("Sccs: no mem");
-		exit(EX_OSERR);
+		p = malloc(strlen(buf) + 1);
+		if (p == NULL)
+		{
+			perror("Sccs: no mem");
+			exit(EX_OSERR);
+		}
+		strcpy(p, buf);
 	}
-	strcpy(p, buf);
 	return (p);
 }
 /*
