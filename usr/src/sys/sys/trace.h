@@ -1,4 +1,4 @@
-/*	trace.h	4.7	81/04/18	*/
+/*	trace.h	4.8	81/07/25	*/
 
 /*
  * File system buffer tracing points; all trace <dev, bn>
@@ -34,6 +34,7 @@
 #define	TR_CACHEFOD	31	/* fod in file system cache */
 #define	TR_SWAPIN	32	/* drum page fault */
 #define	TR_PGINDONE	33	/* page in done */
+#define	TR_SWAPIO	34	/* swap i/o request arrives */
 
 /*
  * System call trace points.
