@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.2	82/07/24	*/
+/*	kern_descrip.c	5.3	82/08/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -435,18 +435,6 @@ closef(fp, nouser)
 
 	case IFCHR:
 		cfunc = cdevsw[major(dev)].d_close;
-#ifdef EFS
-		/*
-		 * Every close() must call the driver if the
-		 * extended file system is being used -- not
-		 * just the last close.  Pass along the file
-		 * pointer for reference later.
-		 */
-		if (major(dev) == efs_major) {
-			(*cfunc)(dev, flag, fp, nouser);
-			return;
-		}
-#endif
 		break;
 
 	case IFBLK:

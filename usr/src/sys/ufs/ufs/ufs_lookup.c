@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.20	82/07/30	*/
+/*	ufs_lookup.c	4.21	82/08/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,10 +9,6 @@
 #include "../h/user.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
-
-#ifdef	EFS
-extern	int	efs_major;
-#endif
 
 struct	buf *blkatoff();
 int	dirchk = 1;
@@ -117,12 +113,6 @@ dirloop:
 	/*
 	 * Check accessiblity of directory.
 	 */
-#ifdef	EFS
-	if ((dp->i_mode & IFMT) == IFCHR && major(dp->i_rdev) == efs_major) {
-		brelse(nbp);
-		return(dp);
-	}
-#endif
 	if ((dp->i_mode&IFMT) != IFDIR) {
 		u.u_error = ENOTDIR;
 		goto bad;
