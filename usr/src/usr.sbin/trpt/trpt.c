@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)trpt.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -50,6 +50,7 @@ int	sflag;
 int	tflag;
 int	jflag;
 int	aflag;
+int	follow;
 int	numeric();
 struct	nlist nl[] = {
 	{ "_tcp_debug" },
@@ -71,6 +72,10 @@ main(argc, argv)
 again:
 	if (argc > 0 && !strcmp(*argv, "-a")) {
 		aflag++, argc--, argv++;
+		goto again;
+	}
+	if (argc > 0 && !strcmp(*argv, "-f")) {
+		follow++, argc--, argv++;
 		goto again;
 	}
 	if (argc > 0 && !strcmp(*argv, "-s")) {
@@ -177,8 +182,22 @@ dotrace(tcpcb)
 {
 	register int i;
 	register struct tcp_debug *td;
+	int prev_debx = tcp_debx;
 
-	for (i = tcp_debx % TCP_NDEBUG; i < TCP_NDEBUG; i++) {
+again:
+	if (--tcp_debx < 0)
+		tcp_debx = TCP_NDEBUG - 1;
+	for (i = prev_debx % TCP_NDEBUG; i < TCP_NDEBUG; i++) {
+		td = &tcp_debug[i];
+		if (tcpcb && td->td_tcb != tcpcb)
+			continue;
+		ntime = ntohl(td->td_time);
+		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
+		    &td->td_ti, td->td_req);
+		if (i == tcp_debx)
+			goto done;
+	}
+	for (i = 0; i <= tcp_debx % TCP_NDEBUG; i++) {
 		td = &tcp_debug[i];
 		if (tcpcb && td->td_tcb != tcpcb)
 			continue;
@@ -186,13 +205,25 @@ dotrace(tcpcb)
 		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
 		    &td->td_ti, td->td_req);
 	}
-	for (i = 0; i < tcp_debx % TCP_NDEBUG; i++) {
-		td = &tcp_debug[i];
-		if (tcpcb && td->td_tcb != tcpcb)
-			continue;
-		ntime = ntohl(td->td_time);
-		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
-		    &td->td_ti, td->td_req);
+done:
+	if (follow) {
+	    prev_debx = tcp_debx + 1;
+	    if (prev_debx >= TCP_NDEBUG)
+		prev_debx = 0;
+	    do {
+		sleep(1);
+		(void) lseek(0, nl[1].n_value, 0);
+		if (read(0, &tcp_debx, sizeof(tcp_debx)) != sizeof(tcp_debx)) {
+			fprintf(stderr, "trpt: "); perror("tcp_debx");
+			exit(3);
+		}
+	    } while (tcp_debx == prev_debx);
+	    (void) lseek(0, nl[0].n_value, 0);
+	    if (read(0, tcp_debug, sizeof(tcp_debug)) != sizeof(tcp_debug)) {
+		    fprintf(stderr, "trpt: "); perror("tcp_debug");
+		    exit(3);
+	    }
+	    goto again;
 	}
 }
 
