@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -1017,6 +1017,7 @@ good:
 		i = qcvt.val[1];
 		qcvt.val[1] = qcvt.val[0];
 		qcvt.val[0] = i;
+		buf->c_dinode.di_size = qcvt.qval;
 	}
 
 	switch (buf->c_type) {
