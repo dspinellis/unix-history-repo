@@ -1,0 +1,8 @@
+(File record.l)
+(defrecord macro nreverse nthcdr nth dr-field-name liszt-internal-do mapcar concat make-dr-record |1+| cadar caar make-dr-field list cons setf push and eq caseq do quote dr-error symbolp not append setq dtpr car let error null cond if cdr)
+(defrecord-namedp lambda get vref vsize >& vectorp symbolp cadr setq progn cdr dtpr or and let)
+(defrecord-name lambda error vref vectorp cadr dtpr defrecord-namedp cond if)
+(record-pkg-illegal-access lambda error)
+(dr-accessor lambda error quote list eq cond caseq)
+(record-pkg-access lambda cons dr-field-offset dr-accessor list memq quote error dr-error if dr-record-storage cddr dr-record-options cdr return caar eq cond null cdddr nthcdr car nth dr-record-fields do assq setq get let)
+(record-pkg-construct lambda dr-field-defaultvalue dr-field-name append dr-record-storage caseq cddr quote error dr-error cadr cons setq setf push cdr return caar eq assq cond if null do cdddr nthcdr car nth dr-record-fields get let let*)
