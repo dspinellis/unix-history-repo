@@ -1,0 +1,291 @@
+.\"	********** dictionary **********
+.\"		B0 size of wide figure just diverted
+.\"		B1 size of figure at top full wdith
+.\"		B2 if figure at full width bottom
+.\"		B3 name of full width top figure for next page
+.\"		B4 full width bottom figure
+.\"		B5 wide top figure size scheduled for this page
+.\"		B6 true if a wide figure being diverted
+.\"		B8 if at EM end up macro stage
+.\"		B9 if at page bottom
+.\"		BM width bottom margin
+.\"		BX full width top figure, this page
+.\"		CE end caption.
+.\"		CP store caption.
+.\"		CS begin caption; center if 1 line, else paragraph.
+.\"		CW column width
+.\"		D1 amount of text left column
+.\"		D2 amount of text right column
+.\"		D3 arithmetic scratch, typically whether went past page footer
+.\"		D9 scratch, remembers length of diverted keep
+.\"		DN name of current diversion trap
+.\"		DO default page offset
+.\"		EE string to be prefixed to an equation to indent it two spaces if wanted
+.\"		EL equation label
+.\"		EZ rathole to throw equations down
+.\"		F0 argument to GS specifying quadrant
+.\"		F1 biggest space available in left column
+.\"		F2 biggest space available in right column
+.\"		F5 position of top of 2 2col section
+.\"		F6 argument to BS specifying top/bottom
+.\"		G0 (1) count authors
+.\"		   (2) size of just entered figure
+.\"		G1 size figure top left next page
+.\"		G2 size figure top right next page
+.\"		G3 size left bottom figure
+.\"		G4 size right bottom figure
+.\"		G5 true if next top narrow figure goes to right side (next page)
+.\"		G6 true if next bottom narrow figure goes to right side
+.\"		G7 (1) amount space before bottom wide figure to sit on baseline
+.\"		   (2) flag for doubled up narrow figures into a wide one
+.\"		G8 true if figure has been placed
+.\"		G9 if at page top
+.\"		GD buffer where narrow figure is placed
+.\"		GJ figure top left next page
+.\"		GK figure top right next page
+.\"		GL content left bottom figure
+.\"		GM content right bottom figure
+.\"		GP left half of a figure pair
+.\"		GQ right half of a figure pair
+.\"		H0 section numbers for numbered headings
+.\"		H1 size of figure at top left this page
+.\"		H2 size of figure top right this page
+.\"		HJ figure at top left this page
+.\"		HK figure at top right this page
+.\"		HS true if just at a section heading
+.\"		IK true if inside a KS/KE
+.\"		L1 shortest legal amount of two column material
+.\"		L2 amount of 2 column stuff expected
+.\"		L4 amount being diverted
+.\"		L5 amount of text diverted in double-column hunt
+.\"		L6 zero if right column, true if too short to split up
+.\"		L7 minimum length of a split column
+.\"		LC position of left column bottom
+.\"		LE computation of column lengths  \" LE should be F3
+.\"		LE true if equations are labeled
+.\"		LH left running head
+.\"		LL line length
+.\"		LS general looseness parameter
+.\"		MX expand month name
+.\"		NB number of columns possible
+.\"		NC number of columns being set
+.\"		ND have been in double column before, not first break to it.
+.\"		NU issue number
+.\"		P1 (1) height left col
+.\"		   (2) amount to pad total
+.\"		P2 height right column
+.\"		P3 amount of extra space at a 1C-2C transition
+.\"		P4 temporary in filling columns calcuations
+.\"		PS standard point size
+.\"		Q1 number of places to pad
+.\"		Q2 number padding points right column
+.\"		RO position of right column (offset for)
+.\"		S1 position of space in column
+.\"		S2 size of space
+.\"		T1 true if top figure position forced by GS arg
+.\"		T2 true if bottom figure position forced by GS arg
+.\"		TB true if there is to be a turnover bar here.
+.\"		TP true if still at document title (turnover bar decision)
+.\"		TQ position at top of page
+.\"		TT >0 if figure, etc. doesn't fit this page
+.\"		TT right running head (title)
+.\"		TW table width (set by TBL)
+.\"		VN volume number
+.\"		VS standard vertical spacing
+.\"		GW gutter width
+.\"		X1 diversion to hold left column
+.\"		X2 diversion to hold right column
+.\"		XI value of indent to be restored after abstract
+.\"		XQ register in which padding points are counted
+.\"		XR true (1) if past the very first paragraph
+.\"		XX diversion to hold input text in preparation for formatting
+.\"		YE past very top: avoids a break in the EQ/EN macro before startup.
+.\"		ZN size of equation
+.\"		mo month name
+.\"		y  place of footer trap
+.\"		
+.\"		
+.\"	********** environments *********
+.\"		0  normal
+.\"		1  figures
+.\"		2  while columns are arranged
+.\"		
+.\"		
+.\"	********** macros **********
+.\"		for user		which invoke
+.\"	TL,AU,AI,AB,AE	IZ, EA, AX, AY
+.\"	EQ, EN		@L, @C, @I
+.\"	TS,TE
+.\"	SP, PP		FI, NX, RT
+.\"	2C		2D, 2S, C4, C3, LA
+.\"	1C		1D, 1E, 1S, C6, C7
+.\"	ST, LS		CL
+.\"	SL
+.\"	GS, GE		GA,GB,GG,GU,GV,GW,GX,GY,GZ,GN,GO,C8,MR,BR
+.\"	BS,BE		BA,BB,BC,BD
+.\"	KS,KE		KU,KT
+.\"	CS,CE		CP
+.\"	SH,NH
+.\"	B, I, R
+.\"	UL
+.\"	ne		NE
+.\"			EM, NP, FO, CM
+.\"		
+.nr B9 1
+.\"		-----------------------------
+.de RT \" reset params to normal state
+.ce 0
+.ul 0
+.ti 0
+.if \\n(IP .in -\\n(IQn
+.if \\n(IP .nr IP -1
+.ft 1
+.if \\n(AJ=0 .ps \\n(PS
+.if \\n(AJ=0 .vs \\n(VSp
+.fi
+..
+.\"		-----------------------------
+.de IZ \"initialization
+.MX
+.rm MX
+.if !\\n(BM .nr BM 1.13i
+.nr y 0-\\n(BM
+.if \\n(DO=0 .nr DO .4i
+.wh 0 NP
+.po \\n(DOu
+.nr IP 0
+.if !\\n(PS .nr PS 9
+.if !\\n(L1 .nr L1 1.5i  \"minimum amount of double column
+.if !\\n(VS .nr VS 11
+.ps \\n(PS
+.vs \\n(VSp
+.if !\\n(PI .nr PI 2n
+.if !\\n(PD .nr PD 0
+.if !\\n(CW .nr CW 3.1i
+.if !\\n(GW .nr GW 0.4i
+.nr RO \\n(CWu+\\n(GWu
+.nr YE 1
+.nr LL \\n(RO+\\n(CW
+.ll \\n(LLu
+.lt \\n(LLu
+.nr NC 1
+.nr NB 1
+.wh \\nyu FO
+..
+.\"		-----------------------------
+.de EQ  \"equation, breakout and display
+.nr EF \\n(.u
+.rm EE
+.nr LE 1	\" 1 is center
+.ds EL \\$1
+.if "\\$1"L" .ds EL \\$2
+.if "\\$1"L" .nr LE 0
+.if "\\$1"C" .ds EL \\$2
+.if "\\$1"I" .nr LE 0
+.if "\\$1"I" .ds EE \\h'4n'
+.if "\\$1"I" .if !"\\$3"" .ds EE \\h'\\$3'
+.if "\\$1"I" .ds EL \\$2
+.if \\n(YE>0 .nf
+.di EZ
+..
+.\"		-----------------------------
+.de EN  \" end of a displayed equation
+.if !"\\n(.z"EZ" .tm EN not preceded by EQ, disaster follows.
+.br
+.ce 0
+.di
+.rm EZ
+.nr ZN 1
+.if "\\*(10"" .nr ZN 0
+.if \\n(ZN=0 .if !"\\*(EL"" .nr ZN 1
+.lt \\n(.lu
+.br
+.if \\n(ZN>0 .if !\\n(.d=\\n(PE .SP 0.5
+.pc
+.if \\n(BD>0 .nr LE 0 \" can't mean centering in this case.
+.if \\n(ZN>0 .if \\n(LE>0 .tl \(ts\(ts\\*(10\(ts\\*(EL\(ts
+.if \\n(ZN>0 .if \\n(LE=0 .if \\n(BD=0 .tl \(ts\\*(EE\\*(10\(ts\(ts\\*(EL\(ts
+.if \\n(ZN>0 .if \\n(LE=0 .if \\n(BD>0 \!\\*(10\\\\t\\*(EL
+.if \\n(ZN>0 .if \\n(LE=0 .if \\n(BD>0 .if \\n(BD<\\w'\\*(10' .nr BD \\w'\\*(10'
+.lt \\n(LLu
+.pc %
+.br
+.if \\n(YE>0 .if \\n(EF>0 .fi
+.rm EL
+.if \\n(ZN>0 .SP 0.5
+.nr PE \\n(.d
+..
+.\"		-----------------------------
+.de TL  \"title of document
+.IZ
+.rm IZ
+.br
+.if \\n(XR>0 .EA
+.ll \\n(LLu
+.ft 3
+.ps 11
+.if \\n(PS=9 .nr y -3v
+.ce 1000
+.nr TP 1
+.nr G0 0
+.bd 1 3
+.bd 2 3
+.if !"xx\\n(.z"xx" \!.bd 1 3
+.if !"xx\\n(.z"xx" \!.bd 2 3
+..
+.\"		-----------------------------
+.de AU  \"author(s) name(s)
+.ft 1
+.br
+.bd 1
+.bd 2
+.if !"xx\\n(.z"xx" \!.bd 1
+.if !"xx\\n(.z"xx" \!.bd 2
+.if !\\n(G0 .sp
+.if \\n(G0 .sp .5
+.if \\n(G0 and
+.if \\n(G0 .sp .5
+.nr G0 +1
+.ps \\n(PS
+..
+.\"		-----------------------------
+.de AI  \"authors institution
+.ft 2
+.ps \\n(PS-1
+..
+.\"		-----------------------------
+.de AB  \"abstract start
+.ce 0
+.ll \\n(LLu
+.fi
+.ft 1
+.sp
+.nr XI \\n(.i
+.nr AJ 1
+.in +\\n(.lu/8u
+.ll -\\n(.lu/8u
+.nr PS -1
+.ps \\n(PS
+.nr VS -1
+.vs \\n(VSp
+.ti +2n
+..
+.\"		-----------------------------
+.de AE  \"abstract end
+.ll \\n(LLu
+.in \\n(XIu
+.ce 0
+.nr PS +1
+.ps \\n(PS
+.nr VS +1
+.vs \\n(VSp
+.nr AJ 0
+.if !\\n(.d=\\n(nl .AX
+.if \\n(PS=9 .sp 2
+.nr XR 0
+.nr ND 0
+.2C
+..
+.\"		No default table macro now.
+.\"		.		-----------------------------
+.\"		.de TS  \"table start
