@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.15	82/09/06	*/
+/*	vm_meter.c	4.16	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -414,7 +414,7 @@ schedpaging()
 	scanrate = (slowscan * vavail + fastscan * (lotsfree - vavail)) / nz(lotsfree);
 	desscan = ((LOOPPAGES / CLSIZE) / nz(scanrate)) / RATETOSCHEDPAGING;
 	wakeup((caddr_t)&proc[2]);
-	timeout(schedpaging, 0, hz / RATETOSCHEDPAGING);
+	timeout(schedpaging, (caddr_t)0, hz / RATETOSCHEDPAGING);
 }
 
 vmtotal()

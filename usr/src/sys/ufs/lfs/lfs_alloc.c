@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.15	82/10/17	*/
+/*	lfs_alloc.c	2.16	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,8 +13,8 @@
 #include "../h/kernel.h"
 
 extern u_long		hashalloc();
-extern ino_t		ialloccg();
-extern daddr_t		alloccg();
+extern u_long		ialloccg();
+extern u_long		alloccg();
 extern daddr_t		alloccgblk();
 extern daddr_t		fragextend();
 extern daddr_t		blkpref();
@@ -400,7 +400,7 @@ fragextend(ip, cg, bprev, osize, nsize)
  * Check to see if a block of the apprpriate size is available,
  * and if it is, allocate it.
  */
-daddr_t
+u_long
 alloccg(ip, cg, bpref, size)
 	struct inode *ip;
 	int cg;
@@ -587,12 +587,12 @@ norot:
 	 * no blocks in the requested cylinder, so take next
 	 * available one in this cylinder group.
 	 */
-	bno = mapsearch(fs, cgp, bpref, fs->fs_frag);
+	bno = mapsearch(fs, cgp, bpref, (int)fs->fs_frag);
 	if (bno < 0)
 		return (NULL);
 	cgp->cg_rotor = bno;
 gotit:
-	clrblock(fs, cgp->cg_free, bno/fs->fs_frag);
+	clrblock(fs, cgp->cg_free, (int)(bno/fs->fs_frag));
 	cgp->cg_cs.cs_nbfree--;
 	fs->fs_cstotal.cs_nbfree--;
 	fs->fs_cs(fs, cgp->cg_cgx).cs_nbfree--;
@@ -612,7 +612,7 @@ gotit:
  *   2) allocate the next available inode after the requested
  *      inode in the specified cylinder group.
  */
-ino_t
+u_long
 ialloccg(ip, cg, ipref, mode)
 	struct inode *ip;
 	int cg;
@@ -985,7 +985,7 @@ update()
 			continue;
 		ip->i_flag |= ILOCKED;
 		ip->i_count++;
-		iupdat(ip, &time.tv_sec, &time.tv_sec, 0);
+		iupdat(ip, time, time, 0);
 		iput(ip);
 	}
 	updlock = 0;

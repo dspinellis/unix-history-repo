@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.27	82/10/17	*/
+/*	ffs_inode.c	4.28	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -248,7 +248,7 @@ irele(ip)
 			ip->i_dquot = NODQUOT;
 #endif
 		}
-		IUPDAT(ip, &time.tv_sec, &time.tv_sec, 0);
+		IUPDAT(ip, time, time, 0);
 		iunlock(ip);
 		ip->i_flag = 0;
 		/*
@@ -284,7 +284,7 @@ irele(ip)
  */
 iupdat(ip, ta, tm, waitfor)
 	register struct inode *ip;
-	time_t *ta, *tm;
+	struct timeval *ta, *tm;
 	int waitfor;
 {
 	register struct buf *bp;
@@ -302,9 +302,9 @@ iupdat(ip, ta, tm, waitfor)
 			return;
 		}
 		if (ip->i_flag&IACC)
-			ip->i_atime = *ta;
+			ip->i_atime = ta->tv_sec;
 		if (ip->i_flag&IUPD)
-			ip->i_mtime = *tm;
+			ip->i_mtime = tm->tv_sec;
 		if (ip->i_flag&ICHG)
 			ip->i_ctime = time.tv_sec;
 		ip->i_flag &= ~(IUPD|IACC|ICHG);
@@ -357,7 +357,7 @@ itrunc(ip, length)
 	for (i = 0; i < NIADDR; i++)
 		itmp.i_ib[i] = 0;
 	itmp.i_flag |= ICHG|IUPD;
-	iupdat(&itmp, &time.tv_sec, &time.tv_sec, 1);
+	iupdat(&itmp, time, time, 1);
 	ip->i_flag &= ~(IUPD|IACC|ICHG);
 
 	/*
@@ -454,7 +454,7 @@ tloop(ip, bn, indflg)
 #endif
 				tloop(ip, nb, 0);
 		} else {
-			fre(ip, nb, fs->fs_bsize);
+			fre(ip, nb, (int)fs->fs_bsize);
 #ifdef QUOTA
 			cnt += fs->fs_bsize / DEV_BSIZE;
 #endif
@@ -462,7 +462,7 @@ tloop(ip, bn, indflg)
 	}
 	if (bp != NULL)
 		brelse(bp);
-	fre(ip, bn, fs->fs_bsize);
+	fre(ip, bn, (int)fs->fs_bsize);
 #ifdef QUOTA
 	cnt += fs->fs_bsize / DEV_BSIZE;
 	return(cnt);

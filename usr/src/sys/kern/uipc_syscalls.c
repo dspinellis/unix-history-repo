@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.31	82/10/17	*/
+/*	uipc_syscalls.c	4.32	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -31,7 +31,7 @@ socket()
 	register struct file *fp;
 	struct socketopt aopt;
 
-	u.u_error = sockopt(&aopt, uap->opt);
+	u.u_error = sockopt(&aopt, (caddr_t)uap->opt);
 	if (u.u_error)
 		return;
 	if ((fp = falloc()) == NULL)
@@ -74,7 +74,7 @@ bind()
 	u.u_error = sockname(&nam, uap->name, uap->namelen);
 	if (u.u_error)
 		return;
-	u.u_error = sockopt(&aopt, uap->opt);
+	u.u_error = sockopt(&aopt, (caddr_t)uap->opt);
 	if (u.u_error) {
 		m_freem(nam);
 		goto freeopt;
@@ -125,12 +125,12 @@ accept()
 		u.u_error = EFAULT;
 		return;
 	}
-	if (useracc((caddr_t)uap->name, namelen, B_WRITE) == 0) {
+	if (useracc((caddr_t)uap->name, (u_int)namelen, B_WRITE) == 0) {
 		u.u_error = EFAULT;
 		return;
 	}
 noname:
-	u.u_error = sockopt(&aopt, uap->opt);
+	u.u_error = sockopt(&aopt, (caddr_t)uap->opt);
 	if (u.u_error)
 		return;
 	fp = getf(uap->s);
@@ -198,8 +198,9 @@ ret:
 		if (namelen > nam->m_len)
 			namelen = nam->m_len;
 		/* SHOULD COPY OUT A CHAIN HERE */
-		(void) copyout(mtod(nam, caddr_t), uap->name, namelen);
-		(void) copyout((caddr_t)&namelen, uap->anamelen,
+		(void) copyout(mtod(nam, caddr_t), (caddr_t)uap->name,
+		    (u_int)namelen);
+		(void) copyout((caddr_t)&namelen, (caddr_t)uap->anamelen,
 		    sizeof (*uap->anamelen));
 	}
 	m_freem(nam);
@@ -234,7 +235,7 @@ connect()
 	u.u_error = sockname(&nam, uap->name, uap->namelen);
 	if (u.u_error)
 		return;
-	u.u_error = sockopt(&aopt, uap->opt);
+	u.u_error = sockopt(&aopt, (caddr_t)uap->opt);
 	if (u.u_error) {
 		m_freem(nam);
 		return;
@@ -296,7 +297,7 @@ sendto()
 	auio.uio_resid = uap->len;
 	auio.uio_segflg = 0;
 	auio.uio_offset = 0;	/* XXX */
-	if (useracc(uap->buf, uap->len, B_READ) == 0) {
+	if (useracc(uap->buf, (u_int)uap->len, B_READ) == 0) {
 		u.u_error = EFAULT;
 		return;
 	}
@@ -334,7 +335,7 @@ send()
 	auio.uio_resid = uap->len;
 	auio.uio_segflg = 0;
 	auio.uio_offset = 0;	/* XXX */
-	if (useracc(uap->buf, uap->len, B_READ) == 0) {
+	if (useracc(uap->buf, (u_int)uap->len, B_READ) == 0) {
 		u.u_error = EFAULT;
 		return;
 	}
@@ -377,7 +378,7 @@ recvfrom()
 	auio.uio_resid = uap->len;
 	auio.uio_segflg = 0;
 	auio.uio_offset = 0;	/* XXX */
-	if (useracc(uap->buf, uap->len, B_WRITE) == 0)  {
+	if (useracc(uap->buf, (u_int)uap->len, B_WRITE) == 0)  {
 		u.u_error = EFAULT;
 		return;
 	}
@@ -390,7 +391,7 @@ recvfrom()
 	else {
 		if (fromlen > from->m_len)
 			fromlen = from->m_len;
-		if (copyout(mtod(from, caddr_t), uap->from, fromlen)) {
+		if (copyout(mtod(from, caddr_t), uap->from, (u_int)fromlen)) {
 			u.u_error = EFAULT;
 			goto bad;
 		}
@@ -433,11 +434,12 @@ recv()
 	auio.uio_resid = uap->len;
 	auio.uio_segflg = 0;
 	auio.uio_offset = 0;	/* XXX */
-	if (useracc(uap->buf, uap->len, B_WRITE) == 0)  {
+	if (useracc(uap->buf, (u_int)uap->len, B_WRITE) == 0)  {
 		u.u_error = EFAULT;
 		return;
 	}
-	u.u_error = soreceive(fp->f_socket, (struct mbuf *)0, &auio, uap->flags);
+	u.u_error =
+	    soreceive(fp->f_socket, (struct mbuf **)0, &auio, uap->flags);
 	u.u_r.r_val1 = uap->len - auio.uio_resid;
 }
 
@@ -465,10 +467,10 @@ pipe()
 	struct socket *rso, *wso;
 	int r;
 
-	u.u_error = socreate(1, &rso, SOCK_STREAM, 0, 0);
+	u.u_error = socreate(1, &rso, SOCK_STREAM, 0, (struct socketopt *)0);
 	if (u.u_error)
 		return;
-	u.u_error = socreate(1, &wso, SOCK_STREAM, 0, 0);
+	u.u_error = socreate(1, &wso, SOCK_STREAM, 0, (struct socketopt *)0);
 	if (u.u_error)
 		goto free;
 	rf = falloc();
@@ -546,7 +548,7 @@ sockname(aname, name, namelen)
 		return (EINVAL);
 	m = m_get(M_WAIT);
 	m->m_len = namelen;
-	if (copyin(name, mtod(m, caddr_t), namelen)) {
+	if (copyin(name, mtod(m, caddr_t), (u_int)namelen)) {
 		(void) m_free(m);
 		return (EFAULT);
 	}
@@ -571,7 +573,7 @@ sockopt(so, opt)
 		return (EINVAL);
 	m = m_get(M_WAIT);
 	m->m_len = so->so_optlen;
-	if (copyin(so->so_optdata, mtod(m, caddr_t), m->m_len)) {
+	if (copyin(so->so_optdata, mtod(m, caddr_t), (u_int)m->m_len)) {
 		(void) m_free(m);
 		return (EFAULT);
 	}

@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.8	82/10/10	*/
+/*	kern_prot.c	5.9	82/10/17	*/
 
 /*
  * System calls related to processes and protection
@@ -61,7 +61,7 @@ getgid()
 getgroups()
 {
 	register struct	a {
-		int	gidsetsize;
+		u_int	gidsetsize;
 		int	*gidset;
 	} *uap = (struct a *)u.u_ap;
 	register int *gp;
@@ -147,7 +147,7 @@ setgid()
 setgroups()
 {
 	register struct	a {
-		int	gidsetsize;
+		u_int	gidsetsize;
 		int	*gidset;
 	} *uap = (struct a *)u.u_ap;
 	register int *gp;

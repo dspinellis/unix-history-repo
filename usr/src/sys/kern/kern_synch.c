@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.22	82/10/10	*/
+/*	kern_synch.c	4.23	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,7 +25,7 @@ roundrobin()
 
 	runrun++;
 	aston();
-	timeout(roundrobin, 0, hz / 10);
+	timeout(roundrobin, (caddr_t)0, hz / 10);
 }
 
 /* constants to digital decay and forget 90% of usage in 5*loadav time */
@@ -93,7 +93,7 @@ schedcpu()
 	}
 	if (bclnlist != NULL)
 		wakeup((caddr_t)&proc[2]);
-	timeout(schedcpu, 0, hz);
+	timeout(schedcpu, (caddr_t)0, hz);
 }
 
 #define SQSIZE 0100	/* Must be power of 2 */

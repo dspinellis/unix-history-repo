@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.15	82/10/17	*/
+/*	kern_resource.c	4.16	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -191,7 +191,7 @@ getrlimit()
 		u.u_error = EINVAL;
 		return;
 	}
-	if (copyout((caddr_t)&u.u_rlimit[uap->which], uap->rlp,
+	if (copyout((caddr_t)&u.u_rlimit[uap->which], (caddr_t)uap->rlp,
 	    sizeof (struct rlimit))) {
 		u.u_error = EFAULT;
 		return;
@@ -220,7 +220,8 @@ getrusage()
 		u.u_error = EINVAL;
 		return;
 	}
-	if (copyout((caddr_t)rup, uap->rusage, sizeof (struct rusage))) {
+	if (copyout((caddr_t)rup, (caddr_t)uap->rusage,
+	    sizeof (struct rusage))) {
 		u.u_error = EFAULT;
 		return;
 	}
@@ -265,7 +266,7 @@ otimes()
 	atms.tms_stime = scale60(&u.u_ru.ru_stime);
 	atms.tms_cutime = scale60(&u.u_cru.ru_utime);
 	atms.tms_cstime = scale60(&u.u_cru.ru_stime);
-	if (copyout((caddr_t)&atms, uap->tmsb, sizeof (atms))) {
+	if (copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms))) {
 		u.u_error = EFAULT;
 		return;
 	}

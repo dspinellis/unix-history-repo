@@ -1,4 +1,4 @@
-/*	kern_time.c	5.9	82/10/17	*/
+/*	kern_time.c	5.10	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"		/* XXX */
@@ -35,7 +35,7 @@ gettimeofday()
 	if (uap->tzp == 0)
 		return;
 	/* SHOULD HAVE PER-PROCESS TIMEZONE */
-	if (copyout((caddr_t)&tz, uap->tzp, sizeof (tz))) {
+	if (copyout((caddr_t)&tz, (caddr_t)uap->tzp, sizeof (tz))) {
 		u.u_error = EFAULT;
 		return;
 	}
@@ -127,7 +127,8 @@ getitimer()
 	} else
 		aitv = u.u_timer[uap->which];
 	splx(s);
-	if (copyout((caddr_t)&aitv, uap->itv, sizeof (struct itimerval)))
+	if (copyout((caddr_t)&aitv, (caddr_t)uap->itv,
+	    sizeof (struct itimerval)))
 		u.u_error = EFAULT;
 	splx(s);
 }
@@ -161,10 +162,10 @@ setitimer()
 	}
 	s = spl7();
 	if (uap->which == ITIMER_REAL) {
-		untimeout(realitexpire, p);
+		untimeout(realitexpire, (caddr_t)p);
 		if (timerisset(&aitv.it_value)) {
 			timevaladd(&aitv.it_value, &time);
-			timeout(realitexpire, p, hzto(&aitv.it_value));
+			timeout(realitexpire, (caddr_t)p, hzto(&aitv.it_value));
 		}
 		p->p_realtimer = aitv;
 	} else
@@ -195,8 +196,8 @@ realitexpire(p)
 		timevaladd(&p->p_realtimer.it_value,
 		    &p->p_realtimer.it_interval);
 		if (timercmp(&p->p_realtimer.it_value, &time, >)) {
-			timeout(realitexpire,
-			    p, hzto(&p->p_realtimer.it_value));
+			timeout(realitexpire, (caddr_t)p,
+			    hzto(&p->p_realtimer.it_value));
 			splx(s);
 			return;
 		}
@@ -356,7 +357,7 @@ oalarm()
 	register struct proc *p = u.u_procp;
 	int s = spl7();
 
-	untimeout(realitexpire, p);
+	untimeout(realitexpire, (caddr_t)p);
 	timerclear(&p->p_realtimer.it_interval);
 	u.u_r.r_val1 = 0;
 	if (timerisset(&p->p_realtimer.it_value) &&
@@ -368,7 +369,7 @@ oalarm()
 	}
 	p->p_realtimer.it_value = time;
 	p->p_realtimer.it_value.tv_sec += uap->deltat;
-	timeout(realitexpire, p, hzto(&p->p_realtimer.it_value));
+	timeout(realitexpire, (caddr_t)p, hzto(&p->p_realtimer.it_value));
 	splx(s);
 }
 #endif

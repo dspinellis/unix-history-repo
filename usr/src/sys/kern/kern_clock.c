@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.40	82/09/08	*/
+/*	kern_clock.c	4.41	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

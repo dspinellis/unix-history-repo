@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.25	82/10/17	*/
+/*	vfs_lookup.c	4.26	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -477,7 +477,8 @@ direnter(ip)
 	register struct direct *ep, *nep;
 	struct buf *bp;
 	int loc, freespace;
-	u_int dsize, newentrysize;
+	u_int dsize;
+	int newentrysize;
 	char *dirbuf;
 
 	u.u_dent.d_ino = ip->i_number;
@@ -493,8 +494,8 @@ direnter(ip)
 		if (u.u_offset&(DIRBLKSIZ-1))
 			panic("wdir: newblk");
 		u.u_dent.d_reclen = DIRBLKSIZ;
-		(void) rdwri(UIO_WRITE, u.u_pdir, (caddr_t)&u.u_dent, newentrysize,
-		    u.u_offset, 1, (int *)0);
+		(void) rdwri(UIO_WRITE, u.u_pdir, (caddr_t)&u.u_dent,
+		    newentrysize, u.u_offset, 1, (int *)0);
 		iput(u.u_pdir);
 		return;
 	}
@@ -513,13 +514,8 @@ direnter(ip)
 	 * This should never push the size past a new multiple of
 	 * DIRBLKSIZE.
 	 */
-	if (u.u_offset+u.u_count > u.u_pdir->i_size) {
-/*ZZ*/		if (((u.u_offset+u.u_count-1)&~(DIRBLKSIZ-1)) !=
-/*ZZ*/		    ((u.u_pdir->i_size-1)&~(DIRBLKSIZ-1))) {
-/*ZZ*/			panic("wdir: span");
-/*ZZ*/		}
+	if (u.u_offset+u.u_count > u.u_pdir->i_size)
 		u.u_pdir->i_size = u.u_offset + u.u_count;
-	}
 
 	/*
 	 * Get the block containing the space for the new directory
@@ -551,9 +547,6 @@ direnter(ip)
 		dsize = DIRSIZ(nep);
 		freespace += nep->d_reclen - dsize;
 		loc += nep->d_reclen;
-/*ZZ*/if((loc&~0x1ff)!=(loc+nep->d_reclen-1&~0x1ff))
-/*ZZ*/printf("wdir: compact loc %d reclen %d (dir %s/%d)\n",loc,nep->d_reclen,
-/*ZZ*/u.u_pdir->i_fs->fs_fsmnt,u.u_pdir->i_number);
 		bcopy((caddr_t)nep, (caddr_t)ep, dsize);
 	}
 	/*
@@ -563,7 +556,6 @@ direnter(ip)
 	if (ep->d_ino == 0) {
 		if (freespace + dsize < newentrysize)
 			panic("wdir: compact1");
-/*ZZ*/if(freespace+dsize>512)panic("wdir: compact screwup");
 		u.u_dent.d_reclen = freespace + dsize;
 	} else {
 		if (freespace < newentrysize)
@@ -590,7 +582,7 @@ dirremove()
 		 */
 		u.u_dent.d_ino = 0;
 		(void) rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent,
-		    DIRSIZ(&u.u_dent), u.u_offset, 1, (int *)0);
+		    (int)DIRSIZ(&u.u_dent), u.u_offset, 1, (int *)0);
 	} else {
 		/*
 		 * Collapse new free space into previous entry.
