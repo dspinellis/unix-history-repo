@@ -87,7 +87,7 @@ MLINKS+=regexp.3 regcomp.3 regexp.3 regexec.3 regexp.3 regsub.3 \
 	regexp.3 regerror.3
 MLINKS+=scandir.3 alphasort.3
 MLINKS+=setjmp.3 _longjmp.3 setjmp.3 _setjmp.3 setjmp.3 longjmp.3 \
-	setjmp.3 longjmperr.3 setjmp.3 longjmperror.3
+	setjmp.3 sigsetjmp.3 setjmp.3 siglongjmp.3 setjmp.3 longjmperror.3
 MLINKS+=setmode.3 getmode.3
 MLINKS+=setuid.3 setegid.3 setuid.3 seteuid.3 setuid.3 setgid.3 \
 	setuid.3 setrgid.3 setuid.3 setruid.3
