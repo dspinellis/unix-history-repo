@@ -2,13 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	4.1 (Berkeley) %G%
+.\"	@(#)2.t	4.2 (Berkeley) %G%
 .\"
 .ds RH Overview of the file system
 .NH
 Overview of the file system
 .PP
-The file system is discussed in detail in [Mckusick83];
+The file system is discussed in detail in [Mckusick84];
 this section gives a brief overview.
 .NH 2
 Superblock
@@ -236,4 +236,3 @@ when they are being deallocated.
 Similarly inodes are kept consistent by synchronously
 deleting, adding, or changing directory entries.
 .ds RH Fixing corrupted file systems
-.bp
