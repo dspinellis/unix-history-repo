@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.4	(Berkeley)	%G%
+#	@(#)Makefile	1.5	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -11,6 +11,7 @@ SFLAGS=	-r
 TDEV=	-Pver
 TROFF=	ditroff ${TDEV}
 SRCS=	fortune.c rnd.c strfile.c unstr.c
+MAN=	fortune.0
 
 all: fortune strfile unstr fortunes.dat
 
@@ -33,19 +34,23 @@ clean: FRC
 	rm -f fortune fortunes fortunes.dat strfile unstr core *.o
 	rm -f Oscene Oobscene
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o games -g bin -m 4755 fortune ${DESTDIR}/usr/games
 	install -o games -g bin -m 600 fortunes.dat ${DESTDIR}/usr/games/lib
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} fortune.c rnd.c
 	lint ${CFLAGS} strfile.c rnd.c
 	lint ${CFLAGS} unstr.c
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
 
 troff: FRC
@@ -63,16 +68,3 @@ sort.obscene: strfile unstr
 	strfile -oi obscene
 	mv obscene Oobscene
 	unstr -o obscene
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-fortune.o: fortune.c /usr/include/sys/types.h /usr/include/stdio.h
-fortune.o: /usr/include/sys/file.h strfile.h
-rnd.o: rnd.c
-strfile.o: strfile.c /usr/include/stdio.h /usr/include/ctype.h strfile.h
-unstr.o: unstr.c /usr/include/stdio.h strfile.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
