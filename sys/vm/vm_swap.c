@@ -32,7 +32,7 @@
  *
  *	@(#)vm_swap.c	7.18 (Berkeley) 5/6/91
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/vm/RCS/vm_swap.c,v 1.3 92/01/21 21:58:25 william Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys.386bsd/vm/vm_swap.c,v 1.1.1.1 1993/06/12 14:57:39 rgrimes Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -167,12 +167,15 @@ swstrategy(bp)
  * which must be in the swdevsw.  Return EBUSY
  * if already swapping on this device.
  */
+
+struct swapon_args {
+	char	*name;
+};
+
 /* ARGSUSED */
 swapon(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*name;
-	} *uap;
+	struct swapon_args *uap;
 	int *retval;
 {
 	register struct vnode *vp;

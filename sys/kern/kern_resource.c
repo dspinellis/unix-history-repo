@@ -44,12 +44,14 @@
  * Resource controls and accounting.
  */
 
+struct getpriority_args {
+	int	which;
+	int	who;
+};
+
 getpriority(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	which;
-		int	who;
-	} *uap;
+	register struct getpriority_args *uap;
 	int *retval;
 {
 	register struct proc *p;
@@ -100,14 +102,16 @@ getpriority(curp, uap, retval)
 	return (0);
 }
 
+struct setpriority_args {
+	int	which;
+	int	who;
+	int	prio;
+};
+
 /* ARGSUSED */
 setpriority(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	which;
-		int	who;
-		int	prio;
-	} *uap;
+	register struct setpriority_args *uap;
 	int *retval;
 {
 	register struct proc *p;
@@ -179,13 +183,15 @@ donice(curp, chgp, n)
 	return (0);
 }
 
+struct setrlimit_args {
+	u_int	which;
+	struct	rlimit *lim;
+};
+
 /* ARGSUSED */
 setrlimit(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		u_int	which;
-		struct	rlimit *lim;
-	} *uap;
+	register struct setrlimit_args *uap;
 	int *retval;
 {
 	struct rlimit alim;
@@ -261,13 +267,15 @@ setrlimit(p, uap, retval)
 	return (0);
 }
 
+struct getrlimit_args {
+	u_int	which;
+	struct	rlimit *rlp;
+};
+
 /* ARGSUSED */
 getrlimit(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		u_int	which;
-		struct	rlimit *rlp;
-	} *uap;
+	register struct getrlimit_args *uap;
 	int *retval;
 {
 
@@ -277,13 +285,15 @@ getrlimit(p, uap, retval)
 	    sizeof (struct rlimit)));
 }
 
+struct getrusage_args {
+	int	who;
+	struct	rusage *rusage;
+};
+
 /* ARGSUSED */
 getrusage(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		int	who;
-		struct	rusage *rusage;
-	} *uap;
+	register struct getrusage_args *uap;
 	int *retval;
 {
 	register struct rusage *rup;

@@ -61,12 +61,16 @@
 /*
  * Exit system call: pass back caller's arg
  */
+
+struct rexit_args {
+	int	rval;
+};
+
 /* ARGSUSED */
+volatile void
 rexit(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	rval;
-	} *uap;
+	struct rexit_args *uap;
 	int *retval;
 {
 
@@ -251,15 +255,18 @@ done:
 }
 
 #ifdef COMPAT_43
+
+struct owait_args {
+	int	pid;
+	int	*status;
+	int	options;
+	struct	rusage *rusage;
+	int	compat;
+};
+
 owait(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	pid;
-		int	*status;
-		int	options;
-		struct	rusage *rusage;
-		int	compat;
-	} *uap;
+	register struct owait_args *uap;
 	int *retval;
 {
 
@@ -271,15 +278,17 @@ owait(p, uap, retval)
 	return (wait1(p, uap, retval));
 }
 
+struct wait4_args {
+	int	pid;
+	int	*status;
+	int	options;
+	struct	rusage *rusage;
+	int	compat;
+};
+
 wait4(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	pid;
-		int	*status;
-		int	options;
-		struct	rusage *rusage;
-		int	compat;
-	} *uap;
+	struct wait4_args *uap;
 	int *retval;
 {
 
@@ -295,17 +304,20 @@ wait4(p, uap, retval)
  * stopped under trace, or (optionally) stopped by a signal.
  * Pass back status and deallocate exited child's proc structure.
  */
+
+struct wait1_args {
+	int	pid;
+	int	*status;
+	int	options;
+	struct	rusage *rusage;
+#ifdef COMPAT_43
+	int compat;
+#endif
+};
+
 wait1(q, uap, retval)
 	register struct proc *q;
-	register struct args {
-		int	pid;
-		int	*status;
-		int	options;
-		struct	rusage *rusage;
-#ifdef COMPAT_43
-		int compat;
-#endif
-	} *uap;
+	register struct wait1_args *uap;
 	int retval[];
 {
 	register int nfound;

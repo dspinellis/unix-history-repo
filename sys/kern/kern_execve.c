@@ -95,14 +95,16 @@ extern int dostacklimits;
  * execve() system call.
  */
 
+struct execve_args {
+	char	*fname;
+	char	**argp;
+	char	**envp;
+};
+
 /* ARGSUSED */
 execve(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		char	*fname;
-		char	**argp;
-		char	**envp;
-	} *uap;
+	register struct execve_args *uap;
 	int *retval;
 {
 	register struct nameidata *ndp;

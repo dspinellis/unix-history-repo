@@ -105,14 +105,17 @@ struct {
 /*
  * Process debugging system call.
  */
+
+struct ptrace_args {
+	int	req;
+	int	pid;
+	int	*addr;
+	int	data;
+};
+
 ptrace(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	req;
-		int	pid;
-		int	*addr;
-		int	data;
-	} *uap;
+	register struct ptrace_args *uap;
 	int *retval;
 {
 	struct proc *p;
@@ -426,15 +429,18 @@ procxmt(p)
 /*
  * Enable process profiling system call.
  */
+
+struct profil_args {
+	short	*bufbase;	/* base of data buffer */
+	unsigned bufsize;	/* size of data buffer */
+	unsigned pcoffset;	/* pc offset (for subtraction) */
+	unsigned pcscale;	/* scaling factor for offset pc */
+};
+
 /* ARGSUSED */
 profil(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		short	*bufbase;	/* base of data buffer */
-		unsigned bufsize;	/* size of data buffer */
-		unsigned pcoffset;	/* pc offset (for subtraction) */
-		unsigned pcscale;	/* scaling factor for offset pc */
-	} *uap;
+	register struct profil_args *uap;
 	int *retval;
 {
 	/* from looking at man pages, and include files, looks like

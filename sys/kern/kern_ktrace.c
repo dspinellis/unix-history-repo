@@ -171,15 +171,18 @@ ktrpsig(vp, sig, action, mask, code)
 /*
  * ktrace system call
  */
+
+struct ktrace_args {
+	char	*fname;
+	int	ops;
+	int	facs;
+	int	pid;
+};
+
 /* ARGSUSED */
 ktrace(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		char	*fname;
-		int	ops;
-		int	facs;
-		int	pid;
-	} *uap;
+	register struct ktrace_args *uap;
 	int *retval;
 {
 	register struct vnode *vp = NULL;

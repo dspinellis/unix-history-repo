@@ -49,15 +49,17 @@
 extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode(), kinfo_file();
 struct kinfo_lock kinfo_lock;
 
+struct getkerninfo_args {
+	int	op;
+	char	*where;
+	int	*size;
+	int	arg;
+};
+
 /* ARGSUSED */
 getkerninfo(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	op;
-		char	*where;
-		int	*size;
-		int	arg;
-	} *uap;
+	register struct getkerninfo_args *uap;
 	int *retval;
 {
 

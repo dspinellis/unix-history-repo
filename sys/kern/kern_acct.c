@@ -68,12 +68,15 @@ struct  vnode *savacctp;	/* file to which to do accounting when space */
  * accounting has been suspended, and freespace rises above acctresume,
  * accounting is resumed.
  */
+
+struct sysacct_args {
+	char	*fname;
+};
+
 /* ARGSUSED */
 sysacct(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*fname;
-	} *uap;
+	struct sysacct_args *uap;
 	int *retval;
 {
 

@@ -32,7 +32,7 @@
  *
  *	@(#)kern_descrip.c	7.28 (Berkeley) 6/25/91
  */
-static char rcsid[] = "$Header: /home/cvs/386BSD/src/sys.386bsd/kern/kern_descrip.c,v 1.1.1.1 1993/06/12 14:57:34 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys.386bsd/kern/kern_descrip.c,v 1.2 1993/06/29 13:57:17 nate Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -74,12 +74,15 @@ getdtablesize(p, uap, retval)
 /*
  * Duplicate a file descriptor.
  */
+
+struct dup_args {
+	int     i;
+};
+
 /* ARGSUSED */
 dup(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	i;
-	} *uap;
+	struct dup_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -108,13 +111,16 @@ dup(p, uap, retval)
 /*
  * Duplicate a file descriptor to a particular value.
  */
+
+struct dup2_args {
+	u_int	from;
+	u_int	to;
+};
+
 /* ARGSUSED */
 dup2(p, uap, retval)
 	struct proc *p;
-	struct args {
-		u_int	from;
-		u_int	to;
-	} *uap;
+	struct dup2_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -154,14 +160,17 @@ dup2(p, uap, retval)
 /*
  * The file control system call.
  */
+
+struct fcntl_args {
+	int	fd;
+	int	cmd;
+	int	arg;
+};
+
 /* ARGSUSED */
 fcntl(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		int	cmd;
-		int	arg;
-	} *uap;
+	register struct fcntl_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -304,11 +313,13 @@ fcntl(p, uap, retval)
  * Close a file descriptor.
  */
 /* ARGSUSED */
+struct close_args {
+	int	fd;
+};
+
 close(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	fd;
-	} *uap;
+	struct close_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -334,13 +345,16 @@ close(p, uap, retval)
 /*
  * Return status information about a file descriptor.
  */
+
+struct fstat_args {
+	int	fd;
+	struct	stat *sb;
+};
+
 /* ARGSUSED */
 fstat(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		struct	stat *sb;
-	} *uap;
+	register struct fstat_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -693,13 +707,15 @@ closef(fp, p)
  * the entire file (l_whence = SEEK_SET, l_start = 0, l_len = 0).
  */
 
+struct flock_args {
+	int	fd;
+	int	how;
+};
+
 /* ARGSUSED */
 flock(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		int	how;
-	} *uap;
+	register struct flock_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;

@@ -84,25 +84,29 @@ getpagesize(p, uap, retval)
 	return (0);
 }
 
+struct sbrk_args {
+	int	incr;
+};
+
 /* ARGSUSED */
 sbrk(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	incr;
-	} *uap;
+	struct sbrk_args *uap;
 	int *retval;
 {
 
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
 }
+
+struct sstk_args {
+	int	incr;
+};
 
 /* ARGSUSED */
 sstk(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	incr;
-	} *uap;
+	struct sstk_args *uap;
 	int *retval;
 {
 
@@ -110,16 +114,18 @@ sstk(p, uap, retval)
 	return (EOPNOTSUPP);
 }
 
+struct smmap_args {
+	caddr_t	addr;
+	int	len;
+	int	prot;
+	int	flags;
+	int	fd;
+	off_t	pos;
+};
+
 smmap(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		caddr_t	addr;
-		int	len;
-		int	prot;
-		int	flags;
-		int	fd;
-		off_t	pos;
-	} *uap;
+	register struct smmap_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -221,12 +227,14 @@ smmap(p, uap, retval)
 	return(error);
 }
 
+struct msync_args {
+	caddr_t	addr;
+	int	len;
+};
+
 msync(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-	} *uap;
+	struct msync_args *uap;
 	int *retval;
 {
 	vm_offset_t addr, objoff, oaddr;
@@ -293,12 +301,14 @@ msync(p, uap, retval)
 	return(0);
 }
 
+struct munmap_args {
+	caddr_t	addr;
+	int	len;
+};
+
 munmap(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		caddr_t	addr;
-		int	len;
-	} *uap;
+	register struct munmap_args *uap;
 	int *retval;
 {
 	vm_offset_t addr;
@@ -340,13 +350,15 @@ munmapfd(p, fd)
 	p->p_fd->fd_ofileflags[fd] &= ~UF_MAPPED;
 }
 
+struct mprotect_args {
+	caddr_t	addr;
+	int	len;
+	int	prot;
+};
+
 mprotect(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		int	prot;
-	} *uap;
+	struct mprotect_args *uap;
 	int *retval;
 {
 	vm_offset_t addr;
@@ -384,14 +396,16 @@ mprotect(p, uap, retval)
 	return (EINVAL);
 }
 
+struct madvise_args {
+	caddr_t	addr;
+	int	len;
+	int	behav;
+};
+
 /* ARGSUSED */
 madvise(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		int	behav;
-	} *uap;
+	struct madvise_args *uap;
 	int *retval;
 {
 
@@ -399,14 +413,16 @@ madvise(p, uap, retval)
 	return (EOPNOTSUPP);
 }
 
+struct mincore_args {
+	caddr_t	addr;
+	int	len;
+	char	*vec;
+};
+
 /* ARGSUSED */
 mincore(p, uap, retval)
 	struct proc *p;
-	struct args {
-		caddr_t	addr;
-		int	len;
-		char	*vec;
-	} *uap;
+	struct mincore_args *uap;
 	int *retval;
 {
 

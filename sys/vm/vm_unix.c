@@ -50,12 +50,14 @@
 
 #include "vm.h"
 
+struct obreak_args {
+	char	*nsiz;
+};
+
 /* ARGSUSED */
 obreak(p, uap, retval)
 	struct proc *p;
-	struct args {
-		char	*nsiz;
-	} *uap;
+	struct obreak_args *uap;
 	int *retval;
 {
 	register struct vmspace *vm = p->p_vmspace;
@@ -119,12 +121,14 @@ grow(p, sp)
 	return (1);
 }
 
+struct ovadvise_args {
+	int	anom;
+};
+
 /* ARGSUSED */
 ovadvise(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	anom;
-	} *uap;
+	struct ovadvise_args *uap;
 	int *retval;
 {
 
