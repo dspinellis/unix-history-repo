@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	6.4	84/01/03	*/
+/*	ufs_lookup.c	6.5	84/01/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,16 +34,8 @@ union	nchash	{
 #define	nch_forw	nch_chain[0]
 #define	nch_back	nch_chain[1]
 
-struct	nch	*nchhead, **nchtail;		/* LRU chain pointers */
-
-struct	nchstats {		/* stats on usefulness */
-	long	ncs_goodhits;		/* hits that we can reall use */
-	long	ncs_badhits;		/* hits we must drop */
-	long	ncs_miss;		/* misses */
-	long	ncs_long;		/* long names that ignore cache */
-	long	ncs_pass2;		/* names found with passes == 2 */
-	long	ncs_2passes;		/* number of times we attempt it */
-} nchstats;
+struct	nch	*nchhead, **nchtail;	/* LRU chain pointers */
+struct	nchstats nchstats;		/* cache effectiveness statistics */
 
 /*
  * Convert a pathname into a pointer to a locked inode,
