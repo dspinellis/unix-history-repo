@@ -2,6 +2,8 @@
  * This file describes the Operator Information Area in the 3270.
  *
  * Our OIA looks like that used by the 3270 PC and PC 3270 products.
+ *
+ * @(#)oia.h	1.6 (Berkeley) %G%
  */
 
 #define	INCLUDED_OIA

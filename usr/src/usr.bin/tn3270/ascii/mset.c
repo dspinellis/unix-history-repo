@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 1984, 1985, 1986 by the Regents of the
+ *	Copyright (c) 1984-1987 by the Regents of the
  *	University of California and by Gregory Glenn Minshall.
  *
  *	Permission to use, copy, modify, and distribute these
@@ -20,7 +20,7 @@
  */
 
 #ifndef	lint
-static	char	sccsid[] = "@(#)mset.c	3.1  10/29/86";
+static	char	sccsid[] = "@(#)mset.c	1.8 (Berkeley) %G%";
 #endif	/* ndef lint */
 
 /*

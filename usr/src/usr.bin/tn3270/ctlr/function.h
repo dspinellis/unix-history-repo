@@ -5,6 +5,8 @@
  * Note that this file (the following entries) are scanned by mkhit.c,
  * and that the format must remain more-or-less consistent
  * [ \t]*TOKEN
+ *
+ * @(#)function.h	1.5 (Berkeley) %G%
  */
 
 enum ctlrfcn {

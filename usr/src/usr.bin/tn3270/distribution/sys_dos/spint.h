@@ -3,6 +3,8 @@
  *
  * Note that spint_asm.asm contains an Assembly language version of
  * the following, so keep changes in synch!
+ *
+ * @(#)spint.h	1.3 (Berkeley) %G%
  */
 
 typedef struct {

@@ -2,6 +2,10 @@
  * Translate table to map EBCDIC into 3270 display codes.
  */
 
+#ifndef lint
+static char sccsid[] = "@(#)ebc_disp.c	1.2 (Berkeley) %G%";
+#endif	/* not lint */
+
 unsigned char ebc_disp[256] = {
 /*00*/	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,
 /*08*/	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,	0x00,

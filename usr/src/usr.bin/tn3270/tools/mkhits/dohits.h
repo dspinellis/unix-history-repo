@@ -1,3 +1,8 @@
+/*
+ *
+ * @(#)dohits.h	1.3 (Berkeley) %G%
+ */
+
 #define	numberof(x)	(sizeof x/sizeof x[0])
 #define	highestof(x)	(numberof(x)-1)
 

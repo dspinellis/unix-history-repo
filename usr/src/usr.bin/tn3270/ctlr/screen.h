@@ -1,5 +1,5 @@
 /*
- *	@(#)screen.h	3.1  10/29/86
+ * @(#)screen.h	1.6 (Berkeley) %G%
  */
 
 #define	INCLUDED_SCREEN
