@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)resolver.3	1.5 (Berkeley) %G%
+.\"	@(#)resolver.3	1.6 (Berkeley) %G%
 .\"
 .TH RESOLVER 3 "15 November 1985"
 .UC 4
@@ -55,11 +55,11 @@ res_mkquery, res_send, res_init, dn_comp, dn_expand \- resolver routines
 .br
 .B char **dnptrs, **lastdnptr;
 .PP
-.B dn_expand(msg, msglen, comp_dn, exp_dn, length)
+.B dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 .br
-.B char *msg, *comp_dn, exp_dn;
+.B char *msg, *eomorig, *comp_dn, exp_dn;
 .br
-.B int  msglen, length;
+.B int  length;
 .SH DESCRIPTION
 These routines are used for making, sending and interpreting packets to
 Internet domain name servers. Global information that is used by the
@@ -178,4 +178,4 @@ is NULL, we don't update the list.
 /etc/resolv.conf see resolver(5)
 .SH "SEE ALSO"
 named(8), resolver(5), RFC882, RFC883, RFC973, RFC974,
-BIND - Operations Guide
+Name Server Operations Guide for BIND
