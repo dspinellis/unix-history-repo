@@ -9,22 +9,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.4 (Berkeley) %G%
+ *	@(#)pk_input.c	7.5 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "protosw.h"
+#include "socketvar.h"
+#include "errno.h"
 
 #include "../net/if.h"
 
-#include "../netccitt/x25.h"
-#include "../netccitt/pk.h"
-#include "../netccitt/pk_var.h"
+#include "x25.h"
+#include "pk.h"
+#include "pk_var.h"
 
 /* 
  *  This procedure is called by the link level whenever the link
@@ -501,7 +501,8 @@ struct x25_packet *xp;
 
 		if (bcmp (sxp -> x25_udata, sa -> x25_udata, sxp->x25_udlen))
 			continue;
-		if (sxp -> x25_net && sxp -> x25_net != pkp->pk_xcp->xc_net)
+		if (sxp -> x25_net &&
+		    sxp -> x25_net != pkp->pk_xc.xc_addr.x25_net)
 			continue;
 		/*
 		 * don't accept incoming collect calls unless
@@ -513,7 +514,7 @@ struct x25_packet *xp;
 			break;
 		}
 		if (l -> lcd_so) {
-			if (so = sonewconn (l -> lcd_so, SO_ISCONNETED))
+			if (so = sonewconn (l -> lcd_so, SS_ISCONNECTED))
 				    lcp = (struct pklcd *) so -> so_pcb;
 		} else 
 			lcp = pk_attach((struct socket *) 0);

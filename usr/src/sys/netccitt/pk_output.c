@@ -9,22 +9,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	7.4 (Berkeley) %G%
+ *	@(#)pk_output.c	7.5 (Berkeley) %G%
  */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/protosw.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "protosw.h"
+#include "errno.h"
 
 #include "../net/if.h"
 
-#include "../netccitt/pk.h"
-#include "../netccitt/pk_var.h"
-#include "../netccitt/x25.h"
+#include "x25.h"
+#include "pk.h"
+#include "pk_var.h"
 
 struct	mbuf *nextpk ();
 
@@ -144,7 +144,7 @@ register struct pklcd *lcp;
 		pk_trace (pkp -> pk_xcp, xp, "P-Out");
 
 		/* Pass the packet on down to the link layer */
-		(*pkp -> pk_lloutput) (m, pkp -> llnext);
+		(*pkp -> pk_lloutput) (m, pkp -> pk_llnext);
 	}
 }
 
