@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)htonl.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)htonl.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /* hostorder = ntohl(netorder) */
