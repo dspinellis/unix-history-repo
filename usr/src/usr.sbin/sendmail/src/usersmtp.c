@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.13 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.14 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.13 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.14 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -546,13 +546,23 @@ datatimeout()
 smtpquit(m)
 	register MAILER *m;
 {
-	int i;
+	bool oldSuprErrs = SuprErrs;
+
+	/*
+	**	Suppress errors here -- we may be processing a different
+	**	job when we do the quit connection, and we don't want the 
+	**	new job to be penalized for something that isn't it's
+	**	problem.
+	*/
+
+	SuprErrs = TRUE;
 
 	/* send the quit message if we haven't gotten I/O error */
 	if (SmtpState == SMTP_OPEN || SmtpState == SMTP_SSD)
 	{
 		SmtpPhase = "client QUIT";
 			return;
+		}
 	}
 
 	/* now actually close the connection */
@@ -563,8 +573,9 @@ smtpquit(m)
 
 	/* and pick up the zombie */
 	i = endmailer(SmtpPid, m->m_argv[0]);
-	if (i != EX_OK)
-		syserr("451 smtpquit %s: stat %d", m->m_argv[0], i);
+	(void) endmailer(mci, e, m->m_argv);
+
+	SuprErrs = oldSuprErrs;
 }
 /*
 **  SMTPRSET -- send a RSET (reset) command
