@@ -1,4 +1,4 @@
-/*	if_imp.c	4.22	82/04/07	*/
+/*	if_imp.c	4.23	82/04/10	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -106,18 +106,20 @@ COUNT(IMPATTACH);
 impinit(unit)
 	int unit;
 {
+	int s = splimp();
 	register struct imp_softc *sc = &imp_softc[unit];
-	struct ifnet *ifp;
 
+COUNT(IMPINIT);
 	if ((*sc->imp_cb.ic_init)(unit) == 0) {
 		sc->imp_state = IMPS_DOWN;
 		sc->imp_if.if_flags &= ~IFF_UP;
+		splx(s);
 		return;
 	}
 	sc->imp_state = IMPS_INIT;
-	sc->imp_dropcnt = IMP_DROPCNT;
 	impnoops(sc);
 	if_rtinit(&sc->imp_if, RTF_DIRECT|RTF_UP);
+	splx(s);
 }
 
 struct sockproto impproto = { PF_IMPLINK };
@@ -230,15 +232,19 @@ COUNT(IMPINPUT);
 			sc->imp_state = IMPS_INIT;
 			sc->imp_dropcnt = IMP_DROPCNT;
 		}
-		if (sc->imp_state != IMPS_INIT || --sc->imp_dropcnt > 0)
+		if (sc->imp_state == IMPS_INIT && --sc->imp_dropcnt > 0)
 			goto drop;
+		sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
+		if (sin->sin_addr.s_host != ip->il_host ||
+		    sin->sin_addr.s_imp != ip->il_imp) {
+			sc->imp_if.if_host[0] =
+				sin->sin_addr.s_host = ip->il_host;
+			sin->sin_addr.s_imp = ip->il_imp;
+			impmsg(sc, "reset (host %d/imp %d)", (u_int)ip->il_host,
+				ntohs(ip->il_imp));
+		}
 		sc->imp_state = IMPS_UP;
 		sc->imp_if.if_flags |= IFF_UP;
-		sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
-		sc->imp_if.if_host[0] = sin->sin_addr.s_host = ip->il_host;
-		sin->sin_addr.s_imp = ip->il_imp;
-		impmsg(sc, "reset (host %d/imp %d)", (u_int)ip->il_host,
-			ntohs(ip->il_imp));
 		/* restart output in case something was q'd */
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
 		goto drop;
@@ -531,7 +537,6 @@ impnoops(sc)
 	int x;
 
 COUNT(IMPNOOPS);
-	sc->imp_state = IMPS_INIT;
 	sc->imp_dropcnt = IMP_DROPCNT;
 	for (i = 0; i < IMP_DROPCNT + 1; i++ ) { 
 		if ((m = m_getclr(M_DONTWAIT)) == 0) 
