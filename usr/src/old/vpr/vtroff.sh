@@ -1,4 +1,4 @@
-#
+#	@(#)vtroff.sh	1.2	%G%
 umask 0
 set flags=() noglob length=() fonts=() fontf=() macp=(/usr/lib/tmac/tmac.vcat)
 unset t
@@ -77,16 +77,16 @@ if ($#argv == 0) then
 endif
 if ($?wide) then
     if ($?t) then
-	/usr/bin/troff -t $flags $macp $fontf $* | /usr/lib/vsort -W $length
+	/usr/bin/troff -t -rv1 $flags $macp $fontf $* | /usr/lib/vsort -W $length
     else
-	/usr/bin/troff -t $flags $macp $fontf $* | \
+	/usr/bin/troff -t -rv1 $flags $macp $fontf $* | \
 	    /usr/lib/vsort -W $length | /usr/ucb/vpr -W -t $fonts
     endif
 else
     if ($?t) then
-	/usr/bin/troff -t $flags $macp $fontf $* | /usr/lib/rvsort $length
+	/usr/bin/troff -t -rv1 $flags $macp $fontf $* | /usr/lib/rvsort $length
     else
-	/usr/bin/troff -t $flags $macp $fontf $* | \
+	/usr/bin/troff -t -rv1 $flags $macp $fontf $* | \
 	    /usr/lib/rvsort $length | /usr/ucb/vpr -t $fonts
 #	    /usr/lib/vsort -c $length | /usr/ucb/vpr -t $fonts
     endif
