@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.25 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.26 (Berkeley) %G%";
 #endif
 
 /*
@@ -1160,7 +1160,7 @@ alloc(size)
 #endif
 	if (size > nleft) {
 		freebase = (char *)sbrk((int)(i = size > 2048 ? size : 2048));
-		if (freebase == 0) {
+		if (freebase == (char *)-1) {
 			fprintf(stderr, "ps: ran out of memory\n");
 			exit(1);
 		}
