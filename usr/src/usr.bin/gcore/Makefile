@@ -1,6 +1,5 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 PROG=	gcore
-CFLAGS+=-I/sys
 
 .include <bsd.prog.mk>
