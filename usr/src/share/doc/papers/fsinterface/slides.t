@@ -1,3 +1,10 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)slides.t	5.2 (Berkeley) %G%
+.\"
 .so macros
 .nf
 .LL

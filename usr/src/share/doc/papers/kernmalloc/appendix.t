@@ -1,4 +1,10 @@
-.\"	@(#)appendix.t	1.2	(Copyright 1988 M. K. McKusick)	88/04/22
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)appendix.t	5.1 (Berkeley) %G%
+.\"
 .bp
 .H 1 "Appendix A - Implementation Details"
 .LP

@@ -1,4 +1,10 @@
-.\"	@(#)0.t	1.4	(Copyright 1986 M. K. McKusick)	86/12/05
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)0.t	5.1 (Berkeley) %G%
+.\"
 .rm CM
 .TL
 Directions of UNIX at Berkeley
