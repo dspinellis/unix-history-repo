@@ -34,6 +34,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)locore.s	7.3 (Berkeley) 5/13/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00030
+ * --------------------         -----   ----------------------
+ *
+ * 06 Aug 92	Pace Willisson		Allow VGA memory to be mapped
  */
 
 
@@ -215,7 +222,7 @@ start:	movw	$0x1234,%ax
 /* map I/O memory map */
 
 	movl	$0x100-0xa0,%ecx	# for this many pte s,
-	movl	$(0xa0000|PG_V),%eax	#  having these bits set, (perhaps URW?)
+	movl	$(0xa0000|PG_V|PG_UW),%eax # having these bits set,(perhaps URW?) XXX 06 Aug 92
 	movl	%ebx,_atdevphys-SYSTEM	#   remember phys addr of ptes
 	fillkpt
 
@@ -236,7 +243,7 @@ start:	movw	$0x1234,%ax
  */
 	/* install a pde for temporary double map of bottom of VA */
 	lea	(4*NBPG)(%esi),%eax	# physical address of kernel page table
-	orl	$ PG_V,%eax		# pde entry is valid
+	orl     $ PG_V|PG_UW,%eax	# pde entry is valid XXX 06 Aug 92
 	movl	%eax,(%esi)		# which is where temp maps!
 
 	/* kernel pde's */
@@ -246,7 +253,7 @@ start:	movw	$0x1234,%ax
 
 	/* install a pde recursively mapping page directory as a page table! */
 	movl	%esi,%eax		# phys address of ptd in proc 0
-	orl	$ PG_V,%eax		# pde entry is valid
+	orl	$ PG_V|PG_UW,%eax	# pde entry is valid XXX 06 Aug 92
 	movl	%eax, PDRPDROFF*4(%esi)	# which is where PTmap maps!
 
 	/* install a pde to map kernel stack for proc 0 */
