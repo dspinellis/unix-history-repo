@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)route.8	6.6 (Berkeley) %G%
+.\"	@(#)route.8	6.7 (Berkeley) %G%
 .\"
 .TH ROUTE 8 ""
 .UC 5
@@ -152,10 +152,13 @@ and
 specify that all subsequent addresses are in the XNS or OSI address families,
 and the names must be numeric specifications rather than
 symbolic names.
-To acheieve the effect of an OSI ESIS redirect with the netmask option,
-one can specify
+.PP
+The optional
 .I -netmask
-qualifier followed by an OSI address (to be interpreted as a network mask).
+qualifier is intended
+to acheieve the effect of an OSI ESIS redirect with the netmask option.
+One specifies an additional ensuing address parameter
+(to be interpreted as a network mask).
 One can override the implicit network mask generated in the inet case
 by making sure this option follows the destination parameter.
 .PP
@@ -200,9 +203,9 @@ If the
 command is specified, 
 .I route
 will ``flush'' the routing tables of all gateway entries.
-If this is used in conjunction with one of the commands
-described above, the tables are flushed prior to the command's
-application.
+One can choose to flush only those routes whose destinations
+are of a given address family, by specifying an optional keyword
+describing which address family.
 .PP
 The
 .B \-n
