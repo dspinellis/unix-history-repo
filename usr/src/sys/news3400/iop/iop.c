@@ -9,7 +9,7 @@
  *
  * from: $Hdr: iop.c,v 4.300 91/06/09 06:42:37 root Rel41 $ SONY
  *
- *	@(#)iop.c	7.3 (Berkeley) %G%
+ *	@(#)iop.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -144,7 +144,7 @@ iopsetup(bp, map, nmap)
 		panic("iopsetup: user address is not allowed");
 	}
 #else /* mips */
-	ERROR!  This code doesn't work. /* KU:XXX */
+	ERROR!  This code does not work. /* KU:XXX */
 	pte = buftopte(bp);
 	while (--npf >= 0) {
 		if (pte->pg_pfnum == 0)
