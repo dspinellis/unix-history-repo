@@ -1,8 +1,7 @@
-# @(#)Makefile	1.2 (ucb.elefunt) %G%
-SCCSID= "@(#)Makefile	1.2 (ucb.elefunt) %G%"
-CFLAGS= -DNATIONAL
-MORE=atan2.o cbrt.o tan.o sincos.o cabs.o\
-     drem.o sqrt.o support.o
+# @(#)Makefile	1.3 (ucb.elefunt) %G%
+CFLAGS= -DNATIONAL -O
+SRCS=cbrt.c sqrt.s support.s
+OBJS=cbrt.o sqrt.o support.o
 
 .c.o:
 	${CC} -p ${CFLAGS} -c $*.c
@@ -23,7 +22,6 @@ MORE=atan2.o cbrt.o tan.o sincos.o cabs.o\
 
 all: ../libm.a ../libm_p.a
 
-../libm.a ../libm_p.a: ${MORE}
-	cd ../profiled; ar cru ../libm_p.a ${MORE}
-	ar cru ../libm.a ${MORE}
-
+../libm.a ../libm_p.a: ${OBJS}
+	cd ../profiled; ar cru ../libm_p.a ${OBJS}
+	ar cru ../libm.a ${OBJS}
