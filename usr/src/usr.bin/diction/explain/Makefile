@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 all explain clean cleandir depend lint tags:
 
@@ -9,4 +9,4 @@ install:
 	    ${.CURDIR}/explain.sh ${DESTDIR}${BINDIR}/explain
 
 .include "../../Makefile.inc"
-.include <bsd.own.mk>
+.include <bsd.prog.mk>
