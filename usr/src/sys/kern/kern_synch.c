@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	7.18 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,6 +15,9 @@
 #include "buf.h"
 #include "signalvar.h"
 #include "resourcevar.h"
+#ifdef KTRACE
+#include "ktrace.h"
+#endif
 
 #include "machine/cpu.h"
 
@@ -245,6 +248,10 @@ tsleep(chan, pri, wmesg, timo)
 	extern int cold;
 	int endtsleep();
 
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_CSW))
+		ktrcsw(p->p_tracep, 1, 0);
+#endif
 	s = splhigh();
 	if (cold || panicstr) {
 		/*
@@ -304,15 +311,28 @@ resume:
 	p->p_flag &= ~SSINTR;
 	if (p->p_flag & STIMO) {
 		p->p_flag &= ~STIMO;
-		if (catch == 0 || sig == 0)
+		if (catch == 0 || sig == 0) {
+#ifdef KTRACE
+			if (KTRPOINT(p, KTR_CSW))
+				ktrcsw(p->p_tracep, 0, 0);
+#endif
 			return (EWOULDBLOCK);
+		}
 	} else if (timo)
 		untimeout(endtsleep, (caddr_t)p);
 	if (catch && (sig != 0 || (sig = CURSIG(p)))) {
+#ifdef KTRACE
+		if (KTRPOINT(p, KTR_CSW))
+			ktrcsw(p->p_tracep, 0, 0);
+#endif
 		if (p->p_sigacts->ps_sigintr & sigmask(sig))
 			return (EINTR);
 		return (ERESTART);
 	}
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_CSW))
+		ktrcsw(p->p_tracep, 0, 0);
+#endif
 	return (0);
 }
 
@@ -384,7 +404,15 @@ sleep(chan, pri)
 	*(qp->sq_tailp = &p->p_link) = 0;
 	p->p_stat = SSLEEP;
 	p->p_stats->p_ru.ru_nvcsw++;
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_CSW))
+		ktrcsw(p->p_tracep, 1, 0);
+#endif
 	swtch();
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_CSW))
+		ktrcsw(p->p_tracep, 0, 0);
+#endif
 	curpri = p->p_usrpri;
 	splx(s);
 }
