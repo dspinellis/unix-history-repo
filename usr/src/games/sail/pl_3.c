@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_3.c	1.2 83/10/10";
+static	char *sccsid = "@(#)pl_3.c	1.3 83/10/14";
 #endif
 
 #include "player.h"
@@ -181,13 +181,15 @@ grapungrap()
 	register struct ship *sp;
 	register int n, k;
 	register struct snag *p;
+	int r;
 
 	n = -1;
 	foreachship(sp) {
 		n++;
 		if (sp == ms)
 			continue;
-		if (range(ms, sp) > 1 && !grappled2(ms, sp))
+		r = range(ms, sp);
+		if (r < 0 || r > 1 && !grappled2(ms, sp))
 			continue;
 		Signal("Attempt to grapple or ungrapple %s (%c%c): ", sp);
 		switch (sgetch(1)) {
@@ -267,12 +269,12 @@ lookout()
 		c = *countryname[sp->nationality];
 		if ((c == *buf || tolower(c) == *buf || colours(sp) == *buf)
 		    && (sp->file->stern == buf[1] || sterncolour(sp) == buf[1]))
-			break;
+		{
+			eyeball(sp);
+			return;
+		}
 	}
-	if (sp)
-		eyeball(sp);
-	else
-		Signal("No such ship.", (struct ship *)0);
+	Signal("No such ship.", (struct ship *)0);
 }
 
 char *
