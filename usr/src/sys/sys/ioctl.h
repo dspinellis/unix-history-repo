@@ -1,4 +1,4 @@
-/*	ioctl.h	4.4	81/02/19	*/
+/*	ioctl.h	4.5	81/02/23	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -85,36 +85,6 @@ struct ltchars {
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
 #define	NTTYDISC	2		/* new tty discipline */
-#define	PKDISC		3		/* packet driver */
-#define	TRDISC		4		/* datakit trailer protocol */
-#define	TDKDISC		5		/* datakit terminal protocol */
-
-#define	DIOCLSTN	(('d'<<8)|1)
-#define	DIOCMD		(('d'<<8)|2)
-#define	DIOCMPX		(('d'<<8)|3)
-#define	DIOCNMPX	(('d'<<8)|4)
-#define	DIOCSCALL	(('d'<<8)|5)
-#define	DIOCRCALL	(('d'<<8)|6)
-#define	DIOCPGRP	(('d'<<8)|7)
-#define	DIOCGETP	(('d'<<8)|8)
-#define	DIOCSETP	(('d'<<8)|9)
-#define	DIOCLOSE	(('d'<<8)|10)
-#define	DIOCTIME	(('d'<<8)|11)
-#define	DIOCRESET	(('d'<<8)|12)
-#define	DIOCSMETA	(('d'<<8)|13)
-#define	DIOCMERGE	(('d'<<8)|14)
-#define	DIOCICHAN	(('d'<<8)|15)
-#define	DIOCUMERGE	(('d'<<8)|16)
-#define	DIOCRMETA	(('d'<<8)|17)
-#define	DIOCXOUT	(('d'<<8)|18)
-#define	DIOCBMETA	(('d'<<8)|19)
-#define	DIOCAMETA	(('d'<<8)|20)
-#define	DIOCSBMETA	(('d'<<8)|21)
-#define	DIOCLOOP	(('d'<<8)|22)
-#define	DIOCPROTOCOL	(('d'<<8)|23)
-#define	DIOCTRL		(('d'<<8)|24)
-#define	DIOCDMETA	(('d'<<8)|25)
-#define	DIOCSWR		(('d'<<8)|26)
 
 #define	FIOCLEX		(('f'<<8)|1)
 #define	FIONCLEX	(('f'<<8)|2)
@@ -138,11 +108,4 @@ struct ltchars {
 /* printer ioctls, see <lpio.h> */
 #define	LGETSTATE	(('v'<<8)|2)
 #define	LSETSTATE	(('v'<<8)|3)
-
-/* chaos net io control commands */
-#define CHIOCRNEXT	(('c'<<8)|1)	/* get chaos net unmatched rfc packet */
-#define CHIOCRSKIP	(('c'<<8)|2)	/* Skip the unmatched RFC */
-#define CHIOCRREAD	(('c'<<8)|3)	/* Read my RFC packet */
-#define CHIOCTTY	(('c'<<8)|4)	/* make this channel a tty */
-#define CHIOCFLUSH	(('c'<<8)|5)	/* flush current output packet */
 #endif
