@@ -1,0 +1,181 @@
+#
+# A sample .screenrc which I use for everyday work. 
+#
+# some of the commands commented out here, have been moved to 
+# /local/etc/screenrc
+#
+# we want no password, right?
+#password                 # This will ask us for a password.
+password none             # Same as not even mentioning it.
+#password 12Bz/9hNlPLZk   # "1234"
+#password YahtrWblnJw     # ypmatch jnweiger passwd. Well, ... :-)
+
+hardcopy_append on        # we append to our hardcopyfiles, not overwrite
+#bufferfile "/tmp/screen-exchange"   # default file for C-A >, C-A <
+scrollback 200            # we have a 200 lines history buffer
+markkeys "@=\177:@=^C"    # our mad facit-twist terminal buffer overflow...
+markkeys "h=^B:l=^F:\$=^E"  # some missing emacs style bindings in copymode
+
+echo -n "booting screen"
+
+# let it flash, not horn!
+#vbell on                          # "vbell" don't work any longer, sorry.
+#vbell_msg "  Wuff,  Wuff!!  "     # this is the default message
+vbell_msg "Miauuuuuuu !!"
+#bell "Bimmmel No. %"		   # sounds the bell and shows a message
+
+# we want to login all windows we create.
+#login on                  # "login", "nologin" don't work any longer, sorry 2.
+
+echo -n "."
+# we have no termcap entry for screen on the target machine? Well then 
+# we tell a lie.
+term screen              # would be the obvious default here.
+#term vt100               # screen will understand vt100 for 99%. 
+
+# we want to survive hangups
+# note that the default setting is off now!
+autodetach on
+
+# when we open a window, where shall its CWD be?
+chdir                     # without argument it's my $HOME
+
+echo -n "."
+# I hate nonexisting status lines! Force screen to believe me.
+#hardstatus off
+
+# now some Terminal setup:
+# Printing in the leftmost column is not save. We express that fact as :LP@:
+#
+# Emacs tends to smear it's highlighted status bar across the screen, producing
+# ugly areas of bright background, if termcap is'nt perfectly sober.
+# Give a little :ms@: in the termcap, this may help.
+#
+# And who invented the initialisation for facit terminals? We tell him that 
+# we non't like smooth scroll, by specifying :ti=\E[?l:.
+# \E[?3l   80 Zeichen
+# \E[?3h   132 Zeichen
+# LP       Last column Printable
+# \E[A     cursor up
+# \E[B     cursor down
+# \E[?4h   smooth scroll
+# \E[?4l   jump scroll
+# \E[%dL   insert %d lines
+# \E[K     clear to end of line
+# cs       \E[%i%d;%dr    for twist and xterm
+# ms@      Move in Standout mode is NOT save.
+# WS       our private variable, it declares that the terminal can 
+#          be resized by an escape-sequence
+# The termcap statement takes 2 or three parameters. First parameter lists
+# which TERMCAPs are affected by this statement. Second we specify changes
+# in screen's view of that terminals. Third we may specify some capabilities
+# that user-programs want to see in the $TERMCAP environment variable or in
+# screen's termcap entry.
+termcap vt* cl=\E[H\E[J\E[?1h:vi=\E[?35h:ve=\E[35l:ti=\E[?4l[vt100]
+termcap facit ti=\E[?4l[facit]
+termcap xterm* is=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;4;6l:Z0=\E[?3h:Z1=\E[?3l
+
+echo -n "."
+# "\E(B", "\E(0", "\E(1", "\E(2", ... to switch between charsets.
+# screen internally emulates G1: "\E)..", G2: "\E*..", G3: "\E+.."
+# you can switch between them, with:
+#
+#  code | switch to
+# ------+------
+#  ^O   |  G0
+#  ^N   |  G1
+#  \En  |  G2
+#  \Eo  |  G3
+#termcap facit|vt100|xterm* G0
+
+# how do we resize windows? under sunview, this is standard, but xterm
+# needs to be a specially hacked xterm, to make this work.
+termcap xterm* WS=\E[8;%d;%dt
+
+# ICL 6402 testing:
+termcap icl* G0:S0=\E$[start]:E0=\E%[end]:C0=j9k<l6m3n?q\:t7u=v;w>x5 GS=\E(0^O:GE=\E(B^O:G1=k:G2=l:G3=m:G4=j:GV=x:GH=q:GR=u:GL=t:GU=w:GD=v:GC=n
+
+#Now if our terminal uses software handshake, we have to take a look at it.
+#Then, if the host transmits to fast, it will send the ^S character to make it
+#pause. And ^Q to resume. In this case 'flow on' shoud be used, as iScreen
+#then will interpret ^S and ^Q. Where the terminal uses hardware handshake
+#(RTS/CTS) we want to have 'flow off'. Switched to 'off', ^S and ^Q will
+#be passed to the application and ^A s / ^A q is not needed. 
+#If flow is set to 'auto', we will decide by the keypad mode, if the 
+#application should get these control characters or not. What a hack!
+#flow on|off|auto [interrupt]
+
+# Long Lines get wrapped around (the back of your terminal). This is the 
+# default for vt100. But now programs make different asumptions about your
+# terminal. You may find two linefeeds where you'd expect one, or you may
+# be confronted with a truncated line. Currently there is no fix, but pressing
+# C-A r and doing a redraw.
+#wrap on
+
+# the autoaka allows you to see the currently executing shell command in the
+# window name field. To use that, your shell prompt must contain ^[k^[\ or
+# you will see the string "(init)" as a name.
+# in my .cshrc I may use this for a wonderfull tcsh-prompt:
+#	set prompt="%{^[k^[\\%}%h %c2(%m)%# "
+#
+# defining a shellaka that contains a pipe-symbol (|) activites the
+# autoaka feature. To the left of that | you specify a constant part of
+# your prompt as a trigger, to the right you may place a default string
+# as in
+shellaka '> |tc'
+# but beware! specifying a window name with the -t option has priority over
+# the autoaka mechanism. Although specifying -t "> |foo" will work.
+# shellaka tc
+
+# ... now a little bit of key bindings
+# In case we don't have write permission for /etc/utmp (no s-bit)
+# we create even local windows via rlogin. -> Et voila: a utmp-slot
+# utmp-slots are strongly recomended to keep sccs and talk happy.
+# (thus we have ^A# or. ^Ac for windowcreation with or without utmp-slot.)
+# but if we run suid-root, we produce all the rlogins with -ln, 
+# as nobody shall refer to these pty's.
+bind '!' screen -ln -k faui41 rlogin faui41
+bind '@' screen -ln -k vme2 rlogin faui4_vme2
+#bind '#' screen -k faui43
+bind '#' screen -ln -k faui43 rlogin faui43
+bind '$' screen -ln -k faui44 rlogin faui44
+bind '%' screen -ln -k faui45 rlogin faui45
+bind '\^' screen -ln -k sup1 rlogin fausup1
+bind '&' screen -ln -k sup2 rlogin fausup2
+bind '*' screen -ln -k faui48 rlogin faui48
+bind '(' screen -ln -k faui09 rlogin faui09
+bind ')' screen -ln -k faui10 rlogin faui10
+bind 'J' screen -ln -k 4j rlogin faui4j
+bind 'P' screen -ln -k 4p rlogin faui4p
+bind '^C' screen -ln -k 45c rlogin faui45c
+bind '^D' screen -ln -k 45d rlogin faui45d
+bind '^E' screen -ln -k 45e rlogin faui45e
+bind '^I' screen -ln -k 45i rlogin faui45i
+
+# these two are logIn and logOut. As a toggle is too stupid.
+#bind 'I' set login on
+#bind 'O' set login off
+bind 'L'
+
+# What happens, when you 'think emacs' and want to erase a whole
+# line? You type ^A^K right? Under screen it should be ^Aa^K. But...
+# killing the window would be a real punishment for a little mistyping.
+bind k		#wow! I even manage to type ^Ak by accident.
+#bind ^k
+#bind K kill
+
+echo -n "."
+# "n:title", -k "title" and -t "title" are all the same.
+#screen 1:faui43          # My good old <nr>:<alias> syntax
+#screen -k faui43          # The way Wayne Davison thinks about it.
+#set redraw off            # we don't redraw this window on window change.
+#screen -ln -t faui43      # this one not logged in.
+#set redraw on
+#screen -ln 2:faui09 rlogin faui09 -l jnweiger
+
+# Finally another bonus feature for people using strange terminal settings like
+# different baud rate, etc. The next user will get standard settings
+# as ^[c is a reset sequence.
+#pow_detach_msg ""                # is the default
+pow_detach_msg "c" 
+echo "done."

@@ -1,0 +1,33 @@
+Installation of screen3.1
+
+0.)
+Unpack. Screen comes as a compressed tar archinve. But... you propably
+already managed that step, when you are reading this.
+
+1.)
+take a look at the config directory. choose one of the config files there,
+or edit one to suit your needs. If necessary cunsult the online manuals
+or look into /usr/include/...
+
+2.)
+look at the Makefiles. Different systems need different libraries. 
+Some need even the putenv code added. Build a Makefile that satisfies
+all these requirements. Then decide if you want to do screen debugging
+or want a production screen. In the first case you want to add -DDEBUG
+to CFLAGS. In the second case you may want to have -O in your CFLAGS
+and -s in your LDFLAGS, as you don't want to analyse a core-dump, if
+that ever happens. Still the executable may be 250 to 500 kbytes in size.
+
+3.)
+compile with the right compiler. If you have gcc, use it. If you have 
+a SYSV-ish and a bsd-like compiler, choose the later. E.g. on suns screen
+will not run properly when compiled with /usr/5bin/cc.
+
+4.)
+You may well run screen from your private binary directory and with a 
+private socket directory like $HOME/.screen. But to have a full featured
+screen and (from a users point of view) more secure pty's you should
+consult a system administrator and discuss installing screen setuid-root
+in some globally accessible directory like /usr/local/bin.
+
+Juergen Weigert. jnweiger@immd4.informatik.uni-erlangen.de

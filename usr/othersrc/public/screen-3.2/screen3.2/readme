@@ -1,0 +1,75 @@
+"screen" is a window manager that allows you to handle several independent
+screens (UNIX ttys) on a single physical terminal; each screen has its own
+set of processes connected to it (typically interactive shells).  Each
+virtual terminal created by "screen" emulates a DEC VT100 plus several ANSI
+X3.64 and ISO 2022 functions (including DEC VT102 features such as line and
+character deletion and insertion).
+
+Since "screen" uses pseudo-ttys, the select system call, and UNIX-domain
+sockets, it will not run under a system that does not include these
+features of 4.2 and 4.3 BSD UNIX.
+
+If you want to get a quick idea how "screen" works but don't want to read
+the entire manual, do the following:
+ 
+     -  call "screen" without arguments
+     -  wait for the shell prompt; execute some commands
+     -  type ^A ^C (Control-A followed by Control-C)
+     -  wait for the shell prompt; do something in the new window
+     -  type ^A ^A repeatedly to switch between the two windows
+     -  terminate the first shell ("screen" switches to the other window)
+     -  terminate the second shell
+
+If you have got "vttest" (the VT100 test program from mod.sources) you
+may want to run it from within "screen" to verify that it correctly
+emulates a VT100 on your terminal (except for things your terminal is
+incapable of handling, like 132 column mode and double width/height
+characters, of course).
+
+By the way, "screen" can be used to compensate for certain bugs of "real"
+VT100 terminals.  For instance, our 4.2 BSD version of mille(6) garbles
+the display on terminals of the VT100 family, but it works quite fine
+when it is invoked from within "screen".  In addition, "screen" enables
+you to use EMACS on terminals that are unable to generate Control-S and
+Control-Q from the keyboard or that require flow control using Control-S
+and Control-Q.  This is the reason why I have an alias like
+
+     alias emacs "screen emacs"
+
+in my .cshrc file.  Users who run EMACS on terminals which normally have no
+trouble with Control-S and Control-Q will probably want to run screen with
+the -fn or -fa options, or put the line "flow off" or "flow auto" in their
+.screenrc file.
+
+Before typing "make", look at the config directory and choose an appropriate 
+config file that you then copy to config.h and then edit it to
+reflect the configuration parameters of your choice.  Each define is well
+commented to help you decide what to choose.  Then give the Makefile the
+once-over and compile.
+
+To get screen to do everything it was designed to do, it should be installed
+set-uid root.  This enables it to modify the ownership of the pseudo-ttys,
+update /etc/utmp, and read the current load average from /dev/kmem.
+
+Failing to install it suid root (e.g. if you fear a trojan horse) doesn't
+have any major disadvantages, except that w(1) and some other utilities
+will display only "screen" as the current process, and the pseudo ttys
+(ptys) used for the virtual terminals won't have their owners set.  Screen
+can provide you some pty security by opening the ptys exclusively, but
+this has the unfortunate side-effect of keeping your own subprocesses from
+being able to open /dev/tty.
+
+It is also possible to create a special "screen" group and give the file
+/etc/utmp screen-group write-access, and give the file /dev/kmem screen-group
+read access to get all the features except the pty-ownership changes.  Some
+people also install it set-gid "kmem" or set-gid "utmp" to give it one or
+the other.
+
+Many people install screen as a normal program with no special privileges
+and still find it to be indispensable.  Give it a try.
+
+Send your questions, comments and bug reports for screen to:
+
+           Juergen Weigert 
+
+	   jnweiger@immd4.informatik.uni-erlangen.de
