@@ -28,8 +28,7 @@ typedef void *		genericptr_t;
 
 #else /* !defined __STDC__ */
 
-#define ASTERISK	*
-#define P(s)		(/ASTERISK s ASTERISK/)
+#define P(s)		()
 
 #ifndef genericptr_t
 typedef char *		genericptr_t;
