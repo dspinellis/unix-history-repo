@@ -1,3 +1,4 @@
+#	@(#)Makefile	4.4	(Berkeley)	%G%
 #
 # makefile for line printer spooling system
 #
@@ -6,7 +7,8 @@
 # DAEMON	someone special
 # SPGRP		the group id of the spooling programs
 #
-CFLAGS=-O
+
+CFLAGS=-O -DBSD41C
 LDFLAGS=
 LIBDIR=/usr/lib
 BINDIR=/usr/ucb
@@ -16,12 +18,15 @@ ROOT=root
 DAEMON=daemon
 SPGRP=daemon
 
-all: lpd rlpr lpr lpq lprm lpdrestart filters
+SRCS=lpd.c rlpr.c lpr.c lpq.c lprm.c lpdrestart.c lpdchar.c getq.c printcap.c \
+	lpf.c necf.c
+OBJS=lpd rlpr lpr lpq lprm lpdrestart
+filters=lpf necf
 
-filters: laf lpf necf
+all:	${OBJS}
 
 lpd:	lpd.o lpdchar.o printcap.o getq.o
-	${CC} -o lpd ${LDFLAGS} lpd.o lpdchar.o printcap.o getq.o
+	${CC} -o lpd ${LDFLAGS} lpd.o lpdchar.o printcap.o getq.o -ljobs
 
 rlpr:	rlpr.o printcap.o
 	${CC} -o rlpr ${LDFLAGS} rlpr.o printcap.o
@@ -38,9 +43,6 @@ lprm:	lprm.o printcap.o
 lpdrestart: lpdrestart.o
 	${CC} -o lpdrestart ${LDFLAGS} lpdrestart.o
 
-laf:	laf.c
-	${CC} -o laf ${CFLAGS} ${LDFLAGS} laf.c
-
 lpf:	lpf.c
 	${CC} -o lpf ${CFLAGS} ${LDFLAGS} lpf.c
 
@@ -50,7 +52,7 @@ necf:	necf.c
 lpd.o rlpr.o lpr.o lpq.o lprm.o lpdrestart.o: lp.local.h
 lpd.o lpq.o getq.o: getq.h
 
-install: lpd rlpr lpr lpq lprm
+install: all
 	install -o ${ROOT} -m 6711 lpd ${LIBDIR}/lpd
 	install -o ${DAEMON} -m 6711 rlpr ${LIBDIR}/rlpr
 	install -o ${ROOT} -m 6711 lpr ${BINDIR}/lpr
@@ -63,10 +65,9 @@ install: lpd rlpr lpr lpq lprm
 	chmod 775 ${SPOOLDIR}
 
 clean:
-	rm -f lpd rlpr lpr lpq lprm lpdrestart laf lpf necf *.o
+	rm -f ${OBJS} *.o
 
 print:
 	@pr makefile
 	@${CXREF} *.c | pr -h XREF
 	@pr *.h *.c
-

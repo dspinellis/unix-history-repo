@@ -1,143 +1,96 @@
-/*	lpf.c	4.4	83/01/05	*/
-/*
- * lpf -- Line printer filter: handles underlines for those printers/
- *	  device drivers that won't
+/*		lpf.c	4.5	83/02/10
+ * 	filter which reads the output of nroff and converts lines
+ *	with ^H's to overwritten lines.  Thus this works like 'ul'
+ *	but is much better: it can handle more than 2 overwrites
+ *	and it is written with some style.
+ *	modified by kls to use register references instead of arrays
+ *	to try to gain a little speed.
  */
-
 #include <stdio.h>
 #include <signal.h>
 
-#define	LINELN	132
+#define MAXWIDTH  132
+#define MAXREP    10
 
-char	linebuf[LINELN+2];
-int	ov;
-int	ff;
-char	ovbuf[LINELN];
+char	buf[MAXREP][MAXWIDTH];
+int	maxcol[MAXREP] = {-1};
 
 main()
 {
-	extern char _sobuf[BUFSIZ];
+	register FILE *p = stdin, *o = stdout;
+	register int i, col;
+	register char *cp;
+	int done, linedone, maxrep;
+	char ch, *limit;
 
-	setbuf(stdout, _sobuf);
-	while (getline())
-		putline();
-	fflush(stdout);
-	if (ferror(stdout))
-		exit(1);
-	exit(0);
-}
+	for (cp = buf[0], limit = buf[MAXREP]; cp < limit; *cp++ = ' ');
+	done = 0;
+	
+	while (!done) {
+		col = 0;
+		maxrep = 0;
+		linedone = 0;
+		while (!linedone) {
+			switch (ch = getc(p)) {
+			case EOF:
+				linedone = done = 1;
+				ch = '\n';
+				break;
 
-getline()
-{
-	register int col, maxcol, c;
+			case '\031':
+				fflush(stdout);
+				kill(getpid(), SIGSTOP);
+				break;
 
-	ov = 0;
-	for (col = 0; col < LINELN; col++) {
-		linebuf[col] = ' ';
-		ovbuf[col] = 0;
-	}
-	col = 0;
-	maxcol = 0;
-	for (;;) switch (c = getchar()) {
+			case '\f':
+			case '\n':
+				linedone = 1;
+				break;
 
-	case EOF:
-		return(0);
+			case '\b':
+				if (col-- < 0)
+					col = 0;
+				break;
 
-	default:
-		if (c >= ' ') {
-			if (col < LINELN) {
-				if (linebuf[col] != ' ') {
-					ov++;
-					ovbuf[col] = c;
-				} else
-					linebuf[col] = c;
-				if (++col > maxcol)
-					maxcol = col;
+			case '\r':
+				col = 0;
+				break;
+
+			case '\t':
+				col = (col | 07) + 1;
+				break;
+
+			default:
+				if (col >= MAXWIDTH)
+					break;
+				cp = &buf[0][col];
+				for (i = 0; i < MAXREP; i++) {
+					if (i > maxrep)
+						maxrep = i;
+					if (*cp == ' ') {
+						*cp = ch;
+						if (col > maxcol[i])
+							maxcol[i] = col;
+						break;
+					}
+					cp += MAXWIDTH;
+				}
+				col++;
+				break;
 			}
 		}
-		continue;
 
-	case ' ':
-		col++;
-		continue;
-
-	case '\t':
-		col = (col|07) + 1;
-		if (col > maxcol)
-			maxcol = col;
-		continue;
-
-	case '\r':
-		col = 0;
-		continue;
-
-	case '\f':
-		ff = 1;		/* force form feed */
-	case '\n':
-		if (maxcol >= LINELN)
-			maxcol = LINELN;
-		linebuf[maxcol] = 0;
-		return(1);
-
-	case '\b':
-		if (col > 0)
-			col--;
-		continue;
-	}
-}
-
-putline()
-{
-	register char c, *lp;
-
-	lp = linebuf;
-	while (c = *lp++)
-		output(c);
-	if (ov) {
-		putchar('\r');
-		lp = ovbuf;
-		while (ov) {
-			if (c = *lp++) {
-				output(c);
-				ov--;
-			} else
-				output(' ');
+		/* print out lines */
+		for (i = 0; i <= maxrep; i++) {
+			for (cp = buf[i], limit = cp+maxcol[i]; cp <= limit;) {
+				putc(*cp, o);
+				*cp++ = ' ';
+			}
+			if (i < maxrep)
+				putc('\r', o);
+			else
+				putc(ch, o);
+			maxcol[i] = -1;
 		}
 	}
-	putchar('\n');
-	if (ff) {
-		ff = 0;
-		putchar('\f');
-	}
-	if (ferror(stdout))
-		exit(1);
-}
-
-output(c)
-register char c;
-{
-
-	if (c == -1)
-		return;
-	c &= 0177;
-	if (c == 0177)
-		putchar('^'), c = '?';
-	if (c == 033)
-		c = '$';
-	if (c < ' ') switch (c) {
-
-	case '\n':
-		break;
-
-	case '\f':
-	case '\b':
-	case '\t':
-	case '\r':
-		break;
-
-	default:
-		putchar('^');
-		c |= 0100;
-	}
-	putchar(c);
 }
