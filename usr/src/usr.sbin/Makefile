@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.18 (Berkeley) %G%
+#	@(#)Makefile	5.19 (Berkeley) %G%
 
 SUBDIR=	ac accton amd arp chown chroot cron dev_mkdb diskpart edquota \
-	inetd kgmon kvm_mkdb lpr mkproto mtree named nvi.recover portmap \
+	inetd kgmon kvm_mkdb lpr mkproto mtree nvi.recover portmap \
 	pstat pwd_mkdb quot quotaon repquota rmt rwhod sa sendmail \
 	sliplogin sysctl syslogd traceroute trpt trsp update vipw
 
