@@ -11,7 +11,7 @@
 #include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)bcopy.s	5.4 (Berkeley) %G%")
+	ASMSTR("@(#)bcopy.s	5.5 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /* bcopy(s1, s2, n) */
@@ -44,7 +44,7 @@ LEAF(bcopy)
 	addu	t1, a1, a2		# t1 = end of to region
 1:
 	lb	v0, -1(t0)		# copy bytes backwards,
-	subu	t0, t0, 1		#   doesn't happen often so do slow way
+	subu	t0, t0, 1		#   doesnt happen often so do slow way
 	subu	t1, t1, 1
 	bne	t0, a0, 1b
 	sb	v0, 0(t1)

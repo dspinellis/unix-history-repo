@@ -12,7 +12,7 @@
 #include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)_setjmp.s	5.4 (Berkeley) %G%")
+	ASMSTR("@(#)_setjmp.s	5.5 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -40,7 +40,7 @@ LEAF(_setjmp)
 	sw	s7, ((S7 + 3) * 4)(a0)
 	sw	sp, ((SP + 3) * 4)(a0)
 	sw	s8, ((S8 + 3) * 4)(a0)
-	cfc1	v0, $31				# too bad can't check if FP used
+	cfc1	v0, $31				# too bad cant check if FP used
 	swc1	$f20, ((20 + 38) * 4)(a0)
 	swc1	$f21, ((21 + 38) * 4)(a0)
 	swc1	$f22, ((22 + 38) * 4)(a0)

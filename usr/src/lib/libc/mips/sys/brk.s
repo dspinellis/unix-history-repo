@@ -11,7 +11,7 @@
 #include "SYS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)brk.s	5.1 (Berkeley) %G%")
+	ASMSTR("@(#)brk.s	5.2 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 #define	SYS_brk		17
@@ -19,7 +19,7 @@
 LEAF(brk)
 	lw	v0, _minbrk
 	bgeu	a0, v0, _brk
-	move	a0, v0		# don't allow break < minbrk
+	move	a0, v0		# dont allow break < minbrk
 ALEAF(_brk)
 	li	v0, SYS_brk
 	syscall

@@ -11,7 +11,7 @@
 #include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)ldexp.s	5.4 (Berkeley) %G%")
+	ASMSTR("@(#)ldexp.s	5.5 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 #define DEXP_INF	0x7ff
@@ -91,7 +91,7 @@ LEAF(ldexp)
  * Now shift t2,t3 the correct number of bits.
  */
 1:
-	subu	t9, t9, DLEAD_ZEROS	# don't count normal leading zeros
+	subu	t9, t9, DLEAD_ZEROS	# dont count normal leading zeros
 	li	t1, DEXP_MIN + DEXP_BIAS
 	subu	t1, t1, t9		# adjust exponent
 	addu	t1, t1, a2		# scale exponent
