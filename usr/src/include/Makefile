@@ -1,4 +1,4 @@
-#	Makefile	4.3	83/07/10
+#	Makefile	4.4	83/07/30
 #
 # Doing a make install builds /usr/include
 #
@@ -12,7 +12,7 @@
 # follow symbolic links.
 #
 DESTDIR=
-SUBDIRS=arpa
+SUBDIRS=arpa pascal
 STD=	a.out.h ar.h assert.h ctype.h curses.h dbm.h \
 	disktab.h dumprestor.h fcntl.h fstab.h getty.h grp.h \
 	lastlog.h math.h mp.h mtab.h netdb.h nlist.h pwd.h ranlib.h \
@@ -36,7 +36,7 @@ install: ${SHARED}
 		then \
 			mkdir ${DESTDIR}/usr/include/$$i; \
 		fi; \
-		(cd $$i; for j in *.h; do \
+		(cd $$i; for j in *.[ih]; do \
 			install -c -m 644 $$j ${DESTDIR}/usr/include/$$i/$$j; \
 		done); \
 	done
