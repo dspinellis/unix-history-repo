@@ -1,4 +1,4 @@
-.\"	@(#)kernmalloc.t	1.5	(Copyright 1988 M. K. McKusick)	88/04/21
+.\"	@(#)kernmalloc.t	1.6	(Copyright 1988 M. K. McKusick)	88/04/22
 .\" reference a system routine name
 .de RN
 \fI\\$1\fP\^()\\$2
@@ -8,10 +8,37 @@
 .NH \\$1
 \\$2
 ..
+.\" begin figure
+.\" .FI "title"
+.nr Fn 0 1
+.de FI
+.ds Lb Figure \\n+(Fn
+.ds Lt \\$1
+.KF
+.DS B
+.nf
+..
+.\"
+.\" end figure
+.de Fe
+.sp
+.\" cheat: original indent is stored in \n(OI by .DS B; restore it
+.\" then center legend after .DE rereads and centers the block.
+\\\\.in \\n(OI
+\\\\.ce
+\\\\*(Lb.  \\\\*(Lt
+.sp
+.DE
+.KE
+.if \nd 'ls 2
+..
 .EQ
 delim $$
 .EN
 .rm CM
+.ds CH "
+.ds CF "- % -
+.nr PO 1.25i
 .TL
 Design of a General Purpose Memory Allocator for the 4.3BSD UNIX\(dg Kernel
 .FS
@@ -43,7 +70,7 @@ and is quick enough that no performance loss relative to the
 current implementations is observed.
 The paper concludes with a discussion of our experience in using
 the new memory allocator,
-and directions for future improvements.
+and directions for future work.
 .AE
 .LP
 .H 1 "Kernel Memory Allocation in 4.3BSD
@@ -79,7 +106,7 @@ The allocation is slow because of the implied semantics of
 finding the oldest buffer, pushing its contents to disk if they are dirty,
 and moving physical memory into or out of the buffer to create 
 the requested size [Thompson78].
-To reduce the overhead a ``new'' memory allocator was built in 4.3BSD
+To reduce the overhead, a ``new'' memory allocator was built in 4.3BSD
 for name translation that allocates a pool of empty buffers.
 It keeps them on a free list so they can
 be quickly allocated and freed [McKusick85].
@@ -186,11 +213,11 @@ If they have their own free lists,
 the amount of memory tied up in the two lists will be the
 sum of the greatest amount of memory that each of
 the two subsystems has ever used.
-If they share a freelist,
+If they share a free list,
 the amount of memory tied up in the free list may be as low as the
 greatest amount of memory that either subsystem used.
 As the number of subsystems grows,
-the savings from having a single freelist grows.
+the savings from having a single free list grows.
 .H 1 "Existing User-level Implementations
 .PP
 There are many different algorithms and
@@ -203,7 +230,7 @@ was the memory allocator provided on 4.2BSD originally
 written by Chris Kingsley at California Institute of Technology.
 Unfortunately,
 the 4.2BSD memory allocator also wasted twice as much memory
-as its nearest competitor.
+as its nearest competitor in the survey.
 .PP
 The 4.2BSD user-level memory allocator works by maintaining a set of lists
 that are ordered by increasing powers of two.
@@ -273,15 +300,11 @@ protection against memory starvation.\(dg
 one subsystem within the kernel hangs if it is something like the
 network on a diskless workstation.
 .FE
-.KF
-.DS B
+.FI "One day memory usage on a Berkeley timesharing machine"
 .so usage.tbl
-.DE
-.ce
-Figure 1 \- One day memory usage on a Berkeley timesharing machine.
-.KE
+.Fe
 .PP
-Figure 1 shows the memory usage of the kernel over a one day period
+\*(Lb shows the memory usage of the kernel over a one day period
 on a general timesharing machine at Berkeley.
 The figure demonstrates that most
 allocations are for small objects.
@@ -308,13 +331,13 @@ Only if the request cannot be fulfilled from a list is a call
 made to the allocator itself.
 To ensure that the allocator is always called for large requests,
 the lists corresponding to large allocations are always empty.
-Appendix 1 shows the data structures and implementation of the macros.
+Appendix A shows the data structures and implementation of the macros.
 .PP
 Similarly, freeing a block of memory can be done with a macro.
 The macro computes the list on which to place the request
 and puts it there.
 The free routine is called only if the block of memory is
-large enough to be a page-based allocation.
+considered to be a large allocation.
 Including the cost of blocking out interrupts,
 the allocation and freeing macros generate respectively
 only nine and sixteen (simple) VAX instructions.
@@ -325,18 +348,18 @@ a different strategy is used for allocations larger than two kilobytes.
 The selection of two kilobytes is derived from our statistics on
 the utilization of memory within the kernel,
 that showed that 95 to 98% of allocations are of size one kilobyte or less.
-The most frequent caller of the memory allocator
+A frequent caller of the memory allocator
 (the name translation function)
 always requests a one kilobyte block.
 Additionally the allocation method for large blocks is based on allocating
 pieces of memory in multiples of pages.
 Consequently the density of allocation for requests of size
-$2~times~pagesize$ or less are identical.\*(dg
+$2~times~pagesize$ or less are identical.\(dg
 .FS
-\*(dgTo understand why this number is $2~times~pagesize$ one observes
-that the power-of-two algorithm yields sizes of 1, 2, 4, 8, ...
+\(dgTo understand why this number is $size 8 {2~times~pagesize}$ one
+observes that the power-of-two algorithm yields sizes of 1, 2, 4, 8, \fIetc.\fP
 pages while the large block algorithm that allocates in multiples
-of pages yields sizes of 1, 2, 3, 4, ... pages.
+of pages yields sizes of 1, 2, 3, 4, \fIetc.\fP pages.
 Thus for allocations of sizes between one and two pages
 both algorithms use two pages;
 it is not until allocations of sizes between two and three pages
@@ -365,6 +388,9 @@ a new page is allocated and divided into pieces of the needed size.
 This strategy speeds future allocations as several pieces of memory
 become available as a result of the call into the allocator.
 .PP
+.FI "Calculation of allocation size"
+.so alloc.fig
+.Fe
 Because the size is not specified when a block of memory is freed,
 the allocator must keep track of the sizes of the pieces it has handed out.
 The 4.2BSD user-level allocator stores the size of each block
@@ -374,17 +400,10 @@ require a power-of-two-sized block.
 Therefore,
 instead of storing the size of each piece of memory with the piece itself,
 the size information is associated with the memory page.
-Figure 2 shows how the kernel determines
+\*(Lb shows how the kernel determines
 the size of a piece of memory that is being freed,
 by calculating the page in which it resides,
 and looking up the size associated with that page.
-.KF
-.DS B
-.so alloc.fig
-.DE
-.ce
-Figure 2 \- Calculation of allocation size.
-.KE
 Eliminating the cost of the overhead per piece improved utilization
 far more than expected.
 The reason is that many allocations in the kernel are for blocks of 
