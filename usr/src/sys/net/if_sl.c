@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.31 (Berkeley) %G%
+ *	@(#)if_sl.c	7.32 (Berkeley) %G%
  */
 
 /*
@@ -140,12 +140,15 @@ struct sl_softc sl_softc[NSL];
 
 #define t_sc T_LINEP
 
-int sloutput(), slioctl(), ttrstrt();
 extern struct timeval time;
+
+static int slinit __P((struct sl_softc *));
+static struct mbuf *sl_btom __P((struct sl_softc *, int));
 
 /*
  * Called from boot code to establish sl interfaces.
  */
+void
 slattach()
 {
 	register struct sl_softc *sc;
@@ -194,6 +197,7 @@ slinit(sc)
  * Attach the given tty to the first available sl unit.
  */
 /* ARGSUSED */
+int
 slopen(dev, tp)
 	dev_t dev;
 	register struct tty *tp;
@@ -225,8 +229,8 @@ slopen(dev, tp)
 /*
  * Line specific close routine.
  * Detach the tty from the sl unit.
- * Mimics part of ttyclose().
  */
+void
 slclose(tp)
 	struct tty *tp;
 {
@@ -254,6 +258,7 @@ slclose(tp)
  * Provide a way to get the sl unit number.
  */
 /* ARGSUSED */
+int
 sltioctl(tp, cmd, data, flag)
 	struct tty *tp;
 	int cmd;
@@ -277,10 +282,12 @@ sltioctl(tp, cmd, data, flag)
 /*
  * Queue a packet.  Start transmission if not active.
  */
-sloutput(ifp, m, dst)
+int
+sloutput(ifp, m, dst, rtp)
 	struct ifnet *ifp;
 	register struct mbuf *m;
 	struct sockaddr *dst;
+	struct rtentry *rtp;
 {
 	register struct sl_softc *sc = &sl_softc[ifp->if_unit];
 	register struct ip *ip;
@@ -352,6 +359,7 @@ sloutput(ifp, m, dst)
  * to send from the interface queue and map it to
  * the interface before starting output.
  */
+void
 slstart(tp)
 	register struct tty *tp;
 {
@@ -527,6 +535,7 @@ sl_btom(sc, len)
 /*
  * tty interface receiver interrupt.
  */
+void
 slinput(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -657,6 +666,7 @@ newpack:
 /*
  * Process an ioctl request.
  */
+int
 slioctl(ifp, cmd, data)
 	register struct ifnet *ifp;
 	int cmd;
