@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.52 (Berkeley) %G%
+ *	@(#)init_main.c	7.53 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,7 +19,6 @@
 #include "conf.h"
 #include "buf.h"
 #include "clist.h"
-#include "malloc.h"
 #include "protosw.h"
 #include "quota.h"
 #include "reboot.h"
@@ -154,6 +153,13 @@ main()
 	 */
 	p->p_stats = &p->p_addr->u_stats;
 	p->p_sigacts = &p->p_addr->u_sigacts;
+
+	/*
+	 * Initialize per uid information structure and charge
+	 * root for one process.
+	 */
+	usrinfoinit();
+	(void)chgproccnt(0, 1);
 
 	rqinit();
 
