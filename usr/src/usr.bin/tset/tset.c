@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -95,11 +95,11 @@ static char sccsid[] = "@(#)tset.c	5.4 (Berkeley) %G%";
 **			the kill character is untouched; however, if
 **			not specified and the kill character is NULL
 **			(zero byte), the kill character is set to '@'.
-**		-iC -- set the interupt character to C on all terminals.
+**		-iC -- set the interrupt character to C on all terminals.
 			Default for C is Delete.  If not specified, the
-			interupt character is untouched; however, if
+			interrupt character is untouched; however, if
 			not specified and the kill character is NULL
-			(zero byte), the interupt character is set to
+			(zero byte), the interrupt character is set to
 			Delete.
 **		-qC -- reserved for setable quit character.
 **		-m -- map the system identified type to some user
@@ -437,7 +437,7 @@ int VirTermNo = -2;
 
 char	Erase_char;		/* new erase character */
 char	Kill_char;		/* new kill character */
-char	Intr_char;		/* new interupt character */
+char	Intr_char;		/* new interrupt character */
 char	Specialerase;		/* set => Erase_char only on terminals with backspace */
 
 # ifdef	GTTYN
@@ -1304,10 +1304,10 @@ ask:
 	if (RepOnly)
 		exit(0);
 
-	/* tell about changing erase, kill and interupt characters */
+	/* tell about changing erase, kill and interrupt characters */
 	reportek("Erase", curerase, olderase, OLDERASE);
 	reportek("Kill", curkill, oldkill, OLDKILL);
-	reportek("Interupt", curintr, oldintr, OLDINTR);
+	reportek("Interrupt", curintr, oldintr, OLDINTR);
 
 # ifdef V6
 	/* update htmp */
