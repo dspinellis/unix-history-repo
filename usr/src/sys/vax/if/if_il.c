@@ -1,4 +1,4 @@
-/*	if_il.c	4.17	82/12/17	*/
+/*	if_il.c	4.18	83/03/15	*/
 
 #include "il.h"
 
@@ -23,11 +23,11 @@
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
+#include "../netinet/if_ether.h"
 #include "../netpup/pup.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_ether.h"
 #include "../vaxif/if_il.h"
 #include "../vaxif/if_ilreg.h"
 #include "../vaxif/if_uba.h"
@@ -42,9 +42,6 @@ struct	uba_driver ildriver =
 #define	ILUNIT(x)	minor(x)
 int	ilinit(),iloutput(),ilreset(),ilwatch();
 
-u_char	il_ectop[3] = { 0x02, 0x60, 0x8c };
-u_char	ilbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
 /*
  * Ethernet software status per interface.
  *
@@ -58,7 +55,9 @@ u_char	ilbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
  * efficiently.
  */
 struct	il_softc {
-	struct	ifnet is_if;		/* network-visible interface */
+	struct	arpcom is_ac;		/* Ethernet common part */
+#define	is_if	is_ac.ac_if		/* network-visible interface */
+#define	is_addr	is_ac.ac_enaddr		/* hardware Ethernet address */
 	struct	ifuba is_ifuba;		/* UNIBUS resources */
 	int	is_flags;
 #define	ILF_OACTIVE	0x1		/* output is active */
@@ -109,7 +108,6 @@ ilattach(ui)
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "il";
 	ifp->if_mtu = ETHERMTU;
-	ifp->if_net = ui->ui_flags;
 
 	/*
 	 * Reset the board and map the statistics
@@ -133,24 +131,24 @@ ilattach(ui)
 		printf("il%d: status failed, csr=%b\n", ui->ui_unit,
 			addr->il_csr, IL_BITS);
 	ubarelse(ui->ui_ubanum, &is->is_ubaddr);
+#ifdef notdef
 	printf("il%d: addr=%x:%x:%x:%x:%x:%x module=%s firmware=%s\n",
 		ui->ui_unit,
 		is->is_stats.ils_addr[0]&0xff, is->is_stats.ils_addr[1]&0xff,
 		is->is_stats.ils_addr[2]&0xff, is->is_stats.ils_addr[3]&0xff,
 		is->is_stats.ils_addr[4]&0xff, is->is_stats.ils_addr[5]&0xff,
 		is->is_stats.ils_module, is->is_stats.ils_firmware);
-	ifp->if_host[0] =
-	    ((is->is_stats.ils_addr[3]&0xff)<<16) | 0x800000 |
-	    ((is->is_stats.ils_addr[4]&0xff)<<8) |
-	    (is->is_stats.ils_addr[5]&0xff);
+#endif
+	bcopy(is->is_stats.ils_addr, is->is_addr, sizeof (is->is_addr));
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
-
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags = IFF_BROADCAST;
+	if (ui->ui_flags) {
+		int i = ((is->is_addr[3]&0xff)<<16) |
+		    ((is->is_addr[4]&0xff)<<8) |
+		    (is->is_addr[5]&0xff);
+		sin->sin_addr = if_makeaddr(ui->ui_flags, i);
+	} else
+		sin->sin_addr = arpmyaddr();
 
 	ifp->if_init = ilinit;
 	ifp->if_output = iloutput;
@@ -192,6 +190,18 @@ ilinit(unit)
 	register struct uba_device *ui = ilinfo[unit];
 	register struct ildevice *addr;
 	int s;
+	register struct ifnet *ifp = &is->is_if;
+	register struct sockaddr_in *sin, *sinb;
+
+	sin = (struct sockaddr_in *)&ifp->if_addr;
+	if (sin->sin_addr.s_addr == 0)	/* if address still unknown */
+		return;
+	ifp->if_net = in_netof(sin->sin_addr);
+	ifp->if_host[0] = in_lnaof(sin->sin_addr);
+	sinb = (struct sockaddr_in *)&ifp->if_broadaddr;
+	sinb->sin_family = AF_INET;
+	sinb->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+	ifp->if_flags = IFF_BROADCAST;
 
 	if (if_ubainit(&is->is_ifuba, ui->ui_ubanum,
 	    sizeof (struct il_rheader), (int)btoc(ETHERMTU)) == 0) { 
@@ -237,6 +247,8 @@ ilinit(unit)
 	ilcint(unit);
 	splx(s);
 	if_rtinit(&is->is_if, RTF_UP);
+	arpattach(&is->is_ac);
+	arpwhohas(&is->is_ac, &sin->sin_addr);
 }
 
 /*
@@ -417,6 +429,10 @@ ilrint(unit)
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
+
+	case ETHERPUP_ARPTYPE:
+		arpinput(&is->is_ac, m);
+		return;
 #endif
 	default:
 		m_freem(m);
@@ -459,7 +475,9 @@ iloutput(ifp, m0, dst)
 	struct mbuf *m0;
 	struct sockaddr *dst;
 {
-	int type, dest, s, error;
+	int type, s, error;
+	u_char edst[6];
+	struct in_addr idst;
 	register struct il_softc *is = &il_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct ether_header *il;
@@ -469,7 +487,9 @@ iloutput(ifp, m0, dst)
 
 #ifdef INET
 	case AF_INET:
-		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
+		idst = ((struct sockaddr_in *)dst)->sin_addr;
+		if (!arpresolve(&is->is_ac, m, &idst, edst))
+			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
@@ -484,6 +504,12 @@ iloutput(ifp, m0, dst)
 		off = 0;
 		goto gottype;
 #endif
+
+	case AF_UNSPEC:
+		il = (struct ether_header *)dst->sa_data;
+		bcopy(il->ether_dhost, edst, sizeof (edst));
+		type = il->ether_type;
+		goto gottype;
 
 	default:
 		printf("il%d: can't handle af%d\n", ifp->if_unit,
@@ -524,18 +550,9 @@ gottype:
 		m->m_len += sizeof (struct ether_header);
 	}
 	il = mtod(m, struct ether_header *);
-	if ((dest &~ 0xff) == 0)
-		bcopy((caddr_t)ilbroadcastaddr, (caddr_t)il->ether_dhost, 6);
-	else {
-		u_char *to = dest & 0x8000 ? is->is_stats.ils_addr : il_ectop;
-
-		bcopy((caddr_t)to, (caddr_t)il->ether_dhost, 3);
-		il->ether_dhost[3] = (dest>>8) & 0x7f;
-		il->ether_dhost[4] = (dest>>16) & 0xff;
-		il->ether_dhost[5] = (dest>>24) & 0xff;
-	}
-	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)il->ether_shost, 6);
 	il->ether_type = htons((u_short)type);
+	bcopy(edst, il->ether_dhost, sizeof (edst));
+	bcopy((caddr_t)is->is_addr, (caddr_t)il->ether_shost, 6);
 
 	/*
 	 * Queue message on interface, and start output if interface
