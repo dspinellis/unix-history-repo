@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	5.1 (Berkeley) %G%
+.\"	@(#)0.t	6.1 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
