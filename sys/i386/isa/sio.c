@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: sio.c,v 1.52 1994/05/31 18:18:46 ache Exp $
+ *	$Id: sio.c,v 1.53 1994/05/31 23:27:46 ache Exp $
  */
 
 #include "sio.h"
@@ -83,7 +83,7 @@
  */
 #define	COM_ISMULTIPORT(dev)	((dev)->id_flags & 0x01)
 #define	COM_MPMASTER(dev)	(((dev)->id_flags >> 8) & 0x0ff)
-#define COM_NOMASTER(dev)    ((dev)->id_flags & 0x04)
+#define	COM_NOTAST4(dev)	((dev)->id_flags & 0x04)
 #endif /* COM_MULTIPORT */
 
 #define	COM_NOFIFO(dev)	((dev)->id_flags & 0x02)
@@ -355,19 +355,19 @@ sioprobe(dev)
 	mcr_image = MCR_IENABLE;
 #ifdef COM_MULTIPORT
 	if (COM_ISMULTIPORT(dev)) {
-		if (!COM_NOMASTER(dev))	{
-			idev = find_isadev(isa_devtab_tty, &siodriver,
-					   COM_MPMASTER(dev));
-			if (idev == NULL) {
-				printf("sio%d: master device %d not found\n",
-				       dev->id_unit, COM_MPMASTER(dev));
-				return (0);
-			}
-			if (idev->id_irq == 0) {
-				printf("sio%d: master device %d irq not configured\n",
-				       dev->id_unit, COM_MPMASTER(dev));
-				return (0);
-			}
+		idev = find_isadev(isa_devtab_tty, &siodriver,
+				   COM_MPMASTER(dev));
+		if (idev == NULL) {
+			printf("sio%d: master device %d not found\n",
+			       dev->id_unit, COM_MPMASTER(dev));
+			return (0);
+		}
+		if (idev->id_irq == 0) {
+			printf("sio%d: master device %d irq not configured\n",
+			       dev->id_unit, COM_MPMASTER(dev));
+			return (0);
+		}
+		if (!COM_NOTAST4(dev)) {
 			outb(idev->id_iobase + com_scr,	0x80);
 			mcr_image = 0;
 		}
@@ -414,7 +414,7 @@ sioprobe(dev)
 	outb(iobase + com_cfcr, CFCR_8BITS);
 	DELAY((16 + 1) * 9600 / 10);
 
-	/* 
+	/*
 	 * Enable the interrupt gate and disable device interupts.  This
 	 * should leave the device driving the interrupt line low and
 	 * guarantee an edge trigger if an interrupt can be generated.
@@ -617,7 +617,7 @@ determined_type: ;
 	if (COM_ISMULTIPORT(isdp)) {
 		com->multiport = TRUE;
 		printf(" (multiport");
-		if (!COM_NOMASTER(isdp)	&& unit	== COM_MPMASTER(isdp))
+		if (unit == COM_MPMASTER(isdp))
 			printf(" master");
 		printf(")");
 	 }
