@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.89 (Berkeley) %G%
+#	@(#)READ_ME	8.90 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -142,14 +142,13 @@ the NEWDB library also catches and maps NDBM calls; you will have to
 back out this feature to get this to work.  See ``Quirks'' section
 below for details.]
 
-If all three are defined, sendmail operates as described above, and also
-looks for the file /var/yp/Makefile.  If it exists, newaliases will
-build BOTH the NEWDB and NDBM format alias files.  However, it will
-only use the NEWDB file; the NDBM format file is used only by the
-NIS subsystem.
+If all three are defined and the name of the file includes the string
+"/yp/", sendmail will rebuild BOTH the NEWDB and NDBM format alias
+files.  However, it will only read the NEWDB file; the NDBM format file
+is used only by the NIS subsystem.
 
-If NDBM and NIS are defined (regardless of the definition of NEWDB
-or the existance of /var/yp/Makefile), sendmail adds the special
+If NDBM and NIS are defined (regardless of the definition of NEWDB),
+and the filename includes the string "/yp/", sendmail adds the special
 tokens "YP_LAST_MODIFIED" and "YP_MASTER_NAME", both of which are
 required if the NDBM file is to be used as an NIS map.
 
@@ -1024,4 +1023,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.89, last update %G% 07:55:40)
+(Version 8.90, last update %G% 08:54:14)
