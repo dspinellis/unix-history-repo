@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.5	6.4 (Berkeley) %G%
+.\"	@(#)termcap.5	6.5 (Berkeley) %G%
 .\"
 .ie n \{\
 .	ds lq \&"\"
@@ -449,18 +449,26 @@ the ability of the
 file to describe it
 or bugs in
 .IR vi\^ .
-To easily test a new terminal description you can set the environment variable
-.B
-.SM TERMCAP
-to the absolute pathname of a file containing the description you are working
-on and programs will look there rather than in
+To easily test a new terminal description you are working on
+you can put it in your home directory in a file called
+.I .termcap\^
+and programs will look there before looking in
 .IR /etc/termcap\^ .
+You can also set the environment variable
+.B
+.SM TERMPATH
+to a list of absolute file pathnames (separated by spaces or colons),
+one of which contains the description you are working on,
+and programs will search them in the order listed, and nowhere else.
+See
+.IR termcap\^ (3X).
+The
 .B
 .SM TERMCAP
-can also be set to the
+environment variable is usually set to the
 .I termcap\^
 entry itself
-to avoid reading the file when starting up a program.
+to avoid reading files when starting up a program.
 .PP
 To get the padding for insert-line right
 (if the terminal manufacturer did not document it),
@@ -1657,7 +1665,8 @@ Mark Horton added underlining and keypad support
 .DT
 /etc/termcap	file containing terminal descriptions
 .SH SEE ALSO
-ex(1), more(1), tset(1), ul(1), vi(1), curses(3X), printf(3S), term(7).
+ex(1), more(1), tset(1), ul(1), vi(1), curses(3X), printf(3S),
+termcap(3X), term(7)
 .SH "CAVEATS AND BUGS"
 .B Note:
 .I termcap\^
