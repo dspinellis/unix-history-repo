@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tmac.orig_me	2.35 (Berkeley) %G%
+.\"	@(#)tmac.orig_me	2.36 (Berkeley) %G%
 .\"
 .\"	%beginstrip%
 .\"
@@ -21,7 +21,7 @@
 .\"*		1919 Addison Street Suite 105				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.35	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.36	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
@@ -37,7 +37,7 @@
 .\"		---	an internal macro.
 .\"
 .\" library directory for sourced files:
-.ds || /usr/share/me
+.ds || /usr/old/lib/me
 .if \n@>0 .ds || .
 .\"
 .if !\n(.V .tm You are using the wrong version of NROFF/TROFF!!
