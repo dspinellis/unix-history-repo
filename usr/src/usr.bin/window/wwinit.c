@@ -1,17 +1,33 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)wwinit.c	3.1 83/08/11";
 #endif
 
 #include "ww.h"
 
-static char *kp = wwkeys;
+struct ww_tty wwoldtty;
+struct ww_tty wwwintty;
+struct ww_tty wwnewtty = {
+	{ 0, 0, -1, -1, 0 },
+	{ -1, -1, -1, -1, -1, -1 },
+	{ -1, -1, -1, -1, -1, -1 },
+	0, 0, 0
+};
+int _wwdtablesize;
+char _wwtermcap[1024];
+char _wwkeys[512];
+static char *kp = _wwkeys;
+int wwncol, wwnrow;
 
 wwinit()
 {
-	register i, j;
+	static char done = 0;
 	int kn;
 
-	wwdtablesize = getdtablesize();
+	setbuf(stdout, _sobuf);
+	if (done)
+		return 0;
+	done++;
+	_wwdtablesize = getdtablesize();
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;
 	wwwintty = wwoldtty;
@@ -26,44 +42,14 @@ wwinit()
 	wwnewtty.ww_sgttyb.sg_flags &= ~(ECHO|CRMOD);
 	wwnewtty.ww_lmode |= LLITOUT;
 	if (wwsettty(0, &wwnewtty) < 0)
-		goto bad;
+		return -1;
+	if (Winit(2, 1) != 0)
+		return -1;
+	WSetRealCursor = 1;
+	Wscreensize(&wwnrow, &wwncol);
 
-	if ((wwterm = getenv("TERM")) == 0)
-		goto bad;
-	if (tgetent(wwtermcap, wwterm) != 1)
-		goto bad;
-	wwbaud = wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed];
-
-	if (ttinit() < 0)
-		goto bad;
-	wwnrow = tt.tt_nrow;
-	wwncol = tt.tt_ncol;
-	(*tt.tt_reset)();
-	(*tt.tt_clreos)();
-
-	if ((wwsmap = wwalloc(wwnrow, wwncol, sizeof (char))) == 0)
-		goto bad;
-	for (i = 0; i < wwnrow; i++)
-		for (j = 0; j < wwncol; j++)
-			wwsmap[i][j] = WWX_NOBODY;
-	wwos = (union ww_char **)
-		wwalloc(wwnrow, wwncol, sizeof (union ww_char));
-	if (wwos == 0)
-		goto bad;
-	for (i = 0; i < wwnrow; i++)
-		for (j = 0; j < wwncol; j++)
-			wwos[i][j].c_w = ' ';
-	wwns = (union ww_char **)
-		wwalloc(wwnrow, wwncol, sizeof (union ww_char));
-	if (wwns == 0)
-		goto bad;
-	for (i = 0; i < wwnrow; i++)
-		for (j = 0; j < wwncol; j++)
-			wwns[i][j].c_w = ' ';
-
-	wwindex[WWX_NOBODY] = &wwnobody;
-	wwnobody.ww_order = NWW;
-
+	if (tgetent(_wwtermcap, getenv("TERM")) != 1)
+		return -1;
 	addcap("kb");
 	addcap("ku");
 	addcap("kd");
@@ -74,29 +60,26 @@ wwinit()
 		char cap[5];
 		int i;
 
-		(void) sprintf(kp, "kn#%d:", kn);
+		sprintf(kp, "kn#%d:", kn);
 		for (; *kp; kp++)
 			;
 		for (i = 1; i <= kn; i++) {
-			(void) sprintf(cap, "k%d", i);
+			sprintf(cap, "k%d", i);
 			addcap(cap);
 			cap[0] = 'l';
 			addcap(cap);
 		}
 	}
 	return 0;
-bad:
-	(void) wwsettty(0, &wwoldtty);
-	return -1;
 }
 
-static
 addcap(cap)
 register char *cap;
 {
-	char tbuf[512];
-	char *tp = tbuf;
+	static char tbuf[512];
+	static char *tp = tbuf;
 	register char *str, *p;
+	char *tgetstr();
 
 	if ((str = tgetstr(cap, &tp)) != 0) {
 		while (*kp++ = *cap++)

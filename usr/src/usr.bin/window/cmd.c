@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)cmd.c	3.1 83/08/11";
 #endif
 
 #include "defs.h"
@@ -12,15 +12,13 @@ docmd()
 	register struct ww *w;
 
 	if (!terse)
-		wwadd(cmdwin, &wwhead);
-	/*
+		Wunhide(cmdwin->ww_win);
 	if (selwin != 0)
 		Woncursor(selwin->ww_win, 1);
-	*/
 top:
 	while ((c = bgetc()) >= 0) {
 		if (!terse)
-			(void) wwputs("\r\n", cmdwin);
+			wwputs("\r\n", cmdwin);
 		switch (c) {
 		default:
 			if (c == escapec)
@@ -34,15 +32,18 @@ top:
 		case CTRL([):
 		foo:
 			if (selwin == 0) {
-				error("No window.");
+				if (terse)
+					Ding();
+				else
+					wwputs("No window.  ", cmdwin);
 				continue;
 			}
 		}
 		switch (c) {
 		case '1': case '2': case '3': case '4': case '5':
 		case '6': case '7': case '8': case '9':
-			if ((w = window[c - '1']) == 0) {
-				wwbell();
+			if ((w = wwfind(c - '0')) == 0) {
+				Ding();
 				break;
 			}
 			setselwin(w);
@@ -53,81 +54,81 @@ top:
 			break;
 		case 'c':
 			if ((w = getwin()) != 0)
-				c_close(w);
+				doclose(w);
 			break;
 		case 'C':
-			c_close((struct ww *)0);
+			doclose((struct ww *)0);
 			break;
 		case 'Z':
-			error("Command Z is now C.");
+			if (terse)
+				Ding();
+			else
+				wwputs("Command Z is now C.  ", cmdwin);
 			break;
 		case 'w':
-			c_window();
+			dowindow();
 			break;
 		case 'S':
-			c_show();
+			doshow();
 			break;
 		case 'L':
-			c_list();
-			break;
-		case 's':
-			c_stat();
-			break;
-		case 'M':
-			wwdumpsmap();
-			break;
-		case 'V':
-			if ((w = getwin()) != 0)
-				wwdumpnvis(w);
-			break;
-		case 'D':
-			if ((w = getwin()) != 0)
-				wwdumpcov(w);
-			break;
-		case 'W':
-			if ((w = getwin()) != 0)
-				wwdumpwin(w);
-			break;
-		case 't':
-			c_time(RUSAGE_SELF);
-			break;
-		case 'T':
-			c_time(RUSAGE_CHILDREN);
-			break;
-		case ':':
-			c_colon();
-			break;
-		case 'h':
-			(void) wwwrite(selwin, "\b", 1);
-			break;
-		case 'j':
-			(void) wwwrite(selwin, "\n", 1);
-			break;
-		case 'k':
-			(void) wwwrite(selwin, "\033A", 2);
-			break;
-		case 'l':
-			(void) wwwrite(selwin, "\033C", 2);
+			dolist();
 			break;
 		/*
-		case CTRL(d):
-			c_scroll(1);
+		case 'e':
+			doescape();
 			break;
-		case CTRL(u):
-			c_scroll(-1);
+		case 'L':
+			dolabel();
 			break;
-		case CTRL(f):
-			c_scroll(2);
+		case 'r':
+			selwin->ww_refresh = 0;
 			break;
-		case CTRL(b):
-			c_scroll(-2);
+		case 'R':
+			selwin->ww_refresh = 1;
 			break;
 		*/
+		case 's':
+			dostat();
+			break;
+		case 't':
+			dotime(RUSAGE_SELF);
+			break;
+		case 'T':
+			dotime(RUSAGE_CHILDREN);
+			break;
+		case ':':
+			docolon();
+			break;
+		case 'h':
+			Wcurleft(selwin->ww_win, 1);
+			break;
+		case 'j':
+			Wcurdown(selwin->ww_win, 1);
+			break;
+		case 'k':
+			Wcurup(selwin->ww_win, 1);
+			break;
+		case 'l':
+			Wcurright(selwin->ww_win, 1);
+			break;
+		case CTRL(d):
+			doscroll(1);
+			break;
+		case CTRL(u):
+			doscroll(-1);
+			break;
+		case CTRL(f):
+			doscroll(2);
+			break;
+		case CTRL(b):
+			doscroll(-2);
+			break;
 		case CTRL(l):
-			wwredraw();
+			ScreenGarbaged = 1;
 			break;
 		case '?':
-			c_help();
+			dohelp();
 			break;
 		case CTRL([):
 			goto out;
@@ -135,21 +136,24 @@ top:
 			wwsuspend();
 			break;
 		case 'q':
-			c_quit();
+			doquit();
 			if (quit)
 				goto out;
 			break;
 		case '.':
-			error("Use q to quit.");
+			if (terse)
+				Ding();
+			else
+				wwputs("Use q to quit.  ", cmdwin);
 			break;
 		default:
 			if (c == escapec) {
-				(void) write(selwin->ww_pty, &escapec, 1);
+				write(selwin->ww_pty, &escapec, 1);
 				goto out;
 			}
+			Ding();
 			if (!terse)
-				wwbell();
-			error("Type ? for help.");
+				wwprintf(cmdwin, "Type ? for help.  ");
 			break;
 		}
 	}
@@ -157,24 +161,19 @@ top:
 		wwsetcursor(0, 0);
 	else {
 		if (!terse)
-			(void) wwputs("Command: ", cmdwin);
-		wwsetcursor(wwcurrow(cmdwin), wwcurcol(cmdwin));
+			wwputs("Command: ", cmdwin);
+		wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
 	}
 	while (bpeekc() < 0)
 		bread();
 	goto top;
 out:
-	if (!quit) {
-		curwin = selwin;
-		if (!terse) {
-			wwdelete(cmdwin);
-			reframe();
-		}
-	}
-	/*
+	if (!quit)
+		wwsetcurwin(selwin);
 	if (selwin != 0)
 		Woncursor(selwin->ww_win, 0);
-	*/
+	if (!terse)
+		Whide(cmdwin->ww_win);
 }
 
 struct ww *
@@ -184,69 +183,46 @@ getwin()
 	struct ww *w = 0;
 
 	if (!terse)
-		(void) wwputs("Which window? ", cmdwin);
-	wwsetcursor(wwcurrow(cmdwin), wwcurcol(cmdwin));
+		wwputs("Which window? ", cmdwin);
+	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
 	while ((c = bgetc()) < 0)
 		bread();
-	if (debug && c == 'c')
-		w = cmdwin;
-	else if (debug && c == 'f')
-		w = framewin;
-	else if (c >= '1' && c < NWINDOW + '1')
-		w = window[c - '1'];
-	if (w == 0)
-		wwbell();
+	if (c < '1' || c > '9' || (w = wwfind(c - '0')) == 0)
+		Ding();
 	if (!terse)
-		(void) wwputs("\r\n", cmdwin);
+		wwputs("\r\n", cmdwin);
 	return w;
 }
 
 setselwin(w)
 register struct ww *w;
 {
-	register struct ww *oldselwin = selwin;
+	struct ww *oldselwin = selwin;
 
 	if (w == oldselwin)
 		return;
 	if (selwin = w) {
-		wwdelete(w);
-		/*
-		 * Stick it in front of the old selected window,
-		 * or behind everbody else.
-		 */
-		wwadd(w, (oldselwin ? oldselwin : &wwhead)->ww_back);
-		/*
+		labelwin(w);
+		/* bring it to the top just below cmdwin */
+		wwsetcurwin(w);
+		wwsetcurwin(cmdwin);
 		Woncursor(w->ww_win, 1);
-		*/
 	}
-	/*
 	if (oldselwin) {
+		labelwin(oldselwin);
 		Woncursor(oldselwin->ww_win, 0);
 	}
-	*/
-	reframe();
 }
 
 labelwin(w)
 register struct ww *w;
 {
-	int mode = w == selwin ? WWM_REV : 0;
+	char buf[2];
+	int mode = w == selwin ? WINVERSE : 0;
 
-	if (w->ww_id >= 0) {
-		char buf[2];
-
-		buf[0] = w->ww_id + '1';
-		buf[1] = 0;
-		(void) wwlabel(w, framewin, 1, buf, mode);
-	}
-	if (w->ww_label) {
-		int col;
-
-		if (w->ww_center) {
-			col = (w->ww_w.nc - strlen(w->ww_label)) / 2;
-			col = MAX(3, col);
-		} else
-			col = 3;
-		(void) wwlabel(w, framewin, col, w->ww_label, mode);
-	}
+	buf[0] = w->ww_ident + '0';
+	buf[1] = 0;
+	wwlabel(w, 1, buf, mode);
+	if (w->ww_label)
+		wwlabel(w, 3, w->ww_label, mode);
 }

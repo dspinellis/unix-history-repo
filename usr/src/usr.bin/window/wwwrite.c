@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)wwwrite.c	3.1 83/08/11";
 #endif
 
 #include "ww.h"
@@ -13,60 +13,34 @@ register char *p;
 register n;
 {
 	register char c;
-	int oldn = n;
 
-	if (w == 0)
+	if (w == 0 || w->ww_win == 0)
 		return -1;
 	wwnwrite++;
 	wwnwritec += n;
-	while (--n >= 0) {
+	while (n-- > 0) {
 		c = *p++ & 0x7f;
 		switch (w->ww_wstate) {
 		case 0:
+			asm("_wwwrite1:");
 			if (c >= ' ' && c < 0x7f) {
-				register i, j, cc;
-
 				if (w->ww_insert)
-					wwinschar(w, 1);
-				cc = w->ww_buf[w->ww_scroll + w->ww_cur.r]
-					[w->ww_cur.c].c_w = c;
-				i = wwcurrow(w);
-				j = wwcurcol(w);
-				if (wwsmap[i][j] == w->ww_index) {
-					cc = wwns[i][j].c_w = cc
-						^ w->ww_win[w->ww_cur.r]
-						[w->ww_cur.c] << WWC_MSHIFT;
-				}
-		right:
-				if (++w->ww_cur.c >= w->ww_w.nc) {
-					w->ww_cur.c = 0;
-					goto lf;
-				}
+					Winschars(w->ww_win, 1);
+				Wputc(c, w->ww_win);
 				break;
 			}
+			asm("_wwwrite2:");
 			switch (c) {
 			case '\n':
-				if (w->ww_mapnl)
-					w->ww_cur.c = 0;
-		lf:
-				if (++w->ww_cur.r >= w->ww_w.nr) {
-					w->ww_cur.r = w->ww_w.nr - 1;
-					wwdelline(w, 0);
-				}
+				Wputc(c, w->ww_win);
+				if (w->ww_refresh)
+					Wrefresh(1);
 				break;
 			case '\t':
-				w->ww_cur.c |= 7;
-				goto right;
-				break;
 			case '\b':
-				if (--w->ww_cur.c < 0)
-					w->ww_cur.c = 0;
-				break;
 			case '\r':
-				w->ww_cur.c = 0;
-				break;
 			case CTRL(g):
-				wwbell();
+				Wputc(c, w->ww_win);
 				break;
 			case CTRL([):
 				w->ww_wstate = 1;
@@ -80,35 +54,42 @@ register n;
 				w->ww_insert = 1;
 				break;
 			case 'A':
-				if (--w->ww_cur.r < 0)
-					w->ww_cur.r = 0;
+				Wcurup(w->ww_win, 1);
 				break;
 			case 'B':
-				goto lf;
+				Wcurdown(w->ww_win, 1);
+				break;
 			case 'C':
-				goto right;
+				Wcurright(w->ww_win, 1);
+				break;
 			case 'E':
-				w->ww_cur.c = w->ww_cur.r = 0;
-				wwclreos(w);
+				w->ww_scroll = 0;
+				WWcursor(w->ww_win, 0, 0);
+				Wclear(w->ww_win, 2);
+				/* always refresh */
+				Wrefresh(1);
 				break;
 			case 'H':
-				w->ww_cur.c = w->ww_cur.r = 0;
+				WWcursor(w->ww_win, 0, 0);
 				break;
 			case 'J':
-				wwclreos(w);
+				Wclear(w->ww_win, 0);
 				break;
 			case 'K':
-				wwclreol(w, w->ww_scroll + w->ww_cur.r,
-					w->ww_cur.c, 0);
+				Wclearline(w->ww_win, 0);
 				break;
 			case 'L':
-				wwinsline(w);
+				Winslines(w->ww_win, 1);
+				if (w->ww_refresh)
+					Wrefresh(1);
 				break;
 			case 'M':
-				wwdelline(w, w->ww_scroll + w->ww_cur.r);
+				Wdellines(w->ww_win, 1);
+				if (w->ww_refresh)
+					Wrefresh(1);
 				break;
 			case 'N':
-				wwdelchar(w);
+				Wdelchars(w->ww_win, 1);
 				break;
 			case 'O':
 				w->ww_insert = 0;
@@ -119,14 +100,15 @@ register n;
 			}
 			break;
 		case 2:
-			w->ww_cur.r = (c - ' ') % w->ww_w.nr;
+			WWcursor(w->ww_win, (c - ' ') % w->ww_i.nrow,
+				w->ww_win->w_cursor.col);
 			w->ww_wstate++;
 			break;
 		case 3:
-			w->ww_cur.c = (c - ' ') % w->ww_w.nc;
+			WWcursor(w->ww_win, w->ww_win->w_cursor.row,
+				(c - ' ') % w->ww_i.ncol);
 			w->ww_wstate = 0;
 			break;
 		}
 	}
-	return oldn - n;
 }

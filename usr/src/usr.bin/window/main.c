@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)main.c	3.1 83/08/11";
 #endif
 
 #include "defs.h"
@@ -8,15 +8,17 @@ char escapec = CTRL(p);
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
-/*ARGSUSED*/
+/*ARGUSED*/
 main(argc, argv)
 char **argv;
 {
 	register n;
 	register char *p;
 	char fast = 0;
+	int wwchild();
 	int imask;
-	struct timezone timezone;
+	char *rindex();
+	char *getenv();
 
 	if (p = rindex(*argv, '/'))
 		p++;
@@ -39,10 +41,10 @@ char **argv;
 				debug++;
 				break;
 			default:
-				(void) usage();
+				usage();
 			}
 		} else
-			(void) usage();
+			usage();
 	}
 	if ((shell = getenv("SHELL")) == 0)
 		shell = "/bin/csh";
@@ -50,47 +52,34 @@ char **argv;
 		shellname++;
 	else
 		shellname = shell;
-	(void) gettimeofday(&starttime, &timezone);
+	gettimeofday(&starttime, &timezone);
 	if (wwinit() < 0) {
-		(void) fflush(stdout);
-		(void) fprintf(stderr, "Can't do windows on this terminal.\n");
+		fflush(stdout);
+		fprintf("Can't do windows on this terminal.\n");
 		exit(1);
 	}
 	if (debug) {
 		wwnewtty.ww_tchars.t_quitc = wwoldtty.ww_tchars.t_quitc;
-		(void) wwsettty(0, &wwnewtty);
+		wwsettty(0, &wwnewtty);
 	}
-
-	if ((cmdwin = wwopen(WWO_REVERSE, 1, wwncol, 0, 0, 0)) == 0) {
-		(void) wwflush();
-		(void) fprintf(stderr, "Can't open command window.\r\n");
+	if ((cmdwin = wwopen(WW_NONE, 0, 1, wwncol, 0, 0)) == 0) {
+		fflush(stdout);
+		fprintf(stderr, "Can't open command window.\r\n");
 		goto bad;
 	}
-	if ((framewin = wwopen(WWO_GLASS, wwnrow, wwncol, 0, 0, 0)) == 0) {
-		(void) wwflush();
-		(void) fprintf(stderr, "Can't open frame window.\r\n");
-		goto bad;
-	}
-	wwadd(framewin, &wwhead);
-
-	curwin = cmdwin;
-	wwupdate();
+	if (terse)
+		Whide(cmdwin->ww_win);
+	wwsetcurwin(cmdwin);
+	for (n = 0; n < wwncol; n++)			/* XXX */
+		Waputc(0, WINVERSE|WBUF, cmdwin->ww_win);
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
 	if (!fast) {
-		if (!terse)
-			wwadd(cmdwin, &wwhead);
 		if (doconfig() < 0)
 			dodefault();
 		if (selwin != 0) {
-			curwin = selwin;
-			/*
+			wwsetcurwin(selwin);
 			Woncursor(selwin->ww_win, 0);
-			*/
-		}
-		if (!terse) {
-			wwdelete(cmdwin);
-			reframe();
 		}
 	}
 	while (!quit) {
@@ -102,8 +91,8 @@ char **argv;
 		 * Loop until we get some keyboard input.
 		 */
 		while (ibufc == 0) {
-			wwcurtowin(curwin);
-			wwupdate();
+			wwsetcursor(WCurRow(curwin->ww_win),
+				WCurCol(curwin->ww_win));
 			wwflush();
 			imask = 1 << 0;
 			while (wwforce(&imask) < 0)
@@ -122,31 +111,28 @@ char **argv;
 			nread++;
 		}
 		/*
-		 * Weird loop.  Copy the buffer to the pty
-		 * and stopping on the escape character
-		 * in a hopefully efficient way.
+		 * Weird loop.  Copy the buffer to the pty stopping
+		 * on the escape character in a hopefully efficient
+		 * way.
 		 * Probably a good thing to make ibufc == 1 a special
 		 * case.
 		 */
 		for (p = ibufp, n = ibufc;;) {
 			if (--n < 0) {
-				(void) write(curwin->ww_pty, ibufp, ibufc);
+				write(curwin->ww_pty, ibufp, ibufc);
 				ibufp = ibuf;
 				ibufc = 0;
 				break;
 			} else if (*p++ == escapec) {
 				if ((n = p - ibufp) > 1)
-					(void) write(curwin->ww_pty,
-						ibufp, n - 1);
+					write(curwin->ww_pty, ibufp, n - 1);
 				ibufp = p;
 				ibufc -= n;
-				curwin = cmdwin;
+				wwsetcurwin(cmdwin);
 				break;
 			}
 		}
 	}
-	wwupdate();
-	wwflush();
 bad:
 	wwend();
 	return 0;
@@ -154,6 +140,6 @@ bad:
 
 usage()
 {
-	(void) fprintf(stderr, "window: [-e escape] [-t] [-f]\n");
-	return exit(1);			/* for lint */
+	fprintf(stderr, "window: [-e escape] [-t]\n");
+	exit(1);
 }
