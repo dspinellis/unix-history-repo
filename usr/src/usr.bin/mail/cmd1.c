@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	2.3 %G%";
+static char *SccsId = "@(#)cmd1.c	2.4 %G%";
 
 /*
  * Print the current active headings.
@@ -389,6 +389,45 @@ mboxit(msgvec)
 		dot = &message[*ip-1];
 		dot->m_flag |= MTOUCH|MBOX;
 		dot->m_flag &= ~MPRESERVE;
+	}
+	return(0);
+}
+
+/*
+ * List the folders the user currently has.
+ */
+folders()
+{
+	char *maildir, *shell;
+	char dirname[BUFSIZ], cmd[BUFSIZ];
+	int pid, s, e;
+
+	if ((maildir = value("maildir")) == NOSTR) {
+		printf("No value set for \"maildir\"\n");
+		return(-1);
+	}
+	if (*maildir != '/')
+		sprintf(dirname, "%s/%s", homedir, maildir);
+	else
+		strcpy(dirname, maildir);
+	sprintf(cmd, "ls %s", dirname);
+	shell = value("SHELL");
+	if (shell == 0)
+		shell = SHELL;
+	switch ((pid = fork())) {
+	case 0:
+		execl(shell, "sh", "-c", cmd, 0);
+		clrbuf(stdout);
+		perror(shell);
+		exit(1);
+
+	case -1:
+		perror("fork");
+		return(-1);
+
+	default:
+		while ((e = wait(&s)) != -1 && e != pid)
+			;
 	}
 	return(0);
 }
