@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.23 %G%";
+static char SccsId[] = "@(#)sccs.c	1.23.1.1 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -386,10 +386,10 @@ makefile(name)
 	register char *p;
 	register char c;
 	char buf[512];
-	struct stat stbuf;
 	extern char *malloc();
 	extern char *rindex();
-	extern bool safepath();
+	extern bool isdir();
+	register char *q;
 
 	p = rindex(name, '/');
 	if (p == NULL)
@@ -398,48 +398,41 @@ makefile(name)
 		p++;
 
 	/*
-	**  Check to see that the path is "safe", i.e., that we
-	**  are not letting some nasty person use the setuid part
-	**  of this program to look at or munge some presumably
-	**  hidden files.
+	**  See if the name can be used as-is.
 	*/
 
-	if (SccsPath[0] == '/' && !safepath(name))
-		return (NULL);
+	if (SccsPath[0] != '/' || name[0] == '/' || strncmp(name, "./", 2) == 0)
+	{
+		if (strncmp(p, "s.", 2) == 0)
+			return (name);
+		if (isdir(name))
+			return (name);
+	}
 
 	/*
-	**  Create the eventual pathname.
+	**  Create the actual pathname.
 	*/
 
-	if (SccsPath[0] == '/')
+	if (name[0] != '/')
 	{
 		strcpy(buf, SccsPath);
 		strcat(buf, "/");
 	}
 	else
 		strcpy(buf, "");
-	if (strncmp(p, "s.", 2) != 0)
+	strncat(buf, name, p - name);
+	q = &buf[strlen(buf)];
+	strcpy(q, p);
+	if (strncmp(p, "s.", 2) != 0 && !isdir(buf))
 	{
-		strncat(buf, name, p - name);
-		if (SccsPath[0] != '/')
+		strcpy(q, "");
+		if (SccsPath[0] != '/' && name[0] == '/')
 		{
 			strcat(buf, SccsPath);
 			strcat(buf, "/");
 		}
 		strcat(buf, "s.");
 		strcat(buf, p);
-	}
-	else
-	{
-		if (SccsPath[0] != '/')
-			return (name);
-		strcat(buf, name);
-	}
-
-	if (stat(buf, &stbuf) >= 0 && (stbuf.st_mode & S_IFMT) == S_IFDIR)
-	{
-		if (SccsPath[0] != '/')
-			return (name);
 	}
 
 	p = malloc(strlen(buf) + 1);
@@ -450,6 +443,27 @@ makefile(name)
 	}
 	strcpy(p, buf);
 	return (p);
+}
+/*
+**  ISDIR -- return true if the argument is a directory.
+**
+**	Parameters:
+**		name -- the pathname of the file to check.
+**
+**	Returns:
+**		TRUE if 'name' is a directory, FALSE otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+isdir(name)
+	char *name;
+{
+	struct stat stbuf;
+
+	return (stat(name, &stbuf) >= 0 && (stbuf.st_mode & S_IFMT) == S_IFDIR);
 }
 /*
 **  SAFEPATH -- determine whether a pathname is "safe"
