@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -63,7 +63,7 @@ reset()
 	exit();
 }
 
-float
+double
 dist2 (x1, y1, x2, y2)
 {
 	float t,v;
