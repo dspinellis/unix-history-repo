@@ -2,15 +2,21 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uuclean.8	6.2 (Berkeley) %G%
+.\"	@(#)uuclean.8	6.3 (Berkeley) %G%
 .\"
 .TH UUCLEAN 8C ""
 .UC 5
 .SH NAME
 uuclean \- uucp spool directory clean-up
 .SH SYNOPSIS
-.B uuclean
-[ option ] ...
+.B /usr/lib/uucp/uuclean
+[
+.B -m
+] [
+.BI -n time
+] [
+.BI -p pre
+]
 .SH DESCRIPTION
 .I Uuclean
 will scan the spool directory for files with the
@@ -26,12 +32,6 @@ as the file prefix.
 Up to 10
 .B \-p
 arguments may be specified.
-A
-.B \-p
-without any
-.I pre
-following will cause all files older than the
-specified time to be deleted.
 .TP
 .BI \-n time
 Files whose age is more than
@@ -43,15 +43,15 @@ test is satisfied.
 .B \-m
 Send mail to the owner of the file
 when it is deleted.
+.TP
+.BI \-d subdirectory
+Only the specified subdirectory will be cleaned.
 .PP
-This program will typically be started by
+This program will typically be run daily by
 .IR cron (8).
 .SH FILES
 .TP 22
-/usr/lib/uucp
-directory with commands used by uuclean internally
-.TP
 /usr/spool/uucp
-spool directory
+Spool directory
 .SH SEE ALSO
-uucp(1C), uux(1C)
+uucp(1C), uux(1C), uucico(8C)
