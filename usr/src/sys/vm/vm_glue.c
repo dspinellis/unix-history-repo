@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.18 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.19 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -93,17 +93,37 @@ useracc(addr, len, rw)
 /*
  * Change protections on kernel pages from addr to addr+len
  * (presumably so debugger can plant a breakpoint).
- * All addresses are assumed to reside in the Sysmap,
+ *
+ * We force the protection change at the pmap level.  If we were
+ * to use vm_map_protect a change to allow writing would be lazily-
+ * applied meaning we would still take a protection fault, something
+ * we really don't want to do.  It would also fragment the kernel
+ * map unnecessarily.  We cannot use pmap_protect since it also won't
+ * enforce a write-enable request.  Using pmap_enter is the only way
+ * we can ensure the change takes place properly.
  */
 void
 chgkprot(addr, len, rw)
 	register caddr_t addr;
 	int len, rw;
 {
-	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
+	vm_prot_t prot;
+	vm_offset_t pa, sva, eva;
 
-	vm_map_protect(kernel_map, trunc_page(addr),
-		       round_page(addr+len-1), prot, FALSE);
+	prot = rw == B_READ ? VM_PROT_READ : VM_PROT_READ|VM_PROT_WRITE;
+	eva = round_page(addr + len - 1);
+	for (sva = trunc_page(addr); sva < eva; sva += PAGE_SIZE) {
+		/*
+		 * Extract physical address for the page.
+		 * We use a cheezy hack to differentiate physical
+		 * page 0 from an invalid mapping, not that it
+		 * really matters...
+		 */
+		pa = pmap_extract(kernel_pmap, sva|1);
+		if (pa == 0)
+			panic("chgkprot: invalid page");
+		pmap_enter(kernel_pmap, sva, pva&~1, prot, TRUE);
+	}
 }
 #endif
 
