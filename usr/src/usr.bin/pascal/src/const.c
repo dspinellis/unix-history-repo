@@ -1,13 +1,10 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-#ifndef lint
-static	char sccsid[] = "@(#)const.c 2.1 %G%";
-#endif
+static	char sccsid[] = "@(#)const.c 1.5.1.1 %G%";
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
-#include "tree_ty.h"
 
 /*
  * Const enters the definitions
@@ -15,7 +12,7 @@ static	char sccsid[] = "@(#)const.c 2.1 %G%";
  * part into the namelist.
  */
 #ifndef PI1
-constbeg( lineofyconst )
+constbeg( lineofyconst , r )
     int	lineofyconst;
 {
     static bool	const_order = FALSE;
@@ -63,7 +60,7 @@ constbeg( lineofyconst )
 const(cline, cid, cdecl)
 	int cline;
 	register char *cid;
-	register struct tnode *cdecl;
+	register int *cdecl;
 {
 	register struct nl *np;
 
@@ -97,11 +94,16 @@ const(cline, cid, cdecl)
 	if (con.ctype == NIL)
 		return;
 	if ( con.ctype == nl + TSTR )
-		np->ptr[0] = (struct nl *) con.cpval;
+		np->ptr[0] = con.cpval;
 	if (isa(con.ctype, "i"))
 		np->range[0] = con.crval;
 	else if (isa(con.ctype, "d"))
 		np->real = con.crval;
+#       ifdef PC
+	    if (cbn == 1 && con.ctype != NIL) {
+		    stabconst(np);
+	    }
+#       endif
 }
 
 #ifndef PI0
@@ -122,36 +124,36 @@ constend()
  * and scalars, the first two
  * being possibly signed.
  */
-gconst(c_node)
-	struct tnode *c_node;
+gconst(r)
+	int *r;
 {
 	register struct nl *np;
-	register struct tnode *cn;
+	register *cn;
 	char *cp;
 	int negd, sgnd;
 	long ci;
 
 	con.ctype = NIL;
-	cn = c_node;
+	cn = r;
 	negd = sgnd = 0;
 loop:
-	if (cn == TR_NIL || cn->sign_const.number == TR_NIL)
-		return;
-	switch (cn->tag) {
+	if (cn == NIL || cn[1] == NIL)
+		return (NIL);
+	switch (cn[0]) {
 		default:
 			panic("gconst");
 		case T_MINUSC:
 			negd = 1 - negd;
 		case T_PLUSC:
 			sgnd++;
-			cn = cn->sign_const.number;
+			cn = cn[1];
 			goto loop;
 		case T_ID:
-			np = lookup(cn->char_const.cptr);
-			if (np == NLNIL)
+			np = lookup(cn[1]);
+			if (np == NIL)
 				return;
 			if (np->class != CONST) {
-				derror("%s is a %s, not a constant as required", cn->char_const.cptr, classes[np->class]);
+				derror("%s is a %s, not a constant as required", cn[1], classes[np->class]);
 				return;
 			}
 			con.ctype = np->type;
@@ -169,7 +171,7 @@ loop:
 					con.crval = con.cival;
 					break;
 				case TSTR:
-					con.cpval = (char *) np->ptr[0];
+					con.cpval = np->ptr[0];
 					break;
 				case NIL:
 					con.ctype = NIL;
@@ -179,10 +181,10 @@ loop:
 			}
 			break;
 		case T_CBINT:
-			con.crval = a8tol(cn->char_const.cptr);
+			con.crval = a8tol(cn[1]);
 			goto restcon;
 		case T_CINT:
-			con.crval = atof(cn->char_const.cptr);
+			con.crval = atof(cn[1]);
 			if (con.crval > MAXINT || con.crval < MININT) {
 				derror("Constant too large for this implementation");
 				con.crval = 0;
@@ -198,10 +200,10 @@ restcon:
 			break;
 		case T_CFINT:
 			con.ctype = nl+TDOUBLE;
-			con.crval = atof(cn->char_const.cptr);
+			con.crval = atof(cn[1]);
 			break;
 		case T_CSTRNG:
-			cp = cn->char_const.cptr;
+			cp = cn[1];
 			if (cp[1] == 0) {
 				con.ctype = nl+T1CHAR;
 				con.cival = cp[0];
@@ -213,9 +215,8 @@ restcon:
 			break;
 	}
 	if (sgnd) {
-		if (isnta((struct nl *) con.ctype, "id"))
-			derror("%s constants cannot be signed",
-				nameof((struct nl *) con.ctype));
+		if (isnta(con.ctype, "id"))
+			derror("%s constants cannot be signed", nameof(con.ctype));
 		else {
 			if (negd)
 				con.crval = -con.crval;
@@ -225,49 +226,42 @@ restcon:
 }
 
 #ifndef PI0
-isconst(cn)
-	register struct tnode *cn;
+isconst(r)
+	register int *r;
 {
 
-	if (cn == TR_NIL)
+	if (r == NIL)
 		return (1);
-	switch (cn->tag) {
+	switch (r[0]) {
 		case T_MINUS:
-			cn->tag = T_MINUSC;
-			cn->sign_const.number = 
-					 cn->un_expr.expr;
-			return (isconst(cn->sign_const.number));
+			r[0] = T_MINUSC;
+			r[1] = r[2];
+			return (isconst(r[1]));
 		case T_PLUS:
-			cn->tag = T_PLUSC;
-			cn->sign_const.number = 
-					 cn->un_expr.expr;
-			return (isconst(cn->sign_const.number));
+			r[0] = T_PLUSC;
+			r[1] = r[2];
+			return (isconst(r[1]));
 		case T_VAR:
-			if (cn->var_node.qual != TR_NIL)
+			if (r[3] != NIL)
 				return (0);
-			cn->tag = T_ID;
-			cn->char_const.cptr = 
-					cn->var_node.cptr;
+			r[0] = T_ID;
+			r[1] = r[2];
 			return (1);
 		case T_BINT:
-			cn->tag = T_CBINT;
-			cn->char_const.cptr = 
-				cn->const_node.cptr;
+			r[0] = T_CBINT;
+			r[1] = r[2];
 			return (1);
 		case T_INT:
-			cn->tag = T_CINT;
-			cn->char_const.cptr = 
-				cn->const_node.cptr;
+			r[0] = T_CINT;
+			r[1] = r[2];
 			return (1);
 		case T_FINT:
-			cn->tag = T_CFINT;
-			cn->char_const.cptr = 
-				cn->const_node.cptr;
+			r[0] = T_CFINT;
+			r[1] = r[2];
 			return (1);
 		case T_STRNG:
-			cn->tag = T_CSTRNG;
-			cn->char_const.cptr = 
-				cn->const_node.cptr;
+			r[0] = T_CSTRNG;
+			r[1] = r[2];
 			return (1);
 	}
 	return (0);
