@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.78 (Berkeley) %G%
+#	@(#)READ_ME	8.79 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -308,6 +308,9 @@ SFS_TYPE	Encodes how your kernel can locate the amount of free
 		<sys/vfs.h>, <sys/mount.h>, or <sys/statfs.h> respectively,
 		or SFS_STATVFS (6) if you have the two-argument statvfs(2)
 		call.  The default if nothing is defined is SFS_NONE.
+SFS_BAVAIL	with SFS_4ARGS hou can also set SFS_BAVAIL to the field name
+		in the statfs structure that holds the useful information;
+		this defaults to f_bavail.
 SPT_TYPE	Encodes how your system can display what a process is doing
 		on a ps(1) command (SPT stands for Set Process Title).  Can
 		be set to:
@@ -928,4 +931,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.78, last update %G% 07:21:13)
+(Version 8.79, last update %G% 06:48:15)

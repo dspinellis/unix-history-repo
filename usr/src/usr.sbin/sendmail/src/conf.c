@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.132 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.133 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2106,11 +2106,11 @@ freespace(dir, bsize)
 	struct ustat fs;
 	struct stat statbuf;
 #  define FSBLOCKSIZE	DEV_BSIZE
-#  define f_bavail	f_tfree
+#  define FSF_BAVAIL	f_tfree
 # else
 #  if defined(ultrix)
 	struct fs_data fs;
-#   define f_bavail	fd_bfreen
+#   define FSF_BAVAIL	fd_bfreen
 #   define FSBLOCKSIZE	1024L
 #  else
 #   if SFS_TYPE == SFS_STATVFS
@@ -2119,11 +2119,11 @@ freespace(dir, bsize)
 #   else
 	struct statfs fs;
 #    define FSBLOCKSIZE	fs.f_bsize
-#    if defined(_SCO_unix_) || defined(IRIX) || defined(apollo) || defined(ALTOS_SYS_V) || defined(_UTS) || defined(_CRAYCOM)
-#     define f_bavail f_bfree
-#    endif
 #   endif
 #  endif
+# endif
+# ifndef FSF_BAVAIL
+#  define FSF_BAVAIL f_bavail
 # endif
 
 # if SFS_TYPE == SFS_USTAT
@@ -2146,7 +2146,7 @@ freespace(dir, bsize)
 	{
 		if (bsize != NULL)
 			*bsize = FSBLOCKSIZE;
-		return (fs.f_bavail);
+		return (fs.FSF_BAVAIL);
 	}
 #endif
 	return (-1);
