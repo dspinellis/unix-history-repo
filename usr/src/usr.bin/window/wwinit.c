@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.25 %G%";
+static char sccsid[] = "@(#)wwinit.c	3.26 %G%";
 #endif
 
 /*
@@ -82,7 +82,6 @@ wwinit()
 	wwaddcap("kh", &kp);
 	if ((j = tgetnum("kn")) >= 0) {
 		char cap[32];
-		int i;
 
 		sprintf(kp, "kn#%d:", kn);
 		for (; *kp; kp++)
