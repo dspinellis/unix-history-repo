@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -74,6 +74,10 @@ xalloc(sz)
 	register int sz;
 {
 	register char *p;
+
+	/* some systems can't handle size zero mallocs */
+	if (sz <= 0)
+		sz = 1;
 
 	p = malloc((unsigned) sz);
 	if (p == NULL)
@@ -1290,6 +1294,7 @@ dumpfd(fd, printclosed, logit)
 {
 	register struct hostent *hp;
 	register char *p;
+	char *fmtstr;
 	struct sockaddr_in sin;
 	auto int slen;
 	struct stat st;
@@ -1381,7 +1386,11 @@ dumpfd(fd, printclosed, logit)
 
 	  default:
 defprint:
-		sprintf(p, "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%ld",
+		if (sizeof st.st_size > 4)
+			fmtstr = "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%qd",
+		else
+			fmtstr = "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%ld",
+		sprintf(p, fmtstr,
 			major(st.st_dev), minor(st.st_dev), st.st_ino,
 			st.st_nlink, st.st_uid, st.st_gid, st.st_size);
 		break;
