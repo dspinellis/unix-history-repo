@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.7 89/04/11$
  *
- *	@(#)hpux_tty.c	7.2 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -33,13 +33,6 @@
 
 #include "hpux.h"
 #include "hpux_termio.h"
-
-/*
- * XXX should just include syscontext.h but RETURN definition clashes
- * with defined constant in tty.h
- */
-#undef RETURN
-#define RETURN(value)	{ u.u_error = (value); return (u.u_error); }
 
 char hpuxtobsdbaud[32] = {
 	B0,	B50,	B75,	B110,	B134,	B150,	B200,	B300,
@@ -298,7 +291,7 @@ ohpuxgtty(p, uap, retval)
 	int *retval;
 {
 
-	RETURN (getsettty(uap->fdes, HPUXTIOCGETP, uap->cmarg));
+	return (getsettty(uap->fdes, HPUXTIOCGETP, uap->cmarg));
 }
 
 ohpuxstty(p, uap, retval)
@@ -310,7 +303,7 @@ ohpuxstty(p, uap, retval)
 	int *retval;
 {
 
-	RETURN (getsettty(uap->fdes, HPUXTIOCSETP, uap->cmarg));
+	return (getsettty(uap->fdes, HPUXTIOCSETP, uap->cmarg));
 }
 
 /*
