@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Usef.c	1.2	%G%
+ *	@(#)Usef.c	1.3	%G%
  */
 
 /*		returns '-f' if need to use -f to bypass C bug		*/
@@ -26,8 +26,7 @@ char **argv;
 	argv++;
 	ptr = needs_f;
 	while( *ptr != 0 ) {
-		ptr++;
-		if( strcmp( *ptr, *argv ) == 0 )
+		if( strcmp( *ptr++, *argv ) == 0 )
 		{
 			printf("-f");
 			exit(0);
