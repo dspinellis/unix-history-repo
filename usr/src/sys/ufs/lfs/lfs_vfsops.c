@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.59 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.60 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -29,8 +29,6 @@
 #include "../ufs/quota.h"
 #include "../ufs/inode.h"
 #include "../ufs/ufsmount.h"
-#include "../vm/vm_param.h"
-#include "../vm/lock.h"
 #include "lfs.h"
 #include "lfs_extern.h"
 
@@ -428,7 +426,6 @@ lfs_statfs(mp, sbp, p)
 }
 
 extern int	syncprt;					/* LFS */
-extern lock_data_t lfs_sync_lock;
 
 /*
  * Go through the disk queues to initiate sandbagged IO;
@@ -442,28 +439,36 @@ lfs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
+	static int sync_lock, sync_want;
 	int error;
 
 printf("lfs_sync\n");
 
 	/*
-	 * Concurrent syncs aren't possible because the meta data blocks are
-	 * only marked dirty, not busy!
+	 * Meta data blocks are only marked dirty, not busy, so LFS syncs
+	 * must be single threaded.
 	 */
-	lock_write(&lfs_sync_lock);
+	while (sync_lock) {
+		sync_want = 1;
+		if (error = tsleep(&sync_lock, PLOCK | PCATCH, "lfs sync", 0))
+			return (error);
+	}
+	sync_lock = 1;
 
 	if (syncprt)
 		bufstats();
-	/* 
-	 * If we do roll forward, then all syncs do not have to be checkpoints.
-	 * Until then, make sure they are.
-	 */
-STOPNOW=1;
+
+	/* All syncs must be checkpoints until roll-forward is implemented. */
+STOPNOW = 1;
 	error = lfs_segwrite(mp, 1);		
-	lock_done(&lfs_sync_lock);
 #ifdef QUOTA
 	qsync(mp);
 #endif
+	sync_lock = 0;
+	if (sync_want) {
+		sync_want = 0;
+		wakeup(&sync_lock);
+	}
 	return (error);
 }
 
