@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.14 %G%";
+char version[] = "@(#)main.c 1.15 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -47,7 +47,7 @@ struct inode *cur_ip;
 
 int	eflag = 0, hflag = 0, mflag = 0, cvtdir = 0;
 
-char	mounted = 0;
+extern	long mounted;
 dev_t	dev = 0;
 struct fs *fsptr;
 struct inode parentino;
@@ -69,6 +69,8 @@ FILE	*df;
 DIR	*dirp;
 int	ofile;
 char	dirfile[] = "rstXXXXXX";
+char	lnkbuf[MAXPATHLEN + 1];
+int	pathlen;
 
 #define INOHASH(val) (val % MAXINO)
 struct inotab {
@@ -173,8 +175,8 @@ usage:
 			fprintf(stderr, "restor: %s - cannot create directory temporary\n", dirfile);
 			done(1);
 		}
-		xmount(envp);
 		mounted++;
+		xmount(envp);
 	}
 	doit(command, argc, argv);
 	done(0);
@@ -241,8 +243,9 @@ extractfiles(argc, argv)
 	register struct xtrlist *xp;
 	struct xtrlist **xpp;
 	ino_t	d;
-	int	xtrfile(), xtrskip(), xtrcvtdir(), xtrcvtskip(), null();
-	int	mode;
+	int	xtrfile(), xtrskip(), xtrcvtdir(), xtrcvtskip(),
+		xtrlnkfile(), xtrlnkskip(), null();
+	int	mode, uid, gid;
 	char	name[BUFSIZ + 1];
 
 	if (readhdr(&spcl) == 0) {
@@ -379,6 +382,21 @@ again:
 					    spcl.c_dinode.di_size);
 				xclose(ofile);
 				break;
+			case IFLNK:
+				fprintf(stdout, "extract symbolic link %s\n", name);
+				uid = spcl.c_dinode.di_uid;
+				gid = spcl.c_dinode.di_gid;
+				lnkbuf[0] = '\0';
+				pathlen = 0;
+				getfile(xtrlnkfile, xtrlnkskip, spcl.c_dinode.di_size);
+				if (xsymlink(lnkbuf, name) < 0) {
+					fprintf(stderr, "%s: cannot create symbolic link\n", name);
+					xp->x_flags |= XTRACTD;
+					xtrcnt--;
+					goto finished;
+				}
+				xchown(name, uid, gid);
+				break;
 			case IFREG:
 				fprintf(stdout, "extract file %s\n", name);
 				if ((ofile = xcreat(name, 0666)) < 0) {
@@ -449,8 +467,8 @@ restorfiles(command, argv)
 #endif
 	ptr[0] = mount;
 	ptr[1] = 0;
-	xmount(ptr);
 	mounted++;
+	xmount(ptr);
 	iput(u.u_cdir); /* release root inode */
 	iput(u.u_rdir); /* release root inode */
 	fsptr = getfs(dev);
@@ -678,7 +696,7 @@ putdir(buf, size)
 	register struct odirect *odp;
 	struct odirect *eodp;
 	register struct direct *dp;
-	long loc;
+	long loc, i;
 
 	if (cvtdir) {
 		eodp = (struct odirect *)&buf[size];
@@ -690,6 +708,12 @@ putdir(buf, size)
 	} else {
 		for (loc = 0; loc < size; ) {
 			dp = (struct direct *)(buf + loc);
+			i = DIRBLKSIZ - (loc & (DIRBLKSIZ - 1));
+			if (dp->d_reclen <= 0 || dp->d_reclen > i) {
+				loc += i;
+				continue;
+			}
+			loc += dp->d_reclen;
 			if (dp->d_ino != 0)
 				putent(dp, dirwrite);
 		}
@@ -922,6 +946,27 @@ xtrcvtskip(buf, size)
 {
 	fprintf(stderr, "unallocated block in directory\n");
 	xtrskip(buf, size);
+}
+
+xtrlnkfile(buf, size)
+	char	*buf;
+	long	size;
+{
+	pathlen += size;
+	if (pathlen > MAXPATHLEN) {
+		fprintf(stderr, "symbolic link name: %s; too long %d\n",
+		    buf, size);
+		done(1);
+	}
+	strcat(lnkbuf, buf);
+}
+
+xtrlnkskip(buf, size)
+	char *buf;
+	long size;
+{
+	fprintf(stderr, "unallocated block in symbolic link\n");
+	done(1);
 }
 #endif
 
@@ -1159,6 +1204,7 @@ checkdir(name)
 				register int pid, rp;
 
 				xumount();
+				mounted = 0;
 				if ((pid = fork()) == 0) {
 					execl("/bin/xmkdir", "xmkdir", name, 0);
 					execl("/usr/bin/xmkdir", "xmkdir", name, 0);
@@ -1168,6 +1214,7 @@ checkdir(name)
 				}
 				while ((rp = wait(&i)) >= 0 && rp != pid)
 					;
+				mounted++;
 				xmount(envp);
 				fsptr = getfs(dev);
 				parentino.i_fs = fsptr;
@@ -1250,7 +1297,27 @@ dcvt(odp, ndp)
 }
 
 /*
- * seek to an entry in a directory.
+ * Open a directory.
+ * Modified to allow any random file to be a legal directory.
+ */
+DIR *
+opendir(name)
+	char *name;
+{
+	register DIR *dirp;
+
+	dirp = (DIR *)malloc(sizeof(DIR));
+	dirp->dd_fd = open(name, 0);
+	if (dirp->dd_fd == -1) {
+		free(dirp);
+		return NULL;
+	}
+	dirp->dd_loc = 0;
+	return dirp;
+}
+
+/*
+ * Seek to an entry in a directory.
  * Only values returned by ``telldir'' should be passed to seekdir.
  * Modified to have many directories based in one file.
  */
@@ -1350,7 +1417,9 @@ done(exitcode)
 #ifndef STANDALONE
 	unlink(dirfile);
 #endif
-	if (mounted)
+	if (mounted) {
 		xumount();
+		mounted = 0;
+	}
 	exit(exitcode);
 }
