@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -441,7 +441,7 @@ sigwinch()
 oob()
 {
 
-	out = FWRITE;
+	out = O_RDWR;
 	rcvd = 0;
 	while (recv(rem, &mark, 1, MSG_OOB) < 0)
 		switch (errno) {
