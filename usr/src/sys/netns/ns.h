@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.h	6.2 (Berkeley) %G%
+ *	@(#)ns.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,7 @@
 
 #define	NS_FORWARDING		0x1	/* most of idp header exists */
 #define	NS_ROUTETOIF		0x10	/* same as SO_DONTROUTE */
-#define	NS_ALLOWBROADCAST	SS_PRIV	/* can send broadcast packets */
+#define	NS_ALLOWBROADCAST	SO_BROADCAST	/* can send broadcast packets */
 
 #define NS_MAXHOPS		15
 
