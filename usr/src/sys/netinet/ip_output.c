@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_output.c	7.19 (Berkeley) %G%
+ *	@(#)ip_output.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -154,7 +154,7 @@ panic("ip_output no HDR");
 			goto bad;
 		}
 		/* don't allow broadcast messages to be fragmented */
-		if (ip->ip_len > ifp->if_mtu) {
+		if ((u_short)ip->ip_len > ifp->if_mtu) {
 			error = EMSGSIZE;
 			goto bad;
 		}
@@ -164,7 +164,7 @@ panic("ip_output no HDR");
 	/*
 	 * If small enough for interface, can just send directly.
 	 */
-	if (ip->ip_len <= ifp->if_mtu) {
+	if ((u_short)ip->ip_len <= ifp->if_mtu) {
 		ip->ip_len = htons((u_short)ip->ip_len);
 		ip->ip_off = htons((u_short)ip->ip_off);
 		ip->ip_sum = 0;
@@ -198,7 +198,7 @@ panic("ip_output no HDR");
 	 */
 	m0 = m;
 	mhlen = sizeof (struct ip);
-	for (off = hlen + len; off < ip->ip_len; off += len) {
+	for (off = hlen + len; off < (u_short)ip->ip_len; off += len) {
 		MGETHDR(m, M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
@@ -215,8 +215,8 @@ panic("ip_output no HDR");
 		mhip->ip_off = ((off - hlen) >> 3) + (ip->ip_off & ~IP_MF);
 		if (ip->ip_off & IP_MF)
 			mhip->ip_off |= IP_MF;
-		if (off + len >= ip->ip_len)
-			len = ip->ip_len - off;
+		if (off + len >= (u_short)ip->ip_len)
+			len = (u_short)ip->ip_len - off;
 		else
 			mhip->ip_off |= IP_MF;
 		mhip->ip_len = htons((u_short)(len + mhlen));
@@ -239,7 +239,7 @@ panic("ip_output no HDR");
 	 * and updating header, then send each fragment (in order).
 	 */
 	m = m0;
-	m_adj(m, hlen + firstlen - ip->ip_len);
+	m_adj(m, hlen + firstlen - (u_short)ip->ip_len);
 	m->m_pkthdr.len = hlen + firstlen;
 	ip->ip_len = htons((u_short)m->m_pkthdr.len);
 	ip->ip_off = htons((u_short)(ip->ip_off | IP_MF));
@@ -282,6 +282,8 @@ ip_insertoptions(m, opt, phlen)
 	unsigned optlen;
 
 	optlen = opt->m_len - sizeof(p->ipopt_dst);
+	if (optlen + (u_short)ip->ip_len > IP_MAXPACKET)
+		return (m);		/* XXX should fail */
 	if (p->ipopt_dst.s_addr)
 		ip->ip_dst = p->ipopt_dst;
 	if (m->m_flags & M_EXT || m->m_data - optlen < m->m_pktdat) {
