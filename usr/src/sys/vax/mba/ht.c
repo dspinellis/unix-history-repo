@@ -1,4 +1,4 @@
-/*	ht.c	4.17	81/05/09	*/
+/*	ht.c	4.18	81/05/10	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -115,18 +115,18 @@ htopen(dev, flag)
 	htcommand(dev, HT_SENSE, 1);
 	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg & HTDS_MOL) == 0) {
-		uprintf("ht%d: not online\n", htunit);
+		uprintf("tu%d: not online\n", tuunit);
 		u.u_error = EIO;
 		return;
 	}
 	if ((flag&FWRITE) && (sc->sc_dsreg&HTDS_WRL)) {
-		uprintf("ht%d: no write ring\n", htunit);
+		uprintf("tu%d: no write ring\n", tuunit);
 		u.u_error = EIO;
 		return;
 	}
 	if ((sc->sc_dsreg & HTDS_BOT) == 0 && (flag&FWRITE) &&
 	    dens != sc->sc_dens) {
-		uprintf("ht%d: can't change density in mid-tape\n", htunit);
+		uprintf("tu%d: can't change density in mid-tape\n", tuunit);
 		u.u_error = EIO;
 		return;
 	}
