@@ -11,13 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
  * make file system for cylinder-group style file systems
  *
- * usage: mkfs -N special size [ nsect ntrak bsize fsize cpg minfree rps nbpi ]
+ * usage:
+ *    mkfs -N special size [ nsect ntrak bsize fsize cpg minfree rps nbpi opt ]
  */
 
 /*
@@ -52,9 +53,11 @@ static char sccsid[] = "@(#)mkfs.c	5.2 (Berkeley) %G%";
  * be set to 0 if no reserve of free blocks is deemed necessary,
  * however throughput drops by fifty percent if the file system
  * is run at between 90% and 100% full; thus the default value of
- * fs_minfree is 10%.
+ * fs_minfree is 10%. With 10% free space, fragmentation is not a
+ * problem, so we choose to optimize for time.
  */
 #define MINFREE		10
+#define DEFAULTOPT	FS_OPTTIME
 
 /*
  * ROTDELAY gives the minimum number of milliseconds to initiate
@@ -486,6 +489,18 @@ next:
 		sblock.fs_rps = atoi(argv[8]);
 	else
 		sblock.fs_rps = DEFHZ;
+	if (argc > 10)
+		if (*argv[10] == 's')
+			sblock.fs_optim = FS_OPTSPACE;
+		else if (*argv[10] == 't')
+			sblock.fs_optim = FS_OPTTIME;
+		else {
+			printf("%s: bogus optimization preference %s\n",
+				argv[10], "reset to time");
+			sblock.fs_optim = FS_OPTTIME;
+		}
+	else
+		sblock.fs_optim = DEFAULTOPT;
 	sblock.fs_cgrotor = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
 	sblock.fs_cstotal.cs_nbfree = 0;
