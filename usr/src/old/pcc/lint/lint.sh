@@ -1,5 +1,6 @@
+#! /bin/sh
 #
-#	@(#)lint.sh	1.1	(Berkeley)	%G%
+#	@(#)lint.sh	1.2	(Berkeley)	%G%
 #
 L=/usr/lib/lint/lint T=/usr/tmp/lint.$$ PATH=/bin:/usr/bin O="-C -Dlint"
 X= P=unix LL=/usr/lib/lint
