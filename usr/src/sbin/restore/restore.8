@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)restore.8	6.10 (Berkeley) %G%
+.\"     @(#)restore.8	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RESTORE 8
@@ -26,9 +26,10 @@ Single files and
 directory subtrees may be restored from full or partial
 backups.
 .Nm Restore
-cannot work across a network, to do this, see the companion
-command
-.Xr rrestore .
+works across a network;
+to do this see the
+.Fl f
+flag described below.
 The actions
 of
 .Nm restore
@@ -220,6 +221,11 @@ The next argument to
 is used as the name of the archive instead
 of
 .Pa /dev/rmt? . 
+If the name of the file is of the form
+.Dq host:file ,
+.Nm restore
+reads from the named file on the remote host using
+.Xr rmt 8 .
 If the name of the file is
 .Ql Fl ,
 .Nm restore
@@ -350,11 +356,11 @@ owner, mode, and time stamps for directories.
 information passed between incremental restores.
 .El
 .Sh SEE ALSO
-.Xr rrestore 8
 .Xr dump 8 ,
 .Xr newfs 8 ,
 .Xr mount 8 ,
-.Xr mkfs 8
+.Xr mkfs 8 ,
+.Xr rmt 8
 .Sh BUGS
 .Nm Restore
 can get confused when doing incremental restores from
