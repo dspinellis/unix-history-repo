@@ -1,13 +1,19 @@
-static	char *sccsid = "@(#)dcheck.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)dcheck.c	2.1 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
 #define	NB	10
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
+#ifndef SIMFS
+#include <sys/param.h>
+#include <sys/inode.h>
+#include <sys/fs.h>
+#else
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
+#endif
 #include <ndir.h>
 #include <stdio.h>
 
