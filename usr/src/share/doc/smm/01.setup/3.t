@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.30 (Berkeley) %G%
+.\"	@(#)3.t	6.31 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -22,7 +22,7 @@ incompatible.
 .PP
 In particular be wary when using this information to upgrade
 a \*(Ps HP300 system.
-There are at least 4 different versions of ``\*(Ps'' out there:
+There are at least four different versions of ``\*(Ps'' out there:
 .IP 1)
 HPBSD 1.x from Utah.
 .br
@@ -51,7 +51,7 @@ upgrading from the Reno distribution.
 .IP 4)
 HPBSD 2.0 from Utah.
 .br
-As if things weren't bad enough already,
+As if things were not bad enough already,
 this release has the \*(4B filesystem and networking code
 as well as some utilities, but still has a \*(Ps hierarchy.
 No filesystem conversions are necessary for this upgrade,
@@ -105,7 +105,7 @@ filesystem can be an MFS virtual-memory-resident filesystem,
 potentially freeing an existing disk partition.
 (Additional swap space may be desirable as a consequence.)
 See
-.Xr mfs (8).
+.Xr mount_mfs (8).
 .PP
 The recommended installation procedure includes the following steps.
 The order of these steps will probably vary according to local needs.
@@ -1239,7 +1239,7 @@ The root filesystem may be made writable while in single-user mode
 with the command:
 .DS
 .ft CW
-mount -u /
+mount \-uw /
 .DE
 The mount command has an option to update the flags on a mounted filesystem,
 including the ability to upgrade a filesystem from read-only to read-write
@@ -1458,7 +1458,7 @@ It is important to remember that merely copying over a native binary
 and executing it (or executing it directly across NFS) does not imply
 that it will run.
 All but the most trivial of applications are likely to require access
-to auxiliary files that don't exist under \*(4B (e.g.
+to auxiliary files that do not exist under \*(4B (e.g.
 .Pn /etc/ld.so.cache )
 or have a slightly different format (e.g.
 .Pn /etc/passwd ).
