@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	8.10 (Berkeley) %G%
+ *	@(#)init_main.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,6 +24,7 @@
 #include <sys/protosw.h>
 #include <sys/reboot.h>
 #include <sys/user.h>
+#include <sys/syscallargs.h>
 
 
 #include <machine/cpu.h>
@@ -64,7 +65,8 @@ main(framep)
 	register struct filedesc0 *fdp;
 	register struct pdevinit *pdev;
 	register int i;
-	int s, rval[2];
+	int s;
+	register_t rval[2];
 	extern int (*mountroot) __P((void));
 	extern struct pdevinit pdevinit[];
 	extern void roundrobin __P((void *));
@@ -275,8 +277,13 @@ start_init(p, framep)
 	void *framep;
 {
 	vm_offset_t addr;
-	struct execve_args args;
-	int options, i, retval[2], error;
+	struct execve_args /* {
+		syscallarg(char *) path;
+		syscallarg(char **) argp;
+		syscallarg(char **) envp;
+	} */ args;
+	int options, i, error;
+	register_t retval[2];
 	char **pathp, *path, *ucp, **uap, *arg0, *arg1;
 
 	initproc = p;
@@ -330,23 +337,23 @@ start_init(p, framep)
 		/*
 		 * Move out the arg pointers.
 		 */
-		uap = (char **)((int)ucp & ~(NBPW-1));
+		uap = (char **)((long)ucp & ~ALIGNBYTES);
 		(void)suword((caddr_t)--uap, 0);	/* terminator */
-		(void)suword((caddr_t)--uap, (int)arg1);
-		(void)suword((caddr_t)--uap, (int)arg0);
+		(void)suword((caddr_t)--uap, (long)arg1);
+		(void)suword((caddr_t)--uap, (long)arg0);
 
 		/*
 		 * Point at the arguments.
 		 */
-		args.fname = arg0;
-		args.argp = uap;
-		args.envp = NULL;
+		SCARG(&args, path) = arg0;
+		SCARG(&args, argp) = uap;
+		SCARG(&args, envp) = NULL;
 
 		/*
 		 * Now try to exec the program.  If can't for any reason
 		 * other than it doesn't exist, complain.
 		 */
-		if ((error = execve(p, &args, &retval)) == 0)
+		if ((error = execve(p, &args, retval)) == 0)
 			return;
 		if (error != ENOENT)
 			printf("exec %s: error %d\n", path, error);
