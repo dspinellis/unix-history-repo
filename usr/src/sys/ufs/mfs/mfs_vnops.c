@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -315,7 +315,8 @@ mfs_badop()
 /*
  * Memory based filesystem initialization.
  */
-mfs_init()
+mfs_init(vfsp)
+	struct vfsconf *vfsp;
 {
 
 	return;
