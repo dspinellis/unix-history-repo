@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 DESTDIR=
 DFLAGS= 
@@ -13,7 +13,6 @@ LINTFLAGS= -x -a -n ${DFLAGS}
 RM=	/bin/rm -f
 INSTALL=install
 PR=pr
-MACHINE=	unknown
 GPROFHDRS=	gprof.h ${MACHINE}.h
 GPROFSRCS=	gprof.c arcs.c dfn.c lookup.c ${MACHINE}.c hertz.c \
 		printgprof.c printlist.c
