@@ -1,3 +1,7 @@
+.\" $Source: /mit/kerberos/src/man/RCS/rsh.1,v $
+.\" $Author: jtkohl $
+.\" $Header: rsh.1,v 4.1 89/01/23 11:39:11 jtkohl Exp $
+.\"
 .\" Copyright (c) 1983 The Regents of the University of California.
 .\" All rights reserved.
 .\"
@@ -13,9 +17,9 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rsh.1	6.3 (Berkeley) %G%
+.\"	@(#)rsh.1	6.2 (Berkeley) 9/20/88
 .\"
-.TH RSH 1 ""
+.TH RSH 1 "Kerberos Version 4.0" "MIT Project Athena"
 .UC 5
 .SH NAME
 rsh \- remote shell
@@ -27,7 +31,13 @@ host
 username
 ] [
 .B \-n
-] command
+] [
+.B \-x
+] [
+.B \-d
+] [
+.B \-k
+realm ] command
 .br
 host
 [
@@ -35,7 +45,13 @@ host
 username
 ] [
 .B \-n
-] command
+] [
+.B \-x
+] [
+.B \-d
+] [
+.B \-k
+realm ] command
 .SH DESCRIPTION
 .I Rsh
 connects to the specified
@@ -52,10 +68,33 @@ The remote username used is the same as your local username,
 unless you specify a different remote name with the
 .B \-l
 option.
-This remote name must be equivalent (in the sense of
-.IR rlogin (1))
-to the originating account; no provision
-is made for specifying a password with a command.
+Kerberos authentication is used, and authorization is determined as in
+rlogin(1).
+.PP
+The
+.B \-k
+\fIrealm\fP option causes 
+.I rsh
+to obtain tickets for the remote host in
+.I realm
+instead of the remote host's realm as determined by
+.IR krb_realmofhost (3).
+.PP
+The
+.B \-x
+option turns on DES encryption for all data exchange.
+This may introduce a significant delay in response time.
+.PP
+The
+.B \-d
+option turns on socket debugging (via \fIsetsockopt(2)\fR) on the TCP
+sockets used for communication with the remote host.
+.PP
+The
+.B \-n
+option redirects input from the special device
+.I /dev/null
+(see the BUGS section below).
 .PP
 If you omit
 .I command,
@@ -72,7 +111,7 @@ Thus the command
 .PP
 appends the remote file
 .I remotefile
-to the localfile
+to the local file
 .I localfile,
 while
 .PP
@@ -83,14 +122,11 @@ appends
 to
 .I otherremotefile.
 .PP
-Host names are given in the file /etc/hosts.  Each host
-has one standard name (the first name given in the file), which
-is rather long and unambiguous, and optionally one or more nicknames.
 The host names for local machines are also commands in the directory
 /usr/hosts; if you put this directory in your search path
 then the
 .B rsh
-can be omitted.
+on the command line can be omitted.
 .SH FILES
 .ta 2i
 /etc/hosts
@@ -98,7 +134,7 @@ can be omitted.
 /usr/hosts/*
 .DT
 .SH SEE ALSO
-rlogin(1)
+rlogin(1), kerberos(3), krb_sendauth(3), krb_realmofhost(3)
 .SH BUGS
 If you are using
 .IR csh (1)
