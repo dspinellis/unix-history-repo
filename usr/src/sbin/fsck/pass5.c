@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass5.c	3.3 (Berkeley) %G%";
+static char version[] = "@(#)pass5.c	3.4 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -9,137 +9,147 @@ static char version[] = "@(#)pass5.c	3.3 (Berkeley) %G%";
 
 pass5()
 {
-	register int c, n, i, b, d;
-	short bo[MAXCPG][NRPOS];
-	long botot[MAXCPG];
-	long frsum[MAXFRAG];
-	int blk;
-	daddr_t cbase;
-	int blockbits = (1<<sblock.fs_frag)-1;
+	int c, blk, frags, sumsize, mapsize;
+	daddr_t dbase, dmax, d;
+	register long i, j;
+	struct csum *cs;
+	time_t now;
+	struct csum cstotal;
+	struct inodesc idesc;
+	char buf[MAXBSIZE];
+	register struct cg *newcg = (struct cg *)buf;
 
-	bcopy(blockmap, freemap, (unsigned)bmapsz);
-	dupblk = 0;
-	n_index = sblock.fs_ncg * (cgdmin(&sblock, 0) - cgtod(&sblock, 0));
+	bzero((char *)newcg, sblock.fs_cgsize);
+	newcg->cg_magic = CG_MAGIC;
+	bzero((char *)&idesc, sizeof(struct inodesc));
+	idesc.id_type = ADDR;
+	bzero((char *)&cstotal, sizeof(struct csum));
+	sumsize = cgrp.cg_iused - (char *)(&cgrp);
+	mapsize = howmany(MAXIPG + sblock.fs_fpg, NBBY);
+	(void)time(&now);
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		cbase = cgbase(&sblock, c);
-		bzero((char *)botot, sizeof (botot));
-		bzero((char *)bo, sizeof (bo));
-		bzero((char *)frsum, sizeof (frsum));
-		/*
-		 * need to account for the super blocks
-		 * which appear (inaccurately) bad
-		 */
-		n_bad += cgtod(&sblock, c) - cgsblock(&sblock, c);
 		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
 			continue;
-		if (cgrp.cg_magic != CG_MAGIC) {
+		if (cgrp.cg_magic != CG_MAGIC)
 			pfatal("CG %d: BAD MAGIC NUMBER\n", c);
-			bzero((char *)&cgrp, (int)sblock.fs_cgsize);
-		}
-		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
-			blk = blkmap(&sblock, cgrp.cg_free, b);
-			if (blk == 0)
-				continue;
-			if (blk == blockbits) {
-				if (pass5check(cbase+b, sblock.fs_frag) == STOP)
-					goto out5;
-				/* this is clumsy ... */
-				n_ffree -= sblock.fs_frag;
-				n_bfree++;
-				botot[cbtocylno(&sblock, b)]++;
-				bo[cbtocylno(&sblock, b)]
-				    [cbtorpos(&sblock, b)]++;
-				continue;
-			}
-			for (d = 0; d < sblock.fs_frag; d++)
-				if ((blk & (1<<d)) &&
-				    pass5check(cbase + b + d, (long)1) == STOP)
-					goto out5;
-			fragacct(&sblock, blk, frsum, 1);
-		}
-		if (bcmp((char *)cgrp.cg_frsum, (char *)frsum, sizeof(frsum))) {
-			if (debug)
-			for (i = 0; i < sblock.fs_frag; i++)
-				if (cgrp.cg_frsum[i] != frsum[i])
-				printf("cg[%d].cg_frsum[%d] have %d calc %d\n",
-				    c, i, cgrp.cg_frsum[i], frsum[i]);
-			frsumbad++;
-		}
-		if (bcmp((char *)cgrp.cg_btot, (char *)botot, sizeof (botot))) {
-			if (debug)
-			for (n = 0; n < sblock.fs_cpg; n++)
-				if (botot[n] != cgrp.cg_btot[n])
-				printf("cg[%d].cg_btot[%d] have %d calc %d\n",
-				    c, n, cgrp.cg_btot[n], botot[n]);
-			offsumbad++;
-		}
-		if (bcmp((char *)cgrp.cg_b, (char *)bo, sizeof (bo))) {
-			if (debug)
-			for (i = 0; i < NRPOS; i++)
-				if (bo[n][i] != cgrp.cg_b[n][i])
-				printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
-				    c, n, i, cgrp.cg_b[n][i], bo[n][i]);
-			offsumbad++;
-		}
-	}
-out5:
-	if (dupblk)
-		pwarn("%d DUP BLKS IN BIT MAPS\n", dupblk);
-	if (fixcg == 0) {
-		if ((b = n_blks+n_ffree+sblock.fs_frag*n_bfree+n_index+n_bad) != fmax) {
-			pwarn("%ld BLK(S) MISSING\n", fmax - b);
-			fixcg = 1;
-		} else if (inosumbad + offsumbad + frsumbad + sbsumbad) {
-			pwarn("SUMMARY INFORMATION %s%s%s%sBAD\n",
-			    inosumbad ? "(INODE FREE) " : "",
-			    offsumbad ? "(BLOCK OFFSETS) " : "",
-			    frsumbad ? "(FRAG SUMMARIES) " : "",
-			    sbsumbad ? "(SUPER BLOCK SUMMARIES) " : "");
-			fixcg = 1;
-		} else if (n_ffree != sblock.fs_cstotal.cs_nffree ||
-		    n_bfree != sblock.fs_cstotal.cs_nbfree) {
-			pwarn("FREE BLK COUNT(S) WRONG IN SUPERBLK");
-			if (preen)
-				printf(" (FIXED)\n");
-			if (preen || reply("FIX") == 1) {
-				sblock.fs_cstotal.cs_nffree = n_ffree;
-				sblock.fs_cstotal.cs_nbfree = n_bfree;
-				sbdirty();
+		dbase = cgbase(&sblock, c);
+		dmax = dbase + sblock.fs_fpg;
+		if (dmax > sblock.fs_size)
+			dmax = sblock.fs_size;
+		if (now > cgrp.cg_time)
+			newcg->cg_time = cgrp.cg_time;
+		else
+			newcg->cg_time = now;
+		newcg->cg_cgx = c;
+		if (c == sblock.fs_ncg - 1)
+			newcg->cg_ncyl = sblock.fs_ncyl % sblock.fs_cpg;
+		else
+			newcg->cg_ncyl = sblock.fs_cpg;
+		newcg->cg_niblk = sblock.fs_ipg;
+		newcg->cg_ndblk = dmax - dbase;
+		newcg->cg_cs.cs_ndir = 0;
+		newcg->cg_cs.cs_nffree = 0;
+		newcg->cg_cs.cs_nbfree = 0;
+		newcg->cg_cs.cs_nifree = sblock.fs_ipg;
+		if (cgrp.cg_rotor < newcg->cg_ndblk)
+			newcg->cg_rotor = cgrp.cg_rotor;
+		else
+			newcg->cg_rotor = 0;
+		if (cgrp.cg_frotor < newcg->cg_ndblk)
+			newcg->cg_frotor = cgrp.cg_frotor;
+		else
+			newcg->cg_frotor = 0;
+		if (cgrp.cg_irotor < newcg->cg_niblk)
+			newcg->cg_irotor = cgrp.cg_irotor;
+		else
+			newcg->cg_irotor = 0;
+		bzero((char *)newcg->cg_frsum, sizeof newcg->cg_frsum);
+		bzero((char *)newcg->cg_btot, sizeof newcg->cg_btot);
+		bzero((char *)newcg->cg_b, sizeof newcg->cg_b);
+		bzero((char *)newcg->cg_free, howmany(sblock.fs_fpg, NBBY));
+		bzero((char *)newcg->cg_iused, howmany(sblock.fs_ipg, NBBY));
+		j = sblock.fs_ipg * c;
+		for (i = 0; i < sblock.fs_ipg; j++, i++) {
+			switch (statemap[j]) {
+
+			case USTATE:
+				break;
+
+			case DSTATE:
+			case DCLEAR:
+			case DFOUND:
+				newcg->cg_cs.cs_ndir++;
+				/* fall through */
+
+			case FSTATE:
+			case FCLEAR:
+				newcg->cg_cs.cs_nifree--;
+				setbit(newcg->cg_iused, i);
+				break;
 			}
 		}
-	}
-	if (fixcg) {
-		pwarn("BAD CYLINDER GROUPS");
-		if (preen)
-			printf(" (SALVAGED)\n");
-		else if (reply("SALVAGE") == 0)
-			fixcg = 0;
-	}
-}
-
-pass5check(blk, size)
-	daddr_t blk;
-	long size;
-{
-
-	if (outrange(blk, (int)size)) {
-		fixcg = 1;
-		if (preen)
-			pfatal("BAD BLOCKS IN BIT MAPS.");
-		if (++badblk >= MAXBAD) {
-			printf("EXCESSIVE BAD BLKS IN BIT MAPS.");
-			if (reply("CONTINUE") == 0)
-				errexit("");
-			return (STOP);
+		if (c == 0)
+			for (i = 0; i < ROOTINO; i++) {
+				setbit(newcg->cg_iused, i);
+				newcg->cg_cs.cs_nifree--;
+			}
+		for (i = 0, d = dbase;
+		     d <= dmax - sblock.fs_frag;
+		     d += sblock.fs_frag, i += sblock.fs_frag) {
+			frags = 0;
+			for (j = 0; j < sblock.fs_frag; j++) {
+				if (getbmap(d + j))
+					continue;
+				setbit(newcg->cg_free, i + j);
+				frags++;
+			}
+			if (frags == sblock.fs_frag) {
+				newcg->cg_cs.cs_nbfree++;
+				j = cbtocylno(&sblock, i);
+				newcg->cg_btot[j]++;
+				newcg->cg_b[j][cbtorpos(&sblock, i)]++;
+			} else if (frags > 0) {
+				newcg->cg_cs.cs_nffree += frags;
+				blk = blkmap(&sblock, newcg->cg_free, i);
+				fragacct(&sblock, blk, newcg->cg_frsum, 1);
+			}
+		}
+		for (frags = d; d < dmax; d++) {
+			if (getbmap(d))
+				continue;
+			setbit(newcg->cg_free, d - dbase);
+			newcg->cg_cs.cs_nffree++;
+		}
+		if (frags != d) {
+			blk = blkmap(&sblock, newcg->cg_free, (frags - dbase));
+			fragacct(&sblock, blk, newcg->cg_frsum, 1);
+		}
+		cstotal.cs_nffree += newcg->cg_cs.cs_nffree;
+		cstotal.cs_nbfree += newcg->cg_cs.cs_nbfree;
+		cstotal.cs_nifree += newcg->cg_cs.cs_nifree;
+		cstotal.cs_ndir += newcg->cg_cs.cs_ndir;
+		if (bcmp(newcg->cg_iused, cgrp.cg_iused, mapsize) != 0 &&
+		    dofix(&idesc, "BLK(S) MISSING IN BIT MAPS")) {
+			bcopy(newcg->cg_iused, cgrp.cg_iused, mapsize);
+			cgdirty();
+		}
+		if (bcmp((char *)newcg, (char *)&cgrp, sumsize) != 0 &&
+		    dofix(&idesc, "SUMMARY INFORMATION BAD")) {
+			bcopy((char *)newcg, (char *)&cgrp, sumsize);
+			cgdirty();
+		}
+		cs = &sblock.fs_cs(&sblock, c);
+		if (bcmp((char *)&newcg->cg_cs, (char *)cs, sizeof *cs) != 0 &&
+		    dofix(&idesc, "FREE BLK COUNT(S) WRONG IN SUPERBLK")) {
+			bcopy((char *)&newcg->cg_cs, (char *)cs, sizeof *cs);
+			sbdirty();
 		}
 	}
-	for (; size > 0; blk++, size--)
-		if (getfmap(blk)) {
-			fixcg = 1;
-			++dupblk;
-		} else {
-			n_ffree++;
-			setfmap(blk);
-		}
-	return (KEEPON);
+	if (bcmp((char *)&cstotal, (char *)&sblock.fs_cstotal, sizeof *cs) != 0
+	    && dofix(&idesc, "FREE BLK COUNT(S) WRONG IN SUPERBLK")) {
+		bcopy((char *)&cstotal, (char *)&sblock.fs_cstotal, sizeof *cs);
+		sblock.fs_ronly = 0;
+		sblock.fs_fmod = 0;
+		sbdirty();
+	}
 }

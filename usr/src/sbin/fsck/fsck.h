@@ -1,6 +1,4 @@
-/* @(#)fsck.h	3.2 (Berkeley) %G% */
-
-/* RECONSTRUCT ONLY BAD CG IN PASS 6 */
+/* @(#)fsck.h	3.3 (Berkeley) %G% */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
 #define	MAXBAD		10	/* limit on bad blks (per inode) */
@@ -13,10 +11,12 @@ typedef	int	(*SIG_TYP)();
 #define BUFSIZ 1024
 #endif
 
-#define	USTATE	0		/* inode not allocated */
-#define	FSTATE	01		/* inode is file */
-#define	DSTATE	02		/* inode is directory */
-#define	CLEAR	03		/* inode is to be cleared */
+#define	USTATE	01		/* inode not allocated */
+#define	FSTATE	02		/* inode is file */
+#define	DSTATE	03		/* inode is directory */
+#define	DFOUND	04		/* directory found during descent */
+#define	DCLEAR	05		/* directory is to be cleared */
+#define	FCLEAR	06		/* file is to be cleared */
 
 typedef struct dinode	DINODE;
 typedef struct direct	DIRECT;
@@ -104,10 +104,8 @@ int	bflag;			/* location of alternate super block */
 int	debug;			/* output debugging info */
 char	preen;			/* just fix normal inconsistencies */
 char	hotroot;		/* checking root device */
-char	fixcg;			/* corrupted free list bit maps */
 
 char	*blockmap;		/* ptr to primary blk allocation map */
-char	*freemap;		/* ptr to secondary blk allocation map */
 char	*statemap;		/* ptr to inode state table */
 short	*lncntp;		/* ptr to link count table */
 
@@ -124,20 +122,8 @@ char	*lfname;		/* lost & found directory name */
 off_t	maxblk;			/* largest logical blk in file */
 off_t	bmapsz;			/* num chars in blockmap */
 
-daddr_t	n_ffree;		/* number of small free blocks */
-daddr_t	n_bfree;		/* number of large free blocks */
 daddr_t	n_blks;			/* number of blocks used */
 daddr_t	n_files;		/* number of files seen */
-daddr_t	n_index;
-daddr_t	n_bad;
-
-daddr_t	badblk;
-daddr_t	dupblk;
-
-int	inosumbad;
-int	offsumbad;
-int	frsumbad;
-int	sbsumbad;
 
 #define	zapino(x)	(*(x) = zino)
 struct	dinode zino;
@@ -145,10 +131,6 @@ struct	dinode zino;
 #define	setbmap(x)	setbit(blockmap, x)
 #define	getbmap(x)	isset(blockmap, x)
 #define	clrbmap(x)	clrbit(blockmap, x)
-
-#define	setfmap(x)	setbit(freemap, x)
-#define	getfmap(x)	isset(freemap, x)
-#define	clrfmap(x)	clrbit(freemap, x)
 
 #define	ALTERED	010
 #define	KEEPON	04

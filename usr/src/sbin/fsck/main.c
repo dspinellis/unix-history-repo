@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)main.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)main.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -121,6 +121,7 @@ main(argc, argv)
 checkfilesys(filesys)
 	char *filesys;
 {
+	daddr_t n_ffree, n_bfree;
 
 	devname = filesys;
 	if (setup(filesys) == 0) {
@@ -128,7 +129,9 @@ checkfilesys(filesys)
 			pfatal("CAN'T CHECK FILE SYSTEM.");
 		return;
 	}
-/* 1: scan inodes tallying blocks used */
+	/*
+	 * 1: scan inodes tallying blocks used
+	 */
 	if (preen == 0) {
 		printf("** Last Mounted on %s\n", sblock.fs_fsmnt);
 		if (hotroot)
@@ -137,7 +140,9 @@ checkfilesys(filesys)
 	}
 	pass1();
 
-/* 1b: locate first references to duplicates, if any */
+	/*
+	 * 1b: locate first references to duplicates, if any
+	 */
 	if (enddup != &duplist[0]) {
 		if (preen)
 			pfatal("INTERNAL ERROR: dups with -p");
@@ -145,44 +150,57 @@ checkfilesys(filesys)
 		pass1b();
 	}
 
-/* 2: traverse directories from root to mark all connected directories */
+	/*
+	 * 2: traverse directories from root to mark all connected directories
+	 */
 	if (preen == 0)
 		printf("** Phase 2 - Check Pathnames\n");
 	pass2();
 
-/* 3: scan inodes looking for disconnected directories */
+	/*
+	 * 3: scan inodes looking for disconnected directories
+	 */
 	if (preen == 0)
 		printf("** Phase 3 - Check Connectivity\n");
 	pass3();
 
-/* 4: scan inodes looking for disconnected files; check reference counts */
+	/*
+	 * 4: scan inodes looking for disconnected files; check reference counts
+	 */
 	if (preen == 0)
 		printf("** Phase 4 - Check Reference Counts\n");
 	pass4();
 
-/* 5: check resource counts in cylinder groups */
+	/*
+	 * 5: check and repair resource counts in cylinder groups
+	 */
 	if (preen == 0)
 		printf("** Phase 5 - Check Cyl groups\n");
 	pass5();
 
-	if (fixcg) {
-		if (preen == 0)
-			printf("** Phase 6 - Salvage Cylinder Groups\n");
-		makecg();
-		n_ffree = sblock.fs_cstotal.cs_nffree;
-		n_bfree = sblock.fs_cstotal.cs_nbfree;
+	/*
+	 * print out summary statistics
+	 */
+	n_ffree = sblock.fs_cstotal.cs_nffree;
+	n_bfree = sblock.fs_cstotal.cs_nbfree;
+	pwarn("%d files, %d used, %d free (%d frags, %d blocks)\n", n_files,
+	    n_blks, n_ffree + sblock.fs_frag * n_bfree, n_ffree, n_bfree);
+	if (debug && (n_files -= imax - ROOTINO - sblock.fs_cstotal.cs_nifree))
+		printf("%d files missing\n", n_files);
+	if (debug) {
+		n_blks += sblock.fs_ncg *
+			(cgdmin(&sblock, 0) - cgsblock(&sblock, 0));
+		n_blks += cgsblock(&sblock, 0) - cgbase(&sblock, 0);
+		n_blks += howmany(sblock.fs_cssize, sblock.fs_fsize);
+		if (n_blks -= fmax - (n_ffree + sblock.fs_frag * n_bfree))
+			printf("%d blocks missing\n", n_blks);
 	}
-
-	pwarn("%d files, %d used, %d free (%d frags, %d blocks)\n",
-	    n_files, n_blks - howmany(sblock.fs_cssize, sblock.fs_fsize),
-	    n_ffree + sblock.fs_frag * n_bfree, n_ffree, n_bfree);
 	if (dfile.mod) {
 		(void)time(&sblock.fs_time);
 		sbdirty();
 	}
 	ckfini();
 	free(blockmap);
-	free(freemap);
 	free(statemap);
 	free((char *)lncntp);
 	if (!dfile.mod)

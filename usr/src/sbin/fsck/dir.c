@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -25,13 +25,15 @@ descend(parentino, inumber)
 	struct inodesc curino;
 
 	bzero((char *)&curino, sizeof(struct inodesc));
-	statemap[inumber] = FSTATE;
+	if (statemap[inumber] != DSTATE)
+		errexit("BAD INODE %d TO DESCEND", statemap[inumber]);
+	statemap[inumber] = DFOUND;
 	if ((dp = ginode(inumber)) == NULL)
 		return;
 	if (dp->di_size == 0) {
 		direrr(inumber, "ZERO LENGTH DIRECTORY");
 		if (reply("REMOVE") == 1)
-			statemap[inumber] = CLEAR;
+			statemap[inumber] = DCLEAR;
 		return;
 	}
 	if (dp->di_size < MINDIRSIZE) {
@@ -191,8 +193,7 @@ adjust(idesc, lcnt)
 	if (dp->di_nlink == lcnt) {
 		if (linkup(idesc->id_number, (ino_t)0) == 0)
 			clri(idesc, "UNREF", 0);
-	}
-	else {
+	} else {
 		pwarn("LINK COUNT %s", (lfdir == idesc->id_number) ? lfname :
 			(DIRCT(dp) ? "DIR" : "FILE"));
 		pinode(idesc->id_number);
@@ -289,7 +290,7 @@ linkup(orphan, pdir)
 		}
 	}
 	if ((dp = ginode(lfdir)) == NULL ||
-	     !DIRCT(dp) || statemap[lfdir] != FSTATE) {
+	     !DIRCT(dp) || statemap[lfdir] != DFOUND) {
 		pfatal("SORRY. NO lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);

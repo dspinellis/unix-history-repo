@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass2.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)pass2.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -27,13 +27,13 @@ pass2()
 		errexit("ROOT INODE UNALLOCATED. TERMINATING.\n");
 
 	case FSTATE:
+	case FCLEAR:
 		pfatal("ROOT INODE NOT DIRECTORY");
 		if (reply("FIX") == 0 || (dp = ginode(ROOTINO)) == NULL)
 			errexit("");
 		dp->di_mode &= ~IFMT;
 		dp->di_mode |= IFDIR;
 		inodirty();
-		inosumbad++;
 		statemap[ROOTINO] = DSTATE;
 		/* fall into ... */
 
@@ -41,13 +41,16 @@ pass2()
 		descend(&rootdesc, ROOTINO);
 		break;
 
-	case CLEAR:
+	case DCLEAR:
 		pfatal("DUPS/BAD IN ROOT INODE");
 		printf("\n");
 		if (reply("CONTINUE") == 0)
 			errexit("");
 		statemap[ROOTINO] = DSTATE;
 		descend(&rootdesc, ROOTINO);
+
+	default:
+		errexit("BAD STATE %d FOR ROOT INODE", statemap[ROOTINO]);
 	}
 }
 
@@ -183,7 +186,8 @@ again:
 			n = reply("REMOVE");
 			break;
 
-		case CLEAR:
+		case DCLEAR:
+		case FCLEAR:
 			direrr(dirp->d_ino, "DUP/BAD");
 			if ((n = reply("REMOVE")) == 1)
 				break;
@@ -192,18 +196,26 @@ again:
 			statemap[dirp->d_ino] = DIRCT(dp) ? DSTATE : FSTATE;
 			goto again;
 
+		case DFOUND:
+			if (idesc->id_entryno > 2)
+				pwarn("WARNING: %s IS %s\n", pathname,
+				    "AN EXTRANEOUS HARD LINK TO A DIRECTORY");
+			/* fall through */
+
 		case FSTATE:
 			lncntp[dirp->d_ino]--;
 			break;
 
 		case DSTATE:
 			descend(idesc, dirp->d_ino);
-			if (statemap[dirp->d_ino] != CLEAR) {
+			if (statemap[dirp->d_ino] == DFOUND) {
 				lncntp[dirp->d_ino]--;
-			} else {
+			} else if (statemap[dirp->d_ino] == DCLEAR) {
 				dirp->d_ino = 0;
 				ret |= ALTERED;
-			}
+			} else
+				errexit("BAD RETURN STATE %d FROM DESCEND",
+				    statemap[dirp->d_ino]);
 			break;
 		}
 	}
