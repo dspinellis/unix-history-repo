@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)prof.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)prof.c	4.3 (Berkeley) %G%";
 #endif
 /*
  * prof
@@ -10,6 +10,7 @@ static	char *sccsid = "@(#)prof.c	4.2 (Berkeley) %G%";
 #include <a.out.h>
 
 typedef	short UNIT;		/* unit of profiling */
+#define	PCFUDGE		11
 #define	A_OUTNAME	"a.out"
 #define	MON_OUTNAME	"mon.out"
 #define	MON_SUMNAME	"mon.sum"
@@ -363,7 +364,7 @@ asgncntrs()
 		if (kp<cbuf || np->value > kp->cvalue)
 			continue;
 			/* skip ``static'' functions */
-		while (kp >= cbuf && kp->cvalue > np->value + 11)
+		while (kp >= cbuf && kp->cvalue > np->value + PCFUDGE)
 			--kp;
 		if (kp->cvalue >= np->value) {
 			np->ncall += kp->cncall;
