@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ace.c	7.5 (Berkeley) %G%
+ *	@(#)if_ace.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -407,39 +407,8 @@ again:
 	 * information to be at the front.
 	 */
 	m = aceget((u_char *)rxseg->rx_data, len, off, &is->is_if);
-	if (m == 0)
-		goto setup;
-	switch (ace->ether_type) {
-
-#ifdef INET
-	case ETHERTYPE_IP:
-		schednetisr(NETISR_IP);
-		inq = &ipintrq;
-		break;
-#endif
-
-	case ETHERTYPE_ARP:
-		arpinput(&is->is_ac, m);
-		goto setup;
-#ifdef NS
-	case ETHERTYPE_NS:
-		schednetisr(NETISR_NS);
-		inq = &nsintrq;
-		break;
-
-#endif
-	default:
-		m_freem(m);
-		goto setup;
-	}
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-		goto setup;
-	}
-	s = splimp();
-	IF_ENQUEUE(inq, m);
-	splx(s);
+	if (m)
+		ether_input(&is->is_if, ace, m);
 setup:
 	rxseg->rx_csr = 0;
 	goto again;
@@ -557,7 +526,7 @@ aceget(rxbuf, totlen, off, ifp)
 	packet_end = cp + totlen;
 	if (off) {
 		off += 2 * sizeof(u_short);
-		totlen -= 2 *sizeof(u_short);
+		totlen -= 2 * sizeof(u_short);
 		cp = rxbuf + off;
 	}
 
