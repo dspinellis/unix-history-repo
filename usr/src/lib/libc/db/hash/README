@@ -1,4 +1,4 @@
-#	@(#)README	5.1 (Berkeley) %G%
+#	@(#)README	5.2 (Berkeley) %G%
 
 This package implements a superset of the hsearch and dbm/ndbm libraries.
 
@@ -22,13 +22,22 @@ Backward Compatibility Routines:
 	hsearch.c
 	search.h
 
-Misc
+Misc:
 	byte_order.c
 
-BSD Files:
-	endian.h
+Compatibilty routines:
 	mkstemp.c
-	bcopy.c
+
+	ansi.h
+	cdefs.h
+	endian.h
+	posix.h
+	unistd.h
+
+DIFFS:
+	These are diffs since the date of the file (i.e. a file labeled
+	DIFFS.2.12 are the diffs since the 2.12 version on arpa).  The
+	date of the DIFF file indicates when those diffs were installed.
 
 Test Programs:
 	All test programs which need key/data pairs expect them entered
@@ -70,17 +79,45 @@ Test Programs:
 		in the file hashtest, and verifies that the data is
 		correct.
 
-If you are running on a BSD system, the BSD h files should be in 
-/usr/include and the BSD .c files should be in libc.  On a non-BSD 
-system, you will need to compile the copies here into the package.  
-Be sure to set BYTE_ORDER in endian.h appropriately for your machine.  
-If you don't know what "endian" your machine is, compile byte_order.c 
-and run it.  It should tell you.
+NOTES:
 
-The file search.h is used only for using the hsearch compatible interface on
-BSD systems.  On System V derived systems, search.h should appear in 
+If you are not running a 4.3BSD-Reno or later system, you may need to use
+some of the compatibility files provided.  The files are as follows:
+
+	mkstemp.c	Mkstemp/mktemp library routine.
+
+	ansi.h		Map bcopy and friends to memcpy and friends.
+	cdefs.h		Handle the function prototypes in other include files.
+	endian.h	Handle byte ordering.  Be sure to set BYTE_ORDER in
+			endian.h appropriately for your machine.  If you don't
+			know what "endian" your machine is, compile
+			byte_order.c and run it.  It should tell you.
+	posix.h		Map various POSIX 1003.1 things to old-style things.
+	unistd.h	POSIX 1003.1 definitions.
+
+The file search.h is provided for using the hsearch compatible interface
+on BSD systems.  On System V derived systems, search.h should appear in 
 /usr/include.
 
 The man page db.3 explains the interface to the hashing system.
 The file hash.ps is a postscript copy of a paper explaining
 the history, implementation, and performance of the hash package.
+
+"bugs" or idiosyncracies
+
+If you have a lot of overflows, it is possible to run out of overflow
+pages.  Currently, this will cause a message to be printed on stderr.
+Eventually, this will be indicated by a return error code.
+
+If you are using the ndbm interface and exit without flushing or closing the
+file, you may lose updates since the package buffers all writes.  Also,
+the db interface only creates a single database file.  To avoid overwriting
+the user's original file, the suffix ".db" is appended to the file name
+passed to dbm_open.  Additionally, if your code "knows" about the historic
+.dir and .pag files, it will break.  
+
+There is a fundamental difference between this package and the old hsearch.
+Hsearch requires the user to maintain the keys and data in the application's
+allocated memory while hash takes care of all storage management.  The down
+side is that the byte strings passed in the ENTRY structure must be null
+terminated (both the keys and the data).
