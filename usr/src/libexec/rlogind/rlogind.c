@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.56 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -168,8 +168,7 @@ doit(f, fromp)
 	int master, pid, on = 1;
 	int authenticated = 0;
 	register struct hostent *hp;
-	register char *hostname;
-	char remotehost[2 * MAXHOSTNAMELEN + 1];
+	char hostname[2 * MAXHOSTNAMELEN + 1];
 	char c;
 
 	alarm(60);
@@ -187,9 +186,9 @@ doit(f, fromp)
 	hp = gethostbyaddr((char *)&fromp->sin_addr, sizeof(struct in_addr),
 	    fromp->sin_family);
 	if (hp)
-		hostname = hp->h_name;
+		(void)strcpy(hostname, hp->h_name);
 	else
-		hostname = strcpy(remotehost, inet_ntoa(fromp->sin_addr));
+		(void)strcpy(hostname, inet_ntoa(fromp->sin_addr));
 
 #ifdef	KERBEROS
 	if (use_kerberos) {
