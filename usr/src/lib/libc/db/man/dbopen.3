@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.14 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.15 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -72,12 +72,12 @@ typedef struct {
 .RS
 int (*close)(const DB *db);
 int (*sync)(const DB *db);
-int (*del)(const DB *db, const DBT *key, u_long flags);
-int (*get)(const DB *db, DBT *key, DBT *data, u_long flags);
+int (*del)(const DB *db, const DBT *key, u_int flags);
+int (*get)(const DB *db, DBT *key, DBT *data, u_int flags);
 int (*put)(const DB *db, const DBT *key, const DBT *data,
 .ti +5
-u_long flags);
-int (*seq)(const DB *db, DBT *key, DBT *data, u_long flags);
+u_int flags);
+int (*seq)(const DB *db, DBT *key, DBT *data, u_int flags);
 void *openinfo;
 .RE
 } DB;
