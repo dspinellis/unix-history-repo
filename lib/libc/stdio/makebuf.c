@@ -35,7 +35,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)makebuf.c	5.2 (Berkeley) 2/24/91";
+static char sccsid[] = "@(#)makebuf.c	5.3 (Berkeley) 5/6/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -56,44 +56,63 @@ void
 __smakebuf(fp)
 	register FILE *fp;
 {
-	register size_t size, couldbetty;
 	register void *p;
-	struct stat st;
+	register int flags;
+	size_t size;
+	int couldbetty;
 
 	if (fp->_flags & __SNBF) {
 		fp->_bf._base = fp->_p = fp->_nbuf;
 		fp->_bf._size = 1;
 		return;
 	}
-	if (fp->_file < 0 || fstat(fp->_file, &st) < 0) {
-		couldbetty = 0;
-		size = BUFSIZ;
-		/* do not try to optimise fseek() */
-		fp->_flags |= __SNPT;
-	} else {
-		couldbetty = (st.st_mode & S_IFMT) == S_IFCHR;
-		size = st.st_blksize <= 0 ? BUFSIZ : st.st_blksize;
-		/*
-		 * Optimise fseek() only if it is a regular file.
-		 * (The test for __sseek is mainly paranoia.)
-		 */
-		if ((st.st_mode & S_IFMT) == S_IFREG &&
-		    fp->_seek == __sseek) {
-			fp->_flags |= __SOPT;
-			fp->_blksize = st.st_blksize;
-		} else
-			fp->_flags |= __SNPT;
-	}
+	flags = __swhatbuf(fp, &size, &couldbetty);
 	if ((p = malloc(size)) == NULL) {
 		fp->_flags |= __SNBF;
 		fp->_bf._base = fp->_p = fp->_nbuf;
 		fp->_bf._size = 1;
-	} else {
-		__cleanup = _cleanup;
-		fp->_flags |= __SMBF;
-		fp->_bf._base = fp->_p = p;
-		fp->_bf._size = size;
-		if (couldbetty && isatty(fp->_file))
-			fp->_flags |= __SLBF;
+		return;
 	}
+	__cleanup = _cleanup;
+	flags |= __SMBF;
+	fp->_bf._base = fp->_p = p;
+	fp->_bf._size = size;
+	if (couldbetty && isatty(fp->_file))
+		flags |= __SLBF;
+	fp->_flags |= flags;
+}
+
+/*
+ * Internal routine to determine `proper' buffering for a file.
+ */
+int
+__swhatbuf(fp, bufsize, couldbetty)
+	register FILE *fp;
+	size_t *bufsize;
+	int *couldbetty;
+{
+	struct stat st;
+
+	if (fp->_file < 0 || fstat(fp->_file, &st) < 0) {
+		*couldbetty = 0;
+		*bufsize = BUFSIZ;
+		return (__SNPT);
+	}
+
+	/* could be a tty iff it is a character device */
+	*couldbetty = (st.st_mode & S_IFMT) == S_IFCHR;
+	if (st.st_blksize <= 0) {
+		*bufsize = BUFSIZ;
+		return (__SNPT);
+	}
+
+	/*
+	 * Optimise fseek() only if it is a regular file.  (The test for
+	 * __sseek is mainly paranoia.)  It is safe to set _blksize
+	 * unconditionally; it will only be used if __SOPT is also set.
+	 */
+	*bufsize = st.st_blksize;
+	fp->_blksize = st.st_blksize;
+	return ((st.st_mode & S_IFMT) == S_IFREG && fp->_seek == __sseek ?
+	    __SOPT : __SNPT);
 }
