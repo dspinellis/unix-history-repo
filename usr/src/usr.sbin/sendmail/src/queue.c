@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.12 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.13 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.12 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.13 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -706,7 +706,7 @@ readqf(e, full)
 			break;
 
 		  case 'P':		/* message priority */
-			e->e_msgpriority = atol(&buf[1]) - WkTimeFact;
+			e->e_msgpriority = atol(&buf[1]) + WkTimeFact;
 			break;
 
 		  case '\0':		/* blank line; ignore */
