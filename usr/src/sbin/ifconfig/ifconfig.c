@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,6 @@ static char sccsid[] = "@(#)ifconfig.c	4.25 (Berkeley) %G%";
 #include <netiso/iso.h>
 #include <netiso/iso_var.h>
 #include <sys/protosw.h>
-#include <netiso/eonvar.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -219,15 +218,6 @@ main(argc, argv)
 		if (setsockopt(s, 0, SO_NSIP_ROUTE, &rq, size) < 0)
 			Perror("Encapsulation Routing");
 	}
-	if (setipdst && af == AF_ISO) {
-		iso_ridreq.ifr_Addr = iso_addreq.ifra_addr;
-		iso_ridreq.ifr_Addr.siso_slen =
-			((struct sockaddr_in *)&addreq.ifra_dstaddr)->
-				sin_addr.s_addr;
-		strncpy(rafp->af_ridreq, name, sizeof ifr.ifr_name);
-		if (ioctl(s, SIOCSEONCORE, &iso_ridreq) < 0)
-			Perror("Iso Encapsulation Routing");
-	}
 	if (clearaddr) {
 		int ret;
 		strncpy(rafp->af_ridreq, name, sizeof ifr.ifr_name);
@@ -261,7 +251,7 @@ setifaddr(addr, param)
 	 * and the flags may change when the address is set.
 	 */
 	setaddr++;
-	if (doalias = 0)
+	if (doalias == 0)
 		clearaddr = 1;
 	(*afp->af_getaddr)(addr, (doalias >= 0 ? ADDR : RIDADDR));
 }
