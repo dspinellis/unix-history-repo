@@ -1,4 +1,4 @@
-.\"	@(#)getenv.3	6.2 (Berkeley) %G%
+.\"	@(#)getenv.3	6.3 (Berkeley) %G%
 .\"
 .TH GETENV 3 ""
 .AT 3
@@ -32,6 +32,6 @@ found and \fIoverwrite\fP is non-zero, its value is changed to
 the environment.
 .PP
 All of these routines permit, but do not require, a trailing equals
-(``='') sign on \fIname\fP.
+(``='') sign on \fIname\fP or a leading equals sign on \fIvalue\fP.
 .SH SEE ALSO
 csh(1), sh(1), execve(2), environ(7)
