@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <string.h>
@@ -717,18 +717,21 @@ scrolln(win, starts, startw, curs, bot, top)
 		}
 
 		/* Scroll up the block. */
-		__mvcur(oy, ox, top, 0, 1);
-		if (SF != NULL && top == 0)
+		if (SF != NULL && top == 0) {
+			__mvcur(oy, ox, bot, 0, 1);
 			tputs(__tscroll(SF, n, 0), 0, __cputchar);
-		else if (DL != NULL)
+		} else if (DL != NULL) {
+			__mvcur(oy, ox, top, 0, 1);
 			tputs(__tscroll(DL, n, 0), 0, __cputchar);
-		else if (dl != NULL)
+		} else if (dl != NULL) {
+			__mvcur(oy, ox, top, 0, 1);
 			for (i = 0; i < n; i++)
 				tputs(dl, 0, __cputchar);
-		else if (sf != NULL && top == 0)
+		} else if (sf != NULL && top == 0) {
+			__mvcur(oy, ox, bot, 0, 1);
 			for (i = 0; i < n; i++)
 				tputs(sf, 0, __cputchar);
-		else
+		} else
 			abort();
 
 		/* Push down the bottom region. */
