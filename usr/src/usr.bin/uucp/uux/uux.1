@@ -1,6 +1,6 @@
-.\"	@(#)uux.1	4.1 (Berkeley) %G%
+.\"	@(#)uux.1	5.1 (Berkeley) %G%
 .\"
-.TH UUX 1C
+.TH UUX 1C "18 January 1983"
 .AT 3
 .SH NAME
 uux \- unix to unix command execution
@@ -55,11 +55,12 @@ Any special shell characters such as <>;| should be quoted either
 by quoting the entire command-string, or quoting the special
 characters as individual arguments.
 .SH FILES
-/usr/uucp/spool - spool directory
+.DT
+/usr/spool/uucp	spool directory
 .br
-/usr/uucp/* - other data and programs
+/usr/lib/uucp/*	other data and programs
 .SH SEE ALSO
-uucp(1)
+uucp(1C)
 .br
 D. A. Nowitz,
 .I Uucp Implementation Description
@@ -67,10 +68,10 @@ D. A. Nowitz,
 An installation may, and for security reasons
 generally will, limit the list of
 commands executable on behalf of an incoming request from
-.I uux.
+.IR uux .
 Typically, a restricted site will permit little other than
 the receipt of mail via 
-.I uux.
+.IR uux .
 .SH BUGS
 Only the first command of a shell pipeline may
 have a system-name!.
