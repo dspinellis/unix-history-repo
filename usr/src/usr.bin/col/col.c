@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)col.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)col.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <errno.h>
@@ -32,9 +32,9 @@ static char sccsid[] = "@(#)col.c	5.2 (Berkeley) %G%";
 #define	SI	'\017'		/* shift in to normal character set */
 #define	SO	'\016'		/* shift out to alternate character set */
 #define	VT	'\013'		/* vertical tab (aka reverse line feed) */
-#define	RLF	'\07'		/* ESC-07 reverse line feed */
-#define	RHLF	'\08'		/* ESC-08 reverse half-line feed */
-#define	FHLF	'\09'		/* ESC-09 forward half-line feed */
+#define	RLF	'\007'		/* ESC-07 reverse line feed */
+#define	RHLF	'\010'		/* ESC-010 reverse half-line feed */
+#define	FHLF	'\011'		/* ESC-011 forward half-line feed */
 
 /* build up at least this many lines before flushing them out */
 #define	BUFFER_MARGIN		32
