@@ -1,6 +1,6 @@
-.\"	@(#)update.8	4.1 (Berkeley) %G%
+.\"	@(#)update.8	5.1 (Berkeley) %G%
 .\"
-.TH UPDATE 8 "4/1/81"
+.TH UPDATE 8  "4 February 1983"
 .AT 3
 .SH NAME
 update \- periodically update the super block
@@ -18,7 +18,7 @@ This command should not be executed directly,
 but should be executed out of the
 initialization shell command file.
 .SH "SEE ALSO"
-sync(2), sync(1), init(8)
+sync(2), sync(8), init(8), rc(8)
 .SH BUGS
 With
 .I update
@@ -32,7 +32,7 @@ a file system can be damaged.
 This is partially due to DEC hardware that
 writes zeros when NPR requests fail.
 A fix would be to have
-.IR sync (1)
+.IR sync (8)
 temporarily increment the system time by at
 least 30 seconds to trigger the execution of
 .I update.
