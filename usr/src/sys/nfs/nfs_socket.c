@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -221,11 +221,11 @@ nfs_reconnect(rep, nmp)
 	int error;
 
 	if (rep->r_procp)
-		tprintf(rep->r_procp->p_session->s_ttyvp,
+		tprintf(rep->r_procp->p_session,
 			"Nfs server %s, trying reconnect\n",
 			nmp->nm_mountp->mnt_stat.f_mntfromname);
 	else
-		tprintf(NULLVP, "Nfs server %s, trying a reconnect\n",
+		tprintf(NULL, "Nfs server %s, trying a reconnect\n",
 			nmp->nm_mountp->mnt_stat.f_mntfromname);
 	while (error = nfs_connect(nmp)) {
 #ifdef lint
@@ -236,11 +236,11 @@ nfs_reconnect(rep, nmp)
 		tsleep((caddr_t)&lbolt, PSOCK, "nfscon", 0);
 	}
 	if (rep->r_procp)
-		tprintf(rep->r_procp->p_session->s_ttyvp,
+		tprintf(rep->r_procp->p_session,
 			"Nfs server %s, reconnected\n",
 			nmp->nm_mountp->mnt_stat.f_mntfromname);
 	else
-		tprintf(NULLVP, "Nfs server %s, reconnected\n",
+		tprintf(NULL, "Nfs server %s, reconnected\n",
 			nmp->nm_mountp->mnt_stat.f_mntfromname);
 
 	/*
@@ -805,11 +805,11 @@ nfs_request(vp, mreq, xid, procnum, procp, mp, mrp, mdp, dposp)
 	 */
 	if (!error && (rep->r_flags & R_TPRINTFMSG)) {
 		if (rep->r_procp)
-			tprintf(rep->r_procp->p_session->s_ttyvp,
+			tprintf(rep->r_procp->p_session,
 				"Nfs server %s, is alive again\n",
 				rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
 		else
-			tprintf(NULLVP, "Nfs server %s, is alive again\n",
+			tprintf(NULL, "Nfs server %s, is alive again\n",
 				rep->r_nmp->nm_mountp->mnt_stat.f_mntfromname);
 	}
 	m_freem(rep->r_mreq);
@@ -1109,11 +1109,11 @@ nfs_timer()
 		if ((rep->r_flags & R_TPRINTFMSG) == 0 &&
 		     rep->r_rexmit > 8) {
 			if (rep->r_procp && rep->r_procp->p_session)
-				tprintf(rep->r_procp->p_session->s_ttyvp,
+				tprintf(rep->r_procp->p_session,
 					"Nfs server %s, not responding\n",
 					nmp->nm_mountp->mnt_stat.f_mntfromname);
 			else
-				tprintf(NULLVP,
+				tprintf(NULL,
 					"Nfs server %s, not responding\n",
 					nmp->nm_mountp->mnt_stat.f_mntfromname);
 			rep->r_flags |= R_TPRINTFMSG;
