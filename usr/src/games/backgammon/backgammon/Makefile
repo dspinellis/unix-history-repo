@@ -1,5 +1,10 @@
-#	Makefile	1.3	82/11/27
-
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.1 (Berkeley) %G%
+#
 DESTDIR=
 CFLAGS= -O -DV7
 OBJS= allow.o board.o check.o extra.o fancy.o init.o main.o move.o\
