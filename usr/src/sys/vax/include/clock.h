@@ -1,4 +1,4 @@
-/*	clock.h	4.7	82/09/12	*/
+/*	clock.h	4.8	82/10/31	*/
 
 /*
  * VAX clock registers
@@ -23,12 +23,8 @@
 #define	LEAPYEAR(year)	((year)%4==0)	/* good till time becomes negative */
 
 /*
- * Start a 60 HZ clock.
+ * Has the time-of-day clock wrapped around?
  */
-#define	clkstart() {\
-	mtpr(NICR, -1000000/hz);	/* 10 milli-seconds */\
-	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_TRANS+ICCS_INT+ICCS_ERR);\
-}
 #define	clkwrap()	(((unsigned)mfpr(TODR) - TODRZERO)/100 > SECYR+SECDAY)
 
 /*
