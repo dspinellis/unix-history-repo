@@ -1,4 +1,4 @@
-# @(#)Makefile	1.2 %G%
+# @(#)Makefile	1.3 %G%
 
 CFLAGS=		-O
 OBJS=		battlestar.o com1.o com2.o com3.o com4.o com5.o com6.o com7.o \
@@ -13,9 +13,9 @@ LINTFLAGS=	-h
 JUNKFILES=	battlestar tags mkfile mkwlist mkobjs \
 		wlist.c dayfile.c nightfile.c dayobjs.c nightobjs.c
 DATAFILES=	dayfile nightfile battlewords dayobjs nightobjs
-DIR=		$(DEST)/usr/games
+DIR=		$(DESTDIR)/usr/games
 LOGFILE=	$(DIR)/lib/battlestar.log
-MAN=		$(DEST)/usr/man/man6/battlestar.6
+MAN=		$(DESTDIR)/usr/man/man6/battlestar.6
 
 battlestar: ${OBJS}
 	cc ${OBJS} ${LIBS} -o battlestar
