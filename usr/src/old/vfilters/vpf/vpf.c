@@ -5,7 +5,6 @@
 
 #include <signal.h>
 #include <stdio.h>
-#include <sgtty.h>
 #include <sys/vcmd.h>
 
 #define LINELN 440
@@ -25,11 +24,22 @@ char	*name;		/* user's login name */
 char	*host;		/* user's machine name */
 char	*acctfile;	/* accounting information file */
 
-main(argc, argv)
-int argc;
-char *argv[];
+onintr()
+{
+	signal(SIGTERM, SIG_IGN);
+	exit(1);
+}
+
+main(argc, argv) 
+	int argc;
+	char *argv[];
 {
 	register int i;
+
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGTERM, onintr);
 
 	if (argv[0][strlen(argv[0])-1] == 'W') { /* Wide: the versatec. */
 		varian = 0;
