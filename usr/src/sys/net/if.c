@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.22 (Berkeley) %G%
+ *	@(#)if.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -495,7 +495,7 @@ ifioctl(so, cmd, data, p)
 	case SIOCDELMULTI:
 		if (error = suser(p->p_ucred, &p->p_acflag))
 			return (error);
-		if (ifp->if_ioctl)
+		if (ifp->if_ioctl == NULL)
 			return (EOPNOTSUPP);
 		return ((*ifp->if_ioctl)(ifp, cmd, data));
 #endif
