@@ -76,7 +76,6 @@ static char sccsid[] = "@(#)egrep.c	5.4 (Berkeley) %G%";
 #define PATSIZE 6000
 #define LARGE 	BUFSIZE + PATSIZE
 
-#define ALTSIZE	100		/* generous? */
 #define NALT	7		/* tied to scanf() size in alternate() */
 #define NMUSH	6		/* loosely relates to expected alt length */
 
@@ -131,7 +130,7 @@ char cmap[256];			/* Usually 0-255, but if -i, maps upper to
 char str[BUFSIZE + 2];
 int nleftover;
 char linetemp[BUFSIZE];
-char altpat[NALT][ALTSIZE];	/* alternation component storage */
+char *altpat[NALT];		/* alternation component storage */
 int altlen[NALT];
 short altset[NMUSH + 1][256];
 char preamble[200];		/* match prefix (filename, line no.) */
@@ -339,7 +338,7 @@ egsecute(file)
 {
 	if (file == NULL)
 		fd = 0;
-	else if ((fd = open(file, 0)) <= 0) {
+	else if ((fd = open(file, O_RDONLY, 0)) <= 0) {
 		fprintf(stderr, "%s: can't open %s\n", progname, file);
 		nsuccess = 2;
 		return;
@@ -566,7 +565,7 @@ gosper(pattern)
 	if (!altflag) {
 		nalt = 1;
 		altmin = altlen[0] = strlen(pattern);
-		strcpy(altpat[0], pattern);
+		altpat[0] = pattern;
 	}
 	/* For chars that aren't in any string, skip by string length. */
 	for (j = 0; j < 256; j++) {
@@ -714,18 +713,38 @@ char *
 alternate(regexpr)
 	char *regexpr;
 {
-	register i, j, min;
+	register int i, j;
+	register char *start, *stop;
 	unsigned char c;
-	char oflow[100];
 
 	if (fgrepflag && strchr(regexpr, '|'))
-		return (NULL);
+			return (NULL);
 
-	i = strlen(regexpr);
-	for (j = 0; j < i; j++)
-		if (regexpr[j] == NL)
-			regexpr[j] = '|';
-
+	/*
+	 * break pattern up into altpat array; delimit on newline, bar,
+	 * or EOS.  We know we won't overflow, we've already checked the
+	 * number of patterns we're going to find against NALT.
+	 * Also, set length of pattern and find minimum pattern length.
+	 */
+	nalt = 0;
+	altmin = NMUSH;
+	for (start = stop = regexpr;; ++stop)
+		if (!*stop || *stop == '|' || *stop == NL) {
+			altlen[nalt] = j = stop - start;
+			if (j < altmin)
+				altmin = j;
+			if (!(altpat[nalt] = malloc((u_int)(j + 1))))
+				oops("out of memory");
+			bcopy(start, altpat[nalt], j);
+			altpat[nalt][j] = EOS;
+			if (!*stop)
+				break;
+			if (++nalt == NALT)
+				return(NULL);
+			if (*stop == NL)
+				*stop = '|';
+			start = stop + 1;
+		}
 	if (!fgrepflag) {
 		if (strchr(regexpr, '|') == NULL || regexpr[0] == '|')
 			return (NULL);
@@ -733,20 +752,7 @@ alternate(regexpr)
 		    || strindex(regexpr, "||") >= 0)
 			return (NULL);
 	}
-	oflow[0] = EOS;
-	nalt = sscanf(regexpr, "%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]|%[^|]",
-		      altpat[0], altpat[1], altpat[2], altpat[3], altpat[4], altpat[5], altpat[6], oflow);
 
-	if (nalt < 1 || oflow[0] != EOS)
-		return (NULL);
-
-	altmin = NMUSH;
-	for (j = 0; j < nalt; j++) {
-		min = altlen[j] = strlen(altpat[j]);
-		if (min > ALTSIZE)
-			return (NULL);
-		altmin = MIN(altmin, min);
-	}
 	if (nalt > 1) {		/* build superimposed "pre-match" sets per
 				 * char */
 		altflag++;
@@ -872,7 +878,7 @@ kernighan(args)			/* "let others do the hard part ..." */
 		args[firstfile++] = "/dev/null";
 	if (patind)
 		args[patind] = pattern;
-	fflush(stdout);
+	(void) fflush(stdout);
 
 	if (grepflag)
 		execvp(GREPSTD, args), oops("can't exec old 'grep'");
