@@ -3,10 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.4 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.5 (Berkeley) %G%
  */
-
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "systm.h"
@@ -20,6 +18,8 @@
 #include "trace.h"
 #include "map.h"
 #include "uio.h"
+
+#include "machine/pte.h"
 #ifdef SECSIZE
 #include "file.h"
 #include "ioctl.h"

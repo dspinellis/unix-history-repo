@@ -3,12 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_proc.c	7.3 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.4 (Berkeley) %G%
  */
-
-#include "../machine/reg.h"
-#include "../machine/pte.h"
-#include "../machine/psl.h"
 
 #include "param.h"
 #include "systm.h"
@@ -29,6 +25,10 @@
 #include "malloc.h"
 #include "mbuf.h"
 #include "tty.h"
+
+#include "machine/reg.h"
+#include "machine/pte.h"
+#include "machine/psl.h"
 
 /*
  * Clear any pending stops for top and all descendents.

@@ -50,7 +50,7 @@ static char *rcsid = "$Header: if_lpb.c,v 4.2 88/06/29 14:59:38 hagens Exp $";
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
-#include "../machine/io.h"
+#include "machine/io.h"
 #include "../machineio/ioccvar.h"
 
 #include "ecn.h"

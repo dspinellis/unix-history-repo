@@ -32,7 +32,7 @@ static char *rcsid = "$Header: te.c,v 1.1 88/06/29 15:00:09 hagens Exp $";
 #include "errno.h"
 #include "types.h"
 
-#include "../machine/io.h"
+#include "machine/io.h"
 #include "../machineio/ioccvar.h"
 
 #include "../net/if.h"

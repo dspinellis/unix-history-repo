@@ -3,11 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)user.h	7.1 (Berkeley) %G%
+ *	@(#)user.h	7.2 (Berkeley) %G%
  */
 
 #ifdef KERNEL
-#include "../machine/pcb.h"
+#include "machine/pcb.h"
 #include "dmap.h"
 #include "time.h"
 #include "resource.h"

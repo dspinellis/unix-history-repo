@@ -3,12 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_fork.c	7.3 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.4 (Berkeley) %G%
  */
-
-#include "../machine/reg.h"
-#include "../machine/pte.h"
-#include "../machine/psl.h"
 
 #include "param.h"
 #include "systm.h"
@@ -24,6 +20,10 @@
 #include "file.h"
 #include "acct.h"
 #include "quota.h"
+
+#include "machine/reg.h"
+#include "machine/pte.h"
+#include "machine/psl.h"
 
 /*
  * fork system call.

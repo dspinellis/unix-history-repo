@@ -3,10 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.7 (Berkeley) %G%
+ *	@(#)init_main.c	7.8 (Berkeley) %G%
  */
-
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "systm.h"
@@ -29,8 +27,10 @@
 #include "protosw.h"
 #include "quota.h"
 #include "reboot.h"
-#include "../machine/reg.h"
-#include "../machine/cpu.h"
+
+#include "machine/pte.h"
+#include "machine/reg.h"
+#include "machine/cpu.h"
 
 int	cmask = CMASK;
 /*

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.2 (Berkeley) %G%
+ *	@(#)rtsock.c	7.3 (Berkeley) %G%
  */
 
 #ifndef RTF_UP
@@ -33,7 +33,7 @@
 #include "route.h"
 #include "raw_cb.h"
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 #endif
 
 struct sockaddr route_dst = { 0, PF_ROUTE, };
