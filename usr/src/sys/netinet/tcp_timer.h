@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.h	6.5 (Berkeley) %G%
+ *	@(#)tcp_timer.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -58,7 +58,7 @@
 #define	TCPTV_MSL	( 15*PR_SLOWHZ)		/* max seg lifetime */
 #define	TCPTV_SRTTBASE	0			/* base roundtrip time;
 						   if 0, no idea yet */
-#define	TCPTV_SRTTDFLT	(  5*PR_SLOWHZ)		/* assumed RTT if no info */
+#define	TCPTV_SRTTDFLT	(  3*PR_SLOWHZ)		/* assumed RTT if no info */
 
 #define	TCPTV_KEEP	( 45*PR_SLOWHZ)		/* keep alive - 45 secs */
 #define	TCPTV_PERSMIN	(  5*PR_SLOWHZ)		/* retransmit persistance */

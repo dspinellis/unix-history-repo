@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	6.11 (Berkeley) %G%
+ *	@(#)tcp_timer.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -150,12 +150,6 @@ tcp_timers(tp, timer)
 			tp = tcp_drop(tp, ETIMEDOUT);
 			break;
 		}
-		/*
-		 * If losing, let the lower level know
-		 * and try for a better route.
-		 */
-		if (tp->t_rxtshift > TCP_MAXRXTSHIFT / 3)
-			in_losing(tp->t_inpcb);
 		if (tp->t_srtt == 0)
 			rexmt = tcp_beta * TCPTV_SRTTDFLT;
 		else
@@ -163,6 +157,13 @@ tcp_timers(tp, timer)
 		rexmt *= tcp_backoff[tp->t_rxtshift - 1];
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT], rexmt,
 			    TCPTV_MIN, TCPTV_MAX);
+		/*
+		 * If losing, let the lower level know
+		 * and try for a better route.
+		 */
+		if (tp->t_rxtshift >= TCP_MAXRXTSHIFT / 4 ||
+		    rexmt >= 10 * PR_SLOWHZ)
+			in_losing(tp->t_inpcb);
 		tp->snd_nxt = tp->snd_una;
 		/*
 		 * If timing a segment in this window,
