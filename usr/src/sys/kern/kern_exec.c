@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	8.1 (Berkeley) %G%
+ *	@(#)kern_exec.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -49,12 +49,6 @@ extern char sigcode[], esigcode[];
 /*
  * exec system call
  */
-struct execve_args {
-	char	*fname;
-	char	**argp;
-	char	**envp;
-};
-/* ARGSUSED */
 execve(p, uap, retval)
 	register struct proc *p;
 	register struct execve_args *uap;
