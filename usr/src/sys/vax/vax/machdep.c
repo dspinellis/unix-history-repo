@@ -1,4 +1,4 @@
-/*	machdep.c	4.5	%G%	*/
+/*	machdep.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -56,13 +56,11 @@ startup(firstaddr)
 	printf(version);
 	printf("real mem  = %d\n", ctob(maxmem));
 
-
-#if VAX==780
+	/*
+	 */			/* Bell labs style comment */
 	tocons(TXDB_CWSI);
-#endif
-#if VAX==750
-	tocons(TXDB_CCSF);
-#endif
+	tocons(TXDB_CCSI);
+
 	/*
 	 * Allow for the u. area of process 0 and its (single)
 	 * page of page tables.
@@ -420,21 +418,13 @@ boot(panic, arghowto)
 	}
 	splx(0x1f);			/* extreme priority */
 	devtype = major(rootdev);
-#if VAX==780
 	if (howto&RB_HALT)
-		tocons(TXDB_WSI);
+		tocons(TXDB_DONE);
 	else if (panic == RB_PANIC)
-		;			/* sent TXDB_CWSI at boot */
-	else {
-		tocons(TXDB_WSI);
-		tocons(TXDB_BOOT);	/* defboo.cmd, not restar.cmd */
-	}
-#endif
-#if VAX==750
-	if (howto&RB_HALT)
-		;
+		;			/* cold or warm start */
 	else
 		tocons(TXDB_BOOT);
+#if VAX==750
 	{ asm("movl r11,r5"); }		/* where boot flags go on comet */
 #endif
 	for (;;)
