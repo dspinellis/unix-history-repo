@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)sym.c 4.2 %G%";
+static	char sccsid[] = "@(#)sym.c 4.3 %G%";
 /*
  * adb - symbol table routines
  */
@@ -40,7 +40,8 @@ findsym(val, type)
 	if (type == NSYM || symtab == 0)
 		return (diff);
 	for (sp = symtab; sp < esymtab; sp++) {
-		if (sp->n_type&N_STAB || (sp->n_type&N_EXT)==0)
+		if (sp->n_type & N_STAB || !(sp->n_type & N_EXT)
+		    || sp->n_type == (N_FN|N_EXT))
 			continue;
 		if (val - sp->n_value < diff && val >= sp->n_value) {
 			diff = val - sp->n_value;
