@@ -1,0 +1,177 @@
+A_ACCEXT	instrs.h	?^#define	A_ACCEXT(consed)	((consed) & (TYPMASK << T?
+A_CONS	instrs.h	?^#define A_CONS(access, type)	((access) | (type))$?
+A_TYPEXT	instrs.h	?^#define	A_TYPEXT(consed)	((consed) & TYPMASK)$?
+CH_FIELD	asnumber.h	?^#define	CH_FIELD(x)	((x).num_num.numIo_int.Io_ulon?
+CONV	bignum2.c	?^#define	CONV(src, dst)	(((src) << TYPLG) + (dst))$?
+Calloc	assyms.c	?^char *Calloc(number, size)$?
+ClearCalloc	assyms.c	?^char *ClearCalloc(number, size)$?
+Closeoutrel	assyms.c	?^u_long Closeoutrel(relfil, relocfile)$?
+DECLITERATE	assyms.h	?^#define DECLITERATE(allocwalk, walkpointer, ubpoin?
+ERROR	asexpr.h	?^#define ERROR(string)		yyerror(string); goto error?
+FLTCHAR	asscan4.c	?^#define	FLTCHAR(x)	(INCHARSET((x),(DIGIT|SIGN|FLOA?
+Flushfield	asio.c	?^Flushfield(n)$?
+INCHARSET	asscanl.h	?^#define	INCHARSET(val, kind) (charsets[val] & (kin?
+INTOKSET	asexpr.h	?^#define	INTOKSET(val, set)	(tokensets[(val)] & (se?
+ISBYTE	as.h	?^#define		ISBYTE(x)	(((x) >= MINBYTE) && ((x) <= MA?
+ISLIT	as.h	?^#define		ISLIT(x)	(((x) >= MINLIT) && ((x) <= MAXL?
+ISUBYTE	as.h	?^#define		ISUBYTE(x)	(((x) >= MINUBYTE) && ((x) <= ?
+ISUWORD	as.h	?^#define		ISUWORD(x)	(((x) >= MINUWORD) && ((x) <= ?
+ISWORD	as.h	?^#define		ISWORD(x)	(((x) >= MINWORD) && ((x) <= MA?
+ITABCHECK	as.h	?^#define	ITABCHECK(o)	((itab[o.Op_eopcode] != (Iptr?
+ITABFETCH	as.h	?^#define	ITABFETCH(o)	itab[o.Op_eopcode][o.Op_popco?
+Masmain	asmain.c	?^main(argc, argv)$?
+ONES	asnumber.h	?^#define	ONES(n)	((1 << (n)) - 1)$?
+OP	aspseudo.c	?^#define	OP(name, eopcode, popcode, nargs, arg1, ar?
+Outb	as.h	?^#define	Outb(o)	outb(o)$?
+PSEUDO	aspseudo.c	?^#define	PSEUDO(name, type, tag) \\$?
+SEGITERATE	assyms.h	?^#define SEGITERATE(segno, start, end, copointer, w?
+SYMITERATE	assyms.h	?^#define SYMITERATE(copointer, walkpointer) \\$?
+argprocess	asmain.c	?^argprocess(argc, argv)$?
+as_atof	bignum1.c	?^Bignum as_atof(numbuf, radix, ovfp)$?
+as_atoi	bignum1.c	?^Bignum as_atoi(ccp, radix, ovfp)$?
+assert	asnumber.h	?^#define	assert(x, str) if (!(x)) panic("%s%s\\n", "?
+bflush	asio.c	?^bflush()$?
+bflush1	asio.c	?^bflush1(bp)$?
+bflushc	asio.c	?^bflushc(bp, c)$?
+bigatof	natof.c	?^Bignum bigatof(str, radix)$?
+bignumconvert	bignum2.c	?^Bignum bignumconvert(number, toconv, ovfp)$?
+bignumpack	bignum2.c	?^Bignum bignumpack(Unpacked, toconv, ovfp)$?
+bignumprint	bignum2.c	?^bignumprint(number)$?
+bignumunpack	bignum2.c	?^Bignum bignumunpack(Packed, ovfp)$?
+bignumwrite	bignum1.c	?^bignumwrite(number, toconv)$?
+boolterm	asexpr.c	?^struct exp *boolterm()$?
+bopen	asio.c	?^bopen(bp, off)$?
+bputc	as.h	?^#define	bputc(c,b) ((b)->b_nleft ? (--(b)->b_nleft?
+bskipfromto	asscanl.h	?^#define bskipfromto(from, to) \\$?
+bskiplg	asscanl.h	?^#define bskiplg(from, length) \\$?
+bstrfromto	asscanl.h	?^#define bstrfromto(from,to) \\$?
+bstrlg	asscanl.h	?^#define bstrlg(from, length) \\$?
+build_hdr	asmain.c	?^build_hdr()$?
+buildskip	asscan1.c	?^buildskip(from, to)$?
+buildtokensets	asexpr.c	?^buildtokensets()$?
+bwrite	asio.c	?^bwrite(p, cnt, bp)$?
+cfloattab	floattab.c	?^cfloattab()$?
+closeoutrel	assyms.c	?^off_t closeoutrel(relocfile)$?
+closetmpfile	asscan1.c	?^closetmpfile()$?
+combine	asexpr.c	?^struct exp *combine(op, exp1, exp2)$?
+delete	asmain.c	?^delete()$?
+delexit	asmain.c	?^delexit()$?
+dumpsymtab	assyms.c	?^dumpsymtab()$?
+eatskiplg	asscanl.h	?^#define eatskiplg(from) \\$?
+eatstrlg	asscanl.h	?^#define eatstrlg(from) \\$?
+ediv	natof.c	?^unsigned int ediv(high, low, divisor, qp, i)$?
+error	asio.c	?^#define	error(severity, message) \\$?
+expr	asexpr.h	?^#define expr(xp, val) { \\$?
+exprparse	asexpr.c	?^inttoktype exprparse(inval, backexpr)$?
+factor	asexpr.c	?^struct exp *factor()$?
+fetcharg	as.h	?^#define	fetcharg(ptr, n) ((struct Instab *)ptr)->I?
+fillinbuffer	asscan2.c	?^char *fillinbuffer()$?
+fillsegments	asmain.c	?^fillsegments()$?
+findreg	asexpr.h	?^#define findreg(regno) \\$?
+fix_a_out	asmain.c	?^fix_a_out()$?
+floatconvert	bignum2.c	?^Bignum floatconvert(number, convto)$?
+floatnumber	asscan4.c	?^Bignum floatnumber(fltradix, cpp)$?
+flushfield	as.h	?^#define flushfield(n) if (bitoff != 0)  Flushfield?
+freezesymtab	assyms.c	?^freezesymtab()$?
+funnyreg	asparse.c	?^inttoktype funnyreg(val, regnoback)	/*what the rea?
+gchar	asscan.h	?^#define	gchar(val, ptr)		val = *ptr++$?
+getchar	asscanl.h	?^#define	getchar() *inbufptr++$?
+gint	asscan.h	?^#define	gint(val, ptr)		val = *(int *)ptr, ptr += ?
+glong	asscan.h	?^#define	glong(val, ptr)		val = *(long *)ptr, ptr +?
+gnumber	asscan.h	?^#define	gnumber(val, ptr)	val = *(Bignum *)ptr, pt?
+gopcode	asscan.h	?^#define	gopcode(val, ptr)	val = *(struct Opcode *)?
+gptr	asscan.h	?^#define	gptr(val, ptr)		val = *(int *)ptr, ptr += ?
+gshort	asscan.h	?^#define	gshort(val, ptr)	val = *(short *)ptr , ptr?
+gskiplg	asscan.h	?^#define	gskiplg(val, ptr)	val = *(lgtype *)ptr, pt?
+gstrlg	asscan.h	?^#define	gstrlg(val, ptr)	val = *(lgtype *)ptr, ptr?
+gtoken	asscan.h	?^#define	gtoken(val, ptr)	val = *ptr++$?
+guchar	asscan.h	?^#define	guchar(val, ptr)	val = *ptr++$?
+guint	asscan.h	?^#define	guint(val, ptr)		val = *(u_int *)ptr, ptr ?
+gulong	asscan.h	?^#define	gulong(val, ptr)	val = *(u_int *)ptr, ptr ?
+gushort	asscan.h	?^#define	gushort(val, ptr)	val = *(u_short *)ptr , ?
+htaballoc	assyms.c	?^htaballoc()$?
+i_pass1	asmain.c	?^i_pass1()$?
+i_pass2	asmain.c	?^i_pass2()$?
+ijxout	asjxxx.c	?^ijxout(opcode, ap, nact)$?
+immconstant	ascode.c	?^int immconstant(xp, argtype, valuep)$?
+initialize	asmain.c	?^initialize()$?
+initijxxx	asjxxx.c	?^initijxxx()$?
+initoutrel	assyms.c	?^initoutrel()$?
+inittmpfile	asscan1.c	?^inittmpfile()$?
+insout	ascode.c	?^insout(opcode, ap, nact)$?
+intconvert	bignum2.c	?^Bignum intconvert(number, convto)$?
+isclear	bignum1.c	?^int isclear(dst)$?
+isunequal	bignum1.c	?^int isunequal(src1, src2)$?
+jalign	asjxxx.c	?^jalign(xp, sp)$?
+jxxxbump	asjxxx.c	?^jxxxbump(segno, starthint)$?
+jxxxfix	asjxxx.c	?^jxxxfix() $?
+lookup	assyms.c	?^struct symtab **lookup(instflg)$?
+mapnumber	bignum2.c	?^mapnumber(chp1, chp2, nbytes, themap)$?
+movestr	asscan1.c	?^movestr(to, from, lg)$?
+new_dot_s	asscan1.c	?^new_dot_s(namep)$?
+num1comp	bignum1.c	?^Ovf num1comp(dst, src)$?
+numaddd	bignum1.c	?^Ovf numaddd(dst, src1, val)$?
+numaddv	bignum1.c	?^Ovf numaddv(dst, src1, src2)$?
+number	asscan4.c	?^int number(ch, cpp)$?
+numclear	bignum1.c	?^Ovf numclear(dst)$?
+numnegate	bignum1.c	?^Ovf numnegate(dst, src)$?
+numprintovf	bignum2.c	?^numprintovf(ovf)$?
+numshift	bignum1.c	?^Ovf numshift(n, dst, src)$?
+open_a_out	asmain.c	?^open_a_out()$?
+outb	as.h	?^#define outb(val) {dotp->e_xvalue++; if (passno==2?
+outrel	assyms.c	?^outrel(xp, reloc_how)$?
+outs	as.h	?^#define outs(cp, lg) dotp->e_xvalue += (lg); if (p?
+panic	asmain.c	?^panic(fmt, a1, a2, a3, a4)$?
+pass1	asmain.c	?^pass1()$?
+pass1_5	asmain.c	?^pass1_5()$?
+pass2	asmain.c	?^pass2()$?
+pchar	asscan.h	?^#define	pchar(ptr,val)		*ptr++  = val$?
+pint	asscan.h	?^#define	pint(ptr,val)		*(int *)ptr  = val,	ptr += ?
+plong	asscan.h	?^#define	plong(ptr,val)		*(long *)ptr  = val,	ptr +?
+pnumber	asscan.h	?^#define	pnumber(ptr,val)	*(Bignum*)ptr=val,	ptr +=?
+popcode	asscan.h	?^#define	popcode(ptr,val)	*(struct Opcode*)ptr=val,?
+posovf	bignum1.c	?^Ovf posovf(src)$?
+pptr	asscan.h	?^#define	pptr(ptr,val)		*(int *)ptr  = (val),	ptr +?
+pshort	asscan.h	?^#define	pshort(ptr,val)		*(short *)ptr=val,	ptr +=?
+pskiplg	asscan.h	?^#define	pskiplg(ptr,val)	*(lgtype *)ptr  = val,	pt?
+pstrlg	asscan.h	?^#define	pstrlg(ptr,val)		*(lgtype *)ptr  = val,	pt?
+ptoken	asscan.h	?^#define	ptoken(ptr,val)		*ptr++  = val$?
+puchar	asscan.h	?^#define	puchar(ptr,val)		*ptr++  = val$?
+puint	asscan.h	?^#define	puint(ptr,val)		*(u_int int *)ptr=val,	ptr?
+pulong	asscan.h	?^#define	pulong(ptr,val)		*(u_int long *)ptr=val,	p?
+pushort	asscan.h	?^#define	pushort(ptr,val)	*(u_short *)ptr=val,	ptr ?
+putins	ascode.c	?^putins(opcode, ap, n)$?
+readTEST	asscanl.h	?^#define readTEST(pointer, size, nelements, ioptr) ?
+reloc_syms	asmain.c	?^reloc_syms()$?
+round	as.h	?^#define	round(x,y)	(((x)+(y)) & ~(y))$?
+roundsegments	asmain.c	?^roundsegments()$?
+savestr	assyms.c	?^char *savestr(str)$?
+sawabort	asmain.c	?^sawabort()$?
+scan_dot_s	asscan2.c	?^scan_dot_s(bufferbox)$?
+scanint	asscan4.c	?^int scanint(signOK, dstcpp, srccpp)$?
+scanit	asscan4.c	?^#define	scanit(sign) *cpp = inbufptr; error |= sca?
+shiftover	asexpr.h	?^#define shiftover(token)	if (val != token) { \\$?
+sizesymtab	assyms.c	?^int sizesymtab()$?
+slitflt	bignum1.c	?^int slitflt(number, argtype, valuep)$?
+sortsymtab	assyms.c	?^sortsymtab()$?
+stabfix	assyms.c	?^stabfix() {$?
+strpoolalloc	assyms.c	?^strpoolalloc()$?
+symalloc	assyms.c	?^struct symtab *symalloc()$?
+symcmp	assyms.c	?^symcmp(Pptr, Qptr)$?
+syminstall	assyms.c	?^syminstall()$?
+symtabinit	assyms.c	?^symtabinit()$?
+symwrite	assyms.c	?^int symwrite(symfile)$?
+tagstring	assyms.c	?^char *tagstring(tag)$?
+term	asexpr.c	?^struct exp *term()$?
+testlocals	asmain.c	?^testlocals()$?
+tok_to_name	asexpr.c	?^char *tok_to_name(token)$?
+ungetc	asscanl.h	?^#define	ungetc(char) *--inbufptr = char$?
+upround	bignum2.c	?^int upround(numberp, p, exponent)$?
+writeTEST	asscanl.h	?^#define writeTEST(pointer, size, nelements, ioptr)?
+yukkyexpr	asexpr.c	?^struct exp *yukkyexpr(val, np)$?
+yyerror	asparse.c	?^yyerror(s, a1, a2,a3,a4,a5)$?
+yylex	asscan1.c	?^inttoktype yylex()$?
+yyparse	asparse.c	?^yyparse()$?
+yywarning	asparse.c	?^yywarning(s, a1, a2,a3,a4,a5)$?
+zerolocals	asmain.c	?^zerolocals()$?
+zeroorigins	asmain.c	?^zeroorigins()$?
