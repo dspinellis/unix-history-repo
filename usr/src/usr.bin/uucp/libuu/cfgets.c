@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cfgets.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cfgets.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -13,7 +13,7 @@ static char sccsid[] = "@(#)cfgets.c	5.1 (Berkeley) %G%";
 #define EOS		'\0'
 
 char *
-cfgets (buf, siz, fil)
+cfgets(buf, siz, fil)
 register char *buf;
 int siz;
 FILE *fil;
@@ -22,15 +22,15 @@ FILE *fil;
 	register i, c, len;
 	char *fgets();
 
-	for (i=0,s=buf; i = (fgets (s, siz-i, fil) != NULL); i = s - buf) {
+	for (i=0,s=buf; i = (fgets(s, siz-i, fil) != NULL); i = s - buf) {
 
 		/* get last character of line */
-		c = s[len = (strlen (s) - 1)];
+		c = s[len = (strlen(s) - 1)];
 
 		/* skip comments; make sure end of comment line seen */
 		if (*s == COMMENT) {
 			while (c != EOLN && c != EOF)
-				c = fgetc (fil);
+				c = getc(fil);
 			*s = EOS;
 		}
 
@@ -44,7 +44,7 @@ FILE *fil;
 		}
 	}
 	
-	return (i ? buf : NULL);
+	return i ? buf : NULL;
 }
 
 #ifdef TEST
@@ -52,7 +52,7 @@ main()
 {
 	char buf[512];
 
-	while (cfgets (buf, sizeof buf, stdin))
-		fputs (buf, stdout);
+	while (cfgets(buf, sizeof buf, stdin))
+		fputs(buf, stdout);
 }
 #endif TEST

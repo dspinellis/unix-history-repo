@@ -1,18 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)chkpth.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)chkpth.c	5.2 (Berkeley) %G%";
 #endif
 
-/*
- * Doug Kingston, 30 July 82 to fix handling of the "userpath" structures.
- * (brl-bmd) 
- * rti!trt: the code here is bizarre.  There must be a zillion holes.
- * chkpth should not be called for implied Spool requests .
- * But explicit requests (foo!/usr/spoo/uucp/*) should use chkpth.
- */
 #include "uucp.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-
 
 struct userpath {
 	char *us_lname;
@@ -24,7 +16,6 @@ struct userpath {
 struct userpath *Uhead = NULL;
 struct userpath *Mchdef = NULL, *Logdef = NULL;
 int Uptfirst = 1;
-
 
 /*******
  *	chkpth(logname, mchname, path)
@@ -47,11 +38,11 @@ char *path, *logname, *mchname;
 
 	/* Allow only rooted pathnames.  Security wish.  rti!trt */
 	if (*path != '/')
-		return(FAIL);
+		return FAIL;
 
 	if (Uptfirst) {
 		rdpth();
-		ASSERT(Uhead != NULL, "INIT USERFILE, No entrys!", "", 0);
+		ASSERT(Uhead != NULL, "INIT USERFILE, No entrys!", CNULL, 0);
 		Uptfirst = 0;
 	}
 	for (u = Uhead; u != NULL; ) {
@@ -67,24 +58,22 @@ char *path, *logname, *mchname;
 		else
 			u = Logdef;
 		if (u == NULL)
-			return(FAIL);
+			return FAIL;
 	}
-	/* found user name */
-	p = u->us_path;
 
 	/*  check for /../ in path name  */
 	for (s = path; *s != '\0'; s++) {
 		if (prefix("/../",s))
-			return(FAIL);
+			return FAIL;
 	}
 
 	/* Check for access permission */
 	for (p = u->us_path; *p != NULL; p++)
 		if (prefix(*p, path))
-			return(0);
+			return SUCCESS;
 
 	/* path name not valid */
-	return(FAIL);
+	return FAIL;
 }
 
 
@@ -94,10 +83,6 @@ char *path, *logname, *mchname;
  *	rdpth  -  this routine will read the USERFILE and
  *	construct the userpath structure pointed to by (u);
  *
- *	return codes:  0  |  FAIL
- *
- * 5/3/81 - changed to enforce the uucp-wide convention that system
- *	    names be 7 chars or less in length
  */
 
 rdpth()
@@ -115,7 +100,8 @@ rdpth()
 	while (cfgets(buf, sizeof(buf), uf) != NULL) {
 		int nargs, i;
 
-		if ((u = (struct userpath *)malloc(sizeof (struct userpath))) == NULL) {
+		u = (struct userpath *)malloc(sizeof (struct userpath));
+		if (u == NULL) {
 			DEBUG (1, "*** Userpath malloc failed\n", 0);
 			fclose (uf);
 			return;
@@ -129,7 +115,7 @@ rdpth()
 		}
 
 		strcpy(pc, buf);
-		nargs = getargs(pc, pbuf);
+		nargs = getargs(pc, pbuf, 50);
 		u->us_lname = pbuf[0];
 		pc = index(u->us_lname, ',');
 		if (pc != NULL)
@@ -141,11 +127,7 @@ rdpth()
 			u->us_mname[7] = '\0';
 		if (*u->us_lname == '\0' && Logdef == NULL)
 			Logdef = u;
-		/* rti!trt: commented following else so
-		 * chkpth("","",file) works okay.
-		 * I don't understand this, though.
-		 */
-		/*else*/ if (*u->us_mname == '\0' && Mchdef == NULL)
+		if (*u->us_mname == '\0' && Mchdef == NULL)
 			Mchdef = u;
 		i = 1;
 		if (strcmp(pbuf[1], "c") == SAME) {
@@ -154,13 +136,14 @@ rdpth()
 		}
 		else
 			u->us_callback = 0;
-		if ((cp = u->us_path =
-		  (char **)calloc((unsigned)(nargs-i+1), sizeof(char *))) == NULL) {
+		cp = (char **)calloc((unsigned)(nargs-i+1), sizeof(char *));
+		if (cp == NULL) {
 			/*  can not allocate space */
 			DEBUG (1, "Userpath calloc 2 failed!\n", 0);
 			fclose(uf);
 			return;
 		}
+		u->us_path = cp;
 
 		while (i < nargs)
 			*cp++ = pbuf[i++];
@@ -189,19 +172,19 @@ register char *name;
 
 	if (Uptfirst) {
 		rdpth();
-		ASSERT(Uhead != NULL, "INIT USERFILE, No Users!", "", 0);
+		ASSERT(Uhead != NULL, "INIT USERFILE, No Users!", CNULL, 0);
 		Uptfirst = 0;
 	}
 
 	for (u = Uhead; u != NULL; ) {
 		if (strcmp(u->us_lname, name) == SAME)
 			/* found user name */
-			return(u->us_callback);
+			return u->us_callback;
 		u = u->unext;
 	}
 
 	/* userid not found */
-	return(0);
+	return 0;
 }
 
 
@@ -214,7 +197,7 @@ register char *name;
  *	directories up to the last part of the
  *	filename (if they do not exist).
  *
- *	return 0 | FAIL
+ *	return SUCCESS | FAIL
  */
 
 chkperm(file, mopt)
@@ -226,40 +209,35 @@ char *file, *mopt;
 	extern char *lastpart();
 
 	if (stat(subfile(file), &s) == 0) {
-		/* Forbid scribbling on a not-generally-writable file */
-		/* rti!trt */
 		if ((s.st_mode & ANYWRITE) == 0)
-			return(FAIL);
-		return(0);
+			return FAIL;
+		return SUCCESS;
 	}
 
 	strcpy(dir, file);
 	*lastpart(dir) = '\0';
 	if ((ret = stat(subfile(dir), &s)) == -1
 	  && mopt == NULL)
-		return(FAIL);
+		return FAIL;
 
 	if (ret != -1) {
 		if ((s.st_mode & ANYWRITE) == 0)
-			return(FAIL);
+			return FAIL;
 		else
-			return(0);
+			return SUCCESS;
 	}
 
 	/*  make directories  */
-	return(mkdirs(file));
+	return mkdirs(file);
 }
 
 /*
  * Check for sufficient privilege to request debugging.
- * Suggested by seismo!stewart, John Stewart.
  */
-chkdebug(uid)
-int uid;
+chkdebug()
 {
-	if (uid > PRIV_UIDS) {
-		fprintf(stderr, "Sorry, uid must be <= %d for debugging\n",
-			PRIV_UIDS);
+	if (access(SYSFILE, 04) < 0) {
+		fprintf(stderr, "Sorry, you must be able to read L.sys for debugging\n");
 		cleanup(1);
 		exit(1);	/* Just in case */
 	}

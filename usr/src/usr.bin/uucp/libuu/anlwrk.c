@@ -1,10 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)anlwrk.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)anlwrk.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "uust.h"
 #ifdef	NDIR
 #include "ndir.h"
 #else
@@ -50,15 +51,11 @@ static char sccsid[] = "@(#)anlwrk.c	5.2 (Berkeley) %G%";
  */
 
 
-#define LLEN 20
-#define MAXRQST 250
 #define TLIMIT	(5*60L)
 #define NITEMS(X)	(sizeof (X) / sizeof ((X)[0]))
 
-/* These are all used only locally
- */
-static	int Nfiles = 0;
-static	char Filent[LLEN][NAMESIZE];
+int Nfiles = 0;
+char Filent[LLEN][NAMESIZE];
 
 /*******
  *	anlwrk(file, wvec)	create a vector of command arguments
@@ -77,22 +74,23 @@ register char *file, **wvec;
 	static char str[MAXRQST];
 	static FILE *fp = NULL;
 
-	/* If called with a null string, force a shutdown
+	/*
+	 * If called with a null string, force a shutdown
 	 * of the current work file.
-	 * John Levine, ima.247, related change in cntl.c
 	 */
 	if (file[0] == '\0') {
 		if (fp != NULL)
 			fclose (fp);
 		fp = NULL;
-		return(0);
+		return 0;
 	}
 	if (fp == NULL) {
 		fp = fopen(subfile(file), "r");
 		if (fp == NULL) {
-			unlink(subfile(file));	/* Try to zap the thing. rti!trt */
-			return(0);
+			unlink(subfile(file));
+			return 0;
 		}
+		Usrf = 0;
 	}
 
 	/* This is what deletes the current work file when EOF
@@ -104,11 +102,14 @@ register char *file, **wvec;
 	if (fgets(str, MAXRQST, fp) == NULL) {
 		fclose(fp);
 		unlink(subfile(file));
+		USRF(USR_COMP);
+		US_RRS(file, Usrf);
+		Usrf = 0;
 		file[0] = '\0';
 		fp = NULL;
-		return(0);
+		return 0;
 	}
-	return(getargs(str, wvec));
+	return getargs(str, wvec, 20);
 }
 
 
@@ -134,12 +135,16 @@ register char *dir, *pre;
 {
 	static DIR  *dirp = NULL;
 	register nfound;
-	char filename[NAMESIZE];	/* @@@ NB: this needs new dir stuff */
+	char filename[NAMESIZE];
 	int plen = strlen (pre);
+	int flen;
+	extern char MaxGrade;
 
 	if (dirp == NULL) {
-		if ((dirp = opendir(subdir(dir,pre[0]), "r")) == NULL)
-			return(0);
+		if ((dirp = opendir(subdir(dir,pre[0]))) == NULL) {
+			DEBUG(1,"opendir(%s) FAILS\n",subdir(dir,pre[0]));
+			return 0;
+		}
 	}
 	else
 		rewinddir(dirp);
@@ -152,15 +157,21 @@ register char *dir, *pre;
 		 * Special case: prefix "X." does not do this check
 		 * so uuxqt can use bldflst.
 		 */
-		if (!prefix(pre, filename)
-		 || (plen != 2 && strlen(filename)-plen != 5))
+		flen = strlen(filename);
+		if (!prefix(pre, filename) || (plen != 2 && flen-plen != 5)) {
+			DEBUG(99,"bldflst rejects %s\n",filename);
 			continue;
+		}
+		if (filename[flen-5] > MaxGrade ) {
+			DEBUG(8,"bldflst rejects %s, grade too low\n",filename);
+			continue;
+		}
 		nfound++;
 		if (*reqst == 'c')
-			return (1);
+			return 1;
 		entflst(filename);
 	}
-	return (nfound? 1: 0);
+	return  nfound? 1: 0;
 }
 
 /***
@@ -175,30 +186,24 @@ register char *dir, *pre;
 /* LOCAL only */
 int
 entflst(file)
-char *file;
+register char *file;
 {
 	register int i;
-	register char *p;
 
-	/* If there is room in the table, just add it. */
-	if (Nfiles < LLEN) {
-		strcpy(Filent[Nfiles++], file);
-		return;
+	/* locate position for the new file and make room for it */
+	for (i = Nfiles; i > 0; i--) {
+		if (pcompar(file, Filent[i-1]) >= 0)
+			break;
+		if (i <LLEN)
+			strcpy(Filent[i], Filent[i-1]);
 	}
 
-	/* Find lowest priority file in table  */
-	p = Filent[0];
-	for (i = 1; i < Nfiles; i++)
-		if (pcompar(Filent[i], p) < 0)
-			p = Filent[i];
-
-	/*
-	 * If new candidate is of higher priority
-	 * that the lowest priority file in the table,
-	 * replace the table entry.
-	 */
-	if (pcompar(p, file) < 0)
-		strcpy(p, file);
+	/* add new file (if there is room), and increase Nfiles if need be */
+	if (i < LLEN) {
+		strcpy(Filent[i], file);
+		if (Nfiles < LLEN)
+			Nfiles++;
+	}
 }
 
 /*
@@ -223,15 +228,15 @@ register char *p1, *p2;
 	p2 += strlen(p2)-5;
 	/* check 'grade' */
 	if (rc = *p2++ - *p1++)
-		return(rc);
+		return rc;
 	/* check for  sequence wrap-around */
 	if (rc = *p2++ - *p1++)
 		if (rc < -10 || rc > 10)
-			return(-rc);
+			return -rc;
 		else
-			return(rc);
+			return rc;
 	/* check remaining digits */
-	return(strcmp(p2, p1));
+	return strcmp(p2, p1);
 }
 
 /***
@@ -249,23 +254,14 @@ register char *p1, *p2;
 gtwrkf(dir, file)
 char *file, *dir;
 {
-	register char *p;
-	register int i;
-
-	if (Nfiles == 0)
-		return(0);
-	/* Find highest priority file in table */
-	p = Filent[0];
-	for (i = 1; i < Nfiles; i++) 
-		if (pcompar(Filent[i], p) > 0)
-			p = Filent[i];
-	sprintf(file, "%s/%s", dir, p);
-	strcpy(p, Filent[--Nfiles]);
-	return(1);
+	if (Nfiles <= 0)
+		return 0;
+	sprintf(file, "%s/%s", dir, Filent[--Nfiles]);
+	return 1;
 }
 
 /***
- *	gtwvec(file, dir, wkpre, wrkvec)	get work vector 
+ *	gtwvec(file, dir, wkpre, wrkvec)	get work vector
  *	char *file, *dir, *wkpre, **wrkvec;
  *
  *	return codes:
@@ -281,12 +277,12 @@ register char *file;
 {
 	register int nargs, n;
 
-	n = 0;		/* Break possible infinite loop.  rti!trt */
+	n = 0;
 	while ((nargs = anlwrk(file, wrkvec)) == 0) {
 		if (++n > 3 || !iswrk(file, "get", dir, wkpre))
-			return(0);
+			return 0;
 	}
-	return(nargs);
+	return nargs;
 }
 
 /***
@@ -338,8 +334,10 @@ register char *file, *reqst, *dir, *pre;
 	 */
 	for (;;) {
 		ret = 0;
-		if (Nfiles == 0 || newspool((time_t)TLIMIT))
+		if (Nfiles == 0 || newspool((time_t)TLIMIT)) {
 			ret = bldflst (reqst, dir, pre);
+			DEBUG(99,"bldflst returns %d\n",ret);
+		}
 
 		/* If they only wanted to check, return
 		 * boolean list not empty.  NB: the list
@@ -347,13 +345,13 @@ register char *file, *reqst, *dir, *pre;
 		 * a new system name is mentioned.
 		 */
 		if (*reqst == 'c')
-			return (ret);
+			return ret;
 
 		if (Nfiles == 0)
-			return(0);
+			return 0;
 
 		if (gtwrkf(dir, file))
-			return (1);
+			return 1;
 	}
 }
 
@@ -383,5 +381,5 @@ time_t	limit;
 		lastmod = mod.st_mtime;
 	}
 	lastcheck = check;
-	return (ret);
+	return ret;
 }
