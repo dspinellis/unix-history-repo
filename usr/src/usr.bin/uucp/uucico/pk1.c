@@ -18,9 +18,9 @@ int iomask[2];
 #endif VMS
 
 #define PKMAXSTMSG 40
-#define	PKTIME	25
+#define	PKTIME 5
 #define CONNODATA 10
-#define NTIMEOUT 10
+#define NTIMEOUT 30
 
 extern int errno;
 extern int Retries;
@@ -113,7 +113,7 @@ int pksizes[] = {
 	1, 32, 64, 128, 256, 512, 1024, 2048, 4096, 1
 };
 
-#define GETRIES 5
+#define GETRIES 10
 /*
  * Pseudo-dma byte collection.
  */
@@ -335,11 +335,8 @@ int count, flag;
 }
 
 
-/***
- *	pkcget(fn, b, n)	get n characters from input
- *	char *b;		- buffer for characters
- *	int fn;			- file descriptor
- *	int n;			- requested number of characters
+/*
+ *	get n characters from input
  *
  *	return codes:
  *		n - number of characters returned
@@ -354,8 +351,8 @@ cgalarm()
 
 pkcget(fn, b, n)
 int fn;
-register int n;
 register char *b;
+register int n;
 {
 	register int ret;
 	extern int linebaudrate;
