@@ -1,6 +1,12 @@
-#	@(#)bsd.subdir.mk	5.7 (Berkeley) %G%
+#	@(#)bsd.subdir.mk	5.8 (Berkeley) %G%
 
 .MAIN: all
+
+STRIP?=	-s
+
+BINGRP?=	bin
+BINOWN?=	bin
+BINMODE?=	555
 
 _SUBDIRUSE: .USE
 	@for entry in ${SUBDIR}; do \
@@ -14,7 +20,7 @@ _SUBDIRUSE: .USE
 		${MAKE} ${.TARGET:realinstall=install}) \
 	done
 
-${SUBDIR}:
+${SUBDIR}::
 	@if test -d ${.TARGET}.${MACHINE}; then \
 		cd ${.CURDIR}/${.TARGET}.${MACHINE}; \
 	else \
@@ -52,6 +58,10 @@ realinstall: beforeinstall _SUBDIRUSE
 
 .if !target(lint)
 lint: _SUBDIRUSE
+.endif
+
+.if !target(obj)
+obj: _SUBDIRUSE
 .endif
 
 .if !target(tags)
