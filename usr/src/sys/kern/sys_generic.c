@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.37	83/06/02	*/
+/*	sys_generic.c	5.38	83/06/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -290,7 +290,9 @@ retry:
 	if (u.u_error || u.u_r.r_val1)
 		goto done;
 	s = spl6();
-	if (uap->tv && timercmp(&time, &atv, >=)) {
+	/* this should be timercmp(&time, &atv, >=) */
+	if (uap->tv && (time.tv_sec > atv.tv_sec ||
+	    time.tv_sec == atv.tv_sec && time.tv_usec >= atv.tv_usec)) {
 		splx(s);
 		goto done;
 	}
