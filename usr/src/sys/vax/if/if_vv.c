@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_vv.c	7.3 (Berkeley) %G%
+ *	@(#)if_vv.c	7.4 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -162,6 +162,7 @@ struct	vv_softc {
 	short	vs_ibadf;		/* number of input bad formats */
 	short	vs_parity;		/* number of parity errors on 10 meg, */
 					/* link data errors on 80 meg */
+	short	vs_ipl;			/* interrupt priority on Q-bus */
 } vv_softc[NVV];
 
 #define	NOHOST	0xffff			/* illegal host number */
@@ -170,8 +171,9 @@ struct	vv_softc {
  * probe the interface to see that the registers exist, and then
  * cause an interrupt to find its vector
  */
-vvprobe(reg)
+vvprobe(reg, ui)
 	caddr_t reg;
+	struct uba_device *ui;
 {
 	register int br, cvec;
 	register struct vvreg *addr;
@@ -182,6 +184,9 @@ vvprobe(reg)
 	addr = (struct vvreg *)reg;
 
 	/* reset interface, enable, and wait till dust settles */
+#ifdef QBA
+	(void) spl6();
+#endif
 	addr->vvicsr = VV_RST;
 	addr->vvocsr = VV_RST;
 	DELAY(100000);
@@ -192,10 +197,13 @@ vvprobe(reg)
 	addr->vvowc = -1;		/* for 1 word */
 	addr->vvocsr = VV_IEN | VV_DEN;	/* start the DMA, with interrupt */
 	DELAY(100000);
+#ifdef QBA
+	vv_softc[ui->ui_unit].vs_ipl = br = qbgetpri();
+#endif
 	addr->vvocsr = VV_RST;		/* clear out the CSR */
 	if (cvec && cvec != 0x200)
 		cvec -= 4;		/* backup so vector => receive */
-	return(1);
+	return (sizeof(struct vvreg));
 }
 
 /*
@@ -267,12 +275,14 @@ vvinit(unit)
 		return;
 
 	addr = (struct vvreg *)ui->ui_addr;
-	if (if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
-	    sizeof (struct vv_header), (int)btoc(VVMRU)) == 0) {
+	if ((vs->vs_if.if_flags & IFF_RUNNING) == 0 &&
+	    if_ubainit(&vs->vs_ifuba, ui->ui_ubanum,
+	      sizeof (struct vv_header), (int)btoc(VVMRU)) == 0) {
 		printf("vv%d: can't initialize, if_ubainit() failed\n", unit);
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
+	vs->vs_if.if_flags |= IFF_RUNNING;
 
 	/*
 	 * Now that the uba is set up, figure out our address and
@@ -313,7 +323,7 @@ vvinit(unit)
 	addr->vviwc = -(VVBUFSIZE) >> 1;
 	addr->vvicsr = VV_IEN | VV_HEN | VV_DEN | VV_ENB;
 	vs->vs_oactive = 1;
-	vs->vs_if.if_flags |= IFF_RUNNING;
+	vs->vs_if.if_flags |= IFF_UP;
 	vvxint(unit);
 	splx(s);
 }
@@ -544,8 +554,10 @@ restart:
 	vs->vs_oactive = 1;
 
 	/* ship it */
+#ifdef notdef
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_w.ifrw_bdp);
+#endif
 	addr = (struct vvreg *)ui->ui_addr;
 	ubaaddr = UBAI_ADDR(vs->vs_ifuba.ifu_w.ifrw_info);
 	addr->vvoba = (u_short) ubaaddr;
@@ -569,6 +581,9 @@ vvxint(unit)
 	register struct vvreg *addr;
 	register int oc;
 
+#ifdef QBA
+	splx(vv_softc[unit].vs_ipl);
+#endif
 	ui = vvinfo[unit];
 	vs = &vv_softc[unit];
 	vs->vs_if.if_timer = 0;
@@ -651,6 +666,9 @@ vvrint(unit)
 	int ubaaddr, len, off, s;
 	short resid;
 
+#ifdef QBA
+	splx(vv_softc[unit].vs_ipl);
+#endif
 	vs = &vv_softc[unit];
 	vs->vs_if.if_ipackets++;
 	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
@@ -972,7 +990,6 @@ vvioctl(ifp, cmd, data)
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		ifp->if_flags |= IFF_UP;
 		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			vvinit(ifp->if_unit);
 		/*
@@ -980,16 +997,18 @@ vvioctl(ifp, cmd, data)
 		 */
 		if ((ifp->if_flags & IFF_UP) == 0)
 			error = ENETDOWN;
-                /*
-                 * Attempt to check agreement of protocol address
-                 * and board address.
-                 */
-		switch (ifa->ifa_addr.sa_family) {
-                case AF_INET:
-			if (in_lnaof(IA_SIN(ifa)->sin_addr) !=
-			    vv_softc[ifp->if_unit].vs_host)
-				error = EADDRNOTAVAIL;
-			break;
+		else {
+			/*
+			 * Attempt to check agreement of protocol address
+			 * and board address.
+			 */
+			switch (ifa->ifa_addr.sa_family) {
+			case AF_INET:
+				if ((in_lnaof(IA_SIN(ifa)->sin_addr) & 0xff) !=
+				    vv_softc[ifp->if_unit].vs_host)
+					error = EADDRNOTAVAIL;
+				break;
+			}
 		}
 		break;
 
