@@ -12,7 +12,7 @@
  * on the understanding that TFS is not responsible for the correct
  * functioning of this software in any circumstances.
  *
- *      $Id: bt742a.c,v 1.17 1994/05/17 20:02:12 jkh Exp $
+ *      $Id: bt742a.c,v 1.18 1994/05/19 08:17:53 jkh Exp $
  */
 
 /*
@@ -1034,8 +1034,7 @@ bt_init(unit)
 	bt_cmd(unit, 1, sizeof(info),0,&info, BT_INQUIRE_EXTENDED,sizeof(info));
 	switch (info.bus_type) {
 		case BT_BUS_TYPE_24bit:		/* PC/AT 24 bit address bus */
-			printf("bt%d: bt54x-ISA(24bit) bus detected..", unit);
-			printf("You may have to use the aha1542 driver instead! ");
+			printf("bt%d: bt54x-ISA(24bit) bus detected\n", unit);
 			break;	
 		case BT_BUS_TYPE_32bit:		/* EISA/VLB/PCI 32 bit bus */
 			printf("bt%d: PCI/EISA/VLB(32bit) bus detected\n",unit);
