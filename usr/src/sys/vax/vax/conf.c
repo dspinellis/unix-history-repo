@@ -1,4 +1,4 @@
-/*	conf.c	4.6	%G%	*/
+/*	conf.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,6 +126,15 @@ struct bdevsw	bdevsw[] =
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 struct tty cons;
 
+#include "../conf/ct.h"
+#if NCT > 0
+int	ctopen(),ctclose(),ctwrite();
+#else
+#define	ctopen	nulldev
+#define	ctclose	nulldev
+#define	ctwrite	nulldev
+#endif
+
 #include "../conf/dh.h"
 #if NDH11 == 0
 #define	dhopen	nodev
@@ -154,6 +163,7 @@ int	flopen(),flclose(),flread(),flwrite();
 #define	dkioctl	nodev
 #define	dkstop	nodev
 #define	dkreset	nulldev
+#define	dkchans	0
 #else
 int	dkopen(),dkclose(),dkread(),dkwrite(),dkioctl(),dkstop(),dkreset();
 struct	tty	dkchans[];
@@ -184,7 +194,7 @@ struct	tty dz_tty[];
 #define	pkrint	nodev
 #define	pkrend	nodev
 #define	pkxint	nodev
-#define	pkmoden	nodev
+#define	pkmodem	nodev
 #else
 int	pkopen(),pkclose(),pkread(),pkioctl();
 int	pkrint(),pkrend(),pkxint(),pkmodem();
@@ -299,8 +309,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nulldev,	0,
 	dkopen,		dkclose,	dkread,		dkwrite,	/*17*/
 	dkioctl,	dkstop,		dkreset,	dkchans,
-/* 18 reserved for cat */
-	nodev,		nodev,		nodev,		nodev,		/*18*/
+	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
 	nodev,		nodev,		nodev,		0,
 	nodev,		nodev,		nodev,		nodev,		/*19*/
 	nodev,		nodev,		nodev,		0,
