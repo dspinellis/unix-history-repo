@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.15 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -349,7 +349,7 @@ ether_input(ifp, eh, m)
 				eh->ether_dhost[i] = eh->ether_shost[i];
 			eh->ether_shost[i] = c;
 		    }
-		    ifp->if_output(ifp, m, &sa);
+		    ifp->if_output(ifp, m, &sa, (struct rtentry *)0);
 		    return;
 		}
 		dropanyway:
