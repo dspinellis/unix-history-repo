@@ -32,17 +32,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00050
- * --------------------         -----   ----------------------
- *
- * 22 Aug 92	pk (?)			Fix "pwd hang bug"
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cd.c	5.2 (Berkeley) 3/13/91";
+/*static char sccsid[] = "from: @(#)cd.c	5.2 (Berkeley) 3/13/91";*/
+static char rcsid[] = "cd.c,v 1.5 1993/08/01 18:58:22 mycroft Exp";
 #endif /* not lint */
 
 /*

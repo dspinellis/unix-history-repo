@@ -35,7 +35,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)memalloc.c	5.2 (Berkeley) 3/13/91";
+/*static char sccsid[] = "from: @(#)memalloc.c	5.2 (Berkeley) 3/13/91";*/
+static char rcsid[] = "memalloc.c,v 1.4 1993/08/01 18:58:10 mycroft Exp";
 #endif /* not lint */
 
 #include "shell.h"

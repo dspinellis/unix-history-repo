@@ -33,6 +33,8 @@
 # SUCH DAMAGE.
 #
 #	@(#)suspend	5.1 (Berkeley) 3/7/91
+#
+#	/b/source/CVS/src/bin/sh/funcs/suspend,v 1.3 1993/03/23 00:30:00 cgd Exp
 
 suspend() {
 	local -

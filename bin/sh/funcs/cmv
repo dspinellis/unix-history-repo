@@ -33,6 +33,8 @@
 # SUCH DAMAGE.
 #
 #	@(#)cmv	5.1 (Berkeley) 3/7/91
+#
+#	/b/source/CVS/src/bin/sh/funcs/cmv,v 1.3 1993/03/23 00:29:45 cgd Exp
 
 # Conditional move--don't replace an existing file.
 

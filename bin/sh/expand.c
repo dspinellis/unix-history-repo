@@ -32,18 +32,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00168
- * --------------------         -----   ----------------------
- *
- * 04 Jun 93	Jim Wilson		Seven (7) fixes for misc bugs
- *
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	5.1 (Berkeley) 3/7/91";
+/*static char sccsid[] = "from: @(#)expand.c	5.1 (Berkeley) 3/7/91";*/
+static char rcsid[] = "expand.c,v 1.5 1993/08/01 18:58:16 mycroft Exp";
 #endif /* not lint */
 
 /*

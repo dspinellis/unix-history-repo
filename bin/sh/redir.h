@@ -33,15 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)redir.h	5.1 (Berkeley) 3/7/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00168
- * --------------------         -----   ----------------------
- *
- * 04 Jun 93	Jim Wilson		Seven (7) fixes for misc bugs
- *
+ *	from: @(#)redir.h	5.1 (Berkeley) 3/7/91
+ *	redir.h,v 1.5 1993/08/01 18:58:36 mycroft Exp
  */
 
 /* flags passed to redirect */

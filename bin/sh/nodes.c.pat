@@ -34,6 +34,8 @@
  * SUCH DAMAGE.
  *
  *	@(#)nodes.c.pat	5.2 (Berkeley) 3/8/91
+ *
+ *	/b/source/CVS/src/bin/sh/nodes.c.pat,v 1.3 1993/03/23 00:28:55 cgd Exp
  */
 
 /*
@@ -89,7 +91,7 @@ copyfunc(n)
       funcstringsize = 0;
       calcsize(n);
       funcblock = ckmalloc(funcblocksize + funcstringsize);
-      funcstring = (char *)funcblock + funcblocksize;
+      funcstring = funcblock + funcblocksize;
       return copynode(n);
 }
 
@@ -138,7 +140,7 @@ copynodelist(lp)
       lpp = &start;
       while (lp) {
 	    *lpp = funcblock;
-	    funcblock = (char *)funcblock + ALIGN(sizeof (struct nodelist));
+	    funcblock += ALIGN(sizeof (struct nodelist));
 	    (*lpp)->n = copynode(lp->n);
 	    lp = lp->next;
 	    lpp = &(*lpp)->next;

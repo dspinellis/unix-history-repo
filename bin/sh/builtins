@@ -35,6 +35,8 @@
 # SUCH DAMAGE.
 #
 #	@(#)builtins	5.1 (Berkeley) 3/7/91
+#
+#	/b/source/CVS/src/bin/sh/builtins,v 1.4 1993/07/07 01:11:56 jtc Exp
 
 #
 # This file lists all the builtin commands.  The first column is the name

@@ -41,7 +41,8 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mknodes.c	5.1 (Berkeley) 3/7/91";
+/*static char sccsid[] = "from: @(#)mknodes.c	5.1 (Berkeley) 3/7/91";*/
+static char rcsid[] = "mknodes.c,v 1.4 1993/08/01 18:58:08 mycroft Exp";
 #endif /* not lint */
 
 /*
@@ -287,7 +288,7 @@ outfunc(cfile, calcsize)
 		fputs("      funcblocksize += nodesize[n->type];\n", cfile);
 	else {
 		fputs("      new = funcblock;\n", cfile);
-		fputs("      funcblock = (char *)funcblock + nodesize[n->type];\n", cfile);
+		fputs("      funcblock += nodesize[n->type];\n", cfile);
 	}
 	fputs("      switch (n->type) {\n", cfile);
 	for (sp = str ; sp < &str[nstr] ; sp++) {

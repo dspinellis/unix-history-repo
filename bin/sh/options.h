@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)options.h	5.1 (Berkeley) 3/7/91
+ *	from: @(#)options.h	5.1 (Berkeley) 3/7/91
+ *	options.h,v 1.4 1993/08/01 18:58:39 mycroft Exp
  */
 
 struct shparam {

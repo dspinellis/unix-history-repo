@@ -33,6 +33,8 @@
 # SUCH DAMAGE.
 #
 #	@(#)login	5.1 (Berkeley) 3/7/91
+#
+#	/b/source/CVS/src/bin/sh/funcs/login,v 1.3 1993/03/23 00:29:51 cgd Exp
 
 # replaces the login builtin in the BSD shell
 login () exec login "$@"

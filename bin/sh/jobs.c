@@ -32,18 +32,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00168
- * --------------------         -----   ----------------------
- *
- * 04 Jun 93	Jim Wilson		Seven (7) fixes for misc bugs
- *
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jobs.c	5.1 (Berkeley) 3/7/91";
+/*static char sccsid[] = "from: @(#)jobs.c	5.1 (Berkeley) 3/7/91";*/
+static char rcsid[] = "jobs.c,v 1.7 1993/08/06 21:50:16 mycroft Exp";
 #endif /* not lint */
 
 #include "shell.h"
@@ -57,7 +50,6 @@ static char sccsid[] = "@(#)jobs.c	5.1 (Berkeley) 3/7/91";
 #include "jobs.h"
 #include "options.h"
 #include "trap.h"
-#include "signames.h"
 #include "syntax.h"
 #include "input.h"
 #include "output.h"
@@ -68,6 +60,7 @@ static char sccsid[] = "@(#)jobs.c	5.1 (Berkeley) 3/7/91";
 #include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
+#include <unistd.h>
 #ifdef BSD
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -130,8 +123,8 @@ setjobctl(on) {
 				return;
 			}
 			if (initialpgrp == -1)
-				initialpgrp = getpgrp(0);
-			else if (initialpgrp != getpgrp(0)) {
+				initialpgrp = getpgrp();
+			else if (initialpgrp != getpgrp()) {
 				killpg(initialpgrp, SIGTTIN);
 				continue;
 			}
@@ -279,8 +272,8 @@ showjobs(change) {
 				if ((i & 0xFF) == 0177)
 					i >>= 8;
 #endif
-				if ((i & 0x7F) <= MAXSIG && sigmesg[i & 0x7F])
-					scopy(sigmesg[i & 0x7F], s);
+				if ((i & 0x7F) < NSIG && sys_siglist[i & 0x7F])
+					scopy(sys_siglist[i & 0x7F], s);
 				else
 					fmtstr(s, 64, "Signal %d", i & 0x7F);
 				if (i & 0x80)
@@ -633,7 +626,7 @@ waitforjob(jp)
 	register struct job *jp;
 	{
 #if JOBS
-	int mypgrp = getpgrp(0);
+	int mypgrp = getpgrp();
 #endif
 	int status;
 	int st;
@@ -743,8 +736,8 @@ dowait(block, job)
 			if (status == SIGTSTP && rootshell && iflag)
 				outfmt(out2, "%%%d ", job - jobtab + 1);
 #endif
-			if (status <= MAXSIG && sigmesg[status])
-				out2str(sigmesg[status]);
+			if (status < NSIG && sys_siglist[status])
+				out2str(sys_siglist[status]);
 			else
 				outfmt(out2, "Signal %d", status);
 			if (core)
@@ -816,7 +809,7 @@ waitproc(block, status)
 #endif
 	if (block == 0)
 		flags |= WNOHANG;
-	return wait3(status, flags, (struct rusage *)NULL);
+	return wait3((int *)status, flags, (struct rusage *)NULL);
 #else
 #ifdef SYSV
 	int (*save)();

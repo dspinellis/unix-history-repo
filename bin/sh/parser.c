@@ -32,18 +32,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00168
- * --------------------         -----   ----------------------
- *
- * 04 Jun 93	Jim Wilson		Seven (7) fixes for misc bugs
- *
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	5.3 (Berkeley) 4/12/91";
+/*static char sccsid[] = "from: @(#)parser.c	5.3 (Berkeley) 4/12/91";*/
+static char rcsid[] = "parser.c,v 1.8 1993/08/01 18:58:02 mycroft Exp";
 #endif /* not lint */
 
 #include "shell.h"
@@ -1189,7 +1182,7 @@ attyline() {
 		if (exception == EXERROR)
 			out2str("\033]D\n");
 		handler = savehandler;
-		longjmp(handler, 1);
+		longjmp(handler->loc, 1);
 	}
 	savehandler = handler;
 	handler = &jmploc;

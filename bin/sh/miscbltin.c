@@ -35,13 +35,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)miscbltin.c	5.2 (Berkeley) 3/13/91";
+/*static char sccsid[] = "from: @(#)miscbltin.c	5.2 (Berkeley) 3/13/91";*/
+static char rcsid[] = "miscbltin.c,v 1.5 1993/08/01 18:57:56 mycroft Exp";
 #endif /* not lint */
 
 /*
  * Miscelaneous builtins.
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "shell.h"
 #include "options.h"
 #include "var.h"
@@ -143,24 +146,74 @@ readcmd(argc, argv)  char **argv; {
 
 
 umaskcmd(argc, argv)  char **argv; {
+	extern void *setmode();
+	extern mode_t getmode();
+	char *ap;
 	int mask;
-	char *p;
 	int i;
+	int symbolic_mode = 0;
 
-	if ((p = argv[1]) == NULL) {
-		INTOFF;
-		mask = umask(0);
-		umask(mask);
-		INTON;
-		out1fmt("%.4o\n", mask);	/* %#o might be better */
+	while ((i = nextopt("S")) != '\0') {
+		symbolic_mode = 1;
+	}
+
+	INTOFF;
+	mask = umask(0);
+	umask(mask);
+	INTON;
+
+	if ((ap = *argptr) == NULL) {
+		if (symbolic_mode) {
+			char u[4], g[4], o[4];
+
+			i = 0;
+			if ((mask & S_IRUSR) == 0)
+				u[i++] = 'r';
+			if ((mask & S_IWUSR) == 0)
+				u[i++] = 'w';
+			if ((mask & S_IXUSR) == 0)
+				u[i++] = 'x';
+			u[i] = '\0';
+
+			i = 0;
+			if ((mask & S_IRGRP) == 0)
+				g[i++] = 'r';
+			if ((mask & S_IWGRP) == 0)
+				g[i++] = 'w';
+			if ((mask & S_IXGRP) == 0)
+				g[i++] = 'x';
+			g[i] = '\0';
+
+			i = 0;
+			if ((mask & S_IROTH) == 0)
+				o[i++] = 'r';
+			if ((mask & S_IWOTH) == 0)
+				o[i++] = 'w';
+			if ((mask & S_IXOTH) == 0)
+				o[i++] = 'x';
+			o[i] = '\0';
+
+			out1fmt("u=%s,g=%s,o=%s\n", u, g, o);
+		} else {
+			out1fmt("%.4o\n", mask);
+		}
 	} else {
-		mask = 0;
-		do {
-			if ((unsigned)(i = *p - '0') >= 8)
-				error("Illegal number: %s", argv[1]);
-			mask = (mask << 3) + i;
-		} while (*++p != '\0');
-		umask(mask);
+		if (isdigit(*ap)) {
+			mask = 0;
+			do {
+				if (*ap >= '8' || *ap < '0')
+					error("Illegal number: %s", argv[1]);
+				mask = (mask << 3) + (*ap - '0');
+			} while (*++ap != '\0');
+			umask(mask);
+		} else {
+			void *set; 
+			if ((set = setmode (ap)) == 0)
+					error("Illegal number: %s", ap);
+
+			mask = getmode (set, ~mask & 0777);
+			umask(~mask & 0777);
+		}
 	}
 	return 0;
 }

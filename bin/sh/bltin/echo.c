@@ -32,9 +32,12 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)echo.c	5.2 (Berkeley) 3/13/91
  */
+
+#ifndef lint
+/*static char sccsid[] = "from: @(#)echo.c	5.2 (Berkeley) 3/13/91";*/
+static char rcsid[] = "echo.c,v 1.4 1993/08/01 18:58:43 mycroft Exp";
+#endif /* not lint */
 
 /*
  * Echo command.
