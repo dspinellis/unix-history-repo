@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)fish.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fish.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include <stdio.h>
@@ -87,7 +87,7 @@ empty( h ) HAND h; {
 	return( i );
 	}
 
-mark( cd, hand ) HAND hand; {
+mark( hand, cd ) HAND hand; {
 	if( cd != NOMORE ){
 		++hand[cd];
 		if( hand[cd] > 4 ){
@@ -232,8 +232,6 @@ game(){
 
 	deal( myhand, 7 );
 	deal( yourhand, 7 );
-
-	start( myhand );
 
 	for(;;){
 
@@ -439,10 +437,6 @@ char ntry;
 char haveguessed[CTSIZ];
 
 char hehas[CTSIZ];
-
-start( h ) HAND h; {
-	;
-	}
 
 hedrew( d ){
 	++hehas[d];
