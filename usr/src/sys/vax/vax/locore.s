@@ -1,4 +1,4 @@
-/*	locore.s	6.1	83/08/01	*/
+/*	locore.s	6.2	83/08/12	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -1218,11 +1218,12 @@ Fastreclaim:
 	movl	P_XLINK(r5),r5		#	p = p->p_xlink;
 	jneq	3b			# }
 2:					# collect a few statistics...
-	incl	_cnt+V_FAULTS		# cnt.v_faults++; 
 	incl	_u+U_RU+RU_MINFLT	# u.u_ru.ru_minflt++;
-	incl	_cnt+V_PGREC		# cnt.v_pgrec++;
-	incl	_cnt+V_FASTPGREC	# cnt.v_fastpgrec++;
-	incl	_cnt+V_TRAP		# cnt.v_trap++;
+	moval	_cnt,r0
+	incl	V_FAULTS(r0)		# cnt.v_faults++; 
+	incl	V_PGREC(r0)		# cnt.v_pgrec++;
+	incl	V_FASTPGREC(r0)		# cnt.v_fastpgrec++;
+	incl	V_TRAP(r0)		# cnt.v_trap++;
 	POPR
 	addl2	$8,sp			# pop pc, code
 	mtpr	$HIGH,$IPL		## dont go to a higher IPL (GROT)
