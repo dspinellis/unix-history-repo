@@ -1,4 +1,4 @@
-/*	autoconf.c	4.27	81/03/13	*/
+/*	autoconf.c	4.28	81/03/16	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -109,7 +109,7 @@ probenexus(pcpu)
 	register struct nexus *nxv;
 	struct nexus *nxp = pcpu->pc_nexbase;
 	union nexcsr nexcsr;
-	int i, ubawatch();
+	int i;
 	
 	nexnum = 0, nxv = nexus;
 	for (; nexnum < pcpu->pc_nnexus; nexnum++, nxp++, nxv++) {
@@ -145,14 +145,19 @@ probenexus(pcpu)
 				printf("5 uba's");
 				goto unsupp;
 			}
-			setscbnex(ubaintv[numuba]);
+#if VAX780
+			if (cpu == VAX_780)
+				setscbnex(ubaintv[numuba]);
+#endif
 			i = nexcsr.nex_type - NEX_UBA0;
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
 			    umem[i], pcpu->pc_umaddr[i]);
+#if VAX780
 			if (cpu == VAX_780)
 				((struct uba_regs *)nxv)->uba_cr =
 				    UBACR_IFS|UBACR_BRIE|
 				    UBACR_USEFIE|UBACR_SUEFIE;
+#endif
 			numuba++;
 			break;
 
@@ -190,7 +195,9 @@ unconfig:
 			continue;
 		}
 	}
-	timeout(ubawatch, (caddr_t)0, hz);
+#if VAX780
+	{ int ubawatch(); timeout(ubawatch, (caddr_t)0, hz); }
+#endif
 }
 
 #if NMBA > 0
@@ -376,6 +383,7 @@ unifind(vubp, pubp, vumem, pumem)
 	 */
 	uhp->uh_uba = vubp;
 	uhp->uh_physuba = pubp;
+/* HAVE TO DO SOMETHING SPECIAL FOR SECOND UNIBUS ON COMETS HERE */
 	if (numuba == 0)
 		uhp->uh_vec = UNIvec;
 	else
