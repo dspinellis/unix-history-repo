@@ -1,0 +1,142 @@
+.TH VGRIND 1 4/1/81
+.UC 4
+.SH NAME
+vgrind \- grind nice listings of programs
+.SH SYNOPSIS
+.B vgrind
+[
+.B \-t
+] [
+.B \-n
+] [
+.B \-x
+] [
+.B \-W
+] [
+.B \-c
+] [
+.B \-m
+] [
+.B \-p
+] [
+.B \-i
+] [
+.B \-sn
+] [
+.B \-h
+header
+]
+name ...
+.SH DESCRIPTION
+.I Vgrind
+formats the C, MODEL, or PASCAL programs which are arguments 
+in a nice style using
+.I troff
+(1).  Comments are placed in italics, keywords in bold face,
+and the name of the current function is listed down the margin of each
+page as it is encountered.
+.PP
+The
+.B \-W
+option sends the output to a 4 page wide raster plotter;
+normally, the output is printed on a narrow plotter.
+.PP
+The
+.B \-c,
+.B \-m,
+.B \-p,
+and
+.B \-i
+options select C, MODEL, PASCAL or ISP respectively as the language
+of the input files. The
+.B \-c
+switch is the default and need not be specified.
+.PP
+Font size may be specified using the
+.B \-s 
+switch. The argument
+.B n
+is the point size (same as the argument of a .ps troff command).
+.PP
+The
+.B \-h
+option specifies a header to be placed at the top of each page.
+If the program is not source, but should be framed like the output
+of
+.I vgrind,
+the
+.B \-n
+option should be specified.
+.PP
+The
+.B \-t
+option is analogous to the
+.B \-t
+option of
+.IR troff (1)
+placing typesetter codes on the standard output.
+.PP
+To create an index, it is only necessary to create an empty file
+.I index
+in the current directory.  As you run
+.I vgrind,
+the index will be automatically kept up to date.
+The index of function definitions can then be run off via
+giving
+.I vgrind
+the
+.B \-x
+option and the file
+.I index
+as argument.
+.SH FILES
+.ta 2i
+index	file where source for index is created
+.br
+/usr/lib/tmac/tmac.vgrind	macro package
+.br
+/usr/lib/vfontedpr		preprocessor
+.SH AUTHOR
+William Joy
+.SH SEE ALSO
+vtroff(1)
+.SH BUGS
+Vfontedpr assumes that a certain programming style is followed:
+.PP
+For 
+.B C
+- functions begin with the name of the function in column one, and lines
+defining functions end with a ).  The function name is followed
+immediately by a ``('' with no intervening space.
+.PP
+For
+.B PASCAL
+- function names need to appear on the same line as the keywords
+.I function
+and
+.I procedure.
+The keyword
+.I end
+at the beginning of a line is interpreted as the end of the current
+function.
+.PP
+For
+.B MODEL
+- function names need to appear on the same line as the keywords
+.I is
+.I beginproc.
+.PP
+If these conventions are not followed, the indexing and marginal function
+name comment mechanisms will fail.
+.sp
+More generally, arbitrary formatting styles for programs mostly look bad.
+The use of spaces to align source code fails miserably; if you plan to
+.I vgrind
+your program you should use tabs.  This is somewhat inevitable since the
+font used by
+.I vgrind
+is variable width.
+.PP
+Should be able to be used as a preprocessor
+.PP
+The mechanism of ctags in recognizing functions should be used here.
