@@ -1,4 +1,4 @@
-/*	mkubglue.c	1.8	83/06/16	*/
+/*	mkubglue.c	1.9	83/06/16	*/
 
 /*
  * Make the uba interrupt file ubglue.s
@@ -55,12 +55,12 @@ dump_vec(fp, vector, number)
 	if (strncmp(vector, "dzx", 3) == 0)
 		fprintf(fp, "\tmovl\t$%d,r0\n\tjmp\tdzdma\n\n", number);
 	else {
-		fprintf(fp, "\tpushl\t$%d\n", number);
 		if (strncmp(vector, "uur", 3) == 0) {
 			fprintf(fp, "#ifdef UUDMA\n");
 			fprintf(fp, "\tmovl\t$%d,r0\n\tjsb\tuudma\n", number);
 			fprintf(fp, "#endif\n");
 		}
+		fprintf(fp, "\tpushl\t$%d\n", number);
 		fprintf(fp, "\tcalls\t$1,_%s\n\tpopr\t$0x3f\n\trei\n\n",
 		    vector);
 	}
