@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	7.14 (Berkeley) %G%
+ *	@(#)fs.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -404,3 +404,6 @@ struct	ocg {
  * NINDIR is the number of indirects in a file system block.
  */
 #define	NINDIR(fs)	((fs)->fs_nindir)
+
+extern int inside[], around[];
+extern u_char *fragtbl[];
