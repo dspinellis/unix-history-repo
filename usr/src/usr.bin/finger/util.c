@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -53,7 +53,7 @@ userinfo(pn, pw)
 	register struct passwd *pw;
 {
 	register char *p, *t;
-	char name[256];
+	char *bp, name[256];
 
 	pn->realname = pn->office = pn->officephone = pn->homephone = NULL;
 
@@ -63,12 +63,12 @@ userinfo(pn, pw)
 	pn->shell = strdup(pw->pw_shell);
 
 	/* why do we skip asterisks!?!? */
-	(void)strcpy(p = tbuf, pw->pw_gecos);
-	if (*p == '*')
-		++p;
+	(void)strcpy(bp = tbuf, pw->pw_gecos);
+	if (*bp == '*')
+		++bp;
 
 	/* ampersands get replaced by the login name */
-	if (!(p = strsep(p, ",")))
+	if (!(p = strsep(&bp, ",")))
 		return;
 	for (t = name; *t = *p; ++p)
 		if (*t == '&') {
@@ -80,11 +80,11 @@ userinfo(pn, pw)
 		else
 			++t;
 	pn->realname = strdup(name);
-	pn->office = ((p = strsep((char *)NULL, ",")) && *p) ?
+	pn->office = ((p = strsep(&bp, ",")) && *p) ?
 	    strdup(p) : NULL;
-	pn->officephone = ((p = strsep((char *)NULL, ",")) && *p) ?
+	pn->officephone = ((p = strsep(&bp, ",")) && *p) ?
 	    strdup(p) : NULL;
-	pn->homephone = ((p = strsep((char *)NULL, ",")) && *p) ?
+	pn->homephone = ((p = strsep(&bp, ",")) && *p) ?
 	    strdup(p) : NULL;
 }
 
