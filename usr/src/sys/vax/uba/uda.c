@@ -1,4 +1,4 @@
-/*	uda.c	4.25	83/07/09	*/
+/*	uda.c	6.1	83/07/29	*/
 
 #include "ra.h"
 #if NUDA > 0

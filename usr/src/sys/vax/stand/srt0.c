@@ -1,4 +1,4 @@
-/*	srt0.c	4.11	83/05/11	*/
+/*	srt0.c	6.1	83/07/29	*/
 
 #include "../vax/mtpr.h"
 #define	LOCORE

@@ -1,4 +1,4 @@
-/*	rl.c	4.2	83/02/16	*/
+/*	rl.c	6.1	83/07/29	*/
 
 /*
  * Standalone RL02 disk driver

@@ -1,4 +1,4 @@
-/*	if_il.h	4.4	82/12/16	*/
+/*	if_il.h	6.1	83/07/29	*/
 
 /*
  * Structure of an Ethernet header -- receive format

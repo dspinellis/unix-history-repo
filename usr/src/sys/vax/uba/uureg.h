@@ -1,5 +1,5 @@
 
-/*	uureg.h	4.3	83/05/08	*/
+/*	uureg.h	6.1	83/07/29	*/
 
 /*
  * DL11-E/DL11-W UNIBUS (for TU58) controller registers

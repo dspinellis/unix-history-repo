@@ -1,4 +1,4 @@
-/*	ubavar.h	4.25	82/04/11	*/
+/*	ubavar.h	6.1	83/07/29	*/
 
 /*
  * This file contains definitions related to the kernel structures

@@ -1,4 +1,4 @@
-/*	drtest.c	4.13	83/05/03	*/
+/*	drtest.c	6.1	83/07/29	*/
 
 /*
  * Standalone program to test a disk and driver

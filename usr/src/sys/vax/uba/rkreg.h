@@ -1,4 +1,4 @@
-/*	rkreg.h	4.2	81/05/09	*/
+/*	rkreg.h	6.1	83/07/29	*/
 
 #define NRK7CYL 	815
 #define	NRK6CYL		411

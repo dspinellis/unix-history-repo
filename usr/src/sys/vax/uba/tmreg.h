@@ -1,4 +1,4 @@
-/*	tmreg.h	4.6	82/02/03	*/
+/*	tmreg.h	6.1	83/07/29	*/
 
 /*
  * TM11 controller registers

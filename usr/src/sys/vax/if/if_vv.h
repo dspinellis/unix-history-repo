@@ -1,4 +1,4 @@
-/*	if_vv.h	4.3	83/02/20	*/
+/*	if_vv.h	4.5	83/07/29	*/
 /*
  * Local network header for V2LNI Ring
  * This is arbitrated by "V2LNI-PEOPLE@MIT-MC"

@@ -1,4 +1,4 @@
-/*	savax.h	4.4	83/03/01	*/
+/*	savax.h	6.1	83/07/29	*/
 
 /*
  * Standalone definitions peculiar to vaxen

@@ -1,4 +1,4 @@
-/*	idc.c	4.15	83/05/27	*/
+/*	idc.c	6.1	83/07/29	*/
 
 #include "rb.h"
 #if NIDC > 0

@@ -1,4 +1,4 @@
-#	Makefile	4.6	83/07/27
+#	Makefile	6.1	83/07/29
 #
 # Make a 750/730 tu58 cassette
 # 

@@ -1,4 +1,4 @@
-/*	sys.c	4.10	83/02/16	*/
+/*	sys.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"

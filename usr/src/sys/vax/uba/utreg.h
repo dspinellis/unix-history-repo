@@ -1,4 +1,4 @@
-/*	utreg.h	4.4	81/11/11	*/
+/*	utreg.h	6.1	83/07/29	*/
 
 /*
  * System Industries Model 9700 Tape Drive

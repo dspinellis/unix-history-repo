@@ -1,4 +1,4 @@
-/*	ikreg.h	4.3	82/10/21	*/
+/*	ikreg.h	6.1	83/07/29	*/
 
 struct ikdevice {
 	short	ik_wc;			/* Unibus word count reg */

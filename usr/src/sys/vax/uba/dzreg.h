@@ -1,4 +1,4 @@
-/*	dzreg.h	4.1	82/12/30	*/
+/*	dzreg.h	6.1	83/07/29	*/
 
 /*
  * DZ-11/DZ-32 Registers and bits.

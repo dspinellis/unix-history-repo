@@ -1,4 +1,4 @@
-/*	adreg.h	4.2	82/08/01	*/
+/*	adreg.h	6.1	83/07/29	*/
 
 struct addevice {
 	short int ad_csr;			/* Control status register */

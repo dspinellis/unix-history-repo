@@ -1,4 +1,4 @@
-/*	dmreg.h	4.1	82/12/30	*/
+/*	dmreg.h	6.1	83/07/29	*/
 
 /*
  * DM-11 device register definitions.

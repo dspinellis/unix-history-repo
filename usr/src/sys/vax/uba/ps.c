@@ -1,4 +1,4 @@
-/*	ps.c	4.9	82/12/17	*/
+/*	ps.c	6.1	83/07/29	*/
 
 /*
  * Evans and Sutherland Picture System 2 driver

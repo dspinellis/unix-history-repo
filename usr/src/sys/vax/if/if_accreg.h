@@ -1,4 +1,4 @@
-/*	if_accreg.h	4.2	82/02/21	*/
+/*	if_accreg.h	6.1	83/07/29	*/
 
 /*
  * ACC LH/DH-11 interface

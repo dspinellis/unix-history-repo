@@ -1,4 +1,4 @@
-/*	hpreg.h	4.13	83/02/18	*/
+/*	hpreg.h	6.1	83/07/29	*/
 
 struct hpdevice
 {

@@ -1,4 +1,4 @@
-/*	lpa.c	4.9	82/10/20	*/
+/*	lpa.c	6.1	83/07/29	*/
 
 #include "lpa.h"
 #if NLPA > 0

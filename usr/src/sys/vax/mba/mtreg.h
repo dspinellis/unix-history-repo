@@ -1,4 +1,4 @@
-/*	mtreg.h	4.1	81/11/04	*/
+/*	mtreg.h	6.1	83/07/29	*/
 
 /*
  * TU78 registers.

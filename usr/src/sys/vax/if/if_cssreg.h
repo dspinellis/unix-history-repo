@@ -1,4 +1,4 @@
-/*	if_cssreg.h	4.1	82/07/20	*/
+/*	if_cssreg.h	6.1	83/07/29	*/
 
 /* 
  * DEC/CSS IMP11-A ARPAnet interface

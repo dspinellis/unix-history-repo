@@ -1,4 +1,4 @@
-/*	if_hy.h	4.2	83/02/21	*/
+/*	if_hy.h	6.1	83/07/29	*/
 
 /*
  * Network Systems Corporation Hyperchannel

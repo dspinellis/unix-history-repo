@@ -1,4 +1,4 @@
-/*	tsreg.h	4.2	82/02/03	*/
+/*	tsreg.h	6.1	83/07/29	*/
 
 /*
  * TS11 controller registers

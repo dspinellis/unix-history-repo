@@ -1,4 +1,4 @@
-/*	tuboot.c	4.5	83/06/29	*/
+/*	tuboot.c	6.1	83/07/29	*/
 
 /*
  * VAX tu58 console cassette boot block

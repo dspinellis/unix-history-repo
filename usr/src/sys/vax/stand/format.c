@@ -1,4 +1,4 @@
-/*	format.c	4.4	83/05/03	*/
+/*	format.c	6.1	83/07/29	*/
 
 /* 
  * Standalone program to do media checking

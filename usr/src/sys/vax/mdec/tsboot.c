@@ -1,4 +1,4 @@
-/*	tsboot.c	4.1	83/02/16	*/
+/*	tsboot.c	6.1	83/07/29	*/
 
 /*
  * VAX tape boot block for distribution tapes

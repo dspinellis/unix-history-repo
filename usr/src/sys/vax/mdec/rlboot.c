@@ -1,4 +1,4 @@
-/*	rlboot.c	4.3	83/06/16	*/
+/*	rlboot.c	6.1	83/07/29	*/
 
 /*
  * RL02 1st level boot program: loads next 7.5Kbytes from

@@ -1,4 +1,4 @@
-/*	htreg.h	4.1	81/03/21	*/
+/*	htreg.h	6.1	83/07/29	*/
 
 struct	htdevice
 {

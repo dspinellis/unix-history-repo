@@ -1,4 +1,4 @@
-/*	mbavar.h	4.15	81/04/08	*/
+/*	mbavar.h	6.1	83/07/29	*/
 
 /*
  * This file contains definitions related to the kernel structures

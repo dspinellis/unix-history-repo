@@ -1,4 +1,4 @@
-/*	if_uba.c	4.16	82/12/17	*/
+/*	if_uba.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
 

@@ -1,4 +1,4 @@
-/*	udareg.h	4.1	81/11/04	*/
+/*	udareg.h	6.1	83/07/29	*/
 
 /*
  * UDA-50 registers and structures

@@ -1,4 +1,4 @@
-/*	confhpup.c	4.2	83/02/16	*/
+/*	confhpup.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
 
