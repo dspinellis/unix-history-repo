@@ -1,0 +1,4 @@
+cc -s -O m6?.c
+cmp a.out /usr/bin/m6
+cp a.out /usr/bin/m6
+rm a.out *.o
