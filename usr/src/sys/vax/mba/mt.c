@@ -1,4 +1,4 @@
-/*	mt.c	4.4	82/07/13	*/
+/*	mt.c	4.5	82/07/15	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -82,22 +82,23 @@ mtattach(mi)
 #endif
 }
 
-mtslave(mi, ms)
+mtslave(mi, ms, sn)
 	struct mba_device *mi;
 	struct mba_slave *ms;
+	int sn;
 {
 	register struct mu_softc *sc = &mu_softc[ms->ms_unit];
 	register struct mtdevice *mtaddr = (struct mtdevice *)mi->mi_drv;
 	int s = spl7(), rtn = 0;
 
 	mtaddr->mtas = -1;
-	mtaddr->mtncs[ms->ms_slave] = MT_SENSE|MT_GO;
+	mtaddr->mtncs[sn] = MT_SENSE|MT_GO;
 	while (mtaddr->mtas == 0)
 		;
 	if ((mtaddr->mtner & MTER_INTCODE) == MTER_DONE &&
 	    (mtaddr->mtds & MTDS_PRES)) {
 		sc->sc_mi = mi;
-		sc->sc_slave = ms->ms_slave;
+		sc->sc_slave = sn;
 		mutomt[ms->ms_unit] = mi->mi_unit;
 		rtn = 1;
 	}
