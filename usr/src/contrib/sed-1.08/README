@@ -1,0 +1,48 @@
+This directory contains GNU sed.  Please report all bugs and comments
+to bug-gnu-utils@prep.ai.mit.edu.
+
+This sed may run slower than some UN*X seds.  This is because it uses
+the regular-expression routines from Emacs, which are rather complete
+and powerful, but not as fast as they could be.  If you really care
+about speed, use perl instead.
+
+To compile:
+
+1.  Type `sh configure'.  This shell script attempts to guess correct
+values for various system-dependent variables used during compilation,
+and creates the file `Makefile'.  This takes a minute or so.
+
+If you want to compile in a different directory from the one
+containing the source code, `cd' to that directory and run `configure'
+with the option `+srcdir=DIR', where DIR is the directory that
+contains the source code.  The object files and executables will be
+put in the current directory.  This option only works with versions of
+`make' that support the VPATH variable.  `configure' ignores any other
+arguments you give it.
+
+If your system requires unusual options for compilation or linking
+that `configure' doesn't know about, you can give `configure' initial
+values for variables by setting them in the environment; in
+Bourne-compatible shells, you can do that on the command line like
+this:
+$ CC='gcc -traditional' LIBS=-lposix sh configure
+
+2.  If you want to change the directories where the program will be
+installed, or the optimization options, edit `Makefile' and change
+those values.  If you have an unusual system that needs special
+compilation options that `configure' doesn't know about, and you
+didn't pass them in the environment when running `configure', you
+should add them to `Makefile' now.  Alternately, teach `configure' how
+to figure out that it is being run on a system where they are needed,
+and mail the diffs to the address listed at the top of this file so we
+can include them in the next release.
+
+3.  Type `make'.
+
+4.  If the program compiles successfully, type `make install' to
+install it.
+
+5.  After you have installed the program, you can remove the binary
+from the source directory by typing `make clean'.  Type `make
+distclean' if you also want to remove `Makefile', for instance if you
+are going to recompile sed next on another type of machine.

@@ -1,0 +1,4 @@
+CC = gcc -O
+INSTALL = install -c
+DEFS =  -DSTDC_HEADERS
+LIBS = 
