@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.12 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -49,7 +49,6 @@ socreate(dom, aso, type, proto)
 {
 	register struct protosw *prp;
 	register struct socket *so;
-	register struct mbuf *m;
 	register int error;
 
 	if (proto)
@@ -60,10 +59,8 @@ socreate(dom, aso, type, proto)
 		return (EPROTONOSUPPORT);
 	if (prp->pr_type != type)
 		return (EPROTOTYPE);
-	m = m_getclr(M_WAIT, MT_SOCKET);
-	so = mtod(m, struct socket *);
-	so->so_options = 0;
-	so->so_state = 0;
+	MALLOC(so, struct socket *, sizeof(*so), M_SOCKET, M_WAIT);
+	bzero((caddr_t)so, sizeof(*so));
 	so->so_type = type;
 	if (u.u_uid == 0)
 		so->so_state = SS_PRIV;
@@ -132,7 +129,7 @@ sofree(so)
 	}
 	sbrelease(&so->so_snd);
 	sorflush(so);
-	(void) m_free(dtom(so));
+	FREE(so, M_SOCKET);
 }
 
 /*
@@ -312,16 +309,19 @@ restart:
 		s = splnet();
 		if (so->so_state & SS_CANTSENDMORE)
 			snderr(EPIPE);
-		if (so->so_error) {
-			error = so->so_error;
-			so->so_error = 0;			/* ??? */
-			splx(s);
-			goto release;
-		}
+		if (so->so_error)
+			snderr(so->so_error);
 		if ((so->so_state & SS_ISCONNECTED) == 0) {
-			if (so->so_proto->pr_flags & PR_CONNREQUIRED)
-				snderr(ENOTCONN);
-			if (nam == 0)
+			if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
+				if (!uio->uio_resid && !rights && control) {
+					snderr((*so->so_proto->pr_usrreq)(so,
+				    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
+					    top, (caddr_t)0, rights, control));
+				} else if (so->so_state & SS_ISCONFIRMING)
+					/* is ok */;
+				else
+					snderr(ENOTCONN);
+			} else if (nam == 0)
 				snderr(EDESTADDRREQ);
 		}
 		if (flags & MSG_OOB)
@@ -479,7 +479,7 @@ bad:
 			m_freem(m);
 		return (error);
 	}
-	if (so->so_state & SS_ISCONFIRMING)
+	if (so->so_state & SS_ISCONFIRMING && uio->uio_resid)
 		(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
 		    (struct mbuf *)0, (struct mbuf *)0);
 
@@ -487,7 +487,10 @@ restart:
 	sblock(&so->so_rcv);
 	s = splnet();
 
-	if (so->so_rcv.sb_cc == 0) {
+	m = so->so_rcv.sb_mb;
+	if (m == 0) {
+		if (so->so_rcv.sb_cc)
+			panic("receive 1");
 		if (so->so_error) {
 			error = so->so_error;
 			so->so_error = 0;
@@ -512,9 +515,6 @@ restart:
 		goto restart;
 	}
 	u.u_ru.ru_msgrcv++;
-	m = so->so_rcv.sb_mb;
-	if (m == 0)
-		panic("receive 1");
 if (m->m_type == 0)
 panic("receive 3a");
 	nextrecord = m->m_nextpkt;
@@ -643,7 +643,8 @@ panic("receive 3a");
 		}
 		if (pr->pr_flags & PR_WANTRCVD && so->so_pcb)
 			(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
-			    (struct mbuf *)0, (struct mbuf *)0);
+			    (struct mbuf *)flags, (struct mbuf *)0,
+			    (struct mbuf *)0);
 		if (error == 0 && rightsp && *rightsp &&
 		    pr->pr_domain->dom_externalize)
 			error = (*pr->pr_domain->dom_externalize)(*rightsp);
@@ -863,9 +864,9 @@ sohasoutofband(so)
 {
 	struct proc *p;
 
-	if (so->so_pgrp < 0)
-		gsignal(-so->so_pgrp, SIGURG);
-	else if (so->so_pgrp > 0 && (p = pfind(so->so_pgrp)) != 0)
+	if (so->so_pgid < 0)
+		gsignal(-so->so_pgid, SIGURG);
+	else if (so->so_pgid > 0 && (p = pfind(so->so_pgid)) != 0)
 		psignal(p, SIGURG);
 	if (so->so_rcv.sb_sel) {
 		selwakeup(so->so_rcv.sb_sel, so->so_rcv.sb_flags & SB_COLL);
