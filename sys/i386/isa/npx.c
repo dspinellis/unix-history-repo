@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)npx.c	7.2 (Berkeley) 5/12/91
- *	$Id: npx.c,v 1.7 1994/04/02 07:00:47 davidg Exp $
+ *	$Id: npx.c,v 1.8 1994/06/03 06:42:30 davidg Exp $
  */
 
 #include "npx.h"
@@ -321,10 +321,12 @@ npxattach(dvp)
 	struct isa_device *dvp;
 {
 	if (!npx_ex16 && !npx_irq13) {
-		if (npx_exists)
+		if (npx_exists) {
 			printf("npx%d: Error reporting broken, using 387 emulator\n",dvp->id_unit);
-		else
+			npx_exists = 0;
+		} else {
 			printf("npx%d: 387 Emulator\n",dvp->id_unit);
+		}
 	}
 	npxinit(__INITIAL_NPXCW__);
 	return (1);		/* XXX unused */
