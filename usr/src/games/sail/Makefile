@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	1.6 83/05/19
+# Makefile	@(#)Makefile	1.7 83/05/20
 #
 CC= cc
 CTAGS= ctags -w
@@ -24,10 +24,10 @@ PLIBS= -lcurses -ltermlib machdep.o
 DLIBS=
 LLIBS=
 SAILMASTER= daemon
-SAIL= SAIL
+SAIL= sail
 DRIVER= .driver
-SAIL.LOG= SAIL.log
-SAIL.DOC= SAIL.doc
+SAIL.LOG= sail.log
+SAIL.DOC= sail.doc
 SHIPSLOG= .shipslog
 TARGET= /usr/games
 
