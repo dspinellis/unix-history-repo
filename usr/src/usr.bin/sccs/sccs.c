@@ -3,7 +3,11 @@
 # include <sys/stat.h>
 # include <sysexits.h>
 
-static char SccsId[] = "@(#)sccs.c 1.3 delta %G% 00:27:33 get %H% %T%";
+static char SccsId[] = "@(#)sccs.c 1.4 delta %G% 11:18:42 get %H% %T%";
+
+# define bitset(bit, word)	((bit) & (word))
+
+typedef char	bool;
 
 struct sccsprog
 {
@@ -12,24 +16,27 @@ struct sccsprog
 	char	*sccspath;	/* pathname of binary implementing */
 };
 
-/* bits for sccspath */
+/* bits for sccsflags */
 # define F_NOSDOT	0001	/* no s. on front of args */
+# define F_PROT		0002	/* protected (e.g., admin) */
 
 struct sccsprog SccsProg[] =
 {
-	"admin",	0,			"/usr/sccs/admin",
+	"admin",	F_PROT,			"/usr/sccs/admin",
 	"chghist",	0,			"/usr/sccs/rmdel",
 	"comb",		0,			"/usr/sccs/comb",
 	"delta",	0,			"/usr/sccs/delta",
 	"get",		0,			"/usr/sccs/get",
 	"help",		F_NOSDOT,		"/usr/sccs/help",
 	"prt",		0,			"/usr/sccs/prt",
-	"rmdel",	0,			"/usr/sccs/rmdel",
+	"rmdel",	F_PROT,			"/usr/sccs/rmdel",
 	"what",		F_NOSDOT,		"/usr/sccs/what",
 	NULL,		0,			NULL
 };
 
-char	*SccsPath = "SCCS/s.";
+char	*SccsPath = "SCCS";	/* pathname of SCCS files */
+bool	IsAdmin;		/* if set, this person is an administrator */
+bool	RealUser;		/* if set, running as real user */
 
 main(argc, argv)
 	int argc;
@@ -40,6 +47,10 @@ main(argc, argv)
 	char *newargv[1000];
 	extern char *makefile();
 	register struct sccsprog *cmd;
+	char buf[200];
+	int uid;
+	auto int xuid;
+	register FILE *fp;
 
 	/*
 	**  Detect and decode flags intended for this program.
@@ -54,6 +65,7 @@ main(argc, argv)
 		{
 		  case 'r':		/* run as real user */
 			setuid(getuid());
+			RealUser++;
 			break;
 
 		  case 'p':		/* path of sccs files */
@@ -64,6 +76,31 @@ main(argc, argv)
 			fprintf(stderr, "Sccs: unknown option -%s\n", p);
 			break;
 		}
+	}
+
+	/*
+	**  See if this user is an administrator.
+	*/
+
+	uid = getuid();
+# ifdef V6
+	uid &= 0377;
+# endif V6
+	strcpy(buf, SccsPath);
+	strcat(buf, "/ADMINFILE");
+	fp = fopen(buf, "r");
+	if (fp != NULL)
+	{
+		while (fgets(buf, sizeof buf, fp) != NULL)
+		{
+			if (buf[0] == 'A')
+			{
+				if (sscanf(&buf[1], "%d", &xuid) > 0 &&
+				    xuid == uid)
+					IsAdmin++;
+			}
+		}
+		fclose(fp);
 	}
 
 	/*
@@ -83,6 +120,16 @@ main(argc, argv)
 	}
 
 	/*
+	**  Set protection as appropriate.
+	*/
+
+	if (bitset(F_PROT, cmd->sccsflags) && !IsAdmin && !RealUser)
+	{
+		fprintf(stderr, "Sccs: not authorized to use %s\n", p);
+		exit(EX_USAGE);
+	}
+
+	/*
 	**  Build new argument vector.
 	*/
 
@@ -93,7 +140,7 @@ main(argc, argv)
 	while (--argc > 0)
 	{
 		p = *++argv;
-		if ((cmd->sccsflags & F_NOSDOT) == 0 && *p != '-')
+		if (!bitset(F_NOSDOT, cmd->sccsflags) && *p != '-')
 			*av++ = makefile(p);
 		else
 			*av++ = p;
@@ -146,6 +193,7 @@ makefile(name)
 	*/
 
 	strcpy(buf, SccsPath);
+	strcat(buf, "/s.");
 	strcat(buf, name);
 	p = malloc(strlen(buf) + 1);
 	if (p == NULL)
