@@ -1,30 +1,42 @@
-/*	if_dmc.h	6.2	84/09/26	*/
+/*	if_dmc.h	6.3	84/12/20	*/
 
 /*
  * DMC-11 Interface
  */
 
 struct dmcdevice {
-	union {
-		char	b[8];
-		short	w[4];
-	} un;
+        char    bsel0;
+	char 	bsel1;
+	char	bsel2;
+	char 	bsel3;
+	short	sel4;
+	short	sel6;
 };
 
-#define	bsel0	un.b[0]
-#define	bsel1	un.b[1]
-#define	bsel2	un.b[2]
-#define	bsel3	un.b[3]
-#define	bsel4	un.b[4]
-#define	bsel5	un.b[5]
-#define	bsel6	un.b[6]
-#define	bsel7	un.b[7]
-#define	sel0	un.w[0]
-#define	sel2	un.w[1]
-#define	sel4	un.w[2]
-#define	sel6	un.w[3]
+/*
+ * dmc software packet encapsulation.  This allows the dmc
+ * link to be multiplexed among several protocols.
+ * The first eight bytes of the dmc header are garbage,
+ * since on a vax the uba has been known to mung these
+ * bytes.  The next two bytes encapsulate packet type.
+ */
+struct dmc_header {
+	char	dmc_buf[8];	/* space for uba on vax */
+	short	dmc_type;	/* encapsulate packet type */
+};
 
-#define	DMCMTU	(1024)
+/* packet types */
+#define	DMC_IPTYPE	1
+#define	DMC_TRAILER	2
+#define	DMC_NTRAILER	16
+
+/*
+ * DMCMTU includes space for data (1024) + 
+ * protocol header (256) + trailer descriptor (4).
+ * The software link encapsulation header (dmc_header)
+ * is handled separately.
+ */
+#define DMCMTU  1284
 
 #define	RDYSCAN	16	/* loop delay for RDYI after RQI */
 
