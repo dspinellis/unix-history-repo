@@ -1,0 +1,123 @@
+   Copyright (C) 1990, 1992 Aladdin Enterprises.  All rights reserved.
+   Distributed by Free Software Foundation, Inc.
+
+This file is part of Ghostscript.
+
+Ghostscript is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+to anyone for the consequences of using it or for whether it serves any
+particular purpose or works at all, unless he says so in writing.  Refer
+to the Ghostscript General Public License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+Ghostscript, but only under the conditions described in the Ghostscript
+General Public License.  A copy of this license is supposed to have been
+given to you along with Ghostscript so you can know your rights and
+responsibilities.  It should be in a file named COPYING.  Among other
+things, the copyright notice and this notice must be preserved on all
+copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, psfiles.doc, describes the .ps files distributed with
+Ghostscript, other than fonts.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+System files
+------------
+
+gs_init.ps - Ghostscript reads this automatically when it starts up.  It
+contains definitions of many standard procedures and initialization for a
+wide variety of things.
+
+gs_fonts.ps - gs_init.ps reads this in.  It initializes Ghostscript's font
+machinery and provides some utility procedures that work with fonts.
+
+gs_statd.ps - gs_init.ps reads this in.  It creates a dummy statusdict and
+some other environmental odds and ends for the benefit of P*stScr*pt files
+that really want to be printed on a LaserWriter.
+
+gs_2asc.ps - gs_init.ps reads this in if the ASCIIOUT option is selected.
+It redefines many operators.  For more information, see the comments in
+the file.
+
+gs_dps1.ps - gs_init.ps reads this in if the dps feature is included in
+the configuration.  It provides support for various Display PostScript and
+Level 2 features.
+
+sym__enc.ps - the Symbol encoding, loaded only if referenced.
+
+Art
+---
+
+chess.ps - A black-and-white chessboard.
+
+golfer.ps - A gray-scale picture of a stylishly dressed woman swinging a
+golf club.
+
+escher.ps - A colored version of a hexagonally symmetric Escher drawing of
+interlocking butterflies.  Can be printed on monochrome devices, with
+somewhat less dramatic results.
+
+cheq.ps - A chessboard "font" used by chess.ps (obtained from the Adobe
+file server).
+
+snowflak.ps - A rectangular grid of intricate colored snowflakes.
+(Renders very slowly.)
+
+colorcir.ps - A set of nested ellipses made up of colored bars.
+
+tiger.ps - A dramatic colored picture of a tiger's head.
+
+Utilities
+---------
+
+For more information on these utility programs, see the comments at the
+beginning of the files.
+
+decrypt.ps - a utility for decrypting the eexec section of a font.
+
+bdftops.ps - a utility for converting BDF fonts to outline form: see
+fonts.doc for more information.
+
+gslp.ps - a utility for doing "line printing" of plain text files.
+
+landscap.ps - a file that you can put in front of your own files to get
+them rendered in landscape mode.
+
+pfbtogs.ps - a utility for converting PFB fonts to plain text form, which
+Ghostscript can use: see fonts.doc for more information.
+
+pstoppm.ps - a utility for rendering PostScript files onto PPM (bitmap)
+files.
+
+ps2image.ps - a utility for converting an arbitrary PostScript file into a
+.ps file consisting of just bitmaps, one per page.
+
+wrfont.ps - a utility for writing out an unprotected Type 1 font, such as
+the standard Ghostscript fonts.
+
+Odds and ends
+-------------
+
+empty.ps - an empty file.
+
+lines.ps - a test program for line joins and caps.
+
+pcharstr.ps - a program to print out the CharStrings and Subrs in a Type 1
+font.
+
+phonbook.ps - an address/phone book template.
+
+ppath.ps - a couple of utilities for printing out the current path, for
+debugging.
+
+prfont.ps - a program to print a font catalog.
+
+quit.ps - a file containing just the word "quit".
+
+traceop.ps - a memory usage monitor for debugging.
+
+unprot.ps - a program to disable access checking.
