@@ -1,4 +1,4 @@
-/* @(#)vsio.h	7.1 (MIT) %G% */
+/* @(#)vsio.h	7.2 (MIT) %G% */
  /****************************************************************************
  *									    *
  *  Copyright (c) 1983, 1984 by						    *
@@ -33,19 +33,19 @@
  * Possible ioctl calls
  */
 
-#define	VSIOINIT	_IO(V, 0)	/* init the device */
-#define	VSIOSTART	_IOW(V, 1, int)	/* start microcode */
-#define	VSIOABORT	_IO(V, 2)	/* abort a command chain */
-#define	VSIOPWRUP	_IO(V, 3)	/* power-up reset */
-#define	VSIOGETVER	_IOR(V, 4, int)	/* get rom version */
-#define	VSIOSYNC	_IO(V, 6)	/* synch with device */
-#define	VSIOBBACTL	_IOW(V, 8, int)	/* control the BBA */
-#define	VSIOFIBCTL	_IOW(V, 9, int)	/* lamp on/off */
-#define	VSIOFIBRETRY	_IOW(V,10, int)	/* fiber retries */
-#define	VSIOGETSTATS	_IOR(V,11, vsStats)	/* get statistics */
-#define	VSIOGETIOA	_IOR(V,13, vsIoAddrAddr)/* get ioreg address */
-#define	VSIOUSERWAIT	_IO(V, 15)	/* wait for user I/O completion */
-#define VSIOWAITGO	_IOW(V, 16, caddr_t)	/* wait then go */
+#define	VSIOINIT	_IO('V', 0)		/* init the device */
+#define	VSIOSTART	_IOW('V', 1, int)	/* start microcode */
+#define	VSIOABORT	_IO('V', 2)		/* abort a command chain */
+#define	VSIOPWRUP	_IO('V', 3)		/* power-up reset */
+#define	VSIOGETVER	_IOR('V', 4, int)	/* get rom version */
+#define	VSIOSYNC	_IO('V', 6)		/* synch with device */
+#define	VSIOBBACTL	_IOW('V', 8, int)	/* control the BBA */
+#define	VSIOFIBCTL	_IOW('V', 9, int)	/* lamp on/off */
+#define	VSIOFIBRETRY	_IOW('V',10, int)	/* fiber retries */
+#define	VSIOGETSTATS	_IOR('V',11, vsStats)	/* get statistics */
+#define	VSIOGETIOA	_IOR('V',13, vsIoAddrAddr)/* get ioreg address */
+#define	VSIOUSERWAIT	_IO('V', 15)	/* wait for user I/O completion */
+#define VSIOWAITGO	_IOW('V', 16, caddr_t)	/* wait then go */
 
 
 #define	VSIO_OFF	0		/* option off */
