@@ -1,4 +1,4 @@
-/*	if_ec.c	6.2	84/03/20	*/
+/*	if_ec.c	6.3	84/03/22	*/
 
 #include "ec.h"
 
@@ -168,9 +168,9 @@ ecattach(ui)
 	 */
 	addr->ec_xcr = EC_UECLR;
 	addr->ec_rcr = EC_AROM;
-	cp = es->es_addr;
+	cp = (u_char *) &es->es_addr;
 #define	NEXTBIT	addr->ec_rcr = EC_AROM|EC_ASTEP; addr->ec_rcr = EC_AROM
-	for (i=0; i<6; i++) {
+	for (i=0; i < sizeof (es->es_addr); i++) {
 		*cp = 0;
 		for (j=0; j<=4; j+=4) {
 			*cp |= ((addr->ec_rcr >> 8) & 0xf) << j;
@@ -180,7 +180,6 @@ ecattach(ui)
 	}
 	sin = (struct sockaddr_in *)&es->es_if.if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = arpmyaddr((struct arpcom *)0);
 	ifp->if_init = ecinit;
 	ifp->if_ioctl = ecioctl;
 	ifp->if_output = ecoutput;
@@ -243,7 +242,6 @@ ecinit(unit)
 		splx(s);
 	}
 	if_rtinit(&es->es_if, RTF_UP);
-	arpattach(&es->es_ac);
 	arpwhohas(&es->es_ac, &sin->sin_addr);
 }
 
@@ -501,7 +499,7 @@ ecoutput(ifp, m0, dst)
 	struct sockaddr *dst;
 {
 	int type, s, error;
-	u_char edst[6];
+	struct ether_addr edst;
 	struct in_addr idst;
 	register struct ec_softc *es = &ec_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
@@ -514,7 +512,7 @@ ecoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&es->es_ac, m, &idst, edst))
+		if (!arpresolve(&es->es_ac, m, &idst, &edst))
 			return (0);	/* if not yet resolved */
 		if (in_lnaof(idst) == INADDR_ANY)
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
@@ -537,7 +535,7 @@ ecoutput(ifp, m0, dst)
 
 	case AF_UNSPEC:
 		ec = (struct ether_header *)dst->sa_data;
-		bcopy((caddr_t)ec->ether_dhost, (caddr_t)edst, sizeof (edst));
+		edst = ec->ether_dhost;
 		type = ec->ether_type;
 		goto gottype;
 
@@ -580,9 +578,9 @@ gottype:
 		m->m_len += sizeof (struct ether_header);
 	}
 	ec = mtod(m, struct ether_header *);
-	bcopy((caddr_t)edst, (caddr_t)ec->ether_dhost, sizeof (edst));
+	ec->ether_dhost = edst;
+	ec->ether_shost = es->es_addr;
 	ec->ether_type = htons((u_short)type);
-	bcopy((caddr_t)es->es_addr, (caddr_t)ec->ether_shost, 6);
 
 	/*
 	 * Queue message on interface, and start output if interface

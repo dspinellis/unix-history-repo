@@ -1,4 +1,4 @@
-/*	if_il.c	6.3	84/01/02	*/
+/*	if_il.c	6.4	84/03/22	*/
 
 #include "il.h"
 
@@ -140,11 +140,9 @@ ilattach(ui)
 		is->is_stats.ils_addr[4]&0xff, is->is_stats.ils_addr[5]&0xff,
 		is->is_stats.ils_module, is->is_stats.ils_firmware);
 #endif
-	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)is->is_addr,
-	    sizeof (is->is_addr));
+	is->is_addr = is->is_stats.ils_addr;
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = arpmyaddr((struct arpcom *)0);
 	ifp->if_init = ilinit;
 	ifp->if_output = iloutput;
 	ifp->if_ioctl = ilioctl;
@@ -241,7 +239,6 @@ ilinit(unit)
 	splx(s);
 justarp:
 	if_rtinit(&is->is_if, RTF_UP);
-	arpattach(&is->is_ac);
 	arpwhohas(&is->is_ac, &sin->sin_addr);
 }
 
@@ -471,7 +468,7 @@ iloutput(ifp, m0, dst)
 	struct sockaddr *dst;
 {
 	int type, s, error;
-	u_char edst[6];
+	struct ether_addr edst;
 	struct in_addr idst;
 	register struct il_softc *is = &il_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
@@ -483,7 +480,7 @@ iloutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&is->is_ac, m, &idst, edst))
+		if (!arpresolve(&is->is_ac, m, &idst, &edst))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
@@ -504,7 +501,7 @@ iloutput(ifp, m0, dst)
 
 	case AF_UNSPEC:
 		il = (struct ether_header *)dst->sa_data;
-		bcopy((caddr_t)il->ether_dhost, (caddr_t)edst, sizeof (edst));
+		edst = il->ether_dhost;
 		type = il->ether_type;
 		goto gottype;
 
@@ -548,8 +545,8 @@ gottype:
 	}
 	il = mtod(m, struct ether_header *);
 	il->ether_type = htons((u_short)type);
-	bcopy((caddr_t)edst, (caddr_t)il->ether_dhost, sizeof (edst));
-	bcopy((caddr_t)is->is_addr, (caddr_t)il->ether_shost, 6);
+	il->ether_dhost = edst;
+	il->ether_shost = is->is_addr;
 
 	/*
 	 * Queue message on interface, and start output if interface
