@@ -3,8 +3,11 @@
 #	@(#)spell.sh	1.5	(Berkeley)	89/08/21
 #
 : V data for -v, B flags, D dictionary, S stop, H history, F files, T temp
+: R for deroff program
 V=/dev/null		B=			F= 
 S=/usr/share/dict/hstop	H=/dev/null		T=/tmp/spell.$$
+R="deroff@-w"
+
 next="F=$F@"
 trap "rm -f $T ${T}a ; exit" 0
 for A in $*
@@ -18,8 +21,10 @@ do
 	-d)	next="D=" ;;
 	-s)	next="S=" ;;
 	-h)	next="H=" ;;
+	-t)	R=detex ;;
+	-l)	R=delatex ;;
 	-*)	echo "spell: illegal option -- $A"
-		echo "usage: spell [-bv] [-d hlist] [-s hstop] [-h spellhist]"
+		echo "usage: spell [-bvtl] [-d hlist] [-s hstop] [-h spellhist]"
 		exit ;;
 	*)	eval $next"$A"
 		next="F=$F@" ;;
@@ -27,10 +32,10 @@ do
 done
 IFS=@
 case $H in
-/dev/null)	deroff -w $F | sort -u | /usr/libexec/spell $S $T |
+/dev/null)	$R $F | sort -u | /usr/libexec/spell $S $T |
 		/usr/libexec/spell ${D-/usr/share/dict/hlista} $V $B |
 		sort -u +0f +0 - $T ;;
-*)		deroff -w $F | sort -u | /usr/libexec/spell $S $T |
+*)		$R $F | sort -u | /usr/libexec/spell $S $T |
 		/usr/libexec/spell ${D-/usr/share/dict/hlista} $V $B |
 		sort -u +0f +0 - $T | tee -a $H
 		who am i >> $H 2> /dev/null ;;
