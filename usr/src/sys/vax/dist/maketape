@@ -1,11 +1,11 @@
-#	@(#)maketape	4.3	%G%
+#	@(#)maketape	4.4	%G%
 #
 machine=arpa
 trap "rm -f /tmp/tape.$$; exit" 0 1 2 3 13 15
 ${machine} rewind
 date
 cd /tp
-tp cmf /tmp/tape.$$ boot copy upchk hpchk updrtest hpdrtest
+tp cmf /tmp/tape.$$ boot copy
 cd /usr/mdec
 echo "Build 1st level boot block file"
 cat tsboot htboot tmboot mtboot noboot noboot noboot /tmp/tape.$$ | \
