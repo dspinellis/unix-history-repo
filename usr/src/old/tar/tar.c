@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -412,6 +412,7 @@ endtape()
 getdir()
 {
 	register struct stat *sp;
+	long tempquad;
 	int i;
 
 top:
@@ -425,7 +426,8 @@ top:
 	sp->st_uid = i;
 	sscanf(dblock.dbuf.gid, "%o", &i);
 	sp->st_gid = i;
-	sscanf(dblock.dbuf.size, "%lo", &sp->st_size);
+	sscanf(dblock.dbuf.size, "%lo", &tempquad);
+	sp->st_size = tempquad;
 	sscanf(dblock.dbuf.mtime, "%lo", &sp->st_mtime);
 	sscanf(dblock.dbuf.chksum, "%o", &chksum);
 	if (chksum != (i = checksum())) {
@@ -826,7 +828,7 @@ longt(st)
 
 	pmode(st);
 	printf("%3u/%1u", st->st_uid, st->st_gid);
-	printf("%7ld", st->st_size);
+	printf("%7qd", st->st_size);
 	cp = ctime(&st->st_mtime);
 	printf(" %-12.12s %-4.4s ", cp+4, cp+20);
 }
@@ -962,7 +964,7 @@ register struct stat *sp;
 	(void)sprintf(dblock.dbuf.mode, "%6o ", sp->st_mode & 07777);
 	(void)sprintf(dblock.dbuf.uid, "%6o ", sp->st_uid);
 	(void)sprintf(dblock.dbuf.gid, "%6o ", sp->st_gid);
-	(void)sprintf(dblock.dbuf.size, "%11lo ", sp->st_size);
+	(void)sprintf(dblock.dbuf.size, "%11qo ", sp->st_size);
 	(void)sprintf(dblock.dbuf.mtime, "%11lo ", sp->st_mtime);
 }
 
@@ -1270,7 +1272,7 @@ backtape()
 			done(4);
 		}
 	} else
-		(void)lseek(mt, (daddr_t) -TBLOCK*nblock, 1);
+		(void)lseek(mt, (off_t) -TBLOCK*nblock, 1);
 	recno--;
 }
 
