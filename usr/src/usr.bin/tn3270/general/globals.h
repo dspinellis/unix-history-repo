@@ -101,7 +101,9 @@ EXTERN int AidByte;
 
 EXTERN OIA OperatorInformationArea;
 
-EXTERN int oia_modified;		/* Has the oia been modified */
+EXTERN int
+    oia_modified,		/* Has the oia been modified */
+    ps_modified;		/* Has the presentation space been modified */
 
 #endif	/* defined(INCLUDED_OIA) */
 
