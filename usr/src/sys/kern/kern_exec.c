@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.39 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.40 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,6 +13,7 @@
 #include "proc.h"
 #include "mount.h"
 #include "malloc.h"
+#include "namei.h"
 #include "vnode.h"
 #include "seg.h"
 #include "file.h"
@@ -92,7 +93,7 @@ execve(p, uap, retval)
 	indir = 0;
 	uid = cred->cr_uid;
 	gid = cred->cr_gid;
-	if (error = VOP_GETATTR(vp, &vattr, cred))
+	if (error = VOP_GETATTR(vp, &vattr, cred, p))
 		goto bad;
 	if (vp->v_mount->mnt_flag & MNT_NOEXEC) {
 		error = EACCES;
@@ -106,9 +107,9 @@ execve(p, uap, retval)
 	}
 
   again:
-	if (error = VOP_ACCESS(vp, VEXEC, cred))
+	if (error = VOP_ACCESS(vp, VEXEC, cred, p))
 		goto bad;
-	if ((p->p_flag & STRC) && (error = VOP_ACCESS(vp, VREAD, cred)))
+	if ((p->p_flag & STRC) && (error = VOP_ACCESS(vp, VREAD, cred, p)))
 		goto bad;
 	if (vp->v_type != VREG ||
 	    (vattr.va_mode & (VEXEC|(VEXEC>>3)|(VEXEC>>6))) == 0) {
@@ -132,7 +133,8 @@ execve(p, uap, retval)
 	 */
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
 	error = vn_rdwr(UIO_READ, vp, (caddr_t)&exdata, sizeof (exdata),
-	    (off_t)0, UIO_SYSSPACE, (IO_UNIT|IO_NODELOCKED), cred, &resid);
+	    (off_t)0, UIO_SYSSPACE, (IO_UNIT|IO_NODELOCKED), cred, &resid,
+	    (struct proc *)0);
 	if (error)
 		goto bad;
 #ifndef lint
@@ -263,7 +265,7 @@ execve(p, uap, retval)
 		if (error = namei(ndp, p))
 			return (error);
 		vp = ndp->ni_vp;
-		if (error = VOP_GETATTR(vp, &vattr, cred))
+		if (error = VOP_GETATTR(vp, &vattr, cred, p))
 			goto bad;
 		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
 		    MAXCOMLEN);
@@ -545,7 +547,7 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		 */
 		(void) vn_rdwr(UIO_READ, vp, vm->vm_daddr, (int) ep->a_data,
 			(off_t)(toff + ep->a_text), UIO_USERSPACE,
-			(IO_UNIT|IO_NODELOCKED), cred, (int *)0);
+			(IO_UNIT|IO_NODELOCKED), cred, (int *)0, p);
 		/*
 		 * Read in text segment if necessary (0410),
 		 * and read-protect it.
@@ -553,7 +555,7 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		if (ep->a_text > 0) {
 			error = vn_rdwr(UIO_READ, vp, vm->vm_taddr,
 				(int)ep->a_text, toff, UIO_USERSPACE,
-				(IO_UNIT|IO_NODELOCKED), cred, (int *)0);
+				(IO_UNIT|IO_NODELOCKED), cred, (int *)0, p);
 			(void) vm_map_protect(&vm->vm_map, VM_MIN_ADDRESS,
 				VM_MIN_ADDRESS + trunc_page(ep->a_text),
 				VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
