@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.18 (Berkeley) %G%
+ *	@(#)stdio.h	5.19 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -179,13 +179,13 @@ FILE	*fopen __P((const char *, const char *));
 int	 fprintf __P((FILE *, const char *, ...));
 int	 fputc __P((int, FILE *));
 int	 fputs __P((const char *, FILE *));
-int	 fread __P((void *, size_t, size_t, FILE *));
+size_t	 fread __P((void *, size_t, size_t, FILE *));
 FILE	*freopen __P((const char *, const char *, FILE *));
 int	 fscanf __P((FILE *, const char *, ...));
 int	 fseek __P((FILE *, long, int));
 int	 fsetpos __P((FILE *, const fpos_t *));
 long	 ftell __P((const FILE *));
-int	 fwrite __P((const void *, size_t, size_t, FILE *));
+size_t	 fwrite __P((const void *, size_t, size_t, FILE *));
 int	 getc __P((FILE *));
 int	 getchar __P((void));
 char	*gets __P((char *));
