@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	8.12 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -468,6 +468,7 @@ found:
 		if ((dp->i_mode & ISVTX) &&
 		    cred->cr_uid != 0 &&
 		    cred->cr_uid != dp->i_uid &&
+		    tdp->v_type != VLNK &&
 		    VTOI(tdp)->i_uid != cred->cr_uid) {
 			vput(tdp);
 			return (EPERM);
