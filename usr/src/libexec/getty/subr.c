@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	4.2 (Berkeley) 83/07/07";
+static char sccsid[] = "@(#)subr.c	4.3 (Berkeley) 84/06/05";
 #endif
 
 /*
@@ -170,6 +170,9 @@ setflags(n)
 
 	if (CE)
 		f |= CRTERA;
+
+	if (CK)
+		f |= CRTKIL;
 
 	if (PE)
 		f |= PRTERA;
