@@ -1,6 +1,6 @@
-/*	dver.c	1.12	84/02/13
+/*	dver.c	1.12	84/02/27
  *
- * Versatec driver for the new troff
+ * VAX Versatec driver for the new troff
  *
  * Authors:	BWK(BELL)
  *		VCAT(berkley)
@@ -81,7 +81,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.12	84/02/13";
+char	SccsId[]= "dver.c	1.12	84/02/27";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -616,8 +616,9 @@ char *s, *s1;
 		register char *c;			    /* somewhere else */
 
 #define ptrswap(x, y) { c = (char*) (x); x = y; y = c; }
+#define ptrfswap(x, y) { c = (char*) (x); x = y; y = (struct font *)c; }
 
-		ptrswap(fontbase[n], fontbase[fin]);
+		ptrfswap(fontbase[n], fontbase[fin]);
 		ptrswap(codetab[n], codetab[fin]);
 		ptrswap(widtab[n], widtab[fin]);
 		ptrswap(fitab[n], fitab[fin]);
@@ -892,7 +893,7 @@ int c;
 		p = codetab[font];	/* get the printing value of ch */
 		pw = widtab[font];	/* get the width */
 	} else		/* on another font (we hope) */
-		for (k=font, j=0; j <= nfonts; j++, k = (k+1) % (nfonts+1)){
+		for (j=0; j <= nfonts; j++, k = (k+1) % (nfonts+1)){
 			if (fitab[k] == 0)
 				continue;
 			if ((i = fitab[k][c] & BMASK) != 0) {
@@ -903,12 +904,13 @@ int c;
 			}
 		}
 
-	if (i == 0 || (code = p[i] & BMASK) == 0 || k > nfonts) {
+	if (i == 0) {
 #ifdef DEBUGABLE
 		if (dbg) fprintf(stderr,"not found 0%o\n", c+32);
 #endif
 		return;
 	}
+	code = p[i] & BMASK;
 #ifdef DEBUGABLE
 	if (dbg) {
 		if (isprint(c+32))
