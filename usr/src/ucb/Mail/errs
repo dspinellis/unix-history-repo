@@ -1,0 +1,6 @@
+cc -c -R version.c
+cc -E -O -DVMUNIX -DV7 aux.c | /usr/ucb/xstr -c -
+x.c: Connection reset by peer
+*** Error code 3
+
+Stop.
