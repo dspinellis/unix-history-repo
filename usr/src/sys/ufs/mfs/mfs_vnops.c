@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.28 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -115,7 +115,7 @@ mfs_ioctl(vp, com, data, fflag, cred, p)
 	struct proc *p;
 {
 
-	return (-1);
+	return (ENOTTY);
 }
 
 /*
@@ -132,7 +132,17 @@ mfs_strategy(bp)
 	if (vfinddev(bp->b_dev, VBLK, &vp) || vp->v_usecount == 0)
 		panic("mfs_strategy: bad dev");
 	mfsp = VTOMFS(vp);
-	if (mfsp->mfs_pid == p->p_pid) {
+	/* check for mini-root access */
+	if (mfsp->mfs_pid == 0) {
+		caddr_t base;
+
+		base = mfsp->mfs_baseoff + (bp->b_blkno << DEV_BSHIFT);
+		if (bp->b_flags & B_READ)
+			bcopy(base, bp->b_un.b_addr, bp->b_bcount);
+		else
+			bcopy(bp->b_un.b_addr, base, bp->b_bcount);
+		biodone(bp);
+	} else if (mfsp->mfs_pid == p->p_pid) {
 		mfs_doio(bp, mfsp->mfs_baseoff);
 	} else {
 		bp->av_forw = mfsp->mfs_buflist;
@@ -231,6 +241,7 @@ mfs_doio(bp, base)
 	register struct buf *bp;
 	caddr_t base;
 {
+
 	base += (bp->b_blkno << DEV_BSHIFT);
 	if (bp->b_flags & B_READ)
 		bp->b_error = copyin(base, bp->b_un.b_addr, bp->b_bcount);

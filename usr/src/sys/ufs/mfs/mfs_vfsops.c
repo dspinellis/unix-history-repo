@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.22 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,6 +28,9 @@
 #include <ufs/mfs/mfsnode.h>
 #include <ufs/mfs/mfs_extern.h>
 
+caddr_t	mfs_rootbase;	/* address of mini-root in kernel virtual memory */
+u_long	mfs_rootsize;	/* size of mini-root in bytes */
+
 extern struct vnodeops mfs_vnodeops;
 
 /*
@@ -45,6 +48,86 @@ struct vfsops mfs_vfsops = {
 	ffs_vptofh,
 	mfs_init,
 };
+
+/*
+ * Called by main() when mfs is going to be mounted as root.
+ *
+ * Name is updated by mount(8) after booting.
+ */
+#define ROOTNAME	"root_device"
+
+mfs_mountroot()
+{
+	extern struct vnode *rootvp;
+	register struct fs *fs;
+	register struct mount *mp;
+	struct proc *p = curproc;	/* XXX */
+	struct ufsmount *ump;
+	struct mfsnode *mfsp;
+	u_int size;
+	int error;
+
+	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
+	mp->mnt_op = &mfs_vfsops;
+	mp->mnt_flag = MNT_RDONLY;
+	mp->mnt_mounth = NULLVP;
+	mfsp = malloc(sizeof *mfsp, M_MFSNODE, M_WAITOK);
+	rootvp->v_data = mfsp;
+	rootvp->v_op = &mfs_vnodeops;
+	mfsp->mfs_baseoff = mfs_rootbase;
+	mfsp->mfs_size = mfs_rootsize;
+	mfsp->mfs_vnode = rootvp;
+	mfsp->mfs_pid = p->p_pid;
+	mfsp->mfs_buflist = (struct buf *)0;
+	if (error = ffs_mountfs(rootvp, mp, p)) {
+		free(mp, M_MOUNT);
+		free(mfsp, M_MFSNODE);
+		return (error);
+	}
+	if (error = vfs_lock(mp)) {
+		(void)ffs_unmount(mp, 0, p);
+		free(mp, M_MOUNT);
+		free(mfsp, M_MFSNODE);
+		return (error);
+	}
+	rootfs = mp;
+	mp->mnt_next = mp;
+	mp->mnt_prev = mp;
+	mp->mnt_vnodecovered = NULLVP;
+	ump = VFSTOUFS(mp);
+	fs = ump->um_fs;
+	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
+	fs->fs_fsmnt[0] = '/';
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
+	    MNAMELEN);
+	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
+	    &size);
+	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void)ffs_statfs(mp, &mp->mnt_stat, p);
+	vfs_unlock(mp);
+	inittodr((time_t)0);
+	return (0);
+}
+
+/*
+ * This is called early in boot to set the base address and size
+ * of the mini-root.
+ */
+mfs_initminiroot(base)
+	caddr_t base;
+{
+	struct fs *fs = (struct fs *)(base + SBOFF);
+	extern int (*mountroot)();
+
+	/* check for valid super block */
+	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE ||
+	    fs->fs_bsize < sizeof(struct fs))
+		return (0);
+	mountroot = mfs_mountroot;
+	mfs_rootbase = base;
+	mfs_rootsize = fs->fs_fsize * fs->fs_size;
+	return (mfs_rootsize);
+}
 
 /*
  * VFS Operations.
