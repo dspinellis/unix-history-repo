@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)talkd.h	5.3 (Berkeley) %G%
+ *	@(#)talkd.h	5.4 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -46,8 +46,8 @@ typedef struct {
 	u_char	answer;		/* not used */
 	u_char	pad;
 	u_long	id_num;		/* message id */
-	struct	sockaddr addr;
-	struct	sockaddr ctl_addr;
+	struct	osockaddr addr;		/* old (4.3) style */
+	struct	osockaddr ctl_addr;	/* old (4.3) style */
 	long	pid;		/* caller's process id */
 #define	NAME_SIZE	12
 	char	l_name[NAME_SIZE];/* caller's name */
@@ -65,7 +65,7 @@ typedef struct {
 	u_char	answer;		/* respose to request message, see below */
 	u_char	pad;
 	u_long	id_num;		/* message id */
-	struct	sockaddr addr;	/* address for establishing conversation */
+	struct	osockaddr addr;	/* address for establishing conversation */
 } CTL_RESPONSE;
 
 #define	TALK_VERSION	1		/* protocol version */
