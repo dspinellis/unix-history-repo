@@ -9,11 +9,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dir.h	8.4 (Berkeley) %G%
+ *	@(#)dir.h	8.5 (Berkeley) %G%
  */
 
 #ifndef _DIR_H_
 #define	_DIR_H_
+
+/*
+ * Theoretically, directories can be more than 2Gb in length, however, in
+ * practice this seems unlikely. So, we define the type doff_t as a 32-bit
+ * quantity to keep down the cost of doing lookup on a 32-bit machine.
+ */
+#define	doff_t		int32_t
+#define MAXDIRSIZE	(0x7fffffff)
 
 /*
  * A directory consists of some number of blocks of DIRBLKSIZ
