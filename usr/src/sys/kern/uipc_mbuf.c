@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_mbuf.c	6.6 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	6.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -164,7 +164,7 @@ m_more(canwait, type)
 	while (m_expand(canwait) == 0) {
 		if (canwait == M_WAIT) {
 			m_want++;
-			sleep((caddr_t)mfree, PZERO - 1);
+			sleep((caddr_t)&mfree, PZERO - 1);
 		} else {
 			mbstat.m_drops++;
 			return (NULL);
