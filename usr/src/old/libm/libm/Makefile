@@ -1,7 +1,7 @@
 #
-#	@(#)Makefile	4.2	%G%
+#	@(#)Makefile	4.3	%G%
 #
-SCCSID = "@(#)Makefile 4.2 %G%"
+SCCSID = "@(#)Makefile 4.3 %G%"
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -33,11 +33,15 @@ DESTDIR=
 #
 # files comprising the standard Math library
 #
+SRCS=	E.c L.c acosh.c asin.c asinh.c atan.c atanh.c atrig.c cosh.c \
+	erf.c exp.c exp__E.c floor.c gamma.c hypot.c j0.c j1.c jn.c \
+	log.c log10.c log__L.c pow.c sin.c sinh.c sqrt.c tan.c tanh.c
 FILES=cosh.o sinh.o tanh.o acosh.o asinh.o atanh.o atrig.o \
 E.o L.o exp.o log.o log10.o pow.o exp__E.o log__L.o \
 jn.o j0.o j1.o gamma.o erf.o floor.o
 MORE=\
 ${MACH}/atan2.o ${MACH}/cbrt.o ${MACH}/trig.o ${MACH}/cabs.o ${MACH}/support.o
+TAGSFILE=tags
 
 .c.o:
 ####	generate additional code for profiling (-p)
@@ -61,5 +65,12 @@ install: libm.a libm_p.a
 	${INSTALL} libm_p.a ${DESTDIR}/usr/lib
 	ranlib ${DESTDIR}/usr/lib/libm_p.a
 
+tags:
+	cwd=`pwd`; \
+	for i in ${SRCS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+
 clean:
-	-rm -f *.o ${MACH}/*.o profiled/*.o profiled/${MACH}/*.o libm.a libm_p.a
+	-rm -f *.o ${MACH}/*.o profiled/*.o profiled/${MACH}/*.o \
+	    libm.a libm_p.a tags
