@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.95 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.96 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.95 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.96 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -274,15 +274,6 @@ getrequests()
 				p[MAXNAME] = '\0';
 			RealHostName = newstr(p);
 			setproctitle("startup with %s", p);
-
-#ifdef LOG
-			if (LogLevel > 11)
-			{
-				/* log connection information */
-				syslog(LOG_INFO, "connect from %s (%s)",
-					RealHostName, anynet_ntoa(&RealHostAddr));
-			}
-#endif
 
 			if ((InChannel = fdopen(t, "r")) == NULL ||
 			    (t = dup(t)) < 0 ||
