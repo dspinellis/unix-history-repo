@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_dmc.h	7.2 (Berkeley) %G%
+ *	@(#)if_dmc.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -57,12 +57,12 @@ struct dmc_header {
 #define	DMC_RQI		0040		/* port request bit */
 #define	DMC_IEI		0100		/* enable input interrupts */
 #define	DMC_RDYI	0200		/* port ready */
-#define	DMC0BITS	"\10\8RDI\7IEI\6RQI"
+#define	DMC0BITS	"\10\10RDI\7IEI\6RQI"
 
 /* defines for bsel1 */
 #define	DMC_MCLR	0100		/* DMC11 Master Clear */
 #define	DMC_RUN		0200		/* clock running */
-#define	DMC1BITS	"\10\8RUN\7MCLR"
+#define	DMC1BITS	"\10\10RUN\7MCLR"
 
 /* defines for bsel2 */
 #define	DMC_BACCO	0
@@ -71,7 +71,7 @@ struct dmc_header {
 #define	DMC_OUR		4		/* read block */
 #define	DMC_IEO		0100		/* enable output interrupts */
 #define	DMC_RDYO	0200		/* port available */
-#define	DMC2BITS	"\10\8RDO\7IEO"
+#define	DMC2BITS	"\10\10RDO\7IEO"
 
 /* defines for CNTLI mode */
 #define	DMC_HDPLX	02000		/* half duplex DDCMP operation */
