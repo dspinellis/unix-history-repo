@@ -1,4 +1,4 @@
-/*	ubareg.h	4.3	%G%	*/
+/*	ubareg.h	4.4	%G%	*/
 
 /*
  * Unibus adapter
@@ -10,11 +10,14 @@
 
 #if VAX==780
 #define	PHYSUBA0	0x20006000
-#define	PHYSUMEM	0x2013e000
+#define	PHYSUDEV0	0x20100000
 #else
 #define	PHYSUBA0	0xf30000
-#define	PHYSUMEM	(0xfc0000+UNIBASE)
+#define	PHYSUDEV0	0xfc0000
 #endif
+#define	PHYSUMEM0	(PHYSUDEV0+0x3e000)
+#define	PHYSUMEM	PHYSUMEM0
+#define	PHYSUDEVSZ	0x40000
 
 #if VAX==780
 /* UBA Configuration Register, CNFGR */
@@ -92,17 +95,17 @@
 /*
  * Unibus maps
  */
-#ifdef	KERNEL
-#define	UAMSIZ 50
-
-struct	map ubamap[UAMSIZ];
-char	bdpwant;		/* someone is waiting for buffered data path */ 
 #if VAX==780
 #define	NUBABDP	15
 #else
 #define	NUBABDP	3
 #endif
 
+#ifdef	KERNEL
+#define	UAMSIZ 50
+
+struct	map ubamap[UAMSIZ];
+char	bdpwant;		/* someone is waiting for buffered data path */ 
 struct	map bdpmap[NUBABDP];
 char	umrwant;		/* ... for unibus map registers */
 #endif
