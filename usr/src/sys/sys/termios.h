@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.11 (Berkeley) %G%
+ *	@(#)termios.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -85,8 +85,6 @@
 #define	IXON		0x00000200	/* enable output flow control */
 #define	IXOFF		0x00000400	/* enable input flow control */
 #ifndef _POSIX_SOURCE
-#define	IFLOW		IXON		/* enable output flow control */
-#define	ITANDEM		IXOFF		/* enable input flow control */
 #define	IXANY		0x00000800	/* any char will restart after stop */
 #define IMAXBEL		0x00002000	/* ring bell on input queue full */
 #endif  /*_POSIX_SOURCE */
@@ -97,7 +95,6 @@
 #define	OPOST		0x00000001	/* enable following output processing */
 #ifndef _POSIX_SOURCE
 #define ONLCR		0x00000002	/* map NL to CR-NL (ala CRMOD) */
-#define ONLCRNL		ONLCR
 #define OXTABS		0x00000004	/* expand tabs to spaces */
 #define ONOEOT		0x00000008	/* discard EOT's (^D) on output) */
 #endif  /*_POSIX_SOURCE */
@@ -182,7 +179,6 @@ struct termios {
 #define	TCSANOW		0		/* make change immediate */
 #define	TCSADRAIN	1		/* drain output, then change */
 #define	TCSAFLUSH	2		/* drain output, flush input */
-#define	TCSADFLUSH	TCSAFLUSH	/* XXX (was a typo, to be removed) */
 
 /*
  * Standard speeds
