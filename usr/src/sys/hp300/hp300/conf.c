@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.4 (Berkeley) %G%
+ *	@(#)conf.c	7.5 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -177,6 +177,18 @@ int	clockopen(),clockclose(),clockioctl(),clockmap();
 #define clockmap	enxio
 #endif
 
+#include "bpfilter.h"
+#if NBPFILTER > 0
+int	bpfopen(),bpfclose(),bpfread(),bpfwrite(),bpfioctl(),bpfselect();
+#else
+#define bpfopen		enxio
+#define bpfclose	enxio
+#define bpfread		enxio
+#define bpfwrite	enxio
+#define bpfioctl	enxio
+#define bpfselect	enxio
+#endif
+
 int	logopen(),logclose(),logread(),logioctl(),logselect();
 
 int	fdopen();
@@ -261,6 +273,9 @@ struct cdevsw	cdevsw[] =
 	{ fdopen,	enodev,		enodev,		enodev,		/*21*/
 	  enodev,	enodev,		enodev,		NULL,
 	  enodev,	enodev,		NULL },
+	{ bpfopen,	bpfclose,	bpfread,	bpfwrite,	/*22*/
+	  bpfioctl,	enodev,		enodev,		NULL,
+	  bpfselect,	enodev,		NULL },
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
