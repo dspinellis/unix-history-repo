@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.7 82/12/29";
+static char sccsid[] = "@(#)rlogind.c	4.8 83/01/07";
 #endif
 
 #include <stdio.h>
@@ -266,11 +266,10 @@ gotpty:
 
 cleanup()
 {
-	int how = 2;
 
 	rmut();
 	vhangup();		/* XXX */
-	ioctl(netf, SIOCDONE, &how);
+	shutdown(netf, 2);
 	kill(0, SIGKILL);
 	exit(1);
 }
