@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)spec_vnops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -479,6 +479,8 @@ spec_bmap(ap)
 		*ap->a_vpp = ap->a_vp;
 	if (ap->a_bnp != NULL)
 		*ap->a_bnp = ap->a_bn;
+	if (ap->a_runp != NULL)
+		*ap->a_runp = 0;
 	return (0);
 }
 
