@@ -4,13 +4,15 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.3 (Berkeley) %G%
+.\"	@(#)op.me	8.4 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:08-%'
 .\" SD is lib if sendmail is installed in /usr/lib, sbin if in /usr/sbin
 .ds SD sbin
+.\" SB is bin if newaliases/mailq are installed in /usr/bin, ucb if in /usr/ucb
+.ds SB bin
 .nr si 3n
 .de $0
 .(x
@@ -41,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.3
+Version 8.4
 .sp
 For Sendmail Version 8.4
 .)l
@@ -269,9 +271,9 @@ make install
 This should install the binary in
 /usr/\*(SD
 and create links from
-/usr/bin/newaliases
+/usr/\*(SB/newaliases
 and
-/usr/bin/mailq
+/usr/\*(SB/mailq
 to
 /usr/\*(SD/sendmail.
 On 4.4BSD systems it will also format and install man pages.
@@ -533,7 +535,7 @@ If you have a particularly unusual system configuration
 you may need to create a special version.
 The format of this file is detailed in later sections
 of this document.
-.sh 3 "/usr/ucb/newaliases"
+.sh 3 "/usr/\*(SB/newaliases"
 .pp
 If you are running delivermail,
 it is critical that the
@@ -542,8 +544,8 @@ command be replaced.
 This can just be a link to
 .i sendmail :
 .(b
-rm \-f /usr/ucb/newaliases
-ln /usr/\*(SD/sendmail /usr/ucb/newaliases
+rm \-f /usr/\*(SB/newaliases
+ln /usr/\*(SD/sendmail /usr/\*(SB/newaliases
 .)b
 This can be installed in whatever search path you prefer
 for your system.
@@ -752,7 +754,7 @@ is defined in the
 option of the
 .i sendmail.cf
 file.
-.sh 3 "/usr/ucb/newaliases"
+.sh 3 "/usr/\*(SB/newaliases"
 .pp
 If
 .i sendmail
@@ -764,7 +766,7 @@ flag
 (i.e., will rebuild the alias database;
 see below).
 This should be a link to /usr/\*(SD/sendmail.
-.sh 3 "/usr/ucb/mailq"
+.sh 3 "/usr/\*(SB/mailq"
 .pp
 If
 .i sendmail
@@ -6474,7 +6476,7 @@ check there to find the actual pathnames.
 .ip "/usr/\*(SD/sendmail"
 The binary of
 .i sendmail .
-.ip /usr/bin/newaliases
+.ip /usr/\*(SB/newaliases
 A link to /usr/\*(SD/sendmail;
 causes the alias database to be rebuilt.
 Running this program is completely equivalent to giving
@@ -6482,7 +6484,7 @@ Running this program is completely equivalent to giving
 the
 .b \-bi
 flag.
-.ip /usr/bin/mailq
+.ip /usr/\*(SB/mailq
 Prints a listing of the mail queue.
 This program is equivalent to using the
 .b \-bp
@@ -6540,7 +6542,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.3
+.\"Version 8.4
 .\".ce 0
 .bp 2
 .ce
