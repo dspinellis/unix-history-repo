@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_debug.c	7.7 (Berkeley) %G%
+ *	@(#)pk_debug.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -109,5 +109,6 @@ struct mbuf *m;
 	c->mbc_num = (1 + c->mbc_num) % c->mbc_size;
 	if (*mp)
 		m_freem(*mp);
-	*mp = m_copym(m, 0, M_COPYALL, M_DONTWAIT);
+	if (*mp = m_copym(m, 0, M_COPYALL, M_DONTWAIT))
+		(*mp)->m_flags |= m->m_flags & 0x08;
 }
