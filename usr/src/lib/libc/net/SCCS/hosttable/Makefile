@@ -4,25 +4,32 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 
-OBJS=	gethostnamadr.o 
+OBJS=	gethostnamadr.o gethostent.o
+SRCS=	gethostnamadr.c gethostent.c
 CFLAGS=	-O ${DEFS}
 
-gethostnamadr.o: 
+.c.o: 
 	${CC} -p -c ${CFLAGS} $*.c
 	-ld -X -r $*.o
-	mv a.out ../profiled/$*.o
+	mv a.out profiled/$*.o
 	${CC} ${CFLAGS} -c $*.c
 	-ld -x -r $*.o
-	mv a.out ../$*.o
+	mv a.out $*.o
 
-netlib netlib_p: ${OBJS} 
-	@echo "building profiled netlib"
-	@cd ../profiled; ar ru ../netlib_p ${TARGETOBJS}
+hostlib hostlib_p: ${OBJS} 
+	@echo "building profiled hostlib"
+	@cd profiled; ar cru ../hostlib_p ${OBJS}
 	@echo "building normal netlib"
-	@ar ru ../netlib ${TARGETOBJS}
+	@ar cru hostlib ${OBJS}
 	
+tags:
+	cwd=`pwd`; \
+	for i in ${SRCS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+
 clean:
-	rm -f ${OBJS} errs a.out core 
+	rm -f ${OBJS} errs a.out core hostlib hostlib_p profiled/*.o tags
