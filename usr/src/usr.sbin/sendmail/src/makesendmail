@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.9 (Berkeley) %G%
+#       @(#)makesendmail	8.10 (Berkeley) %G%
 #
 
 #
@@ -28,6 +28,7 @@ os=`uname -s`
 case $os
 in
   DYNIX/ptx)	os=PTX;;
+  Paragon*)	os=Paragon;;
 esac
 
 # determine operating system release
