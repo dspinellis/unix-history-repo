@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.2.t	8.4 (Berkeley) %G%
+.\"	@(#)1.2.t	8.5 (Berkeley) %G%
 .\"
 .Sh 2 "Memory management
 .Sh 3 "Text, data, and stack
@@ -61,14 +61,13 @@ l l.
 Flags contain sharing type and options. Sharing options, choose one
 MAP_SHARED	/* share changes */
 MAP_PRIVATE	/* changes are private */
-MAP_COPY	/* ``copy'' region at mmap time */
 .TE
 .DE
 .DS
 .TS
 l s
 l l.
-Other flags
+Other flags \(dg
 MAP_ANON	/* allocated from virtual memory; \fIfd\fP ignored */
 MAP_FIXED	/* map addr must be exactly as requested */
 MAP_NORESERVE	/* don't reserve needed swap area */
@@ -77,6 +76,9 @@ MAP_HASSEMAPHORE	/* region may contain semaphores */
 MAP_RENAME	/* Sun: rename private pages to file */
 .TE
 .DE
+.FS
+\(dg Currently only MAP_ANON and MAP_FIXED are implemented.
+.FE
 The cpu-dependent size of a page is returned by the
 .Fn sysctl
 interface described in section
@@ -105,8 +107,9 @@ for the convenience of the system,
 it may differ from that supplied
 unless the MAP_FIXED flag is given,
 in which case the exact address will be used or the call will fail.
-The \fIaddr\fP, \fIlen\fP, and \fIpos\fP parameters
-must all be multiples of the pagesize.
+The \fIaddr\fP and \fIpos\fP parameters
+must be multiples of the pagesize,
+\fIlen\fP will be rounded by the system as necessary.
 A successful
 .Fn mmap
 will delete any previous mapping
@@ -120,10 +123,11 @@ whether modifications made to
 this mapped copy of the page
 are to be kept \fIprivate\fP, or are to be \fIshared\fP with
 other references.
-Possible types include MAP_SHARED, MAP_PRIVATE, or MAP_COPY that
+Possible types include MAP_SHARED or MAP_PRIVATE that
 map a regular file or character-special device memory,
 and MAP_ANON, which maps memory not associated with any specific file.
-The file descriptor used when creating MAP_ANON regions is ignored.
+The file descriptor used when creating MAP_ANON regions is not used
+and should be -1.
 The MAP_INHERIT flag allows a region to be inherited after an
 .Fn execve .
 The MAP_HASSEMAPHORE flag allows special handling for
@@ -248,7 +252,11 @@ After the
 call, the pages in the specified address range are still accessible
 but may be paged out if memory is short and they are not accessed.
 .Sh 3 "Synchronization primitives
-Primitives are provided for synchronization using semaphores in shared memory.
+Primitives are provided for synchronization using semaphores
+in shared memory.\(dd
+.FS
+\(dd All currently unimplemented, no entry points exists.
+.FE
 These primitives are expected to be superseded by the semaphore
 interface being specified by the POSIX Pthread standard.
 They are provided as an efficient interim solution.
