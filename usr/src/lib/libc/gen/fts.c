@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	8.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -654,14 +654,8 @@ mem1:				saved_errno = errno;
 		p->fts_level = level;
 
 #ifdef FTS_WHITEOUT
-		switch (dp->d_type) {
-		case DT_WHT:
+		if (dp->d_type == DT_WHT)
 			p->fts_flags |= FTS_ISW;
-			break;
-		case DT_WHTD:
-			p->fts_flags |= FTS_ISWD;
-			break;
-		}
 #endif
 
 		if (cderrno) {
@@ -770,7 +764,7 @@ fts_stat(sp, p, follow)
 
 #ifdef FTS_WHITEOUT
 	/* check for whiteout */
-	if (p->fts_flags & (FTS_ISW|FTS_ISWD)) {
+	if (p->fts_flags & FTS_ISW) {
 		if (sbp != &sb) {
 			memset(sbp, '\0', sizeof (*sbp));
 			sbp->st_mode = S_IFWHT;
