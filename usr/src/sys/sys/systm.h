@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.4 (Berkeley) %G%
+ *	@(#)systm.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -52,7 +52,6 @@ extern	int szicode;		/* its size */
 #endif
 
 daddr_t	bmap();
-caddr_t	calloc();
 int	memall();
 int	vmemall();
 caddr_t	wmemall();
