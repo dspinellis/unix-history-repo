@@ -1,0 +1,42 @@
+
+#
+#	@(#)Makefile	1.1	(CWI)	85/07/18
+#
+CFLAGS=-O -DBSD42
+DESTDIR=
+BINDIR=/usr/local
+SUBDIR= utilities devhar eqn pic ideal
+TFILES=n1.o n2.o n3.o n4.o n5.o t6.o n7.o n8.o n9.o t10.o ni.o nii.o hytab.o suftab.o
+
+all:	ditroff ${SUBDIR}
+
+ditroff:	${TFILES}
+	${CC} -o ditroff ${CFLAGS} ${TFILES} 
+
+${SUBDIR}: /tmp
+	cd $@; make ${MFLAGS}
+
+n1.o:	tdef.h d.h v.h tw.h s.h ext.h ni.o
+n2.o:	tdef.h d.h v.h tw.h s.h
+n3.o:	tdef.h d.h v.h tw.h s.h
+n4.o:	tdef.h d.h v.h tw.h s.h
+n5.o:	tdef.h d.h v.h tw.h s.h
+n6.o:	tdef.h d.h v.h tw.h s.h
+t6.o:	tdef.h d.h v.h tw.h s.h dev.h ni.o
+n7.o:	tdef.h d.h v.h tw.h s.h
+n8.o:	tdef.h d.h v.h tw.h s.h
+n9.o:	tdef.h d.h v.h tw.h s.h
+n10.o:	tdef.h d.h v.h tw.h s.h
+t10.o:	tdef.h d.h v.h tw.h s.h dev.h ni.o
+ni.o:	tdef.h d.h v.h tw.h s.h
+nii.o:	tdef.h d.h v.h tw.h s.h
+
+install:	all
+	install -s ditroff ${DESTDIR}${BINDIR}/ditroff
+	install -c -m 644 ditroff.1 ${DESTDIR}/usr/man/manl/ditroff.1
+	for i in ${SUBDIR}; do \
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
+
+clean:
+	rm -f make.out *.o ditroff
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
