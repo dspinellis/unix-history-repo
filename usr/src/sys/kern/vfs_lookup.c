@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.7	81/05/18	*/
+/*	vfs_lookup.c	4.8	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,7 +22,7 @@
  */
 struct inode *
 namei(func, flag)
-int (*func)();
+	int (*func)();
 {
 	register struct inode *dp;
 	register c;
@@ -39,13 +39,13 @@ int (*func)();
 	 */
 
 	dp = u.u_cdir;
-	if((c=(*func)()) == '/')
+	if ((c=(*func)()) == '/')
 		if ((dp = u.u_rdir) == NULL)
 			dp = rootdir;
 	(void) iget(dp->i_dev, dp->i_number);
-	while(c == '/')
+	while (c == '/')
 		c = (*func)();
-	if(c == '\0' && flag != 0)
+	if (c == '\0' && flag != 0)
 		u.u_error = ENOENT;
 
 cloop:
@@ -54,23 +54,10 @@ cloop:
 	 * to last component matched.
 	 */
 
-	if(u.u_error)
+	if (u.u_error)
 		goto out;
-	if(c == '\0')
+	if (c == '\0')
 		return(dp);
-
-#ifdef CHAOS
-	/*
-	 *      If the current node is a character
-	 *      special file with the SUID bit set, return anyway.
-	 *	This lets the Chaos open decode the rest of the name in its own
-	 *      peculiar way.  jrl 3/81
-	 */
-	if((dp->i_mode&(IFMT|ISUID)) == (IFCHR|ISUID)) {
-		u.u_dirp--;     /* back up to the slash or null */
-		return(dp);
-	}
-#endif
 
 	/*
 	 * If there is another component,
@@ -80,8 +67,6 @@ cloop:
 
 	cp = &u.u_dbuf[0];
 	while (c != '/' && c != '\0' && u.u_error == 0 ) {
-		if (mpxip!=NULL && c=='!')
-			break;
 		if (flag==1 && c == ('/'|0200)) {
 			u.u_error = ENOENT;
 			goto out;
@@ -90,16 +75,10 @@ cloop:
 			*cp++ = c;
 		c = (*func)();
 	}
-	while(cp < &u.u_dbuf[DIRSIZ])
+	while (cp < &u.u_dbuf[DIRSIZ])
 		*cp++ = '\0';
-	while(c == '/')
+	while (c == '/')
 		c = (*func)();
-	if (c == '!' && mpxip != NULL) {
-		iput(dp);
-		plock(mpxip);
-		mpxip->i_count++;
-		return(mpxip);
-	}
 
 seloop:
 	/*
@@ -107,10 +86,10 @@ seloop:
 	 * must have X permission.
 	 */
 
-	if((dp->i_mode&IFMT) != IFDIR)
+	if ((dp->i_mode&IFMT) != IFDIR)
 		u.u_error = ENOTDIR;
 	(void) access(dp, IEXEC);
-	if(u.u_error)
+	if (u.u_error)
 		goto out;
 
 	/*
@@ -132,14 +111,14 @@ eloop:
 	 * is appropriate as per flag.
 	 */
 
-	if(u.u_offset >= dp->i_size) {
-		if(bp != NULL)
+	if (u.u_offset >= dp->i_size) {
+		if (bp != NULL)
 			brelse(bp);
-		if(flag==1 && c=='\0' && dp->i_nlink) {
-			if(access(dp, IWRITE))
+		if (flag==1 && c=='\0' && dp->i_nlink) {
+			if (access(dp, IWRITE))
 				goto out;
 			u.u_pdir = dp;
-			if(eo)
+			if (eo)
 				u.u_offset = eo-sizeof(struct direct);
 			else
 				dp->i_flag |= IUPD|ICHG;
@@ -155,8 +134,8 @@ eloop:
 	 * Release previous if it exists.
 	 */
 
-	if((u.u_offset&BMASK) == 0) {
-		if(bp != NULL)
+	if ((u.u_offset&BMASK) == 0) {
+		if (bp != NULL)
 			brelse(bp);
 		bp = bread(dp->i_dev,
 			bmap(dp, (daddr_t)(u.u_offset>>BSHIFT), B_READ));
@@ -177,15 +156,15 @@ eloop:
 	 */
 
 	u.u_offset += sizeof(struct direct);
-	if(ep->d_ino == 0) {
-		if(eo == 0)
+	if (ep->d_ino == 0) {
+		if (eo == 0)
 			eo = u.u_offset;
 		goto eloop;
 	}
 	for(i=0; i<DIRSIZ; i++) {
-		if(u.u_dbuf[i] != ep->d_name[i])
+		if (u.u_dbuf[i] != ep->d_name[i])
 			goto eloop;
-		if(u.u_dbuf[i] == 0)
+		if (u.u_dbuf[i] == 0)
 			break;
 	}
 
@@ -195,29 +174,29 @@ eloop:
 	 * cloop, otherwise return.
 	 */
 	bcopy((caddr_t)ep, (caddr_t)&u.u_dent, sizeof(struct direct));
-	if(bp != NULL)
+	if (bp != NULL)
 		brelse(bp);
-	if(flag==2 && c=='\0') {
-		if(access(dp, IWRITE))
+	if (flag==2 && c=='\0') {
+		if (access(dp, IWRITE))
 			goto out;
 		return(dp);
 	}
 	d = dp->i_dev;
-	if(u.u_dent.d_ino == ROOTINO)
-	if(dp->i_number == ROOTINO)
-	if(u.u_dent.d_name[1] == '.')
+	if (u.u_dent.d_ino == ROOTINO)
+	if (dp->i_number == ROOTINO)
+	if (u.u_dent.d_name[1] == '.')
 		for(i=1; i<NMOUNT; i++)
-			if(mount[i].m_bufp != NULL)
-			if(mount[i].m_dev == d) {
+			if (mount[i].m_bufp != NULL)
+			if (mount[i].m_dev == d) {
 				iput(dp);
 				dp = mount[i].m_inodp;
 				dp->i_count++;
-				plock(dp);
+				ilock(dp);
 				goto seloop;
 			}
 	iput(dp);
 	dp = iget(d, u.u_dent.d_ino);
-	if(dp == NULL)
+	if (dp == NULL)
 		return(NULL);
 	goto cloop;
 
@@ -245,7 +224,7 @@ uchar()
 	register c;
 
 	c = fubyte(u.u_dirp++);
-	if(c == -1)
+	if (c == -1)
 		u.u_error = EFAULT;
 	return(c);
 }
