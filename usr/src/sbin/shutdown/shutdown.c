@@ -1,4 +1,4 @@
-/*	@(#)shutdown.c	4.1 (Berkeley/Melbourne) 81/02/07	*/
+/*	@(#)shutdown.c	4.2 (Berkeley/Melbourne) 81/02/28	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -18,7 +18,13 @@
  *		Robert Elz, Melbourne, 1978
  *		Peter Lamb, Melbourne, 1980
  *		William Joy, Berkeley, 1981
+ *		Michael Toy, Berkeley, 1981
  */
+#ifdef DEBUG
+#define LOGFILE "shutdown.log"
+#else
+#define LOGFILE "/usr/adm/shutdownlog"
+#endif
 #define	REBOOT	"/etc/reboot"
 #define	HALT	"/etc/halt"
 #define MAXINTS 20
@@ -61,10 +67,12 @@ struct interval {
 	1 HOURS,	15 MINUTES,
 	30 MINUTES,	10 MINUTES,
 	15 MINUTES,	5 MINUTES,
-	10 MINUTES,	2 MINUTES,
+	10 MINUTES,	5 MINUTES,
+	5 MINUTES,	3 MINUTES,
 	2 MINUTES,	30 SECONDS,
 	0 SECONDS,	0 SECONDS
 };
+char *shutter, *getlogin();
 main(argc,argv)
 	int argc;
 	char **argv;
@@ -77,6 +85,7 @@ main(argc,argv)
 	long nowtime;
 	FILE *termf;
 
+	shutter = getlogin();
 	argc--, argv++;
 	while (argc > 0 && (f = argv[0], *f++ == '-')) {
 		while (i = *f++) switch (i) {
@@ -112,11 +121,10 @@ main(argc,argv)
 	h = m/60; 
 	m %= 60;
 	ts = ctime(&sdt);
-	printf("Shutdown at %5.5s\n", ts+11);
-	printf("ie. in ");
+	printf("Shutdown at %5.5s (in ", ts+11);
 	if (h > 0)
 		printf("%d hour%s ", h, h != 1 ? "s" : "");
-	printf("%d minute%s\n", m, m != 1 ? "s" : "");
+	printf("%d minute%s) ", m, m != 1 ? "s" : "");
 #ifndef DEBUG
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
@@ -125,10 +133,12 @@ main(argc,argv)
 	signal(SIGTERM, finish);
 	signal(SIGALRM, do_nothing);
 	nice(-20);
+#ifndef DEBUG
 	if (i = fork()) {
-		printf("%d\n", i);
+		printf("[pid %d]\n", i);
 		exit(0);
 	}
+#endif
 	sint = 1 HOURS;
 	f = "";
 	for (;;) {
@@ -148,7 +158,7 @@ main(argc,argv)
 			strncat(term, utmp.ut_line, sizeof utmp.ut_line);
 			alarm(3);
 #ifdef DEBUG
-			if ((termf = fopen("/dev/tty", "w")) != NULL)
+			if ((termf = stdout) != NULL)
 #else
 			if ((termf = fopen(term, "w")) != NULL)
 #endif
@@ -161,12 +171,18 @@ main(argc,argv)
 					for (mess = nolog2; *mess; mess++)
 						fprintf(termf, "%s ", *mess);
 				fputc('\n', termf);
+				alarm(5);
+#ifdef DEBUG
+				fflush(termf);
+#else
 				fclose(termf);
+#endif
 				alarm(0);
 			}
 		}
 		if (stogo < 0) {
 	printf("\n\007\007System shutdown time has arrived\007\007\n");
+			log_entry(sdt);
 			unlink(nologin);
 			if (!killflg) {
 				printf("but you'll have to do it yourself\n");
@@ -250,6 +266,7 @@ warn(term, sdt, nowtime)
 {
 	char *ts;
 
+	fprintf(term, "\007\007*** System shutdown message from %s ***\n", shutter);
 	ts = ctime(&sdt);
 	if (sdt - nowtime > 10 MINUTES)
 		fprintf(term, "System going down at %5.5s\n", ts+11);
@@ -257,7 +274,7 @@ warn(term, sdt, nowtime)
 		fprintf(term, "System going down in %d minute%s\n",
 		(sdt-nowtime+30)/60, (sdt-nowtime+30)/60 != 1 ? "s" : "");
 	} else if ( sdt - nowtime > 0 ) {
-		fprintf(term, "System going down in %d seconds\n",
+		fprintf(term, "System going down in %d second%s\n",
 		sdt-nowtime, sdt-nowtime != 1 ? "s" : "");
 	} else
 		fprintf(term, "System going down IMMEDIATELY\n");
@@ -288,4 +305,28 @@ do_nothing()
 {
 
 	signal(SIGALRM, do_nothing);
+}
+
+/*
+ * make an entry in the shutdown log
+ */
+
+log_entry(sdt)
+time_t sdt;
+{
+	FILE *logf;
+	char **mess;
+
+	if ((logf = fopen(LOGFILE, "a")) == NULL)
+	{
+		fprintf(stderr, "*** Can't write on log file ***\n");
+		return;
+	}
+	fseek(logf, 0L, 2);
+	fprintf(logf, "Shutdown by %s at %s",
+			shutter, ctime(&sdt));
+	for (mess = nolog2; *mess; mess++)
+		fprintf(logf, "\t%s\n", *mess);
+	fputc('\n', logf);
+	fclose(logf);
 }
