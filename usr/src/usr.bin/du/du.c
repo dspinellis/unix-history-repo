@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)du.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)du.c	4.9 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -22,11 +22,13 @@ int	mlx;
 long	descend();
 char	*index(), *rindex(), *strcpy(), *sprintf();
 
+#define	kb(n)	(howmany(dbtob(n), 1024))
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	long kbytes = 0;
+	long blocks = 0;
 	register char *np;
 	int pid;
 
@@ -67,9 +69,9 @@ again:
 				}
 			} else
 				np = path;
-			kbytes = descend(path, *np ? np : ".");
+			blocks = descend(path, *np ? np : ".");
 			if (sflg)
-				printf("%ld\t%s\n", kbytes, path);
+				printf("%ld\t%s\n", kb(blocks), path);
 			if (argc > 1)
 				exit(1);
 		}
@@ -87,7 +89,7 @@ descend(base, name)
 	char *ebase0, *ebase;
 	struct stat stb;
 	int i;
-	long kbytes = 0;
+	long blocks = 0;
 	long curoff = NULL;
 	register struct direct *dp;
 
@@ -109,11 +111,11 @@ descend(base, name)
 			mlx++;
 		}
 	}
-	kbytes = howmany(stb.st_size, 1024);
+	blocks = stb.st_blocks;
 	if ((stb.st_mode&S_IFMT) != S_IFDIR) {
 		if (aflg)
-			printf("%ld\t%s\n", kbytes, base);
-		return (kbytes);
+			printf("%ld\t%s\n", kb(blocks), base);
+		return (blocks);
 	}
 	if (dirp != NULL)
 		closedir(dirp);
@@ -135,7 +137,7 @@ descend(base, name)
 			continue;
 		(void) sprintf(ebase, "/%s", dp->d_name);
 		curoff = telldir(dirp);
-		kbytes += descend(base, ebase+1);
+		blocks += descend(base, ebase+1);
 		*ebase = 0;
 		if (dirp == NULL) {
 			dirp = opendir(".");
@@ -149,12 +151,12 @@ descend(base, name)
 	closedir(dirp);
 	dirp = NULL;
 	if (sflg == 0)
-		printf("%ld\t%s\n", kbytes, base);
+		printf("%ld\t%s\n", kb(blocks), base);
 	if (chdir("..") < 0) {
 		(void) sprintf(index(base, 0), "/..");
 		perror(base);
 		exit(1);
 	}
 	*ebase0 = 0;
-	return (kbytes);
+	return (blocks);
 }

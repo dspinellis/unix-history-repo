@@ -1,20 +1,20 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.10 83/05/10";
+static	char *sccsid = "@(#)ls.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
  * ls
  *
- * 4.2bsd version for symbolic links and variable length directory entries.
+ * 4.2bsd version for symbolic links, variable length
+ * directory entries, block size in the inode, etc.
  */
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <dir.h>
 #include <stdio.h>
 #include <sgtty.h>
 
-#define	kbytes(size)	((size + 1023) / 1024)
+#define	kbytes(size)	(((size) + 1023) / 1024)
 
 struct afile {
 	char	ftype;		/* file type, e.g. 'd', 'c', 'f' */
@@ -24,6 +24,7 @@ struct afile {
 	short	fuid;		/* owner id */
 	short	fgid;		/* group id */
 	long	fsize;		/* file size */
+	long	fblks;		/* number of blocks used */
 	time_t	fmtime;		/* time (modify or access or create) */
 	char	*fname;		/* file name */
 	char	*flinkto;	/* symbolic link value */
@@ -69,7 +70,6 @@ main(argc, argv)
 		Aflg++;
 	(void) time(&now); sixmonthsago = now - 6L*30L*24L*60L*60L; now += 60;
 	if (isatty(1)) {
-
 		qflg = Cflg = 1;
 		(void) gtty(1, &sgbuf);
 		if ((sgbuf.sg_flags & XTABS) == 0)
@@ -222,7 +222,7 @@ getdir(dir, pfp0, pfplast)
 	register struct afile *fp;
 	DIR *dirp;
 	register struct direct *dp;
-	int nkb, nent = 20;
+	int nb, nent = 20;
 
 	dirp = opendir(dir);
 	if (dirp == NULL) {
@@ -232,7 +232,7 @@ getdir(dir, pfp0, pfplast)
 	}
 	fp = *pfp0 = (struct afile *)calloc(nent, sizeof (struct afile));
 	*pfplast = *pfp0 + nent;
-	nkb = 0;
+	nb = 0;
 	while (dp = readdir(dirp)) {
 		if (dp->d_ino == 0)
 			continue;
@@ -240,7 +240,7 @@ getdir(dir, pfp0, pfplast)
 		    (Aflg == 0 || dp->d_name[1]==0 ||
 		     dp->d_name[1]=='.' && dp->d_name[2]==0))
 			continue;
-		if (gstat(fp, cat(dir, dp->d_name), Fflg+Rflg, &nkb) == 0)
+		if (gstat(fp, cat(dir, dp->d_name), Fflg+Rflg, &nb) == 0)
 			continue;
 		fp->fnum = dp->d_ino;
 		fp->fname = savestr(dp->d_name);
@@ -259,18 +259,18 @@ getdir(dir, pfp0, pfplast)
 	}
 	closedir(dirp);
 	*pfplast = fp;
-	return (nkb);
+	return (kbytes(dbtob(nb)));
 }
 
 int	stat(), lstat();
 
 struct afile *
-gstat(fp, file, statarg, pnkb)
+gstat(fp, file, statarg, pnb)
 	register struct afile *fp;
 	char *file;
-	int statarg, *pnkb;
+	int statarg, *pnb;
 {
-	int (*statf)() = Lflg ? stat : lstat;
+	int (*statf)() = Lflg || Fflg ? lstat : stat;
 	char buf[BUFSIZ]; int cc;
 	static struct afile azerofile;
 
@@ -285,6 +285,7 @@ gstat(fp, file, statarg, pnkb)
 			fprintf(stderr, "%s not found\n", file);
 			return (0);
 		}
+		fp->fblks = stb.st_blocks;
 		fp->fsize = stb.st_size;
 		switch (stb.st_mode & S_IFMT) {
 
@@ -312,6 +313,7 @@ gstat(fp, file, statarg, pnkb)
 				stb = stb1;
 				fp->ftype = 'd';
 				fp->fsize = stb.st_size;
+				fp->fblks = stb.st_blocks;
 			}
 			break;
 		}
@@ -326,10 +328,8 @@ gstat(fp, file, statarg, pnkb)
 			fp->fmtime = stb.st_ctime;
 		else
 			fp->fmtime = stb.st_mtime;
-		if (pnkb)
-			if (fp->ftype != 'b' && fp->ftype != 'c' &&
-			    fp->ftype != 's')
-				*pnkb += kbytes(fp->fsize);
+		if (pnb)
+			*pnb += stb.st_blocks;
 	}
 	return (fp);
 }
@@ -499,18 +499,7 @@ fmtsize(p)
 {
 	static char sizebuf[32];
 
-	switch (p->ftype) {
-
-	case 'b':
-	case 'c':
-	case 's':
-		(void) sprintf(sizebuf, "%4ld ", 0);
-		break;
-
-	default:
-		(void) sprintf(sizebuf, "%4ld ", kbytes(p->fsize));
-		break;
-	}
+	(void) sprintf(sizebuf, "%4ld ", kbytes(dbtob(p->fblks)));
 	return (sizebuf);
 }
 
