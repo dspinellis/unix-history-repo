@@ -6,7 +6,7 @@
 #define	ITAL	'2'
 #define	BLD	'3'
 
-#define	VERT(n)	((((n)+1)/3)*3)
+#define	VERT(n)	((((n)+(minvert>>1))/minvert)*minvert)
 #define	EFFPS(p)	((p) >= minsize ? (p) : minsize)
 #define	POINT	72
 #define	EM(m, ps)	(int)((((float)(m)*(ps) * res) / POINT))
@@ -24,6 +24,7 @@ extern int	ft;	/* dflt font */
 extern char	*device;	/* name of output device */
 extern int	res;	/* resolution of output device */
 extern int	minsize;	/* min size it can print */
+extern int	minvert;	/* min size it can move vertically */
 
 extern FILE	*curfile;	/* current input file */
 extern int	ifile;	/* input file number */
