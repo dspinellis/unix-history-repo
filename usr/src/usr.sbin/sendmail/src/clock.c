@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)clock.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)clock.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -141,7 +141,7 @@ tick()
 {
 	register time_t now;
 	register EVENT *ev;
-	int pid = getpid();
+	int mypid = getpid();
 
 	(void) signal(SIGALRM, SIG_IGN);
 	(void) alarm(0);
@@ -153,7 +153,7 @@ tick()
 # endif DEBUG
 
 	while ((ev = EventQueue) != NULL &&
-	       (ev->ev_time <= now || ev->ev_pid != pid))
+	       (ev->ev_time <= now || ev->ev_pid != mypid))
 	{
 		int (*f)();
 		int arg;

@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
@@ -150,6 +150,13 @@ main(argc, argv, envp)
 	for (i = 3; i < 50; i++)
 		(void) close(i);
 	errno = 0;
+
+	/*
+	**  Set default values for variables.
+	**	These cannot be in initialized data space.
+	*/
+
+	setdefaults();
 
 	/* set up the blank envelope */
 	BlankEnvelope.e_puthdr = putheader;

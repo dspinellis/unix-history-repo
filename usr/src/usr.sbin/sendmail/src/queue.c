@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.6 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.7 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.6 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.7 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -319,7 +319,7 @@ runqueue(forkflag)
 	*/
 
 	/* order the existing work requests */
-	(void) orderq();
+	(void) orderq(FALSE);
 
 	/* process them once at a time */
 	while (WorkQ != NULL)
@@ -433,6 +433,8 @@ orderq(doall)
 		/* extract useful information */
 		while (fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
+			extern long atol();
+
 			switch (lbuf[0])
 			{
 			  case 'P':
@@ -663,6 +665,7 @@ readqf(e, full)
 	register FILE *qfp;
 	char buf[MAXFIELD];
 	extern char *fgetfolded();
+	extern long atol();
 	extern ADDRESS *sendto();
 
 	/*
@@ -731,7 +734,7 @@ readqf(e, full)
 		}
 	}
 
-	fclose(qfp);
+	(void) fclose(qfp);
 	FileName = NULL;
 
 	/*
