@@ -7,24 +7,25 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)getstr.c	5.5 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
 
-# include	"curses.ext"
+#include <curses.h>
 
 /*
- *	This routine gets a string starting at (_cury,_curx)
- *
+ * wgetstr --
+ *	Get a string starting at (_cury,_curx).
  */
-wgetstr(win,str)
-reg WINDOW	*win; 
-reg char	*str; {
-
+int
+wgetstr(win, str)
+	register WINDOW *win;
+	register char *str;
+{
 	while ((*str = wgetch(win)) != ERR && *str != '\n')
 		str++;
 	if (*str == ERR) {
 		*str = '\0';
-		return ERR;
+		return (ERR);
 	}
 	*str = '\0';
-	return OK;
+	return (OK);
 }
