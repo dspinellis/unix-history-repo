@@ -1,0 +1,55 @@
+.TH TOUCH 1L \" -*- nroff -*-
+.SH NAME
+touch \- change file timestamps
+.SH SYNOPSIS
+.B touch
+[\-acm] [\-r reference-file] [\-t MMDDhhmm[[CC]YY][.ss]]
+[\-d time] [\-\-time={atime,access,use,mtime,modify}] [\-\-date=time]
+[\-\-file=reference-file] [\-\-no-create] file...
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR touch .
+.B touch
+changes the access and modification times of each given file to the
+current time.  Files that do not exist are created empty.
+If the first file name given would be a valid argument to the
+.I \-t
+option and no timestamp is given with any of the
+.IR \-d ,
+.IR \-r ,
+or
+.I \-t
+options and the
+.I \-\-
+argument is not given, that argument is interpreted as the time for
+the other files instead of as a filename.
+.SS OPTIONS
+.TP
+.I "\-a, \-\-time=atime, \-\-time=access, \-\-time=use"
+Change the access time only.
+.TP
+.I "\-c, \-\-no-create"
+Do not create files that do not exist.
+.TP
+.I "\-d, \-\-date time"
+Use
+.I time
+(which can be in various common formats) instead of the current time.
+It can contain month names, timezones, `am' and `pm', etc.
+.TP
+.I "\-m, \-\-time=mtime, \-\-time=modify"
+Change the modification time only.
+.TP
+.I "\-r, \-\-file reference-file"
+Use the times of
+.I reference-file
+instead of the current time.
+.TP
+.I \-t MMDDhhmm[[CC]YY][.ss]
+Use the argument (months, days, hours, minutes, optional century and
+years, optional seconds) instead of the current time.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
