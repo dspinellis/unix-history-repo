@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)talkd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)talkd.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -89,7 +89,8 @@ main(argc, argv)
 		process_request(mp, &response);
 		/* can block here, is this what I want? */
 		cc = sendto(sockt, (char *)&response,
-		    sizeof (response), 0, &mp->ctl_addr, sizeof (mp->ctl_addr));
+		    sizeof (response), 0, (struct sockaddr *)&mp->ctl_addr,
+		    sizeof (mp->ctl_addr));
 		if (cc != sizeof (response))
 			syslog(LOG_WARNING, "sendto: %m");
 	}
