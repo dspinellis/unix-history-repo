@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)trpt.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -305,19 +305,16 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 		if (win)
 			printf("(win=%x)", win);
 		flags = ti->ti_flags;
-		if (flags) {
-			register char *cp = "<";
+#define	IDENT(a)	a
+#define	CAT(a,b)	IDENT(a)b
 #define	pf(flag) { \
-	if (ti->ti_flags&flag) \
-		printf("%s%s", cp, "f"); \
+	if (ti->ti_flags&CAT(TH_,flag)) \
+		printf("%s%s", cp, "flag"); \
 		cp = ","; \
 	}
-			pf(TH_SYN);
-			pf(TH_ACK);
-			pf(TH_FIN);
-			pf(TH_RST);
-			pf(TH_PUSH);
-			pf(TH_URG);
+		if (flags) {
+			register char *cp = "<";
+			pf(SYN); pf(ACK); pf(FIN); pf(RST); pf(PUSH); pf(URG);
 			printf(">");
 		}
 		break;
