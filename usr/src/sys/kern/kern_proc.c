@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.38	82/09/08	*/
+/*	kern_proc.c	4.39	82/09/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -540,7 +540,7 @@ exit(rv)
 	p->p_pctcpu = 0;
 	for (i=0; i<NSIG; i++)
 		u.u_signal[i] = SIG_IGN;
-	untimeout(unrto, p);
+	untimeout(realitexpire, p);
 	/*
 	 * Release virtual memory.  If we resulted from
 	 * a vfork(), instead give the resources back to
@@ -644,19 +644,23 @@ done:
 	swtch();
 }
 
+#include <vtimes.h>
+
 owait()
 {
-	struct rusage ru, *rup;
+	struct rusage ru;
+	struct vtimes *vtp, avt;
 
 	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
 		wait1(0, (struct rusage *)0);
 		return;
 	}
-	rup = (struct rusage *)u.u_ar0[R1];
+	vtp = (struct vtimes *)u.u_ar0[R1];
 	wait1(u.u_ar0[R0], &ru);
 	if (u.u_error)
 		return;
-	(void) copyout((caddr_t)&ru, (caddr_t)rup, sizeof (struct rusage));
+	getvtimes(&ru, &avt);
+	(void) copyout((caddr_t)&avt, (caddr_t)vtp, sizeof (struct vtimes));
 }
 
 /*
