@@ -1,8 +1,8 @@
 #
-#	@(#)Makefile	1.19	(Berkeley)	%G%
+#	@(#)Makefile	1.20	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
-P=/usr/src/lib/pcc/pcc.${MACHINE}
+P=/usr/src/lib/pcc
 CFLAGS=-O
 LINTLIBS=llib-port.ln llib-lc.ln llib-lcurses.ln llib-ldbm.ln llib-lm.ln \
 	llib-lmp.ln llib-lplot.ln llib-ltermcap.ln
@@ -42,9 +42,6 @@ trees.o: $M/manifest.h macdefs.h $M/pass1.h pcclocal.h $M/trees.c
 
 xdefs.o: $M/manifest.h $M/pass1.h pcclocal.h macdefs.h $M/xdefs.c
 	$(CC) -c $(CFLAGS) -I$M -I. $M/xdefs.c
-
-rel.o:	$P/rel.c
-	${CC} -c ${CFLAGS} $P/rel.c
 
 rodata.c cgram.c: $M/cgram.y pcctokens
 	cat pcctokens $M/cgram.y > gram.in
