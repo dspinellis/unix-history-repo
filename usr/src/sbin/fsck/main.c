@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.9	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.10	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -730,9 +730,13 @@ out5:
 	free(statemap);
 	free(lncntp);
 	if (dfile.mod)
-		if (preen)
+		if (preen) {
 			printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
-		else if (hotroot) {
+			if (hotroot) {
+				sync();
+				exit(4);
+			}
+		} else if (hotroot) {
 			printf("\n***** BOOT UNIX (NO SYNC!) *****\n");
 			exit(4);
 		}
@@ -880,8 +884,10 @@ pass1(blk, size)
 		if (outrange(blk)) {
 			blkerr("BAD", blk);
 			if (++badblk >= MAXBAD) {
-				printf("EXCESSIVE BAD BLKS I=%u", inum);
-				if (reply("CONTINUE") == 0)
+				pwarn("EXCESSIVE BAD BLKS I=%u", inum);
+				if (preen)
+					printf(" (SKIPPING)\n");
+				else if (reply("CONTINUE") == 0)
 					errexit("");
 				return (STOP);
 			}
@@ -889,13 +895,15 @@ pass1(blk, size)
 		} else if (getbmap(blk)) {
 			blkerr("DUP", blk);
 			if (++dupblk >= MAXDUP) {
-				printf("EXCESSIVE DUP BLKS I=%u", inum);
-				if (reply("CONTINUE") == 0)
+				pwarn("EXCESSIVE DUP BLKS I=%u", inum);
+				if (preen)
+					printf(" (SKIPPING)\n");
+				else if (reply("CONTINUE") == 0)
 					errexit("");
 				return (STOP);
 			}
 			if (enddup >= &duplist[DUPTBLSIZE]) {
-				printf("DUP TABLE OVERFLOW.");
+				pfatal("DUP TABLE OVERFLOW.");
 				if (reply("CONTINUE") == 0)
 					errexit("");
 				return (STOP);
@@ -1032,6 +1040,8 @@ pass5(blk, size)
 			}
 		} else if (getfmap(blk)) {
 			fixcg = 1;
+			if (preen)
+				pfatal("DUP BLKS IN BIT MAPS.");
 			if (++dupblk >= DUPTBLSIZE) {
 				printf("EXCESSIVE DUP BLKS IN BIT MAPS.");
 				if (reply("CONTINUE") == 0)
