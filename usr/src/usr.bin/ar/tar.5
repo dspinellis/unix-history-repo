@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tar.5	6.1 (Berkeley) %G%
+.\"	@(#)tar.5	6.2 (Berkeley) %G%
 .\"
 .TH TAR 5  ""
 .UC 5
@@ -67,7 +67,9 @@ The other fields are zero-filled octal numbers in ASCII.  Each field
 .IR size
 and
 .IR mtime ,
-which do not contain the trailing null.
+which do not contain the trailing null and
+.IR chksum
+which has a null followed by a space.
 .IR Name
 is the name of the file, as specified on the 
 .I tar
@@ -95,12 +97,12 @@ with this field specified as zero.
 .IR Mtime
 is the modification time of the file at the time it was dumped.
 .IR Chksum
-is a decimal ASCII value which represents the sum of all the bytes in the
+is an octal ASCII value which represents the sum of all the bytes in the
 header block.  When calculating the checksum, the 
 .IR chksum
 field is treated as if it were all blanks.
 .IR Linkflag
-is ASCII `0' if the file is ``normal'' or a special file, ASCII `1'
+is NULL if the file is ``normal'' or a special file, ASCII `1'
 if it is an hard link, and ASCII `2'
 if it is a symbolic link.  The name linked-to, if any, is in
 .IR linkname,
