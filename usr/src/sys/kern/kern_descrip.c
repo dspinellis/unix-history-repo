@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.25	83/06/12	*/
+/*	kern_descrip.c	5.26	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -84,30 +84,22 @@ dup2()
 	if (u.u_ofile[uap->j]) {
 		if (u.u_pofile[uap->j] & UF_MAPPED)
 			munmapfd(uap->j);
-		closef(u.u_ofile[uap->j], u.u_pofile[uap->j]);
+		closef(u.u_ofile[uap->j]);
 		if (u.u_error)
 			return;
-		/* u.u_ofile[uap->j] = 0; */
-		/* u.u_pofile[uap->j] = 0; */
 	}
 	dupit(uap->j, fp, u.u_pofile[uap->i]);
 }
 
-dupit(fd, fp, lockflags)
+dupit(fd, fp, flags)
 	int fd;
 	register struct file *fp;
-	register int lockflags;
+	register int flags;
 {
 
 	u.u_ofile[fd] = fp;
-	u.u_pofile[fd] = lockflags;
+	u.u_pofile[fd] = flags;
 	fp->f_count++;
-/* THIS DOESN'T BELONG HERE */
-	if (lockflags&UF_SHLOCK)
-		((struct inode *)fp->f_data)->i_shlockc++;
-	if (lockflags&UF_EXLOCK)
-		((struct inode *)fp->f_data)->i_exlockc++;
-/* END DOESN'T BELONG */
 }
 
 /*
@@ -251,8 +243,6 @@ close()
 	pf = (u_char *)&u.u_pofile[uap->i];
 	if (*pf & UF_MAPPED)
 		munmapfd(uap->i);
-	if (*pf & (UF_SHLOCK|UF_EXLOCK))
-		unlockf(fp, pf);
 	closef(fp);
 	/* WHAT IF u.u_error ? */
 	u.u_ofile[uap->i] = NULL;
@@ -287,7 +277,8 @@ fstat()
 		/*NOTREACHED*/
 	}
 	if (u.u_error == 0)
-		u.u_error = copyout(&ub, uap->sb, sizeof (ub));
+		u.u_error = copyout((caddr_t)&ub, (caddr_t)uap->sb,
+		    sizeof (ub));
 }
 
 /*
@@ -406,59 +397,21 @@ flock()
 		int	how;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
-	register u_char *pf;
-	int cmd;
 
 	fp = getf(uap->fd);
 	if (fp == NULL)
 		return;
-	cmd = uap->how;
-	pf = (u_char *)&u.u_pofile[uap->fd];
-	if (cmd & LOCK_UN) {
-		unlockf(fp, pf);
+	if (fp->f_type != DTYPE_INODE) {
+		u.u_error = EOPNOTSUPP;
 		return;
 	}
-	/*
-	 * No reason to write lock a file we've already
-	 * write locked, similarly with a read lock.
-	 */
-	if ((*pf & UF_EXLOCK) && (cmd & LOCK_EX) ||
-	    (*pf & UF_SHLOCK) && (cmd & LOCK_SH))
+	if (uap->how & LOCK_UN) {
+		ino_unlock(fp, FSHLOCK|FEXLOCK);
 		return;
-	switch (fp->f_type) {
-
-	case DTYPE_INODE:
-		u.u_error = ino_lock((struct inode *)fp->f_data, pf, cmd);
-		break;
-
-	case DTYPE_SOCKET:
-		u.u_error = soo_lock((struct socket *)fp->f_data, pf, cmd);
-		break;
-
-	default:
-		panic("lockf");
 	}
-}
-
-unlockf(fp, pf)
-	register struct file *fp;
-	register u_char *pf;
-{
-
-	if ((*pf & (UF_SHLOCK|UF_EXLOCK)) == 0)
+	/* avoid work... */
+	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
+	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
 		return;
-	switch (fp->f_type) {
-
-	case DTYPE_INODE:
-		ino_unlock((struct inode *)fp->f_data, *pf);
-		break;
-
-	case DTYPE_SOCKET:
-		soo_unlock((struct socket *)fp->f_data, *pf);
-		break;
-
-	default:
-		panic("unlockf");
-	}
-	*pf &= ~(UF_SHLOCK|UF_EXLOCK);
+	u.u_error = ino_lock(fp, uap->how);
 }

@@ -1,4 +1,4 @@
-/*	kern_exec.c	4.3	83/06/12	*/
+/*	kern_exec.c	4.4	83/06/14	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -435,7 +435,7 @@ setregs()
 #endif
 	for (i=0; i<NOFILE; i++) {
 		if (u.u_pofile[i]&UF_EXCLOSE) {
-			closef(u.u_ofile[i], u.u_pofile[i]);
+			closef(u.u_ofile[i]);
 			u.u_ofile[i] = NULL;
 			u.u_pofile[i] = 0;
 		}
