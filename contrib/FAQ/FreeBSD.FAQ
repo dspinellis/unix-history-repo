@@ -6,7 +6,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.29 1994/05/30 23:36:15 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.30 1994/06/02 11:50:23 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both version 1.1 and current.
@@ -304,16 +304,18 @@ Buslogic             BT-445 Series <VLB> (but see section 1.5)
                      BT-545 Series <ISA>
                      BT-742 Series <EISA>
                      BT-747 Series <EISA>
+Future Domain        TMC-950 Series <ISA> (See below)
+Seagate              ST-01/02 Series <ISA> (See below)
 UltraStor            UH-14f Series <ISA>
                      UH-34f Series <EISA/VLB>
 
 There is supposed to be a UltraStor 24f driver floating around, but
-we're not sure where (could someone please point us at it?).  Note
-that we do NOT support `Future Domain' or `IN2000' SCSI controllers,
-typically the little $50 specials you get with some CDROM drives.  You
-will have to buy a more mainstream (and capable) SCSI controller.  The
-Buslogic controllers are currently the easiest to get.
+we're not sure where (could someone please point us at it?).   
 
+The Seagate and Future Domain SCSI cards are supported through contributed
+code.  Please see the installation notes in:
+        /usr/src/contrib/FAQ/programs/SCSI/st01fd950/README.seagate
+for instructions on how to install these drivers.  
 
 2.3:  What CD-ROM drives are supported by FreeBSD?
 
@@ -424,7 +426,7 @@ clones.
        want an idea of what other people are running.  Is there list
        of other systems anywhere? 
 
-Yes.  Please look at the file FAQ/OTHER-FAQS/Systems.faq.  This file
+Yes.  Please look at the file FAQ/OTHER-FAQS/Systems.FAQ.  This file
 is a listing of hardware that people are running in their machines.
 Please note, this is a raw listing of equipment that other users
 have sent in.
