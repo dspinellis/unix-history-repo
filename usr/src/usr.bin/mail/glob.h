@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)glob.h	5.8 (Berkeley) %G%
+ *	@(#)glob.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -21,8 +21,6 @@ int	msgCount;			/* Count of messages read in */
 int	mypid;				/* Current process id */
 int	rcvmode;			/* True if receiving mail */
 int	sawcom;				/* Set after first command */
-int	hflag;				/* Sequence number for network -h */
-char	*rflag;				/* -r address for network */
 char	*Tflag;				/* -T temp file for netnews */
 char	nosrc;				/* Don't source /usr/lib/Mail.rc */
 int	selfsent;			/* User sent self something */
@@ -64,7 +62,6 @@ struct	ignoretab	saveignore[2];	/* ignored and retained fields
 char	**altnames;			/* List of alternate names for user */
 char	**localnames;			/* List of aliases for our local host */
 int	debug;				/* Debug flag set */
-int	rmail;				/* Being called as rmail */
 int	screenwidth;			/* Screen width, or best guess */
 int	screenheight;			/* Screen height, or best guess,
 					   for "header" command */
