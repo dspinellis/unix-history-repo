@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -495,6 +495,11 @@ setsender(from, e)
 	else
 		FromFlag = TRUE;
 	e->e_from.q_flags |= QDONTSEND;
+	if (tTd(45, 5))
+	{
+		printf("setsender: QDONTSEND ");
+		printaddr(&e->e_from, FALSE);
+	}
 	loweraddr(&e->e_from);
 	SuprErrs = FALSE;
 

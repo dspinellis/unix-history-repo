@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -105,17 +105,22 @@ sendto(list, copyf, ctladdr, qflags)
 		    (firstone && *p == '\0' && bitset(QPRIMARY, ctladdr->q_flags)))
 			a->q_flags |= QPRIMARY;
 
-		/* put on send queue or suppress self-reference */
 		if (ctladdr != NULL && sameaddr(ctladdr, a))
 			selfref = TRUE;
-		else
-			al = a;
+		al = a;
 		firstone = FALSE;
 	}
 
 	/* if this alias doesn't include itself, delete ctladdr */
 	if (!selfref && ctladdr != NULL)
+	{
+		if (tTd(25, 5))
+		{
+			printf("sendtolist: QDONTSEND ");
+			printaddr(ctladdr, FALSE);
+		}
 		ctladdr->q_flags |= QDONTSEND;
+	}
 
 	/* arrange to send to everyone on the local send list */
 	prev = sibl = NULL;
@@ -195,6 +200,7 @@ addrref(a, r)
 **		sendq -- a pointer to the head of a queue to put the
 **			recipient in.  Duplicate supression is done
 **			in this queue.
+**		e -- the current envelope.
 **
 **	Returns:
 **		pointer to address actually inserted in send list.
@@ -259,7 +265,7 @@ recipient(a, sendq, e)
 	stripquotes(buf);
 
 	/* check for direct mailing to restricted mailers */
-	if (a->q_alias == NULL && m == ProgMailer && !ForceMail)
+	if (a->q_alias == NULL && m == ProgMailer)
 	{
 		a->q_flags |= QDONTSEND|QBADADDR;
 		usrerr("Cannot mail directly to programs", m->m_name);
@@ -344,7 +350,7 @@ recipient(a, sendq, e)
 	if (m == InclMailer)
 	{
 		a->q_flags |= QDONTSEND;
-		if (a->q_alias == NULL && !ForceMail)
+		if (a->q_alias == NULL)
 		{
 			a->q_flags |= QBADADDR;
 			usrerr("Cannot mail directly to :include:s");
@@ -362,7 +368,7 @@ recipient(a, sendq, e)
 
 		p = strrchr(buf, '/');
 		/* check if writable or creatable */
-		if (a->q_alias == NULL && !QueueRun && !ForceMail)
+		if (a->q_alias == NULL && !QueueRun)
 		{
 			a->q_flags |= QDONTSEND|QBADADDR;
 			usrerr("Cannot mail directly to files");
