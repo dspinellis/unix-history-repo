@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.27 (Berkeley) %G%
+.\"	@(#)3.t	6.28 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -1014,9 +1014,7 @@ but also inhibits running
 while the system is multi-user.
 See
 .Xr chflags (1)
-and the
-.Op o
-option to 
+and the \-\fBo\fP option to 
 .Xr ls (1)
 for information on setting and displaying the immutable and append-only
 flags.
