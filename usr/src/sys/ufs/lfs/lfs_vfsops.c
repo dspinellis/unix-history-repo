@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vfsops.c	7.45 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.46 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -411,19 +411,20 @@ ufs_quotactl(mp, cmds, uid, arg)
 {
 	register struct nameidata *ndp = &u.u_nd;
 	struct ufsmount *ump = VFSTOUFS(mp);
+	struct proc *p = u.u_procp;	/* XXX */
 	int cmd, type, error;
 
 #ifndef QUOTA
 	return (EOPNOTSUPP);
 #else
 	if (uid == -1)
-		uid = u.u_ruid;
+		uid = p->p_ruid;
 	cmd = cmds >> SUBCMDSHIFT;
 
 	switch (cmd) {
 	case Q_GETQUOTA:
 	case Q_SYNC:
-		if (uid == u.u_ruid)
+		if (uid == p->p_ruid)
 			break;
 		/* fall through */
 	default:
