@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.33 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -293,5 +293,7 @@ nfs_abortop(ndp)
 	struct nameidata *ndp;
 {
 
+	if ((ndp->ni_nameiop & (HASBUF | SAVESTART)) == HASBUF)
+		FREE(ndp->ni_pnbuf, M_NAMEI);
 	return (0);
 }
