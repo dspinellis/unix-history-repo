@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)make.h	5.9 (Berkeley) %G%
+ *	@(#)make.h	5.10 (Berkeley) %G%
  */
 
 /*-
@@ -303,10 +303,9 @@ extern int debug;
 #define	DEBUG_GRAPH2	0x0010
 #define	DEBUG_JOB	0x0020
 #define	DEBUG_MAKE	0x0040
-#define	DEBUG_PARSE	0x0080
-#define	DEBUG_SUFF	0x0100
-#define	DEBUG_TARG	0x0200
-#define	DEBUG_VAR	0x0400
+#define	DEBUG_SUFF	0x0080
+#define	DEBUG_TARG	0x0100
+#define	DEBUG_VAR	0x0200
 
 #ifdef __STDC__
 #define CONCAT(a,b)	a##b
