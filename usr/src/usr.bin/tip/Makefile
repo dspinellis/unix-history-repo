@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 # make file for intermachine communications package
 #
@@ -54,6 +54,7 @@ SRCS=	acu.c acutab.c cmds.c cmdtab.c cu.c hunt.c log.c partab.c remcap.c \
 	remote.c tip.c tipout.c uucplock.c value.c vars.c
 OBJS=	acu.o acutab.o cmds.o cmdtab.o cu.o hunt.o log.o partab.o remcap.o \
 	remote.o tip.o tipout.o uucplock.o value.o vars.o
+MAN=	tip.0
 
 all: aculib/aculib.a tip
 
@@ -84,15 +85,20 @@ depend:
 	mkdep ${CFLAGS} ${SRCS}
 	cd aculib; make ${MFLAGS} depend
 
-install: FRC
+install: ${MAN}
 	cd aculib; make ${MFLAGS} install
 	install -s -o uucp -g daemon -m 4711 tip ${DESTDIR}/usr/bin/tip
 	rm -f ${DESTDIR}/usr/bin/cu
 	ln ${DESTDIR}/usr/bin/tip ${DESTDIR}/usr/bin/cu
+	install -c -o bin -g bin -m 444 tip.0 ${DESTDIR}/usr/man/cat1
+	rm -f ${DESTDIR}/usr/man/cat1/cu.0
+	ln ${DESTDIR}/usr/man/cat1/tip.0 ${DESTDIR}/usr/man/cat1/cu.0
 
-lint:
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags:
+tags: ${SRCS}
 	ctags ${SRCS}
 	cd aculib; make ${MFLAGS} tags
+
+FRC:
