@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_net.c 1.33 89/08/23$
  *
- *	@(#)hpux_net.c	7.6 (Berkeley) %G%
+ *	@(#)hpux_net.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -45,7 +45,6 @@ extern int socket(), listen(), bind(), oaccept(), connect(), orecv();
 extern int osend(), shutdown(), ogetsockname(), sendto();
 extern int orecvfrom(), ogetpeername();
 int hpuxgetsockopt(), hpuxsetsockopt();
-struct file *getsock();
 
 struct hpuxtobsdipc {
 	int (*rout)();
@@ -121,8 +120,7 @@ hpuxsetsockopt(p, uap, retval)
 	struct mbuf *m = NULL;
 	int tmp, error;
 
-	fp = getsock(uap->s, &error);
-	if (fp == 0)
+	if (error = getsock(p->p_fd, uap->s, &fp))
 		return (error);
 	if (uap->valsize > MLEN)
 		return (EINVAL);
@@ -169,8 +167,7 @@ hpuxgetsockopt(p, uap, retval)
 	struct mbuf *m = NULL;
 	int valsize, error;
 
-	fp = getsock(uap->s, &error);
-	if (fp == 0)
+	if (error = getsock(p->p_fd, uap->s, &fp))
 		return (error);
 	if (uap->val) {
 		if (error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
