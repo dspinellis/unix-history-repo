@@ -6,9 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/wait.h>
 #include "defs.h"
 
 #define	ack() 	(void) write(rem, "\0\n", 2)
@@ -25,8 +26,22 @@ int	oumask;			/* old umask for creating files */
 
 extern	FILE *lfp;		/* log file for mailing changes */
 
-void	cleanup();
-struct	linkbuf *savelink();
+static int	chkparent __P((char *));
+static void	clean __P((char *));
+static void	comment __P((char *));
+static void	dospecial __P((char *));
+static int	fchog __P((int, char *, char *, char *, int));
+static void	hardlink __P((char *));
+static void	note __P((const char *, ...));
+static void	query __P((char *));
+static void	recvf __P((char *, int));
+static void	removeit __P((struct stat *));
+static int	response __P((void));
+static void	rmchk __P((int));
+static struct linkbuf *
+		    savelink __P((struct stat *));
+static void	sendf __P((char *, int));
+static int	update __P((char *, int, struct stat *));
 
 /*
  * Server routine to read requests and process them.
@@ -35,6 +50,7 @@ struct	linkbuf *savelink();
  *	Vname	- Verify if file out of date or not
  *	Qname	- Query if file exists. Return mtime & size if it does.
  */
+void
 server()
 {
 	char cmdbuf[BUFSIZ];
@@ -61,7 +77,7 @@ server()
 		}
 		do {
 			if (read(rem, cp, 1) != 1)
-				cleanup();
+				cleanup(0);
 		} while (*cp++ != '\n' && cp < &cmdbuf[BUFSIZ]);
 		*--cp = '\0';
 		cp = cmdbuf;
@@ -183,6 +199,7 @@ server()
  * destdir = 1 if destination should be a directory
  * (i.e., more than one source is being copied to the same destination).
  */
+void
 install(src, dest, destdir, opts)
 	char *src, *dest;
 	int destdir, opts;
@@ -253,6 +270,7 @@ install(src, dest, destdir, opts)
  * Transfer the file or directory in target[].
  * rname is the name of the file on the remote host.
  */
+static void
 sendf(rname, opts)
 	char *rname;
 	int opts;
@@ -287,14 +305,14 @@ sendf(rname, opts)
 			log(lfp, "%s: no password entry for uid %d \n",
 				target, stb.st_uid);
 			pw = NULL;
-			sprintf(user, ":%d", stb.st_uid);
+			(void)sprintf(user, ":%lu", stb.st_uid);
 		}
 	if (gr == NULL || gr->gr_gid != stb.st_gid)
 		if ((gr = getgrgid(stb.st_gid)) == NULL) {
 			log(lfp, "%s: no name for group %d\n",
 				target, stb.st_gid);
 			gr = NULL;
-			sprintf(group, ":%d", stb.st_gid);
+			(void)sprintf(group, ":%lu", stb.st_gid);
 		}
 	if (u == 1) {
 		if (opts & VERIFY) {
@@ -371,7 +389,7 @@ sendf(rname, opts)
 				return;
 			}
 		}
-		(void) sprintf(buf, "K%o %o %ld %ld %s %s %s\n", opts,
+		(void) sprintf(buf, "K%o %o %qd %ld %s %s %s\n", opts,
 			stb.st_mode & 07777, stb.st_size, stb.st_mtime,
 			protoname(), protogroup(), rname);
 		if (debug)
@@ -420,11 +438,11 @@ sendf(rname, opts)
 		}
 	}
 
-	if ((f = open(target, 0)) < 0) {
+	if ((f = open(target, O_RDONLY, 0)) < 0) {
 		error("%s: %s\n", target, strerror(errno));
 		return;
 	}
-	(void) sprintf(buf, "R%o %o %ld %ld %s %s %s\n", opts,
+	(void) sprintf(buf, "R%o %o %qd %ld %s %s %s\n", opts,
 		stb.st_mode & 07777, stb.st_size, stb.st_mtime,
 		protoname(), protogroup(), rname);
 	if (debug)
@@ -471,12 +489,11 @@ dospecial:
 	}
 }
 
-struct linkbuf *
+static struct linkbuf *
 savelink(stp)
 	struct stat *stp;
 {
 	struct linkbuf *lp;
-	int found = 0;
 
 	for (lp = ihead; lp != NULL; lp = lp->nextp)
 		if (lp->inum == stp->st_ino && lp->devnum == stp->st_dev) {
@@ -506,6 +523,7 @@ savelink(stp)
  * Returns 0 if no update, 1 if remote doesn't exist, 2 if out of date
  * and 3 if comparing binaries to determine if out of date.
  */
+static int
 update(rname, opts, stp)
 	char *rname;
 	int opts;
@@ -529,7 +547,7 @@ again:
 	cp = s = buf;
 	do {
 		if (read(rem, cp, 1) != 1)
-			lostconn();
+			lostconn(0);
 	} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 	switch (*s++) {
@@ -605,6 +623,7 @@ again:
  *	Y\n		- exists and its a directory or symbolic link
  *	^Aerror message\n
  */
+static void
 query(name)
 	char *name;
 {
@@ -624,7 +643,7 @@ query(name)
 
 	switch (stb.st_mode & S_IFMT) {
 	case S_IFREG:
-		(void) sprintf(buf, "Y%ld %ld\n", stb.st_size, stb.st_mtime);
+		(void) sprintf(buf, "Y%qd %ld\n", stb.st_size, stb.st_mtime);
 		(void) write(rem, buf, strlen(buf));
 		break;
 
@@ -640,6 +659,7 @@ query(name)
 	*tp = '\0';
 }
 
+static void
 recvf(cmd, type)
 	char *cmd;
 	int type;
@@ -763,7 +783,7 @@ recvf(cmd, type)
 		cp = buf;
 		for (i = 0; i < size; i += j) {
 			if ((j = read(rem, cp, size - i)) <= 0)
-				cleanup();
+				cleanup(0);
 			cp += j;
 		}
 		*cp = '\0';
@@ -812,7 +832,7 @@ recvf(cmd, type)
 			if (j <= 0) {
 				(void) close(f);
 				(void) unlink(new);
-				cleanup();
+				cleanup(0);
 			}
 			amt -= j;
 			cp += j;
@@ -892,6 +912,7 @@ badtarget:	error("%s:%s: %s\n", host, target, strerror(errno));
 /*
  * Creat a hard link to existing file.
  */
+static void
 hardlink(cmd)
 	char *cmd;
 {
@@ -949,6 +970,7 @@ hardlink(cmd)
 /*
  * Check to see if parent directory exists and create one if not.
  */
+static int
 chkparent(name)
 	char *name;
 {
@@ -976,6 +998,7 @@ chkparent(name)
 /*
  * Change owner, group and mode of file.
  */
+static int
 fchog(fd, file, owner, group, mode)
 	int fd;
 	char *file, *owner, *group;
@@ -1039,6 +1062,7 @@ ok:	if (fd != -1 && fchown(fd, uid, gid) < 0 || chown(file, uid, gid) < 0)
  * Check for files on the machine being updated that are not on the master
  * machine and remove them.
  */
+static void
 rmchk(opts)
 	int opts;
 {
@@ -1061,7 +1085,7 @@ rmchk(opts)
 		cp = s = buf;
 		do {
 			if (read(rem, cp, 1) != 1)
-				lostconn();
+				lostconn(0);
 		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 		switch (*s++) {
@@ -1106,7 +1130,7 @@ rmchk(opts)
 					(void) fwrite(s, 1, cp - s, lfp);
 			}
 			if (buf[0] == '\2')
-				lostconn();
+				lostconn(0);
 			break;
 
 		default:
@@ -1120,6 +1144,7 @@ rmchk(opts)
  * Check the current directory (initialized by the 'T' command to server())
  * for extraneous files and remove them.
  */
+static void
 clean(cp)
 	register char *cp;
 {
@@ -1167,7 +1192,7 @@ clean(cp)
 		cp = buf;
 		do {
 			if (read(rem, cp, 1) != 1)
-				cleanup();
+				cleanup(0);
 		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 		*--cp = '\0';
 		cp = buf;
@@ -1192,6 +1217,7 @@ clean(cp)
  * Remove a file or directory (recursively) and send back an acknowledge
  * or an error message.
  */
+static void
 removeit(stp)
 	struct stat *stp;
 {
@@ -1260,6 +1286,7 @@ removed:
 /*
  * Execute a shell command to handle special cases.
  */
+static void
 dospecial(cmd)
 	char *cmd;
 {
@@ -1327,78 +1354,117 @@ dospecial(cmd)
 		ack();
 }
 
-/*VARARGS2*/
-log(fp, fmt, a1, a2, a3)
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+log(FILE *fp, const char *fmt, ...)
+#else
+log(fp, fmt, va_alist)
 	FILE *fp;
 	char *fmt;
-	int a1, a2, a3;
+        va_dcl
+#endif
 {
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	/* Print changes locally if not quiet mode */
 	if (!qflag)
-		printf(fmt, a1, a2, a3);
+		(void)vprintf(fmt, ap);
 
 	/* Save changes (for mailing) if really updating files */
 	if (!(options & VERIFY) && fp != NULL)
-		fprintf(fp, fmt, a1, a2, a3);
+		(void)vfprintf(fp, fmt, ap);
+	va_end(ap);
 }
 
-/*VARARGS1*/
-error(fmt, a1, a2, a3)
+void
+#if __STDC__
+error(const char *fmt, ...)
+#else
+error(fmt, va_alist)
 	char *fmt;
-	int a1, a2, a3;
+        va_dcl
+#endif
 {
 	static FILE *fp;
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 
 	++nerrs;
 	if (!fp && !(fp = fdopen(rem, "w")))
 		return;
 	if (iamremote) {
 		(void)fprintf(fp, "%crdist: ", 0x01);
-		(void)fprintf(fp, fmt, a1, a2, a3);
+		(void)vfprintf(fp, fmt, ap);
 		fflush(fp);
 	}
 	else {
 		fflush(stdout);
 		(void)fprintf(stderr, "rdist: ");
-		(void)fprintf(stderr, fmt, a1, a2, a3);
+		(void)vfprintf(stderr, fmt, ap);
 		fflush(stderr);
 	}
 	if (lfp != NULL) {
 		(void)fprintf(lfp, "rdist: ");
-		(void)fprintf(lfp, fmt, a1, a2, a3);
+		(void)vfprintf(lfp, fmt, ap);
 		fflush(lfp);
 	}
+	va_end(ap);
 }
 
-/*VARARGS1*/
-fatal(fmt, a1, a2,a3)
+void
+#if __STDC__
+fatal(const char *fmt, ...)
+#else
+fatal(fmt, va_alist)
 	char *fmt;
-	int a1, a2, a3;
+        va_dcl
+#endif
 {
 	static FILE *fp;
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 
 	++nerrs;
 	if (!fp && !(fp = fdopen(rem, "w")))
 		return;
 	if (iamremote) {
 		(void)fprintf(fp, "%crdist: ", 0x02);
-		(void)fprintf(fp, fmt, a1, a2, a3);
+		(void)vfprintf(fp, fmt, ap);
 		fflush(fp);
 	}
 	else {
 		fflush(stdout);
 		(void)fprintf(stderr, "rdist: ");
-		(void)fprintf(stderr, fmt, a1, a2, a3);
+		(void)vfprintf(stderr, fmt, ap);
 		fflush(stderr);
 	}
 	if (lfp != NULL) {
 		(void)fprintf(lfp, "rdist: ");
-		(void)fprintf(lfp, fmt, a1, a2, a3);
+		(void)vfprintf(lfp, fmt, ap);
 		fflush(lfp);
 	}
-	cleanup();
+	cleanup(0);
 }
 
+static int
 response()
 {
 	char *cp, *s;
@@ -1410,7 +1476,7 @@ response()
 	cp = s = resp;
 	do {
 		if (read(rem, cp, 1) != 1)
-			lostconn();
+			lostconn(0);
 	} while (*cp++ != '\n' && cp < &resp[BUFSIZ]);
 
 	switch (*s++) {
@@ -1441,7 +1507,7 @@ response()
 				(void) fwrite(s, 1, cp - s, lfp);
 		}
 		if (resp[0] == '\2')
-			lostconn();
+			lostconn(0);
 		return(-1);
 	}
 }
@@ -1450,25 +1516,41 @@ response()
  * Remove temporary files and do any cleanup operations before exiting.
  */
 void
-cleanup()
+cleanup(signo)
+	int signo;
 {
 	(void) unlink(tempfile);
 	exit(1);
 }
 
-note(fmt, a1, a2, a3)
+static void
+#if __STDC__
+note(const char *fmt, ...)
+#else
+note(fmt, va_alist)
 	char *fmt;
-	int a1, a2, a3;
+        va_dcl
+#endif
 {
 	static char buf[BUFSIZ];
-	sprintf(buf, fmt, a1, a2, a3);
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
 	comment(buf);
 }
 
+static void
 comment(s)
-char *s;
+	char *s;
 {
-	char c = '\3';
+	char c;
+
+	c = '\3';
 	write(rem, &c, 1);
 	write(rem, s, strlen(s));
 	c = '\n';

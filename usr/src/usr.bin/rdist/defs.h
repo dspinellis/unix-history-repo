@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.9 (Berkeley) %G%
+ *	@(#)defs.h	5.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -12,12 +12,17 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/file.h>
+
 #include <netinet/in.h>
-#include <stdio.h>
-#include <ctype.h>
+
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 #include "pathnames.h"
 
 /*
@@ -119,14 +124,31 @@ extern struct passwd *pw;	/* pointer to static area used by getpwent */
 extern struct group *gr;	/* pointer to static area used by getgrent */
 extern char host[];		/* host name of master copy */
 extern char buf[];		/* general purpose buffer */
-extern int errno;		/* system error number */
 
-char *makestr();
-struct namelist *makenl();
-struct subcmd *makesubcmd();
-struct namelist *lookup();
-struct namelist *expand();
-char *exptilde();
-char *malloc();
-char *rindex();
-char *index();
+int	 any __P((int, char *));
+char	*colon __P((char *));
+void	 cleanup __P((int));
+void	 define __P((char *));
+void	 docmds __P((char **, int, char **));
+void	 error __P((const char *, ...));
+int	 except __P((char *));
+struct namelist *
+	 expand __P((struct namelist *, int));
+char	*exptilde __P((char [], char *));
+void	 fatal __P((const char *, ...));
+int	 inlist __P((struct namelist *, char *));
+void	 insert __P((char *,
+	    struct namelist *, struct namelist *, struct subcmd *));
+void	 install __P((char *, char *, int, int));
+void	 log __P((FILE *, const char *, ...));
+struct namelist *
+	 lookup __P((char *, int, struct namelist *));
+void	 lostconn __P((int));
+struct namelist *
+	 makenl __P((char *));
+struct subcmd *
+	 makesubcmd __P((int));
+void	 prnames __P((struct namelist *));
+void	 server __P((void));
+void	 yyerror __P((char *));
+int	 yyparse __P((void));

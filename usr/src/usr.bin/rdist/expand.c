@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -31,11 +31,19 @@ int	expany;		/* any expansions done? */
 char	*entp;
 char	**sortbase;
 
-char	*index();
-int	argcmp();
-
 #define sort()	qsort((char *)sortbase, &eargv[eargc] - sortbase, \
 		      sizeof(*sortbase), argcmp), sortbase = &eargv[eargc]
+
+static void	Cat __P((char *, char *));
+static void	addpath __P((int));
+static int	amatch __P((char *, char *));
+static int	argcmp __P((const void *, const void *));
+static int	execbrc __P((char *, char *));
+static void	expsh __P((char *));
+static void	expstr __P((char *));
+static int	match __P((char *, char *));
+static void	matchdir __P((char *));
+static int	smatch __P((char *, char *));
 
 /*
  * Take a list of names and expand any macros, etc.
@@ -105,6 +113,7 @@ expand(list, wh)
 	return(list);
 }
 
+static void
 expstr(s)
 	char *s;
 {
@@ -205,18 +214,19 @@ expstr(s)
 	sort();
 }
 
-static
+static int
 argcmp(a1, a2)
-	char **a1, **a2;
+	const void *a1, *a2;
 {
 
-	return (strcmp(*a1, *a2));
+	return (strcmp(*(char **)a1, *(char **)a2));
 }
 
 /*
  * If there are any Shell meta characters in the name,
  * expand into a list, after searching directory
  */
+static void
 expsh(s)
 	char *s;
 {
@@ -254,6 +264,7 @@ endit:
 	*pathp = '\0';
 }
 
+static void
 matchdir(pattern)
 	char *pattern;
 {
@@ -294,6 +305,7 @@ patherr2:
 	yyerror(path);
 }
 
+static int
 execbrc(p, s)
 	char *p, *s;
 {
@@ -373,6 +385,7 @@ doit:
 	return (0);
 }
 
+static int
 match(s, p)
 	char *s, *p;
 {
@@ -390,6 +403,7 @@ match(s, p)
 	return (c);
 }
 
+static int
 amatch(s, p)
 	register char *s, *p;
 {
@@ -478,6 +492,7 @@ slash:
 	}
 }
 
+static int
 smatch(s, p)
 	register char *s, *p;
 {
@@ -536,6 +551,7 @@ smatch(s, p)
 	}
 }
 
+static void
 Cat(s1, s2)
 	register char *s1, *s2;
 {
@@ -556,8 +572,9 @@ Cat(s1, s2)
 		;
 }
 
+static void
 addpath(c)
-	char c;
+	int c;
 {
 
 	if (pathp >= lastpathp)
