@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)replace.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)replace.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,8 +60,6 @@ replace(argv)
 
 	tfd1 = tmp();			/* Files before key file. */
 	tfd2 = tmp();			/* Files after key file. */
-	
-	mods = (options & (AR_A|AR_B));
 
 	/*
 	 * Break archive into two parts -- entries before and after the key
@@ -70,6 +68,7 @@ replace(argv)
 	 * key, place the key at the end of the before key entries.  Put it
 	 * all back together at the end.
 	 */
+	mods = (options & (AR_A|AR_B));
 	for (err = 0, curfd = tfd1; get_header(afd);) {
 		if ((file = *argv) && files(argv)) {
 			if ((sfd = open(file, O_RDONLY)) < 0) {
@@ -127,7 +126,8 @@ append:	while (file = *argv++) {
 			continue;
 		}
 		(void)fstat(sfd, &sb);
-		SETCF(sfd, file, tfd2, tname, WPAD);
+		SETCF(sfd, file,
+		    options & (AR_A|AR_B) ? tfd1 : tfd2, tname, WPAD);
 		put_header(&cf, &sb);
 		copyfile(&cf, sb.st_size);
 		(void)close(sfd);
