@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)type.c 1.6 %G%";
+static char sccsid[] = "@(#)type.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -374,10 +374,6 @@ foredecl()
 		if (p->class == PTR && p -> ptr[0] != 0)
 		{
 			p->type = gtype(p -> ptr[0]);
-#ifndef PI1
-			if (p->type != NIL && ( ( p->type )->nl_flags & NFILES))
-				error("Files cannot be members of dynamic structures");
-#endif
 #			ifdef PTREE
 			{
 			    if ( pUSE( p -> inTree ).PtrTType == pNIL ) {
