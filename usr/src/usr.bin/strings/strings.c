@@ -12,14 +12,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strings.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)strings.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <sys/file.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <a.out.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define DEF_LEN		4		/* default minimum string length */
 #define ISSTR(ch)	(isascii(ch) && (isprint(ch) || ch == '\t'))
@@ -32,6 +36,8 @@ static int	hcnt,			/* head count */
 		read_len;		/* length to read */
 static u_char	hbfr[sizeof(EXEC)];	/* buffer for struct exec */
 
+static void usage();
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -41,19 +47,18 @@ main(argc, argv)
 	register int ch, cnt;
 	register u_char *C;
 	EXEC *head;
-	int minlen;
-	int exitcode = 0;
+	int exitcode, minlen;
 	short asdata, oflg, fflg;
 	u_char *bfr;
-	char *file, *p, *malloc();
+	char *file, *p;
 
 	/*
 	 * for backward compatibility, allow '-' to specify 'a' flag; no
 	 * longer documented in the man page or usage string.
 	 */
-	asdata = oflg = fflg = 0;
+	asdata = exitcode = fflg = oflg = 0;
 	minlen = -1;
-	while ((ch = getopt(argc, argv, "-0123456789aof")) != EOF)
+	while ((ch = getopt(argc, argv, "-0123456789anof")) != EOF)
 		switch((char)ch) {
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
@@ -73,17 +78,18 @@ main(argc, argv)
 		case 'a':
 			asdata = 1;
 			break;
-		case 'o':
-			oflg = 1;
-			break;
 		case 'f':
 			fflg = 1;
 			break;
+		case 'n':
+			minlen = atoi(optarg);
+			break;
+		case 'o':
+			oflg = 1;
+			break;
 		case '?':
 		default:
-			fprintf(stderr,
-			    "usage: strings [-ao] [-#] [file ... ]\n");
-			exit(1);
+			usage();
 		}
 	argc -= optind;
 	argv += optind;
@@ -91,8 +97,8 @@ main(argc, argv)
 	if (minlen == -1)
 		minlen = DEF_LEN;
 
-	if (!(bfr = (u_char *)malloc((u_int)minlen))) {
-		fputs("strings: no space.\n", stderr);
+	if (!(bfr = malloc((u_int)minlen))) {
+		(void)fprintf(stderr, "strings: %s\n", strerror(errno));
 		exit(1);
 	}
 	bfr[minlen] = '\0';
@@ -101,7 +107,8 @@ main(argc, argv)
 		if (*argv) {
 			file = *argv++;
 			if (!freopen(file, "r", stdin)) {
-				perror(file);
+				(void)fprintf(stderr,
+				    "strings; %s: %s\n", file, strerror(errno));
 				exitcode = 1;
 				goto nextfile;
 			}
@@ -113,11 +120,12 @@ main(argc, argv)
 			DO_EVERYTHING()
 		else {
 			head = (EXEC *)hbfr;
-			if ((head_len = read(fileno(stdin), (char *)head, sizeof(EXEC))) == -1)
+			if ((head_len =
+			    read(fileno(stdin), head, sizeof(EXEC))) == -1)
 				DO_EVERYTHING()
 			if (head_len == sizeof(EXEC) && !N_BADMAG(*head)) {
 				foff = N_TXTOFF(*head);
-				if (fseek(stdin, foff, L_SET) == -1)
+				if (fseek(stdin, foff, SEEK_SET) == -1)
 					DO_EVERYTHING()
 				read_len = head->a_text + head->a_data;
 				head_len = 0;
@@ -136,10 +144,10 @@ start:
 				if (fflg)
 					printf("%s:", file);
 				if (oflg)
-					printf("%07ld %s", foff - minlen,
-					    (char *)bfr);
+					printf("%07ld %s",
+					    foff - minlen, (char *)bfr);
 				else
-					fputs((char *)bfr, stdout);
+					printf("%s", bfr);
 				while ((ch = getch()) != EOF && ISSTR(ch))
 					putchar((char)ch);
 				putchar('\n');
@@ -166,4 +174,12 @@ getch()
 	if (read_len == -1 || read_len-- > 0)
 		return(getchar());
 	return(EOF);
+}
+
+static void
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: strings [-afo] [-n length] [file ... ]\n");
+	exit(1);
 }
