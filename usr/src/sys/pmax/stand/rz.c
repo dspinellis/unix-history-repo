@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Van Jacobson of Lawrence Berkeley Laboratory and Ralph Campbell.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.2 (Berkeley) %G%
+ *	@(#)rz.c	8.1 (Berkeley) %G%
  */
 
 #include <stand/stand.h>
