@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.39 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.40 (Berkeley) %G%
  */
 
 /*
