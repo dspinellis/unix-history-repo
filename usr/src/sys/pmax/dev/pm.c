@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pm.c	7.1 (Berkeley) %G%
+ *	@(#)pm.c	7.2 (Berkeley) %G%
  *
  *  devGraphics.c --
  *
@@ -56,7 +56,7 @@ static u_short	curReg;		/* copy of PCCRegs.cmdr since it's read only */
 static int	isMono;		/* true if B&W frame buffer */
 static int	initialized;	/* true if 'probe' was successful */
 static int	GraphicsOpen;	/* true if the graphics device is open */
-static struct	proc *pm_selp;	/* process waiting for select */
+static struct	selinfo pm_selp;/* process waiting for select */
 
 /*
  * These need to be mapped into user space.
@@ -508,7 +508,7 @@ pmKbdEvent(ch)
 	eventPtr->time = TO_MS(time);
 	eventPtr->key = ch;
 	pmu.scrInfo.qe.eTail = i;
-	pmwakeup();
+	selwakeup(&pm_selp);
 }
 
 /*
@@ -624,7 +624,7 @@ pmMouseEvent(newRepPtr)
 	eventPtr->y = pmu.scrInfo.mouse.y;
 	eventPtr->device = MOUSE_DEVICE;
 	pmu.scrInfo.qe.eTail = PM_EVROUND(pmu.scrInfo.qe.eTail + 1);
-	pmwakeup();
+	selwakeup(&pm_selp);
 }
 
 /*
@@ -699,7 +699,7 @@ pmMouseButtons(newRepPtr)
 		eventPtr->y = pmu.scrInfo.mouse.y;
 	}
 	pmu.scrInfo.qe.eTail = i;
-	pmwakeup();
+	selwakeup(&pm_selp);
 
 	lastRep = *newRepPtr;
 	pmu.scrInfo.mswitches = newSwitch;
@@ -1165,29 +1165,20 @@ pmioctl(dev, cmd, data, flag)
 	return (0);
 }
 
-pmselect(dev, flag)
+pmselect(dev, flag, p)
 	dev_t dev;
 	int flag;
+	struct proc *p;
 {
 
 	switch (flag) {
 	case FREAD:
 		if (pmu.scrInfo.qe.eHead != pmu.scrInfo.qe.eTail)
 			return (1);
-		pm_selp = curproc;
+		selrecord(p, &pm_selp);
 		break;
 	}
 
 	return (0);
-}
-
-static
-pmwakeup()
-{
-
-	if (pm_selp) {
-		selwakeup(pm_selp, 0);
-		pm_selp = 0;
-	}
 }
 #endif
