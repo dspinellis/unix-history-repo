@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)exec.h	5.1 (Berkeley) %G%
+ *	@(#)exec.h	5.2 (Berkeley) %G%
  */
 
 /* values of cmdtype */
@@ -36,7 +36,7 @@ int find_builtin(char *);
 void hashcd(void);
 void changepath(char *);
 void defun(char *, union node *);
-void unsetfunc(char *);
+int unsetfunc(char *);
 #else
 void shellexec();
 char *padvance();
@@ -45,5 +45,5 @@ int find_builtin();
 void hashcd();
 void changepath();
 void defun();
-void unsetfunc();
+int unsetfunc();
 #endif
