@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.18 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -649,7 +649,7 @@ direnter(ip, ndp)
 	error = bwrite(bp);
 	dp->i_flag |= IUPD|ICHG;
 	if (ndp->ni_endoff && ndp->ni_endoff < dp->i_size)
-		error = itrunc(dp, (u_long)ndp->ni_endoff);
+		error = itrunc(dp, (u_long)ndp->ni_endoff, IO_SYNC);
 	iput(dp);
 	return (error);
 }
@@ -734,17 +734,7 @@ blkatoff(ip, offset, res, bpp)
 	int error;
 
 	*bpp = 0;
-	if (error = bmap(ip, lbn, &bn, (daddr_t *)0, (int *)0))
-		return (error);
-	if (bn == (daddr_t)-1) {
-		dirbad(ip, offset, "hole in dir");
-		return (EIO);
-	}
-#ifdef SECSIZE
-	bp = bread(ip->i_dev, fsbtodb(fs, bn), bsize, fs->fs_dbsize);
-#else SECSIZE
-	error = bread(ip->i_devvp, bn, bsize, NOCRED, &bp);
-	if (error) {
+	if (error = bread(ITOV(ip), lbn, bsize, NOCRED, &bp)) {
 		brelse(bp);
 		return (error);
 	}
