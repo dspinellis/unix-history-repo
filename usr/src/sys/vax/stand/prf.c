@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)prf.c	6.2 (Berkeley) %G%
+ *	@(#)prf.c	6.3 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -197,6 +197,7 @@ gets(buf)
 			return;
 		case '\b':
 		case '#':
+		case '\177':
 			lp--;
 			if (lp < buf)
 				lp = buf;
