@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.26 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -143,6 +143,7 @@ spec_open(vp, mode, cred)
 /*
  * Vnode op for read
  */
+/* ARGSUSED */
 spec_read(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	register struct uio *uio;
@@ -219,6 +220,7 @@ spec_read(vp, uio, ioflag, cred)
 /*
  * Vnode op for write
  */
+/* ARGSUSED */
 spec_write(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	register struct uio *uio;
