@@ -1,5 +1,5 @@
 
-/*	@(#)tmscp.c	7.6 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.7 (Berkeley) %G% */
 
 /****************************************************************
  *                                                              *
@@ -260,7 +260,7 @@ tmscpstrategy(io, func)
 	mp->mscp_unit = io->i_unit&03;
 	mp->mscp_bytecnt = io->i_cc;
 	mp->mscp_buffer = (ubinfo & 0x3fffff) | (((ubinfo>>28)&0xf)<<24);
-	if ((mp = tmscpcmd(func == READ ? M_OP_READ : M_OP_WRITE, 0)) == 0) {
+	if ((mp = tmscpcmd(func == F_READ ? M_OP_READ : M_OP_WRITE, 0)) == 0) {
 		ubafree(io, ubinfo);
 		printf("tms: I/O error\n");
 		return(-1);

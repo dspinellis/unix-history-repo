@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	7.8 (Berkeley) %G%
+ *	@(#)rl.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -146,7 +146,7 @@ noseek:
 
 	com = (st->rl_dn << 8) | ((ubaaddr>>12)&RL_BAE);
 
-	if (func == READ)
+	if (func == F_READ)
 		com |= RL_READ;
 	else
 		com |= RL_WRITE;

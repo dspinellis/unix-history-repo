@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.6 (Berkeley) %G%
+ *	@(#)ht.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -80,7 +80,7 @@ retry:
 		htaddr->htcs1 = HT_SREV|HT_GO;
 		return (0);
 	}
-	if (func == READ || func == WRITE)
+	if (func == F_READ || func == F_WRITE)
 		mbastart(io, io->i_ctlr, func);
 	else
 		htaddr->htcs1 = func|HT_GO;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.7 (Berkeley) %G%
+ *	@(#)ts.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -110,9 +110,9 @@ retry:
 		ts.ts_cmd.c_size = io->i_cc;
 		ts.ts_cmd.c_loba = info;
 		ts.ts_cmd.c_hiba = (info>>16)&3;
-		if (func == READ)
+		if (func == F_READ)
 			func = TS_RCOM;
-		else if (func == WRITE)
+		else if (func == F_WRITE)
 			func = TS_WCOM;
 	}
 	ts.ts_cmd.c_cmd = TS_ACK|TS_CVC|func;

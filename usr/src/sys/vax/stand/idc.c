@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.6 (Berkeley) %G%
+ *	@(#)idc.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -102,7 +102,7 @@ retry:
 	idcwait(idcaddr);
 	idcaddr->idccsr &= ~IDC_ATTN;
 	com = dn<<8;
-	if (func == READ)
+	if (func == F_READ)
 		com |= IDC_READ;
 	else
 		com |= IDC_WRITE;
