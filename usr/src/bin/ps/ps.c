@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -1196,24 +1196,24 @@ retucomm:
 }
 
 char	*lhdr =
-"      F UID   PID  PPID CP PRI NI ADDR  SZ  RSS %*s STAT TT  TIME";
+"      F UID   PID  PPID CP PRI NI ADDR    SZ  RSS %*sSTAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
 	register struct lsav *lp = sp->s_un.lp;
 
-	printf("%7x%4d%6u%6u%3d%4d%3d%5x%4d%5d",
+	printf("%7x %3d %5u %5u %2d %3d %2d %4x %5d %4d",
 	    ap->a_flag, ap->a_uid,
 	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, ap->a_pri-PZERO,
 	    ap->a_nice-NZERO, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
 	if (lp->l_wchan == 0)
 		printf(" %*s", wcwidth, "");
 	else if (nflg)
-		printf(" %*x", wcwidth, (int)lp->l_wchan&0xffffff);
+		printf(" %*x", wcwidth, (int)lp->l_wchan&~KERNBASE);
 	else
 		printf(" %*.*s", wcwidth, abs(wcwidth), getchan(lp->l_wchan));
-	printf(" %4.4s ", state(ap));
+	printf(" %-3.3s ", state(ap));
 	ptty(ap->a_tty);
 	ptime(ap);
 }
@@ -1229,11 +1229,11 @@ ptime(ap)
 	struct asav *ap;
 {
 
-	printf("%3ld:%02ld", ap->a_cpu / 60, ap->a_cpu % 60);
+	printf(" %2ld:%02ld", ap->a_cpu / 60, ap->a_cpu % 60);
 }
 
 char	*uhdr =
-"%s   PID %%CPU %%MEM   SZ  RSS TT STAT  TIME";
+"%s   PID %%CPU %%MEM    SZ   RSS TT STAT TIME";
 upr(sp)
 	struct savcom *sp;
 {
@@ -1248,16 +1248,16 @@ upr(sp)
 		printf("%4d ", ap->a_uid);
 	else
 		printf("%-8.8s ", getname(ap->a_uid));
-	printf("%5d%5.1f%5.1f%5d%5d",
+	printf("%5d %4.1f %4.1f %5d %5d",
 	    ap->a_pid, sp->s_un.u_pctcpu, pmem(ap), vmsize, rmsize);
 	putchar(' ');
 	ptty(ap->a_tty);
-	printf(" %4.4s", state(ap));
+	printf(" %-3.3s", state(ap));
 	ptime(ap);
 }
 
 char *vhdr =
-" SIZE  PID TT STAT  TIME SL RE PAGEIN SIZE  RSS   LIM TSIZ TRS %CPU %MEM"+5;
+" SIZE  PID TT STAT TIME SL RE PAGEIN  SIZE   RSS   LIM TSIZ TRS %CPU %MEM"+5;
 vpr(sp)
 	struct savcom *sp;
 {
@@ -1266,17 +1266,17 @@ vpr(sp)
 
 	printf("%5u ", ap->a_pid);
 	ptty(ap->a_tty);
-	printf(" %4.4s", state(ap));
+	printf(" %-3.3s", state(ap));
 	ptime(ap);
-	printf("%3d%3d%7d%5d%5d",
+	printf(" %2d %2d %6d %5d %5d",
 	   ap->a_slptime > 99 ? 99 : ap-> a_slptime,
 	   ap->a_time > 99 ? 99 : ap->a_time, vp->v_majflt,
 	   pgtok(ap->a_size), pgtok(ap->a_rss));
 	if (ap->a_maxrss == (RLIM_INFINITY/NBPG))
 		printf("    xx");
 	else
-		printf("%6d", pgtok(ap->a_maxrss));
-	printf("%5d%4d%5.1f%5.1f",
+		printf(" %5d", pgtok(ap->a_maxrss));
+	printf(" %4d %3d %4.1f %4.1f",
 	   pgtok(ap->a_tsiz), pgtok(ap->a_txtrss), vp->v_pctcpu, pmem(ap));
 }
 
@@ -1292,7 +1292,7 @@ spr(sp)
 	printf("%5u", ap->a_pid);
 	putchar(' ');
 	ptty(ap->a_tty);
-	printf(" %4.4s", state(ap));
+	printf(" %-3.3s", state(ap));
 	ptime(ap);
 }
 
@@ -1300,49 +1300,54 @@ char *
 state(ap)
 	register struct asav *ap;
 {
-	char stat, load, nice, anom;
 	static char res[5];
+	char *cp = res;
 
 	switch (ap->a_stat) {
 
 	case SSTOP:
-		stat = 'T';
+		*cp = 'T';
 		break;
 
 	case SSLEEP:
 		if (ap->a_pri >= PZERO)
 			if (ap->a_slptime >= MAXSLP)
-				stat = 'I';
+				*cp = 'I';
 			else
-				stat = 'S';
+				*cp = 'S';
 		else if (ap->a_flag & SPAGE)
-			stat = 'P';
+			*cp = 'P';
 		else
-			stat = 'D';
+			*cp = 'D';
 		break;
 
 	case SWAIT:
 	case SRUN:
 	case SIDL:
-		stat = 'R';
+		*cp = 'R';
 		break;
 
 	case SZOMB:
-		stat = 'Z';
+		*cp = 'Z';
 		break;
 
 	default:
-		stat = '?';
+		*cp = '?';
 	}
-	load = ap->a_flag & SLOAD ? (ap->a_rss>ap->a_maxrss ? '>' : ' ') : 'W';
+	cp++;
+	if (ap->a_flag & SLOAD) {
+		if (ap->a_rss > ap->a_maxrss)
+			*cp++ = '>';
+	} else
+		*cp++ = 'W';
 	if (ap->a_nice < NZERO)
-		nice = '<';
+		*cp++ = '<';
 	else if (ap->a_nice > NZERO)
-		nice = 'N';
-	else
-		nice = ' ';
-	anom = (ap->a_flag&SUANOM) ? 'A' : ((ap->a_flag&SSEQL) ? 'S' : ' ');
-	res[0] = stat; res[1] = load; res[2] = nice; res[3] = anom;
+		*cp++ = 'N';
+	if (ap->a_flag & SUANOM)
+		*cp++ = 'A';
+	else if (ap->a_flag & SSEQL)
+		*cp++ = 'S';
 	return (res);
 }
 
