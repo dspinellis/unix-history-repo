@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -613,7 +613,7 @@ c_perm(perm)
 	char *perm;
 {
 	PLAN *new;
-	mode_t *set;
+	mode_t *set, *setmode();
 
 	ftsoptions &= ~FTS_NOSTAT;
 
