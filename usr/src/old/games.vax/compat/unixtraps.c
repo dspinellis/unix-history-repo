@@ -1,5 +1,5 @@
 #ifndef	lint
-static char sccsid[] = "@(#)unixtraps.c	4.3 84/05/05";
+static char sccsid[] = "@(#)unixtraps.c	4.4 88/09/22";
 #endif
 
 /* From Lou Salkind: compat/RCS/unixtraps.c,v 1.2 84/01/31 13:34:34 */
@@ -115,6 +115,7 @@ struct timeb {
 #define	ODSIZE	16
 
 off_t	olseek();
+long	longrev();
 
 struct odirect {
 	u_short	od_ino;

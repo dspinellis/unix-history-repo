@@ -1,7 +1,7 @@
 #
 /*      Re-coding of advent in C: file i/o and user i/o                 */
 
-static char sccsid[] = "	io.c	4.1	82/05/11	";
+static char sccsid[] = "	io.c	4.2	88/09/22	";
 
 #include "hdr.h"
 #include <stdio.h>
@@ -440,7 +440,7 @@ struct text *msg;/* msg is a pointer to seek address and length of mess */
 {       register char *s,nonfirst;
 	register char *tbuf;
 	doseek(msg->seekadr);
-	if ((tbuf=(char *) malloc(msg->txtlen+1))<0) bug(109);
+	if ((tbuf=(char *) malloc(msg->txtlen+1)) == 0) bug(109);
 	read(datfd,tbuf,msg->txtlen);
 	s=tbuf;
 	nonfirst=0;
@@ -470,7 +470,7 @@ int skip;       /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
 	char *numst;
 	int lstr;
 	doseek(ptext[msg].seekadr);
-	if ((tbuf=(char *) malloc((lstr=ptext[msg].txtlen)+1))<0) bug(108);
+	if ((tbuf=(char *) malloc((lstr=ptext[msg].txtlen)+1)) == 0) bug(108);
 	read(datfd,tbuf,lstr);
 	s=tbuf;
 	nonfirst=0;
