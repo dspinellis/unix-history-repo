@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.51		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.52		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	3.51		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.51		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.52		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -264,6 +264,7 @@ makeconnection(host, port, outfile, infile)
 		  case ENETRESET:
 		  case ENOBUFS:
 		  case ECONNREFUSED:
+		  case ECONNRESET:
 		  case EHOSTUNREACH:
 		  case ENETUNREACH:
 			/* there are others, I'm sure..... */
