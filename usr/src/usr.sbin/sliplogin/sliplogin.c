@@ -1,5 +1,6 @@
 #ifndef lint
-static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18";
+static char sccsid[] = "@(#)sliplogin.c	1.4 (Berkeley) %G%";
+/* from static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18"; */
 #endif
 
 /*
@@ -62,22 +63,11 @@ static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18";
 #define ADDR	1
 #define MASK	2
 
-#define	DCD_CHECK_INTERVAL 5	/* if > 0, time between automatic DCD checks */
+#define	DCD_CHECK_INTERVAL 0	/* if > 0, time between automatic DCD checks */
 #define	DCD_SETTLING_TIME 1	/* time between DCD change and status check */
 
 int gotalarm = 0;
 int timeleft = DCD_CHECK_INTERVAL;
-
-void
-alarm_handler()
-{
-	/*if (timeleft > DCD_SETTLING_TIME)
-		(void) alarm(timeleft-DCD_SETTLING_TIME);
-	else */
-		(void) alarm(DCD_CHECK_INTERVAL);
-	gotalarm = 1;
-	timeleft = 0;
-}
 
 #if	defined(SIGDCD) && SIGDCD > 0
 void
@@ -91,6 +81,20 @@ dcd_handler()
 }
 #endif
 
+#if DCD_CHECK_INTERVAL > 0
+void
+alarm_handler()
+{
+#ifdef SIGDCD
+	if (timeleft > DCD_SETTLING_TIME)
+		(void) alarm(timeleft-DCD_SETTLING_TIME);
+	else
+#endif /* SIGDCD */
+		(void) alarm(DCD_CHECK_INTERVAL);
+	gotalarm = 1;
+	timeleft = 0;
+}
+
 /* Use TIOCMGET to test if DCD is low on the port of the passed descriptor */
 
 int
@@ -103,19 +107,7 @@ lowdcd(fd)
 		return 1;	/* port is dead, we die */
 	return !(mbits & TIOCM_CAR);
 }
-
-/* Use TIOCMGET to test if DTR is low on the port of the passed descriptor */
-
-int
-lowdtr(fd)
-	int fd;
-{
-	int mbits;
-
-	if (ioctl(fd, TIOCMGET, (caddr_t)&mbits) < 0)
-		return 1;	/* port is dead, we die */
-	return ((mbits & TIOCM_DTR) == TIOCM_DTR);
-}
+#endif /* DCD_CHECK_INTERVAL > 0 */
 
 char	*Accessfile = "/etc/hosts.slip";
 
@@ -134,14 +126,18 @@ struct slip_modes {
 	"noicmp",	SC_NOICMP,	/* Sam's(?) ICMP suppression */
 } ;
 
-/*
- * If we are uncerimoniously dumped, bitch
- */
 void
-hup_handler()
+hup_handler(s)
+	int s;
 {
-syslog(LOG_NOTICE, "connection closed: process aborted %s%d: remote %s\n",
-		SLIPIFNAME, unit, dstaddr);
+
+	syslog(LOG_INFO,
+	    "%s%d: connection closed: process aborted, sig %d, remote %s\n",
+	    SLIPIFNAME, unit, s, dstaddr);
+	if (close(0) < 0)
+		syslog(LOG_ERR, "(hup) close: %m");
+	else
+		syslog(LOG_INFO, "(hup) close completed");
 	exit(1) ;
 }
 
@@ -181,30 +177,38 @@ main(argc, argv)
 			else
 				netmask = "default";
 		}
+		/*
+		 * Disassociate from current controlling terminal, if any,
+		 * and ensure that the slip line is our controlling terminal.
+		 */
+#if !defined(BSD) || BSD < 198810
+		if ((fd = open("/dev/tty", O_RDONLY, 0)) >= 0) {
+			(void) ioctl(fd, TIOCNOTTY, 0);
+			(void) close(fd);
+			/* open slip tty again to acquire as controlling tty? */
+			fd = open(ttyname(0), O_RDWR, 0);
+			if (fd >= 0)
+				(void) close(fd);
+		}
+		(void) setpgrp(0, getpid());
+#else
+		(void) setsid();
+		(void) ioctl(0, TIOCSCTTY, 0); /* not sure this will work */
+#endif
 	} else
 		findid((char *)0);
-	/* ensure that the slip line is our controlling terminal */
-	if ((fd = open("/dev/tty", O_RDONLY, 0)) >= 0) {
-		(void) ioctl(fd, TIOCNOTTY, 0);
-		(void) close(fd);
-		fd = open(ttyname(0), O_RDWR, 0);
-		if (fd >= 0)
-			(void) close(fd);
-		(void) setpgrp(0, getpid());
-	}
 	fchmod(0, 0600);
 	/* set up the line parameters */
-	if (ioctl(0, TCGETA, (caddr_t)&tios) < 0) {
-		syslog(LOG_ERR, "ioctl (TCGETA): %m");
+	if (ioctl(0, TIOCGETA, (caddr_t)&tios) < 0) {
+		syslog(LOG_ERR, "ioctl (TIOCGETA): %m");
 		exit(1);
 	}
-	otios = tios ;
-	tios.c_cflag &= 0xf;	/* only save the speed */
-	tios.c_cflag |= CS8|CREAD|HUPCL;
+	otios = tios;
+	tios.c_cflag = CS8|CREAD|HUPCL;
 	tios.c_iflag = IGNBRK;
 	tios.c_oflag = tios.c_lflag = 0;
-	if (ioctl(0, TCSETA, (caddr_t)&tios) < 0) {
-		syslog(LOG_ERR, "ioctl (TCSETA) (1): %m");
+	if (ioctl(0, TIOCSETA, (caddr_t)&tios) < 0) {
+		syslog(LOG_ERR, "ioctl (TIOCSETA) (1): %m");
 		exit(1);
 	}
 	/* find out what ldisc we started with */
@@ -214,7 +218,7 @@ main(argc, argv)
 	}
 	ldisc = SLIPDISC;
 	if (ioctl(0, TIOCSETD, (caddr_t)&ldisc) < 0) {
-		syslog(LOG_ERR, "ioctl(TIOCSETD) (1): %m");
+		syslog(LOG_ERR, "ioctl(TIOCSETD): %m");
 		exit(1);
 	}
 	/* find out what unit number we were assigned */
@@ -222,7 +226,7 @@ main(argc, argv)
 		syslog(LOG_ERR, "ioctl (TIOCGETD) (2): %m");
 		exit(1);
 	}
-	syslog(LOG_NOTICE, "attaching %s%d: local %s remote %s mask %s\n",
+	syslog(LOG_INFO, "attaching %s%d: local %s remote %s mask %s\n",
 		SLIPIFNAME, unit, localaddr, dstaddr, netmask);
 #ifdef notdef
 	/* set the local and remote interface addresses */
@@ -255,51 +259,54 @@ main(argc, argv)
 	      SLIPIFNAME, unit, localaddr, dstaddr, netmask);
 	  system(cmd);
 	}
+#endif
 	if (ioctl(0, SLIOCSFLAGS, (caddr_t)&slip_mode) < 0) {
 		syslog(LOG_ERR, "ioctl (SLIOCSFLAGS): %m");
 		exit(1);
 	}
-#endif
 
 	/* set up signal handlers */
 #if	defined(SIGDCD) && SIGDCD > 0
 	(void) signal(SIGDCD, dcd_handler);
 #endif
 	(void) sigblock(sigmask(SIGALRM));
-	(void) signal(SIGALRM, alarm_handler);
-	/* a SIGHUP will kill us */
 	(void) signal(SIGHUP, hup_handler);
 	(void) signal(SIGTERM, hup_handler);
 
+#if DCD_CHECK_INTERVAL > 0
 	/* timeleft = 60 * 60 * 24 * 365 ; (void) alarm(timeleft); */
+	(void) signal(SIGALRM, alarm_handler);
 	(void) alarm(DCD_CHECK_INTERVAL);
+#endif
 
 	/* twiddle thumbs until we get a signal */
 	while (1) {
 		sigpause(0);
+#if DCD_CHECK_INTERVAL > 0
 		(void) sigblock(sigmask(SIGALRM));
 		if (gotalarm && lowdcd(0))
 			break;
-		if (gotalarm && lowdtr(0))
-			break;
 		gotalarm = 0;
+#endif /* DCD_CHECK_INTERVAL > 0 */
 	}
 
+#ifdef notdef
 	if (lowdcd(0))
 		syslog(LOG_NOTICE,
 			"connection closed: loss of carrier %s%d: remote %s\n",
 			SLIPIFNAME, unit, dstaddr);
-	else if (lowdtr(0))
-		syslog(LOG_NOTICE,
-			"connection closed by foreign host %s%d: remote %s\n",
-			SLIPIFNAME, unit, dstaddr);
+#endif
 
 	if (ioctl(0, TIOCSETD, (caddr_t)&odisc) < 0) {
 		syslog(LOG_ERR, "ioctl(TIOCSETD) (2): %m");
 		exit(1);
 	}
-	if (ioctl(0, TCSETA, (caddr_t)&otios) < 0) {
-		syslog(LOG_ERR, "ioctl (TCSETA) (2): %m");
+	if (ioctl(0, TIOCSETA, (caddr_t)&otios) < 0) {
+		syslog(LOG_ERR, "ioctl (TIOCSETA) (2): %m");
+		exit(1);
+	}
+	if (close(0) < 0) {
+		syslog(LOG_ERR, "close: %m");
 		exit(1);
 	}
 	exit(0);
