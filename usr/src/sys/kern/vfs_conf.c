@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	7.5 (Berkeley) %G%
+ *	@(#)vfs_conf.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -32,41 +32,37 @@ struct vnode *rootdir;
  */
 #ifdef FFS
 extern	struct vfsops ufs_vfsops;
+#define	UFS_VFSOPS	&ufs_vfsops
+#else
+#define	UFS_VFSOPS	NULL
 #endif
 
 #ifdef LFS
 extern	struct vfsops lfs_vfsops;
+#define	LFS_VFSOPS	&lfs_vfsops
+#else
+#define	LFS_VFSOPS	NULL
 #endif
 
 #ifdef MFS
 extern	struct vfsops mfs_vfsops;
+#define	MFS_VFSOPS	&mfs_vfsops
+#else
+#define	MFS_VFSOPS	NULL
 #endif
 
 #ifdef NFS
 extern	struct vfsops nfs_vfsops;
+#define	NFS_VFSOPS	&nfs_vfsops
+#else
+#define	NFS_VFSOPS	NULL
 #endif
 
 struct vfsops *vfssw[] = {
 	NULL,			/* 0 = MOUNT_NONE */
-#ifdef FFS
-	&ufs_vfsops,		/* 1 = MOUNT_UFS */
-#else
-	NULL,
-#endif
-#ifdef NFS
-	&nfs_vfsops,		/* 2 = MOUNT_NFS */
-#else
-	NULL,
-#endif
-#ifdef MFS
-	&mfs_vfsops,		/* 3 = MOUNT_MFS */
-#else
-	NULL,
-#endif
+	UFS_VFSOPS,		/* 1 = MOUNT_UFS */
+	NFS_VFSOPS,		/* 2 = MOUNT_NFS */
+	MFS_VFSOPS,		/* 3 = MOUNT_MFS */
 	NULL,			/* 4 = MOUNT_PC */
-#ifdef LFS
-	&lfs_vfsops,		/* 5 = MOUNT_LFS */
-#else
-	NULL,
-#endif
+	LFS_VFSOPS,		/* 5 = MOUNT_LFS */
 };
