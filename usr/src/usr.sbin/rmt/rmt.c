@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmt.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -95,7 +95,7 @@ top:
 		getstring(count);
 		getstring(pos);
 		DEBUG2("rmtd: L %s %s\n", count, pos);
-		rval = lseek(tape, atol(count), atoi(pos));
+		rval = lseek(tape, (off_t)atol(count), atoi(pos));
 		if (rval < 0)
 			goto ioerror;
 		goto respond;
