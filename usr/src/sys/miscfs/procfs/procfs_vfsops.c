@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)procfs_vfsops.c	8.3 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vfsops.c,v 3.1 1993/12/15 09:40:17 jsp Exp $
@@ -44,7 +44,6 @@ procfs_mount(mp, path, data, ndp, p)
 	struct proc *p;
 {
 	u_int size;
-	int error;
 
 	if (UIO_MX & (UIO_MX-1)) {
 		log(LOG_ERR, "procfs: invalid directory entry size");
