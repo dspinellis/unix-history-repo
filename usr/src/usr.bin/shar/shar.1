@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)shar.1	5.3 (Berkeley) %G%
+.\"     @(#)shar.1	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SHAR 1
@@ -55,7 +55,7 @@ To create a shell archive of the program
 and mail it to Rick:
 .Bd -literal -offset indent
 cd ls
-shar `find . -print`  mail -s "ls source" rick
+shar `find . -print` \&|  mail -s "ls source" rick
 .Ed
 .Pp
 To recreate the program directory:
