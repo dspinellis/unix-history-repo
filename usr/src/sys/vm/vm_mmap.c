@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.2 (Berkeley) %G%
+ *	@(#)vm_mmap.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -225,26 +225,37 @@ mmap(p, uap, retval)
 		if (vp->v_type != VREG && vp->v_type != VCHR)
 			return (EINVAL);
 		/*
-		 * Ensure that file and memory protections are compatible.
-		 * Note that we only worry about writability if mapping is
-		 * shared; in this case, current and max prot are dictated
-		 * by the open file.
-		 * XXX use the vnode instead?  Problem is: what credentials
-		 * do we use for determination?  What if proc does a setuid?
+		 * XXX hack to handle use of /dev/zero to map anon
+		 * memory (ala SunOS).
 		 */
-		maxprot = VM_PROT_EXECUTE;	/* ??? */
-		if (fp->f_flag & FREAD)
-			maxprot |= VM_PROT_READ;
-		else if (prot & PROT_READ)
-			return (EACCES);
-		if (flags & MAP_SHARED) {
-			if (fp->f_flag & FWRITE)
-				maxprot |= VM_PROT_WRITE;
-			else if (prot & PROT_WRITE)
+		if (vp->v_type == VCHR && iszerodev(vp->v_rdev)) {
+			handle = NULL;
+			maxprot = VM_PROT_ALL;
+			flags |= MAP_ANON;
+		} else {
+			/*
+			 * Ensure that file and memory protections are
+			 * compatible.  Note that we only worry about
+			 * writability if mapping is shared; in this case,
+			 * current and max prot are dictated by the open file.
+			 * XXX use the vnode instead?  Problem is: what
+			 * credentials do we use for determination?
+			 * What if proc does a setuid?
+			 */
+			maxprot = VM_PROT_EXECUTE;	/* ??? */
+			if (fp->f_flag & FREAD)
+				maxprot |= VM_PROT_READ;
+			else if (prot & PROT_READ)
 				return (EACCES);
-		} else
-			maxprot |= VM_PROT_WRITE;
-		handle = (caddr_t)vp;
+			if (flags & MAP_SHARED) {
+				if (fp->f_flag & FWRITE)
+					maxprot |= VM_PROT_WRITE;
+				else if (prot & PROT_WRITE)
+					return (EACCES);
+			} else
+				maxprot |= VM_PROT_WRITE;
+			handle = (caddr_t)vp;
+		}
 	}
 	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot, maxprot,
 	    flags, handle, (vm_offset_t)uap->pos);
