@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lastcomm.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)lastcomm.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -37,8 +37,8 @@ main(argc, argv)
 		exit(1);
 	}
 	fstat(fd, &sb);
-	for (bn = btodb(sb.st_size) - 1; bn >= 0; bn--) {
-		lseek(fd, bn * DEV_BSIZE, L_SET);
+	for (bn = btodb(sb.st_size); bn >= 0; bn--) {
+		lseek(fd, dbtob(bn), L_SET);
 		cc = read(fd, buf, DEV_BSIZE);
 		if (cc < 0) {
 			perror("read");
