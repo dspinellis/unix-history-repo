@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.20 (Berkeley) %G%";
 #endif
 
 #include <ctype.h>
@@ -606,6 +606,7 @@ usage()
 {
 
 	fprintf(stderr, "Usage: mail [ -f ] people . . .\n");
+	error = EX_USAGE;
 }
 
 #include <sys/socket.h>
