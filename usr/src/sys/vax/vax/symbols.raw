@@ -1,4 +1,4 @@
-# symbols.raw 3.5 %G%
+# symbols.raw 3.6 %G%
 	_version
 #dmesg
 	_msgbuf
@@ -7,18 +7,19 @@
 	_dk_busy
 	_dk_time
 	_dk_numb
+	_dk_wds
 	_tk_nin
 	_tk_nout
 #	_io_info
-	_cnt
-	_rate
 #ps
 	_proc
-	_swapdev
 	_Usrptmap
 	_usrpt
 	_text
 	_nswap
+	_maxslp
+	_ccpu
+	_ecmx
 #pstat
 	_inode
 	_text
@@ -27,9 +28,12 @@
 	_dz_cnt
 	_cons
 	_file
-#uptime
-	_bootime
-	_avenrun
+	_Usrptmap
+	_usrpt
+	_nswap
+	_swapmap
+	_dh11
+	_ndh11
 #vmstat
 	_dk_busy
 	_dk_time
@@ -43,6 +47,7 @@
 	_maxfree
 #	_rectime
 #	_pgintime
+	_bootime
 #w
 	_proc
 	_swapdev
