@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.27 (Berkeley) %G%
+		@(#)README	8.28 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -140,7 +140,11 @@ may be empty).
 
 ALIAS_FILE		[/etc/aliases] The location of the text version
 			of the alias file(s).  It can be a comma-separated
-			list of names.
+			list of names (but be sure you quote values with
+			comments in them -- for example, use
+				define(`ALIAS_FILE', `a,b')
+			to get "a" and "b" both listed as alias files;
+			otherwise the define() primitive only sees "a").
 HELP_FILE		[/usr/lib/sendmail.hf] The name of the file
 			containing information printed in response to
 			the SMTP HELP command.
