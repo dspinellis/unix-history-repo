@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strfile.8	5.3 (Berkeley) %G%
+.\"	@(#)strfile.8	5.4 (Berkeley) %G%
 .\"
 .TH STRFILE 8 ""
 .UC 4
@@ -33,12 +33,7 @@ sourcefile
 [ datafile ]
 .sp
 .B unstr
-[
-.B \-o
-] [
-.B \-c char
-]
-datafile[.dat] [ outfile ]
+sourcfile
 .SH DESCRIPTION
 .I Strfile
 takes a file which contains a set of strings and creates a data file
@@ -113,29 +108,18 @@ The purpose of
 .I unstr
 is to undo the work of
 .IR strfile .
-It primarily exists as an emergency backup in case the source file
-is accidentally deleted and the data file is still available.
-It reads data files and creates a corresponding output file.
-.PP
-The options are as follows:
-.TP
-.B \-c \ char
-This option allows specification of a delimiting character to be
-used instead of the default percent sign.
-.TP
-.B \-o
-.I Unstr
-normally prints out the strings in the order they are in the data file.
-If you specify the
-.B -o
-option, it will print them out in the header order, which could be
-different if the file was randomized or ordered when created.
+It prints out the strings contained in the file
+.I sourcefile
+in the order that they are listed in
+the header file
+.IB sourcefile .dat
+to standard output.
 It is possible to create sorted versions of input files by using
 .B \-o
 when
 .I strfile
 is run and then using
-.B "unstr \-o"
+.I unstr
 to dump them out in the table order.
 .SH "SEE ALSO"
 fortune(6)
