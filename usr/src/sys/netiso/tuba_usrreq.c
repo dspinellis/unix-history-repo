@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_usrreq.c	7.8 (Berkeley) %G%
+ *	@(#)tuba_usrreq.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -252,13 +252,13 @@ tuba_usrreq(so, req, m, nam, control)
 
 	case PRU_SOCKADDR:
 		if (isop->isop_laddr)
-			bcopy((caddr_t)isop->isop_laddr, mtod(m, caddr_t),
+			bcopy((caddr_t)isop->isop_laddr, mtod(nam, caddr_t),
 				nam->m_len = isop->isop_laddr->siso_len);
 		break;
 
 	case PRU_PEERADDR:
 		if (isop->isop_faddr)
-			bcopy((caddr_t)isop->isop_faddr, mtod(m, caddr_t),
+			bcopy((caddr_t)isop->isop_faddr, mtod(nam, caddr_t),
 				nam->m_len = isop->isop_faddr->siso_len);
 		break;
 
