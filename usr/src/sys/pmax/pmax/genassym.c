@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.1 (Berkeley) %G%
+ *	@(#)genassym.c	7.2 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -38,8 +38,8 @@ main()
 	printf("#define\tU_PCB_FPREGS %d\n", &up->u_pcb.pcb_regs[F0]);
 	printf("#define\tU_PCB_CONTEXT %d\n", &up->u_pcb.pcb_context);
 	printf("#define\tU_PCB_ONFAULT %d\n", &up->u_pcb.pcb_onfault);
-	printf("#define\tPMAP_HASH_LOW_OFFSET 0x%x\n", &hp->low);
-	printf("#define\tPMAP_HASH_HIGH_OFFSET 0x%x\n", &hp->high);
+	printf("#define\tPMAP_HASH_LOW_OFFSET 0x%x\n", &hp->pmh_pte[0].low);
+	printf("#define\tPMAP_HASH_HIGH_OFFSET 0x%x\n", &hp->pmh_pte[0].high);
 	printf("#define\tPMAP_HASH_KPAGES %d\n", PMAP_HASH_KPAGES);
 	printf("#define\tPMAP_HASH_KADDR 0x%x\n", PMAP_HASH_KADDR);
 	printf("#define\tPMAP_HASH_SIZE_SHIFT %d\n", PMAP_HASH_SIZE_SHIFT);
