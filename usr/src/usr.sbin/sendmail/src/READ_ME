@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.13 (Berkeley) %G%
+#	@(#)READ_ME	8.14 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -13,19 +13,21 @@ For detailed instructions, please read the document ../doc/op.me:
 
 	eqn ../doc/op.me | pic | ditroff -me
 
-The Makefile is for the new Berkeley make, available from ftp.uu.net
-in the directory /systems/unix/bsd-sources/usr.bin/make.  There is
-also a Makefile.dist which is much less clever, but works on the old
-traditional make.  You can use this using:
+The Makefile is for the new (4.4BSD) Berkeley make, available from
+ftp.uu.net in the directory /systems/unix/bsd-sources/usr.bin/make.
+It has assumptions about the 4.4 file system layout built in.  There
+is also a Makefile.dist which is much less clever, but works on the
+old traditional make.  You can use this using:
 
 	make -f Makefile.dist
 
-There are a couple of other Makefiles for other systems -- these are
+There are a bunch of other Makefiles for other systems -- these are
 the ones that I use, they have "Berkeley quirks" in them, and I don't
-guarantee that they will work in your environment.  To make it worse,
-some are for the new Berkeley make, and some are for the old make.
-I provide them for information only.  Still, they may help you get
-started.  They have names like "Makefile.HPUX".
+guarantee that they will work unmodified in your environment.  However,
+they are all designed for the old make and can be used to help you get
+started.  They have names like "Makefile.HPUX".  Many of them include
+-I/usr/sww/include/db and -L/usr/sww/lib -- this is Berkeley's
+location for the new database libraries, described below.
 
 
 +----------------------+
@@ -308,4 +310,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.13, last update %G% 11:32:03)
+(Version 8.14, last update %G% 09:26:12)
