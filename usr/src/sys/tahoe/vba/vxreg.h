@@ -2,6 +2,9 @@
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
  * duplicated in all such forms and that any documentation,
@@ -14,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vxreg.h	7.2 (Berkeley) %G%
+ *	@(#)vxreg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -122,6 +125,9 @@ struct	vxdevice {
 #define	VX_PE	0x40			/* parity error */
 #define	VX_FE	0x80			/* framing error */
 #define	VX_RO	0xc0			/* receiver overrun */
+
+/* VIOC Process Error (PROCER) codes */
+#define	VP_SILO_OFLOW	0x40		/* input silo error, non-fatal */
 
 #define	VRESPLEN	12
 #define	VCMDLEN		64
