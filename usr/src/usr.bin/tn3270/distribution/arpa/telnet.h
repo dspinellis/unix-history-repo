@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)telnet.h	4.3 (Berkeley) %G%
+ *	@(#)telnet.h	4.4 (Berkeley) %G%
  */
 
 /*
@@ -93,8 +93,8 @@ char *telcmds[] = {
 #define TELOPT_LINEMODE	34	/* Linemode option */
 #define	TELOPT_EXOPL	255	/* extended-options-list */
 
-#ifdef TELOPTS
 #define	NTELOPTS	(1+TELOPT_LINEMODE)
+#ifdef TELOPTS
 char *telopts[NTELOPTS] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
