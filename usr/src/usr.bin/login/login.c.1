@@ -1,7 +1,8 @@
-static	char *sccsid = "@(#)login.c.1	4.13 (Berkeley) 4.13";
+static	char *sccsid = "@(#)login.c.1	4.14 82/03/15";
 /*
  * login [ name ]
  * login -r
+ * login -r [ rhost ]
  */
 
 #include <sys/types.h>
@@ -12,15 +13,11 @@ static	char *sccsid = "@(#)login.c.1	4.13 (Berkeley) 4.13";
 #include <stdio.h>
 #include <sys/stat.h>
 #include <lastlog.h>
-#include <whoami.h>
-#ifdef	UNAME
-#include <sys/utsname.h>
-#endif
 
 #define	SCPYN(a, b)	strncpy(a, b, sizeof(a))
 
-#define NMAX sizeof(utmp.ut_name)
-#define LMAX sizeof(utmp.ut_line)
+#define NMAX	sizeof(utmp.ut_name)
+#define LMAX	sizeof(utmp.ut_line)
 
 #define	FALSE	0
 #define	TRUE	-1
@@ -70,15 +67,14 @@ extern	char **environ;
 struct	tchars tc = {
 	CINTR, CQUIT, CSTART, CSTOP, CEOT, CBRK
 };
-#ifdef	TIOCLSET
 struct	ltchars ltc = {
 	CTRL(z), CTRL(y), CTRL(r), CTRL(o), CTRL(w), CTRL(v)
 };
-#endif
 
 int	rflag;
-char	rusername[NMAX+1];
+char	rusername[NMAX+1], lusername[NMAX+1];
 char	rpassword[NMAX+1];
+char	*rhost;
 
 main(argc, argv)
 char **argv;
@@ -90,10 +86,8 @@ char **argv;
 	int i;
 	FILE *nlfd;
 	char *ttyn;
-	int	ldisc = 0;
-#ifdef	UNAME
-	struct utsname uts;
-#endif
+	int ldisc = 0, zero = 0;
+	FILE *hostf; int first = 1;
 
 	alarm(60);
 	signal(SIGQUIT, SIG_IGN);
@@ -103,13 +97,59 @@ char **argv;
 	nice(0);
 	if (argc > 0 && !strcmp(argv[1], "-r")) {
 		rflag++;
-		getstr(rusername, sizeof (rusername), "Username");
-		getstr(rpassword, sizeof (rpassword), "Password");
+		if (argc > 1)
+			rhost = argv[2];
+		argc = 1;
+		if (rhost) {
+			getstr(rusername, sizeof (rusername), "remuser");
+			getstr(lusername, sizeof (lusername), "locuser");
+		} else {
+			getstr(lusername, sizeof (lusername), "Username");
+			getstr(rpassword, sizeof (rpassword), "Password");
+		}
 		getstr(term+5, sizeof(term)-5, "Terminal type");
+		if (rhost == 0)
+			goto normal;
+		if (getuid()) {
+			rflag = 0;
+			goto normal;
+		}
+		setpwent();
+		pwd = getpwnam(lusername);
+		if (pwd == NULL) {
+			fprintf(stderr, "Login incorrect.\n");
+			exit(1);
+		}
+		endpwent();
+		hostf = fopen("/etc/hosts.equiv", "r");
+	again:
+		if (hostf) {
+		  char ahost[32];
+		  while (fgets(ahost, sizeof (ahost), hostf)) {
+			char *user;
+			if (index(ahost, '\n'))
+				*index(ahost, '\n') = 0;
+			user = index(ahost, ' ');
+			if (user)
+				*user++ = 0;
+			if (!strcmp(rhost, ahost) &&
+			    !strcmp(rusername, user ? user : lusername))
+				goto normal;
+		  }
+		  fclose(hostf);
+		}
+		if (first == 1) {
+			first = 0;
+			if (chdir(pwd->pw_dir) < 0)
+				goto again;
+			hostf = fopen(".rhosts", "r");
+			goto again;
+		}
+		rhost = 0;
+		rflag = -1;
 	}
-#ifdef	TIOCLSET
-	ioctl(0, TIOCLSET, 0);
-#endif
+normal:
+	ioctl(0, TIOCLSET, &zero);
 	ioctl(0, TIOCNXCL, 0);
 	gtty(0, &ttyb);
 	if (rflag) {
@@ -125,13 +165,13 @@ char **argv;
 		}
 		ttyb.sg_flags = ECHO|CRMOD|ANYP|XTABS;
 	}
+	if (rflag == -1)
+		rflag = 0;
 	ttyb.sg_erase = CERASE;
 	ttyb.sg_kill = CKILL;
 	stty(0, &ttyb);
 	ioctl(0, TIOCSETC, &tc);
-#ifdef	TIOCLSET
 	ioctl(0, TIOCSLTC, &ltc);
-#endif
 	for (t=3; t<20; t++)
 		close(t);
 	ttyn = ttyname(0);
@@ -147,39 +187,45 @@ char **argv;
 			argc = 0;
 		}
 		if (rflag)
-			strcpy(utmp.ut_name, rusername);
+			strcpy(utmp.ut_name, lusername);
 		else
-		while (utmp.ut_name[0] == '\0') {
-			namep = utmp.ut_name;
-			printf("%s login: ", sysname);
-			while ((c = getchar()) != '\n') {
-				if (c == ' ')
-					c = '_';
-				if (c == EOF)
-					exit(0);
-				if (namep < utmp.ut_name+NMAX)
-					*namep++ = c;
+			while (utmp.ut_name[0] == '\0') {
+				namep = utmp.ut_name;
+				{ char hostname[32];
+				  gethostname(hostname, sizeof (hostname));
+				  printf("%s login: ", hostname); }
+				while ((c = getchar()) != '\n') {
+					if (c == ' ')
+						c = '_';
+					if (c == EOF)
+						exit(0);
+					if (namep < utmp.ut_name+NMAX)
+						*namep++ = c;
+				}
 			}
+		if (rhost == 0) {
+			setpwent();
+			if ((pwd = getpwnam(utmp.ut_name)) == NULL)
+				pwd = &nouser;
+			endpwent();
 		}
-		setpwent();
-		if ((pwd = getpwnam(utmp.ut_name)) == NULL)
-			pwd = &nouser;
-		endpwent();
 		if (!strcmp(pwd->pw_shell, "/bin/csh")) {
 			ldisc = NTTYDISC;
 			ioctl(0, TIOCSETD, &ldisc);
 		}
-		if (*pwd->pw_passwd != '\0') {
-			char *pp;
-			nice(-4);
-			if (rflag == 0)
-				pp = getpass("Password:");
-			else
-				pp = rpassword;
-			namep = crypt(pp,pwd->pw_passwd);
-			nice(4);
-			if (strcmp(namep, pwd->pw_passwd))
-				invalid = TRUE;
+		if (rhost == 0) {
+			if (*pwd->pw_passwd != '\0') {
+				char *pp;
+				nice(-4);
+				if (rflag == 0)
+					pp = getpass("Password:");
+				else
+					pp = rpassword;
+				namep = crypt(pp,pwd->pw_passwd);
+				nice(4);
+				if (strcmp(namep, pwd->pw_passwd))
+					invalid = TRUE;
+			}
 		}
 		if (pwd->pw_uid != 0 && (nlfd = fopen(nolog, "r")) > 0) {
 			/* logins are disabled except for root */
@@ -280,12 +326,7 @@ char **argv;
 		namep++;
 	strcat(minusnam, namep);
 	alarm(0);
-#ifdef ARPAVAX
-	if (pwd->pw_gid == 27)			/* UGLY ! */
-		umask(2);
-	else
-#endif
-		umask(022);
+	umask(022);
 	if (ttyn[sizeof("/dev/tty")-1] == 'd') {
 		FILE *console = fopen("/dev/console", "w");
 		if (console != NULL) {
