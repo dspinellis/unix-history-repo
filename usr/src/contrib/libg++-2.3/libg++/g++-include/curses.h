@@ -63,8 +63,8 @@ int      (winsch)(WINDOW*, int);
 int      (winsertln)(WINDOW*);
 int      (wmove)(WINDOW*, int, int);
 int      (wrefresh)(WINDOW*);
-char     *(wstandend)(WINDOW*);
-char     *(wstandout)(WINDOW*);
+int	 (wstandend)(WINDOW*);
+int	 (wstandout)(WINDOW*);
 
 // SVR4 rather inanely bundles the format-string parameter with the '...'.
 // This breaks VMS, and I don't want to penalize VMS for being right for once!
