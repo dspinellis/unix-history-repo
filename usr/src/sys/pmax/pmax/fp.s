@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fp.s	7.1 (Berkeley) %G%
+ *	@(#)fp.s	7.2 (Berkeley) %G%
  */
 
 /*
@@ -38,7 +38,7 @@
 #define STICKYBIT	1
 #define GUARDBIT	0x80000000
 #define SSIGNAL_NAN	0x00400000
-#define DSIGNAL_NAN	0x00040000
+#define DSIGNAL_NAN	0x00080000
 #define SQUIET_NAN	0x003fffff
 #define DQUIET_NAN0	0x0007ffff
 #define DQUIET_NAN1	0xffffffff
@@ -607,19 +607,19 @@ func_fmt_tbl:
  * Single precision subtract.
  */
 sub_s:
-	jal	get_fs_sgl
-	jal	get_ft_sgl
+	jal	get_ft_fs_s
 	xor	t4, t4, 1			# negate FT sign bit
 	b	add_sub_s
 /*
  * Single precision add.
  */
 add_s:
-	jal	get_fs_sgl
-	jal	get_ft_sgl
+	jal	get_ft_fs_s
 add_sub_s:
 	bne	t1, SEXP_INF, 1f		# is FS an infinity?
 	bne	t5, SEXP_INF, result_fs_s	# if FT is not inf, result=FS
+	bne	t2, zero, result_fs_s		# if FS is NAN, result is FS
+	bne	t6, zero, result_ft_s		# if FT is NAN, result is FT
 	bne	t0, t4, invalid_s		# both infinities same sign?
 	b	result_fs_s			# result is in FS
 1:
@@ -723,19 +723,21 @@ add_sub_s:
  * Double precision subtract.
  */
 sub_d:
-	jal	get_fs_dbl
-	jal	get_ft_dbl
+	jal	get_ft_fs_d
 	xor	t4, t4, 1			# negate sign bit
 	b	add_sub_d
 /*
  * Double precision add.
  */
 add_d:
-	jal	get_fs_dbl
-	jal	get_ft_dbl
+	jal	get_ft_fs_d
 add_sub_d:
 	bne	t1, DEXP_INF, 1f		# is FS an infinity?
 	bne	t5, DEXP_INF, result_fs_d	# if FT is not inf, result=FS
+	bne	t2, zero, result_fs_d		# if FS is NAN, result is FS
+	bne	t3, zero, result_fs_d
+	bne	t6, zero, result_ft_d		# if FT is NAN, result is FT
+	bne	t7, zero, result_ft_d
 	bne	t0, t4, invalid_d		# both infinities same sign?
 	b	result_fs_d			# result is in FS
 1:
@@ -891,20 +893,24 @@ add_sub_d:
  * Single precision multiply.
  */
 mul_s:
-	jal	get_fs_sgl
-	jal	get_ft_sgl
+	jal	get_ft_fs_s
 	xor	t0, t0, t4			# compute sign of result
-	move	t4, t0				# put in FT too
-	bne	t1, SEXP_INF, 1f		# is FS an infinity?
-	beq	t5, SEXP_INF, result_fs_s	# FS is inf, is FT an infinity?
-	bne	t5, zero, result_fs_s		# inf * zero? if no, result=FS
-	beq	t6, zero, invalid_s		# if yes, invalid operation
-	b	result_fs_s
+	move	t4, t0
+	bne	t1, SEXP_INF, 2f		# is FS an infinity?
+	bne	t2, zero, result_fs_s		# if FS is a NAN, result=FS
+	bne	t5, SEXP_INF, 1f		# FS is inf, is FT an infinity?
+	bne	t6, zero, result_ft_s		# if FT is a NAN, result=FT
+	b	result_fs_s			# result is infinity
 1:
+	bne	t5, zero, result_fs_s		# inf * zero? if no, result=FS
+	bne	t6, zero, result_fs_s
+	b	invalid_s			# infinity * zero is invalid
+2:
 	bne	t5, SEXP_INF, 1f		# FS != inf, is FT an infinity?
 	bne	t1, zero, result_ft_s		# zero * inf? if no, result=FT
-	beq	t2, zero, invalid_s		# if yes, invalid operation
-	b	result_ft_s
+	bne	t2, zero, result_ft_s
+	bne	t6, zero, result_ft_s		# if FT is a NAN, result=FT
+	b	invalid_s			# zero * infinity is invalid
 1:
 	bne	t1, zero, 1f			# is FS zero?
 	beq	t2, zero, result_fs_s		# result is zero
@@ -923,7 +929,7 @@ mul_s:
 	or	t6, t6, SIMPL_ONE		# set implied one bit
 2:
 	addu	t1, t1, t5			# compute result exponent
-	addu	t1, t1, 9			# ???
+	addu	t1, t1, 9			# account for binary point
 	multu	t2, t6				# multiply fractions
 	mflo	t8
 	mfhi	t2
@@ -933,22 +939,29 @@ mul_s:
  * Double precision multiply.
  */
 mul_d:
-	jal	get_fs_dbl
-	jal	get_ft_dbl
+	jal	get_ft_fs_d
 	xor	t0, t0, t4			# compute sign of result
-	move	t4, t0				# put in FT too
-	bne	t1, DEXP_INF, 1f		# is FS an infinity?
-	beq	t5, DEXP_INF, result_fs_d	# FS is inf, is FT an infinity?
+	move	t4, t0
+	bne	t1, DEXP_INF, 2f		# is FS an infinity?
+	bne	t2, zero, result_fs_d		# if FS is a NAN, result=FS
+	bne	t3, zero, result_fs_d
+	bne	t5, DEXP_INF, 1f		# FS is inf, is FT an infinity?
+	bne	t6, zero, result_ft_d		# if FT is a NAN, result=FT
+	bne	t7, zero, result_ft_d
+	b	result_fs_d			# result is infinity
+1:
 	bne	t5, zero, result_fs_d		# inf * zero? if no, result=FS
 	bne	t6, zero, result_fs_d
-	beq	t7, zero, invalid_d		# if yes, invalid operation
-	b	result_fs_d
-1:
+	bne	t7, zero, result_fs_d
+	b	invalid_d			# infinity * zero is invalid
+2:
 	bne	t5, DEXP_INF, 1f		# FS != inf, is FT an infinity?
 	bne	t1, zero, result_ft_d		# zero * inf? if no, result=FT
-	bne	t2, zero, result_ft_d
-	beq	t3, zero, invalid_d		# if yes, invalid operation
-	b	result_ft_d
+	bne	t2, zero, result_ft_d		# if FS is a NAN, result=FS
+	bne	t3, zero, result_ft_d
+	bne	t6, zero, result_ft_d		# if FT is a NAN, result=FT
+	bne	t7, zero, result_ft_d
+	b	invalid_d			# zero * infinity is invalid
 1:
 	bne	t1, zero, 2f			# is FS zero?
 	bne	t2, zero, 1f
@@ -1010,15 +1023,19 @@ mul_d:
  * Single precision divide.
  */
 div_s:
-	jal	get_fs_sgl
-	jal	get_ft_sgl
+	jal	get_ft_fs_s
 	xor	t0, t0, t4			# compute sign of result
+	move	t4, t0
 	bne	t1, SEXP_INF, 1f		# is FS an infinity?
-	beq	t5, SEXP_INF, invalid_s		# is FT an infinity?
-	b	result_fs_s			# result=infinity
+	bne	t2, zero, result_fs_s		# if FS is NAN, result is FS
+	bne	t5, SEXP_INF, result_fs_s	# is FT an infinity?
+	bne	t6, zero, result_ft_s		# if FT is NAN, result is FT
+	b	invalid_s			# infinity/infinity is invalid
 1:
 	bne	t5, SEXP_INF, 1f		# is FT an infinity?
-	move	t2, zero			# result = zero
+	bne	t6, zero, result_ft_s		# if FT is NAN, result is FT
+	move	t1, zero			# x / infinity is zero
+	move	t2, zero
 	b	result_fs_s
 1:
 	bne	t1, zero, 2f			# is FS zero?
@@ -1073,15 +1090,22 @@ div_s:
  * Double precision divide.
  */
 div_d:
-	jal	get_fs_dbl
-	jal	get_ft_dbl
+	jal	get_ft_fs_d
 	xor	t0, t0, t4			# compute sign of result
+	move	t4, t0
 	bne	t1, DEXP_INF, 1f		# is FS an infinity?
-	beq	t5, DEXP_INF, invalid_d		# is FT an infinity?
-	b	result_fs_d			# result=infinity
+	bne	t2, zero, result_fs_d		# if FS is NAN, result is FS
+	bne	t3, zero, result_fs_d
+	bne	t5, DEXP_INF, result_fs_d	# is FT an infinity?
+	bne	t6, zero, result_ft_d		# if FT is NAN, result is FT
+	bne	t7, zero, result_ft_d
+	b	invalid_d			# infinity/infinity is invalid
 1:
 	bne	t5, DEXP_INF, 1f		# is FT an infinity?
-	move	t2, zero			# x / infinity == zero
+	bne	t6, zero, result_ft_d		# if FT is NAN, result is FT
+	bne	t7, zero, result_ft_d
+	move	t1, zero			# x / infinity is zero
+	move	t2, zero
 	move	t3, zero
 	b	result_fs_d
 1:
@@ -1137,7 +1161,13 @@ div_d:
 	bne	t8, zero, 3f			# if not done, continue
 	bne	t9, zero, 3f
 	li	v1, 32				# shift result to final position
-	subu	v1, v1, v0
+	blt	v0, v1, 2f			# shift < 32 bits?
+	subu	v0, v0, v1			# shift by > 32 bits
+	sll	t2, t3, v0			# shift upper part
+	move	t3, zero
+	b	norm_d
+2:
+	subu	v1, v1, v0			# shift by < 32 bits
 	sll	t2, t2, v0			# shift upper part
 	srl	t9, t3, v1			# save bits shifted out
 	or	t2, t2, t9			# and put into upper part
@@ -1154,13 +1184,15 @@ div_d:
 	sll	t3, t3, 1
 	subu	v0, v0, 1			# are we done?
 	bne	v0, zero, 1b			# no, continue
+	sltu	v0, zero, t9			# be sure to save any one bits
+	or	t8, t8, v0			# from the lower remainder
 	b	norm_d
 
 /*
  * Single precision absolute value.
  */
 abs_s:
-	jal	get_fs_sgl
+	jal	get_fs_s
 	move	t0, zero			# set sign positive
 	b	result_fs_s
 
@@ -1168,7 +1200,7 @@ abs_s:
  * Double precision absolute value.
  */
 abs_d:
-	jal	get_fs_dbl
+	jal	get_fs_d
 	move	t0, zero			# set sign positive
 	b	result_fs_d
 
@@ -1176,21 +1208,21 @@ abs_d:
  * Single precision move.
  */
 mov_s:
-	jal	get_fs_sgl
+	jal	get_fs_s
 	b	result_fs_s
 
 /*
  * Double precision move.
  */
 mov_d:
-	jal	get_fs_dbl
+	jal	get_fs_d
 	b	result_fs_d
 
 /*
  * Single precision negate.
  */
 neg_s:
-	jal	get_fs_sgl
+	jal	get_fs_s
 	xor	t0, t0, 1			# reverse sign
 	b	result_fs_s
 
@@ -1198,7 +1230,7 @@ neg_s:
  * Double precision negate.
  */
 neg_d:
-	jal	get_fs_dbl
+	jal	get_fs_d
 	xor	t0, t0, 1			# reverse sign
 	b	result_fs_d
 
@@ -1206,7 +1238,7 @@ neg_d:
  * Convert double to single.
  */
 cvt_s_d:
-	jal	get_fs_dbl
+	jal	get_fs_d
 	bne	t1, DEXP_INF, 1f		# is FS an infinity?
 	li	t1, SEXP_INF			# convert to single
 	sll	t2, t2, 3			# convert D fraction to S
@@ -1295,7 +1327,7 @@ cvt_s_w:
  * Convert single to double.
  */
 cvt_d_s:
-	jal	get_fs_sgl
+	jal	get_fs_s
 	bne	t1, SEXP_INF, 1f		# is FS an infinity?
 	li	t1, DEXP_INF			# convert to double
 	b	2f
@@ -1376,7 +1408,7 @@ cvt_d_w:
  * Convert single to integer.
  */
 cvt_w_s:
-	jal	get_fs_sgl
+	jal	get_fs_s
 	bne	t1, SEXP_INF, 1f		# is FS an infinity?
 	bne	t2, zero, invalid_w		# invalid conversion
 1:
@@ -1395,7 +1427,7 @@ cvt_w_s:
  * Convert double to integer.
  */
 cvt_w_d:
-	jal	get_fs_dbl
+	jal	get_fs_d
 	bne	t1, DEXP_INF, 1f		# is FS an infinity?
 	bne	t2, zero, invalid_w		# invalid conversion
 	bne	t3, zero, invalid_w		# invalid conversion
@@ -1512,11 +1544,9 @@ underflow_w:
  * Compare single.
  */
 cmp_s:
-	jal	get_fs_sgl
-	jal	get_ft_sgl
+	jal	get_cmp_s
 	bne	t1, SEXP_INF, 1f		# is FS an infinity?
 	bne	t2, zero, unordered		# FS is a NAN
-	b	2f
 1:
 	bne	t5, SEXP_INF, 2f		# is FT an infinity?
 	bne	t6, zero, unordered		# FT is a NAN
@@ -1542,12 +1572,10 @@ cmp_s:
  * Compare double.
  */
 cmp_d:
-	jal	get_fs_dbl
-	jal	get_ft_dbl
+	jal	get_cmp_d
 	bne	t1, DEXP_INF, 1f		# is FS an infinity?
 	bne	t2, zero, unordered
 	bne	t3, zero, unordered		# FS is a NAN
-	b	2f
 1:
 	bne	t5, DEXP_INF, 2f		# is FT an infinity?
 	bne	t6, zero, unordered
@@ -1579,20 +1607,9 @@ cmp_d:
 	bltu	t3, t7, test_cond		# is FS(LSW) < FT(LSW)?
 	li	v0, COND_EQUAL
 	beq	t3, t7, test_cond		# is FS(LSW) == FT(LSW)?
-1:
 	move	v0, zero			# FS > FT
-
 test_cond:
 	and	v0, v0, a0			# condition match instruction?
-	b	set_cond
-unordered:
-	and	v0, a0, COND_SIGNAL
-	beq	v0, zero, 1f			# is this a signalling cmp?
-	or	a1, a1, MACH_FPC_EXCEPTION_INVALID | MACH_FPC_STICKY_INVALID
-	and	v0, a1, MACH_FPC_ENABLE_INVALID
-	bne	v0, zero, fpe_trap
-1:
-	and	v0, a0, COND_UNORDERED		# this cmp match unordered?
 set_cond:
 	bne	v0, zero, 1f
 	and	a1, a1, ~MACH_FPC_COND_BIT	# clear condition bit
@@ -1600,6 +1617,23 @@ set_cond:
 1:
 	or	a1, a1, MACH_FPC_COND_BIT	# set condition bit
 2:
+	ctc1	a1, MACH_FPC_CSR		# save condition bit
+	b	done
+
+unordered:
+	and	v0, a0, COND_UNORDERED		# this cmp match unordered?
+	bne	v0, zero, 1f
+	and	a1, a1, ~MACH_FPC_COND_BIT	# clear condition bit
+	b	2f
+1:
+	or	a1, a1, MACH_FPC_COND_BIT	# set condition bit
+2:
+	and	v0, a0, COND_SIGNAL
+	beq	v0, zero, 1f			# is this a signaling cmp?
+	or	a1, a1, MACH_FPC_EXCEPTION_INVALID | MACH_FPC_STICKY_INVALID
+	and	v0, a1, MACH_FPC_ENABLE_INVALID
+	bne	v0, zero, fpe_trap
+1:
 	ctc1	a1, MACH_FPC_CSR		# save condition bit
 	b	done
 
@@ -1707,7 +1741,7 @@ inexact_s:
 	addu	t1, t1, SEXP_BIAS		# bias exponent
 	and	t2, t2, ~SIMPL_ONE		# clear implied one bit
 inexact_nobias_s:
-	jal	set_fd_sgl			# save result
+	jal	set_fd_s			# save result
 	or	a1, a1, MACH_FPC_EXCEPTION_INEXACT | MACH_FPC_STICKY_INEXACT
 	and	v0, a1, MACH_FPC_ENABLE_INEXACT
 	bne	v0, zero, fpe_trap
@@ -1725,31 +1759,24 @@ overflow_s:
 	beq	v0, zero, 1f
 	subu	t1, t1, 192			# bias exponent
 	and	t2, t2, ~SIMPL_ONE		# clear implied one bit
-	jal	set_fd_sgl			# save result
+	jal	set_fd_s			# save result
 	b	fpe_trap
 1:
 	and	v0, a1, MACH_FPC_ROUNDING_BITS	# get rounding mode
-	beq	v0, MACH_FPC_ROUND_RN, 5f	# round to nearest
+	beq	v0, MACH_FPC_ROUND_RN, 3f	# round to nearest
 	beq	v0, MACH_FPC_ROUND_RZ, 1f	# round to zero (truncate)
-	beq	v0, MACH_FPC_ROUND_RP, 3f	# round to +infinity
-	bne	t0, zero, 2f
+	beq	v0, MACH_FPC_ROUND_RP, 2f	# round to +infinity
+	bne	t0, zero, 3f
 1:
 	li	t1, SEXP_MAX			# result is max finite
 	li	t2, 0x007fffff
 	b	inexact_s
 2:
-	li	t1, SEXP_MIN - 1		# result is -infinity
-	move	t2, zero
-	b	inexact_s
-3:
 	bne	t0, zero, 1b
-4:
-	li	t1, SEXP_MAX + 1		# result is +infinity
+3:
+	li	t1, SEXP_MAX + 1		# result is infinity
 	move	t2, zero
 	b	inexact_s
-5:
-	bne	t0, zero, 2b
-	b	4b
 
 /*
  * In this implementation, "tininess" is detected "after rounding" and
@@ -1763,7 +1790,7 @@ underflow_s:
  */
 	addu	t1, t1, 192			# bias exponent
 	and	t2, t2, ~SIMPL_ONE		# clear implied one bit
-	jal	set_fd_sgl			# save result
+	jal	set_fd_s			# save result
 	or	a1, a1, MACH_FPC_EXCEPTION_UNDERFLOW | MACH_FPC_STICKY_UNDERFLOW
 	b	fpe_trap
 /*
@@ -1775,15 +1802,31 @@ underflow_s:
 	move	t2, t6				# get unrounded fraction
 	li	t9, SEXP_MIN			# compute shift amount
 	subu	t9, t9, t1			# shift t2,t8 right by t9
-	blt	t9, SFRAC_BITS+2, 1f		# shift all the bits out?
+	blt	t9, SFRAC_BITS+2, 3f		# shift all the bits out?
 	move	t1, zero			# result is inexact zero
 	move	t2, zero
 	or	a1, a1, MACH_FPC_EXCEPTION_UNDERFLOW | MACH_FPC_STICKY_UNDERFLOW
-	b	inexact_nobias_s
+/*
+ * Now round the zero result.
+ * Only need to worry about rounding to +- infinity when the sign matches.
+ */
+	and	v0, a1, MACH_FPC_ROUNDING_BITS	# get rounding mode
+	beq	v0, MACH_FPC_ROUND_RN, inexact_nobias_s	# round to nearest
+	beq	v0, MACH_FPC_ROUND_RZ, inexact_nobias_s	# round to zero
+	beq	v0, MACH_FPC_ROUND_RP, 1f	# round to +infinity
+	beq	t0, zero, inexact_nobias_s	# if sign is positive, truncate
+	b	2f
 1:
+	bne	t0, zero, inexact_nobias_s	# if sign is negative, truncate
+2:
+	addu	t2, t2, 1			# add rounding bit
+	b	inexact_nobias_s
+3:
 	li	v1, 32
 	subu	v1, v1, t9
+	sltu	v0, zero, t8			# be sure to save any one bits
 	sll	t8, t2, v1			# save bits shifted out
+	or	t8, t8, v0			# include sticky bits
 	srl	t2, t2, t9
 /*
  * Now round the denormalized result.
@@ -1811,7 +1854,7 @@ underflow_s:
 	and	t2, t2, ~1			#  clear LSB (round to nearest)
 5:
 	move	t1, zero			# denorm or zero exponent
-	jal	set_fd_sgl			# save result
+	jal	set_fd_s			# save result
 	beq	t8, zero, done			# check for exact result
 	or	a1, a1, MACH_FPC_EXCEPTION_UNDERFLOW | MACH_FPC_STICKY_UNDERFLOW
 	or	a1, a1, MACH_FPC_EXCEPTION_INEXACT | MACH_FPC_STICKY_INEXACT
@@ -1948,7 +1991,7 @@ inexact_d:
 	addu	t1, t1, DEXP_BIAS		# bias exponent
 	and	t2, t2, ~DIMPL_ONE		# clear implied one bit
 inexact_nobias_d:
-	jal	set_fd_dbl			# save result
+	jal	set_fd_d			# save result
 	or	a1, a1, MACH_FPC_EXCEPTION_INEXACT | MACH_FPC_STICKY_INEXACT
 	and	v0, a1, MACH_FPC_ENABLE_INEXACT
 	bne	v0, zero, fpe_trap
@@ -1966,34 +2009,26 @@ overflow_d:
 	beq	v0, zero, 1f
 	subu	t1, t1, 1536			# bias exponent
 	and	t2, t2, ~DIMPL_ONE		# clear implied one bit
-	jal	set_fd_dbl			# save result
+	jal	set_fd_d			# save result
 	b	fpe_trap
 1:
 	and	v0, a1, MACH_FPC_ROUNDING_BITS	# get rounding mode
-	beq	v0, MACH_FPC_ROUND_RN, 5f	# round to nearest
+	beq	v0, MACH_FPC_ROUND_RN, 3f	# round to nearest
 	beq	v0, MACH_FPC_ROUND_RZ, 1f	# round to zero (truncate)
-	beq	v0, MACH_FPC_ROUND_RP, 3f	# round to +infinity
-	bne	t0, zero, 2f
+	beq	v0, MACH_FPC_ROUND_RP, 2f	# round to +infinity
+	bne	t0, zero, 3f
 1:
 	li	t1, DEXP_MAX			# result is max finite
 	li	t2, 0x000fffff
 	li	t3, 0xffffffff
 	b	inexact_d
 2:
-	li	t1, DEXP_MIN - 1		# result is -infinity
-	move	t2, zero
-	move	t3, zero
-	b	inexact_d
-3:
 	bne	t0, zero, 1b
-4:
-	li	t1, DEXP_MAX + 1		# result is +infinity
+3:
+	li	t1, DEXP_MAX + 1		# result is infinity
 	move	t2, zero
 	move	t3, zero
 	b	inexact_d
-5:
-	bne	t0, zero, 2b
-	b	4b
 
 /*
  * In this implementation, "tininess" is detected "after rounding" and
@@ -2007,7 +2042,7 @@ underflow_d:
  */
 	addu	t1, t1, 1536			# bias exponent
 	and	t2, t2, ~DIMPL_ONE		# clear implied one bit
-	jal	set_fd_dbl			# save result
+	jal	set_fd_d			# save result
 	or	a1, a1, MACH_FPC_EXCEPTION_UNDERFLOW | MACH_FPC_STICKY_UNDERFLOW
 	b	fpe_trap
 /*
@@ -2020,24 +2055,42 @@ underflow_d:
 	move	t3, t7				# get unrounded fraction (LS)
 	li	t9, DEXP_MIN			# compute shift amount
 	subu	t9, t9, t1			# shift t2,t8 right by t9
-	blt	t9, DFRAC_BITS+2, 1f		# shift all the bits out?
+	blt	t9, DFRAC_BITS+2, 3f		# shift all the bits out?
 	move	t1, zero			# result is inexact zero
 	move	t2, zero
 	move	t3, zero
 	or	a1, a1, MACH_FPC_EXCEPTION_UNDERFLOW | MACH_FPC_STICKY_UNDERFLOW
-	b	inexact_nobias_d
+/*
+ * Now round the zero result.
+ * Only need to worry about rounding to +- infinity when the sign matches.
+ */
+	and	v0, a1, MACH_FPC_ROUNDING_BITS	# get rounding mode
+	beq	v0, MACH_FPC_ROUND_RN, inexact_nobias_d	# round to nearest
+	beq	v0, MACH_FPC_ROUND_RZ, inexact_nobias_d	# round to zero
+	beq	v0, MACH_FPC_ROUND_RP, 1f	# round to +infinity
+	beq	t0, zero, inexact_nobias_d	# if sign is positive, truncate
+	b	2f
 1:
+	bne	t0, zero, inexact_nobias_d	# if sign is negative, truncate
+2:
+	addu	t3, t3, 1			# add rounding bit
+	b	inexact_nobias_d
+3:
 	li	v1, 32
 	blt	t9, v1, 1f			# shift by < 32?
 	subu	t9, t9, v1			# shift right by >= 32
 	subu	v1, v1, t9
+	sltu	v0, zero, t8			# be sure to save any one bits
 	sll	t8, t2, v1			# save bits shifted out
+	or	t8, t8, v0			# include sticky bits
 	srl	t3, t2, t9
 	move	t2, zero
 	b	2f
 1:
 	subu	v1, v1, t9			# shift right by t9
+	sltu	v0, zero, t8			# be sure to save any one bits
 	sll	t8, t3, v1			# save bits shifted out
+	or	t8, t8, v0			# include sticky bits
 	srl	t3, t3, t9
 	sll	v0, t2, v1			# save bits shifted out
 	or	t3, t3, v0
@@ -2073,7 +2126,7 @@ underflow_d:
 	and	t3, t3, ~1			#  clear LSB (round to nearest)
 5:
 	move	t1, zero			# denorm or zero exponent
-	jal	set_fd_dbl			# save result
+	jal	set_fd_d			# save result
 	beq	t8, zero, done			# check for exact result
 	or	a1, a1, MACH_FPC_EXCEPTION_UNDERFLOW | MACH_FPC_STICKY_UNDERFLOW
 	or	a1, a1, MACH_FPC_EXCEPTION_INEXACT | MACH_FPC_STICKY_INEXACT
@@ -2094,7 +2147,7 @@ invalid_s:					# trap invalid operation
 	move	t0, zero			# result is a quiet NAN
 	li	t1, SEXP_INF
 	li	t2, SQUIET_NAN
-	jal	set_fd_sgl			# save result (in t0,t1,t2)
+	jal	set_fd_s			# save result (in t0,t1,t2)
 	b	done
 
 /*
@@ -2110,7 +2163,7 @@ invalid_d:					# trap invalid operation
 	li	t1, DEXP_INF
 	li	t2, DQUIET_NAN0
 	li	t3, DQUIET_NAN1
-	jal	set_fd_dbl			# save result (in t0,t1,t2,t3)
+	jal	set_fd_d			# save result (in t0,t1,t2,t3)
 	b	done
 
 /*
@@ -2135,10 +2188,7 @@ invalid_w:					# trap invalid operation
 fpe_trap:
 	move	a2, a1				# code = FP CSR
 	ctc1	a1, MACH_FPC_CSR		# save exceptions
-	lw	a0, curproc			# get current process
-	li	a1, SIGFPE
-	jal	trapsignal
-	b	done
+	break	0
 
 /*
  * Send an illegal instruction signal to the current process.
@@ -2146,17 +2196,14 @@ fpe_trap:
 ill:
 	ctc1	a1, MACH_FPC_CSR		# save exceptions
 	move	a2, a0				# code = FP instruction
-	lw	a0, curproc			# get current process
-	li	a1, SIGILL
-	jal	trapsignal
-	b	done
+	break	0
 
 result_ft_s:
 	move	t0, t4				# result is FT
 	move	t1, t5
 	move	t2, t6
 result_fs_s:					# result is FS
-	jal	set_fd_sgl			# save result (in t0,t1,t2)
+	jal	set_fd_s			# save result (in t0,t1,t2)
 	b	done
 
 result_fs_w:
@@ -2169,228 +2216,13 @@ result_ft_d:
 	move	t2, t6
 	move	t3, t7
 result_fs_d:					# result is FS
-	jal	set_fd_dbl			# save result (in t0,t1,t2,t3)
+	jal	set_fd_d			# save result (in t0,t1,t2,t3)
 
 done:
 	lw	ra, STAND_RA_OFFSET(sp)
 	addu	sp, sp, STAND_FRAME_SIZE
 	j	ra
 END(MachEmulateFP)
-
-/*----------------------------------------------------------------------------
- * get_fs_sgl --
- *
- *	Read (single precision) the FS register (bits 15-11) and
- *	break up into fields.
- *	This is an internal routine used by MachEmulateFP only.
- *
- * Results:
- *	t0	contains the sign
- *	t1	contains the (biased) exponent
- *	t2	contains the fraction
- *
- *----------------------------------------------------------------------------
- */
-LEAF(get_fs_sgl)
-	srl	a3, a0, 12 - 2			# get FS field (even regs only)
-	and	a3, a3, 0xF << 2		# mask FS field
-	lw	a3, get_fs_sgl_tbl(a3)		# switch on register number
-	j	a3
-
-	.rdata
-get_fs_sgl_tbl:
-	.word	get_fs_sgl_f0
-	.word	get_fs_sgl_f2
-	.word	get_fs_sgl_f4
-	.word	get_fs_sgl_f6
-	.word	get_fs_sgl_f8
-	.word	get_fs_sgl_f10
-	.word	get_fs_sgl_f12
-	.word	get_fs_sgl_f14
-	.word	get_fs_sgl_f16
-	.word	get_fs_sgl_f18
-	.word	get_fs_sgl_f20
-	.word	get_fs_sgl_f22
-	.word	get_fs_sgl_f24
-	.word	get_fs_sgl_f26
-	.word	get_fs_sgl_f28
-	.word	get_fs_sgl_f30
-	.text
-
-get_fs_sgl_f0:
-	mfc1	t0, $f0
-	b	get_fs_sgl_done
-get_fs_sgl_f2:
-	mfc1	t0, $f2
-	b	get_fs_sgl_done
-get_fs_sgl_f4:
-	mfc1	t0, $f4
-	b	get_fs_sgl_done
-get_fs_sgl_f6:
-	mfc1	t0, $f6
-	b	get_fs_sgl_done
-get_fs_sgl_f8:
-	mfc1	t0, $f8
-	b	get_fs_sgl_done
-get_fs_sgl_f10:
-	mfc1	t0, $f10
-	b	get_fs_sgl_done
-get_fs_sgl_f12:
-	mfc1	t0, $f12
-	b	get_fs_sgl_done
-get_fs_sgl_f14:
-	mfc1	t0, $f14
-	b	get_fs_sgl_done
-get_fs_sgl_f16:
-	mfc1	t0, $f16
-	b	get_fs_sgl_done
-get_fs_sgl_f18:
-	mfc1	t0, $f18
-	b	get_fs_sgl_done
-get_fs_sgl_f20:
-	mfc1	t0, $f20
-	b	get_fs_sgl_done
-get_fs_sgl_f22:
-	mfc1	t0, $f22
-	b	get_fs_sgl_done
-get_fs_sgl_f24:
-	mfc1	t0, $f24
-	b	get_fs_sgl_done
-get_fs_sgl_f26:
-	mfc1	t0, $f26
-	b	get_fs_sgl_done
-get_fs_sgl_f28:
-	mfc1	t0, $f28
-	b	get_fs_sgl_done
-get_fs_sgl_f30:
-	mfc1	t0, $f30
-get_fs_sgl_done:
-	srl	t1, t0, 23			# get exponent
-	and	t1, t1, 0xFF
-	and	t2, t0, 0x7FFFFF		# get fraction
-	srl	t0, t0, 31			# get sign
-	bne	t1, SEXP_INF, 1f		# is it a signalling NAN?
-	and	v0, t2, SSIGNAL_NAN
-	bne	v0, zero, invalid_s
-1:
-	j	ra
-END(get_fs_sgl)
-
-/*----------------------------------------------------------------------------
- * get_fs_dbl --
- *
- *	Read (double precision) the FS register (bits 15-11) and
- *	break up into fields.
- *	This is an internal routine used by MachEmulateFP only.
- *
- * Results:
- *	t0	contains the sign
- *	t1	contains the (biased) exponent
- *	t2	contains the fraction
- *	t3	contains the remaining fraction
- *
- *----------------------------------------------------------------------------
- */
-LEAF(get_fs_dbl)
-	srl	a3, a0, 12 - 2			# get FS field (even regs only)
-	and	a3, a3, 0xF << 2		# mask FS field
-	lw	a3, get_fs_dbl_tbl(a3)		# switch on register number
-	j	a3
-
-	.rdata
-get_fs_dbl_tbl:
-	.word	get_fs_dbl_f0
-	.word	get_fs_dbl_f2
-	.word	get_fs_dbl_f4
-	.word	get_fs_dbl_f6
-	.word	get_fs_dbl_f8
-	.word	get_fs_dbl_f10
-	.word	get_fs_dbl_f12
-	.word	get_fs_dbl_f14
-	.word	get_fs_dbl_f16
-	.word	get_fs_dbl_f18
-	.word	get_fs_dbl_f20
-	.word	get_fs_dbl_f22
-	.word	get_fs_dbl_f24
-	.word	get_fs_dbl_f26
-	.word	get_fs_dbl_f28
-	.word	get_fs_dbl_f30
-	.text
-
-get_fs_dbl_f0:
-	mfc1	t3, $f0
-	mfc1	t0, $f1
-	b	get_fs_dbl_done
-get_fs_dbl_f2:
-	mfc1	t3, $f2
-	mfc1	t0, $f3
-	b	get_fs_dbl_done
-get_fs_dbl_f4:
-	mfc1	t3, $f4
-	mfc1	t0, $f5
-	b	get_fs_dbl_done
-get_fs_dbl_f6:
-	mfc1	t3, $f6
-	mfc1	t0, $f7
-	b	get_fs_dbl_done
-get_fs_dbl_f8:
-	mfc1	t3, $f8
-	mfc1	t0, $f9
-	b	get_fs_dbl_done
-get_fs_dbl_f10:
-	mfc1	t3, $f10
-	mfc1	t0, $f11
-	b	get_fs_dbl_done
-get_fs_dbl_f12:
-	mfc1	t3, $f12
-	mfc1	t0, $f13
-	b	get_fs_dbl_done
-get_fs_dbl_f14:
-	mfc1	t3, $f14
-	mfc1	t0, $f15
-	b	get_fs_dbl_done
-get_fs_dbl_f16:
-	mfc1	t3, $f16
-	mfc1	t0, $f17
-	b	get_fs_dbl_done
-get_fs_dbl_f18:
-	mfc1	t3, $f18
-	mfc1	t0, $f19
-	b	get_fs_dbl_done
-get_fs_dbl_f20:
-	mfc1	t3, $f20
-	mfc1	t0, $f21
-	b	get_fs_dbl_done
-get_fs_dbl_f22:
-	mfc1	t3, $f22
-	mfc1	t0, $f23
-	b	get_fs_dbl_done
-get_fs_dbl_f24:
-	mfc1	t3, $f24
-	mfc1	t0, $f25
-	b	get_fs_dbl_done
-get_fs_dbl_f26:
-	mfc1	t3, $f26
-	mfc1	t0, $f27
-	b	get_fs_dbl_done
-get_fs_dbl_f28:
-	mfc1	t3, $f28
-	mfc1	t0, $f29
-	b	get_fs_dbl_done
-get_fs_dbl_f30:
-	mfc1	t3, $f30
-	mfc1	t0, $f31
-get_fs_dbl_done:
-	srl	t1, t0, 20			# get exponent
-	and	t1, t1, 0x7FF
-	and	t2, t0, 0xFFFFF			# get fraction
-	srl	t0, t0, 31			# get sign
-	bne	t1, DEXP_INF, 1f		# is it a signalling NAN?
-	and	v0, t2, DSIGNAL_NAN
-	bne	v0, zero, invalid_d
-1:
-	j	ra
-END(get_fs_dbl)
 
 /*----------------------------------------------------------------------------
  * get_fs_int --
@@ -2486,112 +2318,628 @@ get_fs_int_done:
 END(get_fs_int)
 
 /*----------------------------------------------------------------------------
- * get_ft_sgl --
+ * get_ft_fs_s --
  *
  *	Read (single precision) the FT register (bits 20-16) and
+ *	the FS register (bits 15-11) and break up into fields.
+ *	This is an internal routine used by MachEmulateFP only.
+ *
+ * Results:
+ *	t0	contains the FS sign
+ *	t1	contains the FS (biased) exponent
+ *	t2	contains the FS fraction
+ *	t4	contains the FT sign
+ *	t5	contains the FT (biased) exponent
+ *	t6	contains the FT fraction
+ *
+ *----------------------------------------------------------------------------
+ */
+LEAF(get_ft_fs_s)
+	srl	a3, a0, 17 - 2			# get FT field (even regs only)
+	and	a3, a3, 0xF << 2		# mask FT field
+	lw	a3, get_ft_s_tbl(a3)		# switch on register number
+	j	a3
+
+	.rdata
+get_ft_s_tbl:
+	.word	get_ft_s_f0
+	.word	get_ft_s_f2
+	.word	get_ft_s_f4
+	.word	get_ft_s_f6
+	.word	get_ft_s_f8
+	.word	get_ft_s_f10
+	.word	get_ft_s_f12
+	.word	get_ft_s_f14
+	.word	get_ft_s_f16
+	.word	get_ft_s_f18
+	.word	get_ft_s_f20
+	.word	get_ft_s_f22
+	.word	get_ft_s_f24
+	.word	get_ft_s_f26
+	.word	get_ft_s_f28
+	.word	get_ft_s_f30
+	.text
+
+get_ft_s_f0:
+	mfc1	t4, $f0
+	b	get_ft_s_done
+get_ft_s_f2:
+	mfc1	t4, $f2
+	b	get_ft_s_done
+get_ft_s_f4:
+	mfc1	t4, $f4
+	b	get_ft_s_done
+get_ft_s_f6:
+	mfc1	t4, $f6
+	b	get_ft_s_done
+get_ft_s_f8:
+	mfc1	t4, $f8
+	b	get_ft_s_done
+get_ft_s_f10:
+	mfc1	t4, $f10
+	b	get_ft_s_done
+get_ft_s_f12:
+	mfc1	t4, $f12
+	b	get_ft_s_done
+get_ft_s_f14:
+	mfc1	t4, $f14
+	b	get_ft_s_done
+get_ft_s_f16:
+	mfc1	t4, $f16
+	b	get_ft_s_done
+get_ft_s_f18:
+	mfc1	t4, $f18
+	b	get_ft_s_done
+get_ft_s_f20:
+	mfc1	t4, $f20
+	b	get_ft_s_done
+get_ft_s_f22:
+	mfc1	t4, $f22
+	b	get_ft_s_done
+get_ft_s_f24:
+	mfc1	t4, $f24
+	b	get_ft_s_done
+get_ft_s_f26:
+	mfc1	t4, $f26
+	b	get_ft_s_done
+get_ft_s_f28:
+	mfc1	t4, $f28
+	b	get_ft_s_done
+get_ft_s_f30:
+	mfc1	t4, $f30
+get_ft_s_done:
+	srl	t5, t4, 23			# get exponent
+	and	t5, t5, 0xFF
+	and	t6, t4, 0x7FFFFF		# get fraction
+	srl	t4, t4, 31			# get sign
+	bne	t5, SEXP_INF, 1f		# is it a signaling NAN?
+	and	v0, t6, SSIGNAL_NAN
+	bne	v0, zero, invalid_s
+1:
+	/* fall through to get FS */
+
+/*----------------------------------------------------------------------------
+ * get_fs_s --
+ *
+ *	Read (single precision) the FS register (bits 15-11) and
  *	break up into fields.
  *	This is an internal routine used by MachEmulateFP only.
  *
  * Results:
+ *	t0	contains the sign
+ *	t1	contains the (biased) exponent
+ *	t2	contains the fraction
+ *
+ *----------------------------------------------------------------------------
+ */
+ALEAF(get_fs_s)
+	srl	a3, a0, 12 - 2			# get FS field (even regs only)
+	and	a3, a3, 0xF << 2		# mask FS field
+	lw	a3, get_fs_s_tbl(a3)		# switch on register number
+	j	a3
+
+	.rdata
+get_fs_s_tbl:
+	.word	get_fs_s_f0
+	.word	get_fs_s_f2
+	.word	get_fs_s_f4
+	.word	get_fs_s_f6
+	.word	get_fs_s_f8
+	.word	get_fs_s_f10
+	.word	get_fs_s_f12
+	.word	get_fs_s_f14
+	.word	get_fs_s_f16
+	.word	get_fs_s_f18
+	.word	get_fs_s_f20
+	.word	get_fs_s_f22
+	.word	get_fs_s_f24
+	.word	get_fs_s_f26
+	.word	get_fs_s_f28
+	.word	get_fs_s_f30
+	.text
+
+get_fs_s_f0:
+	mfc1	t0, $f0
+	b	get_fs_s_done
+get_fs_s_f2:
+	mfc1	t0, $f2
+	b	get_fs_s_done
+get_fs_s_f4:
+	mfc1	t0, $f4
+	b	get_fs_s_done
+get_fs_s_f6:
+	mfc1	t0, $f6
+	b	get_fs_s_done
+get_fs_s_f8:
+	mfc1	t0, $f8
+	b	get_fs_s_done
+get_fs_s_f10:
+	mfc1	t0, $f10
+	b	get_fs_s_done
+get_fs_s_f12:
+	mfc1	t0, $f12
+	b	get_fs_s_done
+get_fs_s_f14:
+	mfc1	t0, $f14
+	b	get_fs_s_done
+get_fs_s_f16:
+	mfc1	t0, $f16
+	b	get_fs_s_done
+get_fs_s_f18:
+	mfc1	t0, $f18
+	b	get_fs_s_done
+get_fs_s_f20:
+	mfc1	t0, $f20
+	b	get_fs_s_done
+get_fs_s_f22:
+	mfc1	t0, $f22
+	b	get_fs_s_done
+get_fs_s_f24:
+	mfc1	t0, $f24
+	b	get_fs_s_done
+get_fs_s_f26:
+	mfc1	t0, $f26
+	b	get_fs_s_done
+get_fs_s_f28:
+	mfc1	t0, $f28
+	b	get_fs_s_done
+get_fs_s_f30:
+	mfc1	t0, $f30
+get_fs_s_done:
+	srl	t1, t0, 23			# get exponent
+	and	t1, t1, 0xFF
+	and	t2, t0, 0x7FFFFF		# get fraction
+	srl	t0, t0, 31			# get sign
+	bne	t1, SEXP_INF, 1f		# is it a signaling NAN?
+	and	v0, t2, SSIGNAL_NAN
+	bne	v0, zero, invalid_s
+1:
+	j	ra
+END(get_ft_fs_s)
+
+/*----------------------------------------------------------------------------
+ * get_ft_fs_d --
+ *
+ *	Read (double precision) the FT register (bits 20-16) and
+ *	the FS register (bits 15-11) and break up into fields.
+ *	This is an internal routine used by MachEmulateFP only.
+ *
+ * Results:
+ *	t0	contains the FS sign
+ *	t1	contains the FS (biased) exponent
+ *	t2	contains the FS fraction
+ *	t3	contains the FS remaining fraction
+ *	t4	contains the FT sign
+ *	t5	contains the FT (biased) exponent
+ *	t6	contains the FT fraction
+ *	t7	contains the FT remaining fraction
+ *
+ *----------------------------------------------------------------------------
+ */
+LEAF(get_ft_fs_d)
+	srl	a3, a0, 17 - 2			# get FT field (even regs only)
+	and	a3, a3, 0xF << 2		# mask FT field
+	lw	a3, get_ft_d_tbl(a3)		# switch on register number
+	j	a3
+
+	.rdata
+get_ft_d_tbl:
+	.word	get_ft_d_f0
+	.word	get_ft_d_f2
+	.word	get_ft_d_f4
+	.word	get_ft_d_f6
+	.word	get_ft_d_f8
+	.word	get_ft_d_f10
+	.word	get_ft_d_f12
+	.word	get_ft_d_f14
+	.word	get_ft_d_f16
+	.word	get_ft_d_f18
+	.word	get_ft_d_f20
+	.word	get_ft_d_f22
+	.word	get_ft_d_f24
+	.word	get_ft_d_f26
+	.word	get_ft_d_f28
+	.word	get_ft_d_f30
+	.text
+
+get_ft_d_f0:
+	mfc1	t7, $f0
+	mfc1	t4, $f1
+	b	get_ft_d_done
+get_ft_d_f2:
+	mfc1	t7, $f2
+	mfc1	t4, $f3
+	b	get_ft_d_done
+get_ft_d_f4:
+	mfc1	t7, $f4
+	mfc1	t4, $f5
+	b	get_ft_d_done
+get_ft_d_f6:
+	mfc1	t7, $f6
+	mfc1	t4, $f7
+	b	get_ft_d_done
+get_ft_d_f8:
+	mfc1	t7, $f8
+	mfc1	t4, $f9
+	b	get_ft_d_done
+get_ft_d_f10:
+	mfc1	t7, $f10
+	mfc1	t4, $f11
+	b	get_ft_d_done
+get_ft_d_f12:
+	mfc1	t7, $f12
+	mfc1	t4, $f13
+	b	get_ft_d_done
+get_ft_d_f14:
+	mfc1	t7, $f14
+	mfc1	t4, $f15
+	b	get_ft_d_done
+get_ft_d_f16:
+	mfc1	t7, $f16
+	mfc1	t4, $f17
+	b	get_ft_d_done
+get_ft_d_f18:
+	mfc1	t7, $f18
+	mfc1	t4, $f19
+	b	get_ft_d_done
+get_ft_d_f20:
+	mfc1	t7, $f20
+	mfc1	t4, $f21
+	b	get_ft_d_done
+get_ft_d_f22:
+	mfc1	t7, $f22
+	mfc1	t4, $f23
+	b	get_ft_d_done
+get_ft_d_f24:
+	mfc1	t7, $f24
+	mfc1	t4, $f25
+	b	get_ft_d_done
+get_ft_d_f26:
+	mfc1	t7, $f26
+	mfc1	t4, $f27
+	b	get_ft_d_done
+get_ft_d_f28:
+	mfc1	t7, $f28
+	mfc1	t4, $f29
+	b	get_ft_d_done
+get_ft_d_f30:
+	mfc1	t7, $f30
+	mfc1	t4, $f31
+get_ft_d_done:
+	srl	t5, t4, 20			# get exponent
+	and	t5, t5, 0x7FF
+	and	t6, t4, 0xFFFFF			# get fraction
+	srl	t4, t4, 31			# get sign
+	bne	t5, DEXP_INF, 1f		# is it a signaling NAN?
+	and	v0, t6, DSIGNAL_NAN
+	bne	v0, zero, invalid_d
+1:
+	/* fall through to get FS */
+
+/*----------------------------------------------------------------------------
+ * get_fs_d --
+ *
+ *	Read (double precision) the FS register (bits 15-11) and
+ *	break up into fields.
+ *	This is an internal routine used by MachEmulateFP only.
+ *
+ * Results:
+ *	t0	contains the sign
+ *	t1	contains the (biased) exponent
+ *	t2	contains the fraction
+ *	t3	contains the remaining fraction
+ *
+ *----------------------------------------------------------------------------
+ */
+ALEAF(get_fs_d)
+	srl	a3, a0, 12 - 2			# get FS field (even regs only)
+	and	a3, a3, 0xF << 2		# mask FS field
+	lw	a3, get_fs_d_tbl(a3)		# switch on register number
+	j	a3
+
+	.rdata
+get_fs_d_tbl:
+	.word	get_fs_d_f0
+	.word	get_fs_d_f2
+	.word	get_fs_d_f4
+	.word	get_fs_d_f6
+	.word	get_fs_d_f8
+	.word	get_fs_d_f10
+	.word	get_fs_d_f12
+	.word	get_fs_d_f14
+	.word	get_fs_d_f16
+	.word	get_fs_d_f18
+	.word	get_fs_d_f20
+	.word	get_fs_d_f22
+	.word	get_fs_d_f24
+	.word	get_fs_d_f26
+	.word	get_fs_d_f28
+	.word	get_fs_d_f30
+	.text
+
+get_fs_d_f0:
+	mfc1	t3, $f0
+	mfc1	t0, $f1
+	b	get_fs_d_done
+get_fs_d_f2:
+	mfc1	t3, $f2
+	mfc1	t0, $f3
+	b	get_fs_d_done
+get_fs_d_f4:
+	mfc1	t3, $f4
+	mfc1	t0, $f5
+	b	get_fs_d_done
+get_fs_d_f6:
+	mfc1	t3, $f6
+	mfc1	t0, $f7
+	b	get_fs_d_done
+get_fs_d_f8:
+	mfc1	t3, $f8
+	mfc1	t0, $f9
+	b	get_fs_d_done
+get_fs_d_f10:
+	mfc1	t3, $f10
+	mfc1	t0, $f11
+	b	get_fs_d_done
+get_fs_d_f12:
+	mfc1	t3, $f12
+	mfc1	t0, $f13
+	b	get_fs_d_done
+get_fs_d_f14:
+	mfc1	t3, $f14
+	mfc1	t0, $f15
+	b	get_fs_d_done
+get_fs_d_f16:
+	mfc1	t3, $f16
+	mfc1	t0, $f17
+	b	get_fs_d_done
+get_fs_d_f18:
+	mfc1	t3, $f18
+	mfc1	t0, $f19
+	b	get_fs_d_done
+get_fs_d_f20:
+	mfc1	t3, $f20
+	mfc1	t0, $f21
+	b	get_fs_d_done
+get_fs_d_f22:
+	mfc1	t3, $f22
+	mfc1	t0, $f23
+	b	get_fs_d_done
+get_fs_d_f24:
+	mfc1	t3, $f24
+	mfc1	t0, $f25
+	b	get_fs_d_done
+get_fs_d_f26:
+	mfc1	t3, $f26
+	mfc1	t0, $f27
+	b	get_fs_d_done
+get_fs_d_f28:
+	mfc1	t3, $f28
+	mfc1	t0, $f29
+	b	get_fs_d_done
+get_fs_d_f30:
+	mfc1	t3, $f30
+	mfc1	t0, $f31
+get_fs_d_done:
+	srl	t1, t0, 20			# get exponent
+	and	t1, t1, 0x7FF
+	and	t2, t0, 0xFFFFF			# get fraction
+	srl	t0, t0, 31			# get sign
+	bne	t1, DEXP_INF, 1f		# is it a signaling NAN?
+	and	v0, t2, DSIGNAL_NAN
+	bne	v0, zero, invalid_d
+1:
+	j	ra
+END(get_ft_fs_d)
+
+/*----------------------------------------------------------------------------
+ * get_cmp_s --
+ *
+ *	Read (single precision) the FS register (bits 15-11) and
+ *	the FT register (bits 20-16) and break up into fields.
+ *	This is an internal routine used by MachEmulateFP only.
+ *
+ * Results:
+ *	t0	contains the sign
+ *	t1	contains the (biased) exponent
+ *	t2	contains the fraction
  *	t4	contains the sign
  *	t5	contains the (biased) exponent
  *	t6	contains the fraction
  *
  *----------------------------------------------------------------------------
  */
-LEAF(get_ft_sgl)
-	srl	a3, a0, 17 - 2			# get FT field (even regs only)
-	and	a3, a3, 0xF << 2		# mask FT field
-	lw	a3, get_ft_sgl_tbl(a3)		# switch on register number
+LEAF(get_cmp_s)
+	srl	a3, a0, 12 - 2			# get FS field (even regs only)
+	and	a3, a3, 0xF << 2		# mask FS field
+	lw	a3, cmp_fs_s_tbl(a3)		# switch on register number
 	j	a3
 
 	.rdata
-get_ft_sgl_tbl:
-	.word	get_ft_sgl_f0
-	.word	get_ft_sgl_f2
-	.word	get_ft_sgl_f4
-	.word	get_ft_sgl_f6
-	.word	get_ft_sgl_f8
-	.word	get_ft_sgl_f10
-	.word	get_ft_sgl_f12
-	.word	get_ft_sgl_f14
-	.word	get_ft_sgl_f16
-	.word	get_ft_sgl_f18
-	.word	get_ft_sgl_f20
-	.word	get_ft_sgl_f22
-	.word	get_ft_sgl_f24
-	.word	get_ft_sgl_f26
-	.word	get_ft_sgl_f28
-	.word	get_ft_sgl_f30
+cmp_fs_s_tbl:
+	.word	cmp_fs_s_f0
+	.word	cmp_fs_s_f2
+	.word	cmp_fs_s_f4
+	.word	cmp_fs_s_f6
+	.word	cmp_fs_s_f8
+	.word	cmp_fs_s_f10
+	.word	cmp_fs_s_f12
+	.word	cmp_fs_s_f14
+	.word	cmp_fs_s_f16
+	.word	cmp_fs_s_f18
+	.word	cmp_fs_s_f20
+	.word	cmp_fs_s_f22
+	.word	cmp_fs_s_f24
+	.word	cmp_fs_s_f26
+	.word	cmp_fs_s_f28
+	.word	cmp_fs_s_f30
 	.text
 
-get_ft_sgl_f0:
+cmp_fs_s_f0:
+	mfc1	t0, $f0
+	b	cmp_fs_s_done
+cmp_fs_s_f2:
+	mfc1	t0, $f2
+	b	cmp_fs_s_done
+cmp_fs_s_f4:
+	mfc1	t0, $f4
+	b	cmp_fs_s_done
+cmp_fs_s_f6:
+	mfc1	t0, $f6
+	b	cmp_fs_s_done
+cmp_fs_s_f8:
+	mfc1	t0, $f8
+	b	cmp_fs_s_done
+cmp_fs_s_f10:
+	mfc1	t0, $f10
+	b	cmp_fs_s_done
+cmp_fs_s_f12:
+	mfc1	t0, $f12
+	b	cmp_fs_s_done
+cmp_fs_s_f14:
+	mfc1	t0, $f14
+	b	cmp_fs_s_done
+cmp_fs_s_f16:
+	mfc1	t0, $f16
+	b	cmp_fs_s_done
+cmp_fs_s_f18:
+	mfc1	t0, $f18
+	b	cmp_fs_s_done
+cmp_fs_s_f20:
+	mfc1	t0, $f20
+	b	cmp_fs_s_done
+cmp_fs_s_f22:
+	mfc1	t0, $f22
+	b	cmp_fs_s_done
+cmp_fs_s_f24:
+	mfc1	t0, $f24
+	b	cmp_fs_s_done
+cmp_fs_s_f26:
+	mfc1	t0, $f26
+	b	cmp_fs_s_done
+cmp_fs_s_f28:
+	mfc1	t0, $f28
+	b	cmp_fs_s_done
+cmp_fs_s_f30:
+	mfc1	t0, $f30
+cmp_fs_s_done:
+	srl	t1, t0, 23			# get exponent
+	and	t1, t1, 0xFF
+	and	t2, t0, 0x7FFFFF		# get fraction
+	srl	t0, t0, 31			# get sign
+
+	srl	a3, a0, 17 - 2			# get FT field (even regs only)
+	and	a3, a3, 0xF << 2		# mask FT field
+	lw	a3, cmp_ft_s_tbl(a3)		# switch on register number
+	j	a3
+
+	.rdata
+cmp_ft_s_tbl:
+	.word	cmp_ft_s_f0
+	.word	cmp_ft_s_f2
+	.word	cmp_ft_s_f4
+	.word	cmp_ft_s_f6
+	.word	cmp_ft_s_f8
+	.word	cmp_ft_s_f10
+	.word	cmp_ft_s_f12
+	.word	cmp_ft_s_f14
+	.word	cmp_ft_s_f16
+	.word	cmp_ft_s_f18
+	.word	cmp_ft_s_f20
+	.word	cmp_ft_s_f22
+	.word	cmp_ft_s_f24
+	.word	cmp_ft_s_f26
+	.word	cmp_ft_s_f28
+	.word	cmp_ft_s_f30
+	.text
+
+cmp_ft_s_f0:
 	mfc1	t4, $f0
-	b	get_ft_sgl_done
-get_ft_sgl_f2:
+	b	cmp_ft_s_done
+cmp_ft_s_f2:
 	mfc1	t4, $f2
-	b	get_ft_sgl_done
-get_ft_sgl_f4:
+	b	cmp_ft_s_done
+cmp_ft_s_f4:
 	mfc1	t4, $f4
-	b	get_ft_sgl_done
-get_ft_sgl_f6:
+	b	cmp_ft_s_done
+cmp_ft_s_f6:
 	mfc1	t4, $f6
-	b	get_ft_sgl_done
-get_ft_sgl_f8:
+	b	cmp_ft_s_done
+cmp_ft_s_f8:
 	mfc1	t4, $f8
-	b	get_ft_sgl_done
-get_ft_sgl_f10:
+	b	cmp_ft_s_done
+cmp_ft_s_f10:
 	mfc1	t4, $f10
-	b	get_ft_sgl_done
-get_ft_sgl_f12:
+	b	cmp_ft_s_done
+cmp_ft_s_f12:
 	mfc1	t4, $f12
-	b	get_ft_sgl_done
-get_ft_sgl_f14:
+	b	cmp_ft_s_done
+cmp_ft_s_f14:
 	mfc1	t4, $f14
-	b	get_ft_sgl_done
-get_ft_sgl_f16:
+	b	cmp_ft_s_done
+cmp_ft_s_f16:
 	mfc1	t4, $f16
-	b	get_ft_sgl_done
-get_ft_sgl_f18:
+	b	cmp_ft_s_done
+cmp_ft_s_f18:
 	mfc1	t4, $f18
-	b	get_ft_sgl_done
-get_ft_sgl_f20:
+	b	cmp_ft_s_done
+cmp_ft_s_f20:
 	mfc1	t4, $f20
-	b	get_ft_sgl_done
-get_ft_sgl_f22:
+	b	cmp_ft_s_done
+cmp_ft_s_f22:
 	mfc1	t4, $f22
-	b	get_ft_sgl_done
-get_ft_sgl_f24:
+	b	cmp_ft_s_done
+cmp_ft_s_f24:
 	mfc1	t4, $f24
-	b	get_ft_sgl_done
-get_ft_sgl_f26:
+	b	cmp_ft_s_done
+cmp_ft_s_f26:
 	mfc1	t4, $f26
-	b	get_ft_sgl_done
-get_ft_sgl_f28:
+	b	cmp_ft_s_done
+cmp_ft_s_f28:
 	mfc1	t4, $f28
-	b	get_ft_sgl_done
-get_ft_sgl_f30:
+	b	cmp_ft_s_done
+cmp_ft_s_f30:
 	mfc1	t4, $f30
-get_ft_sgl_done:
+cmp_ft_s_done:
 	srl	t5, t4, 23			# get exponent
 	and	t5, t5, 0xFF
 	and	t6, t4, 0x7FFFFF		# get fraction
 	srl	t4, t4, 31			# get sign
-	bne	t5, SEXP_INF, 1f		# is it a signalling NAN?
-	and	v0, t6, SSIGNAL_NAN
-	bne	v0, zero, invalid_s
-1:
 	j	ra
-END(get_ft_sgl)
+END(get_cmp_s)
 
 /*----------------------------------------------------------------------------
- * get_ft_dbl --
+ * get_cmp_d --
  *
- *	Read (double precision) the FT register (bits 20-16) and
- *	break up into fields.
+ *	Read (double precision) the FS register (bits 15-11) and
+ *	the FT register (bits 20-16) and break up into fields.
  *	This is an internal routine used by MachEmulateFP only.
  *
  * Results:
+ *	t0	contains the sign
+ *	t1	contains the (biased) exponent
+ *	t2	contains the fraction
+ *	t3	contains the remaining fraction
  *	t4	contains the sign
  *	t5	contains the (biased) exponent
  *	t6	contains the fraction
@@ -2599,109 +2947,199 @@ END(get_ft_sgl)
  *
  *----------------------------------------------------------------------------
  */
-LEAF(get_ft_dbl)
-	srl	a3, a0, 17 - 2			# get FT field (even regs only)
-	and	a3, a3, 0xF << 2		# mask FT field
-	lw	a3, get_ft_dbl_tbl(a3)		# switch on register number
+LEAF(get_cmp_d)
+	srl	a3, a0, 12 - 2			# get FS field (even regs only)
+	and	a3, a3, 0xF << 2		# mask FS field
+	lw	a3, cmp_fs_d_tbl(a3)		# switch on register number
 	j	a3
 
 	.rdata
-get_ft_dbl_tbl:
-	.word	get_ft_dbl_f0
-	.word	get_ft_dbl_f2
-	.word	get_ft_dbl_f4
-	.word	get_ft_dbl_f6
-	.word	get_ft_dbl_f8
-	.word	get_ft_dbl_f10
-	.word	get_ft_dbl_f12
-	.word	get_ft_dbl_f14
-	.word	get_ft_dbl_f16
-	.word	get_ft_dbl_f18
-	.word	get_ft_dbl_f20
-	.word	get_ft_dbl_f22
-	.word	get_ft_dbl_f24
-	.word	get_ft_dbl_f26
-	.word	get_ft_dbl_f28
-	.word	get_ft_dbl_f30
+cmp_fs_d_tbl:
+	.word	cmp_fs_d_f0
+	.word	cmp_fs_d_f2
+	.word	cmp_fs_d_f4
+	.word	cmp_fs_d_f6
+	.word	cmp_fs_d_f8
+	.word	cmp_fs_d_f10
+	.word	cmp_fs_d_f12
+	.word	cmp_fs_d_f14
+	.word	cmp_fs_d_f16
+	.word	cmp_fs_d_f18
+	.word	cmp_fs_d_f20
+	.word	cmp_fs_d_f22
+	.word	cmp_fs_d_f24
+	.word	cmp_fs_d_f26
+	.word	cmp_fs_d_f28
+	.word	cmp_fs_d_f30
 	.text
 
-get_ft_dbl_f0:
+cmp_fs_d_f0:
+	mfc1	t3, $f0
+	mfc1	t0, $f1
+	b	cmp_fs_d_done
+cmp_fs_d_f2:
+	mfc1	t3, $f2
+	mfc1	t0, $f3
+	b	cmp_fs_d_done
+cmp_fs_d_f4:
+	mfc1	t3, $f4
+	mfc1	t0, $f5
+	b	cmp_fs_d_done
+cmp_fs_d_f6:
+	mfc1	t3, $f6
+	mfc1	t0, $f7
+	b	cmp_fs_d_done
+cmp_fs_d_f8:
+	mfc1	t3, $f8
+	mfc1	t0, $f9
+	b	cmp_fs_d_done
+cmp_fs_d_f10:
+	mfc1	t3, $f10
+	mfc1	t0, $f11
+	b	cmp_fs_d_done
+cmp_fs_d_f12:
+	mfc1	t3, $f12
+	mfc1	t0, $f13
+	b	cmp_fs_d_done
+cmp_fs_d_f14:
+	mfc1	t3, $f14
+	mfc1	t0, $f15
+	b	cmp_fs_d_done
+cmp_fs_d_f16:
+	mfc1	t3, $f16
+	mfc1	t0, $f17
+	b	cmp_fs_d_done
+cmp_fs_d_f18:
+	mfc1	t3, $f18
+	mfc1	t0, $f19
+	b	cmp_fs_d_done
+cmp_fs_d_f20:
+	mfc1	t3, $f20
+	mfc1	t0, $f21
+	b	cmp_fs_d_done
+cmp_fs_d_f22:
+	mfc1	t3, $f22
+	mfc1	t0, $f23
+	b	cmp_fs_d_done
+cmp_fs_d_f24:
+	mfc1	t3, $f24
+	mfc1	t0, $f25
+	b	cmp_fs_d_done
+cmp_fs_d_f26:
+	mfc1	t3, $f26
+	mfc1	t0, $f27
+	b	cmp_fs_d_done
+cmp_fs_d_f28:
+	mfc1	t3, $f28
+	mfc1	t0, $f29
+	b	cmp_fs_d_done
+cmp_fs_d_f30:
+	mfc1	t3, $f30
+	mfc1	t0, $f31
+cmp_fs_d_done:
+	srl	t1, t0, 20			# get exponent
+	and	t1, t1, 0x7FF
+	and	t2, t0, 0xFFFFF			# get fraction
+	srl	t0, t0, 31			# get sign
+
+	srl	a3, a0, 17 - 2			# get FT field (even regs only)
+	and	a3, a3, 0xF << 2		# mask FT field
+	lw	a3, cmp_ft_d_tbl(a3)		# switch on register number
+	j	a3
+
+	.rdata
+cmp_ft_d_tbl:
+	.word	cmp_ft_d_f0
+	.word	cmp_ft_d_f2
+	.word	cmp_ft_d_f4
+	.word	cmp_ft_d_f6
+	.word	cmp_ft_d_f8
+	.word	cmp_ft_d_f10
+	.word	cmp_ft_d_f12
+	.word	cmp_ft_d_f14
+	.word	cmp_ft_d_f16
+	.word	cmp_ft_d_f18
+	.word	cmp_ft_d_f20
+	.word	cmp_ft_d_f22
+	.word	cmp_ft_d_f24
+	.word	cmp_ft_d_f26
+	.word	cmp_ft_d_f28
+	.word	cmp_ft_d_f30
+	.text
+
+cmp_ft_d_f0:
 	mfc1	t7, $f0
 	mfc1	t4, $f1
-	b	get_ft_dbl_done
-get_ft_dbl_f2:
+	b	cmp_ft_d_done
+cmp_ft_d_f2:
 	mfc1	t7, $f2
 	mfc1	t4, $f3
-	b	get_ft_dbl_done
-get_ft_dbl_f4:
+	b	cmp_ft_d_done
+cmp_ft_d_f4:
 	mfc1	t7, $f4
 	mfc1	t4, $f5
-	b	get_ft_dbl_done
-get_ft_dbl_f6:
+	b	cmp_ft_d_done
+cmp_ft_d_f6:
 	mfc1	t7, $f6
 	mfc1	t4, $f7
-	b	get_ft_dbl_done
-get_ft_dbl_f8:
+	b	cmp_ft_d_done
+cmp_ft_d_f8:
 	mfc1	t7, $f8
 	mfc1	t4, $f9
-	b	get_ft_dbl_done
-get_ft_dbl_f10:
+	b	cmp_ft_d_done
+cmp_ft_d_f10:
 	mfc1	t7, $f10
 	mfc1	t4, $f11
-	b	get_ft_dbl_done
-get_ft_dbl_f12:
+	b	cmp_ft_d_done
+cmp_ft_d_f12:
 	mfc1	t7, $f12
 	mfc1	t4, $f13
-	b	get_ft_dbl_done
-get_ft_dbl_f14:
+	b	cmp_ft_d_done
+cmp_ft_d_f14:
 	mfc1	t7, $f14
 	mfc1	t4, $f15
-	b	get_ft_dbl_done
-get_ft_dbl_f16:
+	b	cmp_ft_d_done
+cmp_ft_d_f16:
 	mfc1	t7, $f16
 	mfc1	t4, $f17
-	b	get_ft_dbl_done
-get_ft_dbl_f18:
+	b	cmp_ft_d_done
+cmp_ft_d_f18:
 	mfc1	t7, $f18
 	mfc1	t4, $f19
-	b	get_ft_dbl_done
-get_ft_dbl_f20:
+	b	cmp_ft_d_done
+cmp_ft_d_f20:
 	mfc1	t7, $f20
 	mfc1	t4, $f21
-	b	get_ft_dbl_done
-get_ft_dbl_f22:
+	b	cmp_ft_d_done
+cmp_ft_d_f22:
 	mfc1	t7, $f22
 	mfc1	t4, $f23
-	b	get_ft_dbl_done
-get_ft_dbl_f24:
+	b	cmp_ft_d_done
+cmp_ft_d_f24:
 	mfc1	t7, $f24
 	mfc1	t4, $f25
-	b	get_ft_dbl_done
-get_ft_dbl_f26:
+	b	cmp_ft_d_done
+cmp_ft_d_f26:
 	mfc1	t7, $f26
 	mfc1	t4, $f27
-	b	get_ft_dbl_done
-get_ft_dbl_f28:
+	b	cmp_ft_d_done
+cmp_ft_d_f28:
 	mfc1	t7, $f28
 	mfc1	t4, $f29
-	b	get_ft_dbl_done
-get_ft_dbl_f30:
+	b	cmp_ft_d_done
+cmp_ft_d_f30:
 	mfc1	t7, $f30
 	mfc1	t4, $f31
-get_ft_dbl_done:
+cmp_ft_d_done:
 	srl	t5, t4, 20			# get exponent
 	and	t5, t5, 0x7FF
 	and	t6, t4, 0xFFFFF			# get fraction
 	srl	t4, t4, 31			# get sign
-	bne	t5, DEXP_INF, 1f		# is it a signalling NAN?
-	and	v0, t6, DSIGNAL_NAN
-	bne	v0, zero, invalid_d
-1:
 	j	ra
-END(get_ft_dbl)
+END(get_cmp_d)
 
 /*----------------------------------------------------------------------------
- * set_fd_sgl --
+ * set_fd_s --
  *
  *	Write (single precision) the FD register (bits 10-6).
  *	This is an internal routine used by MachEmulateFP only.
@@ -2723,7 +3161,7 @@ END(get_ft_dbl)
  *
  *----------------------------------------------------------------------------
  */
-LEAF(set_fd_sgl)
+LEAF(set_fd_s)
 	sll	t0, t0, 31			# position sign
 	sll	t1, t1, 23			# position exponent
 	or	t2, t2, t0
@@ -2731,81 +3169,81 @@ LEAF(set_fd_sgl)
 ALEAF(set_fd_word)
 	srl	a3, a0, 7 - 2			# get FD field (even regs only)
 	and	a3, a3, 0xF << 2		# mask FT field
-	lw	a3, set_fd_sgl_tbl(a3)		# switch on register number
+	lw	a3, set_fd_s_tbl(a3)		# switch on register number
 	j	a3
 
 	.rdata
-set_fd_sgl_tbl:
-	.word	set_fd_sgl_f0
-	.word	set_fd_sgl_f2
-	.word	set_fd_sgl_f4
-	.word	set_fd_sgl_f6
-	.word	set_fd_sgl_f8
-	.word	set_fd_sgl_f10
-	.word	set_fd_sgl_f12
-	.word	set_fd_sgl_f14
-	.word	set_fd_sgl_f16
-	.word	set_fd_sgl_f18
-	.word	set_fd_sgl_f20
-	.word	set_fd_sgl_f22
-	.word	set_fd_sgl_f24
-	.word	set_fd_sgl_f26
-	.word	set_fd_sgl_f28
-	.word	set_fd_sgl_f30
+set_fd_s_tbl:
+	.word	set_fd_s_f0
+	.word	set_fd_s_f2
+	.word	set_fd_s_f4
+	.word	set_fd_s_f6
+	.word	set_fd_s_f8
+	.word	set_fd_s_f10
+	.word	set_fd_s_f12
+	.word	set_fd_s_f14
+	.word	set_fd_s_f16
+	.word	set_fd_s_f18
+	.word	set_fd_s_f20
+	.word	set_fd_s_f22
+	.word	set_fd_s_f24
+	.word	set_fd_s_f26
+	.word	set_fd_s_f28
+	.word	set_fd_s_f30
 	.text
 
-set_fd_sgl_f0:
+set_fd_s_f0:
 	mtc1	t2, $f0
 	j	ra
-set_fd_sgl_f2:
+set_fd_s_f2:
 	mtc1	t2, $f2
 	j	ra
-set_fd_sgl_f4:
+set_fd_s_f4:
 	mtc1	t2, $f4
 	j	ra
-set_fd_sgl_f6:
+set_fd_s_f6:
 	mtc1	t2, $f6
 	j	ra
-set_fd_sgl_f8:
+set_fd_s_f8:
 	mtc1	t2, $f8
 	j	ra
-set_fd_sgl_f10:
+set_fd_s_f10:
 	mtc1	t2, $f10
 	j	ra
-set_fd_sgl_f12:
+set_fd_s_f12:
 	mtc1	t2, $f12
 	j	ra
-set_fd_sgl_f14:
+set_fd_s_f14:
 	mtc1	t2, $f14
 	j	ra
-set_fd_sgl_f16:
+set_fd_s_f16:
 	mtc1	t2, $f16
 	j	ra
-set_fd_sgl_f18:
+set_fd_s_f18:
 	mtc1	t2, $f18
 	j	ra
-set_fd_sgl_f20:
+set_fd_s_f20:
 	mtc1	t2, $f20
 	j	ra
-set_fd_sgl_f22:
+set_fd_s_f22:
 	mtc1	t2, $f22
 	j	ra
-set_fd_sgl_f24:
+set_fd_s_f24:
 	mtc1	t2, $f24
 	j	ra
-set_fd_sgl_f26:
+set_fd_s_f26:
 	mtc1	t2, $f26
 	j	ra
-set_fd_sgl_f28:
+set_fd_s_f28:
 	mtc1	t2, $f28
 	j	ra
-set_fd_sgl_f30:
+set_fd_s_f30:
 	mtc1	t2, $f30
 	j	ra
-END(set_fd_sgl)
+END(set_fd_s)
 
 /*----------------------------------------------------------------------------
- * set_fd_dbl --
+ * set_fd_d --
  *
  *	Write (double precision) the FT register (bits 10-6).
  *	This is an internal routine used by MachEmulateFP only.
@@ -2819,101 +3257,101 @@ END(set_fd_sgl)
  *
  *----------------------------------------------------------------------------
  */
-LEAF(set_fd_dbl)
+LEAF(set_fd_d)
 	sll	t0, t0, 31			# set sign
 	sll	t1, t1, 20			# set exponent
 	or	t0, t0, t1
 	or	t0, t0, t2			# set fraction
 	srl	a3, a0, 7 - 2			# get FD field (even regs only)
 	and	a3, a3, 0xF << 2		# mask FD field
-	lw	a3, set_fd_dbl_tbl(a3)		# switch on register number
+	lw	a3, set_fd_d_tbl(a3)		# switch on register number
 	j	a3
 
 	.rdata
-set_fd_dbl_tbl:
-	.word	set_fd_dbl_f0
-	.word	set_fd_dbl_f2
-	.word	set_fd_dbl_f4
-	.word	set_fd_dbl_f6
-	.word	set_fd_dbl_f8
-	.word	set_fd_dbl_f10
-	.word	set_fd_dbl_f12
-	.word	set_fd_dbl_f14
-	.word	set_fd_dbl_f16
-	.word	set_fd_dbl_f18
-	.word	set_fd_dbl_f20
-	.word	set_fd_dbl_f22
-	.word	set_fd_dbl_f24
-	.word	set_fd_dbl_f26
-	.word	set_fd_dbl_f28
-	.word	set_fd_dbl_f30
+set_fd_d_tbl:
+	.word	set_fd_d_f0
+	.word	set_fd_d_f2
+	.word	set_fd_d_f4
+	.word	set_fd_d_f6
+	.word	set_fd_d_f8
+	.word	set_fd_d_f10
+	.word	set_fd_d_f12
+	.word	set_fd_d_f14
+	.word	set_fd_d_f16
+	.word	set_fd_d_f18
+	.word	set_fd_d_f20
+	.word	set_fd_d_f22
+	.word	set_fd_d_f24
+	.word	set_fd_d_f26
+	.word	set_fd_d_f28
+	.word	set_fd_d_f30
 	.text
 
-set_fd_dbl_f0:
+set_fd_d_f0:
 	mtc1	t3, $f0
-	mfc1	t0, $f1
+	mtc1	t0, $f1
 	j	ra
-set_fd_dbl_f2:
+set_fd_d_f2:
 	mtc1	t3, $f2
-	mfc1	t0, $f3
+	mtc1	t0, $f3
 	j	ra
-set_fd_dbl_f4:
+set_fd_d_f4:
 	mtc1	t3, $f4
-	mfc1	t0, $f5
+	mtc1	t0, $f5
 	j	ra
-set_fd_dbl_f6:
+set_fd_d_f6:
 	mtc1	t3, $f6
-	mfc1	t0, $f7
+	mtc1	t0, $f7
 	j	ra
-set_fd_dbl_f8:
+set_fd_d_f8:
 	mtc1	t3, $f8
-	mfc1	t0, $f9
+	mtc1	t0, $f9
 	j	ra
-set_fd_dbl_f10:
+set_fd_d_f10:
 	mtc1	t3, $f10
-	mfc1	t0, $f11
+	mtc1	t0, $f11
 	j	ra
-set_fd_dbl_f12:
+set_fd_d_f12:
 	mtc1	t3, $f12
-	mfc1	t0, $f13
+	mtc1	t0, $f13
 	j	ra
-set_fd_dbl_f14:
+set_fd_d_f14:
 	mtc1	t3, $f14
-	mfc1	t0, $f15
+	mtc1	t0, $f15
 	j	ra
-set_fd_dbl_f16:
+set_fd_d_f16:
 	mtc1	t3, $f16
-	mfc1	t0, $f17
+	mtc1	t0, $f17
 	j	ra
-set_fd_dbl_f18:
+set_fd_d_f18:
 	mtc1	t3, $f18
-	mfc1	t0, $f19
+	mtc1	t0, $f19
 	j	ra
-set_fd_dbl_f20:
+set_fd_d_f20:
 	mtc1	t3, $f20
-	mfc1	t0, $f21
+	mtc1	t0, $f21
 	j	ra
-set_fd_dbl_f22:
+set_fd_d_f22:
 	mtc1	t3, $f22
-	mfc1	t0, $f23
+	mtc1	t0, $f23
 	j	ra
-set_fd_dbl_f24:
+set_fd_d_f24:
 	mtc1	t3, $f24
-	mfc1	t0, $f25
+	mtc1	t0, $f25
 	j	ra
-set_fd_dbl_f26:
+set_fd_d_f26:
 	mtc1	t3, $f26
-	mfc1	t0, $f27
+	mtc1	t0, $f27
 	j	ra
-set_fd_dbl_f28:
+set_fd_d_f28:
 	mtc1	t3, $f28
-	mfc1	t0, $f29
+	mtc1	t0, $f29
 	j	ra
-set_fd_dbl_f30:
+set_fd_d_f30:
 	mtc1	t3, $f30
-	mfc1	t0, $f31
+	mtc1	t0, $f31
 	j	ra
-END(set_fd_dbl)
+END(set_fd_d)
 
 /*----------------------------------------------------------------------------
  * renorm_fs_s --
