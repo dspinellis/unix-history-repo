@@ -1,7 +1,7 @@
 # include <sysexits.h>
 # include "useful.h"
 
-SCCSID(@(#)sysexits.c	4.1		%G%);
+SCCSID(@(#)sysexits.c	4.2		%G%);
 
 /*
 **  SYSEXITS.C -- error messages corresponding to sysexits.h
@@ -22,6 +22,7 @@ char	*SysExMsg[] =
 	/* 74 IOERR */		"451 I/O error",
 	/* 75 TEMPFAIL */	"250 Deferred",
 	/* 76 PROTOCOL */	"554 Remote protocol error",
+	/* 77 NOPERM */		"550 Insufficient permission",
 };
 
 int	N_SysEx = sizeof SysExMsg / sizeof SysExMsg[0];
