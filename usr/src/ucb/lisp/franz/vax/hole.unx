@@ -1,0 +1,4 @@
+	.PSECT	$$$$$$$$$$HOLE,LONG,PIC,USR,CON,REL,LCL,NOSHR,EXE,RD,WRT
+holbeg::	.BLKB	%d
+holend::
+	.END
