@@ -22,66 +22,80 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ktrace.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ktrace.c	1.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ktrace.h"
 
 #define USAGE \
- "usage: ktrace [-aci] [-f tracefile] [-t facilitystring] [-p pid] [-g pgid]\n\
-	facilities: c = syscalls, n = namei, g = generic-i/o, a = everything\n"
+ "usage: ktrace [-acid] [-f trfile] [-t trops] [-p pid] [-g pgid]\n\
+	trops: c = syscalls, n = namei, g = generic-i/o, a = everything\n\
+	ktrace -C (clear everthing)\n"
 	
 
 char	*tracefile = DEF_TRACEFILE;
-int	append, clear;
+int	append, clear, descend, inherit;
 
 main(argc, argv)
 	char *argv[];
 {
 	extern int optind;
 	extern char *optarg;
-	int facs = DEF_FACS;
+	int facs = ALL_FACS;
 	int ops = 0;
 	int pid = 0;
 	int ch;
 
-	while ((ch = getopt(argc,argv,"acp:g:if:t:")) != EOF)
+	while ((ch = getopt(argc,argv,"Cacdp:g:if:t:")) != EOF)
 		switch((char)ch) {
-			case 'c':
-				clear = 1;
-				break;
-			case 't':
-				facs = getfacs(optarg);
-				if (facs < 0) {
-					fprintf(stderr, 
-					    "ktrace: unknown facility in %s\n",
-				 	     optarg);
-					exit(1);
-				}
-				break;
-			case 'p':
-				pid = atoi(optarg);
-				break;
-			case 'g':
-				pid = -atoi(optarg);
-				break;
-			case 'i':
-				ops |= KTROP_INHERITFLAG;
-				break;
-			case 'f':
-				tracefile = optarg;
-				break;
-			case 'a':
-				append++;
-				break;
-			default:
-				fprintf(stderr,"usage: \n",*argv);
-				exit(-1);
+		case 'C':
+			clear = 2;
+			break;
+		case 'c':
+			clear = 1;
+			break;
+		case 'd':
+			ops |= KTRFLAG_DESCEND;
+			break;
+		case 't':
+			facs = getfacs(optarg);
+			if (facs < 0) {
+				fprintf(stderr, 
+				    "ktrace: unknown facility in %s\n",
+			 	     optarg);
+				exit(1);
+			}
+			break;
+		case 'p':
+			pid = atoi(optarg);
+			break;
+		case 'g':
+			pid = -atoi(optarg);
+			break;
+		case 'i':
+			inherit++;
+			break;
+		case 'f':
+			tracefile = optarg;
+			break;
+		case 'a':
+			append++;
+			break;
+		default:
+			fprintf(stderr,"usage: \n",*argv);
+			exit(-1);
 		}
 	argv += optind, argc -= optind;
 	
+	if (inherit)
+		facs |= KTRFAC_INHERIT;
 	if (clear) {			/* untrace something */
-		ops |= pid ? KTROP_CLEAR : KTROP_CLEARFILE;
+		if (clear == 2) {	/* -C */
+			ops = KTROP_CLEAR | KTRFLAG_DESCEND;
+			pid = 1;
+		} else {
+			ops |= pid ? KTROP_CLEAR : KTROP_CLEARFILE;
+		}
 		if (ktrace(tracefile, ops, facs, pid) < 0) {
 			perror("ktrace");
 			exit(1);
