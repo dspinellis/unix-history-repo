@@ -34,6 +34,7 @@ BIBSRCS	      = bib.astro \
 
 BIBINCS	      = bibinc.fullnames \
 		bibinc.shortnames \
+		bibinc.publishers \
 		tibinc.fullnames \
 		tibinc.shortnames
 
@@ -45,12 +46,13 @@ clean:;
 
 depend:;	@mkmf -f $(MAKEFILE)
 
-install:	bibinc.fullnames bibinc.shortnames tibinc.fullnames tibinc.shortnames
+install:	${BIBINCS}
 		-mkdir $(DEST)
 		-mkdir $(DEST)/bibmacs
 		-mkdir $(DEST)/tibmacs
 		cp bibinc.fullnames $(DEST)/bibmacs
 		cp bibinc.shortnames $(DEST)/bibmacs
+		cp bibinc.publishers $(DEST)/bibmacs
 		cp tibinc.fullnames $(DEST)/tibmacs/bibinc.fullnames
 		cp tibinc.shortnames $(DEST)/tibmacs/bibinc.shortnames
 		cp bibinc.fulllocal $(DEST)/bibmacs
