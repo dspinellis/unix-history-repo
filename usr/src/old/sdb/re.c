@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)re.c 4.1 %G%";
+static	char sccsid[] = "@(#)re.c 4.2 %G%";
 #include "head.h"
 #define	CBRA	1
 #define	CCHR	2

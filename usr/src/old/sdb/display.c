@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)display.c 4.2 %G%";
+static	char sccsid[] = "@(#)display.c 4.3 %G%";
 #include "head.h"
 #include <a.out.h>
 #include <stab.h>
@@ -44,7 +44,7 @@ nextframe() {
 /*  MACHINE DEPENDENT */
 ADDR
 formaddr(class, addr)
-register char class;
+u_char class;
 ADDR addr; {
 if (debug) printf("formaddr(%o, %d)\n", class & 0377, addr);
 	switch(class & STABMASK) {
@@ -363,7 +363,7 @@ prbkpt() {
 idbkpt() {
 	register BKPTR bkptr;
 	register int yesflg, cnt;
-	register char c;
+	char c;
 	
 	cnt = 0;
 
@@ -415,7 +415,7 @@ prframe() {
 prfrx(top) {
 	int narg;
 	long offset;
-	register char class;
+	u_char class;
 	register int endflg;
 	char *p;
 	struct proct *procp;
@@ -466,7 +466,6 @@ prfrx(top) {
 				}
 			}
 		}
-
 		narg = get(argp, DSP);
 		if (narg & ~0xff) narg = 0;
 		argp += WORDSIZE;

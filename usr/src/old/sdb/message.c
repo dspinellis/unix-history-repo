@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)message.c 4.1 %G%";
+static	char sccsid[] = "@(#)message.c 4.2 %G%";
 #
 /*
  *

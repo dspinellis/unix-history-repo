@@ -1,4 +1,4 @@
-/* "@(#)old.h 4.1 %G%" */
+/* "@(#)old.h 4.2 %G%" */
 #ifndef VMUNIX
 struct brbuf {
 	int	nl, nr;

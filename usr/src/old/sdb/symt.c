@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)symt.c 4.2 %G%";
+static	char sccsid[] = "@(#)symt.c 4.3 %G%";
 #include "head.h"
 #include <a.out.h>
 #include <stab.h>
@@ -58,7 +58,7 @@ initfp() {
 
 	long soffset;
 	int i, gflag = 0;
-	char class;
+	u_char class;
 	register char *p, *q;
 	
 #ifdef FLEXNAMES
@@ -151,8 +151,7 @@ initfp() {
 				if (bread(&sbuf, &stentry, sizeof stentry) 
 						< sizeof stentry)
 					error("Bad N_SO entry (1)");
-				if ((stentry.n_type & STABMASK) !=
-						(unsigned char) class)
+				if ((stentry.n_type & STABMASK) != class)
 					error("Bad N_SO entry (2)");
 				soffset += sizeof stentry;
 			}
@@ -299,7 +298,8 @@ slooknext(pat, poffset, stelt, comblk)
 long poffset; char *pat, *comblk; {
 	register int i;
 	register long offset;
-	char class, *q;
+	char	*q;
+	u_char	class;
 	struct nlist stentry;
 	struct proct *procp, *p;
 	
@@ -411,7 +411,8 @@ globallookup(pat, filestart, stelt)
 char *pat; long filestart; {
 	register int offset, i;
 	struct nlist stentry;
-	int class, clevel;
+	int	clevel;
+	u_char	class;
 	
 	if (debug) printf("globallookup(%s,%d)\n", pat,filestart);
 	blseek(&sbuf, filestart, 0);
@@ -700,8 +701,7 @@ long offset; char *file; {
 				if (bread(&sbuf, &stentry, sizeof stentry) 
 						< sizeof stentry)
 					error("Bad N_SO entry (1)");
-				if ((stentry.n_type & STABMASK) != 
-						(unsigned char) N_SOL)
+				if ((stentry.n_type & STABMASK) != (u_char)N_SOL)
 					error("Bad N_SO entry (2)");
 			}
 #else
@@ -838,7 +838,7 @@ long offset; {
 char pctypes[] = {N_GSYM, N_STSYM, N_LCSYM, N_RSYM, N_SSYM, N_LSYM,
 			N_PSYM, 0};
 varclass(class)
-char class; {
+u_char class; {
 	char *p;
 
 	for (p=pctypes; *p; p++) {
