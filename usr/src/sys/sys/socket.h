@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1993, 1982198519861988
+ * Copyright (c) 1982, 1985, 1986, 1988, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	8.2 (Berkeley) %G%
+ *	@(#)socket.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _SYS_SOCKET_H_
@@ -66,7 +66,8 @@ struct	linger {
  * Address families.
  */
 #define	AF_UNSPEC	0		/* unspecified */
-#define	AF_UNIX		1		/* local to host (pipes, portals) */
+#define	AF_LOCAL	1		/* local to host (pipes, portals) */
+#define	AF_UNIX		AF_LOCAL	/* backward compatibility */
 #define	AF_INET		2		/* internetwork: UDP, TCP, etc. */
 #define	AF_IMPLINK	3		/* arpanet imp addresses */
 #define	AF_PUP		4		/* pup protocols: e.g. BSP */
@@ -118,7 +119,8 @@ struct sockproto {
  * Protocol families, same as address families for now.
  */
 #define	PF_UNSPEC	AF_UNSPEC
-#define	PF_UNIX		AF_UNIX
+#define	PF_LOCAL	AF_LOCAL
+#define	PF_UNIX		PF_LOCAL	/* backward compatibility */
 #define	PF_INET		AF_INET
 #define	PF_IMPLINK	AF_IMPLINK
 #define	PF_PUP		AF_PUP
@@ -307,5 +309,5 @@ int	socket __P((int, int, int));
 int	socketpair __P((int, int, int, int *));
 __END_DECLS
 
-#endif	/* !KERNEL */
+#endif /* !KERNEL */
 #endif /* !_SYS_SOCKET_H_ */
