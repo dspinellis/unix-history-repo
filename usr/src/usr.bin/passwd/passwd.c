@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.27 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -42,7 +42,6 @@ static char sccsid[] = "@(#)passwd.c	4.26 (Berkeley) %G%";
 char	temp[] = "/etc/ptmp";
 char	passwd[] = "/etc/passwd";
 char	*getpass();
-char	*getlogin();
 char	*getfingerinfo();
 char	*getloginshell();
 char	*getnewpasswd();
@@ -55,9 +54,11 @@ main(argc, argv)
 {
 	struct passwd *pwd;
 	char *cp, *uname, *progname;
-	int fd, u, dochfn, dochsh, err;
+	uid_t u;
+	int fd, dochfn, dochsh, err;
 	FILE *tf;
 	DBM *dp;
+	char *getlogin();
 
 	if ((progname = rindex(argv[0], '/')) == NULL)
 		progname = argv[0];
@@ -97,22 +98,16 @@ main(argc, argv)
 			dochsh = 1;
 	}
 	if (argc < 1) {
-		if ((uname = getlogin()) == NULL) {
-			fprintf(stderr, "Usage: %s [-f] [-s] [user]\n", progname);
-			exit(1);
-		}
-		printf("Changing %s for %s.\n",
-		    dochfn ? "finger information" :
-			dochsh ? "login shell" : "password",
-		    uname);
-	} else
+		if (uname = getlogin())
+			printf("Changing %s for %s.\n", dochfn ? "finger information" : dochsh ? "login shell" : "password", uname);
+	}
+	else
 		uname = *argv++;
-	pwd = getpwnam(uname);
-	if (pwd == NULL) {
+	u = getuid();
+	if (!(pwd = uname ? getpwnam(uname) : getpwuid(u))) {
 		fprintf(stderr, "passwd: %s: unknown user.\n", uname);
 		exit(1);
 	}
-	u = getuid();
 	if (u != 0 && u != pwd->pw_uid) {
 		printf("Permission denied.\n");
 		exit(1);
