@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.96 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.97 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.96 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.97 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -534,16 +534,28 @@ myhostname(hostbuf, size)
 	**  All in all, a bit of a mess.
 	*/
 
-	if (strchr(hostbuf, '.') == NULL &&
-	    !getcanonname(hostbuf, size, TRUE) &&
-	    h_errno == TRY_AGAIN)
+	if (strchr(hostbuf, '.') == NULL)
 	{
-		/* try twice in case name server not yet started up */
-		message("My unqualifed host name (%s) unknown to DNS; sleeping for retry",
-			hostbuf);
-		sleep(60);
-		if (!getcanonname(hostbuf, size, TRUE))
-			errno = h_errno + E_DNSBASE;
+		int nmaps;
+		int i;
+		char *maptype[MAXMAPSTACK];
+		short mapreturn[MAXMAPACTIONS];
+
+		nmaps = switch_map_find("hosts", maptype, mapreturn);
+		for (i = 0; i < nmaps; i++)
+			if (strcmp(maptype[i], "dns") == 0)
+				break;
+		if (i < nmaps &&
+		    !dns_getcanonname(hostbuf, size, TRUE) &&
+		    h_errno == TRY_AGAIN)
+		{
+			/* try twice in case name server not yet started up */
+			message("My unqualifed host name (%s) unknown to DNS; sleeping for retry",
+				hostbuf);
+			sleep(60);
+			if (!dns_getcanonname(hostbuf, size, TRUE))
+				errno = h_errno + E_DNSBASE;
+		}
 	}
 #endif
 	return (hp);
