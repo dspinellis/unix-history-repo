@@ -61,5 +61,33 @@
 #define	__CONCAT(x,y)	x/**/y
 #define	__STRING(x)	"x"
 
+/* delete ANSI C keywords */
+#define const                           
+#define inline
+#define signed
+#define volatile
 #endif	/* !(__STDC__ || __cplusplus) */
+
+/*
+ * GCC has extensions for declaring functions as const (`pure' - always returns
+ * the same value given the same inputs, i.e., has no external state and
+ * no side effects) and volatile (nonreturning or `dead').
+ * These mainly affect optimization and warnings.  
+ *
+ * To facilitate portability of a non-standard extension we define __pure
+ * and __dead and use these for qualifying functions. Non-gcc compilers
+ * which have similar extensions can then define these appropriately.
+ *
+ * Unfortunately, GCC complains if these are used under strict ANSI mode 
+ * (`gcc -ansi -pedantic'), hence we need to define them only if compiling 
+ * without this.
+ */
+#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+#define __dead __volatile
+#define __pure __const
+#else
+#define __dead
+#define __pure
+#endif
+
 #endif /* !_CDEFS_H_ */
