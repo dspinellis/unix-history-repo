@@ -1,4 +1,4 @@
-/*	init_main.c	4.39	82/10/10	*/
+/*	init_main.c	4.40	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -200,10 +200,8 @@ bhinit()
  */
 binit()
 {
-	register struct buf *bp;
-	register struct buf *dp;
+	register struct buf *bp, *dp;
 	register int i;
-	struct bdevsw *bdp;
 	struct swdevt *swp;
 
 	for (dp = bfreelist; dp < &bfreelist[BQUEUES]; dp++) {
@@ -223,8 +221,6 @@ binit()
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
 	}
-	for (bdp = bdevsw; bdp->d_open; bdp++)
-		nblkdev++;
 	/*
 	 * Count swap devices, and adjust total swap space available.
 	 * Some of this space will not be available until a vswapon()
@@ -267,7 +263,6 @@ cinit()
 {
 	register int ccp;
 	register struct cblock *cp;
-	register struct cdevsw *cdp;
 
 	ccp = (int)cfree;
 	ccp = (ccp+CROUND) & ~CROUND;
@@ -276,8 +271,4 @@ cinit()
 		cfreelist = cp;
 		cfreecount += CBSIZE;
 	}
-	ccp = 0;
-	for(cdp = cdevsw; cdp->d_open; cdp++)
-		ccp++;
-	nchrdev = ccp;
 }
