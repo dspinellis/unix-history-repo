@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist%
  *
- *	@(#)isa.c	1.4 (Berkeley) %G%
+ *	@(#)isa.c	1.5 (Berkeley) %G%
  */
 
 /*
@@ -18,7 +18,6 @@
 #include "systm.h"
 #include "conf.h"
 #include "file.h"
-#include "user.h"
 #include "buf.h"
 #include "uio.h"
 #include "syslog.h"
@@ -87,7 +86,7 @@ config_isadev(isdp, mp)
 	} else	return(0);
 }
 
-#define	IDTVEC(name)	X/**/name
+#define	IDTVEC(name)	__CONCAT(X,name)
 /* default interrupt vector table */
 extern	IDTVEC(intr0), IDTVEC(intr1), IDTVEC(intr2), IDTVEC(intr3),
 	IDTVEC(intr4), IDTVEC(intr5), IDTVEC(intr6), IDTVEC(intr7),
@@ -186,7 +185,7 @@ int nbytes;
 	if (raw) phys = (unsigned long) bounce;
 	else phys = addr;
 	/* translate to physical */
-	phys = phys - sbase;
+	phys = pmap_extract(pmap_kernel(), (vm_offset_t)phys);
 	outb(0x4,phys & 0xFF);
 	outb(0x4,(phys>>8) & 0xFF);
 	outb(0x81,(phys>>16) & 0xFF);

@@ -9,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)clock.c	5.4 (Berkeley) %G%
+ *	@(#)clock.c	5.5 (Berkeley) %G%
  */
 
 /*
@@ -19,19 +19,60 @@
 #include "time.h"
 #include "kernel.h"
 #include "machine/segments.h"
-#include "machine/isa/icu.h"
-#include "machine/isa/isa.h"
+#include "i386/isa/icu.h"
+#include "i386/isa/isa.h"
+#include "i386/isa/rtc.h"
 
 #define DAYST 119
 #define DAYEN 303
 
 startrtclock() {
+	int s;
 
 	/* initialize 8253 clock */
 	outb (IO_TIMER1+3, 0x36);
 	outb (IO_TIMER1, 1193182/hz);
 	outb (IO_TIMER1, (1193182/hz)/256);
+
+#ifdef notdef
+	/* NMI fail safe 1/4 sec  */
+	/* initialize 8253 clock */
+	outb(0x461,0);
+	outb (IO_TIMER2+3, 0x30);
+	outb (IO_TIMER2, 298300*40);
+	outb (IO_TIMER2, (298300*40)/256);
+	outb(0x461,4);
+printf("armed ");
+#endif
+
+	/* initialize brain-dead battery powered clock */
+	outb (IO_RTC, RTC_STATUSA);
+	outb (IO_RTC+1, 0x26);
+	outb (IO_RTC, RTC_STATUSB);
+	outb (IO_RTC+1, 2);
+
+	/*outb (IO_RTC, RTC_STATUSD);
+	if((inb(IO_RTC+1) & 0x80) == 0)
+		printf("rtc lost power\n");
+	outb (IO_RTC, RTC_STATUSD);
+	outb (IO_RTC+1, 0x80);*/
+
+	outb (IO_RTC, RTC_DIAG);
+	if (s = inb (IO_RTC+1))
+		printf("RTC BIOS diagnostic error %b\n", s, RTCDG_BITS);
+	outb (IO_RTC, RTC_DIAG);
+	outb (IO_RTC+1, 0);
 }
+
+#ifdef ARGOx
+reprimefailsafe(){
+	outb(0x461,0);
+	outb (IO_TIMER2+3, 0x30);
+	outb (IO_TIMER2, 298300*40);
+	outb (IO_TIMER2, (298300*40)/256);
+	outb(0x461,4);
+}
+#endif
 
 /* convert 2 digit BCD number */
 bcd(i)
@@ -50,8 +91,8 @@ int y;
 
 	ret = 0; y = y - 70;
 	for(i=0;i<y;i++) {
-		if (i % 4) ret += 31536000;
-		else ret += 31622400;
+		if (i % 4) ret += 365*24*60*60;
+		else ret += 366*24*60*60;
 	}
 	return ret;
 }
@@ -68,12 +109,12 @@ int m,leap;
 	for(i=1;i<m;i++) {
 		switch(i){
 		case 1: case 3: case 5: case 7: case 8: case 10: case 12:
-			ret += 2678400; break;
+			ret += 31*24*60*60; break;
 		case 4: case 6: case 9: case 11:
-			ret += 2592000; break;
+			ret += 30*24*60*60; break;
 		case 2:
-			if (leap) ret += 2505600;
-			else ret += 2419200;
+			if (leap) ret += 29*24*60*60;
+			else ret += 28*24*60*60;
 		}
 	}
 	return ret;
@@ -89,22 +130,35 @@ inittodr(base)
 {
 	unsigned long sec;
 	int leap,day_week,t,yd;
+int sa,s;
 
-	sec = bcd(rtcin(9)); leap = !(sec % 4); sec += ytos(sec); /* year    */
-	yd = mtos(bcd(rtcin(8)),leap); sec += yd;		/* month   */
-	t = (bcd(rtcin(7))-1) * 86400; sec += t; yd += t;	/* date    */
-	day_week = rtcin(6);					/* day     */
-	sec += bcd(rtcin(4)) * 3600;				/* hour    */
-	sec += bcd(rtcin(2)) * 60;				/* minutes */
-	sec += bcd(rtcin(0));					/* seconds */
+	/* do we have a realtime clock present? (otherwise we loop below) */
+	sa = rtcin(RTC_STATUSA);
+	if (sa == 0xff || sa == 0) return;
 
+	/* ready for a read? */
+	while ((sa&RTCSA_TUP) == RTCSA_TUP)
+		sa = rtcin(RTC_STATUSA);
+
+	sec = bcd(rtcin(RTC_YEAR));
+	leap = !(sec % 4); sec += ytos(sec); /* year    */
+	yd = mtos(bcd(rtcin(RTC_MONTH)),leap); sec += yd;	/* month   */
+	t = (bcd(rtcin(RTC_DAY))-1) * 24*60*60; sec += t; yd += t; /* date    */
+	day_week = rtcin(RTC_WDAY);				/* day     */
+	sec += bcd(rtcin(RTC_HRS)) * 60*60;			/* hour    */
+	sec += bcd(rtcin(RTC_MIN)) * 60;			/* minutes */
+	sec += bcd(rtcin(RTC_SEC));				/* seconds */
+	sec -= 24*60*60; /* XXX why ??? */
+
+#ifdef notdef
 	/* XXX off by one? Need to calculate DST on SUNDAY */
 	/* Perhaps we should have the RTC hold GMT time to save */
 	/* us the bother of converting. */
-	yd = yd / 86400;
+	yd = yd / 24*60*60;
 	if ((yd >= DAYST) && ( yd <= DAYEN)) {
-		sec -= 3600;
+		sec -= 60*60;
 	}
+#endif
 	sec += tz.tz_minuteswest * 60;
 
 	time.tv_sec = sec;
@@ -136,16 +190,26 @@ test_inittodr(base)
 }
 #endif
 
+#ifdef notdef
 /*
  * retreve a value from realtime clock
  */
 u_char rtcin(n) {
 	u_char val;
 
+	/*outb(IO_RTC, RTC_STATUSA);
+	do val = inb(IO_RTC+1) ; while (val&0x80);*/
+
 	outb(IO_RTC,n);
+	DELAY(100);
+	if (inb(IO_RTC) != n) {
+		outb(IO_RTC,n);
+		DELAY(100);
+	}
 	do val = inb(IO_RTC+1) ; while (val != inb(IO_RTC+1));
 	return (val);
 }
+#endif
 
 /*
  * Restart the clock.
@@ -154,7 +218,7 @@ resettodr()
 {
 }
 
-#define V(s)	V/**/s
+#define V(s)	__CONCAT(V, s)
 extern V(clk)();
 enablertclock() {
 	INTREN(IRQ0);

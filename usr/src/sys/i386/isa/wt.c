@@ -5,7 +5,7 @@
  * Copyright (c) 1989 Carnegie-Mellon University
  * All rights reserved.  The CMU software License Agreement specifies
  * the terms and conditions for use and redistribution.
- *	@(#)wt.c	1.3 (Berkeley) %G%
+ *	@(#)wt.c	1.4 (Berkeley) 1/18/91
  */
 /* 
  * HISTORY
@@ -35,16 +35,15 @@
  *	Support Bell Tech QIC-02 and WANGTEK QIC-36 or QIC-02
  */
 
-#include <sys/errno.h>
+/*#include <sys/errno.h>
 #include <sys/signal.h>
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/buf.h>
-#include <sys/dir.h>
-#include <sys/user.h>
-#include <sys/file.h>
-#include <sys/proc.h>
-#include <machine/isa/wtreg.h>
+#include <sys/types.h>*/
+#include "sys/param.h"
+#include "sys/buf.h"
+#include "sys/file.h"
+#include "sys/proc.h"
+#include "sys/user.h"
+#include "i386/isa/wtreg.h"
 
 #ifdef	ORC
 unsigned wtport = 0x288;	/* base I/O port of controller	*/
@@ -173,7 +172,6 @@ char isrlock;			/* isr() flag */
 
 struct proc * Hogproc;	/* no Hogproc on Microport */
 #define	ftoseg(x)	((unsigned) (x >> 16))
-#define	seterror(err)	u.u_error = err
 
 struct	wtstatus {
 	ushort	wt_err;		/* code for error encountered */
@@ -242,6 +240,7 @@ register struct buf *bp;
 {
 	unsigned ucnt1, ucnt2, finished;
 	unsigned long adr1, adr2;
+	int	bad;
 
 	adr1 = kvtop(bp->b_un.b_addr);
 #ifdef DEBUG
@@ -273,7 +272,7 @@ register struct buf *bp;
 		Hogproc = myproc;
 	}
 	if (bp->b_flags & B_READ) {
-		int	bad = 0;
+		bad = 0;
 
 		/* For now, we assume that all data will be copied out */
 		/* If read command outstanding, just skip down */
@@ -358,10 +357,11 @@ errxit:				bp->b_flags |= B_ERROR;
 		/* All writes and/or copyins were fine! */
 		else
 			finished = bp->b_bcount;
-		pollrdy();
+		bad = pollrdy();
 	}
 
 	endio:
+	if(bad == EIO) bad = 0;
 	wterror.wt_err = 0;
 	if (exflag && wtsense((bp->b_flags & B_READ) ? TP_WRP : 0)) {
 		if ((wterror.wt_err & TP_ST0) 
@@ -385,6 +385,10 @@ errxit:				bp->b_flags |= B_ERROR;
 		}
 	}
 
+	if(bad) {
+		bp->b_flags |= B_ERROR;
+		bp->b_error = bad;
+	}
 	bp->b_resid = bp->b_bcount - finished;
 xit:
 	biodone(bp);
@@ -440,7 +444,6 @@ wtread(dev, uio)
 struct uio	*uio;
 {
 	if (wtflags & TPSESS) {
-		seterror(EIO);
 		return(EIO);
 	}
 	physio(wtrawio, &rwtbuf, dev, B_READ, wt_minphys, uio);
@@ -454,7 +457,6 @@ wtwrite(dev, uio)
 struct uio	*uio;
 {
 	if (wtflags & TPSESS) {
-		seterror(EIO);
 		return(EIO);
 	}
 	physio(wtrawio, &rwtbuf, dev, B_WRITE, wt_minphys, uio);
@@ -477,11 +479,11 @@ int mode;
 		if ((qicmd((int)arg) == ERROR) || (rdyexc(HZ) == ERROR))
 		{
 			wtsense(0);
-			seterror(EIO);
+			return(EIO);
 		}
-		return;
+		return(0);
 	}
-	seterror(EINVAL);
+	return(EINVAL);
 }
 
 /*
@@ -499,15 +501,12 @@ int	dev, flag;
 	printf("wtopen ...\n");
 #endif
 	if (!pageaddr) {
-		nodev();
 		return(ENXIO);
 	}
 	if (wtflags & (TPINUSE)) {
-		seterror(ENXIO);
 		return(ENXIO);
 	}
 	if (wtflags & (TPDEAD)) {
-		seterror(EIO);
 		return(EIO);
 	}
 	/* If a rewind from the last session is going on, wait */
@@ -521,14 +520,12 @@ int	dev, flag;
 	 * This allows multiple volumes. */
 	if (wtflags & TPSTART) { 
 		if (t_reset() != SUCCESS) {
-			nodev();
 			return(ENXIO);
 		}
 #ifdef DEBUG
 		debug("reset done. calling wtsense\n");
 #endif
 		if (wtsense(TP_WRP) == ERROR) {
-			seterror(EIO);
 			return (EIO);
 		}
 #ifdef DEBUG
@@ -543,7 +540,7 @@ int	dev, flag;
 	if (flag & FWRITE)
 		wtflags |= TPWRITE;
 	rwtbuf.b_flags = 0;
-	myproc = u.u_procp;		/* for comparison */
+	myproc = curproc;		/* for comparison */
 	switch(TP_DENS(dev)) {
 case 0:
 cmds(0x28);
@@ -737,7 +734,7 @@ wtwind() {
 	rwind();	/* actually start rewind */
 }
 
-wtintr(vec) {
+wtintr(unit) {
 	if (wtflags & (TPWO|TPRO))
 	{
 		isrlock = 1;
@@ -791,13 +788,20 @@ pollrdy()
 	debug("Pollrdy\n");
 #endif
 	sps = splbio();
-	while (wtio)
-		sleep(&wci, WTPRI);
+	while (wtio) {
+		int error;
+
+		if (error = tsleep((caddr_t)&wci, WTPRI | PCATCH,
+			"wtpoll", 0)) {
+			splx(sps);
+			return(error);
+		}
+	}
 	splx(sps);
 #ifdef DEBUG
 	debug("Finish poll, wci %d exflag %d\n", wci, exflag);
 #endif
-	return exflag;
+	return (EIO);
 }
 
 wtdma()		/* start up i/o operation, called from dma() in wtlib1.s */
@@ -1109,8 +1113,8 @@ wtdump()
 {
 }
 
-#include "machine/isa/isa_device.h"
-#include "machine/isa/icu.h"
+#include "i386/isa/isa_device.h"
+#include "i386/isa/icu.h"
 
 int	wtprobe(), wtattach();
 struct	isa_driver wtdriver = {

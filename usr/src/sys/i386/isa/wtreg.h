@@ -3,7 +3,7 @@
  * Copyright (c) 1989 Carnegie-Mellon University
  * All rights reserved.  The CMU software License Agreement specifies
  * the terms and conditions for use and redistribution.
- *	@(#)wtreg.h	1.1 (Berkeley) %G%
+ *	@(#)wtreg.h	1.1 (Berkeley) 11/8/90
  */
 /* 
  * HISTORY
