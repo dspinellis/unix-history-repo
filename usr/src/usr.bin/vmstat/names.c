@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)names.c	5.3 (Berkeley) %G%
+ *	@(#)names.c	5.4 (Berkeley) %G%
  */
 
 #if !defined(hp300) && !defined(tahoe) && !defined(vax)
@@ -34,14 +34,14 @@ read_names()
 	}
 	p = buf;
 	for (;; hp += sizeof hdev) {
-		(void)kvm_read((void *)hp, &hdev, sizeof hdev);
+		(void)kvm_read(kd, hp, &hdev, sizeof hdev);
 		if (hdev.hp_driver == 0)
 			break;
 		if (hdev.hp_dk < 0 || hdev.hp_alive == 0 ||
 		    hdev.hp_cdriver == 0)
 			continue;
-		(void)kvm_read(hdev.hp_driver, &hdrv, sizeof hdrv);
-		(void)kvm_read(hdrv.d_name, name, sizeof name);
+		(void)kvm_read(kd, (u_long)hdev.hp_driver, &hdrv, sizeof hdrv);
+		(void)kvm_read(kd, (u_long)hdrv.d_name, name, sizeof name);
 		dr_name[hdev.hp_dk] = p;
 		p += sprintf(p, "%s%d", name, hdev.hp_unit) + 1;
 	}
@@ -70,13 +70,13 @@ read_names()
 	}
 	p = buf;
 	for (;; up += sizeof udev) {
-		(void)kvm_read(up, &udev, sizeof udev);
+		(void)kvm_read(kd, up, &udev, sizeof udev);
 		if (udev.ui_driver == 0)
 			break;
 		if (udev.ui_dk < 0 || udev.ui_alive == 0)
 			continue;
-		(void)kvm_read(udev.ui_driver, &udrv, sizeof udrv);
-		(void)kvm_read(udrv.ud_dname, name, sizeof name);
+		(void)kvm_read(kd, udev.ui_driver, &udrv, sizeof udrv);
+		(void)kvm_read(kd, udrv.ud_dname, name, sizeof name);
 		dr_name[udev.ui_dk] = p;
 		p += sprintf(p, "%s%d", name, udev.ui_unit);
 	}
@@ -110,24 +110,24 @@ read_names()
 	}
 	p = buf;
 	if (mp) for (;; mp += sizeof mdev) {
-		(void)kvm_read(mp, &mdev, sizeof mdev);
+		(void)kvm_read(kd, mp, &mdev, sizeof mdev);
 		if (mdev.mi_driver == 0)
 			break;
 		if (mdev.mi_dk < 0 || mdev.mi_alive == 0)
 			continue;
-		(void)kvm_read(mdev.mi_driver, &mdrv, sizeof mdrv);
-		(void)kvm_read(mdrv.md_dname, name, sizeof name);
+		(void)kvm_read(kd, mdev.mi_driver, &mdrv, sizeof mdrv);
+		(void)kvm_rea(kd, mdrv.md_dname, name, sizeof name);
 		dr_name[mdev.mi_dk] = p;
 		p += sprintf(p, "%s%d", name, mdev.mi_unit);
 	}
 	if (up) for (;; up += sizeof udev) {
-		(void)kvm_read(up, &udev, sizeof udev);
+		(void)kvm_read(kd, up, &udev, sizeof udev);
 		if (udev.ui_driver == 0)
 			break;
 		if (udev.ui_dk < 0 || udev.ui_alive == 0)
 			continue;
-		(void)kvm_read(udev.ui_driver, &udrv, sizeof udrv);
-		(void)kvm_read(udrv.ud_dname, name, sizeof name);
+		(void)kvm_read(kd, udev.ui_driver, &udrv, sizeof udrv);
+		(void)kvm_read(kd, udrv.ud_dname, name, sizeof name);
 		dr_name[udev.ui_dk] = p;
 		p += sprintf(p, "%s%d", name, udev.ui_unit);
 	}
