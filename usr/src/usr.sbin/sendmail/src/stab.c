@@ -1,6 +1,20 @@
+/*
+**  Sendmail
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
+**
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+*/
+
+#ifndef lint
+static char	SccsId[] = "@(#)stab.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include "sendmail.h"
 
-SCCSID(@(#)stab.c	4.2		%G%);
+SCCSID(@(#)stab.c	5.1		%G%);
 
 /*
 **  STAB -- manage the symbol table

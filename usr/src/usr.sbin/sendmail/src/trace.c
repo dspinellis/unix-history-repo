@@ -1,7 +1,21 @@
+/*
+**  Sendmail
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
+**
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+*/
+
+#ifndef lint
+static char	SccsId[] = "@(#)trace.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)trace.c	4.1		%G%);
+SCCSID(@(#)trace.c	5.1		%G%);
 
 /*
 **  TtSETUP -- set up for trace package.
