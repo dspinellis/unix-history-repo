@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.13	(Berkeley)	83/05/03";
+static char sccsid[] = "@(#)restore.c	3.14	(Berkeley)	83/05/14";
 #endif
 
 #include "restore.h"
@@ -226,6 +226,21 @@ nodeupdates(name, ino, type)
 		break;
 
 	/*
+	 * A file on the tape has a name which is the same as a name
+	 * corresponding to a different file in the previous dump.
+	 * Since all files to be deleted have already been removed,
+	 * this file must live under a new name in this dump level.
+	 * For the time being it is given a temporary name in anticipation
+	 * that it will be renamed when it is later found by inode number
+	 * (see INOFND case below). The entry is then treated as a new
+	 * file.
+	 */
+	case ONTAPE|NAMEFND:
+	case ONTAPE|NAMEFND|MODECHG:
+		mktempname(np);
+		/* fall through */
+
+	/*
 	 * A previously non-existent file.
 	 * Add it to the file system, and request its extraction.
 	 * If it is a directory, create it immediately.
@@ -278,23 +293,8 @@ nodeupdates(name, ino, type)
 		break;
 
 	/*
-	 * A file on the tape has a name which is the same as a name
-	 * corresponding to a different file in the previous dump.
-	 * Since all files to be deleted have already been removed,
-	 * this file must live under a new name in this dump level.
-	 * For the time being it is given a temporary name in anticipation
-	 * that it will be renamed when it is later found by inode number
-	 * (see INOFND case above).
-	 * This then falls into the simple case of a previously known
-	 * file which is to be updated.
+	 * A previously known file which is to be updated.
 	 */
-	case ONTAPE|NAMEFND:
-	case ONTAPE|NAMEFND|MODECHG:
-		mktempname(np);
-		np = addentry(name, ino, type);
-		if (type == NODE)
-			newnode(np);
-		/* fall through */
 	case ONTAPE|INOFND|NAMEFND:
 		if (type == LEAF)
 			np->e_flags |= EXTRACT;
