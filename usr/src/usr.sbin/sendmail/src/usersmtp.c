@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.29		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.30		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.29		%G%);
+SCCSID(@(#)usersmtp.c	3.30		%G%);
 
 
 
@@ -211,7 +211,7 @@ smtpfinish(m, e)
 		return (EX_PROTOCOL);
 	(*e->e_puthdr)(SmtpOut, m, CurEnv);
 	fprintf(SmtpOut, "\n");
-	(*e->e_putbody)(SmtpOut, m, TRUE);
+	(*e->e_putbody)(SmtpOut, m, TRUE, CurEnv);
 	smtpmessage(".");
 	r = reply();
 	if (r < 0 || REPLYTYPE(r) == 4)
@@ -286,8 +286,8 @@ reply()
 		register char *p;
 
 		/* actually do the read */
-		if (Xscript != NULL)
-			(void) fflush(Xscript);		/* for debugging */
+		if (CurEnv->e_xfp != NULL)
+			(void) fflush(CurEnv->e_xfp);	/* for debugging */
 		if (!SmtpClosing)
 		{
 			p = sfgets(SmtpReplyBuffer, sizeof SmtpReplyBuffer, SmtpIn);
@@ -299,8 +299,8 @@ reply()
 		/* log the input in the transcript for future error returns */
 		if (Verbose && !HoldErrs)
 			nmessage(Arpa_Info, "%s", SmtpReplyBuffer);
-		if (Xscript != NULL)
-			fprintf(Xscript, "%s\n", SmtpReplyBuffer);
+		if (CurEnv->e_xfp != NULL)
+			fprintf(CurEnv->e_xfp, "%s\n", SmtpReplyBuffer);
 
 		/* if continuation is required, we can go on */
 		if (SmtpReplyBuffer[3] == '-' || !isdigit(SmtpReplyBuffer[0]))
@@ -346,8 +346,8 @@ smtpmessage(f, a, b, c)
 	(void) sprintf(buf, f, a, b, c);
 	if (tTd(18, 1) || (Verbose && !HoldErrs))
 		nmessage(Arpa_Info, ">>> %s", buf);
-	if (Xscript != NULL)
-		fprintf(Xscript, ">>> %s\n", buf);
+	if (CurEnv->e_xfp != NULL)
+		fprintf(CurEnv->e_xfp, ">>> %s\n", buf);
 	if (!SmtpClosing)
 		fprintf(SmtpOut, "%s\r\n", buf);
 }

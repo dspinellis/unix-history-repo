@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.50		%G%);
+SCCSID(@(#)savemail.c	3.51		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -102,9 +102,9 @@ savemail(e)
 			expand("$n", buf, &buf[sizeof buf - 1], e);
 			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail.\r\n");
-			if (Xscript != NULL)
+			if (e->e_xfp != NULL)
 			{
-				(void) fflush(Xscript);
+				(void) fflush(e->e_xfp);
 				xfile = fopen(queuename(e, 'x'), "r");
 			}
 			else
@@ -167,7 +167,7 @@ savemail(e)
 		p = "/usr/tmp";
 # endif
 	}
-	if (p != NULL && TempFile != NULL)
+	if (p != NULL && e->e_dfp != NULL)
 	{
 		auto ADDRESS *q;
 		bool oldverb = Verbose;
@@ -249,7 +249,7 @@ returntosender(msg, returnto, sendbody)
 	ee->e_putbody = errbody;
 	ee->e_flags |= EF_RESPONSE;
 	ee->e_sendqueue = returnto;
-	(void) queuename(ee, '\0');
+	openxscript(ee);
 	for (q = returnto; q != NULL; q = q->q_next)
 	{
 		if (q->q_alias == NULL)
@@ -293,6 +293,7 @@ returntosender(msg, returnto, sendbody)
 **		xfile -- the transcript file.
 **		fp -- the output file.
 **		xdot -- if set, use the SMTP hidden dot algorithm.
+**		e -- the envelope we are working in.
 **
 **	Returns:
 **		none
@@ -301,10 +302,11 @@ returntosender(msg, returnto, sendbody)
 **		Outputs the body of an error message.
 */
 
-errbody(fp, m, xdot)
+errbody(fp, m, xdot, e)
 	register FILE *fp;
 	register struct mailer *m;
 	bool xdot;
+	register ENVELOPE *e;
 {
 	register FILE *xfile;
 	char buf[MAXLINE];
@@ -316,7 +318,7 @@ errbody(fp, m, xdot)
 	*/
 
 	(void) fflush(stdout);
-	p = queuename(CurEnv->e_parent, 'x');
+	p = queuename(e->e_parent, 'x');
 	if ((xfile = fopen(p, "r")) == NULL)
 	{
 		syserr("Cannot open %s", p);
@@ -325,8 +327,8 @@ errbody(fp, m, xdot)
 	else
 	{
 		fprintf(fp, "   ----- Transcript of session follows -----\n");
-		if (Xscript != NULL)
-			(void) fflush(Xscript);
+		if (e->e_xfp != NULL)
+			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
 			putline(buf, fp, fullsmtp);
 		(void) fclose(xfile);
@@ -339,21 +341,21 @@ errbody(fp, m, xdot)
 
 	if (NoReturn)
 		fprintf(fp, "\n   ----- Return message suppressed -----\n\n");
-	else if (TempFile != NULL)
+	else if (e->e_parent->e_dfp != NULL)
 	{
 		if (SendBody)
 		{
 			fprintf(fp, "\n   ----- Unsent message follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, m, CurEnv->e_parent);
+			putheader(fp, m, e->e_parent);
 			fprintf(fp, "\n");
-			putbody(fp, m, xdot);
+			putbody(fp, m, xdot, e->e_parent);
 		}
 		else
 		{
 			fprintf(fp, "\n  ----- Message header follows -----\n");
 			(void) fflush(fp);
-			putheader(fp, m, CurEnv->e_parent);
+			putheader(fp, m, e->e_parent);
 		}
 	}
 	else

@@ -2,10 +2,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.40		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.41		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.40		%G%);
+SCCSID(@(#)srvrsmtp.c	3.41		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -128,8 +128,8 @@ smtp()
 		fixcrlf(inp, TRUE);
 
 		/* echo command to transcript */
-		if (Xscript != NULL)
-			fprintf(Xscript, "<<< %s\n", inp);
+		if (CurEnv->e_xfp != NULL)
+			fprintf(CurEnv->e_xfp, "<<< %s\n", inp);
 
 		/* break off command */
 		for (p = inp; isspace(*p); p++)
@@ -540,6 +540,7 @@ runinchild(label)
 	{
 		/* child */
 		InChild = TRUE;
+		clearenvelope(CurEnv);
 		return (0);
 	}
 }
