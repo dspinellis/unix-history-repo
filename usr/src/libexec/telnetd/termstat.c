@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termstat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)termstat.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -32,7 +32,7 @@ static int def_row = 0, def_col = 0;
 #endif
 #endif	LINEMODE
 
-#ifdef	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 int	newmap = 1;	/* nonzero if \n maps to ^M^J */
 #endif
 
@@ -115,13 +115,13 @@ localstat()
 {
 	void netflush();
 
-#ifdef	CRAY2
+#ifdef	defined(CRAY2) && defined(UNICOS5)
 	/*
 	 * Keep track of that ol' CR/NL mapping while we're in the
 	 * neighborhood.
 	 */
 	newmap = tty_isnewmap();
-#endif	/* CRAY2 */
+#endif	defined(CRAY2) && defined(UNICOS5)
 
 	/*
 	 * Check for state of BINARY options.
@@ -175,8 +175,10 @@ localstat()
 	 * pty.  This becomes the test for linemode on/off when
 	 * using kludge linemode.
 	 */
-	if (lmodetype == KLUDGE_LINEMODE && uselinemode && tty_israw())
+	if (lmodetype == KLUDGE_LINEMODE && uselinemode && tty_israw()) {
 		uselinemode = 0;
+		tty_setlinemode(uselinemode);
+	}
 # endif	/* KLUDGELINEMODE */
 
 	/*
@@ -436,7 +438,7 @@ register int code, parm1, parm2;
 		 */
 		if (terminit() == 0) {
 			def_col = parm1;
-			def_row = parm1;
+			def_row = parm2;
 			return;
 		}
 #endif	/* LINEMODE */
@@ -481,18 +483,18 @@ register int code, parm1, parm2;
 		break;
 	}  /* end of switch */
 
-#ifdef CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 	/*
 	 * Just in case of the likely event that we changed the pty state.
 	 */
 	rcv_ioctl();
-#endif /* CRAY2 */
+#endif	/* defined(CRAY2) && defined(UNICOS5) */
 
 	netflush();
 
 }  /* end of clientstat */
 
-#ifdef	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 termstat()
 {
 	needtermstat = 1;
@@ -505,7 +507,7 @@ _termstat()
 	localstat();
 	rcv_ioctl();
 }
-#endif	/* CRAY2 */
+#endif	/* defined(CRAY2) && defined(UNICOS5) */
 
 #ifdef	LINEMODE
 /*

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -40,23 +40,58 @@ int	hostinfo = 1;			/* do we print login banner? */
 
 #ifdef	CRAY
 extern int      newmap; /* nonzero if \n maps to ^M^J */
-int	lowpty = 0, highpty = 128;	/* low, high pty numbers */
+int	lowpty = 0, highpty;	/* low, high pty numbers */
 #endif /* CRAY */
 
 int debug = 0;
 char *progname;
+
+#if	defined(IP_TOS) && defined(NEED_GETTOS)
+struct tosent {
+	char	*t_name;	/* name */
+	char	**t_aliases;	/* alias list */
+	char	*t_proto;	/* protocol */
+	int	t_tos;		/* Type Of Service bits */
+};
+
+struct tosent *
+gettosbyname(name, proto)
+char *name, *proto;
+{
+	static struct tosent te;
+	static char *aliasp = 0;
+
+	te.t_name = name;
+	te.t_aliases = &aliasp;
+	te.t_proto = proto;
+	te.t_tos = 020;	/* Low Delay bit */
+	return(&te);
+}
+#endif
 
 main(argc, argv)
 	char *argv[];
 {
 	struct sockaddr_in from;
 	int on = 1, fromlen;
+#ifdef IP_TOS
+	struct tosent *tp;
+#endif /* IP_TOS */
 
 	pfrontp = pbackp = ptyobuf;
 	netip = netibuf;
 	nfrontp = nbackp = netobuf;
 
 	progname = *argv;
+
+#ifdef CRAY
+	/*
+	 * Get number of pty's before trying to process options,
+	 * which may include changing pty range.
+	 */
+	highpty = getnpty();
+#endif /* CRAY */
+
 top:
 	argc--, argv++;
 
@@ -82,6 +117,11 @@ top:
 		char *strchr();
 		char *c;
 
+		/*
+		 * Allow the specification of alterations to the pty search
+		 * range.  It is legal to specify only one, and not change the
+		 * other from its default.
+		 */
 		*argv += 2;
 		if (**argv == '\0' && argc)
 			argv++, argc--;
@@ -89,16 +129,16 @@ top:
 		if (c) {
 			*c++ = '\0';
 			highpty = atoi(c);
-		} else
-			highpty = -1;
-		lowpty = atoi(*argv);
-		if ((lowpty > highpty) || (lowpty < 0) || (highpty > 999)) {
+		}
+		if (**argv != '\0')
+			lowpty = atoi(*argv);
+		if ((lowpty > highpty) || (lowpty < 0) || (highpty > 32767)) {
 	usage:
 			fprintf(stderr, "Usage: telnetd [-debug] [-h] ");
 # ifdef	NEWINIT
 			fprintf(stderr, "[-Iinitid] ");
 # endif	/* NEWINIT */
-			fprintf(stderr, "[-l] [-rlowpty-highpty] [port]\n");
+			fprintf(stderr, "[-l] [-r[lowpty]-[highpty]] [port]\n");
 			exit(1);
 		}
 		goto top;
@@ -182,12 +222,18 @@ top:
 	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	}
+
+#ifdef IP_TOS
+	if ((tp = gettosbyname("telnet", "tcp")) &&
+	    (setsockopt(0, IPPROTO_IP, IP_TOS, &tp->t_tos, sizeof(int)) < 0))
+		syslog(LOG_WARNING, "setsockopt (IP_TOS): %m");
+#endif /* IP_TOS */
 	net = 0;
 	doit(&from);
 	/* NOTREACHED */
 }  /* end of main */
 
-int	cleanup();
+void	cleanup();
 
 /*
  * getterminaltype
@@ -345,7 +391,7 @@ int f, p;
 {
 	int on = 1;
 	char hostname[MAXHOSTNAMELEN];
-#ifdef	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 	int termstat();
 	int interrupt(), sendbrk();
 #endif
@@ -423,8 +469,9 @@ int f, p;
 	 * respond because it believes that it is already in DO ECHO
 	 * mode, which we do not want.
 	 */
-	if (hiswants[TELOPT_ECHO] == OPT_YES)
+	if (hiswants[TELOPT_ECHO] == OPT_YES) {
 		willoption(TELOPT_ECHO);
+	}
 
 	/*
 	 * Finally, to clean things up, we turn on our echo.  This
@@ -461,7 +508,7 @@ int f, p;
 
 	(void) ioctl(f, FIONBIO, (char *)&on);
 	(void) ioctl(p, FIONBIO, (char *)&on);
-#ifdef	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 	init_termdriver(f, p, interrupt, sendbrk);
 #endif
 
@@ -482,7 +529,7 @@ int f, p;
 
 	(void) signal(SIGCHLD, cleanup);
 
-#if	defined(CRAY2)
+#if	defined(CRAY2) && defined(UNICOS5)
 	/*
 	 * Cray-2 will send a signal when pty modes are changed by slave
 	 * side.  Set up signal handler now.
@@ -498,6 +545,9 @@ int f, p;
 #endif
 
 	(void) setpgrp(0, 0);
+#ifdef	TCSETCTTY
+	ioctl(p, TCSETCTTY, 0);
+#endif
 
 	/*
 	 * Show banner that getty never gave.
@@ -537,6 +587,13 @@ int f, p;
 		(void) strncat(ptyibuf2, ptyip, pcc+1);
 	ptyip = ptyibuf2;
 	pcc = strlen(ptyip);
+#ifdef	LINEMODE
+	/*
+	 * Last check to make sure all our states are correct.
+	 */
+	init_termbuf();
+	localstat();
+#endif	/* LINEMODE */
 
 	for (;;) {
 		fd_set ibits, obits, xbits;
@@ -545,10 +602,10 @@ int f, p;
 		if (ncc < 0 && pcc < 0)
 			break;
 
-#ifdef	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 		if (needtermstat)
 			_termstat();
-#endif	/* CRAY2 */
+#endif	/* defined(CRAY2) && defined(UNICOS5) */
 		FD_ZERO(&ibits);
 		FD_ZERO(&obits);
 		FD_ZERO(&xbits);
@@ -668,7 +725,7 @@ int f, p;
 			else {
 				if (pcc <= 0)
 					break;
-#ifndef	CRAY2
+#if	!defined(CRAY2) || !defined(UNICOS5)
 #ifdef	LINEMODE
 				/*
 				 * If ioctl from pty, pass it through net
@@ -681,9 +738,19 @@ int f, p;
 #endif	LINEMODE
 				if (ptyibuf[0] & TIOCPKT_FLUSHWRITE) {
 					netclear();	/* clear buffer back */
+#ifdef	notdef
+					/*
+					 * We really should have this in, but
+					 * there are client telnets on some
+					 * operating systems get screwed up
+					 * royally if we send them urgent
+					 * mode data.  So, for now, we'll not
+					 * do this...
+					 */
 					*nfrontp++ = IAC;
 					*nfrontp++ = DM;
 					neturg = nfrontp-1; /* off by one XXX */
+#endif
 				}
 				if (hisopts[TELOPT_LFLOW] &&
 				    (ptyibuf[0] &
@@ -696,7 +763,7 @@ int f, p;
 				}
 				pcc--;
 				ptyip = ptyibuf+1;
-#else	/* CRAY2 */
+#else	/* defined(CRAY2) && defined(UNICOS5) */
 				if (!uselinemode) {
 					unpcc = pcc;
 					unptyip = ptyibuf;
@@ -705,7 +772,7 @@ int f, p;
 					ptyip = ptyibuf2;
 				} else
 					ptyip = ptyibuf;
-#endif	/* CRAY2 */
+#endif	/* defined(CRAY2) && defined(UNICOS5) */
 			}
 		}
 
@@ -715,11 +782,11 @@ int f, p;
 			c = *ptyip++ & 0377, pcc--;
 			if (c == IAC)
 				*nfrontp++ = c;
-#ifdef	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 			else if (c == '\n' &&
 				     myopts[TELOPT_BINARY] == OPT_NO && newmap)
 				*nfrontp++ = '\r';
-#endif	/* CRAY2 */
+#endif	/* defined(CRAY2) && defined(UNICOS5) */
 			*nfrontp++ = c;
 			if ((c == '\r') && (myopts[TELOPT_BINARY] == OPT_NO)) {
 				if (pcc > 0 && ((*ptyip & 0377) == '\n')) {
@@ -729,7 +796,7 @@ int f, p;
 					*nfrontp++ = '\0';
 			}
 		}
-#ifdef CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 		/*
 		 * If chars were left over from the terminal driver,
 		 * note their existence.
@@ -739,7 +806,7 @@ int f, p;
 			unpcc = 0;
 			ptyip = unptyip;
 		}
-#endif /* CRAY2 */
+#endif	/* defined(CRAY2) && defined(UNICOS5) */
 
 		if (FD_ISSET(f, &obits) && (nfrontp - nbackp) > 0)
 			netflush();
@@ -770,7 +837,8 @@ interrupt()
 	(void) ioctl(pty, TCSIG, (char *)SIGINT);
 #else	/* TCSIG */
 	init_termbuf();
-	*pfrontp++ = slctab[SLC_IP].sptr ? *slctab[SLC_IP].sptr : '\177';
+	*pfrontp++ = slctab[SLC_IP].sptr ?
+			(unsigned char)*slctab[SLC_IP].sptr : '\177';
 #endif	/* TCSIG */
 }
 
@@ -786,7 +854,8 @@ sendbrk()
 	(void) ioctl(pty, TCSIG, (char *)SIGQUIT);
 #else	/* TCSIG */
 	init_termbuf();
-	*pfrontp++ = slctab[SLC_ABORT].sptr ? *slctab[SLC_ABORT].sptr : '\034';
+	*pfrontp++ = slctab[SLC_ABORT].sptr ?
+			(unsigned char)*slctab[SLC_ABORT].sptr : '\034';
 #endif	/* TCSIG */
 }
 
@@ -797,14 +866,25 @@ sendsusp()
 # ifdef	TCSIG
 	(void) ioctl(pty, TCSIG, (char *)SIGTSTP);
 # else	/* TCSIG */
-	*pfrontp++ = slctab[SLC_SUSP].sptr ? *slctab[SLC_SUSP].sptr : '\032';
+	*pfrontp++ = slctab[SLC_SUSP].sptr ?
+			(unsigned char)*slctab[SLC_SUSP].sptr : '\032';
 # endif	/* TCSIG */
 #endif	/* SIGTSTP */
 }
 
 doeof()
 {
+#if	defined(USE_TERMIO) && defined(SYSV_TERMIO)
+	extern char oldeofc;
+#endif
 	init_termbuf();
 
-	*pfrontp++ = slctab[SLC_EOF].sptr ? *slctab[SLC_EOF].sptr : '\004';
+#if	defined(USE_TERMIO) && defined(SYSV_TERMIO)
+	if (!tty_isediting()) {
+		*pfrontp++ = oldeofc;
+		return;
+	}
+#endif
+	*pfrontp++ = slctab[SLC_EOF].sptr ?
+			(unsigned char)*slctab[SLC_EOF].sptr : '\004';
 }

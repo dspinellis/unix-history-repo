@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	5.3 (Berkeley) %G%
+ *	@(#)defs.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -60,11 +60,18 @@
 #include <errno.h>
 #include <netdb.h>
 #include <syslog.h>
+#ifndef	LOG_DAEMON
+#define	LOG_DAEMON	0
+#endif
+#ifndef	LOG_ODELAY
+#define	LOG_ODELAY	0
+#endif
 #include <ctype.h>
 #include <strings.h>
 
 #ifndef	USE_TERMIO
 #include <sgtty.h>
+typedef unsigned char cc_t;
 #else
 # ifdef	SYSV_TERMIO
 # include <termio.h>
@@ -91,7 +98,9 @@
 #endif
 
 #ifndef	FD_SET
+#ifndef	HAVE_fd_set
 typedef struct fd_set { int fds_bits[1]; } fd_set;
+#endif
 
 #define	FD_SET(n, p)	((p)->fds_bits[0] |= (1<<(n)))
 #define	FD_CLR(n, p)	((p)->fds_bits[0] &= ~(1<<(n)))
@@ -133,12 +142,12 @@ typedef struct fd_set { int fds_bits[1]; } fd_set;
  */
 typedef struct {
 	unsigned char	flag;		/* the flags for this function */
-	unsigned char	val;		/* the value of the special character */
+	cc_t		val;		/* the value of the special character */
 } slcent, *Slcent;
 
 typedef struct {
 	slcent		defset;		/* the default settings */
 	slcent		current;	/* the current settings */
-	unsigned char	*sptr;		/* a pointer to the char in */
+	cc_t		*sptr;		/* a pointer to the char in */
 					/* system data structures */
 } slcfun, *Slcfun;

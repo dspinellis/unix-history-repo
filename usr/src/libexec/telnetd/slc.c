@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)slc.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)slc.c	5.1 (Berkeley) %G%";
 /*
  * local varibles
  */
-static char	*def_slcbuf = (char *)0;;
+static char	*def_slcbuf = (char *)0;
 static int	def_slclen = 0;
 static int	slcchange;	/* change to slc is requested */
 static char	*slcptr;	/* pointer into slc buffer */
@@ -102,20 +102,18 @@ get_slc_defaults()
  * Add an slc triplet to the slc buffer.
  */
 add_slc(func, flag, val)
-	register unsigned char func, flag, val;
+	register unsigned char func, flag;
+	cc_t val;
 {
 
-	if (func == 0xff)
+	if ((*slcptr++ = func) == 0xff)
 		*slcptr++ = 0xff;
-	*slcptr++ = func;
 
-	if (flag == 0xff)
+	if ((*slcptr++ = flag) == 0xff)
 		*slcptr++ = 0xff;
-	*slcptr++ = flag;
 
-	if (val == 0xff)
+	if ((*slcptr++ = (unsigned char)val) == 0xff)
 		*slcptr++ = 0xff;
-	*slcptr++ = val;
 
 }  /* end of add_slc */
 
@@ -189,7 +187,8 @@ register char **bufp;
  * Figure out what to do about the client's slc
  */
 process_slc(func, flag, val)
-	register unsigned char func, flag, val;
+	register unsigned char func, flag;
+	cc_t val;
 {
 	register int hislevel, mylevel, ack;
 
@@ -244,7 +243,8 @@ process_slc(func, flag, val)
  * Compare client's request with what we are capable of supporting.
  */
 change_slc(func, flag, val)
-	register unsigned char func, flag, val;
+	register unsigned char func, flag;
+	cc_t val;
 {
 	register int hislevel, mylevel;
 	
@@ -340,6 +340,10 @@ change_slc(func, flag, val)
 
 }  /* end of change_slc */
 
+#if	defined(USE_TERMIO) && defined(SYSV_TERMIO)
+cc_t oldeofc = '\004';
+#endif
+
 /*
  * check_slc
  *
@@ -361,8 +365,12 @@ check_slc()
 		 * ICANON is off, because it is not representing
 		 * a special character.
 		 */
-		if (!tty_isediting() && i == SLC_EOF)
-			continue;
+		if (i == SLC_EOF) {
+			if (!tty_isediting())
+				continue;
+			else if (slctab[i].sptr)
+				oldeofc = *(slctab[i].sptr);
+		}
 #endif	/* defined(USE_TERMIO) && defined(SYSV_TERMIO) */
 		if (slctab[i].sptr &&
 				(*(slctab[i].sptr) != slctab[i].current.val)) {
@@ -388,7 +396,8 @@ do_opt_slc(ptr, len)
 register char *ptr;
 register int len;
 {
-	register unsigned char func, flag, val;
+	register unsigned char func, flag;
+	cc_t val;
 	register char *end = (char *)(ptr + len);
 	char *malloc();
 
@@ -398,7 +407,7 @@ register int len;
 			if (ptr >= end) break;
 			flag = *ptr++;
 			if (ptr >= end) break;
-			val = *ptr++;
+			val = (cc_t)*ptr++;
 
 			process_slc(func, flag, val);
 

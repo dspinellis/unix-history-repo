@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -60,7 +60,7 @@ telrcv()
 {
 	register int c;
 	static int state = TS_DATA;
-#ifdef	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 	char *opfrontp = pfrontp;
 #endif
 
@@ -142,8 +142,9 @@ gotiac:			switch (c) {
 				init_termbuf();
 
 				if (slctab[SLC_AO].sptr &&
-				    *slctab[SLC_AO].sptr != '\377') {
-					*pfrontp++ = *slctab[SLC_AO].sptr;
+				    *slctab[SLC_AO].sptr != (cc_t)-1) {
+				    *pfrontp++ =
+					(unsigned char)*slctab[SLC_AO].sptr;
 				}
 
 				netclear();	/* clear buffer back */
@@ -160,14 +161,14 @@ gotiac:			switch (c) {
 			case EC:
 			case EL:
 			    {
-				unsigned char ch;
+				cc_t ch;
 
 				ptyflush();	/* half-hearted */
 				init_termbuf();
 				ch = (c == EC) ? *slctab[SLC_EC].sptr :
 						 *slctab[SLC_EL].sptr;
-				if (ch != '\377')
-					*pfrontp++ = ch;
+				if (ch != (cc_t)-1)
+					*pfrontp++ = (unsigned char)ch;
 				break;
 			    }
 
@@ -290,7 +291,7 @@ gotiac:			switch (c) {
 			exit(1);
 		}
 	}
-#if	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 	if (!linemode) {
 		char	xptyobuf[BUFSIZ+NETSLOP];
 		char	xbuf2[BUFSIZ];
@@ -304,7 +305,7 @@ gotiac:			switch (c) {
 			if ((*nfrontp++ = *cp++) == IAC)
 				*nfrontp++ = IAC;
 	}
-#endif	/* CRAY2 */
+#endif	/* defined(CRAY2) && defined(UNICOS5) */
 }  /* end of telrcv */
 
 /*
@@ -370,9 +371,6 @@ gotiac:			switch (c) {
  * peer probably should be buffering until this option state negotiation
  * is complete.
  *
- * In processing options, request signifies whether this is a request
- * to send or a response.  request is true if this is a request to 
- * send generated locally.
  */
 send_do(option, init)
 	int option, init;
@@ -772,6 +770,7 @@ dontoption(option)
 	/*
 	 * Process client input.
 	 */
+
 	if (will_wont_resp[option]) {
 		will_wont_resp[option]--;
 		if (will_wont_resp[option] && myopts[option] == OPT_NO)
@@ -962,7 +961,7 @@ suboption()
 	default:
 		break;
 	}
-
+	break;
     }  /* end of case TELOPT_LINEMODE */
 #endif
     case TELOPT_STATUS: {
@@ -981,7 +980,8 @@ suboption()
 	default:
 	    break;
 	}
-    }
+	break;
+    }  /* end of case TELOPT_STATUS */
 
     default:
 	break;
