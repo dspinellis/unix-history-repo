@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ap2	8.1 (Berkeley) %G%
+.\"	@(#)ap2	8.2 (Berkeley) %G%
 .\"
 .bp
 .ce 2
@@ -8,483 +8,167 @@ Appendix 2
 .sp
 Default DICTION Patterns
 .sp
-.nf
-.ps 6
-.vs 8
-.mk
- a great deal of 
- a large number of 
- a lot of 
- a majority of 
- a need for 
- a number of 
- a particular preference for 
- a preference for 
- a small number of 
- a tendency to 
- abovementioned 
- absolutely complete 
- absolutely essential 
- accomplished 
- accordingly 
- activate 
- actual
- added increments 
- adequate enough 
- advent 
- afford an opportunity 
- aggregate 
- all of 
- all throughout 
- along the line
- an indication of 
- analyzation 
- and etc 
- and or 
- another additional 
- any and all 
- arrive at a 
- as a matter of fact 
- as a method of 
- as good or better than 
- as of now 
- as per 
- as regards 
- as related to 
- as to 
- assistance 
- assistance to 
- assistance to 
- assuming that 
- at a later date 
- at about 
- at above 
- at all times 
- at an early date 
- at below 
- at the present 
- at the time when 
- at this point in time 
- at this time 
- at which time 
- at your earliest convenience 
- authorization 
- awful
- basic fundamentals 
- basically 
- be cognizant of 
- being as 
- being that 
- brief in duration 
- bring to a conclusion 
- but that 
- but what 
- by means of 
- by the use of 
- carry out experiments 
- center about 
- center around 
-.in +1.5i
-.rt
- center portion 
- check into 
- check on 
- check up on 
- circle around 
- close proximity 
- collaborate together 
- collect together 
- combine together 
- come to an end 
- commence 
- common accord 
- compensation 
- completely eliminated 
- comprise 
- concerning 
- conduct an investigation of 
- conjecture 
- connect up 
- consensus of opinion 
- consequent result
- consolidate together 
- construct 
- contemplate 
- continue on 
- continue to remain 
- could of 
- count up 
- couple together 
- debate about 
- decide on 
- deleterious effect 
- demean
- demonstrate 
- depreciate in value 
- deserving of 
- desirable benefits 
- desirous of 
- different than 
- discontinue 
- disutility 
- divide up 
- doubt but 
- due to 
- duly noted 
- during the time that 
- each and every 
- early beginnings 
- effectuate 
- emotional feelings 
- empty out 
- enclosed herein 
- enclosed herewith 
- end result 
- end up 
- endeavor 
- enter in 
- enter into 
- enthused 
- entirely complete 
- equally good as 
- essentially 
- eventuate 
- every now and then 
- exactly identical 
- experiencing difficulty 
- fabricate 
- face up to 
- facilitate 
- facts and figures 
- fast in action 
- fearful of 
-.in +1.5i
-.rt
- fearful that 
- few in number 
- file away 
- final completion 
- final ending 
- final outcome 
- final result 
- finalize 
- find it interesting to know 
- first and foremost 
- first beginnings 
- first initiated 
- firstly 
- follow after 
- following after 
- for the purpose of 
- for the reason that 
- for the simple reason that 
- for this reason 
- for your information 
- from the point of view of 
- full and complete 
- generally agreed 
- good and 
- got to 
- gratuitous 
- greatly minimize 
- head up 
- help but 
- helps in the production of 
- hopeful
- if and when 
- if at all possible 
- impact 
- implement 
- important essentials 
- importantly 
- in a large measure 
- in a position to 
- in accordance 
- in advance of 
- in agreement with 
- in all cases 
- in back of 
- in behalf of 
- in behind 
- in between 
- in case 
- in close proximity 
- in conflict with 
- in conjunction with 
- in connection with 
- in fact 
- in large measure 
- in many cases 
- in most cases 
- in my opinion I think 
- in order to 
- in rare cases 
- in reference to 
- in regard to 
- in regards to 
- in relation with 
- in short supply 
- in size 
- in terms of 
- in the amount of 
- in the case of 
- in the course of 
- in the event 
- in the field of 
-.in +1.5i
-.rt
- in the form of 
- in the instance of 
- in the interim 
- in the last analysis 
- in the matter of 
- in the near future 
- in the neighborhood of 
- in the not too distant future 
- in the proximity of 
- in the range of 
- in the same way as described 
- in the shape of 
- in the vicinity of 
- in this case 
- in view of the 
- in violation of 
- inasmuch as 
- indicate 
- indicative of 
- initialize 
- initiate 
- injurious to 
- inquire 
- inside of 
- institute a
- intents and purposes 
- intermingle 
- irregardless 
- is defined as 
- is used to control 
- is when 
- is where 
- it is incumbent 
- it stands to reason 
- it was noted that if 
- joint cooperation 
- joint partnership 
- just exactly 
- kind of 
- know about 
- last but not least 
- later on 
- leaving out of consideration 
- liable 
- link up 
- literally 
- little doubt that 
- lose out on 
- lots of 
- main essentials 
- make a 
- make adjustments to 
- make an 
- make application to 
- make contact with 
- make mention of 
- make out a list of 
- make the acquaintance of 
- make the adjustment 
- manner 
- maximum possible 
- meaningful 
- meet up with 
- melt down 
- melt up 
- methodology 
- might of 
- minimize as far as possible 
- minor importance 
- miss out on 
- modification 
-.bp
-.mk
-.in -4.5i
- more preferable 
- most unique 
- must of 
- mutual cooperation 
- necessary requisite 
- necessitate 
- need for 
- nice 
- not be un
- not in a position to 
- not of a high order of accuracy 
- not un
- notwithstanding 
- of considerable magnitude 
- of that 
- of the opinion that 
- off of 
- on a few occasions 
- on account of 
- on behalf of 
- on the grounds that 
- on the occasion 
- on the part of 
- one of the 
- open up 
- operates to correct 
- outside of 
- over with 
- overall 
- past history 
- perceptive of 
- perform a measurement 
- perform the measurement 
- permits the reduction of 
- personalize 
- pertaining to 
- physical size 
- plan ahead 
- plan for the future 
- plan in advance 
- plan on 
- present a conclusion 
- present a report 
- presently 
- prior to 
- prioritize 
- proceed to 
- procure 
- productive of 
- prolong the duration 
- protrude out from 
- provided that 
- pursuant to 
- put to use in 
- range all the way from 
- reason is because 
- reason why 
- recur again 
- reduce down 
- refer back 
- reference to this 
- reflective of 
- regarding
- regretful 
- reinitiate 
- relative to 
- repeat again 
- representative of 
- resultant effect 
- resume again 
- retreat back 
- return again 
- return back 
- revert back 
- seal off 
-.in +1.5i
-.rt
- seems apparent 
- send a communication 
- short space of time 
- should of 
- single unit 
- situation 
- so as to 
- sort of 
- spell out 
- still continue 
- still remain 
- subsequent 
- substantially in agreement 
- succeed in 
- suggestive of 
- superior than 
- surrounding circumstances 
- take appropriate 
- take cognizance of 
- take into consideration 
- termed as 
- terminate 
- termination 
- the author 
- the authors 
- the case that 
- the fact 
- the foregoing 
- the foreseeable future 
- the fullest possible extent 
- the majority of 
- the nature 
- the necessity of 
- the only difference being that 
- the order of 
- the point that 
- the truth is 
- there are not many 
- through the medium of 
- through the use of 
- throughout the entire 
- time interval 
- to summarize the above 
- total effect of all this 
- totality 
- transpire 
- true facts 
- try and 
- ultimate end 
- under a separate cover 
- under date of 
- under separate cover 
- under the necessity to 
- underlying purpose 
- undertake a study 
- uniformly consistent 
- unique 
- until such time as 
- up to this time 
- upshot 
- utilize 
- very 
- very complete 
- very unique 
- vital 
- which 
- with a view to 
- with reference to 
- with regard to 
- with the exception of 
- with the object of 
- with the result that 
- with this in mind, it is clear that 
- within the realm of possibility 
- without further delay 
-.in +1.5i
-.rt
- worth while 
- would of 
-ing behavior 
-wise 
-~  which
-~ about which
-~ after which
-~ at which
-~ between which
-~ by which
-~ for which
-~ from which
-~ in which
-~ into which
-~ of which
-~ on which
-~ on which
-~ over which
-~ through which
-~ to which
-~ under which
-~ upon which
-~ with which
-~ without which
-~clockwise
-~likewise
-~otherwise
+.TS
+lw(1.7i) lw(1.7i) lw(1.7i).
+a great deal of 	at the present 	couple together 
+a large number of 	at the time when 	debate about 
+a lot of 	at this point in time 	decide on 
+a majority of 	at this time 	deleterious effect 
+a need for 	at which time 	demean
+a number of 	at your earliest convenience 	demonstrate 
+a particular preference for 	authorization 	depreciate in value 
+a preference for 	awful	deserving of 
+a small number of 	basic fundamentals 	desirable benefits 
+a tendency to 	basically 	desirous of 
+abovementioned 	be cognizant of 	different than 
+absolutely complete 	being as 	discontinue 
+absolutely essential 	being that 	disutility 
+accomplished 	brief in duration 	divide up 
+accordingly 	bring to a conclusion 	doubt but 
+activate 	but that 	due to 
+actual	but what 	duly noted 
+added increments 	by means of 	during the time that 
+adequate enough 	by the use of 	each and every 
+advent 	carry out experiments 	early beginnings 
+afford an opportunity 	center about 	effectuate 
+aggregate 	center around 	emotional feelings 
+all of 	center portion 	empty out 
+all throughout 	check into 	enclosed herein 
+along the line	check on 	enclosed herewith 
+an indication of 	check up on 	end result 
+analyzation 	circle around 	end up 
+and etc 	close proximity 	endeavor 
+and or 	collaborate together 	enter in 
+another additional 	collect together 	enter into 
+any and all 	combine together 	enthused 
+arrive at a 	come to an end 	entirely complete 
+as a matter of fact 	commence 	equally good as 
+as a method of 	common accord 	essentially 
+as good or better than 	compensation 	eventuate 
+as of now 	completely eliminated 	every now and then 
+as per 	comprise 	exactly identical 
+as regards 	concerning 	experiencing difficulty 
+as related to 	conduct an investigation of 	fabricate 
+as to 	conjecture 	face up to 
+assistance 	connect up 	facilitate 
+assistance to 	consensus of opinion 	facts and figures 
+assistance to 	consequent result	fast in action 
+assuming that 	consolidate together 	fearful of 
+at a later date 	construct 	fearful that 
+at about 	contemplate 	few in number 
+at above 	continue on 	file away 
+at all times 	continue to remain 	final completion 
+at an early date 	could of 	final ending 
+at below 	count up 	final outcome 
+.TE
+.TS
+lw(1.7i) lw(1.7i) lw(1.7i).
+final result 	in regard to 	liable 
+finalize 	in regards to 	link up 
+find it interesting to know 	in relation with 	literally 
+first and foremost 	in short supply 	little doubt that 
+first beginnings 	in size 	lose out on 
+first initiated 	in terms of 	lots of 
+firstly 	in the amount of 	main essentials 
+follow after 	in the case of 	make a 
+following after 	in the course of 	make adjustments to 
+for the purpose of 	in the event 	make an 
+for the reason that 	in the field of 	make application to 
+for the simple reason that 	in the form of 	make contact with 
+for this reason 	in the instance of 	make mention of 
+for your information 	in the interim 	make out a list of 
+from the point of view of 	in the last analysis 	make the acquaintance of 
+full and complete 	in the matter of 	make the adjustment 
+generally agreed 	in the near future 	manner 
+good and 	in the neighborhood of 	maximum possible 
+got to 	in the not too distant future 	meaningful 
+gratuitous 	in the proximity of 	meet up with 
+greatly minimize 	in the range of 	melt down 
+head up 	in the same way as described 	melt up 
+help but 	in the shape of 	methodology 
+helps in the production of 	in the vicinity of 	might of 
+hopeful	in this case 	minimize as far as possible 
+if and when 	in view of the 	minor importance 
+if at all possible 	in violation of 	miss out on 
+impact 	inasmuch as 	modification 
+implement 	indicate 	more preferable 
+important essentials 	indicative of 	most unique 
+importantly 	initialize 	must of 
+in a large measure 	initiate 	mutual cooperation 
+in a position to 	injurious to 	necessary requisite 
+in accordance 	inquire 	necessitate 
+in advance of 	inside of 	need for 
+in agreement with 	institute a	nice 
+in all cases 	intents and purposes 	not be un
+in back of 	intermingle 	not in a position to 
+in behalf of 	irregardless 	not of a high order of accuracy 
+in behind 	is defined as 	not un
+in between 	is used to control 	notwithstanding 
+in case 	is when 	of considerable magnitude 
+in close proximity 	is where 	of that 
+in conflict with 	it is incumbent 	of the opinion that 
+in conjunction with 	it stands to reason 	off of 
+in connection with 	it was noted that if 	on a few occasions 
+in fact 	joint cooperation 	on account of 
+in large measure 	joint partnership 	on behalf of 
+in many cases 	just exactly 	on the grounds that 
+in most cases 	kind of 	on the occasion 
+in my opinion I think 	know about 	on the part of 
+in order to 	last but not least 	one of the 
+in rare cases 	later on 	open up 
+in reference to 	leaving out of consideration 	operates to correct 
+.TE
+.TS
+lw(1.7i) lw(1.7i) lw(1.7i).
+outside of 	short space of time 	underlying purpose 
+over with 	should of 	undertake a study 
+overall 	single unit 	uniformly consistent 
+past history 	situation 	unique 
+perceptive of 	so as to 	until such time as 
+perform a measurement 	sort of 	up to this time 
+perform the measurement 	spell out 	upshot 
+permits the reduction of 	still continue 	utilize 
+personalize 	still remain 	very 
+pertaining to 	subsequent 	very complete 
+physical size 	substantially in agreement 	very unique 
+plan ahead 	succeed in 	vital 
+plan for the future 	suggestive of 	which 
+plan in advance 	superior than 	with a view to 
+plan on 	surrounding circumstances 	with reference to 
+present a conclusion 	take appropriate 	with regard to 
+present a report 	take cognizance of 	with the exception of 
+presently 	take into consideration 	with the object of 
+prior to 	termed as 	with the result that 
+prioritize 	terminate 	with this in mind, it is clear that 
+proceed to 	termination 	within the realm of possibility 
+procure 	the author 	without further delay 
+productive of 	the authors 	worth while 
+prolong the duration 	the case that 	would of 
+protrude out from 	the fact 	ing behavior 
+provided that 	the foregoing 	wise 
+pursuant to 	the foreseeable future 	~which
+put to use in 	the fullest possible extent 	~about which
+range all the way from 	the majority of 	~after which
+reason is because 	the nature 	~at which
+reason why 	the necessity of 	~between which
+recur again 	the only difference being that 	~by which
+reduce down 	the order of 	~for which
+refer back 	the point that 	~from which
+reference to this 	the truth is 	~in which
+reflective of 	there are not many 	~into which
+regarding	through the medium of 	~of which
+regretful 	through the use of 	~on which
+reinitiate 	throughout the entire 	~on which
+relative to 	time interval 	~over which
+repeat again 	to summarize the above 	~through which
+representative of 	total effect of all this 	~to which
+resultant effect 	totality 	~under which
+resume again 	transpire 	~upon which
+retreat back 	true facts 	~with which
+return again 	try and 	~without which
+return back 	ultimate end 	~clockwise
+revert back 	under a separate cover 	~likewise
+seal off 	under date of 	~otherwise
+seems apparent 	under separate cover 
+send a communication 	under the necessity to 
+.TE
