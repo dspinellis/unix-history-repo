@@ -1,6 +1,7 @@
+#	Makefile	7.6	83/07/03
 VERSION=3.7
 #
-# Ex skeletal makefile for VAX VM/Unix 4.1BSD
+# Ex skeletal makefile for VAX VM/Unix 4.2BSD
 #
 # NB: This makefile doesn't indicate any dependencies on header files.
 #
@@ -64,10 +65,10 @@ VHDR=	"Ex Version ${VERSION}"
 	${CC} ${CFLAGS} -c x.c 
 	mv x.o $*.o
 
+all:	a.out exrecover expreserve tags
+
 a.out: ${OBJS}
 	${CC} ${LDFLAGS} ${OBJS} ${TERMLIB}
-
-all:	a.out exrecover expreserve tags
 
 tags:	/tmp
 	${CTAGS} -w ex.[hc] ex_*.[hc]
@@ -116,39 +117,39 @@ ninstall: a.out
 
 # install in standard place (/usr/ucb)
 install: a.out exrecover expreserve
-	-rm -f ${DESTDIR}${BINDIR}/ex
-	-rm -f ${DESTDIR}${BINDIR}/vi
-	-rm -f ${DESTDIR}${BINDIR}/view
-	-rm -f ${DESTDIR}${BINDIR}/edit
-	-rm -f ${DESTDIR}${BINDIR}/e
+	-rm -f ${DESTDIR}/${BINDIR}/ex
+	-rm -f ${DESTDIR}/${BINDIR}/vi
+	-rm -f ${DESTDIR}/${BINDIR}/view
+	-rm -f ${DESTDIR}/${BINDIR}/edit
+	-rm -f ${DESTDIR}/${BINDIR}/e
 	-rm -f ${DESTDIR}/usr/bin/ex
-	install -s -m 1755 a.out ${DESTDIR}${BINDIR}/ex
+	install -s -m 1755 a.out ${DESTDIR}/${BINDIR}/ex
 #	cp ex${VERSION}strings ${DESTDIR}/${LIBDIR}/ex${VERSION}strings
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/edit
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/e
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/vi
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/view
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}/usr/bin/ex
-	chmod 1755 ${DESTDIR}${BINDIR}/ex
-	install -m 4755 exrecover ${DESTDIR}${LIBDIR}/ex${VERSION}recover
-	install -m 4755 expreserve ${DESTDIR}${LIBDIR}/ex${VERSION}preserve
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/edit
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/e
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/vi
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/view
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/usr/bin/ex
+	chmod 1755 ${DESTDIR}/${BINDIR}/ex
+	install -m 4755 exrecover ${DESTDIR}/${LIBDIR}/ex${VERSION}recover
+	install -m 4755 expreserve ${DESTDIR}/${LIBDIR}/ex${VERSION}preserve
 # The following line normally fails.  This is OK.
 	-mkdir ${DESTDIR}/usr/preserve
 
 # move from /usr/new to /usr/ucb
 newucb: a.out
-	-rm -f ${DESTDIR}${BINDIR}/ex
-	-rm -f ${DESTDIR}${BINDIR}/vi
-	-rm -f ${DESTDIR}${BINDIR}/edit
-	-rm -f ${DESTDIR}${BINDIR}/e
+	-rm -f ${DESTDIR}/${BINDIR}/ex
+	-rm -f ${DESTDIR}/${BINDIR}/vi
+	-rm -f ${DESTDIR}/${BINDIR}/edit
+	-rm -f ${DESTDIR}/${BINDIR}/e
 	-rm -f ${DESTDIR}/usr/bin/ex
-	mv ${DESTDIR}${NBINDIR}/ex ${DESTDIR}${NBINDIR}/ex
-	-rm -f ${DESTDIR}${NBINDIR}/vi
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/edit
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/e
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/vi
-	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}/usr/bin/ex
-	chmod 1755 ${DESTDIR}${BINDIR}/ex
+	mv ${DESTDIR}/${NBINDIR}/ex ${DESTDIR}/${NBINDIR}/ex
+	-rm -f ${DESTDIR}/${NBINDIR}/vi
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/edit
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/e
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/vi
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/usr/bin/ex
+	chmod 1755 ${DESTDIR}/${BINDIR}/ex
 
 lint:
 	lint ${CFLAGS} ex.c ex_?*.c
