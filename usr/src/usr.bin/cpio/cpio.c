@@ -11,6 +11,13 @@
 	Reworked cpio which uses getopt(3) to interpret flag arguments and
 	changes reels to the save file name.
 	Performance and size improvements.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00048
+ * --------------------         -----   ----------------------
+ *
+ * 16 Aug 92	Guy Harris		Symbolic link fix
 */
 
 /*	cpio	COMPILE:	cc -O cpio.c -s -i -o cpio -lgen -lerr
@@ -488,7 +495,8 @@ char **argv;
 				i++;
 			strcpy(fullp, &(Hdr.h_name[i]));
 
-			if( PassLink  &&  !A_directory  &&  Dev == Statb.st_dev ) {
+/* 16 Aug 92*/		if( PassLink  &&  !A_directory  &&  !A_symlink
+			    &&  Dev == Statb.st_dev ) {
 				if(link(Hdr.h_name, Fullname) < 0) {
 					switch(errno) {
 						case ENOENT:
