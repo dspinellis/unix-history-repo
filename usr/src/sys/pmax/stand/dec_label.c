@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Ralph Campbell.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dec_label.c	7.1 (Berkeley) %G%
+ *	@(#)dec_label.c	8.1 (Berkeley) %G%
  */
 
 #include <stdio.h>
