@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.92		%G%);
+SCCSID(@(#)deliver.c	3.93		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -856,12 +856,14 @@ giveresponse(stat, force, m)
 				syserr("Bad m_badstat %d", stat);
 			else
 # endif DEBUG
-			statmsg = SysExMsg[i];
+				statmsg = SysExMsg[i];
 		}
 		if (statmsg == NULL)
 			usrerr("unknown mailer response %d", stat);
 		else if (force || !bitset(M_QUIET, m->m_flags) || Verbose)
 			usrerr("%s", statmsg);
+		else
+			fprintf(Xscript, "%s\n", statmsg);
 	}
 
 	/*
