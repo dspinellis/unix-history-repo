@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.60 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.61 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -69,7 +69,6 @@ ffs_mountroot()
 		M_MOUNT, M_WAITOK);
 	mp->mnt_op = &ufs_vfsops;
 	mp->mnt_flag = MNT_RDONLY;
-	mp->mnt_exroot = 0;
 	mp->mnt_mounth = NULLVP;
 	if (error = ffs_mountfs(rootvp, mp, p)) {
 		free(mp, M_MOUNT);
@@ -122,20 +121,6 @@ ffs_mount(mp, path, data, ndp, p)
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
 		return (error);
 	/*
-	 * Process export requests.
-	 */
-	if ((args.exflags & MNT_EXPORTED) || (mp->mnt_flag & MNT_EXPORTED)) {
-		if (args.exflags & MNT_EXPORTED)
-			mp->mnt_flag |= MNT_EXPORTED;
-		else
-			mp->mnt_flag &= ~MNT_EXPORTED;
-		if (args.exflags & MNT_EXRDONLY)
-			mp->mnt_flag |= MNT_EXRDONLY;
-		else
-			mp->mnt_flag &= ~MNT_EXRDONLY;
-		mp->mnt_exroot = args.exroot;
-	}
-	/*
 	 * If updating, check whether changing from read-only to
 	 * read/write; if there is no device name, that's all we do.
 	 */
@@ -144,8 +129,22 @@ ffs_mount(mp, path, data, ndp, p)
 		fs = ump->um_fs;
 		if (fs->fs_ronly && (mp->mnt_flag & MNT_RDONLY) == 0)
 			fs->fs_ronly = 0;
-		if (args.fspec == 0)
+		if (args.fspec == 0) {
+			/*
+			 * Process export requests.
+			 */
+			if (args.exflags & MNT_EXPORTED) {
+				if (error = hang_addrlist(mp, &args))
+					return (error);
+				mp->mnt_flag |= MNT_EXPORTED;
+			}
+			if (args.exflags & MNT_DELEXPORT) {
+				free_addrlist(ump);
+				mp->mnt_flag &=
+				    ~(MNT_EXPORTED | MNT_DEFEXPORTED);
+			}
 			return (0);
+		}
 	}
 	/*
 	 * Not an update, or updating the name: look up the name
@@ -482,12 +481,13 @@ loop:
  * - check that the inode number is valid
  * - call ffs_vget() to get the locked inode
  * - check for an unallocated inode (i_mode == 0)
- * - check that the generation number matches
+ * - check that the generation number matches unless setgen true
  */
 int
-ffs_fhtovp(mp, fhp, vpp)
+ffs_fhtovp(mp, fhp, setgen, vpp)
 	register struct mount *mp;
 	struct fid *fhp;
+	int setgen;
 	struct vnode **vpp;
 {
 	register struct inode *ip;
@@ -512,9 +512,13 @@ ffs_fhtovp(mp, fhp, vpp)
 		return (EINVAL);
 	}
 	if (ip->i_gen != ufhp->ufid_gen) {
-		ufs_iput(ip);
-		*vpp = NULLVP;
-		return (EINVAL);
+		if (setgen)
+			ufhp->ufid_gen = ip->i_gen;
+		else {
+			ufs_iput(ip);
+			*vpp = NULLVP;
+			return (EINVAL);
+		}
 	}
 	*vpp = nvp;
 	return (0);
