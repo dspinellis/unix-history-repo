@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1287,7 +1287,7 @@ mimeboundary(line, boundaries)
 	register char *line;
 	char **boundaries;
 {
-	int type;
+	int type = MBT_NOTSEP;
 	int i;
 	int savec;
 
@@ -1296,23 +1296,28 @@ mimeboundary(line, boundaries)
 	i = strlen(line);
 	if (line[i - 1] == '\n')
 		i--;
-	if (tTd(43, 5))
-		printf("mimeboundary: line=\"%.*s\"... ", i, line);
+
+	/* strip off trailing whitespace */
 	while (line[i - 1] == ' ' || line[i - 1] == '\t')
 		i--;
-	if (i > 2 && strncmp(&line[i - 2], "--", 2) == 0)
-	{
-		type = MBT_FINAL;
-		i -= 2;
-	}
-	else
-		type = MBT_INTERMED;
-
 	savec = line[i];
 	line[i] = '\0';
-	/* XXX should check for improper nesting here */
-	if (isboundary(&line[2], boundaries) < 0)
-		type = MBT_NOTSEP;
+
+	if (tTd(43, 5))
+		printf("mimeboundary: line=\"%s\"... ", line);
+
+	/* check for this as an intermediate boundary */
+	if (isboundary(&line[2], boundaries) >= 0)
+		type = MBT_INTERMED;
+	else if (i > 2 && strncmp(&line[i - 2], "--", 2) == 0)
+	{
+		/* check for a final boundary */
+		line[i - 2] = '\0';
+		if (isboundary(&line[2], boundaries) >= 0)
+			type = MBT_FINAL;
+		line[i - 2] = '-';
+	}
+
 	line[i] = savec;
 	if (tTd(43, 5))
 		printf("%s\n", MimeBoundaryNames[type]);
