@@ -1,0 +1,18 @@
+# This file is a shell script that supplies the information necessary
+# to tailor a template configure script into the configure script
+# appropriate for this directory.  For more information, check any
+# existing configure script.
+
+srctrigger=istream.cc
+srcname="old-stream"
+configdirs=
+
+# per-host:
+
+#host_makefile_frag=../Make.defs
+
+# per-target:
+
+# post-target:
+
+cat ${srcdir}/depend >>Makefile
