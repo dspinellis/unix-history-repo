@@ -18,15 +18,21 @@ POPDIVERT
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(`@(#)local.m4	8.4 (Berkeley) %G%')
+VERSIONID(`@(#)local.m4	8.5 (Berkeley) %G%')
 
-Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFM', LOCAL_MAILER_FLAGS), S=10, R=20,
+Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFM', LOCAL_MAILER_FLAGS), S=10, R=20/40,
 		A=LOCAL_MAILER_ARGS
 Mprog,		P=LOCAL_SHELL_PATH, F=CONCAT(`lsDFM', LOCAL_SHELL_FLAGS), S=10, R=20, D=$z:/,
 		A=LOCAL_SHELL_ARGS
 
 S10
 R<@>			$n			errors to mailer-daemon
+R$+			$: $>40 $1
+
+S20
+R$+ < @ $* >		$: $1			strip host part
+
+S40
 ifdef(`_ALWAYS_ADD_DOMAIN_',
 `R$* < @ $* > $*		$@ $1 < @ $2 > $3	already fully qualified
 R$*			$: $1 @ $M		add local qualification
