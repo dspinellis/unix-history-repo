@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)utreg.h	7.1 (Berkeley) %G%
+ *	@(#)utreg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -89,7 +89,7 @@ struct utdevice {
 #define	UTCS2_DLT	0x8000		/* data late */
 
 #define	UTCS2_BITS \
-"\10\20DLT\17WCE\16PE\15NED\14\NEM\13\PGE\12\MXF\11RPE\10OR\7IR\6CLR\5PAT\4\BAI"
+"\10\20DLT\17WCE\16PE\15NED\14NEM\13PGE\12MXF\11RPE\10OR\7IR\6CLR\5PAT\4BAI"
 
 /*
  * utds --
@@ -113,8 +113,7 @@ struct utdevice {
 #define	UTDS_ATA	0x8000		/* attention active */
 
 #define	UTDS_BITS \
-"\10\20ATA\17ERR\16PIP\15MOL\14WRL\13EOT\12GCR\11DPR\10DRY\
-\7SSC\6PES\5SDWN\4IDB\3TM\2BOT\1SLA"
+"\10\20ATA\17ERR\16PIP\15MOL\14WRL\13EOT\12GCR\11DPR\10DRY\7SSC\6PES\5SDWN\4IDB\3TM\2BOT\1SLA"
 
 /*
  * uter --
@@ -145,8 +144,7 @@ struct utdevice {
 			 UTER_ILR|UTER_ILF)
 
 #define	UTER_BITS \
-"\10\20COR\17UNS\16OPI\15DTE\14NEF\13CS\12FCE\11NSG\10PEF\
-\7INC\6DPAR\5FMT\4RPE\3RMR\2ILR\1ILF"
+"\10\20COR\17UNS\16OPI\15DTE\14NEF\13CS\12FCE\11NSG\10PEF\7INC\6DPAR\5FMT\4RPE\3RMR\2ILR\1ILF"
 
 /*
  * uttc --
