@@ -4,6 +4,8 @@ Diskless Configuration Program
 
 Based loosely on the 4.4BSD diskless setup code
 
+Solaris 2.3: compile with -lbsm -lnsl -lsocket.
+
 *************************************************************************/
 #include <stdio.h>
 #include <fcntl.h>
@@ -18,6 +20,10 @@ Based loosely on the 4.4BSD diskless setup code
 #include <rpc/types.h>
 #include <sys/errno.h>
 #include <nfs/nfs.h>
+#ifdef __SVR4
+#define getfh nfs_getfh
+#define bcopy(a,b,c) memcpy(b,a,c)
+#endif
 #endif
 
 #ifdef i386				/* Native 386bsd system */
@@ -86,7 +92,7 @@ main(argc, argv)
 	char *p, *q;
 
 	netmask = 0;
-	bzero(&nfs_diskless, 0, sizeof(struct nfs_diskless));
+	memset(&nfs_diskless, 0, sizeof(struct nfs_diskless));
 	strcpy(nfs_diskless.myif.ifra_name,"ed0");
 	nfs_diskless.myif.ifra_addr.sa_len = sizeof(struct sockaddr);
 	nfs_diskless.myif.ifra_addr.sa_family = AF_INET;
