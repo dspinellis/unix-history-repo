@@ -60,6 +60,7 @@ main(argc, argv)
 		printf("Specify machine type, e.g. ``machine vax''\n");
 		exit(1);
 	}
+	symlink("../h", path("sys"));	/* make genassym.c work */
 	makefile();			/* build Makefile */
 	headers();			/* make a lot of .h files */
 	swapconf();			/* swap config files */
