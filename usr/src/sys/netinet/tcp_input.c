@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.14 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -337,6 +337,7 @@ tcp_input(m0)
 	 * If the state is LISTEN then ignore segment if it contains an RST.
 	 * If the segment contains an ACK then it is bad and send a RST.
 	 * If it does not contain a SYN then it is not interesting; drop it.
+	 * Don't bother responding if the destination was a broadcast.
 	 * Otherwise initialize tp->rcv_nxt, and tp->irs, select an initial
 	 * tp->iss, and send a segment:
 	 *     <SEQ=ISS><ACK=RCV_NXT><CTL=SYN,ACK>
@@ -354,6 +355,8 @@ tcp_input(m0)
 		if (tiflags & TH_ACK)
 			goto dropwithreset;
 		if ((tiflags & TH_SYN) == 0)
+			goto drop;
+		if (in_broadcast(ti->ti_dst))
 			goto drop;
 		am = m_get(M_DONTWAIT, MT_SONAME);
 		if (am == NULL)
@@ -873,8 +876,9 @@ dropwithreset:
 	/*
 	 * Generate a RST, dropping incoming segment.
 	 * Make ACK acceptable to originator of segment.
+	 * Don't bother to respond if destination was broadcast.
 	 */
-	if (tiflags & TH_RST)
+	if ((tiflags & TH_RST) || in_broadcast(ti->ti_dst))
 		goto drop;
 	if (tiflags & TH_ACK)
 		tcp_respond(tp, ti, (tcp_seq)0, ti->ti_ack, TH_RST);
