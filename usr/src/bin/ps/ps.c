@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)ps.c	5.39 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/kinfo.h>
+#include <nlist.h>
 #include <kvm.h>
 #include <errno.h>
 #include <unistd.h>
@@ -76,6 +77,7 @@ main(argc, argv)
 	dev_t ttydev;
 	int all, ch, flag, fmt, lineno, pid, prtheader, uid, what, xflg;
 	int pscomp();
+	char *nlistf, *memf, *swapf;
 	char *kludge_oldps_options();
 
 	if ((ioctl(STDOUT_FILENO, TIOCGWINSZ, (char *)&ws) == -1 &&
@@ -93,7 +95,9 @@ main(argc, argv)
 	all = xflg = 0;
 	pid = uid = -1;
 	ttydev = NODEV;
-	while ((ch = getopt(argc, argv, "aCghjLlmO:o:p:rSTt:uvwx")) != EOF)
+	memf = nlistf = swapf = NULL;
+	while ((ch = getopt(argc, argv,
+	    "aCghjLlM:mN:O:o:p:rSTt:uvW:wx")) != EOF)
 		switch((char)ch) {
 		case 'a':
 			all = 1;
@@ -117,8 +121,14 @@ main(argc, argv)
 			parsefmt(lfmt);
 			fmt = 1;
 			break;
+		case 'M':
+			memf = optarg;
+			break;
 		case 'm':
 			sortby = SORTMEM;
+			break;
+		case 'N':
+			nlistf = optarg;
 			break;
 		case 'O':
 			parsefmt(o1);
@@ -176,6 +186,9 @@ main(argc, argv)
 			sortby = SORTMEM;
 			fmt = 1;
 			break;
+		case 'W':
+			swapf = optarg;
+			break;
 		case 'w':
 			if (termwidth < 131)
 				termwidth = 131;
@@ -192,18 +205,20 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
+#define	BACKWARD_COMPATIBILITY
+#ifdef	BACKWARD_COMPATIBILITY
 	if (*argv) {
-		char *nlistf, *memf = NULL, *swapf = NULL;
 
-		nlistf = *argv++;
-		if (*argv) {
-			memf = *argv++;
-			if (*argv)
-				swapf = *argv++;
+		nlistf = *argv;
+		if (*++argv) {
+			memf = *argv;
+			if (*++argv)
+				swapf = *argv;
 		}
-		if (kvm_openfiles(nlistf, memf, swapf) == -1)
-			error("kvm_openfiles: %s", kvm_geterr());
 	}
+#endif
+	if (kvm_openfiles(nlistf, memf, swapf) == -1)
+		error("kvm_openfiles: %s", kvm_geterr());
 
 	if (!fmt)
 		parsefmt(dfmt);
