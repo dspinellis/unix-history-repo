@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)stat.c 1.14 %G%";
+static char sccsid[] = "@(#)stat.c 1.15 %G%";
 #endif
 
 #include "whoami.h"
@@ -350,97 +350,83 @@ asgnop1(r, p)
 	register struct nl *p;
 {
 	register struct nl *p1;
+	int	clas;
 #ifdef OBJ
 	int w;
-#endif
+#endif OBJ
 
+#ifdef OBJ
 	if (p == NLNIL) {
-#	    ifdef OBJ
-		p = lvalue(r->lhs_var, MOD|ASGN|NOUSE , LREQ );
-		w = width(p);
-#	    endif OBJ
-#	    ifdef PC
-		/* check for conformant array type */
-		codeoff();
-		p = rvalue(r->lhs_var, MOD|ASGN|NOUSE, LREQ);
-		codeon();
-		if ((classify(p) == TARY || classify(p) == TSTR)
-		    && p->chain->class == CRANGE) {
-		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR)
-			    , "_blkcpy" );
-		    /* find total size */
-		    /* upper bound */
-		    p1 = p->chain->nptr[1];
-		    putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
-			p1->extra_flags, p2type( p1 ) );
-		    /* minus lower bound */
-		    p1 = p->chain->nptr[0];
-		    putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
-			p1->extra_flags, p2type( p1 ) );
-		    putop( P2MINUS, P2INT );
-		    /* add one */
-		    putleaf(P2ICON, 1, 0, P2INT, 0);
-		    putop( P2PLUS, P2INT );
-		    /* and multiply by the width */
-		    p1 = p->chain->nptr[2];
-		    putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
-			p1->extra_flags, p2type( p1 ) );
-		    putop( P2MUL , P2INT );
-		    p = lvalue( r->lhs_var , MOD|ASGN|NOUSE , RREQ );
-		    putop(P2LISTOP, P2INT);
-		} else {
-		    /*
-		     * since the second pass knows that it should reference
-		     * the lefthandside of asignments, what i need here is
-		     * an rvalue.
-		     */
-		    p = lvalue( r->lhs_var , MOD|ASGN|NOUSE , RREQ );
-		}
-#	    endif PC
+	    p = lvalue(r->lhs_var, MOD|ASGN|NOUSE , LREQ );
+	    if ( p == NLNIL ) {
+		(void) rvalue( r->rhs_expr , NLNIL , RREQ );
+		return NLNIL;
+	    }
+	    w = width(p);
+	} else {
+	    /*
+	     * assigning to the return value, which is at least
+	     * of width two since it resides on the stack
+	     */
+	    w = width(p);
+	    if (w < 2)
+		w = 2;
+	}
+	clas = classify(p);
+	if ((clas == TARY || clas == TSTR) && p->chain->class == CRANGE) {
+	    p1 = lvalue(r->rhs_expr, p , LREQ ); /* SHOULD THIS BE rvalue? */
+	} else {
+	    p1 = rvalue(r->rhs_expr, p , RREQ );
+	}
+#   endif OBJ
+#   ifdef PC
+	if (p == NLNIL) {
+	    /* check for conformant array type */
+	    codeoff();
+	    p = rvalue(r->lhs_var, MOD|ASGN|NOUSE, LREQ);
+	    codeon();
+	    if (p == NLNIL) {
+		(void) rvalue(r->rhs_expr, NLNIL, RREQ);
+		return NLNIL;
+	    }
+	    clas = classify(p);
+	    if ((clas == TARY || clas == TSTR) && p->chain->class == CRANGE) {
+		return pcasgconf(r, p);
+	    } else {
+		/*
+		 * since the second pass knows that it should reference
+		 * the lefthandside of asignments, what i need here is
+		 * an rvalue.
+		 */
+		p = lvalue( r->lhs_var , MOD|ASGN|NOUSE , RREQ );
+	    }
 	    if ( p == NLNIL ) {
 		(void) rvalue( r->rhs_expr , NLNIL , RREQ );
 		return NLNIL;
 	    }
 	}
-#	ifdef OBJ
 	    /*
-	     * assigning to the return value, which is at least
-	     * of width two since it resides on the stack
+	     *	if this is a scalar assignment,
+	     *	    then i want to rvalue the righthandside.
+	     *	if this is a structure assignment,
+	     *	    then i want an lvalue to the righthandside.
+	     *  that's what the intermediate form sez.
 	     */
-	    else {
-		w = width(p);
-		if (w < 2)
-		    w = 2;
-	    }
-	    if ((classify(p) == TARY || classify(p) == TSTR)
-		&& p->chain->class == CRANGE) {
-		p1 = lvalue(r->rhs_expr, p , LREQ );
-	    } else {
-		p1 = rvalue(r->rhs_expr, p , RREQ );
-	    }
-#	endif OBJ
-#	ifdef PC
-		/*
-		 *	if this is a scalar assignment,
-		 *	    then i want to rvalue the righthandside.
-		 *	if this is a structure assignment,
-		 *	    then i want an lvalue to the righthandside.
-		 *  that's what the intermediate form sez.
-		 */
-	    switch ( classify( p ) ) {
-		case TINT:
-		case TCHAR:
-		case TBOOL:
-		case TSCAL:
-		    precheck( p , "_RANG4" , "_RSNG4" );
-		case TDOUBLE:
-		case TPTR:
-		    p1 = rvalue( r->rhs_expr , p , RREQ );
-		    break;
-		default:
-		    p1 = rvalue( r->rhs_expr , p , LREQ );
-		    break;
-	    }
+	switch ( classify( p ) ) {
+	    case TINT:
+	    case TCHAR:
+	    case TBOOL:
+	    case TSCAL:
+		precheck( p , "_RANG4" , "_RSNG4" );
+		/* and fall through */
+	    case TDOUBLE:
+	    case TPTR:
+		p1 = rvalue( r->rhs_expr , p , RREQ );
+		break;
+	    default:
+		p1 = rvalue( r->rhs_expr , p , LREQ );
+		break;
+	}
 #	endif PC
 	if (p1 == NLNIL)
 		return (NLNIL);
@@ -503,18 +489,6 @@ asgnop1(r, p)
 			    putop( P2ASSIGN , p2type( p ) );
 			    putdot( filename , line );
 			    break;
-		    case TARY:
-		    case TSTR:
-			    /* handle conformant array assignment with
-			     * library call.
-			     */
-			    if (p->chain->class == CRANGE) {
-				putop(P2LISTOP, P2INT);
-				putop(P2CALL, P2INT);
-				putdot( filename , line);
-				break;
-			    }
-			    /* else fall through */
 		    default:
 			    putstrop(P2STASG, ADDTYPE(p2type(p), P2PTR),
 					(int) lwidth(p), align(p));
@@ -524,6 +498,53 @@ asgnop1(r, p)
 #	endif PC
 	return (p);	/* Used by for statement */
 }
+
+#ifdef PC
+/*
+ * assignment to conformant arrays.  Since these are variable length,
+ *	we use blkcpy() to perform the assignment.
+ *	blkcpy(rhs, lhs, (upper - lower + 1) * width)
+ */
+struct nl *
+pcasgconf(r, p)
+	register ASG_NODE *r;
+	struct nl *p;
+{
+	struct nl *p1;
+
+	if (r == (ASG_NODE *) TR_NIL || p == NLNIL)
+		return NLNIL;
+	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR) , "_blkcpy" );
+	p1 = rvalue( r->rhs_expr , p , LREQ );
+	if (p1 == NLNIL)
+		return NLNIL;
+	p = lvalue( r->lhs_var , MOD|ASGN|NOUSE , LREQ );
+	if (p == NLNIL)
+		return NLNIL;
+	putop(P2LISTOP, P2INT);
+		/* upper bound */
+	p1 = p->chain->nptr[1];
+	putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
+	    p1->extra_flags, p2type( p1 ) );
+		/* minus lower bound */
+	p1 = p->chain->nptr[0];
+	putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
+	    p1->extra_flags, p2type( p1 ) );
+	putop( P2MINUS, P2INT );
+		/* add one */
+	putleaf(P2ICON, 1, 0, P2INT, 0);
+	putop( P2PLUS, P2INT );
+		/* and multiply by the width */
+	p1 = p->chain->nptr[2];
+	putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
+	    p1->extra_flags, p2type( p1 ) );
+	putop( P2MUL , P2INT );
+	putop(P2LISTOP, P2INT);
+	putop(P2CALL, P2INT);
+	putdot( filename , line);
+	return p;
+}
+#endif PC
 
 /*
  * if expr then stat [ else stat ]
