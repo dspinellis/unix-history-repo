@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.12 (Berkeley) %G%
+#	@(#)Makefile	6.13 (Berkeley) %G%
 
 FILES=	tmac.an.old tmac.r tmac.andoc tmac.doc.old
 MSRCS=  doc doc-ditroff doc-common doc-nroff doc-syms
@@ -12,7 +12,6 @@ all clean cleandir depend lint tags:
 
 beforeinstall:
 	for i in ${MSRCS}; do \
-		sccs get $$i; \
 		sed -f strip.sed < $$i > ${DESTDIR}${BINDIR}/tmac/tmac.$$i; \
 		chown ${BINOWN}.${BINGRP} ${DESTDIR}${BINDIR}/tmac/tmac.$$i; \
 		chmod 444 ${DESTDIR}${BINDIR}/tmac/tmac.$$i; \
