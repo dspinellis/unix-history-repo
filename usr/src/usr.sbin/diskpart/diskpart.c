@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,7 +17,7 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
@@ -101,11 +101,13 @@ main(argc, argv)
 	struct disklabel *dp;
 	register int curcyl, spc, def, part, layout, j;
 	int threshhold, numcyls[NPARTITIONS], startcyl[NPARTITIONS];
-	char *lp;
+	int totsize = 0;
+	char *lp, *tyname;
 
 	argc--, argv++;
 	if (argc < 1) {
-		fprintf(stderr, "usage: disktab [ -p ] [ -d ] disk-type\n");
+		fprintf(stderr,
+		    "usage: disktab [ -p ] [ -d ] [ -s size ] disk-type\n");
 		exit(1);
 	}
 	if (argc > 0 && strcmp(*argv, "-p") == 0) {
@@ -115,6 +117,10 @@ main(argc, argv)
 	if (argc > 0 && strcmp(*argv, "-d") == 0) {
 		dflag++;
 		argc--, argv++;
+	}
+	if (argc > 1 && strcmp(*argv, "-s") == 0) {
+		totsize = atoi(argv[1]);
+		argc += 2, argv += 2;
 	}
 	dp = getdiskbyname(*argv);
 	if (dp == NULL) {
@@ -126,14 +132,11 @@ main(argc, argv)
 		}
 	} else {
 		if (dp->d_flags & D_REMOVABLE)
-			strncpy(dp->d_typename, "removable",
-			    sizeof(dp->d_typename));
+			tyname = "removable";
 		else if (dp->d_flags & D_RAMDISK)
-			strncpy(dp->d_typename, "simulated",
-			    sizeof(dp->d_typename));
+			tyname = "simulated";
 		else
-			strncpy(dp->d_typename, "winchester",
-			    sizeof(dp->d_typename));
+			tyname = "winchester";
 	}
 	spc = dp->d_secpercyl;
 	/*
@@ -141,14 +144,25 @@ main(argc, argv)
 	 * copies of the table and enough full tracks preceding
 	 * the last track to hold the pool of free blocks to which
 	 * bad sectors are mapped.
+	 * If disk size was specified explicitly, use specified size.
 	 */
-	if (dp->d_type == DTYPE_SMD && dp->d_flags & D_BADSECT) {
+	if (dp->d_type == DTYPE_SMD && dp->d_flags & D_BADSECT &&
+	    totsize == 0) {
 		badsecttable = dp->d_nsectors +
 		    roundup(badsecttable, dp->d_nsectors);
 		threshhold = howmany(spc, badsecttable);
 	} else {
 		badsecttable = 0;
 		threshhold = 0;
+	}
+	/*
+	 * If disk size was specified, recompute number of cylinders
+	 * that may be used, and set badsecttable to any remaining
+	 * fraction of the last cylinder.
+	 */
+	if (totsize != 0) {
+		dp->d_ncylinders = howmany(totsize, spc);
+		badsecttable = spc * dp->d_ncylinders - totsize;
 	}
 
 	/* 
@@ -173,7 +187,8 @@ main(argc, argv)
 	/*
 	 * Calculate number of cylinders allocated to each disk
 	 * partition.  We may waste a bit of space here, but it's
-	 * in the interest of compatibility (for mixed disk systems).
+	 * in the interest of (very backward) compatibility
+	 * (for mixed disk systems).
 	 */
 	for (curcyl = 0, part = PART('a'); part < NPARTITIONS; part++) {
 		numcyls[part] = 0;
@@ -190,9 +205,11 @@ main(argc, argv)
 	defpart[def][PART('g')] = numcyls[PART('g')] * spc - badsecttable;
 	defpart[def][PART('c')] = numcyls[PART('c')] * spc;
 #ifndef for_now
-	if (!pflag)
-		defpart[def][PART('c')] -= badsecttable;
+	if (totsize || !pflag)
+#else
+	if (totsize)
 #endif
+		defpart[def][PART('c')] -= badsecttable;
 
 	/*
 	 * Calculate starting cylinder number for each partition.
@@ -248,7 +265,7 @@ main(argc, argv)
 			defparam[PART('g')].p_fsize = temp;
 		}
 		printf("%s:\\\n", dp->d_typename);
-		printf("\t:ty=%s:ns#%d:nt#%d:nc#%d:", dp->d_typename,
+		printf("\t:ty=%s:ns#%d:nt#%d:nc#%d:", tyname,
 			dp->d_nsectors, dp->d_ntracks, dp->d_ncylinders);
 		if (dp->d_secpercyl != dp->d_nsectors * dp->d_ntracks)
 			printf("sc#%d:", dp->d_secpercyl);
@@ -293,15 +310,17 @@ main(argc, argv)
 	printf("%s: #sectors/track=%d, #tracks/cylinder=%d #cylinders=%d\n",
 		dp->d_typename, dp->d_nsectors, dp->d_ntracks,
 		dp->d_ncylinders);
-	printf("\n    Partition\t   Size\t   Range\n");
+	printf("\n    Partition\t   Size\t Offset\t   Range\n");
 	for (part = PART('a'); part < NPARTITIONS; part++) {
 		printf("\t%c\t", 'a' + part);
 		if (numcyls[part] == 0) {
 			printf(" unused\n");
 			continue;
 		}
-		printf("%7d\t%4d - %d\n", defpart[def][part], startcyl[part],
-			startcyl[part] + numcyls[part] - 1);
+		printf("%7d\t%7d\t%4d - %d%s\n",
+			defpart[def][part], startcyl[part] * spc,
+			startcyl[part], startcyl[part] + numcyls[part] - 1,
+			defpart[def][part] % spc ? "*" : "");
 	}
 }
 
