@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.11 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.12 (Berkeley) %G%
  */
 
 /*
@@ -43,7 +43,7 @@ union_mount(mp, path, data, ndp, p)
 	struct union_args args;
 	struct vnode *lowerrootvp = NULLVP;
 	struct vnode *upperrootvp = NULLVP;
-	struct union_mount *um;
+	struct union_mount *um = 0;
 	struct ucred *cred = 0;
 	struct ucred *scred;
 	struct vattr va;
@@ -69,34 +69,6 @@ union_mount(mp, path, data, ndp, p)
 	}
 
 	/*
-	 * Take a copy of the process's credentials.  This isn't
-	 * quite right since the euid will always be zero and we
-	 * want to get the "real" users credentials.  So fix up
-	 * the uid field after taking the copy.
-	 */
-	cred = crdup(p->p_ucred);
-	cred->cr_uid = p->p_cred->p_ruid;
-
-	/*
-	 * Ensure the *real* user has write permission on the
-	 * mounted-on directory.  This allows the mount_union
-	 * command to be made setuid root so allowing anyone
-	 * to do union mounts onto any directory on which they
-	 * have write permission and which they also own.
-	 */
-	error = VOP_GETATTR(mp->mnt_vnodecovered, &va, cred, p);
-	if (error)
-		goto bad;
-	if ((va.va_uid != cred->cr_uid) && 
-	    (cred->cr_uid != 0)) {
-		error = EACCES;
-		goto bad;
-	}
-	error = VOP_ACCESS(mp->mnt_vnodecovered, VWRITE, cred, p);
-	if (error)
-		goto bad;
-
-	/*
 	 * Get argument
 	 */
 	if (error = copyin(data, (caddr_t)&args, sizeof(struct union_args)))
@@ -106,18 +78,10 @@ union_mount(mp, path, data, ndp, p)
 	VREF(lowerrootvp);
 
 	/*
-	 * Find upper node.  Use the real process credentials,
-	 * not the effective ones since this will have come
-	 * through a setuid process (mount_union).  All this
-	 * messing around with permissions is entirely bogus
-	 * and should be removed by allowing any user straight
-	 * past the mount system call.
+	 * Find upper node.
 	 */
-	scred = p->p_ucred;
-	p->p_ucred = cred;
 	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT,
 	       UIO_USERSPACE, args.target, p);
-	p->p_ucred = scred;
 
 	if (error = namei(ndp))
 		goto bad;
@@ -167,7 +131,18 @@ union_mount(mp, path, data, ndp, p)
 		goto bad;
 	}
 
-	um->um_cred = cred;
+	/*
+	 * Unless the mount is readonly, ensure that the top layer
+	 * supports whiteout operations
+	 */
+	if ((mp->mnt_flag & MNT_RDONLY) == 0) {
+		error = VOP_WHITEOUT(um->um_uppervp, (struct componentname *) 0, LOOKUP);
+		if (error)
+			goto bad;
+	}
+
+	um->um_cred = p->p_ucred;
+	crhold(um->um_cred);
 	um->um_cmode = UN_DIRMODE &~ p->p_fd->fd_cmask;
 
 	/*
@@ -194,12 +169,6 @@ union_mount(mp, path, data, ndp, p)
 	 * will leave the unioned view as read-only.
 	 */
 	mp->mnt_flag |= (um->um_uppervp->v_mount->mnt_flag & MNT_RDONLY);
-
-	/*
-	 * This is a user mount.  Privilege check for unmount
-	 * will be done in union_unmount.
-	 */
-	mp->mnt_flag |= MNT_USER;
 
 	mp->mnt_data = (qaddr_t) um;
 	getnewfsid(mp, MOUNT_UNION);
@@ -234,6 +203,8 @@ union_mount(mp, path, data, ndp, p)
 	return (0);
 
 bad:
+	if (um)
+		free(um, M_UFSMNT);
 	if (cred)
 		crfree(cred);
 	if (upperrootvp)
@@ -277,11 +248,6 @@ union_unmount(mp, mntflags, p)
 #ifdef UNION_DIAGNOSTIC
 	printf("union_unmount(mp = %x)\n", mp);
 #endif
-
-	/* only the mounter, or superuser can unmount */
-	if ((p->p_cred->p_ruid != um->um_cred->cr_uid) &&
-	    (error = suser(p->p_ucred, &p->p_acflag)))
-		return (error);
 
 	if (mntflags & MNT_FORCE) {
 		/* union can never be rootfs so don't check for it */

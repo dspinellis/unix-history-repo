@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	8.4 (Berkeley) %G%
+ *	@(#)ufs_extern.h	8.5 (Berkeley) %G%
  */
 
 struct buf;
@@ -85,6 +85,7 @@ int	 ufs_start __P((struct mount *, int, struct proc *));
 int	 ufs_strategy __P((struct vop_strategy_args *));
 int	 ufs_symlink __P((struct vop_symlink_args *));
 int	 ufs_unlock __P((struct vop_unlock_args *));
+int	 ufs_whiteout __P((struct vop_whiteout_args *));
 int	 ufs_vinit __P((struct mount *,
 	    int (**)(), int (**)(), struct vnode **));
 int	 ufsspec_close __P((struct vop_close_args *));

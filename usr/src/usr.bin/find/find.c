@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -143,6 +143,8 @@ find_execute(plan, paths)
 			warnx("%s: %s",
 			    entry->fts_path, strerror(entry->fts_errno));
 			rval = 1;
+			continue;
+		case FTS_W:
 			continue;
 		}
 #define	BADCH	" \t\n\\'\""

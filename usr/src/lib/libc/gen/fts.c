@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	8.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -530,7 +530,7 @@ fts_build(sp, type)
 	FTSENT *cur, *tail;
 	DIR *dirp;
 	void *adjaddr;
-	int cderrno, descend, len, level, maxlen, nlinks, saved_errno;
+	int cderrno, descend, len, level, maxlen, nlinks, oflag, saved_errno;
 	char *cp;
 
 	/* Set current node pointer. */
@@ -540,7 +540,15 @@ fts_build(sp, type)
 	 * Open the directory for reading.  If this fails, we're done.
 	 * If being called from fts_read, set the fts_info field.
 	 */
-	if ((dirp = opendir(cur->fts_accpath)) == NULL) {
+#ifdef FTS_WHITEOUT
+	if (ISSET(FTS_WHITEOUT))
+		oflag = DTF_NODUP|DTF_REWIND;
+	else
+		oflag = DTF_HIDEW|DTF_NODUP|DTF_REWIND;
+#else
+#define __opendir2(path, flag) opendir(path)
+#endif
+	if ((dirp = __opendir2(cur->fts_accpath, oflag)) == NULL) {
 		if (type == BREAD) {
 			cur->fts_info = FTS_DNR;
 			cur->fts_errno = errno;
@@ -645,6 +653,17 @@ mem1:				saved_errno = errno;
 		p->fts_parent = sp->fts_cur;
 		p->fts_level = level;
 
+#ifdef FTS_WHITEOUT
+		switch (dp->d_type) {
+		case DT_WHT:
+			p->fts_flags |= FTS_ISW;
+			break;
+		case DT_WHTD:
+			p->fts_flags |= FTS_ISWD;
+			break;
+		}
+#endif
+
 		if (cderrno) {
 			if (nlinks) {
 				p->fts_info = FTS_NS;
@@ -748,6 +767,17 @@ fts_stat(sp, p, follow)
 
 	/* If user needs stat info, stat buffer already allocated. */
 	sbp = ISSET(FTS_NOSTAT) ? &sb : p->fts_statp;
+
+#ifdef FTS_WHITEOUT
+	/* check for whiteout */
+	if (p->fts_flags & (FTS_ISW|FTS_ISWD)) {
+		if (sbp != &sb) {
+			memset(sbp, '\0', sizeof (*sbp));
+			sbp->st_mode = S_IFWHT;
+		}
+		return (FTS_W);
+	}
+#endif
 	
 	/*
 	 * If doing a logical walk, or application requested FTS_FOLLOW, do

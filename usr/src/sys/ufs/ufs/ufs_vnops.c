@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -681,6 +681,63 @@ out2:
 	return (error);
 }
 
+/*
+ * whiteout vnode call
+ */
+int
+ufs_whiteout(ap)
+	struct vop_whiteout_args /* {
+		struct vnode *a_dvp;
+		struct componentname *a_cnp;
+		int a_flags;
+	} */ *ap;
+{
+	struct vnode *dvp = ap->a_dvp;
+	struct componentname *cnp = ap->a_cnp;
+	struct direct newdir;
+	int error;
+
+	switch (ap->a_flags) {
+	case LOOKUP:
+		/* 4.4 format directories support whiteout operations */
+		if (dvp->v_mount->mnt_maxsymlinklen > 0)
+			return (0);
+		return (EOPNOTSUPP);
+
+	case CREATE:
+		/* create a new directory whiteout */
+#ifdef DIAGNOSTIC
+		if ((cnp->cn_flags & SAVENAME) == 0)
+			panic("ufs_whiteout: missing name");
+		if (dvp->v_mount->mnt_maxsymlinklen <= 0)
+			panic("ufs_whiteout: old format filesystem");
+#endif
+
+		newdir.d_ino = WINO;
+		newdir.d_namlen = cnp->cn_namelen;
+		bcopy(cnp->cn_nameptr, newdir.d_name, (unsigned)cnp->cn_namelen + 1);
+		newdir.d_type = DT_WHT;
+		error = ufs_direnter2(dvp, &newdir, cnp->cn_cred, cnp->cn_proc);
+		break;
+
+	case DELETE:
+		/* remove an existing directory whiteout */
+#ifdef DIAGNOSTIC
+		if (dvp->v_mount->mnt_maxsymlinklen <= 0)
+			panic("ufs_whiteout: old format filesystem");
+#endif
+
+		cnp->cn_flags &= ~DOWHITEOUT;
+		error = ufs_dirremove(dvp, cnp);
+		break;
+	}
+	if (cnp->cn_flags & HASBUF) {
+		FREE(cnp->cn_pnbuf, M_NAMEI);
+		cnp->cn_flags &= ~HASBUF;
+	}
+	return (error);
+}
+
 
 
 /*
@@ -1295,6 +1352,8 @@ ufs_mkdir(ap)
 	ip->i_mode = dmode;
 	tvp->v_type = VDIR;	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 2;
+	if (cnp->cn_flags & ISWHITEOUT)
+		ip->i_flags |= UF_OPAQUE;
 	tv = time;
 	error = VOP_UPDATE(tvp, &tv, &tv, 1);
 
@@ -2168,6 +2227,9 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	if ((ip->i_mode & ISGID) && !groupmember(ip->i_gid, cnp->cn_cred) &&
 	    suser(cnp->cn_cred, NULL))
 		ip->i_mode &= ~ISGID;
+
+	if (cnp->cn_flags & ISWHITEOUT)
+		ip->i_flags |= UF_OPAQUE;
 
 	/*
 	 * Make sure inode goes to disk before directory entry.

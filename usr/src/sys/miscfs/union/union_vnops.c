@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.18 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,6 +16,7 @@
 #include <sys/proc.h>
 #include <sys/file.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
@@ -137,6 +138,8 @@ union_lookup(ap)
 	int rdonly = cnp->cn_flags & RDONLY;
 	struct union_mount *um = MOUNTTOUNIONMOUNT(dvp->v_mount);
 	struct ucred *saved_cred;
+	int iswhiteout;
+	struct vattr va;
 
 #ifdef notyet
 	if (cnp->cn_namelen == 3 &&
@@ -160,6 +163,7 @@ union_lookup(ap)
 	lowerdvp = dun->un_lowervp;
 	uppervp = NULLVP;
 	lowervp = NULLVP;
+	iswhiteout = 0;
 
 	/*
 	 * do the lookup in the upper level.
@@ -180,6 +184,16 @@ union_lookup(ap)
 				cnp->cn_flags &= ~LOCKPARENT;
 			return (uerror);
 		}
+		if (uerror == ENOENT || uerror == EJUSTRETURN) {
+			if (cnp->cn_flags & ISWHITEOUT) {
+				iswhiteout = 1;
+			} else if (lowerdvp != NULLVP) {
+				lerror = VOP_GETATTR(upperdvp, &va,
+					cnp->cn_cred, cnp->cn_proc);
+				if (lerror == 0 && (va.va_flags & OPAQUE))
+					iswhiteout = 1;
+			}
+		}
 	} else {
 		uerror = ENOENT;
 	}
@@ -191,7 +205,7 @@ union_lookup(ap)
 	 * back from the upper layer and return the lower vnode
 	 * instead.
 	 */
-	if (lowerdvp != NULLVP) {
+	if (lowerdvp != NULLVP && !iswhiteout) {
 		int nameiop;
 
 		VOP_LOCK(lowerdvp);
@@ -353,6 +367,23 @@ union_create(ap)
 
 	vput(ap->a_dvp);
 	return (EROFS);
+}
+
+int
+union_whiteout(ap)
+	struct vop_whiteout_args /* {
+		struct vnode *a_dvp;
+		struct componentname *a_cnp;
+		int a_flags;
+	} */ *ap;
+{
+	struct union_node *un = VTOUNION(ap->a_dvp);
+
+	if (un->un_uppervp == NULLVP)
+		return (EOPNOTSUPP);
+
+	FIXUP(un);
+	return (VOP_WHITEOUT(un->un_uppervp, ap->a_cnp, ap->a_flags));
 }
 
 int
@@ -617,21 +648,11 @@ union_setattr(ap)
 	 */
 	if ((un->un_uppervp == NULLVP) &&
 	    /* assert(un->un_lowervp != NULLVP) */
-	    (un->un_lowervp->v_type == VREG) &&
-	    (ap->a_vap->va_size == 0)) {
-		struct vnode *vp;
-
-		error = union_vn_create(&vp, un, ap->a_p);
+	    (un->un_lowervp->v_type == VREG)) {
+		error = union_copyup(un, (ap->a_vap->va_size != 0),
+						ap->a_cred, ap->a_p);
 		if (error)
 			return (error);
-
-		/* at this point, uppervp is locked */
-		union_newupper(un, vp);
-
-		VOP_UNLOCK(vp);
-		union_vn_close(un->un_uppervp, FWRITE, ap->a_cred, ap->a_p);
-		VOP_LOCK(vp);
-		un->un_flags |= UN_ULOCK;
 	}
 
 	/*
@@ -704,32 +725,25 @@ union_write(ap)
 	} */ *ap;
 {
 	int error;
-	struct vnode *vp = OTHERVP(ap->a_vp);
-	int dolock = (vp == LOWERVP(ap->a_vp));
+	struct vnode *vp;
+	struct union_node *un = VTOUNION(ap->a_vp);
 
-	if (dolock)
-		VOP_LOCK(vp);
-	else
-		FIXUP(VTOUNION(ap->a_vp));
+	vp = UPPERVP(ap->a_vp);
+	if (vp == NULLVP)
+		panic("union: missing upper layer in write");
+
+	FIXUP(un);
 	error = VOP_WRITE(vp, ap->a_uio, ap->a_ioflag, ap->a_cred);
-	if (dolock)
-		VOP_UNLOCK(vp);
 
 	/*
 	 * the size of the underlying object may be changed by the
 	 * write.
 	 */
 	if (error == 0) {
-		struct union_node *un = VTOUNION(ap->a_vp);
 		off_t cur = ap->a_uio->uio_offset;
 
-		if (vp == un->un_uppervp) {
-			if (cur > un->un_uppersz)
-				union_newsize(ap->a_vp, cur, VNOVAL);
-		} else {
-			if (cur > un->un_lowersz)
-				union_newsize(ap->a_vp, VNOVAL, cur);
-		}
+		if (cur > un->un_uppersz)
+			union_newsize(ap->a_vp, cur, VNOVAL);
 	}
 
 	return (error);
@@ -833,7 +847,10 @@ union_remove(ap)
 	struct union_node *dun = VTOUNION(ap->a_dvp);
 	struct union_node *un = VTOUNION(ap->a_vp);
 
-	if (dun->un_uppervp != NULLVP && un->un_uppervp != NULLVP) {
+	if (dun->un_uppervp == NULLVP)
+		panic("union remove: null upper vnode");
+
+	if (un->un_uppervp != NULLVP) {
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
 
@@ -846,20 +863,18 @@ union_remove(ap)
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_vp);
 
+		if (un->un_lowervp != NULLVP)
+			ap->a_cnp->cn_flags |= DOWHITEOUT;
 		error = VOP_REMOVE(dvp, vp, ap->a_cnp);
 		if (!error)
 			union_removed_upper(un);
-
-		/*
-		 * XXX: should create a whiteout here
-		 */
 	} else {
-		/*
-		 * XXX: should create a whiteout here
-		 */
+		FIXUP(dun);
+		error = union_mkwhiteout(
+			MOUNTTOUNIONMOUNT(UNIONTOV(dun)->v_mount),
+			dun->un_uppervp, ap->a_cnp, un->un_path);
 		vput(ap->a_dvp);
 		vput(ap->a_vp);
-		error = EROFS;
 	}
 
 	return (error);
@@ -939,7 +954,13 @@ union_rename(ap)
 	if (fdvp->v_op == union_vnodeop_p) {	/* always true */
 		struct union_node *un = VTOUNION(fdvp);
 		if (un->un_uppervp == NULLVP) {
-			error = EROFS;
+			/*
+			 * this should never happen in normal
+			 * operation but might if there was
+			 * a problem creating the top-level shadow
+			 * directory.
+			 */
+			error = EXDEV;
 			goto bad;
 		}
 
@@ -951,9 +972,13 @@ union_rename(ap)
 	if (fvp->v_op == union_vnodeop_p) {	/* always true */
 		struct union_node *un = VTOUNION(fvp);
 		if (un->un_uppervp == NULLVP) {
-			error = EROFS;
+			/* XXX: should do a copyup */
+			error = EXDEV;
 			goto bad;
 		}
+
+		if (un->un_lowervp != NULLVP)
+			ap->a_fcnp->cn_flags |= DOWHITEOUT;
 
 		fvp = un->un_uppervp;
 		VREF(fvp);
@@ -969,7 +994,7 @@ union_rename(ap)
 			 * a problem creating the top-level shadow
 			 * directory.
 			 */
-			error = EROFS;
+			error = EXDEV;
 			goto bad;
 		}
 
@@ -1055,7 +1080,10 @@ union_rmdir(ap)
 	struct union_node *dun = VTOUNION(ap->a_dvp);
 	struct union_node *un = VTOUNION(ap->a_vp);
 
-	if (dun->un_uppervp != NULLVP && un->un_uppervp != NULLVP) {
+	if (dun->un_uppervp == NULLVP)
+		panic("union rmdir: null upper vnode");
+
+	if (un->un_uppervp != NULLVP) {
 		struct vnode *dvp = dun->un_uppervp;
 		struct vnode *vp = un->un_uppervp;
 
@@ -1068,20 +1096,18 @@ union_rmdir(ap)
 		un->un_flags |= UN_KLOCK;
 		vput(ap->a_vp);
 
+		if (un->un_lowervp != NULLVP)
+			ap->a_cnp->cn_flags |= DOWHITEOUT;
 		error = VOP_RMDIR(dvp, vp, ap->a_cnp);
 		if (!error)
 			union_removed_upper(un);
-
-		/*
-		 * XXX: should create a whiteout here
-		 */
 	} else {
-		/*
-		 * XXX: should create a whiteout here
-		 */
+		FIXUP(dun);
+		error = union_mkwhiteout(
+			MOUNTTOUNIONMOUNT(UNIONTOV(dun)->v_mount),
+			dun->un_uppervp, ap->a_cnp, un->un_path);
 		vput(ap->a_dvp);
 		vput(ap->a_vp);
-		error = EROFS;
 	}
 
 	return (error);
@@ -1453,6 +1479,7 @@ struct vnodeopv_entry_desc union_vnodeop_entries[] = {
 	{ &vop_default_desc, vn_default_error },
 	{ &vop_lookup_desc, union_lookup },		/* lookup */
 	{ &vop_create_desc, union_create },		/* create */
+	{ &vop_whiteout_desc, union_whiteout },		/* whiteout */
 	{ &vop_mknod_desc, union_mknod },		/* mknod */
 	{ &vop_open_desc, union_open },			/* open */
 	{ &vop_close_desc, union_close },		/* close */

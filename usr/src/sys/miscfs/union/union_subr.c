@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.11 (Berkeley) %G%
+ *	@(#)union_subr.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -391,8 +391,7 @@ loop:
 		 */
 		if (lowervp != un->un_lowervp) {
 			union_newlower(un, lowervp);
-			if (cnp && (lowervp != NULLVP) &&
-			    (lowervp->v_type == VREG)) {
+			if (cnp && (lowervp != NULLVP)) {
 				un->un_hash = cnp->cn_hash;
 				un->un_path = malloc(cnp->cn_namelen+1,
 						M_TEMP, M_WAITOK);
@@ -459,7 +458,7 @@ loop:
 	else
 		un->un_pid = -1;
 #endif
-	if (cnp && (lowervp != NULLVP) && (lowervp->v_type == VREG)) {
+	if (cnp && (lowervp != NULLVP)) {
 		un->un_hash = cnp->cn_hash;
 		un->un_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
 		bcopy(cnp->cn_nameptr, un->un_path, cnp->cn_namelen);
@@ -655,6 +654,52 @@ union_copyup(un, docopy, cred, p)
 
 }
 
+static int
+union_relookup(um, dvp, vpp, cnp, cn, path)
+	struct union_mount *um;
+	struct vnode *dvp;
+	struct vnode **vpp;
+	struct componentname *cnp;
+	struct componentname *cn;
+	char *path;
+{
+	int error;
+
+	/*
+	 * A new componentname structure must be faked up because
+	 * there is no way to know where the upper level cnp came
+	 * from or what it is being used for.  This must duplicate
+	 * some of the work done by NDINIT, some of the work done
+	 * by namei, some of the work done by lookup and some of
+	 * the work done by VOP_LOOKUP when given a CREATE flag.
+	 * Conclusion: Horrible.
+	 *
+	 * The pathname buffer will be FREEed by VOP_MKDIR.
+	 */
+	cn->cn_namelen = strlen(path);
+	cn->cn_pnbuf = malloc(cn->cn_namelen+1, M_NAMEI, M_WAITOK);
+	bcopy(path, cn->cn_pnbuf, cn->cn_namelen);
+	cn->cn_pnbuf[cn->cn_namelen] = '\0';
+
+	cn->cn_nameiop = CREATE;
+	cn->cn_flags = (LOCKPARENT|HASBUF|SAVENAME|SAVESTART|ISLASTCN);
+	cn->cn_proc = cnp->cn_proc;
+	if (um->um_op == UNMNT_ABOVE)
+		cn->cn_cred = cnp->cn_cred;
+	else
+		cn->cn_cred = um->um_cred;
+	cn->cn_nameptr = cn->cn_pnbuf;
+	cn->cn_hash = cnp->cn_hash;
+	cn->cn_consume = cnp->cn_consume;
+
+	VREF(dvp);
+	error = relookup(dvp, vpp, cn);
+	if (!error)
+		vrele(dvp);
+
+	return (error);
+}
+
 /*
  * Create a shadow directory in the upper layer.
  * The new vnode is returned locked.
@@ -679,45 +724,9 @@ union_mkshadow(um, dvp, cnp, vpp)
 	struct proc *p = cnp->cn_proc;
 	struct componentname cn;
 
-	/*
-	 * policy: when creating the shadow directory in the
-	 * upper layer, create it owned by the user who did
-	 * the mount, group from parent directory, and mode
-	 * 777 modified by umask (ie mostly identical to the
-	 * mkdir syscall).  (jsp, kb)
-	 */
-
-	/*
-	 * A new componentname structure must be faked up because
-	 * there is no way to know where the upper level cnp came
-	 * from or what it is being used for.  This must duplicate
-	 * some of the work done by NDINIT, some of the work done
-	 * by namei, some of the work done by lookup and some of
-	 * the work done by VOP_LOOKUP when given a CREATE flag.
-	 * Conclusion: Horrible.
-	 *
-	 * The pathname buffer will be FREEed by VOP_MKDIR.
-	 */
-	cn.cn_pnbuf = malloc(cnp->cn_namelen+1, M_NAMEI, M_WAITOK);
-	bcopy(cnp->cn_nameptr, cn.cn_pnbuf, cnp->cn_namelen);
-	cn.cn_pnbuf[cnp->cn_namelen] = '\0';
-
-	cn.cn_nameiop = CREATE;
-	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|SAVESTART|ISLASTCN);
-	cn.cn_proc = cnp->cn_proc;
-	if (um->um_op == UNMNT_ABOVE)
-		cn.cn_cred = cnp->cn_cred;
-	else
-		cn.cn_cred = um->um_cred;
-	cn.cn_nameptr = cn.cn_pnbuf;
-	cn.cn_namelen = cnp->cn_namelen;
-	cn.cn_hash = cnp->cn_hash;
-	cn.cn_consume = cnp->cn_consume;
-
-	VREF(dvp);
-	if (error = relookup(dvp, vpp, &cn))
+	error = union_relookup(um, dvp, vpp, cnp, &cn, cnp->cn_nameptr);
+	if (error)
 		return (error);
-	vrele(dvp);
 
 	if (*vpp) {
 		VOP_ABORTOP(dvp, &cn);
@@ -727,14 +736,69 @@ union_mkshadow(um, dvp, cnp, vpp)
 		return (EEXIST);
 	}
 
+	/*
+	 * policy: when creating the shadow directory in the
+	 * upper layer, create it owned by the user who did
+	 * the mount, group from parent directory, and mode
+	 * 777 modified by umask (ie mostly identical to the
+	 * mkdir syscall).  (jsp, kb)
+	 */
+
 	VATTR_NULL(&va);
 	va.va_type = VDIR;
 	va.va_mode = um->um_cmode;
 
 	/* LEASE_CHECK: dvp is locked */
-	LEASE_CHECK(dvp, p, p->p_ucred, LEASE_WRITE);
+	LEASE_CHECK(dvp, p, cn.cn_cred, LEASE_WRITE);
 
 	error = VOP_MKDIR(dvp, vpp, &cn, &va);
+	return (error);
+}
+
+/*
+ * Create a whiteout entry in the upper layer.
+ *
+ * (um) points to the union mount structure for access to the
+ * the mounting process's credentials.
+ * (dvp) is the directory in which to create the whiteout.
+ * it is locked on entry and exit.
+ * (cnp) is the componentname to be created.
+ */
+int
+union_mkwhiteout(um, dvp, cnp, path)
+	struct union_mount *um;
+	struct vnode *dvp;
+	struct componentname *cnp;
+	char *path;
+{
+	int error;
+	struct vattr va;
+	struct proc *p = cnp->cn_proc;
+	struct vnode **vpp;
+	struct componentname cn;
+
+	VOP_UNLOCK(dvp);
+	error = union_relookup(um, dvp, vpp, cnp, &cn, path);
+	if (error)
+		return (error);
+
+	if (*vpp) {
+		VOP_ABORTOP(dvp, &cn);
+		vrele(dvp);
+		vrele(*vpp);
+		*vpp = NULLVP;
+		return (EEXIST);
+	}
+
+	/* LEASE_CHECK: dvp is locked */
+	LEASE_CHECK(dvp, p, p->p_ucred, LEASE_WRITE);
+
+	error = VOP_WHITEOUT(dvp, &cn, CREATE);
+	if (error != 0)
+		VOP_ABORTOP(dvp, &cn);
+
+	vrele(dvp);
+
 	return (error);
 }
 
@@ -833,6 +897,7 @@ union_vn_close(vp, fmode, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
+
 	if (fmode & FWRITE)
 		--vp->v_writecount;
 	return (VOP_CLOSE(vp, fmode));

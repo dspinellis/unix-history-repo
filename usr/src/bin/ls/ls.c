@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -64,6 +64,7 @@ int f_statustime;		/* use time of last mode change */
 int f_dirname;			/* if precede with directory name */
 int f_timesort;			/* sort by time vice name */
 int f_type;			/* add type character for non-regular files */
+int f_whiteout;			/* show whiteout entries */
 
 int
 main(argc, argv)
@@ -93,7 +94,7 @@ main(argc, argv)
 		f_listdot = 1;
 
 	fts_options = FTS_PHYSICAL;
-	while ((ch = getopt(argc, argv, "1ACFLRTacdfgiloqrstu")) != EOF) {
+	while ((ch = getopt(argc, argv, "1ACFLRTWacdfgiloqrstu")) != EOF) {
 		switch (ch) {
 		/*
 		 * The -1, -C and -l options all override each other so shell
@@ -169,6 +170,9 @@ main(argc, argv)
 		case 't':
 			f_timesort = 1;
 			break;
+		case 'W':
+			f_whiteout = 1;
+			break;
 		default:
 		case '?':
 			usage();
@@ -190,6 +194,12 @@ main(argc, argv)
 	 */
 	if (!f_longform && !f_listdir && !f_type)
 		fts_options |= FTS_COMFOLLOW;
+
+	/*
+	 * If -W, show whiteout entries
+	 */
+	if (f_whiteout)
+		fts_options |= FTS_WHITEOUT;
 
 	/* If -l or -s, figure out block size. */
 	if (f_longform || f_size) {
