@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fullname.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)fullname.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # define	reg	register
