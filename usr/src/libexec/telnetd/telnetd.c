@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.17 83/01/22";
+static char sccsid[] = "@(#)telnetd.c	4.18 83/02/21";
 #endif
 
 /*
@@ -119,8 +119,10 @@ again:
 		}
 		if ((pid = fork()) < 0)
 			printf("Out of processes\n");
-		else if (pid == 0)
+		else if (pid == 0) {
+			signal(SIGCHLD, SIG_IGN);
 			doit(s2);
+		}
 		close(s2);
 	}
 	/*NOTREACHED*/
