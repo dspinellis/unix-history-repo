@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.4	84/01/31	*/
+/*	gethostnamadr.c	4.5	84/08/28	*/
 
 #include <stdio.h>
 #include <netdb.h>
@@ -23,7 +23,7 @@ fetchhost(key)
 
         if (key.dptr == 0)
                 return ((struct hostent *)NULL);
-	key = dbmfetch(_host_db, key);
+	key = dbm_fetch(_host_db, key);
 	if (key.dptr == 0)
                 return ((struct hostent *)NULL);
         cp = key.dptr;
@@ -54,13 +54,13 @@ gethostbyname(nam)
 	register struct hostent *hp;
 
 	if ((_host_db == (DBM *)NULL)
-	  && ((_host_db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)NULL))
+	  && ((_host_db = dbm_open(HOSTDB, O_RDONLY)) == (DBM *)NULL))
                 return ((struct hostent *)NULL);
         key.dptr = nam;
         key.dsize = strlen(nam);
 	hp = fetchhost(key);
 	if (!_host_stayopen) {
-		ndbmclose(_host_db);
+		dbm_close(_host_db);
 		_host_db = (DBM *)NULL;
 	}
         return (hp);
@@ -75,13 +75,13 @@ gethostbyaddr(addr, length)
 	register struct hostent *hp;
 
 	if ((_host_db == (DBM *)NULL)
-	  && ((_host_db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)NULL))
+	  && ((_host_db = dbm_open(HOSTDB, O_RDONLY)) == (DBM *)NULL))
                 return ((struct hostent *)NULL);
         key.dptr = addr;
         key.dsize = length;
 	hp = fetchhost(key);
 	if (!_host_stayopen) {
-		ndbmclose(_host_db);
+		dbm_close(_host_db);
 		_host_db = (DBM *)NULL;
 	}
         return (hp);

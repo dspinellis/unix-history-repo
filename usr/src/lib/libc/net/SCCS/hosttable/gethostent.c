@@ -1,4 +1,4 @@
-/*	gethostent.c	4.8	84/05/17	*/
+/*	gethostent.c	4.9	84/08/28	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -38,7 +38,7 @@ endhostent()
 		hostf = NULL;
 	}
 	if (_host_db) {
-		ndbmclose(_host_db);
+		dbm_close(_host_db);
 		_host_db = (DBM *)NULL;
 	}
 	_host_stayopen = 0;
