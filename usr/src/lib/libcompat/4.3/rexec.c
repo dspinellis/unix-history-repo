@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rexec.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexec.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)rexec.c	5.2 (Berkeley) %G%";
 #include <errno.h>
 
 extern	errno;
-char	*index(), *sprintf();
+char	*index();
 int	rexecoptions;
 char	*getpass(), *getlogin();
 

@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ruserpass.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -140,7 +140,7 @@ rnetrc(host, aname, apass)
 	hdir = getenv("HOME");
 	if (hdir == NULL)
 		hdir = ".";
-	sprintf(buf, "%s/.netrc", hdir);
+	(void)sprintf(buf, "%s/.netrc", hdir);
 	cfile = fopen(buf, "r");
 	if (cfile == NULL) {
 		if (errno != ENOENT)
@@ -764,7 +764,7 @@ char *mkenvkey(mch)
 	while (*p)
 		*sk++ = *p++;
 	*sk++ = mch;
-	sprintf(stemp, "%ld", putmp->ut_time);
+	(void)sprintf(stemp, "%ld", putmp->ut_time);
 	sreverse(stemp1, stemp);
 	p = stemp1;
 	while (*p)
