@@ -10,9 +10,9 @@
 
 #ifndef lint
 # ifdef DBM
-static char	SccsId[] = "@(#)alias.c	5.4 (Berkeley) %G%	(with DBM)";
+static char	SccsId[] = "@(#)alias.c	5.5 (Berkeley) %G%	(with DBM)";
 # else DBM
-static char	SccsId[] = "@(#)alias.c	5.4 (Berkeley) %G%	(without DBM)";
+static char	SccsId[] = "@(#)alias.c	5.5 (Berkeley) %G%	(without DBM)";
 # endif DBM
 #endif not lint
 
@@ -472,6 +472,8 @@ readaliases(aliasfile, init)
 					}
 					if (c != '\0')
 						*p++ = c;
+					while (isspace(*p))
+						p++;
 				}
 			}
 			else
