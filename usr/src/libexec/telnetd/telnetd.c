@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -258,8 +258,8 @@ doit(f, who)
 		if (stat(line, &stb) < 0)
 			break;
 		for (i = 0; i < 16; i++) {
-			line[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
-			p = open(line, 2);
+			line[sizeof("/dev/ptyp") - 1] = "0123456789abcdef"[i];
+			p = open(line, O_RDWR);
 			if (p > 0)
 				goto gotpty;
 		}
@@ -276,7 +276,15 @@ gotpty:
 	}
 	t = open(line, O_RDWR);
 	if (t < 0)
-		fatalperror(f, line, errno);
+		fatalperror(f, line);
+	if (fchmod(t, 0))
+		fatalperror(f, line);
+	(void)signal(SIGHUP, SIG_IGN);
+	vhangup();
+	(void)signal(SIGHUP, SIG_DFL);
+	t = open(line, O_RDWR);
+	if (t < 0)
+		fatalperror(f, line);
 	ioctl(t, TIOCGETP, &b);
 	b.sg_flags = CRMOD|XTABS|ANYP;
 	ioctl(t, TIOCSETP, &b);
@@ -299,7 +307,7 @@ gotpty:
 	getterminaltype();
 
 	if ((i = fork()) < 0)
-		fatalperror(f, "fork", errno);
+		fatalperror(f, "fork");
 	if (i)
 		telnet(f, p);
 	close(f);
@@ -319,7 +327,7 @@ gotpty:
 	 */
 	execl("/bin/login", "login", "-h", host,
 					terminaltype ? "-p" : 0, 0);
-	fatalperror(f, "/bin/login", errno);
+	fatalperror(f, "/bin/login");
 	/*NOTREACHED*/
 }
 
@@ -334,10 +342,9 @@ fatal(f, msg)
 	exit(1);
 }
 
-fatalperror(f, msg, errno)
+fatalperror(f, msg)
 	int f;
 	char *msg;
-	int errno;
 {
 	char buf[BUFSIZ];
 	extern char *sys_errlist[];
@@ -366,7 +373,7 @@ int	s;		/* socket number */
     } while ((value == -1) && (errno == EINTR));
 
     if (value < 0) {
-	fatalperror(pty, "select", errno);
+	fatalperror(pty, "select");
     }
     if (FD_ISSET(s, &excepts)) {
 	return 1;
@@ -449,7 +456,7 @@ telnet(f, p)
 			strcpy(hostname, HN);
 		edithost(HE, hostname);
 		if (IM && *IM)
-			putf(IM, ptyibuf+1, p);
+			putf(IM, ptyibuf+1);
 	} else {
 		sprintf(ptyibuf+1, BANNER, hostname);
 	}
@@ -1374,10 +1381,9 @@ putchr(cc)
 	*putlocation++ = cc;
 }
 
-putf(cp, where, tty)
+putf(cp, where)
 register char *cp;
 char *where;
-int tty;
 {
 	char *slash;
 	char datebuffer[60];
