@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mailaddr.7	6.1 (Berkeley) %G%
+.\"	@(#)mailaddr.7	6.2 (Berkeley) %G%
 .\"
 .TH MAILADDR 7 ""
 .UC 5
@@ -38,8 +38,8 @@ For example,
 at Berkeley the associated message
 would probably go directly to monet over the Ethernet
 rather than going via the Berkeley ARPANET gateway.
+.SS Abbreviation.
 .PP
-.I Abbreviation.
 Under certain circumstances
 it may not be necessary to type the entire domain name.
 In general anything following the first dot
@@ -62,8 +62,8 @@ without adding the
 ``.ARPA''
 as long as their names do not conflict
 with a local host name.
+.SS Compatibility.
 .PP
-.I Compatibility.
 Certain old address formats
 are converted to the new format
 to provide compatibility with the previous mail system.
@@ -97,45 +97,51 @@ automatically through the UUCP network.
 Until that time you must explicitly tell the mail system
 which hosts to send your message through
 to get to your final destination.
+.SS Case Distinctions.
 .PP
-.I Case Distinctions.
 Domain names (i.e., anything after the ``@'' sign)
 may be given in any mixture of upper and lower case
 with the exception of UUCP hostnames.
 Most hosts accept any mixture of case in user names,
 with the notable exception of MULTICS sites.
+.SS Differences with ARPA Protocols.
 .PP
-.I Differences with ARPA Protocols.
 Although the UNIX addressing scheme
 is based on the ARPA mail addressing protocols,
 there are some significant differences.
 .PP
 At the time of this writing
-the only
-``top level''
-domain defined by ARPA is the
-``.ARPA''
-domain itself.
-This is further restricted to having only one level of host specifier.
-That is,
-the only addresses that ARPA accepts at this time must be in the format
+DARPA is converting to real domains.
+The following rules may be useful:
+.PP
+\(bu The syntax
 ``user@host.ARPA''
-(where ``host'' is one word).
-In particular,
-addresses such as:
+is being split up into
+``user@host.COM'',
+``user@host.GOV'',
+and
+``user@host.EDU''
+for commercial, government, and educational institutions respectively.
 .PP
-		eric@monet.Berkeley.ARPA
+\(bu The syntax
+``user@host''
+(with no dots)
+has traditionally referred to the ARPANET.
+In the future this semantic will not be continued \(em
+instead, the host will be assumed to be in your organization.
+You should start using one of the syntaxes above.
 .PP
-are not currently legal
-under the ARPA protocols.
-For this reason,
-these addresses are converted to a different format on output
-to the ARPANET,
-typically:
+\(bu Host names of the form ``ORG-NAME''
+(e.g., MIT-MC or CMU-CS-A)
+will be changing to ``NAME.ORG.XXX''
+(where `XXX' is COM, GOV, or EDU).
+For example,
+MIT-MC will change to MC.MIT.EDU.
+In some cases names will be split apart even if they do not have dashes.
+For example,
+USC-ISIF will probably change to F.ISI.USC.EDU.
+.SS Route-addrs.
 .PP
-		eric%monet@Berkeley.ARPA
-.PP
-.I Route-addrs.
 Under some circumstances
 it may be necessary to route a message
 through several hosts
@@ -162,46 +168,29 @@ at each host.
 It is generally possible to ignore all but the
 ``user@host''
 part of the address to determine the actual sender.
+.SS Postmaster.
 .PP
-.I Postmaster.
 Every site is required to have a user or user alias
 designated
 ``postmaster''
 to which problems with the mail system may be addressed.
+.SS Other Networks.
 .PP
-.I CSNET.
-Messages to CSNET sites can be sent to
-``user.host@UDel-Relay''.
+Some other networks can be reached
+by giving the name of the network as the last component
+of the domain.
+.I "This is not a standard feature"
+and may not be supported at all sites.
+For example,
+messages to CSNET or BITNET sites can often be sent to
+``user@host.CSNET''
+or
+``user@host.BITNET''
+respectively.
 .SH BERKELEY
 The following comments apply only to the Berkeley environment.
+.SS What's My Address?
 .PP
-.I Host Names.
-Many of the old familiar host names
-are being phased out.
-In particular,
-single character names as used in Berknet
-are incompatible with the larger world
-of which Berkeley is now a member.
-For this reason
-the following names
-are being obsoleted.
-You should notify any correspondents
-of your new address
-as soon as possible.
-.PP
-.ta 1i 1.2i 2.5i
-	OLD	NEW
-	j	ingvax	ucbingres
-	p		ucbcad
-	r	arpavax	ucbarpa
-	v	csvax	ucbernie
-	n		ucbkim
-	y		ucbcory
-.PP
-The old addresses will be rejected as unknown hosts
-sometime in the near future.
-.PP
-.I What's My Address?
 If you are on a local machine,
 say monet,
 your address is
@@ -220,7 +209,8 @@ From UUCP, your address would be:
 .PP
 		ucbvax!yourname%monet
 .PP
-.I Computer Center.
+.SS Computer Center.
+.PP
 The Berkeley Computer Center
 is in a subdomain of Berkeley.
 Messages to the computer center
@@ -245,18 +235,16 @@ However,
 it is likely that this situation will change
 with time as both the Computer Science department
 and the Computer Center grow.
-.PP
-.I Bitnet.
-Hosts on bitnet may be accessed using:
-.PP
-		user@host.BITNET
-.PP
 .SH BUGS
 The RFC822 group syntax
 (``group:user1,user2,user3;'')
 is not supported except in the special case of
 ``group:;''
 because of a conflict with old berknet-style addresses.
+.PP
+Route-Address syntax is grotty.
+.PP
+UUCP- and ARPANET-style addresses do not coexist politely.
 .SH SEE ALSO
 mail(1), sendmail(8);
 Crocker, D. H.,
