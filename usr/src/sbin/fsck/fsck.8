@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsck.8	4.1 (Berkeley) %G%
+.\"	@(#)fsck.8	5.1 (Berkeley) %G%
 .\"
-.TH FSCK 8 "4/1/81"
+.TH FSCK 8 "4 February 1983"
 .UC 4
 .de us
 \\$1\l'|0\(ul'
@@ -20,16 +20,12 @@ filesystem ...
 .br
 .B /etc/fsck
 [
+.B \-b
+block#
+] [
 .B \-y
 ] [
 .B \-n
-] [
-.BR \-s X
-] [
-.BR \-S X
-] [
-.B \-t
-filename
 ] [
 filesystem 
 ] ...
@@ -119,6 +115,11 @@ combined.
 The following flags are interpreted by
 .I fsck.
 .TP 6
+.B \-b
+Use the block specified immediately after the flag as
+the super block for the file system.  Block 32 is always
+an alternate super block.
+.TP 6
 .B  \-y
 Assume a yes response to all questions asked by 
 .I fsck;
@@ -129,68 +130,6 @@ to continue after essentially unlimited trouble has been encountered.
 Assume a no response to all questions asked by 
 .I fsck;
 do not open the file system for writing.
-.TP 6
-.BR \-s \fIX
-Ignore the actual free list and (unconditionally) reconstruct a new
-one by rewriting the super-block of the file system.  
-The file system should be unmounted while this is done; if this
-is not possible, care should be taken that the system is quiescent
-and that it is rebooted immediately afterwards.
-This precaution is necessary so that the old, bad, in-core copy
-of the superblock will not continue to be used, or written on the file system.
-.IP
-The
-.BR \-s \fIX
-option allows for creating an optimal free-list organization.
-The following forms of
-.I X
-are supported for the following devices:
-.sp
-.nf
-	\-s3 (RP03)
-	\-s4 (RP04, RP05, RP06)
-	\-sBlocks-per-cylinder\fB:\fRBlocks-to-skip (for anything else)
-.fi
-.IP "" 6
-If 
-.I X
-is not given,
-the values used when the filesystem was created
-are used.
-If these values were not specified, then the value
-.I 400:9
-is used.
-.TP 6
-.BR \-S \fIX
-Conditionally reconstruct the free list. This option
-is like
-.BR \-s \fIX
-above except that the free list is rebuilt only
-if there were no discrepancies discovered in the
-file system. Using
-.B \-S
-will force a no response to all questions asked
-by
-.I fsck.
-This option is useful for forcing free list reorganization
-on uncontaminated file systems.
-.TP 6
-.B \-t
-If
-.I fsck
-cannot obtain enough memory to keep its tables,
-it uses a scratch file. If the \f3\-t\fP option is
-specified, the file named in the next argument
-is used as the scratch file, if needed. Without the
-.BR "\-t " flag,
-.I fsck
-will prompt the operator for the name of the
-scratch file. The file chosen should not be on the
-filesystem being checked, and if it is not
-a special file or did not already exist, it is
-removed when
-.I fsck
-completes.
 .PP
 If no filesystems are given to 
 .I fsck
@@ -224,7 +163,7 @@ Size checks:
 .br
 .ns
 .IP "" 12
-Directory size not 16-byte aligned.
+Directory size not of proper format.
 .br
 .br
 .ns
@@ -260,7 +199,6 @@ Super Block checks:
 .br
 .ns
 .IP "" 12
-More than 65536 inodes.
 .br
 More blocks for inodes than there are in the file system.
 .br
@@ -307,17 +245,17 @@ The diagnostics produced by
 .I fsck
 are intended to be self-explanatory.
 .SH "SEE ALSO"
-fstab(5), fs(5), crash(8), reboot(8)
+fstab(5),
+fs(5),
+newfs(8),
+mkfs(8),
+crash(8V),
+reboot(8)
 .SH BUGS
 Inode numbers for
 .BR . ""
 and
 .BR .. ""
 in each directory should be checked for validity.
-.PP
-\f3\-g\fP and \f3\-b\fP options from 
-.I check
-should be available in
-.I fsck.
 .PP
 There should be some way to start a \fBfsck \-p\fR at pass \fIn\fR.
