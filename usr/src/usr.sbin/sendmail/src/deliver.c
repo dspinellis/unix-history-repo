@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.116 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.117 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1694,7 +1694,8 @@ markfailure(e, q, mci, rcode)
 		q->q_status = stat;
 
 	q->q_statdate = curtime();
-	q->q_statmta = newstr(CurHostName);
+	if (CurHostName != NULL && CurHostName[0] != '\0')
+		q->q_statmta = newstr(CurHostName);
 	if (rcode != EX_OK && q->q_rstatus == NULL)
 	{
 		char buf[30];
