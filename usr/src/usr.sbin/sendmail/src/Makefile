@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -50,6 +50,9 @@ install: ${MAN}
 	install -c -o bin -g bin -m 444 sendmail.0 ${DESTDIR}/usr/man/cat8
 	install -c -o bin -g bin -m 444 aliases.0 ${DESTDIR}/usr/man/cat5
 	install -c -o bin -g bin -m 444 newaliases.0 ${DESTDIR}/usr/man/cat1
+	-mkdir ${DESTDIR}/usr/spool/mqueue
+	chown root.wheel ${DESTDIR}/usr/spool/mqueue
+	chmod 775 ${DESTDIR}/usr/spool/mqueue
 	rm -f ${DESTDIR}/usr/ucb/newaliases
 	ln -s ${DESTDIR}/usr/lib/sendmail ${DESTDIR}/usr/ucb/newaliases
 	rm -f ${DESTDIR}/usr/ucb/mailq
