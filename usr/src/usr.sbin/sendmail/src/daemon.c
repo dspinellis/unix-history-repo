@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.18 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.19 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.18 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.19 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -878,7 +878,7 @@ getauthinfo(fd)
 		ntohs(fa.sin.sin_port), ntohs(la.sin.sin_port));
 
 	/* create local address */
-	bzero(&la, sizeof la);
+	la.sin.sin_port = 0;
 
 	/* create foreign address */
 	sp = getservbyname("auth", "tcp");
@@ -898,14 +898,15 @@ getauthinfo(fd)
 	/* put a timeout around the whole thing */
 	ev = setevent(TimeOuts.to_ident, authtimeout, 0);
 
-	/* connect to foreign IDENT server */
+	/* connect to foreign IDENT server using same address as SMTP socket */
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
 	{
 		clrevent(ev);
 		goto noident;
 	}
-	if (connect(s, &fa.sa, sizeof fa.sin) < 0)
+	if (bind(s, &la.sa, sizeof la.sin) < 0 ||
+	    connect(s, &fa.sa, sizeof fa.sin) < 0)
 	{
 closeident:
 		(void) close(s);
