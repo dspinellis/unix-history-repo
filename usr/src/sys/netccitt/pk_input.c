@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.14 (Berkeley) %G%
+ *	@(#)pk_input.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -656,7 +656,7 @@ register struct x25config *xcp;
 	if (xcp -> xc_addr.x25_net && (xcp -> xc_nodnic || xcp ->xc_prepnd0)) {
 		octet dnicname[sizeof(long) * NBBY/3 + 2];
 
-		sprintf (dnicname, "%d", xcp -> xc_addr.x25_net);
+		sprintf ((char *)dnicname, "%d", xcp -> xc_addr.x25_net);
 		prune_dnic (buf, sa -> x25_addr, dnicname, xcp);
 	} else
 		bcopy ((caddr_t)buf, (caddr_t)sa -> x25_addr, count + 1);
@@ -670,7 +670,7 @@ struct socket *so;
 {
 	register struct mbuf *m;
 	struct cmsghdr cmsghdr;
-	if (m = m_copym (m, 0, (int)M_COPYALL)) {
+	if (m = m_copy (m, 0, (int)M_COPYALL)) {
 		int off = fp - mtod (m0, octet *);
 		int len = m->m_pkthdr.len - off + sizeof (cmsghdr);
 		cmsghdr.cmsg_len = len;
