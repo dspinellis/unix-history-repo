@@ -1,4 +1,4 @@
-/*	vba.c	1.9	87/06/30	*/
+/*	vba.c	1.10	87/11/24	*/
 
 /*
  * Tahoe VERSAbus adapator support routines.
@@ -75,6 +75,23 @@ vbainit(vb, xsize, flags)
 }
 
 /*
+ * Due to unknown hardware or software errors, some sites have problems
+ * with strange crashes or corruption of text images when DMA is attempted
+ * to kernel addresses spanning a page boundary, or to user addresses
+ * (even if the buffer is physically contiguous).  To avoid this behavior,
+ * the following toggles inhibit such transfers when set.
+ *	vba_copyk: copy transfers to kernel address that span a page boundary
+ *	vba_copyu: copy transfers to user addresses
+ */
+#ifndef VBA_TRICKY
+int vba_copyk = 1;
+int vba_copyu = 1;
+#else
+int vba_copyk = 0;
+int vba_copyu = 0;
+#endif
+
+/*
  * Check a transfer to see whether it can be done directly
  * to the destination buffer, or whether it must be copied.
  * On Tahoe, the lack of a bus I/O map forces data to be copied
@@ -104,15 +121,18 @@ vbasetup(bp, vb, sectsize)
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	npf = btoc(bp->b_bcount + o);
 	vb->vb_iskernel = (((int)bp->b_un.b_addr & KERNBASE) == KERNBASE);
-	if (vb->vb_iskernel)
+	if (vb->vb_iskernel) {
 		spte = kvtopte(bp->b_un.b_addr);
-	else
+if (vba_copyk && (o != 0 || npf > 1)) goto copy;
+	} else {
 		spte = vtopte((bp->b_flags&B_DIRTY) ? &proc[2] : bp->b_proc,
 		    btop(bp->b_un.b_addr));
-	if (bp->b_bcount % sectsize)
+if (vba_copyu) goto copy;
+	}
+	if (bp->b_bcount % sectsize != 0 || (o & (sizeof(long) - 1)) != 0)
 		goto copy;
 	else if ((vb->vb_flags & VB_SCATTER) == 0 ||
-	    vb->vb_maxphys != VB_MAXADDR32) {
+	    vb->vb_maxphys != btoc(VB_MAXADDR32)) {
 		dpte = spte;
 		p = (dpte++)->pg_pfnum;
 		for (i = npf; --i > 0; dpte++) {
