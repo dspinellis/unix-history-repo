@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.11 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -515,6 +515,16 @@ funcend(fp, bundle, endline)
 	     *  this is only checked on formal calls.
 	     */
 	put(2, O_CASE4, cbn == 1 ? 0 : fp->value[NL_OFFS]-DPOFF2);
+	    /*
+	     *	Output the runtime test mode for the routine
+	     */
+	if (opt('t'))
+		put(2, O_CASE2, TRUE);
+	else
+		put(2, O_CASE2, FALSE);
+	    /*
+	     *	Output line number and routine name
+	     */
 	put(2, O_CASE2, bundle[1]);
 	putstr(fp->symbol, 0);
 #endif OBJ
