@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)dumprmt.c	5.12 (Berkeley) %G%";
 #include <sys/mtio.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <ufs/dinode.h>
+#include <ufs/ufs/dinode.h>
 #include <stdio.h>
 #endif
 #include <signal.h>
