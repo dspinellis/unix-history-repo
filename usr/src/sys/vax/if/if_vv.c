@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.20 (Berkeley) %G%
+ *	@(#)if_vv.c	6.21 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -709,7 +709,7 @@ len = %d, vvicsr = %b\n",
 
 #define	vvdataaddr(vv, off, type)	((type)(((caddr_t)((vv)+1)+(off))))
 	if (vv->vh_type == RING_TRAILER ) {
-		off = ntohs(vv->vh_info);
+		off = ntohs((u_short)vv->vh_info);
 		if (off > VVMTU) {
 			vvprintf("vv%d: off > VVMTU, off = %d, vvicsr = %b\n",
 				    unit, off, 0xffff&(addr->vvicsr), VV_IBITS);
@@ -867,8 +867,8 @@ vvoutput(ifp, m0, dst)
 			type = RING_TRAILER;
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons(RING_IP);
-			*(mtod(m, u_short *) + 1) = htons(m->m_len);
+			*mtod(m, u_short *) = htons((short)RING_IP);
+			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
 			goto gottrailertype;
 		}
 		type = RING_IP;
@@ -916,7 +916,7 @@ gottype:
 	vv->vh_dhost = dest;
 	vv->vh_version = RING_VERSION;
 	vv->vh_type = type;
-	vv->vh_info = htons(off);
+	vv->vh_info = htons((u_short)off);
 	vvtracehdr("vo", vv);
 
 	/*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ct.c	6.5 (Berkeley) %G%
+ *	@(#)ct.c	6.6 (Berkeley) %G%
  */
 
 #include "ct.h"
@@ -93,7 +93,7 @@ ctprobe(reg)
 
 /*ARGSUSED*/
 ctattach(ui)
-	register struct uba_device *ui;
+	struct uba_device *ui;
 {
 }
 
@@ -175,7 +175,7 @@ ctintr(dev)
 			ctaddr->ctcsr |= CSR1;	/* APSu5 - raise strobe */
 			sc->sc_state |= CT_RUNNING;
 			if (sc->sc_oq.c_cc==0 || sc->sc_oq.c_cc==CATLOWAT)
-				wakeup(&sc->sc_oq);
+				wakeup((caddr_t)&sc->sc_oq);
 		} else if (sc->sc_state == 0) {
 				ctaddr->ctcsr = 0;
 		} else

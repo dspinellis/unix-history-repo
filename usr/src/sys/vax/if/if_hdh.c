@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	6.6 (Berkeley) %G% */
+/*	@(#)if_hdh.c	6.7 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -664,7 +664,7 @@ char *msg;
 
 	if ((m = m_get(M_DONTWAIT, MT_DATA)) == NULL) {
 		printf("hdh%d: cannot get supervisor cmnd buffer\n", unit);
-			return(0);
+			return;
 	}
 
 	cnt = len;
@@ -676,7 +676,5 @@ char *msg;
 	cnt = if_wubaput(&sc->hdh_ifuba[SUPR], m);
 
 	hdh_iorq(unit, HDHSUPW, cnt, HDHWRT+HDHEOS);
-
-	return(1);
 }
 #endif NHDH

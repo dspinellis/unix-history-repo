@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.22 (Berkeley) %G%
+ *	@(#)ip_input.c	6.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -849,7 +849,7 @@ ip_forward(ip, ifp)
 	 * Save at most 64 bytes of the packet in case
 	 * we need to generate an ICMP message to the src.
 	 */
-	mcopy = m_copy(dtom(ip), 0, imin(ip->ip_len, 64));
+	mcopy = m_copy(dtom(ip), 0, imin((int)ip->ip_len, 64));
 
 	sin = (struct sockaddr_in *)&ipforward_rt.ro_dst;
 	if (ipforward_rt.ro_rt == 0 ||

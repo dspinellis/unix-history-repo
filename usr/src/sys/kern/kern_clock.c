@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	6.16 (Berkeley) %G%
+ *	@(#)kern_clock.c	6.17 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"

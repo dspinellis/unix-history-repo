@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.12 (Berkeley) %G%
+ *	@(#)ns_input.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -311,7 +311,7 @@ idp_forward(idp)
 	 * Save at most 42 bytes of the packet in case
 	 * we need to generate an NS error message to the src.
 	 */
-	mcopy = m_copy(dtom(idp), 0, imin(ntohs(idp->idp_len), 42));
+	mcopy = m_copy(dtom(idp), 0, imin((int)ntohs(idp->idp_len), 42));
 
 	if ((ok_there = idp_do_route(&idp->idp_dna,&idp_droute))==0) {
 		type = NS_ERR_UNREACH_HOST, code = 0;
