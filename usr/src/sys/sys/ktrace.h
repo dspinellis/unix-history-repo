@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ktrace.h	8.1 (Berkeley) %G%
+ *	@(#)ktrace.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -46,10 +46,10 @@ struct ktr_header {
  */
 #define KTR_SYSCALL	1
 struct ktr_syscall {
-	short	ktr_code;		/* syscall number */
-	short	ktr_narg;		/* number of arguments */
+	int	ktr_code;		/* syscall number */
+	int	ktr_argsize;		/* size of arguments */
 	/*
-	 * followed by ktr_narg ints
+	 * followed by ktr_argsize/sizeof(register_t) 'register_t's
 	 */
 };
 
