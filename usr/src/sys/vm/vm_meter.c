@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.12	81/06/07	*/
+/*	vm_meter.c	4.13	81/08/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -98,7 +98,7 @@ setupclock()
 	 */
 	if (slowscan == 0)
 		slowscan = 2 * fastscan;
-#if defined(BERT) || defined(ERNIE)
+#ifdef notdef
 	printf("slowscan %d, fastscan %d, maxpgio %d\n",
 	    slowscan, fastscan, maxpgio);
 	printf("lotsfree %d, desfree %d, minfree %d\n",
