@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.17	%G%
+#	locore.s		3.18	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -320,7 +320,7 @@ ubanpdma:
 # Negative vector -> UBA requires service.
 #
 ubasrv:
-	beql	ubapass
+	jeql	ubapass
 #
 # UBA service required.
 # The following 'printf' calls should probably be replaced
@@ -328,7 +328,12 @@ ubasrv:
 #
 	bitl	$CFGFLT,UBA0+UCN_OFF  	# any SBI faults ?
 	beql	UBAflt
+	clrl	_waittime
 	pushr	$0xf  			# save regs 0-3
+	pushl	UBA0+UCN_OFF
+	pushl	UBA0+UST_OFF
+	pushab	SBIflt
+	calls	$3,_printf
 	pushab	SBImsg
 	calls	$1,_panic
 #	popr	$0xf
@@ -343,6 +348,7 @@ UBAflt:
 	mfpr	$IPL,-(sp)
 	mtpr	$HIGH,$IPL
 	pushl	UBA0+UFUBAR_OFF
+	ashl	$2,(sp),(sp)
 	pushl	UBA0+UFMER_OFF
 	pushl	r2
 	pushab	UBAmsg
@@ -1362,8 +1368,9 @@ _udiv :
 # ==============
 
 	.data
+SBIflt:	.asciz	"UBA SBI Fault SR %X CNFGR %X\n"
 SBImsg: .asciz	"SBI fault\n"
-UBAmsg: .asciz	"UBA error UBASR %X, FMER %X, FUBAR %X\n"
+UBAmsg: .asciz	"UBA error SR %x, FMER %x, FUBAR %o\n"
 straym: .asciz	"Stray Interrupt\n"
 ZERmsg:	.asciz	"ZERO VECTOR "
 
