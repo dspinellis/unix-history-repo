@@ -2,6 +2,7 @@ root::0:10:Charlie &:/:/bin/csh
 toor::0:10:Bourne-again Superuser:/:
 daemon:*:1:31:The devil himself:/:
 operator::2:28:System &:/usr/guest/operator:/bin/csh
+games:***:7:2:Games pseudo-user:/usr/games:
 uucp::66:1:UNIX-to-UNIX Copy:/usr/spool/uucppublic:/usr/lib/uucp/uucico
 nobody:*:32767:9999:Unprivileged user:/nonexistent:/dev/null
 notes:*:5:31:Notesfile maintainer:/usr/spool/notes:/bin/csh
