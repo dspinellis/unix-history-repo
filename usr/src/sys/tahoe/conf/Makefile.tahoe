@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.17 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.18 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -19,7 +19,7 @@
 # -DQUOTA	compile in file system quotas
 #
 C2=	/usr/libexec/c2
-LD=	/usr/pgrm/ld
+LD=	/usr/bin/ld
 TOUCH=	touch -f -c
 INDIR=	../tahoe/inline
 INLINE=	${INDIR}/inline
