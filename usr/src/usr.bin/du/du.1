@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)du.1	6.15 (Berkeley) %G%
+.\"	@(#)du.1	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DU 1
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 .Nm du
 .Op Fl a Li \&| Fl s
-.Op Fl x
+.Op Fl Hhx
 .Op Ar file ...
 .Sh DESCRIPTION
 The
@@ -35,14 +35,21 @@ The options are as follows:
 Display an entry for each file in the file hierarchy.
 .It Fl s
 Display only the grand total for the specified files.
+.It Fl H
+When encountering a symbolic link on the command line, follow it.  All other
+symbolic links encountered in the traversal are not followed.
+.It Fl h
+When encountering a symbolic link anywhere in the traversal, follow it.
 .It Fl x
 Filesystem mount points are not traversed.
 .El
 .Pp
-If
-.Ar file
-is a symbolic link referencing an existing file, the file referenced
-by the link is reported on instead of the link itself.
+.Nm Du
+references symbolic links as the links themselves unless the
+.Fl H
+or 
+.Fl h 
+flags are specified, in which case behavior is as detailed above.
 .Pp
 Files having multiple hard links are counted (and displayed) a single
 time per
@@ -57,6 +64,7 @@ is set, the block counts will be displayed in units of that size block.
 .El
 .Sh SEE ALSO
 .Xr df 1 ,
+.Xr fts 3 ,
 .Xr quot 8
 .Sh HISTORY
 A
