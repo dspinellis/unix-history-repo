@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	8.10 (Berkeley) %G%
+ *	@(#)proc.h	8.11 (Berkeley) %G%
  */
 
 #ifndef _SYS_PROC_H_
@@ -213,10 +213,10 @@ extern u_long pgrphash;
 extern struct proc *curproc;		/* Current running proc. */
 extern struct proc proc0;		/* Process slot for swapper. */
 extern int nprocs, maxproc;		/* Current and max number of procs. */
-extern int pidhashmask;			/* In param.c. */
 
-extern LIST_HEAD(, proc) allproc;	/* List of all processes. */
-extern LIST_HEAD(, proc) zombproc;	/* List of zombie processes. */
+LIST_HEAD(proclist, proc);
+extern struct proclist allproc;		/* List of all processes. */
+extern struct proclist zombproc;	/* List of zombie processes. */
 struct proc *initproc, *pageproc;	/* Process slots for init, pager. */
 
 #define	NQS	32			/* 32 run queues. */
