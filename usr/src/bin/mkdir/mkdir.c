@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 1983, 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1983, 1992 Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1983, 1992, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkdir.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkdir.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
