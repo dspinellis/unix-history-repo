@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.17 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -400,7 +400,10 @@ groupmember(gid, cred)
 }
 
 /*
- * Test if the current user is the super user.
+ * Test whether the specified credentials imply "super-user"
+ * privilege; if so, and we have accounting info, set the flag
+ * indicating use of super-powers.
+ * Returns 0 or error.
  */
 suser(cred, acflag)
 	struct ucred *cred;
