@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.76 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.77 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1301,7 +1301,13 @@ ufs_symlink(dvp, vpp, cnp, vap, target)
 }
 
 /*
- * Vnode op for read and write
+ * Vnode op for reading directories.
+ * 
+ * The routine below assumes that the on-disk format of a directory
+ * is the same as that defined by <sys/dirent.h>. If the on-disk
+ * format changes, then it will be necessary to do a conversion
+ * from the on-disk format that read returns to the format defined
+ * by <sys/dirent.h>.
  */
 int
 ufs_readdir(vp, uio, cred, eofflagp)
