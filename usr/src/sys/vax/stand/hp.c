@@ -1,4 +1,4 @@
-/*	hp.c	4.7	83/01/31	*/
+/*	hp.c	4.7	83/02/01	*/
 
 /*
  * RP??/RM?? disk driver
@@ -50,7 +50,6 @@ short	hptypes[] =
 #define RP06 (hptypes[hp_type[unit]] <= MBDT_RP06)
 #define ML11 (hptypes[hp_type[unit]] == MBDT_ML11A)
 #define RM80 (hptypes[hp_type[unit]] == MBDT_RM80)
-#define EAGLE (hp_type[unit] == 11)
 
 u_char	hp_offset[16] = {
     HPOF_P400, HPOF_M400, HPOF_P400, HPOF_M400,
@@ -60,19 +59,19 @@ u_char	hp_offset[16] = {
 };
 
 struct st hpst[] = {
-	32,	5,	32*5,	823,	rm3_off,	0,	/* RM03 */
-	32,	19,	32*19,	823,	rm5_off,	0,	/* RM05 */
-	22,	19,	22*19,	815,	hp6_off,	0,	/* RP06 */
-	31,	14, 	31*14,	559,	rm80_off,	1,	/* RM80 */
-	22,	19,	22*19,	411,	hp6_off,	0,	/* RP06 */
-	50,	32,	50*32,	630,	hp7_off,	0,	/* RP07 */
-	1,	1,	1,	1,	ml_off,		0,	/* ML11A */
-	1,	1,	1,	1,	ml_off,		0,	/* ML11B */
-	32,	40,	32*40,	843,	si9775_off,	0,	/* 9775 */
-	32,	10,	32*10,	823,	si9730_off,	0,	/* 9730 */
-	32,	16,	32*16,	1024,	hpam_off,	0,	/* capricorn */
-	43,	20,	43*20,	842,	hpfj_off,	1,	/* Eagle */
-	1,	1,	1,	1,	0,	0,	/* rm02 - not used */
+	32,	5,	32*5,	823,	rm3_off,	/* RM03 */
+	32,	19,	32*19,	823,	rm5_off,	/* RM05 */
+	22,	19,	22*19,	815,	hp6_off,	/* RP06 */
+	31,	14, 	31*14,	559,	rm80_off,	/* RM80 */
+	22,	19,	22*19,	411,	hp6_off,	/* RP06 */
+	50,	32,	50*32,	630,	hp7_off,	/* RP07 */
+	1,	1,	1,	1,	ml_off,		/* ML11A */
+	1,	1,	1,	1,	ml_off,		/* ML11B */
+	32,	40,	32*40,	843,	si9775_off,	/* 9775 */
+	32,	10,	32*10,	823,	si9730_off,	/* 9730 */
+	32,	16,	32*16,	1024,	hpam_off,	/* capricorn */
+	43,	20,	43*20,	842,	hpfj_off,	/* Eagle */
+	1,	1,	1,	1,	0,	/* rm02 - not used */
 };
 struct dkbad hpbad[MAXNMBA*8];
 int sectsiz;
@@ -134,6 +133,10 @@ found:
 			break;
 		}
 		hp_type[unit] = i;
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;		/* init drive */
+		hpaddr->hpcs1 = HP_PRESET|HP_GO;
+		if (!ML11)
+			hpaddr->hpof = HPOF_FMT22;
 		/*
 		 * Read in the bad sector table:
 		 *	copy the contents of the io structure
@@ -165,6 +168,8 @@ found:
 	io->i_boff = st->off[io->i_boff] * st->nspc;
 }
 
+int	ssect;		/* set to 1 if we are on a track with skip sectors */
+
 hpstrategy(io, func)
 	register struct iob *io;
 {
@@ -184,10 +189,11 @@ hpstrategy(io, func)
 	if ((hpaddr->hpds & HPDS_VV) == 0) {
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
-		if (hp_type[unit] != 6)		/* any but ml11 */
+		if (!ML11)			/* any but ml11 */
 			hpaddr->hpof = HPOF_FMT22;
 	}
 	io->i_errcnt = 0;
+	ssect = 0;
 	bytecnt = io->i_cc;
 	membase = io->i_ma;
 	startblock = io->i_bn;
@@ -197,12 +203,12 @@ restart:
 	cn = bn/st->nspc;
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
-	sn = sn%st->nsect;
+	sn = sn%st->nsect + ssect;
 
 	while ((hpaddr->hpds & HPDS_DRY) == 0)
 		;
 	mba->mba_sr = -1;
-	if (hp_type[unit] == 6)		/* ml11 */
+	if (ML11)
 		hpaddr->hpda = bn;
 	else {
 		hpaddr->hpdc = cn;
@@ -253,7 +259,7 @@ hard0:
 		if ((mba->mba_sr & (MBSR_WCKUP | MBSR_WCKLWR)) != 0)
 			io->i_error = EWCK;
 hard:
-		io->i_errblk = bn;
+		io->i_errblk = bn + ssect;
 		printf("hp error: (cyl,trk,sec)=(%d,%d,%d) ds=%b \n",
 			   cn, tn, sn, MASKREG(hpaddr->hpds), HPDS_BITS);
 		printf("er1=%b er2=%b",
@@ -273,6 +279,8 @@ hard:
 
 	} else if ((er2 & HPER2_BSE) && !ML11) {
 badsect:
+		if (!ssect && (er2&HPER2_SSE))
+			goto skipsect;
 		if ((io->i_flgs & F_NBSF) != 0) {
 			io->i_error = EBSE;	
 			goto hard;
@@ -283,10 +291,11 @@ badsect:
 			io->i_error = EBSE;
 			goto hard;
 		}
-	} else if ((RM80||EAGLE) && er2&HPER2_SSE) {
+	} else if (RM80 && er2&HPER2_SSE) {
+skipsect:
 	/* skip sector error */
 		(void) hpecc(io, SSE);
-		startblock++;		/* since one sector was skipped */
+		ssect=1;
 		goto success;
 	} else if ((er1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
 		if ( hpecc(io, ECC) == 0)
@@ -366,7 +375,7 @@ hpecc(io, flag)
 	if (bcr = MASKREG(mbp->mba_bcr>>16))
 		bcr |= 0xffff0000;		/* sxt */
 	npf = (bcr + io->i_cc)/sectsiz;		/* number of sectors read */
-	bn = io->i_bn + npf;
+	bn = io->i_bn + npf + ssect;		/* bn is physical block number*/
 	switch (flag) {
 	case ECC:
 		{
@@ -435,6 +444,7 @@ hpecc(io, flag)
 		printf("revector to cn %d tn %d sn %d mem: 0x%x\n", 
 			cn, tn, sn, io->i_ma);
 #endif 
+		rp->hpof &= ~HPOF_SSEI;	/* clear skip sector inhibit if set */
 		mbp->mba_sr = -1;
 		rp->hpdc = cn;
 		rp->hpda = (tn<<8) + sn;
@@ -456,8 +466,9 @@ hpioctl(io, cmd, arg)
 	caddr_t arg;
 {
 
-	struct st *st = &hpst[hp_type[io->i_unit]], *tmp;
-	struct mba_drv *drv = mbadrv(io->i_unit);
+	register unit = io->i_unit;
+	struct st *st = &hpst[hp_type[unit]], *tmp;
+	struct mba_drv *drv = mbadrv(unit);
 
 	switch(cmd) {
 
@@ -489,6 +500,14 @@ hpioctl(io, cmd, arg)
 			st->nspc -= st->ntrak;
 		}
 		return(0);
+
+	case SAIOSSDEV:			/* return null if device has skip sector
+					 * handling, otherwise return ECMD
+					 */
+		if (RM80)
+			return(0);
+		else
+			return(ECMD);
 
 	default:
 		return (ECMD);
