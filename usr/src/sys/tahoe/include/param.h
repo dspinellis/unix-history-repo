@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.7 (Berkeley) %G%
+ *	@(#)param.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -50,6 +50,7 @@
 #define	CLSIZE		1
 #define	CLSIZELOG2	0
 
+/* NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE */
 #define	SSIZE		2		/* initial stack size/NBPG */
 #define	SINCR		2		/* increment of stack/NBPG */
 #define	UPAGES		8		/* pages of u-area (2 stack pages) */
