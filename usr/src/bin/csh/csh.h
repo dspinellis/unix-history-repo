@@ -4,30 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.14 (Berkeley) %G%
+ *	@(#)csh.h	5.15 (Berkeley) %G%
  */
-
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-
-#ifdef NLS
-#include <locale.h>
-#endif
-#include <time.h>
-#include <limits.h>
-#include <termios.h>
-#include <errno.h>
-#include <setjmp.h>
-#include <dirent.h>
-#include <pwd.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include "pathnames.h"
 
 /*
  * Fundamental definitions which may vary from system to system.
@@ -68,11 +46,10 @@ typedef char Char;
 #endif
 
 typedef void *ioctl_t;		/* Third arg of ioctl */
-typedef long sigmask_t;		/* What a signal mask is */
 
 typedef void *ptr_t;
 
-#include "tc.const.h"
+#include "const.h"
 #include "char.h"
 #include "err.h"
 
@@ -125,7 +102,6 @@ bool    havhash;		/* path hashing is available */
 
 #ifdef FILEC
 bool    filec;			/* doing filename expansion */
-
 #endif
 
 /*
@@ -137,6 +113,9 @@ Char   *ffile;			/* Name of shell file for $0 */
 
 char   *seterr;			/* Error message from scanner/parser */
 Char   *shtemp;			/* Temp name for << shell files in /tmp */
+
+#include <sys/time.h>
+#include <sys/resource.h>
 
 struct timeval time0;		/* Time at which the shell started */
 struct rusage ru0;
@@ -193,6 +172,7 @@ short   OLDSTD;			/* Old standard input (def for cmds) */
  * Because of source commands and .cshrc we need nested error catches.
  */
 
+#include <setjmp.h>
 jmp_buf reslab;
 
 #define	setexit()	(setjmp(reslab))
@@ -203,6 +183,7 @@ jmp_buf reslab;
 
 Char   *gointr;			/* Label for an onintr transfer */
 
+#include <signal.h>
 sig_t parintr;			/* Parents interrupt catch */
 sig_t parterm;			/* Parents terminate catch */
 
@@ -522,9 +503,9 @@ Char   *word_chars;
 
 Char   *STR_SHELLPATH;
 
+#include <paths.h>
 #ifdef _PATH_BSHELL
 Char   *STR_BSHELL;
-
 #endif
 Char   *STR_WORD_CHARS;
 Char  **STR_environ;

@@ -6,11 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <locale.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "csh.h"
 #include "extern.h"
+#include "pathnames.h"
 
 extern char **environ;
 
@@ -420,7 +428,7 @@ preread()
 {
     whyles->w_end = -1;
     if (setintr)
-	(void) sigsetmask(sigblock((sigmask_t) 0) & ~sigmask(SIGINT));
+	(void) sigsetmask(sigblock((sigset_t) 0) & ~sigmask(SIGINT));
 
     search(T_BREAK, 0, NULL);		/* read the expression in */
     if (setintr)
@@ -472,7 +480,7 @@ dorepeat(v, kp)
     struct command *kp;
 {
     register int i;
-    register sigmask_t omask = 0;
+    register sigset_t omask = 0;
 
     i = getn(v[1]);
     if (setintr)
@@ -785,7 +793,7 @@ xecho(sep, v)
     int     nonl = 0;
 
     if (setintr)
-	(void) sigsetmask(sigblock((sigmask_t) 0) & ~sigmask(SIGINT));
+	(void) sigsetmask(sigblock((sigset_t) 0) & ~sigmask(SIGINT));
     v++;
     if (*v == 0)
 	return;
@@ -834,7 +842,7 @@ dosetenv(v)
 	register Char **ep;
 
 	if (setintr)
-	    (void) sigsetmask(sigblock((sigmask_t) 0) & ~sigmask(SIGINT));
+	    (void) sigsetmask(sigblock((sigset_t) 0) & ~sigmask(SIGINT));
 	for (ep = STR_environ; *ep; ep++)
 	    xprintf("%s\n", short2str(*ep));
 	return;

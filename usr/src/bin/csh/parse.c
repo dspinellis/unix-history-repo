@@ -6,9 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <stdlib.h>
+#include <string.h>
 #include "csh.h"
 #include "extern.h"
 

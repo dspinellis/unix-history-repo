@@ -12,12 +12,22 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <pwd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <locale.h>
+#include <unistd.h>
 #include "csh.h"
-#include "dir.h"
 #include "extern.h"
+#include "pathnames.h"
 
 extern bool MapsAreInited;
 extern bool NLSMapsAreInited;
@@ -436,7 +446,7 @@ notty:
 	/* Will have value(STRhome) here because set fast if don't */
 	{
 	    int     osetintr = setintr;
-	    sigmask_t omask = sigblock(sigmask(SIGINT));
+	    sigset_t omask = sigblock(sigmask(SIGINT));
 
 	    setintr = 0;
 #ifdef _PATH_DOTCSHRC
@@ -596,7 +606,7 @@ srcunit(unit, onlyown, hflg)
     bool    otell = cantell;
 
     struct Bin saveB;
-    sigmask_t omask;
+    sigset_t omask;
     jmp_buf oldexit;
 
     /* The (few) real local variables */
@@ -784,9 +794,9 @@ pintr1(wantnl)
     bool    wantnl;
 {
     register Char **v;
-    sigmask_t omask;
+    sigset_t omask;
 
-    omask = sigblock((sigmask_t) 0);
+    omask = sigblock((sigset_t) 0);
     if (setintr) {
 	(void) sigsetmask(omask & ~sigmask(SIGINT));
 	if (pjobs) {
@@ -855,7 +865,7 @@ process(catch)
 	 * Interruptible during interactive reads
 	 */
 	if (setintr)
-	    (void) sigsetmask(sigblock((sigmask_t) 0) & ~sigmask(SIGINT));
+	    (void) sigsetmask(sigblock((sigset_t) 0) & ~sigmask(SIGINT));
 
 	/*
 	 * For the sake of reset()
