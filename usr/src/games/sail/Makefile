@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	1.4 83/03/19
+# Makefile	@(#)Makefile	1.5 83/05/19
 #
 CC= cc
 CTAGS= ctags -w
@@ -29,7 +29,7 @@ DRIVER= .driver
 SAIL.LOG= SAIL.log
 SAIL.DOC= SAIL.doc
 SHIPSLOG= .shipslog
-PUBLIC= /usr/public
+TARGET= /usr/games
 
 ..c.o:; ${CC} ${CFLAGS} -c $<
 
@@ -69,13 +69,13 @@ profile: ${COMMONOBJS} ${POBJS} ${DOBJS}
 clean: 
 	rm -f ${DOBJS} ${POBJS} ${LOBJS} ${COMMONOBJS} ${JUNKFILES}
 
-install: sail driver sail.log sail.doc ${PUBLIC}/${SHIPSLOG}
-	install -s -m 4711 -o ${SAILMASTER} sail ${PUBLIC}/${SAIL}
-	install -s -m 4711 -o ${SAILMASTER} driver ${PUBLIC}/${DRIVER}
-	install -s -m 711 sail.log ${PUBLIC}/${SAIL.LOG}
-	cp sail.doc ${PUBLIC}/${SAIL.DOC}
+install: sail driver sail.log sail.doc ${TARGET}/${SHIPSLOG}
+	install -s -m 4711 -o ${SAILMASTER} sail ${TARGET}/${SAIL}
+	install -s -m 4711 -o ${SAILMASTER} driver ${TARGET}/${DRIVER}
+	install -s -m 711 sail.log ${TARGET}/${SAIL.LOG}
+	cp sail.doc ${TARGET}/${SAIL.DOC}
 
-${PUBLIC}/${SHIPSLOG}:
-	cp /dev/null ${PUBLIC}/${SHIPSLOG}
-	chown ${SAILMASTER} ${PUBLIC}/${SHIPSLOG}
-	chmod 644 ${PUBLIC}/${SHIPSLOG}
+${TARGET}/${SHIPSLOG}:
+	cp /dev/null ${TARGET}/${SHIPSLOG}
+	chown ${SAILMASTER} ${TARGET}/${SHIPSLOG}
+	chmod 644 ${TARGET}/${SHIPSLOG}
