@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs.h	8.7 (Berkeley) %G%
+ *	@(#)procfs.h	8.8 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs.h,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -138,6 +138,7 @@ int	procfs_setattr __P((struct vop_setattr_args *));
 int	procfs_ioctl __P((struct vop_ioctl_args *));
 #define procfs_select ((int (*) __P((struct vop_select_args *))) procfs_badop)
 #define procfs_mmap ((int (*) __P((struct vop_mmap_args *))) procfs_badop)
+#define	procfs_revoke vop_revoke
 #define procfs_fsync ((int (*) __P((struct vop_fsync_args *))) procfs_badop)
 #define procfs_seek ((int (*) __P((struct vop_seek_args *))) procfs_badop)
 #define procfs_remove ((int (*) __P((struct vop_remove_args *))) procfs_badop)
