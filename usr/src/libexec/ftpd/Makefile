@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
-CFLAGS=	-O -DSETPROCTITLE
+CFLAGS=	-O -I../../usr.ucb/ftp -DSETPROCTITLE
 LIBC=	/lib/libc.a
 SRCS=	ftpd.c ftpcmd.c glob.c logwtmp.c popen.c vers.c
 OBJS=	ftpd.o ftpcmd.o glob.o logwtmp.o popen.o vers.o
@@ -41,7 +41,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 ftpd ${DESTDIR}/etc/ftpd
+	install -s -o bin -g bin -m 755 ftpd ${DESTDIR}/usr/libexec
 	install -c -o bin -g bin -m 755 ftpd.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}
