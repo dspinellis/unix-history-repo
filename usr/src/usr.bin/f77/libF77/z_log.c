@@ -3,10 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)z_log.c	5.1	%G%
+ *	@(#)z_log.c	5.2	%G%
  */
 
 #include "complex"
+#ifdef tahoe
+#define cabs zabs
+#endif tahoe
 
 z_log(r, z)
 dcomplex *r, *z;

@@ -3,12 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)main.c	5.2	%G%
+ *	@(#)main.c	5.3	%G%
  */
 #include <stdio.h>
 #include <signal.h>
 #include "../libI77/fiodefs.h"
 
+extern int errno;
+char *getenv();
 int xargc;
 char **xargv;
 
@@ -61,6 +63,25 @@ struct action {
 	{"Sig 16", 0},			/* unassigned */
 };
 
+#ifdef tahoe
+/* The following arrays are defined & used assuming that signal codes are 
+   1 to 5 for SIGFPE, and 0 to 3 for SIGILL. 
+   Actually ILL_ALIGN_FAULT=14, and is mapped to 3. */
+
+#define N_ACT_ILL 4			/* number of entries in act_ill[] */
+#define N_ACT_FPE 5			/* number of entries in act_fpe[] */
+#define ILL_ALIGN_FAULT 14
+
+struct action act_fpe[] = {
+	{"Integer overflow", 1},
+	{"Integer divide by 0", 1},
+	{"Floating divide by zero", 1},
+	{"Floating point overflow", 1},
+	{"Floating point underflow", 1},
+};
+
+#else vax || pdp11
+
 struct action act_fpe[] = {
 	{"Integer overflow", 1},
 	{"Integer divide by 0", 1},
@@ -73,22 +94,27 @@ struct action act_fpe[] = {
 	{"Floating divide by zero", 0},
 	{"Floating point underflow", 0},
 };
+#endif vax || pdp11
 
 struct action act_ill[] = {
 	{"addr mode", 1},
 	{"instruction", 1},
 	{"operand", 0},
+#ifdef tahoe
+	{"alignment", 1},
+#endif tahoe
 };
 
-#if	vax
+#if (defined(vax) || defined(tahoe))
 sigdie(s, t, sc)
 int s; int t; struct sigcontext *sc;
 
 #else	pdp11
+
 sigdie(s, t, pc)
 int s; int t; long pc;
 
-#endif
+#endif pdp11
 {
 extern unit units[];
 register struct action *act = &sig_act[s-1];
@@ -104,15 +130,25 @@ if (act->mesg)
 	fprintf(units[STDERR].ufd, "*** %s", act->mesg);
 	if (s == SIGFPE)
 		{
+#ifndef tahoe
 		if (t >= 1 && t <= 10)
+#else tahoe
+		if ((t-1) >= 0 && t < N_ACT_FPE)
+#endif tahoe
 			fprintf(units[STDERR].ufd, ": %s", act_fpe[t-1].mesg);
 		else
 			fprintf(units[STDERR].ufd, ": Type=%d?", t);
 		}
 	else if (s == SIGILL)
 		{
+#ifndef tahoe
 		if (t == 4) t = 2;	/* 4.0bsd botch */
 		if (t >= 0 && t <= 2)
+#else tahoe
+		if (t == ILL_ALIGN_FAULT)	/* ILL_ALIGN_FAULT maps to last
+			t = N_ACT_ILL-1;   	   entry in act_ill[] */
+		if (t >= 0 && t < N_ACT_ILL)
+#endif tahoe
 			fprintf(units[STDERR].ufd, "%s", act_ill[t].mesg);
 		else
 			fprintf(units[STDERR].ufd, "compat mode: Code=%d", t);
