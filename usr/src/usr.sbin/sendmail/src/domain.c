@@ -16,12 +16,20 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sendmail.h>
+
 #ifndef lint
-static char sccsid[] = "@(#)domain.c	5.15 (Berkeley) %G%";
+#ifdef NAMED_BIND
+static char sccsid[] = "@(#)domain.c	5.16 (Berkeley) %G% (with name server)";
+#else
+static char sccsid[] = "@(#)domain.c	5.16 (Berkeley) %G% (without name server)";
+#endif
 #endif /* not lint */
 
-#include <sendmail.h>
+#ifdef NAMED_BIND
+
 #include <sys/param.h>
+#include <errno.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
 #include <netdb.h>
@@ -47,24 +55,37 @@ getmxrr(host, mxhosts, localhost, rcode)
 	u_short pref, localpref, type, prefer[MAXMXHOSTS];
 
 	n = res_search(host, C_IN, T_MX, (char *)&answer, sizeof(answer));
-	if (n < 0) {
+	if (n < 0)
+	{
 #ifdef DEBUG
 		if (tTd(8, 1))
 			printf("getmxrr: res_search failed (errno=%d, h_errno=%d)\n",
 			    errno, h_errno);
 #endif
-		switch(h_errno) {
-		case NO_DATA:
-		case NO_RECOVERY:
+		switch (h_errno)
+		{
+		  case NO_DATA:
+		  case NO_RECOVERY:
+			/* no MX data on this host */
 			goto punt;
-		case HOST_NOT_FOUND:
+
+		  case HOST_NOT_FOUND:
+			/* the host just doesn't exist */
 			*rcode = EX_NOHOST;
 			break;
-		case TRY_AGAIN:
+
+		  case TRY_AGAIN:
+			/* couldn't connect to the name server */
+			if (!UseNameServer && errno == ECONNREFUSED)
+				goto punt;
+
+			/* it might come up later; better queue it up */
 			*rcode = EX_TEMPFAIL;
 			break;
 		}
-		return(-1);
+
+		/* irreconcilable differences */
+		return (-1);
 	}
 
 	/* find first satisfactory answer */
@@ -225,3 +246,5 @@ loop:
 		}
 	}
 }
+
+#endif /* NAMED_BIND */
