@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 
@@ -86,8 +86,26 @@ xnnet_output(flags, sns, size)
 #ifdef DEBUG
 	if(do_output || ntohs(msg->rip_cmd) == RIPCMD_REQUEST)
 #endif	
+	/*
+	 * Kludge to allow us to get routes out to machines that
+	 * don't know their addresses yet; send to that address on
+	 * ALL connected nets
+	 */
+	 if (ns_netof(sns->sns_addr) == 0L) {
+	 	extern  struct interface *ifnet;
+	 	register struct interface *ifp;
+		
+		for (ifp = ifnet; ifp; ifp = ifp->int_next) {
+			ns_netof(sns->sns_addr) = 
+				ns_netof(((struct sockaddr_ns *)&ifp->int_addr)->sns_addr);
+			if (sendto(s, msg, size, flags, sns, sizeof (*sns)) < 0)
+				syslog(LOG_ERR,"sendto: %m");
+		}
+		return;
+	}
+	
 	if (sendto(s, msg, size, flags, sns, sizeof (*sns)) < 0)
-		perror("sendto");
+		syslog(LOG_ERR,"sendto: %m");
 }
 
 /*

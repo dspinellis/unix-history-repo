@@ -9,7 +9,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,6 +22,9 @@ static char sccsid[] = "@(#)trace.c	5.4 (Berkeley) %G%";
 #ifdef DEBUG
 FILE	*ftrace = stdout;
 int	tracing = 1;
+#else DEBUG
+FILE	*ftrace = NULL;
+int	tracing = 0;
 #endif
 
 char *xns_ntoa();
@@ -34,7 +37,7 @@ traceinit(ifp)
 	    iftraceinit(ifp, &ifp->int_output))
 		return;
 	tracing = 0;
-	fprintf(stderr, "traceinit: can't init %s\n", ifp->int_name);
+	syslog(LOG_ERR, "traceinit: can't init %s\n", ifp->int_name);
 }
 
 static
@@ -176,6 +179,7 @@ traceaction(fd, action, rt)
 
 dumpif(fd, ifp)
 	register struct interface *ifp;
+	FILE *fd;
 {
 	if (ifp->int_input.ifd_count || ifp->int_output.ifd_count) {
 		fprintf(fd, "*** Packet history for interface %s ***\n",
