@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.4 85/09/18";
+static char sccsid[] = "@(#)route.c	5.5 85/09/18";
 #endif
 
 #include <sys/param.h>
@@ -141,7 +141,7 @@ char *
 routename(in)
 	struct in_addr in;
 {
-	register char *cp = 0;
+	register char *cp;
 	static char line[50];
 	struct hostent *hp;
 	static char domain[MAXHOSTNAMELEN + 1];
@@ -156,6 +156,7 @@ routename(in)
 		else
 			domain[0] = 0;
 	}
+	cp = 0;
 	if (!nflag) {
 		hp = gethostbyaddr(&in, sizeof (struct in_addr),
 			AF_INET);
