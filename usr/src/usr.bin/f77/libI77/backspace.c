@@ -1,5 +1,5 @@
 /*
-char id_backspace[] = "@(#)backspace.c	1.1";
+char id_backspace[] = "@(#)backspace.c	1.2";
  *
  * Backspace records
  */
@@ -18,7 +18,7 @@ f_back(a) alist *a;
 	external = YES;
 	errflag = a->aerr;
 	lunit = a->aunit;
-	if (not_legal(lunit)) err(errflag,101,bksp)
+	if (not_legal(lunit)) err(errflag,F_ERUNIT,bksp)
 	b= &units[lunit];
 	if(!b->ufd && (n=fk_open(READ,SEQ,FMT,(ftnint)lunit)) )
 		err(errflag,n,bksp)
@@ -28,7 +28,7 @@ f_back(a) alist *a;
 		return(OK);
 	}
 	if((x=ftell(b->ufd))==0) return(OK);
-	if(!b->useek) err(errflag,106,bksp)
+	if(!b->useek) err(errflag,F_ERNOBKSP,bksp)
 	if(b->uwrt) t_runc(b,errflag);
 	if(b->url)		/* direct access, purely academic */
 	{	y = x%(long)b->url;
