@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.13 (Berkeley) %G%
+#       @(#)makesendmail	8.14 (Berkeley) %G%
 #
 
 #
@@ -14,8 +14,19 @@
 #  multiple architectures and Makefiles.
 #
 
-# determine machine architecture
-arch=`uname -m | sed -e 's/ //g'`
+if [ -d /LocalApps -a ! -f /bin/uname -a ! -f /usr/bin/uname ]
+then
+	# probably a NeXT box
+	arch=NeXT
+	os=Mach
+	rel=`strings /mach | grep Mach | sed -e 's/.* Mach //' -e 's/:.*//'`
+else
+	arch=`uname -m | sed -e 's/ //g'`
+	os=`uname -s`
+	rel=`uname -r`
+fi
+
+# tweak machine architecture
 case $arch
 in
   sun4*)	arch=sun4;;
@@ -23,16 +34,14 @@ in
   9000/*)	arch=`echo $arch | sed -e 's/9000.//' -e 's/..$/xx/'`;;
 esac
 
-# determine operating system type
-os=`uname -s`
+# tweak operating system type
 case $os
 in
   DYNIX/ptx)	os=PTX;;
   Paragon*)	os=Paragon;;
 esac
 
-# determine operating system release
-rel=`uname -r`
+# tweak operating system release
 rbase=`echo $rel | sed 's/\..*//''`
 
 # heuristic tweaks to clean up names
