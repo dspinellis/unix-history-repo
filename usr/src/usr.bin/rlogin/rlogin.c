@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,8 +39,8 @@ static char sccsid[] = "@(#)rlogin.c	5.29 (Berkeley) %G%";
 
 #include <sgtty.h>
 #include <setjmp.h>
-#include <errno.h>
 #include <varargs.h>
+#include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -68,7 +68,10 @@ extern char *krb_realmofhost();
 
 extern int errno;
 int eight, litout, rem;
-char cmdchar;
+
+int noescape;
+u_char escapechar = '~';
+
 char *speeds[] = {
 	"0", "50", "75", "110", "134", "150", "200", "300", "600", "1200",
 	"1800", "2400", "4800", "9600", "19200", "38400"
@@ -101,12 +104,12 @@ main(argc, argv)
 	int argoff, ch, dflag, one, uid;
 	char *host, *p, *user, term[1024];
 	void lostpeer();
+	u_char getescape();
 	char *getenv();
 
 	argoff = dflag = 0;
 	one = 1;
 	host = user = NULL;
-	cmdchar = '~';
 
 	if (p = rindex(argv[0], '/'))
 		++p;
@@ -123,14 +126,17 @@ main(argc, argv)
 	}
 
 #ifdef KERBEROS
-#define	OPTIONS	"8KLde:k:l:x"
+#define	OPTIONS	"8EKLde:k:l:x"
 #else
-#define	OPTIONS	"8KLde:l:"
+#define	OPTIONS	"8EKLde:l:"
 #endif
 	while ((ch = getopt(argc - argoff, argv + argoff, OPTIONS)) != EOF)
 		switch(ch) {
 		case '8':
 			eight = 1;
+			break;
+		case 'E':
+			noescape = 1;
 			break;
 		case 'K':
 #ifdef KERBEROS
@@ -144,7 +150,7 @@ main(argc, argv)
 			dflag = 1;
 			break;
 		case 'e':
-			cmdchar = optarg[0];
+			escapechar = getescape(optarg);
 			break;
 #ifdef KERBEROS
 		case 'k':
@@ -390,14 +396,14 @@ catch_child()
 
 /*
  * writer: write to remote: 0 -> line.
- * ~.	terminate
- * ~^Z	suspend rlogin process.
- * ~^Y  suspend rlogin process, but leave reader alone.
+ * ~.				terminate
+ * ~^Z				suspend rlogin process.
+ * ~<delayed-suspend char>	suspend rlogin process, but leave reader alone.
  */
 writer()
 {
-	char c;
 	register int bol, local, n;
+	char c;
 
 	bol = 1;			/* beginning of line */
 	local = 0;
@@ -417,8 +423,7 @@ writer()
 		 */
 		if (bol) {
 			bol = 0;
-			if (c == cmdchar) {
-				bol = 0;
+			if (!noescape && c == escapechar) {
 				local = 1;
 				continue;
 			}
@@ -434,14 +439,13 @@ writer()
 				stop(c);
 				continue;
 			}
-			if (c != cmdchar) {
+			if (c != escapechar)
 #ifdef KERBEROS
-				if (encrypt) {
-					(void)des_write(rem, &cmdchar, 1);
-				} else
+				if (encrypt)
+					(void)des_write(rem, &escapechar, 1);
+				else
 #endif
-					(void)write(rem, &cmdchar, 1);
-			}
+					(void)write(rem, &escapechar, 1);
 		}
 
 #ifdef KERBEROS
@@ -470,7 +474,7 @@ register char c;
 
 	p = buf;
 	c &= 0177;
-	*p++ = cmdchar;
+	*p++ = escapechar;
 	if (c < ' ') {
 		*p++ = '^';
 		*p++ = c + '@';
@@ -481,7 +485,7 @@ register char c;
 		*p++ = c;
 	*p++ = '\r';
 	*p++ = '\n';
-	(void)write(1, buf, p - buf);
+	(void)write(STDOUT_FILENO, buf, p - buf);
 }
 
 stop(cmdc)
@@ -655,7 +659,7 @@ reader(omask)
 	for (;;) {
 		while ((remaining = rcvcnt - (bufp - rcvbuf)) > 0) {
 			rcvstate = WRITING;
-			n = write(1, bufp, remaining);
+			n = write(STDOUT_FILENO, bufp, remaining);
 			if (n < 0) {
 				if (errno != EINTR)
 					return(-1);
@@ -768,9 +772,9 @@ usage()
 	(void)fprintf(stderr,
 	    "usage: rlogin [ -%s]%s[-e char] [ -l username ] host\n",
 #ifdef KERBEROS
-	    "8Lx", " [-k realm] ");
+	    "8ELx", " [-k realm] ");
 #else
-	    "8L", " ");
+	    "8EL", " ");
 #endif
 	exit(1);
 }
@@ -780,7 +784,6 @@ usage()
  * Suns and others.  Suns have only a `ttysize', so we convert it to a winsize.
  */
 #ifdef sun
-int
 get_window_size(fd, wp)
 	int fd;
 	struct winsize *wp;
@@ -797,3 +800,27 @@ get_window_size(fd, wp)
 	return(0);
 }
 #endif
+
+u_char
+getescape(p)
+	register char *p;
+{
+	long val;
+	int len;
+
+	if ((len = strlen(p)) == 1)	/* use any single char, including '\' */
+		return((u_char)*p);
+					/* otherwise, \nnn */
+	if (*p == '\\' && len >= 2 && len <= 4) {
+		val = strtol(++p, (char **)NULL, 8);
+		for (;;) {
+			if (!*++p)
+				return((u_char)val);
+			if (*p < '0' || *p > '8')
+				break;
+		}
+	}
+	msg("illegal option value -- e");
+	usage();
+	/* NOTREACHED */
+}
