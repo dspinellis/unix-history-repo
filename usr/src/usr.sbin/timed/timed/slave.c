@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -21,10 +21,10 @@ slave()
 	long electiontime, refusetime;
 	u_short seq;
 	char candidate[MAXHOSTNAMELEN];
-	struct tsp *msg, *readmsg();
+	struct tsp *msg, to, *readmsg();
 	struct sockaddr_in saveaddr, msaveaddr;
 	struct timeval wait;
-	struct timeval time;
+	struct timeval time, mytime;
 	struct tsp *answer, *acksend();
 	int timeout();
 	char *date();
@@ -33,6 +33,7 @@ slave()
 	char olddate[32];
 	struct sockaddr_in server;
 	register struct netinfo *ntp;
+	int ind;
 #ifdef MEASURE
 	extern FILE *fp;
 #endif
@@ -204,7 +205,17 @@ loop:
 			}
 			break;
 		case TSP_DATEREQ:
+			saveaddr = from;
 			if (status != SUBMASTER)
+				break;
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				if ((ntp->mask & from.sin_addr.s_addr) ==
+				    ntp->net) {
+					if (ntp->status == MASTER)
+						break;
+				}
+			}
+			if (ntp == NULL)
 				break;
 			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
 				if (ntp->status == SLAVE)
