@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	3.3 (Berkeley) %G%
+#	@(#)makefile	3.4 (Berkeley) %G%
 #
 # msdos versus unix defines
 O	= .o
@@ -67,7 +67,7 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 # Lint flags
 LINTFLAGS	= -hbxaz
 
-ALLH =	spint.h termout.ext video.h
+ALLH =	spint.h video.h
 
 ALLC = spintc.c system.c termout.c
 
@@ -137,7 +137,7 @@ depend:
 
 spintc$O: ../general/general.h spint.h
 system$O: ../general/general.h ../ctlr/api.h spint.h ../general/globals.h
-termout$O: ../general/general.h ../telnet.ext ../api/disp_asc.h
-termout$O: ../ascii/map3270.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
-termout$O: ../ctlr/oia.h ../ctlr/options.ext ../ctlr/outbound.ext
+termout$O: ../general/general.h ../api/disp_asc.h
+termout$O: ../ctlr/hostctlr.h 
+termout$O: ../ctlr/oia.h
 termout$O: ../ctlr/screen.h ../general/globals.h video.h
