@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -566,9 +566,14 @@ setsender(from, e, delimptr, internal)
 		SuprErrs = TRUE;
 
 	delimchar = internal ? '\0' : ' ';
+	e->e_from.q_flags = QBADADDR;
 	if (from == NULL ||
 	    parseaddr(from, &e->e_from, RF_COPYALL|RF_SENDERADDR,
-		      delimchar, delimptr, e) == NULL)
+		      delimchar, delimptr, e) == NULL ||
+	    bitset(QBADADDR, e->e_from.q_flags) ||
+	    e->e_from.q_mailer == ProgMailer ||
+	    e->e_from.q_mailer == FileMailer ||
+	    e->e_from.q_mailer == InclMailer)
 	{
 		/* log garbage addresses for traceback */
 # ifdef LOG
@@ -587,19 +592,31 @@ setsender(from, e, delimptr, internal)
 				p = ebuf;
 			}
 			syslog(LOG_NOTICE,
-				"from=%s unparseable, received from %s",
+				"setsender: %s: invalid or unparseable, received from %s",
 				from, p);
 		}
 # endif /* LOG */
 		if (from != NULL)
+		{
+			if (!bitset(QBADADDR, e->e_from.q_flags))
+			{
+				/* it was a bogus mailer in the from addr */
+				usrerr("553 Invalid sender address");
+			}
 			SuprErrs = TRUE;
+		}
 		if (from == realname ||
 		    parseaddr(from = newstr(realname), &e->e_from,
 			      RF_COPYALL|RF_SENDERADDR, ' ', NULL, e) == NULL)
 		{
+			char nbuf[100];
+
 			SuprErrs = TRUE;
-			if (parseaddr("postmaster", &e->e_from, RF_COPYALL,
-				      ' ', NULL, e) == NULL)
+			expand("\201n", buf, &buf[sizeof buf], e);
+			if (parseaddr(from = newstr(nbuf), &e->e_from,
+				      RF_COPYALL, ' ', NULL, e) == NULL &&
+			    parseaddr(from = "postmaster", &e->e_from,
+			    	      RF_COPYALL, ' ', NULL, e) == NULL)
 				syserr("553 setsender: can't even parse postmaster!");
 		}
 	}
