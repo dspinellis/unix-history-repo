@@ -12,7 +12,7 @@
 #define	NEXP		20	/* max number of expr. terms per instruction */
 #define	NARG		6	/* max number of args per instruction */
 #define	NHASH		1103	/* hash table is dynamically extended */
-#define TNAMESIZE	32	/* maximum length of temporary file names */
+#define	TNAMESIZE	32	/* maximum length of temporary file names */
 #define	NLOC		4	/* number of location ctrs */
 
 #ifdef UNIX
@@ -57,51 +57,51 @@
 /*
  * Actual argument syntax types
  */
-#define AREG	1	/* %r */
-#define ABASE	2	/* (%r) */
-#define ADECR	3	/* -(%r) */
-#define AINCR	4	/* (%r)+ */
-#define ADISP	5	/* expr(%r) */
-#define AEXP	6	/* expr */
-#define AIMM	7	/* $ expr */
-#define ASTAR	8	/* * */
-#define AINDX	16	/* [%r] */
+#define	AREG	1	/* %r */
+#define	ABASE	2	/* (%r) */
+#define	ADECR	3	/* -(%r) */
+#define	AINCR	4	/* (%r)+ */
+#define	ADISP	5	/* expr(%r) */
+#define	AEXP	6	/* expr */
+#define	AIMM	7	/* $ expr */
+#define	ASTAR	8	/* * */
+#define	AINDX	16	/* [%r] */
 
 /*
  * Argument access types used to test validity of operands to operators
  */
-#define ACCA	(8<<3)	/* address only */
-#define ACCR	(1<<3)	/* read */
-#define ACCW	(2<<3)	/* write */
-#define ACCM	(3<<3)	/* modify */
-#define ACCB	(4<<3)	/* branch displacement */
-#define ACCI	(5<<3)	/* XFC code */
+#define	ACCA	(8<<3)	/* address only */
+#define	ACCR	(1<<3)	/* read */
+#define	ACCW	(2<<3)	/* write */
+#define	ACCM	(3<<3)	/* modify */
+#define	ACCB	(4<<3)	/* branch displacement */
+#define	ACCI	(5<<3)	/* XFC code */
 
 /*
  * Argument data types
  */
-#define TYPB	0	/* byte */
-#define TYPW	1	/* word */
-#define TYPL	2	/* long */
-#define TYPQ	3	/* quad */
-#define TYPF	4	/* floating */
-#define TYPD	5	/* double floating */
+#define	TYPB	0	/* byte */
+#define	TYPW	1	/* word */
+#define	TYPL	2	/* long */
+#define	TYPQ	3	/* quad */
+#define	TYPF	4	/* floating */
+#define	TYPD	5	/* double floating */
 
-#define TYPMASK 7
+#define	TYPMASK	7
 
 /* reference types for loader */
-#define PCREL 1
-#define LEN1 2
-#define LEN2 4
-#define LEN4 6
-#define LEN8 8
+#define	PCREL	1
+#define	LEN1	2
+#define	LEN2	4
+#define	LEN4	6
+#define	LEN8	8
 	/*
 	 *	reflen table converts between LEN* and PCREL to numbers
 	 *		of bytes.
 	 *	lgreflen table is the lg base 2 of the values in reflen.
 	 */
 	extern	int	reflen[];	/* reference lengths */
-	extern	int	lgrefltn[];	/* lg reference lengths */
+	extern	int	lgreflen[];	/* lg reference lengths */
 
 #define	TMPC	7	
 #define	HW	01
@@ -119,7 +119,7 @@
 #define	round(x,y)	(((x)+(y)) & ~(y))
 
 #define	STABTYPS	0340
-#define STABFLAG	0200
+#define	STABFLAG	0200
 
 /*
  *	Follows are the definitions for the symbol table tags, which are
@@ -141,14 +141,14 @@
  *			must get turned into their long form.
  */
 
-#define TAGMASK		0xFF
+#define	TAGMASK		0xFF
 
 #	define	JXACTIVE	0xFF	/*jxxx size unknown*/
 #	define	JXNOTYET	0xFE	/*jxxx size known, but not yet expanded*/
 #	define	JXALIGN		0xFD	/*align jxxx entry*/
 #	define	JXINACTIVE	0xFC	/*jxxx size known and expanded*/
 
-#define JXQUESTIONABLE		0xFB
+#define	JXQUESTIONABLE		0xFB
 
 #	define	JXTUNNEL	0xFA	/*jxxx that jumps to another*/
 #	define	OBSOLETE	0xF9	/*erroneously entered symbol*/

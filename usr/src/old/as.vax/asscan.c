@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asscan.c 4.1 %G%";
+static	char sccsid[] = "@(#)asscan.c 4.2 %G%";
 #include <stdio.h>
 #include <sys/types.h>
 #include "as.h"
@@ -435,19 +435,18 @@ readonly short type[] = {
  */
 #define	HEXFLAG		01		/* 'x' or 'X' */
 #define	HEXLDIGIT	02		/* 'a' .. 'f' */
-#define HEXUDIGIT	04		/* 'A' .. 'F' */
+#define	HEXUDIGIT	04		/* 'A' .. 'F' */
 #define	ALPHA		010		/* 'A' .. 'Z', 'a' .. 'z', '_'*/
-#define DIGIT		020		/* '0' .. '9' */
+#define	DIGIT		020		/* '0' .. '9' */
 #define	FLOATEXP	040		/* 'd' 'e' 'D' 'E' */
-						/*exponent field*/
-#define SIGN		0100		/* '+' .. '-'*/
-#define REGDIGIT	0200		/* '0' .. '5' */
-#define SZSPECBEGIN	0400		/* 'b', 'B', 'l', 'L', 'w', 'W' */
-#define POINT		01000		/* '.' */
-#define SPACE		02000		/* '\t' or ' ' */
-#define BSESCAPE	04000		/* bnrtf */
-#define STRESCAPE	010000		/* '"', '\\', '\n' */
-#define OCTDIGIT	020000		/* '0' .. '7' */
+#define	SIGN		0100		/* '+' .. '-'*/
+#define	REGDIGIT	0200		/* '0' .. '5' */
+#define	SZSPECBEGIN	0400		/* 'b', 'B', 'l', 'L', 'w', 'W' */
+#define	POINT		01000		/* '.' */
+#define	SPACE		02000		/* '\t' or ' ' */
+#define	BSESCAPE	04000		/* bnrtf */
+#define	STRESCAPE	010000		/* '"', '\\', '\n' */
+#define	OCTDIGIT	020000		/* '0' .. '7' */
 #define	FLOATFLAG	040000		/* 'd', 'D', 'f', 'F' */
 						/*after leading 0*/
 
@@ -487,7 +486,7 @@ readonly short charsets[] = {
 	ALPHA+HEXFLAG,	ALPHA,	ALPHA,	0,0,	0,	0,	0,    /*x..del*/
 0};
 
-#define INCHARSET(val, kind) (charsets[val] & (kind) )
+#define	INCHARSET(val, kind) (charsets[val] & (kind) )
 static	toktype	oval = NL;
 
 #define	NINBUFFERS	2
@@ -501,13 +500,13 @@ static	toktype	oval = NL;
 static	char	inbuffer[INBUFLG];
 static	char	*InBufPtr = 0;
 
-#ifdef  getchar
-#undef	getchar
+#ifdef	getchar
+#undef		getchar
 #endif
-#define getchar() *inbufptr++
+#define	getchar() *inbufptr++
 
-#ifdef  ungetc
-#undef	ungetc
+#ifdef	ungetc
+#undef		ungetc
 #endif
 #define	ungetc(char) *--inbufptr = char
 
