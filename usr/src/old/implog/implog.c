@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implog.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)implog.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)implog.c	5.3 (Berkeley) %G%";
 u_char	buf[1024];
 int	showdata = 1;
 int	showcontents = 0;
+int	rawheader = 0;
 int	follow = 0;
 int	link = -1;
 int	host = -1;
@@ -80,6 +81,11 @@ main(argc, argv)
 			argv++, argc--;
 			continue;
 		}
+		if (strcmp(*argv, "-r") == 0) {
+			rawheader++;
+			argv++, argc--;
+			continue;
+		}
 		if (strcmp(*argv, "-l") == 0) {
 			argc--, argv++;
 			if (argc > 0) {
@@ -119,7 +125,7 @@ main(argc, argv)
 			argv++, argc--;;
 			continue;
 		}
-		printf("usage: implog [ -D ] [ -c ] [ -f ] [-h #] [-i #] [ -t # ] [-l [#]] [logfile]\n");
+		printf("usage: implog [ -D ] [ -c ] [ -f ] [ -r ] [-h #] [-i #] [ -t # ] [-l [#]] [logfile]\n");
 		exit(2);
 	}
 	if (argc > 0)
@@ -207,6 +213,7 @@ process(l, f)
 {
 	register struct messages *mp;
 	struct imp_leader *ip;
+	int (*fn)();
 
 	if (read(l, (char *)buf, f->sin_cc) != f->sin_cc) {
 		perror("read");
@@ -214,25 +221,32 @@ process(l, f)
 	}
 	ip = (struct imp_leader *)buf;
 	ip->il_imp = ntohs((u_short)ip->il_imp);
-	for (mp = mtypes; mp->m_type != -1; mp++)
-		if (mp->m_type == ip->il_mtype)
-			break;
-	if (mp->m_type == IMPTYPE_DATA) {
+	if (ip->il_format != IMP_NFF)
+		fn = impundef;
+	else {
+		for (mp = mtypes; mp->m_type != -1; mp++)
+			if (mp->m_type == ip->il_mtype)
+				break;
+		fn = mp->m_func;
+	}
+	if (ip->il_mtype == IMPTYPE_DATA) {
 		if (link >= 0 && ip->il_link != link)
 			return;
 		if (!showdata)
 			return;
 	}
-	if (packettype >= 0 && mp->m_type != packettype)
+	if (packettype >= 0 && ip->il_mtype != packettype)
 		return;
 	printf("%.24s: ", ctime(&f->sin_time));
-	(*mp->m_func)(ip, f->sin_cc);
+	(*fn)(ip, f->sin_cc);
+	if (rawheader && fn != impundef)
+		impundef(ip, f->sin_cc);
 }
 
 impdata(ip, cc)
 	register struct imp_leader *ip;
 {
-	printf("<%d/%d, DATA, link=", ip->il_host, ntohs((u_short)ip->il_imp));
+	printf("<DATA, source=%d/%d, link=", ip->il_host, (u_short)ip->il_imp);
 	if (ip->il_link == IMPLINK_IP)
 		printf("ip,");
 	else
@@ -299,7 +313,7 @@ impnoop(ip)
 	register struct imp_leader *ip;
 {
 	printf("noop: host %d, imp %d\n", ip->il_host,
-		ntohs((u_short)ip->il_imp));
+		(u_short)ip->il_imp);
 }
 
 imprfnm(ip)
@@ -310,7 +324,7 @@ imprfnm(ip)
 	if (ip->il_link == IMPLINK_IP)
 		printf("ip,");
 	else
-		printf("%x,", ip->il_link);
+		printf("%d,", ip->il_link);
 	printf(" subtype=%x\n", ip->il_subtype);
 }
 
@@ -336,7 +350,7 @@ char *hostdead[] = {
 imphostdead(ip)
 	register struct imp_leader *ip;
 {
-	printf("host dead: ");
+	printf("host %d/%d dead: ", ip->il_host, ip->il_imp);
 	if (ip->il_link & IMP_DMASK)
 		printf("down %s, ", down[ip->il_link & IMP_DMASK]);
 	if (ip->il_subtype <= IMPHOST_COMINGUP)
@@ -355,7 +369,7 @@ char *hostunreach[] = {
 imphostunreach(ip)
 	register struct imp_leader *ip;
 {
-	printf("host unreachable: ");
+	printf("host %d/%d unreachable: ", ip->il_host, ip->il_imp);
 	if (ip->il_subtype <= IMPREACH_PROHIBITED)
 		printf("%s\n", hostunreach[ip->il_subtype]);
 	else
@@ -370,7 +384,7 @@ impbaddata(ip)
 	if (ip->il_link == IMPLINK_IP)
 		printf("ip, ");
 	else
-		printf("%x, ", ip->il_link);
+		printf("%d, ", ip->il_link);
 	printf("subtype=%x\n", ip->il_subtype);
 }
 
@@ -391,7 +405,7 @@ impincomplete(ip)
 	if (ip->il_link == IMPLINK_IP)
 		printf("ip,");
 	else
-		printf("%x,", ip->il_link);
+		printf("%d,", ip->il_link);
 	if (ip->il_subtype <= IMPCOMPLETE_IMPIO)
 		printf(" %s\n", incomplete[ip->il_subtype]);
 	else
@@ -460,6 +474,6 @@ impundef(ip)
 	if (ip->il_link == IMPLINK_IP)
 		printf("ip,");
 	else
-		printf("%x,", ip->il_link);
+		printf("%d,", ip->il_link);
 	printf(" subtype=%x>\n", ip->il_subtype);
 }

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implogd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)implogd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sgtty.h>
@@ -55,6 +55,18 @@ main(argc, argv)
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d"))
 		options |= SO_DEBUG;
+	log = open(LOGFILE, O_CREAT|O_WRONLY|O_APPEND, 0644);
+	if (log < 0) {
+		perror("implogd: open");
+		exit(1);
+	}
+	from.sin_time = time(0);
+	from.sin_len = sizeof (time_t);
+	write(log, (char *)&from, sizeof (from));
+	if ((s = socket(AF_IMPLINK, SOCK_RAW, 0)) < 0) {
+		perror("implogd: socket");
+		exit(5);
+	}
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -70,18 +82,6 @@ main(argc, argv)
 	  }
 	}
 #endif
-	log = open(LOGFILE, O_CREAT|O_WRONLY|O_APPEND, 0644);
-	if (log < 0) {
-		perror("implogd: open");
-		exit(1);
-	}
-	from.sin_time = time(0);
-	from.sin_len = sizeof (time_t);
-	write(log, (char *)&from, sizeof (from));
-	while ((s = socket(AF_IMPLINK, SOCK_RAW, 0, 0)) < 0) {
-		perror("implogd: socket");
-		sleep(5);
-	}
 	for (;;) {
 		int fromlen = sizeof (from), len;
 
