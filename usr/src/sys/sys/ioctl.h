@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.2 (Berkeley) %G%
+ *	@(#)ioctl.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -82,15 +82,17 @@ struct ttysize {
 /*
  * Ioctl's have the command encoded in the lower word,
  * and the size of any in or out parameters in the upper
- * word.  The high 2 bits of the upper word are used
- * to encode the in/out status of the parameter; for now
- * we restrict parameters to at most 128 bytes.
+ * word.  The high 3 bits of the upper word are used
+ * to encode the in/out status of the parameter.
  */
-#define	IOCPARM_MASK	0x7f		/* parameters must be < 128 bytes */
+#define	IOCPARM_MASK	0x1fff		/* parameter length, at most 13 bits */
+#define	IOCPARM_LEN(x)	(((x) >> 16) & IOCPARM_MASK)
+#define	IOCPARM_MAX	NBPG		/* max size of ioctl, mult. of NBPG */
 #define	IOC_VOID	0x20000000	/* no parameters */
 #define	IOC_OUT		0x40000000	/* copy out parameters */
 #define	IOC_IN		0x80000000	/* copy in parameters */
 #define	IOC_INOUT	(IOC_IN|IOC_OUT)
+#define	IOC_DIRMASK	0xe0000000	/* mask for IN/OUT/VOID */
 /* the 0x20000000 is so we can distinguish new ioctl's from old */
 #define	_IO(x,y)	(IOC_VOID|('x'<<8)|y)
 #define	_IOR(x,y,t)	(IOC_OUT|((sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
