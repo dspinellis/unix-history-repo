@@ -32,6 +32,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)kern_synch.c	7.18 (Berkeley) 6/27/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00077
+ * --------------------         -----   ----------------------
+ *
+ * 11 Dec 92	Williams Jolitz		Fixed panic:remrq hangs
  */
 
 #include "param.h"
@@ -189,7 +196,7 @@ schedcpu()
 #define	PPQ	(128 / NQS)		/* priorities per queue */
 			if ((p != curproc) &&
 			    p->p_stat == SRUN &&
-			    (p->p_flag & SLOAD) &&
+			    (p->p_flag & (SLOAD|SWEXIT)) == SLOAD &&
 			    (p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
 				remrq(p);
 				p->p_pri = p->p_usrpri;
