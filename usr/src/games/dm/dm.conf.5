@@ -2,36 +2,55 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dm.conf.5	5.1 (Berkeley) %G%
+.\"	@(#)dm.conf.5	5.2 (Berkeley) %G%
 .\"
 .TH DM.CONFIG 5 ""
 .UC 5
 .SH NAME
 dm.config \- dm configuration file
 .SH DESCRIPTION
-\fIDm.config\fP is the configuration file for the \fIdm\fP(8) program.  It
-consists of three parts, each separated by percent signs (``%'')
-occurring as the first two characters in a line.  Blank lines and lines
-preceded by a hash mark (``#'') are ignored.
+\fIDm.config\fP is the configuration file for the \fIdm\fP(8) program.
+It consists of lines beginning with one of three keywords, ``badtty'',
+``game'', and ``time''.  All other lines are ignored.
 .PP
-The first part of the file sets the standard games hours on a day-by-day
-basis.  Entries consist of three white-space separated fields: the
-unabbreviated day of the week and the beginning and ending time of the
-period of the day when games may not be played.  The time fields are in a
-0 based, 24-hour clock.  Any of the time fields may be a non-numeric
-character, resulting in no time limitations for that day.
+Any tty listed after the keyword ``badtty'' may not have games played on
+it.  Entries consist of two white-space separated fields: the string
+``badtty'' and the ttyname as returned by \fIttyname\fP(3).  For example,
+to keep the uucp dialout, ``tty19'', from being used for games, the
+entry would be:
 .PP
-The second part sets the tty limitations.  Entries consist of two white-space
-separated fields: the string "badtty", and the ttyname as returned by
-\fIttyname\fP(3).  Games may not be played on tty's listed in this section.
+.RS
+	badtty	/dev/tty19
+.RE
 .PP
-The third, and final, part sets specific game limitations.  Entries consist
-of four white-space separated fields: the name of a game, the highest system
-load average at which the game may be played, the maximum users allowed
-if the game is to be played, and the priority at which the game is to be run.
-Any of these fields may be a non-numeric character, resulting in no game
-limitation or priority based on the field.  The game "default" controls the
-settings for any game not otherwise listed.  Priorities may not be negative.
+Any day/hour combination listed after the keyword ``time'' will disallow
+games during those hours.  Entries consist of four white-space separated
+fields: the string ``time'', the unabbreviated day of the week and the
+beginning and ending time of a period of the day when games may not be
+played.  The time fields are in a 0 based, 24-hour clock.  For example,
+the following entry allows games playing before 8AM and after 5PM on
+Mondays.
+.PP
+.RS
+	time		Monday	8	17
+.RE
+.PP
+Any game listed after the keyword ``game'' will set parameters for a specific
+game.  Entries consist of five white-space separated fields: the keyword
+``game'', the name of a game, the highest system load average at which the
+game may be played, the maximum users allowed if the game is to be played,
+and the priority at which the game is to be run.  Any of these fields may
+start with a non-numeric character, resulting in no game limitation or
+priority based on that field.  The game "default" controls the settings for
+any game not otherwise listed, and must be the last ``game'' entry in the
+file.  Priorities may not be negative.  For example, the following entries
+limits the game ``hack'' to running only when the system has 10 or less
+users and a load average of 5 or less; all other games may be run any time
+the system has 15 or less users.
+.PP
+.RS
+	game		hack		5	10	*
+	game		default	*	15	*
+.RE
 .SH "SEE ALSO"
 setpriority(2), ttyname(3), dm(8)
-
