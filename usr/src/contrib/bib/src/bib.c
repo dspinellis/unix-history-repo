@@ -1,19 +1,28 @@
 #ifndef lint
 static char sccsid[] = "@(#)bib.c	2.2	%G%";
 #endif not lint
-
 /*
-   bib - bibliographic formatter
-         timothy a. budd, 1/82
-         lookup routines supplied by gary levin 2/82
-         reworked several new features added, 11/82.
-*/
+        Bib - bibliographic formatter
+
+        Authored by: Tim Budd, University of Arizona, 1983.
+                lookup routines written by gary levin 2/82
+
+                version 7/4/83
+
+        Various modifications suggested by:
+                David Cherveny - Duke University Medical Center
+                Phil Garrison - UC Berkeley
+                M. J. Hawley - Yale University
+
+
+
+
+                                                        */
 # include <stdio.h>
 # include <ctype.h>
 # include "bib.h"
 
 # define HUNTSIZE 512                /* maximum size of hunt string         */
-# define MAXFIELD 250                /* maximum field length                */
 # define MAXREFS  300                /* maximum number of references        */
 # define MAXATONCE 35                /* maximum references at one location  */
 
@@ -35,10 +44,8 @@ static char sccsid[] = "@(#)bib.c	2.2	%G%";
 
 /* global variables in bibargs */
    extern int foot, sort, personal;
-   extern int hyphen, ordcite;
-   extern char sortstr[], pfile[], citetemplate[];
-   char *bibfname;		/* file name currently reading */
-   char *biblineno;		/* line number in that file */
+   extern int hyphen, ordcite, biblineno;
+   extern char sortstr[], pfile[], citetemplate[], bibfname[];
 
 
 main(argc, argv)
@@ -62,6 +69,7 @@ main(argc, argv)
    rfd = fopen(reffile,"w+");
    if (rfd == NULL)
       error("can't open temporary reference file");
+   putc('x', rfd);      /* put garbage in first position (not used) */
    mktemp(tmpfile);
    tfd = fopen(tmpfile,"w");
    if (tfd == NULL)
@@ -72,10 +80,10 @@ main(argc, argv)
                arguments are read by doargs (bibargs.c)
     */
 
-   if (doargs(argc, argv, DEFSTYLE ) == 0){
-      bibfname = "<stdin>";
+   if (doargs(argc, argv, DEFSTYLE ) == 0) {
+      strcpy(bibfname, "<stdin>");
       rdtext(stdin);
-   }
+      }
 
    /*
     sort references, make citations, add disambiguating characters
@@ -117,71 +125,43 @@ main(argc, argv)
    FILE *fd;
 {  char lastc, c, d;
 
-   biblineno = 0;
-   lastc = 0;
+   lastc = '\0';
+   biblineno = 1;
    while (getch(c, fd) != EOF)
       if (c == '[' || c == '{')
          if (getch(d, fd) == '.') { /* found a reference */
             if (c == '{') { if (lastc) putc(lastc, tfd);}
             else
-	       switch (lastc) {
-	       case ' ': fputs("\\*([<", tfd);
-			 break;
-               case '.': fputs("\\*([.", tfd);
-			 break;
-               case ',': fputs("\\*([,", tfd);
-			 break;
-               case '?': fputs("\\*([?", tfd);
-			 break;
-               case ':': fputs("\\*([:", tfd);
-			 break;
-               case ';': fputs("\\*([;", tfd);
-			 break;
-               case '!': fputs("\\*([!", tfd);
-			 break;
-               case '"': fputs("\\*([\"", tfd);
-			 break;
-               case '\'': fputs("\\*(['", tfd);
-			 break;
-	       default : putc(lastc, tfd);
-			 break;
-	       }
+               switch (lastc) {
+                  case '\0': break;
+                  case ' ': fputs("\\*([<", tfd); break;
+                  case '.': case ',': case '?': case ':':
+                  case ';': case '!': case '"': case '\'':
+                            fputs("\\*([", tfd);  /* fall through */
+                  default:  putc(lastc, tfd); break;
+                  }
             rdcite(fd, c);
             if (c == '[')
-	       switch (lastc) {
-	       case ' ': fputs("\\*(<]", tfd);
-			 break;
-               case '.': fputs("\\*(.]", tfd);
-			 break;
-               case ',': fputs("\\*(,]", tfd);
-			 break;
-               case '?': fputs("\\*(?]", tfd);
-			 break;
-               case ':': fputs("\\*(:]", tfd);
-			 break;
-               case ';': fputs("\\*(;]", tfd);
-			 break;
-               case '!': fputs("\\*(!]", tfd);
-			 break;
-               case '"': fputs("\\*(\"]", tfd);
-			 break;
-               case '\'': fputs("\\*(']", tfd);
-			 break;
-	       }
-            lastc = 0;
+               switch (lastc) {
+                  case '\0': break;
+                  case ' ': fputs("\\*(>]", tfd); break;
+                  case '.': case ',': case '?': case ':':
+                  case ';': case '!': case '"': case '\'':
+                            fprintf(tfd,"\\*(%c]", lastc); break;
+                  }
+            lastc = '\0';
             }
          else {
-            if (lastc) putc(lastc, tfd);
+            if (lastc != '\0') putc(lastc, tfd);
             ungetc(d, fd);
             lastc = c;
             }
       else {
-         if (lastc) putc(lastc, tfd);
+         if (lastc != '\0') putc(lastc, tfd);
          lastc = c;
-	 if (c == '\n')
-		biblineno++;
+         if (c == '\n') biblineno++;
          }
-   if (lastc) putc(lastc, tfd);
+   if (lastc != '\0') putc(lastc, tfd);
 }
 
 /* rdcite - read citation information inside a [. command */
@@ -245,6 +225,7 @@ main(argc, argv)
             break;
 
          case '\n':
+            biblineno++;
          case '\t':
             c = ' ';   /* fall through */
 
@@ -293,7 +274,11 @@ main(argc, argv)
 
       numrefs++;
       refspos[numrefs] = rend;
-      fseek(rfd, rend, 0);
+#ifdef READWRITE
+      fixrfd( WRITE );                 /* fix access mode of rfd, if nec. */
+#else
+      fseek(rfd, rend, 0);             /* go to end of rfd */
+#endif
       i = strlen(rf) + 1;
       fwrite(rf, 1, i, rfd);
       rend = rend + i;
@@ -303,16 +288,6 @@ main(argc, argv)
       bibwarning("no reference matching %s\n", huntstr);
       return( (long) -1 );
       }
-}
-
-/* rdref - read text for an already cited reference */
-   rdref(i, ref)
-   long int  i;
-   char ref[REFSIZE];
-{
-   ref[0] = 0;
-   fseek(rfd, i, 0);
-   fread(ref, 1, REFSIZE, rfd);
 }
 
 /* hunt - hunt for reference from either personal or system index */
@@ -357,267 +332,13 @@ main(argc, argv)
       if (*p == '\n')
          if (*(p+1) == '\n') { /* end */
             if (*(p+2) != 0)
-               bibwarning("multiple references match %s\n", huntstr);
+               bibwarning("multiple references match %s\n",huntstr);
             *(p+1) = 0;
             break;
             }
          else if (*(p+1) != '%' && *(p+1) != '.') /* unnecessary newline */
             *p = ' ';
    return(r);
-}
-
-/* rcomp - reference comparison routine for qsort utility */
-   int rcomp(ap, bp)
-   long int *ap, *bp;
-{  char ref1[REFSIZE], ref2[REFSIZE], field1[MAXFIELD], field2[MAXFIELD];
-   char *p, *q, *getfield();
-   int  neg, res;
-   int  fields_found;
-
-   rdref(*ap, ref1);
-   rdref(*bp, ref2);
-   for (p = sortstr; *p; p = q) {
-      if (*p == '-') {
-         p++;
-         neg = true;
-         }
-      else
-         neg = false;
-      q = getfield(p, field1, ref1);
-      fields_found = true;
-      if (q == 0) {
-	 res = 1;
-	 fields_found = false;
-      } else if (strcmp (field1, "") == 0) {	/* field not found */
-         if (*p == 'A') {
-            getfield("F", field1, ref1);
-	    if (strcmp (field1, "") == 0) {
-               getfield("I", field1, ref1);
-	       if (strcmp (field1, "") == 0) {
-	          res = 1;
-		  fields_found = false;
-	       }
-	    }
-	 } else {
-	    res = 1;
-	    fields_found = false;
-	 }
-      }
-
-      if (getfield(p, field2, ref2) == 0) {
-	 res = -1;
-	 fields_found = false;
-      } else if (strcmp (field2, "") == 0) {	/* field not found */
-         if (*p == 'A') {
-            getfield("F", field2, ref2);
-	    if (strcmp (field2, "") == 0) {
-               getfield("I", field2, ref2);
-	       if (strcmp (field2, "") == 0) {
-	          res = -1;
-		  fields_found = false;
-	       }
-	    }
-	 } else {
-	    res = -1;
-	    fields_found = false;
-	 }
-      }
-      if (fields_found) {
-         if (*p == 'A') {
-            if (isupper(field1[0]))
-               field1[0] -= 'A' - 'a';
-            if (isupper(field2[0]))
-               field2[0] -= 'A' - 'a';
-            }
-         res = strcmp(field1, field2);
-         }
-      if (neg)
-         res = - res;
-      if (res != 0)
-         break;
-      }
-   if (res == 0)
-      if (ap < bp)
-         res = -1;
-      else
-         res = 1;
-   return(res);
-}
-
-/* makecites - make citation strings */
-   makecites(citestr)
-   char *citestr[];
-{  char ref[REFSIZE], tempcite[100], *malloc();
-   int  i;
-
-   for (i = 0; i <= numrefs; i++) {
-      rdref(refspos[i], ref);
-      bldcite(tempcite, i, ref);
-      citestr[i] = malloc(2 + strlen(tempcite)); /* leave room for disambig */
-      if (citestr[i] == NULL)
-         error("out of storage");
-      strcpy(citestr[i], tempcite);
-      }
-}
-
-/* bldcite - build a single citation string */
-   bldcite(cp, i, ref)
-   char *cp, ref[];
-   int  i;
-{  char *p, *q, c, *fp, *np, field[REFSIZE], temp[100], *getfield();
-   int  j;
-
-   getfield("F", field, ref);
-   if (field[0] != 0)
-      for (p = field; *p; p++)
-         *cp++ = *p;
-   else {
-      p = citetemplate;
-      field[0] = 0;
-      while (c = *p++)
-         if (isalpha(c)) {
-            q = getfield(p-1, field, ref);
-            if (q != 0) {
-               p = q;
-               for (fp = field; *fp; )
-                  *cp++ = *fp++;
-               }
-            }
-         else if (c == '1') {
-            sprintf(field,"%d",1 + i);
-            for (fp = field; *fp; )
-               *cp++ = *fp++;
-            }
-         else if (c == '2') {
-            if (getname(1, field, temp, ref)) {
-               np = cp;
-               fp = field;
-               for (j = 1; j <= 3; j++)
-                  if (*fp != 0)
-                     *cp++ = *fp++;
-               if (getname(2, field, temp, ref))
-                  np[2] = field[0];
-               if (getname(3, field, temp, ref)) {
-                  np[1] = np[2];
-                  np[2] = field[0];
-                  }
-               }
-            }
-         else if (c == '{') {
-            while (*p ^= '}')
-               if (*p == 0)
-                  error("unexpected end of citation template");
-               else
-                  *cp++ = *p++;
-            p++;
-            }
-         else if (c == '<') {
-            while (*p ^= '>')
-               if (*p == 0)
-                  error("unexpected end of citation template");
-               else
-                  *cp++ = *p++;
-            p++;
-            }
-         else if (c != '@')
-            *cp++ = c;
-      }
-   *cp++ = 0;
-}
-
-/* getfield - get a single field from reference */
-   char *getfield(ptr, field, ref)
-   char *ptr, field[], ref[];
-{  char *p, *q, temp[100];
-   int  n, len, i, getname();
-
-   field[0] = 0;
-   if (*ptr == 'A')
-      getname(1, field, temp, ref);
-   else
-      for (p = ref; *p; p++)
-         if (*p == '%' && *(p+1) == *ptr) {
-            for (p = p + 2; *p == ' '; p++)
-               ;
-            for (q = field; *p != '\n'; )
-               *q++ = *p++;
-            *q = 0;
-            break;
-            }
-   n = 0;
-   len = strlen(field);
-   if (*++ptr == '-') {
-      for (ptr++; isdigit(*ptr); ptr++)
-         n = 10 * n + (*ptr - '0');
-      if (n > len)
-         n = 0;
-      else
-         n = len - n;
-      for (i = 0; field[i] = field[i+n]; i++)
-         ;
-      }
-   else if (isdigit(*ptr)) {
-      for (; isdigit(*ptr); ptr++)
-         n = 10 * n + (*ptr - '0');
-      if (n > len)
-         n = len;
-      field[n] = 0;
-      }
-
-   if (*ptr == 'u') {
-      ptr++;
-      for (p = field; *p; p++)
-         if (islower(*p))
-            *p = (*p - 'a') + 'A';
-      }
-   else if (*ptr == 'l') {
-      ptr++;
-      for (p = field; *p; p++)
-         if (isupper(*p))
-            *p = (*p - 'A') + 'a';
-      }
-   return(ptr);
-}
-
-/* getname - get the nth name field from reference, breaking into
-             first and last names */
-   int getname(n, last, first, ref)
-   int  n;
-   char last[], first[], ref[];
-{  char *p;
-
-   for (p = ref; *p; p++)
-      if (*p == '%' & (*(p+1) == 'A' || *(p+1) == 'E')) {
-         n--;
-         if (n == 0) {
-            for (p = p + 2; *p == ' '; p++) ;
-            breakname(p, first, last) ;
-            return(true);
-            }
-         }
-   return(false);
-}
-
-/* disambiguate - compare adjacent citation strings, and if equal, add
-                  single character disambiguators */
-   disambiguate()
-{  int i, j;
-   char adstr[2];
-
-   for (i = 0; i < numrefs; i = j) {
-      j = i + 1;
-      if (strcmp(citestr[i], citestr[j])==0) {
-         adstr[0] = 'a'; adstr[1] = 0;
-         for (j = i+1; strcmp(citestr[i],citestr[j]) == 0; j++) {
-            adstr[0] = 'a' + (j-i);
-            strcat(citestr[j], adstr);
-            if (j == numrefs)
-               break;
-            }
-         adstr[0] = 'a';
-         strcat(citestr[i], adstr);
-         }
-     }
 }
 
 /* putrefs - gather contiguous references together, sort them if called
@@ -739,49 +460,5 @@ int  fn, footrefs[];
          putc(c, ofd);
       }
    if (dumped == false)
-      bibwarning("Warning: references never dumped\n", (char *)0);
-}
-
-
-/* dumpref - dump reference number i */
-   dumpref(i, ofd)
-   int i;
-   FILE *ofd;
-{  char ref[REFSIZE], *p, line[REFSIZE];
-   int numauths, maxauths, numeds, maxeds;
-
-   rdref(refspos[i], ref);
-   maxauths = maxeds = 0;
-   numauths = numeds = 0;
-   for (p = ref; *p; p++)
-      if (*p == '%')
-         if (*(p+1) == 'A') maxauths++;
-         else if (*(p+1) == 'E') maxeds++;
-   fprintf(ofd, ".[-\n");
-   fprintf(ofd, ".ds [F %s\n",citestr[i]);
-   fseek(rfd, (long) refspos[i], 0);
-   while (fgets(line, REFSIZE, rfd) != NULL) {
-      if (line[0] == 0)        break;
-      else if (line[0] == '.') fprintf(ofd,"%s",line);
-      else {
-         if (line[0] == '%') {
-            for (p = &line[2]; *p == ' '; p++);
-            if (line[1] == 'A')       numauths++;
-            else if (line[1] == 'E')  numeds++;
-
-            doline(line[1], p, numauths, maxauths, numeds, maxeds, ofd);
-            }
-         }
-      }
-   fprintf(ofd,".][\n");
-}
-/*
- *	print out a warning message
- */
-bibwarning(msg, arg)
-	char	*msg;
-	char	*arg;
-{
-	fprintf(stderr, "`%s', line %d: ", bibfname, biblineno);
-	fprintf(stderr, msg, arg);
+      bibwarning("Warning: references never dumped\n","");
 }
