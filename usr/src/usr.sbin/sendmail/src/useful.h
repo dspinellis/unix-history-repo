@@ -1,7 +1,7 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	3.9		%G%
+**	@(#)useful.h	3.10		%G%
 */
 
 # ifndef makedev
@@ -18,7 +18,7 @@ typedef char	bool;
 # endif NULL
 
 /* bit hacking */
-# define bitset(bit, word)	((word) & (bit))
+# define bitset(bit, word)	(((word) & (bit)) != 0)
 
 /* assertions */
 # ifndef NASSERT
