@@ -1,0 +1,132 @@
+
+
+
+RCSCLEAN(1)                                           RCSCLEAN(1)
+
+
+NNAAMMEE
+       rcsclean - clean up working files
+
+SSYYNNOOPPSSIISS
+       rrccsscclleeaann [_o_p_t_i_o_n_s] [ _f_i_l_e ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+       rrccsscclleeaann  removes  working files that were checked out and
+       never modified.  For each _f_i_l_e  given,  rrccsscclleeaann  compares
+       the  working  file and a revision in the corresponding RCS
+       file.  If it finds a difference, it does nothing.   Other-
+       wise,  it  first  unlocks the revision if the --uu option is
+       given, and then removes the working file unless the  work-
+       ing  file is writable and the revision is locked.  It logs
+       its actions by outputting the corresponding rrccss --uu and  rrmm
+       --ff commands on the standard output.
+
+       If  no  _f_i_l_e  is  given,  all working files in the current
+       directory are cleaned.  Pathnames matching an  RCS  suffix
+       denote  RCS files; all others denote working files.  Names
+       are paired as explained in ccii(1).
+
+       The number of the revision to which the  working  file  is
+       compared may be attached to any of the options --nn, --qq, --rr,
+       or --uu.  If no revision number is specified, then if the --uu
+       option  is  given  and the caller has one revision locked,
+       rrccsscclleeaann uses that revision; otherwise rrccsscclleeaann  uses  the
+       latest  revision on the default branch, normally the root.
+
+       rrccsscclleeaann is useful for cclleeaann targets  in  Makefiles.   See
+       also  rrccssddiiffff(1),  which  prints  out the differences, and
+       ccii(1), which normally asks whether to check in a  file  if
+       it was not changed.
+
+OOPPTTIIOONNSS
+       --kk_s_u_b_s_t
+              Use  _s_u_b_s_t style keyword substitution when retriev-
+              ing the revision for  comparison.   See  ccoo(1)  for
+              details.
+
+       --nn[_r_e_v]
+              Do  not  actually  remove  any  files or unlock any
+              revisions.  Using this option will  tell  you  what
+              rrccsscclleeaann would do without actually doing it.
+
+       --qq[_r_e_v]
+              Do not log the actions taken on standard output.
+
+       --rr[_r_e_v]
+              This option has no effect other than specifying the
+              revision for comparison.
+
+       --uu[_r_e_v]
+              Unlock  the  revision  if  it  is  locked  and   no
+
+
+
+GNU                         1991/11/03                          1
+
+
+
+
+
+RCSCLEAN(1)                                           RCSCLEAN(1)
+
+
+              difference is found.
+
+       --VV_n    Emulate RCS version _n.  See ccoo(1) for details.
+
+       --xx_s_u_f_f_i_x_e_s
+              Use  _s_u_f_f_i_x_e_s to characterize RCS files.  See ccii(1)
+              for details.
+
+EEXXAAMMPPLLEESS
+              rrccsscclleeaann  **..cc  **..hh
+
+       removes all working files ending in ..cc or ..hh that were not
+       changed since their checkout.
+
+              rrccsscclleeaann
+
+       removes  all  working  files in the current directory that
+       were not changed since their checkout.
+
+FFIILLEESS
+       rrccsscclleeaann accesses files much as ccii(1) does.
+
+EENNVVIIRROONNMMEENNTT
+       RRCCSSIINNIITT
+              options prepended to the argument  list,  separated
+              by  spaces.   A  backslash escapes spaces within an
+              option.  The RRCCSSIINNIITT options are prepended  to  the
+              argument   lists  of  most  RCS  commands.   Useful
+              RRCCSSIINNIITT options include --qq, --VV, and --xx.
+
+DDIIAAGGNNOOSSTTIICCSS
+       The exit status is zero if and only if all operations were
+       successful.   Missing  working  files  and  RCS  files are
+       silently ignored.
+
+IIDDEENNTTIIFFIICCAATTIIOONN
+       Author: Walter F. Tichy.
+       Revision Number: 1.8; Release Date: 1991/11/03.
+       Copyright (C) 1982, 1988, 1989 by Walter F. Tichy.
+       Copyright (C) 1990, 1991 by Paul Eggert.
+
+SSEEEE AALLSSOO
+       ci(1), co(1), ident(1), rcs(1),  rcsdiff(1),  rcsintro(1),
+       rcsmerge(1), rlog(1), rcsfile(5)
+       Walter  F.  Tichy,  RCS--A  System  for  Version  Control,
+       _S_o_f_t_w_a_r_e_-_-_P_r_a_c_t_i_c_e  _&  _E_x_p_e_r_i_e_n_c_e  1155,  7   (July   1985),
+       637-654.
+
+BBUUGGSS
+       At  least  one  _f_i_l_e  must be given in older Unix versions
+       that do not provide the needed directory  scanning  opera-
+       tions.
+
+
+
+
+
+GNU                         1991/11/03                          2
+
+
