@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 
-static char sccsid[] = "@(#)symbols.c 5.8 %G%";
+static char sccsid[] = "@(#)symbols.c 5.9 %G%";
 /*
  * Symbol management.
  */
@@ -119,7 +119,7 @@ boolean showaggrs;
 )
 
 #define nosource(f) (not (f)->symvalue.funcv.src)
-#define isinline(f) ((f)->symvalue.funcv.inline)
+#define isinline(f) ((f)->symvalue.funcv.inlne)
 
 #define isreg(s)		(s->storage == INREG)
 

@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 
-static char sccsid[] = "@(#)object.c 5.4 %G%";
+static char sccsid[] = "@(#)object.c 5.5 %G%";
 /*
  * Object code interface, mainly for extraction of symbolic information.
  */
@@ -286,7 +286,7 @@ private initsyms()
     program->class = PROG;
     program->language = primlang;
     program->symvalue.funcv.beginaddr = CODESTART;
-    program->symvalue.funcv.inline = false;
+    program->symvalue.funcv.inlne = false;
     newfunc(program, codeloc(program));
     findbeginning(program);
     enterblock(program);
@@ -529,7 +529,7 @@ register struct nlist *np;
 	if ((np->n_type&N_TYPE) == N_TEXT) {
 	    t->class = FUNC;
 	    t->symvalue.funcv.src = false;
-	    t->symvalue.funcv.inline = false;
+	    t->symvalue.funcv.inlne = false;
 	    t->symvalue.funcv.beginaddr = np->n_value;
 	    newfunc(t, codeloc(t));
 	    findbeginning(t);
