@@ -1,5 +1,5 @@
 /*
- *	@(#)slcompress.c	7.3 (Berkeley) %G%
+ *	@(#)slcompress.c	7.4 (Berkeley) %G%
  *
  *			THIS CODE IS NOT FOR DISTRIBUTION!
  *	KEEP YOUR GRUBBY HANDS OFF UNLESS AUTHORIZED BY VAN JACOBSON TO COPY!
@@ -464,8 +464,9 @@ sl_uncompress_tcp(bufp, len, type, comp)
 		INCR(sls_errorin)
 		return (0);
 	}
-	if (len && ((int)cp & ~3) != (int)cp) {
-		(void) bcopy((caddr_t)cp, (caddr_t)((int)cp &~ 3), len);
+	if ((int)cp & 3) {
+		if (len > 0)
+			BCOPY(cp, (int)cp &~ 3, len);
 		cp = (u_char *)((int)cp &~ 3);
 	}
 	cp -= cs->cs_hlen;
