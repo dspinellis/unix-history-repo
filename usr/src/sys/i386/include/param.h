@@ -1,3 +1,15 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)param.h	5.1 (Berkeley) %G%
+ */
+
 /*
  * Machine dependent constants for Intel 386.
  */
@@ -31,7 +43,7 @@
 #define	SSIZE	1		/* initial stack size/NBPG */
 #define	SINCR	1		/* increment of stack/NBPG */
 
-#define	UPAGES	3		/* pages of u-area */
+#define	UPAGES	2		/* pages of u-area */
 
 /*
  * Some macros for units conversion

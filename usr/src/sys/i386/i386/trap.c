@@ -1,9 +1,12 @@
-/*	trap.c	1.7	86/12/15	*/
+/*
+ * 386 Trap and System call handleing
+ */
 
-#include "../tahoe/psl.h"
-#include "../tahoe/reg.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/mtpr.h"
+#include "../i386/psl.h"
+#include "../i386/reg.h"
+#include "../i386/pte.h"
+#include "../i386/segments.h"
+#include "../i386/frame.h"
 
 #include "param.h"
 #include "systm.h"
@@ -13,58 +16,52 @@
 #include "seg.h"
 #include "acct.h"
 #include "kernel.h"
-#define	SYSCALLTRACE
-#ifdef SYSCALLTRACE
-#include "../sys/syscalls.c"
-#endif
+#include "vm.h"
+#include "cmap.h"
 
-#include "../tahoe/trap.h"
+#include "../i386/trap.h"
 
 #define	USER	040		/* user-mode flag added to type */
 
 struct	sysent sysent[];
 int	nsysent;
-
-char	*trap_type[] = {
-	"Reserved addressing mode",		/* T_RESADFLT */
-	"Privileged instruction",		/* T_PRIVINFLT */
-	"Reserved operand",			/* T_RESOPFLT */
-	"Breakpoint",				/* T_BPTFLT */
-	0,
-	"Kernel call",				/* T_SYSCALL */
-	"Arithmetic trap",			/* T_ARITHTRAP */
-	"System forced exception",		/* T_ASTFLT */
-	"Segmentation fault",			/* T_SEGFLT */
-	"Protection fault",			/* T_PROTFLT */
-	"Trace trap",				/* T_TRCTRAP */
-	0,
-	"Page fault",				/* T_PAGEFLT */
-	"Page table fault",			/* T_TABLEFLT */
-	"Alignment fault",			/* T_ALIGNFLT */
-	"Kernel stack not valid",		/* T_KSPNOTVAL */
-	"Bus error",				/* T_BUSERR */
-	"Kernel debugger trap",			/* T_KDBTRAP */
-};
-int	TRAP_TYPES = sizeof (trap_type) / sizeof (trap_type[0]);
-
+#include "dbg.h"
 /*
  * Called from the trap handler when a processor trap occurs.
  */
+unsigned *rcr2(), Sysbase;
+extern short cpl;
 /*ARGSUSED*/
-trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
-	unsigned type, code;
+trap(frame)
+	struct trapframe frame;
+#define type frame.tf_trapno
+#define code frame.tf_err
+#define pc frame.tf_eip
 {
-	int r0, r1;		/* must reserve space */
-	register int *locr0 = ((int *)&psl)-PS;
+	register int *locr0 = ((int *)&frame)/*-PS*/;
 	register int i;
 	register struct proc *p;
 	struct timeval syst;
+	extern int nofault;
 
-#ifdef lint
-	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
-#endif
+dprintf(DALLTRAPS, "%d. trap",u.u_procp->p_pid);
+dprintf(DALLTRAPS, "\npc:%x cs:%x ds:%x eflags:%x isp %x\n",
+		frame.tf_eip, frame.tf_cs, frame.tf_ds, frame.tf_eflags,
+		frame.tf_isp);
+dprintf(DALLTRAPS, "edi %x esi %x ebp %x ebx %x esp %x\n",
+		frame.tf_edi, frame.tf_esi, frame.tf_ebp,
+		frame.tf_ebx, frame.tf_esp);
+dprintf(DALLTRAPS, "edx %x ecx %x eax %x\n",
+		frame.tf_edx, frame.tf_ecx, frame.tf_eax);
+dprintf(DALLTRAPS|DPAUSE, "ec %x type %x cr0 %x cr2 %x cpl %x \n",
+		frame.tf_err, frame.tf_trapno, rcr0(), rcr2(), cpl);
+
+	locr0[tEFLAGS] &= ~PSL_NT;	/* clear nested trap */
+if(nofault && frame.tf_trapno != 0xc)
+	{ locr0[tEIP] = nofault; return;}
+
 	syst = u.u_ru.ru_stime;
-	if (USERMODE(locr0[PS])) {
+	if (ISPL(locr0[tCS]) == SEL_UPL) {
 		type |= USER;
 		u.u_ar0 = locr0;
 	}
@@ -75,12 +72,9 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		if (kdb_trap(&psl))
 			return;
 #endif
-		printf("trap type %d, code = %x, pc = %x\n", type, code, pc);
+		printf("trap type %d, code = %x, pc = %x cs = %x, eflags = %x\n", type, code, pc, frame.tf_cs, frame.tf_eflags);
 		type &= ~USER;
-		if (type < TRAP_TYPES && trap_type[type])
-			panic(trap_type[type]);
-		else
-			panic("trap");
+		panic("trap");
 		/*NOTREACHED*/
 
 	case T_PROTFLT + USER:		/* protection fault */
@@ -90,7 +84,6 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	case T_PRIVINFLT + USER:	/* privileged instruction fault */
 	case T_RESADFLT + USER:		/* reserved addressing fault */
 	case T_RESOPFLT + USER:		/* resereved operand fault */
-	case T_ALIGNFLT + USER:		/* unaligned data fault */
 		u.u_code = type &~ USER;
 		i = SIGILL;
 		break;
@@ -105,6 +98,7 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		goto out;
 
 	case T_ARITHTRAP + USER:
+	case T_DIVIDE + USER:
 		u.u_code = code;
 		i = SIGFPE;
 		break;
@@ -113,9 +107,11 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	 * If the user SP is above the stack segment,
 	 * grow the stack automatically.
 	 */
+	case T_STKFLT + USER:
 	case T_SEGFLT + USER:
-		if (grow((unsigned)locr0[SP]) || grow(code))
+		if (grow((unsigned)locr0[tESP]) /*|| grow(code)*/)
 			goto out;
+xxx:
 		i = SIGSEGV;
 		break;
 
@@ -125,16 +121,34 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 
 	case T_PAGEFLT:			/* allow page faults in kernel mode */
 	case T_PAGEFLT + USER:		/* page fault */
-		i = u.u_error;
-		pagein(code, 0);
-		u.u_error = i;
+			{ register u_int vp;
+			struct pte *pte;
+
+			if (rcr2() >= &Sysbase) goto xxx;
+			vp = btop((int)rcr2());
+			if (vp >= dptov(u.u_procp, u.u_procp->p_dsize) &&
+			    vp < sptov(u.u_procp, u.u_procp->p_ssize-1)) {
+				if (grow((unsigned)locr0[tESP]) || grow(rcr2()))
+				goto out;
+				else	{
+if(nofault) { locr0[tEIP] = nofault; return;}
+printf("didnt");
+				i = SIGSEGV;
+				break;
+				}
+			}
+			i = u.u_error;
+			pagein(rcr2(), 0);
+			u.u_error = i;
 		if (type == T_PAGEFLT)
-			return;
-		goto out;
+				return;
+if(nofault) { locr0[tEIP] = nofault; return;}
+			goto out;
+	}
 
 	case T_BPTFLT + USER:		/* bpt instruction fault */
 	case T_TRCTRAP + USER:		/* trace trap */
-		locr0[PS] &= ~PSL_T;
+		locr0[tEFLAGS] &= ~PSL_T;
 		i = SIGTRAP;
 		break;
 
@@ -165,8 +179,14 @@ trap(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	psignal(u.u_procp, i);
 out:
 	p = u.u_procp;
+
+if(p->p_cursig)
+printf("out cursig %x flg %x sig %x ign %x msk %x\n", 
+	p->p_cursig,
+	p->p_flag, p->p_sig, p->p_sigignore, p->p_sigmask);
+
 	if (p->p_cursig || ISSIG(p))
-		psig();
+		psig(1);
 	p->p_pri = p->p_usrpri;
 	if (runrun) {
 		/*
@@ -189,24 +209,25 @@ out:
 		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
 			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
 		if (ticks)
-			addupc(locr0[PC], &u.u_prof, ticks);
+			addupc(pc, &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
+#undef type
+#undef code
+#undef pc
 }
-
-#ifdef SYSCALLTRACE
-int	syscalltrace = 0;
-#endif
 
 /*
  * Called from locore when a system call occurs
  */
+int fuckup;
 /*ARGSUSED*/
-syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
-	unsigned code;
+syscall(frame)
+	struct syscframe frame;
+#define code frame.sf_eax	/* note: written over! */
+#define pc frame.sf_eip
 {
-	int r0, r1;			/* must reserve space */
-	register int *locr0 = ((int *)&psl)-PS;
+	register int *locr0 = ((int *)&frame)/*-PS*/;
 	register caddr_t params;
 	register int i;
 	register struct sysent *callp;
@@ -218,78 +239,48 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
 #endif
 	syst = u.u_ru.ru_stime;
-	if (!USERMODE(locr0[PS]))
+	if (ISPL(locr0[sCS]) != SEL_UPL)
 		panic("syscall");
 	u.u_ar0 = locr0;
-	if (code == 139) {			/* 4.2 COMPATIBILTY XXX */
-		osigcleanup();			/* 4.2 COMPATIBILTY XXX */
-		goto done;			/* 4.2 COMPATIBILTY XXX */
-	}
-	params = (caddr_t)locr0[FP] + NBPW;
+svfpsp();
+	params = (caddr_t)locr0[sESP] + NBPW ;
 	u.u_error = 0;
-/* BEGIN GROT */
 	/*
-	 * Try to reconstruct pc, assuming code
-	 * is an immediate constant
+	 * Reconstruct pc, assuming lcall $X,y is 7 bytes, as it is always.
 	 */
-	opc = pc - 2;		/* short literal */
-	if (code > 0x3f) {
-		opc--;				/* byte immediate */
-		if (code > 0x7f) {
-			opc--;			/* word immediate */
-			if (code > 0x7fff)
-				opc -= 2;	/* long immediate */
-		}
-	}
-/* END GROT */
+	opc = pc - 7;
 	callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	if (callp == sysent) {
 		i = fuword(params);
 		params += NBPW;
 		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
+/*dprintf(DALLSYSC,"%d. call %d\n", u.u_procp->p_pid, code);*/
 	if ((i = callp->sy_narg * sizeof (int)) &&
 	    (u.u_error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
-		locr0[R0] = u.u_error;
-		locr0[PS] |= PSL_C;	/* carry bit */
+		locr0[sEAX] = u.u_error;
+		locr0[sEFLAGS] |= PSL_C;	/* carry bit */
 		goto done;
 	}
 	u.u_r.r_val1 = 0;
-	u.u_r.r_val2 = locr0[R1];
+	u.u_r.r_val2 = locr0[sEDX];
 	if (setjmp(&u.u_qsave)) {
 		if (u.u_error == 0 && u.u_eosys != RESTARTSYS)
 			u.u_error = EINTR;
 	} else {
 		u.u_eosys = NORMALRETURN;
-#ifdef SYSCALLTRACE
-		if (syscalltrace) {
-			register int a;
-			char *cp;
-
-			if (code >= nsysent)
-				printf("0x%x", code);
-			else
-				printf("%s", syscallnames[code]);
-			cp = "(";
-			for (a = 0; a < callp->sy_narg; a++) {
-				printf("%s%x", cp, u.u_arg[a]);
-				cp = ", ";
-			}
-			if (a)
-				printf(")");
-			printf("\n");
-		}
-#endif
 		(*callp->sy_call)();
 	}
+/*rsfpsp();*/
 	if (u.u_eosys == NORMALRETURN) {
 		if (u.u_error) {
-			locr0[R0] = u.u_error;
-			locr0[PS] |= PSL_C;	/* carry bit */
+/*dprintf(DSYSFAIL,"%d. fail %d %d\n",u.u_procp->p_pid,  code, u.u_error);*/
+			locr0[sEAX] = u.u_error;
+			locr0[sEFLAGS] |= PSL_C;	/* carry bit */
 		} else {
-			locr0[PS] &= ~PSL_C;	/* clear carry bit */
-			locr0[R0] = u.u_r.r_val1;
-			locr0[R1] = u.u_r.r_val2;
+			locr0[sEFLAGS] &= ~PSL_C;	/* clear carry bit */
+			locr0[sEAX] = u.u_r.r_val1;
+			locr0[sEDX] = u.u_r.r_val2;
 		}
 	} else if (u.u_eosys == RESTARTSYS)
 		pc = opc;
@@ -298,7 +289,7 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 done:
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
-		psig();
+		psig(0);
 	p->p_pri = p->p_usrpri;
 	if (runrun) {
 		/*
@@ -321,7 +312,7 @@ done:
 		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
 			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
 		if (ticks)
-			addupc(locr0[PC], &u.u_prof, ticks);
+			addupc(opc, &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
 }

@@ -1,5 +1,17 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)pte.h	5.1 (Berkeley) %G%
+ */
+
 /*
- * 386 page table entry and page table directory
+ * 386 page table entry and page directory entry
  * W.Jolitz, 8/89
  *
  * There are two major kinds of pte's: those which have ever existed (and are
@@ -10,18 +22,19 @@
  */
 
 #ifndef LOCORE
-struct ptd
+struct pde
 {
 unsigned int	
-		pg_v:1,			/* valid bit */
-		pg_prot:2,		/* access control */
-		pg_mbz1:2,		/* reserved, must be zero */
-		pg_u:1,			/* hardware maintained 'used' bit */
+		pd_v:1,			/* valid bit */
+		pd_prot:2,		/* access control */
+		pd_mbz1:2,		/* reserved, must be zero */
+		pd_u:1,			/* hardware maintained 'used' bit */
 		:1,			/* not used */
-		pg_mbz2:2,		/* reserved, must be zero */
+		pd_mbz2:2,		/* reserved, must be zero */
 		:3,			/* reserved for software */
-		pg_pfnum:20;		/* physical page frame number of pte's*/
+		pd_pfnum:20;		/* physical page frame number of pte's*/
 };
+
 struct pte
 {
 unsigned int	
@@ -36,12 +49,14 @@ unsigned int
 		pg_nc:1,		/* 'uncacheable page' bit */
 		pg_pfnum:20;		/* physical page frame number */
 };
+
 struct hpte
 {
 unsigned int	
 		pg_high:12,		/* special for clustering */
 		pg_pfnum:20;
 };
+
 struct fpte
 {
 unsigned int	
@@ -54,6 +69,9 @@ unsigned int
 };
 #endif
 
+#define	PD_MASK		0xffc00000	/* page directory address bits */
+#define	PD_SHIFT	22		/* page directory address bits */
+
 #define	PG_V		0x00000001
 #define	PG_PROT		0x00000006 /* all protection bits . */
 #define	PG_FOD		0x00000200
@@ -61,7 +79,7 @@ unsigned int
 #define PG_N		0x00000800 /* Non-cacheable */
 #define	PG_M		0x00000040
 #define PG_U		0x00000020 /* not currently used */
-#define	PG_PFNUM	0xfffff000
+#define	PG_FRAME	0xfffff000
 
 #define	PG_FZERO	0
 #define	PG_FTEXT	1

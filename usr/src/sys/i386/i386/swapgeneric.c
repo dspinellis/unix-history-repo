@@ -1,4 +1,15 @@
-/*	swapgeneric.c	1.5	86/11/25	*/
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.386.c%
+ *
+ *	@(#)swapgeneric.c	5.2 (Berkeley) %G%
+ */
+
 
 #include "../machine/pte.h"
 
@@ -9,39 +20,34 @@
 #include "systm.h"
 #include "reboot.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/cp.h"
-#include "../tahoe/mtpr.h"
-#include "../tahoevba/vbavar.h"
-
 /*
  * Generic configuration;  all in one
  */
-dev_t	rootdev = NODEV;
-dev_t	argdev = NODEV;
-dev_t	dumpdev = NODEV;
+dev_t	rootdev = 0;
+dev_t	argdev = 1;
+dev_t	dumpdev = 1;
 int	nswap;
 struct	swdevt swdevt[] = {
-	{ -1,	1,	0 },
-	{ 0,	0,	0 },
+	{ 1,	0,	4*4096 },
+	{ 0,	1,	0 },
 };
 long	dumplo;
 int	dmmin, dmmax, dmtext;
 
-extern	struct vba_driver vddriver;
+extern	struct driver wddriver;
 
 struct	genericconf {
 	caddr_t	gc_driver;
 	char	*gc_name;
 	dev_t	gc_root;
 } genericconf[] = {
-	{ (caddr_t)&vddriver,	"dk",	makedev(1, 0),	},
+	{ (caddr_t)&wddriver,	"wd",	makedev(1, 0),	},
 	{ 0 },
 };
 
 setconf()
 {
-	register struct vba_device *ui;
+#ifdef notdef
 	register struct genericconf *gc;
 	int unit, swaponroot = 0;
 
@@ -95,6 +101,7 @@ doswap:
 	/* swap size and dumplo set during autoconfigure */
 	if (swaponroot)
 		rootdev = dumpdev;
+#endif
 }
 
 gets(cp)

@@ -1,6 +1,14 @@
-#ifndef lint
-static char sccsid[] = "@(#)genassym.c	1.7 (Berkeley) 10/28/87";
-#endif
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)genassym.c	5.1 (Berkeley) %G%
+ */
 
 #include "../i386/pte.h"
 
@@ -40,6 +48,7 @@ main()
 	printf("#define\tP_SZPT %d\n", &p->p_szpt);
 	printf("#define\tP_TEXTP %d\n", &p->p_textp);
 	printf("#define\tP_FLAG %d\n", &p->p_flag);
+	printf("#define\tP_CR3 %d\n", &p->p_cr3);
 	printf("#define\tSSLEEP %d\n", SSLEEP);
 	printf("#define\tSRUN %d\n", SRUN);
 	printf("#define\tV_SWTCH %d\n", &vm->v_swtch);
@@ -47,6 +56,7 @@ main()
 	printf("#define\tV_SYSCALL %d\n", &vm->v_syscall);
 	printf("#define\tV_INTR %d\n", &vm->v_intr);
 	printf("#define\tV_SOFT %d\n", &vm->v_soft);
+	printf("#define\tP1PAGES %d\n", P1PAGES);
 	printf("#define\tNBPG %d\n", NBPG);
 	printf("#define\tPGSHIFT %d\n", PGSHIFT);
 	printf("#define\tUPAGES %d\n", UPAGES);
@@ -83,7 +93,12 @@ main()
 	printf("#define\tPCB_GS %d\n", &pcb->pcbtss.tss_gs);
 	printf("#define\tPCB_LDT %d\n", &pcb->pcbtss.tss_ldt);
 	printf("#define\tPCB_IOOPT %d\n", &pcb->pcbtss.tss_ioopt);
+	printf("#define\tPCB_FPSAV %d\n", &pcb->pcb_fpsav);
 	printf("#define\tPCB_SAVEFPU %d\n", &pcb->pcb_savefpu);
+	printf("#define\tPCB_P0BR %d\n", &pcb->pcb_p0br);
+	printf("#define\tPCB_P1BR %d\n", &pcb->pcb_p1br);
+	printf("#define\tPCB_P0LR %d\n", &pcb->pcb_p0lr);
+	printf("#define\tPCB_P1LR %d\n", &pcb->pcb_p1lr);
 	printf("#define\tPCB_SZPT %d\n", &pcb->pcb_szpt);
 	printf("#define\tPCB_CMAP2 %d\n", &pcb->pcb_cmap2);
 	printf("#define\tPCB_SSWAP %d\n", &pcb->pcb_sswap);
