@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.37 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.38 (Berkeley) %G%
  */
 
 /*

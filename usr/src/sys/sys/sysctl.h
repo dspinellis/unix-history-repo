@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.23 (Berkeley) %G%
+ *	@(#)sysctl.h	7.24 (Berkeley) %G%
  */
 
 #ifndef _SYS_SYSCTL_H_
