@@ -1,32 +1,50 @@
-.\"	@(#)basename.1	6.2 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH BASENAME 1 ""
-.AT 3
-.SH NAME
-basename, dirname \- strip filename affixes
-.SH SYNOPSIS
-\fBbasename\fP \fBstring\fP [ \fBsuffix\fP ]
-.br
-\fBdirname\fP \fBstring\fP
-.SH DESCRIPTION
-\fIBasename\fP deletes any prefix ending in `/' and the \fIsuffix\fP,
-if present in \fIstring\fP, from \fIstring\fP, and prints the result
-to the standard output.  It is normally used inside substitution marks
-(\`\`) in shell procedures.
-.PP
-\fIDirname\fP deletes from the last slash (``/'') to the end of
-\fIstring\fP, and prints to result to the standard output.
-.SH EXAMPLES
-This shell procedure invoked with the argument \fI/usr/src/bin/cat.c\fP
-compiles the named file and moves the output to \fIcat\fP in the current
-directory:
-.IP "" 15n
-cc $1
-.br
-mv a.out \`basename $1 .c\`
-.PP
-The following line sets the shell variable \fIFOO\fP to \fI/usr/bin\fP.
-.IP "" 15n
-FOO=`dirname /usr/bin/trail`
-.SH "SEE ALSO"
-sh(1)
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)basename.1	6.3 (Berkeley) %G%
+.\"
+.Dt BASENAME 1
+.Dd 
+.Os BSD 4.4
+.Sh NAME
+.Nm basename
+.Nd Extract filename from pathname
+.Sh SYNOPSIS
+.Nm basename
+.Ar string
+.Op suffix
+.Sh DESCRIPTION
+.Nm Basename
+strips 
+.Ar string
+of its pathname prefix
+and a
+.Ar suffix ,
+if given, to the standard output.
+If
+.Ar string
+ends in the slash character,
+.Li / ,
+or is the same as the
+.Ar suffix
+argument,
+a newline is output.
+A non-existant suffix is ignored.
+.Pp
+The following line sets the shell variable
+.Ev FOO
+to
+.Pa /usr/bin .
+.Pp
+.Dl FOO=`dirname /usr/bin/trail`
+.Pp
+.Ar baseline
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr sh 1
+.Sh STANDARDS
+The
+.Nm baseline
+function is expected to be POSIX 1003.2 compatible.

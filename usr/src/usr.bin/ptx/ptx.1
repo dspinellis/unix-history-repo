@@ -1,19 +1,27 @@
-.\"	@(#)ptx.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH PTX 1 ""
-.AT 3
-.SH NAME
-ptx \- permuted index
-.SH SYNOPSIS
-.B ptx
-[ option ] ...
-[ input [ output ] ]
-.SH DESCRIPTION
-.I Ptx
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ptx.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PTX 1
+.Os ATT 7th
+.Sh NAME
+.Nm ptx
+.Nd permuted index
+.Sh SYNOPSIS
+.Nm ptx
+.Op  option
+\&...
+.Op  input Op  output
+.Sh DESCRIPTION
+.Nm Ptx
 generates a permuted index to file
-.I input
+.Ar input
 on file
-.I output
+.Ar output
 (standard input and output default).
 It has three phases: the first does the permutation, generating
 one line for each keyword in an input line.
@@ -22,89 +30,104 @@ The permuted file is then
 sorted.
 Finally, the sorted lines are rotated so the keyword
 comes at the middle of the page.
-.I Ptx
+.Nm Ptx
 produces output in the form:
-.br
-.IP
-\&.xx "tail" "before keyword" "keyword and after" "head"
-.LP
+.Pp
+.Dl \&.xx "tail" "before keyword" "keyword and after" "head"
+.Pp
 where .xx may be an
-.I nroff
+.Xr nroff 1
 or
-.IR troff (1)
+.Xr troff  1
 macro
 for user-defined formatting.
 The
-.I before keyword
+.Ar before keyword
 and
-.I keyword and after
+.Ar keyword and after
 fields incorporate as much of the line as will fit
 around the keyword when it is printed at the middle of the page.
-.I Tail
+.Ar Tail
 and
-.I head,
+.Ar head ,
 at least one of which is an empty string "",
 are wrapped-around pieces small enough to fit
 in the unused space at the opposite end of the line.
 When original text must be discarded, `/' marks the spot.
-.PP
+.Pp
 The following options can be applied:
-.TP
-.BR \-f
+.Tw Fl
+.Tp Fl f
 Fold upper and lower case letters for sorting.
-.TP 
-.BR \-t
+.Tp Fl t
 Prepare the output for the phototypesetter;
 the default line length is 100 characters.
-.TP 
-.BI \-w " n"
+.Tp Cx Fl w
+.Ws
+.Ar n
+.Cx
 Use the next argument,
-.I n,
+.Ar n ,
 as the width of the output line.
 The default line length is 72 characters.
-.TP
-.BI \-g " n"
+.Tp Cx Fl g
+.Ws
+.Ar n
+.Cx
 Use the next argument,
-.I n,
+.Ar n ,
 as the number of characters to allow for each gap
 among the four parts of the line as finally printed.
 The default gap is 3 characters.
-.TP 
-.BR \-o " only"
-Use as keywords only the words given in the \fIonly\fR file.
-.TP 
-.BR \-i " ignore"
+.Tp Cx Fl o
+.Ws
+.Ar only
+.Cx
+Use as keywords only the words given in the
+.Ar only
+file.
+.Tp Cx Fl i
+.Ws
+.Ar ignore
+.Cx
 Do not use as keywords any words given in the
-.I
 ignore
 file.
-If the \fB\-i\fR and \fB\-o\fR options are missing, use
-.I /usr/lib/eign
-as the 
-.I
+If the
+.Fl i
+and
+.Fl o
+options are missing, use
+.Pa /usr/share/dict/eign
+as the
 ignore
 file.
-.TP 
-.BR \-b " break"
-Use the characters in the 
-.I
+.Tp Cx Fl b
+.Ws
+.Ar break
+.Cx
+Use the characters in the
 break
 file to separate words.
 In any case, tab, newline, and space characters are always used as break characters.
-.TP
-.BR \-r
+.Tp Fl r
 Take any leading nonblank characters of each input line to
 be a reference identifier (as to a page or chapter)
 separate from the text of the line.
 Attach that identifier as a 5th field on each output line.
-.PP
+.Tp
+.Pp
 The index for this manual was generated using
-.I ptx.
-.SH FILES
-/usr/bin/sort
-.br
-/usr/lib/eign
-.SH BUGS
+.Nm ptx .
+.Sh FILES
+.Dw /usr/share/dict.eign
+.Di L
+.Dp /usr/bin/sort
+.Dp /usr/share/dict/eign
+.Dp
+.Sh HISTORY
+.Nm Ptx
+appeared in Version 7 AT&T UNIX
+.Sh BUGS
 Line length counts do not account for overstriking or
 proportional spacing.
-.br

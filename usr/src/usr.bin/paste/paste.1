@@ -1,105 +1,91 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
+.\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Adam S. Moskowitz of Menlo Consulting.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)paste.1	5.1 (Berkeley) %G%
+.\"     @(#)paste.1	5.2 (Berkeley) %G%
 .\"
-.TH PASTE 1 ""
-.UC 7
-.SH NAME
-paste - merge corresponding or subsequent lines of files
-.SH SYNOPSIS
-.ft B
-.nf
-paste [-s] [-d list] file ...
-.fi
-.ft R
-.SH DESCRIPTION
+.Dd 
+.Dt PASTE 1
+.Os BSD 4.4
+.Sh NAME
+.Nm paste
+.Nd merge corresponding or subsequent lines of files
+.Sh SYNOPSIS
+.Nm paste
+.Op Fl s
+.Op Fl d Ar list
+.Ar file ...
+.Sh DESCRIPTION
 The
-.I paste
+.Nm paste
 utility concatenates the corresponding lines of the given input files,
 replacing all but the last file's newline characters with a single tab
 character, and writes the resulting lines to standard output.
 If end-of-file is reached on an input file while other input files
 still contain data, the file is treated as if it were an endless source
 of empty lines.
-.PP
+.Pp
 The options are as follows:
-.TP
--d list
+.Tw Fl
+.Tp Cx Fl d 
+.Ar list
+.Cx
 Use one or more of the provided characters to replace the newline
 characters instead of the default tab.
 The characters in
-.I list
+.Ar list
 are used circularly, i.e., when
-.I list
+.Ar list
 is exhausted the first character from
-.I list
+.Ar list
 is reused.
 This continues until a line from the last input file (in default operation)
 or the last line in each file (using the -s option) is displayed, at which
 time
-.I paste
+.Nm paste
 begins selecting characters from the beginning of
-.I list
+.Ar list
 again.
-.PP
-.RS
+.Pp
 The following special characters can also be used in list:
-.TP
-\en
+.Tw Ds
+.Tp Li \en
 newline character
 .br
-.ns
-.TP
-\et
+.Tp Li \et
 tab character
 .br
-.ns
-.TP
-\e\e
+.Tp Li \e\e
 backslash character
 .br
-.ns
-.TP
-\e0
+.Tp Li \e0
 Empty string (not a null character).
-.PP
+.Pp
 Any other character preceded by a backslash is equivalent to the
 character itself.
-.RE
-.TP
--s
+.Tp
+.Tp Fl s
 Concatenate all of the lines of each separate input file in command line
 order.
 The newline character of every line except the last line in each input
 file is replaced with the tab character, unless otherwise specified by
 the -d option.
-.PP
+.Tp
+.Pp
 If ``-'' is specified for one or more of the input files, the standard
 input is used; standard input is read one line at a time, circularly,
 for each instance of ``-''.
-.PP
+.Pp
 The
-.I paste
+.Nm paste
 utility exits 0 on success, and >0 if an error occurs.
-.SH ENVIRONMENT
-.SH "SEE ALSO"
-cut(1)
-.SH STANDARDS
+.Sh SEE ALSO
+.Xr cut 1
+.Sh STANDARDS
 The
-.I paste
+.Nm paste
 function is expected to be POSIX 1003.2 compatible.

@@ -6,119 +6,100 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)col.1	6.3 (Berkeley) %G%
+.\"     @(#)col.1	6.4 (Berkeley) %G%
 .\"
-.TH COL 1 ""
-.UC 7
-.SH NAME
-col \- filter reverse line feeds from input
-.SH SYNOPSIS
-.nf
-.ft B
-col [ \-bfx ] [ \-l num ]
-.ft R
-.fi
-.SH DESCRIPTION
-.I Col
+.Dd 
+.Dt COL 1
+.Os ATT 7
+.Sh NAME
+.Nm col
+.Nd filter reverse line feeds from input
+.Sh SYNOPSIS
+.Nm col
+.Op Fl bfx
+.Op Fl l Ar num
+.Sh DESCRIPTION
+.Nm Col
 filters out reverse (and half reverse) line feeds so that the output is
 in the correct order and contains only forward and half forward line
 feeds, and replaces white-space characters with tabs where possible.
 This can be useful in processing the output of
-.IR nroff (1)
+.Xr nroff 1
 and
-.IR tbl (1).
-.PP
-.I Col
+.Xr tbl  1 .
+.Pp
+.Nm Col
 reads from standard input and writes to standard output.
-.PP
+.Pp
 The options are as follows:
-.TP
-.I \-b
+.Tw Fl
+.Tp Fl b
 Do not output any backspaces \- print only the last character
 written to each column position.
-.TP
-.I \-f
+.Tp Fl f
 Forward half line feeds are permitted (``fine'' mode).
 Normally characters printed on a half line boundary are printed
 on the following line.
-.TP
-.I \-x
+.Tp Fl x
 Output multiple spaces instead of tabs.
-.TP
-.I "\-l num"
+.Tp Cx Fl l
+.Cx Ar num
+.Cx
 Buffer at least
-.I num
+.Ar num
 lines in memory.
 By default, 128 lines are buffered.
-.PP
+.Tp
+.Pp
 The control sequences for carriage motion that
-.I col
+.Nm col
 understands and their decimal values are listed in the following
 table:
-.sp
-.TP 17
-ESC\-7
+.Pp
+.Dw carriage\ return
+.Di L
+.Dp ESC\-7
 reverse line feed (escape then 7)
-.br
-.ns
-.TP 17
-ESC\-8
+.Dp ESC\-8
 half reverse line feed (escape then 8)
-.br
-.ns
-.TP 17
-ESC\-9 
+.Dp ESC\-9
 half forward line feed (escape then 9)
-.br
-.ns
-.TP 17
-backspace
+.Dp backspace
 moves back one column (8); ignored in the first column
-.br
-.ns
-.TP 17
-carriage return
+.Dp carriage return
 (13)
-.br
-.ns
-.TP 17
-newline
+.Dp newline
 forward line feed (10); also does carriage return
-.br
-.ns
-.TP 17
-shift in
+.Dp shift in
 shift to normal character set (15)
-.br
-.ns
-.TP 17
-shift out
+.Dp shift out
 shift to alternate character set (14)
-.br
-.ns
-.TP 17
-space
+.Dp space
 moves forward one column (32)
-.br
-.ns
-.TP 17
-tab
+.Dp tab
 moves forward to next tab stop (9)
-.br
-.ns
-.TP 17
-vertical tab
+.Dp vertical tab
 reverse line feed (11)
-.PP
+.Dp
+.Pp
 All unrecognized control characters and escape sequences are
 discarded.
-.PP
-.I Col
+.Pp
+.Nm Col
 keeps track of the character set as characters are read and makes
 sure the character set is correct when they are output.
-.PP
+.Pp
 If the input attempts to back up to the last flushed line,
-.I col
+.Nm col
 will display a warning message.
-.SH "SEE ALSO"
-expand(1), nroff(1), tbl(1)
+.Sh SEE ALSO
+.Xr expand 1 ,
+.Xr nroff 1 ,
+.Xr tbl 1
+.Sh HISTORY
+A
+.Nm col
+command
+appeared in Version 6 AT&T UNIX.  The BSD
+.Nm col
+is derived from code written by Michael Rendell.

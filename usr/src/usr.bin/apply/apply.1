@@ -1,86 +1,94 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)apply.1	6.1 (Berkeley) %G%
 .\"
-.TH APPLY 1 ""
-.UC 5
-.SH NAME
-apply \- apply a command to a set of arguments
-.SH SYNOPSIS
-.B apply
-[
-.B \-a\fIc\fP
-] [
-.B \-\fIn\fP
-] command args ...
-.SH DESCRIPTION
-.I Apply
+.\"     @(#)apply.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt APPLY 1
+.Os BSD 4.2
+.Sh NAME
+.Nm apply
+.Nd apply a command to a set of arguments
+.Sh SYNOPSIS
+.Nm apply
+.Op Fl ac
+.Op Fl n
+.Ar command args ...
+.Sh DESCRIPTION
+.Nm Apply
 runs the named
-.I command
+.Ar command
 on each
 argument
-.I arg
+.Ar arg
 in turn.
 Normally arguments are chosen singly; the optional number
-.I n
+.Fl n
 specifies the number of arguments to be passed to
-.I command.
+.Ar command .
 If
-.I n
+.Fl n
 is zero,
-.I command
+.Ar command
 is run without arguments once for each
-.I arg.
-Character sequences of the form %\fId\fP
+.Ar arg
+Character sequences of the form
+Cx %
+.Ar d
+.Cx
 in
-.I command,
+.Ar command ,
 where
-.I d
+.Ar d
 is a digit from 1 to 9,
 are replaced by the
-\fId\fP'th following unused
-.I arg.
+.Ar d\'th
+following unused
+.Ar arg .
 If any such sequences occur,
-.I n
+.Fl n
 is ignored,
 and the number of arguments passed to
-.I command
+.Ar command
 is the maximum value of
-.I d
+.Ar d
 in
-.I command.
+.Ar command .
 The character `%' may be changed by the
-.B \-a
+.Fl a
 option.
-.PP
-Examples:
-.RS
-apply echo *
-.RE
+.SH ENVIRONMENT
+.Nm apply
+checks the environment variable
+.Ev SHELL
+to find out which shell to use.
+.Sh EXAMPLES
+.Ds
+.Tw apply \-2 cmp a1 b1 a2 b2 ...
+.Tp Li apply echo a*
 is similar to ls(1);
-.RS
-apply \-2 cmp a1 b1 a2 b2 ...
-.RE
+.Tp Li apply \-2 cmp a1 b1 a2 b2 ...
 compares the `a' files to the `b' files;
-.RS
-apply \-0 who 1 2 3 4 5
-.RE
+.Tp Li apply \-0 who 1 2 3 4 5
 runs who(1) 5 times; and
-.RS
-apply \(aaln %1 /usr/joe\(aa *
-.RE
-links all files in the current directory to the directory /usr/joe.
-.SH "SEE ALSO"
-sh(1)
-.SH AUTHOR
+.Tp Li apply \(aaln %1 /usr/joe\(aa *
+links all files in the current directory to the directory
+.Pa /usr/joe .
+.Tp
+.De
+.Sh SEE ALSO
+.Xr sh 1
+.Sh HISTORY
+.Nm Apply
+appeared in 4.2BSD.
+.Sh AUTHOR
 Rob Pike
-.SH BUGS
+.Sh BUGS
 Shell metacharacters in
-.I command
+.Ar command
 may have bizarre effects; it is best to enclose complicated
 commands in single quotes \(aa\ \(aa.
-.sp
+.Pp
 There is no way to pass a literal `%2' if `%' is the
 argument expansion character.

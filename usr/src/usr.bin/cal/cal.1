@@ -1,58 +1,56 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Kim Letkeman.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)cal.1	6.5 (Berkeley) %G%
+.\"     @(#)cal.1	6.6 (Berkeley) %G%
 .\"
-.TH CAL 1 ""
-.UC 7
-.SH NAME
-cal \- displays a calendar
-.SH SYNOPSIS
-.B cal
-[ -jy ] [[
-.I month 
-] 
-.I year 
-]
-.SH DESCRIPTION
-.I Cal
-displays a calendar for a specified month and/or year.
+.Dd 
+.Dt CAL 1
+.Os BSD 4.4
+.Sh NAME
+.Nm cal
+.Nd displays a calendar
+.Sh SYNOPSIS
+.Nm cal
+.Op Fl jy
+.Op Ar month Op Ar year
+.Sh DESCRIPTION
+.Nm Cal
+displays a simple calendar.
+If no options or arguments are given,
+.Nm cal
+displays the current month.
 The options are as follows:
-.TP
-\-j
+.Tp Fl j
 Display julian dates (days one-based, numbered from January 1).
-.TP
-\-y
+.Tp Fl y
 Display a calendar for the current year.
-.PP
+.Tp
+.Pp
 A single parameter specifies the year (1 - 9999) to be displayed;
 note the year must be fully specified: ``cal 89'' will
-.B not
+.Em not
 display a calendar for 1989.
 Two parameters denote the month (1 - 12) and year.
 If no parameters are specified, the current month's calendar is
-displayed. 
-.PP
+displayed.
+.Pp
 A year starts on Jan 1.
-.PP
-The Gregorian Reformation is assumed to have occurred on 3 September
-1752.
+.Pp
+The Gregorian Reformation is assumed to have occurred on 3rd of September
+in 1752.
 By this time, most countries had recognized the reformation (although
 a few did not recognize it until the early 1900's.)
-From 3 September 1752 through 13 September 1752 was eliminated by
+Ten days following that date were eliminated by
 the reformation, so the calendar for that month is a bit unusual.
+.Sh HISTORY
+A
+.Nm
+command appeared in Version 6 AT&T UNIX.  The
+.Nm
+command this man page describes is
+derived from code contributed by Kim Letkeman.

@@ -1,331 +1,374 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sccs.1	2.6 (Berkeley) %G%
+.\"     @(#)sccs.1	2.7 (Berkeley) %G%
 .\"
-.UC 7
-.TH SCCS 1 ""
-.UC 5
-.SH NAME
-sccs \- front end for the \s-1SCCS\s0 subsystem
-.SH SYNOPSIS
-.B sccs
-[
-.B \-r
-] [
-.BI \-d path
-] [
-.BI \-p path
-] command [ flags ] [ args ]
-.SH DESCRIPTION
-.I Sccs
-is a front end
-to the
-.SM SCCS
+.Dd 
+.Os BSD 4.4
+.Dt SCCS 1
+.Os BSD 4.2
+.Sh NAME
+.Nm sccs
+.Nd front end for the
+.Li SCCS
+subsystem
+.Sh SYNOPSIS
+.Nm sccs
+.Op Fl r
+.Op Fl d Ar path
+.Op Fl p Ar path
+.Ar command
+.Op  flags
+.Ar
+.Sh DESCRIPTION
+.Nm Sccs
+is a front end to the
+.Li SCCS
 programs
-that helps them mesh more cleanly
-with the rest of UNIX.
-It also includes the capability to run
-``set user id'' to another user
-to provide additional protection.
-.PP
+that
+helps them mesh more cleanly
+with
+the rest of UNIX.
+It
+also includes the capability to run
+.Dq set user id
+to another user
+to
+provide additional protection.
+.Pp
 Basically,
-.I sccs
-runs the
-.I command
-with the specified
-.I flags
+.Nm sccs
+runs the command with the specified
+.Ar flags
 and
-.I args.
-Each
-argument
-is normally modified to be prepended
-with ``SCCS/s.''.
-.PP
+.Ar args .
+Each argument is normally modified to be prepended with
+.Dq Li SCCS/s. .
+.Pp
 Flags to be interpreted by the
-.I sccs
+.Nm sccs
 program must be before the
-.I command
+.Ar command
 argument.
 Flags to be passed to the actual
-.SM SCCS
-program
-must come after the
-.I command
+.Li SCCS
+program must come after the
+.Ar command
 argument.
-These flags are specific to the command
-and are discussed in the documentation for that command.
-.PP
+These flags are specific to the command and
+are discussed in the documentation for that command.
+.Pp
 Besides the usual
-.SM SCCS
+.Li SCCS
 commands,
-several ``pseudo-commands'' can be issued.
+several
+.Dq pseudo-commands
+can be issued.
 These are:
-.IP edit 1i
-Equivalent to ``get \-e''.
-.IP delget
-Perform a delta on the named files
-and then get new versions.
-The new versions will have id keywords expanded,
-and will not be editable.
-The \-m, \-p, \-r, \-s, and \-y flags
-will be passed to delta,
-and the \-b, \-c, \-e, \-i, \-k, \-l, \-s, and \-x flags
-will be passed to get.
-.IP deledit
-Equivalent to ``delget'' except that the
-``get'' phase includes the ``\-e'' flag.
-This option is useful for making a ``checkpoint''
-of your current editing phase.
-The same flags will be passed to delta
-as described above,
-and all the flags listed for ``get''
-above except \-e and \-k
-are passed to ``edit''.
-.IP create
-Creates an
-.SM SCCS
-file,
-taking the initial contents from the file of the same name.
-Any flags to ``admin'' are accepted.
-If the creation is successful,
-the files are renamed with a comma on the front.
-These should be removed when you are convinced that
-the
-.SM SCCS
-files have been created successfully.
-.IP fix
-Must be followed by a
-.B \-r
+.Tw Fl
+.Tp Ic edit
+Equivalent
+to 
+.Dq Li get \-e .
+.Tp Ic delget
+Perform a delta on the named files and
+then get new versions.
+The new versions will have id keywords expanded, and
+will not be editable.
+The
+.Fl m ,
+.Fl p ,
+.Fl r ,
+.Fl s ,
+and
+.Fl y
+flags will be passed to
+.Nm delta ,
+and the 
+.Fl b,
+.Fl c ,
+.Fl e ,
+.Fl i ,
+.Fl k ,
+.Fl l ,
+.Fl s ,
+.\" anybody who has a bad xterm which is almost anyone
+.if n \{\
+.	br
+.\}
+and
+.Fl x
+flags will be passed to get.
+.Tp Ic deledit
+Equivalent
+to
+.Nm delget
+except that the
+.Nm get
+phase includes the
+.Fl e
 flag.
-This command essentially removes the named delta,
-but leaves you with a copy of the delta
-with the changes that were in it.
-It is useful for fixing small compiler bugs, etc.
-Since it doesn't leave audit trails,
-it should be used carefully.
-.IP clean
+This
+option is useful for making a
+.Em checkpoint
+of your current editing phase.  The same flags will be passed to delta
+as described above, and
+all the flags listed for
+.om get
+above except
+.Fl e
+and
+.Fl k
+are
+passed to
+.Nm edit .
+.Tp Ic create
+Creates
+an
+.Li SCCS
+file ,
+taking
+the initial contents from the file of the same name.
+Any
+flags to
+.Nm admin
+are accepted.  If the creation is successful,
+the files are renamed with a comma on the front.
+These should be removed when you are convinced that the
+.Li SCCS
+files
+have been created successfully.
+.Tp Ic fix
+Must
+be followed by a
+.Fl r
+flag.
+This command essentially removes the named delta, but
+leaves you with a copy of the delta
+with the changes that were in it.  It
+is useful for fixing small compiler bugs, etc.
+Since it doesn't leave audit trails, it should be used carefully.
+.Tp Ic clean
 This routine removes everything from the current directory
 that can be recreated from SCCS files.
 It will not remove any files being edited.
 If the
-.B \-b
-flag is given, branches are ignored in the determination
-of whether they are being edited;
-this is dangerous if you are keeping the branches in the
+.Fl b
+flag is given, branches are ignored in the determination of
+whether they are being edited; this
+is dangerous if you are keeping the branches in the
 same directory.
-.IP unedit
-This is the opposite of an ``edit''
-or a ``get \-e''.
-It should be used with extreme caution,
-since any changes you made since the get
-will be irretrievably lost.
-.IP info
+.Tp Ic unedit
+This
+is the opposite of an
+.Nm edit
+or
+a
+.Dq Li get \-e .
+It should be used with extreme caution, since
+any changes you made since the get will be irretrievably lost.
+.Tp Ic info
 Gives a listing of all files being edited.
 If the
-.B \-b
-flag is given,
-branches (i.e.,
-\s-1SID\s0's with two or fewer components)
-are ignored.
-If the
-.B \-u
-flag is given
-(with an optional argument)
-then only files being edited by you
-(or the named user)
-are listed.
-.IP check
-Like ``info''
-except that nothing is printed if nothing is being edited,
-and a non-zero exit status is returned if anything
-is being edited.
-The intent is to have this included in an ``install''
-entry in a makefile
-to insure that everything is included into the
-.SM SCCS
-file
-before a version is installed.
-.IP tell
-Gives a newline-separated list
-of the files being edited
-on the standard output.
-Takes the
-.B \-b
+.Fl b
+flag
+is given, branches (i.e.,
+.Cx Li SID
+.Cx \&\'s
+.Cx
+with two or fewer components)
+are ignored.  If the
+.Fl u
+flag is given (with an optional argument) then
+only files being edited by you (or the named user) are listed.
+.Tp Ic check
+Like
+.Nm info
+except that nothing is printed if nothing is being edited, and
+a non-zero exit status is returned if anything is being edited.
+The intent is to have this included in an
+.Em install
+entry in a makefile to insure that everything is included into the
+.Li SCCS
+file before a version is installed.
+.Tp Ic tell
+Gives a newline-separated list of the files being edited
+on the standard output.  Takes the
+.Fl b
 and
-.B \-u
-flags like 
-``info'' and ``check''.
-.IP diffs
-Gives a ``diff'' listing between the current version of the
-program(s) you have out for editing and the versions
-in
-.SM SCCS
+.Fl u
+flags like
+.Nm info
+and
+.Nm check .
+.Tp Ic diffs
+Gives a
+.Nm diff
+listing between the current version of the
+program(s) you have out for editing and the versions in
+.Li SCCS
 format.
 The
-.B \-r,
-.B \-c,
-.B \-i,
-.B \-x,
+.Fl r ,
+.Fl c ,
+.Fl i ,
+.Fl x ,
 and
-.B \-t
+.Fl t
 flags are passed to
-.I get\c
-; the
-.B \-l,
-.B \-s,
-.B \-e,
-.B \-f,
-.B \-h,
+.if n \{\
+.	br
+.\}
+.Nm get ;
+the
+.Fl l ,
+.Fl s ,
+.Fl e ,
+.Fl f ,
+.Fl h ,
 and
-.B \-b
+.Fl b
 options are passed to
-.I diff.
+.if n \{\
+.	br
+.\}
+.Nm diff .
 The
-.B \-C
+.Fl C
 flag is passed to
-.I diff
+.Nm diff
 as
-.B \-c.
-.IP print
+.Fl c .
+.Tp Ic print
 This command prints out verbose information
 about the named files.
-.PP
-The
-.B \-r
-flag runs
-.I sccs
-as the real user
-rather than as whatever effective user
-.I sccs
-is ``set user id'' to.
-The
-.B \-d
-flag gives a root directory for the
-.SM SCCS
+.Pp
+.Tp Fl r
+Runs
+.Nm sccs
+as the real user rather than as whatever effective user
+.Nm sccs
+is
+.Dq Li set user id
+to.
+.Tp Fl d
+Specifies a root directory for the
+.Li SCCS
 files.
 The default is the current directory.
-The
-.B \-p
-flag defines the pathname of the directory
-in which the
-.SM SCCS
-files will be found;
-``SCCS'' is the default.
-The
-.B \-p
-flag differs from the
-.B \-d
-flag in that the
-.B \-d
-argument is prepended to the entire pathname
-and the
-.B \-p
-argument is inserted before the final component of the
-pathname.
-For example,
-``sccs \-d/x \-py get a/b''
-will convert to
-``get /x/a/y/s.b''.
-The intent here is to create aliases such as
-``alias syssccs sccs -d/usr/src''
-which will be used as
-``syssccs get cmd/who.c''.
-Also, if the environment variable
-PROJECT
+If environment variable
+.Ev PROJECT
 is set,
-its value is used to determine the
-.B \-d flag.
-If it begins with a slash,
-it is taken directly;
-otherwise,
-the home directory of a user of that name
-is examined for a subdirectory ``src'' or ``source''.
-If such a directory is found,
-it is used.
-.PP
-Certain commands (such as
-.IR admin )
-cannot be run ``set user id'' by all users,
-since this would allow anyone to change the authorizations.
+it will be used to determine the 
+.Fl d
+flag.
+.Tp Fl p
+flag defines the pathname of the directory in which the
+.Li SCCS
+files will be found;
+.Dq Li SCCS
+is the default.
+The
+.Fl p
+flag
+differs from the
+.Fl d
+flag
+in that the
+.Fl d
+argument is prepended to the entire pathname and the
+.Fl p
+argument is inserted before the final component of the pathname.
+For example,
+.Dq Li sccs \-d/x \-py get a/b
+will convert to
+.Dq Li get /x/a/y/s.b .
+The intent here is to create aliases such as
+.Dq Li alias syssccs sccs -d/usr/src
+which
+will be used as
+.Dq Li syssccs get cmd/who.c .
+.Pp
+Certain
+commands (such as
+.Nm admin  )
+cannot be run
+.Dq Li set user id
+by all users, since this would allow anyone to change the authorizations.
 These commands are always run as the real user.
-.SH EXAMPLES
-.de BX
-.PP
-.nf
-.in +0.5i
-..
-.de EX
-.fi
-.PP
-..
+.Sh EXAMPLES
 To get a file for editing,
 edit it,
 and produce a new delta:
-.BX
-sccs get \-e file.c
-ex file.c
-sccs delta file.c
-.EX
+.Pp
+.Dl sccs get \-e file.c
+.Dl ex file.c
+.Dl sccs delta file.c
+.Pp
 To get a file from another directory:
-.BX
-sccs \-p/usr/src/sccs/s. get cc.c
-.EX
+.Pp
+.Dl sccs \-p/usr/src/sccs/s. get cc.c
+.Pp
 or
-.BX
-sccs get /usr/src/sccs/s.cc.c
-.EX
+.Pp
+.Dl sccs get /usr/src/sccs/s.cc.c
+.Pp
 To make a delta of a large number of files
 in the current directory:
-.BX
-sccs delta *.c
-.EX
+.Pp
+.Dl sccs delta *.c
+.Pp
 To get a list of files being edited that are not on branches:
-.BX
-sccs info \-b
-.EX
+.Pp
+.Dl sccs info \-b
+.Pp
 To delta everything being edited by you:
-.BX
-sccs delta \`sccs tell \-u\`
-.EX
+.Pp
+.Dl sccs delta \`sccs tell \-u\`
+.Pp
 In a makefile, to get source files
 from an
-.SM SCCS
+.Li SCCS
 file if it does not already exist:
-.BX
-SRCS = <list of source files>
-$(SRCS):
-	sccs get $(REL) $@
-.EX
-.SH "SEE ALSO"
-admin(SCCS),
-chghist(SCCS),
-comb(SCCS),
-delta(SCCS),
-get(SCCS),
-help(SCCS),
-prt(SCCS),
-rmdel(SCCS),
-sccsdiff(SCCS),
-what(SCCS)
+.Pp
+.Dl SRCS = <list of source files>
+.Dl $(SRCS):
+.Dl \&\tsccs get $(REL) $@
+.Sh ENVIRONMENT
+.Tw Ar
+.Tp Ev PROJECT
+The PROJECT environment variable is checked by the
+.Fl d
+flag.  If
+it begins with a slash, it is taken directly; otherwise,
+the home directory of a user of that name is
+examined for a subdirectory
+.Dq Li src
+or
+.Dq Li source .
+If such a directory is found, it is used.
+.Tp
+.Sh SEE ALSO
+.Xr what 1
+.Xr admin SCCS ,
+.Xr chghist SCCS ,
+.Xr comb SCCS ,
+.Xr delta SCCS ,
+.Xr get SCCS ,
+.Xr help SCCS ,
+.Xr prt SCCS ,
+.Xr rmdel SCCS ,
+.Xr sccsdiff SCCS ,
 .br
 Eric Allman,
-.ul
-An Introduction to the Source Code Control System
-.SH BUGS
+.Em An Introduction to the Source Code Control System
+.Sh HISTORY
+.Nm Sccs
+appeared in 4.3 BSD.
+.Sh BUGS
 It should be able to take directory arguments on pseudo-commands
 like the
-.SM SCCS
+.Li SCCS
 commands do.

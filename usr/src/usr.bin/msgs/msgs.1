@@ -1,191 +1,193 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)msgs.1	6.4 (Berkeley) %G%
+.\"     @(#)msgs.1	6.5 (Berkeley) %G%
 .\"
-.TH MSGS 1 ""
-.UC 4
-.SH NAME
-msgs \- system messages and junk mail program
-.SH SYNOPSIS
-.B msgs
-[
-.B \-fhlpq
-] [
-number
-] [
-\-number
-]
-.LP
-.B msgs
-.B \-s
-.LP
-.B msgs
-.B \-c
-[
-\-days
-]
-.SH DESCRIPTION
-.I Msgs
+.Dd 
+.Dt MSGS 1
+.Os BSD 4
+.Sh NAME
+.Nm msgs
+.Nd system messages and junk mail program
+.Sh SYNOPSIS
+.Nm msgs
+.Op Fl fhlpq
+.Op Ar number
+.Op Ar \-number
+.Pp
+.Nm msgs
+.Op Fl s
+.Pp
+.Nm msgs
+.Op Fl c
+.Op \-days
+.Sh DESCRIPTION
+.Nm Msgs
 is used to read system messages.
 These messages are
 sent by mailing to the login `msgs' and should be short
 pieces of information which are suitable to be read once by most users
 of the system.
-.PP
-.I Msgs
+.Pp
+.Nm Msgs
 is normally invoked each time you login, by placing it in the file
-.I \&.login
-.I (\&.profile
+.Pa \& .login
+(or
+.Pa \&.profile
 if you use
-.IR /bin/sh ).
+.Xr sh 1 ) .
 It will then prompt you with the source and subject of each new message.
 If there is no subject line, the first few non-blank lines of the
 message will be displayed.
 If there is more to the message, you will be told how
 long it is and asked whether you wish to see the rest of the message.
 The possible responses are:
-.TP 7
-.B y
+.Tw Fl
+.Tp Fl y
 type the rest of the message.
-.TP 7
-RETURN
+.Tp Ic RETURN
 synonym for y.
-.TP 7
-.B n
+.Tp Fl n
 skip this message
 and go on to the next message.
-.TP 7
-.B \-
+.Tp Fl
 redisplay the last message.
-.TP 7
-.B q
+.Tp Fl q
 drops you out of
-.I msgs;
+.Nm msgs ;
 the next time you run the program it will pick up where you left off.
-.TP 7
-.B s
+.Tp Fl s
 append the current message to the file ``Messages'' in the current directory;
 `s\-' will save the previously displayed message. A `s' or `s\-' may
 be followed by a space and a file name to receive the message replacing
 the default ``Messages''.
-.TP 7
-.B m
+.Tp Fl m
 or `m\-' causes a copy of the specified message to be placed in a temporary
-mailbox and 
-.IR mail (1)
+mailbox and
+.Xr mail  1
 to be invoked on that mailbox.
 Both `m' and `s' accept a numeric argument in place of the `\-'.
-.PP
-.I Msgs
+.Tp
+.Pp
+.Nm Msgs
 keeps track of the next message you will see by a number in the file
-.I \&.msgsrc
+.Pa \&.msgsrc
 in your home directory.
 In the directory
-.I /usr/msgs
+.Pa /var/msgs
 it keeps a set of files whose names are the (sequential) numbers
 of the messages they represent.
 The file
-.I /usr/msgs/bounds
+.Pa /var/msgs/bounds
 shows the low and high number of the messages in the directory
 so that
-.I msgs
+.Nm msgs
 can quickly determine if there are no messages for you.
 If the contents of
-.I bounds
+.Pa bounds
 is incorrect it can be fixed by removing it;
-.I msgs
+.Nm msgs
 will make a new
-.I bounds
+.Pa bounds
 file the next time it is run.
-.PP
+.Pp
 The
-.B \-s
+.Fl s
 option is used for setting up the posting of messages.  The line
-.IP
-.DT
-msgs: "| /usr/ucb/msgs \-s"
-.PP
-should be include in
-.I /usr/lib/aliases
+.Pp
+.Dl msgs: /usr/ucb/msgs \-s"
+.Pp
+should be included in
+.Pa /etc/aliases
+(see
+.Xr newaliases 1 )
 to enable posting of messages.
-.PP
+.Pp
 The
-.B \-c
+.Fl c
 option is used for performing cleanup on
-.I /usr/msgs.
+.Pa /var/msgs.
 An entry with the
-.B \-c
+.Fl c
 option should be placed in
-.I /usr/lib/crontab
+.Pa /etc/crontab
 to run every night.  This will remove all messages over 21 days old.
 A different expiration may be specified on the command line to override
 the default.
-.PP
+.Pp
 Options when reading messages include:
-.TP 7
-.B \-f
+.Tw Fl
+.Tp Fl f
 which causes it not to say ``No new messages.''.
 This is useful in your
-.I \&.login
+.Pa \& .login
 file since this is often the case here.
-.TP 7
-.B \-q
+.Tp Fl q
 Queries whether there are messages, printing
 ``There are new messages.'' if there are.
 The command ``msgs \-q'' is often used in login scripts.
-.TP 7
-.B \-h
+.Tp Fl h
 causes
-.I msgs
+.Nm msgs
 to print the first part of messages only.
-.TP 7
-.B \-l
+.Tp Fl l
 option causes only locally originated messages to be reported.
-.TP 7
-\fInum\fR
+.Tp Ar num
 A message number can be given
 on the command line, causing
-.I msgs
+.Nm msgs
 to start at the specified message rather than at the next message
 indicated by your
-.I \&.msgsrc
+.Pa \&.msgsrc
 file.
 Thus
-.IP "" 7
-    msgs \-h 1
-.IP "" 7
+.Pp
+.Dl msgs \-h 1
+.Pp
 prints the first part of all messages.
-.TP 7
-.I "\-number"
+.Tp Ar \-number
 will cause
-.I msgs
+.Nm msgs
 to start
-.I number
-messages back from the one indicated by your 
-.I \&.msgsrc
+.Ar number
+messages back from the one indicated by your
+.Pa \&.msgsrc
 file, useful for reviews of recent messages.
-.TP 7
-.B \-p
+.Tp Fl p
 causes long messages to be piped through
-.IR more (1).
-.PP
+.Xr more  1  .
+.Pp
 Within
-.I msgs
+.Nm msgs
 you can also go to any specific message by typing its number when
-.I msgs
+.Nm msgs
 requests input as to what to do.
-.SH FILES
-.ta 2i
-/usr/msgs/*	database
-.br
-~/.msgsrc	number of next message to be presented
-.SH AUTHORS
+.Sh ENVIRONMENT
+.Nm Msgs uses the
+.Ev HOME
+and
+.Ev TERM
+environment variables.
+.Sh FILES
+.Dw /usr/msgs/*
+.Di L
+.Dp Pa /usr/msgs/*
+database
+.Dp ~/.msgsrc
+number of next message to be presented
+.Dp
+.Sh AUTHORS
 William Joy
 .br
 David Wasley
-.SH SEE ALSO
-aliases(5), crontab(5), mail(1), more(1)
-.SH BUGS
+.Sh SEE ALSO
+.Xr aliases 5 ,
+.\".Xr crontab 5 ,
+.Xr mail 1 ,
+.Xr more 1
+.Sh HISTORY
+.Nm Msgs
+appeared in 3 BSD.
+.Sh BUGS

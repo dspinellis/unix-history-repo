@@ -1,99 +1,104 @@
-.\" Copyright (c) 1983, 1990 Regents of the University of California.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
+.\"
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Robert Elz at The University of Melbourne.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)quota.1	6.4 (Berkeley) %G%
+.\"     @(#)quota.1	6.5 (Berkeley) %G%
 .\"
-.TH QUOTA 1 ""
-.UC 5
-.SH NAME
-quota \- display disk usage and limits
-.SH SYNOPSIS
-.B quota
-[
-.B \-g
-] [
-.B \-u
-] [
-.B "\-v | \-q"
-]
-.br
-.B quota
-[
-.B \-u
-] [
-.B "\-v | \-q"
-]
-user
-.br
-.B quota
-.B \-g
-[
-.B "\-v | \-q"
-]
-group
-.br
-.SH DESCRIPTION
-.I Quota
-displays users' disk usage and limits. 
+.Dd 
+.Dt QUOTA 1
+.Os BSD 4.2
+.Sh NAME
+.Nm quota
+.Nd display disk usage and limits
+.Sh SYNOPSIS
+.Nm quota
+.Op Fl g
+.Op Fl u
+.Op Fl v Li \&| Fl q
+.Nm quota
+.Op Fl u
+.Op Fl v Li \&| Fl q
+.Ar user
+.Nm quota
+.Op Fl g
+.Op Fl v Li \&| Fl q
+.Ar group
+.Sh DESCRIPTION
+.Nm Quota
+displays users' disk usage and limits.
 By default only the user quotas are printed.
-The optional \fI-g\fP flag specifies that group quotas
+The optional
+.Fl g
+flag specifies that group quotas
 for the groups of which the user is a member should be printed.
-Specifying both \fI-g\fP and \fI-u\fP
+Specifying both
+.Fl g
+and
+.Fl u
 specifies that both the user quotas and the group quotas for
 the groups of which the user is a member should be printed.
-The optional \fI-u\fP flag is equivalent to the default.
-.PP
-Only the super-user may use the \fI-u\fP flag and the optional
-.I user
+The optional
+.Fl u
+flag is equivalent to the default.
+.Pp
+Only the super-user may use the
+.Fl u
+flag and the optional
+.Ar user
 argument to view the limits of other users.
-Non-super-users can use the the \fI-g\fP flag and optional
-.I group
+Non-super-users can use the the
+.Fl g
+flag and optional
+.Ar group
 argument to view only the limits of groups of which they are members.
-.PP
+.Pp
 If a
-.B \-v
-flag is supplied, 
-.I quota
+.Fl v
+flag is supplied,
+.Nm quota
 will also display quotas on filesystems
 where no storage is allocated.
-.PP
+.Pp
 The
-.B \-q
+.Fl q
 flag prints a more terse message,
 containing only information
 on filesystems where usage is over quota.
-The \fI-q\fP flag takes precedence over the \fI-v\fP flag.
-.PP
-.I Quota
+The
+.Fl q
+flag takes precedence over the
+.Fl v
+flag.
+.Pp
+.Nm Quota
 reports the quotas of all the filesystems listed in
-.IR /etc/fstab .
-If 
-.I quota
+.Nm /etc/fstab .
+If
+.Nm quota
 exits with a non-zero status, one or more filesystems
 are over quota.
-.SH FILES
-.DT
-\fIquota.user\fP	at the filesystem root with user quotas
-.br
-\fIquota.group\fP	at the filesystem root with group quotas
-.br
-/etc/fstab	to find filesystem names and locations
-.SH SEE ALSO
-quotactl(2),
-fstab(5),
-edquota(8), quotacheck(8), quotaon(8), repquota(8)
+.Sh FILES
+.Dw quota.group
+.Di L
+.Nm quota.user
+at the filesystem root with user quotas
+.Nm quota.group
+at the filesystem root with group quotas
+.Dp Pa /etc/fstab
+to find filesystem names and locations
+.Dp
+.Sh HISTORY
+.Nm Quota
+appeared in 4.2 BSD.
+.Sh SEE ALSO
+.Xr quotactl 2 ,
+.Xr fstab 5 ,
+.Xr edquota 8 ,
+.Xr quotacheck 8 ,
+.Xr quotaon 8 ,
+.Xr repquota 8

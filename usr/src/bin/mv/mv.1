@@ -1,97 +1,98 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mv.1	6.3 (Berkeley) %G%
+.\"     @(#)mv.1	6.4 (Berkeley) %G%
 .\"
-.TH MV 1 ""
-.UC 7
-.SH NAME
-mv \- move files
-.SH SYNOPSIS
-.nf
-mv  [ \-f | \-i ] source target
-mv  [ \-f | \-i ] source ... source directory
-.fi
-.SH DESCRIPTION
-.PP
+.Dd 
+.Dt MV 1
+.Os BSD 4.4
+.Sh NAME
+.Nm mv
+.Nd move files
+.Sh SYNOPSIS
+.Nm mv
+.Op Fl f Li \&| Fl i
+.Ar source target
+.Nm mv
+.Op  Fl f Li \&| Fl i
+.Ar source ... source directory
+.De
+.Sh DESCRIPTION
+.Pp
 In its first form, the
-.I mv
+.Nm mv
 utility renames the file named by the
-.I source
+.Ar source
 operand to the destination path named by the
-.I target
+.Ar target
 operand.
 This form is assumed when the last operand does not name an already
 existing directory.
-.PP
+.Pp
 In its second form,
-.I mv
+.Nm mv
 moves each file named by a
-.I source
+.Ar source
 operand to a destination file in the existing directory named by the
-.I directory
+.Ar directory
 operand.
 The destination path for each operand is the pathname produced by the
 concatenation of the last operand, a slash, and the final pathname
 component of the named file.
-.PP
+.Pp
 The following options are available:
-.TP
-\-f
+.Tw Ds
+.Tp Fl f
 Do not prompt for confirmation before overwriting the destination
 path.
 (The
-.I \-i
+.Fl i
 option is ignored if the
-.I \-f
+.Fl f
 option is specified.)
-.TP
-\-i
+.Tp Fl i
 Causes
-.I mv
+.Nm mv
 to write a prompt to standard error before moving a file that would
 overwrite an existing file.
 If the response from the standard input begins with the character ``y'',
 the move is attempted.
-.PP
+.Tp
+.Pp
 It is an error for either the
-.I source
+.Ar source
 operand or the destination path to specify a directory unless both do.
-.PP
+.Pp
 If the destination path does not have a mode which permits writing,
-.I mv
+.Nm mv
 prompts the user for confirmation as specified for the
-.I \-i
+.Fl i
 option.
-.PP
+.Pp
 As the
-.IR rename (2)
+.Xr rename  2
 call does not work across file systems,
-.I mv
+.Nm mv
 uses
-.IR cp (1)
+.Xr cp  1
 and
-.IR rm (1)
+.Xr rm  1
 to accomplish the move.
 The effect is equivalent to:
-.sp
-.nf
-.ti +5
+.Pp
+.Ds I
 rm -f destination_path && \e
-.ti +8
-cp -pr source_file destination && \e
-.ti +8
-rm -rf source_file
-.fi
-.PP
+\tcp -pr source_file destination && \e
+\trm -rf source_file
+.De
+.Pp
 The
-.I mv
+.Nm mv
 utility exits 0 on success, and >0 if an error occurs.
-.SH ENVIRONMENT
-.SH "SEE ALSO"
-.SH STANDARDS
+.Sh SEE ALSO
+.Sh STANDARDS
 The
-.I mv
+.Nm mv
 function is expected to be POSIX 1003.2 compatible.

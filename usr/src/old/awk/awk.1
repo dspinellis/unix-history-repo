@@ -1,73 +1,101 @@
-.\"	@(#)awk.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH AWK 1 ""
-.AT 3
-.SH NAME
-awk \- pattern scanning and processing language
-.SH SYNOPSIS
-.B awk
-[
-.BI \-F c
-]
-[ prog ] [ file ] ...
-.SH DESCRIPTION
-.I Awk
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)awk.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt AWK 1
+.Os ATT 7
+.Sh NAME
+.Nm awk
+.Nd pattern scanning and processing language
+.Sh SYNOPSIS
+.Nm awk
+.Oo
+.Op Fl \&F Ar \&c
+.Oo
+.\".Op Op Fl \&f Ar file Op Ar prog
+.Cx \&[
+.Op Fl f Ar file
+.Op Ar prog
+.Cx \&]
+.Cx
+.Ar
+.Sh DESCRIPTION
+.Nm Awk
 scans each input
-.I file
+.Ar file
 for lines that match any of a set of patterns specified in
-.IR prog .
+.Ar prog .
 With each pattern in
-.I prog
+.Ar prog
 there can be an associated action that will be performed
 when a line of a
-.I file
+.Ar file
 matches the pattern.
 The set of patterns may appear literally as
-.I prog,
+.Ar prog
 or in a file
 specified as
-.B \-f
-.IR file .
-.PP
+.Fl f
+.Ar file .
+.Pp
+.Tw Fl
+.Tp Cx Fl F
+.Ar c
+.Cx
+Specify a field separator of
+.Ar c .
+.Tp Fl f
+Use 
+.Ar file
+as an input
+.Ar prog
+(an awk script).
+.Tp
+.Pp
 Files are read in order;
 if there are no files, the standard input is read.
-The file name `\-'
+The file name
+.Fl
 means the standard input.
 Each line is matched against the
 pattern portion of every pattern-action statement;
 the associated action is performed for each matched pattern.
-.PP
+.Pp
 An input line is made up of fields separated by white space.
-(This default can be changed by using FS,
-.IR "vide infra" ".)"
+(This default can be changed by using 
+.Li FS ,
+.Em vide infra . )
 The fields are denoted $1, $2, ... ;
 $0 refers to the entire line.
-.PP
-.PP
+.Pp
 A pattern-action statement has the form
-.PP
-	pattern { action }
-.PP
+.Pp
+.Dl pattern {action}
+.Pp
 A missing { action } means print the line;
 a missing pattern always matches.
-.PP
+.Pp
 An action is a sequence of statements.
 A statement can be one of the following:
-.PP
-.nf
-	if ( conditional ) statement [ else statement ]
-	while ( conditional ) statement
-	for ( expression ; conditional ; expression ) statement
-	break
-	continue
-	{ [ statement ] ... }
-	variable = expression
-	print [ expression-list ] [ >expression ]
-	printf format [ , expression-list ] [ >expression ]
-	next	# skip remaining patterns on this input line 
-	exit	# skip the rest of the input
-.fi
-.PP
+.Pp
+.Ds I
+if ( conditional ) statement [ else statement ]
+while ( conditional ) statement
+for ( expression ; conditional ; expression ) statement
+break
+continue
+{ [ statement ] ... }
+variable = expression
+print [ expression-list ] [ >expression ]
+printf format [, expression-list ] [ >expression ]
+next	# skip remaining patterns on this input line
+exit	# skip the rest of the input
+.De
+.Pp
 Statements are terminated by
 semicolons, newlines or right braces.
 An empty expression-list stands for the whole line.
@@ -78,80 +106,96 @@ The C operators ++, \-\-, +=, \-=, *=, /=, and %=
 are also available in expressions.
 Variables may be scalars, array elements
 (denoted
-x[i])
+.Cx x
+.Op i
+.Cx )
+.Cx
 or fields.
 Variables are initialized to the null string.
 Array subscripts may be any string,
 not necessarily numeric;
 this allows for a form of associative memory.
 String constants are quoted "...".
-.PP
-The 
-.I print
+.Pp
+The
+.Ic print
 statement prints its arguments on the standard output
-(or on a file if 
-.I >file
+(or on a file if
+.Ar \&>file
 is present), separated by the current output field separator,
 and terminated by the output record separator.
 The
-.I printf
+.Ic printf
 statement formats its expression list according to the format
 (see
-.IR printf (3S)).
-.PP
+.Xr printf 3 ) .
+.Pp
 The built-in function
-.I length
+.Ic length
 returns the length of its argument
 taken as a string,
 or of the whole line if no argument.
 There are also built-in functions
-.I exp,
-.I log,
-.I sqrt,
+.Ic exp ,
+.Ic log ,
+.Ic sqrt
 and
-.IR int .
+.Ic int .
 The last truncates its argument to an integer.
-.IR substr(s,\ m,\ n)
-returns the 
-.IR n -character
-substring of
-.I s
-that begins at position
-.IR m .
 The function
-.IR sprintf(fmt,\ expr,\ expr,\ ...)
+.Cx Ic substr
+.Cx (
+.Ar s ,
+.Ar \& m ,
+.Ar \& n )
+.Cx
+returns the
+.Cx Ar n
+.Cx \-
+.Cx character
+.Cx
+substring of
+.Ar s
+that begins at position
+.Ar m .
+The function
+.Cx Ic sprintf
+.Cx (
+.Ar fmt ,
+.Ar \& expr ,
+.Ar \& expr ,
+.Ar \& ... )
+.Cx
 formats the expressions
 according to the
-.IR printf (3S)
+.Xr printf 3
 format given by
-.I fmt
+.Ar fmt
 and returns the resulting string.
-.PP
+.Pp
 Patterns are arbitrary Boolean combinations
-(!, \(or\(or, &&, and parentheses) of 
+(!, \(or\(or, &&, and parentheses) of
 regular expressions and
 relational expressions.
 Regular expressions must be surrounded
 by slashes and are as in
-.IR egrep .
+.Xr egrep 1 .
 Isolated regular expressions
 in a pattern apply to the entire line.
 Regular expressions may also occur in
 relational expressions.
-.PP
+.Pp
 A pattern may consist of two patterns separated by a comma;
 in this case, the action is performed for all lines
 between an occurrence of the first pattern
 and the next occurrence of the second.
-.PP
-.nf
+.Pp
 A relational expression is one of the following:
-.PP
-.nf
-	expression matchop regular-expression
-	expression relop expression
-.PP
-.fi
+.Ds
+expression matchop regular-expression
+expression relop expression
+.De
+.Pp
 where a relop is any of the six relational operators in C,
 and a matchop is either ~ (for contains)
 or !~ (for does not contain).
@@ -159,82 +203,94 @@ A conditional is an arithmetic expression,
 a relational expression,
 or a Boolean combination
 of these.
-.PP
+.Pp
 The special patterns
-BEGIN
+.Li BEGIN
 and
-END
+.Li END
 may be used to capture control before the first input line is read
 and after the last.
-BEGIN must be the first pattern, END the last.
-.PP
+.Li BEGIN
+must be the first pattern,
+.Li END
+the last.
+.Pp
 A single character
-.I c
+.Ar c
 may be used to separate the fields by starting
 the program with
-.PP
-	BEGIN { FS = "c" }
-.PP
+.Pp
+.Dl BEGIN { FS = "c" }
+.Pp
 or by using the
-.BI \-F c
+.Cx Fl F
+.Ar c
+.Cx
 option.
-.PP
+.Pp
 Other variable names with special meanings
-include NF, the number of fields in the current record;
-NR, the ordinal number of the current record;
-FILENAME, the name of the current input file;
-OFS, the output field separator (default blank);
-ORS, the output record separator (default newline);
-and
-OFMT, the output format for numbers (default "%.6g").
-.PP
-.SH EXAMPLES
-.PP
+include
+.Dp Li NF
+the number of fields in the current record;
+.Dp Li NR
+the ordinal number of the current record;
+.Dp Li FILENAME
+the name of the current input file;
+.Dp Li OFS
+the output field separator (default blank);
+.Dp Li ORS
+the output record separator (default newline);
+.Dp Li OFMT
+the output format for numbers (default "%.6g").
+.Dp
+.Pp
+.Sh EXAMPLES
+.Pp
 Print lines longer than 72 characters:
-.PP
-.nf
-	length > 72
-.fi
-.PP
+.Pp
+.Dl length > 72
+.Pp
 Print first two fields in opposite order:
-.PP
-.nf
-	{ print $2, $1 }
-.fi
-.PP
+.Pp
+.Dl { print $2, $1 }
+.Pp
 Add up first column, print sum and average:
-.PP
-.nf
-		{ s += $1 }
-	END	{ print "sum is", s, " average is", s/NR }
-.fi
-.PP
+.Pp
+.Ds I
+	{ s += $1 }
+END	{ print "sum is", s, " average is", s/NR }
+.De
+.Pp
 Print fields in reverse order:
-.PP
-.nf
-	{ for (i = NF; i > 0; \-\-i) print $i }
-.fi
-.PP
+.Pp
+.Dl { for (i = NF; i > 0; \-\-i) print $i }
+.Pp
 Print all lines between start/stop pairs:
-.PP
-.nf
-	/start/, /stop/
-.fi
-.PP
+.Pp
+.Dl /start/, /stop/
+.Pp
 Print all lines whose first field is different from previous one:
-.PP
-.nf
-	$1 != prev { print; prev = $1 }
-.fi
-.SH SEE ALSO
-.PP
-lex(1), sed(1)
-.br
+.Pp
+.Dl $1 != prev { print; prev = $1 }
+.Sh SEE ALSO
+.Xr lex 1 ,
+.Xr sed 1
+.Pp
 A. V. Aho, B. W. Kernighan, P. J. Weinberger,
-.I
-Awk \- a pattern scanning and processing language
-.SH BUGS
+.Em Awk \- a pattern scanning and processing language
+.Sh HISTORY
+.Nm Awk
+appeared in Version 7 AT&T UNIX.  A much improved
+and true to the book version of
+.Nm awk
+appeared in the AT&T Toolchest in the late 1980's.
+The version of
+.Nm awk
+this manual page describes
+is a derivative of the original and not the Toolchest version.
+.Sh BUGS
 There are no explicit conversions between numbers and strings.
 To force an expression to be treated as a number add 0 to it;
-to force it to be treated as a string concatenate ""
+to force it to be treated as a string concatenate
+.Dq
 to it.

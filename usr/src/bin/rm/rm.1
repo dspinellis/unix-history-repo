@@ -1,61 +1,63 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)rm.1	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH RM 1 ""
-.UC 4
-.SH NAME
-rm, rmdir  \- remove (unlink) files or directories
-.SH SYNOPSIS
-.B rm
-[
-.B \-f
-] [
-.B \-r
-] [
-.B \-i
-] file ...
-.PP
-.B rmdir
-dir ...
-.PP
-.SH DESCRIPTION
-.I Rm
-removes the entries for one or more files from a directory.
-If an entry was the last link to the file, the file is destroyed.
-Removal of a file requires write permission in its directory,
-but neither read nor write permission on the file itself.
-.PP
-If a file has no write permission and the standard input is a terminal,
-its permissions are printed and a line is read from the standard input.
-If that line begins with `y' the file is deleted, otherwise the file remains.
-No questions are asked and no errors are reported when the
-.B \-f
-(force) option is given.
-.PP
-If a designated file is a directory,
-an error comment is printed unless the optional argument
-.B \-r
-has been used.  In that case,
-.I rm
-recursively deletes the entire contents of the specified directory,
-and the directory itself.
-.PP
-If the
-.B \-i
-(interactive) option is in effect,
-.I rm
-asks whether to delete each file, and, under
-.BR \-r ,
-whether to examine each directory.
-.PP
-Since getopt recognizes the string ``--'' as terminating the set
-of options, it can be used to allow the removal of file names
-starting with a dash.
-.PP
-.I Rmdir
-removes entries for the named directories, which must be empty.
-.SH "SEE ALSO"
-rm(1), unlink(2), rmdir(2)
+.\"     @(#)rm.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RM 1
+.Os BSD 4.4
+.Sh NAME
+.Nm rm
+.Nd remove directory entries
+.Sh SYNOPSIS
+.Nm rm
+.Op Fl f Li \&| Fl i
+.Op Fl Rr
+.Ar file ...
+.Sh DESCRIPTION
+The rm utility removes the directory entry specified by each
+file argument.
+.Pp
+The following options are available:
+.Tp Fl f
+Force each specified directory entry to be removed
+without prompting for confirmation, regardless of
+the permissions of the file to which it refers.
+Suppress diagnostic messages regarding non-existent
+operands.
+.Tp Fl i
+Write a prompt to the standard error output
+requesting confirmation before removing each existing
+directory entry, regardless of the permissions
+of the file to which it refers.
+.Tp Fl R
+Permit directories to be removed.
+.Pp
+.Tp Fl r
+Equivalent to
+.FL R.
+.Tp
+.Pp
+The following operands are available:
+.Tw Fl
+.Tp Ar file
+A pathname of a directory entry to be removed.
+.Tp
+.Pp
+The
+.Nm rm
+utility exits with one of the following values:
+.Tw Ds
+.Tp Li 0
+All the named directory entries were removed.
+.Tp Li >0
+An error occurred.
+.Tp
+.Sh ENVIRONMENT
+.Sh SEE ALSO
+.Sh STANDARDS
+The
+.Nm rm
+function is expected to be POSIX 1003.2 compatible.

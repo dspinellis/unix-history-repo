@@ -1,49 +1,51 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)nohup.1	6.3 (Berkeley) %G%
+.\"     @(#)nohup.1	6.4 (Berkeley) %G%
 .\"
-.TH NOHUP 1 ""
-.SH NAME
-nohup - run a utility immune to hangups and quits
-.SH SYNOPSIS
-.B nohup command
-.SH DESCRIPTION
+.Dd 
+.Dt NOHUP 1
+.Sh NAME
+.Nm nohup
+.Nd invoke a command immune to hangups
+.Sh SYNOPSIS
+.Nm nohup
+.Ar command
+.Op Ar arg ...
+.Sh DESCRIPTION
 The
-.I nohup
-utility invokes a command with the signals SIGHUP and SIGQUIT
-initially ignored.
+.Nm nohup
+utility invokes
+.Ar command
+with
+its arguments
+and at this time sets the signal SIGHUP
+to be ignored. The signal SIGQUIT may also be set
+to be ignored.
 If the standard output is a terminal, the standard output is
 appended to the file
-.I nohup.out
+.Pa nohup.out
 in the current directory.
 If standard error is a terminal, it is directed to the same place
 as the standard output.
-.PP
-.I Nohup
+.Pp
+.Nm Nohup
 exits 1 if an error occurs, otherwise the exit status is that of
-.IR command .
-.SH "ENVIRONMENTAL VARIABLES"
-.TP
-.I HOME
+.Ar command  .
+.Sh ENVIRONMENT
+.Tw Fl
+.Tp Ev HOME
 If the output file
-.I nohup.out
+.Pa nohup.out
 cannot be created in the current directory, the
-.I nohup
+.Nm nohup
 utility uses the directory named by
-.I HOME
+.Ev HOME
 to create the file.
-.SH "SEE ALSO"
-signal(3)
+.Tp
+.Sh SEE ALSO
+.Xr signal 3
+.Sh STANDARDS
+The nohup function is expected to be POSIX 1003.2 compatible.

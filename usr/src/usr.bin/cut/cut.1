@@ -1,47 +1,46 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)cut.1	5.1 (Berkeley) %G%
+.\"     @(#)cut.1	5.2 (Berkeley) %G%
 .\"
-.TH CUT 1 ""
-.UC 7
-.SH NAME
-cut - select portions of each line of a file
-.SH SYNOPSIS
-.nf
-cut -c list [file ...]
-cut -f list [-s] [-d string] [file ...]
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt CUT 1
+.Os BSD 4.4
+.Sh NAME
+.Nm cut
+.Nd select portions of each line of a file
+.Sh SYNOPSIS
+.Nm cut
+.Ar list
+.Ar
+.br
+.Nm cut
+.Ar list
+.Op Fl s
+.Op Fl d Ar string
+.Ar
+.Sh DESCRIPTION
 The
-.I cut
+.Nm cut
 utility selects portions of each line (as specified by
-.IR list )
+.Ar list  )
 from each
-.I file
+.Ar file
 (or the standard input by default), and writes them to the
 standard output.
 The items specified by
-.I list
+.Ar list
 can be in terms of column position or in terms of fields delimited
 by a special character.
-.PP
-.I List
+.Pp
+.Ar List
 is a comma or whitespace separated set of one-based numbers and/or
 number ranges.
-Number ranges consist of a number, a dash (``-''), and a second number
+Number ranges consist of a number, a dash
+.Li (``\-'') ,
+and a second number
 and select the fields or columns from the first number to the second,
 inclusive.
 Numbers or number ranges may be preceded by a dash, which selects all
@@ -51,35 +50,41 @@ fields or columns from the last number to the end of the line.
 Numbers and number ranges may be repeated, overlapping, and in any order.
 It is not an error to select fields or columns not present in the
 input line.
-.PP
+.Pp
 The options are as follows:
-.TP
--c list
+.Tw Fl
+.Tp Cx Fl c
+.Cx \&\ \&
+.Ar list
+.Cx
 The
-.I list
+.Ar list
 specifies character positions.
-.TP
--f list
+.Tp Cx Fl f
+.Cx \&\ \&
+.Ar list
+.Cx
 The
-.I list
+.Ar list
 specifies fields, delimited in the input by a single tab character.
 Output fields are separated by a single tab character.
-.TP
--d char
+.Tp Cx Fl d
+.Cx \&\ \&
+.Ar char
+.Cx
 Use
-.I char
+.Ar char
 as the field delimiter character instead of the tab character.
-.TP
--s
+.Tp Fl s
 Suppresses lines with no field delimiter characters.
 Unless specified, lines with no delimiters are passed through unmodified.
-.PP
-.I Cut
+.Tp
+.Pp
+.Nm Cut
 exit 0 on success, 1 if an error occurred.
-.SH ENVIRONMENT
-.SH "SEE ALSO"
-paste(1)
-.SH STANDARDS
+.Sh SEE ALSO
+.Xr paste 1
+.Sh STANDARDS
 The
-.I cut
+.Nm cut
 function is expected to be POSIX 1003.2 compatible.

@@ -1,76 +1,90 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)cat.1	6.7 (Berkeley) %G%
+.\"     @(#)cat.1	6.8 (Berkeley) %G%
 .\"
-.TH CAT 1 ""
-.UC 1
-.SH NAME
-cat \- concatenate and print files
-.SH SYNOPSIS
-\fBcat [ \fI-benstuv\fB ] [ \fI-\fB ] [ \fIfile ...\fB ]
-.ft R
-.SH DESCRIPTION
+.Dd 
+.Dt CAT 1
+.Os BSD 3
+.Sh NAME
+.Nm cat
+.Nd concatenate and print files
+.Sh SYNOPSIS
+.Nm cat
+.Op Fl benstuv
+.Op Fl
+.Ar
+.Sh DESCRIPTION
 The
-.I cat
+.Nm cat
 utility reads files sequentially, writing them to the standard output.
 The
-.I file
+.Ar file
 operands are processed in command line order.
 A single dash represents standard input.
-.PP
+.Pp
 The options are as follows:
-.TP
-.I -b
+.Tp Fl b
 Implies the
-.I -n
+.Fl n
 option but doesn't number blank lines.
-.TP
-.I -e
+.Tp Fl e
 Implies the
-.I -v
+.Fl v
 option, and displays a dollar sign (``$'') at the end of each line
 as well.
-.TP
-.I -n
+.Tp Fl n
 Number the
-.I output
+.Ar output
 lines, starting at 1.
-.TP
-.I -s
+.Tp Fl s
 Squeeze multiple adjacent empty lines, causing the output to be
 single spaced.
-.TP
-.I -t
+.Tp Fl t
 Implies the
-.I -v
+.Fl v
 option, and displays tab characters as ``^I'' as well.
-.TP
-.I -u
+.Tp Fl u
 The
-.I \-u
-option guarantees that the output is unbuffered.
-.TP
-.I -v
+.Fl u option guarantees that the output is unbuffered.
+.Tp Fl v
 Displays non-printing characters so they are visible.
 Control characters print line ``^X'' for control-X; the delete
 character (octal 0177) prints as ``^?''.
 Non-ascii characters (with the high bit set) are printed as
-``M-'' (for meta) followed by the character for the low 7 bits.
-.PP
-The command ``cat file1 file2 > file3'' concatenates the contents of
-file1 and file2 and places the result in file3.
-.PP
+`.`M-'' (for meta) followed by the character for the low 7 bits.
+.Tp
+.Pp
+.Nm cat
+is useful for getting files into a pipe, for instance, to sort
+two files together,
+the command
+.Pp
+.Dl cat file1 file2 | sort > sfile
+.Pp
+reads the contents of
+file1 and file2 sequentially, pipes it all to sort and places the
+newly sorted data in file3.
+.Pp
 Because of the shell language mechanism used to perform output
 redirection, the command ``cat file1 file 2 > file1'' will cause
-the original data in file1 to be destroyed!
-.PP
-.I Cat
-exits 0 on success, >0 if an error occurred.
-.SH "SEE ALSO"
-head(1), more(1), pr(1), tail(1)
-.br
-Rob Pike, ``UNIX Style, or cat -v Considered Harmful''
+.P original data in file1 to be destroyed!
+.Pp
+.Nm Cat
+The cat utility exits 0 on success, and >0 if an error
+occurs.
+.Sh SEE ALSO
+.Xr head 1 ,
+.Xr more 1 ,
+.Xr pr 1 ,
+.Xr tail 1
+.Pp
+Rob Pike,
+.Em UNIX Style, or cat -v Considered Harmful
 USENIX Summer Conference Proceedings, 1983.
+.Sh HISTORY
+The
+.Nm
+command appeared in Version 7 AT&T UNIX.

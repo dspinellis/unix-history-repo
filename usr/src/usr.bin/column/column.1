@@ -1,73 +1,68 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)column.1	5.4 (Berkeley) %G%
+.\"     @(#)column.1	5.5 (Berkeley) %G%
 .\"
-.UC 7
-.TH COLUMN 1 ""
-.UC 1
-.SH NAME
-column \- columnate lists
-.SH SYNOPSIS
-\fBcolumn [ \fI\-tx\fB ] [ \fI\-s sep\fB ] [\fI\-c columns\fB ] [ \fIfile ...\fB ]
-.ft R
-.SH DESCRIPTION
+.Dd 
+.Os BSD 4.4
+.Dt COLUMN 1
+.Sh NAME
+.Nm column
+.Nd columnate lists
+.Sh SYNOPSIS
+.Nm column
+.Oo
+.Op Fl t Ar x
+.Op Fl s Ar sep
+.Op Fl c Ar columns
+.Oo
+.Cx
+.Ar
+.Sh DESCRIPTION
 The
-.I column
+.Nm column
 utility formats its input into multiple columns.
 Rows are filled before columns.
 Input is taken from
-.I file
+.Ar file
 operands, or, by default, from the standard input.
 Empty lines are ignored.
-.PP
+.Pp
 The options are as follows:
-.TP
-.I \-c
+.Tp Fl c
 Output is formatted for a display
-.I columns
+.Ar columns
 wide.
-.TP
-.I \-s
+.Tp Fl s
 Specify a set of characters to be used to delimit columns for the
-.I \-t
+.Fl t
 option.
-.TP
-.I \-t
+.Tp Fl t
 Determine the number of columns the input contains and create a table.
 Columns are delimited by whitespace, by default, or by the characters
 supplied using the
-.I \-s
+.Fl s
 option.
 Useful for pretty-printing displays.
-.TP
-.I \-x
+.Tp Fl x
 Fill columns before filling rows.
-.PP
-.I Column
+.Tp
+.Pp
+.Nm Column
 exits 0 on success, >0 if an error occurred.
-.SH ENVIRONMENT
-.TP
-.I COLUMNS
+.Sh ENVIRONMENT
+.Tp Ar COLUMNS
 The environmental variable COLUMNS is used to determine the size of
 the screen if no other information is available.
-.SH EXAMPLES
-(printf "PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en";
-.br
-.RS
-ls -l | sed 1d) | column -t
-.RE
-.SH "SEE ALSO"
-colrm(1), ls(1), paste(1), sort(1)
+.Sh EXAMPLES
+.Dl (printf "PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en";
+.Dl ls -l  sed 1d)  column -t
+.Sh SEE ALSO
+.Xr colrm 1 ,
+.Xr ls 1 ,
+.Xr paste 1 ,
+.Xr sort 1
+.Sh HISTORY
+4.4 BSD.

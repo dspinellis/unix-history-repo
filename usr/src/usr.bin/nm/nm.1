@@ -1,88 +1,88 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)nm.1	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH NM 1 ""
-.UC 4
-.SH NAME
-nm \- print name list
-.SH SYNOPSIS
-.B nm
-[
-.B \-agnopruw
-]
-[ file ... ]
-.SH DESCRIPTION
-.I Nm
-prints the name list (symbol table) of each object
-.I file
-in the argument list.
-If an argument is an archive, a listing for each object file in the
-archive will be produced.
-If no
-.I file
-is given, the symbols in ``a.out'' are listed.
-.PP
-The options are as follows:
-.TP
-.B  \-a
-Print symbol table entries inserted for use by debuggers.
-.TP
-.B  \-g
-Print only global (external) symbols.
-.TP
-.B \-n
-Sort numerically rather than alphabetically.
-.TP
-.B  \-o
-Prepend file or archive element name to each output line rather than only once.
-.TP
-.B  \-p
-Don't sort; print in symbol-table order.
-.TP
-.B  \-r
-Sort in reverse order.
-.TP
-.B  \-u
-Print only undefined symbols.
-.TP
-.B  \-w
+.\"     @(#)nm.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NM 1
+.Os BSD 4
+.Sh NAME
+.Nm nm
+.Nd display name list (symbol table)
+.Sh SYNOPSIS
+.Nm nm
+.Op Fl agnopruw
+.Ar
+.Sh DESCRIPTION
+The symbol table (name list) of each object in
+.Ar file(s)
+is displayed.
+If a library (archive) is given,
+.Nm 
+displays a list for each
+object archive member.
+If
+.Ar file
+is not present,
+.Nm
+searches for the file
+.Pa a.out
+and if present, displays the symbol
+table for
+.Pa a.out .
+.Pp
+.Tp Fl a
+Display symbol table entries inserted for use by debuggers.
+.Tp Fl g
+Restrict display to external (global) symbols.
+.Tp Fl n
+Present results in numerical order.
+.Tp Fl o
+Display full path or library name of object on every line.
+.Tp Fl p
+Do not sort at all.
+.Tp Fl r
+Reverse order sort.
+.Tp Fl u
+Display undefined symbols only.
+.Tp Fl w
 Warn about non-object archive members.
 Normally, nm will silently ignore all archive members which are not
 object files.
-.PP
+.Tp
+.Pp
 Each symbol name is preceded by its value (a blank field if the symbol
 is undefined) and one of the following letters:
-.TP
-.B \-
+.Tw Ds
+.Tp Fl
 debugger symbol table entries (see the
-.B \-a
+.Fl a
 option).
-.TP
-.B A
+.Tp Li A
 absolute
-.TP
-.B B
+.Tp Li B
 bss segment symbol
-.TP
-.B C
+.Tp Li C
 common symbol
-.TP
-.B D
+.Tp Li D
 data segment symbol
-.TP
-.B f
+.Tp Li f
 file name
-.TP
-.B T
+.Tp Li T
 text segment symbol
-.TP
-.B U
+.Tp Li U
 undefined
-.PP
+.Tp
+.Pp
 If the symbol is local (non-external) the type letter is in lower case.
 The output is sorted alphabetically.
-.SH SEE ALSO
-ar(1), ar(5), a.out(5), stab(5)
+.Sh SEE ALSO
+.Xr ar 1 ,
+.Xr ar 5 ,
+.Xr a.out 5 ,
+.Xr stab 5
+.Sh HISTORY
+.Nm Nm
+appeared in Version 6 AT&T UNIX.
