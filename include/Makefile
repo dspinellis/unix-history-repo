@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.45.1.1 (Berkeley) 5/6/91
 #
- The ``rm -rf''s used below are safe because rm doesn't follow symbolic
+# The ``rm -rf''s used below are safe because rm doesn't follow symbolic
 # links.
 #
 all clean cleandir depend lint tags:
