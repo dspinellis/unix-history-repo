@@ -17,29 +17,21 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)strfile.h	5.5 (Berkeley) %G%
+ *	@(#)strfile.h	5.6 (Berkeley) %G%
  */
 
-# ifndef	__STRFILE__
-
-# define	__STRFILE__
-
-/*
- * bits for flag field
- */
-
-# define	STR_RANDOM	0x1
-# define	STR_ORDERED	0x2
-# define	STR_ROTATED	0x4
-
-# define	STR_ENDSTRING(line,tbl)	((line)[0] == (tbl).str_delim && (line)[1] == '\n')
+#define	STR_ENDSTRING(line,tbl) \
+	((line)[0] == (tbl).str_delim && (line)[1] == '\n')
 
 typedef struct {				/* information table */
+#define	VERSION		1
+	unsigned long	str_version;		/* version number */
 	unsigned long	str_numstr;		/* # of strings in the file */
 	unsigned long	str_longlen;		/* length of longest string */
 	unsigned long	str_shortlen;		/* length of shortest string */
-	unsigned char	str_flags;		/* bit field for flags */
-	char		str_delim;		/* delimiting character */
+#define	STR_RANDOM	0x1			/* randomized pointers */
+#define	STR_ORDERED	0x2			/* ordered pointers */
+#define	STR_ROTATED	0x4			/* rot-13'd text */
+	unsigned long	str_flags;		/* bit field for flags */
+	unsigned char	str_delim;		/* delimiting character */
 } STRFILE;
-
-# endif		/* __STRFILE__ */

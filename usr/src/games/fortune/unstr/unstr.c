@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)unstr.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)unstr.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -76,6 +76,11 @@ char	**av;
 		exit(1);
 	}
 	(void) fread((char *) &tbl, sizeof tbl, 1, Dataf);
+	tbl.str_version = ntohl(tbl.str_version);
+	tbl.str_numstr = ntohl(tbl.str_numstr);
+	tbl.str_longlen = ntohl(tbl.str_longlen);
+	tbl.str_shortlen = ntohl(tbl.str_shortlen);
+	tbl.str_flags = ntohl(tbl.str_flags);
 	if (!(tbl.str_flags & (STR_ORDERED | STR_RANDOM))) {
 		fprintf(stderr, "nothing to do -- table in file order\n");
 		exit(1);
@@ -109,7 +114,7 @@ register STRFILE	*tbl;
 
 	for (i = 0; i < tbl->str_numstr; i++) {
 		(void) fread((char *) &pos, 1, sizeof pos, Dataf);
-		(void) fseek(Inf, pos, 0);
+		(void) fseek(Inf, ntohl(pos), 0);
 		if (i != 0)
 			(void) printf("%c\n", Delimch);
 		for (;;) {

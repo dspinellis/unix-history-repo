@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strfile.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)strfile.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -101,7 +101,7 @@ int	Oflag		= FALSE;	/* ordering flag */
 int	Iflag		= FALSE;	/* ignore case flag */
 int	Rflag		= FALSE;	/* randomize order flag */
 int	Xflag		= FALSE;	/* set rotated bit */
-int	Num_pts		= 0;		/* number of pointers/strings */
+long	Num_pts		= 0;		/* number of pointers/strings */
 
 off_t	*Seekpts;
 
@@ -130,8 +130,8 @@ char	**av;
 {
 	register char		*sp, dc;
 	register FILE		*inf, *outf;
-	register off_t		last_off, length, pos;
-	register int		first;
+	register off_t		last_off, length, pos, *p;
+	register int		first, cnt;
 	register char		*nsp;
 	register STR		*fp;
 	static char		string[257];
@@ -157,6 +157,7 @@ char	**av;
 	Tbl.str_longlen = 0;
 	Tbl.str_shortlen = (unsigned int) 0xffffffff;
 	Tbl.str_delim = dc;
+	Tbl.str_version = VERSION;
 	first = Oflag;
 	add_offset(outf, ftell(inf));
 	last_off = 0;
@@ -194,7 +195,6 @@ char	**av;
 	 */
 
 	(void) fclose(inf);
-	Tbl.str_numstr = Num_pts - 1;
 
 	if (Oflag)
 		do_order();
@@ -203,12 +203,6 @@ char	**av;
 
 	if (Xflag)
 		Tbl.str_flags |= STR_ROTATED;
-
-	(void) fseek(outf, (off_t) 0, 0);
-	(void) fwrite((char *) &Tbl, sizeof Tbl, 1, outf);
-	if (STORING_PTRS)
-		(void) fwrite((char *) Seekpts, sizeof *Seekpts, (int) Num_pts, outf);
-	(void) fclose(outf);
 
 	if (!Sflag) {
 		printf("\"%s\" created\n", Outfile);
@@ -221,8 +215,21 @@ char	**av;
 		printf("Shortest string: %lu byte%s\n", Tbl.str_shortlen,
 		       Tbl.str_shortlen == 1 ? "" : "s");
 	}
+
+	(void) fseek(outf, (off_t) 0, 0);
+	Tbl.str_version = htonl(Tbl.str_version);
+	Tbl.str_numstr = htonl(Num_pts - 1);
+	Tbl.str_longlen = htonl(Tbl.str_longlen);
+	Tbl.str_shortlen = htonl(Tbl.str_shortlen);
+	Tbl.str_flags = htonl(Tbl.str_flags);
+	(void) fwrite((char *) &Tbl, sizeof Tbl, 1, outf);
+	if (STORING_PTRS) {
+		for (p = Seekpts, cnt = Num_pts; cnt--; ++p)
+			*p = htonl(*p);
+		(void) fwrite((char *) Seekpts, sizeof *Seekpts, (int) Num_pts, outf);
+	}
+	(void) fclose(outf);
 	exit(0);
-	/* NOTREACHED */
 }
 
 /*
@@ -296,9 +303,12 @@ add_offset(fp, off)
 FILE	*fp;
 off_t	off;
 {
-	if (!STORING_PTRS)
-		fwrite(&off, 1, sizeof off, fp);
-	else {
+	off_t net;
+
+	if (!STORING_PTRS) {
+		net = htonl(off);
+		fwrite(&net, 1, sizeof net, fp);
+	} else {
 		ALLOC(Seekpts, Num_pts + 1);
 		Seekpts[Num_pts] = off;
 	}

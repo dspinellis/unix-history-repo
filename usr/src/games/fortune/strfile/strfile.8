@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strfile.8	5.5 (Berkeley) %G%
+.\"	@(#)strfile.8	5.6 (Berkeley) %G%
 .\"
 .TH STRFILE 8 ""
 .UC 4
@@ -90,14 +90,14 @@ are rotated 13 positions in a simply caesar cypher.
 The format of the header is:
 .sp
 .nf
-#define	STR_RANDOM	0x1
-#define	STR_ORDERED	0x2
-#define	STR_ROTATED	0x4
-
+unsigned long	str_version;	/* version number */
 unsigned long	str_numstr;	/* # of strings in the file */
 unsigned long	str_longlen;	/* length of longest string */
 unsigned long	str_shortlen;	/* length of shortest string */
-unsigned char	str_flags;	/* bit field for flags */
+#define	STR_RANDOM	0x1	/* randomized pointers */
+#define	STR_ORDERED	0x2	/* ordered pointers */
+#define	STR_ROTATED	0x4	/* rot-13'd text */
+unsigned long	str_flags;	/* bit field for flags */
 char str_delim;			/* delimiting character */
 .fi
 .PP
