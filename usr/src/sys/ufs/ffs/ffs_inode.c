@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.60 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.61 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -115,13 +115,13 @@ ffs_truncate(ap)
 	register struct vnode *ovp = ap->a_vp;
 	register daddr_t lastblock;
 	register struct inode *oip;
-	daddr_t bn, lbn, lastiblock[NIADDR];
+	daddr_t bn, lbn, lastiblock[NIADDR], indir_lbn[NIADDR];
 	off_t length = ap->a_length;
 	register struct fs *fs;
 	register struct inode *ip;
 	struct buf *bp;
 	int offset, size, level;
-	long count, nblocks, blocksreleased = 0;
+	long count, nblocks, vflags, blocksreleased = 0;
 	struct timeval tv;
 	register int i;
 	int aflags, error, allerror;
@@ -205,19 +205,24 @@ ffs_truncate(ap)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	allerror = vinvalbuf(ovp, length > 0, ap->a_cred, ap->a_p);
+	vflags = ((length > 0) ? V_SAVE : 0) | V_SAVEMETA;
+	allerror = vinvalbuf(ovp, vflags, ap->a_cred, ap->a_p);
 	if (error = VOP_UPDATE(ovp, &tv, &tv, MNT_WAIT))
 		allerror = error;
 
 	/*
 	 * Indirect blocks first.
 	 */
+	indir_lbn[SINGLE] = -NDADDR;
+	indir_lbn[DOUBLE] = indir_lbn[SINGLE] - NINDIR(fs) - 1;
+	indir_lbn[TRIPLE] = indir_lbn[DOUBLE] - NINDIR(fs) * NINDIR(fs) - 1;
 	ip = &tip;
+	ITOV(ip)->v_data = ip;
 	for (level = TRIPLE; level >= SINGLE; level--) {
 		bn = ip->i_ib[level];
 		if (bn != 0) {
 			error = ffs_indirtrunc(ip,
-			    bn, lastiblock[level], level, &count);
+			    indir_lbn[level], lastiblock[level], level, &count);
 			if (error)
 				allerror = error;
 			blocksreleased += count;
@@ -277,6 +282,7 @@ ffs_truncate(ap)
 		}
 	}
 done:
+	ITOV(ip)->v_data = oip;
 /* BEGIN PARANOIA */
 	for (level = SINGLE; level <= TRIPLE; level++)
 		if (ip->i_ib[level] != oip->i_ib[level])
@@ -306,9 +312,9 @@ done:
  * NB: triple indirect blocks are untested.
  */
 static int
-ffs_indirtrunc(ip, bn, lastbn, level, countp)
+ffs_indirtrunc(ip, lbn, lastbn, level, countp)
 	register struct inode *ip;
-	daddr_t bn, lastbn;
+	daddr_t lbn, lastbn;
 	int level;
 	long *countp;
 {
@@ -316,7 +322,7 @@ ffs_indirtrunc(ip, bn, lastbn, level, countp)
 	struct buf *bp;
 	register struct fs *fs = ip->i_fs;
 	register daddr_t *bap;
-	daddr_t *copy, nb, last;
+	daddr_t *copy, nb, nlbn, last;
 	long blkcount, factor;
 	int nblocks, blocksreleased = 0;
 	int error, allerror = 0;
@@ -342,8 +348,7 @@ ffs_indirtrunc(ip, bn, lastbn, level, countp)
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize,
 	    fs->fs_dbsize);
 #else SECSIZE
-	error = bread(ip->i_devvp, fsbtodb(fs, bn), (int)fs->fs_bsize,
-		NOCRED, &bp);
+	error = bread(ITOV(ip), lbn, (int)fs->fs_bsize, NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		*countp = 0;
@@ -364,13 +369,14 @@ ffs_indirtrunc(ip, bn, lastbn, level, countp)
 	/*
 	 * Recursively free totally unused blocks.
 	 */
-	for (i = NINDIR(fs) - 1; i > last; i--) {
+	for (i = NINDIR(fs) - 1, nlbn = lbn + 1 - i * factor; i > last;
+	    i--, nlbn -= factor) {
 		nb = bap[i];
 		if (nb == 0)
 			continue;
 		if (level > SINGLE) {
 			if (error = ffs_indirtrunc(ip,
-			    nb, (daddr_t)-1, level - 1, &blkcount))
+			    nlbn, (daddr_t)-1, level - 1, &blkcount))
 				allerror = error;
 			blocksreleased += blkcount;
 		}
@@ -386,7 +392,8 @@ ffs_indirtrunc(ip, bn, lastbn, level, countp)
 		nb = bap[i];
 		if (nb != 0) {
 			if (error =
-			    ffs_indirtrunc(ip, nb, last, level - 1, &blkcount))
+			    ffs_indirtrunc(ip, nlbn, last, level - 1,
+			        &blkcount))
 				allerror = error;
 			blocksreleased += blkcount;
 		}
