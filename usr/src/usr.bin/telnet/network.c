@@ -83,9 +83,8 @@ setneturg()
 int
 netflush()
 {
-    register int n, n0, n1;
+    register int n, n1;
 
-    n0 = ring_full_count(&netoring);
     if ((n1 = n = ring_full_consecutive(&netoring)) > 0) {
 	if (!ring_at_mark(&netoring)) {
 	    n = send(net, netoring.consume, n, 0);	/* normal write */
@@ -103,7 +102,6 @@ netflush()
     }
     if (n < 0) {
 	if (errno != ENOBUFS && errno != EWOULDBLOCK) {
-	abortit:
 	    setcommandmode();
 	    perror(hostname);
 	    NetClose(net);
@@ -117,19 +115,16 @@ netflush()
 	Dump('>', netoring.consume, n);
     }
     if (n) {
-	if (n1 == n && n0 > n && !ring_at_mark(&netoring)) {
-	    n1 = send(net, netoring.bottom, n0 - n, 0);
-	    if (n1 < 0) {
-		if (errno != ENOBUFS && errno != EWOULDBLOCK) {
-		    goto abortit;
-		}
-	    }
-	    if (netdata && n1) {
-		Dump('>', netoring.bottom, n1);
-	    }
-	    n += n1;
-	}
 	ring_consumed(&netoring, n);
+	/*
+	 * If we sent all, and more to send, then recurse to pick
+	 * up the other half.
+	 */
+	if ((n1 == n) && ring_full_consecutive(&netoring)) {
+	    (void) netflush();
+	}
+	return 1;
+    } else {
+	return 0;
     }
-    return n > 0;
 }

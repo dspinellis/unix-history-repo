@@ -12,7 +12,8 @@ typedef struct {
     char	*consume,	/* where data comes out of */
     		*supply,	/* where data comes in to */
 		*bottom,	/* lowest address in buffer */
-		*top;		/* highest address+1 in buffer */
+		*top,		/* highest address+1 in buffer */
+		*mark;		/* marker (user defined) */
     int		size;		/* size in bytes of buffer */
     u_long	consumetime,	/* help us keep straight full, empty, etc. */
 		supplytime;
