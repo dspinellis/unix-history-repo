@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.18 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.19 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.18 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.19 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -311,6 +311,21 @@ smtpmailfrom(m, mci, e)
 		sprintf(optbuf, " SIZE=%ld", e->e_msgsize);
 	else
 		strcpy(optbuf, "");
+
+	if (e->e_bodytype != NULL)
+	{
+		if (bitset(MCIF_8BITMIME, mci->mci_flags))
+		{
+			strcat(optbuf, " BODY=");
+			strcat(optbuf, e->e_bodytype);
+		}
+		else if (strcasecmp(e->e_bodytype, "7bit") != 0)
+		{
+			/* cannot just send a 7-bit version */
+			usrerr("%s does not support 8BITMIME", mci->mci_host);
+			return EX_DATAERR;
+		}
+	}
 
 	/*
 	**  Send the HOPS command.
