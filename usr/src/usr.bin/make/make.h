@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)make.h	5.13 (Berkeley) %G%
+ *	@(#)make.h	5.14 (Berkeley) %G%
  */
 
 /*-
@@ -21,11 +21,18 @@
 #define _MAKE_H_
 
 #include <sys/types.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/cdefs.h>
+#if __STDC__
+#include <stdlib.h>
+#include <unistd.h>
+#endif
 #include "sprite.h"
 #include "lst.h"
 #include "config.h"
+#include "buf.h"
 
 /*-
  * The structure for an individual graph node. Each node has several
@@ -188,7 +195,7 @@ typedef struct GNode {
  * case, it ought to be a power of two simply because most storage allocation
  * schemes allocate in powers of two. 
  */
-#define BSIZE		256	/* starting size for expandable buffers */
+#define MAKE_BSIZE		256	/* starting size for expandable buffers */
 
 /*
  * These constants are all used by the Str_Concat function to decide how the
@@ -245,6 +252,7 @@ extern Lst  	create;	    	/* The list of target names specified on the
 extern Lst     	dirSearchPath; 	/* The list of directories to search when
 				 * looking for targets */
 
+extern Boolean	compatMake;	/* True if we are make compatible */
 extern Boolean	ignoreErrors;  	/* True if should ignore all errors */
 extern Boolean  beSilent;    	/* True if should print no commands */
 extern Boolean  noExecute;    	/* True if should execute nothing */
@@ -296,6 +304,7 @@ extern int debug;
 #define	DEBUG_SUFF	0x0080
 #define	DEBUG_TARG	0x0100
 #define	DEBUG_VAR	0x0200
+#define DEBUG_FOR	0x0400
 
 #ifdef __STDC__
 #define CONCAT(a,b)	a##b
@@ -312,4 +321,11 @@ extern int debug;
  */
 #include "nonints.h"
 
-#endif _MAKE_H_
+void	Make_DoAllVar __P((GNode *));
+int	Make_HandleUse __P((GNode *, GNode *));
+Boolean	Make_OODate __P((GNode *));
+Boolean	Make_Run __P((Lst));
+int	Make_TimeStamp __P((GNode *, GNode *));
+void	Make_Update __P((GNode *));
+
+#endif /* _MAKE_H_ */

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)list.h	5.3 (Berkeley) %G%
+ *	@(#)list.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -269,4 +269,4 @@ void 	List_Move();    /* move an element elsewhere in a list */
 
 #define LIST_ATREAR(headerPtr) (((List_Links *) headerPtr)->prevPtr)
 
-#endif _LIST
+#endif /* _LIST */

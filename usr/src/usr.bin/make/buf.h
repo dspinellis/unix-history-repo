@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	5.4 (Berkeley) %G%
+ *	@(#)buf.h	5.5 (Berkeley) %G%
  */
 
 /*-
@@ -32,24 +32,23 @@ typedef struct Buffer {
     Byte    *outPtr;	/* Place to read from */
 } *Buffer;
 
-Buffer	    	  Buf_Init();	    /* Initialize a buffer */
-void	    	  Buf_Destroy();    /* Destroy a buffer */
-void	    	  Buf_AddBytes();   /* Add a range of bytes to a buffer */
-int	    	  Buf_GetByte();    /* Get a byte from a buffer */
-int	    	  Buf_GetBytes();   /* Get multiple bytes */
-void		  Buf_UngetByte();  /* Push a byte back into the buffer */
-void		  Buf_UngetBytes(); /* Push many bytes back into the buf */
-Byte	    	  *Buf_GetAll();    /* Get them all */
-void	    	  Buf_Discard();    /* Throw away some of the bytes */
-int	    	  Buf_Size();	    /* See how many are there */
-
 /* Buf_AddByte adds a single byte to a buffer. */
 #define	Buf_AddByte(bp, byte) \
-	(--(bp)->left <= 0 ? Buf_OvAddByte(bp, byte) : \
-		(void)(*(bp)->inPtr++ = (byte), *(bp)->inPtr = 0))
-
-void	Buf_OvAddByte();		/* adds a byte when buffer overflows */
+	(void) (--(bp)->left <= 0 ? Buf_OvAddByte(bp, byte), 1 : \
+		(*(bp)->inPtr++ = (byte), *(bp)->inPtr = 0), 1)
 
 #define BUF_ERROR 256
 
-#endif _BUF_H
+void	 Buf_AddBytes __P((Buffer, int, Byte *));
+void	 Buf_Destroy __P((Buffer, Boolean));
+void	 Buf_Discard __P((Buffer, int));
+Byte	*Buf_GetAll __P((Buffer, int *));
+int	 Buf_GetByte __P((Buffer));
+int	 Buf_GetBytes __P((Buffer, int, Byte *));
+Buffer	 Buf_Init __P((int));
+void	 Buf_OvAddByte __P((Buffer, int));
+int	 Buf_Size __P((Buffer));
+void	 Buf_UngetByte __P((Buffer, int));
+void	 Buf_UngetBytes __P((Buffer, int, Byte *));
+
+#endif /* _BUF_H */

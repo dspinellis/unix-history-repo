@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)make.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)make.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -47,6 +47,9 @@ static char sccsid[] = "@(#)make.c	5.3 (Berkeley) %G%";
  */
 
 #include    "make.h"
+#include    "hash.h"
+#include    "dir.h"
+#include    "job.h"
 
 static Lst     	toBeMade;	/* The current fringe of the graph. These
 				 * are nodes which await examination by
@@ -57,6 +60,10 @@ static int  	numNodes;   	/* Number of nodes to be processed. If this
 				 * is non-zero when Job_Empty() returns
 				 * TRUE, there's a cycle in the graph */
 
+static int MakeAddChild __P((GNode *, Lst));
+static int MakeAddAllSrc __P((GNode *, GNode *));
+static Boolean MakeStartJobs __P((void));
+static int MakePrintStatus __P((GNode *, Boolean));
 /*-
  *-----------------------------------------------------------------------
  * Make_TimeStamp --
@@ -399,7 +406,12 @@ Make_Update (cgn)
 	 * little, so this stuff is commented out unless you're sure it's ok.
 	 * -- ardeb 1/12/88
 	 */
-	if (noExecute || Dir_MTime(cgn) == 0) {
+	/*
+	 * Christos, 4/9/92: If we are  saving commands pretend that
+	 * the target is made now. Otherwise archives with ... rules
+	 * don't work!
+	 */
+	if (noExecute || (cgn->type & OP_SAVE_CMDS) || Dir_MTime(cgn) == 0) {
 	    cgn->mtime = now;
 	}
 	if (DEBUG(MAKE)) {

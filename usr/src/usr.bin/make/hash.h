@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hash.h	5.4 (Berkeley) %G%
+ *	@(#)hash.h	5.5 (Berkeley) %G%
  */
 
 /* hash.h --
@@ -79,20 +79,12 @@ typedef struct Hash_Search {
 
 #define	Hash_Size(n)	(((n) + sizeof (int) - 1) / sizeof (int))
 
-/*
- * The following procedure declarations and macros
- * are the only things that should be needed outside
- * the implementation code.
- */
+Hash_Entry	*Hash_CreateEntry __P((Hash_Table *, char *, Boolean *));
+void		 Hash_DeleteEntry __P((Hash_Table *, Hash_Entry *));
+void		 Hash_DeleteTable __P((Hash_Table *));
+Hash_Entry	*Hash_EnumFirst __P((Hash_Table *, Hash_Search *));
+Hash_Entry	*Hash_EnumNext __P((Hash_Search *));
+Hash_Entry	*Hash_FindEntry __P((Hash_Table *, char *));
+void		 Hash_InitTable __P((Hash_Table *, int));
 
-extern Hash_Entry *	Hash_CreateEntry();
-extern void		Hash_DeleteTable();
-extern void		Hash_DeleteEntry();
-extern void		Hash_DeleteTable();
-extern Hash_Entry *	Hash_EnumFirst();
-extern Hash_Entry *	Hash_EnumNext();
-extern Hash_Entry *	Hash_FindEntry();
-extern void		Hash_InitTable();
-extern void		Hash_PrintStats();
-
-#endif _HASH
+#endif /* _HASH */

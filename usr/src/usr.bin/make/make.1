@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)make.1	5.7 (Berkeley) %G%
+.\"	@(#)make.1	5.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -136,9 +136,9 @@ to
 .Ar value .
 .El
 .Pp
-There are six different types of lines in a makefile: file dependency
+There are seven different types of lines in a makefile: file dependency
 specifications, shell commands, variable assignments, include statements,
-conditional directives, and comments.
+conditional directives, for loops, and comments.
 .Pp
 In general, lines may be continued from one line to the next by ending
 them with a backslash
@@ -462,9 +462,9 @@ It must be the last modifier specified.
 is anchored at the end of each word, so only suffixes or entire
 words may be replaced.
 .El
-.Sh INCLUDE STATEMENTS AND CONDITIONALS
-Makefile inclusion and conditional structures reminiscent of the C
-programming language are provided in
+.Sh INCLUDE STATEMENTS, CONDITIONALS AND FOR LOOPS
+Makefile inclusion, conditional structures and for loops  reminiscent 
+of the C programming language are provided in
 .Nm make .
 All such structures are identified by a line beginning with a single
 dot
@@ -625,20 +625,18 @@ has been defined.
 .El
 .Pp
 .Ar Expression
-may also be an arithmetic or string comparison, with the left-hand side
-being a variable expansion.
-The standard C relational operators are all supported, and the usual
-number/base conversion is performed.
-Note, octal numbers are not supported.
-If the righthand value of a
+may also be an arithmetic or string comparison.  Variable expansion is
+performed on both sides of the comparison, after which the integral
+values are compared.  A value is interpreted as hexadecimal if it is
+preceded by 0x, otherwise it is decimal; octal numbers are not supported.
+The standard C relational operators are all supported.  If after
+variable expansion, either the left or right hand side of a
 .Ql Ic ==
 or
 .Ql Ic "!="
-operator begins with a
-quotation mark
-.Pq Ql \*q
-a string comparison is done between the expanded
-variable and the text between the quotation marks.
+operator is not an integral value, then
+string comparison is performed between the expanded
+variables.
 If no relational operator is given, it is assumed that the expanded
 variable is being compared against 0.
 .Pp
@@ -667,6 +665,31 @@ In both cases this continues until a
 or
 .Ql Ic .endif
 is found.
+.Pp 
+For loops are typically used to apply a set of rules to a list of files.
+The syntax of a for loop is:
+.Bl -tag -width Ds
+.It Xo
+.Ic \&.for
+.Ar variable 
+.Ic in 
+.Ar expression
+.Xc
+.It Xo
+<make-rules>
+.Xc
+.It Xo
+.Ic \&.endfor
+.Xc
+.El
+After the for
+.Ic expression 
+is evaluated, it is split into words. The 
+iteration
+.Ic variable
+is successively set to each word, and substituted in the 
+.Ic make-rules 
+inside the body of the for loop.
 .Sh COMMENTS
 Comments begin with a hash
 .Pq Ql \&#

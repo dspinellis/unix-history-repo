@@ -11,8 +11,8 @@
  */
 
 #ifndef lint
-static char     sccsid[] = "@(#)str.c	5.8 (Berkeley) %G%";
-#endif				/* not lint */
+static char     sccsid[] = "@(#)str.c	5.9 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "make.h"
 
@@ -40,7 +40,7 @@ str_concat(s1, s2, flags)
 	result = emalloc((u_int)(len1 + len2 + 2));
 
 	/* copy first string into place */
-	bcopy(s1, result, len1);
+	memcpy(result, s1, len1);
 
 	/* add separator character */
 	if (flags & STR_ADDSPACE) {
@@ -52,7 +52,7 @@ str_concat(s1, s2, flags)
 	}
 
 	/* copy second string plus EOS into place */
-	bcopy(s2, result + len1, len2 + 1);
+	memcpy(result + len1, s2, len2 + 1);
 
 	/* free original strings */
 	if (flags & STR_DOFREE) {
@@ -89,8 +89,9 @@ brk_string(str, store_argc)
 		argv[0] = Var_Value(".MAKE", VAR_GLOBAL);
 	}
 
-	/* skip leading space chars.
-	for (; *str == ' ' || *str == '\t'; ++str);
+	/* skip leading space chars. */
+	for (; *str == ' ' || *str == '\t'; ++str)
+		continue;
 
 	/* allocate room for a copy of the string */
 	if ((len = strlen(str) + 1) > curlen)
@@ -112,7 +113,7 @@ brk_string(str, store_argc)
 				else
 					break;
 			else
-				inquote = ch;
+				inquote = (char) ch;
 			continue;
 		case ' ':
 		case '\t':
@@ -167,7 +168,7 @@ brk_string(str, store_argc)
 		}
 		if (!start)
 			start = t;
-		*t++ = ch;
+		*t++ = (char) ch;
 	}
 done:	argv[argc] = (char *)NULL;
 	*store_argc = argc;
@@ -223,6 +224,7 @@ Str_FindSubstring(string, substring)
  * 
  * Side effects: None.
  */
+int
 Str_Match(string, pattern)
 	register char *string;		/* String */
 	register char *pattern;		/* Pattern */

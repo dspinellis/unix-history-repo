@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)job.h	5.3 (Berkeley) %G%
+ *	@(#)job.h	5.4 (Berkeley) %G%
  */
 
 /*-
@@ -71,7 +71,7 @@ typedef struct Job {
 			     * saved when the job has been run */
     FILE 	*cmdFILE;   /* When creating the shell script, this is
 			     * where the commands go */
-    char    	*rmtID;     /* ID returned from Rmt module */
+    int    	rmtID;     /* ID returned from Rmt module */
     short      	flags;	    /* Flags to control treatment of job */
 #define	JOB_IGNERR	0x001	/* Ignore non-zero exits */
 #define	JOB_SILENT	0x002	/* no output */
@@ -189,18 +189,19 @@ extern Lst  	stoppedJobs;	/* List of jobs that are stopped or didn't
 				 * quite get started */
 extern Boolean	jobFull;    	/* Non-zero if no more jobs should/will start*/
 
-/*
- * These functions should be used only by an intelligent Rmt module, hence
- * their names do *not* include an underscore as they are not fully exported,
- * if you see what I mean.
- */
-extern void 	JobDoOutput(/* job, final? */);	/* Funnel output from
-			     	    	    	 * job->outPipe to the screen,
-						 * filtering out echo-off
-						 * strings etc. */
-extern void 	JobFinish(/* job, status */);	/* Finish out a job. If
-			    	    	    	 * status indicates job has
-						 * just stopped, not finished,
-						 * the descriptor is placed on
-						 * the stoppedJobs list. */
+void		JobFlagForMigration __P((int));
+void		Job_AbortAll __P((void));
+void		Job_CatchChildren __P((Boolean));
+void		Job_CatchOutput __P((void));
+Boolean		Job_CheckCommands __P((GNode *,
+		    void (*abortProc )(const char *, ...)));
+Boolean		Job_Empty __P((void));
+int		Job_End __P((void));
+Boolean		Job_Full __P((void));
+void		Job_Init __P((int, int));
+void		Job_Make __P((GNode *));
+ReturnStatus	Job_ParseShell __P((char *));
+void		Job_Touch __P((GNode *, Boolean));
+void		Job_Wait __P((void));
+
 #endif /* _JOB_H_ */
