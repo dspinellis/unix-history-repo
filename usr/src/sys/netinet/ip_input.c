@@ -1,4 +1,4 @@
-/*	ip_input.c	6.4	84/08/21	*/
+/*	ip_input.c	6.5	84/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
