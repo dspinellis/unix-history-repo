@@ -26,6 +26,33 @@ static int
 	Sent3270TerminalType;	/* Have we said we are a 3270? */
 
 
+#if	defined(unix)
+static
+settranscom(argc, argv)
+	int argc;
+	char *argv[];
+{
+	int i, len = 0;
+	char *strcpy(), *strcat();
+
+	if (argc == 1 && transcom) {
+	   transcom = 0;
+	}
+	if (argc == 1) {
+	   return;
+	}
+	for (i = 1; i < argc; ++i) {
+	    len += 1 + strlen(argv[1]);
+	}
+	transcom = tline;
+	(void) strcpy(transcom, argv[1]);
+	for (i = 2; i < argc; ++i) {
+	    (void) strcat(transcom, " ");
+	    (void) strcat(transcom, argv[i]);
+	}
+}
+#endif	/* defined(unix) */
+
 /*
  * DataToNetwork - queue up some data to go to network.  If "done" is set,
  * then when last byte is queued, we add on an IAC EOR sequence (so,
