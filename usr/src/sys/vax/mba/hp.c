@@ -1,9 +1,9 @@
-/*	hp.c	4.6	%G%	*/
+/*	hp.c	4.7	81/02/08	*/
 
 #include "hp.h"
 #if NHP > 0
 /*
- * RP06/RM03/RM05 disk driver
+ * RP/RM disk driver
  */
 
 #include "../h/param.h"
@@ -20,47 +20,13 @@
 #include "../h/vm.h"
 #include "../h/cmap.h"
 
-struct	device
-{
-	int	hpcs1;		/* control and Status register 1 */
-	int	hpds;		/* Drive Status */
-	int	hper1;		/* Error register 1 */
-	int	hpmr;		/* Maintenance */ 
-	int	hpas;		/* Attention Summary */
-	int	hpda;		/* Desired address register */
-	int	hpdt;		/* Drive type */
-	int	hpla;		/* Look ahead */
-	int	hpsn;		/* serial number */
-	int	hpof;		/* Offset register */
-	int	hpdc;		/* Desired Cylinder address register */
-	int	hpcc;		/* Current Cylinder */
-	int	hper2;		/* Error register 2 */
-	int	hper3;		/* Error register 3 */
-	int	hpec1;		/* Burst error bit position */
-	int	hpec2;		/* Burst error bit pattern */
-};
+#include "../h/hpreg.h"
 
-#define	RP	022
-#define	RM	024
-#define	RM5	027
-#define	NSECT	22
-#define	NTRAC	19
-#define	NRMSECT	32
-#define	NRMTRAC	5
-
-#define	_hpSDIST	2
-#define	_hpRDIST	3
-
-int	hpSDIST = _hpSDIST;
-int	hpRDIST = _hpRDIST;
-int	hpseek;
-
-struct	size
-{
+/* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
+struct	size {
 	daddr_t	nblocks;
 	int	cyloff;
-} hp_sizes[8] =
-{
+} hp_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 37 */
 	33440,	38,		/* B=cyl 38 thru 117 */
 	340670,	0,		/* C=cyl 0 thru 814 */
@@ -87,50 +53,52 @@ struct	size
 	86944,	681,		/* F=cyl 681 thru 823 */
 	159296,	562,		/* G=cyl 562 thru 823 */
 	291346,	82,		/* H=cyl 82 thru 561 */
+}, rm80_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 36 */
+	33440,	37,		/* B=cyl 37 thru 114 */
+	242606,	0,		/* C=cyl 0 thru 558 */
+	0,	0,
+	0,	0,
+	0,	0,
+	82080,	115,		/* G=cyl 115 thru 304 */
+	110236,	305,		/* H=cyl 305 thru 558 */
+};
+/* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
+
+#define	_hpSDIST	2
+#define	_hpRDIST	3
+
+int	hpSDIST = _hpSDIST;
+int	hpRDIST = _hpRDIST;
+
+short	hptypes[] =
+	{ MBDT_RM03, MBDT_RM05, MBDT_RP06, MBDT_RM80, 0 };
+struct	mba_info *hpinfo[NHP];
+int	hpdkinit(),hpustart(),hpstart(),hpdtint();
+struct	mba_driver hpdriver =
+	{ hpdkinit, hpustart, hpstart, hpdtint, 0, hptypes, hpinfo };
+
+struct hpst {
+	short	nsect;
+	short	ntrak;
+	short	nspc;
+	short	ncyl;
+	struct	size *sizes;
+} hpst[] = {
+	32,	5,	32*5,	823,	rm_sizes,	/* RM03 */
+	32,	19,	32*19,	823,	rm5_sizes,	/* RM05 */
+	22,	19,	22*19,	815,	hp_sizes,	/* RP06 */
+	31,	14, 	31*14,	559,	rm80_sizes	/* RM80 */
 };
 
-#define	P400	020
-#define	M400	0220
-#define	P800	040
-#define	M800	0240
-#define	P1200	060
-#define	M1200	0260
-int	hp_offset[16] =
-{
+int	hp_offset[16] = {
 	P400, M400, P400, M400,
 	P800, M800, P800, M800,
 	P1200, M1200, P1200, M1200,
 	0, 0, 0, 0,
 };
 
-struct	buf	hptab;
 struct	buf	rhpbuf;
-struct	buf	hputab[NHP];
-char	hp_type[NHP];	/* drive type */
-
-#define	GO	01
-#define	PRESET	020
-#define	RTC	016
-#define	OFFSET	014
-#define	SEEK	04
-#define	SEARCH	030
-#define	RECAL	06
-#define	DCLR	010
-#define	WCOM	060
-#define	RCOM	070
-
-#define	IE	0100
-#define	PIP	020000
-#define	DRY	0200
-#define	ERR	040000
-#define	TRE	040000
-#define	DCK	0100000
-#define	WLE	04000
-#define	ECH	0100
-#define	VV	0100
-#define	DPR	0400
-#define	MOL	010000
-#define	FMT22	010000
 
 #define	b_cylin b_resid
  
@@ -139,298 +107,145 @@ daddr_t dkblock();
 #endif
  
 hpstrategy(bp)
-register struct buf *bp;
+	register struct buf *bp;
 {
-	register struct buf *dp;
-	register unit, xunit, nspc;
+	register struct mba_info *mi;
+	register struct hpst *st;
+	register int unit;
 	long sz, bn;
-	struct size *sizes;
+	int xunit = minor(bp->b_dev) & 07;
 
-	if ((mbaact&(1<<HPMBANUM)) == 0)
-		mbainit(HPMBANUM);
-	xunit = minor(bp->b_dev) & 077;
 	sz = bp->b_bcount;
 	sz = (sz+511) >> 9;
 	unit = dkunit(bp);
-	if (hp_type[unit] == 0) {
-		struct device *hpaddr;
-		double mspw;
-
-		/* determine device type */
-		hpaddr = mbadev(HPMBA, unit);
-
-		/* record transfer rate (these are guesstimates secs/word) */
-		switch (hp_type[unit] = hpaddr->hpdt) {
-		case RM:	mspw = .0000019728; break;
-		case RM5:	mspw = .0000020345; break;
-		case RP:	mspw = .0000029592; break;
-		}
-		if (HPDK_N + unit <= HPDK_NMAX)
-			dk_mspw[HPDK_N+unit] = mspw;
-	}
-	switch (hp_type[unit]) {
-
-	case RM:
-		sizes = rm_sizes;
-		nspc = NRMSECT*NRMTRAC;
-		break;
-	case RM5:
-		sizes = rm5_sizes;
-		nspc = NRMSECT*NTRAC;
-		break;
-	case RP:
-		sizes = hp_sizes;
-		nspc = NSECT*NTRAC;
-		break;
-	default:
-		printf("hp: unknown device type 0%o\n", hp_type[unit]);
-		u.u_error = ENXIO;
-		unit = NHP+1;	/* force error */
-	}
-	if (unit >= NHP ||
-	    bp->b_blkno < 0 ||
-	    (bn = dkblock(bp))+sz > sizes[xunit&07].nblocks) {
-		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		return;
-	}
-	bp->b_cylin = bn/nspc + sizes[xunit&07].cyloff;
-	dp = &hputab[unit];
+	if (unit >= NHP)
+		goto bad;
+	mi = hpinfo[unit];
+	if (mi->mi_alive == 0)
+		goto bad;
+	st = &hpst[mi->mi_type];
+	if (bp->b_blkno < 0 ||
+	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
+		goto bad;
+	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
 	(void) spl5();
-	disksort(dp, bp);
-	if (dp->b_active == 0) {
-		hpustart(unit);
-		if(hptab.b_active == 0)
-			hpstart();
-	}
+	disksort(&mi->mi_tab, bp);
+	if (mi->mi_tab.b_active == 0)
+		mbustart(mi);
 	(void) spl0();
+	return;
+
+bad:
+	bp->b_flags |= B_ERROR;
+	iodone(bp);
+	return;
 }
 
-hpustart(unit)
-register unit;
+hpustart(mi)
+	register struct mba_info *mi;
 {
-	register struct buf *bp, *dp;
-	register struct device *hpaddr;
+	register struct device *hpaddr = (struct device *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct hpst *st;
 	daddr_t bn;
-	int sn, cn, csn, ns;
+	int sn, dist, flags;
 
-	((struct mba_regs *)HPMBA)->mba_cr |= MBAIE;
-	hpaddr = mbadev(HPMBA, 0);
-	hpaddr->hpas = 1<<unit;
-
-	if(unit >= NHP)
-		return;
-	if (unit+HPDK_N <= HPDK_NMAX)
-		dk_busy &= ~(1<<(unit+HPDK_N));
-	dp = &hputab[unit];
-	if((bp=dp->b_actf) == NULL)
-		return;
-	hpaddr = mbadev(HPMBA, unit);
-	if((hpaddr->hpds & VV) == 0) {
+	if ((hpaddr->hpcs1&DVA) == 0)
+		return (MBU_BUSY);
+	if ((hpaddr->hpds & VV) == 0) {
 		hpaddr->hpcs1 = DCLR|GO;
 		hpaddr->hpcs1 = PRESET|GO;
 		hpaddr->hpof = FMT22;
 	}
-	if(dp->b_active)
-		goto done;
-	dp->b_active++;
+	if (mi->mi_tab.b_active)
+		return (MBU_DODATA);
 	if ((hpaddr->hpds & (DPR|MOL)) != (DPR|MOL))
-		goto done;
-
-#if NHP > 1
-	bn = dkblock(bp);
-	cn = bp->b_cylin;
-	switch (hp_type[unit]) {
-
-	case RM:
-		sn = bn%(NRMSECT*NRMTRAC);
-		sn = (sn+NRMSECT-hpSDIST)%NRMSECT;
-		ns = NRMSECT;
-		break;
-	case RM5:
-		sn = bn%(NRMSECT*NTRAC);
-		sn = (sn+NRMSECT-hpSDIST)%NRMSECT;
-		ns = NRMSECT;
-		break;
-	case RP:
-		sn = bn%(NSECT*NTRAC);
-		sn = (sn+NSECT-hpSDIST)%NSECT;
-		ns = NSECT;
-		break;
-	default:
-		panic("hpustart");
+		return (MBU_DODATA);
+	hpaddr->hpdc = bp->b_cylin;
+	flags = mi->mi_hd->mh_flags;
+	if (flags&MH_NOSEEK)
+		return (MBU_DODATA);
+	if (bp->b_cylin == (hpaddr->hpdc & 0xffff)) {
+		if (flags&MH_NOSEARCH)
+			return (MBU_DODATA);
+		bn = dkblock(bp);
+		st = &hpst[mi->mi_type];
+		sn = bn%st->nspc;
+		sn = (sn+st->nsect-hpSDIST)%st->nsect;
+		dist = ((hpaddr->hpla & 0xffff)>>6) - st->nsect + 1;
+		if (dist < 0)
+			dist += st->nsect;
+		if (dist > st->nsect - hpRDIST)
+			return (MBU_DODATA);
 	}
-
-	if(cn - (hpaddr->hpdc & 0xffff))
-		goto search;
-	else if (hpseek)
-		goto done;
-	csn = ((hpaddr->hpla & 0xffff)>>6) - sn + 1;
-	if(csn < 0)
-		csn += ns;
-	if(csn > ns-hpRDIST)
-		goto done;
-
-search:
-	hpaddr->hpdc = cn;
-	if (hpseek)
+	if (flags&MH_NOSEARCH)
 		hpaddr->hpcs1 = SEEK|GO;
 	else {
 		hpaddr->hpda = sn;
 		hpaddr->hpcs1 = SEARCH|GO;
 	}
-	unit += HPDK_N;
-	if (unit <= HPDK_NMAX) {
-		dk_busy |= 1<<unit;
-		dk_seek[unit]++;
-	}
-	return;
-#endif
-
-done:
-	dp->b_forw = NULL;
-	if(hptab.b_actf == NULL)
-		hptab.b_actf = dp;
-	else
-		hptab.b_actl->b_forw = dp;
-	hptab.b_actl = dp;
+	return (MBU_STARTED);
 }
 
-hpstart()
+hpstart(mi)
+	register struct mba_info *mi;
 {
-	register struct buf *bp, *dp;
-	register unit;
-	register struct device *hpaddr;
+	register struct device *hpaddr = (struct device *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct hpst *st = &hpst[mi->mi_type];
 	daddr_t bn;
-	int dn, sn, tn, cn, nspc, ns;
+	int sn, tn;
 
-loop:
-	if ((dp = hptab.b_actf) == NULL)
-		return;
-	if ((bp = dp->b_actf) == NULL) {
-		hptab.b_actf = dp->b_forw;
-		goto loop;
-	}
-	hptab.b_active++;
-	unit = minor(bp->b_dev) & 077;
-	dn = dkunit(bp);
 	bn = dkblock(bp);
-	switch (hp_type[dn]) {
-	case RM:
-		nspc = NRMSECT*NRMTRAC;
-		ns = NRMSECT;
-		cn = rm_sizes[unit&07].cyloff;
-		break;
-	case RM5:
-		nspc = NRMSECT*NTRAC;
-		ns = NRMSECT;
-		cn = rm5_sizes[unit&07].cyloff;
-		break;
-	case RP:
-		nspc = NSECT*NTRAC;
-		ns = NSECT;
-		cn = hp_sizes[unit&07].cyloff;
-		break;
-	default:
-		panic("hpstart");
-	}
-	cn += bn/nspc;
-	sn = bn%nspc;
-	tn = sn/ns;
-	sn = sn%ns;
-
-	hpaddr = mbadev(HPMBA, dn);
-	if ((hpaddr->hpds & (DPR|MOL)) != (DPR|MOL)) {
-		hptab.b_active = 0;
-		hptab.b_errcnt = 0;
-		dp->b_actf = bp->av_forw;
-		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		goto loop;
-	}
-	if(hptab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
-		hpaddr->hpof = hp_offset[hptab.b_errcnt & 017] | FMT22;
-		HPMBA->mba_cr &= ~MBAIE;
+	sn = bn%st->nspc;
+	tn = sn/st->nsect;
+	sn = sn%st->nsect;
+	if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
+		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017] | FMT22;
 		hpaddr->hpcs1 = OFFSET|GO;
-		while(hpaddr->hpds & PIP)
+		while (hpaddr->hpds & PIP)
 			;
-		HPMBA->mba_cr |= MBAIE;
+		mbclrattn(mi);
 	}
-	hpaddr->hpdc = cn;
+	hpaddr->hpdc = bp->b_cylin;
 	hpaddr->hpda = (tn << 8) + sn;
-	mbastart(bp, (int *)hpaddr);
-
-	unit = dn+HPDK_N;
-	if (unit <= HPDK_NMAX) {
-		dk_busy |= 1<<unit;
-		dk_xfer[unit]++;
-		dk_wds[unit] += bp->b_bcount>>6;
-	}
 }
 
-hpintr(mbastat, as)
+hpdtint(mi, mbastat)
+	register struct mba_info *mi;
+	int mbastat;
 {
-	register struct buf *bp, *dp;
-	register unit;
-	register struct device *hpaddr;
+	register struct device *hpaddr = (struct device *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
 
-	if(hptab.b_active) {
-		dp = hptab.b_actf;
-		bp = dp->b_actf;
-		unit = dkunit(bp);
-		if (HPDK_N+unit <= HPDK_NMAX)
-			dk_busy &= ~(1<<(HPDK_N+unit));
-		hpaddr = mbadev(HPMBA, unit);
-		if (hpaddr->hpds & ERR || mbastat & MBAEBITS) {
-			while((hpaddr->hpds & DRY) == 0)
-				;
-			if(++hptab.b_errcnt > 28 || hpaddr->hper1&WLE)
-				bp->b_flags |= B_ERROR;
-			else
-				hptab.b_active = 0;
-			if(hptab.b_errcnt > 27)
-				deverror(bp, mbastat, hpaddr->hper1);
-			if ((hpaddr->hper1&0xffff) == DCK) {
-				if (hpecc(hpaddr, bp))
-					return;
-			}
-			hpaddr->hpcs1 = DCLR|GO;
-			if((hptab.b_errcnt&07) == 4) {
-				HPMBA->mba_cr &= ~MBAIE;
-				hpaddr->hpcs1 = RECAL|GO;
-				while(hpaddr->hpds & PIP)
-					;
-				HPMBA->mba_cr |= MBAIE;
-			}
+	while ((hpaddr->hpds & DRY) == 0)	/* shouldn't happen */
+		printf("hp dry not set\n");
+	if (hpaddr->hpds & ERR || mbastat & MBAEBITS)
+		if (++mi->mi_tab.b_errcnt < 28 && (hpaddr->hper1&WLE) == 0) {
+			if ((hpaddr->hper1&0xffff) != DCK) {
+				hpaddr->hpcs1 = DCLR|GO;
+				if ((mi->mi_tab.b_errcnt&07) == 4) {
+					hpaddr->hpcs1 = RECAL|GO;
+					while (hpaddr->hpds & PIP)
+						;
+					mbclrattn(mi);
+				}
+				return (MBD_RETRY);
+			} else if (hpecc(mi))
+				return (MBD_RESTARTED);
+		} else {
+			deverror(bp, mbastat, hpaddr->hper1);
+			bp->b_flags |= B_ERROR;
 		}
-		if(hptab.b_active) {
-			if(hptab.b_errcnt) {
-				HPMBA->mba_cr &= ~MBAIE;
-				hpaddr->hpcs1 = RTC|GO;
-				while(hpaddr->hpds & PIP)
-					;
-				HPMBA->mba_cr |= MBAIE;
-			}
-			hptab.b_active = 0;
-			hptab.b_errcnt = 0;
-			hptab.b_actf = dp->b_forw;
-			dp->b_active = 0;
-			dp->b_errcnt = 0;
-			dp->b_actf = bp->av_forw;
-			bp->b_resid = -HPMBA->mba_bcr & 0xffff;
-			iodone(bp);
-			if(dp->b_actf)
-				hpustart(unit);
-		}
-		as &= ~(1<<unit);
-	} else {
-		if(as == 0)
-			HPMBA->mba_cr |= MBAIE;
+	bp->b_resid = -(mi->mi_mba->mba_bcr) & 0xffff;
+	if (mi->mi_tab.b_errcnt) {
+		hpaddr->hpcs1 = RTC|GO;
+		while (hpaddr->hpds & PIP)
+			;
+		mbclrattn(mi);
 	}
-	for(unit=0; unit<NHP; unit++)
-		if(as & (1<<unit))
-			hpustart(unit);
-	hpstart();
+	hpaddr->hpcs1 = RELEASE|GO;
+	return (MBD_DONE);
 }
 
 hpread(dev)
@@ -445,16 +260,17 @@ hpwrite(dev)
 	physio(hpstrategy, &rhpbuf, dev, B_WRITE, minphys);
 }
 
-hpecc(rp, bp)
-register struct device *rp;
-register struct buf *bp;
+hpecc(mi)
+	register struct mba_info *mi;
 {
-	struct mba_regs *mbp = HPMBA;
+	register struct mba_regs *mbp = mi->mi_mba;
+	register struct device *rp = (struct device *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct hpst *st;
 	register int i;
 	caddr_t addr;
 	int reg, bit, byte, npf, mask, o;
-	int dn, bn, cn, tn, sn, ns, nt;
-	extern char buffers[NBUF][BSIZE];
+	int bn, cn, tn, sn;
 	struct pte mpte;
 	int bcr;
 
@@ -502,7 +318,7 @@ register struct buf *bp;
 		i++;
 		bit -= 8;
 	}
-	hptab.b_active++;		/* Either complete or continuing */
+	mi->mi_hd->mh_active++;		/* Either complete or continuing */
 	if (bcr == 0)
 		return (0);
 	/*
@@ -512,25 +328,14 @@ register struct buf *bp;
 	 * restart at offset o of next sector (i.e. in MBA register reg+1).
 	 */
 	rp->hpcs1 = DCLR|GO;
-	dn = dkunit(bp);
 	bn = dkblock(bp);
-	switch (hp_type[dn]) {
-
-	case RM:
-		ns = NRMSECT; nt = NRMTRAC; break;
-	case RM5:
-		ns = NRMSECT; nt = NTRAC; break;
-	case RP:
-		ns = NSECT; nt = NTRAC; break;
-	default:
-		panic("hpecc");
-	}
+	st = &hpst[mi->mi_type];
 	cn = bp->b_cylin;
-	sn = bn%(ns*nt) + npf + 1;
-	tn = sn/ns;
-	sn %= ns;
-	cn += tn/nt;
-	tn %= nt;
+	sn = bn%(st->nspc) + npf + 1;
+	tn = sn/st->nsect;
+	sn %= st->nsect;
+	cn += tn/st->ntrak;
+	tn %= st->ntrak;
 	rp->hpdc = cn;
 	rp->hpda = (tn<<8) + sn;
 	mbp->mba_sr = -1;
@@ -544,10 +349,12 @@ register struct buf *bp;
 hpdump(dev)
 	dev_t dev;
 {
+	register struct mba_info *mi;
+	register struct mba_regs *mba;
 	struct device *hpaddr;
 	char *start;
-	int num, blk, unit, nsect, ntrak, nspc;
-	struct size *sizes;
+	int num, unit;
+	register struct hpst *st;
 
 	num = maxfree;
 	start = 0;
@@ -556,54 +363,49 @@ hpdump(dev)
 		printf("bad unit\n");
 		return (-1);
 	}
-	HPPHYSMBA->mba_cr = MBAINIT;
-	hpaddr = mbadev(HPPHYSMBA, unit);
-	if (hp_type[unit] == 0)
-		hp_type[unit] = hpaddr->hpdt;
-	if((hpaddr->hpds & VV) == 0) {
+#define	phys(a,b)	((b)((int)(a)&0x7fffffff))
+	mi = phys(hpinfo[unit],struct mba_info *);
+	if (mi->mi_alive == 0) {
+		printf("dna\n");
+		return (-1);
+	}
+	mba = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
+	mba->mba_cr = MBAINIT;
+	hpaddr = (struct device *)&mba->mba_drv[mi->mi_drive];
+	if ((hpaddr->hpds & VV) == 0) {
+		hpaddr->hpcs1 = DCLR|GO;
 		hpaddr->hpcs1 = PRESET|GO;
 		hpaddr->hpof = FMT22;
 	}
-	switch (hp_type[unit]) {
-	case RM5:
-		nsect = NRMSECT; ntrak = NTRAC; sizes = rm5_sizes; break;
-	case RM:
-		nsect = NRMSECT; ntrak = NRMTRAC; sizes = rm_sizes; break;
-	case RP:
-		nsect = NSECT; ntrak = NTRAC; sizes = hp_sizes; break;
-	default:
-		printf("hp unknown type %x\n", hp_type[unit]);
+	st = &hpst[mi->mi_type];
+	if (dumplo < 0 || dumplo + num >= st->sizes[minor(dev)&07].nblocks) {
+		printf("oor\n");
 		return (-1);
 	}
-	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks) {
-		printf("dumplo+num, sizes %d %d\n", dumplo+num, sizes[minor(dev)&07].nblocks);
-		return (-1);
-	}
-	nspc = nsect * ntrak;
 	while (num > 0) {
-		register struct pte *hpte = HPPHYSMBA->mba_map;
+		register struct pte *hpte = mba->mba_map;
 		register int i;
-		int cn, sn, tn;
+		int blk, cn, sn, tn;
 		daddr_t bn;
 
 		blk = num > DBSIZE ? DBSIZE : num;
 		bn = dumplo + btop(start);
-		cn = bn/nspc + sizes[minor(dev)&07].cyloff;
-		sn = bn%nspc;
-		tn = sn/nsect;
-		sn = sn%nsect;
+		cn = bn/st->nspc + st->sizes[minor(dev)&07].cyloff;
+		sn = bn%st->nspc;
+		tn = sn/st->nsect;
+		sn = sn%st->nsect;
 		hpaddr->hpdc = cn;
 		hpaddr->hpda = (tn << 8) + sn;
 		for (i = 0; i < blk; i++)
 			*(int *)hpte++ = (btop(start)+i) | PG_V;
-		((struct mba_regs *)HPPHYSMBA)->mba_sr = -1;
-		((struct mba_regs *)HPPHYSMBA)->mba_bcr = -(blk*NBPG);
-		((struct mba_regs *)HPPHYSMBA)->mba_var = 0;
+		mba->mba_sr = -1;
+		mba->mba_bcr = -(blk*NBPG);
+		mba->mba_var = 0;
 		hpaddr->hpcs1 = WCOM | GO;
 		while ((hpaddr->hpds & DRY) == 0)
 			;
 		if (hpaddr->hpds&ERR) {
-			printf("hp dump dsk err: (%d,%d,%d) ds=%x er=%x\n",
+			printf("dskerr: (%d,%d,%d) ds=%x er=%x\n",
 			    cn, tn, sn, hpaddr->hpds, hpaddr->hper1);
 			return (-1);
 		}
@@ -611,5 +413,10 @@ hpdump(dev)
 		num -= blk;
 	}
 	return (0);
+}
+
+hpdkinit()
+{
+	/* I don't really care what this does .. kre */
 }
 #endif
