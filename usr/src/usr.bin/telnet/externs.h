@@ -52,7 +52,6 @@ extern void
 	intr2(),
 	deadpeer(),
 	dosynch(),
-	doflush(),
 	setconnmode(),
 	setcommandmode();
 
