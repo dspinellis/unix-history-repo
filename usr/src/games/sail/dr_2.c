@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_2.c	1.5 83/10/14";
+static	char *sccsid = "@(#)dr_2.c	1.6 83/10/27";
 #endif
 
 #include "driver.h"
@@ -222,13 +222,13 @@ register char *drift;
 	if (!moved) {
 		if (++*drift > 2) {
 			if (ship->specs->class >= 3 && !snagged(ship)
-			    || turn % 2 == 0) {
+			    || (turn & 1) == 0) {
 				*row -= dr[winddir];
 				*col -= dc[winddir];
 			}
 		}
 	} else
-		drift = 0;
+		*drift = 0;
 }
 
 try(command, temp, ma, ta, af, vma, dir, f, t, high, rakeme)
