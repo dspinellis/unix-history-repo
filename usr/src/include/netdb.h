@@ -1,28 +1,22 @@
-/*
+/*-
  * Copyright (c) 1980, 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  *
- *	@(#)netdb.h	5.10.1.1 (Berkeley) %G%
+ *	@(#)netdb.h	5.11 (Berkeley) %G%
  */
 
+#define	_PATH_HEQUIV	"/etc/hosts.equiv"
+#define	_PATH_HOSTS	"/etc/hosts"
+#define	_PATH_NETWORKS	"/etc/networks"
+#define	_PATH_PROTOCOLS	"/etc/protocols"
+#define	_PATH_SERVICES	"/etc/services"
+
 /*
- * Structures returned by network
- * data base library.  All addresses
- * are supplied in host order, and
- * returned in network order (suitable
- * for use in system calls).
+ * Structures returned by network data base library.  All addresses are
+ * supplied in host order, and returned in network order (suitable for
+ * use in system calls).
  */
 struct	hostent {
 	char	*h_name;	/* official name of host */
