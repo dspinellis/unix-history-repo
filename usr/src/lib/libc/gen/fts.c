@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -251,6 +251,9 @@ fts_read(sp)
 	/*
 	 * Following a symlink -- SLNONE test allows application to see
 	 * SLNONE and recover.
+	 *
+	 * XXX
+	 * Have to open a file descriptor to '.' so we can get back.
 	 */
 	if (instr == FTS_FOLLOW &&
 	    (p->fts_info == FTS_SL || p->fts_info == FTS_SLNONE)) {
@@ -284,7 +287,7 @@ fts_read(sp)
 		 */
 		if (sp->fts_child) {
 			if (CHDIR(sp, p->fts_accpath)) {
-				p->fts_parent->fts_errno = errno;
+				p->fts_errno = errno;
 				for (p = sp->fts_child; p; p = p->fts_link)
 					p->fts_accpath =
 					    p->fts_parent->fts_accpath;
@@ -304,7 +307,7 @@ fts_read(sp)
 		goto name;
 	}
 
-	/* Move to next node on this level. */
+	/* Move to the next node on this level. */
 next:	tmp = p;
 	if (p = p->fts_link) {
 		free(tmp);
@@ -318,6 +321,10 @@ next:	tmp = p;
 		/* User may have called fts_set on the node. */
 		if (p->fts_instr == FTS_SKIP)
 			goto next;
+		/*
+		 * XXX
+		 * This may not be able to return to the current directory.
+		 */
 		if (p->fts_instr == FTS_FOLLOW) {
 			p->fts_info = fts_stat(sp, p, 1);
 			p->fts_instr = FTS_NOINSTR;
@@ -346,33 +353,27 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 	sp->fts_path[p->fts_pathlen] = '\0';
 
 	/*
-	 * Cd back up to the parent directory.  If at a root node, have to cd
-	 * back to the original place, otherwise may not be able to access the
-	 * original node on post-order.
+	 * If at a root node, have to cd back to the starting point, otherwise
+	 * may not be able to access the original node on post-order.  If not
+	 * a root node, cd up to the parent directory.  Note that errors are
+	 * assumed to be caused by an inability to cd to the directory in the
+	 * first place.
 	 */
 	if (p->fts_level == FTS_ROOTLEVEL) {
 		if (FCHDIR(sp, sp->fts_rfd)) {
 			SET(FTS_STOP);
 			return (NULL);
 		}
-	}
-	else if (CHDIR(sp, "..")) {
-		SET(FTS_STOP);
-		return (NULL);
-	}
-
-	/* 
-	 * If had a chdir error when trying to get into the directory, set the
-	 * info field to reflect this, and restore errno.  The error indicator
-	 * has to be reset to 0 so that if the user does an FTS_AGAIN, it all
-	 * works.
-	 */
-	if (p->fts_errno) {
-		errno = p->fts_errno;
-		p->fts_errno = 0;
-		p->fts_info = FTS_ERR;
-	} else
 		p->fts_info = FTS_DP;
+	} else if (p->fts_errno)
+		p->fts_info = FTS_ERR;
+	else {
+		if (CHDIR(sp, "..")) {
+			SET(FTS_STOP);
+			return (NULL);
+		}
+		p->fts_info = FTS_DP;
+	}
 	return (sp->fts_cur = p);
 }
 
@@ -417,6 +418,7 @@ fts_children(sp)
 	if (p->fts_info == FTS_INIT)
 		return (p->fts_link);
 
+/* XXX why FTS_DNR?? */
 	 /* If not a directory being visited in pre-order, stop here. */
 	if (p->fts_info != FTS_D && p->fts_info != FTS_DNR)
 		return (NULL);
@@ -468,7 +470,7 @@ fts_build(sp, type)
 	FTSENT *cur;
 	DIR *dirp;
 	void *adjaddr;
-	int cderr, descend, len, level, maxlen, nlinks, saved_errno;
+	int cderrno, descend, len, level, maxlen, nlinks, saved_errno;
 	char *cp;
 
 	/* Set current node pointer. */
@@ -512,10 +514,10 @@ fts_build(sp, type)
 			if (type == BREAD)
 				cur->fts_errno = errno;
 			descend = nlinks = 0;
-			cderr = 1;
+			cderrno = errno;
 		} else {
 			descend = 1;
-			cderr = 0;
+			cderrno = 0;
 		}
 	else
 		descend = 0;
@@ -583,8 +585,13 @@ mem1:				saved_errno = errno;
 			if (nlinks > 0 && (p->fts_info == FTS_D ||
 			    p->fts_info == FTS_DC || p->fts_info == FTS_DOT))
 				--nlinks;
-		} else if (cderr) {
-			p->fts_info = ISSET(FTS_NOSTAT) ? FTS_NSOK : FTS_NS;
+		} else if (cderrno) {
+			if (ISSET(FTS_NOSTAT))
+				p->fts_info = FTS_NSOK;
+		        else {
+				p->fts_info = FTS_NS;
+				p->fts_errno = cderrno;
+			}
 			p->fts_accpath = cur->fts_accpath;
 		} else {
 			p->fts_accpath =
