@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -19,7 +19,17 @@ static char sccsid[] = "@(#)vfprintf.c	5.14 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	MAXBUF	40
+/*
+ * To handle arbitrary floating point precision, the buffer has to hold the
+ * number, a decimal point, and N precision digits.  We can't just truncate
+ * at some point is that the lower-level math routines may very well be
+ * repeatedly returning some small fraction.  A 128 bit fraction can be
+ * represented in 39 decimal digits.  Guess a max of 40 digits of precision,
+ * and add one for the decimal point.
+ */
+#define	MAXFRAC		39
+#define	MAXPREC		40
+#define	MAXDIGIT	(MAXFRAC + MAXPREC + 1)
 
 #define	PUTC(ch)	{++cnt; putc(ch, fp);}
 
@@ -37,7 +47,7 @@ static char sccsid[] = "@(#)vfprintf.c	5.14 (Berkeley) %G%";
 #define	LADJUST		0x10		/* left adjustment */
 static int flags;
 
-static char sign;
+static char sign, *buf;
 
 x_doprnt(fmt, argp, fp)
 	register char *fmt;
@@ -49,10 +59,10 @@ x_doprnt(fmt, argp, fp)
 	double _double;
 	u_long _ulong;
 	int base, width, prec, size;
-	char padc, *digs, *_cvt(), buf[MAXBUF];
+	char padc, *digs, sbuf[MAXDIGIT];
 
 	digs = "0123456789abcdef";
-	for (cnt = 0;; ++fmt) {
+	for (buf = sbuf, cnt = 0;; ++fmt) {
 		n = fp->_cnt;
 		for (t = fp->_ptr; (ch = *fmt) && ch != '%'; ++cnt, ++fmt)
 			if (--n < 0
@@ -77,7 +87,6 @@ x_doprnt(fmt, argp, fp)
 		prec = -1;
 		padc = ' ';
 		sign = '\0';
-		t = buf;
 
 rflag:		switch (*++fmt) {
 		case ' ':
@@ -131,6 +140,7 @@ rflag:		switch (*++fmt) {
 			} while (isascii(*++fmt) && isdigit(*fmt));
 			width = n;
 			--fmt;
+			goto rflag;
 		case 'L':
 			/*
 			 * C doesn't have a long double; use long for now.
@@ -145,8 +155,9 @@ rflag:		switch (*++fmt) {
 			flags |= LONGINT;
 			goto rflag;
 		case 'c':
-			*t = va_arg(argp, int);
+			buf[0] = va_arg(argp, int);
 			size = 1;
+			t = buf;
 			goto pforw;
 		case 'd':
 		case 'i':
@@ -165,8 +176,8 @@ rflag:		switch (*++fmt) {
 		case 'g':
 		case 'G':
 			_double = va_arg(argp, double);
-			size = _cvt(_double, prec, buf, buf + sizeof(buf),
-			    *fmt) - buf;
+			size = _cvt(_double, prec, *fmt);
+			t = buf;
 			goto pforw;
 		case 'n':
 			if (flags&LONGDBL || flags&LONGINT)
@@ -216,13 +227,13 @@ pforw:			if (!(flags&LADJUST) && width)
 				PUTC('0');
 				PUTC(*fmt);
 			}
-num:			t = buf + sizeof(buf) - 1;
+num:			t = buf + MAXDIGIT - 1;
 			do {
 				*t-- = digs[_ulong % base];
 				_ulong /= base;
 			} while(_ulong);
 			digs = "0123456789abcdef";
-			size = buf + sizeof(buf) - 1 - t;
+			size = buf + MAXDIGIT - 1 - t;
 			if (size >= prec) {
 				/* alternate form for octal; leading 0 */
 				if (t[1] != '0' && flags&ALT && *fmt == 'o') {
@@ -236,7 +247,7 @@ num:			t = buf + sizeof(buf) - 1;
 			if (!(flags&LADJUST))
 				while (size++ < width)
 					PUTC(padc);
-			while (++t < buf + sizeof(buf))
+			while (++t < buf + MAXDIGIT)
 				PUTC(*t);
 			for (; width > size; --width)
 				PUTC(padc);
@@ -255,21 +266,27 @@ num:			t = buf + sizeof(buf) - 1;
 #define	GFORMAT	0x04
 #define	DEFPREC	6
 
-static char *
-_cvt(number, prec, startp, endp, fmtch)
+static
+_cvt(number, prec, fmtch)
 	double number;
 	register int prec;
-	char *startp, *endp, fmtch;
+	char fmtch;
 {
 	register char *p;
 	register int expcnt, format;
+	static int maxprec = MAXPREC;
 	double fract, integer, tmp, modf();
 	int decpt;
-	char *savep;
+	char *endp, *savep, *startp, *malloc();
 
 	if (prec == -1)
 		prec = DEFPREC;
 
+	/* allocate space for large precision */
+	if (prec > maxprec)
+		buf = malloc((u_int)((maxprec = prec) + MAXFRAC + 1));
+
+	startp = buf;
 	if (number < 0) {
 		*startp++ = '-';
 		number = -number;
@@ -300,7 +317,8 @@ _cvt(number, prec, startp, endp, fmtch)
 	decpt = flags&ALT || prec > (format&GFORMAT ? 1 : 0);
 
 	expcnt = 0;
-	p = endp - 1;
+	p = buf + maxprec + MAXFRAC;
+	endp = p + 1;
 	fract = modf(number, &integer);
 	if (integer) {
 		register char *p2;
@@ -385,7 +403,7 @@ _cvt(number, prec, startp, endp, fmtch)
 		if (decpt && !(format&GFORMAT))
 			*startp++ = '.';
 		*startp = '\0';
-		return(startp);
+		return(startp - buf);
 	}
 	/*
 	 * if the format is g/G, and the resulting exponent will be less than
@@ -424,14 +442,13 @@ _cvt(number, prec, startp, endp, fmtch)
 		*p++ = '.';
 	}
 
-	/* finish out requested precision from fractional value */
-	while (prec--)
-		if (fract) {
-			fract = modf(fract * 10, &tmp);
-			*p++ = (int)tmp + '0';
-		}
-		else
-			*p++ = '0';
+	/* finish out requested precision */
+	while (fract && prec-- > 0) {
+		fract = modf(fract * 10, &tmp);
+		*p++ = (int)tmp + '0';
+	}
+	while (prec-- > 0)
+		*p++ = '0';
 
 	/*
 	 * if any fractional value left, "round" it back up to the beginning
@@ -479,5 +496,5 @@ _cvt(number, prec, startp, endp, fmtch)
 		*p++ = expcnt / 10 + '0';
 		*p++ = expcnt % 10 + '0';
 	}
-	return(p);
+	return(p - buf);
 }
