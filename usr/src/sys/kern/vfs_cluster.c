@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.29	82/04/19	*/
+/*	vfs_cluster.c	4.30	82/05/12	*/
 
 /* merged into kernel:	 @(#)bio.c 2.3 4/8/82 */
 
