@@ -1,3 +1,4 @@
+
 #
 # remake options -- this isn't necessary unless you add/delete options
 #
@@ -18,17 +19,17 @@ ex - /tmp/foo.c <<'X'
 	1,/option options/d
 	/}/-1,$d
 	" get rid of all of line but option name
-	1,$s/	"//
+	1,$s/[ 	]*"//
 	1,$s/".*//
-	1m$	" kludge since options start at 0 but num at 1
-	%!num
-	$t0	" unkludge
-	1s/......../     0  /	" unkludge
+	" begin kludge since options start at 0 but cat -n starts at 1
+	"              move first to end and later move it back and renumber
+	1m$
+	%!cat -n
+	$t0
+	1s/[0-9][0-9]*/0/
+	" end kludge
 	" make #define lines
-	1,$s/\(......\)\(.*\)/#define	\U\2\L	\1/
-	" get rid of extra blanks, turning into (single) tabs.
-	1,$s/	 */	/g
-	g/  */s//	/g
+	1,$s/[ 	]*\([0-9][0-9]*\)[ 	]*\(.*\)/#define	\U\2\L	\1/
 	" filter through expand to make it line up nice
 	%!expand -8\,24
 	" blank line and number of options.
@@ -37,7 +38,7 @@ ex - /tmp/foo.c <<'X'
 .
 	$s/e[ 	].*[ 	]/e	NOPTS	/
 	0a
-	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.1 %G%  */
+	/*  sccs id   @(#)  ex_vars.h  @(#)makeoptions	6.2 %G%  */
 .
 	w! ex_vars.h
 	q
