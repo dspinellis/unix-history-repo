@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -73,6 +73,8 @@ fts_open(argv, options, compar)
 		if (maxlen < len)
 			maxlen = len;
 		p = fts_alloc(sp, *argv, len);
+		p->fts_level = FTS_ROOTLEVEL;
+		p->fts_parent = parent;
 		/*
 		 * If comparison routine supplied, traverse in sorted
 		 * order; otherwise traverse in the order specified.
@@ -92,8 +94,6 @@ fts_open(argv, options, compar)
 				tmp = p;
 			}
 		}
-		p->fts_level = FTS_ROOTLEVEL;
-		p->fts_parent = parent;
 	}
 	if (compar && nitems > 1)
 		root = fts_sort(sp, root, nitems);
