@@ -4,13 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)endian.h	7.8 (Berkeley) %G%
+ *	@(#)endian.h	7.9 (Berkeley) %G%
  */
-
-/*
- * Define _NOQUAD if the compiler does NOT support 64-bit integers.
- */
-/* #define _NOQUAD */
 
 /*
  * Define the order of 32-bit words in 64-bit words.

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.53 (Berkeley) %G%
+ *	@(#)vnode.h	7.54 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -91,7 +91,7 @@ struct vattr {
 	gid_t		va_gid;		/* owner group id */
 	long		va_fsid;	/* file system id (dev for now) */
 	long		va_fileid;	/* file id */
-	u_quad_t	va_qsize;	/* file size in bytes */
+	u_quad_t	va_size;	/* file size in bytes */
 	long		va_blocksize;	/* blocksize preferred for i/o */
 	struct timespec	va_atime;	/* time of last access */
 	struct timespec	va_mtime;	/* time of last modification */
@@ -99,18 +99,9 @@ struct vattr {
 	u_long		va_gen;		/* generation number of file */
 	u_long		va_flags;	/* flags defined for file */
 	dev_t		va_rdev;	/* device the special file represents */
-	u_quad_t	va_qbytes;	/* bytes of disk space held by file */
+	u_quad_t	va_bytes;	/* bytes of disk space held by file */
 	u_quad_t	va_filerev;	/* file modification number */
 };
-#ifdef _NOQUAD
-#define	va_size		va_qsize.val[_QUAD_LOWWORD]
-#define	va_size_rsv	va_qsize.val[_QUAD_HIGHWORD]
-#define	va_bytes	va_qbytes.val[_QUAD_LOWWORD]
-#define	va_bytes_rsv	va_qbytes.val[_QUAD_HIGHWORD]
-#else
-#define	va_size		va_qsize
-#define	va_bytes	va_qbytes
-#endif
 
 /*
  * Flags for ioflag.
