@@ -1,4 +1,4 @@
-/*	socket.h	4.13	82/01/24	*/
+/*	socket.h	4.14	82/03/15	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -21,9 +21,8 @@
  */
 #define	SO_DEBUG	0x01		/* turn on debugging info recording */
 #define	SO_ACCEPTCONN	0x02		/* willing to accept connections */
-#define	SO_NONBLOCKING	0x04		/* don't block when i/o not possible */
-#define	SO_NOKEEPALIVE	0x08		/* don't keep connections alive */
-#define	SO_DONTLINGER	0x10		/* don't linger on close */
+#define	SO_DONTLINGER	0x04		/* don't linger on close */
+#define	SO_KEEPALIVE	0x08		/* keep connections alive */
 
 /*
  * Generic socket protocol format.

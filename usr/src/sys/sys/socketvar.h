@@ -1,4 +1,4 @@
-/*	socketvar.h	4.14	82/01/19	*/
+/*	socketvar.h	4.15	82/03/15	*/
 
 /*
  * Kernel structure per socket.
@@ -39,14 +39,18 @@ struct socket {
 /*
  * Socket state bits.
  */
-#define	SS_USERGONE		0x01	/* no file table ref any more */
-#define	SS_ISCONNECTED		0x02	/* socket connected to a peer */
-#define	SS_ISCONNECTING		0x04	/* in process of connecting to peer */
-#define	SS_ISDISCONNECTING	0x08	/* in process of disconnecting */
-#define	SS_CANTSENDMORE		0x10	/* can't send more data to peer */
-#define	SS_CANTRCVMORE		0x20	/* can't receive more data from peer */
-#define	SS_CONNAWAITING		0x40	/* connections awaiting acceptance */
-#define	SS_RCVATMARK		0x80	/* at mark on input */
+#define	SS_USERGONE		0x001	/* no file table ref any more */
+#define	SS_ISCONNECTED		0x002	/* socket connected to a peer */
+#define	SS_ISCONNECTING		0x004	/* in process of connecting to peer */
+#define	SS_ISDISCONNECTING	0x008	/* in process of disconnecting */
+#define	SS_CANTSENDMORE		0x010	/* can't send more data to peer */
+#define	SS_CANTRCVMORE		0x020	/* can't receive more data from peer */
+#define	SS_CONNAWAITING		0x040	/* connections awaiting acceptance */
+#define	SS_RCVATMARK		0x080	/* at mark on input */
+
+#define	SS_PRIV			0x100	/* privileged for broadcast, raw... */
+#define	SS_NBIO			0x200	/* non-blocking ops */
+#define	SS_ASYNC		0x400	/* async i/o notify */
 
 /*
  * Macros for sockets and socket buffering.
@@ -58,7 +62,7 @@ struct socket {
 
 /* do we have to send all at once on a socket? */
 #define	sosendallatonce(so) \
-    (((so)->so_options & SO_NONBLOCKING) || ((so)->so_proto->pr_flags & PR_ATOMIC))
+    (((so)->so_state & SS_NBIO) || ((so)->so_proto->pr_flags & PR_ATOMIC))
 
 /* can we read something from so? */
 #define	soreadable(so) \
