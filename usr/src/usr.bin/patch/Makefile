@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # $Header: Makefile,v 1.3 85/03/26 15:03:26 lwall Exp $
 
@@ -8,11 +8,11 @@ patch: patch.c
 	cc patch.c -O -o patch
 
 install:
-	install -c patch $(BINDIR)
+	install -s patch $(BINDIR)
 	install -c -m 444 patch.n ${DESTDIR}/usr/man/mann/patch.n
 
 clean:
-	rm patch
+	rm -f patch patch.kit a.out core errs
 
 shar:
 	shar patch.man patch.c Makefile >patch.kit
