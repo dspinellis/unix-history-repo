@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.6 (Berkeley) %G%
+ *	@(#)db.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -66,7 +66,7 @@ typedef struct {
 	int bsize;		/* bucket size */
 	int ffactor;		/* fill factor */
 	int nelem;		/* number of elements */
-	int ncached;		/* bytes to cache */
+	int cachesize;		/* bytes to cache */
 	int (*hash)();		/* hash function */
 	int lorder;		/* byte order */
 } HASHINFO;
