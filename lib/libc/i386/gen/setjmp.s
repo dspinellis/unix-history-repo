@@ -65,7 +65,7 @@ ENTRY(setjmp)
 	movl	%edi,20(%ecx)
 	movl	%eax,24(%ecx)
 	fnstcw	28(%ecx)
-	movl	$0,%eax
+	xorl	%eax,%eax
 	ret
 
 ENTRY(longjmp)
@@ -83,8 +83,8 @@ ENTRY(longjmp)
 	movl	20(%edx),%edi
 	fninit
 	fldcw	28(%edx)
-	cmpl	$0,%eax
-	jne	1f
-	movl	$1,%eax
+	testl	%eax,%eax
+	jnz	1f
+	incl	%eax
 1:	movl	%ecx,0(%esp)
 	ret
