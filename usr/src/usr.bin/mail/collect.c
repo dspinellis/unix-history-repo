@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	2.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	2.18 (Berkeley) %G%";
 #endif
 
 /*
@@ -59,9 +59,9 @@ collect(hp)
 	hadintr = 0;
 # ifdef VMUNIX
 	if ((savesig = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
-		sigset(SIGINT, hf ? intack : collrub), sigblock(mask(SIGINT));
+		sigset(SIGINT, hf ? intack : collrub), sigblock(sigmask(SIGINT));
 	if ((savehup = sigset(SIGHUP, SIG_IGN)) != SIG_IGN)
-		sigset(SIGHUP, collrub), sigblock(mask(SIGHUP));
+		sigset(SIGHUP, collrub), sigblock(sigmask(SIGHUP));
 	savecont = sigset(SIGCONT, collcont);
 # else VMUNIX
 	savesig = signal(SIGINT, SIG_IGN);
@@ -102,7 +102,7 @@ collect(hp)
 		escape = *cp;
 	eof = 0;
 	for (;;) {
-		int omask = sigblock(0) &~ (mask(SIGINT)|mask(SIGHUP));
+		int omask = sigblock(0) &~ (sigmask(SIGINT)|sigmask(SIGHUP));
 
 		setjmp(coljmp);
 # ifdef VMUNIX

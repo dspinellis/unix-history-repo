@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	1.8 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -10,9 +10,7 @@ static char sccsid[] = "@(#)popen.c	1.7 (Berkeley) %G%";
 #define	WTR	1
 static	int	popen_pid[20];
 
-#ifdef VMUNIX
-#define	mask(s)	(1<<((s)-1))
-#else
+#ifndef VMUNIX
 #define vfork	fork
 #endif VMUNIX
 #ifndef	SIGRETRO
@@ -57,7 +55,7 @@ FILE *ptr;
 	f = fileno(ptr);
 	fclose(ptr);
 # ifdef VMUNIX
-	omask = sigblock(mask(SIGINT)|mask(SIGQUIT)|mask(SIGHUP));
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
 # endif VMUNIX
 	while((r = wait(&status)) != popen_pid[f] && r != -1 && errno != EINTR)
 		;
