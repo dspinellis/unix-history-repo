@@ -4,7 +4,7 @@
 # specifies the terms and conditions for redistribution.
 #
 #ifndef lint
-_sccsid:.asciz	"@(#)dbxxx.s	5.1 (Berkeley) %G%"
+_sccsid:.asciz	"@(#)dbxxx.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 	.data
@@ -19,3 +19,8 @@ __dbsubn:
 	halt
 
 	.data
+#  __lg_flag is used by f77_abort to decide whether or not to dump memory
+	.globl	__lg_flag
+__lg_flag:
+	.long	1
+	.text
