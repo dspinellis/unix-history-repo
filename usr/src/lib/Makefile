@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -18,7 +18,7 @@ TAGSDIR=libcurses libdbm libln libm libmp libpc libtermlib
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR=	lib2648 libF77 libI77 libU77 libcurses libdbm libg libln \
-	libm libmp libnm libpc libplot libtermlib lpr me sendmail
+	libm libmp libpc libplot libtermlib lpr me sendmail
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -42,25 +42,25 @@ ${STD}:
 	cc ${CFLAGS} -o $@ $@.c
 
 install:
-	for i in ${SUBDIR}; do \
+	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/usr/lib/$$i); done
-	for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/usr/lib/$$i); done
+	-for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/usr/lib/$$i); done
+	-for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/usr/lib/$$i); done
 	install -c lib.b ${DESTDIR}/usr/lib/lib.b
 
 tags:
-	for i in ${TAGSDIR}; do \
+	-for i in ${TAGSDIR}; do \
 		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
 	done
 
 clean:
 	rm -f a.out core *.s *.o tags
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f ${STD} ${NSTD}
 
 depend:
 	cat </dev/null >x.c
-	for i in ${STD} ${NSTD}; do \
+	-for i in ${STD} ${NSTD}; do \
 		(echo $$i: $$i.c >>makedep; \
 		/bin/grep '^#[ 	]*include' x.c $$i.c | sed \
 			-e '/\.\.\/h/d' \
