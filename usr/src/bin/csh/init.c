@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1980, 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
 /*###9 [cc] warning: `sccsid' defined but not used%%%*/
-static char sccsid[] = "@(#)init.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #if __STDC__
