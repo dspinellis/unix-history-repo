@@ -1,10 +1,11 @@
-/* @(#)ttyslot.c	4.1 (Berkeley) %G% */
+/* @(#)ttyslot.c	4.2 (Berkeley) %G% */
+
 /*
  * Return the number of the slot in the utmp file
  * corresponding to the current user: try for file 0, 1, 2.
  * Definition is the line number in the /etc/ttys file.
  */
-
+#include <sys/file.h>
 
 char	*ttyname();
 char	*getttys();
@@ -18,42 +19,55 @@ ttyslot()
 	register char *tp, *p;
 	register s, tf;
 
-	if ((tp=ttyname(0))==NULL && (tp=ttyname(1))==NULL && (tp=ttyname(2))==NULL)
+	if ((tp = ttyname(0)) == NULL &&
+	    (tp = ttyname(1)) == NULL &&
+	    (tp = ttyname(2)) == NULL)
 		return(0);
 	if ((p = rindex(tp, '/')) == NULL)
 		p = tp;
 	else
 		p++;
-	if ((tf=open(ttys, 0)) < 0)
-		return(0);
+	if ((tf = open(ttys, O_RDONLY)) < 0)
+		return (0);
 	s = 0;
 	while (tp = getttys(tf)) {
 		s++;
-		if (strcmp(p, tp)==0) {
+		if (strcmp(p, tp) == 0) {
 			close(tf);
-			return(s);
+			return (s);
 		}
 	}
 	close(tf);
-	return(0);
+	return (0);
 }
+
+#define	BUFSIZ	1024
 
 static char *
 getttys(f)
 {
-	static char line[32];
+	static char buf[BUFSIZ + 1], *next = &buf[BUFSIZ + 1];
 	register char *lp;
+	char *start;
 
-	lp = line;
 	for (;;) {
-		if (read(f, lp, 1) != 1)
-			return(NULL);
-		if (*lp =='\n') {
-			*lp = '\0';
-			return(line+2);
+		if (next >= &buf[BUFSIZ]) {
+			int n = read(f, buf, BUFSIZ);
+
+			if (n <= 0)
+				return (NULL);
+			buf[n] = '\0';
+			next = &buf[0];
 		}
-		if (lp >= &line[32])
-			return(line+2);
-		lp++;
+		for (lp = next; *lp && *lp != '\n'; lp++)
+			;
+		if (*lp == '\n') {
+			*lp++ = '\0';
+			start = next;
+			next = lp;
+			return (start + 2);
+		}
+		lseek(f, next - lp, L_INCR);
+		next = lp;
 	}
 }
