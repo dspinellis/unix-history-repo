@@ -1,4 +1,4 @@
-/*	kern_fork.c	6.2	84/05/22	*/
+/*	kern_fork.c	6.3	84/06/06	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -113,6 +113,7 @@ retry:
 	}
 	if (mpid >= pidchecked) {
 		int doingzomb = 0;
+
 		pidchecked = 30000;
 		/*
 		 * Scan the proc table to check whether this pid
@@ -122,14 +123,14 @@ retry:
 		rpp = allproc;
 again:
 		for (; rpp != NULL; rpp = rpp->p_nxt) {
-			if (rpp->p_pid==mpid || rpp->p_pgrp==mpid) {
+			if (rpp->p_pid == mpid || rpp->p_pgrp == mpid) {
 				mpid++;
 				if (mpid >= pidchecked)
 					goto retry;
 			}
-			if ((rpp->p_pid > mpid) && (pidchecked > rpp->p_pid))
+			if (rpp->p_pid > mpid && pidchecked > rpp->p_pid)
 				pidchecked = rpp->p_pid;
-			if ((rpp->p_pgrp > mpid) && (pidchecked > rpp->p_pgrp))
+			if (rpp->p_pgrp > mpid && pidchecked > rpp->p_pgrp)
 				pidchecked = rpp->p_pgrp;
 		}
 		if (!doingzomb) {
