@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ec.c	6.13 (Berkeley) %G%
+ *	@(#)if_ec.c	6.14 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -20,6 +20,7 @@
 #include "buf.h"
 #include "protosw.h"
 #include "socket.h"
+#include "syslog.h"
 #include "vmmac.h"
 #include "ioctl.h"
 #include "errno.h"
@@ -38,10 +39,6 @@
 #include "../netinet/ip.h"
 #include "../netinet/if_ether.h"
 #endif
-
-#ifdef PUP
-#include "../netpup/pup.h"
-#endif PUP
 
 #ifdef NS
 #include "../netns/ns.h"
@@ -299,11 +296,11 @@ ecinit(unit)
 		 * write our ethernet address into the address recognition ROM 
 		 * so we can always use the same EC_READ bits (referencing ROM),
 		 * in case we change the address sometime.
-		 * Note that this is safe here as the reciever is NOT armed.
+		 * Note that this is safe here as the receiver is NOT armed.
 		 */
 		ec_setaddr(es->es_addr, unit);
 		/*
-		 * Arm the reciever
+		 * Arm the receiver
 		 */
 		for (i = ECRHBF; i >= ECRLBF; i--)
 			addr->ec_rcr = EC_READ | i;
@@ -317,30 +314,22 @@ ecinit(unit)
 }
 
 /*
- * Start or restart output on interface.
- * If interface is already active, then this is a retransmit
- * after a collision, and just restuff registers.
- * If interface is not already active, get another datagram
- * to send off of the interface queue, and map it to the interface
+ * Start output on interface.  Get another datagram to send
+ * off of the interface queue, and copy it to the interface
  * before starting the output.
  */
 ecstart(unit)
 {
-	struct ec_softc *es = &ec_softc[unit];
+	register struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr;
 	struct mbuf *m;
 
-	if (es->es_oactive)
-		goto restart;
-
-	IF_DEQUEUE(&es->es_if.if_snd, m);
-	if (m == 0) {
-		es->es_oactive = 0;
+	if ((es->es_if.if_flags & IFF_RUNNING) == 0)
 		return;
-	}
+	IF_DEQUEUE(&es->es_if.if_snd, m);
+	if (m == 0)
+		return;
 	ecput(es->es_buf[ECTBF], m);
-
-restart:
 	addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 	addr->ec_xcr = EC_WRITE|ECTBF;
 	es->es_oactive = 1;
@@ -382,21 +371,15 @@ ecxint(unit)
 eccollide(unit)
 	int unit;
 {
-	struct ec_softc *es = &ec_softc[unit];
-
-	es->es_if.if_collisions++;
-	if (es->es_oactive)
-		ecdocoll(unit);
-}
-
-ecdocoll(unit)
-	int unit;
-{
 	register struct ec_softc *es = &ec_softc[unit];
 	register struct ecdevice *addr =
 	    (struct ecdevice *)ecinfo[unit]->ui_addr;
 	register i;
 	int delay;
+
+	es->es_if.if_collisions++;
+	if (es->es_oactive == 0)
+		return;
 
 	/*
 	 * Es_mask is a 16 bit number with n low zero bits, with
@@ -405,7 +388,7 @@ ecdocoll(unit)
 	 */
 	if (es->es_mask == 0) {
 		es->es_if.if_oerrors++;
-		printf("ec%d: send error\n", unit);
+		log(LOG_ERR, "ec%d: send error\n", unit);
 		/*
 		 * Reset interface, then requeue rcv buffers.
 		 * Some incoming packets may be lost, but that
@@ -425,13 +408,14 @@ ecdocoll(unit)
 	}
 	/*
 	 * Do exponential backoff.  Compute delay based on low bits
-	 * of the interval timer.  Then delay for that number of
+	 * of the interval timer (1 bit for each transmission attempt,
+	 * but at most 5 bits).  Then delay for that number of
 	 * slot times.  A slot time is 51.2 microseconds (rounded to 51).
 	 * This does not take into account the time already used to
 	 * process the interrupt.
 	 */
 	es->es_mask <<= 1;
-	delay = mfpr(ICR) &~ es->es_mask;
+	delay = mfpr(ICR) & 0x1f &~ es->es_mask;
 	DELAY(delay * 51);
 	/*
 	 * Clear the controller's collision flag, thus enabling retransmit.
@@ -587,6 +571,10 @@ ecoutput(ifp, m0, dst)
 	register int off;
 	struct mbuf *mcopy = (struct mbuf *)0;
 
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
+		error = ENETDOWN;
+		goto bad;
+	}
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -857,7 +845,11 @@ ecioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa = (struct ifaddr *)data;
+	struct ec_softc *es = &ec_softc[ifp->if_unit];
+	struct ecdevice *addr;
 	int s = splimp(), error = 0;
+
+	addr = (struct ecdevice *)(ecinfo[ifp->if_unit]->ui_addr);
 
 	switch (cmd) {
 
@@ -867,7 +859,7 @@ ecioctl(ifp, cmd, data)
 		switch (ifa->ifa_addr.sa_family) {
 #ifdef INET
 		case AF_INET:
-			ecinit(ifp->if_unit); /* before, so we can send the ARP packet */
+			ecinit(ifp->if_unit);	/* before arpwhohas */
 			((struct arpcom *)ifp)->ac_ipaddr =
 				IA_SIN(ifa)->sin_addr;
 			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
@@ -878,26 +870,36 @@ ecioctl(ifp, cmd, data)
 		    {
 			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
 
-			if (ns_nullhost(*ina)) {
-				ina->x_host = * (union ns_host *) 
-				     (ec_softc[ifp->if_unit].es_addr);
-			} else {
+			if (ns_nullhost(*ina))
+				ina->x_host = *(union ns_host *)(es->es_addr);
+			else {
 				/* 
 				 * The manual says we can't change the address 
-				 * while the reciever is armed so reset everything
+				 * while the receiver is armed,
+				 * so reset everything
 				 */
-				struct ec_softc *es = &ec_softc[ifp->if_unit];
-				struct uba_device *ui = ecinfo[ifp->if_unit];
-				struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
-				
-				es->es_if.if_flags &= ~IFF_RUNNING; 
-				bcopy(ina->x_host.c_host, es->es_addr, sizeof(es->es_addr));
+				ifp->if_flags &= ~IFF_RUNNING; 
+				bcopy(ina->x_host.c_host, es->es_addr,
+					sizeof(es->es_addr));
 			}
 			ecinit(ifp->if_unit); /* does ec_setaddr() */
 			break;
 		    }
 #endif
+		default:
+			ecinit(ifp->if_unit);
+			break;
 		}
+		break;
+
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    ifp->if_flags & IFF_RUNNING) {
+			addr->ec_xcr = EC_UECLR;
+			ifp->if_flags &= ~IFF_RUNNING;
+		} else if (ifp->if_flags & IFF_UP &&
+		    (ifp->if_flags & IFF_RUNNING) == 0)
+			ecinit(ifp->if_unit);
 		break;
 
 	default:
@@ -908,8 +910,8 @@ ecioctl(ifp, cmd, data)
 }
 
 ec_setaddr(physaddr,unit)
-u_char *physaddr;
-int unit;
+	u_char *physaddr;
+	int unit;
 {
 	struct ec_softc *es = &ec_softc[unit];
 	struct uba_device *ui = ecinfo[unit];
@@ -919,7 +921,7 @@ int unit;
 
 	/*
 	 * Use the ethernet address supplied
-	 * NOte that we do a UECLR here, so the recieve buffers
+	 * Note that we do a UECLR here, so the receive buffers
 	 * must be requeued.
 	 */
 	
