@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
 
+#ifdef ACULOG
 static	FILE *flog = NULL;
 
 /*
@@ -45,16 +46,14 @@ logent(group, num, acu, message)
 		num,
 #endif
 		acu, message);
-	fflush(flog);
+	(void) fflush(flog);
 	(void) flock(fileno(flog), LOCK_UN);
 }
 
 loginit()
 {
-
-#ifdef ACULOG
 	flog = fopen(value(LOG), "a");
 	if (flog == NULL)
-		fprintf(stderr, "can't open log file\r\n");
-#endif
+		fprintf(stderr, "can't open log file %s.\r\n", value(LOG));
 }
+#endif
