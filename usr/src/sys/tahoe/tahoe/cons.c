@@ -1,10 +1,4 @@
-/*
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)cons.c	7.1 (Berkeley) %G%
- */
+/*	cons.c	7.2	89/05/01	*/
 
 /*
  * Tahoe console processor driver
@@ -21,15 +15,16 @@
 #include "user.h"
 #include "proc.h"
 #include "tty.h"
+#include "ttydefaults.h"
 #include "uio.h"
 #include "callout.h"
 #include "systm.h"
 #include "kernel.h"
 #include "syslog.h"
 
-#include "cp.h"
-#include "cpu.h"
-#include "mtpr.h"
+#include "../tahoe/cp.h"
+#include "../tahoe/cpu.h"
+#include "../tahoe/mtpr.h"
 
 int	cnrestart();
 int	timeout();
@@ -49,6 +44,24 @@ struct	consoftc {
 	int	cs_timo;	/* timeouts since interrupt */
 	u_long	cs_wedgecnt;	/* times restarted */
 } consoftc[3];
+
+struct speedtab cnspeedtab[] = {
+	9600,	13,
+	4800,	12,
+	2400,	11,
+	1800,	10,
+	1200,	9,
+	600,	8,
+	300,	7,
+	200,	6,
+	150,	5,
+	134,	4,
+	110,	3,
+	75,	2,
+	50,	1,
+	0,	13,
+	-1,	-1,
+};
 
 /*
  * We check the console periodically to make sure
@@ -90,6 +103,7 @@ cnopen(dev, flag)
 {
 	register struct tty *tp;
 	int unit = minor(dev);
+	int cnparams();
 
 	if (unit > CPREMOT) 
 		return (ENXIO);
@@ -98,11 +112,18 @@ cnopen(dev, flag)
 		return (EBUSY);
 	cnpostread(unit);		/* post request for input */
 	tp->t_oproc = cnstart;
+	tp->t_param = cnparams;
 	tp->t_dev = dev;
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
+		tp->t_iflag = TTYDEF_IFLAG|ICRNL;
+		tp->t_oflag = TTYDEF_OFLAG|OPOST|ONLCR;
+		tp->t_lflag = TTYDEF_LFLAG;
+		tp->t_cflag = CS8|CREAD;
+		tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
 		tp->t_state = TS_ISOPEN|TS_CARR_ON;
-		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
+		cnparams(tp, &tp->t_termios);
+		ttsetwater(tp);
 	}
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
@@ -132,17 +153,17 @@ cnclose(dev)
 }
 
 /*ARGSUSED*/
-cnread(dev, uio)
+cnread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	struct tty *tp = cntty[minor(dev)];
 
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
 /*ARGSUSED*/
-cnwrite(dev, uio)
+cnwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
@@ -152,7 +173,7 @@ cnwrite(dev, uio)
 	    (constty->t_state & (TS_CARR_ON | TS_ISOPEN)) ==
 	    (TS_CARR_ON | TS_ISOPEN))
 		tp = constty;
-	return ((*linesw[tp->t_line].l_write)(tp, uio));
+	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
 /*
@@ -185,7 +206,7 @@ cnrint(dev)
 	if (unit == CPCONS && kdbrintr(c, tp))
 		return;
 #endif
-	(*linesw[tp->t_line].l_rint)(c, tp);
+	(*linesw[tp->t_line].l_rint)(c & 0377, tp);
 }
 
 cnioctl(dev, cmd, addr, flag)
@@ -200,8 +221,6 @@ cnioctl(dev, cmd, addr, flag)
 		return error;
 	if ((error = ttioctl(tp, cmd, addr, flag)) < 0)
 		error = ENOTTY;
-	else if (cmd == TIOCSETP || cmd == TIOCSETN)
-		cnparams(tp);
 	return (error);
 }
 
@@ -242,7 +261,7 @@ cnstart(tp)
 	s = spl8();
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
-	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
+	if (tp->t_outq.c_cc <= tp->t_lowat) {
 		if (tp->t_state&TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
@@ -256,14 +275,9 @@ cnstart(tp)
 	if (tp->t_outq.c_cc == 0)
 		goto out;
 	c = getc(&tp->t_outq) & 0xff;
-	if ((tp->t_flags & (RAW|LITOUT)) == 0) {
-		if (c <= 0177)
-			c |= partab[c] & 0200;
-		else {
-			timeout(ttrstrt, (caddr_t)tp, (c&0177));
-			tp->t_state |= TS_TIMEOUT;
-			goto out;
-		}
+	if (tp->t_cflag&PARENB && ((tp->t_cflag&CSIZE)==CS7)) {
+		c &= 0177;
+		c |= (tp->t_cflag&PARODD ? ~partab[c] : partab[c]) & 0200;
 	}
 	cnputchar(c, tp);
 	tp->t_state |= TS_BUSY;
@@ -417,7 +431,7 @@ cnreset(tp)
 		uncache(&current->cp_hdr.cp_unit);
 	while ((current->cp_hdr.cp_unit&CPTAKE) == 0 && --timo);
 	if (current->cp_hdr.cp_unit & CPTAKE) {
-		cnparams(tp);
+		cnparams(tp, &tp->t_termios);
 		failed = 0;
 	} else if (failed++ == 0)
 		log(LOG_ERR, "Console wedged, reset failed.\n");
@@ -426,16 +440,21 @@ cnreset(tp)
 /*
  * Set line parameters
  */
-cnparams(tp)
+cnparams(tp, t)
 	register struct tty *tp;
+	register struct termios *t;
 {
-	register timo;
-	register struct cpdcb_o *current;
-	int unit;
+	register timo = 30000;
+	int unit = minor(tp->t_dev);
+	register struct cpdcb_o *current = &consout[unit];
+	register cflag = t->c_cflag;
+	int speedcode, csize;
 
-	unit = minor(tp->t_dev);
-	current = &consout[unit];
-	timo = 30000;
+	if (((speedcode == ttspeedtab(t->c_ospeed, cnspeedtab)) < 0) ||
+	   (t->c_ispeed && t->c_ispeed != t->c_ospeed) ||
+	   ((csize = (cflag&CSIZE)) != CS7 && csize != CS8))
+		return (EINVAL);
+	/*XXX*/return (0);
 	/*
 	 * Try waiting for the console tty to finish any output,
 	 * otherwise give up after a reasonable time.
@@ -445,19 +464,28 @@ cnparams(tp)
 	while ((current->cp_hdr.cp_unit&CPDONE) == 0 && --timo);
 	current->cp_hdr.cp_comm = CPSTTY;
 	current->cp_hdr.cp_count = 4;
-	current->cp_buf[0] = tp->t_ispeed;
-	/* the rest are defaults */
+	current->cp_buf[0] = speedcode;
+#ifdef notyet
+	/* parity */
+	current->cp_buf[1] = (cflag&PARENB) ? ((cflag&PARODD) ? 2 : 1) : 0;	
+	/* stop bits */
+	current->cp_buf[2] = (cflag&CSTOPB) ? 2 : 0;
+	/* data bits */
+	current->cp_buf[3] = (csize==CS8) ? 8 : 7;
+#else
 	current->cp_buf[1] = 0;	/* no parity */
 	current->cp_buf[2] = 0;	/* stop bits */
 	current->cp_buf[3] = 8;	/* data bits */
+#endif
+
 	/* Reset done bit */
 	current->cp_hdr.cp_unit = unit; 
 
 	waitforlast(timo);
 	mtpr(CPMDCB, vtoph((struct proc *)0, (unsigned)current));
 	cnlast = &current->cp_hdr;
-
 	cnpostread(unit);
+	return (0);
 }
 
 #ifdef KADB
