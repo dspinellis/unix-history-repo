@@ -34,6 +34,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00015
+ * --------------------         -----   ----------------------
+ *
+ * 17 Mar 92	John Woods		Fix "make - make" bug
  */
 
 #ifndef lint
@@ -280,7 +287,10 @@ rearg:	while((c = getopt(argc, argv, "D:I:d:ef:ij:knqrst")) != EOF) {
 			if (!**argv)
 				Punt("illegal (null) argument.");
 			if (**argv == '-') {
-				optind = 0;
+/* 17 Mar 92*/			if ((*argv)[1])
+/* 17 Mar 92*/				optind = 0;	/* -flag... */
+/* 17 Mar 92*/			else
+/* 17 Mar 92*/				optind = 1;	/* - */
 				goto rearg;
 			}
 			(void)Lst_AtEnd(create, (ClientData)*argv);
