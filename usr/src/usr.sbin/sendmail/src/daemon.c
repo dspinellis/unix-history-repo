@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.27 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.28 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.27 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.28 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -435,6 +435,7 @@ makeconnection(host, port, outfile, infile, usesecureport)
 	h_errno = 0;
 #endif
 	errno = 0;
+	bzero(&CurHostAddr, sizeof CurHostAddr);
 
 	if (host[0] == '[')
 	{
