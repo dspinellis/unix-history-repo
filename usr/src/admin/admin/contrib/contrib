@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.41 (Berkeley) %G%
+.\"	@(#)contrib	5.42 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -78,7 +78,7 @@ Groff	James Clark (The FSF)
 HP300 support	Jeff Forys, Mike Hibler, Jay Lepreau, Donn Seeley and the Systems
 	Programming Group; University of Utah Computer Science Department
 ISODE	Marshall Rose
-Ingres	The Berkeley Ingres Research Group
+Ingres	Mike Stonebraker, Gene Wong, and the Berkeley Ingres Research Group
 Intel 386/486 support	Bill Jolitz and TeleMuse
 Job control	Jim Kulp
 Kerberos	Project Athena and MIT
