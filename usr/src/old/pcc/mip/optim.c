@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)optim.c	4.6 (Berkeley) %G%";
+static char *sccsid ="@(#)optim.c	4.7 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -136,12 +136,7 @@ optim(p) register NODE *p; {
 		    nncon(p->in.right) && (i=ispow2(RV(p)))>=0){
 			if( i == 0 ) /* multiplication by 1 */
 				goto zapright;
-			if( i == 1 && optype(LO(p)) == LTYPE){
-				/* multiplication by 2 */
-				p->in.op = (asgop(o) ? ASG PLUS : PLUS);
-				o = p->in.op;
-				ncopy(p->in.right, p->in.left);
-				}
+			/* c2 will turn 'i << 1' into 'i + i' for us */
 			else {
 				p->in.op = (asgop(o) ? ASG LS : LS);
 				o = p->in.op;
@@ -180,6 +175,29 @@ optim(p) register NODE *p; {
 				 o == OR || o == ER ||
 				 o == LS || o == RS )
 				goto zapright;
+			}
+		if( o != LS && o != RS )
+			break;
+		/* FALL THROUGH */
+
+	case ASG RS:
+	case ASG LS:
+		if( !ISUNSIGNED(p->in.left->in.type) )
+			break;
+		if( p->in.right->in.op == ICON &&
+		    p->in.right->tn.lval < 0 ) {
+			/*
+			 * Technically negative shifts are illegal
+			 * but we can support them, at least with
+			 * constants; you take potluck with variables.
+			 */
+			p->in.right->tn.lval = -p->in.right->tn.lval;
+			switch( o ){
+			case LS:	p->in.op = RS; break;
+			case ASG LS:	p->in.op = ASG RS; break;
+			case RS:	p->in.op = LS; break;
+			case ASG RS:	p->in.op = ASG LS; break;
+				}
 			}
 		break;
 
