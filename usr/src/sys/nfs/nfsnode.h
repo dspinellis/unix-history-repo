@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.30 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.31 (Berkeley) %G%
  */
 
 /*
@@ -58,6 +58,7 @@ struct nfsnode {
 /*
  * Flags for n_flag
  */
+#define	NFLUSHINPROG	0x0002	/* Avoid multiple calls to vinvalbuf() */
 #define	NMODIFIED	0x0004	/* Might have a modified buffer in bio */
 #define	NWRITEERR	0x0008	/* Flag write errors so close will know */
 #define	NQNFSNONCACHE	0x0020	/* Non-cachable lease */
@@ -66,6 +67,23 @@ struct nfsnode {
 #define	NACC		0x0100	/* Special file accessed */
 #define	NUPD		0x0200	/* Special file updated */
 #define	NCHG		0x0400	/* Special file times changed */
+
+#define	NFS_VINVBUF(np, vp, flags, cred, p) {		\
+	if ((np->n_flag & NFLUSHINPROG) == 0) {		\
+		np->n_flag |= NFLUSHINPROG;		\
+		(void) vinvalbuf(vp, flags, cred, p);	\
+		np->n_flag &= ~(NFLUSHINPROG|NMODIFIED);\
+	}						\
+}
+
+#define	NFS_VINVBUFE(np, vp, flags, cred, p, error) {	\
+	if ((np->n_flag & NFLUSHINPROG) == 0) {		\
+		np->n_flag |= NFLUSHINPROG;		\
+		error = vinvalbuf(vp, flags, cred, p);	\
+		np->n_flag &= ~(NFLUSHINPROG|NMODIFIED);\
+	} else						\
+		error = 0;				\
+}
 
 /*
  * Convert between nfsnode pointers and vnode pointers

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -300,7 +300,7 @@ lease_check(vp, p, cred, flag)
 	struct ucred *cred;
 	int flag;
 {
-	int duration, cache;
+	int duration = 0, cache;
 	struct nfsd nfsd;
 	u_quad_t frev;
 
@@ -1005,15 +1005,16 @@ if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash3");
 				np->n_tnext = (struct nfsnode *)0;
 				if ((np->n_flag & (NMODIFIED | NQNFSEVICTED))
 				    && vp->v_type == VREG) {
-					np->n_flag &= ~NMODIFIED;
 					if (np->n_flag & NQNFSEVICTED) {
-						(void) vinvalbuf(vp, TRUE,
-						    cred, p);
+						NFS_VINVBUF(np, vp,
+						            TRUE, cred, p);
 						np->n_flag &= ~NQNFSEVICTED;
 						(void) nqnfs_vacated(vp, cred);
-					} else
+					} else {
+						np->n_flag &= ~NMODIFIED;
 						(void) VOP_FSYNC(vp, cred,
 						    MNT_WAIT, p);
+					}
 				}
 			      }
 			      vrele(vp);
