@@ -90,6 +90,7 @@ define(`confFROM_LINE', `From $g  $d')
 define(`confOPERATORS', `.:%@!^/[]')
 define(`confSMTP_LOGIN_MSG', `$j Sendmail $v/$Z ready at $b')
 define(`confSEVEN_BIT_INPUT', `False')
+define(`confEIGHT_BIT_HANDLING', `pass8')
 define(`confALIAS_WAIT', `10')
 define(`confMIN_FREE_BLOCKS', `4')
 define(`confBLANK_SUB', `.')
@@ -124,4 +125,4 @@ define(`confMIME_FORMAT_ERRORS', `True')
 define(`confTRY_NULL_MX_LIST', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.6 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.7 (Berkeley) %G%')

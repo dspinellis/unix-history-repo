@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.51 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.52 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -131,6 +131,9 @@ include(`../m4/version.m4')
 
 # strip message body to 7 bits on input?
 O7`'confSEVEN_BIT_INPUT
+
+# 8-bit data handling
+O8`'confEIGHT_BIT_HANDLING
 
 # wait (in minutes) for alias file rebuild
 Oa`'confALIAS_WAIT

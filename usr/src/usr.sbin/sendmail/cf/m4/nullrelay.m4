@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)nullrelay.m4	8.5 (Berkeley) %G%')
+VERSIONID(`@(#)nullrelay.m4	8.6 (Berkeley) %G%')
 
 #
 #  This configuration applies only to relay-only hosts.  They send
@@ -57,6 +57,9 @@ include(`../m4/version.m4')
 
 # strip message body to 7 bits on input?
 O7`'confSEVEN_BIT_INPUT
+
+# eight bit data handling
+O8`'confEIGHT_BIT_HANDLING
 
 # no aliases here
 
