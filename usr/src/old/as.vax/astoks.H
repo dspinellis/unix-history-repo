@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)astoks.H 4.3 %G%" */
+/* "@(#)astoks.H 4.4 %G%" */
 /*
  *	Message to the wary:  The order of tokens has been
  *	hand optimized and assigned to that all switch statements
@@ -77,7 +77,6 @@
 /*
  *	Tokens between REGOP and DIV are used in the per character switch
  */
-# define NEEDSBUF	AWKFIXESME	/*signal refilling the input buffer*/
 # define REGOP		AWKFIXESME	/*the percent sign*/
 # define NL		AWKFIXESME
 # define SCANEOF	AWKFIXESME

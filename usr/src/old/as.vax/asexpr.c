@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asexpr.c 4.4 %G%";
+static char sccsid[] = "@(#)asexpr.c 4.5 %G%";
 
 #endif not lint
 #include <stdio.h>
@@ -426,7 +426,6 @@ struct Tok_Desc tok_desc[] = {
 	ILINESKIP,	CNTRL,	"skip lines",
 	VOID,		CNTRL,	"void",
 	SKIP,		CNTRL,	"skip",
-	NEEDSBUF,	CNTRL,	"need scanner buffer",
 	NL,		CNTRL,	"new line",
 	SCANEOF,	CNTRL,	"scanner end of file",
 	BADCHAR,	CNTRL,	"bad character",

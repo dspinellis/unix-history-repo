@@ -2,22 +2,50 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan2.c 4.8 %G%";
+static char sccsid[] = "@(#)asscan2.c 4.9 %G%";
 #endif not lint
 
 #include "asscanl.h"
+
 static	inttoktype	oval = NL;
 
-#define	NINBUFFERS	2
-#define	INBUFLG		NINBUFFERS*ASINBUFSIZ + 2
+char	inbufunget[8];
+char	inbuffer[ASINBUFSIZ];
+char	*Ginbufptr = inbuffer;
+int	Ginbufcnt = 0;
+
+fillinbuffer()
+{
+		int	nread;
+	static	int	hadeof;
+		int	goal;
+		int	got;
+
+	nread = 0;
+	if (hadeof == 0){
+		goal = sizeof(inbuffer);
+		do {
+			got = read(stdin->_file, inbuffer + nread, goal);
+			if (got == 0)
+				hadeof = 1;
+			if (got <= 0)
+				break;
+			nread += got;
+			goal -= got;
+		} while (goal);
+	}
 	/*
-	 *	We have NINBUFFERS input buffers; the first one is reserved
-	 *	for catching the tail of a line split across a buffer
-	 *	boundary; the other ones are used for snarfing a buffer
-	 *	worth of assembly language source.
+	 *	getchar assumes that Ginbufcnt and Ginbufptr
+	 *	are adjusted as if one character has been removed
+	 *	from the input.
 	 */
-static	char	inbuffer[INBUFLG];
-static	char	*InBufPtr = 0;
+	if (nread == 0){
+		inbuffer[0] = EOFCHAR;
+		nread = 1;
+	}
+	Ginbufcnt = nread - 1;
+	Ginbufptr = inbuffer + 1;
+}
 
 #ifndef FLEXNAMES
 char	strtext[NCPString + 1];
@@ -29,104 +57,21 @@ char	strtext[NCPString + 1];
 # endif
 #endif FLEXNAMES
 
-/*
- *	fill the inbuffer from the standard input.
- *	Assert: there are always n COMPLETE! lines in the buffer area.
- *	Assert: there is always a \n terminating the last line
- *		in the buffer area.
- *	Assert: after the \n, there is an EOFCHAR (hard end of file)
- *		or a NEEDCHAR (end of buffer)
- *	Assert:	fgets always null pads the string it reads.
- *	Assert:	no ungetc's are done at the end of a line or at the
- *		beginning of a line.
- *	
- *	We read a complete buffer of characters in one single read.
- *	We then back scan within this buffer to find the end of the
- *	last complete line, and force the assertions, and save a pointer
- *	to the incomplete line.
- *	The next call to fillinbuffer will move the unread characters
- *	to the end of the first buffer, and then read another two buffers,
- *	completing the cycle.
- */
-
-static	char	p_swapped = '\0';			
-static	char	*p_start = &inbuffer[NINBUFFERS * ASINBUFSIZ];
-static	char	*p_stop = &inbuffer[NINBUFFERS * ASINBUFSIZ];
-
-#define	MIDDLE	&inbuffer[ASINBUFSIZ]
-
-char *fillinbuffer()
-{
-	register	char	*from;
-			char	*inbufptr;
-	int		nread;
-	static		int	hadeof;
-	int		goal;
-	int		got;
-
-	*p_start = p_swapped;
-	inbufptr = MIDDLE - (p_stop - p_start);
-	movestr(inbufptr, p_start, p_stop - p_start);
-	/*
-	 *	Now, go read up to NINBUFFERS - 1 full buffers
-	 */
-	if (hadeof){
-		hadeof = 0;
-		return (0);
-	}
-	goal = (NINBUFFERS - 1)*ASINBUFSIZ;
-	nread = 0;
-	do {
-		got = read(stdin->_file, MIDDLE + nread, goal);
-		if (got == 0)
-			hadeof = 1;
-		if (got <= 0)
-			break;
-		nread += got;
-		goal -= got;
-	} while (goal);
-
-	if (nread == 0)
-		return(0);
-	from = MIDDLE + nread;
-	p_stop = from;
-	*from = '\0';
-	while (*--from != '\n'){
-		/*
-		 *	back over the partial line
-		 */
-		if (from == MIDDLE) {
-			from = p_stop;
-			*p_stop++ = '\n';
-			break;
-		} else {
-			continue;
-		}
-	}
-
-	from++;				/* first char of partial line */
-	p_start = from;
-	p_swapped = *p_start;
-	*p_start = NEEDCHAR;		/* force assertion */
-	return(inbufptr);
-}
-
 scan_dot_s(bufferbox)
 	struct tokbufdesc *bufferbox;
 {
+	reg	char	*inbufptr;
+	reg	int	inbufcnt;
 	reg	int	ryylval;	/* local copy of lexical value */
 	extern	int	yylval;		/* global copy of lexical value */
 	reg	int	val;		/* the value returned */
 		int	i;		/* simple counter */
 	reg	char	*rcp;	
-		char	*cp;		/* can have address taken */
-	reg	int	ch;		/* treated as a character */
+		int	ch;		/* treated as a character */
 		int	ch1;		/* shadow value */
-	reg	char	*inbufptr;
 		struct 	symtab	*op;
-
-	reg	ptrall	bufptr;		/* where to stuff tokens */
 		ptrall	lgbackpatch;	/* where to stuff a string length */
+	reg	ptrall	bufptr;		/* where to stuff tokens */
 		ptrall	bufub;		/* where not to stuff tokens */
 	reg	int	maxstrlg;	/* how long a string can be */
 		long	intval;		/* value of int */
@@ -136,17 +81,7 @@ scan_dot_s(bufferbox)
 	(bytetoktype *)bufptr = (bytetoktype *) & (bufferbox->toks[0]);	
 	(bytetoktype *)bufub = &(bufferbox->toks[AVAILTOKS]);
 
-	inbufptr = InBufPtr;
-	if (inbufptr == 0){
-		inbufptr = fillinbuffer();
-		if (inbufptr == 0){	/*end of file*/
-   		  endoffile:
-			inbufptr = 0;
-			ptoken(bufptr, PARSEEOF);
-			goto done;
-		}
-	}
-
+	MEMTOREGBUF;
 	if (newfflag){
 		newfflag = 0;
 		ryylval = (int)savestr(newfname, strlen(newfname) + 1);
@@ -162,16 +97,12 @@ scan_dot_s(bufferbox)
 
 	while (bufptr < bufub){
    loop:
-        switch(ryylval = (type+2)[ch = getchar()]) {
+        switch(ryylval = (type+1)[ch = getchar()]) {
 	case SCANEOF:
+	endoffile: ;
 		inbufptr = 0;
-		goto endoffile;
-
-	case NEEDSBUF:
-		inbufptr = fillinbuffer();
-		if (inbufptr == 0)
-			goto endoffile;
-		goto loop;
+		ptoken(bufptr, PARSEEOF);
+		goto done;
 
 	case DIV:		/*process C style comments*/
 		if ( (ch = getchar()) == '*') {  /*comment prelude*/
@@ -192,13 +123,6 @@ scan_dot_s(bufferbox)
 					break;
 				case EOFCHAR:
 					goto endoffile;
-				case NEEDCHAR:
-					inbufptr = fillinbuffer();
-					if (inbufptr == 0)
-						goto endoffile;
-					lineno++;
-					ch = getchar();
-					break;
 				default:
 					ch = getchar();
 					break;
@@ -350,17 +274,17 @@ scan_dot_s(bufferbox)
 
 	case DIG:
 		/*
-		 *	Implement call by reference on a reg variable
+		 *	restore local inbufptr and inbufcnt
 		 */
-		cp = inbufptr;
-		val = number(ch, &cp);
+		REGTOMEMBUF;
+		val = number(ch);
+		MEMTOREGBUF;
 		/*
 		 *	yylval or yybignum has been stuffed as a side
 		 *	effect to number(); get the global yylval
 		 *	into our fast local copy in case it was an INT.
 		 */
 		ryylval = yylval;
-		inbufptr = cp;
 		goto ret;
 
 	case LSH:
@@ -406,12 +330,6 @@ scan_dot_s(bufferbox)
 			linescrossed++;
 			ch = getchar();
 			switch(ch){
-			case NEEDCHAR:
-				if ( (inbufptr = fillinbuffer()) != 0){
-					ch = '\n';
-					goto stuff;
-				}
-				/*FALLTHROUGH*/
 			case EOFCHAR:
 				pchar(rcp, '\n');
 				ungetc(EOFCHAR);
@@ -535,7 +453,6 @@ scan_dot_s(bufferbox)
    }			/*end of the while to stuff the buffer*/
    done:
 	bufferbox->tok_count = (bytetoktype *)bufptr - &(bufferbox->toks[0]);
-
 	/*
 	 *	This is a real kludge:
 	 *
@@ -554,5 +471,5 @@ scan_dot_s(bufferbox)
 	 *	fail.
 	 */
 	ptoken(bufptr, MINUS);
-	InBufPtr = inbufptr;		/*copy this back*/
+	REGTOMEMBUF;
 }

@@ -2,14 +2,13 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asscan3.c 4.3 %G%";
+static char sccsid[] = "@(#)asscan3.c 4.4 %G%";
 #endif not lint
 
 #include "asscanl.h"
 
 readonly short type[] = {
 
-/*fill up the input buffer*/	NEEDSBUF,	
 /*hit the hard end of file*/	SCANEOF,	
 	/* '^@' 0x00 0000 */	SP,
 	/* '^A' 0x01 0001 */	BADCHAR,
