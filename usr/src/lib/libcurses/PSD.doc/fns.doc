@@ -1,9 +1,9 @@
-.\" Copyright (c) 1992 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1992, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)fns.doc	1.6 (Berkeley) %G%
+.\"     @(#)fns.doc	8.1 (Berkeley) %G%
 .\"
 .Ds
 .Fn addch "char ch" \(dg

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)appen.B	6.3 (Berkeley) %G%
+.\"	@(#)appen.B	8.1 (Berkeley) %G%
 .\"
 .ie t .oh '\*(Ln Appendix B''PS1:18-%'
 .eh 'PS1:18-%''\*(Ln Appendix B'
