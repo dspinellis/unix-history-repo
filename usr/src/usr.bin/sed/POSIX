@@ -1,4 +1,4 @@
-#	@(#)POSIX	5.5 (Berkeley) %G%
+#	@(#)POSIX	5.6 (Berkeley) %G%
 
 Comments on the IEEE P1003.2 Draft 12
      Part 2: Shell and Utilities
@@ -54,7 +54,13 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	command the command must not contain an address specification
 	whereas the command list can contain address specifications.  The
 	specification for ! implies that "3!/hello/p" works, and it never
-	has, historically.  (Note, "3!{ /hello/p }" does work.)
+	has, historically.  Note,
+
+		3!{
+			/hello/p
+		}
+
+	does work.
 
  7.	POSIX does not specify what happens with consecutive ! commands
 	(e.g. /foo/!!!p).  Historic implementations allow any number of
@@ -88,8 +94,8 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	practice.
 
 11.	Historical implementations do not output the change text of a c
-	command in the case of an address range whose second line number
-	is greater than the first (e.g. 3,1).  POSIX requires that the
+	command in the case of an address range whose first line number
+	is greater than the second (e.g. 3,1).  POSIX requires that the
 	text be output.  Since the historic behavior doesn't seem to have
 	any particular purpose, this implementation follows the POSIX
 	behavior.
@@ -149,7 +155,8 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	Historic implementations of sed assigned different locations to
 	the labels "x" and "x ".  This is not useful, and leads to subtle
 	programming errors, but it is historic practice and changing it
-	could theoretically break working scripts.
+	could theoretically break working scripts.  This implementation
+	follows historic practice.
 
 19.	Although POSIX specifies that reading from files that do not exist
 	from within the script must not terminate the script, it does not
@@ -165,7 +172,7 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	substitute command is an overlapping or a non-overlapping one,
 	i.e. what is the result of s/a*/A/2 on the pattern "aaaaa aaaaa".
 	Historical practice is to drop core or only do non-overlapping
-	RE's.  This implementation only does on-overlapping RE's.
+	RE's.  This implementation only does non-overlapping RE's.
 
 22.	Historic implementations of sed ignore the RE delimiter characters
 	within character classes.  This is not specified in POSIX.  This
@@ -187,5 +194,5 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	While many historical implementations fail on programs depending
 	on scope differences, the SunOS version exhibited dynamic scope
 	behaviour.  This implementation also uses does dynamic scoping, as
-	this seems the natural way to interact with an editor, and in order
-	to remain consistent with historical practice.
+	this seems the most useful and in order to remain consistent with
+	historical practice.
