@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_user.c	8.1 (Berkeley) %G%
+ *	@(#)vm_user.c	8.2 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -141,58 +141,6 @@ svm_protect(p, uap, retval)
 	rv = vm_protect(uap->map, uap->addr, uap->size, uap->setmax, uap->prot);
 	return((int)rv);
 }
-#endif
-
-/*
- *	vm_allocate allocates "zero fill" memory in the specfied
- *	map.
- */
-int
-vm_allocate(map, addr, size, anywhere)
-	register vm_map_t	map;
-	register vm_offset_t	*addr;
-	register vm_size_t	size;
-	boolean_t		anywhere;
-{
-	int	result;
-
-	if (map == NULL)
-		return(KERN_INVALID_ARGUMENT);
-	if (size == 0) {
-		*addr = 0;
-		return(KERN_SUCCESS);
-	}
-
-	if (anywhere)
-		*addr = vm_map_min(map);
-	else
-		*addr = trunc_page(*addr);
-	size = round_page(size);
-
-	result = vm_map_find(map, NULL, (vm_offset_t) 0, addr,
-			size, anywhere);
-
-	return(result);
-}
-
-/*
- *	vm_deallocate deallocates the specified range of addresses in the
- *	specified address map.
- */
-int
-vm_deallocate(map, start, size)
-	register vm_map_t	map;
-	vm_offset_t		start;
-	vm_size_t		size;
-{
-	if (map == NULL)
-		return(KERN_INVALID_ARGUMENT);
-
-	if (size == (vm_offset_t) 0)
-		return(KERN_SUCCESS);
-
-	return(vm_map_remove(map, trunc_page(start), round_page(start+size)));
-}
 
 /*
  *	vm_inherit sets the inheritence of the specified range in the
@@ -228,4 +176,111 @@ vm_protect(map, start, size, set_maximum, new_protection)
 		return(KERN_INVALID_ARGUMENT);
 
 	return(vm_map_protect(map, trunc_page(start), round_page(start+size), new_protection, set_maximum));
+}
+#endif
+
+/*
+ *	vm_allocate allocates "zero fill" memory in the specfied
+ *	map.
+ */
+int
+vm_allocate(map, addr, size, anywhere)
+	register vm_map_t	map;
+	register vm_offset_t	*addr;
+	register vm_size_t	size;
+	boolean_t		anywhere;
+{
+	int	result;
+
+	if (map == NULL)
+		return(KERN_INVALID_ARGUMENT);
+	if (size == 0) {
+		*addr = 0;
+		return(KERN_SUCCESS);
+	}
+
+	if (anywhere)
+		*addr = vm_map_min(map);
+	else
+		*addr = trunc_page(*addr);
+	size = round_page(size);
+
+	result = vm_map_find(map, NULL, (vm_offset_t) 0, addr, size, anywhere);
+
+	return(result);
+}
+
+/*
+ *	vm_deallocate deallocates the specified range of addresses in the
+ *	specified address map.
+ */
+int
+vm_deallocate(map, start, size)
+	register vm_map_t	map;
+	vm_offset_t		start;
+	vm_size_t		size;
+{
+	if (map == NULL)
+		return(KERN_INVALID_ARGUMENT);
+
+	if (size == (vm_offset_t) 0)
+		return(KERN_SUCCESS);
+
+	return(vm_map_remove(map, trunc_page(start), round_page(start+size)));
+}
+
+/*
+ * Similar to vm_allocate but assigns an explicit pager.
+ */
+int
+vm_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
+	register vm_map_t	map;
+	register vm_offset_t	*addr;
+	register vm_size_t	size;
+	boolean_t		anywhere;
+	vm_pager_t		pager;
+	vm_offset_t		poffset;
+	boolean_t		internal;
+{
+	register vm_object_t	object;
+	register int		result;
+
+	if (map == NULL)
+		return(KERN_INVALID_ARGUMENT);
+
+	*addr = trunc_page(*addr);
+	size = round_page(size);
+
+	/*
+	 *	Lookup the pager/paging-space in the object cache.
+	 *	If it's not there, then create a new object and cache
+	 *	it.
+	 */
+	object = vm_object_lookup(pager);
+	cnt.v_lookups++;
+	if (object == NULL) {
+		object = vm_object_allocate(size);
+		/*
+		 * From Mike Hibler: "unnamed anonymous objects should never
+		 * be on the hash list ... For now you can just change
+		 * vm_allocate_with_pager to not do vm_object_enter if this
+		 * is an internal object ..."
+		 */
+		if (!internal)
+			vm_object_enter(object, pager);
+	} else
+		cnt.v_hits++;
+	if (internal)
+		object->flags |= OBJ_INTERNAL;
+	else {
+		object->flags &= ~OBJ_INTERNAL;
+		cnt.v_nzfod -= atop(size);
+	}
+
+	result = vm_map_find(map, object, poffset, addr, size, anywhere);
+	if (result != KERN_SUCCESS)
+		vm_object_deallocate(object);
+	else if (pager != NULL)
+		vm_object_setpager(object, pager, (vm_offset_t) 0, TRUE);
+	return(result);
 }
