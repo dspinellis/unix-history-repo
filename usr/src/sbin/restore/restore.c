@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)restore.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -190,19 +190,11 @@ nodeupdates(name, ino, type)
 			lookuptype = LINK;
 	}
 	/*
-	 * Check to see if the inode exists, and if one of its links
-	 * corresponds to the name (if one was found).
+	 * Check to see if the inode exists.
 	 */
 	ip = lookupino(ino);
-	if (ip != NIL) {
+	if (ip != NIL)
 		key |= INOFND;
-		for (ep = ip->e_links; ep != NIL; ep = ep->e_links) {
-			if (ep == np) {
-				ip = ep;
-				break;
-			}
-		}
-	}
 	/*
 	 * If both a name and an inode are found, but they do not
 	 * correspond to the same file, then both the inode that has
