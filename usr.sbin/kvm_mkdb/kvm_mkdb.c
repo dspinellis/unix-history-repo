@@ -71,7 +71,7 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	nlistpath = argc > 1 ? argv[0] : _PATH_UNIX;
+	nlistpath = argc > 0 ? argv[0] : _PATH_UNIX;
 	nlistname = basename(nlistpath);
 
 	(void)sprintf(dbtemp, "%s/kvm_%s.tmp", _PATH_VARRUN, nlistname);
