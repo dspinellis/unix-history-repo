@@ -1,0 +1,81 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Bill Jolitz.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)externalconnect.3c	5.1 (Berkeley) %G%
+.\"
+.TH EXTERNALCONNECT 3 ""
+.SH NAME
+externalconnect \- initiate a connection to an external system or service
+.SH SYNOPSIS
+.nf
+.ft B
+#include <phonenumber.h>
+#include <connect.h>
+.PP
+.ft B
+externalconnect(towhere, options, optslen)
+struct connectdomain *towhere;
+char *options;
+int optlen;
+.fi
+.SH DESCRIPTION
+Connect to an external system or service at an address specified by
+.I towhere
+using the options specified in
+.I options,
+which is of length
+.I optlen.
+.PP
+The parameter
+.I towhere
+does not necessarily need to specify a complete final addres,
+as in the case where
+an outside modem of a specific type is requested and no dialing is
+going to be done and all that is required is
+just that a line
+and a modem be allocated and prepared for use per options.
+.PP
+The parameter
+.I options
+points to a value-result buffer area where options are passed to the connector
+program and optionally returned from the connectd(8C) daemon. The buffer should
+be large enough to contain all expected string options that may be returned.
+Options within this buffer are a sequence of null-terminated strings,
+ending with the null string itself.
+.SH "RETURN VALUE
+This call if successful returns a file descriptor to a serial port or other
+entity that
+has been connected per the above parameters,
+otherwise a \-1 is returned, and a more specific error
+code is stored in \fIerrno\fP.
+.SH "ERRORS
+The call fails if:
+.TP 20
+[EADDRNOTAVAIL]
+The specified address is not available on this machine.
+.TP 20
+[EAFNOSUPPORT]
+Addresses in the specified address family cannot be used with this socket.
+.TP 20
+[ETIMEDOUT]
+Connection establishment timed out without establishing a connection.
+.TP 20
+[ECONNREFUSED]
+The attempt to connect was forcefully rejected.
+.SH SEE ALSO
+connectd(8), getphonenumberbyname(3), connector(5), lines(5), ttys(5)
