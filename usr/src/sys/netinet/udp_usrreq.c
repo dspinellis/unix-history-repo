@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.4	84/06/22	*/
+/*	udp_usrreq.c	6.5	84/07/31	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -203,7 +203,7 @@ udp_output(inp, m0)
 	so = inp->inp_socket;
 	if (so->so_options & SO_DONTROUTE)
 		return (ip_output(m, (struct mbuf *)0, (struct route *)0,
-		    IP_ROUTETOIF));
+		    (so->so_state & SS_PRIV) | IP_ROUTETOIF));
 	/*
 	 * Use cached route for previous datagram if
 	 * this is also to the same destination. 
@@ -302,6 +302,7 @@ udp_usrreq(so, req, m, nam, rights)
 
 	case PRU_SEND: {
 		struct in_addr laddr;
+		int s;
 
 		if (nam) {
 			laddr = inp->inp_laddr;
@@ -309,9 +310,15 @@ udp_usrreq(so, req, m, nam, rights)
 				error = EISCONN;
 				break;
 			}
+			/*
+			 * Must block input while temporarily connected.
+			 */
+			s = splnet();
 			error = in_pcbconnect(inp, nam);
-			if (error)
+			if (error) {
+				splx(s);
 				break;
+			}
 		} else {
 			if (inp->inp_faddr.s_addr == INADDR_ANY) {
 				error = ENOTCONN;
@@ -322,6 +329,7 @@ udp_usrreq(so, req, m, nam, rights)
 		m = NULL;
 		if (nam) {
 			in_pcbdisconnect(inp);
+			splx(s);
 			inp->inp_laddr = laddr;
 		}
 		}
@@ -341,17 +349,6 @@ udp_usrreq(so, req, m, nam, rights)
 		in_setpeeraddr(inp, nam);
 		break;
 
-	case PRU_CONTROL:
-		m = NULL;
-		error = EOPNOTSUPP;
-		break;
-
-	case PRU_SENSE:
-		m = NULL;
-		/* fall thru... */
-
-	case PRU_RCVD:
-	case PRU_RCVOOB:
 	case PRU_SENDOOB:
 	case PRU_FASTTIMO:
 	case PRU_SLOWTIMO:
@@ -359,6 +356,12 @@ udp_usrreq(so, req, m, nam, rights)
 	case PRU_PROTOSEND:
 		error =  EOPNOTSUPP;
 		break;
+
+	case PRU_CONTROL:
+	case PRU_SENSE:
+	case PRU_RCVD:
+	case PRU_RCVOOB:
+		return (EOPNOTSUPP);	/* do not free mbuf's */
 
 	default:
 		panic("udp_usrreq");
