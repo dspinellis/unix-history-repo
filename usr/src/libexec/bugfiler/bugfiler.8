@@ -1,19 +1,9 @@
 .\" Copyright (c) 1983 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)bugfiler.8	6.9 (Berkeley) %G%
+.\"	@(#)bugfiler.8	6.10 (Berkeley) %G%
 .\"
 .TH BUGFILER 8 ""
 .UC 5
@@ -26,7 +16,7 @@ bugfiler \- file bug reports in folders automatically
 \fIBugfiler\fP is a program to automatically intercept, acknowledge,
 redistribute and store bug reports.  \fIBugfiler\fP is normally invoked
 by the mail delivery program with a line similar to the following in
-/usr/lib/aliases.
+/etc/aliases.
 .PP
 .DT
 	bugs:	"|bugfiler"
@@ -143,10 +133,10 @@ the log file
 ~bugs/folder/summary
 the summary files
 .TP 25
-/usr/lib/sendmail
+/usr/sbin/sendmail
 the mail delivery program
 .TP 25
-/usr/lib/bugformat
+/usr/share/misc/bugformat
 a sample bug report format
 .SH "SEE ALSO"
 sendbug(1), aliases(5), syslog(8)
