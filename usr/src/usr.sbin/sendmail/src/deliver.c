@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -765,8 +765,17 @@ openmailer(m, pvp, ctladdr, clever, e)
 		CurHostName = pvp[1];
 		curhost = hostsignature(m, pvp[1], e);
 
+		if (curhost == NULL || curhost[0] == '\0')
+		{
+			syserr("null signature");
+			return NULL;
+		}
+
 		if (!clever)
+		{
 			syserr("554 non-clever IPC");
+			return NULL;
+		}
 		if (pvp[2] != NULL)
 			port = atoi(pvp[2]);
 		else
