@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -299,7 +299,6 @@ longtname(k, ve)
 	char *ttname;
 
 	v = ve->var;
-
 	dev = KI_EPROC(k)->e_tdev;
 	if (dev == NODEV || (ttname = devname(dev, S_IFCHR)) == NULL)
 		(void)printf("%-*s", v->width, "??");
@@ -348,7 +347,6 @@ lstarted(k, ve)
 	char buf[100];
 
 	v = ve->var;
-
 	if (!k->ki_u.u_valid) {
 		(void)printf("%-*s", v->width, "-");
 		return;
@@ -445,10 +443,13 @@ cputime(k, ve)
 		secs = 0;
 		psecs = 0;
 	} else {
-		secs = KI_PROC(k)->p_utime.tv_sec +
-			KI_PROC(k)->p_stime.tv_sec;
-		psecs = KI_PROC(k)->p_utime.tv_usec +
-			KI_PROC(k)->p_stime.tv_usec;
+		/*
+		 * This counts time spent handling interrupts.  We could
+		 * fix this, but it is not 100% trivial (and interrupt
+		 * time fractions only work on the sparc anyway).	XXX
+		 */
+		secs = KI_PROC(k)->p_rtime.tv_sec;
+		psecs = KI_PROC(k)->p_rtime.tv_usec;
 		if (sumrusage) {
 			secs += k->ki_u.u_cru.ru_utime.tv_sec +
 				k->ki_u.u_cru.ru_stime.tv_sec;
