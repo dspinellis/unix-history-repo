@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -108,8 +108,12 @@ wrefresh(win)
 				    win->ch_off)
 					*win->lines[wy]->lastchp = win->ch_off;
 				if (*win->lines[wy]->lastchp < 
-				    *win->lines[wy]->firstchp)
+				    *win->lines[wy]->firstchp) {
+#ifdef DEBUG
+					__TRACE("wrefresh: line %d notdirty \n", wy);
+#endif
 					win->lines[wy]->flags &= ~__ISDIRTY;
+				}
 			}
 #ifdef DEBUG
 		__TRACE("\t%d\t%d\n", *win->lines[wy]->firstchp, 
@@ -411,14 +415,15 @@ quickch(win)
 	/* 
 	 * Find how many lines from the top of the screen are unchanged.
 	 */
-	for (top = 0; top < win->maxy; top++)
+	for (top = 0; top < win->maxy; top++) 
 		if (win->lines[top]->flags & __FORCEPAINT ||
 		    win->lines[top]->hash != curscr->lines[top]->hash 
 		    || memcmp(win->lines[top]->line, 
 		    curscr->lines[top]->line, 
 		    win->maxx * __LDATASIZE) != 0)
 			break;
-	
+		else
+			win->lines[top]->flags &= ~__ISDIRTY;
        /*
 	* Find how many lines from bottom of screen are unchanged. 
 	*/
@@ -429,6 +434,8 @@ quickch(win)
 		    curscr->lines[bot]->line, 
 		    win->maxx * __LDATASIZE) != 0)
 			break;
+		else
+			win->lines[bot]->flags &= ~__ISDIRTY;
 
 	/*
 	 * Search for the largest block of text not changed.
