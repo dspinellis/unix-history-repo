@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vd.c	7.10 (Berkeley) %G%
+ *	@(#)vd.c	7.11 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -29,7 +29,6 @@
 #include "buf.h"
 #include "cmap.h"
 #include "conf.h"
-#include "dir.h"
 #include "dkstat.h"
 #include "disklabel.h"
 #include "map.h"
@@ -38,7 +37,6 @@
 #include "user.h"
 #include "vmmac.h"
 #include "proc.h"
-#include "uio.h"
 #include "syslog.h"
 #include "kernel.h"
 #include "ioctl.h"
@@ -72,7 +70,7 @@ struct	vba_driver vddriver =
  */
 struct vdsoftc {
 	u_short	vd_flags;
-#define	VD_INIT		0x1	/* controller initialized */
+#define	VD_PRINT	0x1	/* controller info printed */
 #define	VD_STARTED	0x2	/* start command issued */
 #define	VD_DOSEEKS	0x4	/* should overlap seeks */
 #define	VD_SCATGATH	0x8	/* can do scatter-gather commands (correctly) */
@@ -80,6 +78,7 @@ struct vdsoftc {
 #define	VD_WAIT		0x20	/* someone needs direct controller access */
 	u_short	vd_type;	/* controller type */
 	u_short	vd_wticks;	/* timeout */
+	u_short	vd_secsize;	/* sector size for controller */
 	struct	mdcb vd_mdcb;	/* master command block */
 	u_long	vd_mdcbphys;	/* physical address of vd_mdcb */
 	struct	dcb vd_dcb;	/* i/o command block */
@@ -159,26 +158,30 @@ vdprobe(reg, vm)
 		vd->vd_flags |= VD_DOSEEKS;
 		vdaddr->vdrstclr = 0;
 		DELAY(3000000);
-		vdaddr->vdcsr = 0;
-		vdaddr->vdtcf_mdcb = AM_ENPDA;
-		vdaddr->vdtcf_dcb = AM_ENPDA;
-		vdaddr->vdtcf_trail = AM_ENPDA;
-		vdaddr->vdtcf_data = AM_ENPDA;
-		vdaddr->vdccf = CCF_SEN | CCF_DIU | CCF_STS |
-		    XMD_32BIT | BSZ_16WRD |
-		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 	}
 	vd->vd_mdcbphys = vtoph((struct proc *)0, (unsigned)&vd->vd_mdcb);
 	vd->vd_dcbphys = vtoph((struct proc *)0, (unsigned)&vd->vd_dcb);
 	vm->um_addr = reg;		/* XXX */
 	s = spl7();
-	if (!vdcmd(vm, VDOP_INIT, 10, 0) || !vdcmd(vm, VDOP_DIAG, 10, 0)) {
-		printf("vd%d: %s cmd failed\n", vm->um_ctlr,
-		    vd->vd_dcb.opcode == VDOP_INIT ? "init" : "diag");
+	if (vdinit_ctlr(vm, vd) == 0) {
 		splx(s);
 		return (0);
 	}
 	if (vd->vd_type == VDTYPE_SMDE) {
+#ifdef notdef
+		/*
+		 * Attempt PROBE to get all drive status;
+		 * we take advantage of this in vdreset_drive
+		 * to try to avoid guessing games.
+		 */
+		(void) vdcmd(vm, VDOP_PROBE, 5, 0);
+#endif
+		/*
+		 * Check for scatter-gather by checking firmware date
+		 * with IDENT command.  The date is printed when
+		 * vdslave is first called, thus this must be
+		 * the last controller operation in vdprobe.
+		 */
 		vd->vd_dcb.trail.idtrail.date = 0;
 		if (vdcmd(vm, VDOP_IDENT, 10, 0)) {
 			uncache(&vd->vd_dcb.trail.idtrail.date);
@@ -215,8 +218,9 @@ vdslave(vi, vdaddr)
 	register struct disklabel *lp = &dklabel[vi->ui_unit];
 	register struct dksoftc *dk = &dksoftc[vi->ui_unit];
 	struct vdsoftc *vd = &vdsoftc[vi->ui_ctlr];
+	int bcd();
 
-	if ((vd->vd_flags&VD_INIT) == 0) {
+	if ((vd->vd_flags&VD_PRINT) == 0) {
 		printf("vd%d: %s controller", vi->ui_ctlr,
 		    vd->vd_type == VDTYPE_VDDC ? "VDDC" : "SMDE");
 		if (vd->vd_flags & VD_SCATGATH) {
@@ -225,12 +229,12 @@ vdslave(vi, vdaddr)
 			bcopy((caddr_t)&vd->vd_dcb.trail.idtrail.rev, rev,
 			    sizeof(vd->vd_dcb.trail.idtrail.rev));
 			printf(" firmware rev %s (%d-%d-%d)", rev,
-			    (vd->vd_dcb.trail.idtrail.date >> 8) & 0xff,
-			    vd->vd_dcb.trail.idtrail.date & 0xff,
-			    (vd->vd_dcb.trail.idtrail.date >> 16) & 0xffff);
+			    bcd((vd->vd_dcb.trail.idtrail.date >> 8) & 0xff),
+			    bcd(vd->vd_dcb.trail.idtrail.date & 0xff),
+			    bcd((vd->vd_dcb.trail.idtrail.date >> 16)&0xffff));
 		}
 		printf("\n");
-		vd->vd_flags |= VD_INIT;
+		vd->vd_flags |= VD_PRINT;
 	}
 
 	/*
@@ -266,6 +270,21 @@ vdslave(vi, vdaddr)
 	vd_setsecsize(dk, lp);
 #endif
 	return (vdreset_drive(vi));
+}
+
+static int
+bcd(n)
+	register u_int n;
+{
+	register int bin = 0;
+	register int mul = 1;
+
+	while (n) {
+		bin += (n & 0xf) * mul;
+		n >>= 4;
+		mul *= 10;
+	}
+	return (bin);
 }
 
 vdattach(vi)
@@ -305,7 +324,7 @@ vdopen(dev, flags, fmt)
 	register struct dksoftc *dk;
 	register struct partition *pp;
 	struct vba_device *vi;
-	int s, error, part = vdpart(dev), mask = 1 << part;
+	int s, error = 0, part = vdpart(dev), mask = 1 << part;
 	daddr_t start, end;
 
 	if (unit >= NDK || (vi = vddinfo[unit]) == 0 || vi->ui_alive == 0)
@@ -316,8 +335,11 @@ vdopen(dev, flags, fmt)
 	s = spl7();
 	while (dk->dk_state != OPEN && dk->dk_state != OPENRAW &&
 	    dk->dk_state != CLOSED)
-		sleep((caddr_t)dk, PZERO+1);
+		if (error = tsleep((caddr_t)dk, (PZERO+1) | PCATCH, devopn, 0))
+			break;
 	splx(s);
+	if (error)
+		return (error);
 	if (dk->dk_state != OPEN && dk->dk_state != OPENRAW)
 		if (error = vdinit(dev, flags))
 			return (error);
@@ -501,8 +523,13 @@ vdstrategy(bp)
 		goto bad;
 	}
 	dk = &dksoftc[unit];
-	if (dk->dk_state < OPEN)
+	if (dk->dk_state < OPEN) {
+		if (dk->dk_state == CLOSED) {
+			bp->b_error = EIO;
+			goto bad;
+		}
 		goto q;
+	}
 	if (dk->dk_state != OPEN && (bp->b_flags & B_READ) == 0) {
 		bp->b_error = EROFS;
 		goto bad;
@@ -682,7 +709,7 @@ loop:
 
 	switch (vd->vd_dcb.opcode) {
 	case VDOP_FSECT:
-		vd->vd_dcb.trailcnt = sizeof (struct trrw) / sizeof (long);
+		vd->vd_dcb.trailcnt = sizeof (struct trfmt) / sizeof (long);
 		vd->vd_dcb.trail.fmtrail.nsectors = bp->b_bcount /
 		    lp->d_secsize;
 		vd->vd_dcb.trail.fmtrail.hdr = *(dskadr *)&dk->dk_althdr;
@@ -691,6 +718,7 @@ loop:
 
 	case VDOP_RDRAW:
 	case VDOP_RD:
+	case VDOP_RHDE:
 	case VDOP_WD:
 		vd->vd_dcb.trail.rwtrail.wcount = (bp->b_bcount+1) >> 1;
 setupaddr:
@@ -826,9 +854,12 @@ vdintr(ctlr)
 	if (bp->b_flags & B_FORMAT) {
 		dk->dk_operrsta = status;
 		uncache(&vd->vd_dcb.err_code);
-		dk->dk_ecode = vd->vd_dcb.err_code;
-	}
-	if (status & VDERR_HARD || timedout) {
+		/* ecodecnt gets err_code + err_wcnt from the same longword */
+		dk->dk_ecodecnt = *(long *)&vd->vd_dcb.err_code;
+		uncache(&vd->vd_dcb.err_trk);
+		/* erraddr gets error trk/sec/cyl from the same longword */
+		dk->dk_erraddr = *(long *)&vd->vd_dcb.err_trk;
+	} else if (status & VDERR_HARD || timedout) {
 		if (vd->vd_type == VDTYPE_SMDE)
 			uncache(&vd->vd_dcb.err_code);
 		if (status & DCBS_WPT) {
@@ -838,10 +869,9 @@ vdintr(ctlr)
 			printf("dk%d: write locked\n", vi->ui_unit);
 			bp->b_flags |= B_ERROR;
 		} else if (status & VDERR_RETRY || timedout) {
-			int endline = 1;
-
 			if (status & VDERR_CTLR || timedout) {
-				vdharderr("controller err",
+				vdharderr(timedout ?
+				    "controller timeout" : "controller err",
 				    vd, bp, &vd->vd_dcb);
 				printf("; resetting controller...");
 				vdreset_ctlr(vm);
@@ -849,30 +879,32 @@ vdintr(ctlr)
 				vdharderr("drive err", vd, bp, &vd->vd_dcb);
 				printf("; resetting drive...");
 				if (!vdreset_drive(vi))
-					vi->ui_alive = 0;
+					dk->dk_state = CLOSED;
 			} else
-				endline = 0;
+				vdharderr("data err", vd, bp, &vd->vd_dcb);
 			/*
 			 * Retry transfer once, unless reset failed.
 			 */
-			if (!vi->ui_alive || dp->b_errcnt++ >= 2 ||
-			    bp->b_flags & B_FORMAT) {
-				if (endline)
-					printf("\n");
+			if (!vi->ui_alive || dp->b_errcnt++ >= 1) {
+				printf("\n");
 				goto hard;
 			}
 
-			if (endline)
-				printf(" retrying\n");
+			printf(" retrying\n");
 			vm->um_tab.b_active = 0;	/* force retry */
 		} else  {
-	hard:
-			bp->b_flags |= B_ERROR;
 			vdharderr("hard error", vd, bp, &vd->vd_dcb);
 			printf("\n");
+	hard:
+			bp->b_flags |= B_ERROR;
 		}
 	} else if (status & DCBS_SOFT)
 		vdsofterr(bp, &vd->vd_dcb);
+if (vd->vd_wticks > 3) {
+vd->vd_dcb.err_code = vd->vd_wticks;
+vdharderr("slow transfer (ecode is sec.)", vd, bp, &vd->vd_dcb);
+printf("\n");
+}
 	vd->vd_wticks = 0;
 	if (vm->um_tab.b_active) {
 		vm->um_tab.b_active = 0;
@@ -1028,18 +1060,24 @@ vdioctl(dev, cmd, data, flag)
 		auio.uio_resid = fop->df_count;
 		auio.uio_segflg = UIO_USERSPACE;
 		auio.uio_offset = fop->df_startblk * lp->d_secsize;
-		dk->dk_operrsta = fop->dk_operrsta;
-		dk->dk_ecode = fop->dk_ecode;
+		/* This assumes one active format operation per disk... */
+		dk->dk_op = fop->dk_op;
+		dk->dk_althdr = fop->dk_althdr;
+		dk->dk_fmtflags = fop->dk_fmtflags;
 		/*
 		 * Don't return errors, as the format op won't get copied
 		 * out if we return nonzero.  Callers must check the returned
-		 * count.
+		 * registers and count.
 		 */
-		(void) physio(vdformat, (struct buf *)NULL, dev,
-		    (cmd == DIOCWFORMAT ? B_WRITE : B_READ), minphys, &auio);
+		error = physio(vdformat, (struct buf *)NULL, dev,
+		     B_WRITE, minphys, &auio);
+		if (error == EIO)
+			error = 0;
 		fop->df_count -= auio.uio_resid;
+		/* This assumes one active format operation per disk... */
 		fop->dk_operrsta = dk->dk_operrsta;
-		fop->dk_ecode = dk->dk_ecode;
+		fop->dk_ecodecnt = dk->dk_ecodecnt;
+		fop->dk_erraddr = dk->dk_erraddr;
 		break;
 	    }
 
@@ -1181,6 +1219,34 @@ vdsize(dev)
 }
 
 /*
+ * Initialize controller.
+ */
+vdinit_ctlr(vm, vd)
+	struct vba_ctlr *vm;
+	struct vdsoftc *vd;
+{
+	register struct vddevice *vdaddr = (struct vddevice *)vm->um_addr;
+
+	if (vd->vd_type == VDTYPE_SMDE) {
+		vdaddr->vdcsr = 0;
+		vdaddr->vdtcf_mdcb = AM_ENPDA;
+		vdaddr->vdtcf_dcb = AM_ENPDA;
+		vdaddr->vdtcf_trail = AM_ENPDA;
+		vdaddr->vdtcf_data = AM_ENPDA;
+		vdaddr->vdccf = CCF_SEN | CCF_DIU | CCF_STS | CCF_RFE |
+		    XMD_32BIT | BSZ_16WRD |
+		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
+	}
+	if (!vdcmd(vm, VDOP_INIT, 10, 0) || !vdcmd(vm, VDOP_DIAG, 10, 0)) {
+		printf("vd%d: %s cmd failed\n", vm->um_ctlr,
+		    vd->vd_dcb.opcode == VDOP_INIT ? "init" : "diag");
+		return (0);
+	}
+	vd->vd_secsize = vdaddr->vdsecsize << 1;
+	return (1);
+}
+
+/*
  * Perform a controller reset.
  */
 vdreset_ctlr(vm)
@@ -1192,20 +1258,8 @@ vdreset_ctlr(vm)
 	struct vba_device *vi;
 	
 	VDRESET(vdaddr, vd->vd_type);
-	if (vd->vd_type == VDTYPE_SMDE) {
-		vdaddr->vdcsr = 0;
-		vdaddr->vdtcf_mdcb = AM_ENPDA;
-		vdaddr->vdtcf_dcb = AM_ENPDA;
-		vdaddr->vdtcf_trail = AM_ENPDA;
-		vdaddr->vdtcf_data = AM_ENPDA;
-		vdaddr->vdccf = CCF_STS | XMD_32BIT | BSZ_16WRD |
-		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
-	}
-	if (!vdcmd(vm, VDOP_INIT, 10, 0) || !vdcmd(vm, VDOP_DIAG, 10, 0)) {
-		printf("%s cmd failed\n",
-		    vd->vd_dcb.opcode == VDOP_INIT ? "init" : "diag");
+	if (vdinit_ctlr(vm, vd) == 0)
 		return;
-	}
 	for (unit = 0; unit < NDK; unit++)
 		if ((vi = vddinfo[unit])->ui_mi == vm && vi->ui_alive)
 			(void) vdreset_drive(vi);
@@ -1219,7 +1273,20 @@ vdreset_drive(vi)
 	struct vddevice *vdaddr = (struct vddevice *)vm->um_addr;
 	register struct vdsoftc *vd = &vdsoftc[vi->ui_ctlr];
 	register struct dksoftc *dk = &dksoftc[vi->ui_unit];
+	int config_status, config_ecode, saw_drive = 0;
 
+#ifdef notdef
+	/*
+	 * check for ESDI distribution panel already configured,
+	 * e.g. on boot drive, or if PROBE on controller actually
+	 * worked.  Status will be zero if drive hasn't
+	 * been probed yet.
+	 */
+#if STA_ESDI != 0
+	if ((vdaddr->vdstatus[vi->ui_slave] & STA_TYPE) == STA_ESDI)
+		lp->d_devflags |= VD_ESDI;
+#endif
+#endif
 top:
 	vd->vd_dcb.opcode = VDOP_CONFIG;		/* command */
 	vd->vd_dcb.intflg = DCBINT_NONE;
@@ -1232,7 +1299,9 @@ top:
 		vd->vd_dcb.trailcnt = sizeof (struct treset) / sizeof (long);
 		vd->vd_dcb.trail.rstrail.nsectors = lp->d_nsectors;
 		vd->vd_dcb.trail.rstrail.slip_sec = lp->d_sparespertrack;
-		vd->vd_dcb.trail.rstrail.recovery = VDRF_NORMAL;
+		vd->vd_dcb.trail.rstrail.recovery =
+		    (lp->d_flags & D_REMOVABLE) ? VDRF_NORMAL :
+		    (VDRF_NORMAL &~ (VDRF_OSP|VDRF_OSM));
 	} else
 		vd->vd_dcb.trailcnt = 2;		/* XXX */
 	vd->vd_mdcb.mdcb_head = (struct dcb *)vd->vd_dcbphys;
@@ -1242,37 +1311,35 @@ top:
 		printf(" during config\n");
 		return (0);
 	}
-/*
-uncache(&vd->vd_dcb.err_code);
-printf("vdreset_drive %d, error %b, ecode %x, status %x => ",
-   vi->ui_unit, vd->vd_dcb.operrsta, VDERRBITS, vd->vd_dcb.err_code,
-   vdaddr->vdstatus[vi->ui_slave]);
-uncache(&vdaddr->vdstatus[vi->ui_slave]);
-printf("%x =>", vdaddr->vdstatus[vi->ui_slave]);
-{ int status = vd->vd_dcb.operrsta;
-vdcmd(vm, VDOP_STATUS, 5, vi->ui_slave);
-vd->vd_dcb.operrsta = status;
-}
-uncache(&vdaddr->vdstatus[vi->ui_slave]);
-printf("%x\n", vdaddr->vdstatus[vi->ui_slave]);
-*/
-	if (vd->vd_dcb.operrsta & VDERR_HARD) {
+	config_status = vd->vd_dcb.operrsta;
+	config_ecode = (u_char)vd->vd_dcb.err_code;
+	if (config_status & VDERR_HARD) {
 		if (vd->vd_type == VDTYPE_SMDE) {
-			if (lp->d_devflags == 0) {
+			/*
+			 * If drive status was updated successfully,
+			 * STA_US (unit selected) should be set
+			 * if the drive is attached and powered up.
+			 * (But only if we've guessed right on SMD
+			 * vs. ESDI; if that flag is wrong, we won't
+			 * see the drive.)  If we don't see STA_US
+			 * with either SMD or ESDI set for the unit,
+			 * we assume that the drive doesn't exist,
+			 * and don't wait for it to spin up.
+			 */
+			(void) vdcmd(vm, VDOP_STATUS, 5, vi->ui_slave);
+			uncache(&vdaddr->vdstatus[vi->ui_slave]);
+			if (vdaddr->vdstatus[vi->ui_slave] & STA_US)
+				saw_drive = 1;
+			else if (lp->d_devflags == 0) {
 				lp->d_devflags = VD_ESDI;
 				goto top;
 			}
-#ifdef notdef
-			/* this doesn't work, STA_US isn't set(?) */
-			if ((vdaddr->vdstatus[vi->ui_slave] & STA_US) == 0)
-				return (0);
-#endif
-		}
-		if ((vd->vd_dcb.operrsta & (DCBS_OCYL|DCBS_NRDY)) == 0)
+		} else
+			saw_drive = 1;
+		if ((config_status & (DCBS_OCYL|DCBS_NRDY)) == 0)
 			printf("dk%d: config error %b ecode %x\n", vi->ui_unit,
-			   vd->vd_dcb.operrsta, VDERRBITS,
-			   (u_char) vd->vd_dcb.err_code);
-		else if ((vd->vd_flags & VD_STARTED) == 0) {
+			   config_status, VDERRBITS, config_ecode);
+		else if ((vd->vd_flags & VD_STARTED) == 0 && saw_drive) {
 			int started;
 
 			printf(" starting drives, wait ... ");
