@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -85,6 +85,13 @@ parseaddr(addr, a, copyf, delim, e)
 	if (tTd(20, 1))
 		printf("\n--parseaddr(%s)\n", addr);
 
+	if (invalidaddr(addr))
+	{
+		if (tTd(20, 1))
+			printf("parseaddr-->bad address\n");
+		return NULL;
+	}
+
 	{
 		extern char *DelimChar;		/* parseaddr.c */
 		char savec;
@@ -154,6 +161,31 @@ parseaddr(addr, a, copyf, delim, e)
 	}
 
 	return (a);
+}
+/*
+**  INVALIDADDR -- check for address containing meta-characters
+**
+**	Parameters:
+**		addr -- the address to check.
+**
+**	Returns:
+**		TRUE -- if the address has any "wierd" characters
+**		FALSE -- otherwise.
+*/
+
+bool
+invalidaddr(addr)
+	register char *addr;
+{
+	for (; *addr != '\0'; addr++)
+	{
+		if (((int) *addr & 0377) >= '\040')
+			continue;
+		setstat(EX_USAGE);
+		usrerr("address contained invalid control characters");
+		return TRUE;
+	}
+	return FALSE;
 }
 /*
 **  ALLOCADDR -- do local allocations of address on demand.
