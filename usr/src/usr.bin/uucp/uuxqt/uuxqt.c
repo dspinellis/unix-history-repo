@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -35,6 +35,8 @@ extern int Nfiles;
 int TransferSucceeded = 1;
 int notiok = 1;
 int nonzero = 0;
+
+struct timeb Now;
 
 char PATH[MAXFULLNAME] = "PATH=/bin:/usr/bin:/usr/ucb";
 char Shell[MAXFULLNAME];
@@ -177,9 +179,13 @@ doprocess:
 	DEBUG(4, "process %s\n", CNULL);
 	time(&xstart);
 	while (gtxfile(xfile) > 0) {
-		ultouch();
 		/* if /etc/nologin exists, exit cleanly */
+#if defined(BSD4_2) || defined(USG)
+		if (access(NOLOGIN) == 0) {
+#else !BSD4_2 && ! USG
+		ultouch();
 		if (nologinflag) {
+#endif !BSD4_2 && !USG
 			logent(NOLOGIN, "UUXQT SHUTDOWN");
 			if (Debug)
 				logent("debugging", "continuing anyway");
@@ -681,7 +687,6 @@ char *cmd, *fi, *fo;
 		signal(SIGINT, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
-		signal(SIGKILL, SIG_IGN);
 		close(Ifn);
 		close(Ofn);
 		close(0);
