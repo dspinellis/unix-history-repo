@@ -1,0 +1,131 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)stdio.3	4.1 (Berkeley) %G%
+.\"
+.TH STDIO 3S 
+.UC 4
+.SH NAME
+stdio \- standard buffered input/output package
+.SH SYNOPSIS
+.B #include <stdio.h>
+.PP
+.SM
+.B FILE
+.B *stdin;
+.br
+.SM
+.B FILE
+.B *stdout;
+.br
+.SM
+.B FILE
+.B *stderr;
+.SH DESCRIPTION
+The functions described in Sections 3S constitute an efficient
+user-level buffering scheme.
+The in-line macros
+.I getc
+and
+.IR  putc (3)
+handle characters quickly.
+The higher level routines
+.I "gets, fgets, scanf, fscanf, fread,"
+.I "puts, fputs, printf, fprintf, fwrite"
+all use
+.I getc
+and
+.I putc;
+they can be freely intermixed.
+.PP
+A file with associated buffering is called a
+.I stream,
+and is declared to be a pointer to a defined type
+.SM
+.B FILE.
+.IR  Fopen (3)
+creates certain descriptive data for a stream
+and returns a pointer to designate the stream in all
+further transactions.
+There are three normally open streams with constant
+pointers declared in
+the include file and associated with the standard open files:
+.TP 10n
+.BR stdin
+standard input file
+.br
+.ns
+.TP
+.B stdout
+standard output file
+.br
+.ns
+.TP
+.BR stderr
+standard error file
+.PP
+A constant `pointer'
+.SM
+.B NULL
+(0)
+designates no stream at all.
+.PP
+An integer constant
+.SM
+.B EOF
+(\-1) is returned
+upon end of file or error by integer functions that
+deal with streams.
+.PP
+Any routine that uses the standard input/output package
+must include the header file <stdio.h> of pertinent
+macro definitions.
+The functions and constants mentioned in sections labeled 3S
+are declared in the include file
+and need no further declaration.
+The constants, and the following `functions' are
+implemented as macros; redeclaration of these names
+is perilous:
+.I getc,
+.I getchar,
+.I putc,
+.I putchar,
+.I feof,
+.I ferror,
+.IR fileno .
+.SH "SEE ALSO"
+open(2), close(2), read(2), write(2)
+.SH DIAGNOSTICS
+The value
+.SM
+.B EOF
+is returned uniformly to indicate that a
+.SM
+.B FILE
+pointer has not been initialized with
+.I fopen,
+input (output) has been attempted on an output (input) stream,
+or a
+.SM
+.B FILE
+pointer designates corrupt or otherwise unintelligible
+.SM
+.B FILE
+data.
+.PP
+For purposes of efficiency, this implementation of the standard library
+has been changed to line buffer output to a terminal by default and attempts
+to do this transparently by flushing the output whenever a 
+.IR read (2)
+from the standard input is necessary.  This is almost always transparent,
+but may cause confusion or malfunctioning of programs which use
+standard i/o routines but use
+.IR read (2)
+themselves to read from the standard input.
+.PP
+In cases where a large amount of computation is done after printing
+part of a line on an output terminal, it is necessary to
+.IR fflush (3)
+the standard output before going off and computing so that the output
+will appear.
