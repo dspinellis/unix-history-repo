@@ -1,16 +1,26 @@
-#	@(#)Makefile	4.6	(Berkeley)	%G%
+#	@(#)Makefile	4.7	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	lib usr.lib bin usr.bin etc ucb new games local
+LIBDIR= lib usr.lib
+SRCDIR=	bin usr.bin etc ucb new games local
 
-all:	${SUBDIR}
+all:	${LIBDIR} ${SRCDIR}
 
-${SUBDIR}: FRC
+${LIBDIR} ${SRCDIR}: FRC
 	cd $@; make ${MFLAGS}
+
+build: FRC
+	cd lib; make ${MFLAGS}
+	echo installing /lib
+	cd lib; make ${MFLAGS} install
+	cd usr.lib; make ${MFLAGS}
+	echo installing /usr/lib
+	cd usr.lib; make ${MFLAGS} install
+	-for i in ${SRCDIR}; do (cd $$i; make ${MFLAGS}); done
 
 FRC:
 
