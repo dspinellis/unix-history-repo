@@ -1,4 +1,4 @@
-#	@(#)makefile	4.2 (Berkeley) %G%
+#	@(#)makefile	8.1 (Berkeley) %G%
 
 # msdos versus unix defines
 O	= .o
