@@ -236,7 +236,7 @@ umapfs_unmount(mp, mntflags, p)
 	/*
 	 * And blow it away for future re-use
 	 */
-	vgone(umapm_rootvp);
+	VOP_REVOKE(umapm_rootvp, 0);
 	/*
 	 * Finally, throw away the umap_mount structure
 	 */

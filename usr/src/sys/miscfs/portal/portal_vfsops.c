@@ -160,7 +160,7 @@ portal_unmount(mp, mntflags, p)
 	/*
 	 * And blow it away for future re-use
 	 */
-	vgone(rootvp);
+	VOP_REVOKE(rootvp, 0);
 	/*
 	 * Shutdown the socket.  This will cause the select in the
 	 * daemon to wake up, and then the accept will get ECONNABORTED
