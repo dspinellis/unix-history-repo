@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)screen.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)screen.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -64,6 +64,7 @@ static char
 int auto_wrap;			/* Terminal does \r\n when write past margin */
 int ignaw;			/* Terminal ignores \n immediately after wrap */
 				/* The user's erase and line-kill chars */
+int retain_below;		/* Terminal retains text below the screen */
 int erase_char, kill_char, werase_char;
 int sc_width, sc_height = -1;	/* Height & width of screen */
 int sc_window = -1;		/* window size for forward and backward */
@@ -235,6 +236,7 @@ get_term()
 
 	auto_wrap = tgetflag("am");
 	ignaw = tgetflag("xn");
+	retain_below = tgetflag("db");
 
 	/*
 	 * Assumes termcap variable "sg" is the printing width of
