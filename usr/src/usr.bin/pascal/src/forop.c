@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.10 %G%";
+static char sccsid[] = "@(#)forop.c 1.11 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -242,9 +242,11 @@ nogood:
 	     *	replace them with the initial expression's offset,
 	     *	and mark it as being a for variable.
 	     */
+	shadow_nl.nl_flags = forvar -> nl_flags;
 	*forvar = *initnlp;
 	forvar -> symbol = shadow_nl.symbol;
 	forvar -> nl_next = shadow_nl.nl_next;
+	forvar -> type = shadow_nl.type;
 	forvar -> value[ NL_FORV ] = FORVAR;
 	    /*
 	     * and don't forget ...
@@ -337,6 +339,7 @@ nogood:
 byebye:
 	noreach = 0;
 	if (forvar != NIL) {
+	    shadow_nl.nl_flags |= forvar -> nl_flags & (NUSED|NMOD);
 	    *forvar = shadow_nl;
 	}
 	if ( goc != gocnt ) {
