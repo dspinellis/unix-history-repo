@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.93 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.94 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -551,7 +551,6 @@ ufs_link(ap)
 			vrele(vp);
 		else
 			vput(vp);
-		vrele(tdvp);
 		return (EXDEV);
 	}
 
