@@ -1,0 +1,46 @@
+.ce 3
+OSI BUDGET
+July 1, 1990 to June 30, 1991
+Revision of 
+.sp 2
+.TS
+center,expand;
+l n.
+A. SALARIES AND WAGES	
+     1. Technical (Programmer IV @ 80%)	$ 48,000
+     2. Administrative Services	$ 4,000
+
+     TOTAL SALARIES AND WAGES	$ 52,000
+
+
+B. EMPLOYEE BENEFITS	
+     Benefits (30% of salaries and wages)	$ 15,600
+
+     TOTAL SALARIES AND EMPLOYEE BENEFITS	$ 67,600
+
+
+C. SUPPLIES AND EXPENSES	
+     (ACCUNET for OSINET connection)	$ 12,000\(dg
+     Documentation	$ 1,000
+
+     TOTAL SUPPLIES AND EXPENSES	$ 13,000
+
+
+D. TRAVEL	
+     4 POSIX conferences @ $1400/trip	$ 5,600
+     3 IETF OSI transition conferences @ $1400/trip	$ 4,200
+
+     TOTAL TRAVEL	$ 9,800
+
+
+E. TOTAL DIRECT COSTS	$ 90,400
+
+
+F. INDIRECT COSTS (49% of Total Budget)	$ 86,855
+
+
+G. TOTAL COST OF PROJECT	$ 177,255
+.TE
+.sp
+\(dg \- If this were paid directly by NIST, the university overhead
+could be avoided thus reducing the cost of the budget to $ 153,725
