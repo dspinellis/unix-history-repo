@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)rlogind.c	4.21 (Berkeley) %G%";
+static	char sccsid[] = "@(#)rlogind.c	4.22 (Berkeley) %G%";
 #endif
 
 /*
@@ -24,6 +24,7 @@ static	char sccsid[] = "@(#)rlogind.c	4.21 (Berkeley) %G%";
 #include <sgtty.h>
 #include <stdio.h>
 #include <netdb.h>
+#include <syslog.h>
 
 extern	errno;
 int	reapchild();
@@ -44,8 +45,8 @@ main(argc, argv)
 		_exit(1);
 	}
 	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("setsockopt (SO_KEEPALIVE)");
+		openlog(argv[0], LOG_PID, 0);
+		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	}
 	doit(0, &from);
 }

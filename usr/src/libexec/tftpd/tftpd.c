@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)tftpd.c	4.13 (Berkeley) %G%";
+static	char sccsid[] = "@(#)tftpd.c	4.14 (Berkeley) %G%";
 #endif
 
 /*
@@ -21,6 +21,7 @@ static	char sccsid[] = "@(#)tftpd.c	4.13 (Berkeley) %G%";
 #include <ctype.h>
 #include <netdb.h>
 #include <setjmp.h>
+#include <syslog.h>
 
 #define	TIMEOUT		5
 
@@ -52,15 +53,18 @@ main()
 	close(1);
 	peer = socket(AF_INET, SOCK_DGRAM, 0);
 	if (peer < 0) {
-		perror("tftpd: socket");
+		openlog("tftpd", LOG_PID, 0);
+		syslog(LOG_ERR, "socket: %m");
 		exit(1);
 	}
 	if (bind(peer, (caddr_t)&sin, sizeof (sin)) < 0) {
-		perror("tftpd: bind");
+		openlog("tftpd", LOG_PID, 0);
+		syslog(LOG_ERR, "bind: %m");
 		exit(1);
 	}
 	if (connect(peer, (caddr_t)&from, sizeof(from)) < 0) {
-		perror("tftpd: connect");
+		openlog("tftpd", LOG_PID, 0);
+		syslog(LOG_ERR, "connect: %m");
 		exit(1);
 	}
 	tp = (struct tftphdr *)buf;
