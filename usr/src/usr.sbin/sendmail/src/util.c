@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -475,7 +475,20 @@ dfopen(filename, mode)
 		if (errno != ENFILE && errno != EINTR)
 			break;
 	}
-	errno = 0;
+	if (fp != NULL)
+	{
+#ifdef FLOCK
+		int locktype;
+
+		/* lock the file to avoid accidental conflicts */
+		if (*mode == 'w' || *mode == 'a')
+			locktype = LOCK_EX;
+		else
+			locktype = LOCK_SH;
+		(void) flock(fileno(fp), locktype);
+#endif
+		errno = 0;
+	}
 	return (fp);
 }
 /*

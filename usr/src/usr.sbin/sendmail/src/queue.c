@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.47 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.48 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.47 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.48 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1251,5 +1251,6 @@ setctluser(user)
 	}
 
 	a->q_flags |= QGOODUID;		/* flag as a "ctladdr"  */
+	a->q_mailer = LocalMailer;
 	return a;
 }

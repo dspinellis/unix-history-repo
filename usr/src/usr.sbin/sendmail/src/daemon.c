@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.48 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.49 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.48 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.49 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -122,7 +122,7 @@ getrequests()
 	}
 
 	/* turn on network debugging? */
-	if (tTd(15, 15))
+	if (tTd(15, 101))
 		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
 
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
@@ -288,7 +288,7 @@ again:
 		printf("makeconnection: fd=%d\n", s);
 
 	/* turn on network debugging? */
-	if (tTd(16, 14))
+	if (tTd(16, 101))
 	{
 		int on = 1;
 		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
