@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -332,13 +332,13 @@ main(argc, argv)
 		envnew[i] = environ[i];
 	environ = envnew;
 
-	setenv("HOME=", pwd->pw_dir);
-	setenv("SHELL=", pwd->pw_shell);
+	setenv("HOME=", pwd->pw_dir, 1);
+	setenv("SHELL=", pwd->pw_shell, 1);
 	if (term[0] == '\0')
 		strncpy(term, stypeof(tty), sizeof(term));
-	setenv("TERM=", term);
-	setenv("USER=", pwd->pw_name);
-	setenv("PATH=", ":/usr/ucb:/bin:/usr/bin");
+	setenv("TERM=", term, 0);
+	setenv("USER=", pwd->pw_name, 1);
+	setenv("PATH=", ":/usr/ucb:/bin:/usr/bin", 0);
 
 	if ((namep = rindex(pwd->pw_shell, '/')) == NULL)
 		namep = pwd->pw_shell;
@@ -551,7 +551,7 @@ done:
  * This procedure assumes the memory for the first level of environ
  * was allocated using malloc.
  */
-setenv(var, value)
+setenv(var, value, clobber)
 	char *var, *value;
 {
 	extern char **environ;
@@ -562,6 +562,8 @@ setenv(var, value)
 	for (index = 0; environ[index] != NULL; index++) {
 		if (strncmp(environ[index], var, varlen) == 0) {
 			/* found it */
+			if (!clobber)
+				return;
 			environ[index] = malloc(varlen + vallen + 1);
 			strcpy(environ[index], var);
 			strcat(environ[index], value);
