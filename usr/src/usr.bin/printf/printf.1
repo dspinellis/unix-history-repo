@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)printf.1	5.3 (Berkeley) %G%
+.\"	@(#)printf.1	5.4 (Berkeley) %G%
 .\"
 .TH PRINTF 1 "
 .AT 1
@@ -235,3 +235,8 @@ exit value is the number of characters printed.  If an error occurs,
 printf exits with a -1.
 .SH "SEE ALSO"
 printf(3)
+.SH BUGS
+Since the number is translated from ASCII to floating-point, and
+then back again, floating-point precision may be lost.
+.PP
+ANSI hexadecimal character constants were deliberately not provided.
