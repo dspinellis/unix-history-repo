@@ -1,4 +1,4 @@
-/*	uba.c	4.32	81/06/08	*/
+/*	uba.c	4.33	81/06/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -120,8 +120,10 @@ ubasetup(uban, bp, flags)
 	npf = btoc(bp->b_bcount + o) + 1;
 	a = spl6();
 	while ((reg = rmalloc(uh->uh_map, npf)) == 0) {
-		if (flags & UBA_CANTWAIT)
+		if (flags & UBA_CANTWAIT) {
+			splx(a);
 			return (0);
+		}
 		uh->uh_mrwant++;
 		sleep((caddr_t)uh->uh_map, PSWP);
 	}
@@ -130,6 +132,7 @@ ubasetup(uban, bp, flags)
 		while ((bdp = ffs(uh->uh_bdpfree)) == 0) {
 			if (flags & UBA_CANTWAIT) {
 				rmfree(uh->uh_map, npf, reg);
+				splx(a);
 				return (0);
 			}
 			uh->uh_bdpwant++;
