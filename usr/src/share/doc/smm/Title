@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Title	8.3 (Berkeley) %G%
+.\"	@(#)Title	8.4 (Berkeley) %G%
 .\"
 .af % i
 .nr LL 6.5i
@@ -223,6 +223,8 @@ with high quality.
 .sp 1
 ISBN: 1-56592-080-5
 .bp
+.OH '\s10Contents''- % -\s0'
+.EH '\s10- % -''Contents\s0'
 \&
 .sp |1.5i
 .nr PS 24
