@@ -1,12 +1,24 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mille.c	5.1 (Berkeley) %G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1982 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)mille.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 # include	"mille.h"
 # include	<signal.h>
@@ -20,14 +32,14 @@ static char sccsid[] = "@(#)mille.c	5.1 (Berkeley) %G%";
 
 int	rub();
 
-char	_sobuf[BUFSIZ];
-
 main(ac, av)
 reg int		ac;
 reg char	*av[]; {
 
 	reg bool	restore;
-	double		avs[3];
+
+	/* run as the user */
+	setuid(getuid());
 
 	if (strcmp(av[0], "a.out") == 0) {
 		outf = fopen("q", "w");
@@ -35,16 +47,6 @@ reg char	*av[]; {
 		Debug = TRUE;
 	}
 	restore = FALSE;
-# ifdef LOADAV
-	if (geteuid() != ARNOLD) {
-		loadav(avs);
-		if (avs[2] > 9.0) {
-			printf("Sorry.  The load average is too high.\n");
-			printf("Please try again later\n");
-			exit(1);
-		}
-	}
-# endif
 	switch (ac) {
 	  case 2:
 		rest_f(av[1]);
@@ -56,7 +58,6 @@ reg char	*av[]; {
 		exit(-1);
 		/* NOTREACHED */
 	}
-	setbuf(stdout, _sobuf);
 	Play = PLAYER;
 	initscr();
 # ifdef attron
@@ -126,10 +127,10 @@ reg char	*av[]; {
  */
 rub() {
 
-	signal(SIGINT, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
 	if (getyn(REALLYPROMPT))
 		die();
-	signal(SIGINT, rub);
+	(void)signal(SIGINT, rub);
 }
 
 /*
@@ -137,7 +138,7 @@ rub() {
  */
 die() {
 
-	signal(SIGINT, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
 	if (outf)
 		fflush(outf);
 	mvcur(0, COLS - 1, LINES - 1, 0);
