@@ -1,0 +1,56 @@
+#!/bin/sh
+# : makedir.SH,v 24920Revision: 4.0.1.1 24920Date: 92/06/08 14:24:55 $
+# 
+# $Log:	makedir.SH,v $
+# Revision 4.0.1.1  92/06/08  14:24:55  lwall
+# patch20: SH files didn't work well with symbolic links
+# 
+# Revision 4.0  91/03/20  01:27:13  lwall
+# 4.0 baseline.
+# 
+# 
+
+export PATH || (echo "OOPS, this isn't sh.  Desperation time.  I will feed myself to sh."; sh $0; kill $$)
+
+case $# in
+  0)
+    /bin/echo "makedir pathname filenameflag"
+    exit 1
+    ;;
+esac
+
+: guarantee one slash before 1st component
+case $1 in
+  /*) ;;
+  *)  set ./$1 $2 ;;
+esac
+
+: strip last component if it is to be a filename
+case X$2 in
+  X1) set `/bin/echo $1 | /usr/bin/sed 's:\(.*\)/[^/]*$:\1:'` ;;
+  *)  set $1 ;;
+esac
+
+: return reasonable status if nothing to be created
+if test -d "$1" ; then
+    exit 0
+fi
+
+list=''
+while true ; do
+    case $1 in
+    */*)
+	list="$1 $list"
+	set `echo $1 | /usr/bin/sed 's:\(.*\)/:\1 :'`
+	;;
+    *)
+	break
+	;;
+    esac
+done
+
+set $list
+
+for dir do
+    /bin/mkdir $dir >/dev/null 2>&1
+done
