@@ -1,3 +1,242 @@
+			SENDMAIL RELEASE NOTES
+	     @(#)RELEASE_NOTES	8.6.6.1 (Berkeley) %G%
+
+This listing shows the version of the sendmail binary, the version
+of the sendmail configuration files, the date of release, and a
+summary of the changes in that release.
+
+8.6.6/8.6.6	94/03/13
+	SECURITY: the ability to give files away on System V-based
+		systems proved dangerous -- don't run as the owner
+		of a :include: file on a system that allows giveaways.
+		Unfortunately, this also applies to determining a
+		valid shell.
+	IMPORTANT: Previous versions weren't expiring old connections
+		in the connection cache for a long time under some
+		circumstances.  This could result in resource exhaustion,
+		both at your end and at the other end.  This checks the
+		connections for timeouts much more frequently.  From
+		Doug Anderson of NCSC.
+	Fix a glitch that snuck in that caused programs to be run as
+		the sender instead of the recipient if the mail was
+		from a local user to another local user.  From
+		Motonori Nakamura of Kyoto University.
+	Fix "wildcard" on /etc/shell matching -- instead of looking
+		for "*", look for "/SENDMAIL/ANY/SHELL/".  From
+		Bryan Costales of ICSI.
+	Change the method used to declare the "statfs" availability;
+		instead of HASSTATFS and/or HASUSTAT with a ton of
+		tweaking in conf.c, there is a single #define called
+		SFS_TYPE which takes on one of six values (SFS_NONE
+		for no statfs availability, SFS_USTAT for the ustat(2)
+		syscall, SFS_4ARGS for a four argument statfs(2) call,
+		and SFS_VFS, SFS_MOUNT, or SFS_STATFS for a two argument
+		statfs(2) call with the declarations in <sys/vfs.h>,
+		<sys/mount.h>, or <sys/statfs.h> respectively).
+	Fix glitch in NetInfo support that could return garbage if
+		there was no "/locations/sendmail" property.  From
+		David Meyer of the University of Virginia.
+	Change HASFLOCK from defined/not-defined to a 0/1 definition
+		to allow Linux to turn it off even though it is a
+		BSD-like system.
+	Allow setting of "ident" timeout to zero to turn off the ident
+		protocol entirely.
+	Make 7-bit stripping local to a connection (instead of to a
+		mailer); this allows you to specify that SMTP is a
+		7-bit channel, but revert to 8-bit should it advertise
+		that it supports 8BITMIME.  You still have to specify
+		mailer flag 7 to get this stripping at all.
+	Improve makesendmail script so it handles more cases automatically.
+	Tighten up restrictions on taking ownership of :include: files
+		to avoid problems on systems that allow you to give away
+		files.
+	Fix a problem that made it impossible to rebuild the alias
+		file if it was on a read-only file system.  From
+		Harry Edmon of the University of Washington.
+	Improve MX randomization function.  From John Gardiner Myers
+		of CMU.
+	Fix a minor glitch causing a bogus message to be printed (used
+		%s instead of %d in a printf string for the line number)
+		when a bad queue file was read.  From Harry Edmon.
+	Allow $s to remain NULL on locally generated mail.  I'm not
+		sure this is necessary, but a lot of people have complained
+		about it, and there is a legitimate question as to whether
+		"localhost" is legal as an 822-style domain.
+	Fix a problem with very short line lengths (mailer L= flag) in
+		headers.  This causes a leading space to be added onto
+		continuation lines (including in the body!), and also
+		tries to wrap headers containing addresses (From:, To:,
+		etc) intelligently at the shorter line lengths.  Problem
+		Reported by Lars-Johan Liman of SUNET Operations Center.
+	Log the real user name when logging syserrs, since these can have
+		security implications.  Suggested by several people.
+	Fix address logging of cached connections -- it used to always
+		log the numeric address as zero.  This is a somewhat
+		bogus implementation in that it does an extra system
+		call, but it should be an inexpensive one.  Fix from
+		Motonori Nakamura.
+	Tighten up handling of short syslog buffers even more -- there
+		were cases where the outgoing relay= name was too long
+		to share a line with delay= and mailer= logging.
+	Limit the overhead on split envelopes to one open file descriptor
+		per envelope -- previously the overhead was three
+		descriptors.  This was in response to a problem reported
+		by P{r (Pell) Emanuelsson.
+	Fixes to better handle the case of unexpected connection closes;
+		this redirects the output to the transcript so the info
+		is not lost.  From Eric Wassenaar.
+	Fix potential string overrun if you macro evaluate a string that
+		has a naked $ at the end.  Problem noted by James Matheson
+		<jmrm@eng.cam.ac.uk>.
+	Make default error number on $#error messages 553 (``Requested
+		action not taken: mailbox name not allowed'') instead of
+		501 (``Syntax error in parameters or arguments'') to
+		avoid bogus "protocol error" messages.
+	Strip off any existing trailing dot on names during $[ ... $]
+		lookup.  This prevents it from ending up with two dots
+		on the end of dot terminated names.  From Wesley Craig
+		of the University of Michigan and Bryan Costales of ICSI.
+	Clean up file class reading so that the debugging information is
+		more informative.  It hadn't been using setclass, so you
+		didn't see the class items being added.
+	Avoid core dump if you are running a version of sendmail where
+		NIS is compiled in, and you specify an NIS map, but
+		NIS is not running.  Fix from John Oleynick of
+		Rutgers.
+	Diagnose bizarre case where res_search returns a failure value,
+		but sets h_errno to a success value.
+	Make sure that "too many hops" messages are considered important
+		enough to send an error to the Postmaster (that is, the
+		address specified in the P option).  This fix should
+		help problems that cause the df file to be left around
+		sometimes -- unfortunately, I can't seem to reproduce
+		the problem myself.
+	Avoid core dump (null pointer reference) on EXPN command; this
+		only occurred if your log level was set to 10 or higher
+		and the target account was an alias or had a .forward file.
+		Problem noted by Janne Himanka.
+	Avoid "denial of service" attacks by someone who is flooding your
+		SMTP port with bad commands by shutting the connection
+		after 25 bad commands are issued.  From Kyle Jones of
+		UUNET.
+	Fix core dump on error messages with very long "to" buffers;
+		fmtmsg overflows the message buffer.  Fixed by trimming
+		the to address to 203 characters.  Problem reported by
+		John Oleynick.
+	Fix configuration for HASFLOCK -- there were some spots where
+		a #ifndef was incorrectly #ifdef.  Pointed out by
+		George Baltz of the University of Maryland.
+	Fix a typo in savemail() that could cause the error message To:
+		lists to be incorrect in some places.  From Motonori
+		Nakamura.
+	Fix a glitch that can cause duplicate error messages on split
+		envelopes where an address on one of the lists has a
+		name server failure.  Fix from Voradesh Yenbut of the
+		University of Washington.
+	Fix possible bogus pointer reference on ESMTP parameters that
+		don't have an ``=value'' part.
+	CNAME loops caused an error message to be generated, but also
+		re-queued the message.  Changed to just re-queue the
+		message (it's really hard to just bounce it because
+		of the wierd way the name server works in the presence
+		of CNAME loops).  Problem noted by James M.R.Matheson
+		of Cambridge University.
+	Avoid giving ``warning: foo owned process doing -bs'' messages
+		if they use ``MAIL FROM:<foo>'' where foo is their true
+		user name.  Suggested by Andreas Stolcke of ICSI.
+	Change the NAMED_BIND compile flag to be a 0/1 flag so you can
+		override it easily in the Makefile -- that is, you can
+		turn it off using -DNAMED_BIND=0.
+	If a gethostbyname(...) of an address with a trailing dot fails,
+		try it without the trailing dot.  This is because if
+		you have a version of gethostbyname() that falls back
+		to NIS or the /etc/hosts file it will fail to find
+		perfectly reasonable names that just don't happen to
+		be dot terminated in the hosts file.  You don't want to
+		strip the dot first though because we're trying to ensure
+		that country names that match one of your subdomains get
+		a chance.
+	PRALIASES: fix bogus output on non-null-terminated strings.
+		From Bill Gianopoulos of Raytheon.
+	CONFIG: Avoid rewriting anything that matches $w to be $j.
+		This was in code intended to only catch the self-literal
+		address (that is, [1.2.3.4], where 1.2.3.4 is your
+		IP address), but the code was broken.  However, it will
+		still do this if $M is defined; this is necessary to
+		get client configurations to work (sigh).  Note that this
+		means that $M overrides :mailname entries in the user
+		database!  Problem noted by Paul Southworth.
+	CONFIG: Fix definition of Solaris help file location.  From
+		Steve Cliffe <steve@gorgon.cs.uow.edu.au>.
+	CONFIG: Fix bug that broke news.group.USENET mappings.
+	CONFIG: Allow declaration of SMTP_MAILER_MAX, FAX_MAILER_MAX,
+		and USENET_MAILER_MAX to tweak the maximum message
+		size for various mailers.
+	CONFIG: Change definition of USENET_MAILER_ARGS to include argv[0]
+		instead of assuming that it is "inews" for consistency
+		with other mailers.  From Michael Corrigan of UC San Diego.
+	CONFIG: When mail is forwarded to a LOCAL_RELAY or a MAIL_HUB,
+		qualify the address in the SMTP envelope as user@{relay|hub}
+		instead of user@$j.  From Bill Wisner of The Well.
+	CONFIG: Fix route-addr syntax in nullrelay configuration set.
+	CONFIG: Don't turn off case mapping of user names in the local
+		mailer for IRIX.  This was different than most every other
+		system.
+	CONFIG: Avoid infinite loops on certainly list:; syntaxes in
+		envelope.  Noted by Thierry Besancon
+		<besancon@excalibur.ens.fr>.
+	CONFIG: Don't include -z by default on uux line -- most systems
+		don't want it set by default.  Pointed out by Philippe
+		Michel of Thomson CSF.
+	CONFIG: Fix some bugs with mailertables -- for example, if your
+		host name was foo.bar.ray.com and you matched against
+		".ray.com", the old implementation bound %1 to "bar"
+		instead of "foo.bar".  Also, allow "." in the mailertable
+		to match anything -- essentially, take over SMART_HOST.
+		This also moves matching of explicit local host names
+		before the mailertable so they don't have to be special
+		cased in the mailertable data.  Reported by Bill
+		Gianopoulos of Raytheon; the fix for the %1 binding
+		problem was contributed by Nicholas Comanos of the
+		University of Sydney.
+	CONFIG: Don't include "root" in class $=L (users to deliver
+		locally, even if a hub or relay exists) by default.
+		This is because of the known bug where definition of
+		both a LOCAL_RELAY and a MAIL_HUB causes $=L to ignore
+		both and deliver into the local mailbox.
+	CONFIG: Move up bitdomain and uudomain handling so that they
+		are done before .UUCP class matching; uudomain was
+		reported as ineffective before.  This also frees up
+		diversion 8 for future use.  Problem reported by Kimmo
+		Suominen.
+	CONFIG: Don't try to convert dotted IP address (e.g., [1.2.3.4])
+		into host names.  As pointed out by Jonathan Kamens,
+		these are often used because either the forward or reverse
+		mapping is broken; this translation makes it broken again.
+	DOC: Clarify $@ and $: in the Install & Op Guide.  From Kimmo
+		Suominen.
+	Portability fixes:
+		Unicos from David L. Kensiski of Sterling Sofware.
+		DomainOS from Don Lewis of Silicon Systems.
+		GNU m4 1.0.3 from Karst Koymans of Utrecht University.
+		Convex from Kimmo Suominen <kim@tac.nyc.ny.us>.
+		NetBSD from Adam Glass <glass@sun-lamp.cs.berkeley.edu>.
+		BSD/386 from Tony Sanders of BSDI.
+		Apollo from Eric Wassenaar.
+		DGUX from Doug Anderson.
+		Sequent DYNIX/ptx 2.0 from Tim Wright of Sequent.
+	NEW FILES:
+		src/Makefile.DomainOS
+		src/Makefile.PTX
+		src/Makefile.SunOS.5.1
+		src/Makefile.SunOS.5.2
+		src/Makefile.SunOS.5.x
+		src/mailq.1
+		cf/ostype/domainos.m4
+		doc/op/Makefile
+		doc/intro/Makefile
+		doc/usenix/Makefile
+
 8.6.5/8.6.5	94/01/13
 	Security fix:  /.forward could be owned by anyone (the test
 		to allow root to own any file was backwards).  From
