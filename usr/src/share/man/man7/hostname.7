@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)hostname.7	6.2 (Berkeley) %G%
+.\"	@(#)hostname.7	6.3 (Berkeley) %G%
 .\"
 .TH HOSTNAME 7 ""
 .UC 5
@@ -22,7 +22,7 @@ hostname \- host name resolution description
 .SH DESCRIPTION
 Hostnames are domains, where a domain is a hierarchical, dot-separated
 list of subdomains; for example, the machine monet, in the Berkeley
-subdomain of the EDU subdomain of the ARPANET would be represented as
+subdomain of the EDU subdomain of the Internet would be represented as
 .br
 		monet.Berkeley.EDU
 .br
@@ -50,12 +50,17 @@ If the input name ends with a trailing dot,
 the trailing dot is removed,
 and the remaining name is looked up with no further processing.
 .PP
-If the input name does not end with a trailing dot, it is looked up in
-the local domain and its parent domains until either a match is found
-or fewer than 2 components of the local domain remain.  For example,
+If the input name does not end with a trailing dot, it is looked up
+by searching through a list of domains until a match is found.
+The default search list includes first the local domain,
+then its parent domains with at least 2 name components (longest first).
+For example,
 in the domain CS.Berkeley.EDU, the name lithium.CChem will be checked first
 as lithium.CChem.CS.Berkeley.EDU and then as lithium.CChem.Berkeley.EDU.
 Lithium.CChem.EDU will not be tried, as the there is only one component
 remaining from the local domain.
+The search path can be changed from the default
+by a system-wide configuration file (see
+.IR resolver (5)).
 .SH SEE ALSO
-gethostbyname(3), resolver(5), mailaddr(7), named(8), RFC883
+gethostbyname(3), resolver(5), mailaddr(7), named(8)
