@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.24.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -61,6 +61,7 @@ main(argc, argv)
 	extern int optind;
 	struct passwd *pw;
 	struct servent *sp;
+	struct hostent *hp;
 	long omask;
 	int argoff, asrsh, ch, dflag, nflag, one, pid, rem, uid;
 	register char *p;
@@ -176,6 +177,13 @@ main(argc, argv)
 #ifdef KERBEROS
 try_connect:
 	if (use_kerberos) {
+		/* fully qualify hostname (needed for krb_realmofhost) */
+		hp = gethostbyname(host);
+		if (hp != NULL && !(host = strdup(hp->h_name))) {
+			(void)fprintf(stderr, "rsh: %s.\n", strerror(ENOMEM));
+			exit(1);
+		}
+
 		rem = KSUCCESS;
 		errno = 0;
 		if (dest_realm == NULL)

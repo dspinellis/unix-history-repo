@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -98,6 +98,7 @@ main(argc, argv)
 	extern int optind;
 	struct passwd *pw;
 	struct servent *sp;
+	struct hostent *hp;
 	struct sgttyb ttyb;
 	long omask;
 	int argoff, ch, dflag, one, uid;
@@ -216,6 +217,13 @@ main(argc, argv)
 #ifdef KERBEROS
 try_connect:
 	if (use_kerberos) {
+		/* fully qualify hostname (needed for krb_realmofhost) */
+		hp = gethostbyname(host);
+		if (hp != NULL && !(host = strdup(hp->h_name))) {
+			(void)fprintf(stderr, "rlogin: %s.\n", strerror(ENOMEM));
+			exit(1);
+		}
+
 		rem = KSUCCESS;
 		errno = 0;
 		if (dest_realm == NULL)
