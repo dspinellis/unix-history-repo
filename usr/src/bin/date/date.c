@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.17 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -270,11 +270,10 @@ settime(tv)
 		fprintf(stderr, "date: All ports in use\n");
 		goto bad;
 	}
-	msg.tsp_type = TSP_DATE;
+	msg.tsp_type = TSP_SETDATE;
 	msg.tsp_vers = TSPVERSION;
 	(void) gethostname(hostname, sizeof (hostname));
 	(void) strncpy(msg.tsp_name, hostname, sizeof (hostname));
-	timevalsub(&tv, &now);
 	msg.tsp_seq = htons((u_short)0);
 	msg.tsp_time.tv_sec = htonl((u_long)tv.tv_sec);
 	msg.tsp_time.tv_usec = htonl((u_long)tv.tv_usec);
