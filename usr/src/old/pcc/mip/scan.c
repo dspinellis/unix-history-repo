@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)scan.c	1.3 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	1.4 (Berkeley) %G%";
 # include "mfile1"
 # include <a.out.h>
 # include <stab.h>
@@ -138,11 +138,11 @@ mainp1( argc, argv ) int argc; char *argv[]; {  /* control multiple files */
 
 	for( i=0; i<SYMTSZ; ++i ) stab[i].stype = TNULL;
 
+	lineno = 1;
+
 	lxinit();
 	tinit();
 	mkdope();
-
-	lineno = 1;
 
 	/* dimension table initialization */
 
