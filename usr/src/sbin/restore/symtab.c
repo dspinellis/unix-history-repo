@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.11	(Berkeley)	83/05/14";
+static char sccsid[] = "@(#)symtab.c	3.12	(Berkeley)	83/05/15";
 #endif
 
 /*
@@ -223,6 +223,7 @@ freeentry(ep)
 	register struct entry *ep;
 {
 	register struct entry *np;
+	ino_t inum;
 
 	if (ep->e_flags != REMOVED)
 		badentry(ep, "not marked REMOVED");
@@ -237,9 +238,10 @@ freeentry(ep)
 		if (np == NIL)
 			badentry(ep, "lookupino failed");
 		if (np == ep) {
-			deleteino(ep->e_ino);
+			inum = ep->e_ino;
+			deleteino(inum);
 			if (ep->e_links != NIL)
-				addino(ep->e_ino, ep->e_links);
+				addino(inum, ep->e_links);
 		} else {
 			for (; np != NIL; np = np->e_links) {
 				if (np->e_links == ep) {
