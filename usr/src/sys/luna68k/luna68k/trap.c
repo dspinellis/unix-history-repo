@@ -11,11 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: trap.c 1.35 91/12/26$
- * OMRON: $Id: trap.c,v 1.2 92/06/14 06:23:41 moti Exp $
+ * from: hp300/hp300/trap.c	7.26 (Berkeley) 12/27/92
  *
- * from: hp300/hp300/trap.c     7.23 (Berkeley) 7/9/92
- *
- *	@(#)trap.c	7.3 (Berkeley) %G%
+ *	@(#)trap.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -130,34 +128,12 @@ userret(p, fp, oticks, faultaddr, fromtrap)
 	/*
 	 * If profiling, charge system time to the trapped pc.
 	 */
-	if (p->p_flag & SPROFIL)
-		addupc_intr(p, fp->f_pc, (int)(p->p_sticks - oticks));
-#ifdef HP380
-	/*
-	 * Deal with user mode writebacks (from trap, or from sigreturn).
-	 * If any writeback fails, go back and attempt signal delivery.
-	 * unless we have already been here and attempted the writeback
-	 * (e.g. bad address with user ignoring SIGSEGV).  In that case
-	 * we just return to the user without sucessfully completing
-	 * the writebacks.  Maybe we should just drop the sucker?
-	 */
-	if (mmutype == MMU_68040 && fp->f_format == FMT7) {
-		if (beenhere) {
-#ifdef DEBUG
-			if (mmudebug & MDB_WBFAILED)
-				printf(fromtrap ?
-		"pid %d(%s): writeback aborted, pc=%x, fa=%x\n" :
-		"pid %d(%s): writeback aborted in sigreturn, pc=%x\n",
-				    p->p_pid, p->p_comm, fp->f_pc, faultaddr);
-#endif
-		} else if (sig = writeback(fp, fromtrap)) {
-			beenhere = 1;
-			oticks = p->p_sticks;
-			trapsignal(p, sig, faultaddr);
-			goto again;
-		}
+	if (p->p_flag & SPROFIL) {
+		extern int psratio;
+
+		addupc_task(p, fp->f_pc,
+			    (int)(p->p_sticks - oticks) * psratio);
 	}
-#endif
 	curpri = p->p_pri;
 }
 
@@ -193,7 +169,7 @@ trap(type, code, v, frame)
 	default:
 dopanic:
 		printf("trap type %d, code = %x, v = %x\n", type, code, v);
-		regdump(frame.f_regs, 128);
+		regdump(&frame, 128);
 		type &= ~T_USER;
 		if ((unsigned)type < TRAP_TYPES)
 			panic(trap_type[type]);
@@ -482,6 +458,13 @@ syscall(code, frame)
 		 */
 		code = fuword(params);
 		params += sizeof(int);
+		/*
+		 * XXX sigreturn requires special stack manipulation
+		 * that is only done if entered via the sigreturn
+		 * trap.  Cannot allow it here so make sure we fail.
+		 */
+		if (code == SYS_sigreturn)
+			code = numsys;
 		break;
 
 	case SYS___indir:
