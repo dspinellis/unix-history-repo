@@ -1,3 +1,4 @@
+/* picy.y	(Berkeley)	1.2	83/12/29	*/
 %{
 #include	<stdio.h>
 #include	"pic.h"
@@ -59,7 +60,7 @@ picture:
 	| PLACENAME ':' picture		{ makevar($1, PLACENAME, $3); $$ = $3; }
 	| PLACENAME ':' ST picture	{ makevar($1, PLACENAME, $4); $$ = $4; }
 	| PLACENAME ':' position ST	{ makevar($1, PLACENAME, $3); $$ = $3; }
-        | VARNAME '=' expr ST	{ makevar($1, VARNAME, $3); checkscale($1); }
+        | VARNAME '=' expr ST	{ makevar($1, VARNAME, $<i>3); checkscale($1); }
 	| DIR				{ setdir($1); }
 	| PRINT expr ST			{ printexpr($2); }
 	| PRINT position ST		{ printpos($2); }
@@ -95,8 +96,8 @@ attrlist:
 	;
 
 attr:
-	  ATTR opt_expr		{ makeattr($1, $2); }
-	| DIR opt_expr		{ makeattr($1, $2); }
+	  ATTR opt_expr		{ makeattr($1, $<i>2); }
+	| DIR opt_expr		{ makeattr($1, $<i>2); }
 	| FROM position		{ makeattr($1, $2); }
 	| TO position		{ makeattr($1, $2); }
 	| AT position		{ makeattr($1, $2); }
@@ -107,9 +108,9 @@ attr:
 	| SAME			{ makeattr(SAME, $1); }
 	| textattr		{ makeattr($1, 0); }
 	| HEAD			{ makeattr(HEAD, $1); }
-	| DOT opt_expr		{ makeattr(DOT, $2); }
-	| DASH opt_expr		{ makeattr(DASH, $2); }
-	| CHOP opt_expr		{ makeattr(CHOP, $2); }
+	| DOT opt_expr		{ makeattr(DOT, $<i>2); }
+	| DASH opt_expr		{ makeattr(DASH, $<i>2); }
+	| CHOP opt_expr		{ makeattr(CHOP, $<i>2); }
 	| textlist
 	;
 
