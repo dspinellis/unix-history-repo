@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scanw.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)scanw.c	5.14 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -135,7 +135,7 @@ mvwscanw(win, y, x, fmt, va_alist)
  * vwscanw --
  *	This routine actually executes the scanf from the window.
  */
-static int
+int
 vwscanw(win, fmt, ap)
 	WINDOW *win;
 	const char *fmt;
