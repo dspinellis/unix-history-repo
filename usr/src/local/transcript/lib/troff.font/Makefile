@@ -15,13 +15,17 @@
 # Here are the family names, the face names are gotten from the .map files
 
 FAMILIES = Times.ct Helvetica.ct
+FILES=	Times.head Times.ct ftR ftI ftB ftS \
+	Helvetica.head Helvetica.ct ftH ftHI ftHB ftHS
 
 #######################################################################
 
 install: ${FAMILIES}
+	-mkdir $${TROFFFONTDIR?undefined}
+	cp -p ${FILES} $${TROFFFONTDIR?undefined}
 
 .map.ct:
-	../pscatmap $*.map
+	$${PSLIBDIR-/usr/local/lib/ps}/pscatmap $*.map
 	make `awk -f doto.awk $*.map`
 	awk -f head.awk $*.map >$*.head
 
