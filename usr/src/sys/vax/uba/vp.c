@@ -1,6 +1,5 @@
-/*	vp.c	3.3	%G%	*/
+/*	vp.c	3.4	%G%	*/
 
-#ifdef ERNIE
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -49,6 +48,7 @@ struct {
 	int	vp_state;
 	int	vp_count;
 	int	vp_bufp;
+	struct	buf *vp_bp;
 } vp11;
 int	vp_ubinfo;
 
@@ -94,10 +94,9 @@ vpstrategy(bp)
 	while (vp11.vp_state & VBUSY)
 		sleep((caddr_t)&vp11, VPPRI);
 	vp11.vp_state |= VBUSY;
-	(void) spl0();
+	vp11.vp_bp = bp;
 	vp_ubinfo = ubasetup(bp, vpbdp);
 	vp11.vp_bufp = vp_ubinfo & 0x3ffff;
-	(void) spl4();
 	if (e = vperror(READY))
 		goto brkout;
 	vp11.vp_count = bp->b_bcount;
@@ -112,6 +111,7 @@ vpstrategy(bp)
 brkout:
 	ubafree(vp_ubinfo), vp_ubinfo = 0;
 	vp11.vp_state &= ~VBUSY;
+	vp11.vp_bp = 0;
 	iodone(bp);
 	if (e)
 		u.u_error = EIO;
@@ -228,4 +228,21 @@ vpclose()
 	vp11.vp_bufp = 0;
 	VPADDR->plcsr = 0;
 }
-#endif
+
+vpreset()
+{
+
+	if ((vp11.vp_state & VISOPEN) == 0)
+		return;
+	printf(" vp");
+	VPADDR->prcsr = IENABLE | DTCINTR;
+	if ((vp11.vp_state & VBUSY) == 0)
+		return;
+	if (vp_ubinfo) {
+		printf("<%d>", (vp_ubinfo>>28)&0xf);
+		ubafree(vp_ubinfo), vp_ubinfo = 0;
+	}
+	vp11.vp_bufp = vp_ubinfo & 0x3ffff;
+	vp11.vp_count = vp11.vp_bp->b_bcount;
+	vpstart();
+}
