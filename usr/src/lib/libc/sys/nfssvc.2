@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)nfssvc.2	6.2 (Berkeley) %G%
+.\"	@(#)nfssvc.2	6.3 (Berkeley) %G%
 .\"
 .TH NFSSVC 2 ""
 .UC 7
@@ -38,7 +38,8 @@ The socket must be in the
 family and of type
 .SM SOCK_DGRAM .
 .SH RETURN VALUE
-Upon successful completion, a value of 0 is returned.
+Normally this system calls does not return unless the server
+is terminated by a signal at which time a value of 0 is returned.
 Otherwise, \-1 is returned and the global variable
 .I errno
 is set to indicate the error.
