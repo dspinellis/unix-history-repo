@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.67 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1699,6 +1699,140 @@ shorten_hostname(host)
 	if (strncasecmp(p, mydom, i) == 0 &&
 	    (mydom[i] == '.' || mydom[i] == '\0'))
 		*--p = '\0';
+}
+/*
+**  PROG_OPEN -- open a program for reading
+**
+**	Parameters:
+**		argv -- the argument list.
+**		pfd -- pointer to a place to store the file descriptor.
+**		e -- the current envelope.
+**
+**	Returns:
+**		pid of the process -- -1 if it failed.
+*/
+
+int
+prog_open(argv, pfd, e)
+	char **argv;
+	int *pfd;
+	ENVELOPE *e;
+{
+	int pid;
+	int i;
+	int saveerrno;
+	char **ep;
+	int fdv[2];
+	char *p, *q;
+	char buf[MAXLINE + 1];
+	char *env[MAXUSERENVIRON];
+	extern char **environ;
+	extern int DtableSize;
+
+	if (pipe(fdv) < 0)
+	{
+		syserr("%s: cannot create pipe for stdout", argv[0]);
+		return -1;
+	}
+	pid = fork();
+	if (pid < 0)
+	{
+		syserr("%s: cannot fork", argv[0]);
+		close(fdv[0]);
+		close(fdv[1]);
+		return -1;
+	}
+	if (pid > 0)
+	{
+		/* parent */
+		close(fdv[1]);
+		*pfd = fdv[0];
+		return pid;
+	}
+
+	/* child -- close stdin */
+	close(0);
+
+	/* stdout goes back to parent */
+	close(fdv[0]);
+	if (dup2(fdv[1], 1) < 0)
+	{
+		syserr("%s: cannot dup2 for stdout", argv[0]);
+		_exit(EX_OSERR);
+	}
+	close(fdv[1]);
+
+	/* stderr goes to transcript if available */
+	if (e->e_xfp != NULL)
+	{
+		if (dup2(fileno(e->e_xfp), 2) < 0)
+		{
+			syserr("%s: cannot dup2 for stderr", argv[0]);
+			_exit(EX_OSERR);
+		}
+	}
+
+	/* this process has no right to the queue file */
+	if (e->e_lockfp != NULL)
+		close(fileno(e->e_lockfp));
+
+	/* run as default user */
+	setgid(DefGid);
+	setuid(DefUid);
+
+	/* run in some directory */
+	if (ProgMailer != NULL)
+		p = ProgMailer->m_execdir;
+	else
+		p = NULL;
+	for (; p != NULL; p = q)
+	{
+		q = strchr(p, ':');
+		if (q != NULL)
+			*q = '\0';
+		expand(p, buf, sizeof buf, e);
+		if (q != NULL)
+			*q++ = ':';
+		if (buf[0] != '\0' && chdir(buf) >= 0)
+			break;
+	}
+	if (p == NULL)
+	{
+		/* backup directories */
+		if (chdir("/tmp") < 0)
+			(void) chdir("/");
+	}
+
+	/* arrange for all the files to be closed */
+	for (i = 3; i < DtableSize; i++)
+	{
+		register int j;
+
+		if ((j = fcntl(i, F_GETFD, 0)) != -1)
+			(void) fcntl(i, F_SETFD, j | 1);
+	}
+
+	/* set up the environment */
+	i = 0;
+	env[i++] = "AGENT=sendmail";
+	for (ep = environ; *ep != NULL; ep++)
+	{
+		if (strncmp(*ep, "TZ=", 3) == 0 ||
+		    strncmp(*ep, "ISP=", 4) == 0 ||
+		    strncmp(*ep, "SYSTYPE=", 8) == 0)
+			env[i++] = *ep;
+	}
+	env[i] = NULL;
+
+	/* now exec the process */
+	execve(argv[0], (ARGV_T) argv, (ARGV_T) env);
+
+	/* woops!  failed */
+	saveerrno = errno;
+	syserr("%s: cannot exec", argv[0]);
+	if (transienterror(saveerrno))
+		_exit(EX_OSERR);
+	_exit(EX_CONFIG);
 }
 /*
 **  GET_COLUMN  -- look up a Column in a line buffer
