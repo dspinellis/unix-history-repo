@@ -1,11 +1,19 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
+
+# The following modules do not build/install:
+# 10.named
 
 BINDIR=	/usr/share/doc/smm
 FILES=	00.contents Makefile Title
-SUBDIR=	02.config 03.kdebug 04.quotas 05.fsck 06.lpd 07.sendmailop \
-	08.timedop 09.uucpimpl 10.newsop 11.named 12.uchanges 13.kchanges \
-	14.fastfs 15.net 16.sendmail 17.security 18.password 19.porttour \
-	20.termdesc 21.uucpnet 22.timed
+SUBDIR=	01.setup 02.config 03.fsck 04.quotas 05.fastfs 06.nfs 07.lpd \
+	08.sendmailop 09.sendmail 11.timedop 12.timed 13.net 14.uucpimpl \
+	15.uucpnet 16.security 17.password 18.termdesc
+
+Title.ps: ${FILES}
+	groff Title > ${.TARGET}
+
+contents.ps: ${FILES}
+	groff -ms 00.contents > ${.TARGET}
 
 .if	${MACHINE} == "tahoe"
 SUBDIR+=01.setup
