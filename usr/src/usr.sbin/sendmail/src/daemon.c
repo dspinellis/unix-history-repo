@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.46		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.47		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	3.46		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.46		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.47		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -342,7 +342,7 @@ makeconnection(host, port, outfile, infile)
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 #else NVMUNIX
 	SendmailAddress.sin_family = AF_INET;
-	bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
+	/* bind(s, &SendmailAddress, sizeof SendmailAddress, 0); */
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 #endif NVMUNIX
 	{
