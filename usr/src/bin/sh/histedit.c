@@ -187,8 +187,8 @@ histcmd(argc, argv)
 		 */
 		if (sflg == 0) {
 			if (editor == NULL &&
-			    (editor = lookupvar("FCEDIT")) == NULL &&
-			    (editor = lookupvar("EDITOR")) == NULL)
+			    (editor = bltinlookup("FCEDIT", 1)) == NULL &&
+			    (editor = bltinlookup("EDITOR", 1)) == NULL)
 				editor = DEFEDITOR;
 			if (editor[0] == '-' && editor[1] == '\0') {
 				sflg = 1;	/* no edit */
