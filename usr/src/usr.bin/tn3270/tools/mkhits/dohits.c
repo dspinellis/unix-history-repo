@@ -41,7 +41,7 @@ char *string;
 
     while (c = *string++) {
 	if (c >= 0x60) {
-	    c - = (0x60+0x20);
+	    c -= (0x60+0x20);
 	} else {
 	    c -= 0x20;
 	}
