@@ -315,6 +315,10 @@ makech(win, wy)
 #ifdef DEBUG
 					__CTRACE("makech: using CE\n");
 #endif
+					if (curscr->flags & __WSTANDOUT) {
+						tputs(SE, 0, __cputchar);
+						curscr->flags &= ~__WSTANDOUT;
+					}
 					tputs(CE, 0, __cputchar);
 					lx = wx + win->begx;
 					while (wx++ <= clsp) {
