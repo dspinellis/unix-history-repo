@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	2.2	%G%	*/
+/*	fs.h	2.3	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -162,10 +162,11 @@ struct csum {
 /*
  * Super block for a file system.
  */
-#define	FS_MAGIC	0x110854
+#define	FS_MAGIC	0x011954
 struct	fs
 {
-	long	fs_magic;		/* magic number */
+	struct	fs *fs_link;		/* linked list of file systems */
+	struct	fs *fs_rlink;		/*     used for incore super blocks */
 	daddr_t	fs_sblkno;		/* addr of super-block in filesys */
 	daddr_t	fs_cblkno;		/* offset of cyl-block in filesys */
 	daddr_t	fs_iblkno;		/* offset of inode-blocks in filesys */
@@ -214,6 +215,7 @@ struct	fs
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
 	long	fs_cpc;			/* cyl per cycle in postbl */
 	short	fs_postbl[MAXCPG][NRPOS];/* head of blocks for each rotation */
+	long	fs_magic;		/* magic number */
 	u_char	fs_rotbl[1];		/* list of blocks for each rotation */
 /* actually longer */
 };
@@ -241,9 +243,10 @@ struct	fs
 /*
  * Cylinder group block for a file system.
  */
-#define	CG_MAGIC	0x092752
+#define	CG_MAGIC	0x090255
 struct	cg {
-	long	cg_magic;		/* magic number */
+	struct	cg *cg_link;		/* linked list of cyl groups */
+	struct	cg *cg_rlink;		/*     used for incore cyl groups */
 	time_t	cg_time;		/* time last written */
 	long	cg_cgx;			/* we are the cgx'th cylinder group */
 	short	cg_ncyl;		/* number of cyl's this cg */
@@ -257,6 +260,7 @@ struct	cg {
 	long	cg_btot[MAXCPG];	/* block totals per cylinder */
 	short	cg_b[MAXCPG][NRPOS];	/* positions of free blocks */
 	char	cg_iused[MAXIPG/NBBY];	/* used inode map */
+	long	cg_magic;		/* magic number */
 	char	cg_free[1];		/* free block map */
 /* actually longer */
 };
