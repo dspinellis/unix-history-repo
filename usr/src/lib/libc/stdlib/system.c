@@ -16,9 +16,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)system.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)system.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/signal.h>
 #include <stdio.h>
@@ -26,22 +27,21 @@ static char sccsid[] = "@(#)system.c	5.3 (Berkeley) %G%";
 system(command)
 	char *command;
 {
-	int pid, wval, (*i)(), (*q)();
-	union wait stat_loc;
+	union wait pstat;
+	pid_t pid, waitpid();
+	int omask;
 
 	switch(pid = vfork()) {
 	case -1:			/* error */
-		stat_loc.w_status = 0;
-		stat_loc.w_retcode = 127;
-		return(stat_loc.w_status);
+		pstat.w_status = 0;
+		pstat.w_retcode = 127;
+		return(pstat.w_status);
 	case 0:				/* child */
 		execl("/bin/sh", "sh", "-c", command, (char *)NULL);
 		_exit(127);
 	}
-	i = signal(SIGINT, SIG_IGN);
-	q = signal(SIGQUIT, SIG_IGN);
-	while ((wval = wait(&stat_loc)) != pid && wval != -1);
-	(void)signal(SIGINT, i);
-	(void)signal(SIGQUIT, q);
-	return(wval == -1 ? -1 : stat_loc.w_status);
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
+	pid = waitpid(pid, &pstat, 0);
+	(void)sigsetmask(omask);
+	return(pid == -1 ? -1 : pstat.w_status);
 }
