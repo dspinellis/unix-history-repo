@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ns_addr.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns_addr.c	6.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -38,11 +38,11 @@ ns_addr(name)
 	 * form  2-272.AA001234H.01777, i.e. XDE standard.
 	 * Great efforts are made to insure backward compatability.
 	 */
-	if (hostname = index(buf, '#'))
+	if (hostname = strchr(buf, '#'))
 		separator = '#';
 	else {
-		hostname = index(buf, '.');
-		if ((cp = index(buf, ':')) &&
+		hostname = strchr(buf, '.');
+		if ((cp = strchr(buf, ':')) &&
 		    ((hostname && cp < hostname) || (hostname == 0))) {
 			hostname = cp;
 			separator = ':';
@@ -57,7 +57,7 @@ ns_addr(name)
 	if (hostname == 0)
 		return (addr);  /* No separator means net only */
 
-	socketname = index(hostname, separator);
+	socketname = strchr(hostname, separator);
 	if (socketname) {
 		*socketname++ = 0;
 		Field(socketname, (u_char *)&addr.x_port, 2);

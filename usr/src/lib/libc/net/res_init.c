@@ -26,7 +26,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.17 (Berkeley) %G%";
 static char rcsid[] = "$Id: res_init.c,v 4.9.1.1 1993/05/02 22:43:03 vixie Rel $";
 #endif /* LIBC_SCCS and not lint */
 
@@ -123,7 +123,7 @@ res_init()
 			    continue;
 		    (void)strncpy(_res.defdname, cp,
 				  sizeof(_res.defdname) - 1);
-		    if ((cp = index(_res.defdname, '\n')) != NULL)
+		    if ((cp = strchr(_res.defdname, '\n')) != NULL)
 			    *cp = '\0';
 		    /*
 		     * Set search list to be blank-separated strings
@@ -173,7 +173,7 @@ res_init()
 	}
 	if (_res.defdname[0] == 0) {
 		if (gethostname(buf, sizeof(_res.defdname)) == 0 &&
-		   (cp = index(buf, '.')))
+		   (cp = strchr(buf, '.')))
 			(void)strcpy(_res.defdname, cp + 1);
 	}
 
@@ -187,7 +187,7 @@ res_init()
 		cp = _res.defdname;
 		for (; n >= LOCALDOMAINPARTS && pp < _res.dnsrch + MAXDFLSRCH;
 		    n--) {
-			cp = index(cp, '.');
+			cp = strchr(cp, '.');
 			*pp++ = ++cp;
 		}
 		*pp++ = 0;
