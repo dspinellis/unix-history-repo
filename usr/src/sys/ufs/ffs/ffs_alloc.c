@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.22 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -118,9 +118,8 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 {
 	register struct fs *fs;
 	struct buf *bp, *obp;
-	int cg, request;
-	daddr_t bprev, bno, bn;
-	int i, error, count;
+	int cg, request, error;
+	daddr_t bprev, bno;
 	struct ucred *cred = u.u_cred;		/* XXX */
 	
 	*bpp = 0;
@@ -217,10 +216,8 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, request,
 		(u_long (*)())alloccg);
 	if (bno > 0) {
-		bp->b_blkno = bn = fsbtodb(fs, bno);
-		count = howmany(osize, CLBYTES);
-		for (i = 0; i < count; i++)
-			munhash(ip->i_devvp, bn + i * CLBYTES / DEV_BSIZE);
+		bp->b_blkno = fsbtodb(fs, bno);
+		(void) vnode_pager_uncache(ITOV(ip));
 		blkfree(ip, bprev, (off_t)osize);
 		if (nsize < request)
 			blkfree(ip, bno + numfrags(fs, nsize),

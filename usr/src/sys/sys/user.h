@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.14 (Berkeley) %G%
+ *	@(#)user.h	7.15 (Berkeley) %G%
  */
 
 #include <machine/pcb.h>
@@ -33,14 +33,12 @@ struct	user {
 	segsz_t u_tsize;		/* text size (clicks) */
 	segsz_t u_dsize;		/* data size (clicks) */
 	segsz_t u_ssize;		/* stack size (clicks) */
-	struct	dmap u_dmap;		/* disk map for data segment */
-	struct	dmap u_smap;		/* disk map for stack segment */
-	struct	dmap u_cdmap;		/* temp data segment disk map */
-	struct	dmap u_csmap;		/* temp stack segment disk map */
-	label_t u_ssave;		/* label variable for swapping */
-	segsz_t u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
+	struct	dmap u_pad1[4];
+	label_t	u_ssave;		/* label variable for swapping */
+	caddr_t	u_taddr;		/* user virtual address of text */
+	caddr_t	u_daddr;		/* user virtual address of data */
 	time_t	u_outime;		/* user time at last sample */
-	struct	mapmem *u_mmap;		/* list of mapped memory regions */
+	caddr_t u_maxsaddr;		/* user VA at max stack growth */
 
 /* 1.3 - signal management */
 	sig_t	u_signal[NSIG];		/* disposition of signals */
@@ -97,10 +95,10 @@ struct	user {
 
 #ifdef KERNEL
 extern	struct user u;
-extern	struct user swaputl;
-extern	struct user forkutl;
-extern	struct user xswaputl;
-extern	struct user xswap2utl;
-extern	struct user pushutl;
-extern	struct user vfutl;
+extern	struct user *swaputl;
+extern	struct user *forkutl;
+extern	struct user *xswaputl;
+extern	struct user *xswap2utl;
+extern	struct user *pushutl;
+extern	struct user *vfutl;
 #endif

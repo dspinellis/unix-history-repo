@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.10 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -132,6 +132,7 @@ balloc(ip, bn, size, bpp, flags)
 			if (error)
 				return (error);
 			ip->i_size = (nb + 1) * fs->fs_bsize;
+			vnode_pager_setsize(ITOV(ip), (u_long)ip->i_size);
 			ip->i_db[nb] = dbtofsb(fs, bp->b_blkno);
 			ip->i_flag |= IUPD|ICHG;
 			if (flags & B_SYNC)
