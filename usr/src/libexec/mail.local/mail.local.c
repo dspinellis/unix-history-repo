@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -92,10 +92,11 @@ store(from)
 	int fd, eline;
 	char *tn, line[2048];
 
-	tn = _PATH_LOCTMP;
+	tn = strdup(_PATH_LOCTMP);
 	if ((fd = mkstemp(tn)) == -1 || !(fp = fdopen(fd, "w+")))
 		error(FATAL, "unable to open temporary file.");
 	(void)unlink(tn);
+	free(tn);
 
 	(void)time(&tval);
 	(void)fprintf(fp, "From %s %s", from, ctime(&tval));
