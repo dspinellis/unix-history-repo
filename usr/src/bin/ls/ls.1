@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ls.1	6.21 (Berkeley) %G%
+.\"     @(#)ls.1	6.22 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LS 1
@@ -76,13 +76,6 @@ Directories are listed as plain files (not searched recursively) and
 symbolic links in the argument list are not indirected through.
 .It Fl f
 Output is not sorted.
-.It Fl g
-Include the group ownership of the file in a long
-.Pq Fl l
-output
-.Pq Fl lg .
-If the group is not a known group name, the numeric ID
-is printed.
 .It Fl i
 For each file, print the file's file serial number (inode number).
 .It Fl l
@@ -157,8 +150,7 @@ If the
 option is given, the following information
 is displayed for each file:
 file mode,
-number of links, owner name,
-.\" group name,
+number of links, owner name, group name,
 number of bytes in the file, abbreviated
 month, day-of-month file was last modified,
 hour file last modified, minute file last
@@ -168,8 +160,8 @@ number of 512-byte blocks used by the files in the directory is displayed
 on a line by itself immediately before the information for the files in the
 directory.
 .Pp
-If the owner name is not a known user name
-the numeric ID is displayed.
+If the owner or group names are not a known user or group name
+the numeric ID's are displayed.
 .Pp
 If the file is a character special or block special file,
 the major and minor device numbers for the file are displayed
@@ -288,6 +280,11 @@ based on the width provided.
 (See
 .Fl C . )
 .El
+.Sh COMPATIBILITY
+The group field is now automatically included in the long listing for
+files in order to be compatible with the
+.St -p1003.2
+specification.
 .Sh SEE ALSO
 .Xr chmod 1 ,
 .Xr sticky 8
