@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	6.1	83/07/29	*/
+/*	uipc_syscalls.c	6.2	83/09/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -368,6 +368,8 @@ sendit(s, mp, flags)
 			u.u_error = EINVAL;
 			return;
 		}
+		if (iov->iov_len == 0)
+			continue;
 		if (useracc(iov->iov_base, (u_int)iov->iov_len, B_READ) == 0) {
 			u.u_error = EFAULT;
 			return;
@@ -512,6 +514,8 @@ recvit(s, mp, flags, namelenp, rightslenp)
 			u.u_error = EINVAL;
 			return;
 		}
+		if (iov->iov_len == 0)
+			continue;
 		if (useracc(iov->iov_base, (u_int)iov->iov_len, B_WRITE) == 0) {
 			u.u_error = EFAULT;
 			return;
