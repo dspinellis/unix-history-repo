@@ -1,4 +1,4 @@
-/*	rlboot.c	4.1	83/02/16	*/
+/*	rlboot.c	4.2	83/02/20	*/
 
 /*
  * RL02 disk boot program to load "/boot" from
