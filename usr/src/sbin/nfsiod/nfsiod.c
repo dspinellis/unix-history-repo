@@ -25,11 +25,10 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsiod.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsiod.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
-#include <syslog.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -37,14 +36,15 @@ static char sccsid[] = "@(#)nfsiod.c	5.1 (Berkeley) %G%";
 
 /* Global defs */
 #ifdef DEBUG
-#define	syslog(e, s)	fprintf(stderr,(s))
 int debug = 1;
 #else
 int debug = 0;
 #endif
 
 /*
- * Nfs asynchronous i/o daemon. Just helps out client i/o with read aheads
+ * Nfsiod does asynchronous buffered I/O on behalf of the NFS client.
+ * It does not have to be running for correct operation, but will improve
+ * throughput. The one optional argument is the number of children to fork.
  */
 main(argc, argv)
 	int argc;
@@ -78,13 +78,11 @@ main(argc, argv)
 		signal(SIGTERM, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 	}
-	openlog("nfsiod:", LOG_PID, LOG_DAEMON);
 	if (argc != 2 || (cnt = atoi(argv[1])) <= 0 || cnt > 20)
 		cnt = 1;
 	for (i = 1; i < cnt; i++)
 		if (fork() == 0)
 			break;
-	if (async_daemon() < 0)		/* Only returns on error */
-		syslog(LOG_ERR, "nfsiod() failed %m");
-	exit();
+	async_daemon();		/* Never returns */
+	exit(1);
 }
