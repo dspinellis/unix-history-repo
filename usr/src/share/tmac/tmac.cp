@@ -1,3 +1,11 @@
+.\" Copyright (c) 1981 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tmac.cp	5.2 (Berkeley) %G%
+.\"
+
 .nr PS 9
 .nr VS 11
 .ps \\n(PS

@@ -1,9 +1,11 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)tmac.an	6.7 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
 .\"
+.\"	@(#)tmac.an	6.8 (Berkeley) %G%
+.\"
+
 '	DT, PD, SM, and B macros invoked internally.
 '	# month name
 .if "\nd"0" .nr m \n(mo-1
