@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tput.1	8.1 (Berkeley) %G%
+.\"     @(#)tput.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TPUT 1
@@ -41,19 +41,27 @@ Otherwise,
 exits 0 if the terminal has the capability and 1 if it does not,
 without further action.
 .Pp
+If the
+.Ar attribute
+is of type string, and takes arguments (e.g. cursor movement,
+the termcap
+.Dq cm
+sequence) the arguments are taken from the command line immediately
+following the attribute.
+.Pp
 The following special attributes are available:
 .Bl -tag -width Ar
-.It Ar clear
+.It clear
 Clear the screen (the
 .Xr termcap
 ``cl'' sequence).
-.It Ar init
+.It init
 Initialize the terminal (the
 .Xr termcap
 ``is'' sequence).
-.It Ar longname
+.It longname
 Print the descriptive name of the user's terminal type.
-.It Ar reset
+.It reset
 Reset the terminal (the
 .Xr termcap
 ``rs'' sequence).
@@ -76,9 +84,6 @@ exits 2 if any error occurred.
 .Sh BUGS
 .Nm Tput
 can't really distinguish between different types of attributes.
-This is due to the limited interface in the current version of
-.Xr termcap 3 ,
-and will be fixed in the near future.
 .Sh HISTORY
 The
 .Nm
