@@ -1,4 +1,4 @@
-/*	up.c	4.44	82/03/29	*/
+/*	up.c	4.45	82/03/31	*/
 
 #include "up.h"
 #if NSC > 0
@@ -93,7 +93,8 @@ int	upRDIST = _upRDIST;
 int	upprobe(), upslave(), upattach(), updgo(), upintr();
 struct	uba_ctlr *upminfo[NSC];
 struct	uba_device *updinfo[NUP];
-struct	uba_device *upip[NSC][4];
+#define	UPIPUNITS	8
+struct	uba_device *upip[NSC][UPIPUNITS]; /* fuji w/fixed head gives n,n+4 */
 
 u_short	upstd[] = { 0776700, 0774400, 0776300, 0 };
 struct	uba_driver scdriver =
@@ -632,7 +633,7 @@ doattn:
 		unit--;		/* was 1 origin */
 		as &= ~(1<<unit);
 		upaddr->upas = 1<<unit;
-		if (upustart(upip[sc21][unit]))
+		if (unit < UPIPUNITS && upustart(upip[sc21][unit]))
 			needie = 0;
 	}
 	/*
