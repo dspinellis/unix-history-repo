@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -580,7 +580,7 @@ startpr(enable)
 	 * Turn off the owner execute bit of the lock file to enable printing.
 	 */
 	if (enable && stat(line, &stbuf) >= 0) {
-		if (chmod(line, stbuf.st_mode & (enable == 2)?0666:0677) < 0)
+		if (chmod(line, stbuf.st_mode & (enable==2 ? 0666 : 0677)) < 0)
 			printf("\tcannot enable printing\n");
 		else
 			printf("\tprinting enabled\n");
