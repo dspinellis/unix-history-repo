@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_we.c	7.1 (Berkeley) %G%
+ *	@(#)if_we.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -243,9 +243,7 @@ westop(unit)
 wewatchdog(unit) {
 
 	log(LOG_WARNING,"we%d: soft reset\n", unit);
-printf("we: reset!\n");
 	westop(unit);
-DELAY(100000);
 	weinit(unit);
 }
 
@@ -266,7 +264,6 @@ weinit(unit)
 		return;
 
 	/* already running */
-/*	if (sc->we_flags & WDF_RUNNING)*/
 	/*if (ifp->if_flags & IFF_RUNNING) return; */
 
 	/*
@@ -350,20 +347,11 @@ westart(ifp)
 	 */
 	buffer = sc->we_vmem_addr;
 	len = 0;
-/*printf("\nT   "); */
 	for (m0 = m; m != 0; m = m->m_next) {
-/*int j;*/
 		bcopy(mtod(m, caddr_t), buffer, m->m_len);
-/*for(j=0; j < m->m_len;j++) {
-
-	puthex(buffer[j]);
-	if (j == sizeof(struct ether_header)-1)
-		printf("|");
-}*/
 		buffer += m->m_len;
         	len += m->m_len;
 	}
-/*printf("|%d ", len);*/
 
 	m_freem(m0);
 
@@ -372,8 +360,6 @@ westart(ifp)
 	 */
 	s = splhigh();
 	len = MAX(len, ETHER_MIN_LEN);
-/*printf("L %d ", len);
-	if (len < 70) len=70;*/
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_ps = 0;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
@@ -400,7 +386,6 @@ weintr(unit)
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_ps = 0;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
-	/*outb(sc->we_io_nic_addr + WD_P0_IMR, 0);*/
 	weisr.is_byte = inb(sc->we_io_nic_addr + WD_P0_ISR);
 loop:
 	outb(sc->we_io_nic_addr + WD_P0_ISR, weisr.is_byte);
@@ -485,7 +470,6 @@ werint(unit)
 if(Bdry)
 	bnry =Bdry;
 
-/*printf("B %d c %d ", bnry, curr);*/
 	while (bnry != curr)
 	{
 		/* get pointer to this buffer header structure */
@@ -527,7 +511,6 @@ outofbufs:
 		wecmd.cs_ps = 1;
 		outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 		curr = inb(sc->we_io_nic_addr + WD_P1_CURR);
-/*printf("b %d c %d ", bnry, curr); */
 	}
 Bdry = bnry;
 }
@@ -761,14 +744,8 @@ weget(buf, totlen, off0, ifp, sc)
 	int off = off0, len;
 	register caddr_t cp = buf;
 	char *epkt;
-int tc =totlen;
+	int tc =totlen;
 
-/*
-printf("\nR");
-{ int j;
-for(j=0; j < sizeof(struct ether_header);j++) puthex(buf[j]);
-printf("|");
-}*/
 	buf += sizeof(struct ether_header);
 	cp = buf;
 	epkt = cp + totlen;
@@ -797,11 +774,6 @@ printf("|");
 			m->m_len = MLEN;
 		}
 		len = min(totlen, epkt - cp);
-#ifdef nope
-		/* only do up to end of buffer */
-		if (epkt > sc->we_vmem_end)
-			len = min(len, sc->we_vmem_end - cp);
-#endif
 		if (len >= MINCLSIZE) {
 			MCLGET(m, M_DONTWAIT);
 			if (m->m_flags & M_EXT)
@@ -834,10 +806,6 @@ printf("|");
 			bcopy(cp, mtod(m, caddr_t), (unsigned)len);
 			cp += len;
 		}
-/*{ int j;
-for(j=0; j < m->m_len;j++) puthex(mtod(m, char *)[j]);
-printf("|");
-}*/
 		*mp = m;
 		mp = &m->m_next;
 		if (cp == epkt) {
@@ -845,12 +813,6 @@ printf("|");
 			epkt = cp + tc;
 		}
 	}
-/*printf("%d ",tc); */
 	return (top);
-}
-
-puthex(c){
-	printf("%x",(c>>4)&0xf);
-	printf("%x",c&0xf);
 }
 #endif

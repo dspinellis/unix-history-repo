@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ne.c	7.1 (Berkeley) %G%
+ *	@(#)if_ne.c	7.2 (Berkeley) %G%
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
@@ -75,7 +75,7 @@ struct	ne_softc {
 	struct	ether_header ns_eh;	/* header of incoming packet */
 	u_char	ns_pb[2048 /*ETHERMTU+sizeof(long)*/];
 } ne_softc[NNE] ;
-#define	ENBUFSIZE	(sizeof(struct ether_header) + ETHERMTU + 2 + 64)
+#define	ENBUFSIZE	(sizeof(struct ether_header) + ETHERMTU + 2 + ETHER_MIN_LEN)
 
 int nec;
 
@@ -94,7 +94,7 @@ neprobe(dvp)
 	nec = dvp->id_iobase;
 	s = splimp();
 
-	/* reset the bastard */
+	/* Reset the bastard */
 	val = inb(nec+ne_reset);
 	DELAY(2000000);
 	outb(nec+ne_reset,val);
@@ -113,7 +113,7 @@ neprobe(dvp)
 	outb(nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
 	DELAY(10000);
 
-	/* check cmd reg and fail if not right */
+	/* Check cmd reg and fail if not right */
 	if ((i=inb(nec+ds_cmd)) != (DSCM_NODMA|DSCM_PG0|DSCM_STOP))
 		return(0);
 
@@ -127,93 +127,95 @@ neprobe(dvp)
 	outb(nec+ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
 	outb(nec+ds1_curr, RBUF/DS_PGSIZE);
 	outb(nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
-	fetchrom (boarddata, 0, sizeof(boarddata));
+
 #ifdef NEDEBUG
-/*{ int i,rom;
-	rom=1;
-printf("ne ram ");
-	for (i = 0; i < 0xfff0; i+=4) {
-		int pat;
-		pat = 0xa55a+i*37;
-		putram(&pat,i,4);
-		fetchram(&pat,i,4);
-		if (pat == 0xa55a+i*37) {
-			if (rom) { rom=0; printf(" %x", i); }
-		} else {
-			if (!rom) { rom=1; printf("..%x ", i); }
+#define	PAT(n)	(0xa55a + 37*(n))
+#define	RCON	37
+	{	int i, rom, pat;
+
+		rom=1;
+		printf("ne ram ");
+		
+		for (i = 0; i < 0xfff0; i+=4) {
+			pat = PAT(i);
+			neput(&pat,i,4);
+			nefetch(&pat,i,4);
+			if (pat == PAT(i)) {
+				if (rom) {
+					rom=0;
+					printf(" %x", i);
+				}
+			} else {
+				if (!rom) {
+					rom=1;
+					printf("..%x ", i);
+				}
+			}
+			pat=0;
+			neput(&pat,i,4);
 		}
-		pat=0;
-		putram(&pat,i,4);
+		printf("\n");
 	}
-printf("\n");
-}*/
 #endif
-/* checksum data? */
-	/* extract board address */
+
+	/* Extract board address */
+	nefetch ((caddr_t)boarddata, 0, sizeof(boarddata));
 	for(i=0; i < 6; i++)  ns->ns_addr[i] = boarddata[i];
 	splx(s);
 	return (1);
 }
 
-fetchrom (up, ad, len) u_short *up; {
+/*
+ * Fetch from onboard ROM/RAM
+ */
+nefetch (up, ad, len) caddr_t up; {
 	u_char cmd;
 
 	cmd = inb(nec+ds_cmd);
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_STOP);
+	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
+
+	/* Setup remote dma */
 	outb (nec+ds0_isr, DSIS_RDC);
-	outb (nec+ds0_rbcr0, len&0xff);
-	outb (nec+ds0_rbcr1, (len>>8)&0xff);
-	outb (nec+ds0_rsar0, ad&0xff);
-	outb (nec+ds0_rsar1, (ad>>8)&0xff);
+	outb (nec+ds0_rbcr0, len);
+	outb (nec+ds0_rbcr1, len>>8);
+	outb (nec+ds0_rsar0, ad);
+	outb (nec+ds0_rsar1, ad>>8);
+
+	/* Execute & extract from card */
 	outb (nec+ds_cmd, DSCM_RREAD|DSCM_PG0|DSCM_START);
 	insw (nec+ne_data, up, len/2);
-	pausestr ("x",1);
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) pausestr("fetchrom",0);
+
+	/* Wait till done, then shutdown feature */
+	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) ;
 	outb (nec+ds0_isr, DSIS_RDC);
 	outb (nec+ds_cmd, cmd);
 }
 
-static recur;
-fetchram (up, ad, len) caddr_t up; {
+/*
+ * Put to onboard RAM
+ */
+neput (up, ad, len) caddr_t up; {
 	u_char cmd;
 
-	recur++;
 	cmd = inb(nec+ds_cmd);
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
-	outb (nec+ds0_isr, DSIS_RDC);
-	outb (nec+ds0_rbcr0, len&0xff);
-	outb (nec+ds0_rbcr1, (len>>8)&0xff);
-	outb (nec+ds0_rsar0, ad&0xff);
-	outb (nec+ds0_rsar1, (ad>>8)&0xff);
-	outb (nec+ds_cmd, DSCM_RREAD|DSCM_PG0|DSCM_START);
-	insw (nec+ne_data, up, len/2);
-	pausestr ("x",1);
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) pausestr("fetchram",0);
-	outb (nec+ds0_isr, DSIS_RDC);
-	outb (nec+ds_cmd, cmd);
-	recur--;
-}
 
-putram (up, ad, len) caddr_t up; {
-	u_char cmd;
-
-	recur++;
-	cmd = inb(nec+ds_cmd);
-	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
+	/* Setup for remote dma */
 	outb (nec+ds0_isr, DSIS_RDC);
-	if(len&1) len++;
-	outb (nec+ds0_rbcr0, len&0xff);
-	outb (nec+ds0_rbcr1, (len>>8)&0xff);
-	outb (nec+ds0_rsar0, ad&0xff);
-	outb (nec+ds0_rsar1, (ad>>8)&0xff);
+	if(len&1) len++;		/* roundup to words */
+	outb (nec+ds0_rbcr0, len);
+	outb (nec+ds0_rbcr1, len>>8);
+	outb (nec+ds0_rsar0, ad);
+	outb (nec+ds0_rsar1, ad>>8);
+
+	/* Execute & stuff to card */
 	outb (nec+ds_cmd, DSCM_RWRITE|DSCM_PG0|DSCM_START);
 	outsw (nec+ne_data, up, len/2);
-	pausestr ("x",1);
-	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0)
-		if(pausestr("putram",0)<0) break;
+	
+	/* Wait till done, then shutdown feature */
+	while ((inb (nec+ds0_isr) & DSIS_RDC) == 0) ;
 	outb (nec+ds0_isr, DSIS_RDC);
 	outb (nec+ds_cmd, cmd);
-	recur--;
 }
 
 /*
@@ -285,6 +287,7 @@ neinit(unit)
 	outb (nec+ds0_rbcr1, 0);
 	outb (nec+ds0_imr, 0);
 	outb (nec+ds0_isr, 0xff);
+
 	/* Word Transfers, Burst Mode Select, Fifo at 8 bytes */
 	outb(nec+ds0_dcr, DSDC_WTS|DSDC_BMS|DSDC_FT1);
 	outb(nec+ds0_tcr, 0);
@@ -341,8 +344,6 @@ nestart(ifp)
 	if (m == 0)
 		return;
 
-	if ((m->m_flags & M_PKTHDR) == 0)
-		printf("should panic: no packet header\n");
 	/*
 	 * Copy the mbuf chain into the transmit buffer
 	 */
@@ -350,68 +351,45 @@ nestart(ifp)
 	ns->ns_flags |= DSF_LOCK;	/* prevent entering nestart */
 	buffer = TBUF; len = i = 0;
 	t = 0;
-#include "machine/dbg.h"
-dprintf(DPAGIN,"\n before: ");
-	for (m0 = m; m != 0; m = m->m_next) {
+	for (m0 = m; m != 0; m = m->m_next)
 		t += m->m_len;
-dprintf(DPAGIN,"%d ", m->m_len);
-	}
 		
 	m = m0;
 	total = t;
-	if (m->m_flags & M_PKTHDR && total != m->m_pkthdr.len)
-		printf("hdr fucked, len %d should be %d\n", total, m->m_pkthdr.len);
-dprintf(DPAGIN,"\n after: ");
 	for (m0 = m; m != 0; ) {
 		
-/*int j;*/
 		if (m->m_len&1 && t > m->m_len) {
-dprintf(DPAGIN|DPAUSE,"+%d:%d ", m->m_len, m->m_next->m_len);
-			putram(mtod(m, caddr_t), buffer, m->m_len - 1);
+			neput(mtod(m, caddr_t), buffer, m->m_len - 1);
 			t -= m->m_len - 1;
 			buffer += m->m_len - 1;
 			m->m_data += m->m_len - 1;
 			m->m_len = 1;
 			m = m_pullup(m, 2);
-if(m == 0) panic("bloowie!");
-{ struct mbuf *mp;
-dprintf(DPAGIN|DPAUSE, "\n rewritten as: ");
-	for (mp = m; mp != 0; mp = mp->m_next)
-dprintf(DPAGIN,"%d ", mp->m_len);
-}
-dprintf(DPAGIN,"\n");
 		} else {
-dprintf(DPAGIN|DPAUSE,"%d ", m->m_len);
-			putram(mtod(m, caddr_t), buffer, m->m_len);
+			neput(mtod(m, caddr_t), buffer, m->m_len);
 			buffer += m->m_len;
 			t -= m->m_len;
 			MFREE(m, m0);
 			m = m0;
 		}
-/*for(j=0; i < len;i++,j++) puthex(mtod(m,u_char *)[j]);
-printf("|"); */
 	}
-dprintf(DPAGIN|DPAUSE,"send %d\n", total);
 
 	/*
 	 * Init transmit length registers, and set transmit start flag.
 	 */
 
-#ifdef NEDEBUGx
-if(len < 0 || len > 1536)
-pg("T Bogus Length %d\n", len);
-dprintf(DEXPAND,"snd %d ", len);
-#endif
 	len = total;
-	if (len < 64) len = 64;
+	if (len < ETHER_MIN_LEN) len = ETHER_MIN_LEN;
 	outb(nec+ds0_tbcr0,len&0xff);
 	outb(nec+ds0_tbcr1,(len>>8)&0xff);
 	outb(nec+ds0_tpsr, TBUF/DS_PGSIZE);
 	outb(nec+ds_cmd, DSCM_TRANS|DSCM_NODMA|DSCM_START);
 }
 
+/* buffer successor/predecessor in ring? */
 #define succ(n) (((n)+1 >= RBUFEND/DS_PGSIZE) ? RBUF/DS_PGSIZE : (n)+1)
 #define pred(n) (((n)-1 < RBUF/DS_PGSIZE) ? RBUFEND/DS_PGSIZE-1 : (n)-1)
+
 /*
  * Controller interrupt.
  */
@@ -419,73 +397,15 @@ neintr(unit)
 {
 	register struct ne_softc *ns = &ne_softc[unit];
 	u_char cmd,isr;
-static cnt;
 
-	/* save cmd, clear interrupt */
+	/* Save cmd, clear interrupt */
 	cmd = inb (nec+ds_cmd);
 loop:
 	isr = inb (nec+ds0_isr);
-#ifdef NEDEBUGx
-dprintf(DEXPAND,"|ppl %x isr %x ", ppl, isr);
-#endif
-
 	outb(nec+ds_cmd,DSCM_NODMA|DSCM_START);
 	outb(nec+ds0_isr, isr);
 
-
-	if (isr & (/*DSIS_RXE|DSIS_TXE|*/DSIS_ROVRN))
-		log(LOG_ERR, "ne%d: error: isr %x\n", ns-ne_softc, isr/*, DSIS_BITS*/);
-
-#ifdef notdef
-	/* receiver ovverun? */
-	if (isr & DSIS_ROVRN) {
-		u_char pend,lastfree;
-
-		outb(nec+ds_cmd, DSCM_STOP|DSCM_NODMA);
-		outb(nec+ds_cmd, DSCM_STOP|DSCM_NODMA|DSCM_PG1);
-		pend = inb(nec+ds1_curr);
-		outb(nec+ds_cmd, DSCM_STOP|DSCM_NODMA|DSCM_PG0);
-		lastfree = inb(nec+ds0_bnry);
-#ifdef NEDEBUG
-printf("Cur %x pend %x lastfree %x ", ns->ns_cur, pend, lastfree);
-#endif
-		/* have we wrapped */
-		if (lastfree >= RBUFEND/DS_PGSIZE)
-			lastfree = RBUF/DS_PGSIZE;
-		/* something in the buffer? */
-		if (pend != succ(lastfree)) {
-			u_char nxt;
-
-			fetchram(&ns->ns_ph,ns->ns_cur*DS_PGSIZE, sizeof(ns->ns_ph));
-			ns->ns_ba = ns->ns_cur*DS_PGSIZE+sizeof(ns->ns_ph);
-
-			if (ns->ns_ph.pr_status & DSRS_RPC)
-				nerecv (ns);
-
-			nxt = ns->ns_ph.pr_nxtpg ;
-#ifdef NEDEBUG
-printf("nxt %x ", nxt);
-#endif
-			/* sanity check */
-			if ( nxt >= RBUF/DS_PGSIZE
-			&& nxt <= RBUFEND/DS_PGSIZE && nxt <= pend)
-				ns->ns_cur = nxt;
-			else	ns->ns_cur = nxt = pend;
-			lastfree = pred(nxt);
-			outb(nec+ds0_bnry, lastfree);
-		} else ns->ns_cur = pend;
-
-		outb(nec+ds0_rbcr0,0);
-		outb(nec+ds0_rbcr1,0);
-		outb(nec+ds0_tcr,DSTC_LB0);
-		outb(nec+ds0_rcr, DSRC_MON);
-		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
-		outb (nec+ds0_rcr, DSRC_AB);
-		outb(nec+ds0_tcr,0);
-	}
-#endif
-
-	/* receiver error */
+	/* Receiver error */
 	if (isr & DSIS_RXE) {
 		/* need to read these registers to clear status */
 		(void) inb(nec+ ds0_rsr);
@@ -495,6 +415,7 @@ printf("nxt %x ", nxt);
 		ns->ns_if.if_ierrors++;
 	}
 
+	/* We received something; rummage thru tiny ring buffer */
 	if (isr & (DSIS_RX|DSIS_RXE|DSIS_ROVRN)) {
 		u_char pend,lastfree;
 
@@ -502,10 +423,8 @@ printf("nxt %x ", nxt);
 		pend = inb(nec+ds1_curr);
 		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG0);
 		lastfree = inb(nec+ds0_bnry);
-#ifdef NEDEBUG
-dprintf(DEXPAND,"cur %x pnd %x lfr %x ", ns->ns_cur, pend, lastfree);
-#endif
-		/* have we wrapped */
+
+		/* Have we wrapped? */
 		if (lastfree >= RBUFEND/DS_PGSIZE)
 			lastfree = RBUF/DS_PGSIZE;
 		if (pend < lastfree && ns->ns_cur < pend)
@@ -513,67 +432,67 @@ dprintf(DEXPAND,"cur %x pnd %x lfr %x ", ns->ns_cur, pend, lastfree);
 		else	if (ns->ns_cur > lastfree)
 			lastfree = ns->ns_cur;
 
-		/* something in the buffer? */
+		/* Something in the buffer? */
 		while (pend != lastfree) {
 			u_char nxt;
 
-			fetchram(&ns->ns_ph,lastfree*DS_PGSIZE,
+			/* Extract header from microcephalic board */
+			nefetch(&ns->ns_ph,lastfree*DS_PGSIZE,
 				sizeof(ns->ns_ph));
 			ns->ns_ba = lastfree*DS_PGSIZE+sizeof(ns->ns_ph);
 
-			/* paranoia */
+			/* Incipient paranoia */
 			if (ns->ns_ph.pr_status == DSRS_RPC ||
+				/* for dequna's */
 				ns->ns_ph.pr_status == 0x21)
 				nerecv (ns);
 #ifdef NEDEBUG
 			else  {
-printf("cur %x pnd %x lfr %x ", ns->ns_cur, pend, lastfree);
-printf("nxt %x len %x ", ns->ns_ph.pr_nxtpg, (ns->ns_ph.pr_sz1<<8)+
-	ns->ns_ph.pr_sz0);
-pg("Bogus Sts %x ", ns->ns_ph.pr_status);	
+				printf("cur %x pnd %x lfr %x ",
+					ns->ns_cur, pend, lastfree);
+				printf("nxt %x len %x ", ns->ns_ph.pr_nxtpg,
+					(ns->ns_ph.pr_sz1<<8)+ ns->ns_ph.pr_sz0);
+				printf("Bogus Sts %x\n", ns->ns_ph.pr_status);	
 			}
 #endif
 
 			nxt = ns->ns_ph.pr_nxtpg ;
-#ifdef NEDEBUG
-dprintf(DEXPAND,"nxt %x ", nxt);
-#endif
-			/* sanity check */
-			if ( nxt >= RBUF/DS_PGSIZE
-			&& nxt <= RBUFEND/DS_PGSIZE && nxt <= pend)
+
+			/* Sanity check */
+			if ( nxt >= RBUF/DS_PGSIZE && nxt <= RBUFEND/DS_PGSIZE
+				&& nxt <= pend)
 				ns->ns_cur = nxt;
 			else	ns->ns_cur = nxt = pend;
+
+			/* Set the boundaries */
 			lastfree = nxt;
 			outb(nec+ds0_bnry, pred(nxt));
 			outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG1);
 			pend = inb(nec+ds1_curr);
 			outb(nec+ds_cmd, DSCM_START|DSCM_NODMA|DSCM_PG0);
-		} /*else ns->ns_cur = pend;*/
-#ifdef NEDEBUG
-dprintf(DEXPAND,"cur %x pnd %x lfR %x ", ns->ns_cur, pend, lastfree);
-#endif
+		}
 		outb(nec+ds_cmd, DSCM_START|DSCM_NODMA);
 	}
+
+	/* Transmit error */
 	if (isr & DSIS_TXE) {
 		ns->ns_flags &= ~DSF_LOCK;
-#ifdef NEDEBUG
-dprintf(DEXPAND," clsn");
-#endif
-		/* need to read these registers to clear status */
+		/* Need to read these registers to clear status */
 		ns->ns_if.if_collisions += inb(nec+ds0_tbcr0);
 		ns->ns_if.if_oerrors++;
 	}
+
+	/* Packet Transmitted */
 	if (isr & DSIS_TX) {
-#ifdef NEDEBUGx
-dprintf(DEXPAND,"tx ");
-#endif
 		ns->ns_flags &= ~DSF_LOCK;
 		++ns->ns_if.if_opackets;
 		ns->ns_if.if_collisions += inb(nec+ds0_tbcr0);
 	}
 
-	/* receiver ovverun? */
+	/* Receiver ovverun? */
 	if (isr & DSIS_ROVRN) {
+		log(LOG_ERR, "ne%d: error: isr %x\n", ns-ne_softc, isr
+			/*, DSIS_BITS*/);
 		outb(nec+ds0_rbcr0, 0);
 		outb(nec+ds0_rbcr1, 0);
 		outb(nec+ds0_tcr, DSTC_LB0);
@@ -583,16 +502,15 @@ dprintf(DEXPAND,"tx ");
 		outb(nec+ds0_tcr, 0);
 	}
 
+	/* Any more to send? */
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
 	nestart(&ns->ns_if);
 	outb (nec+ds_cmd, cmd);
 	outb (nec+ds0_imr, 0xff);
+
+	/* Still more to do? */
 	isr = inb (nec+ds0_isr);
 	if(isr) goto loop;
-	
-#ifdef NEDEBUG
-	if(++cnt % 10 == 0) dprintf(DEXPAND,"\n");
-#endif
 }
 
 /*
@@ -610,65 +528,32 @@ nerecv(ns)
 
 	ns->ns_if.if_ipackets++;
 	len = ns->ns_ph.pr_sz0 + (ns->ns_ph.pr_sz1<<8);
-if(len < 60 || len > 1536) {
-#ifdef NEDEBUG
-pg(DEXPAND,"R Bogus Length %d", len);
-#endif
-return;
-}
-	fetchram(ns->ns_pb,ns->ns_ba,min(len,DS_PGSIZE-sizeof(ns->ns_ph)));
-#ifdef NEDEBUG
-if (!bcmp((caddr_t)ns->ns_pb, (caddr_t)ns->ns_addr, 6)
-&& !bcmp((caddr_t)ns->ns_pb, (caddr_t)etherbroadcastaddr, 6)) {
-printf("G%x ", ns->ns_cur);
-return;
-}/* else 
-printf("P%x ", ns->ns_cur);*/
-#endif
-	if(len > DS_PGSIZE-sizeof(ns->ns_ph)) {
+	if(len < ETHER_MIN_LEN || len > ETHER_MAX_LEN)
+		return;
+
+	/* this need not be so torturous - one/two bcopys at most into mbufs */
+	nefetch(ns->ns_pb, ns->ns_ba, min(len,DS_PGSIZE-sizeof(ns->ns_ph)));
+	if (len > DS_PGSIZE-sizeof(ns->ns_ph)) {
 		int l = len - (DS_PGSIZE-sizeof(ns->ns_ph)), b ;
 		u_char *p = ns->ns_pb + (DS_PGSIZE-sizeof(ns->ns_ph));
 
-#ifdef NEDEBUG
-dprintf(DEXPAND,"len %d(%d|", len, p - ns->ns_pb);
-#endif
 		if(++ns->ns_cur > 0x7f) ns->ns_cur = 0x46;
 		b = ns->ns_cur*DS_PGSIZE;
 		
 		while (l >= DS_PGSIZE) {
-			fetchram(p,b,DS_PGSIZE);
+			nefetch(p, b, DS_PGSIZE);
 			p += DS_PGSIZE; l -= DS_PGSIZE;
-		if(++ns->ns_cur > 0x7f) ns->ns_cur = 0x46;
-		b = ns->ns_cur*DS_PGSIZE;
-#ifdef NEDEBUG
-dprintf(DEXPAND,"%d|", p - ns->ns_pb);
-#endif
+			if(++ns->ns_cur > 0x7f) ns->ns_cur = 0x46;
+			b = ns->ns_cur*DS_PGSIZE;
 		}
-#ifdef NEDEBUG
-dprintf(DEXPAND,"%d) ", l);
-#endif
 		if (l > 0)
-			fetchram(p,b,l);
+			nefetch(p, b, l);
 	}
-	len -= 
-		sizeof(struct ether_header)
-		+ sizeof(long);	/* don't forget checksum! */
+	/* don't forget checksum! */
+	len -= sizeof(struct ether_header) + sizeof(long);
 			
-
 	neread(ns,(caddr_t)(ns->ns_pb), len);
 }
-
-pausestr(s,n) char *s; {
-static downcnt;
-
-	if(n) { downcnt = 0xffff; return(0); }
-	if(--downcnt > 0) return(0);
-#ifdef NEDEBUG
-	pg(" <%s> recur %d sts %x ", s, recur, inb (nec+ds0_isr));
-#endif
-	return(-1);
-}
-	
 
 /*
  * Pass a packet to the higher levels.
@@ -874,22 +759,5 @@ neioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
-}
-
-nesetaddr(ifp, sin)
-	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
-{
-#ifdef notdef
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	if (nepaddr[ifp->if_unit][0] == '3')
-		nepaddr[ifp->if_unit][0] = ifp->if_host[0] << 1;
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = in_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
-#endif
 }
 #endif
