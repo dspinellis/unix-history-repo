@@ -12,7 +12,7 @@
 # include "useful.h"
 # include "conf.h"
 
-SCCSID(@(#)rmail.c	3.8	(Berkeley)	%G%);
+SCCSID(@(#)rmail.c	3.9	(Berkeley)	%G%);
 
 extern FILE *popen();
 extern char *index();
@@ -99,7 +99,10 @@ main(argc, argv)
 	while (*++argv != NULL)
 	{
 		strcat(cmd, " '");
-		strcat(cmd, *argv);
+		if (**argv == '(')
+			strncat(cmd, *argv + 1, strlen(*argv) - 2);
+		else
+			strcat(cmd, *argv);
 		strcat(cmd, "'");
 	}
 #ifdef DEBUG
