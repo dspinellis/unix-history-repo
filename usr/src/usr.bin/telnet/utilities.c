@@ -2,11 +2,23 @@
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that: (1) source distributions retain this entire copyright
+ * notice and comment, and (2) distributions including binaries display
+ * the following acknowledgement:  ``This product includes software
+ * developed by the University of California, Berkeley and its contributors''
+ * in the documentation or other materials provided with the distribution
+ * and in all advertising materials mentioning features or use of this
+ * software. Neither the name of the University nor the names of its
+ * contributors may be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	1.17 (Berkeley) 6/1/90";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -251,6 +263,12 @@ optionstatus()
 
 char *slcnames[] = { SLC_NAMES };
 
+#ifdef	KERBEROS
+static char *authtypes[3] = { "NONE", "PRIVATE", "KERBEROS" };
+#else
+static char *authtypes[2] = { "NONE", "PRIVATE" };
+#endif
+
 void
 printsub(direction, pointer, length)
 char	direction;		/* '<' or '>' */
@@ -371,6 +389,51 @@ int	length;			/* length of suboption data */
 	    for (i = 5; i < length; i++)
 		fprintf(NetTrace, " ?%d?", pointer[i]);
 	    break;
+
+#ifdef	KERBEROS
+	case TELOPT_AUTHENTICATION:
+	    fprintf(NetTrace, "Authentication information ");
+	    switch (pointer[1]) {
+	    case TELQUAL_IS:
+		switch (pointer[2]) {
+		case TELQUAL_AUTHTYPE_NONE:
+		case TELQUAL_AUTHTYPE_PRIVATE:
+		case TELQUAL_AUTHTYPE_KERBEROS:
+
+			fprintf(NetTrace, "is type %s\r\n", authtypes[pointer[2]]);
+			break;
+		default:
+			fprintf(NetTrace, "is type unknown\r\n");
+			break;
+		}
+
+	    case TELQUAL_SEND:
+	    {
+		int	idx = 2;
+		fprintf(NetTrace, "- request to send, types");
+		for (idx = 2; idx < length - 1; idx++)
+			switch (pointer[idx]) {
+			case TELQUAL_AUTHTYPE_NONE:
+			case TELQUAL_AUTHTYPE_PRIVATE:
+			case TELQUAL_AUTHTYPE_KERBEROS:
+				fprintf(NetTrace, " %s",
+					authtypes[pointer[idx]]);
+					break;
+			default:
+				fprintf(NetTrace, " <unknown %u>",
+					pointer[idx]);
+				break;
+			}
+		fprintf(NetTrace, "\r\n");
+	    }
+		break;
+
+	    default:
+		fprintf(NetTrace, " - unknown qualifier %d (0x%x).\r\n",
+			pointer[1], pointer[1]);
+	    }
+	    break;
+#endif /* KERBEROS */
 
 	case TELOPT_LINEMODE:
 	    fprintf(NetTrace, "LINEMODE ");
