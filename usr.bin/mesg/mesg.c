@@ -55,7 +55,7 @@ static char sccsid[] = "@(#)mesg.c	4.7 (Berkeley) 3/1/91";
 #include <stdio.h>
 
 static char *tty;
-#define	OTHER_WRITE	002
+#define	OTHER_WRITE	020
 
 main(argc, argv)
 	int argc;
