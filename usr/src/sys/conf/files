@@ -73,6 +73,7 @@ ufs/ufs_alloc.c		standard
 ufs/ufs_bmap.c		standard
 ufs/ufs_disksubr.c	standard
 ufs/ufs_inode.c		standard
+ufs/ufs_lockf.c		standard
 ufs/ufs_lookup.c	standard
 ufs/ufs_subr.c		standard
 ufs/ufs_tables.c	standard
