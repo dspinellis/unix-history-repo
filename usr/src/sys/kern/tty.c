@@ -1,4 +1,4 @@
-/*	tty.c	3.12	%G%	*/
+/*	tty.c	3.13	%G%	*/
 
 /*
  * general TTY subroutines
@@ -224,6 +224,7 @@ caddr_t addr;
 	struct sgttyb iocb;
 	struct clist tq;
 	extern int nldisp;
+	int temp;
 
 	switch(com) {
 
@@ -401,7 +402,8 @@ caddr_t addr;
 	 * Should allow SPGRP and GPGRP only if tty open for reading.
 	 */
 	case TIOCSPGRP:
-		tp->t_pgrp = (int)addr;
+		if (copyin(addr, (caddr_t)&tp->t_pgrp, sizeof (tp->t_pgrp)))
+			u.u_error = EFAULT;
 		break;
 
 	case TIOCGPGRP:
@@ -413,15 +415,24 @@ caddr_t addr;
 	 * Modify local mode word.
 	 */
 	case TIOCLBIS:
-		tp->t_local |= (int)addr;
+		if (copyin(addr, (caddr_t)&temp, sizeof (tp->t_local)))
+			u.u_error = EFAULT;
+		else
+			tp->t_local |= temp;
 		break;
 
 	case TIOCLBIC:
-		tp->t_local &= ~(int)addr;
+		if (copyin(addr, (caddr_t)&temp, sizeof (tp->t_local)))
+			u.u_error = EFAULT;
+		else
+			tp->t_local &= ~temp;
 		break;
 
 	case TIOCLSET:
-		tp->t_local = (int)addr;
+		if (copyin(addr, (caddr_t)&temp, sizeof (tp->t_local)))
+			u.u_error = EFAULT;
+		else
+			tp->t_local = temp;
 		break;
 
 	case TIOCLGET:
