@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)if.c	4.2 82/10/06";
+static char sccsid[] = "@(#)if.c	4.3 82/10/07";
 #endif
 
 #include <sys/types.h>
@@ -33,7 +33,7 @@ intpr(interval, ifnetaddr)
 	}
 	klseek(kmem, ifnetaddr, 0);
 	read(kmem, &ifnetaddr, sizeof ifnetaddr);
-	printf("%-5.5s %-5.5s %-8.8s  %-12.12s %-7.7s %-5.5s %-7.7s %-5.5s",
+	printf("%-5.5s %-5.5s %-10.10s  %-12.12s %-7.7s %-5.5s %-7.7s %-5.5s",
 		"Name", "Mtu", "Network", "Address", "Ipkts", "Ierrs",
 		"Opkts", "Oerrs");
 	printf(" %-6.6s", "Collis");
@@ -44,6 +44,7 @@ intpr(interval, ifnetaddr)
 		struct sockaddr_in *sin;
 		register char *cp;
 		char *index();
+		struct in_addr in, inet_makeaddr();
 
 		klseek(kmem, ifnetaddr, 0);
 		read(kmem, &ifnet, sizeof ifnet);
@@ -57,7 +58,8 @@ intpr(interval, ifnetaddr)
 		*cp = '\0';
 		printf("%-5.5s %-5d ", name, ifnet.if_mtu);
 		sin = (struct sockaddr_in *)&ifnet.if_addr;
-		printf("%-8.8s  ", routename(ifnet.if_net));
+		in = inet_makeaddr(ifnet.if_net, INADDR_ANY);
+		printf("%-10.10s  ", routename(in));
 		printf("%-12.12s %-7d %-5d %-7d %-5d %-6d",
 		    routename(sin->sin_addr),
 		    ifnet.if_ipackets, ifnet.if_ierrors,
