@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.1 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.2 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -45,6 +45,9 @@ CONCAT(DM, ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j))
 
 # who I send unqualified names to (null means deliver locally)
 CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
+
+# who gets all local email traffic ($R has precedence for unqualified names)
+CONCAT(DH, ifdef(`MAIL_HUB', MAIL_HUB))
 
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
@@ -217,9 +220,12 @@ R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
 R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
 
 # short circuit local delivery so forwarded email works
+R$+ < @ $j . >		$: $1 < @ $j @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
-`R$+ < @ $j . >		$#local $: $1			local address',
-`R$+ < @ $j . >		$#local $: @ $1			local address')
+`R$+ < $+ @ $+ >		$#smtp $@ $3 $: $1 < $2 >	yep ....
+R$+ < $+ @ >		$#local $: $1			nope, local address',
+`R$+ < $+ @ $+ >		$#local $: $1			yep ....
+R$+ < $+ @ >		$#local $: @ $1			nope, local address')
 undivert(3)dnl
 undivert(4)dnl
 
@@ -260,8 +266,10 @@ ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
 R$=L			$#local $: $1			special local names
 R$+			$: $1 < @ $R >			append relay
-R$+ < @ >		$#local $: $1			if no relay, local
-R$+ < @ $+ >		$#smtp $@ $2 $: $1		deliver to relay',
+R$+ < @ >		$: $1 < @ $H >			no relay, try hub
+R$+ < @ >		$#local $: $1			no relay or hub: local
+R$+ < @ $j  >		$#local $: $1			we are relay/hub: local
+R$+ < @ $+ >		$#smtp $@ $2 $: $1		deliver to relay/hub',
 `# handle locally delivered names
 R$=L			$#local $: @ $1			special local names
 R$+			$#local $: $1			regular local names
@@ -275,7 +283,9 @@ S5
 
 ifdef(`_MAILER_smtp_',
 `R$+			$: $1 < @ $R >
-R$+ < @ $+ >		$#smtp $@ $2 $: $1 < @ $2 >	send to relay')')
+R$+ < @ >		$: $1 < @ $H >			no relay, try hub
+R$+ < @ $j >		$@ $1				we are relay/hub: local
+R$+ < @ $+ >		$#smtp $@ $2 $: $1		send to relay or hub')')
 #
 ######################################################################
 ######################################################################
