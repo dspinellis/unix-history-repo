@@ -1,5 +1,5 @@
-# files.vax 1.1 82/10/28
 vax/autoconf.c		standard device-driver
+vax/clock.c		standard
 vax/conf.c		standard
 vax/cons.c		standard
 vax/cpudata.c		standard
