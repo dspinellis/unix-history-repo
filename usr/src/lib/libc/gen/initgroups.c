@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)initgroups.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)initgroups.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -36,8 +36,15 @@ initgroups(uname, agroup)
 	register struct group *grp;
 	register int i;
 
-	if (agroup >= 0)
+	/*
+	 * If installing primary group, duplicate it;
+	 * the first element of groups is the effective gid
+	 * and will be overwritten when a setgid file is executed.
+	 */
+	if (agroup >= 0) {
 		groups[ngroups++] = agroup;
+		groups[ngroups++] = agroup;
+	}
 	setgrent();
 	while (grp = getgrent()) {
 		if (grp->gr_gid == agroup)
