@@ -1,11 +1,11 @@
-#	@(#)Makefile.inc	5.15 (Berkeley) %G%
+#	@(#)Makefile.inc	5.16 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
 SRCS+=	alarm.c clock.c closedir.c crypt.c ctermid.c ctime.c ctype_.c \
-	difftime.c disklabel.c errlst.c exec.c fnmatch.c fstab.c fts.c \
-	getcwd.c getgrent.c getlogin.c getmntinfo.c getpass.c \
+	difftime.c disklabel.c errlst.c exec.c fnmatch.c frexp.c fstab.c \
+	fts.c getcwd.c getgrent.c getlogin.c getmntinfo.c getpass.c \
 	getpwent.c getsubopt.c getttyent.c getusershell.c glob.c initgroups.c \
 	isatty.c isctype.c mktemp.c nice.c nlist.c opendir.c \
 	pause.c popen.c psignal.c raise.c readdir.c \
@@ -20,21 +20,21 @@ SRCS+=	alarm.c clock.c closedir.c crypt.c ctermid.c ctime.c ctype_.c \
 SRCS+=	regerror.c regexp.c regsub.c
 
 .if   (${MACHINE} == "hp300")
-SRCS+=	_setjmp.s alloca.s fabs.s frexp.s ldexp.s modf.s setjmp.s
+SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
 SRCS+=	adddf3.s addsf3.s ashlsi3.s ashrsi3.s cmpdf2.s cmpsf2.s divdf3.s \
 	divsf3.s divsi3.s eprintf.c extendsfdf2.s fixdfsi.s fixunsdfsi.s \
 	floatsidf.s lshlsi3.s lshrsi3.s modsi3.s muldf3.s mulsf3.s mulsi3.s \
 	negdf2.s negsf2.s saveregs.c subdf3.s subsf3.s truncdfsf2.s udivsi3.s \
 	umodsi3.s umulsi3.s
 .elif (${MACHINE} == "i386")
-SRCS+=	_setjmp.s alloca.s fabs.s frexp.c ldexp.c modf.s setjmp.s
+SRCS+=	_setjmp.s alloca.s fabs.s ldexp.c modf.s setjmp.s
 SRCS+=	divsi3.s fixdfsi.s fixunsdfsi.s udivsi3.s
 .elif (${MACHINE} == "tahoe")
 CFLAGS+=-I/sys
-SRCS+=	_setjmp.s alloca.s fabs.s frexp.c ldexp.s modf.s setjmp.s
+SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
 SRCS+=	udiv.s urem.s
 .elif (${MACHINE} == "vax")
-SRCS+=	_setjmp.s alloca.s fabs.s frexp.s ldexp.s modf.s setjmp.s
+SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
 SRCS+=	udiv.s urem.s
 .endif
 
