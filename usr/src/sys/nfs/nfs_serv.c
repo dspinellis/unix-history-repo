@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -409,7 +409,8 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 		}
 		ivp++;
 	}
-	error = VOP_READ(vp, uiop, &off, IO_NODELOCKED, cred);
+	error = VOP_READ(vp, uiop, IO_NODELOCKED, cred);
+	off = uiop->uio_offset;
 	if (error) {
 		m_freem(mp3);
 		vput(vp);
@@ -544,11 +545,12 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 			nfsm_reply(0);
 		}
 		uiop->uio_resid = siz;
-		if (error = VOP_WRITE(vp, uiop, &off, IO_SYNC | IO_NODELOCKED,
+		if (error = VOP_WRITE(vp, uiop, IO_SYNC | IO_NODELOCKED,
 			cred)) {
 			vput(vp);
 			nfsm_reply(0);
 		}
+		off = uiop->uio_offset;
 	}
 	error = VOP_GETATTR(vp, vap, cred);
 	vput(vp);
@@ -1136,7 +1138,8 @@ again:
 	io.uio_resid = fullsiz;
 	io.uio_segflg = UIO_SYSSPACE;
 	io.uio_rw = UIO_READ;
-	error = VOP_READDIR(vp, &io, &off, cred);
+	error = VOP_READDIR(vp, &io, cred);
+	off = io.uio_offset;
 	if (error) {
 		vrele(vp);
 		free((caddr_t)rbuf, M_TEMP);
