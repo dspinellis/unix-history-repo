@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)memchr.3	5.1 (Berkeley) %G%
+.\"
+.TH MEMCHR 3 ""
+.UC 7
+.SH NAME
+memchr \- locate byte in byte string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+int
+memchr(const void *b, int c, size_t len);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Memchr
+locates the first occurrence of
+.I c
+(converted to an unsigned char)
+in string
+.IR b .
+It returns a pointer to the byte located,
+or NULL if no such byte exists within
+.I len
+bytes.
+.SH SEE ALSO
+index(3), rindex(3), strchr(3), strcspn(3), strpbrk(3), strrchr(3),
+strsep(3), strspn(3), strstr(3), strtok(3)
+.SH STANDARDS
+.I Memchr
+conforms to ANSI X3.159-1989 (``ANSI C'').
