@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.89.1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.139 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1868,13 +1868,14 @@ static char sccsid[] = "@(#)getopt.c	4.3 (Berkeley) 3/9/86";
  * get option letter from argument vector
  */
 #ifdef _CONVEX_SOURCE
-extern int	optind, opterr;
+extern int	optind, opterr, optopt;
+extern char	*optarg;
 #else
 int	opterr = 1;		/* if error message should be printed */
 int	optind = 1;		/* index into parent argv vector */
-#endif
 int	optopt = 0;		/* character checked for validity */
 char	*optarg = NULL;		/* argument associated with option */
+#endif
 
 #define BADCH	(int)'?'
 #define EMSG	""
