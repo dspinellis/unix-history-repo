@@ -8,7 +8,6 @@
  * V2LNI won't work if shortened to the obvious "v2".
  * Hence the subterfuge.
  *
- * UNTESTED WITH 4.1C
  */
 #include "../machine/pte.h"
 
@@ -142,7 +141,7 @@ vvprobe(reg)
 	/* reset interface, enable, and wait till dust settles */
 	addr->vvicsr = VV_RST;
 	addr->vvocsr = VV_RST;
-	DELAY(100000);
+	DELAY(10000);
 	/* generate interrupt by doing 1 word DMA from 0 in uba space!! */
 	addr->vvocsr = VV_IEN;		/* enable interrupt */
 	addr->vvoba = 0;		/* low 16 bits */
@@ -239,7 +238,7 @@ vvinit(unit)
 	 */
 	addr->vvocsr = VV_RST | VV_CPB;		/* clear packet buffer */
 	addr->vvicsr = VV_RST | VV_CONF;	/* close logical relay */
-	sleep((caddr_t)&lbolt, PZERO);		/* let contacts settle */
+	DELAY(500000);				/* let contacts settle */
 	vs->vs_init = 0;
 	vs->vs_dropped = 0;
 	vs->vs_nottaken = 0;
