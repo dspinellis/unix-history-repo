@@ -1,4 +1,4 @@
-/*	protosw.h	4.10	82/04/10	*/
+/*	protosw.h	4.11	82/04/24	*/
 
 /*
  * Protocol switch table.
@@ -91,6 +91,43 @@ char *prurequests[] = {
 	"ABORT",	"CONTROL",	"SENSE",	"RCVOOB",
 	"SENDOOB",	"SOCKADDR",	"FASTTIMO",	"SLOWTIMO",
 	"PROTORCV",	"PROTOSEND",
+};
+#endif
+
+/*
+ * The arguments to the ctlinput routine are
+ *	(*protosw[].pr_ctlinput)(cmd, arg);
+ * where cmd is one of the commands below, and arg is
+ * an optional argument (caddr_t).
+ *
+ * N.B. The IMP code, in particular, pressumes the values
+ *      of some of the commands; change with extreme care.
+ */
+#define	PRC_IFDOWN		0	/* interface transition */
+#define	PRC_ROUTEDEAD		1	/* select new route if possible */
+#define	PRC_QUENCH		4	/* some said to slow down */
+#define	PRC_HOSTDEAD		6	/* normally from IMP */
+#define	PRC_HOSTUNREACH		7	/* ditto */
+#define	PRC_UNREACH_NET		8	/* no route to network */
+#define	PRC_UNREACH_HOST	9	/* no route to host */
+#define	PRC_UNREACH_PROTOCOL	10	/* dst says bad protocol */
+#define	PRC_UNREACH_PORT	11	/* bad port # */
+#define	PRC_MSGSIZE		12	/* message size forced drop */
+#define	PRC_REDIRECT_NET	13	/* net routing redirect */
+#define	PRC_REDIRECT_HOST	14	/* host routing redirect */
+#define	PRC_TIMXCEED_INTRANS	17	/* packet lifetime expired in transit */
+#define	PRC_TIMXCEED_REASS	18	/* lifetime expired on reass q */
+#define	PRC_PARAMPROB		19	/* header incorrect */
+
+#define	PRC_NCMDS		20
+
+#ifdef PRCREQUESTS
+char	*prcrequests[] = {
+	"IFDOWN",	"ROUTEDEAD",	"#2",		"#3",
+	"QUNECH",	"#5",		"HOSTDEAD",	"HOSTUNREACH",
+	"NET-UNREACH",	"HOST-UNREACH",	"PROTO-UNREACH","PORT-UNREACH",
+	"MSGSIZE",	"NET-REDIRECT",	"HOST-REDIRECT","TX-INTRANS",
+	"TX-REASS",	"PARAMPROB"
 };
 #endif
 
