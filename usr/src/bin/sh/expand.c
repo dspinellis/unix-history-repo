@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -722,8 +722,11 @@ expandmeta(str, flag)
 		}
 		savelastp = exparg.lastp;
 		INTOFF;
-		if (expdir == NULL)
-			expdir = ckmalloc(strlen(str->text)); /* XXX - */
+		if (expdir == NULL) {
+			int i = strlen(str->text);
+			expdir = ckmalloc(i < 2048 ? 2048 : i); /* XXX */
+		}
+
 		expmeta(expdir, str->text);
 		ckfree(expdir);
 		expdir = NULL;
