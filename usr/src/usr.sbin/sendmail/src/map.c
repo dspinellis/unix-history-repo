@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -304,8 +304,14 @@ initmaps(rebuild, e)
 {
 	extern void map_init();
 
+#ifdef XDEBUG
+	checkfd012("entering initmaps");
+#endif
 	CurEnv = e;
 	stabapply(map_init, rebuild);
+#ifdef XDEBUG
+	checkfd012("exiting initmaps");
+#endif
 }
 
 void
