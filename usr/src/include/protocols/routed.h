@@ -1,4 +1,4 @@
-/*	routed.h	82/06/09	4.5	*/
+/*	routed.h	82/06/09	4.6	*/
 /*
  * Routing Information Protocol
  *
@@ -22,10 +22,16 @@ struct rip {
 #define	rip_tracefile	ripun.ru_tracefile
 };
  
-#define	RIPCMD_REQUEST		0x1	/* want info */
-#define	RIPCMD_RESPONSE		0x2	/* responding to request */
-#define	RIPCMD_TRACEON		0x3	/* turn tracing on */
-#define	RIPCMD_TRACEOFF		0x4	/* turn it off */
+#define	RIPCMD_REQUEST		1	/* want info */
+#define	RIPCMD_RESPONSE		2	/* responding to request */
+#define	RIPCMD_TRACEON		3	/* turn tracing on */
+#define	RIPCMD_TRACEOFF		4	/* turn it off */
+
+#define	RIPCMD_MAX		5
+#ifdef RIPCMDS
+char *ripcmds[RIPCMD_MAX] =
+  { "#0", "REQUEST", "RESPONSE", "TRACEON", "TRACEOFF" };
+#endif
 
 #define IPPORT_ROUTESERVER 	520	/* well-known port */
 #define	HOPCNT_INFINITY		16	/* per Xerox NS */
