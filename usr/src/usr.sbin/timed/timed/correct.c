@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)correct.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)correct.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -108,7 +108,7 @@ struct timeval *corr;
 	struct timeval now;
 
 	if (timerisset(corr)) {
-		if (corr->tv_sec < MAXADJ && corr->tv_sec > - MAXADJ)
+		if (corr->tv_sec < MAXADJ && corr->tv_sec > - MAXADJ) {
 			(void)adjtime(corr, (struct timeval *)0);
 		} else {
 			syslog(LOG_WARNING,
@@ -119,7 +119,6 @@ struct timeval *corr;
 			if (settimeofday(&now, (struct timezone *)0) < 0)
 				syslog(LOG_ERR, "can't set time");
 		}
-		first = 0;
 	}
 }
 
