@@ -6,7 +6,7 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)command.c 4.3 %G%";
+static	char sccsid[] = "@(#)command.c 4.4 %G%";
 
 MSG		BADEQ;
 MSG		NOMATCH;
@@ -174,8 +174,10 @@ CHAR		defcom;
 	    case '>':
 		lastcom=0; savc=rdc();
 		IF regptr=getreg(savc)
-		THEN * (ADDR *) (((ADDR)&u)+regptr)=dot;
+		THEN IF kcore THEN *(int *)regptr = dot; ELSE
+		     * (ADDR *) (((ADDR)&u)+regptr)=dot;
 		     ptrace(WUREGS,pid,regptr,* (ADDR *) (((ADDR)&u)+regptr));
+		     FI
 		ELIF (modifier=varchk(savc)) != -1
 		THEN	var[modifier]=dot;
 		ELSE	error(BADVAR);

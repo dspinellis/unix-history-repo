@@ -6,7 +6,7 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)output.c 4.1 %G%";
+static	char sccsid[] = "@(#)output.c 4.2 %G%";
 #include <stdio.h>
 
 
@@ -78,6 +78,10 @@ printc(c)
 	     WHILE (printptr-printbuf)&7 DO *printptr++=SP; OD
 	ELIF c
 	THEN printptr++;
+	FI
+	IF printptr >= &printbuf[MAXLIN-9] THEN
+		write(outfile, printbuf, printptr - printbuf);
+		printptr = printbuf;
 	FI
 }
 
