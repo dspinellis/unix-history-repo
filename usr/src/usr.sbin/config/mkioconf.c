@@ -1,4 +1,4 @@
-/*	mkioconf.c	2.5	82/10/25	*/
+/*	mkioconf.c	2.6	83/01/02	*/
 
 #include <stdio.h>
 #include "y.tab.h"
@@ -22,8 +22,8 @@ vax_ioconf()
 		perror(path("ioconf.c"));
 		exit(1);
 	}
+	fprintf(fp, "#include \"../machine/pte.h\"\n");
 	fprintf(fp, "#include \"../h/param.h\"\n");
-	fprintf(fp, "#include \"../h/pte.h\"\n");
 	fprintf(fp, "#include \"../h/buf.h\"\n");
 	fprintf(fp, "#include \"../h/map.h\"\n");
 	fprintf(fp, "#include \"../h/vm.h\"\n");
@@ -270,7 +270,7 @@ sun_ioconf()
 	fprintf(fp, "#include \"../h/map.h\"\n");
 	fprintf(fp, "#include \"../h/vm.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#include \"../sunmb/mbvar.h\"\n");
+	fprintf(fp, "#include \"../sundev/mbvar.h\"\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define C (caddr_t)\n\n");
 	fprintf(fp, "\n");
