@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: sd.c 1.2 90/01/23$
  *
- *	@(#)sd.c	7.5 (Berkeley) %G%
+ *	@(#)sd.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -44,23 +44,19 @@ sdinit(ctlr, unit)
 	u_char stat;
 	int capbuf[2];
 
-	/* NB: HP6300 won't boot if next printf is removed (???) - vj */
-	printf("sd(%d,%d,0,0): ", ctlr, unit);
 	stat = scsi_test_unit_rdy(ctlr, unit);
 	if (stat) {
 		/* drive may be doing RTZ - wait a bit */
-		printf("not ready - ");
 		if (stat == STS_CHECKCOND) {
-			printf("retrying ... ");
 			DELAY(1000000);
 			stat = scsi_test_unit_rdy(ctlr, unit);
 		}
 		if (stat) {
-			printf("giving up (stat=%x).\n", stat);
+			printf("sd(%d,%d,0,0): init failed (stat=%x)\n",
+			       ctlr, unit, stat);
 			return (0);
 		}
 	}
-	printf("unit ready.\n");
 	/*
 	 * try to get the drive block size.
 	 */
@@ -117,6 +113,9 @@ sdstrategy(io, func)
 	daddr_t blk = io->i_bn >> ss->sc_blkshift;
 	u_int nblk = io->i_cc >> ss->sc_blkshift;
 	char stat;
+
+	if (io->i_cc == 0)
+		return(0);
 
 	ss->sc_retry = 0;
 retry:
