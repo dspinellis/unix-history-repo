@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -380,7 +380,10 @@ magic(f)
     long magic;
 
     magic = getw(f);
-    fseek(f, -sizeof (magic), L_INCR);		/* reset file position */
+    if (ftell(f) < sizeof magic)
+    	rewind(f);				/* reset file position */
+    else
+    	fseek(f, -sizeof (magic), L_INCR);	/* reset file position */
     return (magic == 0405 || magic == OMAGIC || magic == NMAGIC ||
 	magic == 0411 || magic == ZMAGIC || magic == 0177545);
 }
