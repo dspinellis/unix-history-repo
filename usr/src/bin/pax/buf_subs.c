@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)buf_subs.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)buf_subs.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -200,8 +200,10 @@ appnd_start(skcnt)
 	register int res;
 	off_t cnt;
 
-	if (exit_val != 0)
+	if (exit_val != 0) {
+		warn(0, "Cannot append to an archive that may have flaws.");
 		return(-1);
+	}
 	/*
 	 * if the user did not specify a write blocksize, inherit the size used
 	 * in the last archive volume read. (If a is set we still use rdblksz
@@ -276,7 +278,7 @@ appnd_start(skcnt)
 	return(0);
 
     out:
-	warn(1, "Unable to position at the end of the archive, append failed");
+	warn(1, "Unable to rewrite archive trailer, cannot append.");
 	return(-1);
 }
 	
@@ -342,7 +344,7 @@ rd_sync()
 		 * can extract out of the archive.
 		 */
 		if ((maxflt > 0) && (++errcnt > maxflt))
-			warn(1,"Archive read error limit (%d) reached",maxflt);
+			warn(0,"Archive read error limit (%d) reached",maxflt);
 		else if (ar_rdsync() == 0)
 			continue;
 		if (ar_next() < 0)
