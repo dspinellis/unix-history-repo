@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)nsh.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)nsh.c	4.3	(Berkeley)	%G%";
 
 # include "defs.h"
 /*
@@ -29,30 +29,20 @@ struct {
 	"mwrite",	20,	"/usr/net/bin/mwrite",	"/usr/net/bin/mwrite",
 	"prmail",	20,	"/usr/net/bin/prmail",	"/usr/net/bin/prmail",
 # ifndef NFREECMD
-	"bpq",		20,	"/usr/bin/bpq",		"/bin/bpq",
-	"epq",		20,	"/usr/bin/epq",		"/bin/epq",
 	"finger",	20,	"/usr/ucb/finger",	"/usr/bin/finger",
-	"help",		20,	"/bin/help",	"/usr/bin/help",
-	"lpq",		20,	"/usr/bin/lpq",		"/bin/lpq",
+	"lpq",		20,	"/usr/ucb/lpq",		"/usr/bin/lpq",
 # ifdef FREELPR
-	"lpr",		20,	"/usr/bin/lpr",		"/bin/lpr",
+	"lpr",		20,	"/usr/ucb/lpr",		"/usr/bin/lpr",
 # endif
 	"netlog",	20,	"/usr/bin/netlog",	"/usr/ucb/netlog",
 	"netq",		20,	"/usr/bin/netq",	"/usr/ucb/netq",
-	"news",		20,	"/usr/bin/news",	"/usr/ucb/news",
 	"ps",		20,	"/bin/ps",		"/usr/bin/ps",
-	"pstat",	20,	"/usr/bin/pstat",	"/bin/pstat",
-	"rcs",		20,	"/usr/bin/rcs",		"/bin/rcs",
-	"rcslog",	1,	"/usr/bin/rcslog",	"/bin/rcslog",
-	"rcsq",		20,	"/usr/bin/rcsq",	"/bin/rcsq",
-	"trq",		20,	"/usr/bin/trq",		"/bin/trq",
+	"pstat",	20,	"/etc/pstat",		"/usr/bin/pstat",
 	"vpq",		20,	"/usr/ucb/vpq",		"/usr/bin/vpq",
 	"w",		20,	"/usr/ucb/w",		"/usr/bin/w",
 	"wc",		20,	"/usr/bin/wc",		"/bin/wc",
-	"where",	20,	"/usr/bin/where",	"/bin/where",
 	"who",		20,	"/bin/who",		"/usr/bin/who",
 	"whom",		20,	"/usr/ucb/whom",	"/usr/bin/whom",
-	"write",	20,	"/usr/bin/write",	"/bin/write",
 	"yank",		20,	"/usr/ucb/yank",	"/usr/bin/yank",
 # endif
 	0, 		0,		0,		0
@@ -66,6 +56,24 @@ main(argc,argv)
 		fprintf(stderr,"Wrong number of arguments to nsh.\n");
 		exit(EX_USAGE);
 	}
+	s = argv[2];
+	while (*s)
+		if (*s == ';'
+		 || *s == '|'
+		 || *s == '&'
+		 || *s == '?'
+		 || *s == '*'
+		 || *s == '['
+		 || *s == '~'
+		 || *s == '{'
+		 || *s == '<'
+		 || *s == '>'
+		 || *s == '$'
+		 || *s == '`') {
+			fprintf(stderr, "Illegal shell metacharacter in command.\n");
+			exit(9);
+		} else
+			++s;
 	s = argv[2];
 	while(*s && *s != ' ')s++;
 	if(*s == ' ')flg++;
