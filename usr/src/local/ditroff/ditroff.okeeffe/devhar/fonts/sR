@@ -1,0 +1,72 @@
+#
+# table of font 3600 with master 14 and unitwidth 10
+# 
+# This is the Smal caps for Times Roman font
+#
+# The lower case input chars are automatically translated to upper case
+#
+# Special "oldstyle font" han's preprocessor. Not officially public
+# available
+#
+name sR
+internalname 3600
+charset
+\|	33	0	0	0	spacewidth is 66 decipoints
+\^	17	0	0	0	not really a quart space
+A	111	2	01	3600	SM CAP A
+a	"
+B	105	2	02	3600	SM CAP B
+b	"
+C	111	2	03	3600	SM CAP C
+c	"
+D	125	2	04	3600	SM CAP D
+d	"
+E	94	2	05	3600	SM CAP E
+e	"
+F	94	2	06	3600	SM CAP F
+f	"
+G	130	2	07	3600	SM CAP G
+g	"
+H	125	2	010	3600	SM CAP H
+h	"
+I	63	2	011	3600	SM CAP I
+i	"
+J	69	2	012	3600	SM CAP J
+j	"
+K	119	2	013	3600	SM CAP K
+k	"
+L	100	2	014	3600	SM CAP L
+l	"
+M	136	2	015	3600	SM CAP M
+m	"
+N	125	2	016	3600	SM CAP N
+n	"
+O	119	2	017	3600	SM CAP O
+o	"
+P	100	2	020	3600	SM CAP P
+p	"
+Q	119	2	021	3600	SM CAP q
+q	"
+R	111	2	022	3600	SM CAP R
+r	"
+S	80	2	023	3600	SM CAP S
+s	"
+T	100	2	024	3600	SM CAT T
+t	"
+U	125	2	025	3600	SM CAP U
+u	"
+V	111	2	026	3600	SM CAP V
+v	"
+W	169	2	027	3600	SM CAP W
+w	"
+X	111	2	030	3600	SM CAP X
+x	"
+Y	111	2	031	3600	SM CAP Y
+y	"
+Z	105	2	032	3600	SM CAP Z
+z	"
+&	119	2	033	3600	SM CAP &
+AE	155	2	034	3600	SC DIPH
+ae	"
+OE	155	2	035	3600	SM C DE DIP
+oe	"
