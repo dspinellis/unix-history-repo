@@ -1,91 +1,53 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)a.out.h	5.4 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)a.out.h	5.5 (Berkeley) %G%
  */
 
-/*
- * Definitions of the a.out header
- * and magic numbers are shared with
- * the kernel.
- */
+#ifndef	_AOUT_H_
+#define	_AOUT_H_
+
 #include <sys/exec.h>
 
-/*
- * Macros which take exec structures as arguments and tell whether
- * the file has a reasonable magic number or offsets to text|symbols|strings.
- */
-#define	N_BADMAG(x) \
-    (((x).a_magic)!=OMAGIC && ((x).a_magic)!=NMAGIC && ((x).a_magic)!=ZMAGIC)
+/* Valid magic number check. */
+#define	N_BADMAG(ex) \
+	((ex).a_magic != NMAGIC && (ex).a_magic != OMAGIC && \
+	    (ex).a_magic != ZMAGIC)
 
+/* Text segment offset. */
 #if defined(vax) || defined(tahoe)
-#define	N_TXTOFF(x) \
-	((x).a_magic == ZMAGIC ? 1024 : sizeof (struct exec))
+#define	N_TXTOFF(ex) \
+	((ex).a_magic == ZMAGIC ? 1024 : sizeof(struct exec))
 #endif
 
 #if defined(hp300) || defined(i386)
-#define	N_TXTOFF(x) \
-	((x).a_magic == ZMAGIC ? 4096 : sizeof (struct exec)) 
+#define	N_TXTOFF(ex) \
+	((ex).a_magic == ZMAGIC ? 4096 : sizeof(struct exec)) 
 #endif
 
-#define N_SYMOFF(x) \
-	(N_TXTOFF(x) + (x).a_text+(x).a_data + (x).a_trsize+(x).a_drsize)
+/* Symbol table offset. */
+#define N_SYMOFF(ex) \
+	(N_TXTOFF(ex) + (ex).a_text + (ex).a_data + (ex).a_trsize + \
+	    (ex).a_drsize)
 
-#define	N_STROFF(x) \
-	(N_SYMOFF(x) + (x).a_syms)
+/* String table offset. */
+#define	N_STROFF(ex) \
+	(N_SYMOFF(ex) + (ex).a_syms)
 
-/*
- * Format of a relocation datum.
- */
+/* Relocation format. */
 struct relocation_info {
-	int	r_address;	/* address which is relocated */
-unsigned int	r_symbolnum:24,	/* local symbol ordinal */
-		r_pcrel:1, 	/* was relocated pc relative already */
-		r_length:2,	/* 0=byte, 1=word, 2=long */
-		r_extern:1,	/* does not include value of sym referenced */
-		:4;		/* nothing, yet */
+	int r_address;			/* offset in text or data segment */
+	unsigned int r_symbolnum : 24,	/* ordinal number of add symbol */
+			 r_pcrel :  1,	/* 1 if value should be pc-relative */
+			r_length :  2,	/* log base 2 of value's width */
+			r_extern :  1,	/* 1 if need to add symbol to value */
+				 :  4;	/* reserved */
 };
 
-/*
- * Format of a symbol table entry; this file is included by <a.out.h>
- * and should be used if you aren't interested the a.out header
- * or relocation information.
- */
-struct	nlist {
-	union {
-		char	*n_name;	/* for use when in-core */
-		long	n_strx;		/* index into file string table */
-	} n_un;
-unsigned char	n_type;		/* type flag, i.e. N_TEXT etc; see below */
-	char	n_other;	/* unused */
-	short	n_desc;		/* see <stab.h> */
-unsigned long	n_value;	/* value of this symbol (or sdb offset) */
-};
-#define	n_hash	n_desc		/* used internally by ld */
+#define _AOUT_INCLUDE_
+#include <nlist.h>
 
-/*
- * Simple values for n_type.
- */
-#define	N_UNDF	0x0		/* undefined */
-#define	N_ABS	0x2		/* absolute */
-#define	N_TEXT	0x4		/* text */
-#define	N_DATA	0x6		/* data */
-#define	N_BSS	0x8		/* bss */
-#define	N_COMM	0x12		/* common (internal to ld) */
-#define	N_FN	0x1e		/* file name symbol */
-
-#define	N_EXT	01		/* external bit, or'ed in */
-#define	N_TYPE	0x1e		/* mask for all the type bits */
-
-/*
- * Sdb entries have some of the N_STAB bits set.
- * These are given in <stab.h>
- */
-#define	N_STAB	0xe0		/* if any of these bits set, a SDB entry */
-
-/*
- * Format for namelist values.
- */
-#define	N_FORMAT	"%08x"
+#endif /* !_AOUT_H_ */
