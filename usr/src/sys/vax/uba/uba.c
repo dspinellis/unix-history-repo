@@ -1,4 +1,4 @@
-/*	uba.c	3.3	%G%	*/
+/*	uba.c	3.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
@@ -145,9 +145,9 @@ ubareset()
 {
 	struct uba_regs *up = (struct uba_regs *)UBA0;
 	register struct cdevsw *cdp;
-	int i;
+	int i, s;
 
-	(void) spl6();
+	s = spl6();
 	printf("UBA RESET:");
 	up->uba_cr = ADINIT;
 	up->uba_cr = IFS|BRIE|USEFIE|SUEFIE;
@@ -156,5 +156,5 @@ ubareset()
 	for (cdp = cdevsw; cdp->d_open; cdp++)
 		(*cdp->d_reset)();
 	printf("\n");
-	(void) spl0();
+	splx(s);
 }
