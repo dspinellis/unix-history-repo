@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)scanner.c 1.6 %G%";
+static char sccsid[] = "@(#)scanner.c 1.7 %G%";
 
 /*
  * Debugger scanner.
@@ -445,6 +445,7 @@ private Token getstring()
 		*q++ = *p;
 	    }
 	} else {
+	    curchar = p;
 	    *q++ = charcon(p);
 	    p = curchar;
 	}
