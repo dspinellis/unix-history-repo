@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)patch.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)patch.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /* patch - a program to apply diffs to original files
@@ -1438,7 +1438,9 @@ another_hunk()
 	    default:
 		fatal("Malformed patch at line %d: %s",p_input_line,buf);
 	    }
-	    p_len[p_end] = strlen(p_line[p_end]);
+	    p_len[p_end] = 0;
+	    if (p_line[p_end] != 0)
+		p_len[p_end] = strlen(p_line[p_end]);
 					/* for strncmp() so we do not have */
 					/* to assume null termination */
 	}
@@ -1548,7 +1550,9 @@ another_hunk()
 	    default:
 		fatal("Malformed patch at line %d: %s",p_input_line,buf);
 	    }
-	    p_len[p_end] = strlen(p_line[p_end]);
+	    p_len[p_end] = 0;
+	    if (p_line[p_end] != 0)
+		p_len[p_end] = strlen(p_line[p_end]);
 					/* for strncmp() so we do not have */
 					/* to assume null termination */
 	}
@@ -1617,7 +1621,9 @@ another_hunk()
 	    if (*buf != '<')
 		fatal("< expected at line %d of patch.\n", p_input_line);
 	    p_line[i] = savestr(buf+2);
-	    p_len[i] = strlen(p_line[i]);
+	    p_len[i] = 0;
+	    if (p_line[i] != 0)
+		p_len[i] = strlen(p_line[i]);
 	    p_char[i] = '-';
 	}
 	if (hunk_type == 'c') {
@@ -1641,7 +1647,9 @@ another_hunk()
 	    if (*buf != '>')
 		fatal("> expected at line %d of patch.\n", p_input_line);
 	    p_line[i] = savestr(buf+2);
-	    p_len[i] = strlen(p_line[i]);
+	    p_len[i] = 0;
+	    if (p_line[i] != 0)
+		p_len[i] = strlen(p_line[i]);
 	    p_char[i] = '+';
 	}
     }
