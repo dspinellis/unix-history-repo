@@ -5,7 +5,7 @@
 
 /*
  *	defines.h 2.3 of 5/18/78
- *	defines.h 4.1 of %G%
+ *	defines.h 4.2 of %G%
  */
 
 # define CTLSTR		"%c%c\n"
@@ -64,6 +64,12 @@ extern	char	*substr();
 extern	char	*trnslat();
 extern	char	*zero();
 extern	char	*zeropad();
+
+/*
+	size of login name
+*/
+# define SZLNAM	9	/* size of login name */
+# define LNLNAM	8	/* length of login name */
 
 /*
 	SCCS Internal Structures.
@@ -179,12 +185,6 @@ struct packet {
 # define UNACK		(8)
 # define NEWRL		(16)
 # define WARNING	(32)
-
-/*
-	size of login name
-*/
-# define SZLNAM	9	/* size of login name */
-# define LNLNAM	8	/* length of login name */
 
 
 struct	stats {
