@@ -1,4 +1,4 @@
-/*	ufs_vfsops.c	6.8	84/08/29	*/
+/*	ufs_vfsops.c	6.9	84/09/28	*/
 
 #include "param.h"
 #include "systm.h"
@@ -117,7 +117,7 @@ found:
 			goto out;
 		}
 		bcopy((caddr_t)tp->b_un.b_addr, space, (u_int)size);
-		fs->fs_csp[i / fs->fs_frag] = (struct csum *)space;
+		fs->fs_csp[fragstoblks(fs, i)] = (struct csum *)space;
 		space += size;
 		brelse(tp);
 		tp = 0;
