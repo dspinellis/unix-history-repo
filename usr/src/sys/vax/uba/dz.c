@@ -1,4 +1,4 @@
-/*	dz.c	4.13	%G%	*/
+/*	dz.c	4.14	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
@@ -16,6 +16,7 @@
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
+#include "../h/vm.h"
 #include "../h/uba.h"
 #include "../h/conf.h"
 #include "../h/pdma.h"
@@ -82,6 +83,7 @@ struct device {
  * Software copy of dzbrk since it isn't readable
  */
 char	dz_brk[NDZ11];
+char	dzsoftCAR[NDZ11];
 
 /*
  * The dz doesn't interrupt on carrier transitions, so
@@ -117,7 +119,7 @@ dzcntrlr(ui, reg)
  * Called by auto-configure to initialize good dz's;
  * set up pdma structures.
  */
-dzslave(ui, reg, slaveno, uban)
+dzslave(ui, reg)
 	register struct uba_dinfo *ui;
 	caddr_t reg;
 {
@@ -131,6 +133,7 @@ dzslave(ui, reg, slaveno, uban)
 		pdp->p_fcn = dzxint;
 		pdp++, tp++;
 	}
+	dzsoftCAR[ui->ui_unit] = ui->ui_flags;
 	return (1);
 }
 
@@ -428,11 +431,7 @@ dzscan()
 		dzaddr = dzpdma[i].p_addr;
 		tp = &dz_tty[i];
 		bit = 1<<(i&07);
-#ifdef BERT
-		if (dzaddr->dzmsr & bit || i == 6 || i == 7) {
-#else
-		if (dzaddr->dzmsr & bit) {
-#endif
+		if ((dzsoftCAR[i]&bit) || (dzaddr->dzmsr&bit)) {
 			/* carrier present */
 			if ((tp->t_state & CARR_ON) == 0) {
 				wakeup((caddr_t)&tp->t_rawq);
