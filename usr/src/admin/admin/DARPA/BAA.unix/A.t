@@ -1,13 +1,12 @@
-.\"     @(#)A.t	1.1     89/02/23
+.\"     @(#)A.t	1.2     89/02/23
 .\" run with ditroff -ms
 .nr PS 18
 .nr VS 22
 .nr PO 1.25i
 .LP
-.ce 3
-\fBProposal for Research on the
-Development and Integration of New Software
-into the Berkeley UNIX Project\fP
+.ce 100
+.so A.title
+.ce
 .nr PS 11
 .nr VS 13
 .LP
