@@ -1,28 +1,19 @@
-#	@(#)Makefile	7.2 (Berkeley) %G%
+#	@(#)Makefile	7.3 (Berkeley) %G%
 
 # Makefile for pmax tags file
 
 .include "../kern/Make.tags.inc"
 
 all:
-	@echo "make tags or links only"
+	@echo "make tags only"
 
-TPMAX=	../pmax/tags
-SPMAX=	../pmax/pmax/*.[ch] ../pmax/include/*.h ../pmax/dev/*.[ch]
-APMAX=	../pmax/pmax/*.s
+PMAX=	/sys/pmax/conf/*.[ch] /sys/pmax/dev/*.[ch] /sys/pmax/include/*.[ch] \
+	/sys/pmax/pmax/*.[ch] /sys/pmax/ultrix/*.[ch]
+APMAX=	/sys/pmax/pmax/*.s
 
-# Directories in which to place pmax tags links
-DPMAX=	pmax dev include
-
-tags: FRC
-	-ctags -dtf ${TPMAX} ${COMM} ${SPMAX}
-	egrep "^LEAF(.*)|^ALEAF(.*)|^NON_LEAF(.*)" ${APMAX} | \
+tags::
+	-ctags -dt ${COMM} ${PMAX}
+	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${APMAX} | \
 	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
-		>> ${TPMAX}
-	sort -o ${TPMAX} ${TPMAX}
-
-links:
-	-for i in ${DPMAX}; do \
-	    (cd $$i && rm -f tags; ln -s ../tags tags); done
-
-FRC:
+		>> tags
+	sort -o tags tags
