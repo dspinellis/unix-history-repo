@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.61 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -79,7 +79,7 @@ copies:
 	    tar Hcf - *.h | (cd ${DESTDIR}/usr/include/machine; tar xpfB -);
 	rm -f ${DESTDIR}/usr/include/X11
 	mkdir ${DESTDIR}/usr/include/X11
-	cd /usr/X11R4/include/X11 && \
+	cd /usr/X11/include/X11 && \
 	    tar Hcf - *.h | (cd ${DESTDIR}/usr/include/X11; tar xpfB -);
 
 		rm -rf ${DESTDIR}/usr/include/$$i; \
