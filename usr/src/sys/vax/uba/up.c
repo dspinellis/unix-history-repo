@@ -1,4 +1,4 @@
-/*	up.c	4.22	81/02/25	*/
+/*	up.c	4.23	81/02/25	*/
 
 #include "up.h"
 #if NSC > 0
@@ -102,7 +102,7 @@ daddr_t dkblock();
 
 int	upwstart, upwatch();		/* Have started guardian */
 int	upseek;
-int	updrydel;
+int	upwaitdry;
 
 /*ARGSUSED*/
 upprobe(reg)
@@ -343,7 +343,7 @@ upstart(um)
 	register struct updevice *upaddr;
 	struct upst *st;
 	daddr_t bn;
-	int dn, sn, tn, cmd;
+	int dn, sn, tn, cmd, waitdry;
 
 loop:
 	/*
@@ -376,9 +376,15 @@ loop:
 	/*
 	 * Check that it is ready and online
 	 */
-	if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL)) {
+	waitdry = 0;
+	while ((upaddr->upds&UP_DRY) == 0) {
+		if (++waitdry > 512)
+			break;
+		upwaitdry++;
+	}
+	if ((upaddr->upds & UP_DREADY) != UP_DREADY) {
 		printf("up%d not ready", dkunit(bp));
-		if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL)) {
+		if ((upaddr->upds & UP_DREADY) != UP_DREADY) {
 			printf("\n");
 			um->um_tab.b_active = 0;
 			um->um_tab.b_errcnt = 0;
@@ -444,7 +450,7 @@ scintr(sc21)
 	register unit;
 	struct up_softc *sc = &up_softc[um->um_ctlr];
 	int as = (upaddr->upas & 0377) | sc->sc_softas;
-	int needie = 1;
+	int needie = 1, waitdry;
 
 	sc->sc_wticks = 0;
 	sc->sc_softas = 0;
@@ -475,9 +481,16 @@ scintr(sc21)
 	 * either the drive or the controller.
 	 */
 	if ((upaddr->upds&UP_ERR) || (upaddr->upcs1&UP_TRE)) {
-		while ((upaddr->upds & UP_DRY) == 0)
-			updrydel++;
-		if (upaddr->uper1&UP_WLE) {
+		waitdry = 0;
+		while ((upaddr->upds & UP_DRY) == 0) {
+			if (++waitdry > 512)
+				break;
+			upwaitdry++;
+		}
+		if ((upaddr->upds&UP_DREADY) != UP_DREADY) {
+			printf("up%d not ready", dkunit(bp));
+			bp->b_flags |= B_ERROR;
+		} else if (upaddr->uper1&UP_WLE) {
 			/*
 			 * Give up on write locked devices
 			 * immediately.
