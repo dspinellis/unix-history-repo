@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.16 (Berkeley) %G%
+#	@(#)Makefile.vax	7.17 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -66,7 +66,7 @@ locore.o: assym.s ${AHEADS} ../vax/rpb.s ../vax/scb.s ubvec.s \
     machine/pte.h ../vax/cpu.h mba.h
 	cat assym.s ../vax/rpb.s ../vax/scb.s ubvec.s ../vax/locore.s \
 	    ubglue.s > locore.c
-	cc -E -DLOCORE -I../vax ${COPTS} locore.c > locore.i
+	${CC} -E -DLOCORE -I../vax ${COPTS} locore.c > locore.i
 	@echo 'as -o locore.o $${AHEADS} locore.i'
 	@as -o locore.o ${AHEADS} locore.i
 	@rm locore.i
@@ -95,7 +95,7 @@ assym.s: genassym
 	./genassym >assym.s
 
 genassym:
-	cc ${INCLUDES} ${IDENT} ${PARAM} -o genassym ../vax/genassym.c
+	${CC} ${INCLUDES} ${IDENT} ${PARAM} -o genassym ../vax/genassym.c
 
 depend: assym.s
 	mkdep ${COPTS} ${CFILES} ioconf.c
