@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	8.6 (Berkeley) %G%
+ *	@(#)swap_pager.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -98,7 +98,6 @@ struct swpclean	swap_pager_inuse;	/* list of pending page cleans */
 struct swpclean	swap_pager_free;	/* list of free pager clean structs */
 struct pagerlst	swap_pager_list;	/* list of "named" anon regions */
 
-static int		swap_pager_finish __P((swp_clean_t));
 static void 		swap_pager_init __P((void));
 static vm_pager_t	swap_pager_alloc
 			    __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
@@ -710,6 +709,9 @@ swap_pager_io(swp, mlist, npages, flags)
 		 * to efficiently handle the common case of a single page.
 		 * For clusters, it allows us to locate the object easily
 		 * and we then reconstruct the rest of the mlist from spc_kva.
+		 *
+		 * XXX
+		 * swap_pager_finish no longer exists.
 		 */
 		spc->spc_m = m;
 		spc->spc_npages = npages;
