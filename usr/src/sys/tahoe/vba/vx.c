@@ -6,7 +6,7 @@
  * VIOC-X driver
  */
 #ifdef VXPERF
-#define	DOSCOPE
+#define DOSCOPE
 #endif
 
 #include "../tahoe/pte.h"
@@ -79,13 +79,13 @@ struct	vx_softc {
 	u_short	vs_maxcmd;	/* max number of concurrent cmds */
 	u_short	vs_silosiz;	/* silo size */
 	short	vs_vers;	/* vioc/pvioc version */
-#define	VXV_OLD	0		/* PVIOCX | VIOCX */
-#define	VXV_NEW	1		/* NPVIOCX | NVIOCX */
+#define VXV_OLD	0		/* PVIOCX | VIOCX */
+#define VXV_NEW	1		/* NPVIOCX | NVIOCX */
 	short	vs_xmtcnt;	/* xmit commands pending */
 	short	vs_brkreq;	/* send break requests pending */
 	short	vs_active;	/* active port bit array or flag */
 	short 	vs_state;	/* controller state */
-#define	VXS_READY	0	/* ready for commands */
+#define VXS_READY	0	/* ready for commands */
 #define VXS_RESET	1	/* in process of reseting */
 	caddr_t vs_mricmd;	/* most recent issued cmd */
 	u_int	vs_ivec;	/* interrupt vector base */
@@ -364,16 +364,21 @@ vxcparam(dev, wait)
 	register struct tty *tp;
 	register struct vx_softc *vs;
 	register struct vxcmd *cp;
-	int s;
+	int s, unit = minor(dev);
 
-	tp = &vx_tty[minor(dev)];
+	tp = &vx_tty[unit];
 	vs = (struct vx_softc *)tp->t_addr;
 	cp = vobtain(vs);
 	s = spl8();
-	cp->cmd = VXC_LPARAX;		/* set command to "load parameters" */
-	cp->par[1] = minor(dev)&017;	/* port number */
-	cp->par[2] = (tp->t_flags&RAW) ? 0 : tp->t_startc;	/* XON char */
-	cp->par[3] = (tp->t_flags&RAW) ? 0 : tp->t_stopc;	/* XOFF char */
+	/*
+	 * Construct ``load parameters'' command block
+	 * to setup baud rates, xon-xoff chars, parity,
+	 * and stop bits for the specified port.
+	 */
+	cp->cmd = VXC_LPARAX;
+	cp->par[1] = unit & 017;	/* port number */
+	cp->par[2] = (tp->t_flags&RAW) ? 0 : tp->t_startc;
+	cp->par[3] = (tp->t_flags&RAW) ? 0 : tp->t_stopc;
 	if (tp->t_flags&(RAW|LITOUT) ||
 	    (tp->t_flags&(EVENP|ODDP)) == (EVENP|ODDP)) {
 		cp->par[4] = 0xc0;	/* 8 bits of data */
@@ -382,12 +387,12 @@ vxcparam(dev, wait)
 		cp->par[4] = 0x40;	/* 7 bits of data */
 		if ((tp->t_flags&(EVENP|ODDP)) == ODDP)
 			cp->par[7] = 1;		/* odd parity */
-		else if((tp->t_flags&(EVENP|ODDP)) == EVENP)
+		else if ((tp->t_flags&(EVENP|ODDP)) == EVENP)
 			cp->par[7] = 3;		/* even parity */
 		else
 			cp->par[7] = 0;		/* no parity */
 	}
-	cp->par[5] = 0x4;			/* 1 stop bit */
+	cp->par[5] = 0x4;			/* 1 stop bit - XXX */
 	cp->par[6] = tp->t_ospeed;
 	if (vcmd(vs->vs_nbr, (caddr_t)&cp->cmd) && wait)
 		sleep((caddr_t)cp,TTIPRI);
@@ -403,9 +408,9 @@ vxxint(vx, cp)
 	register int vx;
 	register struct vxcmd *cp;
 {
-	register struct	vxmit *vp, *pvp;
-	register struct	tty *tp, *tp0;
-	register struct	vx_softc *vs;
+	register struct vxmit *vp, *pvp;
+	register struct tty *tp, *tp0;
+	register struct vx_softc *vs;
 	register struct tty *hp;
 
 	vs = &vx_softc[vx];
@@ -472,7 +477,7 @@ vxxint(vx, cp)
 		}
 		vs->vs_active &= ~(1 << ((vp->line & 017) - vs->vs_loport));
 	} else {
-		vs->vs_active = 1;
+		vs->vs_active = -1;
 		tp0 = &vx_tty[vx*16 + vs->vs_hiport];
 		for(tp = &vx_tty[vx*16 + vs->vs_loport]; tp <= tp0; tp++)
 			if (vxstart(tp) && (cp = nextcmd(vs)) != NULL) {
@@ -511,10 +516,9 @@ vxstart(tp)
 	register struct tty *tp;
 {
 	register short n;
-	register struct	vx_softc *vs;
-	register char *outb;
+	register struct vx_softc *vs;
 	register full = 0;
-	int k, s, port;
+	int s, port;
 
 	s = spl8();
 	port = minor(tp->t_dev) & 017;
@@ -546,21 +550,24 @@ vxstart(tp)
 				full = 0;
 			}
 		} else {
-			outb = (char *)tp->t_outq.c_cf;
+			char *cp = (char *)tp->t_outq.c_cf;
+
 			tp->t_state |= TS_BUSY;
-			if (vs->vs_vers == VXV_NEW)
-				k = vs->vs_active & (1 << (port-vs->vs_loport));
-			else
-				k = vs->vs_active;
-			full = vsetq(vs, port, outb, n);
-			if ((k&1) == 0) {	/* not called from vxxint */
+			full = vsetq(vs, port, cp, n);
+			/*
+			 * If the port is not currently active, try to
+			 * send the data.  We send it immediately if the
+			 * command buffer is full, or if we've nothing
+			 * currently outstanding.  If we don't send it,
+			 * set a timeout to force the data to be sent soon.
+			 */
+			if ((vs->vs_active & (1 << (port-vs->vs_loport))) == 0)
 				if (full || vs->vs_xmtcnt == 0) {
-					outb = (char *)(&nextcmd(vs)->cmd);
+					cp = (char *)&nextcmd(vs)->cmd;
 					vs->vs_xmtcnt++;
-					vcmd(vs->vs_nbr, outb);
+					vcmd(vs->vs_nbr, cp);
 				} else
 					timeout(vxforce, (caddr_t)vs, 3);
-			}
 		}
 	}
 	splx(s);
@@ -586,23 +593,22 @@ static	int vxbbno = -1;
 /*
  * VIOCX Initialization.  Makes free lists of command buffers.
  * Resets all viocx's.  Issues a LIDENT command to each
- * viocx which establishes interrupt vectors and logical
- * port numbers
+ * viocx to establish interrupt vectors and logical port numbers.
  */
 vxinit(vx, wait) 
 	register int vx;
 	int wait;
 {
-	register struct	vx_softc *vs;
-	register struct	vxdevice *addr;
-	register struct	vxcmd *cp;
+	register struct vx_softc *vs;
+	register struct vxdevice *addr;
+	register struct vxcmd *cp;
 	register char *resp;
 	register int j;
 	char type;
 
 	vs = &vx_softc[vx];
-	vs->vs_type = 0;		/* viox-x by default */
-	addr = (struct vxdevice *)(((struct vba_device *)vxinfo[vx])->ui_addr);
+	vs->vs_type = 0;		/* vioc-x by default */
+	addr = (struct vxdevice *)((struct vba_device *)vxinfo[vx])->ui_addr;
 	type = addr->v_ident;
 	vs->vs_vers = (type&VXT_NEW) ? VXV_NEW : VXV_OLD;
 	if (vs->vs_vers == VXV_NEW)
@@ -612,7 +618,7 @@ vxinit(vx, wait)
 	case VXT_VIOCX:
 	case VXT_VIOCX|VXT_NEW:
 		/* set dcd for printer ports */
-		for (j = 0;j < 16;j++)
+		for (j = 0; j < 16;j++)
 			if (addr->v_portyp[j] == 4)
 				addr->v_dcd |= 1 << j;
 		break;
@@ -623,7 +629,7 @@ vxinit(vx, wait)
 #if NVBSC > 0
 	case VX_VIOCB:			/* old f/w bisync */
 	case VX_VIOCB|VXT_NEW: {	/* new f/w bisync */
-		register struct	bsc *bp;
+		register struct bsc *bp;
 		extern struct bsc bsc[];
 
 		printf("%X: %x%x %s VIOC-B, ", (long)addr, (int)addr->v_ident,
@@ -641,28 +647,34 @@ vxinit(vx, wait)
 		vs->vs_bop = ++vxbbno;
 		printf("VIOC-BOP no. %d at %x\n", vs->vs_bop, addr);
 
-	default:		/* unknown viocx type */
+	default:
 		printf("vx%d: unknown type %x\n", vx, type);
 		return;
 	}
 	vs->vs_nbr = -1;
-	vs->vs_maxcmd = vs->vs_vers == VXV_NEW ? 24 : 4;
-	/* init all cmd buffers */
+	vs->vs_maxcmd = (vs->vs_vers == VXV_NEW) ? 24 : 4;
+	/*
+	 * Initialize all cmd buffers by linking them
+	 * into a free list.
+	 */
 	for (j = 0; j < NVCXBUFS; j++) {
-		cp = &vs->vs_lst[j];	/* index a buffer */
-		cp->c_fwd = &vs->vs_lst[j+1];	/* point to next buf */
+		cp = &vs->vs_lst[j];
+		cp->c_fwd = &vs->vs_lst[j+1];
 	}
 	vs->vs_avail = &vs->vs_lst[0];	/* set idx to 1st free buf */
 	cp->c_fwd = (struct vxcmd *)0;	/* mark last buf in free list */
 
-	cp = vobtain(vs);		/* grab the control block */
-	cp->cmd = VXC_LIDENT;		/* set command type */
+	/*
+	 * Establish the interrupt vectors and define the port numbers.
+	 */
+	cp = vobtain(vs);
+	cp->cmd = VXC_LIDENT;
 	cp->par[0] = vs->vs_ivec; 	/* ack vector */
 	cp->par[1] = cp->par[0]+1;	/* cmd resp vector */
 	cp->par[3] = cp->par[0]+2;	/* unsol intr vector */
 	cp->par[4] = 15;		/* max ports, no longer used */
 	cp->par[5] = 0;			/* set 1st port number */
-	vcmd(vx, (caddr_t)&cp->cmd);	/* initialize the VIOC-X */
+	vcmd(vx, (caddr_t)&cp->cmd);
 	if (!wait)
 		return;
 	for (j = 0; cp->cmd == VXC_LIDENT && j < 4000000; j++)
@@ -672,14 +684,14 @@ vxinit(vx, wait)
 
  	/* calculate address of response buffer */
  	resp = (char *)addr + (addr->v_rspoff&0x3fff);
-	if (resp[0] != 0 && (resp[0]&0177) != 3) {	/* did init work? */
-		vrelease(vs, cp);
+	if (resp[0] != 0 && (resp[0]&0177) != 3) {
+		vrelease(vs, cp);	/* init failed */
 		return;
 	}
 	vs->vs_loport = cp->par[5];
 	vs->vs_hiport = cp->par[7];
 	vrelease(vs, cp);
-	vs->vs_nbr = vx;		/* assign VIOC-X board number */
+	vs->vs_nbr = vx;		/* assign board number */
 }
 
 /*
@@ -687,9 +699,9 @@ vxinit(vx, wait)
  */
 struct vxcmd *
 vobtain(vs)
-	register struct	vx_softc *vs;
+	register struct vx_softc *vs;
 {
-	register struct	vxcmd *p;
+	register struct vxcmd *p;
 	int s;
 
 	s = spl8();
@@ -713,8 +725,8 @@ vobtain(vs)
  * Release a command buffer
  */
 vrelease(vs, cp)
-	register struct	vx_softc *vs;
-	register struct	vxcmd *cp;
+	register struct vx_softc *vs;
+	register struct vxcmd *cp;
 {
 	int s;
 
@@ -728,15 +740,11 @@ vrelease(vs, cp)
 	splx(s);
 }
 
-/*
- * vxcmd - 
- *
- */
 struct vxcmd *
 nextcmd(vs)
-	register struct	vx_softc *vs;
+	register struct vx_softc *vs;
 {
-	register struct	vxcmd *cp;
+	register struct vxcmd *cp;
 	int s;
 
 	s = spl8();
@@ -747,18 +755,20 @@ nextcmd(vs)
 }
 
 /*
- * assemble transmits into a multiple command.
- * up to 8 transmits to 8 lines can be assembled together
+ * Assemble transmits into a multiple command;
+ * up to 8 transmits to 8 lines can be assembled together.
  */
-vsetq(vs ,d ,addr, n)
-	register struct	vx_softc *vs;
+vsetq(vs, line, addr, n)
+	register struct vx_softc *vs;
 	caddr_t	addr;
 {
-	register struct	vxcmd *cp;
-	register struct	vxmit *mp;
-	register char *p;
-	register i;
+	register struct vxcmd *cp;
+	register struct vxmit *mp;
 
+	/*
+	 * Grab a new command buffer or append
+	 * to the current one being built.
+	 */
 	cp = vs->vs_build;
 	if (cp == (struct vxcmd *)0) {
 		cp = vobtain(vs);
@@ -772,23 +782,23 @@ vsetq(vs ,d ,addr, n)
 		}
 		cp->cmd++;
 	}
+	/*
+	 * Select the next vxmit buffer and copy the
+	 * characters into the buffer (if there's room
+	 * and the device supports ``immediate mode'',
+	 * or store an indirect pointer to the data.
+	 */
 	mp = (struct vxmit *)(cp->par + (cp->cmd & 07)*sizeof (struct vxmit));
 	mp->bcount = n-1;
-	mp->line = d;
-	if (vs->vs_vers == VXV_NEW && n <= 6) {
+	mp->line = line;
+	if (vs->vs_vers == VXV_NEW && n <= sizeof (mp->ostream)) {
 		cp->cmd = VXC_XMITIMM;
-		p = addr;
-		/* bcopy(addr, &(char *)mp->ostream, n) ; */
+		bcopy(addr, mp->ostream, n);
 	} else {
+		/* get system address of clist block */
 		addr = (caddr_t)vtoph((struct proc *)0, (unsigned)addr);
-				/* should be a sys address */
-		p = (char *)&addr;
-		n = sizeof addr;
-		/* mp->ostream = addr ; */
+		bcopy(&addr, mp->ostream, sizeof (addr));
 	}
-	for (i = 0; i < n; i++)
-		mp->ostream[i] = *p++;
-	if (vs->vs_vers == VXV_NEW)
 	return (vs->vs_vers == VXV_NEW ? 1 : (cp->cmd&07) == 7);
 }
 
@@ -799,22 +809,21 @@ vcmd(vx, cmdad)
 	register int vx;
 	register caddr_t cmdad;
 {
-	register struct	vcmds *cp;
+	register struct vcmds *cp;
 	register struct vx_softc *vs;
 	int s;
 
 	s = spl8();
 	vs = &vx_softc[vx];
+	/*
+	 * When the vioc is resetting, don't process
+	 * anything other than VXC_LIDENT commands.
+	 */
 	if (vs->vs_state == VXS_RESET && cmdad != NULL) {
-		/*
-		 * When the vioc is resetting, don't process
-		 * anything other than LIDENT commands.
-		 */
-		register struct vxcmd *cmdp = (struct vxcmd *)
-			((char *)cmdad - sizeof (cmdp->c_fwd));
+		struct vxcmd *vcp = (struct vxcmd *)(cmdad-sizeof (vcp->c_fwd));
 
-		if (cmdp->cmd != VXC_LIDENT) {
-			vrelease(vs, cmdp);
+		if (vcp->cmd != VXC_LIDENT) {
+			vrelease(vs, vcp);
 			return (0);
 		}
 	}
@@ -848,8 +857,8 @@ vcmd(vx, cmdad)
 vackint(vx)
 	register vx;
 {
-	register struct	vxdevice *vp;
-	register struct	vcmds *cp;
+	register struct vxdevice *vp;
+	register struct vcmds *cp;
 	struct vx_softc *vs;
 	int s;
 
@@ -868,12 +877,12 @@ vackint(vx)
 	s = spl8();
 	vp = (struct vxdevice *)((struct vba_device *)vxinfo[vx])->ui_addr;
 	cp = &vs->vs_cmds;
-	if (vp->v_vcid & V_ERR) {
+	if (vp->v_vcid&V_ERR) {
 		register char *resp;
 		register i;
+
 		printf("vx%d INTR ERR type %x v_dcd %x\n", vx,
 		    vp->v_vcid & 07, vp->v_dcd & 0xff);
-		/* resp = (char *)vp + (vp->v_rspoff & 0x7FFF); */
 		resp = (char *)vs->vs_mricmd;
 		for (i = 0; i < 16; i++)
 			printf("%x ", resp[i]&0xff);
@@ -885,10 +894,10 @@ vackint(vx)
 	if ((vp->v_hdwre&017) == CMDquals) {
 #ifdef VX_DEBUG
 		if (vxintr4 & VXERR4) {	/* causes VIOC INTR ERR 4 */
-			register struct vxcmd *cp1;
-			register struct vxcmd *cp0 = (struct vxcmd *)
-				((long)cp->cmdbuf[cp->v_empty] - 4);
+			struct vxcmd *cp1, *cp0;
 
+			cp0 = (struct vxcmd *)
+			    ((caddr_t)cp->cmdbuf[cp->v_empty]-sizeof (cp0->c_fwd));
 			if (cp0->cmd == VXC_XMITDTA || cp0->cmd == VXC_XMITIMM) {
 				cp1 = vobtain(vs);
 				*cp1 = *cp0;
@@ -916,8 +925,8 @@ vackint(vx)
 vcmdrsp(vx)
 	register vx;
 {
-	register struct	vxdevice *vp;
-	register struct	vcmds *cp;
+	register struct vxdevice *vp;
+	register struct vcmds *cp;
 	register caddr_t cmd;
 	register struct vx_softc *vs;
 	register char *resp;
@@ -961,7 +970,7 @@ vcmdrsp(vx)
 vunsol(vx)
 	register vx;
 {
-	register struct	vxdevice *vp;
+	register struct vxdevice *vp;
 	struct vx_softc *vs;
 	int s;
 
@@ -987,7 +996,7 @@ vunsol(vx)
 }
 
 /*
- * Enqueue an interrupt
+ * Enqueue an interrupt.
  */
 vinthandl(vx, item)
 	register int vx;
@@ -997,7 +1006,7 @@ vinthandl(vx, item)
 	int empty;
 
 	cp = &vx_softc[vx].vs_cmds;
-	empty = cp->v_itrfill == cp->v_itrempt;
+	empty = (cp->v_itrfill == cp->v_itrempt);
 	cp->v_itrqueu[cp->v_itrfill] = item;
 	if (++cp->v_itrfill >= VC_IQLEN)
 		cp->v_itrfill = 0;
@@ -1062,7 +1071,7 @@ vxstreset(vx)
 	register vx;
 {
 	register struct vx_softc *vs;
-	register struct	vxdevice *vp;
+	register struct vxdevice *vp;
 	register struct vxcmd *cp;
 	register int j;
 	extern int vxinreset();
@@ -1090,15 +1099,15 @@ vxstreset(vx)
 	vs->vs_state = VXS_RESET;
 	/* init all cmd buffers */
 	for (j = 0; j < NVCXBUFS; j++) {
-		cp = &vs->vs_lst[j];	/* index a buffer */
-		cp->c_fwd = &vs->vs_lst[j+1];	/* point to next buf */
+		cp = &vs->vs_lst[j];
+		cp->c_fwd = &vs->vs_lst[j+1];
 	}
-	vs->vs_avail = &vs->vs_lst[0];	/* set idx to 1st free buf */
-	cp->c_fwd = (struct vxcmd *)0;	/* mark last buf in free list */
+	vs->vs_avail = &vs->vs_lst[0];
+	cp->c_fwd = (struct vxcmd *)0;
 	printf("vx%d: reset...", vx);
 	vp->v_fault = 0;
 	vp->v_vioc = V_BSY;
-	vp->v_hdwre = V_RESET;		/* reset interrupt */
+	vp->v_hdwre = V_RESET;		/* generate reset interrupt */
 	timeout(vxinreset, (caddr_t)vx, hz*5);
 	splx(s);
 }
@@ -1107,7 +1116,7 @@ vxstreset(vx)
 vxinreset(vx)
 	int vx;
 {
-	register struct	vxdevice *vp;
+	register struct vxdevice *vp;
 	int s = spl8();
 
 	vp = (struct vxdevice *)((struct vba_device *)vxinfo[vx])->ui_addr;
@@ -1128,18 +1137,19 @@ vxinreset(vx)
 }
 
 /*
+ * Finish the reset on the vioc after an error (hopefully).
+ *
  * Restore modem control, parameters and restart output.
  * Since the vioc can handle no more then 24 commands at a time
  * and we could generate as many as 48 commands, we must do this in
  * phases, issuing no more then 16 commands at a time.
  */
-/* finish the reset on the vioc after an error (hopefully) */
 vxfnreset(vx, cp)
 	register int vx;
 	register struct vxcmd *cp;
 {
 	register struct vx_softc *vs;
-	register struct	vxdevice *vp ;
+	register struct vxdevice *vp ;
 	register struct tty *tp, *tp0;
 	register int i;
 #ifdef notdef
@@ -1314,7 +1324,7 @@ vcmintr(vx)
 	 */
 	if (bscport[vx*16+port]&BISYNC) {
 		if (kp->v_ustat&DSR_CHG) {
-			register struct	vx_softc *xp;
+			register struct vx_softc *xp;
 			register struct bsc *bp;
 			extern struct bsc bsc[];
 
