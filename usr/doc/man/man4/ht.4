@@ -1,0 +1,69 @@
+.th HT IV 2/9/75
+.sh NAME
+ht \*- RH-11/TU-16 magtape interface
+.sh DESCRIPTION
+The files
+.it "mt0, ..., mt7"
+refer to the DEC RH/TM/TU16 magtape.
+When opened for reading or writing,
+the tape is rewound.
+When closed, it is rewound;
+if it was open for writing, a double end-of-file is written first.
+.s3
+A standard tape consists of a
+series of 512 byte records terminated by a double
+end-of-file.
+To the extent possible, the system makes
+it possible, if inefficient, to treat
+the tape like any other file.
+Seeks have their usual meaning and it is possible
+to read or write a byte at a time.
+Writing in very small units is inadvisable,
+however, because it tends to create monstrous record
+gaps.
+.s3
+The
+.it mt
+files discussed above are useful
+when it is desired to access the tape in a way
+compatible with ordinary files.
+When foreign tapes are to be dealt with, and especially
+when long records are to be read or written, the
+``raw'' interface is appropriate.
+The associated files are named
+.it "rmt0, ..., rmt7."
+Each
+.it read
+or
+.it write
+call reads or writes the next record on the tape.
+In the write case the record has the same length as the
+buffer given.
+During a read, the record size is passed
+back as the number of bytes read, provided it is no greater
+than the buffer size;
+if the record is long, an error is indicated.
+In raw tape I/O, the buffer must begin on a word boundary
+and the count must be even.
+Seeks are ignored.
+An error is returned when a tape mark is read,
+but another read will fetch the first record of the
+new tape file.
+.sh FILES
+/dev/mt?,
+/dev/rmt?
+.sh "SEE ALSO"
+tp (I)
+.sh BUGS
+Raw I/O doesnt work yet.
+The magtape system is supposed to be able
+to take 64 drives.
+Such addressing has never been tried.
+These bugs will be fixed when
+we get more experience with this device.
+.s3
+If any non-data error is encountered, it refuses to do anything
+more until closed.
+In raw I/O, there should be a way
+to perform forward and backward record and file spacing and
+to write an EOF mark.

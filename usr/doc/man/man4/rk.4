@@ -1,0 +1,56 @@
+.th RK IV 10/15/73
+.sh NAME
+rk  \*-  RK-11/RK03 (or RK05) disk
+.sh DESCRIPTION
+.it Rk?
+refers to an entire RK03 disk as a single sequentially-addressed
+file.
+Its 256-word blocks are numbered 0 to 4871.
+.s3
+Drive numbers (minor devices)
+of eight and larger are treated specially.
+Drive 8+\fIx\fR is the \fIx\fR+1 way
+interleaving of devices
+rk0 to rk\fIx\fR.
+Thus blocks on rk10 are distributed alternately
+among rk0, rk1, and rk2.
+.s3
+The
+.it rk
+files
+discussed above access the disk via the system's normal
+buffering mechanism
+and may be read and written without regard to
+physical disk records.
+There is also a ``raw'' interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more efficient when
+many words are transmitted.
+The names of the raw RK files
+begin with
+.it rrk
+and end with a number which selects the same disk
+as the corresponding
+.it rk
+file.
+.s3
+In raw I/O the buffer must begin on a word boundary,
+and counts should be a multiple of 512 bytes
+(a disk block).
+Likewise
+.it seek
+calls should specify a multiple of 512 bytes.
+.sh FILES
+/dev/rk?, /dev/rrk?
+.sh BUGS
+Care should be taken in using the interleaved files.
+First, the same drive should not be accessed simultaneously
+using the ordinary name and as part of an interleaved file,
+because the same physical
+blocks
+have in effect two different
+names; this fools the system's buffering strategy.
+Second, the combined files cannot be used for swapping
+or raw I/O.

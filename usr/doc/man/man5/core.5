@@ -1,0 +1,84 @@
+.th CORE V 2/11/75
+.sh NAME
+core \*- format of core image file
+.sh DESCRIPTION
+UNIX
+writes out a core image of a terminated
+process when any of various errors occur.
+See
+.it "signal (II)"
+for the list of reasons;
+the most common are memory violations, illegal
+instructions, bus errors, and user-generated
+quit signals.
+The core image is called ``core'' and is written in the process's
+working directory (provided it can be; normal
+access controls apply).
+.s3
+The first 1024 bytes of the core image
+are a copy of the system's per-user
+data for the process, including the registers
+as they were at the time of the fault.
+The
+remainder represents the actual contents of
+the user's core area when the core image
+was written.
+If the text segment
+is write-protected and shared,
+it is not dumped; otherwise the entire
+address space is dumped.
+.s3
+The format of the
+information in the first 1024 bytes
+is described by
+the
+.it user
+structure of the system.
+The important stuff not detailed therein is the locations of the registers.
+Here are their offsets.
+The parenthesized numbers for the floating registers are
+used if the floating-point hardware is in
+single precision mode,
+as indicated in the status register.
+.s3
+.lp +10 7
+fpsr	0004
+.lp +10 7
+fr0	0006  (0006)
+.lp +10 7
+fr1	0036  (0022)
+.lp +10 7
+fr2	0046  (0026)
+.lp +10 7
+fr3	0056  (0032)
+.lp +10 7
+fr4	0016  (0012)
+.lp +10 7
+fr5	0026  (0016)
+.lp +10 7
+r0	1772
+.lp +10 7
+r1	1766
+.lp +10 7
+r2	1750
+.lp +10 7
+r3	1752
+.lp +10 7
+r4	1754
+.lp +10 7
+r5	1756
+.lp +10 7
+sp	1764
+.lp +10 7
+pc	1774
+.lp +10 7
+ps	1776
+.s3
+.i0
+In general the debuggers
+.it "db (I)"
+and
+.it "cdb (I)"
+are sufficient to deal with core images.
+.sh "SEE ALSO"
+cdb (I), db (I), signal (II)

@@ -1,0 +1,30 @@
+.th DIRECTORY V 9/10/73
+.sh NAME
+dir \*- format of directories
+.sh DESCRIPTION
+A directory
+behaves exactly like an ordinary file, save that no
+user may write into a directory.
+The fact that a file is a directory is indicated by
+a bit in the flag word of its i-node entry.
+Directory entries are 16 bytes long.
+The first word is the i-number of the file represented
+by the entry, if non-zero; if zero, the entry is empty.
+.s3
+Bytes 2-15 represent the (14-character)
+file name, null padded on the right.
+These bytes are not cleared for empty slots.
+.s3
+By convention, the first two entries in each directory
+are for ``\fB.\fR'' and ``\fB..\fR''.  The first is an entry for the
+directory itself.  The second is for the parent
+directory.
+The meaning of ``\fB..\fR'' is modified for the root directory
+of the master file system and for the root directories of removable
+file systems.
+In the first case, there is no parent, and in the second,
+the system does not permit off-device references.
+Therefore in both cases ``\fB..\fR'' has the
+same meaning as ``\fB.\fR''.
+.sh "SEE ALSO"
+file system (V)

@@ -1,0 +1,49 @@
+.th GETARG III 11/24/73
+.sh NAME
+getarg, iargc \*- get command arguments from Fortran
+.sh SYNOPSIS
+.ft B
+call getarg ( i, iarray \fR[ \fB, isize \fR]\fB )
+.s3
+.li
+... = iargc(dummy)
+.ft R
+.sh DESCRIPTION
+The
+.it getarg
+entry fills in
+.it iarray
+(which is considered to be
+.it integer)
+with the Hollerith string representing the
+.it i
+th
+argument to the command
+in which it it is called.
+If no
+.it isize
+argument is specified,
+at least one blank is placed after the argument,
+and the last word affected is blank padded.
+The user should make sure that the array is big enough.
+.s3
+If the
+.it isize
+argument is given,
+the argument will be followed by blanks
+to fill up
+.it isize
+words, but even if the argument is long no more than
+that many words will be filled in.
+.s3
+The blank-padded array is suitable for use as an
+argument to setfil (III).
+.s3
+The
+.it iargc
+entry returns the number of arguments to the command,
+counting the first (file-name) argument.
+.sh "SEE ALSO"
+exec (II),
+setfil (III)
+.sh BUGS

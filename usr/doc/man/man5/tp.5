@@ -1,0 +1,68 @@
+.th TP V 9/10/73
+.sh NAME
+tp \*- DEC/mag tape formats
+.sh DESCRIPTION
+The
+command
+.it tp
+dumps files to and extracts files from
+DECtape and magtape.
+The formats of these tapes are the same except
+that magtapes have larger directories.
+.s3
+Block zero contains a
+copy of a stand-alone bootstrap program.
+See boot procedures (VIII).
+.s3
+Blocks 1 through 24
+for DECtape (1 through 62 for magtape)
+contain a directory of the tape.
+There are 192 (resp. 496) entries in the directory;
+8 entries per block;
+64 bytes per entry.
+Each entry has the following format:
+.s3
+.lp +24 20
+path name	32 bytes
+.lp +24 20
+mode	2 bytes
+.lp +24 20
+uid	1 byte
+.lp +24 20
+gid	1 byte
+.lp +24 20
+unused	1 byte
+.lp +24 20
+size	3 bytes
+.lp +24 20
+time modified	4 bytes
+.lp +24 20
+tape address	2 bytes
+.lp +24 20
+unused	16 bytes
+.lp +24 20
+check sum	2 bytes
+.s3
+.i0
+The path name entry is the path name of the
+file when put on the tape.
+If the pathname starts with a zero word,
+the entry is empty.
+It is at most 32 bytes long and ends in a null byte.
+Mode, uid, gid, size and time modified
+are the same as described under i-nodes (file system (V)).
+The tape address is the tape block number of the start of
+the contents of the file.
+Every file
+starts on a block boundary.
+The file occupies (size+511)/512 blocks
+of continuous tape.
+The checksum entry has a value such that
+the sum of the 32 words of the directory entry is zero.
+.s3
+Blocks 25 (resp. 63) on are available for file storage.
+.s3
+A fake entry (see tp (I))
+has a size of zero.
+.sh "SEE ALSO"
+file system (V), tp (I)
