@@ -1,20 +1,33 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_exec.c	7.9 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_exec.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
 #include "proc.h"
+#include "mount.h"
+#include "ucred.h"
+#include "malloc.h"
 #include "buf.h"
-#include "inode.h"
+#include "vnode.h"
 #include "seg.h"
 #include "vm.h"
 #include "text.h"
@@ -48,13 +61,15 @@ execve()
 	register nc;
 	register char *cp;
 	register struct buf *bp;
+	struct buf *tbp;
 	register struct execa *uap;
 	int na, ne, ucp, ap, cc;
 	unsigned len;
 	int indir, uid, gid;
 	char *sharg;
-	struct inode *ip;
+	struct vnode *vp;
 	swblk_t bno;
+	struct vattr vattr;
 	char cfname[MAXCOMLEN + 1];
 	char cfarg[MAXINTERP];
 	union {
@@ -67,37 +82,48 @@ execve()
 	extern long argdbsize;			/* XXX */
 #endif SECSIZE
 
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = ((struct execa *)u.u_ap)->fname;
-	if ((ip = namei(ndp)) == NULL)
+	if (u.u_error = namei(ndp)) {
 		return;
+	}
+	vp = ndp->ni_vp;
 	bno = 0;
 	bp = 0;
 	indir = 0;
 	uid = u.u_uid;
 	gid = u.u_gid;
-	if (ip->i_mode & ISUID)
-		uid = ip->i_uid;
-	if (ip->i_mode & ISGID)
-		gid = ip->i_gid;
+	if (u.u_error = VOP_GETATTR(vp, &vattr, u.u_cred))
+		goto bad;
+	if (vp->v_mount->m_flag & M_NOEXEC) {
+		u.u_error = ENOEXEC;
+		goto bad;
+	}
+	if ((vp->v_mount->m_flag & M_NOSUID) == 0) {
+		if (vattr.va_mode & VSUID)
+			uid = vattr.va_uid;
+		if (vattr.va_mode & VSGID)
+			gid = vattr.va_gid;
+	}
 
   again:
-	if (access(ip, IEXEC))
+	if (u.u_error = vn_access(vp, VEXEC, u.u_cred))
 		goto bad;
-	if ((u.u_procp->p_flag&STRC) && access(ip, IREAD))
+	if ((u.u_procp->p_flag & STRC) &&
+	    (u.u_error = vn_access(vp, VREAD, u.u_cred)))
 		goto bad;
-	if ((ip->i_mode & IFMT) != IFREG ||
-	   (ip->i_mode & (IEXEC|(IEXEC>>3)|(IEXEC>>6))) == 0) {
+	if (vp->v_type != VREG ||
+	    (vattr.va_mode & (VEXEC|(VEXEC>>3)|(VEXEC>>6))) == 0) {
 		u.u_error = EACCES;
 		goto bad;
 	}
 
 	/*
 	 * Read in first few bytes of file for segment sizes, magic number:
-	 *	407 = plain executable
-	 *	410 = RO text
-	 *	413 = demand paged RO text
+	 *	OMAGIC = plain executable
+	 *	NMAGIC = RO text
+	 *	ZMAGIC = demand paged RO text
 	 * Also an ASCII line beginning with #! is
 	 * the file name of a ``shell'' and arguments may be prepended
 	 * to the argument list if given here.
@@ -108,8 +134,8 @@ execve()
 	 * THE ASCII LINE.
 	 */
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
-	u.u_error = rdwri(UIO_READ, ip, (caddr_t)&exdata, sizeof (exdata),
-	    (off_t)0, 1, &resid);
+	u.u_error = vn_rdwr(UIO_READ, vp, (caddr_t)&exdata, sizeof (exdata),
+	    (off_t)0, UIO_SYSSPACE, (IO_UNIT|IO_NODELOCKED), u.u_cred, &resid);
 	if (u.u_error)
 		goto bad;
 #ifndef lint
@@ -121,13 +147,13 @@ execve()
 #endif
 	switch ((int)exdata.ex_exec.a_magic) {
 
-	case 0407:
+	case OMAGIC:
 		exdata.ex_exec.a_data += exdata.ex_exec.a_text;
 		exdata.ex_exec.a_text = 0;
 		break;
 
-	case 0413:
-	case 0410:
+	case ZMAGIC:
+	case NMAGIC:
 		if (exdata.ex_exec.a_text == 0) {
 			u.u_error = ENOEXEC;
 			goto bad;
@@ -168,12 +194,14 @@ execve()
 				bcopy((caddr_t)cp, (caddr_t)cfarg, MAXINTERP);
 		}
 		indir = 1;
-		iput(ip);
-		ndp->ni_nameiop = LOOKUP | FOLLOW;
+		vput(vp);
+		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 		ndp->ni_segflg = UIO_SYSSPACE;
-		ip = namei(ndp);
-		if (ip == NULL)
+		if (u.u_error = namei(ndp))
 			return;
+		vp = ndp->ni_vp;
+		if (u.u_error = VOP_GETATTR(vp, &vattr, u.u_cred))
+			goto bad;
 		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
 		    MAXCOMLEN);
 		cfname[MAXCOMLEN] = '\0';
@@ -250,7 +278,7 @@ execve()
 				bp = getblk(argdev, bno + nc / argdbsize, cc,
 				    argdbsize);
 #else SECSIZE
-				bp = getblk(argdev, bno + ctod(nc/NBPG), cc);
+				bp = getblk(argdev_vp, bno + ctod(nc/NBPG), cc);
 #endif SECSIZE
 				cp = bp->b_un.b_addr;
 			}
@@ -278,15 +306,13 @@ execve()
 		bdwrite(bp);
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	getxfile(ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
+	getxfile(vp, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid, u.u_cred);
 	if (u.u_error) {
 badarg:
-		for (cc = 0; cc < nc; cc += CLSIZE*NBPG) {
-#ifdef SECSIZE
-			bp = baddr(argdev, bno + cc / argdbsize, CLSIZE*NBPG,
-			    argdbsize);
-#else SECSIZE
-			bp = baddr(argdev, bno + ctod(cc/NBPG), CLSIZE*NBPG);
+		for (cc = 0; cc < nc; cc += CLBYTES) {
+			u.u_error = baddr(argdev_vp, bno + ctod(cc/NBPG),
+				CLBYTES, &tbp);
+			bp = tbp;
 #endif SECSIZE
 			if (bp) {
 				bp->b_flags |= B_AGE;		/* throw away */
@@ -297,8 +323,8 @@ badarg:
 		}
 		goto bad;
 	}
-	iput(ip);
-	ip = NULL;
+	vput(vp);
+	vp = NULL;
 
 	/*
 	 * Copy back arglist.
@@ -327,7 +353,9 @@ badarg:
 				bp = bread(argdev, bno + nc / argdbsize, cc,
 				    argdbsize);
 #else SECSIZE
-				bp = bread(argdev, bno + ctod(nc / NBPG), cc);
+				error = bread(argdev_vp,
+				    (daddr_t)(bno + ctod(nc / NBPG)), cc, &tbp);
+				bp = tbp;
 #endif SECSIZE
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
@@ -395,38 +423,39 @@ bad:
 #else SECSIZE
 		rmfree(argmap, (long)ctod(clrnd((int) btoc(NCARGS))), bno);
 #endif SECSIZE
-	if (ip)
-		iput(ip);
+	if (vp)
+		vput(vp);
 }
 
 /*
  * Read in and set up memory for executed file.
  */
-getxfile(ip, ep, nargc, uid, gid)
-	register struct inode *ip;
+getxfile(vp, ep, nargc, uid, gid, cred)
+	register struct vnode *vp;
 	register struct exec *ep;
 	int nargc, uid, gid;
+	struct ucred *cred;
 {
 	size_t ts, ds, ids, uds, ss;
 	int pagi;
 
-	if (ep->a_magic == 0413)
-		pagi = SPAGI;
+	if (ep->a_magic == ZMAGIC)
+		pagi = SPAGV;
 	else
 		pagi = 0;
-	if (ip->i_text && (ip->i_text->x_flag & XTRC)) {
+	if (vp->v_text && (vp->v_text->x_flag & XTRC)) {
 		u.u_error = ETXTBSY;
 		goto bad;
 	}
-	if (ep->a_text != 0 && (ip->i_flag&ITEXT) == 0 &&
-	    ip->i_count != 1) {
+	if (ep->a_text != 0 && (vp->v_flag & VTEXT) == 0 &&
+	    vp->v_count != 1) {
 		register struct file *fp;
 
 		for (fp = file; fp < fileNFILE; fp++) {
-			if (fp->f_type == DTYPE_INODE &&
+			if (fp->f_type == DTYPE_VNODE &&
 			    fp->f_count > 0 &&
-			    (struct inode *)fp->f_data == ip &&
-			    (fp->f_flag&FWRITE)) {
+			    (struct vnode *)fp->f_data == vp &&
+			    (fp->f_flag & FWRITE)) {
 				u.u_error = ETXTBSY;
 				goto bad;
 			}
@@ -455,7 +484,7 @@ getxfile(ip, ep, nargc, uid, gid)
 		goto bad;
 
 	/*
-	 * At this point, committed to the new image!
+	 * At this point, we are committed to the new image!
 	 * Release virtual memory resources of old process, and
 	 * initialize the virtual memory of the new process.
 	 * If we resulted from vfork(), instead wakeup our
@@ -472,20 +501,19 @@ getxfile(ip, ep, nargc, uid, gid)
 			sleep((caddr_t)u.u_procp, PZERO - 1);
 		u.u_procp->p_flag &= ~(SVFDONE|SKEEP);
 	}
-	u.u_procp->p_flag &= ~(SPAGI|SSEQL|SUANOM|SOUSIG);
+	u.u_procp->p_flag &= ~(SPAGV|SSEQL|SUANOM|SOUSIG);
 	u.u_procp->p_flag |= pagi | SEXEC;
 	u.u_dmap = u.u_cdmap;
 	u.u_smap = u.u_csmap;
 	vgetvm(ts, ds, ss);
 
 	if (pagi == 0)
-		u.u_error =
-		    rdwri(UIO_READ, ip,
+		u.u_error = vn_rdwr(UIO_READ, vp,
 			(char *)ctob(dptov(u.u_procp, 0)),
 			(int)ep->a_data,
 			(off_t)(sizeof (struct exec) + ep->a_text),
-			0, (int *)0);
-	xalloc(ip, ep, pagi);
+			UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), cred, (int *)0);
+	xalloc(vp, ep, pagi, cred);
 #if defined(tahoe)
 	/*
 	 * Define new keys.
@@ -501,7 +529,7 @@ getxfile(ip, ep, nargc, uid, gid)
 #endif
 	if (pagi && u.u_procp->p_textp)
 		vinifod((struct fpte *)dptopte(u.u_procp, 0),
-		    PG_FTEXT, u.u_procp->p_textp->x_iptr,
+		    PG_FTEXT, u.u_procp->p_textp->x_vptr,
 		    (long)(1 + ts/CLSIZE), (size_t)btoc(ep->a_data));
 
 #if defined(vax) || defined(tahoe)
@@ -515,6 +543,8 @@ getxfile(ip, ep, nargc, uid, gid)
 	 * set SUID/SGID protections, if no tracing
 	 */
 	if ((u.u_procp->p_flag&STRC)==0) {
+		if (uid != u.u_uid || gid != u.u_gid)
+			u.u_cred = crcopy(u.u_cred);
 		u.u_uid = uid;
 		u.u_procp->p_uid = uid;
 		u.u_gid = gid;

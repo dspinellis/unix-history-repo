@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.7 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -314,7 +314,6 @@ killpg1(signo, pgid, all)
 gsignal(pgid, sig)
 {
 	register struct pgrp *pgrp;
-	register struct proc *p;
 
 	if (!pgid)
 		return;
@@ -781,7 +780,7 @@ psig()
  */
 core()
 {
-	register struct vnode *vp, *dvp;
+	register struct vnode *vp;
 	register struct nameidata *ndp = &u.u_nd;
 	struct vattr vattr;
 	int error;
@@ -792,9 +791,9 @@ core()
 	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
 		return (EFAULT);
 	if (u.u_procp->p_textp) {
-		vop_lock(u.u_procp->p_textp->x_vptr);
+		VOP_LOCK(u.u_procp->p_textp->x_vptr);
 		error = vn_access(u.u_procp->p_textp->x_vptr, VREAD, u.u_cred);
-		vop_unlock(u.u_procp->p_textp->x_vptr);
+		VOP_UNLOCK(u.u_procp->p_textp->x_vptr);
 		if (error)
 			return (EFAULT);
 	}
@@ -804,7 +803,7 @@ core()
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VREG ||
-	    vop_getattr(vp, &vattr, u.u_cred) ||
+	    VOP_GETATTR(vp, &vattr, u.u_cred) ||
 	    vattr.va_nlink != 1) {
 		error = EFAULT;
 		goto out;
@@ -819,21 +818,21 @@ core()
 #endif
 	vattr_null(&vattr);
 	vattr.va_size = 0;
-	vop_setattr(vp, &vattr, u.u_cred);
+	VOP_SETATTR(vp, &vattr, u.u_cred);
 	u.u_acflag |= ACORE;
 	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&u, ctob(UPAGES), (off_t)0,
-	    UIO_SYSSPACE, IO_UNIT, (int *)0);
+	    UIO_SYSSPACE, IO_UNIT, ndp->ni_cred, (int *)0);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp,
 		    (caddr_t)ctob(dptov(u.u_procp, 0)),
 		    (int)ctob(u.u_dsize), (off_t)ctob(UPAGES),
-		    UIO_USERSPACE, IO_UNIT, (int *)0);
+		    UIO_USERSPACE, IO_UNIT, ndp->ni_cred, (int *)0);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp,
 		    (caddr_t)ctob(sptov(u.u_procp, u.u_ssize - 1)),
 		    (int)ctob(u.u_ssize),
 		    (off_t)ctob(UPAGES) + ctob(u.u_dsize),
-		    UIO_USERSPACE, IO_UNIT, (int *)0);
+		    UIO_USERSPACE, IO_UNIT, ndp->ni_cred, (int *)0);
 out:
 	if (vp)
 		vrele(vp);

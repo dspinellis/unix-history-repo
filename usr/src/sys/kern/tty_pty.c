@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	7.5 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -17,13 +17,13 @@
 #include "systm.h"
 #include "ioctl.h"
 #include "tty.h"
-#include "dir.h"
 #include "user.h"
 #include "conf.h"
 #include "file.h"
 #include "proc.h"
 #include "uio.h"
 #include "kernel.h"
+#include "vnode.h"
 #include "tsleep.h"
 
 #if NPTY == 1
@@ -132,7 +132,7 @@ again:
 			sleep((caddr_t)&lbolt, TTIPRI);
 		}
 		if (tp->t_canq.c_cc == 0) {
-			if (flag & FNDELAY)
+			if (flag & IO_NDELAY)
 				return (EWOULDBLOCK);
 			sleep((caddr_t)&tp->t_canq, TTIPRI);
 			goto again;
@@ -301,7 +301,7 @@ ptcread(dev, uio, flag)
 		}
 		if ((tp->t_state&TS_CARR_ON) == 0)
 			return (0);	/* EOF */
-		if (flag&FNDELAY)
+		if (flag & IO_NDELAY)
 			return (EWOULDBLOCK);
 if (ptydebug) printf("SLEEP(1) c_cf %d\n", u.u_procp->p_pid);
 		sleep((caddr_t)&tp->t_outq.c_cf, TTIPRI);
@@ -312,7 +312,7 @@ if (ptydebug) printf("SLEEP(1) c_cf %d\n", u.u_procp->p_pid);
 		cc = q_to_b(&tp->t_outq, buf, MIN(uio->uio_resid, BUFSIZ));
 		if (cc <= 0)
 			break;
-		error = uiomove(buf, cc, UIO_READ, uio);
+		error = uiomove(buf, cc, uio);
 	}
 	if (tp->t_outq.c_cc <= TTLOWAT(tp) && !(pti->pt_flags & PF_BLOCK))
 		ptswake(tp);
@@ -447,7 +447,7 @@ again:
 				cc = MIN(iov->iov_len, BUFSIZ);
 				cc = MIN(cc, TTYHOG - 1 - tp->t_canq.c_cc);
 				cp = locbuf;
-				error = uiomove(cp, cc, UIO_WRITE, uio);
+				error = uiomove(cp, cc, uio);
 				if (error)
 					return (error);
 				/* check again for safety */
@@ -473,7 +473,7 @@ again:
 			}
 			cc = MIN(iov->iov_len, BUFSIZ);
 			cp = locbuf;
-			error = uiomove(cp, cc, UIO_WRITE, uio);
+			error = uiomove(cp, cc, uio);
 			if (error)
 				return (error);
 			/* check again for safety */
@@ -500,7 +500,7 @@ block:
 	 */
 	if ((tp->t_state&TS_CARR_ON) == 0)
 		return (EIO);
-	if ((pti->pt_flags & PF_NBIO) || (flag & FNDELAY)) {
+	if ((pti->pt_flags & PF_NBIO) || (flag & IO_NDELAY)) {
 		iov->iov_base -= cc;
 		iov->iov_len += cc;
 		uio->uio_resid += cc;

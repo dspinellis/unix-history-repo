@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,12 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_socket.c	7.4 (Berkeley) %G%
+ *	@(#)sys_socket.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "file.h"
 #include "mbuf.h"
@@ -33,19 +32,30 @@
 #include "../net/if.h"
 #include "../net/route.h"
 
-int	soo_rw(), soo_ioctl(), soo_select(), soo_close();
+int	soo_read(), soo_write(), soo_ioctl(), soo_select(), soo_close();
 struct	fileops socketops =
-    { soo_rw, soo_ioctl, soo_select, soo_close };
+    { soo_read, soo_write, soo_ioctl, soo_select, soo_close };
 
-soo_rw(fp, rw, uio)
+/* ARGSUSED */
+soo_read(fp, uio, cred)
 	struct file *fp;
-	enum uio_rw rw;
 	struct uio *uio;
+	struct ucred *cred;
 {
-	int soreceive(), sosend();
 
-	return ((*(rw == UIO_READ ? soreceive : sosend))
-	      ((struct socket *)fp->f_data, 0, uio, 0, 0, 0));
+	return (soreceive((struct socket *)fp->f_data, (struct mbuf **)0,
+		uio, (int *)0, (struct mbuf **)0, (struct mbuf **)0));
+}
+
+/* ARGSUSED */
+soo_write(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+
+	return (sosend((struct socket *)fp->f_data, (struct mbuf *)0,
+		uio, 0, (struct mbuf *)0, (struct mbuf *)0));
 }
 
 soo_ioctl(fp, cmd, data)

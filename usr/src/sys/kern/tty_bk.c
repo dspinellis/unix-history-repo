@@ -3,14 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_bk.c	7.2 (Berkeley) %G%
+ *	@(#)tty_bk.c	7.3 (Berkeley) %G%
  */
 
 #include "bk.h"
 
 #if NBK > 0
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "ioctl.h"
 #include "tty.h"
@@ -99,7 +98,7 @@ bkread(tp, uio)
 	splx(s);
 	if (tp->t_line != NETLDISC)
 		return (-1);
-	error = uiomove(tp->t_bufp->b_un.b_addr, tp->t_inbuf, UIO_READ, uio);
+	error = uiomove(tp->t_bufp->b_un.b_addr, tp->t_inbuf, uio);
 	tp->t_cp = (char *)tp->t_bufp->b_un.b_addr;
 	tp->t_inbuf = 0;
 	tp->t_rec = 0;

@@ -3,25 +3,24 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_subr.c	7.1 (Berkeley) %G%
+ *	@(#)kern_subr.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
-#include "uio.h"
 
-uiomove(cp, n, rw, uio)
+uiomove(cp, n, uio)
 	register caddr_t cp;
 	register int n;
-	enum uio_rw rw;
 	register struct uio *uio;
 {
 	register struct iovec *iov;
 	u_int cnt;
 	int error = 0;
 
+	if (uio->uio_rw != UIO_READ && uio->uio_rw != UIO_WRITE)
+		panic("uiomove: mode");
 	while (n > 0 && uio->uio_resid) {
 		iov = uio->uio_iov;
 		cnt = iov->iov_len;
@@ -36,7 +35,7 @@ uiomove(cp, n, rw, uio)
 
 		case UIO_USERSPACE:
 		case UIO_USERISPACE:
-			if (rw == UIO_READ)
+			if (uio->uio_rw == UIO_READ)
 				error = copyout(cp, iov->iov_base, cnt);
 			else
 				error = copyin(iov->iov_base, cp, cnt);
@@ -45,7 +44,7 @@ uiomove(cp, n, rw, uio)
 			break;
 
 		case UIO_SYSSPACE:
-			if (rw == UIO_READ)
+			if (uio->uio_rw == UIO_READ)
 				bcopy((caddr_t)cp, iov->iov_base, cnt);
 			else
 				bcopy(iov->iov_base, (caddr_t)cp, cnt);
@@ -102,6 +101,7 @@ again:
 	return (0);
 }
 
+#ifdef unused
 /*
  * Get next character written in by user from uio.
  */
@@ -145,3 +145,4 @@ again:
 	uio->uio_offset++;
 	return (c & 0377);
 }
+#endif /* unused */

@@ -12,13 +12,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_usrreq.c	7.10 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
-#include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
 #include "socket.h"
@@ -29,6 +27,7 @@
 #include "mount.h"
 #include "file.h"
 #include "stat.h"
+#include "mbuf.h"	/* XXX must appear after mount.h */
 
 /*
  * Unix communications domain.
@@ -369,19 +368,19 @@ unp_bind(unp, nam)
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp != NULL) {
-		vop_abortop(ndp);
+		VOP_ABORTOP(ndp);
 		return (EADDRINUSE);
 	}
 	vattr_null(&vattr);
 	vattr.va_type = VSOCK;
 	vattr.va_mode = 0777;
-	if (error = vop_create(ndp, &vattr))
+	if (error = VOP_CREATE(ndp, &vattr))
 		return (error);
 	vp = ndp->ni_vp;
 	vp->v_socket = unp->unp_socket;
 	unp->unp_vnode = vp;
 	unp->unp_addr = m_copy(nam, 0, (int)M_COPYALL);
-	vop_unlock(vp);
+	VOP_UNLOCK(vp);
 	return (0);
 }
 
@@ -402,12 +401,12 @@ unp_connect(so, nam)
 			return (EMSGSIZE);
 	} else
 		*(mtod(nam, caddr_t) + nam->m_len) = 0;
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_SYSSPACE;
 	if (error = namei(ndp))
 		return (error);
 	vp = ndp->ni_vp;
-	if (error = vn_access(vp, VWRITE, u.u_cred))
+	if (error = vn_access(vp, VWRITE, ndp->ni_cred))
 		goto bad;
 	if (vp->v_type != VSOCK) {
 		error = ENOTSOCK;
@@ -437,7 +436,7 @@ unp_connect(so, nam)
 	}
 	error = unp_connect2(so, so2);
 bad:
-	vrele(vp);
+	vput(vp);
 	return (error);
 }
 
@@ -581,16 +580,18 @@ unp_internalize(rights)
 {
 	register struct file **rp;
 	int oldfds = rights->m_len / sizeof (int);
-	register int i;
+	register int i, fd;
 	register struct file *fp;
 
 	rp = mtod(rights, struct file **);
-	for (i = 0; i < oldfds; i++)
-		if (getf(*(int *)rp++) == 0)
+	for (i = 0; i < oldfds; i++) {
+		fd = *(int *)rp++;
+		if ((unsigned)fd >= NOFILE || u.u_ofile[fd] == NULL)
 			return (EBADF);
+	}
 	rp = mtod(rights, struct file **);
 	for (i = 0; i < oldfds; i++) {
-		fp = getf(*(int *)rp);
+		fp = u.u_ofile[*(int *)rp];
 		*rp++ = fp;
 		fp->f_count++;
 		fp->f_msgcount++;

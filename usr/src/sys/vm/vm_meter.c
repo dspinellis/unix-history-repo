@@ -1,23 +1,29 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)vm_meter.c	7.4 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)vm_meter.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "seg.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "text.h"
 #include "vm.h"
-#include "cmap.h"
 #include "kernel.h"
-
-
 
 int	maxslp = MAXSLP;
 int	saferss = SAFERSS;
@@ -357,7 +363,7 @@ vmtotal()
 	total.t_rmtxt = 0;
 	total.t_armtxt = 0;
 	for (xp = text; xp < textNTEXT; xp++)
-		if (xp->x_iptr) {
+		if (xp->x_vptr) {
 			total.t_vmtxt += xp->x_size;
 			total.t_rmtxt += xp->x_rssize;
 			for (p = xp->x_caddr; p; p = p->p_xlink)

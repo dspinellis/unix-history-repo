@@ -1,17 +1,27 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_descrip.c	7.3 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_descrip.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
-#include "inode.h"
+#include "vnode.h"
 #include "proc.h"
 #include "file.h"
 #include "socket.h"
@@ -26,27 +36,12 @@
  */
 
 /*
- * TODO:
- *	eliminate u.u_error side effects
- */
-
-/*
  * System calls on descriptors.
  */
 getdtablesize()
 {
 
 	u.u_r.r_val1 = NOFILE;
-}
-
-getdopt()
-{
-
-}
-
-setdopt()
-{
-
 }
 
 dup()
@@ -59,10 +54,11 @@ dup()
 
 	if (uap->i &~ 077) { uap->i &= 077; dup2(); return; }	/* XXX */
 
-	GETF(fp, uap->i);
-	j = ufalloc(0);
-	if (j < 0)
+	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
+		RETURN (EBADF);
+	if (u.u_error = ufalloc(0, &j))
 		return;
+	u.u_r.r_val1 = j;
 	dupit(j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
@@ -73,7 +69,8 @@ dup2()
 	} *uap = (struct a *) u.u_ap;
 	register struct file *fp;
 
-	GETF(fp, uap->i);
+	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
+		RETURN (EBADF);
 	if (uap->j < 0 || uap->j >= NOFILE) {
 		u.u_error = EBADF;
 		return;
@@ -114,22 +111,23 @@ fcntl()
 		int	fdes;
 		int	cmd;
 		int	arg;
-	} *uap;
-	register i;
+	} *uap = (struct a *)u.u_ap;
 	register char *pop;
+	int i;
 
-	uap = (struct a *)u.u_ap;
-	GETF(fp, uap->fdes);
+	if ((unsigned)uap->fdes >= NOFILE ||
+	    (fp = u.u_ofile[uap->fdes]) == NULL)
+		RETURN (EBADF);
 	pop = &u.u_pofile[uap->fdes];
 	switch(uap->cmd) {
 	case F_DUPFD:
-		i = uap->arg;
-		if (i < 0 || i >= NOFILE) {
+		if (uap->arg < 0 || uap->arg >= NOFILE) {
 			u.u_error = EINVAL;
 			return;
 		}
-		if ((i = ufalloc(i)) < 0)
+		if (u.u_error = ufalloc(uap->arg, &i))
 			return;
+		u.u_r.r_val1 = i;
 		dupit(i, fp, *pop &~ UF_EXCLOSE);
 		break;
 
@@ -205,6 +203,7 @@ fsetown(fp, value)
 	struct file *fp;
 	int value;
 {
+
 	if (fp->f_type == DTYPE_SOCKET) {
 		((struct socket *)fp->f_data)->so_pgid = value;
 		return (0);
@@ -231,17 +230,18 @@ fioctl(fp, cmd, value)
 close()
 {
 	struct a {
-		int	i;
+		int	fdes;
 	} *uap = (struct a *)u.u_ap;
-	register int i = uap->i;
 	register struct file *fp;
 	register u_char *pf;
 
-	GETF(fp, i);
-	pf = (u_char *)&u.u_pofile[i];
+	if ((unsigned)uap->fdes >= NOFILE ||
+	    (fp = u.u_ofile[uap->fdes]) == NULL)
+		RETURN (EBADF);
+	pf = (u_char *)&u.u_pofile[uap->fdes];
 	if (*pf & UF_MAPPED)
-		munmapfd(i);
-	u.u_ofile[i] = NULL;
+		munmapfd(uap->fdes);
+	u.u_ofile[uap->fdes] = NULL;
 	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
 		u.u_lastfile--;
 	*pf = 0;
@@ -255,15 +255,16 @@ fstat()
 	register struct a {
 		int	fdes;
 		struct	stat *sb;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
 	struct stat ub;
 
-	uap = (struct a *)u.u_ap;
-	GETF(fp, uap->fdes);
+	if ((unsigned)uap->fdes >= NOFILE ||
+	    (fp = u.u_ofile[uap->fdes]) == NULL)
+		RETURN (EBADF);
 	switch (fp->f_type) {
 
-	case DTYPE_INODE:
-		u.u_error = ino_stat((struct inode *)fp->f_data, &ub);
+	case DTYPE_VNODE:
+		u.u_error = vn_stat((struct vnode *)fp->f_data, &ub);
 		break;
 
 	case DTYPE_SOCKET:
@@ -282,20 +283,21 @@ fstat()
 /*
  * Allocate a user file descriptor.
  */
-ufalloc(i)
-	register int i;
+ufalloc(want, result)
+	register int want;
+	int *result;
 {
 
-	for (; i < NOFILE; i++)
-		if (u.u_ofile[i] == NULL) {
-			u.u_r.r_val1 = i;
-			u.u_pofile[i] = 0;
-			if (i > u.u_lastfile)
-				u.u_lastfile = i;
-			return (i);
+	for (; want < NOFILE; want++)
+		if (u.u_ofile[want] == NULL) {
+			u.u_pofile[want] = 0;
+			if (want > u.u_lastfile)
+				u.u_lastfile = want;
+			if (result)
+				*result = want;
+			return (0);
 		}
-	u.u_error = EMFILE;
-	return (-1);
+	return (EMFILE);
 }
 
 ufavail()
@@ -315,15 +317,15 @@ struct	file *lastf;
  * Initialize the descriptor
  * to point at the file structure.
  */
-struct file *
-falloc()
+falloc(resultfp, resultfd)
+	struct file **resultfp;
+	int *resultfd;
 {
 	register struct file *fp;
-	register i;
+	int error, i;
 
-	i = ufalloc(0);
-	if (i < 0)
-		return (NULL);
+	if (error = ufalloc(0, &i))
+		return (error);
 	if (lastf == 0)
 		lastf = file;
 	for (fp = lastf; fp < fileNFILE; fp++)
@@ -333,33 +335,20 @@ falloc()
 		if (fp->f_count == 0)
 			goto slot;
 	tablefull("file");
-	u.u_error = ENFILE;
-	return (NULL);
+	return (ENFILE);
 slot:
 	u.u_ofile[i] = fp;
 	fp->f_count = 1;
 	fp->f_data = 0;
 	fp->f_offset = 0;
+	fp->f_cred = u.u_cred;
+	crhold(fp->f_cred);
 	lastf = fp + 1;
-	return (fp);
-}
-
-/*
- * Convert a user supplied file descriptor into a pointer
- * to a file structure.  Only task is to check range of the descriptor.
- * Critical paths should use the GETF macro.
- */
-struct file *
-getf(f)
-	register int f;
-{
-	register struct file *fp;
-
-	if ((unsigned)f >= NOFILE || (fp = u.u_ofile[f]) == NULL) {
-		u.u_error = EBADF;
-		return (NULL);
-	}
-	return (fp);
+	if (resultfp)
+		*resultfp = fp;
+	if (resultfd)
+		*resultfd = i;
+	return (0);
 }
 
 /*
@@ -376,7 +365,10 @@ closef(fp)
 		fp->f_count--;
 		return;
 	}
+	if (fp->f_count < 1)
+		panic("closef: count < 1");
 	(*fp->f_ops->fo_close)(fp);
+	crfree(fp->f_cred);
 	fp->f_count = 0;
 }
 
@@ -386,18 +378,20 @@ closef(fp)
 flock()
 {
 	register struct a {
-		int	fd;
+		int	fdes;
 		int	how;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 
-	GETF(fp, uap->fd);
-	if (fp->f_type != DTYPE_INODE) {
+	if ((unsigned)uap->fdes >= NOFILE ||
+	    (fp = u.u_ofile[uap->fdes]) == NULL)
+		RETURN (EBADF);
+	if (fp->f_type != DTYPE_VNODE) {
 		u.u_error = EOPNOTSUPP;
 		return;
 	}
 	if (uap->how & LOCK_UN) {
-		ino_unlock(fp, FSHLOCK|FEXLOCK);
+		vn_unlock(fp, FSHLOCK|FEXLOCK);
 		return;
 	}
 	if ((uap->how & (LOCK_SH | LOCK_EX)) == 0)
@@ -408,7 +402,7 @@ flock()
 	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
 	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
 		return;
-	u.u_error = ino_lock(fp, uap->how);
+	u.u_error = vn_lock(fp, uap->how);
 }
 
 /*
@@ -421,30 +415,32 @@ flock()
  * consists of only the ``open()'' routine, because all subsequent
  * references to this file will be direct to the other driver.
  */
-fdopen(dev, mode)
+/* ARGSUSED */
+fdopen(dev, mode, type)
 	dev_t dev;
-	int mode;
+	int mode, type;
 {
 	struct file *fp, *wfp;
-	struct inode *ip, *wip;
-	int rwmode;
+	int indx, dfd, rwmode;
 
 	/*
 	 * Note the horrid kludge here: u.u_r.r_val1 contains the value
-	 * of the new file descriptor, which has not been disturbed since
-	 * it was allocated.
+	 * of the new file descriptor, which was set before the call to
+	 * vn_open() by copen() in vfs_syscalls.c
 	 */
-	if ((fp = getf(u.u_r.r_val1)) == NULL)
-		return (u.u_error);
-	if ((wfp = getf(minor(dev))) == NULL)
-		return (u.u_error);
+	indx = u.u_r.r_val1;		/* XXX */
+	if ((unsigned)indx >= NOFILE || (fp = u.u_ofile[indx]) == NULL)
+		return (EBADF);
+	dfd = minor(dev);
+	if ((unsigned)dfd >= NOFILE || (wfp = u.u_ofile[dfd]) == NULL)
+		return (EBADF);
 	/*
 	 * We must explicitly test for this case because ufalloc() may
 	 * have allocated us the same file desriptor we are referring
 	 * to, if the proccess referred to an invalid (closed) descriptor.
-	 * Ordinarily this would be caught by getf(), but by the time we
-	 * reach this routine u_pofile[minor(dev)] could already be set
-	 * to point to our file struct.
+	 * Ordinarily this would be caught by the check for NULL above,
+	 * but by the time we reach this routine u_pofile[minor(dev)]
+	 * could already be set to point to our file struct.
 	 */
 	if (fp == wfp)
 		return (EBADF);
@@ -461,15 +457,15 @@ fdopen(dev, mode)
 	/*
 	 * Delete references to this pseudo-device.
 	 * Note that fp->f_count is guaranteed == 1, and
-	 * that fp references the inode for this driver.
+	 * that fp references the vnode for this driver.
 	 */
-	if (fp->f_count != 1 || fp->f_type != DTYPE_INODE) 
+	if (fp->f_count != 1 || fp->f_type != DTYPE_VNODE) 
 		panic("fdopen");
-	irele((struct inode *)fp->f_data);
+	vrele((struct vnode *)fp->f_data);
 	fp->f_count = 0;
 	/* 
 	 * Dup the file descriptor. 
 	 */
-	dupit(u.u_r.r_val1, wfp, u.u_pofile[minor(dev)]);
+	dupit(indx, wfp, u.u_pofile[dfd]);
 	return (0);
 }

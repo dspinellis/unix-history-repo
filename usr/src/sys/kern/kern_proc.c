@@ -1,15 +1,25 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_proc.c	7.3 (Berkeley) 10/18/88
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_proc.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
 #include "proc.h"
@@ -20,7 +30,7 @@
 #include "vm.h"
 #include "text.h"
 #include "file.h"
-#include "quota.h"
+#include "../ufs/quota.h"
 #include "uio.h"
 #include "malloc.h"
 #include "mbuf.h"
@@ -203,7 +213,6 @@ pgrm(p)
 	register struct proc *p;
 {
 	register struct proc **pp = &p->p_pgrp->pg_mem;
-	register struct proc *cp;
 
 	for (; *pp; pp = &(*pp)->p_pgrpnxt)
 		if (*pp == p) {
@@ -264,6 +273,7 @@ pqinit()
 	zombproc = NULL;
 }
 
+#ifdef debug
 /* DEBUG */
 pgrpdump()
 {
@@ -287,3 +297,4 @@ pgrpdump()
 		}
 	}
 }
+#endif /* debug */

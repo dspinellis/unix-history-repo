@@ -1,22 +1,30 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)vm_swap.c	7.4 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)vm_swap.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
-#include "inode.h"
+#include "vnode.h"
 #include "map.h"
-#include "uio.h"
 #include "file.h"
-#include "stat.h"
 #include "stat.h"
 
 /*
@@ -79,7 +87,7 @@ swapon()
 	struct a {
 		char	*name;
 	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip;
+	register struct vnode *vp;
 	dev_t dev;
 	register struct swdevt *sp;
 	register struct nameidata *ndp = &u.u_nd;
@@ -89,29 +97,31 @@ swapon()
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
-	ip = namei(ndp);
-	if (ip == NULL)
+	if (u.u_error = namei(ndp))
 		return;
-	if ((ip->i_mode&IFMT) != IFBLK) {
+	vp = ndp->ni_vp;
+	if (vp->v_type != VBLK) {
+		vrele(vp);
 		u.u_error = ENOTBLK;
-		iput(ip);
 		return;
 	}
-	dev = (dev_t)ip->i_rdev;
-	iput(ip);
+	dev = (dev_t)vp->v_rdev;
 	if (major(dev) >= nblkdev) {
+		vrele(vp);
 		u.u_error = ENXIO;
 		return;
 	}
 	for (sp = &swdevt[0]; sp->sw_dev; sp++)
 		if (sp->sw_dev == dev) {
 			if (sp->sw_freed) {
+				vrele(vp);
 				u.u_error = EBUSY;
 				return;
 			}
 			u.u_error = swfree(sp - swdevt);
 			return;
 		}
+	vrele(vp);
 	u.u_error = EINVAL;
 }
 
@@ -132,7 +142,7 @@ swfree(index)
 	register struct swdevt *sp;
 	register swblk_t vsbase;
 	register long blk;
-	dev_t dev;
+	struct vnode *vp;
 	register swblk_t dvbase;
 	register int nblks;
 	int error;
@@ -170,7 +180,7 @@ swfree(index)
 			 * First of all chunks... initialize the swapmap
 			 * the second half of the hunk.
 			 */
-			rminit(swapmap, (long)blk/2, (long)blk/2,
+			rminit(swapmap, (long)(blk/2), (long)(blk/2),
 			    "swap", nswapmap);
 		} else if (dvbase == 0) {
 			/*

@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.5 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "buf.h"
 #include "conf.h"
@@ -17,7 +16,7 @@
 #include "vm.h"
 #include "trace.h"
 #include "map.h"
-#include "uio.h"
+#include "vnode.h"
 
 #include "machine/pte.h"
 #ifdef SECSIZE
@@ -50,12 +49,12 @@ struct	buf *swbuf;
  * biodone() will link the header to a list of cleaned
  * pages to be processed by the pageout daemon.
  */
-swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
+swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 	struct proc *p;
 	swblk_t dblkno;
 	caddr_t addr;
 	int nbytes, rdflg, flag;
-	dev_t dev;
+	struct vnode *vp;
 	u_int pfcent;
 {
 	register struct buf *bp;
@@ -92,15 +91,19 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	} else
 		bp->b_un.b_addr = addr;
 	while (nbytes > 0) {
+		bp->b_blkno = dblkno;
+		bp->b_dev = vp->v_rdev;
+		if (bp->b_vp)
+			brelvp(bp);
+		vp->v_count++;
+		bp->b_vp = vp;
 		bp->b_bcount = nbytes;
 		minphys(bp);
 		c = bp->b_bcount;
-		bp->b_blkno = dblkno;
-		bp->b_dev = dev;
 #ifdef TRACE
-		trace(TR_SWAPIO, dev, bp->b_blkno);
+		trace(TR_SWAPIO, vp, bp->b_blkno);
 #endif
-		(*bdevsw[major(dev)].d_strategy)(bp);
+		VOP_STRATEGY(bp);
 		/* pageout daemon doesn't wait for pushed pages */
 		if (flag & B_DIRTY) {
 			if (c < nbytes)

@@ -14,11 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.13 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "file.h"
@@ -384,7 +383,7 @@ nopages:
 				if (atomic && top == 0 && len < mlen)
 					MH_ALIGN(m, len);
 			}
-			error = uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
+			error = uiomove(mtod(m, caddr_t), len, uio);
 			m->m_len = len;
 			*mp = m;
 			top->m_pkthdr.len += len;
@@ -470,8 +469,7 @@ soreceive(so, aname, uio, flagsp, rightsp, controlp)
 			len = uio->uio_resid;
 			if (len > m->m_len)
 				len = m->m_len;
-			error =
-			    uiomove(mtod(m, caddr_t), (int)len, UIO_READ, uio);
+			error = uiomove(mtod(m, caddr_t), (int)len, uio);
 			m = m_free(m);
 		} while (uio->uio_resid && error == 0 && m);
 bad:
@@ -594,8 +592,7 @@ panic("receive 3a");
 		if (len > m->m_len - moff)
 			len = m->m_len - moff;
 		splx(s);
-		error =
-		    uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
+		error = uiomove(mtod(m, caddr_t) + moff, (int)len, uio);
 		s = splnet();
 		if (len == m->m_len - moff) {
 			if (flags & MSG_PEEK) {

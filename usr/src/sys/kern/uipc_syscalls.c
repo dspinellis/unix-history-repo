@@ -12,11 +12,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_syscalls.c	7.9 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "file.h"
@@ -428,6 +427,7 @@ sendit(s, mp, flags)
 	auio.uio_iov = mp->msg_iov;
 	auio.uio_iovcnt = mp->msg_iovlen;
 	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_rw = UIO_WRITE;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
@@ -638,6 +638,7 @@ recvmsg()
 	u.u_error = copyout((caddr_t)&msg, (caddr_t)uap->msg, sizeof(msg));
 }
 
+/* ARGSUSED */
 recvit(s, mp, namelenp, rightslenp, compat_43)
 	int s, compat_43;
 	register struct msghdr *mp;
@@ -656,6 +657,7 @@ recvit(s, mp, namelenp, rightslenp, compat_43)
 	auio.uio_iov = mp->msg_iov;
 	auio.uio_iovcnt = mp->msg_iovlen;
 	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_rw = UIO_READ;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
@@ -867,7 +869,7 @@ free4:
 	u.u_ofile[u.u_r.r_val2] = 0;
 free3:
 	rf->f_count = 0;
-	u.u_ofile[r] = 0;
+	u.u_ofile[u.u_r.r_val1] = 0;
 free2:
 	(void)soclose(wso);
 free1:
@@ -1032,9 +1034,10 @@ getsock(fdes)
 {
 	register struct file *fp;
 
-	fp = getf(fdes);
-	if (fp == NULL)
+	if ((unsigned)fdes >= NOFILE || (fp = u.u_ofile[fdes]) == NULL) {
+		u.u_error = EBADF;
 		return (0);
+	}
 	if (fp->f_type != DTYPE_SOCKET) {
 		u.u_error = ENOTSOCK;
 		return (0);
