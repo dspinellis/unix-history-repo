@@ -1,3 +1,7 @@
+# Copyright (c) 1982 Regents of the University of California
+#
+#	@(#)Makefile	1.4	%G%
+#
 OBJS = y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o mkubglue.o mkheaders.o
 CFLAGS=-w
 LDFLAGS=-ll
