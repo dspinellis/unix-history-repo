@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -125,7 +125,7 @@ setcore()
 		adbprintf("not core file = %s\n", corefile.name);
 		goto ret;
 	}
-	signo = u.u_arg[0];
+	signo = u.u_sig;
 	sigcode = u.u_code;
 	filhdr.a_text = ctob(u.u_tsize);
 	filhdr.a_data = ctob(u.u_dsize);
