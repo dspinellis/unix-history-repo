@@ -1,4 +1,4 @@
-    /*	static	char sccsid[] = "@(#)pstab.h 1.2 %G%"; */
+    /*	static	char sccsid[] = "@(#)pstab.h 1.3 %G%"; */
 
     /*
      *	subtypes within the above type
@@ -15,3 +15,5 @@
 #define	N_PGPROC	0x8	/* global procedure */
 #define	N_PEFUNC	0x9	/* external function */
 #define	N_PEPROC	0xa	/* external procedure */
+#define	N_PLDATA	0xb	/* library variable */
+#define	N_PLTEXT	0xc	/* library routine */
