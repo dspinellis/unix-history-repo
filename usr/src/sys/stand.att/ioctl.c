@@ -4,11 +4,11 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)ioctl.c	7.2 (Berkeley) %G%
+ *	@(#)ioctl.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include <stand/saio.h>
+#include <stand.att/saio.h>
 
 #ifndef SMALL
 ioctl(fdesc, cmd, arg)
