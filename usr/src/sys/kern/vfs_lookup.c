@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.8 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -145,6 +145,28 @@ dirloop:
 	 * that ni_ptr would be left pointing to the last component, but since
 	 * the ni_pnbuf gets free'd, that is not a good idea.
 	 */
+#ifdef notdef
+	for (cp = ndp->ni_ptr; *cp != 0 && *cp != '/'; cp++) {
+		if ((*cp & 0200) == 0)
+			continue;
+		if ((*cp&0377) == ('/'|0200) || flag != DELETE) {
+			error = EINVAL;
+			goto bad;
+		}
+	}
+	ndp->ni_namelen = cp - ndp->ni_ptr;
+	if (ndp->ni_namelen >= MAXNAMLEN) {
+		error = ENAMETOOLONG;
+		goto bad;
+	}
+	ndp->ni_pathlen -= ndp->ni_namelen;
+#ifdef NAMEI_DIAGNOSTIC
+	{ char c = *cp;
+	*cp = '\0';
+	printf("{%s}: ", ndp->ni_ptr);
+	*cp = c; }
+#endif
+#else fornow
 	ndp->ni_hash = 0;
 	for (cp = ndp->ni_ptr, i = 0; *cp != 0 && *cp != '/'; cp++) {
 		if (i >= MAXNAMLEN) {
@@ -166,6 +188,7 @@ dirloop:
 #ifdef NAMEI_DIAGNOSTIC
 	printf("{%s}: ", ndp->ni_dent.d_name);
 #endif
+#endif fornow
 	ndp->ni_next = cp;
 	ndp->ni_makeentry = 1;
 	if (*cp == '\0' && docache == 0)
