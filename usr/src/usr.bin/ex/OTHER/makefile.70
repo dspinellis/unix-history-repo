@@ -21,11 +21,12 @@ VERSION=3.5
 #
 BINDIR=	/usr/ucb/bin
 NBINDIR=/usr/new/bin
-LIBDIR=	/usr/lib
+LIBDIR=	/usr/ucb/lib
 FOLD=	${BINDIR}/fold
 CTAGS=	${BINDIR}/ctags
 XSTR=	${BINDIR}/xstr
-CC=	ovcc
+CC=	ovcc -V -B/usr/new/lib/ -t012 # kludge for /usr/new
+AS=	ovas
 LD=	ovld
 DEBUGFLAGS=	-DTRACE
 NONDEBUGFLAGS=	-O
@@ -68,9 +69,9 @@ OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o \
 a.out: ${OBJS}
 	${LD} -X /lib/crt0.o ${FMT}\
 	    -Z ex_voperate.o ex_vget.o ex_vops.o ex_vops2.o ex_vops3.o \
-	    -Z ex_set.o ex_re.o ex_v.o ex_io.o ex_tty.o ex_unix.o ex.o\
+	    -Z ex_set.o ex_re.o ex_io.o ex_tty.o ex_unix.o ex.o\
 	    -L ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_get.o ex_temp.o\
-	       ex_vadj.o ex_vmain.o ex_vwind.o\
+	       ex_v.o ex_vadj.o ex_vmain.o ex_vwind.o\
 	       ex_vput.o ex_put.o ex_subr.o ${PRINTF} strings.o \
 	       ex_data.o ${TERMLIB} -lovc 
 
@@ -88,7 +89,7 @@ strings.o: strings
 	${XSTR}
 	${CC} -c -S xs.c
 #	ed - <:rofix xs.s
-	as -o strings.o xs.s
+	${AS} -o strings.o xs.s
 	rm xs.s
 	
 exrecover: exrecover.o
