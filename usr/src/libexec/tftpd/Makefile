@@ -14,47 +14,35 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 VPATH=	../../ucb/tftp
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	tftpd.c tftpsubs.c
 OBJS=	tftpd.o tftpsubs.o
+MAN=	tftpd.0
 
 all: tftpd
 
-tftpd:	${OBJS} ${LIBC}
+tftpd: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core tftpd
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 tftpd ${DESTDIR}/etc/tftpd
+	install -c -o bin -g bin -m 444 tftpd.0 ${DESTDIR}/usr/man/cat8
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-tftpd.o: tftpd.c /usr/include/sys/types.h /usr/include/sys/socket.h
-tftpd.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-tftpd.o: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
-tftpd.o: /usr/include/sys/wait.h /usr/include/machine/endian.h
-tftpd.o: /usr/include/sys/stat.h /usr/include/netinet/in.h
-tftpd.o: /usr/include/arpa/tftp.h /usr/include/signal.h
-tftpd.o: /usr/include/machine/trap.h /usr/include/stdio.h /usr/include/errno.h
-tftpd.o: /usr/include/ctype.h /usr/include/netdb.h /usr/include/setjmp.h
-tftpd.o: /usr/include/syslog.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
