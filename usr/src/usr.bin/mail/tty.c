@@ -7,9 +7,8 @@
  */
 
 #include "rcv.h"
-#include <sgtty.h>
 
-static char *SccsId = "@(#)tty.c	2.1.1.1 %G%";
+static char *SccsId = "@(#)tty.c	2.3 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
@@ -35,9 +34,7 @@ grabh(hp, gflags)
 	register int s;
 	int errs;
 
-# ifdef VMUNIX
 	savecont = sigset(SIGCONT, signull);
-# endif VMUNIX
 	errs = 0;
 #ifndef TIOCSTI
 	ttyset = 0;
@@ -91,9 +88,7 @@ grabh(hp, gflags)
 		if (hp->h_bcc != NOSTR)
 			hp->h_seq++;
 	}
-# ifdef VMUNIX
 	sigset(SIGCONT, savecont);
-# endif VMUNIX
 #ifndef TIOCSTI
 	ttybuf.sg_erase = c_erase;
 	ttybuf.sg_kill = c_kill;
@@ -151,9 +146,7 @@ readtty(pr, src)
 	cp2 = cp;
 	if (setjmp(rewrite))
 		goto redo;
-# ifdef VMUNIX
 	sigset(SIGCONT, ttycont);
-# endif VMUNIX
 	while (cp2 < canonb + BUFSIZ) {
 		c = getc(stdin);
 		if (c == EOF || c == '\n')
@@ -161,9 +154,7 @@ readtty(pr, src)
 		*cp2++ = c;
 	}
 	*cp2 = 0;
-# ifdef VMUNIX
 	sigset(SIGCONT, signull);
-# endif VMUNIX
 	if (c == EOF && ferror(stdin) && hadcont) {
 redo:
 		hadcont = 0;
@@ -172,9 +163,9 @@ redo:
 		return(readtty(pr, cp));
 	}
 #ifndef TIOCSTI
-	if (cp == NOSTR || *cp == '\0')
+	if (cp2 == NOSTR || *cp2 == '\0')
 		return(src);
-	cp2 = cp;
+	cp = cp2;
 	if (!ttyset)
 		return(strlen(canonb) > 0 ? savestr(canonb) : NOSTR);
 	while (*cp != '\0') {
@@ -208,7 +199,6 @@ redo:
 	return(savestr(canonb));
 }
 
-# ifdef VMUNIX
 /*
  * Receipt continuation.
  */
@@ -219,7 +209,6 @@ ttycont(s)
 	sigrelse(SIGCONT);
 	longjmp(rewrite, 1);
 }
-# endif VMUNIX
 
 /*
  * Null routine to satisfy

@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.3.1.1 %G%";
+static char *SccsId = "@(#)fio.c	2.8 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -318,7 +318,7 @@ edstop()
 	}
 	if (Tflag != NOSTR)
 		fclose(readstat);
-	if (!gotcha)
+	if (!gotcha || Tflag != NOSTR)
 		goto done;
 	ibuf = NULL;
 	if (stat(editfile, &statb) >= 0 && statb.st_size > mailsize) {
@@ -392,10 +392,6 @@ done:
 	relsesigs();
 }
 
-# ifndef VMUNIX
-static int	SaveSigs[32];
-# endif VMUNIX
-
 /*
  * Hold signals SIGHUP - SIGQUIT.
  */
@@ -404,11 +400,7 @@ holdsigs()
 	register int i;
 
 	for (i = SIGHUP; i <= SIGQUIT; i++)
-# ifdef VMUNIX
 		sighold(i);
-# else
-		SaveSigs[i] = signal(i, SIG_IGN);
-# endif
 }
 
 /*
@@ -419,11 +411,7 @@ relsesigs()
 	register int i;
 
 	for (i = SIGHUP; i <= SIGQUIT; i++)
-# ifdef VMUNIX
 		sigrelse(i);
-# else
-		signal(i, SaveSigs[i]);
-# endif
 }
 
 /*
@@ -508,6 +496,10 @@ expand(name)
 	int s, pivec[2], (*sigint)();
 	struct stat sbuf;
 
+	if (name[0] == '+' && getfold(cmdbuf) >= 0) {
+		sprintf(xname, "%s/%s", cmdbuf, name + 1);
+		return(expand(savestr(xname)));
+	}
 	if (!anyof(name, "~{[*?$`'\"\\"))
 		return(name);
 	if (pipe(pivec) < 0) {
@@ -567,6 +559,23 @@ expand(name)
 
 err:
 	return(NOSTR);
+}
+
+/*
+ * Determine the current folder directory name.
+ */
+getfold(name)
+	char *name;
+{
+	char *folder;
+
+	if ((folder = value("folder")) == NOSTR)
+		return(-1);
+	if (*folder == '/')
+		strcpy(name, folder);
+	else
+		sprintf(name, "%s/%s", homedir, folder);
+	return(0);
 }
 
 /*
