@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -47,11 +47,12 @@ main(argc, argv)
 	extern int optind;
 	int ch, cc, count, bits;
 	struct sockaddr from;
+	struct sigaction sigact;
 	int fromlen = sizeof(from), size = 32*1024;
 	struct timeval shorttime;
 
 	while ((ch = getopt(argc, argv, "n")) != EOF)
-		switch((char)ch) {
+		switch (ch) {
 		case 'n':
 			nflag++;
 			break;
@@ -86,7 +87,11 @@ usage:		printf("usage: query [-n] hosts...\n");
 	bits = 1 << s;
 	bzero(&shorttime, sizeof(shorttime));
 	shorttime.tv_usec = STIME;
-	signal(SIGALRM, timeout);
+	bzero(&sigact, sizeof(sigact));
+	sigact.sa_handler = timeout;
+	/*sigact.sa_flags = 0;		/* no restart */
+	if (sigaction(SIGALRM, &sigact, (struct sigaction *)NULL) == -1)
+		perror("sigaction");
 	alarm(WTIME);
 	while ((count > 0 && !timedout) ||
 	    select(20, (fd_set *)&bits, NULL, NULL, &shorttime) > 0) {
