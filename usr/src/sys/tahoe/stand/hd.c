@@ -1,7 +1,7 @@
 /*
  * Stand alone driver for the HDC controller
  *
- *	@(#)hd.c	7.3 (Berkeley) %G%
+ *	@(#)hd.c	7.4 (Berkeley) %G%
  */
 #define	KERNEL
 
