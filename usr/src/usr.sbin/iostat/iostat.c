@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)iostat.c	5.12 (Berkeley) %G%";
 #include <string.h>
 #include <paths.h>
 #include <kvm.h>
+#include <limits.h>
 
 struct nlist nl[] = {
 #define	X_DK_TIME	0
@@ -48,8 +49,8 @@ struct nlist nl[] = {
 	{ "_dk_wpms" },
 #define	X_HZ		8
 	{ "_hz" },
-#define	X_PHZ		9
-	{ "_phz" },
+#define	X_STATHZ	9
+	{ "_stathz" },
 #define	X_DK_NDRIVE	10
 	{ "_dk_ndrive" },
 #define	X_END		10
@@ -85,8 +86,10 @@ long *dk_wpms;
 int dk_ndrive, *dr_select, hz, kmemfd, ndrives;
 char **dr_name;
 
+kvm_t *kd;
+
 #define nlread(x, v) \
-	kvm_read((void *)nl[x].n_value, (void *)&(v), sizeof(v))
+	kvm_read(kd, nl[x].n_value, &(v), sizeof(v))
 
 #include "names.c"				/* XXX */
 
@@ -102,8 +105,9 @@ main(argc, argv)
 {
 	register int i;
 	long tmp;
-	int ch, hdrcnt, reps, interval, phz, ndrives;
+	int ch, hdrcnt, reps, interval, stathz, ndrives;
 	char **cp, *memf, *nlistf, buf[30];
+        char errbuf[_POSIX2_LINE_MAX];
 
 	interval = reps = 0;
 	nlistf = memf = NULL;
@@ -135,10 +139,11 @@ main(argc, argv)
 	if (nlistf != NULL || memf != NULL)
 		setgid(getgid());
 
-	if (kvm_openfiles(nlistf, memf, NULL) == -1)
-		err("kvm_openfiles: %s", kvm_geterr());
-	if (kvm_nlist(nl) == -1)
-		err("kvm_nlist: %s", kvm_geterr());
+        kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf);
+	if (kd == 0)
+		err("kvm_openfiles: %s", errbuf);
+	if (kvm_nlist(kd, nl) == -1)
+		err("kvm_nlist: %s", kvm_geterr(kd));
 	if (nl[X_DK_NDRIVE].n_type == 0)
 		err("dk_ndrive not found in namelist");
 	(void)nlread(X_DK_NDRIVE, dk_ndrive);
@@ -163,10 +168,10 @@ main(argc, argv)
 	}
 	read_names();
 	(void)nlread(X_HZ, hz);
-	(void)nlread(X_PHZ, phz);
-	if (phz)
-		hz = phz;
-	(void)kvm_read((void *)nl[X_DK_WPMS].n_value, dk_wpms,
+	(void)nlread(X_STATHZ, stathz);
+	if (stathz)
+		hz = stathz;
+	(void)kvm_read(kd, nl[X_DK_WPMS].n_value, dk_wpms,
 		dk_ndrive * sizeof(dk_wpms));
 
 	/*
@@ -230,19 +235,19 @@ main(argc, argv)
 			phdr(0);
 			hdrcnt = 20;
 		}
-		(void)kvm_read((void *)nl[X_DK_TIME].n_value,
+		(void)kvm_read(kd, nl[X_DK_TIME].n_value,
 		    cur.dk_time, dk_ndrive * sizeof(long));
-		(void)kvm_read((void *)nl[X_DK_XFER].n_value,
+		(void)kvm_read(kd, nl[X_DK_XFER].n_value,
 		    cur.dk_xfer, dk_ndrive * sizeof(long));
-		(void)kvm_read((void *)nl[X_DK_WDS].n_value,
+		(void)kvm_read(kd, nl[X_DK_WDS].n_value,
 		    cur.dk_wds, dk_ndrive * sizeof(long));
-		(void)kvm_read((void *)nl[X_DK_SEEK].n_value,
+		(void)kvm_read(kd, nl[X_DK_SEEK].n_value,
 		    cur.dk_seek, dk_ndrive * sizeof(long));
-		(void)kvm_read((void *)nl[X_TK_NIN].n_value,
+		(void)kvm_read(kd, nl[X_TK_NIN].n_value,
 		    &cur.tk_nin, sizeof(cur.tk_nin));
-		(void)kvm_read((void *)nl[X_TK_NOUT].n_value,
+		(void)kvm_read(kd, nl[X_TK_NOUT].n_value,
 		    &cur.tk_nout, sizeof(cur.tk_nout));
-		(void)kvm_read((void *)nl[X_CP_TIME].n_value,
+		(void)kvm_read(kd, nl[X_CP_TIME].n_value,
 		    cur.cp_time, sizeof(cur.cp_time));
 		for (i = 0; i < dk_ndrive; i++) {
 			if (!dr_select[i])
