@@ -1,5 +1,5 @@
 # Area Code : City : State/Province : State/Province Abbrev.
-#	@(#)na.phone	5.4 (Berkeley) %G%
+#	@(#)na.phone	5.5 (Berkeley) %G%
 201:Ashbury Park:New Jersey:NJ
 201:Newark:New Jersey:NJ
 202::District of Columbia:DC
@@ -29,7 +29,7 @@
 218:Duluth:Minnesota:MN
 219:Gary:Indiana:IN
 219:Hammond:Indiana:IN
-301::Maryland:MD
+301:Bethesda:Maryland:MD
 302::Delaware:DE
 303:Aspen:Colorado:CO
 303:Boulder:Colorado:CO
@@ -222,10 +222,11 @@
 904:Apalachicola:Florida:FL
 904:Atlantic Beach:Florida:FL
 904:Tallahassee:Florida:FL
-905:Was Mexico:Mexico:FL
-906:Escananba:Michigan:MI
+905:Was Mexico:Mexico:MX
+906:Escanaba:Michigan:MI
+906:Sault Ste. Marie:Michigan:MI
 907::Alaska:AK
-908::New Jersey:NJ
+908:Asbury Park:New Jersey:NJ
 912:Macon:Georgia:GA
 913:Kansas City:Kansas:KS
 913:Lawrence:Kansas:KS
