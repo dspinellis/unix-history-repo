@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.47 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.48 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,12 +16,12 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/vnode.h>
-#include <sys/specdev.h>
 #include <sys/stat.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/disklabel.h>
+#include <miscfs/specfs/specdev.h>
 
 /* symbolic sleep message strings for devices */
 char	devopn[] = "devopn";
