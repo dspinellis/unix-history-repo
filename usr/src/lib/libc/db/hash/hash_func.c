@@ -9,11 +9,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_func.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_func.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+
 #include <db.h>
+
 #include "hash.h"
 #include "page.h"
 #include "extern.h"
@@ -24,7 +26,7 @@ static int hash3 __P((u_char *, int));
 static int hash4 __P((u_char *, int));
 
 /* Global default hash function */
-int (*default_hash) __P((u_char *, int)) = hash4;
+int (*__default_hash) __P((u_char *, int)) = hash4;
 
 /******************************* HASH FUNCTIONS **************************/
 /*
