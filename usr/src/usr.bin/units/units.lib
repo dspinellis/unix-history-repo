@@ -1,3 +1,5 @@
+/ @(#)units.lib	4.2 (Berkeley) %G%
+
 / dimensions
 m			*a*
 kg			*b*
@@ -173,7 +175,7 @@ lux			cd sr/m2
 
 / Money
 / epoch June 16, 1980 Linns Stamp News
-/ (Wall Stree Journal; Manfra, Tordella and Brookes, Inc.)
+/ (Wall Street Journal; Manfra, Tordella and Brookes, Inc.)
 
 $			dollar
 argentinapeso		.0056 $
@@ -344,7 +346,7 @@ cup			1|2 pt
 curie			3.7+10 /sec
 dalton			amu
 decade			10 yr
-dipotre			/m
+dioptre			/m
 displacementton		35 ft3
 doppelzentner		100 kg
 dozen			12
@@ -397,6 +399,7 @@ jeroboam		4|5 gal
 karat			1|24
 kcal			kilocal
 kcalorie		kilocal
+kelvin			degC
 kev			1+3 e-volt
 key			kg
 khz			1+3 /sec
@@ -462,12 +465,13 @@ quartersection		1|4 mi2
 quintal			100 kg
 quire			25
 rad			100 erg/gm
+rankine			1.8 kelvin
 ream			500
 registerton		100 ft3
 rehoboam		156 floz
 rhe			10 m2/nt-sec
 rontgen			2.58-4 curie/kg
-rood			1.21+3 yd
+rood			1.21+3 yd2
 rope			20 ft
 rutherford		1+6 /sec
 rydberg			1.36054+1 ev
