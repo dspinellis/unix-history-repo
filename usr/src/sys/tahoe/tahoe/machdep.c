@@ -1,4 +1,4 @@
-/*	machdep.c	1.4	86/01/24	*/
+/*	machdep.c	1.5	86/07/16	*/
 
 #include "../tahoe/reg.h"
 #include "../tahoe/pte.h"
@@ -99,7 +99,7 @@ startup(firstaddr)
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
-	valloc(nch, struct nch, nchsize);
+	valloc(namecache, struct namecache, nchsize);
 #ifdef QUOTA
 	valloclim(quota, struct quota, nquota, quotaNQUOTA);
 	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
@@ -293,7 +293,7 @@ sendsig(p, sig, mask)
 	fp = (struct sigframe *)scp - 1;
 	if ((int)fp <= USRSTACK - ctob(u.u_ssize)) 
 		grow((unsigned)fp);
-	if (useracc((caddr_t)fp, sizeof (*fp) + sizeof (*scp), 1) == 0) {
+	if (useracc((caddr_t)fp, sizeof (*fp) + sizeof (*scp), B_WRITE) == 0) {
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
