@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wait.h	7.15 (Berkeley) %G%
+ *	@(#)wait.h	7.16 (Berkeley) %G%
  */
 
 /*
@@ -117,6 +117,8 @@ union wait {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
+struct rusage;	/* forward declaration */
+
 pid_t	wait __P((int *));
 pid_t	waitpid __P((pid_t, int *, int));
 #ifndef _POSIX_SOURCE
