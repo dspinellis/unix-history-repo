@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.33 (Berkeley) %G%
+		@(#)README	8.34 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1060,6 +1060,9 @@ confCOPY_ERRORS_TO	(undefined)	OP	Address for additional copies
 						of all error messages.
 confQUEUE_FACTOR	(undefined)	Oq	Slope of queue-only function
 confREAD_TIMEOUT	(undefined)	Or	SMTP read timeouts.
+confDONT_PRUNE_ROUTES	False		OR	Don't prune down route-addr
+						syntax addresses to the
+						minimum possible.
 confSAFE_QUEUE		True		Os *	Commit all messages to disk
 						before forking.
 confMESSAGE_TIMEOUT	5d/4h		OT	Timeout for messages before
