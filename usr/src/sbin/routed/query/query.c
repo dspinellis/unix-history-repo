@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -24,6 +24,7 @@ int	s;
 int	timedout, timeout();
 char	packet[MAXPACKETSIZE];
 extern int errno;
+int	nflag;
 
 main(argc, argv)
 	int argc;
@@ -35,7 +36,8 @@ main(argc, argv)
 	struct timeval notime;
 	
 	if (argc < 2) {
-		printf("usage: query hosts...\n");
+usage:
+		printf("usage: query [ -n ] hosts...\n");
 		exit(1);
 	}
 	s = socket(AF_INET, SOCK_DGRAM, 0);
@@ -45,6 +47,16 @@ main(argc, argv)
 	}
 
 	argv++, argc--;
+	if (*argv[0] == '-') {
+		switch (*argv[1]) {
+		case 'n':
+			nflag++;
+			break;
+		default:
+			goto usage;
+		}
+		argc--, argv++;
+	}
 	count = argc;
 	while (argc > 0) {
 		query(*argv);
@@ -87,13 +99,16 @@ query(host)
 	struct servent *sp;
 
 	bzero((char *)&router, sizeof (router));
-	hp = gethostbyname(host);
-	if (hp == 0) {
-		printf("%s: unknown\n", host);
-		exit(1);
-	}
-	bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
 	router.sin_family = AF_INET;
+	router.sin_addr.s_addr = inet_addr(host);
+	if (router.sin_addr.s_addr == -1) {
+		hp = gethostbyname(host);
+		if (hp == 0) {
+			printf("%s: unknown\n", host);
+			exit(1);
+		}
+		bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
+	}
 	sp = getservbyname("router", "udp");
 	if (sp == 0) {
 		printf("udp/router: service unknown\n");
@@ -125,10 +140,15 @@ rip_input(from, size)
 
 	if (msg->rip_cmd != RIPCMD_RESPONSE)
 		return;
-	hp = gethostbyaddr(&from->sin_addr, sizeof (struct in_addr), AF_INET);
-	name = hp == 0 ? "???" : hp->h_name;
-	printf("%d bytes from %s(%s):\n", size, name,
-		inet_ntoa(from->sin_addr));
+	printf("%d bytes from ");
+	if (nflag)
+		printf("%s:\n", inet_ntoa(from->sin_addr));
+	else {
+		hp = gethostbyaddr(&from->sin_addr, sizeof (struct in_addr),
+			AF_INET);
+		name = hp == 0 ? "???" : hp->h_name;
+		printf("%s(%s):\n", name, inet_ntoa(from->sin_addr));
+	}
 	size -= sizeof (int);
 	n = msg->rip_nets;
 	while (size > 0) {
@@ -146,30 +166,35 @@ rip_input(from, size)
 		subnet = inet_subnetof(sin->sin_addr);
 		lna = inet_lnaof(sin->sin_addr);
 		name = "???";
-		if (lna == INADDR_ANY) {
-			np = getnetbyaddr(net, AF_INET);
-			if (np)
-				name = np->n_name;
-			else if (net == 0)
-				name = "default";
-		} else if ((subnet != net) && ((lna & 0xff) == 0) &&
-		    (np = getnetbyaddr(subnet, AF_INET))) {
-			struct in_addr subnaddr, inet_makeaddr();
+		if (!nflag) {
+			if (lna == INADDR_ANY) {
+				np = getnetbyaddr(net, AF_INET);
+				if (np)
+					name = np->n_name;
+				else if (net == 0)
+					name = "default";
+			} else if ((subnet != net) && ((lna & 0xff) == 0) &&
+			    (np = getnetbyaddr(subnet, AF_INET))) {
+				struct in_addr subnaddr, inet_makeaddr();
 
-			subnaddr = inet_makeaddr(subnet, INADDR_ANY);
-			if (bcmp(&sin->sin_addr, &subnaddr, sizeof(subnaddr)) == 0)
-				name = np->n_name;
-			else
-				goto host;
-		} else {
-host:
-			hp = gethostbyaddr(&sin->sin_addr,
-			    sizeof (struct in_addr), AF_INET);
-			if (hp)
-				name = hp->h_name;
-		}
-		printf("\t%s(%s), metric %d\n", name,
-			inet_ntoa(sin->sin_addr), n->rip_metric);
+				subnaddr = inet_makeaddr(subnet, INADDR_ANY);
+				if (bcmp(&sin->sin_addr, &subnaddr,
+				    sizeof(subnaddr)) == 0)
+					name = np->n_name;
+				else
+					goto host;
+			} else {
+	host:
+				hp = gethostbyaddr(&sin->sin_addr,
+				    sizeof (struct in_addr), AF_INET);
+				if (hp)
+					name = hp->h_name;
+			}
+			printf("\t%s(%s), metric %d\n", name,
+				inet_ntoa(sin->sin_addr), n->rip_metric);
+		} else
+			printf("\t%s, metric %d\n",
+				inet_ntoa(sin->sin_addr), n->rip_metric);
 		size -= sizeof (struct netinfo), n++;
 	}
 }

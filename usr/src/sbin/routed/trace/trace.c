@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -78,12 +78,16 @@ usage:
 	}
 	router.sin_port = sp->s_port;
 	while (argc > 0) {
-		hp = gethostbyname(*argv);
-		if (hp == 0) {
-			printf("%s: unknown\n", *argv);
-			continue;
+		router.sin_family = AF_INET;
+		router.sin_addr.s_addr = inet_addr(*argv);
+		if (router.sin_addr.s_addr == -1) {
+			hp = gethostbyname(*argv);
+			if (hp == 0) {
+				printf("%s: unknown\n", *argv);
+				exit(1);
+			}
+			bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
 		}
-		bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
 		if (sendto(s, packet, size, 0, &router, sizeof(router)) < 0)
 			perror(*argv);
 		argv++, argc--;
