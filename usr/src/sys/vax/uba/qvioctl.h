@@ -3,7 +3,7 @@
  *
  * Ioctl definitions for the qvss.
  *
- *	@(#)qvioctl.h	1.1 (Berkeley) %G%
+ *	@(#)qvioctl.h	1.2 (Berkeley) %G%
  *
  */
 #ifdef KERNEL
@@ -55,9 +55,9 @@ struct qv_info {
 };
 typedef struct qv_info vsIoAddr;
 
-#define QIOCGINFO 	_IOR(q, 1, struct qv_info)	/* get the info	 */
-#define QIOCSMSTATE	_IOW(q, 2, vsCursor)		/* set mouse pos */
-#define QIOCINIT	_IO(q, 4)			/* init screen   */
-#define QIOCKPCMD	_IOW(q, 5, struct qv_kpcmd)	/* keybd. per. cmd */
-#define QIOCADDR	_IOR(q, 6, struct qv_info *)	/* get address */
+#define QIOCGINFO 	_IOR('q', 1, struct qv_info)	/* get the info	 */
+#define QIOCSMSTATE	_IOW('q', 2, vsCursor)		/* set mouse pos */
+#define QIOCINIT	_IO('q', 4)			/* init screen   */
+#define QIOCKPCMD	_IOW('q', 5, struct qv_kpcmd)	/* keybd. per. cmd */
+#define QIOCADDR	_IOR('q', 6, struct qv_info *)	/* get address */
 
