@@ -1,9 +1,24 @@
-#	@(#)Makefile	4.2	%G%
+#	@(#)Makefile	4.3	%G%
 #
-ALL=	htboot tmboot tsboot hpboot hkboot upboot mtboot utboot noboot \
-	httoggle tmtoggle tstoggle mttoggle uttoggle
+ALL=	hkboot hpboot htboot mtboot noboot raboot rlboot \
+	upboot utboot tmboot tsboot \
+	httoggle mttoggle tmtoggle tstoggle uttoggle
 
 all: ${ALL}
+
+hkboot: hkboot.s
+	as hkboot.s
+	nm -u a.out
+	strip a.out
+	dd if=a.out bs=32 skip=1 of=b.out
+	dd if=b.out of=hkboot conv=sync
+
+hpboot: hpboot.s
+	as hpboot.s
+	nm -u a.out
+	strip a.out
+	dd if=a.out bs=32 skip=1 of=b.out
+	dd if=b.out of=hpboot conv=sync
 
 htboot: htboot.s
 	as htboot.s
@@ -11,6 +26,27 @@ htboot: htboot.s
 	strip a.out
 	dd if=a.out of=b.out bs=32 skip=1
 	dd if=b.out of=htboot conv=sync
+
+mtboot: mtboot.s
+	as mtboot.s
+	nm -u a.out
+	strip a.out
+	dd if=a.out bs=32 skip=1 of=b.out
+	dd if=b.out of=mtboot conv=sync
+
+raboot: raboot.s
+	as raboot.s
+	nm -u a.out
+	strip a.out
+	dd if=a.out bs=32 skip=1 of=b.out
+	dd if=b.out of=raboot conv=sync
+
+rlboot: rlboot.s
+	as rlboot.s
+	nm -u a.out
+	strip a.out
+	dd if=a.out bs=32 skip=1 of=b.out
+	dd if=b.out of=rlboot conv=sync
 
 tmboot: tmboot.s
 	as tmboot.s
@@ -26,33 +62,12 @@ tsboot: tsboot.s
 	dd if=a.out of=b.out bs=32 skip=1
 	dd if=b.out of=tsboot conv=sync
 
-hpboot: hpboot.s
-	as hpboot.s
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=hpboot conv=sync
-
-hkboot: hkboot.s
-	as hkboot.s
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=hkboot conv=sync
-
 upboot: upboot.s
 	as upboot.s
 	nm -u a.out
 	strip a.out
 	dd if=a.out bs=32 skip=1 of=b.out
 	dd if=b.out of=upboot conv=sync
-
-mtboot: mtboot.s
-	as mtboot.s
-	nm -u a.out
-	strip a.out
-	dd if=a.out bs=32 skip=1 of=b.out
-	dd if=b.out of=mtboot conv=sync
 
 utboot: utboot.s
 	as utboot.s
@@ -67,11 +82,11 @@ httoggle: httoggle.s
 	strip a.out
 	dd if=a.out bs=32 skip=1 of=httoggle
 
-tstoggle: tstoggle.s
-	as tstoggle.s
+mttoggle: mttoggle.s
+	as mttoggle.s
 	nm -u a.out
 	strip a.out
-	dd if=a.out bs=32 skip=1 of=tstoggle
+	dd if=a.out bs=32 skip=1 of=mttoggle
 
 tmtoggle: tmtoggle.s
 	as tmtoggle.s
@@ -79,11 +94,11 @@ tmtoggle: tmtoggle.s
 	strip a.out
 	dd if=a.out bs=32 skip=1 of=tmtoggle
 
-mttoggle: mttoggle.s
-	as mttoggle.s
+tstoggle: tstoggle.s
+	as tstoggle.s
 	nm -u a.out
 	strip a.out
-	dd if=a.out bs=32 skip=1 of=mttoggle
+	dd if=a.out bs=32 skip=1 of=tstoggle
 
 uttoggle: uttoggle.s
 	as uttoggle.s
