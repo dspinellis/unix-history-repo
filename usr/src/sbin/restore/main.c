@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.6 %G%";
+char version[] = "@(#)main.c 2.7 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -39,6 +39,7 @@ char version[] = "@(#)main.c 2.6 %G%";
 #include "../h/fs.h"
 #include "../h/dumprestor.h"
 #endif
+#include <sys/ioctl.h>
 #include <sys/mtio.h>
 
 #define ODIRSIZ 14
