@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -118,7 +118,7 @@ c_atime(arg)
 
 	ftsoptions &= ~FTS_NOSTAT;
 
-	NEW(T_ATIME, f_atime);
+	NEW(N_ATIME, f_atime);
 	new->t_data = find_parsenum(new, "-atime", arg, (char *)NULL);
 	return(new);
 }
@@ -146,7 +146,7 @@ c_ctime(arg)
 
 	ftsoptions &= ~FTS_NOSTAT;
 
-	NEW(T_CTIME, f_ctime);
+	NEW(N_CTIME, f_ctime);
 	new->t_data = find_parsenum(new, "-ctime", arg, (char *)NULL);
 	return(new);
 }
@@ -173,7 +173,7 @@ c_depth()
     
 	isdepth = 1;
 
-	NEW(T_DEPTH, f_always_true);
+	NEW(N_DEPTH, f_always_true);
 	return(new);
 }
  
@@ -242,7 +242,7 @@ c_exec(argvp, isok)
 		ftsoptions |= FTS_NOCHDIR;
 	isoutput = 1;
     
-	NEW(T_EXEC, f_exec);
+	NEW(N_EXEC, f_exec);
 	new->flags = isok;
 
 	for (ap = argv = *argvp;; ++ap) {
@@ -290,7 +290,7 @@ c_follow()
 	ftsoptions &= ~FTS_PHYSICAL;
 	ftsoptions |= FTS_LOGICAL;
 
-	NEW(T_FOLLOW, f_always_true);
+	NEW(N_FOLLOW, f_always_true);
 	return(new);
 }
  
@@ -356,7 +356,7 @@ c_fstype(arg)
     
 	ftsoptions &= ~FTS_NOSTAT;
     
-	NEW(T_FSTYPE, f_fstype);
+	NEW(N_FSTYPE, f_fstype);
 	switch(*arg) {
 	case 'l':
 		if (!strcmp(arg, "local")) {
@@ -427,7 +427,7 @@ c_group(gname)
 	} else
 		gid = g->gr_gid;
     
-	NEW(T_GROUP, f_group);
+	NEW(N_GROUP, f_group);
 	new->g_data = gid;
 	return(new);
 }
@@ -452,7 +452,7 @@ c_inum(arg)
     
 	ftsoptions &= ~FTS_NOSTAT;
     
-	NEW(T_INUM, f_inum);
+	NEW(N_INUM, f_inum);
 	new->i_data = find_parsenum(new, "-inum", arg, (char *)NULL);
 	return(new);
 }
@@ -477,7 +477,7 @@ c_links(arg)
     
 	ftsoptions &= ~FTS_NOSTAT;
     
-	NEW(T_LINKS, f_links);
+	NEW(N_LINKS, f_links);
 	new->l_data = (nlink_t)find_parsenum(new, "-links", arg, (char *)NULL);
 	return(new);
 }
@@ -506,7 +506,7 @@ c_ls()
 	ftsoptions &= ~FTS_NOSTAT;
 	isoutput = 1;
     
-	NEW(T_LS, f_ls);
+	NEW(N_LS, f_ls);
 	return(new);
 }
 
@@ -529,7 +529,7 @@ c_name(pattern)
 {
 	PLAN *new;
 
-	NEW(T_NAME, f_name);
+	NEW(N_NAME, f_name);
 	new->c_data = pattern;
 	return(new);
 }
@@ -561,7 +561,7 @@ c_newer(filename)
 		error(filename, errno);
 		exit(1);
 	}
-	NEW(T_NEWER, f_newer);
+	NEW(N_NEWER, f_newer);
 	new->t_data = sb.st_mtime;
 	return(new);
 }
@@ -589,7 +589,7 @@ c_nogroup()
     
 	ftsoptions &= ~FTS_NOSTAT;
 
-	NEW(T_NOGROUP, f_nogroup);
+	NEW(N_NOGROUP, f_nogroup);
 	return(new);
 }
  
@@ -616,7 +616,7 @@ c_nouser()
     
 	ftsoptions &= ~FTS_NOSTAT;
 
-	NEW(T_NOUSER, f_nouser);
+	NEW(N_NOUSER, f_nouser);
 	return(new);
 }
  
@@ -652,7 +652,7 @@ c_perm(perm)
 
 	ftsoptions &= ~FTS_NOSTAT;
 
-	NEW(T_PERM, f_perm);
+	NEW(N_PERM, f_perm);
 
 	if (*perm == '-') {
 		new->flags = 1;
@@ -688,7 +688,7 @@ c_print()
     
 	isoutput = 1;
 
-	NEW(T_PRINT, f_print);
+	NEW(N_PRINT, f_print);
 	return(new);
 }
  
@@ -716,7 +716,7 @@ c_prune()
 {
 	PLAN *new;
 
-	NEW(T_PRUNE, f_prune);
+	NEW(N_PRUNE, f_prune);
 	return(new);
 }
  
@@ -750,7 +750,7 @@ c_size(arg)
     
 	ftsoptions &= ~FTS_NOSTAT;
 
-	NEW(T_SIZE, f_size);
+	NEW(N_SIZE, f_size);
 	new->o_data = find_parsenum(new, "-size", arg, &endch);
 	if (endch == 'c')
 		divsize = 0;
@@ -807,7 +807,7 @@ c_type(typestring)
 		bad_arg("-type", "unknown type");
 	}
     
-	NEW(T_TYPE, f_type);
+	NEW(N_TYPE, f_type);
 	new->m_data = mask;
 	return(new);
 }
@@ -845,7 +845,7 @@ c_user(username)
 	} else
 		uid = p->pw_uid;
 
-	NEW(T_USER, f_user);
+	NEW(N_USER, f_user);
 	new->u_data = uid;
 	return(new);
 }
@@ -863,7 +863,7 @@ c_xdev()
     
 	ftsoptions |= FTS_XDEV;
 
-	NEW(T_XDEV, f_always_true);
+	NEW(N_XDEV, f_always_true);
 	return(new);
 }
 
@@ -885,16 +885,16 @@ f_expr(plan, entry)
 }
  
 /*
- * T_OPENPAREN and T_CLOSEPAREN nodes are temporary place markers.  They are
+ * N_OPENPAREN and N_CLOSEPAREN nodes are temporary place markers.  They are
  * eliminated during phase 2 of find_formplan() --- the '(' node is converted
- * to a T_EXPR node containing the expression and the ')' node is discarded.
+ * to a N_EXPR node containing the expression and the ')' node is discarded.
  */
 PLAN *
 c_openparen()
 {
 	PLAN *new;
 
-	NEW(T_OPENPAREN, (int (*)())-1);
+	NEW(N_OPENPAREN, (int (*)())-1);
 	return(new);
 }
  
@@ -903,7 +903,7 @@ c_closeparen()
 {
 	PLAN *new;
 
-	NEW(T_CLOSEPAREN, (int (*)())-1);
+	NEW(N_CLOSEPAREN, (int (*)())-1);
 	return(new);
 }
  
@@ -931,7 +931,7 @@ c_mtime(arg)
 
 	ftsoptions &= ~FTS_NOSTAT;
 
-	NEW(T_MTIME, f_mtime);
+	NEW(N_MTIME, f_mtime);
 	new->t_data = find_parsenum(new, "-mtime", arg, (char *)NULL);
 	return(new);
 }
@@ -958,7 +958,7 @@ c_not()
 {
 	PLAN *new;
 
-	NEW(T_NOT, f_not);
+	NEW(N_NOT, f_not);
 	return(new);
 }
  
@@ -991,6 +991,6 @@ c_or()
 {
 	PLAN *new;
 
-	NEW(T_OR, f_or);
+	NEW(N_OR, f_or);
 	return(new);
 }
