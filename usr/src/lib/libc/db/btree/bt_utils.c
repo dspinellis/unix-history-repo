@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_utils.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_utils.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -47,11 +47,12 @@ __bt_ret(t, e, key, data)
 		    &data->size, &t->bt_dbuf, &t->bt_dbufsz))
 			return (RET_ERROR);
 	} else {
-		if (bl->dsize > t->bt_dbufsz) {
-			if ((p = realloc(t->bt_dbuf, bl->dsize)) == NULL)
+		/* Use +1 in case the first record retrieved is 0 length. */
+		if (bl->dsize + 1 > t->bt_dbufsz) {
+			if ((p = realloc(t->bt_dbuf, bl->dsize + 1)) == NULL)
 				return (RET_ERROR);
 			t->bt_dbuf = p;
-			t->bt_dbufsz = bl->dsize;
+			t->bt_dbufsz = bl->dsize + 1;
 		}
 		bcopy(bl->bytes + bl->ksize, t->bt_dbuf, t->bt_dbufsz);
 		data->size = bl->dsize;
