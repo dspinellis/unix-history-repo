@@ -41,25 +41,7 @@ static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) 9/19/91";
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "extern.h"
-
-void
-get(fd, off, p, len)
-	int fd;
-	off_t off;
-	void *p;
-	size_t len;
-{
-	int rbytes;
-
-	if (lseek(fd, off, SEEK_SET) < 0)
-		err("%s: %s", special, strerror(errno));
-	if ((rbytes = read(fd, p, len)) < 0)
-		err("%s: %s", special, strerror(errno));
-	if (rbytes != len)
-		err("%s: short read (%d, not %d)", special, rbytes, len);
-}
-
+extern char *special;
 #if __STDC__
 #include <stdarg.h>
 #else
@@ -68,7 +50,7 @@ get(fd, off, p, len)
 
 void
 #if __STDC__
-err(const char *fmt, ...)
+err(const int fatal, const char *fmt, ...)
 #else
 err(fmt, va_alist)
 	char *fmt;
@@ -81,10 +63,28 @@ err(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	(void)fprintf(stderr, "dumplfs: ");
+	(void)fprintf(stderr, "%s: ", special);
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
+	(void)fprintf(stderr, " %s\n", strerror(errno));
+	if (fatal)
+		exit(1);
 }
+
+void
+get(fd, off, p, len)
+	int fd;
+	off_t off;
+	void *p;
+	size_t len;
+{
+	int rbytes;
+
+	if (lseek(fd, off, SEEK_SET) < 0)
+		err(1, "%s: %s", special, strerror(errno));
+	if ((rbytes = read(fd, p, len)) < 0)
+		err(1, "%s: %s", special, strerror(errno));
+	if (rbytes != len)
+		err(1, "%s: short read (%d, not %d)", special, rbytes, len);
+}
+
