@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -78,7 +78,7 @@ getpwuid(uid)
 {
 	datum key;
 	int keyuid, rval;
-	char bf[sizeof(uid) + 1];
+	char bf[sizeof(keyuid) + 1];
 
 	if (!_pw_db && !__initdb())
 		return((struct passwd *)NULL);
