@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	2.1	%G%";
+static char SccsId[] = "@(#)deliver.c	2.1.1.1	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -361,7 +361,9 @@ giveresponse(stat, force, m)
 **
 **	For mailers such as 'msgs' that want the header inserted
 **	into the mail, this edit filter inserts the From line and
-**	then passes the rest of the message through.
+**	then passes the rest of the message through.  If we have
+**	managed to extract a date already, use that; otherwise,
+**	use the current date/time.
 **
 **	Parameters:
 **		fp -- the file pointer for the output.
@@ -383,9 +385,16 @@ putheader(fp)
 	char buf[MAXLINE + 1];
 	long tim;
 	extern char *ctime();
+	extern char SentDate[];
 
-	time(&tim);
-	fprintf(fp, "From %s %s", From.q_paddr, ctime(&tim));
+	fprintf(fp, "From %s ", From.q_paddr);
+	if (SentDate[0] == '\0')
+	{
+		time(&tim);
+		fprintf(fp, "%s", ctime(&tim));
+	}
+	else
+		fprintf(fp, "%s", SentDate);
 	while (fgets(buf, sizeof buf, stdin) != NULL && !ferror(fp))
 		fputs(buf, fp);
 	if (ferror(fp))
