@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.11 82/11/15";
+static char sccsid[] = "@(#)telnetd.c	4.12 82/11/17";
 #endif
 
 /*
@@ -83,7 +83,7 @@ main(argc, argv)
 	}
 #endif
 again:
-	s = socket(0, SOCK_STREAM, 0, 0);
+	s = socket(AF_INET, SOCK_STREAM, 0, 0);
 	if (s < 0) {
 		perror("telnetd: socket");;
 		sleep(5);

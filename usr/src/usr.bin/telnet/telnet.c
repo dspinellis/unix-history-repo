@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.13 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -168,7 +168,7 @@ tn(argc, argv)
 		}
 	}
 	sin.sin_port = htons(sin.sin_port);
-	net = socket(0, SOCK_STREAM, 0, 0);
+	net = socket(AF_INET, SOCK_STREAM, 0, 0);
 	if (net < 0) {
 		perror("telnet: socket");
 		return;
