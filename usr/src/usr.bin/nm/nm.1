@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)nm.1	6.6 (Berkeley) %G%
+.\"     @(#)nm.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NM 1
@@ -32,7 +32,7 @@ searches for the file
 and if present, displays the symbol
 table for
 .Pa a.out .
-.Bl -tag -width Fl
+.Bl -tag -width flag
 .It Fl a
 Display symbol table entries inserted for use by debuggers.
 .It Fl g
@@ -55,7 +55,8 @@ object files.
 .Pp
 Each symbol name is preceded by its value (a blank field if the symbol
 is undefined) and one of the following letters:
-.Bl -tag -width Ds -compact
+.Pp
+.Bl -tag -width Ds -compact -offset indent
 .It Fl
 debugger symbol table entries (see the
 .Fl a
