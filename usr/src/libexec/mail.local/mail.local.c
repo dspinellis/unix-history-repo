@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -269,12 +269,16 @@ tryagain:
 		warn("%s: linked file", path);
 		unlockmbox();
 		return;
+	} else if (sb.st_uid != pw->pw_uid) {
+		warn("%s: wrong ownership (%d)", path, sb.st_uid);
+		unlockmbox();
+		return;
 	} else {
 		mbfd = open(path, O_APPEND|O_WRONLY, 0);
 		if (mbfd != -1 &&
 		    (fstat(mbfd, &fsb) || fsb.st_nlink != 1 ||
 		    S_ISLNK(fsb.st_mode) || sb.st_dev != fsb.st_dev ||
-		    sb.st_ino != fsb.st_ino)) {
+		    sb.st_ino != fsb.st_ino) || sb.st_uid != fsb.st_uid) {
 			warn("%s: file changed after open", path);
 			(void)close(mbfd);
 			unlockmbox();
