@@ -1,16 +1,16 @@
 #ifndef lint
-static char sccsid[] = "@(#)open.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)open.c	4.2 (Berkeley) %G%";
 #endif
 
 int xnow;
 int ynow;
-float boty 0.;
-float botx 0.;
-float oboty 0.;
-float obotx 0.;
-float scalex 1.;
-float scaley 1.;
-int vti -1;
+float boty = 0.;
+float botx = 0.;
+float oboty = 0.;
+float obotx = 0.;
+float scalex = 1.;
+float scaley = 1.;
+int vti = -1;
 
 openvt ()
 {
