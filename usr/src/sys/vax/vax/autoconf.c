@@ -1,4 +1,4 @@
-/*	autoconf.c	4.35	82/04/11	*/
+/*	autoconf.c	4.36	82/04/11	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -283,10 +283,9 @@ found:
 #define	match(fld)	(ni->fld == mi->fld || mi->fld == '?')
 		if (!match(mi_drive) || !match(mi_mbanum))
 			continue;
-		printf("%s%d at mba%d drive %d",
+		printf("%s%d at mba%d drive %d\n",
 		    mi->mi_driver->md_dname, mi->mi_unit,
 		    ni->mi_mbanum, ni->mi_drive);
-		printf("\n");
 		mi->mi_alive = 1;
 		mh = &mba_hd[ni->mi_mbanum];
 		mi->mi_hd = mh;
@@ -294,13 +293,19 @@ found:
 		mh->mh_ndrive++;
 		mi->mi_mba = ni->mi_mba;
 		mi->mi_drv = &mi->mi_mba->mba_drv[ni->mi_drive];
-		mi->mi_driver->md_info[mi->mi_unit] = mi;
 		mi->mi_mbanum = ni->mi_mbanum;
 		mi->mi_drive = ni->mi_drive;
-		if (mi->mi_dk && dkn < DK_NDRIVE)
-			mi->mi_dk = dkn++;
-		else
-			mi->mi_dk = -1;
+		/*
+		 * If drive has never been seen before,
+		 * give it a dkn for statistics.
+		 */
+		if (mi->mi_driver->md_info[mi->mi_unit] == 0) {
+			mi->mi_driver->md_info[mi->mi_unit] = mi;
+			if (mi->mi_dk && dkn < DK_NDRIVE)
+				mi->mi_dk = dkn++;
+			else
+				mi->mi_dk = -1;
+		}
 		(*mi->mi_driver->md_attach)(mi);
 		return (mi);
 	}

@@ -1,4 +1,4 @@
-/*	mba.c	4.25	82/03/31	*/
+/*	mba.c	4.26	82/04/11	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -44,6 +44,20 @@ loop:
 	bp = mi->mi_tab.b_actf;
 	if (bp == NULL)
 		return;
+	/*
+	 * Make sure the drive is still there before starting it up.
+	 */
+	if ((mi->mi_drv->mbd_dt & MBDT_TYPE) == 0) {
+		printf("%s%d: nonexistent\n", mi->mi_driver->md_dname,
+		    dkunit(bp));
+		mi->mi_alive = 0;
+		mi->mi_tab.b_actf = bp->av_forw;
+		mi->mi_tab.b_active = 0;
+		mi->mi_tab.b_errcnt = 0;
+		bp->b_flags |= B_ERROR;
+		iodone(bp);
+		goto loop;
+	}
 	/*
 	 * Let the drivers unit start routine have at it
 	 * and then process the request further, per its instructions.
@@ -138,10 +152,15 @@ loop:
 	 * ONLINE themselves and because TU78 registers are
 	 * different.
 	 */
-	if ((mi->mi_drv->mbd_dt & MBDT_TAP) == 0)
+	if (((com = mi->mi_drv->mbd_dt) & MBDT_TAP) == 0)
 	if ((mi->mi_drv->mbd_ds & MBDS_DREADY) != MBDS_DREADY) {
-		printf("%s%d: not ready\n", mi->mi_driver->md_dname,
-		    dkunit(bp));
+		if ((com & MBDT_TYPE) == 0) {
+			mi->mi_alive = 0;
+			printf("%s%d: nonexistent\n", mi->mi_driver->md_dname,
+			    dkunit(bp));
+		} else
+			printf("%s%d: not ready\n", mi->mi_driver->md_dname,
+			    dkunit(bp));
 		mi->mi_tab.b_actf = bp->av_forw;
 		mi->mi_tab.b_errcnt = 0;
 		mi->mi_tab.b_active = 0;
@@ -192,6 +211,7 @@ mbintr(mbanum)
 	register struct buf *bp;
 	register int drive;
 	int mbasr, as;
+	extern struct mba_device *mbaconfig();
 	
 	/*
 	 * Read out the massbus status register
@@ -268,17 +288,47 @@ mbintr(mbanum)
 		drive--;		/* was 1 origin */
 		as &= ~(1 << drive);
 		mi = mhp->mh_mbip[drive];
-		if (mi == NULL)
-			continue;
+		if (mi == NULL || mi->mi_alive == 0) {
+			struct mba_device fnd;
+			struct mba_slave *ms;
+			struct mba_drv *mbd = &mhp->mh_mba->mba_drv[drive];
+			int dt = mbd->mbd_dt & 0xffff;
+
+			if (dt == 0 || dt == MBDT_MOH)
+				continue;
+			fnd.mi_mba = mhp->mh_mba;
+			fnd.mi_mbanum = mbanum;
+			fnd.mi_drive = drive;
+			if ((mi = mbaconfig(&fnd, dt)) == NULL)
+				continue;
+			if (dt & MBDT_TAP) {
+				for (ms = mbsinit; ms->ms_driver; ms++)
+				if (ms->ms_driver == mi->mi_driver &&
+				    ms->ms_alive == 0 && 
+				    (ms->ms_ctlr == mi->mi_unit ||
+				     ms->ms_ctlr == '?')) {
+					if ((*ms->ms_driver->md_slave)(mi, ms)) {
+						printf("%s%d at %s%d slave %d\n",
+						    ms->ms_driver->md_sname,
+						    ms->ms_unit,
+						    mi->mi_driver->md_dname,
+						    mi->mi_unit,
+						    ms->ms_slave);
+						ms->ms_alive = 1;
+						ms->ms_ctlr = mi->mi_unit;
+					}
+				}
+			}
+		}
 		/*
 		 * If driver has a handler for non-data transfer
 		 * interrupts, give it a chance to tell us what to do.
 		 */
 		if (mi->mi_driver->md_ndint) {
-			mi->mi_tab.b_active = 0;
 			switch ((*mi->mi_driver->md_ndint)(mi)) {
 
 			case MBN_DONE:		/* operation completed */
+				mi->mi_tab.b_active = 0;
 				mi->mi_tab.b_errcnt = 0;
 				bp = mi->mi_tab.b_actf;
 				mi->mi_tab.b_actf = bp->av_forw;
