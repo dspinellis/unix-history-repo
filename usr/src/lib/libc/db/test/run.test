@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)run.test	8.6 (Berkeley) %G%
+#	@(#)run.test	8.7 (Berkeley) %G%
 #
 
 # db regression tests
@@ -14,25 +14,36 @@ TMP1=t1
 TMP2=t2
 TMP3=t3
 
-	if [ $# -ge 1 ]; then
-		for i in "$*"; do
-			test$i
+	if [ $# -eq 0 ]; then
+		for t in 1 2 3 4 5 6 7 8 9 10 11 12 13 20; do
+			test$t
 		done
-	else 
-		test1
-		test2
-		test3
-		test4
-		test5
-		test6
-		test7
-		test8
-		test9
-		test10
-		test11
-		test12
-		test13
-		test20
+	else
+		while [ $# -gt 0 ]
+			do case "$1" in
+			test*)
+				$1;;
+			[0-9]*)
+				test$1;;
+			btree)
+				for t in 1 2 3 7 8 9 10 12 13; do
+					test$t
+				done;;
+			hash)
+				for t in 1 2 3 8 13 20; do
+					test$t
+				done;;
+			recno)
+				for t in 1 2 3 4 5 6 7 10 11; do
+					test$t
+				done;;
+			*)
+				echo "run.test: unknown test $1"
+				echo "usage: run.test test# | type"
+				exit 1
+			esac
+			shift
+		done
 	fi
 	rm -f $TMP1 $TMP2 $TMP3
 	exit 0
