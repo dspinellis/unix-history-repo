@@ -1,4 +1,4 @@
-/*	kern_time.c	5.13	82/12/28	*/
+/*	kern_time.c	5.14	82/12/30	*/
 
 #include "../machine/reg.h"
 
@@ -358,6 +358,7 @@ oalarm()
 	    timercmp(&p->p_realtimer.it_value, &time, >))
 		u.u_r.r_val1 = p->p_realtimer.it_value.tv_sec - time.tv_sec;
 	if (uap->deltat == 0) {
+		timerclear(&p->p_realtimer.it_value);
 		splx(s);
 		return;
 	}
