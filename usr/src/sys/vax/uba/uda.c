@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	7.6 (Berkeley) %G%
+ *	@(#)uda.c	7.7 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -387,13 +387,9 @@ udclose(dev, flags, fmt)
 	int flags, fmt;
 {
 	register int unit = udunit(dev);
-	register struct uda_softc *sc;
-	struct uba_ctlr *um;
 	register struct ra_info *ra = &ra_info[unit];
 	int s, mask = (1 << udpart(dev));
 
-	um = udminfo[unit];
-	sc = &uda_softc[um->um_ctlr];
 	switch (fmt) {
 	case S_IFCHR:
 		ra->copenpart &= ~mask;
