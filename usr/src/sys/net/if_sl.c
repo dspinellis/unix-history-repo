@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_sl.c	7.13 (Berkeley) %G%
+ *	@(#)if_sl.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -44,6 +44,7 @@
 #if NSL > 0
 
 #include "param.h"
+#include "user.h"
 #include "mbuf.h"
 #include "buf.h"
 #include "dk.h"
@@ -184,6 +185,13 @@ sltioctl(tp, cmd, data, flag)
 
 	if (cmd == TIOCGETD) {
 		*(int *)data = ((struct sl_softc *)tp->t_sc)->sc_if.if_unit;
+		return (0);
+	}
+	if (cmd == TIOCMGET) {
+		if (tp->t_state&TS_CARR_ON)
+			*(int *)data = TIOCM_CAR ;
+		else
+			*(int *)data = 0 ;
 		return (0);
 	}
 	return (-1);
@@ -386,15 +394,16 @@ sl_btom(sc, len, ifp)
 	register unsigned count;
 	struct mbuf *top = NULL;
 
-	cp = sc->sc_buf + sizeof(struct ifnet *);
+	cp = sc->sc_buf;
 	mp = &top;
+
 	while (len > 0) {
 		if (top == NULL) {
 			MGETHDR(m, M_DONTWAIT, MT_DATA);
 		} else {
 			MGET(m, M_DONTWAIT, MT_DATA);
 		}
-		if ((*mp = m) == NULL) {
+		if (m == NULL) {
 			m_freem(top);
 			return (NULL);
 		}
@@ -404,6 +413,7 @@ sl_btom(sc, len, ifp)
 			m->m_len = MHLEN;
 		} else
 			m->m_len = MLEN;
+		*mp = m;
 		/*
 		 * If we have at least MINCLSIZE bytes,
 		 * allocate a new page.  Swap the current
@@ -461,7 +471,7 @@ slinput(c, tp)
 
 		default:
 			sc->sc_if.if_ierrors++;
-			sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
+			sc->sc_mp = sc->sc_buf;
 			sc->sc_ilen = 0;
 			return;
 		}
@@ -476,7 +486,7 @@ slinput(c, tp)
 				sc->sc_if.if_ierrors++;
 				return;
 			}
-			sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
+			sc->sc_mp = sc->sc_buf;
 			sc->sc_ilen = 0;
 			sc->sc_if.if_ipackets++;
 			s = splimp();
@@ -498,7 +508,7 @@ slinput(c, tp)
 	}
 	if (++sc->sc_ilen > SLMTU) {
 		sc->sc_if.if_ierrors++;
-		sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
+		sc->sc_mp = sc->sc_buf;
 		sc->sc_ilen = 0;
 		return;
 	}
