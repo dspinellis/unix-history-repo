@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,23 +22,23 @@ static char sccsid[] = "@(#)tftpd.c	5.12 (Berkeley) %G%";
  */
 
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
-#include <sys/signal.h>
+#include <signal.h>
+#include <fcntl.h>
 
+#include <sys/socket.h>
 #include <netinet/in.h>
-
 #include <arpa/tftp.h>
-
 #include <netdb.h>
+
 #include <setjmp.h>
+#include <syslog.h>
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
-#include <syslog.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define	TIMEOUT		5
 
@@ -74,7 +74,7 @@ main(ac, av)
 	}
 	fromlen = sizeof (from);
 	n = recvfrom(0, buf, sizeof (buf), 0,
-	    (caddr_t)&from, &fromlen);
+	    (struct sockaddr *)&from, &fromlen);
 	if (n < 0) {
 		syslog(LOG_ERR, "recvfrom: %m\n");
 		exit(1);
@@ -113,7 +113,7 @@ main(ac, av)
 				 */
 				j = sizeof from;
 				i = recvfrom(0, buf, sizeof (buf), 0,
-				    (caddr_t)&from, &j);
+				    (struct sockaddr *)&from, &j);
 				if (i > 0) {
 					n = i;
 					fromlen = j;
@@ -138,11 +138,11 @@ main(ac, av)
 		syslog(LOG_ERR, "socket: %m\n");
 		exit(1);
 	}
-	if (bind(peer, (caddr_t)&sin, sizeof (sin)) < 0) {
+	if (bind(peer, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
 		syslog(LOG_ERR, "bind: %m\n");
 		exit(1);
 	}
-	if (connect(peer, (caddr_t)&from, sizeof(from)) < 0) {
+	if (connect(peer, (struct sockaddr *)&from, sizeof(from)) < 0) {
 		syslog(LOG_ERR, "connect: %m\n");
 		exit(1);
 	}
@@ -278,6 +278,7 @@ validate_access(filename, mode)
 int	timeout;
 jmp_buf	timeoutbuf;
 
+void
 timer()
 {
 
@@ -349,6 +350,7 @@ abort:
 	(void) fclose(file);
 }
 
+void
 justquit()
 {
 	exit(0);
