@@ -1,0 +1,1 @@
+#define NEN 1

@@ -1,0 +1,1 @@
+#define NIK 1
