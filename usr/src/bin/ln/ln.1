@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ln.1	6.9 (Berkeley) %G%
+.\"	@(#)ln.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LN 1
@@ -105,12 +105,12 @@ The only system calls that operate on symbolic links are
 .Xr lstat 2 ,
 and
 .Xr readlink 2 .
-All other system calls follow the symbolic link and operate on the object to
+All other system calls follow the symbolic link and operate on the object
 which the link points to.
 .Pp
 Utilities that do not recurse over trees always
 follow symbolic links on the command line.  The rest of the utilities
-.Xr (chown 1 ,
+.Xr (chown 8 ,
 .Xr chmod 1 ,
 .Xr chgrp 1 ,
 .Xr chflags 1 ,
@@ -169,7 +169,7 @@ does not follow symbolic links.
 .Xr mv 1 ,
 .Xr ls 1 ,
 .Xr tar 1 ,
-.Xr chown 1 ,
+.Xr chown 8 ,
 .Xr chmod 1 ,
 .Xr chgrp 1 ,
 .Xr chflags 1 ,
