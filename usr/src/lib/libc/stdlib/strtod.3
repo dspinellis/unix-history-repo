@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strtod.3	5.3 (Berkeley) %G%
+.\"     @(#)strtod.3	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRTOD 3
@@ -32,7 +32,7 @@ to
 representation.
 .Pp
 The expected form of the string is an optional plus (``+'') or minus
-sign (``-'') followed by a sequence of digits optionally containing
+sign (``\-'') followed by a sequence of digits optionally containing
 a decimal-point character, optionally followed by an exponent.
 An exponent consists of an ``E'' or ``e'', followed by an optional plus
 or minus sign, followed by a sequence of digits.
@@ -85,8 +85,22 @@ The
 function
 conforms to
 .St -ansiC .
-.Sh BUGS
-This manual page represents intent instead of actual practice.
-The
+.Sh AUTHORS
+The author of this software is David M. Gay.
+.Pp
+Copyright (c) 1991 by AT&T.
+.Pp
+Permission to use, copy, modify, and distribute this software for any
+purpose without fee is hereby granted, provided that this entire notice
+is included in all copies of any software which is or includes a copy
+or modification of this software and in all copies of the supporting
+documentation for such software.
+.Pp
+THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+WARRANTY.  IN PARTICULAR, NEITHER THE AUTHOR NOR AT&T MAKES ANY
+REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY
+OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+.Pp
+Contact your vendor for a free copy of the source code to
 .Fn strtod
-function is not currently available.
+and accompanying functions.
