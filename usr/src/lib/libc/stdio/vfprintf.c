@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.42 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -659,7 +659,7 @@ static char *round();
 static char *
 isspecial(d, signp)
 	double d;
-	char *bufp, *signp;
+	char *signp;
 {
 	register struct IEEEdp {
 		unsigned sign:1;
@@ -670,11 +670,9 @@ isspecial(d, signp)
 
 	if (ip->exp != 0x7ff)
 		return (NULL);
-	if (ip->manh || ip->manl)
-		return ("NaN");
 	if (ip->sign)
 		*signp = '-';
-	return ("Inf");
+	return (ip->manh || ip->manl ? "NaN" : "Inf");
 }
 #endif /* hp300 or sparc */
 
