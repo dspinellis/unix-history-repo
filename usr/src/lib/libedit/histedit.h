@@ -7,11 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)histedit.h	5.1 (Berkeley) %G%
+ *	@(#)histedit.h	5.2 (Berkeley) %G%
  */
 
 /*
- * editline.h: Line editor interface
+ * histedit.h: Line editor and history interface.
  */
 #ifndef _h_editline
 #define _h_editline
@@ -19,6 +19,9 @@
 #include <sys/types.h>
 #include <stdio.h>
 
+/*
+ * ==== Editing ====
+ */
 typedef struct editline EditLine;
 
 /*
@@ -99,5 +102,39 @@ void		 el_resize	__P((EditLine *));
 const LineInfo	*el_line	__P((EditLine *));
 int   		 el_insertstr	__P((EditLine *, char *));
 void		 el_deletestr	__P((EditLine *, int));
+
+/*
+ * ==== History ====
+ */
+
+typedef struct history History;
+
+typedef struct HistEvent {
+    int 	num;
+    const char* str;
+} HistEvent;
+
+/*
+ * History access functions.
+ */
+History *		history_init	__P((void));
+void 			history_end	__P((History *));
+
+const HistEvent *	history		__P((History *, int, ...));
+
+#define H_FUNC		 0	/* , UTSL		*/
+#define H_EVENT		 1	/* , const int);	*/
+#define H_FIRST		 2	/* , void);		*/
+#define H_LAST		 3	/* , void);		*/
+#define H_PREV		 4	/* , void);		*/
+#define H_NEXT		 5	/* , void);		*/
+#define H_CURR		 6	/* , void);		*/
+#define H_ADD		 7	/* , const char*);	*/
+#define H_ENTER		 8	/* , const char*);	*/
+#define H_END		 9	/* , void);		*/
+#define H_NEXT_STR	10	/* , const char*);	*/
+#define H_PREV_STR	11	/* , const char*);	*/
+#define H_NEXT_EVENT	12	/* , const int);	*/
+#define H_PREV_EVENT	13	/* , const int);	*/
 
 #endif /* _h_editline */
