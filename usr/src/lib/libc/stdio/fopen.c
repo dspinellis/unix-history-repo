@@ -12,8 +12,8 @@ register char *mode;
 	register FILE *iop;
 	extern FILE *_lastbuf;
 
-	for (iop = _iob; iop->_flag&(_IOREAD|_IOWRT|_IORW); iop++)
-		if (iop >= _lastbuf)
+	for (iop = _iob; iop->_flag&(_IOREAD|_IOWRT|_IORW); )
+		if (++iop >= _lastbuf)
 			return(NULL);
 
 	rw = mode[1] == '+';
