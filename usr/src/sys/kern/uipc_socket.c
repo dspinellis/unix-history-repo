@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	6.19 (Berkeley) %G%
+ *	@(#)uipc_socket.c	6.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -535,8 +535,10 @@ restart:
 			len = tomark;
 		if (len > m->m_len - moff)
 			len = m->m_len - moff;
-		so->so_rcv.sb_mb = m;
-		m->m_act = nextrecord;
+		if ((flags & MSG_PEEK) == 0) {
+			so->so_rcv.sb_mb = m;
+			m->m_act = nextrecord;
+		}
 		splx(s);
 		error =
 		    uiomove(mtod(m, caddr_t) + moff, (int)len, UIO_READ, uio);
