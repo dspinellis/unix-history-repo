@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
@@ -26,6 +26,16 @@ static char *host_aliases[MAXALIASES];
 static char hostbuf[BUFSIZ+1];
 static struct in_addr host_addr;
 
+typedef union {
+    HEADER qb1;
+    char qb2[PACKETSZ];
+} querybuf;
+
+static union {
+    long al;
+    char ac;
+} align;
+
 
 static struct hostent *
 getanswer(msg, msglen, iquery)
@@ -35,13 +45,13 @@ getanswer(msg, msglen, iquery)
 	register HEADER *hp;
 	register char *cp;
 	register int n;
-	char answer[PACKETSZ];
+	querybuf answer;
 	char *eom, *bp, **ap;
 	int type, class, ancount, qdcount, buflen;
 	int haveanswer, getclass;
 	char **hap;
 
-	n = res_send(msg, msglen, answer, sizeof(answer));
+	n = res_send(msg, msglen, (char *)&answer, sizeof(answer));
 	if (n < 0) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
@@ -49,11 +59,11 @@ getanswer(msg, msglen, iquery)
 #endif
 		return (NULL);
 	}
-	eom = answer + n;
+	eom = (char *)&answer + n;
 	/*
 	 * find first satisfactory answer
 	 */
-	hp = (HEADER *) answer;
+	hp = (HEADER *) &answer;
 	ancount = ntohs(hp->ancount);
 	qdcount = ntohs(hp->qdcount);
 	if (hp->rcode != NOERROR || ancount == 0) {
@@ -65,10 +75,11 @@ getanswer(msg, msglen, iquery)
 	}
 	bp = hostbuf;
 	buflen = sizeof(hostbuf);
-	cp = answer + sizeof(HEADER);
+	cp = (char *)&answer + sizeof(HEADER);
 	if (qdcount) {
 		if (iquery) {
-			if ((n = dn_expand(answer, cp, bp, buflen)) < 0)
+			if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 
+0)
 				return (NULL);
 			cp += n + QFIXEDSZ;
 			host.h_name = bp;
@@ -87,7 +98,7 @@ getanswer(msg, msglen, iquery)
 	host.h_addr_list = h_addr_ptrs;
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
-		if ((n = dn_expand(answer, cp, bp, buflen)) < 0)
+		if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 0)
 			break;
 		cp += n;
 		type = getshort(cp);
@@ -107,7 +118,8 @@ getanswer(msg, msglen, iquery)
 			continue;
 		}
 		if (type == T_PTR) {
-			if ((n = dn_expand(answer, cp, bp, buflen)) < 0) {
+			if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 
+0) {
 				cp += n;
 				continue;
 			}
@@ -142,6 +154,9 @@ getanswer(msg, msglen, iquery)
 				bp += strlen(bp) + 1;
 			}
 		}
+
+		bp += ((u_long)bp % sizeof(align));
+
 		if (bp + n >= &hostbuf[sizeof(hostbuf)]) {
 #ifdef DEBUG
 			if (_res.options & RES_DEBUG)
@@ -167,10 +182,10 @@ gethostbyname(name)
 	char *name;
 {
 	int n;
-	char buf[BUFSIZ+1];
+	querybuf buf;
 
 	n = res_mkquery(QUERY, name, C_ANY, T_A, (char *)NULL, 0, NULL,
-		buf, sizeof(buf));
+		(char *)&buf, sizeof(buf));
 	if (n < 0) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
@@ -178,7 +193,7 @@ gethostbyname(name)
 #endif
 		return (NULL);
 	}
-	return(getanswer(buf, n, 0));
+	return(getanswer((char *)&buf, n, 0));
 }
 
 struct hostent *
@@ -187,7 +202,7 @@ gethostbyaddr(addr, len, type)
 	int len, type;
 {
 	int n;
-	char buf[BUFSIZ+1];
+	querybuf buf;
 	register struct hostent *hp;
 	char qbuf[MAXDNAME];
 
@@ -199,7 +214,7 @@ gethostbyaddr(addr, len, type)
 		(*(unsigned *)addr >> 8 & 0xff),
 		(*(unsigned *)addr & 0xff));
 	n = res_mkquery(QUERY, qbuf, C_IN, T_PTR, NULL, 0, NULL,
-		buf, sizeof(buf));
+		(char *)&buf, sizeof(buf));
 	if (n < 0) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
@@ -207,7 +222,7 @@ gethostbyaddr(addr, len, type)
 #endif
 		return (NULL);
 	}
-	if ((hp = getanswer(buf, n, 1)) == NULL)
+	if ((hp = getanswer((char *)&buf, n, 1)) == NULL)
 		return(NULL);
 	hp->h_addrtype = type;
 	hp->h_length = len;
@@ -216,3 +231,4 @@ gethostbyaddr(addr, len, type)
 	host_addr = *(struct in_addr *)addr;
 	return(hp);
 }
+
