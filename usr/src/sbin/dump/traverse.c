@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -89,7 +89,7 @@ mapfiles(maxino, tapesize)
 	register struct dinode *dp;
 	int anydirskipped = 0;
 
-	for (ino = 0; ino < maxino; ino++) {
+	for (ino = 0; ino <= maxino; ino++) {
 		dp = getino(ino);
 		if ((mode = (dp->di_mode & IFMT)) == 0)
 			continue;
