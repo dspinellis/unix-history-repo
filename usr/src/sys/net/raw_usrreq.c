@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.1	81/11/29	*/
+/*	raw_usrreq.c	4.2	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -18,7 +18,6 @@ raw_input(m, pf, af)
 	struct sockaddr af;
 {
 	struct mbuf *mh;
-	struct sockproto *pfp;
 	int s;
 
 	mh = m_get(0);

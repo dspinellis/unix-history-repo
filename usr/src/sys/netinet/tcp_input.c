@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.33	81/11/29	*/
+/*	tcp_input.c	1.34	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -112,6 +112,13 @@ COUNT(TCP_INPUT);
 	so = inp->inp_socket;
 
 	/*
+	 * Segment received on connection.
+	 * Reset idle time and keep-alive timer.
+	 */
+	tp->t_idle = 0;
+	tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
+
+	/*
 	 * Calculate amount of space in receive window,
 	 * and then do TCP input processing.
 	 */
@@ -178,9 +185,10 @@ COUNT(TCP_INPUT);
 		tp->irs = ti->ti_seq;
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
-		if (SEQ_GT(tp->snd_una, tp->iss))
+		if (SEQ_GT(tp->snd_una, tp->iss)) {
 			tp->t_state = TCPS_ESTABLISHED;
-		else
+			(void) tcp_reass(tp, (struct tcpiphdr *)0);
+		} else
 			tp->t_state = TCPS_SYN_RECEIVED;
 		goto trimthenstep6;
 
@@ -333,6 +341,7 @@ trimthenstep6:
 			goto dropwithreset;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
+		(void) tcp_reass(tp, (struct tcpiphdr *)0);
 		/* fall into ... */
 
 	/*
@@ -358,11 +367,23 @@ trimthenstep6:
 		if (acked > so->so_snd.sb_cc) {
 			sbflush(&so->so_snd);
 			acked -= so->so_snd.sb_cc;
+			/* if acked our FIN is acked */
 		} else {
 			sbdrop(&so->so_snd, acked);
 			acked = 0;
 		}
-		/* if acked our FIN is acked */
+
+		/*
+		 * If transmit timer is running and timed sequence
+		 * number was acked, update smoothed round trip time.
+		 */
+		if (tp->t_rtt && SEQ_GT(ti->ti_ack, tp->t_rtseq)) {
+			tp->t_srtt =
+			    tcp_beta * tp->t_srtt +
+			    (1 - tcp_beta) * tp->t_rtt;
+			tp->t_rtt = 0;
+		}
+
 		tp->snd_una = ti->ti_ack;
 
 		/*
@@ -415,7 +436,7 @@ trimthenstep6:
 		 * it and restart the finack timer.
 		 */
 		case TCPS_TIME_WAIT:
-			tp->t_timer[TCPT_2MSL] = 2 * TCPSC_MSL;
+			tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
 			goto dropafterack;
 		}
 #undef ourfinisacked
@@ -495,14 +516,14 @@ step6:
 		case TCPS_FIN_WAIT_2:
 			tp->t_state = TCPS_TIME_WAIT;;
 			tcp_canceltimers(tp);
-			tp->t_timer[TCPT_2MSL] = TCPSC_2MSL;
+			tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
 			break;
 
 		/*
 		 * In TIME_WAIT state restart the 2 MSL time_wait timer.
 		 */
 		case TCPS_TIME_WAIT:
-			tp->t_timer[TCPT_2MSL] = TCPSC_2MSL;
+			tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
 			break;
 		}
 	}
@@ -562,14 +583,11 @@ tcp_reass(tp, ti)
 COUNT(TCP_REASS);
 
 	/*
-	 * If no data in this segment may want
-	 * to move data up to socket structure (if
-	 * connection is now established).
+	 * Call with ti==0 after become established to
+	 * force pre-ESTABLISHED data up to user socket.
 	 */
-	if (ti->ti_len == 0) {
-		m_freem(dtom(ti));
+	if (ti == 0)
 		goto present;
-	}
 
 	/*
 	 * Find a segment which begins after this one does.
@@ -620,30 +638,6 @@ COUNT(TCP_REASS);
 	 * Stick new segment in its place.
 	 */
 	insque(ti, q->ti_prev);
-	tp->t_seqcnt += ti->ti_len;
-
-	/*
-	 * Calculate available space and discard segments for
-	 * which there is too much.
-	 */
-	overage = 
-	    (so->so_rcv.sb_cc + tp->t_seqcnt) - so->so_rcv.sb_hiwat;
-	if (overage > 0) {
-		q = tp->seg_prev;
-		for (;;) {
-			register int i = MIN(q->ti_len, overage);
-			overage -= i;
-			tp->t_seqcnt -= i;
-			q->ti_len -= i;
-			m_adj(dtom(q), -i);
-			if (q->ti_len)
-				break;
-			if (q == ti)
-				panic("tcp_reass dropall");
-			q = (struct tcpiphdr *)q->ti_prev;
-			remque(q->ti_next);
-		}
-	}
 
 	/*
 	 * Advance rcv_next through newly completed sequence space.
@@ -666,9 +660,6 @@ present:
 	while (ti != (struct tcpiphdr *)tp && ti->ti_seq < tp->rcv_nxt) {
 		remque(ti);
 		sbappend(&so->so_rcv, dtom(ti));
-		tp->t_seqcnt -= ti->ti_len;
-		if (tp->t_seqcnt < 0)
-			panic("tcp_reass");
 		ti = (struct tcpiphdr *)ti->ti_next;
 	}
 	if (so->so_state & SS_CANTRCVMORE)

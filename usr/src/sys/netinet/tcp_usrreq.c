@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.37 81/11/29 */
+/* tcp_usrreq.c 1.38 81/12/02 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -59,14 +59,14 @@ COUNT(TCP_USRREQ);
 			error = EISCONN;
 			break;
 		}
-		error = in_pcballoc(so, &tcb, 2048, 2048, (struct sockaddr_in *)addr);
+		error = in_pcbattach(so, &tcb, 2048, 2048, (struct sockaddr_in *)addr);
 		if (error)
 			break;
 		inp = (struct inpcb *)so->so_pcb;
 		if (so->so_options & SO_ACCEPTCONN) {
 			tp = tcp_newtcpcb(inp);
 			if (tp == 0) {
-				in_pcbfree(inp);
+				in_pcbdetach(inp);
 				error = ENOBUFS;
 				break;
 			}
@@ -76,15 +76,16 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case PRU_DETACH:
+		in_pcbdetach(inp);
 		break;
 
 	case PRU_CONNECT:
-		error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
+		error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
 		if (error)
 			break;
 		tp = tcp_newtcpcb(inp);
 		if (tp == 0) {
-			inp->inp_faddr.s_addr = 0;
+			in_pcbdisconnect(inp);
 			error = ENOBUFS;
 			break;
 		}

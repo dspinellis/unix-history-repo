@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.12	81/11/29	*/
+/*	udp_usrreq.c	4.13	81/12/02	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -184,7 +184,7 @@ COUNT(UDP_USRREQ);
 	case PRU_ATTACH:
 		if (inp != 0)
 			return (EINVAL);
-		error = in_pcballoc(so, &udb, 2048, 2048, (struct sockaddr_in *)addr);
+		error = in_pcbattach(so, &udb, 2048, 2048, (struct sockaddr_in *)addr);
 		if (error)
 			return (error);
 		break;
@@ -192,13 +192,13 @@ COUNT(UDP_USRREQ);
 	case PRU_DETACH:
 		if (inp == 0)
 			return (ENOTCONN);
-		in_pcbfree(inp);
+		in_pcbdetach(inp);
 		break;
 
 	case PRU_CONNECT:
 		if (inp->inp_faddr.s_addr)
 			return (EISCONN);
-		error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
+		error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
 		if (error)
 			return (error);
 		soisconnected(so);
@@ -210,7 +210,7 @@ COUNT(UDP_USRREQ);
 	case PRU_DISCONNECT:
 		if (inp->inp_faddr.s_addr == 0)
 			return (ENOTCONN);
-		inp->inp_faddr.s_addr = 0;
+		in_pcbdisconnect(inp);
 		soisdisconnected(so);
 		break;
 
@@ -222,7 +222,7 @@ COUNT(UDP_USRREQ);
 		if (addr) {
 			if (inp->inp_faddr.s_addr)
 				return (EISCONN);
-			error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
+			error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
 			if (error)
 				return (error);
 		} else {
@@ -231,11 +231,11 @@ COUNT(UDP_USRREQ);
 		}
 		udp_output(inp, m);
 		if (addr)
-			inp->inp_faddr.s_addr = 0;
+			in_pcbdisconnect(inp);
 		break;
 
 	case PRU_ABORT:
-		in_pcbfree(inp);
+		in_pcbdetach(inp);
 		sofree(so);
 		soisdisconnected(so);
 		break;
