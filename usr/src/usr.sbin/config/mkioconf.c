@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -991,6 +991,13 @@ pseudo_ioconf(fp)
 		if (dp->d_type == PSEUDO_DEVICE)
 			(void)fprintf(fp, "extern void %sattach __P((int));\n",
 			    dp->d_name);
+	/*
+	 * XXX concatonated disks are pseudo-devices but appear as DEVICEs
+	 * since they don't adhere to normal pseudo-device conventions
+	 * (i.e. one entry with total count in d_slave).
+	 */
+	if (seen_cd)
+		(void)fprintf(fp, "extern void cdattach __P((int));\n");
 	/* XXX temporary for HP300, others */
 	(void)fprintf(fp, "\n#include <sys/systm.h> /* XXX */\n");
 	(void)fprintf(fp, "#define etherattach (void (*)__P((int)))nullop\n");
@@ -1000,5 +1007,51 @@ pseudo_ioconf(fp)
 		if (dp->d_type == PSEUDO_DEVICE)
 			(void)fprintf(fp, "\t{ %sattach, %d },\n", dp->d_name,
 			    dp->d_slave > 0 ? dp->d_slave : 1);
+	/*
+	 * XXX count up cds and put out an entry
+	 */
+	if (seen_cd) {
+		struct file_list *fl;
+		int cdmax = -1;
+
+		for (fl = comp_list; fl != NULL; fl = fl->f_next)
+			if (fl->f_type == COMPDEVICE && fl->f_compinfo > cdmax)
+				cdmax = fl->f_compinfo;
+		(void)fprintf(fp, "\t{ cdattach, %d },\n", cdmax+1);
+	}
 	(void)fprintf(fp, "\t{ 0, 0 }\n};\n");
+	if (seen_cd)
+		comp_config(fp);
+}
+
+comp_config(fp)
+	FILE *fp;
+{
+	register struct file_list *fl;
+	register struct device *dp;
+
+	fprintf(fp, "\n#include \"dev/cdvar.h\"\n");
+	fprintf(fp, "\nstruct cddevice cddevice[] = {\n");
+	fprintf(fp, "/*\tunit\tileave\tflags\tdk\tdevs\t\t\t\t*/\n");
+
+	fl = comp_list;
+	while (fl) {
+		if (fl->f_type != COMPDEVICE) {
+			fl = fl->f_next;
+			continue;
+		}
+		for (dp = dtab; dp != 0; dp = dp->d_next)
+			if (dp->d_type == DEVICE &&
+			    eq(dp->d_name, fl->f_fn) &&
+			    dp->d_unit == fl->f_compinfo)
+				break;
+		if (dp == 0)
+			continue;
+		fprintf(fp, "\t%d,\t%d,\t%d,\t%d,\t{",
+			dp->d_unit, dp->d_pri, dp->d_flags, 1);
+		for (fl = fl->f_next; fl->f_type == COMPSPEC; fl = fl->f_next)
+			fprintf(fp, " 0x%x,", fl->f_compdev);
+		fprintf(fp, " NODEV },\n");
+	}
+	fprintf(fp, "\t-1,\t0,\t0,\t0,\t{ 0 },\n};\n");
 }

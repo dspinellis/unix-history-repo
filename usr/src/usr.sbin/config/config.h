@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	5.18 (Berkeley) %G%
+ *	@(#)config.h	5.19 (Berkeley) %G%
  */
 
 /*
@@ -32,16 +32,24 @@ struct file_list {
 		struct {		/* when swap specification */
 			dev_t	fuw_swapdev;
 			int	fuw_swapsize;
+			int	fuw_swapflag;
 		} fuw;
 		struct {		/* when system specification */
 			dev_t	fus_rootdev;
 			dev_t	fus_dumpdev;
 		} fus;
+		struct {		/* when component dev specification */
+			dev_t	fup_compdev;
+			int	fup_compinfo;
+		} fup;
 	} fun;
 #define	f_swapdev	fun.fuw.fuw_swapdev
 #define	f_swapsize	fun.fuw.fuw_swapsize
+#define	f_swapflag	fun.fuw.fuw_swapflag
 #define	f_rootdev	fun.fus.fus_rootdev
 #define	f_dumpdev	fun.fus.fus_dumpdev
+#define f_compdev	fun.fup.fup_compdev
+#define f_compinfo	fun.fup.fup_compinfo
 };
 
 /*
@@ -53,6 +61,8 @@ struct file_list {
 #define	PROFILING	4
 #define	SYSTEMSPEC	5
 #define	SWAPSPEC	6
+#define COMPDEVICE	7
+#define COMPSPEC	8
 
 /*
  * Attributes (flags).
@@ -153,6 +163,7 @@ int	seen_vba;
 #if MACHINE_I386
 int	seen_isa;
 #endif
+int	seen_cd;
 
 struct	device *connect();
 struct	device *dtab;
@@ -162,7 +173,7 @@ char	*devtoname();
 char	errbuf[80];
 int	yyline;
 
-struct	file_list *ftab, *conf_list, **confp;
+struct	file_list *ftab, *conf_list, **confp, *comp_list, **compp;
 
 int	zone, hadtz;
 int	dst;
