@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1106,7 +1106,7 @@ static struct limits {
     RLIMIT_RSS,		"memoryuse",	1024,	"kbytes",
     RLIMIT_MEMLOCK,	"memorylocked",	1024,	"kbytes",
     RLIMIT_NPROC,	"maxproc",	1,	"",
-    RLIMIT_OFILE,	"openfiles",	1,	"",
+    RLIMIT_NOFILE,	"openfiles",	1,	"",
     -1,			NULL,		0,	NULL
 };
 
