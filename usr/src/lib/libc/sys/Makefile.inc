@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.26 (Berkeley) %G%
+#	@(#)Makefile.inc	5.27 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -19,8 +19,8 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o \
 	execve.o fchdir.o fchflags.o fchmod.o fchown.o fcntl.o flock.o \
 	fstat.o fstatfs.o fsync.o ftruncate.o getdirentries.o \
 	getdtablesize.o getegid.o geteuid.o getfh.o getfsstat.o getgid.o \
-	getgroups.o gethostid.o gethostname.o getitimer.o getkerninfo.o \
-	getpagesize.o getpeername.o getpgrp.o getpid.o getppid.o \
+	getgroups.o getitimer.o \
+	getpeername.o getpgrp.o getpid.o getppid.o \
 	getpriority.o getrlimit.o getrusage.o getsockname.o getsockopt.o \
 	gettimeofday.o getuid.o indir.o ioctl.o kill.o ktrace.o \
 	lfs_bmapv.o lfs_markv.o lfs_segclean.o lfs_segwait.o \
@@ -29,7 +29,7 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o \
 	mount.o mprotect.o msync.o munmap.o nfssvc.o open.o \
 	profil.o quotactl.o read.o readlink.o readv.o recvfrom.o recvmsg.o \
 	rename.o revoke.o rmdir.o select.o sendmsg.o sendto.o setegid.o \
-	seteuid.o setgid.o setgroups.o sethostid.o sethostname.o \
+	seteuid.o setgid.o setgroups.o \
 	setitimer.o setpgid.o setpriority.o \
 	setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o \
 	shutdown.o sigaction.o sigaltstack.o socket.o socketpair.o stat.o \
@@ -72,8 +72,8 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 \
 	chdir.0 chflags.0 chmod.0 chown.0 chroot.0 close.0 connect.0 \
 	dup.0 execve.0 _exit.0 fcntl.0 flock.0 fork.0 fsync.0 \
 	getdirentries.0 getdtablesize.0 getfh.0 getfsstat.0 getgid.0 \
-	getgroups.0 gethostid.0 gethostname.0 getitimer.0 getlogin.0 \
-	getpagesize.0 getpeername.0 getpgrp.0 getpid.0 getpriority.0 \
+	getgroups.0 getitimer.0 getlogin.0 \
+	getpeername.0 getpgrp.0 getpid.0 getpriority.0 \
 	getrlimit.0 getrusage.0 getsockname.0 getsockopt.0 gettimeofday.0 \
 	getuid.0 intro.0 ioctl.0 kill.0 link.0 listen.0 lseek.0 mkdir.0 \
 	mkfifo.0 mknod.0 madvise.0 mincore.0 mmap.0 mount.0 mprotect.0 \
@@ -92,8 +92,6 @@ MLINKS+=chflags.2 fchflags.2
 MLINKS+=chmod.2 fchmod.2
 MLINKS+=chown.2 fchown.2
 MLINKS+=getgid.2 getegid.2
-MLINKS+=gethostid.2 sethostid.2
-MLINKS+=gethostname.2 sethostname.2
 MLINKS+=getitimer.2 setitimer.2
 MLINKS+=getlogin.2 setlogin.2
 MLINKS+=getpid.2 getppid.2
