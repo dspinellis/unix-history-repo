@@ -1,151 +1,104 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)resolver.3	6.7 (Berkeley) %G%
+.\"     @(#)resolver.3	6.7 (Berkeley) %G%
 .\"
-.TH RESOLVER 3 ""
-.UC 4
-.SH NAME
-res_query, res_search, res_mkquery, res_send, res_init, dn_comp, dn_expand \- resolver routines
-.SH SYNOPSIS
-.B #include <sys/types.h>
-.br
-.B #include <netinet/in.h>
-.br
-.B #include <arpa/nameser.h>
-.br
-.B #include <resolv.h>
-.PP
-.B "res_query(dname, class, type, answer, anslen)"
-.br
-.B char *dname;
-.br
-.B int class, type;
-.br
-.B u_char *answer;
-.br
-.B int anslen;
-.PP
-.B "res_search(dname, class, type, answer, anslen)"
-.br
-.B char *dname;
-.br
-.B int class, type;
-.br
-.B u_char *answer;
-.br
-.B int anslen;
-.PP
-.B "res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)"
-.br
-.B int op;
-.br
-.B char *dname;
-.br
-.B int class, type;
-.br
-.B char *data;
-.br
-.B int datalen;
-.br
-.B struct rrec *newrr;
-.br
-.B char *buf;
-.br
-.B int buflen;
-.PP
-.B res_send(msg, msglen, answer, anslen)
-.br
-.B char *msg;
-.br
-.B int msglen;
-.br
-.B char *answer;
-.br
-.B int anslen;
-.PP
-.B res_init()
-.PP
-.B dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
-.br
-.B char *exp_dn, *comp_dn;
-.br
-.B int length;
-.br
-.B char **dnptrs, **lastdnptr;
-.PP
-.B dn_expand(msg, eomorig, comp_dn, exp_dn, length)
-.br
-.B u_char *msg, *eomorig, *comp_dn, *exp_dn;
-.br
-.B int  length;
-.SH DESCRIPTION
+.Dd 
+.Dt RESOLVER 3
+.Os BSD 4
+.Sh NAME
+.Nm res_query ,
+.Nm res_search ,
+.Nm res_mkquery ,
+.Nm res_send ,
+.Nm res_init ,
+.Nm dn_comp ,
+.Nm dn_expand
+.Nd resolver routines
+.Sh SYNOPSIS
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
+"u_".Fn res_query char\ *dname int\ class int\ type char\ *answer int\ anslen
+u_".Fn res_search char\ *dname int\ class int\ type char\ *answer int\ anslen
+.Fn res_mkquery int\ op char\ *dname int\ class int\ type char\ *data int\ datalen struct\ rrec\ *newrr char\ *buf int\ buflen
+.Ft buflen
+.Fn res_send char\ *msg int\ msglen char\ *answer int\ anslen
+.Fn res_init 
+.Fn dn_comp char\ *exp_dn char\ *comp_dn int\ length dnptrs lastdnptr
+u_.Fn dn_expand char\ *msg char\ *eomorig char\ *comp_dn char\ *exp_dn int\ length
+.Sh DESCRIPTION
 These routines are used for making, sending and interpreting
 query and reply messages with Internet domain name servers.
-.PP
+.Pp
 Global configuration and state information that is used by the
 resolver routines is kept in the structure
-.IR _res .
+.Em _res .
 Most of the values have reasonable defaults and can be ignored.
 Options
 stored in
-.I _res.options
+.Em _res.options
 are defined in
-.I resolv.h
+.Pa resolv.h
 and are as follows.
 Options are stored as a simple bit mask containing the bitwise ``or''
 of the options enabled.
-.IP RES_INIT
+.Bl -tag -width indent
+.It Em RES_INIT
 True if the initial name server address and default domain name are
 initialized (i.e.,
-.I res_init
+.Fn res_init
 has been called).
-.IP RES_DEBUG
+.It Em RES_DEBUG
 Print debugging messages.
-.IP RES_AAONLY
+.It Em RES_AAONLY
 Accept authoritative answers only.
 With this option,
-.I res_send
+.Fn res_send
 should continue until it finds an authoritative answer or finds an error.
 Currently this is not implemented.
-.IP RES_USEVC
-Use TCP connections for queries instead of UDP datagrams.
-.IP RES_STAYOPEN
+.It Em RES_USEVC
+Use TCP connections for queries instead of
+.Tn UDP
+datagrams.
+.It Em RES_STAYOPEN
 Used with RES_USEVC to keep the TCP connection open between
 queries.
 This is useful only in programs that regularly do many queries.
-UDP should be the normal mode used.
-.IP RES_IGNTC
+.Tn UDP
+should be the normal mode used.
+.It Em RES_IGNTC
 Unused currently (ignore truncation errors, i.e., don't retry with TCP).
-.IP RES_RECURSE
+.It Em RES_RECURSE
 Set the recursion-desired bit in queries.
 This is the default.
 (\c
-.I res_send
+.Fn res_send
 does not do iterative queries and expects the name server
 to handle recursion.)
-.IP RES_DEFNAMES
+.It Em RES_DEFNAMES
 If set,
-.I res_search
+.Fn res_search
 will append the default domain name to single-component names
 (those that do not contain a dot).
 This option is enabled by default.
-.IP RES_DNSRCH
+.It Em RES_DNSRCH
 If this option is set,
-.I res_search
+.Fn res_search
 will search for host names in the current domain and in parent domains; see
-.IR hostname (7).
+.Xr hostname 7 .
 This is used by the standard host lookup routine
-.IR gethostbyname (3).
+.Xr gethostbyname 3 .
 This option is enabled by default.
-.PP
+.Pp
 The
-.I res_init
+.Fn res_init
 routine
 reads the configuration file (if any; see
-.IR resolver (5))
+.Xr resolver 5 )
 to get the default domain name,
 search list and
 the Internet address of the local name server(s).
@@ -156,113 +109,128 @@ if not specified in the configuration file;
 it can be overridden by the environment variable LOCALDOMAIN.
 Initialization normally occurs on the first call
 to one of the following routines.
-.PP
+.Pp
 The
-.I res_query
+.Fn res_query
 function provides an interface to the server query mechanism.
 It constructs a query, sends it to the local server,
 awaits a response, and makes preliminary checks on the reply.
 The query requests information of the specified
-.I type
+.Fa type
 and
-.I class
+.Fa class
 for the specified fully-qualified domain name
-.I dname .
+.Fa dname .
 The reply message is left in the
-.I answer
+.Fa answer
 buffer with length
-.I anslen
+.Fa anslen
 supplied by the caller.
-.PP
+.Pp
 The
-.I res_search
+.Fn res_search
 routine makes a query and awaits a response like
-.IR res_query ,
+.Fn res_query ,
 but in addition, it implements the default and search rules
 controlled by the RES_DEFNAMES and RES_DNSRCH options.
 It returns the first successful reply.
-.PP
+.Pp
 The remaining routines are lower-level routines used by
-.IR res_query .
+.Fn res_query .
 The
-.I res_mkquery
+.Fn res_mkquery
 function
 constructs a standard query message and places it in
-.IR buf .
+.Fa buf .
 It returns the size of the query, or \-1 if the query is
 larger than
-.IR buflen .
+.Fa buflen .
 The query type
-.I op
+.Fa op
 is usually QUERY, but can be any of the query types defined in
-.IR <arpa/nameser.h> .
+.Ao Pa arpa/nameser.h Ac .
 The domain name for the query is given by
-.IR dname .
-.I Newrr
+.Fa dname .
+.Fa Newrr
 is currently unused but is intended for making update messages.
-.PP
+.Pp
 The
-.I res_send
+.Fn res_send
 routine
 sends a pre-formatted query and returns an answer.
 It will call
-.I res_init
+.Fn res_init
 if RES_INIT is not set, send the query to the local name server, and
 handle timeouts and retries.
 The length of the reply message is returned, or
 \-1 if there were errors.
-.PP
+.Pp
 The
-.I dn_comp
+.Fn dn_comp
 function
 compresses the domain name
-.I exp_dn
+.Fa exp_dn
 and stores it in
-.IR comp_dn .
+.Fa comp_dn .
 The size of the compressed name is returned or \-1 if there were errors.
 The size of the array pointed to by
-.I comp_dn
+.Fa comp_dn
 is given by
-.IR length .
+.Fa length .
 The compression uses
 an array of pointers
-.I dnptrs
+.Fa dnptrs
 to previously-compressed names in the current message.
 The first pointer points to
 to the beginning of the message and the list ends with NULL.
 The limit to the array is specified by
-.IR lastdnptr .
+.Fa lastdnptr .
 A side effect of
-.I dn_comp
+.Fn dn_comp
 is to update the list of pointers for
 labels inserted into the message
 as the name is compressed.
 If
-.I dnptr
+.Em dnptr
 is NULL, names are not compressed.
 If
-.I lastdnptr
+.Fa lastdnptr
 is NULL, the list of labels is not updated.
-.PP
+.Pp
 The
-.I dn_expand
+.Fn dn_expand
 entry
 expands the compressed domain name
-.I comp_dn
+.Fa comp_dn
 to a full domain name
 The compressed name is contained in a query or reply message;
-.I msg
+.Fa msg
 is a pointer to the beginning of the message.
 The uncompressed name is placed in the buffer indicated by
-.I exp_dn
+.Fa exp_dn
 which is of size
-.IR length .
+.Fa length .
 The size of compressed name is returned or \-1 if there was an error.
-.SH FILES
-/etc/resolv.conf	see resolver(5)
-.SH "SEE ALSO"
-gethostbyname(3), named(8), resolver(5), hostname(7),
+.Sh FILES
+.Bl -tag -width Pa
+/etc/resolv.conf
+see.Xr resolver 5
+.El
+.Sh SEE ALSO
+.Xr gethostbyname 3 ,
+.Xr named 8 ,
+.Xr resolver 5 ,
+.Xr hostname 7 ,
 .br
 RFC1032, RFC1033, RFC1034, RFC1035, RFC974, 
 .br
 SMM:11 Name Server Operations Guide for BIND
+.Sh HISTORY
+The
+.Nm
+function appeared in 
+.Bx 4.3 .
+.\" /arch/4.3bsd/usr/man/man3/resolver.3
+.\" /arch/4.3tahoe/usr/network.1/man/man3/resolver.3
+.\" /arch/4.3tahoe/usr/src/man/man3/resolver.3
+.\" 4.4BSD
