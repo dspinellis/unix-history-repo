@@ -718,7 +718,7 @@ matchsubj(str, mesg)
 		    str[2] == ':')
 			return(matchto(cp, mesg));
 		*cp++ = '\0';
-		cp2 = hfield(str, mp);
+		cp2 = hfield(*str ? str : "subject", mp);
 		cp[-1] = ':';
 		str = cp;
 	} else {
