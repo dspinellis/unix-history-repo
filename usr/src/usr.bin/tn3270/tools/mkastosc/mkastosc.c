@@ -32,7 +32,9 @@
 
 
 void
-main()
+main(argc, argv)
+int	argc;
+char	*argv[];
 {
     int scancode;
     int asciicode;
@@ -49,8 +51,20 @@ main()
 	int	scancode;
     } tbl[128], *Pt;
     static char *shiftof[] = { "normal", "shifted", "alted", "shiftalted" };
+    char *aidfile = 0, *fcnfile = 0;
 
-    dohits();		/* Set up "Hits" */
+    if (argc > 1) {
+	if (argv[1][0] != '-') {
+	    aidfile = argv[1];
+	}
+    }
+    if (argc > 2) {
+	if (argv[2][0] != '-') {
+	    fcnfile = argv[2];
+	}
+    }
+
+    dohits(aidfile, fcnfile);		/* Set up "Hits" */
 
     printf("/*\n");
     printf(" * Ascii to scancode conversion table.  First\n");
@@ -67,7 +81,7 @@ main()
 							Ph++, scancode++) {
 	ph = &Ph->hits;
 	for (i = 0; i < 4; i++) {
-	    if (ph->hit[i].type == character) {
+	    if (ph->hit[i].ctlrfcn == FCN_CHARACTER) {
 		c = Ph->name[i][0];	/* "name" of this one */
 		if (tbl[c].shift[0] == 0) {
 		    tbl[c].shift = shiftof[i];

@@ -27,15 +27,29 @@
 
 
 void
-main()
+main(argc, argv)
+int	argc;
+char	*argv[];
 {
     int scancode;
     int empty;
     int i;
     struct hits *ph;
     struct Hits *Ph;
+    char *aidfile = 0, *fcnfile = 0;
 
-    dohits();		/* Set up "Hits" */
+    if (argc > 1) {
+	if (argv[1][0] != '-') {
+	    aidfile = argv[1];
+	}
+    }
+    if (argc > 2) {
+	if (argv[2][0] != '-') {
+	    fcnfile = argv[2];
+	}
+    }
+
+    dohits(aidfile, fcnfile);		/* Set up "Hits" */
 
     printf("struct hits hits[] = {\n");
     empty = 0;
@@ -43,35 +57,40 @@ main()
     for (Ph = Hits; Ph < Hits+(sizeof Hits/sizeof Hits[0]); Ph++) {
 	ph = &Ph->hits;
 	scancode++;
-	if ((ph->hit[0].type == undefined)
-		&& (ph->hit[1].type == undefined)
-		&& (ph->hit[2].type == undefined)
-		&& (ph->hit[3].type == undefined)) {
+	if ((ph->hit[0].ctlrfcn == undefined)
+		&& (ph->hit[1].ctlrfcn == undefined)
+		&& (ph->hit[2].ctlrfcn == undefined)
+		&& (ph->hit[3].ctlrfcn == undefined)) {
 	    empty++;
 	    continue;
 	} else {
 	    while (empty) {
-		printf("\t{ 0, {\t{ illegal },\t{ illegal }");
-		printf(",\t{ illegal },\t{ illegal } } },\n");
+		printf("\t{ 0, {  {undefined}, {undefined}");
+		printf(", {undefined}, {undefined}  } },\n");
 		empty--;
 	    }
 	}
 	printf("\t{ %d, {\t/* 0x%02x */\n\t", ph->keynumber, scancode);
 	for (i = 0; i < 4; i++) {
 	    printf("\t{ ");
-	    switch (ph->hit[i].type) {
+	    switch (ph->hit[i].ctlrfcn) {
 	    case undefined:
-	    case illegal:
-		printf("illegal");
+		printf("undefined");
 		break;
-	    case character:
-		printf("character, 0x%02x", ph->hit[i].code);
+	    case FCN_CHARACTER:
+		printf("FCN_CHARACTER, 0x%02x", ph->hit[i].code);
 		break;
-	    case function:
-		printf("function, %s", Ph->name[i]);
+	    case FCN_AID:
+		printf("FCN_AID, %s", Ph->name[i]);
 		break;
-	    case aid:
-		printf("aid, %s", Ph->name[i]);
+	    case FCN_NULL:
+	    default:
+		if ((Ph->name[i] != 0)
+				    && (strcmp(Ph->name[i], "FCN_NULL") != 0)) {
+		    printf("%s", Ph->name[i]);
+		} else {
+		    printf("undefined");
+		}
 		break;
 	    }
 	    printf(" },\n\t");
