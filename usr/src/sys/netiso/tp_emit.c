@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_emit.c,v $
- *	@(#)tp_emit.c	7.3 (Berkeley) %G% *
+ *	@(#)tp_emit.c	7.4 (Berkeley) %G% *
  *
  * This file contains tp_emit() and tp_error_emit(), which
  * form TPDUs and hand them to ip.
@@ -200,6 +200,15 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 
 		case CR_TPDU_type:
 			hdr->tpdu_CRdref_0 = htons(0);	/* must be zero */
+			if (!tpcb->tp_cebit_off) {
+				tpcb->tp_win_recv = tp_start_win << 8;
+				LOCAL_CREDIT(tpcb);
+				CONG_INIT_SAMPLE(tpcb);
+				tpcb->tp_ackrcvd = 0;
+			}
+			else
+				LOCAL_CREDIT(tpcb);
+
 
 		case CC_TPDU_type: 
 				{
@@ -208,7 +217,9 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 				hdr->tpdu_CCsref =  htons(tpcb->tp_lref); /* same as CRsref */
 
 				if( tpcb->tp_class > TP_CLASS_1 ) {
-					LOCAL_CREDIT( tpcb ); 
+/* ifdef CE_BIT, we did this in tp_input when the CR came in */
+					if (tpcb->tp_cebit_off)
+						LOCAL_CREDIT( tpcb );
 					tpcb->tp_sent_uwe = tpcb->tp_lcredit -1;
 					tpcb->tp_sent_rcvnxt = 1;
 					tpcb->tp_sent_lcdt = tpcb->tp_lcredit;
