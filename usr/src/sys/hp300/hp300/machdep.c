@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	7.36 (Berkeley) %G%
+ *	@(#)machdep.c	7.37 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,9 +29,12 @@
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/msgbuf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
 #include <sys/mount.h>
 #include <sys/user.h>
 #include <sys/exec.h>
+#include <sys/sysctl.h>
 #ifdef SYSVSHM
 #include <sys/shm.h>
 #endif
@@ -42,6 +45,7 @@
 #include <machine/cpu.h>
 #include <machine/reg.h>
 #include <machine/psl.h>
+#include <hp/dev/cons.h>
 #include <hp300/hp300/isr.h>
 #include <hp300/hp300/pte.h>
 #include <net/netisr.h>
@@ -379,6 +383,9 @@ setregs(p, entry, retval)
 #endif
 }
 
+/*
+ * Info for CTL_HW
+ */
 extern	char machine[];
 char	cpu_model[120];
 extern	char ostype[], osrelease[], version[];
@@ -488,6 +495,33 @@ identifycpu()
 	default:
 		break;
 	}
+}
+
+/*
+ * machine dependent system variables.
+ */
+cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct proc *p;
+{
+
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR);		/* overloaded */
+
+	switch (name[0]) {
+	case CPU_CONSDEV:
+		return (sysctl_rdstruct(oldp, oldlenp, newp, &cn_tty->t_dev,
+		    sizeof cn_tty->t_dev));
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
 }
 
 #ifdef USELEDS
