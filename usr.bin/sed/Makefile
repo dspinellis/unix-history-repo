@@ -2,7 +2,7 @@
 
 PROG=	sed
 SRCS=	compile.c main.c misc.c process.c 
-CFLAGS=-I${.CURDIR}
+CFLAGS+=-I${.CURDIR}
 LDADD+=	-lgnuregex
 DPADD+=	/usr/lib/libgnuregex.a
 
