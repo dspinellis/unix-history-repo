@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sc.c	7.3 (Berkeley) %G%
+ *	@(#)sc.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -187,8 +187,6 @@ scinit(hc)
 
 	hs->sc_stat   = 0;
 	hs->sc_msg[0] = 0;
-
-	scsi_init_buf();
 
 	screset(hc->hp_unit);
 
@@ -1019,50 +1017,6 @@ struct	driver scsi_driver = {
 	(int (*)()) 0, "scsi", (int (*)()) 0, (int (*)()) 0, scsi_result, (int (*)()) 0
 };
 
-#define SCSI_BUF 8
-
-struct buf scsi_buf[SCSI_BUF];
-
-int
-scsi_init_buf()
-{
-	register struct buf *rbp = &scsi_buf[0];
-	register int i;
-
-	rbp->av_forw = rbp->av_back = rbp;
-
-	for(i = 0; i < SCSI_BUF; i++)
-		scsi_free_buf(&scsi_buf[i]);
-}
-
-int
-scsi_free_buf(bp)
-	register struct buf *bp;
-{
-	register struct buf *rbp = &scsi_buf[0];
-
-	bp->av_forw = rbp;
-	bp->av_back = rbp->av_back;
-
-	rbp->av_back->av_forw = bp;
-	rbp->av_back = bp;
-}
-
-struct buf *
-scsi_get_buf()
-{
-	register struct buf *rbp = &scsi_buf[0];
-	register struct buf *bp = rbp->av_forw;
-
-	if (bp == rbp)
-		return((struct buf *) 0);
-
-	bp->av_forw->av_back = rbp;
-	rbp->av_forw = bp->av_forw;
-
-	return(bp);
-}
-
 struct scsi_queue scsi_entry[NSC];
 
 int
@@ -1083,16 +1037,10 @@ scsi_immed_command(ctlr, slave, lun, cdb, buf, len)
 	printf("scsi_immed_command( %d, %d, %d, cdb(%d,%s), buf, %d): Start\n",
 	       ctlr, slave, lun, cdb->len, scsi_command(cdb->cdb[0]), len);
 #endif
-
-	if ((bp = scsi_get_buf()) == 0) {
-		return(SC_BUSY);
-	}
+	bp = geteblk(len);
+	bp->b_flags = B_BUSY;
 
 	s = splbio();
-
-	bp->b_flags = B_BUSY;
-	bp->b_bcount = len;
-	bp->b_un.b_addr = (caddr_t) buf;
 
 	dq->dq_unit   = ctlr;
 	dq->dq_ctlr   = ctlr;
@@ -1131,7 +1079,9 @@ scsi_immed_command(ctlr, slave, lun, cdb, buf, len)
 	if (scsi_lock[ctlr] < 0)
 		status = scsi_lock[ctlr];
 
-	scsi_free_buf(bp);
+	bcopy(bp->b_un.b_addr, buf, len);
+
+	brelse(bp);
 
 #ifdef SCSI_DEBUG
 		printf("scsi_immed_command: Status -- 0x%x\n", status);
