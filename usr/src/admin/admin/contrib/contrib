@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.48 (Berkeley) %G%
+.\"	@(#)contrib	5.49 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -8,15 +8,25 @@
 .\" Be careful sorting the list, there are some entries that span two
 .\" two lines.
 .\"
-.ds CH
+\&
+.sp |1i
 .ps 16
 .ce
-The Computer Stystems Research Group 1979 \- 1993
+\fBThe Computer Stystems Research Group 1979 \- 1993\fP
+.OH '\s10Community''- % -\s0'
+.EH '\s10- % -''Community\s0'
+.pn 4
+.af % i
 .sp 3
-.ps 10
+.nr PS 11
+.nr VS 12
+.ps 11
+.vs 12
 .nf
-CSRG Technical Staff
+.in +0.5i
+\fBCSRG Technical Staff\fP
 .sp 1
+.in +1i
 Jim Bloom
 Keith Bostic
 Ralph Campbell
@@ -29,9 +39,11 @@ Miriam Amos Nihart
 Keith Sklower
 Marc Teitelbaum
 Michael Toy
+.in -1i
 .sp 3
-CSRG Administration and Support
+\fBCSRG Administration and Support\fP
 .sp 1
+.in +1i
 Robert Fabry
 Domenico Ferrari
 Susan L. Graham
@@ -42,12 +54,14 @@ David Mosher
 Pauline Schwartz
 Mark Seiden
 Jean Wood
+.in -1i
 .fi
 .sp 3
-The following organizations funded the CSRG with grants,
-gifts, personnel, and/or hardware.
+\fBOrganizations that funded the CSRG with grants,
+gifts, personnel, and/or hardware.\fP
 .sp 1
 .nf
+.in +1i
 Compaq Computer Corporation
 Cray Research Inc.
 Department of Defense Advance Research Projects Agency (DARPA)
@@ -56,11 +70,16 @@ NASA Ames Research Center
 The Hewlett-Packard Company
 The Open Software Foundation
 UUNET Technologies Inc.
+.in -1.5i
 .fi
 .bp
-.lp
-The following are people and organizations that provided a
-large subsystem for the BSD releases.
+.nr PS 10
+.nr VS 11
+.ps 10
+.vs 11
+.LP
+\fBThe following are people and organizations that provided a
+large subsystem for the BSD releases.\fP
 .sp
 .TS
 l l.
@@ -112,14 +131,15 @@ Virtual memory implementation	Avadis Tevanian, Jr., Michael Wayne Young,
 X25 	University of British Columbia
 .TE
 .bp
-.lp
-The following are people and organizations that provided a specific
+.LP
+\fBThe following are people and organizations that provided a specific
 item, program, library routine or program maintenance for the BSD system.
-(Their contribution may not be part of the final 4.4BSD release.)
-.sp
+(Their contribution may not be part of the final 4.4BSD release.)\fP
+.nr PS 9
+.nr VS 10
 .ps 9
-.vs 11
-.nf
+.vs 10
+.sp
 .TS
 l l.
 386 device drivers	Carnegie-Mellon University Mach project
@@ -128,7 +148,6 @@ HCX device drivers	Harris Corporation
 Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone, Piers Lauder,
 	John Lions, Tim Long, Chris Maltby, Greg Rose and John Wainwright 
 .TE
-.fi
 .TS
 l l l l.
 adventure(6)	Don Woods
