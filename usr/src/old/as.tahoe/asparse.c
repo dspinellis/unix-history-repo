@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asparse.c 4.17 7/1/83";
+static char sccsid[] = "$W$ (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
