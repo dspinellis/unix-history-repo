@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkheaders.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkheaders.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -60,8 +60,8 @@ do_count(dev, hname, search)
 				count = dp->d_unit + 1;
 			if (search) {
 				mp = dp->d_conn;
-				if (mp != 0 && mp != (struct device *)-1 &&
-				    mp->d_conn != (struct device *)-1) {
+				if (mp != 0 && mp != TO_NEXUS &&
+				    mp->d_conn != 0 && mp->d_conn != TO_NEXUS) {
 					do_count(mp->d_name, hname, 0);
 					search = 0;
 				}
