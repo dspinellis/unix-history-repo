@@ -158,7 +158,7 @@ static char *files[] =		/* all files to create */
 	    }
 	}
 
-#ifdef MAKE_INSTALLS_THIS_AND_DOESNT_ANSWER_QUESTIONS
+#ifdef MAKE_INSTALLS_THIS_AND_DOESNT_WANT_TO_HEAR_ABOUT_IT
     /* write to motd file */
     printf("One line 'motd' ? ");
     if (fgets(Databuf, SZ_DATABUF, stdin) == NULL)
@@ -170,7 +170,6 @@ static char *files[] =		/* all files to create */
 	fwrite(Databuf, sizeof(char), strlen(Databuf), fp);
 	fclose(fp);
 	}
-#endif
 
     /* report compile-time options */
     printf("Compiled options:\n\n");
@@ -203,6 +202,7 @@ static char *files[] =		/* all files to create */
 
 #ifdef SYS5
     printf("Compiled for System V\n");
+#endif
 #endif
 
     exit(0);
