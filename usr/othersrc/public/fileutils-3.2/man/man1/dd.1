@@ -1,0 +1,117 @@
+.TH DD 1L \" -*- nroff -*-
+.SH NAME
+dd \- convert a file while copying it
+.SH SYNOPSIS
+.B dd
+[if=file] [of=file] [ibs=bytes] [obs=bytes] [bs=bytes] [cbs=bytes]
+[skip=blocks] [seek=blocks] [count=blocks]
+[conv={ascii,ebcdic,ibm,block,unblock,lcase,ucase,swab,noerror,notrunc,
+sync}]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR dd .
+.B dd
+copies a file (from the standard input to the standard output, by
+default) with a user-selectable blocksize, while optionally performing
+conversions on it.
+.SS OPTIONS
+Numbers can be followed by a multiplier:
+.br
+b=512, k=1024, w=2, xm=number m
+.TP
+.I if=file
+Read from
+.I file
+instead of the standard input.
+.TP
+.I of=file
+Write to
+.I file
+instead of the standard output.
+Unless
+.I conv=notrunc
+is given, truncate
+.I file
+to the size specified by
+.I seek=
+(0 bytes if
+.I seek=
+is not given).
+.TP
+.I ibs=bytes
+Read
+.I bytes
+bytes at a time.
+.TP
+.I obs=bytes
+Write
+.I bytes
+bytes at a time.
+.TP
+.I bs=bytes
+Read and write
+.I bytes
+bytes at atime.  Override ibs and obs.
+.TP
+.I cbs=bytes
+Convert
+.I bytes
+bytes at a time.
+.TP
+.I skip=blocks
+Skip
+.I blocks
+ibs-sized blocks at start of input.
+.TP
+.I seek=blocks
+Skip
+.I blocks
+obs-sized blocks at start of output.
+.TP
+.I count=blocks
+Copy only
+.I blocks
+ibs-sized input blocks.
+.TP
+.I conv=conversion[,conversion...]
+Convert the file as specified by the
+.I conversion
+arguments.
+.RS
+Conversions:
+.TP
+ascii
+Convert EBCDIC to ASCII.
+.TP
+ebcdic
+Convert ASCII to EBCDIC.
+.TP
+ibm
+Convert ASCII to alternate EBCDIC.
+.TP
+block
+Pad newline-terminated records to size of cbs, replacing newline with
+trailing spaces.
+.TP
+unblock
+Replace trailing spaces in cbs-sized block with newline.
+.TP
+lcase
+Change uppercase characters to lowercase.
+.TP
+ucase
+Change lowercase characters to uppercase.
+.TP
+swab
+Swap every pair of input bytes.  Unlike the Unix dd, this works when
+an odd number of bytes are read.  If the input file contains an odd
+number of bytes, the last byte is simply copied (since there is
+nothing to swap it with).
+.TP
+noerror
+Continue after read errors.
+.TP
+sync
+Pad every input block to size of ibs with trailing NULs.
+.RE

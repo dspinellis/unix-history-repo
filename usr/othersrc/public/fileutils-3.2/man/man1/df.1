@@ -1,0 +1,68 @@
+.TH DF 1L \" -*- nroff -*-
+.SH NAME
+df \- summarize free disk space
+.SH SYNOPSIS
+.B df
+[\-aikPv] [\-t fstype] [\-\-all] [\-\-inodes] [\-\-type fstype]
+[\-\-kilobytes] [\-\-portability] [path...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR df .
+.B df
+displays the amount of disk space available on the filesystem
+containing each argument pathname.  If no pathnames are given, the
+space available on all currently mounted filesystems is shown.  Disk
+space is shown in 1K blocks by default, unless the environment
+variable POSIXLY_CORRECT is set, in which case 512-byte blocks are
+used.
+.PP
+If an argument is the full pathname of a disk device node containing a
+mounted filesystem,
+.B df
+shows the space available on that filesystem rather than on the
+filesystem containing the device node (which is almost always the root
+filesystem).  This version of
+.B df
+can not show the space available on unmounted filesystems, because on
+most kinds of systems doing so requires very nonportable intimate
+knowledge of filesystem structures.
+.SS OPTIONS
+.TP
+.I "\-a, \-\-all"
+Include in the listing filesystems that have 0 blocks, which are
+omitted by default.  Such filesystems are typically special-purpose
+pseudo-filesystems, such as automounter entries.  On some systems,
+filesystems of type ``ignore'' or ``auto'' are also omitted by
+default and included in the listing by this option.
+.TP
+.I "\-i, \-\-inodes"
+List inode usage information instead of block usage.  An inode is a
+special kind of disk block that contains information about a file,
+such as its owner, permissions, timestamps, and location on the disk.
+.TP
+.I "\-k, \-\-kilobytes"
+Print sizes in 1K blocks instead of 512-byte blocks.  This overrides
+the environment variable POSIXLY_CORRECT.
+.TP
+.I "\-P, \-\-portability"
+Use the POSIX output format.  This is like the default format except
+that the information about each filesystem is always printed on
+exactly one line; a mount device is never put on a line by itself.
+This means that if the mount device name is more than 20 characters
+long (as for some network mounts), the columns are misaligned.
+.TP
+.I "\-t, \-\-type fstype"
+Limit the listing to filesystems of type
+.IR fstype .
+Multiple filesystem types can be shown by giving multiple
+.I \-t
+options.  By default, all filesystem types are listed.
+.TP
+.I \-v
+Ignored; for compatibility with System V versions of
+.BR df .
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
