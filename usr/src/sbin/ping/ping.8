@@ -1,0 +1,47 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ping.8	6.1 (Berkeley) %G%
+.\"
+.TH PING 8 ""
+.UC 6
+.SH NAME
+ping \- send ICMP ECHO_REQUEST packets to network hosts
+.SH SYNOPSIS
+.B /etc/ping
+.B host
+[
+.B packetsize
+]
+.SH DESCRIPTION
+The ARPA InterNet is a large and complex aggregation of
+network hardware, connected together by gateways.
+Tracking a single-point hardware or software failure
+can often be difficult.
+.I Ping
+utilizes the mandatory
+ICMP protocol's ECHO_REQUEST datagram to elicit an
+ICMP ECHO_RESPONSE from a distant host or gateway.
+ECHO_REQUEST datagrams (``pings'') have an IP and ICMP header,
+followed by a \fBstruct timeval\fR, and then an arbitrary number
+of ``pad'' bytes used to fill out the packet.
+Default datagram length is 64 bytes, but this may be changed
+using the command-line option.
+.PP
+When using \fIping\fR for fault isolation,
+it should first be run on the local
+host, to verify that the local network interface is up and
+running.  Then, hosts and gateways further and further away
+should be ``pinged''.  A lack of output from the \fIping\fR
+program indicates no response;  in normal operation,
+\fIping\fR sends one datagram per second, and
+prints one line of output for every ECHO_RESPONSE returned.
+Round-trip times and packet loss statistics are computed.
+If the program is terminated with a SIGINT, a brief
+summary is displayed.
+.SH AUTHOR
+Mike Muuss
+.SH SEE ALSO
+netstat(8),
+ifconfig(5)
