@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,20 +31,20 @@ static char sccsid[] = "@(#)chmod.c	5.8 (Berkeley) %G%";
 #include <stdio.h>
 #include <strings.h>
 
+extern int errno;
 int retval;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
+	extern int optind;
 	register FTS *fts;
 	register FTSENT *p;
 	register int oct, omode;
 	register char *mode;
 	struct stat sb;
 	int ch, fflag, rflag;
-	mode_t setmode();
 
 	fflag = rflag = 0;
 	while ((ch = getopt(argc, argv, "Rfrwx")) != EOF)
@@ -76,7 +76,7 @@ done:	argv += optind;
 		omode = (int)strtol(mode, (char **)NULL, 8);
 		oct = 1;
 	} else {
-		if (setmode(mode, 0, 0) == (mode_t)-1) {
+		if (setmode(mode) == -1) {
 			(void)fprintf(stderr, "chmod: invalid file mode.\n");
 			exit(1);
 		}
@@ -98,8 +98,8 @@ done:	argv += optind;
 					error(p->path);
 				continue;
 			}
-			if (chmod(p->accpath, oct ? omode :
-			    (int)setmode(mode, p->statb.st_mode, 0)) && !fflag)
+			if (chmod(p->accpath,
+			    oct ? omode : getmode(p->statb.st_mode) && !fflag))
 				error(p->path);
 		}
 		exit(retval);
@@ -110,8 +110,8 @@ done:	argv += optind;
 				error(*argv);
 	} else
 		while (*++argv)
-			if ((lstat(*argv, &sb) || chmod(*argv,
-			    (int)setmode(mode, sb.st_mode, 0))) && !fflag)
+			if ((lstat(*argv, &sb) ||
+			    chmod(*argv, getmode(sb.st_mode))) && !fflag)
 				error(*argv);
 	exit(retval);
 }
