@@ -1,4 +1,4 @@
-/*	flp.c	4.6	82/06/14	*/
+/*	flp.c	4.7	82/08/22	*/
 
 #if VAX780
 #include "../h/flp.h"
@@ -11,6 +11,7 @@
 #include "../h/buf.h"
 #include "../h/cons.h"
 #include "../h/cpu.h"
+#include "../h/uio.h"
 
 struct {
 	short	fl_state;		/* open and busy flags */
@@ -52,11 +53,12 @@ flclose(dev, flag)
 	fltab.fl_state = 0;
 }
 
-flstrategy(rw)
-	int rw;
+floperation(rw, uio)
+	enum uio_rw rw;
+	struct uio *uio;
 {
 	register struct buf *bp;
-	register unsigned i;
+	register int i;
 
 	/*
 	 * Assume one block read/written for each call - 
@@ -67,7 +69,7 @@ flstrategy(rw)
 	 *
 	 *	track# * (sectors/track) + sector #
 	 */
-	if (u.u_count == 0) 
+	if (uio->uio_resid == 0) 
 		return;
 	(void) spl4();
 	while (fltab.fl_state & FL_BUSY)
@@ -76,20 +78,20 @@ flstrategy(rw)
 	(void) spl0();
 
 	bp = fltab.fl_buf;
-	while ((i = min(RXBYSEC, u.u_count)) != 0) {
-		bp->b_blkno = u.u_offset>>7;
-		if (bp->b_blkno >= MAXSEC || (u.u_offset & 0177) != 0) {
+	while ((i = imin(RXBYSEC, uio->uio_resid)) > 0) {
+		bp->b_blkno = uio->uio_offset>>7;
+		if (bp->b_blkno >= MAXSEC || (uio->uio_offset & 0177) != 0) {
 			/* block number out of range */
 			/* or offset in middle of block */
 			u.u_error = ENXIO;
 			break;	
 		}
-		if (rw == B_WRITE) {
-			iomove(bp->b_un.b_addr, i, B_WRITE);
-			if (u.u_error != 0)
+		if (rw == UIO_WRITE) {
+			u.u_error = uiomove(bp->b_un.b_addr, i, UIO_WRITE, uio);
+			if (u.u_error)
 				break;
 		}
-		bp->b_flags = rw;
+		bp->b_flags = rw == UIO_WRITE ? B_WRITE : B_READ;
 		(void) spl4(); 
 		flstart();
 		while ((bp->b_flags & B_DONE) == 0)
@@ -99,31 +101,32 @@ flstrategy(rw)
 			u.u_error = EIO;
 			break;
 		}
-		if (rw == B_READ) {
-			iomove(bp->b_un.b_addr, i, B_READ);
-			if (u.u_error != 0)
+		if (rw == UIO_READ) {
+			u.u_error = uiomove(bp->b_un.b_addr, i, UIO_READ, uio);
+			if (u.u_error)
 				break;
 		}
 	}
-	u.u_count = bp->b_resid;
 	fltab.fl_state &= ~FL_BUSY;
 	wakeup((caddr_t)&fltab);
 }
 
 /*ARGSUSED*/
-flread(dev)
+flread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 
-	flstrategy(B_READ);
+	floperation(UIO_READ, uio);
 }
 
 /*ARGSUSED*/
-flwrite(dev)
+flwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 
-	flstrategy(B_WRITE);
+	floperation(UIO_WRITE, uio);
 }
 
 flstart()

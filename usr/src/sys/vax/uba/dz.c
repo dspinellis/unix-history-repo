@@ -1,4 +1,4 @@
-/*	dz.c	4.41	82/08/13	*/
+/*	dz.c	4.42	82/08/22	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -268,13 +268,14 @@ dzread(dev, uio)
 	return ((*linesw[tp->t_line].l_read)(tp, uio));
 }
  
-dzwrite(dev)
+dzwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
  
 	tp = &dz_tty[minor(dev)];
-	(*linesw[tp->t_line].l_write)(tp);
+	(*linesw[tp->t_line].l_write)(tp, uio);
 }
  
 /*ARGSUSED*/

@@ -1,4 +1,4 @@
-/*	hp.c	4.52	82/08/13	*/
+/*	hp.c	4.53	82/08/22	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -636,15 +636,16 @@ hpread(dev, uio)
 		physio(hpstrategy, &rhpbuf[unit], dev, B_READ, minphys, uio);
 }
 
-hpwrite(dev)
+hpwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NHP)
 		u.u_error = ENXIO;
 	else
-		physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys, 0);
+		physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys, uio);
 }
 
 /*ARGSUSED*/

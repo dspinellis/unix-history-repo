@@ -1,4 +1,4 @@
-/*	mt.c	4.7	82/08/13	*/
+/*	mt.c	4.8	82/08/22	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -465,13 +465,15 @@ mtread(dev, uio)
 	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_READ, minphys, uio);
 }
 
-mtwrite(dev)
+mtwrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
 {
 
-	mtphys(dev, 0);
+	u.u_error = mtphys(dev, uio);
 	if (u.u_error)
 		return;
-	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_WRITE, minphys, 0);
+	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_WRITE, minphys, uio);
 }
 
 mtphys(dev, uio)
@@ -484,14 +486,9 @@ mtphys(dev, uio)
 	daddr_t a;
 
 	mtunit = MTUNIT(dev);
-	if (mtunit >= NMT || (mi = mtinfo[mtunit]) == 0 || mi->mi_alive == 0) {
-		u.u_error = ENXIO;
+	if (mtunit >= NMT || (mi = mtinfo[mtunit]) == 0 || mi->mi_alive == 0)
 		return (ENXIO);
-	}
-	if (uio)
-		a = uio->uio_offset >> 9;
-	else
-		a = u.u_offset >> 9;
+	a = uio->uio_offset >> 9;
 	sc = &mu_softc[MUUNIT(dev)];
 	sc->sc_blkno = bdbtofsb(a);
 	sc->sc_nxrec = bdbtofsb(a)+1;

@@ -1,4 +1,4 @@
-/*	cons.c	4.14	82/08/13	*/
+/*	cons.c	4.15	82/08/22	*/
 
 /*
  * Vax console driver and floppy interface
@@ -68,13 +68,14 @@ struct uio *uio;
 }
 
 /*ARGSUSED*/
-cnwrite(dev)
-dev_t dev;
+cnwrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
 {
 	register struct tty *tp;
 
 	tp = &cons;
-	(*linesw[tp->t_line].l_write)(tp);
+	(*linesw[tp->t_line].l_write)(tp, uio);
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	lp.c	4.26	82/07/15	*/
+/*	lp.c	4.27	82/08/22	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -143,16 +143,19 @@ lpclose(dev, flag)
 	sc->sc_state &= ~OPEN;
 }
 
-lpwrite(dev)
+lpwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register unsigned n;
 	register char *cp;
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 
-	while (n = min(512, u.u_count)) {
+	while (n = min(512, uio->uio_resid)) {
 		cp = sc->sc_inbuf->b_un.b_addr;
-		iomove(cp, n, B_WRITE);
+		u.u_error = uiomove(cp, n, UIO_WRITE, uio);
+		if (u.u_error)
+			break;
 		do
 			lpcanon(dev, *cp++);
 		while (--n);

@@ -1,4 +1,4 @@
-/*	tty_tb.c	4.3	82/08/13	*/
+/*	tty_tb.c	4.4	82/08/22	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -101,7 +101,7 @@ tbread(tp, uio)
 
 	if ((tp->t_state&TS_CARR_ON)==0)
 		return (-1);
-	u.u_error = copyuout(uio, &tp->t_rocount, sizeof tbposition);
+	u.u_error = iomove(&tp->t_rocount, sizeof tbposition, UIO_READ, uio);
 	if (u.u_error)
 		return (-1);
 	return (0);

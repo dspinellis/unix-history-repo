@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.31	82/08/13	*/
+/*	kern_physio.c	4.32	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -174,35 +174,16 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	unsigned (*mincnt)();
 	struct uio *uio;
 {
+	register struct iovec *iov = uio->uio_iov;
 	register int c;
-	struct uio auio;
-	register struct iovec *iov;
-	struct iovec aiov;
 	char *a;
 	int s, error = 0;
 
-	if (uio == 0) {
-		uio = &auio;
-		uio->uio_iov = &aiov;
-		uio->uio_iovcnt = 1;
-		uio->uio_offset = u.u_offset;
-		uio->uio_segflg = u.u_segflg;
-		iov = &aiov;
-		iov->iov_base = u.u_base;
-		iov->iov_len = u.u_count;
-		uio->uio_resid = iov->iov_len;
-	} else
-		iov = uio->uio_iov;
 nextiov:
-	if (uio->uio_iovcnt == 0) {
-		u.u_count = uio->uio_resid;
+	if (uio->uio_iovcnt == 0)
 		return (0);
-	}
-	if (useracc(iov->iov_base,iov->iov_len,rw==B_READ?B_WRITE:B_READ) == NULL) {
-		u.u_count = uio->uio_resid;
-		u.u_error = EFAULT;
+	if (useracc(iov->iov_base,(u_int)iov->iov_len,rw==B_READ?B_WRITE:B_READ) == NULL)
 		return (EFAULT);
-	}
 	s = spl6();
 	while (bp->b_flags&B_BUSY) {
 		bp->b_flags |= B_WANTED;
@@ -240,11 +221,8 @@ nextiov:
 	}
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS);
 	error = geterror(bp);
-	if (error) {
-		u.u_error = error;
-		u.u_count = uio->uio_resid;
+	if (error)
 		return (error);
-	}
 	uio->uio_iov++;
 	uio->uio_iovcnt--;
 	goto nextiov;
