@@ -70,8 +70,8 @@ tags:	/tmp
 
 ${OBJS}: ex_vars.h
 
-ex_vars.h:
-	csh makeoptions ${CFLAGS}
+# ex_vars.h:
+# 	csh makeoptions ${CFLAGS}
 
 bcopy.o:	bcopy.c
 	cc -c ${CFLAGS} bcopy.c
