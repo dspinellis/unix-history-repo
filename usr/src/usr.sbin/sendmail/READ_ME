@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	6.5 (Berkeley) %G%
+ *	@(#)READ_ME	6.6 (Berkeley) %G%
  */
 
 THIS IS AN ALPHA VERSION OF SENDMAIL.  DON'T EVEN THINK ABOUT USING IT
@@ -15,6 +15,12 @@ THIS IS COPYRIGHTED CODE.  BY COMPILING AND RUNNING THIS CODE YOU AGREE
 to upgrade to the production release when it comes out.  You understand
 that we hope this will be by March, but if there are serious problems
 it may be longer than that.
+
+PLEASE DO NOT MAKE THIS AVAILABLE ON PUBLIC FTP.  Since it is still an
+early release, I'd prefer that people get copies directly from Berkeley
+to make certain that they have the most recent version.  This isn't
+an attempt to limit access, just to make certain that everyone is able
+to keep up.
 
 You don't have to install mail.local to run the new version of sendmail.
 Many versions of /bin/mail take a "-d" flag or do local delivery already.
