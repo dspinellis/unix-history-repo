@@ -17,7 +17,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)df.c	8.4 (Berkeley) %G%";
 
 /* subject to change */
 #define MT_LOCAL \
-    (MT(MOUNT_UFS)|MT(MOUNT_MFS)|MT(MOUNT_LFS)|MT(MOUNT_MSDOS)|MT(MOUNT_ISOFS))
+    (MT(MOUNT_UFS)|MT(MOUNT_MFS)|MT(MOUNT_LFS)|MT(MOUNT_MSDOS)|MT(MOUNT_CD9660))
 #define MT_DEFAULT	MT_ALL
 
 struct typetab {
@@ -66,11 +66,11 @@ struct typetab {
 	"kernfs",	MT(MOUNT_KERNFS),
 	"procfs",	MT(MOUNT_PROCFS),
 	"afs",		MT(MOUNT_AFS),
-	"isofs",	MT(MOUNT_ISOFS),
-	"cdfs",		MT(MOUNT_ISOFS),
+	"iso9660fs",	MT(MOUNT_CD9660),
+	"cdfs",		MT(MOUNT_CD9660),
 	"misc",		MT(MOUNT_LOFS)|MT(MOUNT_FDESC)|MT(MOUNT_PORTAL)|
 			MT(MOUNT_KERNFS)|MT(MOUNT_PROCFS),
-	(char *)0,	0
+	NULL,		0
 };
 
 long	addtype __P((long, char *));

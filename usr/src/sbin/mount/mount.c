@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -385,8 +385,8 @@ getmnttype(fstype)
 		return (MOUNT_MFS);
 	if (!strcmp(fstype, "lfs"))
 		return (MOUNT_LFS);
-	if (!strcmp(fstype, "isofs"))
-		return (MOUNT_ISOFS);
+	if (!strcmp(fstype, "iso9660fs"))
+		return (MOUNT_CD9660);
 	return (0);
 }
 
