@@ -1,4 +1,4 @@
-/*	displayq.c	4.2	83/05/13	*/
+/*	displayq.c	4.3	83/05/18	*/
 /*
  * Routines to display the state of the queue.
  */
@@ -84,7 +84,7 @@ displayq(format)
 			strcpy(cp, user[i]);
 		}
 		strcat(line, "\n");
-		fd = getport();
+		fd = getport(RM);
 		if (fd < 0) {
 			if (from != host)
 				printf("%s: ", host);
