@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -111,7 +111,7 @@ hookup(host, port)
 		goto bad;
 	}
 	if (verbose)
-		printf("Connected to %s.\n", hp->h_name);
+		printf("Connected to %s.\n", hostname);
 	if (getreply(0) != 2) { 	/* read startup message from server */
 		if (cin)
 			fclose(cin);
