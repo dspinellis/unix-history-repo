@@ -1,4 +1,4 @@
-/*	prf.c	1.1	%G% */
+/*	prf.c	1.2	%G% */
 
 #include "../h/cons.h"
 #include "../h/mtpr.h"
@@ -171,6 +171,7 @@ register c;
 				lp = buf;
 			continue;
 		case '@':
+		case 'u'&037:
 			lp = buf;
 			putchar('\n');
 			continue;
