@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -172,8 +172,7 @@ main(argc, argv)
 		f_recursive = 0;
 
 	/* if need to stat files */
-	needstat = f_longform || f_recursive || f_timesort || f_size ||
-	    f_inode || f_type;
+	needstat = f_longform || f_recursive || f_timesort || f_size || f_type;
 
 	/* select a sort function */
 	if (f_reversesort) {
@@ -375,7 +374,7 @@ buildstats(lp, s_stats, s_names)
 {
 	register int cnt, maxentry;
 	register char *p, *names;
-	struct dirent *entry;
+	struct dirent *dp;
 	LS *stats;
 	DIR *dirp;
 
@@ -390,9 +389,9 @@ buildstats(lp, s_stats, s_names)
 		    lp->name, strerror(errno));
 		return(0);
 	}
-	for (cnt = 0; entry = readdir(dirp);) {
+	for (cnt = 0; dp = readdir(dirp);) {
 		/* this does -A and -a */
-		p = entry->d_name;
+		p = dp->d_name;
 		if (p[0] == '.') {
 			if (!f_listdot)
 				continue;
@@ -405,16 +404,21 @@ buildstats(lp, s_stats, s_names)
 			    (u_int)maxentry * sizeof(LS))))
 				nomem();
 		}
-		if (needstat && lstat(entry->d_name, &stats[cnt].lstat)) {
+		if (needstat && lstat(dp->d_name, &stats[cnt].lstat)) {
 			(void)fprintf(stderr, "ls: %s: %s\n",
-			    entry->d_name, strerror(errno));
+			    dp->d_name, strerror(errno));
 			if (errno == ENOENT)
 				continue;
 			exit(1);
 		}
+		/*
+		 * get the inode from the directory, in case the -f flag
+		 * was set and we can't stat the actual file.
+		 */
+		stats[cnt].lstat.st_ino = dp->d_ino;
 		stats[cnt].name = names;
-		bcopy(entry->d_name, names, (int)entry->d_namlen);
-		names += entry->d_namlen;
+		bcopy(dp->d_name, names, (int)dp->d_namlen);
+		names += dp->d_namlen;
 		*names++ = '\0';
 		++cnt;
 	}
