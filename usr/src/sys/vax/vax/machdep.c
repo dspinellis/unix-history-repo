@@ -1,4 +1,4 @@
-/*	machdep.c	4.35	81/05/05	*/
+/*	machdep.c	4.36	81/05/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -334,7 +334,14 @@ sendsig(p, n)
 
 asm("bad:");
 bad:
-	psignal(u.u_procp, SIGKILL);
+	/*
+	 * Process has trashed its stack; give it an illegal
+	 * instruction to halt it in its tracks.
+	 */
+	u.u_signal[SIGILL] = SIG_DFL;
+	u.u_procp->p_siga0 &= ~(1<<(SIGILL-1));
+	u.u_procp->p_siga1 &= ~(1<<(SIGILL-1));
+	psignal(u.u_procp, SIGILL);
 }
 
 dorti()
