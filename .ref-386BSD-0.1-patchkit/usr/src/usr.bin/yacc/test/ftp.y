@@ -1,1 +1,0 @@
-../../../libexec/ftpd/ftpcmd.y
