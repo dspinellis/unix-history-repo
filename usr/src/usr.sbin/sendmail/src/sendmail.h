@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.42 (Berkeley) %G%
+ *	@(#)sendmail.h	8.43 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.42		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.43		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -693,6 +693,7 @@ EXTERN char	OpMode;		/* operation mode, see below */
 #define PRIV_NOEXPN		00010	/* disallow EXPN command entirely */
 #define PRIV_NOVRFY		00020	/* disallow VRFY command entirely */
 #define PRIV_AUTHWARNINGS	00040	/* flag possible authorization probs */
+#define PRIV_NORECEIPTS		00100	/* disallow return receipts */
 #define PRIV_RESTRICTMAILQ	01000	/* restrict mailq command */
 #define PRIV_RESTRICTQRUN	02000	/* restrict queue run */
 #define PRIV_GOAWAY		00777	/* don't give no info, anyway, anyhow */
