@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.11 1993/12/19 00:51:38 wollman Exp $
+ *	$Id: tty.c,v 1.12 1993/12/30 05:27:01 davidg Exp $
  */
 
 #include "param.h"
@@ -1294,14 +1294,17 @@ loop:
 	/*
 	 * take pending input first 
 	 */
-	if (lflag&PENDIN)
+	if (lflag&PENDIN) {
 		ttypend(tp);
-	splx(s);
+		splx(s);	/* reduce latency */
+		s = spltty();
+	}
 
 	/*
 	 * Hang process if it's in the background.
 	 */
 	if (isbackground(p, tp)) {
+		splx(s);
 		if ((p->p_sigignore & sigmask(SIGTTIN)) ||
 		   (p->p_sigmask & sigmask(SIGTTIN)) ||
 		    p->p_flag&SPPWAIT || p->p_pgrp->pg_jobc == 0)
@@ -1325,7 +1328,6 @@ loop:
 	 * awaiting hardware receipt and notification.
 	 * If we have data, we don't need to check for carrier.
 	 */
-	s = spltty();
 	if (RB_LEN(qp) <= not_enough) {
 		int carrier;
 
@@ -1351,13 +1353,45 @@ loop:
 			return (error);
 		goto loop;
 	}
-	splx(s);
 
 	/*
 	 * Input present, check for input mapping and processing.
 	 */
 	first = 1;
-	while ((c = getc(qp)) >= 0) {
+	if (lflag & (ICANON | ISIG))
+		goto slowcase;
+	for (;;) {
+		int rcc;
+
+		rcc = RB_CONTIGGET(qp);
+		if (rcc > uio->uio_resid)
+			rcc = uio->uio_resid;
+		if (rcc <= 0) {
+			if (first) {
+				/* queue got flushed (can't happen) */
+				splx(s);
+				goto loop;
+			}
+			break;
+		}
+		error = uiomove(qp->rb_hd, rcc, uio);
+		if (error)
+			splx(s);
+		qp->rb_hd = RB_ROLLOVER(qp, qp->rb_hd + rcc);
+		splx(s);
+		s = spltty();
+		first = 0;
+	}
+	goto out;
+slowcase:
+	for (;;) {
+		c = getc(qp);
+		splx(s);
+		if (c < 0) {
+			if (first)
+				goto loop;
+			break;
+		}
 		/*
 		 * delayed suspend (^Y)
 		 */
@@ -1390,16 +1424,21 @@ loop:
 		 */
 		if (lflag&ICANON && ttbreakc(c))
 			break;
+		s = spltty();
 		first = 0;
 	}
+	s = spltty();
+
 	/*
 	 * Look to unblock input now that (presumably)
 	 * the input queue has gone down.
 	 */
+out:
 	if (tp->t_state & (TS_TBLOCK | TS_HW_IFLOW)
 	    && INPUT_LEN(tp) <= I_LOW_WATER)
 		ttyunblock(tp);
 
+	splx(s);
 	return (error);
 }
 
