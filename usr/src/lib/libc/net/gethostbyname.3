@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostbyname.3	6.2 (Berkeley) %G%
+.\"	@(#)gethostbyname.3	6.3 (Berkeley) %G%
 .\"
 .TH GETHOSTENT 3N ""
 .UC 5
@@ -36,10 +36,13 @@ gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent, sethostfile \-
 and
 .I gethostbyaddr
 each return a pointer to an object with the
-following structure
-containing the broken-out
+following structure.
+Depending on how the library is configured,
+this structure contains either the broken-out
 fields of a line in the network host data base,
-.IR /etc/hosts .
+.IR /etc/hosts ,
+or similar information obtained from the name server,
+.IR named (8).
 .RS
 .PP
 .nf
@@ -82,7 +85,7 @@ opens and rewinds the file.  If the
 .I stayopen
 flag is non-zero,
 the host data base will not be closed after each call to 
-.I gethosbyname
+.I gethostbyname
 or
 .IR gethostbyaddr .
 .PP
@@ -125,7 +128,7 @@ address format is currently understood.
 .PP
 On sites configured to use the name server
 .IR named (8)
-instead of 
+instead of
 .IR /etc/hosts ,
 .I gethostent
 is not available
