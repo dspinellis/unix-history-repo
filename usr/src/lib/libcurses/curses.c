@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)curses.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)curses.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,7 +33,7 @@ bool	_echoit		= TRUE,	/* set if stty indicates ECHO		*/
 char	ttytype[50],		/* long name of tty			*/
 	*Def_term	= "unknown";	/* default terminal type	*/
 
-int	_tty_ch		= 1,	/* file channel which is a tty		*/
+int	_tty_ch		= 0,	/* file channel which is a tty		*/
 	LINES,			/* number of lines allowed on screen	*/
 	COLS,			/* number of columns allowed on screen	*/
 	_res_flg;		/* sgtty flags for reseting later	*/
