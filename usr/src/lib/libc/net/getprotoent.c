@@ -1,4 +1,4 @@
-/*	getprotoent.c	4.2	82/10/05	*/
+/*	getprotoent.c	4.3	82/11/14	*/
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -61,19 +61,20 @@ again:
 	if (p != NULL)
 		*p++ = '\0';
 	proto.p_proto = atoi(cp);
-	proto.p_aliases = proto_aliases;
-	cp = p;
-	q = proto_aliases;
-	while (*cp) {
-		if (*cp == ' ' || *cp == '\t') {
-			cp++;
-			continue;
+	q = proto.p_aliases = proto_aliases;
+	if (p != NULL) {
+		cp = p;
+		while (*cp) {
+			if (*cp == ' ' || *cp == '\t') {
+				cp++;
+				continue;
+			}
+			if (q < &proto_aliases[MAXALIASES - 1])
+				*q++ = cp;
+			cp = any(cp, " \t");
+			if (*cp != NULL)
+				*cp++ = '\0';
 		}
-		if (q < &proto_aliases[MAXALIASES - 1])
-			*q++ = cp;
-		cp = any(cp, " \t");
-		if (*cp != NULL)
-			*cp++ = '\0';
 	}
 	*q = NULL;
 	return (&proto);

@@ -1,4 +1,4 @@
-/*	getservent.c	4.2	82/10/05	*/
+/*	getservent.c	4.3	82/11/14	*/
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -63,21 +63,21 @@ again:
 	*cp++ = '\0';
 	serv.s_port = atoi(p);
 	serv.s_proto = cp;
+	q = serv.s_aliases = serv_aliases;
 	cp = any(cp, " \t");
-	if (cp != NULL)
+	if (cp != NULL) {
 		*cp++ = '\0';
-	serv.s_aliases = serv_aliases;
-	q = serv_aliases;
-	while (*cp) {
-		if (*cp == ' ' || *cp == '\t') {
-			cp++;
-			continue;
+		while (*cp) {
+			if (*cp == ' ' || *cp == '\t') {
+				cp++;
+				continue;
+			}
+			if (q < &serv_aliases[MAXALIASES - 1])
+				*q++ = cp;
+			cp = any(cp, " \t");
+			if (*cp != NULL)
+				*cp++ = '\0';
 		}
-		if (q < &serv_aliases[MAXALIASES - 1])
-			*q++ = cp;
-		cp = any(cp, " \t");
-		if (*cp != NULL)
-			*cp++ = '\0';
 	}
 	*q = NULL;
 	return (&serv);
