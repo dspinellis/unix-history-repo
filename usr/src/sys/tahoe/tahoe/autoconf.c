@@ -1,4 +1,4 @@
-/*	autoconf.c	1.9	86/12/15	*/
+/*	autoconf.c	1.10	86/12/18	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -234,11 +234,12 @@ vbafind(vban, vumem, memmap)
 				ui->ui_hd = vhp;
 				/* ui_type comes from driver */
 				udp->ud_dinfo[ui->ui_unit] = ui;
-				printf("%s%d at %s%d slave %d\n",
+				printf("    %s%d at %s%d slave %d",
 				    udp->ud_dname, ui->ui_unit,
 				    udp->ud_mname, um->um_ctlr,
 				    ui->ui_slave);
 				(*udp->ud_attach)(ui);
+				printf("\n");
 			}
 		}
 		break;
