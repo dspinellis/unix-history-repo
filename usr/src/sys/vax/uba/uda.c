@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.17 (Berkeley) %G%
+ *	@(#)uda.c	6.18 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -237,6 +237,7 @@ udprobe(reg, ctlr)
 	return(sizeof (struct udadevice));
 }
 
+/* ARGSUSED */
 udslave(ui, reg)
 	struct uba_device *ui;
 	caddr_t reg;
@@ -249,9 +250,6 @@ udslave(ui, reg)
 					/* the uda polling */
 
 
-#ifdef lint
-	ui = ui; reg = reg; i = i;
-#endif
 	udaddr = (struct udadevice *)um->um_addr;
 	if(sc->sc_state != S_RUN){
 		if(!udinit(ui->ui_ctlr))
@@ -280,6 +278,9 @@ udslave(ui, reg)
 	udip[ui->ui_ctlr][ui->ui_slave] = ui;
 	*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT;/* maybe we should poll*/
 	i = udaddr->udaip;
+#ifdef lint
+	i = i;
+#endif
 	while(!ra_info[ui->ui_unit].rastatus);  /* Wait for some status */
 	udip[ui->ui_ctlr][ui->ui_slave] = 0;
 	if(!ra_info[ui->ui_unit].ratype)	/* packet from a GTUNT */
@@ -296,9 +297,6 @@ udattach(ui)
 	struct	mscp	*mp;
 	int	i;			/* Something to write into to start */
 					/* the uda polling */
-#ifdef	lint
-	i = i;
-#endif
 	if (ui->ui_dk >= 0)
 		dk_mspw[ui->ui_dk] = 1.0 / (60 * 31 * 256);     /* approx */
 	ui->ui_flags = 0;
@@ -319,6 +317,9 @@ udattach(ui)
 #endif	
 	*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT;
 	i = udaddr->udaip;
+#ifdef	lint
+	i = i;
+#endif
 	while(ui->ui_flags == 0 && ra_info[ui->ui_unit].ratype != 0);
 }
 
@@ -326,6 +327,7 @@ udattach(ui)
  * Open a UDA.  Initialize the device and
  * set the unit online.
  */
+/* ARGSUSED */
 udopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -339,9 +341,6 @@ udopen(dev, flag)
 	int s,i;
 	extern quota;
 	
-#ifdef lint
-	flag = flag; i = i;
-#endif
 	unit = udunit(dev);
 	if (unit >= nNRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
@@ -384,6 +383,9 @@ udopen(dev, flag)
 #endif	
 		*((long *) mp->mscp_dscptr ) |= UDA_OWN | UDA_INT ;
 		i = udaddr->udaip;
+#ifdef	lint
+		i = i;
+#endif
 		timeout(wakeup,(caddr_t) mp->mscp_cmdref,10 * hz);
 			/* make sure we wake up */
 		sleep((caddr_t) mp->mscp_cmdref,PSWP+1); /*wakeup in udrsp() */
@@ -913,7 +915,7 @@ udrsp(um, ud, sc, i)
 				,F_to_C(mp,1),F_to_C(mp,0)
 				,mp->mscp_mediaid & 0x7f);
 #endif				
-			switch(mp->mscp_mediaid & 0x7f){
+			switch((int)(mp->mscp_mediaid & 0x7f)){
 			case    25:
 				ra_info[ui->ui_unit].ra_sizes = ra25_sizes;
 				break;
@@ -1354,10 +1356,6 @@ udcmd(op, udp, udaddr)
 {
 	int i;
 
-#ifdef	lint
-	i = i;
-#endif
-
 	udp->uda_Cmd.mscp_opcode = op;
 	udp->uda_Rsp.mscp_header.uda_msglen = mscp_msglen;
 	udp->uda_Cmd.mscp_header.uda_msglen = mscp_msglen;
@@ -1366,6 +1364,9 @@ udcmd(op, udp, udaddr)
 	if (udaddr->udasa&UDA_ERR)
 		printf("Udaerror udasa (%x)\n", udaddr->udasa&0xffff);
 	i = udaddr->udaip;
+#ifdef	lint
+	i = i;
+#endif
 	for (;;) {
 		if (udp->uda_ca.ca_cmdint)
 			udp->uda_ca.ca_cmdint = 0;

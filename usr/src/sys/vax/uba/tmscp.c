@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	5.1 (Berkeley) %G% */
+/*	@(#)tmscp.c	5.2 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -281,7 +281,6 @@ tmscpprobe(reg, ctlr)
 	register struct tmscp_softc *sc = &tmscp_softc[ctlr];
 				/* ptr to software controller structure */
 	struct tmscpdevice *tmscpaddr; /* ptr to tmscpdevice struct (IP & SA) */
-	struct uba_ctlr *um;	/* UNUSED ptr to uba_ctlr (controller) struct */
 	int count;		/* for probe delay time out */
 
 #	ifdef lint
@@ -343,7 +342,7 @@ tmscpslave (ui, reg)
 					/* the tmscp polling */
 
 #	ifdef lint
-	ui = ui; reg = reg; i = i;
+	reg = reg;
 #	endif
 	tmscpaddr = (struct tmscpdevice *)um->um_addr;
 	/* 
@@ -394,6 +393,9 @@ tmscpslave (ui, reg)
 	tmscpip[ui->ui_ctlr][ui->ui_slave] = ui;
 	*((long *) mp->mscp_dscptr ) |= TMSCP_OWN | TMSCP_INT;/* maybe we should poll*/
 	i = tmscpaddr->tmscpip;
+#ifdef lint
+	i = i;
+#endif
 	while(!tms->tms_status)
 		;				/* Wait for some status */
 #	ifdef DEBUG
@@ -416,13 +418,7 @@ tmscpattach (ui)
 	register struct uba_device *ui;		/* ptr to unibus dev struct */
 {
 	register struct uba_ctlr *um = ui->ui_mi; /* ptr to controller struct */
-	struct tmscpdevice *tmscpaddr = (struct tmscpdevice *) um->um_addr; /* IP & SA */
-	struct mscp *mp;
-	int i;		/* Assign to here to start the tmscp-dev polling */
 
-#	ifdef lint
-	i = i;
-#	endif lint
 	ui->ui_flags = 0;
 	tmscpip[ui->ui_ctlr][ui->ui_slave] = ui;
 #	ifdef DEBUG
@@ -683,6 +679,7 @@ tmscpintr (d)
  * in the run state, call init to initialize the tmscp controller first.
  */
 
+/* ARGSUSED */
 tmscpopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -697,9 +694,6 @@ tmscpopen(dev, flag)
 	int s,i;
 	extern quota;
 	
-#	ifdef lint
-	flag = flag; i = i;
-#	endif
 	unit = TMSUNIT(dev);
 #	ifdef DEBUG
 	printd("tmscpopen unit %d\n",unit);
@@ -761,6 +755,9 @@ tmscpopen(dev, flag)
 #		endif	
 		*((long *) mp->mscp_dscptr ) |= TMSCP_OWN | TMSCP_INT;
 		i = tmscpaddr->tmscpip;
+#ifdef lint
+		i = i;
+#endif
 		/* 
 		 * To make sure we wake up, timeout in 240 seconds.
 		 * Wakeup in tmscprsp routine.
@@ -808,7 +805,6 @@ tmscpclose(dev, flag)
 	register dev_t dev;
 	register flag;
 {
-	register struct tmscp_softc *sc = &tmscp_softc[TMSCPCTLR(dev)];
 	register struct tms_info *tms;
 	register struct uba_device *ui;
 
@@ -862,8 +858,6 @@ tmscpcommand (dev, com, count)
 	register int s;
 	int unit = TMSUNIT(dev);
 
-	if (unit >= NTMS)
-		return (ENXIO);
 	ui = tmsdinfo[unit];
 	bp = &ctmscpbuf[ui->ui_ctlr];
 
@@ -1154,7 +1148,7 @@ tmscpstart(um)
 		 * tmkcnt are only modified here if they need to be set to
 		 * a non-zero value.
 		 */
-		switch (bp->b_resid) {
+		switch ((int)bp->b_resid) {
 
 		case TMS_WRITM:
 			mp->mscp_opcode = M_OP_WRITM;
@@ -1335,7 +1329,7 @@ tmscprsp(um, tm, sc, i)
 	register struct mscp *mp;
 	register struct tms_info *tms;
 	struct uba_device *ui;
-	struct buf *dp, *bp, nullbp;
+	struct buf *dp, *bp;
 	int st;
 
 	mp = &tm->tmscp_rsp[i];
@@ -1430,14 +1424,14 @@ tmscprsp(um, tm, sc, i)
 			}	/* end if st == M_ST_SUCC */
 		else 
 			{
-			if(dp->b_actf)
+			if (bp = dp->b_actf)
 				tprintf(tms->tms_ttyp,
 				    "tms%d: hard error bn%d: OFFLINE\n",
 				    minor(bp->b_dev)&03, bp->b_blkno);
 			else
 				tprintf(tms->tms_ttyp,
 				    "tms%d: hard error: OFFLINE\n",
-				    minor(bp->b_dev)&03);
+				    ui->ui_unit);
 			while (bp = dp->b_actf)
 				{
 				dp->b_actf = bp->av_forw;
@@ -1865,9 +1859,6 @@ tmscpcmd(op, tmscpp, tmscpaddr)
 {
 	int i;
 
-#	ifdef lint
-	i = i;
-#	endif
 
 	tmscpp->tmscp_Cmd.mscp_opcode = op;
 	tmscpp->tmscp_Rsp.mscp_header.tmscp_msglen = mscp_msglen;
@@ -1877,6 +1868,9 @@ tmscpcmd(op, tmscpp, tmscpaddr)
 	if (tmscpaddr->tmscpsa&TMSCP_ERR)
 		printf("tmscp fatal error (0%o)\n", tmscpaddr->tmscpsa&0xffff);
 	i = tmscpaddr->tmscpip;
+#ifdef lint
+	i = i;
+#endif
 	for (;;)
 		{
 		if (tmscpp->tmscp_ca.ca_cmdint)
@@ -1932,20 +1926,20 @@ tmscpwrite(dev, uio)
  * Catch ioctl commands, and call the "command" routine to do them.
  */
 
+/* ARGSUSED */
 tmscpioctl(dev, cmd, data, flag)
 	dev_t dev;
 	int cmd;
 	caddr_t data;
 	int flag;
 {
-	register struct tmscp_softc *sc = &tmscp_softc[TMSCPCTLR(dev)];
 	register struct buf *bp = &ctmscpbuf[TMSCPCTLR(dev)];
 	register callcount;	/* number of times to call cmd routine */
 	register struct uba_device *ui;
 	register struct tms_info *tms;
 	int fcount;		/* number of files (or records) to space */
-	struct mtop *mtop;	/* mag tape cmd op to perform */
-	struct mtget *mtget;	/* mag tape struct to get info in */
+	register struct mtop *mtop;	/* mag tape cmd op to perform */
+	register struct mtget *mtget;	/* mag tape struct to get info in */
 
 	/* we depend of the values and order of the TMS ioctl codes here */
 	static tmsops[] =
