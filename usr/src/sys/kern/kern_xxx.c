@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_xxx.c	7.17 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -12,6 +12,10 @@
 #include "kernel.h"
 #include "proc.h"
 #include "reboot.h"
+
+char	hostname[MAXHOSTNAMELEN];
+int	hostnamelen;
+long	hostid;
 
 /* ARGSUSED */
 gethostid(p, uap, retval)
