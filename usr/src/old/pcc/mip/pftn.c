@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.10 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.11 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1892,7 +1892,7 @@ clearst( lev ) register int lev; {
 			if( q == p || q->stype == TNULL )break;
 			if( (r = relook(q)) != q ) {
 				*r = *q;
-				q->stype = NULL;
+				q->stype = TNULL;
 				}
 			}
 		p = p->snext;
