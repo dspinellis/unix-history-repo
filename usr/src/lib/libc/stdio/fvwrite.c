@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fvwrite.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fvwrite.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -41,7 +41,7 @@ __sfvwrite(fp, uio)
 		return (EOF);
 
 #define	MIN(a, b) ((a) < (b) ? (a) : (b))
-#define	COPY(n)	  (void) memcpy((void *)fp->_p, (void *)p, (size_t)(n));
+#define	COPY(n)	  (void) bcopy((void *)p, (void *)fp->_p, (size_t)(n));
 
 	iov = uio->uio_iov;
 	p = iov->iov_base;

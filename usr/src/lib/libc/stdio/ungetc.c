@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ungetc.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ungetc.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -48,7 +48,7 @@ __submore(fp)
 	p = realloc(fp->_ub._base, i << 1);
 	if (p == NULL)
 		return (EOF);
-	(void) memcpy((void *)(p + i), (void *)p, (size_t)i);
+	(void) bcopy((void *)p, (void *)(p + i), (size_t)i);
 	fp->_p = p + i;
 	fp->_ub._base = p;
 	fp->_ub._size = i << 1;
