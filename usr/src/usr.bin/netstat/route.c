@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -51,6 +51,7 @@ struct bits {
 	{ RTF_XRESOLVE,	'X' },
 	{ RTF_LLINFO,	'L' },
 	{ RTF_REJECT,	'R' },
+	{ RTF_STATIC,	'S' },
 	{ 0 }
 };
 
@@ -73,6 +74,7 @@ routepr(rtree)
 	off_t rtree;
 {
 	struct radix_node_head *rnh, head;
+	int i;
 
 	printf("Routing tables\n");
 
@@ -80,19 +82,22 @@ routepr(rtree)
 		ntreestuff();
 	else {
 		if (rtree == 0) {
-			printf("radix_node_head: symbol not in namelist\n");
+			printf("rt_tables: symbol not in namelist\n");
 			return;
 		}
 
-		for (kget(rtree, rnh); rnh; rnh = head.rnh_next) {
+		kget(rtree, rt_tables);
+		for (i = 0; i <= AF_MAX; i++) {
+			if ((rnh = rt_tables[i]) == 0)
+				continue;
 			kget(rnh, head);
-			if (head.rnh_af == AF_UNSPEC) {
-				if (Aflag) { 
+			if (i == AF_UNSPEC) {
+				if (Aflag && af == 0) { 
 					printf("Netmasks:\n");
 					p_tree(head.rnh_treetop);
 				}
-			} else if (af == AF_UNSPEC || af == head.rnh_af) {
-				pr_family(head.rnh_af);
+			} else if (af == AF_UNSPEC || af == i) {
+				pr_family(i);
 				do_rtent = 1;
 				pr_rthdr();
 				p_tree(head.rnh_treetop);
@@ -118,6 +123,9 @@ pr_family(af)
 		break;
 	case AF_ISO:
 		afname = "ISO";
+		break;
+	case AF_CCITT:
+		afname = "X.25";
 		break;
 	default:
 		afname = NULL;
