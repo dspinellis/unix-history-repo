@@ -11,13 +11,17 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 # Lint flags
 LINTFLAGS	= -hbxaz
 
-ALLC = dohits.c ectype.c mkastosc.c mkdctype.c \
-		mkastods.c mkdstoas.c mkhits.c prt3270.c
-
 ALLH = dohits.h ectype.h
+
+ALLC = dohits.c ectype.c mkastods.c mkastosc.c mkdctype.c \
+		mkdstoas.c mkhits.c prt3270.c
 
 ALLO =	prt3270.o mkdctype.o ectype.o \
 		mkastods.o mkdstoas.o mkhits.o dohits.o mkastosc.o
+
+ALLPRINT =	${ALLH} ${ALLC}
+
+ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
 ALLEXE	=	mkastods mkastosc mkdctype mkdstoas mkhits prt3270
 
@@ -69,8 +73,12 @@ mkdctype:	mkdctype.o ../ctlr/ebc_disp.o ectype.o
 ../general/globals.o:
 	(cd ../general; make globals.o)
 
+sourcelist:	${ALLSOURCE}
+	@for i in ${ALLSOURCE}; \
+		do (echo ${DIRPATH}/$$i); done
+
 print:
-	${PRINT} ${ALLH} ${ALLC}
+	${PRINT} ${ALLPRINT}
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}

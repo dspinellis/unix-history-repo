@@ -13,11 +13,17 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 # Lint flags
 LINTFLAGS	= -hbxaz
 
-ALLC = termout.c system.c
+ALLH =	spint.h termout.ext video.h
+
+ALLC = spintc.c system.c termout.c
+
+ALLASM =	spintasm.asm
 
 ALLO = termout.o system.o
 
-ALLH =
+ALLPRINT =	${ALLH} ${ALLASM} ${ALLC}
+
+ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
 screenlib:	$(ALLO)
 	ar cr screenlib $(ALLO)
@@ -26,8 +32,12 @@ screenlib:	$(ALLO)
 clean:
 	rm -f $(ALLO) errs makefile.bak screenlib
 
+sourcelist:	${ALLSOURCE}
+	@for i in ${ALLSOURCE}; \
+		do (echo ${DIRPATH}/$$i); done
+
 print:
-	${PRINT} ${ALLC} ${ALLH}
+	${PRINT} ${ALLPRINT}
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
