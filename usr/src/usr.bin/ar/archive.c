@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)archive.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)archive.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -197,17 +197,19 @@ put_arobj(cfp, sb)
 				    name, OLDARMAXNAME, name);
 				(void)fflush(stderr);
 			}
-			(void)sprintf(hb, HDR3, name, sb->st_mtime, sb->st_uid,
-			    sb->st_gid, sb->st_mode, sb->st_size, ARFMAG);
+			(void)sprintf(hb, HDR3, name, sb->st_mtimespec.ts_sec,
+			    sb->st_uid, sb->st_gid, sb->st_mode, sb->st_size,
+			    ARFMAG);
 			lname = 0;
 		} else if (lname > sizeof(hdr->ar_name) || index(name, ' '))
-			(void)sprintf(hb, HDR1, AR_EFMT1, lname, sb->st_mtime,
-			    sb->st_uid, sb->st_gid, sb->st_mode,
-			    sb->st_size + lname, ARFMAG);
+			(void)sprintf(hb, HDR1, AR_EFMT1, lname,
+			    sb->st_mtimespec.ts_sec, sb->st_uid, sb->st_gid,
+			    sb->st_mode, sb->st_size + lname, ARFMAG);
 		else {
 			lname = 0;
-			(void)sprintf(hb, HDR2, name, sb->st_mtime, sb->st_uid,
-			    sb->st_gid, sb->st_mode, sb->st_size, ARFMAG);
+			(void)sprintf(hb, HDR2, name, sb->st_mtimespec.ts_sec,
+			    sb->st_uid, sb->st_gid, sb->st_mode, sb->st_size,
+			    ARFMAG);
 		}
 		size = sb->st_size;
 	} else {
