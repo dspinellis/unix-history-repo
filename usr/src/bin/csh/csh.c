@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.11 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.12 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -256,7 +256,6 @@ main(c, av)
 	 */
 	shpgrp = getpgrp(0);
 	opgrp = tpgrp = -1;
-	oldisc = -1;
 	if (setintr) {
 		**av = '-';
 		if (!quitit)		/* Wary! */
@@ -292,17 +291,6 @@ retry:
 					(void) signal(SIGTTIN, old);
 					goto retry;
 				}
-				if (ioctl(f, TIOCGETD, (char *)&oldisc) != 0) 
-					goto notty;
-				if (oldisc != NTTYDISC) {
-#ifdef DEBUG
-					printf("Switching to new tty driver...\n");
-#endif DEBUG
-					ldisc = NTTYDISC;
-					(void) ioctl(f, TIOCSETD,
-						(char *)&ldisc);
-				} else
-					oldisc = -1;
 				opgrp = shpgrp;
 				shpgrp = getpid();
 				tpgrp = shpgrp;
@@ -387,12 +375,6 @@ untty()
 	if (tpgrp > 0) {
 		(void) setpgrp(0, opgrp);
 		(void) ioctl(FSHTTY, TIOCSPGRP, (char *)&opgrp);
-		if (oldisc != -1 && oldisc != NTTYDISC) {
-#ifdef DEBUG
-			printf("\nReverting to old tty driver...\n");
-#endif DEBUG
-			(void) ioctl(FSHTTY, TIOCSETD, (char *)&oldisc);
-		}
 	}
 }
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)csh.h	5.3 (Berkeley) %G%
+ *	@(#)csh.h	5.4 (Berkeley) %G%
  */
 
 #include <sys/time.h>
@@ -78,7 +78,6 @@ int	shpgrp;			/* Pgrp of shell */
 int	tpgrp;			/* Terminal process group */
 /* If tpgrp is -1, leave tty alone! */
 int	opgrp;			/* Initial pgrp and tty pgrp */
-int	oldisc;			/* Initial line discipline or -1 */
 
 /*
  * These are declared here because they want to be
