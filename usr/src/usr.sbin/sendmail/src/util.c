@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "conf.h"
 
-static char	SccsId[] = "@(#)util.c	3.10	%G%";
+static char	SccsId[] = "@(#)util.c	3.11	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -411,6 +411,40 @@ safefile(fn, uid, mode)
 	    (stbuf.st_mode & mode) == mode)
 		return (TRUE);
 	return (FALSE);
+}
+/*
+**  FIXCRLF -- fix <CR><LF> in line.
+**
+**	Looks for the <CR><LF> combination and turns it into the
+**	UNIX canonical <NL> character.  It only takes one line,
+**	i.e., it is assumed that the first <NL> found is the end
+**	of the line.
+**
+**	Parameters:
+**		line -- the line to fix.
+**		stripnl -- if true, strip the newline also.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		line is changed in place.
+*/
+
+fixcrlf(line, stripnl)
+	char *line;
+	bool stripnl;
+{
+	register char *p;
+
+	p = index(line, '\n');
+	if (p == NULL)
+		return;
+	if (*p == '\r')
+		p--;
+	if (!stripnl)
+		*p++ = '\n';
+	*p = '\0';
 }
 /*
 **  SYSLOG -- fake entry to fool lint

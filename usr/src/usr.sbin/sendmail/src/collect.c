@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.24	%G%";
+static char	SccsId[] = "@(#)collect.c	3.25	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -76,11 +76,13 @@ maketemp(from)
 
 	if (fgets(buf, sizeof buf, stdin) == NULL)
 		return;
+	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
 	if (!SaveFrom && strncmp(buf, "From ", 5) == 0)
 	{
 		eatfrom(buf);
 		(void) fgets(buf, sizeof buf, stdin);
+		fixcrlf(buf, FALSE);
 	}
 # endif NOTUNIX
 
@@ -97,6 +99,8 @@ maketemp(from)
 		register char c;
 		extern bool isheader();
 
+		fixcrlf(buf, FALSE);
+
 		/* see if the header is over */
 		if (!isheader(buf))
 			break;
@@ -108,6 +112,7 @@ maketemp(from)
 			*p++ = c;
 			if (fgets(p, sizeof buf - (p - buf), stdin) == NULL)
 				break;
+			fixcrlf(p, FALSE);
 		}
 		if (!feof(stdin))
 			(void) ungetc(c, stdin);
@@ -129,7 +134,10 @@ maketemp(from)
 
 	/* throw away a blank line */
 	if (buf[0] == '\n')
+	{
 		(void) fgets(buf, sizeof buf, stdin);
+		fixcrlf(buf, FALSE);
+	}
 
 	/*
 	**  Collect the body of the message.
@@ -139,6 +147,8 @@ maketemp(from)
 	{
 		register int i;
 		register char *bp = buf;
+
+		fixcrlf(buf, FALSE);
 
 		/* check for end-of-message */
 		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
@@ -173,7 +183,7 @@ maketemp(from)
 			{
 				(void) freopen(InFileName, "w", tf);
 				fputs("\nMAIL DELETED BECAUSE OF LACK OF DISK SPACE\n\n", tf);
-				syserr("collect: Out of disk space for temp file");
+				usrerr("452 Out of disk space for temp file");
 			}
 			else
 				syserr("collect: Cannot write %s", InFileName);
