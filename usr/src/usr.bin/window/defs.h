@@ -1,18 +1,13 @@
 /*
- *	@(#)defs.h	3.12 84/04/05	
+ *	@(#)defs.h	3.13 84/04/05	
  */
 
 #include "ww.h"
-#ifndef O_4_1A
 #include <sys/time.h>
-#include <sys/resource.h>
-#endif
 
 #define NWINDOW 9
 
-#ifndef O_4_1A
 struct timeval starttime;
-#endif
 
 struct ww *window[NWINDOW];	/* the windows */
 struct ww *selwin;		/* the selected window */

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.23 84/04/05";
+static	char *sccsid = "@(#)cmd.c	3.24 84/04/05";
 #endif
 
 #include "defs.h"
@@ -77,9 +77,6 @@ docmd()
 					movewin(w, w->ww_altpos.r,
 						w->ww_altpos.c);
 				break;
-			case 'S':
-				c_show();
-				break;
 			case 'L':
 				c_list();
 				break;
@@ -143,18 +140,6 @@ docmd()
 			case 'q':
 				c_quit();
 				break;
-			/* undocumented commands */
-			case 's':
-				c_stat();
-				break;
-#ifndef O_4_1A
-			case 't':
-				c_time(RUSAGE_SELF);
-				break;
-			case 'T':
-				c_time(RUSAGE_CHILDREN);
-				break;
-#endif
 			/* debugging stuff */
 			case '&':
 				if (debug) {
