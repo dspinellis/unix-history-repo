@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -156,7 +156,7 @@ char	*psdb	= "/etc/psdatabase";
 char	*psdb	= PSFILE;
 #endif
 
-int	chkpid;
+int	chkpid = -1;
 int	aflg, cflg, eflg, gflg, kflg, lflg, nflg, sflg,
 	uflg, vflg, xflg, Uflg;
 int	nchans;				/* total # of wait channels */
@@ -363,7 +363,7 @@ main(argc, argv)
 				continue;
 			if (uid != mproc->p_uid && aflg==0)
 				continue;
-			if (chkpid != 0 && chkpid != mproc->p_pid)
+			if (chkpid != -1 && chkpid != mproc->p_pid)
 				continue;
 			if (vflg && gflg == 0 && xflg == 0) {
 				if (mproc->p_stat == SZOMB ||
