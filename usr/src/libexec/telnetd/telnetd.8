@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)telnetd.8	6.4 (Berkeley) %G%
+.\"	@(#)telnetd.8	6.5 (Berkeley) %G%
 .\"
 .TH TELNETD 8 ""
 .UC 5
@@ -64,8 +64,16 @@ a willingness to do
 of characters, to
 .I suppress go
 .IR ahead ,
+to do
+.I remote flow
+.IR control ,
 and to receive
-.I terminal type information
+.I terminal type
+.IR information ,
+.I terminal speed
+.IR information ,
+and
+.I window size information
 from the remote client.
 If the remote client is willing, the remote terminal type is
 propagated in the environment of the created login process.
@@ -90,6 +98,12 @@ is willing to have the remote client
 .IR binary ,
 .I terminal
 .IR type ,
+.I terminal
+.IR speed ,
+.I window
+.IR size ,
+.I toggle flow
+.IR control ,
 and
 .I suppress go
 .IR ahead .
@@ -99,14 +113,6 @@ telnet(1)
 Some
 .B TELNET
 commands are only partially implemented.
-.PP
-The
-.B TELNET
-protocol allows for
-the exchange of the number of lines and columns on the user's terminal,
-but
-.I telnetd
-doesn't make use of them.
 .PP
 Because of bugs in the original 4.2 BSD
 .IR telnet (1),
@@ -121,14 +127,6 @@ has no common interpretation except between similar operating systems
 .PP
 The terminal type name received from the remote client is converted to
 lower case.
-.PP
-The
-.I packet
-interface to the pseudo-terminal
-(see
-.IR pty (4))
-should be used for more
-intelligent flushing of input and output queues.
 .PP
 .I Telnetd
 never sends
