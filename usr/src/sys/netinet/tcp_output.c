@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	7.22 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -222,10 +222,13 @@ send:
 	optlen = 0;
 	hdrlen = sizeof (struct tcpiphdr);
 	if (flags & TH_SYN && (tp->t_flags & TF_NOOPT) == 0) {
+		u_short mss;
+
 		opt = tcp_initopt;
 		optlen = sizeof (tcp_initopt);
 		hdrlen += sizeof (tcp_initopt);
-		*(u_short *)(opt + 2) = htons((u_short) tcp_mss(tp, 0));
+		mss = htons((u_short) tcp_mss(tp, 0));
+		bcopy((caddr_t)&mss, (caddr_t)(opt + 2), sizeof(mss));
 #ifdef DIAGNOSTIC
 	 	if (max_linkhdr + hdrlen > MHLEN)
 			panic("tcphdr too big");
