@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -42,7 +42,6 @@ static char sccsid[] = "@(#)syslogd.c	5.12 (Berkeley) %G%";
 #define DEFSPRI		(LOG_KERN|LOG_CRIT)
 #define MARKCOUNT	10		/* ratio of minor to major marks */
 
-#include <syslog.h>
 #include <errno.h>
 #include <stdio.h>
 #include <utmp.h>
@@ -51,6 +50,7 @@ static char sccsid[] = "@(#)syslogd.c	5.12 (Berkeley) %G%";
 #include <sysexits.h>
 #include <strings.h>
 
+#include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
@@ -81,6 +81,7 @@ char	ctty[] = "/dev/console";
 #define MAXFNAME	200	/* max file pathname length */
 
 #define NOPRI		0x10	/* the "no priority" priority */
+#define	LOG_MARK	(LOG_NFACILITIES << 3)	/* mark "facility" */
 
 /*
  * Flags to logmsg().
@@ -101,16 +102,15 @@ struct filed {
 	short	f_type;			/* entry type, see below */
 	short	f_file;			/* file descriptor */
 	time_t	f_time;			/* time this was last written */
-	u_char	f_pmask[LOG_NFACILITIES];	/* priority mask */
+	u_char	f_pmask[LOG_NFACILITIES+1];	/* priority mask */
 	union {
 		char	f_uname[MAXUNAMES][UNAMESZ+1];
-		struct
-		{
+		struct {
 			char	f_hname[MAXHOSTNAMELEN+1];
 			struct sockaddr_in	f_addr;
-		}	f_forw;		/* forwarding address */
+		} f_forw;		/* forwarding address */
 		char	f_fname[MAXFNAME];
-	}	f_un;
+	} f_un;
 };
 
 /* values for f_type */
@@ -497,6 +497,8 @@ logmsg(pri, msg, from, flags)
 
 	/* extract facility and priority level */
 	fac = (pri & LOG_FACMASK) >> 3;
+	if (flags & MARK)
+		fac = LOG_NFACILITIES;
 	prilev = pri & LOG_PRIMASK;
 
 	/* log the message to the particular outputs */
@@ -724,7 +726,7 @@ domark()
 	int pri;
 
 	if ((++MarkSeq % MARKCOUNT) == 0)
-		logmsg(LOG_SYSLOG|LOG_INFO, "-- MARK --", LocalHostName, ADDDATE|MARK);
+		logmsg(LOG_INFO, "-- MARK --", LocalHostName, ADDDATE|MARK);
 	else
 		flushmsg();
 	alarm(MarkInterval * 60 / MARKCOUNT);
@@ -832,7 +834,7 @@ init()
 
 	if (Debug) {
 		for (f = Files; f < &Files[NLOGS]; f++) {
-			for (i = 0; i < LOG_NFACILITIES; i++)
+			for (i = 0; i <= LOG_NFACILITIES; i++)
 				if (f->f_pmask[i] == NOPRI)
 					printf("X ");
 				else
@@ -894,7 +896,7 @@ struct code	FacNames[] = {
 	"daemon",	LOG_DAEMON,
 	"auth",		LOG_AUTH,
 	"security",	LOG_AUTH,
-	"mark",		LOG_SYSLOG,
+	"mark",		LOG_MARK,
 	"syslog",	LOG_SYSLOG,
 	"lpr",		LOG_LPR,
 	"local0",	LOG_LOCAL0,
@@ -924,7 +926,7 @@ cfline(line, f)
 
 	/* clear out file entry */
 	bzero((char *) f, sizeof *f);
-	for (i = 0; i < LOG_NFACILITIES; i++)
+	for (i = 0; i <= LOG_NFACILITIES; i++)
 		f->f_pmask[i] = NOPRI;
 
 	/* scan through the list of selectors */
