@@ -1,9 +1,15 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982,1986,1988 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)if_imphost.c	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)if_imphost.c	7.3 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -29,10 +35,6 @@
 #include "if_imp.h"
 #include "if_imphost.h"
 
-/*
- * Head of host table hash chains.
- */
-struct mbuf *hosts;
 extern struct imp_softc imp_softc[];
 
 /*
@@ -47,10 +49,11 @@ hostlookup(imp, host, unit)
 	register struct mbuf *m;
 	register int hash = HOSTHASH(imp, host);
 
-	for (m = hosts; m; m = m->m_next) {
+	for (m = imp_softc[unit].imp_hosts; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
-	        if (hp->h_imp == imp && hp->h_host == host &&
-		    hp->h_unit == unit) {
+	        if (hp->h_imp == imp && hp->h_host == host) {
+			if ((hp->h_flags & HF_INUSE) == 0 && hp->h_timer == 0)
+				mtod(dtom(hp), struct hmbuf *)->hm_count++;
 			hp->h_flags |= HF_INUSE;
 			return (hp);
 		}
@@ -71,13 +74,15 @@ hostenter(imp, host, unit)
 	register struct host *hp, *hp0 = 0;
 	register int hash = HOSTHASH(imp, host);
 
-	mprev = &hosts;
+	mprev = &imp_softc[unit].imp_hosts;
 	while (m = *mprev) {
 		mprev = &m->m_next;
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
-	        if (hp->h_imp == imp && hp->h_host == host &&
-		    hp->h_unit == unit)
+	        if (hp->h_imp == imp && hp->h_host == host) {
+			if ((hp->h_flags & HF_INUSE) == 0 && hp->h_timer == 0)
+				mtod(dtom(hp), struct hmbuf *)->hm_count++;
 			goto foundhost;
+		}
 		if ((hp->h_flags & HF_INUSE) == 0) {
 			if (hp0 == 0)
 				hp0 = hp;
@@ -101,7 +106,6 @@ hostenter(imp, host, unit)
 	hp = hp0;
 	hp->h_imp = imp;
 	hp->h_host = host;
-	hp->h_unit = unit;
 	hp->h_timer = 0;
 	hp->h_flags = 0;
 
@@ -120,17 +124,16 @@ hostreset(unit)
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
 
-	for (m = hosts; m; m = m->m_next) {
+	for (m = imp_softc[unit].imp_hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
 		while (hm->hm_count > 0 && hp < lp) {
-			if (hp->h_unit == unit)
-				hostrelease(hp);
+			hostrelease(hp);
 			hp++;
 		}
 	}
-	hostcompress();
+	hostcompress(unit);
 }
 
 /*
@@ -140,7 +143,21 @@ hostreset(unit)
 hostrelease(hp)
 	register struct host *hp;
 {
-	register struct mbuf *m, **mprev, *mh = dtom(hp);
+	struct mbuf *mh = dtom(hp);
+
+	hostflush(hp);
+	hp->h_flags = 0;
+	hp->h_rfnm = 0;
+	--mtod(mh, struct hmbuf *)->hm_count;
+}
+
+/*
+ * Flush the message queue for a host.
+ */
+hostflush(hp)
+	register struct host *hp;
+{
+	register struct mbuf *m, **mprev;
 
 	/*
 	 * Discard any packets left on the waiting q
@@ -154,17 +171,16 @@ hostrelease(hp)
 			m = n;
 		} while (m != hp->h_q);
 		hp->h_q = 0;
+		hp->h_qcnt = 0;
 	}
-	hp->h_flags = 0;
-	hp->h_rfnm = 0;
-	--mtod(mh, struct hmbuf *)->hm_count;
 }
 
-hostcompress()
+hostcompress(unit)
+	int unit;
 {
 	register struct mbuf *m, **mprev;
 
-	mprev = &hosts;
+	mprev = &imp_softc[unit].imp_hosts;
 	while (m = *mprev) {
 		if (mtod(m, struct hmbuf *)->hm_count == 0)
 			*mprev = m_free(m);
@@ -185,33 +201,32 @@ hostslowtimo()
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
-	int s = splimp(), any = 0;
+	int s = splimp(), unit, any;
 
-	for (m = hosts; m; m = m->m_next) {
+	for (unit = 0; unit < NIMP; unit++) {
+	    any = 0;
+	    for (m = imp_softc[unit].imp_hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
 		for (; hm->hm_count > 0 && hp < lp; hp++) {
 		    if (hp->h_timer && --hp->h_timer == 0) {
 			if (hp->h_rfnm) {
-			    log(LOG_WARNING,
-			        "imp%d: host %d/imp %d, lost %d rfnms\n",
-			        hp->h_unit, hp->h_host, ntohs(hp->h_imp),
-			        hp->h_rfnm);
-			    imp_softc[hp->h_unit].imp_lostrfnm += hp->h_rfnm;
-			    hp->h_rfnm = 0;
-			    if (hp->h_q) {
-				imprestarthost(hp);
-				continue;
-			    }
+				log(LOG_WARNING,
+				    "imp%d: host %d/imp %d, lost rfnm\n",
+				    unit, hp->h_host, ntohs(hp->h_imp));
+				imprestarthost(unit, hp);
 			}
-			any = 1;
-			hostrelease(hp);
+			if (hp->h_rfnm == 0 && hp->h_qcnt == 0) {
+				any = 1;
+				hostrelease(hp);
+			}
 		    }
 		}
+	    }
+	    if (any)
+		hostcompress(unit);
 	}
-	if (any)
-		hostcompress();
 	splx(s);
 }
 #endif

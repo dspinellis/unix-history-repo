@@ -1,9 +1,15 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982,1986,1988 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)if_imp.h	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)if_imp.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +41,7 @@ struct imp_leader {
 	u_short	il_length;	/* message length */
 };
 
+#define	IMP_MAXHOSTMSG	8	/* max messages in flight to a host */
 #define	IMP_NOOPCNT	3	/* # of noops to send imp on reset */
 /* insure things are even... */
 #define	IMPMTU		((8159 / NBBY) & ~01)
@@ -142,7 +149,9 @@ char *impmessage[] = {
 #define	IMPRETRY_BUFFER		0	/* IMP buffer wasn't available */
 #define	IMPRETRY_BLOCK		1	/* connection block unavailable */
 
-#define	RFNMTIMER	(120*PR_SLOWHZ)	/* time to wait for RFNM for msg. */
+#define	RFNMTIMER	(120*PR_SLOWHZ)	  /* time to wait for RFNM for msg. */
+#define	IMP_OTIMER	(10*IFNET_SLOWHZ) /* max output time unless blocked */
+
 /*
  * Data structure shared between IMP protocol module and hardware
  * interface driver.  Used to allow layering of IMP routines on top
@@ -153,8 +162,8 @@ struct impcb {
 	char	*ic_hwname;		/* H/W type name */
 	char	ic_oactive;		/* output in progress */
 	int	(*ic_init)();		/* hardware init routine */
-	int	(*ic_start)();		/* hardware start output routine */
-	int	(*ic_stop)();		/* hardware "drop ready" routine */
+	int	(*ic_output)();		/* hardware output routine */
+	int	(*ic_down)();		/* hardware "drop ready" routine */
 };
 
 /*
@@ -175,11 +184,17 @@ struct imp_softc {
 	struct	impcb imp_cb;		/* hooks to hardware module */
 	int	imp_state;		/* current state of IMP */
 	int	imp_dropcnt;		/* used during initialization */
+	struct	mbuf *imp_hosts;	/* Head of host table hash chains. */
+	struct	mbuf *imp_hostq;	/* current round-robin-output mark */
+	u_int	imp_hostent;		/* current round-robin-output mark */
+	int	imp_msgready;		/* number of messages ready to send */
+	u_long	imp_block;		/* times imp blocked output */
 	u_long	imp_lostrfnm;		/* rfnm's timed out */
 	u_long	imp_badrfnm;		/* rfnm/incompl after timeout/bogus */
 	u_long	imp_incomplete;		/* incomplete's received */
 	u_long	imp_garbage;		/* bad messages received */
 };
+
 struct	imp_softc *impattach();
 
 /*

@@ -1,9 +1,15 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982,1986,1988 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)if_imphost.h	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)if_imphost.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -16,11 +22,10 @@
  */
 struct host {
 	struct	mbuf *h_q;		/* holding queue */
+	u_short	h_timer;		/* used to stay off deletion */
 	u_short	h_imp;			/* host's imp number */
 	u_char	h_host;			/* host's number on imp */
-	u_char	h_unit;			/* imp unit number */
 	u_char	h_qcnt;          	/* size of holding q */
-	u_char	h_timer;		/* used to stay off deletion */
 	u_char	h_rfnm;			/* # outstanding rfnm's */
 	u_char	h_flags;		/* see below */
 };
@@ -31,20 +36,23 @@ struct host {
  * and also to reflect IMP status back to sites which aren't
  * directly connected to the IMP.  When structures are marked
  * free, a timer is started; when the timer expires the structure
- * is scavenged.
+ * is deallocated.  A structure may be reused before the timer expires.
+ * A structure holds a reference on the containing mbuf when it is marked
+ * HF_INUSE or its timer is running.
  */
 #define	HF_INUSE	0x1
 #define	HF_DEAD		(1<<IMPTYPE_HOSTDEAD)
 #define	HF_UNREACH	(1<<IMPTYPE_HOSTUNREACH)
+
+#define	HOSTTIMER	128		/* keep structure around awhile */
 
 /*
  * Mark a host structure free
  */
 #define	hostfree(hp) { \
 	(hp)->h_flags &= ~HF_INUSE; \
+	(hp)->h_timer = HOSTTIMER; \
 }
-
-#define	HOSTTIMER	128		/* keep structure around awhile */
 
 /*
  * Host structures, as seen inside an mbuf.
@@ -52,7 +60,7 @@ struct host {
  * select an index into the first mbuf.  Collisions
  * are then resolved by searching successive
  * mbuf's at the same index.  Reclamation is done
- * automatically at the time a structure is free'd.
+ * automatically at the time a structure is freed.
  */
 #define	HPMBUF	((MLEN - sizeof(int)) / sizeof(struct host))
 #if defined(notdef) && BYTE_ORDER == BIG_ENDIAN
