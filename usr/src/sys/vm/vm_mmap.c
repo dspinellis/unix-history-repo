@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.27 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -21,6 +21,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/filedesc.h>
+#include <sys/resourcevar.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/file.h>
@@ -453,6 +454,77 @@ mincore(p, uap, retval)
 
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
+}
+
+struct mlock_args {
+	caddr_t	addr;
+	int	len;
+};
+int
+mlock(p, uap, retval)
+	struct proc *p;
+	struct mlock_args *uap;
+	int *retval;
+{
+	vm_offset_t addr;
+	vm_size_t size;
+	int error;
+	extern int vm_page_max_wired;
+
+#ifdef DEBUG
+	if (mmapdebug & MDB_FOLLOW)
+		printf("mlock(%d): addr %x len %x\n",
+		       p->p_pid, uap->addr, uap->len);
+#endif
+	addr = (vm_offset_t)uap->addr;
+	if ((addr & PAGE_MASK) || uap->len < 0)
+		return (EINVAL);
+	size = round_page((vm_size_t)uap->len);
+	if (atop(size) + cnt.v_wire_count > vm_page_max_wired)
+		return (ENOMEM);
+#ifdef pmap_wired_count
+	if (size + ptoa(pmap_wired_count(vm_map_pmap(&p->p_vmspace->vm_map))) >
+	    p->p_rlimit[RLIMIT_MEMLOCK].rlim_cur)
+		return (ENOMEM);
+#else
+	if (error = suser(p->p_ucred, &p->p_acflag))
+		return (error);
+#endif
+
+	error = vm_map_pageable(&p->p_vmspace->vm_map, addr, addr+size, FALSE);
+	return (error == KERN_SUCCESS ? 0 : ENOMEM);
+}
+
+struct munlock_args {
+	caddr_t	addr;
+	int	len;
+};
+int
+munlock(p, uap, retval)
+	struct proc *p;
+	struct munlock_args *uap;
+	int *retval;
+{
+	vm_offset_t addr;
+	vm_size_t size;
+	int error;
+
+#ifdef DEBUG
+	if (mmapdebug & MDB_FOLLOW)
+		printf("munlock(%d): addr %x len %x\n",
+		       p->p_pid, uap->addr, uap->len);
+#endif
+	addr = (vm_offset_t)uap->addr;
+	if ((addr & PAGE_MASK) || uap->len < 0)
+		return (EINVAL);
+#ifndef pmap_wired_count
+	if (error = suser(p->p_ucred, &p->p_acflag))
+		return (error);
+#endif
+	size = round_page((vm_size_t)uap->len);
+
+	error = vm_map_pageable(&p->p_vmspace->vm_map, addr, addr+size, TRUE);
+	return (error == KERN_SUCCESS ? 0 : ENOMEM);
 }
 
 /*
