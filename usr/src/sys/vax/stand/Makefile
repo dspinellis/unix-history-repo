@@ -1,4 +1,4 @@
-#	Makefile	4.28	83/02/20
+#	Makefile	4.29	83/04/02
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -57,11 +57,13 @@ tpcopy:	copy.o tpsrt0.o /usr/lib/libsa.a
 	ld -N tpsrt0.o copy.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpcopy ibs=32 skip=1; rm b.out
 
-tpformat: format.c tpsrt0.o /usr/lib/libsa.a
+tpformat: format.o tpsrt0.o dkbad.o
+tpformat: confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
 	cp format.c tpformat.c; chmod +w tpformat.c
 	cc -c -O -DJUSTEXIT tpformat.c
 	rm tpformat.c
-	ld -N tpsrt0.o tpformat.o -lsa -lc
+	ld -N tpsrt0.o tpformat.o dkbad.o confhpup.o \
+		hp.new.o up.new.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpformat ibs=32 skip=1; rm b.out
 
 # bootable from floppy or real disks
