@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dc.c	4.6	(Berkeley)	%G%";
+static char sccsid[] = "@(#)dc.c	4.7	(Berkeley)	%G%";
 #endif not lint
 
 #include <paths.h>
@@ -930,6 +930,7 @@ char *argv[];
 	sfree = &symlst[0];
 	return;
 }
+void
 onintr(){
 
 	signal(SIGINT,onintr);
@@ -1565,7 +1566,8 @@ subt(){
 command(){
 	int c;
 	char line[100],*sl;
-	register (*savint)(),pid,rpid;
+	register int pid, rpid;
+	sig_t savint;
 	int retcode;
 
 	switch(c = readc()){

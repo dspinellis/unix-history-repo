@@ -5,17 +5,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.17 (Berkeley) %G%";
 #endif not lint
 
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/vnode.h>
 #include <ufs/inode.h>
 #include <ufs/fs.h>
 #include <ufs/dir.h>
+#include <stdio.h>
+#include <ctype.h>
 #include "fsck.h"
 
 long	diskreads, totalreads;	/* Disk cache statistics */
@@ -404,9 +404,9 @@ getpathname(namebuf, curdir, ino)
 	bcopy(cp, namebuf, &namebuf[BUFSIZ] - cp);
 }
 
+void
 catch()
 {
-
 	ckfini();
 	exit(12);
 }
@@ -416,6 +416,7 @@ catch()
  * a special exit after filesystem checks complete
  * so that reboot sequence may be interrupted.
  */
+void
 catchquit()
 {
 	extern returntosingle;
@@ -429,6 +430,7 @@ catchquit()
  * Ignore a single quit signal; wait and flush just in case.
  * Used by child processes in preen.
  */
+void
 voidquit()
 {
 

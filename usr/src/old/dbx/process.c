@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -333,8 +333,8 @@ public run()
 
 typedef int Intfunc();
 
-private Intfunc *dbintr;
-private intr();
+private sig_t dbintr;
+private void intr();
 
 public cont(signo)
 integer signo;
@@ -379,7 +379,7 @@ integer signo;
  * which will then be handled.
  */
 
-private intr()
+private void intr()
 {
     signal(SIGINT, intr);
 }
@@ -1049,7 +1049,7 @@ Process p;
  * Turn off attention to signals not being caught.
  */
 
-private Intfunc *sigfunc[NSIG];
+private sig_t sigfunc[NSIG];
 
 private sigs_off()
 {

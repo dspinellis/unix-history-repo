@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,11 +40,11 @@ static char sccsid[] = "@(#)collect.c	5.19 (Berkeley) %G%";
  * away on dead.letter.
  */
 
-static	int	(*saveint)();		/* Previous SIGINT value */
-static	int	(*savehup)();		/* Previous SIGHUP value */
-static	int	(*savetstp)();		/* Previous SIGTSTP value */
-static	int	(*savettou)();		/* Previous SIGTTOU value */
-static	int	(*savettin)();		/* Previous SIGTTIN value */
+static	sig_t	saveint;		/* Previous SIGINT value */
+static	sig_t	savehup;		/* Previous SIGHUP value */
+static	sig_t	savetstp;		/* Previous SIGTSTP value */
+static	sig_t	savettou;		/* Previous SIGTTOU value */
+static	sig_t	savettin;		/* Previous SIGTTIN value */
 static	FILE	*collf;			/* File for saving away */
 static	int	hadintr;		/* Have seen one SIGINT so far */
 
@@ -419,7 +419,7 @@ exwrite(name, fp, f)
 mesedit(fp, c)
 	FILE *fp;
 {
-	int (*sigint)() = signal(SIGINT, SIG_IGN);
+	sig_t sigint = signal(SIGINT, SIG_IGN);
 	FILE *nf = run_editor(fp, (off_t)-1, c, 0);
 
 	if (nf != NULL) {
@@ -441,7 +441,7 @@ mespipe(fp, cmd)
 	char cmd[];
 {
 	FILE *nf;
-	int (*sigint)() = signal(SIGINT, SIG_IGN);
+	sig_t sigint = signal(SIGINT, SIG_IGN);
 	extern char tempEdit[];
 
 	if ((nf = fopen(tempEdit, "w+")) == NULL) {
@@ -528,7 +528,7 @@ forward(ms, fp, f)
 /*ARGSUSED*/
 collstop(s)
 {
-	int (*old_action)() = signal(s, SIG_DFL);
+	sig_t old_action = signal(s, SIG_DFL);
 
 	sigsetmask(sigblock(0) & ~sigmask(s));
 	kill(0, s);

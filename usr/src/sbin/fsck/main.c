@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -27,9 +27,8 @@ static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #include "fsck.h"
 
 char	*rawname(), *unrawname(), *blockcheck(), *malloc();
-int	catch(), catchquit(), voidquit();
+void	catch(), catchquit(), voidquit();
 int	returntosingle;
-int	(*signal())();
 
 struct part {
 	char	*name;			/* device name */

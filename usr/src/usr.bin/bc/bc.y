@@ -1,5 +1,5 @@
 %{
-static	char *sccsid = "@(#)bc.y	4.6 (Berkeley) 89/05/10";
+static	char *sccsid = "@(#)bc.y	4.7 (Berkeley) 89/09/15";
 	int *getout();
 %}
 %right '='
@@ -16,6 +16,7 @@ static	char *sccsid = "@(#)bc.y	4.6 (Berkeley) 89/05/10";
 %term QSTR
 
 %{
+#include <sys/signal.h>
 #include <stdio.h>
 #include <varargs.h>
 #include "pathnames.h"
@@ -550,7 +551,7 @@ tp( s ) char *s; { /* same as pp, but for temps */
 }
 
 yyinit(argc,argv) int argc; char *argv[];{
-	signal( 2, (int(*)())1 );	/* ignore all interrupts */
+	(void)signal(SIGINT, SIG_IGN);	/* ignore all interrupts */
 	sargv=argv;
 	sargc= -- argc;
 	if(sargc == 0)in=stdin;
