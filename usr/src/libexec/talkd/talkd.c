@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)talkd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)talkd.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -21,12 +21,17 @@ static char sccsid[] = "@(#)talkd.c	5.7 (Berkeley) %G%";
  * disconnect all descriptors and ttys, and then endless
  * loop on waiting for and processing requests
  */
-#include <stdio.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <protocols/talkd.h>
 #include <signal.h>
 #include <syslog.h>
-
-#include <protocols/talkd.h>
+#include <time.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <paths.h>
 
 CTL_MSG		request;
@@ -34,7 +39,7 @@ CTL_RESPONSE	response;
 
 int	sockt;
 int	debug = 0;
-int	timeout();
+void	timeout();
 long	lastmsgtime;
 
 char	hostname[32];
@@ -86,6 +91,7 @@ main(argc, argv)
 	}
 }
 
+void
 timeout()
 {
 

@@ -6,16 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /* debug print routines */
 
-#include <stdio.h>
-#include <syslog.h>
-#include <sys/param.h>
-
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <protocols/talkd.h>
+#include <syslog.h>
+#include <stdio.h>
 
 static	char *types[] =
     { "leave_invite", "look_up", "delete", "announce" };
