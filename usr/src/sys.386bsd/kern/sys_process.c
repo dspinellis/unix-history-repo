@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_process.c	7.22 (Berkeley) 5/11/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00011
+ * --------------------         -----   ----------------------
+ *
+ * 04 Sep 92	Paul Kranenburg		Fixed copy-on-write checking for pages
+ *					other than anonymous (text pages, etc.)
  */
 
 #define IPCREG
@@ -278,9 +286,42 @@ procxmt(p)
 		break;
 
 	case PT_WRITE_I:
-	case PT_WRITE_D:
-		ipc.error = copyout((char *)&ipc.data, (char *)ipc.addr, sizeof(ipc.data));
+	case PT_WRITE_D: {				/* 04 Sep 92*/
+		vm_prot_t prot;		/* current protection of region */
+		int cow;		 /* ensure copy-on-write happens */
+
+		if (cow = (useracc(ipc.addr, sizeof(ipc.data), B_WRITE) == 0)) {
+			vm_offset_t	addr = (vm_offset_t)ipc.addr;
+			vm_size_t	size;
+			vm_prot_t	max_prot;
+			vm_inherit_t	inh;
+			boolean_t	shared;
+			vm_object_t	object;
+			vm_offset_t	objoff;
+
+			if (vm_region(&p->p_vmspace->vm_map, &addr, &size,
+					&prot, &max_prot, &inh, &shared,
+					&object, &objoff) != KERN_SUCCESS ||
+			    vm_protect(&p->p_vmspace->vm_map, ipc.addr,
+					sizeof(ipc.data), FALSE,
+					prot|VM_PROT_WRITE) != KERN_SUCCESS ||
+			    vm_fault(&p->p_vmspace->vm_map,trunc_page(ipc.addr),
+					VM_PROT_WRITE, FALSE) != KERN_SUCCESS) {
+
+				ipc.error = EFAULT;
+				break;
+			}
+		}
+		ipc.error = copyout((char *)&ipc.data,
+					(char *)ipc.addr, sizeof(ipc.data));
+		if (cow)
+			if (vm_protect(&p->p_vmspace->vm_map, ipc.addr,
+					sizeof(ipc.data), FALSE,
+					prot) != KERN_SUCCESS)
+
+				printf("ptrace: oops\n");
 		break;
+	}
 
 	case PT_WRITE_U:
 		if ((u_int)ipc.addr > UPAGES * NBPG - sizeof(int)) {
