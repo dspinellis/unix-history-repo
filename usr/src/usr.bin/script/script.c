@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)script.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -155,15 +155,15 @@ doshell()
 
 	t = open("/dev/tty", O_RDWR);
 	if (t >= 0) {
-		ioctl(t, TIOCNOTTY, (char *)0);
+		(void) ioctl(t, TIOCNOTTY, (char *)0);
 		(void) close(t);
 	}
 	getslave();
 	(void) close(master);
 	(void) fclose(fscript);
-	dup2(slave, 0);
-	dup2(slave, 1);
-	dup2(slave, 2);
+	(void) dup2(slave, 0);
+	(void) dup2(slave, 1);
+	(void) dup2(slave, 2);
 	(void) close(slave);
 	execl(shell, "sh", "-i", 0);
 	perror(shell);
@@ -177,7 +177,7 @@ fixtty()
 	sbuf = b;
 	sbuf.sg_flags |= RAW;
 	sbuf.sg_flags &= ~ECHO;
-	ioctl(0, TIOCSETP, (char *)&sbuf);
+	(void) ioctl(0, TIOCSETP, (char *)&sbuf);
 }
 
 fail()
@@ -191,7 +191,7 @@ done()
 {
 
 	if (!subchild) {
-		ioctl(0, TIOCSETP, (char *)&b);
+		(void) ioctl(0, TIOCSETP, (char *)&b);
 		printf("Script done, file is %s\n", fname);
 	}
 	exit(0);
@@ -201,7 +201,6 @@ getmaster()
 {
 	char *pty, *bank, *cp;
 	struct stat stb;
-	int i;
 
 	pty = &line[strlen("/dev/ptyp")];
 	for (bank = "pqrs"; *bank; bank++) {
@@ -221,15 +220,15 @@ getmaster()
 				ok = access(line, R_OK|W_OK) == 0;
 				*tp = 'p';
 				if (ok) {
-					ioctl(0, TIOCGETP, (char *)&b);
-					ioctl(0, TIOCGETC, (char *)&tc);
-					ioctl(0, TIOCGETD, (char *)&l);
-					ioctl(0, TIOCGLTC, (char *)&lc);
-					ioctl(0, TIOCLGET, (char *)&lb);
-					ioctl(0, TIOCGWINSZ, (char *)&win);
+				    (void) ioctl(0, TIOCGETP, (char *)&b);
+				    (void) ioctl(0, TIOCGETC, (char *)&tc);
+				    (void) ioctl(0, TIOCGETD, (char *)&l);
+				    (void) ioctl(0, TIOCGLTC, (char *)&lc);
+				    (void) ioctl(0, TIOCLGET, (char *)&lb);
+				    (void) ioctl(0, TIOCGWINSZ, (char *)&win);
 					return;
 				}
-				close(master);
+				(void) close(master);
 			}
 		}
 	}
@@ -246,10 +245,10 @@ getslave()
 		perror(line);
 		fail();
 	}
-	ioctl(slave, TIOCSETP, (char *)&b);
-	ioctl(slave, TIOCSETC, (char *)&tc);
-	ioctl(slave, TIOCSLTC, (char *)&lc);
-	ioctl(slave, TIOCLSET, (char *)&lb);
-	ioctl(slave, TIOCSETD, (char *)&l);
-	ioctl(slave, TIOCSWINSZ, (char *)&win);
+	(void) ioctl(slave, TIOCSETP, (char *)&b);
+	(void) ioctl(slave, TIOCSETC, (char *)&tc);
+	(void) ioctl(slave, TIOCSLTC, (char *)&lc);
+	(void) ioctl(slave, TIOCLSET, (char *)&lb);
+	(void) ioctl(slave, TIOCSETD, (char *)&l);
+	(void) ioctl(slave, TIOCSWINSZ, (char *)&win);
 }
