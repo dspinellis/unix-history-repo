@@ -1,4 +1,4 @@
-/*	gethostnamadr.c	4.2	83/12/21	*/
+/*	gethostnamadr.c	4.3	83/12/21	*/
 
 #include <stdio.h>
 #include <netdb.h>
@@ -8,11 +8,11 @@
 #define	MAXALIASES	35
 
 static char HOSTDB[] = "/etc/hosts";
-static DBM *db = (DBM *)NULL;
+DBM *_host_db = (DBM *)NULL;
 static datum curkey;
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
-extern int _stayopen;	/* set by sethostent(), cleared by endhostent() */
+int _host_stayopen;	/* set by sethostent(), cleared by endhostent() */
 
 static struct hostent *
 fetchhost(key)
@@ -24,7 +24,7 @@ fetchhost(key)
         curkey = key;
         if (curkey.dptr == 0)
                 return ((struct hostent *)NULL);
-	key = dbmfetch(db, curkey);
+	key = dbmfetch(_host_db, curkey);
 	if (key.dptr == 0)
                 return ((struct hostent *)NULL);
         cp = key.dptr;
@@ -52,14 +52,15 @@ gethostbyname(nam)
         datum key;
 	register struct hostent *hp;
 
-	if (db == (DBM *)0 && (db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)0)
+	if ((_host_db == (DBM *)NULL)
+	  && ((_host_db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)NULL))
                 return ((struct hostent *)NULL);
         key.dptr = nam;
         key.dsize = strlen(nam);
 	hp = fetchhost(key);
-	if (!_stayopen) {
-		ndbmclose(db);
-		db = (DBM *)NULL;
+	if (!_host_stayopen) {
+		ndbmclose(_host_db);
+		_host_db = (DBM *)NULL;
 	}
         return (hp);
 }
@@ -72,14 +73,15 @@ gethostbyaddr(addr, length)
         datum key;
 	register struct hostent *hp;
 
-	if (db == (DBM *)0 && (db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)0)
+	if ((_host_db == (DBM *)NULL)
+	  && ((_host_db = ndbmopen(HOSTDB, O_RDONLY)) == (DBM *)NULL))
                 return ((struct hostent *)NULL);
         key.dptr = addr;
         key.dsize = length;
 	hp = fetchhost(key);
-	if (!_stayopen) {
-		ndbmclose(db);
-		db = (DBM *)NULL;
+	if (!_host_stayopen) {
+		ndbmclose(_host_db);
+		_host_db = (DBM *)NULL;
 	}
         return (hp);
 }
