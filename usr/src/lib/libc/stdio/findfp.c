@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
@@ -15,15 +15,13 @@ extern int errno;
 
 #define active(iop)	((iop)->_flag & (_IOREAD|_IOWRT|_IORW))
 
-#define NSTATIC	3	/* stdin + stdout + stderr */
+#define NSTATIC	20	/* stdin + stdout + stderr + the usual */
 
 FILE _iob[NSTATIC] = {
 	{ 0, NULL, NULL, 0, _IOREAD,		0 },	/* stdin  */
 	{ 0, NULL, NULL, 0, _IOWRT,		1 },	/* stdout */
 	{ 0, NULL, NULL, 0, _IOWRT|_IONBF,	2 },	/* stderr */
 };
-
-static	FILE	*_lastbuf = _iob + NSTATIC;
 
 extern	char	*calloc();
 
@@ -37,19 +35,9 @@ _findiop()
 	register FILE **iov;
 	register FILE *fp;
 
-	if (nfiles <= 0)
-		nfiles = getdtablesize();
-
-	if (iobglue == NULL) {
-		iobglue = (FILE **)calloc(nfiles, sizeof *iobglue);
-		if (iobglue == NULL)
-			return (NULL);
-
-		endglue = iobglue + nfiles;
-
-		iov = iobglue;
-		for (fp = _iob; fp < _lastbuf; /* void */)
-			*iov++ = fp++;
+	if (iobglue == 0 && _stdio_init() == 0) {
+		errno = ENOMEM;
+		return (NULL);
 	}
 
 	iov = iobglue;
@@ -65,22 +53,50 @@ _findiop()
 	return (*iov);
 }
 
+_stdio_init()
+{
+	register FILE **iov;
+	register FILE *fp;
+
+	nfiles = getdtablesize();
+
+	iobglue = (FILE **)calloc(nfiles, sizeof *iobglue);
+	if (iobglue == NULL)
+		return (0);
+
+	endglue = iobglue + nfiles;
+
+	for (fp = _iob, iov = iobglue; fp < &_iob[NSTATIC]; /* void */)
+		*iov++ = fp++;
+	return (1);
+}
+
+f_prealloc()
+{
+	register FILE **iov;
+	register FILE *fp;
+
+	if (iobglue == NULL && _stdio_init() == 0)
+		return;
+
+	for (iov = iobglue; iov < endglue; iov++)
+		if (*iov == NULL)
+			*iov = (FILE *)calloc(1, sizeof **iov);
+}
+
 _fwalk(function)
 	register int (*function)();
 {
 	register FILE **iov;
 	register FILE *fp;
 
-	if (function == NULL)
-		return;
-
 	if (iobglue == NULL) {
-		for (fp = _iob; fp < _lastbuf; fp++)
+		for (fp = _iob; fp < &_iob[NSTATIC]; fp++)
 			if (active(fp))
 				(*function)(fp);
 	} else {
 		for (iov = iobglue; iov < endglue; iov++)
-			if (*iov != NULL && active(*iov))
+			if (*iov && active(*iov))
 				(*function)(*iov);
 	}
 }
