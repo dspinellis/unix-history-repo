@@ -1,4 +1,4 @@
-/*	autoconf.c	1.3	86/01/12	*/
+/*	autoconf.c	1.4	86/01/12	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -191,7 +191,7 @@ vbafind(vban, vumem, memmap)
 		um->um_addr = (caddr_t)reg;
 		udp->ud_minfo[um->um_ctlr] = um;
 		for (ivec = um->um_intr; *ivec; ivec++)
-			((long *)&scb)[cvec++] = *ivec;
+			((long *)&scb)[cvec++] = (long)*ivec;
 		for (ui = vbdinit; ui->ui_driver; ui++) {
 			if (ui->ui_driver != udp || ui->ui_alive ||
 			    ui->ui_ctlr != um->um_ctlr && ui->ui_ctlr != '?' ||
@@ -254,7 +254,7 @@ vbafind(vban, vumem, memmap)
 			vballoc[vbaoff(addr+i)] = 1;
 #endif
 		for (ivec = ui->ui_intr; *ivec; ivec++)
-			((long *)&scb)[cvec++] = *ivec;
+			((long *)&scb)[cvec++] = (long)*ivec;
 		ui->ui_alive = 1;
 		ui->ui_vbanum = vban;
 		ui->ui_addr = (caddr_t)reg;
