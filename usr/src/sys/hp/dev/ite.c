@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.22 89/08/17$
  *
- *	@(#)ite.c	7.1 (Berkeley) %G%
+ *	@(#)ite.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -189,7 +189,8 @@ iteopen(dev, flag)
 	register int error;
 	int first = 0;
 
-	if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+	if ((tp->t_state&(TS_ISOPEN|TS_XCLUDE)) == (TS_ISOPEN|TS_XCLUDE)
+	    && u.u_uid != 0)
 		return (EBUSY);
 	if ((ip->flags & ITE_ACTIVE) == 0) {
 		error = iteon(dev, 0);
