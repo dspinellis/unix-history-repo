@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ld.c 4.1 %G%";
+static	char sccsid[] = "@(#)ld.c 4.2 %G%";
 /*
  * ld - string table version for VAX
  */
@@ -1187,8 +1187,8 @@ long loc;
 		filhdr.a_data++;
 	}
 	torigin += filhdr.a_text;
-	dorigin += filhdr.a_data;
-	borigin += filhdr.a_bss;
+	dorigin += round(filhdr.a_data, sizeof (long));
+	borigin += round(filhdr.a_bss, sizeof (long));
 	free(curstr);
 }
 
