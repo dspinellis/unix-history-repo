@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -1301,14 +1301,14 @@ dospecial(cmd)
 		(void) close(0);
 		(void) close(1);
 		(void) close(2);
-		(void) open("/dev/null", 0);
+		(void) open(_PATH_DEVNULL, O_RDONLY);
 		(void) dup(fd[1]);
 		(void) dup(fd[1]);
 		(void) close(fd[0]);
 		(void) close(fd[1]);
 		setgid(groupid);
 		setuid(userid);
-		execl("/bin/sh", "sh", "-c", cmd, 0);
+		execl(_PATH_BSHELL, "sh", "-c", cmd, 0);
 		_exit(127);
 	}
 	(void) close(fd[1]);
