@@ -5,6 +5,7 @@
 #include "hack.h"
 #include "def.mkroom.h"
 #include "def.eshk.h"
+#include <stdlib.h>
 #define	ESHK	((struct eshk *)(&(shk->mextra[0])))
 extern struct monst *makemon();
 extern struct obj *mkobj_at();
@@ -21,7 +22,6 @@ register struct monst *shk;
 #ifdef WIZARD
 	/* first determine shoptype */
 	if(wizard){
-		extern char *getenv();
 		register char *ep = getenv("SHOPTYPE");
 		if(ep){
 			if(*ep == 'z' || *ep == 'Z'){
