@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Scooter Morris at Genentech Inc.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	7.9.1.1 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

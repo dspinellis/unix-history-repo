@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.30 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

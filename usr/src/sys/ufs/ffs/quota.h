@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Robert Elz at The University of Melbourne.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quota.h	7.12 (Berkeley) %G%
+ *	@(#)quota.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _QUOTA_

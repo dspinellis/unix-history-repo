@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.53 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

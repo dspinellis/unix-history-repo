@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Scooter Morris at Genentech Inc.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lockf.h	7.2 (Berkeley) %G%
+ *	@(#)lockf.h	8.1 (Berkeley) %G%
  */
 
 /*
