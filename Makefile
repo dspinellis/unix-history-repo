@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.40 1994/02/18 02:03:17 rgrimes Exp $
+#	$Id: Makefile,v 1.41 1994/02/26 19:32:43 wollman Exp $
 #
 
 SUBDIR=
@@ -67,6 +67,11 @@ CLEANDIR=
 CLEANDIR=	cleandir
 .endif
 
+# Where is the c-compier source.  Change this, and gnu/usr.bin/Makefile if you
+# want to use another cc (gcc-2.5.8 for instance)
+CCDIR=		${.CURDIR}/gnu/usr.bin/cc
+#CCDIR=		${.CURDIR}/gnu/usr.bin/cc25
+
 world:	directories cleandist mk includes libraries tools mdec
 	@echo "--------------------------------------------------------------"
 	@echo " Rebuilding ${DESTDIR} The whole thing"
@@ -128,7 +133,7 @@ includes:
 	chmod 755 ${DESTDIR}/usr/include
 .endif
 	cd ${.CURDIR}/include;			make install
-	cd ${.CURDIR}/gnu/usr.bin/cc/libobjc;	make beforeinstall
+	cd ${CCDIR}/libobjc;			make beforeinstall
 	cd ${.CURDIR}/gnu/lib/libg++;		make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/libc;			make beforeinstall
@@ -152,8 +157,8 @@ bootstrapld:	directories cleandist mk includes
 	cd ${.CURDIR}/usr.bin/strip;	make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/usr.bin/ld;	make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/usr.bin/as;	make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/usr.bin/cc;	make -DNOPIC depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/usr.bin/cc/libgcc;	make all install ${CLEANDIR} obj
+	cd ${CCDIR};			make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${CCDIR}/libgcc;		make all install ${CLEANDIR} obj
 	cd ${.CURDIR}/lib/csu.i386;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/lib/libc;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/usr.bin/ld/rtld;	make depend all install ${CLEANDIR} obj
@@ -168,7 +173,7 @@ libraries:
 	find ${DESTDIR}/usr/lib \! -name '*.s[ao].*' -a \! -type d | xargs -n30 rm -rf
 .endif
 	cd ${.CURDIR}/lib;			make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/usr.bin/cc/libgcc;	make depend all install ${CLEANDIR} obj
+	cd ${CCDIR}/libgcc;			make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/lib/libg++;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/lib/libregex;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/lib/libmalloc;	make depend all install ${CLEANDIR} obj
@@ -176,7 +181,7 @@ libraries:
 .if exists(${.CURDIR}/kerberosIV) && !defined(NOCRYPT)
 	cd ${.CURDIR}/kerberosIV/des;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/kerberosIV/krb;	make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/kerberosIV/kdc;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/kerberosIV/kdb;	make depend all install ${CLEANDIR} obj
 .endif
 
 tools:
@@ -184,7 +189,7 @@ tools:
 	@echo " Rebuilding ${DESTDIR} Compiler and Make"
 	@echo "--------------------------------------------------------------"
 	@echo
-	cd ${.CURDIR}/gnu/usr.bin/cc;	make depend all install ${CLEANDIR} obj
+	cd ${CCDIR};			make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/make;	make depend all install ${CLEANDIR} obj
 
 mdec:
