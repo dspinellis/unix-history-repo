@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.57 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.58 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,6 +24,8 @@
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
+
+static struct dinode *lfs_ifind __P((struct lfs *, ino_t, struct dinode *));
 
 int
 lfs_init()
@@ -135,6 +137,26 @@ lfs_vget(mntp, ino, vpp)
 	VREF(ip->i_devvp);
 	*vpp = vp;
 	return (0);
+}
+
+/* Search a block for a specific dinode. */
+static struct dinode *
+lfs_ifind(fs, ino, dip)
+	struct lfs *fs;
+	ino_t ino;
+	register struct dinode *dip;
+{
+	register int cnt;
+
+#ifdef VERBOSE
+	printf("lfs_ifind: inode %d\n", ino);
+#endif
+	for (cnt = INOPB(fs); cnt--; ++dip)
+		if (dip->di_inum == ino)
+			return (dip);
+
+	panic("lfs_ifind: dinode %u not found", ino);
+	/* NOTREACHED */
 }
 
 int
