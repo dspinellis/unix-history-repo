@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)px_header.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)px_header.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,8 +21,6 @@ static char sccsid[] = "@(#)px_header.c	5.1 (Berkeley) %G%";
  * This program lives in /usr/lib/px_header
  * Bill Joy UCB February 6, 1978
  */
-
-static char sccsid[] = "@(#)px_header.c 5.1 %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
