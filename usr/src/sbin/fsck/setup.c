@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -179,10 +179,10 @@ readsb(listerr)
 {
 	BUFAREA asblk;
 #	define altsblock asblk.b_un.b_fs
-	daddr_t super = bflag ? bflag : SBLOCK;
+	daddr_t super = bflag ? bflag * DEV_BSIZE : SBOFF;
 
 	initbarea(&asblk);
-	dev_bsize = DEV_BSIZE;
+	dev_bsize = 1;
 	if (bread(&dfile, (char *)&sblock, super, (long)SBSIZE) != 0)
 		return (0);
 	sblk.b_bno = super;
@@ -207,7 +207,7 @@ readsb(listerr)
 	 * When an alternate super-block is specified this check is skipped.
 	 */
 	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
-	sblk.b_bno = sblk.b_bno * DEV_BSIZE / dev_bsize;
+	sblk.b_bno = sblk.b_bno / dev_bsize;
 	if (bflag)
 		return (1);
 	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
