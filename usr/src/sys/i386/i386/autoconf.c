@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	5.7 (Berkeley) %G%
+ *	@(#)autoconf.c	7.1 (Berkeley) %G%
  */
 
 /*
@@ -91,7 +91,7 @@ extern int Maxmem;
 		dumplo = 0;
 }
 
-#define	DOSWAP			/* change swdevt, argdev, and dumpdev too */
+#define	DOSWAP			/* change swdevt and dumpdev */
 u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
 
 static	char devname[][2] = {
@@ -151,12 +151,10 @@ setroot()
 	if (swp->sw_dev == 0)
 		return;
 	/*
-	 * If argdev and dumpdev were the same as the old primary swap
-	 * device, move them to the new primary swap device.
+	 * If dumpdev was the same as the old primary swap
+	 * device, move it to the new primary swap device.
 	 */
 	if (temp == dumpdev)
 		dumpdev = swdevt[0].sw_dev;
-	if (temp == argdev)
-		argdev = swdevt[0].sw_dev;
 #endif
 }
