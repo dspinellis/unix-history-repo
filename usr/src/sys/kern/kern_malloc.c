@@ -188,7 +188,7 @@ free(addr, type)
 	size = 1 << kup->ku_indx;
 	if (size > MAXALLOCSAVE) {
 		alloc = btokmemx(addr);
-		(void) memfree(&kmempt[alloc], (int)kup->ku_pagecnt, 0);
+		(void) memfree(&kmempt[alloc], (int)kup->ku_pagecnt, 1);
 		rmfree(kmemmap, (long)kup->ku_pagecnt, alloc + CLSIZE);
 		OUT;
 		if (wantkmemmap) {
