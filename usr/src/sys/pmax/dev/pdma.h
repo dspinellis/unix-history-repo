@@ -1,17 +1,17 @@
-/*
- * Copyright (c) 1992 Regents of the University of California.
+/*-
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Ralph Campbell.
+ * Ralph Campbell and Rick Macklem.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pdma.h	7.2 (Berkeley) %G%
+ *	@(#)pdma.h	7.3 (Berkeley) %G%
  */
 
 struct pdma {
-	dcregs	*p_addr;
+	void	*p_addr;
 	char	*p_mem;
 	char	*p_end;
 	int	p_arg;

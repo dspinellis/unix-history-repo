@@ -3,11 +3,11 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Ralph Campbell.
+ * Ralph Campbell and Rick Macklem.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.7 (Berkeley) %G%
+ *	@(#)asc.c	7.8 (Berkeley) %G%
  */
 
 /* 
@@ -91,16 +91,25 @@
  *
  */
 
-#include "asc.h"
+#include <asc.h>
 #if NASC > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/dkstat.h>
+#include <sys/buf.h>
+#include <sys/conf.h>
 #include <sys/errno.h>
+
+#include <machine/machConst.h>
 
 #include <pmax/dev/device.h>
 #include <pmax/dev/scsi.h>
 #include <pmax/dev/ascreg.h>
+
+#include <pmax/pmax/asic.h>
+#include <pmax/pmax/kmin.h>
+#include <pmax/pmax/pmaxtype.h>
 
 #define ASC_OFFSET_53C94	0x0		/* from module base */
 #define ASC_OFFSET_DMAR		0x40000		/* DMA Address Register */
@@ -109,6 +118,7 @@
 
 #define	ASC_RAM_SIZE		0x20000		/* 128k (32k*32) */
 
+#define	readback(a)	{ register int foo; foo = (a); }
 /*
  * DMA Address Register
  */
@@ -119,44 +129,51 @@
 /*
  * Synch xfer parameters, and timing conversions
  */
-#define SCSI_MIN_PERIOD	50	/* in 4 nsecs units */
-#define ASC_MIN_PERIOD	5	/* in CLKS/BYTE, 1 CLK = 40nsecs */
-#define ASC_MAX_PERIOD	35	/* in CLKS/BYTE, 1 CLK = 40nsecs */
-#define ASC_MAX_OFFSET	15	/* pure number */
+#define SCSI_MIN_PERIOD		50	/* in 4 nsecs units */
+#define ASC_MIN_PERIOD25	5	/* in CLKS/BYTE, 1 CLK = 40nsecs */
+#define ASC_MIN_PERIOD12	3	/* in CLKS/BYTE, 1 CLK = 80nsecs */
+#define ASC_MAX_PERIOD25	35	/* in CLKS/BYTE, 1 CLK = 40nsecs */
+#define ASC_MAX_PERIOD12	18	/* in CLKS/BYTE, 1 CLK = 80nsecs */
+#define ASC_MAX_OFFSET		15	/* pure number */
 
+extern int pmax_boardtype;
+
+/*
+ * In 4ns ticks.
+ */
 int	asc_to_scsi_period[] = {
-	320,
-	330,
-	340,
-	350,
-	50,
-	50,
-	60,
-	70,
-	80,
-	90,
-	100,
-	110,
-	120,
-	130,
-	140,
-	150,
-	160,
-	170,
-	180,
-	190,
-	200,
-	210,
-	220,
-	230,
-	240,
-	250,
-	260,
-	270,
-	280,
-	290,
-	300,
-	310,
+	32,
+	33,
+	34,
+	35,
+	5,
+	5,
+	6,
+	7,
+	8,
+	9,
+	10,
+	11,
+	12,
+	13,
+	14,
+	15,
+	16,
+	17,
+	18,
+	19,
+	20,
+	21,
+	22,
+	23,
+	24,
+	25,
+	26,
+	27,
+	28,
+	29,
+	30,
+	31,
 };
 
 /*
@@ -205,21 +222,21 @@ typedef struct script {
 #define	SCRIPT_MATCH(ir, csr)		((ir) | (ASC_PHASE(csr) << 8))
 
 /* forward decls of script actions */
-static int	script_nop();		/* when nothing needed */
-static int	asc_end();		/* all come to an end */
-static int	asc_get_status();	/* get status from target */
-static int	asc_dma_in();		/* start reading data from target */
-static int	asc_last_dma_in();	/* cleanup after all data is read */
-static int	asc_resume_in();	/* resume data in after a message */
-static int	asc_resume_dma_in();	/* resume DMA after a disconnect */
-static int	asc_dma_out();		/* send data to target via dma */
-static int	asc_last_dma_out();	/* cleanup after all data is written */
-static int	asc_resume_out();	/* resume data out after a message */
-static int	asc_resume_dma_out();	/* resume DMA after a disconnect */
-static int	asc_sendsync();		/* negotiate sync xfer */
-static int	asc_replysync();	/* negotiate sync xfer */
-static int	asc_msg_in();		/* process a message byte */
-static int	asc_disconnect();	/* process an expected disconnect */
+static int script_nop();		/* when nothing needed */
+static int asc_end();			/* all come to an end */
+static int asc_get_status();		/* get status from target */
+static int asc_dma_in();		/* start reading data from target */
+static int asc_last_dma_in();		/* cleanup after all data is read */
+static int asc_resume_in();		/* resume data in after a message */
+static int asc_resume_dma_in();		/* resume DMA after a disconnect */
+static int asc_dma_out();		/* send data to target via dma */
+static int asc_last_dma_out();		/* cleanup after all data is written */
+static int asc_resume_out();		/* resume data out after a message */
+static int asc_resume_dma_out();	/* resume DMA after a disconnect */
+static int asc_sendsync();		/* negotiate sync xfer */
+static int asc_replysync();		/* negotiate sync xfer */
+static int asc_msg_in();		/* process a message byte */
+static int asc_disconnect();		/* process an expected disconnect */
 
 /* Define the index into asc_scripts for various state transitions */
 #define	SCRIPT_DATA_IN		0
@@ -379,7 +396,7 @@ typedef struct scsi_state {
 struct asc_softc {
 	asc_regmap_t	*regs;		/* chip address */
 	volatile int	*dmar;		/* DMA address register address */
-	u_char		*buff;		/* RAM buffer address */
+	u_char		*buff;		/* RAM buffer address (uncached) */
 	int		myid;		/* SCSI ID of this interface */
 	int		myidmask;	/* ~(1 << myid) */
 	int		state;		/* current SCSI connection state */
@@ -387,6 +404,15 @@ struct asc_softc {
 	script_t	*script;	/* next expected interrupt & action */
 	ScsiCmd		*cmd[ASC_NCMD];	/* active command indexed by SCSI ID */
 	State		st[ASC_NCMD];	/* state info for each active command */
+	void		(*dma_start)();	/* Start dma routine */
+	void		(*dma_end)();	/* End dma routine */
+	u_char		*dma_next;
+	int		dma_xfer;	/* Dma len still to go */
+	int		min_period;	/* Min transfer period clk/byte */
+	int		max_period;	/* Max transfer period clk/byte */
+	int		ccf;		/* CCF, whatever that really is? */
+	int		timeout_250;	/* 250ms timeout */
+	int		tb_ticks;	/* 4ns. ticks/tb channel ticks */
 } asc_softc[NASC];
 
 #define	ASC_STATE_IDLE		0	/* idle state */
@@ -395,6 +421,14 @@ struct asc_softc {
 #define ASC_STATE_RESEL		3	/* currently waiting for reselect */
 
 typedef struct asc_softc *asc_softc_t;
+
+/*
+ * Dma operations.
+ */
+#define	ASCDMA_READ	1
+#define	ASCDMA_WRITE	2
+static void tb_dma_start(), tb_dma_end(), asic_dma_start(), asic_dma_end();
+u_long asc_iobuf[33792];
 
 /*
  * Definition of the controller for the auto-configuration program.
@@ -416,6 +450,7 @@ asc_probe(cp)
 	register asc_softc_t asc;
 	register asc_regmap_t *regs;
 	int unit, id, s, i;
+	u_int bufadr;
 
 	if ((unit = cp->pmax_unit) >= NASC)
 		return (0);
@@ -427,8 +462,60 @@ asc_probe(cp)
 	 * Initialize hw descriptor, cache some pointers
 	 */
 	asc->regs = (asc_regmap_t *)(cp->pmax_addr + ASC_OFFSET_53C94);
-	asc->dmar = (volatile int *)(cp->pmax_addr + ASC_OFFSET_DMAR);
-	asc->buff = (u_char *)(cp->pmax_addr + ASC_OFFSET_RAM);
+
+	/*
+	 * Set up machine dependencies.
+	 * 1) how to do dma
+	 * 2) timing based on turbochannel frequency
+	 */
+	switch (pmax_boardtype) {
+	case DS_3MIN:
+	case DS_MAXINE:
+	    if (unit == 0) {
+		bufadr = MACH_PHYS_TO_UNCACHED(MACH_CACHED_TO_PHYS(asc_iobuf));
+		bufadr = (bufadr + NBPG - 1) & ~(NBPG - 1);
+		asc->buff = (u_char *)bufadr;
+		*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMAPTR))
+			= -1;
+		*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMANPTR))
+			= -1;
+		*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SCR)) = 0;
+		asc->dma_start = asic_dma_start;
+		asc->dma_end = asic_dma_end;
+		break;
+	    }
+	    /*
+	     * Fall through for turbochannel option.
+	     */
+	case DS_3MAX:
+	default:
+	    asc->dmar = (volatile int *)(cp->pmax_addr + ASC_OFFSET_DMAR);
+	    asc->buff = (u_char *)(cp->pmax_addr + ASC_OFFSET_RAM);
+	    asc->dma_start = tb_dma_start;
+	    asc->dma_end = tb_dma_end;
+	};
+	/*
+	 * Now for timing. The 3max has a 25Mhz tb whereas the 3min and
+	 * maxine are 12.5Mhz.
+	 */
+	switch (pmax_boardtype) {
+	case DS_3MAX:
+		asc->min_period = ASC_MIN_PERIOD25;
+		asc->max_period = ASC_MAX_PERIOD25;
+		asc->ccf = ASC_CCF(25);
+		asc->timeout_250 = ASC_TIMEOUT_250(25, asc->ccf);
+		asc->tb_ticks = 10;
+		break;
+	case DS_3MIN:
+	case DS_MAXINE:
+	default:
+		asc->min_period = ASC_MIN_PERIOD12;
+		asc->max_period = ASC_MAX_PERIOD12;
+		asc->ccf = ASC_CCF(13);
+		asc->timeout_250 = ASC_TIMEOUT_250(13, asc->ccf);
+		asc->tb_ticks = 20;
+		break;
+	};
 
 	asc->state = ASC_STATE_IDLE;
 	asc->target = -1;
@@ -529,17 +616,16 @@ asc_reset(asc, regs)
 	/*
 	 * Set up various chip parameters
 	 */
-	regs->asc_ccf = ASC_CCF_25MHz;	/* 25 MHz clock */
+	regs->asc_ccf = asc->ccf;
 	MachEmptyWriteBuffer(); DELAY(25);
-	regs->asc_sel_timo = ASC_TIMEOUT_250;
+	regs->asc_sel_timo = asc->timeout_250;
 	/* restore our ID */
 	regs->asc_cnfg1 = asc->myid | ASC_CNFG1_P_CHECK;
-	regs->asc_cnfg2 = /* ASC_CNFG2_RFB | */ ASC_CNFG2_EPL;
+	regs->asc_cnfg2 = /* ASC_CNFG2_RFB | */ ASC_CNFG2_SCSI2;
 	regs->asc_cnfg3 = 0;
 	/* zero anything else */
 	ASC_TC_PUT(regs, 0);
-	regs->asc_sel_timo = ASC_TIMEOUT_250;
-	regs->asc_syn_p = ASC_MIN_PERIOD;
+	regs->asc_syn_p = asc->min_period;
 	regs->asc_syn_o = 0;	/* async for now */
 	MachEmptyWriteBuffer();
 }
@@ -571,6 +657,7 @@ asc_startcmd(asc, target)
 	 */
 	if (asc->state == ASC_STATE_RESEL) {
 		regs->asc_cmd = ASC_CMD_DISABLE_SEL;
+		readback(regs->asc_cmd);
 		while (!(regs->asc_status & ASC_CSR_INT))
 			DELAY(1);
 		asc_intr(asc - asc_softc);
@@ -612,6 +699,8 @@ asc_startcmd(asc, target)
 	 * Init the chip and target state.
 	 */
 	regs->asc_cmd = ASC_CMD_FLUSH;
+	readback(regs->asc_cmd);
+	DELAY(2);
 	state->flags = state->flags & DID_SYNC;
 	state->error = 0;
 	state->script = (script_t *)0;
@@ -646,19 +735,25 @@ asc_startcmd(asc, target)
 
 	/* preload the FIFO with the message to be sent */
 	regs->asc_fifo = SCSI_DIS_REC_IDENTIFY;
+	MachEmptyWriteBuffer();
 
 	/* start the asc */
-	*asc->dmar = ASC_DMAR_WRITE | ASC_DMA_ADDR(state->dmaBufAddr);
+	(*asc->dma_start)(asc, state, state->dmaBufAddr, ASCDMA_WRITE);
 	ASC_TC_PUT(regs, len);
+	readback(regs->asc_cmd);
 
 	regs->asc_dbus_id = target;
+	readback(regs->asc_dbus_id);
 	regs->asc_syn_p = state->sync_period;
+	readback(regs->asc_syn_p);
 	regs->asc_syn_o = state->sync_offset;
+	readback(regs->asc_syn_o);
 
 	if (state->flags & TRY_SYNC)
 		regs->asc_cmd = ASC_CMD_SEL_ATN_STOP;
 	else
 		regs->asc_cmd = ASC_CMD_SEL_ATN | ASC_CMD_DMA;
+	readback(regs->asc_cmd);
 }
 
 /*
@@ -705,6 +800,7 @@ again:
 		 */
 		if ((*scpt->action)(asc, status, ss, ir)) {
 			regs->asc_cmd = scpt->command;
+			readback(regs->asc_cmd);
 			asc->script = scpt->next;
 		}
 		goto done;
@@ -731,12 +827,14 @@ again:
 			regs->asc_fifo = state->msg_out;
 			state->msg_out = SCSI_NO_OP;
 			regs->asc_cmd = ASC_CMD_XFER_INFO;
+			readback(regs->asc_cmd);
 			goto done;
 
 		case ASC_PHASE_STATUS:
 			/* probably an error in the SCSI command */
 			asc->script = &asc_scripts[SCRIPT_GET_STATUS];
 			regs->asc_cmd = ASC_CMD_I_COMPLETE;
+			readback(regs->asc_cmd);
 			goto done;
 
 		default:
@@ -766,7 +864,9 @@ again:
 				printf("asc_intr: dmalen %d len %d fifo %d\n",
 					state->dmalen, len, fifo); /* XXX */
 			regs->asc_cmd = ASC_CMD_FLUSH;
+			readback(regs->asc_cmd);
 			MachEmptyWriteBuffer();
+			DELAY(2);
 		}
 		if (len) {
 			/* save number of bytes still to be sent or received */
@@ -785,6 +885,7 @@ again:
 			if (state->flags & DMA_IN) {
 				if (state->flags & DMA_IN_PROGRESS) {
 					state->flags &= ~DMA_IN_PROGRESS;
+					(*asc->dma_end)(asc, state, ASCDMA_READ);
 					len = state->dmalen;
 					bcopy(state->dmaBufAddr, state->buf,
 						len);
@@ -804,6 +905,7 @@ again:
 				 */
 				if (state->flags & DMA_IN_PROGRESS) {
 					state->flags &= ~DMA_IN_PROGRESS;
+					(*asc->dma_end)(asc, state, ASCDMA_WRITE);
 					len = state->dmalen;
 					state->buf += len;
 					state->buflen -= len;
@@ -825,6 +927,7 @@ again:
 		asc->script = &asc_scripts[SCRIPT_MSG_IN];
 		state->msglen = 0;
 		regs->asc_cmd = ASC_CMD_XFER_INFO;
+		readback(regs->asc_cmd);
 		goto done;
 	}
 
@@ -899,6 +1002,7 @@ again:
 		regs->asc_syn_p = state->sync_period;
 		regs->asc_syn_o = state->sync_offset;
 		regs->asc_cmd = ASC_CMD_MSG_ACPT;
+		readback(regs->asc_cmd);
 		goto done;
 	}
 
@@ -958,6 +1062,7 @@ asc_get_status(asc, status, ss, ir)
 		printf("asc_get_status: fifo cnt %d\n", data); /* XXX */
 		if (data < 2) {
 			asc->regs->asc_cmd = ASC_CMD_MSG_ACPT;
+			readback(asc->regs->asc_cmd);
 			return (0);
 		}
 		do {
@@ -1020,6 +1125,7 @@ asc_end(asc, status, ss, ir)
 		if (!asc->cmd[i] || !(asc->st[i].flags & DISCONN))
 			continue;
 		asc->regs->asc_cmd = ASC_CMD_ENABLE_SEL;
+		readback(asc->regs->asc_cmd);
 		asc->state = ASC_STATE_RESEL;
 		asc->script = &asc_scripts[SCRIPT_RESEL];
 		break;
@@ -1058,6 +1164,7 @@ asc_dma_in(asc, status, ss, ir)
 		 * There may be some bytes in the FIFO if synchonous transfers
 		 * are in progress.
 		 */
+		(*asc->dma_end)(asc, state, ASCDMA_READ);
 		ASC_TC_GET(regs, len);
 		len = state->dmalen - len;
 		bcopy(state->dmaBufAddr, state->buf, len);
@@ -1070,7 +1177,7 @@ asc_dma_in(asc, status, ss, ir)
 	if (len > state->dmaBufSize)
 		len = state->dmaBufSize;
 	state->dmalen = len;
-	*asc->dmar = ASC_DMA_ADDR(state->dmaBufAddr);
+	(*asc->dma_start)(asc, state, state->dmaBufAddr, ASCDMA_READ);
 	ASC_TC_PUT(regs, len);
 #ifdef DEBUG
 	if (asc_debug > 2)
@@ -1081,6 +1188,7 @@ asc_dma_in(asc, status, ss, ir)
 	state->flags |= DMA_IN_PROGRESS;
 	if (len != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
+		readback(regs->asc_cmd);
 		asc->script = &asc_scripts[SCRIPT_CONTINUE_IN];
 		return (0);
 	}
@@ -1098,6 +1206,7 @@ asc_last_dma_in(asc, status, ss, ir)
 	register int len, fifo;
 
 	/* copy data from buffer to main memory */
+	(*asc->dma_end)(asc, state, ASCDMA_READ);
 	ASC_TC_GET(regs, len);
 	fifo = regs->asc_flags & ASC_FLAGS_FIFO_CNT;
 #ifdef DEBUG
@@ -1108,6 +1217,7 @@ asc_last_dma_in(asc, status, ss, ir)
 	if (fifo) {
 		/* device must be trying to send more than we expect */
 		regs->asc_cmd = ASC_CMD_FLUSH;
+		readback(regs->asc_cmd);
 		MachEmptyWriteBuffer();
 	}
 	state->flags &= ~DMA_IN_PROGRESS;
@@ -1133,7 +1243,7 @@ asc_resume_in(asc, status, ss, ir)
 	if (len > state->dmaBufSize)
 		len = state->dmaBufSize;
 	state->dmalen = len;
-	*asc->dmar = ASC_DMA_ADDR(state->dmaBufAddr);
+	(*asc->dma_start)(asc, state, state->dmaBufAddr, ASCDMA_READ);
 	ASC_TC_PUT(regs, len);
 #ifdef DEBUG
 	if (asc_debug > 2)
@@ -1145,6 +1255,7 @@ asc_resume_in(asc, status, ss, ir)
 	state->flags |= DMA_IN_PROGRESS;
 	if (len != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
+		readback(regs->asc_cmd);
 		asc->script = &asc_scripts[SCRIPT_CONTINUE_IN];
 		return (0);
 	}
@@ -1169,7 +1280,7 @@ asc_resume_dma_in(asc, status, ss, ir)
 			state->dmalen, len, off); /* XXX */
 		regs->asc_res_fifo = state->dmaBufAddr[off];
 	}
-	*asc->dmar = ASC_DMA_ADDR(state->dmaBufAddr + off);
+	(*asc->dma_start)(asc, state, state->dmaBufAddr + off, ASCDMA_READ);
 	ASC_TC_PUT(regs, len);
 #ifdef DEBUG
 	if (asc_debug > 2)
@@ -1181,6 +1292,7 @@ asc_resume_dma_in(asc, status, ss, ir)
 	state->flags |= DMA_IN_PROGRESS;
 	if (state->dmalen != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
+		readback(regs->asc_cmd);
 		asc->script = &asc_scripts[SCRIPT_CONTINUE_IN];
 		return (0);
 	}
@@ -1216,7 +1328,7 @@ asc_dma_out(asc, status, ss, ir)
 		len = state->dmaBufSize;
 	state->dmalen = len;
 	bcopy(state->buf, state->dmaBufAddr, len);
-	*asc->dmar = ASC_DMAR_WRITE | ASC_DMA_ADDR(state->dmaBufAddr);
+	(*asc->dma_start)(asc, state, state->dmaBufAddr, ASCDMA_WRITE);
 	ASC_TC_PUT(regs, len);
 #ifdef DEBUG
 	if (asc_debug > 2)
@@ -1227,6 +1339,7 @@ asc_dma_out(asc, status, ss, ir)
 	state->flags |= DMA_IN_PROGRESS;
 	if (len != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
+		readback(regs->asc_cmd);
 		asc->script = &asc_scripts[SCRIPT_CONTINUE_OUT];
 		return (0);
 	}
@@ -1253,6 +1366,7 @@ asc_last_dma_out(asc, status, ss, ir)
 	if (fifo) {
 		len += fifo;
 		regs->asc_cmd = ASC_CMD_FLUSH;
+		readback(regs->asc_cmd);
 		MachEmptyWriteBuffer();
 	}
 	state->flags &= ~DMA_IN_PROGRESS;
@@ -1277,7 +1391,7 @@ asc_resume_out(asc, status, ss, ir)
 		len = state->dmaBufSize;
 	state->dmalen = len;
 	bcopy(state->buf, state->dmaBufAddr, len);
-	*asc->dmar = ASC_DMAR_WRITE | ASC_DMA_ADDR(state->dmaBufAddr);
+	(*asc->dma_start)(asc, state, state->dmaBufAddr, ASCDMA_WRITE);
 	ASC_TC_PUT(regs, len);
 #ifdef DEBUG
 	if (asc_debug > 2)
@@ -1289,6 +1403,7 @@ asc_resume_out(asc, status, ss, ir)
 	state->flags |= DMA_IN_PROGRESS;
 	if (len != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
+		readback(regs->asc_cmd);
 		asc->script = &asc_scripts[SCRIPT_CONTINUE_OUT];
 		return (0);
 	}
@@ -1315,7 +1430,7 @@ asc_resume_dma_out(asc, status, ss, ir)
 		off++;
 		len--;
 	}
-	*asc->dmar = ASC_DMAR_WRITE | ASC_DMA_ADDR(state->dmaBufAddr + off);
+	(*asc->dma_start)(asc, state, state->dmaBufAddr + off, ASCDMA_WRITE);
 	ASC_TC_PUT(regs, len);
 #ifdef DEBUG
 	if (asc_debug > 2)
@@ -1327,6 +1442,7 @@ asc_resume_dma_out(asc, status, ss, ir)
 	state->flags |= DMA_IN_PROGRESS;
 	if (state->dmalen != state->buflen) {
 		regs->asc_cmd = ASC_CMD_XFER_INFO | ASC_CMD_DMA;
+		readback(regs->asc_cmd);
 		asc->script = &asc_scripts[SCRIPT_CONTINUE_OUT];
 		return (0);
 	}
@@ -1370,7 +1486,7 @@ asc_replysync(asc, status, ss, ir)
 #ifdef DEBUG
 	if (asc_debug > 2)
 		printf("asc_replysync: %x %x\n",
-			asc_to_scsi_period[state->sync_period],
+			asc_to_scsi_period[state->sync_period] * asc->tb_ticks,
 			state->sync_offset);
 #endif
 	/* send synchronous transfer in response to a request */
@@ -1380,10 +1496,11 @@ asc_replysync(asc, status, ss, ir)
 	MachEmptyWriteBuffer();
 	regs->asc_fifo = SCSI_SYNCHRONOUS_XFER;
 	MachEmptyWriteBuffer();
-	regs->asc_fifo = asc_to_scsi_period[state->sync_period];
+	regs->asc_fifo = asc_to_scsi_period[state->sync_period] * asc->tb_ticks;
 	MachEmptyWriteBuffer();
 	regs->asc_fifo = state->sync_offset;
 	regs->asc_cmd = ASC_CMD_XFER_INFO;
+	readback(regs->asc_cmd);
 
 	/* return to the appropriate script */
 	if (!state->script) {
@@ -1446,17 +1563,17 @@ asc_msg_in(asc, status, ss, ir)
 			state->sync_offset = state->msg_in[2];
 
 			/* convert SCSI period to ASC period */
-			i = state->msg_in[1] / 10;
-			if (i < ASC_MIN_PERIOD)
-				i = ASC_MIN_PERIOD;
-			else if (i >= ASC_MAX_PERIOD) {
+			i = state->msg_in[1] / asc->tb_ticks;
+			if (i < asc->min_period)
+				i = asc->min_period;
+			else if (i >= asc->max_period) {
 				/* can't do sync transfer, period too long */
 				printf("asc%d: SCSI device %d: sync xfer period too long (%d)\n",
 					asc - asc_softc, asc->target, i);
-				i = ASC_MAX_PERIOD;
+				i = asc->max_period;
 				state->sync_offset = 0;
 			}
-			if ((i * 10) != state->msg_in[1])
+			if ((i * asc->tb_ticks) != state->msg_in[1])
 				i++;
 			state->sync_period = i & 0x1F;
 
@@ -1466,23 +1583,29 @@ asc_msg_in(asc, status, ss, ir)
 			 */
 			if (!(state->flags & TRY_SYNC)) {
 				regs->asc_cmd = ASC_CMD_SET_ATN;
+				readback(regs->asc_cmd);
 				MachEmptyWriteBuffer();
 
-				if (state->sync_period < ASC_MIN_PERIOD)
+				if (state->sync_period < asc->min_period)
 					state->sync_period =
-						ASC_MIN_PERIOD;
+						asc->min_period;
 				if (state->sync_offset > ASC_MAX_OFFSET)
 					state->sync_offset =
 						ASC_MAX_OFFSET;
 				asc->script = &asc_scripts[SCRIPT_REPLY_SYNC];
 				regs->asc_syn_p = state->sync_period;
+				readback(regs->asc_syn_p);
 				regs->asc_syn_o = state->sync_offset;
+				readback(regs->asc_syn_o);
 				regs->asc_cmd = ASC_CMD_MSG_ACPT;
+				readback(regs->asc_cmd);
 				return (0);
 			}
 
 			regs->asc_syn_p = state->sync_period;
+			readback(regs->asc_syn_p);
 			regs->asc_syn_o = state->sync_offset;
+			readback(regs->asc_syn_o);
 			goto done;
 
 		default:
@@ -1504,12 +1627,14 @@ asc_msg_in(asc, status, ss, ir)
 		printf(" did not like SYNCH xfer "); /* XXX */
 		state->flags |= DID_SYNC;
 		regs->asc_cmd = ASC_CMD_MSG_ACPT;
+		readback(regs->asc_cmd);
 		status = asc_wait(regs, ASC_CSR_INT);
 		ir = regs->asc_intr;
 		/* some just break out here, some dont */
 		if (ASC_PHASE(status) == ASC_PHASE_MSG_OUT) {
 			regs->asc_fifo = SCSI_ABORT;
 			regs->asc_cmd = ASC_CMD_XFER_INFO;
+			readback(regs->asc_cmd);
 			status = asc_wait(regs, ASC_CSR_INT);
 			ir = regs->asc_intr;
 		}
@@ -1546,6 +1671,7 @@ asc_msg_in(asc, status, ss, ir)
 			goto abort;
 		state->flags |= DISCONN;
 		regs->asc_cmd = ASC_CMD_MSG_ACPT;
+		readback(regs->asc_cmd);
 		asc->script = &asc_scripts[SCRIPT_DISCONNECT];
 		return (0);
 
@@ -1556,12 +1682,14 @@ asc_msg_in(asc, status, ss, ir)
 		/* request a message out before acknowledging this message */
 		state->msg_out = SCSI_MESSAGE_REJECT;
 		regs->asc_cmd = ASC_CMD_SET_ATN;
+		readback(regs->asc_cmd);
 		MachEmptyWriteBuffer();
 	}
 
 done:
 	/* return to original script */
 	regs->asc_cmd = ASC_CMD_MSG_ACPT;
+	readback(regs->asc_cmd);
 	if (!state->script) {
 	abort:
 #ifdef DEBUG
@@ -1585,6 +1713,132 @@ asc_disconnect(asc, status, ss, ir)
 	asc->target = -1;
 	asc->state = ASC_STATE_RESEL;
 	return (1);
+}
+
+/*
+ * DMA handling routines. For a turbochannel device, just set the dmar
+ * for the I/O ASIC, handle the actual DMA interface.
+ */
+static void
+tb_dma_start(asc, state, cp, flag)
+	asc_softc_t asc;
+	State *state;
+	caddr_t cp;
+	int flag;
+{
+
+	if (flag == ASCDMA_WRITE)
+		*asc->dmar = ASC_DMAR_WRITE | ASC_DMA_ADDR(cp);
+	else
+		*asc->dmar = ASC_DMA_ADDR(cp);
+}
+
+static void
+tb_dma_end(asc, state, flag)
+	asc_softc_t asc;
+	State *state;
+	int flag;
+{
+
+}
+
+static void
+asic_dma_start(asc, state, cp, flag)
+	asc_softc_t asc;
+	State *state;
+	caddr_t cp;
+	int flag;
+{
+	register volatile u_int *ssr = (volatile u_int *)
+		MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
+	u_int phys, nphys;
+
+	/* stop DMA engine first */
+	*ssr &= ~ASIC_CSR_DMAEN_SCSI;
+	* ((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SCR)) = 0;
+
+	phys = MACH_CACHED_TO_PHYS(cp);
+	cp = (caddr_t)pmax_trunc_page(cp + NBPG);
+	nphys = MACH_CACHED_TO_PHYS(cp);
+
+	asc->dma_next = cp;
+	asc->dma_xfer = state->dmalen - (nphys - phys);
+
+	*(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMAPTR) =
+		ASIC_DMA_ADDR(phys);
+	*(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMANPTR) =
+		ASIC_DMA_ADDR(nphys);
+	if (flag == ASCDMA_READ)
+		*ssr |= ASIC_CSR_SCSI_DIR | ASIC_CSR_DMAEN_SCSI;
+	else
+		*ssr = (*ssr & ~ASIC_CSR_SCSI_DIR) | ASIC_CSR_DMAEN_SCSI;
+	MachEmptyWriteBuffer();
+}
+
+static void
+asic_dma_end(asc, state, flag)
+	asc_softc_t asc;
+	State *state;
+	int flag;
+{
+	register volatile u_int *ssr = (volatile u_int *)
+		MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
+	int nb;
+
+	*ssr &= ~ASIC_CSR_DMAEN_SCSI;
+	*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMAPTR)) = -1;
+	*((volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMANPTR)) = -1;
+	MachEmptyWriteBuffer();
+
+	if (flag == ASCDMA_READ) {
+		MachFlushDCache(MACH_PHYS_TO_CACHED(
+		    MACH_UNCACHED_TO_PHYS(state->dmaBufAddr)), state->dmalen);
+		if (nb = *((int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SCR))) {
+			/* pick up last upto6 bytes, sigh. */
+			register u_short *to;
+			register int w;
+	
+			/* Last byte really xferred is.. */
+			to = (u_short *)(state->dmaBufAddr + state->dmalen - (nb << 1));
+			w = *(int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SDR0);
+			*to++ = w;
+			if (--nb > 0) {
+				w >>= 16;
+				*to++ = w;
+			}
+			if (--nb > 0) {
+				w = *(int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_SDR1);
+				*to++ = w;
+			}
+		}
+	}
+}
+
+/*
+ * Called by asic_intr() for scsi dma pointer update interrupts.
+ */
+void
+asc_dma_intr()
+{
+	asc_softc_t asc = &asc_softc[0];
+	u_int next_phys;
+
+	asc->dma_xfer -= NBPG;
+	if (asc->dma_xfer <= -NBPG) {
+		volatile u_int *ssr = (volatile u_int *)
+			MACH_PHYS_TO_UNCACHED(KMIN_REG_CSR);
+		*ssr &= ~ASIC_CSR_DMAEN_SCSI;
+	} else {
+		asc->dma_next += NBPG;
+		next_phys = MACH_CACHED_TO_PHYS(asc->dma_next);
+	}
+#ifdef notdef
+	else
+		next_phys = MACH_CACHED_TO_PHYS(asc_iobuf);
+#endif
+	*(volatile int *)MACH_PHYS_TO_UNCACHED(KMIN_REG_SCSI_DMANPTR) =
+		ASIC_DMA_ADDR(next_phys);
+	MachEmptyWriteBuffer();
 }
 
 #ifdef DEBUG

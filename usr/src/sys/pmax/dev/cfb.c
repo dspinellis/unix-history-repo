@@ -3,11 +3,11 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Ralph Campbell.
+ * Ralph Campbell and Rick Macklem.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cfb.c	7.4 (Berkeley) %G%
+ *	@(#)cfb.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -52,16 +52,8 @@
  * rights to redistribute these changes.
  */
 
-#include "cfb.h"
+#include <cfb.h>
 #if NCFB > 0
-
-/*
- * This is a device driver for the PMAG-BA color frame buffer
- * on the TURBOchannel.
- * XXX This is just to get a console working;
- *	it will need changes to work with X11R5.
- */
-
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
@@ -74,596 +66,95 @@
 #include <vm/vm.h>
 
 #include <machine/machConst.h>
-#include <machine/machMon.h>
-#include <machine/dc7085cons.h>
 #include <machine/pmioctl.h>
+
+#include <pmax/pmax/maxine.h>
+#include <pmax/pmax/cons.h>
+#include <pmax/pmax/pmaxtype.h>
 
 #include <pmax/dev/device.h>
 #include <pmax/dev/cfbreg.h>
-#include <pmax/dev/font.c>
+#include <pmax/dev/fbreg.h>
 
-#define MAX_ROW	56
-#define MAX_COL	80
-
-/*
- * Macro to translate from a time struct to milliseconds.
- */
-#define TO_MS(tv) ((tv.tv_sec * 1000) + (tv.tv_usec / 1000))
-
-static int	isMono;		/* true if B&W frame buffer */
-static int	initialized;	/* true if 'probe' was successful */
-static int	GraphicsOpen;	/* true if the graphics device is open */
-static int	row, col;	/* row and col for console cursor */
-static struct	selinfo cfb_selp;	/* process waiting for select */
-static unsigned	fb_addr;	/* frame buffer kernel virtual address */
-static unsigned	planemask_addr;	/* plane mask kernel virtual address */
+#include <dc.h>
+#include <dtop.h>
+#include <scc.h>
 
 /*
  * These need to be mapped into user space.
  */
-static struct pmuaccess {
-	PM_Info		scrInfo;
-	pmEvent		events[PM_MAXEVQ];	
-	pmTimeCoord	tcs[MOTION_BUFFER_SIZE];
-} pmu;
-
-/*
- * Font mask bits used by Blitc().
- */
-static unsigned int fontmaskBits[16] = {
-	0x00000000,
-	0x00000001,
-	0x00000100,
-	0x00000101,
-	0x00010000,
-	0x00010001,
-	0x00010100,
-	0x00010101,
-	0x01000000,
-	0x01000001,
-	0x01000100,
-	0x01000101,
-	0x01010000,
-	0x01010001,
-	0x01010100,
-	0x01010101
-};
+struct fbuaccess cfbu;
+struct pmax_fb cfbfb;
 
 /*
  * Forward references.
  */
-static void Scroll();
-static void Blitc();
+extern void fbScroll();
 
-static void ScreenInit();
-static void LoadCursor();
-static void RestoreCursorColor();
-static void CursorColor();
-static void PosCursor();
-static void InitColorMap();
-static void LoadColorMap();
-static void EnableVideo();
-static void DisableVideo();
+static void cfbScreenInit();
+static void cfbLoadCursor();
+static void cfbRestoreCursorColor();
+static void cfbCursorColor();
+void cfbPosCursor();
+static void cfbInitColorMap();
+static void cfbLoadColorMap();
+static void bt459_set_cursor_ram(), bt459_video_on(), bt459_video_off();
+static void bt459_select_reg(), bt459_write_reg();
+static u_char bt459_read_reg();
+static void cfbConfigMouse(), cfbDeconfigMouse();
 
-extern void dcKBDPutc();
+extern void fbKbdEvent(), fbMouseEvent(), fbMouseButtons();
+void cfbKbdEvent(), cfbMouseEvent(), cfbMouseButtons();
+#if NDC > 0
+#include <machine/dc7085cons.h>
+extern void dcPutc();
 extern void (*dcDivertXInput)();
 extern void (*dcMouseEvent)();
 extern void (*dcMouseButtons)();
+#endif
+#if NSCC > 0
+#include <pmax/dev/sccreg.h>
+extern void sccPutc();
+extern void (*sccDivertXInput)();
+extern void (*sccMouseEvent)();
+extern void (*sccMouseButtons)();
+#endif
+#if NDTOP > 0
+#include <pmax/dev/dtopreg.h>
+extern void dtopKBDPutc();
+extern void (*dtopDivertXInput)();
+extern void (*dtopMouseEvent)();
+extern void (*dtopMouseButtons)();
+#endif
+extern int pmax_boardtype;
+extern u_short defCursor[32];
+extern struct consdev cn_tab;
 
 int	cfbprobe();
 struct	driver cfbdriver = {
 	"cfb", cfbprobe, 0, 0,
 };
 
+#define	CFB_OFFSET_VRAM		0x0		/* from module's base */
+#define CFB_OFFSET_BT459	0x200000	/* Bt459 registers */
+#define CFB_OFFSET_IREQ		0x300000	/* Interrupt req. control */
+#define CFB_OFFSET_ROM		0x380000	/* Diagnostic ROM */
+#define CFB_OFFSET_RESET	0x3c0000	/* Bt459 resets on writes */
+
 /*
  * Test to see if device is present.
  * Return true if found and initialized ok.
  */
+/*ARGSUSED*/
 cfbprobe(cp)
 	register struct pmax_ctlr *cp;
 {
+	register struct pmax_fb *fp = &cfbfb;
 
-	if (!initialized) {
-		if (!cfb_init(cp))
-			return (0);
-	}
-	printf("cfb%d at nexus0 csr 0x%x priority %d\n",
-		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
+	if (!fp->initialized && !cfbinit(cp->pmax_addr))
+		return (0);
+	printf("cfb0 (color display)\n");
 	return (1);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * cfbKbdEvent --
- *
- *	Process a received character.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Events added to the queue.
- *
- *----------------------------------------------------------------------
- */
-void
-cfbKbdEvent(ch)
-	int ch;
-{
-	register pmEvent *eventPtr;
-	int i;
-
-	if (!GraphicsOpen)
-		return;
-
-	/*
-	 * See if there is room in the queue.
-	 */
-	i = PM_EVROUND(pmu.scrInfo.qe.eTail + 1);
-	if (i == pmu.scrInfo.qe.eHead)
-		return;
-
-	/*
-	 * Add the event to the queue.
-	 */
-	eventPtr = &pmu.events[pmu.scrInfo.qe.eTail];
-	eventPtr->type = BUTTON_RAW_TYPE;
-	eventPtr->device = KEYBOARD_DEVICE;
-	eventPtr->x = pmu.scrInfo.mouse.x;
-	eventPtr->y = pmu.scrInfo.mouse.y;
-	eventPtr->time = TO_MS(time);
-	eventPtr->key = ch;
-	pmu.scrInfo.qe.eTail = i;
-	selwakeup(&cfb_selp);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * cfbMouseEvent --
- *
- *	Process a mouse event.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	An event is added to the event queue.
- *
- *----------------------------------------------------------------------
- */
-void
-cfbMouseEvent(newRepPtr) 
-	register MouseReport *newRepPtr;
-{
-	unsigned milliSec;
-	int i;
-	pmEvent *eventPtr;
-
-	if (!GraphicsOpen)
-		return;
-
-	milliSec = TO_MS(time);
-
-	/*
-	 * Check to see if we have to accelerate the mouse
-	 */
-	if (pmu.scrInfo.mscale >= 0) {
-		if (newRepPtr->dx >= pmu.scrInfo.mthreshold) {
-			newRepPtr->dx +=
-				(newRepPtr->dx - pmu.scrInfo.mthreshold) *
-				pmu.scrInfo.mscale;
-		}
-		if (newRepPtr->dy >= pmu.scrInfo.mthreshold) {
-			newRepPtr->dy +=
-				(newRepPtr->dy - pmu.scrInfo.mthreshold) *
-				pmu.scrInfo.mscale;
-		}
-	}
-
-	/*
-	 * Update mouse position
-	 */
-	if (newRepPtr->state & MOUSE_X_SIGN) {
-		pmu.scrInfo.mouse.x += newRepPtr->dx;
-		if (pmu.scrInfo.mouse.x > pmu.scrInfo.max_cur_x)
-			pmu.scrInfo.mouse.x = pmu.scrInfo.max_cur_x;
-	} else {
-		pmu.scrInfo.mouse.x -= newRepPtr->dx;
-		if (pmu.scrInfo.mouse.x < pmu.scrInfo.min_cur_x)
-			pmu.scrInfo.mouse.x = pmu.scrInfo.min_cur_x;
-	}
-	if (newRepPtr->state & MOUSE_Y_SIGN) {
-		pmu.scrInfo.mouse.y -= newRepPtr->dy;
-		if (pmu.scrInfo.mouse.y < pmu.scrInfo.min_cur_y)
-			pmu.scrInfo.mouse.y = pmu.scrInfo.min_cur_y;
-	} else {
-		pmu.scrInfo.mouse.y += newRepPtr->dy;
-		if (pmu.scrInfo.mouse.y > pmu.scrInfo.max_cur_y)
-			pmu.scrInfo.mouse.y = pmu.scrInfo.max_cur_y;
-	}
-
-	/*
-	 * Move the hardware cursor.
-	 */
-	PosCursor(pmu.scrInfo.mouse.x, pmu.scrInfo.mouse.y);
-
-	/*
-	 * Store the motion event in the motion buffer.
-	 */
-	pmu.tcs[pmu.scrInfo.qe.tcNext].time = milliSec;
-	pmu.tcs[pmu.scrInfo.qe.tcNext].x = pmu.scrInfo.mouse.x;
-	pmu.tcs[pmu.scrInfo.qe.tcNext].y = pmu.scrInfo.mouse.y;
-	if (++pmu.scrInfo.qe.tcNext >= MOTION_BUFFER_SIZE)
-		pmu.scrInfo.qe.tcNext = 0;
-	if (pmu.scrInfo.mouse.y < pmu.scrInfo.mbox.bottom &&
-	    pmu.scrInfo.mouse.y >=  pmu.scrInfo.mbox.top &&
-	    pmu.scrInfo.mouse.x < pmu.scrInfo.mbox.right &&
-	    pmu.scrInfo.mouse.x >=  pmu.scrInfo.mbox.left)
-		return;
-
-	pmu.scrInfo.mbox.bottom = 0;
-	if (PM_EVROUND(pmu.scrInfo.qe.eTail + 1) == pmu.scrInfo.qe.eHead)
-		return;
-
-	i = PM_EVROUND(pmu.scrInfo.qe.eTail - 1);
-	if ((pmu.scrInfo.qe.eTail != pmu.scrInfo.qe.eHead) && 
-	    (i != pmu.scrInfo.qe.eHead)) {
-		pmEvent *eventPtr;
-
-		eventPtr = &pmu.events[i];
-		if (eventPtr->type == MOTION_TYPE) {
-			eventPtr->x = pmu.scrInfo.mouse.x;
-			eventPtr->y = pmu.scrInfo.mouse.y;
-			eventPtr->time = milliSec;
-			eventPtr->device = MOUSE_DEVICE;
-			return;
-		}
-	}
-	/*
-	 * Put event into queue and wakeup any waiters.
-	 */
-	eventPtr = &pmu.events[pmu.scrInfo.qe.eTail];
-	eventPtr->type = MOTION_TYPE;
-	eventPtr->time = milliSec;
-	eventPtr->x = pmu.scrInfo.mouse.x;
-	eventPtr->y = pmu.scrInfo.mouse.y;
-	eventPtr->device = MOUSE_DEVICE;
-	pmu.scrInfo.qe.eTail = PM_EVROUND(pmu.scrInfo.qe.eTail + 1);
-	selwakeup(&cfb_selp);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * cfbMouseButtons --
- *
- *	Process mouse buttons.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-cfbMouseButtons(newRepPtr)
-	MouseReport *newRepPtr;
-{
-	static char temp, oldSwitch, newSwitch;
-	int i, j;
-	pmEvent *eventPtr;
-	static MouseReport lastRep;
-
-	if (!GraphicsOpen)
-		return;
-
-	newSwitch = newRepPtr->state & 0x07;
-	oldSwitch = lastRep.state & 0x07;
-
-	temp = oldSwitch ^ newSwitch;
-	if (temp == 0)
-		return;
-	for (j = 1; j < 8; j <<= 1) {
-		if ((j & temp) == 0)
-			continue;
-
-		/*
-		 * Check for room in the queue
-		 */
-		i = PM_EVROUND(pmu.scrInfo.qe.eTail+1);
-		if (i == pmu.scrInfo.qe.eHead)
-			return;
-
-		/*
-		 * Put event into queue.
-		 */
-		eventPtr = &pmu.events[pmu.scrInfo.qe.eTail];
-
-		switch (j) {
-		case RIGHT_BUTTON:
-			eventPtr->key = EVENT_RIGHT_BUTTON;
-			break;
-
-		case MIDDLE_BUTTON:
-			eventPtr->key = EVENT_MIDDLE_BUTTON;
-			break;
-
-		case LEFT_BUTTON:
-			eventPtr->key = EVENT_LEFT_BUTTON;
-		}
-		if (newSwitch & j)
-			eventPtr->type = BUTTON_DOWN_TYPE;
-		else
-			eventPtr->type = BUTTON_UP_TYPE;
-		eventPtr->device = MOUSE_DEVICE;
-
-		eventPtr->time = TO_MS(time);
-		eventPtr->x = pmu.scrInfo.mouse.x;
-		eventPtr->y = pmu.scrInfo.mouse.y;
-	}
-	pmu.scrInfo.qe.eTail = i;
-	selwakeup(&cfb_selp);
-
-	lastRep = *newRepPtr;
-	pmu.scrInfo.mswitches = newSwitch;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Scroll --
- *
- *	Scroll the screen.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static void
-Scroll()
-{
-	register int *dest, *src;
-	register int *end;
-	register int temp0, temp1, temp2, temp3;
-	register int i, scanInc, lineCount;
-	int line;
-
-	/*
-	 * If the mouse is on we don't scroll so that the bit map remains sane.
-	 */
-	if (GraphicsOpen) {
-		row = 0;
-		return;
-	}
-
-	/*
-	 *  The following is an optimization to cause the scrolling 
-	 *  of text to be memory limited.  Basically the writebuffer is 
-	 *  4 words (32 bits ea.) long so to achieve maximum speed we 
-	 *  read and write in multiples of 4 words. We also limit the 
-	 *  size to be MAX_COL characters for more speed. 
-	 */
-	if (isMono) {
-		lineCount = 5;
-		line = 1920 * 2;
-		scanInc = 44;
-	} else {
-		lineCount = 40;
-		scanInc = 96;
-		line = 1920 * 8;
-	}
-	src = (int *)(fb_addr + line);
-	dest = (int *)(fb_addr);
-	end = (int *)(fb_addr + (60 * line) - line);
-	do {
-		i = 0;
-		do {
-			temp0 = src[0];
-			temp1 = src[1];
-			temp2 = src[2];
-			temp3 = src[3];
-			dest[0] = temp0;
-			dest[1] = temp1;
-			dest[2] = temp2;
-			dest[3] = temp3;
-			dest += 4;
-			src += 4;
-			i++;
-		} while (i < lineCount);
-		src += scanInc;
-		dest += scanInc;
-	} while (src < end);
-
-	/* 
-	 * Now zero out the last two lines 
-	 */
-	bzero(fb_addr + (row * line), 3 * line);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * cfbPutc --
- *
- *	Write a character to the console.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-cfbPutc(c)
-	register int c;
-{
-	int s;
-
-	s = splhigh();	/* in case we do any printf's at interrupt time */
-	if (initialized) {
-#ifdef DEBUG
-		/*
-		 * If the HELP key is pressed, wait for another
-		 * HELP key press to start/stop output.
-		 */
-		if (dcDebugGetc() == LK_HELP) {
-			while (dcDebugGetc() != LK_HELP)
-				;
-		}
-#endif
-		Blitc(c);
-	} else {
-		void (*f)() = (void (*)())MACH_MON_PUTCHAR;
-
-		(*f)(c);
-	}
-	splx(s);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Blitc --
- *
- *	Write a character to the screen.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static void
-Blitc(c)
-	register int c;
-{
-	register char *bRow, *fRow;
-	register int i;
-	register int ote = isMono ? 256 : 1024; /* offset to table entry */
-	int colMult = isMono ? 1 : 8;
-
-	c &= 0xff;
-
-	switch (c) {
-	case '\t':
-		for (i = 8 - (col & 0x7); i > 0; i--)
-			Blitc(' ');
-		break;
-
-	case '\r':
-		col = 0;
-		break;
-
-	case '\b':
-		col--;
-		if (col < 0)
-			col = 0;
-		break;
-
-	case '\n':
-		if (row + 1 >= MAX_ROW)
-			Scroll();
-		else
-			row++;
-		col = 0;
-		break;
-
-	case '\007':
-		dcKBDPutc(LK_RING_BELL);
-		break;
-
-	default:
-		/*
-		 * 0xA1 to 0xFD are the printable characters added with 8-bit
-		 * support.
-		 */
-		if (c < ' ' || c > '~' && c < 0xA1 || c > 0xFD)
-			break;
-		/*
-		 * If the next character will wrap around then 
-		 * increment row counter or scroll screen.
-		 */
-		if (col >= MAX_COL) {
-			col = 0;
-			if (row + 1 >= MAX_ROW)
-				Scroll();
-			else
-				row++;
-		}
-		bRow = (char *)(fb_addr +
-			(row * 15 & 0x3ff) * ote + col * colMult);
-		i = c - ' ';
-		/*
-		 * This is to skip the (32) 8-bit 
-		 * control chars, as well as DEL 
-		 * and 0xA0 which aren't printable
-		 */
-		if (c > '~')
-			i -= 34; 
-		i *= 15;
-		fRow = (char *)((int)pmFont + i);
-
-		/* inline expansion for speed */
-		if (isMono) {
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-			*bRow = *fRow++; bRow += ote;
-		} else {
-			register int j;
-			register unsigned int *pInt;
-
-			pInt = (unsigned int *)bRow;
-			for (j = 0; j < 15; j++) {
-				/*
-				 * fontmaskBits converts a nibble
-				 * (4 bytes) to a long word 
-				 * containing 4 pixels corresponding
-				 * to each bit in the nibble.  Thus
-				 * we write two longwords for each
-				 * byte in font.
-				 * 
-				 * Remember the font is 8 bits wide
-				 * and 15 bits high.
-				 *
-				 * We add 256 to the pointer to
-				 * point to the pixel on the 
-				 * next scan line
-				 * directly below the current
-				 * pixel.
-				 */
-				pInt[0] = fontmaskBits[(*fRow) & 0xf];
-				pInt[1] = fontmaskBits[((*fRow) >> 4) & 0xf];
-				fRow++; 
-				pInt += 256;
-			}
-		}
-		col++; /* increment column counter */
-	}
-	if (!GraphicsOpen)
-		PosCursor(col * 8, row * 15);
 }
 
 /*ARGSUSED*/
@@ -671,23 +162,25 @@ cfbopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
+	register struct pmax_fb *fp = &cfbfb;
+	int s;
 
-	if (!initialized)
+	if (!fp->initialized)
 		return (ENXIO);
-	if (GraphicsOpen)
+	if (fp->GraphicsOpen)
 		return (EBUSY);
 
-	GraphicsOpen = 1;
-	if (!isMono)
-		InitColorMap();
+	fp->GraphicsOpen = 1;
+	cfbInitColorMap();
 	/*
 	 * Set up event queue for later
 	 */
-	pmu.scrInfo.qe.eSize = PM_MAXEVQ;
-	pmu.scrInfo.qe.eHead = pmu.scrInfo.qe.eTail = 0;
-	pmu.scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
-	pmu.scrInfo.qe.tcNext = 0;
-	pmu.scrInfo.qe.timestamp_ms = TO_MS(time);
+	fp->fbu->scrInfo.qe.eSize = PM_MAXEVQ;
+	fp->fbu->scrInfo.qe.eHead = fp->fbu->scrInfo.qe.eTail = 0;
+	fp->fbu->scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
+	fp->fbu->scrInfo.qe.tcNext = 0;
+	fp->fbu->scrInfo.qe.timestamp_ms = TO_MS(time);
+	cfbConfigMouse();
 	return (0);
 }
 
@@ -696,23 +189,19 @@ cfbclose(dev, flag)
 	dev_t dev;
 	int flag;
 {
+	register struct pmax_fb *fp = &cfbfb;
 	int s;
 
-	if (!GraphicsOpen)
+	if (!fp->GraphicsOpen)
 		return (EBADF);
 
-	GraphicsOpen = 0;
-	if (!isMono)
-		InitColorMap();
-	s = spltty();
-	dcDivertXInput = (void (*)())0;
-	dcMouseEvent = (void (*)())0;
-	dcMouseButtons = (void (*)())0;
-	splx(s);
-	ScreenInit();
+	fp->GraphicsOpen = 0;
+	cfbInitColorMap();
+	cfbDeconfigMouse();
+	cfbScreenInit();
 	vmUserUnmap();
-	bzero(fb_addr, (isMono ? 1024 / 8 : 1024) * 864);
-	PosCursor(col * 8, row * 15);
+	bzero((caddr_t)fp->fr_addr, 1024 * 864);
+	cfbPosCursor(fp->col * 8, fp->row * 15);
 	return (0);
 }
 
@@ -721,6 +210,7 @@ cfbioctl(dev, cmd, data, flag)
 	dev_t dev;
 	caddr_t data;
 {
+	register struct pmax_fb *fp = &cfbfb;
 	int s;
 
 	switch (cmd) {
@@ -733,26 +223,20 @@ cfbioctl(dev, cmd, data, flag)
 		 * Map the all the data the user needs access to into
 		 * user space.
 		 */
-		addr = vmUserMap(sizeof(pmu), (unsigned)&pmu);
+		addr = vmUserMap(sizeof(struct fbuaccess), (unsigned)fp->fbu);
 		if (addr == (caddr_t)0)
 			goto mapError;
-		*(PM_Info **)data = &((struct pmuaccess *)addr)->scrInfo;
-		pmu.scrInfo.qe.events = ((struct pmuaccess *)addr)->events;
-		pmu.scrInfo.qe.tcs = ((struct pmuaccess *)addr)->tcs;
-		/*
-		 * Map the plane mask into the user's address space.
-		 */
-		addr = vmUserMap(4, planemask_addr);
-		if (addr == (caddr_t)0)
-			goto mapError;
-		pmu.scrInfo.planemask = (char *)addr;
+		*(PM_Info **)data = &((struct fbuaccess *)addr)->scrInfo;
+		fp->fbu->scrInfo.qe.events = ((struct fbuaccess *)addr)->events;
+		fp->fbu->scrInfo.qe.tcs = ((struct fbuaccess *)addr)->tcs;
+		fp->fbu->scrInfo.planemask = (char *)0;
 		/*
 		 * Map the frame buffer into the user's address space.
 		 */
-		addr = vmUserMap(isMono ? 256*1024 : 1024*1024, fb_addr);
+		addr = vmUserMap(1024 * 1024, (unsigned)fp->fr_addr);
 		if (addr == (caddr_t)0)
 			goto mapError;
-		pmu.scrInfo.bitmap = (char *)addr;
+		fp->fbu->scrInfo.bitmap = (char *)addr;
 		break;
 
 	mapError:
@@ -765,15 +249,15 @@ cfbioctl(dev, cmd, data, flag)
 		/*
 		 * Set mouse state.
 		 */
-		pmu.scrInfo.mouse = *(pmCursor *)data;
-		PosCursor(pmu.scrInfo.mouse.x, pmu.scrInfo.mouse.y);
+		fp->fbu->scrInfo.mouse = *(pmCursor *)data;
+		cfbPosCursor(fp->fbu->scrInfo.mouse.x, fp->fbu->scrInfo.mouse.y);
 		break;
 
 	case QIOCINIT:
 		/*
 		 * Initialize the screen.
 		 */
-		ScreenInit();
+		cfbScreenInit();
 		break;
 
 	case QIOCKPCMD:
@@ -784,56 +268,49 @@ cfbioctl(dev, cmd, data, flag)
 		kpCmdPtr = (pmKpCmd *)data;
 		if (kpCmdPtr->nbytes == 0)
 			kpCmdPtr->cmd |= 0x80;
-		if (!GraphicsOpen)
+		if (!fp->GraphicsOpen)
 			kpCmdPtr->cmd |= 1;
-		dcKBDPutc((int)kpCmdPtr->cmd);
+		(*fp->KBDPutc)(fp->kbddev, (int)kpCmdPtr->cmd);
 		cp = &kpCmdPtr->par[0];
 		for (; kpCmdPtr->nbytes > 0; cp++, kpCmdPtr->nbytes--) {
 			if (kpCmdPtr->nbytes == 1)
 				*cp |= 0x80;
-			dcKBDPutc((int)*cp);
+			(*fp->KBDPutc)(fp->kbddev, (int)*cp);
 		}
-		break;
 	    }
+	    break;
 
 	case QIOCADDR:
-		*(PM_Info **)data = &pmu.scrInfo;
+		*(PM_Info **)data = &fp->fbu->scrInfo;
 		break;
 
 	case QIOWCURSOR:
-		LoadCursor((unsigned short *)data);
+		cfbLoadCursor((unsigned short *)data);
 		break;
 
 	case QIOWCURSORCOLOR:
-		CursorColor((unsigned int *)data);
+		cfbCursorColor((unsigned int *)data);
 		break;
 
 	case QIOSETCMAP:
-		LoadColorMap((ColorMap *)data);
+		cfbLoadColorMap((ColorMap *)data);
 		break;
 
 	case QIOKERNLOOP:
-		s = spltty();
-		dcDivertXInput = cfbKbdEvent;
-		dcMouseEvent = cfbMouseEvent;
-		dcMouseButtons = cfbMouseButtons;
-		splx(s);
+		cfbConfigMouse();
 		break;
 
 	case QIOKERNUNLOOP:
-		s = spltty();
-		dcDivertXInput = (void (*)())0;
-		dcMouseEvent = (void (*)())0;
-		dcMouseButtons = (void (*)())0;
-		splx(s);
+		cfbDeconfigMouse();
 		break;
 
 	case QIOVIDEOON:
-		EnableVideo();
+		cfbRestoreCursorColor();
+		bt459_video_on();
 		break;
 
 	case QIOVIDEOOFF:
-		DisableVideo();
+		bt459_video_off();
 		break;
 
 	default:
@@ -848,12 +325,13 @@ cfbselect(dev, flag, p)
 	int flag;
 	struct proc *p;
 {
+	struct pmax_fb *fp = &cfbfb;
 
 	switch (flag) {
 	case FREAD:
-		if (pmu.scrInfo.qe.eHead != pmu.scrInfo.qe.eTail)
+		if (fp->fbu->scrInfo.qe.eHead != fp->fbu->scrInfo.qe.eTail)
 			return (1);
-		selrecord(p, &cfb_selp);
+		selrecord(p, &fp->selp);
 		break;
 	}
 
@@ -863,54 +341,77 @@ cfbselect(dev, flag, p)
 static u_char	cursor_RGB[6];	/* cursor color 2 & 3 */
 
 /*
- * The default cursor.
+ * XXX This assumes 2bits/cursor pixel so that the 1Kbyte cursor RAM
+ * defines a 64x64 cursor. If the bt459 does not map the cursor RAM
+ * this way, this code is Screwed!
  */
-static unsigned short defCursor[1024] = {
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x00FF, 0x00FF, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-};
+static void
+cfbLoadCursor(cursor)
+	u_short *cursor;
+{
+	register int i, j, k, pos;
+	register u_short ap, bp, out;
 
-#define	CFB_OFFSET_VRAM		0x0		/* from module's base */
-						/* Replicated at x100000 */
-#define CFB_OFFSET_BT459	0x200000	/* Bt459 registers */
-#define CFB_OFFSET_IREQ		0x300000	/* Interrupt req. control */
-#define CFB_OFFSET_ROM		0x380000	/* Diagnostic ROM */
-#define CFB_OFFSET_RESET	0x3c0000	/* Bt459 resets on writes */
+	/*
+	 * Fill in the cursor sprite using the A and B planes, as provided
+	 * for the pmax.
+	 * XXX This will have to change when the X server knows that this
+	 * is not a pmax display.
+	 */
+	pos = 0;
+	for (k = 0; k < 16; k++) {
+		ap = *cursor;
+		bp = *(cursor + 16);
+		j = 0;
+		while (j < 4) {
+			out = 0;
+			for (i = 0; i < 4; i++) {
+				out = (out << 2) | ((ap & 0x1) << 1) |
+					(bp & 0x1);
+				ap >>= 1;
+				bp >>= 1;
+			}
+			bt459_set_cursor_ram(pos, out);
+			pos++;
+			j++;
+		}
+		while (j < 16) {
+			bt459_set_cursor_ram(pos, 0);
+			pos++;
+			j++;
+		}
+		cursor++;
+	}
+	while (pos < 1024) {
+		bt459_set_cursor_ram(pos, 0);
+		pos++;
+	}
+}
+
+/*
+ * Set a cursor ram value.
+ */
+static void
+bt459_set_cursor_ram(pos, val)
+	int pos;
+	register u_char val;
+{
+	register bt459_regmap_t *regs = (bt459_regmap_t *)
+		(cfbfb.fr_addr + CFB_OFFSET_BT459);
+	register int cnt;
+	u_char nval;
+
+	cnt = 0;
+	do {
+		bt459_write_reg(regs, BT459_REG_CRAM_BASE + pos, val);
+		nval = bt459_read_reg(regs, BT459_REG_CRAM_BASE + pos);
+	} while (val != nval && ++cnt < 10);
+}
 
 /*
  * Generic register access
  */
-void
+static void
 bt459_select_reg(regs, regno)
 	bt459_regmap_t *regs;
 {
@@ -919,7 +420,7 @@ bt459_select_reg(regs, regno)
 	MachEmptyWriteBuffer();
 }
 
-void
+static void
 bt459_write_reg(regs, regno, val)
 	bt459_regmap_t *regs;
 {
@@ -930,55 +431,68 @@ bt459_write_reg(regs, regno, val)
 	MachEmptyWriteBuffer();
 }
 
-unsigned char
+static u_char
 bt459_read_reg(regs, regno)
 	bt459_regmap_t *regs;
 {
 	regs->addr_lo = regno;
 	regs->addr_hi = regno >> 8;
 	MachEmptyWriteBuffer();
-	return regs->addr_reg;
+	return (regs->addr_reg);
 }
-
-#ifdef DEBUG
-bt459_print_colormap(regs)
-	bt459_regmap_t *regs;
-{
-	register int i;
-
-	bt459_select_reg(regs, 0);
-	for (i = 0; i < 256; i++) {
-		register unsigned red, green, blue;
-
-		red = regs->addr_cmap;
-		green = regs->addr_cmap;
-		blue = regs->addr_cmap;
-		printf("%x->[x%x x%x x%x]\n", i, red, green, blue);
-	}
-}
-#endif
 
 /*
- * Test to see if device is present.
- * Return true if found and initialized ok.
+ * Initialization
  */
-cfb_init(cp)
-	register struct pmax_ctlr *cp;
+int
+cfbinit(cp)
+	char *cp;
 {
-	bt459_regmap_t *regs;
+	register bt459_regmap_t *regs;
+	register struct pmax_fb *fp = &cfbfb;
 
 	/* check for no frame buffer */
-	if (badaddr(cp->pmax_addr, 4))
+	if (badaddr(cp, 4))
 		return (0);
 
-	fb_addr = (unsigned)cp->pmax_addr + CFB_OFFSET_VRAM;
-	planemask_addr = 0; /* XXX */
-	regs = (bt459_regmap_t *)(fb_addr + CFB_OFFSET_BT459);
+	fp->isMono = 0;
+	fp->fr_addr = (char *)(cp + CFB_OFFSET_VRAM);
+	fp->fbu = &cfbu;
+	fp->posCursor = cfbPosCursor;
+	switch (pmax_boardtype) {
+#if NDC > 0
+	case DS_3MAX:
+		fp->KBDPutc = dcPutc;
+		fp->kbddev = makedev(DCDEV, DCKBD_PORT);
+		break;
+#endif
+#if NSCC > 0
+	case DS_3MIN:
+		fp->KBDPutc = sccPutc;
+		fp->kbddev = makedev(SCCDEV, SCCKBD_PORT);
+		break;
+#endif
+#if NDTOP > 0
+	case DS_MAXINE:
+		fp->KBDPutc = dtopKBDPutc;
+		fp->kbddev = makedev(DTOPDEV, DTOPKBD_PORT);
+		break;
+#endif
+	default:
+		printf("Can't cofigure keyboard/mouse\n");
+		return (0);
+	};
+
+	/*
+	 * Initialize the screen.
+	 */
+	regs = (bt459_regmap_t *)(fp->fr_addr + CFB_OFFSET_BT459);
 
 	if (bt459_read_reg(regs, BT459_REG_ID) != 0x4a)
 		return (0);
 
-	*(int *)(fb_addr + CFB_OFFSET_RESET) = 0;	/* force chip reset */
+	/* Reset the chip */
+	*(volatile int *)(fp->fr_addr + CFB_OFFSET_RESET) = 0;
 	DELAY(2000);	/* ???? check right time on specs! ???? */
 
 	/* use 4:1 input mux */
@@ -1037,38 +551,40 @@ cfb_init(cp)
 	/*
 	 * Initialize screen info.
 	 */
-	pmu.scrInfo.max_row = MAX_ROW;
-	pmu.scrInfo.max_col = MAX_COL;
-	pmu.scrInfo.max_x = 1024;
-	pmu.scrInfo.max_y = 864;
-	pmu.scrInfo.max_cur_x = 1023;
-	pmu.scrInfo.max_cur_y = 863;
-	pmu.scrInfo.version = 11;
-	pmu.scrInfo.mthreshold = 4;
-	pmu.scrInfo.mscale = 2;
-	pmu.scrInfo.min_cur_x = 0;
-	pmu.scrInfo.min_cur_y = 0;
-	pmu.scrInfo.qe.timestamp_ms = TO_MS(time);
-	pmu.scrInfo.qe.eSize = PM_MAXEVQ;
-	pmu.scrInfo.qe.eHead = pmu.scrInfo.qe.eTail = 0;
-	pmu.scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
-	pmu.scrInfo.qe.tcNext = 0;
+	fp->fbu->scrInfo.max_row = 56;
+	fp->fbu->scrInfo.max_col = 80;
+	fp->fbu->scrInfo.max_x = 1024;
+	fp->fbu->scrInfo.max_y = 864;
+	fp->fbu->scrInfo.max_cur_x = 1023;
+	fp->fbu->scrInfo.max_cur_y = 863;
+	fp->fbu->scrInfo.version = 11;
+	fp->fbu->scrInfo.mthreshold = 4;
+	fp->fbu->scrInfo.mscale = 2;
+	fp->fbu->scrInfo.min_cur_x = 0;
+	fp->fbu->scrInfo.min_cur_y = 0;
+	fp->fbu->scrInfo.qe.timestamp_ms = TO_MS(time);
+	fp->fbu->scrInfo.qe.eSize = PM_MAXEVQ;
+	fp->fbu->scrInfo.qe.eHead = fp->fbu->scrInfo.qe.eTail = 0;
+	fp->fbu->scrInfo.qe.tcSize = MOTION_BUFFER_SIZE;
+	fp->fbu->scrInfo.qe.tcNext = 0;
 
 	/*
 	 * Initialize the color map, the screen, and the mouse.
 	 */
-	InitColorMap();
-	ScreenInit();
-	Scroll();
+	cfbInitColorMap();
+	cfbScreenInit();
+	fbScroll(fp);
 
-	initialized = 1;
+	fp->initialized = 1;
+	if (cn_tab.cn_fb == (struct pmax_fb *)0)
+		cn_tab.cn_fb = fp;
 	return (1);
 }
 
 /*
  * ----------------------------------------------------------------------------
  *
- * ScreenInit --
+ * cfbScreenInit --
  *
  *	Initialize the screen.
  *
@@ -1081,66 +597,23 @@ cfb_init(cp)
  * ----------------------------------------------------------------------------
  */
 static void
-ScreenInit()
+cfbScreenInit()
 {
+	register struct pmax_fb *fp = &cfbfb;
 
 	/*
 	 * Home the cursor.
-	 * We want an LSI terminal emulation. We want the graphics
+	 * We want an LSI terminal emulation.  We want the graphics
 	 * terminal to scroll from the bottom. So start at the bottom.
 	 */
-	row = 55;
-	col = 0;
+	fp->row = 55;
+	fp->col = 0;
 
 	/*
 	 * Load the cursor with the default values
 	 *
 	 */
-	LoadCursor(defCursor);
-}
-
-/*
- * ----------------------------------------------------------------------------
- *
- * LoadCursor --
- *
- *	Routine to load the cursor Sprite pattern.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The cursor is loaded into the hardware cursor.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-LoadCursor(cur)
-	unsigned short *cur;
-{
-	bt459_regmap_t *regs = (bt459_regmap_t *)(fb_addr + CFB_OFFSET_BT459);
-	register int i, j;
-
-	/*
-	 * As per specs, must run a check to see if we
-	 * had contention. If so, re-write the cursor.
-	 */
-	for (j = 0; j < 2; j++) {
-		/* loop once to write */
-		bt459_select_reg(regs, BT459_REG_CRAM_BASE);
-		for (i = 0; i < 1024; i++) {
-			regs->addr_reg = cur[i];
-			MachEmptyWriteBuffer();
-		}
-
-		/* loop to check, if fail write again */
-		bt459_select_reg(regs, BT459_REG_CRAM_BASE);
-		for (i = 0; i < 1024; i++)
-			if (regs->addr_reg != cur[i])
-				break;
-		if (i == 1024)
-			break;	/* all went well first shot */
-	}
+	cfbLoadCursor(defCursor);
 }
 
 /*
@@ -1159,9 +632,9 @@ LoadCursor(cur)
  * ----------------------------------------------------------------------------
  */
 static void
-RestoreCursorColor()
+cfbRestoreCursorColor()
 {
-	bt459_regmap_t *regs = (bt459_regmap_t *)(fb_addr + CFB_OFFSET_BT459);
+	bt459_regmap_t *regs = (bt459_regmap_t *)(cfbfb.fr_addr + CFB_OFFSET_BT459);
 	register int i;
 
 	bt459_select_reg(regs, BT459_REG_CCOLOR_2);
@@ -1187,7 +660,7 @@ RestoreCursorColor()
  * ----------------------------------------------------------------------------
  */
 static void
-CursorColor(color)
+cfbCursorColor(color)
 	unsigned int color[];
 {
 	register int i, j;
@@ -1195,7 +668,7 @@ CursorColor(color)
 	for (i = 0; i < 6; i++)
 		cursor_RGB[i] = (u_char)(color[i] >> 8);
 
-	RestoreCursorColor();
+	cfbRestoreCursorColor();
 }
 
 /*
@@ -1213,18 +686,19 @@ CursorColor(color)
  *
  *----------------------------------------------------------------------
  */
-static void
-PosCursor(x, y)
+void
+cfbPosCursor(x, y)
 	register int x, y;
 {
-	bt459_regmap_t *regs = (bt459_regmap_t *)(fb_addr + CFB_OFFSET_BT459);
+	bt459_regmap_t *regs = (bt459_regmap_t *)(cfbfb.fr_addr + CFB_OFFSET_BT459);
+	register struct pmax_fb *fp = &cfbfb;
 
-	if (y < pmu.scrInfo.min_cur_y || y > pmu.scrInfo.max_cur_y)
-		y = pmu.scrInfo.max_cur_y;
-	if (x < pmu.scrInfo.min_cur_x || x > pmu.scrInfo.max_cur_x)
-		x = pmu.scrInfo.max_cur_x;
-	pmu.scrInfo.cursor.x = x;		/* keep track of real cursor */
-	pmu.scrInfo.cursor.y = y;		/* position, indep. of mouse */
+	if (y < fp->fbu->scrInfo.min_cur_y || y > fp->fbu->scrInfo.max_cur_y)
+		y = fp->fbu->scrInfo.max_cur_y;
+	if (x < fp->fbu->scrInfo.min_cur_x || x > fp->fbu->scrInfo.max_cur_x)
+		x = fp->fbu->scrInfo.max_cur_x;
+	fp->fbu->scrInfo.cursor.x = x;		/* keep track of real cursor */
+	fp->fbu->scrInfo.cursor.y = y;		/* position, indep. of mouse */
 
 	x += 219;
 	y += 34;
@@ -1256,9 +730,9 @@ PosCursor(x, y)
  * ----------------------------------------------------------------------------
  */
 static void
-InitColorMap()
+cfbInitColorMap()
 {
-	bt459_regmap_t *regs = (bt459_regmap_t *)(fb_addr + CFB_OFFSET_BT459);
+	bt459_regmap_t *regs = (bt459_regmap_t *)(cfbfb.fr_addr + CFB_OFFSET_BT459);
 	register int i;
 
 	bt459_select_reg(regs, 0);
@@ -1276,7 +750,7 @@ InitColorMap()
 		cursor_RGB[i] = 0x00;
 		cursor_RGB[i + 3] = 0xff;
 	}
-	RestoreCursorColor();
+	cfbRestoreCursorColor();
 }
 
 /*
@@ -1295,10 +769,10 @@ InitColorMap()
  * ----------------------------------------------------------------------------
  */
 static void
-LoadColorMap(ptr)
+cfbLoadColorMap(ptr)
 	ColorMap *ptr;
 {
-	bt459_regmap_t *regs = (bt459_regmap_t *)(fb_addr + CFB_OFFSET_BT459);
+	bt459_regmap_t *regs = (bt459_regmap_t *)(cfbfb.fr_addr + CFB_OFFSET_BT459);
 
 	if (ptr->index > 256)
 		return;
@@ -1313,7 +787,7 @@ LoadColorMap(ptr)
 /*
  * Video on/off state.
  */
-struct vstate {
+static struct vstate {
 	u_char	color0[3];	/* saved color map entry zero */
 	u_char	off;		/* TRUE if display is off */
 } vstate;
@@ -1321,7 +795,7 @@ struct vstate {
 /*
  * ----------------------------------------------------------------------------
  *
- * EnableVideo --
+ * bt459_video_on
  *
  *	Enable the video display.
  *
@@ -1334,9 +808,9 @@ struct vstate {
  * ----------------------------------------------------------------------------
  */
 static void
-EnableVideo()
+bt459_video_on()
 {
-	bt459_regmap_t *regs = (bt459_regmap_t *)(fb_addr + CFB_OFFSET_BT459);
+	bt459_regmap_t *regs = (bt459_regmap_t *)(cfbfb.fr_addr + CFB_OFFSET_BT459);
 
 	if (!vstate.off)
 		return;
@@ -1360,7 +834,7 @@ EnableVideo()
 /*
  * ----------------------------------------------------------------------------
  *
- * DisableVideo --
+ * bt459_video_off
  *
  *	Disable the video display.
  *
@@ -1373,9 +847,9 @@ EnableVideo()
  * ----------------------------------------------------------------------------
  */
 static void
-DisableVideo()
+bt459_video_off()
 {
-	bt459_regmap_t *regs = (bt459_regmap_t *)(fb_addr + CFB_OFFSET_BT459);
+	bt459_regmap_t *regs = (bt459_regmap_t *)(cfbfb.fr_addr + CFB_OFFSET_BT459);
 
 	if (vstate.off)
 		return;
@@ -1401,4 +875,101 @@ DisableVideo()
 
 	vstate.off = 1;
 }
+
+/*
+ * cfb keyboard and mouse input. Just punt to the generic ones in fb.c
+ */
+void
+cfbKbdEvent(ch)
+	int ch;
+{
+	fbKbdEvent(ch, &cfbfb);
+}
+
+void
+cfbMouseEvent(newRepPtr)
+	MouseReport *newRepPtr;
+{
+	fbMouseEvent(newRepPtr, &cfbfb);
+}
+
+void
+cfbMouseButtons(newRepPtr)
+	MouseReport *newRepPtr;
+{
+	fbMouseButtons(newRepPtr, &cfbfb);
+}
+
+/*
+ * Configure the mouse and keyboard based on machine type
+ */
+static void
+cfbConfigMouse()
+{
+	int s;
+
+	s = spltty();
+	switch (pmax_boardtype) {
+#if NDC > 0
+	case DS_3MAX:
+		dcDivertXInput = cfbKbdEvent;
+		dcMouseEvent = cfbMouseEvent;
+		dcMouseButtons = cfbMouseButtons;
+		break;
 #endif
+#if NSCC > 1
+	case DS_3MIN:
+		sccDivertXInput = cfbKbdEvent;
+		sccMouseEvent = cfbMouseEvent;
+		sccMouseButtons = cfbMouseButtons;
+		break;
+#endif
+#if NDTOP > 0
+	case DS_MAXINE:
+		dtopDivertXInput = cfbKbdEvent;
+		dtopMouseEvent = cfbMouseEvent;
+		dtopMouseButtons = cfbMouseButtons;
+		break;
+#endif
+	default:
+		printf("Can't configure mouse/keyboard\n");
+	};
+	splx(s);
+}
+
+/*
+ * and deconfigure them
+ */
+static void
+cfbDeconfigMouse()
+{
+	int s;
+
+	s = spltty();
+	switch (pmax_boardtype) {
+#if NDC > 0
+	case DS_3MAX:
+		dcDivertXInput = (void (*)())0;
+		dcMouseEvent = (void (*)())0;
+		dcMouseButtons = (void (*)())0;
+		break;
+#endif
+#if NSCC > 1
+	case DS_3MIN:
+		sccDivertXInput = (void (*)())0;
+		sccMouseEvent = (void (*)())0;
+		sccMouseButtons = (void (*)())0;
+		break;
+#endif
+#if NDTOP > 0
+	case DS_MAXINE:
+		dtopDivertXInput = (void (*)())0;
+		dtopMouseEvent = (void (*)())0;
+		dtopMouseButtons = (void (*)())0;
+		break;
+#endif
+	default:
+		printf("Can't deconfigure mouse/keyboard\n");
+	};
+}
+#endif /* NCFB */

@@ -1,13 +1,13 @@
-/*
- * Copyright (c) 1992 Regents of the University of California.
+/*-
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Ralph Campbell.
+ * Ralph Campbell and Rick Macklem.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sii.c	7.6 (Berkeley) %G%
+ *	@(#)sii.c	7.7 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devSII.c,
  *	v 9.2 89/09/14 13:37:41 jhh Exp $ SPRITE (DECWRL)";
@@ -29,6 +29,8 @@
 #include <pmax/dev/device.h>
 #include <pmax/dev/scsi.h>
 #include <pmax/dev/siireg.h>
+
+#include <pmax/pmax/kn01.h>
 
 int	siiprobe();
 void	siistart();
@@ -121,15 +123,17 @@ u_char	sii_buf[256];	/* used for extended messages */
 #define WAIT	1
 
 /* define a safe address in the SCSI buffer for doing status & message DMA */
-#define SII_BUF_ADDR	(MACH_SCSI_BUFFER_ADDR + SII_MAX_DMA_XFER_LENGTH * 14)
+#define SII_BUF_ADDR	(MACH_PHYS_TO_UNCACHED(KN01_SYS_SII_B_START) \
+		+ SII_MAX_DMA_XFER_LENGTH * 14)
 
-extern void sii_Reset();
-extern void sii_StartCmd();
-extern void sii_CmdDone();
-extern void sii_DoIntr();
-extern void sii_StateChg();
-extern void sii_DoSync();
-extern void sii_StartDMA();
+static void sii_Reset();
+static void sii_StartCmd();
+static void sii_CmdDone();
+static void sii_DoIntr();
+static void sii_StateChg();
+static void sii_DoSync();
+static void sii_StartDMA();
+static int sii_GetByte();
 
 /*
  * Test to see if device is present.
@@ -153,7 +157,8 @@ siiprobe(cp)
 	 * while we copy the data.
 	 */
 	for (i = 0; i < SII_NCMD; i++) {
-		sc->sc_st[i].dmaAddr[0] = (u_short *)MACH_SCSI_BUFFER_ADDR +
+		sc->sc_st[i].dmaAddr[0] = (u_short *)
+			MACH_PHYS_TO_UNCACHED(KN01_SYS_SII_B_START) +
 			2 * SII_MAX_DMA_XFER_LENGTH * i;
 		sc->sc_st[i].dmaAddr[1] = sc->sc_st[i].dmaAddr[0] +
 			SII_MAX_DMA_XFER_LENGTH;
