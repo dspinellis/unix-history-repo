@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.10 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.11 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -84,12 +84,12 @@ dump_mbuf(n, str)
 
 	printf("dump %s\n", str);
 
-	if( n == MNULL)  {
+	if (n == MNULL)  {
 		printf("EMPTY:\n");
 		return;
 	}
 		
-	for(;n;) {
+	while (n) {
 		nextrecord = n->m_act;
 		printf("RECORD:\n");
 		while (n) {
@@ -101,15 +101,15 @@ dump_mbuf(n, str)
 				register int i;
 
 				printf("data: ");
-				for(i=0; i < n->m_len; i++ ) {
-					if(i%8 == 0)
+				for (i = 0; i < n->m_len; i++) {
+					if (i%8 == 0)
 						printf("\n");
 					printf("0x%x ", *(p+i));
 				}
 				printf("\n");
 			}
 #endif notdef
-			if( n->m_next == n ) {
+			if (n->m_next == n) {
 				printf("LOOP!\n");
 				return;
 			}
@@ -155,7 +155,7 @@ tp_rcvoob(tpcb, so, m, outflags, inflags)
 	ENDDEBUG
 
 	/* if you use soreceive */
-	if (m==MNULL)
+	if (m == MNULL)
 		return ENOBUFS;
 
 restart:
@@ -183,7 +183,7 @@ restart:
 			break;
 
 	if (n == 0) {
-		ASSERT( (tpcb->tp_flags & TPF_DISC_DATA_IN)  == 0 );
+		ASSERT((tpcb->tp_flags & TPF_DISC_DATA_IN) == 0);
 		IFDEBUG(D_XPD)
 			printf("RCVOOB: empty queue!\n");
 		ENDDEBUG
@@ -197,7 +197,7 @@ restart:
 	m->m_len = 0;
 
 	/* Assuming at most one xpd tpdu is in the buffer at once */
-	while ( n != MNULL ) {
+	while (n != MNULL) {
 		m->m_len += n->m_len;
 		bcopy(mtod(n, caddr_t), mtod(m, caddr_t), (unsigned)n->m_len);
 		m->m_data += n->m_len; /* so mtod() in bcopy() above gives right addr */
@@ -212,7 +212,7 @@ restart:
 		dump_mbuf(sb->sb_mb, "RCVOOB: Xrcv socketbuf");
 	ENDDEBUG
 
-	if( (inflags & MSG_PEEK) == 0 ) {
+	if ((inflags & MSG_PEEK) == 0) {
 		n = *nn;
 		*nn = n->m_act;
 		sb->sb_cc -= m->m_len;
@@ -223,7 +223,7 @@ release:
 
 	IFTRACE(D_XPD)
 		tptraceTPCB(TPPTmisc, "PRU_RCVOOB @ release sb_cc m_len",
-			tpcb->tp_Xrcv.sb_cc, m->m_len,0,0 );
+			tpcb->tp_Xrcv.sb_cc, m->m_len, 0, 0);
 	ENDTRACE
 	if (error == 0)
 		error = DoEvent(T_USR_Xrcvd); 
@@ -266,7 +266,7 @@ tp_sendoob(tpcb, so, xdata, outflags)
 
 	IFDEBUG(D_XPD)
 		printf("tp_sendoob:");
-		if(xdata)
+		if (xdata)
 			printf("xdata len 0x%x\n", xdata->m_len);
 	ENDDEBUG
 	/* DO NOT LOCK the Xsnd buffer!!!! You can have at MOST one 
@@ -298,7 +298,7 @@ tp_sendoob(tpcb, so, xdata, outflags)
 	}
 	IFDEBUG(D_XPD)
 		printf("tp_sendoob 1:");
-		if(xdata)
+		if (xdata)
 			printf("xdata len 0x%x\n", xdata->m_len);
 	ENDDEBUG
 	xmark = xdata; /* temporary use of variable xmark */
@@ -311,7 +311,7 @@ tp_sendoob(tpcb, so, xdata, outflags)
 	}
 	IFDEBUG(D_XPD)
 		printf("tp_sendoob 2:");
-		if(xdata)
+		if (xdata)
 			printf("xdata len 0x%x\n", len);
 	ENDDEBUG
 
@@ -357,7 +357,7 @@ tp_usrreq(so, req, m, nam, controlp)
 
 	IFDEBUG(D_REQUEST)
 		printf("usrreq(0x%x,%d,0x%x,0x%x,0x%x)\n",so,req,m,nam,outflags);
-		if(so->so_error)
+		if (so->so_error)
 			printf("WARNING!!! so->so_error is 0x%x\n", so->so_error);
 	ENDDEBUG
 	IFTRACE(D_REQUEST)
@@ -380,7 +380,7 @@ tp_usrreq(so, req, m, nam, controlp)
 			error = EISCONN;
 			break;
 		}
-		if( error = tp_attach(so, so->so_proto->pr_domain->dom_family ) )
+		if (error = tp_attach(so, so->so_proto->pr_domain->dom_family))
 			break;
 		tpcb = sototpcb(so);
 		break;
@@ -389,7 +389,7 @@ tp_usrreq(so, req, m, nam, controlp)
 		/* called for each incoming connect queued on the 
 		 *	parent (accepting) socket 
 		 */
-		if( tpcb->tp_state == TP_OPEN ) {
+		if (tpcb->tp_state == TP_OPEN) {
 			E.ATTR(T_DISC_req).e_reason = E_TP_NO_SESSION;
 			error = DoEvent(T_DISC_req); /* pretend it was a close() */
 			break;
@@ -412,22 +412,22 @@ tp_usrreq(so, req, m, nam, controlp)
 		break;
 
 	case PRU_BIND:
-		error =  (tpcb->tp_nlproto->nlp_pcbbind)( so->so_pcb, nam );
+		error =  (tpcb->tp_nlproto->nlp_pcbbind)(so->so_pcb, nam);
 		if (error == 0) {
 			(tpcb->tp_nlproto->nlp_getsufx)(so->so_pcb, &tpcb->tp_lsuffixlen,
-				tpcb->tp_lsuffix, TP_LOCAL );
+				tpcb->tp_lsuffix, TP_LOCAL);
 		}
 		break;
 
 	case PRU_LISTEN:
-		if( tpcb->tp_lsuffixlen ==  0) {
-			if( error = (tpcb->tp_nlproto->nlp_pcbbind)(so->so_pcb, MNULL) )
+		if (tpcb->tp_lsuffixlen == 0) {
+			if (error = (tpcb->tp_nlproto->nlp_pcbbind)(so->so_pcb, MNULL))
 				break;
 			(tpcb->tp_nlproto->nlp_getsufx)(so->so_pcb, &tpcb->tp_lsuffixlen,
-				tpcb->tp_lsuffix, TP_LOCAL );
+				tpcb->tp_lsuffix, TP_LOCAL);
 		}
 		IFDEBUG(D_TPISO)
-			if(tpcb->tp_state != TP_CLOSED)
+			if (tpcb->tp_state != TP_CLOSED)
 				printf("LISTEN ERROR: state 0x%x\n", tpcb->tp_state);
 		ENDDEBUG
 		error = DoEvent(T_LISTEN_req);
@@ -449,38 +449,38 @@ tp_usrreq(so, req, m, nam, controlp)
 			tpcb->tp_sock, *SHORT_LSUFXP(tpcb), tpcb->tp_lsuffixlen,
 				tpcb->tp_class);
 		ENDDEBUG
-		if( tpcb->tp_lsuffixlen ==  0) {
-			if( error = (tpcb->tp_nlproto->nlp_pcbbind)(so->so_pcb, MNULL) ) {
+		if (tpcb->tp_lsuffixlen == 0) {
+			if (error = (tpcb->tp_nlproto->nlp_pcbbind)(so->so_pcb, MNULL)) {
 				IFDEBUG(D_CONN)
-					printf("pcbbind returns error 0x%x\n", error );
+					printf("pcbbind returns error 0x%x\n", error);
 				ENDDEBUG
 				break;
 			}
 			(tpcb->tp_nlproto->nlp_getsufx)(so->so_pcb, &tpcb->tp_lsuffixlen,
-				tpcb->tp_lsuffix, TP_LOCAL );
+				tpcb->tp_lsuffix, TP_LOCAL);
 		}
 
 		IFDEBUG(D_CONN)
 			printf("isop 0x%x isop->isop_socket offset 12 :\n", tpcb->tp_npcb);
-			dump_buf( tpcb->tp_npcb, 16);
+			dump_buf(tpcb->tp_npcb, 16);
 		ENDDEBUG
-		if( error = tp_route_to( nam, tpcb, /* channel */0) )
+		if (error = tp_route_to(nam, tpcb, /* channel */0))
 			break;
 		IFDEBUG(D_CONN)
 			printf(
 				"PRU_CONNECT after tpcb 0x%x so 0x%x npcb 0x%x flags 0x%x\n", 
 				tpcb, so, tpcb->tp_npcb, tpcb->tp_flags);
 			printf("isop 0x%x isop->isop_socket offset 12 :\n", tpcb->tp_npcb);
-			dump_buf( tpcb->tp_npcb, 16);
+			dump_buf(tpcb->tp_npcb, 16);
 		ENDDEBUG
-		if( tpcb->tp_fsuffixlen ==  0) {
+		if (tpcb->tp_fsuffixlen ==  0) {
 			/* didn't set peer extended suffix */
 			(tpcb->tp_nlproto->nlp_getsufx)(so->so_pcb, &tpcb->tp_fsuffixlen,
-				tpcb->tp_fsuffix, TP_FOREIGN );
+				tpcb->tp_fsuffix, TP_FOREIGN);
 		}
 		(void) (tpcb->tp_nlproto->nlp_mtu)(so, so->so_pcb,
 					&tpcb->tp_l_tpdusize, &tpcb->tp_tpdusize, 0);
-		if( tpcb->tp_state == TP_CLOSED) {
+		if (tpcb->tp_state == TP_CLOSED) {
 			soisconnecting(so);  
 			error = DoEvent(T_CONN_req);
 		} else {
@@ -492,8 +492,8 @@ tp_usrreq(so, req, m, nam, controlp)
 			lsufx = *(u_short *)(tpcb->tp_lsuffix);
 			fsufx = *(u_short *)(tpcb->tp_fsuffix);
 
-			tpmeas( tpcb->tp_lref, 
-				TPtime_open | (tpcb->tp_xtd_format <<4 ), 
+			tpmeas(tpcb->tp_lref, 
+				TPtime_open | (tpcb->tp_xtd_format << 4), 
 				&time, lsufx, fsufx, tpcb->tp_fref);
 		ENDPERF
 		break;
@@ -509,7 +509,7 @@ tp_usrreq(so, req, m, nam, controlp)
 			lsufx = *(u_short *)(tpcb->tp_lsuffix);
 			fsufx = *(u_short *)(tpcb->tp_fsuffix);
 
-			tpmeas( tpcb->tp_lref, TPtime_open, 
+			tpmeas(tpcb->tp_lref, TPtime_open, 
 				&time, lsufx, fsufx, tpcb->tp_fref);
 		ENDPERF
 		break;
@@ -547,7 +547,7 @@ tp_usrreq(so, req, m, nam, controlp)
 			error = ENOTCONN;
 			break;
 		}
-		if( ! tpcb->tp_xpd_service ) {
+		if (! tpcb->tp_xpd_service) {
 			error = EOPNOTSUPP;
 			break;
 		}
