@@ -1,96 +1,110 @@
-.\" Copyright (c) 1985, 1987 Regents of the University of California.
+.\" Copyright (c) 1985, 1987, 1990, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)vacation.1	6.8 (Berkeley) %G%
+.\"     @(#)vacation.1	6.8 (Berkeley) %G%
 .\"
-.TH VACATION 1 ""
-.UC 6
-.SH NAME
-vacation \- return ``I am not here'' indication
-.SH SYNOPSIS
-.B vacation
-.B -i
-[
-.B -r
-interval ]
-.br
-.B vacation
-[
-.B -a
-alias ] login
-.SH DESCRIPTION
-.I Vacation
+.Dd 
+.Dt VACATION 1
+.Os BSD 4.3
+.Sh NAME
+.Nm vacation
+.Nd return ``I am not here'' indication
+.Sh SYNOPSIS
+.Nm vacation
+.Fl i
+.Op Fl r Ar interval
+.Nm vacation
+.Op Fl a Ar alias
+.Ar login
+.Sh DESCRIPTION
+.Nm Vacation
 returns a message to the sender of a message telling them that you
 are currently not reading your mail.  The intended use is in a
-.I .forward
+.Pa .forward
 file.  For example, your
-.I .forward
+.Pa .forward
 file might have:
-.PP
-.ti +5
-\eeric, "|/usr/ucb/vacation -a allman eric"
-.PP
+.Bd -literal -offset indent
+\eeric, "|/usr/bin/vacation -a allman eric"
+.Ed
 which would send messages to you (assuming your login name was eric) and
-reply to any messages for ``eric'' or ``allman''.
-.PP
-No message will be sent unless
-.I login
-(or an
-.I alias
-supplied using the
-.B -a
-option) is part of either the ``To:'' or ``Cc:'' headers of the mail.
-No messages from ``???-REQUEST'', ``Postmaster'', ``UUCP'', ``MAILER'',
-or ``MAILER-DAEMON'' will be replied to (where these strings are
-case insensitive) nor is a notification sent if a ``Precedence: bulk''
-or ``Precedence: junk'' line is included in the mail headers.
-The people who have sent you messages are maintained as an
-.IR ndbm (3)
-database in the files
-.I .vacation.pag
-and
-.I .vacation.dir
-in your home directory.
-.PP
-The
-.B -i
-flag initializes the vacation database files.  It should be used
+reply to any messages for
+.Dq eric
+or
+.Dq allman .
+.Pp
+Available options:
+.Bl -tag -width Ds
+.It Fl a Ar alias
+Handle messages for
+.Ar alias
+in the same manner as those received for the user's
+login name.
+.It Fl i
+Initialize the vacation database files.  It should be used
 before you modify your
-.I .forward
+.Pa .forward
 file.
-.PP
-The
-.B -r
-flag sets the reply interval to
-.I interval
-days.  The default is one week.  An interval of ``0'' means that
-a reply is sent to each message, and an interval of ``infinite''
+.It Fl r
+Set the reply interval to
+.Ar interval
+days.  The default is one week.  An interval of
+.Dq 0
+means that
+a reply is sent to each message, and an interval of
+.Dq Li infinite
 (actually, any non-numeric character) will never send more than
-one reply.  It should be noted that intervals of ``0'' are quite
-dangerous, as it allows mailers to get into ``I am on vacation''
+one reply.  It should be noted that intervals of
+.Dq Li \&0
+are quite
+dangerous, as it allows mailers to get into
+.Dq I am on vacation
 loops.
-.PP
-.I Vacation
+.El
+.Pp
+No message will be sent unless
+.Ar login
+(or an
+.Ar alias
+supplied using the
+.Fl a
+option) is part of either the
+.Dq To:
+or
+.Dq Cc:
+headers of the mail.
+No messages from
+.Dq ???-REQUEST ,
+.Dq Postmaster ,
+.Dq Tn UUCP ,
+.Dq MAILER ,
+or
+.Dq MAILER-DAEMON
+will be replied to (where these strings are
+case insensitive) nor is a notification sent if a
+.Dq Precedence: bulk
+or
+.Dq Precedence: junk
+line is included in the mail headers.
+The people who have sent you messages are maintained as an
+.Xr ndbm 3
+database in the files
+.Pa .vacation.pag
+and
+.Pa .vacation.dir
+in your home directory.
+.Pp
+.Pp
+.Nm Vacation
 expects a file
-.IR .vacation.msg ,
+.Pa .vacation.msg ,
 in your home directory, containing a message to be sent back to each
 sender.  It should be an entire message (including headers).  For
 example, it might contain:
-.PP
-.in +5
-.nf
+.Pp
+.Bd -unfilled -offset indent -compact
 From: eric@ucbmonet.Berkeley.EDU (Eric Allman)
 Subject: I am on vacation
 Delivered-By-The-Graces-Of: The Vacation program
@@ -98,28 +112,39 @@ Precedence: bulk
 
 I am on vacation until July 22.  If you have something urgent,
 please contact Joe Kalash <kalash@ucbingres.Berkeley.EDU>.
-	--eric
-.fi
-.in -5
-.PP
-.I Vacation
-reads the first line from the standard input for a \s-1UNIX\s0-style
-``From'' line to determine the sender.
-.IR Sendmail (8)
-includes this ``From'' line automatically.
-.PP
+--eric
+.Ed
+.Pp
+.Nm Vacation
+reads the first line from the standard input for a
+.Tn UNIX
+.Dq From
+line to determine the sender.
+.Xr Sendmail 8
+includes this
+.Dq From
+line automatically.
+.Pp
 Fatal errors, such as calling
-.I vacation
+.Nm vacation
 with incorrect arguments, or with non-existent
-.IR login s,
+.Ar login Ns Ar s ,
 are logged in the system log file, using
-.IR syslog (8).
-.SH FILES
-.nf
-.ta \w'~/.vacation.msg    'u
-~/.vacation.dir	database file
-~/.vacation.msg	message to send
-~/.vacation.pag	database file
-.fi
-.SH "SEE ALSO"
-sendmail(8), syslog(8)
+.Xr syslog 8 .
+.Sh FILES
+.Bl -tag -width vacation.dirx -compact
+.It Pa ~/.vacation.dir
+database file
+.It Pa ~/.vacation.msg
+message to send
+.It Pa ~/.vacation.pag
+database file
+.El
+.Sh SEE ALSO
+.Xr sendmail 8 ,
+.Xr syslog 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 .
