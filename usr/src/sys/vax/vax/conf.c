@@ -1,4 +1,4 @@
-/*	conf.c	4.31	81/04/13	*/
+/*	conf.c	4.32	81/05/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -78,7 +78,9 @@ int	tsioctl(),tsdump(),tsreset();
 #define	tsstrategy	nodev
 #define	tsread		nodev
 #define	tswrite		nodev
+#define	tsioctl		nodev
 #define	tsdump		nodev
+#define	tsreset		nodev
 #endif
 
 #include "up.h"
@@ -250,7 +252,7 @@ struct cdevsw	cdevsw[] =
 	lpopen,		lpclose,	nodev,		lpwrite,	/*15*/
 	nodev,		nodev,		lpreset,	0,
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
-	nodev,		nodev,		nulldev,	0,
+	tsioctl,	nodev,		tsreset,	0,
 	nodev,		nodev,		nodev,		nodev,		/*17*/
 	nodev,		nodev,		nulldev,	0,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
@@ -292,7 +294,7 @@ struct	linesw linesw[] =
 	bkopen, bkclose, bkread, ttwrite, bkioctl,
 	bkinput, nodev, nulldev, ttstart, nulldev,		/* 1 */
 #else
-	nodev, nodev, nodev, nodev, nodev,
+	nodev, nodev, nodev, (char *(*)())nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
 #endif
 	ntyopen, ntyclose, ntread, ntwrite, nullioctl,
