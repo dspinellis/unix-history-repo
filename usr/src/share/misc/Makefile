@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 FILES=	airport ascii birthtoken eqnchar greek inter.phone man.template \
-	na.phone operator
+	mdoc.template na.phone operator
 NOOBJ=	noobj
 
 all clean cleandir depend lint tags:
