@@ -1,0 +1,56 @@
+.\"	@(#)tac.1	1.1 %G%
+.\"
+.TH TAC 1 ""
+.SH NAME
+tac \- concatenate and print files in reverse
+.SH SYNOPSIS
+.B tac
+[
+.B \-string
+] [
+.B +string
+] file ...
+.SH DESCRIPTION
+.I Tac
+reads each
+.I file
+in sequence
+and writes it on the standard output, reversed by the file segments
+delimited by
+.I string.
+.I \-string
+specifies segments bounded on the left by
+.I string,
+while
+.I +string
+specifies right-bounded segments.
+The default is
+.I +\en
+(print lines in reverse order).
+.SH EXAMPLES
+.RS
+tac '-\e
+.br
+From\ ' /usr/spool/mail/$USER
+.RE
+prints out one's mail messages, most recent first.
+.PP
+.RS
+tac file
+.RE
+prints the file in reverse, line by line, and:
+.PP
+.RS
+tac file1 file2 >file3
+.RE
+reverses each of the first two files by line and places the
+concatenated result on the third.
+.SH SEE ALSO
+cat(1), rev(1), tail(1), tmail(1)
+.SH BUGS
+.I Tac
+doesn't yet handle multiple argument files exactly right.  It's
+also unclear which direction it should process them in.
+.br
+.I Tac
+does not (and cannot efficiently) work on piped input.
