@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)point.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)point.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 point(xi,yi){
