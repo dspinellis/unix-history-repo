@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	6.3 (Berkeley) %G%
+.\"	@(#)a.t	6.4 (Berkeley) %G%
 .\"
 .ds RH Summary of facilities
 .bp
@@ -55,13 +55,13 @@ sstk\(dg	change stack section size
 .FE
 getpagesize	get memory page size
 mmap\(dg	map pages of memory
-mremap\(dg	remap pages in memory
+msync\(dg	flush modified mapped pages to filesystem
 munmap\(dg	unmap memory
 mprotect\(dg	change protection of pages
 madvise\(dg	give memory management advice
 mincore\(dg	determine core residency of pages
-msleep\(dg	sleep on a lock
-mwakeup\(dg	wakeup process sleeping on a lock
+.\"msleep\(dg	sleep on a lock
+.\"mwakeup\(dg	wakeup process sleeping on a lock
 .TE
 .in -5
 .h 1.3 "Signals
@@ -186,7 +186,7 @@ lw(1.6i) aw(3i).
 socket	create socket
 bind	bind socket to name
 getsockname	get socket name
-listen	allow queueing of connections
+listen	allow queuing of connections
 accept	accept a connection
 connect	connect to peer socket
 socketpair	create pair of connected sockets
