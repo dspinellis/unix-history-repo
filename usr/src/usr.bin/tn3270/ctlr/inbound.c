@@ -839,7 +839,7 @@ int	count;				/* how much data there is */
 	    case FCN_EINP:
 		if (!FormattedScreen()) {
 		    i = CursorAddress;
-		    TurnOnMdt(i);
+		    TurnOffMdt(i);
 		    do {
 			AddHost(i, 0);
 			i = ScreenInc(i);
@@ -855,7 +855,7 @@ int	count;				/* how much data there is */
 		    do {
 			if (IsUnProtected(ScreenInc(i))) {
 			    i = ScreenInc(i);
-			    TurnOnMdt(i);
+			    TurnOffMdt(i);
 			    do {
 			       AddHost(i, 0);
 			       i = ScreenInc(i);
