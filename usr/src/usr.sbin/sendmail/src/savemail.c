@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.31		%G%);
+SCCSID(@(#)savemail.c	3.31.1.1		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -50,9 +50,10 @@ savemail()
 	**  to, make someone up.
 	*/
 
-	if (CurEnv->e_from.q_paddr == NULL)
+	if (CurEnv->e_returnto == NULL)
 	{
-		if (parse("root", &CurEnv->e_from, 0) == NULL)
+		CurEnv->e_returnto = parse("root", (ADDRESS *) NULL, 0);
+		if (CurEnv->e_returnto == NULL)
 		{
 			syserr("Cannot parse root!");
 			ExitStat = EX_SOFTWARE;
@@ -74,7 +75,7 @@ savemail()
 		ExitStat = EX_OK;
 		MailBack = TRUE;
 	}
-	if (!bitset(M_LOCAL, CurEnv->e_from.q_mailer->m_flags))
+	if (!bitset(M_LOCAL, CurEnv->e_returnto->q_mailer->m_flags))
 		MailBack = TRUE;
 
 	/*
@@ -123,7 +124,7 @@ savemail()
 
 	if (MailBack)
 	{
-		if (returntosender("Unable to deliver mail", &CurEnv->e_from, TRUE) == 0)
+		if (returntosender("Unable to deliver mail", CurEnv->e_returnto, TRUE) == 0)
 			return;
 	}
 
@@ -138,16 +139,16 @@ savemail()
 	if (ArpaMode)
 		return;
 	p = NULL;
-	if (CurEnv->e_from.q_mailer == LocalMailer)
+	if (CurEnv->e_returnto->q_mailer == LocalMailer)
 	{
-		if (CurEnv->e_from.q_home != NULL)
-			p = CurEnv->e_from.q_home;
-		else if ((pw = getpwnam(CurEnv->e_from.q_user)) != NULL)
+		if (CurEnv->e_returnto->q_home != NULL)
+			p = CurEnv->e_returnto->q_home;
+		else if ((pw = getpwnam(CurEnv->e_returnto->q_user)) != NULL)
 			p = pw->pw_dir;
 	}
 	if (p == NULL)
 	{
-		syserr("Can't return mail to %s", CurEnv->e_from.q_paddr);
+		syserr("Can't return mail to %s", CurEnv->e_returnto->q_paddr);
 # ifdef DEBUG
 		p = "/usr/tmp";
 # else
