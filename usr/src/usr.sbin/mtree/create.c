@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -192,7 +192,7 @@ statdir(t, parent, puid, pgid, pmode, tabs)
 		if (p->fts_namelen > 7)
 			*tabs = 2;
 	}
-	(void)printf("\n/set group=%u, mode=%#o, nlink=1, owner=%u, type=file\n",
+	(void)printf("\n/set group=%u mode=%#o nlink=1 owner=%u type=file\n",
 	    savegid, savemode, saveuid);
 	*puid = saveuid;
 	*pgid = savegid;
