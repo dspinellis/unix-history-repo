@@ -1,4 +1,4 @@
-/*	tty_pty.c	6.2	83/09/26	*/
+/*	tty_pty.c	6.3	83/10/01	*/
 
 /*
  * Pseudo-teletype Driver
