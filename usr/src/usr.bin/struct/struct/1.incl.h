@@ -1,7 +1,7 @@
 /*-
  * %sccs.include.proprietary.c%
  *
- *	@(#)1.incl.h	4.3 (Berkeley) %G%
+ *	@(#)1.incl.h	8.1 (Berkeley) %G%
  */
 
 #define maxlsw		10	/* max number of switches and labels per statement */
