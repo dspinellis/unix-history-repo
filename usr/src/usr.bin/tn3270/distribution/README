@@ -1,22 +1,14 @@
-There are 3 interfaces we define.
+Welcome to the new tn3270.
 
-One is that between the host computer and the 3274 controller.  This
-interface specifies the AIDs, orders, commands, attributes, WCC, formats
-of various read and write commands, etc., that are transmitted to and
-from the host.  Additionally, the mapping between EBCDIC and the
-internal 3270 display code occurs at this interface.
+Unfortunately, things are much more complicated that ever.  There are now
+subdirectories.
 
-The logic for this interface is in outbound.c and inbound.c.  The interface
-is parameterized in 3270.h and ebc_disp.[hc].
+The good news is that MOST system dependent code is in a few subdirectories
+(mostly in sys_curses, on Unix, or sys_dos, on MS_DOS).
 
-The second interface is between the keyboard and the 3274 controller.
-This interface specifies which keyboard scan codes perform which
-function (either are a character like A, or some function like EEOF, or
-some AID-generating function like CLEAR or PFK1).
-
-The logic for this interface is in inbound.c, and is parameterized in
-kbd3270.h and hits.c.
-
-The third and last interface is between the screen and the 3274 controller.
-This interface specifies the internal 3270 display code, error messages
-which may be presented to the screen by the 3274, and the bell.
+On MS_DOS, the INCLUDE environmental variable is assumed to point to
+the standard include files, plus to whereever the networking include
+files are located.  These are files like <sys/socket.h>.  This is
+assuming that you have a 4.2/3 network emulation package (UB offers such
+a package with their product; my understanding is that FTP Software
+is, or soon will be, offering such a package).
