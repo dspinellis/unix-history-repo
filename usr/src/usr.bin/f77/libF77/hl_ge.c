@@ -1,5 +1,9 @@
 /*
- *	"@(#)hl_ge.c	1.1"
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)hl_ge.c	5.1	%G%
  */
 
 short hl_ge(a,b,la,lb)
