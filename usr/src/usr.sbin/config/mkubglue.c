@@ -1,6 +1,6 @@
 /*
  * Make the uba interrupt file ubglue.s
- *	mkubglue.c	1.4	81/05/22
+ *	mkubglue.c	1.5	82/06/16
  */
 #include <stdio.h>
 #include "config.h"
@@ -53,7 +53,7 @@ int number;
     sprintf(v, "%s%d", vector, number);
     fprintf(fp, "\t.globl\t_X%s\n\t.align\t2\n_X%s:\n\tpushr\t$0x3f\n", v, v);
     if (strncmp(vector, "dzx", 3) == 0)
-	fprintf(fp, "\tmovl\t$%d,r0\n\tjbr\t_dzdma\n\n", number);
+	fprintf(fp, "\tmovl\t$%d,r0\n\tjmp\t_dzdma\n\n", number);
     else
     {
 	fprintf(fp, "\tpushl\t$%d\n", number);
