@@ -1,0 +1,132 @@
+
+
+
+RMM(1)                 BSD Reference Manual                RMM(1)
+
+
+NNAAMMEE
+       rmm - remove messages
+
+SSYYNNOOPPSSIISS
+       rmm [+folder] [msgs] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _R_m_m removes the specified messages by renaming the message
+       files with preceding commas.  Many  sites  consider  files
+       that  start  with  a  comma  to be a temporary backup, and
+       arrange for _c_r_o_n (8) to remove such files once a day.
+
+       If the user has a profile component such as
+
+            rmmproc:  /bin/rm
+
+       then instead of simply renaming the message file, _r_m_m will
+       call  the  named program to delete the file.  Note that at
+       most installations, _c_r_o_n (8) is told to remove files  that
+       begin with a comma once a night.
+
+       Some users of csh prefer the following:
+
+            alias rmm 'refile +d'
+
+       where folder +d is a folder for deleted messages, and
+
+            alias mexp 'rm `mhpath +d all`'
+
+       is used to "expunge" deleted messages.
+
+       The current message is not changed by _r_m_m, so a _n_e_x_t  will
+       advance to the next message in the folder as expected.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Current-Folder:      To find the default current folder
+       rmmproc:             Program to delete the message
+
+SSEEEE AALLSSOO
+       rmf(1)
+
+DDEEFFAAUULLTTSS
+       `+folder' defaults to the current folder
+       `msgs' defaults to cur
+
+CCOONNTTEEXXTT
+       If a folder is given, it will become the current folder.
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+RMM(1)                 BSD Reference Manual                RMM(1)
+
+
+BBUUGGSS
+       Since _r_e_f_i_l_e uses your _r_m_m_p_r_o_c to delete the message,  the
+       _r_m_m_p_r_o_c  must  NNOOTT call _r_e_f_i_l_e without specifying `-normm-
+       proc', or you will create an infinte loop.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+

@@ -1,0 +1,528 @@
+
+
+
+MH-PROFILE(5)        BSD Programmer's Manual        MH-PROFILE(5)
+
+
+NNAAMMEE
+       mh-profile  -  user  profile  customization for MH message
+       handler
+
+SSYYNNOOPPSSIISS
+       _._m_h___p_r_o_f_i_l_e
+
+DDEESSCCRRIIPPTTIIOONN
+       Each  user  of  _M_H  is  expected  to  have  a  file  named
+       _._m_h___p_r_o_f_i_l_e  in his or her home directory.  This file con-
+       tains a set of user parameters used by some or all of  the
+       _M_H  family  of  programs.  Each line of the file is of the
+       format
+
+           _p_r_o_f_i_l_e_-_c_o_m_p_o_n_e_n_t: _v_a_l_u_e
+
+       The possible profile  components  are  exemplified  below.
+       Only  `Path:' is mandatory.  The others are optional; some
+       have default values if they are not present.  In the nota-
+       tion  used below, (profile, default) indicates whether the
+       information is kept in the user's _M_H profile  or  _M_H  con-
+       text, and indicates what the default value is.
+
+       Path: Mail
+                 Locates  _M_H  transactions  in  directory "Mail".
+                 (profile, no default)
+
+       context: context
+                 Declares the location of the  _M_H  context  file,
+                 see   the   HHIISSTTOORRYY  section  below.   (profile,
+                 default: <mh-dir>/context)
+
+       Current-Folder: inbox
+                 Keeps track of the current open  folder.   (con-
+                 text, default: folder specified by "Inbox")
+
+       Inbox:    inbox
+                 Defines  the  name  of  your  inbox.   (profile,
+                 default: inbox)
+
+       Previous-Sequence: pseq
+                 Names the sequences which should be  defined  as
+                 the  `msgs'  or `msg' argument given to the pro-
+                 gram.  If not present, or  empty,  no  sequences
+                 are  defined.   Otherwise,  for each name given,
+                 the sequence is first zero'd and then each  mes-
+                 sage  is  added  to  the sequence.  (profile, no
+                 default)
+
+       Sequence-Negation: not
+                 Defines the string which,  when  prefixed  to  a
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+MH-PROFILE(5)        BSD Programmer's Manual        MH-PROFILE(5)
+
+
+                 sequence  name,  negates  that sequence.  Hence,
+                 "notseen" means all those messages that are  not
+                 a  member  of the sequence "seen".  (profile, no
+                 default)
+
+       Unseen-Sequence: unseen
+                 Names the sequences which should be  defined  as
+                 those  messages  recently  incorporated  by _i_n_c.
+                 _S_h_o_w knows to remove messages from this sequence
+                 once it thinks they have been seen.  If not pre-
+                 sent, or empty, no sequences are defined.   Oth-
+                 erwise,  each  message is added to each sequence
+                 name given.  (profile, no default)
+
+       mh-sequences: .mh_sequences
+                 The name  of  the  file  in  each  folder  which
+                 defines public sequences.  To disable the use of
+                 public sequences, leave  the  value  portion  of
+                 this    entry    blank.     (profile,   default:
+                 .mh_sequences)
+
+       atr-_s_e_q-_f_o_l_d_e_r: 172 178-181 212
+                 Keeps track of the private sequence  called  _s_e_q
+                 in the specified folder.  (context, no default)
+
+       Editor: /usr/ucb/ex
+                 Defines editor to be used by _c_o_m_p (1), _d_i_s_t (1),
+                 _f_o_r_w (1),  and  _r_e_p_l (1).   (profile,   default:
+                 prompter)
+
+       Msg-Protect: 644
+                 Defines octal protection bits for message files.
+                 See _c_h_m_o_d (1) for an explanation  of  the  octal
+                 number.  (profile, default: 0644)
+
+       Folder-Protect: 711
+                 Defines  protection bits for folder directories.
+                 (profile, default: 0711)
+
+       _p_r_o_g_r_a_m: default switches
+                 Sets default switches to be used whenever the mh
+                 program  _p_r_o_g_r_a_m  is  invoked.  For example, one
+                 could override  the  _E_d_i_t_o_r:  profile  component
+                 when  replying to messages by adding a component
+                 such as:
+                      repl: -editor /bin/ed
+                 (profile, no defaults)
+
+       _l_a_s_t_e_d_i_t_o_r-next: nexteditor
+                 Names "nexteditor"  to  be  the  default  editor
+                 after  using "lasteditor".  This takes effect at
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+MH-PROFILE(5)        BSD Programmer's Manual        MH-PROFILE(5)
+
+
+                 "What now?" level in _c_o_m_p, _d_i_s_t, _f_o_r_w, and _r_e_p_l.
+                 After  editing  the draft with "lasteditor", the
+                 default editor is set to  be  "nexteditor".   If
+                 the  user  types "edit" without any arguments to
+                 "What now?", then "nexteditor" is  used.   (pro-
+                 file, no default)
+
+       bboards: system
+                 Tells  _b_b_c  which BBoards you are interested in.
+                 (profile, default: system)
+
+       Folder-Stack: _f_o_l_d_e_r_s
+                 The contents of the folder-stack for the  _f_o_l_d_e_r
+                 command.  (context, no default)
+
+       mhe:
+                 If  present,  tells _i_n_c to compose an _M_H_E audit-
+                 file in addition to its  other  tasks.   _M_H_E  is
+                 Brian  Reid's  _E_m_a_c_s front-end for _M_H.  An early
+                 version is supplied with the _m_h_._6  distribution.
+                 (profile, no default)
+
+       Alternate-Mailboxes: mh@uci-750a, bug-mh*
+                 Tells  _r_e_p_l  and _s_c_a_n which addresses are really
+                 yours.  In this way, _r_e_p_l knows which  addresses
+                 should  be included in the reply, and _s_c_a_n knows
+                 if  the  message  really  originated  from  you.
+                 Addresses  must be separated by a comma, and the
+                 hostnames listed should be the "official"  host-
+                 names  for  the mailboxes you indicate, as local
+                 nicknames for hosts are not replaced with  their
+                 official  site  names.   For  each address, if a
+                 host is not given, then that address on any host
+                 is considered to be you.  In addition, an aster-
+                 isk (`*') may appear at either or both  ends  of
+                 the  mailbox  and  host  to  indicate  wild-card
+                 matching.  (profile, default: your user-id)
+
+       Aliasfile: aliases other-alias
+                 Indicates aliases files for _a_l_i, _w_h_o_m, and _s_e_n_d.
+                 This  may  be  used instead of the `-alias file'
+                 switch.  (profile, no default)
+
+       Draft-Folder: drafts
+                 Indicates a default draft folder for _c_o_m_p, _d_i_s_t,
+                 _f_o_r_w, and _r_e_p_l.  (profile, no default)
+
+       digest-issue-_l_i_s_t: 1
+                 Tells  _f_o_r_w  the  last  issue of the last volume
+                 sent for the digest _l_i_s_t.  (context, no default)
+
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+MH-PROFILE(5)        BSD Programmer's Manual        MH-PROFILE(5)
+
+
+       digest-volume-_l_i_s_t: 1
+                 Tells  _f_o_r_w  the last volume sent for the digest
+                 _l_i_s_t.  (context, no default)
+
+       MailDrop: .mail
+                 Tells _i_n_c your maildrop, if different  from  the
+                 default.   This  is  superceded  by the MMAAIILLDDRROOPP
+                 envariable.  (profile, default: /var/mail/$USER)
+
+       Signature: RAND MH System (agent: Marshall Rose)
+                 Tells   _s_e_n_d   your  mail  signature.   This  is
+                 superceded by the SSIIGGNNAATTUURREE envariable.  If SSIIGG--
+                 NNAATTUURREE  is not set and this profile entry is not
+                 present, the "gcos"  field  of  the  _/_e_t_c_/_p_a_s_s_w_d
+                 file  will be used; otherwise, on hosts where _M_H
+                 was configured with the  UCI  option,  the  file
+                 $HOME/.signature  is  consulted.  Your signature
+                 will be added to the address _s_e_n_d  puts  in  the
+                 "From:" header; do not include an address in the
+                 signature text.  (profile, no default)
+
+       The following profile elements are  used  whenever  an  _M_H
+       program  invokes some other program such as _m_o_r_e (1).  The
+       _._m_h___p_r_o_f_i_l_e can be used to select  alternate  programs  if
+       the  user  wishes.   The  default  values are given in the
+       examples.
+
+            fileproc:     /usr/contrib/mh-6.8/bin/refile
+            incproc:      /usr/contrib/mh-6.8/bin/inc
+            installproc:  /usr/contrib/mh-6.8/lib/install-mh
+            lproc:        /usr/ucb/more
+            mailproc:     /usr/contrib/mh-6.8/bin/mhmail
+            mhlproc:      /usr/contrib/mh-6.8/lib/mhl
+            moreproc:     /usr/ucb/more
+            mshproc:      /usr/contrib/mh-6.8/bin/msh
+            packproc:     /usr/contrib/mh-6.8/bin/packf
+            postproc:     /usr/contrib/mh-6.8/lib/post
+            rmmproc:      none
+            rmfproc:      /usr/contrib/mh-6.8/bin/rmf
+            sendproc:     /usr/contrib/mh-6.8/bin/send
+            showproc:     /usr/ucb/more
+            whatnowproc:  /usr/contrib/mh-6.8/bin/whatnow
+            whomproc:     /usr/contrib/mh-6.8/bin/whom
+
+       If you define the envariable MMHH, you can specify a profile
+       other  than _._m_h___p_r_o_f_i_l_e to be read by the _M_H programs that
+       you invoke.  If the value of MMHH is  not  absolute,  (i.e.,
+       does  not  begin  with a // ), it will be presumed to start
+       from the current working directory.  This is  one  of  the
+       very few exceptions in _M_H where non-absolute pathnames are
+       not considered relative to the user's _M_H directory.
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+
+
+
+
+MH-PROFILE(5)        BSD Programmer's Manual        MH-PROFILE(5)
+
+
+       Similarly, if you define the envariable MMHHCCOONNTTEEXXTT, you can
+       specify  a  context other than the normal context file (as
+       specified in the _M_H profile).  As always, unless the value
+       of  MMHHCCOONNTTEEXXTT  is  absolute,  it will be presumed to start
+       from your _M_H directory.
+
+       _M_H programs also support other envariables:
+
+       MMAAIILLDDRROOPP : tells _i_n_c the default maildrop
+            This supercedes the "MailDrop:" profile entry.
+
+       SSIIGGNNAATTUURREE : tells _s_e_n_d and _p_o_s_t your mail signature
+            This supercedes the "Signature:" profile entry.
+
+       HHOOMMEE : tells all _M_H programs your home directory
+
+       SSHHEELLLL : tells _b_b_l the default shell to run
+
+       TTEERRMM : tells _M_H your terminal type
+            The TTEERRMMCCAAPP envariable is also consulted.  In partic-
+            ular,  these tell _s_c_a_n and _m_h_l how to clear your ter-
+            minal, and how many columns wide  your  terminal  is.
+            They  also tell _m_h_l how many lines long your terminal
+            screen is.
+
+       eeddiittaalltt : the alternate message
+            This is set by _d_i_s_t and _r_e_p_l during edit sessions  so
+            you  can  peruse  the  message  being  distributed or
+            replied to.  The message is also available through  a
+            link called "@" in the current directory if your cur-
+            rent working directory and  the  folder  the  message
+            lives in are on the same UNIX filesystem.
+
+       mmhhddrraafftt : the path to the working draft
+            This is set by _c_o_m_p, _d_i_s_t, _f_o_r_w, and _r_e_p_l to tell the
+            _w_h_a_t_n_o_w_p_r_o_c which file to ask "What  now?"  questions
+            about.    In  addition,  _d_i_s_t,  _f_o_r_w,  and  _r_e_p_l  set
+            mmhhffoollddeerr if appropriate.  Further, _d_i_s_t and _r_e_p_l  set
+            mmhhaallttmmssgg  to  tell the _w_h_a_t_n_o_w_p_r_o_c about an alternate
+            message associated with the draft (the message  being
+            distributed  or  replied to), and _d_i_s_t sets mmhhddiisstt to
+            tell the _w_h_a_t_n_o_w_p_r_o_c that message re-distribution  is
+            occurring.   Also,  mmhheeddiittoorr is set to tell the _w_h_a_t_-
+            _n_o_w_p_r_o_c the user's choice of editor (unless  overrid-
+            den  by  `-noedit').   Similarly, mmhhuussee may be set by
+            _c_o_m_p.  Finally, mmhhmmeessssaaggeess is set by _d_i_s_t, _f_o_r_w,  and
+            _r_e_p_l  if annotations are to occur (along with mmhhaannnnoo--
+            ttaattee, and mmhhiinnppllaaccee).  It's amazing all the  informa-
+            tion  that  has to get passed via envariables to make
+            the "What now?" interface look squeaky clean  to  the
+            _M_H  user,  isn't it?  The reason for all this is that
+
+
+
+[mh.6]                        MH.6.8                            5
+
+
+
+
+
+
+
+
+MH-PROFILE(5)        BSD Programmer's Manual        MH-PROFILE(5)
+
+
+            the _M_H user can select _a_n_y program  as  the  _w_h_a_t_n_o_w_-
+            _p_r_o_c,  including  one  of  the standard shells.  As a
+            result, it's not possible to pass information via  an
+            argument list.
+            If the WHATNOW option was set during _M_H configuration
+            (type `-help' to an _M_H command to find out),  and  if
+            this envariable is set, if the commands _r_e_f_i_l_e, _s_e_n_d,
+            _s_h_o_w, or _w_h_o_m are not  given  any  `msgs'  arguments,
+            then they will default to using the file indicated by
+            mmhhddrraafftt.  This is  useful  for  getting  the  default
+            behavior supplied by the default _w_h_a_t_n_o_w_p_r_o_c.
+
+       mmhhffoollddeerr : the folder containing the alternate message
+            This  is set by _d_i_s_t and _r_e_p_l during edit sessions so
+            you can peruse other messages in the  current  folder
+            besides the one being distributed or replied to.  The
+            mmhhffoollddeerr envariable is also set by  _s_h_o_w,  _p_r_e_v,  and
+            _n_e_x_t for use by _m_h_l.
+
+       MMHHBBBBRRCC :
+            If  you define the envariable MMHHBBBBRRCC, you can specify
+            a BBoards information file other  than  _._b_b_r_c  to  be
+            read by _b_b_c.  If the value of MMHHBBBBRRCC is not absolute,
+            (i.e., does not begin with a // ), it will be presumed
+            to start from the current working directory.
+
+       MMHHFFDD :
+            If  the  OVERHEAD option was set during _M_H configura-
+            tion (type `-help' to an _M_H  command  to  find  out),
+            then if this envariable is set, _M_H considers it to be
+            the number of a  file  descriptor  which  is  opened,
+            read-only  to  the  _M_H  profile.   Similarly,  if the
+            envariable MMHHCCOONNTTEEXXTTFFDD is set, this is the number  of
+            a file descriptor which is opened read-only to the _M_H
+            context.  This feature of _M_H is experimental, and  is
+            used  to  examine  possible speed improvements for _M_H
+            startup.  Note that these envariables must be set and
+            non-empty  to enable this feature.  However, if OVER-
+            HEAD is enabled during _M_H configuration, then when _M_H
+            programs call other _M_H programs, this scheme is used.
+            These file descriptors are not closed throughout  the
+            execution  of  the  _M_H  program, so children may take
+            advantage of this.  This approach is  thought  to  be
+            completely  safe  and does result in some performance
+            enhancements.
+
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+       or $MH                                    Rather than the standard profile
+       <mh-dir>/context                          The user context
+
+
+
+[mh.6]                        MH.6.8                            6
+
+
+
+
+
+
+
+
+MH-PROFILE(5)        BSD Programmer's Manual        MH-PROFILE(5)
+
+
+       or $CONTEXT                               Rather than the standard context
+       <folder>/.mh_sequences                    Public sequences for <folder>
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       All
+
+SSEEEE AALLSSOO
+       mh(1), environ(5), mh-sequence(5)
+
+DDEEFFAAUULLTTSS
+       None
+
+CCOONNTTEEXXTT
+       All
+
+HHIISSTTOORRYY
+       In previous versions of _M_H, the current-message value of a
+       writable  folder  was  kept  in a file called "cur" in the
+       folder itself.  In _m_h_._3,  the  _._m_h___p_r_o_f_i_l_e  contained  the
+       current-message  values  for  all  folders,  regardless of
+       their writability.
+
+       In all versions of _M_H since _m_h_._4, the _._m_h___p_r_o_f_i_l_e contains
+       only  static  information,  which  _M_H  programs  will  NNOOTT
+       update.  Changes in context are made to the  _c_o_n_t_e_x_t  file
+       kept in the users MH _d_i_r_e_c_t_o_r_y.  This includes, but is not
+       limited to: the "Current-Folder"  entry  and  all  private
+       sequence information.  Public sequence information is kept
+       in a file called _._m_h___s_e_q_u_e_n_c_e_s in each folder.
+
+       To convert from the format used in releases of _M_H prior to
+       the  format used in the _m_h_._4 release, _i_n_s_t_a_l_l_-_m_h should be
+       invoked with the `-compat' switch.  This generally happens
+       automatically  on  _M_H  systems generated with the "COMPAT"
+       option during _M_H configuration.
+
+       The _._m_h___p_r_o_f_i_l_e may override the path of the _c_o_n_t_e_x_t file,
+       by  specifying  a  "context" entry (this must be in lower-
+       case).  If the entry is not absolute (does not start  with
+       a  // ),  then  it is interpreted relative to the user's _M_H
+       directory.  As a result, you can actually have  more  than
+       one  set  of  private sequences by using different context
+       files.
+
+BBUUGGSS
+       The shell quoting conventions are  not  available  in  the
+       .mh_profile.  Each token is separated by whitespace.
+
+       There is some question as to what kind of arguments should
+       be placed in the profile as options.  In order to  provide
+       a  clear  answer,  recall command line semantics of all _M_H
+
+
+
+[mh.6]                        MH.6.8                            7
+
+
+
+
+
+
+
+
+MH-PROFILE(5)        BSD Programmer's Manual        MH-PROFILE(5)
+
+
+       programs:  conflicting  switches   (e.g.,   `-header   and
+       `-noheader')  may  occur more than one time on the command
+       line, with the last switch  taking  effect.   Other  argu-
+       ments,  such  as message sequences, filenames and folders,
+       are always remembered on the invocation line and  are  not
+       superseded  by  following  arguments  of  the  same  type.
+       Hence, it is safe to place only switches (and their  argu-
+       ments) in the profile.
+
+       If one finds that an _M_H program is being invoked again and
+       again with the same arguments, and those arguments  aren't
+       switches,  then there are a few possible solutions to this
+       problem.  The first is to create a  (soft)  link  in  your
+       _$_H_O_M_E_/_b_i_n  directory to the _M_H program of your choice.  By
+       giving this link a different name, you can  create  a  new
+       entry in your profile and use an alternate set of defaults
+       for the _M_H command.  Similarly, you could create  a  small
+       shell  script  which  called the _M_H program of your choice
+       with an alternate set of invocation line  switches  (using
+       links and an alternate profile entry is preferable to this
+       solution).
+
+       Finally, the _c_s_h user could create an alias for  the  com-
+       mand of the form:
+
+            alias cmd 'cmd arg1 arg2 ...'
+
+       In  this  way,  the  user can avoid lengthy type-in to the
+       shell, and still give _M_H commands  safely.   (Recall  that
+       some _M_H commands invoke others, and that in all cases, the
+       profile is read,  meaning  that  aliases  are  disregarded
+       beyond an initial command invocation)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            8
+
+
+
+
+

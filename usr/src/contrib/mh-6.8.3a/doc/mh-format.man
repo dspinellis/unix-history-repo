@@ -1,0 +1,594 @@
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+NNAAMMEE
+       mh-format - format file for MH message system
+
+SSYYNNOOPPSSIISS
+       some _M_H commands
+
+DDEESSCCRRIIPPTTIIOONN
+       Several  _M_H  commands  utilize either a _f_o_r_m_a_t string or a
+       _f_o_r_m_a_t file during their execution.  For example, _s_c_a_n (1)
+       uses  a format string which directs it how to generate the
+       scan listing for each message; _r_e_p_l (1) uses a format file
+       which  directs  it how to generate the reply to a message,
+       and so on.
+
+       Format strings are designed to be efficiently parsed by _M_H
+       which  means  they are not necessarily simple to write and
+       understand.  This  means  that  novice,  casual,  or  even
+       advanced  users  of  _M_H should not have to deal with them.
+       Some    canned    scan    listing    formats    are     in
+       /usr/contrib/mh-6.8/lib/scan.time,
+       /usr/contrib/mh-6.8/lib/scan.size,                     and
+       /usr/contrib/mh-6.8/lib/scan.timely.         Look       in
+       /usr/contrib/mh-6.8/lib for other  _s_c_a_n  and  _r_e_p_l  format
+       files which may have been written at your site.
+
+       It  suffices  to  have your local _M_H expert actually write
+       new format commands or modify existing ones.  This  manual
+       section  explains  how to do that.  Note: familiarity with
+       the C _p_r_i_n_t_f routine is assumed.
+
+       A format string consists of  ordinary  text,  and  special
+       multi-character  _e_s_c_a_p_e  sequences  which  begin with `%'.
+       When specifying a format string,  the  usual  C  backslash
+       characters  are honored: `\b', `\f', `\n', `\r', and `\t'.
+       Continuation lines in format files end with  `\'  followed
+       by the newline character.  There are three types of _e_s_c_a_p_e
+       sequences: header _c_o_m_p_o_n_e_n_t_s, built-in _f_u_n_c_t_i_o_n_s, and flow
+       _c_o_n_t_r_o_l.
+
+       A  _c_o_m_p_o_n_e_n_t  escape  is  specified as `%{_c_o_m_p_o_n_e_n_t}', and
+       exists for each header found in  the  message  being  pro-
+       cessed.  For example `%{date}' refers to the "Date:" field
+       of the appropriate message.  All component escapes have  a
+       string  value.   Normally, component values are compressed
+       by converting any  control  characters  (tab  and  newline
+       included)  to spaces, then eliding any leading or multiple
+       spaces.  However, commands may give different  interpreta-
+       tions  to some component escapes; be sure to refer to each
+       command's manual entry for complete details.
+
+       A _f_u_n_c_t_i_o_n escape  is  specified  as  `%(_f_u_n_c_t_i_o_n)'.   All
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+       functions  are built-in, and most have a string or numeric
+       value.
+
+
+   CCoonnttrrooll--ffllooww eessccaappeess
+       A _c_o_n_t_r_o_l escape is one of: `%<',  `%?',  `%|',  or  `%>'.
+       These  are  combined  into  the conditional execution con-
+       struct:
+
+            %<condition
+                 _f_o_r_m_a_t _t_e_x_t _1
+            %?condition2
+                 _f_o_r_m_a_t _t_e_x_t _2
+            %?condition3
+                 _f_o_r_m_a_t _t_e_x_t _3
+            ...
+            %|
+                 _f_o_r_m_a_t _t_e_x_t _N
+            %>
+
+       Extra white space is shown here only for  clarity.   These
+       constructs  may  be nested without ambiguity.  They form a
+       general iiff--eellsseeiiff--eellssee--eennddiiff block where only one  of  the
+       _f_o_r_m_a_t _t_e_x_t segments is interpreted.
+
+       The `%<' and `%?' control escapes causes a condition to be
+       evaluated.  This condition may be either a _c_o_m_p_o_n_e_n_t or  a
+       _f_u_n_c_t_i_o_n.  The four constructs have the following syntax:
+
+            %<{component}
+            %<(function)
+            %?{component}
+            %?(function)
+
+       These  control escapes test whether the function or compo-
+       nent value is non-zero (for  integer-valued  escapes),  or
+       non-empty (for string-valued escapes).
+
+       If  this  test  evaulates true, then the format text up to
+       the next corresponding control escape (one of `%|',  `%?',
+       or  `%>')  is interpreted normally.  Next, all format text
+       (if any) up to the corresponding `%>'  control  escape  is
+       skipped.  The `%>' control escape is not interpreted; nor-
+       mal interpretation resumes after the `%>' escape.
+
+       If the test evaluates false, however, then the format text
+       up to the next corresponding control escape (again, one of
+       `%|', `%?', or `%>') is skipped, instead of  being  inter-
+       preted.   If the control escape encountered was `%?', then
+       the condition associated with that control escape is eval-
+       uated,  and  interpretation  proceeds  after  that test as
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+       described in  the  previous  paragraph.   If  the  control
+       escape  encountered  was  `%|', then the format text up to
+       the corresponding `%>' escape is interpreted normally.  As
+       above,  the  `%>'  escape  is  not  interpreted and normal
+       interpretation resumes after the `%>' escape.
+
+       The `%?' control escape and its following format  text  is
+       optional,  and  may  be  included zero or more times.  The
+       `%|' control escape and its following format text is  also
+       optional, and may be included zero or one times.
+
+
+   FFuunnccttiioonn eessccaappeess
+       Most functions expect an argument of a particular type:
+
+       _A_r_g_u_m_e_n_t _D_e_s_c_r_i_p_t_i_o_n            _E_x_a_m_p_l_e _S_y_n_t_a_x
+       literal  A literal number,      %(_f_u_n_c 1234)
+                or string              %(_f_u_n_c text string)
+       comp     Any header component   %(_f_u_n_c{_i_n_-_r_e_p_l_y_-_t_o})
+       date     A date component       %(_f_u_n_c{_d_a_t_e})
+       addr     An address component   %(_f_u_n_c{_f_r_o_m})
+       expr     An optional component, %(_f_u_n_c(_f_u_n_c_2))
+                function or control,   %(_f_u_n_c %<{_r_e_p_l_y_-_t_o}%|%{_f_r_o_m}%>)
+                perhaps nested         %(_f_u_n_c(_f_u_n_c_2{_c_o_m_p}))
+
+       The  types _d_a_t_e and _a_d_d_r have the same syntax as _c_o_m_p, but
+       require that the header component be  a  date  string,  or
+       address string, respectively.
+
+       All arguments except those of type _e_x_p_r are required.  For
+       the _e_x_p_r argument type, the leading `%'  must  be  omitted
+       for  component  and function escape arguments, and must be
+       present (with a leading space) for  control  escape  argu-
+       ments.
+
+       The  evaluation  of  format  strings  is based on a simple
+       machine with an integer register _n_u_m, and  a  text  string
+       register  _s_t_r.  When a function escape is processed, if it
+       accepts an optional _e_x_p_r argument which is not present, it
+       reads  the current value of either _n_u_m or _s_t_r as appropri-
+       ate.
+
+
+   RReettuurrnn vvaalluueess
+       Component escapes write the value of their message  header
+       in  _s_t_r.  Function escapes write their return value in _n_u_m
+       for functions returning _i_n_t_e_g_e_r or _b_o_o_l_e_a_n values, and  in
+       _s_t_r  for  functions returning string values.  (The _b_o_o_l_e_a_n
+       type is a subset of integers with usual values 0=false and
+       1=true.)   Control escapes return a _b_o_o_l_e_a_n value, and set
+       _n_u_m.
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+       All component escapes, and those  function  escapes  which
+       return an _i_n_t_e_g_e_r or _s_t_r_i_n_g value, pass this value back to
+       their caller in addition to setting  _s_t_r  or  _n_u_m.   These
+       escapes will print out this value unless called as part of
+       an argument to another  escape  sequence.   Escapes  which
+       return  a  _b_o_o_l_e_a_n  value do pass this value back to their
+       caller in _n_u_m, but will never print out the value.
+
+       _F_u_n_c_t_i_o_n   _A_r_g_u_m_e_n_t _R_e_t_u_r_n   _D_e_s_c_r_i_p_t_i_o_n
+       msg                 integer  message number
+       cur                 integer  message is current
+       size                integer  size of message
+       strlen              integer  length of _s_t_r
+       width               integer  output buffer size in bytes
+       charleft            integer  bytes left in output buffer
+       timenow             integer  seconds since the UNIX epoch
+       me                  string   the user's mailbox
+       eq         literal  boolean  _n_u_m == _a_r_g
+       ne         literal  boolean  _n_u_m != _a_r_g
+       gt         literal  boolean  _n_u_m > _a_r_g
+       match      literal  boolean  _s_t_r contains _a_r_g
+       amatch     literal  boolean  _s_t_r starts with _a_r_g
+       plus       literal  integer  _a_r_g plus _n_u_m
+       minus      literal  integer  _a_r_g minus _n_u_m
+       divide     literal  integer  _n_u_m divided by _a_r_g
+       modulo     literal  integer  _n_u_m modulo _a_r_g
+       num        literal  integer  Set _n_u_m to _a_r_g
+       lit        literal  string   Set _s_t_r to _a_r_g
+       getenv     literal  string   Set _s_t_r to environment value of _a_r_g
+       profile    literal  string   Set _s_t_r to profile component _a_r_g value
+       nonzero    expr     boolean  _n_u_m is non-zero
+       zero       expr     boolean  _n_u_m is zero
+       null       expr     boolean  _s_t_r is empty
+       nonnull    expr     boolean  _s_t_r is non-empty
+       void       expr              Set _s_t_r or _n_u_m
+       comp       comp     string   Set _s_t_r to component text
+       compval    comp     integer  _n_u_m set to "aattooii(_c_o_m_p)"
+       trim       expr              trim trailing white-space from _s_t_r
+       putstr     expr              print _s_t_r
+       putstrf    expr              print _s_t_r in a fixed width
+       putnum     expr              print _n_u_m
+       putnumf    expr              print _n_u_m in a fixed width
+
+       These functions require a date component as an argument:
+
+       _F_u_n_c_t_i_o_n   _A_r_g_u_m_e_n_t _R_e_t_u_r_n   _D_e_s_c_r_i_p_t_i_o_n
+       sec        date     integer  seconds of the minute
+       min        date     integer  minutes of the hour
+       hour       date     integer  hours of the day (0-23)
+       wday       date     integer  day of the week (Sun=0)
+       day        date     string   day of the week (abbrev.)
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+       weekday    date     string   day of the week
+       sday       date     integer  day of the week known?
+                                    (0=implicit,-1=unknown)
+       mday       date     integer  day of the month
+       yday       date     integer  day of the year
+       mon        date     integer  month of the year
+       month      date     string   month of the year (abbrev.)
+       lmonth     date     string   month of the year
+       year       date     integer  year (may be > 100)
+       zone       date     integer  timezone in hours
+       tzone      date     string   timezone string
+       szone      date     integer  timezone explicit?
+                                    (0=implicit,-1=unknown)
+       date2local date              coerce date to local timezone
+       date2gmt   date              coerce date to GMT
+       dst        date     integer  daylight savings in effect?
+       clock      date     integer  seconds since the UNIX epoch
+       rclock     date     integer  seconds prior to current time
+       tws        date     string   official 822 rendering
+       pretty     date     string   user-friendly rendering
+       nodate     date     integer  _s_t_r not a date string
+
+       These functions require an address component as  an  argu-
+       ment.   The  return value of functions noted with `*' per-
+       tain only to the first address present in the header  com-
+       ponent.
+
+       _F_u_n_c_t_i_o_n   _A_r_g_u_m_e_n_t _R_e_t_u_r_n   _D_e_s_c_r_i_p_t_i_o_n
+       proper     addr     string   official 822 rendering
+       friendly   addr     string   user-friendly rendering
+       addr       addr     string   mbox@host or host!mbox rendering*
+       pers       addr     string   the personal name*
+       note       addr     string   commentary text*
+       mbox       addr     string   the local mailbox*
+       mymbox     addr     integer  the user's addresses? (0=no,1=yes)
+       host       addr     string   the host domain*
+       nohost     addr     integer  no host was present*
+       type       addr     integer  host type* (0=local,1=network,
+                                    -1=uucp,2=unknown)
+       path       addr     string   any leading host route*
+       ingrp      addr     integer  address was inside a group*
+       gname      addr     string   name of group*
+       formataddr expr              append _a_r_g to _s_t_r as a
+                                    (comma separated) address list
+       putaddr    literal           print _s_t_r address list with
+                                    _a_r_g as optional label;
+                                    get line width from _n_u_m
+
+       When  escapes  are  nested, evaluation is done from inner-
+       most to outer-most.  The outer-most escape must begin with
+       `%'; the inner escapes must not.  For example,
+
+
+
+[mh.6]                        MH.6.8                            5
+
+
+
+
+
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+            %<(mymbox{from}) To: %{to}%>
+
+       writes  the  value of the header component "From:" to _s_t_r;
+       then (_m_y_m_b_o_x) reads _s_t_r and writes its result to _n_u_m; then
+       the control escape evaluates _n_u_m.  If _n_u_m is non-zero, the
+       string "To: " is printed followed  by  the  value  of  the
+       header component "To:".
+
+       A  minor  explanation  of  (_m_y_m_b_o_x{_c_o_m_p}) is in order.  In
+       general, it checks each of the  addresses  in  the  header
+       component  "_c_o_m_p"  against the user's mailbox name and any
+       _A_l_t_e_r_n_a_t_e_-_M_a_i_l_b_o_x_e_s.   It  returns  true  if  any  address
+       matches,  however,  it  also  returns  true  if the "_c_o_m_p"
+       header is not present in  the  message.   If  needed,  the
+       (_n_u_l_l)  function  can  be used to explicitly test for this
+       condition.
+
+       When a function or component escape is interpreted and the
+       result  will  be  immediately  printed,  an optional field
+       width can be specified to print the  field  in  exactly  a
+       given number of characters.  For example, a numeric escape
+       like %4(_s_i_z_e) will print at most 4 digits of  the  message
+       size;  overflow  will  be  indicated by a `?' in the first
+       position (like `?234').  A string escape like %4(_m_e)  will
+       print  the  first  4  characters  and truncate at the end.
+       Short fields are padded at the right with the fill charac-
+       ter  (normally,  a  blank).   If  the field width argument
+       begins with a leading zero, then the fill character is set
+       to a zero.
+
+       As  above,  the  functions  (_p_u_t_n_u_m_f)  and (_p_u_t_s_t_r_f) print
+       their result in exactly the number of characters specified
+       by  their  leading  field  width  argument.   For example,
+       %06(_p_u_t_n_u_m_f(_s_i_z_e)) will print the message size in a  field
+       six   characters   wide   filled   with   leading   zeros;
+       %14(_p_u_t_s_t_r_f{_f_r_o_m}) will print the "From:" header component
+       in  fourteen  characters  with  trailing  spaces  added as
+       needed.  For _p_u_t_s_t_r_f, using a negative value for the field
+       width  causes right-justification of the string within the
+       field, with padding on the left up  to  the  field  width.
+       The  functions (_p_u_t_n_u_m) and (_p_u_t_s_t_r) print their result in
+       the minimum number of characters required, and ignore  any
+       leading field width argument.
+
+       The  available  output width is kept in an internal regis-
+       ter; any output past this width will be truncated.
+
+       Comments may be inserted in most places where  a  function
+       argument  is not expected.  A comment begins with `%;' and
+       ends with a (non-escaped) newline.
+
+
+
+
+[mh.6]                        MH.6.8                            6
+
+
+
+
+
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+       With all this in mind, here's the  default  format  string
+       for _s_c_a_n.  It's been divided into several pieces for read-
+       ability.  The first part is:
+
+            %4(msg)%<(cur)+%| %>%<{replied}-%?{encrypted}E%| %>
+
+       which says that the message number should  be  printed  in
+       four  digits, if the message is the current message then a
+       `+' else a space should be printed, and  if  a  "Replied:"
+       field  is present then a `-' else if an "Encrypted:" field
+       is present  then  an  `E'  otherwise  a  space  should  be
+       printed.  Next:
+
+            %02(mon{date})/%02(mday{date})
+
+       the month and date are printed in two digits (zero filled)
+       separated by a slash.  Next,
+
+            %<{date} %|*>
+
+       If a "Date:" field was present, then a space  is  printed,
+       otherwise a `*'.  Next,
+
+            %<(mymbox{from})%<{to}To:%14(friendly{to})%>%>
+
+       if  the  message  is from me, and there is a "To:" header,
+       print `To:' followed by a "user-friendly" rendering of the
+       first address in the "To:" field.  Continuing,
+
+            %<(zero)%17(friendly{from})%>
+
+       if  either of the above two tests failed, then the "From:"
+       address is  printed  in  a  "user-friendly"  format.   And
+       finally,
+
+            %{subject}%<{body}<<%{body}%>
+
+       the subject and initial body (if any) are printed.
+
+       For  a more complicated example, next consider the default
+       _r_e_p_l_c_o_m_p_s format file.
+
+            %(lit)%(formataddr %<{reply-to}
+
+       This clears _s_t_r and formats the "Reply-To:" header if pre-
+       sent.  If not present, the else-if clause is executed.
+
+            %?{from}%?{sender}%?{return-path}%>)\
+
+       This  formats  the  "From:",  "Sender:" and "Return-Path:"
+       headers, stopping as soon  as  one  of  them  is  present.
+
+
+
+[mh.6]                        MH.6.8                            7
+
+
+
+
+
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+       Next:
+
+            %<(nonnull)%(void(width))%(putaddr To: )\n%>\
+
+       If  the _f_o_r_m_a_t_a_d_d_r result is non-null, it is printed as an
+       address (with line folding if needed)  in  a  field  _w_i_d_t_h
+       wide with a leading label of "To: ".
+
+            %(lit)%(formataddr{to})%(formataddr{cc})%(formataddr(me))\
+
+       _s_t_r is cleared, and the "To:"  and  "Cc:"  headers,  along
+       with  the  user's address (depending on what was specified
+       with the "-cc" switch to _r_e_p_l) are formatted.
+
+            %<(nonnull)%(void(width))%(putaddr cc: )\n%>\
+
+       If the result is non-null, it is printed as above  with  a
+       leading label of "cc: ".
+
+            %<{fcc}Fcc: %{fcc}\n%>\
+
+       If  a "-fcc folder" switch was given to _r_e_p_l (see _r_e_p_l (1)
+       for more details about %{_f_c_c}), an "Fcc:" header  is  out-
+       put.
+
+            %<{subject}Subject: Re: %{subject}\n%>\
+
+       If  a subject component was present, a suitable reply sub-
+       ject is output.
+
+            %<{date}In-reply-to: Your message of "\
+            %<(nodate{date})%{date}%|%(pretty{date})%>."%<{message-id}
+                         %{message-id}%>\n%>\
+            --------
+
+       If a date component was present, an "In-Reply-To:"  header
+       is  output  with  the  preface "Your message of ".  If the
+       date was parseable, it is output in a  user-friendly  for-
+       mat,  otherwise  it  is  output  as-is.  The message-id is
+       included if present.  As with all plain-text, the  row  of
+       dashes are output as-is.
+
+       This  last part is a good example for a little more elabo-
+       ration.  Here's that part again in pseudo-code:
+
+            if (comp_exists(date))  then
+                 print ("In-reply-to: Your message of \"")
+                 if (not_date_string(date.value) then
+                      print (date.value)
+                 else
+                      print (pretty(date.value))
+
+
+
+[mh.6]                        MH.6.8                            8
+
+
+
+
+
+
+
+
+MH-FORMAT(5)         BSD Programmer's Manual         MH-FORMAT(5)
+
+
+                 endif
+                 print ("\"")
+                 if (comp_exists(message-id)) then
+                      print ("\n\t")
+                      print (message-id.value)
+                 endif
+                 print ("\n")
+            endif
+
+       Although this seems complicated, in point  of  fact,  this
+       method is flexible enough to extract individual fields and
+       print them in any format the user desires.
+
+FFIILLEESS
+       None
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       None
+
+SSEEEE AALLSSOO
+       scan(1), repl(1), ap(8), dp(8)
+
+DDEEFFAAUULLTTSS
+       None
+
+CCOONNTTEEXXTT
+       None
+
+HHIISSTTOORRYY
+       This software was contributed for MH 6.3.  Prior to  this,
+       output  format  specifications  were much easier to write,
+       but considerably less flexible.
+
+BBUUGGSS
+       On hosts where _M_H was configured  with  the  BERK  option,
+       address parsing is not enabled.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            9
+
+
+
+
+

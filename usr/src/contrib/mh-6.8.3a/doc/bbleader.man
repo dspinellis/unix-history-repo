@@ -1,0 +1,132 @@
+
+
+
+BBLEADER(1)            BSD Reference Manual           BBLEADER(1)
+
+
+NNAAMMEE
+       BBleader - responsiblities of an MH BBoard-leader
+
+SSYYNNOOPPSSIISS
+       bbl bboard [+folder] [-shell shell] [-verbose] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       What follows is a description of the responsibilities of a
+       BBleader.  This is a working collection  of  facts:  there
+       are  no  simple  or elegant rules.  In the discussion that
+       follows, substitute in the name of  your  BBoard  wherever
+       you see the ficticious name ``hacks''.
+
+       PPrreelliimmiinnaarryy MMaaiinntteennaannccee
+            When  you  are appointed a BBleader by the person who
+            is acting as the _P_o_s_t_M_a_s_t_e_r  you  should  first  make
+            sure  that  the  four  addresses associated with your
+            BBoard are correct (see _b_b_o_a_r_d_s (1)).  To check this,
+            try  "bbc  -topics  -verbose  hacks".   You should be
+            listed  under  local  leader(s),   and   the   BBoard
+            addresses should be correct.
+
+       PPeerriiooddiicc MMaaiinntteennaannccee
+            There  are  three  functions  that you should perform
+            periodically:
+              RReeaadd tthhee BBBBooaarrdd : If you're  a  BBoard  leader  you
+                   should be keeping up on what's going on.
+              RReemmoovvee  iinnaapppprroopprriiaattee  mmaatteerriiaall :  If offsensive or
+                   otherwise non-sensical material shows  up,  or
+                   if  a  duplicate  message appears, use the _B_B_l
+                   program, delete the  offending  messages  from
+                   the folder.
+              AArrcchhiivvee  nnoonn--rreecceenntt mmaatteerriiaall : The archive facility
+                   has been upgraded to  be  almost  fully  auto-
+                   mated.  BBoards with the Auto-Archive flag set
+                   will have old material automatically placed in
+                   the  archive  area  once a week.  You may also
+                   archive material yourself if you like,  or  if
+                   your  BBoard is not set to Auto-Archive.  Just
+                   file messages in the folder ``+bbl'' into  the
+                   folder  ``+bbl/arc''  You should archive mate-
+                   rial whenever it takes a long time to read  in
+                   a  BBoard  using _b_b_c and _m_s_h.  The only excep-
+                   tion to this is (possibly) the aapp--nneewwss and nnyy--
+                   ttiimmeess  BBoards, in which case non-recent mate-
+                   rial is usually deleted, and an archive is not
+                   kept.
+
+       SSppoorraaddiicc MMaaiinntteennaannccee
+            As  a  BBoard leader there are three groups of people
+            that you will be required to deal with:
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+BBLEADER(1)            BSD Reference Manual           BBLEADER(1)
+
+
+              BBBBooaarrdd uusseerrss : Correspondence from BBoard users  is
+                   usually   addressed   to  llooccaall--hhaacckkss--rreeqquueesstt.
+                   Although the  nature  of  such  correspondence
+                   varies,  the  most  usual  topic is how to get
+                   access to archives for the  BBoard.   In  such
+                   cases,  if  the  archives  are  on-line in the
+                   ~bboards/archive/ area, then you should  refer
+                   the  BBoard user to the appropriate files.  If
+                   not, then you should  contact  the  _P_o_s_t_M_a_s_t_e_r
+                   and  ask  for archive retrieval.  Archives may
+                   be accessed through the  normal  _b_b_c  and  _m_s_h
+                   programs,  using the `-archive' switch to _b_b_c.
+              BBBBooaarrdd lleeaaddeerrss : You may have  to  correspond  with
+                   the  people  who maintain the IInntteerrnneett mailing
+                   list  for  the  BBoard.   Their   address   is
+                   hhaacckkss--rreeqquueesstt.
+              PPoossttOOffffiiccee ppeerrssoonnnneell : You may need help or advice.
+                   The address to turn to is _P_o_s_t_M_a_s_t_e_r.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+
+SSEEEE AALLSSOO
+       bboards(1), bbc(1), bbl(1), msh(1)
+
+DDEEFFAAUULLTTSS
+       The default bboard is "system"
+
+CCOONNTTEEXXTT
+       None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
