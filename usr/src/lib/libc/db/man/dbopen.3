@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	8.1 (Berkeley) %G%
+.\"	@(#)dbopen.3	8.2 (Berkeley) %G%
 .\"
 .TH DBOPEN 3 ""
 .UC 7
@@ -416,6 +416,9 @@ for any of the errors specified for the library routine
 .IR hash (3),
 .IR mpool (3),
 .IR recno (3)
+.sp
+.IR "LIBTP: Portable, Modular Transactions for UNIX" ,
+Margo Seltzer, Michael Olson, USENIX proceedings, Winter 1992.
 .SH BUGS
 The typedef DBT is a mnemonic for ``data base thang'', and was used
 because noone could think of a reasonable name that wasn't already used.
