@@ -1,0 +1,53 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)pwcache.3	5.1 (Berkeley) %G%
+.\"
+.TH PWCACHE 3 ""
+.UC 7
+.SH NAME
+pwcache \- cache password and group entries
+.SH SYNOPSIS
+.ft B
+.nf
+user_from_uid(uid)
+uid_t uid;
+
+group_from_gid(gid)
+gid_t gid;
+.fi
+.ft R
+.SH DESCRIPTION
+.ft B
+This interface is not part of the C library.
+It has been placed in the Berkeley utility library, libutil, as it is
+used by several standard utilities.
+.ft R
+.PP
+The
+.I user_from_uid
+function returns the user name associated with the argument uid.
+The user name is cached so that multiple calls with the same uid 
+do not require additional calls to
+.IR getpwuid (3).
+.PP
+The
+.I group_from_gid
+function returns the group name associated with the argument gid.
+The group name is cached so that multiple calls with the same gid
+do not require additional calls to
+.IR getgrgid (3).
+.SH SEE ALSO
+getgrgid(3), getpwuid(3)
