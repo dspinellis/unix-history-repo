@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_xxx.c	7.1 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -40,7 +40,11 @@ nulldev()
 	return (0);
 }
 
-#ifdef notdef
+/*
+ * Definitions of various trivial functions;
+ * usually expanded inline rather than being defined here.
+ */
+#if !defined(vax) && !defined(tahoe)
 imin(a, b)
 {
 
@@ -68,7 +72,7 @@ max(a, b)
 
 	return (a > b ? a : b);
 }
-#endif notdef
+#endif
 
 extern	cabase, calimit;
 extern	struct pte camap[];
@@ -117,7 +121,7 @@ cfreemem(cp, size)
 }
 #endif
 
-#ifndef vax
+#if !defined(vax) && !defined(tahoe)
 ffs(mask)
 	register long mask;
 {
@@ -130,7 +134,9 @@ ffs(mask)
 	}
 	return (0);
 }
+#endif
 
+#if !defined(vax)
 bcmp(s1, s2, len)
 	register char *s1, *s2;
 	register int len;

@@ -3,12 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.1 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
 #include "../machine/psl.h"
+#include "../machine/mtpr.h"
 
 #include "param.h"
 #include "systm.h"
@@ -26,10 +27,6 @@
 #include "uio.h"
 #include "acct.h"
 #include "exec.h"
-
-#ifdef vax
-#include "../vax/mtpr.h"
-#endif
 
 /*
  * exec system call, with and without environments.
@@ -463,12 +460,25 @@ getxfile(ip, ep, nargc, uid, gid)
 			(off_t)(sizeof (struct exec) + ep->a_text),
 			0, (int *)0);
 	xalloc(ip, ep, pagi);
+#if defined(tahoe)
+	/*
+	 * Define new keys.
+	 */
+	if (u.u_procp->p_textp == 0) {	/* use existing code key if shared */
+		ckeyrelease(u.u_procp->p_ckey);
+		u.u_procp->p_ckey = getcodekey();
+	}
+	mtpr(CCK, u.u_procp->p_ckey);
+	dkeyrelease(u.u_procp->p_dkey);
+	u.u_procp->p_dkey = getdatakey();
+	mtpr(DCK, u.u_procp->p_dkey);
+#endif
 	if (pagi && u.u_procp->p_textp)
 		vinifod((struct fpte *)dptopte(u.u_procp, 0),
 		    PG_FTEXT, u.u_procp->p_textp->x_iptr,
 		    (long)(1 + ts/CLSIZE), (size_t)btoc(ep->a_data));
 
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
 	mtpr(TBIA, 0);
 #endif
@@ -488,6 +498,9 @@ getxfile(ip, ep, nargc, uid, gid)
 	u.u_dsize = ds;
 	u.u_ssize = ss;
 	u.u_prof.pr_scale = 0;
+#if defined(tahoe)
+	u.u_pcb.pcb_savacc.faddr = (float *)NULL;
+#endif
 bad:
 	return;
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_subr.c	7.1 (Berkeley) %G%
+ *	@(#)tty_subr.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -399,7 +399,6 @@ catq(from, to)
 #ifdef unneeded
 /*
  * Integer (short) get/put using clists.
- * Note dependency on byte order.
  */
 typedef	u_short word_t;
 
@@ -413,15 +412,15 @@ getw(p)
 		return(-1);
 	if (p->c_cc & 01) {
 		c = getc(p);
-#if defined(vax)
+#if ENDIAN == LITTLE
 		return (c | (getc(p)<<8));
 #else
 		return (getc(p) | (c<<8));
 #endif
 	}
 	s = spltty();
-#if defined(vax)
-	c = *((word_t *)p->c_cf);
+#if ENDIAN == LITTLE
+	c = (((u_char *)p->c_cf)[0] << 8) | ((u_char *)p->c_cf)[1];
 #else
 	c = (((u_char *)p->c_cf)[1] << 8) | ((u_char *)p->c_cf)[0];
 #endif
@@ -469,7 +468,7 @@ putw(c, p)
 		return(-1);
 	}
 	if (p->c_cc & 01) {
-#if defined(vax)
+#if ENDIAN == LITTLE
 		(void) putc(c, p);
 		(void) putc(c>>8, p);
 #else

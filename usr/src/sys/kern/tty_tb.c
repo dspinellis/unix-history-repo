@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tb.c	7.1 (Berkeley) %G%
+ *	@(#)tty_tb.c	7.2 (Berkeley) %G%
  */
 
 #include "tb.h"
@@ -107,7 +107,7 @@ tbclose(tp)
 	int modebits = TBPOINT|TBSTOP;
 
 	tbioctl(tp, BIOSMODE, &modebits, 0);
-	s = spl5();
+	s = spltty();
 	((struct tb *)tp->T_LINEP)->tbflags = 0;
 	tp->t_cp = 0;
 	tp->t_inbuf = 0;

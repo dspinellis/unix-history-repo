@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.1 (Berkeley) %G%
+ *	@(#)init_main.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -61,6 +61,15 @@ main(firstaddr)
 	 * set up system process 0 (swapper)
 	 */
 	p = &proc[0];
+#if defined(tahoe)
+#ifndef lint
+#define	initkey(which, p, index) \
+    which/**/_cache[index] = 1, which/**/_cnt[index] = 1; \
+    p->p_/**/which = index;
+	initkey(ckey, p, MAXCKEY);
+	initkey(dkey, p, MAXDKEY);
+#endif
+#endif
 	p->p_p0br = u.u_pcb.pcb_p0br;
 	p->p_szpt = 1;
 	p->p_addr = uaddr(p);
@@ -69,7 +78,6 @@ main(firstaddr)
 	p->p_nice = NZERO;
 	setredzone(p->p_addr, (caddr_t)&u);
 	u.u_procp = p;
-#ifdef vax
 	/*
 	 * These assume that the u. area is always mapped 
 	 * to the same virtual address. Otherwise must be
@@ -77,8 +85,8 @@ main(firstaddr)
 	 */
 	u.u_nd.ni_iov = &u.u_nd.ni_iovec;
 	u.u_ap = u.u_arg;
-#endif
 	u.u_nd.ni_iovcnt = 1;
+
 	u.u_cmask = cmask;
 	u.u_lastfile = -1;
 	for (i = 1; i < NGROUPS; i++)
@@ -96,10 +104,12 @@ main(firstaddr)
 	qtinit();
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
 #endif
+#if defined(vax)
 	startrtclock();
 #include "kg.h"
 #if NKG > 0
 	startkgclock();
+#endif
 #endif
 
 	/*
@@ -156,6 +166,9 @@ main(firstaddr)
 	u.u_dmap = zdmap;
 	u.u_smap = zdmap;
 
+#if defined(tahoe)
+	clk_enable = 1;			/* enable clock interrupt */
+#endif
 	/*
 	 * make init process
 	 */

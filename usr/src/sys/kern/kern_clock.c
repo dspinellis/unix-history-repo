@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.1 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -11,7 +11,7 @@
 
 #include "param.h"
 #include "systm.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "callout.h"
 #include "dir.h"
 #include "user.h"
@@ -20,9 +20,9 @@
 #include "vm.h"
 #include "text.h"
 
-#if defined(vax)
-#include "../vax/mtpr.h"
-#include "../vax/clock.h"
+#if defined(vax) || defined(tahoe)
+#include "../machine/mtpr.h"
+#include "../machine/clock.h"
 #endif
 
 #ifdef GPROF
@@ -284,7 +284,7 @@ gatherstats(pc, ps)
 	 */
 	cp_time[cpstate]++;
 	for (s = 0; s < DK_NDRIVE; s++)
-		if (dk_busy & (1 << s))
+		if (dk_busy&(1<<s))
 			dk_time[s]++;
 }
 

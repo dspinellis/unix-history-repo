@@ -3,8 +3,9 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.2 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.3 (Berkeley) %G%
  */
+#include "../machine/mtpr.h"
 
 #include "param.h"
 #include "systm.h"
@@ -20,10 +21,6 @@
 #include "ioctl.h"
 #include "tty.h"
 #include "syslog.h"
-
-#ifdef vax
-#include "../vax/mtpr.h"
-#endif
 
 #define TOCONS	0x1
 #define TOTTY	0x2
@@ -59,14 +56,25 @@ int	(*v_console)() = cnputc;	/* routine to putc on virtual console */
  * would produce output:
  *	reg=3<BITTWO,BITONE>
  */
+#if defined(tahoe)
+int	consintr;
+#endif
+
 /*VARARGS1*/
 printf(fmt, x1)
 	char *fmt;
 	unsigned x1;
 {
+#if defined(tahoe)
+	register int savintr;
 
+	savintr = consintr, consintr = 0;	/* disable interrupts */
+#endif
 	prf(fmt, &x1, TOCONS | TOLOG, (struct tty *)0);
 	logwakeup();
+#if defined(tahoe)
+	consintr = savintr;			/* reenable interrupts */
+#endif
 }
 
 /*
@@ -169,7 +177,7 @@ loop:
 	}
 again:
 	c = *fmt++;
-	/* THIS CODE IS VAX DEPENDENT IN HANDLING %l? AND %c */
+	/* THIS CODE IS MACHINE DEPENDENT IN HANDLING %l? AND %c */
 	switch (c) {
 
 	case 'l':
@@ -178,7 +186,9 @@ again:
 		b = 16;
 		goto number;
 	case 'd': case 'D':
-	case 'u':		/* what a joke */
+		b = -10;
+		goto number;
+	case 'u':
 		b = 10;
 		goto number;
 	case 'o': case 'O':
@@ -188,9 +198,15 @@ number:
 		break;
 	case 'c':
 		b = *adx;
+#if ENDIAN == LITTLE
 		for (i = 24; i >= 0; i -= 8)
 			if (c = (b >> i) & 0x7f)
 				putchar(c, flags, ttyp);
+#endif
+#if ENDIAN == BIG
+		if (c = (b & 0x7f))
+			putchar(c, flags, ttyp);
+#endif
 		break;
 	case 'b':
 		b = *adx++;
@@ -200,7 +216,7 @@ number:
 		if (b) {
 			while (i = *s++) {
 				if (b & (1 << (i-1))) {
-					putchar(any? ',' : '<', flags, ttyp);
+					putchar(any ? ',' : '<', flags, ttyp);
 					any = 1;
 					for (; (c = *s) > 32; s++)
 						putchar(c, flags, ttyp);
@@ -238,9 +254,12 @@ printn(n, b, flags, ttyp)
 	char prbuf[11];
 	register char *cp;
 
-	if (b == 10 && (int)n < 0) {
-		putchar('-', flags, ttyp);
-		n = (unsigned)(-(int)n);
+	if (b == -10) {
+		if ((int)n < 0) {
+			putchar('-', flags, ttyp);
+			n = (unsigned)(-(int)n);
+		}
+		b = -b;
 	}
 	cp = prbuf;
 	do {
@@ -324,11 +343,11 @@ putchar(c, flags, tp)
 			constty = 0;
 		splx(s);
 	}
-	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177
-#ifdef vax
-	    && mfpr(MAPEN)
-#endif
-	    ) {
+	/*
+	 * Can send to log only after memory management enabled:
+	 * this has happened by the time maxmem is set.
+	 */
+	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177 && maxmem) {
 		if (msgbuf.msg_magic != MSG_MAGIC) {
 			register int i;
 
