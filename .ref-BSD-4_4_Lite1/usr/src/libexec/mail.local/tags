@@ -1,9 +1,0 @@
-Mmail.local	mail.local.c	/^main(argc, argv)$/
-deliver	mail.local.c	/^deliver(fd, name)$/
-e_to_sys	mail.local.c	/^e_to_sys(num)$/
-err	mail.local.c	/^err(fmt, va_alist)$/
-notifybiff	mail.local.c	/^notifybiff(msg)$/
-store	mail.local.c	/^store(from)$/
-usage	mail.local.c	/^usage()$/
-vwarn	mail.local.c	/^vwarn(fmt, ap)$/
-warn	mail.local.c	/^warn(fmt, va_alist)$/

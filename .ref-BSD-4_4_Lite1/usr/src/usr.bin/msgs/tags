@@ -1,9 +1,0 @@
-Mmsgs	msgs.c	/^main(argc, argv)$/
-ask	msgs.c	/^ask(prompt)$/
-gfrsub	msgs.c	/^gfrsub(infile)$/
-linecnt	msgs.c	/^linecnt(f)$/
-next	msgs.c	/^next(buf)$/
-nxtfld	msgs.c	/^nxtfld(s)$/
-onintr	msgs.c	/^onintr()$/
-onsusp	msgs.c	/^onsusp()$/
-prmesg	msgs.c	/^prmesg(length)$/

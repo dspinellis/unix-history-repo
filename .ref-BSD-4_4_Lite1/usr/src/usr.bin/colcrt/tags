@@ -1,4 +1,0 @@
-Mcolcrt	colcrt.c	/^main(argc, argv)$/
-move	colcrt.c	/^move(l, m)$/
-pflush	colcrt.c	/^pflush(ol)$/
-plus	colcrt.c	/^plus(c, d)$/

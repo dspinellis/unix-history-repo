@@ -1,2 +1,0 @@
-Mrenice	renice.c	/^main(argc, argv)$/
-donice	renice.c	/^donice(which, who, prio)$/
