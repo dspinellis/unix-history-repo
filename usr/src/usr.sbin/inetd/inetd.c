@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -194,6 +194,7 @@ nextopt:
 		close(tt);
 	  }
 	}
+	(void) setpgrp(0, 0);
 #endif
 	openlog("inetd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
 	bzero((char *)&sv, sizeof(sv));
@@ -213,8 +214,8 @@ nextopt:
 	    if (nsock == 0) {
 		(void) sigblock(SIGBLOCK);
 		while (nsock == 0)
-		    sigpause(0);
-		(void) sigsetmask(0);
+		    sigpause(0L);
+		(void) sigsetmask(0L);
 	    }
 	    readable = allsock;
 	    if ((n = select(maxsock + 1, &readable, (fd_set *)0,
@@ -266,7 +267,7 @@ nextopt:
 					sep->se_fd = -1;
 					sep->se_count = 0;
 					nsock--;
-					sigsetmask(0);
+					sigsetmask(0L);
 					if (!timingout) {
 						timingout = 1;
 						alarm(RETRYTIME);
@@ -279,7 +280,7 @@ nextopt:
 		if (pid < 0) {
 			if (!sep->se_wait && sep->se_socktype == SOCK_STREAM)
 				close(ctrl);
-			sigsetmask(0);
+			sigsetmask(0L);
 			sleep(1);
 			continue;
 		}
@@ -288,7 +289,7 @@ nextopt:
 			FD_CLR(sep->se_fd, &allsock);
 			nsock--;
 		}
-		sigsetmask(0);
+		sigsetmask(0L);
 		if (pid == 0) {
 #ifdef	DEBUG
 			int tt;
@@ -370,7 +371,7 @@ config()
 {
 	register struct servtab *sep, *cp, **sepp;
 	struct servtab *getconfigent(), *enter();
-	int omask;
+	long omask;
 
 	if (!setconfig()) {
 		syslog(LOG_ERR, "%s: %m", CONFIG);
@@ -499,7 +500,7 @@ enter(cp)
 	struct servtab *cp;
 {
 	register struct servtab *sep;
-	int omask;
+	long omask;
 	char *strdup();
 
 	sep = (struct servtab *)malloc(sizeof (*sep));
@@ -779,35 +780,29 @@ chargen_stream(s, sep)		/* Character generator */
 	int s;
 	struct servtab *sep;
 {
+	register char *rs;
+	int len;
 	char text[LINESIZ+2];
-	register int i;
-	register char *rp, *rs, *dp;
 
 	setproctitle(sep->se_service, s);
-	if (endring == 0)
+
+	if (!endring) {
 		initring();
+		rs = ring;
+	}
 
-	for (rs = ring; ; ++rs) {
-		if (rs >= endring)
-			rs = ring;
-		rp = rs;
-		dp = text;
-		i = MIN(LINESIZ, endring - rp);
-		bcopy(rp, dp, i);
-		dp += i;
-		if ((rp += i) >= endring)
-			rp = ring;
-		if (i < LINESIZ) {
-			i = LINESIZ - i;
-			bcopy(rp, dp, i);
-			dp += i;
-			if ((rp += i) >= endring)
-				rp = ring;
+	text[LINESIZ] = '\r';
+	text[LINESIZ + 1] = '\n';
+	for (rs = ring;;) {
+		if ((len = endring - rs) >= LINESIZ)
+			bcopy(rs, text, LINESIZ);
+		else {
+			bcopy(rs, text, len);
+			bcopy(ring, text + len, LINESIZ - len);
 		}
-		*dp++ = '\r';
-		*dp++ = '\n';
-
-		if (write(s, text, dp - text) != dp - text)
+		if (++rs == endring)
+			rs = ring;
+		if (write(s, text, sizeof(text)) != sizeof(text))
 			break;
 	}
 	exit(0);
@@ -818,34 +813,30 @@ chargen_dg(s, sep)		/* Character generator */
 	int s;
 	struct servtab *sep;
 {
-	char text[LINESIZ+2];
-	register int i;
-	register char *rp;
-	static char *rs = ring;
 	struct sockaddr sa;
-	int size;
+	static char *rs;
+	int len, size;
+	char text[LINESIZ+2];
 
-	if (endring == 0)
+	if (endring == 0) {
 		initring();
+		rs = ring;
+	}
 
 	size = sizeof(sa);
 	if (recvfrom(s, text, sizeof(text), 0, &sa, &size) < 0)
 		return;
-	rp = rs;
-	if (rs++ >= endring)
-		rs = ring;
-	i = MIN(LINESIZ - 2, endring - rp);
-	bcopy(rp, text, i);
-	if ((rp += i) >= endring)
-		rp = ring;
-	if (i < LINESIZ - 2) {
-		bcopy(rp, text, i);
-		if ((rp += i) >= endring)
-			rp = ring;
-	}
-	text[LINESIZ - 2] = '\r';
-	text[LINESIZ - 1] = '\n';
 
+	if ((len = endring - rs) >= LINESIZ)
+		bcopy(rs, text, LINESIZ);
+	else {
+		bcopy(rs, text, len);
+		bcopy(ring, text + len, LINESIZ - len);
+	}
+	if (++rs == endring)
+		rs = ring;
+	text[LINESIZ] = '\r';
+	text[LINESIZ + 1] = '\n';
 	(void) sendto(s, text, sizeof(text), 0, &sa, sizeof(sa));
 }
 
@@ -907,7 +898,7 @@ daytime_stream(s, sep)		/* Return human-readable time of day */
 
 	clock = time((time_t *) 0);
 
-	sprintf(buffer, "%s\r", ctime(&clock));
+	sprintf(buffer, "%.24s\r\n", ctime(&clock));
 	(void) write(s, buffer, strlen(buffer));
 }
 
@@ -927,7 +918,7 @@ daytime_dg(s, sep)		/* Return human-readable time of day */
 	size = sizeof(sa);
 	if (recvfrom(s, buffer, sizeof(buffer), 0, &sa, &size) < 0)
 		return;
-	sprintf(buffer, "%s\r", ctime(&clock));
+	sprintf(buffer, "%.24s\r\n", ctime(&clock));
 	(void) sendto(s, buffer, strlen(buffer), 0, &sa, sizeof(sa));
 }
 
