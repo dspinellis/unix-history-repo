@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtc.h	1.2 (Berkeley) %G%
+ *	@(#)rtc.h	7.1 (Berkeley) %G%
  */
 
 /*
@@ -39,7 +39,7 @@
 #define  RTCSD_PWR	 0x80	/* clock lost power */
 
 #define RTC_DIAG	0x0e	/* status register E - bios diagnostic */
-#define RTCDG_BITS	"\020\010clock battery\007ROM cksum\006config unit\005memory size\004fixed disk\003invalid time"
+#define RTCDG_BITS	"\020\010clock_battery\007ROM_cksum\006config_unit\005memory_size\004fixed_disk\003invalid_time"
 
 #define RTC_RESET	0x0f	/* status register F - reset code byte */
 #define	 RTCRS_RST	 0x00		/* normal reset */

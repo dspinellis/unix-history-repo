@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clock.c	7.1 (Berkeley) %G%
+ *	@(#)clock.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -32,28 +32,11 @@ startrtclock() {
 	outb (IO_TIMER1, 1193182/hz);
 	outb (IO_TIMER1, (1193182/hz)/256);
 
-#ifdef notdef
-	/* NMI fail safe 1/4 sec  */
-	/* initialize 8253 clock */
-	outb(0x461,0);
-	outb (IO_TIMER2+3, 0x30);
-	outb (IO_TIMER2, 298300*40);
-	outb (IO_TIMER2, (298300*40)/256);
-	outb(0x461,4);
-printf("armed ");
-#endif
-
 	/* initialize brain-dead battery powered clock */
 	outb (IO_RTC, RTC_STATUSA);
 	outb (IO_RTC+1, 0x26);
 	outb (IO_RTC, RTC_STATUSB);
 	outb (IO_RTC+1, 2);
-
-	/*outb (IO_RTC, RTC_STATUSD);
-	if((inb(IO_RTC+1) & 0x80) == 0)
-		printf("rtc lost power\n");
-	outb (IO_RTC, RTC_STATUSD);
-	outb (IO_RTC+1, 0x80);*/
 
 	outb (IO_RTC, RTC_DIAG);
 	if (s = inb (IO_RTC+1))
@@ -61,16 +44,6 @@ printf("armed ");
 	outb (IO_RTC, RTC_DIAG);
 	outb (IO_RTC+1, 0);
 }
-
-#ifdef ARGOx
-reprimefailsafe(){
-	outb(0x461,0);
-	outb (IO_TIMER2+3, 0x30);
-	outb (IO_TIMER2, 298300*40);
-	outb (IO_TIMER2, (298300*40)/256);
-	outb(0x461,4);
-}
-#endif
 
 /* convert 2 digit BCD number */
 bcd(i)
@@ -128,7 +101,7 @@ inittodr(base)
 {
 	unsigned long sec;
 	int leap,day_week,t,yd;
-int sa,s;
+	int sa,s;
 
 	/* do we have a realtime clock present? (otherwise we loop below) */
 	sa = rtcin(RTC_STATUSA);
@@ -188,27 +161,6 @@ test_inittodr(base)
 }
 #endif
 
-#ifdef notdef
-/*
- * retreve a value from realtime clock
- */
-u_char rtcin(n) {
-	u_char val;
-
-	/*outb(IO_RTC, RTC_STATUSA);
-	do val = inb(IO_RTC+1) ; while (val&0x80);*/
-
-	outb(IO_RTC,n);
-	DELAY(100);
-	if (inb(IO_RTC) != n) {
-		outb(IO_RTC,n);
-		DELAY(100);
-	}
-	do val = inb(IO_RTC+1) ; while (val != inb(IO_RTC+1));
-	return (val);
-}
-#endif
-
 /*
  * Restart the clock.
  */
@@ -216,6 +168,9 @@ resettodr()
 {
 }
 
+/*
+ * Wire clock interrupt in.
+ */
 #define V(s)	__CONCAT(V, s)
 extern V(clk)();
 enablertclock() {
