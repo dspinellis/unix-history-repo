@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -155,7 +155,7 @@ userlist(argc, argv)
 	int r, sflag, *used, *ip;
 	char **ap, **nargv, **np, **p;
 
-	if ((nargv = malloc(argc * sizeof(char *))) == NULL ||
+	if ((nargv = malloc((argc+1) * sizeof(char *))) == NULL ||
 	    (used = calloc(argc, sizeof(int))) == NULL)
 		err("%s", strerror(errno));
 
