@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)users.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)users.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -25,29 +25,20 @@ static char sccsid[] = "@(#)users.c	5.3 (Berkeley) %G%";
 #define OKEXIT		0
 #define NMAX		sizeof(utmp.ut_name)
 #define MAXUSERS	200
+#define UTMP_FILE	"/etc/utmp"
 
 static struct utmp	utmp;		/* read structure */
 static int	ncnt;			/* count of names */
-static char	*names[MAXUSERS],	/* names table */
-		**namp;			/* pointer to names table */
+static char	*names[MAXUSERS];	/* names table */
 
-main(argc,argv)
-int	argc;
-char	**argv;
+main()
 {
 	register FILE	*fp;		/* file pointer */
-	char	*fname;
 
-	if (argc > 2) {
-		fputs("usage: users [ utmp_file ]\n",stderr);
+	if (!(fp = fopen(UTMP_FILE,"r"))) {
+		perror(UTMP_FILE);
 		exit(ERREXIT);
 	}
-	fname = argc == 2 ? argv[1] : "/etc/utmp";
-	if (!(fp = fopen(fname,"r"))) {
-		perror(fname);
-		exit(ERREXIT);
-	}
-	namp = names;
 	while (fread((char *)&utmp,sizeof(utmp),1,fp) == 1)
 		if (*utmp.ut_name) {
 			if (++ncnt > MAXUSERS) {
@@ -57,13 +48,13 @@ char	**argv;
 			}
 			nsave();
 		}
-	if (ncnt)
-		summary();
+	summary();
 	exit(OKEXIT);
 }
 
 nsave()
 {
+	static char	**namp = names;		/* pointer to names table */
 	char	*calloc();
 
 	if (!(*namp = calloc((u_int)(NMAX + 1),sizeof(char)))) {
@@ -75,16 +66,16 @@ nsave()
 
 summary()
 {
-	register char	**p,
-			**q;
+	register char	**p;
 	int	scmp();
 
+	if (!ncnt)
+		return;
 	qsort((char *)names,ncnt,sizeof(names[0]),scmp);
-	for (p = names;p < namp;p = q) {
-		if (p != names)
-			putchar(' ');
+	fputs(names[0],stdout);
+	for (p = &names[1];--ncnt;++p) {
+		putchar(' ');
 		fputs(*p,stdout);
-		for (q = p + 1;q < namp && !strcmp(*q,*p);++q);
 	}
 	putchar('\n');
 }
