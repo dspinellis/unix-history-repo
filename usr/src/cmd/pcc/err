@@ -1,0 +1,58 @@
+yacc /usr/vaxv7/usr/src/cmd/mip/cgram.y
+
+conflicts: 7 shift/reduce
+rm -f rodata.c
+:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+43220
+365
+42881
+42881
+6305
+36601
+36601
+1716
+34911
+34911
+333
+34603
+34603
+959
+33668
+33668
+959
+32733
+32733
+1603
+31155
+31155
+1602
+29578
+mv y.tab.c /usr/vaxv7/usr/src/cmd/mip/cgram.c
+cc -O -S rodata.c
+:rofix rodata.s
+32882
+32882
+as -o rodata.o rodata.s
+rm -f rodata.s rodata.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/cgram.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/xdefs.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/scan.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/pftn.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/trees.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/optim.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. code.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. local.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/reader.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. local2.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. order.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/match.c
+cc -c -O -I/usr/vaxv7/usr/src/cmd/mip -I. /usr/vaxv7/usr/src/cmd/mip/allo.c
+cc -c -O -I. -I/usr/vaxv7/usr/src/cmd/mip /usr/vaxv7/usr/src/cmd/mip/comm1.c
+cc -O -S -I/usr/vaxv7/usr/src/cmd/mip -I. table.c
+:rofix table.s
+20034
+20034
+as -o table.o table.s
+rm -f table.s
+cc -O -i rodata.o cgram.o xdefs.o scan.o pftn.o trees.o optim.o code.o local.o  reader.o local2.o order.o match.o allo.o comm1.o table.o
+mv a.out comp
