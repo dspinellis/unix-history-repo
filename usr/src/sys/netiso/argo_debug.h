@@ -1,4 +1,5 @@
-/*********************************************************** Copyright IBM Corporation 1987
+/*****************************************************************
+				Copyright IBM Corporation 1987
 
                       All Rights Reserved
 
@@ -26,7 +27,7 @@ SOFTWARE.
 /* 
  * $Header: argo_debug.h,v 4.6 88/07/19 15:53:40 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/argo_debug.h,v $
- *	@(#)argo_debug.h	7.2 (Berkeley) %G%
+ *	@(#)argo_debug.h	7.3 (Berkeley) %G%
  */
 #ifndef __ARGO_DEBUG__
 #define __ARGO_DEBUG__
@@ -147,6 +148,12 @@ char *clnp_iso_addrp();
 #define	D_ESISOUTPUT	'\30'
 #define	D_ESISINPUT		'\31'
 #define D_SNPA			'\32'
+
+/***********************************************
+ * ISIS DEBUG OPTIONS
+ **********************************************/
+#define D_ISISOUTPUT	'\40'
+#define D_ISISINPUT		'\41'
 
 /***********************************************
  * EON DEBUG OPTION
