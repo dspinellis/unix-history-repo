@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -156,7 +156,8 @@ find_user(name, tty)
 	int status;
 	FILE *fd;
 	struct stat statb;
-	char ftty[20];
+	char line[sizeof(ubuf.ut_line) + 1];
+	char ftty[sizeof(_PATH_DEV) - 1 + sizeof(line)];
 
 	if ((fd = fopen(_PATH_UTMP, "r")) == NULL) {
 		fprintf(stderr, "talkd: can't read %s.\n", _PATH_UTMP);
@@ -167,19 +168,22 @@ find_user(name, tty)
 	(void) strcpy(ftty, _PATH_DEV);
 	while (fread((char *) &ubuf, sizeof ubuf, 1, fd) == 1)
 		if (SCMPN(ubuf.ut_name, name) == 0) {
+			strncpy(line, ubuf.ut_line, sizeof(ubuf.ut_line));
+			line[sizeof(ubuf.ut_line)] = '\0';
 			if (*tty == '\0') {
 				status = PERMISSION_DENIED;
 				/* no particular tty was requested */
-				(void) strcpy(ftty+5, ubuf.ut_line);
-				if (stat(ftty,&statb) == 0) {
+				(void) strcpy(ftty + sizeof(_PATH_DEV) - 1,
+				    line);
+				if (stat(ftty, &statb) == 0) {
 					if (!(statb.st_mode & 020))
 						continue;
-					(void) strcpy(tty, ubuf.ut_line);
+					(void) strcpy(tty, line);
 					status = SUCCESS;
 					break;
 				}
 			}
-			if (strcmp(ubuf.ut_line, tty) == 0) {
+			if (strcmp(line, tty) == 0) {
 				status = SUCCESS;
 				break;
 			}
