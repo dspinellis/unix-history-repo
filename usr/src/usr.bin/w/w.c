@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.19 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -318,9 +318,9 @@ proc_compare(p1, p2)
 	 * pick the one with the smallest sleep time
 	 */
 	if (p2->p_slptime > p1->p_slptime)
-		return (1);
-	if (p1->p_slptime > p2->p_slptime)
 		return (0);
+	if (p1->p_slptime > p2->p_slptime)
+		return (1);
 	/*
 	 * favor one sleeping in a non-interruptible sleep
 	 */
