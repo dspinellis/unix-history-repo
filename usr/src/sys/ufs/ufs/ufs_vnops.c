@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.14 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,8 +43,8 @@ static int ufs_chown
 	__P((struct vnode *, uid_t, gid_t, struct ucred *, struct proc *));
 
 union _qcvt {
-	quad_t qcvt;
-	long val[2];
+	int64_t qcvt;
+	int32_t val[2];
 };
 #define SETHIGH(q, h) { \
 	union _qcvt tmp; \

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_readwrite.c	8.8 (Berkeley) %G%
+ *	@(#)ufs_readwrite.c	8.9 (Berkeley) %G%
  */
 
 #ifdef LFS_READWRITE
@@ -66,7 +66,7 @@ READ(ap)
 		panic("%s: type %d", READ_S, vp->v_type);
 #endif
 	fs = ip->I_FS;
-	if ((u_quad_t)uio->uio_offset > fs->fs_maxfilesize)
+	if ((u_int64_t)uio->uio_offset > fs->fs_maxfilesize)
 		return (EFBIG);
 
 	for (error = 0, bp = NULL; uio->uio_resid > 0; bp = NULL) {
@@ -180,7 +180,7 @@ WRITE(ap)
 
 	fs = ip->I_FS;
 	if (uio->uio_offset < 0 ||
-	    (u_quad_t)uio->uio_offset + uio->uio_resid > fs->fs_maxfilesize)
+	    (u_int64_t)uio->uio_offset + uio->uio_resid > fs->fs_maxfilesize)
 		return (EFBIG);
 	/*
 	 * Maybe this should be above the vnode op call, but so long as
