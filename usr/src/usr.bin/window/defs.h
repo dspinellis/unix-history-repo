@@ -1,5 +1,5 @@
 /*
- *	@(#)defs.h	3.11 84/04/05	
+ *	@(#)defs.h	3.12 84/04/05	
  */
 
 #include "ww.h"
@@ -21,10 +21,8 @@ struct ww *cmdwin;		/* the command window */
 struct ww *framewin;		/* the window for framing */
 struct ww *boxwin;		/* the window for the box */
 struct ww *fgwin;		/* the last foreground window */
-struct ww *bgwin;		/* the first background window */
 
 #define isfg(w)		((w)->ww_order <= fgwin->ww_order)
-#define isbg(w)		((w)->ww_order >= bgwin->ww_order)
 
 char *shell;			/* the shell program */
 char *shellname;		/* the shell program name (for argv[0]) */

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.17 84/04/05";
+static	char *sccsid = "@(#)lcmd1.c	3.18 84/04/05";
 #endif
 
 #include "defs.h"
@@ -139,31 +139,7 @@ register struct value *v, *a;
 	if (flag == v->v_num)
 		return;
 	deletewin(w);
-	addwin(w, flag ? 0 : 1);
-	reframe();
-}
-
-struct lcmd_arg arg_background[] = {
-	{ "window",	1,	ARG_NUM },
-	{ "flag",	1,	ARG_ANY },
-	0
-};
-
-l_background(v, a)
-register struct value *v, *a;
-{
-	struct ww *w;
-	char flag;
-
-	if ((w = vtowin(a)) == 0)
-		return;
-	v->v_type = V_NUM;
-	v->v_num = isbg(w);
-	flag = vtobool(++a, 1, v->v_num);
-	if (flag == v->v_num)
-		return;
-	deletewin(w);
-	addwin(w, flag ? 3 : 2);
+	addwin(w, flag);
 	reframe();
 }
 
