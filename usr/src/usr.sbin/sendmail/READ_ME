@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.5 (Berkeley) %G%
+ *	@(#)READ_ME	8.6 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -39,6 +39,32 @@ existing man pages will be translated properly.
 
 I'm also told that the groff distribution from MIT has a tmac.doc
 macro set that is compatible with these macros.
+
+
++-----------------------+
+| RELATED DOCUMENTATION |
++-----------------------+
+
+There are other files you should read.  Rooted in this directory are:
+
+  CHANGES-R5-R8
+	Describes changes between Release 5 and Release 8 of sendmail.
+	There are some things that may behave somewhat differently.
+	For example, the rules governing when :include: files will
+	be read have been tightened up for security reasons.
+  FAQ
+	Answers to Frequently Asked Questions.
+  KNOWNBUGS
+	Known bugs in the current release.  I try to keep this up
+	to date -- get the latest version from FTP.CS.Berkeley.EDU
+	in /ucb/sendmail/KNOWNBUGS.
+  RELEASE_NOTES
+	A detailed description of the changes in each version.  This
+	is quite long, but informative.
+  src/READ_ME
+	Details on compiling and installing sendmail.
+  cf/README
+	Details on configuring sendmail.
 
 
 +--------------+
