@@ -1,4 +1,4 @@
-/*	uba.c	4.43	82/04/11	*/
+/*	uba.c	4.44	82/05/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -274,6 +274,29 @@ ubapurge(um)
 	}
 }
 
+ubainitmaps(uhp)
+	register struct uba_hd *uhp;
+{
+
+	rminit(uhp->uh_map, NUBMREG, 1, "uba", UAMSIZ);
+	switch (cpu) {
+#if VAX780
+	case VAX_780:
+		uhp->uh_bdpfree = (1<<NBDP780) - 1;
+		break;
+#endif
+#if VAX750
+	case VAX_750:
+		uhp->uh_bdpfree = (1<<NBDP750) - 1;
+		break;
+#endif
+#if VAX7ZZ
+	case VAX_7ZZ:
+		break;
+#endif
+	}
+}
+
 /*
  * Generate a reset on uba number uban.  Then
  * call each device in the character device table,
@@ -294,6 +317,7 @@ ubareset(uban)
 	uh->uh_actf = uh->uh_actl = 0;
 	uh->uh_bdpwant = 0;
 	uh->uh_mrwant = 0;
+	ubainitmaps(uh);
 	wakeup((caddr_t)&uh->uh_bdpwant);
 	wakeup((caddr_t)&uh->uh_mrwant);
 	printf("uba%d: reset", uban);
