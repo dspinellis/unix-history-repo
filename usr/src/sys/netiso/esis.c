@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esis.c	7.20 (Berkeley) %G%
+ *	@(#)esis.c	7.21 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -417,7 +417,7 @@ struct rtentry		*rt;			/* snpa cache info regarding next hop of
 	siso.siso_nlen = 6 + 1;	/* should be taken from snpa_hdr */
 										/* +1 is for AFI */
 	bcopy(inbound_shp->snh_shost, siso.siso_data + 1, 6);
-	(ifp->if_output)(ifp, m0, &siso, 0);
+	(ifp->if_output)(ifp, m0, (struct sockaddr *)&siso, 0);
 }
 
 /*
@@ -894,7 +894,7 @@ struct	iso_addr *isoa;
 	siso.siso_data[0] = AFI_SNA;
 	siso.siso_nlen = sn_len + 1;
 	bcopy(sn_addr, siso.siso_data + 1, (unsigned)sn_len);
-	(ifp->if_output)(ifp, m0, &siso, 0);
+	(ifp->if_output)(ifp, m0, (struct sockaddr *)&siso, 0);
 }
 
 /*
@@ -968,7 +968,7 @@ struct mbuf *m;
 	int error = 0;
 	unsigned sn_len;
 
-	ifa = ifa_ifwithnet(sdl);	/* extract ifp from sockaddr_dl */
+	ifa = ifa_ifwithnet((struct sockaddr *)sdl);	/* get ifp from sdl */
 	if (ifa == 0) {
 		IFDEBUG(D_ISISOUTPUT)
 			printf("isis_output: interface not found\n");
