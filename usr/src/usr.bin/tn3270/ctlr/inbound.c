@@ -69,10 +69,11 @@ static char	*ourPHead = ourBuffer,
 
 static int	HadAid;			/* Had an AID haven't sent */
 
-static int shifted,			/* Shift state of terminal */
-	alted;				/* Alt state of terminal */
-
 static int InsertMode;			/* is the terminal in insert mode? */
+
+static int rememberedshiftstate;	/* Shift (alt) state of terminal */
+#   define HITNUM(s) ((((s)&(SHIFT_CAPS|SHIFT_UPSHIFT))? 1:0) \
+			+ ((((s)&SHIFT_ALT)? 1:0)<<1))
 
 static int	XWasSF, XProtected;	/* For optimizations */
 #if	!defined(PURE3274)
@@ -97,7 +98,7 @@ init_inbound()
 {
     ourPHead = ourPTail = ourBuffer;
     HadAid = 0;
-    shifted = alted = 0;
+    rememberedshiftstate = 0;
     InsertMode = 0;
 }
 
@@ -551,33 +552,41 @@ int insert;		/* are we in insert mode? */
     }
 }
 
-/* go through data until an AID character is hit, then generate an interrupt */
+/*
+ * AcceptKeystroke()
+ *
+ * Processes one keystroke.
+ *
+ * Returns:
+ *
+ *	0	if this keystroke was NOT processed.
+ *	1	if everything went OK.
+ */
 
 int
-DataFrom3270(buffer, count)
-unsigned char	*buffer;		/* where the data is */
-int	count;				/* how much data there is */
+AcceptKeystroke(scancode, shiftstate)
+int
+    scancode,			/* 3270 scancode */
+    shiftstate;			/* The shift state */
 {
-    int origCount;
     register int c;
     register int i;
     register int j;
     enum ctlrfcn ctlrfcn;
-#   define HITNUM() ((shifted? 1:0) + ((alted?1:0)<<1))
 
-    if (*buffer >= numberof(hits)) {
+    if (scancode >= numberof(hits)) {
 	ExitString(stderr,
-		"Unknown scancode encountered in DataFrom3270.\n", 1);
+		"Unknown scancode encountered in AcceptKeystroke.\n", 1);
 	/*NOTREACHED*/
     }
-    ctlrfcn = hits[*buffer].hit[HITNUM()].ctlrfcn;
-    c = hits[*buffer].hit[HITNUM()].code;
+    ctlrfcn = hits[scancode].hit[HITNUM(shiftstate)].ctlrfcn;
+    c = hits[scancode].hit[HITNUM(shiftstate)].code;
 
     if (!UnLocked || HadAid) {
 	if (HadAid) {
 	    SendToIBM();
 	    if (!EmptyChar()) {
-		return(0);			/* nothing to do */
+		return 0;			/* nothing to do */
 	    }
 	}
 #if	!defined(PURE3274)
@@ -588,50 +597,494 @@ int	count;				/* how much data there is */
 	}
 #endif	/* !defined(PURE3274) */
 	if (!UnLocked) {
-	    return(0);
+	    return 0;
 	}
     }
     /* now, either empty, or haven't seen aid yet */
 
-    origCount = count;
 
 #if	!defined(PURE3274)
     if (TransparentClock == OutputClock) {
-	while (count) {
-	    if (*buffer >= numberof(hits)) {
-		ExitString(stderr,
-			"Unknown scancode encountered in DataFrom3270.\n", 1);
-		/*NOTREACHED*/
-	    }
-	    ctlrfcn = hits[*buffer].hit[HITNUM()].ctlrfcn;
-	    c = hits[*buffer].hit[HITNUM()].code;
-	    buffer++;
-	    count--;
-	    if (ctlrfcn == FCN_AID) {
-		UnLocked = 0;
-		InsertMode = 0;
-		AidByte = (c);
-		HadAid = 1;
-	    } else {
-		switch (ctlrfcn) {
-		case FCN_ESCAPE:
-		    StopScreen(1);
-		    command(0);
-		    ConnectScreen();
-		    break;
+	if (ctlrfcn == FCN_AID) {
+	    UnLocked = 0;
+	    InsertMode = 0;
+	    AidByte = (c);
+	    HadAid = 1;
+	} else {
+	    switch (ctlrfcn) {
+	    case FCN_ESCAPE:
+		StopScreen(1);
+		command(0);
+		ConnectScreen();
+		break;
 
-		case FCN_RESET:
-		case FCN_MASTER_RESET:
-		    UnLocked = 1;
-		    break;
+	    case FCN_RESET:
+	    case FCN_MASTER_RESET:
+		UnLocked = 1;
+		break;
 
-		default:
-		    return(origCount-(count+1));
-		}
+	    default:
+		return 0;
 	    }
 	}
     }
 #endif	/* !defined(PURE3274) */
+
+    if (ctlrfcn == FCN_CHARACTER) {
+		    /* Add the character to the buffer */
+	OneCharacter(c, InsertMode);
+    } else if (ctlrfcn == FCN_AID) {		/* got Aid */
+	if (c == AID_CLEAR) {
+	    LocalClearScreen();	/* Side effect is to clear 3270 */
+	}
+	ResetOiaOnlineA(&OperatorInformationArea);
+	SetOiaTWait(&OperatorInformationArea);
+	ResetOiaInsert(&OperatorInformationArea);
+	InsertMode = 0;		/* just like a 3278 */
+	SetOiaSystemLocked(&OperatorInformationArea);
+	SetOiaModified();
+	UnLocked = 0;
+	AidByte = c;
+	HadAid = 1;
+	SendToIBM();
+    } else {
+	switch (ctlrfcn) {
+
+	case FCN_CURSEL:
+	    c = FieldAttributes(CursorAddress)&ATTR_DSPD_MASK;
+	    if (!FormattedScreen()
+		    || ((c != ATTR_DSPD_DSPD) && (c != ATTR_DSPD_HIGH))) {
+		RingBell("Cursor not in selectable field");
+	    } else {
+		i = ScreenInc(WhereAttrByte(CursorAddress));
+		c = GetHost(i);
+		if (c == DISP_QUESTION) {
+		    AddHost(i, DISP_GREATER_THAN);
+		    TurnOnMdt(i);
+		} else if (c == DISP_GREATER_THAN) {
+		    AddHost(i, DISP_QUESTION);
+		    TurnOffMdt(i);
+		} else if (c == DISP_BLANK || c == DISP_NULL
+					    || c == DISP_AMPERSAND) {
+		    UnLocked = 0;
+		    InsertMode = 0;
+		    ResetOiaOnlineA(&OperatorInformationArea);
+		    SetOiaTWait(&OperatorInformationArea);
+		    SetOiaSystemLocked(&OperatorInformationArea);
+		    ResetOiaInsert(&OperatorInformationArea);
+		    SetOiaModified();
+		    if (c == DISP_AMPERSAND) {
+			TurnOnMdt(i);	/* Only for & type */
+			AidByte = AID_ENTER;
+		    } else {
+			AidByte = AID_SELPEN;
+		    }
+		    HadAid = 1;
+		    SendToIBM();
+		} else {
+		    RingBell(
+			"Cursor not in a selectable field (designator)");
+		}
+	    }
+	    break;
+
+#if	!defined(PURE3274)
+	case FCN_ERASE:
+	    if (IsProtected(ScreenDec(CursorAddress))) {
+		RingBell("Protected Field");
+	    } else {
+		CursorAddress = ScreenDec(CursorAddress);
+		Delete(CursorAddress, ScreenInc(CursorAddress));
+	    }
+	    break;
+	case FCN_WERASE:
+	    j = CursorAddress;
+	    i = ScreenDec(j);
+	    if (IsProtected(i)) {
+		RingBell("Protected Field");
+	    } else {
+		SetXIsProtected();
+		while ((!XIsProtected(i) && Disspace(GetHost(i)))
+						    && (i != j)) {
+		    i = ScreenDec(i);
+		}
+		/* we are pointing at a character in a word, or
+		 * at a protected position
+		 */
+		while ((!XIsProtected(i) && !Disspace(GetHost(i)))
+						    && (i != j)) {
+		    i = ScreenDec(i);
+		}
+		/* we are pointing at a space, or at a protected
+		 * position
+		 */
+		CursorAddress = ScreenInc(i);
+		Delete(CursorAddress, j);
+	    }
+	    break;
+
+	case FCN_FERASE:
+	    if (IsProtected(CursorAddress)) {
+		RingBell("Protected Field");
+	    } else {
+		CursorAddress = ScreenInc(CursorAddress);	/* for btab */
+		BackTab();
+		EraseEndOfField();
+	    }
+	    break;
+
+	case FCN_RESET:
+	    if (InsertMode) {
+		InsertMode = 0;
+		ResetOiaInsert(&OperatorInformationArea);
+		SetOiaModified();
+	    }
+	    break;
+	case FCN_MASTER_RESET:
+	    if (InsertMode) {
+		InsertMode = 0;
+		ResetOiaInsert(&OperatorInformationArea);
+		SetOiaModified();
+	    }
+	    RefreshScreen();
+	    break;
+#endif	/* !defined(PURE3274) */
+
+	case FCN_UP:
+	    CursorAddress = ScreenUp(CursorAddress);
+	    break;
+
+	case FCN_LEFT:
+	    CursorAddress = ScreenDec(CursorAddress);
+	    break;
+
+	case FCN_RIGHT:
+	    CursorAddress = ScreenInc(CursorAddress);
+	    break;
+
+	case FCN_DOWN:
+	    CursorAddress = ScreenDown(CursorAddress);
+	    break;
+
+	case FCN_DELETE:
+	    if (IsProtected(CursorAddress)) {
+		RingBell("Protected Field");
+	    } else {
+		Delete(CursorAddress, ScreenInc(CursorAddress));
+	    }
+	    break;
+
+	case FCN_INSRT:
+	    InsertMode = !InsertMode;
+	    if (InsertMode) {
+		SetOiaInsert(&OperatorInformationArea);
+	    } else {
+		ResetOiaInsert(&OperatorInformationArea);
+	    }
+	    SetOiaModified();
+	    break;
+
+	case FCN_HOME:
+	    Home();
+	    break;
+
+	case FCN_NL:
+	    /* The algorithm is to look for the first unprotected
+	     * column after column 0 of the following line.  Having
+	     * found that unprotected column, we check whether the
+	     * cursor-address-at-entry is at or to the right of the
+	     * LeftMargin AND the LeftMargin column of the found line
+	     * is unprotected.  If this conjunction is true, then
+	     * we set the found pointer to the address of the LeftMargin
+	     * column in the found line.
+	     * Then, we set the cursor address to the found address.
+	     */
+	    i = SetBufferAddress(ScreenLine(ScreenDown(CursorAddress)), 0);
+	    j = ScreenInc(WhereAttrByte(CursorAddress));
+	    do {
+		if (IsUnProtected(i)) {
+		    break;
+		}
+		/* Again (see comment in Home()), this COULD be a problem
+		 * with an unformatted screen.
+		 */
+		/* If there was a field with only an attribute byte,
+		 * we may be pointing to the attribute byte of the NEXT
+		 * field, so just look at the next byte.
+		 */
+		if (IsStartField(i)) {
+		    i = ScreenInc(i);
+		} else {
+		    i = ScreenInc(FieldInc(i));
+		}
+	    } while (i != j);
+	    if (!IsUnProtected(i)) {	/* couldn't find unprotected */
+		i = SetBufferAddress(0,0);
+	    }
+	    if (OptLeftMargin <= ScreenLineOffset(CursorAddress)) {
+		if (IsUnProtected(SetBufferAddress(ScreenLine(i),
+							OptLeftMargin))) {
+		    i = SetBufferAddress(ScreenLine(i), OptLeftMargin);
+		}
+	    }
+	    CursorAddress = i;
+	    break;
+
+	case FCN_EINP:
+	    if (!FormattedScreen()) {
+		i = CursorAddress;
+		TurnOffMdt(i);
+		do {
+		    AddHost(i, 0);
+		    i = ScreenInc(i);
+		} while (i != CursorAddress);
+	    } else {
+		    /*
+		     * The algorithm is:  go through each unprotected
+		     * field on the screen, clearing it out.  When
+		     * we are at the start of a field, skip that field
+		     * if its contents are protected.
+		     */
+		i = j = FieldInc(CursorAddress);
+		do {
+		    if (IsUnProtected(ScreenInc(i))) {
+			i = ScreenInc(i);
+			TurnOffMdt(i);
+			do {
+			   AddHost(i, 0);
+			   i = ScreenInc(i);
+			} while (!IsStartField(i));
+		    } else {
+			i = FieldInc(i);
+		    }
+		} while (i != j);
+	    }
+	    Home();
+	    break;
+
+	case FCN_EEOF:
+	    EraseEndOfField();
+	    break;
+
+	case FCN_SPACE:
+	    OneCharacter(DISP_BLANK, InsertMode);  /* Add cent */
+	    break;
+
+	case FCN_CENTSIGN:
+	    OneCharacter(DISP_CENTSIGN, InsertMode);  /* Add cent */
+	    break;
+
+	case FCN_FM:
+	    OneCharacter(DISP_FM, InsertMode);  /* Add field mark */
+	    break;
+
+	case FCN_DP:
+	    if (IsProtected(CursorAddress)) {
+		RingBell("Protected Field");
+	    } else {
+		OneCharacter(DISP_DUP, InsertMode);/* Add dup character */
+		Tab();
+	    }
+	    break;
+
+	case FCN_TAB:
+	    Tab();
+	    break;
+
+	case FCN_BTAB:
+	    BackTab();
+	    break;
+
+#ifdef	NOTUSED			/* Actually, this is superseded by unix flow
+			     * control.
+			     */
+	case FCN_XOFF:
+	    Flow = 0;			/* stop output */
+	    break;
+
+	case FCN_XON:
+	    if (!Flow) {
+		Flow = 1;			/* turn it back on */
+		DoTerminalOutput();
+	    }
+	    break;
+#endif	/* NOTUSED */
+
+#if	!defined(PURE3274)
+	case FCN_ESCAPE:
+	    /* FlushChar(); do we want to flush characters from before? */
+	    StopScreen(1);
+	    command(0);
+	    ConnectScreen();
+	    break;
+
+	case FCN_DISC:
+	    StopScreen(1);
+	    suspend();
+	    setconnmode();
+	    ConnectScreen();
+	    break;
+
+	case FCN_RESHOW:
+	    RefreshScreen();
+	    break;
+
+	case FCN_SETTAB:
+	    OptColTabs[ScreenLineOffset(CursorAddress)] = 1;
+	    break;
+
+	case FCN_DELTAB:
+	    OptColTabs[ScreenLineOffset(CursorAddress)] = 0;
+	    break;
+
+	    /*
+	     * Clear all tabs, home line, and left margin.
+	     */
+	case FCN_CLRTAB:
+	    for (i = 0; i < sizeof OptColTabs; i++) {
+		OptColTabs[i] = 0;
+	    }
+	    OptHome = 0;
+	    OptLeftMargin = 0;
+	    break;
+
+	case FCN_COLTAB:
+	    ColTab();
+	    break;
+
+	case FCN_COLBAK:
+	    ColBak();
+	    break;
+
+	case FCN_INDENT:
+	    ColTab();
+	    OptLeftMargin = ScreenLineOffset(CursorAddress);
+	    break;
+
+	case FCN_UNDENT:
+	    ColBak();
+	    OptLeftMargin = ScreenLineOffset(CursorAddress);
+	    break;
+
+	case FCN_SETMRG:
+	    OptLeftMargin = ScreenLineOffset(CursorAddress);
+	    break;
+
+	case FCN_SETHOM:
+	    OptHome = ScreenLine(CursorAddress);
+	    break;
+
+	    /*
+	     * Point to first character of next unprotected word on
+	     * screen.
+	     */
+	case FCN_WORDTAB:
+	    i = CursorAddress;
+	    SetXIsProtected();
+	    while (!XIsProtected(i) && !Disspace(GetHost(i))) {
+		i = ScreenInc(i);
+		if (i == CursorAddress) {
+		    break;
+		}
+	    }
+	    /* i is either protected, a space (blank or null),
+	     * or wrapped
+	     */
+	    while (XIsProtected(i) || Disspace(GetHost(i))) {
+		i =  ScreenInc(i);
+		if (i == CursorAddress) {
+		    break;
+		}
+	    }
+	    CursorAddress = i;
+	    break;
+
+	case FCN_WORDBACKTAB:
+	    i = ScreenDec(CursorAddress);
+	    SetXIsProtected();
+	    while (XIsProtected(i) || Disspace(GetHost(i))) {
+		i = ScreenDec(i);
+		if (i == CursorAddress) {
+		    break;
+		}
+	    }
+		/* i is pointing to a character IN an unprotected word
+		 * (or i wrapped)
+		 */
+	    while (!Disspace(GetHost(i))) {
+		i = ScreenDec(i);
+		if (i == CursorAddress) {
+		    break;
+		}
+	    }
+	    CursorAddress = ScreenInc(i);
+	    break;
+
+		    /* Point to last non-blank character of this/next
+		     * unprotected word.
+		     */
+	case FCN_WORDEND:
+	    i = ScreenInc(CursorAddress);
+	    SetXIsProtected();
+	    while (XIsProtected(i) || Disspace(GetHost(i))) {
+		i = ScreenInc(i);
+		if (i == CursorAddress) {
+		    break;
+		}
+	    }
+		    /* we are pointing at a character IN an
+		     * unprotected word (or we wrapped)
+		     */
+	    while (!Disspace(GetHost(i))) {
+		i = ScreenInc(i);
+		if (i == CursorAddress) {
+		    break;
+		}
+	    }
+	    CursorAddress = ScreenDec(i);
+	    break;
+
+		    /* Get to last non-blank of this/next unprotected
+		     * field.
+		     */
+	case FCN_FIELDEND:
+	    i = LastOfField(CursorAddress);
+	    if (i != CursorAddress) {
+		CursorAddress = i;		/* We moved; take this */
+	    } else {
+		j = FieldInc(CursorAddress);	/* Move to next field */
+		i = LastOfField(j);
+		if (i != j) {
+		    CursorAddress = i;	/* We moved; take this */
+		}
+		    /* else - nowhere else on screen to be; stay here */
+	    }
+	    break;
+#endif	/* !defined(PURE3274) */
+
+	default:
+				/* We don't handle this yet */
+	    RingBell("Function not implemented");
+	}
+    }
+    return 1;				/* We did something! */
+}
+
+
+/*
+ * We get data from the terminal.  We keep track of the shift state
+ * (including ALT, CONTROL), and then call AcceptKeystroke to actually
+ * process any non-shift keys.
+ */
+
+int
+DataFrom3270(buffer, count)
+unsigned char	*buffer;		/* where the data is */
+int		count;			/* how much data there is */
+{
+    int origCount;
+
+    origCount = count;
 
     while (count) {
 	if (*buffer >= numberof(hits)) {
@@ -639,470 +1092,29 @@ int	count;				/* how much data there is */
 			"Unknown scancode encountered in DataFrom3270.\n", 1);
 	    /*NOTREACHED*/
 	}
-	ctlrfcn = hits[*buffer].hit[HITNUM()].ctlrfcn;
-	c = hits[*buffer].hit[HITNUM()].code;
+
+	switch (hits[*buffer].hit[HITNUM(rememberedshiftstate)].ctlrfcn) {
+
+	case FCN_MAKE_SHIFT:
+	    rememberedshiftstate |= (SHIFT_RIGHT|SHIFT_UPSHIFT);
+	    break;
+	case FCN_BREAK_SHIFT:
+	    rememberedshiftstate &= ~(SHIFT_RIGHT|SHIFT_UPSHIFT);
+	    break;
+	case FCN_MAKE_ALT:
+	    rememberedshiftstate |= SHIFT_ALT;
+	    break;
+	case FCN_BREAK_ALT:
+	    rememberedshiftstate &= ~SHIFT_ALT;
+	    break;
+	default:
+	    if (AcceptKeystroke(*buffer, rememberedshiftstate) == 0) {
+		return(origCount-count);
+	    }
+	    break;
+	}
 	buffer++;
 	count--;
-
-	if (ctlrfcn == FCN_CHARACTER) {
-			/* Add the character to the buffer */
-	    OneCharacter(c, InsertMode);
-	} else if (ctlrfcn == FCN_AID) {		/* got Aid */
-	    if (c == AID_CLEAR) {
-		LocalClearScreen();	/* Side effect is to clear 3270 */
-	    }
-	    ResetOiaOnlineA(&OperatorInformationArea);
-	    SetOiaTWait(&OperatorInformationArea);
-	    ResetOiaInsert(&OperatorInformationArea);
-	    InsertMode = 0;		/* just like a 3278 */
-	    SetOiaSystemLocked(&OperatorInformationArea);
-	    SetOiaModified();
-	    UnLocked = 0;
-	    AidByte = c;
-	    HadAid = 1;
-	    SendToIBM();
-	    return(origCount-count);
-	} else {
-	    switch (ctlrfcn) {
-
-	    case FCN_MAKE_SHIFT:
-		shifted++;
-		break;
-	    case FCN_BREAK_SHIFT:
-		shifted--;
-		if (shifted < 0) {
-		    ExitString(stderr,
-				"More BREAK_SHIFT than MAKE_SHIFT.\n", 1);
-		    /*NOTREACHED*/
-		}
-		break;
-	    case FCN_MAKE_ALT:
-		alted++;
-		break;
-	    case FCN_BREAK_ALT:
-		alted--;
-		if (alted < 0) {
-		    ExitString(stderr, "More BREAK_ALT than MAKE_ALT.\n", 1);
-		    /*NOTREACHED*/
-		}
-		break;
-	    case FCN_CURSEL:
-		c = FieldAttributes(CursorAddress)&ATTR_DSPD_MASK;
-		if (!FormattedScreen()
-			|| ((c != ATTR_DSPD_DSPD) && (c != ATTR_DSPD_HIGH))) {
-		    RingBell("Cursor not in selectable field");
-		} else {
-		    i = ScreenInc(WhereAttrByte(CursorAddress));
-		    c = GetHost(i);
-		    if (c == DISP_QUESTION) {
-			AddHost(i, DISP_GREATER_THAN);
-			TurnOnMdt(i);
-		    } else if (c == DISP_GREATER_THAN) {
-			AddHost(i, DISP_QUESTION);
-			TurnOffMdt(i);
-		    } else if (c == DISP_BLANK || c == DISP_NULL
-						|| c == DISP_AMPERSAND) {
-			UnLocked = 0;
-			InsertMode = 0;
-			ResetOiaOnlineA(&OperatorInformationArea);
-			SetOiaTWait(&OperatorInformationArea);
-			SetOiaSystemLocked(&OperatorInformationArea);
-			ResetOiaInsert(&OperatorInformationArea);
-			SetOiaModified();
-			if (c == DISP_AMPERSAND) {
-			    TurnOnMdt(i);	/* Only for & type */
-			    AidByte = AID_ENTER;
-			} else {
-			    AidByte = AID_SELPEN;
-			}
-			HadAid = 1;
-			SendToIBM();
-		    } else {
-			RingBell(
-			    "Cursor not in a selectable field (designator)");
-		    }
-		}
-		break;
-
-#if	!defined(PURE3274)
-	    case FCN_ERASE:
-		if (IsProtected(ScreenDec(CursorAddress))) {
-		    RingBell("Protected Field");
-		} else {
-		    CursorAddress = ScreenDec(CursorAddress);
-		    Delete(CursorAddress, ScreenInc(CursorAddress));
-		}
-		break;
-	    case FCN_WERASE:
-		j = CursorAddress;
-		i = ScreenDec(j);
-		if (IsProtected(i)) {
-		    RingBell("Protected Field");
-		} else {
-		    SetXIsProtected();
-		    while ((!XIsProtected(i) && Disspace(GetHost(i)))
-							&& (i != j)) {
-			i = ScreenDec(i);
-		    }
-		    /* we are pointing at a character in a word, or
-		     * at a protected position
-		     */
-		    while ((!XIsProtected(i) && !Disspace(GetHost(i)))
-							&& (i != j)) {
-			i = ScreenDec(i);
-		    }
-		    /* we are pointing at a space, or at a protected
-		     * position
-		     */
-		    CursorAddress = ScreenInc(i);
-		    Delete(CursorAddress, j);
-		}
-		break;
-
-	    case FCN_FERASE:
-		if (IsProtected(CursorAddress)) {
-		    RingBell("Protected Field");
-		} else {
-		    CursorAddress = ScreenInc(CursorAddress);	/* for btab */
-		    BackTab();
-		    EraseEndOfField();
-		}
-		break;
-
-	    case FCN_RESET:
-		if (InsertMode) {
-		    InsertMode = 0;
-		    ResetOiaInsert(&OperatorInformationArea);
-		    SetOiaModified();
-		}
-		break;
-	    case FCN_MASTER_RESET:
-		if (InsertMode) {
-		    InsertMode = 0;
-		    ResetOiaInsert(&OperatorInformationArea);
-		    SetOiaModified();
-		}
-		RefreshScreen();
-		break;
-#endif	/* !defined(PURE3274) */
-
-	    case FCN_UP:
-		CursorAddress = ScreenUp(CursorAddress);
-		break;
-
-	    case FCN_LEFT:
-		CursorAddress = ScreenDec(CursorAddress);
-		break;
-
-	    case FCN_RIGHT:
-		CursorAddress = ScreenInc(CursorAddress);
-		break;
-
-	    case FCN_DOWN:
-		CursorAddress = ScreenDown(CursorAddress);
-		break;
-
-	    case FCN_DELETE:
-		if (IsProtected(CursorAddress)) {
-		    RingBell("Protected Field");
-		} else {
-		    Delete(CursorAddress, ScreenInc(CursorAddress));
-		}
-		break;
-
-	    case FCN_INSRT:
-		InsertMode = !InsertMode;
-		if (InsertMode) {
-		    SetOiaInsert(&OperatorInformationArea);
-		} else {
-		    ResetOiaInsert(&OperatorInformationArea);
-		}
-		SetOiaModified();
-		break;
-
-	    case FCN_HOME:
-		Home();
-		break;
-
-	    case FCN_NL:
-		/* The algorithm is to look for the first unprotected
-		 * column after column 0 of the following line.  Having
-		 * found that unprotected column, we check whether the
-		 * cursor-address-at-entry is at or to the right of the
-		 * LeftMargin AND the LeftMargin column of the found line
-		 * is unprotected.  If this conjunction is true, then
-		 * we set the found pointer to the address of the LeftMargin
-		 * column in the found line.
-		 * Then, we set the cursor address to the found address.
-		 */
-		i = SetBufferAddress(ScreenLine(ScreenDown(CursorAddress)), 0);
-		j = ScreenInc(WhereAttrByte(CursorAddress));
-		do {
-		    if (IsUnProtected(i)) {
-			break;
-		    }
-		    /* Again (see comment in Home()), this COULD be a problem
-		     * with an unformatted screen.
-		     */
-		    /* If there was a field with only an attribute byte,
-		     * we may be pointing to the attribute byte of the NEXT
-		     * field, so just look at the next byte.
-		     */
-		    if (IsStartField(i)) {
-			i = ScreenInc(i);
-		    } else {
-			i = ScreenInc(FieldInc(i));
-		    }
-		} while (i != j);
-		if (!IsUnProtected(i)) {	/* couldn't find unprotected */
-		    i = SetBufferAddress(0,0);
-		}
-		if (OptLeftMargin <= ScreenLineOffset(CursorAddress)) {
-		    if (IsUnProtected(SetBufferAddress(ScreenLine(i),
-							    OptLeftMargin))) {
-			i = SetBufferAddress(ScreenLine(i), OptLeftMargin);
-		    }
-		}
-		CursorAddress = i;
-		break;
-
-	    case FCN_EINP:
-		if (!FormattedScreen()) {
-		    i = CursorAddress;
-		    TurnOffMdt(i);
-		    do {
-			AddHost(i, 0);
-			i = ScreenInc(i);
-		    } while (i != CursorAddress);
-		} else {
-			/*
-			 * The algorithm is:  go through each unprotected
-			 * field on the screen, clearing it out.  When
-			 * we are at the start of a field, skip that field
-			 * if its contents are protected.
-			 */
-		    i = j = FieldInc(CursorAddress);
-		    do {
-			if (IsUnProtected(ScreenInc(i))) {
-			    i = ScreenInc(i);
-			    TurnOffMdt(i);
-			    do {
-			       AddHost(i, 0);
-			       i = ScreenInc(i);
-			    } while (!IsStartField(i));
-			} else {
-			    i = FieldInc(i);
-			}
-		    } while (i != j);
-		}
-		Home();
-		break;
-
-	    case FCN_EEOF:
-		EraseEndOfField();
-		break;
-
-	    case FCN_SPACE:
-		OneCharacter(DISP_BLANK, InsertMode);  /* Add cent */
-		break;
-
-	    case FCN_CENTSIGN:
-		OneCharacter(DISP_CENTSIGN, InsertMode);  /* Add cent */
-		break;
-
-	    case FCN_FM:
-		OneCharacter(DISP_FM, InsertMode);  /* Add field mark */
-		break;
-
-	    case FCN_DP:
-		if (IsProtected(CursorAddress)) {
-		    RingBell("Protected Field");
-		} else {
-		    OneCharacter(DISP_DUP, InsertMode);/* Add dup character */
-		    Tab();
-		}
-		break;
-
-	    case FCN_TAB:
-		Tab();
-		break;
-
-	    case FCN_BTAB:
-		BackTab();
-		break;
-
-#ifdef	NOTUSED			/* Actually, this is superseded by unix flow
-				 * control.
-				 */
-	    case FCN_XOFF:
-		Flow = 0;			/* stop output */
-		break;
-
-	    case FCN_XON:
-		if (!Flow) {
-		    Flow = 1;			/* turn it back on */
-		    DoTerminalOutput();
-		}
-		break;
-#endif	/* NOTUSED */
-
-#if	!defined(PURE3274)
-	    case FCN_ESCAPE:
-		/* FlushChar(); do we want to flush characters from before? */
-		StopScreen(1);
-		command(0);
-		ConnectScreen();
-		break;
-
-	    case FCN_DISC:
-		StopScreen(1);
-		suspend();
-		setconnmode();
-		ConnectScreen();
-		break;
-
-	    case FCN_RESHOW:
-		RefreshScreen();
-		break;
-
-	    case FCN_SETTAB:
-		OptColTabs[ScreenLineOffset(CursorAddress)] = 1;
-		break;
-
-	    case FCN_DELTAB:
-		OptColTabs[ScreenLineOffset(CursorAddress)] = 0;
-		break;
-
-		/*
-		 * Clear all tabs, home line, and left margin.
-		 */
-	    case FCN_CLRTAB:
-		for (i = 0; i < sizeof OptColTabs; i++) {
-		    OptColTabs[i] = 0;
-		}
-		OptHome = 0;
-		OptLeftMargin = 0;
-		break;
-
-	    case FCN_COLTAB:
-		ColTab();
-		break;
-
-	    case FCN_COLBAK:
-		ColBak();
-		break;
-
-	    case FCN_INDENT:
-		ColTab();
-		OptLeftMargin = ScreenLineOffset(CursorAddress);
-		break;
-
-	    case FCN_UNDENT:
-		ColBak();
-		OptLeftMargin = ScreenLineOffset(CursorAddress);
-		break;
-
-	    case FCN_SETMRG:
-		OptLeftMargin = ScreenLineOffset(CursorAddress);
-		break;
-
-	    case FCN_SETHOM:
-		OptHome = ScreenLine(CursorAddress);
-		break;
-
-		/*
-		 * Point to first character of next unprotected word on
-		 * screen.
-		 */
-	    case FCN_WORDTAB:
-		i = CursorAddress;
-		SetXIsProtected();
-		while (!XIsProtected(i) && !Disspace(GetHost(i))) {
-		    i = ScreenInc(i);
-		    if (i == CursorAddress) {
-			break;
-		    }
-		}
-		/* i is either protected, a space (blank or null),
-		 * or wrapped
-		 */
-		while (XIsProtected(i) || Disspace(GetHost(i))) {
-		    i =  ScreenInc(i);
-		    if (i == CursorAddress) {
-			break;
-		    }
-		}
-		CursorAddress = i;
-		break;
-
-	    case FCN_WORDBACKTAB:
-		i = ScreenDec(CursorAddress);
-		SetXIsProtected();
-		while (XIsProtected(i) || Disspace(GetHost(i))) {
-		    i = ScreenDec(i);
-		    if (i == CursorAddress) {
-			break;
-		    }
-		}
-		    /* i is pointing to a character IN an unprotected word
-		     * (or i wrapped)
-		     */
-		while (!Disspace(GetHost(i))) {
-		    i = ScreenDec(i);
-		    if (i == CursorAddress) {
-			break;
-		    }
-		}
-		CursorAddress = ScreenInc(i);
-		break;
-
-			/* Point to last non-blank character of this/next
-			 * unprotected word.
-			 */
-	    case FCN_WORDEND:
-		i = ScreenInc(CursorAddress);
-		SetXIsProtected();
-		while (XIsProtected(i) || Disspace(GetHost(i))) {
-		    i = ScreenInc(i);
-		    if (i == CursorAddress) {
-			break;
-		    }
-		}
-			/* we are pointing at a character IN an
-			 * unprotected word (or we wrapped)
-			 */
-		while (!Disspace(GetHost(i))) {
-		    i = ScreenInc(i);
-		    if (i == CursorAddress) {
-			break;
-		    }
-		}
-		CursorAddress = ScreenDec(i);
-		break;
-
-			/* Get to last non-blank of this/next unprotected
-			 * field.
-			 */
-	    case FCN_FIELDEND:
-		i = LastOfField(CursorAddress);
-		if (i != CursorAddress) {
-		    CursorAddress = i;		/* We moved; take this */
-		} else {
-		    j = FieldInc(CursorAddress);	/* Move to next field */
-		    i = LastOfField(j);
-		    if (i != j) {
-			CursorAddress = i;	/* We moved; take this */
-		    }
-			/* else - nowhere else on screen to be; stay here */
-		}
-		break;
-#endif	/* !defined(PURE3274) */
-
-	    default:
-				    /* We don't handle this yet */
-		RingBell("Function not implemented");
-	    }
-	}
     }
     return(origCount-count);
 }

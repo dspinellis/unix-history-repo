@@ -25,6 +25,8 @@ enum ctlrfcn {
 
 	FCN_MAKE_CTRL,
 
+	FCN_CAPS_LOCK,
+
 	FCN_MONOCASE,			/* DISPLAY in upper case */
 	FCN_DVCNL,
 
@@ -116,3 +118,14 @@ struct hits {
 };
 
 extern struct hits hits[];
+
+/*
+ * Definitions of the shift state (and the left/right shift key position).
+ */
+
+#define	SHIFT_RIGHT	0x20	/* Right shift key is down */
+#define	SHIFT_LEFT	0x10	/* Left shift key is down */
+#define	SHIFT_CONTROL	0x08	/* Control shift state (unused) */
+#define	SHIFT_ALT	0x04	/* ALT shift state */
+#define	SHIFT_CAPS	0x02	/* Caps lock state */
+#define	SHIFT_UPSHIFT	0x01	/* Upshift state */
