@@ -1,10 +1,10 @@
-static	char *sccsid = "@(#)main.c	1.21 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.22 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
 #include "../h/param.h"
 #include "../h/fs.h"
-#include "../h/dir.h"
+#include "../h/ndir.h"
 #include "../h/inode.h"
 #include "../h/stat.h"
 #include "../h/ostat.h"
@@ -12,8 +12,6 @@ static	char *sccsid = "@(#)main.c	1.21 (Berkeley) %G%";
 
 typedef	int	(*SIG_TYP)();
 
-#define	NDIRECT(fs)	((fs)->fs_bsize / sizeof(struct direct))
-#define	MAXNDIRECT	(MAXBSIZE / sizeof(struct direct))
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 #define	MAXINOPB	(MAXBSIZE / sizeof (struct dinode))
 #define	SPERB		(MAXBSIZE / sizeof(short))
@@ -30,7 +28,7 @@ typedef struct dinode	DINODE;
 typedef struct direct	DIRECT;
 
 #define	ALLOC	((dp->di_mode & IFMT) != 0)
-#define	DIR	((dp->di_mode & IFMT) == IFDIR)
+#define	DIRCT	((dp->di_mode & IFMT) == IFDIR)
 #define	REG	((dp->di_mode & IFMT) == IFREG)
 #define	BLK	((dp->di_mode & IFMT) == IFBLK)
 #define	CHR	((dp->di_mode & IFMT) == IFCHR)
@@ -51,7 +49,6 @@ struct bufarea {
 		struct	fs b_fs;		/* super block */
 		struct	cg b_cg;		/* cylinder group */
 		struct dinode b_dinode[MAXINOPB]; /* inode block */
-		DIRECT b_dir[MAXNDIRECT];	/* directory */
 	} b_un;
 	char	b_dirty;
 };
@@ -106,7 +103,7 @@ short	*lncntp;		/* ptr to link count table */
 char	*pathp;			/* pointer to pathname position */
 char	*thisname;		/* ptr to current pathname component */
 char	*srchname;		/* name being searched for in dir */
-char	pathname[200];
+char	pathname[BUFSIZ];
 
 char	*lfname = "lost+found";
 
@@ -415,15 +412,9 @@ check(dev)
 							errexit("");
 					}
 				}
-				setstate(DIR ? DSTATE : FSTATE);
+				setstate(DIRCT ? DSTATE : FSTATE);
 				badblk = dupblk = 0; filsize = 0; maxblk = 0;
 				ckinode(dp, ADDR);
-				if (DIR && dp->di_size % sizeof(DIRECT)) {
-					pwarn("DIRECTORY MISALIGNED I=%u\n",
-					    inum);
-					if (preen == 0)
-						printf("\n");
-				}
 			} else {
 				n++;
 				if (isset(cgrp.cg_iused, i)) {
@@ -913,7 +904,7 @@ pass2(dirp)
 	if ((inum = dirp->d_ino) == 0)
 		return (KEEPON);
 	thisname = pathp;
-	for (p = dirp->d_name; p < &dirp->d_name[DIRSIZ]; )
+	for (p = dirp->d_name; p < &dirp->d_name[MAXNAMLEN]; )
 		if ((*pathp++ = *p++) == 0) {
 			--pathp;
 			break;
@@ -934,7 +925,7 @@ again:
 				break;
 			if ((dp = ginode()) == NULL)
 				break;
-			setstate(DIR ? DSTATE : FSTATE);
+			setstate(DIRCT ? DSTATE : FSTATE);
 			goto again;
 
 		case FSTATE:
@@ -1049,46 +1040,84 @@ descend()
 	filsize = savsize;
 }
 
+struct dirstuff {
+	int loc;
+	int blkno;
+	int blksiz;
+};
+
 dirscan(blk, nf)
 	daddr_t blk;
 	int nf;
 {
-	register DIRECT *dirp;
-	register DIRECT *edirp;
-	register char *p1, *p2;
-	register n;
+	register DIRECT *dp;
 	DIRECT direntry;
+	struct dirstuff dirp;
+	int blksiz, n;
 
 	if (outrange(blk)) {
 		filsize -= sblock.fs_bsize;
 		return (SKIP);
 	}
-	edirp = &dirblk.b_dir[NDIRECT(&sblock)*nf/sblock.fs_frag];
-	for (dirp = dirblk.b_dir; dirp < edirp &&
-		filsize > 0; dirp++, filsize -= sizeof(DIRECT)) {
-		if (getblk(&fileblk, blk, nf * sblock.fs_fsize) == NULL) {
-			filsize -= (&dirblk.b_dir[NDIRECT(&sblock)]-dirp)*sizeof(DIRECT);
-			return (SKIP);
-		}
-		p1 = &dirp->d_name[DIRSIZ];
-		p2 = &direntry.d_name[DIRSIZ];
-		while (p1 > (char *)dirp)
-			*--p2 = *--p1;
+	blksiz = nf * sblock.fs_fsize;
+	dirp.loc = 0;
+	dirp.blkno = blk;
+	dirp.blksiz = blksiz;
+	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+		printf("got %s ino %d\n", dp->d_name, dp->d_ino);
+		copy(dp, &direntry, DIRSIZ(dp));
 		if ((n = (*pfunc)(&direntry)) & ALTERD) {
-			if (getblk(&fileblk, blk, nf * sblock.fs_fsize) != NULL) {
-				p1 = &dirp->d_name[DIRSIZ];
-				p2 = &direntry.d_name[DIRSIZ];
-				while (p1 > (char *)dirp)
-					*--p1 = *--p2;
+			if (getblk(&fileblk, blk, blksiz) != NULL) {
+				copy(&direntry, dp, DIRSIZ(&direntry));
 				dirty(&fileblk);
 				sbdirty();
 			} else
 				n &= ~ALTERD;
 		}
-		if (n & STOP)
+		if (n & STOP) 
 			return (n);
 	}
 	return (filsize > 0 ? KEEPON : STOP);
+}
+
+/*
+ * read an old stlye directory entry and present it as a new one
+ */
+#define	ODIRSIZ	14
+
+struct	olddirect {
+	ino_t	d_ino;
+	char	d_name[ODIRSIZ];
+	char	d_spare[14];
+};
+
+/*
+ * get next entry in a directory.
+ */
+DIRECT *
+readdir(dirp)
+	register struct dirstuff *dirp;
+{
+	register struct olddirect *dp;
+	static DIRECT dir;
+
+	if (getblk(&fileblk, dirp->blkno, dirp->blksiz) == NULL) {
+		filsize -= dirp->blksiz - dirp->loc;
+		return NULL;
+	}
+	for (;;) {
+		if (filsize <= 0 || dirp->loc >= dirp->blksiz)
+			return NULL;
+		dp = (struct olddirect *)(dirblk.b_buf + dirp->loc);
+		dirp->loc += sizeof(struct olddirect);
+		filsize -= sizeof(struct olddirect);
+		if (dp->d_ino == 0)
+			continue;
+		dir.d_ino = dp->d_ino;
+		strncpy(dir.d_name, dp->d_name, ODIRSIZ);
+		dir.d_namlen = strlen(dir.d_name);
+		return (&dir);
+	}
 }
 
 direrr(s)
@@ -1100,7 +1129,7 @@ direrr(s)
 	pinode();
 	printf("\n");
 	if ((dp = ginode()) != NULL && ftypeok(dp))
-		pfatal("%s=%s", DIR?"DIR":"FILE", pathname);
+		pfatal("%s=%s", DIRCT?"DIR":"FILE", pathname);
 	else
 		pfatal("NAME=%s", pathname);
 	return (reply("REMOVE"));
@@ -1119,7 +1148,7 @@ adjust(lcnt)
 	}
 	else {
 		pwarn("LINK COUNT %s",
-			(lfdir==inum)?lfname:(DIR?"DIR":"FILE"));
+			(lfdir==inum)?lfname:(DIRCT?"DIR":"FILE"));
 		pinode();
 		printf(" COUNT %d SHOULD BE %d",
 			dp->di_nlink, dp->di_nlink-lcnt);
@@ -1145,7 +1174,7 @@ clri(s, flg)
 	if ((dp = ginode()) == NULL)
 		return;
 	if (flg == 1) {
-		pwarn("%s %s", s, DIR?"DIR":"FILE");
+		pwarn("%s %s", s, DIRCT?"DIR":"FILE");
 		pinode();
 	}
 	if (preen || reply("CLEAR") == 1) {
@@ -1436,7 +1465,7 @@ pinode()
 {
 	register DINODE *dp;
 	register char *p;
-	char uidbuf[200];
+	char uidbuf[BUFSIZ];
 	char *ctime();
 
 	printf(" I=%u ", inum);
@@ -1517,7 +1546,7 @@ makecg()
 			if (dp == NULL)
 				continue;
 			if (ALLOC) {
-				if (DIR)
+				if (DIRCT)
 					cgrp.cg_cs.cs_ndir++;
 				setbit(cgrp.cg_iused, i);
 				continue;
@@ -1631,16 +1660,12 @@ fragacct(fs, fragmap, fraglist, cnt)
 findino(dirp)
 	register DIRECT *dirp;
 {
-	register char *p1, *p2;
-
 	if (dirp->d_ino == 0)
 		return (KEEPON);
-	for (p1 = dirp->d_name, p2 = srchname;*p2++ == *p1; p1++) {
-		if (*p1 == 0 || p1 == &dirp->d_name[DIRSIZ-1]) {
-			if (dirp->d_ino >= ROOTINO && dirp->d_ino <= imax)
-				parentdir = dirp->d_ino;
-			return (STOP);
-		}
+	if (!strcmp(dirp->d_name, srchname)) {
+		if (dirp->d_ino >= ROOTINO && dirp->d_ino <= imax)
+			parentdir = dirp->d_ino;
+		return (STOP);
 	}
 	return (KEEPON);
 }
@@ -1684,7 +1709,7 @@ linkup()
 
 	if ((dp = ginode()) == NULL)
 		return (0);
-	lostdir = DIR;
+	lostdir = DIRCT;
 	pdir = parentdir;
 	pwarn("UNREF %s ", lostdir ? "DIR" : "FILE");
 	pinode();
@@ -1715,7 +1740,7 @@ linkup()
 		}
 	}
 	inum = lfdir;
-	if ((dp = ginode()) == NULL || !DIR || getstate() != FSTATE) {
+	if ((dp = ginode()) == NULL || !DIRCT || getstate() != FSTATE) {
 		inum = orphan;
 		pfatal("SORRY. NO lost+found DIRECTORY");
 		printf("\n\n");
