@@ -8,7 +8,7 @@
  */
 
 #include "defs.h"
-static	char sccsid[] = "@(#)access.c 4.4 %G%";
+static	char sccsid[] = "@(#)access.c 4.4 5/15/81";
 
 
 MAP		txtmap;
@@ -79,7 +79,7 @@ access(mode, addr, space, value)
 		if (addr < 0)
 			return (0);
 	}
-	if (physrw(file, addr, &w, rd) < 0)
+	if (physrw(file, addr, rd ? &w : &value, rd) < 0)
 		rwerr(space);
 	return (w);
 }
