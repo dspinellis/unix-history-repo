@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.1 (Berkeley) %G%
+ *	@(#)machdep.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
 #include "map.h"
@@ -17,7 +16,8 @@
 #include "buf.h"
 #include "reboot.h"
 #include "conf.h"
-#include "inode.h"
+#include "vnode.h"
+#include "../ufs/inode.h"
 #include "file.h"
 #include "text.h"
 #include "clist.h"
@@ -26,7 +26,7 @@
 #include "malloc.h"
 #include "mbuf.h"
 #include "msgbuf.h"
-#include "quota.h"
+#include "../ufs/quota.h"
 
 #include "cpu.h"
 #include "reg.h"
@@ -451,8 +451,8 @@ boot(arghowto)
 		 * Release inodes held by texts before update.
 		 */
 		if (panicstr == 0)
-			xumount(NODEV);
-		update();
+			xumount(NULL);
+		sync();
 
 		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)conf.c	7.4 (Berkeley) %G%
+ *	@(#)conf.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -100,7 +100,7 @@ struct	tty vx_tty[];
 
 int	syopen(),syread(),sywrite(),syioctl(),syselect();
 
-int 	mmread(),mmwrite();
+int 	mmrw();
 #define	mmselect	seltrue
 
 #include "pty.h"
@@ -202,7 +202,7 @@ struct cdevsw	cdevsw[] =
 	syopen,		nulldev,	syread,		sywrite,	/*2*/
 	syioctl,	nulldev,	nulldev,	NULL,
 	syselect,	nodev,		NULL,
-	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
+	nulldev,	nulldev,	mmrw,		mmrw,		/*3*/
 	nodev,		nulldev,	nulldev,	NULL,
 	mmselect,	nodev,		NULL,
 	nodev,		nulldev,	nodev,		nodev,		/*4*/
