@@ -5,7 +5,7 @@
 #
 # %sccs.include.proprietary.sh%
 #
-#	@(#)spell.sh	1.6 (Berkeley) %G%
+#	@(#)spell.sh	1.7 (Berkeley) %G%
 #
 
 : V data for -v, B flags, D dictionary, S stop, H history, F files, T temp
@@ -38,10 +38,10 @@ do
 done
 IFS=@
 case $H in
-/dev/null)	$R $F | sort -u | /usr/libexec/spell $S $T |
+/dev/null)	eval $R $F | sort -u | /usr/libexec/spell $S $T |
 		/usr/libexec/spell ${D-/usr/share/dict/hlista} $V $B |
 		sort -u +0f +0 - $T ;;
-*)		$R $F | sort -u | /usr/libexec/spell $S $T |
+*)		eval $R $F | sort -u | /usr/libexec/spell $S $T |
 		/usr/libexec/spell ${D-/usr/share/dict/hlista} $V $B |
 		sort -u +0f +0 - $T | tee -a $H
 		who am i >> $H 2> /dev/null ;;
