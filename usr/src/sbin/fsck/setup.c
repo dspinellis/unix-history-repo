@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -88,6 +88,14 @@ setup(dev)
 		dev_bsize = secsize = lp->d_secsize;
 	else
 		dev_bsize = secsize = DEV_BSIZE;
+#ifdef tahoe
+	/*
+	 * On the tahoe, the disk label and the disk driver disagree.
+	 * The label knows that sectors are 512 bytes, but the disk
+	 * drivers will only transfer in 1024 sized pieces.
+	 */
+	secsize = 1024;
+#endif
 	/*
 	 * Read in the superblock, looking for alternates if necessary
 	 */
