@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_domain.c	7.4 (Berkeley) %G%
+ *	@(#)uipc_domain.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -124,7 +124,7 @@ pfctlinput(cmd, sa)
 	for (dp = domains; dp; dp = dp->dom_next)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_ctlinput)
-				(*pr->pr_ctlinput)(cmd, sa);
+				(*pr->pr_ctlinput)(cmd, sa, (caddr_t) 0);
 }
 
 pfslowtimo()
