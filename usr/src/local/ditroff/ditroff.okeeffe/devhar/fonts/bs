@@ -1,0 +1,69 @@
+#
+# table of font 3604 with master 14 and unitwidth 10
+#
+# Baskerville smallcaps
+#
+# Note: ascender and descender info generated automatically
+#
+name bs
+internalname 3604
+charset
+\|	33	0	0	0	spacewidth is 66 decip.
+\^	17	0	0	0	this isn't really a quarter space
+A	105	0	01	3604	SM CAP A
+a	"
+B	100	0	02	3604	SM CAP B
+b	"
+C	100	0	03	3604	SM CAP C
+c	"
+D	111	0	04	3604	SM CAP D
+d	"
+E	100	0	05	3604	SM CAP E
+e	"
+F	86	0	06	3604	SM CAP F
+f	"
+G	105	0	07	3604	SM CAP G
+g	"
+H	119	0	010	3604	SM CAP H
+h	"
+I	55	0	011	3604	SM CAP I
+i	"
+J	63	1	012	3604	SM CAP J
+j	"
+K	111	0	013	3604	SM CAP K
+k	"
+L	100	0	014	3604	SM CAP L
+l	"
+M	130	0	015	3604	SM CAP M
+m	"
+N	105	0	016	3604	SM CAP N
+n	"
+O	111	0	017	3604	SM CAP O
+o	"
+P	94	0	020	3604	SM CAP P
+p	"
+Q	111	1	021	3604	SM Q
+q	"
+R	100	0	022	3604	SM CAP R
+r	"
+S	75	0	023	3604	SM CAP S
+s	"
+T	94	0	024	3604	SM CAP T
+t	"
+U	111	0	025	3604	SM CAP U
+u	"
+V	108	0	026	3604	SM CAP V
+v	"
+W	150	0	027	3604	SM CAP W
+w	"
+X	105	0	030	3604	SM CAP X
+x	"
+Y	105	0	031	3604	SM CAP Y
+y	"
+Z	94	0	032	3604	SM CAP Z
+z	"
+&	111	0	033	3604	SM CAP &
+AE	169	0	034	3604	SC DIPH
+ae	"
+OE	155	0	035	3604	SM C OE DIP
+oe	"
