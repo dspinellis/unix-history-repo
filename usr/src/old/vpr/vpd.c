@@ -4,17 +4,17 @@
  * vpd.c						updated %G%
  * Varian or Versatec printer daemon
  */
-char vpdSCCSid[] = "@(#)vpd.c	1.4\t%G%";
+char vpdSCCSid[] = "@(#)vpd.c	1.5\t%G%";
 
 #include <stdio.h>
 #include <sys/param.h>
-#include <dir.h>
+#include <sys/dir.h>
 #include <signal.h>
-#include <stat.h>
+#include <sys/stat.h>
 #include <sgtty.h>
 #include <errno.h>
 #include <sys/vcmd.h>
-#include <wait.h>
+#include <sys/wait.h>
 
 int	debug;
 extern	int errno;
