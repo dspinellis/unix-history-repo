@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sendmail.8	6.12 (Berkeley) %G%
+.\"     @(#)sendmail.8	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SENDMAIL 8
@@ -143,6 +143,10 @@ Set option
 to the specified
 .Em value .
 Options are described below.
+.It Fl p Ns Ar protocol
+Set the name of the protocol used to receive the message.
+This can be a simple protocol name such as ``UUCP''
+or a protocol and hostname, such as ``UUCP:ucbvax''.
 .It Fl q Ns Bq Ar time
 Processed saved messages in the queue at given intervals.
 If
