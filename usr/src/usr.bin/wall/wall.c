@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -32,20 +32,19 @@ static char sccsid[] = "@(#)wall.c	5.6 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/signal.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
-#include <fcntl.h>
+#include <sys/file.h>
 #include <utmp.h>
 #include <pwd.h>
 #include <errno.h>
 #include <stdio.h>
+#include "pathnames.h"
 
 #define	IGNOREUSER	"sleeper"
-#define	UTMP		"/etc/utmp"
 
-static int mbufsize;
-static char *mbuf;
+int mbufsize;
+char *mbuf;
 
 /* ARGSUSED */
 main(argc, argv)
@@ -61,15 +60,15 @@ main(argc, argv)
 	}
 	makemsg(argv);
 
-	if (!(fp = fopen(UTMP, "r"))) {
-		fprintf(stderr, "wall: cannot read /etc/utmp.\n");
+	if (!(fp = fopen(_PATH_UTMP, "r"))) {
+		fprintf(stderr, "wall: cannot read %s.\n", _PATH_UTMP);
 		exit(1);
 	}
 	/* NOSTRICT */
 	while (fread((char *)&utmp, sizeof(utmp), 1, fp) == 1)
 		if (utmp.ut_name[0] &&
 		    strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name)))
-			sendmsg(utmp.ut_line);
+			sendmsg(utmp.ut_line, 1, mbufsize);
 	exit(0);
 }
 
@@ -86,7 +85,7 @@ makemsg(argv)
 	char *p, *whom, hostname[MAXHOSTNAMELEN], lbuf[100], tmpname[15];
 	char *getlogin(), *malloc(), *strcpy(), *ttyname();
 
-	(void)strcpy(tmpname, "/tmp/wall.XXX");
+	(void)strcpy(tmpname, _PATH_TMP);
 	if (!(fd = mkstemp(tmpname)) || !(fp = fdopen(fd, "r+"))) {
 		fprintf(stderr, "wall: can't open temporary file.\n");
 		exit(1);
@@ -101,8 +100,8 @@ makemsg(argv)
 
 	/*
 	 * all this stuff is to blank out a square for the message; we
-	 * limit message lines to 75 characters, and blank out to 79.
-	 * Not 80 'cause some terminals do weird stuff then.
+	 * wrap message lines at column 79, not 80, because some terminals
+	 * wrap after 79, some do not, and we can't tell.
 	 */
 	fprintf(fp, "\r%79s\r\n", " ");
 	(void)sprintf(lbuf, "Broadcast Message from %s@%s", whom, hostname);
@@ -117,15 +116,14 @@ makemsg(argv)
 		exit(1);
 	}
 	while (fgets(lbuf, sizeof(lbuf), stdin))
-		for (cnt = 0, p = lbuf; ch = *p; ++p, ++cnt)
-			if (cnt == 75 || ch == '\n') {
-				for (; cnt < 79; ++cnt)
-					putc(' ', fp);
+		for (cnt = 0, p = lbuf; ch = *p; ++p, ++cnt) {
+			if (cnt == 79 || ch == '\n') {
 				putc('\r', fp);
 				putc('\n', fp);
-				cnt = 1;
+				cnt = 0;
 			} else
 				putc(ch, fp);
+		}
 	fprintf(fp, "%79s\r\n", " ");
 	rewind(fp);
 
@@ -145,55 +143,50 @@ makemsg(argv)
 	(void)close(fd);
 }
 
-sendmsg(line)
+sendmsg(line, nonblock, left)
 	char *line;
 {
 	extern int errno;
-	static char device[MAXNAMLEN] = "/dev/";
-	register int fd, flags, left, wret;
-	char *lp, *strcpy();
+	static char device[MAXNAMLEN] = _PATH_DEV;
+	register int fd, wret;
+	char *lp, *strcpy(), *strerror();
 
 	(void)strcpy(device + 5, line);
-	if ((fd = open(device, O_WRONLY, 0)) < 0) {
-		fprintf(stderr, "wall: %s: ", device);
-		perror((char *)NULL);
+	/*
+	 * open will fail on slip lines or exclusive-use lines
+	 * if not running as root
+	 */
+	if ((fd = open(device, O_WRONLY|(nonblock ? O_NONBLOCK : 0), 0)) < 0) {
+		if (errno != EBUSY && errno != EPERM)
+			(void)fprintf(stderr, "wall: %s: %s\n",
+			    device, strerror(errno));
+		return;
 	}
-	flags = fcntl(fd, F_GETFL, 0);
-	if (!(flags & FNDELAY)) {
-		/* NDELAY bit not set; if can't set, fork instead */
-		if (fcntl(fd, F_SETFL, flags|FNDELAY) == -1) {
-			flags = 0;
-			goto forkit;
-		}
-	}
-	else
-		flags = 0;
-	lp = mbuf;
-	left = mbufsize;
-	while ((wret = write(fd, lp, left)) != left) {
+	lp = mbuf + mbufsize - left;
+	while (left) {
+		wret = write(fd, lp, left);
 		if (wret >= 0) {
 			lp += wret;
 			left -= wret;
-		} else if (errno == EWOULDBLOCK) {
-			/* child resets FNDELAY if necessary; parent leaves */
-forkit:			if (fork()) {
+		} else
+		if (errno == EWOULDBLOCK) {
+			if (fork()) {
 				(void)close(fd);
 				return;
 			}
-			if (flags)
-				(void)fcntl(fd, F_SETFL, flags);
-			/* wait 5 minutes and then quit */
+			/* wait at most 5 minutes */
 			(void)alarm((u_int)(60 * 5));
-			(void)write(fd, mbuf, mbufsize);
+			sendmsg(line, 0, left);
 			exit(0);
-		} else {
-			fprintf(stderr, "wall: %s: ", device);
-			perror((char *)NULL);
+		} else if (errno != ENODEV) {
+			/*
+			 * We get ENODEV on a slip line
+			 * if we're running as root
+			 */
+			(void)fprintf(stderr, "wall: %s: %s\n",
+			    device, strerror(errno));
 			break;
 		}
 	}
-	/* write was successful, or error != EWOULDBLOCK; cleanup */
-	if (flags)
-		(void)fcntl(fd, F_SETFL, flags);
 	(void)close(fd);
 }
