@@ -7,25 +7,24 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)insertln.c	5.5 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
 
-# include	"curses.ext"
+#include <curses.h>
 
 /*
- *	This routine performs an insert-line on the window, leaving
- * (_cury,_curx) unchanged.
- *
+ * winsertln --
+ *	Do an insert-line on the window, leaving (_cury,_curx) unchanged.
  */
+int
 winsertln(win)
-reg WINDOW	*win; {
+	register WINDOW *win;
+{
 
-	reg char	*temp;
-	reg int		y;
-	reg char	*end;
-	reg int		x;
+	register int x, y;
+	register char *end, *temp;
 
-#ifdef	DEBUG
-	fprintf(outf, "INSERTLN(%0.2o)\n", win);
+#ifdef DEBUG
+	__TRACE("insertln: (%0.2o)\n", win);
 #endif
 	if (win->_orig == NULL)
 		temp = win->_y[win->_maxy - 1];
@@ -40,9 +39,10 @@ reg WINDOW	*win; {
 		win->_y[y] = temp;
 	else
 		temp = win->_y[y];
-	for (end = &temp[win->_maxx]; temp < end; )
+	for (end = &temp[win->_maxx]; temp < end;)
 		*temp++ = ' ';
 	touchline(win, y, 0, win->_maxx - 1);
 	if (win->_orig == NULL)
-		_id_subwins(win);
+		__id_subwins(win);
+	return (OK);
 }
