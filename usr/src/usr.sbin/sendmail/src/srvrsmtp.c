@@ -15,12 +15,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.13 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.14 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.13 (Berkeley) %G%";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.14 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -118,7 +118,7 @@ smtp()
 	}
 	settime();
 	if (RealHostName != NULL)
-		setproctitle("talking to %s", RealHostName);
+		setproctitle("srvrsmtp %s", RealHostName);
 	expand("\001e", inp, &inp[sizeof inp], CurEnv);
 	message("220", inp);
 	SmtpPhase = "startup";
@@ -173,7 +173,7 @@ smtp()
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
 			SmtpPhase = "HELO";
-			setproctitle("talking to %s (%s)", RealHostName, inp);
+			setproctitle("%s: %s", RealHostName, inp);
 			if (sameword(p, HostName))
 			{
 				/* connected to an echo server */
@@ -216,8 +216,8 @@ smtp()
 			if (runinchild("SMTP-MAIL") > 0)
 				break;
 			initsys();
-			setproctitle("talking to %s (%s - %s)", RealHostName,
-				CurEnv->e_id, inp);
+			setproctitle("%s %s: %s", CurEnv->e_id,
+				RealHostName, inp);
 
 			/* child -- go do the processing */
 			p = skipword(p, "from");
@@ -235,8 +235,8 @@ smtp()
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
 			SmtpPhase = "RCPT";
-			setproctitle("talking to %s (%s - %s)", RealHostName,
-				CurEnv->e_id, inp);
+			setproctitle("%s %s: %s", CurEnv->e_id,
+				RealHostName, inp);
 			if (setjmp(TopFrame) > 0)
 			{
 				CurEnv->e_flags &= ~EF_FATALERRS;
@@ -281,8 +281,8 @@ smtp()
 
 			/* collect the text of the message */
 			SmtpPhase = "collect";
-			setproctitle("talking to %s (%s - %s)", RealHostName,
-				CurEnv->e_id, inp);
+			setproctitle("%s %s: %s", CurEnv->e_id,
+				RealHostName, inp);
 			collect(TRUE);
 			if (Errors != 0)
 				break;
@@ -347,7 +347,7 @@ smtp()
 		  case CMDVRFY:		/* vrfy -- verify address */
 			if (runinchild("SMTP-VRFY") > 0)
 				break;
-			setproctitle("talking to %s (%s)", RealHostName, inp);
+			setproctitle("%s: %s", RealHostName, inp);
 				paddrtree(a);
 			break;
 
