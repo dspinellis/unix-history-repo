@@ -121,19 +121,19 @@ hpopen(io)
 		tio.i_ma = lbuf;
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
-		if (hpstrategy(&tio, READ) != SECTSIZ) {
-			printf("hp: can't read disk label\n");
-			return (EIO);
-		}
+		if (hpstrategy(&tio, READ) != SECTSIZ)
+			return (ERDLAB);
 		dlp = (struct disklabel *)(lbuf + LABELOFFSET);
-		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
+		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC)
+#ifdef COMPAT_42
+		{
 			printf("hp%d: unlabeled\n", unit);
-#if defined(COMPAT_42) /* && !defined(SMALL) */
 			hpmaptype(hpaddr, hpaddr->hpdt & MBDT_TYPE, unit, lp);
+		}
 #else
-			return (ENXIO);
+			return (EUNLAB);
 #endif
-		} else
+		else
 			*lp = *dlp;
 #ifndef SMALL
 		/*
