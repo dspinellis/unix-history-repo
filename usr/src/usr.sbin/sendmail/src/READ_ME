@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.79 (Berkeley) %G%
+#	@(#)READ_ME	8.80 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -716,6 +716,17 @@ Linux
 	the flock() system call gives errors.  If you are running .14,
 	you must not use flock.  You can do this with -DHASFLOCK=0.
 
+	Around the inclusion of bind-4.9.3 & linux libc-4.6.20, the
+	initialization of the _res structure changed.  If /etc/hosts.conf
+	was configured as "hosts, bind" the resolver code could return
+	"Name server failure" errors.  This is supposedly fixed in
+	later versions of libc (>= 4.6.29?), and later versions of
+	sendmail (> 8.6.10) try to work around the problem.
+
+	Some older versions (< 4.6.20?) of the libc/include files conflict
+	with sendmail's version of cdefs.h.  Deleting sendmail's version
+	on those systems should be non-harmful, and new versions don't care.
+
 AIX
 	This version of sendmail does not support MB, MG, and MR resource
 	records, which are supported by AIX sendmail.
@@ -931,4 +942,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.79, last update %G% 06:48:15)
+(Version 8.80, last update %G% 12:50:13)
