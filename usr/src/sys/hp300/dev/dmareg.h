@@ -4,8 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dmareg.h	7.3 (Berkeley) %G%
+ *	@(#)dmareg.h	7.4 (Berkeley) %G%
  */
+
+#ifdef KERNEL
+#include "hp/dev/iotypes.h"	/* XXX */
+#else
+#include <hp/dev/iotypes.h>	/* XXX */
+#endif
 
 /*
  * Hardware layout for the 98620[ABC]:
@@ -13,11 +19,6 @@
  *	98620B (320s only):	98620A with programmable IPL
  *	98620C (all others):	byte/word/longword DMA in up to 4Gb chunks
  */
-#define v_char		volatile char
-#define	v_int		volatile int
-#define vu_char		volatile u_char
-#define vu_short	volatile u_short
-#define vu_int		volatile u_int
 
 struct	dmaBdevice {
 	v_char		*dmaB_addr;

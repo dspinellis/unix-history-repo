@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: st.c 1.8 90/10/14$
+ * from: Utah $Hdr: st.c 1.11 92/01/21$
  *
- *      @(#)st.c	7.6 (Berkeley) %G%
+ *      @(#)st.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -52,19 +52,17 @@
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
-#include "scsireg.h"
 #include "file.h"
 #include "proc.h"
+#include "ioctl.h"
 #include "tty.h"
 #include "mtio.h"
-#include "ioctl.h"
 #include "kernel.h"
 #include "tprintf.h"
 
-#include "device.h"
+#include "hp/dev/device.h"
+#include "scsireg.h"
 #include "stvar.h"
-
-#define ADD_DELAY
 
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();
@@ -169,7 +167,6 @@ int st_dmaoddretry = 0;
  * In st_open, if minor bit 4 set then 1k records are used.
  * If st_exblken is set to anything other then 0 we are in fixed length mode.
  * Minor bit 5 requests 1K fixed-length, overriding any setting of st_exblklen.
- * 
  */
 int st_exblklen = 0;
 
@@ -207,7 +204,6 @@ stinit(hd)
 	sc->sc_type = stident(sc, hd);
 	if (sc->sc_type < 0)
 		return(0);
-
 	sc->sc_dq.dq_ctlr = hd->hp_ctlr;
 	sc->sc_dq.dq_unit = hd->hp_unit;
 	sc->sc_dq.dq_slave = hd->hp_slave;
@@ -225,9 +221,7 @@ stident(sc, hd)
 	int ctlr, slave;
 	int i, stat, inqlen;
 	char idstr[32];
-#ifdef ADD_DELAY
 	static int havest = 0;
-#endif
 	struct st_inquiry {
 		struct	scsi_inquiry inqbuf;
 		struct  exb_inquiry exb_inquiry;
@@ -356,13 +350,11 @@ st_inqbuf.inqbuf.qual, st_inqbuf.inqbuf.version);
 	stxsense(ctlr, slave, unit, sc);
 
 	scsi_delay(0);
-#ifdef ADD_DELAY
 	/* XXX if we have a tape, we must up the delays in the HA driver */
 	if (!havest) {
 		havest = 1;
 		scsi_delay(20000);
 	}
-#endif
 	return(st_inqbuf.inqbuf.type);
 failed:
 	scsi_delay(0);

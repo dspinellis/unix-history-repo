@@ -4,10 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fhpibreg.h	7.1 (Berkeley) %G%
+ *	@(#)fhpibreg.h	7.2 (Berkeley) %G%
  */
 
-#define	vu_char	volatile u_char
+#ifdef KERNEL
+#include "hp/dev/iotypes.h"	/* XXX */
+#else
+#include <hp/dev/iotypes.h>	/* XXX */
+#endif
 
 struct	fhpibdevice {
 	u_char	hpib_pad0;

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vmparam.h 1.16 91/01/18$
  *
- *	@(#)vmparam.h	7.3 (Berkeley) %G%
+ *	@(#)vmparam.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -200,9 +200,6 @@
  * swapping area is desirable.
  */
 #define	LOTSOFMEM	2
-
-#define	mapin(pte, v, pfnum, prot) \
-	(*(u_int *)(pte) = ((pfnum) << PGSHIFT) | (prot), TBIS((caddr_t)(v)))
 
 /*
  * Mach derived constants

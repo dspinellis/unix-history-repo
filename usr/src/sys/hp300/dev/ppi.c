@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ppi.c	7.3 (Berkeley) %G%
+ *	@(#)ppi.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,7 @@
 #include "sys/uio.h"
 #include "sys/malloc.h"
 
-#include "device.h"
+#include "hp/dev/device.h"
 #include "ppiioctl.h"
 
 int	ppiattach(), ppistart(), ppitimo();

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: machdep.c 1.63 91/04/24$
+ * from: Utah $Hdr: machdep.c 1.68 92/01/20$
  *
- *	@(#)machdep.c	7.27 (Berkeley) %G%
+ *	@(#)machdep.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,7 +36,7 @@
 #include "shm.h"
 #endif
 #ifdef HPUXCOMPAT
-#include "../hpux/hpux.h"
+#include "hp/hpux/hpux.h"
 #endif
 
 #include "../include/cpu.h"
@@ -105,6 +105,9 @@ consinit()
 	case HP_375:
 		cpuspeed = MHZ_50;
 		break;
+	case HP_380:
+		cpuspeed = MHZ_25 * 2;	/* XXX */
+		break;
 	}
 	/*
          * Find what hardware is attached to this machine.
@@ -126,22 +129,19 @@ cpu_startup()
 	register unsigned i;
 	register caddr_t v, firstaddr;
 	int base, residual;
-	extern long Usrptsize;
-	extern struct map *useriomap;
+	vm_offset_t minaddr, maxaddr;
+	vm_size_t size;
 #ifdef DEBUG
 	extern int pmapdebug;
 	int opmapdebug = pmapdebug;
+
+	pmapdebug = 0;
 #endif
-	vm_offset_t minaddr, maxaddr;
-	vm_size_t size;
 
 	/*
 	 * Initialize error message buffer (at end of core).
+	 * avail_end was pre-decremented in pmap_bootstrap to compensate.
 	 */
-#ifdef DEBUG
-	pmapdebug = 0;
-#endif
-	/* avail_end was pre-decremented in pmap_bootstrap to compensate */
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
 		pmap_enter(kernel_pmap, (vm_offset_t)msgbufp,
 		    avail_end + i * NBPG, VM_PROT_ALL, TRUE);
@@ -375,12 +375,18 @@ identifycpu()
 	case HP_375:
 		printf("345/375 (50Mhz");
 		break;
+	case HP_380:
+		printf("380/425 (25Mhz)");
+		break;
 	default:
 		printf("\nunknown machine type %d\n", machineid);
 		panic("startup");
 	}
-	printf(" MC680%s CPU", mmutype == MMU_68030 ? "30" : "20");
+	printf(" MC680%s CPU",
+	       mmutype == MMU_68040 ? "40" :
+	       (mmutype == MMU_68030 ? "30" : "20"));
 	switch (mmutype) {
+	case MMU_68040:
 	case MMU_68030:
 		printf("+MMU");
 		break;
@@ -394,7 +400,9 @@ identifycpu()
 		printf("\nunknown MMU type %d\n", mmutype);
 		panic("startup");
 	}
-	if (mmutype == MMU_68030)
+	if (mmutype == MMU_68040)
+		printf("+FPU, 4k on-chip physical I/D caches");
+	else if (mmutype == MMU_68030)
 		printf(", %sMhz MC68882 FPU",
 		       machineid == HP_340 ? "16.67" :
 		       (machineid == HP_360 ? "25" :
@@ -430,6 +438,9 @@ identifycpu()
 	case HP_340:
 	case HP_360:
 	case HP_370:
+#endif
+#if !defined(HP380)
+	case HP_380:
 #endif
 		panic("CPU type not configured");
 	default:
@@ -555,7 +566,7 @@ sendsig(catcher, sig, mask, code)
 	    (psp->ps_sigstk.ss_flags & SA_ONSTACK) == 0 &&
 	    (psp->ps_sigonstack & sigmask(sig))) {
 		fp = (struct sigframe *)(psp->ps_sigstk.ss_base +
-		    psp->ps_sigstk.ss_size - fsize);
+					 psp->ps_sigstk.ss_size - fsize);
 		psp->ps_sigstk.ss_flags |= SA_ONSTACK;
 	} else
 		fp = (struct sigframe *)(frame->f_regs[SP] - fsize);
@@ -601,9 +612,13 @@ sendsig(catcher, sig, mask, code)
 	kfp->sf_state.ss_flags = SS_USERREGS;
 	bcopy((caddr_t)frame->f_regs,
 	      (caddr_t)kfp->sf_state.ss_frame.f_regs, sizeof frame->f_regs);
-	if (ft >= FMT9) {
+	if (ft >= FMT7) {
 #ifdef DEBUG
-		if (ft != FMT9 && ft != FMTA && ft != FMTB)
+		if (ft != FMT9 && ft != FMTA && ft != FMTB
+#if defined(HP380)
+		    && mmutype != MMU_68040 || mmutype==MMU_68040 && ft != FMT7
+#endif
+		    )
 			panic("sendsig: bogus frame type");
 #endif
 		kfp->sf_state.ss_flags |= SS_RTEFRAME;

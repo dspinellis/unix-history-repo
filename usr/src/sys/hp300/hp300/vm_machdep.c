@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	7.11 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -215,22 +215,12 @@ kvtop(addr)
 extern vm_map_t phys_map;
 
 /*
- * Map an IO request into kernel virtual address space.  Requests fall into
- * one of five catagories:
+ * Map an IO request into kernel virtual address space.
  *
- *	B_PHYS|B_UAREA:	User u-area swap.
- *			Address is relative to start of u-area (p_addr).
- *	B_PHYS|B_PAGET:	User page table swap.
- *			Address is a kernel VA in usrpt (Usrptmap).
- *	B_PHYS|B_DIRTY:	Dirty page push.
- *			Address is a VA in proc2's address space.
- *	B_PHYS|B_PGIN:	Kernel pagein of user pages.
- *			Address is VA in user's address space.
- *	B_PHYS:		User "raw" IO request.
- *			Address is VA in user's address space.
- *
- * All requests are (re)mapped into kernel VA space via the useriomap
- * (a name with only slightly more meaning than "kernelmap")
+ * XXX we allocate KVA space by using kmem_alloc_wait which we know
+ * allocates space without backing physical memory.  This implementation
+ * is a total crock, the multiple mappings of these physical pages should
+ * be reflected in the higher-level VM structures to avoid problems.
  */
 vmapbuf(bp)
 	register struct buf *bp;
@@ -265,7 +255,6 @@ vmapbuf(bp)
 
 /*
  * Free the io map PTEs associated with this IO operation.
- * We also invalidate the TLB entries and restore the original b_addr.
  */
 vunmapbuf(bp)
 	register struct buf *bp;

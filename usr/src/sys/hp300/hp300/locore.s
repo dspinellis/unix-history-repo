@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: locore.s 1.58 91/04/22$
+ * from: Utah $Hdr: locore.s 1.62 92/01/20$
  *
- *	@(#)locore.s	7.12 (Berkeley) %G%
+ *	@(#)locore.s	7.13 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -52,15 +52,53 @@ _doadump:
 	.globl	_trap, _nofault, _longjmp
 _buserr:
 	tstl	_nofault		| device probe?
-	jeq	_addrerr		| no, handle as usual
+	jeq	Lberr			| no, handle as usual
 	movl	_nofault,sp@-		| yes,
 	jbsr	_longjmp		|  longjmp(nofault)
+Lberr:
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	_addrerr		| no, skip
+	clrw	sp@-			| pad SR to longword
+	moveml	#0xFFFF,sp@-		| save user registers
+	movl	usp,a0			| save the user SP
+	movl	a0,sp@(60)		|   in the savearea
+	lea	sp@(64),a1		| grab base of HW berr frame
+	moveq	#0,d0
+	movw	a1@(14),d0		| grab SSW
+	movl	a1@(22),d1		| and fault VA
+	btst	#11,d0			| check for mis-aligned access
+	jeq	Lberr2			| no, skip
+	addl	#3,d1			| yes, get into next page
+	andl	#PG_FRAME,d1		| and truncate
+Lberr2:
+	movl	d1,sp@-			| push fault VA
+	movl	d0,sp@-			| and padded SSW
+	btst	#10,d0			| ATC bit set?
+	jeq	Lisberr			| no, must be a real bus error
+	movc	dfc,d1			| yes, get MMU fault
+	movc	d0,dfc			| store faulting function code
+	movl	sp@(4),a0		| get faulting address
+	.word	0xf568			| ptestr a0@
+	movc	d1,dfc
+	.long	0x4e7a0805		| movc mmusr,d0
+	movw	d0,sp@			| save (ONLY LOW 16 BITS!)
+	jra	Lismerr
+#endif
 _addrerr:
 	clrw	sp@-			| pad SR to longword
 	moveml	#0xFFFF,sp@-		| save user registers
 	movl	usp,a0			| save the user SP
 	movl	a0,sp@(60)		|   in the savearea
 	lea	sp@(64),a1		| grab base of HW berr frame
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lbenot040		| no, skip
+	movl	a1@(10),sp@-		| yes, push fault address
+	clrl	sp@-			| no SSW for address fault
+	jra	Lisaerr			| go deal with it
+Lbenot040:
+#endif
 	moveq	#0,d0
 	movw	a1@(12),d0		| grab SSW for fault processing
 	btst	#12,d0			| RB set?
@@ -156,10 +194,38 @@ Lstkadj:
  * FP exceptions.
  */
 _fpfline:
+#if defined(HP380)
+	cmpw	#0x202c,sp@(6)		| format type 2?
+	jne	_illinst		| no, not an FP emulation
+#ifdef HPFPLIB
+	.globl fpsp_unimp
+	jmp	fpsp_unimp		| yes, go handle it
+#else
+	clrw	sp@-			| yes, pad SR
+	moveml	#0xFFFF,sp@-		| save registers
+	moveq	#T_FPEMULI,d0		| denote as FP emulation trap
+	jra	fault			| do it
+#endif
+#else
 	jra	_illinst
+#endif
 
 _fpunsupp:
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	_illinst		| no, treat as illinst
+#ifdef HPFPLIB
+	.globl	fpsp_unsupp
+	jmp	fpsp_unsupp		| yes, go handle it
+#else
+	clrw	sp@-			| yes, pad SR
+	moveml	#0xFFFF,sp@-		| save registers
+	moveq	#T_FPEMULD,d0		| denote as FP emulation trap
+	jra	fault			| do it
+#endif
+#else
 	jra	_illinst
+#endif
 
 /*
  * Handles all other FP coprocessor exceptions.
@@ -189,6 +255,37 @@ Lfptnull:
 	jra	Ltrapnstkadj	| call trap and deal with stack cleanup
 #else
 	jra	_badtrap	| treat as an unexpected trap
+#endif
+
+#ifdef HPFPLIB
+/*
+ * We wind up here from the 040 FP emulation library after
+ * the exception has been processed.
+ */
+	.globl	_fault
+_fault:
+	subql	#4,sp		| space for rts addr
+	movl	d0,sp@-		| scratch register
+	movw	sp@(14),d0	| get vector offset
+	andl	#0xFFF,d0	| mask out frame type and clear high word
+	cmpl	#0x100,d0	| HP-UX style reschedule trap?
+	jne	Lfault1		| no, skip
+	movl	sp@+,d0		| restore scratch register
+	addql	#4,sp		| pop space
+	jra	Lrei1		| go do AST
+Lfault1:
+	cmpl	#0xC0,d0	| FP exception?
+	jlt	Lfault2		| no, skip
+	movl	sp@+,d0		| yes, backoff
+	addql	#4,sp		|  and prepare for normal trap frame
+	jra	_fpfault	| go to it
+Lfault2:
+	addl	#Lvectab,d0	| convert to vector table offset
+	exg	d0,a0
+	movl	a0@,sp@(8) 	| get exception vector and save for rts
+	exg	d0,a0
+	movl	sp@+,d0		|   scratch registers
+	rts			| return to handler from vectab
 #endif
 
 /*
@@ -410,9 +507,9 @@ Lsigr1:
  *	Level 0:	Spurious: ignored.
  *	Level 1:	HIL
  *	Level 2:
- *	Level 3:	Internal HP-IB
+ *	Level 3:	Internal HP-IB, DCM
  *	Level 4:	"Fast" HP-IBs, SCSI
- *	Level 5:	DMA, Ethernet, Built-in RS232
+ *	Level 5:	DMA, Ethernet, Built-in RS232 (DCA)
  *	Level 6:	Clock
  *	Level 7:	Non-maskable: parity errors, RESET key
  */
@@ -600,9 +697,7 @@ _lev7intr:
  * do not have to do it here.
  *
  * This code is complicated by the fact that sendsig may have been called
- * necessitating a stack cleanup.  A cleanup should only be needed at this
- * point for coprocessor mid-instruction frames (type 9), but we also test
- * for bus error frames (type 10 and 11).
+ * necessitating a stack cleanup.
  */
 	.comm	_ssir,1
 	.globl	_astpending
@@ -613,6 +708,7 @@ rei:
 #endif
 	tstl	_astpending		| AST pending?
 	jeq	Lchksir			| no, go check for SIR
+Lrei1:
 	btst	#5,sp@			| yes, are we returning to user mode?
 	jne	Lchksir			| no, go check for SIR
 	clrw	sp@-			| pad SR to longword
@@ -624,35 +720,24 @@ rei:
 	movl	#T_ASTFLT,sp@-		| type == async system trap
 	jbsr	_trap			| go handle it
 	lea	sp@(12),sp		| pop value args
-	movl	sp@(60),a0		| restore
-	movl	a0,usp			|   user SP
-	moveml	sp@+,#0x7FFF		| and all remaining registers
-	addql	#4,sp			| toss SSP
-	tstw	sp@+			| do we need to clean up stack?
-	jeq	Ldorte			| no, just continue
-	btst	#7,sp@(6)		| type 9/10/11 frame?
-	jeq	Ldorte			| no, nothing to do
-	btst	#5,sp@(6)		| type 9?
-	jne	Last1			| no, skip
-	movw	sp@,sp@(12)		| yes, push down SR
-	movl	sp@(2),sp@(14)		| and PC
-	clrw	sp@(18)			| and mark as type 0 frame
-	lea	sp@(12),sp		| clean the excess
-	jra	Ldorte			| all done
-Last1:
-	btst	#4,sp@(6)		| type 10?
-	jne	Last2			| no, skip
-	movw	sp@,sp@(24)		| yes, push down SR
-	movl	sp@(2),sp@(26)		| and PC
-	clrw	sp@(30)			| and mark as type 0 frame
-	lea	sp@(24),sp		| clean the excess
-	jra	Ldorte			| all done
-Last2:
-	movw	sp@,sp@(84)		| type 11, push down SR
-	movl	sp@(2),sp@(86)		| and PC
-	clrw	sp@(90)			| and mark as type 0 frame
-	lea	sp@(84),sp		| clean the excess
-	jra	Ldorte			| all done
+	movl	sp@(60),a0		| restore user SP
+	movl	a0,usp			|   from save area
+	movw	sp@(64),d0		| need to adjust stack?
+	jne	Laststkadj		| yes, go to it
+	moveml	sp@+,#0x7FFF		| no, restore most user regs
+	addql	#6,sp			| toss SSP and pad
+	rte				| and do real RTE
+Laststkadj:
+	lea	sp@(66),a1		| pointer to HW frame
+	addql	#8,a1			| source pointer
+	movl	a1,a0			| source
+	addw	d0,a0			|  + hole size = dest pointer
+	movl	a1@-,a0@-		| copy
+	movl	a1@-,a0@-		|  8 bytes
+	movl	a0,sp@(60)		| new SSP
+	moveml	sp@+,#0x7FFF		| restore user registers
+	movl	sp@,sp			| and our SP
+	rte				| and return
 Lchksir:
 	tstb	_ssir			| SIR pending?
 	jeq	Ldorte			| no, all done
@@ -727,7 +812,7 @@ start:
 	movc	d0,cacr			|   only exists on 68030
 	movc	cacr,d0			| read it back
 	tstl	d0			| zero?
-	jeq	Lis68020		| yes, we have 68020
+	jeq	Lnot68030		| yes, we have 68020/68040
 	RELOC(_mmutype, a0)		| no, we have 68030
 	movl	#-1,a0@			| set to reflect 68030 PMMU
 	RELOC(_machineid, a0)
@@ -755,6 +840,25 @@ Lhaspac:
 	RELOC(_ectype, a0)
 	movl	#-1,a0@			| also has a physical address cache
 	jra	Lstart1
+Lnot68030:
+	bset	#31,d0			| data cache enable bit
+	movc	d0,cacr			|   only exists on 68040
+	movc	cacr,d0			| read it back
+	tstl	d0			| zero?
+	beq	Lis68020		| yes, we have 68020
+	moveq	#0,d0			| now turn it back off
+	movec	d0,cacr			|   before we access any data
+	RELOC(_machineid, a0)
+	movl	#7,a0@			| we have a 380
+	RELOC(_mmutype, a0)
+	movl	#-2,a0@			| with a 68040 MMU
+	RELOC(_ectype, a0)
+	movl	#0,a0@			| and no cache (for now XXX)
+#ifdef HPFPLIB
+	RELOC(_processor, a0)
+	movl	#3,a0@			| HP-UX style processor id
+#endif
+	jra	Lstart1
 Lis68020:
 	movl	#1,a1@(MMUCMD)		| a 68020, write HP MMU location
 	movl	a1@(MMUCMD),d0		| read it back
@@ -781,7 +885,44 @@ Lstart1:
 	moveq	#FC_USERD,d0		| user space
 	movc	d0,sfc			|   as source
 	movc	d0,dfc			|   and destination of transfers
+/* initialize memory sizes (for pmap_bootstrap) */
+	movl	#MAXADDR,d1		| last page
+	moveq	#PGSHIFT,d2
+	lsrl	d2,d1			| convert to page (click) number
+	RELOC(_maxmem, a0)
+	movl	d1,a0@			| save as maxmem
+	movl	a5,d0			| lowram value from ROM via boot
+	lsrl	d2,d0			| convert to page number
+	subl	d0,d1			| compute amount of RAM present
+	RELOC(_physmem, a0)
+	movl	d1,a0@			| and physmem
+/* configure kernel and proc0 VA space so we can get going */
+	.globl	_Sysseg, _pmap_bootstrap, _avail_start
+	movl	#_end,d5		| end of static kernel text/data
+	addl	#NBPG-1,d5
+	andl	#PG_FRAME,d5		| round to a page
+	movl	d5,a4
+	addl	a5,a4			| convert to PA
+	pea	a5@			| firstpa
+	pea	a4@			| nextpa
+	RELOC(_pmap_bootstrap,a0)
+	jbsr	a0@			| bootstrap(firstpa, nextpa)
+	addql	#8,sp
 
+#ifdef BOOTDEBUG
+/*
+ * If we are debugging the pmap_bootstrap code, we ignore what it has
+ * just done (without clobbering it) and do it ourselves here with the
+ * code we know works.
+ */
+	.globl	_Xavail_start
+	RELOC(_Xavail_start,a0)
+	movl	a0@,a4			| grab new first avail PA
+	movl	a4,d1			| new firstpa
+	movl	d5,d0
+	addl	a5,d0			| old firstpa
+	subl	d0,d1			| new - old == amount allocated
+	addl	d1,d5			| update firstva
 /*
  * Allocate kernel segment/page table resources.
  *	a5 contains the PA of lowest RAM page
@@ -797,11 +938,13 @@ Lstart1:
  * after the MMU is turned on.
  */
 	.globl	_Sysseg, _Sysmap, _Sysptmap, _Sysptsize
+#if 0
 	movl	#_end,d5		| end of static kernel text/data
 	addl	#NBPG-1,d5
 	andl	#PG_FRAME,d5		| round to a page
 	movl	d5,a4
 	addl	a5,a4
+#endif
 /* allocate kernel segment table */
 	RELOC(_Sysseg, a0)
 	movl	d5,a0@			| remember VA for pmap module
@@ -865,7 +1008,7 @@ List2:
 	movl	d1,a0@+			| store in last ST entry
 	movl	a0,a2			| remember addr for PT load
 	andl	#PG_FRAME,d1
-	orl	#PG_RW+PG_V,d1		| convert to PTE
+	orl	#PG_RW+PG_CI+PG_V,d1	| convert to PTE
 	movl	d1,a1@+			| store in PT map
 	movl	a4,a0			| physical beginning of PT page
 	lea	a0@(NBPG-4),a1		| (almost) end of page
@@ -875,7 +1018,7 @@ Lispt7:
 	jcs	Lispt7
 	movl	#MAXADDR,d1		| get last phys page addr
 	andl	#PG_FRAME,d1
-	orl	#PG_RW+PG_V,d1
+	orl	#PG_RW+PG_CI+PG_V,d1
 	movl	d1,a0@+			| map to last virt page
 	addl	#NBPG,a4
 	addl	#NBPG,d5
@@ -956,35 +1099,19 @@ Lipt4:
 /*
  * Setup page table for process 0.
  *
- * We set up page table access for the kernel via Usrptmap (usrpt)
- * and access to the u-area itself via Umap (u).  First available
- * page (VA: d5, PA: a4) is used for proc0 page table.  Next UPAGES
- * pages following are for u-area.
+ * We set up page table access for the kernel via Umap and access to
+ * the u-area itself via `u'.  First available UPAGES pages (start at
+ * VA: d5, PA: a4) are used for the u-area.
  */
 	movl	a4,d0
-	movl	d0,d1
-	andl	#PG_FRAME,d1		| mask to page frame number
-	orl	#PG_RW+PG_V,d1		| RW and valid
-	movl	d1,d4			| remember for later Usrptmap load
-	movl	d0,a0			| base of proc0 PT
-	addl	#NBPG,d0		| plus one page yields base of u-area
-	movl	d0,a2			|   and end of PT
-	addl	#NBPG,d5		| keep VA in sync
-/* invalidate entire page table */
-Liudot1:
-	movl	#PG_NV,a0@+		| invalidate PTE
-	cmpl	a2,a0			| done yet?
-	jcs	Liudot1			| no, keep going
-/* now go back and validate u-area PTEs in PT and in Umap */
-	lea	a0@(-HIGHPAGES*4),a0	| base of PTEs for u-area (p_addr)
+	movl	a4,a2
+	lea	a4@(-HIGHPAGES*4),a0	| u-area PTE base in Umap PT
 	lea	a0@(UPAGES*4),a1	| end of PTEs for u-area
-	lea	a4@(-HIGHPAGES*4),a3	| u-area PTE base in Umap PT
 	movl	d0,d1			| get base of u-area
 	andl	#PG_FRAME,d1		| mask to page frame number
 	orl	#PG_RW+PG_V,d1		| add valid and writable
 Liudot2:
 	movl	d1,a0@+			| validate p_addr PTE
-	movl	d1,a3@+			| validate u PTE
 	addl	#NBPG,d1		| to next page
 	cmpl	a1,a0			| done yet?
 	jcs	Liudot2			| no, keep going
@@ -998,6 +1125,7 @@ Lclru1:
 	RELOC(_proc0paddr, a0)
 	movl	d5,a0@			| save KVA of proc0 u-area
 	addl	#UPAGES*NBPG,d5		| increment virtual addr as well
+#endif
 
 /*
  * Prepare to enable MMU.
@@ -1010,19 +1138,23 @@ Lclru1:
  * Is this all really necessary, or am I paranoid??
  */
 	RELOC(_Sysseg, a0)		| system segment table addr
-	movl	a0@,a1			| read value (a KVA)
-	addl	a5,a1			| convert to PA
+	movl	a0@,d1			| read value (a KVA)
+	addl	a5,d1			| convert to PA
 	RELOC(_mmutype, a0)
 	tstl	a0@			| HP MMU?
 	jeq	Lhpmmu2			| yes, skip
+	cmpl	#-2,a0@			| 68040?
+	jne	Lmotommu1		| no, skip
+	.long	0x4e7b1807		| movc d1,srp
+	jra	Lstploaddone
+Lmotommu1:
 	RELOC(_protorp, a0)
 	movl	#0x80000202,a0@		| nolimit + share global + 4 byte PTEs
-	movl	a1,a0@(4)		| + segtable address
+	movl	d1,a0@(4)		| + segtable address
 	pmove	a0@,srp			| load the supervisor root pointer
 	movl	#0x80000002,a0@		| reinit upper half for CRP loads
 	jra	Lstploaddone		| done
 Lhpmmu2:
-	movl	a1,d1
 	moveq	#PGSHIFT,d2
 	lsrl	d2,d1			| convert to page frame
 	movl	d1,INTIOBASE+MMUBASE+MMUSSTP | load in sysseg table register
@@ -1040,6 +1172,24 @@ Lhighcode:
 	RELOC(_mmutype, a0)
 	tstl	a0@			| HP MMU?
 	jeq	Lhpmmu3			| yes, skip
+	cmpl	#-2,a0@			| 68040?
+	jne	Lmotommu2		| no, skip
+	movw	#0,INTIOBASE+MMUBASE+MMUCMD+2
+	movw	#MMU_IEN+MMU_CEN+MMU_FPE,INTIOBASE+MMUBASE+MMUCMD+2
+					| enable FPU and caches
+	moveq	#0,d0			| ensure TT regs are disabled
+	.long	0x4e7b0004		| movc d0,itt0
+	.long	0x4e7b0005		| movc d0,itt1
+	.long	0x4e7b0006		| movc d0,dtt0
+	.long	0x4e7b0007		| movc d0,dtt1
+	.word	0xf4d8			| cinva bc
+	.word	0xf518			| pflusha
+	movl	#0x8000,d0
+	.long	0x4e7b0003		| movc d0,tc
+	movl	#0x80008000,d0
+	movc	d0,cacr			| turn on both caches
+	jmp	Lenab1
+Lmotommu2:
 	movl	#MMU_IEN+MMU_FPE,INTIOBASE+MMUBASE+MMUCMD
 					| enable 68881 and i-cache
 	movl	#0x82c0aa00,a2@		| value to load TC with
@@ -1057,34 +1207,18 @@ Lehighcode:
 Lenab1:
 /* check for internal HP-IB in SYSFLAG */
 	btst	#5,0xfffffed2		| internal HP-IB?
-	jeq	Linitmem		| yes, have HP-IB just continue
+	jeq	Lfinish			| yes, have HP-IB just continue
 	clrl	_internalhpib		| no, clear associated address
-/* init mem sizes */
-Linitmem:
-	movl	#MAXADDR,d1		| last page
-	moveq	#PGSHIFT,d2
-	lsrl	d2,d1			| convert to page (click) number
-	movl	d1,_maxmem		| save as maxmem
-	movl	_lowram,d0		| lowram value from ROM via boot
-	lsrl	d2,d0			| convert to page number
-	subl	d0,d1			| compute amount of RAM present
-	movl	d1,_physmem		| and physmem
-/*
- * First we have to select the software page size, then set up the pmap.
- * pmap_bootstrap is supposed to be called with mapping off early on
- * to set up the kernel VA space.  However, this only works easily if
- * you have a kernel PA == VA mapping.  Since we do not, we just set
- * up and enable mapping here and then call the bootstrap routine to
- * get the pmap module in sync with reality.
- */
-	.globl	_avail_start
+Lfinish:
+/* select the software page size now */
 	lea	tmpstk,sp		| temporary stack
 	jbsr	_vm_set_page_size	| select software page size
+#ifdef BOOTDEBUG
 	movl	a5,sp@-			| phys load address (assumes VA 0)
 	movl	a4,sp@-			| first available PA
-	jbsr	_pmap_bootstrap		| sync up pmap module
+	jbsr	_Opmap_bootstrap	| sync up pmap module
 	addql	#8,sp
-|	movl	_avail_start,a4		| pmap_bootstrap may need RAM
+#endif
 /* set kernel stack, user SP, and initial pcb */
 	lea	_kstack,a1		| proc0 kernel stack
 	lea	a1@(UPAGES*NBPG-4),sp	| set kernel stack to end of area
@@ -1101,6 +1235,8 @@ Linitmem:
 #endif
 /* flush TLB and turn on caches */
 	jbsr	_TBIA			| invalidate TLB
+	cmpl	#-2,_mmutype		| 68040?
+	jeq	Lnocache0		| yes, cache already on
 	movl	#CACHE_ON,d0
 	movc	d0,cacr			| clear cache(s)
 	tstl	_ectype
@@ -1117,6 +1253,11 @@ Lnocache0:
 /* proc[1] == init now running here;
  * create a null exception frame and return to user mode in icode
  */
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lnoflush		| no, skip
+	.word	0xf478			| cpusha dc
+	.word	0xf498			| cinva ic
+Lnoflush:
 	clrw	sp@-			| vector offset/frame type
 	clrl	sp@-			| return to icode location 0
 	movw	#PSL_USER,sp@-		| in user mode
@@ -1249,6 +1390,7 @@ ENTRY(copyinstr)
 	subql	#1,d0			| set up for dbeq
 Lcisloop:
 	movsb	a0@+,d1			| grab a byte
+	nop
 	movb	d1,a1@+			| copy it
 	dbeq	d0,Lcisloop		| if !null and more, continue
 	jne	Lcisflt2		| ran out of room, error
@@ -1290,6 +1432,7 @@ ENTRY(copyoutstr)
 Lcosloop:
 	movb	a0@+,d1			| grab a byte
 	movsb	d1,a1@+			| copy it
+	nop
 	dbeq	d0,Lcosloop		| if !null and more, continue
 	jne	Lcosflt2		| ran out of room, error
 	moveq	#0,d0			| got a null, all done
@@ -1364,6 +1507,7 @@ ENTRY(copyin)
 	btst	#0,d0			| src address odd?
 	jeq	Lcieven			| no, go check dest
 	movsb	a0@+,d1			| yes, get a byte
+	nop
 	movb	d1,a1@+			| put a byte
 	subql	#1,d2			| adjust count
 	jeq	Lcidone			| exit if done
@@ -1377,6 +1521,7 @@ Lcieven:
 	subql	#1,d0			| set up for dbf
 Lcilloop:
 	movsl	a0@+,d1			| get a long
+	nop
 	movl	d1,a1@+			| put a long
 	dbf	d0,Lcilloop		| til done
 	andl	#3,d2			| what remains
@@ -1385,6 +1530,7 @@ Lcibyte:
 	subql	#1,d2			| set up for dbf
 Lcibloop:
 	movsb	a0@+,d1			| get a byte
+	nop
 	movb	d1,a1@+			| put a byte
 	dbf	d2,Lcibloop		| til done
 Lcidone:
@@ -1418,6 +1564,7 @@ ENTRY(copyout)
 	jeq	Lcoeven			| no, go check dest
 	movb	a0@+,d1			| yes, get a byte
 	movsb	d1,a1@+			| put a byte
+	nop
 	subql	#1,d2			| adjust count
 	jeq	Lcodone			| exit if done
 Lcoeven:
@@ -1431,6 +1578,7 @@ Lcoeven:
 Lcolloop:
 	movl	a0@+,d1			| get a long
 	movsl	d1,a1@+			| put a long
+	nop
 	dbf	d0,Lcolloop		| til done
 	andl	#3,d2			| what remains
 	jeq	Lcodone			| all done
@@ -1439,6 +1587,7 @@ Lcobyte:
 Lcobloop:
 	movb	a0@+,d1			| get a byte
 	movsb	d1,a1@+			| put a byte
+	nop
 	dbf	d2,Lcobloop		| til done
 Lcodone:
 	moveq	#0,d0			| success
@@ -1488,8 +1637,7 @@ ENTRY(longjmp)
  */
 
 	.globl	_whichqs,_qs,_cnt,_panic
-	.globl	_curproc
-	.comm	_want_resched,4
+	.globl	_curproc,_want_resched
 
 /*
  * Setrq(p)
@@ -1686,7 +1834,6 @@ Lsw2:
 	moveml	#0xFCFC,a1@(PCB_REGS)	| save non-scratch registers
 	movl	usp,a2			| grab USP (a2 has been saved)
 	movl	a2,a1@(PCB_USP)		| and save it
-	movl	_CMAP2,a1@(PCB_CMAP2)	| save temporary map PTE
 #ifdef FPCOPROC
 	lea	a1@(PCB_FPCTX),a2	| pointer to FP save area
 	fsave	a2@			| save FP state
@@ -1742,8 +1889,8 @@ Lskipoff:
 	movl	#PGSHIFT,d1
 	movl	a1,d0
 	lsrl	d1,d0			| convert p_addr to page number
-	lsll	#2,d0			| and now to Systab offset
-	addl	_Sysmap,d0		| add Systab base to get PTE addr
+	lsll	#2,d0			| and now to Sysmap offset
+	addl	_Sysmap,d0		| add Sysmap base to get PTE addr
 #ifdef notdef
 	movw	#PSL_HIGHIPL,sr		| go crit while changing PTEs
 #endif
@@ -1757,6 +1904,17 @@ Lres1:
 	orl	#PG_RW+PG_V,d1		| ensure valid and writable
 	movl	d1,a2@+			| load it up
 	dbf	d0,Lres1		| til done
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lres1a			| no, skip
+	.word	0xf518			| yes, pflusha
+	movl	a1@(PCB_USTP),d0	| get USTP
+	moveq	#PGSHIFT,d1
+	lsll	d1,d0			| convert to addr
+	.long	0x4e7b0806		| movc d0,urp
+	jra	Lcxswdone
+Lres1a:
+#endif
 	movl	#CACHE_CLR,d0
 	movc	d0,cacr			| invalidate cache(s)
 #if defined(HP330) || defined(HP360) || defined(HP370)
@@ -1783,7 +1941,6 @@ Lnocache1:
 	movl	a1@(PCB_USTP),a0@(MMUUSTP) | context switch
 #endif
 Lcxswdone:
-	movl	a1@(PCB_CMAP2),_CMAP2	| reload tmp map
 	moveml	a1@(PCB_REGS),#0xFCFC	| and registers
 	movl	a1@(PCB_USP),a0
 	movl	a0,usp			| and USP
@@ -1806,6 +1963,13 @@ Lskipon:
 	lea	a1@(PCB_FPCTX),a0	| pointer to FP save area
 	tstb	a0@			| null state frame?
 	jeq	Lresfprest		| yes, easy
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lresnot040		| no, skip
+	clrl	sp@-			| yes...
+	frestore sp@+			| ...magic!
+Lresnot040:
+#endif
 	fmovem	a0@(312),fpcr/fpsr/fpi	| restore FP control registers
 	fmovem	a0@(216),fp0-fp7	| restore FP general registers
 Lresfprest:
@@ -1826,7 +1990,6 @@ ENTRY(savectx)
 	movl	usp,a0			| grab USP
 	movl	a0,a1@(PCB_USP)		| and save it
 	moveml	#0xFCFC,a1@(PCB_REGS)	| save non-scratch registers
-	movl	_CMAP2,a1@(PCB_CMAP2)	| save temporary map PTE
 #ifdef FPCOPROC
 	lea	a1@(PCB_FPCTX),a0	| pointer to FP save area
 	fsave	a0@			| save FP state
@@ -1855,6 +2018,7 @@ ENTRY(fuword)
 	movl	_curpcb,a1		| current pcb
 	movl	#Lfserr,a1@(PCB_ONFAULT) | where to return to on a fault
 	movsl	a0@,d0			| do read from user space
+	nop
 	jra	Lfsdone
 
 ENTRY(fusword)
@@ -1863,6 +2027,7 @@ ENTRY(fusword)
 	movl	#Lfserr,a1@(PCB_ONFAULT) | where to return to on a fault
 	moveq	#0,d0
 	movsw	a0@,d0			| do read from user space
+	nop
 	jra	Lfsdone
 
 ALTENTRY(fuibyte, _fubyte)
@@ -1872,6 +2037,7 @@ ENTRY(fubyte)
 	movl	#Lfserr,a1@(PCB_ONFAULT) | where to return to on a fault
 	moveq	#0,d0
 	movsb	a0@,d0			| do read from user space
+	nop
 	jra	Lfsdone
 
 Lfserr:
@@ -1880,13 +2046,37 @@ Lfsdone:
 	clrl	a1@(PCB_ONFAULT) 	| clear fault address
 	rts
 
-ALTENTRY(suiword, _suword)
+/*
+ * Write a longword in user instruction space.
+ * Largely the same as suword but with a final i-cache purge on those
+ * machines with split caches.
+ */
+ENTRY(suiword)
+	movl	sp@(4),a0		| address to write
+	movl	sp@(8),d0		| value to put there
+	movl	_curpcb,a1		| current pcb
+	movl	#Lfserr,a1@(PCB_ONFAULT) | where to return to on a fault
+	movsl	d0,a0@			| do write to user space
+	nop
+	moveq	#0,d0			| indicate no fault
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lsuicpurge		| no, skip
+	.word	0xf498			| cinva ic (XXX overkill)
+	jra	Lfsdone
+Lsuicpurge:
+#endif
+	movl	#IC_CLEAR,d1
+	movc	d1,cacr			| invalidate i-cache
+	jra	Lfsdone
+
 ENTRY(suword)
 	movl	sp@(4),a0		| address to write
 	movl	sp@(8),d0		| value to put there
 	movl	_curpcb,a1		| current pcb
 	movl	#Lfserr,a1@(PCB_ONFAULT) | where to return to on a fault
 	movsl	d0,a0@			| do write to user space
+	nop
 	moveq	#0,d0			| indicate no fault
 	jra	Lfsdone
 
@@ -1896,6 +2086,7 @@ ENTRY(susword)
 	movl	_curpcb,a1		| current pcb
 	movl	#Lfserr,a1@(PCB_ONFAULT) | where to return to on a fault
 	movsw	d0,a0@			| do write to user space
+	nop
 	moveq	#0,d0			| indicate no fault
 	jra	Lfsdone
 
@@ -1906,97 +2097,50 @@ ENTRY(subyte)
 	movl	_curpcb,a1		| current pcb
 	movl	#Lfserr,a1@(PCB_ONFAULT) | where to return to on a fault
 	movsb	d0,a0@			| do write to user space
+	nop
 	moveq	#0,d0			| indicate no fault
 	jra	Lfsdone
 
-/*
- * Copy 1 relocation unit (NBPG bytes)
- * from user virtual address to physical address
- */
-ENTRY(copyseg)
-	movl	_curpcb,a1			| current pcb
-	movl	#Lcpydone,a1@(PCB_ONFAULT)	| where to return to on a fault
-	movl	sp@(8),d0			| destination page number
-	moveq	#PGSHIFT,d1
-	lsll	d1,d0				| convert to address
-	orl	#PG_CI+PG_RW+PG_V,d0		| make sure valid and writable
-	movl	_CMAP2,a0
-	movl	_CADDR2,sp@-			| destination kernel VA
-	movl	d0,a0@				| load in page table
-	jbsr	_TBIS				| invalidate any old mapping
-	addql	#4,sp
-	movl	_CADDR2,a1			| destination addr
-	movl	sp@(4),a0			| source addr
-	movl	#NBPG/4-1,d0			| count
-Lcpyloop:
-	movsl	a0@+,d1				| read longword
-	movl	d1,a1@+				| write longword
-	dbf	d0,Lcpyloop			| continue until done
-Lcpydone:
-	movl	_curpcb,a1			| current pcb
-	clrl	a1@(PCB_ONFAULT) 		| clear error catch
+#if defined(HP380)
+ENTRY(suline)
+	movl	sp@(4),a0		| address to write
+	movl	_curpcb,a1		| current pcb
+	movl	#Lslerr,a1@(PCB_ONFAULT) | where to return to on a fault
+	movl	sp@(8),a1		| address of line
+	movl	a1@+,d0			| get lword
+	movsl	d0,a0@+			| put lword
+	nop				| sync
+	movl	a1@+,d0			| get lword
+	movsl	d0,a0@+			| put lword
+	nop				| sync
+	movl	a1@+,d0			| get lword
+	movsl	d0,a0@+			| put lword
+	nop				| sync
+	movl	a1@+,d0			| get lword
+	movsl	d0,a0@+			| put lword
+	nop				| sync
+	moveq	#0,d0			| indicate no fault
+	jra	Lsldone
+Lslerr:
+	moveq	#-1,d0
+Lsldone:
+	movl	_curpcb,a1		| current pcb
+	clrl	a1@(PCB_ONFAULT) 	| clear fault address
 	rts
-
-/*
- * Copy 1 relocation unit (NBPG bytes)
- * from physical address to physical address
- */
-ENTRY(physcopyseg)
-	movl	sp@(4),d0			| source page number
-	moveq	#PGSHIFT,d1
-	lsll	d1,d0				| convert to address
-	orl	#PG_CI+PG_RW+PG_V,d0		| make sure valid and writable
-	movl	_CMAP1,a0
-	movl	d0,a0@				| load in page table
-	movl	_CADDR1,sp@-			| destination kernel VA
-	jbsr	_TBIS				| invalidate any old mapping
-	addql	#4,sp
-
-	movl	sp@(8),d0			| destination page number
-	moveq	#PGSHIFT,d1
-	lsll	d1,d0				| convert to address
-	orl	#PG_CI+PG_RW+PG_V,d0		| make sure valid and writable
-	movl	_CMAP2,a0
-	movl	d0,a0@				| load in page table
-	movl	_CADDR2,sp@-			| destination kernel VA
-	jbsr	_TBIS				| invalidate any old mapping
-	addql	#4,sp
-
-	movl	_CADDR1,a0			| source addr
-	movl	_CADDR2,a1			| destination addr
-	movl	#NBPG/4-1,d0			| count
-Lpcpy:
-	movl	a0@+,a1@+			| copy longword
-	dbf	d0,Lpcpy			| continue until done
-	rts
-
-/*
- * zero out physical memory
- * specified in relocation units (NBPG bytes)
- */
-ENTRY(clearseg)
-	movl	sp@(4),d0			| destination page number
-	moveq	#PGSHIFT,d1
-	lsll	d1,d0				| convert to address
-	orl	#PG_CI+PG_RW+PG_V,d0		| make sure valid and writable
-	movl	_CMAP1,a0
-	movl	_CADDR1,sp@-			| destination kernel VA
-	movl	d0,a0@				| load in page map
-	jbsr	_TBIS				| invalidate any old mapping
-	addql	#4,sp
-	movl	_CADDR1,a1			| destination addr
-	movl	#NBPG/4-1,d0			| count
-/* simple clear loop is fastest on 68020 */
-Lclrloop:
-	clrl	a1@+				| clear a longword
-	dbf	d0,Lclrloop			| continue til done
-	rts
+#endif
 
 /*
  * Invalidate entire TLB.
  */
 ENTRY(TBIA)
 __TBIA:
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu3		| no, skip
+	.word	0xf518			| yes, pflusha
+	rts
+Lmotommu3:
+#endif
 #if defined(HP330) || defined(HP360) || defined(HP370)
 	tstl	_mmutype		| HP MMU?
 	jeq	Lhpmmu6			| yes, skip
@@ -2028,6 +2172,21 @@ ENTRY(TBIS)
 #ifdef DEBUG
 	tstl	fulltflush		| being conservative?
 	jne	__TBIA			| yes, flush entire TLB
+#endif
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu4		| no, skip
+	movl	sp@(4),a0
+	movc	dfc,d1
+	moveq	#1,d0			| user space
+	movc	d0,dfc
+	.word	0xf508			| pflush a0@
+	moveq	#5,d0			| super space
+	movc	d0,dfc
+	.word	0xf508			| pflush a0@
+	movc	d1,dfc
+	rts
+Lmotommu4:
 #endif
 #if defined(HP330) || defined(HP360) || defined(HP370)
 	tstl	_mmutype		| HP MMU?
@@ -2069,6 +2228,13 @@ ENTRY(TBIAS)
 	tstl	fulltflush		| being conservative?
 	jne	__TBIA			| yes, flush everything
 #endif
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu5		| no, skip
+	.word	0xf518			| yes, pflusha (for now) XXX
+	rts
+Lmotommu5:
+#endif
 #if defined(HP330) || defined(HP360) || defined(HP370)
 	tstl	_mmutype		| HP MMU?
 	jeq	Lhpmmu7			| yes, skip
@@ -2103,6 +2269,13 @@ ENTRY(TBIAU)
 	tstl	fulltflush		| being conservative?
 	jne	__TBIA			| yes, flush everything
 #endif
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu6		| no, skip
+	.word	0xf518			| yes, pflusha (for now) XXX
+	rts
+Lmotommu6:
+#endif
 #if defined(HP330) || defined(HP360) || defined(HP370)
 	tstl	_mmutype		| HP MMU?
 	jeq	Lhpmmu8			| yes, skip
@@ -2133,6 +2306,14 @@ Lhpmmu8:
  * Invalidate instruction cache
  */
 ENTRY(ICIA)
+#if defined(HP380)
+ENTRY(ICPA)
+	cmpl	#-2,_mmutype		| 68040
+	jne	Lmotommu7		| no, skip
+	.word	0xf498			| cinva ic
+	rts
+Lmotommu7:
+#endif
 	movl	#IC_CLEAR,d0
 	movc	d0,cacr			| invalidate i-cache
 	rts
@@ -2147,6 +2328,13 @@ ENTRY(ICIA)
  */
 ENTRY(DCIA)
 __DCIA:
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040
+	jne	Lmotommu8		| no, skip
+	/* XXX implement */
+	rts
+Lmotommu8:
+#endif
 #if defined(HP320) || defined(HP350)
 	tstl	_ectype			| got external VAC?
 	jle	Lnocache2		| no, all done
@@ -2159,6 +2347,13 @@ Lnocache2:
 
 ENTRY(DCIS)
 __DCIS:
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040
+	jne	Lmotommu9		| no, skip
+	/* XXX implement */
+	rts
+Lmotommu9:
+#endif
 #if defined(HP320) || defined(HP350)
 	tstl	_ectype			| got external VAC?
 	jle	Lnocache3		| no, all done
@@ -2171,6 +2366,13 @@ Lnocache3:
 
 ENTRY(DCIU)
 __DCIU:
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040
+	jne	LmotommuA		| no, skip
+	/* XXX implement */
+	rts
+LmotommuA:
+#endif
 #if defined(HP320) || defined(HP350)
 	tstl	_ectype			| got external VAC?
 	jle	Lnocache4		| no, all done
@@ -2181,7 +2383,45 @@ Lnocache4:
 #endif
 	rts
 
+#if defined(HP380)
+ENTRY(ICPL)
+	movl	sp@(4),a0		| address
+	.word	0xf488			| cinvl ic,a0@
+	rts
+ENTRY(ICPP)
+	movl	sp@(4),a0		| address
+	.word	0xf490			| cinvp ic,a0@
+	rts
+ENTRY(DCPL)
+	movl	sp@(4),a0		| address
+	.word	0xf448			| cinvl dc,a0@
+	rts
+ENTRY(DCPP)
+	movl	sp@(4),a0		| address
+	.word	0xf450			| cinvp dc,a0@
+	rts
+ENTRY(DCPA)
+	.word	0xf458			| cinva dc
+	rts
+ENTRY(DCFL)
+	movl	sp@(4),a0		| address
+	.word	0xf468			| cpushl dc,a0@
+	rts
+ENTRY(DCFP)
+	movl	sp@(4),a0		| address
+	.word	0xf470			| cpushp dc,a0@
+	rts
+#endif
+
 ENTRY(PCIA)
+#if defined(HP380)
+ENTRY(DCFA)
+	cmpl	#-2,_mmutype		| 68040
+	jne	LmotommuB		| no, skip
+	.word	0xf478			| cpusha dc
+	rts
+LmotommuB:
+#endif
 #if defined(HP360) || defined(HP370)
 	movl	#DC_CLEAR,d0
 	movc	d0,cacr			| invalidate on-chip d-cache
@@ -2234,12 +2474,19 @@ _getdfc:
  * Load a new user segment table pointer.
  */
 ENTRY(loadustp)
-#if defined(HP330) || defined(HP360) || defined(HP370)
+#if defined(HP330) || defined(HP360) || defined(HP370) || defined(HP380)
 	tstl	_mmutype		| HP MMU?
 	jeq	Lhpmmu9			| yes, skip
 	movl	sp@(4),d0		| new USTP
 	moveq	#PGSHIFT,d1
 	lsll	d1,d0			| convert to addr
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	LmotommuC		| no, skip
+	.long	0x4e7b0806		| movc d0,urp
+	rts
+LmotommuC:
+#endif
 	lea	_protorp,a0		| CRP prototype
 	movl	d0,a0@(4)		| stash USTP
 	pmove	a0@,crp			| load root pointer
@@ -2558,6 +2805,10 @@ Lm68881rdone:
  */
 	.globl	_doboot
 _doboot:
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jeq	Lnocache5		| yes, skip
+#endif
 	movl	#CACHE_OFF,d0
 	movc	d0,cacr			| disable on-chip cache(s)
 #if defined(HP320) || defined(HP350) || defined(HP370)
@@ -2565,8 +2816,8 @@ _doboot:
 	jeq	Lnocache5
 	MMUADDR(a0)
 	andl	#~MMU_CEN,a0@(MMUCMD)	| disable external cache
-Lnocache5:
 #endif
+Lnocache5:
 	lea	MAXADDR,a0		| last page of physical memory
 	movl	_boothowto,a0@+		| store howto
 	movl	_bootdev,a0@+		| and devtype
@@ -2576,10 +2827,26 @@ Lbootcopy:
 	movw	a1@+,a0@+		| copy a word
 	cmpl	a3,a1			| done yet?
 	jcs	Lbootcopy		| no, keep going
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	LmotommuE		| no, skip
+	.word	0xf4f8			| cpusha bc
+LmotommuE:
+#endif
 	jmp	MAXADDR+8		| jump to last page
 
 Lbootcode:
 	lea	MAXADDR+0x800,sp	| physical SP in case of NMI
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	LmotommuF		| no, skip
+	movl	#0,d0
+	movc	d0,cacr			| caches off
+	.long	0x4e7b0003		| movc d0,tc
+	movl	d2,MAXADDR+NBPG-4	| restore old high page contents
+	jmp	0x1A4			| goto REQ_REBOOT
+LmotommuF:
+#endif
 #if defined(HP330) || defined(HP360) || defined(HP370)
 	tstl	_mmutype		| HP MMU?
 	jeq	LhpmmuB			| yes, skip
@@ -2616,6 +2883,9 @@ _internalhpib:
 	.globl	_cold
 _cold:
 	.long	1		| cold start flag
+	.globl	_want_resched
+_want_resched:
+	.long	0
 	.globl	_intiobase, _intiolimit, _extiobase, _CLKbase, _MMUbase
 	.globl	_proc0paddr
 _proc0paddr:
@@ -2639,6 +2909,27 @@ fullcflush:
 	.globl	timebomb
 timebomb:
 	.long	0
+#endif
+#ifdef HPFPLIB
+/*
+ * Undefined symbols from hpux_float.o:
+ *
+ * kdb_printf:	A kernel debugger print routine, we just use printf instead.
+ * processor:	HP-UX equiv. of machineid, set to 3 if it is a 68040.
+ * u:		Ye ole u-area.  The code wants to grab the first longword
+ *		indirect off of that and clear the 0x40000 bit there.
+ *		Oddly enough this was incorrect even in HP-UX!
+ * runrun:	Old name for want_resched.
+ */
+	.globl	_kdb_printf,_processor,_u,_runrun
+_kdb_printf:
+	.long	_printf
+_processor:
+	.long	0
+_u:
+	.long	.+4
+	.long	0
+	.set	_runrun,_want_resched
 #endif
 /* interrupt counters */
 	.globl	_intrcnt,_eintrcnt,_intrnames,_eintrnames

@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.13 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.14 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -67,7 +67,7 @@ SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o
 #SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
 SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
 SYSTEM_LD_HEAD=	rm -f $@
-SYSTEM_LD=	@if [ X${DEBUG} = X-g ]; \
+SYSTEM_LD=	-@if [ X${DEBUG} = X-g ]; \
 		then strip=-X; \
 		else strip=-x; \
 		fi; \

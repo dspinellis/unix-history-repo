@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.10 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.11 (Berkeley) %G%
  */
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
@@ -22,7 +22,7 @@ static char rcsid[] = "$Header: kgdb_stub.c,v 1.13 91/03/23 13:55:57 mccanne Exp
 #include "../include/reg.h"
 #include "../include/frame.h"
 #include "buf.h"
-#include "cons.h"
+#include "hp/dev/cons.h"
 
 #include "kgdb_proto.h"
 #include "machine/remote-sl.h"

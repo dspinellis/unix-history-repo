@@ -9,85 +9,91 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: dcmreg.h 1.1 90/07/09$
+ * from: Utah $Hdr: dcmreg.h 1.7 92/01/21$
  *
- *	@(#)dcmreg.h	7.4 (Berkeley) %G%
+ *	@(#)dcmreg.h	7.5 (Berkeley) %G%
  */
+
+#ifdef KERNEL
+#include "hp/dev/iotypes.h"	/* XXX */
+#else
+#include <hp/dev/iotypes.h>	/* XXX */
+#endif
 
 struct dcmdevice {	   /* host address, only odd bytes addressed */
 	u_char	dcm_pad0;
-	volatile u_char	dcm_rsid;	/* Reset / ID			0001 */
+	vu_char	dcm_rsid;		/* Reset / ID			0001 */
 	u_char	dcm_pad1;
-	volatile u_char	dcm_ic;		/* Interrupt control register	0003 */
+	vu_char	dcm_ic;			/* Interrupt control register	0003 */
 	u_char	dcm_pad2;
-	volatile u_char	dcm_sem;	/* Semaphore register		0005 */
+	vu_char	dcm_sem;		/* Semaphore register		0005 */
 	u_char  dcm_pad3[0x7ffa];	/* Unaddressable	0006-7fff */
 	u_char	dcm_pad4;
-	volatile u_char	dcm_iir;	/* Interrupt ident register	8001 */
+	vu_char	dcm_iir;		/* Interrupt ident register	8001 */
 	u_char	dcm_pad5;
-	volatile u_char	dcm_cr;		/* Command register		8003 */
+	vu_char	dcm_cr;			/* Command register		8003 */
 	u_char  dcm_pad6[0x3fc];	/* Card scratch		8004-83ff */
 	struct	dcmrfifo {
 		u_char	ptr_pad1;
-		volatile u_char	data_char;
+		vu_char	data_char;
 		u_char	ptr_pad2;
-		volatile u_char	data_stat;
+		vu_char	data_stat;
 	} dcm_rfifos[4][0x80];		/* Receive queues		8400 */
 	struct  {
 		u_char	ptr_pad1;
-		volatile u_char	data_data;
+		vu_char	data_data;
 	} dcm_bmap[0x100];		/* Bitmap table			8c00 */
 	struct  {
 		u_char	ptr_pad;
-		volatile u_char	ptr;
+		vu_char	ptr;
 	} dcm_rhead[4];			/* Fifo head - receive		8e00 */
 	struct  {
 		u_char  ptr_pad;
-		volatile u_char  ptr;
+		vu_char  ptr;
 	} dcm_rtail[4];			/* Fifo tail - receive		8e08 */
 	struct  {
 		u_char	ptr_pad;
-		volatile u_char	ptr;
+		vu_char	ptr;
 	} dcm_thead[4];			/* Fifo head - transmit		8e10 */
 	struct  {
 		u_char	ptr_pad;
-		volatile u_char	ptr;
+		vu_char	ptr;
 	} dcm_ttail[4];			/* Fifo tail - transmit		8e18 */
 	struct  {
 		u_char	pad1;
-		volatile u_char	dcm_conf;
+		vu_char	dcm_conf;
 		u_char	pad2;
-		volatile u_char	dcm_baud;
+		vu_char	dcm_baud;
 	} dcm_data[4];			/* Configuration registers	8e20 */
 	struct	modemreg {
 		u_char	pad0;
-		volatile u_char  mdmin;		/* Modem in		8e31 */
+		vu_char mdmin;		/* Modem in			8e31 */
 		u_char  pad1;
-		volatile u_char  mdmout;	/* Modem out		8e33 */
+		vu_char mdmout;		/* Modem out			8e33 */
 		u_char  pad2;
-		volatile u_char  mdmmsk;	/* Modem mask		8e35 */
+		vu_char mdmmsk;		/* Modem mask			8e35 */
 	} dcm_modem0;
 	struct  {
 		u_char pad1;
-		volatile u_char dcm_data;
+		vu_char dcm_data;
 	} dcm_cmdtab[4];		/* Command tables		8e36 */
 	struct  {
 		u_char pad1;
-		volatile u_char dcm_data;
+		vu_char dcm_data;
 	} dcm_icrtab[4];		/* Interrupt data		8e3e */
 	u_char  dcm_pad10;
-	volatile u_char  dcm_stcon;	/* Self test condition		8e47 */
+	vu_char dcm_stcon;		/* Self test condition		8e47 */
 	struct modemreg dcm_modem1;	/* 638 Modem port1		8e48 */
 	struct modemreg dcm_modem2;	/* 638 Modem port2		8e4e */
 	struct modemreg dcm_modem3;	/* 638 Modem port3		8e54 */
 	u_char	dcm_pad11;
-	volatile u_char	dcm_modemchng;	/* 638 Modem change mask	8e5b */
+	vu_char	dcm_modemchng;		/* 638 Modem change mask	8e5b */
 	u_char	dcm_pad12;
-	volatile u_char	dcm_modemintr;	/* 638 Modem interrupt mask	8e5d */
+	vu_char	dcm_modemintr;		/* 638 Modem interrupt mask	8e5d */
 	u_char  dcm_pad13[0x82];	/* Undef Shared Ram	8e5e-8edf */
 	struct	dcmtfifo {
 	    u_char  ptr_pad1;
-	    volatile u_char  data_char;
+	    vu_char  data_char;
 	} dcm_tfifos[4][0x10];		/* Transmit queues		8ee0 */
 };
 
@@ -97,13 +103,13 @@ struct dcmdevice {	   /* host address, only odd bytes addressed */
  */
 struct	dcmpreg {
 	u_char		pad0;		/* +00 */
-	volatile u_char	r_head;		/* +01 */
+	vu_char	r_head;			/* +01 */
 	u_char		pad1[7];	/* +02 */
-	volatile u_char	r_tail;		/* +09 */
+	vu_char	r_tail;			/* +09 */
 	u_char		pad2[7];	/* +0A */
-	volatile u_char	t_head;		/* +11 */
+	vu_char	t_head;			/* +11 */
 	u_char		pad3[7];	/* +12 */
-	volatile u_char	t_tail;		/* +19 */
+	vu_char	t_tail;			/* +19 */
 };
 #define	dcm_preg(d, p)	((struct dcmpreg *)((u_int)(d)+0x8e00+(p)*2))
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_machdep.c	7.7 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.8 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -18,6 +18,7 @@
 #include "sys/mtio.h"
 #include "sys/buf.h"
 #include "sys/trace.h"
+#include "vm/vm.h"
 
 #ifdef TRACE
 int	nvualarm;
@@ -83,6 +84,16 @@ vdoualarm(arg)
 #define CC_EXTPURGE	0x80000000
 /* XXX end should be */
 
+/*
+ * Note that what we do here for a 68040 is different than HP-UX.
+ *
+ * In 'pux they either act on a line (len == 16), a page (len == NBPG)
+ * or the whole cache (len == anything else).
+ *
+ * In BSD we attempt to be more optimal when acting on "odd" sizes.
+ * For lengths up to 1024 we do all affected lines, up to 2*NBPG we
+ * do pages, above that we do the entire cache.
+ */
 /*ARGSUSED1*/
 cachectl(req, addr, len)
 	int req;
@@ -91,6 +102,89 @@ cachectl(req, addr, len)
 {
 	int error = 0;
 
+#if defined(HP380)
+	if (mmutype == MMU_68040) {
+		register int inc;
+		int pa = 0, doall = 0;
+		caddr_t end;
+
+		if (addr == 0 ||
+		    (req & ~CC_EXTPURGE) != CC_PURGE && len > 2*NBPG)
+			doall = 1;
+#ifdef HPUXCOMPAT
+		if ((curproc->p_flag & SHPUX) && len != 16 && len != NBPG)
+			doall = 1;
+#endif
+		if (!doall) {
+			end = addr + len;
+			if (len <= 1024) {
+				addr = (caddr_t)((int)addr & ~0xF);
+				inc = 16;
+			} else {
+				addr = (caddr_t)((int)addr & ~PGOFSET);
+				inc = NBPG;
+			}
+		}
+		do {
+			/*
+			 * Convert to physical address if needed.
+			 * If translation fails, we perform operation on
+			 * entire cache (XXX is this a rational thing to do?)
+			 */
+			if (!doall &&
+			    (pa == 0 || ((int)addr & PGOFSET) == 0)) {
+				pa = pmap_extract(&curproc->p_vmspace->vm_pmap,
+						  (vm_offset_t)addr);
+				if (pa == 0)
+					doall = 1;
+			}
+			switch (req) {
+			case CC_EXTPURGE|CC_IPURGE:
+			case CC_IPURGE:
+				if (doall) {
+					DCFA();
+					ICPA();
+				} else if (inc == 16) {
+					DCFL(pa);
+					ICPL(pa);
+				} else if (inc == NBPG) {
+					DCFP(pa);
+					ICPP(pa);
+				}
+				break;
+			
+			case CC_EXTPURGE|CC_PURGE:
+			case CC_PURGE:
+				if (doall)
+					DCFA();	/* note: flush not purge */
+				else if (inc == 16)
+					DCPL(pa);
+				else if (inc == NBPG)
+					DCPP(pa);
+				break;
+
+			case CC_EXTPURGE|CC_FLUSH:
+			case CC_FLUSH:
+				if (doall)
+					DCFA();
+				else if (inc == 16)
+					DCFL(pa);
+				else if (inc == NBPG)
+					DCFP(pa);
+				break;
+				
+			default:
+				error = EINVAL;
+				break;
+			}
+			if (doall)
+				break;
+			pa += inc;
+			addr += inc;
+		} while (addr < end);
+		return(error);
+	}
+#endif
 	switch (req) {
 	case CC_EXTPURGE|CC_PURGE:
 	case CC_EXTPURGE|CC_FLUSH:

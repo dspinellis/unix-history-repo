@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_rb.c 1.16 91/01/21$
+ * from: Utah $Hdr: ite_rb.c 1.17 92/01/21$
  *
- *	@(#)ite_rb.c	7.5 (Berkeley) %G%
+ *	@(#)ite_rb.c	7.6 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -24,15 +24,15 @@
 #include "tty.h"
 #include "systm.h"
 
-#include "itevar.h"
-#include "itereg.h"
+#include "hp/dev/itevar.h"
+#include "hp/dev/itereg.h"
 #include "grf_rbreg.h"
 
 #include "machine/cpu.h"
 
 /* XXX */
-#include "grfioctl.h"
-#include "grfvar.h"
+#include "hp/dev/grfioctl.h"
+#include "hp/dev/grfvar.h"
 
 #define REGBASE		((struct rboxfb *)(ip->regbase))
 #define WINDOWMOVER	rbox_windowmove
@@ -44,12 +44,17 @@ rbox_init(ip)
 
 	/* XXX */
 	if (ip->regbase == 0) {
-		struct grf_softc *gp = &grf_softc[ip - ite_softc];
+		struct grf_softc *gp = ip->grf;
+
 		ip->regbase = gp->g_regkva;
 		ip->fbbase = gp->g_fbkva;
+		ip->fbwidth = gp->g_display.gd_fbwidth;
+		ip->fbheight = gp->g_display.gd_fbheight;
+		ip->dwidth = gp->g_display.gd_dwidth;
+		ip->dheight = gp->g_display.gd_dheight;
 	}
 
-	rb_waitbusy(REGADDR);
+	rb_waitbusy(ip->regbase);
 
 	REGBASE->reset = 0x39;
 	DELAY(1000);
@@ -60,7 +65,7 @@ rbox_init(ip)
 	REGBASE->drive = 0x01;
 	REGBASE->vdrive = 0x0;
 
-	ite_devinfo(ip);
+	ite_fontinfo(ip);
 	
 	REGBASE->opwen = 0xFF;
 
@@ -68,17 +73,17 @@ rbox_init(ip)
 	 * Clear the framebuffer.
 	 */
 	rbox_windowmove(ip, 0, 0, 0, 0, ip->fbheight, ip->fbwidth, RR_CLEAR);
-	rb_waitbusy(REGADDR);
+	rb_waitbusy(ip->regbase);
 
 	for(i = 0; i < 16; i++) {
-		*(REGADDR + 0x63c3 + i*4) = 0x0;
-		*(REGADDR + 0x6403 + i*4) = 0x0;
-		*(REGADDR + 0x6803 + i*4) = 0x0;
-		*(REGADDR + 0x6c03 + i*4) = 0x0;
-		*(REGADDR + 0x73c3 + i*4) = 0x0;
-		*(REGADDR + 0x7403 + i*4) = 0x0;
-		*(REGADDR + 0x7803 + i*4) = 0x0;
-		*(REGADDR + 0x7c03 + i*4) = 0x0;
+		*(ip->regbase + 0x63c3 + i*4) = 0x0;
+		*(ip->regbase + 0x6403 + i*4) = 0x0;
+		*(ip->regbase + 0x6803 + i*4) = 0x0;
+		*(ip->regbase + 0x6c03 + i*4) = 0x0;
+		*(ip->regbase + 0x73c3 + i*4) = 0x0;
+		*(ip->regbase + 0x7403 + i*4) = 0x0;
+		*(ip->regbase + 0x7803 + i*4) = 0x0;
+		*(ip->regbase + 0x7c03 + i*4) = 0x0;
 	}
 
 	REGBASE->rep_rule = 0x33;
@@ -120,7 +125,7 @@ rbox_deinit(ip)
 	struct ite_softc *ip;
 {
 	rbox_windowmove(ip, 0, 0, 0, 0, ip->fbheight, ip->fbwidth, RR_CLEAR);
-	rb_waitbusy(REGADDR);
+	rb_waitbusy(ip->regbase);
 
    	ip->flags &= ~ITE_INITED;
 }
@@ -206,7 +211,7 @@ rbox_windowmove(ip, sy, sx, dy, dx, h, w, func)
 	if (h == 0 || w == 0)
 		return;
 	
-	rb_waitbusy(REGADDR);
+	rb_waitbusy(ip->regbase);
 	rp->rep_rule = func << 4 | func;
 	rp->source_y = sy;
 	rp->source_x = sx;

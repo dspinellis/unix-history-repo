@@ -1,58 +1,60 @@
 /*
- * Copyright (c) 1988 University of Utah.
+ * Copyright (c) 1991 University of Utah.
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
- * Science Department.
+ * Science Department and Mark Davies of the Department of Computer
+ * Science, Victoria University of Wellington, New Zealand.
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_rb.c 1.14 92/01/21$
+ * from: Utah $Hdr: grf_hy.c 1.1 92/01/22$
  *
- *	@(#)grf_rb.c	7.6 (Berkeley) %G%
+ *	@(#)grf_hy.c	7.1 (Berkeley) %G%
  */
 
 #include "grf.h"
 #if NGRF > 0
 
 /*
- * Graphics routines for the Renaissance, HP98720 Graphics system.
+ * Graphics routines for HYPERION frame buffer
  */
 #include "sys/param.h"
 #include "sys/errno.h"
 
 #include "hp/dev/grfioctl.h"
 #include "hp/dev/grfvar.h"
-#include "grf_rbreg.h"
+#include "grf_hyreg.h"
 
 #include "../include/cpu.h"
 
+caddr_t badhyaddr = (caddr_t) -1;
+
 /*
  * Initialize hardware.
- * Must point g_display at a grfinfo structure describing the hardware.
+ * Must fill in the grfinfo structure in g_softc.
  * Returns 0 if hardware not present, non-zero ow.
  */
-rb_init(gp, addr)
+hy_init(gp, addr)
 	struct grf_softc *gp;
 	caddr_t addr;
 {
-	register struct rboxfb *rbp;
+	register struct hyboxfb *hy = (struct hyboxfb *) addr;
 	struct grfinfo *gi = &gp->g_display;
 	int fboff;
 	extern caddr_t sctopa(), iomap();
 
-	rbp = (struct rboxfb *) addr;
 	if (ISIIOVA(addr))
 		gi->gd_regaddr = (caddr_t) IIOP(addr);
 	else
 		gi->gd_regaddr = sctopa(vatosc(addr));
 	gi->gd_regsize = 0x20000;
-	gi->gd_fbwidth = (rbp->fbwmsb << 8) | rbp->fbwlsb;
-	gi->gd_fbheight = (rbp->fbhmsb << 8) | rbp->fbhlsb;
-	gi->gd_fbsize = gi->gd_fbwidth * gi->gd_fbheight;
-	fboff = (rbp->fbomsb << 8) | rbp->fbolsb;
+	gi->gd_fbwidth = (hy->fbwmsb << 8) | hy->fbwlsb;
+	gi->gd_fbheight = (hy->fbhmsb << 8) | hy->fbhlsb;
+	gi->gd_fbsize = (gi->gd_fbwidth * gi->gd_fbheight) >> 3;
+	fboff = (hy->fbomsb << 8) | hy->fbolsb;
 	gi->gd_fbaddr = (caddr_t) (*((u_char *)addr + fboff) << 16);
 	if (gi->gd_regaddr >= (caddr_t)DIOIIBASE) {
 		/*
@@ -71,10 +73,11 @@ rb_init(gp, addr)
 		gp->g_regkva = addr;
 		gp->g_fbkva = iomap(gi->gd_fbaddr, gi->gd_fbsize);
 	}
-	gi->gd_dwidth = (rbp->dwmsb << 8) | rbp->dwlsb;
-	gi->gd_dheight = (rbp->dwmsb << 8) | rbp->dwlsb;
-	gi->gd_planes = 0;	/* ?? */
-	gi->gd_colors = 256;
+	gi->gd_dwidth = (hy->dwmsb << 8) | hy->dwlsb;
+	gi->gd_dheight = (hy->dhmsb << 8) | hy->dhlsb;
+	gi->gd_planes = hy->num_planes;
+	gi->gd_colors = 1 << gi->gd_planes;
+
 	return(1);
 }
 
@@ -82,30 +85,16 @@ rb_init(gp, addr)
  * Change the mode of the display.
  * Right now all we can do is grfon/grfoff.
  * Return a UNIX error number or 0 for success.
+ * Function may not be needed anymore.
  */
-rb_mode(gp, cmd)
-	register struct grf_softc *gp;
+hy_mode(gp, cmd)
+	struct grf_softc *gp;
 {
-	register struct rboxfb *rbp;
 	int error = 0;
 
-	rbp = (struct rboxfb *) gp->g_regkva;
 	switch (cmd) {
-	/*
-	 * The minimal register info here is from the Renaissance X driver.
-	 */
 	case GM_GRFON:
 	case GM_GRFOFF:
-		break;
-	case GM_GRFOVON:
-		rbp->write_enable = 0;
-		rbp->opwen = 0xF;
-		rbp->drive = 0x10;
-		break;
-	case GM_GRFOVOFF:
-		rbp->opwen = 0;
-		rbp->write_enable = 0xffffffff;
-		rbp->drive = 0x01;
 		break;
 	default:
 		error = EINVAL;
@@ -113,5 +102,4 @@ rb_mode(gp, cmd)
 	}
 	return(error);
 }
-
 #endif
