@@ -89,7 +89,7 @@ struct semconfig_args {
 	semconfig_ctl_t	flag;
 };
 
-int
+static int
 semconfig(p, uap, retval)
 	struct proc *p;
 	struct semconfig_args *uap;
@@ -324,7 +324,7 @@ struct semctl_args {
 	union	semun *arg;
 };
 
-int
+static int
 semctl(p, uap, retval)
 	struct proc *p;
 	register struct semctl_args *uap;
@@ -556,7 +556,7 @@ struct semget_args {
 	int	semflg;
 };
 
-int
+static int
 semget(p, uap, retval)
 	struct proc *p;
 	register struct semget_args *uap;
@@ -676,7 +676,7 @@ struct semop_args {
 	int	nsops;
 };
 
-int
+static int
 semop(p, uap, retval)
 	struct proc *p;
 	register struct semop_args *uap;

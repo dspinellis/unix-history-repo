@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *	from: @(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
- *	$Id: sysv_shm.c,v 1.10 1994/03/07 11:03:02 davidg Exp $
+ *	$Id: sysv_shm.c,v 1.11 1994/03/08 13:01:44 ats Exp $
  */
 
 /*
@@ -146,7 +146,7 @@ struct shmget_args {
 	int shmflg;
 };
 
-int
+static int
 shmget(p, uap, retval)
 	struct proc *p;
 	register struct shmget_args *uap;
@@ -244,7 +244,7 @@ struct shmctl_args {
 };
 
 /* ARGSUSED */
-int
+static int
 shmctl(p, uap, retval)
 	struct proc *p;
 	register struct shmctl_args *uap;
@@ -316,7 +316,7 @@ struct shmat_args {
 	int	shmflg;
 };
 
-int
+static int
 shmat(p, uap, retval)
 	struct proc *p;
 	register struct shmat_args *uap;
@@ -402,7 +402,7 @@ struct shmdt_args {
 };
 
 /* ARGSUSED */
-int
+static int
 shmdt(p, uap, retval)
 	struct proc *p;
 	struct shmdt_args *uap;
