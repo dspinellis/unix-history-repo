@@ -1,0 +1,293 @@
+/*
+ * Copyright (c) 1989 Stanford University
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided
+ * that the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of Stanford not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  Stanford makes no representations about
+ * the suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * STANFORD DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS.
+ * IN NO EVENT SHALL STANFORD BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+ * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+/**/#
+/**/# g++ compiler
+/**/#
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+
+#else
+
+CC = gcc
+GCCDIR = ${SRC}/../gcc
+GCCBIN = # -B${GCCDIR}/
+DEBUG = # -g
+OPTIM = -O
+INCL = -I. -I${SRC} -I${GEN} -I${GCCDIR}
+DEFINES =
+CFLAGS = ${GCCBIN} ${DEBUG} ${OPTIM} ${INCL} ${DEFINES}
+DEPENDCFLAGS = ${INCL} ${DEFINES}
+BINDIR = ${LOCALBINDIR}
+
+#include <gcc.def>
+
+#define make_o(file) @@\
+file.o: ${SRC}/file.c @@\
+	@${RM} file.o @@\
+	${CC} -c ${CFLAGS} ${SRC}/file.c
+
+#define make_gcc_o(file) @@\
+file.o: ${GCCDIR}/file.c @@\
+	@${RM} file.c file.o @@\
+	${LN} ${GCCDIR}/file.c file.c @@\
+	${CC} -c ${CFLAGS} file.c @@\
+	${RM} file.c
+
+#define make_gen_o(file) @@\
+file.o: ${GEN}/file.c @@\
+	@${RM} file.o @@\
+	${CC} -c ${CFLAGS} ${GEN}/file.c
+
+#define src(file) ${SRC}/file.c
+#define gcc_src(file) ${GCCDIR}/file.c
+#define gen_src(file) ${GEN}/file.c
+#define obj(file) file.o
+
+CPLUS_SRC = \
+    src(lastfile) \
+    src(cplus-decl) \
+    src(cplus-decl2) \
+    src(cplus-except) \
+    gen_src(cplus-tab) \
+    src(cplus-typeck) \
+    src(cplus-type2) \
+    src(cplus-tree) \
+    src(cplus-lex) \
+    src(cplus-class) \
+    src(cplus-init) \
+    src(cplus-method) \
+    src(cplus-cvt) \
+    src(cplus-search) \
+    src(cplus-ptree) \
+    src(dbxout) \
+    src(expr) \
+    src(integrate) \
+    src(print-tree) \
+    src(stmt) \
+    src(stor-layout) \
+    src(symout) \
+    src(toplev) \
+    src(tree) \
+    src(varasm) \
+    src(version)
+
+GCC_SRC = \
+    gcc_src(caller-save) \
+    gcc_src(combine) \
+    gcc_src(cse) \
+    gcc_src(emit-rtl) \
+    gcc_src(expmed) \
+    gcc_src(explow) \
+    gcc_src(final) \
+    gcc_src(flow) \
+    gcc_src(fold-const) \
+    gcc_src(global-alloc) \
+    gcc_src(jump) \
+    gcc_src(local-alloc) \
+    gcc_src(loop) \
+    gcc_src(obstack) \
+    gcc_src(optabs) \
+    gcc_src(recog) \
+    gcc_src(regclass) \
+    gcc_src(reload) \
+    gcc_src(reload1) \
+    gcc_src(rtl) \
+    gcc_src(rtlanal) \
+    gcc_src(sdbout) \
+    gcc_src(stupid)
+
+SRCS = ${CPLUS_SRC} ${GCC_SRC}
+
+CPLUS_OBJS = \
+    obj(lastfile) \
+    obj(cplus-decl) \
+    obj(cplus-decl2) \
+    obj(cplus-except) \
+    obj(cplus-tab) \
+    obj(cplus-typeck) \
+    obj(cplus-type2) \
+    obj(cplus-tree) \
+    obj(cplus-lex) \
+    obj(cplus-class) \
+    obj(cplus-init) \
+    obj(cplus-method) \
+    obj(cplus-cvt) \
+    obj(cplus-search) \
+    obj(cplus-ptree) \
+    obj(dbxout) \
+    obj(expr) \
+    obj(integrate) \
+    obj(print-tree) \
+    obj(stmt) \
+    obj(stor-layout) \
+    obj(symout) \
+    obj(toplev) \
+    obj(tree) \
+    obj(varasm) \
+    obj(version)
+
+GCC_OBJS = \
+    obj(caller-save) \
+    obj(combine) \
+    obj(cse) \
+    obj(emit-rtl) \
+    obj(expmed) \
+    obj(explow) \
+    obj(final) \
+    obj(flow) \
+    obj(fold-const) \
+    obj(global-alloc) \
+    obj(jump) \
+    obj(local-alloc) \
+    obj(loop) \
+    obj(obstack) \
+    obj(optabs) \
+    obj(recog) \
+    obj(regclass) \
+    obj(reload) \
+    obj(reload1) \
+    obj(rtl) \
+    obj(rtlanal) \
+    obj(sdbout) \
+    obj(stupid)
+
+INSN_OBJS = \
+    obj(insn-emit) \
+    obj(insn-peep) \
+    obj(insn-recog) \
+    obj(insn-extract) \
+    obj(insn-output)
+
+OBJS = ${CPLUS_OBJS} ${GCC_OBJS} ${INSN_OBJS}
+
+ComplexProgramTarget(cc1plus)
+
+${OBJS}: config.h
+
+config.h:
+	ln -s ${GCCDIR}/config/xm-${TARGET}.h config.h
+	ln -s ${GCCDIR}/config/tm-${TARGET}.h tm.h
+	ln -s ${GCCDIR}/config/${TARGET}.md md
+	ln -s ${GCCDIR}/config/out-${TARGET}.c aux-output.c
+	ln -s ${GCCDIR}/move-if-change
+	ln -s ${GCCDIR}/machmode.def
+	ln -s ${GCCDIR}/stab.def
+
+${GEN}/cplus-tab.c: ${SRC}/cplus-parse.y
+	bison -d ${SRC}/cplus-parse.y
+	mv cplus-parse.tab.c ${GEN}/cplus-tab.c
+	mv cplus-parse.tab.h ${GEN}/cplus-tab.h
+
+clean::
+	${RM} config.h tm.h md aux-output.c move-if-change \
+	    machmode.def stab.def
+
+make_o(lastfile)
+make_o(cplus-decl)
+make_o(cplus-decl2)
+make_o(cplus-except)
+make_gen_o(cplus-tab)
+make_o(cplus-typeck)
+make_o(cplus-type2)
+make_o(cplus-tree)
+make_o(cplus-lex)
+make_o(cplus-class)
+make_o(cplus-init)
+make_o(cplus-method)
+make_o(cplus-cvt)
+make_o(cplus-search)
+make_o(cplus-ptree)
+make_o(dbxout)
+make_o(expr)
+make_o(integrate)
+make_o(print-tree)
+make_o(stmt)
+make_o(stor-layout)
+make_o(tree)
+make_o(symout)
+make_o(toplev)
+make_o(varasm)
+make_o(version)
+
+make_gcc_o(caller-save)
+make_gcc_o(combine)
+make_gcc_o(cse)
+make_gcc_o(emit-rtl)
+make_gcc_o(expmed)
+make_gcc_o(explow)
+make_gcc_o(final)
+make_gcc_o(flow)
+make_gcc_o(fold-const)
+make_gcc_o(global-alloc)
+make_gcc_o(jump)
+make_gcc_o(local-alloc)
+make_gcc_o(loop)
+make_gcc_o(obstack)
+make_gcc_o(optabs)
+make_gcc_o(recog)
+make_gcc_o(regclass)
+make_gcc_o(reload)
+make_gcc_o(reload1)
+make_gcc_o(rtl)
+make_gcc_o(rtlanal)
+make_gcc_o(sdbout)
+make_gcc_o(stupid)
+
+#if defined(__STDC__)
+#define concat(a,b)a##b
+#else
+#define concat(a,b)a/**/b
+#endif
+
+GENOBJS = rtl.o obstack.o
+
+#define make_gen(name,suf) @@\
+insn-name.suf: stamp-name.suf ; @@\
+stamp-name.suf: md concat(gen,name) @@\
+	./concat(gen,name) md > tmp-insn-name.suf @@\
+	./move-if-change tmp-insn-name.suf insn-name.suf @@\
+	touch stamp-name.suf @@\
+@@\
+concat(gen,name): concat(gen,name).o ${GENOBJS} @@\
+	$(CC) $(LDFLAGS) -o concat(gen,name) concat(gen,name).o ${GENOBJS} @@\
+@@\
+make_gcc_o(concat(gen,name))
+
+make_gen(config,h)
+make_gen(flags,h)
+make_gen(codes,h)
+make_gen(emit,c)
+make_gen(recog,c)
+make_gen(extract,c)
+make_gen(peep,c)
+make_gen(output,c)
+
+clean::
+	${RM} stamp-* insn-* \
+	    genflags gencodes genemit genrecog genextract genpeep genoutput
+
+#endif /* if compiling in subdirectory */
