@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	6.1	83/07/29	*/
+/*	ufs_lookup.c	6.2	83/09/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -160,7 +160,7 @@ dirloop2:
 	 */
 	if (u.u_dent.d_name[0] == 0) {
 		if (flag || lockparent) {
-			u.u_error = ENOENT;
+			u.u_error = EISDIR;
 			goto bad;
 		}
 		brelse(nbp);
