@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.26	(Berkeley)	%G%
+#	@(#)Makefile	5.27	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -11,7 +11,7 @@ LIBC=	/lib/libc.a
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	adb as awk csh diff make passwd sed sh tp
+SUBDIR=	adb as awk cpio csh diff make passwd sed sh tp
 
 # Shell scripts that need only be installed and are never removed.
 #
