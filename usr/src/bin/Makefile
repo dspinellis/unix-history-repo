@@ -1,4 +1,4 @@
-#	Makefile	4.17	83/08/19
+#	Makefile	4.18	84/09/07
 #
 DESTDIR=
 CFLAGS=	-O
@@ -19,13 +19,17 @@ STD=	ar cat cc chgrp chmod cmp date dd df du echo ed expr \
 	nm od pagesize passwd pr pwd rm rmail rmdir size strip stty su sync \
 	tar tee test time wall who write
 
+# C programs that live in the current directory and need explicit make lines.
+#
+NSTD=	ps
+
 # Programs that must run setuid to root
 #
 SETUID=	chgrp df login mail passwd su
 
-# C programs that live in the current directory and need explicit make lines.
+# Programs that must run set-group-id kmem.
 #
-NSTD=	ps
+KMEM=	ps
 
 all:	${SUBDIR} ${STD} ${NSTD} cp mv
 
@@ -47,6 +51,8 @@ install:
 	for i in ${STD} ${NSTD}; do (install -s $$i ${DESTDIR}/bin/$$i); done
 	for i in ${SETUID}; do (chown root ${DESTDIR}/bin/$$i; \
 		chmod 4755 ${DESTDIR}/bin/$$i); done
+	for i in ${KMEM}; do (chgrp kmem ${DESTDIR}/bin/$$i; \
+		chmod 2755 ${DESTDIR}/bin/$$i); done
 	rm -f ${DESTDIR}/bin/[; ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
 	rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
 
