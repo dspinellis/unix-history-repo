@@ -20,7 +20,7 @@ main()
 	struct st st;
 	register i;
 
-	printf("Testprogram for stand-alone hp or up driver\n");
+	printf("Testprogram for stand-alone hp or up driver\n\n");
 askunit:
 	printf("Enter disk name [ type(adapter,unit), e.g, hp(1,3) ] > ");
 	gets(buf);
@@ -33,7 +33,8 @@ askunit:
 		goto askunit;
 	}
 	ioctl(fd,SAIODEVDATA,&st);
-
+	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
+		st->ncyl, st->ntrak, st->nsect);
 	chunk = st.nsect*SECTSIZ;
 	printf("Testing %s, chunk size is %d bytes\n",buf, chunk);
 	printf("Start ...Make sure %s is online\n",buf);
