@@ -3,6 +3,8 @@
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ *
+ *	@(#)rm.c	5.2 (Berkeley) %G%
  */
 
 int eval;
