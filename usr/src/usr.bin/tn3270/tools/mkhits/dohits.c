@@ -52,6 +52,8 @@ char *string;
 
 void
 add(first, second, value)
+char *first, *second;
+int value;
 {
     struct thing **item, *this;
 
@@ -65,8 +67,38 @@ add(first, second, value)
 }
 
 void
-scan(file, prefix)
-char *file,		/* Name of file to scan */
+scanwhite(file, prefix)
+char *file,		/* Name of file to scan for whitespace prefix */
+     *prefix;		/* prefix of what should be picked up */
+{
+    FILE *ourfile;
+    char compare[100];
+    char what[100], value[100];
+    char line[200];
+
+    sprintf(compare, " %s%%[^,\t \n]", prefix);
+    if ((ourfile = fopen(file, "r")) == NULL) {
+	perror("fopen");
+	exit(1);
+    }
+    while (!feof(ourfile)) {
+	if (fscanf(ourfile, compare,  what) == 1) {
+	    add(prefix, what, 0);
+	}
+	do {
+	    if (fgets(line, sizeof line, ourfile) == NULL) {
+		if (!feof(ourfile)) {
+		    perror("fgets");
+		}
+		break;
+	    }
+	} while (line[strlen(line)-1] != '\n');
+    }
+}
+
+void
+scandefine(file, prefix)
+char *file,		/* Name of file to scan for #define prefix */
      *prefix;		/* prefix of what should be picked up */
 {
     FILE *ourfile;
@@ -126,12 +158,12 @@ struct Hits *hits;
 {
     struct thing *this;
 
-    hit->type = illegal;
+    hit->ctlrfcn = FCN_NULL;
     if (type[0] == 0) {
 	return 0;
     }
     if (type[1] == 0) {		/* character */
-	hit->type = character;
+	hit->ctlrfcn = FCN_CHARACTER;
 	hit->code = ebc_disp[ascebc[AE_IN][type[0]]];
 	return savechr(*type);		/* The character is the name */
     } else {
@@ -140,9 +172,9 @@ struct Hits *hits;
 				&& (strcmp(type, this->name+4) == 0)) {
 		this->hits = hits;
 		if (this->name[0] == 'F') {
-		    hit->type = function;
+		    hit->ctlrfcn = FCN_NULL;	/* XXX */
 		} else {
-		    hit->type = aid;
+		    hit->ctlrfcn = FCN_AID;
 		}
 		return this->name;
 	    }
@@ -154,7 +186,8 @@ struct Hits *hits;
 
 
 void
-dohits()
+dohits(aidfile, fcnfile)
+char	*aidfile, *fcnfile;
 {
     unsigned char plain[100], shifted[100], alted[100], shiftalted[100];
     unsigned char line[200];
@@ -173,8 +206,14 @@ dohits()
      * of various FCNs.
      */
 
-    scan("../ctlr/hostctlr.h", "AID_");
-    scan("../ctlr/function.h", "FCN_");
+    if (aidfile == 0) {
+	aidfile = "../ctlr/hostctlr.h";
+    }
+    scandefine(aidfile, "AID_");
+    if (fcnfile == 0) {
+        fcnfile = "../ctlr/function.h";
+    }
+    scanwhite(fcnfile, "FCN_");
 
     while (gets(line) != NULL) {
 	if (!isdigit(line[0])) {
@@ -198,7 +237,7 @@ dohits()
 		    keynumber);
 	    break;
 	}
-	if (Hits[scancode].hits.hit[0].type != undefined) {
+	if (Hits[scancode].hits.hit[0].ctlrfcn != undefined) {
 	    fprintf(stderr,
 		"Error: duplicate scancode 0x%02x for keynumber %d\n",
 		    scancode, keynumber);
