@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.87 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.88 (Berkeley) %G%
  */
 
 /*
@@ -715,11 +715,6 @@ vclean(vp, flags)
 	register struct vnode *vp;
 	int flags;
 {
-	struct vop_inactive_args vop_inactive_a;
-	struct vop_reclaim_args vop_reclaim_a;
-	struct vop_unlock_args vop_unlock_a;
-	struct vop_close_args vop_close_a;
-	int (**origops)();
 	int active;
 
 	/*
@@ -731,6 +726,14 @@ vclean(vp, flags)
 	if (active = vp->v_usecount)
 		VREF(vp);
 	/*
+	 * Even if the count is zero, the VOP_INACTIVE routine may still
+	 * have the object locked while it cleans it out. The VOP_LOCK
+	 * ensures that the VOP_INACTIVE routine is done with its work.
+	 * For active vnodes, it ensures that no other activity can
+	 * occur while the underlying object is being cleaned out.
+	 */
+	VOP_LOCK(vp);
+	/*
 	 * Prevent the vnode from being recycled or
 	 * brought into use while we clean it out.
 	 */
@@ -738,63 +741,37 @@ vclean(vp, flags)
 		panic("vclean: deadlock");
 	vp->v_flag |= VXLOCK;
 	/*
-	 * Even if the count is zero, the VOP_INACTIVE routine may still
-	 * have the object locked while it cleans it out. The VOP_LOCK
-	 * ensures that the VOP_INACTIVE routine is done with its work.
-	 * For active vnodes, it ensures that no other activity can
-	 * occur while the buffer list is being cleaned out.
+	 * Clean out any buffers associated with the vnode.
 	 */
-	VOP_LOCK(vp);
 	if (flags & DOCLOSE)
 		vinvalbuf(vp, 1, NOCRED, NULL);
 	/*
-	 * Prevent any further operations on the vnode from
-	 * being passed through to the old file system.
+	 * Any other processes trying to obtain this lock must first
+	 * wait for VXLOCK to clear, then call the new lock operation.
 	 */
-	origops = vp->v_op;
-	vp->v_op = dead_vnodeop_p;
-	vp->v_tag = VT_NON;
+	VOP_UNLOCK(vp);
 	/*
-	 * If purging an active vnode, it must be unlocked, closed,
-	 * and deactivated before being reclaimed.
+	 * If purging an active vnode, it must be closed and
+	 * deactivated before being reclaimed.
 	 */
-	vop_unlock_a.a_desc = VDESC(vop_unlock);
-	vop_unlock_a.a_vp = vp;
-	VOCALL(origops,VOFFSET(vop_unlock),&vop_unlock_a);
 	if (active) {
-		/*
-		 * Note: these next two calls imply
-		 * that vop_close and vop_inactive implementations
-		 * cannot count on the ops vector being correctly
-		 * set.
-		 */
-		if (flags & DOCLOSE) {
-			vop_close_a.a_desc = VDESC(vop_close);
-			vop_close_a.a_vp = vp;
-			vop_close_a.a_fflag = IO_NDELAY;
-			vop_close_a.a_p = NULL;
-			VOCALL(origops,VOFFSET(vop_close),&vop_close_a);
-		};
-		vop_inactive_a.a_desc = VDESC(vop_inactive);
-		vop_inactive_a.a_vp = vp;
-		VOCALL(origops,VOFFSET(vop_inactive),&vop_inactive_a);
+		if (flags & DOCLOSE)
+			VOP_CLOSE(vp, IO_NDELAY, NOCRED, NULL);
+		VOP_INACTIVE(vp);
 	}
 	/*
 	 * Reclaim the vnode.
 	 */
-	/*
-	 * Emulate VOP_RECLAIM.
-	 */
-	vop_reclaim_a.a_desc = VDESC(vop_reclaim);
-	vop_reclaim_a.a_vp = vp;
-	if (VOCALL(origops,VOFFSET(vop_reclaim),&vop_reclaim_a))
+	if (VOP_RECLAIM(vp))
 		panic("vclean: cannot reclaim");
 	if (active)
 		vrele(vp);
 
 	/*
-	 * Done with purge, notify sleepers in vget of the grim news.
+	 * Done with purge, notify sleepers of the grim news.
 	 */
+	vp->v_op = dead_vnodeop_p;
+	vp->v_tag = VT_NON;
 	vp->v_flag &= ~VXLOCK;
 	if (vp->v_flag & VXWANT) {
 		vp->v_flag &= ~VXWANT;
