@@ -1,20 +1,19 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7recover.c	7.1	%G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.2	%G%";
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
 #undef	BUFSIZ		/* mjm: BUFSIZ different */
 #undef	EOF		/* mjm: EOF and NULL effectively the same */
 #undef	NULL
+
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include "local/uparm.h"
+#include "sys/dir.h"
 
-/* #undef	BUFSIZ		mjm: move to before ex.h */
-/* #undef	EOF		mjm: move to before ex.h */
-/* #undef	NULL		mjm: move to before ex.h */
+char xstr[1];	/* make loader happy */
 
-/* #include <stdio.h>		mjm: move to before ex.h */
-#include <sys/dir.h>
+/*
  *
  * This program searches through the specified directory and then
  * the directory usrpath(preserve) looking for an instance of the specified

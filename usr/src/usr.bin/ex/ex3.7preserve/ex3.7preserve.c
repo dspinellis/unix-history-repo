@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7preserve.c	7.1	%G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.2	%G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -8,19 +8,20 @@ static char *sccsid = "@(#)ex3.7preserve.c	7.1	%G%";
 #include <pwd.h>
 #include "local/uparm.h"
 				/* mjm: "/tmp" --> TMP */
-#define TMP	"/3b/tmp"
+#define TMP	"/tmp"
 
 #ifdef VMUNIX
 #define	HBLKS	2
 #endif
+
+char xstr[1];			/* make loader happy */
 
 /*
  * Expreserve - preserve a file in usrpath(preserve)
  * Bill Joy UCB November 13, 1977
  *
  * This routine is very naive - it doesn't remove anything from
- * usrpath(preserve)... this may mean that we will be unable to preserve
- * stuff there... the danger in doing anything with usrpath(preserve)
+ * usrpath(preserve)... this may mean that we  * stuff there... the danger in doing anything with usrpath(preserve)
  * is that the clock may be screwed up and we may get confused.
  *
  * We are called in two ways - first from the editor with no argumentss
@@ -92,16 +93,16 @@ main(argc)
 	 * ... else preserve all the stuff in /tmp, removing
 	 * it as we go.
 	 */
-	if (chdir("/tmp") < 0) {
-		perror("/tmp");
 	if (chdir(TMP) < 0) {
 		perror(TMP);
+		exit(1);
+	}
 
 	tf = fopen(".", "r");
 	if (tf == NULL) {
-		perror("/tmp");
-		exit(1);
 		perror(TMP);
+		exit(1);
+	}
 	while (fread((char *) &dirent, sizeof dirent, 1, tf) == 1) {
 		if (dirent.d_ino == 0)
 			continue;
