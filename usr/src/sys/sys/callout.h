@@ -1,4 +1,4 @@
-/*	callout.h	4.2	81/02/19	*/
+/*	callout.h	4.3	81/02/27	*/
 
 /*
  * The callout structure is for
@@ -16,4 +16,7 @@ struct	callo
 	caddr_t	c_arg;		/* argument to routine */
 	int	(*c_func)();	/* routine */
 };
-struct	callo	callout[NCALL];
+#ifdef KERNEL
+extern	struct callo *callout;
+extern	int ncallo;
+#endif
