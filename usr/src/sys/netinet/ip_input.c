@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	7.6.1.2 (Berkeley) %G%
+ *	@(#)ip_input.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -842,6 +842,10 @@ ip_forward(ip, ifp)
 		return;
 #endif
 	}
+	if (in_canforward(ip->ip_dst) == 0) {
+		m_freem(dtom(ip));
+		return;
+	}
 	if (ip->ip_ttl <= IPTTLDEC) {
 		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
 		goto sendicmp;
@@ -876,7 +880,7 @@ ip_forward(ip, ifp)
 	 */
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
 	if (ipforward_rt.ro_rt && ipforward_rt.ro_rt->rt_ifp == ifp &&
-	    (ipforward_rt.ro_rt->rt_flags & RTF_DYNAMIC) == 0 &&
+	    (ipforward_rt.ro_rt->rt_flags & (RTF_DYNAMIC|RTF_MODIFIED)) == 0 &&
 	    satosin(&ipforward_rt.ro_rt->rt_dst)->sin_addr.s_addr != 0 &&
 	    ipsendredirects && ip->ip_hl == (sizeof(struct ip) >> 2)) {
 		struct in_ifaddr *ia;
@@ -936,7 +940,10 @@ ip_forward(ip, ifp)
 
 	case ENETUNREACH:
 	case ENETDOWN:
-		code = ICMP_UNREACH_NET;
+		if (in_localaddr(ip->ip_dst))
+			code = ICMP_UNREACH_HOST;
+		else
+			code = ICMP_UNREACH_NET;
 		break;
 
 	case EMSGSIZE:
