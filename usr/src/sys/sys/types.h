@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.27 (Berkeley) %G%
+ *	@(#)types.h	7.28 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -46,7 +46,6 @@ typedef	unsigned long	uid_t;		/* user id */
  * version of lseek.
  */
 #ifndef KERNEL
-#define	 lseek __lseek
 __BEGIN_DECLS
 off_t	 lseek __P((int, off_t, int));
 __END_DECLS
