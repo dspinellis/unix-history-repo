@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asjxxx.c 4.8 %G%";
+static char sccsid[] = "@(#)asjxxx.c 4.9 %G%";
 #endif not lint
 
 #include	<stdio.h>
@@ -335,7 +335,7 @@ jxxxfix()
 			if (displ >= 0) {
 				SEGITERATE(segno, cojumpfrom + 1,0,cointdest,
 						intdest, ubintdest, ++){
-					if (intdest->s_value >= dest->s_value) 
+					if (intdest->s_value > dest->s_value) 
 						break; /* beyond destination */
 					if (intdest->s_tag <= JXQUESTIONABLE)
 						continue;	/*frozen solid*/
