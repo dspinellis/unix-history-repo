@@ -1,35 +1,32 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)false.1	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH FALSE 1 ""
-.UC 5
-.SH NAME
-false, true \- provide truth values
-.SH SYNOPSIS
-.B true
-.PP
-.B false
-.SH DESCRIPTION
-.I True
-and
-.I false
-are usually used in a Bourne shell script.
-They test for the appropriate status "true" or "false" before running 
+.\"     @(#)false.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FALSE 1
+.Os BSD 4.2
+.Sh NAME
+.Nm false
+.Nd return false value
+.Sh SYNOPSIS
+.Nm false
+.Sh DESCRIPTION
+.Nm false
+is usually used in a Bourne shell script.
+It tests for the appropriate status "false" before running 
 (or failing to run) a list of commands.  
-.SH EXAMPLE
-.IP
-.nf
-     while false
-     do
-          command list 
-     done
-.SH "SEE ALSO"
-csh(1),
-sh(1),
-true(1)
-.SH DIAGNOSTICS
-.I False
-has exit status nonzero.
+.Pp
+The
+.Nm false
+utility always exits with a value other than zero.
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr sh 1 ,
+.Xr true 1
+.Sh STANDARDS
+The
+.Nm false
+function is expected to be POSIX 1003.2 compatible.

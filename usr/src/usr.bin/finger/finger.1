@@ -1,126 +1,136 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)finger.1	6.9 (Berkeley) %G%
+.\"     @(#)finger.1	6.10 (Berkeley) %G%
 .\"
-.TH FINGER 1 ""
-.UC 4
-.SH NAME
-finger \- user information lookup program
-.SH SYNOPSIS
-.B finger
-[
-.B -lmsp
-] [user [@host] ...]
-.SH DESCRIPTION
+.Dd 
+.Dt FINGER 1
+.Os BSD 4
+.Sh NAME
+.Nm finger
+.Nd user information lookup program
+.Sh SYNOPSIS
+.Nm finger
+.Op Fl lmsp
+.Ob
+.Ar user
+.Op \&@host
+\&...
+.Oe
+.Sh DESCRIPTION
 The
-.I finger
+.Nm finger
 command has two basic output formats providing essentially the same
 information.
-.PP
-The
-.I -s
-option of
-.I finger
+.Pp
+Options are:
+.Tp Fl s
+.Nm Finger
 displays the user's login name, real name, terminal name and write
 status (as a ``*'' after the terminal name if write permission is
 denied), idle time, login time, office location and office phone
 number.
-.PP
+.Pp
 Idle time is in minutes if it is a single integer, hours and minutes
 if a ``:'' is present, or days if a ``d'' is present.
 Login time is displayed as month, day, hours and minutes, unless
 more than six months ago, in which case the year is displayed rather
 than the hours and minutes.
-.PP
+.Pp
 Unknown devices as well as nonexistent idle and login times are
 displayed as single asterisks.
-.PP
-The
-.I -l
-option produces a multi-line format displaying all of the information
+.Pp
+.Tp Fl l
+Produces a multi-line format displaying all of the information
 described for the
-.I -s
+.Fl s
 option as well as the user's home directory, home phone number, login
 shell, and the contents of the files
-.I ``.plan''
+.Dq Pa .plan
 and
-.I ``.project''
+.Dq Pa .project
 from the user's home directory.
-.PP
+.Pp
 If idle time is at least a minute and less than a day, it is
 presented in the form ``hh:mm''.
-Idle times greater than a day are presented as ``d day[s] hh:mm''.
-.PP
+Idle times greater than a day are presented as ``d day[s]hh:mm''.
+.Pp
 Phone numbers specified as eleven digits are printed as ``+N-NNN-NNN-NNNN''.
 Numbers specified as ten or seven digits are printed as the appropriate
 subset of that string.
 Numbers specified as five digits are printed as ``xN-NNNN''.
-.PP
+.Pp
 If write permission is denied to the device, the phrase ``(messages off)''
 is appended to the line containing the device name.
 One entry per user is displayed with the
-.IR -l
+.Fl l
 option; if a user is logged on multiple times, terminal information
 is repeated once per login.
-.PP
-The
-.I -p
-option prevents
+.Pp
+.Tp Fl p
+Prevents
 the
-.I -l
+.Fl l
 option of
-.I finger
-from displaying the contents of the ``.plan'' and ``.project''
+.Nm finger
+from displaying the contents of the
+.Dq Pa .plan
+and
+.Dq Pa .project
 files.
-.PP
+.Pp
 Note that some fields may be missing, in either format, if information
 is not available for them.
-.PP
-If no operands are specified,
-.I finger
-will print an entry for each user currently logged into the system.
-If no options are specified,
-.I finger
-defaults to the
-.I -l
-style output if operands are provided, otherwise to the
-.I -s
-style.
-.PP
-.I User
+.Tp Fl m
+Prevent matching of
+.Ar user
+names.
+.Ar User
 is usually a login name; however, matching will also be done on the
 users' real names, unless the
-.I -m
+.Fl m
 option is supplied.
 All name matching performed by
-.I finger
+.Nm finger
 is case insensitive.
-.PP
-.I Finger
+.Tp
+.Pp
+If no options are specified,
+.Nm finger
+defaults to the
+.Fl l
+style output if operands are provided, otherwise to the
+.Fl s
+style.
+.Pp
+If no arguments are specified,
+.Nm finger
+will print an entry for each user currently logged into the system.
+.Pp
+.Nm Finger
 may be used to look up users on a remote machine.
 The format is to specify a
-.I user
-as ``user@host'', or ``@host'', where the default output
+.Ar user
+as
+.Dq Li user@host ,
+or
+.Dq Li @host ,
+where the default output
 format for the former is the
-.I -l
+.Fl l
 style, and the default output format for the latter is the
-.IR -s
+.Fl s
 style.
 The
-.I -l
+.Fl l
 option is the only option that may be passed to a remote machine.
-.SH "SEE ALSO"
-chpass(1), w(1), who(1), getpwent(3)
+.Sh SEE ALSO
+.Xr chpass 1 ,
+.Xr w 1 ,
+.Xr who 1 ,
+.Xr getpwent 3
+.Sh HISTORY
+.Nm Finger
+appeared in 3 BSD.

@@ -1,49 +1,57 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)leave.1	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH LEAVE 1 ""
-.UC
-.SH NAME
-leave \- remind you when you have to leave
-.SH SYNOPSIS
-.B leave
-[ [+]hhmm ]
-.SH DESCRIPTION
-.I Leave
+.\"     @(#)leave.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LEAVE 1
+.Sh NAME
+.Nm leave
+.Nd remind you when you have to leave
+.Sh SYNOPSIS
+.Nm leave
+.Op Op \&+ Ar hhmm
+.Sh DESCRIPTION
+.Nm Leave
 waits until the specified time, then reminds you that you
 have to leave.
 You are reminded 5 minutes and 1 minute before the actual
 time, at the time, and every minute thereafter.
 When you log off,
-.I leave
+.Nm leave
 exits just before it would have
 printed the next message.
-.PP
+.Pp
 The time of day is in the form hhmm where hh is a time in
 hours (on a 12 or 24 hour clock).
 All times are converted to a 12 hour clock, and assumed to
 be in the next 12 hours.
-.PP
+.Tw Ds
+.Tp Ic \&+
 If the time is preceeded by `+', the alarm will go off in hours and minutes
 from the current time.
-.PP
+.Tp
+.Pp
 If no argument is given,
-.I leave
+.Nm leave
 prompts with "When do you
 have to leave?". A reply of newline causes
-.I leave
+.Nm leave
 to exit,
 otherwise the reply is assumed to be a time.
 This form is suitable for inclusion in a
-.I .login
+.Pa .login
 or
-.I .profile.
-.PP
+.Pa .profile.
+.Pp
 Leave ignores interrupts, quits, and terminates.
-To get rid of it you should either log off or use ``kill \-9''
+To get rid of it you should either log off or use
+.Dq Li kill \-9
 giving its process id.
-.SH SEE ALSO
-calendar(1)
+.Sh SEE ALSO
+.Xr calendar 1
+.Sh HISTORY
+.Nm Leave
+appeared in 3 BSD.

@@ -1,107 +1,184 @@
-.\"	@(#)join.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH JOIN 1 ""
-.AT 3
-.SH NAME
-join \- relational database operator
-.SH SYNOPSIS
-.B join
-[
-options
-]
-file1 file2
-.SH DESCRIPTION
-.I Join
-forms, on the standard output,
-a join
-of the two relations specified by the lines of
-.I file1
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)join.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt JOIN 1
+.Os BSD 4.4
+.Sh NAME
+.Nm join
+.Nd relational database operator
+.Sh SYNOPSIS
+.Nm join
+.Op Fl a Ar file_number
+.Op Fl e Ar string
+.Op Fl j Ar file_number field
+.if n .br
+.Op Fl o Ar list
+.Op Fl t Ar char
+.Op Fl v Ar file_number
+.Ob
+.Fl \&1
+.Ar field
+.Oe
+.Ob
+.Fl \&2
+.Ar field
+.Oe
+.Ar file1
+.if n .br
+.Ar file2
+.Sh DESCRIPTION
+The join utility performs an ``equality join'' on the files
+.Ar file1
 and
-.IR file2 .
-If
-.I file1
-is `\-', the standard input is used.
-.PP
-.I File1
-and 
-.I file2
-must be sorted in increasing ASCII collating
-sequence on the fields
-on which they are to be joined,
-normally the first in each line.
-.PP
-There is one line in the output 
-for each pair of lines in 
-.I file1 
-and 
-.I file2
-that have identical join fields.
-The output line normally consists of the common field,
-then the rest of the line from 
-.IR file1 ,
-then the rest of the line from
-.IR file2 .
-.PP
-Fields are normally separated by blank, tab or newline.
-In this case, multiple separators count as one, and
-leading separators are discarded.
-.PP
-These options are recognized:
-.TP
-.BI \-a n
-In addition to the normal output,
-produce a line for each unpairable line in file
-.IR n ,
-where
-.I n
-is 1 or 2.
-.TP
-.BI \-e \ s
-Replace empty output fields by string
-.IR s .
-.TP
-.BI \-j n\ m
-Join on the
-.IR m th
-field of file
-.IR n .
-If
-.I n
-is missing, use the
-.IR m th
-field in each file.
-.TP
-.BI \-o \ list
+.Ar file2 .
+The joined files are written to the standard
+output.
+.Pp
+The ``join field'' is a field in each file on which the
+files are compared.
+There is one line in the output for
+each pair of lines in
+.Ar file1
+and
+.Ar file2
+which have identical
+join fields.
+The output line by default consists of the
+join field, then the remaining fields from
+.Ar file1 ,
+then the
+remaining fields from
+.Ar file2 .
+This format can be changed by
+using the
+.Fl o
+option (see below).
+.Pp
+The files file1 and file2 should be ordered in the collating
+sequence of
+.Li sort -b
+on the fields on which they are to be
+joined, by default the first in each line; Otherwise, all
+join field matches need not be reported.
+.Pp
+The default input field separators are <blank>s.
+In this
+case, multiple separators count as one field separator, and
+leading separators are ignored.
+The default output field
+separator is a <space>.
+.Pp
+The following options are available:
+.Tw Fl
+.Tc Fl a
+.Ws
+.Ar file_number
+.Cx
+In addition to the default output, produce a line
+for each unpairable line in file file_number, where
+file_number is 1 or 2.
+.Tc Fl e
+.Ws
+.Ar string
+.Cx
+Replace empty output fields by string string.
+.Tc Fl j
+.Ws
+.Ar file_number field
+.Cx
+Join on the fieldth field of file
+file_number.
+If file_number is missing, (i.e., the
+first digit of the option argument is neither 1 nor
+2), use the fieldth field in each file.
+Fields are
+decimal integers starting with 1.
+.Tc Fl o
+.Ws
+.Ar list
+.Cx
 Each output line comprises the fields specified in
-.IR list ,
-each element of which has the form
-.IR n . m ,
-where
-.I n
-is a file number and
-.I m
-is a field number.
-.PP
-.TP
-.BI \-t c
-Use character
-.I c
-as a separator (tab character).
-Every appearance of
-.I c
-in a line is significant.
-.SH "SEE ALSO"
-sort(1), comm(1), awk(1)
-.SH BUGS
-With default field separation,
-the collating sequence is that of
-.IR sort\ \-b ;
-with
-.BR \-t ,
-the sequence is that of a plain sort.
-.PP
+list, each element of which has the form
+file_number.field, where file_number is a file
+number and field is a decimal integer field number.
+The elements of list are either comma or <space> separated.
+The list is written only for lines with matching join fields,
+and is not output unless specifically requested.
+.Tc Fl t
+.Ws
+.Ar char
+.Cx
+Use character char as a separator, for both input
+and output.
+Every appearance of char in a line is
+significant.
+When this option is specified, the
+collating sequence should be the same as sort
+without the -b option.
+.Tc Fl v
+.Ws
+.Ar file_number
+.Cx
+Instead of the default output, produce a line only
+for each unpairable line in file_number, where
+file_number is 1 or 2.
+.Tc Fl 1
+.Ws
+.Ar field
+.Cx
+Join on the fieldth field of file 1.
+Fields are
+decimal integers starting with 1.
+.Tc Fl 2
+.Ws
+.Ar field
+.Cx
+Join on the fieldth field of file 2.
+Fields are
+decimal integers starting with 1.
+.Tp
+.Pp
+If both -a 1 and -a 2 are specified, both sets of information
+are output, -a 2 always first, regardless of the specified
+order.
+.Pp
+The following arguments are required:
+.Tw Fl
+.Tp Ar file1
+.Tp Ar file2
+A pathname of a file to be joined.
+If either of
+the file1 or file2 arguments is
+.Fl
+the standard
+input is used in its place.
+.Pp
+The
+.Nm join
+utility exits 0 on success, and >0 if an error occurs.
+.Sh STANDARDS
+The
+.Nm join
+function is expected to be POSIX 1003.2 compatible.
+.Sh SEE ALSO
+.Xr awk 1
+.Xr comm 1 ,
+.Xr look 1
+.Xr sort 1 ,
+.Xr uniq 1 ,
+.Sh BUGS
 The conventions of
-.I join, sort, comm, uniq, look
+.Nm
+.Xr join 1 ,
+.Xr comm 1 ,
+.Xr sort 1 ,
+.Xr uniq 1 ,
+.Xr look 1
 and
-.IR awk (1)
+.Xr awk  1
 are wildly incongruous.
