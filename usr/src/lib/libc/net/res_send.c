@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.17 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)res_send.c	6.16 (Berkeley) %G%";
 extern int errno;
 
 static int s = -1;	/* socket used for communications */
+static struct sockaddr no_addr;
   
 
 #ifndef FD_SET
@@ -167,10 +168,11 @@ res_send(buf, buflen, answer, anslen)
 			if (s < 0)
 				s = socket(AF_INET, SOCK_DGRAM, 0);
 #if	BSD >= 43
-			if (_res.nscount == 1) {
+			if (_res.nscount == 1 || retry == _res.retry) {
 				/*
-				 * Connect/Send is detrimental if you
-				 * are going to poll more than one server
+				 * Don't use connect if we might
+				 * still receive a response
+				 * from another server.
 				 */
 				if (connect(s, &_res.nsaddr_list[ns],
 				    sizeof(struct sockaddr)) < 0 ||
@@ -220,6 +222,13 @@ wait:
 				if (_res.options & RES_DEBUG)
 					printf("timeout\n");
 #endif DEBUG
+				/*
+				 * Disconnect if we want to listen
+				 * for responses from more than one server.
+				 */
+				if (_res.nscount > 1 && retry == _res.retry)
+					(void) connect(s, &no_addr,
+					    sizeof(no_addr));
 				gotsomewhere = 1;
 				continue;
 			}
