@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)data.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)data.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	data.c		Larn is copyrighted 1986 by Noah Morgan. */
