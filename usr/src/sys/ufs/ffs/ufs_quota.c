@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	7.12 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.13 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/kernel.h>
@@ -343,9 +343,8 @@ quotaon(p, mp, type, fname)
 	struct nameidata nd;
 
 	vpp = &ump->um_quotas[type];
-	nd.ni_segflg = UIO_USERSPACE;
-	nd.ni_dirp = fname;
-	if (error = vn_open(&nd, p, FREAD|FWRITE, 0))
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, fname, p);
+	if (error = vn_open(&nd, FREAD|FWRITE, 0))
 		return (error);
 	vp = nd.ni_vp;
 	VOP_UNLOCK(vp);
