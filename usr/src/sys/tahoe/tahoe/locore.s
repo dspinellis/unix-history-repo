@@ -1,4 +1,4 @@
-/*	locore.s	1.22	88/01/27	*/
+/*	locore.s	1.23	88/02/08	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -196,20 +196,15 @@ _X/**/name
 	pushab 1f; callf $(n+2)*4,_printf; MSG(msg)
 #define	MSG(msg) .data; 1: .asciz msg; .text
 /*
- * r0-r2 are saved across all faults and interrupts.
+ * r0-r5 are saved across all faults and interrupts.
  * Routines below and those hidden in vbglue.s (device
  * interrupts) invoke the PUSHR/POPR macros to execute
  * this.  Also, certain stack frame offset calculations
- * (such as in hardclock) understand this, using the
- * REGSPC definition (and FPSPC defined below).
- * Finally, many routines, including those expanded
- * inline depend on this!  Should probably save all
- * live C compiler temp registers to eliminate potentially
- * grievous problems caused by incorrect register save masks.
+ * use this, using the REGSPC definition (and FPSPC defined below).
  */
-#define	REGSPC	(3*4)
-#define	PUSHR	pushl r0; pushl r1; pushl r2;
-#define	POPR	movl (sp)+,r2; movl (sp)+,r1; movl (sp)+,r0;
+#define	REGSPC	6*4
+#define	PUSHR	movab -REGSPC(sp),sp; storer $0x3f,(sp)
+#define	POPR	loadr $0x3f,(sp); movab REGSPC(sp),sp
 
 /*
  * Floating point state is saved across faults and
@@ -297,7 +292,7 @@ SCBVEC(buserr):
 	jbr	5f
 4:
 	PUSHR
-	pushab	7*4(sp)			# address of bus error parameters
+	pushab	4*4+REGSPC(sp)		# address of bus error parameters
 	callf	$8,_buserror
 	POPR
 5:
