@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.29 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -71,6 +71,13 @@ _doprnt(fmt0, argp, fp)
 	char *digs;		/* digits for [diouxX] conversion */
 	char buf[BUF];		/* space for %c, %[diouxX], %[eEfgG] */
 	char *_cvt();		/* handles [eEfgG] formats */
+
+	if (fp->_flag & _IORW) {
+		fp->_flag |= _IOWRT;
+		fp->_flag &= ~(_IOEOF|_IOREAD);
+	}
+	if ((fp->_flag & _IOWRT) == 0)
+		return (EOF);
 
 	fmt = fmt0;
 	digs = "0123456789abcdef";
