@@ -1,4 +1,4 @@
-/*	kern_descrip.c	6.2	83/09/25	*/
+/*	kern_descrip.c	6.3	83/11/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -243,10 +243,10 @@ close()
 	pf = (u_char *)&u.u_pofile[uap->i];
 	if (*pf & UF_MAPPED)
 		munmapfd(uap->i);
-	closef(fp);
-	/* WHAT IF u.u_error ? */
 	u.u_ofile[uap->i] = NULL;
 	*pf = 0;
+	closef(fp);
+	/* WHAT IF u.u_error ? */
 }
 
 fstat()
