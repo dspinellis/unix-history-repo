@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)netstat.1	8.5 (Berkeley) %G%
+.\"	@(#)netstat.1	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NETSTAT 1
@@ -138,6 +138,9 @@ for
 .Ar ns ,
 for
 .Dv AF_NS  ,
+.Ar iso ,
+for
+.Dv AF_ISO ,
 and
 .Ar unix  ,
 for
@@ -178,10 +181,31 @@ and the maximum transmission unit (``mtu'') are also displayed.
 The routing table display indicates the available routes and
 their status.  Each route consists of a destination host or network
 and a gateway to use in forwarding packets.  The flags field shows
-the state of the route (``U'' if ``up''), whether the route
-is to a gateway (``G''), whether the route was created dynamically
-by a redirect (``D''), and whether the route has been modified
-by a redirect (``M'').  Direct routes are created for each
+a collection of information about the route stored as
+binary choices.  The individual flags are discussed in more
+detail in the
+.Xr route 8
+and
+.Xr route 4
+manual pages.
+The mapping between letters and flags is:
+.Bd -literal
+U   RTF_UP        Route useable 
+G   RTF_GATEWAY   Destination requires forwarding by intermediary
+H   RTF_HOST      Host entry (net otherwise) 
+R   RTF_REJECT    Host or net unreachable 
+D   RTF_DYNAMIC   Created dynamically (by redirect) 
+M   RTF_MODIFIED  Modified dynamically (by redirect) 
+C   RTF_CLONING   Generate new routes on use 
+X   RTF_XRESOLVE  External daemon translates proto to link address
+L   RTF_LLINFO    Valid protocol to link address translation.
+S   RTF_STATIC    Manually added 
+B   RTF_BLACKHOLE Just discard pkts (during updates) 
+1   RTF_PROTO2    Protocol specific routing flag #1 
+2   RTF_PROTO1    Protocol specific routing flag #2 
+.Ed
+.Pp
+Direct routes are created for each
 interface attached to the local host;
 the gateway field for such entries shows the address of the outgoing interface.
 The refcnt field gives the
