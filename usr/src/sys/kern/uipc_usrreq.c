@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_usrreq.c	6.17 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	6.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,7 +29,7 @@
  *	need a proper out-of-band
  */
 struct	sockaddr sun_noname = { AF_UNIX };
-ino_t	unp_ino;				/* fake inode numbers */
+ino_t	unp_ino;			/* prototype for fake inode numbers */
 
 /*ARGSUSED*/
 uipc_usrreq(so, req, m, nam, rights)
@@ -88,9 +88,14 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_ACCEPT:
-		nam->m_len = unp->unp_remaddr->m_len;
-		bcopy(mtod(unp->unp_remaddr, caddr_t),
-		    mtod(nam, caddr_t), (unsigned)nam->m_len);
+		if (unp->unp_conn->unp_addr) {
+			nam->m_len = unp->unp_conn->unp_addr->m_len;
+			bcopy(mtod(unp->unp_conn->unp_addr, caddr_t),
+			    mtod(nam, caddr_t), (unsigned)nam->m_len);
+		} else {
+			nam->m_len = sizeof(sun_noname);
+			*(mtod(nam, struct sockaddr *)) = sun_noname;
+		}
 		break;
 
 	case PRU_SHUTDOWN:
@@ -112,13 +117,13 @@ uipc_usrreq(so, req, m, nam, rights)
 				break;
 			so2 = unp->unp_conn->unp_socket;
 			/*
-			 * Transfer resources back to send port
+			 * Adjust backpressure on sender
 			 * and wakeup any waiting to write.
 			 */
-			snd->sb_mbmax += rcv->sb_mbmax - rcv->sb_mbcnt;
-			rcv->sb_mbmax = rcv->sb_mbcnt;
-			snd->sb_hiwat += rcv->sb_hiwat - rcv->sb_cc;
-			rcv->sb_hiwat = rcv->sb_cc;
+			snd->sb_mbmax += unp->unp_mbcnt - rcv->sb_mbcnt;
+			unp->unp_mbcnt = rcv->sb_mbcnt;
+			snd->sb_hiwat += unp->unp_cc - rcv->sb_cc;
+			unp->unp_cc = rcv->sb_cc;
 			sowwakeup(so2);
 #undef snd
 #undef rcv
@@ -130,9 +135,16 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_SEND:
+		if (rights) {
+			error = unp_internalize(rights);
+			if (error)
+				break;
+		}
 		switch (so->so_type) {
 
-		case SOCK_DGRAM:
+		case SOCK_DGRAM: {
+			struct sockaddr *from;
+
 			if (nam) {
 				if (unp->unp_conn) {
 					error = EISCONN;
@@ -148,36 +160,24 @@ uipc_usrreq(so, req, m, nam, rights)
 				}
 			}
 			so2 = unp->unp_conn->unp_socket;
-			/* BEGIN XXX */
-			if (rights) {
-				error = unp_internalize(rights);
-				if (error)
-					break;
-			}
-			if (sbspace(&so2->so_rcv) > 0) {
-				/*
-				 * There's no record of source socket's
-				 * name, so send null name for the moment.
-				 */
-				if (sbappendaddr(&so2->so_rcv,
-				    &sun_noname, m, rights)) {
-					sorwakeup(so2);
-					m = 0;
-				} else
-					error = ENOBUFS;
-			}
-			/* END XXX */
+			if (unp->unp_addr)
+				from = mtod(unp->unp_addr, struct sockaddr *);
+			else
+				from = &sun_noname;
+			if (sbspace(&so2->so_rcv) > 0 &&
+			    sbappendaddr(&so2->so_rcv, from, m, rights)) {
+				sorwakeup(so2);
+				m = 0;
+			} else
+				error = ENOBUFS;
 			if (nam)
 				unp_disconnect(unp);
 			break;
+		}
 
 		case SOCK_STREAM:
 #define	rcv (&so2->so_rcv)
 #define	snd (&so->so_snd)
-			if (rights && rights->m_len) {
-				error = EOPNOTSUPP;
-				break;
-			}
 			if (so->so_state & SS_CANTSENDMORE) {
 				error = EPIPE;
 				break;
@@ -186,15 +186,19 @@ uipc_usrreq(so, req, m, nam, rights)
 				panic("uipc 3");
 			so2 = unp->unp_conn->unp_socket;
 			/*
-			 * Send to paired receive port, and then
-			 * give it enough resources to hold what it already has.
+			 * Send to paired receive port, and then reduce
+			 * send buffer hiwater marks to maintain backpressure.
 			 * Wake up readers.
 			 */
-			sbappend(rcv, m);
-			snd->sb_mbmax -= rcv->sb_mbcnt - rcv->sb_mbmax;
-			rcv->sb_mbmax = rcv->sb_mbcnt;
-			snd->sb_hiwat -= rcv->sb_cc - rcv->sb_hiwat;
-			rcv->sb_hiwat = rcv->sb_cc;
+			if (rights)
+				sbappendrights(rcv, m, rights);
+			else
+				sbappend(rcv, m);
+			snd->sb_mbmax -=
+			    rcv->sb_mbcnt - unp->unp_conn->unp_mbcnt;
+			unp->unp_conn->unp_mbcnt = rcv->sb_mbcnt;
+			snd->sb_hiwat -= rcv->sb_cc - unp->unp_conn->unp_cc;
+			unp->unp_conn->unp_cc = rcv->sb_cc;
 			sorwakeup(so2);
 			m = 0;
 #undef snd
@@ -217,7 +221,9 @@ uipc_usrreq(so, req, m, nam, rights)
 			((struct stat *) m)->st_blksize += so2->so_rcv.sb_cc;
 		}
 		((struct stat *) m)->st_dev = NODEV;
-		((struct stat *) m)->st_ino = unp_ino++;
+		if (unp->unp_ino == 0)
+			unp->unp_ino = unp_ino++;
+		((struct stat *) m)->st_ino = unp->unp_ino;
 		return (0);
 
 	case PRU_RCVOOB:
@@ -246,17 +252,20 @@ release:
 }
 
 /*
- * We assign all buffering for stream sockets to the source,
- * as that is where the flow control is implemented.
+ * Both send and receive buffers are allocated PIPSIZ bytes of buffering
+ * for stream sockets, although the total for sender and receiver is
+ * actually only PIPSIZ.
  * Datagram sockets really use the sendspace as the maximum datagram size,
  * and don't really want to reserve the sendspace.  Their recvspace should
  * be large enough for at least one max-size datagram plus address.
  */
 #define	PIPSIZ	4096
 int	unpst_sendspace = PIPSIZ;
-int	unpst_recvspace = 0;
+int	unpst_recvspace = PIPSIZ;
 int	unpdg_sendspace = 2*1024;	/* really max datagram size */
 int	unpdg_recvspace = 4*1024;
+
+int	unp_rights;			/* file descriptors in flight */
 
 unp_attach(so)
 	struct socket *so;
@@ -301,8 +310,10 @@ unp_detach(unp)
 		unp_drop(unp->unp_refs, ECONNRESET);
 	soisdisconnected(unp->unp_socket);
 	unp->unp_socket->so_pcb = 0;
-	m_freem(unp->unp_remaddr);
+	m_freem(unp->unp_addr);
 	(void) m_free(dtom(unp));
+	if (unp_rights)
+		unp_gc();
 }
 
 unp_bind(unp, nam)
@@ -338,6 +349,7 @@ unp_bind(unp, nam)
 	}
 	ip->i_socket = unp->unp_socket;
 	unp->unp_inode = ip;
+	unp->unp_addr = m_copy(nam, 0, (int)M_COPYALL);
 	iunlock(ip);			/* but keep reference */
 	return (0);
 }
@@ -416,8 +428,6 @@ unp_connect2(so, sonam, so2)
 
 	case SOCK_STREAM:
 		unp2->unp_conn = unp;
-		if (sonam)
-			unp2->unp_remaddr = m_copy(sonam, 0, (int)M_COPYALL);
 		soisconnected(so2);
 		soisconnected(so);
 		break;
@@ -490,7 +500,7 @@ unp_drop(unp, errno)
 	unp_disconnect(unp);
 	if (so->so_head) {
 		so->so_pcb = (caddr_t) 0;
-		m_freem(unp->unp_remaddr);
+		m_freem(unp->unp_addr);
 		(void) m_free(dtom(unp));
 		sofree(so);
 	}
@@ -527,6 +537,7 @@ unp_externalize(rights)
 		fp = *rp;
 		u.u_ofile[f] = fp;
 		fp->f_msgcount--;
+		unp_rights--;
 		*(int *)rp++ = f;
 	}
 	return (0);
@@ -550,6 +561,7 @@ unp_internalize(rights)
 		*rp++ = fp;
 		fp->f_count++;
 		fp->f_msgcount++;
+		unp_rights++;
 	}
 	return (0);
 }
@@ -600,11 +612,9 @@ restart:
 	for (fp = file; fp < fileNFILE; fp++) {
 		if (fp->f_count == 0)
 			continue;
-		if (fp->f_count == fp->f_msgcount && (fp->f_flag&FMARK)==0) {
-			if (fp->f_type != DTYPE_SOCKET)
-				panic("unp_gc");
-			(void) soshutdown((struct socket *)fp->f_data, 0);
-		}
+		if (fp->f_count == fp->f_msgcount && (fp->f_flag & FMARK) == 0)
+			while (fp->f_msgcount)
+				unp_discard(fp);
 	}
 	unp_gcing = 0;
 }
@@ -655,5 +665,6 @@ unp_discard(fp)
 {
 
 	fp->f_msgcount--;
+	unp_rights--;
 	closef(fp);
 }
