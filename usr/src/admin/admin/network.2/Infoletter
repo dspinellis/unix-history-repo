@@ -1,4 +1,4 @@
-.\"     @(#)Infoletter	1.7 (Berkeley) %G%
+.\"     @(#)Infoletter	1.8 (Berkeley) %G%
 .\" use -ms
 .nr PS 10
 .ps 10
@@ -74,7 +74,7 @@ is not included for licensing reasons.
 .B "This software distribution is provided on 1/2'' 9-track tape"
 .B "and 8mm cassette only."
 The distribution is available on a single 6250 BPI 9-track tape,
-one 8mm Exabyte cassette, or on two 1600 BPI 9-track tapes.
+one 8mm Exabyte cassette, or on three 1600 BPI 9-track tapes.
 No other media are currently available.
 .PP
 This distribution represents an intermediate point in the development
@@ -320,7 +320,7 @@ Execution of the included Berkeley License Agreement.
 .IP \(bu
 A check from a U.S. bank for $795.00 US for a single 6250 BPI 9-track tape
 or 8mm Exabyte tape,
-or $895.00 US for two 1600 BPI tapes, payable to
+or $895.00 US for three 1600 BPI tapes, payable to
 ``The Regents of the University of California.''
 If you must issue a Purchase Order, please issue one that is blank-backed.
 If this is not possible, insert and initial in the body of the Purchase
@@ -400,8 +400,9 @@ and must reject your application if material submitted is not in order.
 If You Have Read Everything and Still Need Help
 .PP
 If you have questions about the licensing process after reading this letter,
-you may call Pauline Schwartz at 415-642-7780, or contact her via electronic
-mail at either bsd\-dist@CS.Berkeley.EDU or uunet!bsd\-dist@CS.Berkeley.EDU.
+you may contact Pauline Schwartz via electronic
+mail at either bsd\-dist@CS.Berkeley.EDU or uunet!bsd\-dist@CS.Berkeley.EDU,
+or call her at 415-642-7780.
 She will not be able to answer technical questions.
 .sp 2
 .ti +2.5i
