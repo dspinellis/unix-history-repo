@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	7.11 (Berkeley) %G%
+ *	@(#)swap_pager.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -30,8 +30,9 @@
 #include <sys/buf.h>
 #include <sys/map.h>
 #include <sys/vnode.h>
-#include <sys/specdev.h>
 #include <sys/malloc.h>
+
+#include <miscfs/specfs/specdev.h>
 
 #include <vm/vm.h>
 #include <vm/queue.h>
