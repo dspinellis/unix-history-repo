@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -947,8 +947,9 @@ nis_map_open(map, mode)
 		yperr = yp_get_default_domain(&map->map_domain);
 		if (yperr != 0)
 		{
-			syserr("NIS map %s specified, but NIS not running\n",
-				map->map_file);
+			if (!bitset(MF_OPTIONAL, map->map_mflags))
+				syserr("NIS map %s specified, but NIS not running\n",
+					map->map_file);
 			return FALSE;
 		}
 	}
