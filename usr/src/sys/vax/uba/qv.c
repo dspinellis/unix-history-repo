@@ -1,7 +1,12 @@
-#ifndef lint
-static	char	*sccsid = "@(#)qv.c	1.4 (Berkeley) %G%";
-static	char	*osccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
-#endif lint
+/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * 		@(#)qv.c	1.5  Berkeley  %G%
+ *
+ *	derived from: @(#)qv.c	1.8 (ULTRIX) 8/21/85
+ */
 
 /************************************************************************
  *									*
@@ -42,6 +47,8 @@ static	char	*osccsid = "@(#)qv.c	1.8 (ULTRIX) 8/21/85";
  * on the inability to map more than one at a time.  This restriction will
  * exist until the kernel has shared memory services. This driver therefore
  * support a single unit. No attempt was made to have it service more.
+ *
+ * (this belongs in sccs - not here)
  *
  * 02 Aug 85 -- rjl
  *	Changed the names of the special setup routines so that the system

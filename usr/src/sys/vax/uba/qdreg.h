@@ -1,8 +1,13 @@
-
 /*
- *		@(#)qdreg.h	1.2  Berkeley  %G%
- *	@(#)qdreg.h	1.5	(ULTRIX)	5/21/86
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * 		@(#)qdreg.h	1.3  Berkeley  %G%
+ *
+ *	derived from: qdreg.h	1.5	(ULTRIX)	5/21/86
  */
+
 
 /************************************************************************
  *									*
@@ -29,7 +34,7 @@
 /*
  * qdreg.h
  *
- * Modification history
+ * Modification history (belongs in sccs)
  *
  * QDSS registers/data structures and definitions
  *

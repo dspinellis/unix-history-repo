@@ -1,10 +1,16 @@
-
+/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * 		@(#)qdioctl.h	1.3  Berkeley  %G%
+ *
+ *	derived from: qdioctl.h	1.1	(ULTRIX)	8/22/85
+ */
 /*
  * QDSS IOCTL definitions
- *	@(#)qdioctl.h	1.2 (Berkeley) %G%
  */
 
-/* static	char	*sccsid = "@(#)qdioctl.h	1.1	(ULTRIX)	8/22/85"; */
 
 /************************************************************************
  *									*
@@ -34,7 +40,7 @@
  *									*
  ************************************************************************/
 /***************************************************************************
-*	revision history:
+*	revision history: (belongs in sccs)
 ****************************************************************************
 *
 * 22 oct 85  longo  fixed QD_PRGTABRES cmd number to be 22 instead of 12
@@ -46,7 +52,7 @@
 
 
 #ifdef KERNEL
-#include "../h/ioctl.h"
+#include "ioctl.h"
 #else
 #include <sys/ioctl.h>
 #endif

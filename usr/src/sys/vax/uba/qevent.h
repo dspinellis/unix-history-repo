@@ -1,4 +1,10 @@
-
+/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * 		@(#)qevent.h	1.2  Berkeley  %G%
+ */
 /************************************************************************
 *									*
 *			Copyright (c) 1985 by				*
@@ -25,8 +31,8 @@
  * Event queue entries
  */
 
-# ifndef _QEVENT_
-# define _QEVENT_
+#ifndef _QEVENT_
+#define _QEVENT_
 
 typedef struct  _vs_event {
         unsigned short vse_x;	/* x position */
@@ -81,4 +87,4 @@ typedef struct _vs_box {
         short top;
 } vsBox;
 
-# endif _QEVENT_
+#endif /*_QEVENT_*/
