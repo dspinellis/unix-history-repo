@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.7	%G%";
+static char sccsid[] = "@(#)bib.c	2.8	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -46,7 +46,7 @@ static char sccsid[] = "@(#)bib.c	2.7	%G%";
    int  findex = false;         /* can we read the file INDEX ?          */
 
 /* global variables in bibargs */
-   extern int foot, doacite, sort, personal;
+   extern int foot, doacite, sort, max_klen, personal;
    extern int hyphen, ordcite, biblineno;
    extern char sortstr[], pfile[], citetemplate[], bibfname[];
 
@@ -368,7 +368,7 @@ struct refinfo *refssearch(rf)
    char file[], huntstr[];
 {  char *p, *r, *locate();
 
-   r = locate(huntstr, file, 6, common);
+   r = locate(huntstr, file, max_klen, common);
 
    if (r == NULL)
       return(NULL);  /* error */
@@ -416,8 +416,8 @@ int  fn, footrefs[];
 	 */
 
 	ncites = 0;
-	neg = 1;
 	do {
+		neg = 1;
 		n = 0;
 		do{
 			getch(c, ifd);
