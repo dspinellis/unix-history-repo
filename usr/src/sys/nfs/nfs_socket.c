@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.22 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -124,7 +124,7 @@ nfs_connect(nmp)
 	register struct nfsmount *nmp;
 {
 	register struct socket *so;
-	int s, error;
+	int s, error, bufsize;
 	struct mbuf *m;
 
 	nmp->nm_so = (struct socket *)0;
@@ -133,6 +133,15 @@ nfs_connect(nmp)
 		goto bad;
 	so = nmp->nm_so;
 	nmp->nm_soflags = so->so_proto->pr_flags;
+
+	if (nmp->nm_sotype == SOCK_DGRAM)
+		bufsize = min(4 * (nmp->nm_wsize + NFS_MAXPKTHDR),
+		    NFS_MAXPACKET);
+	else
+		bufsize = min(4 * (nmp->nm_wsize + NFS_MAXPKTHDR + sizeof(u_long)),
+		    NFS_MAXPACKET + sizeof(u_long));
+	if (error = soreserve(so, bufsize, bufsize))
+		goto bad;
 
 	/*
 	 * Protocols that do not require connections may be optionally left
@@ -168,10 +177,7 @@ nfs_connect(nmp)
 			so->so_rcv.sb_timeo = 0;
 			so->so_snd.sb_timeo = 0;
 		}
-		if (error = soreserve(so,
-		    min(4 * (nmp->nm_wsize + NFS_MAXPKTHDR), NFS_MAXPACKET),
-		    min(4 * (nmp->nm_rsize + NFS_MAXPKTHDR), NFS_MAXPACKET)))
-			goto bad;
+		nmp->nm_rto = NFS_TIMEO;
 	} else {
 		if (nmp->nm_flag & (NFSMNT_SOFT | NFSMNT_SPONGY | NFSMNT_INT)) {
 			so->so_rcv.sb_timeo = (5 * hz);
@@ -194,20 +200,14 @@ nfs_connect(nmp)
 			m->m_len = sizeof(int);
 			sosetopt(so, IPPROTO_TCP, TCP_NODELAY, m);
 		}
-		if (error = soreserve(so,
-		    min(4 * (nmp->nm_wsize + NFS_MAXPKTHDR + sizeof(u_long)),
-		    NFS_MAXPACKET + sizeof(u_long)),
-		    min(4 * (nmp->nm_rsize + NFS_MAXPKTHDR + sizeof(u_long)),
-		    NFS_MAXPACKET + sizeof(u_long))))
-			goto bad;
+		nmp->nm_rto = 10 * NFS_TIMEO;		/* XXX */
 	}
 	so->so_rcv.sb_flags |= SB_NOINTR;
 	so->so_snd.sb_flags |= SB_NOINTR;
 
 	/* Initialize other non-zero congestion variables */
-	nmp->nm_rto = NFS_TIMEO;
-	nmp->nm_window = 2;		    /* Initial send window */
-	nmp->nm_ssthresh = NFS_MAXWINDOW; /* Slowstart threshold */
+	nmp->nm_window = 2;			/* Initial send window */
+	nmp->nm_ssthresh = NFS_MAXWINDOW;	/* Slowstart threshold */
 	nmp->nm_rttvar = nmp->nm_rto << 1;
 	nmp->nm_sent = 0;
 	nmp->nm_currexmit = 0;
