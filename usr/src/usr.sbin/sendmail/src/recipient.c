@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -339,7 +339,7 @@ recipient(a, sendq, e)
 		    (*p = '\0', safefile(buf, getruid(), S_IWRITE|S_IEXEC) != 0))
 		{
 			a->q_flags |= QBADADDR;
-			giveresponse(EX_CANTCREAT, m, e);
+			giveresponse(EX_CANTCREAT, m, NULL, e);
 		}
 	}
 
@@ -415,7 +415,7 @@ recipient(a, sendq, e)
 		if (pw == NULL)
 		{
 			a->q_flags |= QBADADDR;
-			giveresponse(EX_NOUSER, m, e);
+			giveresponse(EX_NOUSER, m, NULL, e);
 		}
 		else
 		{

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.22 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.23 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.22 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.23 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -237,7 +237,7 @@ queueup(e, queueall, announce)
 				e->e_to = q->q_paddr;
 				message("queued");
 				if (LogLevel > 8)
-					logdelivery("queued", e);
+					logdelivery(NULL, NULL, "queued", e);
 				e->e_to = NULL;
 			}
 			if (tTd(40, 1))
