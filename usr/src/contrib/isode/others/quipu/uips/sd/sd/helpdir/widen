@@ -1,0 +1,10 @@
+
+  "Widen" serves  to  increase  the  scope  of the address contained
+ in the  "Search Area"  field  by  removing  one section  from  this
+ address. For example if this address is currently,
+
+         "GB, Heriot-Watt University"
+
+  a call to "Widen" would change this to
+
+	 "GB".
