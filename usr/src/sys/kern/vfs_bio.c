@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.19	81/04/23	*/
+/*	vfs_bio.c	4.20	81/04/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -499,10 +499,11 @@ register struct buf *bp;
 		if (bp->b_flags & B_ERROR)
 			panic("IO err in push");
 		s = spl6();
-		cnt.v_pgout++;
 		bp->av_forw = bclnlist;
 		bp->b_bcount = swsize[bp - swbuf];
 		bp->b_pfcent = swpf[bp - swbuf];
+		cnt.v_pgout++;
+		cnt.v_pgpgout += bp->b_bcount / NBPG;
 		bclnlist = bp;
 		if (bswlist.b_flags & B_WANTED)
 			wakeup((caddr_t)&proc[2]);
