@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hil_keymaps.c 1.1 89/08/22$
+ * from: Utah $Hdr: hil_keymaps.c 1.1 90/07/09$
  *
- *	@(#)hil_keymaps.c	7.1 (Berkeley) %G%
+ *	@(#)hil_keymaps.c	7.2 (Berkeley) %G%
  */
 
 /*

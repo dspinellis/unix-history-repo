@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hilreg.h 1.8 89/08/24$
+ * from: Utah $Hdr: hilreg.h 1.1 90/07/09$
  *
- *	@(#)hilreg.h	7.1 (Berkeley) %G%
+ *	@(#)hilreg.h	7.2 (Berkeley) %G%
  */
 
 struct	hil_dev {

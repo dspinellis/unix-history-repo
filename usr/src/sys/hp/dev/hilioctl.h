@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hilioctl.h 1.9 89/01/18$
+ * from: Utah $Hdr: hilioctl.h 1.1 90/07/09$
  *
- *	@(#)hilioctl.h	7.1 (Berkeley) %G%
+ *	@(#)hilioctl.h	7.2 (Berkeley) %G%
  */
 
 struct _hilbell {

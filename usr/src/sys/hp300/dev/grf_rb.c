@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf_rb.c 1.10 89/04/11$
+ * from: Utah $Hdr: grf_rb.c 1.1 90/07/09$
  *
- *	@(#)grf_rb.c	7.2 (Berkeley) %G%
+ *	@(#)grf_rb.c	7.3 (Berkeley) %G%
  */
 
 #include "grf.h"
