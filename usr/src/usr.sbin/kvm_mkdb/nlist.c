@@ -6,24 +6,24 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <ndbm.h>
 #include <a.out.h>
-#include <kvm.h>
+#include <errno.h>
 #include <unistd.h>
+#include <kvm.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 typedef struct nlist NLIST;
 #define	_strx	n_un.n_strx
 #define	_name	n_un.n_name
-
-#define	BFLEN		1024
-#define	VRS		"_version"
 
 static char *kfile;
 
@@ -31,68 +31,73 @@ create_knlist(name, db)
 	char *name;
 	DBM *db;
 {
-	register char *bp;
-	register int ch, len;
+	register int nsyms;
 	struct exec ebuf;
-	FILE *fstr, *fsym;
+	FILE *fp;
 	NLIST nbuf;
-	off_t string_off, symbol_off, symbol_size;
-	off_t rel_off, vers_off;
 	datum key, data;
-	char sbuf[BFLEN];
+	int fd, nr, strsize;
+	char *strtab, buf[1024];
 
-	/* Two pointers, one for symbol table and one for string table. */
 	kfile = name;
-	if ((fsym = fopen(name, "r")) == NULL ||
-	    (fstr = fopen(name, "r")) == NULL)
+	if ((fd = open(name, O_RDONLY, 0)) < 0)
 		error(name);
 
-	if (fread((char *)&ebuf, sizeof(struct exec), 1, fsym) != 1)
-		badfmt("no exec header");
+	/* Read in exec structure. */
+	nr = read(fd, (char *)&ebuf, sizeof(struct exec));
+	if (nr != sizeof(struct exec))
+		badfmt(nr, "no exec header");
+
+	/* Check magic number and symbol count. */
 	if (N_BADMAG(ebuf))
 		badfmt("bad magic number");
-		
-	symbol_size = ebuf.a_syms;
-	if (!symbol_size)
+	if (!ebuf.a_syms)
 		badfmt("stripped");
 
-	symbol_off = N_SYMOFF(ebuf);
-	string_off = symbol_off + symbol_size;
+	/* Seek to string table. */
+	if (lseek(fd, N_STROFF(ebuf), SEEK_SET) == -1)
+		badfmt("corrupted string table");
 
-	if (fseek(fsym, symbol_off, SEEK_SET) == -1)
-		badfmt("corrupted symbol table");
+	/* Read in the size of the symbol table. */
+	nr = read(fd, (char *)&strsize, sizeof(strsize));
+	if (nr != sizeof(strsize))
+		badread(nr, "no symbol table");
 
-	key.dptr = sbuf;
+	/* Read in the string table. */
+	strsize -= sizeof(strsize);
+	if (!(strtab = (char *)malloc(strsize)))
+		error(name);
+	if ((nr = read(fd, strtab, strsize)) != strsize)
+		badread(nr, "corrupted symbol table");
+
+	/* Seek to symbol table. */
+	if (!(fp = fdopen(fd, "r")))
+		error(name);
+	if (fseek(fp, N_SYMOFF(ebuf), SEEK_SET) == -1)
+		error(name);
+	
 	data.dptr = (char *)&nbuf;
 	data.dsize = sizeof(NLIST);
 
-	for (; symbol_size; symbol_size -= sizeof(NLIST)) {
-		if (fread((char *)&nbuf, sizeof (NLIST), 1, fsym) != 1)
-			badfmt("corrupted symbol table");
+	/* Read each symbol and enter it into the database. */
+	nsyms = ebuf.a_syms / sizeof(struct nlist);
+	while (nsyms--) {
+		if (fread((char *)&nbuf, sizeof (NLIST), 1, fp) != 1) {
+			if (feof(fp))
+				badfmt("corrupted symbol table");
+			error(name);
+		}
 		if (!nbuf._strx || nbuf.n_type&N_STAB)
 			continue;
-		if (fseek(fstr, string_off + nbuf._strx, SEEK_SET) == -1)
-			badfmt("corrupted string table");
 
-		/* Read string. */
-		bp = sbuf;
-		for (len = 0; (ch = getc(fstr)) != EOF && ch != '\0';) {
-			if (++len == BFLEN) {
-				(void)fprintf(stderr,
-				    "kvm_mkdb: symbol too long.");
-				break;
-			}
-			*bp++ = ch;
-		}
-		if (len == BFLEN)
-			continue;
-
-		/* Store string. */
-		key.dsize = len;
+		key.dptr = strtab + nbuf._strx - sizeof(long);
+		key.dsize = strlen(key.dptr);
 		if (dbm_store(db, key, data, DBM_INSERT) < 0)
 			error("dbm_store");
 
-		if (!strncmp(sbuf, VRS, sizeof(VRS) - 1)) {
+		if (!strncmp(key.dptr, VRS_SYM, sizeof(VRS_SYM) - 1)) {
+			off_t cur_off, rel_off, vers_off;
+
 			/* Offset relative to start of text image in VM. */
 #ifdef hp300
 			rel_off = nbuf.n_value;
@@ -113,7 +118,9 @@ create_knlist(name, db)
 			 */
 			rel_off -= CLBYTES - (ebuf.a_text % CLBYTES);
 			vers_off = N_TXTOFF(ebuf) + rel_off;
-			if (fseek(fstr, vers_off, SEEK_SET) == -1)
+
+			cur_off = ftell(fp);
+			if (fseek(fp, vers_off, SEEK_SET) == -1)
 				badfmt("corrupted string table");
 
 			/*
@@ -121,27 +128,37 @@ create_knlist(name, db)
 			 * This code assumes that a newline terminates the
 			 * version line.
 			 */
-			if (fgets(sbuf, sizeof(sbuf), fstr) == NULL)
+			if (fgets(buf, sizeof(buf), fp) == NULL)
 				badfmt("corrupted string table");
 
-			key.dptr = VERSION;
-			key.dsize = sizeof(VERSION) - 1;
-			data.dptr = sbuf;
-			data.dsize = strlen(sbuf);
+			key.dptr = VRS_KEY;
+			key.dsize = sizeof(VRS_KEY) - 1;
+			data.dptr = buf;
+			data.dsize = strlen(buf);
 			if (dbm_store(db, key, data, DBM_INSERT) < 0)
 				error("dbm_store");
 
 			/* Restore to original values. */
-			key.dptr = sbuf;
 			data.dptr = (char *)&nbuf;
 			data.dsize = sizeof(NLIST);
+			if (fseek(fp, cur_off, SEEK_SET) == -1)
+				badfmt("corrupted string table");
 		}
 	}
-	(void)fclose(fstr);
-	(void)fclose(fsym);
+	(void)fclose(fp);
+}
+
+badread(nr, p)
+	int nr;
+	char *p;
+{
+	if (nr < 0)
+		error(kfile);
+	badfmt(p);
 }
 
 badfmt(p)
+	char *p;
 {
 	(void)fprintf(stderr,
 	    "symorder: %s: %s: %s\n", kfile, p, strerror(EFTYPE));
