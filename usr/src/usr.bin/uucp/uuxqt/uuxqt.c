@@ -1,6 +1,19 @@
+/*-
+ * Copyright (c) 1985, 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.13	(Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1985, 1988 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)uuxqt.c	5.14 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "uucp.h"
 #include <sys/stat.h>
