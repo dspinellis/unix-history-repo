@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.39 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.40 (Berkeley) %G%
  */
 
 /*
@@ -552,7 +552,7 @@ sysctl_doproc(name, namelen, where, sizep)
 	struct eproc eproc;
 	int error = 0;
 
-	if (namelen != 2)
+	if (namelen != 2 && !(namelen == 1 && name[0] == KERN_PROC_ALL))
 		return (EINVAL);
 	p = (struct proc *)allproc;
 	doingzomb = 0;
