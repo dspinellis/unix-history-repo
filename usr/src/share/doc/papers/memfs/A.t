@@ -1,4 +1,4 @@
-.\"	@(#)A.t	1.1	(Copyright 1990 M. K. McKusick)	90/04/13
+.\"	@(#)A.t	1.2	(Copyright 1990 M. K. McKusick)	90/04/17
 .bp
 .nr PS 10
 .nr VS 12
@@ -22,9 +22,18 @@ struct mfsnode {
 /*
  * Convert between mfsnode pointers and vnode pointers
  */
-#define VTOMFS(vp)	((struct mfsnode *)(vp)->v_data)
-#define MFSTOV(mfsp)	((mfsp)->mfs_vnode)
+#define	VTOMFS(vp)	((struct mfsnode *)(vp)->v_data)
+#define	MFSTOV(mfsp)	((mfsp)->mfs_vnode)
 #define	MFS_EXIT	(struct buf *)-1
+
+/*
+ * Arguments to mount MFS
+ */
+struct mfs_args {
+	char	*name;		/* name to export for statfs */
+	caddr_t	base;		/* base address of file system in memory */
+	u_long	size;		/* size of file system */
+};
 .bp
 /*
  * Mount an MFS filesystem.
