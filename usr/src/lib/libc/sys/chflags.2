@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.2	8.1 (Berkeley) %G%
+.\"	@(#)chflags.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 2
@@ -39,6 +39,8 @@ Do not dump the file.
 The file may not be changed.
 .It UF_APPEND
 The file may only be appended to.
+.It UF_OPAQUE
+The directory is opaque when viewed through a union stack.
 .\".It ARCHIVED
 .\"File is archived.
 .It SF_IMMUTABLE
@@ -118,8 +120,9 @@ An
 error occurred while reading from or writing to the file system.
 .El
 .Sh SEE ALSO
-.Xr chflags 1,
-.Xr init 8
+.Xr chflags 1 ,
+.Xr init 8 ,
+.Xr mount_union 8
 .Sh HISTORY
 The
 .Nm chflags

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)opendir.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)opendir.c	8.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -24,12 +24,21 @@ DIR *
 opendir(name)
 	const char *name;
 {
+
+	return (__opendir2(name, DTF_HIDEW|DTF_NODUP));
+}
+
+DIR *
+__opendir2(name, flags)
+	const char *name;
+	int flags;
+{
 	DIR *dirp;
 	int fd;
 	int incr;
-	struct statfs sfb;
+	int unionstack;
 
-	if ((fd = open(name, 0)) == -1)
+	if ((fd = open(name, O_RDONLY)) == -1)
 		return (NULL);
 	if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1 ||
 	    (dirp = (DIR *)malloc(sizeof(DIR))) == NULL) {
@@ -48,17 +57,23 @@ opendir(name)
 	else
 		incr = DIRBLKSIZ;
 
-#ifdef MOUNT_UNION
 	/*
 	 * Determine whether this directory is the top of a union stack.
 	 */
-	if (fstatfs(fd, &sfb) < 0) {
-		free(dirp);
-		close(fd);
-		return (NULL);
+	if (flags & DTF_NODUP) {
+		struct statfs sfb;
+
+		if (fstatfs(fd, &sfb) < 0) {
+			free(dirp);
+			close(fd);
+			return (NULL);
+		}
+		unionstack = (sfb.f_type == MOUNT_UNION);
+	} else {
+		unionstack = 0;
 	}
 
-	if (sfb.f_type == MOUNT_UNION) {
+	if (unionstack) {
 		int len = 0;
 		int space = 0;
 		char *buf = 0;
@@ -72,11 +87,6 @@ opendir(name)
 		 * remove duplicate entries by setting the inode
 		 * number to zero.
 		 */
-
-		/*
-		 * Fixup dd_loc to be non-zero to fake out readdir
-		 */
-		dirp->dd_loc = sizeof(void *);
 
 		do {
 			/*
@@ -92,7 +102,7 @@ opendir(name)
 					close(fd);
 					return (NULL);
 				}
-				ddptr = buf + (len - space) + dirp->dd_loc;
+				ddptr = buf + (len - space);
 			}
 
 			n = getdirentries(fd, ddptr, space, &dirp->dd_seek);
@@ -101,6 +111,24 @@ opendir(name)
 				space -= n;
 			}
 		} while (n > 0);
+
+		flags |= __DTF_READALL;
+
+		/*
+		 * Re-open the directory.
+		 * This has the effect of rewinding back to the
+		 * top of the union stack and is needed by
+		 * programs which plan to fchdir to a descriptor
+		 * which has also been read -- see fts.c.
+		 */
+		if (flags & DTF_REWIND) {
+			(void) close(fd);
+			if ((fd = open(name, O_RDONLY)) == -1) {
+				free(buf);
+				free(dirp);
+				return (NULL);
+			}
+		}
 
 		/*
 		 * There is now a buffer full of (possibly) duplicate
@@ -117,7 +145,7 @@ opendir(name)
 		 */
 		for (dpv = 0;;) {
 			n = 0;
-			ddptr = buf + dirp->dd_loc;
+			ddptr = buf;
 			while (ddptr < buf + len) {
 				struct dirent *dp;
 
@@ -155,9 +183,13 @@ opendir(name)
 					struct dirent *dp = dpv[n];
 
 					if ((xp == NULL) ||
-					    strcmp(dp->d_name, xp->d_name))
+					    strcmp(dp->d_name, xp->d_name)) {
 						xp = dp;
-					else
+					} else {
+						dp->d_fileno = 0;
+					}
+					if (DT_ISWHT(dp->d_type) &&
+					    (flags & DTF_HIDEW))
 						dp->d_fileno = 0;
 				}
 
@@ -172,9 +204,7 @@ opendir(name)
 
 		dirp->dd_len = len;
 		dirp->dd_size = ddptr - dirp->dd_buf;
-	} else
-#endif /* MOUNT_UNION */
-	{
+	} else {
 		dirp->dd_len = incr;
 		dirp->dd_buf = malloc(dirp->dd_len);
 		if (dirp->dd_buf == NULL) {
@@ -183,10 +213,12 @@ opendir(name)
 			return (NULL);
 		}
 		dirp->dd_seek = 0;
-		dirp->dd_loc = 0;
+		flags &= ~DTF_REWIND;
 	}
 
+	dirp->dd_loc = 0;
 	dirp->dd_fd = fd;
+	dirp->dd_flags = flags;
 
 	/*
 	 * Set up seek point for rewinddir.

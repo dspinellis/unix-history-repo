@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	8.1 (Berkeley) %G%
+ *	@(#)fts.h	8.2 (Berkeley) %G%
  */
 
 #ifndef	_FTS_H_
@@ -28,10 +28,11 @@ typedef struct {
 #define	FTS_PHYSICAL	0x010		/* physical walk */
 #define	FTS_SEEDOT	0x020		/* return dot and dot-dot */
 #define	FTS_XDEV	0x040		/* don't cross devices */
-#define	FTS_OPTIONMASK	0x07f		/* valid user option mask */
+#define	FTS_WHITEOUT	0x080		/* return whiteout information */
+#define	FTS_OPTIONMASK	0x0ff		/* valid user option mask */
 
-#define	FTS_NAMEONLY	0x080		/* (private) child names only */
-#define	FTS_STOP	0x100		/* (private) unrecoverable error */
+#define	FTS_NAMEONLY	0x100		/* (private) child names only */
+#define	FTS_STOP	0x200		/* (private) unrecoverable error */
 	int fts_options;		/* fts_open options, global flags */
 } FTS;
 
@@ -69,10 +70,13 @@ typedef struct _ftsent {
 #define	FTS_NSOK	11		/* no stat(2) requested */
 #define	FTS_SL		12		/* symbolic link */
 #define	FTS_SLNONE	13		/* symbolic link without target */
+#define	FTS_W		14		/* whiteout object */
 	u_short fts_info;		/* user flags for FTSENT structure */
 
 #define	FTS_DONTCHDIR	 0x01		/* don't chdir .. to the parent */
 #define	FTS_SYMFOLLOW	 0x02		/* followed a symlink to get here */
+#define	FTS_ISW		 0x04		/* this is a whiteout object */
+#define	FTS_ISWD	 0x08		/* this is a whiteout dir object */
 	u_short fts_flags;		/* private flags for FTSENT structure */
 
 #define	FTS_AGAIN	 1		/* read node again */

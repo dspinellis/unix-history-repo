@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stat_flags.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)stat_flags.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,6 +43,8 @@ flags_to_string(flags, def)
 		SAPPEND("uchg");
 	if (flags & UF_NODUMP)
 		SAPPEND("nodump");
+	if (flags & UF_OPAQUE)
+		SAPPEND("opaque");
 	if (flags & SF_APPEND)
 		SAPPEND("sappnd");
 	if (flags & SF_ARCHIVED)
@@ -99,6 +101,9 @@ string_to_flags(stringp, setp, clrp)
 		case 'd':
 			clear = !clear;
 			TEST(p, "dump", UF_NODUMP);
+			return (1);
+		case 'o':
+			TEST(p, "opaque", UF_OPAQUE);
 			return (1);
 		case 's':
 			TEST(p, "sappnd", SF_APPEND);

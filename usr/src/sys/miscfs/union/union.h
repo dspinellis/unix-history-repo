@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	8.6 (Berkeley) %G%
+ *	@(#)union.h	8.7 (Berkeley) %G%
  */
 
 struct union_args {
@@ -76,6 +76,8 @@ extern int union_copyup __P((struct union_node *, int, struct ucred *,
 				struct proc *));
 extern int union_mkshadow __P((struct union_mount *, struct vnode *,
 				struct componentname *, struct vnode **));
+extern int union_mkwhiteout __P((struct union_mount *, struct vnode *,
+				struct componentname *, char *));
 extern int union_vn_create __P((struct vnode **, struct union_node *,
 				struct proc *));
 extern int union_cn_close __P((struct vnode *, int, struct ucred *,
