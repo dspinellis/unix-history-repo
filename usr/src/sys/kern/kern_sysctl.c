@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sysctl.c	7.2 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -110,15 +110,7 @@ kinfo_doprocs(op, where, acopysize, arg, aneeded)
 	register needed = 0;
 	int buflen;
 	int doingzomb;
-	struct {
-		struct	proc *paddr;
-		struct	session *session;
-		pid_t	pgid;
-		short	jobc;
-		dev_t	ttydev;
-		pid_t	ttypgid;
-		struct	session *ttysession;
-	} extra;
+	struct eproc eproc;
 	struct tty *tp;
 	int error = 0;
 
@@ -169,22 +161,22 @@ again:
 			    sizeof (struct proc)))
 				return (error);
 			dp += sizeof (struct proc);
-			extra.paddr = p;
-			extra.session = p->p_pgrp->pg_session;
-			extra.pgid = p->p_pgrp->pg_id;
-			extra.jobc = p->p_pgrp->pg_jobc;
+			eproc.kp_paddr = p;
+			eproc.kp_sess = p->p_pgrp->pg_session;
+			eproc.kp_pgid = p->p_pgrp->pg_id;
+			eproc.kp_jobc = p->p_pgrp->pg_jobc;
 			tp = p->p_pgrp->pg_session->s_ttyp;
 			if ((p->p_flag&SCTTY) && tp != NULL) {
-				extra.ttydev = tp->t_dev;
-				extra.ttypgid = tp->t_pgrp ? 
+				eproc.kp_tdev = tp->t_dev;
+				eproc.kp_tpgid = tp->t_pgrp ? 
 					tp->t_pgrp->pg_id : -1;
-				extra.ttysession = tp->t_session;
+				eproc.kp_tsess = tp->t_session;
 			} else
-				extra.ttydev = NODEV;
-			if (error = copyout((caddr_t)&extra, dp, 
-			    sizeof (extra)))
+				eproc.kp_tdev = NODEV;
+			if (error = copyout((caddr_t)&eproc, dp, 
+			    sizeof (eproc)))
 				return (error);
-			dp += sizeof (extra);
+			dp += sizeof (eproc);
 			buflen -= sizeof (struct kinfo_proc);
 		}
 		needed += sizeof (struct kinfo_proc);
