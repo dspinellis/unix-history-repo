@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)device_pager.c	7.2 (Berkeley) 4/20/91
+ *	from: @(#)device_pager.c	7.2 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 /*

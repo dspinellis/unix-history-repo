@@ -33,9 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_lock.c	7.4 (Berkeley) 4/21/91
- *
- *
+ *	from: @(#)kern_lock.c	7.4 (Berkeley) 4/21/91
+ *	$Id$
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *

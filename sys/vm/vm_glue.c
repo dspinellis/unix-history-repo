@@ -33,9 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_glue.c	7.8 (Berkeley) 5/15/91
- *
- *
+ *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
+ *	$Id: vm_glue.c,v 1.7 1993/09/06 14:19:11 rgrimes Exp $
+ */
+
+/*
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  * 
@@ -58,10 +60,7 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
- *
- *	$Id$
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/vm/vm_glue.c,v 1.6 1993/09/05 09:21:15 rgrimes Exp $";
 
 #include "ddb.h"
 #include "param.h"

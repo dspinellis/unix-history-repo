@@ -35,19 +35,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
- *
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00075
- * --------------------         -----   ----------------------
- *
- * 22 Jan 1993		Bruce Evans	Fixed unmatched spl calls
- *
- *	@(#)swap_pager.c	7.4 (Berkeley) 5/7/91
+ *	from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
+ *	from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/vm/RCS/swap_pager.c,v 1.3 92/01/21 21:57:58 william Exp $";
 
 /*
  * Quick hack to page to dedicated partition(s).

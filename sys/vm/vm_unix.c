@@ -35,9 +35,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * from: Utah $Hdr: vm_unix.c 1.1 89/11/07$
- *
- *	@(#)vm_unix.c	7.2 (Berkeley) 4/20/91
+ *	from: Utah $Hdr: vm_unix.c 1.1 89/11/07$
+ *	from: @(#)vm_unix.c	7.2 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 /*
