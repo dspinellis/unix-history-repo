@@ -8,9 +8,6 @@
 **  specifies the terms and conditions for redistribution.
 */
 
-#ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.1 (Berkeley) %G%";
-#endif not lint
 
 # include "sendmail.h"
 # include <sys/stat.h>
@@ -19,10 +16,10 @@ static char	SccsId[] = "@(#)queue.c	5.1 (Berkeley) %G%";
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	5.1		%G%	(no queueing));
+static char	SccsId[] = "@(#)queue.c	5.2 (Berkeley) %G%	(no queueing)";
 # else QUEUE
 
-SCCSID(@(#)queue.c	5.1		%G%);
+static char	SccsId[] = "@(#)queue.c	5.2 (Berkeley) %G%";
 
 /*
 **  Work queue.
@@ -705,7 +702,6 @@ printqueue()
 		struct stat st;
 		auto time_t submittime = 0;
 		long dfsize = -1;
-		int fd;
 		char lf[20];
 		char message[MAXLINE];
 
