@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_search.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_search.c	8.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -19,8 +19,8 @@ static char sccsid[] = "@(#)bt_search.c	8.3 (Berkeley) %G%";
 #include <db.h>
 #include "btree.h"
 
-static EPG *bt_snext __P((BTREE *, PAGE *, const DBT *, int *));
-static EPG *bt_sprev __P((BTREE *, PAGE *, const DBT *, int *));
+static int bt_snext __P((BTREE *, PAGE *, const DBT *, int *));
+static int bt_sprev __P((BTREE *, PAGE *, const DBT *, int *));
 
 /*
  * __BT_SEARCH -- Search a btree for a key.
@@ -70,20 +70,22 @@ __bt_search(t, key, exactp)
 
 		/*
 		 * If it's a leaf page, and duplicates aren't allowed, we're
-		 * done.  If duplicates are allowed, it's possible that the
-		 * matching spanned pages, and were later deleted, so we could
-		 * be on the wrong page.  If we're at the start or end of a
-		 * page, check.
+		 * done.  If duplicates are allowed, it's possible that there
+		 * were duplicate keys on duplicate pages, and they were later
+		 * deleted, so we could be on a page with no matches while
+		 * there are matches on other pages.  If we're at the start or
+		 * end of a page, check on both sides.
 		 */
 		if (h->flags & P_BLEAF) {
 			t->bt_cur.index = base;
 			*exactp = 0;
 			if (!ISSET(t, B_NODUPS)) {
-				if (base == 0 && h->prevpg != P_INVALID)
-					return (bt_sprev(t, h, key, exactp));
+				if (base == 0 &&
+				    bt_sprev(t, h, key, exactp))
+					return (&t->bt_cur);
 				if (base == NEXTINDEX(h) &&
-				    h->nextpg != P_INVALID)
-					return (bt_snext(t, h, key, exactp));
+				    bt_snext(t, h, key, exactp))
+					return (&t->bt_cur);
 			}
 			return (&t->bt_cur);
 		}
@@ -104,7 +106,19 @@ next:		if (__bt_push(t, h->pgno, index) == RET_ERROR)
 	}
 }
 
-static EPG *
+/*
+ * BT_SNEXT -- Check for an exact match after the key.
+ *
+ * Parameters:
+ *	t:	tree to search
+ *	h:	current page.
+ *	key:	key to find
+ *	exactp:	pointer to exact match flag
+ *
+ * Returns:
+ *	If an exact match found.
+ */
+static int
 bt_snext(t, h, key, exactp)
 	BTREE *t;
 	PAGE *h;
@@ -137,12 +151,25 @@ bt_snext(t, h, key, exactp)
 			mpool_put(t->bt_mp, h, 0);
 			t->bt_cur = e;
 			*exactp = 1;
+			return (1);
 		}
 	}
-	return (&t->bt_cur);
+	return (0);
 }
 
-static EPG *
+/*
+ * BT_SPREV -- Check for an exact match before the key.
+ *
+ * Parameters:
+ *	t:	tree to search
+ *	h:	current page.
+ *	key:	key to find
+ *	exactp:	pointer to exact match flag
+ *
+ * Returns:
+ *	If an exact match found.
+ */
+static int
 bt_sprev(t, h, key, exactp)
 	BTREE *t;
 	PAGE *h;
@@ -175,7 +202,8 @@ bt_sprev(t, h, key, exactp)
 			mpool_put(t->bt_mp, h, 0);
 			t->bt_cur = e;
 			*exactp = 1;
+			return (1);
 		}
 	}
-	return (&t->bt_cur);
+	return (0);
 }
