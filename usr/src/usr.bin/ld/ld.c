@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -80,6 +80,9 @@ char *progname;
 #endif
 
 #ifdef sparc
+#ifndef sun
+#define sun 1
+#endif
 #define	INITIALIZE_HEADER \
 	(outheader.a_mid = MID_SUN_SPARC, outheader.a_toolversion = 1)
 #endif
@@ -4544,8 +4547,7 @@ void
 perror_name (name)
      char *name;
 {
-  extern int errno, sys_nerr;
-  extern char *sys_errlist[];
+  extern int errno;
   char *s;
 
   if (errno < sys_nerr)
@@ -4562,8 +4564,7 @@ void
 perror_file (entry)
      struct file_entry *entry;
 {
-  extern int errno, sys_nerr;
-  extern char *sys_errlist[];
+  extern int errno;
   char *s;
 
   if (errno < sys_nerr)
