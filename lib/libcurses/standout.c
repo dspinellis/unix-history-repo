@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1981 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1981, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,40 +32,37 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)standout.c	5.4 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)standout.c	8.1 (Berkeley) 6/4/93";
 #endif /* not lint */
 
-/*
- * routines dealing with entering and exiting standout mode
- *
- */
-
-# include	"curses.ext"
+#include <curses.h>
 
 /*
- * enter standout mode
+ * wstandout
+ *	Enter standout mode.
  */
 char *
 wstandout(win)
-reg WINDOW	*win;
+	register WINDOW *win;
 {
 	if (!SO && !UC)
-		return FALSE;
+		return (0);
 
-	win->_flags |= _STANDOUT;
+	win->flags |= __WSTANDOUT;
 	return (SO ? SO : UC);
 }
 
 /*
- * exit standout mode
+ * wstandend --
+ *	Exit standout mode.
  */
 char *
 wstandend(win)
-reg WINDOW	*win;
+	register WINDOW *win;
 {
 	if (!SO && !UC)
-		return FALSE;
+		return (0);
 
-	win->_flags &= ~_STANDOUT;
+	win->flags &= ~__WSTANDOUT;
 	return (SE ? SE : UC);
 }

@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 1981, 1993
+/*-
+ * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,43 +32,109 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overwrite.c	8.1 (Berkeley) 6/4/93";
-#endif	/* not lint */
+static char sccsid[] = "@(#)tscroll.c	8.1 (Berkeley) 6/4/93";
+#endif /* not lint */
 
 #include <curses.h>
-#include <string.h>
+
+#define	MAXRETURNSIZE	64
 
 /*
- * overwrite --
- *	Writes win1 on win2 destructively.
+ * Routine to perform scrolling.  Derived from tgoto.c in tercamp(3) library.
+ * Cap is a string containing printf type escapes to allow
+ * scrolling.
+ * The following escapes are defined for substituting n:
+ *
+ *	%d	as in printf
+ *	%2	like %2d
+ *	%3	like %3d
+ *	%.	gives %c hacking special case characters
+ *	%+x	like %c but adding x first
+ *
+ *	The codes below affect the state but don't use up a value.
+ *
+ *	%>xy	if value > x add y
+ *	%i	increments n
+ *	%%	gives %
+ *	%B	BCD (2 decimal digits encoded in one byte)
+ *	%D	Delta Data (backwards bcd)
+ *
+ * all other characters are ``self-inserting''.
  */
-int
-overwrite(win1, win2)
-	register WINDOW *win1, *win2;
+char *
+__tscroll(cap, n)
+	const char *cap;
+	int n;
 {
-	register int x, y, endy, endx, starty, startx;
+	static char result[MAXRETURNSIZE];
+	register char *dp;
+	register int c;
+	char *cp;
 
-#ifdef DEBUG
-	__CTRACE("overwrite: (%0.2o, %0.2o);\n", win1, win2);
-#endif
-	starty = max(win1->begy, win2->begy);
-	startx = max(win1->begx, win2->begx);
-	endy = min(win1->maxy + win1->begy, win2->maxy + win2->begx);
-	endx = min(win1->maxx + win1->begx, win2->maxx + win2->begx);
-	if (starty >= endy || startx >= endx)
-		return (OK);
-#ifdef DEBUG
-	__CTRACE("overwrite: from (%d, %d) to (%d, %d)\n",
-	    starty, startx, endy, endx);
-#endif
-	x = endx - startx;
-	for (y = starty; y < endy; y++) {
-		(void)memcpy(
-		    &win2->lines[y - win2->begy]->line[startx - win2->begx], 
-		    &win1->lines[y - win1->begy]->line[startx - win1->begx],
-		    x * __LDATASIZE);
-		__touchline(win2, y, startx - win2->begx, endx - win2->begx,
-		    0);
+	if (cap == NULL) {
+toohard:
+		/*
+		 * ``We don't do that under BOZO's big top''
+		 */
+		return ("OOPS");
 	}
-	return (OK);
+
+	cp = (char *) cap;
+	dp = result;
+	while (c = *cp++) {
+		if (c != '%') {
+			*dp++ = c;
+			continue;
+		}
+		switch (c = *cp++) {
+		case 'n':
+			n ^= 0140;
+			continue;
+		case 'd':
+			if (n < 10)
+				goto one;
+			if (n < 100)
+				goto two;
+			/* fall into... */
+		case '3':
+			*dp++ = (n / 100) | '0';
+			n %= 100;
+			/* fall into... */
+		case '2':
+two:	
+			*dp++ = n / 10 | '0';
+one:
+			*dp++ = n % 10 | '0';
+			continue;
+		case '>':
+			if (n > *cp++)
+				n += *cp++;
+			else
+				cp++;
+			continue;
+		case '+':
+			n += *cp++;
+			/* fall into... */
+		case '.':
+			*dp++ = n;
+			continue;
+		case 'i':
+			n++;
+			continue;
+		case '%':
+			*dp++ = c;
+			continue;
+
+		case 'B':
+			n = (n / 10 << 4) + n % 10;
+			continue;
+		case 'D':
+			n = n - 2 * (n % 16);
+			continue;
+		default:
+			goto toohard;
+		}
+	}
+	*dp = '\0';
+	return (result);
 }
