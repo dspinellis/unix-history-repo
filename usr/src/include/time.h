@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	5.7 (Berkeley) %G%
+ *	@(#)time.h	5.8 (Berkeley) %G%
  */
 
-#include <machine/machtypes.h>
+#include <machine/types.h>
 
 #ifndef	NULL
 #define	NULL	0
