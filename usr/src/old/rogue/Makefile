@@ -3,14 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 OBJS=		main.obj machdep.o
 
-SCOREFILE=	/usr/games/lib/rogue_roll
+GAMESDIR=	$(DESTDIR)/usr/games
+SCOREFILE=	$(DESTDIR)/usr/games/lib/rogue_roll
 DEFS=		-DSCOREFILE='"$(SCOREFILE)"'
 CFLAGS=		-O $(DEFS)
-DESTDIR=	/usr/games
 
 NROFF=	nroff
 TROFF=	ditroff
@@ -19,7 +19,7 @@ rogue:	$(OBJS)
 	$(CC) $(CFLAGS) -o rogue $(OBJS) -lcurses -ltermlib
 
 install: rogue
-	install -s -o daemon -m 4711 rogue $(DESTDIR)
+	install -s -o daemon -m 4711 rogue $(GAMESDIR)
 	install -c -o daemon -m 644 /dev/null $(SCOREFILE)
 
 clean:
