@@ -7,12 +7,12 @@
 #
 #  This has been tested on Solaris 2.4.
 #
-#	@(#)Makefile.SunOS.5.4	8.13 (Berkeley) %G%
+#	@(#)Makefile.SunOS.5.4	8.14 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
-# warning: do not use -O with gcc
-O=	
+# warning: do not use -O with versions of gcc prior to 2.6
+O=	-O
 
 CC=	gcc
 
