@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.33 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -255,6 +255,7 @@ ufs_inactive(vp)
 		error = itrunc(ip, (u_long)0, 0);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
+		ip->i_rdev = 0;
 		ip->i_flag |= IUPD|ICHG;
 		ifree(ip, ip->i_number, mode);
 	}
