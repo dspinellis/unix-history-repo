@@ -186,4 +186,6 @@ tags: ${SRCS} _PROGSUBDIR
 
 .if !defined(NOMAN)
 .include <bsd.man.mk>
+.elif !target(maninstall)
+maninstall:
 .endif

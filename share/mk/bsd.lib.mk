@@ -1,6 +1,10 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.7  1993/07/23  20:44:38  nate
+# Fixed a boo-boo and made the NOMAN environment variable work correctly with
+# both programs and libraries.
+#
 # Revision 1.6  1993/07/09  00:38:35  jkh
 # Removed $History$ line from hell (no leading #).
 #
@@ -165,6 +169,8 @@ tags: ${SRCS}
 
 .if !defined(NOMAN)
 .include <bsd.man.mk>
+.elif !target(maninstall)
+maninstall:
 .endif
 
 .if !target(obj)
