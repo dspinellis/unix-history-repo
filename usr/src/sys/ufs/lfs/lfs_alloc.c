@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.13 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.14 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -24,6 +24,25 @@ extern daddr_t		mapsearch();
 extern int		inside[], around[];
 extern unsigned char	*fragtbl[];
 
+/*
+ * Allocate a block in the file system.
+ * 
+ * The size of the requested block is given, which must be some
+ * multiple of fs_fsize and <= fs_bsize.
+ * A preference may be optionally specified. If a preference is given
+ * the following hierarchy is used to allocate a block:
+ *   1) allocate the requested block.
+ *   2) allocate a rotationally optimal block in the same cylinder.
+ *   3) allocate a block in the same cylinder group.
+ *   4) quadradically rehash into other cylinder groups, until an
+ *      available block is located.
+ * If no block preference is given the following heirarchy is used
+ * to allocate a block:
+ *   1) allocate a block in the cylinder group that contains the
+ *      inode for the file.
+ *   2) quadradically rehash into other cylinder groups, until an
+ *      available block is located.
+ */
 struct buf *
 alloc(dev, ip, bpref, size)
 	dev_t dev;
@@ -64,6 +83,14 @@ nospace:
 	return (NULL);
 }
 
+/*
+ * Reallocate a fragment to a bigger size
+ *
+ * The number and size of the old block is given, and a preference
+ * and new size is also specified. The allocator attempts to extend
+ * the original block. Failing that, the regular block allocator is
+ * invoked to get an appropriate block.
+ */
 struct buf *
 realloccg(dev, bprev, bpref, osize, nsize)
 	dev_t dev;
@@ -84,10 +111,10 @@ realloccg(dev, bprev, bpref, osize, nsize)
 	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
 	      fs->fs_dsize * fs->fs_minfree / 100)
 		goto nospace;
-	if (bprev == 0)
-		panic("realloccg: bad bprev");
-	else
+	if (bprev != 0)
 		cg = dtog(bprev, fs);
+	else
+		panic("realloccg: bad bprev");
 	bno = fragextend(dev, fs, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
 		bp = bread(dev, fsbtodb(fs, bno), osize);
@@ -127,6 +154,21 @@ nospace:
 	return (NULL);
 }
 
+/*
+ * Allocate an inode in the file system.
+ * 
+ * A preference may be optionally specified. If a preference is given
+ * the following hierarchy is used to allocate an inode:
+ *   1) allocate the requested inode.
+ *   2) allocate an inode in the same cylinder group.
+ *   3) quadradically rehash into other cylinder groups, until an
+ *      available inode is located.
+ * If no inode preference is given the following heirarchy is used
+ * to allocate an inode:
+ *   1) allocate an inode in cylinder group 0.
+ *   2) quadradically rehash into other cylinder groups, until an
+ *      available inode is located.
+ */
 struct inode *
 ialloc(dev, ipref, mode)
 	dev_t dev;
@@ -163,7 +205,11 @@ noinodes:
 }
 
 /*
- * find a cylinder to place a directory
+ * Find a cylinder to place a directory.
+ *
+ * The policy implemented by this algorithm is to select from
+ * among those cylinder groups with above the average number of
+ * free inodes, the one with the smallest number of directories.
  */
 dirpref(dev)
 	dev_t dev;
@@ -185,7 +231,12 @@ dirpref(dev)
 }
 
 /*
- * select a cylinder to place a large block of data
+ * Select a cylinder to place a large block of data.
+ *
+ * The policy implemented by this algorithm is to maintain a
+ * rotor that sweeps the cylinder groups. When a block is 
+ * needed, the rotor is advanced until a cylinder group with
+ * greater than the average number of free blocks is found.
  */
 daddr_t
 blkpref(dev)
@@ -209,6 +260,14 @@ blkpref(dev)
 	return (0);
 }
 
+/*
+ * Implement the cylinder overflow algorithm.
+ *
+ * The policy implemented by this algorithm is:
+ *   1) allocate the block in its requested cylinder group.
+ *   2) quadradically rehash on the cylinder group number.
+ *   3) brute force search for a free block.
+ */
 /*VARARGS5*/
 u_long
 hashalloc(dev, fs, cg, pref, size, allocator)
@@ -254,6 +313,12 @@ hashalloc(dev, fs, cg, pref, size, allocator)
 	return (0);
 }
 
+/*
+ * Determine whether a fragment can be extended.
+ *
+ * Check to see if the necessary fragments are available, and 
+ * if they are, allocate them.
+ */
 daddr_t
 fragextend(dev, fs, cg, bprev, osize, nsize)
 	dev_t dev;
@@ -278,7 +343,7 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 	if (bp->b_flags & B_ERROR)
 		return (0);
 	cgp = bp->b_un.b_cg;
-	bno = bprev % fs->fs_fpg;
+	bno = dtogd(bprev, fs);
 	for (i = osize / fs->fs_fsize; i < frags; i++)
 		if (isclr(cgp->cg_free, bno + i)) {
 			brelse(bp);
@@ -307,6 +372,12 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 	return (bprev);
 }
 
+/*
+ * Determine whether a block can be allocated.
+ *
+ * Check to see if a block of the apprpriate size is available,
+ * and if it is, allocate it.
+ */
 daddr_t
 alloccg(dev, fs, cg, bpref, size)
 	dev_t dev;
@@ -351,7 +422,7 @@ alloccg(dev, fs, cg, bpref, size)
 			return (0);
 		}
 		bno = alloccgblk(fs, cgp, bpref);
-		bpref = bno % fs->fs_fpg;
+		bpref = dtogd(bno, fs);
 		for (i = frags; i < fs->fs_frag; i++)
 			setbit(cgp->cg_free, bpref + i);
 		i = fs->fs_frag - frags;
@@ -377,6 +448,17 @@ alloccg(dev, fs, cg, bpref, size)
 	return (cg * fs->fs_fpg + bno);
 }
 
+/*
+ * Allocate a block in a cylinder group.
+ *
+ * This algorithm implements the following policy:
+ *   1) allocate the requested block.
+ *   2) allocate a rotationally optimal block in the same cylinder.
+ *   3) allocate the next available block on the block rotor for the
+ *      specified cylinder group.
+ * Note that this routine only allocates fs_bsize blocks; these
+ * blocks may be fragmented by the routine that allocates them.
+ */
 daddr_t
 alloccgblk(fs, cgp, bpref)
 	struct fs *fs;
@@ -393,7 +475,7 @@ alloccgblk(fs, cgp, bpref)
 		goto norot;
 	}
 	bpref &= ~(fs->fs_frag - 1);
-	bpref %= fs->fs_fpg;
+	bpref = dtogd(bpref, fs);
 	/*
 	 * if the requested block is available, use it
 	 */
@@ -401,13 +483,23 @@ alloccgblk(fs, cgp, bpref)
 		bno = bpref;
 		goto gotit;
 	}
-	if (fs->fs_cpc == 0)
-		goto norot;
 	/*
 	 * check for a block available on the same cylinder
-	 * beginning with one which is rotationally optimal
 	 */
 	cylno = cbtocylno(fs, bpref);
+	if (cgp->cg_btot[cylno] == 0)
+		goto norot;
+	if (fs->fs_cpc == 0) {
+		/*
+		 * block layout info is not available, so just have
+		 * to take any block in this cylinder.
+		 */
+		bpref = howmany(fs->fs_spc * cylno, NSPF(fs));
+		goto norot;
+	}
+	/*
+	 * find a block that is rotationally optimal
+	 */
 	cylbp = cgp->cg_b[cylno];
 	if (fs->fs_rotdelay == 0) {
 		pos = cbtorpos(fs, bpref);
@@ -468,11 +560,22 @@ gotit:
 	cgp->cg_cs.cs_nbfree--;
 	fs->fs_cstotal.cs_nbfree--;
 	fs->fs_cs(fs, cgp->cg_cgx).cs_nbfree--;
-	cgp->cg_b[cbtocylno(fs, bno)][cbtorpos(fs, bno)]--;
+	cylno = cbtocylno(fs, bno);
+	cgp->cg_b[cylno][cbtorpos(fs, bno)]--;
+	cgp->cg_btot[cylno]--;
 	fs->fs_fmod++;
 	return (cgp->cg_cgx * fs->fs_fpg + bno);
 }
 	
+/*
+ * Determine whether an inode can be allocated.
+ *
+ * Check to see if an inode is available, and if it is,
+ * allocate it using the following policy:
+ *   1) allocate the requested inode.
+ *   2) allocate the next available inode after the requested
+ *      inode in the specified cylinder group.
+ */
 ino_t
 ialloccg(dev, fs, cg, ipref, mode)
 	dev_t dev;
@@ -523,6 +626,13 @@ gotit:
 	return (cg * fs->fs_ipg + ipref);
 }
 
+/*
+ * Free a block or fragment.
+ *
+ * The specified block or fragment is placed back in the
+ * free map. If a fragment is deallocated, a possible 
+ * block reassembly is checked.
+ */
 fre(dev, bno, size)
 	dev_t dev;
 	daddr_t bno;
@@ -544,7 +654,7 @@ fre(dev, bno, size)
 	if (bp->b_flags & B_ERROR)
 		return;
 	cgp = bp->b_un.b_cg;
-	bno %= fs->fs_fpg;
+	bno = dtogd(bno, fs);
 	if (size == fs->fs_bsize) {
 		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag))
 			panic("free: freeing free block");
@@ -552,7 +662,9 @@ fre(dev, bno, size)
 		cgp->cg_cs.cs_nbfree++;
 		fs->fs_cstotal.cs_nbfree++;
 		fs->fs_cs(fs, cg).cs_nbfree++;
-		cgp->cg_b[cbtocylno(fs, bno)][cbtorpos(fs, bno)]++;
+		i = cbtocylno(fs, bno);
+		cgp->cg_b[i][cbtorpos(fs, bno)]++;
+		cgp->cg_btot[i]++;
 	} else {
 		bbase = bno - (bno % fs->fs_frag);
 		/*
@@ -589,13 +701,20 @@ fre(dev, bno, size)
 			cgp->cg_cs.cs_nbfree++;
 			fs->fs_cstotal.cs_nbfree++;
 			fs->fs_cs(fs, cg).cs_nbfree++;
-			cgp->cg_b[cbtocylno(fs, bbase)][cbtorpos(fs, bbase)]++;
+			i = cbtocylno(fs, bbase);
+			cgp->cg_b[i][cbtorpos(fs, bbase)]++;
+			cgp->cg_btot[i]++;
 		}
 	}
 	fs->fs_fmod++;
 	bdwrite(bp);
 }
 
+/*
+ * Free an inode.
+ *
+ * The specified inode is placed back in the free map.
+ */
 ifree(dev, ino, mode)
 	dev_t dev;
 	ino_t ino;
@@ -631,7 +750,8 @@ ifree(dev, ino, mode)
 }
 
 /*
- * find a block of the specified size in the specified cylinder group
+ * Find a block of the specified size in the specified cylinder group.
+ *
  * It is a panic if a request is made to find a block if none are
  * available.
  */
@@ -651,7 +771,7 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	 * map for an appropriate bit pattern
 	 */
 	if (bpref)
-		start = bpref % fs->fs_fpg / NBBY;
+		start = dtogd(bpref, fs) / NBBY;
 	else
 		start = cgp->cg_frotor / NBBY;
 	len = roundup(fs->fs_fpg - 1, NBBY) / NBBY - start;
@@ -659,8 +779,7 @@ mapsearch(fs, cgp, bpref, allocsiz)
 		1 << (allocsiz - 1));
 	if (loc == 0) {
 		len = start - 1;
-		start = (cgdmin(cgp->cg_cgx, fs) -
-			 cgbase(cgp->cg_cgx, fs)) / NBBY;
+		start = fs->fs_dblkno / NBBY;
 		loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
 			1 << (allocsiz - 1));
 		if (loc == 0) {
@@ -693,8 +812,8 @@ mapsearch(fs, cgp, bpref, allocsiz)
 }
 
 /*
- * update the frsum fields to reflect addition or deletion 
- * of some frags
+ * Update the frsum fields to reflect addition or deletion 
+ * of some frags.
  */
 fragacct(fs, fragmap, fraglist, cnt)
 	struct fs *fs;
@@ -726,6 +845,9 @@ fragacct(fs, fragmap, fraglist, cnt)
 	}
 }
 
+/*
+ * Check that a specified block number is in range.
+ */
 badblock(fs, bn)
 	register struct fs *fs;
 	daddr_t bn;
@@ -739,13 +861,10 @@ badblock(fs, bn)
 }
 
 /*
- * getfs maps a device number into
- * a pointer to the incore super
- * block.  The algorithm is a linear
- * search through the mount table.
- * A consistency check of the
- * in core free-block and i-node
- * counts is performed.
+ * Getfs maps a device number into a pointer to the incore super block.
+ *
+ * The algorithm is a linear search through the mount table. A
+ * consistency check of the super block magic number is performed.
  *
  * panic: no fs -- the device is not mounted.
  *	this "cannot happen"
@@ -769,8 +888,9 @@ getfs(dev)
 }
 
 /*
- * Fserr prints the name of a file system
- * with an error diagnostic, in the form
+ * Fserr prints the name of a file system with an error diagnostic.
+ * 
+ * The form of the error message is:
  *	fs: error message
  */
 fserr(fs, cp)
@@ -809,8 +929,8 @@ getfsx(dev)
 /*
  * Update is the internal name of 'sync'.  It goes through the disk
  * queues to initiate sandbagged IO; goes through the inodes to write
- * modified nodes; and it goes through the mount table to initiate modified
- * super blocks.
+ * modified nodes; and it goes through the mount table to initiate
+ * the writing of the modified super blocks.
  */
 update()
 {
@@ -870,9 +990,10 @@ update()
 }
 
 /*
- * block macros
+ * block operations
+ *
+ * check if a block is available
  */
-
 isblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
@@ -897,6 +1018,10 @@ isblock(fs, cp, h)
 		return;
 	}
 }
+
+/*
+ * take a block out of the map
+ */
 clrblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
@@ -920,6 +1045,10 @@ clrblock(fs, cp, h)
 		return;
 	}
 }
+
+/*
+ * put a block into the map
+ */
 setblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
