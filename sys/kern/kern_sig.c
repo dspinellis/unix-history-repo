@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_sig.c	7.35 (Berkeley) 6/28/91
- *	$Id: kern_sig.c,v 1.6 1993/11/10 03:53:26 ache Exp $
+ *	$Id: kern_sig.c,v 1.7 1993/11/25 01:33:08 wollman Exp $
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -620,6 +620,10 @@ psignal(p, sig)
 	register int s, prop;
 	register sig_t action;
 	int mask;
+
+	/* Ignore signals to system (internal) daemons */
+	if (p->p_flag & SSYS)
+		return;
 
 	if ((unsigned)sig >= NSIG || sig == 0)
 		panic("psignal sig");

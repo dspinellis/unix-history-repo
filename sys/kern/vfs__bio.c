@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.11 1993/11/25 13:16:09 davidg Exp $
+ *	$Id: vfs__bio.c,v 1.12 1993/11/26 19:08:26 wollman Exp $
  */
 
 #include "param.h"
@@ -631,11 +631,10 @@ int vfs_update_wakeup;
 
 void
 vfs_update() {
+	(void) spl0();
 	while(1) {
-		splbio();
-		tsleep((caddr_t)&vfs_update_wakeup, PRIBIO|PCATCH, "update", hz*30);
+		tsleep((caddr_t)&vfs_update_wakeup, PRIBIO, "update", hz*30);
 		vfs_update_wakeup = 0;
-		spl0();
 		sync(curproc, NULL, NULL);
 	}
 }
