@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -148,16 +148,15 @@ loop:
 		case TSP_TRACEON:
 			if (!(trace)) {
 				fd = fopen(fj, "w");
+				setlinebuf(fd);
 				fprintf(fd, "Tracing started on: %s\n\n", 
 								date());
-				(void)fflush(fd);
 			}
 			trace = ON;
 			break;
 		case TSP_TRACEOFF:
 			if (trace) {
 				fprintf(fd, "Tracing ended on: %s\n", date());
-				(void)fflush(fd);
 				(void)fclose(fd);
 			}
 			trace = OFF;

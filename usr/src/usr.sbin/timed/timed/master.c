@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	1.4 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -63,6 +63,7 @@ master()
 #ifdef MEASURE
 	fi = "/usr/adm/timed.masterlog";
 	fp = fopen(fi, "w");
+	setlinebuf(fp);
 #endif
 
 	syslog(LOG_INFO, "THIS MACHINE IS MASTER");
@@ -184,16 +185,15 @@ loop:
 		case TSP_TRACEON:
 			if (!(trace)) {
 				fd = fopen(fj, "w");
+				setlinebuf(fd);
 				fprintf(fd, "Tracing started on: %s\n\n", 
 							date());
-				(void)fflush(fd);
 			}
 			trace = ON;
 			break;
 		case TSP_TRACEOFF:
 			if (trace) {
 				fprintf(fd, "Tracing ended on: %s\n", date());
-				(void)fflush(fd);
 				(void)fclose(fd);
 			}
 			trace = OFF;
@@ -326,7 +326,6 @@ synch()
 			end.tv_usec += 1000000;
 		}
 		fprintf(fp, "%d ms.\n", (end.tv_sec*1000+end.tv_usec/1000));
-		(void)fflush(fp);
 #endif
 		for(i=1; i<slvcount; i++) {
 			if (hp[i].delta == HOSTDOWN) {
