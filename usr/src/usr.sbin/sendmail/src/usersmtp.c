@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.5 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.6 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.5 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.6 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -37,6 +37,7 @@ char	SmtpError[MAXLINE] = "";	/* save failure error messages */
 FILE	*SmtpOut;			/* output file */
 FILE	*SmtpIn;			/* input file */
 int	SmtpPid;			/* pid of mailer */
+bool	SmtpNeedIntro;			/* need "while talking" in transcript */
 
 #ifdef __STDC__
 extern	smtpmessage(char *f, MAILER *m, MCI *mci, ...);
@@ -88,6 +89,7 @@ smtpinit(m, pvp)
 	if (SmtpState == SMTP_OPEN)
 	SmtpError[0] = '\0';
 	CurHostName = mci->mci_host;		/* XXX UGLY XXX */
+	SmtpNeedIntro = TRUE;
 	switch (mci->mci_state)
 	{
 	  case MCIS_ACTIVE:
@@ -691,6 +693,14 @@ reply(m)
 		    (bufp[0] == '5' && strncmp(SmtpMsgBuffer, "EHLO", 4) != 0)))
 		{
 			/* serious error -- log the previous command */
+			if (SmtpNeedIntro)
+			{
+				/* inform user who we are chatting with */
+				fprintf(CurEnv->e_xfp,
+					"... while talking to %s:\n",
+					CurHostName);
+				SmtpNeedIntro = FALSE;
+			}
 			if (SmtpMsgBuffer[0] != '\0')
 				fprintf(e->e_xfp, ">>> %s\n", SmtpMsgBuffer);
 			SmtpMsgBuffer[0] = '\0';
