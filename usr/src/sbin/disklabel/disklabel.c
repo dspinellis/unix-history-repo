@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.7 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -359,6 +359,7 @@ display(f, lp)
 	fprintf(f, "bytes/sector: %d\n", lp->d_secsize);
 	fprintf(f, "sectors/track: %d\n", lp->d_nsectors);
 	fprintf(f, "tracks/cylinder: %d\n", lp->d_ntracks);
+	fprintf(f, "sectors/cylinder: %d\n", lp->d_secpercyl);
 	fprintf(f, "cylinders: %d\n", lp->d_ncylinders);
 	fprintf(f, "rpm: %d\n", lp->d_rpm);
 	fprintf(f, "interleave: %d\n", lp->d_interleave);
@@ -578,13 +579,7 @@ getasciilabel(f, lp)
 			continue;
 		}
 		if (streq(cp, "flags")) {
-			v = 0;
-			while ((cp = tp) && *cp != '\0') {
-				if (tp = skip(cp)) {
-					*tp++ = '\0';
-					while (*tp && isspace(*tp))
-						tp++;
-				}
+			for (v = 0; (cp = tp) && *cp != '\0'; tp = word(cp)) {
 				if (streq(cp, "removeable"))
 					v |= D_REMOVABLE;
 				else if (streq(cp, "ecc"))
@@ -604,13 +599,9 @@ getasciilabel(f, lp)
 		if (streq(cp, "drivedata")) {
 			register int i;
 
-			for (i = 0;(cp = tp) && *cp != '\0'  && i < NDDATA;) {
-				if (tp = skip(cp)) {
-					*tp++ = '\0';
-					while (*tp != '\0' && isspace(*tp))
-						tp++;
-				}
+			for (i = 0; (cp = tp) && *cp != '\0' && i < NDDATA;) {
 				lp->d_drivedata[i++] = atoi(cp);
+				tp = word(cp);
 			}
 			continue;
 		}
@@ -653,6 +644,16 @@ getasciilabel(f, lp)
 				errors++;
 			} else
 				lp->d_nsectors = v;
+			continue;
+		}
+		if (streq(cp, "sectors/cylinder")) {
+			v = atoi(tp);
+			if (v <= 0) {
+				fprintf(stderr, "line %d: %s: bad %s\n",
+				    lineno, tp, cp);
+				errors++;
+			} else
+				lp->d_secpercyl = v;
 			continue;
 		}
 		if (streq(cp, "tracks/cylinder")) {
