@@ -1,7 +1,9 @@
-/* $Header: /a/guest/moore/talk/RCS/msgs.c,v 1.4 83/07/06 00:17:22 moore Exp $ */
+#ifndef lint
+static char sccsid[] = "@(#)msgs.c	1.2 (Berkeley) %G%";
+#endif
 
 /* 
- * a package to display what is happening every MSG_INTERVAL seconds
+ * A package to display what is happening every MSG_INTERVAL seconds
  * if we are slow connecting.
  */
 
@@ -13,31 +15,33 @@
 #define MSG_INTERVAL 4
 #define LONG_TIME 100000
 
-char *current_state;
-int current_line = 0;
+char	*current_state;
+int	current_line = 0;
 
-static struct itimerval itimer;
-static struct timeval wait = { MSG_INTERVAL , 0};
-static struct timeval undo = { LONG_TIME, 0};
-    
-
+static	struct itimerval itimer;
+static	struct timeval wait = { MSG_INTERVAL , 0};
+static	struct timeval undo = { LONG_TIME, 0};
+	
 disp_msg()
 {
-    message(current_state);
+
+	message(current_state);
 }
 
 start_msgs()
 {
-    message(current_state);
-    signal(SIGALRM, disp_msg);
-    itimer.it_value = itimer.it_interval = wait;
-    setitimer(ITIMER_REAL, &itimer, (struct timerval *)0);
+
+	message(current_state);
+	signal(SIGALRM, disp_msg);
+	itimer.it_value = itimer.it_interval = wait;
+	setitimer(ITIMER_REAL, &itimer, (struct timerval *)0);
 }
 
 end_msgs()
 {
-    signal(SIGALRM, SIG_IGN);
-    timerclear(&itimer.it_value);
-    timerclear(&itimer.it_interval);
-    setitimer(ITIMER_REAL, &itimer, (struct timerval *)0);
+
+	signal(SIGALRM, SIG_IGN);
+	timerclear(&itimer.it_value);
+	timerclear(&itimer.it_interval);
+	setitimer(ITIMER_REAL, &itimer, (struct timerval *)0);
 }

@@ -1,4 +1,6 @@
-/* $Header: talk.c 1.3 83/04/23 02:08:25 moore Exp $ */
+#ifndef lint
+static char sccsid[] = "@(#)talk.c	1.2 (Berkeley) %G%";
+#endif
 
 #include "talk.h"
 
@@ -17,25 +19,18 @@
  */
 
 main(argc, argv)
-int argc;
-char *argv[];
+	int argc;
+	char *argv[];
 {
+
 	get_names(argc, argv);
-
 	init_display();
-
 	open_ctl();
 	open_sockt();
-
 	start_msgs();
-
-	if ( !check_local() ) {
-	    invite_remote();
-	}
-
+	if (!check_local() )
+		invite_remote();
 	end_msgs();
-
 	set_edit_chars();
-
 	talk();
 }
