@@ -1,0 +1,132 @@
+MKLOCALE(1)                  BSD Reference Manual                  MKLOCALE(1)
+
+NNAAMMEE
+     mmkkllooccaallee - make LC_CTYPE locale files
+
+SSYYNNOOPPSSIISS
+     mmkkllooccaallee _< _s_r_c_-_f_i_l_e _> _l_a_n_g_u_a_g_e_/_L_C___C_T_Y_P_E
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmkkllooccaallee utility reads a LC_CTYPE source file from standard input and
+     produces a LC_CTYPE binary file on standard output suitable for placement
+     in /usr/share/locale/_l_a_n_g_u_a_g_e/LC_CTYPE.
+
+     The format of _s_r_c_-_f_i_l_e is quite simple.  It consists of a series of lines
+     which start with a keyword and have associated data following.  C style
+     comments are used to place comments in the file.
+
+     Besides the keywords which will be listed below, the following are valid
+     tokens in _s_r_c_-_f_i_l_e:
+
+     RUNE     A RUNE may be any of the following:
+
+              _'_x_'          The ascii character _x.
+
+              _'_\_x_'         The ANSI C character _\_x where _\_x is one of \a, \b,
+                           \f, \n, \r, \t, or \v.
+
+              _0_x_[_0_-_9_a_-_z_]_*  A hexadecimal number representing a rune code.
+
+              _0_[_0_-_7_]_*      An octal number representing a rune code.
+
+              _[_1_-_9_]_[_0_-_9_]_*  A decimal number representing a rune code.
+
+     STRING   A string enclosed in double quotes (").
+
+     THRU     Either ... or -. Used to indicate ranges.
+
+     _l_i_t_e_r_a_l  The follow characters are taken literally:
+
+              <([  Used to start a mapping.  All are equivalent.
+
+              >)]  Used to end a mapping.  All are equivalent.
+
+              :    Used as a delimiter in mappings.
+
+     Key words which should only appear once are:
+
+     ENCODING   Followed by a STRING which indicates the encoding mechanism to
+                be used for this locale.  The current encodings are:
+
+                NONE  No translation and the default.
+
+                UTF2  Universal character set Transformation Format adopted
+                      from PPllaann 99 ffrroomm BBeellll LLaabbss. This is the preferred encod-
+                      ing.
+
+                EUC   EUC encoding as used by several vendors of UNIX systems.
+
+     VARIABLE   This keyword must be followed by a single tab or space charac-
+                ter, after which encoding specific data is placed.  Currently
+                only the EUC encoding requires variable data.  See euc(4) for
+                further details.
+
+     INVALID    A single RUNE follows and is used as the invalid rune for this
+                locale.
+
+     The following keywords may appear multiple times and have the following
+     format for data:
+
+          <RUNE1 RUNE2>               RUNE1 is mapped to RUNE2.
+
+          <RUNE1 THRU RUNEn: RUNE2>   Runes RUNE1 through RUNEn are mapped to
+                                      RUNE2 through RUNE2 + n-1.
+
+     MAPLOWER   Defines the tolower mappings.  RUNE2 is the lower case repre-
+                sentatin of RUNE1.
+
+     MAPUPPER   Defines the toupper mappings.  RUNE2 is the upper case repre-
+                sentatin of RUNE1.
+
+     TODIGIT    Defines a map from runes to their digit value.  RUNE2 is the
+                integer value represented  by RUNE1. For example, the ascii
+                character ''00'' would map to the decimal value 00. Only values up
+                to 225555 are allowed.
+
+     The following keywords may appear multiple times and have the following
+     format for data:
+
+          RUNE              This rune has the property defined by the keyword.
+
+          RUNE1 THRU RUNEn  All the runes between and including RUNE1 and
+                            RUNEn have the property defined by the keyword.
+
+     ALPHA      Defines runes which are alphabetic, printable and graphic.
+
+     CONTROL    Defines runes which are control characters.
+
+     DIGIT      Defines runes which are decimal digits, printable and graphic.
+
+     GRAPH      Defines runes which are graphic and printable.
+
+     LOWER      Defines runes which are lower case, printable and graphic.
+
+     PUNCT      Defines runes which are punctuation, printable and graphic.
+
+     SPACE      Defines runes which are spaces.
+
+     UPPER      Defines runes which are upper case, printable and graphic.
+
+     XDIGIT     Defines runes which are hexadecimal digits, printable and
+                graphic.
+
+     BLANK      Defines runes which are blank.
+
+     PRINT      Defines runes which are printable.
+
+     IDEOGRAM   Defines runes which are ideograms, printable and graphic.
+
+     SPECIAL    Defines runes which are special characters, printable and
+                graphic.
+
+     PHONOGRAM  Defines runes which are phonograms, printable and graphic.
+
+SSEEEE AALLSSOO
+     mbrune(3),  rune(3),  setlocale(3),  euc(4),  utf2(4)
+
+BBUUGGSS
+     The mmkkllooccaallee utility is overly simplistic.
+
+HHIISSTTOORRYY
+     The mmkkllooccaallee utility first appeared in 4.4BSD.
+

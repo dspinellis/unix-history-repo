@@ -1,0 +1,80 @@
+MAN(1)                       BSD Reference Manual                       MAN(1)
+
+NNAAMMEE
+     mmaann - display the on-line manual pages
+
+SSYYNNOOPPSSIISS
+     mmaann [--aacchhww] [--MM _p_a_t_h] [--mm _p_a_t_h] [_s_e_c_t_i_o_n] _n_a_m_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmaann utility displays the BSD manual pages entitled _n_a_m_e.
+
+     The options are as follows:
+
+     --aa      Display all of the manual pages for a specified _s_e_c_t_i_o_n and _n_a_m_e
+             combination.  (Normally, only the first manual page found is dis-
+             played.)
+
+     --cc      Copy the manual page to the standard output instead of using
+             more(1) to paginate it.  This is done by default if the standard
+             output is not a terminal device.
+
+     --hh      Display only the ``SYNOPSIS'' lines of the requested manual
+             pages.
+
+     --MM      Override the list of standard directories which mmaann searches for
+             manual pages.  The supplied _p_a_t_h must be a colon (``:'') separat-
+             ed list of directories.  This search path may also be set using
+             the environment variable MANPATH. The subdirectories to be
+             searched as well as their search order is specified by the
+             ``_subdir'' line in the mmaann configuration file.
+
+     --mm      Augment the list of standard directories which mmaann searches for
+             manual pages.  The supplied _p_a_t_h must be a colon (``:'') separat-
+             ed list of directories.  These directories will be searched be-
+             fore the standard directories or the directories specified using
+             the --MM option or the MANPATH environment variable.
+
+     --ww      List the pathnames of the manual pages which mmaann would display
+             for the specified _s_e_c_t_i_o_n and _n_a_m_e combination.
+
+     The optional _s_e_c_t_i_o_n restricts the directories that mmaann will search.  The
+     mmaann configuration file (see man_conf(5))  specifies the possible _s_e_c_t_i_o_n
+     values that are currently available.  If only a single argument is speci-
+     fied or if the first argument is not a valid section, mmaann assumes that
+     the argument is the name of a manual page to be displayed.
+
+EENNVVIIRROONNMMEENNTT
+     MACHINE   As some manual pages are intended only for use on certain ar-
+               chitectures, mmaann searches certain directories applicable to the
+               current machine.  Man's determination of the current machine
+               type may be overridden by setting the environment variable
+               MACHINE to the name of an architecture (see machine(1)).  Ma-
+               chine specific areas are checked before general areas.
+
+     MANPATH   The standard search path used by mmaann may be overridden by spec-
+               ifying a path in the MANPATH environment variable.  The format
+               of the path is a colon (``:'') separated list of directories.
+               The subdirectories to be searched as well as their search order
+               is specified by the ``_subdir'' line in the mmaann configuration
+               file.
+
+     PAGER     Any value of the environment variable PAGER will be used in-
+               stead of the standard pagination program more(1).
+
+FFIILLEESS
+
+     /etc/man.conf  man configuration file (see man_conf(5))
+
+SSEEEE AALLSSOO
+     apropos(1),  machine(1),  whatis(1),  whereis(1),  man_conf(5)
+
+BBUUGGSS
+     The on-line manual pages are, by necessity, forgiving toward stupid dis-
+     play devices, causing some manual pages to not be as good as their type-
+     set counterparts.
+
+HHIISSTTOORRYY
+     A mmaann command appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 6, 1993                                2

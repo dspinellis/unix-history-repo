@@ -1,0 +1,49 @@
+MKDEP(1)                     BSD Reference Manual                     MKDEP(1)
+
+NNAAMMEE
+     mmkkddeepp - construct Makefile dependency list
+
+SSYYNNOOPPSSIISS
+     mmkkddeepp [--aapp] [--ff _f_i_l_e] [_f_l_a_g_s] _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     MMkkddeepp takes a set of flags for the C compiler and a list of C source
+     files as arguments and constructs a set of include file dependencies
+     which are written into the file ``.depend''.  An example of its use in a
+     Makefile might be:
+
+           CFLAGS= -O -I../include
+           SRCS= file1.c file2.c
+
+           depend:
+                   mkdep ${CFLAGS} ${SRCS}
+
+     where the macro SRCS is the list of C source files and the macro CFLAGS
+     is the list of flags for the C compiler.
+
+     The options are as follows:
+
+     --aa      Append to the output file, so that multiple mmkkddeepp's may be run
+             from a single Makefile.
+
+     --ff      Write the include file dependencies to _f_i_l_e, instead of the de-
+             fault ``.depend''.
+
+     --pp      Cause mmkkddeepp to produce dependencies of the form:
+
+                   program: program.c
+
+             so that subsequent makes will produce _p_r_o_g_r_a_m directly from its C
+             module rather than using an intermediate _._o module.  This is use-
+             ful for programs whose source is contained in a single module.
+
+SSEEEE AALLSSOO
+     cc(1),  cpp(1),  make(1)
+
+FFIILLEESS
+     .depend  File containing list of dependencies.
+
+HHIISSTTOORRYY
+     The mmkkddeepp command appeared in 4.3BSD-Tahoe.
+
+4.2 Berkeley Distribution        June 6, 1993                                1
