@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)execve.2	8.2 (Berkeley) %G%
+.\"     @(#)execve.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXECVE 2
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 .Fd #include <unistd.h>
 .Ft int
-.Fn execve "const char *path" "const * char *argv" "const * char *envp"
+.Fn execve "const char *path" "char *const argv[]" "char *const envp[]"
 .Sh DESCRIPTION
 .Fn Execve
 transforms the calling process into a new process.
