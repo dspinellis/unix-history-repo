@@ -1,0 +1,204 @@
+
+
+# DO NOT DELETE THIS LINE -- g++dep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+clearerr.o : clearerr.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+emulate.o : emulate.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fclose.o : fclose.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fdopen.o : fdopen.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+feof.o : feof.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+ferror.o : ferror.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fflush.o : fflush.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fgetc.o : fgetc.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fgets.o : fgets.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fileno.o : fileno.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fopen.o : fopen.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fprintf.o : fprintf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h
+fputc.o : fputc.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fputs.o : fputs.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fread.o : fread.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+freopen.o : freopen.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fscanf.o : fscanf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fseek.o : fseek.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+ftell.o : ftell.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+fwrite.o : fwrite.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+popen.o : popen.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  $(srcdir)/../../$(IO_DIR)/procbuf.h
+printf.o : printf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+rewind.o : rewind.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+scanf.o : scanf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h
+setbuf.o : setbuf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+setbuffer.o : setbuffer.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+setlinebuf.o : setlinebuf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+setvbuf.o : setvbuf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+sprintf.o : sprintf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h
+sscanf.o : sscanf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  $(srcdir)/../../$(IO_DIR)/strstream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h
+stdio.o : stdio.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+ungetc.o : ungetc.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+vfprintf.o : vfprintf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+vfscanf.o : vfscanf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+vprintf.o : vprintf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h
+vscanf.o : vscanf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h 
+vsprintf.o : vsprintf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  $(srcdir)/../../$(IO_DIR)/strstream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h
+vsscanf.o : vsscanf.C \
+  stdioprivate.h \
+  stdio.h \
+  $(srcdir)/../../$(IO_DIR)/ioprivate.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  $(srcdir)/../../$(IO_DIR)/strstream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
