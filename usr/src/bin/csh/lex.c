@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.6 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -1009,6 +1009,15 @@ findev(cp, anyarg)
 		register struct wordent *lp = hp->Hlex.next;
 		int argno = 0;
 
+		/*
+		 * The entries added by alias substitution don't
+		 * have a newline but do have a negative event number.
+		 * Savehist() trims off these entries, but it happens
+		 * before alias expansion, too early to delete those
+		 * from the previous command.
+		 */
+		if (hp->Hnum < 0)
+			continue;
 		if (lp->word[0] == '\n')
 			continue;
 		if (!anyarg) {
