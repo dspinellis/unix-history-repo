@@ -6,7 +6,7 @@ divert(0)dnl
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cf.m4	2.15 (Berkeley) %G%
+#	@(#)cf.m4	2.16 (Berkeley) %G%
 #
 
 
@@ -53,7 +53,8 @@ define(`SITE', `ifelse(CONCAT($'2`, $3), SU,
 sinclude(../siteconfig/$1.m4)')
 define(`LOCAL_NAME', `PUSHDIVERT(5)CL$1
 POPDIVERT`'dnl')
+define(`DOIT', `include(`../m4/proto.m4')')
 
-m4wrap(`include(`../m4/proto.m4')')
+m4wrap(`DOIT')
 
 divert(0)dnl
