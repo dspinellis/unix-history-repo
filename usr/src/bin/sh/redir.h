@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)redir.h	5.1 (Berkeley) %G%
+ *	@(#)redir.h	5.2 (Berkeley) %G%
  */
 
 /* flags passed to redirect */
@@ -20,9 +20,11 @@ void redirect(union node *, int);
 void popredir(void);
 void clearredir(void);
 int copyfd(int, int);
+int fd0_redirected_p(void);
 #else
 void redirect();
 void popredir();
 void clearredir();
 int copyfd();
+int fd0_redirected_p();
 #endif
