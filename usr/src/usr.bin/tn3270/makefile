@@ -3,13 +3,18 @@
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms are permitted
-# provided that this notice is preserved and that due credit is given
-# to the University of California at Berkeley. The name of the University
-# may not be used to endorse or promote products derived from this
-# software without specific prior written permission. This software
-# is provided ``as is'' without express or implied warranty.
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	3.5 (Berkeley) %G%
+#	@(#)makefile	3.6 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -111,6 +116,8 @@ LINTFLAGS	= -hbxaz
 DESTDIR=
 
 BINDIR		= $(DESTDIR)/usr/ucb
+MAN1DIR		= $(DESTDIR)/usr/man/cat1
+MAN5DIR		= $(DESTDIR)/usr/man/cat5
 
 # Names for the terminal libraries...
 LIBCURSES	= -lcurses
@@ -120,7 +127,7 @@ LIBTERM		= -ltermlib
 #PC_LIBTERM	=
 
 # The source files...
-ALLH =	telnet.ext
+ALLH =	telextrn.h
 
 MSMAIN = ascii/mset.c
 
@@ -131,7 +138,8 @@ ALLO	= mset$O
 ALLHC=	${ALLH} ${ALLC}
 ALLPRINT =	${ALLHC}
 
-ALLSOURCE =	${ALLPRINT} makefile makefile.mak makefile_4.2 README
+ALLSOURCE =	${ALLPRINT} makefile makefile.mak makefile_4.2 README \
+		mset.1 tn3270.1 map3270.5
 
 SYS	= sys_curses
 #PC_SYS	= sys_dos
@@ -181,9 +189,11 @@ mset$X:	mset$O ascii/map3270$O
 mset$O:	$(MSMAIN)
 	$(CC) $(CFLAGS) -c $(MSMAIN)
 
-install:	tn3270$X mset$X
+install:	tn3270$X mset$X tn3270.0 mset.0 map3270.0
 	install -m 755 -o bin -g bin -s tn3270 $(BINDIR)
 	install -m 755 -o bin -g bin -s mset $(BINDIR)
+	install -c -o bin -g bin -m 444 tn3270.0 mset.0 $(MAN1DIR)
+	install -c -o bin -g bin -m 444 map3270.0 $(MAN5DIR)
 
 action:
 	${ACTION}
@@ -231,7 +241,7 @@ sourcelist:	${ALLSOURCE}
 							    sourcelist); done
 
 lint:
-	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} -DTN3270 \
+	lint ${LINTFLAGS} -Itelnet ${INCLUDES} ${DEFINES} -DTN3270 \
 				`make clist` -lcurses
 
 lintmset:
