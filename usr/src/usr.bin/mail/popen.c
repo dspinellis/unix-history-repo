@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include <signal.h>
+#include <errno.h>
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
 #define	RDR	0
 #define	WTR	1
 static	int	popen_pid[20];
-static	char	*sccsid = "@(#)popen.c	1.2.1.1 %G%";
+static	char	*sccsid = "@(#)popen.c	1.2.1.2 %G%";
+
+# ifndef VMUNIX
+# define vfork	fork
+# endif VMUNIX
 
 FILE *
 popen(cmd,mode)
@@ -38,18 +43,23 @@ FILE *ptr;
 {
 	register f, r;
 	int status;
+	extern int errno;
 
 	f = fileno(ptr);
 	fclose(ptr);
+# ifdef VMUNIX
 	sighold(SIGINT);
 	sighold(SIGQUIT);
 	sighold(SIGHUP);
-	while((r = wait(&status)) != popen_pid[f] && r != -1)
+# endif VMUNIX
+	while((r = wait(&status)) != popen_pid[f] && r != -1 && errno != EINTR)
 		;
 	if(r == -1)
 		status = -1;
+# ifdef VMUNIX
 	sigrelse(SIGINT);
 	sigrelse(SIGQUIT);
 	sigrelse(SIGHUP);
+# endif VMUNIX
 	return(status);
 }

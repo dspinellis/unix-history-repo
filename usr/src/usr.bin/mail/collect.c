@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.7.1.1 %G%";
+static char *SccsId = "@(#)collect.c	2.7.1.2 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -27,7 +27,9 @@ static char *SccsId = "@(#)collect.c	2.7.1.1 %G%";
 
 static	int	(*savesig)();		/* Previous SIGINT value */
 static	int	(*savehup)();		/* Previous SIGHUP value */
+# ifdef VMUNIX
 static	int	(*savecont)();		/* Previous SIGCONT value */
+# endif VMUNIX
 static	FILE	*newi;			/* File for saving away */
 static	FILE	*newo;			/* Output side of same */
 static	int	hf;			/* Ignore interrups */
@@ -45,6 +47,7 @@ collect(hp)
 	char linebuf[LINESIZE], *cp;
 	extern char tempMail[];
 	int notify();
+	extern collintsig(), collhupsig();
 
 	noreset++;
 	ibuf = obuf = NULL;
@@ -53,11 +56,16 @@ collect(hp)
 	else
 		hf = 0;
 	hadintr = 0;
+# ifdef VMUNIX
 	if ((savesig = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
 		sigset(SIGINT, hf ? intack : collrub), sighold(SIGINT);
 	if ((savehup = sigset(SIGHUP, SIG_IGN)) != SIG_IGN)
-		sigset(SIGHUP, collrub), sighold(SIGINT);
+		sigset(SIGHUP, collrub), sighold(SIGHUP);
 	savecont = sigset(SIGCONT, collcont);
+# else VMUNIX
+	savesig = signal(SIGINT, SIG_IGN);
+	savehup = signal(SIGHUP, SIG_IGN);
+# endif VMUNIX
 	newi = NULL;
 	newo = NULL;
 	if ((obuf = fopen(tempMail, "w")) == NULL) {
@@ -96,8 +104,15 @@ collect(hp)
 	eof = 0;
 	for (;;) {
 		setjmp(coljmp);
+# ifdef VMUNIX
 		sigrelse(SIGINT);
 		sigrelse(SIGHUP);
+# else VMUNIX
+		if (savesig != SIG_IGN)
+			signal(SIGINT, hf ? intack : collintsig);
+		if (savehup != SIG_IGN)
+			signal(SIGHUP, collhupsig);
+# endif VMUNIX
 		flush();
 		if (readline(stdin, linebuf) <= 0) {
 			if (intty && value("ignoreeof") != NOSTR) {
@@ -166,7 +181,7 @@ collect(hp)
 			/*
 			 * Simulate end of file on input.
 			 */
-			goto eof;
+			goto eofl;
 
 		case 'q':
 		case 'Q':
@@ -376,12 +391,14 @@ collect(hp)
 			break;
 		}
 	}
-eof:
+eofl:
 	fclose(obuf);
 	rewind(ibuf);
 	sigset(SIGINT, savesig);
 	sigset(SIGHUP, savehup);
+# ifdef VMUNIX
 	sigset(SIGCONT, savecont);
+# endif VMUNIX
 	noreset = 0;
 	return(ibuf);
 
@@ -392,7 +409,9 @@ err:
 		fclose(obuf);
 	sigset(SIGINT, savesig);
 	sigset(SIGHUP, savehup);
+# ifdef VMUNIX
 	sigset(SIGCONT, savecont);
+# endif VMUNIX
 	noreset = 0;
 	return(NULL);
 }
@@ -478,7 +497,9 @@ mesedit(ibuf, obuf, c)
 	register char *edit;
 
 	sig = sigset(SIGINT, SIG_IGN);
+# ifdef VMUNIX
 	scont = sigset(SIGCONT, foonly);
+# endif VMUNIX
 	if (stat(tempEdit, &sbuf) >= 0) {
 		printf("%s: file exists\n", tempEdit);
 		goto out;
@@ -548,7 +569,9 @@ mesedit(ibuf, obuf, c)
 fix:
 	perror(tempEdit);
 out:
+# ifdef VMUNIX
 	sigset(SIGCONT, scont);
+# endif VMUNIX
 	sigset(SIGINT, sig);
 	newi = ibuf;
 	return(obuf);
@@ -752,6 +775,20 @@ collcont(s)
  * were previously set anyway.
  */
 
+# ifndef VMUNIX
+collintsig()
+{
+	signal(SIGINT, SIG_IGN);
+	collrub(SIGINT);
+}
+
+collhupsig()
+{
+	signal(SIGHUP, SIG_IGN);
+	collrub(SIGHUP);
+}
+# endif VMUNIX
+
 collrub(s)
 {
 	register FILE *dbuf;
@@ -761,7 +798,9 @@ collrub(s)
 		hadintr++;
 		clrbuf(stdout);
 		printf("\n(Interrupt -- one more to kill letter)\n");
+# ifdef VMUNIX
 		sigrelse(s);
+# endif VMUNIX
 		longjmp(coljmp, 1);
 	}
 	fclose(newo);
@@ -779,7 +818,9 @@ done:
 	fclose(newi);
 	sigset(SIGINT, savesig);
 	sigset(SIGHUP, savehup);
+# ifdef VMUNIX
 	sigset(SIGCONT, savecont);
+# endif VMUNIX
 	if (rcvmode) {
 		if (s == SIGHUP)
 			hangup(SIGHUP);

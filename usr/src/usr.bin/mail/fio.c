@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.7 %G%";
+static char *SccsId = "@(#)fio.c	2.3.1.1 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -392,6 +392,10 @@ done:
 	relsesigs();
 }
 
+# ifndef VMUNIX
+static int	SaveSigs[32];
+# endif VMUNIX
+
 /*
  * Hold signals SIGHUP - SIGQUIT.
  */
@@ -400,7 +404,11 @@ holdsigs()
 	register int i;
 
 	for (i = SIGHUP; i <= SIGQUIT; i++)
+# ifdef VMUNIX
 		sighold(i);
+# else
+		SaveSigs[i] = signal(i, SIG_IGN);
+# endif
 }
 
 /*
@@ -411,7 +419,11 @@ relsesigs()
 	register int i;
 
 	for (i = SIGHUP; i <= SIGQUIT; i++)
+# ifdef VMUNIX
 		sigrelse(i);
+# else
+		signal(i, SaveSigs[i]);
+# endif
 }
 
 /*

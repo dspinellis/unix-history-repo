@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.7 %G%";
+static char *SccsId = "@(#)lex.c	2.5.1.1 %G%";
 
 char	*prompt = "& ";
 
@@ -103,7 +103,9 @@ commands()
 	char linebuf[LINESIZE];
 	int hangup(), contin();
 
+# ifdef VMUNIX
 	sigset(SIGCONT, SIG_DFL);
+# endif VMUNIX
 	if (rcvmode && !sourcing) {
 		if (sigset(SIGINT, SIG_IGN) != SIG_IGN)
 			sigset(SIGINT, stop);
@@ -125,6 +127,7 @@ commands()
 top:
 		if (shudprompt) {
 			sigset(SIGCONT, contin);
+# endif VMUNIX
 			printf(prompt);
 		}
 		flush();
@@ -163,7 +166,9 @@ top:
 				break;
 			linebuf[n++] = ' ';
 		}
+# ifdef VMUNIX
 		sigset(SIGCONT, SIG_DFL);
+# endif VMUNIX
 		if (execute(linebuf, 0))
 			return;
 more:		;
@@ -491,6 +496,9 @@ stop(s)
 {
 	register FILE *fp;
 
+# ifndef VMUNIX
+	s = SIGINT;
+# endif VMUNIX
 	noreset = 0;
 	if (!inithdr)
 		sawcom++;
@@ -518,7 +526,11 @@ stop(s)
 	}
 	clrbuf(stdout);
 	printf("Interrupt\n");
+# ifdef VMUNIX
 	sigrelse(s);
+# else
+	signal(s, stop);
+# endif
 	reset(0);
 }
 
