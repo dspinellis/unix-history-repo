@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -411,8 +411,8 @@ edit(file)
 	else
 		p = editor = "vi";
 	if (!(pid = vfork())) {
-		(void)setuid(getuid());
 		(void)setgid(getgid());
+		(void)setuid(getuid());
 		execlp(editor, p, file, NULL);
 		_exit(127);
 	}
