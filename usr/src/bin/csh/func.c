@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -240,7 +240,7 @@ doif(v, kp)
     register Char **vv;
 
     v++;
-    i = exp(&v);
+    i = expr(&v);
     vv = v;
     if (*vv == NULL)
 	stderror(ERR_NAME | ERR_EMPTYIF);
@@ -368,7 +368,7 @@ doexit(v, t)
      */
     v++;
     if (*v) {
-	set(STRstatus, putn(exp(&v)));
+	set(STRstatus, putn(expr(&v)));
 	if (*v)
 	    stderror(ERR_NAME | ERR_EXPRESSION);
     }
@@ -438,7 +438,7 @@ dowhile(v, t)
     if (intty && !again)
 	status = !exp0(&v, 1);
     else
-	status = !exp(&v);
+	status = !expr(&v);
     if (*v)
 	stderror(ERR_NAME | ERR_EXPRESSION);
     if (!again) {
