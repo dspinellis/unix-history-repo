@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_balloc.c	7.5 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,18 +29,13 @@
 
 /*
  * Bmap defines the structure of file system storage
- * by returning the physical block number on a device given the
- * inode and the logical block number in a file.
- * When convenient, it also leaves the physical
- * block number of the next block of the file in rablock
- * for use in read-ahead.
+ * by returning the physical block number on a device
+ * given the inode and the logical block number in a file.
  */
-bmap(ip, bn, bnp, rablockp, rasizep)
+bmap(ip, bn, bnp)
 	register struct inode *ip;
 	register daddr_t bn;
 	daddr_t	*bnp;
-	daddr_t	*rablockp;
-	int *rasizep;
 {
 	register struct fs *fs;
 	register daddr_t nb;
@@ -62,21 +57,11 @@ bmap(ip, bn, bnp, rablockp, rasizep)
 			*bnp = (daddr_t)-1;
 			return (0);
 		}
-		if (rablockp && rasizep) {
-			if (bn < NDADDR - 1) {
-				*rablockp = fsbtodb(fs, ip->i_db[bn + 1]);
-				*rasizep = blksize(fs, ip, bn + 1);
-			} else {
-				*rablockp = 0;
-				*rasizep = 0;
-			}
-		}
 		*bnp = fsbtodb(fs, nb);
 		return (0);
 	}
-
 	/*
-	 * Determine how many levels of indirection.
+	 * Determine the number of levels of indirection.
 	 */
 	sh = 1;
 	bn -= NDADDR;
@@ -88,25 +73,22 @@ bmap(ip, bn, bnp, rablockp, rasizep)
 	}
 	if (j == 0)
 		return (EFBIG);
-
 	/*
-	 * fetch the first indirect block
+	 * Fetch through the indirect blocks.
 	 */
 	nb = ip->i_ib[NIADDR - j];
 	if (nb == 0) {
 		*bnp = (daddr_t)-1;
 		return (0);
 	}
-
-	/*
-	 * fetch through the indirect blocks
-	 */
 	for (; j <= NIADDR; j++) {
 		if (error = bread(ip->i_devvp, fsbtodb(fs, nb),
 		    (int)fs->fs_bsize, NOCRED, &bp)) {
 			brelse(bp);
 			return (error);
 		}
+		if ((bp->b_flags & B_CACHE) == 0)
+			reassignbuf(bp, ITOV(ip));
 		bap = bp->b_un.b_daddr;
 		sh /= NINDIR(fs);
 		i = (bn / sh) % NINDIR(fs);
@@ -116,47 +98,32 @@ bmap(ip, bn, bnp, rablockp, rasizep)
 			brelse(bp);
 			return (0);
 		}
-		if (j < NIADDR)
-			brelse(bp);
-	}
-
-	/*
-	 * calculate read-ahead.
-	 */
-	if (rablockp && rasizep) {
-		if (i < NINDIR(fs) - 1) {
-			*rablockp = fsbtodb(fs, bap[i + 1]);
-			*rasizep = fs->fs_bsize;
-		} else {
-			*rablockp = 0;
-			*rasizep = 0;
-		}
+		brelse(bp);
 	}
 	*bnp = fsbtodb(fs, nb);
-	brelse(bp);
 	return (0);
 }
 
 /*
  * Balloc defines the structure of file system storage
- * by returning the physical block number on a device given the
- * inode and the logical block number in a file.
- * When unallocated entries are found, new physical blocks
- * are allocated.
+ * by allocating the physical blocks on a device given
+ * the inode and the logical block number in a file.
  */
-balloc(ip, bn, size, bnp, flags)
+balloc(ip, bn, size, bpp, flags)
 	register struct inode *ip;
 	register daddr_t bn;
 	int size;
-	daddr_t	*bnp;
+	struct buf **bpp;
 	int flags;
 {
 	register struct fs *fs;
 	register daddr_t nb;
 	struct buf *bp, *nbp;
+	struct vnode *vp = ITOV(ip);
 	int osize, nsize, i, j, sh, error;
-	daddr_t lbn, *bap, pref, blkpref();
+	daddr_t newb, lbn, *bap, pref, blkpref();
 
+	*bpp = (struct buf *)0;
 	if (bn < 0)
 		return (EFBIG);
 	fs = ip->i_fs;
@@ -170,17 +137,18 @@ balloc(ip, bn, size, bnp, flags)
 	if (nb < NDADDR && nb < bn) {
 		osize = blksize(fs, ip, nb);
 		if (osize < fs->fs_bsize && osize > 0) {
-			error = realloccg(ip, ip->i_db[nb],
+			error = realloccg(ip, nb,
 				blkpref(ip, nb, (int)nb, &ip->i_db[0]),
 				osize, (int)fs->fs_bsize, &bp);
-			if (error) {
-				*bnp = (daddr_t)-1;
+			if (error)
 				return (error);
-			}
 			ip->i_size = (nb + 1) * fs->fs_bsize;
 			ip->i_db[nb] = dbtofsb(fs, bp->b_blkno);
 			ip->i_flag |= IUPD|ICHG;
-			bdwrite(bp);
+			if (flags & B_SYNC)
+				bwrite(bp);
+			else
+				bawrite(bp);
 		}
 	}
 	/*
@@ -188,52 +156,56 @@ balloc(ip, bn, size, bnp, flags)
 	 */
 	if (bn < NDADDR) {
 		nb = ip->i_db[bn];
-		if (nb == 0 || ip->i_size < (bn + 1) * fs->fs_bsize) {
-			if (nb != 0) {
-				/* consider need to reallocate a frag */
-				osize = fragroundup(fs, blkoff(fs, ip->i_size));
-				nsize = fragroundup(fs, size);
-				if (nsize <= osize)
-					goto gotit;
-				error = realloccg(ip, nb,
-					blkpref(ip, bn, (int)bn, &ip->i_db[0]),
-					osize, nsize, &bp);
-			} else {
-				if (ip->i_size < (bn + 1) * fs->fs_bsize)
-					nsize = fragroundup(fs, size);
-				else
-					nsize = fs->fs_bsize;
-				error = alloc(ip,
-					blkpref(ip, bn, (int)bn, &ip->i_db[0]),
-					nsize, &bp, flags);
-			}
+		if (nb != 0 && ip->i_size >= (bn + 1) * fs->fs_bsize) {
+			error = bread(vp, bn, fs->fs_bsize, NOCRED, &bp);
 			if (error) {
-				*bnp = (daddr_t)-1;
+				brelse(bp);
 				return (error);
 			}
-			nb = dbtofsb(fs, bp->b_blkno);
-			if ((ip->i_mode & IFMT) == IFDIR)
-				/*
-				 * Write directory blocks synchronously
-				 * so they never appear with garbage in
-				 * them on the disk.
-				 * 
-				 * NB: Should free space and return error
-				 * if bwrite returns an error.
-				 */
-				error = bwrite(bp);
-			else
-				bdwrite(bp);
-			ip->i_db[bn] = nb;
-			ip->i_flag |= IUPD|ICHG;
+			*bpp = bp;
+			return (0);
 		}
-gotit:
-		*bnp = fsbtodb(fs, nb);
+		if (nb != 0) {
+			/*
+			 * Consider need to reallocate a fragment.
+			 */
+			osize = fragroundup(fs, blkoff(fs, ip->i_size));
+			nsize = fragroundup(fs, size);
+			if (nsize <= osize) {
+				error = bread(vp, bn, osize, NOCRED, &bp);
+				if (error) {
+					brelse(bp);
+					return (error);
+				}
+			} else {
+				error = realloccg(ip, bn,
+					blkpref(ip, bn, (int)bn, &ip->i_db[0]),
+					osize, nsize, &bp);
+				if (error)
+					return (error);
+			}
+		} else {
+			if (ip->i_size < (bn + 1) * fs->fs_bsize)
+				nsize = fragroundup(fs, size);
+			else
+				nsize = fs->fs_bsize;
+			error = alloc(ip, bn,
+				blkpref(ip, bn, (int)bn, &ip->i_db[0]),
+				nsize, &newb);
+			if (error)
+				return (error);
+			bp = getblk(vp, bn, nsize);
+			bp->b_blkno = fsbtodb(fs, newb);
+			if (flags & B_CLRBUF)
+				clrbuf(bp);
+		}
+		ip->i_db[bn] = dbtofsb(fs, bp->b_blkno);
+		ip->i_flag |= IUPD|ICHG;
+		*bpp = bp;
 		return (0);
 	}
-
 	/*
-	 * Determine how many levels of indirection.
+	 * Determine the number of levels of indirection.
 	 */
 	pref = 0;
 	sh = 1;
@@ -247,81 +219,111 @@ gotit:
 	}
 	if (j == 0)
 		return (EFBIG);
-
 	/*
-	 * fetch the first indirect block
+	 * Fetch the first indirect block allocating if necessary.
 	 */
 	nb = ip->i_ib[NIADDR - j];
 	if (nb == 0) {
 		pref = blkpref(ip, lbn, 0, (daddr_t *)0);
-	        error = alloc(ip, pref, (int)fs->fs_bsize, &bp, B_CLRBUF);
-		if (error) {
-			*bnp = (daddr_t)-1;
+	        if (error = alloc(ip, lbn, pref, (int)fs->fs_bsize, &newb))
 			return (error);
-		}
-		nb = dbtofsb(fs, bp->b_blkno);
+		nb = newb;
+		bp = getblk(ip->i_devvp, fsbtodb(fs, nb), fs->fs_bsize);
+		clrbuf(bp);
+		if ((bp->b_flags & B_CACHE) == 0)
+			reassignbuf(bp, vp);
 		/*
 		 * Write synchronously so that indirect blocks
 		 * never point at garbage.
-		 * 
-		 * NB: Should free space and return error
-		 * if bwrite returns an error.
 		 */
-		error = bwrite(bp);
+		if (error = bwrite(bp)) {
+			blkfree(ip, nb, fs->fs_bsize);
+			return (error);
+		}
 		ip->i_ib[NIADDR - j] = nb;
 		ip->i_flag |= IUPD|ICHG;
 	}
-
 	/*
-	 * fetch through the indirect blocks
+	 * Fetch through the indirect blocks, allocating as necessary.
 	 */
-	for (; j <= NIADDR; j++) {
-#ifdef SECSIZE
-		bp = bread(ip->i_dev, fsbtodb(fs, nb), (int)fs->fs_bsize,
-		    fs->fs_dbsize);
-#else SECSIZE
-		if (error = bread(ip->i_devvp, fsbtodb(fs, nb),
-		    (int)fs->fs_bsize, NOCRED, &bp)) {
+	for (; ; j++) {
+		error = bread(ip->i_devvp, fsbtodb(fs, nb),
+		    (int)fs->fs_bsize, NOCRED, &bp);
+		if (error) {
 			brelse(bp);
 			return (error);
 		}
+		if ((bp->b_flags & B_CACHE) == 0)
+			reassignbuf(bp, vp);
 		bap = bp->b_un.b_daddr;
 		sh /= NINDIR(fs);
 		i = (bn / sh) % NINDIR(fs);
 		nb = bap[i];
-		if (nb == 0) {
-			if (pref == 0)
-				if (j < NIADDR)
-					pref = blkpref(ip, lbn, 0,
-						(daddr_t *)0);
-				else
-					pref = blkpref(ip, lbn, i, &bap[0]);
-		        error = alloc(ip, pref, (int)fs->fs_bsize, &nbp,
-				(j < NIADDR) ? B_CLRBUF : flags);
-			if (error) {
-				brelse(bp);
-				*bnp = (daddr_t)-1;
-				return (error);
-			}
-			nb = dbtofsb(fs, nbp->b_blkno);
-			if (j < NIADDR || (ip->i_mode & IFMT) == IFDIR)
-				/*
-				 * Write synchronously so indirect blocks
-				 * never point at garbage and blocks
-				 * in directories never contain garbage.
-				 * 
-				 * NB: Should free space and return error
-				 * if bwrite returns an error.
-				 */
-				error = bwrite(nbp);
-			else
-				bdwrite(nbp);
-			bap[i] = nb;
-			bdwrite(bp);
-		} else
+		if (j == NIADDR)
+			break;
+		if (nb != 0) {
 			brelse(bp);
+			continue;
+		}
+		if (pref == 0)
+			pref = blkpref(ip, lbn, 0, (daddr_t *)0);
+		if (error = alloc(ip, lbn, pref, (int)fs->fs_bsize, &newb)) {
+			brelse(bp);
+			return (error);
+		}
+		nb = newb;
+		nbp = getblk(ip->i_devvp, fsbtodb(fs, nb), fs->fs_bsize);
+		clrbuf(nbp);
+		if ((nbp->b_flags & B_CACHE) == 0)
+			reassignbuf(nbp, vp);
+		/*
+		 * Write synchronously so that indirect blocks
+		 * never point at garbage.
+		 */
+		if (error = bwrite(nbp)) {
+			blkfree(ip, nb, fs->fs_bsize);
+			brelse(bp);
+			return (error);
+		}
+		bap[i] = nb;
+		if (flags & B_SYNC)
+			bwrite(bp);
+		else
+			bdwrite(bp);
 	}
-
-	*bnp = fsbtodb(fs, nb);
+	/*
+	 * Get the data block, allocating if necessary.
+	 */
+	if (nb == 0) {
+		pref = blkpref(ip, lbn, i, &bap[0]);
+		if (error = alloc(ip, lbn, pref, (int)fs->fs_bsize, &newb)) {
+			brelse(bp);
+			return (error);
+		}
+		nb = newb;
+		nbp = getblk(vp, lbn, fs->fs_bsize);
+		nbp->b_blkno = fsbtodb(fs, nb);
+		if (flags & B_CLRBUF)
+			clrbuf(nbp);
+		bap[i] = nb;
+		if (flags & B_SYNC)
+			bwrite(bp);
+		else
+			bdwrite(bp);
+		*bpp = nbp;
+		return (0);
+	}
+	brelse(bp);
+	nbp = getblk(vp, lbn, fs->fs_bsize);
+	nbp->b_blkno = fsbtodb(fs, nb);
+	if ((flags & B_CLRBUF) && (nbp->b_flags & (B_DONE|B_DELWRI)) == 0) {
+		brelse(nbp);
+		error = bread(vp, lbn, (int)fs->fs_bsize, NOCRED, &nbp);
+		if (error) {
+			brelse(nbp);
+			return (error);
+		}
+	}
+	*bpp = nbp;
 	return (0);
 }
