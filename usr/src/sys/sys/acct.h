@@ -1,4 +1,4 @@
-/*	acct.h	4.5	82/10/10	*/
+/*	acct.h	4.6	83/07/25	*/
 
 /*
  * Accounting structures;
@@ -27,9 +27,6 @@ struct	acct
 #define	ACOMPAT	0004		/* used compatibility mode */
 #define	ACORE	0010		/* dumped core */
 #define	AXSIG	0020		/* killed by a signal */
-
-#define	ACCTLO	30		/* acctg off when space < this */
-#define	ACCTHI	100		/* acctg resumes at this level */
 
 #ifdef KERNEL
 struct	acct	acctbuf;
