@@ -1,18 +1,14 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printerror.c 1.1 %G%";
+static char sccsid[] = "@(#)printerror.c 1.2 %G%";
 
 /*
- * print out an execution time error
- *
- * Have to check if the -r option was specified; if so then
- * the object file information hasn't been read in yet.
+ * Print out an execution time error.
  */
 
 #include "defs.h"
 #include <signal.h>
 #include "machine.h"
-#include "main.h"
 #include "sym.h"
 #include "process.h"
 #include "source.h"
@@ -30,9 +26,6 @@ printerror()
 	p = process;
 	if (p->signo != ESIGNAL && p->signo != SIGINT) {
 		error("signal %d at px pc %d, lc %d", p->signo, p->pc, pc);
-	}
-	if (option('r')) {
-		init();
 	}
 	curline = srcline(pc);
 	curfunc = whatblock(pc);
