@@ -1,0 +1,54 @@
+.TH CAT 1L \" -*- nroff -*-
+.SH NAME
+cat \- concatenate files and print on the standard output
+.SH SYNOPSIS
+.B cat
+[\-benstuvAET] [\-\-number] [\-\-number-nonblank] [\-\-squeeze-blank]
+[\-\-show-nonprinting] [\-\-show-ends] [\-\-show-tabs] [\-\-show-all] [file...]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR cat .
+.B cat
+writes the contents of each given file, or the standard input if
+none are given or when a file named `\-' is given, to the standard
+output.
+.SS OPTIONS
+.TP
+.I "\-b, \-\-number-nonblank"
+Number all nonblank output lines, starting with 1.
+.TP
+.I \-e
+Equivalent to
+.IR \-vE .
+.TP
+.I "\-n, \-\-number"
+Number all output lines, starting with 1.
+.TP
+.I "\-s, \-\-squeeze-blank"
+Replace multiple adjacent blank lines with a single blank line.
+.TP
+.I \-t
+Equivalent to
+.IR \-vT .
+.TP
+.I \-u
+Ignored; for Unix compatibility.
+.TP
+.I "\-v, \-\-show-nonprinting"
+Display control characters except for LFD and TAB using `^' notation
+and precede characters that have the high bit set with `M-'.
+.TP
+.I "\-A, \-\-show-all"
+Equivalent to
+.IR \-vET .
+.TP
+.I "\-E, \-\-show-ends"
+Display a `$' after the end of each line.
+.TP
+.I "\-T, \-\-show-tabs"
+Display TAB characters as `^I'.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
