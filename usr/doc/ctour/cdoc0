@@ -1,0 +1,23 @@
+.TL
+A Tour through the UNIX\(dg C Compiler
+.AU "MH 2C517 3770
+D. M. Ritchie
+.AI
+.MH
+.OK
+Languages
+Computing
+..AB
+..AE
+.CS a b c d e f
+.de II
+.I
+\\$1
+.R
+..
+.de Op
+.SH
+\\$1 \fI\\$2
+.IP
+..
+.PP
