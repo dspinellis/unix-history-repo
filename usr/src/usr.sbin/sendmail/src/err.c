@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -46,9 +46,9 @@ char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 
 static void fmtmsg();
 
+void
 /*VARARGS1*/
 #ifdef __STDC__
-void
 syserr(char *fmt, ...)
 #else
 syserr(fmt, va_alist)
@@ -113,8 +113,8 @@ syserr(fmt, va_alist)
 */
 
 /*VARARGS1*/
-#ifdef __STDC__
 void
+#ifdef __STDC__
 usrerr(char *fmt, ...)
 #else
 usrerr(fmt, va_alist)
