@@ -1,4 +1,4 @@
-/*	ip_output.c	1.29	82/03/30	*/
+/*	ip_output.c	1.30	82/03/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -38,8 +38,8 @@ COUNT(IP_OUTPUT);
 	/*
 	 * Find interface for this packet in the routing
 	 * table.  Note each interface has placed itself
-	 * in there at boot time, so call on route degenerates
-	 * to if_ifonnetof(ip->ip_dst.s_net).
+	 * in there at boot time, so calls to rtalloc
+	 * degenerate to if_ifonnetof(ip->ip_dst.s_net).
 	 */
 	if (ro == 0) {
 		ro = &iproute;
@@ -49,6 +49,8 @@ COUNT(IP_OUTPUT);
 		ro->ro_dst.sa_family = AF_INET;
 		((struct sockaddr_in *)&ro->ro_dst)->sin_addr = ip->ip_dst;
 		rtalloc(ro);
+		if (ro != &iproute)
+			ro->ro_rt->rt_refcnt++;
 	}
 	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
 printf("no route to %x\n", ip->ip_dst.s_addr);
@@ -74,6 +76,7 @@ printf("no route to %x\n", ip->ip_dst.s_addr);
 #endif
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
+		ro->ro_rt->rt_use++;
 		return ((*ifp->if_output)(ifp, m, dst));
 	}
 
@@ -129,6 +132,7 @@ printf("no route to %x\n", ip->ip_dst.s_addr);
 #endif
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(mh, hlen);
+		ro->ro_rt->rt_use++;
 		if ((*ifp->if_output)(ifp, mh, dst) == 0)
 			goto bad;
 	}

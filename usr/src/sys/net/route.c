@@ -1,4 +1,4 @@
-/*	route.c	4.4	82/03/30	*/
+/*	route.c	4.5	82/03/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,49 +22,41 @@ rtalloc(ro)
 {
 	register struct rtentry *rt, *rtmin;
 	register struct mbuf *m;
-	register int hash;
+	register int hash, (*match)();
 	struct afhash h;
 	struct sockaddr *dst = &ro->ro_dst;
-	int af = dst->sa_family, doinghost;
+	int af = dst->sa_family;
 
 COUNT(RTALLOC);
 	if (ro->ro_rt && ro->ro_rt->rt_ifp)			/* XXX */
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
-	hash = h.afh_hosthash;
-	rtmin = 0, doinghost = 1;
-again:
-	m = routehash[hash % RTHASHSIZ];
-	for (; m; m = m->m_next) {
+	rtmin = 0, hash = h.afh_hosthash;
+	for (m = rthost[hash % RTHASHSIZ]; m; m = m->m_next) {
 		rt = mtod(m, struct rtentry *);
-		if (rt->rt_hash[doinghost] != hash)
+		if (rt->rt_hash != hash)
 			continue;
-		if (doinghost) {
-#define	equal(a1, a2) \
-	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof(struct sockaddr)) == 0)
-			if (!equal(&rt->rt_dst, dst))
-				continue;
-		} else {
-			if (rt->rt_dst.sa_family != af)
-				continue;
-			if ((*afswitch[af].af_netmatch)(&rt->rt_dst, dst) == 0)
-				continue;
-		}
+		if (bcmp((caddr_t)&rt->rt_dst, (caddr_t)dst, sizeof (*dst)))
+			continue;
 		if (rtmin == 0 || rt->rt_use < rtmin->rt_use)
 			rtmin = rt;
 	}
-	if (rtmin) {
-		ro->ro_rt = rt;
-		rt->rt_refcnt++;
-		return;
+	if (rtmin) 
+		goto found;
+
+	hash = h.afh_nethash;
+	match = afswitch[af].af_netmatch;
+	for (m = rtnet[hash % RTHASHSIZ]; m; m = m->m_next) {
+		rt = mtod(m, struct rtentry *);
+		if (rt->rt_hash != hash)
+			continue;
+		if (rt->rt_dst.sa_family != af || !(*match)(&rt->rt_dst, dst))
+			continue;
+		if (rtmin == 0 || rt->rt_use < rtmin->rt_use)
+			rtmin = rt;
 	}
-	if (doinghost) {
-		doinghost = 0;
-		hash = h.afh_nethash;
-		goto again;
-	}
-	ro->ro_rt = 0;
-	return;
+found:
+	ro->ro_rt = rtmin;
 }
 
 rtfree(rt)
@@ -78,6 +70,8 @@ COUNT(FREEROUTE);
 	/* on refcnt == 0 reclaim? notify someone? */
 }
 
+#define	equal(a1, a2) \
+	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)
 /*
  * Carry out a request to change the routing table.  Called by
  * interfaces at boot time to make their ``local routes'' known
@@ -89,52 +83,54 @@ rtrequest(req, new)
 {
 	register struct rtentry *rt;
 	register struct mbuf *m, **mprev;
-	register int hash;
-	struct sockaddr *sa = &new->rt_dst;
+	register int hash, (*match)();
+	register struct sockaddr *sa = &new->rt_dst;
+	register struct sockaddr *gate = &new->rt_gateway;
 	struct afhash h;
 	int af = sa->sa_family, doinghost, s, error = 0;
 
 COUNT(RTREQUEST);
 	(*afswitch[af].af_hash)(sa, &h);
 	hash = h.afh_hosthash;
+	mprev = &rthost[hash % RTHASHSIZ];
 	doinghost = 1;
 	s = splimp();
 again:
-	mprev = &routehash[hash % RTHASHSIZ];
 	for (; m = *mprev; mprev = &m->m_next) {
 		rt = mtod(m, struct rtentry *);
-		if (rt->rt_hash[doinghost] != hash)
+		if (rt->rt_hash != hash)
 			continue;
 		if (doinghost) {
-			if (!equal(&rt->rt_dst, &new->rt_dst))
+			if (!equal(&rt->rt_dst, sa))
 				continue;
 		} else {
-			if (rt->rt_dst.sa_family != af)
-				continue;
-			if ((*afswitch[af].af_netmatch)(&rt->rt_dst, sa) == 0)
+			if (rt->rt_dst.sa_family != sa->sa_family ||
+			    (*match)(&rt->rt_dst, sa) == 0)
 				continue;
 		}
 		/* require full match on deletions */
-		if (req == SIOCDELRT &&
-		    !equal(&rt->rt_gateway, &new->rt_gateway))
+		if (req == SIOCDELRT && !equal(&rt->rt_gateway, gate))
 			continue;
 		/* don't keep multiple identical entries */
-		if (req == SIOCADDRT &&
-		    equal(&rt->rt_gateway, &new->rt_gateway)) {
+		if (req == SIOCADDRT && equal(&rt->rt_gateway, gate)) {
 			error = EEXIST;
 			goto bad;
 		}
 		break;
 	}
 	if (m == 0 && doinghost) {
-		doinghost = 0;
 		hash = h.afh_nethash;
+		mprev = &rtnet[hash % RTHASHSIZ];
+		match = afswitch[af].af_netmatch;
+		doinghost = 0;
 		goto again;
 	}
+
 	if (m == 0 && req != SIOCADDRT) {
 		error = ESRCH;
 		goto bad;
 	}
+found:
 	switch (req) {
 
 	case SIOCDELRT:
@@ -149,7 +145,7 @@ again:
 		rt->rt_flags = new->rt_flags;
 		if (rt->rt_refcnt > 0)
 			error = EBUSY;
-		else if (!equal(&rt->rt_gateway, &new->rt_gateway))
+		else if (!equal(&rt->rt_gateway, gate))
 			goto newneighbor;
 		break;
 
@@ -164,14 +160,14 @@ again:
 		*mprev = m;
 		rt = mtod(m, struct rtentry *);
 		*rt = *new;
-		rt->rt_hash[0] = h.afh_nethash;
-		rt->rt_hash[1] = h.afh_hosthash;
-newneighbor:
-		rt->rt_ifp = if_ifwithnet(&new->rt_gateway);
-		if (rt->rt_ifp == 0)
-			rt->rt_flags &= ~RTF_UP;
+		rt->rt_hash = new->rt_flags & RTF_HOST ?
+			h.afh_hosthash : h.afh_nethash;
 		rt->rt_use = 0;
 		rt->rt_refcnt = 0;
+newneighbor:
+		rt->rt_ifp = if_ifwithnet(gate);
+		if (rt->rt_ifp == 0)
+			rt->rt_flags &= ~RTF_UP;
 		break;
 	}
 bad:

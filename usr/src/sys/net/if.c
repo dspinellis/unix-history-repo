@@ -1,4 +1,4 @@
-/*	if.c	4.12	82/03/30	*/
+/*	if.c	4.13	82/03/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -172,5 +172,5 @@ if_rtinit(ifp, flags)
 	bzero((caddr_t)&sin, sizeof (sin));
 	sin.sin_family = AF_INET;
 	sin.sin_addr = if_makeaddr(ifp->if_net, 0);
-	rtinit(&sin, &sin, flags);
+	rtinit(&sin, &ifp->if_addr, flags);
 }
