@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -381,7 +381,15 @@ send_do(option, init)
 		if ((do_dont_resp[option] == 0 && hisopts[option] == OPT_YES) ||
 		    hiswants[option] == OPT_YES)
 			return;
-		hiswants[option] = OPT_YES;
+		/*
+		 * Special case for TELOPT_TM:  We send a DO, but pretend
+		 * that we sent a DONT, so that we can send more DOs if
+		 * we want to.
+		 */
+		if (option == TELOPT_TM)
+			hiswants[option] = OPT_NO;
+		else
+			hiswants[option] = OPT_YES;
 		do_dont_resp[option]++;
 	}
 	(void) sprintf(nfrontp, doopt, option);
@@ -402,7 +410,8 @@ willoption(option)
 		if (do_dont_resp[option] && hisopts[option] == OPT_YES)
 			do_dont_resp[option]--;
 	}
-	if ((do_dont_resp[option] == 0) && (hiswants[option] != OPT_YES)) {
+	if (do_dont_resp[option] == 0) {
+	    if (hiswants[option] != OPT_YES) {
 		switch (option) {
 
 		case TELOPT_BINARY:
@@ -478,10 +487,9 @@ willoption(option)
 			}
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 			/*
-			 * Cheat the state machine so that it
-			 * looks like we got back a WONT.
+			 * We never respond to a WILL TM, and
+			 * we leave the state OPT_NO.
 			 */
-			hiswants[TELOPT_TM] = OPT_NO;
 			return;
 
 		case TELOPT_LFLOW:
@@ -498,11 +506,21 @@ willoption(option)
 		case TELOPT_SGA:
 		case TELOPT_NAWS:
 		case TELOPT_TSPEED:
-#ifdef	LINEMODE
-		case TELOPT_LINEMODE:
-#endif	LINEMODE
 			changeok++;
 			break;
+
+#ifdef	LINEMODE
+		case TELOPT_LINEMODE:
+# ifdef	KLUDGELINEMODE
+			/*
+			 * Note client's desire to use linemode.
+			 */
+			lmodetype = REAL_LINEMODE;
+# endif	/* KLUDGELINEMODE */
+			clientstat(TELOPT_LINEMODE, WILL, 0);
+			changeok++;
+			break;
+#endif	/* LINEMODE */
 
 		default:
 			break;
@@ -514,29 +532,9 @@ willoption(option)
 			do_dont_resp[option]++;
 			send_dont(option, 0);
 		}
+	    }
 	}
 	hisopts[option] = OPT_YES;
-
-	/*
-	 * Handle other processing that should occur after we have
-	 * responded to client input.
-	 */
-	switch (option) {
-#ifdef	LINEMODE
-	case TELOPT_LINEMODE:
-# ifdef	KLUDGELINEMODE
-		/*
-		 * Note client's desire to use linemode.
-		 */
-		lmodetype = REAL_LINEMODE;
-# endif	/* KLUDGELINEMODE */
-		clientstat(TELOPT_LINEMODE, WILL, 0);
-		break;
-#endif	LINEMODE
-	
-	default:
-		break;
-	}
 }  /* end of willoption */
 
 send_dont(option, init)
@@ -567,7 +565,8 @@ wontoption(option)
 		if (do_dont_resp[option] && hisopts[option] == OPT_NO)
 			do_dont_resp[option]--;
 	}
-	if ((do_dont_resp[option] == 0) && (hiswants[option] != OPT_NO)) {
+	if (do_dont_resp[option] == 0) {
+	    if (hiswants[option] != OPT_NO) {
 		/* it is always ok to change to negative state */
 		switch (option) {
 		case TELOPT_ECHO:
@@ -594,27 +593,13 @@ wontoption(option)
 #endif	LINEMODE
 
 		case TELOPT_TM:
-#if	defined(LINEMODE) && defined(KLUDGELINEMODE)
-			if (lmodetype < REAL_LINEMODE) {
-				lmodetype = NO_LINEMODE;
-				clientstat(TELOPT_LINEMODE, WONT, 0);
-				send_will(TELOPT_SGA, 1);
-/*@*/				send_will(TELOPT_ECHO, 1);
-			}
-#endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 			/*
 			 * If we get a WONT TM, and had sent a DO TM,
 			 * don't respond with a DONT TM, just leave it
 			 * as is.  Short circut the state machine to
-			 * achive this. The bad part of this is that if
-			 * the client sends a WONT TM on his own to
-			 * turn off linemode, then he won't get a
-			 * response.
+			 * achive this.
 			 */
 			hiswants[TELOPT_TM] = OPT_NO;
-#ifdef	notdef
-			do_dont_resp[TELOPT_TM]--;
-#endif
 			return;
 
 		case TELOPT_LFLOW:
@@ -635,11 +620,21 @@ wontoption(option)
 		hiswants[option] = OPT_NO;
 		fmt = dont;
 		send_dont(option, 0);
-	} else if (option == TELOPT_TM) {
-		/*
-		 * Special case for TM.
-		 */
-		hiswants[option] = OPT_NO;
+	    } else {
+		switch (option) {
+		case TELOPT_TM:
+#if	defined(LINEMODE) && defined(KLUDGELINEMODE)
+			if (lmodetype < REAL_LINEMODE) {
+				lmodetype = NO_LINEMODE;
+				clientstat(TELOPT_LINEMODE, WONT, 0);
+				send_will(TELOPT_SGA, 1);
+/*@*/				send_will(TELOPT_ECHO, 1);
+			}
+#endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
+		default:
+			break;
+		}
+	    }
 	}
 	hisopts[option] = OPT_NO;
 

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -698,8 +698,10 @@ int f, p;
 				ptyip = ptyibuf+1;
 #else	/* CRAY2 */
 				if (!uselinemode) {
-					pcc = term_output(ptyibuf, ptyibuf2,
-								pcc, BUFSIZ);
+					unpcc = pcc;
+					unptyip = ptyibuf;
+					pcc = term_output(&unptyip, ptyibuf2,
+								&unpcc, BUFSIZ);
 					ptyip = ptyibuf2;
 				} else
 					ptyip = ptyibuf;
@@ -727,6 +729,18 @@ int f, p;
 					*nfrontp++ = '\0';
 			}
 		}
+#ifdef CRAY2
+		/*
+		 * If chars were left over from the terminal driver,
+		 * note their existence.
+		 */
+		 if (!uselinemode && unpcc) {
+			pcc = unpcc;
+			unpcc = 0;
+			ptyip = unptyip;
+		}
+#endif /* CRAY2 */
+
 		if (FD_ISSET(f, &obits) && (nfrontp - nbackp) > 0)
 			netflush();
 		if (ncc > 0)

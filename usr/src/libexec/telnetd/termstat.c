@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termstat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)termstat.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -205,7 +205,7 @@ localstat()
 			send_dont(TELOPT_LINEMODE, 1);
 # ifdef	KLUDGELINEMODE
 		else if (lmodetype == KLUDGE_LINEMODE)
-			send_wont(TELOPT_SGA, 1);
+			send_will(TELOPT_SGA, 1);
 # endif	/* KLUDGELINEMODE */
 		linemode = uselinemode;
 		goto done;
