@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.16	83/05/13	*/
+/*	lpr.c	4.17	83/05/18	*/
 /*
  *      lpr -- off line print
  *
@@ -577,7 +577,6 @@ chkprinter(s)
 		MX = DEFMX;
 	if ((DU = pgetnum("du")) < 0)
 		DU = DEFUID;
-	RM = host;		/* machine for getport to connect to */
 }
 
 /*
