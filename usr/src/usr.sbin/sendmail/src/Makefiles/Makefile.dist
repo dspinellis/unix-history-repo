@@ -7,7 +7,7 @@
 #
 #  This has been tested on Ultrix.
 #
-#	@(#)Makefile.dist	6.6 (Berkeley) %G%
+#	@(#)Makefile.dist	8.1 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
