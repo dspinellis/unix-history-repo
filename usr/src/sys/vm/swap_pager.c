@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	7.5 (Berkeley) %G%
+ *	@(#)swap_pager.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -549,8 +549,11 @@ swap_pager_io(swp, m, flags)
 	if (swapdev_vp->v_type == VBLK)
 		bp->b_dev = swapdev_vp->v_rdev;
 	bp->b_bcount = PAGE_SIZE;
-	if ((bp->b_flags & B_READ) == 0)
+	if ((bp->b_flags & B_READ) == 0) {
+		bp->b_dirtyoff = 0;
+		bp->b_dirtyend = PAGE_SIZE;
 		swapdev_vp->v_numoutput++;
+	}
 
 	/*
 	 * If this is an async write we set up additional buffer fields
