@@ -1,4 +1,4 @@
-/*	user.h	6.3	84/07/08	*/
+/*	user.h	6.4	84/07/11	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -90,7 +90,7 @@ struct	user {
 	struct	rusage u_cru;		/* sum of stats for reaped children */
 	struct	itimerval u_timer[3];
 	int	u_XXX[3];
-	time_t	u_start;
+	struct	timeval u_start;
 	short	u_acflag;
 
 	struct uprof {			/* profile arguments */
