@@ -188,5 +188,21 @@ FILE *ifp;
 		perror("fclose");
 		exit(1);
 	}
+
+	/*
+	 * Now, set modification time.
+	 */
+	{
+#include <sys\utime.h>
+	    struct utimbuf utim;
+
+	    utim.modtime = mtime;
+
+	    if (utime(fname, &utim) == -1) {
+		perror("utime");
+		exit(1);
+	    }
+	}
+
 	return (1);
 }
