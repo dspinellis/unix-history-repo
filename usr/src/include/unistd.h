@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.9 (Berkeley) %G%
+ *	@(#)unistd.h	5.10 (Berkeley) %G%
  */
+
+#ifndef _UNISTD_H_
+#define	_UNISTD_H_
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
@@ -152,3 +155,5 @@ int	 vfork __P((void));
 
 #endif /* !_POSIX_SOURCE */
 __END_DECLS
+
+#endif /* !_UNISTD_H_ */

@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ttyent.h	5.6 (Berkeley) %G%
+ *	@(#)ttyent.h	5.7 (Berkeley) %G%
  */
+
+#ifndef	_TTYENT_H_
+#define	_TTYENT_H_
 
 #define	_PATH_TTYS	"/etc/ttys"
 
@@ -33,3 +36,5 @@ struct ttyent *getttynam __P((const char *));
 int setttyent __P((void));
 int endttyent __P((void));
 __END_DECLS
+
+#endif /* !_TTYENT_H_ */
