@@ -596,6 +596,38 @@ RESOLVING PROBLEMS
 	general, you may have network problems that are causing
 	connections to get reset.
 ----------------------------------------------------------------------
+  * I just upgraded to 8.x and now when my users try to forward their
+    mail to a program they get an "illegal shell" message and their
+    mail is not delivered.  What's wrong?
+
+	In order for people to be able to run a program from their
+	.forward file, 8.x insists that their shell (that is, the
+	shell listed for that user in the passwd entry) be a "valid"
+	shell, meaning a shell listed in /etc/shells.  If /etc/shells
+	does not exist, a default list is used, typically consisting
+	of /bin/sh and /bin/csh.
+
+	This is to support environments that may have NFS-shared
+	directories mounted on machines on which users do not have
+	login permission.  For example, many people make their
+	file server inaccessible for performance or security
+	reasons; although users have directories, their shell on
+	the server is /usr/local/etc/nologin or some such.  If you
+	allowed them to run programs anyway you might as well let
+	them log in.
+
+	If you are willing to let users run programs from their
+	.forward file even though they cannot telnet or rsh in (as
+	might be reasonable if you run smrsh to control the list of
+	programs they can run) then add the line
+
+		/SENDMAIL/ANY/SHELL/
+
+	to /etc/shells.  This must be typed exactly as indicated,
+	in caps, with the trailing slash.  NOTA BENE:  DO NOT
+	list /usr/local/etc/nologin in /etc/shells -- this will
+	open up other security problems.
+----------------------------------------------------------------------
   * I just upgraded to 8.x and suddenly connections to the SMTP port
     take a long time.  What is going wrong?
 
@@ -620,8 +652,9 @@ RESOLVING PROBLEMS
 	/etc/named.boot file to get your value) are up to date.
 	Either of these can cause long delays.
 ----------------------------------------------------------------------
-  * I just upgraded to 8.x and suddenly I get errors such as ``mail:
-    options must follow recipients.''  What is going wrong?
+  * I just upgraded to 8.x and suddenly I get errors such as ``unknown
+    mailer error 5 -- mail: options MUST PRECEDE recipients.''  What is
+    going wrong?
 
 	You need OSTYPE(systype) in your .mc file -- otherwise the
 	configurations use a default that probably disagrees with
@@ -692,5 +725,5 @@ RESOLVING PROBLEMS
 	directory and have them processed by the same uid that
 	submitted the job in the first place.
 ----------------------------------------------------------------------
-@(#)FAQ	8.12	(Berkeley)	%G%
+@(#)FAQ	8.13	(Berkeley)	%G%
 Send updates to sendmail@CS.Berkeley.EDU.
