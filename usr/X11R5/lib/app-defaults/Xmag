@@ -1,0 +1,25 @@
+*Font: fixed
+*pane2*orientation: horizontal
+*pane2*showGrip: False
+*allowShellResize: on
+*Scale.baseTranslations:#augment\
+			<EnterWindow>: set-colors()\n\
+			<LeaveWindow>: unset-colors()\n\
+			<Btn1Down>:popup-pixel()\n\
+			Button1<Enter>:popup-pixel()\n\
+			<Btn1Motion>:update-pixel()\n\
+			<Btn1Up>:popdown-pixel()\n\
+			<Leave>:popdown-pixel()\n\
+			<Key>q:close()\n\
+			Ctrl<Key>c:close()\n\
+			<Key>space:replace()
+*close.accelerators:#augment\
+			<Key>q:set()notify()unset()\n\
+			Ctrl<Key>c:set()notify()unset()
+*replace.accelerators:#augment\
+			<Key>space:set()notify()unset()\n\
+			<Btn2Up>:set()notify()unset()\n\
+			<Btn3Up>:set()notify()unset()
+*pixLabel.Translations:<Enter>:popdown-pixel()
+*helpLabel.font:	8x13bold
+*helpLabel.label:	xmag
