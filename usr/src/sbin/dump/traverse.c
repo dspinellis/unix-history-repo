@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -115,7 +115,7 @@ mapfiles(maxino, tapesize)
 	 * Restore gets very upset if the root is not dumped,
 	 * so ensure that it always is dumped.
 	 */
-	SETINO(ROOTINO, usedinomap);
+	SETINO(ROOTINO, dumpinomap);
 	return (anydirskipped);
 }
 
