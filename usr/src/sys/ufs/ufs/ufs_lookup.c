@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.50 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.51 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -381,7 +381,7 @@ searchloop:
 	/*
 	 * Insert name into cache (as non-existent) if appropriate.
 	 */
-	if ((flags & MAKEENTRY) && nameiop != CREATE)
+	if ((cnp->cn_flags & MAKEENTRY) && nameiop != CREATE)
 		cache_enter(vdp, *vpp, cnp);
 	return (ENOENT);
 
@@ -523,7 +523,7 @@ found:
 	/*
 	 * Insert name into cache if appropriate.
 	 */
-	if (flags & MAKEENTRY)
+	if (cnp->cn_flags & MAKEENTRY)
 		cache_enter(vdp, *vpp, cnp);
 	return (0);
 }
