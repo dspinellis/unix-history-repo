@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.11 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -273,6 +273,8 @@ main(argc, argv)
 			printf(" swapper");
 		else if (sp->ap->a_pid == 2)
 			printf(" pagedaemon");
+		else if (sp->ap->a_pid == 3 && sp->ap->a_flag & SSYS)
+			printf(" net input");
 		else
 			printf(" %.*s", twidth - cmdstart - 2, sp->ap->a_cmdp);
 		printf("\n");
