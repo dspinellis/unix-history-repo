@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.28 (Berkeley) %G%
+ *	@(#)locore.s	6.29 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -18,6 +18,7 @@
 #include "nexus.h"
 #include "cons.h"
 #include "clock.h"
+#include "ioa.h"
 #include "../vaxuba/ubareg.h"
 
 #include "dz.h"
@@ -104,9 +105,15 @@ SCBVEC(machcheck):
 	.word	8f-0b		# 1 is 780
 	.word	5f-0b		# 2 is 750
 	.word	5f-0b		# 3 is 730
+	.word	7f-0b		# 4 is 8600
 5:
 #if defined(VAX750) || defined(VAX730)
 	mtpr	$0xf,$MCESR
+#endif
+	brb	1f
+7:
+#if VAX8600
+	mtpr	$0,$EHSR
 #endif
 	brb	1f
 8:
@@ -159,6 +166,16 @@ SCBVEC(mba0int):
 #define	rUBA	r4
 /* r2,r5 are scratch */
 
+#if NUBA > 4
+SCBVEC(ua7int):
+	PUSHR; movl $7,rUBANUM; moval _uba_hd+(7*UH_SIZE),rUBAHD; brb 1f
+SCBVEC(ua6int):
+	PUSHR; movl $6,rUBANUM; moval _uba_hd+(6*UH_SIZE),rUBAHD; brb 1f
+SCBVEC(ua5int):
+	PUSHR; movl $5,rUBANUM; moval _uba_hd+(5*UH_SIZE),rUBAHD; brb 1f
+SCBVEC(ua4int):
+	PUSHR; movl $4,rUBANUM; moval _uba_hd+(4*UH_SIZE),rUBAHD; brb 1f
+#endif
 SCBVEC(ua3int):
 	PUSHR; movl $3,rUBANUM; moval _uba_hd+(3*UH_SIZE),rUBAHD; brb 1f
 SCBVEC(ua2int):
@@ -234,25 +251,49 @@ SCBVEC(netintr):
 	POPR
 	incl	_cnt+V_SOFT
 	rei
-#if defined(VAX750) || defined(VAX730)
+#if defined(VAX750) || defined(VAX730) || defined(VAX8600)
 SCBVEC(consdin):
 	PUSHR;
 	incl _intrcnt+I_TUR
-#if defined(VAX750) && !defined(VAX730) && !defined(MRSP)
+	casel	_cpu,$VAX_750,$VAX_8600
+0:
+	.word	5f-0b		# 2 is VAX_750
+	.word	3f-0b		# 3 is VAX_730
+	.word	6f-0b		# 4 is VAX_8600
+	halt
+5:
+#if defined(VAX750) && !defined(MRSP)
 	jsb	tudma
 #endif
-	calls $0,_turintr;
+3:
+#if defined(VAX750) || defined(VAX730)
+	calls $0,_turintr
+	brb 2f
+#else
+	halt
+#endif
+6:
+#if VAX8600
+	calls $0, _crlintr
+#else
+	halt
+#endif
+2:
 	POPR;
 	incl _cnt+V_INTR;
 	rei
+#else
+SCBVEC(consdin):
+	halt
+#endif
+
+#if defined(VAX750) || defined(VAX730)
 SCBVEC(consdout):
 	PUSHR; calls $0,_tuxintr; POPR
 	incl _cnt+V_INTR
 	incl _intrcnt+I_TUX
 	rei
 #else
-SCBVEC(consdin):
-	halt
 SCBVEC(consdout):
 	halt
 #endif
@@ -378,7 +419,7 @@ uudma:
 	rsb				# continue processing in uurintr
 #endif
 
-#if defined(VAX750) && !defined(VAX730) && !defined(MRSP)
+#if defined(VAX750) && !defined(MRSP)
 /*
  * Pseudo DMA routine for VAX-11/750 console tu58 
  *   	    (without MRSP)
@@ -570,7 +611,8 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(Sysmap	,Sysbase	,SYSPTSIZE	)
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
 	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)
-	SYSMAP(UMEMmap	,umem		,512*NUBA	)
+	SYSMAP(UMEMmap	,umem		,UBAPAGES*NUBA	)
+	SYSMAP(Ioamap	,ioa		,MAXNIOA*IOAMAPSIZ/NBPG	)
 	SYSMAP(UMBAend	,umbaend	,0		)
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE	)
 	SYSMAP(Forkmap	,forkutl	,UPAGES		)
@@ -608,6 +650,7 @@ _cpu:	.long	0
 	.globl	start
 start:
 	.word	0
+	mtpr	$0,$ICCS
 /* set system control block base and system page table params */
 	mtpr	$_scb-0x80000000,$SCBB
 	mtpr	$_Sysmap-0x80000000,$SBR

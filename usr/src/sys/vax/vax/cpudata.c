@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpudata.c	6.3 (Berkeley) %G%
+ *	@(#)cpudata.c	6.4 (Berkeley) %G%
  */
 
 #include "pte.h"
@@ -12,6 +12,7 @@
 
 #include "cpu.h"
 #include "nexus.h"
+#include "ioa.h"
 #include "../vaxuba/ubareg.h"
 
 /*
@@ -23,6 +24,16 @@
  * unibus memory for each of the possible unibus adapters.  Note that the
  * unibus memory addresses are actually indexed by the unibus adapter type code.
  */
+#if VAX8600
+caddr_t umaddr8600a[4] = {
+	(caddr_t) UMEMA8600(0),	(caddr_t) UMEMA8600(1),
+	(caddr_t) UMEMA8600(2),	(caddr_t) UMEMA8600(3),
+};
+caddr_t umaddr8600b[4] = {
+	(caddr_t) UMEMB8600(0),	(caddr_t) UMEMB8600(1),
+	(caddr_t) UMEMB8600(2),	(caddr_t) UMEMB8600(3),
+};
+#endif
 #if VAX780
 caddr_t	umaddr780[4] = {
 	(caddr_t) UMEM780(0), (caddr_t) UMEM780(1),
@@ -59,15 +70,47 @@ short	nexty730[NNEX730] = {
 };
 #endif
 
-struct percpu percpu[] = {
+#if VAX8600
+struct persbi sbi8600[2] = {
+	{ NNEX8600, NEXA8600, umaddr8600a, NBDP8600, 1, 0 },
+	{ NNEX8600, NEXB8600, umaddr8600b, NBDP8600, 1, 0 },
+};
+caddr_t ioaaddr8600[] = { IOA8600(0), IOA8600(1) };
+#endif
+
 #if VAX780
-	VAX_780, NNEX780, NEX780, umaddr780, NBDP780, 1, 0,
+struct persbi sbi780 = {
+	NNEX780, NEX780, umaddr780, NBDP780, 1, 0,
+};
+short ioa780[] = { IOA_SBI780 };
+#endif
+
+#if VAX750
+struct persbi cmi750 = {
+	NNEX750, NEX750, umaddr750, NBDP750, 0, nexty750,
+};
+short ioa750[] = { IOA_CMI750 };
+#endif
+
+#if VAX730
+struct persbi xxx730 = {
+	NNEX730, NEX730, umaddr730, NBDP730, 0, nexty730,
+};
+short ioa730[] = { IOA_XXX730 };
+#endif
+
+struct percpu percpu[] = {
+#if VAX8600
+	{ VAX_8600, 2, ioaaddr8600, 512, (short *)0 },
+#endif
+#if VAX780
+	{ VAX_780, 1, (caddr_t *)0, 0, ioa780 },
 #endif
 #if VAX750
-	VAX_750, NNEX750, NEX750, umaddr750, NBDP750, 0, nexty750,
+	{ VAX_750, 1, (caddr_t *)0, 0, ioa750 },
 #endif
 #if VAX730
-	VAX_730, NNEX730, NEX730, umaddr730, NBDP730, 0, nexty730,
+	{ VAX_730, 1, (caddr_t *)0, 0, ioa730 },
 #endif
 	0,
 };

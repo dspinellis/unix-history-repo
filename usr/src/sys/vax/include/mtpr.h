@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mtpr.h	6.2 (Berkeley) %G%
+ *	@(#)mtpr.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -41,8 +41,30 @@
 #define	PMR	0x3d		/* performance monitor enable */
 #define	SID	0x3e		/* system identification */
 
-#if defined(VAX780)
+#if defined(VAX780) || defined(VAX8600)
 #define	ACCS	0x28		/* accelerator control and status */
+#endif
+
+#if defined(VAX8600)
+#define TBCHK	0x3f		/* Translation Buffer Check */
+#define PAMACC	0x40		/* PAMM access */
+#define PAMLOC	0x41		/* PAMM location */
+#define CSWP	0x42		/* Cache sweep */
+#define MDECC	0x43		/* MBOX data ecc register */
+#define MENA	0x44		/* MBOX error enable register */
+#define MDCTL	0x45		/* MBOX data control register */
+#define MCCTL	0x46		/* MBOX mcc control register */
+#define MERG	0x47		/* MBOX	error generator register */
+#define CRBT	0x48		/* Console reboot */
+#define DFI	0x49		/* Diag fault insertion register */
+#define EHSR	0x4a		/* Error handling status register */
+#define STXCS	0x4c		/* Console block storage C/S */
+#define STXDB	0x4d		/* Console block storage D/B */
+#define ESPA	0x4e		/* EBOX scratchpad address */
+#define ESPD	0x4f		/* EBOX sratchpad data */
+#endif
+
+#if defined(VAX780)
 #define	ACCR	0x29		/* accelerator maintenance */
 #define	WCSA	0x2c		/* WCS address */
 #define	WCSD	0x2d		/* WCS data */
