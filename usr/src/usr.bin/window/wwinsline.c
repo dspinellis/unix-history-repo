@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinsline.c	3.2 83/08/11";
+static	char *sccsid = "@(#)wwinsline.c	3.3 83/08/18";
 #endif
 
 #include "ww.h"
@@ -10,18 +10,22 @@ int line;
 {
 	register i;
 	register union ww_char **cpp, **cqq;
-	union ww_char *tmp;
+	register union ww_char *cp;
 	int srow, erow;
 	char deleted;
+	int visible;
 
 	/*
 	 * Scroll first.
 	 */
-	if ((srow = line - w->ww_scroll) < 0)
+	if ((srow = line - w->ww_scroll) < 0) {
 		srow = 0;
+		visible = 0;
+	} else
+		visible = 1;
 	if ((erow = w->ww_nline - w->ww_scroll - 1) >= w->ww_w.nr)
 		erow = w->ww_w.nr - 1;
-	deleted = wwscroll1(w, srow, erow, -1, 1);
+	deleted = wwscroll1(w, srow, erow, -1, visible);
 
 	/*
 	 * Fix the buffer.
@@ -29,13 +33,17 @@ int line;
 	 */
 	cpp = &w->ww_buf[w->ww_nline];
 	cqq = cpp - 1;
-	tmp = *cqq;
+	cp = *cqq;
 	for (i = w->ww_nline - line - 1; --i >= 0;)
 		*--cpp = *--cqq;
-	*cqq = tmp;
+	*cqq = cp;
 
 	/*
 	 * Now clear the last line.
 	 */
-	wwclreol1(w, line, 0, deleted);
+	if (visible)
+		wwclreol1(w, line, 0, deleted);
+	else
+		for (i = w->ww_w.nc; --i >= 0;)
+			cp++->c_w = ' ';
 }
