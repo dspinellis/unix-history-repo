@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)shutdown.c	4.16 (Berkeley) 83/04/29";
+#ifndef lint
+static	char *sccsid = "@(#)shutdown.c	4.17 (Berkeley) 83/05/22";
+#endif
 
 #include <stdio.h>
 #include <ctype.h>

@@ -1,4 +1,7 @@
-static	char *sccsid = "@(#)last.c	4.4 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)last.c	4.5 (Berkeley) %G%";
+#endif
+
 /*
  * last
  */
@@ -10,10 +13,12 @@ static	char *sccsid = "@(#)last.c	4.4 (Berkeley) %G%";
 
 #define NMAX	sizeof(buf[0].ut_name)
 #define LMAX	sizeof(buf[0].ut_line)
+#define	HMAX	sizeof(buf[0].ut_host)
 #define	SECDAY	(24*60*60)
 
 #define	lineq(a,b)	(!strncmp(a,b,LMAX))
 #define	nameq(a,b)	(!strncmp(a,b,NMAX))
+#define	hosteq(a,b)	(!strncmp(a,b,HMAX))
 
 #define MAXTTYS 256
 
@@ -48,8 +53,8 @@ main(ac, av)
 	nameargs = argc = ac;
 	argv = av;
 	for (i = 0; i < argc; i++) {
-		if (argv[i][0] == '-' && argv[i][1] >= '0' && argv[i][1] <= '9')
-		{
+		if (argv[i][0] == '-' &&
+		    argv[i][1] >= '0' && argv[i][1] <= '9') {
 			maxrec = atoi(argv[i]+1);
 			nameargs--;
 			continue;
@@ -80,9 +85,11 @@ main(ac, av)
 			print = want(bp);
 			if (print) {
 				ct = ctime(&bp->ut_time);
-				printf("%-*.*s  %-*.*s  %10.10s %5.5s ",
+				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s",
 				    NMAX, NMAX, bp->ut_name,
-				    LMAX, LMAX, bp->ut_line, ct, 11+ct);
+				    LMAX, LMAX, bp->ut_line,
+				    HMAX, HMAX, bp->ut_host,
+				    ct, 11+ct);
 			}
 			for (i = 0; i < MAXTTYS; i++) {
 				if (ttnames[i][0] == 0) {

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.19 83/05/03";
+static char sccsid[] = "@(#)telnetd.c	4.20 83/05/22";
 #endif
 
 /*
@@ -105,9 +105,10 @@ again:
 	sigset(SIGCHLD, reapchild);
 	listen(s, 10);
 	for (;;) {
-		int s2;
+		struct sockaddr_in from;
+		int s2, fromlen = sizeof (from);
 
-		s2 = accept(s, (caddr_t)0, 0, 0);
+		s2 = accept(s, (caddr_t)&from, &fromlen);
 		if (s2 < 0) {
 			if (errno == EINTR)
 				continue;
@@ -119,7 +120,7 @@ again:
 			printf("Out of processes\n");
 		else if (pid == 0) {
 			signal(SIGCHLD, SIG_IGN);
-			doit(s2);
+			doit(s2, &from);
 		}
 		close(s2);
 	}
@@ -139,11 +140,14 @@ int	cleanup();
 /*
  * Get a pty, scan input lines.
  */
-doit(f)
+doit(f, who)
+	int f;
+	struct sockaddr_in *who;
 {
-	char *cp = line;
+	char *cp = line, *host, *ntoa();
 	int i, p, cc, t;
 	struct sgttyb b;
+	struct hostent *hp;
 
 	for (i = 0; i < 16; i++) {
 		cp[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
@@ -170,6 +174,12 @@ gotpty:
 	ioctl(p, TIOCGETP, &b);
 	b.sg_flags &= ~ECHO;
 	ioctl(p, TIOCSETP, &b);
+	hp = gethostbyaddr(&who->sin_addr, sizeof (struct in_addr),
+		who->sin_family);
+	if (hp)
+		host = hp->h_name;
+	else
+		host = ntoa(who->sin_addr);
 	if ((i = fork()) < 0)
 		fatalperror(f, "fork", errno);
 	if (i)
@@ -180,7 +190,7 @@ gotpty:
 	dup2(t, 1);
 	dup2(t, 2);
 	close(t);
-	execl("/bin/login", "telnet-login", 0);
+	execl("/bin/login", "telnet-login", "-h", host, 0);
 	fatalperror(f, "/bin/login", errno);
 	/*NOTREACHED*/
 }
@@ -627,6 +637,7 @@ rmut()
 				continue;
 			lseek(f, -(long)sizeof (wtmp), 1);
 			SCPYN(wtmp.ut_name, "");
+			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
 			write(f, (char *)&wtmp, sizeof (wtmp));
 			found++;
@@ -638,6 +649,7 @@ rmut()
 		if (f >= 0) {
 			SCPYN(wtmp.ut_line, line+5);
 			SCPYN(wtmp.ut_name, "");
+			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
 			lseek(f, (long)0, 2);
 			write(f, (char *)&wtmp, sizeof (wtmp));
@@ -649,4 +661,21 @@ rmut()
 	line[strlen("/dev/")] = 'p';
 	chmod(line, 0666);
 	chown(line, 0, 0);
+}
+
+/*
+ * Convert network-format internet address
+ * to base 256 d.d.d.d representation.
+ */
+char *
+ntoa(in)
+	struct in_addr in;
+{
+	static char b[18];
+	register char *p;
+
+	p = (char *)&in;
+#define	UC(b)	(((int)b)&0xff)
+	sprintf(b, "%d.%d.%d.%d", UC(p[0]), UC(p[1]), UC(p[2]), UC(p[3]));
+	return (b);
 }

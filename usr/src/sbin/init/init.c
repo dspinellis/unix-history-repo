@@ -1,4 +1,7 @@
-static	char *sccsid = "@(#)init.c	4.10 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)init.c	4.11 (Berkeley) %G%";
+#endif
+
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
@@ -156,6 +159,7 @@ shutend()
 		lseek(f, 0L, 2);
 		SCPYN(wtmp.ut_line, "~");
 		SCPYN(wtmp.ut_name, "shutdown");
+		SCPYN(wtmp.ut_host, "");
 		time(&wtmp.ut_time);
 		write(f, (char *)&wtmp, sizeof(wtmp));
 		close(f);
@@ -216,6 +220,7 @@ runcom(oldhowto)
 		lseek(f, 0L, 2);
 		SCPYN(wtmp.ut_line, "~");
 		SCPYN(wtmp.ut_name, "reboot");
+		SCPYN(wtmp.ut_host, "");
 		if (time0) {
 			wtmp.ut_time = time0;
 			time0 = 0;
@@ -457,6 +462,7 @@ register struct tab *p;
 				continue;
 			lseek(f, -(long)sizeof(wtmp), 1);
 			SCPYN(wtmp.ut_name, "");
+			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
 			write(f, (char *)&wtmp, sizeof(wtmp));
 			found++;
@@ -468,6 +474,7 @@ register struct tab *p;
 		if (f >= 0) {
 			SCPYN(wtmp.ut_line, p->line);
 			SCPYN(wtmp.ut_name, "");
+			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
 			lseek(f, (long)0, 2);
 			write(f, (char *)&wtmp, sizeof(wtmp));
