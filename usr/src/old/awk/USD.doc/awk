@@ -1,10 +1,15 @@
-.\"	@(#)awk	5.1 (Berkeley) %G%
+.\"	@(#)awk	6.1 (Berkeley) %G%
 .\"
-.fp 3 G
+.EH 'USD:19-%''Awk \(em A Pattern Scanning and Processing Language'
+.OH 'Awk \(em A Pattern Scanning and Processing Language''USD:19-%'
+.\" .fp 3 G  no G on APS (use gb) or Dandelion Printer (use CW)
+.\" the .T is only a ditroff feature...
+.if '\*.T'dp' .fp 3 El
+.if '\*.T'aps' .fp 3 gB
 ....TM "78-1271-12, 78-1273-6" 39199 39199-11
 .ND "September 1, 1978"
 ....TR 68
-.RP
+.\".RP
 .	\" macros here
 .tr _\(em
 .if t .tr ~\(ap
