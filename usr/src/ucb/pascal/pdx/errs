@@ -1,0 +1,4 @@
+compiling object/readobj.c
+linking
+ld:cerror.o: bad magic number
+*** Error code 4
