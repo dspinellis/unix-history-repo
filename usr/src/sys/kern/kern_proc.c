@@ -4,25 +4,25 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	7.16 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.17 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "kernel.h"
-#include "proc.h"
-#include "buf.h"
-#include "seg.h"
-#include "acct.h"
-#include "wait.h"
-#include "file.h"
-#include "../ufs/quota.h"
-#include "uio.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "ioctl.h"
-#include "tty.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/seg.h>
+#include <sys/acct.h>
+#include <sys/wait.h>
+#include <sys/file.h>
+#include <ufs/ufs/quota.h>
+#include <sys/uio.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
 
 /*
  * Is p an inferior of the current process?
