@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)db.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)db.c	8.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -16,7 +16,6 @@ static char sccsid[] = "@(#)db.c	8.3 (Berkeley) %G%";
 #include <stddef.h>
 #include <stdio.h>
 
-#define	__DBINTERFACE_PRIVATE
 #include <db.h>
 
 DB *
