@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fsck.8	6.6 (Berkeley) %G%
+.\"	@(#)fsck.8	6.7 (Berkeley) %G%
 .\"
 .TH FSCK 8 ""
 .UC 4
@@ -50,13 +50,15 @@ to determine which file systems to check.
 It uses the information there to inspect groups of disks in parallel, taking
 maximum advantage of i/o overlap to check the file systems
 as quickly as possible.
-Normally, the root file system will be checked on pass 1, other
-``root'' (``a'' partition) file systems on pass 2, other
-small file systems on separate passes (e.g. the ``d'' file systems
-on pass 3 and the ``e'' file systems on pass 4), and finally
-the large user file systems on the last pass, e.g. pass 5.
 Only partitions in fstab that are mounted ``rw,'' ``rq'' or ``ro''
 and that have non-zero pass number are checked.
+Filesystems with pass number 1 (normally just the root filesystem)
+are checked one at a time.
+When pass 1 completes, all remaining filesystems are checked,
+running one process per disk drive.
+The disk drive containing each filesystem is inferred from the longest prefix
+of the device name that ends in a digit; the remaining characters are assumed
+to be the partition designator.
 .PP
 The system takes care that only a restricted class of innocuous
 inconsistencies can happen unless hardware or software failures intervene.
@@ -94,9 +96,9 @@ and the percentage of fragmentation.
 If sent a QUIT signal,
 .I fsck
 will finish the file system checks, then exit with an abnormal
-return status that causes the automatic reboot to fail.
-This is useful when you wish to finish the file system checks,
-but do not want the machine to come up multiuser.
+return status that causes an automatic reboot to fail.
+This is useful when to finish the file system checks during an automatic reboot,
+but do not want the machine to come up multiuser after the checks complete.
 .PP
 Without the
 .B \-p
@@ -131,6 +133,13 @@ The following flags are interpreted by
 Use the block specified immediately after the flag as
 the super block for the file system.  Block 32 is usually
 an alternate super block.
+.TP 6
+.B \-l
+Limit the number of parallel checks to the number specified in the following
+argument.
+By default, the limit is the number of disks, running one process per disk.
+If a smaller limit is given, the disks are checked round-robin, one filesystem
+at a time.
 .TP 6
 .B \-m
 Use the mode specified in octal immediately after the flag as the

@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1989 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -24,24 +24,35 @@ static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #include <ctype.h>
 #include "fsck.h"
 
-char	*rawname(), *unrawname(), *blockcheck();
+char	*rawname(), *unrawname(), *blockcheck(), *malloc();
 int	catch(), catchquit(), voidquit();
 int	returntosingle;
 int	(*signal())();
+
+struct part {
+	char	*name;			/* device name */
+	char	*fsname;		/* mounted filesystem name */
+	struct	part *next;		/* forward link of partitions on disk */
+} *badlist, **badnext = &badlist;
+
+struct disk {
+	char	*name;			/* disk base name */
+	struct	disk *next;		/* forward link for list of disks */
+	struct	part *part;		/* head of list of partitions on disk */
+	int	pid;			/* If != 0, pid of proc working on */
+} *disks;
+
+int	nrun, ndisks, maxrun;
 
 main(argc, argv)
 	int	argc;
 	char	*argv[];
 {
 	struct fstab *fsp;
-	int pid, passno, anygtr, sumstatus;
+	int pid, passno, sumstatus;
 	char *name;
-	struct worklist {
-		int	pid;		/* pid of child doing the check */
-		struct	worklist *next;	/* next in list */
-		char	name[MAXMNTLEN];/* name of file system */
-	} *listhead = 0, *freelist = 0, *badlist = 0;
-	register struct worklist *wp, *pwp;
+	register struct disk *dk, *nextdisk;
+	register struct part *pt;
 
 	sync();
 	while (--argc > 0 && **++argv == '-') {
@@ -67,6 +78,13 @@ main(argc, argv)
 
 		case 'd':
 			debug++;
+			break;
+
+		case 'l':
+			if (!isdigit(argv[1][0]))
+				errexit("-l flag requires a number\n");
+			maxrun = atoi(*++argv);
+			argc--;
 			break;
 
 		case 'm':
@@ -107,9 +125,7 @@ main(argc, argv)
 		exit(0);
 	}
 	sumstatus = 0;
-	passno = 1;
-	do {
-		anygtr = 0;
+	for (passno = 1; passno <= 2; passno++) {
 		if (setfsent() == 0)
 			errexit("Can't open checklist file: %s\n", FSTAB);
 		while ((fsp = getfsent()) != 0) {
@@ -118,15 +134,13 @@ main(argc, argv)
 			    strcmp(fsp->fs_type, FSTAB_RQ))
 				continue;
 			if (preen == 0 ||
-			    passno == 1 && fsp->fs_passno == passno) {
+			    passno == 1 && fsp->fs_passno == 1) {
 				name = blockcheck(fsp->fs_spec);
 				if (name != NULL)
 					checkfilesys(name);
 				else if (preen)
 					exit(8);
-			} else if (fsp->fs_passno > passno) {
-				anygtr = 1;
-			} else if (fsp->fs_passno == passno) {
+			} else if (passno == 2 && fsp->fs_passno > 1) {
 				name = blockcheck(fsp->fs_spec);
 				if (name == NULL) {
 					pwarn("BAD DISK NAME %s\n",
@@ -134,79 +148,156 @@ main(argc, argv)
 					sumstatus |= 8;
 					continue;
 				}
-				pid = fork();
-				if (pid < 0) {
-					perror("fork");
-					exit(8);
-				}
-				if (pid == 0) {
-					(void)signal(SIGQUIT, voidquit);
-					checkfilesys(name);
-					exit(0);
-				} else {
-					if (freelist == 0) {
-						wp = (struct worklist *) malloc
-						    (sizeof(struct worklist));
-					} else {
-						wp = freelist;
-						freelist = wp->next;
-					}
-					wp->next = listhead;
-					listhead = wp;
-					wp->pid = pid;
-					sprintf(wp->name, "%s (%s)", name,
-					    fsp->fs_file);
-				}
+				addpart(name, fsp->fs_file);
 			}
 		}
-		if (preen) {
-			union wait status;
-			while ((pid = wait(&status)) != -1) {
-				if (status.w_termsig)
-					sumstatus |= 8;
-				else
-					sumstatus |= status.w_retcode;
-				pwp = 0;
-				for (wp = listhead; wp; pwp = wp, wp = wp->next)
-					if (wp->pid == pid)
+	}
+	if (preen) {
+		union wait status;
+
+		if (maxrun == 0)
+			maxrun = ndisks;
+		if (maxrun > ndisks)
+			maxrun = ndisks;
+		nextdisk = disks;
+		for (passno = 0; passno < maxrun; ++passno) {
+			startdisk(nextdisk);
+			nextdisk = nextdisk->next;
+		}
+		while ((pid = wait(&status)) != -1) {
+			if (status.w_termsig)
+				sumstatus |= 8;
+			else
+				sumstatus |= status.w_retcode;
+			for (dk = disks; dk; dk = dk->next)
+				if (dk->pid == pid)
+					break;
+			if (dk == 0) {
+				printf("Unknown pid %d\n", pid);
+				continue;
+			}
+			if (status.w_termsig) {
+				printf("%s (%s): EXITED WITH SIGNAL %d\n",
+					dk->part->name, dk->part->fsname,
+					status.w_termsig);
+				status.w_retcode = 8;
+			}
+			if (status.w_retcode != 0) {
+				*badnext = dk->part;
+				badnext = &dk->part->next;
+				dk->part = dk->part->next;
+				*badnext = NULL;
+			} else
+				dk->part = dk->part->next;
+			dk->pid = 0;
+			nrun--;
+			if (dk->part == NULL)
+				ndisks--;
+
+			if (nextdisk == NULL) {
+				if (dk->part)
+					startdisk(dk);
+			} else if (nrun < maxrun && nrun < ndisks) {
+				for ( ;; ) {
+					if ((nextdisk = nextdisk->next) == NULL)
+						nextdisk = disks;
+					if (nextdisk->part != NULL &&
+					    nextdisk->pid == 0)
 						break;
-				if (wp == 0) {
-					printf("Unknown pid %d\n", pid);
-					continue;
 				}
-				if (pwp == 0)
-					listhead = wp->next;
-				else
-					pwp->next = wp->next;
-				if (status.w_termsig) {
-					printf("%s: EXITED WITH SIGNAL %d\n",
-						wp->name, status.w_termsig);
-					status.w_retcode = 8;
-				}
-				if (status.w_retcode != 0) {
-					wp->next = badlist;
-					badlist = wp;
-				} else {
-					wp->next = freelist;
-					freelist = wp;
-				}
+				startdisk(nextdisk);
 			}
 		}
-		passno++;
-	} while (anygtr);
+	}
 	if (sumstatus) {
 		if (badlist == 0)
 			exit(8);
 		printf("THE FOLLOWING FILE SYSTEM%s HAD AN %s\n\t",
 			badlist->next ? "S" : "", "UNEXPECTED INCONSISTENCY:");
-		for (wp = badlist; wp; wp = wp->next)
-			printf("%s%s", wp->name, wp->next ? ", " : "\n");
+		for (pt = badlist; pt; pt = pt->next)
+			printf("%s (%s)%s", pt->name, pt->fsname,
+			    pt->next ? ", " : "\n");
 		exit(8);
 	}
 	(void)endfsent();
 	if (returntosingle)
 		exit(2);
 	exit(0);
+}
+
+struct disk *
+finddisk(name)
+	char *name;
+{
+	register struct disk *dk, **dkp;
+	register char *p;
+	int len;
+
+	for (p = name + strlen(name) - 1; p >= name; --p)
+		if (isdigit(*p)) {
+			len = p - name + 1;
+			break;
+		}
+	if (p < name)
+		len = strlen(name);
+
+	for (dk = disks, dkp = &disks; dk; dkp = &dk->next, dk = dk->next) {
+		if (strncmp(dk->name, name, len) == 0 &&
+		    dk->name[len] == 0)
+			return (dk);
+	}
+	if ((*dkp = (struct disk *)malloc(sizeof(struct disk))) == NULL)
+		errexit("out of memory");
+	dk = *dkp;
+	if ((dk->name = malloc(len + 1)) == NULL)
+		errexit("out of memory");
+	strncpy(dk->name, name, len);
+	dk->name[len] = '\0';
+	dk->part = NULL;
+	dk->next = NULL;
+	dk->pid = 0;
+	ndisks++;
+	return (dk);
+}
+
+addpart(name, fsname)
+	char *name, *fsname;
+{
+	struct disk *dk = finddisk(name);
+	register struct part *pt, **ppt = &dk->part;
+
+	for (pt = dk->part; pt; ppt = &pt->next, pt = pt->next)
+		if (strcmp(pt->name, name) == 0) {
+			printf("%s in fstab more than once!\n", name);
+			return;
+		}
+	if ((*ppt = (struct part *)malloc(sizeof(struct part))) == NULL)
+		errexit("out of memory");
+	pt = *ppt;
+	if ((pt->name = malloc(strlen(name) + 1)) == NULL)
+		errexit("out of memory");
+	strcpy(pt->name, name);
+	if ((pt->fsname = malloc(strlen(fsname) + 1)) == NULL)
+		errexit("out of memory");
+	strcpy(pt->fsname, fsname);
+	pt->next = NULL;
+}
+
+startdisk(dk)
+	register struct disk *dk;
+{
+
+	nrun++;
+	dk->pid = fork();
+	if (dk->pid < 0) {
+		perror("fork");
+		exit(8);
+	}
+	if (dk->pid == 0) {
+		(void)signal(SIGQUIT, voidquit);
+		checkfilesys(dk->part->name);
+		exit(0);
+	}
 }
 
 checkfilesys(filesys)
@@ -217,6 +308,8 @@ checkfilesys(filesys)
 	struct zlncnt *zlnp;
 
 	devname = filesys;
+	if (debug && preen)
+		pwarn("starting\n");
 	if (setup(filesys) == 0) {
 		if (preen)
 			pfatal("CAN'T CHECK FILE SYSTEM.");
