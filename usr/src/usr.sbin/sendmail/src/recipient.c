@@ -1,7 +1,9 @@
 # include <pwd.h>
+# include <sys/types.h>
+# include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.11	%G%";
+static char SccsId[] = "@(#)recipient.c	3.12	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -189,6 +191,8 @@ recipient(a)
 	{
 		char buf[MAXNAME];
 		register char *p;
+		struct stat stb;
+		extern bool writable();
 
 		strcpy(buf, a->q_user);
 		stripquotes(buf, TRUE);
@@ -197,8 +201,7 @@ recipient(a)
 		if ((p = rindex(buf, '/')) != NULL)
 		{
 			/* check if writable or creatable */
-			if ((access(buf, 0) >= 0) ?
-			    (access(buf, 2) < 0) :
+			if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
 			    (*p = '\0', access(buf, 3) < 0))
 			{
 				a->q_flags |= QBADADDR;
@@ -224,6 +227,58 @@ recipient(a)
 			}
 		}
 	}
+}
+/*
+**  WRITABLE -- predicate returning if the file is writable.
+**
+**	This routine must duplicate the algorithm in sys/fio.c.
+**	Unfortunately, we cannot use the access call since we
+**	won't necessarily be the real uid when we try to
+**	actually open the file.
+**
+**	Notice that ANY file with ANY execute bit is automatically
+**	not writable.  This is also enforced by mailfile.
+**
+**	Parameters:
+**		s -- pointer to a stat struct for the file.
+**
+**	Returns:
+**		TRUE -- if we will be able to write this file.
+**		FALSE -- if we cannot write this file.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+writable(s)
+	register struct stat *s;
+{
+	int euid, egid;
+	int bits;
+
+	if (bitset(0111, s->st_mode))
+		return (FALSE);
+	euid = getruid();
+	egid = getrgid();
+	if (geteuid() == 0)
+	{
+		if (bitset(S_ISUID, s->st_mode))
+			euid = s->st_uid;
+		if (bitset(S_ISGID, s->st_mode))
+			egid = s->st_gid;
+	}
+
+	if (euid == 0)
+		return (TRUE);
+	bits = S_IWRITE;
+	if (euid != s->st_uid)
+	{
+		bits >>= 3;
+		if (egid != s->st_gid)
+			bits >>= 3;
+	}
+	return ((s->st_mode & bits) != 0);
 }
 /*
 **  INCLUDE -- handle :include: specification.
