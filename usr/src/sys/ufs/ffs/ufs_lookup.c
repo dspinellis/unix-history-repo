@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	8.3 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -138,11 +138,11 @@ ufs_lookup(ap)
 			error = 0;
 		} else if (flags & ISDOTDOT) {
 			VOP_UNLOCK(pdp);
-			error = vget(vdp);
+			error = vget(vdp, 1);
 			if (!error && lockparent && (flags & ISLASTCN))
 				error = VOP_LOCK(pdp);
 		} else {
-			error = vget(vdp);
+			error = vget(vdp, 1);
 			if (!lockparent || error || !(flags & ISLASTCN))
 				VOP_UNLOCK(pdp);
 		}
