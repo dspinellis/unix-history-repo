@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.8	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)restore.c	3.9	(Berkeley)	83/04/11";
 #endif
 
 #include "restore.h"
@@ -138,7 +138,7 @@ nodeupdates(name, ino, type)
 #		define INOFND	0x2	/* inode already exists */
 #		define NAMEFND	0x4	/* name already exists */
 #		define MODECHG	0x8	/* mode of inode changed */
-	char keybuf[32], *keyval = &keybuf[1];
+	extern char *keyval();
 
 	/*
 	 * This routine is called once for each element in the 
@@ -146,19 +146,14 @@ nodeupdates(name, ino, type)
 	 * The "type" value is incorrectly specified as LEAF for
 	 * directories that are not on the dump tape.
 	 */
-	strcpy(keybuf, "|NIL");
-	keybuf[0] = '\0';
-	if (BIT(ino, dumpmap)) {
+	if (BIT(ino, dumpmap))
 		key |= ONTAPE;
-		strcat(keybuf, "|ONTAPE");
-	}
 	np = lookupname(name);
 	if (np != NIL)
 		key |= NAMEFND;
 	ip = lookupino(ino);
 	if (ip != NIL) {
 		key |= INOFND;
-		strcat(keybuf, "|INOFND");
 		for (ep = ip; ep != NIL; ep = ep->e_links)
 			if (ep == np) {
 				ip = ep;
@@ -184,14 +179,10 @@ nodeupdates(name, ino, type)
 		np = NIL;
 		key &= ~NAMEFND;
 	}
-	if (key & NAMEFND)
-		strcat(keybuf, "|NAMEFND");
 	if ((key & ONTAPE) &&
 	  (((key & INOFND) && ip->e_type != type) ||
-	   ((key & NAMEFND) && np->e_type != type))) {
+	   ((key & NAMEFND) && np->e_type != type)))
 		key |= MODECHG;
-		(void) strcat(keybuf, "|MODECHG");
-	}
 
 	/*
 	 * Decide on the disposition of the file based on its flags.
@@ -209,7 +200,8 @@ nodeupdates(name, ino, type)
 	 */
 	case INOFND|NAMEFND:
 		ip->e_flags |= KEEP;
-		dprintf(stdout, "[%s] %s: KEEP\n", keyval, name);
+		dprintf(stdout, "[%s] %s: %s\n", keyval(key), name,
+			flagvalues(ip));
 		break;
 
 	/*
@@ -225,7 +217,8 @@ nodeupdates(name, ino, type)
 		else
 			ep->e_flags |= NEW;
 		ep->e_flags |= KEEP;
-		dprintf(stdout, "[%s] %s: KEEP|NEW\n", keyval, name);
+		dprintf(stdout, "[%s] %s: %s\n", keyval(key), name,
+			flagvalues(ep));
 		break;
 
 	/*
@@ -240,17 +233,16 @@ nodeupdates(name, ino, type)
 	 * a request is made to extract it.
 	 */
 	case ONTAPE|INOFND:
-		if (type == LEAF && (ip->e_flags & KEEP) == 0) {
+		if (type == LEAF && (ip->e_flags & KEEP) == 0)
 			ip->e_flags |= EXTRACT;
-			dprintf(stdout, "[%s] %s: EXTRACT\n", keyval, name);
-		}
 		/* fall through */
 	case INOFND:
 		if ((ip->e_flags & KEEP) == 0) {
 			renameit(myname(ip), name);
 			moveentry(ip, name);
 			ip->e_flags |= KEEP;
-			dprintf(stdout, "[%s] %s: RENAME\n", keyval, name);
+			dprintf(stdout, "[%s] %s: %s\n", keyval(key),
+				flagvalues(ip));
 			break;
 		}
 		if (ip->e_type == NODE) {
@@ -262,7 +254,8 @@ nodeupdates(name, ino, type)
 		}
 		ep = addentry(name, ino, type|LINK);
 		ep->e_flags |= NEW;
-		dprintf(stdout, "[%s] %s: LINK\n", keyval, name);
+		dprintf(stdout, "[%s] %s: %s|LINK\n", keyval(key), name,
+			flagvalues(ep));
 		break;
 
 	/*
@@ -287,7 +280,8 @@ nodeupdates(name, ino, type)
 		if (type == LEAF)
 			np->e_flags |= EXTRACT;
 		np->e_flags |= KEEP;
-		dprintf(stdout, "[%s] %s: KEEP|EXTRACT\n", keyval, name);
+		dprintf(stdout, "[%s] %s: %s\n", keyval(key), name,
+			flagvalues(np));
 		break;
 
 	/*
@@ -324,7 +318,8 @@ nodeupdates(name, ino, type)
 			ip->e_flags |= NEW;
 		}
 		ip->e_flags |= KEEP;
-		dprintf(stdout, "[%s] %s: KEEP|NEW\n", keyval, name);
+		dprintf(stdout, "[%s] %s: %s\n", keyval(key), name,
+			flagvalues(ip));
 		break;
 
 	/*
@@ -332,7 +327,8 @@ nodeupdates(name, ino, type)
 	 * Ignore it.
 	 */
 	case NAMEFND:
-		dprintf(stdout, "[%s] %s: Extraneous name\n", keyval, name);
+		dprintf(stdout, "[%s] %s: Extraneous name\n", keyval(key),
+			name);
 		descend = FAIL;
 		break;
 
@@ -344,7 +340,7 @@ nodeupdates(name, ino, type)
 	case NAMEFND|MODECHG:
 	case INOFND|MODECHG:
 	case NIL:
-		panic("[%s] %s: inconsistent state\n", keyval, name);
+		panic("[%s] %s: inconsistent state\n", keyval(key), name);
 		break;
 
 	/*
@@ -353,10 +349,32 @@ nodeupdates(name, ino, type)
 	case ONTAPE|MODECHG:
 	case MODECHG:
 	default:
-		panic("[%s] %s: impossible state\n", keyval, name);
+		panic("[%s] %s: impossible state\n", keyval(key), name);
 		break;
 	}	
 	return (descend);
+}
+
+/*
+ * Calculate the active flags in a key.
+ */
+char *
+keyval(key)
+	int key;
+{
+	static char keybuf[32];
+
+	strcpy(keybuf, "|NIL");
+	keybuf[0] = '\0';
+	if (key & ONTAPE)
+		(void) strcat(keybuf, "|ONTAPE");
+	if (key & INOFND)
+		(void) strcat(keybuf, "|INOFND");
+	if (key & NAMEFND)
+		(void) strcat(keybuf, "|NAMEFND");
+	if (key & MODECHG)
+		(void) strcat(keybuf, "|MODECHG");
+	return (&keybuf[1]);
 }
 
 /*

@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.8	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)utilities.c	3.9	(Berkeley)	83/04/11";
 #endif
 
 #include "restore.h"
@@ -217,7 +217,6 @@ badentry(ep, msg)
 	register struct entry *ep;
 	char *msg;
 {
-	char flagbuf[BUFSIZ];
 
 	fprintf(stderr, "bad entry: %s\n", msg);
 	fprintf(stderr, "name: %s\n", myname(ep));
@@ -233,19 +232,31 @@ badentry(ep, msg)
 	fprintf(stderr, "entry type: %s\n",
 		ep->e_type == NODE ? "NODE" : "LEAF");
 	fprintf(stderr, "inode number: %ld\n", ep->e_ino);
-	strcpy(flagbuf, "|NIL");
+	panic("flags: %s\n", flagvalues(ep));
+}
+
+/*
+ * Construct a string indicating the active flag bits of an entry.
+ */
+char *
+flagvalues(ep)
+	register struct entry *ep;
+{
+	static char flagbuf[BUFSIZ];
+
+	(void) strcpy(flagbuf, "|NIL");
 	flagbuf[0] = '\0';
 	if (ep->e_flags & REMOVED)
-		strcat(flagbuf, "|REMOVED");
+		(void) strcat(flagbuf, "|REMOVED");
 	if (ep->e_flags & TMPNAME)
-		strcat(flagbuf, "|TMPNAME");
+		(void) strcat(flagbuf, "|TMPNAME");
 	if (ep->e_flags & EXTRACT)
-		strcat(flagbuf, "|EXTRACT");
+		(void) strcat(flagbuf, "|EXTRACT");
 	if (ep->e_flags & NEW)
-		strcat(flagbuf, "|NEW");
+		(void) strcat(flagbuf, "|NEW");
 	if (ep->e_flags & KEEP)
-		strcat(flagbuf, "|KEEP");
-	panic("flags: %s\n", &flagbuf[1]);
+		(void) strcat(flagbuf, "|KEEP");
+	return (&flagbuf[1]);
 }
 
 /*
