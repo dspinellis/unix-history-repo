@@ -1,4 +1,4 @@
-/*	hpmaptype.c	4.4	83/02/22	*/
+/*	hpmaptype.c	4.5	83/02/27	*/
 
 /*
  * RP??/RM?? drive type mapping routine.
@@ -97,17 +97,26 @@ hpmaptype(hpaddr, type, unit)
 	 * register for the disk geometry.
 	 */
 	if (type == 13) {
+		int newtype = type;
+
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
 		ntracks = MASKREG(hpaddr->hphr) + 1;
-		if (ntracks == 16)
-			return (10);	/* AMPEX capricorn */
+		if (ntracks == 16) {
+			newtype = 10;	/* AMPEX capricorn */
+			goto done;
+		}
+		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXSECT;
 		ntracks = MASKREG(hpaddr->hphr) + 1;
-		if (ntracks == 48)
-			return (11);	/* 48 sector Eagle */
+		if (ntracks == 48) {
+			newtype = 11;	/* 48 sector Eagle */
+			goto done;
+		}
 		printf("RM02 with %d sectors/track?\n", ntracks);
-		return (type);
+	done:
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		return (newtype);
 	}
 	/*
 	 * ML11's all map to the same type.
