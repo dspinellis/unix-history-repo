@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_search.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_search.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -57,7 +57,7 @@ __rec_search(t, recno, op)
 		}
 		for (index = 0, top = NEXTINDEX(h);;) {
 			r = GETRINTERNAL(h, index);
-			if (++index == top || total + r->nrecs >= recno)
+			if (++index == top || total + r->nrecs > recno)
 				break;
 			total += r->nrecs;
 		}
@@ -68,11 +68,11 @@ __rec_search(t, recno, op)
 		pg = r->pgno;
 		switch (op) {
 		case SDELETE:
-			--GETRINTERNAL(h, index)->nrecs;
+			--GETRINTERNAL(h, (index - 1))->nrecs;
 			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 			break;
 		case SINSERT:
-			++GETRINTERNAL(h, index)->nrecs;
+			++GETRINTERNAL(h, (index - 1))->nrecs;
 			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 			break;
 		case SEARCH:
