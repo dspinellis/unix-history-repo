@@ -1,0 +1,38 @@
+.\" Copyright (c) 1987 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)mpcc.4	6.1 (Berkeley) %G%
+.\"
+.TH MPCC 4 ""
+.UC 7
+.SH NAME
+mpcc \- Multi protocol communications controller
+.SH SYNOPSIS
+device mp0 at vba0 csr 0xff5000
+.br
+thru
+.br
+device mp15 at vba0 csr 0xff5f00
+.SH DESCRIPTION
+The MPCC has two different connecter panel styles.
+The 16 port MPCC will support any combination of SYNC or ASYNC ports.
+The 32 port MPCC will only support ASYNC ports.
+Each async line attached to the MPCC communications controller
+behaves as described in
+.IR tty (7)
+and may be set to run at any of 16 speeds; see
+.IR tty (7)
+for the encoding.
+.PP
+Each MPCC controller uses 2 entries in the SCB for download/handshake,
+and command/response interrupts.
+These entries start at 0xa0 for the 1st controllers download/handshake
+interrupts thru 0xaf, and 0xb0 for the 1st controllers command/response
+interrupts thru 0xbf.
+.SH FILES
+/dev/tty[0-f][0-f] For 16 port MPCC
+.br
+/dev/tty[0-f][0-f,g-v] For 32 port MPCC
+.SH "SEE ALSO"
+tty(7)
