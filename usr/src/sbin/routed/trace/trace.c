@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983,1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,12 +17,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983,1988 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)trace.c	5.6 (Berkeley) %G%";
 #include <netdb.h>
 #include <protocols/routed.h>
 
-struct	sockaddr_in myaddr = { AF_INET, IPPORT_RESERVED-1 };
+struct	sockaddr_in myaddr;
 char	packet[MAXPACKETSIZE];
 
 main(argc, argv)
@@ -59,9 +59,8 @@ usage:
 		perror("socket");
 		exit(2);
 	}
-#ifdef vax || pdp11
-	myaddr.sin_port = htons(myaddr.sin_port);
-#endif
+	myaddr.sin_family = AF_INET;
+	myaddr.sin_port = htons(IPPORT_RESERVED-1);
 	if (bind(s, &myaddr, sizeof(myaddr)) < 0) {
 		perror("bind");
 		exit(2);
@@ -96,7 +95,7 @@ usage:
 			if (hp == NULL) {
 				fprintf(stderr, "trace: %s: ", *argv);
 				herror((char *)NULL);
-				exit(1);
+				continue;
 			}
 			bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
 		}
