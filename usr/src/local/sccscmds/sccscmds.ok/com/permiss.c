@@ -1,7 +1,7 @@
 #include <sys/param.h>
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)permiss.c	1.2	%G%);
+SCCSID(@(#)permiss.c	1.3	%G%);
 
 finduser(pkt)
 register struct packet *pkt;
@@ -74,12 +74,14 @@ register struct packet *pkt;
 	if (!pkt->p_user)
 		fatal("not authorized to make deltas (co14)");
 	if (p = Sflags[FLORFLAG - 'a']) {
-		if (((unsigned)pkt->p_reqsid.s_rel) < (n = patoi(p)))
-			fatal(sprintf(Error,"release %u < %u (floor) (co15)",
-				pkt->p_reqsid.s_rel,n));
+		if (((unsigned)pkt->p_reqsid.s_rel) < (n = patoi(p))) {
+			sprintf(Error,"release %u < %u (floor) (co15)",pkt->p_reqsid.s_rel,n);
+			fatal(Error);
+		}
 	}
 	if (p = Sflags[CEILFLAG - 'a'])
-		if (((unsigned)pkt->p_reqsid.s_rel) > (n = patoi(p)))
-			fatal(sprintf(Error,"release %u > %u (ceiling) (co16)",
-				pkt->p_reqsid.s_rel,n));
+		if (((unsigned)pkt->p_reqsid.s_rel) > (n = patoi(p))) {
+			sprintf(Error,"release %u > %u (ceiling) (co16)",pkt->p_reqsid.s_rel,n);
+			fatal(Error);
+		}
 }

@@ -9,6 +9,6 @@ register char *ch;
 {
 	char fivech[6];
 	repeat(fivech,ch,5);
-	putline(pkt,sprintf(strp,"%c%c %s/%s/%s\n",CTLCHAR,STATS,
-					fivech,fivech,fivech),0);
+	sprintf(strp,"%c%c %s/%s/%s\n",CTLCHAR,STATS,fivech,fivech,fivech);
+	putline(pkt,strp);
 }

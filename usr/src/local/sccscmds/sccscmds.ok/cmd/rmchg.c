@@ -1,7 +1,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-static char Sccsid[] = "@(#)rmchg.c	4.3	%G%";
+static char Sccsid[] = "@(#)rmchg.c	4.4	%G%";
 
 /*
 	Program to remove a specified delta from an SCCS file,
@@ -151,8 +151,10 @@ char *file;
 		dohist(file);
 	}
 
-	if (!exists(file))
-		fatal(sprintf(Error,"file %s does not exist (rc2)",file));
+	if (!exists(file)) {
+		sprintf(Error,"file %s does not exist (rc2)",file);
+		fatal(Error);
+	}
 
 	/*
 	Lock out any other user who may be trying to process
@@ -224,9 +226,10 @@ char *file;
 		downer = Statbuf.st_uid & 0377;
 	user = getuid() & 0377;
 	if (user != fowner || user != downer)
-		if (!equal(Pgmr,logname()))
-			fatal(sprintf(Error,
-				"you are neither owner nor '%s' (rc4)",Pgmr));
+		if (!equal(Pgmr,logname())) {
+			sprintf(Error, "you are neither owner nor '%s' (rc4)",Pgmr);
+			fatal(Error);
+		}
 
 	/*
 	For 'rmdel', check that delta being removed is a
@@ -322,14 +325,17 @@ struct packet *pkt;
 		if (Mrs)
 			putmrs(pkt);
 
-		putline(pkt,sprintf(line,"%c%c ",CTLCHAR,COMMENTS));
+		sprintf(line,"%c%c ",CTLCHAR,COMMENTS);
+		putline(pkt,line);
 		putline(pkt,Comments);
 		putline(pkt,"\n");
-		putline(pkt,sprintf(line,"%c%c ",CTLCHAR,COMMENTS));
+		sprintf(line,"%c%c ",CTLCHAR,COMMENTS);
+		putline(pkt,line);
 		putline(pkt,"*** CHANGED *** ");
 		date_ba(&Timenow,line);		/* get date and time */
 		putline(pkt,line);
-		putline(pkt,sprintf(line," %s\n",logname()));
+		sprintf(line," %s\n",logname());
+		putline(pkt,line);
 	}
 
 	if (pkt->p_line[1] == MRNUM) {
@@ -352,8 +358,10 @@ struct packet *pkt;
 	char str[64];
 	extern char *Varg[];
 
-	for (argv = &Varg[VSTART]; *argv; argv++)
-		putline(pkt,sprintf(str,"%c%c %s\n",CTLCHAR,MRNUM,*argv));
+	for (argv = &Varg[VSTART]; *argv; argv++) {
+		sprintf(str,"%c%c %s\n",CTLCHAR,MRNUM,*argv);
+		putline(pkt,str);
+	}
 }
 
 

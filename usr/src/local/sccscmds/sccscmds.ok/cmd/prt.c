@@ -1,7 +1,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-static char Sccsid[] = "@(#)prt.c	4.2	%G%";
+static char Sccsid[] = "@(#)prt.c	4.3	%G%";
 
 /*
 	Program to print parts or all of an SCCS file.
@@ -259,8 +259,8 @@ char *file;
 					break;
 
 				default:
-					fatal(sprintf(Error,
-					"format error at line %d (co4)",linenum));
+					sprintf(Error, "format error at line %d (co4)",linenum);
+					fatal(Error);
 				}
 			}
 		}

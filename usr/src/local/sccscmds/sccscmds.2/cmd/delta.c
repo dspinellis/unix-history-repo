@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-static char Sccsid[] = "@(#)delta.c	4.9	%G%";
+static char Sccsid[] = "@(#)delta.c	4.10	%G%";
 USXALLOC();
 
 # ifdef LOGDELTA
@@ -71,9 +71,10 @@ register char *argv[];
 
 			if (testmore) {
 				testmore = 0;
-				if (*p)
-					fatal(sprintf(Error,
-					  "value after %c arg (cm7)",c));
+				if (*p) {
+					sprintf(Error, "value after %c arg (cm7)",c);
+					fatal(Error);
+				}
 			}
 			if (had[c - 'a']++)
 				fatal("key letter twice (cm2)");
@@ -216,10 +217,10 @@ char *file;
 			/*
 			Check top byte (exit code of child).
 			*/
-			if (((status >> 8) & 0377) == 32) /* 'execl' failed */
-				fatal(sprintf(Error,
-						"cannot execute '%s' (de12)",
-						Diffpgm));
+			if (((status >> 8) & 0377) == 32) { /* 'execl' failed */
+				sprintf(Error, "cannot execute '%s' (de12)", Diffpgm);
+				fatal(Error);
+			}
 			/*
 			Re-try.
 			*/
@@ -295,7 +296,8 @@ int orig_nlines;
 		sid_ba(sp,str);
 		fprintf(pkt->p_stdout,"%s\n",str);
 	}
-	putline(pkt,sprintf(str,"%c%c00000\n",CTLCHAR,HEAD));
+	sprintf(str,"%c%c00000\n",CTLCHAR,HEAD);
+	putline(pkt,str);
 	newstats(pkt,str,"0");
 	bcopy(sp,&dt.d_sid,sizeof(dt.d_sid));
 
@@ -361,15 +363,16 @@ int orig_nlines;
 	}
 	else if (Sflags[VALFLAG - 'a'])
 		fatal("MRs required (de10)");
-	putline(pkt,sprintf(str,"%c%c ",CTLCHAR,COMMENTS));
+	sprintf(str,"%c%c ",CTLCHAR,COMMENTS);
+	putline(pkt,str);
 	putline(pkt,Comments);
 	putline(pkt,"\n");
-	putline(pkt,sprintf(str,CTLSTR,CTLCHAR,EDELTAB));
+	sprintf(str,CTLSTR,CTLCHAR,EDELTAB);
+	putline(pkt,str);
 	if (nulldel)			/* insert 'null' deltas */
 		while (--ser_inc) {
-			putline(pkt,sprintf(str,"%c%c %s/%s/%05u\n",
-				CTLCHAR, STATS,
-				"00000", "00000", orig_nlines));
+			sprintf(str,"%c%c %s/%s/%05u\n", CTLCHAR, STATS, "00000", "00000", orig_nlines);
+			putline(pkt,str);
 			dt.d_sid.s_rel -= 1;
 			dt.d_serial -= 1;
 			if (ser_inc != 1)
@@ -378,9 +381,11 @@ int orig_nlines;
 				dt.d_pred = opred;	/* point to old pred */
 			del_ba(&dt,str);
 			putline(pkt,str);
-			putline(pkt,sprintf(str,"%c%c ",CTLCHAR,COMMENTS));
+			sprintf(str,"%c%c ",CTLCHAR,COMMENTS);
+			putline(pkt,str);
 			putline(pkt,"AUTO NULL DELTA\n");
-			putline(pkt,sprintf(str,CTLSTR,CTLCHAR,EDELTAB));
+			sprintf(str,CTLSTR,CTLCHAR,EDELTAB);
+			putline(pkt,str);
 		}
 	return(newser);
 }
@@ -394,10 +399,13 @@ char ch;
 	int n;
 	char str[512];
 
-	putline(pkt,sprintf(str,"%c%c",CTLCHAR,ch));
+	sprintf(str,"%c%c",CTLCHAR,ch);
+	putline(pkt,str);
 	for (n = maxser(pkt); n; n--) {
-		if (pkt->p_apply[n].a_reason == reason)
-			putline(pkt,sprintf(str," %u",n));
+		if (pkt->p_apply[n].a_reason == reason) {
+			sprintf(str," %u",n);
+			putline(pkt,str);
+		}
 	}
 	putline(pkt,"\n");
 }
@@ -410,8 +418,10 @@ struct packet *pkt;
 	char str[64];
 	extern char *Varg[];
 
-	for (argv = &Varg[VSTART]; *argv; argv++)
-		putline(pkt,sprintf(str,"%c%c %s\n",CTLCHAR,MRNUM,*argv));
+	for (argv = &Varg[VSTART]; *argv; argv++) {
+		sprintf(str,"%c%c %s\n",CTLCHAR,MRNUM,*argv);
+		putline(pkt,str);
+	}
 }
 
 
@@ -561,12 +571,14 @@ int ser;
 	char str[512];
 
 	after(pkt,linenum);
-	putline(pkt,sprintf(str,"%c%c %u\n",CTLCHAR,INS,ser));
+	sprintf(str,"%c%c %u\n",CTLCHAR,INS,ser);
+	putline(pkt,str);
 	for (++n; --n; ) {
 		rddiff(str,sizeof(str));
 		putline(pkt,&str[2]);
 	}
-	putline(pkt,sprintf(str,"%c%c %u\n",CTLCHAR,END,ser));
+	sprintf(str,"%c%c %u\n",CTLCHAR,END,ser);
+	putline(pkt,str);
 }
 
 
@@ -579,9 +591,11 @@ register int ser;
 	char str[512];
 
 	before(pkt,linenum);
-	putline(pkt,sprintf(str,"%c%c %u\n",CTLCHAR,DEL,ser));
+	sprintf(str,"%c%c %u\n",CTLCHAR,DEL,ser);
+	putline(pkt,str);
 	after(pkt,linenum + n - 1);
-	putline(pkt,sprintf(str,"%c%c %u\n",CTLCHAR,END,ser));
+	sprintf(str,"%c%c %u\n",CTLCHAR,END,ser);
+	putline(pkt,str);
 }
 
 

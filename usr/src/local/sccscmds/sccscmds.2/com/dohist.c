@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-static char Sccsid[] = "@(#)dohist.c	1.3	%G%";
+static char Sccsid[] = "@(#)dohist.c	1.4	%G%";
 
 char	Cstr[RESPSIZE];
 char	Mstr[RESPSIZE];
@@ -45,7 +45,8 @@ char *file;
 	if (!Comments) {
 		if (doprmt)
 			printf("comments? ");
-		Comments = getresp(sprintf(line,"\n%c%c ",CTLCHAR,COMMENTS),Cstr);
+		sprintf(line,"\n%c%c ",CTLCHAR,COMMENTS);
+		Comments = getresp(line,Cstr);
 	}
 }
 

@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-static char Sccsid[] = "@(#)comb.c	4.3	%G%";
+static char Sccsid[] = "@(#)comb.c	4.4	%G%";
 USXALLOC();
 
 struct packet gpkt;
@@ -53,9 +53,10 @@ register char *argv[];
 
 			if (testmore) {
 				testmore = 0;
-				if (*p)
-					fatal(sprintf(Error,
-					  "value after %c arg (cm7)",c));
+				if (*p) {
+					sprintf(Error, "value after %c arg (cm7)",c);
+					fatal(Error);
+				}
 			}
 			if (had[c - 'a']++)
 				fatal("key letter twice (cm2)");

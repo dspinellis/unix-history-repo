@@ -3,7 +3,7 @@
 # include	"seven/macros.h"
 # include	"fatal.h"
 
-SCCSID(@(#)vc.c	4.2);
+SCCSID(@(#)vc.c	4.3);
 USXALLOC();
 
 /*
@@ -628,7 +628,8 @@ char *s1, *s2;
 
 error(arg)
 {
-	fatal(sprintf(Error,"%r",&arg));
+	sprintf(Error,"%r",&arg);
+	fatal(Error);
 }
 
 
