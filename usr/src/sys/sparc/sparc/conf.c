@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	8.3 (Berkeley) %G%
+ *	@(#)conf.c	8.4 (Berkeley) %G%
  *
  * from: $Header: conf.c,v 1.17 93/10/31 05:37:39 torek Exp $ (LBL)
  */
@@ -377,6 +377,28 @@ iszerodev(dev)
 	dev_t dev;
 {
 	return (major(dev) == 3 && minor(dev) == 12);
+}
+
+/*
+ * Routine to determine if a device is a tty.
+ *
+ * A minimal stub routine can always return 0.
+ */
+istty(dev)
+	dev_t dev;
+{
+
+	switch (major(dev)) {
+	case 0:
+	case 2:
+	case 12:
+	case 20:
+	case 21:
+	case 29:
+		return (1);
+	default:
+		return (0);
+	}
 }
 
 /*
