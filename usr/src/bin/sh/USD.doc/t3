@@ -1,6 +1,5 @@
-.\"	@(#)t3	5.1 (Berkeley) %G%
+.\"	@(#)t3	6.1 (Berkeley) %G%
 .\"
-.bp
 .SH
 3.0\ Keyword\ parameters
 .LP
@@ -487,9 +486,12 @@ if any error is detected.
 .DE
 .ft B
 .ce
-Figure 3. UNIX signals
+Figure 3. UNIX signals\(dg
 .ft
-
+.FS
+\(dg Additional signals have been added in Berkeley Unix.  See sigvec(2) or signal(3C)
+for an up-to-date list.
+.FE
 Those signals marked with an asterisk
 produce a core dump
 if not caught.
