@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.15 %G%";
+static	char *sccsid = "@(#)csh.c 4.16 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -737,7 +737,7 @@ process(catch)
 			 * need or want to prompt.
 			 */
 			if (fseekp == feobp)
-			    printprompt();
+				printprompt();
 			flush();
 		}
 		err = 0;
@@ -917,24 +917,24 @@ exit(i)
 #endif
 }
 
-printprompt ()
+printprompt()
 {
-    register char *cp;
-    if (!whyles)
-	for (cp = value ("prompt"); *cp; cp++)
-	    if (*cp == HIST)
-		printf ("%d", eventno + 1);
-	    else
-	    {
-		if (*cp == '\\' && cp[1] == HIST)
-		    cp++;
-		putchar (*cp | QUOTE);
-	    }
-    else
-    /* 
-     * Prompt for forward reading loop
-     * body content.
-     */
-	printf ("? ");
-    flush ();
+	register char *cp;
+
+	if (whyles) {
+		for (cp = value("prompt"); *cp; cp++)
+			if (*cp == HIST)
+				printf("%d", eventno + 1);
+			else {
+				if (*cp == '\\' && cp[1] == HIST)
+					cp++;
+				putchar(*cp | QUOTE);
+			}
+	} else
+		/* 
+		 * Prompt for forward reading loop
+		 * body content.
+		 */
+		printf("? ");
+	flush();
 }
