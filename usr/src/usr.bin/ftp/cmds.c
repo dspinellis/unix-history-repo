@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -243,7 +243,7 @@ usage:
 mput(argc, argv)
 	char *argv[];
 {
-	char **cpp, **gargs = NULL;
+	register int i;
 
 	if (argc < 2) {
 		strcat(line, " ");
@@ -257,23 +257,27 @@ mput(argc, argv)
 		printf("%s local-files\n", argv[0]);
 		return;
 	}
-	cpp = argv + 1;
-	if (doglob) {
-		gargs = glob(cpp);
+	for (i = 1; i < argc; i++) {
+		register char **cpp, **gargs;
+
+		if (!doglob) {
+			if (confirm(argv[0], argv[i]))
+				sendrequest("STOR", argv[i], argv[i]);
+			continue;
+		}
+		gargs = glob(argv[i]);
 		if (globerr != NULL) {
 			printf("%s\n", globerr);
 			if (gargs)
 				blkfree(gargs);
-			return;
+			continue;
 		}
+		for (cpp = gargs; cpp && *cpp != NULL; cpp++)
+			if (confirm(argv[0], *cpp))
+				sendrequest("STOR", *cpp, *cpp);
+		if (gargs != NULL)
+			blkfree(gargs);
 	}
-	if (gargs != NULL)
-		cpp = gargs;
-	for (; *cpp != NULL; cpp++)
-		if (confirm(argv[0], *cpp))
-			sendrequest("STOR", *cpp, *cpp);
-	if (gargs != NULL)
-		blkfree(gargs);
 }
 
 /*
@@ -346,7 +350,7 @@ remglob(argc, argv)
 	static char buf[MAXPATHLEN];
 	static FILE *ftemp = NULL;
 	static char **args;
-	int oldverbose;
+	int oldverbose, oldhash;
 	char *cp, *mode;
 
 	if (!doglob) {
@@ -360,9 +364,10 @@ remglob(argc, argv)
 		strcpy(temp, "/tmp/ftpXXXXXX");
 		mktemp(temp);
 		oldverbose = verbose, verbose = 0;
+		oldhash = hash, hash = 0;
 		for (mode = "w"; *++argv != NULL; mode = "a")
 			recvrequest ("NLST", temp, *argv, mode);
-		verbose = oldverbose;
+		verbose = oldverbose; hash = oldhash;
 		ftemp = fopen(temp, "r");
 		unlink(temp);
 		if (ftemp == NULL) {
@@ -403,8 +408,8 @@ status(argc, argv)
 	printf("Verbose: %s; Bell: %s; Prompting: %s; Globbing: %s\n", 
 		onoff(verbose), onoff(bell), onoff(interactive),
 		onoff(doglob));
-	printf("Hash mark printing: %s; Use of PORT cmds: %s\n",
-		onoff(hash), onoff(sendport));
+	printf("Hash mark printing: %s; Use of PORT cmds: %s; Linger: %s\n",
+		onoff(hash), onoff(sendport), onoff(linger));
 }
 
 /*
@@ -513,6 +518,26 @@ setdebug(argc, argv)
 	else
 		options &= ~SO_DEBUG;
 	printf("Debugging %s (debug=%d).\n", onoff(debug), debug);
+}
+
+/*
+ * Set linger on data connections on/off.
+ */
+/*VARARGS*/
+setlinger(argc, argv)
+	char *argv[];
+{
+
+	if (argc == 1)
+		linger = !linger;
+	else
+		linger = atoi(argv[1]);
+	if (argc == 1 || linger == 0) {
+		printf("Linger on data connection close %s.\n", onoff(linger));
+		return;
+	}
+	printf("Will linger for %d seconds on close of data connections.\n",
+	   linger);
 }
 
 /*
@@ -673,20 +698,37 @@ ls(argc, argv)
 mls(argc, argv)
 	char *argv[];
 {
-	char *cmd, *mode;
-	int i, dest;
+	char *cmd, *mode, *cp, *dest;
 
-	if (argc < 2)
-		argc++, argv[1] = NULL;
-	if (argc < 3)
-		argc++, argv[2] = "-";
-	dest = argc - 1;
-	cmd = argv[0][1] == 'l' ? "NLST" : "LIST";
-	if (strcmp(argv[dest], "-") != 0)
-		if (globulize(&argv[dest]) && confirm("local-file", argv[dest]))
+	if (argc < 2) {
+		strcat(line, " ");
+		printf("(remote-files) ");
+		gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc < 3) {
+		strcat(line, " ");
+		printf("(local-file) ");
+		gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc < 3) {
+		printf("%s remote-files local-file\n", argv[0]);
+		return;
+	}
+	dest = argv[argc - 1];
+	argv[argc - 1] = NULL;
+	if (strcmp(dest, "-"))
+		if (globulize(&dest) && confirm("local-file", dest))
 			return;
-	for (i = 1, mode = "w"; i < dest; i++, mode = "a")
-		recvrequest(cmd, argv[dest], argv[i], mode);
+	cmd = argv[0][1] == 'l' ? "NLST" : "LIST";
+	for (mode = "w"; cp = remglob(argc, argv); mode = "a")
+		if (confirm(argv[0], cp))
+			recvrequest(cmd, dest, cp, mode);
 }
 
 /*

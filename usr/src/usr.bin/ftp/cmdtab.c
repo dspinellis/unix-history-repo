@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	4.6 (Berkeley) %G%";
 #endif
 
 #include "ftp_var.h"
@@ -8,7 +8,7 @@ static char sccsid[] = "@(#)cmdtab.c	4.5 (Berkeley) %G%";
  * User FTP -- Command Tables.
  */
 int	setascii(), setbell(), setbinary(), setdebug(), setform();
-int	setglob(), sethash(), setmode(), setpeer(), setport ();
+int	setglob(), sethash(), setlinger(), setmode(), setpeer(), setport();
 int	setprompt(), setstruct();
 int	settenex(), settrace(), settype(), setverbose();
 int	disconnect();
@@ -33,6 +33,7 @@ char	globhelp[] =	"toggle metacharacter expansion of local file names";
 char	hashhelp[] =	"toggle printing `#' for each buffer transferred";
 char	helphelp[] =	"print local help information";
 char	lcdhelp[] =	"change local working directory";
+char	lingerhelp[] =	"wait for other side when closing data connections";
 char	lshelp[] =	"nlist contents of remote directory";
 char	mdeletehelp[] =	"delete multiple files";
 char	mdirhelp[] =	"list contents of multiple remote directories";
@@ -78,6 +79,7 @@ struct cmd cmdtab[] = {
 	{ "hash",	hashhelp,	0,	0,	sethash },
 	{ "help",	helphelp,	0,	0,	help },
 	{ "lcd",	lcdhelp,	0,	0,	lcd },
+	{ "linger",	lingerhelp,	0,	0,	setlinger },
 	{ "ls",		lshelp,		1,	1,	ls },
 	{ "mdelete",	mdeletehelp,	1,	1,	mdelete },
 	{ "mdir",	mdirhelp,	1,	1,	mls },
