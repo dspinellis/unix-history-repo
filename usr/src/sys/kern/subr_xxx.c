@@ -1,4 +1,4 @@
-/*	subr_xxx.c	6.3	84/07/28	*/
+/*	subr_xxx.c	6.4	84/08/22	*/
 
 #include "../machine/pte.h"
 
@@ -34,6 +34,7 @@ nulldev()
 	return (0);
 }
 
+#ifndef vax
 imin(a, b)
 {
 
@@ -61,6 +62,7 @@ max(a, b)
 
 	return (a > b ? a : b);
 }
+#endif not vax
 
 extern	cabase, calimit;
 extern	struct pte camap[];
