@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -32,7 +32,7 @@ spec()
 	for (lineno = 1; fgets(buf, sizeof(buf), stdin); ++lineno) {
 		if (!(p = index(buf, '\n'))) {
 			(void)fprintf(stderr,
-			    "mtree: line %d too long, ignored.\n", lineno);
+			    "mtree: line %d too long.\n", lineno);
 			exit(1);
 		}
 		*p = '\0';
