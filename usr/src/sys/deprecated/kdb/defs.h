@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	7.5 (Berkeley) %G%
+ *	@(#)defs.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -12,8 +12,8 @@
 
 #include "param.h"
 #include "dir.h"
-#include "../machine/psl.h"
-#include "../machine/pte.h"
+#include "machine/psl.h"
+#include "machine/pte.h"
 #include "user.h"
 #include "proc.h"
 
@@ -23,7 +23,7 @@
 struct	pcb kdbpcb;		/* must go before redef.h */
 
 #include "redef.h"
-#include "../machine/kdbparam.h"
+#include "machine/kdbparam.h"
 
 /* access modes */
 #define RD	0

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_usrreq.c	7.5 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,7 +30,7 @@
 #include "netisr.h"
 #include "raw_cb.h"
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 /*
  * Initialize raw connection block q.
