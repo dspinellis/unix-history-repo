@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tutor.me	8.1 (Berkeley) %G%
+.\"	@(#)tutor.me	6.11 (Berkeley) %G%
 .\"
 .oh 'Introductory 4.4BSD IPC''PSD:20-%'
 .eh 'PSD:20-%''Introductory 4.4BSD IPC'
@@ -223,14 +223,10 @@ After the fork, both parent's and child's descriptor tables point to
 the pipe.
 The child can then use the pipe to send a message to the parent.
 .(z
-.ns
-.GS C
-height 6i
-file pipe.grn
-.GE
-.sp
-.ce 1
+.so fig2.pic
+.ce 2
 Figure 2\ \ Sharing a pipe between parent and child
+.ce 0
 .)z
 .pp
 Just what is a pipe?
@@ -302,11 +298,7 @@ for some of its definitions.
 Figure 3\ \ Use of a socketpair
 .)z
 .(z
-.GS C
-height 6i
-file socketpair.grn
-.GE
-.sp
+.so fig3.pic
 .ce 1
 Figure 4\ \ Sharing a socketpair between parent and child
 .)z
@@ -604,10 +596,7 @@ Figure 7b\ \ Accepting an Internet domain stream connection
 Figure 7c\ \ Using select() to check for pending connections
 .)z
 .(z
-.GS C
-height 6i
-file accept.grn
-.GE
+.so fig8.pic
 .sp
 .ce 1
 Figure 8\ \ Establishing a stream connection
