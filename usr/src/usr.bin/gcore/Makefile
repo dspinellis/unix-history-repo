@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	gcore
 SRCS=	gcore.c md-${MACHINE}.c
