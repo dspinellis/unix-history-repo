@@ -1,5 +1,7 @@
-/* $Header: llparse.h,v 2.1 88/09/19 12:56:20 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/llparse.h,v $ */
+/*
+ *	from: llparse.h,v 2.1 88/09/19 12:56:20 nhall Exp
+ *	$Id$
+ */
 
 	/************************************************************
 		attributes stack garbage

@@ -1,5 +1,7 @@
-/* $Header: putdriver.c,v 2.2 88/09/19 12:55:27 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/putdriver.c,v $ */
+/*
+ *	from: putdriver.c,v 2.2 88/09/19 12:55:27 nhall Exp
+ *	$Id$
+ */
 
 /*
  * This code is such a kludge that I don't want to put my name on it.

@@ -1,3 +1,7 @@
+/*
+ *	from: unknown
+ *	$Id$
+ */
 
 struct blah {
 	unsigned int blahfield;

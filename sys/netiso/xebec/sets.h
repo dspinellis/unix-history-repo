@@ -1,5 +1,7 @@
-/* $Header: sets.h,v 2.1 88/09/19 12:56:33 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/sets.h,v $ */
+/*
+ *	from: sets.h,v 2.1 88/09/19 12:56:33 nhall Exp
+ *	$Id$
+ */
 
 #define MAXEVENTS 200
 #define MAXSTATES 200

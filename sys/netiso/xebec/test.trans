@@ -1,5 +1,8 @@
-/* $Header: test.trans,v 0.2 88/09/19 12:58:29 nhall Exp $
+/*
+ *	from: test.trans,v 0.2 88/09/19 12:58:29 nhall Exp 
+ *	$Id$
  */
+
 *PROTOCOL test
 
 *INCLUDE

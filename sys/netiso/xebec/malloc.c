@@ -1,5 +1,8 @@
-/* $Header: malloc.c,v 2.2 88/09/19 12:55:18 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/malloc.c,v $ */
+/*
+ *	from: malloc.c,v 2.2 88/09/19 12:55:18 nhall Exp
+ *	$Id$
+ */
+
 /*
  * This code is such a kludge that I don't want to put my name on it.
  * It was a ridiculously fast hack and needs rewriting.

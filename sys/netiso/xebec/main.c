@@ -1,5 +1,8 @@
-/* $Header: main.c,v 2.4 88/09/19 12:55:13 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/main.c,v $ */
+/*
+ *	from: main.c,v 2.4 88/09/19 12:55:13 nhall Exp
+ *	$Id$
+ */
+
 /*
  * TODO:
  * rewrite the command line stuff altogether - it's kludged beyond

@@ -1,5 +1,7 @@
-/* $Header: xebec.c,v 2.2 88/09/19 12:55:37 nhall Exp $ */
-/* $Source: /var/home/tadl/src/argo/xebec/RCS/xebec.c,v $ */
+/*
+ *	from: xebec.c,v 2.2 88/09/19 12:55:37 nhall Exp
+ *	$Id$
+ */
 
 #include "xebec.h"
 #include "llparse.h"
