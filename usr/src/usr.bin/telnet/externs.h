@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	5.6 (Berkeley) %G%
+ *	@(#)externs.h	5.7 (Berkeley) %G%
  */
 
 #ifndef	BSD

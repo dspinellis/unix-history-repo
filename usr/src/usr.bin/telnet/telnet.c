@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.56 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
