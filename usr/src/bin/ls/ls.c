@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>	
@@ -30,9 +30,9 @@ static char sccsid[] = "@(#)ls.c	5.54 (Berkeley) %G%";
 #include "ls.h"
 #include "extern.h"
 
-static void	display __P((int, FTSENT *, FTSENT *));
-static int	mastercmp __P((const FTSENT **, const FTSENT **));
-static void	traverse __P((int, char **, int));
+void	display __P((int, FTSENT *, FTSENT *));
+int	mastercmp __P((const FTSENT **, const FTSENT **));
+void	traverse __P((int, char **, int));
 
 static void (*printfcn) __P((FTSENT *, int, u_long, int));
 static int (*sortfcn) __P((const FTSENT *, const FTSENT *));
@@ -44,14 +44,11 @@ int f_accesstime;		/* use time of last access */
 int f_column;			/* columnated format */
 int f_group;			/* show group ownership of a file */
 int f_flags;			/* show flags associated with a file */
-int f_ignorelink;		/* indirect through symbolic link operands */
 int f_inode;			/* print inode */
 int f_kblocks;			/* print size in kilobytes */
-int f_listalldot;		/* list . and .. as well */
 int f_listdir;			/* list actual directory, not contents */
 int f_listdot;			/* list files beginning with . */
 int f_longform;			/* long listing format */
-int f_needstat;                 /* need stat(2) information */
 int f_newline;			/* if precede with newline */
 int f_nonprint;			/* show unprintables as ? */
 int f_nosort;			/* don't sort output */
@@ -65,7 +62,7 @@ int f_dirname;			/* if precede with directory name */
 int f_timesort;			/* sort by time vice name */
 int f_type;			/* add type character for non-regular files */
 
-void
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -91,7 +88,7 @@ main(argc, argv)
 	if (!getuid())
 		f_listdot = 1;
 
-	fts_options = 0;
+	fts_options = FTS_PHYSICAL;
 	while ((ch = getopt(argc, argv, "1ACFLRTacdfgikloqrstu")) != EOF) {
 		switch (ch) {
 		/*
@@ -123,14 +120,14 @@ main(argc, argv)
 			f_type = 1;
 			break;
 		case 'L':
-			f_ignorelink = 1;
+			fts_options &= ~FTS_PHYSICAL;
+			fts_options |= FTS_LOGICAL;
 			break;
 		case 'R':
 			f_recursive = 1;
 			break;
 		case 'a':
 			fts_options |= FTS_SEEDOT;
-			f_listalldot = 1;
 			/* FALLTHROUGH */
 		case 'A':
 			f_listdot = 1;
@@ -183,9 +180,7 @@ main(argc, argv)
 		f_recursive = 0;
 
 	/* If options require that the files be stat'ed. */
-	f_needstat =
-	    f_longform || f_timesort || f_size || f_type;
-	if (!f_needstat)
+	if (!f_longform && !f_size && !f_timesort && !f_type)
 		fts_options |= FTS_NOSTAT;
 
 	/* Select a sort function. */
@@ -217,10 +212,6 @@ main(argc, argv)
 	else
 		printfcn = printcol;
 
-	/* If -l or -F, and not ignoring the link, use lstat(). */
-	fts_options |= (f_longform || f_type) && !f_ignorelink ?
-	    FTS_PHYSICAL : FTS_LOGICAL;
-
 	if (argc)
 		traverse(argc, argv, fts_options);
 	else {
@@ -230,24 +221,19 @@ main(argc, argv)
 	exit(0);
 }
 
-#define	IS_DDOT(name) \
-	((name)[0] == '.' && ((name)[1] == '\0' || \
-	    ((name)[1] == '.' && (name)[2] == '\0')))
-
 /*
  * Traverse() walks the logical directory structure specified by the argv list
  * in the order specified by the mastercmp() comparison function.  During the
  * traversal it passes linked lists of structures to display() which represent
  * a superset (may be exact set) of the files to be displayed.
  */
-static void
+void
 traverse(argc, argv, options)
 	int argc, options;
 	char *argv[];
 {
 	register FTS *ftsp;
 	register FTSENT *p;
-	register char *name;
 	register int is_ddot;
 	
 	if ((ftsp =
@@ -267,17 +253,12 @@ traverse(argc, argv, options)
 			    p->fts_name, strerror(p->fts_errno));
 			break;
 		case FTS_D:
-			name = p->fts_name;
-			is_ddot = IS_DDOT(name);
-			if (!is_ddot ||
-			    (is_ddot && p->fts_level == FTS_ROOTLEVEL)) {
-				if (name[0] == '.' && !f_listdot && !is_ddot &&
-				    p->fts_level != FTS_ROOTLEVEL)
-					break;
-				display(argc, p, fts_children(ftsp));
-				if (!f_recursive)
-					(void)fts_set(ftsp, p, FTS_SKIP);
-			}
+			if (p->fts_level != FTS_ROOTLEVEL &&
+			    p->fts_name[0] == '.' && !f_listdot)
+				break;
+			display(argc, p, fts_children(ftsp));
+			if (!f_recursive)
+				(void)fts_set(ftsp, p, FTS_SKIP);
 			break;
 		}
 	(void)fts_close(ftsp);
@@ -289,7 +270,7 @@ traverse(argc, argv, options)
  * information to the print function (printfcn()).  P always points to the
  * parent directory of the display list.
  */
-static void
+void
 display(argc, p, list)
 	int argc;
 	register FTSENT *p;
@@ -321,8 +302,7 @@ display(argc, p, list)
 	if (p == NULL)
 		for (cur = list, entries = 0; cur; cur = cur->fts_link) {
 			if (cur->fts_info == FTS_ERR ||
-			    cur->fts_errno == ENOENT ||
-			    cur->fts_info == FTS_NS && f_needstat) {
+			    cur->fts_info == FTS_NS) {
 				err(0, "%s: %s",
 				    cur->fts_name, strerror(cur->fts_errno));
 				cur->fts_number = NO_PRINT;
@@ -350,17 +330,13 @@ display(argc, p, list)
 		
 		for (cur = list, entries = 0; cur; cur = cur->fts_link) {
 			if (cur->fts_info == FTS_ERR ||
-			    cur->fts_errno == ENOENT ||
-			    cur->fts_info == FTS_NS && f_needstat) {
+			    cur->fts_info == FTS_NS) {
 				err(0, "%s: %s",
 				    cur->fts_name, strerror(cur->fts_errno));
 				cur->fts_number = NO_PRINT;
 				continue;
 			}
-			/*
-			 * If file is dot file and no -a or -A is set,
-			 * do not display.
-			 */
+			/* Don't display dot file if -a/-A not set. */
 			if (cur->fts_name[0] == '.' && !f_listdot) {
 				cur->fts_number = NO_PRINT;
 				continue;
@@ -387,7 +363,7 @@ display(argc, p, list)
  * as larger than directories.  Within either group, use the sort function.
  * All other levels use the sort function.  Error entries remain unsorted.
  */
-static int
+int
 mastercmp(a, b)
 	const FTSENT **a, **b;
 {
@@ -399,7 +375,8 @@ mastercmp(a, b)
 	b_info = (*b)->fts_info;
 	if (b_info == FTS_ERR)
 		return (0);
-	if (f_needstat && (a_info == FTS_NS || b_info == FTS_NS))
+
+	if (a_info == FTS_NS || b_info == FTS_NS)
 		return (namecmp(*a, *b));
 
 	if (a_info == b_info)  
