@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_close.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_close.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -147,7 +147,7 @@ bt_meta(t)
 	m.m_free = 0;           		/* XXX */
 	m.m_nrecs = t->bt_nrecs;
 	m.m_flags = t->bt_flags & SAVEMETA;
-	m.m_lorder = HTONL((long)t->bt_lorder);
+	m.m_lorder = htonl((u_long)t->bt_lorder);
 
 	if (t->bt_lorder != BYTE_ORDER) {
 		BLSWAP(m.m_magic);
