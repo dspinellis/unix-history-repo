@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1109,7 +1109,7 @@ tn(argc, argv)
     }
 #endif	/* defined(MSDOS) */
     sin.sin_addr.s_addr = inet_addr(argv[1]);
-    if (sin.sin_addr.s_addr != -1) {
+    if (sin.sin_addr.s_addr != (unsigned long) -1) {
 	sin.sin_family = AF_INET;
 	(void) strcpy(hnamebuf, argv[1]);
 	hostname = hnamebuf;
