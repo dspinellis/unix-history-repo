@@ -159,8 +159,10 @@ static struct nlist nl[] = {
 	{ "" },
 };
 
-static void seterr(), setsyserr(), vstodb();
+static off_t Vtophys();
+static void klseek(), seterr(), setsyserr(), vstodb();
 static int getkvars(), kvm_doprocs(), kvm_init();
+static int findpage();
 
 /*
  * returns 	0 if files were opened now,
@@ -590,18 +592,18 @@ proc_getmem(const struct proc *p, void *buffer, vm_offset_t size, vm_offset_t of
 	int fd;
 	char fn[512+1];
 	sprintf(fn,"/proc/%d",p->p_pid);
-	if( p->p_flag & SSYS)
+	if (p->p_flag & SSYS)
 		return 0;
 	fd = open(fn,O_RDONLY);
-	if( fd == -1) {
+	if (fd == -1) {
 		return 0;
 	}
 	
-	if( lseek(fd, offset, 0) == -1) {
+	if (lseek(fd, offset, 0) == -1) {
 		close(fd);
 		return 0;
 	}
-	if( read(fd, buffer, size) <= 0) {
+	if (read(fd, buffer, size) <= 0) {
 		close(fd);
 		return 0;
 	}
@@ -617,7 +619,6 @@ kvm_getu(p)
 	register int i;
 	register char *up;
 	u_int vaddr;
-	struct swapblk swb;
 	int arg_size;
 
 	if (kvminit == 0 && kvm_init(NULL, NULL, NULL, 0) == -1)
@@ -627,13 +628,65 @@ kvm_getu(p)
 		return (NULL);
 	}
 
-	if (proc_getmem(p, user.upages, sizeof user.upages, USRSTACK)) {
-		kp->kp_eproc.e_vm.vm_rssize =
-		    kp->kp_eproc.e_vm.vm_pmap.pm_stats.resident_count; /* XXX */
-		return &user.user;
+	if (!deadkernel) {
+		if (proc_getmem(p, user.upages, sizeof user.upages, USRSTACK)) {
+			kp->kp_eproc.e_vm.vm_rssize =
+			    kp->kp_eproc.e_vm.vm_pmap.pm_stats.resident_count; /* XXX */
+			return &user.user;
+		}
 	}
 
-	return (NULL);
+	argaddr0 = argaddr1 = 0;
+	/*
+	 * Read u-area one page at a time for the benefit of post-mortems
+	 */
+	up = (char *) p->p_addr;
+	for (i = 0; i < UPAGES; i++) {
+		klseek(kmem, (long)up, 0);
+		if (read(kmem, user.upages[i], CLBYTES) != CLBYTES) {
+			seterr("cant read page %x of u of pid %d from %s",
+			    up, p->p_pid, kmemf);
+			return(NULL);
+		}
+		up += CLBYTES;
+	}
+
+	pcbpf = (int) btop(p->p_addr);	/* what should this be really? */
+	/*
+	 * Conjure up a physical address for the arguments.
+	 */
+	kp->kp_eproc.e_vm.vm_rssize =
+	    kp->kp_eproc.e_vm.vm_pmap.pm_stats.resident_count; /* XXX */
+
+	vaddr = (u_int)kp->kp_eproc.e_vm.vm_minsaddr;
+	arg_size = USRSTACK - vaddr;
+
+	if (kp->kp_eproc.e_vm.vm_pmap.pm_pdir) {
+		struct pde pde;
+
+		klseek(kmem,
+		(long)(&kp->kp_eproc.e_vm.vm_pmap.pm_pdir[pdei(vaddr)]), 0);
+
+		if (read(kmem, (char *)&pde, sizeof pde) == sizeof pde
+				&& pde.pd_v) {
+
+			struct pte pte;
+
+			if (lseek(mem, (long)ctob(pde.pd_pfnum) +
+					(ptei(vaddr) * sizeof pte), 0) == -1)
+				seterr("kvm_getu: lseek");
+			if (read(mem, (char *)&pte, sizeof pte) == sizeof pte) {
+				if (pte.pg_v) {
+					argaddr1 = (pte.pg_pfnum << PGSHIFT) |
+						((u_long)vaddr & (NBPG-1));
+				}
+			} else {
+				seterr("kvm_getu: read");
+			}
+		}
+	}
+
+	return(&user.user);
 }
 
 char *
@@ -678,8 +731,15 @@ printf("failed to mmap %s error=%s\n", procfile, strerror(errno));
 	}
 #endif
 
-	if (!proc_getmem(p, argc, arg_size, vaddr))
-		goto bad;
+	if (!proc_getmem(p, argc, arg_size, vaddr)) {
+		if ((p->p_flag & SLOAD) == 0 || argaddr1 == 0) {
+			goto bad;
+		} else {
+			lseek(mem, (long)argaddr1, 0);
+			if (read(mem, argc, arg_size) != arg_size)
+				goto bad;
+		}
+	}
 
 	argv = (int *)argc;
 
@@ -730,11 +790,30 @@ bad:
 	return (cmdbuf);
 }
 
+
 static
 getkvars()
 {
 	if (kvm_nlist(nl) == -1)
 		return (-1);
+	if (deadkernel) {
+		/* We must do the sys map first because klseek uses it */
+		long	addr;
+
+		PTD = (struct pde *) malloc(NBPG);
+		if (PTD == NULL) {
+			seterr("out of space for PTD");
+			return (-1);
+		}
+		addr = (long) nl[X_IdlePTD].n_value;
+		(void) lseek(kmem, addr, 0);
+		read(kmem, (char *)&addr, sizeof(addr));
+		(void) lseek(kmem, (long)addr, 0);
+		if (read(kmem, (char *) PTD, NBPG) != NBPG) {
+			seterr("can't read PTD");
+			return (-1);
+		}
+	}
 	if (kvm_read((void *) nl[X_NSWAP].n_value, &nswap, sizeof (long)) !=
 	    sizeof (long)) {
 		seterr("can't read nswap");
@@ -760,7 +839,7 @@ kvm_read(loc, buf, len)
 	if (kvmfilesopen == 0 && kvm_openfiles(NULL, NULL, NULL) == -1)
 		return (-1);
 	if (iskva(loc)) {
-		lseek(kmem, (off_t) loc, 0);
+		klseek(kmem, (off_t) loc, 0);
 		if (read(kmem, buf, len) != len) {
 			seterr("error reading kmem at %x", loc);
 			return (-1);
@@ -773,6 +852,112 @@ kvm_read(loc, buf, len)
 		}
 	}
 	return (len);
+}
+
+static void
+klseek(fd, loc, off)
+	int fd;
+	off_t loc;
+	int off;
+{
+
+	if (deadkernel) {
+		if ((loc = Vtophys(loc)) == -1)
+			return;
+	}
+	(void) lseek(fd, (off_t)loc, off);
+}
+
+static off_t
+Vtophys(loc)
+	u_long	loc;
+{
+	off_t newloc = (off_t) -1;
+	struct pde pde;
+	struct pte pte;
+	int p;
+
+	pde = PTD[loc >> PD_SHIFT];
+	if (pde.pd_v == 0) {
+		seterr("vtophys: page directory entry not valid");
+		return((off_t) -1);
+	}
+	p = btop(loc & PT_MASK);
+	newloc = pde.pd_pfnum + (p * sizeof(struct pte));
+	(void) lseek(kmem, (long)newloc, 0);
+	if (read(kmem, (char *)&pte, sizeof pte) != sizeof pte) {
+		seterr("vtophys: cannot obtain desired pte");
+		return((off_t) -1);
+	}
+	newloc = pte.pg_pfnum;
+	if (pte.pg_v == 0) {
+		seterr("vtophys: page table entry not valid");
+		return((off_t) -1);
+	}
+	newloc += (loc & PGOFSET);
+	return((off_t) newloc);
+}
+
+/*
+ * locate address of unwired or swapped page
+ */
+
+
+#define KREAD(off, addr, len) \
+	(kvm_read((void *)(off), (char *)(addr), (len)) == (len))
+
+#define atop(x)		(((unsigned)(x)) >> page_shift)
+#define vm_page_hash(object, offset) \
+        (((unsigned)object+(unsigned)atop(offset))&vm_page_hash_mask)
+
+static int
+findpage(object, offset, maddr)
+long			object;
+long			offset;
+vm_offset_t		*maddr;
+{
+static	long		vm_page_hash_mask;
+static	long		vm_page_buckets;
+static	long		page_shift;
+	queue_head_t	bucket;
+	struct vm_page	mem;
+	long		addr, baddr;
+
+	if (vm_page_hash_mask == 0 && !KREAD(nl[X_VM_PAGE_HASH_MASK].n_value,
+			&vm_page_hash_mask, sizeof (long))) {
+		seterr("can't read vm_page_hash_mask");
+		return 0;
+	}
+	if (page_shift == 0 && !KREAD(nl[X_PAGE_SHIFT].n_value,
+			&page_shift, sizeof (long))) {
+		seterr("can't read page_shift");
+		return 0;
+	}
+	if (vm_page_buckets == 0 && !KREAD(nl[X_VM_PAGE_BUCKETS].n_value,
+			&vm_page_buckets, sizeof (long))) {
+		seterr("can't read vm_page_buckets");
+		return 0;
+	}
+
+	baddr = vm_page_buckets + vm_page_hash(object,offset) * sizeof(queue_head_t);
+	if (!KREAD(baddr, &bucket, sizeof (bucket))) {
+		seterr("can't read vm_page_bucket");
+		return 0;
+	}
+
+	addr = (long)bucket.next;
+	while (addr != baddr) {
+		if (!KREAD(addr, &mem, sizeof (mem))) {
+			seterr("can't read vm_page");
+			return 0;
+		}
+		if ((long)mem.object == object && mem.offset == offset) {
+			*maddr = (long)mem.phys_addr;
+			return 1;
+		}
+		addr = (long)mem.hashq.next;
+	}
+	return 0;
 }
 
 #include <varargs.h>
