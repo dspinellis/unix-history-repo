@@ -10,7 +10,7 @@
 #include "configdefs.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	2.7 %G%";
+static char *SccsId = "@(#)optim.c	2.8 %G%";
 
 /*
  * Map a name into the correct network "view" of the
@@ -29,7 +29,7 @@ netmap(name, from)
 	if (strlen(from) == 0)
 		return(name);
 	if (any('@', name) || any('%', name))
-		return(arpafix(name, from));
+		return(savestr(arpafix(name, from)));
 	cp = revarpa(from);
 	if (cp == NOSTR)
 		return(name);
@@ -44,7 +44,7 @@ netmap(name, from)
 	optim(nbuf, ret);
 	cp = revarpa(ret);
 	if (!icequal(name, cp))
-		return((char *) savestr(cp));
+		return(savestr(cp));
 	return(name);
 }
 
