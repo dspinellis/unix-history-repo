@@ -1,4 +1,4 @@
-/*	if_acc.c	4.32	82/12/17	*/
+/*	if_acc.c	4.33	83/01/03	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -83,9 +83,6 @@ accprobe(reg)
 	addr->ocsr = 0;
 	if (cvec && cvec != 0x200)	/* transmit -> receive */
 		cvec -= 4;
-#ifdef ECHACK
-	br = 0x16;
-#endif
 	return (1);
 }
 
