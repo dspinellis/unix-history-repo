@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.7 (Berkeley) %G%
+ *	@(#)conf.c	7.8 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -14,18 +14,18 @@
 #include "sys/tty.h"
 #include "sys/conf.h"
 
-int nulldev(), nodev(), rawread(), rawwrite(), swstrategy();
+int nullop(), enxio(), enodev(), rawread(), rawwrite(), swstrategy();
 
 #include "dk.h"
 #if NVD > 0
 int	vdopen(),vdclose(),vdstrategy(),vdioctl();
 int	vddump(),vdsize();
 #else
-#define	vdopen		nodev
-#define	vdclose		nodev
-#define	vdstrategy	nodev
-#define	vdioctl		nodev
-#define	vddump		nodev
+#define	vdopen		enxio
+#define	vdclose		enxio
+#define	vdstrategy	enxio
+#define	vdioctl		enxio
+#define	vddump		enxio
 #define	vdsize		0
 #endif
 
@@ -34,11 +34,11 @@ int	vddump(),vdsize();
 int	hdopen(),hdclose(),hdstrategy(),hdioctl();
 int	hddump(),hdsize();
 #else
-#define	hdopen		nodev
-#define	hdclose		nodev
-#define	hdstrategy	nodev
-#define	hdioctl		nodev
-#define	hddump		nodev
+#define	hdopen		enxio
+#define	hdclose		enxio
+#define	hdstrategy	enxio
+#define	hdioctl		enxio
+#define	hddump		enxio
 #define	hdsize		0
 #endif
 
@@ -47,26 +47,26 @@ int	hddump(),hdsize();
 int	cyopen(),cyclose(),cystrategy(),cydump();
 int	cyioctl(),cyreset();
 #else
-#define	cyopen		nodev
-#define	cyclose		nodev
-#define	cystrategy	nodev
-#define	cydump		nodev
-#define	cyioctl		nodev
-#define	cyreset		nulldev
+#define	cyopen		enxio
+#define	cyclose		enxio
+#define	cystrategy	enxio
+#define	cydump		enxio
+#define	cyioctl		enxio
+#define	cyreset		nullop
 #endif
 
 struct bdevsw	bdevsw[] =
 {
-	{ nodev,	nulldev,	nodev,		nodev,		/*0*/
-	  nodev,	0,		0 },
+	{ enodev,	nullop,	enodev,		enodev,		/*0*/
+	  enodev,	0,		0 },
 	{ vdopen,	vdclose,	vdstrategy,	vdioctl,	/*1*/
 	  vddump,	vdsize,		0 },
 	{ hdopen,	hdclose,	hdstrategy,	hdioctl,	/*2*/
 	  hddump,	hdsize,		0 },
 	{ cyopen,	cyclose,	cystrategy,	cyioctl,	/*3*/
 	  cydump,	0,		B_TAPE },
-	{ nodev,	nodev,		swstrategy,	nodev,		/*4*/
-	  nodev,	0,		0 },
+	{ enodev,	enodev,		swstrategy,	enodev,		/*4*/
+	  enodev,	0,		0 },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -75,13 +75,13 @@ extern	struct tty cons;
 
 #include "vx.h"
 #if NVX == 0
-#define	vxopen	nodev
-#define	vxclose	nodev
-#define	vxread	nodev
-#define	vxwrite	nodev
-#define	vxioctl	nodev
-#define	vxstop	nodev
-#define	vxreset	nulldev
+#define	vxopen	enxio
+#define	vxclose	enxio
+#define	vxread	enxio
+#define	vxwrite	enxio
+#define	vxioctl	enxio
+#define	vxstop	enxio
+#define	vxreset	nullop
 #define	vx_tty	0
 #else
 int	vxopen(),vxclose(),vxread(),vxwrite(),vxioctl(),vxstop(),vxreset();
@@ -100,18 +100,18 @@ int	ptcopen(),ptcclose(),ptcread(),ptcwrite(),ptcselect();
 int	ptyioctl();
 struct	tty pt_tty[];
 #else
-#define ptsopen		nodev
-#define ptsclose	nodev
-#define ptsread		nodev
-#define ptswrite	nodev
-#define ptcopen		nodev
-#define ptcclose	nodev
-#define ptcread		nodev
-#define ptcwrite	nodev
-#define ptyioctl	nodev
+#define ptsopen		enxio
+#define ptsclose	enxio
+#define ptsread		enxio
+#define ptswrite	enxio
+#define ptcopen		enxio
+#define ptcclose	enxio
+#define ptcread		enxio
+#define ptcwrite	enxio
+#define ptyioctl	enxio
 #define	pt_tty		0
-#define	ptcselect	nodev
-#define	ptsstop		nulldev
+#define	ptcselect	enxio
+#define	ptsstop		nullop
 #endif
 
 #include "mp.h"
@@ -120,59 +120,59 @@ int	mpopen(), mpclose(), mpread(), mpwrite(), mpioctl(), mpstop();
 int	mpdlopen(), mpdlclose(), mpdlwrite(), mpdlioctl();
 extern	struct tty mp_tty[];
 #else
-#define	mpopen		nodev
-#define	mpclose		nodev
-#define	mpread		nodev
-#define	mpwrite		nodev
-#define	mpioctl		nodev
-#define	mpstop		nodev
-#define	mpdlopen	nodev
-#define	mpdlclose	nodev
-#define	mpdlwrite	nodev
-#define	mpdlioctl	nodev
+#define	mpopen		enxio
+#define	mpclose		enxio
+#define	mpread		enxio
+#define	mpwrite		enxio
+#define	mpioctl		enxio
+#define	mpstop		enxio
+#define	mpdlopen	enxio
+#define	mpdlclose	enxio
+#define	mpdlwrite	enxio
+#define	mpdlioctl	enxio
 #define	mp_tty		0
 #endif
 
 #if NII > 0
 int	iiioctl(), iiclose(), iiopen();
 #else
-#define	iiopen	nodev
-#define	iiclose	nodev
-#define	iiioctl	nodev
+#define	iiopen	enxio
+#define	iiclose	enxio
+#define	iiioctl	enxio
 #endif
 
 #include "enp.h"
 #if NENP > 0
 int	enpr_open(), enpr_close(), enpr_read(), enpr_write(), enpr_ioctl();
 #else
-#define enpr_open	nodev
-#define enpr_close	nodev
-#define enpr_read	nodev
-#define enpr_write	nodev
-#define enpr_ioctl	nodev
+#define enpr_open	enxio
+#define enpr_close	enxio
+#define enpr_read	enxio
+#define enpr_write	enxio
+#define enpr_ioctl	enxio
 #endif
 
 #include "dr.h"
 #if NDR > 0
 int     dropen(),drclose(),drread(),drwrite(),drioctl(),drreset();
 #else
-#define dropen nodev
-#define drclose nodev
-#define drread nodev
-#define drwrite nodev
-#define drioctl nodev
-#define drreset nodev
+#define dropen enxio
+#define drclose enxio
+#define drread enxio
+#define drwrite enxio
+#define drioctl enxio
+#define drreset enxio
 #endif
 
 #include "ik.h"
 #if NIK > 0
 int     ikopen(),ikclose(),ikread(),ikwrite(),ikioctl();
 #else
-#define ikopen nodev
-#define ikclose nodev
-#define ikread nodev
-#define ikwrite nodev
-#define ikioctl nodev
+#define ikopen enxio
+#define ikclose enxio
+#define ikread enxio
+#define ikwrite enxio
+#define ikioctl enxio
 #endif
 
 int	logopen(),logclose(),logread(),logioctl(),logselect();
@@ -184,72 +184,72 @@ int	ttselect(), seltrue();
 struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
-	cnioctl,	nulldev,	nulldev,	&cons,
-	ttselect,	nodev,		NULL,
+	cnioctl,	nullop,	nullop,	&cons,
+	ttselect,	enodev,		NULL,
 	vxopen,		vxclose,	vxread,		vxwrite,	/*1*/
 	vxioctl,	vxstop,		vxreset,	vx_tty,
-	ttselect,	nodev,		NULL,
-	syopen,		nulldev,	syread,		sywrite,	/*2*/
-	syioctl,	nulldev,	nulldev,	NULL,
-	syselect,	nodev,		NULL,
-	nulldev,	nulldev,	mmrw,		mmrw,		/*3*/
-	nodev,		nulldev,	nulldev,	NULL,
-	mmselect,	nodev,		NULL,
-	nodev,		nulldev,	nodev,		nodev,		/*4*/
-	nodev,		nodev,		nulldev,	NULL,
-	seltrue,	nodev,		NULL,
+	ttselect,	enodev,		NULL,
+	syopen,		nullop,	syread,		sywrite,	/*2*/
+	syioctl,	nullop,	nullop,	NULL,
+	syselect,	enodev,		NULL,
+	nullop,	nullop,	mmrw,		mmrw,		/*3*/
+	enodev,		nullop,	nullop,	NULL,
+	mmselect,	enodev,		NULL,
+	enodev,		nullop,	enodev,		enodev,		/*4*/
+	enodev,		enodev,		nullop,	NULL,
+	seltrue,	enodev,		NULL,
 	vdopen,		vdclose,	rawread,	rawwrite,	/*5*/
-	vdioctl,	nodev,		nulldev,	NULL,
-	seltrue,	nodev,		vdstrategy,
+	vdioctl,	enodev,		nullop,	NULL,
+	seltrue,	enodev,		vdstrategy,
 	hdopen,		hdclose,	rawread,	rawwrite,	/*6*/
-	hdioctl,	nodev,		nulldev,	NULL,
-	seltrue,	nodev,		hdstrategy,
+	hdioctl,	enodev,		nullop,	NULL,
+	seltrue,	enodev,		hdstrategy,
 	cyopen,		cyclose,	rawread,	rawwrite,	/*7*/
-	cyioctl,	nodev,		cyreset,	NULL,
-	seltrue,	nodev,		cystrategy,
-	nulldev,	nulldev,	rawread,	rawwrite,	/*8*/
-	nodev,		nodev,		nulldev,	NULL,
-	nodev,		nodev,		swstrategy,
+	cyioctl,	enodev,		cyreset,	NULL,
+	seltrue,	enodev,		cystrategy,
+	nullop,	nullop,	rawread,	rawwrite,	/*8*/
+	enodev,		enodev,		nullop,	NULL,
+	enodev,		enodev,		swstrategy,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*9*/
-	ptyioctl,	ptsstop,	nodev,		pt_tty,
-	ttselect,	nodev,		NULL,
+	ptyioctl,	ptsstop,	enodev,		pt_tty,
+	ttselect,	enodev,		NULL,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*10*/
-	ptyioctl,	nulldev,	nodev,		pt_tty,
-	ptcselect,	nodev,		NULL,
-	mpdlopen,	mpdlclose,	nodev,		mpdlwrite,	/*11*/
-	mpdlioctl,	nodev,		nulldev,	NULL,
-	seltrue,	nodev,		NULL,
+	ptyioctl,	nullop,	enodev,		pt_tty,
+	ptcselect,	enodev,		NULL,
+	mpdlopen,	mpdlclose,	enodev,		mpdlwrite,	/*11*/
+	mpdlioctl,	enodev,		nullop,	NULL,
+	seltrue,	enodev,		NULL,
 	mpopen,		mpclose,	mpread,		mpwrite,	/*12*/
-	mpioctl,	mpstop,		nulldev,	mp_tty,
-	ttselect,	nodev,		NULL,
-	nodev,		nodev,		nodev,		nodev,		/*13*/
-	nodev,		nodev,		nulldev,	NULL,
-	nodev,		nodev,		NULL,
-	iiopen,		iiclose,	nulldev,	nulldev,	/*14*/
-	iiioctl,	nulldev,	nulldev,	NULL,
-	seltrue,	nodev,		NULL,
-	logopen,	logclose,	logread,	nodev,		/*15*/
-	logioctl,	nodev,		nulldev,	NULL,
-	logselect,	nodev,		NULL,
+	mpioctl,	mpstop,		nullop,	mp_tty,
+	ttselect,	enodev,		NULL,
+	enodev,		enodev,		enodev,		enodev,		/*13*/
+	enodev,		enodev,		nullop,	NULL,
+	enodev,		enodev,		NULL,
+	iiopen,		iiclose,	nullop,	nullop,	/*14*/
+	iiioctl,	nullop,	nullop,	NULL,
+	seltrue,	enodev,		NULL,
+	logopen,	logclose,	logread,	enodev,		/*15*/
+	logioctl,	enodev,		nullop,	NULL,
+	logselect,	enodev,		NULL,
 	enpr_open,	enpr_close,	enpr_read,	enpr_write,	/*16*/
-	enpr_ioctl,	nodev,		nulldev,	NULL,
-	nodev,		nodev,		NULL,
-	nodev,		nodev,		nodev,		nodev,		/*17*/
-	nodev,		nodev,		nulldev,	NULL,
-	nodev,		nodev,		NULL,
+	enpr_ioctl,	enodev,		nullop,	NULL,
+	enodev,		enodev,		NULL,
+	enodev,		enodev,		enodev,		enodev,		/*17*/
+	enodev,		enodev,		nullop,	NULL,
+	enodev,		enodev,		NULL,
 	dropen,		drclose,	drread,		drwrite,	/*18*/
-	drioctl,	nodev,		drreset,	NULL,
-	nodev,		nodev,		NULL,
-	nodev,		nodev,		nodev,		nodev,		/*19*/
-	nodev,		nodev,		nulldev,	NULL,
-	nodev,		nodev,		NULL,
+	drioctl,	enodev,		drreset,	NULL,
+	enodev,		enodev,		NULL,
+	enodev,		enodev,		enodev,		enodev,		/*19*/
+	enodev,		enodev,		nullop,	NULL,
+	enodev,		enodev,		NULL,
 /* 20-30 are reserved for local use */
 	ikopen,		ikclose,	ikread,		ikwrite,	/*20*/
-	ikioctl,	nodev,		nulldev,	NULL,
-	nodev,		nodev,		NULL,
-	fdopen,		nodev,		nodev,		nodev,		/*21*/
-	nodev,		nodev,		nodev,		NULL,
-	nodev,		nodev,		NULL,
+	ikioctl,	enodev,		nullop,	NULL,
+	enodev,		enodev,		NULL,
+	fdopen,		enodev,		enodev,		enodev,		/*21*/
+	enodev,		enodev,		enodev,		NULL,
+	enodev,		enodev,		NULL,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
