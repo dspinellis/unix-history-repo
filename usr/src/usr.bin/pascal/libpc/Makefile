@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.17 %G%"
+SCCSID = "@(#)Makefile 1.18 %G%"
 
 CFLAGS = -O
 
@@ -50,8 +50,6 @@ SYOBJ =	ERROR.o GETNAME.o IOSYNC.o PCEXIT.o PCLOSE.o PCSTART.o \
 
 EXOBJ =	APPEND.o SEEK.o TELL.o
 
-sources: ${CMDS} ${SYS} ${EXTN} ${HDRS}
-
 .s.o:
 	sed -f mcount.sed $*.s | ${AS} -o tmp.o
 	-${LD} -X -r -o profiled/$@ tmp.o
@@ -77,6 +75,8 @@ install: libpc libpc_p
 	${RANLIB} ${LIB}/libpc_p.a
 	${INSTALL} libpc ${LIB}/libpc.a
 	${RANLIB} ${LIB}/libpc.a
+
+sources: ${CMDS} ${SYS} ${EXTN} ${HDRS}
 
 whoami.h:
 	cp ${PASDIR}/whoami.h whoami.h
