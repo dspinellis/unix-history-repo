@@ -6,7 +6,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)ns.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -73,19 +73,6 @@ nsprotopr(off, name)
 	prev = (struct nspcb *)off;
 	if (nspcb.nsp_next == (struct nspcb *)off)
 		return;
-	if (first) {
-		printf("Active connections");
-		if (aflag)
-			printf(" (including servers)");
-		putchar('\n');
-		if (Aflag)
-			printf("%-8.8s ", "PCB");
-		printf(Aflag ? "%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s %s\n" :
-			"%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
-			"Proto", "Recv-Q", "Send-Q",
-			"Local Address", "Foreign Address", "(state)");
-		first = 0;
-	}
 	for (;nspcb.nsp_next != (struct nspcb *)off; prev = next) {
 		char *cp;
 		off_t ppcb;
@@ -110,6 +97,20 @@ nsprotopr(off, name)
 			} else continue;
 		} else
 			if (isspp) continue;
+		if (first) {
+			printf("Active NS connections");
+			if (aflag)
+				printf(" (including servers)");
+			putchar('\n');
+			if (Aflag)
+				printf("%-8.8s ", "PCB");
+			printf(Aflag ?
+				"%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s %s\n" :
+				"%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
+				"Proto", "Recv-Q", "Send-Q",
+				"Local Address", "Foreign Address", "(state)");
+			first = 0;
+		}
 		if (Aflag)
 			printf("%8x ", ppcb);
 		printf("%-5.5s %6d %6d ", name, sockb.so_rcv.sb_cc,
