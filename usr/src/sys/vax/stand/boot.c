@@ -1,4 +1,4 @@
-/*	boot.c	4.1	%G% */
+/*	boot.c	4.2	%G% */
 
 #include "../h/param.h"
 #include "../h/ino.h"
