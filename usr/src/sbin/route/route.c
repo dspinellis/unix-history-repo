@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -141,6 +141,7 @@ char *argv[];
 		} m_u;
 	} m;
 
+	shutdown(s, 0); /* Don't want to read back our messages */
 	if (argc > 1) {
 		argv++;
 		if (argc == 2 && **argv == '-') switch (keyword(1 + *argv)) {
@@ -174,16 +175,6 @@ char *argv[];
 			perror("writing to routing socket");
 			printf("got only %d for rlen\n", rlen);
 			break;
-		}
-	again:
-		if ((rlen = read(s, (char *)&m, sizeof (m))) < 0) {
-			perror("reading from routing socket");
-			printf("got only %d for rlen\n", rlen);
-			break;
-		}
-		if ((m.m_rtm.rtm_pid != pid) || (m.m_rtm.rtm_seq != seqno)) {
-			printf("Got response for somebody else's request");
-			goto again;
 		}
 		seqno++;
 		if (qflag)
@@ -411,6 +402,7 @@ newroute(argc, argv)
 	struct hostent *hp = 0;
 	extern int errno;
 
+	shutdown(s, 0); /* Don't want to read back our messages */
 	cmd = argv[0];
 	while (--argc > 0) {
 		if (**(++argv)== '-') {
@@ -851,24 +843,6 @@ rtmsg(cmd, flags)
 	if ((rlen = write(s, (char *)&m_rtmsg, l)) < 0) {
 		perror("writing to routing socket");
 		printf("got only %d for rlen\n", rlen);
-		return (-1);
-	}
-again:
-	if ((rlen = read(s, (char *)&m_rtmsg, l)) < 0) {
-		perror("reading from routing socket");
-		printf("got only %d for rlen\n", rlen);
-		return (-1);
-	}
-	if ((m_rtmsg.m_rtm.rtm_pid != pid) ||
-	    (m_rtmsg.m_rtm.rtm_seq != seq)) {
-		printf("Got response for somebody else's request");
-		goto again;
-	}
-	if (qflag == 0)
-		print_rtmsg( &m_rtmsg.m_rtm, rlen);
-	if ((m_rtmsg.m_rtm.rtm_flags & RTF_DONE) == 0) {
-		errno = m_rtmsg.m_rtm.rtm_errno;
-		perror("response from routing socket turned down");
 		return (-1);
 	}
 	return (0);
