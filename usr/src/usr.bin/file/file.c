@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)file.c	4.4 (Berkeley) 4.4";
+static	char sccsid[] = "@(#)file.c	4.5 (Berkeley) 4.5";
 /*
  * file - determine type of file
  */
@@ -9,6 +9,8 @@ static	char sccsid[] = "@(#)file.c	4.4 (Berkeley) 4.4";
 #include <stdio.h>
 #include <ctype.h>
 #include <a.out.h>
+int	errno;
+char	*sys_errlist[];
 int in;
 int i  = 0;
 char buf[BUFSIZ];
@@ -35,7 +37,7 @@ char **argv;
 
 	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='f') {
 		if ((fl = fopen(argv[2], "r")) == NULL) {
-			printf("Can't open %s\n", argv[2]);
+			perror(argv[2]);
 			exit(2);
 		}
 		while ((p = fgets(ap, 128, fl)) != NULL) {
@@ -69,7 +71,7 @@ char *file;
 
 	ifile = -1;
 	if (lstat(file, &mbuf) < 0) {
-		printf("cannot stat\n");
+		printf("%s\n", sys_errlist[errno]);
 		return;
 	}
 	switch (mbuf.st_mode & S_IFMT) {
