@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.7 (Berkeley) %G%
+ *	@(#)if_ex.c	6.8 (Berkeley) %G%
  */
 
 
@@ -94,6 +94,7 @@ struct	ex_softc {
 #define	EX_XPENDING	1		/* xmit rqst pending on EXOS */
 #define	EX_STATPENDING	(1<<1)		/* stats rqst pending on EXOS */
 #define	EX_RUNNING	(1<<2)		/* board is running */
+#define EX_SETADDR	(1<<3)		/* physaddr has been changed */
 	struct	ex_msg *xs_h2xnext;	/* host pointer to request queue */
 	struct	ex_msg *xs_x2hnext;	/* host pointer to reply queue */
 	u_long	xs_ubaddr;		/* map info for structs below */
@@ -295,9 +296,11 @@ exinit(unit)
 	ifp->if_timer = EXWATCHINTVL;
 	s = splimp();	/* are interrupts always disabled here, anyway? */
 	exhangrcv(unit);			/* hang receive request */
-	exstart(unit);				/* start transmits */
 	xs->xs_if.if_flags |= IFF_RUNNING;
 	xs->xs_flags |= EX_RUNNING;
+	if (xs->xs_flags & EX_SETADDR)
+		ex_setaddr(0, unit);
+	exstart(unit);				/* start transmits */
 	splx(s);
 }
 
@@ -503,6 +506,9 @@ excdint(unit)
 		case LLNET_STSTCS:
 			xs->xs_if.if_ierrors = xs->xs_xsa.sa_crc;
 			xs->xs_flags &= ~EX_STATPENDING;
+			break;
+		case LLNET_ADDRS:
+		case LLNET_RECV:
 			break;
 #ifdef	DEBUG
 		default:
@@ -851,9 +857,15 @@ exioctl(ifp, cmd, data)
 #endif
 #ifdef NS
 		case AF_NS:
-			IA_SNS(ifa)->sns_addr.x_host =
-				*(union ns_host *)(xs->xs_addr);
+		    {
+			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+			
+			if (ns_nullhost(*ina))
+				ina->x_host = *(union ns_host *)(xs->xs_addr);
+			else
+				ex_setaddr(ina->x_host.c_host,ifp->if_unit);
 			break;
+		    }
 #endif
 		}
 		break;
@@ -874,5 +886,53 @@ exioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
+}
+
+/*
+ * set ethernet address for unit
+ */
+ex_setaddr(physaddr, unit)
+	u_char *physaddr;
+	int unit;
+{
+	register struct ex_softc *xs = &ex_softc[unit];
+	struct uba_device *ui = exinfo[unit];
+	register struct exdevice *addr= (struct exdevice *)ui->ui_addr;
+	register struct ifnet *ifp = &xs->xs_if;
+	register struct ex_msg *bp;
+	
+	if (physaddr) {
+		xs->xs_flags |= EX_SETADDR;
+		bcopy((caddr_t)physaddr, (caddr_t)xs->xs_addr, 6);
+	}
+	if (! (xs->xs_flags & EX_RUNNING))
+		return;
+	bp = exgetcbuf(xs);
+	bp->mb_rqst = LLNET_ADDRS;
+	bp->mb_na.na_mask = READ_OBJ|WRITE_OBJ;
+	bp->mb_na.na_slot = PHYSSLOT;
+	bcopy(xs->xs_addr, bp->mb_na.na_addrs, 6);
+	bp->mb_status |= MH_EXOS;
+	addr->xd_portb = EX_NTRUPT;
+	bp = xs->xs_x2hnext;
+	while ((bp->mb_status & MH_OWNER) == MH_EXOS)	/* poll for reply */
+		;
+	printf("ex%d: reset addr %x.%x.%x.%x.%x.%x\n",
+		ui->ui_unit,
+		bp->mb_na.na_addrs[0], bp->mb_na.na_addrs[1],
+		bp->mb_na.na_addrs[2], bp->mb_na.na_addrs[3],
+		bp->mb_na.na_addrs[4], bp->mb_na.na_addrs[5]);
+	/*
+	 * Now, re-enable reception on phys slot.
+	 */
+	bp = exgetcbuf(xs);
+	bp->mb_rqst = LLNET_RECV;
+	bp->mb_nr.nr_mask = ENABLE_RCV|READ_OBJ|WRITE_OBJ;
+	bp->mb_nr.nr_slot = PHYSSLOT;
+	bp->mb_status |= MH_EXOS;
+	addr->xd_portb = EX_NTRUPT;
+	bp = xs->xs_x2hnext;
+	while ((bp->mb_status & MH_OWNER) == MH_EXOS)	/* poll for reply */
+		;
 }
 #endif
