@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.43	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.44	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1090,7 +1090,7 @@ Xa|tek|tek4012|4012|tektronix 4012:\
 	:cr=^M:do=^J:bl=^G:\
 	:is=\E^O:le=^H:bs:cl=1000\E^L:co#75:ns:li#35:os:
 Xb|tek4013|4013|tektronix 4013:\
-	:as=\E^N:ae=\E^O:tc=4012:
+	:as=\E^N:ae=\E^O:dF#1000:tc=4012:
 Xc|tek4014|4014|tektronix 4014:\
 	:is=\E^O\E9:co#81:li#38:dF#1000:tc=tek4012:
 Xd|tek4015|4015|tektronix 4015:\
