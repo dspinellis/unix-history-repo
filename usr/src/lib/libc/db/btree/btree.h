@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.13 (Berkeley) %G%
+ *	@(#)btree.h	5.14 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -233,7 +233,7 @@ typedef struct BTMETA {
 	u_long	m_psize;		/* page size */
 	u_long	m_free;			/* page number of first free page */
 	u_long	m_nrecs;		/* R: number of records */
-#define	SAVEMETA	(BTF_NODUPS | BTF_RECNO)
+#define	SAVEMETA	(B_NODUPS | R_RECNO)
 	u_long	m_flags;		/* bt_flags & SAVEMETA */
 	u_long	m_unused;		/* unused */
 } BTMETA;
@@ -289,22 +289,25 @@ typedef struct BTREE {
 
 /*
  * NB:
- * BTF_NODUPS and BTF_RECNO are stored on disk, and may not be changed.
+ * B_NODUPS and R_RECNO are stored on disk, and may not be changed.
  */
-#define	BTF_CLOSEFP	0x0001		/* R: opened a file pointer */
-#define	BTF_DELCRSR	0x0002		/* cursor has been deleted */
-#define	BTF_EOF		0x0004		/* R: end of input file reached. */
-#define	BTF_FIXEDLEN	0x0008		/* R: fixed length records */
-#define	BTF_INMEM	0x0010		/* B: in-memory tree */
-#define	BTF_NODUPS	0x0020		/* B: no duplicate keys permitted */
-#define	BTF_MEMMAPPED	0x0040		/* R: memory mapped file. */
-#define	BTF_RECNO	0x0080		/* R: record oriented tree */
-#define	BTF_METADIRTY	0x0100		/* B: need to write metadata */
-#define	BTF_MODIFIED	0x0200		/* tree modified */
-#define	BTF_NEEDSWAP	0x0400		/* if byte order requires swapping */
-#define	BTF_RDONLY	0x0800		/* read-only tree */
-#define	BTF_RINMEM	0x1000		/* R: in-memory tree */
-#define	BTF_SEQINIT	0x2000		/* sequential scan initialized */
+#define	B_DELCRSR	0x00001		/* cursor has been deleted */
+#define	B_INMEM		0x00002		/* in-memory tree */
+#define	B_METADIRTY	0x00004		/* need to write metadata */
+#define	B_MODIFIED	0x00008		/* tree modified */
+#define	B_NEEDSWAP	0x00010		/* if byte order requires swapping */
+#define	B_NODUPS	0x00020		/* no duplicate keys permitted */
+#define	B_RDONLY	0x00040		/* read-only tree */
+#define	B_SEQINIT	0x00100		/* sequential scan initialized */
+
+#define	R_CLOSEFP	0x00200		/* opened a file pointer */
+#define	R_EOF		0x00400		/* end of input file reached. */
+#define	R_FIXLEN	0x00800		/* fixed length records */
+#define	R_MEMMAPPED	0x01000		/* memory mapped file. */
+#define	R_RECNO		0x00080		/* record oriented tree */
+#define	R_INMEM		0x02000		/* in-memory file */
+#define	R_MODIFIED	0x04000		/* modified file */
+#define	R_RDONLY	0x08000		/* read-only file */
 
 	u_long		bt_flags;	/* btree state */
 } BTREE;
