@@ -1,14 +1,16 @@
-/* ch2rst.c	1.3	84/02/27
+/* ch2rst.c	1.4	84/04/07
  *
  * Font translation to Imagen-style fonts (RST format) from character format.
  *
- *	Use:	ch2rst  [ -i ]  charfile  > rstfile
+ *	Use:	ch2rst  [ -i  -s ]  charfile  > rstfile
  *
  *		Takes input from charfile (which must be in the format written
  *	by rst2ch), converts to rst format and writes to stdout.  If charfile
  *	is missing, stdin is read.  The -i flag tells ch2rst to ignore the
  *	character codes at the start of each glyph definition, and pack the
- *	glyphs in consecutive code positions starting with 0.
+ *	glyphs in consecutive code positions starting with 0.  The -s flag
+ *	forces ch2rst to NOT trim off any white space in the glyph map.  This
+ *	is usefull to make stipples of fixed size.
  */
 
 #include <stdio.h>
@@ -36,6 +38,7 @@ int	width, length, maxv, minv, maxh, minh, refv, refh;
 int	bitwidth;
 
 int	ignorecode = 0;
+int	stipple = 0;
 FILE *	filep;
 char	ibuff[MAXLINE];
 char	ebuff[MAXLINE];
@@ -59,6 +62,10 @@ char **argv;
 	switch(argv[1][1]) {
 	case 'i':
 		ignorecode = 1;
+		break;
+
+	case 's':
+		stipple = 1;
 		break;
 	default:
 		error("%s, unknown option flag", argv[1]);
@@ -148,6 +155,13 @@ char **argv;
 		if (fgets(chp, MAXLINE, filep) == NULL)
 			error("unexpected end of input");
 	    } /* for length */
+
+	    if (stipple) {		/* use the whole box to make a */
+		minv = 0;		/* stipple pattern. */
+		minh = 0;
+		maxv = length - 1;
+		maxh = width - 1;
+	    }
 
 	    if (refv < 0) error("no reference point in glyph %d.", code);
 	    if (minv < 0) {
