@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/if_eon.c,v $ 
- *	@(#)if_eon.c	7.11 (Berkeley) %G% *
+ *	@(#)if_eon.c	7.12 (Berkeley) %G% *
  *
  *	EON rfc 
  *  Layer between IP and CLNL
@@ -181,6 +181,7 @@ register struct eon_iphdr *hdr;
 caddr_t loc;
 {
 	struct mbuf mhead;
+	extern struct ifnet loif;
 	register struct sockaddr_in *sin = (struct sockaddr_in *)&ro->ro_dst;
 	if (zero) {
 		bzero((caddr_t)hdr, sizeof (*hdr));
@@ -189,6 +190,23 @@ caddr_t loc;
 	sin->sin_family = AF_INET;
 	sin->sin_len = sizeof (*sin);
 	bcopy(loc, (caddr_t)&sin->sin_addr, sizeof(struct in_addr));
+	/*
+	 * If there is a cached route,
+	 * check that it is to the same destination
+	 * and is still up.  If not, free it and try again.
+	 */
+	if (ro->ro_rt) {
+		struct sockaddr_in *dst =
+			(struct sockaddr_in *)rt_key(ro->ro_rt);
+		if ((ro->ro_rt->rt_flags & RTF_UP) == 0 ||
+		   sin->sin_addr.s_addr != dst->sin_addr.s_addr) {
+			RTFREE(ro->ro_rt);
+			ro->ro_rt = (struct rtentry *)0;
+		}
+	}
+	rtalloc(ro);
+	if (ro->ro_rt)
+		ro->ro_rt->rt_use++;
 	hdr->ei_ip.ip_dst = sin->sin_addr;
 	hdr->ei_ip.ip_p = IPPROTO_EON;
 	hdr->ei_ip.ip_ttl = MAXTTL;	
@@ -236,8 +254,9 @@ register struct sockaddr *gate;
 		}
 		return;
 
-	case RTM_RESOLVE:
 	case RTM_ADD:
+	case RTM_RESOLVE:
+		rt->rt_rmx.rmx_mtu = loif.if_mtu; /* unless better below */
 		R_Malloc(el, struct eon_llinfo *, sizeof(*el));
 		rt->rt_llinfo = (caddr_t)el;
 		if (el == 0)
@@ -264,6 +283,8 @@ register struct sockaddr *gate;
 	}
 	el->el_flags |= RTF_UP;
 	eoniphdr(&el->el_ei, ipaddrloc, &el->el_iproute, EON_NORMAL_ADDR, 0);
+	if (el->el_iproute.ro_rt)
+		rt->rt_rmx.rmx_mtu = el->el_iproute.ro_rt - sizeof(el->el_ei);
 }
 
 /*
