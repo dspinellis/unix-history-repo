@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.87	83/01/17	*/
+/*	tcp_input.c	1.88	83/02/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -46,6 +46,7 @@ tcp_input(m0)
 	int todrop, acked;
 	short ostate;
 	struct in_addr laddr;
+	int dropsocket = 0;
 
 	/*
 	 * Get IP and TCP header together in first mbuf.
@@ -151,6 +152,18 @@ tcp_input(m0)
 		so = sonewconn(so);
 		if (so == 0)
 			goto drop;
+		/*
+		 * This is ugly, but ....
+		 *
+		 * Mark socket as temporary until we're
+		 * committed to keeping it.  The code at
+		 * ``drop'' and ``dropwithreset'' check the
+		 * flag dropsocket to see if the temporary
+		 * socket created here should be discarded.
+		 * We mark the socket as discardable until
+		 * we're committed to it below in TCPS_LISTEN.
+		 */
+		dropsocket++;
 		inp = (struct inpcb *)so->so_pcb;
 		inp->inp_laddr = ti->ti_dst;
 		inp->inp_lport = ti->ti_dport;
@@ -235,6 +248,7 @@ tcp_input(m0)
 		tcp_rcvseqinit(tp);
 		tp->t_state = TCPS_SYN_RECEIVED;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
+		dropsocket = 0;		/* committed to socket */
 		goto trimthenstep6;
 		}
 
@@ -706,6 +720,9 @@ dropwithreset:
 		tcp_respond(tp, ti, ti->ti_seq+ti->ti_len, (tcp_seq)0,
 		    TH_RST|TH_ACK);
 	}
+	/* destroy temporarily created socket */
+	if (dropsocket)
+		(void) soabort(so);
 	return;
 
 drop:
@@ -715,6 +732,9 @@ drop:
 	if (tp && (tp->t_inpcb->inp_socket->so_options & SO_DEBUG))
 		tcp_trace(TA_DROP, ostate, tp, &tcp_saveti, 0);
 	m_freem(m);
+	/* destroy temporarily created socket */
+	if (dropsocket)
+		(void) soabort(so);
 	return;
 }
 
