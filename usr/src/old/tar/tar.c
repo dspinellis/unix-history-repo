@@ -1,8 +1,9 @@
-static char *sccsid = "@(#)tar.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)tar.c	4.3 (Berkeley) 03/31/81";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
+#include <sys/mtio.h>
 #include <signal.h>
 
 char	*sprintf();
@@ -39,7 +40,7 @@ struct stat stbuf;
 int	rflag, xflag, vflag, tflag, mt, cflag, mflag, fflag, oflag, pflag;
 int	term, chksum, wflag, recno, first, linkerrok;
 int	freemem = 1;
-int	nblock = 1;
+int	nblock = NBLOCK;
 
 daddr_t	low;
 daddr_t	high;
@@ -72,8 +73,6 @@ char	*argv[];
 		case 'f':
 			usefile = *argv++;
 			fflag++;
-			if (nblock == 1)
-				nblock = 0;
 			break;
 		case 'c':
 			cflag++;
@@ -95,11 +94,6 @@ char	*argv[];
 			/* FALL THROUGH */
 		case 'r':
 			rflag++;
-noupdate:
-			if (nblock != 1 && cflag == 0) {
-				fprintf(stderr, "Tar: Blocked tapes cannot be updated (yet)\n");
-				done(1);
-			}
 			break;
 		case 'v':
 			vflag++;
@@ -133,8 +127,6 @@ noupdate:
 				fprintf(stderr, "Invalid blocksize. (Max %d)\n", NBLOCK);
 				done(1);
 			}
-			if (rflag && !cflag)
-				goto noupdate;
 			break;
 		case 'l':
 			linkerrok++;
@@ -173,8 +165,6 @@ noupdate:
 				done(1);
 			}
 		}
-		if (cflag == 0 && nblock == 0)
-			nblock = 1;
 		dorep(argv);
 	}
 	else if (xflag)  {
@@ -227,11 +217,7 @@ char	*argv[];
 		if (tfile != NULL) {
 			char buf[200];
 
-			strcat(buf, "sort +0 -1 +1nr ");
-			strcat(buf, tname);
-			strcat(buf, " -o ");
-			strcat(buf, tname);
-			sprintf(buf, "sort +0 -1 +1nr %s -o %s; awk '$1 != prev {print; prev=$1}' %s >%sX;mv %sX %s",
+			sprintf(buf, "sort +0 -1 +1nr %s -o %s; awk '$1 != prev {print; prev=$1}' %s >%sX; mv %sX %s",
 				tname, tname, tname, tname, tname, tname);
 			fflush(tfile);
 			system(buf);
@@ -510,7 +496,8 @@ gotit:
 				continue;
 			}
 			if (vflag)
-				fprintf(stderr, "%s linked to %s\n", dblock.dbuf.name, dblock.dbuf.linkname);
+				fprintf(stderr, "%s linked to %s\n",
+					dblock.dbuf.name, dblock.dbuf.linkname);
 			continue;
 		}
 		if ((ofile = creat(dblock.dbuf.name, stbuf.st_mode & 07777)) < 0) {
@@ -522,7 +509,8 @@ gotit:
 
 		blocks = ((bytes = stbuf.st_size) + TBLOCK-1)/TBLOCK;
 		if (vflag)
-			fprintf(stderr, "x %s, %ld bytes, %ld tape blocks\n", dblock.dbuf.name, bytes, blocks);
+			fprintf(stderr, "x %s, %ld bytes, %ld tape blocks\n",
+				dblock.dbuf.name, bytes, blocks);
 		while (blocks-- > 0) {
 			readtape(buf);
 			if (bytes > TBLOCK) {
@@ -888,14 +876,10 @@ char *b, *s;
 readtape(buffer)
 char *buffer;
 {
-	int i, j;
+	register int i;
 
 	if (recno >= nblock || first == 0) {
-		if (first == 0 && nblock == 0)
-			j =  fflag ? NBLOCK : 1; /* orignally, NBLOCK;  */
-		else
-			j = nblock;
-		if ((i = read(mt, tbuf, TBLOCK*j)) < 0) {
+		if ((i = read(mt, tbuf, TBLOCK*nblock)) < 0) {
 			fprintf(stderr, "Tar: tape read error\n");
 			done(3);
 		}
@@ -905,11 +889,7 @@ char *buffer;
 				done(3);
 			}
 			i /= TBLOCK;
-			if (rflag && i != 1) {
-				fprintf(stderr, "Tar: Cannot update blocked tapes (yet)\n");
-				done(4);
-			}
-			if (i != nblock && (i != 1 || nblock == 0)) {
+			if (i != nblock) {
 				fprintf(stderr, "Tar: blocksize = %d\n", i);
 				nblock = i;
 			}
@@ -925,8 +905,6 @@ writetape(buffer)
 char *buffer;
 {
 	first = 1;
-	if (nblock == 0)
-		nblock = 1;
 	if (recno >= nblock) {
 		if (write(mt, tbuf, TBLOCK*nblock) < 0) {
 			fprintf(stderr, "Tar: tape write error\n");
@@ -947,15 +925,20 @@ char *buffer;
 
 backtape()
 {
-	lseek(mt, (long) -TBLOCK, 1);
-	if (recno >= nblock) {
-		recno = nblock - 1;
-		if (read(mt, tbuf, TBLOCK*nblock) < 0) {
-			fprintf(stderr, "Tar: tape read error after seek\n");
+	static int mtdev = 1;
+	static struct mtop mtop = {MTBSR, 1};
+	struct mtget mtget;
+
+	if (mtdev == 1)
+		mtdev = ioctl(mt, MTIOCGET, &mtget);
+	if (mtdev == 0) {
+		if (ioctl(mt, MTIOCTOP, &mtop) < 0) {
+			fprintf(stderr, "Tar: tape backspace error\n");
 			done(4);
 		}
-		lseek(mt, (long) -TBLOCK, 1);
-	}
+	} else
+		lseek(mt, (long) -TBLOCK*nblock, 1);
+	recno--;
 }
 
 flushtape()
