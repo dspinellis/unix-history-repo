@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar_io.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar_io.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@ static char sccsid[] = "@(#)ar_io.c	1.1 (Berkeley) %G%";
 #include "extern.h"
 
 /*
- * Routines which handle the archive I/O device/file.
+ * Routines which deal directly with the archive I/O device/file.
  */
 
 #define DMOD		0666		/* default mode of created archives */
@@ -45,7 +45,7 @@ static int artyp;			/* archive type: file/FIFO/tape */
 static int arvol = 1;			/* archive volume number */
 static int lstrval = -1;		/* return value from last i/o */
 static int io_ok;			/* i/o worked on volume after resync */
-static int did_io;			/* ok i/o did occur on volume */
+static int did_io;			/* did i/o ever occur on volume? */
 static int done;			/* set via tty termination */
 static struct stat arsb;		/* stat of archive device at open */
 static int invld_rec;			/* tape has out of spec record size */
@@ -91,21 +91,21 @@ ar_open(name)
 			arfd = STDIN_FILENO;
 			arcname = STDN;
 		} else if ((arfd = open(name, EXT_MODE, DMOD)) < 0)
-			syswarn(1, errno, "Failed open to read on %s", name);
+			syswarn(0, errno, "Failed open to read on %s", name);
 		break;
 	case ARCHIVE:
 		if (name == NULL) {
 			arfd = STDOUT_FILENO;
 			arcname = STDO;
 		} else if ((arfd = open(name, AR_MODE, DMOD)) < 0)
-			syswarn(1, errno, "Failed open to write on %s", name);
+			syswarn(0, errno, "Failed open to write on %s", name);
 		break;
 	case APPND:
 		if (name == NULL) {
 			arfd = STDOUT_FILENO;
 			arcname = STDO;
 		} else if ((arfd = open(name, APP_MODE, DMOD)) < 0)
-			syswarn(1, errno, "Failed open to read/write on %s",
+			syswarn(0, errno, "Failed open to read/write on %s",
 				name);
 		break;
 	case COPY:
@@ -123,11 +123,11 @@ ar_open(name)
 	 * set up is based on device type
 	 */
 	if (fstat(arfd, &arsb) < 0) {
-		syswarn(1, errno, "Failed stat on %s", arcname);
+		syswarn(0, errno, "Failed stat on %s", arcname);
 		return(-1);
 	}
 	if (S_ISDIR(arsb.st_mode)) {
-		warn(1, "Cannot write an archive on top of a directory %s",
+		warn(0, "Cannot write an archive on top of a directory %s",
 		    arcname);
 		return(-1);
 	}
@@ -141,7 +141,7 @@ ar_open(name)
 		artyp = ISREG;
 
 	/*
-	 * if we are writing, were are done
+	 * if we are writing, we are done
 	 */
 	if (act == ARCHIVE) {
 		blksz = rdblksz = wrblksz;
@@ -170,7 +170,7 @@ ar_open(name)
 		 * what the physical record size is UNLESS we are going to
 		 * append. (We will need the physical block size to rewrite
 		 * the trailer). Only when we are appending do we go to the
-		 * effort to figure out the true* PHYSICAL record size.
+		 * effort to figure out the true PHYSICAL record size.
 		 */
 		blksz = rdblksz = MAXBLK;
 		break;
@@ -256,8 +256,35 @@ ar_close()
 {
 	FILE *outf;
 
+	if (act == LIST)
+		outf = stdout;
+	else
+		outf = stderr;
+
+	/*
+	 * Close archive file. This may take a LONG while on tapes (we may be
+	 * forced to wait for the rewind to complete) so tell the user what is
+	 * going on (this avoids the user hitting control-c thinking pax is
+	 * broken).
+	 */
+	if (vflag && (arfd >= 0) && (artyp == ISTAPE)) {
+		if (vfpart) {
+			(void)putc('\n', outf);
+			vfpart = 0;
+		}
+		(void)fputs("pax: Waiting for tape drive close to complete...",
+		    outf);
+		(void)fflush(outf);
+	}
+
 	(void)close(arfd);
+
+	if (vflag && (arfd >= 0) && (artyp == ISTAPE)) {
+		(void)fputs("done.\n", outf);
+		(void)fflush(outf);
+	}
 	arfd = -1;
+
 	if (!io_ok && !did_io) {
 		flcnt = 0;
 		return;
@@ -266,8 +293,11 @@ ar_close()
 
 	/*
 	 * The volume number is only increased when the last device has data
+	 * and we have already determined the archive format.
 	 */
-	++arvol;
+	if (frmt != NULL)
+		++arvol;
+
 	if (!vflag) {
 		flcnt = 0;
 		return;
@@ -276,24 +306,33 @@ ar_close()
 	/*
 	 * Print out a summary of I/O for this archive volume.
 	 */
-	if (act == LIST)
-		outf = stdout;
-	else
-		outf = stderr;
-
-	/*
-	 * we need to go to the next line, partial output may be present
-	 */
 	if (vfpart) {
 		(void)putc('\n', outf);
 		vfpart = 0;
 	}
 
+	/*
+	 * If we have not determined the format yet, we just say how many bytes
+	 * we have skipped over looking for a header to id. there is no way we
+	 * could have written anything yet.
+	 */
+	if (frmt == NULL) {
+#	ifdef NET2_STAT
+		(void)fprintf(outf, "pax: unknown format, %lu bytes skipped.\n",
+#	else
+		(void)fprintf(outf, "pax: unknown format, %qu bytes skipped.\n",
+#	endif
+		    rdcnt);
+		(void)fflush(outf);
+		flcnt = 0;
+		return;
+	}
+
 	(void)fprintf(outf,
 #	ifdef NET2_STAT
-	    "Pax %s vol %d: %lu files, %lu bytes read, %lu bytes written\n",
+	    "pax: %s vol %d, %lu files, %lu bytes read, %lu bytes written.\n",
 #	else
-	    "Pax %s vol %d: %lu files, %qu bytes read, %qu bytes written\n",
+	    "pax: %s vol %d, %lu files, %qu bytes read, %qu bytes written.\n",
 #	endif
 	    frmt->name, arvol-1, flcnt, rdcnt, wrcnt);
 	(void)fflush(outf);
@@ -326,7 +365,9 @@ ar_set_wr()
 	if (artyp != ISREG)
 		return(0);
 	/*
-	 * Get rid of all the stuff after the current offset
+	 * Ok we have an archive in a regular file. If we were rewriting a
+	 * file, we must get rid of all the stuff after the current offset
+	 * (it was not written by pax).
 	 */
 	if (((cpos = lseek(arfd, (off_t)0L, SEEK_CUR)) < 0) ||
 	    (ftruncate(arfd, cpos) < 0))
@@ -358,7 +399,6 @@ ar_app_ok()
 
 	if (!invld_rec)
 		return(0);
-
 	warn(1,"Cannot append, device record size %d does not support pax spec",
 		rdblksz);
 	return(-1);
@@ -408,11 +448,12 @@ ar_read(buf, cnt)
 			if (res != rdblksz) {
 				/*
 				 * Record size changed. If this is happens on
-				 * any record after the first, it may cause
-				 * problem if we try to append. (We may not be
-				 * able to space backwards the proper number
-				 * of BYTES). Watch out for blocking which
-				 * violates pax spec.
+				 * any record after the first, we probably have
+				 * a tape drive which has a fixed record size
+				 * we are getting multiple records in a single
+				 * read). Watch out for record blocking that
+				 * violates pax spec (must be a multiple of
+				 * BLKMULT).
 				 */
 				rdblksz = res;
 				if (rdblksz % BLKMULT)
@@ -489,7 +530,7 @@ ar_write(buf, bsz)
 
 	/*
 	 * write broke, see what we can do with it. We try to send any partial
-	 * writes that violate pax spec to the next archive volume.
+	 * writes that may violate pax spec to the next archive volume.
 	 */
 	if (res < 0)
 		lstrval = res;
@@ -547,11 +588,11 @@ ar_write(buf, bsz)
 
 	/*
 	 * Better tell the user the bad news...
-	 * if this is a block aligned archive format, it may be a bad archive.
-	 * the format wants the header to start at a BLKMULT boundry. While
+	 * if this is a block aligned archive format, we may have a bad archive
+	 * if the format wants the header to start at a BLKMULT boundry. While
 	 * we can deal with the mis-aligned data, it violates spec and other
 	 * archive readers will likely fail. if the format is not block
-	 * aligned, the user may be lucky.
+	 * aligned, the user may be lucky (and the archive is ok).
 	 */
 	if (res >= 0)
 		io_ok = 1;
@@ -648,7 +689,7 @@ ar_rdsync()
 		break;
 	}
 	if (lstrval <= 0) {
-		warn(1,"Unable to recover from an archive read failure.");
+		warn(1, "Unable to recover from an archive read failure.");
 		return(-1);
 	}
 	warn(0, "Attempting to recover from an archive read failure.");
@@ -830,7 +871,9 @@ ar_rev(sksz)
 /*
  * get_phys()
  *	Determine the physical block size on a tape drive. Should only be
- *	when at EOF.
+ *	when at EOF. Tape drives are so inconsistant, while finding true record
+ *	size should be a trival thing to figure out, it really is difficult and
+ *	very likely to fail.
  * Return:
  *	0 if ok, -1 otherwise
  */
@@ -843,42 +886,88 @@ static int
 get_phys()
 #endif
 {
-        struct mtop mb;
+	register int res;
+	struct mtop mb;
 	char scbuf1[MAXBLK];
 	char scbuf2[MAXBLK];
 
 	/*
-	 * We can only use this technique when we are at tape EOF (so the
-	 * MTBSR will leave just a SINGLE PHYSICAL record between the head
-	 * and the end of the tape). Since we may be called more than once,
-	 * only the first phyblk detection will be used.
-	 */
+	 * We backspace one record and read foward. The read should tell us the
+	 * true physical size.  We can only use this technique when we are at
+	 * tape EOF (so the MTBSR will leave just a SINGLE PHYSICAL record
+	 * between the head and the end of the tape file; the max we can then
+	 * read should be just ONE physical record). Since we may be called
+	 * more than once, only the first phyblk detection will be used.
+ 	 */
 	if (phyblk > 0)
 		return(0);
 
 	mb.mt_op = MTBSR;
 	mb.mt_count = 1;
 	if ((ioctl(arfd, MTIOCTOP, &mb) < 0) ||
-	    ((phyblk = read(arfd, scbuf1, sizeof(scbuf1))) <= 0))
+	    ((phyblk = read(arfd, scbuf1, sizeof(scbuf1))) <= 0)) {
+		return(-1);
+	}
+
+	/*
+	 * We must be careful, we may not have been called with the tape head
+	 * at the end of the tape.  We expect if we read again we will get the
+	 * true blocksize. (We expect the true size on the second read because
+	 * by pax spec the trailer is always in the last record, and we are
+	 * only called after the trailer was seen. If this is not true, the
+	 * archive is flawed and we will return a failure indication). After
+	 * the second read we must adjust the head position so it is at the
+	 * same place it was when we are called. We also check for consistancy,
+	 * if we cannot repeat we return a failure.
+	 */
+	if ((ioctl(arfd, MTIOCTOP, &mb) < 0) ||
+	    ((res = read(arfd, scbuf2, sizeof(scbuf2))) <= 0))
 		return(-1);
 
 	/*
-	 * check for consistancy, if we cannot repeat, abort. This can only be
-	 * a guess, trailer blocks tend to be zero filled!
+	 * If we get a bigger size on the second read or the first read is not
+	 * a multiple of the second read, we better not chance an append.
+	 */
+	if ((res > phyblk) || (phyblk % res))
+		return(-1);
+
+	/*
+	 * if both reads are the same size and the data is consistant we can
+	 * go on with the append
+	 */
+	if (res == phyblk) {
+		if (bcmp(scbuf1, scbuf2, phyblk) != 0)
+			return(-1);
+		return(0);
+	}
+
+	/*
+	 * We got two different block sizes. We were not at the tape EOF.
+	 * So we try one more time, if the result is not consistant we abort.
 	 */
 	if ((ioctl(arfd, MTIOCTOP, &mb) < 0) ||
-	    (read(arfd, scbuf2, sizeof(scbuf2)) != phyblk) ||
-	    (bcmp(scbuf1, scbuf2, phyblk) != 0))
+	    (read(arfd, scbuf1, sizeof(scbuf1)) != res) ||
+	    (bcmp(scbuf1, scbuf2, res) != 0))
+		return(-1);
+
+	/*
+	 * Ok, we assume the physical block size is in res. We need to adjust
+	 * head position backwards based on the what we got on the first read.
+	 * (must leave the head at the same place it was when we were called).
+	 */
+	mb.mt_count = (phyblk - res)/res;
+	phyblk = res;
+	if ((mb.mt_count == 0) || (ioctl(arfd, MTIOCTOP, &mb) < 0))
 		return(-1);
 	return(0);
 }
 
 /*
  * ar_next()
- *	prompts the user for the next volume in this archive. For devices we
- *	may allow the media to be changed. otherwise a new archive is prompted
- *	for. By pax spec, if there is no controlling tty or an eof is read on
- *	tty input, we quit pax.
+ *	prompts the user for the next volume in this archive. For some devices
+ *	we may allow the media to be changed. Otherwise a new archive is
+ *	prompted for. By pax spec, if there is no controlling tty or an eof is
+ *	read on tty input, we must quit pax.
  * Return:
  *	0 when ready to continue, -1 when all done
  */
@@ -896,15 +985,15 @@ ar_next()
 	sigset_t o_mask;
 
 	/*
-	 * WE MUST CLOSE the device. A lot of devices must see last close, (so
+	 * WE MUST CLOSE THE DEVICE. A lot of devices must see last close, (so
 	 * things like writing EOF etc will be done) (Watch out ar_close() can
-	 * also be called on a signal, so we must prevent a race.
+	 * also be called via a signal handler, so we must prevent a race.
 	 */
 	if (sigprocmask(SIG_BLOCK, &s_mask, &o_mask) < 0)
-		syswarn(1, errno, "Unable to set signal mask");
+		syswarn(0, errno, "Unable to set signal mask");
 	ar_close();
 	if (sigprocmask(SIG_SETMASK, &o_mask, (sigset_t *)NULL) < 0)
-		syswarn(1, errno, "Unable to restore signal mask");
+		syswarn(0, errno, "Unable to restore signal mask");
 
 	if (done)
 		return(-1);
@@ -913,7 +1002,7 @@ ar_next()
 
 	/*
 	 * if i/o is on stdin or stdout, we cannot reopen it (we do not know
-	 * the name), the user will have to type it in.
+	 * the name), the user will be forced to type it in.
 	 */
 	if (strcmp(arcname, STDO) && strcmp(arcname, STDN) && (artyp != ISREG)
 	    && (artyp != ISPIPE)) {
@@ -1016,7 +1105,7 @@ ar_next()
 			if ((arcname = strdup(buf)) == NULL) {
 				done = 1;
 				lstrval = -1;
-				warn(1, "Cannot save archive name.");
+				warn(0, "Cannot save archive name.");
 				return(-1);
 			}
 			freeit = 1;
