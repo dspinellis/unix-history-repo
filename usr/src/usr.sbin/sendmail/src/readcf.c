@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <ctype.h>
 
-static char SccsId[] = "@(#)readcf.c	3.6	%G%";
+static char SccsId[] = "@(#)readcf.c	3.7	%G%";
 
 /*
 **  READCF -- read control file.
@@ -133,16 +133,108 @@ readcf(cfname)
 			}
 			break;
 
+		  case 'M':		/* define mailer */
+			makemailer(&buf[1]);
+			break;
+
 		  default:
 		  badline:
 			syserr("unknown control line \"%s\"", buf);
 		}
 	}
+}
+/*
+**  MAKEMAILER -- define a new mailer.
+**
+**	Parameters:
+**		line -- description of mailer.  This is in tokens
+**			separated by white space.  The fields are:
+**			* the name of the mailer, as refered to
+**			  in the rewriting rules.
+**			* the pathname of the program to fork to
+**			  execute it.
+**			* the options needed by this program.
+**			* the macro string needed to translate
+**			  a local "from" name to one that can be
+**			  returned to this machine.
+**			* the argument vector (a series of parameters).
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		enters the mailer into the mailer table.
+*/
 
-# ifdef DEBUG
-	if (Debug > 6)
-		printrules();
-# endif DEBUG
+# define SETWORD \
+		{ \
+			while (*p != '\0' && isspace(*p)) \
+				p++; \
+			q = p; \
+			while (*p != '\0' && !isspace(*p)) \
+				p++; \
+			if (*p != '\0') \
+				*p++ = '\0'; \
+		}
+
+makemailer(line)
+	char *line;
+{
+	register char *p;
+	register char *q;
+	char *mname;
+	char *mpath;
+	int mopts;
+	char *mfrom;
+	register struct mailer *m;
+	char *margv[MAXPV + 1];
+	register int i;
+	extern int NextMailer;
+
+	if (NextMailer >= MAXMAILERS)
+	{
+		syserr("Too many mailers defined");
+		return;
+	}
+
+	/* collect initial information */
+	p = line;
+	SETWORD;
+	mname = q;
+	SETWORD;
+	mpath = q;
+	SETWORD;
+	mopts = crackopts(q);
+	SETWORD;
+	mfrom = q;
+
+	if (*p == '\0')
+	{
+		syserr("invalid M line in configuration file");
+		return;
+	}
+
+	/* allocate a mailer */
+	m = (struct mailer *) xalloc(sizeof *m);
+	m->m_name = newstr(mname);
+	m->m_mailer = newstr(mpath);
+	m->m_flags = mopts;
+	m->m_from = newstr(mfrom);
+	m->m_badstat = EX_UNAVAILABLE;
+	m->m_sendq = NULL;
+	Mailer[NextMailer++] = m;
+
+	/* collect the argument vector */
+	for (i = 0; i < MAXPV - 1 && *p != '\0'; i++)
+	{
+		SETWORD;
+		margv[i] = newstr(q);
+	}
+	margv[i++] = NULL;
+
+	/* save the argv */
+	m->m_argv = (char **) xalloc(sizeof margv[0] * i);
+	bmove((char *) margv, (char *) m->m_argv, sizeof margv[0] * i);
 }
 /*
 **  PRINTRULES -- print rewrite rules (for debugging)
@@ -187,4 +279,62 @@ printrules()
 			printf("\n");
 		}
 	}
+}
+/*
+**  CRACKOPTS -- crack mailer options
+**
+**	These options modify the functioning of the mailer
+**	from the configuration table.
+**
+**	Parameters:
+**		p -- pointer to vector of options.
+**
+**	Returns:
+**		option list in binary.
+**
+**	Side Effects:
+**		none.
+*/
+
+struct optlist
+{
+	char	opt_name;	/* external name of option */
+	int	opt_value;	/* internal name of option */
+};
+struct optlist	OptList[] =
+{
+	'f',	M_FOPT,
+	'r',	M_ROPT,
+	'q',	M_QUIET,
+	'S',	M_RESTR,
+	'n',	M_NHDR,
+	'l',	M_NOHOST,
+	's',	M_STRIPQ,
+	'm',	M_MUSER,
+	'F',	M_NEEDFROM,
+	'D',	M_NEEDDATE,
+	'M',	M_MSGID,
+	'u',	M_USR_UPPER,
+	'h',	M_HST_UPPER,
+	'x',	M_FULLNAME,
+	'A',	M_ARPAFMT,
+	0,	0
+};
+
+crackopts(p)
+	register char *p;
+{
+	register struct optlist *o;
+	register int opts = 0;
+
+	while (*p != '\0')
+	{
+		for (o = OptList; o->opt_name != '\0' && o->opt_name != *p; o++)
+			continue;
+		if (o->opt_name == '\0')
+			syserr("bad mailer option %c", *p);
+		opts |= o->opt_value;
+		p++;
+	}
+	return (opts);
 }

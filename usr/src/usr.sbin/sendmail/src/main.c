@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.15	%G%";
+static char	SccsId[] = "@(#)main.c	3.16	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -134,6 +134,8 @@ HDR	*Header;	/* header list */
 char	*Macro[128];	/* macros */
 long	CurTime;	/* current time */
 char	FromLine[80];	/* holds From line (UNIX style header) */
+int	NextMailer = 0;	/* "free" index into Mailer struct */
+struct mailer	*Mailer[MAXMAILERS+1];	/* definition of mailers */
 
 
 
@@ -186,7 +188,7 @@ main(argc, argv)
 # endif
 	errno = 0;
 	from = NULL;
-	cfname = "/usr/lib/sendmail.cf";
+	cfname = CONFFILE;
 
 	/*
 	** Crack argv.
@@ -358,6 +360,22 @@ main(argc, argv)
 			readcf(cfbuf);
 	}
 # endif V6
+
+# ifdef DEBUG
+	if (Debug > 15)
+	{
+		printrules();
+		for (i = 0; i < MAXMAILERS; i++)
+		{
+			register struct mailer *m = Mailer[i];
+
+			if (m == NULL)
+				continue;
+			printf("mailer %d: %s %s %o %s\n", i, m->m_name,
+			       m->m_mailer, m->m_flags, m->m_from);
+		}
+	}
+# endif DEBUG
 
 	/*
 	locname = getname();

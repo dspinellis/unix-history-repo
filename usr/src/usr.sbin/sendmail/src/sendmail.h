@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.21	%G%
+**	@(#)sendmail.h	3.22	%G%
 */
 
 
@@ -19,7 +19,9 @@
 # define MAXPV		40	/* maximum # of parms to mailers */
 # define MAXHOP		30	/* maximum value of HopCount */
 # define MAXATOM	15	/* max atoms per address */
+# define MAXMAILERS	10	/* maximum mailers known to system */
 # define ALIASFILE	"/usr/lib/aliases"	/* location of alias file */
+# define CONFFILE	"/usr/lib/sendmail.cf"	/* configuration file */
 
 
 
