@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)rlogin.c	8.1 (Berkeley) %G%";
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
@@ -33,7 +34,7 @@ static char sccsid[] = "@(#)rlogin.c	8.1 (Berkeley) %G%";
 #include <netdb.h>
 #include <pwd.h>
 #include <setjmp.h>
-#include <sgtty.h>
+#include <termios.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,7 +64,7 @@ int	sigwinch();
 
 void		catch_child __P((int));
 void		copytochild __P((int));
-__dead void	doit __P((long));
+__dead void	doit __P((sigset_t *));
 __dead void	done __P((int));
 void		echo __P((char));
 u_int		getescape __P((char *));
@@ -71,7 +72,7 @@ void		lostpeer __P((int));
 void		mode __P((int));
 void		msg __P((char *));
 void		oob __P((int));
-int		reader __P((int));
+int		reader __P((sigset_t *));
 void		sendwindow __P((void));
 void		setsignal __P((int));
 void		sigwinch __P((int));
@@ -92,26 +93,25 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern char *optarg;
-	extern int optind;
 	struct passwd *pw;
 	struct servent *sp;
 	int uid, options = 0;
-	struct sgttyb ttyb;
-	long omask;
-	int argoff, ch, dflag, one, uid;
+	sigset_t smask;
+	uid_t uid;
+	int argoff, ch, dflag, one;
 	char *host, *p, *user, term[1024];
+	struct sigaction sa;
 
 	argoff = dflag = 0;
 	one = 1;
 	host = user = NULL;
 
-	if (p = rindex(argv[0], '/'))
+	if (p = strrchr(argv[0], '/'))
 		++p;
 	else
 		p = argv[0];
 
-	if (strcmp(p, "rlogin"))
+	if (strcmp(p, "rlogin") != 0)
 		host = p;
 
 	/* handle "rlogin host flags" */
@@ -180,10 +180,9 @@ main(argc, argv)
 	if (*argv)
 		usage();
 
-	if (!(pw = getpwuid(uid = getuid()))) {
-		(void)fprintf(stderr, "rlogin: unknown user id.\n");
-		exit(1);
-	}
+	if (!(pw = getpwuid(uid = getuid())))
+		errx(1, "unknown user id.");
+
 	if (!user)
 		user = pw->pw_name;
 
@@ -200,56 +199,47 @@ main(argc, argv)
 #endif
 	if (sp == NULL)
 		sp = getservbyname("login", "tcp");
-	if (sp == NULL) {
-		(void)fprintf(stderr, "rlogin: login/tcp: unknown service.\n");
-		exit(1);
-	}
+	if (sp == NULL)
+		errx(1, "login/tcp: unknown service.");
 
-	(void)strcpy(term, (p = getenv("TERM")) ? p : "network");
-	if (ioctl(0, TIOCGETP, &ttyb) == 0) {
-		(void)strcat(term, "/");
-		(void)strcat(term, speeds[(int)ttyb.sg_ospeed]);
-	}
+	(void)snprintf(term, sizeof(term), "%s/%d",
+			((p = getenv("TERM")) ? p : "network"),
+			cfgetispeed(0));
 	if (rem < 0)
 		exit(1);
 
 	/*NOTREACHED*/
 }
 
-int child, defflags, deflflags, tabflag;
-char deferase, defkill;
-struct tchars deftc;
-struct ltchars defltc;
-struct tchars notc = { -1, -1, -1, -1, -1, -1 };
-struct ltchars noltc = { -1, -1, -1, -1, -1, -1 };
+pid_t child;
+struct termios deftt;
+struct termios nott;
 
 void
 {
-	struct sgttyb sb;
+	int i;
+	struct sigaction sa;
 
-	(void)ioctl(0, TIOCGETP, (char *)&sb);
-	defflags = sb.sg_flags;
-	tabflag = defflags & TBDELAY;
-	defflags &= ECHO | CRMOD;
-	deferase = sb.sg_erase;
-	defkill = sb.sg_kill;
-	(void)ioctl(0, TIOCLGET, &deflflags);
-	(void)ioctl(0, TIOCGETC, &deftc);
-	notc.t_startc = deftc.t_startc;
-	notc.t_stopc = deftc.t_stopc;
-	(void)ioctl(0, TIOCGLTC, &defltc);
-	(void)signal(SIGINT, SIG_IGN);
+	for (i = 0; i < NCCS; i++)
+		nott.c_cc[i] = _POSIX_VDISABLE;
+	tcgetattr(0, &deftt);
+	nott.c_cc[VSTART] = deftt.c_cc[VSTART];
+	nott.c_cc[VSTOP] = deftt.c_cc[VSTOP];
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART;
+	sa.sa_handler = SIG_IGN;
+	(void)sigaction(SIGINT, &sa, (struct sigaction *) 0);
 	setsignal(SIGHUP);
 	setsignal(SIGQUIT);
 	child = fork();
 	if (child == -1) {
-		(void)fprintf(stderr, "rlogin: fork: %s.\n", strerror(errno));
+		warn("fork");
 		done(1);
 	}
 	signal(SIGINT, SIG_IGN);
 	mode(1);
 	if (child == 0) {
-		if (reader(omask) == 0) {
+		if (reader(smask) == 0) {
 			msg("connection closed.");
 			exit(0);
 		}
@@ -265,8 +255,9 @@ void
 	 * signals to the child. We can now unblock SIGURG and SIGUSR1
 	 * that were set above.
 	 */
-	(void)sigsetmask(omask);
-	(void)signal(SIGCHLD, catch_child);
+	(void)sigprocmask(SIG_SETMASK, smask, (sigset_t *) 0);
+	sa.sa_handler = catch_child;
+	(void)sigaction(SIGCHLD, &sa, (struct sigaction *) 0);
 	writer();
 	msg("closed connection.");
 	done(0);
@@ -277,25 +268,41 @@ void
 setsignal(sig)
 	int sig;
 {
-	int omask = sigblock(sigmask(sig));
+	struct sigaction sa;
+	sigset_t sigs;
 
-	if (signal(sig, exit) == SIG_IGN)
-		(void)signal(sig, SIG_IGN);
-	(void)sigsetmask(omask);
+	sigemptyset(&sigs);
+	sigaddset(&sigs, sig);
+	sigprocmask(SIG_BLOCK, &sigs, &sigs);
+
+	sigemptyset(&sa.sa_mask);
+	sa.sa_handler = exit;
+	sa.sa_flags = SA_RESTART;
+	(void)sigaction(sig, &sa, &sa);
+	if (sa.sa_handler == SIG_IGN)
+		(void)sigaction(sig, &sa, (struct sigaction *) 0);
+
+	(void)sigprocmask(SIG_SETMASK, &sigs, (sigset_t *) 0);
 }
 
 __dead void
 done(status)
 	int status;
 {
-	int w, wstatus;
+	pid_t w;
+	int wstatus;
+	struct sigaction sa;
 
 	mode(0);
 	if (child > 0) {
 		/* make sure catch_child does not snap it up */
-		(void)signal(SIGCHLD, SIG_DFL);
+		sigemptyset(&sa.sa_mask);
+		sa.sa_handler = SIG_DFL;
+		sa.sa_flags = 0;
+		(void)sigaction(SIGCHLD, &sa, (struct sigaction *) 0);
 		if (kill(child, SIGKILL) >= 0)
-			while ((w = wait(&wstatus)) > 0 && w != child);
+			while ((w = wait(&wstatus)) > 0 && w != child)
+				continue;
 	}
 	exit(status);
 }
@@ -304,16 +311,16 @@ void
 catch_child(signo)
 	int signo;
 {
-	union wait status;
-	int pid;
+	int status;
+	pid_t pid;
 
 	for (;;) {
-		pid = wait3((int *)&status, WNOHANG|WUNTRACED, NULL);
+		pid = waitpid(-1, &status, WNOHANG|WUNTRACED);
 		if (pid == 0)
 			return;
 		/* if the child (reader) dies, just quit */
 		if (pid < 0 || (pid == child && !WIFSTOPPED(status)))
-			done((int)(status.w_termsig | status.w_retcode));
+			done(WEXITSTATUS(status) | WTERMSIG(status));
 	}
 	/* NOTREACHED */
 }
@@ -383,11 +390,11 @@ writer()
 			}
 		} else if (local) {
 			local = 0;
-			if (c == '.' || c == deftc.t_eofc) {
+			if (c == '.' || c == deftt.c_cc[VEOF]) {
 				echo(c);
 				break;
 			}
-			if (c == defltc.t_suspc || c == defltc.t_dsuspc) {
+			if (c == deftt.c_cc[VSUSP] || c == deftt.c_cc[VDSUSP]) {
 				bol = 1;
 				echo(c);
 				stop(c);
@@ -419,8 +426,8 @@ writer()
 				msg("line gone");
 				break;
 			}
-		bol = c == defkill || c == deftc.t_eofc ||
-		    c == deftc.t_intrc || c == defltc.t_suspc ||
+		bol = c == deftt.c_cc[VKILL] || c == deftt.c_cc[VEOF] ||
+		    c == deftt.c_cc[VINTR] || c == deftt.c_cc[VSUSP] ||
 		    c == '\r' || c == '\n';
 	}
 }
@@ -460,12 +467,18 @@ stop(cmdc)
 	char cmdc;
 #endif
 {
+	struct sigaction sa;
+
 	struct winsize ws;
 
 	mode(0);
-	(void)signal(SIGCHLD, SIG_IGN);
-	(void)kill(cmdc == defltc.t_suspc ? 0 : getpid(), SIGTSTP);
-	(void)signal(SIGCHLD, catch_child);
+	sigemptyset(&sa.sa_mask);
+	sa.sa_handler = SIG_IGN;
+	sa.sa_flags = SA_RESTART;
+	(void)sigaction(SIGCHLD, &sa, (struct sigaction *) 0);
+	(void)kill(cmdc == deftt.c_cc[VSUSP] ? 0 : getpid(), SIGTSTP);
+	sa.sa_handler = catch_child;
+	(void)sigaction(SIGCHLD, &sa, (struct sigaction *) 0);
 	mode(1);
 	sigwinch(0);			/* check for size changes */
 }
@@ -477,7 +490,7 @@ sigwinch(signo)
 	struct winsize ws;
 
 	if (!nosigwin && ioctl(0, TIOCGWINSZ, &ws) == 0 &&
-	    bcmp(&ws, &winsize, sizeof(ws))) {
+	    memcmp(&ws, &winsize, sizeof(ws))) {
 		winsize = ws;
 		longjmp(winsizechanged, 1);
 	}
@@ -514,21 +527,24 @@ oob(signo)
 		}
 	}
 	if (!eight && (mark & TIOCPKT_NOSTOP)) {
-		notc.t_stopc = -1;
-		notc.t_startc = -1;
-		(void)ioctl(0, TIOCSETC, (char *)&notc);
+		tcgetattr(0, &tt);
+		tt.c_iflag &= ~(IXON|IXOFF);
+		tt.c_cc[VSTOP] = _POSIX_VDISABLE;
+		tt.c_cc[VSTART] = _POSIX_VDISABLE;
+		tcsetattr(0, TCSANOW, &tt);
 	}
 	if (!eight && (mark & TIOCPKT_DOSTOP)) {
-		notc.t_stopc = deftc.t_stopc;
-		notc.t_startc = deftc.t_startc;
-		(void)ioctl(0, TIOCSETC, (char *)&notc);
+		tcgetattr(0, &tt);
+		tt.c_iflag |= (IXON|IXOFF);
+		tt.c_cc[VSTOP] = deftt.c_cc[VSTOP];
+		tt.c_cc[VSTART] = deftt.c_cc[VSTART];
+		tcsetattr(0, TCSANOW, &tt);
 	}
 	if (mark & TIOCPKT_FLUSHWRITE) {
 		(void)ioctl(1, TIOCFLUSH, (char *)&out);
 		for (;;) {
 			if (ioctl(rem, SIOCATMARK, &atmark) < 0) {
-				(void)fprintf(stderr, "rlogin: ioctl: %s.\n",
-				    strerror(errno));
+				warn("ioctl SIOCATMARK (ignored)");
 				break;
 			}
 			if (atmark)
@@ -560,11 +576,13 @@ oob(signo)
 
 /* reader: read from remote: line -> 1 */
 int
-reader(omask)
-	int omask;
+reader(smask)
+	sigset_t *smask;
 {
-	int pid, n, remaining;
+	pid_t pid;
+	int n, remaining;
 	char *bufp;
+	struct sigaction sa;
 
 #if BSD >= 43 || defined(SUNOS4)
 	pid = getpid();		/* modern systems use positives for pid */
@@ -572,12 +590,16 @@ reader(omask)
 	pid = -getpid();	/* old broken systems use negatives */
 #endif
 	signal(SIGURG, oob);
-	(void)signal(SIGTTOU, SIG_IGN);
-	(void)signal(SIGURG, oob);
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART;
+	sa.sa_handler = SIG_IGN;
+	(void)sigaction(SIGTTOU, &sa, (struct sigaction *) 0);
+	sa.sa_handler = oob;
+	(void)sigaction(SIGURG, &sa, (struct sigaction *) 0);
 	ppid = getppid();
 	(void)fcntl(rem, F_SETOWN, pid);
 	(void)setjmp(rcvtop);
-	(void)sigsetmask(omask);
+	(void)sigprocmask(SIG_SETMASK, smask, (sigset_t *) 0);
 	bufp = rcvbuf;
 	for (;;) {
 		while ((remaining = rcvcnt - (bufp - rcvbuf)) > 0) {
@@ -607,8 +629,7 @@ reader(omask)
 		if (rcvcnt < 0) {
 			if (errno == EINTR)
 				continue;
-			(void)fprintf(stderr, "rlogin: read: %s.\n",
-			    strerror(errno));
+			warn("read");
 			return (-1);
 		}
 	}
@@ -618,49 +639,43 @@ void
 mode(f)
 	int f;
 {
-	struct ltchars *ltc;
-	struct sgttyb sb;
-	struct tchars *tc;
-	int lflags;
+	struct termios tt;
 
-	(void)ioctl(0, TIOCGETP, (char *)&sb);
-	(void)ioctl(0, TIOCLGET, (char *)&lflags);
-	switch(f) {
+	switch (f) {
 	case 0:
-		sb.sg_flags &= ~(CBREAK|RAW|TBDELAY);
-		sb.sg_flags |= defflags|tabflag;
-		tc = &deftc;
-		ltc = &defltc;
-		sb.sg_kill = defkill;
-		sb.sg_erase = deferase;
-		lflags = deflflags;
+		tcsetattr(0, TCSADRAIN, &deftt);
 		break;
 	case 1:
-		sb.sg_flags |= (eight ? RAW : CBREAK);
-		sb.sg_flags &= ~defflags;
-		/* preserve tab delays, but turn off XTABS */
-		if ((sb.sg_flags & TBDELAY) == XTABS)
-			sb.sg_flags &= ~TBDELAY;
-		tc = &notc;
-		ltc = &noltc;
-		sb.sg_kill = sb.sg_erase = -1;
-		if (litout)
-			lflags |= LLITOUT;
+		tt = deftt;
+		tt.c_oflag &= ~OPOST;
+		tt.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+		tt.c_cc[VMIN] = 1;
+		tt.c_cc[VTIME] = 0;
+		if (eight) {
+			tt.c_iflag &= ~(IXON | IXOFF);
+			tt.c_cc[VSTOP] = _POSIX_VDISABLE;
+			tt.c_cc[VSTART] = _POSIX_VDISABLE;
+		}
+		/*if (litout)
+			lflags |= LLITOUT;*/
+		tcsetattr(0, TCSADRAIN, &tt);
 		break;
+
 	default:
 		return;
 	}
-	(void)ioctl(0, TIOCSLTC, (char *)ltc);
-	(void)ioctl(0, TIOCSETC, (char *)tc);
-	(void)ioctl(0, TIOCSETN, (char *)&sb);
-	(void)ioctl(0, TIOCLSET, (char *)&lflags);
 }
 
 void
 lostpeer(signo)
 	int signo;
 {
-	(void)signal(SIGPIPE, SIG_IGN);
+	struct sigaction sa;
+
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART;
+	sa.sa_handler = SIG_IGN;
+	(void)sigaction(SIGPIPE, &sa, (struct sigaction *) 0);
 	msg("\007connection closed.");
 	done(1);
 }
@@ -671,6 +686,7 @@ void
 copytochild(signo)
 	int signo;
 {
+
 	(void)kill(child, SIGURG);
 }
 
@@ -678,6 +694,7 @@ void
 msg(str)
 	char *str;
 {
+
 	(void)fprintf(stderr, "rlogin: %s\r\n", str);
 }
 
