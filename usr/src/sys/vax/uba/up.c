@@ -1,9 +1,17 @@
-/*	up.c	4.27	81/02/28	*/
+/*	up.c	4.28	81/03/03	*/
 
 #include "up.h"
 #if NSC > 0
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
+ *
+ * TODO:
+ *	Check out handling of spun-down drives and write lock
+ *	Add reading of bad sector information and disk layout from sector 1
+ *	Add bad sector forwarding code
+ *	Check multiple drive handling
+ *	Check dump code
+ *	Check unibus reset code
  */
 #define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
 
@@ -656,8 +664,8 @@ upecc(ui)
 	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("%D ", bp->b_blkno+npf);
-	prdev("ECC", bp->b_dev);
+	printf("SOFT ECC up%d%c bn%d\n", dkunit(bp),
+	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = up->upec2;
 	/*
 	 * Flush the buffered data path, and compute the
@@ -800,7 +808,7 @@ updump(dev)
 {
 	struct updevice *upaddr;
 	char *start;
-	int num, blk, unit;
+	int num, blk, unit, i;
 	struct size *sizes;
 	register struct uba_regs *uba;
 	register struct uba_dinfo *ui;
@@ -808,25 +816,21 @@ updump(dev)
 	struct upst *st;
 
 	unit = minor(dev) >> 3;
-	if (unit >= NUP) {
-		printf("bad unit\n");
-		return (-1);
-	}
+	if (unit >= NUP)
+		return (ENXIO);
 #define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
 	ui = phys(struct uba_dinfo *, updinfo[unit]);
-	if (ui->ui_alive == 0) {
-		printf("dna\n");
-		return(-1);
-	}
+	if (ui->ui_alive == 0)
+		return (ENXIO);
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
 #if VAX780
 	if (cpu == VAX_780)
 		ubainit(uba);
 #endif
-	DELAY(1000000);
+	DELAY(2000000);
 	upaddr = (struct updevice *)ui->ui_physaddr;
-	while ((upaddr->upcs1&UP_DVA) == 0)
-		;
+	if ((upaddr->upcs1&UP_DVA) == 0)
+		return (EFAULT);
 	num = maxfree;
 	start = 0;
 	upaddr->upcs2 = unit;
@@ -835,16 +839,12 @@ updump(dev)
 		upaddr->upcs1 = UP_PRESET|UP_GO;
 		upaddr->upof = UP_FMT22;
 	}
-	if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL)) {
-		printf("dna\n");
-		return (-1);
-	}
+	if ((upaddr->upds & UP_DREADY) != UP_DREADY)
+		return (EFAULT);
 	st = &upst[ui->ui_type];
 	sizes = phys(struct size *, st->sizes);
-	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks) {
-		printf("oor\n");
-		return (-1);
-	}
+	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks)
+		return (EINVAL);
 	while (num > 0) {
 		register struct pte *io;
 		register int i;
@@ -870,11 +870,8 @@ updump(dev)
 		do {
 			DELAY(25);
 		} while ((upaddr->upcs1 & UP_RDY) == 0);
-		if (upaddr->upcs1&UP_ERR) {
-			printf("up dump dsk err: (%d,%d,%d) cs1=%x, er1=%x\n",
-			    cn, tn, sn, upaddr->upcs1, upaddr->uper1);
-			return (-1);
-		}
+		if (upaddr->upcs1&UP_ERR)
+			return (EIO);
 		start += blk*NBPG;
 		num -= blk;
 	}
