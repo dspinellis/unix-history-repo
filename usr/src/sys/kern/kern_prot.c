@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.8 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -179,12 +179,6 @@ setreuid()
 	/*
 	 * Everything's okay, do it.
 	 */
-#ifdef QUOTA
-	if (u.u_quota->q_uid != ruid) {
-		qclean();
-		qstart(getquota((uid_t)ruid, 0, 0));
-	}
-#endif
 	u.u_cred->cr_uid = euid;
 	p->p_uid = euid;
 	p->p_ruid = ruid;
