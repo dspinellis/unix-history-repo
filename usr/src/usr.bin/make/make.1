@@ -1,0 +1,661 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)make.1	5.1 (Berkeley) %G%
+.\"
+.TH MAKE 1 ""
+.UC 7
+.SH NAME
+make \- maintain program dependencies
+.SH SYNOPSIS
+.ft B
+make [-eiknqrstv] [-D variable] [-d flags] [-f makefile ] [-I directory]
+[-j max_jobs] [variable=value] [target ...]
+.ft R
+.SH DESCRIPTION
+.I Make
+is a program designed to simplify the maintenance of other programs.
+Its input is a ``makefile'' which specifies files that programs and
+other files are dependent upon.
+.PP
+This manual page is intended as a reference document only.
+For a more thorough description of
+.I make
+and makefiles, please refer to
+.IR "Make -- A Tutorial" .
+.PP
+The options are as follows:
+.TP
+\-D variable
+Define
+.I variable
+to be 1, in the global context.
+.TP
+\-d flags
+Turn on debugging, and specify which portions of
+.I make
+are to print debugging information.
+.I Flags
+is one or more of the following:
+.RS
+.TP
+A
+Print all possible debugging information; equivalent to specifying
+all of the debugging flags.
+.TP
+a
+Print debugging information about archive searching and caching.
+.TP
+c
+Print debugging information about conditional evaluation.
+.TP
+d
+Print debugging information about directory searching and caching.
+.TP
+g1
+Print the input graph before making anything.
+.TP
+g2
+Print the input graph after making everything, or before exiting
+on error.
+.TP
+j
+Print debugging information about running multiple shells.
+.TP
+m
+Print debugging information about making targets, including modification
+dates.
+.TP
+s
+Print debugging information about suffix-transformation rules.
+.TP
+t
+Print debugging information about target list maintenance.
+.TP
+v
+Print debugging information about variable assignment.
+.RE
+.TP
+\-f makefile
+Specify a makefile to read.
+If no makefile is specified, the files ``makefile'' and ``Makefile''
+are searched for, in that order.
+If
+.I makefile
+is ``\-'', standard input is read.
+Multiple makefile's may be specified, and are read in the order specified.
+.TP
+\-I directory
+Specify a directory in which to search for makefiles and included makefiles.
+The system makefile directory is automatically included as part of this
+list.
+.TP
+\-i
+Ignore non-zero exit of shell commands in the makefile.
+Equivalent to specifying ``\-'' before each command line in the makefile.
+.TP
+\-j max_jobs
+Specify the maximum number of jobs that
+.I make
+may have running at any one time.
+.TP
+\-k
+Continue processing after errors are encountered, but only on those targets
+that do not depend on the target whose creation caused the error.
+.TP
+\-n
+Display the commands that would have been executed, but do not actually
+execute them.
+.TP
+\-q
+Do not execute any commands, but exit 0 if the specified targets are
+up-to-date and 1, otherwise.
+.TP
+\-r
+Do not use the built-in rules specified in the system makefile.
+.TP
+\-s
+Do not echo any commands as they are executed.
+Equivalent to specifying ``@'' before each command line in the makefile.
+.TP
+\-t
+Rather than re-building a target as specified in the makefile, create it
+or update its modification time to make it appear up-to-date.
+.TP
+variable=value
+Set the value of the variable
+.I variable
+to
+.IR value .
+.PP
+There are six different types of lines in a makefile: file dependency
+specifications, shell commands, variable assignments, include statements,
+conditional directives, and comments.
+.PP
+In general, lines may be continued from one line to the next by ending
+them with a backslash (``\e'').
+The trailing newline character and initial whitespace on the following
+line are compressed into a single space.
+.SH "FILE DEPENDENCY SPECIFICATIONS"
+Dependency lines consist of one or more targets, an operator, and zero
+or more sources.
+This creates a relationship where the targets ``depend'' on the sources
+and are usually created from them.
+The exact relationship between the target and the source is determined
+by the operator that separates them.
+The three operators are as follows:
+.TP
+:
+A target is considered out-of-date if its modification time is less than
+those of any of its sources.
+Sources for a target accumulate over dependency lines when this operator
+is used.
+The target is removed if
+.I make
+is interrupted.
+.TP
+!
+Targets are always re-created, but not until all sources have been
+examined and re-created as necessary.
+Sources for a target accumulate over dependency lines when this operator
+is used.
+The target is removed if
+.I make
+is interrupted.
+.TP
+::
+If no sources are specified, the target is always re-created.
+Otherwise, a target is considered out-of-date if any of its sources has
+been modified more recently than the target.
+Sources for a target do not accumulate over dependency lines when this
+operator is used.
+The target will not be removed if
+.I make
+is interrupted.
+.PP
+Targets and sources may contain the shell wildcard values ``?'', ``*'',
+``[]'' and ``{}''.
+The values ``?'', ``*'' and ``[]'' may only be used as part of the final
+component of the target or source, and must be used to describe existing
+files.
+The value ``{}'' need not necessarily be used to describe existing files.
+Expansion is in directory order, not alphabetically as done in the shell.
+.SH "SHELL COMMANDS"
+Each target may have associated with it a series of shell commands, normally
+used to create the target.
+Each of the commands in this script
+.B must
+be preceded by a tab.
+While any target may appear on a dependency line, only one of these
+dependencies may be followed by a creation script, unless the ``::''
+operator is used.
+.PP
+If the first or first two characters of the command line are ``@'' and/or
+``\-'', the command is treated specially.
+A ``@'' causes the command not to be echoed before it is executed.
+A ``\-'' causes any non-zero exit status of the command line to be ignored.
+.SH "VARIABLE ASSIGNMENTS"
+Variables in make are much like variables in the shell, and, by tradition,
+consist of all upper-case letters.
+The five operators that can be used to assign values to variables are as
+follows:
+.TP
+=
+Assign the value to the variable.
+Any previous value is overridden.
+.TP
++=
+Append the value to the current value of the variable.
+.TP
+?=
+Assign the value to the variable if it is not already defined.
+.TP
+:=
+Assign with expansion, i.e. expand the value before assigning it
+to the variable.
+Normally, expansion is not done until the variable is referenced.
+.TP
+!=
+Expand the value and pass it to the shell for execution and assign
+the result to the variable.
+Any newlines in the result are replaced with spaces.
+.PP
+Any white-space before the assigned
+.I value
+is removed; if the value is being appended, a single space is inserted
+between the previous contents of the variable and the appended value.
+.PP
+Variables are expanded by surrounding the variable name with either
+curly braces (``{}'') or parenthesis (``()'') and preceding it with
+a dollar sign (``$'').
+If the variable name contains only a single letter, the surrounding
+braces or parenthesis are not required.
+This shorter form is not recommended.
+.PP
+Variable substitution occurs at two distinct times, depending on where
+the variable is being used.
+Variables in dependency lines are expanded as the line is read.
+Variables in shell commands are expanded when the shell command is
+executed.
+.PP
+The four different classes of variables (in order of increasing precedence)
+are:
+.TP
+environmental variables
+Variables defined as part of
+.IR make 's
+environment.
+.TP
+global variables
+Variables defined in the makefile or in included makefiles.
+.TP
+command line variables
+Variables defined as part of the command line.
+.TP
+local variables
+Variables that are defined specific to a certain target.
+The seven local variables are as follows:
+.RS
+.TP
+\&.ALLSRC
+The list of all sources for this target; also known as ``>''.
+.TP
+\&.ARCHIVE
+The name of the archive file.
+.TP
+\&.IMPSRC
+The name/path of the source from which the target is to be transformed
+(the ``implied'' source); also known as ``<''.
+.TP
+\&.MEMBER
+The name of the archive member.
+.TP
+\&.OODATE
+The list of sources for this target that were deemed out-of-date; also
+known as ``?''.
+.TP
+\&.PREFIX
+The file prefix of the file, containing only the file portion, no suffix
+or preceding directory components; also known as ``*'.
+.TP
+\&.TARGET
+The name of the target; also known as ``@''.
+.RE
+.PP
+The shorter forms ``@'', ``?'', ``>'' and ``*'' are permitted for backward
+compatibility with historical makefiles and are not recommended.
+The six variables ``@F'', ``@D'', ``<F'', ``<D'', ``*F'' and ``*D'' are
+permitted for compatibility with System V makefiles and are not recommended.
+.PP
+Four of the local variables may be used in sources on dependency lines
+because they expand to the proper value for each target on the line.
+These variables are ``.TARGET'', ``.PREFIX'', ``.ARCHIVE'', and ``.MEMBER''.
+.PP
+In addition,
+.I make
+sets or knows about the following variables:
+.TP
+$
+A single dollar sign (``$''), i.e. ``$$'' expands to a single dollar
+sign.
+.TP
+\&.MAKE
+The name that
+.I make
+was executed with (argv[0]).
+.TP
+\&.CURDIR
+A path to the directory where
+.I make
+was executed.
+.TP
+MAKEFLAGS
+The environmental variable ``MAKEFLAGS'' may contain anything that
+may be specified on
+.IR make 's
+command line.
+Anything specified on
+.IR make 's
+command line is appended to the ``MAKEFLAGS'' variable which is then
+entered into the environment for all programs which
+.I make
+executes.
+.PP
+Variable expansion may be modified to select or modify each word of the
+variable (where a ``word'' is white-space delimited sequence of characters).
+The general format of a variable expansion is as follows:
+.RS
+
+${variable[:modifier[:...]])
+
+.RE
+Each modifier begins with a colon and one of the following
+special characters.
+The colon may be escaped with a backslash (``\e'').
+.TP
+E
+Replaces each word in the variable with its suffix.
+.TP
+H
+Replaces each word in the variable with everything but the last component.
+.TP
+Mpattern
+Select only those words that match the rest of the modifier.
+The standard shell wildcard characters (``*'', ``?'', and ``[]'') may
+be used.
+The wildcard characters may be escaped with a backslash (``\e'').
+.TP
+Npattern
+This is identical to ``M'', but selects all words which do not match
+the rest of the modifier.
+.TP
+R
+Replaces each word in the variable with everything but its suffix.
+.TP
+S/old_pattern/new_pattern/[g]
+Modify the first occurrence of
+.I old_pattern
+in each word to be replaced with
+.IR new_pattern .
+If a ``g'' is appended to the last slash of the pattern, all occurrences
+in each word are replaced.
+.RS
+If
+.I old_pattern
+begins with a carat (``^''),
+.I old_pattern
+is anchored at the beginning of each word.
+If
+.I old_pattern
+ends with a dollar sign (``$''), it is anchored at the end of each word.
+Inside
+.IR new_string ,
+an ampersand (``&'') is replaced by
+.IR old_pattern.
+Any character may be used as a delimiter for the parts of the modifier
+string.
+The anchoring, ampersand and delimiter characters may be escaped with a
+backslash (``\e'').
+.sp
+Variable expansion occurs in the normal fashion inside both
+.I old_string
+and
+.I new_string
+with the single exception that a backslash is used to prevent the expansion
+of a dollar sign (``$''), not a preceding dollar sign as is usual.
+.RE
+.TP
+T
+Replaces each word in the variable with its last component.
+.TP
+old_string=new_string
+This is the System V style variable substitution.
+It must be the last modifier specified.
+.I Old_string
+is anchored at the end of each word, so only suffixes or entire
+words may be replaced.
+.SH "INCLUDE STATEMENTS AND CONDITIONALS"
+Makefile inclusion and conditional structures reminiscent of the C
+programming language are provided in
+.IR make .
+All such structures are identified by a line beginning with a single
+dot (``.'') character.
+Files are included with either ``.include <file>'' or ``.include "file"''.
+Variables between the angle brackets or double quotes are expanded
+to form the file name.
+If angle brackets are used, the included makefile is expected to be in
+the system makefile directory.
+If double quotes are used, the including makefile's directory and any
+directories specified using the -I option are searched before the system
+makefile directory.
+.PP
+Conditional expressions are also preceded by a single dot as the first
+chraracter of a line.
+The possible conditionals are as follows:
+.TP
+\&.undef variable
+Un-define the specified global variable.
+Only global variables may be un-defined.
+.TP
+\&.if [!] expression [ operator expression ... ]
+Test the value of an expression.
+.TP
+\&.ifdef [!] variable [ operator variable ... ]
+Test the value of an variable.
+.TP
+\&.ifndef [!] variable [ operator variable ... ]
+Test the value of an variable.
+.TP
+\&.ifmake [!] target [ operator target ... ]
+Test the the target being built.
+.TP
+\&.ifnmake [!] target [ operator target ... ]
+Test the target being built.
+.TP
+\&.else
+Reverse the sense of the last conditional.
+.TP
+\&.elif [!] expression [ operator expression ...]
+A combination of ``.else'' followed by ``.if''.
+.TP
+\&.elifdef [!] variable [ operator variable ...]
+A combination of ``.else'' followed by ``.ifdef''.
+.TP
+\&.elifndef [!] variable [ operator variable ...]
+A combination of ``.else'' followed by ``.ifndef''.
+.TP
+\&.elifmake [!] target [ operator target ...]
+A combination of ``.else'' followed by ``.ifmake''.
+.TP
+\&.elifnmake [!] target [ operator target ...]
+A combination of ``.else'' followed by ``.ifnmake''.
+.TP
+\&.endif
+End the body of the conditional.
+.PP
+The
+.I operator
+may be any one of the following:
+.TP
+||
+logical OR
+.TP
+&&
+Logical AND; of higher precedence than ``||''.
+.PP
+As in C,
+.I make
+will only evaluate a conditional as far as is necessary to determine
+its value.
+Parenthesis may be used to change the order of evaluation.
+The boolean operator ``!'' may be used to logically negate an entire
+conditional.
+It is of higher precendence than ``&&''.
+.PP
+The value of
+.I expression
+may be any of the following:
+.TP
+defined
+Takes a variable name as an argument and evaluates to true if the variable
+has been defined.
+.TP
+make
+Takes a target name as an argument and evaluates to true if the target
+was specified as part of
+.IR make 's
+command line or was declared the default target (either implicitly or
+explicitly, see .MAIN) before the line containing the conditional.
+.TP
+empty
+Takes a variable, with possible modifiers, and evalutes to true if
+the expansion of the variable would result in an empty string.
+.TP
+exists
+Takes a file name as an argument and evaluates to true if the file exists.
+The file is searched for on the system search path (see .PATH).
+.TP
+target
+Takes a target name as an argument and evaluates to true if the target
+has been defined.
+.PP
+.I Expression
+may also be an arithmetic or string comparison, with the left-hand side
+being a variable expansion.
+The standard C relational operators are all supported, and the usual
+number/base conversion is performed.
+Note, octal numbers are not supported.
+If the righthand value of a ``=='' or ``!='' operator begins with a
+quotation mark (``"'') a string comparison is done between the expanded
+variable and the text between the quotation marks.
+If no relational operator is given, it is assumed that the expanded
+variable is being compared against 0.
+.PP
+When
+.I make
+is evaluating one of these conditional expression, and it encounters
+a word it doesn't recognize, either the ``make'' or ``defined''
+expression is applied to it, depending on the form of the conditional.
+If the form is ``.ifdef'' or ``.ifndef'', the ``defined'' expression
+is applied.
+Similarly, if the form is ``.ifmake'' or ``.ifnmake'', the ``make''
+expression is applied.
+.PP
+If the conditional evaluates to true the parsing of the makefile continues
+as before.
+If it evaluates to false, the following lines are skipped.
+In both cases this continues until a ``.else'' or ``.endif'' is found.
+.SH COMMENTS
+Comments begin with a hash (``#'') character, anywhere but in a shell
+command line, and continue to the end of the line.
+.SH "SPECIAL SOURCES"
+.TP
+\&.IGNORE
+Ignore any errors from the commands associated with this target, exactly
+as if they all were preceded by a dash (``\-'').
+.TP
+\&.MAKE
+Execute the commands associated with this target even if the -n or -t
+options were specified.
+Normally used to mark recursive
+.IR make 's.
+.TP
+\&.NOTMAIN
+Normally
+.I make
+selects the first target it encounters as the default target to be built
+if no target was specified.
+This source prevents this target from being selected.
+.TP
+\&.OPTIONAL
+If a target is marked with this attribute and
+.I make
+can't figure out how to create it, it will ignore this fact and assume
+the file isn't needed or already exists.
+.TP
+\&.PRECIOUS
+When
+.I make
+is interrupted, it removes any partially made targets.
+This source prevents the target from being removed.
+.TP
+\&.SILENT
+Do not echo any of the commands associated with this target, exactly
+as if they all were preceded by an at sign (``@'').
+.TP
+\&.USE
+Turn the target into
+.IR make 's
+version of a macro.
+When the target is used as a source for another target, the other target
+acquires the commands, sources, and attributes (except for .USE) of the
+source.
+If the target already has commands, the .USE target's commands are appended
+to them.
+.SH "SPECIAL TARGETS"
+Special targets may not be included with other targets, i.e. they must be
+the only target specified.
+.TP
+\&.BEGIN
+Any command lines attached to this target are executed before anything
+else is done.
+.TP
+\&.DEFAULT
+This is sort of a .USE rule for any target (that was used only as a
+source) that
+.I make
+can't figure out any other way to create.
+Only the shell script is used.
+The .IMPSRC variable of a target that inherits .DEFAULT's commands is set
+to the target's own name.
+.TP
+\&.END
+Any command lines attached to this target are executed after everything
+else is done.
+.TP
+\&.IGNORE
+Mark each of the sources with the .IGNORE attribute.
+If no sources are specified, this is the equivalent of specifying the -i
+option.
+.TP
+\&.INTERRUPT
+If
+.I make
+is interrupted, the commands for this target will be executed.
+.TP
+\&.MAIN
+If no target is specified when
+.I make
+is invoked, this target will be built.
+.TP
+\&.MAKEFLAGS
+This target provides a way to specify flags for
+.I make
+when the makefile is used.
+The flags are as if typed to the shell, though the -f option will have
+no effect.
+.TP
+\&.PATH
+The sources are directories which are to be searched for files not
+found in the current directory.
+If no sources are specified, any previously specified directories are
+deleted.
+.TP
+\&.PRECIOUS
+Apply the .PRECIOUS attribute to any specified sources.
+If no sources are specified, the .PRECIOUS attribute is applied to every
+target in the file.
+.TP
+\&.SILENT
+Apply the .SILENT attribute to any specified sources.
+If no sources are specified, the .SILENT attribute is applied to every
+command in the file.
+.TP
+\&.SUFFIXES
+Each source specifies a suffix to
+.IR make .
+If no sources are specified, any previous specifies suffices are deleted.
+.SH FILES
+.ta \w'/usr/share/mk\ \ \ 'u
+/usr/share/mk	system makefile directory
+.br
+sys.mk	include system makefile
+.br
+bsd.mk	BSD source tree template
+.br
+subdir.mk	BSD source tree subdirectory template
+.SH SEE ALSO
+.SH DIAGNOSTICS
+.SH BUGS
