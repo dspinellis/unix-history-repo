@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n9.c	4.1 %G%";
+static char sccsid[] = "@(#)n9.c	4.2 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -102,7 +102,7 @@ int c;
 }
 setov(){
 	register i, j, k;
-	int *p, delim, o[NOV], w[NOV];
+	int *p, delim, o[NOV+1], w[NOV+1];
 
 	if((delim = getch()) & MOT)return;
 		else delim &= CMASK;
