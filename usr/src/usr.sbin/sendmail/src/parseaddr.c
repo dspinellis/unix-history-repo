@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -544,6 +544,8 @@ rewrite(pvp, ruleset)
 
 	for (rwr = RewriteRules[ruleset]; rwr != NULL; )
 	{
+		int loopcount = 0;
+
 		if (tTd(21, 12))
 		{
 			printf("-----trying rule:");
@@ -556,12 +558,17 @@ rewrite(pvp, ruleset)
 		avp = pvp;
 		while ((ap = *avp) != NULL || *rvp != NULL)
 		{
+			if (++loopcount > 100)
+			{
+				syserr("Infinite loop in ruleset %d", ruleset);
+				break;
+			}
 			rp = *rvp;
 			if (tTd(21, 35))
 			{
-				printf("ap=");
+				printf("operator=");
 				xputs(ap);
-				printf(", rp=");
+				printf(", token=");
 				xputs(rp);
 				printf("\n");
 			}

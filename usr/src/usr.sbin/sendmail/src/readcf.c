@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -79,6 +79,9 @@ readcf(cfname)
 	LineNumber = 0;
 	while (fgetfolded(buf, sizeof buf, cf) != NULL)
 	{
+		if (buf[0] == '#')
+			continue;
+
 		/* map $ into \001 (ASCII SOH) for macro expansion */
 		for (p = buf; *p != '\0'; p++)
 		{
@@ -252,6 +255,12 @@ readcf(cfname)
 			syserr("unknown control line \"%s\"", buf);
 		}
 	}
+	if (ferror(cf))
+	{
+		syserr("Error reading %s", cfname);
+		exit(EX_OSFILE);
+	}
+	fclose(cf);
 	FileName = NULL;
 }
 /*
@@ -415,7 +424,7 @@ makemailer(line)
 			p++;
 		if (*p++ != '=')
 		{
-			syserr("`=' expected");
+			syserr("mailer %s: `=' expected", m->m_name);
 			return;
 		}
 		while (isspace(*p))
@@ -433,7 +442,8 @@ makemailer(line)
 
 		  case 'F':		/* flags */
 			for (; *p != '\0'; p++)
-				setbitn(*p, m->m_flags);
+				if (!isspace(*p))
+					setbitn(*p, m->m_flags);
 			break;
 
 		  case 'S':		/* sender rewriting ruleset */
