@@ -14,12 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fsck.h	5.11 (Berkeley) %G%
+ *	@(#)fsck.h	5.12 (Berkeley) %G%
  */
 
-#define	MAXDUP		10	 /* limit on dup blks (per inode) */
-#define	MAXBAD		10	 /* limit on bad blks (per inode) */
-#define MAXBUFSPACE	128*1024 /* maximum space to allocate to buffers */
+#define	MAXDUP		10	/* limit on dup blks (per inode) */
+#define	MAXBAD		10	/* limit on bad blks (per inode) */
+#define	MAXBUFSPACE	40*1024	/* maximum space to allocate to buffers */
+#define	INOBUFSIZE	56*1024	/* size of buffer to read inodes in pass1 */
 
 #ifndef BUFSIZ
 #define BUFSIZ 1024
@@ -128,6 +129,20 @@ struct zlncnt {
 };
 struct zlncnt *zlnhead;		/* head of zero link count list */
 
+/*
+ * Inode cache data structures.
+ */
+struct inoinfo {
+	struct	inoinfo *i_nexthash;	/* next entry in hash chain */
+	ino_t	i_number;		/* inode number of this entry */
+	ino_t	i_parent;		/* inode number of parent */
+	ino_t	i_dotdot;		/* inode number of `..' */
+	size_t	i_isize;		/* size of inode */
+	u_int	i_numblks;		/* size of block array in bytes */
+	daddr_t	i_blks[1];		/* actually longer */
+} **inphead, **inpsort;
+long numdirs, listmax, inplast;
+
 char	*devname;		/* name of device being checked */
 long	dev_bsize;		/* computed value of DEV_BSIZE */
 long	secsize;		/* actual disk sector size */
@@ -176,7 +191,7 @@ struct	dinode zino;
 
 time_t time();
 struct dinode *ginode();
-struct dinode *getcacheino();
+struct inoinfo *getinoinfo();
 struct bufarea *getblk();
 ino_t allocino();
 int findino();
