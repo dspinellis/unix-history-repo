@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclreol.c	3.10 83/12/02";
+static	char *sccsid = "@(#)wwclreol.c	3.11 83/12/02";
 #endif
 
 #include "ww.h"
@@ -45,37 +45,35 @@ char cleared;
 	{
 		register union ww_char *s;
 		register char *smap, *win;
-		register char *touched;
 
 		i = col;
 		smap = &wwsmap[row][i];
-		s = &wwns[row][i];
+		s = wwns[row];
 		win = w->ww_win[row];
-		touched = &wwtouched[row];
 		ncleared = nblank = 0;
 
 		for (; i < w->ww_i.r; i++) {
 			if (*smap++ != w->ww_index) {
-				if (s++->c_w == ' ')
+				if (s[i].c_w == ' ')
 					nblank++;
-				continue;
-			}
-			ncleared++; 
-			*touched = 1;
-			if (win[i] == 0) {
+			} else if (win[i] == 0) {
 				nblank++;
-				s++->c_w = ' ';
+				if (s[i].c_w != ' ') {
+					ncleared++; 
+					s[i].c_w = ' ';
+				}
 			} else
-				s++->c_w = ' ' | win[i] << WWC_MSHIFT;
+				s[i].c_w = ' ' | win[i] << WWC_MSHIFT;
 		}
+		if (ncleared > 0)
+			wwtouched[row] |= WWU_TOUCHED;
 	}
 
 	/*
 	 * Can/Should we use clear eol?
 	 */
 	if (!cleared && tt.tt_clreol != 0
-	    && ncleared > wwncol - col - nblank
-	    && nblank > (wwncol - col) / 2) {
+	    && ncleared > wwncol - col - nblank + 4) {
 		register union ww_char *s;
 
 		/* clear to the end */

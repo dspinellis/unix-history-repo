@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwredrawwin.c	3.7 83/12/02";
+static	char *sccsid = "@(#)wwredrawwin.c	3.8 83/12/02";
 #endif
 
 #include "ww.h"
@@ -14,20 +14,24 @@ int row1, row2, offset;
 	register union ww_char *buf;
 	register char *win;
 	register union ww_char *ns;
-	char *touched;
+	int nchanged;
 
-	touched = &wwtouched[row1];
-	for (row = row1; row < row2; row++, touched++) {
+	for (row = row1; row < row2; row++) {
 		col = w->ww_i.l;
 		ns = wwns[row];
 		smap = &wwsmap[row][col];
 		buf = w->ww_buf[row + offset];
 		win = w->ww_win[row];
+		nchanged = 0;
 		for (; col < w->ww_i.r; col++)
 			if (*smap++ == w->ww_index) {
-				*touched = 1;
+				nchanged++;
 				ns[col].c_w =
 					buf[col].c_w ^ win[col] << WWC_MSHIFT;
 			}
+		if (nchanged > 4)
+			wwtouched[row] |= WWU_MAJOR|WWU_TOUCHED;
+		else if (nchanged > 0)
+			wwtouched[row] |= WWU_TOUCHED;
 	}
 }

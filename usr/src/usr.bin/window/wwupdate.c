@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwupdate.c	3.8 83/09/15";
+static	char *sccsid = "@(#)wwupdate.c	3.9 83/12/02";
 #endif
 
 #include "ww.h"
@@ -22,12 +22,36 @@ wwupdate()
 	for (i = 0, touched = wwtouched; i < wwnrow; i++, touched++) {
 		if (!*touched)
 			continue;
-		wwntouched++;
-		*touched = 0;
+		if (*touched & WWU_MAJOR) {
+			int ncleared = 0;
+			int nsame = 0;
 
+			wwnmajline++;
+			j = wwncol;
+			ns = wwns[i];
+			os = wwos[i];
+			while (--j >= 0) {
+				if (ns->c_w == ' ') {
+					if (ns->c_w != os->c_w)
+						ncleared++;
+				} else
+					if (ns->c_w == os->c_w)
+						nsame++;
+				ns++;
+				os++;
+			}
+			if (tt.tt_clreol != 0 && ncleared > nsame + 4) {
+				(*tt.tt_move)(i, 0);
+				(*tt.tt_clreol)();
+				for (j = wwncol, os = wwos[i]; --j >= 0;)
+					os++->c_w = ' ';
+			} else
+				wwnmajmiss++;
+		}
+		wwnupdline++;
+		didit = 0;
 		ns = wwns[i];
 		os = wwos[i];
-		didit = 0;
 		for (j = 0; j < wwncol;) {
 			for (; j++ < wwncol && ns++->c_w == os++->c_w;)
 				;
@@ -74,6 +98,7 @@ wwupdate()
 			didit++;
 		}
 		if (!didit)
-			wwnmiss++;
+			wwnupdmiss++;
+		*touched = 0;
 	}
 }

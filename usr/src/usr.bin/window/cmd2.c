@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.13 83/11/02";
+static	char *sccsid = "@(#)cmd2.c	3.14 83/12/02";
 #endif
 
 #include "defs.h"
@@ -134,10 +134,12 @@ dostat()
 	}
 	wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\r\n");
 	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\r\n",
-	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\tnupdate\tntouchd\tnmiss\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec,
-		wwnupdate, wwntouched, wwnmiss);
+	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
+		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec);
+	(void) wwprintf(w, "nupdate\tnupdlin\tnupdmis\tnmajlin\tnmajmis\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
+		wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss);
 	waitnl(w);
 	closewin(w);
 }

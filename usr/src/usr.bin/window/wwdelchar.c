@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelchar.c	3.8 83/12/02";
+static	char *sccsid = "@(#)wwdelchar.c	3.9 83/12/02";
 #endif
 
 #include "ww.h"
@@ -59,7 +59,7 @@ register struct ww *w;
 		for (; i < w->ww_i.r; i++) {
 			if (*smap++ != w->ww_index)
 				continue;
-			touched = 1;
+			touched |= WWU_TOUCHED;
 			if (win[i])
 				ns[i].c_w =
 					buf[i].c_w ^ win[i] << WWC_MSHIFT;

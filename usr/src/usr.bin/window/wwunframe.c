@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwunframe.c	3.11 83/11/28";
+static	char *sccsid = "@(#)wwunframe.c	3.12 83/12/02";
 #endif
 
 #include "ww.h"
@@ -15,7 +15,7 @@ register struct ww *w;
 		register char *fmap = w->ww_fmap ? w->ww_fmap[i] : 0;
 		register char *smap = wwsmap[i];
 		register struct ww_char *ns = wwns[i];
-		char touched = wwtouched[i];
+		int nchanged = 0;
 
 		for (j = w->ww_i.l; j < w->ww_i.r; j++) {
 			if (win[j] & WWM_GLS)
@@ -26,10 +26,13 @@ register struct ww *w;
 			if (smap[j] == w->ww_index) {
 				smap[j] = WWX_NOBODY;
 				ns[j].c_w = ' ';
-				touched = 1;
+				nchanged++;
 			}
 		}
-		wwtouched[i] = touched;
+		if (nchanged > 4)
+			wwtouched[i] |= WWU_MAJOR|WWU_TOUCHED;
+		else if (nchanged > 0)
+			wwtouched[i] |= WWU_TOUCHED;
 		w->ww_nvis[i] = 0;
 	}
 

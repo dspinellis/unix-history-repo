@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.20 83/12/01		*/
+/*	@(#)ww.h	3.21 83/12/02		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -91,6 +91,7 @@ union ww_char {
 	/* special ww_index value */
 #define WWX_NOBODY	NWW
 
+	/* error codes */
 #define WWE_NOERR	0
 #define WWE_SYS		1		/* system error */
 #define WWE_NOMEM	2		/* out of memory */
@@ -99,6 +100,10 @@ union ww_char {
 #define WWE_SIZE	5		/* bad window size */
 #define WWE_BADTERM	6		/* bad terminal type */
 #define WWE_CANTDO	7		/* dumb terminal */
+
+	/* wwtouched[] bits */
+#define WWU_TOUCHED	0x01		/* touched */
+#define WWU_MAJOR	0x02		/* major change */
 
 	/* ww_mode values */
 #define WW_PTY		0		/* has pty */
