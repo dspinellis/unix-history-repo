@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)open.c	5.2	%G%
+ *	@(#)open.c	5.3	%G%
  */
 
 /*
@@ -29,6 +29,7 @@ char *getenv();
 
 f_open(a) olist *a;
 {	unit *b;
+	struct stat sbuf;
 	int n,exists;
 	char buf[BUF_LEN], env_name[BUF_LEN];
 	char *env_val, *p1, *p2, ch, st;
@@ -88,7 +89,7 @@ f_open(a) olist *a;
 		x.cerr=errflag;
 		if(n=f_clos(&x)) return(n);
 	}
-	exists = (access(buf,0)==NULL);
+	exists = (stat(buf,&sbuf)==NULL);
 	if(!exists && OLD) err(errflag,F_EROLDF,"open");
 	if( exists && NEW) err(errflag,F_ERNEWF,"open");
 	errno = F_ERSYS;
@@ -97,7 +98,7 @@ f_open(a) olist *a;
 		else	err(errflag,errno,buf)
 	}
 	else
-	{	
+	{
 		errno = F_ERSYS;
 		if((b->ufd = fopen(buf, "a")) != NULL)
 		{	if(!opneof)
