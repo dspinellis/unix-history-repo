@@ -1,0 +1,95 @@
+%    Copyright (C) 1990, 1992 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% Print the CharStrings and Subrs (if present) from a Type 1 font,
+% in symbolic form.
+
+32 256 add array dup /csdict exch def
+0 [
+% base commands
+  null (hstem) null (vstem) (vmoveto) (rlineto) (hlineto) (vlineto)
+  (rrcurveto) (closepath) (callsubr) (return) null (hsbw) (endchar) null
+  null null null null null (rmoveto) (hmoveto) null
+  null null null null null null (vhcurveto) (hvcurveto)
+% escape commands
+  (dotsection) (vstem3) (hstem3) null null null (seac) (sbw)
+  null null null null (div) null null null
+  (callothersubr) (pop) null null null null null null
+  null null null null null null null null
+  null (setcurrentpoint)
+] putinterval
+
+/printcs
+ { dup type /stringtype eq
+    { printcs1 (\n) print }
+    { ( ) print == }
+   ifelse
+ } bind def
+/printcs1
+ { 4330 exch dup length string type1decrypt exch pop
+   dup /s exch def length /n exch def
+   /lenIV where { pop lenIV } { 4 } ifelse
+   1 sub
+    { 1 add dup n ge { exit } if
+      ( ) print dup s exch get
+      dup 31 le
+       { dup 12 eq { pop 1 add dup s exch get 32 add } if
+         dup csdict exch get dup null eq
+	  { pop =only (?) print }
+	  { print pop }
+	 ifelse
+       }
+       { dup 247 lt
+       	  { 139 sub }
+	  { dup 255 eq
+	     { pop 0 4
+	        { exch 1 add exch
+		  8 bitshift s 2 index get add
+		} repeat
+	     }
+	     { 247 sub
+	        { {108 add} {364 add} {620 add} {876 add}
+		  {108 add neg} {364 add neg} {620 add neg} {876 add neg}
+		} exch get
+	       exch 1 add exch s 2 index get exch exec
+	     }
+	    ifelse
+	  }
+	 ifelse =only
+       }
+      ifelse
+    } loop
+   pop
+ } bind def
+
+/printfont
+ { currentfont begin Private begin 10 dict begin
+   CharStrings { exch ==only printcs } forall
+   Subrs where
+    { pop	% the dictionary
+      0 1 Subrs length 1 sub
+       { dup =only
+         Subrs exch get printcs
+       } for
+    } if
+   end end end
+ } bind def
+
+% /Times-Roman findfont setfont
+% printfont
