@@ -1,8 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)telldir.c 4.1 %G%";
+static char sccsid[] = "@(#)telldir.c 4.2 %G%";
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <ndir.h>
 
 /*
