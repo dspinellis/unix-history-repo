@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)time.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)time.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)time.c	5.10 (Berkeley) %G%";
 /*
  * C Shell - routines handling process timing and niceing
  */
-static void pdeltat();
+static void	pdeltat __P((struct timeval *, struct timevail *));
 
 void
 settimes()
@@ -105,17 +105,10 @@ prusage(r0, r1, e, b)
     (e->tv_sec - b->tv_sec) * 100 + (e->tv_usec - b->tv_usec) / 10000;
 
     cp = "%Uu %Ss %E %P %X+%Dk %I+%Oio %Fpf+%Ww";
-#ifdef TDEBUG
-    xprintf("es->tms_utime %lu bs->tms_utime %lu\n",
-	    es->tms_utime, bs->tms_utime);
-    xprintf("es->tms_stime %lu bs->tms_stime %lu\n",
-	    es->tms_stime, bs->tms_stime);
-    xprintf("ms %lu e %lu b %lu\n", ms, e, b);
-    xprintf("t %lu\n", t);
-#endif				/* TDEBUG */
 
     if (vp && vp->vec[0] && vp->vec[1])
 	cp = short2str(vp->vec[1]);
+
     for (; *cp; cp++)
 	if (*cp != '%')
 	    xputchar(*cp);
@@ -135,7 +128,8 @@ prusage(r0, r1, e, b)
 		break;
 
 	    case 'P':		/* percent time spent running */
-		i = (int) (t * 1000 / ((ms ? ms : 1)));
+		/* check if it did not run at all */
+		i = (ms == 0) ? 0 : (t * 1000 / ms);
 		xprintf("%ld.%01ld%%", i / 10, i % 10);	/* nn.n% */
 		break;
 

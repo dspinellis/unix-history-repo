@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -19,16 +19,17 @@ static char sccsid[] = "@(#)proc.c	5.17 (Berkeley) %G%";
 
 static struct rusage zru;
 
-static void pflushall();
-static void pflush();
-static void pclrcurr();
-static void padd();
-static int pprint();
-static void ptprint();
-static void pads();
-static void pkill();
-static struct process *pgetcurr();
-static void okpcntl();
+static void	 pflushall __P((void));
+static void	 pflush __P((struct process *));
+static void	 pclrcurr __P((struct process *));
+static void	 padd __P((struct command *));
+static int	 pprint __P((struct process *, int));
+static void	 ptprint __P((struct process *));
+static void	 pads __P((Char *));
+static void	 pkill __P((Char **v, int));
+static struct	process 
+		*pgetcurr __P((struct process *));
+static void	 okpcntl __P((void));
 
 /*
  * pchild - called at interrupt level by the SIGCHLD signal

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -15,15 +15,15 @@ static char sccsid[] = "@(#)func.c	5.16 (Berkeley) %G%";
 extern char **environ;
 
 static int zlast = -1;
-static void islogin();
-static void reexecute();
-static void preread();
-static void doagain();
-static int getword();
-static int keyword();
-static void Unsetenv();
-static void toend();
-static void xecho();
+static void	islogin __P((void));
+static void	reexecute __P((struct command *));
+static void	preread __P((void));
+static void	doagain __P((void));
+static int	getword __P((Char *));
+static int	keyword __P((Char *));
+static void	Unsetenv __P((Char *));
+static void	toend __P((void));
+static void	xecho __P((int, Char **));
 
 struct biltins *
 isbfunc(t)
@@ -183,7 +183,7 @@ dologin(v)
     islogin();
     rechist();
     (void) signal(SIGTERM, parterm);
-    (void) execl(_PATH_LOGIN, "login", short2str(v[1]), (Char *) 0);
+    (void) execl(_PATH_LOGIN, "login", short2str(v[1]), NULL);
     untty();
     xexit(1);
 }
@@ -220,7 +220,7 @@ doif(v, kp)
 	 * following code.
 	 */
 	if (!i)
-	    search(T_IF, 0);
+	    search(T_IF, 0, NULL);
 	return;
     }
     /*
@@ -255,7 +255,7 @@ reexecute(kp)
 void
 doelse()
 {
-    search(T_ELSE, 0);
+    search(T_ELSE, 0, NULL);
 }
 
 void
@@ -272,7 +272,7 @@ dogoto(v)
     zlast = T_GOTO;
     for (wp = whyles; wp; wp = wp->w_next)
 	if (wp->w_end == 0) {
-	    search(T_BREAK, 0);
+	    search(T_BREAK, 0, NULL);
 	    wp->w_end = fseekp;
 	}
 	else
@@ -422,7 +422,7 @@ preread()
     if (setintr)
 	(void) sigsetmask(sigblock((sigmask_t) 0) & ~sigmask(SIGINT));
 
-    search(T_BREAK, 0);		/* read the expression in */
+    search(T_BREAK, 0, NULL);		/* read the expression in */
     if (setintr)
 	(void) sigblock(sigmask(SIGINT));
     whyles->w_end = fseekp;
@@ -492,7 +492,7 @@ dorepeat(v, kp)
 void
 doswbrk()
 {
-    search(T_BRKSW, 0);
+    search(T_BRKSW, 0, NULL);
 }
 
 int
@@ -628,7 +628,6 @@ getword(wp)
     register int c, d;
     int     kwd = 0;
     Char   *owp = wp;
-    static int keyword();
 
     c = readc(1);
     d = 0;
@@ -779,7 +778,7 @@ doglob(v)
 
 static void
 xecho(sep, v)
-    Char    sep;
+    int    sep;
     register Char **v;
 {
     register Char *cp;
@@ -1004,7 +1003,10 @@ static struct limits {
     RLIMIT_STACK,	"stacksize",	1024,	"kbytes",
     RLIMIT_CORE,	"coredumpsize", 1024,	"kbytes",
     RLIMIT_RSS,		"memoryuse", 	1024,	"kbytes",
-    -1, 		(char *) 0, 	0,	(char *) 0
+    RLIMIT_MEMLOCK,	"memorylocked",	1024,	"kbytes",
+    RLIMIT_NPROC,	"maxproc",	1,	"",
+    RLIMIT_OFILE,	"openfiles",	1,	"",
+    -1, 		NULL, 		0,	NULL
 };
 
 static struct limits *findlim();
@@ -1295,7 +1297,7 @@ doeval(v)
 	v = copyblk(v);
     }
     else {
-	gv = (Char **) 0;
+	gv = NULL;
 	v = copyblk(v);
 	trim(v);
     }

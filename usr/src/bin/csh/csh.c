@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -52,12 +52,12 @@ bool    tellwhat = 0;
 
 extern char **environ;
 
-static int srccat();
-static int srcfile();
-static void phup();
-static void srcunit();
-static void mailchk();
-static Char **defaultpath();
+static int	srccat __P((Char *, Char *));
+static int	srcfile __P((char *, bool, bool));
+static void	phup __P((int));
+static void	srcunit __P((int, bool, bool));
+static void	mailchk __P((void));
+static Char   **defaultpath __P((void));
 
 int
 main(argc, argv)
@@ -146,7 +146,7 @@ main(argc, argv)
      */
     set(STRstatus, Strsave(STR0));
 
-    if ((tcp = getenv("HOME")) != (char *) 0)
+    if ((tcp = getenv("HOME")) != NULL)
 	cp = SAVE(tcp);
     else
 	cp = NULL;
@@ -161,16 +161,16 @@ main(argc, argv)
      * Grab other useful things from the environment. Should we grab
      * everything??
      */
-    if ((tcp = getenv("LOGNAME")) != (char *) 0 ||
-	(tcp = getenv("USER")) != (char *) 0)
+    if ((tcp = getenv("LOGNAME")) != NULL ||
+	(tcp = getenv("USER")) != NULL)
 	set(STRuser, SAVE(tcp));
-    if ((tcp = getenv("TERM")) != (char *) 0)
+    if ((tcp = getenv("TERM")) != NULL)
 	set(STRterm, SAVE(tcp));
 
     /*
      * Re-initialize path if set in environment
      */
-    if ((tcp = getenv("PATH")) == (char *) 0)
+    if ((tcp = getenv("PATH")) == NULL)
 	set1(STRpath, defaultpath(), &shvhed);
     else
 	importpath(SAVE(tcp));
@@ -187,9 +187,9 @@ main(argc, argv)
      * only if we are the login shell.
      */
     /* parents interruptibility */
-    (void) sigvec(SIGINT, (struct sigvec *) 0, &osv);
+    (void) sigvec(SIGINT, NULL, &osv);
     parintr = (void (*) ()) osv.sv_handler;
-    (void) sigvec(SIGTERM, (struct sigvec *) 0, &osv);
+    (void) sigvec(SIGTERM, NULL, &osv);
     parterm = (void (*) ()) osv.sv_handler;
 
     if (loginsh) {
@@ -322,7 +322,7 @@ main(argc, argv)
 		stderror(ERR_SYSTEM, tempv[0], strerror(errno));
 		break;
 	    }
-	(void) ioctl(SHIN, FIOCLEX, (ioctl_t) 0);
+	(void) ioctl(SHIN, FIOCLEX, NULL);
 	prompt = 0;
 	 /* argc not used any more */ tempv++;
     }
@@ -413,7 +413,7 @@ main(argc, argv)
 		 */
 		if (tcsetpgrp(f, shpgrp) == -1)
 		    goto notty;
-		(void) ioctl(dcopy(f, FSHTTY), FIOCLEX, (ioctl_t) 0);
+		(void) ioctl(dcopy(f, FSHTTY), FIOCLEX, NULL);
 	    }
 	    if (tpgrp == -1) {
 notty:
@@ -569,7 +569,7 @@ srcfile(f, onlyown, flag)
 	return 0;
     unit = dmove(unit, -1);
 
-    (void) ioctl(unit, FIOCLEX, (ioctl_t) 0);
+    (void) ioctl(unit, FIOCLEX, NULL);
     srcunit(unit, onlyown, flag);
     return 1;
 }
@@ -633,7 +633,7 @@ srcunit(unit, onlyown, hflg)
 	omask = sigblock(sigmask(SIGINT));
     /* Setup the new values of the state stuff saved above */
     bcopy((char *) &B, (char *) &(saveB), sizeof(B));
-    fbuf = (Char **) 0;
+    fbuf = NULL;
     fseekp = feobp = fblocks = 0;
     oSHIN = SHIN, SHIN = unit, arginp = 0, onelflg = 0;
     intty = isatty(SHIN), whyles = 0, gointr = 0;
@@ -755,10 +755,11 @@ exitstat()
  * in the event of a HUP we want to save the history
  */
 static void
-phup()
+phup(sig)
+int sig;
 {
     rechist();
-    xexit(1);
+    xexit(sig);
 }
 
 Char   *jobargv[2] = {STRjobs, 0};
@@ -902,7 +903,7 @@ process(catch)
 	}
 	if (seterr) {
 	    xfree((ptr_t) seterr);
-	    seterr = (char *) 0;
+	    seterr = NULL;
 	}
 
 	/*
@@ -1074,10 +1075,10 @@ initdesc()
 {
 
     didfds = 0;			/* 0, 1, 2 aren't set up */
-    (void) ioctl(SHIN = dcopy(0, FSHIN), FIOCLEX, (ioctl_t) 0);
-    (void) ioctl(SHOUT = dcopy(1, FSHOUT), FIOCLEX, (ioctl_t) 0);
-    (void) ioctl(SHDIAG = dcopy(2, FSHDIAG), FIOCLEX, (ioctl_t) 0);
-    (void) ioctl(OLDSTD = dcopy(SHIN, FOLDSTD), FIOCLEX, (ioctl_t) 0);
+    (void) ioctl(SHIN = dcopy(0, FSHIN), FIOCLEX, NULL);
+    (void) ioctl(SHOUT = dcopy(1, FSHOUT), FIOCLEX, NULL);
+    (void) ioctl(SHDIAG = dcopy(2, FSHDIAG), FIOCLEX, NULL);
+    (void) ioctl(OLDSTD = dcopy(SHIN, FOLDSTD), FIOCLEX, NULL);
     closem();
 }
 
@@ -1113,7 +1114,7 @@ defaultpath()
 #undef DIRAPPEND
 
     *blkp++ = Strsave(STRdot);
-    *blkp = (Char *) 0;
+    *blkp = NULL;
     return (blk);
 }
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -42,17 +42,17 @@ static int dolcnt;		/* Count of further words */
 static Char dolmod;		/* : modifier character */
 static int dolmcnt;		/* :gx -> 10000, else 1 */
 
-static void Dfix2();
-static Char *Dpack();
-static int Dword();
-static void dolerror();
-static int DgetC();
-static void Dgetdol();
-static void fixDolMod();
-static void setDolp();
-static void unDredc();
-static int Dredc();
-static void Dtestq();
+static void	 Dfix2 __P((Char **));
+static Char 	*Dpack __P((Char *, Char *));
+static int	 Dword __P((void));
+static void	 dolerror __P((Char *));
+static int	 DgetC __P((int));
+static void	 Dgetdol __P((void));
+static void	 fixDolMod __P((void));
+static void	 setDolp __P((Char *));
+static void	 unDredc __P((int));
+static int	 Dredc __P((void));
+static void	 Dtestq __P((int));
 
 
 /*

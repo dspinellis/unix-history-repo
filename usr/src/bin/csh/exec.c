@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -55,9 +55,9 @@ static int hits, misses;
 /* Dummy search path for just absolute search when no path */
 static Char *justabs[] = {STRNULL, 0};
 
-static void pexerr();
-static void texec();
-static int hashname();
+static void	pexerr __P((void));
+static void	texec __P((Char *, Char **));
+static int	hashname __P((Char *));
 
 void
 doexec(t)
@@ -126,7 +126,7 @@ doexec(t)
     av = t->t_dcom;
     trim(av);
 
-    if (*av == (Char *) 0 || **av == '\0')
+    if (*av == NULL || **av == '\0')
 	pexerr();
 
     xechoit(av);		/* Echo command if -x */

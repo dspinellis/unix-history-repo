@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.13 (Berkeley) %G%
+ *	@(#)csh.h	5.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,6 +29,34 @@
 #include <string.h>
 #include "pathnames.h"
 
+/*
+ * Fundamental definitions which may vary from system to system.
+ *
+ *	BUFSIZ		The i/o buffering size; also limits word size
+ *	MAILINTVL	How often to mailcheck; more often is more expensive
+ */
+#ifndef BUFSIZ
+#define	BUFSIZ	1024		/* default buffer size */
+#endif				/* BUFSIZ */
+
+#define FORKSLEEP	10	/* delay loop on non-interactive fork failure */
+#define	MAILINTVL	600	/* 10 minutes */
+
+/*
+ * The shell moves std in/out/diag and the old std input away from units
+ * 0, 1, and 2 so that it is easy to set up these standards for invoked
+ * commands.
+ */
+#define	FSHTTY	15		/* /dev/tty when manip pgrps */
+#define	FSHIN	16		/* Preferred desc for shell input */
+#define	FSHOUT	17		/* ... shell output */
+#define	FSHDIAG	18		/* ... shell diagnostics */
+#define	FOLDSTD	19		/* ... old std input */
+
+#ifdef PROF
+#define	xexit(n)	done(n)
+#endif
+
 #ifdef SHORT_STRINGS
 typedef short Char;
 
@@ -45,7 +73,6 @@ typedef long sigmask_t;		/* What a signal mask is */
 typedef void *ptr_t;
 
 #include "tc.const.h"
-#include "local.h"
 #include "char.h"
 #include "err.h"
 

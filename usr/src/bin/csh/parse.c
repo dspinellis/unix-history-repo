@@ -6,22 +6,29 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
 #include "extern.h"
 
-static void asyntax();
-static void asyn0();
-static void asyn3();
-static struct wordent *freenod();
-static struct command *syn0();
-static struct command *syn1();
-static struct command *syn1a();
-static struct command *syn1b();
-static struct command *syn2();
-static struct command *syn3();
+static void	 asyntax __P((struct wordent *, struct wordent *));
+static void	 asyn0 __P((struct wordent *, struct wordent *));
+static void	 asyn3 __P((struct wordent *, struct wordent *));
+static struct wordent 
+		*freenod __P((struct wordent *, struct wordent *));
+static struct command 
+		*syn0 __P((struct wordent *, struct wordent *, int));
+static struct command 
+		*syn1 __P((struct wordent *, struct wordent *, int));
+static struct command 
+		*syn1a __P((struct wordent *, struct wordent *, int));
+static struct command 
+		*syn1b __P((struct wordent *, struct wordent *, int));
+static struct command 
+		*syn2 __P((struct wordent *, struct wordent *, int));
+static struct command 
+		*syn3 __P((struct wordent *, struct wordent *, int));
 
 #define ALEFT	21		/* max of 20 alias expansions	 */
 #define HLEFT	11		/* max of 10 history expansions	 */

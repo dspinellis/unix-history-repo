@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sem.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)sem.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
@@ -14,9 +14,9 @@ static char sccsid[] = "@(#)sem.c	5.13 (Berkeley) %G%";
 #include "proc.h"
 #include "extern.h"
 
-static void vffree();
-static void doio();
-static void chkclob();
+static void	vffree __P((int));
+static void	doio __P((struct command *t, int *, int *));
+static void	chkclob __P((Char *));
 
 void
 execute(t, wanttty, pipein, pipeout)
@@ -387,7 +387,8 @@ execute(t, wanttty, pipein, pipeout)
 }
 
 static void
-vffree()
+vffree(i)
+int i;
 {
     register Char **v;
 
@@ -399,7 +400,7 @@ vffree()
 	pargv = 0;
 	xfree((ptr_t) v);
     }
-    _exit(1);
+    _exit(i);
 }
 
 /*

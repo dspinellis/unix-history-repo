@@ -6,15 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)hist.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)hist.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
 #include "extern.h"
 
-static void hfree();
-static void dohist1();
-static void phist();
+static void	hfree __P((struct Hist *));
+static void	dohist1 __P((struct Hist *, int *, int, int, int));
+static void	phist __P((struct Hist *, int, int));
 
 void
 savehist(sp)

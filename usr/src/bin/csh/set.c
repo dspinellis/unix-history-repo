@@ -6,22 +6,24 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)set.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)set.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "csh.h"
 #include "extern.h"
 
-static Char *getinx();
-static void asx();
-static struct varent *getvx();
-static Char *xset();
-static Char *operate();
-static void putn1();
-static struct varent *madrof();
-static void unsetv1();
-static void exportpath();
-static void balance();
+static Char	*getinx __P((Char *, int *));
+static void	 asx __P((Char *, int, Char *));
+static struct varent 
+		*getvx __P((char *, int));
+static Char	*xset __P((Char *, Char ***));
+static Char	*operate __P((int, Char *, Char *));
+static void	 putn1 __P((int));
+static struct varent 
+		*madrof __P((Char *, struct varent *));
+static void	 unsetv1 __P((struct varent *));
+static void	 exportpath __P((Char **));
+static void	 balance __P((struct varent *, int, int));
 
 
 /*
@@ -282,7 +284,8 @@ xset(cp, vp)
 
 static Char *
 operate(op, vp, p)
-    Char    op, *vp, *p;
+    int    op;
+    Char  *vp, *p;
 {
     Char    opr[2];
     Char   *vec[5];
