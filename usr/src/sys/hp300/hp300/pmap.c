@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.6 (Berkeley) %G%
+ *	@(#)pmap.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -1869,11 +1869,27 @@ pmap_remove_mapping(pmap, va, pte, flags)
 	 * PT page.
 	 */
 	if (pmap != kernel_pmap) {
+#if defined(DEBUG) && NCPUS == 1
+		/*
+		 * XXX this recursive use of the VM won't work on a MP
+		 * (or when otherwise debugging simple locks).  We might
+		 * be called with the page queue lock held (e.g. from
+		 * the pageout daemon) and vm_map_pageable might call
+		 * vm_fault_unwire which would try to lock the page queues
+		 * again.  For debugging we hack and drop the lock.
+		 */
+		int hadit = !simple_lock_try(&vm_page_queue_lock);
+		simple_unlock(&vm_page_queue_lock);
+#endif
 		(void) vm_map_pageable(pt_map, trunc_page(pte),
 				       round_page(pte+1), TRUE);
 #ifdef DEBUG
 		if (pmapdebug & PDB_WIRING)
 			pmap_check_wiring("remove", trunc_page(pte));
+#if NCPUS == 1
+		if (hadit)
+			simple_lock(&vm_page_queue_lock);
+#endif
 #endif
 	}
 	/*
