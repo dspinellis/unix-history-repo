@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deleteln.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)deleteln.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -20,7 +20,7 @@ wdeleteln(win)
 	register WINDOW *win;
 {
 	register int x, y;
-	register char *end, *temp;
+	register char *temp;
 
 #ifdef DEBUG
 	__TRACE("deleteln: (%0.2o)\n", win);
@@ -37,8 +37,7 @@ wdeleteln(win)
 		win->_y[y] = temp;
 	else
 		temp = win->_y[y];
-	for (end = &temp[win->_maxx]; temp < end;)
-		*temp++ = ' ';
+	(void)memset(temp, ' ', &temp[win->_maxx] - temp);
 	touchline(win, win->_cury, 0, win->_maxx - 1);
 	if (win->_orig == NULL)
 		__id_subwins(win);
