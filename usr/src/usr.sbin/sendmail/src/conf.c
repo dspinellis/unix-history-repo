@@ -17,14 +17,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
-# include <pwd.h>
 # include <sys/ioctl.h>
-# ifdef sun
 # include <sys/param.h>
-# endif sun
+# include <pwd.h>
 # include "sendmail.h"
 
 /*

@@ -18,19 +18,19 @@
 
 #ifndef lint
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.17 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.18 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.17 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.18 (Berkeley) %G% (without DBM)";
 #endif
 #endif /* not lint */
 
-# include <pwd.h>
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <signal.h>
 # include <errno.h>
 # include "sendmail.h"
 # include <sys/file.h>
+# include <pwd.h>
 
 /*
 **  ALIAS -- Compute aliases.
