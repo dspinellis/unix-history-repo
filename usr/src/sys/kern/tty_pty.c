@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.16	82/01/19	*/
+/*	tty_pty.c	4.17	82/02/18	*/
 
 /*
  * Pseudo-teletype Driver
@@ -39,6 +39,7 @@ struct	pt_ioctl {
 #define	PF_NBIO		0x04
 #define	PF_PKT		0x08		/* packet mode */
 #define	PF_STOPPED	0x10		/* user told stopped */
+#define	PF_REMOTE	0x20		/* remote and flow controlled input */
 
 /*ARGSUSED*/
 ptsopen(dev, flag)
@@ -79,19 +80,44 @@ ptsclose(dev)
 ptsread(dev)
 	dev_t dev;
 {
-	register struct tty *tp;
-	register struct pt_ioctl *pti;
+	register struct tty *tp = &pt_tty[minor(dev)];
+	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 
-	tp = &pt_tty[minor(dev)];
-	if (tp->t_oproc) {
-		(*linesw[tp->t_line].l_read)(tp);
-		wakeup((caddr_t)&tp->t_rawq.c_cf);
-		if (tp->t_rawq.c_cc < TTYHOG/2 &&
-		    (pti = &pt_ioctl[minor(tp->t_dev)])->pt_selw) {
-			selwakeup(pti->pt_selw, pti->pt_flags & PF_WCOLL);
-			pti->pt_selw = 0;
-			pti->pt_flags &= ~PF_WCOLL;
+again:
+	if (pti->pt_flags & PF_REMOTE) {
+		while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
+			if (u.u_signal[SIGTTIN] == SIG_IGN ||
+			    u.u_signal[SIGTTIN] == SIG_HOLD ||
+	/*
+			    (u.u_procp->p_flag&SDETACH) ||
+	*/
+			    u.u_procp->p_flag&SVFORK)
+				return;
+			gsignal(u.u_procp->p_pgrp, SIGTTIN);
+			sleep((caddr_t)&lbolt, TTIPRI);
 		}
+		if (tp->t_rawq.c_cc == 0) {
+			if (tp->t_state & TS_NBIO) {
+				u.u_error = EWOULDBLOCK;
+				return;
+			}
+			sleep((caddr_t)&tp->t_rawq, TTIPRI);
+			goto again;
+		}
+		while (tp->t_rawq.c_cc > 1 && passc(getc(&tp->t_rawq)) >= 0)
+			;
+		if (tp->t_rawq.c_cc == 1)
+			(void) getc(&tp->t_rawq);
+		if (tp->t_rawq.c_cc)
+			return;
+	} else
+		if (tp->t_oproc)
+			(*linesw[tp->t_line].l_read)(tp);
+	wakeup((caddr_t)&tp->t_rawq.c_cf);
+	if (pti->pt_selw) {
+		selwakeup(pti->pt_selw, pti->pt_flags & PF_WCOLL);
+		pti->pt_selw = 0;
+		pti->pt_flags &= ~PF_WCOLL;
 	}
 }
 
@@ -242,7 +268,7 @@ ptcselect(dev, rw)
 	int rw;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
-	struct pt_ioctl *pti;
+	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 	struct proc *p;
 	int s;
 
@@ -256,7 +282,6 @@ ptcselect(dev, rw)
 			splx(s);
 			return (1);
 		}
-		pti = &pt_ioctl[minor(dev)];
 		if ((p = pti->pt_selr) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_RCOLL;
 		else
@@ -264,11 +289,10 @@ ptcselect(dev, rw)
 		break;
 
 	case FWRITE:
-		if (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG/2) {
+		if ((pti->pt_flags & PF_REMOTE) == 0 || tp->t_rawq.c_cc == 0) {
 			splx(s);
 			return (1);
 		}
-		pti = &pt_ioctl[minor(dev)];
 		if ((p = pti->pt_selw) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_WCOLL;
 		else
@@ -287,17 +311,34 @@ ptcwrite(dev)
 	register int cc;
 	char locbuf[BUFSIZ];
 	int cnt = 0;
+	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
 		return;
-	while (u.u_count) {
+	do {
 		cc = MIN(u.u_count, BUFSIZ);
 		cp = locbuf;
 		iomove(cp, (unsigned)cc, B_WRITE);
 		if (u.u_error)
 			break;
 		ce = cp + cc;
+again:
+		if (pti->pt_flags & PF_REMOTE) {
+			if (tp->t_rawq.c_cc) {
+				if (pti->pt_flags & PF_NBIO) {
+					u.u_count += ce - cp;
+					u.u_error = EWOULDBLOCK;
+					return;
+				}
+				sleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI);
+				goto again;
+			}
+			b_to_q(cp, cc, &tp->t_rawq);
+			putc(0, &tp->t_rawq);
+			wakeup((caddr_t)&tp->t_rawq);
+			return;
+		}
 		while (cp < ce) {
 			while (tp->t_delct && tp->t_rawq.c_cc >= TTYHOG - 2) {
 				wakeup((caddr_t)&tp->t_rawq);
@@ -310,11 +351,12 @@ ptcwrite(dev)
 				/* Better than just flushing it! */
 				/* Wait for something to be read */
 				sleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI);
+				goto again;
 			}
 			(*linesw[tp->t_line].l_rint)(*cp++, tp);
 			cnt++;
 		}
-	}
+	} while (u.u_count);
 }
 
 /*ARGSUSED*/
@@ -338,6 +380,19 @@ ptyioctl(dev, cmd, addr, flag)
 				pti->pt_flags |= PF_PKT;
 			else
 				pti->pt_flags &= ~PF_PKT;
+			return;
+		}
+		if (cmd == TIOCREMOTE) {
+			int remote;
+			if (copyin((caddr_t)addr, &remote, sizeof (remote))) {
+				u.u_error = EFAULT;
+				return;
+			}
+			if (remote)
+				pti->pt_flags |= PF_REMOTE;
+			else
+				pti->pt_flags &= ~PF_REMOTE;
+			flushtty(tp, FREAD|FWRITE);
 			return;
 		}
 		if (cmd == FIONBIO) {
