@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telnet.h	8.1 (Berkeley) %G%
+ *	@(#)telnet.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _TELNET_H_
@@ -89,13 +89,14 @@ extern char *telcmds[];
 #define	TELOPT_LFLOW	33	/* remote flow control */
 #define TELOPT_LINEMODE	34	/* Linemode option */
 #define TELOPT_XDISPLOC	35	/* X Display Location */
-#define TELOPT_ENVIRON	36	/* Environment variables */
+#define TELOPT_OLD_ENVIRON 36	/* Old - Environment variables */
 #define	TELOPT_AUTHENTICATION 37/* Authenticate */
 #define	TELOPT_ENCRYPT	38	/* Encryption option */
+#define TELOPT_NEW_ENVIRON 39	/* New - Environment variables */
 #define	TELOPT_EXOPL	255	/* extended-options-list */
 
 
-#define	NTELOPTS	(1+TELOPT_ENCRYPT)
+#define	NTELOPTS	(1+TELOPT_NEW_ENVIRON)
 #ifdef TELOPTS
 char *telopts[NTELOPTS+1] = {
 	"BINARY", "ECHO", "RCP", "SUPPRESS GO AHEAD", "NAME",
@@ -106,12 +107,12 @@ char *telopts[NTELOPTS+1] = {
 	"SEND LOCATION", "TERMINAL TYPE", "END OF RECORD",
 	"TACACS UID", "OUTPUT MARKING", "TTYLOC",
 	"3270 REGIME", "X.3 PAD", "NAWS", "TSPEED", "LFLOW",
-	"LINEMODE", "XDISPLOC", "ENVIRON", "AUTHENTICATION",
-	"ENCRYPT",
+	"LINEMODE", "XDISPLOC", "OLD-ENVIRON", "AUTHENTICATION",
+	"ENCRYPT", "NEW-ENVIRON",
 	0,
 };
 #define	TELOPT_FIRST	TELOPT_BINARY
-#define	TELOPT_LAST	TELOPT_ENCRYPT
+#define	TELOPT_LAST	TELOPT_NEW_ENVIRON
 #define	TELOPT_OK(x)	((unsigned int)(x) <= TELOPT_LAST)
 #define	TELOPT(x)	telopts[(x)-TELOPT_FIRST]
 #endif
@@ -205,8 +206,10 @@ extern char *slc_names[];
 #define	SLC_FLUSHIN	0x40
 #define	SLC_FLUSHOUT	0x20
 
-#define	ENV_VALUE	0
-#define	ENV_VAR		1
+#define	OLD_ENV_VAR	1
+#define	OLD_ENV_VALUE	0
+#define	NEW_ENV_VAR	0
+#define	NEW_ENV_VALUE	1
 #define	ENV_ESC		2
 #define ENV_USERVAR	3
 
