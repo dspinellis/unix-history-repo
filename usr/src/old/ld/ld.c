@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -376,7 +376,6 @@ char **argv;
 		}
 	}
 	/* add default search directories */
-	dirs[ndir++] = _PATH_LIB;
 	dirs[ndir++] = _PATH_USRLIB;
 	dirs[ndir++] = _PATH_LOCALLIB;
 
