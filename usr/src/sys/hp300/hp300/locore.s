@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
  *
- *	@(#)locore.s	7.15 (Berkeley) %G%
+ *	@(#)locore.s	7.16 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -563,17 +563,10 @@ Lnotdma:
 	jra	rei
 
 _lev6intr:
-	clrw	sp@-
+	clrw	sp@-			| pad ps
 	moveml	#0xC0C0,sp@-
 #ifdef DEBUG
 	.globl	_panicstr, _regdump, _panic
-	tstl	timebomb		| set to go off?
-	jeq	Lnobomb			| no, skip it
-	subql	#1,timebomb		| decrement
-	jne	Lnobomb			| not ready to go off
-	moveml	sp@+,#0x0303		| temporarily restore regs
-	jra	Lbomb			| go die
-Lnobomb:
 	cmpl	#_kstack+NBPG,sp	| are we still in stack pages?
 	jcc	Lstackok		| yes, continue normally
 	tstl	_curproc		| if !curproc could have swtch_exit'ed,
@@ -592,90 +585,40 @@ Lnobomb:
 	addql	#8,sp			| pop params
 	movl	#Lstkrip,sp@-		| push panic message
 	jbsr	_panic			| ES and D
-Lbomb:
-	moveml	#0xFFFF,sp@-		| push all registers
-	movl	sp,a0			| remember this spot
-	movl	#256,sp@-		| longword count
-	movl	a0,sp@-			| and reg pointer
-	jbsr	_regdump		| dump core
-	addql	#8,sp			| pop params
-	movl	#Lbomrip,sp@-		| push panic message
-	jbsr	_panic			| ES and D
 Lstkrip:
 	.asciz	"k-stack overflow"
-Lbomrip:
-	.asciz	"timebomb"
 	.even
 Lstackok:
 #endif
 	CLKADDR(a0)
+	lea	sp@(16),a1		| a1 = &clockframe
 	movb	a0@(CLKSR),d0		| read clock status
-#ifdef PROFTIMER
-	.globl  _profon
-	tstb	_profon			| profile clock on?
-	jeq     Ltimer1			| no, then must be timer1 interrupt
 	btst	#2,d0			| timer3 interrupt?
-	jeq     Ltimer1			| no, must be timer1
-	movb	a0@(CLKMSB3),d1		| clear timer3 interrupt
-	lea	sp@(16),a1		| get pointer to PS
-#ifdef GPROF
-	.globl	_profclock
-	movl	d0,sp@-			| save status so jsr will not clobber
-	movl	a1@,sp@-		| push padded PS
-	movl	a1@(4),sp@-		| push PC
-	jbsr	_profclock		| profclock(pc, ps)
-	addql	#8,sp			| pop params
-#else
-	btst	#5,a1@(2)		| saved PS in user mode?
-	jne	Lttimer1		| no, go check timer1
-	movl	_curpcb,a0		| current pcb
-	tstl	a0@(U_PROFSCALE)	| process being profiled?
-	jeq	Lttimer1		| no, go check timer1
-	movl	d0,sp@-			| save status so jsr will not clobber
-	movl	#1,sp@-
-	pea	a0@(U_PROF)
-	movl	a1@(4),sp@-
-	jbsr    _addupc			| addupc(pc, &u.u_prof, 1)
-	lea	sp@(12),sp		| pop params
-#endif
-	addql	#1,_intrcnt+32		| add another profile clock interrupt
-	movl	sp@+,d0			| get saved clock status
+	jeq	1f			| no, skip statintr
+	addql	#1,_intrcnt+32		| count statclock interrupts
+	movl	d0,sp@-			| save status
+	movl	a1,sp@-
+	jbsr	_statintr		| statintr(&frame)
+	addql	#4,sp
+	movl	sp@+,d0			| restore registers
 	CLKADDR(a0)
-Lttimer1:
+	lea	sp@(16),a1
+1:
 	btst	#0,d0			| timer1 interrupt?
-	jeq     Ltimend		        | no, check state of kernel profiling
-Ltimer1:
-#endif
+	jeq	2f			| no, skip hardclock
 	movb	a0@(CLKMSB1),d1		| clear timer1 interrupt
-	lea	sp@(16),a1		| get pointer to PS
-	movl	a1@,sp@-		| push padded PS
-	movl	a1@(4),sp@-		| push PC
-	jbsr	_hardclock		| call generic clock int routine
-	addql	#8,sp			| pop params
-	addql	#1,_intrcnt+28		| add another system clock interrupt
-#ifdef PROFTIMER
-Ltimend:
-#ifdef GPROF
-	.globl	_profiling, _startprofclock
-	tstl	_profiling		| kernel profiling desired?
-	jne	Ltimdone		| no, all done
-	bset	#7,_profon		| mark continuous timing
-	jne	Ltimdone		| was already enabled, all done
-	jbsr	_startprofclock		| else turn it on
-Ltimdone:
-#endif
-#endif
+	addql	#1,_intrcnt+28		| count hardclock interrupts
+	movl	a1,sp@-
+	jbsr	_hardclock		| hardclock(&frame)
+	addql	#4,sp
+2:
 	moveml	sp@+,#0x0303		| restore scratch regs
 	addql	#2,sp			| pop pad word
 	addql	#1,_cnt+V_INTR		| chalk up another interrupt
 	jra	rei			| all done
 
 _lev7intr:
-#ifdef PROFTIMER
 	addql	#1,_intrcnt+36
-#else
-	addql	#1,_intrcnt+32
-#endif
 	clrw	sp@-			| pad SR to longword
 	moveml	#0xFFFF,sp@-		| save registers
 	movl	usp,a0			| and save
@@ -1116,44 +1059,6 @@ _szicode:
 #endif
 
 /*
- * update profiling information for the user
- * addupc(pc, &u.u_prof, ticks)
- */
-ENTRY(addupc)
-	movl	a2,sp@-			| scratch register
-	movl	sp@(12),a2		| get &u.u_prof
-	movl	sp@(8),d0		| get user pc
-	subl	a2@(8),d0		| pc -= pr->pr_off
-	jlt	Lauexit			| less than 0, skip it
-	movl	a2@(12),d1		| get pr->pr_scale
-	lsrl	#1,d0			| pc /= 2
-	lsrl	#1,d1			| scale /= 2
-	mulul	d1,d0			| pc /= scale
-	moveq	#14,d1
-	lsrl	d1,d0			| pc >>= 14
-	bclr	#0,d0			| pc &= ~1
-	cmpl	a2@(4),d0		| too big for buffer?
-	jge	Lauexit			| yes, screw it
-	addl	a2@,d0			| no, add base
-	movl	d0,sp@-			| push address
-	jbsr	_fusword		| grab old value
-	movl	sp@+,a0			| grab address back
-	cmpl	#-1,d0			| access ok
-	jeq	Lauerror		| no, skip out
-	addw	sp@(18),d0		| add tick to current value
-	movl	d0,sp@-			| push value
-	movl	a0,sp@-			| push address
-	jbsr	_susword		| write back new value
-	addql	#8,sp			| pop params
-	tstl	d0			| fault?
-	jeq	Lauexit			| no, all done
-Lauerror:
-	clrl	a2@(12)			| clear scale (turn off prof)
-Lauexit:
-	movl	sp@+,a2			| restore scratch reg
-	rts
-
-/*
  * copyinstr(fromaddr, toaddr, maxlength, &lencopied)
  *
  * Copy a null terminated string from the user address space into
@@ -1514,7 +1419,7 @@ pcbflag:
 ENTRY(swtch_exit)
 	movl	#nullpcb,_curpcb	| save state into garbage pcb
 	lea	tmpstk,sp		| goto a tmp stack
-	jra	_swtch
+	jra	_cpu_swtch
 
 /*
  * When no processes are on the runq, Swtch branches to idle
@@ -1537,7 +1442,7 @@ Lbadsw:
 	/*NOTREACHED*/
 
 /*
- * Swtch()
+ * cpu_swtch()
  *
  * NOTE: On the mc68851 (318/319/330) we attempt to avoid flushing the
  * entire ATC.  The effort involved in selective flushing may not be
@@ -1547,7 +1452,7 @@ Lbadsw:
  * user's PTEs have been changed (formerly denoted by the SPTECHG p_flag
  * bit).  For now, we just always flush the full ATC.
  */
-ENTRY(Swtch)
+ENTRY(cpu_swtch)
 	movl	_curpcb,a0		| current pcb
 	movw	sr,a0@(PCB_PS)		| save sr before changing ipl
 #ifdef notyet
@@ -1654,21 +1559,6 @@ Lswnofpsave:
 	movl	_curpcb,a1		| restore p_addr
 Lswnochg:
 
-#ifdef PROFTIMER
-#ifdef notdef
-	movw	#SPL6,sr		| protect against clock interrupts
-#endif
-	bclr	#0,_profon		| clear user profiling bit, was set?
-	jeq	Lskipoff		| no, clock off or doing kernel only
-#ifdef GPROF
-	tstb	_profon			| kernel profiling also enabled?
-	jlt	Lskipoff		| yes, nothing more to do
-#endif
-	CLKADDR(a0)
-	movb	#0,a0@(CLKCR2)		| no, just user, select CR3
-	movb	#0,a0@(CLKCR3)		| and turn it off
-Lskipoff:
-#endif
 	movl	#PGSHIFT,d1
 	movl	a1,d0
 	lsrl	d1,d0			| convert p_addr to page number
@@ -1727,21 +1617,6 @@ Lcxswdone:
 	moveml	a1@(PCB_REGS),#0xFCFC	| and registers
 	movl	a1@(PCB_USP),a0
 	movl	a0,usp			| and USP
-#ifdef PROFTIMER
-	tstl	a1@(U_PROFSCALE)	| process being profiled?
-	jeq	Lskipon			| no, do nothing
-	orb	#1,_profon		| turn on user profiling bit
-#ifdef GPROF
-	jlt	Lskipon			| already profiling kernel, all done
-#endif
-	CLKADDR(a0)
-	movl	_profint,d1		| profiling interval
-	subql	#1,d1			|   adjusted
-	movepw	d1,a0@(CLKMSB3)		| set interval
-	movb	#0,a0@(CLKCR2)		| select CR3
-	movb	#64,a0@(CLKCR3)		| turn it on
-Lskipon:
-#endif
 #ifdef FPCOPROC
 	lea	a1@(PCB_FPCTX),a0	| pointer to FP save area
 	tstb	a0@			| null state frame?
@@ -2752,16 +2627,10 @@ _intrnames:
 	.asciz	"lev5"
 	.asciz	"dma"
 	.asciz	"clock"
-#ifdef PROFTIMER
-	.asciz  "pclock"
-#endif
+	.asciz  "statclock"
 	.asciz	"nmi"
 _eintrnames:
 	.even
 _intrcnt:
-#ifdef PROFTIMER
 	.long	0,0,0,0,0,0,0,0,0,0
-#else
-	.long	0,0,0,0,0,0,0,0,0
-#endif
 _eintrcnt:
