@@ -37,14 +37,15 @@ int	nproc = NPROC;
 #else
 #define	NETSLOP	0
 #endif
+#define NCHSIZE (60 + 2 * MAXUSERS)
+int	nchsize = NCHSIZE;
 int	ntext = 24 + MAXUSERS + NETSLOP;
-int	ninode = (NPROC + 16 + MAXUSERS) + 32;
+int	ninode = (NPROC + 16 + MAXUSERS + (2 * NCHSIZE / 3)) + 32;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32 + 2 * NETSLOP;
 int	ncallout = 16 + NPROC;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
 int     nmbclusters = NMBCLUSTERS;
-int	nchsize = 60 + 3 * MAXUSERS;
 #ifdef QUOTA
 int	nquota = (MAXUSERS * 9)/7 + 3;
 int	ndquot = (MAXUSERS*NMOUNT)/4 + NPROC;
