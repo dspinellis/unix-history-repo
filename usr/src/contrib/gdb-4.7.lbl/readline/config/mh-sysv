@@ -1,0 +1,4 @@
+# Define USG as -DUSG if you are using a System V operating system.
+USG = -DUSG
+RANLIB = true
+INSTALL = cp
