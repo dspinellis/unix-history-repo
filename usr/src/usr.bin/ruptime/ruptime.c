@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.8 83/04/21";
+static char sccsid[] = "@(#)ruptime.c	4.9 83/05/03";
 #endif
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <dir.h>
 #include <utmp.h>
-#include "rwhod.h"
+#include <rwhod.h>
 
 DIR	*etc;
 
