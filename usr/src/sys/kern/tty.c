@@ -1,4 +1,4 @@
-/*	tty.c	4.43	83/07/01	*/
+/*	tty.c	4.44	83/07/06	*/
 
 #include "../machine/reg.h"
 
@@ -380,6 +380,7 @@ ttioctl(tp, com, data, flag)
 				tp->t_canq = tq;
 			} else {
 				tp->t_flags |= PENDIN;
+				newflags |= PENDIN;
 				ttwakeup(tp);
 			}
 		}
