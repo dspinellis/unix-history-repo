@@ -1,4 +1,4 @@
-/*	printjob.c	4.2	83/05/13	*/
+/*	printjob.c	4.2	83/05/16	*/
 /*
  * printjob -- print jobs in the queue.
  *
@@ -27,8 +27,10 @@ extern	banner();		/* big character printer */
 char	logname[32];		/* user's login name */
 char	jobname[32];		/* job or file name */
 char	class[32];		/* classification field */
-char	width[10] = "-w";	/* page width for `pr' */
-char	length[10] = "-l";	/* page length for `pr' */
+char	width[10] = "-w";	/* page width in characters */
+char	length[10] = "-l";	/* page length in lines */
+char	pxwidth[10] = "-x";	/* page width in pixels */
+char	pxlength[10] = "-y";	/* page length in pixels */
 
 printjob()
 {
@@ -39,14 +41,13 @@ printjob()
 	long pidoff;
 	extern int onintr();
 
-	name = "printjob";
 	init();					/* set up capabilities */
 	(void) close(2);			/* set up log file */
 	(void) open(LF, FWRONLY|FAPPEND, 0);
-	dup2(2, 1);
-	pid = getpid();
+	dup2(2, 1);				/* closes original connection */
+	pid = getpid();				/* for use with lprm */
 	setpgrp(0, pid);
-	sigset(SIGINT, onintr);			/* for use with lprm */
+	sigset(SIGINT, onintr);
 
 	/*
 	 * uses short form file names
@@ -55,6 +56,8 @@ printjob()
 		log("cannot chdir to %s", SD);
 		exit(1);
 	}
+	if (stat(LO, &stb) == 0 && (stb.st_mode & 0100))
+		exit(0);		/* printing disabled */
 	if ((lfd = open(LO, FWRONLY|FCREATE|FTRUNCATE|FEXLOCK|FNBLOCK, 0664)) < 0) {
 		if (errno == EWOULDBLOCK)	/* active deamon present */
 			exit(0);
@@ -66,99 +69,21 @@ printjob()
 	 */
 	sprintf(line, "%u\n", pid);
 	pidoff = i = strlen(line);
-	if (write(lfd, line, i) != i)
+	if (write(lfd, line, i) != i) {
 		log("cannot write daemon pid");
-	/*
-	 * acquire line printer or remote connection
- 	 */
-restart:
-	if (*LP) {
-		for (i = 1; ; i = i < 32 ? i << 1 : i) {
-			pfd = open(LP, RW ? FRDWR : FWRONLY, 0);
-			if (pfd >= 0)
-				break;
-			if (errno == ENOENT) {
-				log("cannot open %s", LP);
-				exit(1);
-			}
-			if (i == 1)
-				status("waiting for %s to become ready (offline ?)", printer);
-			sleep(i);
-		}
-		if (isatty(pfd))
-			setty();
-		status("%s is ready and printing", printer);
-	} else if (RM != NULL) {
-		for (i = 1; ; i = i < 512 ? i << 1 : i) {
-			pfd = getport();
-			if (pfd >= 0) {
-				(void) sprintf(line, "\2%s\n", RP);
-				nitems = strlen(line);
-				if (write(pfd, line, nitems) != nitems)
-					break;
-				if (noresponse())
-					(void) close(pfd);
-				else
-					break;
-			}
-			if (i == 1)
-				status("waiting for %s to come up", RM);
-			sleep(i);
-		}
-		status("sending to %s", RM);
-		remote = 1;
-	} else {
-		log("no line printer device or remote machine name");
 		exit(1);
 	}
 	/*
-	 * Start running as daemon instead of root
-	 */
-	setuid(DU);
-	/*
-	 * Start up an output filter, if needed.
-	 */
-	if (OF) {
-		int p[2];
-		char *cp;
-
-		pipe(p);
-		if ((ofilter = dofork(DOABORT)) == 0) {	/* child */
-			dup2(p[0], 0);		/* pipe is std in */
-			dup2(pfd, 1);		/* printer is std out */
-			for (i = 3; i < NOFILE; i++)
-				(void) close(i);
-			if ((cp = rindex(OF, '/')) == NULL)
-				cp = OF;
-			else
-				cp++;
-			execl(OF, cp, 0);
-			log("can't execl output filter %s", OF);
-			exit(1);
-		}
-		(void) close(p[0]);		/* close input side */
-		ofd = p[1];			/* use pipe for output */
-	} else {
-		ofd = pfd;
-		ofilter = 0;
-	}
-
-	/*
 	 * search the spool directory for work and sort by queue order.
 	 */
-again:
 	if ((nitems = getq(&queue)) < 0) {
 		log("can't scan spool directory %s", SD);
 		exit(1);
 	}
-	if (nitems == 0) {		/* EOF => no work to do */
-		if (!SF && !tof)
-			(void) write(ofd, FF, strlen(FF));
-		if (TR != NULL)		/* output trailer */
-			(void) write(ofd, TR, strlen(TR));
+	if (nitems == 0)		/* no work to do */
 		exit(0);
-	}
-
+	openpr();			/* open printer or remote */
+again:
 	/*
 	 * we found something to do now do it --
 	 *    write the name of the current control file into the lock file
@@ -168,6 +93,7 @@ again:
 		q = *qp++;
 		if (stat(q->q_name, &stb) < 0)
 			continue;
+	restart:
 		(void) lseek(lfd, pidoff, 0);
 		(void) sprintf(line, "%s\n", q->q_name);
 		i = strlen(line);
@@ -177,7 +103,15 @@ again:
 			i = printit(q->q_name);
 		else
 			i = sendit(q->q_name);
-		if (i > 0) {	/* restart daemon to reprint job */
+		/*
+		 * Check to see if we are supposed to stop printing.
+		 */
+		if (stat(LO, &stb) == 0 && (stb.st_mode & 0100))
+			goto done;
+		/*
+		 * Check to see if we should try reprinting the job.
+		 */
+		if (i > 0) {
 			log("restarting");
 			if (ofilter > 0) {
 				kill(ofilter, SIGCONT);	/* to be sure */
@@ -186,15 +120,30 @@ again:
 					;
 				ofilter = 0;
 			}
-			(void) close(pfd);
-			free((char *) q);
-			while (nitems--)
-				free((char *) *qp++);
-			free((char *) queue);
+			(void) close(pfd);	/* close printer */
+			(void) lseek(lfd, pidoff, 0);
+			if (write(lfd, "\n", 1) != 1)
+				log("can't write (%d) control file name", errno);
+			openpr();		/* try to reopen printer */
 			goto restart;
 		}
 	}
 	free((char *) queue);
+	/*
+	 * search the spool directory for more work.
+	 */
+	if ((nitems = getq(&queue)) < 0) {
+		log("can't scan spool directory %s", SD);
+		exit(1);
+	}
+	if (nitems == 0) {		/* no more work to do */
+	done:
+		if (!SF && !tof)
+			(void) write(ofd, FF, strlen(FF));
+		if (TR != NULL)		/* output trailer */
+			(void) write(ofd, TR, strlen(TR));
+		exit(0);
+	}
 	goto again;
 }
 
@@ -279,6 +228,13 @@ printit(file)
 
 		case 'P':
 			strcpy(logname, line+1);
+			if (RS) {			/* restricted */
+				if (getpwnam(logname) == (struct passwd *)0) {
+					bombed = 2;
+					sendmail(bombed);
+					goto pass2;
+				}
+			}
 			continue;
 
 		case 'J':
@@ -334,11 +290,13 @@ printit(file)
 
 	/* pass 2 */
 
+pass2:
 	fseek(cfp, 0L, 0);
 	while (getline(cfp))
 		switch (line[0]) {
 		case 'M':
-			sendmail(bombed);
+			if (bombed != 2)		/* already sent if 2 */
+				sendmail(bombed);
 			continue;
 
 		case 'U':
@@ -432,10 +390,16 @@ print(format, file)
 		av[3] = length;
 		n = 4;
 		break;
+	case 'r':	/* print a fortran text file */
+		prog = RF;
+		av[1] = width;
+		av[2] = length;
+		n = 3;
+		break;
 	case 't':	/* print troff output */
-	case 'd':	/* print troff output */
+	case 'd':	/* print tex output */
 		(void) unlink(".railmag");
-		if ((fo = creat(".railmag", 0666)) < 0) {
+		if ((fo = creat(".railmag", FILMOD)) < 0) {
 			log("cannot create .railmag");
 			(void) unlink(".railmag");
 		} else {
@@ -448,19 +412,27 @@ print(format, file)
 			(void) close(fo);
 		}
 		prog = (format == 't') ? TF : DF;
-		n = 1;
+		av[1] = pxwidth;
+		av[2] = pxlength;
+		n = 3;
 		break;
 	case 'c':	/* print cifplot output */
 		prog = CF;
-		n = 1;
+		av[1] = pxwidth;
+		av[2] = pxlength;
+		n = 3;
 		break;
 	case 'g':	/* print plot(1G) output */
 		prog = GF;
-		n = 1;
+		av[1] = pxwidth;
+		av[2] = pxlength;
+		n = 3;
 		break;
 	case 'v':	/* print raster output */
 		prog = VF;
-		n = 1;
+		av[1] = pxwidth;
+		av[2] = pxlength;
+		n = 3;
 		break;
 	default:
 		(void) close(fi);
@@ -798,10 +770,18 @@ sendmail(bombed)
 		printf("Your printer job ");
 		if (*jobname)
 			printf("(%s) ", jobname);
-		if (bombed)
-			printf("bombed\n");
-		else
-			printf("is done\n");
+		switch (bombed) {
+		case 0:
+			printf("\ncompleted successfully\n");
+			break;
+		default:
+		case 1:
+			printf("\ncould not be printed\n");
+			break;
+		case 2:
+			printf("\ncould not be printed without an account on %s\n", host);
+			break;
+		}
 		fflush(stdout);
 		(void) close(1);
 	}
@@ -819,10 +799,16 @@ dofork(action)
 	register int i, pid;
 
 	for (i = 0; i < 20; i++) {
-		if ((pid = fork()) < 0)
+		if ((pid = fork()) < 0) {
 			sleep((unsigned)(i*i));
-		else
-			return(pid);
+			continue;
+		}
+		/*
+		 * Child should run as daemon instead of root
+		 */
+		if (pid == 0)
+			setuid(DU);
+		return(pid);
 	}
 	log("can't fork");
 
@@ -865,7 +851,7 @@ init()
 	if ((LP = pgetstr("lp", &bp)) == NULL)
 		LP = DEFDEVLP;
 	if ((RP = pgetstr("rp", &bp)) == NULL)
-		RP = printer;
+		RP = DEFLP;
 	if ((LO = pgetstr("lo", &bp)) == NULL)
 		LO = DEFLOCK;
 	if ((ST = pgetstr("st", &bp)) == NULL)
@@ -884,16 +870,24 @@ init()
 	if ((PL = pgetnum("pl")) < 0)
 		PL = DEFLENGTH;
 	sprintf(&length[2], "%d", PL);
+	if ((PX = pgetnum("px")) < 0)
+		PX = 0;
+	sprintf(&pxwidth[2], "%d", PX);
+	if ((PY = pgetnum("py")) < 0)
+		PY = 0;
+	sprintf(&pxlength[2], "%d", PY);
 	RM = pgetstr("rm", &bp);
 	AF = pgetstr("af", &bp);
 	OF = pgetstr("of", &bp);
 	IF = pgetstr("if", &bp);
+	RF = pgetstr("rf", &bp);
 	TF = pgetstr("tf", &bp);
 	DF = pgetstr("df", &bp);
 	GF = pgetstr("gf", &bp);
 	VF = pgetstr("vf", &bp);
 	CF = pgetstr("cf", &bp);
 	TR = pgetstr("tr", &bp);
+	RS = pgetflag("rs");
 	SF = pgetflag("sf");
 	SH = pgetflag("sh");
 	SB = pgetflag("sb");
@@ -907,6 +901,81 @@ init()
 		XC = 0;
 	if ((XS = pgetnum("xs")) < 0)
 		XS = 0;
+}
+
+/*
+ * Acquire line printer or remote connection.
+ */
+openpr()
+{
+	register int i, n;
+
+	if (*LP) {
+		for (i = 1; ; i = i < 32 ? i << 1 : i) {
+			pfd = open(LP, RW ? FRDWR : FWRONLY, 0);
+			if (pfd >= 0)
+				break;
+			if (errno == ENOENT) {
+				log("cannot open %s", LP);
+				exit(1);
+			}
+			if (i == 1)
+				status("waiting for %s to become ready (offline ?)", printer);
+			sleep(i);
+		}
+		if (isatty(pfd))
+			setty();
+		status("%s is ready and printing", printer);
+	} else if (RM != NULL) {
+		for (i = 1; ; i = i < 512 ? i << 1 : i) {
+			pfd = getport();
+			if (pfd >= 0) {
+				(void) sprintf(line, "\2%s\n", RP);
+				n = strlen(line);
+				if (write(pfd, line, n) != n)
+					break;
+				if (noresponse())
+					(void) close(pfd);
+				else
+					break;
+			}
+			if (i == 1)
+				status("waiting for %s to come up", RM);
+			sleep(i);
+		}
+		status("sending to %s", RM);
+		remote = 1;
+	} else {
+		log("no line printer device or remote machine name");
+		exit(1);
+	}
+	/*
+	 * Start up an output filter, if needed.
+	 */
+	if (OF) {
+		int p[2];
+		char *cp;
+
+		pipe(p);
+		if ((ofilter = dofork(DOABORT)) == 0) {	/* child */
+			dup2(p[0], 0);		/* pipe is std in */
+			dup2(pfd, 1);		/* printer is std out */
+			for (i = 3; i < NOFILE; i++)
+				(void) close(i);
+			if ((cp = rindex(OF, '/')) == NULL)
+				cp = OF;
+			else
+				cp++;
+			execl(OF, cp, width, length, 0);
+			log("can't execl output filter %s", OF);
+			exit(1);
+		}
+		(void) close(p[0]);		/* close input side */
+		ofd = p[1];			/* use pipe for output */
+	} else {
+		ofd = pfd;
+		ofilter = 0;
+	}
 }
 
 struct bauds {
@@ -977,4 +1046,21 @@ setty()
 			exit(1);
 		}
 	}
+}
+
+/*VARARGS1*/
+static
+status(msg, a1, a2, a3)
+	char *msg;
+{
+	register int fd;
+	char buf[BUFSIZ];
+
+	umask(0);
+	if ((fd = open(ST, FWRONLY|FCREATE|FTRUNCATE|FEXLOCK, 0664)) < 0)
+		fatal("cannot create status file");
+	sprintf(buf, msg, a1, a2, a3);
+	strcat(buf, "\n");
+	(void) write(fd, buf, strlen(buf));
+	(void) close(fd);
 }
