@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -458,9 +458,7 @@ ttypath()
 **		to -- the person being sent to.
 **
 **	Returns:
-**		+1 -- ok to send.
-**		0 -- not ok.
-**		-1 -- return TEMPFAIL.
+**		an exit status
 **
 **	Side Effects:
 **		none (unless you include the usrerr stuff)
@@ -484,10 +482,10 @@ checkcompat(to, e)
 	{
 		usrerr("No ARPA mail through this machine: see your system administration");
 		/* NoReturn = TRUE; to supress return copy */
-		return (FALSE);
+		return (EX_UNAVAILABLE);
 	}
 # endif /* EXAMPLE_CODE */
-	return (TRUE);
+	return (EX_OK);
 }
 /*
 **  HOLDSIGS -- arrange to hold all signals

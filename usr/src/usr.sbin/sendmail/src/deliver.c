@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -257,10 +257,9 @@ deliver(e, firstto)
 			continue;
 		}
 		rcode = checkcompat(to, e);
-		if (rcode <= 0)
+		if (rcode != EX_OK)
 		{
-			giveresponse(rcode == 0 ? EX_UNAVAILABLE : EX_TEMPFAIL,
-				     m, e);
+			giveresponse(rcode, m, e);
 			continue;
 		}
 
