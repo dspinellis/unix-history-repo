@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)environ.7	6.7 (Berkeley) %G%
+.\"	@(#)environ.7	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ENVIRON 7
@@ -94,6 +94,13 @@ of
 is ignored if
 .Ev TERMCAP
 contains a full pathname.
+.It Ev TMPDIR
+The directory in which to store temporary files.
+Most applications use either
+.Dq /tmp
+or
+.Dq /var/tmp .
+Setting this variable will make them use another directory.
 .It Ev USER
 The login name of the user.
 .El
