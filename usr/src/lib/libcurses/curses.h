@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.15 */
+/* %G% (Berkeley) @(#)curses.h	1.16 */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -31,7 +31,7 @@ typedef	struct sgttyb	SGTTY;
  */
 
 extern bool     AM, BS, CA, DA, DB, EO, HC, HZ, IN, MI, MS, NC, NS, OS, UL,
-		XB, XN, XT, XX;
+		XB, XN, XT, XS, XX;
 extern char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
 		*DM, *DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6,
 		*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
