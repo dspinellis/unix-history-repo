@@ -1,4 +1,4 @@
-/*	if_uba.c	4.10	82/03/28	*/
+/*	if_uba.c	4.11	82/05/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -40,14 +40,18 @@ if_ubainit(ifu, uban, hlen, nmr)
 
 COUNT(IF_UBAINIT);
 	ncl = clrnd(nmr + CLSIZE) / CLSIZE;
-	cp = m_clalloc(2 * ncl, MPG_SPACE);
-	if (cp == 0)
-		return (0);
-	ifu->ifu_hlen = hlen;
-	ifu->ifu_uban = uban;
-	ifu->ifu_uba = uba_hd[uban].uh_uba;
-	ifu->ifu_r.ifrw_addr = cp + CLBYTES - hlen;
-	ifu->ifu_w.ifrw_addr = ifu->ifu_r.ifrw_addr + ncl * CLBYTES;
+	if (ifu->ifu_r.ifrw_addr)
+		cp = ifu->ifu_r.ifrw_addr - (CLBYTES - hlen);
+	else {
+		cp = m_clalloc(2 * ncl, MPG_SPACE);
+		if (cp == 0)
+			return (0);
+		ifu->ifu_r.ifrw_addr = cp + CLBYTES - hlen;
+		ifu->ifu_w.ifrw_addr = ifu->ifu_r.ifrw_addr + ncl * CLBYTES;
+		ifu->ifu_hlen = hlen;
+		ifu->ifu_uban = uban;
+		ifu->ifu_uba = uba_hd[uban].uh_uba;
+	}
 	if (if_ubaalloc(ifu, &ifu->ifu_r, nmr) == 0)
 		goto bad;
 	if (if_ubaalloc(ifu, &ifu->ifu_w, nmr) == 0)
@@ -60,6 +64,7 @@ bad2:
 	ubarelse(ifu->ifu_uban, &ifu->ifu_r.ifrw_info);
 bad:
 	m_pgfree(cp, 2 * ncl);
+	ifu->ifu_r.ifrw_addr = 0;
 	return (0);
 }
 
