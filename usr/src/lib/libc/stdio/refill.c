@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)refill.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)refill.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
@@ -22,7 +22,7 @@ lflush(fp)
 {
 
 	if ((fp->_flags & (__SLBF|__SWR)) == __SLBF|__SWR)
-		return (fflush(fp));
+		return (__sflush(fp));
 	return (0);
 }
 
@@ -52,7 +52,7 @@ __srefill(fp)
 		}
 		/* switch to reading */
 		if (fp->_flags & __SWR) {
-			if (fflush(fp))
+			if (__sflush(fp))
 				return (EOF);
 			fp->_flags &= ~__SWR;
 			fp->_w = 0;
