@@ -63,3 +63,4 @@ vaxuba/ut.c		optional tj device-driver
 vaxuba/uu.c		optional uu device-driver
 vaxuba/va.c		optional va device-driver
 vaxuba/vp.c		optional vp device-driver
+vaxuba/vs.c		optional vs device-driver
