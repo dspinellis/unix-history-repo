@@ -1,9 +1,7 @@
 /*
- * "@(#)dump.h	1.4 (Berkeley) %G%"
+ * "@(#)dump.h	1.5 (Berkeley) %G%"
  */
 #define	NI		16
-#define	DIRPB(fs)	((fs)->fs_bsize / sizeof(struct direct))
-#define	MAXDIRPB	(MAXBSIZE / sizeof(struct direct))
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
 #define MAXNINDIR	(MAXBSIZE / sizeof(daddr_t))
 
@@ -13,7 +11,6 @@
 #include "../../h/stat.h"
 #include "../../h/fs.h"
 #include "../../h/inode.h"
-#include "../../h/dir.h"
 #include "../../h/dumprestor.h"
 #include <utmp.h>
 #include <time.h>
