@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ucred.h	7.5 (Berkeley) %G%
+ *	@(#)ucred.h	7.6 (Berkeley) %G%
  */
 
 #ifndef _UCRED_H_
@@ -20,7 +20,8 @@ struct ucred {
 	gid_t	cr_groups[NGROUPS];	/* groups */
 };
 #define cr_gid cr_groups[0]
-#define NOCRED ((struct ucred *)-1)
+#define NOCRED ((struct ucred *)-1)	/* no credential available */
+#define FSCRED ((struct ucred *)-2)	/* filesystem credential */
 
 #ifdef KERNEL
 #define	crhold(cr)	(cr)->cr_ref++
