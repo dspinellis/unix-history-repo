@@ -1,0 +1,34 @@
+#
+# GENERIC VAX
+#
+machine		vax
+cpu		"VAX730"
+cpu		"VAX750"
+cpu		"VAX780"
+ident		ACP	
+timezone	8 dst
+maxusers	8
+options		INET
+
+config		acpvmunix	root on hp0 swap on hp0
+
+controller	mba0	at nexus ?
+controller	uba0	at nexus ?
+controller	idc0	at uba0 csr 0175606		vector idcintr
+disk		hp0	at mba? drive 0
+disk		rb0	at idc0 drive 0
+disk		rb1	at idc0 drive 1
+controller	fx0	at uba? csr 0177170		vector rxintr
+disk		rx0	at fx0 drive 0
+disk		rx1	at fx0 drive 1
+device		dz0	at uba? csr 0160100 flags 0xff	vector dzrint dzxint
+controller	zs0	at uba? csr 0172520		vector tsintr
+device		ts0	at zs0 drive 0
+device		dmf0	at uba0 csr 0160340
+	vector dmfsrint dmfsxint dmfdaint dmfdbint dmfrint dmfxint dmflint
+pseudo-device	inet
+pseudo-device	imp
+pseudo-device	loop
+pseudo-device	ether
+pseudo-device	pty
+device		acp0	at uba0 csr 0167000 vector acpinta acpintb
