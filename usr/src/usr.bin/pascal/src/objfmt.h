@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)objfmt.h 1.11 %G%"; */
+/* static char sccsid[] = "@(#)objfmt.h 1.12 %G%"; */
 
 /*
  * The size of the display.
@@ -127,7 +127,7 @@ struct formalrtn {
     };
 
 #ifdef vax
-#   define HEADER_BYTES	1536			/* the size of px_header */
+#   define HEADER_BYTES	2048			/* the size of px_header */
 #endif vax
 #ifdef mc68000
 #   define HEADER_BYTES	3072			/* the size of px_header */
