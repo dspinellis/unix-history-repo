@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termcap.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)termcap.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	BUFSIZ		1024
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)termcap.c	5.5 (Berkeley) %G%";
 #define	PVECSIZ		32	/* max number of names in path */
 
 #include <ctype.h>
+#include <stdlib.h>
 #include "pathnames.h"
 
 /*
@@ -36,10 +37,9 @@ static	int hopcount;	/* detect infinite loops in termcap, init 0 */
 static	char pathbuf[PBUFSIZ];		/* holds raw path of filenames */
 static	char *pathvec[PVECSIZ];		/* to point to names in pathbuf */
 static	char **pvec;			/* holds usable tail of path vector */
-char	*tskip();
-char	*tgetstr();
-char	*tdecode();
-char	*getenv();
+
+static	char *tdecode __P((char *, char **));
+static	char *tskip __P ((char *));
 
 /*
  * Get an entry for terminal name in buffer bp from the termcap file.
