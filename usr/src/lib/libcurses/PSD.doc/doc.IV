@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)doc.IV	5.1 (Berkeley) %G%
+.\"	@(#)doc.IV	6.1 (Berkeley) %G%
 .\"
 .Ds
 .Fd gettmode
@@ -38,7 +38,6 @@ Scroll the window upward one line.
 This is normally not used by the user.
 .Ds
 .Fd savetty "" \*m
-.sp .5
 .Fd resetty "" \*m
 .De
 .Fn savetty
@@ -56,7 +55,12 @@ and
 char	*name;
 .De
 Set the terminal characteristics to be those of the terminal named
-.Vn name .
+.Vn name ,
+getting the terminal size from the
+.b TIOCGWINSZ
+.Fn ioctl "" "" 2
+if it exists,
+otherwise from the environment.
 This is normally called by
 .Fn initscr .
 .Ds
