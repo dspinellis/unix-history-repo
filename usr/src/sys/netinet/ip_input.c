@@ -1,4 +1,4 @@
-/*	ip_input.c	6.5	84/08/29	*/
+/*	ip_input.c	6.6	84/11/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -125,6 +125,7 @@ next:
 	if (i != 0) {
 		if (i < 0) {
 			ipstat.ips_tooshort++;
+			m = m0;
 			goto bad;
 		}
 		if (i <= m->m_len)
@@ -591,7 +592,7 @@ ip_ctlinput(cmd, arg)
 	caddr_t arg;
 {
 	struct in_addr *in;
-	int tcp_abort(), udp_abort();
+	int in_rtchange(), tcp_abort(), udp_abort();
 	extern struct inpcb tcb, udb;
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
@@ -604,9 +605,14 @@ ip_ctlinput(cmd, arg)
 		in = (struct in_addr *)arg;
 	else
 		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
-/* THIS IS VERY QUESTIONABLE, SHOULD HIT ALL PROTOCOLS */
-	in_pcbnotify(&tcb, in, (int)inetctlerrmap[cmd], tcp_abort);
-	in_pcbnotify(&udb, in, (int)inetctlerrmap[cmd], udp_abort);
+	/* THIS IS VERY QUESTIONABLE, SHOULD HIT ALL PROTOCOLS */
+	if (cmd == PRC_REDIRECT_NET || cmd == PRC_REDIRECT_HOST) {
+		in_pcbnotify(&tcb, in, 0, in_rtchange);
+		in_pcbnotify(&udb, in, 0, in_rtchange);
+	} else {
+		in_pcbnotify(&tcb, in, (int)inetctlerrmap[cmd], tcp_abort);
+		in_pcbnotify(&udb, in, (int)inetctlerrmap[cmd], udp_abort);
+	}
 }
 
 int	ipprintfs = 0;
