@@ -14,7 +14,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.18 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.19 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -27,7 +27,7 @@ static char	SccsId[] = "@(#)daemon.c	5.18 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.18 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.19 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -303,6 +303,7 @@ makeconnection(host, port, outfile, infile)
 	FILE **infile;
 {
 	register int s;
+	int sav_errno;
 
 	/*
 	**  Set up the address for the mailer.
@@ -384,6 +385,7 @@ makeconnection(host, port, outfile, infile)
 	if (s < 0)
 	{
 		syserr("makeconnection: no socket");
+		sav_errno = errno;
 		goto failure;
 	}
 
@@ -408,9 +410,11 @@ makeconnection(host, port, outfile, infile)
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress) < 0)
 #endif NVMUNIX
 	{
+		sav_errno = errno;
+		(void) close(s);
 		/* failure, decide if temporary or not */
 	failure:
-		switch (errno)
+		switch (sav_errno)
 		{
 		  case EISCONN:
 		  case ETIMEDOUT:
