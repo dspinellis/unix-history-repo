@@ -1,4 +1,4 @@
-/*	autoconf.c	4.15	81/02/26	*/
+/*	autoconf.c	4.16	81/02/27	*/
 
 /*
  * Configure the system for the current machine.
@@ -107,11 +107,11 @@ c780(pcpu)
 
 		case NEX_MBA:
 #if NMBA > 0
-			if (nummba >= 4) {
-				printf("5 mba's");
-				goto unsupp;
-			}
 			printf("mba%d at tr%d\n", nummba, nexnum);
+			if (nummba >= NMBA) {
+				printf("%d mba's not configured\n", nummba+1);
+				continue;
+			}
 			mbafind(nxv, nxp);
 			nummba++;
 #else
@@ -192,8 +192,12 @@ c750(pcpu)
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
 		printf("mba%d at %x\n", nummba, nxp);
-		mbafind(nxv, nxp);
-		nummba++;
+		if (nummba >= NMBA)
+			printf("%d mba's not configured\n", nummba+1);
+		else {
+			mbafind(nxv, nxp);
+			nummba++;
+		}
 	}
 #endif
 	printf("uba at %x\n", nxp);
