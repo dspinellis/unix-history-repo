@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.34 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -52,8 +52,8 @@ nfs_nhinit()
 	register union  nhead *nh = nhead;
 
 #ifndef lint
-	if (VN_MAXPRIVATE < sizeof(struct nfsnode))
-		panic("nfs_nhinit: too small");
+	if ((sizeof(struct nfsnode) - 1) & sizeof(struct nfsnode))
+		printf("nfs_nhinit: bad size %d\n", sizeof(struct nfsnode));
 #endif /* not lint */
 	for (i = NFSNOHSZ; --i >= 0; nh++) {
 		nh->nh_head[0] = nh;
@@ -119,7 +119,8 @@ loop:
 		return (error);
 	}
 	vp = nvp;
-	np = VTONFS(vp);
+	MALLOC(np, struct nfsnode *, sizeof *np, M_NFSNODE, M_WAITOK);
+	vp->v_data = np;
 	np->n_vnode = vp;
 	/*
 	 * Insert the nfsnode in the hash queue for its new file handle
@@ -163,7 +164,9 @@ nfs_inactive(vp, p)
 		}
 		crfree(sp->s_cred);
 		vrele(sp->s_dvp);
+#ifdef SILLYSEPARATE
 		free((caddr_t)sp, M_NFSREQ);
+#endif
 	}
 	nfs_unlock(vp);
 	np->n_flag &= NMODIFIED;
@@ -205,11 +208,9 @@ nfs_reclaim(vp)
 	 * Remove the nfsnode from its hash chain.
 	 */
 	remque(np);
-	np->n_forw = np;
-	np->n_back = np;
 	cache_purge(vp);
-	np->n_flag = 0;
-	np->n_direofoffset = 0;
+	FREE(vp->v_data, M_NFSNODE);
+	vp->v_data = NULL;
 	return (0);
 }
 
