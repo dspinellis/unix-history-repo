@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.11	%G%";
+static char	SccsId[] = "@(#)main.c	3.12	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -39,8 +39,10 @@ static char	SccsId[] = "@(#)main.c	3.11	%G%";
 **				for remote mail delivery as needed
 **				in the future.  So, network servers
 **				should use -r.
+**		-Ffullname	Select what the full-name should be
+**				listed as.
 **		-a		This mail should be in ARPANET std
-**				format (not used).
+**				format.
 **		-n		Don't do aliasing.  This might be used
 **				when delivering responses, for
 **				instance.
@@ -72,6 +74,8 @@ static char	SccsId[] = "@(#)main.c	3.11	%G%";
 **				front of messages.
 **		-v		Give blow-by-blow description of
 **				everything that happens.
+**		-Cfilename	Use alternate configuration file.
+**		-DXvalue	Define macro X to have value.
 **
 **	Return Codes:
 **		As defined in <sysexits.h>.
@@ -107,7 +111,6 @@ static char	SccsId[] = "@(#)main.c	3.11	%G%";
 
 bool	ArpaFmt;	/* mail is expected to be in ARPANET format */
 bool	FromFlag;	/* from person is explicitly specified */
-bool	Debug;		/* run in debug mode */
 bool	MailBack;	/* mail back response on error */
 bool	BerkNet;	/* called from BerkNet */
 bool	WriteBack;	/* write back response on error */
@@ -119,6 +122,7 @@ bool	SaveFrom;	/* save From lines on the front of messages */
 bool	IgnrDot;	/* if set, ignore dot when collecting mail */
 bool	SuprErrs;	/* supress errors if set */
 bool	Verbose;	/* set if blow-by-blow desired */
+int	Debug;		/* debug level */
 int	Errors;		/* count of errors */
 char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
@@ -142,6 +146,7 @@ main(argc, argv)
 {
 	register char *p;
 	char *realname;
+	char *fullname = NULL;
 	extern char *collect();
 	extern char *getlogin();
 	char *locname;
@@ -219,6 +224,10 @@ main(argc, argv)
 			from = p;
 			break;
 
+		  case 'F':	/* set full name */
+			fullname = &p[2];
+			break;
+
 		  case 'h':	/* hop count */
 			p += 2;
 			if (*p == '\0')
@@ -264,8 +273,10 @@ main(argc, argv)
 
 # ifdef DEBUG
 		  case 'd':	/* debug */
-			Debug++;
-			printf("Version %s\n", Version);
+			Debug = atoi(&p[2]);
+			if (Debug <= 0)
+				Debug = 1;
+			printf("Version %s Debug %d\n", Version, Debug);
 			break;
 
 		  case 'D':	/* redefine internal macro */
@@ -273,7 +284,7 @@ main(argc, argv)
 			break;
 # endif DEBUG
 
-		  case 'F':	/* select control file */
+		  case 'C':	/* select configuration file */
 			cfname = &p[2];
 			break;
 		
@@ -372,7 +383,8 @@ main(argc, argv)
 	realname = p;
 
 	/* extract full name from passwd file */
-	if (pw != NULL && pw->pw_gecos != NULL)
+	if ((fullname == NULL || fullname[0] == '\0') &&
+	    pw != NULL && pw->pw_gecos != NULL)
 	{
 		register char *nb;
 
@@ -393,8 +405,10 @@ main(argc, argv)
 		}
 		*nb = '\0';
 		if (!ArpaFmt && from == NULL && nbuf[0] != '\0')
-			define('x', nbuf);
+			fullname = nbuf;
 	}
+	if (fullname != NULL && fullname[0] != '\0')
+		define('x', nbuf);
 
 	/*
 	** Get a temp file.
