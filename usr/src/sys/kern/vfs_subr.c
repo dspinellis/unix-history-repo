@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.2 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,8 @@
 #include "mount.h"
 #include "time.h"
 #include "vnode.h"
+#include "namei.h"
+#include "ucred.h"
 #include "errno.h"
 
 /*
@@ -160,4 +162,49 @@ void vattr_null(vap)
 		vap->va_mtime.tv_sec = vap->va_mtime.tv_usec =
 		vap->va_ctime.tv_sec = vap->va_ctime.tv_usec =
 		vap->va_flags = vap->va_gen = VNOVAL;
+}
+
+/*
+ * Initialize a nameidata structure
+ */
+ndinit(ndp)
+	register struct nameidata *ndp;
+{
+
+	bzero((caddr_t)ndp, sizeof(struct nameidata));
+	ndp->ni_iov = &ndp->ni_nd.nd_iovec;
+	ndp->ni_iovcnt = 1;
+	ndp->ni_base = (caddr_t)&ndp->ni_dent;
+	ndp->ni_rw = UIO_WRITE;
+	ndp->ni_segflg = UIO_SYSSPACE;
+}
+
+/*
+ * Duplicate a nameidata structure
+ */
+nddup(ndp, newndp)
+	register struct nameidata *ndp, *newndp;
+{
+
+	ndinit(newndp);
+	newndp->ni_cdir = ndp->ni_cdir;
+	newndp->ni_cdir->v_count++;
+	newndp->ni_rdir = ndp->ni_rdir;
+	if (newndp->ni_rdir)
+		newndp->ni_rdir->v_count++;
+	newndp->ni_cred = ndp->ni_cred;
+	crhold(newndp->ni_cred);
+}
+
+/*
+ * Release a nameidata structure
+ */
+ndrele(ndp)
+	register struct nameidata *ndp;
+{
+
+	vrele(ndp->ni_cdir);
+	if (ndp->ni_rdir)
+		vrele(ndp->ni_rdir);
+	crfree(ndp->ni_cred);
 }
