@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mem.4	6.1 (Berkeley) %G%
+.\"	@(#)mem.4	6.2 (Berkeley) %G%
 .\"
 .TH MEM 4 ""
 .UC 4
@@ -21,31 +21,31 @@ Byte addresses in
 are interpreted as physical memory addresses.
 References to non-existent locations cause errors to be returned.
 .PP
-Examining and patching device registers is likely
-to lead to unexpected results when read-only or write-only
-bits are present.
-.PP
 The file
 .I kmem
 is the same as 
 .I mem
 except that kernel virtual memory
 rather than physical memory is accessed.
+Only kernel virtual addresses that are mapped to memory are allowed.
+The file
+.I kUmem
+also refers to kernel virtual memory,
+but may be used to access areas mapped to UNIBUS address space
+and other I/O areas.
+It forces all accesses to use word (short integer) accesses.
+Examining and patching device registers is likely
+to lead to unexpected results when read-only or write-only
+bits are present.
 .PP
-On PDP11's, the I/O page
-begins at location 0160000 of
-.I kmem
-and per-process data for the current process
-begins at 0140000.
 On VAX 11/780 the I/O space begins at physical address 20000000(16);
-on an 11/750 I/O space addresses are of the form fxxxxx(16); on all VAX'en
-per-process data f\&or the current process is at virtual
-7f\&f\&f\&f\&000(16).
+on an 11/750 I/O space addresses are of the form fxxxxx(16).
+On all VAX'en
+per-process data for the current process is UPAGES long, and ends at virtual
+address 80000000(16).
 .SH FILES
 /dev/mem
 .br
 /dev/kmem
-.SH BUGS
-On PDP11's and VAX's, memory files are accessed one byte
-at a time, an inappropriate method for some
-device registers.
+.br
+/dev/kUmem

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uda.4	6.1 (Berkeley) %G%
+.\"	@(#)uda.4	6.2 (Berkeley) %G%
 .\"
 .TH UDA 4 ""
 .UC 4
@@ -13,7 +13,8 @@ uda \- UDA-50 disk controller interface
 .br
 .B "disk ra0 at uda0 drive 0"
 .SH DESCRIPTION
-This is a driver for the DEC UDA-50 disk controller.
+This is a driver for the DEC UDA-50 disk controller
+and for other compatible controllers.
 The UDA-50 communicates with the host through a packet
 oriented protocol termed the Mass Storage Control Protocol (MSCP).
 Consult the file
@@ -42,51 +43,83 @@ Likewise
 .I seek
 calls should specify a multiple of 512 bytes.
 .SH "DISK SUPPORT"
-This driver handles all drives which may be connected to the
-UDA-50.  Drive types per se are not recognized, but rather
-the variable length partitions are defined as having an
-``infinite'' length and the controller is relied on to return
-an error when an inaccessible block is requested.  For
-constructing file systems, however the partitions sizes are
-required.
+This driver configures the drive type of each drive
+when it is first opened.
+A partition table in the driver is required for each type of disk.
 The origin and size (in sectors) of the pseudo-disks
-on each drive are shown below.  Partitions are not rounded
-to cylinder boundaries, as on other drives, because the type
-of drive attached to the controller is discovered too late
-in the autoconfiguration process to maintain separate partition
-tables for each drive.  (The lack of proper drive
-type recognition would be more easily dealt with if the partition
-tables were read off the drive.)
+on each drive are shown below.
+Not all partitions begin on
+cylinder boundaries, as on other drives, because previous drivers
+used one partition table for all drive types.
+Variants of the partition tables are common;
+check the driver and the file
+.IR /etc/disktab ( disktab (5))
+for other possibilities.
 .PP
 .nf
 .ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u +\w'000000    'u
 .PP
+RC25 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	10032
+	ra?c	0	50902
+	ra?g	25916	24986
+RD52 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	9766
+	ra?c	0	60480
+	ra?g	25650	34830
+RD53 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	138672
+	ra?g	49324	89348
+	ra?h	15884	122788
 RA60 partitions
 	disk	start	length
 	ra?a	0	15884
 	ra?b	15884	33440
 	ra?c	0	400176
-	ra?g	49324	82080
-	ra?h	131404	268772
+	ra?d	49324	82080	same as 4.2BSD ra?g
+	ra?e	131404	268772	same as 4.2BSD ra?h
+	ra?f	49324	350852
+	ra?g	242606	157570
+	ra?h	49324	193282
 .PP
 RA80 partitions
 	disk	start	length
 	ra?a	0	15884
 	ra?b	15884	33440
 	ra?c	0	242606
-	ra?g	49324	82080
-	ra?h	131404	111202
+	ra?e	49324	193282	same as old Berkeley ra?g
+	ra?f	49324	82080	same as 4.2BSD ra?g
+	ra?g	49910	192696
+	ra?h	131404	111202	same as 4.2BSD
 .PP
 RA81 partitions
 	disk	start	length
 	ra?a	0	15884
-	ra?b	15884	33440
+	ra?b	16422	66880
 	ra?c	0	891072
-	ra?d	340670	15884
-	ra?e	356554	55936
-	ra?f	412490	478582
-	ra?g	49324	82080
-	ra?h	131404	759668
+	ra?d	375564	15884
+	ra?e	391986	307200
+	ra?f	699720	191352
+	ra?g	375564	515508
+	ra?h	83538	291346
+.PP
+RA81 partitions with 4.2BSD-compatible partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	16422	66880
+	ra?c	0	891072
+	ra?d	49324	82080	same as 4.2BSD ra?g
+	ra?e	131404	759668	same as 4.2BSD ra?h
+	ra?f	412490	478582	same as 4.2BSD ra?f
+	ra?g	375564	515508
+	ra?h	83538	291346
 .DT
 .fi
 .PP
@@ -149,8 +182,7 @@ returned by the UDA-50 to the host.
 .PP
 .BR "uda%d: %s error, unknown error, unit %d, format 0%o, event 0%o" .
 .SH BUGS
-The partition tables are so poorly laid out that they almost
-certainly force each site to tailor them to their individual
-needs.  The problem is even worse when a site has a mixed collection
-of drives.  The best solution would be to read the partition tables
+The partition tables attempt to combine compatibility
+with previous drivers and functionality; this is impossible.
+The best solution would be to read the partition tables
 off the drive.

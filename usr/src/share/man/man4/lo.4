@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lo.4	6.1 (Berkeley) %G%
+.\"	@(#)lo.4	6.2 (Berkeley) %G%
 .\"
 .TH LO 4 ""
 .UC 5
@@ -15,16 +15,17 @@ The
 .I loop
 interface is a software loopback mechanism which may be
 used for performance analysis, software testing, and/or local
-communication.   By default, the loopback interface is
-accessible at address 127.0.0.1 (non-standard); this address
-may be changed with the SIOCSIFADDR ioctl.
+communication.
+As with other network interfaces, the loopback interface must have
+network addresses assigned for each address family with which it is to be used.
+These addresses
+may be set or changed with the SIOCSIFADDR ioctl.
 .SH DIAGNOSTICS
 \fBlo%d: can't handle af%d\fP.  The interface was handed
 a message with addresses formatted in an unsuitable address
 family; the packet was dropped.
 .SH SEE ALSO
-intro(4N), inet(4F)
+intro(4N), inet(4F), ns(4F)
 .SH BUGS
-It should handle all address and protocol families.
-An approved network address should be reserved for this
-interface.
+Previous versions of the system enabled the loopback interface
+automatically, using a nonstandard Internet address (127.1).

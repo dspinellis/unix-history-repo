@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)np.4	6.1 (Berkeley) %G%
+.\"	@(#)np.4	6.2 (Berkeley) %G%
 .\"
 .TH NP 4 ""
 .UC 5
@@ -13,11 +13,11 @@ np \- Interlan Np100 10 Mb/s Ethernet interface
 .SH DESCRIPTION
 The
 .I NP
-device provides access to an Interlan Np100 ethernet interface
+device provides access to an Interlan Np100 Ethernet interface
 for control functions.
 .PP
 This interface is unusual in that it requires loading firmware
-into the controller before it may be used as a network interface.
+into the controller before it may be used as a network link-level interface.
 This is accomplished by opening a character special device,
 and writing data to it.
 It is also possible to do post-mortem debugging of firmware failures
@@ -32,7 +32,7 @@ The sequence of commands would be:
 	# ifconfig ix0 ...
 .fi
 .PP
-Multiple control process are allowed by opening separate
+Multiple control processes are allowed by opening separate
 minor devices; secondary interfaces are specified by shifting
 the interface number by 4 bits.
 .PP
@@ -41,7 +41,7 @@ by the following ioctls:
 .TP
 NPRESET
 .br
-kills off all active network process.
+kills off all active network processes.
 .TP
 NPSTART
 .br
@@ -92,7 +92,4 @@ There are 110 other diagnostic messages that can be enabled
 by setting bits in a debugging mask.
 Consult the driver for details.
 .SH SEE ALSO
-intro(4N), inet(4F), arp(4P), ix(4).
-.SH BUGS
-There should be a direct path to an intelligent controller
-via a protocol family using the socket mechanism.
+intro(4N), inet(4F), arp(4P), ix(4)
