@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.11 (Berkeley) 87/08/29";
+static char sccsid[] = "@(#)route.c	5.12 (Berkeley) 87/12/12";
 #endif
 
 #include <stdio.h>
@@ -141,7 +141,7 @@ again:
 			read(kmem, (char *)&ifnet, sizeof (ifnet));
 			klseek(kmem, (off_t)ifnet.if_name, 0);
 			read(kmem, name, 16);
-			printf(" %s%d\n", name, ifnet.if_unit);
+			printf(" %.15s%d\n", name, ifnet.if_unit);
 			m = mb.m_next;
 		}
 	}
@@ -159,7 +159,7 @@ routename(in)
 	struct in_addr in;
 {
 	register char *cp;
-	static char line[50];
+	static char line[MAXHOSTNAMELEN + 1];
 	struct hostent *hp;
 	static char domain[MAXHOSTNAMELEN + 1];
 	static int first = 1;
@@ -185,7 +185,7 @@ routename(in)
 		}
 	}
 	if (cp)
-		strcpy(line, cp);
+		strncpy(line, cp, sizeof(line) - 1);
 	else {
 #define C(x)	((x) & 0xff)
 		in.s_addr = ntohl(in.s_addr);
@@ -205,7 +205,7 @@ netname(in, mask)
 	u_long mask;
 {
 	char *cp = 0;
-	static char line[50];
+	static char line[MAXHOSTNAMELEN + 1];
 	struct netent *np = 0;
 	u_long net;
 	register i;
@@ -241,7 +241,7 @@ netname(in, mask)
 			cp = np->n_name;
 	}	
 	if (cp)
-		strcpy(line, cp);
+		strncpy(line, cp, sizeof(line) - 1);
 	else if ((i & 0xffffff) == 0)
 		sprintf(line, "%u", C(i >> 24));
 	else if ((i & 0xffff) == 0)
