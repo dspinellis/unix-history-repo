@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.48 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.49 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -192,7 +192,7 @@ spec_read(ap)
 		do {
 			bn = (uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
 			on = uio->uio_offset % bsize;
-			n = MIN((unsigned)(bsize - on), uio->uio_resid);
+			n = min((unsigned)(bsize - on), uio->uio_resid);
 			if (vp->v_lastr + bscale == bn) {
 				nextbn = bn + bscale;
 				error = breadn(vp, bn, (int)bsize, &nextbn,
@@ -200,7 +200,7 @@ spec_read(ap)
 			} else
 				error = bread(vp, bn, (int)bsize, NOCRED, &bp);
 			vp->v_lastr = bn;
-			n = MIN(n, bsize - bp->b_resid);
+			n = min(n, bsize - bp->b_resid);
 			if (error) {
 				brelse(bp);
 				return (error);
@@ -273,12 +273,12 @@ spec_write(ap)
 		do {
 			bn = (uio->uio_offset / DEV_BSIZE) &~ blkmask;
 			on = uio->uio_offset % bsize;
-			n = MIN((unsigned)(bsize - on), uio->uio_resid);
+			n = min((unsigned)(bsize - on), uio->uio_resid);
 			if (n == bsize)
 				bp = getblk(vp, bn, bsize);
 			else
 				error = bread(vp, bn, bsize, NOCRED, &bp);
-			n = MIN(n, bsize - bp->b_resid);
+			n = min(n, bsize - bp->b_resid);
 			if (error) {
 				brelse(bp);
 				return (error);
