@@ -1,4 +1,4 @@
-/*	@(#)ww.h	1.7 83/07/28		*/
+/*	@(#)ww.h	1.8 83/07/28		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -17,7 +17,8 @@ struct ww {
 	char ww_wstate;		/* state for printing charcters */
 	int ww_insert :1;	/* insert mode, for printing */
 	int ww_refresh :1;	/* force refresh after \n and others */
-	char ww_ident;
+	char ww_ident;		/* the window id */
+	char *ww_label;		/* the user supplied label */
 	Win *ww_win;
 	struct ww_dim ww_o;	/* outside dimemsions */
 	struct ww_dim ww_i;	/* inside dimemsions */
