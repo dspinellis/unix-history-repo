@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_init.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -22,18 +22,24 @@ static char sccsid[] = "@(#)res_init.c	5.8 (Berkeley) %G%";
  */
 
 #ifdef CONFFILE
-char	*conffile = CONFFILE;
+char    *conffile = CONFFILE;
 #else
-char	*conffile = "/etc/resolv.conf";
+char    *conffile = "/etc/resolv.conf";
 #endif
 
 /*
  * Resolver state default settings
  */
+
+#ifndef RES_TIMEOUT
+#define RES_TIMEOUT 10
+#endif
+
 struct state _res = {
-	10,
-	4,
-	RES_RECURSE|RES_DEFNAMES,
+    RES_TIMEOUT,                 /* retransmition time interval */
+    4,                           /* number of times to retransmit */
+    RES_RECURSE|RES_DEFNAMES,    /* options flags */
+    1,                           /* number of name servers */
 };
 
 /*
@@ -48,61 +54,81 @@ struct state _res = {
  */
 res_init()
 {
-	FILE *fp;
-	char buf[BUFSIZ], *cp;
-	extern u_long inet_addr();
-	extern char *index();
-	extern char *strcpy(), *strncpy();
+    register FILE *fp;
+    char buf[BUFSIZ], *cp;
+    extern u_long inet_addr();
+    extern char *index();
+    extern char *strcpy(), *strncpy();
 #ifdef DEBUG
-	extern char *getenv();
-#endif
+    extern char *getenv();
+#endif DEBUG
+    int n = 0;    /* number of nameserver records read from file */
 
-	_res.nsaddr.sin_family = AF_INET;
-	_res.nsaddr.sin_addr.s_addr = INADDR_ANY;
-	_res.defdname[0] = '\0';
-	_res.nsaddr.sin_port = htons(NAMESERVER_PORT);
+    _res.nsaddr.sin_addr.s_addr = INADDR_ANY;
+    _res.nsaddr.sin_family = AF_INET;
+    _res.nsaddr.sin_port = htons(NAMESERVER_PORT);
+    _res.nscount = 1;
+    _res.defdname[0] = '\0';
 
-	if ((fp = fopen(conffile, "r")) != NULL) {
-		while (fgets(buf, sizeof(buf), fp) != NULL) {
-			if (!strncmp(buf, "domain", sizeof("domain") - 1)) {
-				cp = buf + sizeof("domain") - 1;
-				while (*cp == ' ' || *cp == '\t')
-					cp++;
-				if (*cp == '\0')
-					continue;
-				(void)strncpy(_res.defdname, cp,
-				        sizeof(_res.defdname));
-				_res.defdname[sizeof(_res.defdname) - 1] = '\0';
-				if ((cp = index(_res.defdname, '\n')) != NULL)
-					*cp = '\0';
-				continue;
-			}
-			if (!strncmp(buf, "resolver", sizeof("resolver") - 1)) {
-				cp = buf + sizeof("resolver") - 1;
-				while (*cp == ' ' || *cp == '\t')
-					cp++;
-				if (*cp == '\0')
-					continue;
-				_res.nsaddr.sin_addr.s_addr = inet_addr(cp);
-				if (_res.nsaddr.sin_addr.s_addr == (unsigned)-1)
-					_res.nsaddr.sin_addr.s_addr =
-						INADDR_ANY;
-				continue;
-			}
-		}
-		(void) fclose(fp);
-	}
-	if (_res.defdname[0] == 0) {
-		if (gethostname(buf, sizeof(_res.defdname)) == 0 &&
-		    (cp = index(buf, '.')))
-			(void)strcpy(_res.defdname, cp + 1);
-	}
+    if ((fp = fopen(conffile, "r")) != NULL) {
+        /* read the config file */
+        while (fgets(buf, sizeof(buf), fp) != NULL) {
+            /* read default domain name */
+            if (!strncmp(buf, "domain", sizeof("domain") - 1)) {
+                cp = buf + sizeof("domain") - 1;
+                while (*cp == ' ' || *cp == '\t')
+                    cp++;
+                if (*cp == '\0')
+                    continue;
+                (void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
+                _res.defdname[sizeof(_res.defdname) - 1] = '\0';
+                if ((cp = index(_res.defdname, '\n')) != NULL)
+                    *cp = '\0';
+                continue;
+            }
+            /* read nameservers to query */
+            if (!strncmp(buf, "nameserver", 
+               sizeof("nameserver") - 1) && (n < MAXNS)) {
+                cp = buf + sizeof("nameserver") - 1;
+                while (*cp == ' ' || *cp == '\t')
+                    cp++;
+                if (*cp == '\0')
+                    continue;
+                _res.nsaddr_list[n].sin_addr.s_addr = inet_addr(cp);
+                if (_res.nsaddr_list[n].sin_addr.s_addr == (unsigned)-1) 
+                    _res.nsaddr_list[n].sin_addr.s_addr = INADDR_ANY;
+                    _res.nsaddr_list[n].sin_family = AF_INET;
+                    _res.nsaddr_list[n].sin_port = htons(NAMESERVER_PORT);
+#ifdef DEBUG
+                if ( _res.options && RES_DEBUG )
+                    printf("Server #%d address = %s\n", n+1,
+                         inet_ntoa(_res.nsaddr_list[n].sin_addr.s_addr));
+#endif DEBUG
+                    if ( ++n >= MAXNS) { 
+                       n = MAXNS;
+#ifdef DEBUG
+                       if ( _res.options && RES_DEBUG )
+                          printf("MAXNS reached\n");
+#endif DEBUG
+                }
+                continue;
+            }
+        }
+        if ( n > 1 ) 
+            _res.nscount = n;
+        (void) fclose(fp);
+    }
+    if (_res.defdname[0] == 0) {
+        if (gethostname(buf, sizeof(_res.defdname)) == 0 &&
+           (cp = index(buf, '.')))
+             (void)strcpy(_res.defdname, cp + 1);
+    }
 
 #ifdef DEBUG
-	/* Allow user to override the local domain definition */
-	if ((cp = getenv("LOCALDOMAIN")) != NULL)
-		(void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
-#endif
-	_res.options |= RES_INIT;
-	return(0);
+    /* Allow user to override the local domain definition */
+    if ((cp = getenv("LOCALDOMAIN")) != NULL)
+        (void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
+#endif DEBUG
+    _res.options |= RES_INIT;
+    return(0);
 }
