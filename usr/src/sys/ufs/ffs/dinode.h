@@ -1,4 +1,4 @@
-/*	dinode.h	6.4	84/07/20	*/
+/*	dinode.h	6.5	84/07/26	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -142,6 +142,7 @@ ino_t	dirpref();
 #define	IEXLOCK		0x100		/* file has exclusive lock */
 #define	ILWAIT		0x200		/* someone waiting on file lock */
 #define	IMOD		0x400		/* inode has been modified */
+#define	IRENAME		0x800		/* inode is being renamed */
 
 /* modes */
 #define	IFMT		0170000		/* type of file */
