@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -647,6 +647,7 @@ struct match
 {
 	char	**first;	/* first token matched */
 	char	**last;		/* last token matched */
+	char	**pattern;	/* pointer to pattern */
 	char	**source;	/* left hand source operand */
 	char	flags;		/* attributes of this operator */
 };
@@ -799,7 +800,7 @@ _rewrite(pvp, ruleset)
 
 			if (tTd(21, 35))
 			{
-				printf("rp=");
+				printf("ADVANCE rp=");
 				xputs(rp);
 				printf(", ap=");
 				xputs(ap);
@@ -877,13 +878,6 @@ _rewrite(pvp, ruleset)
 			{
 				switch (*rp)
 				{
-					register STAB *s;
-
-				    case MATCHNCLASS:
-					/* match any single token not in a class */
-					s = stab(ap, ST_CLASS, ST_FIND);
-					if (s != NULL && bitnset(rp[1], s->s_class))
-						goto extendclass;
 					break;
 				}
 
@@ -1032,6 +1026,7 @@ backup:
 
 			if (*avp == NULL)
 			{
+				rvp = mlp->pattern;
 				while (--mlp > mlist)
 				{
 					if ((mlp->flags & OP_CLASS) &&
@@ -1898,7 +1893,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	**  Now restore the comment information we had at the beginning.
 	*/
 
-	cataddr(pvp, lbuf, sizeof lbuf, '\0');
+	cataddr(pvp, NULL, lbuf, sizeof lbuf, '\0');
 	define('g', lbuf, e);
 	expand(fancy, buf, &buf[sizeof buf - 1], e);
 	define('g', oldg, e);
