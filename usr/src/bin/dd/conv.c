@@ -10,11 +10,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conv.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)conv.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+
 #include <string.h>
+
 #include "dd.h"
 #include "extern.h"
 
@@ -114,7 +116,7 @@ block()
 		 * input block.
 		 */
 		if (ch != '\n' && in.dbcnt < cbsz) {
-			bcopy(in.dbp - in.dbcnt, in.db, in.dbcnt);
+			memmove(in.db, in.dbp - in.dbcnt, in.dbcnt);
 			break;
 		}
 
@@ -158,7 +160,7 @@ block_close()
 	 */
 	if (in.dbcnt) {
 		++st.trunc;
-		bcopy(in.dbp - in.dbcnt, out.dbp, in.dbcnt);
+		memmove(out.dbp, in.dbp - in.dbcnt, in.dbcnt);
 		(void)memset(out.dbp + in.dbcnt,
 		    ctab ? ctab[' '] : ' ', cbsz - in.dbcnt);
 		out.dbcnt += cbsz;
@@ -191,7 +193,7 @@ unblock()
 		for (t = inp + cbsz - 1; t >= inp && *t == ' '; --t);
 		if (t >= inp) {
 			cnt = t - inp + 1;
-			bcopy(inp, out.dbp, cnt);
+			memmove(out.dbp, inp, cnt);
 			out.dbp += cnt;
 			out.dbcnt += cnt;
 		}
@@ -201,7 +203,7 @@ unblock()
 			dd_out(0);
 	}
 	if (in.dbcnt)
-		bcopy(in.dbp - in.dbcnt, in.db, in.dbcnt);
+		memmove(in.db, in.dbp - in.dbcnt, in.dbcnt);
 	in.dbp = in.db + in.dbcnt;
 }
 
@@ -216,7 +218,7 @@ unblock_close()
 		for (t = in.db + in.dbcnt - 1; t >= in.db && *t == ' '; --t);
 		if (t >= in.db) {
 			cnt = t - in.db + 1;
-			bcopy(in.db, out.dbp, cnt);
+			memmove(out.dbp, in.db, cnt);
 			out.dbp += cnt;
 			out.dbcnt += cnt;
 		}
