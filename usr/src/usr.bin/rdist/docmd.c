@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.9 (Berkeley) 83/11/29";
+static	char *sccsid = "@(#)docmd.c	4.10 (Berkeley) 83/11/29";
 #endif
 
 #include "defs.h"
@@ -90,7 +90,8 @@ makeconn(rhost)
 	char *rhost;
 {
 	register struct block *c;
-	register char *ruser;
+	register char *ruser, *cp;
+	int n;
 	extern char user[];
 
 	(void) sprintf(buf, "/usr/local/rdist -Server%s", qflag ? " -q" : "");
@@ -113,9 +114,24 @@ makeconn(rhost)
 	rem = rcmd(&rhost, IPPORT_CMDSERVER, user, ruser, buf, 0);
 	if (rem < 0)
 		return(0);
-	if (response() < 0)
-		return(0);
-	return(1);
+	cp = buf;
+	if (read(rem, cp, 1) != 1)
+		lostconn();
+	if (*cp == 'V') {
+		do {
+			if (read(rem, cp, 1) != 1)
+				lostconn();
+		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
+		*--cp = '\0';
+		cp = buf;
+		n = 0;
+		while (*cp >= '0' && *cp <= '9')
+			n = (n * 10) + (*cp++ - '0');
+		if (*cp == '\0' && n == VERSION)
+			return(1);
+	}
+	error("connection failed: version numbers don't match\n");
+	return(0);
 }
 
 okname(name)

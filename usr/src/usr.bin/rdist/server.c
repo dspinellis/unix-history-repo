@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.8 (Berkeley) 83/11/29";
+static	char *sccsid = "@(#)server.c	4.9 (Berkeley) 83/11/29";
 #endif
 
 #include "defs.h"
@@ -31,7 +31,8 @@ server()
 	int opts;
 
 	oumask = umask(0);
-	ack();
+	(void) sprintf(buf, "V%d\n", VERSION);
+	(void) write(rem, buf, strlen(buf));
 
 	for (;;) {
 		cp = cmdbuf;
