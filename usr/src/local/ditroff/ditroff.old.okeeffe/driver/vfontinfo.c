@@ -126,7 +126,11 @@ char **argv;
 				H = (disptable[j].up) + (disptable[j].down);
 				W = (disptable[j].left) + (disptable[j].right);
 				base = disptable[j].up;
+#ifdef sun
+				WB = ((W+15)/16)*2;
+#else
 				WB = (W+7)/8;
+#endif
 				shozoom();
 				if (msgflag) {
 					k = disptable[j].width;
