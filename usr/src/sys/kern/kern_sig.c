@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.12	85/03/13	*/
+/*	kern_sig.c	6.13	85/03/13	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -180,17 +180,44 @@ sigstack()
 	}
 }
 
-/* KILL SHOULD BE UPDATED */
-
 kill()
 {
 	register struct a {
 		int	pid;
 		int	signo;
 	} *uap = (struct a *)u.u_ap;
+	register struct proc *p;
 
-	u.u_error = kill1(uap->signo < 0,
-		uap->signo < 0 ? -uap->signo : uap->signo, uap->pid);
+	if (uap->signo < 0 || uap->signo > NSIG) {
+		u.u_error = EINVAL;
+		return;
+	}
+	if (uap->pid > 0) {
+		/* kill single process */
+		p = pfind(uap->pid);
+		if (p == 0) {
+			u.u_error = ESRCH;
+			return;
+		}
+		if (u.u_uid && u.u_uid != p->p_uid)
+			u.u_error = EPERM;
+		else if (uap->signo)
+			psignal(p, uap->signo);
+		return;
+	}
+	switch (uap->pid) {
+	case -1:		/* broadcast signal */
+		if (suser())
+			u.u_error = killpg1(uap->signo, 0, 1);
+		break;
+	case 0:			/* signal own process group */
+		u.u_error = killpg1(uap->signo, 0, 0);
+		break;
+	default:		/* negative explicit process group */
+		u.u_error = killpg1(uap->signo, -uap->pid, 0);
+		break;
+	}
+	return;
 }
 
 killpg()
@@ -200,55 +227,43 @@ killpg()
 		int	signo;
 	} *uap = (struct a *)u.u_ap;
 
-	u.u_error = kill1(1, uap->signo, uap->pgrp);
+	if (uap->signo < 0 || uap->signo > NSIG) {
+		u.u_error = EINVAL;
+		return;
+	}
+	u.u_error = killpg1(uap->signo, uap->pgrp, 0);
 }
 
 /* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
 
-kill1(ispgrp, signo, who)
-	int ispgrp, signo, who;
+killpg1(signo, pgrp, all)
+	int signo, pgrp, all;
 {
 	register struct proc *p;
-	int f, priv = 0;
+	int f, error = 0;
 
-	if (signo < 0 || signo > NSIG)
-		return (EINVAL);
-	if (who > 0 && !ispgrp) {
-		p = pfind(who);
-		if (p == 0)
-			return (ESRCH);
-		if (u.u_uid && u.u_uid != p->p_uid)
-			return (EPERM);
-		if (signo)
-			psignal(p, signo);
-		return (0);
-	}
-	if (who == -1 && u.u_uid == 0)
-		priv++, who = 0, ispgrp = 1;	/* like sending to pgrp */
-	else if (who == 0) {
+	if (!all && pgrp == 0) {
 		/*
 		 * Zero process id means send to my process group.
 		 */
-		ispgrp = 1;
-		who = u.u_procp->p_pgrp;
-		if (who == 0)
+		pgrp = u.u_procp->p_pgrp;
+		if (pgrp == 0)
 			return (EINVAL);
 	}
 	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
-		if (!ispgrp) {
-			if (p->p_pid != who)
-				continue;
-		} else if (p->p_pgrp != who && priv == 0 || p->p_ppid == 0 ||
-		    (p->p_flag&SSYS) || (priv && p == u.u_procp))
-			continue;
-		if (u.u_uid != 0 && u.u_uid != p->p_uid &&
-		    (signo != SIGCONT || !inferior(p)))
+		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
+		    (p->p_flag&SSYS) || (all && p == u.u_procp))
 			continue;
 		f++;
+		if (u.u_uid != 0 && u.u_uid != p->p_uid &&
+		    (signo != SIGCONT || !inferior(p))) {
+			error = EPERM;
+			continue;
+		}
 		if (signo)
 			psignal(p, signo);
 	}
-	return (f == 0 ? ESRCH : 0);
+	return (f == 0 ? ESRCH : error);
 }
 
 /*
