@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.1 %G%";
+static	char sccsid[] = "@(#)cc.c 4.2 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -71,6 +71,9 @@ main(argc, argv)
 			continue;
 		case 'p':
 			proflag++;
+			crt0 = "/lib/mcrt0.o";
+			if (argv[i][2] == 'g')
+				crt0 = "/usr/lib/gcrt0.o";
 			continue;
 		case 'g':
 			gflag++;
@@ -149,8 +152,6 @@ main(argc, argv)
 			continue;
 		}
 	}
-	if (proflag)
-		crt0 = "/lib/mcrt0.o";
 	if (nc==0)
 		goto nocom;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -244,7 +245,10 @@ nocom:
 			av[na++] = llist[i++];
 		if (gflag)
 			av[na++] = "-lg";
-		av[na++] = "-lc";
+		if (proflag)
+			av[na++] = "-lc_p";
+		else
+			av[na++] = "-lc";
 		av[na++] = 0;
 		eflag |= callsys(ld, av);
 		if (nc==1 && nxo==1 && eflag==0)
