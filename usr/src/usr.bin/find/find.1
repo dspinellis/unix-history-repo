@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)find.1	8.6 (Berkeley) %G%
+.\"	@(#)find.1	8.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FIND 1
@@ -131,9 +131,14 @@ was executed.
 .It Ic -fstype Ar type 
 True if the file is contained in a file system of type
 .Ar type .
-Currently supported types are ``local'', ``mfs'', ``nfs'', ``msdos'',
-``rdonly'' and ``ufs''.
-The types ``local'' and ``rdonly'' are not specific file system types.
+The
+.Xr sysctl 8
+command can be used to find out the types of filesystems
+that are available on the system:
+.Bd -literal -offset indent
+sysctl vfs
+.Ed
+In addition, there are two pseudo-types, ``local'' and ``rdonly''.
 The former matches any file system physically mounted on the system where
 the
 .Nm find
