@@ -1,0 +1,37 @@
+.pa 1
+.he 'RAND (III)'1/15/73'RAND (III)'
+.ti 0
+NAME		rand -- random number generator
+.sp
+.ti 0
+SYNOPSIS	jsr pc,srand	/to initialize
+.br
+jsr pc,rand	/to get a random number
+.sp
+.ti 0
+DESCRIPTION	The routine uses a multiplicative congruential
+random number generator to return successive pseudo-random
+numbers in r0 in the range from 1 to 2^15-1.
+.sp
+The generator is reinitialized by calling srand with 1 in r0.
+.sp
+It can be set to a random starting point by calling
+srand with whatever you like in r0,
+for example the result left in r1 from sys___ time____.
+.sp
+.ti 0
+FILES		kept in /lib/liba.a
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		--
+.sp
+.ti 0
+WARNING		The author of this routine has been writing
+random-number generators for many years and has never been
+known to write one that worked.
