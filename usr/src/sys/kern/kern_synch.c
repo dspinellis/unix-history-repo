@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	7.20 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -123,7 +123,7 @@ fixpt_t	ccpu = 0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
  */
 schedcpu()
 {
-	register fixpt_t loadfac = loadfactor(averunnable[0]);
+	register fixpt_t loadfac = loadfactor(averunnable.ldavg[0]);
 	register struct proc *p;
 	register int s;
 	register unsigned int newcpu;
@@ -191,7 +191,7 @@ updatepri(p)
 	register struct proc *p;
 {
 	register unsigned int newcpu = p->p_cpu;
-	register fixpt_t loadfac = loadfactor(averunnable[0]);
+	register fixpt_t loadfac = loadfactor(averunnable.ldavg[0]);
 
 	if (p->p_slptime > 5 * loadfac)
 		p->p_cpu = 0;
