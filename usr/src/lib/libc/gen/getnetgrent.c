@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getnetgrent.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getnetgrent.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -222,6 +222,8 @@ parse_netgrp(group)
 			if (parse_netgrp(spos))
 				return (1);
 		}
+		if (pos == NULL)
+			break;
 		while (*pos == ' ' || *pos == ',' || *pos == '\t')
 			pos++;
 	}
