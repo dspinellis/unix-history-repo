@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_utils.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_utils.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -56,7 +56,7 @@ __bt_ret(t, e, key, data)
 			t->bt_dbuf = p;
 			t->bt_dbufsz = bl->dsize + 1;
 		}
-		bcopy(bl->bytes + bl->ksize, t->bt_dbuf, t->bt_dbufsz);
+		bcopy(bl->bytes + bl->ksize, t->bt_dbuf, bl->dsize);
 		data->size = bl->dsize;
 	}
 	data->data = t->bt_dbuf;
@@ -75,7 +75,7 @@ __bt_ret(t, e, key, data)
 			t->bt_kbuf = p;
 			t->bt_kbufsz = bl->ksize;
 		}
-		bcopy(bl->bytes, t->bt_kbuf, t->bt_kbufsz);
+		bcopy(bl->bytes, t->bt_kbuf, bl->ksize);
 		key->size = bl->ksize;
 	}
 	key->data = t->bt_kbuf;
