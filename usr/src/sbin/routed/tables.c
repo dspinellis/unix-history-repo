@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -378,11 +378,24 @@ rtioctl(action, ort)
 	if (rtm.rtm_flags & RTF_HOST) {
 		rtm.rtm_msglen -= sizeof(w.w_netmask);
 	} else {
-		rtm.rtm_msglen -= 8;
+		register char *cp;
+		int len;
+
 		rtm.rtm_addrs |= RTA_NETMASK;
-		w.w_netmask.sin_len = 8;
 		w.w_netmask.sin_addr.s_addr =
 			inet_maskof(w.w_dst.sin_addr.s_addr);
+		for (cp = (char *)(1 + &w.w_netmask.sin_addr);
+				    --cp > (char *) &w.w_netmask; )
+			if (*cp)
+				break;
+		len = cp - (char *)&w.w_netmask;
+		if (len) {
+			len++;
+			w.w_netmask.sin_len = len;
+			len = 1 + ((len - 1) | (sizeof(long) - 1));
+		} else 
+			len = sizeof(long);
+		rtm.rtm_msglen -= (sizeof(w.w_netmask) - len);
 	}
 	errno = 0;
 	return write(r, (char *)&w, rtm.rtm_msglen);
