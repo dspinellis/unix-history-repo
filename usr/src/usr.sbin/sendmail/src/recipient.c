@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.6	%G%";
+static char SccsId[] = "@(#)recipient.c	3.7	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -199,6 +199,7 @@ recipient(a)
 			else
 			{
 				a->q_home = newstr(pw->pw_dir);
+				a->q_uid = pw->pw_uid;
 				if (strcmp(buf, a->q_user) == 0)
 					forward(a);
 			}
