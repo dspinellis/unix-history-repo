@@ -39,7 +39,7 @@
 #include "pathnames.h"
 
 struct tms tmbuf1,tmbuf2;
-int TerminateSearch(),Die();
+void TerminateSearch(),Die();
 
 #define scanz fflush(stdout),scanw
 #define printz printw
@@ -61,6 +61,7 @@ ExitChess()
 }
 
 
+void
 Die()
 {
 char s[80];
@@ -73,6 +74,7 @@ char s[80];
 }
 
 
+void
 TerminateSearch()
 {
   signal(SIGINT,SIG_IGN);
@@ -118,7 +120,7 @@ char s[80];
           VerifyMove(mvstr1,2,&mv);
           if (Sdepth > 0) Sdepth--;
         }
-      ft = time((long *)0) - time0;
+      ft = time((time_t *)0) - time0;
       epsquare = tmp;
     }
   
@@ -415,7 +417,7 @@ ElapsedTime(iop)
 
 short iop;
 {
-  et = time((long *)0) - time0;
+  et = time((time_t *)0) - time0;
   if (et < 0) et = 0;
   ETnodes += 50;
   if (et > et0 || iop == 1)
@@ -424,7 +426,7 @@ short iop;
       et0 = et;
       if (iop == 1)
         {
-          time0 = time((long *)0); et0 = 0;
+          time0 = time((time_t *)0); et0 = 0;
         }
       (void) times(&tmbuf2);
       cputimer = 100*(tmbuf2.tms_utime - tmbuf1.tms_utime) / HZ;
