@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.81 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.82 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -819,23 +819,20 @@ getla()
 int
 getla()
 {
-	register double avenrun;
+	double avenrun;
 	register int result;
-	static FILE *fp = NULL;
+	FILE *fp;
 
-	if (fp == NULL)
+	fp = fopen(_PATH_LOADAVG, "r");
+	if (fp == NULL) 
 	{
-		fp = fopen(_PATH_LOADAVG, "r");
-		if (fp == NULL) 
-		{
-			if (tTd(3, 1))
-				printf("getla: fopen(%s): %s\n",
-					_PATH_LOADAVG, errstring(errno));
-			return -1;
-		}
+		if (tTd(3, 1))
+			printf("getla: fopen(%s): %s\n",
+				_PATH_LOADAVG, errstring(errno));
+		return -1;
 	}
-	(void) rewind(fp);
 	result = fscanf(fp, "%lf", &avenrun);
+	fclose(fp);
 	if (result != 1)
 	{
 		if (tTd(3, 1))
