@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -413,6 +413,12 @@ expand(name)
 	struct stat sbuf;
 	extern union wait wait_status;
 
+	/*
+	 * The order of evaluation is "%" and "#" expand into constants.
+	 * "&" can expand into "+".  "+" can expand into shell meta characters.
+	 * Shell meta characters expand into constants.
+	 * This way, we make no recursive expansion.
+	 */
 	switch (*name) {
 	case '%':
 		findmail(name[1] ? name + 1 : myname, xname);
@@ -426,14 +432,17 @@ expand(name)
 		}
 		return savestr(prevfile);
 	case '&':
-		if (name[1] == 0 && (name = value("mbox")) == NOSTR) {
-			sprintf(xname, "%s/mbox", homedir);
-			name = savestr(xname);
-		}
+		if (name[1] == 0 && (name = value("mbox")) == NOSTR)
+			name = "~/mbox";
 		/* fall through */
 	}
 	if (name[0] == '+' && getfold(cmdbuf) >= 0) {
 		sprintf(xname, "%s/%s", cmdbuf, name + 1);
+		name = savestr(xname);
+	}
+	/* catch the most common shell meta character */
+	if (name[0] == '~' && (name[1] == '/' || name[1] == '\0')) {
+		sprintf(xname, "%s/%s", homedir, name + 1);
 		name = savestr(xname);
 	}
 	if (!anyof(name, "~{[*?$`'\"\\"))
@@ -455,7 +464,7 @@ expand(name)
 	l = read(pivec[0], xname, BUFSIZ);
 	close(pivec[0]);
 	if (wait_child(pid) < 0 && wait_status.w_termsig != SIGPIPE) {
-		fprintf(stderr, "\"Echo\" failed\n");
+		fprintf(stderr, "\"%s\": Expansion failed.\n");
 		return NOSTR;
 	}
 	if (l < 0) {
@@ -463,11 +472,11 @@ expand(name)
 		return NOSTR;
 	}
 	if (l == 0) {
-		fprintf(stderr, "\"%s\": No match\n", name);
+		fprintf(stderr, "\"%s\": No match.\n", name);
 		return NOSTR;
 	}
 	if (l == BUFSIZ) {
-		fprintf(stderr, "Buffer overflow expanding \"%s\"\n", name);
+		fprintf(stderr, "\"%s\": Expansion buffer overflow.\n", name);
 		return NOSTR;
 	}
 	xname[l] = 0;
@@ -475,7 +484,7 @@ expand(name)
 		;
 	cp[1] = '\0';
 	if (index(xname, ' ') && stat(xname, &sbuf) < 0) {
-		fprintf(stderr, "\"%s\": Ambiguous\n", name);
+		fprintf(stderr, "\"%s\": Ambiguous.\n", name);
 		return NOSTR;
 	}
 	return savestr(xname);
