@@ -1,4 +1,4 @@
-/*	up.c	4.28	81/03/03	*/
+/*	up.c	4.29	81/03/06	*/
 
 #include "up.h"
 #if NSC > 0
@@ -390,7 +390,7 @@ loop:
 		upwaitdry++;
 	}
 	if ((upaddr->upds & UP_DREADY) != UP_DREADY) {
-		printf("up%d not ready", dkunit(bp));
+		printf("up%d: not ready", dkunit(bp));
 		if ((upaddr->upds & UP_DREADY) != UP_DREADY) {
 			printf("\n");
 			um->um_tab.b_active = 0;
@@ -471,8 +471,6 @@ upintr(sc21)
 			upaddr->upcs1 = UP_TRE;
 		goto doattn;
 	}
-	if ((upaddr->upcs1 & UP_RDY) == 0)
-		printf("upintr !RDY\n");		/* shouldn't happen */
 	/*
 	 * Get device and block structures, and a pointer
 	 * to the uba_dinfo for the drive.  Select the drive.
@@ -494,28 +492,20 @@ upintr(sc21)
 				break;
 			upwaitdry++;
 		}
-		if ((upaddr->upds&UP_DREADY) != UP_DREADY) {
-			printf("up%d not ready", dkunit(bp));
-			bp->b_flags |= B_ERROR;
-		} else if (upaddr->uper1&UP_WLE) {
+		if (upaddr->uper1&UP_WLE) {
 			/*
 			 * Give up on write locked devices
 			 * immediately.
 			 */
-			printf("up%d is write locked\n", dkunit(bp));
+			printf("up%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
 		} else if (++um->um_tab.b_errcnt > 27) {
 			/*
 			 * After 28 retries (16 without offset, and
 			 * 12 with offset positioning) give up.
 			 */
-			if (upaddr->upcs2&(UP_NEM|UP_MXF)) {
-				printf("FLAKEY UP ");
-				ubareset(um->um_ubanum);
-				return;
-			}
-			harderr(bp);
-			printf("up%d cs2=%b er1=%b er2=%b\n", dkunit(bp),
+			harderr(bp, "up");
+			printf("cs2=%b er1=%b er2=%b\n",
 			    upaddr->upcs2, UPCS2_BITS,
 			    upaddr->uper1, UPER1_BITS,
 			    upaddr->uper2, UPER2_BITS);
@@ -664,7 +654,7 @@ upecc(ui)
 	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("SOFT ECC up%d%c bn%d\n", dkunit(bp),
+	printf("up%d%c: soft ecc bn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = up->upec2;
 	/*
@@ -731,23 +721,20 @@ upecc(ui)
  * and restart all units and the controller.
  */
 upreset(uban)
+	int uban;
 {
 	register struct uba_minfo *um;
 	register struct uba_dinfo *ui;
 	register sc21, unit;
-	int any = 0;
 
 	for (sc21 = 0; sc21 < NSC; sc21++) {
 		if ((um = upminfo[sc21]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
-		if (any == 0) {
-			printf(" up");
-			DELAY(10000000);	/* give it time to self-test */
-			any++;
-		}
+		printf(" sc%d", sc21);
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
+		up_softc[sc21].sc_recal = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
@@ -756,7 +743,7 @@ upreset(uban)
 		for (unit = 0; unit < NUP; unit++) {
 			if ((ui = updinfo[unit]) == 0)
 				continue;
-			if (ui->ui_alive == 0)
+			if (ui->ui_alive == 0 || ui->ui_mi != um)
 				continue;
 			uputab[unit].b_active = 0;
 			(void) upustart(ui);
@@ -768,7 +755,7 @@ upreset(uban)
 /*
  * Wake up every second and if an interrupt is pending
  * but nothing has happened increment a counter.
- * If nothing happens for 20 seconds, reset the controller
+ * If nothing happens for 20 seconds, reset the UNIBUS
  * and begin anew.
  */
 upwatch()
@@ -791,11 +778,11 @@ upwatch()
 			sc->sc_wticks = 0;
 			continue;
 		}
-    active:
+active:
 		sc->sc_wticks++;
 		if (sc->sc_wticks >= 20) {
 			sc->sc_wticks = 0;
-			printf("LOST upintr ");
+			printf("sc%d: lost interrupt\n", sc21);
 			ubareset(um->um_ubanum);
 		}
 	}
@@ -827,7 +814,6 @@ updump(dev)
 	if (cpu == VAX_780)
 		ubainit(uba);
 #endif
-	DELAY(2000000);
 	upaddr = (struct updevice *)ui->ui_physaddr;
 	if ((upaddr->upcs1&UP_DVA) == 0)
 		return (EFAULT);
