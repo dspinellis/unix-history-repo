@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.49	83/01/22	*/
+/*	ffs_vnops.c	4.50	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -265,7 +265,7 @@ link()
 		u.u_error = EXDEV;
 		goto out;
 	}
-	direnter(ip);
+	u.u_error = direnter(ip);
 out:
 	if (u.u_error) {
 		ip->i_nlink--;
@@ -991,11 +991,9 @@ rename()
 			dp->i_flag |= ICHG;
 			iupdat(dp, &time, &time, 1);
 		}
-		direnter(ip);
-		if (u.u_error) {
-			error = u.u_error;
+		error = direnter(ip);
+		if (error)
 			goto out;
-		}
 	} else {
 		if (xp->i_dev != dp->i_dev || xp->i_dev != ip->i_dev) {
 			error = EXDEV;
@@ -1181,11 +1179,11 @@ maknode(mode)
 	 * Make sure inode goes to disk before directory entry.
 	 */
 	iupdat(ip, &time, &time, 1);
-	direnter(ip);
+	u.u_error = direnter(ip);
 	if (u.u_error) {
 		/*
-		 * write error occurred trying to update directory
-		 * so must deallocate the inode
+		 * Write error occurred trying to update directory
+		 * so must deallocate the inode.
 		 */
 		ip->i_nlink = 0;
 		ip->i_flag |= ICHG;

@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.34	82/12/22	*/
+/*	ufs_lookup.c	4.35	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -537,7 +537,7 @@ direnter(ip)
 {
 	register struct direct *ep, *nep;
 	struct buf *bp;
-	int loc, freespace;
+	int loc, freespace, error = 0;
 	u_int dsize;
 	int newentrysize;
 	char *dirbuf;
@@ -555,10 +555,10 @@ direnter(ip)
 		if (u.u_offset&(DIRBLKSIZ-1))
 			panic("wdir: newblk");
 		u.u_dent.d_reclen = DIRBLKSIZ;
-		(void) rdwri(UIO_WRITE, u.u_pdir, (caddr_t)&u.u_dent,
+		error = rdwri(UIO_WRITE, u.u_pdir, (caddr_t)&u.u_dent,
 		    newentrysize, u.u_offset, 1, (int *)0);
 		iput(u.u_pdir);
-		return;
+		return (error);
 	}
 
 	/*
@@ -580,12 +580,12 @@ direnter(ip)
 
 	/*
 	 * Get the block containing the space for the new directory
-	 * entry.
+	 * entry.  Should return error by result instead of u.u_error.
 	 */
 	bp = blkatoff(u.u_pdir, u.u_offset, (char **)&dirbuf);
 	if (bp == 0) {
 		iput(u.u_pdir);
-		return;
+		return (u.u_error);
 	}
 
 	/*
@@ -631,6 +631,7 @@ direnter(ip)
 	bwrite(bp);
 	u.u_pdir->i_flag |= IUPD|ICHG;
 	iput(u.u_pdir);
+	return (error);
 }
 
 /*
