@@ -1,4 +1,4 @@
-/*	conf.c	4.28	81/03/11	*/
+/*	conf.c	4.29	81/03/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -54,7 +54,7 @@ int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump(),rkreset();
 #endif
 
 #include "te.h"
-#if NTM > 0
+#if NTE > 0
 int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite();
 int	tmioctl(),tmdump(),tmreset();
 #else

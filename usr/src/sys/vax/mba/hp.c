@@ -1,4 +1,4 @@
-/*	hp.c	4.31	81/03/11	*/
+/*	hp.c	4.32	81/03/16	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -53,11 +53,11 @@ struct	size {
 }, rm5_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 26 */
 	33440,	27,		/* B=cyl 27 thru 81 */
-	500992,	0,		/* C=cyl 0 thru 823 */
+	500384,	0,		/* C=cyl 0 thru 822 */
 	15884,	562,		/* D=cyl 562 thru 588 */
 	55936,	589,		/* E=cyl 589 thru 680 */
-	86944,	681,		/* F=cyl 681 thru 823 */
-	159296,	562,		/* G=cyl 562 thru 823 */
+	86636,	681,		/* F=cyl 681 thru 822 */
+	158688,	562,		/* G=cyl 562 thru 822 */
 	291346,	82,		/* H=cyl 82 thru 561 */
 }, rm80_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 36 */
@@ -241,8 +241,9 @@ hpdtint(mi, mbsr)
 		    hpaddr->hper1 & HPER1_HARD ||
 		    hpaddr->hper2 & HPER2_HARD) {
 			harderr(bp, "hp");
-			printf("mbsr=%b er1=%b er2=%b\n",
-			    mbsr, mbsr_bits,
+			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
+				printf("mbsr=%b ", mbsr, mbsr_bits);
+			printf("er1=%b er2=%b\n",
 			    hpaddr->hper1, HPER1_BITS,
 			    hpaddr->hper2, HPER2_BITS);
 			bp->b_flags |= B_ERROR;
