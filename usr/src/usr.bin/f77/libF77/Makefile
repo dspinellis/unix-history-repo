@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 # Makefile for f77 math & startup lib, libF77.a
 
@@ -48,6 +48,7 @@ OBJS	      = abort_.o \
 		d_cos.o \
 		d_cosh.o \
 		d_dim.o \
+		d_dprod.o \
 		d_exp.o \
 		d_imag.o \
 		d_int.o \
@@ -183,6 +184,7 @@ SRCS	      = abort_.c \
 		d_cos.c \
 		d_cosh.c \
 		d_dim.c \
+		d_dprod.c \
 		d_exp.c \
 		d_imag.c \
 		d_int.c \
