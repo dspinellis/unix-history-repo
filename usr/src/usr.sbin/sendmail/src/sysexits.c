@@ -9,13 +9,11 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)sysexits.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)sysexits.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include <sysexits.h>
 # include "useful.h"
-
-SCCSID(@(#)sysexits.c	5.1		%G%);
 
 /*
 **  SYSEXITS.C -- error messages corresponding to sysexits.h
