@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.24 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -52,6 +52,7 @@ int	dead_bmap __P((struct vop_bmap_args *));
 int	dead_strategy __P((struct vop_strategy_args *));
 int	dead_print __P((struct vop_print_args *));
 #define dead_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
+#define dead_pathconf ((int (*) __P((struct  vop_pathconf_args *)))dead_ebadf)
 #define dead_advlock ((int (*) __P((struct  vop_advlock_args *)))dead_ebadf)
 #define dead_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))dead_badop)
 #define dead_valloc ((int (*) __P((struct  vop_valloc_args *)))dead_badop)
@@ -95,6 +96,7 @@ struct vnodeopv_entry_desc dead_vnodeop_entries[] = {
 	{ &vop_strategy_desc, dead_strategy },	/* strategy */
 	{ &vop_print_desc, dead_print },	/* print */
 	{ &vop_islocked_desc, dead_islocked },	/* islocked */
+	{ &vop_pathconf_desc, dead_pathconf },	/* pathconf */
 	{ &vop_advlock_desc, dead_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, dead_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, dead_valloc },	/* valloc */
