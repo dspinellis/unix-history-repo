@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.15 (Berkeley) %G%
+#	@(#)Makefile	5.16 (Berkeley) %G%
 
 SUBDIR=	ac accton amd arp chown chroot cron dev_mkdb diskpart edquota \
 	inetd kgmon kvm_mkdb lpr mkproto mtree named portmap pstat \
@@ -14,7 +14,7 @@ SUBDIR+=bad144 config iostat
 .elif ${MACHINE} == "luna68k"
 SUBDIR+=config iostat timed
 .elif ${MACHINE} == "sparc"
-SUBDIR+=config.new timed
+SUBDIR+=config.new eeprom timed
 .elif ${MACHINE} == "tahoe"
 SUBDIR+=config iostat timed
 .elif ${MACHINE} == "vax"
