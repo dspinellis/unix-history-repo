@@ -3,7 +3,8 @@
 #
 I BMACLIB/bibinc.shortnames
 H
-A
+AA
+EA
 .so \*(l]/bmac.std
 .de s[   \" start reference
 .nh

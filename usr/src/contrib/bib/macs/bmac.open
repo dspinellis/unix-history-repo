@@ -8,9 +8,21 @@
 .ds .] .
 .ds [, " \&
 .ds ,] ,
+.ds [? " \&
+.ds ?] ?
+.ds [: " \&
+.ds :] :
+.ds [; " \&
+.ds ;] ;
+.ds [! " \&
+.ds !] !
+.ds [" " \&
+.ds "] \&"
+.ds [' " \&
+.ds '] '
 .ds [< " \&
 .ds >]
-.\" reference formmating strings
+.\" reference formating strings
 .ds c] , \&
 .ds n] "" and \&
 .ds m] "" and \&
@@ -24,8 +36,6 @@
 .[-
 ..
 .de []   \" start to display collected references
-.SH
-References
 .LP
 ..
 .de ][   \" choose format
@@ -38,6 +48,13 @@ References
 ..
 .de 0[   \" other
 .s[
+.if !~\\*(]A~.~ .as [A .
+.if !~\\*([A~~ \\*([A
+.br
+.if !~\\*([E~~ \{\
+.       ie \\n([E-1 \\*([E, editors.
+.       el \\*([E, editor.\}
+.br
 .if !~\\*(]A~.~ .as [A .
 .if !~\\*([A~~ \\*([A
 .br
@@ -54,6 +71,10 @@ References
 .if !~\\*(]A~.~ .as [A .
 .if !~\\*([A~~ \\*([A
 .br
+.if !~\\*([E~~ \{\
+.       ie \\n([E-1 \\*([E, editors.
+.       el \\*([E, editor.\}
+.br
 .if !~\\*(]T~.~ .as [T .
 .if !~\\*([T~~ \\*([T
 .br
@@ -62,7 +83,7 @@ References
 .       as a[ , \\*([V
 .       if !~\\*([N~~ .as a[ (\\*([N)
 .       if !~\\*([P~~ .as a[ :\\*([P\}
-.el .if !~\\*([P~~ .as a[ , pages \\*([P
+.el .if !~\\*([P~~ .as a[ , pp. \\*([P
 .if !~\\*([I~~ .as a[ , \\*([I
 .if !~\\*([D~~ .as a[ , \\*([D
 \\*(a[.
@@ -73,8 +94,9 @@ References
 .de 2[ \" book
 .s[
 .if !~\\*(]A~.~ .as [A .
-.ie !"\\*([A"" \\*([A
-.el .if !~\\*([E~~ \{\
+.if !"\\*([A"" \\*([A
+.br
+.if !~\\*([E~~ \{\
 .       ie \\n([E-1 \\*([E, editors.
 .       el \\*([E, editor.\}
 .br
@@ -107,7 +129,10 @@ References
 .if !~\\*([P~~ pp. \\*([P \c
 in \\fI\\*([B\\fP\c
 .if !~\\*([V~~ , Vol \\*([V\c
-.if !~\\*([E~~ , ed. \\*([E\c
+.if !~\\*([E~~ \{\
+.       ie \\n([E-1 , \\*([E, editors.
+.       el , \\*([E, editor.\}
+.br
 \&.
 .br
 .if !~\\*([I~~ \\*([I\c
@@ -121,6 +146,10 @@ in \\fI\\*([B\\fP\c
 .s[
 .if !~\\*(]A~.~ .as [A .
 .if !~\\*([A~~ \\*([A
+.br
+.if !~\\*([E~~ \{\
+.       ie \\n([E-1 \\*([E, editors.
+.       el \\*([E, editor.\}
 .br
 .if !~\\*(]T~.~ .as [T .
 \\*([T
