@@ -1,4 +1,4 @@
-/*	dmfreg.h	4.1	83/05/14	*/
+/*	dmfreg.h	4.2	83/05/14	*/
 
 /*
  * DMF-32 definitions.
@@ -56,8 +56,7 @@ struct dmfdevice {
 #define	BITS8	(03<<3)
 #define	TWOSB	0200
 #define	PENABLE	040
-/* DEC manuals incorrectly say this bit causes generation of even parity. */
-#define	OPAR	0100
+#define	EPAR	0100
 
 #define	DMF_IE	(DMF_TIE|DMF_RIE)
 
