@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.4 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -43,10 +43,10 @@ int traceallspps = 0;
 extern int sppconsdebug;
 
 int spp_hardnosed;
-spp_input(m, nsp)
-	register struct nspcb *nsp;
+spp_input(m)
 	register struct mbuf *m;
 {
+	register struct nspcb *nsp;
 	register struct sppcb *cb;
 	register struct spidp *si = mtod(m, struct spidp *);
 	register struct socket *so;
@@ -54,6 +54,14 @@ spp_input(m, nsp)
 	int dropsocket = 0;
 
 
+	/*
+	 * Locate pcb for datagram.
+	 */
+	nsp = ns_pcblookup(&si->si_sna, si->si_dna.x_port, NS_WILDCARD);
+	if (nsp==0) {
+		ns_error(m, NS_ERR_NOSOCK, 0);
+		return;
+	}
 
 	cb = nstosppcb(nsp);
 	if (cb == 0) goto bad;
@@ -145,12 +153,11 @@ spp_input(m, nsp)
 	/*
 	 * This state means that we have gotten a response
 	 * to our attempt to establish a connection.
-	 * We fill in the data from the other side
-	 * (Telling which port to send to instead of the well-
-	 * known one we might have to in the first place )
+	 * We fill in the data from the other side,
+	 * telling us which port to respond to, instead of the well-
+	 * known one we might have sent to in the first place.
 	 * We also require that this is a response to our
-	 * connection id, and that it should be a system packet,
-	 * containing no data.
+	 * connection id.
 	 */
 	case TCPS_SYN_SENT:
 		if (si->si_did!=cb->s_sid) {
@@ -190,7 +197,6 @@ spp_input(m, nsp)
 	m->m_off += sizeof (struct idp);
 
 	if (spp_reass(cb,si)) {
-		spp_istat.bdreas++;
 		goto drop;
 	}
 	spp_output(cb,(struct mbuf *)0);
@@ -209,7 +215,7 @@ dropwithreset:
 
 drop:
 bad:
-	if (cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
+	if (cb==0 || cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
 		spp_trace(SA_DROP, ostate, cb, &spp_savesi, 0);
 	m_freem(m);
 }
@@ -274,13 +280,18 @@ register struct spidp *si;
 	 * than that of the first packet not yet seen coming
 	 * from them, this must be a duplicate, so drop.
 	 */
-	if (SSEQ_LT(si->si_seq,cb->s_ack))
+	if (SSEQ_LT(si->si_seq,cb->s_ack)) {
+		spp_istat.bdreas++;
+		if (si->si_seq==cb->s_ack-1)
+			spp_istat.lstdup++;
 		return (1);
+	}
 	/*
 	 * If this packet number is higher than that which
 	 * we have allocated refuse it, unless urgent
 	 */
 	if (SSEQ_GT(si->si_seq,cb->s_alo) && (!(si->si_cc & SP_OB))) {
+		spp_istat.notyet++;
 		return (1);
 	}
 	/*
@@ -344,6 +355,8 @@ spp_ctlinput(cmd, arg)
 	struct ns_addr *na;
 	extern u_char nsctlerrmap[];
 	extern spp_abort();
+	struct ns_errp *errp;
+	struct nspcb *nsp;
 	int type;
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
@@ -366,20 +379,27 @@ spp_ctlinput(cmd, arg)
 		break;
 
 	default:
-		na = &((struct ns_errp *)arg)->ns_err_idp.idp_dna;
-		type = ((struct ns_errp *)arg)->ns_err_num;
+		errp = (struct ns_errp *)arg;
+		na = &errp->ns_err_idp.idp_dna;
+		type = errp->ns_err_num;
 		type = ntohs(type);
 	}
 	switch (type) {
 
 	case NS_ERR_UNREACH_HOST:
-	case NS_ERR_NOSOCK:
-		ns_pcbnotify(na, (int)nsctlerrmap[cmd],
-				spp_abort, (long) 0);
+		ns_pcbnotify(na, (int)nsctlerrmap[cmd], spp_abort, (long) 0);
 		break;
 
 	case NS_ERR_TOO_BIG:
-		ns_pcbnotify(na, 0, spp_abort, (long)arg);
+	case NS_ERR_NOSOCK:
+		nsp = ns_pcblookup(na, errp->ns_err_idp.idp_sna.x_port,
+			NS_WILDCARD);
+		if (nsp) {
+			if(nsp->nsp_pcb)
+				spp_drop(nsp->nsp_pcb, (int)nsctlerrmap[cmd]);
+			else
+				idp_drop(nsp, (int)nsctlerrmap[cmd]);
+		}
 	}
 }
 
@@ -431,6 +451,7 @@ register struct nspcb *nsp;
 }
 
 int spp_output_cnt = 0;
+
 spp_output(cb, m0)
 	register struct sppcb *cb;
 	struct mbuf *m0;
@@ -474,6 +495,7 @@ spp_output(cb, m0)
 			}
 		}
 		if (len & 1) {
+			m = mprev;
 			if (m->m_len + m->m_off < MMAXOFF) {
 				m->m_len++;
 			} else {
@@ -512,6 +534,21 @@ spp_output(cb, m0)
 			len -= sizeof (*sh);
 		}
 		len += sizeof(*si);
+		if (cb->s_oobflags & SF_SOOB) {
+			/*
+			 * Per jqj@cornell:
+			 * make sure OB packets convey exactly 1 byte.
+			 * If the packet is 1 byte or larger, we
+			 * have already guaranted there to be at least
+			 * one garbage byte for the checksum, and
+			 * extra bytes shouldn't hurt!
+			 * 
+			 */
+			if (len > sizeof(*si)) {
+				si->si_cc |= SP_OB;
+				len = (1 + sizeof(*si));
+			}
+		}
 		si->si_len = htons(len);
 		/*
 		 * queue stuff up for output
@@ -604,8 +641,7 @@ output:
 		si = mtod(m, struct spidp *);
 		*si = cb->s_shdr;
 		si->si_seq = cb->s_snt + 1;
-		len = sizeof (*si);
-		si->si_len = htons((u_short)len);
+		si->si_len = htons(sizeof (*si));
 		si->si_cc |= SP_SP;
 		cb->s_flags &= ~SF_AK;
 	}
@@ -624,9 +660,9 @@ output:
 			si->si_cc |= SP_SA;
 			cb->s_force = 0;
 		}
-		/* if this is a new packet (and not a system packet)
-		 * and we are not currently timing anything
-		 * time this one and ask for an ack
+		/* If this is a new packet (and not a system packet),
+		 * and we are not currently timing anything,
+		 * time this one and ask for an ack.
 		 */
 		if (SSEQ_LT(cb->s_snt,si->si_seq) &&
 		   (!(si->si_cc & SP_SP))) {
@@ -654,6 +690,7 @@ output:
 
 		if (idpcksum) {
 			si->si_sum = 0;
+			len = ntohs(si->si_len);
 			len = ((len - 1) | 1) + 1;
 			si->si_sum = ns_cksum(dtom(si), len);
 		} else
@@ -822,7 +859,6 @@ spp_usrreq(so, req, m, nam, rights)
 			}
 			cb = mtod(mm, struct sppcb *);
 			cb->s_state = TCPS_LISTEN;
-			cb->s_flags = SF_HI | SF_HO;
 			cb->s_snt = -1;
 			cb->s_q.si_next = cb->s_q.si_prev = &cb->s_q;
 			cb->s_nspcb = nsp;
