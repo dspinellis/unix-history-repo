@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)code.c	1.9 (Berkeley) %G%";
+static char *sccsid ="@(#)code.c	1.10 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -78,12 +78,11 @@ locctr( l ){
 	return( temp );
 	}
 
-#ifndef deflab
 deflab( n ){
 	/* output something to define the current position as label n */
+	if (nerrors) return;
 	printf( "L%d:\n", n );
 	}
-#endif
 
 int crslab = 10;
 
