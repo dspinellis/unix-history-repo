@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.7 (Berkeley) %G%
+ *	@(#)types.h	7.8 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
@@ -33,6 +33,13 @@ typedef	struct	label_t	{
 	int	val[14];
 } label_t;
 #endif
+#if defined(hp300)
+typedef	struct	_physadr { short r[1]; } *physadr;
+typedef	struct	label_t	{
+	int	val[15];	/* consistent with HP-UX */
+} label_t;
+#endif
+typedef	struct	_uquad { unsigned long val[2]; } u_quad;
 typedef	struct	_quad { long val[2]; } quad;
 typedef	long	daddr_t;
 typedef	char *	caddr_t;
