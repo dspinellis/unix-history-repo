@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.12 (Berkeley) %G%
+ *	@(#)stdio.h	5.13 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -98,7 +98,9 @@ typedef	struct __sFILE {
 	int	_offset;	/* current lseek offset */
 } FILE;
 
+__BEGIN_DECLS
 extern FILE __sF[];
+__END_DECLS
 
 #define	__SLBF	0x0001		/* line buffered */
 #define	__SNBF	0x0002		/* unbuffered */
@@ -252,13 +254,15 @@ FILE	*funopen __P((const void *,
 __END_DECLS
 #define	fropen(cookie, fn) funopen(cookie, fn, 0, 0, 0)
 #define	fwopen(cookie, fn) funopen(cookie, 0, fn, 0, 0)
-#endif /* neither ANSI nor POSIX */
+#endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 
 /*
  * Functions internal to the implementation.
  */
+__BEGIN_DECLS
 int	__srget __P((FILE *));
 int	__swbuf __P((int, FILE *));
+__END_DECLS
 
 /*
  * The __sfoo macros are here so that we can 
