@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -116,8 +116,7 @@ wrefresh(win)
 				}
 			}
 
-		} else
-			win->lines[wy]->flags &= ~__ISPASTEOL;
+		}
 #ifdef DEBUG
 		__TRACE("\t%d\t%d\n", *win->lines[wy]->firstchp, 
 			*win->lines[wy]->lastchp);
@@ -174,14 +173,10 @@ makech(win, wy)
 
 	/* Is the cursor still on the end of the last line? */
 	if (wy > 0 && win->lines[wy - 1]->flags & __ISPASTEOL) {
-		win->lines[wy - 1]->flags &= ~__ISPASTEOL;
 		domvcur(ly, lx, ly + 1, 0);
 		ly++;
 		lx = 0;
 	}
-	if (!(win->lines[wy]->flags & __ISDIRTY))
-		return (OK);
-
 	wx = *win->lines[wy]->firstchp - win->ch_off;
 	if (wx < 0)
 		wx = 0;
@@ -310,13 +305,9 @@ makech(win, wy)
 		if (lx == wx + win->begx)	/* If no change. */
 			break;
 		lx = wx + win->begx;
-		if (lx >= COLS && AM) {
-			if (wy != LINES)
-				win->lines[wy]->flags |= __ISPASTEOL;
+		if (lx >= COLS && AM)
 			lx = COLS - 1;
-		} else if (wx >= win->maxx) {
-			if (wy != win->maxy)
-				win->lines[wy]->flags |= __ISPASTEOL;
+		else if (wx >= win->maxx) {
 			domvcur(ly, lx, ly, win->maxx + win->begx - 1);
 			lx = win->maxx + win->begx - 1;
 		}
