@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.58	83/02/10	*/
+/*	kern_proc.c	4.59	83/02/16	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -433,7 +433,6 @@ register struct inode *ip;
 		u.u_uid = uid;
 		u.u_procp->p_uid = uid;
 		u.u_gid = gid;
-		(void) entergroup(gid);
 	} else
 		psignal(u.u_procp, SIGTRAP);
 	u.u_tsize = ts;
