@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1749,7 +1749,7 @@ char *acp;
 	if (text.size <= 0)
 		return (1);
 	getarhdr();
-	if (strncmp(archdr.ar_name, "__.SYMDEF", sizeof(archdr.ar_name)) != 0)
+	if (strncmp(archdr.ar_name, RANLIBMAG, sizeof(archdr.ar_name)) != 0)
 		return (1);
 	return (stb.st_mtime > atol(archdr.ar_date) ? 3 : 2);
 }

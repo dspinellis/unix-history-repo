@@ -1,4 +1,6 @@
-/*	ranlib.h	4.1	83/05/03	*/
+/*	ranlib.h	4.2	87/04/06	*/
+
+#define	RANLIBMAG	"__.SYMDEF"
 
 /*
  * Structure of the __.SYMDEF table of contents for an archive.
