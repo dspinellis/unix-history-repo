@@ -1,6 +1,6 @@
-#	@(#)Makefile	0.1 (RGrimes) 4/7/93
+# $Id$
 
-SUBDIR=	tcpdump
+SUBDIR=	tcpdump xntpd
 
 # Not ported: isode
 
