@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printval.c 1.4 %G%";
+static char sccsid[] = "@(#)printval.c 1.5 %G%";
 
 /*
  * Print out the value at the top of the stack using the given type.
@@ -53,7 +53,7 @@ SYM *s;
 	    } else if (s == t_char) {
 		printf("'%c'", pop(char));
 	    } else if (s == t_boolean) {
-		printf(pop(BOOLEAN)==TRUE ? "true" : "false");
+		printf(popsmall(s) == TRUE ? "true" : "false");
 	    } else {
 		printf("%ld", popsmall(s));
 	    }
