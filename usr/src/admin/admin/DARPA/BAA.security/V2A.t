@@ -1,4 +1,4 @@
-.\"     @(#)V2A.t	1.1     89/03/09
+.\"     @(#)V2A.t	1.2     89/03/17
 .nr PS 18
 .nr VS 22
 .nr HM 1.75i
@@ -37,15 +37,14 @@ Computer Science Department.
 Professor Ferrari is a former departmental Associate Chair for
 Computer Science.
 .PP
-The staff for the proposed project will consist of five technical
+The staff for the proposed project will consist of two technical
 people, a business manager, and a secretary.
 The technical people, whose salaries will be paid directly by
-this contract, will consist of a research computer scientist
-and four professional programmers.
+this contract, will consist of two professional programmers.
 .PP
 Dr. Marshall Kirk McKusick together with Michael J. Karels
 will be responsible for setting the research directions
-of the project and managing the other programmers
+of the project and managing the programmers
 associated with the project.
 Dr. McKusick has been the Research Computer Scientist
 associated with the project since 1984.
