@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ps.1	6.4 (Berkeley) %G%
+.\"	@(#)ps.1	6.5 (Berkeley) %G%
 .\"
 .TH PS 1 ""
 .UC 4
@@ -29,7 +29,7 @@ All output formats include, for each process, the process id PID,
 control terminal of the process TT, cpu time used by the process TIME
 (this includes both user and system time), the state STAT of the process,
 and an indication of the COMMAND which is running.
-The state is given by a sequence of four letters, e.g. ``RWNA''.
+The state is given by a sequence of letters, e.g. ``RWNA''.
 The first letter indicates the runnability of the process:
 R for runnable processes,
 T for stopped processes,
@@ -38,23 +38,26 @@ D for those in disk (or other short term) waits,
 S for those sleeping for less than about 20 seconds,
 and I for idle (sleeping longer than about 20 seconds)
 processes.
-The second letter indicates whether a process is swapped out,
-showing W if it is, or a blank if it is loaded (in-core);
-a process which has specified a soft limit on memory requirements
+Additional characters after these, if any,
+indicate additional state information.
+The letter W indicates that a process is swapped out,
+showing W if it is, or a blank if it is loaded (in-core).
+A process which has specified a soft limit on memory requirements
 and which is exceeding that limit shows >; such a process is (necessarily)
 not swapped.
-The third letter indicates whether a process is running with altered
+An additional letter may indicate whether a process is running with altered
 CPU scheduling priority (nice); if the process priority is reduced,
 an N is shown, if the process priority has been artificially raised then
-a `<' is shown; processes running without special treatment have just a
-blank.
-The final letter indicates any special treatment of the process for virtual
+a `<' is shown.
+The final optional letter
+indicates any special treatment of the process for virtual
 memory replacement; the letters correspond to options to the
 .IR vadvise (2)
-call; currently the possibilities are A standing for VA_ANOM, 
-S for VA_SEQL and blank for VA_NORM; an A typically represents a
+call; currently the possibilities are A standing for VA_ANOM and 
+S for VA_SEQL.
+An A typically represents a
 .IR lisp (1)
-in garbage collection, S is typical of large image processing programs
+in garbage collection, and S is typical of large image processing programs
 which are using virtual memory to sequentially address voluminous data.
 .PP
 Here are the options:
