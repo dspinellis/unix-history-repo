@@ -21,4 +21,13 @@ device snd1 at isa? port 0x388 irq 0 drq 0 vector sbintr
 
 NOTE:  The MPU-401 driver may or may not work, and is unfortunately
 unverifiable since no one I know has one.  If you can test this,
-please let me know!	- Jordan Hubbard (jkh@freefall.cdrom.com)
+please let me know!
+
+Also:  Some systems with the OPTI chipset will require you to #define
+BROKEN_BUS_CLOCK in /sys/i386/sound/pas2_card.c.  Symptoms are that
+you will hear a lot of clicking and popping sounds, like a geiger counter,
+coming out of the PAS even when is not playing anything.
+
+
+
+		- Jordan Hubbard (jkh@freefall.cdrom.com)
