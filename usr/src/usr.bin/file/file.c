@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -45,7 +45,7 @@ char *fort[] = {
 char *asc[] = {
 	"chmk","mov","tst","clr","jmp",0};
 char *c[] = {
-	"int","char","float","double","struct","extern",0};
+	"int","char","float","double","struct","extern", "static",0};
 char *as[] = {
 	"globl","byte","align","text","data","comm",0};
 char *sh[] = {
