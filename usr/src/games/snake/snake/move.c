@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*************************************************************************
@@ -59,10 +59,8 @@ static char sccsid[] = "@(#)move.c	5.4 (Berkeley) %G%";
  *		getcap()	initializes strings for later calls.
  *		cap(string)	outputs the string designated in the termcap
  *					data base. (Should not move the cursor.)
- *		done(int)	returns the terminal to intial state.  If int
- *					is not 0, it exits.
+ *		done()		returns the terminal to intial state and exits.
  *
- *		same(&p1,&p2)	returns 1 if p1 and p2 are the same point.
  *		point(&p,x,y)	return point set to x,y.
  *
  *		baudrate(x)	returns the baudrate of the terminal.
@@ -509,13 +507,6 @@ raw()
 #endif
 }
 
-same(sp1,sp2)
-struct point *sp1, *sp2;
-{
-	if ((sp1->line == sp2->line) && (sp1->col == sp2->col))return(1);
-	return(0);
-}
-
 struct point *point(ps,x,y)
 struct point *ps;
 int x,y;
@@ -554,8 +545,10 @@ getcap()
 
 	LINES = tgetnum("li");
 	COLUMNS = tgetnum("co");
-	lcnt = LINES;
-	ccnt = COLUMNS - 1;
+	if (!lcnt)
+		lcnt = LINES - 2;
+	if (!ccnt)
+		ccnt = COLUMNS - 3;
 
 	AM = tgetflag("am");
 	BW = tgetflag("bw");
