@@ -1,6 +1,6 @@
 #!/bin/sh -
 
-#	@(#)netstart	5.3 (Berkeley) %G%
+#	@(#)netstart	5.4 (Berkeley) %G%
 routedflags=-q
 rwhod=NO
 
@@ -18,4 +18,3 @@ ifconfig lo0  inet localhost
 ifconfig en0 inet $hostname netmask my-netmask
 
 route add $hostname localhost 0
-hostid $hostname
