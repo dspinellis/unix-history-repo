@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.14 (Berkeley) %G%
+ *	@(#)machdep.c	7.15 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -245,8 +245,10 @@ mach_init(argc, argv, code, cv)
 	 * Check to see if a mini-root was loaded into memory. It resides
 	 * at the start of the next page just after the end of BSS.
 	 */
-	if (boothowto & RB_MINIROOT)
+	if (boothowto & RB_MINIROOT) {
+		boothowto |= RB_DFLTROOT;
 		v += mfs_initminiroot(v);
+	}
 #endif
 
 	/*
@@ -631,6 +633,15 @@ consinit()
 	}
 	if (pmax_boardtype == DS_PMAX && kbd == 1)
 		cn_tab.cn_screen = 1;
+	/*
+	 * The boot program uses PMAX ROM entrypoints so the ROM sets
+	 * osconsole to '1' like the PMAX.
+	 */
+	if (pmax_boardtype == DS_3MAX && crt == -1 && kbd == 1) {
+		cn_tab.cn_screen = 1;
+		crt = 0;
+		kbd = 7;
+	}
 
 	/*
 	 * First try the keyboard/crt cases then fall through to the
