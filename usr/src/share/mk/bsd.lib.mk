@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.26.1.1 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.30 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
