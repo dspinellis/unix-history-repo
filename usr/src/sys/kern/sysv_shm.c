@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.11 92/04/23$
  *
- *	@(#)sysv_shm.c	8.1 (Berkeley) %G%
+ *	@(#)sysv_shm.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -29,6 +29,7 @@
 #include <sys/shm.h>
 #include <sys/malloc.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include <vm/vm.h>
 #include <vm/vm_kern.h>
@@ -163,7 +164,7 @@ shmget(p, uap, retval)
 		shmtot += size;
 		shp->shm_perm.cuid = shp->shm_perm.uid = cred->cr_uid;
 		shp->shm_perm.cgid = shp->shm_perm.gid = cred->cr_gid;
-		shp->shm_perm.mode = SHM_ALLOC | (uap->shmflg&0777);
+		shp->shm_perm.mode = SHM_ALLOC | (uap->shmflg & ACCESSPERMS);
 		shp->shm_segsz = uap->size;
 		shp->shm_cpid = p->p_pid;
 		shp->shm_lpid = shp->shm_nattch = 0;
@@ -174,7 +175,8 @@ shmget(p, uap, retval)
 		/* XXX: probably not the right thing to do */
 		if (shp->shm_perm.mode & SHM_DEST)
 			return (EBUSY);
-		if (error = ipcaccess(&shp->shm_perm, uap->shmflg&0777, cred))
+		if (error = ipcaccess(&shp->shm_perm, uap->shmflg & ACCESSPERMS,
+			    cred))
 			return (error);
 		if (uap->size && uap->size > shp->shm_segsz)
 			return (EINVAL);
@@ -221,8 +223,8 @@ shmctl(p, uap, retval)
 			return (error);
 		shp->shm_perm.uid = sbuf.shm_perm.uid;
 		shp->shm_perm.gid = sbuf.shm_perm.gid;
-		shp->shm_perm.mode = (shp->shm_perm.mode & ~0777)
-			| (sbuf.shm_perm.mode & 0777);
+		shp->shm_perm.mode = (shp->shm_perm.mode & ~ACCESSPERMS)
+			| (sbuf.shm_perm.mode & ACCESSPERMS);
 		shp->shm_ctime = time.tv_sec;
 		break;
 
