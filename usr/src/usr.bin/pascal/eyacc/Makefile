@@ -14,10 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O
-LIBC=	/lib/libc.a
+LIBC=	/usr/lib/libc.a
 SRCS=	ey0.c ey1.c ey2.c ey3.c ey4.c ey5.c
 OBJS=	ey0.o ey1.o ey2.o ey3.o ey4.o ey5.o
 
@@ -36,7 +36,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-#	install -s -o bin -g bin -m 755 eyacc ${DESTDIR}/usr/ucb/eyacc
+#	install -s -o bin -g bin -m 755 eyacc ${DESTDIR}/usr/bin/eyacc
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
