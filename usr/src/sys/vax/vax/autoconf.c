@@ -1,4 +1,4 @@
-/*	autoconf.c	4.39	82/07/13	*/
+/*	autoconf.c	4.40	82/07/15	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -218,7 +218,7 @@ mbafind(nxv, nxp)
 	register struct mba_drv *mbd;
 	register struct mba_device *mi;
 	register struct mba_slave *ms;
-	int dn, dt;
+	int dn, dt, sn;
 	struct mba_device fnd;
 
 	mdp = (struct mba_regs *)nxv;
@@ -239,22 +239,28 @@ mbafind(nxv, nxp)
 		if (dt == MBDT_MOH)
 			continue;
 		fnd.mi_drive = dn;
-		if ((mi = mbaconfig(&fnd, dt)) && (dt & MBDT_TAP)) {
-			for (ms = mbsinit; ms->ms_driver; ms++)
-			if (ms->ms_driver == mi->mi_driver && ms->ms_alive == 0 && 
-			    (ms->ms_ctlr == mi->mi_unit || ms->ms_ctlr=='?')) {
-				if ((*ms->ms_driver->md_slave)(mi, ms)) {
-					printf("%s%d at %s%d slave %d\n",
-					    ms->ms_driver->md_sname,
-					    ms->ms_unit,
-					    mi->mi_driver->md_dname,
-					    mi->mi_unit,
-					    ms->ms_slave);
+#define	qeq(a, b)	( a == b || a == '?' )
+		if ((mi = mbaconfig(&fnd, dt)) && (dt & MBDT_TAP))
+		    for (sn = 0; sn < 8; sn++) {
+			mbd->mbd_tc = sn;
+		        for (ms = mbsinit; ms->ms_driver; ms++)
+			    if (ms->ms_driver == mi->mi_driver &&
+				ms->ms_alive == 0 && 
+				qeq(ms->ms_ctlr, mi->mi_unit) &&
+				qeq(ms->ms_slave, sn) &&
+				(*ms->ms_driver->md_slave)(mi, ms, sn)) {
+					printf("%s%d at %s%d slave %d\n"
+					    , ms->ms_driver->md_sname
+					    , ms->ms_unit
+					    , mi->mi_driver->md_dname
+					    , mi->mi_unit
+					    , sn
+					);
 					ms->ms_alive = 1;
 					ms->ms_ctlr = mi->mi_unit;
+					ms->ms_slave = sn;
 				}
-			}
-		}
+		    }
 	}
 	mdp->mba_cr = MBCR_INIT;
 	mdp->mba_cr = MBCR_IE;
@@ -357,10 +363,11 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 #endif
 	register struct uba_device *ui;
 	register struct uba_ctlr *um;
-	u_short *reg, addr;
+	u_short *reg, *ap, addr;
 	struct uba_hd *uhp;
 	struct uba_driver *udp;
 	int i, (**ivec)(), haveubasr;
+	caddr_t ualloc, zmemall();
 
 	/*
 	 * Initialize the UNIBUS, by freeing the map
@@ -401,6 +408,21 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	}
 #endif
 	/*
+	 * Grab some memory to record the umem address space we allocate,
+	 * so we can be sure not to place two devices at the same address.
+	 *
+	 * We could use just 1/8 of this (we only want a 1 bit flag) but
+	 * we are going to give it back anyway, and that would make the
+	 * code here bigger (which we can't give back), so ...
+	 *
+	 * One day, someone will make a unibus with something other than
+	 * an 8K i/o address space, & screw this totally.
+	 */
+	ualloc = zmemall(memall, 8*1024);
+	if (ualloc == (caddr_t)0)
+		panic("no mem for unifind");
+
+	/*
 	 * Map the first page of UNIBUS i/o
 	 * space to the first page of memory
 	 * for devices which will need to dma
@@ -408,7 +430,8 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	 */
 	*(int *)(&vubp->uba_map[0]) = UBAMR_MRV;
 
-#define	ubaddr(off)	(u_short *)((int)vumem + ((off)&0x3ffff))
+#define	ubaoff(off)	((off)&0x1fff)
+#define	ubaddr(off)	(u_short *)((int)vumem + (ubaoff(off)|0x3e000))
 	/*
 	 * Check each unibus mass storage controller.
 	 * For each one which is potentially on this uba,
@@ -419,7 +442,17 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		if (um->um_ubanum != numuba && um->um_ubanum != '?')
 			continue;
 		addr = (u_short)um->um_addr;
-		reg = ubaddr(addr|0x3e000);
+		/*
+		 * use the particular address specified first,
+		 * or if it is given as "0", of there is no device
+		 * at that address, try all the standard addresses
+		 * in the driver til we find it
+		 */
+	    for (ap = udp->ud_addr; addr || (addr = *ap++); addr = 0) {
+
+		if (ualloc[ubaoff(addr)])
+			continue;
+		reg = ubaddr(addr);
 		if (badaddr((caddr_t)reg, 2))
 			continue;
 #if VAX780
@@ -484,6 +517,8 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 				(*udp->ud_attach)(ui);
 			}
 		}
+		break;
+	    }
 	}
 	/*
 	 * Now look for non-mass storage peripherals.
@@ -493,7 +528,12 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		    ui->ui_alive || ui->ui_slave != -1)
 			continue;
 		addr = (u_short)ui->ui_addr;
-		reg = ubaddr(addr|0x3e000);
+
+	    for (ap = udp->ud_addr; addr || (addr = *ap++); addr = 0) {
+		
+		if (ualloc[ubaoff(addr)])
+			continue;
+		reg = ubaddr(addr);
 		if (badaddr((caddr_t)reg, 2))
 			continue;
 #if VAX780
@@ -523,6 +563,8 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 			continue;
 		}
 		printf("vec %o, ipl %x\n", cvec, br);
+		while (--i >= 0)
+			ualloc[ubaoff(addr+i)] = 1;
 		ui->ui_hd = &uba_hd[numuba];
 		for (ivec = ui->ui_intr; *ivec; ivec++) {
 			ui->ui_hd->uh_vec[cvec/4] =
@@ -537,7 +579,37 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		/* ui_type comes from driver */
 		udp->ud_dinfo[ui->ui_unit] = ui;
 		(*udp->ud_attach)(ui);
+		break;
+	    }
 	}
+
+#ifdef	AUTO_DEBUG
+	printf("Unibus allocation map");
+	for (i = 0; i < 8*1024; ) {
+		register n, m;
+
+		if ((i % 128) == 0) {
+			printf("\n%6o:", i);
+			for (n = 0; n < 128; n++)
+				if (ualloc[i+n])
+					break;
+			if (n == 128) {
+				i += 128;
+				continue;
+			}
+		}
+
+		for (n = m = 0; n < 16; n++) {
+			m <<= 1;
+			m |= ualloc[i++];
+		}
+
+		printf(" %4x", m);
+	}
+	printf("\n");
+#endif
+
+	wmemfree(ualloc, 8*1024);
 }
 
 setscbnex(fn)
