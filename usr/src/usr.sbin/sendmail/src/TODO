@@ -1,4 +1,4 @@
-(Version 8.19 of %G%)
+(Version 8.20 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -69,6 +69,11 @@ X ****	"quote" map (inverse of dequote).  Lets you turn node::user
 
 X ****	Named rulesets.
 
+? ****	Should $( [1.2.3.4] $) convert the address to a name?
+
+X ****	Let I option include retry count etc.
+	drl@vuse.vanderbilt.edu (David R. Linn)
+
 X ***	Extend I option to allow setting of retry and timeout values.
 	drl@vuse.vanderbilt.edu (David R. Linn).
 
@@ -115,6 +120,10 @@ X ***	DECNET_RELAY support in configs.
 
 X ***	-wN command line flag to set the width of mailq output.
 	(Allan Johannesen)
+
+E **	Move CurHostAddr into mci struct, and make CurMCI variable
+	point to this, so that logging will give the correct address
+	instead of (0) for cached connections.  Motonori Nakamura.
 
 X **	Allow use of a generalized network service for aliasing?
 	How would the protocol be defined?
