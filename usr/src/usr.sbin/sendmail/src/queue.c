@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.41.1.2 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.64 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.41.1.2 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.64 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -29,6 +29,8 @@ static char sccsid[] = "@(#)queue.c	8.41.1.2 (Berkeley) %G% (without queueing)";
 struct work
 {
 	char		*w_name;	/* name of control file */
+	char		*w_host;	/* name of recipient host */
+	bool		w_lock;		/* is message locked? */
 	long		w_pri;		/* priority of message, see below */
 	time_t		w_ctime;	/* creation time of message */
 	struct work	*w_next;	/* next in queue */
@@ -37,6 +39,8 @@ struct work
 typedef struct work	WORK;
 
 WORK	*WorkQ;			/* queue of things to be done */
+
+#define QF_VERSION	1	/* version number of this queue format */
 /*
 **  QUEUEUP -- queue a message up for future transmission.
 **
@@ -133,11 +137,26 @@ queueup(df)
 	**	they are required by orderq.
 	*/
 
+	/* output queue version number (must be first!) */
+	fprintf(tfp, "V%d\n", QF_VERSION);
+
 	/* output message priority */
 	fprintf(tfp, "P%ld\n", e->e_msgpriority);
 
 	/* output creation time */
 	fprintf(tfp, "T%ld\n", e->e_ctime);
+
+	/* output last delivery time */
+	fprintf(tfp, "K%ld\n", e->e_dtime);
+
+	/* output number of delivery attempts */
+	fprintf(tfp, "N%d\n", e->e_ntries);
+
+	/* output inode number of data file */
+	/* XXX should probably include device major/minor too */
+	if (e->e_dfino != -1)
+		fprintf(tfp, "I%d/%d/%ld\n",
+			major(e->e_dfdev), minor(e->e_dfdev), e->e_dfino);
 
 	/* output type and name of data file */
 	if (e->e_bodytype != NULL)
@@ -146,7 +165,7 @@ queueup(df)
 
 	/* message from envelope, if it exists */
 	if (e->e_message != NULL)
-		fprintf(tfp, "M%s\n", e->e_message);
+		fprintf(tfp, "M%s\n", denlstring(e->e_message));
 
 	/* send various flag bits through */
 	p = buf;
@@ -154,20 +173,26 @@ queueup(df)
 		*p++ = 'w';
 	if (bitset(EF_RESPONSE, e->e_flags))
 		*p++ = 'r';
+	if (bitset(EF_HAS8BIT, e->e_flags))
+		*p++ = '8';
 	*p++ = '\0';
 	if (buf[0] != '\0')
 		fprintf(tfp, "F%s\n", buf);
 
 	/* $r and $s and $_ macro values */
 	if ((p = macvalue('r', e)) != NULL)
-		fprintf(tfp, "$r%s\n", p);
+		fprintf(tfp, "$r%s\n", denlstring(p));
 	if ((p = macvalue('s', e)) != NULL)
-		fprintf(tfp, "$s%s\n", p);
+		fprintf(tfp, "$s%s\n", denlstring(p));
 	if ((p = macvalue('_', e)) != NULL)
-		fprintf(tfp, "$_%s\n", p);
+		fprintf(tfp, "$_%s\n", denlstring(p));
 
 	/* output name of sender */
 	fprintf(f, "S%s\n", CurEnv->e_from.q_paddr);
+
+	/* output ESMTP-supplied "original" information */
+	if (e->e_envid != NULL)
+		fprintf(tfp, "Z%s\n", denlstring(e->e_envid, FALSE));
 
 	/* output list of error recipients */
 	printctladdr(NULL, NULL);
@@ -176,7 +201,7 @@ queueup(df)
 		if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 		{
 			printctladdr(q, tfp);
-			fprintf(tfp, "E%s\n", q->q_paddr);
+			fprintf(tfp, "E%s\n", denlstring(q->q_paddr));
 		}
 	}
 
@@ -187,6 +212,9 @@ queueup(df)
 		    (queueall && !bitset(QDONTSEND|QBADADDR|QSENT, q->q_flags)))
 		{
 			printctladdr(q, tfp);
+			if (q->q_orcpt != NULL)
+				fprintf(tfp, "Q%s\n", denlstring(q->q_orcpt, FALSE));
+			fprintf(f, "R%s\n", q->q_paddr);
 	}
 
 	/*
@@ -288,9 +316,8 @@ printctladdr(a, tfp)
 	else
 		uname = pw->pw_name;
 
-	fprintf(tfp, "C%s:%s\n", uname, a->q_paddr);
+	fprintf(tfp, "C%s:%s\n", uname, denlstring(a->q_paddr));
 }
-
 /*
 **  RUNQUEUE -- run the jobs in the queue.
 **
@@ -311,10 +338,13 @@ printctladdr(a, tfp)
 
 ENVELOPE	QueueEnvelope;		/* the queue run envelope */
 
+void
 runqueue(forkflag)
 	bool forkflag;
 {
 	register ENVELOPE *e;
+	int njobs;
+	int sequenceno = 0;
 	extern ENVELOPE BlankEnvelope;
 
 	/*
@@ -407,7 +437,7 @@ runqueue(forkflag)
 	*/
 
 	/* order the existing work requests */
-	(void) orderq(FALSE);
+	njobs = orderq(FALSE);
 
 	/* process them once at a time */
 	while (WorkQ != NULL)
@@ -420,22 +450,29 @@ runqueue(forkflag)
 		**  Ignore jobs that are too expensive for the moment.
 		*/
 
+		sequenceno++;
 		if (shouldqueue(w->w_pri, w->w_ctime))
 		{
 			if (Verbose)
-				printf("\nSkipping %s\n", w->w_name + 2);
+				printf("\nSkipping %s (sequence %d of %d)\n",
+					w->w_name + 2, sequenceno, njobs);
 		}
 		else
 		{
 			pid_t pid;
 			extern pid_t dowork();
 
+			if (Verbose)
+				printf("\nRunning %s (sequence %d of %d)\n",
+					w->w_name + 2, sequenceno, njobs);
 			pid = dowork(w->w_name + 2, ForkQueueRuns, FALSE, e);
 			errno = 0;
 			if (pid != 0)
 				(void) waitfor(pid);
 		}
 		free(w->w_name);
+		if (w->w_host)
+			free(w->w_host);
 		free((char *) w);
 	}
 
@@ -483,7 +520,7 @@ orderq(doall)
 	register int i;
 	WORK wlist[QUEUESIZE+1];
 	int wn = -1;
-	extern workcmpf();
+	int wc;
 
 	if (tTd(41, 1))
 	{
@@ -503,6 +540,8 @@ orderq(doall)
 
 		WorkQ = nw;
 		free(w->w_name);
+		if (w->w_host)
+			free(w->w_host);
 		free((char *) w);
 		w = nw;
 	}
@@ -589,6 +628,8 @@ orderq(doall)
 		}
 		w = &wlist[wn];
 		w->w_name = newstr(d->d_name);
+		w->w_host = NULL;
+		w->w_lock = !lockfile(fileno(cf), w->w_name, NULL, LOCK_SH|LOCK_NB);
 
 		/* make sure jobs in creation don't clog queue */
 		w->w_pri = 0x7fffffff;
@@ -598,7 +639,7 @@ orderq(doall)
 		i = NEED_P | NEED_T;
 		if (QueueLimitSender != NULL)
 			i |= NEED_S;
-		if (QueueLimitRecipient != NULL)
+		if (QueueSortOrder == QS_BYHOST || QueueLimitRecipient != NULL)
 			i |= NEED_R;
 		while (i != 0 && fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
@@ -618,7 +659,10 @@ orderq(doall)
 				break;
 
 			  case 'R':
-				if (QueueLimitRecipient != NULL &&
+				if (w->w_host == NULL &&
+				    (p = strrchr(&lbuf[1], '@')) != NULL)
+					w->w_host = newstr(&p[1]);
+				if (QueueLimitRecipient == NULL ||
 				    strcontainedin(QueueLimitRecipient, &lbuf[1]))
 					i &= ~NEED_R;
 				break;
@@ -636,17 +680,74 @@ orderq(doall)
 		    bitset(NEED_R|NEED_S, i))
 		{
 			/* don't even bother sorting this job in */
+			free(w->w_name);
+			if (w->w_host)
+				free(w->w_host);
 			wn--;
 		}
 	}
 	(void) closedir(f);
 	wn++;
 
-	/*
-	**  Sort the work directory.
-	*/
+	wc = min(wn, QUEUESIZE);
 
-	qsort((char *) wlist, min(wn, QUEUESIZE), sizeof *wlist, workcmpf);
+	if (QueueSortOrder == QS_BYHOST)
+	{
+		extern workcmpf1();
+		extern workcmpf2();
+
+		/*
+		**  Sort the work directory for the first time,
+		**  based on host name, lock status, and priority.
+		*/
+
+		qsort((char *) wlist, wc, sizeof *wlist, workcmpf1);
+
+		/*
+		**  If one message to host is locked, "lock" all messages
+		**  to that host.
+		*/
+
+		i = 0;
+		while (i < wc)
+		{
+			if (!wlist[i].w_lock)
+			{
+				i++;
+				continue;
+			}
+			w = &wlist[i];
+			while (++i < wc)
+			{
+				if (wlist[i].w_host == NULL &&
+				    w->w_host == NULL)
+					wlist[i].w_lock = TRUE;
+				else if (wlist[i].w_host != NULL &&
+					 w->w_host != NULL &&
+					 strcmp(wlist[i].w_host, w->w_host) == 0)
+					wlist[i].w_lock = TRUE;
+				else
+					break;
+			}
+		}
+
+		/*
+		**  Sort the work directory for the second time,
+		**  based on lock status, host name, and priority.
+		*/
+
+		qsort((char *) wlist, wc, sizeof *wlist, workcmpf2);
+	}
+	else
+	{
+		extern workcmpf0();
+
+		/*
+		**  Simple sort based on queue priority only.
+		*/
+
+		qsort((char *) wlist, wc, sizeof *wlist, workcmpf0);
+	}
 
 	/*
 	**  Convert the work list into canonical form.
@@ -654,10 +755,12 @@ orderq(doall)
 	*/
 
 	WorkQ = NULL;
-	for (i = min(wn, QUEUESIZE); --i >= 0; )
+	for (i = wc; --i >= 0; )
 	{
 		w = (WORK *) xalloc(sizeof *w);
 		w->w_name = wlist[i].w_name;
+		w->w_host = wlist[i].w_host;
+		w->w_lock = wlist[i].w_lock;
 		w->w_pri = wlist[i].w_pri;
 		w->w_ctime = wlist[i].w_ctime;
 		w->w_next = WorkQ;
@@ -673,7 +776,7 @@ orderq(doall)
 	return (wn);
 }
 /*
-**  WORKCMPF -- compare function for ordering work.
+**  WORKCMPF0 -- simple priority-only compare function.
 **
 **	Parameters:
 **		a -- the first argument.
@@ -688,7 +791,7 @@ orderq(doall)
 **		none.
 */
 
-workcmpf(a, b)
+workcmpf0(a, b)
 	register WORK *a;
 	register WORK *b;
 {
@@ -696,11 +799,91 @@ workcmpf(a, b)
 	long pb = b->w_pri;
 
 	if (pa == pb)
-		return (0);
+		return 0;
 	else if (pa > pb)
-		return (1);
+		return 1;
 	else
-		return (-1);
+		return -1;
+}
+/*
+**  WORKCMPF1 -- first compare function for ordering work based on host name.
+**
+**	Sorts on host name, lock status, and priority in that order.
+**
+**	Parameters:
+**		a -- the first argument.
+**		b -- the second argument.
+**
+**	Returns:
+**		<0 if a < b
+**		 0 if a == b
+**		>0 if a > b
+**
+**	Side Effects:
+**		none.
+*/
+
+workcmpf1(a, b)
+	register WORK *a;
+	register WORK *b;
+{
+	int i;
+
+	/* host name */
+	if (a->w_host != NULL && b->w_host == NULL)
+		return 1;
+	else if (a->w_host == NULL && b->w_host != NULL)
+		return -1;
+	if (a->w_host != NULL && b->w_host != NULL &&
+	    (i = strcmp(a->w_host, b->w_host)))
+		return i;
+
+	/* lock status */
+	if (a->w_lock != b->w_lock)
+		return b->w_lock - a->w_lock;
+
+	/* job priority */
+	return a->w_pri - b->w_pri;
+}
+/*
+**  WORKCMPF2 -- second compare function for ordering work based on host name.
+**
+**	Sorts on lock status, host name, and priority in that order.
+**
+**	Parameters:
+**		a -- the first argument.
+**		b -- the second argument.
+**
+**	Returns:
+**		<0 if a < b
+**		 0 if a == b
+**		>0 if a > b
+**
+**	Side Effects:
+**		none.
+*/
+
+workcmpf2(a, b)
+	register WORK *a;
+	register WORK *b;
+{
+	int i;
+
+	/* lock status */
+	if (a->w_lock != b->w_lock)
+		return a->w_lock - b->w_lock;
+
+	/* host name */
+	if (a->w_host != NULL && b->w_host == NULL)
+		return 1;
+	else if (a->w_host == NULL && b->w_host != NULL)
+		return -1;
+	if (a->w_host != NULL && b->w_host != NULL &&
+	    (i = strcmp(a->w_host, b->w_host)))
+		return i;
+
+	/* job priority */
+	return a->w_pri - b->w_pri;
 }
 /*
 **  DOWORK -- do a work request.
@@ -785,7 +968,19 @@ dowork(id, forkflag, requeueflag, e)
 		/* don't use the headers from sendmail.cf... */
 		e->e_header = NULL;
 
-		sendall(e, SM_DELIVER);
+			e->e_flags |= EF_KEEPQUEUE;
+			if (Verbose || tTd(40, 8))
+				printf("%s: too young (%s)\n",
+					e->e_id, howlong);
+#ifdef LOG
+			if (LogLevel > 19)
+				syslog(LOG_DEBUG, "%s: too young (%s)",
+					e->e_id, howlong);
+#endif
+		}
+		else
+		{
+			eatheader(e, requeueflag);
 		if (forkflag)
 			finis();
 		else
@@ -816,6 +1011,9 @@ readqf(e)
 	ADDRESS *ctladdr;
 	struct stat st;
 	char *bp;
+	int qfver = 0;
+	register char *p;
+	char *orcpt = NULL;
 	char qf[20];
 	char buf[MAXLINE];
 	extern long atol();
@@ -840,9 +1038,7 @@ readqf(e)
 	if (!lockfile(fileno(qfp), qf, NULL, LOCK_EX|LOCK_NB))
 	{
 		/* being processed by another queuer */
-		if (tTd(40, 8))
-			printf("readqf(%s): locked\n", qf);
-		if (Verbose)
+		if (Verbose || tTd(40, 8))
 			printf("%s: locked\n", e->e_id);
 # ifdef LOG
 		if (LogLevel > 19)
@@ -911,28 +1107,87 @@ readqf(e)
 	LineNumber = 0;
 	e->e_flags |= EF_GLOBALERRS;
 	OpMode = MD_DELIVER;
-	if (Verbose)
-		printf("\nRunning %s\n", e->e_id);
 	ctladdr = NULL;
+	e->e_dfino = -1;
 	while ((bp = fgetfolded(buf, sizeof buf, qfp)) != NULL)
 	{
 		register char *p;
 		struct stat st;
+		u_long qflags;
+		ADDRESS *q;
 
 		if (tTd(40, 4))
 			printf("+++++ %s\n", bp);
 		switch (bp[0])
 		{
+		  case 'V':		/* queue file version number */
+			qfver = atoi(&bp[1]);
+			if (qfver > QF_VERSION)
+			{
+				syserr("Version number in qf (%d) greater than max (%d)",
+					qfver, QF_VERSION);
+			}
+			break;
+
 		  case 'C':		/* specify controlling user */
 			ctladdr = setctluser(&bp[1]);
 			break;
 
+		  case 'Q':		/* original recipient */
+			orcpt = newstr(&bp[1]);
+			break;
+
 		  case 'R':		/* specify recipient */
-			(void) sendtolist(&bp[1], ctladdr, &e->e_sendqueue, e);
+			p = bp;
+			qflags = 0;
+			if (qfver >= 1)
+			{
+				/* get flag bits */
+				while (*++p != '\0' && *p != ':')
+				{
+					switch (*p)
+					{
+					  case 'S':
+						qflags |= QPINGONSUCCESS;
+						break;
+
+					  case 'F':
+						qflags |= QPINGONFAILURE;
+						break;
+
+					  case 'D':
+						qflags |= QPINGONDELAY;
+						break;
+
+					  case 'B':
+						qflags |= QHAS_RET_PARAM;
+						break;
+
+					  case 'N':
+						qflags |= QHAS_RET_PARAM|QRET_HDRS;
+						break;
+
+					  case 'P':
+						qflags |= QPRIMARY;
+						break;
+					}
+				}
+			}
+			else
+				qflags |= QPRIMARY;
+			q = parseaddr(++p, NULLADDR, RF_COPYALL, '\0', NULL, e);
+			if (q != NULL)
+			{
+				q->q_alias = ctladdr;
+				q->q_flags |= qflags;
+				q->q_orcpt = orcpt;
+				(void) recipient(q, &e->e_sendqueue, 0, e);
+			}
+			orcpt = NULL;
 			break;
 
 		  case 'E':		/* specify error recipient */
-			(void) sendtolist(&bp[1], ctladdr, &e->e_errorqueue, e);
+			(void) sendtolist(&bp[1], ctladdr, &e->e_errorqueue, 0, e);
 			break;
 
 		  case 'H':		/* header */
@@ -962,11 +1217,28 @@ readqf(e)
 				e->e_msgsize = -1;
 			}
 			else if (fstat(fileno(e->e_dfp), &st) >= 0)
+			{
 				e->e_msgsize = st.st_size;
+				e->e_dfdev = st.st_dev;
+				e->e_dfino = st.st_ino;
+			}
 			break;
 
 		  case 'T':		/* init time */
 			e->e_ctime = atol(&bp[1]);
+			break;
+
+		  case 'I':		/* data file's inode number */
+			if (e->e_dfino == -1)
+				e->e_dfino = atol(&buf[1]);
+			break;
+
+		  case 'K':		/* time of last deliver attempt */
+			e->e_dtime = atol(&buf[1]);
+			break;
+
+		  case 'N':		/* number of delivery attempts */
+			e->e_ntries = atoi(&buf[1]);
 			break;
 
 		  case 'P':		/* message priority */
@@ -985,8 +1257,16 @@ readqf(e)
 				  case 'r':	/* response */
 					e->e_flags |= EF_RESPONSE;
 					break;
+
+				  case '8':	/* has 8 bit data */
+					e->e_flags |= EF_HAS8BIT;
+					break;
 				}
 			}
+			break;
+
+		  case 'Z':		/* original envelope id from ESMTP */
+			e->e_envid = newstr(&bp[1]);
 			break;
 
 		  case '$':		/* define macro */
@@ -1107,6 +1387,7 @@ printqueue()
 		auto time_t submittime = 0;
 		long dfsize = -1;
 		int flags = 0;
+		int qfver;
 		char message[MAXLINE];
 		char bodytype[MAXNAME];
 
@@ -1118,7 +1399,7 @@ printqueue()
 			errno = 0;
 			continue;
 		}
-		if (!lockfile(fileno(f), w->w_name, NULL, LOCK_SH|LOCK_NB))
+		if (w->w_lock)
 			printf("*");
 		else if (shouldqueue(w->w_pri, w->w_ctime))
 			printf("X");
@@ -1127,6 +1408,7 @@ printqueue()
 		errno = 0;
 
 		message[0] = bodytype[0] = '\0';
+		qfver = 0;
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
 			register int i;
@@ -1135,6 +1417,10 @@ printqueue()
 			fixcrlf(buf, TRUE);
 			switch (buf[0])
 			{
+			  case 'V':	/* queue file version */
+				qfver = atoi(&buf[1]);
+				break;
+
 			  case 'M':	/* error message */
 				if ((i = strlen(&buf[1])) >= sizeof message)
 					i = sizeof message - 1;
@@ -1175,10 +1461,18 @@ printqueue()
 				break;
 
 			  case 'R':	/* recipient name */
+				p = &buf[1];
+				if (qfver >= 1)
+				{
+					p = strchr(p, ':');
+					if (p == NULL)
+						break;
+					p++;
+				}
 				if (Verbose)
-					printf("\n\t\t\t\t\t  %.38s", &buf[1]);
+					printf("\n\t\t\t\t\t  %.38s", p);
 				else
-					printf("\n\t\t\t\t   %.45s", &buf[1]);
+					printf("\n\t\t\t\t   %.45s", p);
 				break;
 
 			  case 'T':	/* creation time */
