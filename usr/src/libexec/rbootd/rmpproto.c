@@ -12,25 +12,26 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rmpproto.c	5.1 (Berkeley) %G%
+ *	@(#)rmpproto.c	5.2 (Berkeley) %G%
  *
  * Utah $Hdr: rmpproto.c 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmpproto.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmpproto.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "defs.h"
+#include <sys/param.h>
+#include <sys/time.h>
 
-#include <sys/file.h>
-
-#include <strings.h>
-#include <syslog.h>
 #include <errno.h>
-
-extern int errno;
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
+#include "defs.h"
 
 /*
 **  ProcessPacket -- determine packet type and do what's required.
@@ -54,15 +55,13 @@ extern int errno;
 **		- Also, unless we run out of memory, a reply will be
 **		  sent to the host that sent the packet.
 */
-
+void
 ProcessPacket(rconn, client)
-RMPCONN *rconn;
-CLIENT *client;
+	RMPCONN *rconn;
+	CLIENT *client;
 {
-	int SendServerID(), SendFileNo(), SendBootRepl();
-	int SendReadRepl(), BootDone();
-	RMPCONN *rconnout, *NewConn();
 	struct rmp_packet *rmp;
+	RMPCONN *rconnout;
 
 	rmp = &rconn->rmp;		/* cache pointer to RMP packet */
 
@@ -146,12 +145,10 @@ CLIENT *client;
 **	Side Effects:
 **		none.
 */
-
 int
 SendServerID(rconn)
-RMPCONN *rconn;
+	RMPCONN *rconn;
 {
-	int SendPacket();
 	register struct rmp_packet *rpl;
 	register char *src, *dst;
 	register u_char *size;
@@ -200,14 +197,12 @@ RMPCONN *rconn;
 **	Side Effects:
 **		none.
 */
-
 int
-SendFileNo(req,rconn,filelist)
-struct rmp_packet *req;
-RMPCONN *rconn;
-char *filelist[];
+SendFileNo(req, rconn, filelist)
+	struct rmp_packet *req;
+	RMPCONN *rconn;
+	char *filelist[];
 {
-	int SendPacket();
 	register struct rmp_packet *rpl;
 	register char *src, *dst;
 	register u_char *size, i;
@@ -264,15 +259,15 @@ char *filelist[];
 **	Side Effects:
 **		none.
 */
-
-SendBootRepl(req,rconn,filelist)
-struct rmp_packet *req;
-RMPCONN *rconn;
-char *filelist[];
+int
+SendBootRepl(req, rconn, filelist)
+	struct rmp_packet *req;
+	RMPCONN *rconn;
+	char *filelist[];
 {
-	int retval, SendPacket();
+	int retval;
 	char *filename, filepath[RMPBOOTDATA+1];
-	RMPCONN *oldconn, *FindConn();
+	RMPCONN *oldconn;
 	register struct rmp_packet *rpl;
 	register char *src, *dst1, *dst2;
 	register u_char i;
@@ -373,14 +368,12 @@ sendpkt:
 **	Side Effects:
 **		none.
 */
-
 int
 SendReadRepl(rconn)
-RMPCONN *rconn;
+	RMPCONN *rconn;
 {
-	off_t lseek();
-	int retval, SendPacket();
-	RMPCONN *oldconn, *FindConn(), *NewConn();
+	int retval;
+	RMPCONN *oldconn;
 	register struct rmp_packet *rpl, *req;
 	register int size = 0;
 	int madeconn = 0;
@@ -493,12 +486,11 @@ sendpkt:
 **	Side Effects:
 **		none.
 */
-
 int
 BootDone(rconn)
-RMPCONN *rconn;
+	RMPCONN *rconn;
 {
-	RMPCONN *oldconn, *FindConn();
+	RMPCONN *oldconn;
 	struct rmp_packet *rpl;
 
 	/*
@@ -542,10 +534,9 @@ RMPCONN *rconn;
 **	Side Effects:
 **		none.
 */
-
 int
 SendPacket(rconn)
-register RMPCONN *rconn;
+	register RMPCONN *rconn;
 {
 	/*
 	 *  Set Ethernet Destination address to Source (BPF and the enet

@@ -12,25 +12,30 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rbootd.c	5.1 (Berkeley) %G%
+ *	@(#)rbootd.c	5.2 (Berkeley) %G%
  *
  * Utah $Hdr: rbootd.c 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rbootd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rbootd.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/param.h>
+#include <sys/ioctl.h>
+
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
 #include "defs.h"
 
-#include <sys/ioctl.h>
-#include <sys/file.h>
-
-#include <errno.h>
-#include <ctype.h>
-#include <syslog.h>
-#include <strings.h>
 
 /* fd mask macros (backward compatibility with 4.2BSD) */
 #ifndef	FD_SET
@@ -45,18 +50,13 @@ typedef	struct fd_set {		/* this should already be in 4.2 */
 #define	FD_ISSET(n, p)	((p)->fds_bits[0] & (1 << (n)))
 #endif
 
-extern int errno;
-
+int
 main(argc, argv)
-int argc;
-char *argv[];
+	int argc;
+	char *argv[];
 {
-	int Exit(), ReConfig(), DebugOn(), DebugOff();
-	int GetBootFiles(), ParseConfig();
 	int c, fd, omask, maxfds;
 	fd_set rset;
-	extern int optind;
-	extern char *optarg;
 
 	/*
 	 *  Find what name we are running under.
@@ -171,7 +171,7 @@ char *argv[];
 	 *  (in `errmsg') which will be displayed here.
 	 */
 	if (IntfName == NULL) {
-		char *errmsg, *BpfGetIntfName();
+		char *errmsg;
 
 		if ((IntfName = BpfGetIntfName(&errmsg)) == NULL) {
 			syslog(LOG_NOTICE, "restarted (??)");
@@ -322,7 +322,7 @@ char *argv[];
 **	Side Effects:
 **		- Timed out connections in `RmpConns' will be freed.
 */
-
+void
 DoTimeout()
 {
 	register RMPCONN *rtmp;
@@ -361,7 +361,7 @@ DoTimeout()
 
 CLIENT *
 FindClient(rconn)
-register RMPCONN *rconn;
+	register RMPCONN *rconn;
 {
 	register CLIENT *ctmp;
 
@@ -385,8 +385,7 @@ register RMPCONN *rconn;
 **	Side Effects:
 **		- This process ceases to exist.
 */
-
-int
+void
 Exit(sig)
 	int sig;
 {
@@ -415,12 +414,10 @@ Exit(sig)
 **	Warnings:
 **		- This routine must be called with SIGHUP blocked.
 */
-
-int
-ReConfig()
+void
+ReConfig(signo)
+	int signo;
 {
-	int GetBootFiles(), ParseConfig();
-
 	syslog(LOG_NOTICE, "reconfiguring boot server");
 
 	FreeConns();
@@ -444,9 +441,9 @@ ReConfig()
 **	Side Effects:
 **		- Debug file is closed.
 */
-
-int
-DebugOff()
+void
+DebugOff(signo)
+	int signo;
 {
 	if (DbgFp != NULL)
 		(void) fclose(DbgFp);
@@ -467,9 +464,9 @@ DebugOff()
 **		- Debug file is opened/truncated if not already opened,
 **		  otherwise do nothing.
 */
-
-int
-DebugOn()
+void
+DebugOn(signo)
+	int signo;
 {
 	if (DbgFp == NULL) {
 		if ((DbgFp = fopen(DbgFile, "w")) == NULL)

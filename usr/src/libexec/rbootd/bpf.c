@@ -12,32 +12,33 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bpf.c	5.1 (Berkeley) %G%
+ *	@(#)bpf.c	5.2 (Berkeley) %G%
  *
  * Utah $Hdr: bpf.c 3.1 92/07/06$
  * Author: Jeff Forys, University of Utah CSS
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bpf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bpf.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "defs.h"
-
-#include <ctype.h>
-#include <syslog.h>
-#include <strings.h>
-
+#include <sys/param.h>
 #include <sys/ioctl.h>
-#include <sys/file.h>
-#include <sys/errno.h>
+#include <sys/socket.h>
 
 #include <net/if.h>
 #include <net/bpf.h>
 
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
+#include "defs.h"
 #include "pathnames.h"
-
-extern int errno;
 
 static int BpfFd = -1;
 static unsigned BpfLen = 0;
@@ -55,7 +56,6 @@ static u_char *BpfPkt = NULL;
 **	Side Effects:
 **		If an error is encountered, the program terminates here.
 */
-
 int
 BpfOpen()
 {
@@ -190,7 +190,6 @@ BpfOpen()
 **	Side Effects:
 **		None.
 */
-
 char *
 BpfGetIntfName(errmsg)
 	char **errmsg;
@@ -281,7 +280,6 @@ BpfGetIntfName(errmsg)
 **	Side Effects:
 **		None.
 */
-
 int
 BpfRead(rconn, doread)
 	RMPCONN *rconn;
@@ -348,7 +346,7 @@ BpfRead(rconn, doread)
 **	Side Effects:
 **		None.
 */
-
+int
 BpfWrite(rconn)
 	RMPCONN *rconn;
 {
@@ -361,7 +359,7 @@ BpfWrite(rconn)
 }
 
 /*
-**  BpfOpen -- Close a BPF device.
+**  BpfClose -- Close a BPF device.
 **
 **	Parameters:
 **		None.
@@ -372,7 +370,7 @@ BpfWrite(rconn)
 **	Side Effects:
 **		None.
 */
-
+void
 BpfClose()
 {
 	struct ifreq ifr;
