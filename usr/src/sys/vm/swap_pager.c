@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	7.4 (Berkeley) %G%
+ *	@(#)swap_pager.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -34,11 +34,7 @@
 #include "malloc.h"
 #include "queue.h"
 
-#include "vm_param.h"
-#include "queue.h"
-#include "lock.h"
-#include "vm_prot.h"
-#include "vm_object.h"
+#include "vm.h"
 #include "vm_page.h"
 #include "vm_pageout.h"
 #include "swap_pager.h"
