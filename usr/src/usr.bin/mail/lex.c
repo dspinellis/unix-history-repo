@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.9 %G%";
+static char *SccsId = "@(#)lex.c	2.10 %G%";
 
 char	*prompt = "& ";
 
@@ -28,13 +28,8 @@ setfile(name, isedit)
 	static char efile[128];
 	extern char tempMesg[];
 
-	if ((ibuf = fopen(name, "r")) == NULL) {
-		if (isedit)
-			perror(name);
-		else
-			printf("No mail for %s\n", myname);
+	if ((ibuf = fopen(name, "r")) == NULL)
 		return(-1);
-	}
 
 	/*
 	 * Looks like all will be well.  We must now relinquish our
