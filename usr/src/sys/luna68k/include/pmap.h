@@ -10,9 +10,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: hp300/include/pmap.h	7.11 (Berkeley) 12/27/92
+ * from: hp300/include/pmap.h	7.13 (Berkeley) 6/2/93
  *
- *	@(#)pmap.h	8.1 (Berkeley) %G%
+ *	@(#)pmap.h	8.2 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -118,6 +118,6 @@ struct physmap {
 	int pm_cache;
 } ;
 
-#endif
+#endif /* KERNEL */
 
-#endif	_PMAP_MACHINE_
+#endif /* _PMAP_MACHINE_ */
