@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.106 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.107 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -49,6 +49,8 @@ sendall(e, mode)
 	register ENVELOPE *ee;
 	ENVELOPE *splitenv = NULL;
 	bool announcequeueup;
+	bool oldverbose = Verbose;
+	int pid;
 
 	/*
 	**  If we have had global, fatal errors, don't bother sending
@@ -278,54 +280,10 @@ sendall(e, mode)
 	}
 #endif /* QUEUE */
 
-	if (splitenv != NULL)
-	{
-		if (tTd(13, 1))
-		{
-			printf("\nsendall: Split queue; remaining queue:\n");
-			printaddr(e->e_sendqueue, TRUE);
-		}
-
-		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
-		{
-			CurEnv = ee;
-			if (mode != SM_VERIFY)
-				openxscript(ee);
-			sendenvelope(ee, mode);
-			dropenvelope(ee);
-		}
-
-		CurEnv = e;
-	}
-	sendenvelope(e, mode);
-}
-
-sendenvelope(e, mode)
-	register ENVELOPE *e;
-	char mode;
-{
-	bool oldverbose;
-	int pid;
-	register ADDRESS *q;
-	char *qf;
-	char *id;
-	bool didany;
-
 	/*
-	**  If we have had global, fatal errors, don't bother sending
-	**  the message at all if we are in SMTP mode.  Local errors
-	**  (e.g., a single address failing) will still cause the other
-	**  addresses to be sent.
+	**  If we belong in background, fork now.
 	*/
 
-	if (bitset(EF_FATALERRS, e->e_flags) &&
-	    (OpMode == MD_SMTP || OpMode == MD_DAEMON))
-	{
-		e->e_flags |= EF_CLRQUEUE;
-		return;
-	}
-
-	oldverbose = Verbose;
 	switch (mode)
 	{
 	  case SM_VERIFY:
@@ -420,6 +378,52 @@ sendenvelope(e, mode)
 		break;
 	}
 
+	if (splitenv != NULL)
+	{
+		if (tTd(13, 1))
+		{
+			printf("\nsendall: Split queue; remaining queue:\n");
+			printaddr(e->e_sendqueue, TRUE);
+		}
+
+		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
+		{
+			CurEnv = ee;
+			if (mode != SM_VERIFY)
+				openxscript(ee);
+			sendenvelope(ee, mode);
+			dropenvelope(ee);
+		}
+
+		CurEnv = e;
+	}
+	sendenvelope(e, mode);
+	Verbose = oldverbose;
+}
+
+sendenvelope(e, mode)
+	register ENVELOPE *e;
+	char mode;
+{
+	register ADDRESS *q;
+	char *qf;
+	char *id;
+	bool didany;
+
+	/*
+	**  If we have had global, fatal errors, don't bother sending
+	**  the message at all if we are in SMTP mode.  Local errors
+	**  (e.g., a single address failing) will still cause the other
+	**  addresses to be sent.
+	*/
+
+	if (bitset(EF_FATALERRS, e->e_flags) &&
+	    (OpMode == MD_SMTP || OpMode == MD_DAEMON))
+	{
+		e->e_flags |= EF_CLRQUEUE;
+		return;
+	}
+
 	/*
 	**  Run through the list and send everything.
 	**
@@ -473,7 +477,6 @@ sendenvelope(e, mode)
 			didany = TRUE;
 		}
 	}
-	Verbose = oldverbose;
 	if (didany)
 	{
 		e->e_dtime = curtime();
