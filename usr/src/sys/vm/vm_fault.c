@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	8.5 (Berkeley) %G%
+ *	@(#)vm_fault.c	8.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -462,8 +462,23 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			vm_page_lock_queues();
 			vm_page_activate(m);
 			vm_page_deactivate(m);
-			pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 			vm_page_unlock_queues();
+			/*
+			 * XXX gag!  The page protect has been moved out
+			 * of the page queue lock section to avoid a deadlock
+			 * in the hp300-style (recursive) pmap module.
+			 * If you were on an MP, p_p_protect might result
+			 * in a vm_map_pageable(..., TRUE) for the associated
+			 * page table page.  This would call vm_fault_unwire
+			 * which would try to lock the page queues.
+			 * Moving the call out is safe here because the
+			 * object is still locked and that will prevent
+			 * the pageout daemon from messing with this page
+			 * on the inactive list.  (It would move it back to
+			 * the active list if it were referenced but
+			 * v_p_deallocate clears the ref bit).
+			 */
+			pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 
 			/*
 			 *	We no longer need the old page or object.
