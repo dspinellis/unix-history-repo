@@ -1,3 +1,15 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)pcb.h	5.1 (Berkeley) %G%
+ */
+
 /*
  * Intel 386 process control block
  */
@@ -15,6 +27,9 @@ struct pcb {
 /*
  * Software pcb (extension)
  */
+	int	pcb_fpsav;
+#define	FP_NEEDSAVE	0x1	/* need save on next context switch */
+#define	FP_NEEDRESTORE	0x2	/* need restore on next DNA fault */
 	struct	save87	pcb_savefpu;
 	struct	pte	*pcb_p0br;
 	struct	pte	*pcb_p1br;
@@ -25,4 +40,3 @@ struct pcb {
 	int	*pcb_sswap;
 	long	pcb_sigc[5];	/* sigcode actually 19 bytes */
 };
-

@@ -1,3 +1,15 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)npx.h	5.1 (Berkeley) %G%
+ */
+
 /*
  * 287/387 Floating Point Data Structures and Constants
  * W. Jolitz 1/90

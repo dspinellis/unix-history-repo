@@ -1,38 +1,62 @@
-/*	reg.h	1.2	87/01/13	*/
-/*	reg.h	4.2	81/02/19	*/
-/*
- * Location of the users' stored
- * registers relative to PSL of 'trap' and 'syscall'.
- * Usage is u.u_ar0[XX].
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)reg.h	5.1 (Berkeley) %G%
  */
 
-#define	PS	(-1)
-#define	PC	(-2)
-/*		(-3)	*/
-/*		(-4)	*/
-#define	RACL	(-5)
-#define	RACH	(-6)
-/*		(-7)	*/
-/*		(-8)	*/
-#define	SP	(-9)
-#define	R13	(-10)
-#define	FP	(-10)
-#define	R12	(-13)
-#define	R11	(-14)
-#define	R10	(-15)
-#define	R9	(-16)
-#define	R8	(-17)
-#define	R7	(-18)
-#define	R6	(-19)
-#define	R5	(-20)
-#define	R4	(-21)
-#define	R3	(-22)
-#define	R2	(-23)
-#define	R1	(-24)
-#define	R0	(-25)
+/*
+ * Location of the users' stored
+ * registers within appropriate frame of 'trap' and 'syscall', relative to
+ * base of stack frame.
+ * Normal usage is u.u_ar0[XX] in kernel.
+ */
 
+/* When referenced during a trap/exception, registers are at these offsets */
+
+#define	tES	(0)
+#define	tDS	(1)
+#define	tEDI	(2)
+#define	tESI	(3)
+#define	tEBP	(4)
+
+#define	tEBX	(6)
+#define	tEDX	(7)
+#define	tECX	(8)
+#define	tEAX	(9)
+
+#define	tEIP	(12)
+#define	tCS	(13)
+#define	tEFLAGS	(14)
+#define	tESP	(15)
+#define	tSS	(16)
+
+/* During a system call, registers are at these offsets instead of above. */
+
+#define	sEDI	(0)
+#define	sESI	(1)
+#define	sEBP	(2)
+
+#define	sEBX	(4)
+#define	sEDX	(5)
+#define	sECX	(6)
+#define	sEAX	(7)
+#define	sEFLAGS	(8)
+#define	sEIP	(9)
+#define	sCS	(10)
+#define	sESP	(11)
+#define	sSS	(12)
+
+/*
+ * Registers accessible to ptrace(2) syscall for debugger
+ */
 #ifdef IPCREG
-#define	NIPCREG 18
+#define	NIPCREG 14
 int ipcreg[NIPCREG] =
-	{R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,FP,SP,PC,RACH,RACL};
+  { tES,tDS,tEDI,tESI,tEBP,tEBX,tEDX,tECX,tEAX,tEIP,tCS,tEFLAGS,tESP,tSS };
 #endif

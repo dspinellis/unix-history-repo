@@ -1,3 +1,15 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)psl.h	5.1 (Berkeley) %G%
+ */
+
 /*
  * 386 processor status longword.
  */

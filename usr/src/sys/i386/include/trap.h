@@ -1,4 +1,14 @@
-/*	trap.h	1.3	87/07/11	*/
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)trap.h	5.1 (Berkeley) %G%
+ */
 
 /*
  * Trap type values
@@ -21,12 +31,13 @@
 #define	T_KSPNOTVAL	15	/* kernel stack pointer not valid */
 #define	T_BUSERR	16	/* bus error */
 #define	T_KDBTRAP	17	/* kernel debugger trap */
+
 #define	T_DIVIDE	18	/* integer divide fault */
-#define	T_DEBUG	19	/* debug fault/trap catchall */
-#define	T_NMI	20	/* non-maskable trap */
-#define	T_OFLOW	21	/* overflow trap */
-#define	T_BOUND	22	/* bound instruction fault */
-#define	T_DNA	23	/* device not available fault */
+#define	T_DEBUG		19	/* debug fault/trap catchall */
+#define	T_NMI		20	/* non-maskable trap */
+#define	T_OFLOW		21	/* overflow trap */
+#define	T_BOUND		22	/* bound instruction fault */
+#define	T_DNA		23	/* device not available fault */
 #define	T_DOUBLEFLT	24	/* double fault */
 #define	T_FPOPFLT	25	/* fp coprocessor operand fetch fault */
 #define	T_TSSFLT	26	/* invalid tss fault */

@@ -1,4 +1,15 @@
-/*	dkbad.c	1.1	86/01/05	*/
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)dkbad.c	5.1 (Berkeley) %G%
+ */
+
 
 #ifndef NOBADSECT
 #include "../h/param.h"
