@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)string.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)string.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -78,7 +78,7 @@ savestr(cp)
 #ifndef PI01
 #ifndef PXP
 		*stract++ = strngp;
-		strmax =+ STRINC;
+		strmax += STRINC;
 #endif
 #endif
 		strng = strngp;
@@ -121,7 +121,7 @@ soffset(cp)
 	for (i = STRINC, sp = strp; sp < stract; sp++) {
 		if (cp >= *sp && cp < (*sp + STRINC))
 			return (i + (cp - *sp));
-		i =+ STRINC;
+		i += STRINC;
 	}
 	i = nlfund(cp);
 	if (i != 0)
