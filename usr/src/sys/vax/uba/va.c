@@ -1,5 +1,18 @@
-/*	va.c	4.13	82/05/19	*/
+/*	va.c	4.14	82/11/16	*/
 
+/*	va.c	4.10	81/07/08	*/
+
+/*
+ ****************************************************************
+ * HISTORY:
+ *	4 August 1981	Jeffrey Mogul @ Stanford
+ *	- added DMAGO bit definition and use
+ *	- clears word count register after failures and on close
+ *	23 October 1981 Peter Eichenberger @ Stanford
+ *	- added interrrupt
+ ****************************************************************
+ */
+/*#define	DEBUG/**/
 #include "va.h"
 #if NVA > 0
 /*
@@ -43,9 +56,13 @@ struct	vadevice {
 #define	VA_NOTREADY	0000400		/* something besides NPRTIMO */
 #define	VA_DONE		0000200
 #define	VA_IENABLE	0000100		/* interrupt enable */
+#define	VA_DMAGO	0000010		/* DMA Go Bit */
 #define	VA_SUPPLIESLOW	0000004
 #define	VA_BOTOFFORM	0000002
 #define	VA_BYTEREVERSE	0000001		/* reverse byte order in words */
+
+char va_error[] =
+  "\10\2BottomOfForm\3SuppliesLow\10Done\11NotReady\12NPRTimeout\20Error\n";
 
 /* vacsh command bytes */
 #define	VAPLOT		0000340
@@ -64,10 +81,12 @@ struct va_softc {
 	int	sc_wc;
 	struct	buf *sc_bp;
 	int	sc_ubinfo;
+	short	sc_tocnt;
 } va_softc[NVA];
 
 #define	VAUNIT(dev)	(minor(dev))
 
+int va_intbit = VA_IENABLE;
 struct	buf rvabuf[NVA];
 
 int	vaprobe(), vaattach();
@@ -82,17 +101,19 @@ vaprobe(reg)
 	register int br, cvec;		/* value-result */
 	register struct vadevice *vaaddr = (struct vadevice *)reg;
 
-#ifdef lint
-	br = 0; cvec = br; br = cvec;
-	vaintr(0);
-#endif
+#ifndef UCBVAX
 	vaaddr->vacsl = VA_IENABLE;
 	vaaddr->vaba = 0;
 	vaaddr->vacsh = VAPLOT;
-	vaaddr->vacsl = 0;
+	vaaddr->vacsl = VA_IENABLE|VA_DMAGO;
 	vaaddr->vawc = -1;
-	DELAY(100000);
+	DELAY(10000);
 	vaaddr->vacsl = 0;
+	vaaddr->vawc = 0;
+#else
+	br=0x14;
+	cvec=0170;
+#endif
 }
 
 /*ARGSUSED*/
@@ -119,6 +140,7 @@ vaopen(dev)
 	vaaddr->vawc = 0;
 	sc->sc_wc = 0;
 	sc->sc_state = 0;
+	sc->sc_tocnt = 0;
 	vaaddr->vacsl = VA_IENABLE;
 	vatimo(dev);
 	vacmd(dev, VPRINT);
@@ -153,6 +175,7 @@ vastrategy(bp)
 	}
 	(void) spl0();
 brkout:
+	vaaddr->vawc = 0;
 	ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
 	sc->sc_bp = 0;
 	sc->sc_busy = 0;
@@ -177,7 +200,6 @@ minvaph(bp)
 vawrite(dev)
 	dev_t dev;
 {
-
 	physio(vastrategy, &rvabuf[VAUNIT(dev)], dev, B_WRITE, minvaph);
 }
 
@@ -188,8 +210,14 @@ vawait(dev)
 	    (struct vadevice *)vadinfo[VAUNIT(dev)]->ui_addr;
 	register int e;
 
-	while (((e = vaaddr->vacsw) & (VA_DONE|VA_ERROR)) == 0)
+	while (((e = vaaddr->vacsw) & (VA_DONE|VA_ERROR)) == 0) {
 		sleep((caddr_t)&va_softc[VAUNIT(dev)], VAPRI);
+	}
+	vaaddr->vacsl = 0;	/* clear interrupt enable */
+#ifdef	DEBUG
+	if (e & VA_ERROR)
+	    printf("va%d: csw=%b wc=%o\n",VAUNIT(dev),(unsigned short)e,va_error, vaaddr->vawc);
+#endif	DEBUG
 	if (e & VA_NPRTIMO)
 		printf("va%d: npr timeout\n", VAUNIT(dev));
 	return (e & VA_ERROR);
@@ -204,9 +232,11 @@ vastart(dev)
 
 	if (sc->sc_wc == 0)
 		return;
+	sc->sc_tocnt = 0;
+	vaaddr->vacsl = 0;	/* clear GO bit before writing new wc */
 	vaaddr->vaba = sc->sc_ubinfo;
-	vaaddr->vacsl = (sc->sc_ubinfo >> 12) & 0x30;
 	vaaddr->vawc = sc->sc_wc;
+	vaaddr->vacsl = ((sc->sc_ubinfo >> 12) & 0x30)|VA_DMAGO|va_intbit;
 }
 
 /*ARGSUSED*/
@@ -246,6 +276,7 @@ vacmd(dev, vcmd)
 	    (struct vadevice *)vadinfo[VAUNIT(dev)]->ui_addr;
 
 	(void) spl4();
+	sc->sc_tocnt = 0;
 	(void) vawait(dev);
 	switch (vcmd) {
 
@@ -277,8 +308,13 @@ vatimo(dev)
 	register struct va_softc *sc = &va_softc[VAUNIT(dev)];
 
 	if (sc->sc_openf)
-		timeout(vatimo, (caddr_t)dev, hz/10);
-	vaintr(dev);
+		timeout(vatimo, (caddr_t)dev, hz/2);
+	if(!sc->sc_tocnt) {
+		sc->sc_tocnt++;
+	} else {
+		sc->sc_tocnt = 0;
+		vaintr(dev);
+	}
 }
 
 /*ARGSUSED*/
@@ -302,6 +338,7 @@ vaclose(dev)
 	sc->sc_state = 0;
 	sc->sc_ubinfo = 0;
 	vaaddr->vacsl = 0;
+	vaaddr->vawc = 0;
 }
 
 vareset(uban)
