@@ -22,13 +22,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tee.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tee.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
 #include <signal.h>
 #include <stdio.h>
+#include <unistd.h>
 
 typedef struct _list {
 	struct _list *next;
@@ -70,7 +71,7 @@ main(argc, argv)
 		(void)fprintf(stderr, "tee: out of space.\n");
 		exit(1);
 	}
-	add(1, "stdout");
+	add(STDOUT_FILENO, "stdout");
 	for (; *argv; ++argv)
 		if ((fd = open(*argv, append ? O_WRONLY|O_CREAT|O_APPEND :
 		    O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0)
@@ -79,7 +80,7 @@ main(argc, argv)
 		else
 			add(fd, *argv);
 	exitval = 0;
-	while ((rval = read(0, buf, sizeof(buf))) > 0)
+	while ((rval = read(STDIN_FILENO, buf, sizeof(buf))) > 0)
 		for (p = head; p; p = p->next) {
 			n = rval;
 			bp = buf;
