@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tth19.c	3.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)tth19.c	3.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -189,7 +189,7 @@ out:
 	tt.tt_row = row;
 }
 
-h19_init()
+h19_start()
 {
 	if (gen_VS)
 		ttxputs(gen_VS);
@@ -260,7 +260,7 @@ tt_h19()
 	gen_VS = ttxgetstr("vs");
 	gen_VE = ttxgetstr("ve");
 
-	tt.tt_init = h19_init;
+	tt.tt_start = h19_start;
 	tt.tt_end = h19_end;
 
 	tt.tt_insline = h19_insline;

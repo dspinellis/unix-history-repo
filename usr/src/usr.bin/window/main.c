@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	3.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -109,7 +109,7 @@ char **argv;
 
 	if ((cmdwin = wwopen(wwbaud > 2400 ? WWO_REVERSE : 0, 1, wwncol,
 			     0, 0, 0)) == 0) {
-		(void) wwflush();
+		wwflush();
 		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
@@ -119,13 +119,13 @@ char **argv;
 	cmdwin->ww_unctrl = 1;
 	if ((framewin = wwopen(WWO_GLASS|WWO_FRAME, wwnrow, wwncol, 0, 0, 0))
 	    == 0) {
-		(void) wwflush();
+		wwflush();
 		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
 	wwadd(framewin, &wwhead);
 	if ((boxwin = wwopen(WWO_GLASS, wwnrow, wwncol, 0, 0, 0)) == 0) {
-		(void) wwflush();
+		wwflush();
 		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
@@ -133,7 +133,6 @@ char **argv;
 
 	wwupdate();
 	wwflush();
-	(void) signal(SIGCHLD, wwchild);
 	setvars();
 
 	setterse(tflag);

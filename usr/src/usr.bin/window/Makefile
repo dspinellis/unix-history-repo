@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O -R
 LIBC=	/lib/libc.a
@@ -30,7 +30,7 @@ SRCS=	char.c cmd.c cmd1.c cmd2.c cmd3.c cmd4.c cmd5.c cmd6.c cmd7.c \
 	wwiomux.c wwlabel.c wwmisc.c wwmove.c wwopen.c wwprintf.c wwpty.c \
 	wwputc.c wwputs.c wwredraw.c wwredrawwin.c wwrint.c wwscroll.c \
 	wwsize.c wwspawn.c wwsuspend.c wwtty.c wwunframe.c wwupdate.c \
-	wwwrite.c xx.c
+	wwwrite.c xx.c xxcompress.c xxflush.c
 OBJS=	char.o cmd.o cmd1.o cmd2.o cmd3.o cmd4.o cmd5.o cmd6.o cmd7.o \
 	context.o error.o lcmd.o lcmd1.o lcmd2.o main.o mloop.o parser1.o \
 	parser2.o parser3.o parser4.o parser5.o scanner.o startup.o string.o \
@@ -43,7 +43,7 @@ OBJS=	char.o cmd.o cmd1.o cmd2.o cmd3.o cmd4.o cmd5.o cmd6.o cmd7.o \
 	wwiomux.o wwlabel.o wwmisc.o wwmove.o wwopen.o wwprintf.o wwpty.o \
 	wwputc.o wwputs.o wwredraw.o wwredrawwin.o wwrint.o wwscroll.o \
 	wwsize.o wwspawn.o wwsuspend.o wwtty.o wwunframe.o wwupdate.o \
-	wwwrite.o xx.o
+	wwwrite.o xx.o xxcompress.o xxflush.o
 MAN=	window.0
 
 all: window
@@ -65,7 +65,7 @@ install: ${MAN}
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
+	lint ${CFLAGS} -z ${SRCS}
 
 tags: ${SRCS}
 	ctags ${SRCS}

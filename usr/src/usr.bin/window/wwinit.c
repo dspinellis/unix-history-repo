@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -36,8 +36,12 @@ wwinit()
 	wwhead.ww_back = &wwhead;
 
 	s = sigblock(sigmask(SIGIO));
-	if (signal(SIGIO, wwrint) == BADSIG)
+	if (signal(SIGIO, wwrint) == BADSIG ||
+	    signal(SIGCHLD, wwchild) == BADSIG ||
+	    signal(SIGPIPE, SIG_IGN) == BADSIG) {
+		wwerrno = WWE_SYS;
 		return -1;
+	}
 
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;
@@ -76,15 +80,12 @@ wwinit()
 	}
 	wwbaud = wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed];
 
-	if (ttinit() < 0)
+	if (xxinit() < 0)
 		goto bad;
 	wwnrow = tt.tt_nrow;
 	wwncol = tt.tt_ncol;
 	wwavailmodes = tt.tt_availmodes;
 	wwwrap = tt.tt_wrap;
-	if (xxinit() < 0)
-		return -1;
-	(*tt.tt_init)();
 
 	if (wwavailmodes & WWM_REV)
 		wwcursormodes = WWM_REV | wwavailmodes & WWM_BLK;
@@ -179,8 +180,10 @@ wwinit()
 	 */
 	(void) setenv("TERM", WWT_TERM, 1);
 
-	(void) signal(SIGPIPE, SIG_IGN);
 	(void) sigsetmask(s);
+	/* catch typeahead before ASYNC was set */
+	(void) kill(getpid(), SIGIO);
+	xxstart();
 	return 0;
 bad:
 	/*

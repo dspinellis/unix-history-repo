@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttzapple.c	3.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttzapple.c	3.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -34,8 +34,9 @@ zz|zapple|unorthodox apple:\
 	:sf=^[f:SF=^\%+ F:sr=^[r:SR=^\%+ R:cs=^]%+ %+ ?:
 */
 
-#define NCOL	80
-#define NROW	24
+#define NCOL		80
+#define NROW		24
+#define TOKEN_MAX	32
 
 #define pc(c)	ttputc(c)
 #define esc()	pc(ctrl('['))
@@ -43,43 +44,6 @@ zz|zapple|unorthodox apple:\
 #define esc2()	pc(ctrl(']'))
 
 extern short gen_frame[];
-
-/*
- * stuff for token compression
- */
-
-#define N	4
-#define NTOKEN	128
-#define NCTOKEN	(NTOKEN * 4)
-#define H	11
-#define HSIZE	(1 << H)
-struct ctoken {
-	short index;
-	short hash;
-	unsigned long time;
-	unsigned long count;
-	char string[N];
-	struct ctoken *forw;
-	struct ctoken *back;
-};
-
-static struct ctoken q1, q2;
-static struct ctoken *htab[HSIZE];
-static struct ctoken *line[NCOL];
-static struct ctoken tokens[NTOKEN * 4];
-static unsigned long tick;
-
-#define zc_eval(t)	((int) ((t)->count * 400 + (t)->time - tick))
-#define zc_hash(h, c)	((((h) << 1 | (h) >> H - 1) ^ (c)) & HSIZE - 1)
-#define zc_unhash(h, c)	(((h) ^ (c) << N - 1 ^ (c) >> H - N + 1) & (HSIZE - 1))
-#define zc_copy(f, t)	bcopy(f, t, N)
-#define zc_equal(f, t)	(bcmp(f, t, N) == 0)
-/*
-#define zc_copy(f, t)	((t)[0] = (f)[0], (t)[1] = (f)[1], \
-				(t)[2] = (f)[2], (t)[3] = (f)[3])
-#define zc_equal(f, t)	((t)[0] == (f)[0] && (t)[1] == (f)[1] && \
-				(t)[2] == (f)[2] && (t)[3] == (f)[3])
-*/
 
 zz_setmodes(new)
 {
@@ -136,10 +100,7 @@ zz_write(p, n)
 {
 	if (tt.tt_nmodes != tt.tt_modes)
 		zz_setmodes(tt.tt_nmodes);
-	if (n < N)
-		ttwrite(p, n);
-	else
-		zc_write(p, n);
+	ttwrite(p, n);
 	tt.tt_col += n;
 	if (tt.tt_col == NCOL)
 		tt.tt_col = 0, tt.tt_row++;
@@ -148,19 +109,31 @@ zz_write(p, n)
 zz_move(row, col)
 	register row, col;
 {
+	register x;
+
 	if (tt.tt_row == row) {
-		if (tt.tt_col == col)
+		if ((x = col - tt.tt_col) == 0)
 			return;
 		if (col == 0) {
 			pc('\r');
 			goto out;
 		}
-		if (tt.tt_col == col - 1) {
+		switch (x) {
+		case 2:
+			pc(ctrl('f'));
+		case 1:
 			pc(ctrl('f'));
 			goto out;
-		}
-		if (tt.tt_col == col + 1) {
+		case -2:
 			pc('\b');
+		case -1:
+			pc('\b');
+			goto out;
+		}
+		if (col & 7 == 0 && x > 0 && x <= 16) {
+			pc('\t');
+			if (x > 8)
+				pc('\t');
 			goto out;
 		}
 		esc1();
@@ -169,12 +142,16 @@ zz_move(row, col)
 		goto out;
 	}
 	if (tt.tt_col == col) {
-		if (tt.tt_row == row + 1) {
-			pc(ctrl('k'));
-			goto out;
-		}
-		if (tt.tt_row == row - 1) {
+		switch (row - tt.tt_row) {
+		case 2:
 			pc('\n');
+		case 1:
+			pc('\n');
+			goto out;
+		case -2:
+			pc(ctrl('k'));
+		case -1:
+			pc(ctrl('k'));
 			goto out;
 		}
 		if (col == 0) {
@@ -195,6 +172,11 @@ home:
 			pc('0');
 			goto out;
 		}
+		if (row == tt.tt_row + 1) {
+			pc('\r');
+			pc('\n');
+			goto out;
+		}
 		if (row == NROW - 1) {
 ll:
 			esc();
@@ -211,15 +193,14 @@ out:
 	tt.tt_row = row;
 }
 
-zz_init()
+zz_start()
 {
 	zz_setmodes(0);
 	zz_setscroll(0, NROW - 1);
 	zz_clear();
 	esc1();
-	pc(N + ' ');
+	pc(TOKEN_MAX + ' ');
 	pc('T');
-	zc_init();
 }
 
 zz_end()
@@ -227,7 +208,6 @@ zz_end()
 	esc1();
 	pc(' ');
 	pc('T');
-	pc(0);
 }
 
 zz_clreol()
@@ -279,7 +259,7 @@ zz_scroll_down(n)
 		esc1();
 		pc(n + ' ');
 		pc('F');
-	} else if (tt.tt_row == tt.tt_scroll_bot)
+	} else if (tt.tt_row == NROW - 1)
 		pc('\n');
 	else {
 		esc();
@@ -309,149 +289,51 @@ zz_setscroll(top, bot)
 	tt.tt_scroll_bot = bot;
 }
 
-zc_write(s, n)
+int zz_debug = 0;
+
+zz_set_token(t, s, n)
 	char *s;
-	register n;
 {
-	register char *p;
-	register h;
-	register i;
-	register struct ctoken *tp;
-
-	p = s;
-	for (i = N - 2, h = zc_hash(0, *p++); --i >= 0; h = zc_hash(h, *p++))
-		;
-	for (i = 0;;) {
-		tick++;
-		h = zc_hash(h, *p++);
-		if ((tp = htab[h]) == 0) {
-			tp = q2.back;
-			if (tp->hash >= 0)
-				htab[tp->hash] = 0;
-			zc_copy(p - N, tp->string);
-			tp->hash = h;
-			tp->count = 0;
-			htab[h] = tp;
-		} else if (!zc_equal(tp->string, p - N)) {
-			if (tp->index == 0 && zc_eval(tp) < 0) {
-				zc_copy(p - N, tp->string);
-				tp->count = 0;
-			} else {
-				line[i] = 0;
-				goto cont;
-			}
-		}
-		tp->time = tick;
-		tp->count++;
-		if (tp->index == 0)
-			zc_head(tp, &q2);
-		else
-			zc_head(tp, &q1);
-		line[i] = tp;
-	cont:
-		if (++i > n - N)
-			break;
-		h = zc_unhash(h, p[- N]);
+	if (tt.tt_nmodes != tt.tt_modes)
+		zz_setmodes(tt.tt_nmodes);
+	if (zz_debug) {
+		char buf[100];
+		zz_setmodes(WWM_REV);
+		(void) sprintf(buf, "%02x=", t);
+		ttputs(buf);
+		tt.tt_col += 3;
 	}
-	while (i < n)
-		line[i++] = 0;
-	for (i = 0; i < n;) {
-		register struct ctoken *tp;
-
-		if ((tp = line[i]) == 0) {
-			pc(s[i]);
-			i++;
-		} else if (tp->index > 0) {
-			zc_head(tp, &q1);
-			pc(tp->index - 1 | 0x80);
-			wwzc1++;
-			wwzcsave += N - 1;
-			i += N;
-		} else if (tp->index < 0) {
-			tp->index = - tp->index;
-			zc_head(tp, &q1);
-			pc(ctrl('^'));
-			pc(tp->index - 1);
-			ttwrite(tp->string, N);
-			wwzc0++;
-			wwzcsave -= 2;
-			i += N;
-		} else if (tp->count > 1 && zc_eval(tp) > zc_eval(q1.back)) {
-			tp->index = abs(q1.back->index);
-			q1.back->index = 0;
-			zc_head(q1.back, &q2);
-			zc_head(tp, &q1);
-			pc(ctrl('^'));
-			pc(tp->index - 1);
-			ttwrite(tp->string, N);
-			wwzc0++;
-			wwzcsave -= 2;
-			i += N;
-		} else {
-			pc(s[i]);
-			i++;
-		}
-	}
-	wwzctotal += n;
+	pc(ctrl('^'));
+	pc(t);
+	s[n - 1] |= 0x80;
+	ttwrite(s, n);
+	s[n - 1] &= ~0x80;
+	tt.tt_col += n;
+	if (tt.tt_col == NCOL)
+		tt.tt_col = 0, tt.tt_row++;
 }
 
-zc_head(tp, q)
-	register struct ctoken *tp, *q;
+/*ARGSUSED*/
+zz_put_token(t, s, n)
+	char *s;
 {
-
-	tp->back->forw = tp->forw;
-	tp->forw->back = tp->back;
-	q->forw->back = tp;
-	tp->forw = q->forw;
-	q->forw = tp;
-	tp->back = q;
-}
-
-zc_init()
-{
-	register struct ctoken *tp;
-
-	for (tp = tokens; tp < tokens + sizeof tokens / sizeof *tokens; tp++)
-		if (tp->index > 0)
-			tp->index = - tp->index;
-}
-
-zc_start()
-{
-	register struct ctoken *tp;
-	register i;
-
-	tick = 0;
-	bzero((char *)htab, sizeof htab);
-	q1.forw = &q1;
-	q1.back = &q1;
-	for (i = 0, tp = tokens; i < NTOKEN; i++, tp++) {
-		tp->index = i + 1;
-		tp->hash = -1;
-		tp->count = 0;
-		tp->time = 0;
-		q1.forw->back = tp;
-		tp->forw = q1.forw;
-		q1.forw = tp;
-		tp->back = &q1;
+	if (tt.tt_nmodes != tt.tt_modes)
+		zz_setmodes(tt.tt_nmodes);
+	if (zz_debug) {
+		char buf[100];
+		zz_setmodes(WWM_REV);
+		(void) sprintf(buf, "%02x>", t);
+		ttputs(buf);
+		tt.tt_col += 3;
 	}
-	q2.forw = &q2;
-	q2.back = &q2;
-	for (; i < sizeof tokens / sizeof *tokens; i++, tp++) {
-		tp->index = 0;
-		tp->hash = -1;
-		tp->count = 0;
-		tp->time = 0;
-		q2.forw->back = tp;
-		tp->forw = q2.forw;
-		q2.forw = tp;
-		tp->back = &q2;
-	}
+	pc(t | 0x80);
+	tt.tt_col += n;
+	if (tt.tt_col == NCOL)
+		tt.tt_col = 0, tt.tt_row++;
 }
 
 tt_zapple()
 {
-	zc_start();
 	tt.tt_inschar = zz_inschar;
 	tt.tt_delchar = zz_delchar;
 	tt.tt_insline = zz_insline;
@@ -464,9 +346,9 @@ tt_zapple()
 	tt.tt_availmodes = WWM_REV;
 	tt.tt_wrap = 1;
 	tt.tt_retain = 0;
-	tt.tt_ncol = 80;
-	tt.tt_nrow = 24;
-	tt.tt_init = zz_init;
+	tt.tt_ncol = NCOL;
+	tt.tt_nrow = NROW;
+	tt.tt_start = zz_start;
 	tt.tt_end = zz_end;
 	tt.tt_write = zz_write;
 	tt.tt_putc = zz_putc;
@@ -474,5 +356,12 @@ tt_zapple()
 	tt.tt_clear = zz_clear;
 	tt.tt_setmodes = zz_setmodes;
 	tt.tt_frame = gen_frame;
+	tt.tt_ntoken = 128;
+	tt.tt_set_token = zz_set_token;
+	tt.tt_put_token = zz_put_token;
+	tt.tt_token_min = 1;
+	tt.tt_token_max = TOKEN_MAX;
+	tt.tt_set_token_cost = 2;
+	tt.tt_put_token_cost = 1;
 	return 0;
 }

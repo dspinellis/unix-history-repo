@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwwrite.c	3.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwwrite.c	3.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -227,9 +227,16 @@ int n;
 			case 'O':
 				w->ww_insert = 0;
 				break;
+			case 'X':
+				wwupdate();
+				break;
 			case 'Y':
 				UPDATE();
 				w->ww_wstate = 2;
+				break;
+			case 'Z':
+				wwupdate();
+				xxflush(0);
 				break;
 			case 's':
 				w->ww_wstate = 4;

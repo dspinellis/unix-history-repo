@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -278,7 +278,7 @@ out:
 	tt.tt_row = row;
 }
 
-gen_init()
+gen_start()
 {
 	if (gen_VS)
 		ttxputs(gen_VS);
@@ -500,7 +500,7 @@ tt_generic()
 	tt.tt_retain = gen_DB;
 	tt.tt_ncol = gen_CO;
 	tt.tt_nrow = gen_LI;
-	tt.tt_init = gen_init;
+	tt.tt_start = gen_start;
 	tt.tt_end = gen_end;
 	tt.tt_write = gen_write;
 	tt.tt_putc = gen_putc;
