@@ -1,4 +1,4 @@
-/*	init_main.c	4.23	81/12/03	*/
+/*	init_main.c	4.24	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -47,6 +47,10 @@ main(firstaddr)
 	register struct proc *p;
 
 	rqinit();
+#include "loop.h"
+#if NLOOP > 0
+	loattach();			/* XXX */
+#endif
 	startup(firstaddr);
 
 	/*
@@ -84,10 +88,7 @@ main(firstaddr)
 	mbinit();
 #ifdef INET
 	pfinit();
-#endif
-#include "lo.h"
-#if NLOOP > 0
-	loattach();
+	ifinit();
 #endif
 	ihinit();
 	bhinit();
