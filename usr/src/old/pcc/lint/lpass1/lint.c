@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.3	(Berkeley)	%G%";
 #endif lint
 
 # include "mfile1"
@@ -34,6 +34,8 @@ int argflag = 0;  /* used to turn off complaints about arguments */
 int libflag = 0;  /* used to generate library descriptions */
 int vaflag = -1;  /* used to signal functions with a variable number of args */
 int aflag = 0;  /* used to check precision of assignments */
+int Cflag = 0;  /* filter out certain output, for generating libraries */
+char *libname = 0;  /* name of the library we're generating */
 
 	/* flags for the "outdef" function */
 # define USUAL (-101)
@@ -135,6 +137,8 @@ ejobcode( flag ){
 					lineno = k;
 					break;
 					}
+				/* no statics in libraries */
+				if( Cflag ) break;
 
 			case EXTERN:
 			case USTATIC:
@@ -198,7 +202,11 @@ bfcode( a, n ) int a[]; {
 	static ATYPE t;
 
 	retlab = 1;
+
 	cfp = &stab[curftn];
+
+	/* if creating library, don't do static functions */
+	if( Cflag && cfp->sclass == STATIC ) return;
 
 	/* if variable number of arguments, only print the ones which will be checked */
 	if( vaflag > 0 ){
@@ -382,6 +390,13 @@ lprt( p, down, uses ) register NODE *p; {
 		if( p->in.left->in.op == ICON && (id=p->in.left->tn.rval) != NONAME ){ /* used to be &name */
 			struct symtab *sp = &stab[id];
 			int lty;
+
+			fsave( ftitle );
+			/*
+			 * if we're generating a library -C then
+			 * we don't want to output references to functions
+			 */
+			if( Cflag ) break;
 			/*  if a function used in an effects context is
 			 *  cast to type  void  then consider its value
 			 *  to have been disposed of properly
@@ -396,8 +411,7 @@ lprt( p, down, uses ) register NODE *p; {
 			} else {
 				lty = LUV;
 			}
-			fsave( ftitle );
-			outdef(sp, lty, acount);
+			outdef( sp, lty, acount );
 			if( acount ) {
 				lpta( p->in.right );
 				}
@@ -513,7 +527,8 @@ efcode(){
 	register struct symtab *cfp;
 
 	cfp = &stab[curftn];
-	if( retstat & RETVAL ) outdef( cfp, LRV, DECTY );
+	if( retstat & RETVAL && !(Cflag && cfp->sclass==STATIC) )
+		outdef( cfp, LRV, DECTY );
 	if( !vflag ){
 		vflag = argflag;
 		argflag = 0;
@@ -573,7 +588,7 @@ aocode(p) struct symtab *p; {
 defnam( p ) register struct symtab *p; {
 	/* define the current location as the name p->sname */
 
-	if( p->sclass == STATIC && p->slevel>1 ) return;
+	if( p->sclass == STATIC && (p->slevel>1 || Cflag) ) return;
 
 	if( !ISFTN( p->stype ) ) outdef( p, libflag?LIB:LDI, USUAL );
 	}
@@ -728,8 +743,10 @@ strip(s) char *s; {
 #ifndef FLEXNAMES
 /* PATCHED by ROBERT HENRY on 8Jul80 to fix 14 character file name bug */
 			if( p >= &x[LFNM] )
-				cerror( "filename too long" );
+#else
+			if( p >= &x[BUFSIZ] )
 #endif
+				cerror( "filename too long" );
 			*p++ = *s;
 		}
 	}
@@ -759,6 +776,12 @@ fsave( s ) char *s; {
 		fsname.f.decflag = LFN;
 		fwrite( (char *)&fsname, sizeof(fsname), 1, stdout );
 #ifdef FLEXNAMES
+		/* if generating a library, prefix with the library name */
+		/* only do this for flexnames */
+		if( libname ){
+			fwrite( libname, strlen(libname), 1, stdout );
+			putchar( ':' );
+			}
 		fwrite( fsname.f.fn, strlen(fsname.f.fn)+1, 1, stdout );
 #endif
 		}
@@ -793,64 +816,72 @@ fldal(t) unsigned t; { /* field alignment... */
 
 main( argc, argv ) char *argv[]; {
 	char *p;
+	int i;
 
 	/* handle options */
 
-	for( p=argv[1]; argc>1 && *p; ++p ){
+	for( i = 1; i < argc; i++ )
+		for( p=argv[i]; *p; ++p ){
 
-		switch( *p ){
+			switch( *p ){
 
-		case '-':
-			continue;
+			case '-':
+				continue;
 
-		case '\0':
-			break;
+			case '\0':
+				break;
 
-		case 'b':
-			brkflag = 1;
-			continue;
+			case 'b':
+				brkflag = 1;
+				continue;
 
-		case 'p':
-			pflag = 1;
-			continue;
+			case 'p':
+				pflag = 1;
+				continue;
 
-		case 'c':
-			cflag = 1;
-			continue;
+			case 'c':
+				cflag = 1;
+				continue;
 
-		case 's':
-			/* for the moment, -s triggers -h */
+			case 's':
+				/* for the moment, -s triggers -h */
 
-		case 'h':
-			hflag = 1;
-			continue;
+			case 'h':
+				hflag = 1;
+				continue;
 
-		case 'L':
-			libflag = 1;
-		case 'v':
-			vflag = 0;
-			continue;
+			case 'L':
+				libflag = 1;
+			case 'v':
+				vflag = 0;
+				continue;
 
-		case 'x':
-			xflag = 1;
-			continue;
+			case 'x':
+				xflag = 1;
+				continue;
 
-		case 'a':
-			++aflag;
-		case 'u':	/* done in second pass */
-		case 'n':	/* done in shell script */
-			continue;
+			case 'a':
+				++aflag;
+			case 'u':	/* done in second pass */
+			case 'n':	/* done in shell script */
+				continue;
 
-		case 't':
-			werror( "option %c now default: see `man 6 lint'", *p );
-			continue;
+			case 't':
+				werror( "option %c now default: see `man 6 lint'", *p );
+				continue;
 
-		default:
-			uerror( "illegal option: %c", *p );
-			continue;
+			case 'C':
+				Cflag = 1;
+				if( p[1] ) libname = p + 1;
+				while( p[1] ) p++;
+				continue;
 
+			default:
+				uerror( "illegal option: %c", *p );
+				continue;
+
+				}
 			}
-		}
 
 	if( !pflag ){  /* set sizes to sizes of target machine */
 # ifdef gcos
