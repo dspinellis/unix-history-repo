@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.12 (Berkeley) %G%
+ *	@(#)autoconf.c	6.13 (Berkeley) %G%
  */
 
 /*
@@ -825,9 +825,6 @@ ubaaccess(pumem, pte, size)
 	mtpr(TBIA, 0);
 }
 
-#ifndef MAXDUMP
-#define	MAXDUMP	(10*2048)
-#endif
 /*
  * Configure swap space and related parameters.
  */
@@ -837,16 +834,17 @@ swapconf()
 	register int nblks;
 
 	for (swp = swdevt; swp->sw_dev; swp++) {
-		if (bdevsw[major(swp->sw_dev)].d_psize)
+		if (bdevsw[major(swp->sw_dev)].d_psize) {
 			nblks =
-			  (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
-		if (swp->sw_nblks == 0 || swp->sw_nblks > nblks)
-			swp->sw_nblks = nblks;
+			    (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
+			if (swp->sw_nblks == 0 || swp->sw_nblks > nblks)
+				swp->sw_nblks = nblks;
+		}
 	}
 	if (!cold)			/* in case called for mba device */
 		return;
 	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - MAXDUMP;
+		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
 	if (dumplo < 0)
 		dumplo = 0;
 }
