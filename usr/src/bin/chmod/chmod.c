@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1989, 1993\n\
+"@(#) Copyright (c) 1989, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,8 +43,8 @@ main(argc, argv)
 
 	fts_options = FTS_PHYSICAL;
 	fflag = rflag = hflag = Hflag = 0;
-	while ((ch = getopt(argc, argv, "HRfhrwx")) != EOF)
-		switch((char)ch) {
+	while ((ch = getopt(argc, argv, "HRXfghorstuwx")) != EOF)
+		switch (ch) {
 		case 'H':
 			Hflag = 1;
 			fts_options |= FTS_COMFOLLOW;
@@ -52,7 +52,7 @@ main(argc, argv)
 		case 'R':
 			rflag = 1;
 			break;
-		case 'f':		/* no longer documented */
+		case 'f':		/* XXX: no longer documented. */
 			fflag = 1;
 			break;
 		case 'h':
@@ -61,20 +61,16 @@ main(argc, argv)
 			fts_options |= FTS_LOGICAL;
 			break;
 		/*
+		 * XXX
 		 * "-[rwx]" are valid mode commands.  If they are the entire
 		 * argument, getopt has moved past them, so decrement optind.
 		 * Regardless, we're done argument processing.
 		 */
-		case 'r':
-			if (!strcmp(argv[optind - 1], "-r"))
-				--optind;
-			goto done;
-		case 'w':
-			if (!strcmp(argv[optind - 1], "-w"))
-				--optind;
-			goto done;
-		case 'x':
-			if (!strcmp(argv[optind - 1], "-x"))
+		case 'g': case 'o': case 'r': case 's':
+		case 't': case 'u': case 'w': case 'X': case 'x':
+			if (argv[optind - 1][0] == '-' &&
+			    argv[optind - 1][1] == ch &&
+			    argv[optind - 1][2] == '\0')
 				--optind;
 			goto done;
 		case '?':
@@ -102,8 +98,8 @@ done:	argv += optind;
 	retval = 0;
 	if ((ftsp = fts_open(++argv, fts_options, 0)) == NULL)
 		err(1, "");
-	while (p = fts_read(ftsp))
-		switch(p->fts_info) {
+	while ((p = fts_read(ftsp)) != NULL)
+		switch (p->fts_info) {
 		case FTS_D:
 			if (!rflag)
 				fts_set(ftsp, p, FTS_SKIP);
