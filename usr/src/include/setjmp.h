@@ -26,27 +26,34 @@
 #define _JBLEN	10
 #endif
 
+#ifndef _ANSI_SOURCE
 /*
- * sigsetjmp/siglongjmp use the first int to decide if the
- * signal mask was saved or not.
+ * WARNING: sigsetjmp() isn't supported yet, this is a placeholder.
  */
 typedef int sigjmp_buf[_JBLEN + 1];
+#endif /* not ANSI */
 
-#ifndef _POSIX_SOURCE
 typedef int jmp_buf[_JBLEN];
-#endif
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int sigsetjmp __P((sigjmp_buf, int));
-void siglongjmp __P((sigjmp_buf, int));
-#ifndef _POSIX_SOURCE
-int setjmp __P((jmp_buf));
-int _setjmp __P((jmp_buf));
-void longjmp __P((jmp_buf, int));
-void _longjmp __P((jmp_buf, int));
-#endif
+int	setjmp __P((jmp_buf));
+void	longjmp __P((jmp_buf, int));
+
+#ifndef _ANSI_SOURCE
+/*
+ * WARNING: sigsetjmp() isn't supported yet, this is a placeholder.
+ */
+int	sigsetjmp __P((sigjmp_buf, int));
+void	siglongjmp __P((sigjmp_buf, int));
+#endif /* not ANSI */
+
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+int	_setjmp __P((jmp_buf));
+void	_longjmp __P((jmp_buf, int));
+void	longjmperror __P((void));
+#endif /* neither ANSI nor POSIX */
 __END_DECLS
 
 #endif /* !_SETJMP_H_ */
