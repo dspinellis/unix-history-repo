@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -271,6 +271,8 @@ consinit()
 	vt100_open();
 	setup_fnt();
 	setup_fnt24();
+#else
+	dipsw &= SW_CONSOLE;
 #endif
 
 	switch (dipsw & SW_CONSOLE) {
@@ -281,8 +283,10 @@ consinit()
 		break;
 
 	    default:
+#if NBM > 0
 		consdev = makedev(22, 0);
 		constty = cn_tty;
+#endif
 		break;
 	}
 	return(0);
