@@ -1,10 +1,21 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)inet.3	6.6 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH INET 3N ""
+.\"	@(#)inet.3	6.7 (Berkeley) %G%
+.\"
+.TH INET 3 ""
 .UC 5
 .SH NAME
 inet_addr, inet_network, inet_ntoa, inet_makeaddr, inet_lnaof, inet_netof \- Internet address manipulation routines
@@ -104,7 +115,7 @@ in the C language (i.e., a leading 0x or 0X implies
 hexadecimal; otherwise, a leading 0 implies octal;
 otherwise, the number is interpreted as decimal).
 .SH "SEE ALSO"
-gethostbyname(3N), getnetent(3N), hosts(5), networks(5),
+gethostbyname(3), getnetent(3), hosts(5), networks(5),
 .SH DIAGNOSTICS
 The constant \fBINADDR_NONE\fP is returned by
 .I inet_addr
