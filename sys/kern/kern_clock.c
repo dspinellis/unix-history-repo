@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.14 1994/04/02 07:00:57 davidg Exp $
+ *	$Id: kern_clock.c,v 1.15 1994/04/02 08:39:20 davidg Exp $
  */
 
 /* Portions of this software are covered by the following: */
@@ -114,232 +114,234 @@ int ncallout;
 /*
  * Phase-lock loop (PLL) definitions
  *
- * The following defines establish the performance envelope of the PLL.
- * They specify the maximum phase error (MAXPHASE), maximum frequency
- * error (MAXFREQ), minimum interval between updates (MINSEC) and
- * maximum interval between updates (MAXSEC). The intent of these bounds
- * is to force the PLL to operate within predefined limits in order to
- * satisfy correctness assertions. An excursion which exceeds these
- * bounds is clamped to the bound and operation proceeds accordingly. In
- * practice, this can occur only if something has failed or is operating
- * out of tolerance, but otherwise the PLL continues to operate in a
- * stable mode.
- *
- * MAXPHASE must be set greater than or equal to CLOCK.MAX (128 ms), as
- * defined in the NTP specification. CLOCK.MAX establishes the maximum
- * time offset allowed before the system time is reset, rather than
- * incrementally adjusted. Here, the maximum offset is clamped to
- * MAXPHASE only in order to prevent overflow errors due to defective
- * protocol implementations.
- *
- * MAXFREQ reflects the manufacturing frequency tolerance of the CPU
- * clock oscillator plus the maximum slew rate allowed by the protocol.
- * It should be set to at least the frequency tolerance of the
- * oscillator plus 100 ppm for vernier frequency adjustments. If the
- * kernel frequency discipline code is installed (PPS_SYNC), the CPU
- * oscillator frequency is disciplined to an external source, presumably
- * with negligible frequency error, and MAXFREQ can be reduced.
- */
-#define MAXPHASE 512000L	/* max phase error (us) */
-#ifdef PPS_SYNC
-#define MAXFREQ (100L << SHIFT_USEC) /* max freq error (scaled ppm) */
-#else
-#define MAXFREQ (200L << SHIFT_USEC) /* max freq error (scaled ppm) */
-#endif /* PPS_SYNC */
-#define MINSEC 16L		/* min interval between updates (s) */
-#define MAXSEC 1200L		/* max interval between updates (s) */
-
-/*
  * The following variables are read and set by the ntp_adjtime() system
- * call. The ntp_pll.status variable defines the synchronization status of
- * the system clock, with codes defined in the timex.h header file. The
- * time_offset variable is used by the PLL to adjust the system time in
- * small increments. The time_constant variable determines the bandwidth
- * or "stiffness" of the PLL. The time_tolerance variable is the maximum
- * frequency error or tolerance of the CPU clock oscillator and is a
- * property of the architecture; however, in principle it could change
- * as result of the presence of external discipline signals, for
- * instance. The time_precision variable is usually equal to the kernel
- * tick variable; however, in cases where a precision clock counter or
- * external clock is available, the resolution can be much less than
- * this and depend on whether the external clock is working or not. The
- * time_maxerror variable is initialized by a ntp_adjtime() call and
- * increased by the kernel once each second to reflect the maximum error
- * bound growth. The time_esterror variable is set and read by the
- * ntp_adjtime() call, but otherwise not used by the kernel.
+ * call.
+ *
+ * time_state shows the state of the system clock, with values defined
+ * in the timex.h header file.
+ *
+ * time_status shows the status of the system clock, with bits defined
+ * in the timex.h header file.
+ *
+ * time_offset is used by the PLL to adjust the system time in small
+ * increments.
+ *
+ * time_constant determines the bandwidth or "stiffness" of the PLL.
+ *
+ * time_tolerance determines maximum frequency error or tolerance of the
+ * CPU clock oscillator and is a property of the architecture; however,
+ * in principle it could change as result of the presence of external
+ * discipline signals, for instance.
+ *
+ * time_precision is usually equal to the kernel tick variable; however,
+ * in cases where a precision clock counter or external clock is
+ * available, the resolution can be much less than this and depend on
+ * whether the external clock is working or not.
+ *
+ * time_maxerror is initialized by a ntp_adjtime() call and increased by
+ * the kernel once each second to reflect the maximum error
+ * bound growth.
+ *
+ * time_esterror is set and read by the ntp_adjtime() call, but
+ * otherwise not used by the kernel.
  */
-/* - use appropriate fields in ntp_pll instead */
-#if 0
-int ntp_pll.status = TIME_BAD;	/* clock synchronization status */
-long time_offset = 0;		/* time adjustment (us) */
+int time_status = STA_UNSYNC;	/* clock status bits */
+int time_state = TIME_OK;	/* clock state */
+long time_offset = 0;		/* time offset (us) */
 long time_constant = 0;		/* pll time constant */
 long time_tolerance = MAXFREQ;	/* frequency tolerance (scaled ppm) */
 long time_precision = 1;	/* clock precision (us) */
 long time_maxerror = MAXPHASE;	/* maximum error (us) */
 long time_esterror = MAXPHASE;	/* estimated error (us) */
-#endif
 
 /*
  * The following variables establish the state of the PLL and the
- * residual time and frequency offset of the local clock. The time_phase
- * variable is the phase increment and the ntp_pll.frequency variable is the
- * frequency increment of the kernel time variable at each tick of the
- * clock. The ntp_pll.frequency variable is set via ntp_adjtime() from a value
- * stored in a file when the synchronization daemon is first started.
- * Its value is retrieved via ntp_adjtime() and written to the file
- * about once per hour by the daemon. The time_adj variable is the
- * adjustment added to the value of tick at each timer interrupt and is
- * recomputed at each timer interrupt. The time_reftime variable is the
- * second's portion of the system time on the last call to
- * ntp_adjtime(). It is used to adjust the ntp_pll.frequency variable and to
- * increase the time_maxerror as the time since last update increases.
- * The scale factors are defined in the timex.h header file.
+ * residual time and frequency offset of the local clock. The scale
+ * factors are defined in the timex.h header file.
+ *
+ * time_phase and time_freq are the phase increment and the frequency
+ * increment, respectively, of the kernel time variable at each tick of
+ * the clock.
+ *
+ * time_freq is set via ntp_adjtime() from a value stored in a file when
+ * the synchronization daemon is first started. Its value is retrieved
+ * via ntp_adjtime() and written to the file about once per hour by the
+ * daemon.
+ *
+ * time_adj is the adjustment added to the value of tick at each timer
+ * interrupt and is recomputed at each timer interrupt.
+ *
+ * time_reftime is the second's portion of the system time on the last
+ * call to ntp_adjtime(). It is used to adjust the time_freq variable
+ * and to increase the time_maxerror as the time since last update
+ * increases.
  */
 long time_phase = 0;		/* phase offset (scaled us) */
-#if 0
-long ntp_pll.frequency = 0;		/* frequency offset (scaled ppm) */
-#endif
+long time_freq = 0;		/* frequency offset (scaled ppm) */
 long time_adj = 0;		/* tick adjust (scaled 1 / hz) */
-long time_reftime;	/* time at last adjustment (s) */
+long time_reftime = 0;		/* time at last adjustment (s) */
 
 #ifdef PPS_SYNC
 /*
- * The following defines and declarations are used only if a pulse-per-
- * second (PPS) signal is available and connected via a modem control
- * lead, such as produced by the optional ppsclock feature incorporated
- * in the asynch driver. They establish the design parameters of the PPS
- * frequency-lock loop used to discipline the CPU clock oscillator to
- * the PPS signal. PPS_AVG is the averaging factor for the frequency
- * loop. PPS_SHIFT and PPS_SHIFTMAX specify the minimum and maximum
- * intervals, respectively, in seconds as a power of two. The
- * PPS_DISPINC is the initial increment to pps_disp at each second.
- */
-#define PPS_AVG 2		/* pps averaging constant (shift) */
-#define PPS_SHIFT 2		/* min interval duration (s) (shift) */
-#define PPS_SHIFTMAX 8		/* max interval duration (s) (shift) */
-#define PPS_DISPINC 0L		/* dispersion increment (us/s) */
-
-/*
- * The pps_time variable contains the time at each calibration as read
- * by microtime(). The pps_usec variable is latched from a high
- * resolution counter or external clock at pps_time. Here we want the
- * hardware counter contents only, not the contents plus the
- * time_tv.usec as usual. The pps_ybar variable is the current CPU
- * oscillator frequency offset estimate relative to the PPS signal. The
- * pps_disp variable is the current error estimate, which is increased
- * pps_dispinc once each second. Frequency updates are permitted only
- * when pps_disp is below the pps_dispmax threshold. The pps-mf[] array
- * is used as a median filter for the frequency estimate and to derive
- * the error estimate.
+ * The following variables are used only if the if the kernel PPS
+ * discipline code is configured (PPS_SYNC). The scale factors are
+ * defined in the timex.h header file.
+ *
+ * pps_time contains the time at each calibration interval, as read by
+ * microtime().
+ *
+ * pps_offset is the time offset produced by the time median filter
+ * pps_tf[], while pps_jitter is the dispersion measured by this
+ * filter.
+ *
+ * pps_freq is the frequency offset produced by the frequency median
+ * filter pps_ff[], while pps_stabil is the dispersion measured by
+ * this filter.
+ *
+ * pps_usec is latched from a high resolution counter or external clock
+ * at pps_time. Here we want the hardware counter contents only, not the
+ * contents plus the time_tv.usec as usual.
+ *
+ * pps_valid counts the number of seconds since the last PPS update. It
+ * is used as a watchdog timer to disable the PPS discipline should the
+ * PPS signal be lost.
+ *
+ * pps_glitch counts the number of seconds since the beginning of an
+ * offset burst more than tick/2 from current nominal offset. It is used
+ * mainly to suppress error bursts due to priority conflicts between the
+ * PPS interrupt and timer interrupt.
+ *
+ * pps_count counts the seconds of the calibration interval, the
+ * duration of which is pps_shift in powers of two.
+ *
+ * pps_intcnt counts the calibration intervals for use in the interval-
+ * adaptation algorithm. It's just too complicated for words.
  */
 struct timeval pps_time;	/* kernel time at last interval */
-long pps_usec = 0;		/* usec counter at last interval */
-#if 0
-long pps_ybar = 0;		/* frequency estimate (scaled ppm) */
-long pps_disp = MAXFREQ;	/* dispersion estimate (scaled ppm) */
-#endif
-long pps_dispmax = MAXFREQ / 2;	/* dispersion threshold */
-long pps_dispinc = PPS_DISPINC;	/* pps dispersion increment/sec */
-long pps_mf[] = {0, 0, 0};	/* pps median filter */
-
-/*
- * The pps_count variable counts the seconds of the calibration
- * interval, the duration of which is pps_shift (s) in powers of two.
- * The pps_intcnt variable counts the calibration intervals for use in
- * the interval-adaptation algorithm. It's just too complicated for
- * words.
- */
+long pps_offset = 0;		/* pps time offset (us) */
+long pps_jitter = MAXTIME;	/* pps time dispersion (jitter) (us) */
+long pps_tf[] = {0, 0, 0};	/* pps time offset median filter (us) */
+long pps_freq = 0;		/* frequency offset (scaled ppm) */
+long pps_stabil = MAXFREQ;	/* frequency dispersion (scaled ppm) */
+long pps_ff[] = {0, 0, 0};	/* frequency offset median filter */
+long pps_usec = 0;		/* microsec counter at last interval */
+long pps_valid = PPS_VALID;	/* pps signal watchdog counter */
+int pps_glitch = 0;		/* pps signal glitch counter */
 int pps_count = 0;		/* calibration interval counter (s) */
-#if 0
 int pps_shift = PPS_SHIFT;	/* interval duration (s) (shift) */
-#endif
 int pps_intcnt = 0;		/* intervals at current duration */
 
 /*
  * PPS signal quality monitors
+ *
+ * pps_jitcnt counts the seconds that have been discarded because the
+ * jitter measured by the time median filter exceeds the limit MAXTIME
+ * (100 us).
+ *
+ * pps_calcnt counts the frequency calibration intervals, which are
+ * variable from 4 s to 256 s.
+ *
+ * pps_errcnt counts the calibration intervals which have been discarded
+ * because the wander exceeds the limit MAXFREQ (100 ppm) or where the
+ * calibration interval jitter exceeds two ticks.
+ *
+ * pps_stbcnt counts the calibration intervals that have been discarded
+ * because the frequency wander exceeds the limit MAXFREQ / 4 (25 us).
  */
-#if 0
-long pps_calcnt;		/* calibration intervals */
-long pps_jitcnt;		/* jitter limit exceeded */
-long pps_discnt;		/* dispersion limit exceeded */
-#endif
+long pps_jitcnt = 0;		/* jitter limit exceeded */
+long pps_calcnt = 0;		/* calibration intervals */
+long pps_errcnt = 0;		/* calibration errors */
+long pps_stbcnt = 0;		/* stability limit exceeded */
 #endif /* PPS_SYNC */
 
-struct timex ntp_pll = {
-	0,			/* mode */
-	0,			/* offset */
-	0,			/* frequency */
-	MAXPHASE,		/* maxerror */
-	MAXPHASE,		/* esterror */
-	TIME_BAD,		/* status */
-	0,			/* time_constant */
-	1,			/* precision */
-	MAXFREQ,		/* tolerance */
-	0,			/* ybar */
-#ifdef PPS_SYNC
-	MAXFREQ,		/* disp */
-	PPS_SHIFT,		/* shift */
-	0,			/* calcnt */
-	0,			/* jitcnt */
-	0			/* discnt */
-#endif
-};
+/* XXX none of this stuff works under FreeBSD */
+#ifdef EXT_CLOCK
+/*
+ * External clock definitions
+ *
+ * The following definitions and declarations are used only if an
+ * external clock (HIGHBALL or TPRO) is configured on the system.
+ */
+#define CLOCK_INTERVAL 30	/* CPU clock update interval (s) */
+
+/*
+ * The clock_count variable is set to CLOCK_INTERVAL at each PPS
+ * interrupt and decremented once each second.
+ */
+int clock_count = 0;		/* CPU clock counter */
+
+#ifdef HIGHBALL
+/*
+ * The clock_offset and clock_cpu variables are used by the HIGHBALL
+ * interface. The clock_offset variable defines the offset between
+ * system time and the HIGBALL counters. The clock_cpu variable contains
+ * the offset between the system clock and the HIGHBALL clock for use in
+ * disciplining the kernel time variable.
+ */
+extern struct timeval clock_offset; /* Highball clock offset */
+long clock_cpu = 0;		/* CPU clock adjust */
+#endif /* HIGHBALL */
+#endif /* EXT_CLOCK */
 
 /*
  * hardupdate() - local clock update
  *
  * This routine is called by ntp_adjtime() to update the local clock
  * phase and frequency. This is used to implement an adaptive-parameter,
- * first-order, type-II phase-lock loop. The code computes the time
- * since the last update and clamps to a maximum (for robustness). Then
- * it multiplies by the offset (sorry about the ugly multiply), scales
- * by the time constant, and adds to the frequency variable. Then, it
- * computes the phase variable as the offset scaled by the time
- * constant. Note that all shifts are assumed to be positive. Only
- * enough error checking is done to prevent bizarre behavior due to
- * overflow problems.
+ * first-order, type-II phase-lock loop. The code computes new time and
+ * frequency offsets each time it is called. The hardclock() routine
+ * amortizes these offsets at each tick interrupt. If the kernel PPS
+ * discipline code is configured (PPS_SYNC), the PPS signal itself
+ * determines the new time offset, instead of the calling argument.
+ * Presumably, calls to ntp_adjtime() occur only when the caller
+ * believes the local clock is valid within some bound (+-128 ms with
+ * NTP). If the caller's time is far different than the PPS time, an
+ * argument will ensue, and it's not clear who will lose.
  *
  * For default SHIFT_UPDATE = 12, the offset is limited to +-512 ms, the
  * maximum interval between updates is 4096 s and the maximum frequency
  * offset is +-31.25 ms/s.
+ *
+ * Note: splclock() is in effect.
  */
 void
 hardupdate(offset)
 	long offset;
 {
-	long mtemp;
+	long ltemp, mtemp;
 
-	if (offset > MAXPHASE)
-		ntp_pll.offset = MAXPHASE << SHIFT_UPDATE;
-	else if (offset < -MAXPHASE)
-		ntp_pll.offset = -(MAXPHASE << SHIFT_UPDATE);
+	if (!(time_status & STA_PLL) && !(time_status & STA_PPSTIME))
+		return;
+	ltemp = offset;
+#ifdef PPS_SYNC
+	if (time_status & STA_PPSTIME && time_status & STA_PPSSIGNAL)
+		ltemp = pps_offset;
+#endif /* PPS_SYNC */
+	if (ltemp > MAXPHASE)
+		time_offset = MAXPHASE << SHIFT_UPDATE;
+	else if (ltemp < -MAXPHASE)
+		time_offset = -(MAXPHASE << SHIFT_UPDATE);
 	else
-		ntp_pll.offset = offset << SHIFT_UPDATE;
+		time_offset = ltemp << SHIFT_UPDATE;
 	mtemp = time.tv_sec - time_reftime;
 	time_reftime = time.tv_sec;
 	if (mtemp > MAXSEC)
 		mtemp = 0;
 
 	/* ugly multiply should be replaced */
-	if (offset < 0)
-	  ntp_pll.frequency -= 
-	    (-offset * mtemp) >> (ntp_pll.time_constant
-				  + ntp_pll.time_constant
-				  + SHIFT_KF 
-				  - SHIFT_USEC);
+	if (ltemp < 0)
+		time_freq -= (-ltemp * mtemp) >> (time_constant +
+		    time_constant + SHIFT_KF - SHIFT_USEC);
 	else
-	  ntp_pll.frequency +=
-	    (offset * mtemp) >> (ntp_pll.time_constant 
-				 + ntp_pll.time_constant
-				 + SHIFT_KF
-				 - SHIFT_USEC);
-	if (ntp_pll.frequency > ntp_pll.tolerance)
-		ntp_pll.frequency = ntp_pll.tolerance;
-	else if (ntp_pll.frequency < -ntp_pll.tolerance)
-		ntp_pll.frequency = -ntp_pll.tolerance;
-	if (ntp_pll.status == TIME_BAD)
-		ntp_pll.status = TIME_OK;
+		time_freq += (ltemp * mtemp) >> (time_constant +
+		    time_constant + SHIFT_KF - SHIFT_USEC);
+	if (time_freq > time_tolerance)
+		time_freq = time_tolerance;
+	else if (time_freq < -time_tolerance)
+		time_freq = -time_tolerance;
 }
+
+
 
 /*
  * The hz hardware interval timer.
@@ -485,35 +487,36 @@ hardclock(frame)
 	 * priority any longer than necessary.
 	 */
 	{
-		int delta;
+		int time_update;
 		if (timedelta == 0) {
-		  delta = tick;
+		  time_update = tick;
 		} else {
 			if (timedelta < 0) {
-				delta = tick - tickdelta;
+				time_update = tick - tickdelta;
 				timedelta += tickdelta;
 			} else {
-				delta = tick + tickdelta;
+				time_update = tick + tickdelta;
 				timedelta -= tickdelta;
 			}
 		}
 		/*
-		 * Logic from ``Precision Time and Frequency Synchronization
-		 * Using Modified Kernels'' by David L. Mills, University
-		 * of Delaware.
+		 * Compute the phase adjustment. If the low-order bits
+		 * (time_phase) of the update overflow, bump the high-order bits
+		 * (time_update).
 		 */
 		time_phase += time_adj;
-		if(time_phase <= -FINEUSEC) {
-			ltemp = -time_phase >> SHIFT_SCALE;
-			time_phase += ltemp << SHIFT_SCALE;
-			time_update -= ltemp;
-		} else if(time_phase >= FINEUSEC) {
-			ltemp = time_phase >> SHIFT_SCALE;
-			time_phase -= ltemp << SHIFT_SCALE;
-			time_update += ltemp;
+		if (time_phase <= -FINEUSEC) {
+		  ltemp = -time_phase >> SHIFT_SCALE;
+		  time_phase += ltemp << SHIFT_SCALE;
+		  time_update -= ltemp;
+		}
+		else if (time_phase >= FINEUSEC) {
+		  ltemp = time_phase >> SHIFT_SCALE;
+		  time_phase -= ltemp << SHIFT_SCALE;
+		  time_update += ltemp;
 		}
 
-		time.tv_usec += delta + time_update;
+		time.tv_usec += time_update;
 		/*
 		 * On rollover of the second the phase adjustment to be used for
 		 * the next second is calculated. Also, the maximum error is
@@ -529,63 +532,109 @@ hardclock(frame)
 		 * limited to half the maximum or 15.625 ms/s.
 		 */
 		if (time.tv_usec >= 1000000) {
-			time.tv_usec -= 1000000;
-			time.tv_sec++;
-			ntp_pll.maxerror += ntp_pll.tolerance >> SHIFT_USEC;
-			if (ntp_pll.offset < 0) {
-				ltemp = -ntp_pll.offset >>
-			    (SHIFT_KG + ntp_pll.time_constant);
-				ntp_pll.offset += ltemp;
-			time_adj = -ltemp <<
-			  (SHIFT_SCALE - SHIFT_HZ - SHIFT_UPDATE);
-			} else {
-				ltemp = ntp_pll.offset >>
-				  (SHIFT_KG + ntp_pll.time_constant);
-				ntp_pll.offset -= ltemp;
-				time_adj = ltemp <<
-				  (SHIFT_SCALE - SHIFT_HZ - SHIFT_UPDATE);
-			}
+		  time.tv_usec -= 1000000;
+		  time.tv_sec++;
+		  time_maxerror += time_tolerance >> SHIFT_USEC;
+		  if (time_offset < 0) {
+		    ltemp = -time_offset >>
+		      (SHIFT_KG + time_constant);
+		    time_offset += ltemp;
+		    time_adj = -ltemp <<
+		      (SHIFT_SCALE - SHIFT_HZ - SHIFT_UPDATE);
+		  } else {
+		    ltemp = time_offset >>
+		      (SHIFT_KG + time_constant);
+		    time_offset -= ltemp;
+		    time_adj = ltemp <<
+		      (SHIFT_SCALE - SHIFT_HZ - SHIFT_UPDATE);
+		  }
 #ifdef PPS_SYNC
-			/*
-			 * Grow the pps error by pps_dispinc ppm and clamp to
-			 * MAXFREQ. The hardpps() routine will pull it down as
-			 * long as the PPS signal is good.
-			 */
-			ntp_pll.disp += pps_dispinc;
-			if (ntp_pll.disp > MAXFREQ)
-			  ntp_pll.disp = MAXFREQ;
-			ltemp = ntp_pll.frequency + ntp_pll.ybar;
+		  /*
+		   * Gnaw on the watchdog counter and update the frequency
+		   * computed by the pll and the PPS signal.
+		   */
+		  pps_valid++;
+		  if (pps_valid == PPS_VALID) {
+		    pps_jitter = MAXTIME;
+		    pps_stabil = MAXFREQ;
+		    time_status &= ~(STA_PPSSIGNAL | STA_PPSJITTER |
+				     STA_PPSWANDER | STA_PPSERROR);
+		  }
+		  ltemp = time_freq + pps_freq;
 #else
-			ltemp = ntp_pll.frequency;
+		  ltemp = time_freq;
 #endif /* PPS_SYNC */
-			if (ltemp < 0)
-			  time_adj -= -ltemp >>
-			    (SHIFT_USEC + SHIFT_HZ - SHIFT_SCALE);
-			else
-			  time_adj += ltemp >>
-			    (SHIFT_USEC + SHIFT_HZ - SHIFT_SCALE);
-#if 0
-			time_adj += fixtick << (SHIFT_SCALE - SHIFT_HZ);
-#endif
+		  if (ltemp < 0)
+		    time_adj -= -ltemp >>
+		      (SHIFT_USEC + SHIFT_HZ - SHIFT_SCALE);
+		  else
+		    time_adj += ltemp >>
+		      (SHIFT_USEC + SHIFT_HZ - SHIFT_SCALE);
 
-			/*
-			 * When the CPU clock oscillator frequency is not a
-			 * power of two in Hz, the SHIFT_HZ is only an
-			 * approximate scale factor. In the SunOS kernel, this
-			 * results in a PLL gain factor of 1/1.28 = 0.78 what it
-			 * should be. In the following code the overall gain is
-			 * increased by a factor of 1.25, which results in a
-			 * residual error less than 3 percent.
-			 */
-			if (hz == 100) {
-				if (time_adj < 0)
-				  time_adj -= -time_adj >> 2;
-				else
-				  time_adj += time_adj >> 2;
-			}
+		  /*
+		   * When the CPU clock oscillator frequency is not a
+		   * power of two in Hz, the SHIFT_HZ is only an
+		   * approximate scale factor. In the SunOS kernel, this
+		   * results in a PLL gain factor of 1/1.28 = 0.78 what it
+		   * should be. In the following code the overall gain is
+		   * increased by a factor of 1.25, which results in a
+		   * residual error less than 3 percent.
+		   */
+		  /* Same thing applies for FreeBSD --GAW */
+		  if (hz == 100) {
+		    if (time_adj < 0)
+		      time_adj -= -time_adj >> 2;
+		    else
+		      time_adj += time_adj >> 2;
+		  }
+
+		  /* XXX - this is really bogus, but can't be fixed until
+		     xntpd's idea of the system clock is fixed to know how
+		     the user wants leap seconds handled; in the mean time,
+		     we assume that users of NTP are running without proper
+		     leap second support (this is now the default anyway) */
+		  /*
+		   * Leap second processing. If in leap-insert state at
+		   * the end of the day, the system clock is set back one
+		   * second; if in leap-delete state, the system clock is
+		   * set ahead one second. The microtime() routine or
+		   * external clock driver will insure that reported time
+		   * is always monotonic. The ugly divides should be
+		   * replaced.
+		   */
+		  switch (time_state) {
+		    
+		  case TIME_OK:
+		    if (time_status & STA_INS)
+		      time_state = TIME_INS;
+		    else if (time_status & STA_DEL)
+		      time_state = TIME_DEL;
+		    break;
+		    
+		  case TIME_INS:
+		    if (time.tv_sec % 86400 == 0) {
+		      time.tv_sec--;
+		      time_state = TIME_OOP;
+		    }
+		    break;
+
+		  case TIME_DEL:
+		    if ((time.tv_sec + 1) % 86400 == 0) {
+		      time.tv_sec++;
+		      time_state = TIME_WAIT;
+		    }
+		    break;
+		    
+		  case TIME_OOP:
+		    time_state = TIME_WAIT;
+		    break;
+		    
+		  case TIME_WAIT:
+		    if (!(time_status & (STA_INS | STA_DEL)))
+		      time_state = TIME_OK;
+		  }
 		}
 	}
-
 	if (needsoft) {
 		if (CLKF_BASEPRI(&frame)) {
 			/*
