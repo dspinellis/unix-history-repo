@@ -14,7 +14,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)qsort.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)qsort.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -143,15 +143,14 @@ loop:	SWAPINIT(a, es);
 	vecswap(a, pb - r, r);
 	r = min(pd - pc, pn - pd - es);
 	vecswap(pb, pn - r, r);
-	if ((r = pb - pa) > es) {
-		/*
-		 * To decrease the stack space we iterate here rather than 
-		 * recurse.
-		 */
+	if ((r = pb - pa) > es)
+		qsort(a, r / es, es, cmp);
+	if ((r = pd - pc) > es) { 
+		/* Iterate rather than recurse to save stack space */
+		a = pn - r;
 		n = r / es;
 		goto loop;
 	}
-	if ((r = pd - pc) > es)
-		qsort(pn - r, r / es, es, cmp);
+/*		qsort(pn - r, r / es, es, cmp);*/
 }
 	
