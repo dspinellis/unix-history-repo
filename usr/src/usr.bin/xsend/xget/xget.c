@@ -1,18 +1,19 @@
 #ifndef lint
-static char sccsid[] = "@(#)xget.c	4.1 %G%";
+static char sccsid[] = "@(#)xget.c	4.2 %G%";
 #endif
 
 #include "xmail.h"
 #include "sys/types.h"
-#include "sys/dir.h"
+#include "dir.h"
 #include "ctype.h"
 #include "pwd.h"
 #include "sys/stat.h"
 char *myname;
 int uid;
-struct direct dbuf;
+struct direct *dbuf;
 char *maildir = "/usr/spool/secretmail/";
-FILE *kf, *mf, *df;
+FILE *kf, *mf;
+DIR *df;
 MINT *x, *b, *one, *t45, *z, *q, *r;
 MINT *two, *t15, *mbuf;
 char buf[256], line[128];
@@ -22,8 +23,9 @@ struct stat stbuf;
 main()
 {	int i;
 	char *p;
+
 	uid = getuid();
-	myname = getlogin();
+	myname = (char *)getlogin();
 	if(myname == NULL)
 		myname = getpwuid(uid)->pw_name;
 	comminit();
@@ -103,22 +105,20 @@ icmp(a, b) int *a, *b;
 }
 files()
 {	int i;
-	if((df = fopen(maildir, "r")) == NULL)
+	if((df = opendir(maildir)) == NULL)
 	{	perror(maildir);
 		exit(1);
 	}
 	strcpy(line, myname);
 	strcat(line, ".%d");
-	for(; !feof(df);)
-	{	fread(&dbuf, sizeof(dbuf), 1, df);
-		if(feof(df)) break;
-		if(dbuf.d_ino == 0) continue;
-		if(sscanf(dbuf.d_name, line, &i) != 1)
+	while ((dbuf = readdir(df)) != NULL) 
+	{	if(sscanf(dbuf->d_name, line, &i) != 1)
 			continue;
 		if(fcnt >= MXF)
 			break;
 		fnum[fcnt++] = i;
 	}
+	closedir(df);
 	if(fcnt == 0)
 	{	printf("no secret mail\n");
 		exit(0);
