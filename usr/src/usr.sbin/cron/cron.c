@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.12 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.13 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -11,8 +11,10 @@ static char *sccsid = "@(#)cron.c	4.12 (Berkeley) %G%";
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
+#include <sys/resource.h>
 #include <pwd.h>
 #include <fcntl.h>
+#include <syslog.h>
 
 #define	LISTS	(2*BUFSIZ)
 #define	MAXLIN	BUFSIZ
@@ -33,7 +35,7 @@ static char *sccsid = "@(#)cron.c	4.12 (Berkeley) %G%";
 
 char	crontab[]	= CRONTAB;
 char	loc_crontab[]   = CRONTABLOC;
-time_t	itime;
+time_t	itime, time();
 struct	tm *loct;
 struct	tm *localtime();
 char	*malloc();
@@ -58,24 +60,36 @@ main(argc, argv)
 	char c;
 	extern char *optarg;
 
-	if (fork())
+	openlog("cron", LOG_PID | LOG_CONS | LOG_NOWAIT, LOG_DAEMON);
+	switch (fork()) {
+
+	case -1:
+		syslog(LOG_ERR, "fork: %m");
+		exit(1);
+		/* NOTREACHED */
+	case 0:
+		break;
+	default:
 		exit(0);
+		/* NOTREACHED */
+	}
+
 	c = getopt(argc, argv, "d:");
 	if (c == 'd') {
 		debug = fopen(optarg, "w");
 		if (debug == NULL)
 			exit(1);
-		fcntl(fileno(debug), F_SETFL, FAPPEND);
+		(void) fcntl(fileno(debug), F_SETFL, FAPPEND);
 	}
-	chdir("/");
-	freopen("/", "r", stdout);
-	freopen("/", "r", stderr);
+	(void) chdir("/");
+	(void) freopen("/", "r", stdout);
+	(void) freopen("/", "r", stderr);
 	untty();
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGCHLD, reapchild);
-	time(&itime);
+	(void) signal(SIGHUP, SIG_IGN);
+	(void) signal(SIGINT, SIG_IGN);
+	(void) signal(SIGQUIT, SIG_IGN);
+	(void) signal(SIGCHLD, reapchild);
+	(void) time(&itime);
 	itime -= localtime(&itime)->tm_sec;
 
 	for (;; itime+=60, slp()) {
@@ -167,7 +181,7 @@ slp()
 	register i;
 	time_t t;
 
-	time(&t);
+	(void) time(&t);
 	i = itime - t;
 	if(i < -60 * 60 || i > 60 * 60) {
 		itime = t;
@@ -175,38 +189,46 @@ slp()
 		itime += i;
 	}
 	if(i > 0)
-		sleep(i);
+		sleep((u_int)i);
 }
 
 ex(s)
 char *s;
 {
-	int st;
 	register struct passwd *pwd;
 	char user[BUFSIZ];
 	char *c = user;
 	int pid;
 
-	if (fork()) {
+	switch (fork()) {
+	case 0:
+		break;
+	case -1:
+		syslog(LOG_ERR, "cannot fork: %m (running %.40s%s)",
+			s, strlen(s) > 40 ? "..." : "");
+		/*FALLTHROUGH*/
+	default:
 		return;
 	}
-
 	pid = getpid();
 	while(*s != ' ' && *s != '\t')
 		*c++ = *s++;
 	*c = '\0';
 	s++;
 	if ((pwd = getpwnam(user)) == NULL) {
+		syslog(LOG_ERR, "invalid user name \"%s\"", user);
 		dprintf(debug, "%d: cannot find %s\n", pid, user),
 			fflush(debug);
 		exit(1);
 	}
 	(void) setgid(pwd->pw_gid);
-	initgroups(pwd->pw_name, pwd->pw_gid);
+	(void) initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid(pwd->pw_uid);
-	freopen("/", "r", stdin);
+	(void) freopen("/", "r", stdin);
+	closelog();
 	dprintf(debug, "%d: executing %s", pid, s), fflush (debug);
 	execl("/bin/sh", "sh", "-c", s, 0);
+	syslog(LOG_ERR, "cannot exec /bin/sh: %m");
 	dprintf(debug, "%d: cannot execute sh\n", pid), fflush (debug);
 	exit(0);
 }
@@ -311,7 +333,7 @@ ignore:
 	cp = ocp;
 	while(c != '\n') {
 		if(c == EOF) {
-			fclose(stdin);
+			(void) fclose(stdin);
 			listend = cp;
 			return;
 		}
@@ -329,7 +351,7 @@ register c;
 		n = n*10 + c - '0';
 		c = getchar();
 	}
-	ungetc(c, stdin);
+	(void) ungetc(c, stdin);
 	if (n>=100)
 		return(-1);
 	return(n);
@@ -340,7 +362,7 @@ reapchild()
 	union wait status;
 	int pid;
 
-	while ((pid = wait3(&status, WNOHANG, 0)) > 0)
+	while ((pid = wait3(&status, WNOHANG, (struct rusage *)0)) > 0)
 		dprintf(debug, "%d: child exits with signal %d status %d\n",
 			pid, status.w_termsig, status.w_retcode),
 			fflush (debug);
@@ -352,7 +374,7 @@ untty()
 
 	i = open("/dev/tty", O_RDWR);
 	if (i >= 0) {
-		ioctl(i, TIOCNOTTY, (char *)0);
+		(void) ioctl(i, TIOCNOTTY, (char *)0);
 		(void) close(i);
 	}
 }
