@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)vis.3	5.4 (Berkeley) %G%
+.\"	@(#)vis.3	5.5 (Berkeley) %G%
 .\"
 .TH VIS 3 ""
 .UC 7
@@ -43,10 +43,10 @@ int len, flag;
 copies into dst a string which represents the character c.  If
 c needs no encoding, it is copied in unaltered.  The string is
 null terminated, and a pointer to the end of the string is
-returned.  The maximum length of any visual encoding is four
+returned.  The maximum length of any encoding is four
 characters (not including the trailing NULL); thus, when
 encoding a set of characters into a buffer, the size of the buffer should
-be four times the number of characters encoded (plus one for the last NULL).
+be four times the number of characters encoded, plus one for the trailing NULL.
 The flag parameter is used for altering the default range of
 characters considered for encoding and for altering the visual
 representation.
@@ -69,7 +69,7 @@ the unvis(3) or strunvis(3) functions.
 There are two parameters that can be controlled: the range of
 characters that are encoded, and the type
 of representation used.  
-By default, all non-graphic characters
+By default, all non-graphic characters (see isgraph(3))
 except space, tab, and newline are encoded.  The following flags
 alter this:
 .TP
@@ -92,7 +92,7 @@ unexpected functions.  Currently this form allows space,
 tab, newline, backspace, bell, and return - in addition
 to all graphic characters - unencoded. 
 .PP
-There are three forms of representation.
+There are three forms of encoding.
 All forms use the backslash character (``\e'') to introduce a special
 sequence; two backslashes are used to represent a real backslash.
 These are the visual formats:
@@ -124,7 +124,7 @@ Represents Meta-space.
 .sp
 .RE
 .TP
-CENC_CSTYLE
+VIS_CSTYLE
 Use C-style backslash sequences to represent standard non-printable
 characters.
 The following sequences are used to represent the indicated characters:
