@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -430,6 +430,7 @@ safefile(fn, uid, gid, uname, mustown, mode)
 			break;
 		if (stbuf.st_gid == gid && bitset(S_IXGRP, stbuf.st_mode))
 			continue;
+#ifndef NO_GROUP_SET
 		if (uname != NULL &&
 		    ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
 		     (gr = getgrgid(stbuf.st_gid)) != NULL))
@@ -442,6 +443,7 @@ safefile(fn, uid, gid, uname, mustown, mode)
 			if (*gp != NULL && !bitset(S_IXGRP, stbuf.st_mode))
 				break;
 		}
+#endif
 		if (!bitset(S_IXOTH, stbuf.st_mode))
 			break;
 	}
@@ -467,10 +469,33 @@ safefile(fn, uid, gid, uname, mustown, mode)
 		errno = 0;
 		return ret;
 	}
-	if (stbuf.st_uid != uid || uid == 0 || !mustown)
+	if (uid == 0)
 		mode >>= 6;
+	else if (stbuf.st_uid != uid)
+	{
+		mode >>= 3;
+		if (stbuf.st_gid == gid)
+			;
+#ifndef NO_GROUP_SET
+		else if (uname != NULL &&
+			 ((gr != NULL && gr->gr_gid == stbuf.st_gid) ||
+			  (gr = getgrgid(stbuf.st_gid)) != NULL))
+		{
+			register char **gp;
+
+			for (gp = gr->gr_mem; *gp != NULL; gp++)
+				if (strcmp(*gp, uname) == 0)
+					break;
+			if (*gp == NULL)
+				mode >>= 3;
+		}
+#endif
+		else
+			mode >>= 3;
+	}
 	if (tTd(54, 4))
-		printf("\t[uid %d, stat %o] ", stbuf.st_uid, stbuf.st_mode);
+		printf("\t[uid %d, stat %o, mode %o] ",
+			stbuf.st_uid, stbuf.st_mode, mode);
 	if ((stbuf.st_uid == uid || uid == 0 || !mustown) &&
 	    (stbuf.st_mode & mode) == mode)
 	{
