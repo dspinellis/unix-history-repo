@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.16 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.17 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -650,6 +650,8 @@ chkstr( i, j, type ) TWORD type; {
 
 conval( p, o, q ) register NODE *p, *q; {
 	/* apply the op o to the lval part of p; if binary, rhs is val */
+	/* works only on integer constants */
+	NODE *r;
 	int i, u;
 	CONSZ val;
 
@@ -660,6 +662,16 @@ conval( p, o, q ) register NODE *p, *q; {
 	if( p->tn.rval != NONAME && q->tn.rval != NONAME ) return(0);
 	if( q->tn.rval != NONAME && o!=PLUS ) return(0);
 	if( p->tn.rval != NONAME && o!=PLUS && o!=MINUS ) return(0);
+
+	if( p->in.type != INT || q->in.type != INT ){
+		/* will this always work if p == q and o is UTYPE? */
+		r = block( o, p, q, INT, 0, INT );
+		r = tymatch( r );
+		p->in.type = r->in.type;
+		p->fn.cdim = r->fn.cdim;
+		p->fn.csiz = r->fn.csiz;
+		r->in.op = FREE;
+		}
 
 	switch( o ){
 
