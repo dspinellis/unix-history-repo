@@ -3,7 +3,7 @@
 .\"
 %sccs.include.redist.man%
 .\"
-.\"	@(#)rlogin.1	6.12 (Berkeley) %G%
+.\"	@(#)rlogin.1	6.13 (Berkeley) %G%
 .\"
 .\" $Source: /mit/kerberos/src/man/RCS/rlogin.1,v $
 .\" $Author: jtkohl $
@@ -14,7 +14,7 @@
 rlogin \- remote login
 .SH SYNOPSIS
 .ft B
-rlogin [ \-8Ldx ] [ \-e char ] [ \-k realm ] [ \-l username ] host
+rlogin [ \-8KLdx ] [ \-e char ] [ \-k realm ] [ \-l username ] host
 .ft R
 .SH DESCRIPTION
 .I Rlogin
@@ -33,6 +33,9 @@ The \-8 option allows an eight-bit input data path at all times; otherwise
 parity bits are stripped except when the remote side's stop and start
 characters are other than ^S/^Q.
 Eight-bit mode is the default.
+.TP
+\-K
+The \-K option turns off all Kerberos authentication.
 .TP
 \-L
 The \-L option allows the rlogin session to be run in ``litout'' (see
