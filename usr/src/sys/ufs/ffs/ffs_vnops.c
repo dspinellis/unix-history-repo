@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	6.3	83/09/30	*/
+/*	ffs_vnops.c	6.4	84/01/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -812,7 +812,7 @@ rename()
 	 * and target inodes are returned locked.
 	 */
 	u.u_dirp = (caddr_t)uap->to;
-	xp = namei(uchar, CREATE | LOCKPARENT, 0);
+	xp = namei(uchar, CREATE | LOCKPARENT | NOCACHE, 0);
 	if (u.u_error) {
 		error = u.u_error;
 		goto out;
@@ -840,7 +840,7 @@ rename()
 			if (u.u_error)
 				goto out;
 			u.u_dirp = (caddr_t)uap->to;
-			xp = namei(uchar, CREATE | LOCKPARENT, 0);
+			xp = namei(uchar, CREATE | LOCKPARENT | NOCACHE, 0);
 			if (u.u_error) {
 				error = u.u_error;
 				goto out;
@@ -1166,7 +1166,7 @@ mkdir()
 	dp = NULL;
 	if (u.u_error) {
 		u.u_dirp = uap->name;
-		dp = namei(uchar, LOOKUP, 0);
+		dp = namei(uchar, LOOKUP | NOCACHE, 0);
 		if (dp) {
 			dp->i_nlink--;
 			dp->i_flag |= ICHG;

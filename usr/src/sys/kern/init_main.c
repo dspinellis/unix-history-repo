@@ -1,4 +1,4 @@
-/*	init_main.c	6.1	83/07/29	*/
+/*	init_main.c	6.2	84/01/03	*/
 
 #include "../machine/pte.h"
 
@@ -113,6 +113,7 @@ main(firstaddr)
 	bhinit();
 	binit();
 	bswinit();
+	nchinit();
 #ifdef GPROF
 	kmstartup();
 #endif
