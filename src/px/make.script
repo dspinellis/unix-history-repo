@@ -1,0 +1,13 @@
+rm -f as.o
+as -o as.o 00head.s 00int.s 02rel.s 02relset.s 03bool.s 04as.s 05lv.s   06add.s 07sub.s 10mul.s 12div.s 13mod.s 14neg.s   16dvd.s 17ind.s 17rv.s 20con.s 21rang.s 24case.s 24pxp.s 25set.s   26for.s 27conv.s 30atof.s 30getname.s 30io.s 30iosubs.s 30read.s   30write.s 34fun.s E.s opcode.s wait.s
+cc -O -DHZ=60.0 -c exit.c
+cc -O -DHZ=60.0 -c int.c
+cc -O -DHZ=60.0 -c palloc.c
+cc -O -DHZ=60.0 -c pcttot.c
+cc -O -DHZ=60.0 -c pdattim.c
+cc -O -DHZ=60.0 -c perror.c
+cc -O -DHZ=60.0 -c pwrite.c
+ld -X -i ../pascal/assubs/pcrt0.o *.o ../pascal/fpterp/fp.o -lc -l
+ld -X -n ../pascal/assubs/pcrt0.o *.o ../pascal/fpnofetchi/fp.o -lc -l -o a.outNOID
+cp a.out /usr/ucb/px
+cp a.outNOID /usr/ucb/px34
