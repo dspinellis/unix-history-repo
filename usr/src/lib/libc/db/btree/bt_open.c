@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -163,7 +163,7 @@ __bt_open(fname, flags, mode, openinfo)
 		SET(t, BTF_INMEM);
 	}
 
-	if (fcntl(t->bt_fd, F_SETFL, 1) == -1)
+	if (fcntl(t->bt_fd, F_SETFD, 1) == -1)
 		goto err;
 
 	if (fstat(t->bt_fd, &sb))
