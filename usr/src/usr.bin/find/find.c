@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)find.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.3 (Berkeley) %G%";
 /*	find	COMPILE:	cc -o find -s -O -i find.c -lS	*/
 #include <stdio.h>
 #include <sys/types.h>
@@ -456,8 +456,14 @@ doex(com)
 	}
 	nargv[np] = 0;
 	if (np==0) return(9);
-	if(fork()) /*parent*/ wait(&ccode);
-	else { /*child*/
+	if(fork()) /*parent*/ {
+#include <signal.h>
+		int (*old)() = signal(SIGINT, SIG_IGN);
+		int (*oldq)() = signal(SIGQUIT, SIG_IGN);
+		wait(&ccode);
+		signal(SIGINT, old);
+		signal(SIGQUIT, oldq);
+	} else { /*child*/
 		chdir(Home);
 		execvp(nargv[0], nargv, np);
 		exit(1);
