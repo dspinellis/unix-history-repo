@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.19	82/01/19	*/
+/*	vfs_vnops.c	4.20	82/01/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -63,8 +63,9 @@ closef(fp, nouser)
 	}
 	flag = fp->f_flag;
 	if (flag & FSOCKET) {
+		u.u_error = 0;			/* XXX */
 		soclose(fp->f_socket, nouser);
-		if (u.u_error)
+		if (nouser == 0 && u.u_error)
 			return;
 		fp->f_socket = 0;
 		fp->f_count = 0;

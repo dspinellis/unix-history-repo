@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.13	81/12/20	*/
+/*	uipc_proto.c	4.14	82/01/25	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -33,6 +33,19 @@ int	tcp_usrreq();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
 int	rip_input(),rip_output(),rip_ctlinput();
 int	rip_usrreq(),rip_slowtimo();
+
+/*
+ * IMP protocol family: raw interface
+ */
+#include "imp.h"
+#if NIMP > 0
+int	imp_usrreq(),imp_output(),imp_ctlinput();
+#endif
+
+/*
+ * Sundries.
+*/
+int	raw_init(),raw_usrreq(),raw_input();
 
 struct protosw protosw[] = {
 { SOCK_STREAM,	PF_UNIX,	0,		PR_CONNREQUIRED,
@@ -75,11 +88,24 @@ struct protosw protosw[] = {
   tcp_usrreq,
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
 },
-{ SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
+{ 0,		0,		0,		0,
+  raw_input,	0,		0,		0,
+  raw_usrreq,
+  raw_init,	0,		0,		0,
+},
+{ SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC,
   rip_input,	rip_output,	rip_ctlinput,	0,
   rip_usrreq,
-  0,		0,		rip_slowtimo,	0,
+  0,		0,		0,		0,
 }
+#if NIMP > 0
+,
+{ SOCK_RAW,	PF_IMPLINK,	0,		PR_ATOMIC|PR_ADDR,
+  0,		imp_output,	imp_ctlinput,	0,
+  imp_usrreq,
+  0,		0,		0,		0,
+}
+#endif
 };
 
 #define	NPROTOSW	(sizeof(protosw) / sizeof(protosw[0]))

@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.19	82/01/24	*/
+/*	kern_proc.c	4.20	82/01/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -514,6 +514,7 @@ exit(rv)
 	acct();
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
+	(void) slpimp();		/* hack for mem alloc race XXX */
 	multprog--;
 	p->p_stat = SZOMB;
 	noproc = 1;
