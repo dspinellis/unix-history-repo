@@ -1,7 +1,9 @@
 1. Create and use an interrupt stack.
    Well actually, use the master SP for kernel stacks instead of
    the interrupt SP.  Right now we use the interrupt stack for
-   everything.
+   everything.  Allows for more accurate accounting of systime.
+   In theory, could also allow for smaller kernel stacks but we
+   only use one page anyway.
 
 2. Copy/clear primitives could be tuned.
    What is best is highly CPU and cache dependent.  One thing to look
@@ -27,12 +29,16 @@
    We could possibly handle them by using an appropriately planted
    PS trace bit.
 
-5. Make use of transparent translation registers on 030 MMU.
+5. Make use of transparent translation registers on 030/040 MMU.
    With a little rearranging of the KVA space we could use one to
    map the entire external IO space [ 600000 - 20000000 ).  Since
    the translation must be 1-1, this would limit the kernel to 6mb
    (some would say that is hardly a limit) or divide it into two
-   pieces.
+   pieces.  Another promising use would be to map physical memory
+   within the kernel.  This allows a much simpler and more efficient
+   implementation of /dev/mem, pmap_zero_page, pmap_copy_page and
+   possible even kernel-user cross address space copies.  However,
+   it does eat up a significant piece of kernel address space.
 
 6. Create a 32-bit timer.
    Timers 2 and 3 on the MC6840 clock chip can be concatonated together to
@@ -63,8 +69,3 @@
    scheme (though HP 68k boxes have just about every caching scheme
    imaginable: internal/external, physical/virtual, writeback/writethrough)
    See, for example, Wheeler and Bershad in ASPLOS 92.
-
-9. 1-1 mapping of physical memory into kernel VA space.
-   This would make the pmap physical copy/zero primitives and the mem.c
-   code easier if not slightly more efficient (cache-inhibit?).  Could use
-   a TTR on the 030.  However, this could eat up a lot of KVA space.
