@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.4	5.1 (Berkeley) %G%
+.\"	@(#)intro.4	6.1 (Berkeley) %G%
 .\"
 .sh 1 "Cursor Motion Optimization: Standing Alone"
 .pp
@@ -12,12 +12,12 @@ The screen updating functions are designed for uses
 where parts of the screen are changed,
 but the overall image remains the same.
 This includes such programs as
-.b eye
+.b rogue
 and
 .b vi \**.
 .(f
 \**
-.b Eye
+.b rogue
 actually uses these functions,
 .b vi
 does not.
@@ -35,12 +35,13 @@ I could name many,
 but they come and go,
 so the list would be quickly out of date.
 Recently, there have been programs such as
-.b rocket
+.b rain ,
+.b rocket ,
 and
 .b gun .
 .)f
 and optimizing
-.b cat (1)-type
+.b more (1)-type
 programs,
 all that is needed is the motion optimizations.
 This, therefore, is a description
@@ -78,11 +79,12 @@ is a string which moves the cursor to the "home" position\**.
 \**
 These names are identical to those variables
 used in the
-.b /etc/termcap
+.b termcap (5)
 \*(db to describe each capability.
 See Appendix A for a complete list of those read,
-and
+and the
 .b termcap (5)
+manual page
 for a full description.
 .)f
 As there are two types of variables involving ttys,
@@ -102,8 +104,10 @@ This is the way these routines are used by
 .(l I
 \*fif\fP (isatty(0)) {
        gettmode();
-       \*fif\fP (sp=getenv("TERM"))
+       \*fif\fP ((sp=getenv("TERM")) != NULL)
                setterm(sp);
+	\*felse\fP
+	       setterm(Def\*_term);
 }
 \*felse\fP
        setterm(Def\*_term);
@@ -152,14 +156,15 @@ is a macro which uses
 .Fn tputs
 (see
 .b termcap (3))
+and 
+.Fn \*_putchar ""
 to put out a string).
-It is these things which
 .Fn endwin
-undoes.
+undoes these things.
 .sh 2 "Movement Optimizations, or, Getting Over Yonder"
 .pp
 Now that we have all this useful information,
-it  would be nice to do something with it\**.
+it would be nice to do something with it\**.
 .(f
 \**
 Actually,
