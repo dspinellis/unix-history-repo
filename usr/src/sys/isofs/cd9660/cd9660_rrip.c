@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_rrip.c	8.4 (Berkeley) %G%
+ *	@(#)cd9660_rrip.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -614,7 +614,7 @@ cd9660_rrip_getsymname(isodir,outbuf,outlen,imp)
 	ISO_RRIP_ANALYZE analyze;
 	
 	analyze.outbuf = outbuf;
-	analyze.outlen = 0;
+	analyze.outlen = outlen;
 	*outlen = 0;
 	analyze.maxlen = MAXPATHLEN;
 	analyze.cont = 1;		/* don't start with a slash */
