@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.15 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -557,7 +557,8 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 	int relocated;
 	struct iso_directory_record *isodir;
 {
-	register struct iso_mnt *imp;
+	struct proc *p = curproc;	/* XXX */
+	struct iso_mnt *imp;
 	struct iso_node *ip;
 	struct buf *bp;
 	struct vnode *vp, *nvp;
@@ -577,6 +578,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 	MALLOC(ip, struct iso_node *, sizeof(struct iso_node), M_ISOFSNODE,
 	    M_WAITOK);
 	bzero((caddr_t)ip, sizeof(struct iso_node));
+	lockinit(&ip->i_lock, PINOD, "isonode", 0, 0);
 	vp->v_data = ip;
 	ip->i_vnode = vp;
 	ip->i_dev = dev;
@@ -723,7 +725,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 			 * Discard unneeded vnode, but save its iso_node.
 			 */
 			cd9660_ihashrem(ip);
-			VOP_UNLOCK(vp);
+			VOP_UNLOCK(vp, 0, p);
 			nvp->v_data = vp->v_data;
 			vp->v_data = NULL;
 			vp->v_op = spec_vnodeop_p;
