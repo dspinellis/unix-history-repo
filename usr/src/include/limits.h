@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)limits.h	5.6 (Berkeley) %G%
+ *	@(#)limits.h	5.7 (Berkeley) %G%
  */
 
 #define	_POSIX_ARG_MAX		4096
@@ -18,7 +18,14 @@
 #define	_POSIX_PATH_MAX		255
 #define	_POSIX_PIPE_BUF		512
 
+#define	_POSIX2_BC_BASE_MAX	99
+#define	_POSIX2_BC_DIM_MAX	2048
+#define	_POSIX2_BC_SCALE_MAX	99
+#define	_POSIX2_BC_STRING_MAX	1000
+#define	_POSIX2_EQUIV_CLASS_MAX	2
+#define	_POSIX2_EXPR_NEST_MAX	32
+#define	_POSIX2_LINE_MAX	2048
+#define	_POSIX2_RE_DUP_MAX	255
+
 #include <machine/machlimits.h>
 #include <sys/syslimits.h>
-
-#define	_BSD_LINE_MAX		2048
