@@ -2,29 +2,29 @@
 # include <signal.h>
 # include <ctype.h>
 # include <pwd.h>
-# include "dlvrmail.h"
+# include "postbox.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.1	%G%";
+static char	SccsId[] = "@(#)main.c	3.2	%G%";
 
 /*
-**  DELIVERMAIL -- Deliver mail to a set of destinations
+**  POSTBOX -- Post mail to a set of destinations.
 **
 **	This is the basic mail router.  All user mail programs should
-**	call this routine to actually deliver mail.  Delivermail in
+**	call this routine to actually deliver mail.  Postbox in
 **	turn calls a bunch of mail servers that do the real work of
 **	delivering the mail.
 **
-**	Delivermail is driven by tables defined in config.c.  This
+**	Postbox is driven by tables defined in conf.c.  This
 **	file will be different from system to system, but the rest
 **	of the code will be the same.  This table could be read in,
 **	but it seemed nicer to have it compiled in, since deliver-
 **	mail will potentially be exercised a lot.
 **
 **	Usage:
-**		/etc/delivermail [-f name] [-a] [-q] [-v] [-n] [-m] addr ...
+**		/etc/postbox [-f name] [-a] [-q] [-v] [-n] [-m] addr ...
 **
 **	Positional Parameters:
 **		addr -- the address to deliver the mail to.  There
@@ -82,11 +82,11 @@ static char	SccsId[] = "@(#)main.c	3.1	%G%";
 **		LOG -- if set, everything is logged.
 **
 **	Compilation Instructions:
-**		cc -c -O main.c config.c deliver.c parse.c
+**		cc -c -O main.c conf.c deliver.c parse.c
 **		cc -n -s *.o -lS
 **		chown root a.out
 **		chmod 755 a.out
-**		mv a.out delivermail
+**		mv a.out postbox
 **
 **	Deficiencies:
 **		It ought to collect together messages that are
@@ -119,13 +119,13 @@ bool	SuprErrs;	/* supress errors if set */
 int	Errors;		/* count of errors */
 char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
-addrq	From;		/* the from person */
+ADDRESS	From;		/* the from person */
 char	*To;		/* the target person */
 char	*FullName;	/* full name of sender */
 int	HopCount;	/* hop count */
 int	ExitStat;	/* the exit status byte */
-addrq	SendQ;		/* queue of people to send to */
-addrq	AliasQ;		/* queue of people who turned out to be aliases */
+ADDRESS	SendQ;		/* queue of people to send to */
+ADDRESS	AliasQ;		/* queue of people who turned out to be aliases */
 HDR	*Header;	/* header list */
 
 
@@ -138,12 +138,12 @@ main(argc, argv)
 	char **argv;
 {
 	register char *p;
-	extern char *maketemp();
+	extern char *collect();
 	extern char *getlogin();
 	char *locname;
 	extern int finis();
-	extern addrq *parse();
-	register addrq *q;
+	extern ADDRESS *parse();
+	register ADDRESS *q;
 	extern char Version[];
 	extern int errno;
 	char *from;
@@ -161,7 +161,7 @@ main(argc, argv)
 	signal(SIGTERM, finis);
 	setbuf(stdout, (char *) NULL);
 # ifdef LOG
-	openlog("delivermail", 0);
+	openlog("postbox", 0);
 # endif LOG
 # ifdef DEBUG
 # ifdef DEBUGFILE
@@ -417,12 +417,12 @@ main(argc, argv)
 # endif DEBUG
 
 	if (argc <= 0)
-		usrerr("Usage: /etc/delivermail [flags] addr...");
+		usrerr("Usage: /etc/postbox [flags] addr...");
 
 	/*
 	**  Process Hop count.
 	**	The Hop count tells us how many times this message has
-	**	been processed by delivermail.  If it exceeds some
+	**	been processed by postbox.  If it exceeds some
 	**	fairly large threshold, then we assume that we have
 	**	an infinite forwarding loop and die.
 	*/
@@ -521,7 +521,7 @@ main(argc, argv)
 **		never
 **
 **	Side Effects:
-**		exits delivermail
+**		exits postbox
 **
 **	Called By:
 **		main
