@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.24 (Berkeley) %G%
+ *	@(#)if.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -299,7 +299,9 @@ link_rtrequest(cmd, rt, sa)
 	    ((ifp = ifa->ifa_ifp) == 0) || ((dst = rt_key(rt)) == 0))
 		return;
 	if (ifa = ifaof_ifpforaddr(dst, ifp)) {
+		IFAFREE(rt->rt_ifa);
 		rt->rt_ifa = ifa;
+		ifa->ifa_refcnt++;
 		if (ifa->ifa_rtrequest && ifa->ifa_rtrequest != link_rtrequest)
 			ifa->ifa_rtrequest(cmd, rt, sa);
 	}
