@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)getfsstat.2	8.2 (Berkeley) %G%
+.\"	@(#)getfsstat.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETFSSTAT 2
@@ -48,6 +48,39 @@ struct statfs {
 	char	f_mntfromname[MNAMELEN];/* mounted filesystem */
 };
 .Ed
+.Pp
+The flags that may be returned include:
+.Bl -tag -width MNT_ASYNCHRONOUS
+.It Dv MNT_RDONLY
+The filesystem is mounted read-only;
+Even the super-user may not write on it.
+.It Dv MNT_NOEXEC
+Files may not be executed from the filesystem.
+.It Dv MNT_NOSUID
+Setuid and setgid bits on files are not honored when they are executed.
+.It Dv MNT_NODEV
+Special files in the filesystem may not be opened.
+.It Dv MNT_SYNCHRONOUS
+All I/O to the filesystem is done synchronously.
+.It Dv MNT_ASYNCHRONOUS
+No filesystem I/O is done synchronously.
+.It Dv MNT_LOCAL
+The filesystem resides locally.
+.It Dv MNT_QUOTA
+The filesystem has quotas enabled on it.
+.It Dv MNT_ROOTFS
+Identifies the root filesystem.
+.It Dv MNT_EXRDONLY
+The filesystem is exported read-only.
+.It Dv MNT_EXPORTED
+The filesystem is exported for both reading and writing.
+.It Dv MNT_DEFEXPORTED
+The filesystem is exported for both reading and writing to any Internet host.
+.It Dv MNT_EXPORTANON
+The filesystem maps all remote accesses to the anonymous user.
+.It Dv MNT_EXKERB
+The filesystem is exported with Kerberos uid mapping.
+.El
 .Pp
 Fields that are undefined for a particular filesystem are set to -1.
 The buffer is filled with an array of
