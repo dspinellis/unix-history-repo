@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hexdump.h	5.4 (Berkeley) %G%
+ *	@(#)hexdump.h	5.5 (Berkeley) %G%
  */
 
 typedef struct _pr {
@@ -47,4 +47,27 @@ typedef struct _fs {			/* format strings */
 extern FS *fshead;			/* head of format strings list */
 extern int blocksize;			/* data block size */
 enum _vflag { ALL, DUP, FIRST, WAIT };	/* -v values */
-char *emalloc();
+
+void	 add __P((char *));
+void	 addfile __P((char *));
+void	 badcnt __P((char *));
+void	 badconv __P((char *));
+void	 badfmt __P((char *));
+void	 badsfmt __P((void));
+void	 bpad __P((PR *));
+void	 conv_c __P((PR *, u_char *));
+void	 conv_u __P((PR *, u_char *));
+void	 display __P((void));
+void	 doskip __P((char *, int));
+void	 err __P((const char *, ...));
+void	*emalloc __P((int));
+void	 escape __P((char *));
+u_char	*get __P((void));
+void	 newsyntax __P((int, char ***));
+int	 next __P((char **));
+void	 nomem __P((void));
+void	 odoffset __P((int, char ***));
+void	 oldsyntax __P((int, char ***));
+void	 rewrite __P((FS *));
+int	 size __P((FS *));
+void	 usage __P((void));

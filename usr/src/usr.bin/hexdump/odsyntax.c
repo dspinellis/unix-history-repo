@@ -6,27 +6,30 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)odsyntax.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)odsyntax.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include "hexdump.h"
 
 int deprecated;
 
+static void odoffset __P((int, char ***));
+static void odprecede __P((void));
+
+void
 oldsyntax(argc, argvp)
 	int argc;
 	char ***argvp;
 {
 	extern enum _vflag vflag;
 	extern FS *fshead;
-	extern char *optarg;
-	extern int length, optind;
 	int ch;
 	char **argv;
-	static void odprecede();
 
 	deprecated = 1;
 	argv = *argvp;
@@ -121,6 +124,7 @@ oldsyntax(argc, argvp)
 		odoffset(argc, argvp);
 }
 
+static void
 odoffset(argc, argvp)
 	int argc;
 	char ***argvp;
