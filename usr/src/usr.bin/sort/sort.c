@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sort.c	4.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.9 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -9,11 +9,13 @@ static	char *sccsid = "@(#)sort.c	4.8 (Berkeley) %G%";
 #define	N	7
 #define	C	20
 #ifndef pdp11
-#define	MEM	(64*2048)
+#define	MEM	(128*2048)
 #else
 #define	MEM	(16*2048)
 #endif
 #define NF	10
+
+#define rline(mp)	(fgets((mp)->l, L, (mp)->b) == NULL)
 
 FILE	*is, *os;
 char	*dirtry[] = {"/usr/tmp", "/tmp", NULL};
@@ -300,42 +302,43 @@ sort()
 {
 	register char *cp;
 	register char **lp;
-	register c;
-	int done;
-	int i;
+	register lines, text, len;
+	int done = 0;
+	int i = 0;
 	char *f;
 
-	done = 0;
-	i = 0;
-	c = EOF;
+	if((f = setfil(i++)) == NULL)
+		is = stdin;
+	else if((is = fopen(f, "r")) == NULL)
+		cant(f);
+
 	do {
 		cp = tspace;
 		lp = (char **)lspace;
-		while(lp < (char **)lspace+nlines && cp < tspace+ntext) {
-			*lp++ = cp;
-			while(c != '\n') {
-				if(c != EOF) {
-					*cp++ = c;
-					c = getc(is);
-					continue;
-				} else if(is)
-					fclose(is);
-				if(i < eargc) {
-					if((f = setfil(i++)) == 0)
-						is = stdin;
-					else if((is = fopen(f, "r")) == NULL)
-						cant(f);
-					c = getc(is);
-				} else
+		lines = nlines;
+		text = ntext;
+		while(lines > 0 && text > 0) {
+			if(fgets(cp, L, is) == NULL) {
+				if(i >= eargc) {
+					++done;
 					break;
+				}
+				fclose(is);
+				if((f = setfil(i++)) == NULL)
+					is = stdin;
+				else if((is = fopen(f, "r")) == NULL)
+					cant(f);
+				continue;
 			}
-			*cp++ = '\n';
-			if(c == EOF) {
-				done++;
-				lp--;
-				break;
+			*lp++ = cp;
+			len = strlen(cp) + 1; /* null terminate */
+			if(cp[len - 2] != '\n') {
+				diag("line too long: ", cp);
+				term();
 			}
-			c = getc(is);
+			cp += len;
+			--lines;
+			text -= len;
 		}
 		qsort((char **)lspace, lp);
 		if(done == 0 || nfiles != eargc)
@@ -346,9 +349,7 @@ sort()
 		while(lp > (char **)lspace) {
 			cp = *--lp;
 			if(*cp)
-				do
-				putc(*cp, os);
-				while(*cp++ != '\n');
+				fputs(cp, os);
 			if (ferror(os)) {
 				error = 1;
 				term();
@@ -413,9 +414,7 @@ merge(a,b)
 		cp = ibuf[i-1]->l;
 		if (!cflg && (uflg == 0 || muflg || i == 1 ||
 			(*compare)(ibuf[i-1]->l,ibuf[i-2]->l))) {
-			do
-				putc(*cp, os);
-			while(*cp++ != '\n');
+			fputs(cp, os);
 			if (ferror(os)) {
 				error = 1;
 				term();
@@ -462,28 +461,6 @@ merge(a,b)
 			unlink(setfil(i));
 	}
 	fclose(os);
-}
-
-rline(mp)
-struct merg *mp;
-{
-	register char *cp;
-	register char *ce;
-	FILE *bp;
-	register c;
-
-	bp = mp->b;
-	cp = mp->l;
-	ce = cp+L;
-	do {
-		c = getc(bp);
-		if(c == EOF)
-			return(1);
-		if(cp>=ce)
-			cp--;
-		*cp++ = c;
-	} while(c!='\n');
-	return(0);
 }
 
 disorder(s,t)
