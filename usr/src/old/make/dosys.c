@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dosys.c	4.8 (Berkeley) 84/03/21";
+static	char *sccsid = "@(#)dosys.c	4.9 (Berkeley) %G%;
 #include "defs"
 #include <signal.h>
 
@@ -39,6 +39,7 @@ char *shellstr;
 if((waitpid = vfork()) == 0)
 	{
 	enbint(SIG_DFL);
+	doclose();
 
 #ifdef SHELLENV
 	if (shellcom == 0) shellcom = SHELLCOM;
@@ -70,6 +71,23 @@ while( (pid = wait(&status)) != waitpid)
 waitpid = 0;
 enbint(intrupt);
 return(status);
+}
+
+/*
+ * Close open directory files before exec'ing
+ */
+doclose()
+{
+register struct dirhdr *od;
+
+for (od = firstod; od; od = od->nxtopendir)
+	if (od->dirfc != NULL)
+		/*
+		 * vfork kludge...
+		 * we cannot call closedir since this will modify
+		 * the parents data space; just call close directly.
+		 */
+		close(od->dirfc->dd_fd);
 }
 
 
@@ -106,6 +124,7 @@ for(t = str ; *t ; )
 if((waitpid = vfork()) == 0)
 	{
 	enbint(SIG_DFL);
+	doclose();
 	enbint(intrupt);
 	execvp(str, argv);
 	fatal1("Cannot load %s",str);
