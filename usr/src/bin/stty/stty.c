@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)stty.c	4.1 (Berkeley) %G%";
+static char *sccsid ="@(#)stty.c	4.2 (Berkeley) %G%";
 /*
  * set teletype modes
  */
@@ -349,9 +349,9 @@ prmodes(all)
 		      ((mode.sg_ospeed > B300) ? LCRTERA|LCRTKIL : 0);
 		if (newcrt) {
 			if (all==2)
-				fprintf(stderr, "newcrt: (crtbs crterase crtkill ctlecho) ");
+				fprintf(stderr, "crt: (crtbs crterase crtkill ctlecho) ");
 			else
-				fprintf(stderr, "newcrt ");
+				fprintf(stderr, "crt ");
 			any++;
 		} else {
 			lpit(LCRTBS, "-crtbs ");
