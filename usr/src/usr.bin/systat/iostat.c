@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -295,7 +295,7 @@ stat1(row, o)
 		time = 1.0;
 	wmove(wnd, row, INSET);
 #define CPUSCALE	0.5
-	histogram(100 * s.cp_time[o] / time, 50, CPUSCALE);
+	histogram(100.0 * s.cp_time[o] / time, 50, CPUSCALE);
 }
 
 histogram(val, colwidth, scale)

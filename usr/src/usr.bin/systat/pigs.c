@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)pigs.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -213,7 +213,8 @@ fetchpigs()
 			continue;
 		prt->pt_pid = pp->p_pid;
 		prt->pt_pp = pp;
-		prt->pt_pctcpu = pp->p_pctcpu / (1.0 - exp(time * lccpu));
+		prt->pt_pctcpu = ((double) pp->p_pctcpu / fscale) /
+				(1.0 - exp(time * lccpu));
 		prt->pt_uid = pp->p_uid;
 		prt++;
 	}
