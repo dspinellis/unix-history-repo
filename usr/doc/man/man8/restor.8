@@ -1,0 +1,127 @@
+.th RESTOR VIII 11/24/73
+.sh NAME
+restor \*- incremental file system restore
+.sh SYNOPSIS
+.bd restor
+key [ arguments ]
+.sh DESCRIPTION
+.it Restor
+is used to read magtapes dumped with the
+.it dump
+command.
+The
+.it key
+argument specifies what is to be done.
+.it Key
+is a character from the set
+.bd trxw.
+.s3
+.lp +5 3
+\fBt\fR	The date that the tape was made and the date that
+was specified in the
+.it dump
+command are printed.
+A list of all of the i-numbers on the tape
+is also given.
+.s3
+.lp +5 3
+\fBr\fR	The tape
+is read and loaded into the file system
+specified in
+.it arguments.
+This should not be done lightly (see below).
+.s3
+.lp +5 3
+\fBx\fR	Each file on the
+tape is individually extracted into
+a file whose name is the file's i-number.
+If
+there are
+.it arguments,
+they are interpreted as i-numbers and only they are
+extracted.
+.s3
+.lp +5 3
+\fBc\fR	If the tape overflows, increment the last character
+of its name and continue on that drive.
+(Normally it asks you to change tapes.)
+.s3
+.lp +5 3
+\fBf\fR	Read the dump from the next argument file
+instead of the tape.
+.s3
+.lp +5 3
+\fBi\fR	All read and checksum errors
+are reported, but will not
+cause termination.
+.s3
+.lp +5 3
+\fBw\fR	In conjunction with the
+.bd x
+option,
+before each file is extracted,
+its i-number is typed out.
+To extract this file,
+you must respond with
+.bd y.
+.s3
+.i0
+The
+.bd x
+option is used to retrieve individual files.
+If the i-number of the desired file is not known,
+it can be discovered by following the file system
+directory search algorithm.
+First retrieve the
+.it root
+directory whose i-number is 1.
+List this file with
+.it "ls \*-fi 1."
+This will give names and i-numbers of
+sub-directories.
+Iterating, any file may be retrieved.
+.s3
+The
+.bd r
+option should only be used to restore
+a complete dump tape onto a clear file system
+or to restore an incremental dump tape onto this.
+Thus
+.s3
+	/etc/mkfs /dev/rp0 40600
+.br
+	restor r /dev/rp0
+.s3
+is a typical sequence to restore a complete dump.
+Another
+.it restor
+can be done to get an incremental dump
+in on top of this.
+.s3
+A
+.it dump
+followed by a
+.it mkfs
+and a
+.it restor
+is used to
+change the size of a file system.
+.sh FILES
+/dev/mt0
+.sh "SEE ALSO"
+ls (I), dump (VIII), mkfs (VIII), clri (VIII)
+.sh DIAGNOSTICS
+There are various diagnostics
+involved with reading the tape and writing the disk.
+There are also diagnostics if the i-list or the free list
+of the file system is not large enough to hold the dump.
+.s3
+If the dump extends over more than one tape,
+it may ask you to change tapes.
+Reply with a new-line when the next tape has been mounted.
+.sh BUGS
+There is redundant information on the tape
+that could be used in case of tape reading problems.
+Unfortunately,
+.it restor's
+approach is to exit if anything is wrong.
