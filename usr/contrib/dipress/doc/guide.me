@@ -1,0 +1,123 @@
+.bp
+.sh 1 "Invoking the Programs"
+.lp
+All of the programs provided with this toolkit have associated ``man''
+pages for easy reference.  A short overview of each is also provided below:
+.sh 2 "maha"
+.lp
+This program treats the laser printer as a line-printer.
+Normally, it uses a fixed-width font so that columns will line up.
+Options are provided to change the font, provide two-column output
+and print landscape (rotated) output.
+.sh 2 "charset"
+.lp
+This program prints a character set of a specific font in a given point
+size.  Since the Xerox Character Encoding Standard has a very sparse
+space of characters, it's handy to know exactly which characters your
+printer can print.
+.sh 2 "iptotext and texttoip"
+.lp
+\*(IP files are binary encoded files and thus are somewhat inconvient to
+examine. There is a parallel representation to \*(IP called Intertext which is
+a textual representation.  Since the mapping is one-to-one, \*(IP files
+can be converted to Intertext files and back again without loss of information.
+The actual syntax of Intertext is documented in Section 5 of this document.
+.lp
+The programs iptotext and texttoip convert between these two representations
+in the obvious way.  Converting to Intertext is a handy way to debug
+\*(IP files that are constructed using the C language interface described
+in Section 4.  Intertext also provides a way for knowledgable people
+to edit \*(IP files.  For example, it was used to debug \*(TR changes intended
+to remove the cut-marks inserted by the standard 4.2BSD macros.
+.sh 2 "iptroff and dipress"
+.lp
+The shell script ``iptroff\|'' is simply a front-end for TI-\*(TR and dipress.
+Only under special circumstances will one need to invoke dipress directly.
+In general, one invokes iptroff just as regular \*(TR would be used.
+For example:
+.(l
+iptroff \-me foo.me
+.)l
+.lp
+Remember, that many pre-processors such as eqn and pic
+need to know which output device you intend to use.  When using iptroff,
+specifiy the ``\-Tip'' switch.
+.sh 2 "restotext and stackres"
+.lp
+RES is Xerox's Raster Encoding Standard.  It is used as a way of transmitting
+and exchanging image data.  The program ``restotext'' converts an RES file
+to a textual represtation and a manner similar to iptotext.  Stackres
+executes the RES file (an RES file is similar to an \*(IP file) and
+prints out what is left on the stack.
+.sh 2 "ipmetrics"
+.lp
+The \*(IP standard specifies that fonts metrics (like widths of characters)
+are distributed in the form of an \*(IP file which when executed leaves various
+vectors on the stack.  These vectors are property lists which contain
+various pieces of information about the fonts.  The program ``ipmetrics''
+will execute an \*(IP master and with the aid of various description
+files, produce metrics for \*(TR.
+.sh 3 "Fonts"
+.lp
+In order to be compatible with the C/A/T phototypsetter, there are the
+standard four fonts: R, B, I and S.  The fonts provided with
+this distribution have all the characters that the C/A/T had as well as
+many new special characters.  These are documented in Appendix \f(RN2\fR.
+Because \*(TR has a restriction of only 221 special character names,
+it was not possible to give all the special characters unique names.
+The overflow characters were placed in three (3) pseudo-fonts as follows:\(dg
+.(f
+.ti -\n(fiu
+\(dgThey are pseudo-fonts in the sense that although \*(TR thinks
+they are separate fonts, they are actually mapped to the same Interpress font.
+.)f
+.RS
+.ip "RN"
+This is the roman numeral font.  It has the digits one through nine
+mapped to the matching roman numeral.  The digit zero is mapped to roman
+numeral 10.
+.ip "CN"
+This is the circled (arabic) numeral font.  The digits are mapped
+in the same way.
+.ip "XX"
+The remaining miscellaneous characters which are mapped to normal
+ASCII characters.
+.RE
+.sh 3 "Hints and Warnings"
+.lp
+This section discusses unexpected behavior that users of iptroff might
+encounter and how to deal with it.
+.lp
+On page three (3) of
+.i "Typesetting Mathematics - User's Guide"
+it is implied that typing a ``{'' to eqn will produce a roman ``{'' in the
+output.  Unfortuately, eqn doesn't produce any code to guarantee this behavior.
+Instead it relies on the fact that the C/A/T would always print ``{'' as
+a roman character.  Since the \*(IP fonts include bold and italic curly
+brackets, eqn output will produce italic curly brackets by default.
+.lp
+The \-me macros have a bug where some footnotes are broken across pages when
+they shouldn't be.  This may be because our higher device resolution
+alters the fudge factor that is used
+to compute the amount of space to reserve for a footnote.
+.lp
+The 4.2 BSD macros have been modified to produce cut-marks for roll paper
+devices such as Versatec plotters.  These cut marks will cause appearance
+errors to appear on the banner page produced by the 8044 printer.  
+In \-me they can be removed by placing the following
+two lines at the front of your file:
+.(l
+	.rm @m
+.)l
+In \-ms they can be removed by using the following lines:
+.(l
+	.rm CM
+.)l
+.lp
+The default physical offset for \*(TR is often too small.  Most users
+will preface their files with a
+.(l
+	.po 1i
+.)l
+.lp
+to produce the correct page centering.
