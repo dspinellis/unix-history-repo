@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -55,6 +55,7 @@ char	edata, end;
 **		Eric Allman, UCB/INGRES (until 10/81)
 **			     Britton-Lee, Inc., purveyors of fine
 **				database computers (from 11/81)
+**			     Now back at UCB at the Mammoth project.
 **		The support of the INGRES Project and Britton-Lee is
 **			gratefully acknowledged.  Britton-Lee in
 **			particular had absolutely nothing to gain from
@@ -80,6 +81,19 @@ ADDRESS		NullAddress =	/* a null address */
 char		**Argv = NULL;		/* pointer to argument vector */
 char		*LastArgv = NULL;	/* end of argv */
 # endif SETPROCTITLE
+
+/*
+**  The file in which to log raw recipient information.
+**	This is logged before aliasing, forwarding, and so forth so we
+**	can see how our addresses are being used.  For example, this
+**	would give us the names of aliases (instead of what they alias
+**	to), the pre-MX hostnames, and so forth.
+**
+**	This is specified on the command line, not in the config file,
+**	and is therefore really only useful for logging SMTP RCPTs.
+*/
+
+char		*RcptLogFile = NULL;	/* file name */
 
 #ifdef DAEMON
 #ifndef SMTP
@@ -436,7 +450,19 @@ main(argc, argv, envp)
 		  case 'I':	/* initialize alias DBM file */
 			OpMode = MD_INITALIAS;
 			break;
-# endif DBM
+# endif /* DBM */
+
+		  case 'R':	/* log raw recipient info */
+			p += 2;
+			if (*p == '\0' && ((p = *++av) == NULL || *p == '-'))
+			{
+				usrerr("Bad -R flag");
+				ExitStat = EX_USAGE;
+				av--;
+				break;
+			}
+			RcptLogFile = newstr(p);
+			break;
 		}
 	}
 

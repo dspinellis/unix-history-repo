@@ -7,11 +7,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <sys/file.h>
 # include <pwd.h>
 # include "sendmail.h"
 
@@ -203,6 +204,7 @@ addrref(a, r)
 */
 
 extern ADDRESS *getctladdr();
+extern char	*RcptLogFile;
 
 ADDRESS *
 ADDRESS *
@@ -298,6 +300,37 @@ recipient(a, sendq)
 	*pq = a;
 	a->q_next = NULL;
 	CurEnv->e_nrcpts++;
+
+	if (a->q_alias == NULL && RcptLogFile != NULL &&
+	    !bitset(QDONTSEND, a->q_flags))
+	{
+		static int RcptLogFd = -1;
+
+		/*
+		**  Log the incoming recipient name before aliasing,
+		**  expanding, forwarding, rewriting, and all that jazz.
+		**  We'll use this to track down out-of-date aliases,
+		**  host names, and so forth.
+		*/
+
+		if (RcptLogFd < 0)
+		{
+			/* try to open the log file */
+			RcptLogFd = open(RcptLogFile, O_WRONLY|O_APPEND|O_CREAT, 0666);
+		}
+		if (RcptLogFd >= 0)
+		{
+			int l = strlen(a->q_paddr);
+
+			a->q_paddr[l] = '\n';
+			if (write(RcptLogFd, a->q_paddr, l + 1) < 0)
+			{
+				(void) close(RcptLogFd);
+				RcptLogFd = -1;
+			}
+			a->q_paddr[l] = '\0';
+		}
+	}
 
 	/*
 	**  Alias the name and handle :include: specs.
