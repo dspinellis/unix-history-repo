@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.5 (Berkeley) %G%
+#	@(#)daily	5.6 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
@@ -130,29 +130,6 @@ echo "network:"
 netstat -i
 echo ""
 ruptime
-
-echo ""
-echo "SECURITY CHECKS:"
-echo ""
-echo "checking setuid files in root filesystem:"
-ncheck -s `awk -F: '$2=="/" {print $1}' /etc/fstab` | grep -v '	/dev/' \
-	> $bak/check.today
-chmod 400 $bak/check.today
-if [ -f $bak/check.yesterday ]
-then
-	if diff $bak/check.today $bak/check.yesterday > /tmp/dif; then :; else
-		echo "*** New setuid files in root filesystem:"
-		cat /tmp/dif
-		mv $bak/check.today $bak/check.yesterday
-	fi
-	rm /tmp/dif
-else
-	cat $bak/check.today
-	mv $bak/check.today $bak/check.yesterday
-fi
-echo ""
-echo "checking for uids of 0:"
-awk 'BEGIN {FS=":"} $3=="0" {print $1,$3}' /etc/master.passwd
 
 echo ""
 echo "Checking filesystems:"
