@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	1.3	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	1.4	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -348,7 +348,10 @@ prescan(addr, buf, buflim, delim)
 		else if (c == delim)
 			break;
 		else if (c == '(')
+		{
 			cmntcnt++;
+			continue;
+		}
 		else if (c == ')')
 		{
 			if (cmntcnt <= 0)
@@ -362,8 +365,6 @@ prescan(addr, buf, buflim, delim)
 				continue;
 			}
 		}
-		if (cmntcnt > 0)
-			continue;
 		else if (c == '<')
 		{
 			brccnt++;
@@ -390,7 +391,7 @@ prescan(addr, buf, buflim, delim)
 
 		/*
 		**  Turn "at" into "@",
-		**	but only if "at" is a word in and to itself.
+		**	but only if "at" is a word.
 		**	By the way, I violate the ARPANET RFC-733
 		**	standard here, by assuming that 'space' delimits
 		**	atoms.  I assume that is just a mistake, since
