@@ -1,4 +1,4 @@
-/*	rst2ch.c	(Berkeley)	1.1	85/02/04
+/*	rst2ch.c	(Berkeley)	1.2	86/03/04
  *
  * Font translation for Imagen-style fonts (RST format) to character format.
  *
@@ -71,9 +71,6 @@ char **argv;
 	    error("too many glyphs (%d) in font.", p.p_last);
 	p.p_mag = rd4();
 
-	if ((fixtowdth = FIXPIX * p.p_mag / 1000.0) == 0.0)
-	    fixtowdth = FIXPIX;
-
 	p.p_desiz = rd4();
 	p.p_linesp = rd4();
 	p.p_wordsp = rd4();
@@ -82,9 +79,9 @@ char **argv;
 	p.p_ladv = rd1();
 	p.p_id = rd4();
 	p.p_res = rd2();
-	if (p.p_res != RES)
-	    fprintf(stderr,"rst2ch: Warning, wrong resolution (%d)\n",p.p_res);
 
+	if ((fixtowdth = FIXIN * p.p_res * p.p_mag / 1000.0) == 0.0)
+	    fixtowdth = FIXIN * p.p_res;
 	i = p.p_glyph - 44;
 	while (i--) if (getc(FID) == EOF)
 	    error("bad preamble in Font file.");
