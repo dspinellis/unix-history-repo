@@ -1,4 +1,4 @@
-/*	ip_output.c	1.41	82/10/30	*/
+/*	ip_output.c	1.42	82/12/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -122,7 +122,7 @@ gotif:
 	m->m_len -= sizeof (struct ip);
 	m->m_off += sizeof (struct ip);
 	for (off = 0; off < ip->ip_len-hlen; off += len) {
-		struct mbuf *mh = m_get(M_DONTWAIT);
+		struct mbuf *mh = m_get(M_DONTWAIT, MT_HEADER);
 		struct ip *mhip;
 
 		if (mh == 0) {
