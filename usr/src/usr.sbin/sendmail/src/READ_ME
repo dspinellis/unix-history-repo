@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.68 (Berkeley) %G%
+#	@(#)READ_ME	8.69 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -84,6 +84,7 @@ SunOS 4.1.x are available on ftp.css.itd.umich.edu in
 /pub/systems/sun/Net2-make.sun4.diff.Z.  Diffs and instructions
 for building this version of make under IBM AIX 3.2.4 are available
 on ftp.uni-stuttgart.de in /sw/src/patches/bsd-make-rus-patches.
+For Ultrix, try ftp.vix.com:~ftp/pub/patches/pmake-for-ultrix.Z.
 Paul Southworth <pauls@umich.edu> published a description of porting
 this make in comp.unix.bsd.
 
@@ -875,4 +876,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.68, last update %G% 11:41:27)
+(Version 8.69, last update %G% 06:41:53)
