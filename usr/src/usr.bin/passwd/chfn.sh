@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)chfn.sh	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)chfn.sh	4.4 (Berkeley) %G%";
 #endif lint
 
 /*
@@ -8,6 +8,9 @@ static char *sccsid = "@(#)chfn.sh	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <pwd.h>
+#include <time.h>
+#include <resource.h>
+#include <sys/file.h>
 #include <ctype.h>
 
 struct default_values {
@@ -24,15 +27,14 @@ struct	passwd *getpwent(), *getpwnam(), *getpwuid();
 int	endpwent();
 char	*crypt();
 char	*getpass();
-char	buf[BUFSIZ];
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
 	int user_uid;
-	int num_bytes, fi, fo;
 	char replacement[4*BUFSIZ];
+	int fd;
 	FILE *tf;
 
 	if (argc > 2) {
@@ -88,48 +90,27 @@ main(argc, argv)
 	 */
 	get_info(pwd->pw_gecos, replacement);
 
-	/*
-	 * Update the entry in the password file.
-	 */
-	while (access(temp, 0) >= 0) {
-		printf("Password file busy -- waiting for it to be free.\n");
-		sleep(10);
-	}
 	(void) signal(SIGHUP, SIG_IGN);
 	(void) signal(SIGINT, SIG_IGN);
 	(void) signal(SIGQUIT, SIG_IGN);
 	(void) signal(SIGTSTP, SIG_IGN);
-	/*
-	 * Race condition -- the locking mechinism is not my idea (ns)
-	 */
-	if (access(temp, 0) >= 0) {
-		printf("It's not your day!  Password file is busy again.\n");
-		printf("Try again later.\n");
+	if ((fd = open(temp, O_CREAT|O_EXCL|O_RDWR, 0644)) < 0) {
+		printf("Temporary file busy -- try again\n");
 		exit(1);
 	}
-	if ((tf=fopen(temp,"w")) == NULL) {
-		printf("Cannot create temporary file\n");
-		exit(1);
-	}
-	/*
-	 * There is another race condition here:  if the passwd file
-	 * has changed since the error checking at the beginning of the program,
-	 * then user_uid may not be in the file.  Of course, the uid might have
-	 * been changed, but this is not supposed to happen.
-	 */
-	if (getpwuid(user_uid) == NULL) {
-		printf("%s%d%s\n", "Passwd file has changed. Uid ", user_uid,
-			" is no longer in the file!?");
+	if ((tf = fdopen(fd, "w")) == NULL) {
+		printf("Absurd fdopen failure - seek help\n");
 		goto out;
 	}
+	unlimit(RLIMIT_CPU);
+	unlimit(RLIMIT_FSIZE);
 	/*
-	 * copy passwd to temp, replacing matching line
-	 * with new finger entry (gecos field).
+	 * Copy passwd to temp, replacing matching lines
+	 * with new gecos field.
 	 */
-	while ((pwd=getpwent()) != NULL) {
-		if (pwd->pw_uid == user_uid) {
+	while ((pwd = getpwent()) != NULL) {
+		if (pwd->pw_uid == user_uid)
 			pwd->pw_gecos = replacement;
-		}
 		fprintf(tf,"%s:%s:%d:%d:%s:%s:%s\n",
 			pwd->pw_name,
 			pwd->pw_passwd,
@@ -140,22 +121,22 @@ main(argc, argv)
 			pwd->pw_shell);
 	}
 	(void) endpwent();
+	if (rename(temp, passwd) < 0) {
+		fprintf(stderr, "chfn: "); perror("rename");
+  out:
+		(void) unlink(temp);
+		exit(1);
+	}
 	(void) fclose(tf);
-	/*
-	 * Copy temp back to password file.
-	 */
-	if((fi=open(temp,0)) < 0) {
-		printf("Temp file disappeared!\n");
-		goto out;
-	}
-	if((fo=creat(passwd, 0644)) < 0) {
-		printf("Cannot recreat passwd file.\n");
-		goto out;
-	}
-	while((num_bytes=read(fi,buf,sizeof(buf))) > 0)
-		(void) write(fo,buf,num_bytes);
-out:
-	(void) unlink(temp);
+	exit(0);
+}
+
+unlimit(lim)
+{
+	struct rlimit rlim;
+
+	rlim.rlim_cur = rlim.rlim_max = RLIM_INFINITY;
+	(void) setrlimit(lim, &rlim);
 }
 
 /*
