@@ -1,0 +1,180 @@
+This file is history.def, from which is created history.c.
+It implements the builtin "history" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES history.c
+
+$BUILTIN history
+$FUNCTION history_builtin
+$SHORT_DOC history [n] [ [-awrn] [filename]]
+Display the history list with line numbers.  Lines listed with
+with a `*' have been modified.  Argument of N says to list only
+the last N lines.  Argument `-w' means to write out the current
+history file;  `-r' means to read it instead.  Argument `-a' means
+to append history lines from this session to the history file.
+Argument `-n' means to read all history lines not already read
+from the history file.  If FILENAME is given, then use that file,
+else if $HISTFILE has a value, use that, else use ~/.bash_history.
+$END
+
+#include "../shell.h"
+#include <sys/types.h>
+#include <sys/file.h>
+#include "../filecntl.h"
+#include "../posixstat.h"
+#include <readline/history.h>
+
+/* History.  Arg of -w FILENAME means write file, arg of -r FILENAME
+   means read file.  Arg of N means only display that many items. */
+
+history_builtin (list)
+     WORD_LIST *list;
+{
+  register int i;
+  int limited = 0, limit = 0;
+  HIST_ENTRY **hlist;
+
+  while (list)
+    {
+      char *arg = list->word->word;
+
+      if ((arg[0] == '-') &&
+	  (strlen (arg) == 2) &&
+	  (member (arg[1], "rwan")))
+	{
+	  char *file;
+	  int result = EXECUTION_SUCCESS;
+
+	  if (list->next)
+	    file = list->next->word->word;
+	  else
+	    file = get_string_value ("HISTFILE");
+
+	  switch (arg[1])
+	    {
+	    case 'a':		/* Append `new' lines to file. */
+	      {
+		extern int history_lines_this_session;
+		extern int history_lines_in_file;
+
+		if (history_lines_this_session)
+		  {
+		    void using_history ();
+
+		    if (history_lines_this_session < where_history ())
+		      {
+			/* If the filename was supplied, then create it
+			   if it doesn't already exist. */
+			if (file)
+			  {
+			    struct stat buf;
+
+			    if (stat (file, &buf) == -1)
+			      {
+				int tem;
+
+				tem = open (file, O_CREAT, 0666);
+				close (tem);
+			      }
+			  }
+
+			result =
+			  append_history (history_lines_this_session, file);
+			history_lines_in_file += history_lines_this_session;
+			history_lines_this_session = 0;
+		      }
+		  }
+		break;
+	      }
+
+	    case 'w':		/* Write entire history. */
+	      {
+		result = write_history (file);
+		break;
+	      }
+
+	    case 'r':		/* Read entire file. */
+	      {
+		result = read_history (file);
+		break;
+	      }
+
+	    case 'n':		/* Read `new' history from file. */
+	      {
+		extern int history_lines_in_file;
+
+		/* Read all of the lines in the file that we haven't
+		   already read. */
+		using_history ();
+		result =
+		  read_history_range (file, history_lines_in_file, -1);
+		using_history ();
+		history_lines_in_file = where_history ();
+
+		break;
+	      }
+	    }
+	  return (result ? EXECUTION_FAILURE : EXECUTION_SUCCESS);
+	}
+      else if (strcmp (list->word->word, "--") == 0)
+	{
+	  list = list->next;
+	  break;
+	}
+      else if (*list->word->word == '-')
+	{
+	  bad_option (list->word->word);
+	  return (EXECUTION_FAILURE);
+	}
+      else
+	break;
+    }
+
+  if (list)
+    {
+      limited = 1;
+      limit = get_numeric_arg (list);
+    }
+
+  hlist = history_list ();
+
+  if (hlist)
+    {
+      for (i = 0;  hlist[i]; i++);
+
+      if (limit < 0)
+	limit = -limit;
+
+      if (!limited)
+	i = 0;
+      else
+	if ((i -= limit) < 0)
+	  i = 0;
+
+      while (hlist[i])
+	{
+	  QUIT;
+	  printf ("%5d%c %s\n", i + history_base,
+		  hlist[i]->data ? '*' : ' ', hlist[i]->line);
+	  i++;
+	}
+    }
+  return (EXECUTION_SUCCESS);
+}
