@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	8.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -130,9 +130,9 @@ main(argc, argv, envp)
 	cltpflag = reregister = tcpflag = tp4cnt = tp4flag = tpipcnt = 0;
 	tpipflag = udpflag = 0;
 #ifdef ISO
-#define	FLAGS	"crtu"
+#define	FLAGS	"-crtu"
 #else
-#define	FLAGS	"rtu"
+#define	FLAGS	"-rtu"
 #endif
 	while ((ch = getopt(argc, argv, &FLAGS[1])) != EOF)
 		switch (ch) {
