@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lgamma.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)lgamma.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -164,7 +164,7 @@ large_lgam(double x)
 
 	p = p*x1;			/* error < 2.3e-18 absolute */
 					/* 0 < p < 1/64 (at x = 5.5) */
-	x = x - 0.5;
+	v.a = x = x - 0.5;
 	TRUNC(v.a);			/* truncate v.a to 26 bits. */
 	v.b = x - v.a;
 	t.a = v.a*u.a;			/* t = (x-.5)*(log(x)-1) */
