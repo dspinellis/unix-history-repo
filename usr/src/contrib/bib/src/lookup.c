@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lookup.c	2.4	%G%";
+static char sccsid[] = "@(#)lookup.c	2.5	%G%";
 #endif not lint
 # include "stdio.h"
 # include "streams.h"
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)lookup.c	2.4	%G%";
 char *locate();
 
 int     fflag =   0;        /*  print out file names                    */
+int     Aflag =   0;        /*  print hits from All indexes 		*/
 int     max_klen =   6;     /*  max length of keys                      */
 char    *common =           /*  name of file of common words            */
             COMFILE;
@@ -24,6 +25,7 @@ char **arglist;
     char keys[maxstr];
     char *p,*q;
     char one_index[maxstr];
+    int found;
 
     strcpy(BMACLIB, N_BMACLIB);
     strcpy(COMFILE, N_COMFILE);
@@ -39,7 +41,8 @@ char **arglist;
 	strcat(INDEX, ",");
 
     while (fgets(keys,maxstr,stdin)!=NULL)
-    {   for (p = one_index, q = INDEX; *q != 0 ; q++)
+    {	found = 0;
+	for (p = one_index, q = INDEX; *q != 0 ; q++)
 	    if (*q == ',' )
 	    {   *p = 0;
 	        refs = locate(keys, one_index, max_klen, common);
@@ -50,14 +53,18 @@ char **arglist;
 			strcpy(q-strlen(one_index),q+1);
 			q = q-strlen(one_index)-1;
 		}
-                if (refs!=NULL && *refs!=NULL) break;
+                if (refs!=NULL && *refs!=NULL)
+		{
+		    printf("%s", refs);
+		    free(refs);
+		    found = 1;
+		    if (!Aflag) break;
+		}
 	        p = one_index;
 	    }
 	    else *p++ = *q;
 
-        if (refs==NULL || *refs==NULL)  printf("No references found.\n");
-        else                            printf("%s", refs);
-        if (refs!=NULL) free(refs);
+        if (!found)  printf("No references found.\n");
     }
     exit(0);
 }
@@ -75,6 +82,8 @@ flags()
 			break;
             case 'c':   common=  operand;
                         break;
+	    case 'A':	Aflag++;
+			break;
             case 'p':   strcpy(INDEX,operand);
                         break;
 	    case 'd':
