@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -266,6 +266,18 @@ rmtstatus()
 	for (i = 0, cp = (char *)&mts; i < sizeof(mts); i++)
 		*cp++ = rmtgetb();
 	return (&mts);
+}
+
+int
+rmtioctl(cmd, count)
+	int cmd, count;
+{
+	char buf[256];
+
+	if (count < 0)
+		return (-1);
+	(void)sprintf(buf, "I%d\n%d\n", cmd, count);
+	return (rmtcall("ioctl", buf));
 }
 
 static int
