@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_rmap.c	7.6 (Berkeley) %G%
+ *	@(#)subr_rmap.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -197,7 +197,7 @@ rmfree(mp, size, addr)
 				(bp-1)->m_size = bp->m_size;
 			}
 		}
-		goto done;
+		return;
 	}
 	/*
 	 * Don't abut on the left, check for abutting on
@@ -208,7 +208,7 @@ rmfree(mp, size, addr)
 			goto badrmfree;
 		bp->m_addr -= size;
 		bp->m_size += size;
-		goto done;
+		return;
 	}
 	/*
 	 * Don't abut at all.  Make a new entry
@@ -242,14 +242,6 @@ rmfree(mp, size, addr)
 		    (bp-1)->m_addr, (bp-1)->m_addr+(bp-1)->m_size);
 		bp[-1] = bp[0];
 		bp[0].m_size = bp[0].m_addr = 0;
-	}
-done:
-	/*
-	 * THIS IS RIDICULOUS... IT DOESN'T BELONG HERE!
-	 */
-	if ((mp == kernelmap) && kmapwnt) {
-		kmapwnt = 0;
-		wakeup((caddr_t)kernelmap);
 	}
 	return;
 badrmfree:
