@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)init_disp.c	5.1 (Berkeley) 6/6/85";
  * as well as the signal handling routines.
  */
 
+#define USE_OLD_TTY
 #include "talk.h"
 #include <signal.h>
 
