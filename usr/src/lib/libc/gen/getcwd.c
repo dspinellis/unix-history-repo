@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcwd.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcwd.c	8.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -54,7 +54,7 @@ getcwd(pt, size)
 			} else if ((pt = malloc(pwdlen + 1)) == NULL)
 				return (NULL);
 			memmove(pt, pwd, pwdlen);
-			pwd[pwdlen] = '\0';
+			pt[pwdlen] = '\0';
 			return (pt);
 		}
 	}
