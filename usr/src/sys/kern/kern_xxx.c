@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	6.5 (Berkeley) %G%
+ *	@(#)kern_xxx.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -180,12 +180,13 @@ oftime()
 		struct	timeb	*tp;
 	} *uap;
 	struct timeb tb;
+	int s;
 
 	uap = (struct a *)u.u_ap;
-	(void) spl7();
+	s = splhigh();
 	tb.time = time.tv_sec;
 	tb.millitm = time.tv_usec / 1000;
-	(void) spl0();
+	splx(s);
 	tb.timezone = tz.tz_minuteswest;
 	tb.dstflag = tz.tz_dsttime;
 	u.u_error = copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb));
@@ -197,7 +198,7 @@ oalarm()
 		int	deltat;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p = u.u_procp;
-	int s = spl7();
+	int s = splhigh();
 
 	untimeout(realitexpire, (caddr_t)p);
 	timerclear(&p->p_realtimer.it_interval);
