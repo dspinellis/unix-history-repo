@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.5 (Berkeley) %G%
+ *	@(#)if_le.c	7.6 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -195,12 +195,7 @@ leattach(hd)
 	ifp->if_start = lestart;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
 #if NBPFILTER > 0
-	{
-		static struct bpf_devp dev =
-			{ DLT_EN10MB, sizeof(struct ether_header) };
-
-		bpfattach(&le->sc_bpf, ifp, &dev);
-        }
+	bpfattach(&le->sc_bpf, ifp, DLT_EN10MB, sizeof(struct ether_header));
 #endif
 	if_attach(ifp);
 	return (1);
