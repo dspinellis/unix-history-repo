@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)quotactl.2	8.1 (Berkeley) %G%
+.\"	@(#)quotactl.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt QUOTACTL 2
@@ -15,7 +15,7 @@
 .Nm quotactl
 .Nd manipulate filesystem quotas
 .Sh SYNOPSIS
-.Ft #include <ufs/quota.h>	/* for ufs quotas */
+.Fd #include <ufs/quota.h>	/* for ufs quotas */
 .Ft int
 .Fn quotactl "const char *path" "int cmd" "int id" "char *addr"
 .Sh DESCRIPTION
