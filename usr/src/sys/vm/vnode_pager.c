@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	7.3 (Berkeley) %G%
+ *	@(#)vnode_pager.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -243,7 +243,7 @@ vnode_pager_haspage(pager, offset)
 	 */
 	err = VOP_BMAP(vnp->vnp_vp,
 		       offset / vnp->vnp_vp->v_mount->mnt_stat.f_bsize,
-		       (struct vnode *)0, &bn);
+		       (struct vnode **)0, &bn);
 	if (err) {
 #ifdef DEBUG
 		if (vpagerdebug & VDB_FAIL)
