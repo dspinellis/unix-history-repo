@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.h	7.3 (Berkeley) %G%
+ *	@(#)vm_pageout.h	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -59,6 +59,6 @@ simple_lock_data_t	vm_pages_needed_lock;
 #define	VM_WAIT		{ \
 			simple_lock(&vm_pages_needed_lock); \
 			thread_wakeup((int)&vm_pages_needed); \
-			thread_sleep((int)&vm_page_free_count, \
+			thread_sleep((int)&vm_stat.free_count, \
 				&vm_pages_needed_lock, FALSE); \
 			}
