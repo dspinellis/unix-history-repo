@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.1 (Berkeley) 83/07/06";
+static char sccsid[] = "@(#)main.c	4.2 (Berkeley) 83/07/07";
 #endif
 
 /*
@@ -35,6 +35,7 @@ char	hostname[32];
 char	name[16];
 char	*portselector();
 
+#define	OBUFSIZ		128
 #define	TABBUFSIZ	512
 
 char	defent[TABBUFSIZ];
@@ -77,14 +78,23 @@ dingdong()
 	longjmp(timeout, 1);
 }
 
+jmp_buf	intrupt;
+
+interrupt()
+{
+
+	signal(SIGINT, interrupt);
+	longjmp(intrupt, 1);
+}
+
 main(argc, argv)
 	char *argv[];
 {
 	char *tname;
 	long allflags;
 
-/*
 	signal(SIGINT, SIG_IGN);
+/*
 	signal(SIGQUIT, SIG_DFL);
 */
 	gethostname(hostname, sizeof(hostname));
@@ -99,6 +109,8 @@ main(argc, argv)
 		int ldisp = OTTYDISC;
 
 		gettable(tname, tabent, tabstrs);
+		if (OPset || EPset || APset)
+			APset++, OPset++, EPset++;
 		setdefaults();
 		ioctl(0, TIOCFLUSH, 0);		/* clear out the crap */
 		if (IS)
@@ -153,11 +165,13 @@ main(argc, argv)
 			ioctl(0, TIOCLSET, &allflags);
 			putchr('\n');
 			makeenv(env);
+			signal(SIGINT, SIG_DFL);
 			execle(LO, "login", name, (char *)0, env);
 			exit(1);
 		}
 		alarm(0);
 		signal(SIGALRM, SIG_DFL);
+		signal(SIGINT, SIG_IGN);
 		if (NX && *NX)
 			tname = NX;
 	}
@@ -169,6 +183,14 @@ getname()
 	register c;
 	char cs;
 
+	/*
+	 * interrupt may happen if we use CBREAK mode
+	 */
+	if (setjmp(intrupt)) {
+		signal(SIGINT, SIG_IGN);
+		return (0);
+	}
+	signal(SIGINT, interrupt);
 	tmode.sg_flags = setflags(0);
 	ioctl(0, TIOCSETP, &tmode);
 	tmode.sg_flags = setflags(1);
@@ -180,6 +202,7 @@ getname()
 	digit = 0;
 	np = name;
 	for (;;) {
+		oflush();
 		if (read(0, &cs, 1) <= 0)
 			exit(0);
 		if ((c = cs&0177) == 0)
@@ -193,7 +216,7 @@ getname()
 			lower++;
 		else if (c>='A' && c<='Z') {
 			upper++;
-		} else if (c==ERASE) {
+		} else if (c==ERASE || c=='#' || c=='\b') {
 			if (np > name) {
 				np--;
 				if (tmode.sg_ospeed >= B1200)
@@ -202,7 +225,7 @@ getname()
 					putchr(cs);
 			}
 			continue;
-		} else if (c==KILL) {
+		} else if (c==KILL || c=='@') {
 			putchr(cs);
 			putchr('\r');
 			if (tmode.sg_ospeed < B1200)
@@ -222,6 +245,7 @@ getname()
 		*np++ = c;
 		putchr(cs);
 	}
+	signal(SIGINT, SIG_IGN);
 	*np = 0;
 	if (c == '\r')
 		crmod++;
@@ -287,6 +311,9 @@ puts(s)
 		putchr(*s++);
 }
 
+char	outbuf[OBUFSIZ];
+int	obufcnt = 0;
+
 putchr(cc)
 {
 	char c;
@@ -295,7 +322,19 @@ putchr(cc)
 	c |= partab[c&0177] & 0200;
 	if (OP)
 		c ^= 0200;
-	write(1, &c, 1);
+	if (!UB) {
+		outbuf[obufcnt++] = c;
+		if (obufcnt >= OBUFSIZ)
+			oflush();
+	} else
+		write(1, &c, 1);
+}
+
+oflush()
+{
+	if (obufcnt)
+		write(1, outbuf, obufcnt);
+	obufcnt = 0;
 }
 
 prompt()
