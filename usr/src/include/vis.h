@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vis.h	5.2 (Berkeley) %G%
+ *	@(#)vis.h	5.3 (Berkeley) %G%
  */
 
 
@@ -40,7 +40,7 @@
 #define	VIS_NOSLASH	0x20	/* inhibit printing '\' */
 #define	VIS_NEXTC	0x40	/* nextc character is valid */
 
-extern char *cvis();
+extern char *vis();
 
 /*
  * unvis flags
