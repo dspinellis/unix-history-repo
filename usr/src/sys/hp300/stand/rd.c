@@ -9,15 +9,15 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: rd.c 1.14 89/02/27$
+ * from: Utah $Hdr: rd.c 1.17 92/06/18$
  *
- *	@(#)rd.c	7.3 (Berkeley) %G%
+ *	@(#)rd.c	7.4 (Berkeley) %G%
  */
 
 /*
  * CS80/SS80 disk driver
  */
-#include <sys/param.h>
+#include "sys/param.h"
 #include "saio.h"
 #include "samachdep.h"
 
@@ -32,7 +32,7 @@ struct	rd_softc {
 	char	sc_retry;
 	char	sc_alive;
 	short	sc_type;
-} rd_softc[NRD];
+} rd_softc[NHPIB][NRD];
 
 #define	RDRETRY		5
 
@@ -48,7 +48,9 @@ int rdcyloff[][8] = {
 	{ 1, 65,  0, 65,  257, 657, 193, 257, },	/* 7958A */
 	{ 1, 128, 0, 128, 518, 918, 388, 518, },	/* 7957B */
 	{ 1, 44,  0, 44,  174, 496, 131, 174, },	/* 7958B */
-	{ 1, 44,  0, 44,  218, 918, 174, 218, },	/* 7959B */
+	{ 1, 44,  0, 44,  218, 1022,174, 218, },	/* 7959B */
+	{ 1, 37,  0, 37,  183, 857, 147, 183, },	/* 2200A */
+	{ 1, 19,  0, 94,  112, 450, 94,  788, },	/* 2203A */
 	{ 1, 20,  0, 98,  117, 256, 98,  397, },	/* 7936H */
 	{ 1, 11,  0, 53,  63,  217, 53,  371, },	/* 7937H */
 };
@@ -67,34 +69,34 @@ struct rdinfo {
 	NRD7957ABPT*NRD7957ATRK, RD7957AID, rdcyloff[7],
 	NRD7933HBPT*NRD7933HTRK, RD7933HID, rdcyloff[5],
 	NRD9134LBPT*NRD9134LTRK, RD9134LID, rdcyloff[6],
-	NRD7936HBPT*NRD7936HTRK, RD7936HID, rdcyloff[12],
-	NRD7937HBPT*NRD7937HTRK, RD7937HID, rdcyloff[13],
+	NRD7936HBPT*NRD7936HTRK, RD7936HID, rdcyloff[14],
+	NRD7937HBPT*NRD7937HTRK, RD7937HID, rdcyloff[15],
 	NRD7914PBPT*NRD7914PTRK, RD7914CTID,rdcyloff[4],
 	NRD7945ABPT*NRD7945ATRK, RD7946AID, rdcyloff[0],
 	NRD9122SBPT*NRD9122STRK, RD9134LID, rdcyloff[2],
 	NRD7957BBPT*NRD7957BTRK, RD7957BID, rdcyloff[9],
 	NRD7958BBPT*NRD7958BTRK, RD7958BID, rdcyloff[10],
 	NRD7959BBPT*NRD7959BTRK, RD7959BID, rdcyloff[11],
+	NRD2200ABPT*NRD2200ATRK, RD2200AID, rdcyloff[12],
+	NRD2203ABPT*NRD2203ATRK, RD2203AID, rdcyloff[13],
 };
 int	nrdinfo = sizeof(rdinfo) / sizeof(rdinfo[0]);
 					
-rdinit(unit)
-	register int unit;
+rdinit(ctlr, unit)
+	int ctlr, unit;
 {
-	register struct rd_softc *rs;
+	register struct rd_softc *rs = &rd_softc[ctlr][unit];
 	u_char stat;
 
-	if (unit > NRD)
-		return (0);
-	rs = &rd_softc[unit];
-	rs->sc_type = rdident(unit);
+	rs->sc_type = rdident(ctlr, unit);
 	if (rs->sc_type < 0)
 		return (0);
 	rs->sc_alive = 1;
 	return (1);
 }
 
-rdreset(unit)
+rdreset(ctlr, unit)
+	register int ctlr, unit;
 {
 	u_char stat;
 
@@ -104,19 +106,20 @@ rdreset(unit)
 	rd_ssmc.c_fefm = FEF_MASK;
 	rd_ssmc.c_aefm = AEF_MASK;
 	rd_ssmc.c_iefm = IEF_MASK;
-	hpibsend(unit, C_CMD, &rd_ssmc, sizeof(rd_ssmc));
-	hpibswait(unit);
-	hpibrecv(unit, C_QSTAT, &stat, 1);
+	hpibsend(ctlr, unit, C_CMD, &rd_ssmc, sizeof(rd_ssmc));
+	hpibswait(ctlr, unit);
+	hpibrecv(ctlr, unit, C_QSTAT, &stat, 1);
 }
 
-rdident(unit)
+rdident(ctlr, unit)
+	register int ctlr, unit;
 {
 	struct rd_describe desc;
 	u_char stat, cmd[3];
 	char name[7];
 	register int id, i;
 
-	id = hpibid(unit);
+	id = hpibid(ctlr, unit);
 	if ((id & 0x200) == 0)
 		return(-1);
 	for (i = 0; i < nrdinfo; i++)
@@ -125,13 +128,13 @@ rdident(unit)
 	if (i == nrdinfo)
 		return(-1);
 	id = i;
-	rdreset(unit);
+	rdreset(ctlr, unit);
 	cmd[0] = C_SUNIT(0);
 	cmd[1] = C_SVOL(0);
 	cmd[2] = C_DESC;
-	hpibsend(unit, C_CMD, cmd, sizeof(cmd));
-	hpibrecv(unit, C_EXEC, &desc, 37);
-	hpibrecv(unit, C_QSTAT, &stat, sizeof(stat));
+	hpibsend(ctlr, unit, C_CMD, cmd, sizeof(cmd));
+	hpibrecv(ctlr, unit, C_EXEC, &desc, 37);
+	hpibrecv(ctlr, unit, C_QSTAT, &stat, sizeof(stat));
 	bzero(name, sizeof(name));
 	if (!stat) {
 		register int n = desc.d_name;
@@ -174,27 +177,36 @@ rdident(unit)
 rdopen(io)
 	struct iob *io;
 {
-	register int unit = io->i_unit;
-	register struct rd_softc *rs = &rd_softc[unit];
+	register struct rd_softc *rs;
 	struct rdinfo *ri;
+	int unit, ctlr, part;
 
-	if (hpibalive(unit) == 0)
-		_stop("rd controller not configured");
+	devconvert(io);
+
+	ctlr = io->i_adapt;
+	if (ctlr >= NHPIB || hpibalive(ctlr) == 0)
+		return (EADAPT);
+	unit = io->i_ctlr;
+	if (unit >= NRD)
+		return (ECTLR);
+	rs = &rd_softc[ctlr][unit];
 	if (rs->sc_alive == 0)
-		if (rdinit(unit) == 0)
-			_stop("rd init failed");
-	if (io->i_boff < 0 || io->i_boff > 7)
-		_stop("rd bad minor");
+		if (rdinit(ctlr, unit) == 0)
+			return (ENXIO);
+	part = io->i_part;
+	if (part >= 8)
+		return (EPART);
 	ri = &rdinfo[rs->sc_type];
-	io->i_boff = ri->cyloff[io->i_boff] * ri->nbpc;
+	io->i_boff = ri->cyloff[part] * ri->nbpc;
 }
 
 rdstrategy(io, func)
 	register struct iob *io;
-	register int func;
+	int func;
 {
-	register int unit = io->i_unit;
-	register struct rd_softc *rs = &rd_softc[unit];
+	register int ctlr = io->i_adapt;
+	register int unit = io->i_ctlr;
+	register struct rd_softc *rs = &rd_softc[ctlr][unit];
 	char stat;
 
 	rs->sc_retry = 0;
@@ -208,40 +220,42 @@ rdstrategy(io, func)
 	rd_ioc.c_len = io->i_cc;
 	rd_ioc.c_cmd = func == F_READ ? C_READ : C_WRITE;
 retry:
-	hpibsend(unit, C_CMD, &rd_ioc.c_unit, sizeof(rd_ioc)-2);
-	hpibswait(unit);
-	hpibgo(unit, C_EXEC, io->i_ma, io->i_cc, func);
-	hpibswait(unit);
-	hpibrecv(unit, C_QSTAT, &stat, 1);
+	hpibsend(ctlr, unit, C_CMD, &rd_ioc.c_unit, sizeof(rd_ioc)-2);
+	hpibswait(ctlr, unit);
+	hpibgo(ctlr, unit, C_EXEC, io->i_ma, io->i_cc, func);
+	hpibswait(ctlr, unit);
+	hpibrecv(ctlr, unit, C_QSTAT, &stat, 1);
 	if (stat) {
-		if (rderror(unit) == 0)
+		if (rderror(ctlr, unit, io->i_part) == 0)
 			return(-1);
 		if (++rs->sc_retry > RDRETRY)
 			return(-1);
-		else
-			goto retry;
+		goto retry;
 	}
 	return(io->i_cc);
 }
 
-rderror(unit)
-	register int unit;
+rderror(ctlr, unit, part)
+	register int ctlr, unit;
+	int part;
 {
-	register struct rd_softc *rd = &rd_softc[unit];
+	register struct rd_softc *rd = &rd_softc[ctlr][unit];
 	char stat;
 
 	rd_rsc.c_unit = C_SUNIT(0);
 	rd_rsc.c_sram = C_SRAM;
 	rd_rsc.c_ram = C_RAM;
 	rd_rsc.c_cmd = C_STATUS;
-	hpibsend(unit, C_CMD, &rd_rsc, sizeof(rd_rsc));
-	hpibrecv(unit, C_EXEC, &rd_stat, sizeof(rd_stat));
-	hpibrecv(unit, C_QSTAT, &stat, 1);
+	hpibsend(ctlr, unit, C_CMD, &rd_rsc, sizeof(rd_rsc));
+	hpibrecv(ctlr, unit, C_EXEC, &rd_stat, sizeof(rd_stat));
+	hpibrecv(ctlr, unit, C_QSTAT, &stat, 1);
 	if (stat) {
-		printf("rd(%d,?): request status fail %d\n", unit, stat);
+		printf("rd(%d,%d,0,%d): request status fail %d\n",
+		       ctlr, unit, part, stat);
 		return(0);
 	}
-	printf("rd(%d,?) err: vu 0x%x", unit, rd_stat.c_vu);
+	printf("rd(%d,%d,0,%d) err: vu 0x%x",
+	       ctlr, unit, part, rd_stat.c_vu);
 	if ((rd_stat.c_aef & AEF_UD) || (rd_stat.c_ief & (IEF_MD|IEF_RD)))
 		printf(", block %d", rd_stat.c_blk);
 	printf(", R0x%x F0x%x A0x%x I0x%x\n",

@@ -9,26 +9,42 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: autoconf.c 1.13 91/01/21$
+ * from: Utah $Hdr: autoconf.c 1.16 92/05/29$
  *
- *	@(#)autoconf.c	7.5 (Berkeley) %G%
+ *	@(#)autoconf.c	7.6 (Berkeley) %G%
  */
 
 #include "samachdep.h"
+#include "rominfo.h"
 #include "sys/param.h"
+#include "sys/reboot.h"
 
-#include "../dev/device.h"
-#include "../dev/grfvar.h"
+#include "hp/dev/device.h"
+#include "hp/dev/grfreg.h"
+
+/*
+ * Mapping of ROM MSUS types to BSD major device numbers
+ * WARNING: major numbers must match bdevsw indices in hp300/conf.c.
+ */
+char rom2mdev[] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 0-13: none */
+	4,	/* 14: SCSI disk */
+	0,	/* 15: none */
+	2,	/* 16: CS/80 device on HPIB */
+	2,	/* 17: CS/80 device on HPIB */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 18-31: none */
+};
 
 struct hp_hw sc_table[MAXCTLRS];
+int cpuspeed;
 
 extern int internalhpib;
 
 #if 0
-#include "rominfo.h"
 printrominfo()
 {
 	struct rominfo *rp = (struct rominfo *)ROMADDR;
+
 	printf("boottype %x, name %s, lowram %x, sysflag %x\n",
 	       rp->boottype, rp->name, rp->lowram, rp->sysflag&0xff);
 	printf("rambase %x, ndrives %x, sysflag2 %x, msus %x\n",
@@ -38,6 +54,31 @@ printrominfo()
 
 configure()
 {
+	u_long msustobdev();
+
+	switch (machineid) {
+	case HP_320:
+	case HP_330:
+	case HP_340:
+		cpuspeed = MHZ_16;
+		break;
+	case HP_350:
+	case HP_360:
+		cpuspeed = MHZ_25;
+		break;
+	case HP_370:
+		cpuspeed = MHZ_33;
+		break;
+	case HP_375:
+		cpuspeed = MHZ_50;
+		break;
+	case HP_380:
+		cpuspeed = MHZ_25 * 2;	/* XXX */
+		break;
+	default:	/* assume the slowest */
+		cpuspeed = MHZ_16;
+		break;
+	}
 	find_devs();
 	cninit();
 #if 0
@@ -45,6 +86,41 @@ configure()
 #endif
 	hpibinit();
 	scsiinit();
+	if ((bootdev & B_MAGICMASK) != B_DEVMAGIC)
+		bootdev = msustobdev();
+}
+
+/*
+ * Convert HP MSUS to a valid bootdev layout:
+ *	TYPE comes from MSUS device type as mapped by rom2mdev
+ *	PARTITION is set to 0 ('a')
+ *	UNIT comes from MSUS unit (almost always 0)
+ *	CONTROLLER comes from MSUS primary address
+ *	ADAPTOR comes from SCSI/HPIB driver logical unit number
+ *		(passed back via unused hw_pa field)
+ */
+u_long
+msustobdev()
+{
+	struct rominfo *rp = (struct rominfo *) ROMADDR;
+	u_long bdev = 0;
+	register struct hp_hw *hw;
+	int sc;
+
+	sc = (rp->msus >> 8) & 0xFF;
+	for (hw = sc_table; hw < &sc_table[MAXCTLRS]; hw++)
+		if (hw->hw_sc == sc)
+			break;
+	bdev |= rom2mdev[(rp->msus >> 24) & 0x1F] << B_TYPESHIFT;
+	bdev |= 0 << B_PARTITIONSHIFT;
+	bdev |= ((rp->msus >> 16) & 0xFF) << B_UNITSHIFT;
+	bdev |= (rp->msus & 0xFF) << B_CONTROLLERSHIFT;
+	bdev |= (int)hw->hw_pa << B_ADAPTORSHIFT;
+	bdev |= B_DEVMAGIC;
+#if 0
+	printf("msus %x -> bdev %x\n", rp->msus, bdev);
+#endif
+	return (bdev);
 }
 
 sctoaddr(sc)
@@ -73,7 +149,6 @@ find_devs()
 	u_char *id_reg;
 	register caddr_t addr;
 	register struct hp_hw *hw;
-	extern int machineid;
 
 	hw = sc_table;
 	sctop = machineid == HP_320 ? 32 : 256;
@@ -85,7 +160,7 @@ find_devs()
 			continue;
 
 		id_reg = (u_char *) addr;
-		hw->hw_pa = addr;
+		hw->hw_pa = 0;	/* XXX used to pass back LUN from driver */
 		if (sc >= 132)
 			hw->hw_size = (id_reg[0x101] + 1) * 0x100000;
 		else

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite_tc.c 1.9 89/02/20$
+ * from: Utah $Hdr: ite_tc.c 1.11 92/01/20$
  *
- *	@(#)ite_tc.c	7.2 (Berkeley) %G%
+ *	@(#)ite_tc.c	7.3 (Berkeley) %G%
  */
 
 #include "samachdep.h"
@@ -19,9 +19,9 @@
 #ifdef ITECONSOLE
 
 #include "sys/param.h"
-#include "../dev/itevar.h"
-#include "../dev/itereg.h"
-#include "../dev/grfvar.h"
+#include "hp/dev/itevar.h"
+#include "hp/dev/itereg.h"
+#include "hp/dev/grfreg.h"
 #include "../dev/grf_tcreg.h"
 
 #define REGBASE	    	((struct tcboxfb *)(ip->regbase))
@@ -30,6 +30,21 @@
 topcat_init(ip)
 	register struct ite_softc *ip;
 {
+
+	/*
+	 * Catseye looks a lot like a topcat, but not completely.
+	 * So, we set some bits to make it work.
+	 */
+	if (REGBASE->fbid != GID_TOPCAT) {
+		while ((REGBASE->catseye_status & 1))
+			;
+		REGBASE->catseye_status = 0x0;
+		REGBASE->vb_select      = 0x0;
+		REGBASE->tcntrl         = 0x0;
+		REGBASE->acntrl         = 0x0;
+		REGBASE->pncntrl        = 0x0;
+		REGBASE->rug_cmdstat    = 0x90;
+	}
 
 	/*
 	 * Determine the number of planes by writing to the first frame
@@ -49,13 +64,13 @@ topcat_init(ip)
 	REGBASE->ren  = ip->planemask;
 	REGBASE->prr  = RR_COPY;
 
-	ite_devinfo(ip);
+	ite_fontinfo(ip);
 
 	/*
 	 * Clear the framebuffer on all planes.
 	 */
 	topcat_windowmove(ip, 0, 0, 0, 0, ip->fbheight, ip->fbwidth, RR_CLEAR);
-	tc_waitbusy(REGADDR, ip->planemask);
+	tc_waitbusy(ip->regbase, ip->planemask);
 
 	ite_fontinit(ip);
 
@@ -125,7 +140,7 @@ topcat_windowmove(ip, sy, sx, dy, dx, h, w, func)
 	
 	if (h == 0 || w == 0)
 		return;
-	tc_waitbusy(REGADDR, ip->planemask);
+	tc_waitbusy(ip->regbase, ip->planemask);
 	rp->wmrr     = func;
 	rp->source_y = sy;
 	rp->source_x = sx;

@@ -9,14 +9,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.3 (Berkeley) %G%
+ *	@(#)dca.c	7.4 (Berkeley) %G%
  */
 
 #ifdef DCACONSOLE
 #include "sys/param.h"
-#include "../dev/dcareg.h"
+#include "hp/dev/dcareg.h"
 #include "../include/cpu.h"
-#include "../hp300/cons.h"
+#include "hp/dev/cons.h"
 
 struct dcadevice *dcacnaddr = 0;
 
@@ -30,8 +30,11 @@ dcaprobe(cp)
 		cp->cn_pri = CN_DEAD;
 		return;
 	}
+#ifdef FORCEDCACONSOLE
+	cp->cn_pri = CN_REMOTE;
+#else
 	dca = dcacnaddr;
-	switch (dca->dca_irid) {
+	switch (dca->dca_id) {
 	case DCAID0:
 	case DCAID1:
 		cp->cn_pri = CN_NORMAL;
@@ -44,6 +47,7 @@ dcaprobe(cp)
 		cp->cn_pri = CN_DEAD;
 		break;
 	}
+#endif
 }
 
 dcainit(cp)
@@ -51,7 +55,7 @@ dcainit(cp)
 {
 	register struct dcadevice *dca = dcacnaddr;
 
-	dca->dca_irid = 0xFF;
+	dca->dca_reset = 0xFF;
 	DELAY(100);
 	dca->dca_ic = 0;
 	dca->dca_cfcr = CFCR_DLAB;

@@ -9,14 +9,14 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: cons.c 1.5 89/08/22$
+ * from: Utah $Hdr: cons.c 1.7 92/02/28$
  *
- *	@(#)cons.c	7.4 (Berkeley) %G%
+ *	@(#)cons.c	7.5 (Berkeley) %G%
  */
 
 #include "sys/param.h"
 #include "samachdep.h"
-#include "../hp300/cons.h"
+#include "../hp/dev/cons.h"
 
 #ifdef ITECONSOLE
 int	iteprobe(), iteinit(), itegetchar(), iteputchar();
@@ -72,6 +72,13 @@ cngetc()
 cnputc(c)
 	int c;
 {
+#ifdef ROMPRF
+	extern int userom;
+
+	if (userom)
+		romputchar(c);
+	else
+#endif
 	if (cn_tab)
 		(*cn_tab->cn_putc)(c);
 }

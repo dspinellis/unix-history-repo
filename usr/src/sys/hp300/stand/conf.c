@@ -4,18 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.3 (Berkeley) %G%
+ *	@(#)conf.c	7.4 (Berkeley) %G%
  */
 
-#include <sys/param.h>
+#include "sys/param.h"
 #include "saio.h"
 
 extern int	nullsys(), nodev(), noioctl();
 
-#ifndef BOOT
+#ifdef BOOT
+#define	ctstrategy	nullsys
+#define	ctopen		nodev
+#define	ctclose		nullsys
+#else
 int	ctstrategy(), ctopen(), ctclose();
-#define	ctioctl	noioctl
 #endif
+#define	ctioctl	noioctl
 
 int	rdstrategy(), rdopen();
 #define	rdioctl	noioctl
@@ -25,12 +29,24 @@ int	sdstrategy(), sdopen();
 
 
 struct devsw devsw[] = {
-	{ "rd",	rdstrategy,	rdopen,	nullsys, noioctl },	/* 0 = rd */
-	{ "sd",	sdstrategy,	sdopen,	nullsys, noioctl },	/* 1 = sd */
-#ifndef BOOT
-	{ "ct",	ctstrategy,	ctopen,	ctclose, noioctl },	/* 2 = ct */
-#endif
-	{ NULL },
+	{ "ct",	ctstrategy,	ctopen,	ctclose,	ctioctl }, /*0*/
+	{ "??",	nullsys,	nodev,	nullsys,	noioctl }, /*1*/
+	{ "rd",	rdstrategy,	rdopen,	nullsys,	rdioctl }, /*2*/
+	{ "??",	nullsys,	nodev,	nullsys,	noioctl }, /*3*/
+	{ "sd",	sdstrategy,	sdopen,	nullsys,	sdioctl }, /*4*/
 };
 
 int	ndevs = (sizeof(devsw)/sizeof(devsw[0]));
+
+/*
+ * Convert old style unit syntax into adaptor/controller/unit
+ */
+devconvert(io)
+	register struct iob *io;
+{
+	if (io->i_unit == 0 || io->i_adapt || io->i_ctlr)
+		return;
+	io->i_adapt = io->i_unit / 8;
+	io->i_ctlr = io->i_unit % 8;
+	io->i_unit = 0;
+}
