@@ -1,7 +1,7 @@
-static char *sccsid = "@(#)lock.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)lock.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/types.h>
-#include <stat.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <sgtty.h>
 
@@ -18,9 +18,16 @@ main(argc, argv)
 	register int t;
 	struct stat statb;
 
-	for (t = 1; t <= 16; t++)
-		if (t != SIGHUP)
-		signal(t, SIG_IGN);
+	
+	/*
+	 *	Ignore signals generated from tty keyboard.  These signals
+	 *	are for xBSD only.  This program should be compiled with
+	 *	the jobs library (cc ... -ljobs).
+	 */
+	sigset( SIGINT, SIG_IGN ); 
+	sigset( SIGQUIT, SIG_IGN ); 
+	sigset( SIGTSTP, SIG_IGN ); 
+
 	if (argc > 0)
 		argv[0] = 0;
 	if (gtty(0, &tty))
