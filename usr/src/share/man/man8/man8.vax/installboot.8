@@ -1,41 +1,54 @@
-.\" Copyright (c) 1986 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)installboot.8	7.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH INSTALLBOOT 8V ""
-.UC 7
-.SH NAME
-installboot \- installs a boot program in a file system
-.SH SYNOPSIS
-.B /usr/mdec/installboot
-bootblock bootprog special
-.SH DESCRIPTION
-.I Installboot
+.\"     @(#)installboot.8	7.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INSTALLBOOT 8
+.Os BSD 4.3t
+.Sh NAME
+.Nm installboot
+.Nd installs a boot program in a file system
+.Sh SYNOPSIS
+.Nm installboot
+.Ar bootblock bootprog special
+.Sh DESCRIPTION
+.Xr Installboot
 concatentates
-.I bootblock
+.Ar bootblock
 and
-.I bootprog
-and writes at most BBSIZE bytes (from <sys/fs.h>)
+.Ar bootprog
+and writes at most
+.Dv BBSIZE
+bytes (from
+.Aq Pa sys/fs.h )
 of them on the first bytes of
-.IR special .
-.SH FILES
-/usr/mdec/??boot	boot blocks
-.br
-/usr/mdec/boot??	boot programs
-.SH SEE ALSO
-newfs(8), dd(1)
-.SH EXAMPLES
+.Ar special .
+.Sh FILES
+.Bl -tag -width /usr/mdec/bootxxx -compact
+.It Pa /usr/mdec/??boot
+boot blocks
+.It Pa /usr/mdec/boot??
+boot programs
+.El
+.Sh SEE ALSO
+.Xr newfs 8 ,
+.Xr dd 1
+.Sh EXAMPLES
+.Bd -literal -offset indent -compact
 cd /usr/mdec
-.br
 installboot raboot bootra /dev/ra0a
-.SH HISTORY
-.I Installboot
-comes undocumented with 4.2BSD.
-This manual page was written by Geoff Collyer.
-.SH BUGS
+.Ed
+.Sh BUGS
 There is no convenient way to determine the names of the boot blocks
 and boot programs without
-.I "a priori"
+.Em a priori
 knowledge of one's make of disk.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 tahoe .
+This manual page was written by Geoff Collyer.

@@ -1,31 +1,44 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)intro.8	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH INTRO 8 ""
-.UC 5
-.SH NAME
-intro \- introduction to system maintenance and operation commands
-.SH DESCRIPTION
+.\"     @(#)intro.8	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INTRO 8
+.Os BSD 4.2
+.Sh NAME
+.Nm intro
+.Nd "introduction to system maintenance and operation commands"
+.Sh DESCRIPTION
 This section contains information related to system operation
 and maintenance.
 It describes commands used to create new file systems,
-.IR newfs ,
+.Ql Xr newfs ,
 verify the integrity of the file systems,
-.IR fsck ,
+.Ql Xr fsck ,
 control disk usage,
-.IR edquota ,
+.Ql Xr edquota ,
 maintain system backups,
-.IR dump ,
+.Ql Xr dump ,
 and recover files when disks die an untimely death,
-.IR restore .
-The section 
-.I format
-should be consulted when formatting disk packs.
-Network related services are distinguished as 8C.
+.Ql Xr restore .
+The manual 
+.Ql Xr format
+should be consulted when formatting disk packs respective
+to the architecture the system is running on.
+Network related services like
+.Ql Xr inetd
+and
+.Ql Xr ftpd
+are also described.
 The section
-.I crash
+.Ql Xr crash
 should be consulted in understanding how to interpret system
 crash dumps.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

@@ -1,39 +1,49 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)diskpart.8	6.5 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH DISKPART 8 ""
-.UC 4
-.SH NAME
-diskpart \- calculate default disk partition sizes
-.SH SYNOPSIS
-.B diskpart
-[
-.B \-p
-] [
-.B \-d
-] [
-.B \-s
-size
-]
-disk-type
-.SH DESCRIPTION
-.I Diskpart
+.\"     @(#)diskpart.8	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DISKPART 8
+.Os BSD 4
+.Sh NAME
+.Nm diskpart
+.Nd calculate default disk partition sizes
+.Sh SYNOPSIS
+.Nm diskpart
+.Op Fl p
+.Op Fl d
+.Op Fl s Ar size
+.Ar disk-type
+.Sh DESCRIPTION
+.Nm Diskpart
 is used to calculate the disk partition sizes based on the
-default rules used at Berkeley.  If the
-.B \-p
-option is supplied, tables suitable for inclusion in a device driver
-are produced.  If the
-.B \-d
-option is supplied, an entry suitable for inclusion in the disk
+default rules used at Berkeley.
+.Pp
+Available options and operands:
+.Bl -tag -width Fl
+.It Fl p
+Tables suitable for inclusion in a device driver
+are produced.
+.It Fl d
+An entry suitable for inclusion in the disk
 description file
-.I /etc/disktab
-is generated; c.f.
-.IR disktab (5).
+.Pa /etc/disktab
+is generated; for example,
+.Xr disktab 5 .
+.It Fl s Ar size
+The size of the disk may be limited to
+.Ar size
+with the
+.Fl s
+option.
+.El
+.Pp
 On disks that use
-.IR bad144 \|-style
+.Xr bad144 8
+type of
 bad-sector forwarding,
 space is normally left in the last partition on the disk
 for a bad sector forwarding table, although this space
@@ -41,51 +51,67 @@ is not reflected in the tables produced.  The space reserved
 is one track for the replicated copies of the table and
 sufficient tracks to hold a pool of 126 sectors to which bad sectors
 are mapped.  For more information, see 
-.IR bad144 (8).
-The size of the disk may be limited with the
-.B \-s
-option, specifying the amount of the disk to be used.
-This option is intended for other controllers that reserve some space at the end
+.Xr bad144 8 .
+The
+.Fl s
+option is intended for other controllers which reserve some space at the end
 of the disk for bad-sector replacements or other control areas,
 even if not a multiple of cylinders.
-.PP
+.Pp
 The disk partition sizes are based on the total amount of
 space on the disk as given in the table below (all values
-are supplied in units of sectors).  The `c' partition
+are supplied in units of sectors).  The
+.Ql c
+partition
 is, by convention, used to access the entire physical disk.
 The device driver tables include
-the space reserved for the bad sector forwarding table in the `c' partition;
+the space reserved for the bad sector forwarding table in the
+.Ql c
+partition;
 those used in the disktab and default formats exclude reserved tracks.
-In normal operation, either the `g' partition is used, or the
-`d', `e', and `f' partitions are used.  The `g' and `f' partitions
+In normal operation, either the
+.Ql g
+partition is used, or the
+.Ql d ,
+.Ql e ,
+and
+.Ql f
+partitions are used.  The
+.Ql g
+and
+.Ql f
+partitions
 are variable-sized, occupying whatever space remains after allocation
 of the fixed sized partitions.
 If the disk is smaller than 20 Megabytes, then
-.I diskpart
-aborts with the message ``disk too small, calculate by hand''.
-.in +0.5i
-.nf
-
-.ta \w'Partition  'u +\w'20-60 MB  'u +\w'61-205 MB  'u +\w'206-355 MB  'u +\w'356+ MB'u
+.Nm diskpart
+aborts with the message
+.Dq Li disk too small, calculate by hand .
+.Bl -column Partition 20-60\ MB 61-205\ MB 206-355\ MB 356+\ MB
 Partition	20-60 MB	61-205 MB	206-355 MB	356+ MB
 a	15884	15884	15884	15884
 b	10032	33440	33440	66880
 d	15884	15884	15884	15884
 e	unused	55936	55936	307200
 h	unused	unused	291346	291346
-
-.fi
-.in -0.5i
-.PP
+.El
+.Pp
 If an unknown disk type is specified, 
-.I diskpart
+.Nm diskpart
 will prompt for the required disk geometry information.
-.SH SEE ALSO
-disktab(5),
-bad144(8)
-.SH BUGS
+.Sh SEE ALSO
+.Xr disktab 5 ,
+.Xr bad144 8
+.Sh BUGS
 Most default partition sizes are based on historical artifacts
-(e.g. RP06), and may result in unsatisfactory layouts.
-.PP
-When using the \-d flag, alternate disk names are not included
+(like the RP06), and may result in unsatisfactory layouts.
+.Pp
+When using the
+.Fl d
+flag, alternate disk names are not included
 in the output.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

@@ -1,64 +1,80 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)rc.8	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH RC 8 ""
-.UC 4
-.SH NAME
-rc \- command script for auto-reboot and daemons
-.SH SYNOPSIS
-.B /etc/rc
-.br
-.B /etc/rc.local
-.SH DESCRIPTION
-.I Rc
+.\"     @(#)rc.8	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RC 8
+.Os BSD 4
+.Sh NAME
+.Nm rc
+.Nd command script for auto\-reboot and daemons
+.Sh SYNOPSIS
+.Nm rc
+.Nm rc.local
+.Sh DESCRIPTION
+.Nm Rc
 is the command script which controls the automatic reboot and
-.I rc.local
+.Nm rc.local
 is the script holding commands which are pertinent only
 to a specific site.
-.PP
+.Pp
 When an automatic reboot is in progress,
-.I rc
+.Nm rc
 is invoked with the argument
-.I autoboot
-and runs a
-.I fsck
+.Em autoboot .
+The first portion of
+.Nm rc
+runs an
+.Xr fsck 8
 with option
-.B \-p
+.Fl p
 to ``preen'' all the disks of minor inconsistencies resulting
 from the last system shutdown and to check for serious inconsistencies
 caused by hardware or software failure.
 If this auto-check and repair succeeds, then the second part of
-.I rc
+.Nm rc
 is run.
-.PP
+.Pp
 The second part of
-.I rc,
+.Nm rc ,
 which is run after a auto-reboot succeeds and also if
-.I rc
+.Nm rc
 is invoked when a single user shell terminates (see
-.IR init (8)),
+.Xr init 8 ) ,
 starts all the daemons on the system, preserves editor files
 and clears the scratch directory
-.B /tmp.
-.I Rc.local
+.Pa /tmp .
+.Pp
+.Nm Rc.local
 is executed immediately before any other commands after a successful
-.IR fsck .
+.Xr fsck .
 Normally, the first commands placed in the
-.I rc.local
+.Nm rc.local
 file define the machine's name, using
-.IR hostname (1),
+.Xr hostname 1 ,
 and save any possible core image that might have been
-generated as a result of a system crash,
-.IR savecore (8).
+generated as a result of a system crash, with
+.Xr savecore 8 .
 The latter command is included in the
-.I rc.local
+.Nm rc.local
 file because the directory in which core dumps are saved
 is usually site specific.
-.SH SEE ALSO
-init(8),
-reboot(8),
-savecore(8)
-.SH BUGS
+.Pp
+Following tradition, the startup files
+.Nm rc
+and
+.Nm rc.local
+reside in
+.Pa /etc .
+.Sh SEE ALSO
+.Xr init 8 ,
+.Xr reboot 8 ,
+.Xr savecore 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.0 .

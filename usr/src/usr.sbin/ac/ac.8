@@ -1,65 +1,81 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)ac.8	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH AC 8 ""
-.UC 4
-.SH NAME
-ac \- login accounting
-.SH SYNOPSIS
-.B ac
-[
-.B \-w
-wtmp ] [
-.B \-p
-] [
-.B \-d
-] [ people ] ...
-.SH DESCRIPTION
-.I Ac
-produces a printout giving
-connect time
-for each user who has logged in
-during the life of the current
-.I wtmp
-file.
-A total is also produced.
-.B \-w
-is used to specify an alternate
-.IR wtmp ""
-file.
-.B \-p
-prints individual totals; without this option,
-only totals are printed.
-.B \-d
-causes a printout for each midnight to midnight
-period.
-Any
-.I people
-will limit the
-printout to only the specified login names.
-If no
-.IR wtmp ""
-file is given,
-.I /var/log/wtmp
-is used.
-.PP
-The accounting file
-.I /var/log/wtmp
-is maintained by
-.I init
+.\"     @(#)ac.8	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt AC 8
+.Os BSD 4
+.Sh NAME
+.Nm ac
+.Nd display connect time accounting
+.Sh SYNOPSIS
+.Nm ac
+.Op Fl d
+.Op Fl p
+.Op Fl w Ar file
+.Op Ar users ...
+.Sh DESCRIPTION
+If the file
+.Pa /var/log/wtmp
+exists,
+a record of individual
+login and logout times are written to it by
+.Xr init 8
 and
-.I login.
-Neither of these programs creates the file,
-so if it does not exist
-no connect-time accounting is done.
-To start accounting, it should be created with length 0.
-On the other hand if the file is left undisturbed it will
-grow without bound, so periodically any information
-desired should be collected and the file truncated.
-.SH FILES
-/var/log/wtmp
-.SH "SEE ALSO"
-init(8), sa(8), login(1), utmp(5).
+.Xr login 8
+respectively.
+The program
+.Nm ac
+examines these
+records and writes the accumulated connect time for all logins to the
+standard output.
+.Pp
+Options available:
+.Bl -tag -width people
+.It Fl d
+Display the connect times in 24 hour chunks.
+.It Fl p
+Display individual user totals.
+.It Fl w Ar file
+Read raw connect time data from
+.Ar file
+instead of the default file
+.Pa /var/log/wtmp .
+.It Ar users ...
+Display totals for the given indiviuals
+only.
+.El
+.Pp
+If no arguments are given,
+.Nm
+displays the total amount of login time for all active accounts on the
+system.
+.Pp
+The default
+.Pa wtmp
+file is an infinitely increasing file
+unless frequently truncated.  This is normally
+done by the daily daemon scripts scheduled by
+.Xr cron 8
+which rename and rotate the
+.Pa wtmp
+files before truncating them (and keeping about a weeks worth on hand).
+No login times are collected however, if the file does not exist.
+.Sh FILES
+.Bl -tag -width /var/log/wtmp.[0-7] -compact
+.It Pa /var/log/wtmp
+.It Pa /var/log/wtmp.[0-7]
+rotated files
+.El
+.Sh SEE ALSO
+.Xr init 8 ,
+.Xr sa 8 ,
+.Xr login 1 ,
+.Xr utmp 5 .
+.Sh HISTORY
+A
+.Nm
+command appeared in Version 6 AT&T UNIX.

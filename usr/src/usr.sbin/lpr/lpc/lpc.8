@@ -1,144 +1,148 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)lpc.8	6.3 (Berkeley) %G%
+.\"     @(#)lpc.8	6.4 (Berkeley) %G%
 .\"
-.TH LPC 8 ""
-.UC 5
-.ad
-.SH NAME
-lpc \- line printer control program
-.SH SYNOPSIS
-.B lpc
-[ command [ argument ... ] ]
-.SH DESCRIPTION
-.I Lpc
+.Dd 
+.Dt LPC 8
+.Os BSD 4.2
+.Sh NAME
+.Nm lpc
+.Nd line printer control program
+.Sh SYNOPSIS
+.Nm lpc
+.Oo
+.Ar command
+.Op Ar argument ...
+.Oc
+.Sh DESCRIPTION
+.Nm Lpc
 is used by the system administrator to control the
 operation of the line printer system.  
-For each line printer configured in /etc/printcap,
-.I lpc
+For each line printer configured in
+.Pa /etc/printcap ,
+.Nm lpc
 may be used to:
-.IP \(bu
+.Bl -bullet -offset indent
+.It
 disable or enable a printer,
-.IP \(bu
+.It
 disable or enable a printer's spooling queue,
-.IP \(bu
+.It
 rearrange the order of jobs in a spooling queue,
-.IP \(bu
+.It
 find the status of printers, and their associated
 spooling queues and printer dameons.
-.PP
+.El
+.Pp
 Without any arguments,
-.I lpc
+.Nm lpc
 will prompt for commands from the standard input.
 If arguments are supplied,
-.IR lpc
+.Nm lpc
 interprets the first argument as a command and the remaining
 arguments as parameters to the command.  The standard input
 may be redirected causing
-.I lpc
+.Nm lpc
 to read commands from file.
 Commands may be abreviated;
 the following is the list of recognized commands.
-.TP
-? [ command ... ]
-.TP
-help [ command ... ]
-.br
+.Pp
+.Bl -tag -width Ds -compact
+.It Ic \&? No [ command ... ]
+.It Ic help No [ command ... ]
 Print a short description of each command specified in the argument list,
 or, if no arguments are given, a list of the recognized commands.
-.TP
-abort { all | printer ... }
-.br
+.Pp
+.It Ic abort  No {\ all\ |\ printer\ }
 Terminate an active spooling daemon on the local host immediately and
 then disable printing (preventing new daemons from being started by
-.IR lpr )
+.Xr lpr )
 for the specified printers.
-.TP
-clean { all | printer ... }
-.br
+.Pp
+.It Ic clean  No {\ all\ |\ printer\ }
 Remove any temporary files, data files, and control files that cannot
 be printed (i.e., do not form a complete printer job)
 from the specified printer queue(s) on the local machine.
-.TP
-disable { all | printer ... }
-.br
+.Pp
+.It Ic disable  No {\ all\ |\ printer\ }
 Turn the specified printer queues off.  This prevents new
 printer jobs from being entered into the queue by
-.IR lpr .
-.TP
-down { all | printer } message ...
-.br
+.Xr lpr .
+.Pp
+.It Ic down No {\ all\ |\ printer\ } message ...
 Turn the specified printer queue off, disable printing and put
-.I message
+.Em message
 in the printer status file. The message doesn't need to be quoted, the
 remaining arguments are treated like
-.IR echo (1).
+.Xr echo 1 .
 This is normally used to take a printer down and let others know why
-(lpq will indicate the printer is down and print the status message).
-.TP
-enable { all | printer ... }
-.br
+.Xr lpq 1
+will indicate the printer is down and print the status message).
+.Pp
+.It Ic enable  No {\ all\ |\ printer\ }
 Enable spooling on the local queue for the listed printers. 
 This will allow
-.I lpr
+.Xr lpr 1
 to put new jobs in the spool queue.
-.TP
-exit
-.TP
-quit
-.br
+.Pp
+.It Ic exit
+.It Ic quit
 Exit from lpc.
-.TP
-restart { all | printer ... }
-.br
+.Pp
+.It Ic restart  No {\ all\ |\ printer\ }
 Attempt to start a new printer daemon. 
 This is useful when some abnormal condition causes the daemon to
 die unexpectedly leaving jobs in the queue.
-.I Lpq
+.Xr Lpq
 will report that there is no daemon present when this condition occurs. 
 If the user is the super-user,
 try to abort the current daemon first (i.e., kill and restart a stuck daemon).
-.TP
-start { all | printer ... }
-.br
+.Pp
+.It Ic start  No {\ all\ |\ printer\ }
 Enable printing and start a spooling daemon for the listed printers.
-.TP
-status { all | printer ... }
+.Pp
+.It Ic status  No {\ all\ |\ printer\ }
 Display the status of daemons and queues on the local machine.
-.TP
-stop { all | printer ... }
-.br
+.Pp
+.It Ic stop  No {\ all\ |\ printer\ }
 Stop a spooling daemon after the current job completes and disable
 printing.
-.TP
-topq printer [ jobnum ... ] [ user ... ]
-.br
+.Pp
+.It Ic topq No printer\ [\ jobnum\ ...\ ]\ [\ user\ ...\ ]
 Place the jobs in the order listed at the top of the printer queue.
-.TP
-up { all | printer ... }
-.br
+.Pp
+.It Ic up  No {\ all\ |\ printer\ }
 Enable everything and start a new printer daemon. Undoes the effects of
-.IR down .
-.SH FILES
-.nf
-.ta \w'/etc/printcap           'u
-/etc/printcap	printer description file
-/var/spool/*	spool directories
-/var/spool/*/lock	lock file for queue control
-.fi
-.SH "SEE ALSO"
-lpd(8),
-lpr(1),
-lpq(1),
-lprm(1),
-printcap(5)
-.SH DIAGNOSTICS
-.nf
-.ta \w'?Ambiguous command      'u
-?Ambiguous command	abreviation matches more than one command
-?Invalid command	no match was found
-?Privileged command	command can be executed by root only
-.fi
+.Ic down .
+.Sh FILES
+.Bl -tag -width /var/spool/*/lockx -compact
+.It Pa /etc/printcap
+printer description file
+.It Pa /var/spool/*
+spool directories
+.It Pa /var/spool/*/lock
+lock file for queue control
+.El
+.Sh SEE ALSO
+.Xr lpd 8 ,
+.Xr lpr 1 ,
+.Xr lpq 1 ,
+.Xr lprm 1 ,
+.Xr printcap 5
+.Sh DIAGNOSTICS
+.Bl -tag -width Ds
+.It Sy "?Ambiguous command"
+abreviation matches more than one command
+.It Sy "?Invalid command"
+no match was found
+.It Sy "?Privileged command"
+command can be executed by root only
+.El
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

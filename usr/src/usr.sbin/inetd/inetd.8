@@ -1,23 +1,27 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)inetd.8	6.6 (Berkeley) %G%
+.\"     @(#)inetd.8	6.7 (Berkeley) %G%
 .\"
-.TH INETD 8 ""
-.UC 6
-.SH NAME
-inetd \- internet ``super\-server''
-.SH SYNOPSIS
-.B inetd
-[
-.B \-d
-] [ configuration file ]
-.SH DESCRIPTION
-.I Inetd
+.Dd 
+.Dt INETD 8
+.Os BSD 4.3
+.Sh NAME
+.Nm inetd
+.Nd internet
+.Dq super-server
+.Sh SYNOPSIS
+.Nm inetd
+.Op Fl d
+.Op Ar configuration file
+.Sh DESCRIPTION
+.Nm Inetd
 should be run at boot time by
-.IR /etc/rc.local .
+.Pa /etc/rc.local
+(see
+.Xr rc 8 ) .
 It then listens for connections on certain
 internet sockets.  When a connection is found on one
 of its sockets, it decides what service the socket
@@ -25,113 +29,168 @@ corresponds to, and invokes a program to service the request.
 After the program is
 finished, it continues to listen on the socket (except in some cases which
 will be described below).  Essentially,
-.I inetd
+.Nm inetd
 allows running one daemon to invoke several others,
 reducing load on the system.
-.PP
+.Pp
+The option available for
+.Nm inetd:
+.Bl -tag -width Ds
+.It Fl d
+Turns on debugging.
+.El
+.Pp
 Upon execution,
-.I inetd
+.Nm inetd
 reads its configuration information from a configuration
 file which, by default, is
-.IR /etc/inetd.conf .
+.Pa /etc/inetd.conf .
 There must be an entry for each field of the configuration
 file, with entries for each field separated by a tab or
 a space.  Comments are denoted by a ``#'' at the beginning
 of a line.  There must be an entry for each field.  The
 fields of the configuration file are as follows:
-.br
-	service name
-.br
-	socket type
-.br
-	protocol
-.br
-	wait/nowait
-.br
-	user
-.br
-	server program
-.br
-	server program arguments
-.PP
+.Pp
+.Bd -unfilled -offset indent -compact
+service name
+socket type
+protocol
+wait/nowait
+user
+server program
+server program arguments
+.Ed
+.Pp
 The
-.I service name
+.Em service-name
 entry is the name of a valid service in
 the file
-.IR /etc/services/ .
-For ``internal'' services (discussed below), the service
+.Pa /etc/services .
+For
+.Dq internal
+services (discussed below), the service
 name
-.I must
+.Em must
 be the official name of the service (that is, the first entry in
-.IR /etc/services ).
-.PP
+.Pa /etc/services ) .
+.Pp
 The
-.I socket type
-should be one of ``stream'', ``dgram'', ``raw'', ``rdm'', or ``seqpacket'',
+.Em socket-type
+should be one of
+.Dq stream ,
+.Dq dgram ,
+.Dq raw ,
+.Dq rdm ,
+or
+.Dq seqpacket ,
 depending on whether the socket is a stream, datagram, raw,
 reliably delivered message, or sequenced packet socket.
-.PP
+.Pp
 The
-.I protocol
+.Em protocol
 must be a valid protocol as given in
-.IR /etc/protocols .
-Examples might be ``tcp'' or ``udp''.
-.PP
+.Pa /etc/protocols .
+Examples might be
+.Dq tcp
+or
+.Dq udp .
+.Pp
 The
-.I wait/nowait
+.Em wait/nowait
 entry is applicable to datagram sockets only (other sockets should
-have a ``nowait'' entry in this space).  If a datagram server connects
+have a
+.Dq nowait
+entry in this space).  If a datagram server connects
 to its peer, freeing the socket so
-.I inetd
+.Nm inetd
 can received further messages on the socket, it is said to be
-a ``multi-threaded'' server, and should use the ``nowait''
+a
+.Dq multi-threaded
+server, and should use the
+.Dq nowait
 entry.  For datagram servers which process all incoming datagrams
 on a socket and eventually time out, the server is said to be
-``single-threaded'' and should use a ``wait'' entry.  ``Comsat'' (``biff'')
-and ``talk'' are both examples of the latter type of
+.Dq single-threaded
+and should use a
+.Dq wait
+entry.
+.Xr Comsat 8
+.Pq Xr biff 1
+and
+.Xr talkd 8
+are both examples of the latter type of
 datagram server.
-.I Tftpd
+.Xr Tftpd 8
 is an exception; it is a datagram server that establishes pseudo-connections.
-It must be listed as ``wait'' in order to avoid a race;
+It must be listed as
+.Dq wait
+in order to avoid a race;
 the server reads the first packet, creates a new socket,
 and then forks and exits to allow
-.I inetd
+.Nm inetd
 to check for new service requests to spawn new servers.
-.PP
+.Pp
 The
-.I user
+.Em user
 entry should contain the user name of the user as whom the server
 should run.  This allows for servers to be given less permission
 than root.
+.Pp
 The
-.I server program
+.Em server-program
 entry should contain the pathname of the program which is to be
 executed by
-.I inetd
+.Nm inetd
 when a request is found on its socket.  If
-.I inetd
+.Nm inetd
 provides this service internally, this entry should
-be ``internal''.
-.PP
-The arguments to the server program should be just as they
+be
+.Dq internal .
+.Pp
+The
+.Em server program arguments
+should be just as arguments
 normally are, starting with argv[0], which is the name of
 the program.  If the service is provided internally, the
-word ``internal'' should take the place of this entry.
-.PP
-.I Inetd
-provides several ``trivial'' services internally by use of
-routines within itself.  These services are ``echo'',
-``discard'', ``chargen'' (character generator), ``daytime''
-(human readable time), and ``time'' (machine readable time,
+word
+.Dq internal
+should take the place of this entry.
+.Pp
+.Nm Inetd
+provides several
+.Dq trivial
+services internally by use of
+routines within itself.  These services are
+.Dq echo ,
+.Dq discard ,
+.Dq chargen
+(character generator),
+.Dq daytime
+(human readable time), and
+.Dq time
+(machine readable time,
 in the form of the number of seconds since midnight, January
 1, 1900).  All of these services are tcp based.  For
-details of these services, consult the appropriate RFC
+details of these services, consult the appropriate
+.Tn RFC
 from the Network Information Center.
-.PP
-.I Inetd
-rereads its configuration file when it receives a hangup signal, SIGHUP.
+.Pp
+.Nm Inetd
+rereads its configuration file when it receives a hangup signal,
+.Dv SIGHUP .
 Services may be added, deleted or modified when the configuration file
 is reread.
-.SH "SEE ALSO"
-comsat(8), fingerd(8), ftpd(8), rexecd(8), rlogind(8), rshd(8),
-telnetd(8), tftpd(8)
+.Sh SEE ALSO
+.Xr comsat 8 ,
+.Xr fingerd 8 ,
+.Xr ftpd 8 ,
+.Xr rexecd 8 ,
+.Xr rlogind 8 ,
+.Xr rshd 8 ,
+.Xr telnetd 8 ,
+.Xr tftpd 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 .
