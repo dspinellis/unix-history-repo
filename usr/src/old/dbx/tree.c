@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.6 %G%";
+static char sccsid[] = "@(#)tree.c 1.7 %G%";
 /*
  * Parse tree management.
  */
@@ -104,8 +104,6 @@ Operator op;
 	case O_LCON:
 	case O_CONT:
 	case O_DELETE:
-	case O_CATCH:
-	case O_IGNORE:
 	case O_TRACEOFF:
 	    p->value.lcon = nextarg(long);
 	    break;
@@ -317,8 +315,6 @@ Command cmd;
 	    break;
 
 	case O_DELETE:
-	case O_CATCH:
-	case O_IGNORE:
 	case O_TRACEOFF:
 	    fprintf(f, "%d", cmd->value.lcon);
 	    break;
