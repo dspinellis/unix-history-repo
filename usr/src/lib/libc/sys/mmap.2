@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mmap.2	8.2 (Berkeley) %G%
+.\"	@(#)mmap.2	8.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt MMAP 2
@@ -78,12 +78,9 @@ Map anonymous memory not associated with any specific file.
 The file descriptor used for creating
 .Dv MAP_ANON
 must be \-1.
-If 
-.Dv MAP_ANON
-is used,
-the
+The
 .Fa offset
-parameter is ignored, otherwise it must be a multiple of the pagesize.
+parameter is ignored.
 .\".It Dv MAP_FILE
 .\"Mapped from a regular file or character-special device memory.
 .It Dv MAP_FIXED
@@ -170,9 +167,6 @@ was specified and the
 .Fa addr
 parameter was not page aligned or was outside of the
 valid address range for a process.
-.Dv MAP_ANON was not specified and
-.Fa pos
-was not page aligned.
 .Dv MAP_ANON was specified and
 .Fa fd
 was not \-1.
