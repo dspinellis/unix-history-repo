@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)apilib.c	3.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)apilib.c	3.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "../ctlr/api.h"
@@ -52,8 +57,8 @@ struct SREGS 	*sregs;
     regs->h.bl = bl;
     regs->x.cx = cx;
     regs->x.dx = dx;
-    sregs->es = (int) FP_SEG(ourseg);
-    regs->x.di = (int) FP_OFF(ourseg);
+    sregs->es = FP_SEG(ourseg);
+    regs->x.di = FP_OFF(ourseg);
 
 #if	defined(MSDOS)
     int86x(API_INTERRUPT_NUMBER, regs, regs, sregs);
@@ -115,8 +120,8 @@ char *name;
 	}
     }
 
-    if (api_issue_regs(NAME_RESOLUTION, 0, 0, 0, 0, 0, &parms, sizeof parms, &regs, &sregs)
-		    == -1) {
+    if (api_issue_regs(NAME_RESOLUTION, 0, 0, 0, 0, 0, (char *) &parms,
+			    sizeof parms, &regs, &sregs) == -1) {
 	return -1;
     } else {
 	return regs.x.dx;
@@ -134,8 +139,8 @@ api_ps_or_oia_modified()
     union REGS regs;
     struct SREGS sregs;
 
-    if (api_issue_regs(PS_OR_OIA_MODIFIED, 0, 0, 0, 0, 0, 0, 0, &regs, &sregs)
-		    == -1) {
+    if (api_issue_regs(PS_OR_OIA_MODIFIED, 0, 0, 0, 0, 0, (char *) 0,
+				0, &regs, &sregs) == -1) {
 	return -1;
     } else {
 	return 0;
@@ -355,10 +360,10 @@ api_finish()
 
 api_init()
 {
+#if	defined(MSDOS)
     union REGS regs;
     struct SREGS sregs;
 
-#if	defined(MSDOS)
     regs.h.ah = 0x35;
     regs.h.al = API_INTERRUPT_NUMBER;
     intdosx(&regs, &regs, &sregs);
@@ -368,7 +373,7 @@ api_init()
     }
 #endif	/* defined(MSDOS) */
 #if	defined(unix)
-    if (api_open_api(0) == -1) {
+    if (api_open_api((char *)0) == -1) {
 	return 0;
     }
 #endif	/* defined(unix) */

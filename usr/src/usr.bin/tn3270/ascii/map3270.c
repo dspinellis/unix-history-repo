@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map3270.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)map3270.c	3.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	This program reads a description file, somewhat like /etc/termcap,
@@ -50,9 +50,9 @@ static char sccsid[] = "@(#)map3270.c	3.3 (Berkeley) %G%";
 #define	IsPrint(c)	((isprint(c) && !isspace(c)) || ((c) == ' '))
 
 #include "state.h"
+#include "map3270.h"
 
 #include "../general/globals.h"
-#include "map3270.ext"
 
 /* this is the list of types returned by the lex processor */
 #define	LEX_CHAR	400			/* plain unadorned character */
@@ -457,7 +457,7 @@ static void
 FreeState(pState)
 state *pState;
 {
-    extern void free();
+    extern int free();
 
     free((char *)pState);
 }
@@ -815,7 +815,7 @@ char *string;
     char *p;
     extern char *malloc();
 
-    p = malloc(strlen(string)+1);
+    p = malloc((unsigned int)strlen(string)+1);
     if (p != 0) {
 	strcpy(p, string);
     }

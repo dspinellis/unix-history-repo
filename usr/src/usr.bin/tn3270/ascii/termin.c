@@ -3,15 +3,20 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termin.c	3.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)termin.c	3.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /* this takes characters from the keyboard, and produces 3270 keystroke
@@ -23,10 +28,8 @@ static char sccsid[] = "@(#)termin.c	3.2 (Berkeley) %G%";
 
 #include "../general/general.h"
 #include "../ctlr/function.h"
-#include "../ctlr/inbound.ext"
-#include "../ctlr/outbound.ext"
-#include "../telnet.ext"
-#include "termin.ext"
+#include "../ctlr/externs.h"
+#include "../ctlr/declare.h"
 
 #include "../api/astosc.h"
 #include "state.h"
@@ -123,6 +126,7 @@ FlushChar()
     ourPHead = ourBuffer;
 }
 
+/*ARGSUSED*/
 void
 TransInput(onoff, mode)
 int	mode;			/* Which KIND of transparent input */
@@ -188,7 +192,7 @@ register int	count;			/* how many bytes in this buffer */
 	    c = (*buffer++)&0x7f;
 	    *TransPointer++ = c|0x80;
 	    if (c == '\r') {
-		SendTransparent(ourBuffer, TransPointer-ourBuffer);
+		SendTransparent((char *)ourBuffer, TransPointer-ourBuffer);
 		TransPointer = 0;		/* Done */
 		break;
 	    }
@@ -197,6 +201,8 @@ register int	count;			/* how many bytes in this buffer */
     }
 
     if (bellwinup) {
+	void BellOff();
+
 	BellOff();
     }
 
@@ -234,6 +240,8 @@ register int	count;			/* how many bytes in this buffer */
 			if (astosc[result].function == FCN_SYNCH) {
 			    WaitingForSynch = 0;
 			} else {
+			    void RingBell();
+
 			    RingBell("Need to type synch character");
 			}
 		    }
