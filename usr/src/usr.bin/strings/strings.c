@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strings.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)strings.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -108,7 +108,7 @@ main(argc, argv)
 			file = *argv++;
 			if (!freopen(file, "r", stdin)) {
 				(void)fprintf(stderr,
-				    "strings; %s: %s\n", file, strerror(errno));
+				    "strings: %s: %s\n", file, strerror(errno));
 				exitcode = 1;
 				goto nextfile;
 			}
