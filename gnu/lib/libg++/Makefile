@@ -1,5 +1,2 @@
-#	%W% (Berkeley) %G%
-
-SUBDIR=	libg++ g++-include genclass
-
+SUBDIR= libg++
 .include <bsd.subdir.mk>
