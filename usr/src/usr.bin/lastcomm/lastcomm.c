@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastcomm.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -36,21 +36,38 @@ char	*getname();
 char	*getdev();
 
 main(argc, argv)
+	int argc;
 	char *argv[];
 {
-	register int bn, cc;
+	extern int optind;
+	extern char *optarg;
 	register struct acct *acp;
-	int fd;
+	register int bn, cc;
 	struct stat sb;
+	int ch, fd;
+	char *acctfile, *strcpy(), *ctime();
 	long lseek();
-	char *strcpy(), *ctime();
 
-	fd = open("/usr/adm/acct", O_RDONLY);
+	acctfile = NULL;
+	while ((ch = getopt(argc, argv, "f:")) != EOF)
+		switch((char)ch) {
+		case 'f':
+			acctfile = optarg;
+			break;
+		case '?':
+		default:
+			fputs("lastcomm [ -f file ]\n", stderr);
+			exit(1);
+		}
+	argv += optind;
+	if (!acctfile)
+		acctfile = "/usr/adm/acct";
+	fd = open(acctfile, O_RDONLY);
 	if (fd < 0) {
-		perror("/usr/adm/acct");
+		perror(acctfile);
 		exit(1);
 	}
-	fstat(fd, &sb);
+	(void)fstat(fd, &sb);
 	for (bn = btodb(sb.st_size); bn >= 0; bn--) {
 		(void)lseek(fd, (off_t)dbtob(bn), L_SET);
 		cc = read(fd, buf, DEV_BSIZE);
@@ -64,13 +81,13 @@ main(argc, argv)
 			time_t x;
 
 			if (acp->ac_comm[0] == '\0')
-				strcpy(acp->ac_comm, "?");
+				(void)strcpy(acp->ac_comm, "?");
 			for (cp = &acp->ac_comm[0];
 			     cp < &acp->ac_comm[fldsiz(acct, ac_comm)] && *cp;
 			     cp++)
 				if (!isascii(*cp) || iscntrl(*cp))
 					*cp = '?';
-			if (argc > 1 && !ok(argc, argv, acp))
+			if (*argv && !ok(argv, acp))
 				continue;
 			x = expand(acp->ac_utime) + expand(acp->ac_stime);
 			printf("%-*.*s %s %-*s %-*s %6.2f secs %.16s\n",
@@ -117,20 +134,19 @@ flagbits(f)
 	return (flags);
 }
 
-ok(argc, argv, acp)
-	register int argc;
+ok(argv, acp)
 	register char *argv[];
 	register struct acct *acp;
 {
-	register int j;
 	register char *cp;
 
-	for (j = 1; j < argc; j++)
-		if ((!(cp = getname(acp->ac_uid)) || strcmp(cp, argv[j])) &&
-		    (!(cp = getdev(acp->ac_tty)) || strcmp(cp, argv[j])) &&
-		    strncmp(acp->ac_comm, argv[j], fldsiz(acct, ac_comm)))
-			break;
-	return (j == argc);
+	do {
+		if ((cp = getname(acp->ac_uid)) && !strcmp(cp, *argv) ||
+		    (cp = getdev(acp->ac_tty)) && !strcmp(cp, *argv) ||
+		    !strncmp(acp->ac_comm, *argv, fldsiz(acct, ac_comm)))
+			return(1);
+	} while (*++argv);
+	return(0);
 }
 
 /* should be done with nameserver or database */
