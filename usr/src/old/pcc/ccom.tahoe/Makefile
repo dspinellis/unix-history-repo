@@ -1,5 +1,5 @@
 #
-#	%MIP%	1.5	86/10/13
+#	%MIP%	1.6	87/06/06
 #
 # Makefile for tahoe pcc
 #
