@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.11 (Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -769,4 +769,9 @@ prefix(s1, s2)
 			return (1);
 	return (c == '\0');
 }
-#endif /* DIALINOUT */
+#else	/* !DIALINOUT */
+main()
+{
+	fprintf(stderr,"acucntrl is not supported on this system\n");
+}
+#endif /* !DIALINOUT */
