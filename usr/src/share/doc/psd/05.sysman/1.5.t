@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.5.t	6.2 (Berkeley) %G%
+.\"	@(#)1.5.t	6.3 (Berkeley) %G%
 .\"
 .sh Descriptors
 .PP
@@ -137,9 +137,9 @@ result int dopt; int d, cmd, arg;
 #define	F_GETOWN	6	/* get descriptor owner (pid/pgrp) */
 .DE
 The F_SETFL \fIcmd\fP may be used to set a descriptor in 
-non-blocking I/O mode and/or enable signalling when I/O is
+non-blocking I/O mode and/or enable signaling when I/O is
 possible.  F_SETOWN may be used to specify a process or process
-group to be signalled when using the latter mode of operation
+group to be signaled when using the latter mode of operation
 or when urgent indications arise.
 .PP
 Operations on non-blocking descriptors will
@@ -177,7 +177,7 @@ new = wrap(old, proto)
 result int new; int old; struct dprop *proto;
 .DE
 Operations on the descriptor \fIold\fP are then translated by the
-system provided protocol translator into requests on the underyling
+system provided protocol translator into requests on the underlying
 object \fIold\fP in a way defined by the protocol.
 The protocols supported by the kernel may vary from system to system
 and are described in the programmers manual.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.2.t	6.2 (Berkeley) %G%
+.\"	@(#)2.2.t	6.3 (Berkeley) %G%
 .\"
 .sh "File system
 .NH 3
@@ -168,7 +168,7 @@ server process when the name is used.
 The portal call returns an active portal in \fIfd\fP as though an
 access had occurred to activate an inactive portal, as now described.
 .PP
-When an inactive portal is accesseed, the system sets up a socket
+When an inactive portal is accessed, the system sets up a socket
 of the specified \fIsocktype\fP in the specified communications
 \fIdomain\fP (see section 2.3), and creates the \fIserver\fP process,
 giving it the specified \fIparam\fP as argument to help it identify

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.3 (Berkeley) %G%
+.\"	@(#)0.t	6.4 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -163,7 +163,7 @@ TABLE OF CONTENTS
 .LP
 .if t .sp .5v
 .nf
-\fB2.3.  Inteprocess communication\fP
+\fB2.3.  Interprocess communication\fP
 \0\0\0.1.   Interprocess communication primitives
 \0\0\0.1.1.\0   Communication domains
 \0\0\0.1.2.\0   Socket types and protocols

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.3.t	6.2 (Berkeley) %G%
+.\"	@(#)2.3.t	6.3 (Berkeley) %G%
 .\"
 .sh "Interprocess communications
 .NH 3
@@ -176,7 +176,7 @@ pipe(pv)
 result int pv[2];
 .DE
 creates a pair of SOCK_STREAM sockets in the UNIX domain,
-with pv[0] only writeable and pv[1] only readable.
+with pv[0] only writable and pv[1] only readable.
 .NH 4
 Sending and receiving data
 .PP
