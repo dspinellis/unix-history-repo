@@ -9,7 +9,6 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <signal.h>
-# include <errno.h>
 # include "sendmail.h"
 # include <sys/file.h>
 # include <pwd.h>
@@ -17,24 +16,26 @@
 # include <fcntl.h>
 # endif
 
+# ifdef DBM
+# error DBM is no longer supported -- use NDBM instead.
+# endif
+
 # ifdef NEWDB
 # include <db.h>
 # endif
 
 # ifdef NDBM
-# ifndef DBM
-# define DBM
-# endif
+# include <ndbm.h>
 # endif
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.38 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.39 (Berkeley) %G% (with NEWDB)";
 #else
-#ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.38 (Berkeley) %G% (with DBM)";
+#ifdef NDBM
+static char sccsid[] = "@(#)alias.c	5.39 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.38 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.39 (Berkeley) %G% (without NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -71,7 +72,7 @@ static char sccsid[] = "@(#)alias.c	5.38 (Berkeley) %G% (without DBM)";
 **  even if NEWDB
 */
 
-#ifdef DBM
+#ifdef NDBM
 # ifndef NEWDB
 #  define IF_MAKEDBMFILES
 # else
@@ -81,19 +82,26 @@ static char sccsid[] = "@(#)alias.c	5.38 (Berkeley) %G% (without DBM)";
 # endif
 #endif
 
-#ifdef DBM
-#ifndef NEWDB
-typedef struct
+typedef union
 {
-	char	*data;
-	int	size;
-} DBT;
+#ifdef NDBM
+	datum	dbm;
 #endif
-extern DBT fetch();
-#endif /* DBM */
+#ifdef NEWDB
+	DBT	dbt;
+#endif
+	struct
+	{
+		char	*data;
+		int	size;
+	} xx;
+} DBdatum;
 
 #ifdef NEWDB
 static DB	*AliasDBptr;
+#endif
+#ifdef NDBM
+static DBM	*AliasDBMptr;
 #endif
 
 alias(a, sendq, e)
@@ -159,32 +167,32 @@ char *
 aliaslookup(name)
 	char *name;
 {
-# if defined(NEWDB) || defined(DBM)
-	DBT rhs, lhs;
+# if defined(NEWDB) || defined(NDBM)
+	DBdatum rhs, lhs;
 	int s;
 
 	/* create a key for fetch */
-	lhs.data = name;
-	lhs.size = strlen(name) + 1;
+	lhs.xx.data = name;
+	lhs.xx.size = strlen(name) + 1;
 # ifdef NEWDB
 	if (AliasDBptr != NULL)
 	{
-		s = AliasDBptr->get(AliasDBptr, &lhs, &rhs, 0);
+		s = AliasDBptr->get(AliasDBptr, &lhs.dbt, &rhs.dbt, 0);
 		if (s == 0)
-			return (rhs.data);
+			return (rhs.dbt.data);
 	}
-# ifdef DBM
+# ifdef NDBM
 	else
 	{
-		rhs = fetch(lhs);
-		return (rhs.data);
+		rhs.dbm = dbm_fetch(AliasDBMptr, lhs.dbm);
+		return (rhs.dbm.dptr);
 	}
-# endif
-# else
-	rhs = fetch(lhs);
-	return (rhs.data);
-# endif
-# else /* neither NEWDB nor DBM */
+# endif /* NDBM */
+# else /* not NEWDB */
+	rhs.dbm = dbm_fetch(AliasDBMptr, lhs.dbm);
+	return (rhs.dbm.dptr);
+# endif /* NEWDB */
+# else /* neither NEWDB nor NDBM */
 	register STAB *s;
 
 	s = stab(name, ST_ALIAS, ST_FIND);
@@ -196,19 +204,19 @@ aliaslookup(name)
 /*
 **  INITALIASES -- initialize for aliasing
 **
-**	Very different depending on whether we are running DBM or not.
+**	Very different depending on whether we are running NDBM or not.
 **
 **	Parameters:
 **		aliasfile -- location of aliases.
-**		init -- if set and if DBM, initialize the DBM files.
+**		init -- if set and if NDBM, initialize the NDBM files.
 **
 **	Returns:
 **		none.
 **
 **	Side Effects:
 **		initializes aliases:
-**		if DBM:  opens the database.
-**		if ~DBM: reads the aliases into the symbol table.
+**		if NDBM:  opens the database.
+**		if ~NDBM: reads the aliases into the symbol table.
 */
 
 # define DBMMODE	0644
@@ -218,7 +226,7 @@ initaliases(aliasfile, init, e)
 	bool init;
 	register ENVELOPE *e;
 {
-#if defined(DBM) || defined(NEWDB)
+#if defined(NDBM) || defined(NEWDB)
 	int atcnt;
 	time_t modtime;
 	bool automatic = FALSE;
@@ -241,7 +249,7 @@ initaliases(aliasfile, init, e)
 		return;
 	}
 
-# if defined(DBM) || defined(NEWDB)
+# if defined(NDBM) || defined(NEWDB)
 	/*
 	**  Check to see that the alias file is complete.
 	**	If not, we will assume that someone died, and it is up
@@ -256,8 +264,8 @@ initaliases(aliasfile, init, e)
 		AliasDBptr = dbopen(buf, O_RDONLY, DBMMODE, DB_HASH, NULL);
 		if (AliasDBptr == NULL)
 		{
-# ifdef DBM
-			dbminit(aliasfile);
+# ifdef NDBM
+			AliasDBMptr = dbm_open(aliasfile, O_RDONLY, DBMMODE);
 # else
 			syserr("initaliases: cannot open %s", buf);
 			NoAlias = TRUE;
@@ -265,7 +273,7 @@ initaliases(aliasfile, init, e)
 # endif
 		}
 # else
-		dbminit(aliasfile);
+		AliasDBMptr = dbm_open(aliasfile, O_RDONLY, DBMMODE);
 # endif
 	}
 	atcnt = SafeAlias * 2;
@@ -287,6 +295,10 @@ initaliases(aliasfile, init, e)
 			if (AliasDBptr != NULL)
 				AliasDBptr->close(AliasDBptr);
 # endif
+# ifdef NDBM
+			if (AliasDBMptr != NULL)
+				dbm_close(AliasDBMptr);
+# endif
 
 			sleep(30);
 # ifdef NEWDB
@@ -297,7 +309,7 @@ initaliases(aliasfile, init, e)
 			if (AliasDBptr == NULL)
 			{
 # ifdef NDBM
-				dbminit(aliasfile);
+				AliasDBMptr = dbm_open(aliasfile, O_RDONLY, DBMMODE);
 # else
 				syserr("initaliases: cannot open %s", buf);
 				NoAlias = TRUE;
@@ -306,7 +318,7 @@ initaliases(aliasfile, init, e)
 			}
 # else
 # ifdef NDBM
-			dbminit(aliasfile);
+			AliasDBMptr = dbm_open(aliasfile, O_RDONLY, DBMMODE);
 # endif
 # endif
 		}
@@ -315,7 +327,7 @@ initaliases(aliasfile, init, e)
 		atcnt = 1;
 
 	/*
-	**  See if the DBM version of the file is out of date with
+	**  See if the NDBM version of the file is out of date with
 	**  the text version.  If so, go into 'init' mode automatically.
 	**	This only happens if our effective userid owns the DBM.
 	**	Note the unpalatable hack to see if the stat succeeded.
@@ -354,8 +366,8 @@ initaliases(aliasfile, init, e)
 
 
 	/*
-	**  If necessary, load the DBM file.
-	**	If running without DBM, load the symbol table.
+	**  If necessary, load the NDBM file.
+	**	If running without NDBM, load the symbol table.
 	*/
 
 	if (init)
@@ -371,9 +383,9 @@ initaliases(aliasfile, init, e)
 #endif /* LOG */
 		readaliases(aliasfile, TRUE, e);
 	}
-# else /* DBM */
+# else /* NDBM */
 	readaliases(aliasfile, init, e);
-# endif /* DBM */
+# endif /* NDBM */
 }
 /*
 **  READALIASES -- read and process the alias file.
@@ -383,7 +395,7 @@ initaliases(aliasfile, init, e)
 **
 **	Parameters:
 **		aliasfile -- the pathname of the alias file master.
-**		init -- if set, initialize the DBM stuff.
+**		init -- if set, initialize the NDBM stuff.
 **
 **	Returns:
 **		none.
@@ -412,6 +424,9 @@ readaliases(aliasfile, init, e)
 # ifdef NEWDB
 	DB *dbp;
 # endif
+# ifdef NDBM
+	DBM *dbmp;
+# endif
 # ifdef LOCKF
 	struct flock fld;
 # endif
@@ -426,7 +441,7 @@ readaliases(aliasfile, init, e)
 		return;
 	}
 
-# if defined(DBM) || defined(NEWDB)
+# if defined(NDBM) || defined(NEWDB)
 	/* see if someone else is rebuilding the alias file already */
 # ifdef LOCKF
 	fld.l_type = F_WRLCK;
@@ -451,7 +466,7 @@ readaliases(aliasfile, init, e)
 		errno = 0;
 		return;
 	}
-# endif /* DBM */
+# endif /* NDBM */
 
 	/*
 	**  If initializing, create the new DBM files.
@@ -478,23 +493,15 @@ readaliases(aliasfile, init, e)
 # endif
 		IF_MAKEDBMFILES
 		{
-			(void) strcpy(line, aliasfile);
-			(void) strcat(line, ".dir");
-			if (close(creat(line, DBMMODE)) < 0)
+			dbmp = dbm_open(aliasfile,
+					       O_RDWR|O_CREAT|O_TRUNC, DBMMODE);
+			if (dbmp == NULL)
 			{
-				syserr("cannot make %s", line);
+				syserr("readaliases: cannot create %s.{dir,pag}",
+					aliasfile);
 				(void) signal(SIGINT, oldsigint);
 				return;
 			}
-			(void) strcpy(line, aliasfile);
-			(void) strcat(line, ".pag");
-			if (close(creat(line, DBMMODE)) < 0)
-			{
-				syserr("cannot make %s", line);
-				(void) signal(SIGINT, oldsigint);
-				return;
-			}
-			dbminit(aliasfile);
 		}
 # endif
 	}
@@ -654,26 +661,28 @@ readaliases(aliasfile, init, e)
 		lhssize = strlen(lhs) + 1;
 		rhssize = strlen(rhs) + 1;
 
-# if defined(DBM) || defined(NEWDB)
+# if defined(NDBM) || defined(NEWDB)
 		if (init)
 		{
-			DBT key, content;
+			DBdatum key, content;
 
-			key.size = lhssize;
-			key.data = al.q_user;
-			content.size = rhssize;
-			content.data = rhs;
+			key.xx.size = lhssize;
+			key.xx.data = al.q_user;
+			content.xx.size = rhssize;
+			content.xx.data = rhs;
 # ifdef NEWDB
-			if (dbp->put(dbp, &key, &content, 0) != 0)
+			if (dbp->put(dbp, &key.dbt, &content.dbt, 0) != 0)
 				syserr("readaliases: db put (%s)", al.q_user);
 # endif
 # ifdef IF_MAKEDBMFILES
 			IF_MAKEDBMFILES
-				store(key, content);
+				if (dbm_store(dbmp, key.dbm, content.dbm, DBM_REPLACE) != 0)
+					syserr("readaliases: dbm store (%s)",
+						al.q_user);
 # endif
 		}
 		else
-# endif /* DBM */
+# endif /* NDBM */
 		{
 			s = stab(al.q_user, ST_ALIAS, ST_ENTER);
 			s->s_alias = newstr(rhs);
@@ -686,29 +695,34 @@ readaliases(aliasfile, init, e)
 			longest = rhssize;
 	}
 
-# if defined(DBM) || defined(NEWDB)
+# if defined(NDBM) || defined(NEWDB)
 	if (init)
 	{
 		/* add the distinquished alias "@" */
-		DBT key;
+		DBdatum key;
 
-		key.size = 2;
-		key.data = "@";
+		key.xx.size = 2;
+		key.xx.data = "@";
 # ifdef NEWDB
 		if (dbp->sync(dbp) != 0 ||
-		    dbp->put(dbp, &key, &key, 0) != 0 ||
+		    dbp->put(dbp, &key.dbt, &key.dbt, 0) != 0 ||
 		    dbp->close(dbp) != 0)
 			syserr("readaliases: db close failure");
 # endif
 # ifdef IF_MAKEDBMFILES
 		IF_MAKEDBMFILES
-			store(key, key);
+		{
+			if (dbm_store(dbmp, key.dbm, key.dbm, DBM_REPLACE) != 0 ||
+			    dbm_error(dbmp))
+				syserr("readaliases: dbm close failure");
+			dbm_close(dbmp);
+		}
 # endif
 
 		/* restore the old signal */
 		(void) signal(SIGINT, oldsigint);
 	}
-# endif /* DBM */
+# endif /* NDBM */
 
 	/* closing the alias file drops the lock */
 	(void) fclose(af);
