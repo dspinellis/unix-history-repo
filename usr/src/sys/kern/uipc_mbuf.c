@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.17	81/11/26	*/
+/*	uipc_mbuf.c	1.18	81/11/30	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -18,7 +18,7 @@ m_reserve(mbufs)
 /*
 	printf("reserve %d\n", mbufs);
 */
-	if (mbstat.m_lowat + (mbufs>>1) > (NMBPAGES-32) * CLBYTES) 
+	if (mbstat.m_lowat + (mbufs>>1) > (NMBCLUSTERS-32) * CLBYTES) 
 		return (0);
 	mbstat.m_hiwat += mbufs;
 	mbstat.m_lowat = mbstat.m_hiwat >> 1;
