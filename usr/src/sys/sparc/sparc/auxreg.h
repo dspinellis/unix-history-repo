@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)auxreg.h	7.2 (Berkeley) %G%
+ *	@(#)auxreg.h	7.3 (Berkeley) %G%
  *
- * from: $Header: auxreg.h,v 1.5 92/06/17 05:21:55 torek Exp $ (LBL)
+ * from: $Header: auxreg.h,v 1.8 92/11/26 03:04:45 torek Exp $ (LBL)
  */
 
 /*
@@ -37,8 +37,8 @@
  */
 #define	AUXIO_REG	((volatile u_char *)(AUXREG_VA + 3))
 
-#define LED_ON		*AUXIO_REG = AUXIO_MB1|AUXIO_FEJ
-#define LED_OFF		*AUXIO_REG = AUXIO_MB1|AUXIO_FEJ|AUXIO_LED
+#define LED_ON		*AUXIO_REG = AUXIO_MB1|AUXIO_FEJ|AUXIO_LED
+#define LED_OFF		*AUXIO_REG = AUXIO_MB1|AUXIO_FEJ
 #define LED_FLIP	*AUXIO_REG = (*AUXIO_REG | AUXIO_MB1) ^ AUXIO_LED
 
 #define	AUXIO_BITS	"\20\6FHD\5FDC\4FDS\3FTC\2FEJ\1LED"
