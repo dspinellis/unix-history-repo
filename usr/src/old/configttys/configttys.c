@@ -1,13 +1,14 @@
+
+#ifndef	lint
+char sccsid[] = "@(#)configttys.c	4.4 (Berkeley) %G%";
+#endif
+
 /*
  * configttys - configure "tty" ports
  *
  * David L. Wasley
  * U.C.Berkeley
  */
-
-#ifndef	lint
-char	sccsid[]	= "@(#)configttys.c	4.4 Berkeley %G%";
-#endif
 
 #include <stdio.h>
 #include <getty.h>
@@ -47,8 +48,8 @@ struct ttytype	*type();		/* find ttytype for port */
 FILE	*fopen();
 
 main (argc, argv)
-int	argc;
-char	**argv;
+	int argc;
+	char **argv;
 {
 	int		lineno;
 	int		child;
@@ -293,11 +294,11 @@ re_read:
 	quit(0);
 }
 
+/*
+ * read ttys file
+ */
 readttys()
 {
-	/*
-	 * read ttys file
-	 */
 	FILE			*tyf;
 	register struct ttys	*ty;
 	char			buf[1024];
@@ -378,12 +379,11 @@ writettys()
 	return (rtn);
 }
 
-
+/*
+ * invoke editor
+ */
 edit()
 {
-	/*
-	 * invoke editor
-	 */
 	int	child;
 	int	status;
 
@@ -408,7 +408,6 @@ edit()
 
 	return (status);
 }
-
 
 quit (n)
 int	n;
@@ -455,7 +454,7 @@ getlockfile ()
 	unlink(locktmp);
 	return(0);
 }
-
+
 struct speeds {
 	char	*sp_name;	/* human readable name */
 	char	sp_table;	/* getty table name */
@@ -474,21 +473,21 @@ struct speeds {
 	{ "dw2console",	GT_DW2CONSOLE },/* Decwriter Console - 300 baud */
 	{ "fastdialup",	GT_FASTDIALUP },/* 1200-300 baud rotation for dialup */
 	{ "fastdialup1",GT_FASTDIALUP1},/* 300-1200  "     "       "     "    */
-	{ "crt_hcpy",	GT_CRT_HCPY },	/* 9600-300 CRT + hardcopy rotation */
-	{ "hcpy_crt",	GT_HCPY_CRT },	/* 300-9600  "      "        "      */
+	{ "crt",	GT_CRT_HCPY },	/* 9600-300 CRT + hardcopy rotation */
+	{ "hardcopy",	GT_HCPY_CRT },	/* 300-9600  "      "        "      */
 	{ "plugboard",	GT_PLUGBOARD },	/* 9600-300-1200 rotation */
 	{ "plugboard1",	GT_PLUGBOARD2 },/* 300-1200-9600 rotation */
 	{ "plugboard2",	GT_PLUGBOARD2 },/* 1200-9600-300 rotation */
 	{ "interdata",	GT_INTERDATA },	/* Interdata Console */
 	{ "chess",	GT_CHESS },	/* LSI Chess Terminal */
 	{ "tty33",	GT_TTY33 },	/* 110 baud Model 33 TTY */
-	{ "network",	GT_NETWORK },	/* ethernet port */
+	{ "network",	GT_NETWORK },	/* network port */
 	{ "", 0 }
 };
 
 char *
 speedname (c)
-char	c;
+	char	c;
 {
 	struct speeds	*sp;
 	static char	sbuf[32];
@@ -510,7 +509,7 @@ char	c;
 
 char *
 termname (port)
-char	*port;
+	char	*port;
 {
 	register struct ttytype	*tp;
 
@@ -530,7 +529,7 @@ char	*port;
 
 char
 speedchar (speed)
-char	*speed;
+	char	*speed;
 {
 	register struct speeds	*sp;
 
@@ -542,7 +541,7 @@ char	*speed;
 
 struct ttytype *
 type (port)
-char	*port;
+	char	*port;
 {
 	register struct ttytype	*tp;
 
