@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)local.c	1.5 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -117,7 +117,7 @@ clocal(p) register NODE *p; {
 		}
 		/* now, look for conversions downwards */
 
-		if( p->in.left->in.op == ICON ){ /* simulate the conversion here */
+		if( p->in.left->in.op == ICON ){	/* simulate the conversion here */
 			CONSZ val;
 			val = p->in.left->tn.lval;
 			switch( m ){
@@ -141,22 +141,14 @@ clocal(p) register NODE *p; {
 				break;
 				}
 			p->in.left->in.type = m;
-			}
-		else {
-			/* meaningful ones are conversion of int to char, int to short,
-			   and short to char, and unsigned versions thereof */
-			if( m==CHAR || m==UCHAR ){
-				if( ml!=CHAR && ml!= UCHAR ) break;
-				}
-			else if( m==SHORT || m==USHORT ){
-				if( ml!=CHAR && ml!=UCHAR && ml!=SHORT && ml!=USHORT ) break;
-				}
-			}
-
+		} else if (tlen(p) == tlen(p->in.left))
+			goto inherit;
+		else
+			break;
 		/* clobber conversion */
-		if( tlen(p) == tlen(p->in.left) ) goto inherit;
 		p->in.op = FREE;
 		return( p->in.left );  /* conversion gets clobbered */
+		break;
 
 	case QUEST:	/* the right side should be COLON */
 		if((r = p->in.right)->in.op == SCONV) {
