@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,10 +43,10 @@ static char sccsid[] = "@(#)ifconfig.c	4.21 (Berkeley) %G%";
 
 extern int errno;
 struct	ifreq ifr;
-struct	sockaddr_in sin = { AF_INET };
+struct	sockaddr_in sin = { sizeof(sin), AF_INET };
 struct	sockaddr_in broadaddr;
-struct	sockaddr_in netmask = { AF_INET };
-struct	sockaddr_in ipdst = { AF_INET };
+struct	sockaddr_in netmask = {sizeof(sin),  AF_INET };
+struct	sockaddr_in ipdst = {sizeof(sin),  AF_INET };
 char	name[30];
 int	flags;
 int	metric;
@@ -439,6 +439,7 @@ in_getaddr(s, saddr)
 	int val;
 
 	sin->sin_family = AF_INET;
+	sin->sin_len = sizeof(*sin);
 	val = inet_addr(s);
 	if (val != -1) {
 		sin->sin_addr.s_addr = val;
@@ -500,5 +501,6 @@ struct sockaddr *saddr;
 	struct sockaddr_ns *sns = (struct sockaddr_ns *)saddr;
 	struct ns_addr ns_addr();
 	sns->sns_family = AF_NS;
+	sns->sns_len = sizeof(*sns);
 	sns->sns_addr = ns_addr(addr);
 }
