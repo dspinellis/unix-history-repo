@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.c	7.9 (Berkeley) %G%
+ *	@(#)vm_map.c	7.10 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -1087,7 +1087,7 @@ vm_map_pageable(map, start, end, new_pageable)
 	register boolean_t	new_pageable;
 {
 	register vm_map_entry_t	entry;
-	vm_map_entry_t		temp_entry;
+	vm_map_entry_t		start_entry;
 	register vm_offset_t	failed;
 	int			rv;
 
@@ -1103,13 +1103,11 @@ vm_map_pageable(map, start, end, new_pageable)
 	 *	for the entire region.  We do so before making any changes.
 	 */
 
-	if (vm_map_lookup_entry(map, start, &temp_entry)) {
-		entry = temp_entry;
-		vm_map_clip_start(map, entry, start);
+	if (vm_map_lookup_entry(map, start, &start_entry) == FALSE) {
+		vm_map_unlock(map);
+		return(KERN_INVALID_ADDRESS);
 	}
-	else
-		entry = temp_entry->next;
-	temp_entry = entry;
+	entry = start_entry;
 
 	/*
 	 *	Actions are rather different for wiring and unwiring,
@@ -1118,13 +1116,19 @@ vm_map_pageable(map, start, end, new_pageable)
 
 	if (new_pageable) {
 
+		vm_map_clip_start(map, entry, start);
+
 		/*
 		 *	Unwiring.  First ensure that the range to be
-		 *	unwired is really wired down.
+		 *	unwired is really wired down and that there
+		 *	are no holes.
 		 */
 		while ((entry != &map->header) && (entry->start < end)) {
 
-		    if (entry->wired_count == 0) {
+		    if (entry->wired_count == 0 ||
+			(entry->end < end &&
+			 (entry->next == &map->header ||
+			  entry->next->start > entry->end))) {
 			vm_map_unlock(map);
 			return(KERN_INVALID_ARGUMENT);
 		    }
@@ -1138,7 +1142,7 @@ vm_map_pageable(map, start, end, new_pageable)
 		 */
 		lock_set_recursive(&map->lock);
 
-		entry = temp_entry;
+		entry = start_entry;
 		while ((entry != &map->header) && (entry->start < end)) {
 		    vm_map_clip_end(map, entry, end);
 
@@ -1155,10 +1159,12 @@ vm_map_pageable(map, start, end, new_pageable)
 		/*
 		 *	Wiring.  We must do this in two passes:
 		 *
-		 *	1.  Holding the write lock, we increment the
-		 *	    wiring count.  For any area that is not already
-		 *	    wired, we create any shadow objects that need
-		 *	    to be created.
+		 *	1.  Holding the write lock, we create any shadow
+		 *	    or zero-fill objects that need to be created.
+		 *	    Then we clip each map entry to the region to be
+		 *	    wired and increment its wiring count.  We
+		 *	    create objects before clipping the map entries
+		 *	    to avoid object proliferation.
 		 *
 		 *	2.  We downgrade to a read lock, and call
 		 *	    vm_fault_wire to fault in the pages for any
@@ -1179,12 +1185,11 @@ vm_map_pageable(map, start, end, new_pageable)
 		/*
 		 *	Pass 1.
 		 */
-		entry = temp_entry;
 		while ((entry != &map->header) && (entry->start < end)) {
+#if 0
 		    vm_map_clip_end(map, entry, end);
-
-		    entry->wired_count++;
-		    if (entry->wired_count == 1) {
+#endif
+		    if (entry->wired_count == 0) {
 
 			/*
 			 *	Perform actions of vm_map_lookup that need
@@ -1214,7 +1219,28 @@ vm_map_pageable(map, start, end, new_pageable)
 			    }
 			}
 		    }
+		    vm_map_clip_start(map, entry, start);
+		    vm_map_clip_end(map, entry, end);
+		    entry->wired_count++;
 
+		    /*
+		     * Check for holes
+		     */
+		    if (entry->end < end &&
+			(entry->next == &map->header ||
+			 entry->next->start > entry->end)) {
+			/*
+			 *	Found one.  Object creation actions
+			 *	do not need to be undone, but the
+			 *	wired counts need to be restored.
+			 */
+			while (entry != &map->header && entry->end > start) {
+			    entry->wired_count--;
+			    entry = entry->prev;
+			}
+			vm_map_unlock(map);
+			return(KERN_INVALID_ARGUMENT);
+		    }
 		    entry = entry->next;
 		}
 
@@ -1243,7 +1269,7 @@ vm_map_pageable(map, start, end, new_pageable)
 		}
 
 		rv = 0;
-		entry = temp_entry;
+		entry = start_entry;
 		while (entry != &map->header && entry->start < end) {
 		    /*
 		     * If vm_fault_wire fails for any page we need to
@@ -1991,6 +2017,7 @@ vmspace_fork(vm1)
 				new_share_entry =
 					vm_map_entry_create(new_share_map);
 				*new_share_entry = *old_entry;
+				new_share_entry->wired_count = 0;
 
 				/*
 				 *	Insert the entry into the new sharing
@@ -2017,6 +2044,7 @@ vmspace_fork(vm1)
 
 			new_entry = vm_map_entry_create(new_map);
 			*new_entry = *old_entry;
+			new_entry->wired_count = 0;
 			vm_map_reference(new_entry->object.share_map);
 
 			/*
