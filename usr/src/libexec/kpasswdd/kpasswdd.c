@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kpasswdd.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)kpasswdd.c	1.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,8 +30,9 @@ static char sccsid[] = "@(#)kpasswdd.c	1.3 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/time.h>
 #include <syslog.h>
-#include <krb.h>
-#include <krb_db.h>
+#include <kerberosIV/des.h>
+#include <kerberosIV/krb.h>
+#include <kerberosIV/krb_db.h>
 #include <sys/resource.h>
 #include <sys/signal.h>
 #include <netinet/in.h>
@@ -41,7 +42,7 @@ static	struct kpasswd_data	kpwd_data;
 static	C_Block			master_key, key;
 static	Key_schedule		master_key_schedule,
 				key_schedule, random_sched;
-int				mkeyversion;
+long				mkeyversion;
 AUTH_DAT			kdata;
 static	Principal		principal_data;
 static	struct update_data	ud_data;
@@ -79,22 +80,34 @@ main()
 
 	strcpy(inst, "*");
 	rval = krb_recvauth(
-		0L,				/* !MUTUAL */
+		0L,				/* options--!MUTUAL */
 		0,				/* file desc */
 		&ticket,			/* client's ticket */
 		SERVICE,			/* expected service */
 		inst,				/* expected instance */
 		&foreign,			/* foreign addr */
-		(struct sockaddr_in *) 0,	
-		&kdata,
-		"",
-		(bit_64 *) NULL,		/* key schedule */
+		(struct sockaddr_in *) 0,	/* local addr */
+		&kdata,				/* returned krb data */
+		"",				/* service keys file */
+		(bit_64 *) NULL,		/* returned key schedule */
 		version
 	);
 
 
 	if (rval != KSUCCESS) {
 		syslog(LOG_ERR, "krb_recvauth: %s", krb_err_txt[rval]);
+		cleanup();
+		exit(1);
+	}
+
+	if (*version == '\0') {
+		/* indicates error on client's side (no tickets, etc.) */
+		cleanup();
+		exit(0);
+	} else if (strcmp(version, "KPWDV0.1") != 0) {
+		syslog(LOG_NOTICE,
+			"kpasswdd version conflict (recv'd %s)",
+			version);
 		cleanup();
 		exit(1);
 	}
@@ -107,9 +120,7 @@ main()
 		exit(1);
 	}
 
-	mkeyversion = 
-	   kdb_get_master_key(master_key, master_key_schedule, NULL);
-
+	mkeyversion = kdb_get_master_key(NULL, master_key, master_key_schedule);
 
 	if (mkeyversion < 0) {
 		syslog(LOG_NOTICE, "couldn't verify master key");
@@ -126,8 +137,16 @@ main()
 		&more
 	);
 
+	if (rval < 0) {
+		syslog(LOG_NOTICE,
+			"error retrieving principal record for %s.%s",
+			kdata.pname, kdata.pinst);
+		cleanup();
+		exit(1);
+	}
+
 	if (rval != 1 || (more != 0)) {
-		syslog(LOG_NOTICE, "more than 1 entry for %s.%s",
+		syslog(LOG_NOTICE, "more than 1 dbase entry for %s.%s",
 			kdata.pname, kdata.pinst);
 		cleanup();
 		exit(1);
@@ -168,7 +187,7 @@ main()
 
 	/* validate info string by looking at the embedded string */
 
-	if (strcmp(ud_data.secure_msg, SECURE_STRING)) {
+	if (strcmp(ud_data.secure_msg, SECURE_STRING) != 0) {
 		syslog(LOG_NOTICE, "invalid update from %s",
 			inet_ntoa(foreign.sin_addr));
 		cleanup();
