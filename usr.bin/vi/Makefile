@@ -1,5 +1,5 @@
 #	@(#)Makefile	8.30 (Berkeley) 3/22/94
-#	$Id: Makefile,v 1.14 1994/04/30 06:32:38 alm Exp $
+#	$Id: Makefile,v 1.15 1994/06/01 07:51:29 phk Exp $
 
 PROG=	nvi
 #CFLAGS=-g -DDEBUG
@@ -9,6 +9,7 @@ CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/ex -I${.CURDIR}/vi
 .PATH:	${.CURDIR}/ex ${.CURDIR}/sex ${.CURDIR}/vi \
 	${.CURDIR}/svi ${.CURDIR}/xaw
 #CLEANFILES+=ex
+CLEANFILES+=vi.1 vi-ref.1
 MAN1+=	vi.1 vi-ref.1
 
 MLINKS+=vi.1 nvi.1
