@@ -1,6 +1,6 @@
-# include <sccs.h>
+#include "../hdr/macros.h"
 
-SCCSID(@(#)alloc.c	4.1);
+SCCSID(@(#)alloc.c	4.2);
 
 alloc(i)
 	int i;
