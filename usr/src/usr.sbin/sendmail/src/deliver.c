@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.136		%G%);
+SCCSID(@(#)deliver.c	3.137		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1280,14 +1280,14 @@ sendall(e, mode)
 # endif DEBUG
 
 			/* owner list exists -- add it to the error queue */
-			sendto(obuf, (ADDRESS *) NULL, &e->e_errorqueue);
+			sendtolist(obuf, (ADDRESS *) NULL, &e->e_errorqueue);
 			ErrorMode == EM_MAIL;
 			break;
 		}
 
 		/* if we did not find an owner, send to the sender */
 		if (qq == NULL && bitset(QBADADDR, q->q_flags))
-			sendto(e->e_from.q_paddr, qq, &e->e_errorqueue);
+			sendtolist(e->e_from.q_paddr, qq, &e->e_errorqueue);
 	}
 
 	if (mode == SM_FORK)

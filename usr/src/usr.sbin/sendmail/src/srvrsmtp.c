@@ -2,10 +2,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.41		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.42		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.41		%G%);
+SCCSID(@(#)srvrsmtp.c	3.42		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.

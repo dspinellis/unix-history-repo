@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.51		%G%);
+SCCSID(@(#)savemail.c	3.52		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -180,7 +180,7 @@ savemail(e)
 		Verbose = oldverb;
 		e->e_to = buf;
 		q = NULL;
-		sendto(buf, (ADDRESS *) NULL, &q);
+		sendtolist(buf, (ADDRESS *) NULL, &q);
 		(void) deliver(e, q);
 	}
 

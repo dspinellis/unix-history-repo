@@ -2,10 +2,10 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.48		%G%);
+SCCSID(@(#)recipient.c	3.49		%G%);
 
 /*
-**  SENDTO -- Designate a send list.
+**  SENDTOLIST -- Designate a send list.
 **
 **	The parameter is a comma-separated list of people to send to.
 **	This routine arranges to send to all of them.
