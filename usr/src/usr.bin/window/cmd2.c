@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.5 83/08/16";
+static	char *sccsid = "@(#)cmd2.c	3.6 83/08/16";
 #endif
 
 #include "defs.h"
@@ -10,7 +10,7 @@ c_help()
 {
 	register struct ww *w;
 
-	if ((w = openiwin(wwnrow - 2, "Help")) == 0) {
+	if ((w = openiwin(wwnrow - 3, "Help")) == 0) {
 		error("Can't open help window.");
 		return;
 	}
@@ -119,7 +119,7 @@ c_stat()
 {
 	register struct ww *w;
 
-	if ((w = openiwin(6, "IO Statics")) == 0) {
+	if ((w = openiwin(4, "IO Statics")) == 0) {
 		error("Can't open statistics window.");
 		return;
 	}
