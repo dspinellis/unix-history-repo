@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_stat.h	7.5 (Berkeley) %G%
+ *	@(#)tp_stat.h	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -120,6 +120,8 @@ struct tp_stat {
 	u_long	ts_Cset;
 	u_long	ts_Ccan_act;
 	u_long	ts_Ccan_inact;
+	u_long	ts_Fdelack;
+	u_long	ts_Fpruned;
 
 	u_long	ts_concat_rcvd;
 

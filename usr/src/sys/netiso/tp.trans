@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.12 (Berkeley) %G%
+ *	@(#)tp.trans	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.12 (Berkeley) %G% */
+/* @(#)tp.trans	7.13 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -1319,19 +1319,20 @@ SAME			<==		TP_OPEN 									T_USR_rcvd
 	DEFAULT
 	{	
 		if( trick_hc ) {
-
-			LOCAL_CREDIT($P);
+			SeqNum ack_thresh;
 			/*
-			 * If the window is now closed or has only
-			 * one slot left and an ACK will increase this (local
-			 * credit is greater than or equal to 1) send an AK
-			 * here. Otherwise, we will wait for more data or
-			 * the ack timer to fire.
+			 * If the upper window edge has advanced a reasonable
+			 * amount beyond what was known, send an ACK.
+			 * A reasonable amount is 2 packets, unless the max window
+			 * is only 1 or 2 packets, in which case we
+			 * should send an ack for any advance in the upper window edge.
 			 */
-#define CREDIT_SMALL 1
-			if (SEQ_GEQ($P, $P.tp_rcvnxt, $P.tp_sent_uwe) &&
-				$P.tp_lcredit > CREDIT_SMALL) {
+			LOCAL_CREDIT($P);
+			ack_thresh = SEQ_SUB($P, $P.tp_lcredit + $P.tp_rcvnxt,
+									 ($P.tp_maxlcredit > 2 ? 2 : 1));
+			if (SEQ_GT($P, ack_thresh, $P.tp_sent_uwe)) {
 				IncStat(ts_ackreason[_ACK_USRRCV_]);
+				$P.tp_flags &= ~TPF_DELACK;
 				return tp_emit(AK_TPDU_type, $P, $P.tp_rcvnxt, 0, MNULL);
 			}
 		}
