@@ -1,23 +1,15 @@
-/*
- * Copyright (c) 1988 The Regents of the University of California.
+/*-
+ * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  *
- *	@(#)grp.h	4.5 (Berkeley) %G%
+ *	@(#)grp.h	5.1 (Berkeley) %G%
  */
 
+#ifndef _POSIX_SOURCE
 #define	_PATH_GROUP		"/etc/group"
+#endif
 
 struct group {
 	char	*gr_name;		/* group name */
@@ -27,19 +19,23 @@ struct group {
 };
 
 #ifdef __STDC__
-extern struct group *getgrent(void);
 extern struct group *getgrgid(gid_t);
 extern struct group *getgrnam(const char *);
+#ifndef _POSIX_SOURCE
+extern struct group *getgrent(void);
 extern int setgrent(void);
 extern void endgrent(void);
 extern void setgrfile(const char *);
 extern int setgroupent(int);
+#endif
 #else
-extern struct group *getgrent();
 extern struct group *getgrgid();
 extern struct group *getgrnam();
+#ifndef _POSIX_SOURCE
+extern struct group *getgrent();
 extern int setgrent();
 extern void endgrent();
 extern void setgrfile();
 extern int setgroupent();
+#endif
 #endif
