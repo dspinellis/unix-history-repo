@@ -91,9 +91,11 @@ char	zeroes[512];
 extern char *val;
 extern char table[256];
 struct rt_dir rt_dir[RT_DIRSIZE] = {
+	{
 	{ 4, 0, 1, 0, 14 },
 	{ { 0, RT_NULL, { 0, 0, 0 }, 486, 0 },
 	  { 0, RT_ESEG } }
+	}
 };
 
 struct rt_dir rt_nulldir = {
