@@ -1,9 +1,9 @@
-#	Makefile	4.1	85/01/22
+#	Makefile	4.2	85/04/03
 
 CFLAGS= -O
 
-OBJS= bsdtcp.o df2.o dk.o dn.o hys.o hysq.o mic.o nov.o pnet.o rvmacs.o \
-	sy.o unet.o va212.o va811.o va820.o vad.o vent.o vmacs.o
+OBJS= bsdtcp.o df2.o df12.o dk.o dn.o hys.o hysq.o mic.o nov.o pen.o pnet.o \
+	rvmacs.o sy.o unet.o va212.o va811.o va820.o vad.o vent.o vmacs.o
 
 aculib.a: ${OBJS}
 	ar cr aculib.a ${OBJS}
