@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_query.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_query.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -96,7 +96,7 @@ res_query(name, class, type, answer, anslen)
 				h_errno = TRY_AGAIN;
 				break;
 			case NOERROR:
-				h_errno = NO_ADDRESS;
+				h_errno = NO_DATA;
 				break;
 			case FORMERR:
 			case NOTIMP:
@@ -125,13 +125,14 @@ res_search(name, class, type, answer, anslen)
 	int anslen;		/* size of answer */
 {
 	register char *cp, **domain;
-	int n, ret;
+	int n, ret, got_nodata = 0;
 	char *hostalias();
 
 	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
 		return (-1);
 
 	errno = 0;
+	h_errno = HOST_NOT_FOUND;		/* default, if we never query */
 	for (cp = name, n = 0; *cp; cp++)
 		if (*cp == '.')
 			n++;
@@ -149,7 +150,7 @@ res_search(name, class, type, answer, anslen)
 		 * If name isn't found in this domain,
 		 * keep trying higher domains in the search list
 		 * (if that's enabled).
-		 * On a NO_ADDRESS error, keep trying, otherwise
+		 * On a NO_DATA error, keep trying, otherwise
 		 * a wildcard entry of another type could keep us
 		 * from finding this entry higher in the domain.
 		 * If we get some other error (non-authoritative negative
@@ -160,7 +161,9 @@ res_search(name, class, type, answer, anslen)
 			h_errno = TRY_AGAIN;
 			return (-1);
 		}
-		if ((h_errno != HOST_NOT_FOUND && h_errno != NO_ADDRESS) ||
+		if (h_errno == NO_DATA)
+			got_nodata++;
+		if ((h_errno != HOST_NOT_FOUND && h_errno != NO_DATA) ||
 		    (_res.options & RES_DNSRCH) == 0)
 			break;
 		h_errno = 0;
@@ -172,7 +175,8 @@ res_search(name, class, type, answer, anslen)
 	if (n)
 		return (res_querydomain(name, (char *)NULL, class, type,
 		    answer, anslen));
-	h_errno = HOST_NOT_FOUND;
+	if (got_nodata)
+		h_errno = NO_DATA;
 	return (-1);
 }
 
@@ -190,6 +194,11 @@ res_querydomain(name, domain, class, type, answer, anslen)
 	char *longname = nbuf;
 	int n;
 
+#ifdef DEBUG
+	if (_res.options & RES_DEBUG)
+		printf("res_querydomain(%s, %s, %d, %d)\n",
+		    name, domain, class, type);
+#endif
 	if (domain == NULL) {
 		/*
 		 * Check for trailing '.';
