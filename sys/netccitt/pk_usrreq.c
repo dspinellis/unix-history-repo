@@ -56,6 +56,16 @@
 #include "pk_var.h"
 
 /*
+ * forward references
+ */
+
+static
+old_to_new (struct mbuf *m);
+
+static
+new_to_old (struct mbuf *m);
+
+/*
  * 
  *  X.25 Packet level protocol interface to socket abstraction.
  *

@@ -35,7 +35,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)hd_input.c	7.7 (Berkeley) 5/29/91
+ *	From:	@(#)hd_input.c	7.7 (Berkeley) 5/29/91
+ *	$Id$
  */
 
 #include "param.h"
@@ -53,6 +54,18 @@
 #include "hdlc.h"
 #include "hd_var.h"
 #include "x25.h"
+
+/*
+ * forward references
+ */
+static
+frame_reject (struct hdcb *hdp, int rejectcode, struct Hdlc_iframe *frame);
+
+static
+rej_routine (struct hdcb *hdp, int rejnr);
+
+static
+free_iframes (struct hdcb *hdp, int *nr, int finalbit);
 
 /*
  *      HDLC INPUT INTERFACE
@@ -444,6 +457,7 @@ int     rear,
 static
 frame_reject (hdp, rejectcode, frame)
 struct hdcb *hdp;
+int rejectcode;
 struct Hdlc_iframe *frame;
 {
 	register struct Frmr_frame *frmr = &hd_frmr;
