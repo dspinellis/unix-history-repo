@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.8	82/08/13	*/
+/*	sys_generic.c	5.9	82/08/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -37,6 +37,8 @@ read()
 		char	*cbuf;
 		unsigned count;
 	} *uap;
+	struct uio auio;
+	struct iovec aiov;
 
 	uap = (struct a *)u.u_ap;
 	if ((int)uap->count < 0) {
@@ -48,26 +50,31 @@ read()
 		u.u_error = EBADF;
 		return;
 	}
-	u.u_base = (caddr_t)uap->cbuf;
-	u.u_count = uap->count;
-	u.u_segflg = 0;
+	aiov.iov_base = (caddr_t)uap->cbuf;
+	aiov.iov_len = uap->count;
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	auio.uio_segflg = 0;
+	auio.uio_resid = uap->count;
+	u.u_base = (caddr_t)0xc0000000;
+	u.u_count = 0x40000000;
 	if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
-		if (u.u_count == uap->count)
+		if (auio.uio_resid == uap->count)
 			u.u_eosys = RESTARTSYS;
 	} else if (fp->f_type == DTYPE_SOCKET)
-		u.u_error = soreceive(fp->f_socket, (struct sockaddr *)0);
+		u.u_error = soreceive(fp->f_socket, (struct sockaddr *)0, &auio);
 	else {
 		ip = fp->f_inode;
-		u.u_offset = fp->f_offset;
+		auio.uio_offset = fp->f_offset;
 		if ((ip->i_mode&IFMT) == IFREG) {
 			ilock(ip);
-			readi(ip);
+			u.u_error = readip(ip, &auio);
 			iunlock(ip);
 		} else
-			readi(ip);
-		fp->f_offset += uap->count - u.u_count;
+			u.u_error = readip(ip, &auio);
+		fp->f_offset += uap->count - auio.uio_resid;
 	}
-	u.u_r.r_val1 = uap->count - u.u_count;
+	u.u_r.r_val1 = uap->count - auio.uio_resid;
 }
 
 /*
@@ -505,7 +512,7 @@ readip(ip, uio)
 	register struct inode *ip;
 	register struct uio *uio;
 {
-	register struct iovec *iov = uio->uio_iov;
+	register struct iovec *iov;
 	struct buf *bp;
 	struct fs *fs;
 	dev_t dev;
@@ -518,22 +525,17 @@ readip(ip, uio)
 	extern int mem_no;
 	int error = 0;
 
-	uio->uio_resid = 0;
-	if (uio->uio_iovcnt == 0)
-		return (0);
 	dev = (dev_t)ip->i_rdev;
 	if (uio->uio_offset < 0 &&
-	    ((ip->i_mode&IFMT) != IFCHR || mem_no != major(dev))) {
-		error = EINVAL;
-		goto bad;
-	}
+	    ((ip->i_mode&IFMT) != IFCHR || mem_no != major(dev)))
+		return (EINVAL);
 	ip->i_flag |= IACC;
 	type = ip->i_mode&IFMT;
 	if (type == IFCHR) {
 		register c = u.u_count;
-		error = (*cdevsw[major(dev)].d_read)(dev, uio);
-		CHARGE(sc_tio * (c - u.u_count));
-		return (error);
+		(*cdevsw[major(dev)].d_read)(dev, uio);
+		CHARGE(sc_tio * (c - uio->uio_resid));
+		return (u.u_error);
 	}
 	if (type != IFBLK) {
 		dev = ip->i_dev;
@@ -543,7 +545,8 @@ readip(ip, uio)
 		bsize = BLKDEV_IOSIZE;
 nextiov:
 	if (uio->uio_iovcnt == 0)
-		goto getresid;
+		return (0);
+	iov = uio->uio_iov;
 	if (iov->iov_len > 0)
 	do {
 		lbn = uio->uio_offset / bsize;
@@ -557,7 +560,7 @@ nextiov:
 				n = diff;
 			bn = fsbtodb(fs, bmap(ip, lbn, B_READ));
 			if (u.u_error)
-				goto getresid;
+				return (u.u_error);
 			size = blksize(fs, ip, lbn);
 		} else {
 			size = bsize;
@@ -577,31 +580,65 @@ nextiov:
 		if (n != 0) {
 			if (uio->uio_segflg != 1) {
 				if (copyout(bp->b_un.b_addr+on, iov->iov_base, n)) {
-					error = EFAULT;
-					goto getresid;
+					brelse(bp);
+					return (EFAULT);
 				}
 			} else
 				bcopy(bp->b_un.b_addr + on, iov->iov_base, n);
 			iov->iov_base += n;
 			uio->uio_offset += n;
 			iov->iov_len -= n;
-bad:
-			;
+			uio->uio_resid -= n;
 		}
 		if (n + on == bsize || uio->uio_offset == ip->i_size)
 			bp->b_flags |= B_AGE;
 		brelse(bp);
 	} while (u.u_error == 0 && iov->iov_len != 0 && n != 0);
-	if (u.u_error == 0 && n > 0) {
-		iov++;
+	if (u.u_error == 0 && iov->iov_len == 0) {
+		uio->uio_iov++;
 		uio->uio_iovcnt--;
 		goto nextiov;
 	}
-getresid:
-	while (uio->uio_iovcnt > 0) {
-		uio->uio_resid += iov->iov_len;
-		iov++;
-		uio->uio_iovcnt--;
-	}
 	return (error);
+}
+
+uiomove(cp, n, dir, uio)
+	register caddr_t cp;
+	register unsigned n;
+	enum uio_direction dir;
+	struct uio *uio;
+{
+	register struct iovec *iov;
+	int bad, cnt;
+
+	if (n == 0)
+		return (0);
+	if (uio->uio_segflg != 1) {
+		if (dir == UIO_READFROM)
+#ifdef notdef
+			bad = copyuin(uio, (caddr_t)cp, n);
+#else
+			panic("uiomove");
+#endif
+		else
+			bad = copyuout((caddr_t)cp, n, uio);
+		if (bad)
+			return (EFAULT);
+	} else {
+		while (n > 0 && uio->uio_iovcnt) {
+			iov = uio->uio_iov;
+			cnt = iov->iov_len;
+			if (cnt > n)
+				cnt = n;
+			if (dir == UIO_READFROM)
+				bcopy(iov->iov_base, (caddr_t)cp, cnt);
+			else
+				bcopy((caddr_t)cp, iov->iov_base, cnt);
+			iov->iov_base += cnt;
+			iov->iov_len -= cnt;
+			uio->uio_resid -= cnt;
+			n -= cnt;
+		}
+	}
+	return (0);
 }
