@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/07/07
+#	Makefile	4.3	83/07/09
 #
 # Make a 750/730 tu58 cassette
 # 
@@ -31,6 +31,7 @@ install: cassette ../mdec/tuboot
 	dd if=../mdec/tuboot of=${CASSETTE} bs=512 count=2
 
 # build a 730 boot cassette from a DEC console cassette
+# DONT TRY THIS ON A 750 W/O MRSP, THE SYSTEM WILL CRASH
 update:	${BOOTOBJS}
 	-mkdir fromdec
 	cd fromdec; arff mxf ${CASSETTE}; rm -f ${FROMDEC}; \
