@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disklabel.h	7.24 (Berkeley) %G%
+ *	@(#)disklabel.h	7.25 (Berkeley) %G%
  */
 
 /*
@@ -138,7 +138,7 @@ struct disklabel {
 #define	p_sgs	__partition_u1.sgs
 	} d_partitions[MAXPARTITIONS];	/* actually may be more */
 };
-#else LOCORE
+#else /* LOCORE */
 	/*
 	 * offsets for asm boot files.
 	 */
@@ -149,7 +149,7 @@ struct disklabel {
 	.set	d_secpercyl,56
 	.set	d_secperunit,60
 	.set	d_end_,276		/* size of disk label */
-#endif LOCORE
+#endif /* LOCORE */
 
 /* d_type values: */
 #define	DTYPE_SMD		1		/* SMD, XSMD; VAX hp/up */
@@ -293,7 +293,7 @@ struct partinfo {
 
 #define DIOCSBAD	_IOW('d', 110, struct dkbad)	/* set kernel dkbad */
 
-#endif LOCORE
+#endif /* LOCORE */
 
 #if !defined(KERNEL) && !defined(LOCORE)
 

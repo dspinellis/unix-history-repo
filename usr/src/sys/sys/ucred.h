@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ucred.h	7.6 (Berkeley) %G%
+ *	@(#)ucred.h	7.7 (Berkeley) %G%
  */
 
 #ifndef _UCRED_H_
@@ -28,6 +28,6 @@ struct ucred {
 struct ucred *crget();
 struct ucred *crcopy();
 struct ucred *crdup();
-#endif KERNEL
+#endif /* KERNEL */
 
 #endif /* !_UCRED_H_ */
