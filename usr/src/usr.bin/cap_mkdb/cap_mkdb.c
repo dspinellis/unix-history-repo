@@ -12,12 +12,11 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	1.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 
 #include <db.h>
 #include <errno.h>
@@ -50,7 +49,6 @@ main(argc, argv)
 {
 	int c, fd;
 	char *outname, buf[MAXPATHLEN + 1], **f;
-	
 
 	outname = NULL;
 	while ((c = getopt(argc, argv, "f:")) != EOF) {
@@ -62,10 +60,10 @@ main(argc, argv)
 		default:
 			usage();
 		}
-	}		
+	}
 	argc -= optind;
-	argv += optind;	
-	
+	argv += optind;
+
 	if (*argv == NULL)
 		usage();
 
@@ -79,27 +77,27 @@ main(argc, argv)
 		err(1, "%s", strerror(errno));
 	(void)sprintf(capdb, "%s.db", outname);
 
-	/* 
-	 * We want to avoid the confusion of where the capability record 
-	 * is being read from.  Since the user probably intends to read the 
-	 * ascii file, we should make sure that user knows that the 
+	/*
+	 * We want to avoid the confusion of where the capability record
+	 * is being read from.  Since the user probably intends to read the
+	 * ascii file, we should make sure that user knows that the
 	 * corresponding .db file will override.
-         */
+	 */
 	for (f = inputfiles; *f != NULL; f++) {
 		(void)sprintf(buf, "%s.db", *f);
 		fd = open(buf, O_RDONLY, 0444);
-	        if (fd == -1 && errno != ENOENT)
-			err(1, "open: %s", strerror(errno));
+		if (fd == -1 && errno != ENOENT)
+			err(1, "%s: %s", buf, strerror(errno));
 		if (fd >= 0) {
 			err(0, "Warning -- %s.db will override %s.", *f, *f);
 			(void)close(fd);
 		}
 	}
 
-        db_build(inputfiles);
+	db_build(inputfiles);
 	exit(0);
 }
-   
+
 /*
  * Any changes to these definitions should be made also in the getcap(3)
  * library routines.
@@ -120,87 +118,80 @@ db_build(inputfiles)
 {
 	DB *capdbp;
 	DBT key, data;
+	recno_t reccnt;
 	size_t lastlen, bplen;
-	int st, stdb, i;
+	int st, stdb;
 	char *cp, *np, *bp, *nf, namebuf[NBUFSIZ];
-	
-	if ((capdbp = dbopen(capdb, O_CREAT | O_TRUNC | O_WRONLY, 
-            DEFFILEMODE, DB_HASH, NULL)) == NULL)
+
+	if ((capdbp = dbopen(capdb, O_CREAT | O_TRUNC | O_RDWR,
+	    DEFFILEMODE, DB_HASH, NULL)) == NULL)
 		err(1, "%s: %s", capdb, strerror(errno));
 	docapdbunlink = 1;
-	
+
 	lastlen = 0;
 	nf = NULL;
 	data.data = NULL;
 	key.data = NULL;
-	i = 1;
-	while((st = cgetnext(&bp, inputfiles)) > 0) {
+	for (reccnt = 0; (st = cgetnext(&bp, inputfiles)) > 0;) {
 		getnamefield(&nf, bp);
 		if ((bplen = strlen(bp)) > lastlen) {
-			if ((data.data =
-			    realloc(data.data, bplen + 2)) == NULL)
+			if ((data.data = realloc(data.data, bplen + 2)) == NULL)
 				err(1, "%s", strerror(errno));
 			lastlen = bplen;
 		}
 
-		/*
-		 * Store record under name field.
-		 */
+		/* Store record under name field. */
 		if (st == 2)
 			((char *)(data.data))[0] = TCERR;
 		else
 			((char *)(data.data))[0] = RECOK;
-			
+
 		(void)strcpy(&((char *)(data.data))[1], bp);
 		data.size = bplen + 2;
 		key.data = nf;
 		key.size = strlen(nf) + 1;
-		if ((stdb = capdbp->put(capdbp, &key, &data, R_NOOVERWRITE))
-		    < 0)
+		if ((stdb =
+		    capdbp->put(capdbp, &key, &data, R_NOOVERWRITE)) < 0)
 			err(1, "put: %s", strerror(errno));
 		if (stdb == 1) {
-			err(0, "put: record '%s' already exists -- only first reference is stored", nf);
+			err(0, "ignored duplicate: %s", nf);
 			continue;
 		}
-		printf("Hashed %d capability records.\r", i++);
-		printnl = 1;
-		fflush(stdout);
+		++reccnt;
 
-		/*
-		 * Store references for other names.
-		 */
+		/* Store references for other names. */
 		(void)strcpy((char *)(data.data), nf);
 
 		data.size = key.size;
 		key.data = namebuf;
 		np = namebuf;
-		for (cp = nf; *cp != '\0'; cp++) {
+		for (cp = nf; *cp != '\0'; *np++ = *cp++)
 			if (*cp == ':' || *cp == '|') {
 				*np = '\0';
 				key.size = strlen(namebuf) + 1;
-				if ((stdb = 
-				    capdbp->put(capdbp, &key, &data, 
-                   	  	    R_NOOVERWRITE)) < 0)
+				if ((stdb = capdbp->put(capdbp, &key, &data,
+				    R_NOOVERWRITE)) < 0)
 					err(1, "put: %s", strerror(errno));
 				if (stdb == 1)
-					err(0, "put: record '%s' already exists -- only first reference is stored.", 
-					    namebuf);
+					err(0,
+					    "ignored duplicate: %s", namebuf);
 				np = namebuf;
 				continue;
-			}	      	      
-			*np++ = *cp;
-		}
+			}
 	}
 	if (capdbp->close(capdbp) < 0)
 		err(1, "%s", strerror(errno));
+
 	if (st == -1)
 		err(1, "%s", strerror(errno));
 	if (st == -2)
 		err(1, "potential reference loop detected");
+
 	free(data.data);
 	free(nf);
 	free(bp);
-	printf("\n");
+
+	(void)printf("cap_mkdb: %d capability records\n", reccnt);
 }
 
 void
@@ -210,7 +201,7 @@ getnamefield(nf, bp)
 	static size_t nfsize;
 	size_t newsize;
 	char *cp, tmp;
-	
+
 	for (cp = bp; *cp != ':'; cp++);
 
 	tmp = *(cp + 1);
@@ -228,9 +219,9 @@ getnamefield(nf, bp)
 void
 usage()
 {
-        (void)fprintf(stderr,
+	(void)fprintf(stderr,
 	    "usage: cap_mkdb [-f outfile] file1 [file2 ...]\n");
-        exit(1);
+	exit(1);
 }
 
 #if __STDC__
@@ -245,7 +236,7 @@ err(int fatal, const char *fmt, ...)
 #else
 err(fmt, va_alist)
 	char *fmt;
-        va_dcl
+	va_dcl
 #endif
 {
 	va_list ap;
