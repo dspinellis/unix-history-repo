@@ -1,4 +1,4 @@
-.\"     @(#)Infoletter	1.3 (Berkeley) %G%
+.\"     @(#)Infoletter	1.4 (Berkeley) %G%
 .\" use -ms
 .nr PS 10
 .ps 10
@@ -36,7 +36,8 @@ numerous requests for portions of the system.
 Therefore, we are providing this release as an experimental test release
 for interested developers.
 The distribution includes both software developed at Berkeley
-and also a large amount of software contributed by authors outside of Berkeley.
+and also a large amount of software contributed by authors outside
+of Berkeley (for details, see the attached contributors list).
 .PP
 This packet is designed to serve two purposes.
 The first is to acquaint you with the details of our distribution
@@ -54,7 +55,7 @@ It includes source code and manual pages for the C library
 and approximately three-fourths of the utilities distributed as
 part of 4.3BSD-Reno.
 An approximate list of the included and excluded utilities is provided
-in the attached appendix.
+in the attached list.
 .PP
 Additionally, the distribution includes source code for most of the
 4.3BSD-Reno kernel, including machine support for the HP9000/300 series
@@ -72,6 +73,8 @@ managing the buffer cache, handling process tracing and doing accounting
 is not included as it contains proprietary code.
 .PP
 .B "This software distribution is provided on 1/2'' 9-track tape only."
+The distribution is available on a single 6250 BPI tape,
+or on two 1600 BPI tapes.
 No other media are currently available.
 .PP
 This distribution represents an intermediate point in the development
@@ -93,7 +96,7 @@ including function prototypes for many of the exported functions.
 .SH
 Intended audience for this distribution
 .PP
-This release is indended for system developers and others who wish
+This release is intended for system developers and others who wish
 to preview or experiment with the most recent Berkeley system.
 It may also be useful as an update to earlier BSD or BSD-derived systems,
 although substantial work will be required to integrate portions of this
@@ -297,7 +300,8 @@ Before the distribution can be sent, we require:
 .IP \(bu
 Execution of the included Berkeley License Agreement.
 .IP \(bu
-A check from a U.S. bank for $495.00 US, payable to
+A check from a U.S. bank for $495.00 US for a single 6250 BPI tape
+or $545.00 US for two 1600 BPI tapes, payable to
 ``The Regents of the University of California.''
 If you must issue a Purchase Order, please issue one that is blank-backed.
 If this is not possible, insert and initial in the body of the Purchase
@@ -362,7 +366,8 @@ the following items to the Computer Systems Research Group:\fR
 1) a letter signed by the Director or Head of Department requesting
 this distribution and stating that you have read and understood the Berkeley
 License Agreement and that your organization will abide by it, 2)
-an IOC for $495.00, and 3) a Site Information Form and Checklist for
+an IOC for $495.00 for a single 6250 BPI tape or $545.00 for
+two 1600 BPI tapes, and 3) a Site Information Form and Checklist for
 Hardware/Software.
 .SH
 A Special Note 
