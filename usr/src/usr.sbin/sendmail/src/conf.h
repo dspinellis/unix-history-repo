@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.81 (Berkeley) %G%
+ *	@(#)conf.h	8.82 (Berkeley) %G%
  */
 
 /*
@@ -991,3 +991,11 @@ typedef void		(*sigfunc_t) __P((int));
 # ifndef FORK
 # define FORK		vfork		/* function to call to fork mailer */
 # endif
+
+/*
+**  If we are going to link scanf anyway, use it in readcf
+*/
+
+#if !defined(HASUNAME) && !defined(SCANF)
+# define SCANF		1
+#endif
