@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fread.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fread.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -26,8 +26,13 @@ fread(buf, size, count, fp)
 	register int r;
 	size_t total;
 
+	/*
+	 * The ANSI standard requires a return value of 0 for a count
+	 * or a size of 0.  Peculiarily, it imposes no such requirements
+	 * on fwrite; it only requires fread to be broken.
+	 */
 	if ((resid = count * size) == 0)
-		return (count);
+		return (0);
 	if (fp->_r < 0)
 		fp->_r = 0;
 	total = resid;
