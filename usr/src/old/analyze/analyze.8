@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)analyze.8	4.1 (Berkeley) %G%
+.\"	@(#)analyze.8	5.1 (Berkeley) %G%
 .\"
 .TH ANALYZE 8 ""
 .UC 4
@@ -34,20 +34,20 @@ In order to use
 .I analyze
 you must arrange to get a image of the memory (and possibly the
 paging area) of the system after it crashes (see
-.IR crash (8)).
+.IR crash (8V)).
 .PP
 The
 .I analyze
 program reads the relevant system data structures from the core
 image file and indexing information from 
 .B /vmunix
-(or the specified file).
+(or the specified file)
 to determine the state of the paging subsystem at the point of crash.
 It looks at each process in the system, and the resources each is
 using in an attempt to determine inconsistencies in the paging system
 state.  Normally, the output consists of a sequence of lines showing
 each active process, its state (whether swapped in or not), its
-.I p0br,
+.IR p0br ,
 and the number and location of its page table pages.
 Any pages which are locked while raw i/o is in progress, or which
 are locked because they are
@@ -62,7 +62,7 @@ map entries correspond to the page tables.
 The state of the free list is also checked.
 .PP
 Options to
-.I analyze:
+.IR analyze :
 .TP
 .B \-D
 causes the diskmap for each process to be printed.
@@ -91,26 +91,11 @@ It is possible to look at the core dump with
 .I adb
 if you do
 .IP
-adb /vmunix /vmcore
-.br
-.lg 0
-/m 80000000 #ffffffff
-.LP
-which fixes the map of
-.I vmcore
-so that symbols in data space will work.
-Note that the debugger is looking at the physical memory at the point
-of crash; you will have to determine which pages of physical memory
-virtual pages are in if you wish to look at them.
-If
-.I analyze
-says that a processes page tables are in page 218 (hex of course), then
-you can look at them by looking at address 0x80043000 in the dump, i.e.
-\*(lq80043000,80/X\*(rq will print the page of page tables.
+adb \-k /vmunix /vmcore
 .SH FILES
 /vmunix	default system namelist
 .SH SEE ALSO
-ps(1), crash(8), pstat(8)
+adb(1), ps(1), crash(8V), pstat(8)
 .SH AUTHORS
 Ozalp Babaoglu and William Joy
 .SH DIAGNOSTICS
