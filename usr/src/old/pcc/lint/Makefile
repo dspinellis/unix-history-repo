@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.25	(Berkeley)	%G%
+#	@(#)Makefile	1.26	(Berkeley)	%G%
 #
 M=../../libexec/mip
 P=../../libexec/pcc
@@ -65,28 +65,28 @@ lint.o: $M/manifest.h macdefs.h $M/pass1.h lmanifest.h
 	${CC} -c ${CFLAGS} -I$M -I. lint.c
 
 llib-port.ln: llib-port lpass1
-	-(/lib/cpp -C -Dlint llib-port | ./lpass1 -puv > llib-port.ln )
+	-(/usr/bin/cpp -C -Dlint llib-port | ./lpass1 -puv > llib-port.ln )
 
 llib-ldbm.ln: llib-ldbm lpass1
-	-(/lib/cpp -C -Dlint llib-ldbm | ./lpass1 -uv > llib-ldbm.ln )
+	-(/usr/bin/cpp -C -Dlint llib-ldbm | ./lpass1 -uv > llib-ldbm.ln )
 
 llib-lm.ln: llib-lm lpass1
-	-(/lib/cpp -C -Dlint llib-lm | ./lpass1 -uv > llib-lm.ln )
+	-(/usr/bin/cpp -C -Dlint llib-lm | ./lpass1 -uv > llib-lm.ln )
 
 llib-lmp.ln: llib-lmp lpass1
-	-(/lib/cpp -C -Dlint llib-lmp | ./lpass1 -uv > llib-lmp.ln )
+	-(/usr/bin/cpp -C -Dlint llib-lmp | ./lpass1 -uv > llib-lmp.ln )
 
 llib-lplot.ln: llib-lplot lpass1
-	-(/lib/cpp -C -Dlint llib-lplot | ./lpass1 -uv > llib-lplot.ln )
+	-(/usr/bin/cpp -C -Dlint llib-lplot | ./lpass1 -uv > llib-lplot.ln )
 
 llib-ltermcap.ln: llib-ltermcap lpass1
-	-(/lib/cpp -C -Dlint llib-ltermcap | ./lpass1 -uv > llib-ltermcap.ln )
+	-(/usr/bin/cpp -C -Dlint llib-ltermcap | ./lpass1 -uv > llib-ltermcap.ln )
 
 llib-lc.ln: llib-lc lpass1
-	-(/lib/cpp -C -Dlint llib-lc | ./lpass1 -v > llib-lc.ln )
+	-(/usr/bin/cpp -C -Dlint llib-lc | ./lpass1 -v > llib-lc.ln )
 
 llib-lcurses.ln: llib-lcurses lpass1
-	-(/lib/cpp -C -Dlint -D__void__=__curses__ llib-lcurses | ./lpass1 -v > llib-lcurses.ln )
+	-(/usr/bin/cpp -C -Dlint -D__void__=__curses__ llib-lcurses | ./lpass1 -v > llib-lcurses.ln )
 
 lpass2: lpass2.o hash.o
 	${CC} ${CFLAGS} lpass2.o hash.o -o lpass2
