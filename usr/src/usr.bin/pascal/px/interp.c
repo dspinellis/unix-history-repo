@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.26 %G%";
+static char sccsid[] = "@(#)interp.c 1.27 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -325,7 +325,7 @@ interpreter(base)
 		case O_PUSH:
 			tl = *pc.cp++;
 			if (tl == 0)
-				tl = *pc.usp++;
+				tl = *pc.lp++;
 			tl = (-tl + 1) & ~1;
 			tcp = pushsp(tl);
 			if (_runtst)
