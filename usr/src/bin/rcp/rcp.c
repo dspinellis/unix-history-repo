@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.7 83/07/03";
+static char sccsid[] = "@(#)rcp.c	4.8 83/08/12";
 #endif
 
 /*
@@ -102,11 +102,11 @@ main(argc, argv)
 					*suser++ = 0;
 					if (!okname(suser))
 						continue;
-		(void) sprintf(buf, "rsh %s -L %s %s %s '%s:%s' </dev/null",
+		(void) sprintf(buf, "rsh %s -L %s -n %s %s '%s:%s'",
 					    argv[i], suser, cmd,
 					    src, argv[argc - 1], targ);
 				} else
-		(void) sprintf(buf, "rsh %s %s %s '%s:%s' </dev/null",
+		(void) sprintf(buf, "rsh %s -n %s %s '%s:%s'",
 					    argv[i], cmd,
 					    src, argv[argc - 1], targ);
 				(void) susystem(buf);
@@ -381,7 +381,7 @@ sink(argc, argv)
 {
 	char *targ;
 	char cmdbuf[BUFSIZ], nambuf[BUFSIZ], buf[BUFSIZ], *cp;
-	int of, mode, wrerr, exists;
+	int of, mode, wrerr, exists, first;
 	off_t i, size;
 	char *whopp;
 	struct stat stb; int targisdir = 0;
@@ -400,7 +400,7 @@ sink(argc, argv)
 	ga();
 	if (stat(targ, &stb) == 0 && (stb.st_mode & S_IFMT) == S_IFDIR)
 		targisdir = 1;
-	for (;;) {
+	for (first = 1; ; first = 0) {
 		cp = cmdbuf;
 		if (read(rem, cp, 1) <= 0)
 			return;
@@ -425,8 +425,20 @@ sink(argc, argv)
 			ga();
 			return;
 		}
-		if (*cp != 'C' && *cp != 'D')
+		if (*cp != 'C' && *cp != 'D') {
+			/*
+			 * Check for the case "rcp remote:foo\* local:bar".
+			 * In this case, the line "No match." can be returned
+			 * by the shell before the rcp command on the remote is
+			 * executed so the ^Aerror_message convention isn't
+			 * followed.
+			 */
+			if (first) {
+				error("%s\n", cp);
+				exit(1);
+			}
 			SCREWUP("expected control record");
+		}
 		cp++;
 		mode = 0;
 		for (; cp < cmdbuf+5; cp++) {
