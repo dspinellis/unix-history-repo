@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_malloc.c	7.2 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -161,7 +161,7 @@ kmeminit()
 		panic("kmeminit: MAXALLOCSAVE too big");
 	if (MAXALLOCSAVE < CLBYTES)
 		panic("kmeminit: MAXALLOCSAVE too small");
-	rminit(kmemmap, ekmempt - kmempt, (long)1,
+	rminit(kmemmap, ekmempt - kmempt, (long)CLSIZE,
 		"malloc map", ekmempt - kmempt);
 #ifdef KMEMSTATS
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
