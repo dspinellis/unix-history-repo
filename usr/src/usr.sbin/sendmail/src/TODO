@@ -1,14 +1,10 @@
-(Version 6.9 of %G%)
+(Version 6.10 of %G%)
 
 *****	Database (keyed lookup) locking and rebuild.
-
-*****	Extend UDB support for mailing lists: owner- equivalent and the like.
 
 ****	8 -> 7 bit MIME conversion.
 
 ***	NIS support for aliases.
-
-***	Clean up alias.c.
 
 ***	cf/cf/Makefile.dist
 
