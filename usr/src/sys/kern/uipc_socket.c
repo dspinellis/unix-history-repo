@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.40	82/05/20	*/
+/*	uipc_socket.c	4.41	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -82,7 +82,10 @@ COUNT(SOCREATE);
 	so->so_proto = prp;
 	error = (*prp->pr_usrreq)(so, PRU_ATTACH, 0, asa);
 	if (error) {
-		(void) m_free(dtom(so));
+		if (so->so_snd.sb_mbmax || so->so_rcv.sb_mbmax)
+			panic("socreate");
+		so->so_state |= SS_USERGONE;
+		sofree(so);
 		return (error);
 	}
 	*aso = so;
