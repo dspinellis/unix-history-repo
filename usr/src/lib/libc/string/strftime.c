@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strftime.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)strftime.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -84,11 +84,16 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'b':
+			case 'h':
 				if (!_add(bfmt[t->tm_mon]))
 					return(0);
 				continue;
 			case 'c':
 				if (!_fmt("%x %X %Z %Y", t))
+					return(0);
+				continue;
+			case 'D':
+				if (!_fmt("%m/%d/%y", t))
 					return(0);
 				continue;
 			case 'd':
@@ -115,12 +120,33 @@ _fmt(format, t)
 				if (!_conv(t->tm_mon + 1, 2))
 					return(0);
 				continue;
+			case 'n':
+				if (!_add("\n"))
+					return(0);
+				continue;
 			case 'p':
 				if (!_add(t->tm_hour >= 12 ? "AM" : "PM"))
 					return(0);
 				continue;
+			case 'R':
+				if (!_fmt("%H:%M", t))
+					return(0);
+				continue;
+			case 'r':
+				if (!_fmt("%I:%M:%S %p", t))
+					return(0);
+				continue;
 			case 'S':
 				if (!_conv(t->tm_sec, 2))
+					return(0);
+				continue;
+			case 'T':
+			case 'X':
+				if (!_fmt("%H:%M:%S", t))
+					return(0);
+				continue;
+			case 't':
+				if (!_add("\t"))
 					return(0);
 				continue;
 			case 'U':
@@ -135,10 +161,6 @@ _fmt(format, t)
 				continue;
 			case 'w':
 				if (!_conv(t->tm_wday, 1))
-					return(0);
-				continue;
-			case 'X':
-				if (!_fmt("%H:%M:%S", t))
 					return(0);
 				continue;
 			case 'x':
