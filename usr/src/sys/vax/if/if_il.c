@@ -1,4 +1,4 @@
-/*	if_il.c	6.6	85/05/01	*/
+/*	if_il.c	6.7	85/05/04	*/
 
 #include "il.h"
 
@@ -26,7 +26,9 @@
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
+#ifdef PUP
 #include "../netpup/pup.h"
+#endif
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"

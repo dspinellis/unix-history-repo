@@ -1,4 +1,4 @@
-/*	if_de.c	6.8	85/05/01	*/
+/*	if_de.c	6.9	85/05/04	*/
 #include "de.h"
 #if NDE > 0
 
@@ -32,7 +32,9 @@
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
+#ifdef PUP
 #include "../netpup/pup.h"
+#endif
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
