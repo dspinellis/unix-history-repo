@@ -1,137 +1,199 @@
-static char *sccsid = "@(#)tr.c	4.2 (Berkeley) %G%";
+/*
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1988 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)tr.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <sys/types.h>
 #include <stdio.h>
+#include <ctype.h>
 
-/* tr - transliterate data stream */
-int	dflag	= 0;
-int	sflag	= 0;
-int	cflag = 0;
-int	save	= 0;
-char	code[256];
-char	squeez[256];
-char	vect[256];
-struct string { int last, max; char *p; } string1, string2;
+#define	NCHARS	256				/* size of u_char */
+#define	OOBCH	257				/* out of band value */
 
-main(argc,argv)
-char **argv;
+typedef struct {
+	char *str;
+	int lastch, endrange;
+	enum { NORM, INRANGE, EOS } state;
+} STR;
+
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	register i;
-	int j;
-	register c, d;
-	char *compl;
-	int lastd;
+	extern int optind;
+	STR s1, s2;
+	register int ch, indx, lastch;
+	int cflag, dflag, sflag;
+	u_char *tp, tab[NCHARS], squeeze[NCHARS];
 
-	string1.last = string2.last = 0;
-	string1.max = string2.max = 0;
-	string1.p = string2.p = "";
-
-	if(--argc>0) {
-		argv++;
-		if(*argv[0]=='-'&&argv[0][1]!=0) {
-			while(*++argv[0])
-				switch(*argv[0]) {
-				case 'c':
-					cflag++;
-					continue;
-				case 'd':
-					dflag++;
-					continue;
-				case 's':
-					sflag++;
-					continue;
-				}
-			argc--;
-			argv++;
+	cflag = dflag = sflag = 0;
+	while ((ch = getopt(argc, argv, "cds")) != EOF)
+		switch((char)ch) {
+		case 'c':
+			cflag = 1;
+			break;
+		case 'd':
+			dflag = 1;
+			break;
+		case 's':
+			sflag = 1;
+			break;
+		case '?':
+		default:
+			fprintf(stderr,
+			    "usage: tr [-cds] [string1 [string2]]\n");
+			exit(1);
 		}
-	}
-	if(argc>0) string1.p = argv[0];
-	if(argc>1) string2.p = argv[1];
-	for(i=0; i<256; i++)
-		code[i] = vect[i] = 0;
-	if(cflag) {
-		while(c = next(&string1))
-			vect[c&0377] = 1;
-		j = 0;
-		for(i=1; i<256; i++)
-			if(vect[i]==0) vect[j++] = i;
-		vect[j] = 0;
-		compl = vect;
-	}
-	for(i=0; i<256; i++)
-		squeez[i] = 0;
-	lastd = 0;
-	for(;;){
-		if(cflag) c = *compl++;
-		else c = next(&string1);
-		if(c==0) break;
-		d = next(&string2);
-		if(d==0) d = lastd;
-		else lastd = d;
-		squeez[d&0377] = 1;
-		code[c&0377] = dflag?1:d;
-	}
-	while(d = next(&string2))
-		squeez[d&0377] = 1;
-	squeez[0] = 1;
-	for(i=0;i<256;i++) {
-		if(code[i]==0) code[i] = i;
-		else if(dflag) code[i] = 0;
+	argc -= optind;
+	argv += optind;
+
+	/*
+	 * the original tr was amazingly tolerant of the command line.
+	 * Neither -c or -s have any effect unless there are two strings.
+	 * Extra arguments are silently ignored.  Bag this noise, they
+	 * should all be errors.
+	 */
+	if (argc < 2 && !dflag) {
+		while ((ch = getchar()) != EOF)
+			putchar(ch);
+		exit(0);
 	}
 
-	clearerr(stdout);
-	while((c=getc(stdin)) != EOF ) {
-		if(c == 0) continue;
-		if(c = code[c&0377]&0377)
-			if(!sflag || c!=save || !squeez[c&0377]) {
-				putchar(save = c);
-				if(ferror(stdout))
-					exit(1);
+	bzero(tab, NCHARS);
+	if (sflag) {
+		s1.str = argv[1];
+		s1.state = NORM;
+		s1.lastch = OOBCH;
+		while (next(&s1))
+			squeeze[s1.lastch] = 1;
+	}
+	if (dflag) {
+		s1.str = argv[0];
+		s1.state = NORM;
+		s1.lastch = OOBCH;
+		while (next(&s1))
+			tab[s1.lastch] = 1;
+		if (cflag)
+			for (tp = tab, indx = 0; indx < NCHARS; ++tp, ++indx)
+				*tp = !*tp;
+		if (sflag)
+			for (lastch = OOBCH; (ch = getchar()) != EOF;) {
+				if (tab[ch] || (squeeze[ch] && lastch == ch))
+					continue;
+				lastch = ch;
+				putchar(ch);
 			}
+		else
+			while ((ch = getchar()) != EOF)
+				if (!tab[ch])
+					putchar(ch);
+	} else {
+		s1.str = argv[0];
+		s2.str = argv[1];
+		s1.state = s2.state = NORM;
+		s1.lastch = s2.lastch = OOBCH;
+		if (cflag) {
+			/*
+			 * if cflag is set, tr just pretends it only got one
+			 * character in string2.  As reasonable as anything
+			 * else.  Should really be an error.
+			 */
+			while (next(&s2));
+			lastch = s2.lastch;
+			for (tp = tab, indx = 0; indx < NCHARS; ++tp, ++indx)
+				*tp = lastch;
+			while (next(&s1))
+				tab[s1.lastch] = s1.lastch;
+		} else {
+			for (tp = tab, indx = 0; indx < NCHARS; ++tp, ++indx)
+				*tp = indx;
+			while (next(&s1)) {
+				(void)next(&s2);
+				tab[s1.lastch] = s2.lastch;
+			}
+		}
+		if (sflag)
+			for (lastch = OOBCH; (ch = getchar()) != EOF;) {
+				ch = tab[ch];
+				if (squeeze[ch] && lastch == ch)
+					continue;
+				lastch = ch;
+				putchar(ch);
+			}
+		else
+			while ((ch = getchar()) != EOF)
+				putchar((int)tab[ch]);
 	}
 	exit(0);
 }
 
 next(s)
-struct string *s;
+	STR *s;
 {
+	register int ch;
+	int cnt, val;
 
-again:
-	if(s->max) {
-		if(s->last++ < s->max)
-			return(s->last);
-		s->max = s->last = 0;
+	if (s->state == EOS)
+		return(0);
+	if (s->state == INRANGE) {
+		if (++s->lastch == s->endrange)
+			s->state = NORM;
+		return(1);
 	}
-	if(s->last && *s->p=='-') {
-		nextc(s);
-		s->max = nextc(s);
-		if(s->max==0) {
-			s->p--;
-			return('-');
-		}
-		if(s->max < s->last)  {
-			s->last = s->max-1;
-			return('-');
-		}
-		goto again;
+	if (!(ch = *s->str++)) {
+		s->state = EOS;
+		return(0);
 	}
-	return(s->last = nextc(s));
-}
-
-nextc(s)
-struct string *s;
-{
-	register c, i, n;
-
-	c = *s->p++;
-	if(c=='\\') {
-		i = n = 0;
-		while(i<3 && (c = *s->p)>='0' && c<='7') {
-			n = n*8 + c - '0';
-			i++;
-			s->p++;
-		}
-		if(i>0) c = n;
-		else c = *s->p++;
+	if (ch == '\\') {			/* escape; \nnn is octal # */
+		for (val = cnt = 0; isascii(ch = *s->str) && isdigit(ch)
+		    && cnt++ < 3; ++s->str)
+			val = val * 8 + ch - '0';
+		s->lastch = cnt ? val : ch;
+		return(1);
 	}
-	if(c==0) *--s->p = 0;
-	return(c&0377);
+	if (ch == '-') {			/* ranges */
+		if (s->lastch == OOBCH) {	/* "-a" */
+			s->lastch = '-';
+			return(1);
+		}
+		s->endrange = ch = *s->str;
+		if (!ch) {			/* "a-" */
+			s->lastch = '-';
+			return(1);
+		}
+		if (s->lastch > ch) { 		/* "z-a" */
+			s->lastch = '-';
+			return(1);
+		}
+		++s->str;
+		if (s->lastch == ch)		/* "a-a" */
+			return(next(s));
+		s->state = INRANGE;		/* "a-z" */
+		++s->lastch;
+		return(1);
+	}
+	s->lastch = ch;
+	return(1);
 }
