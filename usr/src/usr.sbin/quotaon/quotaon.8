@@ -13,76 +13,54 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)quotaon.8	6.3 (Berkeley) %G%
+.\"	@(#)quotaon.8	6.4 (Berkeley) %G%
 .\"
 .TH QUOTAON 8 ""
 .UC 5
 .SH NAME
 quotaon, quotaoff \- turn file system quotas on and off
 .SH SYNOPSIS
-.B /etc/quotaon
-[
-.B \-v
-]
-.I filsys...
-.PP
-.B /etc/quotaon
-[
-.B \-v
-]
-.B \-a
-.PP
-.B /etc/quotaoff
-[
-.B \-v
-]
-.I filsys...
-.PP
-.B /etc/quotaoff
-[
-.B \-v
-]
-.B \-a
+.nf
+.ft B
+quotaon [-v] filesys ...
+quotaon [-av]
+quotaoff [-v] filesys ...
+quotaoff [-av]
+.fi
+.ft R
 .SH DESCRIPTION
 .I Quotaon
-announces to the system that disc quotas should be enabled
-on one or more file systems.
-The file systems specified must have entries
-in /etc/fstab and be mounted at the time.
-The file system quota files must be present in the root
-directory of the specified file system and be named
-.IR quotas .
-The optional argument
-.B \-v
-causes
-.I quotaon
-to print a message for each file system where quotas are turned on.
-If, instead of a list of file systems, a
-.B \-a
-argument is give to 
-.IR quotaon ,
-all file systems in /etc/fstab marked read-write with quotas
-will have their quotas turned on.  This is normally used at
-boot time to enable quotas.
+announces to the system that disk quotas should be enabled on one or more
+file systems.
+The file systems specified must have entries in the
+.I fstab
+file and be mounted.
+The file system quota files (named ``quotas'') must be present in
+the root directory of the specified file system.
 .PP
 .I Quotaoff
-announces to the system that file systems specified should
-have any disc quotas turned off.  As above, the
-.B \-v
-forces a verbose message for each file system affected; and
-the 
-.B \-a
-option forces all file systems in /etc/fstab to have their
-quotas disabled.
+announces to the system that the specified file systems should have
+any disk quotas turned off.
 .PP
-These commands
-update the status field of devices located in
-.I /etc/mtab
-to indicate when quotas are on or off for each file system.
+The options are as follows:
+.TP
+-v
+Verbose; this flag causes
+.I quotaon
+and
+.I quotaoff
+to print a message for each file system where quotas are turned on or off.
+.TP
+-a
+Turn on (off) quotas on the standard set of file systems.
+This flag should be specified instead of a list of file systems.
+It causes all file systems in the
+.I fstab
+file marked read-write with quotas to have their quotas turned on (off).
+This is normally used at boot time by the
+.I /etc/rc
+file.
 .SH FILES
-/etc/mtab	mount table
-.br
 /etc/fstab	file system table
 .SH "SEE ALSO"
-setquota(2),
-mtab(5), fstab(5)
+setquota(2), fstab(5)
