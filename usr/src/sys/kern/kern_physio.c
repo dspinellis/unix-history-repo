@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.13 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -106,6 +106,9 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 #ifdef TRACE
 		trace(TR_SWAPIO, vp, bp->b_blkno);
 #endif
+#if defined(hp300)
+		vmapbuf(bp);
+#endif
 		VOP_STRATEGY(bp);
 		/* pageout daemon doesn't wait for pushed pages */
 		if (flag & B_DIRTY) {
@@ -113,6 +116,9 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 				panic("big push");
 			return (0);
 		}
+#if defined(hp300)
+		vunmapbuf(bp);
+#endif
 		bp->b_un.b_addr += c;
 		bp->b_flags &= ~B_DONE;
 		if (bp->b_flags & B_ERROR) {
@@ -151,6 +157,9 @@ swdone(bp)
 	bclnlist = bp;
 	if (bswlist.b_flags & B_WANTED)
 		wakeup((caddr_t)&proc[2]);
+#if defined(hp300)
+	vunmapbuf(bp);
+#endif
 	splx(s);
 }
 
@@ -279,6 +288,9 @@ physio(strat, bp, dev, rw, mincnt, uio)
 		uio->uio_iov++;
 		uio->uio_iovcnt--;
 	}
+#if defined(hp300)
+	DCIU();
+#endif
 	if (allocbuf)
 		freeswbuf(bp);
 	return (error);
