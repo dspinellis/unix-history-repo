@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)munmap.2	8.1 (Berkeley) %G%
+.\"	@(#)munmap.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MUNMAP 2
@@ -20,10 +20,31 @@ system call
 deletes the mappings for the specified address range,
 and causes further references to addresses within the range
 to generate invalid memory references.
-.Sh SEE ALSO
+.Sh RETURN VALUES
+Upon successful completion,
+.Nm munmap
+returns zero.
+Otherwise, a value of -1 is returned and
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+.Fn Munmap
+will fail if:
+.Bl -tag -width Er
+.It Bq Er EINVAL
+The
+.Fa addr
+parameter was not page aligned, the
+.Fa len
+parameter was negative, or
+some part of the region being unmapped is not part of the currently
+valid address space.
+.Sh "SEE ALSO"
+.Xr getpagesize 2 ,
 .Xr msync 2 ,
-.Xr madvise 2 ,
+.Xr munmap 2 ,
 .Xr mprotect 2 ,
+.Xr madvise 2 ,
 .Xr mincore 2
 .Sh HISTORY
 The
