@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -467,13 +467,21 @@ setsender(from, e, delimptr, internal)
 # ifdef LOG
 		if (from != NULL && LogLevel > 2)
 		{
-			char *host = RealHostName;
+			char *p;
+			char ebuf[MAXNAME * 2 + 2];
 
-			if (host == NULL)
-				host = MyHostName;
+			p = macvalue('_', e);
+			if (p == NULL)
+			{
+				char *host = RealHostName;
+				if (host == NULL)
+					host = MyHostName;
+				(void) sprintf(ebuf, "%s@%s", realname, host);
+				p = ebuf;
+			}
 			syslog(LOG_NOTICE,
-				"from=%s unparseable, received from %s@%s",
-				from, realname, host);
+				"from=%s unparseable, received from %s",
+				from, p);
 		}
 # endif /* LOG */
 		if (from != NULL)

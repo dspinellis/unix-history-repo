@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.31 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.32 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.31 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.32 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -459,39 +459,182 @@ myhostname(hostbuf, size)
 		return (NULL);
 }
 /*
-**  GETREALHOSTNAME -- get the real host name asociated with a file descriptor
+**  GETAUTHINFO -- get the real host name asociated with a file descriptor
+**
+**	Uses RFC1413 protocol to try to get info from the other end.
 **
 **	Parameters:
 **		fd -- the descriptor
 **
 **	Returns:
-**		The host name associated with this descriptor, if it can
-**			be determined.
-**		NULL otherwise.
+**		The user@host information associated with this descriptor.
 **
 **	Side Effects:
-**		none
+**		Sets RealHostName to the name of the host at the other end.
 */
 
+#define IDENTPROTO	1
+
+#ifdef IDENTPROTO
+
+static jmp_buf	CtxAuthTimeout;
+
+static
+authtimeout()
+{
+	longjmp(CtxAuthTimeout, 1);
+}
+
+#endif
+
 char *
-getrealhostname(fd)
+getauthinfo(fd)
 	int fd;
 {
-	register struct hostent *hp;
-	SOCKADDR sa;
-	int salen;
-	char hbuf[MAXNAME];
-	extern struct hostent *gethostbyaddr();
+	SOCKADDR fa;
+	int falen;
+#ifdef IDENTPROTO
+	SOCKADDR la;
+	int lalen;
+	register struct servent *sp;
+	int s;
+	int i;
+	register char *p;
+	EVENT *ev;
+#endif
+	static char hbuf[MAXNAME * 2 + 2];
+	extern char *hostnamebyanyaddr();
+	extern char RealUserName[];			/* main.c */
 
-	salen = sizeof sa;
-	if (getsockname(fd, &sa.sa, &salen) < 0 || salen <= 0)
-		return NULL;
-	hp = gethostbyaddr(sa.sa.sa_data, salen, sa.sa.sa_family);
-	if (hp != NULL)
-		(void) strcpy(hbuf, hp->h_name);
+	falen = sizeof fa;
+	if (getpeername(fd, &fa.sa, &falen) < 0 || falen <= 0)
+	{
+		RealHostName = "localhost";
+		(void) sprintf(hbuf, "%s@localhost", RealUserName);
+		if (tTd(29, 1))
+			printf("getauthinfo: %s\n", hbuf);
+		return hbuf;
+	}
+
+	RealHostName = newstr(hostnamebyanyaddr(&fa));
+	RealHostAddr = fa;
+
+#ifdef IDENTPROTO
+	lalen = sizeof la;
+	if (fa.sa.sa_family != AF_INET ||
+	    getsockname(fd, &la.sa, &lalen) < 0 || lalen <= 0 ||
+	    la.sa.sa_family != AF_INET)
+	{
+		/* no ident info */
+		goto noident;
+	}
+
+	/* create ident query */
+	(void) sprintf(hbuf, "%d,%d\r\n", fa.sin.sin_port, la.sin.sin_port);
+
+	/* create local address */
+	bzero(&la, sizeof la);
+
+	/* create foreign address */
+	sp = getservbyname("auth", "tcp");
+	if (sp != NULL)
+		fa.sin.sin_port = sp->s_port;
 	else
-		(void) sprintf(hbuf, "[%s]", anynet_ntoa(&sa));
+		fa.sin.sin_port = 113;
+
+	s = -1;
+	if (setjmp(CtxAuthTimeout) != 0)
+	{
+		if (s >= 0)
+			(void) close(s);
+		goto noident;
+	}
+
+	/* put a timeout around the whole thing */
+	ev = setevent((time_t) 30, authtimeout, 0);
+
+	/* connect to foreign IDENT server */
+	s = socket(AF_INET, SOCK_STREAM, 0);
+	if (s < 0)
+	{
+		clrevent(ev);
+		goto noident;
+	}
+	if (connect(s, &fa.sa, sizeof fa.sin) < 0)
+	{
+closeident:
+		(void) close(s);
+		clrevent(ev);
+		goto noident;
+	}
+
+	if (tTd(29, 1))
+		printf("getauthinfo: sent %s", hbuf);
+
+	/* send query */
+	if (write(s, hbuf, strlen(hbuf)) < 0)
+		goto closeident;
+
+	/* get result */
+	i = read(s, hbuf, sizeof hbuf);
+	(void) close(s);
+	clrevent(ev);
+	if (i <= 0)
+		goto noident;
+	if (hbuf[--i] == '\n' && hbuf[--i] == '\r')
+		i--;
+	hbuf[++i] = '\0';
+
+	if (tTd(29, 1))
+		printf("getauthinfo:  got %s\n", hbuf);
+
+	/* parse result */
+	p = strchr(hbuf, ':');
+	if (p == NULL)
+	{
+		/* malformed response */
+		goto noident;
+	}
+	while (isascii(*++p) && isspace(*p))
+		continue;
+	if (strncasecmp(p, "userid", 6) != 0)
+	{
+		/* presumably an error string */
+		goto noident;
+	}
+	p += 6;
+	while (isascii(*p) && isspace(*p))
+		p++;
+	if (*p++ != ':')
+	{
+		/* either useridxx or malformed response */
+		goto noident;
+	}
+
+	/* p now points to the OSTYPE field */
+	p = strchr(p, ':');
+	if (p == NULL)
+	{
+		/* malformed response */
+		goto noident;
+	}
+	p++;
+
+	/* p now points to the authenticated name */
+	(void) sprintf(hbuf, "%s@%s", p, RealHostName);
+	if (RealHostName[0] != '[')
+	{
+		p = &hbuf[strlen(hbuf)];
+		(void) sprintf(p, " [%s]", anynet_ntoa(&RealHostAddr));
+	}
+	if (tTd(29, 1))
+		printf("getauthinfo: %s\n", hbuf);
 	return hbuf;
+
+#endif /* IDENTPROTO */
+
+noident:
+	return NULL;
 }
 /*
 **  MAPHOSTNAME -- turn a hostname into canonical form
@@ -628,6 +771,61 @@ anynet_ntoa(sap)
 	*--bp = '\0';
 	return buf;
 }
+/*
+**  HOSTNAMEBYANYADDR -- return name of host based on address
+**
+**	Parameters:
+**		sap -- SOCKADDR pointer
+**
+**	Returns:
+**		text representation of host name.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+hostnamebyanyaddr(sap)
+	register SOCKADDR *sap;
+{
+	register struct hostent *hp;
+
+	switch (sap->sa.sa_family)
+	{
+#ifdef NETINET
+	  case AF_INET:
+		hp = gethostbyaddr((char *) &sap->sin.sin_addr,
+			sizeof sap->sin.sin_addr,
+			AF_INET);
+		break;
+#endif
+
+#ifdef NETISO
+	  case AF_ISO:
+		hp = gethostbyaddr((char *) &sap->siso.siso_addr,
+			sizeof sap->siso.siso_addr,
+			AF_ISO);
+		break;
+#endif
+
+	  default:
+		hp = gethostbyaddr(sap->sa.sa_data,
+			   sizeof sap->sa.sa_data,
+			   sap->sa.sa_family);
+		break;
+	}
+
+	if (hp != NULL)
+		return hp->h_name;
+	else
+	{
+		/* produce a dotted quad */
+		static char buf[512];
+
+		(void) sprintf(buf, "[%s]", anynet_ntoa(sap));
+		return buf;
+	}
+}
 
 # else /* DAEMON */
 /* code for systems without sophisticated networking */
@@ -658,7 +856,7 @@ myhostname(hostbuf, size)
 	return (NULL);
 }
 /*
-**  GETREALHOSTNAME -- get the real host name asociated with a file descriptor
+**  GETAUTHINFO -- get the real host name asociated with a file descriptor
 **
 **	Parameters:
 **		fd -- the descriptor
@@ -673,7 +871,7 @@ myhostname(hostbuf, size)
 */
 
 char *
-getrealhostname(fd)
+getauthinfo(fd)
 	int fd;
 {
 	return NULL;

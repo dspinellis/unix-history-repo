@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -73,6 +73,7 @@ ADDRESS		NullAddress =	/* a null address */
 		{ "", "", NULL, "" };
 char		*UserEnviron[MAXUSERENVIRON + 1];
 				/* saved user environment */
+char		RealUserName[256];	/* the actual user id on this host */
 
 /*
 **  Pointers for setproctitle.
@@ -120,7 +121,6 @@ main(argc, argv, envp)
 	char *argv0 = argv[0];
 	struct passwd *pw;
 	struct stat stb;
-	char realuser[256];
 	char jbuf[MAXHOSTNAMELEN];	/* holds MyHostName */
 	extern int DtableSize;
 	extern int optind;
@@ -130,7 +130,7 @@ main(argc, argv, envp)
 	extern void intsig();
 	extern char **myhostname();
 	extern char *arpadate();
-	extern char *getrealhostname();
+	extern char *getauthinfo();
 	extern char *optarg;
 	extern char **environ;
 
@@ -207,9 +207,9 @@ main(argc, argv, envp)
 
 	pw = getpwuid(RealUid);
 	if (pw != NULL)
-		(void) strcpy(realuser, pw->pw_name);
+		(void) strcpy(RealUserName, pw->pw_name);
 	else
-		(void) sprintf(realuser, "Unknown UID %d", RealUid);
+		(void) sprintf(RealUserName, "Unknown UID %d", RealUid);
 
 	/* Handle any non-getoptable constructions. */
 	obsolete(argv);
@@ -360,11 +360,8 @@ main(argc, argv, envp)
 	**  Find our real host name for future logging.
 	*/
 
-	p = getrealhostname(STDIN_FILENO);
-	if (p != NULL)
-		RealHostName = newstr(p);
-	else
-		RealHostName = "localhost";
+	p = getauthinfo(STDIN_FILENO);
+	define('_', p, CurEnv);
 
 	/*
 	** Crack argv.
@@ -436,7 +433,7 @@ main(argc, argv, envp)
 			if (getuid() != 0)
 				auth_warning(CurEnv,
 					"Processed by %s with -C %s",
-					realuser, optarg);
+					RealUserName, optarg);
 			break;
 
 		  case 'd':	/* debugging -- redo in case frozen */
@@ -454,10 +451,10 @@ main(argc, argv, envp)
 				break;
 			}
 			from = newstr(optarg);
-			if (strcmp(realuser, from) != 0)
+			if (strcmp(RealUserName, from) != 0)
 				auth_warning(CurEnv,
 					"%s set sender to %s using -%c",
-					realuser, from, j);
+					RealUserName, from, j);
 			break;
 
 		  case 'F':	/* set full name */
@@ -636,7 +633,7 @@ main(argc, argv, envp)
 		if (RealUid != 0)
 			auth_warning(CurEnv,
 				"%s owned process doing -bs",
-				realuser);
+				RealUserName);
 		break;
 	}
 
@@ -899,6 +896,14 @@ main(argc, argv, envp)
 		/* at this point we are in a child: reset state */
 		OpMode = MD_SMTP;
 		(void) newenvelope(CurEnv, CurEnv);
+
+		/*
+		**  Get authentication data
+		*/
+
+		p = getauthinfo(fileno(InChannel));
+		define('_', p, CurEnv);
+
 #endif /* DAEMON */
 	}
 	
