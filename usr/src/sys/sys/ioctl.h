@@ -1,4 +1,4 @@
-/*	ioctl.h	4.27	83/03/15	*/
+/*	ioctl.h	4.28	83/03/19	*/
 /*
  * Ioctl definitions
  */
@@ -192,6 +192,10 @@ struct ltchars {
 #define	FIOASYNC	_IOW(f, 125, int)	/* set/clear async i/o */
 
 /* socket i/o controls */
+#define	SIOCSHIWAT	_IOW(s, 0, int)		/* set high water mark */
+#define	SIOCGHIWAT	_IOR(s, 1, int)		/* get high water mark */
+#define	SIOCSLOWAT	_IOW(s, 2, int)		/* set low water mark */
+#define	SIOCGLOWAT	_IOR(s, 3, int)		/* get low water mark */
 #define	SIOCATMARK	_IOR(s, 7, int)		/* at out of band mark? */
 #define	SIOCSPGRP	_IOW(s, 8, int)		/* set process group */
 #define	SIOCGPGRP	_IOR(s, 9, int)		/* get process group */
