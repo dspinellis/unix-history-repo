@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.16 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -99,10 +99,9 @@ getgid(p, uap, retval)
 }
 
 /*
- * Get effective group ID.
- * The "egid" is groups[0], and thus could be obtained via getgroups;
- * this is somewhat painful to do correctly in a library function,
- * this the existence of this syscall.
+ * Get effective group ID.  The "egid" is groups[0], and could be obtained
+ * via getgroups.  This syscall exists because it is somewhat painful to do
+ * correctly in a library function.
  */
 /* ARGSUSED */
 getegid(p, uap, retval)
@@ -110,7 +109,6 @@ getegid(p, uap, retval)
 	void *uap;
 	int *retval;
 {
-
 	*retval = u.u_cred->cr_groups[0];
 	return (0);
 }
@@ -199,14 +197,11 @@ setpgrp(cp, uap, retval)
 		return (EPERM);
 	if (uap->pgid == 0)
 		uap->pgid = p->p_pid;
-	else if ((uap->pgid != p->p_pid) &&
-		(((pgrp = pgfind(uap->pgid)) == 0) || 
-		   pgrp->pg_mem == NULL ||
-	           pgrp->pg_session != u.u_procp->p_session))
-		return (EPERM);
-	/*
-	 * done checking, now do it
-	 */
+	else if (uap->pgid != p->p_pid)
+		if ((pgrp = pgfind(uap->pgid)) == 0 ||
+		    pgrp->pg_mem == NULL ||
+	            pgrp->pg_session != cp->p_session)
+			return (EPERM);
 	pgmv(p, uap->pgid, 0);
 	return (0);
 }
@@ -226,12 +221,10 @@ setuid(p, uap, retval)
 	if (uid != p->p_ruid && (error = suser(u.u_cred, &u.u_acflag)))
 		return (error);
 	/*
-	 * Everything's okay, do it.
-	 * Copy credentials so other references do not
-	 * see our changes.
+	 * Everything's okay, do it.  Copy credentials so other references do
+	 * not see our changes.
 	 */
-	if (u.u_cred->cr_ref > 1)
-		u.u_cred = crcopy(u.u_cred);
+	u.u_cred = crcopy(u.u_cred);
 	u.u_cred->cr_uid = uid;
 	p->p_uid = uid;
 	p->p_ruid = uid;
@@ -255,12 +248,10 @@ seteuid(p, uap, retval)
 	    (error = suser(u.u_cred, &u.u_acflag)))
 		return (error);
 	/*
-	 * Everything's okay, do it.
-	 * Copy credentials so other references do not
-	 * see our changes.
+	 * Everything's okay, do it.  Copy credentials so other references do
+	 * not see our changes.
 	 */
-	if (u.u_cred->cr_ref > 1)
-		u.u_cred = crcopy(u.u_cred);
+	u.u_cred = crcopy(u.u_cred);
 	u.u_cred->cr_uid = euid;
 	p->p_uid = euid;
 	return (0);
@@ -280,8 +271,7 @@ setgid(p, uap, retval)
 	gid = uap->gid;
 	if (gid != p->p_rgid && (error = suser(u.u_cred, &u.u_acflag)))
 		return (error);
-	if (u.u_cred->cr_ref > 1)
-		u.u_cred = crcopy(u.u_cred);
+	u.u_cred = crcopy(u.u_cred);
 	p->p_rgid = gid;
 	u.u_cred->cr_groups[0] = gid;
 	p->p_svgid = gid;		/* ??? */
@@ -303,8 +293,7 @@ setegid(p, uap, retval)
 	if (egid != p->p_rgid && egid != p->p_svgid &&
 	    (error = suser(u.u_cred, &u.u_acflag)))
 		return (error);
-	if (u.u_cred->cr_ref > 1)
-		u.u_cred = crcopy(u.u_cred);
+	u.u_cred = crcopy(u.u_cred);
 	u.u_cred->cr_groups[0] = egid;
 	return (0);
 }
@@ -329,12 +318,10 @@ osetreuid(p, uap, retval)
 	    euid != p->p_svuid && (error = suser(u.u_cred, &u.u_acflag)))
 		return (error);
 	/*
-	 * Everything's okay, do it.
-	 * Copy credentials so other references do not
-	 * see our changes.
+	 * Everything's okay, do it.  Copy credentials so other references do
+	 * not see our changes.
 	 */
-	if (u.u_cred->cr_ref > 1)
-		u.u_cred = crcopy(u.u_cred);
+	u.u_cred = crcopy(u.u_cred);
 	u.u_cred->cr_uid = euid;
 	p->p_uid = euid;
 	p->p_ruid = ruid;
@@ -359,8 +346,7 @@ osetregid(p, uap, retval)
 	if (uap->egid == -1)
 	    egid != p->p_svgid && (error = suser(u.u_cred, &u.u_acflag)))
 		return (error);
-	if (u.u_cred->cr_ref > 1)
-		u.u_cred = crcopy(u.u_cred);
+	u.u_cred = crcopy(u.u_cred);
 	p->p_rgid = rgid;
 	u.u_cred->cr_groups[0] = egid;
 	return (0);
@@ -388,6 +374,7 @@ setgroups(p, uap, retval)
 	if (error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
 	    ngrp * sizeof (groups[0])))
 		return (error);
+	u.u_cred = crcopy(u.u_cred);
 	u.u_cred->cr_ngroups = ngrp;
 	/* convert from int's to gid_t's */
 	for (gp = u.u_cred->cr_groups, lp = groups; ngrp--; )
@@ -419,7 +406,6 @@ suser(cred, acflag)
 	struct ucred *cred;
 	short *acflag;
 {
-
 	if (cred->cr_uid == 0) {
 		if (acflag)
 			*acflag |= ASU;
@@ -468,6 +454,8 @@ crcopy(cr)
 {
 	struct ucred *newcr;
 
+	if (cr->cr_ref == 1)
+		return (cr);
 	newcr = crget();
 	*newcr = *cr;
 	crfree(cr);
@@ -525,7 +513,7 @@ setlogin(p, uap, retval)
 	if (error = suser(u.u_cred, &u.u_acflag))
 		return (error);
 	error = copyinstr((caddr_t)uap->namebuf, (caddr_t)p->p_logname,
-	    sizeof (p->p_logname) - 1, (int *) 0);
+	    sizeof (p->p_logname) - 1, (u_int *)0);
 	if (error == ENAMETOOLONG)		/* name too long */
 		error = EINVAL;
 	return (error);
