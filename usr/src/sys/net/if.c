@@ -1,4 +1,4 @@
-/*	if.c	4.29	83/06/12	*/
+/*	if.c	4.30	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -243,10 +243,19 @@ ifioctl(cmd, data)
 		ifr->ifr_flags = ifp->if_flags;
 		break;
 
+	case SIOCSIFFLAGS:
+		if (ifp->if_flags & IFF_UP && (ifr->ifr_flags & IFF_UP) == 0) {
+			int s = splimp();
+			if_down(ifp);
+			splx(s);
+		}
+		ifp->if_flags = ifr->ifr_flags;
+		break;
+
 	default:
 		if (ifp->if_ioctl == 0)
 			return (EOPNOTSUPP);
-		return ((*ifp->if_ioctl)(cmd, data));
+		return ((*ifp->if_ioctl)(ifp, cmd, data));
 	}
 	return (0);
 }
