@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.2 (Berkeley) %G%
+ *	@(#)mt.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -30,31 +30,30 @@ short	mttypes[] =
 mtopen(io)
 	register struct iob *io;
 {
-	register int skip;
-	register struct mtdevice *mtaddr =
-		(struct mtdevice *)mbadrv(io->i_unit);
-	register int i;
+	register struct mtdevice *mtaddr;
+	register int i, skip;
 
-	if (mbainit(UNITTOMBA(io->i_unit)) == 0)
-		return (ENXIO);
-	for (i = 0; mttypes[i]; i++)
+	if (mbainit(io->i_adapt) == 0)
+		return (EADAPT);
+	mtaddr = (struct mtdevice *)mbadrv(io->i_adapt, io->i_ctlr);
+	for (i = 0;; i++) {
+		if (!mttypes[i]) {
+			printf("mt: not a tape\n");
+			return (ENXIO);
+		}
 		if (mttypes[i] == (mtaddr->mtdt&MBDT_TYPE))
-			goto found;
-	printf("not a tape\n");
-	return (ENXIO);
-found:
+			break;
+	}
 	mtaddr->mtid = MTID_CLR;
 	DELAY(250);
-	while ((mtaddr->mtid & MTID_RDY) == 0)
-		;
+	while ((mtaddr->mtid & MTID_RDY) == 0);
 
 	/* clear any attention bits present on open */
 	i = mtaddr->mtner;
 	mtaddr->mtas = mtaddr->mtas;
 
 	mtstrategy(io, MT_REW);
-	skip = io->i_boff;
-	while (skip--) {
+	for (skip = io->i_part; skip--;) {
 		io->i_cc = -1;
 		mtstrategy(io, MT_SFORWF);
 	}
@@ -64,7 +63,6 @@ found:
 mtclose(io)
 	register struct iob *io;
 {
-
 	mtstrategy(io, MT_REW);
 }
 
@@ -73,11 +71,12 @@ mtstrategy(io, func)
 	int func;
 {
 	register int errcnt, s, ic;
-	register struct mtdevice *mtaddr =
-	    (struct mtdevice *)mbadrv(io->i_unit);
-	struct mba_regs *mba = mbamba(io->i_unit);
+	register struct mtdevice *mtaddr;
+	struct mba_regs *mba;
 
 	errcnt = 0;
+	mtaddr = (struct mtdevice *)mbadrv(io->i_adapt, io->i_ctlr);
+	mba = mbamba(io->i_adapt);
 retry:
 	/* code to trap for attention up prior to start of command */
 	if ((mtaddr->mtas & 0xffff) != 0) {
@@ -89,7 +88,7 @@ retry:
 	if (func == READ || func == WRITE) {
 		mtaddr->mtca = 1<<2;	/* 1 record */
 		mtaddr->mtbc = io->i_cc;
-		mbastart(io, func);
+		mbastart(io, io->i_ctlr, func);
 		/* wait for mba to go idle and read result status */
 		while((mba->mba_sr & MBSR_DTBUSY) != 0)
 			;
@@ -130,11 +129,10 @@ retry:
 
 	case MTER_RETRY:
 		printf("mt error: er=%x\n", MASKREG(mtaddr->mter));
-		if (errcnt == 10) {
+		if (errcnt++ == 10) {
 			printf("mt: unrecovered error\n");
 			return (-1);
 		}
-		errcnt++;
 		goto retry;
 	}
 	if (errcnt)
