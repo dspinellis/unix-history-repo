@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setreuid.2	6.5 (Berkeley) %G%
+.\"     @(#)setreuid.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SETREUID 2
@@ -16,28 +16,29 @@
 .Ft int
 .Fn setreuid "int ruid" "int euid"
 .Sh DESCRIPTION
-.Bf -symbolic
-This interface is made obsolete by:
-.Ef
-.Xr seteuid 2 .
-.Pp
-The effective user ID's of the
-current process is set according to the
-.Fa euid
-argument.
-The real user ID's of the
-current process is checked to ensure that it matches
-either the real or saved ID of the process
-(thus ensuring that it can later be restored to the effective ID).
-If
-.Fa euid
-is -1, the current uid is filled in by the system.
+The real and effective user IDs of the
+current process are set according to the arguments.
 If
 .Fa ruid
-is -1, the check on real ID above is skipped.
-Unprivileged users may change the effective user
-ID to the real user ID or the saved user ID;
-only the super-user may make other changes.
+or 
+.Fa euid
+is -1, the current uid is filled in by the system.
+Unprivileged users may change the real user
+ID to the effective user ID and vice-versa; only the super-user may
+make other changes.
+.Pp
+The
+.Fn setreuid function has been used to swap the real and effective user IDs
+in set-user-ID programs to temporarily relinquish the set-user-ID value.
+This purpose is now better served by the use of the
+.Fn seteuid
+function (see
+.Xr setuid 2 ) .
+.Pp
+When setting the real and effective user IDs to the same value,
+the standard
+.Fn setuid
+function is preferred.
 .Sh RETURN VALUES
 Upon successful completion, a value of 0 is returned.  Otherwise,
 a value of -1 is returned and
@@ -48,7 +49,7 @@ is set to indicate the error.
 .It Bq Er EPERM
 The current process is not the super-user and a change
 other than changing the effective user-id to the real user-id
-or saved user-id was specified.
+was specified.
 .El
 .Sh SEE ALSO
 .Xr getuid 2 ,
