@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.19 %G%";
+static	char sccsid[] = "@(#)c21.c 4.20 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -985,6 +985,8 @@ struct node *p2;
 	register char *cp1, *cp2;
 
 	if (p1->combop != p2->combop)
+		return(0);
+	if (p1->combop == 0 && p1->pop != p2->pop)
 		return(0);
 	if (p1->op>0 && p1->op<MOV)
 		return(0);
