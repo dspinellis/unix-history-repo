@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.28 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -324,23 +324,25 @@ getfsstat(scp)
 		long bufsize;
 	} *uap = (struct a *)scp->sc_ap;
 	register struct mount *mp;
-	register struct statfs *sfsp;
+	caddr_t sfsp;
 	long count, maxcount, error;
+	struct statfs sb;
 
 	maxcount = uap->bufsize / sizeof(struct statfs);
-	sfsp = uap->buf;
+	sfsp = (caddr_t)uap->buf;
 	mp = rootfs;
 	count = 0;
 	do {
-		count++;
-		if (sfsp && count <= maxcount &&
-		    ((mp->m_flag & M_MLOCK) == 0)) {
-			if (error = VFS_STATFS(mp, sfsp))
+		if (sfsp && count < maxcount && ((mp->m_flag & M_MLOCK) == 0)) {
+			if (error = VFS_STATFS(mp, &sb))
 				RETURN (error);
-			sfsp->f_flags = mp->m_flag & M_VISFLAGMASK;
-			sfsp->f_fsid = mp->m_fsid;
-			sfsp++;
+			sb.f_flags = mp->m_flag & M_VISFLAGMASK;
+			sb.f_fsid = mp->m_fsid;
+			if (error = copyout((caddr_t)&sb, sfsp, sizeof(sb)))
+				RETURN (error);
+			sfsp += sizeof(sb);
 		}
+		count++;
 		mp = mp->m_prev;
 	} while (mp != rootfs);
 	if (sfsp && count > maxcount)
