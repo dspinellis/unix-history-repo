@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.36 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -386,9 +386,6 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 	 */
 	if (p->fts_level == FTS_ROOTLEVEL) {
 		if (!ISSET(FTS_NOCHDIR) && FCHDIR(sp, sp->fts_rfd)) {
-			saved_errno = errno;
-			(void)close(sp->fts_rfd);
-			errno = saved_errno;
 			SET(FTS_STOP);
 			return (NULL);
 		}
