@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)name.c	4.3 %G%";
+static char sccsid[] = "@(#)name.c	4.4 %G%";
 #endif
 
 #
@@ -79,7 +79,19 @@ VOID	setname(argi, xp)
 			*argscan++ = '=';
 			attrib(n, xp);
 			IF xp&N_ENVNAM
-			THEN	n->namenv = n->namval = argscan;
+			THEN	
+				/*
+				 * Importing IFS can be very dangerous
+				 */
+				IF !bcmp(argi, "IFS=", sizeof("IFS=") - 1)
+				THEN 
+					int uid;
+					IF (uid = getuid())!=geteuid() ORF !uid
+					THEN
+						return;
+					FI
+				FI
+				n->namenv = n->namval = argscan;
 			ELSE	assign(n, argscan);
 			FI
 			return;
