@@ -1,4 +1,4 @@
-.\"	@(#)getlogin.3	6.1 (Berkeley) %G%
+.\"	@(#)getlogin.3	6.2 (Berkeley) %G%
 .\"
 .TH GETLOGIN 3  ""
 .AT 3
@@ -18,17 +18,21 @@ is shared by several login names.
 If
 .I getlogin
 is called within a process that is not attached to a
-typewriter, it returns NULL.
-The correct procedure for determining the login name is to first call
+terminal, or if there is no entry in
+.I /etc/utmp
+for the process's terminal,
+.I getlogin
+returns a NULL pointer (0).
+A reasonable procedure for determining the login name is to first call
 .I getlogin
 and if it fails, to call
-.IR getpw ( getuid ()).
+.IR getpwuid ( getuid ()).
 .SH FILES
 /etc/utmp
 .SH "SEE ALSO"
-getpwent(3), getgrent(3), utmp(5), getpw(3)
+getpwent(3), utmp(5), ttyslot(3)
 .SH DIAGNOSTICS
-Returns NULL (0) if name not found.
+Returns a NULL pointer (0) if name not found.
 .SH BUGS
 The return values point to static data
 whose content is overwritten by each call.
