@@ -6,10 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+
+#ifdef	KERBEROS
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <kerberosIV/des.h>
+#include <kerberosIV/krb.h>
+#include "krb4-proto.h"
+#endif
 
 #if	defined(unix)
 #include <signal.h>
@@ -53,6 +61,9 @@ int
 	showoptions,
 	In3270,		/* Are we in 3270 mode? */
 	ISend,		/* trying to send network data in */
+#ifdef	KERBEROS
+	kerberized = 0,	/* Are we using Kerberos authentication ? */
+#endif
 	debug = 0,
 	crmod,
 	netdata,	/* Print out network data flow */
@@ -424,6 +435,12 @@ dooption(option)
 		set_my_state_wont(TELOPT_TM);
 		return;
 
+#ifdef	KERBEROS
+	    case TELOPT_AUTHENTICATION:
+		if (kerberized)
+			new_state_ok = 1;
+		break;
+#endif
 #	if defined(TN3270)
 	    case TELOPT_EOR:		/* end of record */
 #	endif	/* defined(TN3270) */
@@ -784,7 +801,131 @@ suboption()
 	default:
 		break;
 	}
+
+#ifdef	KERBEROS
+    case TELOPT_AUTHENTICATION:
+	if ((subbuffer[1] & 0xff) == TELQUAL_SEND) {
+		register char *cp = &subbuffer[2];
+		int dokrb4 = 0, unknowntypes = 0, noresponse = 1;
+
+		while (cp < subend) {
+			switch (*cp) {
+			case TELQUAL_AUTHTYPE_KERBEROS_V4:
+				dokrb4 = 1;
+				break;
+			default:
+				unknowntypes++;
+			}
+			cp++;
+		}
+
+		if (noresponse && dokrb4) {
+			register unsigned char *ucp = (unsigned char *)cp;
+			char *krb_realm;
+			char hst_inst[INST_SZ];
+			KTEXT_ST authent_st;
+			int space = 0;
+			int retval;
+			extern char *krb_realmofhost(), *krb_get_phost();
+
+			fprintf(stderr,
+				"[Trying Kerberos V4 authentication]\n");
+
+			krb_realm = krb_get_phost(hostname);
+			bzero(hst_inst, sizeof(hst_inst));
+			if (krb_realm)
+			    strncpy(hst_inst, krb_realm, sizeof(hst_inst));
+			hst_inst[sizeof(hst_inst)-1] = '\0';
+			if (!(krb_realm = krb_realmofhost(hst_inst))) {
+			    fprintf(stderr, "no realm for %s\n", hostname);
+			    goto cantsend4;
+			}
+			if (retval = krb_mk_req(&authent_st, "rcmd", hst_inst,
+			    krb_realm, 0L)) {
+				fprintf(stderr, "mk_req failed: %s\n",
+				    krb_err_txt[retval]);
+				goto cantsend4;
+			}
+			space = authent_st.length;
+			for (ucp = authent_st.dat; ucp < authent_st.dat +
+			     authent_st.length; ucp++) {
+				if (*ucp == IAC)
+					space++;
+			}
+			if (NETROOM() < 6 + 1 + strlen(remotename) + 2 +
+			    space + 2) {
+				fprintf(stderr,
+				   "no room to send V4 ticket/authenticator\n");
+cantsend4:
+			    if (7 < NETROOM()) {
+				printring(&netoring, "%c%c%c%c%c%c%c", IAC, SB,
+				  TELOPT_AUTHENTICATION,
+				  TELQUAL_IS, TELQUAL_AUTHTYPE_NONE, IAC, SE);
+				sprintf(tmp, "%c%c%c%c%c", TELOPT_AUTHENTICATION,
+					TELQUAL_IS, TELQUAL_AUTHTYPE_NONE, IAC, SE);
+				printsub(">", tmp, 4+2-2-2);
+			    } else
+				exit(1);
+			} else {
+#ifdef notdef
+		    printring(&netoring, "%c%c%c%c%c%c%c%s", IAC, SB,
+			      TELOPT_AUTHENTICATION,
+			      TELQUAL_IS, TELQUAL_AUTHTYPE_KERBEROS,
+			      TELQUAL_AUTHTYPE_KERBEROS_V4,
+			      strlen(remotename),
+			      remotename);
+		    sprintf(tmp, "%c%c%c%c%s%c%c", TELOPT_AUTHENTICATION,
+			    TELQUAL_IS, TELQUAL_AUTHTYPE_KERBEROS,
+			    TELQUAL_AUTHTYPE_KERBEROS_V4,
+			    remotename, IAC, SE);
+#else
+			    printring(&netoring, "%c%c%c%c%c%c%s", IAC, SB,
+			      TELOPT_AUTHENTICATION,
+			      TELQUAL_IS,
+			      TELQUAL_AUTHTYPE_KERBEROS_V4,
+			      strlen(remotename),
+			      remotename);
+			    sprintf(tmp, "%c%c%c%s%c%c", TELOPT_AUTHENTICATION,
+			      TELQUAL_IS,
+			      TELQUAL_AUTHTYPE_KERBEROS_V4,
+			      remotename, IAC, SE);
+#endif
+			    printsub(">", tmp, 4+strlen(remotename)+2-2-2);
+			    ring_supply_bindata(&netoring,
+			        (char *)authent_st.dat, authent_st.length, IAC);
+			    printring(&netoring, "%c%c", IAC, SE);
+			}
+			noresponse = 0;
+	    	}
+	    	if (noresponse) {
+			if (NETROOM() < 7) {
+			    ExitString("not enough room to reject unhandled authtype\n", 1);
+			} else {
+			    fprintf(stderr,"[Sending empty auth info in response to request for %d unknown type(s):\n\t", unknowntypes);
+#ifdef notdef
+			    cp = &subbuffer[3];
+#else
+			    cp = &subbuffer[2];
+#endif
+			    while (cp < subend) {
+				switch (*cp) {
+				case TELQUAL_AUTHTYPE_KERBEROS_V4:
+			    		break;
+				default:
+			    		fprintf(stderr, "%d,", *cp);
+			    		break;
+				}
+				cp++;
+		    	    }
+		    	    fputs("]\n", stderr);
+		    	    printring(&netoring, "%c%c%c%c%c%c%c", IAC, SB,
+			      TELOPT_AUTHENTICATION,
+			      TELQUAL_IS, TELQUAL_AUTHTYPE_NONE, IAC, SE);
+			}
+	    	}
+	}
 	break;
+#endif /* KERBEROS */
     default:
 	break;
     }
@@ -1622,6 +1763,10 @@ telnet()
 	send_will(TELOPT_TSPEED, 1);
 	send_will(TELOPT_LFLOW, 1);
 	send_will(TELOPT_LINEMODE, 1);
+#ifdef	KERBEROS
+	if (kerberized)
+		send_will(TELOPT_AUTHENTICATION, 1);
+#endif
 	send_do(TELOPT_STATUS, 1);
     }
 #   endif /* !defined(TN3270) */
