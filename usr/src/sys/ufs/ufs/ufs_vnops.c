@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -691,9 +691,11 @@ relookup(dvp, vpp, cnp)
 	int docache;			/* == 0 do not cache last component */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int rdonly;			/* lookup read-only flag bit */
-	char *cp;			/* DEBUG: check name ptr/len */
-	int newhash;			/* DEBUG: check name hash */
 	int error = 0;
+#ifdef NAMEI_DIAGNOSTIC
+	int newhash;			/* DEBUG: check name hash */
+	char *cp;			/* DEBUG: check name ptr/len */
+#endif
 
 	/*
 	 * Setup: break out flag bits into variables.
