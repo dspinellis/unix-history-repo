@@ -1,0 +1,166 @@
+.sc
+.ta 1.0i 2.0i 3.0i 4.0i 5.0i 6.0i
+.m1 3
+.m2 2
+.he'Berkeley FP Users Manual'Rev. 4.1'December 15, 1982'
+.m3 2
+.m4 3
+.fo''-%-''
+.de NS	\"   New section heading: enter in the table of contents
+.sh \\$1 "\\$2"
+.(x
+\\*($n.\\ \\ \\$2
+.)x
+..
+.de AP	\"   Appendix heading: enter in the table of contents
+.bp
+.sz +2
+.ce 1
+.b "\\$1"
+.sz -2
+.sp 2
+.(x
+\\$1\\ \\ 
+.)x
+..
+.de TC  \" Dump out table of contents
+.br
+.fi
+.he ''''
+.bp 1
+.fo ''%''
+.af % i
+.bp 1
+.ls 1
+.ce 1
+.b "Table of Contents"
+.sp 2
+.xp
+.br
+.ls
+.bp
+..
+.de BB
+.sp 0.1i
+.ls 1
+.po +0.8i
+.ll -1.5i
+..
+.de EB
+.sp 0.3i
+.ls
+.ll +1.5i
+.po -0.8i
+.br
+.lp
+..
+.ds bt \fB\s7\l'1.10m'\h'-0.55m'\L'-0.80m'\h'0.55m'\v'0.80m'\s0\fP
+.ds cm \h'-0.10m'\v'0.30m'\(de\h'0.10m'\v'-0.30m'
+.ds sa \s-4\v'-0.4m'a\v'0.4m'\s+4
+.ds sb \s-4\v'-0.4m'b\v'0.4m'\s+4
+.ds FA \s+2\fBV\s-2\h'-0.056i'\v'-0.55m'\l'.0024i'\fP\v'+0.55m'\h'+0.056i'
+.ds IE \fIi.e.,\fP
+.ds EG \fIe.g.,\fP
+.EQ
+delim $$
+define bottom "\*(bt"
+define compose "\*(cm"
+define equiv '~==~'
+define dd '"$$"'
+define df '"$fp"'
+define dl '"$"'
+define fs '<x sub 1 ,~x sub 2 ,...,~x sub k >'
+define qy '<y sub 1 ,~y sub 2 ,...,~y sub k >'
+define qz '<z sub 1 ,~z sub 2 ,...,~z sub k >'
+define T  'bold "T"'
+define F  'bold "F"'
+define nd '~ bold "and" ~'
+define rr '~ bold "or"~'
+define oppI % "\(eq\
+\h'-.25m'\
+\z\(eq\
+\h'.25m'\
+\v'-.01i'\
+>\
+\v'.01i'\
+" %
+define orsign % "\s-2\
+\h'.05m'\
+\v'.15m'\
+\z\
+\e\
+\e\
+\h'-.08m'\
+\z\(sl\
+\(sl\
+\h'-.1m'\
+\v'-.15m'\
+\s+2" %
+define andsign % "\s-2\
+\v'.15m'\
+\z\(sl\
+\(sl\
+\h'-.3m'\
+\z\e\
+\e\
+\v'-.15m'\
+\s+2" %
+define oppA % "\s-2\
+\h'.05m'\
+\v'-.15m'\
+\z\e\
+\e\
+\h'-.05m'\
+\z\(sl\
+\(sl\
+\v'-.15m'\
+\h'-1.2m'\
+\z-\
+\h'.08m'\
+\z-\
+\h'.35m'\
+\z-\
+\v'.3m'\
+\h'.65m'\
+\s+2" %
+define oppE %"\s-3\
+\v'.2m'\
+\z\(em\
+\v'-.5m'\
+\z\(em\
+\v'-.5m'\
+\z\(em\
+\v'.85m'\
+\h'.9m'\
+\z\(br\
+\h'.004i'\
+\(br\
+\h'.02m'\
+\v'-.05m'\
+\s+3\
+\h'.2m'" %
+define oppEslash %"\s-3\
+\s+3\
+\z\(sl\
+\z\(sl\
+\s-3\
+\v'.2m'\
+\z\(em\
+\v'-.5m'\
+\z\(em\
+\v'-.5m'\
+\z\(em\
+\v'.85m'\
+\h'.9m'\
+\z\(br\
+\h'.004i'\
+\(br\
+\h'.02m'\
+\v'-.05m'\
+\s+3\
+\h'.2m'" %
+define notmemberof ` \(mo back 80 size +2 / `
+define memberOf "^\(mo^"
+define forAll "\*(FA~"
+.EN
+.nr di \n(ii
