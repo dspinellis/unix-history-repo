@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.31	83/02/10	*/
+/*	tcp_timer.c	4.32	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -74,8 +74,7 @@ tcp_slowtimo()
 			if (tp->t_timer[i] && --tp->t_timer[i] == 0) {
 				(void) tcp_usrreq(tp->t_inpcb->inp_socket,
 				    PRU_SLOWTIMO, (struct mbuf *)0,
-				    (struct mbuf *)i,
-				    (struct socketopt *)0);
+				    (struct mbuf *)i, (struct mbuf *)0);
 				if (ipnxt->inp_prev != ip)
 					goto tpgone;
 			}
