@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)inet.3	6.5 (Berkeley) %G%
+.\"	@(#)inet.3	6.6 (Berkeley) %G%
 .\"
 .TH INET 3N ""
 .UC 5
@@ -26,10 +26,10 @@ inet_addr, inet_network, inet_ntoa, inet_makeaddr, inet_lnaof, inet_netof \- Int
 .B "struct in_addr inet_makeaddr(net, lna)
 .B "int net, lna;
 .PP
-.B "int inet_lnaof(in)
+.B "unsigned long inet_lnaof(in)
 .B "struct in_addr in;
 .PP
-.B "int inet_netof(in)
+.B "unsigned long inet_netof(in)
 .B "struct in_addr in;
 .fi
 .SH DESCRIPTION
