@@ -1,5 +1,5 @@
 .\" manual page [] for pppd 2.0
-.\" $Id: pppd.8,v 1.2 1994/02/08 23:50:51 paulus Exp $
+.\" $Id: pppd.8,v 1.2 1994/03/30 09:31:40 jkh Exp $
 .\" SH section heading
 .\" SS subsection heading
 .\" LP paragraph
@@ -239,7 +239,7 @@ Use the system password database for authenticating the peer using
 PAP.
 .TP
 .B noipdefault
-Disables the default behaviour when no local IP address is specified,
+Disables the default behavior when no local IP address is specified,
 which is to determine (if possible) the local IP address from the
 hostname.  With this option, the peer will have to supply the local IP
 address during IPCP negotiation (unless it specified explicitly on the
@@ -330,7 +330,7 @@ is run, and in part by the PAP and CHAP secrets files, where the
 administrator can restrict the set of IP addresses which individual
 users may use.
 .LP
-The default behaviour of
+The default behavior of
 .I pppd
 is to agree to authenticate if requested, and to not
 require authentication from the peer.  However, 

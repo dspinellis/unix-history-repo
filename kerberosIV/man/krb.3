@@ -1,6 +1,6 @@
-.\" $Source: /usr/src/kerberosIV/man/RCS/kerberos.3,v $
-.\" $Author: kfall $
-.\" $Header: /usr/src/kerberosIV/man/RCS/kerberos.3,v 4.10 90/06/25 21:12:11 kfall Exp $
+.\" $Source: /home/cvs/386BSD/src/kerberosIV/man/krb.3,v $
+.\" $Author: wollman $
+.\" $Header: /home/cvs/386BSD/src/kerberosIV/man/krb.3,v 1.1.1.1 1994/02/25 01:14:44 wollman Exp $
 .\" Copyright 1989 by the Massachusetts Institute of Technology.
 .\"
 .\" For copying and distribution information,
@@ -133,7 +133,7 @@ to the calling procedure.
 It is up to the application to get the authenticator to the service
 where it will be read by
 .I krb_rd_req.
-Unless an attacker posesses the session key contained in the ticket, it
+Unless an attacker possesses the session key contained in the ticket, it
 will be unable to modify the authenticator.  Thus, the checksum can be
 used to verify the authenticity of the other data that will pass through
 a connection.
