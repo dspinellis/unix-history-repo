@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.47	83/01/01	*/
+/*	ufs_vnops.c	4.48	83/01/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -1038,6 +1038,7 @@ rename()
 		}
 		xp->i_flag |= ICHG;
 		iput(xp);
+		xp = NULL;
 	}
 
 	/*
@@ -1117,10 +1118,10 @@ stuck:
 	goto done;
 
 bad:
-	iput(u.u_pdir);
+	iput(dp);
 bad1:
 	if (xp)
-		irele(xp);
+		iput(xp);
 out:
 	ip->i_nlink--;
 	ip->i_flag |= ICHG;
