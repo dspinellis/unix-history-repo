@@ -53,10 +53,13 @@ define(`SITE', `ifelse(CONCAT($'2`, $3), SU,
 		CONCAT(CY, $'1`),
 		CONCAT(C, $3, $'1`))')
 sinclude(../siteconfig/$1.m4)')
-define(`LOCAL_NAME', `PUSHDIVERT(5)CL$1
+define(`EXPOSED_USER', `PUSHDIVERT(5)CE$1
 POPDIVERT`'dnl')
+define(`LOCAL_USER', `PUSHDIVERT(5)CL$1
+POPDIVERT`'dnl')
+define(`MASQUERADE_AS', `define(`MASQUERADE_NAME', $1)')
 
 m4wrap(`include(`../m4/proto.m4')')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	2.20 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	2.21 (Berkeley) %G%')
