@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char     sccsid[] = "@(#)str.c	5.6 (Berkeley) %G%";
+static char     sccsid[] = "@(#)str.c	5.7 (Berkeley) %G%";
 #endif				/* not lint */
 
 #include "make.h"
@@ -80,7 +80,7 @@ str_concat(s1, s2, flags)
  *
  * returns --
  *	Pointer to the array of pointers to the words.  To make life easier,
- *	the first word is always the value of the .PMAKE variable.
+ *	the first word is always the value of the .MAKE variable.
  */
 char **
 brk_string(str, store_argc)
@@ -96,7 +96,7 @@ brk_string(str, store_argc)
 	/* save off pmake variable */
 	if (!argv) {
 		argv = (char **)emalloc((argmax = 50) * sizeof(char *));
-		argv[0] = Var_Value(".PMAKE", VAR_GLOBAL);
+		argv[0] = Var_Value(".MAKE", VAR_GLOBAL);
 	}
 
 	/* skip leading space chars.
