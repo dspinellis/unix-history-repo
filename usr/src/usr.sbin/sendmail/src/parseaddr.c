@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.1		%G%);
+SCCSID(@(#)parseaddr.c	4.2		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -221,6 +221,10 @@ prescan(addr, delim)
 	int newstate;
 	static char buf[MAXNAME+MAXATOM];
 	static char *av[MAXATOM+1];
+	extern int errno;
+
+	/* make sure error messages don't have garbage on them */
+	errno = 0;
 
 	q = buf;
 	bslashmode = FALSE;
