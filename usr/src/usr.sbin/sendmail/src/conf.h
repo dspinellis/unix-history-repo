@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.164 (Berkeley) %G%
+ *	@(#)conf.h	8.165 (Berkeley) %G%
  */
 
 /*
@@ -1186,6 +1186,9 @@ typedef int		(*sigfunc_t)();
 #  define HASGETUSERSHELL 1	/* DOES have getusershell(3) call in libc */
 #  define LA_TYPE	LA_READKSYM	/* use MIOC_READKSYM ioctl */
 #  define SFS_TYPE	SFS_STATVFS	/* use <sys/statvfs.h> statvfs() impl */
+#  ifndef SPT_TYPE
+#   define SPT_TYPE	SPT_SYSMIPS	/* use sysmips() (OS 6.0.2 or later) */
+#  endif
 #  define GIDSET_T	gid_t
 #  undef WIFEXITED
 #  undef WEXITSTATUS
@@ -1215,6 +1218,8 @@ typedef int		(*sigfunc_t)();
 #  include <sys/time.h>
 #  define NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
 # endif
+# define HASUNSETENV	1	/* has unsetenv(2) call */
+# define NEEDPUTENV	1	/* need putenv(3) call */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # ifdef uniosb
