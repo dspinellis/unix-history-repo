@@ -1027,9 +1027,10 @@ loop:
 	/*
 	 * Hang process if it's in the background.
 	 */
+#define bit(a) (1<<(a-1))
 	while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
-		if (u.u_signal[SIGTTIN] == SIG_IGN ||
-		    u.u_signal[SIGTTIN] == SIG_HOLD ||
+		if ((u.u_procp->p_sigignore & bit(SIGTTIN)) ||
+		   (u.u_procp->p_sigmask & bit(SIGTTIN)) ||
 /*
 		    (u.u_procp->p_flag&SDETACH) ||
 */
@@ -1039,6 +1040,7 @@ loop:
 		sleep((caddr_t)&lbolt, TTIPRI);
 	}
 	t_flags = tp->t_flags;
+#undef	bit
 
 	/*
 	 * In raw mode take characters directly from the
@@ -1178,10 +1180,11 @@ loop:
 	/*
 	 * Hang the process if it's in the background.
 	 */
+#define bit(a) (1<<(a-1))
 	while (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 	    (tp->t_flags&TOSTOP) && (u.u_procp->p_flag&SVFORK)==0 &&
-	    u.u_signal[SIGTTOU] != SIG_IGN &&
-	    u.u_signal[SIGTTOU] != SIG_HOLD
+	    !(u.u_procp->p_sigignore & bit(SIGTTOU)) &&
+	    !(u.u_procp->p_sigmask & bit(SIGTTOU))
 /*
 					     &&
 	    (u.u_procp->p_flag&SDETACH)==0) {
@@ -1190,6 +1193,7 @@ loop:
 		gsignal(u.u_procp->p_pgrp, SIGTTOU);
 		sleep((caddr_t)&lbolt, TTIPRI);
 	}
+#undef	bit
 
 	/*
 	 * Process the user's data in at most OBUFSIZ
