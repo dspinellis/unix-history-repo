@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_alloc.c	7.16 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -69,6 +69,7 @@ alloc(ip, lbn, bpref, size, bnp)
 	register struct fs *fs;
 	register struct buf *bp;
 	int cg, error;
+	struct ucred *cred = u.u_cred;		/* XXX */
 	
 	*bnp = 0;
 	fs = ip->i_fs;
@@ -79,10 +80,10 @@ alloc(ip, lbn, bpref, size, bnp)
 	}
 	if (size == fs->fs_bsize && fs->fs_cstotal.cs_nbfree == 0)
 		goto nospace;
-	if (u.u_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
+	if (cred->cr_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
 #ifdef QUOTA
-	if (error = chkdq(ip, (long)btodb(size), 0))
+	if (error = chkdq(ip, (long)btodb(size), cred, 0))
 		return (error);
 #endif
 	if (bpref >= fs->fs_size)
@@ -125,6 +126,7 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 	int cg, request;
 	daddr_t bprev, bno, bn;
 	int i, error, count;
+	struct ucred *cred = u.u_cred;		/* XXX */
 	
 	*bpp = 0;
 	fs = ip->i_fs;
@@ -134,7 +136,7 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 		    ip->i_dev, fs->fs_bsize, osize, nsize, fs->fs_fsmnt);
 		panic("realloccg: bad size");
 	}
-	if (u.u_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
+	if (cred->cr_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
 	if ((bprev = ip->i_db[lbprev]) == 0) {
 		printf("dev = 0x%x, bsize = %d, bprev = %d, fs = %s\n",
@@ -142,7 +144,7 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 		panic("realloccg: bad bprev");
 	}
 #ifdef QUOTA
-	if (error = chkdq(ip, (long)btodb(nsize - osize), 0))
+	if (error = chkdq(ip, (long)btodb(nsize - osize), cred, 0))
 		return (error);
 #endif
 	/*
@@ -264,10 +266,11 @@ nospace:
  *   2) quadradically rehash into other cylinder groups, until an
  *      available inode is located.
  */
-ialloc(pip, ipref, mode, ipp)
+ialloc(pip, ipref, mode, cred, ipp)
 	register struct inode *pip;
 	ino_t ipref;
 	int mode;
+	struct ucred *cred;
 	struct inode **ipp;
 {
 	ino_t ino;
@@ -279,10 +282,6 @@ ialloc(pip, ipref, mode, ipp)
 	fs = pip->i_fs;
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
-#ifdef QUOTA
-	if (error = chkiq(pip->i_dev, (struct inode *)NULL, u.u_uid, 0))
-		return (error);
-#endif
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
 	cg = itog(fs, ipref);
@@ -291,7 +290,7 @@ ialloc(pip, ipref, mode, ipp)
 		goto noinodes;
 	error = iget(pip, ino, ipp);
 	if (error) {
-		ifree(pip, ino, 0);
+		ifree(pip, ino, mode);
 		return (error);
 	}
 	ip = *ipp;
