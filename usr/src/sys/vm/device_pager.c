@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	7.2 (Berkeley) %G%
+ *	@(#)device_pager.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -143,9 +143,13 @@ dev_pager_alloc(handle, size, prot)
 		 */
 		queue_enter(&dev_pager_list, devp, dev_pager_t, devp_list);
 #ifdef DEBUG
-		if (dpagerdebug & DDB_ALLOC)
+		if (dpagerdebug & DDB_ALLOC) {
 			printf("dev_pager_alloc: pages %d@%x\n",
 			       devp->devp_npages, devp->devp_pages);
+			printf("dev_pager_alloc: pager %x devp %x object %x\n",
+			       pager, devp, object);
+			vm_object_print(object, FALSE);
+		}
 #endif
 	} else {
 		/*
@@ -156,13 +160,6 @@ dev_pager_alloc(handle, size, prot)
 		if (vm_object_lookup(pager) != devp->devp_object)
 			panic("dev_pager_setup: bad object");
 	}
-#ifdef DEBUG
-	if (dpagerdebug & DDB_ALLOC) {
-		printf("dev_pager_alloc: pager %x devp %x object %x\n",
-		       pager, devp, object);
-		vm_object_print(object, FALSE);
-	}
-#endif
 	return(pager);
 
 }
