@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] =	"@(#)rmail.c	4.7 (Berkeley) %G%";
+static char sccsid[] =	"@(#)rmail.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -38,7 +38,7 @@ main(argc, argv)
 	char junk[1024];	/* scratchpad */
 	char cmd[2000];
 	register char *cp;
-	register char *uf;	/* ptr into ufrom */
+	register char *uf = ufrom;	/* ptr into ufrom */
 	int i;
 
 # ifdef DEBUG
@@ -66,7 +66,6 @@ main(argc, argv)
 			break;
 		(void) sscanf(lbuf, "%s %s", junk, ufrom);
 		cp = lbuf;
-		uf = ufrom;
 		for (;;)
 		{
 			cp = index(cp+1, 'r');
