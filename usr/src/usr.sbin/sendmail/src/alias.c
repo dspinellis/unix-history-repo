@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)alias.c	3.5	%G%";
+static char SccsId[] = "@(#)alias.c	3.6	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -266,5 +266,41 @@ bool
 forward(user)
 	ADDRESS *user;
 {
-	return (FALSE);
+	register struct passwd *pw;
+	char buf[50];
+	register FILE *fp;
+	register char *p;
+	extern struct passwd *getpwnam();
+	extern char *index();
+
+	if (user->q_mailer != 0)
+		return (FALSE);
+
+	/* find the user's home directory */
+	pw = getpwnam(user->q_user);
+	if (pw == NULL)
+	{
+		/* bad address -- mark it */
+		user->q_flags |= QBADADDR;
+		return (FALSE);
+	}
+
+	/* good address -- look for .forward file in home */
+	user->q_flags |= QGOODADDR;
+	sprintf(buf, "%s/.forward", pw->pw_dir);
+	fp = fopen(buf, "r");
+	if (fp == NULL)
+		return (FALSE);
+
+	/* we do have an address to forward to -- do it */
+	fgets(buf, sizeof buf, fp);
+	if ((p = index(buf, '\n')) != NULL)
+		*p = '\0';
+	fclose(fp);
+	if (buf[0] == '\0')
+		return (FALSE);
+	if (Verbose)
+		message("050", "forwarded to %s", buf);
+	sendto(buf, 1);
+	return (TRUE);
 }
