@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -132,6 +132,7 @@ char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *state();
 char	*rindex(), *calloc(), *sbrk(), *strcpy(), *strcat(), *strncat();
 char	*strncpy(), *index(), *ttyname(), mytty[MAXPATHLEN+1];
+char	*malloc();
 long	lseek();
 off_t	vtophys();
 double	pcpu(), pmem();
@@ -146,17 +147,20 @@ int	dmmin, dmmax;
 struct	pte *Sysmap;
 int	Syssize;
 
-#ifndef	MAXTTYS
-#define	MAXTTYS		256
-#endif
-
 int	nttys;
 
 struct	ttys {
 	dev_t	ttyd;
-	struct	ttys *cand;
+	int cand;
 	char	name[MAXNAMLEN+1];
-} allttys[MAXTTYS], *cand[16];
+} *allttys;
+int cand[16] = {-1, -1, -1, -1, -1, -1, -1, -1,
+		-1, -1, -1, -1, -1, -1, -1, -1};
+struct lttys {
+	struct ttys ttys;
+	struct lttys *next;
+} *lallttys;
+
 
 int	npr;
 
@@ -364,6 +368,7 @@ writepsdb(unixname)
 {
 	int nllen;
 	register FILE *fp;
+	struct lttys *lt;
 
 	setgid(getgid());
 	setuid(getuid());
@@ -375,8 +380,10 @@ writepsdb(unixname)
 	nllen = sizeof nl / sizeof (struct nlist);
 	fwrite((char *) &nllen, sizeof nllen, 1, fp);
 	fwrite((char *) nl, sizeof (struct nlist), nllen, fp);
+	fwrite((char *) cand, sizeof (cand), 1, fp);
 	fwrite((char *) &nttys, sizeof nttys, 1, fp);
-	fwrite((char *) allttys, sizeof (struct ttys), nttys, fp);
+	for (lt = lallttys ; lt ; lt = lt->next)
+		fwrite((char *)&lt->ttys, sizeof (struct ttys), 1, fp);
 	fwrite(unixname, strlen(unixname) + 1, 1, fp);
 	fclose(fp);
 }
@@ -400,7 +407,13 @@ readpsdb(unixname)
 
 	fread((char *) &nllen, sizeof nllen, 1, fp);
 	fread((char *) nl, sizeof (struct nlist), nllen, fp);
+	fread((char *) cand, sizeof (cand), 1, fp);
 	fread((char *) &nttys, sizeof nttys, 1, fp);
+	allttys = (struct ttys *)malloc(sizeof(struct ttys)*nttys);
+	if (allttys == NULL) {
+		fprintf(stderr, "ps: Can't malloc space for tty table\n");
+		exit(1);
+	}
 	fread((char *) allttys, sizeof (struct ttys), nttys, fp);
 	while ((*p = getc(fp)) != '\0')
 		p++;
@@ -551,6 +564,8 @@ int	dialbase;
 getdev()
 {
 	register DIR *df;
+	struct ttys *t;
+	struct lttys *lt;
 
 	if (chdir("/dev") < 0) {
 		perror("/dev");
@@ -564,6 +579,13 @@ getdev()
 	while ((dbuf = readdir(df)) != NULL) 
 		maybetty();
 	closedir(df);
+	allttys = (struct ttys *)malloc(sizeof(struct ttys)*nttys);
+	if (allttys == NULL) {
+		fprintf(stderr, "ps: Can't malloc space for tty table\n");
+		exit(1);
+	}
+	for (lt = lallttys, t = allttys; lt ; lt = lt->next, t++)
+		*t = lt->ttys;
 }
 
 /*
@@ -575,7 +597,8 @@ getdev()
 maybetty()
 {
 	register char *cp = dbuf->d_name;
-	register struct ttys *dp;
+	static struct lttys *dp;
+	struct lttys *olddp;
 	int x;
 	struct stat stb;
 
@@ -665,27 +688,40 @@ trymem:
 	else
 		x = -1;
 donecand:
-	if (nttys >= MAXTTYS) {
-		fprintf(stderr, "ps: tty table overflow\n");
+	olddp = dp;
+	dp = (struct lttys *)malloc(sizeof(struct lttys));
+	if (dp == NULL) {
+		fprintf(stderr, "ps: Can't malloc space for tty table\n");
 		exit(1);
 	}
-	dp = &allttys[nttys++];
-	(void) strcpy(dp->name, dbuf->d_name);
+	if (lallttys == NULL)
+		lallttys = dp;
+	nttys++;
+	if (olddp)
+		olddp->next = dp;
+	dp->next = NULL;
+	(void) strcpy(dp->ttys.name, dbuf->d_name);
 	if (Uflg) {
-		if (stat(dp->name, &stb) == 0 &&
+		if (stat(dp->ttys.name, &stb) == 0 &&
 		   (stb.st_mode&S_IFMT)==S_IFCHR)
-			dp->ttyd = x = stb.st_rdev;
+			dp->ttys.ttyd = x = stb.st_rdev;
 		else {
 			nttys--;
+			if (lallttys == dp)
+				lallttys = NULL;
+			free(dp);
+			dp = olddp;
+			if (dp)
+				dp->next = NULL;
 			return;
 		}
 	} else
-		dp->ttyd = -1;
+		dp->ttys.ttyd = -1;
 	if (x == -1)
 		return;
 	x &= 017;
-	dp->cand = cand[x];
-	cand[x] = dp;
+	dp->ttys.cand = cand[x];
+	cand[x] = nttys-1;
 }
 
 char *
@@ -699,7 +735,8 @@ gettty()
 	if (u.u_ttyp == 0)
 		return("?");
 	x = u.u_ttyd & 017;
-	for (dp = cand[x]; dp; dp = dp->cand) {
+	for (dp = &allttys[cand[x]]; dp != &allttys[-1];
+	     dp = &allttys[dp->cand]) {
 		if (dp->ttyd == -1) {
 			if (stat(dp->name, &stb) == 0 &&
 			   (stb.st_mode&S_IFMT)==S_IFCHR)
