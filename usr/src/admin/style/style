@@ -1,7 +1,7 @@
 /*
  * Style guide for BSD's KNF (Kernel Normal Form).
  *
- *	@(#)style	1.5 (Berkeley) %G%
+ *	@(#)style	1.6 (Berkeley) %G%
  */
 
 /*
@@ -87,12 +87,13 @@ main(argc, argv)
 	/*
 	 * For consistency, getopt should be used to parse options.
 	 * Options should be sorted in the getopt call and the switch
-	 * statment, unless they fall through.
+	 * statement, unless they fall through.  Elements in a switch
+	 * statement that fall through should have a FALLTHROUGH comment.
 	 */
 	while ((ch = getopt(argc, argv, "ab")) != EOF)
 		switch (ch) {		/* Indent the switch. */
 		case 'a':		/* Don't indent the case. */
-			break;
+			/* FALLTHROUGH */
 		case 'b':
 			break;
 		case '?':
@@ -103,17 +104,17 @@ main(argc, argv)
 	argv += optind;
 
 	/*
-	 * Space after keywords (while, for, return, switch).  No parenthesis
-	 * for single statement block.
+	 * Space after keywords (while, for, return, switch).  No braces are
+	 * used for single statement block.
 	 *
-	 * Forever loop.
+	 * Forever loops are done with for's, not while's.
 	 */
 	for (;;)
 		stmt;
 	
 	/*
 	 * Parts of a for loop may be left empty.  Avoid declarations in
-	 * blocks.
+	 * blocks unless the routine is unusually complicated.
 	 */
 	for (; cnt < 15; cnt++) {
 		stmt1;
@@ -131,9 +132,10 @@ main(argc, argv)
 	 * Try to put shorter part first.  The closing and opening braces
 	 * go on the same line as the else.
 	 */
-	if (test) {
+	if (test)
 		stmt;
-	} else if (bar) {
+	else if (bar) {
+		stmt;
 		stmt;
 	} else
 		stmt;
