@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.6	(Berkeley)	83/03/23";
+static char sccsid[] = "@(#)utilities.c	3.7	(Berkeley)	83/03/27";
 #endif
 
 #include "restore.h"
@@ -66,7 +66,7 @@ gentempname(ep)
 		i++;
 	if (np == NIL)
 		badentry(ep, "not on ino list");
-	sprintf(name, "%s%d%d", TMPHDR, i, ep->e_ino);
+	(void) sprintf(name, "%s%d%d", TMPHDR, i, ep->e_ino);
 	return (name);
 }
 
