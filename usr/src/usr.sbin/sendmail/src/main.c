@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -185,15 +185,6 @@ main(argc, argv, envp)
 
 	if (!nothaw)
 		readconfig = !thaw(FreezeFile, argv0);
-
-	{
-		/* strip out "dangerous" envariables */
-		if (strncmp(p, "FS=", 3) == 0 || strncmp(p, "LD_", 3) == 0)
-			continue;
-		UserEnviron[j++] = newstr(p);
-	}
-	UserEnviron[j] = NULL;
-	environ = UserEnviron;
 
 # ifdef SETPROCTITLE
 	/*
