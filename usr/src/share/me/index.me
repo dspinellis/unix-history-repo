@@ -2,25 +2,33 @@
 .\"	@(#)index.me	2.2	%G%
 .\"	%beginstrip%
 .de (x			\" *** begin index entry
-.ds |X x
-.if \\n(.$ \
-.	ds |X \\$1
-.am %\\*(|X )x
-.sp \\n(xsu
+.ie "\\n(.z"" \
+\{\
+.	ds |X x
+.	if \\n(.$ \
+.		ds |X \\$1
+.	am %\\*(|X )x
+.	sp \\n(xsu
+.\}
+.el \!.(x \\$1
 ..
 .de )x			\" *** end index entry
-.ds |x \\n%
-.if \\n(.$ \
-.	ds |x \\$1
-.if "\\*(|x"_" \
-.	ig ..
-.am %\\*(|X ..
-.if \w"\\$2">(\\n(.l-\\n(.i-\\n(.k) \
-.	ti +\\n(xuu
+.ie "\\n(.z"" \
+\{\
+.	ds |x \\n%
+.	if \\n(.$ \
+.		ds |x \\$1
+.	if "\\*(|x"_" \
+.		ig ..
+.	am %\\*(|X ..
+.	if \w"\\$2">(\\n(.l-\\n(.i-\\n(.k) \
+.		ti +\\n(xuu
 \\\\a\\\\t\\$2\\*(|x
 ...
-.rm |x
-.rm |X
+.	rm |x
+.	rm |X
+.\}
+.el \!.)x \\$1 \\$2
 ..
 .de xp			\" *** print the index
 .br
