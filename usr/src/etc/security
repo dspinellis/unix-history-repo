@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.8 (Berkeley) %G%
+#	@(#)security	5.9 (Berkeley) %G%
 #
 PATH=/sbin:/bin:/usr/bin
 
@@ -9,34 +9,70 @@ echo "Subject: $host security check output"
 
 umask 22
 
-LOG=/var/log
-TMP1=/tmp/_secure1.$$
-TMP2=/tmp/_secure2.$$
+echo ""
+echo "Checking for uids of 0:"
+awk -F: "\$3==\"0\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
+
+echo ""
+echo "Checking for uids without passwords:"
+awk -F: "\$2==\"\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
+
+DONE=/tmp/_secure1.$$
+LIST=/tmp/_secure2.$$
+TMP=/tmp/_secure3.$$
+
+trap 'rm -f $DONE $LIST $TMP' 0
 
 echo ""
 echo "Checking setuid files and devices:"
-(find / \( ! -fstype local \) -a -prune -o \( -perm -u+s -o -perm -g+s \
-	-o ! -type d -a ! -type f -a ! -type l \) | sort >$TMP1) 2>$TMP2
+(find /sbin \( ! -fstype local \) -a -prune -o \
+    \( -perm -u+s -o -perm -g+s -o ! -type d -a ! -type f -a ! -type l \) | \
+    sort | sed -e 's/^/ls -lgT /' | sh >$LIST) 2>$TMP
 
-if [ -s $TMP2 ] ; then
+if [ -s $TMP ] ; then
 	echo "$host setuid/device find errors:"
-	cat $TMP2
-	echo ""; echo ""
+	cat $TMP
+	echo ""
 fi
 
-if cmp $LOG/setuid.today $TMP1 >/dev/null; then :; else
-	echo "$host setuid/device additions:"
-	ls -lgT `join -v1 $LOG/setuid.today $TMP1`
-	echo ""; echo ""
-	echo "$host setuid/device deletions:"
-	ls -lgT `join -v2 $LOG/setuid.today $TMP1`
+if [ -s $LIST ] ; then
+	SETCUR=/var/log/setuid.current
+	SETBACK=/var/log/setuid.backup
 
-	mv $LOG/setuid.current $LOG/setuid.backup
-	mv $TMP1 $LOG/setuid.current
+	if [ -s $SETCUR ] ; then
+		if cmp -s $SETCUR $LIST ; then
+			:
+		else
+			:> $DONE
+			join -110 -210 -v2 $SETCUR $LIST >$TMP
+			if [ -s $TMP ] ; then
+				echo "$host setuid/device additions:"
+				tee -a $DONE < $TMP
+				echo ""
+			fi
+
+			join -110 -210 -v1 $SETCUR $LIST >$TMP
+			if [ -s $TMP ] ; then
+				echo "$host setuid/device deletions:"
+				tee -a $DONE < $TMP
+				echo ""
+			fi
+
+			sort +9 $DONE $SETCUR $LIST | uniq -u >$TMP
+			if [ -s $TMP ] ; then
+				echo "$host setuid/device changes:"
+				cat $TMP
+				echo ""
+			fi
+
+			mv $SETCUR $SETBACK
+			mv $LIST $SETCUR
+		fi
+	else
+		echo "$host setuid/device additions:"
+		cat $LIST
+		echo ""
+		mv $LIST $SETCUR
+	fi
 fi
-rm -f $TMP1 $TMP2
 
-echo ""
-echo ""
-echo "Checking for uids of 0:"
-awk 'BEGIN {FS=":"} $3=="0" {print $1,$3}' /etc/master.passwd
