@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_pcb.c,v $
- *	@(#)iso_pcb.c	7.5 (Berkeley) %G% *
+ *	@(#)iso_pcb.c	7.6 (Berkeley) %G%
  *
  * Iso address family net-layer(s) pcb stuff. NEH 1/29/87
  */
@@ -180,7 +180,7 @@ iso_pcbbind(isop, nam)
 		isop->isop_laddr = mtod(nam, struct sockaddr_iso *);
 	}
 	bcopy((caddr_t)siso, (caddr_t)isop->isop_laddr, siso->siso_len);
-	if (suf.s) {
+	if (suf.s || siso->siso_tlen != 2) {
 		if((suf.s < ISO_PORT_RESERVED) && (siso->siso_tlen <= 2) &&
 		   (u.u_uid != 0))
 			return EACCES;
@@ -375,6 +375,7 @@ iso_pcbdisconnect(isop)
 	struct isopcb *isop;
 {
 	void iso_pcbdetach();
+	register struct sockaddr_iso *siso;
 
 	IFDEBUG(D_ISO)
 		printf("iso_pcbdisconnect(isop 0x%x)\n", isop);
@@ -382,8 +383,11 @@ iso_pcbdisconnect(isop)
 	/*
 	 * Preserver binding infnormation if already bound.
 	 */
-	if (isop->isop_laddr && isop->isop_laddr->siso_nlen)
-		isop->isop_laddr->siso_nlen = 0;
+	if ((siso = isop->isop_laddr) && siso->siso_nlen && siso->siso_tlen) {
+		caddr_t otsel = TSEL(siso);
+		siso->siso_nlen = 0;
+		ovbcopy(otsel, TSEL(siso), siso->siso_tlen);
+	}
 	if (isop->isop_faddr && isop->isop_faddr != &isop->isop_sfaddr)
 		m_freem(dtom(isop->isop_faddr));
 	isop->isop_faddr = 0;
@@ -473,36 +477,32 @@ iso_pcbdetach(isop)
  * NOTES:			(notify) is called at splimp!
  */
 void
-iso_pcbnotify(head, dst, errno, notify)
+iso_pcbnotify(head, siso, errno, notify)
 	struct isopcb *head;
-	register struct iso_addr *dst;
+	register struct sockaddr_iso *siso;
 	int errno, (*notify)();
 {
-	register struct isopcb *isop, *oisop;
+	register struct isopcb *isop;
 	int s = splimp();
 
 	IFDEBUG(D_ISO)
 		printf("iso_pcbnotify(head 0x%x, notify 0x%x) dst:\n", head, notify);
 	ENDDEBUG
-	for (isop = head->isop_next; isop != head;) {
-		if (!iso_addrmatch1(&(isop->isop_faddr->siso_addr), dst) ||
-		    isop->isop_socket == 0) {
+	for (isop = head->isop_next; isop != head; isop = isop->isop_next) {
+		if (isop->isop_socket == 0 || isop->isop_faddr == 0 ||
+			!SAME_ISOADDR(siso, isop->isop_faddr)) {
 			IFDEBUG(D_ISO)
 				printf("iso_pcbnotify: CONTINUE isop 0x%x, sock 0x%x\n" ,
 					isop, isop->isop_socket);
-				printf("addrmatch cmp'd with (0x%x):\n",
-					&(isop->isop_faddr->siso_addr));
+				printf("addrmatch cmp'd with (0x%x):\n", isop->isop_faddr);
 				dump_isoaddr(isop->isop_faddr);
 			ENDDEBUG
-			isop = isop->isop_next;
 			continue;
 		}
 		if (errno) 
 			isop->isop_socket->so_error = errno;
-		oisop = isop;
-		isop = isop->isop_next;
 		if (notify)
-			(*notify)(oisop);
+			(*notify)(isop);
 	}
 	splx(s);
 	IFDEBUG(D_ISO)
