@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 # All library objects contain sccsid strings by default; they may be
 # excluded as a space-saving measure.  To produce a library that does
@@ -20,12 +20,20 @@ AINC=	-I${.CURDIR}/${MACHINE}
 .include "${.CURDIR}/string/Makefile.inc"
 .include "${.CURDIR}/sys/Makefile.inc"
 
+KQSRCS=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
+	lshldi3.c lshrdi3.c moddi3.c muldi3.c negdi2.c notdi2.c qdivrem.c \
+	subdi3.c ucmpdi2.c udivdi3.c umoddi3.c xordi3.c
+KSRCS=	bcmp.c ffs.c strcat.c strcmp.c strcpy.c strlen.c strncpy.c
+
+libkern: ${KQSRCS} ${KSRCS}
+	cp -p ${.CURDIR}/quad/quad.h ${.ALLSRC} /sys/libkern
+	
 beforeinstall: tags
 	install -c -o bin -g bin -m 444 ${.CURDIR}/tags /var/db/libc.tags
 
 tags: ${SRCS}
-	cd ${.CURDIR}; ctags ${.ALLSRC:M*.c}
-	cd ${.CURDIR}; egrep -o "^ENTRY(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | \
+	ctags ${.ALLSRC:M*.c}
+	egrep -o "^ENTRY(.*)|^FUNC(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | \
 	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
 	    >> tags; sort -o tags tags
 
