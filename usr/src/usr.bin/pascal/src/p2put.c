@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.2 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.3 %G%";
 
     /*
      *	functions to help pi put out
@@ -378,14 +378,25 @@ putCONG( string , length , required )
      *		is stored as
      *		    <ptr><ftn><int>
      *	so, we build types recursively
+     *	also, we know that /lib/f1 can only deal with 6 qualifications
+     *	so we stop the recursion there.  this stops infinite type recursion
+     *	through mutually recursive pointer types.
      */
+#define	MAXQUALS	6
 int
 p2type( np )
-    struct nl *np;
+{
+
+    return typerecur( np , 0 );
+}
+typerecur( np , quals )
+    struct nl	*np;
+    int		quals;
     {
 	
-	if ( np == NIL )
-	    return P2UNDEFINED;
+	if ( np == NIL || quals > MAXQUALS ) {
+	    return P2UNDEF;
+	}
 	switch ( np -> class ) {
 	    case SCAL :
 	    case RANGE :
@@ -404,9 +415,6 @@ p2type( np )
 		}
 	    case STR :
 		return ( P2ARY | P2CHAR );
-		/*
-		return P2STRTY;
-		*/
 	    case RECORD :
 	    case SET :
 		return P2STRTY;
@@ -419,12 +427,9 @@ p2type( np )
 	    case TYPE :
 		switch ( nloff( np ) ) {
 		    case TNIL :
-			return ( P2PTR | P2UNDEFINED );
+			return ( P2PTR | P2UNDEF );
 		    case TSTR :
 			return ( P2ARY | P2CHAR );
-			/*
-			return P2STRTY;
-			*/
 		    case TSET :
 			return P2STRTY;
 		    default :
@@ -433,19 +438,16 @@ p2type( np )
 	    case REF:
 	    case WITHPTR:
 	    case PTR :
-		return ADDTYPE( p2type( np -> type ) , P2PTR );
+		return ADDTYPE( typerecur( np -> type , quals + 1 ) , P2PTR );
 	    case ARRAY :
-		return ADDTYPE( p2type( np -> type ) , P2ARY );
-		/*
-		return P2STRTY;
-		*/
+		return ADDTYPE( typerecur( np -> type , quals + 1 ) , P2ARY );
 	    case FUNC :
 		    /*
 		     * functions are really pointers to functions
 		     * which return their underlying type.
 		     */
-		return ADDTYPE( ADDTYPE( p2type( np -> type ) , P2FTN )
-				, P2PTR );
+		return ADDTYPE( ADDTYPE( typerecur( np -> type , quals + 2 ) ,
+					P2FTN ) , P2PTR );
 	    case PROC :
 		    /*
 		     * procedures are pointers to functions 
@@ -460,7 +462,6 @@ p2type( np )
 		     */
 		return ADDTYPE( P2PTR , P2STRTY );
 	    default :
-		fprintf( stderr , "[p2type] np -> class %d\n" , np -> class );
 		panic( "p2type" );
 	}
     }

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rval.c 1.2 %G%";
+static	char sccsid[] = "@(#)rval.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -87,7 +87,7 @@ rvalue(r, contype , required )
 		    put(2, O_CON2, 0);
 #		endif OBJ
 #		ifdef PC
-		    putleaf( P2ICON , 0 , 0 , P2PTR|P2UNDEFINED , 0 );
+		    putleaf( P2ICON , 0 , 0 , P2PTR|P2UNDEF , 0 );
 #		endif PC
 		return (nl+TNIL);
 
