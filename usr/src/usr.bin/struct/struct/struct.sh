@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)struct.sh	4.2	(Berkeley)	83/12/19
+#	@(#)struct.sh	4.3	(Berkeley)	89/05/10
 #
 trap "rm -f /tmp/struct*$$" 0 1 2 3 13 15
 files=no
@@ -14,10 +14,10 @@ done
 
 case $files in
 yes)
-	/usr/lib/struct/structure $* >/tmp/struct$$
+	/usr/libexec/structure $* >/tmp/struct$$
 	;;
 no)
 	cat >/tmp/structin$$
-	/usr/lib/struct/structure /tmp/structin$$ $* >/tmp/struct$$
+	/usr/libexec/structure /tmp/structin$$ $* >/tmp/struct$$
 esac &&
-	/usr/lib/struct/beautify</tmp/struct$$
+	/usr/libexec/beautify</tmp/struct$$

@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)lex.c	5.1 (Berkeley) 6/7/85";
 
 #include "defs.h"
 #include "tokdefs.h"
+#include "pathnames.h"
 
 # define BLANK	' '
 # define MYQUOTE (2)
@@ -161,7 +162,7 @@ else	{
 
 	if( (fp = fopen(temp, "r")) == NULL )
 		{
-		sprintf(temp, "/usr/include/%s", name);
+		sprintf(temp, "%s/%s", _PATH_INCLUDES, name);
 		fp = fopen(temp, "r");
 		}
 	if(fp)

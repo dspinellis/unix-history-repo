@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.6 {Berkeley} %G%
+#	@(#)Makefile	4.7 {Berkeley} %G%
 #
 CFLAGS=	-O
 YFLAGS=	-d
@@ -53,10 +53,9 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	-[ -d ${DESTDIR}/usr/lib/struct ] || mkdir ${DESTDIR}/usr/lib/struct
-	install -s -o bin -g bin -m 755 structure ${DESTDIR}/usr/lib/struct
-	install -s -o bin -g bin -m 755 beautify ${DESTDIR}/usr/lib/struct
-	install -c -o bin -g bin -m 755 struct ${DESTDIR}/usr/bin/struct
+	install -s -o bin -g bin -m 755 structure beautify \
+	    ${DESTDIR}/usr/libexec
+	install -c -o bin -g bin -m 755 struct ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

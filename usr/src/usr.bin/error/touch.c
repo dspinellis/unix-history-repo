@@ -16,15 +16,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)touch.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)touch.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <signal.h>
+#include <sys/signal.h>
+#include <stdio.h>
+#include <ctype.h>
 #include "error.h"
+#include "pathnames.h"
 
 /*
  *	Iterate through errors
@@ -495,7 +496,7 @@ FILE	*o_touchedfile;	/* the old file */
 FILE	*n_touchedfile;	/* the new file */
 char	*o_name;
 char	n_name[64];
-char	*canon_name = "/tmp/ErrorXXXXXX";
+char	*canon_name = _PATH_TMP;
 int	o_lineno;
 int	n_lineno;
 boolean	tempfileopen = FALSE;

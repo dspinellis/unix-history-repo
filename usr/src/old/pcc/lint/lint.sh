@@ -1,9 +1,11 @@
 #! /bin/sh
 #
-#	@(#)lint.sh	1.8	(Berkeley)	%G%
+#	@(#)lint.sh	1.9	(Berkeley)	%G%
 #
-L=/usr/lib/lint/lint T=/tmp/lint.$$ PATH=/bin:/usr/bin O="-C -Dlint"
-X= P=unix LL=/usr/lib/lint
+L=/usr/libexec/lint T=/tmp/lint.$$
+PATH=/bin:/usr/bin:/usr/pgrm
+O="-C -Dlint"
+X= P=unix LL=/usr/libdata/lint
 C=
 trap "rm -f $T; exit" 1 2 15
 for A in $*
@@ -17,15 +19,13 @@ do
 	-[IDU]*)O="$O $A" ;;
 	-[ORpg]*)
 		;;
-	-X)	LL=/usr/src/usr.bin/lint
-		L=/usr/src/usr.bin/lint/lpass ;;
 	-*)	X="$X $A"
 		case $A in
 		-*n*)	P= ;;
 		-*p*)	P=port ;;
 		esac ;;
 	*)	echo "$A:"
-		(/lib/cpp $O $A | ${L}1 $X >>$T)2>&1
+		(cpp $O $A | ${L}1 $X >>$T)2>&1
 	esac
 	done
 case $P in

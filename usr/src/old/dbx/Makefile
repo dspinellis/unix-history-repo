@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	5.15 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -15,7 +15,7 @@
 
 AOUT	= tdbx
 DESTDIR	=
-DEST	= /usr/ucb/dbx
+DEST	= /usr/bin/dbx
 
 CC	= cc
 AS	= as
@@ -133,7 +133,7 @@ SRC = \
 .s.o:
 	@echo "assembling $*.s"
 	@rm -f tmp
-	@/lib/cpp $*.s | grep -v "^#" > tmp
+	@cpp $*.s | egrep -v "^#" > tmp
 	@${AS} -o $*.o tmp
 	@rm -f tmp
 

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)gprof.h	5.6 (Berkeley) %G%
+ *	@(#)gprof.h	5.7 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -58,12 +58,6 @@ char	*a_outname;
 char	*gmonname;
 #define	GMONNAME		"gmon.out"
 #define	GMONSUM			"gmon.sum"
-
-    /*
-     *	blurbs on the flat and graph profiles.
-     */
-#define	FLAT_BLURB	"/usr/lib/gprof.flat"
-#define	CALLG_BLURB	"/usr/lib/gprof.callg"
 
     /*
      *	a constructed arc,

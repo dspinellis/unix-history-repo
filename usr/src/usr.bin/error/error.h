@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)error.h	5.3 (Berkeley) %G%
+ *	@(#)error.h	5.4 (Berkeley) %G%
  */
 
 typedef	int	boolean;
@@ -151,10 +151,6 @@ extern struct lang_desc lang_table[];
  *	be touched, or if the function reference is to a
  *	function the user doesn't want recorded.
  */
-#define	IG_FILE1	"llib-lc"
-#define	IG_FILE2	"llib-port"
-#define	IG_FILE3	"/usr/lib/llib-lc"
-#define	IG_FILE4	"/usr/lib/llib-port"
 
 #define	ERRORNAME	"/.errorrc"
 int	nignored;

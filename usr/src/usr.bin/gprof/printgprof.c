@@ -16,10 +16,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printgprof.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)printgprof.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
+#include "pathnames.h"
 
 printprof()
 {
@@ -75,7 +76,7 @@ flatprofheader()
 {
     
     if ( bflag ) {
-	printblurb( FLAT_BLURB );
+	printblurb( _PATH_FLAT_BLURB );
     }
     printf( "\ngranularity: each sample hit covers %d byte(s)" ,
 	    (long) scale * sizeof(UNIT) );
@@ -121,7 +122,7 @@ gprofheader()
 {
 
     if ( bflag ) {
-	printblurb( CALLG_BLURB );
+	printblurb( _PATH_CALLG_BLURB );
     }
     printf( "\ngranularity: each sample hit covers %d byte(s)" ,
 	    (long) scale * sizeof(UNIT) );

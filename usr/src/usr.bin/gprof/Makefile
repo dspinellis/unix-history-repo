@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.15 (Berkeley) %G%
+#	@(#)Makefile	5.16 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -49,9 +49,9 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 gprof ${DESTDIR}/usr/ucb/gprof
-	install -c -o bin -g bin -m 444 gprof.flat ${DESTDIR}/usr/lib
-	install -c -o bin -g bin -m 444 gprof.callg ${DESTDIR}/usr/lib
+	install -s -o bin -g bin -m 755 gprof ${DESTDIR}/usr/bin
+	install -c -o bin -g bin -m 444 gprof.flat gprof.callg \
+	    ${DESTDIR}/usr/share/misc
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

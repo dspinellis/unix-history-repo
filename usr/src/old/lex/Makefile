@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.4 (Berkeley) %G%
+#	@(#)Makefile	4.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -40,9 +40,8 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 lex ${DESTDIR}/usr/bin/lex
-	install -c -o bin -g bin -m 755 ncform ${DESTDIR}/usr/lib/lex/ncform
-	install -c -o bin -g bin -m 755 nrform ${DESTDIR}/usr/lib/lex/nrform
+	install -s -o bin -g bin -m 755 lex ${DESTDIR}/usr/bin
+	install -c -o bin -g bin -m 444 nrform ncform ${DESTDIR}/usr/share/misc
 	install -c -o bin -g bin -m 755 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 CFLAGS=	-DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 \
 	-O -I../include
@@ -29,7 +29,7 @@ depend: FRC
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o bin -g bin -m 755 f77 ${DESTDIR}/usr/bin/f77
+	install -s -o bin -g bin -m 755 f77 ${DESTDIR}/usr/bin
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)filter.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)filter.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)filter.c	5.4 (Berkeley) %G%";
 #include <ctype.h>
 #include <pwd.h>
 #include "error.h"
+#include "pathnames.h"
 
 char	*lint_libs[] = {
 	IG_FILE1,

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)makedefs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)makedefs.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: makedefs.c,v 1.2 87/03/26 19:14:02 donn Exp $";
@@ -35,6 +35,7 @@ static char rcsid[] = "$Header: makedefs.c,v 1.2 87/03/26 19:14:02 donn Exp $";
 
 #include "defs.h"
 #include <signal.h>
+#include "pathnames.h"
 
 #define procedure void
 
@@ -77,7 +78,7 @@ String argv[];
 	if (force) {
 	    tmpname = argv[index + 1];
 	} else {
-	    tmpname = mktemp("/tmp/makedefsXXXXXX");
+	    tmpname = mktemp(_PATH_TMP);
 	}
 	tmp = freopen(tmpname, "w", stdout);
 	if (tmp == nil) {

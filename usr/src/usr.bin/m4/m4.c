@@ -1,10 +1,11 @@
 Virgin BTL M4 as sent out in 4.1
 #ifndef lint
-static char sccsid[] = "@(#)m4.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)m4.c	1.5 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <signal.h>
+#include "pathnames.h"
 
 #define ERROR NULL
 #define	READ	"r"
@@ -105,7 +106,7 @@ char	*syscmdloc;
 char	*dumploc;
 char	*errploc;
 
-char	tempname[] = "/tmp/m4aXXXXX";
+char	tempname[] = _PATH_TMP;
 struct nlist	*lookup();
 char	*install();
 char	*malloc();

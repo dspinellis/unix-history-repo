@@ -22,13 +22,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xstr.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)xstr.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "pathnames.h"
 
 /*
  * xstr - extract and hash strings in a C program
@@ -89,7 +90,7 @@ main(argc, argv)
 	if (cflg || argc == 0 && !readstd)
 		inithash();
 	else
-		strings = mktemp(savestr("/tmp/xstrXXXXXX"));
+		strings = mktemp(savestr(_PATH_TMP));
 	while (readstd || argc > 0) {
 		if (freopen("x.c", "w", stdout) == NULL)
 			perror("x.c"), exit(1);

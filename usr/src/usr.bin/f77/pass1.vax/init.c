@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)init.c	5.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -35,6 +35,7 @@ static	char *sccsid = "@(#)init.c	5.3 (Berkeley) %G%";
 #include "defs.h"
 #include "io.h"
 #include <sys/file.h>
+#include "pathnames.h"
 
 
 FILEP infile	= { stdin };
@@ -195,10 +196,10 @@ fileinit()
 int pid;
 
 pid = getpid();
-sprintf(cdatafname, "/tmp/fortcd.%d", pid);
-sprintf(cchkfname, "/tmp/fortcc.%d", pid);
-sprintf(vdatafname, "/tmp/fortvd.%d", pid);
-sprintf(vchkfname, "/tmp/fortvc.%d", pid);
+sprintf(cdatafname, "%s/fortcd.%d", _PATH_TMP, pid);
+sprintf(cchkfname, "%s/fortcc.%d", _PATH_TMP, pid);
+sprintf(vdatafname, "%s/fortvd.%d", _PATH_TMP, pid);
+sprintf(vchkfname, "%s/fortvc.%d", _PATH_TMP, pid);
 
 cdatafile = open(cdatafname, O_CREAT | O_RDWR, 0600);
 if (cdatafile < 0)

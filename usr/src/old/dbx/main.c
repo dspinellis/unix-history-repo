@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: main.c,v 1.4 87/07/08 21:31:27 donn Exp $";
@@ -37,6 +37,7 @@ static char rcsid[] = "$Header: main.c,v 1.4 87/07/08 21:31:27 donn Exp $";
 #include "object.h"
 #include "mappings.h"
 #include "coredump.h"
+#include "pathnames.h"
 
 #ifndef public
 
@@ -232,7 +233,7 @@ String outfile;
     String tmpfile;
     extern String mktemp();
 
-    tmpfile = mktemp("/tmp/dbxXXXX");
+    tmpfile = mktemp(_PATH_TMP);
     setout(tmpfile);
     status();
     alias(nil, nil, nil);
@@ -411,10 +412,10 @@ private openfiles ()
     }
     if (coredump and corefile == nil) {
 	if (vaddrs) {
-	    corename = "/dev/mem";
+	    corename = _PATH_MEM;
 	    corefile = fopen(corename, "r");
 	    if (corefile == nil) {
-		panic("can't open /dev/mem");
+		panic("can't open %s", _PATH_MEM);
 	    }
 	} else {
 	    corename = "core";
