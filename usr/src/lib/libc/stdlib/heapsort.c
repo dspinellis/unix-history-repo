@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)heapsort.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)heapsort.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -24,23 +24,23 @@ static char sccsid[] = "@(#)heapsort.c	5.5 (Berkeley) %G%";
  * isn't worth optimizing; the SWAP's get sped up by the cache, and pointer
  * arithmetic gets lost in the time required for comparison function calls.
  */
-#define	SWAP(a, b) { \
-	cnt = size; \
+#define	SWAP(a, b, count, size, tmp) { \
+	count = size; \
 	do { \
-		ch = *a; \
+		tmp = *a; \
 		*a++ = *b; \
-		*b++ = ch; \
-	} while (--cnt); \
+		*b++ = tmp; \
+	} while (--count); \
 }
 
 /* Copy one block of size size to another. */
-#define COPY(a, b) { \
-	cnt = size; \
-	t1 = a; \
-	t2 = b; \
+#define COPY(a, b, count, size, tmp1, tmp2) { \
+	count = size; \
+	tmp1 = a; \
+	tmp2 = b; \
 	do { \
-		*t1++ = *t2++; \
-	} while (--cnt); \
+		*tmp1++ = *tmp2++; \
+	} while (--count); \
 }
 
 /*
@@ -50,17 +50,17 @@ static char sccsid[] = "@(#)heapsort.c	5.5 (Berkeley) %G%";
  * There two cases.  If j == nmemb, select largest of Ki and Kj.  If
  * j < nmemb, select largest of Ki, Kj and Kj+1.
  */
-#define CREATE(initval) { \
-	for (i = initval; (j = i * 2) <= nmemb; i = j) { \
-		p = (char *)bot + j * size; \
-		if (j < nmemb && compar(p, p + size) < 0) { \
-			p += size; \
-			++j; \
+#define CREATE(initval, nmemb, par_i, child_i, par, child, size, count, tmp) { \
+	for (par_i = initval; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
+		child = (char *)bot + child_i * size; \
+		if (child_i < nmemb && compar(child, child + size) < 0) { \
+			child += size; \
+			++child_i; \
 		} \
-		t = (char *)bot + i * size; \
-		if (compar(p, t) <= 0) \
+		par = (char *)bot + par_i * size; \
+		if (compar(child, par) <= 0) \
 			break; \
-		SWAP(t, p); \
+		SWAP(par, child, count, size, tmp); \
 	} \
 }
 
@@ -79,26 +79,26 @@ static char sccsid[] = "@(#)heapsort.c	5.5 (Berkeley) %G%";
  * The time savings from this optimization are on the order of 15-20% for the
  * average case. See Knuth, Vol. 3, page 158, problem 18.
  */
-#define SELECT { \
-	for (i = 1; (j = i * 2) <= nmemb; i = j) { \
-		p = (char *)bot + j * size; \
-		if (j < nmemb && compar(p, p + size) < 0) { \
-			p += size; \
-			++j; \
+#define SELECT(par_i, child_i, nmemb, par, child, size, k, count, tmp1, tmp2) { \
+	for (par_i = 1; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
+		child = (char *)bot + child_i * size; \
+		if (child_i < nmemb && compar(child, child + size) < 0) { \
+			child += size; \
+			++child_i; \
 		} \
-		t = (char *)bot + i * size; \
-		COPY(t, p); \
+		par = (char *)bot + par_i * size; \
+		COPY(par, child, count, size, tmp1, tmp2); \
 	} \
 	for (;;) { \
-		j = i; \
-		i = j / 2; \
-		p = (char *)bot + j * size; \
-		t = (char *)bot + i * size; \
-		if (j == 1 || compar(k, t) < 0) { \
-			COPY(p, k); \
+		child_i = par_i; \
+		par_i = child_i / 2; \
+		child = (char *)bot + child_i * size; \
+		par = (char *)bot + par_i * size; \
+		if (child_i == 1 || compar(k, par) < 0) { \
+			COPY(child, k, count, size, tmp1, tmp2); \
 			break; \
 		} \
-		COPY(p, t); \
+		COPY(child, par, count, size, tmp1, tmp2); \
 	} \
 }
 
@@ -116,7 +116,7 @@ heapsort(bot, nmemb, size, compar)
 	int (*compar) __P((const void *, const void *));
 {
 	register int cnt, i, j, l;
-	register char ch, *t1, *t2;
+	register char tmp, *tmp1, *tmp2;
 	char *k, *p, *t;
 
 	if (nmemb <= 1)
@@ -137,7 +137,7 @@ heapsort(bot, nmemb, size, compar)
 	bot -= size;
 
 	for (l = nmemb / 2 + 1; --l;)
-		CREATE(l);
+		CREATE(l, nmemb, i, j, t, p, size, cnt, tmp);
 
 	/*
 	 * For each element of the heap, save the largest element into its
@@ -145,10 +145,10 @@ heapsort(bot, nmemb, size, compar)
 	 * heap.
 	 */
 	while (nmemb > 1) {
-		COPY(k, (char *)bot + nmemb * size);
-		COPY((char *)bot + nmemb * size, (char *)bot + size);
+		COPY(k, (char *)bot + nmemb * size, cnt, size, tmp1, tmp2);
+		COPY((char *)bot + nmemb * size, (char *)bot + size,  cnt, size, tmp1, tmp2);
 		--nmemb;
-		SELECT;
+		SELECT(i, j, nmemb, t, p, size, k, cnt, tmp1, tmp2);
 	}
 	free(k);
 	return (0);
