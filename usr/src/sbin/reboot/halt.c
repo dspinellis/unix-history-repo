@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980,1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)halt.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)halt.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,9 +21,10 @@ static char sccsid[] = "@(#)halt.c	5.2 (Berkeley) %G%";
 #include <sys/reboot.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/syslog.h>
 #include <errno.h>
 #include <signal.h>
-#include <syslog.h>
+#include <pwd.h>
 
 main(argc, argv)
 	int argc;
@@ -33,6 +34,8 @@ main(argc, argv)
 	char *ttyn = (char *)ttyname(2);
 	register i;
 	register qflag = 0;
+	char *user, *getlogin();
+	struct passwd *pw, *getpwuid();
 
 	openlog("halt", 0, LOG_AUTH);
 	howto = RB_HALT;
@@ -55,11 +58,19 @@ main(argc, argv)
 		exit(1);
 	}
 
+	user = getlogin();
+	if (user == (char *)0 && (pw = getpwuid(getuid())))
+		user = pw->pw_name;
+	if (user == (char *)0)
+		user = "root";
+	syslog(LOG_CRIT, "halted by %s", user);
+
 	signal(SIGHUP, SIG_IGN);		/* for network connections */
 	if (kill(1, SIGTSTP) == -1) {
 		fprintf(stderr, "reboot: can't idle init\n");
 		exit(1);
 	}
+	sleep(1);
 
 	if (!qflag) for (i = 1; ; i++) {
 		if (kill(-1, SIGKILL) == -1) {
@@ -73,21 +84,17 @@ main(argc, argv)
 			exit(1);
 		}
 		if (i > 5) {
-	fprintf(stderr, "CAUTION: some process(es) wouldn't die\n");
+			fprintf(stderr,
+			    "CAUTION: some process(es) wouldn't die\n");
 			break;
 		}
 		setalarm(2 * i);
 		pause();
 	}
 
-	if ((howto & RB_NOSYNC) == 0)
-		syslog(LOG_CRIT, "halted");
-	if (!qflag) {
-		if ((howto & RB_NOSYNC)==0) {
-			markdown();
-			sync();
-			sync();
-		}
+	if (!qflag && (howto & RB_NOSYNC) == 0) {
+		markdown();
+		sync();
 		setalarm(5);
 		pause();
 	}
