@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)send.c	2.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	2.14 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -260,7 +260,7 @@ mail1(hp)
 		grabh(hp, GCC);
 	else if (intty) {
 		printf("EOT\n");
-		flush();
+		fflush(stdout);
 	}
 
 	/*

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	2.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	2.17 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -351,7 +351,7 @@ edstop()
 		remove(tempname);
 	}
 	printf("\"%s\" ", editfile);
-	flush();
+	fflush(stdout);
 	if ((obuf = fopen(editfile, "r+")) == NULL) {
 		perror(editfile);
 		relsesigs();
@@ -388,7 +388,7 @@ edstop()
 	}
 	else
 		printf("complete\n");
-	flush();
+	fflush(stdout);
 
 done:
 	relsesigs();
@@ -419,19 +419,6 @@ relsesigs()
 }
 
 /*
- * Empty the output buffer.
- */
-
-clrbuf(buf)
-	register FILE *buf;
-{
-
-	buf = stdout;
-	buf->_ptr = buf->_base;
-	buf->_cnt = BUFSIZ;
-}
-
-/*
  * Open a temp file by creating, closing, unlinking, and
  * reopening.  Return the open file descriptor.
  */
@@ -453,16 +440,6 @@ opentemp(file)
 	}
 	remove(file);
 	return(f);
-}
-
-/*
- * Flush the standard output.
- */
-
-flush()
-{
-	fflush(stdout);
-	fflush(stderr);
 }
 
 /*

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	2.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	2.17 (Berkeley) %G%";
 #endif
 
 /*
@@ -97,7 +97,7 @@ collect(hp)
 
 		setjmp(coljmp);
 		sigsetmask(omask);
-		flush();
+		fflush(stdout);
 		if (getsub) {
 			grabh(hp, GSUBJECT);
 			getsub = 0;
@@ -264,7 +264,7 @@ collect(hp)
 				break;
 			}
 			printf("\"%s\" ", cp);
-			flush();
+			fflush(stdout);
 			lc = 0;
 			cc = 0;
 			while (readline(fbuf, linebuf) > 0) {
@@ -761,8 +761,8 @@ collrub(s)
 
 	if (s == SIGINT && hadintr == 0) {
 		hadintr++;
-		clrbuf(stdout);
-		printf("\n(Interrupt -- one more to kill letter)\n");
+		fflush(stdout);
+		fprintf(stderr, "\n(Interrupt -- one more to kill letter)\n");
 		longjmp(coljmp, 1);
 	}
 	fclose(newo);

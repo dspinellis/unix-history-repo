@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	2.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	2.14 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -303,8 +303,7 @@ main(argc, argv)
 hdrstop()
 {
 
-	clrbuf(stdout);
-	printf("\nInterrupt\n");
 	fflush(stdout);
+	fprintf(stderr, "\nInterrupt\n");
 	longjmp(hdrjmp, 1);
 }
