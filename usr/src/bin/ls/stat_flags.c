@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stat_flags.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)stat_flags.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,18 +37,18 @@ flags_to_string(flags, def)
 
 	string[0] = '\0';
 	prefix = NULL;
-	if (flags & ARCHIVED)
-		SAPPEND("arch");
-	if (flags & NODUMP)
-		SAPPEND("nodump");
-	if (flags & USR_IMMUTABLE)
-		SAPPEND("uchg");
-	if (flags & USR_APPEND)
+	if (flags & UF_APPEND)
 		SAPPEND("uappnd");
-	if (flags & SYS_IMMUTABLE)
-		SAPPEND("schg");
-	if (flags & SYS_APPEND)
+	if (flags & UF_IMMUTABLE)
+		SAPPEND("uchg");
+	if (flags & UF_NODUMP)
+		SAPPEND("nodump");
+	if (flags & SF_APPEND)
 		SAPPEND("sappnd");
+	if (flags & SF_ARCHIVED)
+		SAPPEND("arch");
+	if (flags & SF_IMMUTABLE)
+		SAPPEND("schg");
 	return (prefix == NULL && def != NULL ? def : string);
 }
 
@@ -93,26 +93,26 @@ string_to_flags(stringp, setp, clrp)
 		}
 		switch (p[0]) {
 		case 'a':
-			TEST(p, "arch", ARCHIVED);
-			TEST(p, "archived", ARCHIVED);
+			TEST(p, "arch", SF_ARCHIVED);
+			TEST(p, "archived", SF_ARCHIVED);
 			return (1);
 		case 'd':
 			clear = !clear;
-			TEST(p, "dump", NODUMP);
+			TEST(p, "dump", UF_NODUMP);
 			return (1);
 		case 's':
-			TEST(p, "sappnd", SYS_APPEND);
-			TEST(p, "sappend", SYS_APPEND);
-			TEST(p, "schg", SYS_IMMUTABLE);
-			TEST(p, "schange", SYS_IMMUTABLE);
-			TEST(p, "simmutable", SYS_IMMUTABLE);
+			TEST(p, "sappnd", SF_APPEND);
+			TEST(p, "sappend", SF_APPEND);
+			TEST(p, "schg", SF_IMMUTABLE);
+			TEST(p, "schange", SF_IMMUTABLE);
+			TEST(p, "simmutable", SF_IMMUTABLE);
 			return (1);
 		case 'u':
-			TEST(p, "uappnd", USR_APPEND);
-			TEST(p, "uappend", USR_APPEND);
-			TEST(p, "uchg", USR_IMMUTABLE);
-			TEST(p, "uchange", USR_IMMUTABLE);
-			TEST(p, "uimmutable", SYS_IMMUTABLE);
+			TEST(p, "uappnd", UF_APPEND);
+			TEST(p, "uappend", UF_APPEND);
+			TEST(p, "uchg", UF_IMMUTABLE);
+			TEST(p, "uchange", UF_IMMUTABLE);
+			TEST(p, "uimmutable", UF_IMMUTABLE);
 			/* FALLTHROUGH */
 		default:
 			return (1);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.18 (Berkeley) %G%
+ *	@(#)stat.h	7.19 (Berkeley) %G%
  */
 
 #include <sys/time.h>
@@ -110,20 +110,23 @@ struct stat {
  *
  * Low 16-bits: super-user and owner settable.
  */
-#define	NODUMP		0x00000001	/* do not dump file */
-#define	USR_IMMUTABLE	0x00000002	/* file may not be changed */
-#define	USR_APPEND	0x00000004	/* writes to file may only append */
+#define	UF_NODUMP	0x00000001	/* do not dump file */
+#define	UF_IMMUTABLE	0x00000002	/* file may not be changed */
+#define	UF_APPEND	0x00000004	/* writes to file may only append */
 /*
  * High 16-bits: super-user settable.
  */
-#define	ARCHIVED	0x00010000	/* file is archived */
-#define	SYS_IMMUTABLE	0x00020000	/* file may not be changed */
-#define	SYS_APPEND	0x00040000	/* writes to file may only append */
+#define	SF_ARCHIVED	0x00010000	/* file is archived */
+#define	SF_IMMUTABLE	0x00020000	/* file may not be changed */
+#define	SF_APPEND	0x00040000	/* writes to file may only append */
+
+#ifdef KERNEL
 /*
  * Shorthand abbreviations of above.
  */
-#define	IMMUTABLE	(USR_IMMUTABLE | SYS_IMMUTABLE)
-#define	APPEND		(USR_APPEND | SYS_APPEND)
+#define	APPEND		(UF_APPEND | SF_APPEND)
+#define	IMMUTABLE	(UF_IMMUTABLE | SF_IMMUTABLE)
+#endif
 #endif
 
 #ifndef KERNEL
