@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.1	%G%	*/
+/*	vfs_lookup.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -68,6 +68,10 @@ cloop:
 	while (c != '/' && c != '\0' && u.u_error == 0 ) {
 		if (mpxip!=NULL && c=='!')
 			break;
+		if (flag==1 && c == ('/'|0200)) {
+			u.u_error = ENOENT;
+			goto out;
+		}
 		if (cp < &u.u_dbuf[DIRSIZ])
 			*cp++ = c;
 		c = (*func)();
