@@ -606,7 +606,7 @@ ufs_write(vp, uio, ioflag, cred)
 		if (cred->cr_uid != 0)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
-	if (error && (ioflag & IO_UNIT)) {
+	if (error == EFAULT || error && (ioflag & IO_UNIT)) {
 		(void) itrunc(ip, osize, ioflag & IO_SYNC);
 		uio->uio_offset -= resid - uio->uio_resid;
 		uio->uio_resid = resid;

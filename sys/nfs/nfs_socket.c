@@ -49,6 +49,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "mount.h"
 #include "kernel.h"

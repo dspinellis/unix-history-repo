@@ -38,6 +38,7 @@
  */
 #ifndef RNF_NORMAL
 #include "param.h"
+#include "systm.h"
 #include "radix.h"
 #include "malloc.h"
 #define	M_DONTWAIT M_NOWAIT

@@ -45,6 +45,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "buf.h"
 #include "uio.h"

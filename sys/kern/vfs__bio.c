@@ -53,9 +53,10 @@
  * 24 Apr 92	Martin Renters		Fix NFS read request hang
  * 20 Aug 92	David Greenman		Fix getnewbuf() 2xAllocation
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys.386bsd/kern/vfs__bio.c,v 1.2 1993/07/18 11:27:45 paul Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys.386bsd/kern/vfs__bio.c,v 1.3 1993/07/18 17:15:09 davidg Exp $";
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "vnode.h"
 #include "buf.h"

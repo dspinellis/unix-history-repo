@@ -34,10 +34,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
- *	$Id: isofs_lookup.c,v 1.5 1993/07/19 13:40:03 cgd Exp $
+ *	$Id: isofs_lookup.c,v 1.2 1993/07/20 03:27:28 jkh Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "namei.h"
 #include "buf.h"
 #include "file.h"

@@ -34,6 +34,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "namei.h"
 #include "buf.h"
 #include "file.h"

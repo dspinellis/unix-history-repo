@@ -64,6 +64,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "file.h"
 #include "namei.h"

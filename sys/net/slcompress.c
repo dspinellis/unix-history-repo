@@ -29,11 +29,12 @@
  */
 #ifndef lint
 static char rcsid[] =
-    "@(#) $Header: slcompress.c,v 1.22 92/05/24 11:48:20 van Exp $ (LBL)";
+    "@(#) $Header: /a/cvs/386BSD/src/sys.386bsd/net/slcompress.c,v 1.1.1.1 1993/06/12 14:57:51 rgrimes Exp $ (LBL)";
 #endif
 
 #include <sys/types.h>
 #include <sys/param.h>
+#include "systm.h"
 #include <sys/mbuf.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>

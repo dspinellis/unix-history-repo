@@ -35,6 +35,7 @@
 
 #ifndef CLTPOVAL_SRC /* XXX -- till files gets changed */
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"

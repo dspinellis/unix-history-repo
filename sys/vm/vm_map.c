@@ -74,6 +74,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "malloc.h"
 #include "vm.h"
 #include "vm_page.h"

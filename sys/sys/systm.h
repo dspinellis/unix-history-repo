@@ -117,8 +117,8 @@ void	ttyprintf __P((struct tty *, const char *, ...));
 void	bcopy __P((void *from, void *to, u_int len));
 void	ovbcopy __P((void *from, void *to, u_int len));
 void	bzero __P((void *buf, u_int len));
-int	bcmp __P((void *str1, void *str2, u_int len));
-size_t	strlen __P((const char *string));
+static int	bcmp __P((void *str1, void *str2, u_int len));
+static size_t	strlen __P((const char *string));
 
 int	copystr __P((void *kfaddr, void *kdaddr, u_int len, u_int *done));
 int	copyinstr __P((void *udaddr, void *kaddr, u_int len, u_int *done));
@@ -140,7 +140,7 @@ int	suiword __P((void *base, int word));
 int	scanc __P((unsigned size, u_char *cp, u_char *table, int mask));
 int	skpc __P((int mask, int size, char *cp));
 int	locc __P((int mask, char *cp, unsigned size));
-int	ffs __P((long value));
+static int	ffs __P((long value));
 
 /*
  * XXX - a lot were missing.  A lot are still missing.  Some of the above

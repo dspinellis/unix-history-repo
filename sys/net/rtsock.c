@@ -34,6 +34,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "proc.h"
 #include "socket.h"

@@ -61,8 +61,8 @@ SOFTWARE.
  */
 /* 
  * ARGO TP
- * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
- * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
+ * $Header: /a/cvs/386BSD/src/sys/netiso/tp_iso.c,v 1.1.1.1 1993/06/12 14:57:18 rgrimes Exp $
+ * $Source: /a/cvs/386BSD/src/sys/netiso/tp_iso.c,v $
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -87,6 +87,7 @@ SOFTWARE.
 #ifdef ISO
 
 #include "param.h"
+#include "systm.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "domain.h"
