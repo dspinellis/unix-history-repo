@@ -1,0 +1,42 @@
+#
+# ETHERNET CALDER COMET
+#
+machine		vax
+cpu		"VAX780"
+cpu		"VAX750"
+cpu		"VAX730"
+ident		CALDER
+timezone	8 dst
+maxusers	16
+options		INET
+options		PUP
+
+config	hp	vmunix
+config	hk	hkvmunix
+config	hphp	hphpvmunix
+
+controller	uba0	at nexus ?
+controller	mba0	at nexus ?
+disk		hp0	at mba? drive 0
+disk		hp1	at mba? drive 1
+controller	hk0	at uba? csr 0177440 		vector rkintr
+disk		rk0	at hk0 drive 0
+disk		rk1	at hk0 drive 1
+controller	sc0	at uba? csr 0176700		vector upintr
+disk		up0	at sc0 drive 0
+disk		up1	at sc0 drive 1
+device		dz0	at uba? csr 0160120 flags 0xff	vector dzrint dzxint
+pseudo-device	pty
+pseudo-device	inet
+pseudo-device	pup
+pseudo-device	loop
+device		en0	at uba0 csr 0161000 flags 46
+				vector enxint enrint encollide
+device		en1	at uba0 csr 0162000 flags 0xc0002e
+				vector enxint enrint encollide
+device		un0	at uba? csr 0160210 flags 99
+				vector unintr
+device		ec0	at uba? csr 0164330 flags 98
+				vector ecrint eccollide ecxint
+device		il0	at uba? csr 0164000 flags 97
+				vector ilrint ilcint
