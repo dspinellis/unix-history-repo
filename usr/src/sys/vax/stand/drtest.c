@@ -1,4 +1,4 @@
-/*	drtest.c	4.12	83/03/20	*/
+/*	drtest.c	4.13	83/05/03	*/
 
 /*
  * Standalone program to test a disk and driver
@@ -41,7 +41,7 @@ again:
 	lastsector = st.ncyl * st.nspc;
 	for (sector = 0; sector < lastsector; sector += st.nsect) {
 		if (sector && (sector % (st.nspc * 10)) == 0)
-			printf("sector %d\n", sector);
+			printf("cylinder %d\n", sector/st.nspc);
 		read(fd, bp, tracksize);
 	}
 	goto again;
