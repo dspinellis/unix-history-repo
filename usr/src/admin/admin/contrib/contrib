@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.10 (Berkeley) %G%
+.\"	@(#)contrib	5.11 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -77,7 +77,7 @@ l l l l.
 386 device drivers	Don Ahn, Sean Fagin, Tim Tucker
 HCX device drivers	Harris Corp.
 adventure(6)	Will Crowther, Don Woods, Jim Gillogly
-ar(1)	Hugh Smith
+ar(1)	Hugh A. Smith
 arithmetic(6)	Eamonn McManus
 arp(8)	Sun Microsystems Inc.
 atc(6)	Ed James
@@ -151,7 +151,7 @@ phantasia(6)	Edward A. Estes, C. Robertson
 ping(8)	Mike Muuss
 pom(6)	Keith E. Brandt
 primes(6)	Landon Curt Noll
-ranlib(1)	Hugh Smith
+ranlib(1)	Hugh A. Smith
 rcs(1)	Walter F. Tichy
 regexp(3)	Henry Spencer
 robots(6)	Ken Arnold
