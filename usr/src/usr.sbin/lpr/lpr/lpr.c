@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.20	83/06/15	*/
+/*	lpr.c	4.21	83/06/17	*/
 /*
  *      lpr -- off line print
  *
@@ -214,19 +214,20 @@ main(argc, argv)
 			break;
 
 		case '#':		/* n copies */
-			if (isdigit(arg[2]))
-				ncopies = atoi(&arg[2]);
+			if (isdigit(arg[2])) {
+				i = atoi(&arg[2]);
+				if (i > 0)
+					ncopies = i;
+			}
 		}
 	}
 	if (printer == NULL && (printer = getenv("PRINTER")) == NULL)
 		printer = DEFLP;
 	chkprinter(printer);
-	/*
-	 * Check to make sure queuing is enabled.
-	 */
-	(void) sprintf(line, "%s/%s", SD, LO);
-	if (stat(line, &stb) == 0 && (stb.st_mode & 010))
-		fatal("Printer queue is disabled");
+	if (SC && ncopies > 1)
+		fatal("multiple copies are not allowed");
+	if (MC > 0 && ncopies > MC)
+		fatal("only %d copies are allowed", MC);
 	/*
 	 * Get the identity of the person doing the lpr using the same
 	 * algorithm as lprm. 
@@ -235,6 +236,12 @@ main(argc, argv)
 	if ((pw = getpwuid(userid)) == NULL)
 		fatal("Who are you?");
 	person = pw->pw_name;
+	/*
+	 * Check to make sure queuing is enabled if userid is not root.
+	 */
+	(void) sprintf(line, "%s/%s", SD, LO);
+	if (userid && stat(line, &stb) == 0 && (stb.st_mode & 010))
+		fatal("Printer queue is disabled");
 	/*
 	 * Initialize the control file.
 	 */
@@ -580,8 +587,11 @@ chkprinter(s)
 		LO = DEFLOCK;
 	if ((MX = pgetnum("mx")) < 0)
 		MX = DEFMX;
+	if ((MC = pgetnum("mc")) < 0)
+		MC = DEFMAXCOPIES;
 	if ((DU = pgetnum("du")) < 0)
 		DU = DEFUID;
+	SC = pgetflag("sc");
 }
 
 /*
@@ -589,28 +599,26 @@ chkprinter(s)
  */
 mktemps()
 {
-	register int c, len;
-	int n;
+	register int c, len, fd, n;
+	register char *cp;
 	char buf[BUFSIZ], *mktemp();
-	FILE *fp;
 
 	(void) sprintf(buf, "%s/.seq", SD);
-	if ((fp = fopen(buf, "r+")) == NULL) {
-		if ((fp = fopen(buf, "w")) == NULL) {
-			printf("%s: cannot create %s\n", name, buf);
-			exit(1);
+	if ((fd = open(buf, O_RDWR|O_CREAT, 0661)) < 0) {
+		printf("%s: cannot create %s\n", name, buf);
+		exit(1);
+	}
+	if (flock(fd, LOCK_EX)) {
+		printf("%s: cannot lock %s\n", name, buf);
+		exit(1);
+	}
+	n = 0;
+	if ((len = read(fd, buf, sizeof(buf))) > 0) {
+		for (cp = buf; len--; ) {
+			if (*cp < '0' || *cp > '9')
+				break;
+			n = n * 10 + (*cp++ - '0');
 		}
-		setbuf(fp, buf);
-		n = 0;
-	} else {
-		setbuf(fp, buf);
-		if (flock(fileno(fp), LOCK_EX)) {
-			printf("%s: cannot lock %s\n", name, buf);
-			exit(1);
-		}
-		n = 0;
-		while ((c = getc(fp)) >= '0' && c <= '9')
-			n = n * 10 + (c - '0');
 	}
 	len = strlen(SD) + strlen(host) + 8;
 	tfname = mktemp("tf", n, len);
@@ -618,9 +626,10 @@ mktemps()
 	dfname = mktemp("df", n, len);
 	inchar = strlen(SD) + 3;
 	n = (n + 1) % 1000;
-	(void) fseek(fp, 0L, 0);
-	fprintf(fp, "%d\n", n);
-	(void) fclose(fp);
+	(void) lseek(fd, 0L, 0);
+	sprintf(buf, "%03d\n", n);
+	(void) write(fd, buf, strlen(buf));
+	(void) close(fd);	/* unlocks as well */
 }
 
 /*
