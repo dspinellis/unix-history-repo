@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -134,7 +134,8 @@ point:	if (l_bang_flag)
 		fclose(l_fp);
 	if (filename_read != filename_current)
 		free(filename_read);
-	change_flag = 0L;
+	if ((Start == top) && (End == bottom))
+		change_flag = 0L;
 	*errnum = 1;
 	if (l_q_flag) {			/* For "wq" and "Wq". */
 		ungetc('\n', inputt);

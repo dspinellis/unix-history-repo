@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)g.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)g.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -123,6 +123,8 @@ skip2:
 		sl = ss;
 		l_cnt++;
 	}
+
+	fputc('\n', fp);
 	if (ss == EOF)
 		clearerr(inputt);
 }
@@ -141,7 +143,7 @@ g(inputt, errnum)
 	int *errnum;
 {
 	static char *l_template_g;
-	char *l_patt;
+	char *l_patt, l_ohm[130];
 	static int l_template_flag = 0;
 	int l_re_success, l_flag_v = 0, l_err, l_num;
 	register l_gut_cnt, a;
@@ -241,6 +243,7 @@ g(inputt, errnum)
 	l_posix_cur = current;
 #endif
 	current = Start;
+	strcpy(l_ohm, help_msg);
 
 	sigspecial++;
 
@@ -248,7 +251,7 @@ g(inputt, errnum)
 		sigspecial++;
 		gut_num = l_num + 512;
 		free(l_gut);
-		l_gut = malloc(sizeof(LINE **) * gut_num);
+		gut = l_gut = malloc(sizeof(LINE **) * gut_num);
 		sigspecial--;
 		if (l_gut == NULL) {
 			*errnum = -1;
@@ -256,6 +259,7 @@ g(inputt, errnum)
 #ifdef POSIX
 			current = l_posix_cur;
 #endif
+			ungetc('\n', inputt);
 			return;
 		}
 	}
@@ -336,6 +340,7 @@ g(inputt, errnum)
 	}
 
 point:
+	strcpy(help_msg, l_ohm);
 	if (GV_flag == 0) {
 		fclose(l_fp);
 		unlink(l_template_g);

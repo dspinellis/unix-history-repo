@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)line_number.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)line_number.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,7 +27,7 @@ static char sccsid[] = "@(#)line_number.c	5.3 (Berkeley) %G%";
 
 /*
  * Converts a LINE to a line number (int) that can be printed to
- * the device the user is at. Used by n.
+ * the device the user is at. Used by n and =.
  */
 int
 line_number(line_addr)

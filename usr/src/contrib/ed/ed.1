@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ed.1	5.7 (Berkeley) %G%
+.\"	@(#)ed.1	5.8 (Berkeley) %G%
 .\"
 .TH ED 1 ""
 .SH NAME
@@ -346,14 +346,14 @@ Generally, in the command list one command occupies a line. Thus to
 have multiple commands in the command list it is necessary to escape the
 <newline> at the end of each line so that the global command does not
 interpret it as an indication that the command list entry has ended.
-The <newline> is escaped by proceeding it with a backslash (\e).
+The <newline> is escaped by proceeding it with a backslash (`\e').
 Similarly with the commands that set \fIed\fR into input mode the <newlines>
 of the entered text need to be escaped. If the `.' used to end input mode
 is the last line of the command list the <newline> following the `.' need
 not be escaped, or the `.' may be omitted entirely.
 Commands in the command list can affect any line in the buffer.
 For the behaviour of each \fIed\fR command within a command list refer to the
-information on the individual command.
+information on the individual command, particularly \fIs\fR and \fI!\fR.
 The commands
 .IR g ,
 .IR G ,
@@ -382,6 +382,8 @@ will be set to the last line affected by the last successful command
 input. If no match or an input command error occurs \fBcurrent\fR
 will be set to the last line searched by \fIG\fR. \fIG\fR can be prematurely
 ended by `ctrl-C' (SIGINT).
+For the behaviour of each \fIed\fR command within a command list refer to the
+information on the individual command, particularly \fIs\fR and \fI!\fR.
 
 .TP 5
 h
@@ -514,9 +516,9 @@ The prompt is initially off unless the \-p option is specified.
 q
 The quit command causes
 .I ed
-to exit. If the
+to exit. If the entire
 .B buffer
-has been modified since the last write command
+(1,$) has not been written since the last modification
 .I ed
 will
 issue a warning once (`?'); a second issuing of the command will be obeyed
@@ -580,11 +582,13 @@ preceeded by a backslash (`\e') to escape it.
 can continue on the next line and can include another escaped <newline>.
 .IP
 The following extention should not be included in portable scripts.
-When spliting lines using \fIs\fR with the global commands (\fIg\fR,
-\fIG\fR, \fIv\fR, or \fIV\fR) the new-line in the replacement string
+When spliting lines using \fIs\fR within the global commands (\fIg\fR,
+\fIG\fR, \fIv\fR, or \fIV\fR) the <newline> in the replacement string
 must be escaped by preceding it with `\e\e\e' (three adjacent `\e'\|s \-
-the first \e escapes the second \e so that it is passed to \fIs\fR
-to escape the <newline>). [N.B. Other \fIed\fR's do not allow line
+the first `\e' escapes the second `\e' so that it is passed to \fIs\fR
+to escape the <newline> passed by the global command; the third `\e'
+is to escape the <newline> so that the global command list continues).
+[N.B. Other \fIed\fR's do not allow line
 splitting within the global commands].
 .IP
 The \fBflags\fR may be any combination of:
@@ -710,7 +714,7 @@ works as the
 command does except the addressed contents of the
 .B buffer
 are appended to `filename' (or the
-.B "remember filename"
+.B "remembered filename"
 if `filename' is not specified). If `filename' is lead by ! then
 .I W
 will act exactly as the
@@ -733,7 +737,7 @@ works as the
 .I W
 command does with the addition that
 .I ed
-exits immediately after the write is complete.
+exits immediately after the appended write is complete.
 \fBCurrent\fR is unchanged.
 .TP 5
 .RB (\|.\|+1)\|z\ \ \ \ or,
@@ -766,8 +770,26 @@ The command after the
 is executed by \fIsh(1)\fR and the results are printed. A `!' is
 printed in the first column when execution has completed (unless the -s
 option has been specified).
-A `!' after \fI!\fR repeats the last shell command. An unescaped `%'
-represents the remembered pathname.
+A `!' immediately after \fI!\fR repeats the last shell command.
+An unescaped `%' represents the remembered filename.
+Commands to \fIsh(1)\fR can have several lines by escaping the <newline>
+with a `\e' immediately before it. The line continuation character
+for \fIsh(1)\fR, `\e', can be included on a line provided that it
+is escaped by a `\e' immediately before so that \fIed\fR passes it
+literally to \fIsh(1)\fR: `\e\e'. It is implicit that for the command
+line that the \fIsh(1)\fR line continuation character is on that the
+<newline> will be escaped (e.g. `\e\e\e<newline>').
+This behavior can be used within global command lists. However, an
+additional `\e' must be added so that the \fI!\fR command continuor is
+passed to \fI!\fR - it must occur immediately before the global
+command's continuor. Therefore,
+the \fI!\fR command continuation sequence in a global command list
+will appear as `\e\e\e' (explanation as with \fIsfR). The line continuation
+character for \fIsh(1)\fR needs no additional escaping (since it it
+not dependant on <newline> being adjacent) - hence, the
+sequence in a global command list with a line continuation will appear
+as `\e\e\e\e\e<newline>'.
+
 \fBCurrent\fR is unchanged.
 .TP 5
 /regular expression/\|\|\|\|\|or,
