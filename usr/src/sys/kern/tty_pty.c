@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.24	82/08/22	*/
+/*	tty_pty.c	4.25	82/09/12	*/
 
 /*
  * Pseudo-teletype Driver
@@ -16,6 +16,7 @@
 #include "../h/file.h"
 #include "../h/proc.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 #if NPTY == 1
 #undef	NPTY
