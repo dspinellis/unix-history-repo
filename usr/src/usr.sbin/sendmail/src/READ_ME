@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.97 (Berkeley) %G%
+#	@(#)READ_ME	8.98 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -158,6 +158,12 @@ tested.
 
 All of -DNEWDB, -DNDBM, -DNIS, -DNISPLUS, -DHESIOD, and -DNETINFO are
 normally defined in the DBMDEF line in the Makefile.
+
+If you define NEWDB or HESIOD you get the User Database (USERDB)
+automatically.  Generally you do want to have NEWDB for it to do
+anything interesting.  See above for getting the Berkeley "db"
+package (i.e., NEWDB).  There is no separate "user database"
+package -- don't bother searching for it on the net.
 
 
 +---------------+
@@ -1077,4 +1083,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.97, last update %G% 18:11:35)
+(Version 8.98, last update %G% 10:41:51)
