@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getitimer.2	5.1 (Berkeley) %G%
+.\"	@(#)getitimer.2	6.1 (Berkeley) %G%
 .\"
-.TH GETITIMER 2 "27 July 1983"
+.TH GETITIMER 2 ""
 .UC 5
 .SH NAME
 getitimer, setitimer \- get/set value of interval timer
@@ -35,11 +35,16 @@ defined in
 The
 .I getitimer
 call returns the current value for the timer specified in
-.IR which ,
-while the
+.I which
+in the structure at
+.IR value .
+The
 .I setitimer
-call sets the value of a timer (optionally returning the previous
-value of the timer).
+call sets a timer to the specified
+.I value
+(returning the previous value of the timer if
+.I ovalue
+is nonzero).
 .PP
 A timer value is defined by the 
 .I itimerval
@@ -73,7 +78,7 @@ is non-zero).
 .PP
 Time values smaller than the resolution of the
 system clock are rounded up to this resolution
-(on the VAX, 10 microseconds).
+(on the VAX, 10 milliseconds).
 .PP
 The ITIMER_REAL timer decrements in real time.  A SIGALRM signal is
 delivered when this timer expires.
