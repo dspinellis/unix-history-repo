@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.70 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.71 (Berkeley) %G%
  */
 
 /*
@@ -2051,10 +2051,11 @@ nfs_vfree(pvp, ino, mode)
  * NFS file truncation.
  */
 int
-nfs_truncate(vp, length, flags)
+nfs_truncate(vp, length, flags, cred)
 	struct vnode *vp;
 	off_t length;
 	int flags;
+	struct ucred *cred;
 {
 
 	/* Use nfs_setattr */

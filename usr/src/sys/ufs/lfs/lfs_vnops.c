@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.78 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.79 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -324,7 +324,7 @@ lfs_write(vp, uio, ioflag, cred)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (error && (ioflag & IO_UNIT)) {
-		(void)lfs_truncate(vp, osize, ioflag & IO_SYNC);
+		(void)lfs_truncate(vp, osize, ioflag & IO_SYNC, cred);
 		uio->uio_offset -= resid - uio->uio_resid;
 		uio->uio_resid = resid;
 	}
@@ -389,7 +389,7 @@ lfs_inactive(vp, p)
 		if (!getinoquota(ip))
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
-		error = lfs_truncate(vp, (off_t)0, 0);
+		error = lfs_truncate(vp, (off_t)0, 0, NOCRED);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
 		ip->i_rdev = 0;

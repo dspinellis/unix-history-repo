@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfsnode.h	7.8 (Berkeley) %G%
+ *	@(#)mfsnode.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -163,7 +163,8 @@ struct mfsnode {
 #define mfs_truncate ((int (*) __P(( \
 		struct vnode *vp, \
 		off_t length, \
-		int flags))) mfs_badop)
+		int flags, \
+		struct ucred *cred))) mfs_badop)
 #define mfs_update ((int (*) __P(( \
 		struct vnode *vp, \
 		struct timeval *ta, \
