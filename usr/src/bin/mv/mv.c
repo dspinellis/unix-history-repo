@@ -15,29 +15,36 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+
 #include <errno.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "pathnames.h"
 
 int fflg, iflg;
 
+int	copy __P((char *, char *));
+int	do_move __P((char *, char *));
+void	err __P((const char *, ...));
+int	fastcopy __P((char *, char *, struct stat *));
+void	usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern char *optarg;
-	extern int optind;
 	register int baselen, exitval, len;
 	register char *p, *endp;
 	struct stat sb;
@@ -52,7 +59,7 @@ main(argc, argv)
 		case 'f':
 			fflg = 1;
 			break;
-		case '-':		/* undocumented; for compatibility */
+		case '-':		/* Undocumented; for compatibility. */
 			goto endarg;
 		case '?':
 		default:
@@ -85,10 +92,10 @@ endarg:	argc -= optind;
 			p = *argv;
 		else
 			++p;
-		if ((baselen + (len = strlen(p))) >= MAXPATHLEN)
-			(void)fprintf(stderr,
-			    "mv: %s: destination pathname too long\n", *argv);
-		else {
+		if ((baselen + (len = strlen(p))) >= MAXPATHLEN) {
+			err("%s: destination pathname too long", *argv);
+			exitval = 1;
+		} else {
 			bcopy(p, endp, len + 1);
 			exitval |= do_move(*argv, path);
 		}
@@ -96,6 +103,7 @@ endarg:	argc -= optind;
 	exit(exitval);
 }
 
+int
 do_move(from, to)
 	char *from, *to;
 {
@@ -122,16 +130,15 @@ do_move(from, to)
 			if ((ch = getchar()) != EOF && ch != '\n')
 				while (getchar() != '\n');
 			if (ch != 'y')
-				return(0);
+				return (0);
 		}
 	}
 	if (!rename(from, to))
-		return(0);
+		return (0);
 
 	if (errno != EXDEV) {
-		(void)fprintf(stderr,
-		    "mv: rename %s to %s: %s\n", from, to, strerror(errno));
-		return(1);
+		err("rename %s to %s: %s", from, to, strerror(errno));
+		return (1);
 	}
 
 	/*
@@ -139,13 +146,14 @@ do_move(from, to)
 	 * otherwise, use cp and rm.
 	 */
 	if (stat(from, &sb)) {
-		(void)fprintf(stderr, "mv: %s: %s\n", from, strerror(errno));
-		return(1);
+		err("%s: %s", from, strerror(errno));
+		return (1);
 	}
-	return(S_ISREG(sb.st_mode) ?
+	return (S_ISREG(sb.st_mode) ?
 	    fastcopy(from, to, &sb) : copy(from, to));
 }
 
+int
 fastcopy(from, to, sbp)
 	char *from, *to;
 	struct stat *sbp;
@@ -156,29 +164,29 @@ fastcopy(from, to, sbp)
 	register int nread, from_fd, to_fd;
 
 	if ((from_fd = open(from, O_RDONLY, 0)) < 0) {
-		error(from);
-		return(1);
+		err("%s: %s", from, strerror(errno));
+		return (1);
 	}
 	if ((to_fd = open(to, O_CREAT|O_TRUNC|O_WRONLY, sbp->st_mode)) < 0) {
-		error(to);
+		err("%s: %s", to, strerror(errno));
 		(void)close(from_fd);
-		return(1);
+		return (1);
 	}
 	if (!blen && !(bp = malloc(blen = sbp->st_blksize))) {
-		error(NULL);
-		return(1);
+		err("%s", strerror(errno));
+		return (1);
 	}
 	while ((nread = read(from_fd, bp, blen)) > 0)
 		if (write(to_fd, bp, nread) != nread) {
-			error(to);
+			err("%s: %s", to, strerror(errno));
 			goto err;
 		}
 	if (nread < 0) {
-		error(from);
+		err("%s: %s", from, strerror(errno));
 err:		(void)unlink(to);
 		(void)close(from_fd);
 		(void)close(to_fd);
-		return(1);
+		return (1);
 	}
 	(void)fchown(to_fd, sbp->st_uid, sbp->st_gid);
 	(void)fchmod(to_fd, sbp->st_mode);
@@ -191,43 +199,63 @@ err:		(void)unlink(to);
 	tval[0].tv_usec = tval[1].tv_usec = 0;
 	(void)utimes(to, tval);
 	(void)unlink(from);
-	return(0);
+	return (0);
 }
 
+int
 copy(from, to)
 	char *from, *to;
 {
 	int pid, status;
 
 	if (!(pid = vfork())) {
-		execl(_PATH_CP, "mv", "-pr", from, to, NULL);
-		error(_PATH_CP);
+		execl(_PATH_CP, "mv", "-pR", from, to, NULL);
+		err("%s: %s", _PATH_CP, strerror(errno));
 		_exit(1);
 	}
 	(void)waitpid(pid, &status, 0);
 	if (!WIFEXITED(status) || WEXITSTATUS(status))
-		return(1);
+		return (1);
 	if (!(pid = vfork())) {
 		execl(_PATH_RM, "mv", "-rf", from, NULL);
-		error(_PATH_RM);
+		err("%s: %s", _PATH_RM, strerror(errno));
 		_exit(1);
 	}
 	(void)waitpid(pid, &status, 0);
-	return(!WIFEXITED(status) || WEXITSTATUS(status));
+	return (!WIFEXITED(status) || WEXITSTATUS(status));
 }
 
-error(s)
-	char *s;
-{
-	if (s)
-		(void)fprintf(stderr, "mv: %s: %s\n", s, strerror(errno));
-	else
-		(void)fprintf(stderr, "mv: %s\n", strerror(errno));
-}
-
+void
 usage()
 {
 	(void)fprintf(stderr,
 "usage: mv [-if] src target;\n   or: mv [-if] src1 ... srcN directory\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "mv: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
 }
