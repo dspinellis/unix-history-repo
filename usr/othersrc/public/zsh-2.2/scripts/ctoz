@@ -1,0 +1,32 @@
+#! /bin/sh
+#
+# ctoz - alias conversion tool
+# This file is part of zsh, the Z shell.
+# (c) 1991 Paul Falstad
+#
+# This is a quick script to convert csh aliases to zsh aliases/functions.
+# Pipe the output of csh's alias command through this; it will generate
+# a series of alias/function definitions on stdout, suitable for
+# processing by zsh (probably also ksh or bash).
+#
+# This is not perfect, but it gets most common aliases; it should manage to
+# cut down a lot of the busy work.
+#
+sed -e 's/	(\(.*\))/	\1/' >/tmp/cz$$.1
+grep ! /tmp/cz$$.1 >/tmp/cz$$.2
+grep -v ! /tmp/cz$$.1 >/tmp/cz$$.3
+sed -e "s/'/'"\\\\"''"/g -e 's/^\([^	]*\)	\(.*\)$/alias \1='"'\2'/" \
+	/tmp/cz$$.3
+sed -e 's/![:#]*/$/g' -e 's/^\([^	]*\)	\(.*\)$/\1 () { \2 }/' /tmp/cz$$.2
+rm /tmp/cz$$.?
+#
+# in case your mailer eats tabs, here it is again, with the tabs
+# marked with a T:
+#
+#sed -e 's/T(\(.*\))/T\1/' >/tmp/cz$$.1
+#grep ! /tmp/cz$$.1 >/tmp/cz$$.2
+#grep -v ! /tmp/cz$$.1 >/tmp/cz$$.3
+#sed -e "s/'/'"\\\\"''"/g -e 's/^\([^T]*\)T\(.*\)$/alias \1='"'\2'/" \
+#	/tmp/cz$$.3
+#sed -e 's/![:#]*/$/g' -e 's/^\([^T]*\)T\(.*\)$/\1 () { \2 }/' /tmp/cz$$.2
+#rm /tmp/cz$$.?

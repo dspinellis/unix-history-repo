@@ -1,0 +1,16 @@
+void setterm DCLPROTO((void));
+void unsetterm DCLPROTO((void));
+void ungetkey DCLPROTO((int ch));
+void ungetkeys DCLPROTO((char *s,int len));
+unsigned int getkey DCLPROTO((int tmok));
+unsigned char *zleread DCLPROTO((unsigned char *ppt,unsigned char *ppt2,int plen));
+int getkeycmd DCLPROTO((void));
+void sendstring DCLPROTO((void));
+Key makefunckey DCLPROTO((int fun));
+void initxbindtab DCLPROTO((void));
+char *getkeystring DCLPROTO((char *s,int *len));
+void printbind DCLPROTO((char *s,int len));
+void printbinding DCLPROTO((char *str,Key k));
+int bin_bindkey DCLPROTO((char *name,char **argv,char *ops,int junc));
+void freekey DCLPROTO((vptr x));
+void drainoutput DCLPROTO((void));

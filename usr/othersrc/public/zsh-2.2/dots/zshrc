@@ -1,0 +1,88 @@
+#
+# my rc file for zsh 2.2
+# all this runs in interactive shells only
+#
+
+# search path for the cd command
+cdpath=(. ~ ~/src/cs320 ~/src)
+
+# where to look for function definitions
+# fpath=(~/func)
+
+# useful directory
+csrc=/usr/princeton/common/src
+
+# use hard limits, except for a smaller stack and no core dumps
+unlimit
+limit stack 8192
+limit core 0
+limit -s
+
+umask 022
+
+# define some aliases
+alias a=alias
+a a.out=./a.out sendmail=/usr/lib/sendmail c=cp 0=vi 09='vi -t' 00=r
+a d=dirs en='enscript -2rGh' fm='finger -m' grep=egrep h=history
+a hinfo='host -t hinfo' j=jobs l='ls -AF' lock='lock -p -60000'
+a lsd='ls -d */' m=make mm=less
+a nrable='ls -AFltrd *(^R)' sz='ls -l | sort -n +3 | tail -20'
+a sn='sed -n' nw='l -ltr | tail' pd=pushd pop=popd mroe=more
+a rable='ls -AFltrd *(R)' strings='strings -' t=cat
+a v=mv where='hostname; echo >/dev/null' k9='kill -9' whoami='echo root'
+a find='noglob find' bindkey='noglob bindkey' dh='dirs -v'
+a mv='nocorrect mv' z=suspend
+
+# global aliases
+a -g 'GF'='| fgrep -f ~/.friends' G='| grep' M='| less' cex='/u/pup/centrex'
+
+# setenv for csh junkies (including tset)
+setenv() { export $1=$2 }
+
+manpath=(/usr/man /usr/princeton/man /u/cad/man /usr/lang/man)
+export MANPATH
+
+# filename completion suffixes to ignore
+fignore=(.o .pro .old)
+
+# hosts to use for completion
+hosts=(uunet.uu.net `hostname` wuarchive.wustl.edu quiche.cs.mcgill.ca)
+
+PROMPT='%l %T %m[%h] '
+
+# prompt on the right side of the screen
+RPROMPT=' %~'
+
+# some environment variables
+export MAILCALL='NEW MAIL! '
+export YOUSAID='In %C you wrote:'
+export ATTRIBUTION='%f wrote:'
+
+# functions to autoload
+# autoload cx acx mere yu yp randline proto namedir ilogin
+
+MAILCHECK=30
+HISTSIZE=600
+DIRSTACKSIZE=50
+
+# lots of options
+setopt notify globdots correct pushdtohome cdablevars autolist \
+	sunkeyboardhack correctall autocd recexact longlistjobs mailwarning \
+	autoresume histignoredups pushdsilent noclobber \
+	autopushd pushdminus extendedglob rcquotes
+unsetopt bgnice
+
+# watch for my friends
+watch=($(cat ~/.friends))
+WATCHFMT='%n %a %l from %m at %t.'
+LOGCHECK=0
+
+export LESS=-ainx3
+unhash p
+
+# some nice bindings
+bindkey '^X^Z' universal-argument ' ' magic-space
+bindkey '^X^A' vi-find-prev-char-skip
+bindkey '^Z' accept-and-hold
+bindkey -s '\M-/' \\\\
+bindkey -s '\M-=' \|
