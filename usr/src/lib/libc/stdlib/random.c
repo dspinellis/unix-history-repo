@@ -6,10 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)random.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)random.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 /*
  * random.c:
@@ -172,12 +173,12 @@ static  long		*end_ptr		= &randtbl[ DEG_3 + 1 ];
  * values produced by this routine.
  */
 
+void
 srandom( x )
 
     unsigned		x;
 {
     	register  int		i, j;
-	long random();
 
 	if(  rand_type  ==  TYPE_0  )  {
 	    state[ 0 ] = x;
@@ -190,7 +191,8 @@ srandom( x )
 	    }
 	    fptr = &state[ rand_sep ];
 	    rptr = &state[ 0 ];
-	    for( i = 0; i < 10*rand_deg; i++ )  random();
+	    for( i = 0; i < 10*rand_deg; i++ )
+		(void) random();
 	}
 }
 
@@ -353,4 +355,3 @@ random()
 	}
 	return( i );
 }
-

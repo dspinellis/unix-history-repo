@@ -6,10 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getopt.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)getopt.c	4.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * get option letter from argument vector
@@ -22,13 +24,15 @@ char	*optarg;		/* argument associated with option */
 #define	BADCH	(int)'?'
 #define	EMSG	""
 
+int
 getopt(nargc, nargv, ostr)
 	int nargc;
-	char **nargv, *ostr;
+	char * const *nargv;
+	const char *ostr;
 {
 	static char *place = EMSG;		/* option letter processing */
 	register char *oli;			/* option letter list index */
-	char *p, *index(), *rindex();
+	char *p;
 
 	if (!*place) {				/* update scanning pointer */
 		if (optind >= nargc || *(place = nargv[optind]) != '-') {
