@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	7.51 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.52 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -71,6 +71,10 @@ ufs_inactive(ap)
 #ifdef DIAGNOSTIC
 	if (VOP_ISLOCKED(vp))
 		panic("ffs_inactive: locked inode");
+	if (curproc)
+		ip->i_lockholder = curproc->p_pid;
+	else
+		ip->i_lockholder = -1;
 #endif
 	ip->i_flag |= ILOCKED;
 	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
