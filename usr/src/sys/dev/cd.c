@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cd.c 1.6 90/11/28$
  *
- *	@(#)cd.c	8.1 (Berkeley) %G%
+ *	@(#)cd.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -462,7 +462,7 @@ cdstart(cs, bp)
 	 * Allocate component buffers and fire off the requests
 	 */
 	bn = bp->b_blkno;
-	addr = bp->b_un.b_addr;
+	addr = bp->b_data;
 	for (bcount = bp->b_bcount; bcount > 0; bcount -= rcount) {
 		cbp = cdbuffer(cs, bp, bn, addr, bcount);
 		rcount = cbp->b_bcount;
@@ -541,7 +541,7 @@ cdbuffer(cs, bp, bn, addr, bcount)
 	cbp->b_proc = bp->b_proc;
 	cbp->b_dev = ci->ci_dev;
 	cbp->b_blkno = cbn + cboff;
-	cbp->b_un.b_addr = addr;
+	cbp->b_data = addr;
 	cbp->b_vp = 0;
 	if (cs->sc_ileave == 0)
 		cbp->b_bcount = dbtob(ci->ci_size - cbn);
@@ -558,7 +558,7 @@ cdbuffer(cs, bp, bn, addr, bcount)
 	if (cddebug & CDB_IO)
 		printf(" dev %x(u%d): cbp %x bn %d addr %x bcnt %d\n",
 		       ci->ci_dev, ci-cs->sc_cinfo, cbp, cbp->b_blkno,
-		       cbp->b_un.b_addr, cbp->b_bcount);
+		       cbp->b_data, cbp->b_bcount);
 #endif
 	return(cbp);
 }
@@ -604,7 +604,7 @@ cdiodone(cbp)
 		       bp, bp->b_bcount, bp->b_resid);
 		printf(" dev %x(u%d), cbp %x bn %d addr %x bcnt %d\n",
 		       cbp->b_dev, cbp->b_pfcent & 0xFFFF, cbp,
-		       cbp->b_blkno, cbp->b_un.b_addr, cbp->b_bcount);
+		       cbp->b_blkno, cbp->b_data, cbp->b_bcount);
 	}
 #endif
 
