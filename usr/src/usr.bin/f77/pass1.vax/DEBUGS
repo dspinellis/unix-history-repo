@@ -1,0 +1,39 @@
+Copyright (c) 1980 Regents of the University of California.
+All rights reserved.  The Berkeley software License Agreement
+specifies the terms and conditions for redistribution.
+
+	@(#)DEBUGS	5.1 (Berkeley) %G%
+
+WHAT THE DEBUG FLAGS MEAN:
+
+0)	Dump core on fatal errors.  Set by default when -d is given.
+	Also prints statistics on optimizations.
+
+1)	Show data structures after optimization but before intermediate
+	code generation.  Also causes each optimizer data structure to
+	be printed as it is created (before optimization).
+
+2)	Show data structures prior to optimization.
+
+3)	Show data structures after loop optimization but before other
+	optimizations.
+
+4)	Show data structures after loop optimization and CSE but before
+	other optimizations.
+
+6)	Don't perform loop optimization.
+
+7)	Don't do copy propagation optimization.
+
+8)	Show data structures after fatal errors.
+
+9)	Show data structures after loop optimization, CSE and copy
+	propagation but before register optimization.
+
+10)	Don't do register optimization.
+
+12)	Print statistics on memory allocation (local version only).
+
+13)	Don't do common subexpression elimination.
+
+14)	Print history of stack temporary allocations (mkaltmpn()).
