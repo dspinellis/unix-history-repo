@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.13 82/12/25";
+static char sccsid[] = "@(#)telnetd.c	4.14 82/12/29";
 #endif
 
 /*
@@ -582,9 +582,7 @@ cleanup()
 	int how = 2;
 
 	rmut();
-#ifdef notdef
-	vhangup();
-#endif
+	vhangup();	/* XXX */
 	ioctl(net, SIOCDONE, &how);
 	kill(0, SIGKILL);
 	exit(1);
