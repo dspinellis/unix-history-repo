@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.3 (Berkeley) %G%
+ *	@(#)scsi.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,7 @@
 #if NSCSI > 0
 
 #ifndef lint
-static char rcsid[] = "$Header: scsi.c,v 1.3 90/10/10 14:55:08 mike Exp $";
+static char rcsid[] = "$Header: scsi.c,v 1.4 91/01/17 12:50:18 mike Exp $";
 #endif
 
 #include "sys/param.h"
@@ -31,6 +31,14 @@ static char rcsid[] = "$Header: scsi.c,v 1.3 90/10/10 14:55:08 mike Exp $";
 
 #include "../include/cpu.h"
 #include "../hp300/isr.h"
+
+/*
+ * SCSI delays
+ * In u-seconds, primarily for state changes on the SPC.
+ */
+#define	SCSI_CMD_WAIT	1000	/* wait per step of 'immediate' cmds */
+#define	SCSI_DATA_WAIT	1000	/* wait per data in/out step */
+#define	SCSI_INIT_WAIT	50000	/* wait per step (both) during init */
 
 extern void isrlink();
 extern void printf();
@@ -48,8 +56,10 @@ struct	driver scsidriver = {
 struct	scsi_softc scsi_softc[NSCSI];
 struct	isr scsi_isr[NSCSI];
 
-int scsi_cmd_wait = 512;	/* microsec wait per step of 'immediate' cmds */
-int scsi_data_wait = 512;	/* wait per data in/out step */
+int scsi_cmd_wait = SCSI_CMD_WAIT;
+int scsi_data_wait = SCSI_DATA_WAIT;
+int scsi_init_wait = SCSI_INIT_WAIT;
+
 int scsi_nosync = 1;		/* inhibit sync xfers if 1 */
 int scsi_pridma = 0;		/* use "priority" dma */
 
@@ -64,6 +74,7 @@ u_int	ixstart_wait[MAXWAIT+2];
 u_int	ixin_wait[MAXWAIT+2];
 u_int	ixout_wait[MAXWAIT+2];
 u_int	mxin_wait[MAXWAIT+2];
+u_int	mxin2_wait[MAXWAIT+2];
 u_int	cxin_wait[MAXWAIT+2];
 u_int	fxfr_wait[MAXWAIT+2];
 u_int	sgo_wait[MAXWAIT+2];
@@ -140,6 +151,35 @@ out:
 		hd->scsi_sctl &=~ SCTL_CTRLRST;
 		hd->scsi_hconf = 0;
 		hd->scsi_ints = hd->scsi_ints;
+	}
+}
+
+/*
+ * XXX Set/reset long delays.
+ *
+ * if delay == 0, reset default delays
+ * if delay < 0,  set both delays to default long initialization values
+ * if delay > 0,  set both delays to this value
+ *
+ * Used when a devices is expected to respond slowly (e.g. during
+ * initialization).
+ */
+void
+scsi_delay(delay)
+	int delay;
+{
+	static int saved_cmd_wait, saved_data_wait;
+
+	if (delay) {
+		saved_cmd_wait = scsi_cmd_wait;
+		saved_data_wait = scsi_data_wait;
+		if (delay > 0)
+			scsi_cmd_wait = scsi_data_wait = delay;
+		else
+			scsi_cmd_wait = scsi_data_wait = scsi_init_wait;
+	} else {
+		scsi_cmd_wait = saved_cmd_wait;
+		scsi_data_wait = saved_data_wait;
 	}
 }
 
@@ -442,6 +482,11 @@ mxfer_in(hd, len, buf, phase)
 	hd->scsi_tmod = 0;
 	for (i = 0; i < len; ++i) {
 		/*
+		 * manual sez: reset ATN before ACK is sent.
+		 */
+		if (hd->scsi_psns & PSNS_ATN)
+			hd->scsi_scmd = SCMD_RST_ATN;
+		/*
 		 * wait for the request line (which says the target
 		 * wants to give us data).  If the phase changes while
 		 * we're waiting, we're done.
@@ -473,11 +518,21 @@ mxfer_in(hd, len, buf, phase)
 		}
 		*buf++ = hd->scsi_temp;
 		hd->scsi_scmd = SCMD_RST_ACK;
-		if (hd->scsi_psns & PSNS_ATN)
-			hd->scsi_scmd = SCMD_RST_ATN;
 	}
 out:
 	HIST(mxin_wait, wait)
+	/*
+	 * Wait for manual transfer to finish.
+	 * Avoids occasional "unexpected phase" errors in finishxfer
+	 * formerly addressed by per-slave delays.
+	 */
+	wait = scsi_cmd_wait;
+	while ((hd->scsi_ssts & SSTS_ACTIVE) == SSTS_INITIATOR) {
+		if (--wait < 0)
+			break;
+		DELAY(1);
+	}
+	HIST(mxin2_wait, wait)
 	return (i);
 }
 
@@ -1027,7 +1082,7 @@ scsiintr(unit)
 		hs->sc_flags &=~ SCSI_PAD;
 #endif
 		dq = hs->sc_sq.dq_forw;
-		finishxfer(hs, hd, dq->dq_unit);
+		finishxfer(hs, hd, dq->dq_slave);
 		hs->sc_flags &=~ SCSI_IO;
 		dmafree(&hs->sc_dq);
 		(dq->dq_driver->d_intr)(dq->dq_unit, hs->sc_stat[0]);
@@ -1058,4 +1113,58 @@ scsifree(dq)
 	if ((dq = hq->dq_forw) != hq)
 		(dq->dq_driver->d_start)(dq->dq_unit);
 }
+
+/*
+ * (XXX) The following routine is needed for the SCSI tape driver
+ * to read odd-size records.
+ */
+
+#include "st.h"
+#if NST > 0
+int
+scsi_tt_oddio(ctlr, slave, unit, buf, len, b_flags, freedma)
+	int ctlr, slave, unit, b_flags;
+	u_char *buf;
+	u_int len;
+{
+	register struct scsi_softc *hs = &scsi_softc[ctlr];
+	struct scsi_cdb6 cdb;
+	u_char iphase;
+	int stat;
+
+	/*
+	 * First free any DMA channel that was allocated.
+	 * We can't use DMA to do this transfer.
+	 */
+	if (freedma)
+		dmafree(hs->sc_dq);
+	/*
+	 * Initialize command block
+	 */
+	bzero(&cdb, sizeof(cdb));
+	cdb.lun = unit;
+	cdb.lbam = (len >> 16) & 0xff;
+	cdb.lbal = (len >> 8) & 0xff;
+	cdb.len = len & 0xff;
+	if (buf == 0) {
+		cdb.cmd = CMD_SPACE;
+		cdb.lun |= 0x00;
+		len = 0;
+		iphase = MESG_IN_PHASE;
+	} else if (b_flags & B_READ) {
+		cdb.cmd = CMD_READ;
+		iphase = DATA_IN_PHASE;
+	} else {
+		cdb.cmd = CMD_WRITE;
+		iphase = DATA_OUT_PHASE;
+	}
+	/*
+	 * Perform command (with very long delays)
+	 */
+	scsi_delay(30000000);
+	stat = scsiicmd(hs, slave, &cdb, sizeof(cdb), buf, len, iphase);
+	scsi_delay(0);
+	return (stat);
+}
+#endif
 #endif
