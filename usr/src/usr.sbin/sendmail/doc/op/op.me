@@ -5,12 +5,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)op.me	5.7 (Berkeley) %G%
+.\"	@(#)op.me	5.8 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.7''Last Mod %G%'
+.\".fo 'Version 5.8''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.7
+Version 5.8
 .)l
 .sp 2
 .pp
@@ -134,7 +134,10 @@ and that the standard installation parameters are acceptable.
 All pathnames and examples
 are given from the root of the
 .i sendmail
-subtree.
+subtree,
+normally
+.i /usr/src/usr.lib/sendmail
+on 4.3BSD.
 .sh 2 "Off-The-Shelf Configurations"
 .pp
 The configuration files
@@ -155,6 +158,11 @@ was being used.
 You should create a symbolic link from
 .i cf
 to the directory that you are going to use.
+For example,
+to use the name server:
+.(b
+ln \-s cf.named cf
+.)b
 The ones used at Berkeley are in
 .i m4 \|(1)
 format;
@@ -992,8 +1000,9 @@ These builtins are described here.
 .pp
 If this header is sent,
 a message will be sent to any specified addresses
-when the final delivery is complete.
-if the mailer has the
+when the final delivery is complete,
+that is,
+when successfully delivered to a mailer with the
 .b l
 flag (local delivery) set in the mailer descriptor.
 .sh 3 "Errors-To:"
@@ -1286,7 +1295,7 @@ and 1800
 (for the class factor).
 The initial priority is:
 .(b
-pri = size - (class * z) + (nrcpt * y)
+pri = size \- (class * z) + (nrcpt * y)
 .)b
 (Remember, higher values for this parameter actually mean
 that the job will be treated with lower priority.)
@@ -1652,9 +1661,6 @@ The syntax is:
 .br
 .b F \c
 .i c\|file
-[
-.i format
-]
 .)b
 The first form defines the class
 .i c
@@ -1674,13 +1680,7 @@ The second form
 reads the elements of the class
 .i c
 from the named
-.i file ;
-the
-.i format
-is a
-.i scanf \|(3)
-pattern
-that should produce a single string.
+.i file .
 .sh 3 "M \*- define mailer"
 .pp
 Programs and interfaces to mailers
@@ -2498,7 +2498,8 @@ For example,
 a typical site on our local ether network is
 .q monet.
 When monet receives mail for delivery,
-it checks whether the destination host is directly reachable;
+it checks whether it knows
+that the destination host is directly reachable;
 if so, mail is sent to that host.
 If it receives mail for any unknown host,
 it just passes it directly to
@@ -2546,7 +2547,8 @@ and if monet incorrectly sent a message to ucbarpa
 it would still be sent by ucbarpa
 to ucbvax as before.
 The only problem that can occur is loops,
-as if ucbarpa thought that ucbvax had the UUCP connection
+for example,
+if ucbarpa thought that ucbvax had the UUCP connection
 and vice versa.
 For this reason,
 updates should
@@ -3989,7 +3991,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.7
+.\"Version 5.8
 .\".ce 0
 .pn 2
 .bp
