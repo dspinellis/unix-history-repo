@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-	.asciz	"@(#)setjmp.s	5.2 (Berkeley) %G%"
+	.asciz	"@(#)setjmp.s	5.3 (Berkeley) %G%"
 #endif not lint
 
 /*
@@ -27,7 +27,7 @@ ENTRY(setjmp, R6)
 	pushl	sp			# get current values
 	pushl	$0			# no new values
 	calls	$3,_sigstack		# pop args plus signal stack value
-	movl	*(sp)+,(r6)+		# save onsigstack status of caller
+	movl	(sp)+,(r6)+		# save onsigstack status of caller
 	pushl	$0
 	calls	$1,_sigblock		# get signal mask
 	movl	r0,(r6)+		# save signal mask of caller
