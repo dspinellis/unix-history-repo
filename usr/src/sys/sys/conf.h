@@ -1,4 +1,4 @@
-/*	conf.h	4.1	%G%	*/
+/*	conf.h	4.2	%G%	*/
 
 /*
  * Declaration of block device
@@ -57,3 +57,7 @@ extern struct swdevt
 	dev_t	sw_dev;
 	int	sw_freed;
 } swdevt[];
+
+#ifdef	CHAOS
+extern int cdevpath;
+#endif
