@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -98,12 +98,12 @@ VAR var[] = {
 	{"pagein", "PAGEIN", NULL, USER, pagein, 6},
 	{"pcpu", "", "%cpu"},
 	{"pending", "", "sig"},
-	{"pgid", "PGID", NULL, 0, evar, PIDLEN, EOFF(e_pgid), USHORT, PIDFMT},
+	{"pgid", "PGID", NULL, 0, evar, PIDLEN, EOFF(e_pgid), ULONG, PIDFMT},
 	{"pid", "PID", NULL, 0, pvar, PIDLEN, POFF(p_pid), LONG, PIDFMT},
 	{"pmem", "", "%mem"},
 	{"ppid", "PPID", NULL, 0, evar, PIDLEN, EOFF(e_ppid), LONG, PIDFMT},
 	{"pri", "PRI", NULL, 0, pri, 3},
-	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), CHAR, "d"},
+	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), ULONG, "d"},
 	{"rgid", "RGID", NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_rgid),
 		ULONG, UIDFMT},
 	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_rlink), KPTR, "x"},
@@ -119,7 +119,7 @@ VAR var[] = {
 	{"sigignore", "IGNORED",
 		NULL, 0, pvar, 8, POFF(p_sigignore), LONG, "x"},
 	{"sigmask", "BLOCKED", NULL, 0, pvar, 8, POFF(p_sigmask), LONG, "x"},
-	{"sl", "SL", NULL, 0, pvar, 3, POFF(p_slptime), CHAR, "d"},
+	{"sl", "SL", NULL, 0, pvar, 3, POFF(p_slptime), ULONG, "d"},
 	{"start", "STARTED", NULL, LJUST|USER, started, 8},
 	{"stat", "", "state"},
 	{"state", "STAT", NULL, 0, state, 4},
@@ -129,7 +129,7 @@ VAR var[] = {
 		NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_svuid), ULONG, UIDFMT},
 	{"tdev", "TDEV", NULL, 0, tdev, 4},
 	{"time", "TIME", NULL, USER, cputime, 9},
-	{"tpgid", "TPGID", NULL, 0, evar, 4, EOFF(e_tpgid), USHORT, PIDFMT},
+	{"tpgid", "TPGID", NULL, 0, evar, 4, EOFF(e_tpgid), ULONG, PIDFMT},
 	{"tsess", "TSESS", NULL, 0, evar, 6, EOFF(e_tsess), KPTR, "x"},
 	{"tsiz", "TSIZ", NULL, 0, tsize, 4},
 	{"tt", "TT", NULL, LJUST, tname, 3},
@@ -184,13 +184,13 @@ VAR var[] = {
 	{"pagein", "PAGEIN", NULL, USER, pagein, 6},
 	{"pcpu", "", "%cpu"},
 	{"pending", "", "sig"},
-	{"pgid", "PGID", NULL, 0, evar, PIDLEN, EOFF(e_pgid), USHORT, PIDFMT},
+	{"pgid", "PGID", NULL, 0, evar, PIDLEN, EOFF(e_pgid), ULONG, PIDFMT},
 	{"pid", "PID", NULL, 0, pvar, PIDLEN, POFF(p_pid), LONG, PIDFMT},
 	{"pmem", "", "%mem"},
 	{"poip", "POIP", NULL, 0, pvar, 4, POFF(p_poip), SHORT, "d"},
 	{"ppid", "PPID", NULL, 0, pvar, PIDLEN, POFF(p_ppid), LONG, PIDFMT},
 	{"pri", "PRI", NULL, 0, pri, 3},
-	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), CHAR, "d"},
+	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), ULONG, "d"},
 	{"rgid", "RGID", NULL, 0, pvar, UIDLEN, POFF(p_rgid), USHORT, UIDFMT},
 	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_rlink), KPTR, "x"},
 	{"rss", "RSS", NULL, 0, p_rssize, 4},
@@ -204,7 +204,7 @@ VAR var[] = {
 	{"sigignore", "IGNORED",
 		NULL, 0, pvar, 8, POFF(p_sigignore), LONG, "x"},
 	{"sigmask", "BLOCKED", NULL, 0, pvar, 8, POFF(p_sigmask), LONG, "x"},
-	{"sl", "SL", NULL, 0, pvar, 3, POFF(p_slptime), CHAR, "d"},
+	{"sl", "SL", NULL, 0, pvar, 3, POFF(p_slptime), ULONG, "d"},
 	{"start", "STARTED", NULL, LJUST|USER, started, 8},
 	{"stat", "", "state"},
 	{"state", "STAT", NULL, 0, state, 4},
@@ -214,7 +214,7 @@ VAR var[] = {
 		NULL, 0, pvar, UIDLEN, POFF(p_svuid), USHORT, UIDFMT},
 	{"tdev", "TDEV", NULL, 0, tdev, 4},
 	{"time", "TIME", NULL, USER, cputime, 9},
-	{"tpgid", "TPGID", NULL, 0, evar, 4, EOFF(e_tpgid), USHORT, PIDFMT},
+	{"tpgid", "TPGID", NULL, 0, evar, 4, EOFF(e_tpgid), ULONG, PIDFMT},
 	{"trs", "TRS", NULL, 0, trss, 3},
 	{"tsess", "TSESS", NULL, 0, evar, 6, EOFF(e_tsess), KPTR, "x"},
 	{"tsiz", "TSIZ", NULL, 0, tsize, 4},
