@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)id.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)id.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -253,11 +253,17 @@ group(pw, nflag)
 		for (lastid = -1; --ngroups >= 0;) {
 			if (lastid == (id = groups[ngroups]))
 				continue;
-			if (nflag && (gr = getgrgid(id))) {
-				(void)printf(fmt, gr->gr_name);
+			if (nflag) {
+				if (gr = getgrgid(id))
+					(void)printf(fmt, gr->gr_name);
+				else
+					(void)printf(*fmt == ' ' ? " %u" : "%u",
+					    id);
 				fmt = " %s";
-			} else
-				(void)printf(*fmt == ' ' ? " %u" : "%u", id);
+			} else {
+				(void)printf(fmt, id);
+				fmt = " %u";
+			}
 			lastid = id;
 		}
 	}
