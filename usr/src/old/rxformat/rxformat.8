@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rxformat.8	6.2 (Berkeley) %G%
+.\"	@(#)rxformat.8	6.3 (Berkeley) %G%
 .\"
 .TH RXFORMAT 8V ""
 .UC 5
@@ -48,10 +48,10 @@ Other error messages are selfexplanatory.
 /dev/rx?
 .SH SEE ALSO
 rx(4V)
+.SH AUTHOR
+Helge Skrivervik
 .SH BUGS
 A floppy may not be formatted if the
 header info on sector 1, track 0 has been damaged.  Hence, it is not
 possible to format a completely degaussed disk. 
 (This is actually a problem in the hardware.)
-.SH AUTHOR
-Helge Skrivervik
