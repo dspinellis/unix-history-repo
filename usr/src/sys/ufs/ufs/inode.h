@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.13 (Berkeley) %G%
+ *	@(#)inode.h	7.14 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -29,7 +29,7 @@ struct inode {
 	dev_t	i_dev;		/* device where inode resides */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
 	struct	fs *i_fs;	/* file sys associated with this inode */
-	struct	dquot *i_dquot[MAXQUOTAS]; /* pointer to dquot strauctures */
+	struct	dquot *i_dquot[MAXQUOTAS]; /* pointer to dquot structures */
 	long	i_diroff;	/* offset in dir, where we found last entry */
 	off_t	i_endoff;	/* end of useful stuff in directory */
 	long	i_spare0;
