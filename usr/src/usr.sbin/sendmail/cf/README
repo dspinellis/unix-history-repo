@@ -4,13 +4,13 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	2.6 (Berkeley) %G%
+		@(#)README	2.7 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
 at Berkeley.  These use features in the new (R6) sendmail, and although
 there is an ``OLDSENDMAIL'' mode, they haven't really been tested on
-old versions and cannot be expected to work well.
+old versions of sendmail and cannot be expected to work well.
 
 These configuration files are probably not as general as previous
 versions, and don't handle as many of the wierd cases automagically.
@@ -28,26 +28,17 @@ world, things are going to get wierder for you.  I'm sorry about that,
 but at the time we at Berkeley had a problem, and it seemed like the
 right thing to do.
 
-This package requires a relatively new version of M4.  SunOS's
-/usr/5bin/m4 or BSD-Net/2's m4 both work.  GNU m4 (which is a language
-unto itself) also works, but I don't intend to work so hard to keep
-this up in the future.  [Note to GNU folks:  the construct
+This package requires a post-V7 version of m4; if you are running the
+4.2bsd, SysV.2, or 7th Edition version, I suggest finding a friend with
+a newer version.  You can m4-expand on their system, then run locally.
+SunOS's /usr/5bin/m4 or BSD-Net/2's m4 both work.  GNU m4 (which is a
+language unto itself) also works, but I don't intend to work so hard
+to keep this up in the future.  [Note to GNU folks:  the construct
 "define(`FOO')" should work without my having to add a null value.]
-
-At this point, let me make one thing perfectly clear.  I am a rope
-salesman.  I sell you rope.  I haven't produced a new M4 system
-that detects latent bugs, nor have I tried to fix the old one.
-(However, I have decided to rely on a post-V7 version; if you
-are running the 4.2bsd, SysV.2, or 7th Edition version, I suggest
-finding a friend with a newer version.  You can m4-expand on
-their system, then run locally.)
 
 I'm not pretending that this README describes everything that these
 configuration files can do; clever people can probably tweak them
 to great effect.  But it should get you started.
-
-These files only include minimal database primitives, largely because
-of inertia -- and those haven't really been tested at Berkeley.
 
 +--------------------------+
 | INTRODUCTION AND EXAMPLE |
@@ -78,7 +69,7 @@ Let's examine a typical .mc file (cf/cs-exposed.mc):
 	#
 
 The divert(-1) will delete the crud in the resulting output file.
-The copyright notice is what your lawyers require.  My lawyers require
+The copyright notice is what your lawyers require.  Our lawyers require
 the one that I've included in my files. A copyleft is a copyright by
 another name.
 
@@ -118,10 +109,10 @@ local mailer is always included automatically.
 
 Note that cf/cs-exposed.mc omits an OSTYPE macro -- this assumes
 default Computer Science Division environment.  There are several
-environments available: bsd4.3, bsd4.4, hpux, irix, osf1, riscos4.5,
-sunos3.5, sunos4.1, and ultrix4.1.  These change things like the
-location of the alias file and queue directory.  Some of these
-are identical.
+explicit environments available: bsd4.3, bsd4.4, hpux, irix, osf1,
+riscos4.5, sunos3.5, sunos4.1, and ultrix4.1.  These change things
+like the location of the alias file and queue directory.  Some of
+these files are identical to one another.
 
 Operating system definitions are easy to write.  They may define
 the following variables (everything defaults, so an ostype file
@@ -185,9 +176,9 @@ LOCAL_RELAY	The site that will handle unqualified names -- that
 		methods.
 
 The domain file can also be used to define a domain name, if needed
-(directly using "DD<domain>") and set certain site-wide features,
-such as no_wildcard_MX.  If all hosts at your site masquerade
-behind one email name, you could also use MASQUERADE_AS here.
+(using "DD<domain>") and set certain site-wide features, such as
+no_wildcard_MX.  If all hosts at your site masquerade behind one
+email name, you could also use MASQUERADE_AS here.
 
 +---------+
 | MAILERS |
@@ -198,7 +189,8 @@ version, owing mostly to a simpler world.
 
 local		The local and prog mailers.  You will almost always
 		need these; the only exception is if you relay ALL
-		your mail to another site.
+		your mail to another site.  This mailer is included
+		automatically.
 
 smtp		The Simple Mail Transport Protocol mailer.  This does
 		not hide hosts behind a gateway or another other
@@ -248,7 +240,7 @@ config files fairly lean and mean.
 +-------+
 
 Some things just can't be called features.  To make this clear,
-they go in the hack subdirectory and are ferenced using the HACK
+they go in the hack subdirectory and are referenced using the HACK
 macro.  These will tend to be site-dependent.  The release
 includes the Berkeley-dependent "cssubdomain" hack (that makes
 sendmail accept local names in either Berkeley.EDU or CS.Berkeley.EDU;
@@ -390,7 +382,7 @@ Within this directory are several subdirectories, to wit:
 
 m4		General support routines.  These are typically
 		very important and should not be changed without
-		contacting your lawyer.
+		very careful consideration.
 
 cf		The configuration files themselves.  They have
 		".mc" suffixes, and must be run through m4 to
@@ -449,9 +441,9 @@ RULESETS (* means built in to sendmail)
    4 *	Post cleanup
    5 *	Local address rewrite (after aliasing)
    6	Bottom half of Ruleset 3
-   7	Back compatibility for UUCP
-   8	"host dependent cleanup" -- unused?
-   9	change rightmost % to @ -- needed?
+   7	Hook for recursive ruleset 0 call
+   8
+   9
 
 
 MAILERS
