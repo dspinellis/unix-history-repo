@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)doname.c	4.9 (Berkeley) 87/06/18";
+static	char *sccsid = "@(#)doname.c	4.10 (Berkeley) 93/03/01";
 #include "defs"
 #include <strings.h>
 #include <signal.h>
@@ -11,8 +11,6 @@ p->done = 1   file in process of being updated
 p->done = 2   file already exists in current state
 p->done = 3   file make failed
 */
-
-extern char *sys_siglist[];
 
 doname(p, reclevel, tval)
 register struct nameblock *p;
