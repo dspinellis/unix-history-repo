@@ -1,5 +1,5 @@
 /*
-char id_dofio[] = "@(#)dofio.c	1.5";
+char id_dofio[] = "@(#)dofio.c	1.6";
  *
  * fortran format executer
  */

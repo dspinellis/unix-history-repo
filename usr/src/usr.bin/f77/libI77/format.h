@@ -1,5 +1,5 @@
 /*
-char id_format[] = "@(#)format.h	1.4";
+char id_format[] = "@(#)format.h	1.5";
  *
  * format parser definitions
  */
