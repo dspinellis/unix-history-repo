@@ -761,6 +761,8 @@ unp_discard(fp)
 	struct file *fp;
 {
 
+	if (fp->f_msgcount == 0)
+		return;
 	fp->f_msgcount--;
 	unp_rights--;
 	(void) closef(fp, curproc);
