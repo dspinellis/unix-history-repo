@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)com4.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)com4.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "externs.h"
@@ -310,14 +310,12 @@ puton()
 
 eat()
 {
-	register int n;
 	int firstnumber, value;
 
 	firstnumber = wordnumber;
 	while(wordtype[++wordnumber] == ADJS);
 	while(wordnumber <= wordcount){
 		value = wordvalue[wordnumber];
-		for (n=0; objsht[value][n]; n++);
 		switch(value){
 			
 			case -1:
@@ -325,7 +323,12 @@ eat()
 				return(firstnumber);
 
 			default:
-				printf("You can't eat%s%s!\n",(objsht[value][n-1] == 's' ? " " : " a "),objsht[value]);
+				printf("You can't eat%s%s!\n",
+					wordtype[wordnumber] == OBJECT &&
+					objsht[value]
+					[strlen(objsht[value]) - 1] == 's' ?
+					" " : " a ",
+					words[wordnumber]);
 				return(firstnumber);
 
 			case PAPAYAS:
