@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.1 (Berkeley) %G%
+ *	@(#)autoconf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -314,7 +314,8 @@ vbafind(vban, vumem, memmap)
 		csralloc(valloc, addr, i);
 		ui->ui_alive = 1;
 		ui->ui_vbanum = vban;
-		ui->ui_addr = (caddr_t)reg;
+		if (VBIOMAPPED(addr))
+			ui->ui_addr = (caddr_t)reg;
 		ui->ui_physaddr = (caddr_t)addr;
 		ui->ui_dk = -1;
 		/* ui_type comes from driver */
