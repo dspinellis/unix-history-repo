@@ -1,4 +1,4 @@
-/* if_en.c 4.2 81/10/31 */
+/* if_en.c 4.3 81/11/01 */
 
 #include "en.h"
 /*
@@ -156,6 +156,8 @@ enreset(uban)
 	}
 }
 
+int	enlastdel = 25;
+int	enlastx = 0;
 enstart(dev)
 	dev_t dev;
 {
@@ -206,10 +208,14 @@ COUNT(ENSTART);
 			MFREE(m, mp);
 			m = mp;
 		}
-	}
-	if (enxswapnow == 0 && enxswapd) {
-		enxmr[0] = enxmap[0];
-		enxmr[1] = enxmap[1];
+		if (enxswapnow == 0 && enxswapd) {
+			enxmr[0] = enxmap[0];
+			enxmr[1] = enxmap[1];
+		}
+		if (enlastx && enlastx == xpkt->Header.en_dhost)
+			imp_stat.endelay = enlastdel;
+		else
+			enlastx = xpkt->Header.en_dhost;
 	}
 	len = ntohs(((struct ip *)((int)xpkt + L1822))->ip_len) + L1822;
 	if (len > sizeof(struct en_packet)) {
@@ -292,8 +298,11 @@ COUNT(ENXINT);
 	imp_stat.outactive = 0;
 	if (imp_stat.outq_head)
 		enstart(unit);
+	else
+		enlastx = 0;
 }
 
+int collisions;
 encollide(unit)
 	int unit;
 {
@@ -301,6 +310,7 @@ encollide(unit)
 	register struct uba_device *ui;
 COUNT(ENCOLLIDE);
 
+	collisions++;
 	ui = eninfo[unit];
 	addr = (struct endevice *)ui->ui_addr;
 
@@ -317,7 +327,7 @@ COUNT(ENCOLLIDE);
 			addr->en_ostat, EN_BITS);
 	} else {
 		imp_stat.enmask <<= 1;
-		imp_stat.endelay = time & ~imp_stat.enmask;
+		imp_stat.endelay = mfpr(ICR) & ~imp_stat.enmask;
 	}
 	enstart(unit);
 }
