@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 DESTDIR=
 OBJS=	talk.o get_names.o display.o io.o ctl.o init_disp.o \
@@ -21,7 +21,7 @@ talk:	${OBJS}
 ${OBJS}: talk.h talk_ctl.h
 
 install: talk
-	install -s talk ${DESTDIR}/usr/ucb/talk
+	install -g write -m 2755 -s talk ${DESTDIR}/usr/ucb/talk
 
 clean:
 	rm -f ${OBJS} a.out errs core talk

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -170,7 +170,7 @@ find_user(name, tty)
 				/* no particular tty was requested */
 				(void) strcpy(ftty+5, ubuf.ut_line);
 				if (stat(ftty,&statb) == 0) {
-					if (!(statb.st_mode & 02))
+					if (!(statb.st_mode & 020))
 						continue;
 					(void) strcpy(tty, ubuf.ut_line);
 					status = SUCCESS;
