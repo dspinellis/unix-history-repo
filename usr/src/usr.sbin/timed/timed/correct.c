@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)correct.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)correct.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -124,7 +124,7 @@ struct timeval *corr;
 			else
 				corr->tv_sec = - SAMPLEINTVL/10 + 2;
 			(void)adjtime(corr, (struct timeval *)0);
-			syslog(LOG_WARNING, "timed: adjclock called with too large a parameter\n");
+			syslog(LOG_WARNING, "timed: adjclock called with too large a parameter");
 		}
 	}
 }
