@@ -270,6 +270,11 @@ doecmd:
 			laste++;
 			sync();
 			rop(c);
+#ifdef VMUNIX
+			tlaste();
+#endif
+			laste = 0;
+			sync();
 			nochng();
 			continue;
 
@@ -507,6 +512,11 @@ quit:
 						rop3(c);
 					if (dol != zero)
 						change();
+#ifdef VMUNIX
+					tlaste();
+#endif
+					laste = 0;
+					sync();
 					nochng();
 					continue;
 				}
