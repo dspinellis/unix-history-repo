@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -195,7 +195,16 @@ main(argc, argv)
 
 	if (!(pw = getpwuid(uid = getuid())))
 		errx(1, "unknown user id.");
-
+	/* Accept user1@host format, though "-l user2" overrides user1 */
+	p = strchr(host, '@');
+	if (p) {
+		*p = '\0';
+		if (!user && p > host)
+			user = host;
+		host = p + 1;
+		if (*host == '\0')
+			usage();
+	}
 	if (!user)
 		user = pw->pw_name;
 
@@ -845,7 +854,7 @@ __dead void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: rlogin [ -%s]%s[-e char] [ -l username ] host\n",
+	    "usage: rlogin [ -%s]%s[-e char] [ -l username ] [username@]host\n",
 #ifdef KERBEROS
 	    "8EKL", " [-k realm] ");
 #else

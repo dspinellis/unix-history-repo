@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -153,6 +153,16 @@ main(argc, argv)
 
 	if (!(pw = getpwuid(uid = getuid())))
 		errx(1, "unknown user id");
+	/* Accept user1@host format, though "-l user2" overrides user1 */
+	p = strchr(host, '@');
+	if (p) {
+		*p = '\0';
+		if (!user && p > host)
+			user = host;
+		host = p + 1;
+		if (*host == '\0')
+			usage();
+	}
 	if (!user)
 		user = pw->pw_name;
 
@@ -396,7 +406,7 @@ usage()
 {
 
 	(void)fprintf(stderr,
-	    "usage: rsh [-nd%s]%s[-l login] host [command]\n",
+	    "usage: rsh [-nd%s]%s[-l login] [login@]host [command]\n",
 #ifdef KERBEROS
 	    "", " [-k realm] ");
 #else

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rlogin.1	8.1 (Berkeley) %G%
+.\"	@(#)rlogin.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RLOGIN 1
@@ -12,12 +12,17 @@
 .Nm rlogin
 .Nd remote login
 .Sh SYNOPSIS
-.Ar rlogin
+.Nm rlogin
 .Op Fl 8EKLd
 .Op Fl e Ar char
 .Op Fl k Ar realm
 .Op Fl l Ar username
 .Ar host
+.Nm rlogin
+.Op Fl 8EKLdx
+.Op Fl e Ar char
+.Op Fl k Ar realm
+.Ar username@host
 .Sh DESCRIPTION
 .Nm Rlogin
 starts a terminal session on a remote host
