@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_send.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,6 +35,7 @@ res_send(buf, buflen, answer, anslen)
 	register int n;
 	int retry, v_circuit, resplen, ns;
 	static int s = -1;
+	int gotsomewhere = 0;
 	u_short id, len;
 	char *cp;
 	int dsmask;
@@ -70,6 +71,13 @@ res_send(buf, buflen, answer, anslen)
 			 */
 			if (s < 0) {
 				s = socket(AF_INET, SOCK_STREAM, 0);
+				if (s < 0) {
+#ifdef DEBUG
+					if (_res.options & RES_DEBUG)
+					    printf("socket failed %d\n",errno);
+#endif DEBUG
+					continue;
+				}
 				if (connect(s, &(_res.nsaddr_list[ns]), 
 				   sizeof(struct sockaddr)) < 0) {
 #ifdef DEBUG
@@ -134,6 +142,7 @@ res_send(buf, buflen, answer, anslen)
 			 */
 			if (s < 0)
 				s = socket(AF_INET, SOCK_DGRAM, 0);
+#if	BSD >= 43
 			if (connect(s, &_res.nsaddr_list[ns],
 			    sizeof(struct sockaddr)) < 0 ||
 			    send(s, buf, buflen, 0) != buflen) {
@@ -142,7 +151,18 @@ res_send(buf, buflen, answer, anslen)
 					printf("connect/send errno = %d\n",
 					    errno);
 #endif DEBUG
+				continue;
 			}
+#else BSD
+			if (sendto(s, buf, buflen, 0, &_res.nsaddr_list[ns],
+			    sizeof(struct sockaddr)) != buflen) {
+#ifdef DEBUG
+				if (_res.options & RES_DEBUG) 
+					printf("sendto errno = %d\n", errno);
+#endif DEBUG
+				continue;
+			}
+#endif BSD
 			/*
 			 * Wait for reply 
 			 */
@@ -167,6 +187,7 @@ wait:
 				if (_res.options & RES_DEBUG)
 					printf("timeout\n");
 #endif DEBUG
+				gotsomewhere = 1;
 				continue;
 			}
 			if ((resplen = recv(s, answer, anslen, 0)) <= 0) {
@@ -176,6 +197,7 @@ wait:
 #endif DEBUG
 				continue;
 			}
+			gotsomewhere = 1;
 			if (id != anhp->id) {
 				/*
 				 * response from old query, ignore it
@@ -224,6 +246,9 @@ wait:
 	   }
 	}
 	(void) close(s);
-	errno = ETIMEDOUT;
+	if (v_circuit == 0 && gotsomewhere == 0)
+		errno = ECONNREFUSED;
+	else
+		errno = ETIMEDOUT;
 	return (-1);
 }
