@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sliplogin.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sliplogin.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,30 +31,32 @@ static char sccsid[] = "@(#)sliplogin.c	5.3 (Berkeley) %G%";
  * There are two forms of usage:
  *
  * "sliplogin"
- * Invoked simply as "sliplogin" and a realuid != 0, the program looks up
- * the uid in /etc/passwd, and then the username in the file /etc/hosts.slip.
- * If and entry is found, the line on fd0 is configured for SLIP operation
+ * Invoked simply as "sliplogin", the program looks up the username
+ * in the file /etc/slip.hosts.
+ * If an entry is found, the line on fd0 is configured for SLIP operation
  * as specified in the file.
  *
- * "sliplogin IPhost1 </dev/ttyb"
+ * "sliplogin IPhostlogin </dev/ttyb"
  * Invoked by root with a username, the name is looked up in the
- * /etc/hosts.slip file and if found fd0 is configured as in case 1.
+ * /etc/slip.hosts file and if found fd0 is configured as in case 1.
  */
 
 #include <sys/param.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
 #include <sys/signal.h>
 #include <sys/file.h>
 #include <sys/syslog.h>
 #include <netdb.h>
 
-#if defined(BSD4_4)
-#define TERMIOS
+#if BSD >= 199006
+#define POSIX
 #endif
-#ifdef TERMIOS
+#ifdef POSIX
 #include <sys/termios.h>
+#include <sys/ioctl.h>
 #include <ttyent.h>
+#else
+#include <sgtty.h>
 #endif
 #include <netinet/in.h>
 #include <net/if.h>
@@ -69,9 +71,9 @@ static char sccsid[] = "@(#)sliplogin.c	5.3 (Berkeley) %G%";
 int	unit;
 int	slip_mode;
 int	speed;
+int	uid;
 char	loginargs[BUFSIZ];
-char	loginfile[BUFSIZ];
-char	logoutfile[BUFSIZ];
+char	loginfile[MAXPATHLEN];
 char	loginname[BUFSIZ];
 
 struct slip_modes {
@@ -132,9 +134,8 @@ findid(name)
 		 * a generic one.
 		 */
 		(void)sprintf(loginfile, "%s.%s", _PATH_LOGIN, name);
-		if (access(loginfile, R_OK|X_OK)) {
+		if (access(loginfile, R_OK|X_OK) != 0) {
 			(void)strcpy(loginfile, _PATH_LOGIN);
-			(void)strcpy(logoutfile, _PATH_LOGOUT);
 			if (access(loginfile, R_OK|X_OK)) {
 				fputs("access denied - no login file\n",
 				      stderr);
@@ -143,8 +144,7 @@ findid(name)
 				       name, _PATH_LOGIN);
 				exit(5);
 			}
-		} else
-			(void)sprintf(logoutfile, "%s.%s", _PATH_LOGOUT, name);
+		}
 
 		(void) fclose(fp);
 		return;
@@ -204,14 +204,19 @@ int
 hup_handler(s)
 	int s;
 {
-	if (access(logoutfile, R_OK|X_OK) == 0) {
-		char logincmd[2*BUFSIZ+32];
+	char logoutfile[MAXPATHLEN];
 
-		(void)sprintf(logincmd, "%s %d %d %s", logoutfile, unit, speed,
+	(void)sprintf(logoutfile, "%s.%s", _PATH_LOGOUT, loginname);
+	if (access(logoutfile, R_OK|X_OK) != 0)
+		(void)strcpy(logoutfile, _PATH_LOGOUT);
+	if (access(logoutfile, R_OK|X_OK) == 0) {
+		char logincmd[2*MAXPATHLEN+32];
+
+		(void) sprintf(logincmd, "%s %d %d %s", logoutfile, unit, speed,
 			      loginargs);
-		(void)system(logincmd);
+		(void) system(logincmd);
 	}
-	(void)close(0);
+	(void) close(0);
 	syslog(LOG_INFO, "closed %s slip unit %d (%s)\n", loginname, unit,
 	       sigstr(s));
 	exit(1);
@@ -222,12 +227,12 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int	fd, s, ldisc, odisc;
+	int fd, s, ldisc, odisc;
 	char *name;
-#ifdef TERMIOS
-	struct	termios tios, otios;
+#ifdef POSIX
+	struct termios tios, otios;
 #else
-	struct	sgttyb tty, otty;
+	struct sgttyb tty, otty;
 #endif
 	char logincmd[2*BUFSIZ+32];
 	extern uid_t getuid();
@@ -238,20 +243,19 @@ main(argc, argv)
 	for (fd = 3 ; fd < s ; fd++)
 		(void) close(fd);
 	openlog(name, LOG_PID, LOG_DAEMON);
+	uid = getuid();
 	if (argc > 1) {
-		if (argc > 2) {
-			(void)fprintf(stderr, "Usage: %s loginname\n", argv[0]);
-			exit(1);
-		}
 		findid(argv[1]);
 
 		/*
 		 * Disassociate from current controlling terminal, if any,
 		 * and ensure that the slip line is our controlling terminal.
 		 */
-#ifdef TERMIOS
-		(void) setsid();
-		(void) ioctl(0, TIOCSCTTY, (caddr_t)0);
+#ifdef POSIX
+		if (fork() > 0)
+			exit(0);
+		if (setsid() != 0)
+			perror("setsid");
 #else
 		if ((fd = open("/dev/tty", O_RDONLY, 0)) >= 0) {
 			extern char *ttyname();
@@ -265,32 +269,45 @@ main(argc, argv)
 		}
 		(void) setpgrp(0, getpid());
 #endif
+		if (argc > 2) {
+			if ((fd = open(argv[2], O_RDWR)) == -1) {
+				perror(argv[2]);
+				exit(2);
+			}
+			(void) dup2(fd, 0);
+			if (fd > 2)
+				close(fd);
+		}
+#ifdef TIOCSCTTY
+		if (ioctl(0, TIOCSCTTY, (caddr_t)0) != 0)
+			perror("ioctl (TIOCSCTTY)");
+#endif
 	} else {
-		extern char *getenv();
+		extern char *getlogin();
 
-		if ((name = getenv("USER")) == NULL) {
+		if ((name = getlogin()) == NULL) {
 			(void) fprintf(stderr, "access denied - no username\n");
-			syslog(LOG_ERR, "access denied - no username\n");
+			syslog(LOG_ERR, "access denied - getlogin returned 0\n");
 			exit(1);
 		}
 		findid(name);
 	}
 	(void) fchmod(0, 0600);
 	(void) fprintf(stderr, "starting slip login for %s\n", loginname);
-#ifdef TERMIOS
+#ifdef POSIX
 	/* set up the line parameters */
-	if (ioctl(0, TIOCGETA, (caddr_t)&tios) < 0) {
-		syslog(LOG_ERR, "ioctl (TIOCGETA): %m");
+	if (tcgetattr(0, &tios) < 0) {
+		syslog(LOG_ERR, "tcgetattr: %m");
 		exit(1);
 	}
 	otios = tios;
-	tios.c_cflag = CS8|CREAD|HUPCL;
-	tios.c_iflag = IGNBRK;
-	tios.c_oflag = tios.c_lflag = 0;
-	if (ioctl(0, TIOCSETA, (caddr_t)&tios) < 0) {
-		syslog(LOG_ERR, "ioctl (TIOCSETA) (1): %m");
+	cfmakeraw(&tios);
+	tios.c_iflag &= ~IMAXBEL;
+	if (tcsetattr(0, TCSAFLUSH, &tios) < 0) {
+		syslog(LOG_ERR, "tcsetattr: %m");
 		exit(1);
 	}
+	speed = cfgetispeed(&tios);
 #else
 	/* set up the line parameters */
 	if (ioctl(0, TIOCGETP, (caddr_t)&tty) < 0) {
@@ -316,8 +333,8 @@ main(argc, argv)
 		exit(1);
 	}
 	/* find out what unit number we were assigned */
-	if (ioctl(0, TIOCGETD, (caddr_t)&unit) < 0) {
-		syslog(LOG_ERR, "ioctl (TIOCGETD) (2): %m");
+	if (ioctl(0, SLIOCGUNIT, (caddr_t)&unit) < 0) {
+		syslog(LOG_ERR, "ioctl (SLIOCGUNIT) (2): %m");
 		exit(1);
 	}
 	(void) signal(SIGHUP, hup_handler);
@@ -330,16 +347,23 @@ main(argc, argv)
 	 * aim stdout and errout at /dev/null so logincmd output won't
 	 * babble into the slip tty line.
 	 */
-	(void)close(1);
-	if ((fd = open("/dev/null", O_WRONLY, 0)) != 1) {
+	(void) close(1);
+	if ((fd = open("/dev/null", O_WRONLY)) != 1) {
 		if (fd < 0) {
 			syslog(LOG_ERR, "open /dev/null: %m");
 			exit(1);
 		}
-		(void)dup2(fd, 1);
-		(void)close(fd);
+		(void) dup2(fd, 1);
+		(void) close(fd);
 	}
-	(void)dup2(1,2);
+	(void) dup2(1, 2);
+
+	/*
+	 * Run login and logout scripts as root (real and effective);
+	 * current route(8) is setuid root, and checks the real uid
+	 * to see whether changes are allowed (or just "route get").
+	 */
+	(void) setuid(0);
 	if (s = system(logincmd)) {
 		syslog(LOG_ERR, "%s login failed: exit status %d from %s",
 		       loginname, s, loginfile);
