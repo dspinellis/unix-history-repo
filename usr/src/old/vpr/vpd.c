@@ -4,10 +4,10 @@
  * vpd.c						updated %G%
  * Varian or Versatec printer daemon
  */
-char vpdSCCSid[] = "@(#)vpd.c	1.2\t%G%";
+char vpdSCCSid[] = "@(#)vpd.c	1.3\t%G%";
 
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <dir.h>
 #include <signal.h>
 #include <stat.h>
@@ -48,7 +48,6 @@ int	linel;
 FILE	*dfb;
 char	dfname[33] = DFNAME;
 int	waittm = 6;
-struct	dir dbuf;
 int	onalrm ();
 char	tmplock[] = "lockXXXXXX";
 char	fonts[4][50] = {
@@ -60,9 +59,11 @@ char	fonts[4][50] = {
 
 main(argc, argv)
 {
-	char dp, n;
+	char n;
 	register char *p1, *p2;
 	register int df;
+	register struct direct *dirp;
+	DIR *dp;
 	struct stat stb;
 	int offline = 0;
 	int i, okreque = 1;
@@ -125,14 +126,14 @@ reopen:
 		}
 		sleep(10);
 	}
-	dp = open(".", 0);
+	dp = opendir(".");
 search:
 	dprcons("search\n");
 	if (okreque == 1) {
-		lseek(dp, 0, 0);
+		rewinddir(dp);
 		do {
-			n = read(dp, &dbuf, sizeof dbuf);
-			if (n <= 0) {
+			dirp = readdir(dp);
+			if (dirp == NULL) {
 				if (printflag)
 					lastpage();
 				unlink("lock");
@@ -144,13 +145,13 @@ search:
 				dprcons("one last time\n");
 				printflag = 0;
 				close(3);
+				closedir(dp);
 				sleep(30);
 				goto begin;
 			}
-		} while (!dbuf.d_ino
-		    || dbuf.d_name[0] != 'd' || dbuf.d_name[1] != 'f');
-		strcpy(&dfname[15], dbuf.d_name);
-		dprcons("found %s\n", dbuf.d_name);
+		} while (dirp->d_name[0] != 'd' || dirp->d_name[1] != 'f');
+		strcpy(&dfname[15], dirp->d_name);
+		dprcons("found %s\n", dirp->d_name);
 	}
 	dprcons("trying %s\n", dfname);
 	printflag = 1;
@@ -158,7 +159,7 @@ search:
 		feedpage();
 	if (trysend(dfname, okreque)) {
 		okreque = 0;
-		close(dp);
+		closedir(dp);
 		printf("reque %s\n", dfname);
 		close(3);
 		goto reopen;
