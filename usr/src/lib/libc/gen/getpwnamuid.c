@@ -1,4 +1,4 @@
-/*	getpwnamuid.c	4.5	84/08/28	*/
+/*	getpwnamuid.c	4.6	85/01/10	*/
 
 #include <stdio.h>
 #include <pwd.h>
@@ -30,9 +30,12 @@ fetchpw(key)
 #define	EXPAND(e)	passwd.pw_/**/e = tp; while (*tp++ = *cp++);
 	EXPAND(name);
 	EXPAND(passwd);
-	passwd.pw_uid = *(int *)cp; cp += sizeof (int);
-	passwd.pw_gid = *(int *)cp; cp += sizeof (int);
-	passwd.pw_quota = *(int *)cp; cp += sizeof (int);
+	bcopy(cp, (char *)&passwd.pw_uid, sizeof (int));
+	cp += sizeof (int);
+	bcopy(cp, (char *)&passwd.pw_gid, sizeof (int));
+	cp += sizeof (int);
+	bcopy(cp, (char *)&passwd.pw_quota, sizeof (int));
+	cp += sizeof (int);
 	EXPAND(comment);
 	EXPAND(gecos);
 	EXPAND(dir);
