@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)tail.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)tail.c	4.2 (Berkeley) %G%";
 /* tail command 
  *
  *	tail where [file]
@@ -36,8 +36,6 @@ char **argv;
 	int partial,bylines,bkwds,fromend,lastnl;
 	char *p;
 
-	lseek(0,(long)0,1);
-	piped = errno==ESPIPE;
 	arg = argv[1];
 	if(argc<=1 || *arg!='-'&&*arg!='+') {
 		arg = "-10l";
@@ -58,6 +56,8 @@ char **argv;
 			exit(1);
 		}
 	}
+	lseek(0,(long)0,1);
+	piped = errno==ESPIPE;
 	bylines = -1; bkwds = 0;
 	while(*arg)
 	switch(*arg++) {
