@@ -3,8 +3,6 @@
 	     K N O W N   B U G S   I N   S E N D M A I L
 			     (for 8.6)
 
-			   8.5 (%G%)
-
 
 The following are bugs or deficiencies in sendmail that I am aware of
 but which have not been fixed in the current release.  You probably
@@ -38,3 +36,10 @@ in /ucb/sendmail/KNOWNBUGS.
 
   Sometimes identical, duplicate error messages can be generated.  As
   near as I can tell, this is rare and relatively innocuous.
+
+* If you EXPN a list or user that has a program mailer, the output of
+  EXPN will include ``@local.host.name''.  You can't actually mail to
+  this address.  It's not clear what the right behaviour is in this
+  circumstance.
+
+(Version 8.6, last updated %G%)
