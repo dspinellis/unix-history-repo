@@ -16,25 +16,26 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)register.c	1.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)register.c	1.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
-#include <stdio.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <kerberosIV/des.h>
-#include <kerberosIV/krb.h>
-#include <sys/param.h>
 #include <sys/file.h>
 #include <sys/signal.h>
+#include <netinet/in.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <netdb.h>
+#include <kerberosIV/des.h>
+#include <kerberosIV/krb.h>
 #include "pathnames.h"
 #include "register_proto.h"
 
-#define	SERVICE	"krbupdate"
+#define	SERVICE	"krbupdate"	/* service to add to KDC's database */
 #define	PROTO	"tcp"
 
 char	realm[REALM_SZ];
@@ -42,14 +43,15 @@ char	krbhst[MAX_HSTNM];
 
 static	char	pname[ANAME_SZ];
 static	char	iname[INST_SZ];
-static	char	password[255];
+static	char	password[_PASSWORD_LEN];
 
-extern char	*sys_errlist;
+/* extern char	*sys_errlist; */
 int	die();
+void	setup_key(), type_info(), cleanup();
 
 main(argc, argv)
-int	argc;
-char	**argv;
+	int	argc;
+	char	**argv;
 {
 	struct servent	*se;
 	struct hostent	*host;
@@ -90,7 +92,7 @@ char	**argv;
 	}
 
 	sin.sin_family = host->h_addrtype;
-	bcopy(host->h_addr, (char *) &sin.sin_addr, host->h_length);
+	(void)bcopy(host->h_addr, (char *) &sin.sin_addr, host->h_length);
 	sin.sin_port = se->s_port;
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
@@ -100,14 +102,14 @@ char	**argv;
 
 	if (connect(sock, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
 		perror("connect");
-		close(sock);
+		(void)close(sock);
 		exit(1);
 	}
 
 	llen = sizeof(local);
 	if (getsockname(sock, (struct sockaddr *) &local, &llen) < 0) {
 		perror("getsockname");
-		close(sock);
+		(void)close(sock);
 		exit(1);
 	}
 
@@ -176,15 +178,14 @@ char	**argv;
 	}
 
 	cleanup();
-	close(sock);
+	(void)close(sock);
 }
 
+void
 cleanup()
 {
 	bzero(password, 255);
 }
-
-#include <pwd.h>
 
 extern	char	*crypt();
 extern	char	*getpass();
@@ -197,13 +198,16 @@ get_user_info()
 	struct	passwd	*pw;
 	char	*pas, *namep;
 
+	/* NB: we must run setuid-root to get at the real pw file */
+
 	if ((pw = getpwuid(uid)) == NULL) {
 		fprintf(stderr, "Who are you?\n");
 		return(0);
 	}
-	seteuid(uid);
-	strcpy(pname, pw->pw_name);	/* principal name */
-	for(i = 1; i < 3; i++) {
+	(void)seteuid(uid);
+	(void)strcpy(pname, pw->pw_name);	/* principal name */
+
+	for (i = 1; i < 3; i++) {
 		pas = getpass("login password:");
 		namep = crypt(pas, pw->pw_passwd);
 		if (strcmp(namep, pw->pw_passwd)) {
@@ -217,11 +221,11 @@ get_user_info()
 	if (!valid)
 		return(0);
 	pas = getpass("Kerberos password (may be the same):");
-	while(*pas == NULL) {
+	while (*pas == NULL) {
 		printf("<NULL> password not allowed\n");
 		pas = getpass("Kerberos password (may be the same):");
 	}
-	strcpy(password, pas);		/* password */
+	(void)strcpy(password, pas);		/* password */
 	pas = getpass("Retype Kerberos password:");
 	if (strcmp(password, pas)) {
 		fprintf(stderr, "Password mismatch -- aborted\n");
@@ -232,6 +236,7 @@ get_user_info()
 	return(1);
 }
 
+void
 setup_key(local)
 	struct	sockaddr_in	local;
 {
@@ -260,8 +265,10 @@ setup_key(local)
 	}
 	key_sched(kdata.kf_key, schedule);
 	des_set_key(kdata.kf_key, schedule);
+	return;
 }
 
+void
 type_info()
 {
 	printf("Kerberos user registration (realm %s)\n\n", realm);
@@ -272,6 +279,7 @@ type_info()
 	printf("the %s program from now on to change your Kerberos password.\n\n", _PATH_KPASSWD);
 }
 
+int
 die()
 {
 	fprintf(stderr, "\nServer no longer listening\n");
