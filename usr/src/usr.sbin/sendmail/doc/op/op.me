@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.7 (Berkeley) %G%
+.\"	@(#)op.me	8.8 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.7
+Version 8.8
 .sp
 For Sendmail Version 8.6
 .)l
@@ -2737,38 +2737,76 @@ through
 .b $Z )
 are specifically reserved for configuration file authors.
 .pp
-The following macros
-.i must
-be defined to transmit information into
-.i sendmail :
-.(b
-.ta 4n
-e	The SMTP entry message
-j	The \*(lqofficial\*(rq domain name for this site
-l	The format of the UNIX from line
-n	The name of the daemon (for error messages)
-o	The set of "operators" in addresses
-q	default format of sender address
-.)b
-The
-.b $e
-macro is printed out when SMTP starts up.
+The following macros are defined and/or used internally by
+.i sendmail
+for interpolation into argv's for mailers
+or for other contexts.
+The ones marked \(dg are information passed into sendmail\**,
+.(f
+\**As of version 8.6,
+all of these macros have reasonable defaults.
+Previous versions required that they be defined.
+.)f
+the ones marked \(dd are information passed both in and out of sendmail,
+and the unmarked macros are passed out of sendmail
+but are not otherwise used internally.
+These macros are:
+.nr ii 5n
+.ip $a
+.b "The origination date in RFC 822 format."
+.ip $b
+.b "The current date in RFC 822 format."
+.ip $c
+.b "The hop count."
+.ip $d
+.b "The current date in UNIX (ctime) format."
+.ip $e\(dg
+.b "The SMTP entry message."
+This is printed out when SMTP starts up.
 The first word must be the
 .b $j
-macro.
-The
+macro as specified by RFC821.
+Defaults to
+.q "$j Sendmail $v ready at $b" .
+Commonly redefined to include the configuration version number, e.g.,
+.q "$j Sendmail $v/$Z ready at $b"
+.ip $f
+.b "The sender (from) address."
+.ip $g
+.b "The sender address relative to the recipient."
+.ip $h
+.b "The recipient host."
+.ip $i
+.b "The queue id."
+.ip $j\(dd
+.b "The \*(lqofficial\*(rq domain name for this site."
+This is fully qualified if the full qualification can be found.
+It
+.i must
+be redefined to be the fully qualified domain name
+if your system is not configured so that information can find
+it automatically.
+.ip $k
+.b "The UUCP node name (from the uname system call)."
+.ip $l\(dg
+.b "The format of the UNIX from line."
+Unless you have changed the UNIX mailbox format,
+you should not change the default,
+which is
+.q "From $g  $d" .
+.ip $m
+.b "The domain part of the \fIgethostname\fP return value."
+Under normal circumstances,
 .b $j
-macro
-should be in RFC821 format.
-The
-.b $l
-and
-.b $n
-macros can be considered constants
-except under terribly unusual circumstances.
-The
-.b $o
-macro consists of a list of characters
+is equivalent to
+.b $w.$m .
+.ip $n\(dg
+.b "The name of the daemon (for error messages)."
+Defaults to
+.q MAILER-DAEMON .
+.ip $o\(dg
+.b "The set of "operators" in addresses."
+A list of characters
 which will be considered tokens
 and which will separate tokens
 when doing parsing.
@@ -2783,24 +2821,27 @@ would be scanned as three tokens:
 .q @,
 and
 .q b.
-Finally, the
+Defaults to
+.q ".:@[]" ,
+which is the minimum set necessary to do RFC 822 parsing;
+a richer set of operators is
+.q ".:%@!/[]" ,
+which adds support for UUCP, the %-hack, and X.400 addresses.
+.ip $p
+.b "Sendmail's process id."
+.ip $q\(dg
+.b "Default format of sender address."
+The
 .b $q
 macro specifies how an address should appear in a message
 when it is defaulted.
-For example, on our system these definitions are:
-.(b
-De$j Sendmail $v/$Z ready at $b
-DnMAILER-DAEMON
-DlFrom $g  $d
-Do.:%@!^/[]
-Dq$?x$x <$g>$|$g$.
-Dj$w
-.)b
-An acceptable alternative for the
-.b $q
-macro is
-.q "$g$?x ($x)$." .
-These correspond to the following two formats:
+Defaults to
+.q "<$g>" .
+It is commonly redefined to be
+.q "$?x$x <$g>$|$g$."
+or
+.q "$g$?x ($x)$." ,
+corresponding to the following two formats:
 .(b
 Eric Allman <eric@CS.Berkeley.EDU>
 eric@CS.Berkeley.EDU (Eric Allman)
@@ -2808,34 +2849,28 @@ eric@CS.Berkeley.EDU (Eric Allman)
 .i Sendmail
 properly quotes names that have special characters
 if the first form is used.
+.ip $r
+.b "Protocol used to receive the message."
+.ip $s
+.b "Sender's host name."
+.ip $t
+.b "A numeric representation of the current time."
+.ip $u
+.b "The recipient user."
+.ip $v
+.b "The version number of \fIsendmail\fP."
+.ip $w\(dd
+.b "The hostname of this site."
 .pp
-Some macros are defined by
-.i sendmail
-for interpolation into argv's for mailers
-or for other contexts.
-These macros are:
-.(b
-a	The origination date in RFC 822 format
-b	The current date in RFC 822 format
-c	The hop count
-d	The date in UNIX (ctime) format
-f	The sender (from) address
-g	The sender address relative to the recipient
-h	The recipient host
-i	The queue id
-k	The UUCP node name (from the uname system call)
-m	The domain part of the \fIgethostname\fP return value
-p	Sendmail's pid
-r	Protocol used to receive the message
-s	Sender's host name
-t	A numeric representation of the current time
-u	The recipient user
-v	The version number of \fIsendmail\fP
-w	The hostname of this site
-x	The full name of the sender
-z	The home directory of the recipient
-_	The validated sender address
-.)b
+The
+.b $w
+macro is set to the root name of this host (but see below for caveats).
+.ip $x
+.b "The full name of the sender."
+.ip $z
+.b "The home directory of the recipient."
+.ip $_
+.b "The validated sender address."
 .pp
 There are three types of dates that can be used.
 The
@@ -2864,6 +2899,59 @@ macro is equivalent to the
 macro in UNIX
 (ctime)
 format.
+.pp
+The macros
+.b $w ,
+.b $j ,
+and
+.b $m
+are set to the identity of this host.
+.i Sendmail
+tries to find the fully qualified name of the host
+if at all possible;
+it does this by calling
+.i gethostname (2)
+to get the current hostname
+and then passing that to
+.i gethostbyname (3)
+which is supposed to return the canonical version of that host name.\**
+.(f
+\**For example, on some systems
+.i gethostname
+might return
+.q foo
+which would be mapped to
+.q foo.bar.com
+by
+.i gethostbyname .
+.)f
+Assuming this is successful,
+.b $j
+is set to the fully qualified name
+and
+.b $m
+is set to the domain part of the name
+(everything after the first dot).
+The
+.b $w
+macro is set to the first word
+(everything before the first dot)
+if you have a level 5 or higher configuration file;
+otherwise, it is set to the same value as
+.b $j .
+If the canonification is not successful,
+it is imperative that the config file set
+.b $j
+to the fully qualified domain name\**.
+.(f
+\**Older versions of sendmail didn't pre-define
+.b $j
+at all, so up until 8.6,
+config files
+.i always
+had to define
+.b $j .
+.)f
 .pp
 The
 .b $f
@@ -2942,10 +3030,7 @@ macro is set to be the version number of
 .i sendmail ;
 this is normally put in timestamps
 and has been proven extremely useful for debugging.
-The
-.b $w
-macro is set to the name of this host
-if it can be determined.
+.pp
 The
 .b $c
 field is set to the
@@ -2964,6 +3049,7 @@ and
 fields are set to the protocol used to communicate with
 .i sendmail
 and the sending hostname.
+.pp
 The
 .b $_
 is set to a validated sender host name.
@@ -4015,6 +4101,19 @@ These are not intended to be long term supports;
 rather, they describe compatibility features
 which will probably be removed in future releases.
 .pp
+.b N.B.:
+these version
+.i levels
+have nothing
+to do with the version
+.i number
+on the files.
+For example,
+as of this writing
+version 8 config files
+(specifically, 8.6)
+used version level 5 configurations.
+.pp
 .q Old
 configuration files are defined as version level one.
 Version level two files make the following changes:
@@ -4061,6 +4160,15 @@ Version level three files
 allow # initiated comments on all lines.
 Exceptions are backslash escaped # marks
 and the $# syntax.
+.pp
+Version level four configurations
+are completely equivalent to level three
+for historical reasons.
+.pp
+Version level five configuration files
+change the default definition of
+.b $w
+to be just the first component of the hostname.
 .sh 3 "K \*- key file declaration"
 .pp
 Special maps can be defined using the line:
@@ -6617,7 +6725,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.7
+.\"Version 8.8
 .\".ce 0
 .bp 2
 .ce
