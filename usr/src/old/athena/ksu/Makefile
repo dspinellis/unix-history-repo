@@ -38,7 +38,7 @@ cleandir: clean
 depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: ${MAN}
+install: ${MAN} ksu
 	install -s -o root -g bin -m 4755 ksu ${DESTDIR}/usr/athena
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
