@@ -1,9 +1,9 @@
 .\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)df.1	6.7 (Berkeley) %G%
+.\"     @(#)df.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DF 1
@@ -14,10 +14,10 @@
 .Sh SYNOPSIS
 .Nm df
 .Op Fl ikn
-.Op Ar file Li \&| Ar filesystem \&...
+.Op Ar file | Ar filesystem ...
 .Sh DESCRIPTION
 .Nm Df
-displays statistics about the amount of free disk space on the
+displays statistics about the amount of free disk space on the specified
 filesystem
 .Ar filesystem
 or on the filesystem of which
@@ -27,13 +27,13 @@ If neither a file or a filesystem argument is given,
 statistics for every filesystem mounted is displayed.
 .Pp
 The following options are available:
-.Tw Ds
-.Tp Fl i
+.Bl -tag -width Ds
+.It Fl i
 Include statistics on the number of free inodes.
-.Tp Fl k
+.It Fl k
 By default, all reported numbers are in 512-byte blocks.
 This causes the numbers to be reported in kilobytes.
-.Tp Fl n
+.It Fl n
 Print out the previously obtained statistics from the filesystems.
 This option should be used
 if it is possible that one or more filesystems are
@@ -44,6 +44,7 @@ When this option is specified,
 will not request new statistics from the filesystems,
 but will respond with the possibly stale statistics
 that were previously obtained.
+.El
 .Sh BUGS
 The
 .Fl n
@@ -60,7 +61,5 @@ flag is ignored if a file or filesystem is specified.
 .Sh HISTORY
 A
 .Nm df
-command appeared in Version 6 AT&T Unix as
-df(8) and in Version 7 AT&T Unix as df(1m).
-.\" Just for posterity and perspective, the date on the Version 6
-.\" release manual page was 1/20/73.
+command appeared in
+.At v6 .
