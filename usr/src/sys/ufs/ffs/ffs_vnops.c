@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.32 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1245,10 +1245,11 @@ ufs_symlink(ndp, vap, target)
 /*
  * Vnode op for read and write
  */
-ufs_readdir(vp, uio, cred)
+ufs_readdir(vp, uio, cred, eofflagp)
 	struct vnode *vp;
 	register struct uio *uio;
 	struct ucred *cred;
+	int *eofflagp;
 {
 	int count, lost, error;
 
@@ -1261,6 +1262,10 @@ ufs_readdir(vp, uio, cred)
 	uio->uio_iov->iov_len = count;
 	error = ufs_read(vp, uio, 0, cred);
 	uio->uio_resid += lost;
+	if ((VTOI(vp)->i_size - uio->uio_offset) <= 0)
+		*eofflagp = 1;
+	else
+		*eofflagp = 0;
 	return (error);
 }
 
