@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)mailstats.c	3.1	%G%";
+static char	SccsId[] =	"@(#)mailstats.c	3.2	%G%";
 
 /*
 **  MAILSTATS -- print mail statistics.
@@ -19,6 +19,7 @@ main(argc, argv)
 	struct statistics stat;
 	char *sfile = "/usr/eric/mailstats";
 	register int i;
+	extern char *ctime();
 
 	fd = open(sfile, 0);
 	if (fd < 0)
@@ -33,6 +34,7 @@ main(argc, argv)
 		exit(EX_OSERR);
 	}
 
+	printf("Statistics from %s", ctime(&stat.stat_itime));
 	printf(" M msgsfr bytes_from  msgsto   bytes_to\n");
 	for (i = 0; i < MAXMAILERS; i++)
 	{
