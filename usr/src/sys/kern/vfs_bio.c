@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_bio.c	6.5 (Berkeley) %G%
+ *	@(#)vfs_bio.c	6.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -273,8 +273,16 @@ getblk(dev, blkno, size)
 	register struct buf *bp, *dp;
 	int s;
 
-	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-PGSHIFT))	/* XXX */
-		blkno = 1 << ((sizeof(int)*NBBY-PGSHIFT) + 1);
+	/*
+	 * To prevent overflow of 32-bit ints when converting block
+	 * numbers to byte offsets, blknos > 2^32 / DEV_BSIZE are set
+	 * to the maximum number that can be converted to a byte offset
+	 * without overflow. This is historic code; what bug it fixed,
+	 * or whether it is still a reasonable thing to do is open to
+	 * dispute. mkm 9/85
+	 */
+	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-DEV_BSHIFT))
+		blkno = 1 << ((sizeof(int)*NBBY-DEV_BSHIFT) + 1);
 	/*
 	 * Search the cache for the block.  If we hit, but
 	 * the buffer is in use for i/o, then we wait until
