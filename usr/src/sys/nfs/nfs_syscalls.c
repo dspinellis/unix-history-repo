@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.30.1.1 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -422,7 +422,6 @@ nfssvc_nfsd(nsd, argp, p)
 			solockp = &slp->ns_solock;
 		else
 			solockp = (int *)0;
-		nd->nd_repstat = 0;
 		/*
 		 * nam == nam2 for connectionless protocols such as UDP
 		 * nam2 == NULL for connection based protocols to disable
