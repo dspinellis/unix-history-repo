@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.24	82/03/30	*/
+/*	in_pcb.c	4.25	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -117,7 +117,6 @@ COUNT(IN_PCBATTACH);
 	inp->inp_socket = so;
 	insque(inp, head);
 	so->so_pcb = (caddr_t)inp;
-	in_setsockaddr(inp);
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);
@@ -160,27 +159,11 @@ COUNT(IN_PCBCONNECT);
 	    inp->inp_lport,
 	    0))
 		return (EADDRINUSE);
-	if (inp->inp_laddr.s_addr == 0) {
-		struct sockaddr_in *sin2 =
-		    (struct sockaddr_in *)&inp->inp_socket->so_addr;
-
+	if (inp->inp_laddr.s_addr == 0)
 		inp->inp_laddr = ifaddr->sin_addr;
-		sin2->sin_addr = inp->inp_laddr;
-	}
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
 	return (0);
-}
-
-in_setsockaddr(inp)
-	struct inpcb *inp;
-{
-	register struct sockaddr_in *sin =
-	    (struct sockaddr_in *)&inp->inp_socket->so_addr;
-
-	sin->sin_family = AF_INET;
-	sin->sin_addr = inp->inp_laddr;
-	sin->sin_port = inp->inp_lport;
 }
 
 in_pcbdisconnect(inp)
@@ -205,6 +188,18 @@ in_pcbdetach(inp)
 		rtfree(inp->inp_route.ro_rt);
 	remque(inp);
 	(void) m_free(dtom(inp));
+}
+
+in_setsockaddr(sin, inp)
+	register struct sockaddr_in *sin;
+	register struct inpcb *inp;
+{
+	if (sin == 0 || inp == 0)
+		panic("setsockaddr_in");
+	bzero((caddr_t)sin, sizeof (*sin));
+	sin->sin_family = AF_INET;
+	sin->sin_port = inp->inp_lport;
+	sin->sin_addr = inp->inp_laddr;
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.12	82/04/10	*/
+/*	raw_usrreq.c	4.13	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -10,7 +10,7 @@
 #include "../net/in_systm.h"
 #include "../net/if.h"
 #include "../net/raw_cb.h"
-#include "../errno.h"
+#include <errno.h>
 
 int	rawqmaxlen = IFQ_MAXLEN;
 
@@ -28,10 +28,10 @@ COUNT(RAW_INIT);
 /*
  * Raw protocol interface.
  */
-raw_input(m0, pf, daf, saf)
+raw_input(m0, proto, dst, src)
 	struct mbuf *m0;
-	struct sockproto *pf;
-	struct sockaddr *daf, *saf;
+	struct sockproto *proto;
+	struct sockaddr *dst, *src;
 {
 	register struct mbuf *m;
 	struct raw_header *rh;
@@ -50,9 +50,9 @@ COUNT(RAW_INPUT);
 	m->m_off = MMINOFF;
 	m->m_len = sizeof(struct raw_header);
 	rh = mtod(m, struct raw_header *);
-	rh->raw_dst = *daf;
-	rh->raw_src = *saf;
-	rh->raw_protocol = *pf;
+	rh->raw_dst = *dst;
+	rh->raw_src = *src;
+	rh->raw_proto = *proto;
 
 	/*
 	 * Header now contains enough info to decide
@@ -80,11 +80,9 @@ rawintr()
 	int s;
 	struct mbuf *m;
 	register struct rawcb *rp;
-	register struct socket *so;
-	register struct protosw *pr;
-	register struct sockproto *sp;
-	register struct sockaddr *sa;
-	struct raw_header *rawp;
+	register struct sockaddr *laddr;
+	register struct protosw *lproto;
+	struct raw_header *rh;
 	struct socket *last;
 
 COUNT(RAWINTR);
@@ -94,9 +92,7 @@ next:
 	splx(s);
 	if (m == 0)
 		return;
-	rawp = mtod(m, struct raw_header *);
-	sp = &rawp->raw_protocol;
-	sa = &rawp->raw_dst;
+	rh = mtod(m, struct raw_header *);
 
 	/*
 	 * Find the appropriate socket(s) in which to place this
@@ -106,25 +102,26 @@ next:
 	 */
 	last = 0;
 	for (rp = rawcb.rcb_next; rp != &rawcb; rp = rp->rcb_next) {
-		so = rp->rcb_socket;
-		pr = so->so_proto;
-		if (pr->pr_family != sp->sp_family ||
-		    (pr->pr_protocol && pr->pr_protocol != sp->sp_protocol))
+		lproto = rp->rcb_socket->so_proto;
+		if (lproto->pr_family != rh->raw_proto.sp_family)
 			continue;
-		if (so->so_addr.sa_family && 
-		    sa->sa_family != so->so_addr.sa_family)
+		if (lproto->pr_protocol &&
+		    lproto->pr_protocol != rh->raw_proto.sp_protocol)
+			continue;
+		laddr = &rp->rcb_laddr;
+		if (laddr->sa_family &&
+		    laddr->sa_family != rh->raw_dst.sa_family)
 			continue;
 		/*
 		 * We assume the lower level routines have
 		 * placed the address in a canonical format
-		 * suitable for a structure comparison. Packets
-		 * are duplicated for each receiving socket.
-		 *
-		 * SHOULD HAVE A NUMBER OF MECHANISMS FOR
-		 * MATCHING BASED ON rcb_flags
+		 * suitable for a structure comparison.
 		 */
-		if ((rp->rcb_flags & RAW_ADDR) &&
-		    bcmp(sa->sa_data, so->so_addr.sa_data, 14) != 0)
+		if ((rp->rcb_flags & RAW_LADDR) &&
+		    bcmp(laddr->sa_data, rh->raw_dst.sa_data, 14) != 0)
+			continue;
+		if ((rp->rcb_flags & RAW_FADDR) &&
+		    bcmp(rp->rcb_faddr.sa_data, rh->raw_src.sa_data, 14) != 0)
 			continue;
 		/*
 		 * To avoid extraneous packet copies, we keep
@@ -137,27 +134,21 @@ next:
 
 			if (n = m_copy(m->m_next, 0, (int)M_COPYALL))
 				goto nospace;
-			if (sbappendaddr(&last->so_rcv, &rawp->raw_src, n) == 0) {
-				/*
-				 * Should drop notification of lost packet
-				 * into this guy's queue, but...
-				 */
+			if (sbappendaddr(&last->so_rcv, &rh->raw_src, n)==0) {
+				/* should notify about lost packet */
 				m_freem(n);
 				goto nospace;
 			}
 			sorwakeup(last);
 		}
 nospace:
-		last = so;
+		last = rp->rcb_socket;
 	}
 	if (last == 0)
 		goto drop;
-	if (sbappendaddr(&last->so_rcv, &rawp->raw_src, m->m_next) == 0)
-{
-printf("rawintr: sbappendaddr failed\n");
+	m = m_free(m);		/* header */
+	if (sbappendaddr(&last->so_rcv, &rh->raw_src, m) == 0)
 		goto drop;
-}
-	(void) m_free(m);	/* generic header */
 	sorwakeup(last);
 	goto next;
 drop:
@@ -211,14 +202,14 @@ COUNT(RAW_USRREQ);
 	 * nothing else around it should go to). 
 	 */
 	case PRU_CONNECT:
-		if (rp->rcb_flags & RAW_ADDR)
+		if (rp->rcb_flags & RAW_FADDR)
 			return (EISCONN);
 		raw_connaddr(rp, (struct sockaddr *)addr);
 		soisconnected(so);
 		break;
 
 	case PRU_DISCONNECT:
-		if ((rp->rcb_flags & RAW_ADDR) == 0)
+		if ((rp->rcb_flags & RAW_FADDR) == 0)
 			return (ENOTCONN);
 		raw_disconnect(rp);
 		soisdisconnected(so);
@@ -237,14 +228,14 @@ COUNT(RAW_USRREQ);
 	 */
 	case PRU_SEND:
 		if (addr) {
-			if (rp->rcb_flags & RAW_ADDR)
+			if (rp->rcb_flags & RAW_FADDR)
 				return (EISCONN);
 			raw_connaddr(rp, (struct sockaddr *)addr);
-		} else if ((rp->rcb_flags & RAW_ADDR) == 0)
+		} else if ((rp->rcb_flags & RAW_FADDR) == 0)
 			return (ENOTCONN);
 		error = (*so->so_proto->pr_output)(m, so);
 		if (addr)
-			rp->rcb_flags &= ~RAW_ADDR;
+			rp->rcb_flags &= ~RAW_FADDR;
 		break;
 
 	case PRU_ABORT:
@@ -263,6 +254,10 @@ COUNT(RAW_USRREQ);
 	case PRU_RCVOOB:
 	case PRU_SENDOOB:
 		error = EOPNOTSUPP;
+		break;
+
+	case PRU_SOCKADDR:
+		bcopy(addr, (caddr_t)&rp->rcb_laddr, sizeof (struct sockaddr));
 		break;
 
 	default:

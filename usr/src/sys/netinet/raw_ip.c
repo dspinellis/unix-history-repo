@@ -1,16 +1,17 @@
-/*	raw_ip.c	4.9	82/03/28	*/
+/*	raw_ip.c	4.10	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/socketvar.h"
+#include "../net/if.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/raw_cb.h"
-#include "../errno.h"
+#include <errno.h>
 
 /*
  * Raw interface to IP protocol.
@@ -19,7 +20,6 @@
 static struct sockaddr_in ripdst = { AF_INET };
 static struct sockaddr_in ripsrc = { AF_INET };
 static struct sockproto ripproto = { PF_INET };
-
 /*
  * Setup generic address and protocol structures
  * for raw_input routine, then pass them along with
@@ -48,8 +48,10 @@ rip_output(m0, so)
 {
 	register struct mbuf *m;
 	register struct ip *ip;
-	register int len = 0;
-	register struct rawcb *rp = sotorawcb(so);
+	int len = 0, error;
+	struct rawcb *rp = sotorawcb(so);
+	struct ifnet *ifp;
+	struct sockaddr_in *src;
 
 COUNT(RIP_OUTPUT);
 	/*
@@ -60,8 +62,8 @@ COUNT(RIP_OUTPUT);
 		len += m->m_len;
 	m = m_get(M_DONTWAIT);
 	if (m == 0) {
-		m_freem(m);
-		return (0);
+		error = ENOBUFS;
+		goto bad;
 	}
 	
 	/*
@@ -73,10 +75,26 @@ COUNT(RIP_OUTPUT);
 	ip = mtod(m, struct ip *);
 	ip->ip_p = so->so_proto->pr_protocol;
 	ip->ip_len = sizeof(struct ip) + len;
-	ip->ip_dst =
-		((struct sockaddr_in *)&rp->rcb_addr)->sin_addr;
-	ip->ip_src =
-		((struct sockaddr_in *)&so->so_addr)->sin_addr;
+	ip->ip_dst = ((struct sockaddr_in *)&rp->rcb_faddr)->sin_addr;
+	/* local address may not be specified -- XXX */
+	ifp = if_ifonnetof(ip->ip_dst.s_net);
+	if (ifp == 0) {
+		error = ENETUNREACH;
+		goto bad;
+	}
+	if (rp->rcb_flags & RAW_LADDR)
+		src = (struct sockaddr_in *)&rp->rcb_laddr;
+	else {
+		if (ifp->if_addr.sa_family != AF_INET) {
+			error = EAFNOSUPPORT;
+			goto bad;
+		}
+		src = (struct sockaddr_in *)&ifp->if_addr;
+	}
+	ip->ip_src = src->sin_addr;
 	ip->ip_ttl = MAXTTL;
 	return (ip_output(m, (struct mbuf *)0, 0, 1));
+bad:
+	m_freem(m);
+	return (error);
 }
