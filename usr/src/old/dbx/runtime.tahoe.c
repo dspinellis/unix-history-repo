@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)runtime.tahoe.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)runtime.tahoe.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1053,12 +1053,12 @@ public flushoutput()
 	p = p->next_sym;
     }
     if (p != nil) {
-	iob = lookup(identname("_iob", true));
+	iob = lookup(identname("__sF", true));
 	if (iob != nil) {
 	    pushenv();
 	    pc = codeloc(p);
 	    savesp = sp;
-	    push(long, address(iob, nil) + sizeof(struct _iobuf));
+	    push(long, address(iob, nil) + sizeof(*stdout));
 	    setreg(STKP, reg(STKP) - sizeof(long));
 	    dwrite(savesp, reg(STKP), sizeof(long));
 	    sp = savesp;

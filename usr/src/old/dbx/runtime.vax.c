@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 
-static char sccsid[] = "@(#)runtime.vax.c 5.5 %G%";
+static char sccsid[] = "@(#)runtime.vax.c 5.6 %G%";
 #endif /* not lint */
 
 /*
@@ -773,7 +773,7 @@ public flushoutput()
 	p = p->next_sym;
     }
     if (p != nil) {
-	iob = lookup(identname("_iob", true));
+	iob = lookup(identname("__sF", true));
 	if (iob != nil) {
 	    pushenv();
 	    pc = codeloc(p) - FUNCOFFSET;
