@@ -5,7 +5,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.22 1994/05/04 08:28:16 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.23 1994/05/07 11:54:38 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both.
@@ -583,6 +583,14 @@ the ``TUNE_1542''' kernel configuration option in order to have this
 take place.  Using it on those systems where it works may make your
 disks run faster, but on those systems where it doesn't, your data could
 be corrupted.
+
+5.6:  I would like to track changes to current.  Is there any other way
+      besides downloading the whole tree?
+
+Yes, Poul-Henning has set up a source tracking list.  Please email 
+majordomo@ref.tfs.com with a body of "get ctm-src-cur README" for
+futher information.
+
 
 
 6 Kernel Configuration
