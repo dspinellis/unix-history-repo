@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)wsnmle.c	5.1	%G%
+ *	@(#)wsnmle.c	5.2	%G%
  */
 
 /*
@@ -39,9 +39,7 @@ s_wsne(a) namelist_arglist *a;
 
 	/* begin line with " &namelistname " */
 	if(recpos != 0)
-		PUT('\n')  /* PUT() adds blank */
-	else
-		PUT(' ');
+		PUT('\n');  /* PUT() adds blank */
 	PUT(namelistkey_);
 	while(*nmlist_nm != '\0') PUT(*nmlist_nm++);
 	PUT(' ');
