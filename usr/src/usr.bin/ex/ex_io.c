@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	7.8	%G%";
+static char *sccsid = "@(#)ex_io.c	7.9	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -413,10 +413,18 @@ rop(c)
 rop2()
 {
 	line *first, *last, *a;
+	struct stat statb;
 
 	deletenone();
 	clrstats();
 	first = addr2 + 1;
+	if (fstat(io, &statb) < 0)
+		bsize = LBSIZE;
+	else {
+		bsize = statb.st_blksize;
+		if (bsize <= 0)
+			bsize = LBSIZE;
+	}
 	ignore(append(getfile, addr2));
 	last = dot;
 	/*
@@ -631,7 +639,7 @@ getfile()
 	fp = nextip;
 	do {
 		if (--ninbuf < 0) {
-			ninbuf = read(io, genbuf, LBSIZE) - 1;
+			ninbuf = read(io, genbuf, bsize) - 1;
 			if (ninbuf < 0) {
 				if (lp != linebuf) {
 					lp++;
@@ -686,13 +694,21 @@ int isfilter;
 	line *a1;
 	register char *fp, *lp;
 	register int nib;
+	struct stat statb;
 
 	a1 = addr1;
 	clrstats();
 	cntln = addr2 - a1 + 1;
 	if (cntln == 0)
 		return;
-	nib = BUFSIZ;
+	if (fstat(io, &statb) < 0)
+		bsize = LBSIZE;
+	else {
+		bsize = statb.st_blksize;
+		if (bsize <= 0)
+			bsize = LBSIZE;
+	}
+	nib = bsize;
 	fp = genbuf;
 	do {
 		getline(*a1++);
@@ -708,7 +724,7 @@ int isfilter;
 					wrerror();
 				}
 				cntch += nib;
-				nib = BUFSIZ - 1;
+				nib = bsize - 1;
 				fp = genbuf;
 			}
 			if ((*fp++ = *lp++) == 0) {

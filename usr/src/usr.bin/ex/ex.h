@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex.h	7.5	%G%  */
+/* sccs id:	@(#)ex.h	7.6	%G%  */
 #ifdef V6
 #include <retrofit.h>
 #endif
@@ -177,7 +177,7 @@ var	short	erfile;		/* Error message file unit */
 #endif
 var	line	*fendcore;	/* First address in line pointer space */
 var	char	file[FNSIZE];	/* Working file name */
-var	char	genbuf[LBSIZE];	/* Working buffer when manipulating linebuf */
+var	char	genbuf[MAXBSIZE]; /* Working buffer when manipulating linebuf */
 var	bool	hush;		/* Command line option - was given, hush up! */
 var	char	*globp;		/* (Untyped) input string to command mode */
 var	bool	holdcm;		/* Don't cursor address */
@@ -221,6 +221,7 @@ var	bool	vcatch;		/* Want to catch an error (open/visual) */
 var	jmp_buf	vreslab;	/* For error throws to a visual catch */
 var	bool	writing;	/* 1 if in middle of a file write */
 var	int	xchng;		/* Suppresses multiple "No writes" in !cmd */
+var	long	bsize;		/* Block size for disk i/o */
 
 /*
  * Macros
