@@ -14,24 +14,30 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pwd.h	4.2 (Berkeley) %G%
+ *	@(#)pwd.h	4.3 (Berkeley) %G%
  */
 
+#define	_PATH_PASSWD		"/etc/passwd"
+#define	_PATH_MASTERPASSWD	"/etc/master.passwd"
+#define	_PATH_MKPASSWD		"/usr/sbin/mkpasswd"
+#define	_PATH_PTMP		"/etc/ptmp"
+
+#define	_PW_KEYBYNAME		'0'
+#define	_PW_KEYBYUID		'1'
+
 struct passwd {
-	char	*pw_name;
-	char	*pw_passwd;
-	int	pw_uid;
-	int	pw_gid;
-	int	pw_quota;		/* not used */
-	char	*pw_comment;		/* not used */
-	char	*pw_gecos;
-	char	*pw_dir;
-	char	*pw_shell;
+	char	*pw_name;			/* user name */
+	char	*pw_passwd;			/* encrypted password */
+	int	pw_uid;				/* user uid */
+	int	pw_gid;				/* user gid */
+	time_t	pw_change;			/* password change time */
+	char	*pw_class;			/* user access class */
+	char	*pw_gecos;			/* Honeywell login info */
+	char	*pw_dir;			/* home directory */
+	char	*pw_shell;			/* default shell */
+	time_t	pw_expire;			/* account expiration */
 };
 
-struct passwd *getpwent();
-struct passwd *getpwuid();
-struct passwd *getpwnam();
-int setpwent();
-void endpwent();
-void setpwfile();
+struct passwd *getpwent(), *getpwuid(), *getpwnam();
+void endpwent(), setpwfile();
+int setpassent(), setpwent();

@@ -1,8 +1,19 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)vipw.8	6.2 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)vipw.8	6.3 (Berkeley) %G%
 .\"
 .TH VIPW 8 ""
 .UC 4
@@ -24,7 +35,14 @@ performs a number of consistency checks on the password entry for
 .IR root ,
 and will not allow a password file with a ``mangled'' root entry
 to be installed.
+.PP
+Once the information has been verified,
+.I vipw
+uses
+.IR mkpasswd (8)
+to update the user database.  This is run in the background, and,
+at very large sites could take several minutes.  Until this update
+is completed, the password file is unavailable for other updates
+and the new information will not be available to programs.
 .SH SEE ALSO
-passwd(1), passwd(5), adduser(8), mkpasswd(8)
-.SH FILES
-/etc/ptmp
+chpass(1), passwd(1), passwd(5), adduser(8), mkpasswd(8)
