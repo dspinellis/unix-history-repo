@@ -609,7 +609,7 @@ static int n_default_compilers
 static char *link_command_spec = "\
 %{!fsyntax-only: \
  %{!c:%{!M:%{!MM:%{!E:%{!S:ld %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} \
-			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z}\
+			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z} %{Z} \
 			%{!A:%{!nostartfiles:%{!nostdlib:%S}}} %{static:}\
 			%{L*} %D %o %{!nostdlib:libgcc.a%s %L libgcc.a%s %{!A:%E}}\n }}}}}}";
 #else
@@ -618,7 +618,7 @@ static char *link_command_spec = "\
 static char *link_command_spec = "\
 %{!fsyntax-only: \
  %{!c:%{!M:%{!MM:%{!E:%{!S:ld %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} \
-			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z}\
+			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z} %{Z} \
 			%{!A:%{!nostartfiles:%{!nostdlib:%S}}} %{static:}\
 			%{L*} %o %{!nostdlib:libgcc.a%s %L libgcc.a%s %{!A:%E}}\n }}}}}}";
 #else
@@ -626,7 +626,7 @@ static char *link_command_spec = "\
 static char *link_command_spec = "\
 %{!fsyntax-only: \
  %{!c:%{!M:%{!MM:%{!E:%{!S:ld %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} \
-			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z}\
+			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z} %{Z} \
 			%{!A:%{!nostartfiles:%{!nostdlib:%S}}} %{static:}\
 			%{L*} %D %o %{!nostdlib:-lgcc %L -lgcc %{!A:%E}}\n }}}}}}";
 #endif
