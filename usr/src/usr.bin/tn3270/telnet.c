@@ -26,7 +26,7 @@ static char copyright[] =
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	6.4 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -211,7 +211,8 @@ static int
 	ISend,		/* trying to send network data in */
 	debug = 0,
 	crmod,
-	netdata,
+	netdata,	/* Print out network data flow */
+	crlf,		/* Should '\r' be mapped to <CR><LF> (or <CR><NUL>)? */
 	noasynch = 0,	/* User specified "-noasynch" on command line */
 	askedSGA = 0,	/* We have talked about suppress go ahead */
 	telnetport = 1;
@@ -2726,7 +2727,11 @@ int	block;			/* should we block in the select ? */
 			flushline = 1;
 			break;
 		    case '\r':
-			NET2ADD('\r', '\0');
+			if (!crlf) {
+			    NET2ADD('\r', '\0');
+			} else {
+			    NET2ADD('\r', '\n');
+			}
 			flushline = 1;
 			break;
 		    case IAC:
@@ -2747,7 +2752,7 @@ int	block;			/* should we block in the select ? */
     }
 #   endif /* defined(TN3270) */
 
-    if ((!MODE_LINE(globalmode) || flushline) &&
+    if ((!MODE_LINE(globalmode) || flushline || myopts[TELOPT_BINARY]) &&
 	FD_ISSET(net, &obits) && (NETBYTES() > 0)) {
 	FD_CLR(net, &obits);
 	returnValue = netflush();
@@ -3067,6 +3072,18 @@ togdebug()
 
 
 static int
+togcrlf()
+{
+    if (crlf) {
+	printf("Will send carriage returns as telnet <CR><LF>.\n");
+    } else {
+	printf("Will send carriage returns as telnet <CR><NUL>.\n");
+    }
+    return 1;
+}
+
+
+static int
 togbinary()
 {
     donebinarytoggle = 1;
@@ -3124,7 +3141,13 @@ static struct togglelist Togglelist[] = {
 	    togbinary,
 		1,
 		    0,
-			"send and receive network data in binary mode" },
+			0 },
+    { "crlf",
+	"toggle sending carriage returns as telnet <CR><LF>",
+	    togcrlf,
+		1,
+		    &crlf,
+			0 },
     { "crmod",
 	"toggle mapping of received carriage returns",
 	    0,
@@ -3228,8 +3251,10 @@ char	*argv[];
 	} else {
 	    if (c->variable) {
 		*c->variable = !*c->variable;		/* invert it */
-		printf("%s %s.\n", *c->variable? "Will" : "Won't",
+		if (c->actionexplanation) {
+		    printf("%s %s.\n", *c->variable? "Will" : "Won't",
 							c->actionexplanation);
+		}
 	    }
 	    if (c->handler) {
 		retval &= (*c->handler)(c);
