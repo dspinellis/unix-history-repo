@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)parser.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -718,6 +718,7 @@ breakloop:
 #define PARSESUB()	{goto parsesub; parsesub_return:;}
 #define PARSEBACKQOLD()	{oldstyle = 1; goto parsebackq; parsebackq_oldreturn:;}
 #define PARSEBACKQNEW()	{oldstyle = 0; goto parsebackq; parsebackq_newreturn:;}
+#define	PARSEARITH()	{goto parsearith; parsearith_return:;}
 
 STATIC int
 readtoken1(firstc, syntax, eofmark, striptabs)
@@ -733,8 +734,11 @@ readtoken1(firstc, syntax, eofmark, striptabs)
 	struct nodelist *bqlist;
 	int quotef;
 	int dblquote;
-	int varnest;
+	int varnest;	/* levels of variables expansion */
+	int arinest;	/* levels of arithmetic expansion */
+	int parenlevel;	/* levels of parens in arithmetic */
 	int oldstyle;
+	char const *prevsyntax;	/* syntax before arithmetic */
 
 	startlinno = plinno;
 	dblquote = 0;
@@ -743,6 +747,9 @@ readtoken1(firstc, syntax, eofmark, striptabs)
 	quotef = 0;
 	bqlist = NULL;
 	varnest = 0;
+	arinest = 0;
+	parenlevel = 0;
+
 	STARTSTACKSTR(out);
 	loop: {	/* for each line, until end of word */
 #if ATTY
@@ -806,7 +813,10 @@ readtoken1(firstc, syntax, eofmark, striptabs)
 				if (eofmark) {
 					USTPUTC(c, out);
 				} else {
-					syntax = BASESYNTAX;
+					if (arinest)
+						syntax = ARISYNTAX;
+					else
+						syntax = BASESYNTAX;
 					quotef++;
 					dblquote = 0;
 				}
@@ -820,6 +830,31 @@ readtoken1(firstc, syntax, eofmark, striptabs)
 					USTPUTC(CTLENDVAR, out);
 				} else {
 					USTPUTC(c, out);
+				}
+				break;
+			case CLP:	/* '(' in arithmetic */
+				parenlevel++;
+				USTPUTC(c, out);
+				break;
+			case CRP:	/* ')' in arithmetic */
+				if (parenlevel > 0) {
+					USTPUTC(c, out);
+					--parenlevel;
+				} else {
+					if (pgetc() == ')') {
+						if (--arinest == 0) {
+							USTPUTC(CTLENDARI, out);
+							syntax = prevsyntax;
+						} else
+							USTPUTC(')', out);
+					} else {
+						/* 
+						 * unbalanced parens
+						 *  (don't 2nd guess - no error)
+						 */
+						pungetc();
+						USTPUTC(')', out);
+					}
 				}
 				break;
 			case CBQUOTE:	/* '`' */
@@ -842,6 +877,8 @@ readtoken1(firstc, syntax, eofmark, striptabs)
 		}
 	}
 endword:
+	if (syntax == ARISYNTAX)
+		synerror("Missing '))'");
 	if (syntax != BASESYNTAX && eofmark == NULL)
 		synerror("Unterminated quoted string");
 	if (varnest != 0) {
@@ -974,8 +1011,13 @@ parsesub: {
 	if (c != '(' && c != '{' && !is_name(c) && !is_special(c)) {
 		USTPUTC('$', out);
 		pungetc();
-	} else if (c == '(') {	/* $(command) */
-		PARSEBACKQNEW();
+	} else if (c == '(') {	/* $(command) or $((arith)) */
+		if (pgetc() == '(') {
+			PARSEARITH();
+		} else {
+			pungetc();
+			PARSEBACKQNEW();
+		}
 	} else {
 		USTPUTC(CTLVAR, out);
 		typeloc = out - stackblock();
@@ -1010,7 +1052,7 @@ badsub:				synerror("Bad substitution");
 		} else {
 			pungetc();
 		}
-		if (dblquote)
+		if (dblquote || arinest)
 			flags |= VSQUOTE;
 		*(stackblock() + typeloc) = subtype | flags;
 		if (subtype != VSNORMAL)
@@ -1079,11 +1121,33 @@ parsebackq: {
 	}
 	parsebackquote = savepbq;
 	handler = savehandler;
-	USTPUTC(CTLBACKQ + dblquote, out);
+	if (arinest || dblquote)
+		USTPUTC(CTLBACKQ | CTLQUOTE, out);
+	else
+		USTPUTC(CTLBACKQ, out);
 	if (oldstyle)
 		goto parsebackq_oldreturn;
 	else
 		goto parsebackq_newreturn;
+}
+
+/*
+ * Parse an arithmetic expansion (indicate start of one and set state)
+ */
+parsearith: {
+
+	if (++arinest == 1) {
+		prevsyntax = syntax;
+		syntax = ARISYNTAX;
+		USTPUTC(CTLARI, out);
+	} else {
+		/*
+		 * we collapse embedded arithmetic expansion to
+		 * parenthesis, which should be equivalent
+		 */
+		USTPUTC('(', out);
+	}
+	goto parsearith_return;
 }
 
 } /* end of readtoken */

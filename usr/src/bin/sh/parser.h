@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)parser.h	5.1 (Berkeley) %G%
+ *	@(#)parser.h	5.2 (Berkeley) %G%
  */
 
 /* control characters in argument strings */
@@ -16,6 +16,9 @@
 #define CTLENDVAR '\203'
 #define CTLBACKQ '\204'
 #define CTLQUOTE 01		/* ored with CTLBACKQ code if in quotes */
+/*	CTLBACKQ | CTLQUOTE == '\205' */
+#define	CTLARI	'\206'
+#define	CTLENDARI '\207'
 
 /* variable substitution byte (follows CTLVAR) */
 #define VSTYPE 07		/* type of variable substitution */
