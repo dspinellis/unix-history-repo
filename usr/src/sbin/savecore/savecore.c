@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -506,7 +506,7 @@ check_space()
 		(void)fclose(fp);
 	}
 
-	needed = dumpsize + vmunixsize;
+	needed = (dumpsize + vmunixsize) / 1024;
  	if (minfree > 0 && spacefree - needed < minfree) {
 		syslog(LOG_WARNING,
 		    "no dump, not enough free space on device");
