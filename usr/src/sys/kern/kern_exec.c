@@ -9,7 +9,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	8.7 (Berkeley) %G%
+ *	@(#)kern_exec.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,6 +26,7 @@
 #include <sys/exec.h>
 #include <sys/ktrace.h>
 #include <sys/resourcevar.h>
+#include <sys/syscallargs.h>
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
@@ -56,8 +57,12 @@ extern char sigcode[], esigcode[];
  */
 execve(p, uap, retval)
 	register struct proc *p;
-	register struct execve_args *uap;
-	int *retval;
+	register struct execve_args /* {
+		syscallarg(char *) path;
+		syscallarg(char **) argp;  
+		syscallarg(char **) envp;
+	} */ *uap;      
+	register_t *retval;
 {
 	register struct ucred *cred = p->p_ucred;
 	register struct filedesc *fdp = p->p_fd;
@@ -89,7 +94,7 @@ execve(p, uap, retval)
 #endif SECSIZE
 
 	NDINIT(&nd, LOOKUP, FOLLOW | SAVENAME, UIO_USERSPACE,
-		uap->fname, p);
+		SCARG(uap, path), p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
@@ -312,26 +317,26 @@ execve(p, uap, retval)
 	/*
 	 * Copy arguments into file in argdev area.
 	 */
-	if (uap->argp) for (;;) {
+	if (SCARG(uap, argp)) for (;;) {
 		ap = NULL;
 		sharg = NULL;
 		if (indir && na == 0) {
 			sharg = nd.ni_cnd.cn_nameptr;
 			ap = (int)sharg;
-			uap->argp++;		/* ignore argv[0] */
+			SCARG(uap, argp)++;		/* ignore argv[0] */
 		} else if (indir && (na == 1 && cfarg[0])) {
 			sharg = cfarg;
 			ap = (int)sharg;
 		} else if (indir && (na == 1 || na == 2 && cfarg[0]))
-			ap = (int)uap->fname;
-		else if (uap->argp) {
-			ap = fuword((caddr_t)uap->argp);
-			uap->argp++;
+			ap = (int)SCARG(uap, path);
+		else if (SCARG(uap, argp)) {
+			ap = fuword((caddr_t)SCARG(uap, argp));
+			SCARG(uap, argp)++;
 		}
-		if (ap == NULL && uap->envp) {
-			uap->argp = NULL;
-			if ((ap = fuword((caddr_t)uap->envp)) != NULL)
-				uap->envp++, ne++;
+		if (ap == NULL && SCARG(uap, envp)) {
+			SCARG(uap, envp) = NULL;
+			if ((ap = fuword((caddr_t)SCARG(uap, envp))) != NULL)
+				SCARG(uap, envp)++, ne++;
 		}
 		if (ap == NULL)
 			break;

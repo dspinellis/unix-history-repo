@@ -9,7 +9,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_acct.c	8.6 (Berkeley) %G%
+ *	@(#)kern_acct.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,6 +26,7 @@
 #include <sys/file.h>
 #include <sys/acct.h>
 #include <sys/syslog.h>
+#include <sys/syscallargs.h>
 
 /*
  * Values associated with enabling and disabling accounting
@@ -51,13 +52,12 @@ struct	vnode *savacctp;
  * accounting has been suspended, and freespace rises above acctresume,
  * accounting is resumed.
  */
-struct acct_args {
-	char	*fname;
-};
 acct(p, uap, retval)
 	struct proc *p;
-	struct acct_args *uap;
-	int *retval;
+	struct acct_args /* {
+		syscallarg(char *) path;
+	} */ *uap;
+	register_t *retval;
 {
 	register struct vnode *vp;
 	extern void acctwatch __P((void *));
@@ -71,7 +71,7 @@ acct(p, uap, retval)
 		acctp = savacctp;
 		savacctp = NULL;
 	}
-	if (uap->fname == NULL) {
+	if (SCARG(uap, path) == NULL) {
 		if (vp = acctp) {
 			acctp = NULL;
 			error = vn_close(vp, FWRITE, p->p_ucred, p);
@@ -79,7 +79,7 @@ acct(p, uap, retval)
 		}
 		return (error);
 	}
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, SCARG(uap, path), p);
 	if (error = vn_open(&nd, FWRITE, 0644))
 		return (error);
 	vp = nd.ni_vp;
