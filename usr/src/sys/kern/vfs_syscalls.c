@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.8 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -97,10 +97,6 @@ mount(p, uap, retval)
 		    uap->flags & (MNT_RELOAD | MNT_FORCE | MNT_UPDATE);
 		VOP_UNLOCK(vp);
 		goto update;
-	}
-	if (vp->v_usecount != 1 && (uap->flags & MNT_UNION) == 0) {
-		vput(vp);
-		return (EBUSY);
 	}
 	if (error = vinvalbuf(vp, V_SAVE, p->p_ucred, p, 0, 0))
 		return (error);
