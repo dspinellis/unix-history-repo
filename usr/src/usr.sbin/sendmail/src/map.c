@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.67 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1676,7 +1676,27 @@ hes_map_lookup(map, name, av, statp)
 	if (tTd(38, 20))
 		printf("hes_map_lookup(%s, %s)\n", map->map_file, name);
 
-	hp = hes_resolve(name, map->map_file);
+	if (name[0] == '\\')
+	{
+		char *np;
+		int nl;
+		char nbuf[MAXNAME];
+
+		nl = strlen(name);
+		if (nl < sizeof nbuf - 1)
+			np = nbuf;
+		else
+			np = xalloc(strlen(name) + 2);
+		np[0] = '\\';
+		strcpy(&np[1], name);
+		hp = hes_resolve(np, map->map_file);
+		if (np != nbuf)
+			free(np);
+	}
+	else
+	{
+		hp = hes_resolve(name, map->map_file);
+	}
 	if (hp == NULL || hp[0] == NULL)
 		return NULL;
 	
