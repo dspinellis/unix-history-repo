@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -56,7 +56,8 @@ __rec_open(fname, flags, mode, openinfo)
 		btopeninfo.compare = NULL;
 		btopeninfo.prefix = NULL;
 		btopeninfo.lorder = openinfo->lorder;
-		dbp = __bt_open(NULL, O_RDWR, S_IRUSR | S_IWUSR, &btopeninfo);
+		dbp = __bt_open(openinfo->bfname,
+		    O_RDWR, S_IRUSR | S_IWUSR, &btopeninfo);
 	} else
 		dbp = __bt_open(NULL, O_RDWR, S_IRUSR | S_IWUSR, NULL);
 	if (dbp == NULL)
@@ -71,7 +72,7 @@ __rec_open(fname, flags, mode, openinfo)
 	t = dbp->internal;
 	if (openinfo) {
 		if (openinfo->flags & R_FIXEDLEN) {
-			SET(t, BTF_FIXEDLEN);
+			SET(t, R_FIXLEN);
 			t->bt_reclen = openinfo->reclen;
 			if (t->bt_reclen == 0)
 				goto einval;
@@ -80,9 +81,9 @@ __rec_open(fname, flags, mode, openinfo)
 	} else
 		t->bt_bval = '\n';
 
-	SET(t, BTF_RECNO);
+	SET(t, R_RECNO);
 	if (fname == NULL)
-		SET(t, BTF_EOF | BTF_RINMEM);
+		SET(t, R_EOF | R_INMEM);
 	else
 		t->bt_rfd = rfd;
 	t->bt_rcursor = 0;
@@ -95,20 +96,20 @@ __rec_open(fname, flags, mode, openinfo)
 		if (lseek(rfd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
 			switch (flags & O_ACCMODE) {
 			case O_RDONLY:
-				SET(t, BTF_RDONLY);
+				SET(t, R_RDONLY);
 				break;
 			default:
 				goto einval;
 			}
 slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 				goto err;
-			SET(t, BTF_CLOSEFP);
+			SET(t, R_CLOSEFP);
 			t->bt_irec =
-			    ISSET(t, BTF_FIXEDLEN) ? __rec_fpipe : __rec_vpipe;
+			    ISSET(t, R_FIXLEN) ? __rec_fpipe : __rec_vpipe;
 		} else {
 			switch (flags & O_ACCMODE) {
 			case O_RDONLY:
-				SET(t, BTF_RDONLY);
+				SET(t, R_RDONLY);
 				break;
 			case O_RDWR:
 				break;
@@ -136,7 +137,7 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 				}
 			}
 			if (sb.st_size == 0)
-				SET(t, BTF_EOF);
+				SET(t, R_EOF);
 			else {
 				t->bt_msize = sb.st_size;
 				if ((t->bt_smap =
@@ -145,9 +146,9 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 					goto slow;
 				t->bt_cmap = t->bt_smap;
 				t->bt_emap = t->bt_smap + sb.st_size;
-				t->bt_irec = ISSET(t, BTF_FIXEDLEN) ?
+				t->bt_irec = ISSET(t, R_FIXLEN) ?
 				    __rec_fmap : __rec_vmap;
-				SET(t, BTF_MEMMAPPED);
+				SET(t, R_MEMMAPPED);
 			}
 		}
 	}
@@ -170,7 +171,7 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 		mpool_put(t->bt_mp, h, 0);
 
 	if (openinfo && openinfo->flags & R_SNAPSHOT &&
-	    !ISSET(t, BTF_EOF | BTF_RINMEM) &&
+	    !ISSET(t, R_EOF | R_INMEM) &&
 	    t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
                 goto err;
 	return (dbp);
