@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.13 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.14 %G%";
 
 #include "diff.h"
 /*
@@ -152,18 +152,39 @@ diffreg()
 		done();
 	}
 	chrtran = (iflag? cup2low : clow2low);
-	if ((stb1.st_mode & S_IFMT) == S_IFDIR)
+	if ((stb1.st_mode & S_IFMT) == S_IFDIR) {
 		file1 = splice(file1, file2);
-	else if ((stb2.st_mode & S_IFMT) == S_IFDIR)
+		if (stat(file1, &stb1) < 0) {
+			fprintf(stderr, "diff: ");
+			perror(file1);
+			done();
+		}
+	} else if ((stb2.st_mode & S_IFMT) == S_IFDIR) {
 		file2 = splice(file2, file1);
-	else if (!strcmp(file1, "-")) {
+		if (stat(file2, &stb2) < 0) {
+			fprintf(stderr, "diff: ");
+			perror(file2);
+			done();
+		}
+	} else if (!strcmp(file1, "-")) {
 		if (!strcmp(file2, "-")) {
 			fprintf(stderr, "diff: can't specify - -\n");
 			done();
 		}
 		file1 = copytemp();
-	} else if (!strcmp(file2, "-"))
+		if (stat(file1, &stb1) < 0) {
+			fprintf(stderr, "diff: ");
+			perror(file1);
+			done();
+		}
+	} else if (!strcmp(file2, "-")) {
 		file2 = copytemp();
+		if (stat(file2, &stb2) < 0) {
+			fprintf(stderr, "diff: ");
+			perror(file2);
+			done();
+		}
+	}
 	if ((f1 = fopen(file1, "r")) == NULL) {
 		fprintf(stderr, "diff: ");
 		perror(file1);
