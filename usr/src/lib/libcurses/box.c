@@ -1,10 +1,19 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)box.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include	"curses.ext"
 
 /*
  *	This routine draws a box around the given window with "vert"
  * as the vertical delimiting char, and "hor", as the horizontal one.
  *
- * @(#)box.c	1.3 (Berkeley) %G%
  */
 box(win, vert, hor)
 reg WINDOW	*win;

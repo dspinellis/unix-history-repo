@@ -1,10 +1,19 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)fullname.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # define	reg	register
 
 /*
  *	This routine fills in "def" with the full name of the terminal.
  * This is assumed to be the last name in the list of aliases.
  *
- * @(#)fullname.c	1.1 (Berkeley) %G%
  */
 char *
 fullname(bp, def)
