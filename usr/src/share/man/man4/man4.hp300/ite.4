@@ -1,0 +1,79 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ite.4	5.1 (Berkeley) %G%
+.\"
+.TH ITE 4 ""
+.UC 7
+.SH NAME
+ite \- HP Internal Terminal Emulator
+.SH DESCRIPTION
+TTY special files of the form ``ttye?''
+are interfaces to the HP ITE for bit-mapped displays as implemented under BSD.
+An ITE is the main system console on most HP300 workstations and
+is the mechanism through which a user communicates with the machine.
+If more than one display exists on a system,
+any or all can be used as ITEs with the limitation that only the first
+one opened will have a keyboard (since only one keyboard is supported).
+.PP
+ITE devices use the HP-UX ``300h''
+.IR termcap (5)
+or
+.I terminfo
+entries.
+However, as currently implemented,
+the ITE does not support the full range of HP-UX capabilities for this device.
+Missing are multiple colors, underlining, blinking, softkeys,
+programmable tabs, scrolling memory and keyboard arrow keys.
+The keyboard does not have any of the international character
+support of HP's NLS system.
+It does use the left and right
+.I "extend char"
+keys as meta keys, in that it will set the eighth bit of the character code.
+.PP
+Upon booting, the kernel will first look for an ITE device
+to use as the system console (/dev/console).
+If a display exists at any hardware address, it will be the console.
+The kernel looks for, in order:
+a 98544, 98545, or 98547 Topcat display,
+a 98700 Gatorbox at a supported address (see
+.IR gb (4)),
+or a 98720 Renaissance at a supported address (see
+.IR rb (4)).
+Currently there is no ITE support for the
+98548, 98549, 98550 and 98556 boards.
+.PP
+When activated as an ITE (special file opened),
+all displays go through a standard initialization sequence.
+The frame buffer is cleared,
+the ROM fonts are unpacked and loaded into off-screen storage and
+a cursor appears.
+The ITE initialization routine also sets the colormap entry used to white.
+Variable colors are not used, mainly for reasons of simplicity.
+The font pixels are all set to 0xff and the colormap entry corresponding
+to all planes is set to R=255, G=255 and B=255.
+The actual number of planes used to display the characters depends
+on the hardware installed.
+Finally, if the keyboard HIL device is not already assigned to another
+ITE device, it is placed in ``cooked'' mode and assigned to this ITE.
+.PP
+On most systems,
+a display is used both as an ITE (/dev/ttye? aka /dev/console)
+and as a graphics device (/dev/grf?).
+In this environment,
+there is some interaction between the two uses that should be noted.
+For example, opening /dev/grf0 will deactivate the ITE,
+that is, write over whatever may be on the ITE display.
+When the graphics application is finished and /dev/grf0 closed,
+the ITE will be reinitialized with the frame buffer cleared
+and the ITE colormap installed.
+.SH SEE ALSO
+grf(4), hil(4), gb(4), rb(4), tc(4)
+.SH DIAGNOSTICS
+None under BSD.
