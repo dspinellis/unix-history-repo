@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)col.1	8.1 (Berkeley) %G%
+.\"     @(#)col.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COL 1
@@ -20,7 +20,7 @@
 .Op Fl l Ar num
 .Sh DESCRIPTION
 .Nm Col
-filters out reverse (and half reverse) line feeds so the output is
+filters out reverse (and half reverse) line feeds so that the output is
 in the correct order with only forward and half forward line
 feeds, and replaces white-space characters with tabs where possible.
 This can be useful in processing the output of
@@ -29,10 +29,10 @@ and
 .Xr tbl  1 .
 .Pp
 .Nm Col
-reads from standard input and writes to standard output.
+reads from the standard input and writes to the standard output.
 .Pp
 The options are as follows:
-.Bl -tag -width "-lnum"
+.Bl -tag -width "-l num  "
 .It Fl b
 Do not output any backspaces, printing only the last character
 written to each column position.
@@ -42,7 +42,7 @@ Normally characters printed on a half line boundary are printed
 on the following line.
 .It Fl x
 Output multiple spaces instead of tabs.
-.It Fl l Ns Ar num
+.It Fl l Ar num
 Buffer at least
 .Ar num
 lines in memory.
