@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sd.c,v 4.300 91/06/27 20:42:56 root Rel41 $ SONY
  *
- *	@(#)sd.c	7.1 (Berkeley) %G%
+ *	@(#)sd.c	7.2 (Berkeley) %G%
  */
 #define	dkblock(bp)	bp->b_blkno
 
@@ -259,6 +259,9 @@ struct sc_inq *get_sc_inq();
 int	sdprobe(), sdslave(), sdattach(), sddgo(), sdintr();
 int	sdwstart, sdwatch(), sdstop();	/* Have started guardian */
 void	sdexec();
+
+static sd_check(), sd_tstdrv(), sd_other_pages(), sd_err_rcv(), sd_synctr_on();
+static disklabel2sdst(), sdst2disklabel(), sd_scu_exec();
 
 #ifdef CPU_SINGLE
 struct hb_driver sdcdriver =
