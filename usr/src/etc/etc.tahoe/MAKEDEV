@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)MAKEDEV	5.7 (Berkeley) %G%
+#	@(#)MAKEDEV	5.8 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -23,7 +23,8 @@
 # Tapes:
 #	cy*	Cipher
 # Disks:
-#	dk*	VDDC or SMDE disk
+#	dk*	VDDC or SMDE disk on Versabus
+#	hd*	VDDC or SMDE disk on VME
 # Terminal multiplexors:
 #	vx*	VIOC
 #	mp*	MPCC
@@ -90,10 +91,11 @@ cy*)
 	esac
 	;;
 
-dk*)
+hd*|dk*)
 	unit=`expr $i : '..\(.*\)'`
 	case $i in
 	dk*) name=dk; blk=1; chr=5;;
+	hd*) name=hd; blk=2; chr=6;;
 	esac
 	case $unit in
 	0|1|2|3|4|5|6|7|8|9|a|b|c|d|e|f|g|h)
