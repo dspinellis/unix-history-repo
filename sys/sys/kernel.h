@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kernel.h	7.4 (Berkeley) 2/15/91
- *	$Id: kernel.h,v 1.5 1993/11/25 01:37:57 wollman Exp $
+ *	$Id: kernel.h,v 1.6 1993/12/19 00:55:17 wollman Exp $
  */
 
 #ifndef _SYS_KERNEL_H_
@@ -96,5 +96,25 @@ extern char *bootesym;		/* end of symbol info from boot */
 #endif
 
 extern u_char curpri;		/* priority of current process */
+
+/*
+ * The following macros are used to declare global sets of objects, which
+ * are collected by the linker into a `struct linker_set' as defined below.
+ *
+ * NB: the constants defined below must match those defined in
+ * /usr/src/gnu/ld/ld.h.  Since their calculation requires arithmetic, we
+ * can't name them symbolically (e.g., 23 is N_SETT | N_EXT).
+ */
+#define MAKE_SET(set, sym, type) \
+	asm(".stabs \"_" #set "\", " #type ", 0, 0, _" #sym)
+#define TEXT_SET(set, sym) MAKE_SET(set, sym, 23)
+#define DATA_SET(set, sym) MAKE_SET(set, sym, 25)
+#define BSS_SET(set, sym)  MAKE_SET(set, sym, 27)
+#define ABS_SET(set, sym)  MAKE_SET(set, sym, 21)
+
+struct linker_set {
+	int ls_length;
+	caddr_t ls_items[1];	/* really ls_length of them, trailing NULL */
+};
 
 #endif /* _SYS_KERNEL_H_ */
