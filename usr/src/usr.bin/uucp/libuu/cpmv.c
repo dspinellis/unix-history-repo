@@ -1,14 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpmv.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cpmv.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 
-/***
- *	xcp(f1, f2)	copy f1 to f2
- *	char *f1, *f2;
+/*LINTLIBRARY*/
+
+/*
+ *	copy f1 to f2
  *
  *	return - 0 ok  |  FAIL failed
  */
