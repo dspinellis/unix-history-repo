@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.60 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.61 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -534,10 +534,9 @@ R<$+ @ $+ > $* < $+ >	$: $>_SET_95_ < $H > $3 < $4 >	... send direct to hub
 R<$* @ $* > $* < $+ >	$: $3 < $4 >
 ifdef(`_STICKY_LOCAL_DOMAIN_',
 `R$+ < @ $=w . >		$: < $H > $1 < @ $2 . >		first try hub
-R< $+ > $+ + $* < $+ >	$#_LOCAL_ $@ $3 $: $2		yep (plussed name) ....
-R< $+ > $+ < $+ >	$#_LOCAL_ $: $2			yep (nonplussed) ....
+R< $+ > $+ < $+ >	$#_LOCAL_ $: $2			yep ....
 R< > $=D . $+ < $+ >	$#_LOCAL_ $: $1 . $2		dotted name?
-R< > $+ + $* < $+ >	$#_LOCAL_ $@ $2 $: $1		plussed name?
+R< > $+ + $* < $+ >	$#_LOCAL_ $: $1 + $2		plussed name?
 R< > $+ < $+ >		$#_LOCAL_ $: @ $1			nope, local address',
 `R$+ < @ $=w . >		$#_LOCAL_ $: $1			dispose directly',
 `R$+ < @ $=w . >		$: $>_SET_95_ < $H > $1 < @ $2 . >	sticky local names
