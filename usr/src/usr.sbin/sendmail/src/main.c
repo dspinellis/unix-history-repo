@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -101,7 +101,6 @@ main(argc, argv, envp)
 	char *argv0 = argv[0];
 	struct passwd *pw;
 	struct stat stb;
-	char realuser[256];
 	char jbuf[60];			/* holds MyHostName */
 	extern int DtableSize;
 	extern time_t convtime();
@@ -162,9 +161,9 @@ main(argc, argv, envp)
 
 	pw = getpwuid(RealUid);
 	if (pw != NULL)
-		(void) strcpy(realuser, pw->pw_name);
+		(void) strcpy(RealUserName, pw->pw_name);
 	else
-		(void) sprintf(realuser, "Unknown UID %d", RealUid);
+		(void) sprintf(RealUserName, "Unknown UID %d", RealUid);
 
 	/*
 	**  Do a quick prescan of the argument list.
@@ -310,11 +309,8 @@ main(argc, argv, envp)
 	**  Find our real host name for future logging.
 	*/
 
-	p = getrealhostname(STDIN_FILENO);
-	if (p != NULL)
-		RealHostName = newstr(p);
-	else
-		RealHostName = "localhost";
+	p = getauthinfo(STDIN_FILENO);
+	define('_', p, CurEnv);
 
 	/*
 	** Crack argv.
@@ -384,7 +380,7 @@ main(argc, argv, envp)
 			if (getuid() != 0)
 				auth_warning(CurEnv,
 					"Processed by %s with -C %s",
-					realuser, optarg);
+					RealUserName, optarg);
 			break;
 
 		  case 'd':	/* debugging -- redo in case frozen */
@@ -579,7 +575,7 @@ main(argc, argv, envp)
 		if (RealUid != 0)
 			auth_warning(CurEnv,
 				"%s owned process doing -bs",
-				realuser);
+				RealUserName);
 		break;
 	}
 
@@ -843,6 +839,14 @@ main(argc, argv, envp)
 		/* at this point we are in a child: reset state */
 		OpMode = MD_SMTP;
 		(void) newenvelope(CurEnv, CurEnv);
+
+		/*
+		**  Get authentication data
+		*/
+
+		p = getauthinfo(fileno(InChannel));
+		define('_', p, CurEnv);
+
 #endif /* DAEMON */
 	}
 	
