@@ -1,4 +1,4 @@
-/*	icmp_var.h	6.1	83/07/29	*/
+/*	icmp_var.h	6.2	83/09/19	*/
 
 /*
  * Variables related to this implementation
@@ -11,6 +11,7 @@ struct	icmpstat {
 	int	icps_oldicmp;		/* no error 'cuz old was icmp */
 	int	icps_outhist[ICMP_IREQREPLY + 1];
 /* statistics related to input messages processed */
+ 	int	icps_badcode;		/* icmp_code out of range */
 	int	icps_tooshort;		/* packet < ICMP_MINLEN */
 	int	icps_checksum;		/* bad checksum */
 	int	icps_badlen;		/* calculated bound mismatch */

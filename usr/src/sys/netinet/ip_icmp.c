@@ -1,4 +1,4 @@
-/*	ip_icmp.c	6.1	83/07/29	*/
+/*	ip_icmp.c	6.2	83/09/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,12 +16,14 @@
 #include "../netinet/ip_icmp.h"
 #include "../netinet/icmp_var.h"
 
+#ifdef ICMPPRINTFS
 /*
  * ICMP routines: error generation, receive packet processing, and
  * routines to turnaround packets back to the originator, and
  * host table maintenance routines.
  */
 int	icmpprintfs = 0;
+#endif
 
 /*
  * Generate an error packet of type error
@@ -36,8 +38,10 @@ icmp_error(oip, type, code)
 	struct mbuf *m;
 	struct ip *nip;
 
+#ifdef ICMPPRINTFS
 	if (icmpprintfs)
 		printf("icmp_error(%x, %d, %d)\n", oip, type, code);
+#endif
 	icmpstat.icps_error++;
 	/*
 	 * Make sure that the old IP packet had 8 bytes of data to return;
@@ -95,15 +99,6 @@ free:
 	m_freem(dtom(oip));
 }
 
-static char icmpmap[] = {
-	-1,		 -1,		-1,
-	PRC_UNREACH_NET, PRC_QUENCH, 	PRC_REDIRECT_NET,
-	-1,		 -1,		-1,
-	-1,		 -1,		PRC_TIMXCEED_INTRANS,
-	PRC_PARAMPROB,	 -1,		-1,
-	-1,		 -1
-};
-
 static struct sockproto icmproto = { AF_INET, IPPROTO_ICMP };
 static struct sockaddr_in icmpsrc = { AF_INET };
 static struct sockaddr_in icmpdst = { AF_INET };
@@ -124,8 +119,10 @@ icmp_input(m)
 	 * Locate icmp structure in mbuf, and check
 	 * that not corrupted and of at least minimum length.
 	 */
+#ifdef ICMPPRINTFS
 	if (icmpprintfs)
 		printf("icmp_input from %x, len %d\n", ip->ip_src, icmplen);
+#endif
 	if (icmplen < ICMP_MINLEN) {
 		icmpstat.icps_tooshort++;
 		goto free;
@@ -141,35 +138,61 @@ icmp_input(m)
 		goto free;
 	}
 
+#ifdef ICMPPRINTFS
 	/*
 	 * Message type specific processing.
 	 */
 	if (icmpprintfs)
 		printf("icmp_input, type %d code %d\n", icp->icmp_type,
-			icp->icmp_code);
+		    icp->icmp_code);
+#endif
 	if (icp->icmp_type > ICMP_IREQREPLY)
 		goto free;
 	icmpstat.icps_inhist[icp->icmp_type]++;
+	code = icp->icmp_code;
 	switch (icp->icmp_type) {
 
 	case ICMP_UNREACH:
+		if (code > 5)
+			goto badcode;
+		code += PRC_UNREACH_NET;
+		goto deliver;
+
 	case ICMP_TIMXCEED:
+		if (code > 1)
+			goto badcode;
+		code += PRC_TIMXCEED_INTRANS;
+		goto deliver;
+
 	case ICMP_PARAMPROB:
+		if (code)
+			goto badcode;
+		code = PRC_PARAMPROB;
+		goto deliver;
+
 	case ICMP_SOURCEQUENCH:
+		if (code)
+			goto badcode;
+		code = PRC_QUENCH;
+	deliver:
 		/*
-		 * Problem with previous datagram; advise
-		 * higher level routines.
+		 * Problem with datagram; advise higher level routines.
 		 */
 		icp->icmp_ip.ip_len = ntohs((u_short)icp->icmp_ip.ip_len);
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
 			icmpstat.icps_badlen++;
 			goto free;
 		}
+#ifdef ICMPPRINTFS
 		if (icmpprintfs)
 			printf("deliver to protocol %d\n", icp->icmp_ip.ip_p);
-		code = icp->icmp_type == ICMP_PARAMPROB ? 0 : icp->icmp_code;
+#endif
 		if (ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
-			(*ctlfunc)(icmpmap[icp->icmp_type]+code, (caddr_t)icp);
+			(*ctlfunc)(code, (caddr_t)icp);
+		goto free;
+
+	badcode:
+		icmpstat.icps_badcode++;
 		goto free;
 
 	case ICMP_ECHO:
@@ -187,8 +210,12 @@ icmp_input(m)
 		goto reflect;
 		
 	case ICMP_IREQ:
+#ifdef notdef
 		/* fill in source address zero fields! */
 		goto reflect;
+#else
+		goto free;		/* not yet implemented: ignore */
+#endif
 
 	case ICMP_REDIRECT:
 	case ICMP_ECHOREPLY:
@@ -262,8 +289,10 @@ icmp_send(ip)
 	icp->icmp_cksum = in_cksum(m, ip->ip_len - hlen);
 	m->m_off -= hlen;
 	m->m_len += hlen;
+#ifdef ICMPPRINTFS
 	if (icmpprintfs)
 		printf("icmp_send dst %x src %x\n", ip->ip_dst, ip->ip_src);
+#endif
 	(void) ip_output(m, (struct mbuf *)0, (struct route *)0, 0);
 }
 
