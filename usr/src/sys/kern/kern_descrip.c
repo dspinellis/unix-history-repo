@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_descrip.c	6.11 (Berkeley) %G%
+ *	@(#)kern_descrip.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -366,11 +366,6 @@ getf(f)
 /*
  * Internal form of close.
  * Decrement reference count on file structure.
- * If last reference not going away, but no more
- * references except in message queues, run a
- * garbage collect.  This would better be done by
- * forcing a gc() to happen sometime soon, rather
- * than running one each time.
  */
 closef(fp)
 	register struct file *fp;
@@ -380,8 +375,6 @@ closef(fp)
 		return;
 	if (fp->f_count > 1) {
 		fp->f_count--;
-		if (fp->f_count == fp->f_msgcount)
-			unp_gc();
 		return;
 	}
 	(*fp->f_ops->fo_close)(fp);
