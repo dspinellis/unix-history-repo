@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	6.4 (Berkeley) %G%
+.\"	@(#)csh.1	6.5 (Berkeley) %G%
 .\"
 .TH CSH 1 ""
 .UC 4
@@ -1384,7 +1384,7 @@ The final two forms run command at priority 4 and
 respectively.
 The super-user may specify negative niceness by using `nice \-number ...'.
 Command is always executed in a sub-shell, and the restrictions
-place on commands in simple
+placed on commands in simple
 .I if
 statements apply.
 .HP 5
@@ -2120,6 +2120,15 @@ and only allows words to be prepended to the argument list without modification.
 If argument 0 to the shell is `\-' then this
 is a login shell.
 The flag arguments are interpreted as follows:
+.TP 5
+.B  \-b
+\c
+This flag forces a ``break'' from option processing, causing any further
+shell arguments to be treated as non-option arguments.
+The remaining arguments will not be interpreted as shell options.
+This may be used to pass options to a shell script without confusion
+or possible subterfuge.
+The shell will not run a set-user ID script without this option.
 .TP 5
 .B  \-c
 \c
