@@ -1,6 +1,7 @@
-#	@(#)keywords	8.1 (Berkeley) %G%
+#	@(#)keywords	8.2 (Berkeley) %G%
 
 add
+blackhole
 change
 cloning
 delete
