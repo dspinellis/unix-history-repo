@@ -1,0 +1,75 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)adjtime.2	1.1 (Berkeley) %G%
+.\"
+.TH ADJTIME 2 ""
+.UC 6
+.SH NAME
+adjtime \- correct the time to allow synchronization of the system clock
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/time.h>
+.PP
+.ft B
+adjtime(delta, olddelta)
+struct timeval *delta; 
+struct timeval *olddelta;
+.fi
+.SH DESCRIPTION
+.I Adjtime
+changes the system time, as returned by
+.IR gettimeofday (2),
+moving it backward or forward 
+by the number of microseconds corresponding to the timeval
+\fIdelta\fP.
+.PP
+The time is maintained by incrementing it with a machine-dependent tick
+every clock interrupt.
+If \fIdelta\fP is negative, the clock is
+slowed down by incrementing it in smaller ticks until
+the correction is made.
+If \fIdelta\fP is positive, a larger tick
+is used.
+Thus, the time is always
+a monotonically increasing function.
+A time correction from an earlier call to \fIadjtime\fP
+may not be finished when \fIadjtime\fP is called again.
+If \fIolddelta\fP is non-zero,
+then the structure pointed to will contain, upon return, the
+number of microseconds still to be corrected
+from the earlier call.
+.PP
+This call can be used in time servers that synchronize the clocks
+of computers in a local area network.
+Such time servers would slow down the clocks of some machines
+and speed up the clocks of others to bring them to the average network time.
+.PP
+The call 
+.IR adjtime (2)
+is restricted to the super-user.
+.SH NOTES
+On a VAX the time is incremented 
+in 10ms ticks.
+When \fIadjtime\fP is called with an argument other than zero,
+ticks of 9ms or 11ms are used until the time is corrected.
+A \fIdelta\fP of less than 1ms would have no effect.
+.SH "RETURN VALUE
+A return value of 0 indicates that the call succeeded.
+A return value of \-1 indicates that an error occurred, and in this
+case an error code is stored in the global variable \fIerrno\fP.
+.SH "ERRORS
+The following error codes may be set in \fIerrno\fP:
+.TP 15
+[EFAULT]
+An argument points outside the process's allocated address space.
+.TP 15
+[EPERM]
+The process's effective user ID is not that of the super-user.
+.SH "SEE ALSO"
+date(1), gettimeofday(2), timed(8), timedc(8),
+.br
+\fITSP: The Time Synchronization Protocol for UNIX 4.3BSD\fP, 
+R. Gusella and S. Zatti
