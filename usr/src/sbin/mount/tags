@@ -1,0 +1,14 @@
+BADTYPE	mount.c	/^#define	BADTYPE(type)							\\$/
+Mmount	mount.c	/^main(argc, argv)$/
+catopt	mount.c	/^catopt(s0, s1)$/
+checkvfsname	vfslist.c	/^checkvfsname(vfsname, vfslist)$/
+getmntopts	getmntopts.c	/^getmntopts(options, m0, flagp, altflagp)$/
+getmntpt	mount.c	/^getmntpt(name)$/
+hasopt	mount.c	/^hasopt(mntopts, option)$/
+makevfslist	vfslist.c	/^makevfslist(fslist)$/
+mangle	mount.c	/^mangle(options, argcp, argv)$/
+mount_ufs	mount_ufs.c	/^mount_ufs(argc, argv)$/
+mountfs	mount.c	/^mountfs(vfstype, spec, name, flags, options, mntop/
+prmount	mount.c	/^prmount(sfp)$/
+ufs_usage	mount_ufs.c	/^ufs_usage()$/
+usage	mount.c	/^usage()$/
