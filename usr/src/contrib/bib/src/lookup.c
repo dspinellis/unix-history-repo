@@ -25,6 +25,10 @@ char **arglist;
     char *p,*q;
     char one_index[maxstr];
 
+    strcpy(BMACLIB, N_BMACLIB);
+    strcpy(COMFILE, N_COMFILE);
+    strcpy(DEFSTYLE, N_DEFSTYLE);
+
     argc= argcount-1;
     argv= arglist+1;
     flags();
@@ -61,7 +65,9 @@ char **arglist;
 # define    operand     (strlen(*argv+2)==0 ? (argv++,argc--,*argv) : *argv+2)
 
 flags()
-{   for (; argc>0 && *argv[0]=='-';  argc--,argv++)
+{
+    char *p;
+    for (; argc>0 && *argv[0]=='-';  argc--,argv++)
     {   switch ((*argv)[1])
         {   case 'l':   max_klen= atoi(operand);
                         break;
@@ -71,6 +77,15 @@ flags()
                         break;
             case 'p':   strcpy(INDEX,operand);
                         break;
+	    case 'd':
+		p = &argv[0][2];
+		if (!p) { 
+			argv++;
+			p = &argv[0][0];
+		}
+		strreplace(COMFILE, BMACLIB, p);
+		strcpy(BMACLIB, p);
+		break;
             default:    fprintf(stderr, "unknown flag '%s'\n", *argv);
         }
     }
