@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lock.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)lock.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -43,8 +43,6 @@ static char sccsid[] = "@(#)lock.c	5.6 (Berkeley) %G%";
 #include <ctype.h>
 
 #define	TIMEOUT	15
-#define	YES	1
-#define	NO	0
 
 int	quit(), bye(), hi();
 
@@ -55,31 +53,35 @@ long	nexttime;			/* keep the timeout time */
 
 /*ARGSUSED*/
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
-	struct passwd	*root_pwd, *my_pwd;
-	struct timeval	timval;
-	struct itimerval	ntimer, otimer;
-	struct tm	*timp;
-	int	sectimeout = TIMEOUT,
-		use_mine;
-	char	*ttynam, *ap, *tzn,
-		hostname[MAXHOSTNAMELEN], s[BUFSIZ], s1[BUFSIZ],
-		*crypt(), *index(), *ttyname();
+	extern char *optarg;
+	extern int optind;
+	struct passwd *root_pwd, *my_pwd;
+	struct timeval timval;
+	struct itimerval ntimer, otimer;
+	struct tm *timp;
+	int ch, sectimeout, use_mine;
+	char *ttynam, *ap, *tzn;
+	char hostname[MAXHOSTNAMELEN], s[BUFSIZ], s1[BUFSIZ];
+	char *crypt(), *index(), *ttyname();
 
-	use_mine = NO;
-	for (++argv; *argv; ++argv) {
-		if (argv[0][0] != '-')
-			usage();
-		if (argv[0][1] == 'p')
-			use_mine = YES;
-		else if (!isdigit(argv[0][1])) {
-			fprintf(stderr, "lock: illegal option -- %c\n", argv[0][1]);
-			usage();
-		}
-		else if ((sectimeout = atoi(*argv + 1)) <= 0)
-			usage();
+	use_mine = 0;
+	sectimeout = TIMEOUT;
+	while ((ch = getopt(argc, argv, "pt:")) != EOF)
+		switch((char)ch) {
+		case 't':
+			if ((sectimeout = atoi(optarg)) <= 0)
+				exit(0);
+			break;
+		case 'p':
+			use_mine = 1;
+			break;
+		case '?':
+		default:
+			fputs("usage: lock [-p] [-t timeout]\n", stderr);
+			exit(1);
 	}
 	timeout.tv_sec = sectimeout * 60;
 
@@ -169,7 +171,7 @@ main(argc, argv)
 static
 hi()
 {
-	struct timeval	timval;
+	struct timeval timval;
 
 	if (!gettimeofday(&timval, (struct timezone *)NULL))
 	    printf("lock: type in the unlock key. timeout in %ld:%ld minutes\n",
@@ -188,12 +190,5 @@ bye()
 {
 	(void)ioctl(0, TIOCSETP, &tty);
 	puts("lock: timeout");
-	exit(1);
-}
-
-static
-usage()
-{
-	fputs("usage: lock [-p] [-timeout]\n", stderr);
 	exit(1);
 }
