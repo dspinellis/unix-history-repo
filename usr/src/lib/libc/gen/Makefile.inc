@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.1 (Berkeley) %G%
+#	@(#)Makefile.inc	5.2 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -86,12 +86,13 @@ MLINKS+=regex.3 re_comp.3 regex.3 re_exec.3 regexp.3 regcomp.3 \
 MLINKS+=scandir.3 alphasort.3
 MLINKS+=setjmp.3 _longjmp.3 setjmp.3 _setjmp.3 setjmp.3 longjmp.3 \
 	setjmp.3 longjmperr.3
+MLINKS+=setmode.3 getmode.3
 MLINKS+=setuid.3 setegid.3 setuid.3 seteuid.3 setuid.3 setgid.3 \
 	setuid.3 setrgid.3 setuid.3 setruid.3
 MLINKS+=syslog.3 closelog.3 syslog.3 openlog.3 syslog.3 setlogmask.3 \
 	syslog.3 vsyslog.3
+MLINKS+=tmpnam.3 tmpfile.3 tmpnam.3 tempnam.3
 MLINKS+=ttyname.3 isatty.3 ttyname.3 ttyslot.3
-MLINKS+=setmode.3 getmode.3
 
 errlst.o:
 	${CC} -S ${CFLAGS} ${.IMPSRC}
