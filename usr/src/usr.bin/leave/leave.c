@@ -1,20 +1,27 @@
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific written prior permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)leave.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)leave.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
+#include <ctype.h>
 #include <signal.h>
 /*
  * leave [[+]hhmm]
@@ -32,13 +39,17 @@ char buff[100];
 main(argc, argv)
 char **argv;
 {
-	long when, tod, now, diff, hours, minutes;
+	long when, now, diff, hours, minutes;
 	char *cp;
 	int *nv;
-	int atoi();
+	int gethm();
 	int *localtime();
 
-	strcpy(origlogin, getlogin());
+	if ((cp = getlogin()) == NULL) {
+		fputs("leave: You are not logged in.\n", stderr);
+		exit(1);
+	}
+	strcpy(origlogin, cp);
 	if (argc < 2) {
 		printf("When do you have to leave? ");
 		fflush(stdout);
@@ -50,26 +61,20 @@ char **argv;
 		exit(0);
 	if (*cp == '+') {
 		cp++;
-		if (*cp < '0' || *cp > '9')
+		if (!gethm(cp, &hours, &minutes))
 			usage();
-		tod = atoi(cp);
-		hours = tod / 100;
-		minutes = tod % 100;
 		if (minutes < 0 || minutes > 59)
 			usage();
 		diff = 60*hours+minutes;
 		doalarm(diff);
 		exit(0);
 	}
-	if (*cp < '0' || *cp > '9')
+	if (!gethm(cp, &hours, &minutes))
 		usage();
-	tod = atoi(cp);
-	hours = tod / 100;
 	if (hours > 12)
 		hours -= 12;
 	if (hours == 12)
 		hours = 0;
-	minutes = tod % 100;
 
 	if (hours < 0 || hours > 12 || minutes < 0 || minutes > 59)
 		usage();
@@ -84,7 +89,7 @@ char **argv;
 	while (diff < 0)
 		diff += 12*60;
 	if (diff > 11*60) {
-		printf("That time has already passed!\n");
+		fprintf(stderr, "That time has already passed!\n");
 		exit(1);
 	}
 	doalarm(diff);
@@ -93,8 +98,27 @@ char **argv;
 
 usage()
 {
-	printf("usage: leave [[+]hhmm]\n");
+	fprintf(stderr, "usage: leave [[+]hhmm]\n");
 	exit(1);
+}
+
+int
+gethm(cp, hp, mp)
+register char *cp;
+int *hp, *mp;
+{
+	register char c;
+	register int tod;
+
+	tod = 0;
+	while ((c = *cp++) != '\0') {
+		if (!isdigit(c))
+			return(0);
+		tod = tod * 10 + (c - '0');
+	}
+	*hp = tod / 100;
+	*mp = tod % 100;
+	return(1);
 }
 
 doalarm(nmins)
@@ -172,6 +196,7 @@ delay(secs)
 int secs;
 {
 	int n;
+	register char *l;
 
 	while (secs > 0) {
 		n = 100;
@@ -180,7 +205,10 @@ int secs;
 		secs -= n;
 		if (n > 0)
 			sleep(n);
-		if (strcmp(origlogin, getlogin()))
+		l = getlogin();
+		if (l == NULL)
+			exit(0);
+		if (strcmp(origlogin, l) != 0)
 			exit(0);
 	}
 }
