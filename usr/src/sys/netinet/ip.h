@@ -9,8 +9,23 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip.h	7.6 (Berkeley) %G%
+ *	@(#)ip.h	7.6.1.1 (Berkeley) %G%
  */
+#ifndef BYTE_ORDER
+/*
+ * Definitions for byte order,
+ * according to byte significance from low address to high.
+ */
+#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
+#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
+#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
+
+#ifdef vax
+#define	BYTE_ORDER	LITTLE_ENDIAN
+#else
+#define	BYTE_ORDER	BIG_ENDIAN	/* mc68000, tahoe, most others */
+#endif
+#endif BYTE_ORDER
 
 /*
  * Definitions for internet protocol version 4.
