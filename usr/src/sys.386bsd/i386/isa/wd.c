@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00038
+ * CURRENT PATCH LEVEL:         4       00072
  * --------------------         -----   ----------------------
  *
  * 17 Sep 92	Frank Maclachlan	Fixed I/O error reporting on raw device
@@ -46,6 +46,9 @@
  *					boot problem.
  * 19 Aug 92    Frank Maclachlan	Fixed bug when first sector of a
  *					multisector read is in bad144 table.
+ * 17 Jan 93	B. Evans & A.Chernov	Fixed bugs from previous patches,
+ *					driver initialization, and cylinder
+ *					boundary conditions.
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -170,9 +173,8 @@ wdprobe(struct isa_device *dvp)
 	wdc = du->dk_port = dvp->id_iobase;
 	
 	/* check if we have registers that work */
-	outb(wdc+wd_error, 0x5a) ;	/* error register not writable */
-	outb(wdc+wd_cyl_lo, 0xa5) ;	/* but all of cyllo are implemented */
-	if(inb(wdc+wd_error) == 0x5a || inb(wdc+wd_cyl_lo) != 0xa5)
+	outb(wdc+wd_cyl_lo, 0xa5) ;	/* wd_cyl_lo is read/write */
+	if(inb(wdc+wd_cyl_lo) != 0xa5)
 		goto nodevice;
 
 	/* reset the device */
@@ -237,8 +239,9 @@ wdattach(struct isa_device *dvp)
 			du->dk_unit = unit;
 		}
 		else {
-			free(du, M_TEMP);
-			wddrives[unit] = 0;
+			/* old ST506 controller */
+			printf(" %d:<wdgetctlr failed, assuming OK>",
+			       unit);
 		}
 	}
 	return(1);
@@ -397,12 +400,11 @@ loop:
 	lp = &du->dk_dd;
 	secpertrk = lp->d_nsectors;
 	secpercyl = lp->d_secpercyl;
+	if ((du->dk_flags & DKFL_BSDLABEL) != 0 && wdpart(bp->b_dev) != WDRAW)
+		blknum += lp->d_partitions[wdpart(bp->b_dev)].p_offset;
 	cylin = blknum / secpercyl;
 	head = (blknum % secpercyl) / secpertrk;
 	sector = blknum % secpertrk;
-	if ((du->dk_flags & DKFL_BSDLABEL) != 0 && wdpart(bp->b_dev) != WDRAW)
-		cylin += lp->d_partitions[wdpart(bp->b_dev)].p_offset
-				/ secpercyl;
 
 	/* 
 	 * See if the current block is in the bad block list.
@@ -803,6 +805,11 @@ wdcontrol(register struct buf *bp)
 
 		outb(wdc+wd_sdh, WDSD_IBM | (unit << 4));
 		wdtab.b_active = 1;
+
+		/* wait for drive and controller to become ready */
+		for (i = 1000000; (inb(wdc+wd_status) & (WDCS_READY|WDCS_BUSY))
+				  != WDCS_READY && i-- != 0; )
+			;
 		outb(wdc+wd_command, WDCC_RESTORE | WD_STEP);
 		du->dk_state++;
 		splx(s);
@@ -816,8 +823,10 @@ wdcontrol(register struct buf *bp)
 					stat, WDCS_BITS, inb(wdc+wd_error),
 					WDERR_BITS);
 			}
-			if (++wdtab.b_errcnt < RETRIES)
+			if (++wdtab.b_errcnt < RETRIES) {
+				du->dk_state = WANTOPEN;
 				goto tryagainrecal;
+			}
 			bp->b_error = ENXIO;	/* XXX needs translation */
 			goto badopen;
 		}
