@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.30 (Berkeley) %G%
+ *	@(#)tty.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -278,6 +278,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIC:
 	case TIOCLSET:
 	case OTIOCSETD:
+	case OTIOCCONS:
 #endif
 		while (isbackground(u.u_procp, tp) && 
 		   u.u_procp->p_pgrp->pg_jobc &&
