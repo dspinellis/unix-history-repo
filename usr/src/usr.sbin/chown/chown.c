@@ -22,12 +22,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
+#include <sys/errno.h>
+#include <dirent.h>
 #include <pwd.h>
 #include <grp.h>
 #include <stdio.h>
@@ -112,7 +113,7 @@ setgid(s)
 		if (!(gr = getgrnam(gname))) {
 			if (fflag)
 				exit(0);
-			fprintf(stderr, "%s: unknown group id: %s\n",
+			(void)fprintf(stderr, "%s: unknown group id: %s\n",
 			    myname, gname);
 			exit(-1);
 		}
@@ -138,7 +139,8 @@ setuid(s)
 		if (!(pwd = getpwnam(beg))) {
 			if (fflag)
 				exit(0);
-			fprintf(stderr, "chown: unknown user id: %s\n", beg);
+			(void)fprintf(stderr,
+			    "chown: unknown user id: %s\n", beg);
 			exit(-1);
 		}
 		uid = pwd->pw_uid;
@@ -150,7 +152,7 @@ change(file)
 	char *file;
 {
 	register DIR *dirp;
-	register struct direct *dp;
+	register struct dirent *dp;
 	struct stat buf;
 
 	if (chown(file, uid, gid)) {
@@ -186,10 +188,11 @@ static
 chownerr(file)
 	char *file;
 {
+	extern int errno;
 	static int euid = -1, ngroups = -1;
 
 	/* check for chown without being root */
-	if (uid != -1 && euid == -1 && (euid = geteuid())) {
+	if (errno != EPERM || uid != -1 && euid == -1 && (euid = geteuid())) {
 		if (fflag)
 			exit(0);
 		err(file);
@@ -204,7 +207,7 @@ chownerr(file)
 		if (ngroups < 0) {
 			if (fflag)
 				exit(0);
-			fprintf(stderr,
+			(void)fprintf(stderr,
 			    "%s: you are not a member of group %s.\n",
 			    myname, gname);
 			exit(-1);
@@ -222,14 +225,14 @@ err(s)
 
 	if (fflag)
 		return;
-	fprintf(stderr, "%s: %s: %s", myname, s, strerror(errno));
+	(void)fprintf(stderr, "%s: %s: %s\n", myname, s, strerror(errno));
 	retval = -1;
 }
 
 static
 usage()
 {
-	fprintf(stderr, "usage: %s [-Rf] %s file ...\n", myname,
+	(void)fprintf(stderr, "usage: %s [-Rf] %s file ...\n", myname,
 	    ischown ? "owner[.group]" : "group");
 	exit(-1);
 }
