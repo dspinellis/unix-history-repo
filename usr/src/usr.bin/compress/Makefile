@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 CFLAGS=	-O -DBSD4_2 -DSACREDMEM=256000 -DUSERMEM=`cat USERMEM` 
 LIBC=	/lib/libc.a
@@ -25,7 +25,7 @@ MAN=	compress.0
 all: compress
 
 compress: USERMEM ${LIBC}
-	${CC} ${CFLAGS} -o $@ $@.c
+	${CC} ${CFLAGS} -o $@ $@.c -lcompat
 
 # USERMEM may have to be set by hand.  It should contain the amount of
 # available user memory in bytes.  Set it to zero, for physical memory
