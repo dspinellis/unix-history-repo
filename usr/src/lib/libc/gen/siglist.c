@@ -6,12 +6,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)siglist.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)siglist.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/cdefs.h>
 #include <signal.h>
 
-char *sys_signame[NSIG] = {
+char *const sys_signame[NSIG] = {
 	"Signal 0",
 	"hup",				/* SIGHUP */
 	"int",				/* SIGINT */
@@ -46,7 +47,7 @@ char *sys_signame[NSIG] = {
 	"usr2",				/* SIGUSR2 */
 };
 
-char *sys_siglist[NSIG] = {
+char *const sys_siglist[NSIG] = {
 	"Signal 0",
 	"Hangup",			/* SIGHUP */
 	"Interrupt",			/* SIGINT */
