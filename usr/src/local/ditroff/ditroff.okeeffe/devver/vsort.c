@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vsort.c	1.1 (CWI) 86/10/21";
+static char sccsid[] = "@(#)vsort.c	1.2 (CWI) 87/11/26";
 #endif
 /* vsort.c	1.11	84/05/29
  *
@@ -31,22 +31,24 @@ static char sccsid[] = "@(#)vsort.c	1.1 (CWI) 86/10/21";
 #define FONTDIR "/usr/lib/font"
 #endif FONTDIR
 
-#define INCH	200	/* assumed resolution of the printer (dots/inch) */
-#define POINT	72	/* number of points per inch */
+#define POINT	72			/* number of points per inch */
 
 #ifndef VER80
-#define WIDTH	7040	/* number of pixels across the page */
+#define WIDTH	7040			/* number of pixels across the page */
 #else
-#define WIDTH	2112	/* number of pixels across the page */
+#define WIDTH	2112			/* number of pixels across the page */
+	/*
+	 * Note that this does not work unless the input really is
+	 * designed for the versatec, i.e., res = 200.  But that's
+	 * OK, because it is only used for side-by-side pages, which
+	 * we don't do anyway.
+	 * DD
+	 */
 #endif VER80
 
-#define HALF	(INCH/2)
-
-#ifndef DEBUGABLE
-#define BAND	1	/* length of each band (or defined below) */
-#endif DEBUGABLE
-
-#define NLINES	(int)(BAND * INCH)	/* number of pixels in each band */
+#define BAND	1			/* length of each band in inches */
+#define NLINES	(int)(BAND * inch)	/* number of pixels in each band */
+#define HALF	(inch/2)
 
 #define hgoto(n)	if((hpos = leftmarg + n) > maxh) maxh = hpos
 #define hmot(n)		if((hpos += n) > maxh) maxh = hpos
@@ -54,17 +56,15 @@ static char sccsid[] = "@(#)vsort.c	1.1 (CWI) 86/10/21";
 #define vgoto(n)	vpos = (n)
 
 
-#ifdef DEBUGABLE
 int	dbg = 0;	/* debug flag != 0 means do debug output */
-float	BAND = 1.0;
-#endif DEBUGABLE
-
 
 int	size	= 10;	/* current size (points) */
 int	up	= 0;	/* number of pixels that the current size pushes up */
 int	down	= 0;	/* # of pixels that the current size will hang down */
 int	font	= 1;	/* current font */
-char *	fontdir = FONTDIR;	/* place to find DESC.out file */
+char *	fontdir = FONTDIR;	/* place to find DESC.out file	*/
+int	inch	= 200;	/* resolution of the device, in inches	*/
+
 /* #ifdef BERK		/* leave this one in for now */
 int	thick	= 3;	/* line thickness */
 
@@ -108,34 +108,6 @@ int	obufsiz	= OBUFSIZ;
 char	obuf[OBUFSIZ + SLOP];
 char	*op = obuf;			/* pointer to current spot in buffer */
 
-/* Compatabilty mode code by jna */
-int	res = INCH;		/* resolution when input prepared,
-				 * assume INCH to be default */
-int	hres = 1;		/* horizontal goobies in res when prepared */
-int	vres = 1;		/* vertical goobies in res when prepared */
-
-	/*
-	 * to scale on resolution
-	 */
-#define SCALE(x)   (int)(((double)INCH * (double)(x))/(double)(res))
-	/*
-	 * to scale horizontal
-	 */
-#define HSCALE(x)   (int)(((double)INCH * (double)(x))/((double)(res) * vres))
-	/*
-	 * to scale vertical
-	 */
-#define	VSCALE(x)   (int)(((double)INCH * (double)(x))/((double)(res) * vres))
-
-#undef hgoto(n)
-#undef hmot(n)
-#undef vmot(n)
-#undef vgoto(n)
-
-#define hgoto(n)	if((hpos = leftmarg + (HSCALE(n))) > maxh) maxh = hpos
-#define hmot(n)		if((hpos += (HSCALE(n))) > maxh) maxh = hpos
-#define vmot(n)		vpos += (VSCALE(n))
-#define vgoto(n)	vpos = (VSCALE(n))
 
 
 main(argc, argv)
@@ -163,14 +135,10 @@ char *argv[];
 			fontdir = &(*argv)[2];
 			break;
 #ifdef DEBUGABLE
-		case 'B':
-			BAND = atof(&(*argv)[2]);
-			break;
 		case 'd':
 			dbg = atoi(&(*argv)[2]);
 			if (!dbg) dbg = 1;
 			break;
-
 		case 's':
 			if((obufsiz = atoi(&(*argv)[2])) > OBUFSIZ)
 			    obufsiz = OBUFSIZ;
@@ -287,7 +255,7 @@ register FILE *fp;
 			 */
 			n = ((c - '0') * 10 + ( m = getc(fp)) - '0');
 			hmot(n);
-			sprintf(op, "%02d", HSCALE(n));
+			sprintf(op, "%02d", n);
 			op += strlen(op);
 			*op++ = getc(fp);
 			break;
@@ -329,8 +297,8 @@ register FILE *fp;
 			case 'l':	/* draw a line */
 				n1 = ngetnumber(fp);
 				m1 = ngetnumber(fp);
-				n = HSCALE(n1);
-				m = VSCALE(m1);
+				n = n1;
+				m = m1;
 				if (m < 0) {
 				    setlimit(vpos+m-thick/2, vpos+thick/2);
 				} else {
@@ -359,8 +327,8 @@ register FILE *fp;
 				break;
 
 			case 'e':	/* ellipse */
-				n = HSCALE(ngetnumber(fp));
-				m = VSCALE(ngetnumber(fp));
+				n = ngetnumber(fp);
+				m = ngetnumber(fp);
 				setlimit(vpos-(m+thick)/2, vpos+(m+thick)/2);
 				sprintf(op, "De %d %d", n, m);
 				op += strlen(op);
@@ -368,7 +336,7 @@ register FILE *fp;
 				break;
 
 			case 'c':	/* circle */
-				n = SCALE(ngetnumber(fp));
+				n = ngetnumber(fp);
 				setlimit(vpos-(n+thick)/2, vpos+(n+thick)/2);
 				sprintf(op, "Dc %d", n);
 				op += strlen(op);
@@ -387,10 +355,8 @@ register FILE *fp;
 				n1 = ngetnumber(fp);
 				m1 = ngetnumber(fp);
 #endif BERK
-				arcbounds(HSCALE(n), VSCALE(m),
-						HSCALE(n1), VSCALE(m1));
-				sprintf(op, "Da %d %d %d %d", HSCALE(n),
-						VSCALE(m), HSCALE(n1), VSCALE(m1));
+				arcbounds(n, m, n1, m1);
+				sprintf(op, "Da %d %d %d %d", n, m, n1, m1);
 				op += strlen(op);
 				hmot(n + n1);
 				vmot(m + m1);
@@ -506,7 +472,7 @@ register FILE *fp;
 
 				hmot(n1);
 				vmot(m1);
-				sprintf(op, "%d %d ", HSCALE(n1), VSCALE(m1));
+				sprintf(op, "%d %d ", n1, m1);
 				op += strlen(op);
 
 				if (vpos < n) n = vpos;
@@ -528,7 +494,7 @@ register FILE *fp;
 		case 's':
 			*op++ = c;
 			size = getnumber(fp);
-			up = ((size + 1)*INCH) / POINT;	/* ROUGH estimate */
+			up = ((size + 1)*inch) / POINT;	/* ROUGH estimate */
 			down = up / 3;			/* of max up/down */
 			break;
 		case 'f':
@@ -553,7 +519,7 @@ register FILE *fp;
 			 */
 			n = ngetnumber(fp);
 			hmot(n);
-			sprintf(op, "h%d", HSCALE(n));
+			sprintf(op, "h%d", n);
 			op += strlen(op);
 			break;
 		case 'w':	/* useless */
@@ -575,7 +541,7 @@ register FILE *fp;
 			 */
 			n = ngetnumber(fp);
 			vmot(n);
-			sprintf(op, "v%d", VSCALE(n));
+			sprintf(op, "v%d", n);
 			op += strlen(op);
 			break;
 		case 'p':	/* new page */
@@ -595,8 +561,8 @@ register FILE *fp;
 			while (c != '\n' && c != EOF);
 			 */
 			*op++ = c;
-			n = VSCALE(ngetnumber(fp));
-			m = VSCALE(ngetnumber(fp));
+			n = ngetnumber(fp);
+			m = ngetnumber(fp);
 			sprintf(op, "%d %d", n, m);
 			op += strlen(op);
 			break;
@@ -620,7 +586,7 @@ FILE *fp;		/* returns -1 apon recieving "stop" command */
 {
         char str[20], str1[50], buf[50];
 	char *p;
-	int c, n;
+	int c, n, t1, t2;
 
 	fscanf(fp, "%s", str);
 	switch (str[0]) {	/* crude for now */
@@ -629,13 +595,14 @@ FILE *fp;		/* returns -1 apon recieving "stop" command */
 		fscanf(fp, "%d", &inRES);
 		if (n!=RES) error(FATAL,"Input computed for wrong printer");
 		 */
-		fscanf(fp, "%d %d %d", &res, &hres, &vres);
-		sprintf(str1, "x res 200 1 1");
+		fscanf(fp, "%d %d %d", &inch, &t1, &t2);
+		sprintf(str1, "x res %d %d %d", inch, t1, t2); 
 		break;
 	default:	/* reconstruct the string */
 		fgets(buf, sizeof buf, fp);
 		sprintf(str1, "x %s%s", str, buf);
 	}
+
 	startspan(vpos);
 	/*
 	*op++ = c;
@@ -874,7 +841,7 @@ int n;
 
     				/* if we're near the edge, we'll go over on */
     if (leftmarg + 2*(pageno ? leftmarg/pageno : 0) > WIDTH	/* this page, */
-	  || maxh > WIDTH - INCH || first) {	/* or this is the first page */
+	  || maxh > WIDTH - inch || first) {	/* or this is the first page */
 	oflush();
 	printf("p%d\n", spanno++);		/* make it a REAL page-break */
 	first = pageno = leftmarg = maxh = 0;
@@ -882,7 +849,7 @@ int n;
 	register int x = (maxh - leftmarg + (HALF - 1)) / HALF;
 
 	if (x > 11 && x <= 17)
-	    leftmarg += (8 * INCH) + HALF; 		/* if close to 8.5"  */
+	    leftmarg += (8 * inch) + HALF; 		/* if close to 8.5"  */
 	else						/* then make it so   */
 	    leftmarg = ((maxh + HALF) / HALF) * HALF;	/* else set it to the */
 	pageno++;					/* nearest half-inch */
