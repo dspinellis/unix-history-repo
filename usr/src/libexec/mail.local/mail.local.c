@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.18 (Berkeley) %G%";
 #endif
 
 #include <ctype.h>
@@ -443,6 +443,12 @@ char **argv;
 		switch (cp[1]) {
 		case 'r':
 			if (argc <= 0) {
+				usage();
+				done();
+			}
+			if (strcmp(my_name, "root") &&
+			    strcmp(my_name, "daemon") &&
+			    strcmp(my_name, "network")) {
 				usage();
 				done();
 			}
