@@ -1,4 +1,4 @@
-/*	@(#)if_qe.c	7.3 (Berkeley) %G% */
+/*	@(#)if_qe.c	7.4 (Berkeley) %G% */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
  
@@ -102,8 +102,6 @@
 /*
  * Digital Q-BUS to NI Adapter
  */
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "mbuf.h"
@@ -134,6 +132,7 @@
 #include "../netns/ns_if.h"
 #endif
 
+#include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
 #include "if_qereg.h"
@@ -148,6 +147,8 @@
 #endif
 #define NXMT	5	 		/* Transmit descriptors		*/
 #define NTOT	(NXMT + NRCV)
+
+#define	QETIMEOUT	2		/* transmit timeout, must be > 1 */
  
 /*
  * This constant should really be 60 because the qna adds 4 bytes of crc.
@@ -160,13 +161,13 @@
  * Ethernet software status per interface.
  *
  * Each interface is referenced by a network interface structure,
- * is_if, which the routing code uses to locate the interface.
+ * qe_if, which the routing code uses to locate the interface.
  * This structure contains the output queue for the interface, its address, ...
  */
 struct	qe_softc {
-	struct	arpcom is_ac;		/* Ethernet common part 	*/
-#define	is_if	is_ac.ac_if		/* network-visible interface 	*/
-#define	is_addr	is_ac.ac_enaddr		/* hardware Ethernet address 	*/
+	struct	arpcom qe_ac;		/* Ethernet common part 	*/
+#define	qe_if	qe_ac.ac_if		/* network-visible interface 	*/
+#define	qe_addr	qe_ac.ac_enaddr		/* hardware Ethernet address 	*/
 	struct	ifubinfo qe_uba;	/* Q-bus resources 		*/
 	struct	ifrw qe_ifr[NRCV];	/*	for receive buffers;	*/
 	struct	ifxmt qe_ifw[NXMT];	/*	for xmit buffers;	*/
@@ -186,17 +187,15 @@ struct	qe_softc {
 	struct	qedevice *addr;		/* device addr			*/
 	int 	setupqueued;		/* setup packet queued		*/
 	int	nxmit;			/* Transmits in progress	*/
-	int	timeout;		/* watchdog			*/
 	int	qe_restarts;		/* timeouts			*/
 } qe_softc[NQE];
 
 struct	uba_device *qeinfo[NQE];
  
 extern struct timeval time;
-extern timeout();
  
-int	qeprobe(), qeattach(), qeintr(), qewatch();
-int	qeinit(),qeoutput(),qeioctl(),qereset(),qewatch();
+int	qeprobe(), qeattach(), qeintr(), qetimeout();
+int	qeinit(), qeoutput(), qeioctl(), qereset();
  
 u_short qestd[] = { 0 };
 struct	uba_driver qedriver =
@@ -205,7 +204,6 @@ struct	uba_driver qedriver =
 #define QE_TIMEO	(15)
 #define	QEUNIT(x)	minor(x)
 static int mask = 0x3ffff;		/* address mask		*/
-int qewatchrun = 0;			/* watchdog running	*/
 /*
  * The deqna shouldn't receive more than ETHERMTU + sizeof(struct ether_header)
  * but will actually take in up to 2048 bytes. To guard against the receiver
@@ -300,7 +298,8 @@ qeprobe(reg)
 	ubarelse(0, (int *)&sc->rringaddr);
 	if( cvec == j ) 
 		return 0;		/* didn't interrupt	*/
- 
+
+	br = 0x15;			/* q-bus doesn't get level */
 	return( sizeof(struct qedevice) );
 }
  
@@ -313,7 +312,7 @@ qeattach(ui)
 	struct uba_device *ui;
 {
 	register struct qe_softc *sc = &qe_softc[ui->ui_unit];
-	register struct ifnet *ifp = &sc->is_if;
+	register struct ifnet *ifp = &sc->qe_if;
 	register struct qedevice *addr = (struct qedevice *)ui->ui_addr;
 	register int i;
  
@@ -326,7 +325,9 @@ qeattach(ui)
 	 * Read the address from the prom and save it.
 	 */
 	for( i=0 ; i<6 ; i++ )
-		sc->setup_pkt[i][1] = sc->is_addr[i] = addr->qe_sta_addr[i] & 0xff;  
+		sc->setup_pkt[i][1] = sc->qe_addr[i] = addr->qe_sta_addr[i] & 0xff;  
+	printf("qe%d: hardware address %s\n", ui->ui_unit,
+		ether_sprintf(is->is_addr));
  
 	/*
 	 * Save the vector for initialization at reset time.
@@ -337,6 +338,7 @@ qeattach(ui)
 	ifp->if_output = qeoutput;
 	ifp->if_ioctl = qeioctl;
 	ifp->if_reset = qereset;
+	ifp->if_watchdog = qetimeout;
 	sc->qe_uba.iff_flags = UBA_CANTWAIT;
 	if_attach(ifp);
 }
@@ -354,7 +356,7 @@ qereset(unit, uban)
 		ui->ui_ubanum != uban)
 		return;
 	printf(" qe%d", unit);
-	qe_softc[unit].is_if.if_flags &= ~IFF_RUNNING;
+	qe_softc[unit].qe_if.if_flags &= ~IFF_RUNNING;
 	qeinit(unit);
 }
  
@@ -367,7 +369,7 @@ qeinit(unit)
 	register struct qe_softc *sc = &qe_softc[unit];
 	register struct uba_device *ui = qeinfo[unit];
 	register struct qedevice *addr = (struct qedevice *)ui->ui_addr;
-	register struct ifnet *ifp = &sc->is_if;
+	register struct ifnet *ifp = &sc->qe_if;
 	register i;
 	int s;
  
@@ -394,7 +396,7 @@ qeinit(unit)
 		    sizeof (struct ether_header), (int)btoc(MAXPACKETSIZE),
 		    sc->qe_ifr, NRCV, sc->qe_ifw, NXMT) == 0) {
 			printf("qe%d: can't initialize\n", unit);
-			sc->is_if.if_flags &= ~IFF_UP;
+			sc->qe_if.if_flags &= ~IFF_UP;
 			return;
 		}
 	}
@@ -451,10 +453,9 @@ qeinit(unit)
  * Start output on interface.
  *
  */
-qestart(dev)
-	dev_t dev;
+qestart(unit)
+	int unit;
 {
-	int unit = QEUNIT(dev);
 	struct uba_device *ui = qeinfo[unit];
 	register struct qe_softc *sc = &qe_softc[unit];
 	register struct qedevice *addr;
@@ -487,7 +488,7 @@ qestart(dev)
 			rp->qe_setup = 1;
 			sc->setupqueued = 0;
 		} else {
-			IF_DEQUEUE(&sc->is_if.if_snd, m);
+			IF_DEQUEUE(&sc->qe_if.if_snd, m);
 			if( m == 0 ){
 				splx(s);
 				return;
@@ -513,14 +514,7 @@ qestart(dev)
 		rp->qe_flag = rp->qe_status1 = QE_NOTYET;
 		rp->qe_valid = 1;
 		sc->nxmit++;
-		/*
-		 * If the watchdog time isn't running kick it.
-		 */
-		sc->timeout=1;
-		if (qewatchrun == 0) { 
-			qewatchrun++; 
-			timeout(qewatch, (caddr_t)0, QE_TIMEO);
-		}
+		sc->qe_if.if_timer = QETIMEOUT;
 			
 		/*
 		 * See if the xmit list is invalid.
@@ -592,15 +586,15 @@ qetint(unit)
 		 */
 		bzero((caddr_t)rp, sizeof(struct qe_ring));
 		if( --sc->nxmit == 0 )
-			sc->timeout = 0;
+			sc->qe_if.if_timer = 0;
 		if( !setupflag ) {
 			/*
 			 * Do some statistics.
 			 */
-			sc->is_if.if_opackets++;
-			sc->is_if.if_collisions += ( status1 & QE_CCNT ) >> 4;
+			sc->qe_if.if_opackets++;
+			sc->qe_if.if_collisions += ( status1 & QE_CCNT ) >> 4;
 			if (status1 & QE_ERROR)
-				sc->is_if.if_oerrors++;
+				sc->qe_if.if_oerrors++;
 			/*
 			 * If this was a broadcast packet loop it
 			 * back because the hardware can't hear its own
@@ -657,11 +651,11 @@ qerint(unit)
 		if( (status1 & QE_MASK) == QE_MASK )
 			panic("qe: chained packet");
 		len = ((status1 & QE_RBL_HI) | (status2 & QE_RBL_LO)) + 60;
-		sc->is_if.if_ipackets++;
+		sc->qe_if.if_ipackets++;
  
 		if (status1 & QE_ERROR) {
 			if ((status1 & QE_RUNT) == 0)
-				sc->is_if.if_ierrors++;
+				sc->qe_if.if_ierrors++;
 		} else {
 			/*
 			 * We don't process setup packets.
@@ -711,7 +705,7 @@ qeoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&is->is_ac, m, &idst, edst, &usetrailers))
+		if (!arpresolve(&is->qe_ac, m, &idst, edst, &usetrailers))
 			return (0);	/* if not yet resolved */
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
@@ -784,7 +778,7 @@ gottype:
 	eh = mtod(m, struct ether_header *);
 	eh->ether_type = htons((u_short)type);
  	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
- 	bcopy((caddr_t)is->is_addr, (caddr_t)eh->ether_shost, sizeof (is->is_addr));
+ 	bcopy((caddr_t)is->qe_addr, (caddr_t)eh->ether_shost, sizeof (is->qe_addr));
  
 	/*
 	 * Queue message on interface, and start output if interface
@@ -839,7 +833,7 @@ qeioctl(ifp, cmd, data)
 			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
 			
 			if (ns_nullhost(*ina))
-				ina->x_host = *(union ns_host *)(sc->is_addr);
+				ina->x_host = *(union ns_host *)(sc->qe_addr);
 			else
 				qe_setaddr(ina->x_host.c_host, ifp->if_unit);
 			break;
@@ -878,9 +872,9 @@ qe_setaddr(physaddr, unit)
 	register int i;
 
 	for (i = 0; i < 6; i++)
-		sc->setup_pkt[i][1] = sc->is_addr[i] = physaddr[i];
+		sc->setup_pkt[i][1] = sc->qe_addr[i] = physaddr[i];
 	sc->qe_flags |= QEF_SETADDR;
-	if (sc->is_if.if_flags & IFF_RUNNING)
+	if (sc->qe_if.if_flags & IFF_RUNNING)
 		qesetup(sc);
 	qeinit(unit);
 }
@@ -976,7 +970,7 @@ qeread(sc, ifrw, len)
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = if_ubaget(&sc->qe_uba, ifrw, len, off, &sc->is_if);
+	m = if_ubaget(&sc->qe_uba, ifrw, len, off, &sc->qe_if);
  
 	if (m == 0)
 		return;
@@ -998,7 +992,7 @@ qeread(sc, ifrw, len)
 		break;
 
 	case ETHERTYPE_ARP:
-		arpinput(&sc->is_ac, m);
+		arpinput(&sc->qe_ac, m);
 		return;
 #endif
 #ifdef NS
@@ -1023,32 +1017,19 @@ qeread(sc, ifrw, len)
 }
 
 /*
- * Watchdog timer routine. There is a condition in the hardware that
+ * Watchdog timeout routine. There is a condition in the hardware that
  * causes the board to lock up under heavy load. This routine detects
  * the hang up and restarts the device.
  */
-qewatch()
+qetimeout(unit)
+	int unit;
 {
 	register struct qe_softc *sc;
-	register int i;
-	int inprogress=0;
  
-	for (i = 0; i < NQE; i++) {
-		sc = &qe_softc[i];
-		if (sc->timeout) 
-			if (++sc->timeout > 3 ) {
-				log(LOG_ERR,
-				     "qerestart: restarted qe%d %d\n",
-				     i, ++sc->qe_restarts);
-				qerestart(sc);
-			} else
-				inprogress++;
-	}
-	if (inprogress) {
-		timeout(qewatch, (caddr_t)0, QE_TIMEO);
-		qewatchrun++;
-	} else
-		qewatchrun=0;
+	sc = &qe_softc[unit];
+	log(LOG_ERR, "qe%d: transmit timeout, restarted %d\n",
+	     unit, ++sc->qe_restarts);
+	qerestart(sc);
 }
 /*
  * Restart for board lockup problem.
@@ -1056,13 +1037,12 @@ qewatch()
 qerestart(sc)
 	register struct qe_softc *sc;
 {
-	register struct ifnet *ifp = &sc->is_if;
+	register struct ifnet *ifp = &sc->qe_if;
 	register struct qedevice *addr = sc->addr;
 	register struct qe_ring *rp;
 	register i;
  
 	addr->qe_csr = QE_RESET;
-	sc->timeout = 0;
 	qesetup( sc );
 	for (i = 0, rp = sc->tring; i < NXMT; rp++, i++) {
 		rp->qe_flag = rp->qe_status1 = QE_NOTYET;
