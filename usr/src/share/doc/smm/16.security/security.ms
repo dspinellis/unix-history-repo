@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)security.ms	5.4 (Berkeley) %G%
+.\"	@(#)security.ms	8.1 (Berkeley) %G%
 .\"
 .EH 'SMM:16-%''On the Security of \s-2UNIX\s+2'
 .OH 'On the Security of \s-2UNIX\s+2''SMM:16-%'

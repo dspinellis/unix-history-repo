@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.3 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 DIR=	smm/17.password
 SRCS=	password.ms

@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)password.ms	6.3 (Berkeley) %G%
+.\"	@(#)password.ms	8.1 (Berkeley) %G%
 .\"
 .\" tbl mm ^ eqn ^ troff -ms
 .EH 'SMM:17-%''Password Security: A Case History'
