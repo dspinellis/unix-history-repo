@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -121,7 +121,8 @@ dropenvelope(e)
 	**  Arrange to send error messages if there are fatal errors.
 	*/
 
-	if (bitset(EF_FATALERRS|EF_TIMEOUT, e->e_flags) && ErrorMode != EM_QUIET)
+	if (bitset(EF_FATALERRS|EF_TIMEOUT, e->e_flags) &&
+	    e->e_errormode != EM_QUIET)
 		savemail(e);
 
 	/*

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.35 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.36 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.35 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.36 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -777,7 +777,7 @@ dowork(w, e)
 		(void) alarm(0);
 		clearenvelope(e, FALSE);
 		QueueRun = TRUE;
-		ErrorMode = EM_MAIL;
+		e->e_errormode = EM_MAIL;
 		e->e_id = &w->w_name[2];
 # ifdef LOG
 		if (LogLevel > 76)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -59,7 +59,7 @@ savemail(e)
 
 	if (tTd(6, 1))
 	{
-		printf("\nsavemail, ErrorMode = %c\n  e_from=", ErrorMode);
+		printf("\nsavemail, errormode = %c\n  e_from=", e->e_errormode);
 		printaddr(&e->e_from, FALSE);
 	}
 
@@ -99,7 +99,7 @@ savemail(e)
 	*/
 
 	/* determine starting state */
-	switch (ErrorMode)
+	switch (e->e_errormode)
 	{
 	  case EM_WRITE:
 		state = ESM_REPORT;
@@ -125,7 +125,7 @@ savemail(e)
 		return;
 
 	  default:
-		syserr("554 savemail: ErrorMode x%x\n");
+		syserr("554 savemail: bogus errormode x%x\n", e->e_errormode);
 		state = ESM_MAIL;
 		break;
 	}

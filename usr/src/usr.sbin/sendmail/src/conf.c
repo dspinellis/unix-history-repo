@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -130,7 +130,7 @@ int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
 **	using direct code.
 **
 **	Parameters:
-**		none.
+**		e -- the default envelope.
 **
 **	Returns:
 **		none.
@@ -140,7 +140,8 @@ int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
 **		default values.
 */
 
-setdefaults()
+setdefaults(e)
+	register ENVELOPE *e;
 {
 	SpaceSub = ' ';				/* option B */
 	QueueLA = 8;				/* option x */
@@ -155,8 +156,8 @@ setdefaults()
 	DefGid = 1;				/* option g */
 	CheckpointInterval = 10;		/* option C */
 	MaxHopCount = 25;			/* option h */
-	SendMode = SM_FORK;			/* option d */
-	ErrorMode = EM_PRINT;			/* option e */
+	e->e_sendmode = SM_FORK;		/* option d */
+	e->e_errormode = EM_PRINT;		/* option e */
 	EightBit = FALSE;			/* option 8 */
 	MaxMciCache = 1;			/* option k */
 	MciCacheTimeout = 300;			/* option K */

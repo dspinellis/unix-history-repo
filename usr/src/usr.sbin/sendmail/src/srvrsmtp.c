@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.26 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.27 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.26 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.27 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -354,7 +354,7 @@ smtp(e)
 			LogUsrErrs = TRUE;
 
 			/* optimization -- if queueing, don't expand aliases */
-			if (SendMode == SM_QUEUE)
+			if (e->e_sendmode == SM_QUEUE)
 				e->e_flags |= EF_VRFYONLY;
 
 			p = skipword(p, "to");
@@ -422,7 +422,7 @@ smtp(e)
 			if (e->e_nrcpts != 1)
 			{
 				HoldErrs = TRUE;
-				ErrorMode = EM_MAIL;
+				e->e_errormode = EM_MAIL;
 			}
 			e->e_flags &= ~EF_FATALERRS;
 			e->e_xfp = freopen(queuename(e, 'x'), "w", e->e_xfp);
@@ -508,7 +508,7 @@ smtp(e)
 
 		  case CMDVERB:		/* set verbose mode */
 			Verbose = TRUE;
-			SendMode = SM_DELIVER;
+			e->e_sendmode = SM_DELIVER;
 			message("200 Verbose mode");
 			break;
 
