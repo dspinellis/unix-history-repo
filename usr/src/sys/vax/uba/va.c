@@ -1,4 +1,4 @@
-/*	va.c	4.19	82/12/17	*/
+/*	va.c	4.20	83/02/10	*/
 
 #include "va.h"
 #if NVA > 0
@@ -15,6 +15,7 @@
 #include "../h/map.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"

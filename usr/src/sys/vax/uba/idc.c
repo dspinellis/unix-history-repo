@@ -1,4 +1,4 @@
-/*	idc.c	4.11	82/12/17	*/
+/*	idc.c	4.12	83/02/10	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -33,6 +33,7 @@ int	*trp = idctrb;
 #include "../h/cmap.h"
 #include "../h/dkbad.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 #include "../vax/cpu.h"
 #include "../vaxuba/ubareg.h"
