@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fstab.h	5.3 (Berkeley) %G%
+ *	@(#)fstab.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -48,6 +48,5 @@ struct	fstab{
 struct	fstab *getfsent();
 struct	fstab *getfsspec();
 struct	fstab *getfsfile();
-struct	fstab *getfstype();
 int	setfsent();
 void	endfsent();
