@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-common	5.1 (Berkeley) %G%
+.\"     @(#)doc-common	5.2 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .nr %A 1
@@ -152,7 +152,7 @@
 .de Os
 .ds oS Null
 .if "\\$1"" \{\
-.	ds oS 4.4 Berkeley UNIX
+.	ds oS \&\fIBSD Experimental\fP
 .\}
 .if "\\$2"" \{\
 .	ds aa Non-Null
@@ -179,7 +179,7 @@
 .	if "\\$2"4.3R" .ds oS 4.3-Reno Berkeley Distribution
 .	if "\\$2"4.3t" .ds oS 4.3-Tahoe Berkeley Distribution
 .	if "\\$2"4.3r" .ds oS 4.3-Reno Berkeley Distribution
-.	if "\\$2"4.4"  .ds oS 4.4 Berkeley Distribution
+.	if "\\$2"4.4"  .ds oS \&\fIBSD Experimental\fP
 .\}
 .if "\\*(oS"Null" .ds oS \\$1
 .if "\\*(aa"Non-Null" .as oS \0\\$2
@@ -243,45 +243,6 @@
 .de pp
 .tm Not a \-mdoc command: .pp
 ..
-.de Sh
-.nr nS 0
-.nr sE 0
-.ie "\\$1"NAME" \{\
-.	hK
-'	in 0
-.\}
-.el \{\
-.	nr nS 0
-.	nr nA 0
-.	nr nF 0
-.	if "\\$1"SYNOPSIS" .nr nS 1
-.	if "\\$1"SEE" .nr nA 1
-.	if "\\$1"FILES" .nr nF 1
-.	in 0
-.	nr aN 0
-.\}
-.pL
-'sp
-.ns
-.ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i 4.5i 5i 5.5i 6i 6.5i
-.if !\\n(cR .ne 3
-'fi
-\&\\*(sH\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6 \|\\$7 \|\\$8 \|\\$9
-\&\fP\s0\&
-.in \\n(.iu+\\n(Tiu
-.if "\\$1"SEE" .nr sE 1
-.ns
-..
 .de Nd
 \&\-\& \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-..
-.de Ss
-.sp
-.ne 2
-.ti -.25i
-\&\\*(sH\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6 \|\\$7 \|\\$8 \|\\$9
-\&\fP\s0\&
-.ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i 4.5i 5i 5.5i 6i 6.5i
-.if !\\n(cR .ne 2
-.br
 ..

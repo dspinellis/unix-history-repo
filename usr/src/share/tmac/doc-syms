@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-syms	5.1 (Berkeley) %G%
+.\"     @(#)doc-syms	5.2 (Berkeley) %G%
 .\"
-.\" NS Ux macro - UNIX
 .\"     %beginstrip%
+.\" NS Ux macro - UNIX
 .de Ux
 .if \\n(aC==0 \{\
 .       ie \\n(.$==0 \&\fRU\s-2NIX\fP\s0
@@ -75,4 +75,16 @@
 .	       nR
 .	\}
 .\}
+..
+.\" Ns Ud macro - prints "is currently under development." (HISTORY section)
+.de Ud
+\&is currently under development.
+..
+.\" Ns At macro - prints "is currently in alpha test." (HISTORY section)
+.de At
+\&is currently in alpha test.
+..
+.\" Ns Bt macro - prints "is currently in beta test." (HISTORY section)
+.de Bt
+\&is currently in beta test.
 ..
