@@ -1,4 +1,4 @@
-/*	ioctl.h	3.4	%G%	*/
+/*	ioctl.h	3.5	%G%	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -78,6 +78,7 @@ struct ltchars {
 #define	TIOCSPGRP	(('t'<<8)|118)	/* set pgrp of tty */
 #define	TIOCSLTC	(('t'<<8)|117)	/* set local special characters */
 #define	TIOCGLTC	(('t'<<8)|116)	/* get local special characters */
+#define	TIOCOUTQ	(('t'<<8)|115)	/* number of chars in output queue */
 
 #define	NETLDISC	1		/* line discip for berk net */
 #define	NTTYDISC	2
