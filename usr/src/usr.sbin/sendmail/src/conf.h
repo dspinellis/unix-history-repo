@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.20 (Berkeley) %G%
+ *	@(#)conf.h	6.21 (Berkeley) %G%
  */
 
 /*
@@ -91,6 +91,10 @@
 
 #ifdef _POSIX_VERSION
 # define HASSETSID	1	/* has setsid(2) call */
+#endif
+
+#ifdef NeXT
+# define	sleep	sleepX
 #endif
 
 /*
