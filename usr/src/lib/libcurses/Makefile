@@ -1,9 +1,15 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	5.2	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -21,12 +27,11 @@ OBJS=	addbytes.o addch.o addstr.o box.o clear.o clrtobot.o clrtoeol.o \
 	scroll.o toucholap.o standout.o touchwin.o tstp.o unctrl.o
 
 .c.o:
-	${CC} -c -pg ${CFLAGS} $*.c
-	ld -x -r $*.o
-	mv a.out profiled/$*.o
-	${CC} -c ${CFLAGS} $*.c
-	ld -x -r $*.o
-	mv a.out $*.o
+	@${CC} -c -pg ${CFLAGS} $*.c
+	@ld -x -o profiled/$*.o -r $*.o
+	${CC} ${CFLAGS} -c $*.c
+	@ld -x -r $*.o
+	@mv a.out $*.o
 
 all: libcurses libcurses_p
 
@@ -37,9 +42,6 @@ libcurses libcurses_p: ${OBJS}
 	@echo building normal libcurses
 	@ar cu libcurses ${OBJS}
 	ranlib libcurses
-
-test: libcurses test.o
-	${CC} ${CFLAGS} -o $@ test.o libcurses -ltermlib
 
 clean: FRC
 	rm -f ${OBJS} profiled/*.o libcurses libcurses_p
