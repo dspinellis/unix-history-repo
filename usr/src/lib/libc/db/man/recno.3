@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)recno.3	5.3 (Berkeley) %G%
+.\"	@(#)recno.3	5.4 (Berkeley) %G%
 .\"
 .TH RECNO 3 ""
 .UC 7
@@ -26,7 +26,12 @@ The general description of the database access methods is in
 this manual page describes only the recno specific information.
 .PP
 The record number data structure is either variable or fixed-length
-records stored in a flat-file format.
+records stored in a flat-file format, accessed by the logical record
+number.
+.PP
+The existence of record number five implies the existence of records
+one through four, and the deletion of record number four causes
+record number five to be renumbered to record number four.
 .PP
 The recno access method specific data structure provided to
 .I dbopen
