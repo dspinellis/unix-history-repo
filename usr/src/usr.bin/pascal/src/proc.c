@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.15 %G%";
+static char sccsid[] = "@(#)proc.c 1.16 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -11,6 +11,16 @@ static char sccsid[] = "@(#)proc.c 1.15 %G%";
 #include "tree.h"
 #include "opcode.h"
 #include "objfmt.h"
+
+/*
+ * The constant REALSPC defines the amount of forced padding preceeding
+ * real numbers when they are printed. If REALSPC == 0, then no padding
+ * is added, REALSPC == 1 adds one extra blank irregardless of the width
+ * specified by the user.
+ *
+ * N.B. - Values greater than one require program mods.
+ */
+#define	REALSPC	0
 
 /*
  * The following array is used to determine which classes may be read
@@ -423,7 +433,8 @@ proc(r)
 					fmtspec = CONWIDTH + CONPREC;
 					break;
 				case CONWIDTH:
-					if (--field < 1)
+					field -= REALSPC;
+					if (field < 1)
 						field = 1;
 #					ifdef DEC11
 					    prec = field - 7;
@@ -437,11 +448,12 @@ proc(r)
 					break;
 				case CONWIDTH + CONPREC:
 				case CONWIDTH + VARPREC:
-					if (--field < 1)
+					field -= REALSPC;
+					if (field < 1)
 						field = 1;
 				}
 				format[0] = ' ';
-				fmtstart = 1;
+				fmtstart = 1 - REALSPC;
 				break;
 			case TSTR:
 				constval( alv );
@@ -532,9 +544,9 @@ proc(r)
 						put(2, O_RV4 | cbn << 8 + INDX,
 						    tempnlp -> value[NL_OFFS] );
 #						ifdef DEC11
-						    put(3, O_MAX, 8, 1);
+						    put(3, O_MAX, 7 + REALSPC, 1);
 #						else
-						    put(3, O_MAX, 9, 1);
+						    put(3, O_MAX, 8 + REALSPC, 1);
 #						endif DEC11
 						convert(nl+T4INT, INT_TYP);
 						stkcnt += sizeof(int);
@@ -543,7 +555,7 @@ proc(r)
 						fmtspec += VARPREC;
 						tmpfree(&soffset);
 					}
-					put(3, O_MAX, 1, 1);
+					put(3, O_MAX, REALSPC, 1);
 					break;
 				case TSTR:
 					put(1, O_AS4);
