@@ -33,6 +33,7 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)inode.c	5.18 (Berkeley) 3/19/91";
+static char rcsid[] = "$Header: /b/source/CVS/src/sbin/fsck/inode.c,v 1.4 1993/06/13 21:09:16 mycroft Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -58,7 +59,8 @@ ckinode(dp, idesc)
 		idesc->id_fix = DONTKNOW;
 	idesc->id_entryno = 0;
 	idesc->id_filesize = dp->di_size;
-	if ((dp->di_mode & IFMT) == IFBLK || (dp->di_mode & IFMT) == IFCHR)
+	if ((dp->di_mode & IFMT) == IFBLK || (dp->di_mode & IFMT) == IFCHR ||
+		DFASTLINK(*dp))
 		return (KEEPON);
 	dino = *dp;
 	ndb = howmany(dino.di_size, sblock.fs_bsize);

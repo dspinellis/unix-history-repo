@@ -1,4 +1,6 @@
 #	@(#)Makefile	5.15 (Berkeley) 6/29/90
+#
+#	$Header$
 
 PROG=	fsck
 MAN8=	fsck.8

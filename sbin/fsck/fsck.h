@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  *
  *	@(#)fsck.h	5.17 (Berkeley) 7/27/90
+ *
+ *	$Header: /b/source/CVS/src/sbin/fsck/fsck.h,v 1.3 1993/03/23 00:27:51 cgd Exp $
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
