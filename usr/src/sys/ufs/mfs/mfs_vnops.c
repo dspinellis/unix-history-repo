@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.9 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,6 +42,7 @@ extern char mfsiobuf[];
  */
 int	mfs_open(),
 	mfs_strategy(),
+	mfs_bmap(),
 	mfs_ioctl(),
 	mfs_close(),
 	mfs_inactive(),
@@ -78,7 +79,7 @@ struct vnodeops mfs_vnodeops = {
 	mfs_nullop,		/* reclaim */
 	mfs_badop,		/* lock */
 	mfs_badop,		/* unlock */
-	mfs_badop,		/* bmap */
+	mfs_bmap,		/* bmap */
 	mfs_strategy,		/* strategy */
 	mfs_print,		/* print */
 };
@@ -210,6 +211,23 @@ mfs_doio(bp, base)
 		}
 	}
 	biodone(bp);
+}
+
+/*
+ * This is a noop, simply returning what one has been given.
+ */
+mfs_bmap(vp, bn, vpp, bnp)
+	struct vnode *vp;
+	daddr_t bn;
+	struct vnode **vpp;
+	daddr_t *bnp;
+{
+
+	if (vpp != NULL)
+		*vpp = vp;
+	if (bnp != NULL)
+		*bnp = bn;
+	return (0);
 }
 
 /*
