@@ -1,4 +1,4 @@
-#	@(#)sys.mk	5.13 (Berkeley) %G%
+#	@(#)sys.mk	5.14 (Berkeley) %G%
 
 unix		?=	We run UNIX.
 
@@ -13,14 +13,15 @@ RANLIB		?=	ranlib
 AS		?=	as
 AFLAGS		?=
 
-CC		?=	cc
+CC		?=	gcc
+
 .if ${MACHINE} == "sparc"
 CFLAGS		?=	-O4
 .else
-CFLAGS		?=	-O
+CFLAGS		?=	-O2
 .endif
 
-CPP		?=	cpp
+CPP		?=	/usr/libexec/gcc2/cpp -traditional
 
 FC		?=	f77
 FFLAGS		?=	-O
