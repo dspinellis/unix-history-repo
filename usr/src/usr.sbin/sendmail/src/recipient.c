@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -357,7 +357,8 @@ recipient(a, sendq, e)
 #ifdef LOG
 				if (LogLevel > 2)
 					syslog(LOG_ERR, "%s: include %s: transient error: %s",
-						e->e_id, a->q_user, errstring(ret));
+						e->e_id == NULL ? "NOQUEUE" : e->e_id,
+						a->q_user, errstring(ret));
 #endif
 				a->q_flags |= QQUEUEUP;
 				a->q_flags &= ~QDONTSEND;
@@ -425,7 +426,8 @@ recipient(a, sendq, e)
 # ifdef LOG
 			if (LogLevel > 8)
 				syslog(LOG_INFO, "%s: deferred: udbexpand: %s",
-					e->e_id, errstring(errno));
+					e->e_id == NULL ? "NOQUEUE" : e->e_id,
+					errstring(errno));
 # endif
 			message("queued (user database error): %s",
 				errstring(errno));
@@ -1024,7 +1026,8 @@ resetuid:
 #ifdef LOG
 		if (forwarding && LogLevel > 9)
 			syslog(LOG_INFO, "%s: forward %s => %s",
-				e->e_id, oldto, buf);
+				e->e_id == NULL ? "NOQUEUE" : e->e_id,
+				oldto, buf);
 #endif
 
 		AliasLevel++;

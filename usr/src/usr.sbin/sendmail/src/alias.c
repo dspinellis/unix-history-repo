@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -766,7 +766,8 @@ forward(user, sendq, e)
 #ifdef LOG
 			if (LogLevel > 2)
 				syslog(LOG_ERR, "%s: forward %s: transient error: %s",
-					e->e_id, buf, errstring(err));
+					e->e_id == NULL ? "NOQUEUE" : e->e_id,
+					buf, errstring(err));
 #endif
 			message("%s: %s: message queued", buf, errstring(err));
 			user->q_flags |= QQUEUEUP;
