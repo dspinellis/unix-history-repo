@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.32 (Berkeley) %G%
+#	@(#)READ_ME	8.33 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -30,18 +30,27 @@ guarantee that they will work unmodified in your environment.  However,
 they are all designed for the old make and can be used to help you get
 started.  They have names like "Makefile.HPUX".  Many of them include
 -I/usr/sww/include/db and -L/usr/sww/lib -- this is Berkeley's
-location for the new database libraries, described below.
+location for the new database libraries, described below.  You don't
+have to remove these definitions if you don't have these directories.
 
 There is also a shell script (makesendmail) that tries to be clever
 about using object subdirectories.  It's pretty straightforward, and
 may help if you share a source tree among different architectures.
 
-IMPORTANT:  DO NOT USE OPTIMIZATION (``-O'') IF YOU ARE RUNNING GCC
-2.4.x.  THERE IS A BUG IN THE GCC OPTIMIZER THAT CAUSES SENDMAIL TO
-FAIL MISERABLY.
+**************************************************************************
+**  IMPORTANT:  DO NOT USE OPTIMIZATION (``-O'') IF YOU ARE RUNNING	**
+**  GCC 2.4.x or 2.5.x.  THERE IS A BUG IN THE GCC OPTIMIZER THAT	**
+**  CAUSES SENDMAIL COMPILES TO FAIL MISERABLY.				**
+**************************************************************************
 
-IMPORTANT:  Read the appropriate paragraphs in the section on
-``Operating System and Compile Quirks''.
+Jim Wilson of Cygnus believes he has found the problem -- it will
+probably be fixed in GCC 2.5.6 -- but until this is verified, be
+very suspicious of gcc -O.
+
+**************************************************************************
+**  IMPORTANT:  Read the appropriate paragraphs in the section on	**
+**  ``Operating System and Compile Quirks''.				**
+**************************************************************************
 
 
 +----------------------+
@@ -57,7 +66,9 @@ older DBM implementation -- the very old V7 implementation is no
 longer supported), and NIS (Network Information Services).  Used alone
 these just include the support they indicate.  [If you are using NEWDB,
 get the latest version from FTP.CS.Berkeley.EDU in /ucb/4bsd.  DO NOT
-use the version from the Net2 distribution!]
+use the version from the Net2 distribution!  However, if you are on
+BSD/386 or 386BSD-based systems, use the one that already exists
+on your system.  You may need to define OLD_NEWDB to do this.]
 
 If NEWDB and NDBM are defined (but not NIS), then sendmail will read
 NDBM format alias files, but the next time a newaliases is run the
@@ -93,6 +104,7 @@ symbols availble, requiring the following compilation flags in the
 Makefile:
 
 SOLARIS		Define this if you are running Solaris 2.0 or higher.
+SOLARIS_2_3	Define this if you are running Solaris 2.3 or higher.
 NeXT		Define this if you are on a NeXT box.  (This one may
 		be pre-defined for you.)  There are other hacks you
 		have to make -- see below.
@@ -140,12 +152,22 @@ HASSETREUID	Define this if you have setreuid(2) ***AND*** root can
 		your system has setresuid(2), (for example, on HP-UX) in
 		which case you will also have to #define setreuid(r, e)
 		to be the appropriate call.  Some systems (such as Solaris)
-		have a compatibility routine that doesn't work properly.
+		have a compatibility routine that doesn't work properly,
+		but may have "saved user ids" properly implemented so you
+		can ``#define setreuid(r, e) seteuid(e)'' and have it work.
 		The important thing is that you have a call that will set
-		the effective uid independently of the real or saved uid.
-		Setting this improves the security somewhat, since
-		sendmail doesn't have to read .forward and :include: files
-		as root.
+		the effective uid independently of the real or saved uid
+		and be able to set the effective uid back again when done.
+		There's a test program in ../test/t_setreuid.c that will
+		try things on your system.  Setting this improves the
+		security, since sendmail doesn't have to read .forward
+		and :include: files as root.  There are certain attacks
+		that may be unpreventable without this call.
+HASLSTAT	Define this if you have symbolic links (and thus the
+		lstat(2) system call).  This improves security.  Unlike
+		most other options, this one is on by default, so you
+		need to #undef it in conf.h if you don't have symbolic
+		links (these days everyone does).
 GIDSET_T	The type of entries in a gidset passed as the second
 		argument to getgroups(2).  Historically this has been an
 		int, so this is the default, but some systems (such as
@@ -180,6 +202,10 @@ ERRLIST_PREDEFINED
 WAITUNION	The wait(2) routine takes a "union wait" argument instead
 		of an integer argument.  This is for compatibility with
 		old versions of BSD.
+SCANF		You can set this to extend the F command to accept a
+		scanf string -- this gives you a primitive parser for
+		class definitions -- BUT it can make you vulnerable to
+		core dumps if the target file is poorly formed.
 
 
 +-----------------------+
@@ -200,10 +226,11 @@ NIS		Define this to get NIS (YP) support for aliases and maps.
 		Normally defined in the Makefile.
 USERDB		Include support for the User Information Database.  Implied
 		by NEWDB in conf.h.
-IDENTPROTO	Define this to get IDENT (RFC 1413) protocol support.
+IDENTPROTO	Define this as 1 to get IDENT (RFC 1413) protocol support.
 		This is assumed unless you are running on Ultrix or
 		HP-UX, both of which have a problem in the UDP
-		implementation.
+		implementation.  You can define it to be 0 to explicitly
+		turn off IDENT protocol support.
 MIME		Include support for MIME-encapsulated error messages.
 LOG		Set this to get syslog(3) support.  Defined by default
 		in conf.h.  You want this if at all possible.
@@ -230,6 +257,22 @@ SETPROCTITLE	Try to set the string printed by "ps" to something
 		default in conf.h.
 
 
++---------------------+
+| DNS/RESOLVER ISSUES |
++---------------------+
+
+Many systems have old versions of the resolver library.  At a minimum,
+you should be running BIND 4.8.3; older versions may compile, but they
+have known bugs that should give you pause.
+
+Common problems in old versions include "undefined" errors for
+dn_skipname.
+
+Some people have had a problem with BIND 4.9; it uses some routines
+that it expects to be externally defined such as strerror().  It may
+help to link with "-l44bsd" to solve this problem.
+
+
 +-------------------------------------+
 | OPERATING SYSTEM AND COMPILE QUIRKS |
 +-------------------------------------+
@@ -242,7 +285,8 @@ SunOS 4.x (Solaris 1.x)
 	Some people have reported problems with the SunOS version of
 	-lresolv and/or in.named, and suggest that you get a newer
 	version.  The symptoms are delays when you connect to the
-	SMTP server on a SunOS machine.  There is a version of BIND
+	SMTP server on a SunOS machine or having your domain added to
+	addresses inappropriately.  There is a version of BIND
 	version 4.9 on gatekeeper.DEC.COM in pub/BSD/bind/4.9.
 
 	There is substantial disagreement about whether you can make
@@ -273,15 +317,19 @@ Solaris 2.x (SunOS 5.x)
 
 	The Solaris "syslog" function is apparently limited to something
 	about 90 characters because of a kernel limitation.  If you have
-	source code, you can probably up this number.  Bill Wisner
-	<wisner@well.sf.ca.us> was able to get an unofficial, unsupported
-	patch.
+	source code, you can probably up this number.  The syslogd patch
+	is included in kernel jumbo patch for Solaris 2.2 as of revision
+	-39 or so.  At least one person is running with patch 100999-45
+	and their long lost sendmail logging is finally showing up.
 
 OSF/1
-	If you are compiling on OSF/1 (DEC Alpha), you must use -lmld
-	and -non_shared (otherwise it core dumps on startup).  Also,
-	the enclosed makefile removed /usr/sbin/smtpd; if you need it,
-	just create the link to the sendmail binary.
+	If you are compiling on OSF/1 (DEC Alpha), you must use 
+	-non_shared (otherwise it core dumps on startup).  You may also
+	need -mld to get the nlist() function, although some versions
+	apparently don't need this.
+	
+	Also, the enclosed makefile removed /usr/sbin/smtpd; if you need
+	it, just create the link to the sendmail binary.
 
 NeXT
 	If you are compiling on NeXT, you will have to create an empty
@@ -303,9 +351,31 @@ NeXT
 
 	You may have to use -DNeXT.
 
-BSDI (BSD/386)
-	I have reports that the "m4" from BSDI won't handle the config
-	files properly.  I haven't had a chance to test this myself.
+BSDI (BSD/386) 1.0, NetBSD 0.9, FreeBSD 1.0
+	The "m4" from BSDI won't handle the config files properly.
+	I haven't had a chance to test this myself.
+
+	The M4 shipped in FreeBSD and NetBSD 0.9 don't handle the config
+	files properly. One must use either GNU m4 1.1 or the PD-M4
+	recently posted in comp.os.386bsd.bugs (and maybe others).
+	NetBSD-current includes the PD-M4 (as stated in the NetBSD file
+	CHANGES).
+	
+	FreeBSD 1.0 RELEASE has uname(2) now. Use -DUSEUNAME in order to
+	use it (look into Makefile.FreeBSD). NetBSD-current may have
+	it too but it has not been verified.
+
+	You cannot port the latest version of the Berkeley db library
+	and use it with sendmail without recompiling the world.  This
+	is because C library routines use the older version which have
+	incompatible header files -- the result is that it can't read
+	other system files, such as /etc/passwd, unless you use the
+	new db format throughout your system.  You should normally just
+	use the version of db supplied in your release.  You may need
+	to use -DOLD_NEWDB to make this work -- this turns off some
+	new interface calls (for file locking) that are not in older
+	versions of db.  You'll get compile errors if you need this
+	flag and don't have it set.
 
 4.3BSD
 	If you are running a "virgin" version of 4.3BSD, you'll have
@@ -473,4 +543,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.32, last update %G% 09:46:52)
+(Version 8.33, last update %G% 11:34:48)
