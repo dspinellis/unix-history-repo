@@ -11,9 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
- * from: hp300/hp300/locore.s	7.20 (Berkeley) 12/28/92
+ * from: hp300/hp300/locore.s	7.22 (Berkeley) 2/18/93
  *
- *	@(#)locore.s	7.9 (Berkeley) %G%
+ *	@(#)locore.s	7.10 (Berkeley) %G%
  */
 
 /*
