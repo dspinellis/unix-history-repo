@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -222,21 +222,22 @@ glob2(pathbuf, pathend, pattern, pglob)
 	char *pathbuf, *pathend, *pattern;
 	glob_t *pglob;
 {
-	struct stat sbuf;
-	bool_t anymeta = 0;
+	struct stat sb;
+	bool_t anymeta;
 	char *p, *q;
 
 	/*
 	 * loop over pattern segments until end of pattern or until
 	 * segment with meta character found.
 	 */
-	for (;;) {
+	for (anymeta = 0;;) {
 		if (*pattern == EOS) {		/* end of pattern? */
 			*pathend = EOS;
-			if (stat(pathbuf, &sbuf) != 0)
-				return(0);	/* need error call here? */
-			if ((pglob->gl_flags & GLOB_MARK) &&
-			    pathend[-1] != SEP && S_ISDIR(sbuf.st_mode)) {
+			if (lstat(pathbuf, &sb))
+				return(0);
+			if (pglob->gl_flags & GLOB_MARK && pathend[-1] != SEP &&
+			    (S_ISDIR(sb.st_mode) || S_ISLNK(sb.st_mode) &&
+			    !stat(pathbuf, &sb) && S_ISDIR(sb.st_mode))) {
 				*pathend++ = SEP;
 				*pathend = EOS;
 			}
