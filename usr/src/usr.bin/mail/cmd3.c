@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.5 %G%";
+static char *SccsId = "@(#)cmd3.c	1.6 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -526,21 +526,27 @@ getfilename(name)
 {
 	register char *cp;
 	char savename[BUFSIZ];
+	char oldmailname[BUFSIZ];
 
 	switch (*name) {
 	case '%':
 		strcpy(prevfile, mailname);
 		if (name[1] != 0) {
 			strcpy(savename, myname);
+			strcpy(oldmailname, mailname);
 			strncpy(myname, name+1, PATHSIZE-1);
 			myname[PATHSIZE-1] = 0;
 			findmail();
-			cp = mailname;
+			cp = savestr(mailname);
 			strcpy(myname, savename);
+			strcpy(mailname, oldmailname);
 			return(cp);
 		}
+		strcpy(oldmailname, mailname);
 		findmail();
-		return(mailname);
+		cp = savestr(mailname);
+		strcpy(mailname, oldmailname);
+		return(cp);
 
 	case '#':
 		if (name[1] != 0)
@@ -549,10 +555,9 @@ getfilename(name)
 			printf("No previous file\n");
 			return(NOSTR);
 		}
-		strcpy(savename, prevfile);
+		cp = savestr(prevfile);
 		strcpy(prevfile, mailname);
-		strcpy(mailname, savename);
-		return(mailname);
+		return(cp);
 
 	case '&':
 		strcpy(prevfile, mailname);
