@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	8.4 (Berkeley) %G%
+ *	@(#)lfs_inode.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -292,7 +292,7 @@ lfs_truncate(ap)
 	 */
 	a_released = 0;
 	i_released = 0;
-	for (bp = vp->v_dirtyblkhd.le_next; bp; bp = bp->b_vnbufs.qe_next)
+	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = bp->b_vnbufs.le_next)
 		if (bp->b_flags & B_LOCKED) {
 			++a_released;
 			/*
