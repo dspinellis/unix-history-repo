@@ -1,9 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.3 82/12/05";
+static char sccsid[] = "@(#)main.c	4.4 82/12/24";
 #endif
 
 #include <sys/param.h>
-#include <sys/pte.h>
+#include <machine/pte.h>
 #include <ctype.h>
 #include <errno.h>
 #include <netdb.h>
