@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.26 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -248,12 +248,21 @@ rflag:		switch (*++fmt) {
 			/* unsigned conversions */
 nosign:			sign = NULL;
 			/*
+			 * ``... diouXx conversions ... if a precision is
+			 * specified, the 0 flag will be ignored.''
+			 *	-- ANSI X3J11
+			 */
+number:			if (prec >= 0)
+				padc = ' ';
+			/*
 			 * ``The result of converting a zero value with an
 			 * explicit precision of zero is no characters.''
 			 *	-- ANSI X3J11
 			 */
-number:			if (!_ulong && !prec)
-				break;
+			if (!_ulong && !prec) {
+				size = 0;
+				goto pforw;
+			}
 
 			t = buf + BUF - 1;
 			do {
