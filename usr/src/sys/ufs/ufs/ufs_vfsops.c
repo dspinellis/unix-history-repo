@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.20 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -71,7 +71,7 @@ struct ufsmount mounttab[NMOUNT];
  *
  * XXX - Need to have a way of figuring the name of the root device
  */
-#define ROOTNAME	"root device"
+#define ROOTNAME	"root_device"
 
 ufs_mountroot()
 {
