@@ -1,47 +1,49 @@
 #
-# Copyright (c) 1986 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1986, 1993 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 #
-TOCS=	toc1 toc2 toc3 toc3f toc4 toc5 toc6 toc7 toc8 \
-	tocx1 tocx2 tocx3 tocx3f tocx4 tocx5 tocx6 tocx7 tocx8
-MACROS=	-msU
-PRINTER=Pdp
-TROFF=	ditroff -${PRINTER}
+SRCS=	man1 man2 man3 man4 man5 man6 man7 man8
+
+MACROS=	-ms
+PRINTER=Pps
+TBL=	tbl
+TROFF=	groff
 
 all: title.urm.${PRINTER} preface.${PRINTER} intro.${PRINTER} \
      toc.${PRINTER} ptx.${PRINTER} title.prm.${PRINTER}
-	lpr -${PRINTER} -n title.urm.${PRINTER}
-	lpr -${PRINTER} -n preface.${PRINTER}
-	lpr -${PRINTER} -n intro.${PRINTER}
-	lpr -${PRINTER} -n toc.${PRINTER}
-	lpr -${PRINTER} -n ptx.${PRINTER}
-	lpr -${PRINTER} -n title.prm.${PRINTER}
+
+print: title.urm.${PRINTER} preface.${PRINTER} intro.${PRINTER} \
+     toc.${PRINTER} ptx.${PRINTER} title.prm.${PRINTER}
+	lpr -${PRINTER} title.urm.${PRINTER}
+	lpr -${PRINTER} preface.${PRINTER}
+	lpr -${PRINTER} intro.${PRINTER}
+	lpr -${PRINTER} toc.${PRINTER}
+	lpr -${PRINTER} ptx.${PRINTER}
+	lpr -${PRINTER} title.prm.${PRINTER}
 
 title.urm.${PRINTER}: title.urm
-	${TROFF} -t title.urm >title.urm.${PRINTER}
+	${TROFF} title.urm >title.urm.${PRINTER}
 
 preface.${PRINTER}: preface.ms
-	${TROFF} ${MACROS} -t preface.ms >preface.${PRINTER}
+	${TBL} preface.ms | ${TROFF} ${MACROS} >preface.${PRINTER}
 
 intro.${PRINTER}: intro.ms
-	${TROFF} ${MACROS} -t intro.ms >intro.${PRINTER}
+	${TROFF} ${MACROS} intro.ms >intro.${PRINTER}
 
 toc.${PRINTER}: toc.in ptxx
-	${TROFF} -t toc.in >toc.${PRINTER}
+	${TROFF} toc.in >toc.${PRINTER}
 
 ptx.${PRINTER}: ptx.in ptxx
-	${TROFF} -t ptx.in >ptx.${PRINTER}
+	${TROFF} ptx.in >ptx.${PRINTER}
 
 title.prm.${PRINTER}: title.prm ptxx
-	${TROFF} -t title.prm >title.prm.${PRINTER}
+	${TROFF} title.prm >title.prm.${PRINTER}
 
 ptxx:
-	tocrc all
-	tocrc t
+	tocrc
 
 clean:
 	rm -f title.urm.[PT]* preface.[PT]* intro.[PT]* toc.[PT]* ptx.[PT]* \
-	title.prm.[PT]* ${TOCS} ptxx *.spell errs Errs make.out
+	title.prm.[PT]* toc? tocx? ptxx *.spell errs Errs make.out
