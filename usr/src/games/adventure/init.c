@@ -1,27 +1,22 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1991, 1993 The Regents of the University of California.
  * All rights reserved.
  *
- * The game adventure was original written Fortran by Will Crowther
- * and Don Woods.  It was later translated to C and enhanced by
- * Jim Gillogly.
+ * The game adventure was originally written in Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by Jim
+ * Gillogly.  This code is derived from software contributed to Berkeley
+ * by Jim Gillogly at The Rand Corporation.
  *
  * %sccs.include.redist.c%
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)init.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
 
 /*      Re-coding of advent in C: data initialization                   */
 
 #include <sys/types.h>
 #include <stdio.h>
 #include "hdr.h"
-#include "pathnames.h"
 
 int blklin = TRUE;
-int setup  = 0;
 
 int setbit[16] = {1,2,4,010,020,040,0100,0200,0400,01000,02000,04000,
 		  010000,020000,040000,0100000};
@@ -29,32 +24,29 @@ int setbit[16] = {1,2,4,010,020,040,0100,0200,0400,01000,02000,04000,
 
 init(command)                           /* everything for 1st time run  */
 char *command;                          /* command we were called with  */
-{       int stat,adfd;
+{
 	rdata();                        /* read data from orig. file    */
 	linkdata();
 	poof();
-	setup=1;                        /* indicate that data is in     */
-	if (save(command, "adventure") < 0) {
-		fprintf(stderr, "adventure: save failed\n");
-		exit(1);
-	}
-	adfd=open("adventure",1);
-	lseek(adfd,0L,2);
-	close(datfd);
-	if (vfork() == 0) {
-		dup2(adfd, 1);
-		execl(_PATH_CAT, "cat", TMPFILE, 0);
-		fprintf(stderr, "adventure: unable to find %s\n", _PATH_CAT);
-		exit(1);
-	}
-	wait(&stat);
-	unlink(TMPFILE);
-	exit(stat);
 }
 
+char *decr(a,b,c,d,e)
+char a,b,c,d,e;
+{
+	static char buf[6];
+
+	buf[0] = a-'+';
+	buf[1] = b-'-';
+	buf[2] = c-'#';
+	buf[3] = d-'&';
+	buf[4] = e-'%';
+	buf[5] = 0;
+	return buf;
+}
 
 linkdata()                              /*  secondary data manipulation */
 {       register int i,j;
+
 	/*      array linkages          */
 	for (i=1; i<=LOCSIZ; i++)
 		if (ltext[i].seekadr!=0 && travel[i] != 0)
@@ -79,65 +71,68 @@ linkdata()                              /*  secondary data manipulation */
 	}
 
 	/* define mnemonics */
-	keys=vocab("keys",1);
-	lamp=vocab("lamp",1);
-	grate=vocab("grate",1);
-	cage=vocab("cage",1);
-	rod=vocab("rod",1);
+	keys = vocab(DECR(k,e,y,s,\0), 1);
+	lamp = vocab(DECR(l,a,m,p,\0), 1);
+	grate = vocab(DECR(g,r,a,t,e), 1);
+	cage  = vocab(DECR(c,a,g,e,\0),1);
+	rod   = vocab(DECR(r,o,d,\0,\0),1);
 	rod2=rod+1;
-	steps=vocab("steps",1);
-	bird=vocab("bird",1);
-	door=vocab("door",1);
-	pillow=vocab("pillow",1);
-	snake=vocab("snake",1);
-	fissur=vocab("fissu",1);
-	tablet=vocab("table",1);
-	clam=vocab("clam",1);
-	oyster=vocab("oyster",1);
-	magzin=vocab("magaz",1);
-	dwarf=vocab("dwarf",1);
-	knife=vocab("knife",1);
-	food=vocab("food",1);
-	bottle=vocab("bottl",1);
-	water=vocab("water",1);
-	oil=vocab("oil",1);
-	plant=vocab("plant",1);
+	steps=vocab(DECR(s,t,e,p,s),1);
+	bird  = vocab(DECR(b,i,r,d,\0),1);
+	door  = vocab(DECR(d,o,o,r,\0),1);
+	pillow= vocab(DECR(p,i,l,l,o), 1);
+	snake = vocab(DECR(s,n,a,k,e), 1);
+	fissur= vocab(DECR(f,i,s,s,u), 1);
+	tablet= vocab(DECR(t,a,b,l,e), 1);
+	clam  = vocab(DECR(c,l,a,m,\0),1);
+	oyster= vocab(DECR(o,y,s,t,e), 1);
+	magzin= vocab(DECR(m,a,g,a,z), 1);
+	dwarf = vocab(DECR(d,w,a,r,f), 1);
+	knife = vocab(DECR(k,n,i,f,e), 1);
+	food  = vocab(DECR(f,o,o,d,\0),1);
+	bottle= vocab(DECR(b,o,t,t,l), 1);
+	water = vocab(DECR(w,a,t,e,r), 1);
+	oil   = vocab(DECR(o,i,l,\0,\0),1);
+	plant = vocab(DECR(p,l,a,n,t), 1);
 	plant2=plant+1;
-	axe=vocab("axe",1);
-	mirror=vocab("mirro",1);
-	dragon=vocab("drago",1);
-	chasm=vocab("chasm",1);
-	troll=vocab("troll",1);
+	axe   = vocab(DECR(a,x,e,\0,\0),1);
+	mirror= vocab(DECR(m,i,r,r,o), 1);
+	dragon= vocab(DECR(d,r,a,g,o), 1);
+	chasm = vocab(DECR(c,h,a,s,m), 1);
+	troll = vocab(DECR(t,r,o,l,l), 1);
 	troll2=troll+1;
-	bear=vocab("bear",1);
-	messag=vocab("messa",1);
-	vend=vocab("vendi",1);
-	batter=vocab("batte",1);
+	bear  = vocab(DECR(b,e,a,r,\0),1);
+	messag= vocab(DECR(m,e,s,s,a), 1);
+	vend  = vocab(DECR(v,e,n,d,i), 1);
+	batter= vocab(DECR(b,a,t,t,e), 1);
 
-	nugget=vocab("gold",1);
-	coins=vocab("coins",1);
-	chest=vocab("chest",1);
-	eggs=vocab("eggs",1);
-	tridnt=vocab("tride",1);
-	vase=vocab("vase",1);
-	emrald=vocab("emera",1);
-	pyram=vocab("pyram",1);
-	pearl=vocab("pearl",1);
-	rug=vocab("rug",1);
-	chain=vocab("chain",1);
+	nugget= vocab(DECR(g,o,l,d,\0),1);
+	coins = vocab(DECR(c,o,i,n,s), 1);
+	chest = vocab(DECR(c,h,e,s,t), 1);
+	eggs  = vocab(DECR(e,g,g,s,\0),1);
+	tridnt= vocab(DECR(t,r,i,d,e), 1);
+	vase  = vocab(DECR(v,a,s,e,\0),1);
+	emrald= vocab(DECR(e,m,e,r,a), 1);
+	pyram = vocab(DECR(p,y,r,a,m), 1);
+	pearl = vocab(DECR(p,e,a,r,l), 1);
+	rug   = vocab(DECR(r,u,g,\0,\0),1);
+	chain = vocab(DECR(c,h,a,i,n), 1);
 
-	back=vocab("back",0);
-	look=vocab("look",0);
-	cave=vocab("cave",0);
-	null=vocab("null",0);
-	entrnc=vocab("entra",0);
-	dprssn=vocab("depre",0);
+	back  = vocab(DECR(b,a,c,k,\0),0);
+	look  = vocab(DECR(l,o,o,k,\0),0);
+	cave  = vocab(DECR(c,a,v,e,\0),0);
+	null  = vocab(DECR(n,u,l,l,\0),0);
+	entrnc= vocab(DECR(e,n,t,r,a), 0);
+	dprssn= vocab(DECR(d,e,p,r,e), 0);
+	enter = vocab(DECR(e,n,t,e,r), 0);
 
-	say=vocab("say",2);
-	lock=vocab("lock",2);
-	throw=vocab("throw",2);
-	find=vocab("find",2);
-	invent=vocab("inven",2);
+	pour  = vocab(DECR(p,o,u,r,\0), 2);
+	say   = vocab(DECR(s,a,y,\0,\0),2);
+	lock  = vocab(DECR(l,o,c,k,\0),2);
+	throw = vocab(DECR(t,h,r,o,w), 2);
+	find  = vocab(DECR(f,i,n,d,\0),2);
+	invent= vocab(DECR(i,n,v,e,n), 2);
+
 	/* initialize dwarves */
 	chloc=114;
 	chloc2=140;
@@ -185,8 +180,7 @@ startup()
 	/* srand(371);				/* non-random seed */
 	hinted[3]=yes(65,1,0);
 	newloc=1;
-	setup=3;
+	delhit = 0;
 	limit=330;
 	if (hinted[3]) limit=1000;      /* better batteries if instrucs */
 }
-

@@ -1,16 +1,17 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1991, 1993 The Regents of the University of California.
  * All rights reserved.
  *
- * The game adventure was original written Fortran by Will Crowther
- * and Don Woods.  It was later translated to C and enhanced by
- * Jim Gillogly.
+ * The game adventure was originally written in Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by Jim
+ * Gillogly.  This code is derived from software contributed to Berkeley
+ * by Jim Gillogly at The Rand Corporation.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*      Re-coding of advent in C: subroutines from main                 */
@@ -360,7 +361,7 @@ badmove()                                       /* 20                   */
 
 bug(n)
 int n;
-{       printf("Please tell jim@rand-unix that fatal bug %d happened.\n",n);
+{       printf("Please tell jim@rand.org that fatal bug %d happened.\n",n);
 	exit(0);
 }
 
@@ -748,6 +749,7 @@ trfill()                                        /* 9220 */
 
 closing()                               /* 10000 */
 {       register int i;
+
 	prop[grate]=prop[fissur]=0;
 	for (i=1; i<=6; i++)
 	{       dseen[i]=FALSE;
@@ -798,4 +800,3 @@ caveclose()                             /* 11000 */
 	closed=TRUE;
 	return(2);
 }
-

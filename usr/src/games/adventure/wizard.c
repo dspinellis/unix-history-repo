@@ -1,16 +1,17 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1991, 1993 The Regents of the University of California.
  * All rights reserved.
  *
- * The game adventure was original written Fortran by Will Crowther
- * and Don Woods.  It was later translated to C and enhanced by
- * Jim Gillogly.
+ * The game adventure was originally written in Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by Jim
+ * Gillogly.  This code is derived from software contributed to Berkeley
+ * by Jim Gillogly at The Rand Corporation.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wizard.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)wizard.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*      Re-coding of advent in C: privileged operations                 */
@@ -21,6 +22,7 @@ datime(d,t)
 int *d,*t;
 {       int tvec[2],*tptr;
 	int *localtime();
+
 	time(tvec);
 	tptr=localtime(tvec);
 	*d=tptr[7]+365*(tptr[5]-77);    /* day since 1977  (mod leap)   */
@@ -30,23 +32,27 @@ int *d,*t;
 }                                       /* pretty painless              */
 
 
-char *magic;
+char magic[6];
 
 poof()
-{       magic="dwarf";
-	latncy=45;
+{
+	strcpy(magic, DECR(d,w,a,r,f));
+	latncy = 45;
 }
 
 start(n)
 {       int d,t,delay;
+
 	datime(&d,&t);
-	delay=(d-saved)*1440+(t-savet); /* good for about a month       */
-	if (delay>=latncy || setup >= 0)
-	{       saved= -1;
+	delay=(d-saved)*1440+(t-savet); /* good for about a month     */
+
+	if (delay >= latncy)
+	{       saved = -1;
 		return(FALSE);
 	}
-	printf("This adventure was suspended a mere %d minutes ago.",delay);
-	if (delay<=latncy/3)
+	printf("This adventure was suspended a mere %d minute%s ago.",
+		delay, delay == 1? "" : "s");
+	if (delay <= latncy/3)
 	{       mspeak(2);
 		exit(0);
 	}
@@ -80,31 +86,22 @@ char *cmdfile;
 	char fname[80], buf[512];
 	extern unsigned filesize;
 
-	lseek(datfd,(long)filesize,0);
-	for (;;)
-	{       printf("What would you like to call the saved version?\n");
-		for (c=fname;; c++)
-			if ((*c=getchar())=='\n') break;
-		*c=0;
-		if (save(cmdfile,fname)>=0) break;
-		printf("I can't use that one.\n");
-		return;
-	}
-	outfd=open(fname,1);
-	lseek(outfd,0L,2);                /* end of executable file       */
-	while ((size=read(datfd,buf,512))>0)
-		write(outfd,buf,size);  /* copy the message data        */
-	printf("                    ^\n");
-	printf("That should do it.  Gis revido.\n");
+	printf("What would you like to call the saved version?\n");
+	for (c=fname;; c++)
+		if ((*c=getchar())=='\n') break;
+	*c=0;
+	if (save(fname) != 0) return;           /* Save failed */
+	printf("To resume, say \"adventure %s\".\n", fname);
+	printf("\"With these rooms I might now have been familiarly acquainted.\"\n");
 	exit(0);
 }
 
 
-ran(range)                              /* uses unix rng                */
-int range;                              /* can't div by 32768 because   */
+ran(range)
+int range;
 {
 	long rand(), i;
+
 	i = rand() % range;
 	return(i);
 }
-
