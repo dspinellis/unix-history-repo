@@ -81,11 +81,12 @@ char		*s;
 {
 	register int		i, j;
 	BOOLEAN			win;
+	static char		prompt[BUFSIZ];
 
 	prhand(hand, CINHAND, Playwin);
-	msg("Your %s scores ", s);
+	sprintf(prompt, "Your %s scores ", s);
 	i = scorehand(hand, turnover, CINHAND, FALSE);	/* count */
-	if ((j = number(0, 29)) == 19)
+	if ((j = number(0, 29, prompt)) == 19)
 	    j = 0;
 	if (i != j) {
 	    if (i < j) {

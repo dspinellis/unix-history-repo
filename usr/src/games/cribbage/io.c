@@ -274,48 +274,46 @@ getuchar()
 	return c;
 }
 
-
-
 /*
- * number reads in a decimal number and makes sure it is between
- * lo and hi inclusive
- * a cr counts as lo
+ * number:
+ *	Reads in a decimal number and makes sure it is between "lo" and
+ *	"hi" inclusive.
  */
-
-number( lo, hi )
-
-    int         lo, hi;
+number(lo, hi, prompt)
+int		lo, hi;
+char		*prompt;
 {
-	char                    *getline();
-	register  char          *p;
-	register  int            sum;
+	char			*getline();
+	register char		*p;
+	register int		sum;
 
 	sum = 0;
-	do  {
-	    if(  !( p = getline() )  )  return( lo );   /* no line = lo */
-	    if(  *p == NULL  )  return( lo );
+	for (;;) {
+	    msg(prompt);
+	    if(!(p = getline()) || *p == NULL) {
+		msg(quiet ? "Not a number" : "That doesn't look like a number");
+		continue;
+	    }
 	    sum = 0;
-	    while(  *p == ' '  ||  *p == '\t'  )  ++p;
-	    if(  *p < '0'  ||  *p > '9'  )  {
+
+	    if (!isdigit(*p))
 		sum = lo - 1;
-	    }
-	    else  {
-		do  {
-		    sum = 10*sum + (*p - '0');
+	    else
+		while (isdigit(*p)) {
+		    sum = 10 * sum + (*p - '0');
 		    ++p;
-		}  while(  '0' <= *p  &&  *p <= '9'  );
-	    }
-	    if(  *p != ' '  &&  *p != '\t'  &&  *p != NULL  )  sum = lo - 1;
-	    if(  sum >= lo  &&  sum <= hi  )  break;
-	    if(  sum == lo - 1  )  {
-		printf( "that doesn't look like a number, try again --> " );
-	    }
-	    else  {
-		printf( "%d is not between %d and %d inclusive, try again --> ",
-								sum, lo, hi );
-	    }
-	}  while( TRUE );
-	return( sum );
+		}
+
+	    if (*p != ' ' && *p != '\t' && *p != NULL)
+		sum = lo - 1;
+	    if (sum >= lo && sum <= hi)
+		return sum;
+	    if (sum == lo - 1)
+		msg("that doesn't look like a number, try again --> ");
+	    else
+		msg("%d is not between %d and %d inclusive, try again --> ",
+								sum, lo, hi);
+	}
 }
 
 /*
