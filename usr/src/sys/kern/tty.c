@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.38 (Berkeley) %G%
+ *	@(#)tty.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "ioctl.h"
 #define TTYDEFCHARS
 #include "tty.h"
@@ -26,7 +25,7 @@
 #include "vnode.h"
 #include "syslog.h"
 
-#include "machine/reg.h"
+#include "vm/vm.h"
 #include "syslog.h"
 
 /* symbolic sleep message strings */
@@ -487,6 +486,11 @@ ttioctl(tp, com, data, flag)
 			constty = tp;
 		} else if (tp == constty)
 			constty = NULL;
+		break;
+
+	case TIOCDRAIN:
+		if (error = ttywait(tp))
+			return (error);
 		break;
 
 	/* allow old ioctls for now */
@@ -1162,6 +1166,7 @@ ttycheckoutq(tp, wait)
 	int wait;
 {
 	int hiwat, s, oldsig;
+	extern int wakeup();
 
 	hiwat = tp->t_hiwat;
 	s = spltty();
@@ -1546,6 +1551,20 @@ ttwakeup(tp)
 }
 
 /*
+ * Look up a code for a specified speed in a conversion table;
+ * used by drivers to map software speed values to hardware parameters.
+ */
+ttspeedtab(speed, table)
+	register struct speedtab *table;
+{
+
+	for ( ; table->sp_speed != -1; table++)
+		if (table->sp_speed == speed)
+			return (table->sp_code);
+	return (-1);
+}
+
+/*
  * set tty hi and low water marks
  *
  * Try to arrange the dynamics so there's about one second
@@ -1600,7 +1619,8 @@ ttyinfo(tp)
 		}
 		ttyprintf(tp, "  cmd: %s %d [%s] ",
 			pick->p_comm, pick->p_pid,
-			pick->p_wmesg ? pick->p_wmesg : "running");
+			pick->p_stat == SRUN ? "running" :
+			pick->p_wmesg ? pick->p_wmesg : "iowait");
 		/* 
 		 * cpu time 
 		 */
