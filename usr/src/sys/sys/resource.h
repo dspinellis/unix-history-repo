@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resource.h	7.5 (Berkeley) %G%
+ *	@(#)resource.h	7.6 (Berkeley) %G%
  */
 
 #ifndef _RESOURCE_H_
@@ -63,11 +63,16 @@ struct	rusage {
 
 #define	RLIM_NLIMITS	9		/* number of resource limits */
 
-#define	RLIM_INFINITY	0x7fffffff
+#define	RLIM_INFINITY	(((quad_t)1 << 63) - 1)
 
-struct rlimit {
+struct orlimit {
 	long	rlim_cur;		/* current (soft) limit */
 	long	rlim_max;		/* maximum value for rlim_cur */
+};
+
+struct rlimit {
+	quad_t	rlim_cur;		/* current (soft) limit */
+	quad_t	rlim_max;		/* maximum value for rlim_cur */
 };
 
 #ifndef KERNEL
@@ -75,9 +80,11 @@ struct rlimit {
 
 __BEGIN_DECLS
 int	getpriority __P((int, int));
+#define getrlimit __getrlimit
 int	getrlimit __P((int, struct rlimit *));
 int	getrusage __P((int, struct rusage *));
 int	setpriority __P((int, int, int));
+#define setrlimit __setrlimit
 int	setrlimit __P((int, const struct rlimit *));
 __END_DECLS
 
