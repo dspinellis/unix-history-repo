@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c	4.12 (Berkeley) 4.12";
+static	char *sccsid = "@(#)login.c	4.13 (Berkeley) 4.13";
 /*
  * login [ name ]
  * login -r
@@ -90,8 +90,7 @@ char **argv;
 	int i;
 	FILE *nlfd;
 	char *ttyn;
-	int ldisc = 0;
-	int zero = 0;
+	int	ldisc = 0;
 #ifdef	UNAME
 	struct utsname uts;
 #endif
@@ -109,7 +108,7 @@ char **argv;
 		getstr(term+5, sizeof(term)-5, "Terminal type");
 	}
 #ifdef	TIOCLSET
-	ioctl(0, TIOCLSET, &zero);
+	ioctl(0, TIOCLSET, 0);
 #endif
 	ioctl(0, TIOCNXCL, 0);
 	gtty(0, &ttyb);
@@ -267,6 +266,7 @@ char **argv;
 	}
 	chown(ttyn, pwd->pw_uid, pwd->pw_gid);
 	setgid(pwd->pw_gid);
+	inigrp(utmp.ut_name, pwd->pw_gid);
 	setuid(pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
