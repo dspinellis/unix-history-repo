@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.33 1994/01/26 03:50:15 rgrimes Exp $
+#	$Id: Makefile,v 1.34 1994/01/29 20:22:31 nate Exp $
 #
 
 SUBDIR=
@@ -117,8 +117,8 @@ includes:
 	chmod 755 ${DESTDIR}/usr/include
 .endif
 	cd ${.CURDIR}/include;			make install
-	cd ${.CURDIR}/gnu/gcc2/libobjc;		make beforeinstall
-	cd ${.CURDIR}/gnu/libg++;		make beforeinstall
+	cd ${.CURDIR}/gnu/usr.bin/cc/libobjc;	make beforeinstall
+	cd ${.CURDIR}/gnu/usr.bin/libg++;	make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/libc;			make beforeinstall
 
@@ -136,13 +136,13 @@ bootstrapld:	directories cleandist mk includes
 	cd ${.CURDIR}/usr.bin/nm;	make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/ranlib;	make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/strip;	make -DNOPIC depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/ld;		make -DNOPIC depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/gas;		make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/gcc2;		make -DNOPIC depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/gcc2/libgcc;	make all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/usr.bin/ld;	make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/usr.bin/as;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/usr.bin/cc;	make -DNOPIC depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/usr.bin/cc/libgcc;	make all install ${CLEANDIR} obj
 	cd ${.CURDIR}/lib/csu.i386;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/lib/libc;		make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/ld/rtld;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/usr.bin/ld/rtld;	make depend all install ${CLEANDIR} obj
 
 libraries:
 	# setenv NOPROFILE if you do not want profiled libraries
@@ -153,11 +153,11 @@ libraries:
 .if defined(CLOBBER)
 	find ${DESTDIR}/usr/lib \! -name '*.s[ao].*' -a \! -type d | xargs -n30 rm -rf
 .endif
-	cd ${.CURDIR}/lib;		make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/gcc2/libgcc;	make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/libg++;	make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/libregex;	make depend all install ${CLEANDIR} obj
-	cd ${.CURDIR}/gnu/libmalloc;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/lib;			make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/usr.bin/cc/libgcc;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/lib/libg++;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/lib/libregex;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/lib/libmalloc;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/lex;	make depend all install ${CLEANDIR} obj
 
 tools:
@@ -165,7 +165,7 @@ tools:
 	@echo " Rebuilding ${DESTDIR} Compiler and Make"
 	@echo "--------------------------------------------------------------"
 	@echo
-	cd ${.CURDIR}/gnu/gcc2;		make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/usr.bin/cc;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/make;	make depend all install ${CLEANDIR} obj
 
 mdec:
