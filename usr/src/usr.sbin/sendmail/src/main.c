@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.91		%G%);
+SCCSID(@(#)main.c	3.92		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -179,6 +179,7 @@ main(argc, argv)
 	errno = 0;
 	from = NULL;
 	CurEnv->e_oldstyle = TRUE;
+	NoConnect = TRUE;
 	initmacros();
 
 	/*
@@ -311,7 +312,7 @@ main(argc, argv)
 			break;
 		
 		  case 'n':	/* don't alias */
-			NoAlias++;
+			NoAlias = TRUE;
 			break;
 
 # ifdef DBM
@@ -322,11 +323,11 @@ main(argc, argv)
 # endif DBM
 
 		  case 'm':	/* send to me too */
-			MeToo++;
+			MeToo = TRUE;
 			break;
 
 		  case 'i':	/* don't let dot stop me */
-			IgnrDot++;
+			IgnrDot = TRUE;
 			break;
 
 		  case 'a':	/* arpanet format */
@@ -343,17 +344,18 @@ main(argc, argv)
 			break;
 
 # ifdef QUEUE
-		  case 'c':	/* don't connect to non-local mailers */
-			NoConnect = TRUE;
+		  case 'c':	/* connect to non-local mailers */
+			NoConnect = FALSE;
 			break;
 # endif QUEUE
 		
 		  case 's':	/* save From lines in headers */
-			SaveFrom++;
+			SaveFrom = TRUE;
 			break;
 
 		  case 'v':	/* give blow-by-blow description */
-			Verbose++;
+			Verbose = TRUE;
+			NoConnect = FALSE;
 			break;
 
 		  case 't':	/* read recipients from message */
