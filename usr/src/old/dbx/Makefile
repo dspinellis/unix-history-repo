@@ -1,4 +1,4 @@
-# The file "defs.h" is included by all.
+#	@(#)Makefile	5.21 (Berkeley) %G%
 # N.B.:
 #    My version of cerror automatically catches certain errors
 # such as out of memory, I/O error.  If you re-make this with
