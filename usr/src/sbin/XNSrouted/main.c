@@ -14,7 +14,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -105,6 +105,7 @@ main(argc, argv)
 #endif
 	openlog("XNSrouted", LOG_PID, LOG_DAEMON);
 
+	ns_anynet.s_net[0] = -1; ns_anynet.s_net[1] = -1;
 	addr.sns_family = AF_NS;
 	addr.sns_port = htons(IDPPORT_RIF);
 	s = getsocket(SOCK_DGRAM, 0, &addr);
@@ -128,7 +129,7 @@ main(argc, argv)
 		supplier = 0;
 	/* request the state of the world */
 	msg->rip_cmd = htons(RIPCMD_REQUEST);
-	xnnet(msg->rip_nets[0].rip_dst[0]) = htonl(DSTNETS_ALL);
+	msg->rip_nets[0].rip_dst = ns_anynet;
 	msg->rip_nets[0].rip_metric =  htons(HOPCNT_INFINITY);
 	toall(sendmsg);
 	signal(SIGALRM, timer);
@@ -161,9 +162,13 @@ process(fd)
 	    fprintf(ftrace," from %s\n", xns_ntoa(&idp->idp_sna));
 	}
 	
-	if (noteremoterequests && ns_netof(idp->idp_sna) && 
-	    ns_netof(idp->idp_sna) != ns_netof(idp->idp_dna)) {
-		syslog(LOG_ERR, "net of interface (%d) != net on ether (%d)!\n",  ns_netof(idp->idp_dna), ns_netof(idp->idp_sna));
+	if (noteremoterequests && !ns_neteqnn(idp->idp_sna.x_net, ns_zeronet)
+		&& !ns_neteq(idp->idp_sna, idp->idp_dna))
+	{
+		syslog(LOG_ERR,
+		       "net of interface (%s) != net on ether (%s)!\n",
+		       xns_nettoa(idp->idp_dna.x_net),
+		       xns_nettoa(idp->idp_sna.x_net));
 	}
 			
 	/* We get the IDP header in front of the RIF packet*/

@@ -9,7 +9,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,14 +19,14 @@ static char sccsid[] = "@(#)input.c	5.5 (Berkeley) %G%";
 
 struct sockaddr *
 xns_nettosa(net)
-u_short *net;
+union ns_net net;
 {
 	static struct sockaddr_ns sxn;
 	extern char ether_broadcast_addr[6];
 	
 	bzero(&sxn, sizeof (struct sockaddr_ns));
 	sxn.sns_family = AF_NS;
-	xnnet(sxn.sns_addr.x_net) = xnnet(net[0]);
+	sxn.sns_addr.x_net = net;
 	sxn.sns_addr.x_host = *(union ns_host *)ether_broadcast_addr;
 	return( (struct sockaddr *)&sxn);
 	
@@ -68,7 +68,7 @@ rip_input(from, size)
 			 * A single entry with rip_dst == DSTNETS_ALL and
 			 * metric ``infinity'' means ``all routes''.
 			 */
-			if (ntohl(xnnet(n->rip_dst[0])) == DSTNETS_ALL &&
+			if (ns_neteqnn(n->rip_dst, ns_anynet) &&
 		            ntohs(n->rip_metric) == HOPCNT_INFINITY &&
 			    size == 0) {
 				ifp = if_ifwithnet(from);
@@ -81,26 +81,28 @@ rip_input(from, size)
 			rt = rtlookup(xns_nettosa(n->rip_dst));
 			if (ftrace) {
 				fprintf(ftrace,
-					"specific request for %d",
-					ntohl(xnnet(n->rip_dst[0])));
+					"specific request for %s",
+					xns_nettoa(n->rip_dst));
 				fprintf(ftrace,
-					"yields route %x",
+					" yields route %x\n",
 					rt);
 			}
 			n->rip_metric = htons( rt == 0 ? HOPCNT_INFINITY :
 				min(rt->rt_metric+1, HOPCNT_INFINITY));
-			n++, newsize += sizeof (struct netinfo);
+			n++;
+		        newsize += sizeof (struct netinfo);
 		}
 		if (newsize > 0) {
 			msg->rip_cmd = htons(RIPCMD_RESPONSE);
 			newsize += sizeof (u_short);
 			/* should check for if with dstaddr(from) first */
 			(*afp->af_output)(0, from, newsize);
-			(ifp = if_ifwithnet(from));
+			ifp = if_ifwithnet(from);
+			TRACE_OUTPUT(ifp, from, newsize);
 			if (ftrace) {
 				fprintf(ftrace,
-					", request arriving on interface %x\n",
-					ifp);
+					"request arrived on interface %s\n",
+					ifp->int_name);
 			}
 		}
 		return;

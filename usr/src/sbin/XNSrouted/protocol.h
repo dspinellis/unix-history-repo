@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)protocol.h	5.3 (Berkeley) %G%";
+ *	@(#)protocol.h	5.4 (Berkeley) %G%";
  *
  * Includes material written at Cornell University by Bill Nesheim,
  * by permission of the author.
@@ -15,8 +15,8 @@
  */
 
 struct netinfo {
-	u_short  rip_dst[2];		/* destination net */
-	u_short	rip_metric;		/* cost of route */
+	union ns_net	rip_dst;		/* destination net */
+	u_short		rip_metric;		/* cost of route */
 };
 
 struct rip {
@@ -37,8 +37,11 @@ char *ripcmds[RIPCMD_MAX] =
 #endif
 
 #define	HOPCNT_INFINITY		16		/* per Xerox NS */
-#define 	DSTNETS_ALL		0xffffffff	/* per Xerox NS */
+#define	DSTNETS_ALL		0xffffffff	/* per Xerox NS */
 #define	MAXPACKETSIZE		512		/* max broadcast size */
+
+extern union ns_net ns_anynet;
+extern union ns_net ns_zeronet;
 
 /*
  * Timer values used in managing the routing table.
