@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-all hpux-as clean cleandir depend lint tags:
+all hpux-as clean cleandir depend lint obj tags:
 
 install:
 	install -c -o ${BINOWN} -o ${BINGRP} -m ${BINMODE} hpux-as \
