@@ -3,12 +3,13 @@ standard, and Frank Mullers paper on signal handelling presented
 at the Winter 93 USENIX conference.
 
 It is currently being designed and written by me, Chris Provenzano.
-All bug, comments, and questions can be sent me at either
-proven@athena.mit.edu or proven@sun-lamp.cs.berkeley.edu
-Please don't send questions, bugs or patches to any of the NetBSD mailing lists.
+All bug, comments, and questions can be sent me at proven@mit.edu.
+
+PLEASE, don't send questions, bugs or patches to any of the *BSD* mailing lists.
 
 Thanks goes to John Carr jfc@mit.edu for porting this to the IBM/RT,
-and for his bug reports and fixes.
+and for his bug reports and fixes, Greg Hudson for the testing he's
+done, and all the others.
 
 PORTING
 One of the goals of this user space implementation of pthreads is that it
@@ -33,8 +34,6 @@ files must be followed.
 
 pthread.h should be included first (if it is to be included).
 machdep.h should define size_t if the system doesn't define it already
-
-stdio.h should not be included. It is included in pthread.h.
 
 posix.h should be included last. This file is used to correct non
 POSIX features, after everything else has been defined.
@@ -80,7 +79,10 @@ mask must be checked afterwards or cleared in some way, after interrputs
 have been reenabled, this allows back to back interrupts, but should always
 avoid missing one.
 
+------------------------------------------------------------------------------
 Copyright (c) 1993 Chris Provenzano. All rights reserved.
-
 This product includes software developed by the Univeristy of California,
 Berkeley and its contributors.
+
+For further licencing and distribution restrictions see the file COPYRIGHT
+included in this directory.
