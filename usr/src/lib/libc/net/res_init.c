@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.7 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -21,10 +21,8 @@ static char sccsid[] = "@(#)res_init.c	6.6 (Berkeley) %G%";
  * non fully qualified domain names.
  */
 
-#ifdef CONFFILE
-char    *conffile = CONFFILE;
-#else
-char    *conffile = "/etc/resolv.conf";
+#ifndef	CONFFILE
+#define	CONFFILE	"/etc/resolv.conf"
 #endif
 
 /*
@@ -65,7 +63,7 @@ res_init()
     _res.nscount = 1;
     _res.defdname[0] = '\0';
 
-    if ((fp = fopen(conffile, "r")) != NULL) {
+    if ((fp = fopen(CONFFILE, "r")) != NULL) {
         /* read the config file */
         while (fgets(buf, sizeof(buf), fp) != NULL) {
             /* read default domain name */
