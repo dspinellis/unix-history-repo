@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.39		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.40		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.39		%G%);
+SCCSID(@(#)usersmtp.c	3.40		%G%);
 
 
 
@@ -321,6 +321,11 @@ reply(m)
 			extern char Arpa_TSyserr[];	/* conf.c */
 
 			message(Arpa_TSyserr, "reply: read error");
+# ifdef DEBUG
+			/* if debugging, pause so we can see state */
+			if (tTd(18, 100))
+				pause();
+# endif DEBUG
 # ifdef LOG
 			syslog(LOG_ERR, "%s", &MsgBuf[4]);
 # endif LOG
