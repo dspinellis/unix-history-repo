@@ -1,4 +1,4 @@
-/*	lpd.c	4.6	83/07/06	*/
+/*	lpd.c	4.7	83/07/17	*/
 /*
  * lpd -- line printer daemon.
  *
