@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)getpwent.c	5.6 (Berkeley) %G%";
 static DBM *_pw_db;
 static FILE *_pw_fp;
 static struct passwd _pw_passwd;
-static int _pw_fd, _pw_rewind = 1, _pw_set, _pw_stayopen;
+static int _pw_fd, _pw_rewind = 1, _pw_stayopen;
 static char _pw_flag, *_pw_file = _PATH_MASTERPASSWD;
 
 #define	MAXLINELENGTH	1024
@@ -158,7 +158,6 @@ setpwfile(file)
 	char *file;
 {
 	_pw_file = file;
-	_pw_set = 1;
 }
 
 static
