@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm.h	8.2 (Berkeley) %G%
+ *	@(#)vm.h	8.3 (Berkeley) %G%
  */
 
 #ifndef VM_H
@@ -30,10 +30,22 @@ typedef struct vm_page  *vm_page_t;
 struct pager_struct;
 typedef struct pager_struct *vm_pager_t;
 
+/*
+ *	MACH VM locking primitives mappings to kernel locking primitives.
+ */
+typedef struct atomic_lk	simple_lock_data_t;
+typedef struct atomic_lk	*simple_lock_t;
+typedef struct lock		lock_data_t;
+typedef struct lock		*lock_t;
+#define	simple_lock(l)		atomic_lock(l)
+#define	simple_lock_init(l)	atomic_lock_init(l)
+#define	simple_lock_try(l)	atomic_lock_try(l)
+#define	simple_unlock(l)	atomic_unlock(l)
+
 #include <sys/vmmeter.h>
 #include <sys/queue.h>
+#include <sys/lock.h>
 #include <vm/vm_param.h>
-#include <vm/lock.h>
 #include <vm/vm_prot.h>
 #include <vm/vm_inherit.h>
 #include <vm/vm_map.h>
