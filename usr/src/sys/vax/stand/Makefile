@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	7.12 (Berkeley) %G%
+#	@(#)Makefile	7.13 (Berkeley) %G%
 #
 DESTDIR=
 STAND=/stand
@@ -17,10 +17,18 @@ INCPATH=-I. -I../stand -I../h
 VPATH=	../stand:../vax
 DEFS=	${INCPATH} -DSTANDALONE -DCOMPAT_42
 MACH=	-DVAX8600 -DVAX780 -DVAX750 -DVAX730 -DVAX630
+
+# Collections of C options:
+#	COPTS	device drivers/assembler, not optimized
+#	SMOPTS	"small" versions for 7.5K bootxx programs
+#	730OPTS	"small" versions for 11/730-only versions
+#	CFLAGS	everything else
+
 COPTS=	${DEFS} ${MACH}
 CFLAGS=	-O ${DEFS} ${MACH}
 730OPTS=-O ${DEFS} -DVAX730
-SMOPTS=	-O ${DEFS} -DVAX750 -DVAX630
+SMOPTS=	${DEFS} -DSMALL -DVAX750 -DVAX630
+
 RELOC=	150000
 LIBSA=	libsa.a
 
@@ -32,6 +40,7 @@ SRCS=	autoconf.c boot.c bootxx.c cat.c copy.c dev.c drtest.c drtest.c \
 DUMMIES=confxx.c
 DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o qdcons.o qvcons.o \
 	rk.o rl.o tm.o tmscp.o ts.o up.o upmaptype.o uba.o uda.o ut.o
+SMOBJ=	bootxx.o sm_sys.o sm_autoconf.o 
 
 # These drivers don't have ecc correction and bad sector forwarding;
 # they are placed in the file system boot area for 750's.  If your
@@ -148,60 +157,65 @@ drtest: drtest.o srt0.o confhpup.o ${LIBSA}
 
 # getting booted from disc
 
-boothk: relsrt0.o bootxx.o confrk.o sm_sys.o sm_autoconf.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confrk.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
+boothk: relsrt0.o confrk.o ${SMOBJ} ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o confrk.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	strip a.out;dd if=a.out of=boothk ibs=32 skip=1;rm -f a.out
-	ls -l boothk
+	-rm -f $@
+	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
+	ls -l $@
 
-boothp: relsrt0.o bootxx.o confhp.o sm_hp.o sm_sys.o sm_autoconf.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confhp.o sm_hp.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
+boothp: relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	strip a.out;dd if=a.out of=boothp ibs=32 skip=1;rm -f a.out
-	ls -l boothp
+	-rm -f $@
+	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
+	ls -l $@
 
-bootup: relsrt0.o bootxx.o confup.o sm_up.o sm_sys.o sm_autoconf.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confup.o sm_up.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
+bootup: relsrt0.o confup.o sm_up.o ${SMOBJ} ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o confup.o sm_up.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	strip a.out;dd if=a.out of=bootup ibs=32 skip=1;rm -f a.out
-	ls -l bootup
+	-rm -f $@
+	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
+	ls -l $@
 
-bootra: relsrt0.o bootxx.o confra.o sm_sys.o sm_autoconf.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confra.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
+bootra: relsrt0.o confra.o ${SMOBJ} ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o confra.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	strip a.out;dd if=a.out of=bootra ibs=32 skip=1;rm -f a.out
-	ls -l bootra
+	-rm -f $@
+	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
+	ls -l $@
 
-bootrl: relsrt0.o bootxx.o confrl.o sm_sys.o sm_autoconf.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootxx.o confrl.o sm_sys.o sm_autoconf.o ${LIBSA} -lc
+bootrl: relsrt0.o confrl.o ${SMOBJ} ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o confrl.o ${SMOBJ} ${LIBSA} -lc
 	size a.out
-	strip a.out;dd if=a.out of=bootrl ibs=32 skip=1;rm -f a.out
-	ls -l bootrl
+	-rm -f $@
+	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
+	ls -l $@
 
 sm_hp.o: hp.o
 	rm -f sm_hp.c
 	-ln -s hp.c sm_hp.c
-	${CC} -S -DSMALL ${CFLAGS} sm_hp.c
+	${CC} -S ${SMOPTS} sm_hp.c
 	/lib/c2 -i sm_hp.s | as -o sm_hp.o
 	rm -f sm_hp.s sm_hp.c
 
 sm_up.o: up.o
 	rm -f sm_up.c
 	-ln -s up.c sm_up.c
-	${CC} -S -DSMALL ${CFLAGS} sm_up.c
+	${CC} -S ${SMOPTS} sm_up.c
 	/lib/c2 -i sm_up.s | as -o sm_up.o
 	rm -f sm_up.s sm_up.c
 
 sm_sys.o: sys.o
 	rm -f sm_sys.c
 	-ln -s sys.c sm_sys.c
-	${CC} -c -DSMALL ${CFLAGS} sm_sys.c
+	${CC} -c -O ${SMOPTS} sm_sys.c
 	rm -f sm_sys.c
 
 sm_autoconf.o: autoconf.o
 	rm -f sm_autoconf.c
 	-ln -s autoconf.c sm_autoconf.c
-	${CC} -c -DSMALL ${CFLAGS} sm_autoconf.c
+	${CC} -c -O ${SMOPTS} sm_autoconf.c
 	rm -f sm_autoconf.c
 
 confrk.o: confrk.c confxx.o
