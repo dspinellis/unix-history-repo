@@ -1,4 +1,4 @@
-/*	vm_machdep.c	1.8	87/03/13	*/
+/*	vm_machdep.c	1.9	87/04/06	*/
 
 #include "../machine/pte.h"
 
@@ -294,6 +294,15 @@ dkeyinval(p)
 
 /* 
  * Get a code key.
+ * Strategy: try each of the following in turn
+ * until a key is allocated.
+ *
+ * 1) Find an unreferenced key not yet in the cache.
+ *    If this fails, a code cache purge will be necessary.
+ * 2) Find an unreferenced key.  Mark all unreferenced keys
+ *    as available and purge the cache.
+ * 3) Free the keys from all processes not sharing keys.
+ * 4) Free the keys from all processes.
  */
 getcodekey()
 {
@@ -347,16 +356,17 @@ purge:
 
 	/*
 	 * All keys are marked as in the cache and in use.
-	 * Release all unshared keys.
+	 * Release all unshared keys, or, on second pass,
+	 * release all keys.
 	 */
 steal:
 	for (p = allproc; p; p = p->p_nxt)
 		if (p->p_ckey != 0 && (p->p_flag & SSYS) == 0) {
 			i = p->p_ckey;
 			if (ckey_cnt[i] == 1 || desparate) {
-				if (--ckey_cnt[i]) {
+				p->p_ckey = 0;
+				if (--ckey_cnt[i] == 0) {
 					freekey = i;
-					p->p_ckey = 0;
 					if (p->p_textp)
 						p->p_textp->x_ckey = 0;
 				}
@@ -378,9 +388,9 @@ steal:
  * General strategy:
  * 1) Try to find a data key that isn't in the cache. Allocate it.
  * 2) If all data keys are in the cache, find one which isn't
- *    allocated.  Mark all unallocated keys as not in cache and
- *    allocate this one.
- * 3) If all of them are allocated, free the all process' keys
+ *    allocated.  Mark all unallocated keys as not in cache,
+ *    purge the cache, and allocate this one.
+ * 3) If all of them are allocated, free all process' keys
  *    and let them reclaim then as they run.
  */
 getdatakey()
@@ -429,7 +439,7 @@ purge:
 	}
 
 	/*
-	 * Now, we have to take a code from someone.
+	 * Now, we have to take a key from someone.
 	 * May as well take them all, so we get them
 	 * from all of the idle procs.
 	 */
