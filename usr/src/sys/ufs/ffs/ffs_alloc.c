@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.38 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.39 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -446,9 +446,8 @@ ffs_blkpref(ip, lbn, indx, bap)
 	 * requested rotationally delayed by fs_rotdelay milliseconds.
 	 */
 	nextblk = bap[indx - 1] + fs->fs_frag;
-	if (indx > fs->fs_maxcontig &&
-	    bap[indx - fs->fs_maxcontig] + blkstofrags(fs, fs->fs_maxcontig)
-	    != nextblk)
+	if (indx < fs->fs_maxcontig || bap[indx - fs->fs_maxcontig] +
+	    blkstofrags(fs, fs->fs_maxcontig) != nextblk)
 		return (nextblk);
 	if (fs->fs_rotdelay != 0)
 		/*
