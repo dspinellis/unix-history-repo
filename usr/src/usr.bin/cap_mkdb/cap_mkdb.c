@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cap_mkdb.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cap_mkdb.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -224,7 +224,7 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: cap_mkdb [-f outfile] file1 [file2 ...]\n");
+	    "usage: cap_mkdb [-v] [-f outfile] file1 [file2 ...]\n");
 	exit(1);
 }
 
