@@ -1,5 +1,6 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
+NOOBJ=	noobj
 all learnlib clean cleandir depend lint tags:
 
 install:
