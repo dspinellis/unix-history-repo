@@ -1,12 +1,41 @@
+# msdos versus unix defines
+O	= .o
+PC_O	= .obj
+
+X	=
+PC_X	= .exe
+
 CC	= cc
+PC_CC	= cl
+
+MV	= mv
+PC_MV	= rename
+
+RM	= rm -f
+PC_RM= erase
+
+LINT_ARGS =
+PC_LINT_ARGS = -DLINT_ARGS
+
+DEBUG_FLAGS = -g
+PC_DEBUG_FLAGS = -Zi -Od
+
+AR	= ar
+C	=
+PC_AR	= lib
+PC_C	= +
+
+RANLIB	= ranlib
+PC_RANLIB = echo "Done with "
+
 PRINT	= print
 
-DEFINES = 
+DEFINES = ${LINT_ARGS}
 
 INCLUDES = -I.
 
 OPTIMIZE = -O
-OPTIMIZE = -g
+OPTIMIZE = ${DEBUG_FLAGS}
 
 CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 
@@ -36,8 +65,8 @@ ALLC =	globals.c
 SUBS = vaxbsubs.s
 SUBS = genbsubs.c
 
-SUBSO = vaxbsubs.o
-SUBSO = genbsubs.o
+SUBSO = vaxbsubs$O
+SUBSO = genbsubs$O
 
 ALLS = vaxbsubs.s
 
@@ -47,17 +76,24 @@ ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
 ALLS =
 
-ALLO	= globals.o ${SUBSO}
+ALLO	= globals$O ${SUBSO}
 
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
+.c.obj:
+	${CC} ${CFLAGS} -c $<
+
 generallib.a:	${ALLO}
-	ar cr generallib.a ${ALLO}
-	ranlib generallib.a
+	${RM} $@
+	for i in ${ALLO}; do (${AR} cr $@ $C $$i); done
+	${RANLIB} $@
 
 clean:
-	rm -f $(ALLO) errs makefile.bak generallib.a
+	for i in $(ALLO) errs makefile.bak generallib.a; \
+		do (${RM} $$i); done
+
+sccsclean:
 	-sccs clean
 	-sccs get makefile
 
@@ -83,7 +119,7 @@ lint:
 depend:
 	grep '^#include' ${ALLC} ${ALLH} | grep -v '<' | \
 	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/.o/' | \
+	    -e 's/\.c/$$O/' | \
 	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		       else rec = rec " " $$2 } } \
@@ -92,11 +128,12 @@ depend:
 	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
+	-rm -f makefile.bak
 	cp makefile makefile.bak
 	ed - makefile < eddep
 	rm eddep makedep
 
 # DO NOT DELETE THIS LINE
 
-globals.o: ../ctlr/hostctlr.h ../ctlr/oia.h ../ctlr/options.h ../ctlr/screen.h
-globals.o: globals.h ../general/general.h
+globals$O: ../ctlr/hostctlr.h ../ctlr/oia.h ../ctlr/options.h ../ctlr/screen.h
+globals$O: globals.h ../general/general.h
