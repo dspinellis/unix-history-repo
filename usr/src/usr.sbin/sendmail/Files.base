@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.28 (Berkeley) %G%
+#	@(#)Files.base	8.29 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -111,6 +111,7 @@ src/Makefiles/Makefile.SunOS.5.1
 src/Makefiles/Makefile.SunOS.5.2
 src/Makefiles/Makefile.SunOS.5.3
 src/Makefiles/Makefile.SunOS.5.4
+src/Makefiles/Makefile.SunOS.5.5
 src/Makefiles/Makefile.Titan
 src/Makefiles/Makefile.ULTRIX
 src/Makefiles/Makefile.UMAX
