@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.14.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -311,16 +311,22 @@ flusheol(buf, fp)
 	char *buf;
 	FILE *fp;
 {
-	char junkbuf[MAXLINE], *sfgets();
 	register char *p = buf;
+	bool printmsg = TRUE;
+	char junkbuf[MAXLINE];
+	extern char *sfgets();
 
-	while (strchr(p, '\n') == NULL) {
-		if (sfgets(junkbuf,MAXLINE,fp) == NULL)
-			return(FALSE);
+	while (strchr(p, '\n') == NULL)
+	{
+		if (printmsg)
+			usrerr("header line too long");
+		printmsg = FALSE;
+		if (sfgets(junkbuf, MAXLINE, fp) == NULL)
+			return (FALSE);
 		p = junkbuf;
 	}
 
-	return(TRUE);
+	return (TRUE);
 }
 /*
 **  TFERROR -- signal error on writing the temporary file.
