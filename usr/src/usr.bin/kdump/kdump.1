@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kdump.1	1.3 (Berkeley) %G%
+.\"     @(#)kdump.1	5.1 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KDUMP 1
@@ -12,69 +12,61 @@
 .Nd display kernel trace data
 .Sh SYNOPSIS
 .Nm kdump
-.Op Fl dnlTR
-.Op Fl f Ar trfile
-.Op Fl t Ar trstr
+.Op Fl dnlRT
+.Op Fl f Ar file
+.Op Fl m Ar maxdata
+.Op Fl t Op cnis
 .Sh DESCRIPTION
 .Nm Kdump
-displays kernel trace files produced with
+displays the kernel trace files produced with
 .Xr ktrace 1
-in a human readable format.
-Without the
-.Fl f
-flag,
-.Nm kdump
-reads the file
-.Sq Pa ktrace.out
-in the current
-directory.
+in human readable format.
+By default, the file ``ktrace.out'' in the current directory is displayed.
 .Pp
-Options:
+The options are as follows:
 .Tw Fl
 .Tp Fl d
 Display all numbers in decimal.
-.Tp Fl n
-Suppress ad hoc translations.  Normally
-.Nm kdump
-tries to decode many
-system calls into a more human readable format.  For example, ioctl
-values are replaced with the macro name and errno values are replaced
-with the
-.Li sys_errlist
-string.  Suppressing this feature yields a more consistent
-output format and is easily amenable to further processing.
-.Tp Fl l
-Loop reading end-of-file.
-.Tp Fl T
-Display absolute timestamps for each entry (seconds since epoch).
-.Tp Fl R
-Display relative timestamps (time since previous entry).
-.Tc Fl t
-.Ws
-.Ar trstr
-.Cx
-See
-.Fl t
-in
-.Xr ktrace 1 .
 .Tc Fl f
 .Ws
-.Ar trfile
+.Ar file
 .Cx
-See
-.Fl t
-in
-.Xr ktrace 1 .
+Display the specified file instead of ``ktrace.out''.
+.Tp Fl l
+Loop reading the trace file, once the end-of-file is reached, waiting for
+more data.
 .Tc Fl m
 .Ws
 .Ar maxdata
 .Cx
 Display at most
 .Ar maxdata
-bytes when decoding i/o.
+bytes when decoding I/O.
+.Tp Fl n
+Suppress ad hoc translations.
+Normally
+.Nm kdump
+tries to decode many system calls into a more human readable format.
+For example, ioctl values are replaced with the macro name and errno
+values are replaced with the
+.Li sys_errlist
+string.
+Suppressing this feature yields a more consistent output format and is
+easily amenable to further processing.
+.Tp Fl R
+Display relative timestamps (time since previous entry).
+.Tp Fl T
+Display absolute timestamps for each entry (seconds since epoch).
+.Tc Fl t
+.Ws
+.Ar cnis
+.Cx
+See the
+.Fl t
+option of
+.Xr ktrace 1 .
 .Tp
 .Sh SEE ALSO
 .Xr ktrace 1
-\- enable kernel process tracing.
 .Sh HISTORY
 4.4 BSD.
