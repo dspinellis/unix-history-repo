@@ -1,4 +1,4 @@
-/*	dkstat.h	3.2	%G%	*/
+/*	dkstat.h	4.1	%G%	*/
 
 /*
  * Instrumentation

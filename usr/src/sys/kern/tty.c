@@ -1,4 +1,4 @@
-/*	tty.c	3.20	%G%	*/
+/*	tty.c	4.1	%G%	*/
 
 /*
  * TTY subroutines common to more than one line discipline

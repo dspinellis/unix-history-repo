@@ -1,4 +1,4 @@
-/*	mba.c	3.6	%G%	*/
+/*	mba.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/buf.h"

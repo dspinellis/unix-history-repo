@@ -1,4 +1,4 @@
-/*	dinode.h	3.6	%G%	*/
+/*	dinode.h	4.1	%G%	*/
 
 /*
  * The I node is the focus of all

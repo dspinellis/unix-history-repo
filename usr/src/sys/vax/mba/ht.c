@@ -1,4 +1,4 @@
-/*	ht.c	3.6	%G%	*/
+/*	ht.c	4.1	%G%	*/
 
 #include "../conf/ht.h"
 #if NHT > 0
