@@ -8,13 +8,15 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)nullrelay.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)nullrelay.m4	8.2 (Berkeley) %G%')
 
 #
 #  This configuration applies only to relay-only hosts.  They send
 #  all mail to a hub without consideration of the address syntax
 #  or semantics, except for adding the hub qualification to the
 #  addresses.
+#
+#	This is based on a prototype done by Bryan Costales of ICSI.
 #
 
 # hub host (to which all mail is sent)
