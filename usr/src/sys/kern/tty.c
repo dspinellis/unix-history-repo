@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.3 (Berkeley) %G%
+ *	@(#)tty.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -107,6 +107,8 @@ struct	ttychars ttydefaults = {
 	CERASE,	CKILL,	CINTR,	CQUIT,	CSTART,	CSTOP,	CEOF,
 	CBRK,	CSUSP,	CDSUSP, CRPRNT, CFLUSH, CWERASE,CLNEXT
 };
+
+extern struct tty *constty;		/* temporary virtual console */
 
 ttychars(tp)
 	struct tty *tp;
@@ -243,6 +245,7 @@ ttioctl(tp, com, data, flag)
 	extern int nldisp;
 	int s;
 	register int newflags;
+
 
 	/*
 	 * If the ioctl involves modification,
@@ -504,6 +507,19 @@ ttioctl(tp, com, data, flag)
 		*(struct winsize *)data = tp->t_winsize;
 		break;
 
+	case TIOCCONS:
+		if (*(int *)data) {
+			if (constty != NULL)
+				return (EBUSY);
+#ifndef	UCONSOLE
+			if (!suser())
+				return (EPERM);
+#endif
+			constty = tp;
+		} else if (tp == constty)
+			constty == NULL;
+		break;
+
 	default:
 		return (-1);
 	}
@@ -607,6 +623,8 @@ ttyclose(tp)
 	register struct tty *tp;
 {
 
+	if (constty == tp)
+		constty = NULL;
 	ttyflush(tp, FREAD|FWRITE);
 	tp->t_pgrp = 0;
 	tp->t_state = 0;
