@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.18	83/05/12	*/
+/*	raw_ip.c	4.19	83/06/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -8,8 +8,8 @@
 #include "../h/errno.h"
 
 #include "../net/if.h"
-#include "../net/raw_cb.h"
 #include "../net/route.h"
+#include "../net/raw_cb.h"
 
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -20,9 +20,9 @@
  * Raw interface to IP protocol.
  */
 
-static struct sockaddr_in ripdst = { AF_INET };
-static struct sockaddr_in ripsrc = { AF_INET };
-static struct sockproto ripproto = { PF_INET };
+struct	sockaddr_in ripdst = { AF_INET };
+struct	sockaddr_in ripsrc = { AF_INET };
+struct	sockproto ripproto = { PF_INET };
 /*
  * Setup generic address and protocol structures
  * for raw_input routine, then pass them along with
@@ -86,7 +86,7 @@ rip_output(m0, so)
 		ip->ip_src.s_addr = 0;
 	ip->ip_dst = ((struct sockaddr_in *)&rp->rcb_faddr)->sin_addr;
 	ip->ip_ttl = MAXTTL;
-	return (ip_output(m, (struct mbuf *)0, (struct route *)0, 
+	return (ip_output(m, (struct mbuf *)0, &rp->rcb_route, 
 	   IP_ROUTETOIF|IP_ALLOWBROADCAST));
 bad:
 	m_freem(m);
