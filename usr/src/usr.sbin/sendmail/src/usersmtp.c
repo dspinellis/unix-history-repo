@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.27 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.28 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.27 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.28 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -291,7 +291,7 @@ helo_options(line, firstline, m, mci, e)
 	}
 	else if (strcasecmp(line, "expn") == 0)
 		mci->mci_flags |= MCIF_EXPN;
-	else if (strcasecmp(line, "x-dsn-0") == 0)
+	else if (strcasecmp(line, "x-dsn-1") == 0)
 		mci->mci_flags |= MCIF_DSN;
 }
 /*
@@ -355,10 +355,18 @@ smtpmailfrom(m, mci, e)
 		return EX_DATAERR;
 	}
 
-	if (e->e_envid != NULL && bitset(MCIF_DSN, mci->mci_flags))
+	if (bitset(MCIF_DSN, mci->mci_flags))
 	{
-		strcat(optbuf, " ENVID=");
-		strcat(optbuf, e->e_envid);
+		if (e->e_envid != NULL)
+		{
+			strcat(optbuf, " ENVID=");
+			strcat(optbuf, e->e_envid);
+		}
+		if (e->e_omts != NULL)
+		{
+			strcat(optbuf, " OMTS=");
+			strcat(optbuf, e->e_omts);
+		}
 	}
 
 	/*
@@ -465,28 +473,38 @@ smtprcpt(to, m, mci, e)
 	strcpy(optbuf, "");
 	if (bitset(MCIF_DSN, mci->mci_flags))
 	{
+		bool firstone = TRUE;
+
 		strcat(optbuf, " NOTIFY=");
 		if (bitset(QPINGONFAILURE, to->q_flags))
 		{
-			if (bitset(QPINGONSUCCESS, to->q_flags))
-				strcat(optbuf, "ALWAYS");
-			else
-				strcat(optbuf, "FAILURE");
+			strcat(optbuf, "FAILURE");
+			firstone = FALSE;
 		}
-		else
+		if (bitset(QPINGONSUCCESS, to->q_flags))
 		{
-			if (bitset(QPINGONSUCCESS, to->q_flags))
-				strcat(optbuf, "SUCCESS");
-			else
-				strcat(optbuf, "NEVER");
+			if (firstone)
+				strcat(optbuf, ",");
+			strcat(optbuf, "SUCCESS");
+			firstone = FALSE;
 		}
-		if (bitset(QHASRETPARAM, to->q_flags))
+		if (bitset(QPINGONDELAY, to->q_flags))
+		{
+			if (firstone)
+				strcat(optbuf, ",");
+			strcat(optbuf, "DELAY");
+			firstone = FALSE;
+		}
+		if (firstone)
+			strcat(optbuf, "NEVER");
+
+		if (bitset(QHAS_RET_PARAM, to->q_flags))
 		{
 			strcat(optbuf, " RET=");
-			if (bitset(QNOBODYRETURN, to->q_flags))
-				strcat(optbuf, "NO");
+			if (bitset(QRET_HDRS, to->q_flags))
+				strcat(optbuf, "HDRS");
 			else
-				strcat(optbuf, "YES");
+				strcat(optbuf, "FULL");
 		}
 	}
 	else if (bitset(QPINGONSUCCESS, to->q_flags))

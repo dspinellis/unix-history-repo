@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.46 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.47 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.46 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.47 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -452,6 +452,15 @@ smtp(e)
 					}
 					e->e_envid = newstr(vp);
 				}
+				else if (strcasecmp(kp, "omts") == 0)
+				{
+					if (vp == NULL)
+					{
+						usrerr("501 OMTS requires a value");
+						/* NOTREACHED */
+					}
+					e->e_omts = newstr(vp);
+				}
 				else
 				{
 					usrerr("501 %s parameter unrecognized", kp);
@@ -803,6 +812,87 @@ skipword(p, w)
 		goto syntax;
 
 	return (p);
+}
+/*
+**  RCPT_ESMTP_ARGS -- process ESMTP arguments from RCPT line
+**
+**	Parameters:
+**		a -- the address corresponding to the To: parameter.
+**		kp -- the parameter key.
+**		vp -- the value of that parameter.
+**		e -- the envelope.
+**
+**	Returns:
+**		none.
+*/
+
+rcpt_esmtp_args(a, kp, vp, e)
+	ADDRESS *a;
+	char *kp;
+	char *vp;
+	ENVELOPE *e;
+{
+	if (strcasecmp(kp, "notify") == 0)
+	{
+		char *p;
+
+		if (vp == NULL)
+		{
+			usrerr("501 NOTIFY requires a value");
+			/* NOTREACHED */
+		}
+		a->q_flags &= ~(QPINGONSUCCESS|QPINGONFAILURE|QPINGONDELAY);
+		if (strcasecmp(vp, "never") == 0)
+			return;
+		for (p = vp; p != NULL; vp = p)
+		{
+			p = strchr(p, ',');
+			if (p != NULL)
+				*p++ = '\0';
+			if (strcasecmp(vp, "success") == 0)
+				a->q_flags |= QPINGONSUCCESS;
+			else if (strcasecmp(vp, "failure") == 0)
+				a->q_flags |= QPINGONFAILURE;
+			else if (strcasecmp(vp, "delay") == 0)
+				a->q_flags |= QPINGONDELAY;
+			else
+			{
+				usrerr("501 Bad argument \"%s\"  to NOTIFY",
+					vp);
+				/* NOTREACHED */
+			}
+		}
+	}
+	else if (strcasecmp(kp, "ret") == 0)
+	{
+		if (vp == NULL)
+		{
+			usrerr("501 RET requires a value");
+			/* NOTREACHED */
+		}
+		a->q_flags |= QHAS_RET_PARAM;
+		if (strcasecmp(vp, "hdrs") == 0)
+			a->q_flags |= QRET_HDRS;
+		else if (strcasecmp(vp, "full") != 0)
+		{
+			usrerr("501 Bad argument \"%s\" to RET", vp);
+			/* NOTREACHED */
+		}
+	}
+	else if (strcasecmp(kp, "orcpt") == 0)
+	{
+		if (vp == NULL)
+		{
+			usrerr("501 ORCPT requires a value");
+			/* NOTREACHED */
+		}
+		a->q_orcpt = newstr(vp);
+	}
+	else
+	{
+		usrerr("501 %s parameter unrecognized", kp);
+		/* NOTREACHED */
+	}
 }
 /*
 **  PRINTVRFYADDR -- print an entry in the verify queue

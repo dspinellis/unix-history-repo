@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -135,18 +135,22 @@ dropenvelope(e)
 		{
 			success_return = TRUE;
 		}
+		else if (bitset(QRELAYED, q->q_flags))
+		{
+			success_return = TRUE;
+		}
 		else
 			continue;
 
 		/* common code for error returns and return receipts */
 
 		/* test for returning the body */
-		if (!bitset(QHASRETPARAM, q->q_flags))
+		if (!bitset(QHAS_RET_PARAM, q->q_flags))
 		{
 			if (!bitset(EF_NORETURN, e->e_flags))
 				return_yes = TRUE;
 		}
-		else if (bitset(QNOBODYRETURN, q->q_flags))
+		else if (bitset(QRET_HDRS, q->q_flags))
 			return_no = TRUE;
 		else
 			return_yes = TRUE;
@@ -182,7 +186,19 @@ dropenvelope(e)
 	else if (TimeOuts.to_q_warning[e->e_timeoutclass] > 0 &&
 	    curtime() > e->e_ctime + TimeOuts.to_q_warning[e->e_timeoutclass])
 	{
-		if (!bitset(EF_WARNING|EF_RESPONSE, e->e_flags) &&
+		bool delay_return = FALSE;
+
+		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			if (bitset(QQUEUEUP, q->q_flags) &&
+			    bitset(QPINGONDELAY, q->q_flags))
+			{
+				q->q_flags |= QREPORT;
+				delay_return = TRUE;
+			}
+		}
+		if (delay_return &&
+		    !bitset(EF_WARNING|EF_RESPONSE, e->e_flags) &&
 		    e->e_class >= 0 &&
 		    strcmp(e->e_from.q_paddr, "<>") != 0 &&
 		    strncasecmp(e->e_from.q_paddr, "owner-", 6) != 0 &&
@@ -204,11 +220,6 @@ dropenvelope(e)
 			pintvl(TimeOuts.to_q_warning[e->e_timeoutclass], FALSE));
 		fprintf(e->e_xfp, "Will keep trying until message is %s old\n",
 			pintvl(TimeOuts.to_q_return[e->e_timeoutclass], FALSE));
-		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
-		{
-			if (bitset(QQUEUEUP, q->q_flags))
-				q->q_flags |= QREPORT;
-		}
 	}
 
 	if (tTd(50, 2))
@@ -231,7 +242,7 @@ dropenvelope(e)
 
 		e->e_flags |= EF_SENDRECEIPT;
 		(void) sendtolist(e->e_receiptto, NULLADDR, &rlist, e);
-		(void) returntosender("Return receipt", rlist, FALSE, e);
+		(void) returntosender("Return receipt", rlist, return_yes, e);
 	}
 	e->e_flags &= ~EF_SENDRECEIPT;
 

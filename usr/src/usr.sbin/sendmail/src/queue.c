@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.53 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.54 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.53 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.54 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -272,9 +272,9 @@ queueup(e, queueall, announce)
 				putc('F', tfp);
 			if (bitset(QPINGONDELAY, q->q_flags))
 				putc('D', tfp);
-			if (bitset(QHASRETPARAM, q->q_flags))
+			if (bitset(QHAS_RET_PARAM, q->q_flags))
 			{
-				if (bitset(QNOBODYRETURN, q->q_flags))
+				if (bitset(QRET_HDRS, q->q_flags))
 					putc('N', tfp);
 				else
 					putc('B', tfp);
