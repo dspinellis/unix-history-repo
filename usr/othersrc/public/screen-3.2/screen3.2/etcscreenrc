@@ -1,0 +1,94 @@
+# This is a global screenrc file
+# Install this file as /usr/local/etc/screenrc. See config.h
+#
+# Flaws of termcap and standard settings are done here.
+# Note: This file should not be shared between different hosts.
+#       The 'termcap' lines are written in termcap syntax.
+#       The syntax for a terminfo based host is slightly different.
+#
+echo "-----------------------------------------------------------------------"
+echo ""
+echo "     This is iScreen version 3.2  -- Enjoy"
+echo ""
+echo "            Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)"
+echo "-----------------------------------------------------------------------"
+sleep 2
+
+# startup_message off
+
+#flow on # will force iScreen to process ^S/^Q
+
+set vbell on
+set login on
+set autodetach off
+
+# 'vbell on' without the prepended 'set' keyword will change the default for 
+# subsequently opened windows. With the 'set' keyword we would change
+# the setting of the currently active window.
+vbell on
+set vbell_msg "   Wuff,  ----  Wuff!!  "
+
+# all termcap entries are now duplicated as terminfo entries.
+# only difference should be the slightly modified syntax, and check for
+# terminfo entries, that are already corected in the database.
+# 
+# G0 	we have a SEMI-GRAPHICS-CHARACTER-MODE
+# WS	this sequence resizes our window.
+# cs    this sequence changes the scrollregion
+# hs@	we have no hardware statusline. iScreen will only believe that
+#       there is a hardware status line if hs,ts,fs,ds are all set.
+# ts    to statusline
+# fs    from statusline
+# ds    delete statusline
+# al    add one line
+# AL    add multiple lines
+# dl    delete one line
+# DL    delete multiple lines
+# ic    insert one char (space)
+# IC    insert multiple chars
+
+termcap  facit|vt100|xterm LP:G0
+terminfo facit|vt100|xterm LP:G0
+
+#the vt100 description does not mention "dl". *sigh*
+termcap  vt100 dl=5\E[M
+terminfo vt100 dl=5\E[M
+
+#facit's "al" / "dl"  are buggy if the current / last line
+#contain attributes...
+termcap  facit al=\E[L\E[K:AL@:dl@:DL@:cs=\E[%i%d;%dr:ic@
+terminfo facit al=\E[L\E[K:AL@:dl@:DL@:cs=\E[%i%p1%d;%p2%dr:ic@
+
+#make sun termcap/info better
+termcap  sun up=^K:AL=\E[%dL:DL=\E[%dM:UP=\E[%dA:DO=\E[%dB:LE=\E[%dD:RI=\E[%dC:IC=\E[%d@:WS=1000\E[8;%d;%dt
+terminfo sun up=^K:AL=\E[%p1%dL:DL=\E[%p1%dM:UP=\E[%p1%dA:DO=\E[%p1%dB:LE=\E[%p1%dD:RI=\E[%p1%dC:IC=\E[%p1%d@:WS=\E[8;%p1%d;%p2%dt$<1000>
+
+#xterm understands both im/ic and doesn't have a status line.
+#Note: Do not specify im and ic in the real termcap/info file as
+#some programs (e.g. vi) will not work anymore.
+termcap  xterm|fptwist hs@:cs=\E[%i%d;%dr:im=\E[4h:ei=\E[4l
+terminfo xterm|fptwist hs@:cs=\E[%i%p1%d;%p2%dr:im=\E[4h:ei=\E[4l
+
+#xterms is xterm with status line in title bar
+termcap  xterms hs:ts=\E]0;:fs=\007:ds=\E]0;iScreen\007:cs=\E[%i%d;%dr:LP:G0:im=\E[4h:ei=\E[4l
+terminfo xterms hs:ts=\E]0;:fs=\007:ds=\E]0;iScreen\007:cs=\E[%i%p1%d;%p2%dr:LP:G0:im=\E[4h:ei=\E[4l
+
+#make hp700 termcap/info better
+termcap  hp700 Z0=\E[?3h:Z1=\E[?3l:hs:ts=\E[62"p\E[0$~\E[2$~\E[1$}:fs=\E[0}\E[61"p:ds=\E[62"p\E[1$~\E[61"p:ic@
+terminfo hp700 Z0=\E[?3h:Z1=\E[?3l:hs:ts=\E[62"p\E[0$~\E[2$~\E[1$}:fs=\E[0}\E[61"p:ds=\E[62"p\E[1$~\E[61"p:ic@
+
+#wyse-75-42 must have flow control (xo = "terminal uses xon/xoff")
+#essential to have it here, as this is a slow terminal.
+termcap wy75-42 xo
+terminfo wy75-42 xo
+
+#remove some stupid / dangerous key bindings
+bind '^k'
+#bind 'L'
+bind '^\'
+#make them better
+bind '\\' quit
+bind 'K' kill
+bind 'I' set login on
+bind 'O' set login off
+bind '}' history
