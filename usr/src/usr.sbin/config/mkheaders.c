@@ -1,86 +1,161 @@
 /*
- * mkheaders.c	1.2	81/02/24
- * Make header files for EVERYTHING
+ *	mkheaders.c	1.3	81/02/25
+ * Make all the .h files for the optional entries
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include "config.h"
-#include "y.tab.h"
 
-
+/*
+ * This macro reads a line of the form
+ *	#define STRING <number>
+ * and assigns STRING to wd and <number> to count
+ */
+#define rdln(f, wd, count) {\
+	register char *iwd;\
+	if ((wd = get_word(f)) != NULL && wd != EOF)\
+	    if ((wd = get_word(f)) != NULL && wd != EOF) {\
+		iwd = ns(wd);\
+		if ((wd = get_word(f)) != NULL && wd != EOF) {\
+		    count = atoi(wd);\
+		    wd = get_word(f);\
+		    wd = iwd;\
+		}\
+	    }\
+	}
 
 headers()
 {
-    register struct device *ip;
-    register struct file_list *tp;
+    register struct file_list *fl;
+
+    for (fl = ftab; fl != NULL; fl = fl->f_next)
+	if (fl->f_needs != NULL)
+	    do_count(fl->f_needs, fl->f_needs, TRUE);
+}
+
+/*
+ * do_count:
+ *	Count all the devices of a certain type and recurse to count
+ *	whatever the device is connected to
+ */
+
+do_count(dev, hname, search)
+register char *dev, *hname;
+bool search;
+{
+    register struct device *dp, *mp;
     register int count;
 
-    for (tp = ftab; tp != NULL; tp = tp->f_next)
-    {
-	if (tp->f_needs == NULL)
-	    continue;
-	count = 0;
-	for (ip = dtab; ip != NULL; ip = ip->d_next)
+    for (count = 0,dp = dtab; dp != NULL; dp = dp->d_next)
+	if (dp->d_unit != -1 && eq(dp->d_name, dev))
 	{
-	    if (eq(tp->f_needs, ip->d_name))
-		count++;
+	    count++;
+	    if (search)
+	    {
+		mp = dp->d_conn;
+		if (mp != NULL && mp != -1 && mp->d_conn != -1)
+		{
+		    do_count(mp->d_name, hname, FALSE);
+		    search = FALSE;
+		}
+	    }
 	}
-	do_header(tp->f_needs, count);
-    }
+    do_header(dev, hname, count);
 }
 
-/*
- * tomacro
- *	Convert a two character name to a NXX
- */
-
-tomacro(nm)
-register char *nm;
-{
-    static char ret[80];
-    register char *cp;
-
-    cp = ret;
-    *cp++ = 'N';
-    while(*nm)
-	*cp++ = toupper(*nm++);
-    *cp++ = '\0';
-    return ret;
-}
-
-/*
- * do_header:
- *	See if a header file needs to be changed
- */
-
-do_header(dev, count)
-char *dev;
+do_header(dev, hname, count)
+char *dev, *hname;
 int count;
 {
-    register FILE *f;
-    char file[80];
-    register char *w;
-    register int oldcount;
+    char *file, *name, *inw, *toheader(), *tomacro();
+    struct file_list *fl, *fl_head;
+    FILE *inf, *outf;
+    int inc, oldcount;
 
-    strcpy(file, "_unix/");
-    strcat(file, dev);
-    strcat(file, ".h");
+    file = toheader(hname);
+    name = tomacro(dev);
+    inf = fopen(file, "r");
     oldcount = -1;
-    if ((f = fopen(file, "r")) != NULL)
+    if (inf == NULL)
     {
-	/*
-	 * Throw out the #define and the NXX
-	 */
-	if ((w = get_word(f)) != EOF && w != NULL)
-	    if ((w = get_word(f)) == EOF && w != NULL)
-		oldcount = atoi(get_word(f));
-	fclose(f);
+	outf = fopen(file, "w");
+	fprintf(outf, "#define %s %d\n", name, count);
+	fclose(outf);
+	return;
     }
-    if (oldcount != count)
+    fl_head = NULL;
+    while(1)
     {
-	f = fopen(file, "w");
-	fprintf(f, "#define %s %d\n", tomacro(dev), count);
-	fclose(f);
+	rdln(inf, inw, inc);
+	if (inw == EOF)
+	    break;
+	if (eq(inw, name))
+	{
+	    oldcount = inc;
+	    inc = count;
+	}
+	fl = (struct file_list *) malloc(sizeof *fl);
+	fl->f_fn = inw;
+	fl->f_type = inc;
+	fl->f_next = fl_head;
+	fl_head = fl;
     }
+    fclose(inf);
+    if (count == oldcount)
+    {
+	for (fl = fl_head; fl != NULL; fl = fl->f_next)
+	    free(fl);
+	return;
+    }
+    if (oldcount == -1)
+    {
+	fl = (struct file_list *) malloc(sizeof *fl);
+	fl->f_fn = name;
+	fl->f_type = count;
+	fl->f_next = fl_head;
+	fl_head = fl;
+    }
+    outf = fopen(file, "w");
+    for (fl = fl_head; fl != NULL; fl = fl->f_next)
+    {
+	fprintf(outf, "#define %s %d\n", fl->f_fn, fl->f_type);
+	free(fl);
+    }
+    fclose(outf);
+}
+
+/*
+ * toheader:
+ *	Convert a dev name to a .h file nae
+ */
+
+char *toheader(dev)
+char *dev;
+{
+    static char hbuf[80];
+
+    strcpy(hbuf, PREFIX);
+    strcat(hbuf, dev);
+    strcat(hbuf, ".h");
+    return hbuf;
+}
+
+/*
+ * tomacro:
+ *	Convert a dev name to a macro name
+ */
+
+char *tomacro(dev)
+register char *dev;
+{
+    static char mbuf[20];
+    register char *cp;
+
+    cp = mbuf;
+    *cp++ = 'N';
+    while(*dev)
+	*cp++ = toupper(*dev++);
+    *cp++ = '\0';
+    return mbuf;
 }
