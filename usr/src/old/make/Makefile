@@ -1,52 +1,39 @@
-# Description file for the Make command
-# Makefile 4.5 87/05/05
-
-OBJECTS=ident.o main.o doname.o misc.o files.o dosys.o gram.o 
-SOURCES=ident.c main.c doname.c misc.c files.c dosys.c gram.c
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.6	(Berkeley)	%G%
+#
 CFLAGS=	-O -DASCARCH -I. -I/usr/src/bin/make 
-LIBES= 
-LINT=	lint -chapx
+LIBC=	/lib/libc.a
+SRCS=	ident.c main.c doname.c misc.c files.c dosys.c gram.c
+OBJS=	ident.o main.o doname.o misc.o files.o dosys.o gram.o
 
 all:	make
 
-make:	${OBJECTS}
-	${CC} -o $@ ${CFLAGS} ${OBJECTS} ${LIBES}
+make:	${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-${OBJECTS}: defs
+clean: FRC
+	rm -f ${OBJS} core make gram.c
 
-clean:
-	rm -f ${OBJECTS} gram.c make a.out errs core
+depend: gram.c FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-install:
-	install -s make ${DESTDIR}/bin/make
+install: FRC
+	install -s -o bin -g bin -m 755 make ${DESTDIR}/bin/make
 
-lint: FRC
-	${LINT} ${SOURCES}
-	rm -f gram.c
+lint: gram.c FRC
+	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
-	ctags ${SOURCES}
+tags: gram.c FRC
+	ctags ${SRCS}
 
 FRC:
 
-depend: ${SOURCES}
-	cc -M ${CFLAGS} ${SOURCES} | sed -e 's, ./, ,g' | \
-	    awk ' { if ($$1 != prev) \
-		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >makedep
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
-
-# DO NOT DELETE THIS LINE -- make depend uses it
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
 ident.o: ident.c
 main.o: main.c defs /usr/include/stdio.h /usr/include/ctype.h
@@ -73,6 +60,5 @@ dosys.o: /usr/include/sys/stat.h
 gram.o: gram.c defs /usr/include/stdio.h /usr/include/ctype.h
 gram.o: /usr/include/sys/param.h /usr/include/sys/types.h /usr/include/signal.h
 gram.o: /usr/include/machine/machparam.h /usr/include/sys/dir.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
