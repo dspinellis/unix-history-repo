@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)shar.sh	5.2 (Berkeley) %G%
+#	@(#)shar.sh	5.3 (Berkeley) %G%
 #
 
 if [ $# -eq 0 ]; then
@@ -34,7 +34,7 @@ for i
 do
 	if [ -d $i ]; then
 		echo "echo c - $i"
-		echo "mkdir $i > /dev/null 2>&1"
+		echo "mkdir -p $i > /dev/null 2>&1"
 	else
 		echo "echo x - $i"
 		echo "sed 's/^X//' >$i << 'END-of-$i'"
