@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)udp_usrreq.c	7.13 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -187,13 +187,40 @@ udp_ctlinput(cmd, sa, ip)
 		in_pcbnotify(&udb, sa, 0, zeroin_addr, 0, cmd, udp_notify);
 }
 
-udp_output(inp, m)
+udp_output(inp, m, addr, control)
 	register struct inpcb *inp;
 	register struct mbuf *m;
+	struct mbuf *addr, *control;
 {
 	register struct udpiphdr *ui;
 	register int len = m->m_pkthdr.len;
+	struct in_addr laddr;
+	int s, error = 0;
 
+	if (control)
+		m_freem(control);		/* XXX */
+
+	if (addr) {
+		laddr = inp->inp_laddr;
+		if (inp->inp_faddr.s_addr != INADDR_ANY) {
+			error = EISCONN;
+			goto release;
+		}
+		/*
+		 * Must block input while temporarily connected.
+		 */
+		s = splnet();
+		error = in_pcbconnect(inp, addr);
+		if (error) {
+			splx(s);
+			goto release;
+		}
+	} else {
+		if (inp->inp_faddr.s_addr == INADDR_ANY) {
+			error = ENOTCONN;
+			goto release;
+		}
+	}
 	/*
 	 * Calculate data length and get a mbuf
 	 * for UDP and IP headers.
@@ -226,8 +253,19 @@ udp_output(inp, m)
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = udp_ttl;
 	udpstat.udps_opackets++;
-	return (ip_output(m, inp->inp_options, &inp->inp_route,
-	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST)));
+	error = ip_output(m, inp->inp_options, &inp->inp_route,
+	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST));
+
+	if (addr) {
+		in_pcbdisconnect(inp);
+		inp->inp_laddr = laddr;
+		splx(s);
+	}
+	return (error);
+
+release:
+	m_freem(m);
+	return (error);
 }
 
 u_long	udp_sendspace = 9216;		/* really max datagram size */
@@ -235,16 +273,16 @@ u_long	udp_recvspace = 40 * (1024 + sizeof(struct sockaddr_in));
 					/* 40 1K datagrams */
 
 /*ARGSUSED*/
-udp_usrreq(so, req, m, nam, control)
+udp_usrreq(so, req, m, addr, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *control;
+	struct mbuf *m, *addr, *control;
 {
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
 
 	if (req == PRU_CONTROL)
-		return (in_control(so, (int)m, (caddr_t)nam,
+		return (in_control(so, (int)m, (caddr_t)addr,
 			(struct ifnet *)control));
 	if (inp == NULL && req != PRU_ATTACH) {
 		error = EINVAL;
@@ -270,7 +308,7 @@ udp_usrreq(so, req, m, nam, control)
 		break;
 
 	case PRU_BIND:
-		error = in_pcbbind(inp, nam);
+		error = in_pcbbind(inp, addr);
 		break;
 
 	case PRU_LISTEN:
@@ -282,7 +320,7 @@ udp_usrreq(so, req, m, nam, control)
 			error = EISCONN;
 			break;
 		}
-		error = in_pcbconnect(inp, nam);
+		error = in_pcbconnect(inp, addr);
 		if (error == 0)
 			soisconnected(so);
 		break;
@@ -309,39 +347,10 @@ udp_usrreq(so, req, m, nam, control)
 		socantsendmore(so);
 		break;
 
-	case PRU_SEND: {
-		struct in_addr laddr;
-		int s;
-
-		if (nam) {
-			laddr = inp->inp_laddr;
-			if (inp->inp_faddr.s_addr != INADDR_ANY) {
-				error = EISCONN;
-				break;
-			}
-			/*
-			 * Must block input while temporarily connected.
-			 */
-			s = splnet();
-			error = in_pcbconnect(inp, nam);
-			if (error) {
-				splx(s);
-				break;
-			}
-		} else {
-			if (inp->inp_faddr.s_addr == INADDR_ANY) {
-				error = ENOTCONN;
-				break;
-			}
-		}
-		error = udp_output(inp, m);
+	case PRU_SEND:
+		error = udp_output(inp, m, addr, control);
 		m = NULL;
-		if (nam) {
-			in_pcbdisconnect(inp);
-			inp->inp_laddr = laddr;
-			splx(s);
-		}
-		}
+		control = NULL;
 		break;
 
 	case PRU_ABORT:
@@ -350,11 +359,11 @@ udp_usrreq(so, req, m, nam, control)
 		break;
 
 	case PRU_SOCKADDR:
-		in_setsockaddr(inp, nam);
+		in_setsockaddr(inp, addr);
 		break;
 
 	case PRU_PEERADDR:
-		in_setpeeraddr(inp, nam);
+		in_setpeeraddr(inp, addr);
 		break;
 
 	case PRU_SENSE:
@@ -379,7 +388,11 @@ udp_usrreq(so, req, m, nam, control)
 		panic("udp_usrreq");
 	}
 release:
-	if (m != NULL)
+	if (control) {
+		printf("udp control data unexpectedly retained\n");
+		m_freem(control);
+	}
+	if (m)
 		m_freem(m);
 	return (error);
 }
