@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -92,7 +92,7 @@ again:
 				continue;
 			if (rt->rt_dst.sa_family != dst->sa_family)
 				continue;
-			if ((*sendsubnet)(&rt->rt_dst, dst) == 0)
+			if ((*sendsubnet)(rt, dst) == 0)
 				continue;
 		}
 		size = (char *)n - packet;

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -197,7 +197,7 @@ addrouteforif(ifp)
 			return;
 		rtadd(dst, &ifp->int_addr, ifp->int_metric,
 		    (ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE) |
-			RTS_INTERNAL));
+			RTS_INTERNAL | RTS_SUBNET));
 	}
 }
 
@@ -220,7 +220,7 @@ gwkludge()
 	FILE *fp;
 	char *type, *dname, *gname, *qual, buf[BUFSIZ];
 	struct interface *ifp;
-	int metric;
+	int metric, n;
 	struct rt_entry route;
 
 	fp = fopen("/etc/gateways", "r");
@@ -238,7 +238,7 @@ gwkludge()
 	fscanf((fp), "%s %s gateway %s metric %d %s\n", \
 		type, dname, gname, &metric, qual)
 	for (;;) {
-		if (readentry(fp) == EOF)
+		if ((n = readentry(fp)) == EOF)
 			break;
 		if (!getnetorhostname(type, dname, &dst))
 			continue;
@@ -271,6 +271,7 @@ gwkludge()
 			 * with something else.
 			 */
 			rtadd(&dst, &gate, metric, RTS_EXTERNAL|RTS_PASSIVE);
+			continue;
 		}
 		/* assume no duplicate entries */
 		externalinterfaces++;
