@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	8.4 (Berkeley) %G%
+ *	@(#)kern_exec.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -712,6 +712,7 @@ badmap:
 	if ((p->p_flag & P_TRACED) == 0) {
 		if (uid != cred->cr_uid || gid != cred->cr_gid) {
 			p->p_ucred = cred = crcopy(cred);
+#ifdef KTRACE
 			/*
 			 * If process is being ktraced, turn off - unless
 			 * root set it.
@@ -721,6 +722,7 @@ badmap:
 				p->p_tracep = NULL;
 				p->p_traceflag = 0;
 			}
+#endif
 			cred->cr_uid = uid;
 			cred->cr_gid = gid;
 			p->p_flag |= P_SUGID;
