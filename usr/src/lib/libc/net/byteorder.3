@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)byteorder.3	6.3 (Berkeley) %G%
+.\"	@(#)byteorder.3	6.4 (Berkeley) %G%
 .\"
 .TH BYTEORDER 3 ""
 .UC 5
@@ -21,8 +21,7 @@
 htonl, htons, ntohl, ntohs \- convert values between host and network byte order
 .SH SYNOPSIS
 .nf
-.B #include <sys/types.h>
-.B #include <netinet/in.h>
+.B #include <machine/endian.h>
 .PP
 .B netlong = htonl(hostlong);
 .B u_long netlong, hostlong;
