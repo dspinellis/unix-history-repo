@@ -11,10 +11,25 @@
 #include "DEFS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)bcopy.s	5.2 (Berkeley) %G%")
+	ASMSTR("@(#)bcopy.s	5.3 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /* bcopy(s1, s2, n) */
+
+#include <machine/endian.h>
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+#	define	LWHI	lwr
+#	define	LWLO	lwl
+#	define	SWHI	swr
+#	define	SWLO	swl
+#endif
+#if BYTE_ORDER == BIG_ENDIAN
+#	define	LWHI	lwl
+#	define	LWLO	lwr
+#	define	SWHI	swl
+#	define	SWLO	swr
+#endif
 
 LEAF(bcopy)
 	.set	noreorder
@@ -46,10 +61,10 @@ forward:
 
 	beq	a3, zero, 1f
 	subu	a2, a2, a3		# subtract from remaining count
-	lwr	v0, 0(a0)		# get next 4 bytes (unaligned)
-	lwl	v0, 3(a0)
+	LWHI	v0, 0(a0)		# get next 4 bytes (unaligned)
+	LWLO	v0, 3(a0)
 	addu	a0, a0, a3
-	swr	v0, 0(a1)		# store 1, 2, or 3 bytes to align a1
+	SWHI	v0, 0(a1)		# store 1, 2, or 3 bytes to align a1
 	addu	a1, a1, a3
 1:
 	and	v0, a2, 3		# compute number of words left
@@ -57,8 +72,8 @@ forward:
 	move	a2, v0
 	addu	a3, a3, a0		# compute ending address
 2:
-	lwr	v0, 0(a0)		# copy words a0 unaligned, a1 aligned
-	lwl	v0, 3(a0)
+	LWHI	v0, 0(a0)		# copy words a0 unaligned, a1 aligned
+	LWLO	v0, 3(a0)
 	addu	a0, a0, 4
 	addu	a1, a1, 4
 	bne	a0, a3, 2b
@@ -68,9 +83,9 @@ forward:
 aligned:
 	beq	a3, zero, 1f
 	subu	a2, a2, a3		# subtract from remaining count
-	lwr	v0, 0(a0)		# copy 1, 2, or 3 bytes to align
+	LWHI	v0, 0(a0)		# copy 1, 2, or 3 bytes to align
 	addu	a0, a0, a3
-	swr	v0, 0(a1)
+	SWHI	v0, 0(a1)
 	addu	a1, a1, a3
 1:
 	and	v0, a2, 3		# compute number of whole words left
