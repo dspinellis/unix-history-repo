@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)stab.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)stab.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -45,7 +45,6 @@ stab(name, type, op)
 {
 	register STAB *s;
 	register STAB **ps;
-	extern bool sameword();
 	register int hfunc;
 	register char *p;
 	extern char lower();
@@ -71,7 +70,7 @@ stab(name, type, op)
 # endif DEBUG
 
 	ps = &SymTab[hfunc];
-	while ((s = *ps) != NULL && (!sameword(name, s->s_name) || s->s_type != type))
+	while ((s = *ps) != NULL && (strcasecmp(name, s->s_name) || s->s_type != type))
 		ps = &s->s_next;
 
 	/*

@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)arpadate.c	5.5 (Berkeley) %G%";
+static char	SccsId[] = "@(#)arpadate.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 # include "conf.h"
@@ -216,16 +216,14 @@ static struct foreign	Foreign[] =
 bool
 fconvert(a, b)
 	register char *a;
-	char *b;
+	register char *b;
 {
 	register struct foreign *euptr;
 	register char *p;
 
 	for (euptr = Foreign; euptr->f_from != NULL; euptr++)
 	{
-		extern bool sameword();
-
-		if (sameword(euptr->f_from, a))
+		if (!strcasecmp(euptr->f_from, a))
 		{
 			p = euptr->f_to;
 			*b++ = ' ';
