@@ -1,0 +1,59 @@
+/##  Filter noise out of System V-style lint output./d
+/##  $Revision: 1.6 $/d
+:top
+/==============/ {
+    n
+    b top
+}
+/struct.union iovec never defined/ {
+    n
+    b eat
+}
+/name declared but never used or defined/ {
+    n
+    b eat
+}
+/name used but not defined/ {
+    n
+    b eat
+}
+/name defined but never used/ {
+    n
+    b eat
+}
+/possible pointer alignment problem/ {
+    n
+    b eat
+}
+/name multiply declared/ {
+    n
+    b eat
+}
+/implicitly declared to return int/ {
+    n
+    b eat
+}
+/function returns value which is always ignored/ {
+    n
+    b eat
+}
+/function returns value which is sometimes ignored/ {
+    n
+    b eat
+}
+/label without goto:/d
+/bodyless if/d
+/bodyless else/d
+/./ {
+    p
+    n
+    b top
+}
+:eat
+/^    / {
+    n
+    b eat
+}
+/./ {
+    b top
+}
