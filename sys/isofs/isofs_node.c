@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)isofs_inode.c
- *	$Id: isofs_node.c,v 1.4 1993/07/19 13:40:04 cgd Exp $
+ *	$Id: isofs_node.c,v 1.2 1993/07/20 03:27:29 jkh Exp $
  */
 
 #include "param.h"
@@ -236,8 +236,17 @@ isofs_inactive(vp, p)
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (vp->v_usecount == 0 /* && ip->i_mode == 0 */)
-		vgone(vp);
+
+	/*
+	 * Whenever any inode is registered to HASH by the iso_iget,
+         * All inode purged here immediately ( v_usecount is 0 )
+	 * It's too much penalty for cdrom, so I just comment out it.
+         * (I've confirmed purging them when hash is getting full.)
+         *
+         *                             amurai@spec.co.jp  July 22,'93
+	 */
+	/*if (vp->v_usecount == 0*/ /* && ip->i_mode == 0 *//*)*/
+	/*	vgone(vp); */
 	return (error);
 }
 
