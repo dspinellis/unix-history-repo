@@ -1,0 +1,132 @@
+
+
+
+ANALYZE(8)	    UNIX Programmer's Manual	       ANALYZE(8)
+
+
+
+NAME
+     analyze - Virtual UNIX postmortem crash analyzer
+
+SYNOPSIS
+     /etc/analyze [ -s swapfile ] [ -f ] [ -m ] [ -d ] [ -D ] [
+     -v ] corefile [ system ]
+
+DESCRIPTION
+     _A_n_a_l_y_z_e is the post-mortem analyzer for the state of the
+     paging system.  In order to use _a_n_a_l_y_z_e you must arrange to
+     get a image of the memory (and possibly the paging area) of
+     the system after it crashes (see _c_r_a_s_h(8V)).
+
+     The _a_n_a_l_y_z_e program reads the relevant system data struc-
+     tures from the core image file and indexing information from
+     /vmunix (or the specified file) to determine the state of
+     the paging subsystem at the point of crash.  It looks at
+     each process in the system, and the resources each is using
+     in an attempt to determine inconsistencies in the paging
+     system state.  Normally, the output consists of a sequence
+     of lines showing each active process, its state (whether
+     swapped in or not), its _p_0_b_r, and the number and location of
+     its page table pages.  Any pages which are locked while raw
+     i/o is in progress, or which are locked because they are
+     _i_n_t_r_a_n_s_i_t are also printed.  (Intransit text pages often
+     diagnose as duplicated; you will have to weed these out by
+     hand.)
+
+     The program checks that any pages in core which are marked
+     as not modified are, in fact, identical to the swap space
+     copies.  It also checks for non-overlap of the swap space,
+     and that the core map entries correspond to the page tables.
+     The state of the free list is also checked.
+
+     Options to _a_n_a_l_y_z_e:
+
+     -D   causes the diskmap for each process to be printed.
+
+     -d   causes the (sorted) paging area usage to be printed.
+
+     -f   which causes the free list to be dumped.
+
+     -m   causes the entire coremap state to be dumped.
+
+     -v   (long unused) which causes a hugely verbose output for-
+	  mat to be used.
+
+     In general, the output from this program can be confused by
+     processes which were forking, swapping, or exiting or hap-
+     pened to be in unusual states when the crash occurred.  You
+     should examine the flags fields of relevant processes in the
+     output of a _p_s_t_a_t(8) to weed out such processes.
+
+
+
+Printed 7/26/87          April 27, 1985                         1
+
+
+
+
+
+
+ANALYZE(8)	    UNIX Programmer's Manual	       ANALYZE(8)
+
+
+
+     It is possible to look at the core dump with _a_d_b if you do
+
+	  adb -k /vmunix /vmcore
+
+FILES
+     /vmunix   default system namelist
+
+SEE ALSO
+     adb(1), ps(1), crash(8V), pstat(8)
+
+AUTHORS
+     Ozalp Babaoglu and William Joy
+
+DIAGNOSTICS
+     Various diagnostics about overlaps in swap mappings, missing
+     swap mappings, page table entries inconsistent with the core
+     map, incore pages which are marked clean but differ from
+     disk-image copies, pages which are locked or intransit, and
+     inconsistencies in the free list.
+
+     It would be nice if this program analyzed the system in gen-
+     eral, rather than just the paging system in particular.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/26/87          April 27, 1985                         2
+
+
+
