@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,7 +31,7 @@ static struct nlist namelist[] = {
 	{ "_stathz" },
 	{ "" }
 };
-
+n
 static int     dellave;
 
 kvm_t *kd;
@@ -217,18 +217,28 @@ error(fmt, va_alist)
 #endif
 {
 	va_list ap;
+	char buf[255];
+	int oy, ox;
 #if __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
 #endif
-	(void) vfprintf(stderr, fmt, ap);
-	va_end(ap);
+
 	if (wnd) {
+		getyx(stdscr, oy, ox);
+		(void) vsprintf(buf, fmt, ap);
 		clrtoeol();
+		standout();
+		mvaddstr(CMDLINE, 0, buf);
+		standend();
+		move(oy, ox);
 		refresh();
-	} else
+	} else {
+		(void) vfprintf(stderr, fmt, ap);
 		fprintf(stderr, "\n");
+	}
+	va_end(ap);
 }
 
 void
