@@ -41,6 +41,7 @@
  * rknier 940331 Added fast transfer code 
  * rknier 940407 Added assembler coded data transfers 
  *
+ * $Id: seagate.c,v 1.2 1994/06/13 00:43:26 sean Exp $
  */
 
 /*
@@ -380,8 +381,8 @@ struct scsi_device sea_dev =
 
 struct isa_driver seadriver =
 {
-	seaprobe,
-	seaattach,
+	sea_probe,
+	sea_attach,
 	"sea"
 };
 
