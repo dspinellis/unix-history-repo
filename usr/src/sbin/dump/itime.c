@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)itime.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
@@ -246,15 +246,7 @@ est(ip)
 bmapest(map)
 	char *map;
 {
-	register i, n;
 
-	n = -1;
-	for (i = 0; i < msiz; i++)
-		if(map[i])
-			n = i;
-	if(n < 0)
-		return;
-	n++;
 	esize++;
-	esize += howmany(n * sizeof map[0], TP_BSIZE);
+	esize += howmany(msiz * sizeof map[0], TP_BSIZE);
 }
