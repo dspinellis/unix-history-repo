@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	1.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	1.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -91,8 +91,8 @@ static char sccsid[] = "@(#)tset.c	1.8 (Berkeley) %G%";
 **			(-d type  ->  -m dialup:type)
 **			(-p type  ->  -m plug:type)
 **			Syntax:	-m identifier [test baudrate] :type
-**			where: ``identifier'' is whatever is found in
-**			/etc/ttytype for this port, (abscence of an identifier
+**			where: ``identifier'' is terminal type found in
+**			/etc/ttys for this port, (abscence of an identifier
 **			matches any identifier); ``test'' may be any combination
 **			of  >  =  <  !  @; ``baudrate'' is as with stty(1);
 **			``type'' is the actual terminal type to use if the
@@ -136,7 +136,7 @@ static char sccsid[] = "@(#)tset.c	1.8 (Berkeley) %G%";
 **			the output of -s to use virtual terminal sequences.
 **
 **	Files:
-**		/etc/ttytype
+**		/etc/ttys
 **			contains a terminal id -> terminal type
 **			mapping; used when any user mapping is specified,
 **			or the environment doesn't have TERM set.
@@ -166,7 +166,7 @@ static char sccsid[] = "@(#)tset.c	1.8 (Berkeley) %G%";
 **			and compiles code to look there.
 **
 **	Requires:
-**		Routines to handle htmp, ttytype, and ttycap.
+**		Routines to handle htmp, ttys, and ttycap.
 **
 **	Compilation Flags:
 **		OLDFLAGS -- must be defined to compile code for any of
@@ -174,11 +174,9 @@ static char sccsid[] = "@(#)tset.c	1.8 (Berkeley) %G%";
 **		OLDDIALUP -- accept the -d flag.
 **		OLDPLUGBOARD -- accept the -p flag.
 **		OLDARPANET -- accept the -a flag.
-**		FULLLOGIN -- if defined, login sets the ttytype from
-**			/etc/ttytype file.
 **		V6 -- if clear, use environments, not htmp.
 **			also use TIOCSETN rather than stty to avoid flushing
-**		GTTYN -- if set, compiles code to look at /etc/ttytype.
+**		GTTYN -- if set, compiles code to look at /etc/ttys.
 **		UCB_NTTY -- set to handle new tty driver modes.
 **
 **	Trace Flags:
@@ -245,7 +243,7 @@ static char sccsid[] = "@(#)tset.c	1.8 (Berkeley) %G%";
 **		12/78 -- modified for eventual migration to VAX/UNIX,
 **			so the '-' option is changed to output only
 **			the terminal type to STDOUT instead of
-**			FILEDES.  FULLLOGIN flag added.
+**			FILEDES.
 **		9/78 -- '-' and '-p' options added (now fully
 **			compatible with ttytype!), and spaces are
 **			permitted between the -d and the type.
@@ -269,11 +267,9 @@ static char sccsid[] = "@(#)tset.c	1.8 (Berkeley) %G%";
 #  define oldkill oldmode.sg_kill
 # endif
 
-/*
-# define	FULLLOGIN	1
-/*/
 # ifndef V6
-# define	GTTYN		"/etc/ttytype"
+# define	GTTYN
+# include	<ttyent.h>
 # endif
 
 # ifndef USG
@@ -1610,17 +1606,12 @@ char *
 stypeof(ttyid)
 char	*ttyid;
 {
-	static char	typebuf[BUFSIZ];
 	register char	*PortType;
 	register char	*PortName;
 	register char	*TtyId;
-	register char	*p;
-	register FILE	*f;
+	struct ttyent *t;
 
 	if (ttyid == NOTTY)
-		return (DEFTYPE);
-	f = fopen(GTTYN, "r");
-	if (f == NULL)
 		return (DEFTYPE);
 
 	/* split off end of name */
@@ -1630,37 +1621,17 @@ char	*ttyid;
 			TtyId = ttyid;
 
 	/* scan the file */
-	while (fgets(typebuf, sizeof typebuf, f) != NULL)
+	if ((t = getttynam(TtyId)) != NULL)
 	{
-		p = PortType = typebuf;
-		while (*p && isalnum(*p))
-			p++;
-		*p++ = NULL;
-
-		/* skip separator */
-		while (*p && !isalnum(*p))
-			p++;
-
-		PortName = p;
-		/* put NULL at end of name */
-		while (*p && isalnum(*p))
-			p++;
-		*p = NULL;
-
-		/* check match on port name */
-		if (sequal(PortName, TtyId))	/* found it */
-		{
-			fclose (f);
-			/* get aliases from termcap entry */
-			if (Mapped && tgetent(Capbuf, PortType) > 0) {
-				makealias(Capbuf);
-				if (sequal(Alias[0], PortType) && Alias[1])
-					PortType = Alias[1];
-			}
-			return(PortType);
+		PortType = t->ty_type;
+		/* get aliases from termcap entry */
+		if (Mapped && tgetent(Capbuf, PortType) > 0) {
+			makealias(Capbuf);
+			if (sequal(Alias[0], PortType) && Alias[1])
+				PortType = Alias[1];
 		}
+		return (PortType);
 	}
-	fclose (f);
 	return (DEFTYPE);
 }
 # endif

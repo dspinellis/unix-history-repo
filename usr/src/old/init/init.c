@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)init.c	4.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.13 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -9,8 +9,10 @@ static	char *sccsid = "@(#)init.c	4.12 (Berkeley) %G%";
 #include <sys/reboot.h>
 #include <errno.h>
 #include <sys/file.h>
+#include <ttyent.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
+#define	TTYSIZ	16
 #define	TABSIZ	100
 #define	ALL	p = &itab[0]; p < &itab[TABSIZ]; p++
 #define	EVER	;;
@@ -22,23 +24,16 @@ char	shell[]	= "/bin/sh";
 char	getty[]	 = "/etc/getty";
 char	minus[]	= "-";
 char	runc[]	= "/etc/rc";
-char	ifile[]	= "/etc/ttys";
 char	utmp[]	= "/etc/utmp";
 char	wtmpf[]	= "/usr/adm/wtmp";
 char	ctty[]	= "/dev/console";
 char	dev[]	= "/dev/";
 
 struct utmp wtmp;
-struct
-{
-	char	line[LINSIZ];
-	char	comn;
-	char	flag;
-} line;
 struct	tab
 {
 	char	line[LINSIZ];
-	char	comn;
+	char	comn[TTYSIZ];
 	char	xflag;
 	int	pid;
 	time_t	gettytime;
@@ -182,6 +177,7 @@ single()
 			signal(SIGTERM, SIG_DFL);
 			signal(SIGHUP, SIG_DFL);
 			signal(SIGALRM, SIG_DFL);
+			signal(SIGTSTP, SIG_IGN);
 			(void) open(ctty, O_RDWR);
 			dup2(0, 1);
 			dup2(0, 2);
@@ -266,35 +262,40 @@ multiple()
 merge()
 {
 	register struct tab *p;
+	register struct ttyent *t;
 
-	fi = open(ifile, 0);
-	if (fi < 0)
-		return;
 	for (ALL)
 		p->xflag = 0;
-	while (rline()) {
+	setttyent();
+	while (t = getttyent()) {
+		if ((t->ty_status & TTY_ON) == 0)
+			continue;
+		strcpy(tty, dev);
+		strcat(tty, t->ty_name);
+		if (access(tty, R_OK|W_OK) < 0)
+			continue;
 		for (ALL) {
-			if (SCMPN(p->line, line.line))
+			if (SCMPN(p->line, t->ty_name))
 				continue;
 			p->xflag |= FOUND;
-			if (line.comn != p->comn) {
+			if (SCMPN(p->comn, t->ty_getty)) {
 				p->xflag |= CHANGE;
-				p->comn = line.comn;
+				SCPYN(p->comn, t->ty_getty);
 			}
 			goto contin1;
 		}
 		for (ALL) {
 			if (p->line[0] != 0)
 				continue;
-			SCPYN(p->line, line.line);
+			SCPYN(p->line, t->ty_name);
 			p->xflag |= FOUND|CHANGE;
-			p->comn = line.comn;
+			SCPYN(p->comn, t->ty_getty);
 			goto contin1;
 		}
 	contin1:
 		;
 	}
-	close(fi);
+	endttyent();
 	for (ALL) {
 		if ((p->xflag&FOUND) == 0) {
 			term(p);
@@ -316,52 +317,6 @@ term(p)
 		kill(p->pid, SIGKILL);
 	}
 	p->pid = 0;
-}
-
-rline()
-{
-	register c, i;
-
-loop:
-	c = get();
-	if (c < 0)
-		return(0);
-	if (c == 0)
-		goto loop;
-	line.flag = c;
-	c = get();
-	if (c <= 0)
-		goto loop;
-	line.comn = c;
-	SCPYN(line.line, "");
-	for (i = 0; i < LINSIZ; i++) {
-		c = get();
-		if (c <= 0)
-			break;
-		line.line[i] = c;
-	}
-	while (c > 0)
-		c = get();
-	if (line.line[0] == 0)
-		goto loop;
-	if (line.flag == '0')
-		goto loop;
-	strcpy(tty, dev);
-	strncat(tty, line.line, LINSIZ);
-	if (access(tty, 06) < 0)
-		goto loop;
-	return (1);
-}
-
-get()
-{
-	char b;
-
-	if (read(fi, &b, 1) != 1)
-		return (-1);
-	if (b == '\n')
-		return (0);
-	return (b);
 }
 
 #include <sys/ioctl.h>
@@ -438,8 +393,8 @@ dfork(p)
 		close(0);
 		dup(1);
 		dup(0);
-		tty[0] = p->comn;
-		tty[1] = 0;
+		strncpy(tty, p->comn, sizeof(p->comn));
+		tty[sizeof(p->comn)] = 0;
 		execl(getty, minus, tty, (char *)0);
 		exit(0);
 	}
