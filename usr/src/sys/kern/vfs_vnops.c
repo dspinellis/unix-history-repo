@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -56,7 +56,7 @@ vn_open(ndp, fmode, cmode)
 			VATTR_NULL(vap);
 			vap->va_type = VREG;
 			vap->va_mode = cmode;
-			LEASE_CHECK(ndp->ni_dvp, p, cred, LEASE_WRITE);
+			VOP_LEASE(ndp->ni_dvp, p, cred, LEASE_WRITE);
 			if (error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp,
 			    &ndp->ni_cnd, vap))
 				return (error);
@@ -104,7 +104,7 @@ vn_open(ndp, fmode, cmode)
 	}
 	if (fmode & O_TRUNC) {
 		VOP_UNLOCK(vp);				/* XXX */
-		LEASE_CHECK(vp, p, cred, LEASE_WRITE);
+		VOP_LEASE(vp, p, cred, LEASE_WRITE);
 		VOP_LOCK(vp);					/* XXX */
 		VATTR_NULL(vap);
 		vap->va_size = 0;
@@ -225,7 +225,7 @@ vn_read(fp, uio, cred)
 	register struct vnode *vp = (struct vnode *)fp->f_data;
 	int count, error;
 
-	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_READ);
+	VOP_LEASE(vp, uio->uio_procp, cred, LEASE_READ);
 	VOP_LOCK(vp);
 	uio->uio_offset = fp->f_offset;
 	count = uio->uio_resid;
@@ -251,7 +251,7 @@ vn_write(fp, uio, cred)
 		ioflag |= IO_APPEND;
 	if (fp->f_flag & FNONBLOCK)
 		ioflag |= IO_NDELAY;
-	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_WRITE);
+	VOP_LEASE(vp, uio->uio_procp, cred, LEASE_WRITE);
 	VOP_LOCK(vp);
 	uio->uio_offset = fp->f_offset;
 	count = uio->uio_resid;
