@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)passwd.5	6.4 (Berkeley) %G%
+.\"	@(#)passwd.5	6.5 (Berkeley) %G%
 .\"
 .TH PASSWD 5  ""
 .AT 3
@@ -83,11 +83,13 @@ The
 .I change
 field is the number in seconds, GMT, from the epoch, until the
 password for the account must be changed.
+This field may be left empty to turn off the password aging feature.
 .PP
 The
 .I expire
 field is the number in seconds, GMT, from the epoch, until the
 account expires.
+This field may be left empty to turn off the account aging feature.
 .PP
 The
 .I gecos
