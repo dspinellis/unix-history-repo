@@ -8,7 +8,7 @@
 #include <setjmp.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.10	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.11	%G%";
 
 #define SENDMAIL	"/usr/lib/sendmail"
 
@@ -600,8 +600,8 @@ usage()
 
 #include <sys/socket.h>
 #include <netinet/in.h>
-struct sockaddr_in biffaddr = { AF_INET, IPPORT_BIFFUDP };
-char *localhost = "localhost";
+#include <netdb.h>
+struct sockaddr_in biffaddr;
 
 sendmail(n, name, fromaddr)
 int n;
@@ -615,6 +615,8 @@ char *fromaddr;
 	struct stat statb;
 	char buf[128];
 	int f;
+	struct hostent *hp = NULL;
+	struct servent *sp = NULL;
 
 	for(p=name; *p!='!'&&*p!='^' &&*p!='\0'; p++)
 		;
@@ -643,17 +645,19 @@ char *fromaddr;
 	lock(file);
 	chown(file, pw->pw_uid, pw->pw_gid);
 	{
-		f = socket(0, SOCK_DGRAM, 0, 0);
-		sprintf(buf, "%s@%d\n", name, ftell(malf)); 
+		hp = gethostbyname("localhost");
+		sp = getservbyname("biff", "udp");
+		if (hp && sp) {
+			f = socket(AF_INET, SOCK_DGRAM, 0, 0);
+			sprintf(buf, "%s@%d\n", name, ftell(malf)); 
+		}
 	}
 	copylet(n, malf, ORDINARY);
 	fclose(malf);
-	if (f >= 0) {
-		biffaddr.sin_addr.s_addr = rhost(&localhost);
-#if vax
-		biffaddr.sin_port =
-		    ((biffaddr.sin_port<<8)&0xff00)|((biffaddr.sin_port>>8)&0xff);
-#endif
+	if (hp && sp) {
+		biffaddr.sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr, &biffaddr.sin_addr, hp->h_length);
+		biffaddr.sin_port = sp->s_port;
 		sendto(f, buf, strlen(buf)+1, 0, &biffaddr, sizeof (biffaddr));
 		close(f);
 	}
