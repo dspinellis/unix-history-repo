@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # Hack or Quest Makefile.
 
@@ -46,7 +46,7 @@ MAN=	hack.0
 all: hack
 
 hack: ${OBJS} ${LIBC}
-	${CC} -o $@ ${OBJS} -ltermcap
+	${CC} -o $@ ${OBJS} -ltermcap -lcompat
 
 makedefs: makedefs.c
 	${CC} ${CFLAGS} -o $@ $@.c

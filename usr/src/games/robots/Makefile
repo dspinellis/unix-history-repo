@@ -14,12 +14,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 DEFS=	-DMAX_PER_UID=5
 CFLAGS=	-O ${DEFS}
 LIBC=	/lib/libc.a
-LIBS=	-lcurses -ltermlib
 SRCS=	extern.c init_field.c main.c make_level.c move.c move_robs.c \
 	play_level.c query.c rnd_pos.c score.c flush_in.c
 OBJS=	extern.o init_field.o main.o make_level.o move.o move_robs.o \
@@ -29,7 +28,7 @@ MAN=	robots.0
 all: robots
 
 robots: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} ${LIBS}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lcurses -ltermlib -lcompat
 
 clean:
 	rm -f ${OBJS} core robots

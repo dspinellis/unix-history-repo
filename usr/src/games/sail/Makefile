@@ -14,11 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-LIBS=	-lcurses -ltermlib
 SRCS=	main.c pl_main.c pl_1.c pl_2.c pl_3.c pl_4.c pl_5.c pl_6.c pl_7.c \
 	dr_main.c dr_1.c dr_2.c dr_3.c dr_4.c dr_5.c lo_main.c \
 	assorted.c game.c globals.c misc.c parties.c sync.c version.c
@@ -30,7 +29,7 @@ MAN=	sail.0
 all: sail
 
 sail: ${OBJS} ${LIBC}
-	${CC} -o $@ ${OBJS} ${LIBS}
+	${CC} -o $@ ${OBJS} -lcurses -ltermlib -lcompat
 
 clean:
 	rm -f ${OBJS} core sail

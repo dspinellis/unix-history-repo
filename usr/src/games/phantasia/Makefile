@@ -17,7 +17,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 # PLOTDEVICE is used for plotting the map.
 # Change as appropriate.
@@ -52,7 +52,7 @@ MAN=	phantasia.0
 all: phantasia setup
 
 phantasia: ${OBJS} ${LIBC}
-	${CC} ${OBJS} -o $@ -lm -lcurses -ltermlib
+	${CC} ${OBJS} -o $@ -lm -lcurses -ltermlib -lcompat
 
 # Make the initialization program.
 setup: phantglobs.o setup.o monsters.asc ${LIBC}

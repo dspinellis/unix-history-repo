@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -25,7 +25,7 @@ MAN=	canfield.0
 all: canfield cfscores
 
 canfield: ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${CSRCS} -lcurses -ltermcap
+	${CC} -o $@ ${CFLAGS} ${CSRCS} -lcurses -ltermcap -lcompat
 
 cfscores: ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${CFSRCS}

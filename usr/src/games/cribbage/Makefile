@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -28,7 +28,7 @@ MAN=	cribbage.0
 all: cribbage crib.instr
 
 cribbage: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} ${LIBS}
+	${CC} -o $@ ${CFLAGS} ${OBJS} ${LIBS} -lcompat
 
 test: ${TOBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${TOBJS} ${LIBS}

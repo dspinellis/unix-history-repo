@@ -14,11 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-LIBS=	-lcurses -ltermlib
 OBJS=	battlestar.o com1.o com2.o com3.o com4.o com5.o com6.o com7.o \
 	init.o cypher.o getcom.o parse.o room.o save.o fly.o misc.o \
 	globals.o dayfile.o nightfile.o dayobjs.o nightobjs.o words.o
@@ -30,7 +29,7 @@ MAN=	battlestar.0
 all: battlestar
 
 battlestar: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} ${LIBS}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lcurses -ltermlib -lcompat
 
 clean:
 	rm -f ${OBJS} core battlestar
