@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.8 %G%";
+static char sccsid[] = "@(#)object.c 1.9 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -239,7 +239,7 @@ private initsyms()
     t_boolean = maketype("$boolean", 0L, 1L);
     t_int = maketype("$integer", 0x80000000L, 0x7fffffffL);
     t_char = maketype("$char", 0L, 127L);
-    t_real = maketype("$real", 4L, 0L);
+    t_real = maketype("$real", 8L, 0L);
     t_nil = maketype("$nil", 0L, 0L);
 }
 
