@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.5	%G%";
+char id_libF77[] = "@(#)main.c	2.6	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -47,8 +47,12 @@ struct action {
 	{"Illegal instruction", 1},	/* SIGILL  */
 	{ 0, 0},			/* SIGTRAP */
 	{"IOT Trap", 1},		/* SIGIOT  */
-	{"EMT trap", 1},		/* SIGEMT  */
+	{"EMT Trap", 1},		/* SIGEMT  */
+#ifdef UCBVAX
 	{"Arithmetic Exception", 1},	/* SIGFPE  */
+#else
+	{"Floating Point Exception", 1},/* SIGFPE  */
+#endif
 	{ 0, 0},			/* SIGKILL */
 	{"Bus error", 1},		/* SIGBUS  */
 	{"Segmentation violation", 1},	/* SIGSEGV */
