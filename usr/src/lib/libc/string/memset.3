@@ -1,0 +1,36 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)memset.3	5.1 (Berkeley) %G%
+.\"
+.TH MEMSET 3 ""
+.UC 7
+.SH NAME
+memset \- write a byte to byte string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+void *
+memset(void *b, int c, size_t len);
+.ft R
+.nf
+.SH DESCRIPTION
+.B Memset
+writes
+.I len
+bytes of value
+.I c
+(converted to an unsigned char) to the string
+.IR b .
+.SH SEE ALSO
+bzero(3), swab(3)
+.SH STANDARDS
+.B Memset
+conforms to ANSI X3.159-1989 (``ANSI C'').
