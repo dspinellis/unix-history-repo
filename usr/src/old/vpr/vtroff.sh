@@ -1,5 +1,14 @@
 #! /bin/csh -f
-#	@(#)vtroff.sh	1.3	%G%
+#
+#	@(#)vtroff.sh	1.4	(Berkeley)	%G%
+#
+set remote = ucbernie
+set execdir = /usr/ucb
+if ($remote != `hostname`) then
+	set cmd = "/usr/ucb/rsh $remote"
+else
+	set cmd = ""
+endif
 umask 0
 set flags=() noglob length=() fonts=() fontf=() macp=(/usr/lib/tmac/tmac.vcat)
 unset t
@@ -81,15 +90,14 @@ if ($?wide) then
 	/usr/bin/troff -t -rv1 $flags $macp $fontf $* | /usr/lib/vsort -W $length
     else
 	/usr/bin/troff -t -rv1 $flags $macp $fontf $* | \
-	    /usr/lib/vsort -W $length | /usr/ucb/vpr -W -t $fonts
+	    /usr/lib/vsort -W $length | $cmd $execdir/vpr -W -t $fonts
     endif
 else
     if ($?t) then
 	/usr/bin/troff -t -rv1 $flags $macp $fontf $* | /usr/lib/rvsort $length
     else
 	/usr/bin/troff -t -rv1 $flags $macp $fontf $* | \
-	    /usr/lib/rvsort $length | /usr/ucb/vpr -t $fonts
-#	    /usr/lib/vsort -c $length | /usr/ucb/vpr -t $fonts
+	    /usr/lib/rvsort $length | $cmd $execdir/vpr -t $fonts
     endif
 endif
 if ($#fontf) then
