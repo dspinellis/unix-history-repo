@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)gettytab	5.1 (Berkeley) %G%
+#	@(#)gettytab	5.2 (Berkeley) %G%
 #
 #
 # Most of the table entries here are just copies of the
@@ -16,7 +16,7 @@
 # entries, and in cases where getty is called with no table name
 #
 default:\
-	:ap:fd#1000:im=\r\n\r\n4.2 BSD UNIX (%h)\r\n\r\r\n\r:sp#1200:
+	:ap:fd#1000:im=\r\n\r\n4.3 BSD UNIX (%h)\r\n\r\r\n\r:sp#1200:
 
 #
 # Fixed speed entries
@@ -81,9 +81,9 @@ l|lsi chess terminal:\
 # Fast dialup terminals, 1200/300 rotary (can start either way)
 #
 3|D1200|Fast-Dial-1200:\
-	:nx=D300:im=\r\n\r\n4.2 BSD UNIX (%h) (%t)\r\n\r\r\n\r:tc=1200-baud:
+	:nx=D300:im=\r\n\r\n4.3 BSD UNIX (%h) (%t)\r\n\r\r\n\r:tc=1200-baud:
 5|D300|Fast-Dial-300:\
-	:nx=D1200:im=\r\n\r\n4.2 BSD UNIX (%h) (%t)\r\n\r\r\n\r:tc=300-baud:
+	:nx=D1200:im=\r\n\r\n4.3 BSD UNIX (%h) (%t)\r\n\r\r\n\r:tc=300-baud:
 
 #
 # Wierdo special case for fast crt's with hardcopy devices
