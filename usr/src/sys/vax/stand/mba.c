@@ -1,4 +1,4 @@
-/*	mba.c	4.9	83/02/18	*/
+/*	mba.c	4.10	83/07/01	*/
 
 #include "../machine/pte.h"
 
@@ -41,10 +41,12 @@ mbastart(io, func)
 
 	case F_RDDATA:			/* standard read */
 		drv->mbd_cs1 = MB_RCOM|MB_GO;
+		mbawait(io);
 		return(0);
 
 	case F_WRDATA:			/* standard write */
 		drv->mbd_cs1 = MB_WCOM|MB_GO;
+		mbawait(io);
 		return(0);
 
 	/* the following commands apply to disks only */
@@ -70,12 +72,23 @@ mbastart(io, func)
 	default:
 		goto error;
 	}
+	mbawait(io);
 	if ((drv->mbd_dt & MBDT_TAP) == 0)
 		return (0);
 error:
 	io->i_error = ECMD;
 	io->i_flgs &= ~F_TYPEMASK;
 	return (1);
+}
+
+mbawait(io)
+	register struct iob *io;
+{
+	struct mba_regs *mba = mbamba(io->i_unit);
+	struct mba_drv *drv = mbadrv(io->i_unit);
+
+	while (mba->mba_sr & MBSR_DTBUSY)
+		DELAY(100);
 }
 
 mbainit(mbanum)
