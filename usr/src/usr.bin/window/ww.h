@@ -1,5 +1,5 @@
 /*
- * @(#)ww.h	3.38 %G%	
+ * @(#)ww.h	3.39 %G%	
  */
 
 /*
@@ -77,6 +77,7 @@ struct ww {
 	char ww_id;		/* the user window id */
 	char ww_center;		/* center the label */
 	char ww_hasframe;	/* frame it */
+	char ww_keepopen;	/* keep it open after the process dies */
 	char *ww_label;		/* the user supplied label */
 	struct ww_dim ww_alt;	/* alternate position and size */
 };

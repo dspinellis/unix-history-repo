@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	3.13 %G%";
+static char sccsid[] = "@(#)cmd3.c	3.14 %G%";
 #endif
 
 /*
@@ -10,37 +10,6 @@ static char sccsid[] = "@(#)cmd3.c	3.13 %G%";
 
 #include "defs.h"
 #include "string.h"
-
-c_close(w)
-register struct ww *w;
-{
-	char didit = 0;
-	register i;
-
-	if (w != 0) {
-		closewin(w);
-		didit++;
-	} else {
-		for (i = 0; i < NWINDOW; i++) {
-			if ((w = window[i]) == 0)
-				continue;
-			closewin(w);
-			didit++;
-		}
-	}
-	if (selwin == 0) {
-		if (lastselwin != 0)
-			setselwin(lastselwin);
-		else {
-			for (i = 0; i < NWINDOW && window[i] == 0; i++)
-				;
-			if (i < NWINDOW)
-				setselwin(window[i]);
-		}
-	}
-	if (didit)
-		reframe();
-}
 
 setescape(esc)
 register char *esc;

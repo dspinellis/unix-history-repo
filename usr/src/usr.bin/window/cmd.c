@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd.c	3.33 %G%";
+static char sccsid[] = "@(#)cmd.c	3.34 %G%";
 #endif
 
 /*
@@ -23,9 +23,8 @@ docmd()
 				wwputc('\n', cmdwin);
 			switch (c) {
 			default:
-				if (c == escapec)
-					goto foo;
-				break;
+				if (c != escapec)
+					break;
 			case 'h': case 'j': case 'k': case 'l':
 			case ctrl(y):
 			case ctrl(e):
@@ -36,7 +35,6 @@ docmd()
 			case ctrl(s):
 			case ctrl(q):
 			case ctrl([):
-			foo:
 				if (selwin == 0) {
 					error("No window.");
 					continue;
@@ -67,7 +65,7 @@ docmd()
 				break;
 			case 'c':
 				if ((w = getwin()) != 0)
-					c_close(w);
+					closewin(w);
 				break;
 			case 'w':
 				c_window();
@@ -197,6 +195,10 @@ getwin()
 		w = boxwin;
 	else if (c >= '1' && c < NWINDOW + '1')
 		w = window[c - '1'];
+	else if (c == '+')
+		w = selwin;
+	else if (c == '-')
+		w = lastselwin;
 	if (w == 0)
 		wwbell();
 	if (!terse)

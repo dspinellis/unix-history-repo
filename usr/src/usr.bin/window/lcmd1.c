@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd1.c	3.30 %G%";
+static char sccsid[] = "@(#)lcmd1.c	3.31 %G%";
 #endif
 
 /*
@@ -24,6 +24,8 @@ struct lcmd_arg arg_window[] = {
 	{ "pty",	1,	ARG_ANY },
 	{ "frame",	1,	ARG_ANY },
 	{ "mapnl",	1,	ARG_ANY },
+	{ "keepopen",	1,	ARG_ANY },
+	{ "smooth",	1,	ARG_ANY },
 	{ "shell",	1,	ARG_STR|ARG_LIST },
 	0
 };
@@ -35,7 +37,7 @@ register struct value *a;
 	struct ww *w;
 	int col, row, ncol, nrow, id, nline;
 	char *label;
-	char haspty, hasframe, mapnl;
+	char haspty, hasframe, mapnl, keepopen, smooth;
 	char *shf, **sh;
 	char *argv[sizeof shell / sizeof *shell];
 	register char **pp;
@@ -59,6 +61,10 @@ register struct value *a;
 		return;
 	if ((mapnl = vtobool(++a, !haspty, -1)) < 0)
 		return;
+	if ((keepopen = vtobool(++a, 0, -1)) < 0)
+		return;
+	if ((smooth = vtobool(++a, 1, -1)) < 0)
+		return;
 	if ((++a)->v_type != V_ERR) {
 		for (pp = argv; a->v_type != V_ERR &&
 		     pp < &argv[sizeof argv/sizeof *argv-1]; pp++, a++)
@@ -77,6 +83,8 @@ register struct value *a;
 	    hasframe, shf, sh)) == 0)
 		return;
 	w->ww_mapnl = mapnl;
+	w->ww_keepopen = keepopen;
+	w->ww_noupdate = !smooth;
 	v->v_type = V_NUM;
 	v->v_num = id + 1;
 }
@@ -93,6 +101,25 @@ register struct value *v, *a;
 	v->v_type = V_NUM;
 	if (a->v_type != V_ERR)
 		nbufline = a->v_num;
+}
+
+struct lcmd_arg arg_smooth[] = {
+	{ "window",	1,	ARG_NUM },
+	{ "flag",	1,	ARG_ANY },
+	0
+};
+
+l_smooth(v, a)
+register struct value *v, *a;
+{
+	struct ww *w;
+
+	v->v_type = V_NUM;
+	v->v_num = 0;
+	if ((w = vtowin(a++, selwin)) == 0)
+		return;
+	v->v_num = !w->ww_noupdate;
+	w->ww_noupdate = !vtobool(a, v->v_num, v->v_num);
 }
 
 struct lcmd_arg arg_select[] = {
@@ -261,11 +288,11 @@ register struct value *a;
 	struct ww *w;
 
 	if (a->v_type == V_STR && str_match(a->v_str, "all", 3))
-		c_close((struct ww *)0);
+		closewin((struct ww *)0);
 	else
 		for (; a->v_type != V_ERR; a++)
 			if ((w = vtowin(a, (struct ww *)0)) != 0)
-				c_close(w);
+				closewin(w);
 }
 
 struct lcmd_arg arg_cursormodes[] = {

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)win.c	3.16 %G%";
+static char sccsid[] = "@(#)win.c	3.17 %G%";
 #endif
 
 /*
@@ -69,7 +69,7 @@ char *shf, **sh;
 	wwflush();
 	if (wwspawn(w, shf, sh) < 0) {
 		error("Can't execute %s: %s.", shf, wwerror());
-		c_close(w);
+		closewin(w);
 		return 0;
 	}
 	return w;
@@ -88,23 +88,51 @@ findid()
 	return i;
 }
 
+struct ww *
+findselwin()
+{
+	register struct ww *w, *s = 0;
+	register i;
+
+	for (i = 0; i < NWINDOW; i++)
+		if ((w = window[i]) != 0 && w != selwin &&
+		    (s == 0 ||
+		     !isfg(w) && (w->ww_order < s->ww_order || isfg(s))))
+			s = w;
+	return s;
+}
+
 /*
- * Close a user window.
- * May leave selwin == 0.
+ * Close a user window.  Close all if w == 0.
  */
 closewin(w)
 register struct ww *w;
 {
-	if (w == selwin)
-		selwin = 0;
-	if (w == lastselwin)
-		lastselwin = 0;
-	if (w->ww_id >= 0 && w->ww_id < NWINDOW)
-		window[w->ww_id] = 0;
-	if (w->ww_label)
-		str_free(w->ww_label);
-	deletewin(w);
-	wwclose(w);
+	char didit = 0;
+	register i;
+
+	if (w != 0) {
+		closewin1(w);
+		didit++;
+	} else
+		for (i = 0; i < NWINDOW; i++) {
+			if ((w = window[i]) == 0)
+				continue;
+			closewin1(w);
+			didit++;
+		}
+	if (didit) {
+		if (selwin == 0)
+			if (lastselwin != 0) {
+				setselwin(lastselwin);
+				lastselwin = 0;
+			} else if (w = findselwin())
+				setselwin(w);
+		if (lastselwin == 0 && selwin)
+			if (w = findselwin())
+				lastselwin = w;
+		reframe();
+	}
 }
 
 /*
@@ -138,8 +166,23 @@ char *label;
 closeiwin(w)
 struct ww *w;
 {
-	closewin(w);
+	closewin1(w);
 	reframe();
+}
+
+closewin1(w)
+register struct ww *w;
+{
+	if (w == selwin)
+		selwin = 0;
+	if (w == lastselwin)
+		lastselwin = 0;
+	if (w->ww_id >= 0 && w->ww_id < NWINDOW)
+		window[w->ww_id] = 0;
+	if (w->ww_label)
+		str_free(w->ww_label);
+	deletewin(w);
+	wwclose(w);
 }
 
 /*
