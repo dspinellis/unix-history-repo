@@ -1,4 +1,4 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1985, 1989 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms are permitted
@@ -13,9 +13,9 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ftp.1	6.12.1.1 (Berkeley) %G%
+.\"	@(#)ftp.1	6.13 (Berkeley) %G%
 .\"
-.TH FTP 1 "February 23, 1989"
+.TH FTP 1 "March 14, 1989"
 .UC 5
 .SH NAME
 ftp \- ARPANET file transfer program
@@ -127,6 +127,10 @@ to
 Change the remote machine working directory to the parent of the
 current remote machine working directory.
 .TP
+.BI chmod " mode file-name"
+Change the permission modes the file \fIfile-name\fR on the remote
+sytem to \fImode\fR.
+.TP
 .B close
 Terminate the FTP session with the remote server, and
 return to the command interpreter.
@@ -235,6 +239,10 @@ Print an informative message about the meaning of
 If no argument is given, 
 .I ftp
 prints a list of the known commands.
+.TP
+\fBidle\fP [ \fIseconds\fP ]
+Set the inactivity timer on the remote server to \fIseconds\fR seconds.
+If \fIseconds\fR is ommitted, the current inactivity timer is printed.
 .TP
 \fBlcd\fP [ \fIdirectory\fP ]
 Change the working directory on the local machine.  If
@@ -590,6 +598,10 @@ PORT commands for each data transfer.  This is useful
 for certain FTP implementations which do ignore PORT
 commands but, incorrectly, indicate they've been accepted.
 .TP
+.BI site " arg1 arg2 ..."
+The arguments specified are sent, verbatim, to the remote FTP
+server as a SITE command.
+.TP
 .BI size " file-name"
 Return size of \fIfile-name\fP on remote machine.
 .TP
@@ -628,6 +640,10 @@ to
 .IR type-name .
 If no type is specified, the current type
 is printed.  The default type is network ASCII.
+.TP
+\fBumask\fP [ \fInewmask\fP ]
+Set the default umask on the remote server to \fInewmask\fR.
+If \fInewmask\fR is ommitted, the current umask is printed.
 .TP
 \fBuser\fP \fIuser-name\fP [ \fIpassword\fP ] [ \fIaccount\fP ]
 Identify yourself to the remote FTP server.  If the

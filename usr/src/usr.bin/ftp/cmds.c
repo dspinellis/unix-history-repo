@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.14.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -787,7 +787,7 @@ sethash()
 	printf("Hash mark printing %s", onoff(hash));
 	code = hash;
 	if (hash)
-		printf(" (%d bytes/hash mark)", BUFSIZ);
+		printf(" (%d bytes/hash mark)", 1024);
 	printf(".\n");
 }
 
@@ -890,7 +890,11 @@ cd(argc, argv)
 		code = -1;
 		return;
 	}
-	(void) command("CWD %s", argv[1]);
+	if (command("CWD %s", argv[1]) == ERROR && code == 500) {
+		if (verbose)
+			printf("CWD command not recognized, trying XCWD\n");
+		(void) command("XCWD %s", argv[1]);
+	}
 }
 
 /*
@@ -1231,8 +1235,17 @@ user(argc, argv)
 /*VARARGS*/
 pwd()
 {
+	int oldverbose = verbose;
 
-	(void) command("PWD");
+	/*
+	 * If we aren't verbose, this doesn't do anything!
+	 */
+	verbose = 1;
+	if (command("PWD") == ERROR && code == 500) {
+		printf("PWD command not recognized, trying XPWD\n");
+		(void) command("XPWD");
+	}
+	verbose = oldverbose;
 }
 
 /*
@@ -1255,7 +1268,11 @@ makedir(argc, argv)
 		code = -1;
 		return;
 	}
-	(void) command("MKD %s", argv[1]);
+	if (command("MKD %s", argv[1]) == ERROR && code == 500) {
+		if (verbose)
+			printf("MKD command not recognized, trying XMKD\n");
+		(void) command("XMKD %s", argv[1]);
+	}
 }
 
 /*
@@ -1278,7 +1295,11 @@ removedir(argc, argv)
 		code = -1;
 		return;
 	}
-	(void) command("RMD %s", argv[1]);
+	if (command("RMD %s", argv[1]) == ERROR && code == 500) {
+		if (verbose)
+			printf("RMD command not recognized, trying XRMD\n");
+		(void) command("XRMD %s", argv[1]);
+	}
 }
 
 /*
@@ -1311,6 +1332,86 @@ quote(argc, argv)
 	if (command(buf) == PRELIM) {
 		while (getreply(0) == PRELIM);
 	}
+}
+
+/*
+ * Send a SITE command to the remote machine.  The line
+ * is sent almost verbatim to the remote machine, the
+ * first argument is changed to SITE.
+ */
+
+site(argc, argv)
+	char *argv[];
+{
+	int i;
+	char buf[BUFSIZ];
+
+	if (argc < 2) {
+		(void) strcat(line, " ");
+		printf("(arguments to SITE command) ");
+		(void) gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc < 2) {
+		printf("usage: %s line-to-send\n", argv[0]);
+		code = -1;
+		return;
+	}
+	(void) strcpy(buf, "SITE ");
+	(void) strcat(buf, argv[1]);
+	for (i = 2; i < argc; i++) {
+		(void) strcat(buf, " ");
+		(void) strcat(buf, argv[i]);
+	}
+	if (command(buf) == PRELIM) {
+		while (getreply(0) == PRELIM);
+	}
+}
+
+do_chmod(argc, argv)
+	char *argv[];
+{
+	if (argc == 2) {
+		printf("usage: %s mode file-name\n", argv[0]);
+		code = -1;
+		return;
+	}
+	if (argc < 3) {
+		(void) strcat(line, " ");
+		printf("(mode and file-name) ");
+		(void) gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc != 3) {
+		printf("usage: %s mode file-name\n", argv[0]);
+		code = -1;
+		return;
+	}
+	(void)command("SITE CHMOD %s %s", argv[1], argv[2]);
+}
+
+do_umask(argc, argv)
+	char *argv[];
+{
+	int oldverbose = verbose;
+
+	verbose = 1;
+	(void) command(argc == 1 ? "SITE UMASK" : "SITE UMASK %s", argv[1]);
+	verbose = oldverbose;
+}
+
+idle(argc, argv)
+	char *argv[];
+{
+	int oldverbose = verbose;
+
+	verbose = 1;
+	(void) command(argc == 1 ? "SITE IDLE" : "SITE IDLE %s", argv[1]);
+	verbose = oldverbose;
 }
 
 /*
@@ -1818,7 +1919,11 @@ setrunique()
 /* change directory to perent directory */
 cdup()
 {
-	(void) command("CDUP");
+	if (command("CDUP") == ERROR && code == 500) {
+		if (verbose)
+			printf("CDUP command not recognized, trying XCUP\n");
+		(void) command("XCUP");
+	}
 }
 
 
