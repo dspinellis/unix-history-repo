@@ -11,11 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
- * OMRON: $Id: machdep.c,v 1.3 92/06/14 06:17:12 moti Exp $
+ * from: hp300/hp300/machdep.c	7.35 (Berkeley) 12/28/92
  *
- * from: hp300/hp300/machdep.c  7.33 (Berkeley) 10/11/92
- *
- *	@(#)machdep.c	7.5 (Berkeley) %G%
+ *	@(#)machdep.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -77,6 +75,7 @@ int	physmem = MAXMEM;	/* max supported memory, changes to actual */
 int	safepri = PSL_LOWIPL;
 
 extern	u_int lowram;
+extern	short exframesize[];
 
 #ifdef FPCOPROC
 int	fpptype = -1;
@@ -297,7 +296,9 @@ setregs(p, entry, retval)
 	u_long entry;
 	int retval[2];
 {
-	p->p_md.md_regs[PC] = entry & ~1;
+	struct frame *frame = (struct frame *)p->p_md.md_regs;
+
+	frame->f_pc = entry & ~1;
 #ifdef FPCOPROC
 	/* restore a null state frame */
 	p->p_addr->u_pcb.pcb_fpregs.fpf_null = 0;
@@ -360,7 +361,6 @@ sendsig(catcher, sig, mask, code)
 	register struct sigacts *psp = p->p_sigacts;
 	register short ft;
 	int oonstack, fsize;
-	extern short exframesize[];
 	extern char sigcode[], esigcode[];
 
 	frame = (struct frame *)p->p_md.md_regs;
@@ -517,7 +517,6 @@ sigreturn(p, uap, retval)
 	struct sigcontext tsigc;
 	struct sigstate tstate;
 	int flags;
-	extern short exframesize[];
 
 	scp = uap->sigcntxp;
 #ifdef DEBUG
@@ -839,6 +838,12 @@ netintr()
 		clnlintr();
 	}
 #endif
+#ifdef CCITT
+	if (netisr & (1 << NETISR_CCITT)) {
+		netisr &= ~(1 << NETISR_CCITT);
+		ccittintr();
+	}
+#endif
 }
 
 #ifdef	notfdef
@@ -928,9 +933,9 @@ nmihand(frame)
        	return;
 }
 
-regdump(rp, sbytes)
-  int *rp; /* must not be register */
-  int sbytes;
+regdump(fp, sbytes)
+	struct frame *fp; /* must not be register */
+	int sbytes;
 {
 	static int doingdump = 0;
 	register int i;
@@ -941,8 +946,9 @@ regdump(rp, sbytes)
 		return;
 	s = splhigh();
 	doingdump = 1;
-	printf("pid = %d, pc = %s, ", curproc->p_pid, hexstr(rp[PC], 8));
-	printf("ps = %s, ", hexstr(rp[PS], 4));
+	printf("pid = %d, pc = %s, ",
+	       curproc ? curproc->p_pid : -1, hexstr(fp->f_pc, 8));
+	printf("ps = %s, ", hexstr(fp->f_sr, 4));
 	printf("sfc = %s, ", hexstr(getsfc(), 4));
 	printf("dfc = %s\n", hexstr(getdfc(), 4));
 	printf("Registers:\n     ");
@@ -950,18 +956,18 @@ regdump(rp, sbytes)
 		printf("        %d", i);
 	printf("\ndreg:");
 	for (i = 0; i < 8; i++)
-		printf(" %s", hexstr(rp[i], 8));
+		printf(" %s", hexstr(fp->f_regs[i], 8));
 	printf("\nareg:");
 	for (i = 0; i < 8; i++)
-		printf(" %s", hexstr(rp[i+8], 8));
+		printf(" %s", hexstr(fp->f_regs[i+8], 8));
 	if (sbytes > 0) {
-		if (rp[PS] & PSL_S) {
+		if (fp->f_sr & PSL_S) {
 			printf("\n\nKernel stack (%s):",
-			       hexstr((int)(((int *)&rp)-1), 8));
-			dumpmem(((int *)&rp)-1, sbytes, 0);
+			       hexstr((int)(((int *)&fp)-1), 8));
+			dumpmem(((int *)&fp)-1, sbytes, 0);
 		} else {
-			printf("\n\nUser stack (%s):", hexstr(rp[SP], 8));
-			dumpmem((int *)rp[SP], sbytes, 1);
+			printf("\n\nUser stack (%s):", hexstr(fp->f_regs[SP], 8));
+			dumpmem((int *)fp->f_regs[SP], sbytes, 1);
 		}
 	}
 	doingdump = 0;
@@ -1018,6 +1024,24 @@ hexstr(val, len)
 	return(nbuf);
 }
 
+#ifdef DEBUG
+char oflowmsg[] = "k-stack overflow";
+char uflowmsg[] = "k-stack underflow";
+
+badkstack(oflow, fr)
+	int oflow;
+	struct frame fr;
+{
+	extern char kstackatbase[];
+
+	printf("%s: sp should be %x\n", 
+	       oflow ? oflowmsg : uflowmsg,
+	       kstackatbase - (exframesize[fr.f_format] + 8));
+	regdump(&fr, 0);
+	panic(oflow ? oflowmsg : uflowmsg);
+}
+#endif
+
 /* for LUNA */
 
 /*
@@ -1027,7 +1051,7 @@ hexstr(val, len)
 #define	PARITY_ENABLE	0xC
 parityenable()
 {
-    *PARREG = PARITY_ENABLE;
+	*PARREG = PARITY_ENABLE;
 }
 
 #ifdef FPCOPROC
