@@ -170,7 +170,7 @@ login_incorrect()
 doit(sinp)
 struct sockaddr_in *sinp;
 {
-	char user[64], passwd[64];
+	char user[64], passwd[64], ubuf[64];
 	char *xpasswd, *crypt();
 	struct passwd *pw, *getpwnam();
 
@@ -212,9 +212,8 @@ struct sockaddr_in *sinp;
 #endif BSD4_2
 	chdir(pw->pw_dir);
 	setuid(pw->pw_uid);
-#ifdef BSD4_2
-	execl(_PATH_UUCICO, "uucico", (char *)0);
-#endif BSD4_2
+	sprintf(ubuf, "-u%s", pw->pw_name);
+	execl(pw->pw_shell, "uucico", ubuf, (char *)0);
 	perror("uucico server: execl");
 }
 
