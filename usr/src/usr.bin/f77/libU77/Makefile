@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 LIB=	U77
 SRCS=	access_.c alarm_.c chdir_.c chmod_.c ctime_.c dtime_.c etime_.c \
@@ -16,7 +16,7 @@ CLEANFILES+=	Version.o Version.c mkvers
 all: Version.o
 
 Version.o: Version.c
-	${CC} -c Version.c
+	${CC} -R -c Version.c
 
 Version.c: mkvers ${SRCS}
 	mkvers libU77.a ${.ALLSRC:M*.c} > ${.TARGET}
@@ -29,12 +29,12 @@ mkvers: mkvers.c
 # Fortran compiler doesn't let you rename .o's, so we'll have to cheat.
 .f.o:
 	${FC} -p ${FFLAGS} -c ${.IMPSRC}
-	${LD} -X -r ${.TARGET:S/.po/.o/}
-	mv a.out ${.TARGET}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .f.po:
 	ln -s ${.IMPSRC} xxx.f
 	${FC} -p ${FFLAGS} -c xxx.f
-	${LD} -X -r xxx.o
-	mv a.out ${.TARGET}
-	rm -f xxx.f xxx.o
+	@${LD} -X -r xxx.o
+	@mv a.out ${.TARGET}
+	@rm -f xxx.f xxx.o
