@@ -1,10 +1,10 @@
 #
-#	Makefile	4.4	%G%
+#	Makefile	4.5	%G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
 #
-CFLAGS=	-O -DTELL -DVMUNIX -Ddebug -DVFORK -pg
+CFLAGS=	-O -DTELL -DVMUNIX -DVFORK
 XSTR=	/usr/ucb/xstr
 ED=	-ed
 AS=	-as
@@ -18,7 +18,7 @@ SCCS=	/usr/local/sccs
 # strings.o must be last in OBJS since it can change when previous files compile
 OBJS=	alloc.o doprnt.o printf.o sh.dir.o sh.dol.o sh.err.o sh.exec.o \
 	sh.exp.o sh.func.o sh.glob.o sh.hist.o sh.init.o sh.lex.o sh.misc.o \
-	sh.parse.o sh.print.o sh.proc.o sh.sem.o sh.set.o sh.sig.o sh.time.o \
+	sh.parse.o sh.print.o sh.proc.o sh.sem.o sh.set.o sh.time.o \
 	strings.o
 
 # Special massaging of C files for sharing of strings
@@ -26,11 +26,13 @@ OBJS=	alloc.o doprnt.o printf.o sh.dir.o sh.dol.o sh.err.o sh.exec.o \
 	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
 	${CC} -c ${CFLAGS} x.c 
 	mv x.o $*.o
+	rm -f x.c
 
 csh: sh.o ${OBJS} sh.local.h
 	rm -f csh
 	cc sh.o ${OBJS} -o csh ${LIBES}
 
+# To make csh.prof: put -pg in CFLAGS, make clean, make csh.prof
 csh.prof: sh.prof.o ${OBJS} sh.local.h
 	rm -f csh.prof
 	cc -pg sh.prof.o ${OBJS} ${LIBES} -o csh.prof
@@ -39,6 +41,7 @@ sh.prof.o: sh.c
 	${CC} -E ${CFLAGS} -DPROF sh.c | ${XSTR} -c -
 	cc -c ${CFLAGS} -DPROF x.c
 	mv x.o sh.prof.o
+	rm -f x.c
 
 .DEFAULT:
 	${SCCS} get $<
@@ -54,11 +57,13 @@ strings.o: strings
 	${XSTR}
 	${CC} -c -R xs.c
 	mv xs.o strings.o
+	rm -f xs.c
 
 sh.init.o:
 	${CC} -E ${CFLAGS} sh.init.c | ${XSTR} -c -
 	${CC} ${CFLAGS} -c -R x.c
 	mv x.o sh.init.o
+	rm -f x.c
 	
 lint:
 	lint ${CFLAGS} sh*.c
