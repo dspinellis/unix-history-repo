@@ -2,24 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	6.1 (Berkeley) %G%
+.\"	@(#)6.t	6.2 (Berkeley) %G%
 .\"
-.ds LH "Building Systems With Config
-.ds RH "Adding New Devices
-.ds CF July 27, 1983
-.LP
-.nr H2 0
-.nr H1 6
-.ds CH "
-.bp
-.ds CH "\(hy \\n(PN \(hy
-.LG
-.B
-.ce
-6. ADDING NEW SYSTEM SOFTWARE
-.sp 2
-.R
-.NL
+.\".ds RH "Adding New Devices
+.ne 2i
+.NH
+ADDING NEW SYSTEM SOFTWARE
 .PP
 This section is not for the novice, it describes
 some of the inner workings of the configuration process as
@@ -33,11 +21,11 @@ This section is broken into four parts:
 .IP \(bu 3
 general guidelines to be followed in modifying system code,
 .IP \(bu 3
-how to add a device driver to 4.2BSD,
+how to add non-standard system facilities to 4.3BSD,
 .IP \(bu 3
-how UNIBUS device drivers are autoconfigured under 4.2BSD on the VAX, and
+how to add a device driver to 4.3BSD, and
 .IP \(bu 3
-how to add non-standard system facilities to 4.2BSD.
+how UNIBUS device drivers are autoconfigured under 4.3BSD on the VAX.
 .NH 2
 Modifying system code
 .PP
@@ -62,14 +50,15 @@ of the form:
 We try to isolate our site-dependent code in individual files
 which may be configured with pseudo-device specifications.
 .PP
-Indicate machine specific code with ``#ifdef vax''.  4.2BSD
-has undergone extensive work to make it extremely portable to
-machines with similar architectures \- you may someday find
+Indicate machine-specific code with ``#ifdef vax'' (or other machine,
+as appropriate).
+4.2BSD underwent extensive work to make it extremely portable to
+machines with similar architectures\- you may someday find
 yourself trying to use a single copy of the source code on
 multiple machines.
 .PP
 Use \fIlint\fP periodically if you make changes to the system.
-The 4.2BSD release has only one line of lint in it.  It
+The 4.3BSD kernel has only two lines of lint in it.  It
 is very simple to lint the kernel.  Use the LINT configuration
 file, designed to pull in as much of the kernel source code as
 possible, in the following manner.
@@ -84,27 +73,119 @@ $ make \-k lint > linterrs 2>&1 &
 (or for users of \fIcsh\fP\|(1))
 % make \-k >& linterrs
 .DE
-This takes about 45 minutes on a lightly loaded
+This takes about an hour on a lightly loaded
 VAX-11/750, but is well worth it.
 .NH 2
-Adding device drivers to 4.2BSD
+Adding non-standard system facilities
 .PP
-The i/o system and
+This section considers the work needed to augment 
+.IR config 's
+data base files for non-standard system facilities.
+.I Config
+uses a set of files that list the source modules that may be required
+when building a system.
+The data bases are taken from the directory in which
+.I config
+is run, normally /sys/conf.
+Three such files may be used:
+.IR files ,
+.IR files .machine,
+and
+.IR files .ident.
+The first is common to all systems,
+the second contains files unique to a single machine type,
+and the third is an optional list of modules for use on a specific machine.
+This last file may override specifications in the first two.
+The format of the 
+.I files
+file has grown somewhat complex over time.  Entries are normally of
+the form
+.IP
+.nf
+.DT
+\fIdir/source.c\fP	\fItype\fP	 \fIoption-list\fP \fImodifiers\fP
+.LP
+for example,
+.IP
+.nf
+.DT
+\fIvaxuba/foo.c\fP	\fBoptional\fP	foo	\fBdevice-driver\fP
+.LP
+The
+.I type
+is one of
+.B standard
+or
+.BR optional .
+Files marked as standard are included in all system configurations.
+Optional file specifications include a list of one or more system
+options that together require the inclusion of this module.
+The options in the list may be either names of devices that may
+be in the configuration file,
+or the names of system options that may be defined.
+An optional file may be listed multiple times with different options;
+if all of the options for any of the entries are satisfied,
+the module is included.
+.PP
+If a file is specified as a
+.IR device-driver ,
+any special compilation options for device drivers will be invoked.
+On the VAX this results in the use of the
+.B \-i
+option for the C optimizer.  This is required when pointer references
+are made to memory locations in the VAX I/O address space.
+.PP
+Two other optional keywords modify the usage of the file.
+.I Config
+understands that certain files are used especially for
+kernel profiling.  These files are indicated in the
+.I files
+files with a 
+.I profiling-routine
+keyword.  For example, the current profiling subroutines
+are sequestered off in a separate file with the following
+entry:
+.IP
+.nf
+.DT
+\fIsys/subr_mcount.c\fP	\fBoptional\fP	\fBprofiling-routine\fP
+.fi
+.LP
+The 
+.I profiling-routine
+keyword forces
+.I config
+not to compile the source file with the 
+.B \-pg
+option.
+.PP
+The second keyword which can be of use is the
+.I config-dependent
+keyword.  This causes
+.I config
+to compile the indicated module with the global configuration
+parameters.  This allows certain modules, such as
+.I machdep.c
+to size system data structures based on the maximum number
+of users configured for the system.
+.NH 2
+Adding device drivers to 4.3BSD
+.PP
+The I/O system and
 .I config
 have been designed to easily allow new device support to be added.
-As described in ``Installing and Operating 4.2BSD on the VAX'',
-the system source directories are organized as follows:
+The system source directories are organized as follows:
 .DS
 .TS
 lw(1.0i) l.
 /sys/h	machine independent include files
-/sys/sys	machine independent system source files
+/sys/sys	machine-independent system source files
 /sys/conf	site configuration files and basic templates
-/sys/net	network independent, but network related code
+/sys/net	network-protocol-independent, but network-related code
 /sys/netinet	DARPA Internet code
 /sys/netimp	IMP support code
-/sys/netpup	PUP-1 support code
-/sys/vax	VAX specific mainline code
+/sys/netns	Xerox NS code
+/sys/vax	VAX-specific mainline code
 /sys/vaxif	VAX network interface code
 /sys/vaxmba	VAX MASSBUS device drivers and related code
 /sys/vaxuba	VAX UNIBUS device drivers and related code
@@ -125,59 +206,35 @@ Once the source for the device driver has been placed in a directory,
 the file ``/sys/conf/files.machine'', and possibly
 ``/sys/conf/devices.machine'' should be modified.  The 
 .I files
-files in the conf directory contain a line for each source or binary-only
+files in the conf directory contain a line for each C source or binary-only
 file in the system.  Those files which are machine independent are
-located in ``/sys/conf/files'' while machine specific files
-are in ``/sys/conf/files.machine''.  The ``devices.machine'' file
+located in ``/sys/conf/files,'' while machine specific files
+are in ``/sys/conf/files.machine.''  The ``devices.machine'' file
 is used to map device names to major block device numbers.  If the device
 driver being added provides support for a new disk
 you will want to modify this file (the format is obvious).
 .PP
-The format of the 
-.I files
-file has grown somewhat complex over time.  Entries are normally of
-the form
-.IP
-.nf
-.DT
-\fIvaxuba/foo.c\fP	\fBoptional\fP foo \fBdevice-driver\fP
-.LP
-where the keyword 
-.I optional
-indicates that to compile the ``foo''
-driver into the system it must be specified in the configuration file.
-If instead the driver is specified as 
-.IR standard ,
-the file
-will be loaded no matter what configuration is requested.
-This is not normally done with device drivers.  The fact that
-the file is specified as a
-.I device-driver
-results, on the VAX, in the compilation including a
-.B \-i
-option for the C optimizer.  This is required when pointer references
-are made to memory locations in the VAX i/o address space.
-.PP
-Aside from including the driver in the
+In addition to including the driver in the
 .I files
 file, it must also be added to the device configuration tables.  These
 are located in ``/sys/vax/conf.c'', or similar for machines other than
 the VAX.  If you don't understand what to add to this file, you should
 study an entry for an existing driver. 
-Remember that the position in the block
-device table specifies what the major block device number is, this is
-needed in the ``devices.machine'' file if the device is a disk.
+Remember that the position in the
+device table specifies the major device number.
+The block major number is needed in the ``devices.machine'' file
+if the device is a disk.
 .PP
 With the configuration information in place, your configuration
 file appropriately modified, and a system reconfigured and rebooted
 you should incorporate the shell commands needed to install the special
 files in the file system to the file ``/dev/MAKEDEV'' or
 ``/dev/MAKEDEV.local''.  This is discussed in the document ``Installing
-and Operating 4.2BSD on the VAX''.
+and Operating 4.3BSD on the VAX''.
 .NH 2
 Autoconfiguration on the VAX
 .PP
-4.2BSD (and 4.1BSD) require all device drivers to conform to a
+4.3BSD requires all device drivers to conform to a
 set of rules which allow the system to:
 .IP 1)
 support multiple UNIBUS and MASSBUS adapters,
@@ -192,13 +249,13 @@ everyone else to get off the UNIBUS when they are running
 need cooperation from other DMA devices if they are to work.
 Since it is unlikely that you will be writing a device driver
 for a MASSBUS device, this section is devoted exclusively to
-describing the i/o system and autoconfiguration process as it
+describing the I/O system and autoconfiguration process as it
 applies to UNIBUS devices.
 .PP
 Each UNIBUS on a VAX has a set of resources:
 .IP \(bu
-496 map registers which are used to convert from the 18 bit UNIBUS
-addresses into the much larger VAX address space.
+496 map registers which are used to convert from the 18-bit UNIBUS
+addresses into the much larger VAX memory address space.
 .IP \(bu
 Some number of buffered data paths (3 on an 11/750, 15 on an 11/780, 0
 on an 11/730) which are used by high speed devices to transfer
@@ -210,7 +267,7 @@ a linked list where devices waiting for resources to complete DMA UNIBUS
 activity have requests waiting.
 .PP
 There are three central structures in the writing of drivers for UNIBUS
-controllers; devices which do not do DMA i/o can often use only two
+controllers; devices which do not do DMA I/O can often use only two
 of these structures.  The structures are \fIstruct uba_ctlr\fR, the
 UNIBUS controller structure, \fIstruct uba_device\fR the UNIBUS
 device structure, and \fIstruct uba_driver\fR, the UNIBUS driver structure.
@@ -248,7 +305,7 @@ drives may be on any of the controllers (that is there is a single
 linear name space for devices, separate from the controllers.)
 .PP
 We now explain the fields in the various structures.  It may help
-to look at a copy of \fIvaxuba/ubareg.h\fR, \fIh/ubavar.h\fR and drivers
+to look at a copy of \fIvaxuba/ubareg.h\fR, \fIvaxuba/ubavar.h\fR and drivers
 such as \fIup.c\fR and \fIdz.c\fR while reading the descriptions of
 the various structure fields.
 .SH
@@ -258,11 +315,23 @@ One of these structures exists per driver.  It is initialized in
 the driver and contains functions used by the configuration program
 and by the UNIBUS resource routines.  The fields of the structure are:
 .IP \fBud_probe\fP
-A routine which is given a \fIcaddr_t\fR address as argument and
-should cause an interrupt on the device whose control-status register
-is at that address in virtual memory.  It may be the case that the
-device does not exist, so the probe routine should use delays (via
-the DELAY(n) macro which delays for \fIn\fR microseconds) rather than
+A routine which, given a \fIcaddr_t\fR address as argument,
+should attempt to determine that the device is present
+at that address in virtual memory,
+and should cause an interrupt from the device.
+When probing controllers, two additional arguments are supplied:
+the controller index, and a pointer to the \fIuba_ctlr\fP structure.
+Device probe routines receive a pointer to the \fIuba_device\fP structure
+as second argument.
+Both of these structures are described below.
+Neither is normally used, but devices that must record status or device
+type information from the probe routine may require them.
+.PP
+The autoconfiguration routine attempts to verify that the specified address
+responds before calling the probe routine.
+However, the device may not actually exist or may be of a different type,
+and therefore the probe routine should use delays
+(via the DELAY(n) macro which delays for \fIn\fR microseconds) rather than
 waiting for specific events to occur.  The routine must \fBnot\fR
 declare its argument as a \fIregister\fR parameter, but \fBmust\fR declare
 .DS
@@ -283,7 +352,7 @@ upprobe(reg)
         register int br, cvec;
 
 #ifdef lint     
-        br = 0; cvec = br; br = cvec;
+        br = 0; cvec = br; br = cvec; upintr(0);
 #endif
         ((struct updevice *)reg)->upcs1 = UP_IE|UP_RDY;
         DELAY(10);
@@ -292,13 +361,15 @@ upprobe(reg)
 }
 .DE
 The definitions for \fIlint\fR serve to indicate to it that the
-\fIbr\fR and \fIcvec\fR variables are value-result.  The statements
-here interrupt enable the device and write the ready bit UP_RDY.
+\fIbr\fR and \fIcvec\fR variables are value-result.
+The call to the interrupt routine satisfies lint that the interrupt
+handler is used.
+The cod here enable interrupts on the device and write the ready bit UP_RDY.
 The 10 microsecond delay insures that the interrupt enable will
 not be canceled before the interrupt can be posted.  The return of
 ``sizeof (struct updevice)'' here indicates that the probe routine
 is satisfied that the device is present (the value returned is not
-currently used, but future plans dictate you should return the amount
+currently used, but future plans dictate that you should return the amount
 of space in the device's register bank).  A probe routine may use
 the function ``badaddr'' to see
 if certain other addresses are accessible on the UNIBUS (without generating
@@ -321,9 +392,7 @@ br = 0x15;
 cvec = 0200;
 .DE
 for instance, to declare that the device ran at UNIBUS br5 and interrupted
-through vector 0200 on the UNIBUS.  The current UDA-50 driver does 
-something similar to this because the device is so difficult to force
-an interrupt on that it hardly seems worthwhile.
+through vector 0200 on the UNIBUS.
 .IP \fBud_slave\fP
 This routine is called with a \fIuba_device\fR structure (yet to
 be described) and the address of the device controller.  It should
@@ -339,8 +408,8 @@ upslave(ui, reg)
 
         upaddr->upcs1 = 0;              /* conservative */
         upaddr->upcs2 = ui->ui_slave;
-        if (upaddr->upcs2&UPCS2_NED) {
-                upaddr->upcs1 = UP_DCLR|UP_GO;
+        if (upaddr->upcs2 & UPCS2_NED) {
+                upaddr->upcs1 = UP_DCLR | UP_GO;
                 return (0);
         }
         return (1);
@@ -348,7 +417,7 @@ upslave(ui, reg)
 .DE
 Here the code fetches the slave (disk unit) number from the \fIui_slave\fR
 field of the \fIuba_device\fR structure, and sees if the controller
-responds that that is a non-existent driver (NED).  If the drive
+responds that that is a non-existent driver (NED).  If the drive is not present,
 a drive clear is issued to clean the state of the controller, and 0 is
 returned indicating that the slave is not there.  Otherwise a 1 is returned.
 .IP \fBud_attach\fP
@@ -393,7 +462,7 @@ type is used to setup disk partition mapping tables and other
 device specific information.
 .IP \fBud_dgo\fP
 .br
-Is the routine which is called by the UNIBUS resource management
+This is the routine which is called by the UNIBUS resource management
 routines when an operation is ready to be started (because the required
 resources have been allocated).  The routine in \fIup.c\fR is:
 .DS
@@ -408,29 +477,30 @@ updgo(um)
 .DE
 This routine uses the field \fIum_ubinfo\fR of the \fIuba_ctlr\fR
 structure which is where the UNIBUS routines store the UNIBUS
-map allocation information.  In particluar, the low 18 bits of this
+map allocation information.  In particular, the low 18 bits of this
 word give the UNIBUS address assigned to the transfer.  The assignment
 to \fIupba\fR in the go routine places the low 16 bits of the UNIBUS
 address in the disk UNIBUS address register.  The next assignment
 places the disk operation command and the extended (high 2) address
-bits in the device control-status register, starting the i/o operation.
+bits in the device control-status register, starting the I/O operation.
 The field \fIum_cmd\fR was initialized with the command to be stuffed
 here in the driver code itself before the call to the \fIubago\fR
 routine which eventually resulted in the call to \fIupdgo\fR.
 .IP \fBud_addr\fP
-Are the conventional addresses for the device control registers in
-UNIBUS space.  This information is used by the system
+This is a zero-terminated list of the conventional addresses
+for the device control registers in UNIBUS space.
+This information is used by the system
 to look for instances of the device supported by the driver.
 When the system probes for the device it first checks for a
 control-status register located at the address indicated in
 the configuration file (if supplied), then uses the list of
 conventional addresses pointed to be \fIud_addr\fP.
 .IP \fBud_dname\fP
-Is the name of a \fIdevice\fR supported by this controller; thus the
+This is the name of a \fIdevice\fR supported by this controller; thus the
 disks on a SC-21 controller are called \fIup0\fR, \fIup1\fR, etc.
 That is because this field contains \fIup\fR.
 .IP \fBud_dinfo\fP
-Is an array of back pointers to the \fIuba_device\fR structures for
+This is an array of back pointers to the \fIuba_device\fR structures for
 each device attached to the controller.  Each driver defines a set of
 controllers and a set of devices.  The device address space is always
 one-dimensional, so that the presence of extra controllers may be
@@ -449,6 +519,19 @@ only for the RK611 controller for the RK07 disks to map around a hardware
 problem.  It could also be used if 6250bpi tape drives are to be used
 on the UNIBUS to insure that they get the bandwidth that they need
 (basically the whole bus).
+.IP \fBud_ubamem\fP
+This is an optional entry point to the driver to configure UNIBUS memory
+associated with a device.
+If this field in the driver structure is null, it is ignored.
+Otherwise, it is called before beginning to probe for devices
+when configuration of a UNIBUS is begun.
+The driver must probe for the existence of its memory,
+and is then responsible for allocating the map registers corresponding
+to the device memory addresses so that the registers are not used for other
+purposes.
+The \fBud_ubamem\fP returns 0 on success and \-1 on failure.
+A return value of 1 indicates that the memory exists, and that there
+is no further configuration required for the device.
 .SH
 uba_ctlr structure
 .PP
@@ -478,7 +561,7 @@ A place for the driver to store the command which is to be given to
 the device before calling the routine \fIubago\fR with the devices
 \fIuba_device\fR structure.  This information is then retrieved when the
 device go routine is called and stuffed in the device control status register
-to start the i/o operation.
+to start the I/O operation.
 .IP \fBum_ubinfo\fP
 Information about the UNIBUS resources allocated to the device.  This is
 normally only used in device driver go routine (as \fIupdgo\fR above)
@@ -498,7 +581,7 @@ must be:
 A chain of \fIbuf\fR structures for each waiting device on this controller.
 .IP \(bu 3
 On each waiting \fIbuf\fR structure another \fIbuf\fR structure which is
-the one containing the parameters of the i/o operation.
+the one containing the parameters of the I/O operation.
 .RE
 .SH
 uba_device structure
@@ -506,7 +589,7 @@ uba_device structure
 One of these structures exist for each device attached to a UNIBUS
 controller.  Devices which are not attached to controllers or which
 perform no buffered data path
-DMA i/o may have only a device structure.  Thus \fIdz\fR
+DMA I/O may have only a device structure.  Thus \fIdz\fR
 and \fIdh\fR devices have only \fIuba_device\fR structures.
 The fields are:
 .IP \fBui_driver\fP
@@ -535,7 +618,7 @@ The control-status register address of this device.
 .IP \fBui_dk\fP
 .br
 The iostat number assigned to this device.  Numbers are assigned to
-disks only, and are small positive integers which index the various
+disks only, and are small nonnegative integers which index the various
 \fIdk_*\fP arrays in <\fIsys/dk.h\fP>.
 .IP \fBui_flags\fP
 The optional ``flags \fIxxx\fP'' parameter from the configuration
@@ -548,7 +631,7 @@ determined to be alive, and left 1.
 The device type, to be used by the driver internally.
 .IP \fBui_physaddr\fP
 The physical memory address of the device control-status register.
-This is used in the device dump routines typically.
+This is typically used in the device dump routines.
 .IP \fBui_mi\fP
 .br
 A \fIstruct uba_ctlr\fP pointer to the controller (if any) on which
@@ -570,9 +653,12 @@ you may request that you
 if you need a buffered data path,
 .IP HAVEBDP
 if you already have a buffered data path and just want new
-mapping registers (and access to the UNIBUS), and
+mapping registers (and access to the UNIBUS),
 .IP CANTWAIT
-if you are calling (potentially) from interrupt level
+if you are calling (potentially) from interrupt level, and
+.IP NEED16
+if the device uses only 16 address bits, and thus requires
+map registers from the first 64K of UNIBUS address space.
 .LP
 If the presentation here does not answer all the questions
 you may have, consult the file /sys/vaxuba/uba.c
@@ -590,15 +676,15 @@ and want to share it with others.
 If you managed to create all the needed hooks, then make sure you include
 the necessary header files; the ones included by \fIvaxuba/ct.c\fP are nearly
 minimal.  Order is important here, don't be surprised at undefined structure
-complaints if you order the includes wrongly.
-Finally if you get the device configured in, you can try bootstrapping
+complaints if you order the includes incorrectly.
+Finally, if you get the device configured in, you can try bootstrapping
 and see if configuration messages print out about your device.
 It is a good idea to have some messages in the probe routine so that
-you can see that you are getting called and what is going on.
-If you do not get called, then you probably have the control-status
-register address wrong in your system configuration.  The autoconfigure
-code notices that the device doesn't exist in this case and you will never
-get called.
+you can see that it is being called and what is going on.
+If it is not called, then you probably have the control-status
+register address wrong in the system configuration.  The autoconfigure
+code notices that the device doesn't exist in this case,
+and the probe will never be called.
 .PP
 Assuming that your probe routine works and you manage
 to generate an interrupt, then you are basically back to where you
@@ -626,46 +712,3 @@ may fail to present interrupt vectors because they have configuration
 switches set wrong, or because they are being accessed in inappropriate ways.
 Incomplete emulation can cause ``maintenance mode'' features to not work
 properly, and these features are often needed to force device interrupts.
-.NH 2
-Adding non-standard system facilities
-.PP
-This section considers the work needed to augment 
-.IR config 's
-data base files for non-standard system facilities.
-.PP
-As far as
-.I config
-is concerned
-non-standard facilities may fall into two categories.
-.I Config
-understands that certain files are used especially for
-kernel profiling.  These files are indicated in the
-.I files
-files with a 
-.I profiling-routine
-keyword.  For example, the current profiling subroutines
-are sequestered off in a separate file with the following
-entry:
-.IP
-.nf
-.DT
-\fIsys/subr_mcount.c\fP	\fBoptional\fP \fBprofiling-routine\fP
-.fi
-.LP
-The 
-.I profiling-routine
-keyword forces
-.I config
-to not compile the source file with the 
-.B \-pg
-option.
-.PP
-The second keyword which can be of use is the
-.I config-dependent
-keyword.  This causes
-.I config
-to compile the indicated module with the global configuration
-parameters.  This allows certain modules, such as
-.I machdep.c
-to size system data structures based on the maximum number
-of users configured for the system.

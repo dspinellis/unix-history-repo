@@ -2,24 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.1 (Berkeley) %G%
+.\"	@(#)4.t	6.2 (Berkeley) %G%
 .\"
-.ds LH "Building Systems With Config
-.ds RH "Configuration File Syntax
-.ds CF July 27, 1983
-.LP
-.nr H1 4
-.nr H2 0
-.ds CH "
-.bp
-.ds CH "\(hy \\n(PN \(hy
-.LG
-.B
-.ce
-4. CONFIGURATION FILE SYNTAX
-.sp 2
-.R
-.NL
+.\".ds RH "Configuration File Syntax
+.ne 2i
+.NH
+CONFIGURATION FILE SYNTAX
 .PP
 In this section we consider the specific rules used in writing
 a configuration file.  A complete grammar for the input language
@@ -57,9 +45,11 @@ can appear in a configuration file.
 Legal types for a
 .B vax
 machine are
-\fBVAX780\fP,\fBVAX750\fP,
+\fBVAX8600\fP, \fBVAX780\fP, \fBVAX750\fP,
+\fBVAX730\fP
 and
-\fBVAX730\fP.
+\fBVAX630\fP (MicroVAX II).
+The 8650 is listed as an 8600, the 785 as a 780, and a 725 as a 730.
 .IP "\fBoptions\fP \fIoptionlist\fP"
 .br
 Compile the listed optional code into the system. 
@@ -68,19 +58,33 @@ Possible options are listed at the top of the generic makefile.
 A line of the form ``options FUNNY,HAHA'' generates global ``#define''s
 \-DFUNNY \-DHAHA in the resultant makefile.
 An option may be given a value by following its name with ``\fB=\fP'',
-then the value enclosed in (double) quotes.  None of the standard options
-use such a value.  The following options are currently in use:
-COMPAT (include code for compatiblity with 4.1BSD binaries),
+then the value enclosed in (double) quotes.
+The following are major options are currently in use:
+COMPAT (include code for compatibility with 4.1BSD binaries),
 INET (Internet communication protocols),
-PUP (support for a PUP raw interface),
+NS (Xerox NS communication protocols),
 and
 QUOTA (enable disk quotas).
+Other kernel options controlling system sizes and limits
+are listed in Appendix D;
+options for the network are found in Appendix E.
 There are additional options which are associated with certain
 peripheral devices; those are listed in the Synopsis section
 of the manual page for the device.
+.IP "\fBmakeoptions\fP \fIoptionlist\fP"
+.br
+Options that are used within the system makefile
+and evaluated by
+.I make
+are listed as
+.IR makeoptions .
+Options are listed with their values with the form
+``makeoptions name=value,name2=value2.''
+The values must be enclosed in double quotes if they include numerals
+or begin with a dash.
 .IP "\fBtimezone\fP \fInumber\fP [ \fBdst\fP [ \fInumber\fP ] ]"
 .br
-Specifies the timezone you are in.  This is measured in the
+Specifies the timezone used by the system.  This is measured in the
 number of hours your timezone is west of GMT.  
 EST is 5 hours west of GMT, PST is 8.  Negative numbers
 indicate hours east of GMT. If you specify
@@ -97,6 +101,9 @@ This system is to be known as
 .IR name .
 This is usually a cute name like ERNIE (short for Ernie Co-Vax) or
 VAXWELL (for Vaxwell Smart).
+This value is defined for use in conditional compilation,
+and is also used to locate an optional list of source files specific
+to this system.
 .IP "\fBmaxusers\fP \fInumber\fP"
 .br
 The maximum expected number of simultaneously active user on this system is
@@ -118,7 +125,7 @@ The
 field is the name given to the loaded system image; almost everyone
 names their standard system image ``vmunix''.  The configuration clauses
 are one or more specifications indicating where the root file system
-is located, how many paging devices there are and where they go.
+is located and the number and location of paging devices.
 The device used by the system to process argument lists during
 .IR execve (2)
 calls may also be specified, though in practice this is almost
@@ -131,7 +138,7 @@ A configuration clause is one of the following
 .IP
 .nf
 \fBroot\fP [ \fBon\fP ] \fIroot-device\fP
-\fBswap\fP [ \fBon\fP ] \fIswap-device\fP [ \fBand\fP \fIswap-device\fP ]
+\fBswap\fP [ \fBon\fP ] \fIswap-device\fP [ \fBand\fP \fIswap-device\fP ] ...
 \fBdumps\fP [ \fBon\fP ] \fIdump-device\fP
 \fBargs\fP [ \fBon\fP ] \fIarg-device\fP
 .LP
@@ -146,7 +153,7 @@ area(s), the ``dumps'' clause can be used to force system dumps
 to be taken on a particular device, and the ``args'' clause
 can be used to specify that argument list processing for
 .I execve
-should be done on a particular disk.
+should be done on a particular device.
 .PP
 The device names supplied in the clauses may be fully specified
 as a device, unit, and file system partition; or underspecified
@@ -188,8 +195,9 @@ where the device name would normally be found.  For example,
 .fi
 .PP
 Normally, the areas configured for swap space are sized by the system
-at boot time.  If a non-standard partition size is to be used for one
-or more swap areas, this can also be specified.  To do this, the
+at boot time.  If a non-standard size is to be used for one
+or more swap areas (less than the full partition),
+this can also be specified.  To do this, the
 device name specified for a swap area should have a ``size''
 specification appended.  For example,
 .IP
@@ -218,9 +226,9 @@ hardware actually found at boot time will be used by the system.
 .PP
 The specification of hardware devices in the configuration file
 parallels the interconnection hierarchy of the machine to be
-configured.  On the VAX, this means a configuration file must
+configured.  On the VAX, this means that a configuration file must
 indicate what MASSBUS and UNIBUS adapters are present, and to
-which \fInexi\fP they might be connected*. 
+which \fInexi\fP they might be connected.* 
 .FS
 * While VAX-11/750's and VAX-11/730 do not actually have 
 nexi, the system treats them as having 
@@ -258,7 +266,7 @@ a UNIBUS adapter.  A ``device'' is an autonomous device which
 connects directly to a UNIBUS adapter (as opposed to something
 like a disk which connects through a disk controller).  ``Disk''
 and ``tape'' identify disk drives and tape drives connected to
-a ``controller'' or ``master''.
+a ``controller'' or ``master.''
 .PP
 The
 .I device-name
@@ -306,7 +314,7 @@ a controller
 may be connected to another controller (e.g. a disk controller attached
 to a UNIBUS adapter),
 .IP \(bu 3
-a master is always attached to a controller (a MASSBUS adaptor),
+a master is always attached to a controller (a MASSBUS adapter),
 .IP \(bu 3
 a tape is always attached to a master (for MASSBUS
 tape drives),
@@ -323,6 +331,7 @@ The following lines give an example of each of these interconnections:
 .nf
 \fBcontroller\fP	hk0	\fBat\fP uba0 ...
 \fBmaster\fP	ht0	\fBat\fP mba0 ...
+\fBdisk\fP	hp0	\fBat\fP mba0 ...
 \fBtape\fP	tu0	\fBat\fP ht0 ...
 \fBdisk\fP	rk1	\fBat\fP hk0 ...
 \fBdevice\fP	dz0	\fBat\fP uba0 ...
@@ -335,8 +344,11 @@ The final piece of information needed by the system to configure
 devices is some indication of where or how a device will interrupt.
 For tapes and disks, simply specifying the \fIslave\fP or \fIdrive\fP
 number is sufficient to locate the control status register for the
-device.  For controllers, the control status register must be
-given explicitly, as well how many interrupt vectors are used and
+device.
+\fIDrive\fP numbers may be wildcarded
+on MASSBUS devices, but not on disks on a UNIBUS controller.
+For controllers, the control status register must be
+given explicitly, as well the number of interrupt vectors used and
 the names of the routines to which they should be bound. 
 Thus the example lines given above might be completed as:
 .IP
@@ -344,6 +356,7 @@ Thus the example lines given above might be completed as:
 .nf
 \fBcontroller\fP	hk0	\fBat\fP uba0 \fBcsr\fP 0177440	\fBvector\fP rkintr
 \fBmaster\fP	ht0	\fBat\fP mba0 \fBdrive\fP 0
+\fBdisk\fP	hp0	\fBat\fP mba0 \fBdrive\fP ?
 \fBtape\fP	tu0	\fBat\fP ht0 \fBslave\fP 0
 \fBdisk\fP	rk1	\fBat\fP hk0 \fBdrive\fP 1
 \fBdevice\fP	dz0	\fBat\fP uba0 \fBcsr\fP 0160100	\fBvector\fP dzrint dzxint
@@ -389,15 +402,14 @@ must be used.  A specification for a pseudo device takes the form
 \fBpseudo-device\fP	\fIdevice-name\fP [ \fIhowmany\fP ]
 .fi
 .PP
-Examples of pseudo devices are \fBbk\fP, the Berknet line discipline,
+Examples of pseudo devices are
 \fBpty\fP, the pseudo terminal driver (where the optional
 .I howmany
 value indicates the number of pseudo terminals to configure, 32 default),
-and \fBinet\fP, the DARPA Internet protocols (one must also specify INET
-in the ``options'').
-Other pseudo devices for the network include \fBloop\fP, the software loopback
-interface, \fBimp\fP (required when a CSS or ACC imp is configured),
+and \fBloop\fP, the software loopback network pseudo-interface.
+Other pseudo devices for the network include
+\fBimp\fP (required when a CSS or ACC imp is configured)
 and \fBether\fP (used by the Address Resolution Protocol
-on 10 Mb/sec ethernets).
+on 10 Mb/sec Ethernets).
 More information on configuring each of these can also be found
 in section 4 of the manual.

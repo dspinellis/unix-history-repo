@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.2 (Berkeley) %G%
+.\"	@(#)0.t	6.3 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -39,7 +39,7 @@ Berkeley, California  94720
 .PP
 This document describes the use of
 \fIconfig\fP\|(8) to configure and create bootable
-4.2BSD system images.
+4.3BSD system images.
 It discusses the structure of system
 configuration files and how to configure
 systems with non-standard hardware configurations.
@@ -50,6 +50,7 @@ contains a summary of the rules used by the system
 in calculating the size of system data structures,
 and also indicates some of the standard system size
 limitations (and how to change them).
+Other configuration options are also listed.
 .sp
 .LP
 Revised 
