@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -111,15 +111,11 @@ radixsort(l1, nmemb, tab, endbyte)
 
 	/*
 	 * T1 is the constant part of the equation, the number of elements
-	 * represented on the stack between the top and bottom entries.
-	 * It doesn't get rounded as the divide by 2 rounds down (correct
-	 * for a value being subtracted).  T2, the nelem value, has to be
-	 * rounded up before each divide because we want an upper bound;
-	 * this could overflow if nmemb is the maximum int.
+	 * on the stack other than the two largest, worst-case buckets.
 	 */
-	t1 = ((__rspartition + 1) * (NBUCKETS - 2)) >> 1;
+	t1 = (__rspartition + 1) * (NBUCKETS - 2);
 	for (i = 0, t2 = nmemb; t2 > __rspartition; i += NBUCKETS - 1)
-		t2 = ((t2 + 1) >> 1) - t1;
+		t2 = (t2 - t1) >> 1;
 	if (i) {
 		if (!(stack = stackp = (CONTEXT *)malloc(i * sizeof(CONTEXT))))
 			return(-1);
