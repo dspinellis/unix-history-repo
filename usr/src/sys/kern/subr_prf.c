@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.19	81/11/20	*/
+/*	subr_prf.c	4.20	82/01/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -214,7 +214,7 @@ putchar(c, touser)
 	if (touser) {
 		register struct tty *tp = u.u_ttyp;
 
-		if (tp && (tp->t_state&CARR_ON)) {
+		if (tp && (tp->t_state&TS_CARR_ON)) {
 			register s = spl6();
 			if (c == '\n')
 				(void) ttyoutput('\r', tp);
