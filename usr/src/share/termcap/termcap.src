@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.101 (Berkeley) %G%
+#	@(#)termcap.src	5.102 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -3310,7 +3310,7 @@ zH|go225|go-225|Graphon 225:\
 	:so=\E[7m:se=\E[27m:us=\E[4m:ue=\E[24m:\
 	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:\
-	:rs=\E[!p\E[?7h\E[2;1;1#w:rf=/usr/lib/tabset/vt100:\
+	:rs=\E[!p\E[?7h\E[2;1;1#w:rf=/usr/share/tabset/vt100:\
 	:do=^J:co#80:li#25:le=^H:bs:am:ks=\E=:ke=\E>:\
 	:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:kb=^H:kh=\E[H:\
 	:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:pt:vt#3:xn:\
