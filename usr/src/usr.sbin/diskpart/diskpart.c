@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)diskpart.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)diskpart.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -58,11 +58,13 @@ struct	defparam {
 
 /*
  * Each disk has some space reserved for a bad sector
- * forwarding table.  While DEC standard 144 uses only
- * the first 5 even numbered sectors in the last track
- * of the last cylinder, we reserve 3 tracks for expansion.
+ * forwarding table.  DEC standard 144 uses the first
+ * 5 even numbered sectors in the last track of the
+ * last cylinder for replicated storage of the bad sector
+ * table; another 126 sectors past this is needed as a
+ * pool of replacement sectors.
  */
-int	badsecttable = 3;	/* # tracks */
+int	badsecttable = 126;	/* # sectors */
 
 int	pflag;			/* print device driver partition tables */
 int	dflag;			/* print disktab entry */
@@ -101,7 +103,13 @@ main(argc, argv)
 		}
 	}
 	spc = dp->d_nsectors * dp->d_ntracks;
-	badsecttable *= dp->d_nsectors;
+	/*
+	 * Bad sector table contains one track for the replicated
+	 * copies of the table and enough full tracks preceding
+	 * the last track to hold the pool of free blocks to which
+	 * bad sectors are mapped.
+	 */
+	badsecttable = dp->d_nsectors + roundup(badsecttable, dp->d_nsectors);
 	threshhold = howmany(spc, badsecttable);
 
 	/* 
