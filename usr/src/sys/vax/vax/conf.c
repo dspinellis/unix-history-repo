@@ -1,4 +1,4 @@
-/*	conf.c	4.37	81/07/05	*/
+/*	conf.c	4.38	81/08/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -232,17 +232,6 @@ int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset();
 #define	chreset	nodev
 #endif
 
-#include "en.h"
-#if	(NEN > 0) && !defined(CHAOS)
-int	enopen(),enclose(),enread(),enwrite(),enreset();
-#else
-#define	enopen	nodev
-#define	enclose	nodev
-#define	enread	nodev
-#define	enwrite	nodev
-#define	enreset	nodev
-#endif
-
 #include "ca.h"
 #if NCA > 0
 int	caopen(), caclose(), cawrite(), caioctl(), careset();
@@ -252,6 +241,18 @@ int	caopen(), caclose(), cawrite(), caioctl(), careset();
 #define	cawrite	nodev
 #define	caioctl	nodev
 #define	careset	nulldev
+#endif
+
+#include "dr.h"
+#if NDR > 0
+int	dropen(), drclose(), drread(), drwrite(), drioctl(), drreset();
+#else
+#define	dropen	nodev
+#define	drclose	nodev
+#define drread	nodev
+#define	drwrite	nodev
+#define	drioctl	nodev
+#define	drreset	nodev
 #endif
 
 struct cdevsw	cdevsw[] =
@@ -302,13 +303,13 @@ struct cdevsw	cdevsw[] =
 	chopen,		chclose,	chread,		chwrite,	/*19*/
 	chioctl,	nodev,		chreset,	0,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
-	ptyioctl,	nodev,		nodev,		pt_tty,
+	ptyioctl,	nulldev,	nodev,		pt_tty,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
-	ptyioctl,	nodev,		nodev,		pt_tty,
+	ptyioctl,	nulldev,	nodev,		pt_tty,
 	nodev,		nodev,		nodev,		nodev,		/*22*/
 	nodev,		nodev,		accreset,	0,
-	enopen,		enclose,	enread,		enwrite,	/*23*/
-	nodev,		nodev,		enreset,	0,
+	dropen,		drclose,	drread,		drwrite,	/*23*/
+	drioctl,	nodev,		drreset,	0,
 	caopen,		caclose,	nodev,		cawrite,	/*24*/
 	nodev,		nodev,		careset,	0,
 	nodev,		nodev,		nodev,		nodev,		/*25*/
