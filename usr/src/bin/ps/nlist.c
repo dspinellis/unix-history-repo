@@ -6,18 +6,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/proc.h>
 #include <sys/resource.h>
-#include <nlist.h>
+
+#include <err.h>
 #include <errno.h>
+#include <kvm.h>
+#include <nlist.h>
 #include <stdio.h>
 #include <string.h>
-#include <kvm.h>
+
 #include "ps.h"
 
 #ifdef SPPWAIT
@@ -65,33 +68,33 @@ donlist()
 	if (kvm_nlist(kd, psnl)) {
 		nlisterr(psnl);
 		eval = 1;
-		return(1);
+		return (1);
 	}
 	if (kread(X_FSCALE, fscale)) {
-		(void)fprintf(stderr, "ps: fscale: %s\n", kvm_geterr(kd));
+		warnx("fscale: %s", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 #ifdef NEWVM
 	if (kread(X_AVAILEND, mempages)) {
-		(void)fprintf(stderr, "ps: avail_start: %s\n", kvm_geterr(kd));
+		warnx("avail_start: %s", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 	if (kread(X_AVAILSTART, tmp)) {
-		(void)fprintf(stderr, "ps: avail_end: %s\n", kvm_geterr(kd));
+		warnx("avail_end: %s", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 	mempages -= tmp;
 #else
 	if (kread(X_ECMX, mempages)) {
-		(void)fprintf(stderr, "ps: ecmx: %s\n", kvm_geterr(kd));
+		warnx("ecmx: %s", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 #endif
 	if (kread(X_CCPU, ccpu)) {
-		(void)fprintf(stderr, "ps: ccpu: %s\n", kvm_geterr(kd));
+		warnx("ccpu: %s", kvm_geterr(kd));
 		eval = rval = 1;
 	}
-	return(rval);
+	return (rval);
 }
 
 void
