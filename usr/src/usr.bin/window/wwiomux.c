@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	3.8 84/03/03";
+static	char *sccsid = "@(#)wwiomux.c	3.9 84/03/06";
 #endif
 
 #include "ww.h"
@@ -60,14 +60,11 @@ loop:
 
 	if (n < 0)
 		wwnselecte++;
-	else if (n == 0)
-		wwnselectz++;
 	else {
-		char first_time = 1;
-		for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw) {
-			if (w->ww_pty < 0)
-				continue;
-			if (imask & 1 << w->ww_pty) {
+		if (n == 0)
+			wwnselectz++;
+		for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw)
+			if (w->ww_pty >= 0 && imask & 1 << w->ww_pty) {
 				wwnwread++;
 				p = w->ww_obp + w->ww_obc;
 				if (p == w->ww_ob)
@@ -102,17 +99,17 @@ loop:
 				}
 				*p = c;
 			}
-			if (first_time && w->ww_obc != 0 && !w->ww_stopped) {
-				first_time = 0;
-				n = wwwrite(w, w->ww_obp, w->ww_obc);
-				if (w->ww_obc -= n)
-					w->ww_obp += n;
-				else
-					w->ww_obp = w->ww_ob;
-				if (wwinterrupt())
-					return;
-			}
-		}
 	}
+	for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw)
+		if (w->ww_pty >= 0 && w->ww_obc != 0 && !w->ww_stopped) {
+			n = wwwrite(w, w->ww_obp, w->ww_obc);
+			if (w->ww_obc -= n)
+				w->ww_obp += n;
+			else
+				w->ww_obp = w->ww_ob;
+			if (wwinterrupt())
+				return;
+			break;
+		}
 	goto loop;
 }
