@@ -1,0 +1,1 @@
+Mmesg	mesg.c	/^main(argc, argv)$/
