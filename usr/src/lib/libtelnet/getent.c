@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getent.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getent.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,6 +35,7 @@ char *cp, *name;
 	return(0);
 }
 
+#ifndef	__svr4__
 /*ARGSUSED*/
 char *
 getstr(cp, cpp)
@@ -42,3 +43,4 @@ char *cp, **cpp;
 {
 	return(0);
 }
+#endif

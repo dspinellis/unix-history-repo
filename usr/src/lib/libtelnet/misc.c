@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -44,10 +44,10 @@ auth_encrypt_init(local, remote, name, server)
 {
 	RemoteHostName = remote;
 	LocalHostName = local;
-#if	defined(AUTHENTICATE)
+#if	defined(AUTHENTICATION)
 	auth_init(name, server);
 #endif
-#if	defined(ENCRYPT)
+#if	defined(ENCRYPTION)
 	encrypt_init(name, server);
 #endif
 	if (UserNameRequested) {

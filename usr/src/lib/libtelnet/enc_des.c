@@ -6,10 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)enc_des.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)enc_des.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#if	defined(AUTHENTICATE) && defined(ENCRYPT) && defined(DES_ENCRYPT)
+#if defined(AUTHENTICATION) && defined(ENCRYPTION) && defined(DES_ENCRYPTION)
 #include <arpa/telnet.h>
 #include <stdio.h>
 #ifdef	__STDC__
@@ -342,7 +342,7 @@ fb64_reply(data, cnt, fbp)
 		if (state == FAILED)
 			state = IN_PROGRESS;
 		state &= ~NO_RECV_IV;
-		encrypt_send_keyid(DIR_ENCRYPT, (unsigned char *)"\0", 1, 1);
+		encrypt_send_keyid(DIR_ENCRYPT, "\0", 1, 1);
 		break;
 
 	case FB64_IV_BAD:
