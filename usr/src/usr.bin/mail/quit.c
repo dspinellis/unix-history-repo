@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)quit.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -100,7 +100,7 @@ quit()
 		Fclose(rbuf);
 		if ((rbuf = Fopen(tempResid, "r")) == NULL)
 			goto newmail;
-		remove(tempResid);
+		rm(tempResid);
 	}
 
 	/*
@@ -178,12 +178,12 @@ quit()
 		}
 		if ((ibuf = Fopen(tempQuit, "r")) == NULL) {
 			perror(tempQuit);
-			remove(tempQuit);
+			rm(tempQuit);
 			Fclose(obuf);
 			Fclose(fbuf);
 			return;
 		}
-		remove(tempQuit);
+		rm(tempQuit);
 		if ((abuf = Fopen(mbox, "r")) != NULL) {
 			while ((c = getc(abuf)) != EOF)
 				(void) putc(c, obuf);
@@ -400,7 +400,7 @@ edstop()
 		if ((ibuf = Fopen(mailname, "r")) == NULL) {
 			perror(mailname);
 			Fclose(obuf);
-			remove(tempname);
+			rm(tempname);
 			relsesigs();
 			reset(0);
 		}
@@ -411,11 +411,11 @@ edstop()
 		Fclose(obuf);
 		if ((ibuf = Fopen(tempname, "r")) == NULL) {
 			perror(tempname);
-			remove(tempname);
+			rm(tempname);
 			relsesigs();
 			reset(0);
 		}
-		remove(tempname);
+		rm(tempname);
 	}
 	printf("\"%s\" ", mailname);
 	fflush(stdout);
@@ -450,7 +450,7 @@ edstop()
 	}
 	Fclose(obuf);
 	if (gotcha) {
-		remove(mailname);
+		rm(mailname);
 		printf("removed\n");
 	} else
 		printf("complete\n");

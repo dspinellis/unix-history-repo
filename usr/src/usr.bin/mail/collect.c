@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -69,7 +69,7 @@ collect(hp, printheaders)
 	savettou = signal(SIGTTOU, collstop);
 	savettin = signal(SIGTTIN, collstop);
 	if (setjmp(collabort) || setjmp(colljmp)) {
-		remove(tempMail);
+		rm(tempMail);
 		goto err;
 	}
 	sigsetmask(omask & ~(sigmask(SIGINT) | sigmask(SIGHUP)));
