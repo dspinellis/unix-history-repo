@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,6 +50,7 @@ main(argc, argv)
 	char *mntpt;
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
+	struct ufs_args mdev;
 
 	while ((ch = getopt(argc, argv, "io")) != EOF)
 		switch(ch) {
@@ -91,6 +92,18 @@ main(argc, argv)
 				continue;
 		} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
 			if ((mntpt = getmntpt(*argv)) == 0)
+				mntpt = "/tmp/.mnt";
+				mdev.fspec = *argv;
+				if (!mkdir(mntpt) &&
+				    !mount(MOUNT_UFS, mntpt, M_RDONLY, &mdev) &&
+				    !statfs(mntpt, &statfsbuf)) {
+					statfsbuf.f_mntonname[0] = '\0';
+					prtstat(&statfsbuf);
+				} else {
+					perror(*argv);
+				}
+				umount(mntpt, MNT_NOFORCE);
+				rmdir(mntpt);
 				continue;
 		} else
 			mntpt = *argv;
