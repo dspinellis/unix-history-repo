@@ -4,9 +4,12 @@
 # import/ checkout.  These need to be made by the Makefiles, this
 # is just here as a stop gap solution.
 #
-# $Header: /a/cvs/386BSD/src/FixLinks,v 1.6 1993/08/03 01:40:19 rgrimes Exp $
+# $Header: /a/cvs/386BSD/src/FixLinks,v 1.7 1993/08/05 18:40:33 conklin Exp $
 #
 # $Log: FixLinks,v $
+# Revision 1.7  1993/08/05  18:40:33  conklin
+# Commented out more links that are no longer needed.
+#
 # Revision 1.6  1993/08/03  01:40:19  rgrimes
 # Commented out many of the links that are no longer needed.
 #
@@ -43,7 +46,7 @@ pushd lib/libc/db/PORT ; ln -s include sys ; popd
 #pushd usr.sbin/named ; ln -s /usr/include/resolv.h resolv.h ; popd
 #pushd usr.sbin/sendmail ; ln -s ../../libexec/mail.local mail.local ; popd
 #pushd usr.sbin/sendmail ; ln -s ../../bin/rmail rmail ; popd
-pushd share/doc/usd/10.etiq ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
-pushd share/doc/usd/09.newsread ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
+#pushd share/doc/usd/10.etiq ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
+#pushd share/doc/usd/09.newsread ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
 #pushd games/chess ; ln -s DOCUMENTATION/MAN-PAGE chess.6 ; popd
 pushd games/fortune/datfiles ; ln -s fortunes-o.real.rot13 fortunes-o ; popd
