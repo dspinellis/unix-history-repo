@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_debug.c	7.8 (Berkeley) %G%
+ *	@(#)tcp_debug.c	8.1 (Berkeley) %G%
  */
 
 #ifdef TCPDEBUG

@@ -2,8 +2,8 @@
  * Copyright (c) University of British Columbia, 1984
  * Copyright (C) Computer Science Department IV, 
  * 		 University of Erlangen-Nuremberg, Germany, 1992
- * Copyright (c) 1991, 1992  The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by the
  * Laboratory for Computation Vision and the Computer Science Department
@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.20 (Berkeley) %G%
+ *	@(#)pk_input.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

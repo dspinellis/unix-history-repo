@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.21 (Berkeley) %G%
+ *	@(#)machdep.c	8.1 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */

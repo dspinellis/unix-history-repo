@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1988, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.36 (Berkeley) %G%
+ *	@(#)tcp_input.c	8.1 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
