@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.50 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -19,14 +19,17 @@ static char sccsid[] = "@(#)vfprintf.c	5.49 (Berkeley) %G%";
  */
 
 #include <sys/types.h>
-#include <math.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
 #if __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
+
 #include "local.h"
 #include "fvwrite.h"
 
@@ -91,12 +94,14 @@ __sbprintf(fp, fmt, ap)
 
 
 #ifdef FLOATING_POINT
+#include <math.h>
 #include "floatio.h"
 
 #define	BUF		(MAXEXP+MAXFRACT+1)	/* + decimal point */
 #define	DEFPREC		6
 
-static int cvt();
+static char *cvt __P((double, int, int, char *, int *, int, int *));
+static int exponent __P((char *, int, int));
 
 #else /* no FLOATING_POINT */
 
@@ -123,7 +128,7 @@ static int cvt();
 #define	QUADINT		0x020		/* quad integer */
 #define	SHORTINT	0x040		/* short integer */
 #define	ZEROPAD		0x080		/* zero (as opposed to blank) pad */
-
+#define FPT		0x100		/* Floating point number */
 int
 vfprintf(fp, fmt0, ap)
 	FILE *fp;
@@ -143,7 +148,10 @@ vfprintf(fp, fmt0, ap)
 #ifdef FLOATING_POINT
 	char softsign;		/* temporary negative sign for floats */
 	double _double;		/* double precision arguments %[eEfgG] */
-	int fpprec;		/* `extra' floating precision in [eEfgG] */
+	int expt;		/* integer value of exponent */
+	int expsize;		/* character count for expstr */
+	int ndig;		/* actual number of digits returned by cvt */
+	char expstr[7];		/* buffer for exponent string */
 #endif
 	u_quad_t _uquad;	/* integer arguments %[diouxX] */
 	enum { OCT, DEC, HEX } base;/* base for [diouxX] conversion */
@@ -245,9 +253,6 @@ vfprintf(fp, fmt0, ap)
 
 		flags = 0;
 		dprec = 0;
-#ifdef FLOATING_POINT
-		fpprec = 0;
-#endif
 		width = 0;
 		prec = -1;
 		sign = '\0';
@@ -345,12 +350,20 @@ reswitch:	switch (ch) {
 			base = DEC;
 			goto number;
 #ifdef FLOATING_POINT
-		case 'e':
+		case 'e':		/* anomalous precision */
 		case 'E':
-		case 'f':
+			prec = (prec == -1) ?
+				DEFPREC + 1 : prec + 1;
+			/* FALLTHROUGH */
+			goto fp_begin;
+		case 'f':		/* always print trailing zeroes */
+			if (prec != 0)
+				flags |= ALT;
 		case 'g':
 		case 'G':
-			_double = va_arg(ap, double);
+			if (prec == -1)
+				prec = DEFPREC;
+fp_begin:		_double = va_arg(ap, double);
 			/* do this before tricky precision changes */
 			if (isinf(_double)) {
 				if (_double < 0)
@@ -364,31 +377,38 @@ reswitch:	switch (ch) {
 				size = 3;
 				break;
 			}
-			/*
-			 * don't do unrealistic precision; just pad it with
-			 * zeroes later, so buffer size stays rational.
-			 */
-			if (prec > MAXFRACT) {
-				if (ch != 'g' && ch != 'G' || (flags&ALT))
-					fpprec = prec - MAXFRACT;
-				prec = MAXFRACT;
-			} else if (prec == -1)
-				prec = DEFPREC;
-			/*
-			 * cvt may have to round up before the "start" of
-			 * its buffer, i.e. ``intf("%.2f", (double)9.999);'';
-			 * if the first character is still NUL, it did.
-			 * softsign avoids negative 0 if _double < 0 but
-			 * no significant digits will be shown.
-			 */
-			cp = buf;
-			*cp = '\0';
-			size = cvt(_double, prec, flags, &softsign, ch,
-			    cp, buf + sizeof(buf));
+			flags |= FPT;
+			cp = cvt(_double, prec, flags, &softsign,
+				&expt, ch, &ndig);
+			if (ch == 'g' || ch == 'G') {
+				if (expt <= -4 || expt > prec)
+					ch = (ch == 'g') ? 'e' : 'E';
+				else
+					ch = 'g';
+			} 
+			if (ch <= 'e') {	/* 'e' or 'E' fmt */
+				--expt;
+				expsize = exponent(expstr, expt, ch);
+				size = expsize + ndig;
+				if (ndig > 1 || flags & ALT)
+					++size;
+			} else if (ch == 'f') {		/* f fmt */
+				if (expt > 0) {
+					size = expt;
+					if (prec || flags & ALT)
+						size += prec + 1;
+				} else	/* "0.X" */
+					size = prec + 2;
+			} else if (expt >= ndig) {	/* fixed g fmt */
+				size = expt;
+				if (flags & ALT)
+					++size;
+			} else
+				size = ndig + (expt > 0 ?
+					1 : 2 - expt);
+
 			if (softsign)
 				sign = '-';
-			if (*cp == '\0')
-				cp++;
 			break;
 #endif /* FLOATING_POINT */
 		case 'n':
@@ -532,28 +552,20 @@ number:			if ((dprec = prec) >= 0)
 		}
 
 		/*
-		 * All reasonable formats wind up here.  At this point,
-		 * `cp' points to a string which (if not flags&LADJUST)
-		 * should be padded out to `width' places.  If
-		 * flags&ZEROPAD, it should first be prefixed by any
-		 * sign or other prefix; otherwise, it should be blank
-		 * padded before the prefix is emitted.  After any
-		 * left-hand padding and prefixing, emit zeroes
-		 * required by a decimal [diouxX] precision, then print
-		 * the string proper, then emit zeroes required by any
-		 * leftover floating precision; finally, if LADJUST,
-		 * pad with blanks.
+		 * All reasonable formats wind up here.  At this point, `cp'
+		 * points to a string which (if not flags&LADJUST) should be
+		 * padded out to `width' places.  If flags&ZEROPAD, it should
+		 * first be prefixed by any sign or other prefix; otherwise,
+		 * it should be blank padded before the prefix is emitted.
+		 * After any left-hand padding and prefixing, emit zeroes
+		 * required by a decimal [diouxX] precision, then print the
+		 * string proper, then emit zeroes required by any leftover
+		 * floating precision; finally, if LADJUST, pad with blanks.
+		 *
+		 * Compute actual size, so we know how much to pad.
+		 * fieldsz excludes decimal prec; realsz includes it.
 		 */
-
-		/*
-		 * compute actual size, so we know how much to pad.
-		 * fieldsz excludes decimal prec; realsz includes it
-		 */
-#ifdef FLOATING_POINT
-		fieldsz = size + fpprec;
-#else
 		fieldsz = size;
-#endif
 		if (sign)
 			fieldsz++;
 		else if (flags & HEXPREFIX)
@@ -581,13 +593,53 @@ number:			if ((dprec = prec) >= 0)
 		PAD(dprec - fieldsz, zeroes);
 
 		/* the string or number proper */
-		PRINT(cp, size);
-
 #ifdef FLOATING_POINT
-		/* trailing f.p. zeroes */
-		PAD(fpprec, zeroes);
+		if ((flags & FPT) == 0) {
+			PRINT(cp, size);
+		} else {	/* glue together f_p fragments */
+			if (ch >= 'f') {	/* 'f' or 'g' */
+				if (_double == 0) {
+				/* kludge for __dtoa irregularity */
+					if (prec == 0 ||
+					    (flags & ALT) == 0) {
+						PRINT("0", 1);
+					} else {
+						PRINT("0.", 2);
+						PAD(ndig - 1, zeroes);
+					}
+				} else if (expt <= 0) {
+					PRINT("0.", 2);
+					PAD(-expt, zeroes);
+					PRINT(cp, ndig);
+				} else if (expt >= ndig) {
+					PRINT(cp, ndig);
+					PAD(expt - ndig, zeroes);
+					if (flags & ALT)
+						PRINT(".", 1);
+				} else {
+					PRINT(cp, expt);
+					cp += expt;
+					PRINT(".", 1);
+					PRINT(cp, ndig-expt);
+				}
+			} else {	/* 'e' or 'E' */
+				if (ndig > 1 || flags & ALT) {
+					ox[0] = *cp++;
+					ox[1] = '.';
+					PRINT(ox, 2);
+					if (_double || flags & ALT == 0) {
+						PRINT(cp, ndig-1);
+					} else	/* 0.[0..] */
+						/* __dtoa irregularity */
+						PAD(ndig - 1, zeroes);
+				} else	/* XeYYY */
+					PRINT(cp, 1);
+				PRINT(expstr, expsize);
+			}
+		}
+#else
+		PRINT(cp, size);
 #endif
-
 		/* left-adjusting padding (always blank) */
 		if (flags & LADJUST)
 			PAD(width - realsz, blanks);
@@ -605,257 +657,54 @@ error:
 }
 
 #ifdef FLOATING_POINT
-#include <math.h>
 
-static char *exponent();
-static char *round();
+extern char *__dtoa __P((double, int, int, int *, int *, char **));
+
+static char *
+cvt(value, ndigits, flags, sign, decpt, ch, length)
+	double value;
+	int ndigits, flags, *decpt, ch, *length;
+	char *sign;
+{
+	int mode, dsgn;
+	char *digits, *bp, *rve;
+
+	if (ch == 'f')
+		mode = 3;
+	else {
+		mode = 2;
+	}
+	if (value < 0) {
+		value = -value;
+		*sign = '-';
+	} else
+		*sign = '\000';
+	digits = __dtoa(value, mode, ndigits, decpt, &dsgn, &rve);
+	if (flags & ALT) {	/* Print trailing zeros */
+		bp = digits + ndigits;
+		if (ch == 'f') {
+			if (*digits == '0' && value)
+				*decpt = -ndigits + 1;
+			bp += *decpt;
+		}
+		if (value == 0)	/* kludge for __dtoa irregularity */
+			rve = bp;
+		while (rve < bp)
+			*rve++ = '0';
+	}
+	*length = rve - digits;
+	return (digits);
+}
 
 static int
-cvt(number, prec, flags, signp, fmtch, startp, endp)
-	double number;
-	register int prec;
-	int flags;
-	char *signp;
-	int fmtch;
-	char *startp, *endp;
+exponent(p0, exp, fmtch)
+	char *p0;
+	int exp, fmtch;
 {
 	register char *p, *t;
-	register double fract;
-	int dotrim, expcnt, gformat;
-	double integer, tmp;
-
-	dotrim = expcnt = gformat = 0;
-	if (number < 0) {
-		number = -number;
-		*signp = '-';
-	} else
-		*signp = 0;
-
-	fract = modf(number, &integer);
-
-	/* get an extra slot for rounding. */
-	t = ++startp;
-
-	/*
-	 * get integer portion of number; put into the end of the buffer; the
-	 * .01 is added for modf(356.0 / 10, &integer) returning .59999999...
-	 */
-	for (p = endp - 1; integer; ++expcnt) {
-		tmp = modf(integer / 10, &integer);
-		*p-- = to_char((int)((tmp + .01) * 10));
-	}
-	switch (fmtch) {
-	case 'f':
-		/* reverse integer into beginning of buffer */
-		if (expcnt)
-			for (; ++p < endp; *t++ = *p);
-		else
-			*t++ = '0';
-		/*
-		 * if precision required or alternate flag set, add in a
-		 * decimal point.
-		 */
-		if (prec || flags&ALT)
-			*t++ = '.';
-		/* if requires more precision and some fraction left */
-		if (fract) {
-			if (prec)
-				do {
-					fract = modf(fract * 10, &tmp);
-					*t++ = to_char((int)tmp);
-				} while (--prec && fract);
-			if (fract)
-				startp = round(fract, (int *)NULL, startp,
-				    t - 1, (char)0, signp);
-		}
-		for (; prec--; *t++ = '0');
-		break;
-	case 'e':
-	case 'E':
-eformat:	if (expcnt) {
-			*t++ = *++p;
-			if (prec || flags&ALT)
-				*t++ = '.';
-			/* if requires more precision and some integer left */
-			for (; prec && ++p < endp; --prec)
-				*t++ = *p;
-			/*
-			 * if done precision and more of the integer component,
-			 * round using it; adjust fract so we don't re-round
-			 * later.
-			 */
-			if (!prec && ++p < endp) {
-				fract = 0;
-				startp = round((double)0, &expcnt, startp,
-				    t - 1, *p, signp);
-			}
-			/* adjust expcnt for digit in front of decimal */
-			--expcnt;
-		}
-		/* until first fractional digit, decrement exponent */
-		else if (fract) {
-			/* adjust expcnt for digit in front of decimal */
-			for (expcnt = -1;; --expcnt) {
-				fract = modf(fract * 10, &tmp);
-				if (tmp)
-					break;
-			}
-			*t++ = to_char((int)tmp);
-			if (prec || flags&ALT)
-				*t++ = '.';
-		}
-		else {
-			*t++ = '0';
-			if (prec || flags&ALT)
-				*t++ = '.';
-		}
-		/* if requires more precision and some fraction left */
-		if (fract) {
-			if (prec)
-				do {
-					fract = modf(fract * 10, &tmp);
-					*t++ = to_char((int)tmp);
-				} while (--prec && fract);
-			if (fract)
-				startp = round(fract, &expcnt, startp,
-				    t - 1, (char)0, signp);
-		}
-		/* if requires more precision */
-		for (; prec--; *t++ = '0');
-
-		/* unless alternate flag, trim any g/G format trailing 0's */
-		if (gformat && !(flags&ALT)) {
-			while (t > startp && *--t == '0');
-			if (*t == '.')
-				--t;
-			++t;
-		}
-		t = exponent(t, expcnt, fmtch);
-		break;
-	case 'g':
-	case 'G':
-		/* a precision of 0 is treated as a precision of 1. */
-		if (!prec)
-			++prec;
-		/*
-		 * ``The style used depends on the value converted; style e
-		 * will be used only if the exponent resulting from the
-		 * conversion is less than -4 or greater than the precision.''
-		 *	-- ANSI X3J11
-		 */
-		if (expcnt > prec || !expcnt && fract && fract < .0001) {
-			/*
-			 * g/G format counts "significant digits, not digits of
-			 * precision; for the e/E format, this just causes an
-			 * off-by-one problem, i.e. g/G considers the digit
-			 * before the decimal point significant and e/E doesn't
-			 * count it as precision.
-			 */
-			--prec;
-			fmtch -= 2;		/* G->E, g->e */
-			gformat = 1;
-			goto eformat;
-		}
-		/*
-		 * reverse integer into beginning of buffer,
-		 * note, decrement precision
-		 */
-		if (expcnt)
-			for (; ++p < endp; *t++ = *p, --prec);
-		else
-			*t++ = '0';
-		/*
-		 * if precision required or alternate flag set, add in a
-		 * decimal point.  If no digits yet, add in leading 0.
-		 */
-		if (prec || flags&ALT) {
-			dotrim = 1;
-			*t++ = '.';
-		}
-		else
-			dotrim = 0;
-		/* if requires more precision and some fraction left */
-		if (fract) {
-			if (prec) {
-				do {
-					fract = modf(fract * 10, &tmp);
-					*t++ = to_char((int)tmp);
-				} while(!tmp);
-				while (--prec && fract) {
-					fract = modf(fract * 10, &tmp);
-					*t++ = to_char((int)tmp);
-				}
-			}
-			if (fract)
-				startp = round(fract, (int *)NULL, startp,
-				    t - 1, (char)0, signp);
-		}
-		/* alternate format, adds 0's for precision, else trim 0's */
-		if (flags&ALT)
-			for (; prec--; *t++ = '0');
-		else if (dotrim) {
-			while (t > startp && *--t == '0');
-			if (*t != '.')
-				++t;
-		}
-	}
-	return (t - startp);
-}
-
-static char *
-round(fract, exp, start, end, ch, signp)
-	double fract;
-	int *exp;
-	register char *start, *end;
-	char ch, *signp;
-{
-	double tmp;
-
-	if (fract)
-		(void)modf(fract * 10, &tmp);
-	else
-		tmp = to_digit(ch);
-	if (tmp > 4)
-		for (;; --end) {
-			if (*end == '.')
-				--end;
-			if (++*end <= '9')
-				break;
-			*end = '0';
-			if (end == start) {
-				if (exp) {	/* e/E; increment exponent */
-					*end = '1';
-					++*exp;
-				}
-				else {		/* f; add extra digit */
-				*--end = '1';
-				--start;
-				}
-				break;
-			}
-		}
-	/* ``"%.3f", (double)-0.0004'' gives you a negative 0. */
-	else if (*signp == '-')
-		for (;; --end) {
-			if (*end == '.')
-				--end;
-			if (*end != '0')
-				break;
-			if (end == start)
-				*signp = 0;
-		}
-	return (start);
-}
-
-static char *
-exponent(p, exp, fmtch)
-	register char *p;
-	register int exp;
-	int fmtch;
-{
-	register char *t;
 	char expbuf[MAXEXP];
 
+	p = p0;
 	*p++ = fmtch;
 	if (exp < 0) {
 		exp = -exp;
@@ -875,6 +724,6 @@ exponent(p, exp, fmtch)
 		*p++ = '0';
 		*p++ = to_char(exp);
 	}
-	return (p);
+	return (p - p0);
 }
 #endif /* FLOATING_POINT */
