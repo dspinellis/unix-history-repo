@@ -204,6 +204,7 @@ static int num_signal_names = 0;
    same name, it differs from other implementations in that it is dynamically
    initialized rather than statically initialized. */
 
+#ifdef notdef
 #ifdef NEED_sys_siglist
 
 static int sys_nsig;
@@ -216,6 +217,7 @@ static int sys_nsig = NSIG;
 extern char * const sys_siglist[];
 #else
 extern char *sys_siglist[];
+#endif
 #endif
 #endif
 
