@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.4 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.5 %G%";
 
 #include "diff.h"
 /*
@@ -144,6 +144,7 @@ diffreg()
 		if (i == 0 && j == 0) {
 			fclose(f1);
 			fclose(f2);
+			status = 0;		/* files don't differ */
 			goto same;
 		}
 		for (j = 0; j < i; j++)
@@ -151,6 +152,10 @@ diffreg()
 				goto notsame;
 	}
 notsame:
+	/*
+	 *	Files certainly differ at this point; set status accordingly
+	 */
+	status = 1;
 	if (!asciifile(f1) || !asciifile(f2)) {
 		printf("Binary files %s and %s differ\n", file1, file2);
 		fclose(f1);
