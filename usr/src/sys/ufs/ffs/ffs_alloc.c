@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	6.11	85/01/14	*/
+/*	ffs_alloc.c	6.12	85/03/12	*/
 
 #include "param.h"
 #include "systm.h"
@@ -11,6 +11,7 @@
 #include "user.h"
 #include "quota.h"
 #include "kernel.h"
+#include "syslog.h"
 
 extern u_long		hashalloc();
 extern ino_t		ialloccg();
@@ -971,5 +972,5 @@ fserr(fs, cp)
 	char *cp;
 {
 
-	printf("%s: %s\n", fs->fs_fsmnt, cp);
+	log(KERN_FAIL, "%s: %s\n", fs->fs_fsmnt, cp);
 }
