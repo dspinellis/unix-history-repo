@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)passwd.1	6.1 (Berkeley) %G%
+.\"	@(#)passwd.1	6.2 (Berkeley) %G%
 .\"
 .TH PASSWD 1 ""
 .UC 4
@@ -43,13 +43,16 @@ When altering a login shell,
 .I passwd
 displays the current login shell and then prompts
 for the new one.
-The new login shell must be one of the approved shells:
-.IR /bin/sh ,
-.IR /bin/csh ,
-.IR /bin/oldcsh ,
-or
-.I /usr/new/csh
+The new login shell must be one of the approved shells
+listed in
+.I /etc/shells
 unless you are the super-user.
+If
+.I /etc/shells
+does not exist, the only shells that may be specified are
+.I /bin/sh
+and
+.IR /bin/csh .
 .PP
 The super-user may change anyone's login shell; normal users
 may only change their own login shell.
@@ -83,16 +86,6 @@ none
 .PP
 .I Passwd
 allows phone numbers to be entered with or without hyphens.
-Because 
-.I finger
-only knows about UCB extensions,
-.I passwd
-will insist upon a four digit number (after the hyphens are removed) 
-for office phone numbers.
-Also, room numbers must be in Evans or Cory;
-again, this is also because of 
-.IR finger .
-.PP
 It is a good idea to run
 .I finger
 after changing the GECOS information
@@ -101,12 +94,10 @@ to make sure everything is setup properly.
 The super-user may change anyone's GECOS information; normal
 users may only change their own.
 .SH FILES
-/etc/passwd
+/etc/passwd	The file containing all of this information
+/etc/shells	The list of approved shells
 .SH "SEE ALSO"
 login(1), finger(1), passwd(5), crypt(3)
 .br
 Robert Morris and Ken Thompson,
 .I UNIX password security
-.SH BUGS
-The encoding of the office and extension information
-is installation dependent.
