@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)operators.h	5.1 (Berkeley) %G%
+ *	@(#)operators.h	5.2 (Berkeley) %G%
  */
 
 #define	NOT		0
@@ -14,30 +14,31 @@
 #define	ISEXIST		4
 #define	ISFILE		5
 #define	ISSETGID	6
-#define	ISSTICKY	7
-#define	STRLEN		8
-#define	ISFIFO		9
-#define	ISREAD		10
-#define	ISSIZE		11
-#define	ISTTY		12
-#define	ISSETUID	13
-#define	ISWRITE		14
-#define	ISEXEC		15
-#define	NULSTR		16
+#define	ISSYMLINK	7
+#define	ISSTICKY	8
+#define	STRLEN		9
+#define	ISFIFO		10
+#define	ISREAD		11
+#define	ISSIZE		12
+#define	ISTTY		13
+#define	ISSETUID	14
+#define	ISWRITE		15
+#define	ISEXEC		16
+#define	NULSTR		17
 
-#define	FIRST_BINARY_OP	17
-#define	OR1		17
-#define	OR2		18
-#define	AND1		19
-#define	AND2		20
-#define	STREQ		21
-#define	STRNE		22
-#define	EQ		23
-#define	NE		24
-#define	GT		25
-#define	LT		26
-#define	LE		27
-#define	GE		28
+#define	FIRST_BINARY_OP	18
+#define	OR1		18
+#define	OR2		19
+#define	AND1		20
+#define	AND2		21
+#define	STREQ		22
+#define	STRNE		23
+#define	EQ		24
+#define	NE		25
+#define	GT		26
+#define	LT		27
+#define	LE		28
+#define	GE		29
 
 
 #define	OP_INT		1	/* arguments to operator are integer */

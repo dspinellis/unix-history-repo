@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)test.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)test.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -335,6 +335,10 @@ permission:	if (fs->stat.st_uid == geteuid())
 		goto filetype;
 	case ISBLOCK:
 		i = S_IFBLK;
+		goto filetype;
+	case ISSYMLINK:
+		i = S_IFLNK;
+		(void)lstat(sp->u.string, &fs->stat);
 		goto filetype;
 	case ISFIFO:
 		i = S_IFIFO;
