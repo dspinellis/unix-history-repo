@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -224,6 +224,21 @@ dropenvelope(e)
 	if (tTd(50, 2))
 		printf("failure_return=%d success_return=%d queueit=%d\n",
 			failure_return, success_return, queueit);
+
+	/*
+	**  If we had some fatal error, but no addresses are marked as
+	**  bad, mark them _all_ as bad.
+	*/
+
+	if (bitset(EF_FATALERRS, e->e_flags) && !failure_return)
+	{
+		failure_return = TRUE;
+		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			if (!bitset(QDONTSEND, q->q_flags))
+				q->q_flags |= QBADADDR;
+		}
+	}
 
 	/*
 	**  Send back return receipts as requested.
