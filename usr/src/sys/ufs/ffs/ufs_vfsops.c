@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.41 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.42 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -522,16 +522,10 @@ ufs_sync(mp, waitfor)
 	register struct fs *fs;
 	struct vnode *nvp;
 	int error, allerror = 0;
-	static int updlock = 0;
 
 	if (syncprt)
 		bufstats();
-	if (updlock)
-		return (EBUSY);
 	fs = ump->um_fs;
-	if (fs == (struct fs *)1)
-		return (0);
-	updlock++;
 	/*
 	 * Write back modified superblock.
 	 * Consistency check that the superblock
@@ -565,7 +559,6 @@ loop:
 			allerror = error;
 		vput(vp);
 	}
-	updlock = 0;
 	/*
 	 * Force stale file system control information to be flushed.
 	 */
