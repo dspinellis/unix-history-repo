@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.98		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.99		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -352,16 +352,26 @@ struct statistics
 EXTERN struct statistics	Stat;
 extern long			kbytes();	/* for _bf, _bt */
 /*
-**  Operation modes
-**	The default operation mode can be safely changed (except
-**	that the default cannot be MD_DAEMON).
+**  Operation and send modes
+**
+**	The operation mode describes the basic operation of sendmail.
+**	This can be set from the command line, and is "send mail" by
+**	default.
+**
+**	The send mode tells how to send mail.  It can be set in the
+**	configuration file.  It's setting determines how quickly the
+**	mail will be delivered versus the load on your system.  If the
+**	-v (verbose) flag is given, it will be forced to SM_DELIVER
+**	mode.
+**
+**	The default send mode can be safely changed.
 */
 
-EXTERN char	Mode;		/* operation mode, see below */
+EXTERN char	OpMode;		/* operation mode, see below */
 
-#define MD_DELIVER	'a'		/* collect and deliver */
-#define MD_FORK		'f'		/* verify & fork before delivery */
-#define MD_QUEUE	'q'		/* collect & queue, don't deliver */
+#define MD_DELIVER	'm'		/* be a mail sender */
+#define MD_ARPAFTP	'a'		/* old-style arpanet protocols */
+#define MD_SMTP		's'		/* run SMTP on standard input */
 #define MD_DAEMON	'd'		/* run as a daemon */
 #define MD_VERIFY	'v'		/* verify: don't collect or deliver */
 #define MD_TEST		't'		/* test mode: resolve addrs only */
@@ -369,7 +379,14 @@ EXTERN char	Mode;		/* operation mode, see below */
 #define MD_PRINT	'p'		/* print the queue */
 #define MD_FREEZE	'z'		/* freeze the configuration file */
 
-#define MD_DEFAULT	MD_DELIVER	/* default operation mode */
+
+EXTERN char	SendMode;	/* send mode, see below */
+
+#define SM_DELIVER	'i'		/* interactive delivery */
+#define SM_QUICKD	'j'		/* deliver w/o queueing */
+#define SM_FORK		'b'		/* deliver in background */
+#define SM_QUEUE	'q'		/* queue, don't deliver */
+#define SM_VERIFY	'v'		/* verify only (used internally) */
 /*
 **  Global variables.
 */
@@ -387,11 +404,9 @@ EXTERN bool	Verbose;	/* set if blow-by-blow desired */
 EXTERN bool	GrabTo;		/* if set, get recipients from msg */
 EXTERN bool	DontSend;	/* mark recipients as QDONTSEND */
 EXTERN bool	NoReturn;	/* don't return letter to sender */
-EXTERN bool	Smtp;		/* using SMTP over connection */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
 EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
-EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */

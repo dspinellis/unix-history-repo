@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.63		%G%);
+SCCSID(@(#)conf.c	3.64		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -262,7 +262,7 @@ getegid()
 
 getruid()
 {
-	if (Mode == MD_DAEMON)
+	if (OpMode == MD_DAEMON)
 		return (RealUid);
 	else
 		return (getuid());
@@ -275,7 +275,7 @@ getruid()
 
 getrgid()
 {
-	if (Mode == MD_DAEMON)
+	if (OpMode == MD_DAEMON)
 		return (RealGid);
 	else
 		return (getgid());

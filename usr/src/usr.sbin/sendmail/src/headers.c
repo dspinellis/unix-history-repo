@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.36		%G%);
+SCCSID(@(#)headers.c	3.37		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -389,7 +389,7 @@ eatheader()
 		sendto(p, (ADDRESS *) NULL, &CurEnv->e_errorqueue);
 
 	/* from person */
-	if (ArpaMode)
+	if (OpMode == MD_ARPAFTP)
 	{
 		register struct hdrinfo *hi = HdrInfo;
 

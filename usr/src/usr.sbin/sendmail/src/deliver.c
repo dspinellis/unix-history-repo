@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.128		%G%);
+SCCSID(@(#)deliver.c	3.129		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -716,7 +716,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			(void) dup(rpvect[1]);
 			(void) close(rpvect[1]);
 		}
-		else if (Smtp || HoldErrs)
+		else if (OpMode == MD_SMTP || HoldErrs)
 		{
 			(void) close(1);
 			(void) dup(fileno(Xscript));
@@ -1419,7 +1419,7 @@ mailfile(filename, ctladdr)
 **
 **	Parameters:
 **		e -- the envelope to send.
-**		verifyonly -- if set, only give verification messages.
+**		mode -- the delivery mode to use.
 **
 **	Returns:
 **		none.
@@ -1427,33 +1427,92 @@ mailfile(filename, ctladdr)
 **	Side Effects:
 **		Scans the send lists and sends everything it finds.
 **		Delivers any appropriate error messages.
+**		If we are running in a non-interactive mode, takes the
+**			appropriate action.
 */
 
-sendall(e, verifyonly)
+sendall(e, mode)
 	ENVELOPE *e;
-	bool verifyonly;
+	char mode;
 {
 	register ADDRESS *q;
 	bool oldverbose;
+	int pid;
 
 # ifdef DEBUG
 	if (tTd(13, 1))
 	{
-		printf("\nSENDALL: verify %d, sendqueue:\n", verifyonly);
+		printf("\nSENDALL: mode %c, sendqueue:\n", mode);
 		printaddr(e->e_sendqueue, TRUE);
 	}
 # endif DEBUG
 
 	/*
+	**  Do any preprocessing necessary for the mode we are running.
+	*/
+
+# ifdef QUEUE
+	if (mode == SM_QUEUE)
+	{
+		register ADDRESS *q;
+
+		for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
+		{
+			if (!bitset(QDONTSEND, q->q_flags))
+			{
+				CurEnv->e_to = q->q_paddr;
+				message(Arpa_Info, "queued");
+				if (LogLevel > 4)
+					logdelivery("queued");
+			}
+			CurEnv->e_to = NULL;
+		}
+	}
+	if (mode == SM_QUEUE || mode == SM_FORK ||
+	    (mode != SM_VERIFY && SuperSafe))
+		queueup(CurEnv, TRUE);
+#endif QUEUE
+
+	oldverbose = Verbose;
+	switch (mode)
+	{
+	  case SM_VERIFY:
+		Verbose = TRUE;
+		break;
+
+	  case SM_QUEUE:
+		CurEnv->e_df = CurEnv->e_qf = NULL;
+		CurEnv->e_dontqueue = TRUE;
+		finis();
+		return;
+
+	  case SM_FORK:
+		pid = fork();
+		if (pid < 0)
+		{
+			mode = SM_DELIVER;
+			break;
+		}
+		else if (pid > 0)
+			return;
+
+		/* double fork to avoid zombies */
+		if (fork() > 0)
+			exit(EX_OK);
+
+		/* now arrange to run the queue */
+		HoldErrs = MailBack = TRUE;
+		Verbose = FALSE;
+		break;
+	}
+
+	/*
 	**  Run through the list and send everything.
 	*/
 
-	oldverbose = Verbose;
-	if (verifyonly)
-		Verbose = TRUE;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
-		if (verifyonly)
+		if (mode == SM_VERIFY)
 		{
 			CurEnv->e_to = q->q_paddr;
 			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
@@ -1468,7 +1527,7 @@ sendall(e, verifyonly)
 	**  Now run through and check for errors.
 	*/
 
-	if (verifyonly)
+	if (mode == SM_VERIFY)
 		return;
 
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
@@ -1530,6 +1589,9 @@ sendall(e, verifyonly)
 		if (qq == NULL && bitset(QBADADDR, q->q_flags))
 			sendto(e->e_from.q_paddr, qq, &e->e_errorqueue);
 	}
+
+	if (mode == SM_FORK)
+		finis();
 }
 /*
 **  CHECKERRORS -- check a queue of addresses and process errors.

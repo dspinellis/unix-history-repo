@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.43		%G%);
+SCCSID(@(#)readcf.c	3.44		%G%);
 
 /*
 **  READCF -- read control file.
@@ -649,40 +649,27 @@ setoption(opt, val, safe, sticky)
 		SafeAlias = bval;
 		break;
 
-	  case 'b':		/* operations mode */
-		Mode = *val;
-		switch (Mode)
+	  case 'c':		/* don't connect to "expensive" mailers */
+		NoConnect = bval;
+		break;
+
+	  case 'd':		/* delivery mode */
+		switch (*val)
 		{
-		  case MD_DAEMON:	/* run as a daemon */
-#ifdef DAEMON
-			ArpaMode = Smtp = TRUE;
-#else DAEMON
-			syserr("Daemon mode not implemented");
-#endif DAEMON
+		  case '\0':
+			SendMode = SM_DELIVER;
 			break;
 
-		  case '\0':	/* default: do full delivery */
-			Mode = MD_DEFAULT;
-			/* fall through....... */
-
-		  case MD_DELIVER:	/* do everything (default) */
-		  case MD_FORK:		/* fork after verification */
-		  case MD_QUEUE:	/* queue only */
-		  case MD_VERIFY:	/* verify only */
-		  case MD_TEST:		/* test addresses */
-		  case MD_PRINT:	/* print queue contents */
-		  case MD_INITALIAS:	/* initialize alias database */
-		  case MD_FREEZE:	/* freeze config file */
+		  case SM_DELIVER:	/* do everything */
+		  case SM_FORK:		/* fork after verification */
+		  case SM_QUEUE:	/* queue only */
+			SendMode = *val;
 			break;
 
 		  default:
-			syserr("Unknown operation mode -b%c", Mode);
+			syserr("Unknown delivery mode %c", *val);
 			exit(EX_USAGE);
 		}
-		break;
-
-	  case 'c':		/* don't connect to "expensive" mailers */
-		NoConnect = bval;
 		break;
 
 	  case 'D':		/* rebuild alias database as needed */
@@ -796,8 +783,6 @@ setoption(opt, val, safe, sticky)
 
 	  case 'v':		/* run in verbose mode */
 		Verbose = bval;
-		if (Verbose)
-			NoConnect = FALSE;
 		break;
 
 # ifdef DEBUG

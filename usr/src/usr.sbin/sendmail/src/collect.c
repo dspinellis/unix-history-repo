@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.53		%G%);
+SCCSID(@(#)collect.c	3.54		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -156,7 +156,7 @@ maketemp(from)
 			break;
 
 		/* check for transparent dot */
-		if (Smtp && *bp == '.')
+		if (OpMode == MD_SMTP && *bp == '.')
 			bp++;
 
 # ifndef NOTUNIX
