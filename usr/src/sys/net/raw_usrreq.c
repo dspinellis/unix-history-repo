@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_usrreq.c	7.6 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -53,11 +53,12 @@ raw_init()
  */
 raw_input(m0, proto, src, dst)
 	struct mbuf *m0;
-	struct sockproto *proto;
+	register struct sockproto *proto;
 	struct sockaddr *src, *dst;
 {
 	register struct rawcb *rp;
 	register struct mbuf *m = m0;
+	register int sockets = 0;
 	struct socket *last;
 
 	last = 0;
@@ -88,8 +89,10 @@ raw_input(m0, proto, src, dst)
 				    n, (struct mbuf *)0) == 0)
 					/* should notify about lost packet */
 					m_freem(n);
-				else
+				else {
 					sorwakeup(last);
+					sockets++;
+				}
 			}
 		}
 		last = rp->rcb_socket;
@@ -98,10 +101,13 @@ raw_input(m0, proto, src, dst)
 		if (sbappendaddr(&last->so_rcv, src,
 		    m, (struct mbuf *)0) == 0)
 			m_freem(m);
-		else
+		else {
 			sorwakeup(last);
+			sockets++;
+		}
 	} else
 		m_freem(m);
+	return (sockets);
 }
 
 /*ARGSUSED*/
