@@ -5,12 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
 #include <sys/buf.h>
 #include <ctype.h>
+#include <paths.h>
 
 static struct nlist nlst[] = {
 #define	X_DK_NDRIVE	0
@@ -43,14 +44,14 @@ dkinit()
 
 	if (once)
 		return(1);
-	nlist("/vmunix", nlst);
+	nlist(_PATH_UNIX, nlst);
 	if (nlst[X_DK_NDRIVE].n_value == 0) {
 		error("dk_ndrive undefined in kernel");
 		return(0);
 	}
 	dk_ndrive = getw(nlst[X_DK_NDRIVE].n_value);
 	if (dk_ndrive <= 0) {
-		error("dk_ndrive=%d according to /vmunix", dk_ndrive);
+		error("dk_ndrive=%d according to %s", dk_ndrive, _PATH_UNIX);
 		return(0);
 	}
 	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
@@ -78,24 +79,23 @@ dkinit()
 dkcmd(cmd, args)
 	char *cmd, *args;
 {
-
-        if (prefix(cmd, "display") || prefix(cmd, "add")) {
-                dkselect(args, 1, dk_select);
+	if (prefix(cmd, "display") || prefix(cmd, "add")) {
+		dkselect(args, 1, dk_select);
 		return (1);
-        }
-        if (prefix(cmd, "ignore") || prefix(cmd, "delete")) {
-                dkselect(args, 0, dk_select);
+	}
+	if (prefix(cmd, "ignore") || prefix(cmd, "delete")) {
+		dkselect(args, 0, dk_select);
 		return (1);
-        }
-        if (prefix(cmd, "drives")) {
+	}
+	if (prefix(cmd, "drives")) {
 		register int i;
 
-                move(CMDLINE, 0); clrtoeol();
-                for (i = 0; i < dk_ndrive; i++)
-                        if (dk_mspw[i] != 0.0)
-                                printw("%s ", dr_name[i]);
-                return (1);
-        }
+		move(CMDLINE, 0); clrtoeol();
+		for (i = 0; i < dk_ndrive; i++)
+			if (dk_mspw[i] != 0.0)
+				printw("%s ", dr_name[i]);
+		return (1);
+	}
 	return (0);
 }
 

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netstat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)netstat.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)netstat.c	5.2 (Berkeley) %G%";
 #include <netinet/tcp_debug.h>
 #include <netinet/udp.h>
 #include <netinet/udp_var.h>
+#include <paths.h>
 
 #define	streq(a,b)	(strcmp(a,b)==0)
 #define	YMAX(w)		((w)->_maxy-1)
@@ -42,7 +43,6 @@ static char sccsid[] = "@(#)netstat.c	5.2 (Berkeley) %G%";
 WINDOW *
 opennetstat()
 {
-
 	sethostent(1);
 	setnetent(1);
 	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
@@ -100,13 +100,12 @@ static struct nlist nlst[] = {
 	{ "_tcb" },
 #define	X_UDB	1
 	{ "_udb" },
-        { "" },
+	{ "" },
 };
 
 initnetstat()
 {
-
-	nlist("/vmunix", nlst);
+	nlist(_PATH_UNIX, nlst);
 	if (nlst[X_TCB].n_value == 0) {
 		error("No symbols in namelist");
 		return(0);
@@ -230,10 +229,9 @@ enter(inp, so, state, proto)
 
 labelnetstat()
 {
-
-        if (nlst[X_TCB].n_type == 0)
-                return;
-        wmove(wnd, 0, 0); wclrtobot(wnd);
+	if (nlst[X_TCB].n_type == 0)
+		return;
+	wmove(wnd, 0, 0); wclrtobot(wnd);
 	mvwaddstr(wnd, 0, LADDR, "Local Address");
 	mvwaddstr(wnd, 0, FADDR, "Foreign Address");
 	mvwaddstr(wnd, 0, PROTO, "Proto");
@@ -384,7 +382,7 @@ inetname(in)
 }
 
 cmdnetstat(cmd, args)
-        char *cmd, *args;
+	char *cmd, *args;
 {
 	register struct netinfo *p;
 
