@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)mount.c	5.6 (Berkeley) %G%";
 #include <mtab.h>
 #include <errno.h>
 #include <stdio.h>
+#include </usr/src/local/mkmsys/macklem/mkmsys/h/mount.h>
 
 #define	BADTYPE(type) \
 	(strcmp(type, FSTAB_RO) && strcmp(type, FSTAB_RW) && \
@@ -133,11 +134,16 @@ mountfs(spec, name, type)
 	register struct mtab *mp, *space;
 	register int cnt;
 	register char *p;
-	int fd;
+	int fd, flags;
+	struct ufs_args args;
 	char *index(), *rindex(), *strcpy();
 
 	if (!fake) {
-		if (mount(spec, name, !strcmp(type, FSTAB_RO))) {
+		flags = 0;
+		if (!strcmp(type, FSTAB_RO))
+			flags |= M_RDONLY;
+		args.fspec = spec;
+		if (mount(MOUNT_UFS, name, flags, &args)) {
 			fprintf(stderr, "%s on %s: ", spec, name);
 			switch (errno) {
 			case EMFILE:
