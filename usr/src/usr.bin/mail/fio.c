@@ -6,13 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+#include <paths.h>
 #include <errno.h>
 
 /*
@@ -22,26 +23,28 @@ static char sccsid[] = "@(#)fio.c	5.23 (Berkeley) %G%";
  */
 
 /*
- * Set up the input pointers while copying the mail file into
- * /tmp.
+ * Set up the input pointers while copying the mail file into /tmp.
  */
 setptr(ibuf)
 	register FILE *ibuf;
 {
-	register c;
+	register int c, count;
 	register char *cp, *cp2;
-	register count;
-	char linebuf[LINESIZE];
-	int maybe, inhead;
+	struct message this;
 	FILE *mestmp;
 	off_t offset;
-	struct message this;
-	extern char tempSet[];
+	int maybe, inhead;
+	char linebuf[LINESIZE];
 
-	if ((c = opentemp(tempSet)) < 0)
+	/* Get temporary file. */
+	(void)sprintf(linebuf, "%s/mail.XXXXXX", _PATH_TMP);
+	if ((c = mkstemp(linebuf)) == -1 ||
+	    (mestmp = Fdopen(c, "r+")) == NULL) {
+		(void)fprintf(stderr, "mail: can't open %s\n", linebuf);
 		exit(1);
-	if ((mestmp = Fdopen(c, "r+")) == NULL)
-		panic("Can't open temporary");
+	}
+	(void)unlink(linebuf);
+
 	msgCount = 0;
 	maybe = 1;
 	inhead = 0;
@@ -54,7 +57,7 @@ setptr(ibuf)
 	for (;;) {
 		if (fgets(linebuf, LINESIZE, ibuf) == NULL) {
 			if (append(&this, mestmp)) {
-				perror(tempSet);
+				perror("temporary file");
 				exit(1);
 			}
 			makemessage(mestmp);
@@ -70,7 +73,7 @@ setptr(ibuf)
 		if (maybe && linebuf[0] == 'F' && ishead(linebuf)) {
 			msgCount++;
 			if (append(&this, mestmp)) {
-				perror(tempSet);
+				perror("temporary file");
 				exit(1);
 			}
 			this.m_flag = MUSED|MNEW;
@@ -202,19 +205,18 @@ append(mp, f)
 /*
  * Delete a file, but only if the file is a plain file.
  */
-remove(name)
-	char name[];
+rm(name)
+	char *name;
 {
-	struct stat statb;
-	extern int errno;
+	struct stat sb;
 
-	if (stat(name, &statb) < 0)
+	if (stat(name, &sb) < 0)
 		return(-1);
-	if ((statb.st_mode & S_IFMT) != S_IFREG) {
+	if (!S_ISREG(sb.st_mode)) {
 		errno = EISDIR;
 		return(-1);
 	}
-	return unlink(name);
+	return(unlink(name));
 }
 
 static int sigdepth;		/* depth of holdsigs() */
@@ -237,21 +239,6 @@ relsesigs()
 
 	if (--sigdepth == 0)
 		sigsetmask(omask);
-}
-
-/*
- * Open a temp file by creating and unlinking.
- * Return the open file descriptor.
- */
-opentemp(file)
-	char file[];
-{
-	int f;
-
-	if ((f = open(file, O_CREAT|O_EXCL|O_RDWR, 0600)) < 0)
-		perror(file);
-	remove(file);
-	return (f);
 }
 
 /*

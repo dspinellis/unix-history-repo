@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)v7.local.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)v7.local.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,7 +35,7 @@ findmail(user, buf)
 demail()
 {
 
-	if (value("keep") != NOSTR || remove(mailname) < 0)
+	if (value("keep") != NOSTR || rm(mailname) < 0)
 		close(creat(mailname, 0600));
 }
 

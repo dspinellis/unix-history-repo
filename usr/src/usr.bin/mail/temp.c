@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)temp.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -20,7 +20,6 @@ static char sccsid[] = "@(#)temp.c	5.14 (Berkeley) %G%";
 char	tempMail[24];
 char	tempQuit[24];
 char	tempEdit[24];
-char	tempSet[24];
 char	tempResid[24];
 char	tempMesg[24];
 
@@ -36,8 +35,6 @@ tinit()
 	mktemp(strcat(tempQuit, "RmXXXXXX"));
 	strcpy(tempEdit, _PATH_TMP);
 	mktemp(strcat(tempEdit, "ReXXXXXX"));
-	strcpy(tempSet, _PATH_TMP);
-	mktemp(strcat(tempSet, "RxXXXXXX"));
 	strcpy(tempMesg, _PATH_TMP);
 	mktemp(strcat(tempMesg, "RxXXXXXX"));
 
