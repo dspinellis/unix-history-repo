@@ -2,83 +2,90 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)write.2	4.1 (Berkeley) %G%
+.\"	@(#)write.2	5.1 (Berkeley) %G%
 .\"
-.TH WRITE 2 
+.TH WRITE 2 "27 July 1983"
 .UC 4
 .SH NAME
-write \- write on a file
+write, writev \- write on a file
 .SH SYNOPSIS
 .nf
-.B write(fildes, buffer, nbytes)
-.B char *buffer;
+.ft B
+write(d, buf, nbytes)
+int d;
+char *buf;
+int nbytes;
+.PP
+.ft B
+#include <sys/types.h>
+#include <sys/uio.h>
+.PP
+.ft B
+writev(d, iov, ioveclen)
+int d;
+struct iovec *iov;
+int ioveclen;
 .fi
 .SH DESCRIPTION
-A file descriptor is a word returned from a
-successful
-.I open,
-.I creat,
-.I dup,
-or
-.IR pipe (2)
-call.
-.PP
-.I Buffer
-is the address of
+.I Write
+attempts to write
 .I nbytes
-contiguous
-bytes which are written on the output file.
-The number of characters actually written is returned.
-It should be regarded as an error
-if this is not the same as requested.
+of data to the object referenced by the descriptor
+.I d
+from the buffer pointed to by
+.IR buf .
+.I Writev
+performs the same action, but gathers the output data
+from the \fIiovlen\fP buffers specified by the members
+of the \fIiovec\fP array: iov[0], iov[1], etc.
 .PP
-Writes which are multiples
-of 1024 characters long and begin on a 1024-byte boundary
-in the file
-are more efficient than any others.
+On objects capable of seeking, the \fIwrite\fP starts at a position
+given by the pointer associated with
+.IR d ,
+see
+.IR lseek (2).
+Upon return from
+.IR write ,
+the pointer is incremented by the number of bytes actually written.
 .PP
-.IR Write s
-to the control terminal by a process
-which is not in the process group of the termainl
-and which is not ignoring or holding SIGTTOU signals
-cause the writer's process group
-to receive a SIGTTOU signal
-(See
-.IR jobs (3)
-and the description of the LTOSTOP option in
-.IR tty (4)
-for details).
+Objects that are not capable of seeking always write from the current
+position.  The value of the pointer associated with such an object
+is undefined.
 .PP
-On some systems
+If the real user is not the super-user, then
 .I write
 clears the set-user-id bit on a file.
 This prevents penetration of system security
 by a user who
-\*(lqcaptures\*(rq a writeable set-user-id file
+\*(lqcaptures\*(rq a writable set-user-id file
 owned by the super-user.
+.SH "RETURN VALUE
+Upon successful completion the number of bytes actually writen
+is returned.  Otherwise a \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Write
+will fail and the file pointer will remain unchanged if one or more
+of the following are true:
+.TP 15
+[EBADF]
+\fID\fP is not a valid descriptor open for writing.
+.TP 15
+[EPIPE]
+An attempt is made to write to a pipe that is not open
+for reading by any process.
+.TP 15
+[EPIPE]
+An attempt is made to write to a socket of type SOCK_STREAM
+which is not connected to a peer socket.
+.TP 15
+[EFBIG]
+An attempt was made to write a file that exceeds the process's
+file size limit or the maximum file size.
+.TP 15
+[EFAULT]
+Part of \fIiov\fP or data to be written to the file
+points outside the process's allocated address space.
 .SH "SEE ALSO"
-creat(2), open(2), pipe(2)
-.SH DIAGNOSTICS
-Returns
-\-1 on error: bad descriptor, buffer address, or
-count; physical I/O errors.
-.SH "ASSEMBLER (PDP-11)"
-(write = 4.)
-.br
-(file descriptor in r0)
-.br
-.B sys  write; buffer; nbytes
-.br
-(byte count in r0)
-.SH BUGS
-It would be nice to be able to call write and have the call return
-with an error indication if there was no buffer space for the written
-data, rather than blocking the process.
-.PP
-Processes which have been orphaned by their parents
-and have been inherited by
-.IR init (8)
-never receive SIGTTOU signals.
-Output by such a process
-is permitted even when they are not in the process group
-of the control terminal.
+lseek(2), open(2), pipe(2)
