@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)send.2	6.8 (Berkeley) %G%
+.\"     @(#)send.2	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SEND 2
@@ -17,9 +17,9 @@
 .Fd #include <sys/types.h>
 .Fd #include <sys/socket.h>
 .Ft int
-.Fn send "int s" "const char *msg" "int len" "int flags"
+.Fn send "int s" "const void *msg" "int len" "int flags"
 .Ft int
-.Fn sendto "int s" "const char *msg" "int len" "int flags" "const struct sockaddr *to" "int tolen"
+.Fn sendto "int s" "const void *msg" "int len" "int flags" "const struct sockaddr *to" "int tolen"
 .Ft int
 .Fn sendmsg "int s" "const struct msghdr *msg" "int flags"
 .Sh DESCRIPTION

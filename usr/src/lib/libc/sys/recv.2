@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)recv.2	6.10 (Berkeley) %G%
+.\"     @(#)recv.2	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RECV 2
@@ -17,9 +17,9 @@
 .Fd #include <sys/types.h>
 .Fd #include <sys/socket.h>
 .Ft int
-.Fn recv "int s" "char *buf" "int len" "int flags"
+.Fn recv "int s" "void *buf" "int len" "int flags"
 .Ft int
-.Fn recvfrom "int s" "char *buf" "int len" "int flags" "struct sockaddr *from" "int *fromlen"
+.Fn recvfrom "int s" "void *buf" "int len" "int flags" "struct sockaddr *from" "int *fromlen"
 .Ft int
 .Fn recvmsg "int s" "struct msghdr *msg" "int flags"
 .Sh DESCRIPTION
