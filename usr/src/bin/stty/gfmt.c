@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gfmt.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gfmt.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -138,6 +138,16 @@ gread(tp, s)
 		}
 		if (CHK("susp")) {
 			tp->c_cc[VSUSP] = tmp;
+			continue;
+		}
+		if (CHK("vmin")) {
+			(void)sscanf(ep, "%ld", &tmp);
+			tp->c_cc[VMIN] = tmp;
+			continue;
+		}
+		if (CHK("vtime")) {
+			(void)sscanf(ep, "%ld", &tmp);
+			tp->c_cc[VTIME] = tmp;
 			continue;
 		}
 		if (CHK("werase")) {
