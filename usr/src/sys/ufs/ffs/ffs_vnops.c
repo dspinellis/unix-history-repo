@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.89 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.90 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -220,7 +220,7 @@ ffs_read(ap)
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
-		n = MIN((unsigned)(fs->fs_bsize - on), uio->uio_resid);
+		n = min((unsigned)(fs->fs_bsize - on), uio->uio_resid);
 		diff = ip->i_size - uio->uio_offset;
 		if (diff <= 0)
 			return (0);
@@ -236,7 +236,7 @@ ffs_read(ap)
 		} else
 			error = bread(vp, lbn, size, NOCRED, &bp);
 		vp->v_lastr = lbn;
-		n = MIN(n, size - bp->b_resid);
+		n = min(n, size - bp->b_resid);
 		if (error) {
 			brelse(bp);
 			return (error);
@@ -316,7 +316,7 @@ ffs_write(ap)
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
-		n = MIN((unsigned)(fs->fs_bsize - on), uio->uio_resid);
+		n = min((unsigned)(fs->fs_bsize - on), uio->uio_resid);
 		if (n < fs->fs_bsize)
 			flags |= B_CLRBUF;
 		else
@@ -330,7 +330,7 @@ ffs_write(ap)
 		}
 		size = blksize(fs, ip, lbn);
 		(void) vnode_pager_uncache(vp);
-		n = MIN(n, size - bp->b_resid);
+		n = min(n, size - bp->b_resid);
 		error = uiomove(bp->b_un.b_addr + on, n, uio);
 		if (ioflag & IO_SYNC)
 			(void) bwrite(bp);
