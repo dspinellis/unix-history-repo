@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.6	(Berkeley)	%G%"
+/* @(#)dterm.c	1.7	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -53,7 +53,7 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.6	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.7	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
 char	*specfile = SPECFILE;	/* place to look up special characters */
@@ -401,7 +401,7 @@ int reinit;
 					/* special character table file. */
 	if ((fp = fopen (specfile, "r")) != NULL) {
 	    charptr = &specials[0];
-	    for (i = 2; fscanf(fp, "%s", charptr) != EOF; i += 2) {
+	    for (i = 2; fscanf(fp, "%s", charptr) != EOF; i++) {
 		charptr += strlen(charptr) + 1;
 	    }
 	    fclose(fp);
@@ -414,7 +414,7 @@ int reinit;
 						/* copy whole table */
 	    for (charptr = &specials[0]; j--; *tabptr++ = *charptr++);
 
-	    tabptr = spectab[j];		/* set up pointers to table */
+	    tabptr = spectab[0];		/* set up pointers to table */
 	    for (j = 0; i--; j++) {
 		spectab[j] = tabptr;
 		tabptr += strlen(tabptr) + 1;
