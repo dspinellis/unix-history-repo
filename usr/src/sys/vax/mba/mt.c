@@ -1,4 +1,4 @@
-/*	mt.c	4.12	82/10/17	*/
+/*	mt.c	4.13	82/10/17	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -78,9 +78,7 @@ char	mtds_bits[] = MTDS_BITS;
 mtattach(mi)
 	struct mba_device *mi;
 {
-#ifdef lint
-	mtread(0, 0); mtwrite(0); mtioctl(0, 0, 0, 0);
-#endif
+
 }
 
 mtslave(mi, ms, sn)

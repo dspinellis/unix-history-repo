@@ -1,4 +1,4 @@
-/*	ts.c	4.32	82/10/17	*/
+/*	ts.c	4.34	82/10/17	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -819,8 +819,7 @@ tsioctl(dev, cmd, data, flag)
 			if ((bp->b_flags&B_ERROR) || sc->sc_sts.s_xs0&TS_BOT)
 				break;
 		}
-		geterror(bp);		/* XXX */
-		return (u.u_error);	/* XXX */
+		return (geterror(bp));
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;
@@ -853,7 +852,7 @@ tsdump()
 		return (ENXIO);
 	ui = phys(tsdinfo[0], struct uba_device *);
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
-	ubainit(up);
+	ubainit(ui->ui_hd);
 	DELAY(1000000);
 	addr = (struct tsdevice *)ui->ui_physaddr;
 	addr->tssr = 0;
@@ -875,7 +874,7 @@ tsdump()
 }
 
 tsdwrite(dbuf, num, addr, up)
-	register dbuf, num;
+	register int dbuf, num;
 	register struct tsdevice *addr;
 	struct uba_regs *up;
 {

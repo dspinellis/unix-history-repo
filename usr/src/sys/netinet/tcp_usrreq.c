@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.66	82/10/17	*/
+/*	tcp_usrreq.c	1.67	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -75,7 +75,7 @@ tcp_usrreq(so, req, m, nam, opt)
 			error = EISCONN;
 			break;
 		}
-		error = tcp_attach(so, nam);
+		error = tcp_attach(so);
 		if (error)
 			break;
 		if ((so->so_options & SO_DONTLINGER) == 0)

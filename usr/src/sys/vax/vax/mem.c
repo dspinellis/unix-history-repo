@@ -1,4 +1,4 @@
-/*	mem.c	4.6	82/10/17	*/
+/*	mem.c	4.7	82/10/17	*/
 
 /*
  * Memory special file
@@ -39,7 +39,7 @@ mmrw(dev, uio, rw)
 	enum uio_rw rw;
 {
 	register int o;
-	register unsigned c, v;
+	register u_int c, v;
 	register struct iovec *iov;
 	int error = 0;
 
@@ -116,7 +116,7 @@ fault:
  */
 UNIcpy(uniadd, usradd, n, rw)
 	caddr_t uniadd, usradd;
-	register int n;
+	register u_int n;
 	enum uio_rw rw;
 {
 	register short *from, *to;

@@ -1,4 +1,4 @@
-/*	dn.c	4.10	82/10/17	*/
+/*	dn.c	4.11	82/10/17	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -81,6 +81,7 @@ dnattach(ui)
 /*ARGSUSED*/
 dnopen(dev, flag)
 	dev_t dev;
+	int flag;
 {
 	register struct dndevice *dp;
 	register u_short unit, *dnreg;
@@ -128,7 +129,7 @@ dnwrite(dev, uio)
 	dnreg = &(dp->dn_reg[DNREG(dev)]);
 	cc = MIN(uio->uio_resid, OBUFSIZ);
 	cp = obuf;
-	error = uiomove(cp, (unsigned)cc, UIO_WRITE, uio);
+	error = uiomove(cp, cc, UIO_WRITE, uio);
 	if (error)
 		return (error);
 	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {

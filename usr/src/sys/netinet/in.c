@@ -1,4 +1,4 @@
-/*	in.c	4.5	82/10/17	*/
+/*	in.c	4.6	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -104,6 +104,6 @@ if_rtinit(ifp, flags)
 	bzero((caddr_t)&sin, sizeof (sin));
 	sin.sin_family = AF_INET;
 	sin.sin_addr = if_makeaddr(ifp->if_net, 0);
-	rtinit(&sin, &ifp->if_addr, flags);
+	rtinit((struct sockaddr *)&sin, &ifp->if_addr, flags);
 }
 #endif

@@ -1,4 +1,4 @@
-/*	ut.c	4.20	82/10/17	*/
+/*	ut.c	4.21	82/10/17	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -742,8 +742,7 @@ utioctl(dev, cmd, data, flag)
 			if ((bp->b_flags&B_ERROR) || (sc->sc_dsreg&UTDS_BOT))
 				break;
 		}
-		geterror(bp);		/* XXX */
-		return (u.u_error);	/* XXX */
+		return (geterror(bp));
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;

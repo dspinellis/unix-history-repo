@@ -1,4 +1,4 @@
-/*	route.c	4.12	82/10/09	*/
+/*	route.c	4.13	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -69,10 +69,9 @@ found:
 rtfree(rt)
 	register struct rtentry *rt;
 {
-	register struct mbuf **mp;
 
 	if (rt == 0)
-		panic("freeroute");
+		panic("rtfree");
 	rt->rt_refcnt--;
 	if (rt->rt_refcnt == 0 && (rt->rt_flags&RTF_UP) == 0) {
 		rttrash--;
@@ -187,11 +186,10 @@ rtinit(dst, gateway, flags)
 	int flags;
 {
 	struct rtentry route;
-	struct route ro;
 
 	bzero((caddr_t)&route, sizeof (route));
 	route.rt_dst = *dst;
 	route.rt_gateway = *gateway;
 	route.rt_flags = flags;
-	(void) rtrequest(SIOCADDRT, &route);
+	(void) rtrequest((int)SIOCADDRT, &route);
 }
