@@ -1,4 +1,4 @@
-/*	groups.c	4.1	82/02/28	*/
+/*	groups.c	4.2	82/09/11	*/
 
 /*
  * groups
@@ -18,7 +18,7 @@ main(argc, argv)
 	char *sep = "";
 	int i;
 
-	setgrp(0, grps);
+	getgrp(grps);
 	for (i = 0; i < NGRPS; i++)
 		if (grps[i/(sizeof(int)*8)] & (1<<(i%(sizeof(int)*8)))) {
 			gr = getgrgid(i);
