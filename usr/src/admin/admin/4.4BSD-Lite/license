@@ -1,8 +1,8 @@
-.\"	@(#)license	1.9 (Berkeley) %G%
+.\"	@(#)license	1.10 (Berkeley) %G%
 .\"
 .nr LL 6.8i
-.OF '(3/94)'''
-.EF '(3/94)'''
+.OF '(4/94)'''
+.EF '(4/94)'''
 .ll 6.8i
 .ce 2
 .ps 11
@@ -17,10 +17,9 @@ University of California, Berkeley
 .nr FT H
 .ls 1
 .PP
-This LICENSE AGREEMENT is made and entered into
-by and between THE REGENTS OF THE
-UNIVERSITY OF CALIFORNIA, a California corporation, hereinafter called
-``THE REGENTS'', and
+This LICENSE AGREEMENT is made and entered into by and between
+THE REGENTS OF THE UNIVERSITY OF CALIFORNIA, a California corporation,
+hereinafter called ``THE REGENTS'', and
 \l'3.4i'
 having its principal office at 
 \l'4.00i'\|,
@@ -31,7 +30,7 @@ on the date of execution by THE REGENTS.
 .PP
 LICENSEE desires to obtain from THE REGENTS the Computer Programs
 and documentation known as 4.4BSD-LITE,
-hereinafter called `LICENSED MATERIAL,' and THE REGENTS desires to
+hereinafter called ``LICENSED MATERIAL,'' and THE REGENTS desires to
 grant to LICENSEE, a license to use LICENSED MATERIAL. THE REGENTS
 hereby grants to LICENSEE a non-exclusive, non-transferable, and
 perpetual license to use the LICENSED MATERIAL upon the terms and
@@ -141,32 +140,13 @@ OF THE LICENSED MATERIAL.
 .I Notice
 .I and
 .I Acknowledgement.
-LICENSEE
-may reproduce or
-distribute any copies of the LICENSED MATERIAL
-or derivative works, in source or binary form,
-as long as the original copyright notice is retained by
-LICENSEE in redistributed source code, and appropriate
-credit is given to the
-University of California at Berkeley and its contributors.
-This obligation will be considered met if
-LICENSEE includes the copyright notices found in the files that they
-are distributing on the label for electronic media
-containing source or binary code, and the
-statement regarding derivation appears on the
-cover page of the installation or release documentation
-accompanying the electronic media.
-Such statement is to include:
-``This product includes software developed by the University of
-California, Berkeley and its contributors.''
-Advertisements or other promotional literature for
-products or features based on LICENSED MATERIAL
-should acknowledge the role of the University
-of California, Berkeley and its contributors.
-However, neither the name of the University
-nor the names of its contributors may be used to
-endorse or promote products derived from this software
-without specific prior written permission.
+LICENSEE may reproduce and/or distribute any copies of the
+LICENSED MATERIAL or derivative works, in source or binary form,
+provided LICENSEE complies with the requirements set forth in
+Attachment A.
+In addition, any written materials, including, but not limited to,
+documentation, shall include the appropriate copyright notice and
+the acknowledgement set forth in paragraph 3 of Attachment A.
 .IP 11.
 .I Sublicensing 
 .I and 
@@ -201,7 +181,7 @@ court or United States federal court in California.
 .IP 15.
 .I Entire
 .I Agreement.
-This Agreement contains the entire
+This Agreement, including Attachment A, contains the entire
 Agreement between the parties and supersedes all prior written or
 oral agreements with respect to the subject matter hereof.
 .IP 16.
@@ -242,3 +222,49 @@ Title:\l'2.6i'~~Title:\l'2.6i'
 Date:\l'2.6i'~~Date:\l'2.6i'
 .R
 .TE
+.bp
+.ll 5.8i
+.nr LL 5.8i
+.ce 2
+.ps 14
+.B "4.4BSD-LITE"
+.ps 10
+.B "ATTACHMENT A"
+.\".ps 12
+.sp 4
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+.sp
+1. Redistributions of source code must retain the copyright notice
+which appears in the source code, this list of conditions and the
+following disclaimer.
+.sp
+2. Redistributions in binary form must reproduce the copyright notice
+which appears in the source code, this list of conditions and the
+following disclaimer in the documentation and/or other materials
+provided with the distribution.
+.sp
+3. All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+.sp
+.ti .5i
+This product includes software developed by the University of
+.ti .5i
+California, Berkeley, and its contributors.
+.sp
+4. Neither the name of the University nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+.sp
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS, OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
