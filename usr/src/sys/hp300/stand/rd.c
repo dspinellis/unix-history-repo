@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.20 92/12/21$
  *
- *	@(#)rd.c	8.1 (Berkeley) %G%
+ *	@(#)rd.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -115,7 +115,7 @@ rdident(ctlr, unit)
 	for (i = 0; i < numrdidentinfo; i++)
 		if (id == rdidentinfo[i].ri_hwid)
 			break;
-	if (i == numrdidentinfo || unit > rdidentinfo[i].ri_maxunum)
+	if (i == numrdidentinfo)
 		return(-1);
 	id = i;
 	rdreset(ctlr, unit);
