@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	7.4 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -404,7 +404,7 @@ soreceive(so, aname, uio, flags, rightsp)
 	struct mbuf **rightsp;
 {
 	register struct mbuf *m;
-	register int len, error = 0, s, tomark;
+	register int len, error = 0, s, offset;
 	struct protosw *pr = so->so_proto;
 	struct mbuf *nextrecord;
 	int moff;
@@ -511,14 +511,14 @@ restart:
 		}
 	}
 	moff = 0;
-	tomark = so->so_oobmark;
+	offset = 0;
 	while (m && uio->uio_resid > 0 && error == 0) {
 		if (m->m_type != MT_DATA && m->m_type != MT_HEADER)
 			panic("receive 3");
 		len = uio->uio_resid;
 		so->so_state &= ~SS_RCVATMARK;
-		if (tomark && len > tomark)
-			len = tomark;
+		if (so->so_oobmark && len > so->so_oobmark - offset)
+			len = so->so_oobmark - offset;
 		if (len > m->m_len - moff)
 			len = m->m_len - moff;
 		splx(s);
@@ -546,17 +546,15 @@ restart:
 				so->so_rcv.sb_cc -= len;
 			}
 		}
-		if ((flags & MSG_PEEK) == 0 && so->so_oobmark) {
-			so->so_oobmark -= len;
-			if (so->so_oobmark == 0) {
-				so->so_state |= SS_RCVATMARK;
-				break;
-			}
-		}
-		if (tomark) {
-			tomark -= len;
-			if (tomark == 0)
-				break;
+		if (so->so_oobmark) {
+			if ((flags & MSG_PEEK) == 0) {
+				so->so_oobmark -= len;
+				if (so->so_oobmark == 0) {
+					so->so_state |= SS_RCVATMARK;
+					break;
+				}
+			} else
+				offset += len;
 		}
 	}
 	if ((flags & MSG_PEEK) == 0) {
