@@ -2,7 +2,33 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef lint
@@ -12,7 +38,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pac.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)pac.c	5.8 (Berkeley) 8/31/92";
 #endif /* not lint */
 
 /*
@@ -31,19 +57,18 @@ static char sccsid[] = "@(#)pac.c	5.6 (Berkeley) %G%";
 #include "lp.h"
 #include "lp.local.h"
 
-char	*printer;			/* printer name */
-char	*acctfile;			/* accounting file (input data) */
-char	*sumfile;			/* summary file */
-float	price = 0.02;			/* cost per page (or what ever) */
-int	allflag = 1;			/* Get stats on everybody */
-int	sort;				/* Sort by cost */
-int	summarize;			/* Compress accounting file */
-int	reverse;			/* Reverse sort order */
-int	hcount;				/* Count of hash entries */
-int	errs;
-int	mflag = 0;			/* disregard machine names */
-int	pflag = 0;			/* 1 if -p on cmd line */
-int	price100;			/* per-page cost in 100th of a cent */
+static char	*acctfile;	/* accounting file (input data) */
+static int	 allflag = 1;	/* Get stats on everybody */
+static int	 errs;
+static int	 hcount;	/* Count of hash entries */
+static int	 mflag = 0;	/* disregard machine names */
+static int	 pflag = 0;	/* 1 if -p on cmd line */
+static float	 price = 0.02;	/* cost per page (or what ever) */
+static long	 price100;	/* per-page cost in 100th of a cent */
+static int	 reverse;	/* Reverse sort order */
+static int	 sort;		/* Sort by cost */
+static char	*sumfile;	/* summary file */
+static int	 summarize;	/* Compress accounting file */
 
 /*
  * Grossness follows:
@@ -60,19 +85,19 @@ struct hent {
 	int	h_count;		/* Number of runs */
 };
 
-struct	hent	*hashtab[HSHSIZE];	/* Hash table proper */
+static struct	hent	*hashtab[HSHSIZE];	/* Hash table proper */
 
-int	account __P((FILE *));
-int	any __P((int, char []));
-int	chkprinter __P((char *));
-void	dumpit __P((void));
-int	hash __P((char []));
-struct	hent *enter __P((char []));
-struct	hent *lookup __P((char []));
-int	qucmp __P((const void *, const void *));
-void	rewrite __P((void));
+static void	account __P((FILE *));
+static int	any __P((int, char []));
+stativ int	chkprinter __P((char *));
+static void	dumpit __P((void));
+static int	hash __P((char []));
+static struct	hent *enter __P((char []));
+static struct	hent *lookup __P((char []));
+static int	qucmp __P((const void *, const void *));
+static void	rewrite __P((void));
 
-int
+void
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -168,7 +193,7 @@ fprintf(stderr,
  * formats here.
  * Host names are ignored if the -m flag is present.
  */
-int
+static void
 account(acct)
 	register FILE *acct;
 {
@@ -211,7 +236,7 @@ account(acct)
  * Sort the hashed entries by name or footage
  * and print it all out.
  */
-void
+static void
 dumpit()
 {
 	struct hent **base;
@@ -249,7 +274,7 @@ dumpit()
 /*
  * Rewrite the summary file with the summary information we have accumulated.
  */
-void
+static void
 rewrite()
 {
 	register struct hent *hp;
@@ -289,7 +314,7 @@ rewrite()
  * Enter the name into the hash table and return the pointer allocated.
  */
 
-struct hent *
+static struct hent *
 enter(name)
 	char name[];
 {
@@ -315,7 +340,7 @@ enter(name)
  * to it.
  */
 
-struct hent *
+static struct hent *
 lookup(name)
 	char name[];
 {
@@ -333,7 +358,7 @@ lookup(name)
  * Hash the passed name and return the index in
  * the hash table to begin the search.
  */
-int
+static int
 hash(name)
 	char name[];
 {
@@ -348,7 +373,7 @@ hash(name)
 /*
  * Other stuff
  */
-int
+static int
 any(ch, str)
 	int ch;
 	char str[];
@@ -367,7 +392,7 @@ any(ch, str)
  * The comparison is ascii collating order
  * or by feet of typesetter film, according to sort.
  */
-int
+static int
 qucmp(a, b)
 	const void *a, *b;
 {
@@ -387,25 +412,25 @@ qucmp(a, b)
 /*
  * Perform lookup for printer name or abbreviation --
  */
-int
+static int
 chkprinter(s)
 	register char *s;
 {
-	static char buf[BUFSIZ/2];
-	char b[BUFSIZ];
 	int stat;
-	char *bp = buf;
 
-	if ((stat = pgetent(b, s)) < 0) {
+	if ((stat = cgetent(&bp, printcapdb, s)) == -2) {
 		printf("pac: can't open printer description file\n");
 		exit(3);
-	} else if (stat == 0)
+	} else if (stat == -1)
 		return(0);
-	if ((acctfile = pgetstr("af", &bp)) == NULL) {
+	else if (stat == -3)
+		fatal("potential reference loop detected in printcap file");
+
+	if (cgetstr(bp, "af", &acctfile) == -1) {
 		printf("accounting not enabled for printer %s\n", printer);
 		exit(2);
 	}
-	if (!pflag && (price100 = pgetnum("pc")) > 0)
+	if (!pflag && (cgetnum(bp, "pc", &price100) == 0))
 		price = price100/10000.0;
 	sumfile = (char *) calloc(sizeof(char), strlen(acctfile)+5);
 	if (sumfile == NULL) {
