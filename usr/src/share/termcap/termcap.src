@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.96 (Berkeley) %G%
+#	@(#)termcap.src	5.97 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -1903,7 +1903,7 @@ cf|c100-rv-s|concept-rv-s|concept100-rv-s|c100rvs|slow reverse concept 100:\
 # The vt100 uses rs and rf rather than is/ct/st because the tab settings
 # are in non-volatile memory and don't need to be reset upon login.
 # You can type "reset" to get them set.
-d0|vt100|dec-vt100|vt100-am|vt100am|dec-vt100|dec vt100:\
+d0|vt100|dec-vt100|vt100-am|vt100am|dec vt100:\
 	:do=^J:co#80:li#24:cl=50\E[;H\E[2J:sf=2*\ED:\
 	:le=^H:bs:am:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
@@ -1986,8 +1986,10 @@ dj|vt100-s-bot|dec-vt100-s-bot|vt100 with status line at bottom:\
 ds|vt100-nav|dec-vt100-nav|dec vt100 132 cols 14 lines (w/o advanced video option):\
 	:li#14:tc=vt100-w:
 dt|vt100-w|dec-vt100-w|dec vt100 132 cols (w/advanced video):\
+	:if=/usr/share/tabset/vt100-w:\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:tc=vt100-am:
 dv|vt100-w-nam|dec-vt100-w-nam|dec vt100 132 cols (w/advanced video), no am:\
+	:if=/usr/share/tabset/vt100-w:\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:vt@:tc=vt100-nam:
 d8|vt102|vt100 w/adv. video:\
 	:al=\E[1L:dl=\E[1M:im=\E[4h:ei=\E[4l:mi:dc=\E[1P:ku=\EOA:kd=\EOB:\
