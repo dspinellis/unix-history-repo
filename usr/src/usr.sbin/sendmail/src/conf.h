@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.33 (Berkeley) %G%
+ *	@(#)conf.h	8.34 (Berkeley) %G%
  */
 
 /*
@@ -355,6 +355,7 @@ typedef int		pid_t;
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASUSTAT	1	/* use System V ustat(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
+# define SIGFUNC_DEFINED	/* sigfunc_t already defined */
 # define FORK		fork
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
@@ -548,6 +549,10 @@ struct utsname
 #endif
 #ifndef WIFEXITED
 # define WIFEXITED(st)		(((st) & 0377) == 0)
+#endif
+
+#ifndef SIGFUNC_DEFINED
+typedef void		(*sigfunc_t) __P((int));
 #endif
 
 /*
