@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)od.c	5.8 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.9 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
@@ -846,9 +846,15 @@ offset(a)
 long	a;
 {
 	if (canseek(stdin))
-		fseek(stdin, a, 0);
-	else
-		dumbseek(stdin, a);
+	{
+		/*
+		 * in case we're accessing a raw disk,
+		 * we have to seek in multiples of a physical block.
+		 */
+		fseek(stdin, a & 0xfffffe00L, 0);
+		a &= 0x1ffL;
+	}
+	dumbseek(stdin, a);
 }
 
 dumbseek(s, offset)
