@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.58 (Berkeley) %G%
+#	@(#)termcap.src	5.59 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -2011,7 +2011,7 @@ hz|2392|hp2392|hp2392a:\
 #HP 236 console
 #from ddavis@ic.berkeley.edu
 h7|236|hp236|HP236 internal terminal emulator:\
-	:am:bs:li#24:co#80:cl=\EF:cm=\EE%+ %+ :\
+	:am:bs:li#24:co#80:ce=\EK:cl=\EF:cm=\EE%+ %+ :\
 	:dc=\EJ:dl=\EH:ic=\EI:al=\EG:up=^K:im=:ei=:\
 	:so=\EBI:se=\ECI:vs=\EDB:ve=\EDE:
 # hp150 from ddavis@ic.berkeley.edu
