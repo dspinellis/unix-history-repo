@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	7.11 (Berkeley) %G%
+ *	@(#)socket.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -223,8 +223,7 @@ int	recvfrom __P((int, void *, int, int,
 		struct sockaddr *, int *));
 int	recvmsg __P((int, const struct msghdr *, int));
 int	send __P((int, const void *, int, int));
-int	sendto __P((int, const void *, int, int,
-		const struct sockaddr *, int *));
+int	sendto __P((int, const void *, int, int, const struct sockaddr *, int));
 int	sendmsg __P((int, const struct msghdr *, int));
 int	setsockopt __P((int, int, int, const void *, int));
 int	shutdown __P((int, int));
