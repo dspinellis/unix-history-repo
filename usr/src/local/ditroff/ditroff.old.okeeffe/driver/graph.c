@@ -1,4 +1,4 @@
-/* graph.c	1.9	83/11/30
+/* graph.c	1.10	84/03/03
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -79,57 +79,68 @@ register int d;
  * Routine:	drawellip (horizontal_diameter, vertical_diameter)
  *
  * Results:	Draws regular ellipses given the major "diameters."  It does
- *		so by drawing many small lines, every other pixel.  The ellipse
- *		formula:  ((x-x0)/hrad)**2 + ((y-y0)/vrad)**2 = 1 is used,
- *		converting to:  y = y0 +- vrad * sqrt(1 - ((x-x0)/hrad)**2).
- *		The line segments are duplicated (mirrored) on either side of
- *		the horizontal "diameter".
+ *		so using a modified circle algorithm (see RoundEnd) that
+ *		increments x and y proportionally to their axes.
  *
  * Side Efct:	Resulting position is at (hpos + hd, vpos).
- *
- * Bugs:	Odd numbered horizontal axes are rounded up to even numbers.
  *----------------------------------------------------------------------------*/
 
-#define ELLIPSEDX	3
-
 drawellip(hd, vd)
-register int hd;
+int hd;
 int vd;
 {
-    register int bx;		/* multiplicative x factor */
-    register int x;		/* x position drawing to */
-    register int yk;		/* the square-root term */
-    register int y;		/* y position drawing to */
-    double k1;			/* k? are constants depending on parameters */
-    int k2, oldy1, oldy2;	/* oldy? are last y points drawn to */
+    double xs, ys, xepsilon, yepsilon;
+    register int thick;
+    register int basex;
+    register int basey;
+    register int x;
+    register int y;
 
 
-    if (hd < ELLIPSEDX) {
-	if (output) HGtline(hpos, vpos, hpos + hd, vpos);
-	hmot(hd);
-	return;
-    }
+    basex = hpos + (hd >> 1);		/* bases == coordinates of center */
+    hmot(hd);				/* horizontal motion (hpos should */
+    basey = vpos;			/*   NOT be used after this) */
+					/* hd and vd are radii, not diameters */
+    if ((hd = hd >> 1) < 1) hd++;	/* neither diameter can be zero. */
+    if ((vd = vd >> 1) < 1) vd++;	/*   hd changed!! no hmot after this */
+    ys = (double) vd;			/* start at top of the ellipse */
+    xs = 0.0;				/*   (y = 1/2 diameter, x = 0) */
 
-    bx = 4 * (hpos + hd);
-    x = hpos;
-    k1 = vd / (2.0 * hd);
-    k2 = hd * hd - (2 * hpos + hd) * (2 * hpos + hd);
-    oldy1 = vpos;
-    oldy2 = vpos;
+    if ((thick = vd) > hd) thick = hd;
+    xepsilon = (double) thick / (double) (vd * vd);
+    yepsilon = (double) thick / (double) (hd * hd);
 
-    hmot (hd);		/* end position is the right-hand side of the ellipse */
+		/* Calculate trajectory of the ellipse for 1/4	*/
+		/* the circumference (while ys is non-negative)	*/
+		/* and mirror to get the other three quadrants.	*/
 
-    if (output) {
-	while ((hd -= ELLIPSEDX) > 0) {
-	    yk=(int)(k1*sqrt((double)(k2+(bx-=(4*ELLIPSEDX))*(x+=ELLIPSEDX))));
-
-	    HGtline (x-ELLIPSEDX, oldy1, x, y = vpos + yk);	/* top half */
-	    oldy1 = y;
-	    HGtline (x-ELLIPSEDX, oldy2, x, y = vpos - yk);	/* bottom */
-	    oldy2 = y;
+    thick = linethickness / 2;
+    if (thick) {		/* more than one pixel thick */
+	RoundEnd(basex, ((int)(ys + 0.5)) + basey, thick, 0);
+	RoundEnd(basex, basey - ((int)(ys + 0.5)), thick, 0);
+	while (ys >= 0) {
+	    xs += xepsilon * ys;	/* generate circumference */
+	    ys -= yepsilon * xs;
+	    x = (int)(xs + 0.5);
+	    y = (int)(ys + 0.5);
+	    RoundEnd(x + basex, y + basey, thick, 0);
+	    RoundEnd(x + basex, basey - y, thick, 0);
+	    RoundEnd(basex - x, y + basey, thick, 0);
+	    RoundEnd(basex - x, basey - y, thick, 0);
 	}
-	HGtline(x, oldy1, hpos, vpos);
-	HGtline(x, oldy2, hpos, vpos);
+    } else {		/* do the perimeter only (no fill) */
+	point(basex, ((int)(ys + 0.5)) + basey);
+	point(basex, basey - ((int)(ys + 0.5)));
+	while (ys >= 0) {
+	    xs += xepsilon * ys;	/* generate circumference */
+	    ys -= yepsilon * xs;
+	    x = (int)(xs + 0.5);
+	    y = (int)(ys + 0.5);
+	    point(x + basex, y + basey);
+	    point(x + basex, basey - y);
+	    point(basex - x, y + basey);
+	    point(basex - x, basey - y);
+        }
     }
 }
 
@@ -395,36 +406,39 @@ int y1;
 HGArc(cx,cy,px,py,angle)
 register int cx;
 register int cy;
-register int px;
-register int py;
-register int angle;
+int px;
+int py;
+int angle;
 {
-    double xs, ys, resolution, epsilon, degreesperpoint, fullcircle;
-    double t1, t2;
-    int i, extent, nx, ny;
+    double xs, ys, resolution, epsilon, fullcircle;
+    int thick = linethickness / 2;
+    register int nx;
+    register int ny;
+    register int extent;
 
     xs = px - cx;
     ys = py - cy;
 
 /* calculate drawing parameters */
 
-    t1 = log10(sqrt( xs * xs + ys * ys)) * log2_10;
-    t1 = ceil(t1);
-    resolution = pow(2.0, t1);
+    resolution = log10(sqrt( xs * xs + ys * ys)) * log2_10;
+    resolution = ceil(resolution);
+    resolution = pow(2.0, resolution);
     epsilon = 1.0 / resolution;
     fullcircle = 2 * pi * resolution;
     fullcircle = ceil(fullcircle);
-    degreesperpoint = 360.0 / fullcircle;
 
-    if (angle == 0) extent = fullcircle;
-    else extent = angle/degreesperpoint;
+    if (angle == 0)
+	extent = fullcircle;
+    else
+	extent = angle * fullcircle / 360.0;
 
-    for (i=0; i<extent; ++i) {
+    while (extent-- > 0) {
         xs += epsilon * ys;
-        nx = (int) (xs + cx + 0.5);
+        nx = cx + (int) (xs + 0.5);
         ys -= epsilon * xs;
-        ny = (int) (ys + cy + 0.5);
-        RoundEnd(nx, ny, (int) (linethickness/2), FALSE);
+        ny = cy + (int) (ys + 0.5);
+        RoundEnd(nx, ny, thick, FALSE);
     }   /* end for */
 }  /* end HGArc */
 
@@ -437,13 +451,17 @@ register int angle;
  *----------------------------------------------------------------------------*/
 
 RoundEnd(x, y, radius, filled)
-int x, y, radius;
+register int x;
+register int y;
+int radius;
 int filled;
-
 {
-    double xs, ys, epsilon;
-    int i, j, k, extent, nx, ny;
-    int cx, cy;
+    double xs, ys;	/* floating point distance form center of circle */
+    double epsilon;	/* "resolution" of the step around circle */
+    register int cx;	/* center of circle */
+    register int cy;
+    register int nx;	/* integer distance from center */
+    register int ny;
 
 
     if (radius < 1) {	/* too small to notice */
@@ -454,39 +472,38 @@ int filled;
     xs = 0;
     ys = radius;
     epsilon = 1.0 / radius;
-    extent = pi * radius / 2.0;    /* 1/4 the circumference */
 
         /* Calculate the trajectory of the circle for 1/4 the circumference
          * and mirror appropriately to get the other three quadrants.
          */
 
-    point(x, y+((int) ys));    /* take care if end of arc missed by */
-    point(x, y-((int) ys));    /* below formulation                 */
-    for (i=0; i<extent; ++i)
-    {
-             /* generate circumference */
-        xs += epsilon * ys;
-        nx = (int) (xs + x + 0.5);
-        if (nx < x) nx = x;  /* 1st quadrant, should be positive */
-        ys -= epsilon * xs;
-        ny = (int) (ys + y + 0.5);
-        if (ny < y) ny = y;  /* 1st quadrant, should be positive */
+    nx = x;			/* must start out the x and y for first */
+    ny = y + radius;		/*   painting going on in while loop */
 
-        if (filled == TRUE) {	/* fill from center */
+    while (ny >= 0)
+    {
+        if (filled) {		/* fill from center */
             cx = x;
             cy = y;
         } else {		/* fill from perimeter only (no fill) */
             cx = nx;
             cy = ny;
         }
-        for (j=cx; j<=nx; ++j) {
-            for (k=cy; k<=ny; ++k) {
-                point(j, k);
-                point(j, 2*y-k);
-                point(2*x-j, k);
-                point(2*x-j, 2*y-k);
+        while (cx <= nx) {
+            while (cy <= ny) {
+                point(cx, cy);
+                point(cx, 2*y-cy);
+                point(2*x-cx, cy);
+                point(2*x-cx, 2*y-cy);
+		cy++;
             }  /* end for k */
+	    cx++;
         }  /* end for j */;
+				 /* generate circumference */
+        xs += epsilon * ys;
+        nx = x + (int) (xs + 0.5);
+        ys -= epsilon * xs;
+        ny = y + (int) (ys + 0.5);
     }  /* end for i */;
 }  /* end RoundEnd */;
 
