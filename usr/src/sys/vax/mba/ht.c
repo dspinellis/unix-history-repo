@@ -50,17 +50,6 @@ struct	ht_softc {
 } ht_softc[NHT];
 
 /*
- * States for b_active for device.
- */
-#define	SIO	1
-#define	SSFOR	2
-#define	SSREV	3
-#define	SRETRY	4
-#define	SCOM	5
-#define	SOK	6
-#define	SEOF	7
-
-/*
  * Bits for sc_flags.
  */
 #define	H_WRITTEN 1	/* last operation was a write */
@@ -92,7 +81,6 @@ htopen(dev, flag)
 	 * The NOP below serves two purposes:
 	 * 1. To get a recent copy of the status registers.
 	 * 2. To ensure that any outstanding rewinds are truly finished
-	 *	so that the test for BOT is valid.
 	 */
 	htcommand(dev, HT_SENSE, 1);
 	if ((sc->sc_dsreg & HTDS_MOL) == 0 || 
@@ -101,7 +89,8 @@ htopen(dev, flag)
 		return;
 	}
 	sc->sc_dens =
-	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|HTTC_PDP11|unit;
+	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|HTTC_PDP11|mi->mi_slave;
+	printf("dens %o\n", sc->sc_dens);
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
@@ -138,19 +127,11 @@ htcommand(dev, com, count)
 
 	bp = &chtbuf[HTUNIT(dev)];
 	(void) spl5();
-	/*
-	 * The B_DONE test is to allow the rewind on close not to wait at
-	 * all.  We just must make sure that it was an asynchronous rewind,
-	 * otherwise if it isn't we might wake up before the process
-	 * waiting for the command (we are waiting for the buffer here).
-	 */
 	while (bp->b_flags&B_BUSY) {
-		if (bp->b_flags&B_DONE && bp->b_repcnt == 0)
-			break;
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO);
 	}
-	bp->b_flags = B_BUSY;
+	bp->b_flags = B_BUSY|B_READ;
 	(void) spl0();
 	bp->b_dev = dev;
 	bp->b_command = com;
@@ -169,7 +150,7 @@ htstrategy(bp)
 	register struct buf *bp;
 {
 	register int unit = HTUNIT(bp->b_dev);
-	register struct mba_info *mi;
+	register struct mba_info *mi = htinfo[unit];
 	register struct buf *dp;
 	register struct ht_softc *sc = &ht_softc[unit];
 
@@ -221,13 +202,16 @@ htustart(mi)
 		} else if ((bp->b_flags&B_READ)==0)
 			sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
 	} else {
-		if (bp->b_command == HT_SENSE)
+		if (bp->b_command == HT_SENSE) {
+			T(10)("sense complete\n");
 			return (MBU_NEXT);
+		}
 		if (bp->b_command == HT_REW)
 			sc->sc_flags |= H_REWIND;
 		else
 			htaddr->htfc = -bp->b_bcount;
 		htaddr->htcs1 = bp->b_command|HT_GO;
+		T(10)("started cmd %d\n", bp->b_command);
 		return (MBU_STARTED);
 	}
 	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
@@ -250,9 +234,11 @@ htustart(mi)
 	}
 	if (blkno < dbtofsb(bp->b_blkno)) {
 		htaddr->htfc = blkno - dbtofsb(bp->b_blkno);
+		T(10)("spacing fwd %d\n", MASKREG(htaddr)->htfc);
 		htaddr->htcs1 = HT_SFORW|HT_GO;
 	} else {
 		htaddr->htfc = dbtofsb(bp->b_blkno) - blkno;
+		T(10)("spacing back %d\n", MASKREG(htaddr)->htfc);
 		htaddr->htcs1 = HT_SREV|HT_GO;
 	}
 	return (MBU_STARTED);
@@ -274,8 +260,6 @@ htdtint(mi, mbasr)
 	register struct ht_softc *sc;
 	int ds, er;
 
-	if (bp == NULL)
-		return;
 	sc = &ht_softc[HTUNIT(bp->b_dev)];
 	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
 	er = sc->sc_erreg = MASKREG(htaddr->hter);
@@ -326,8 +310,6 @@ htndtint(mi)
 	register struct ht_softc *sc;
 	int er, ds, fc;
 
-	if (bp == NULL)
-		return;
 	sc = &ht_softc[HTUNIT(bp->b_dev)];
 	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
 	er = sc->sc_erreg = MASKREG(htaddr->hter);
