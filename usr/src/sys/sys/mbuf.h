@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbuf.h	7.5 (Berkeley) %G%
+ *	@(#)mbuf.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -55,7 +55,6 @@ struct mbuf {
 #define	MT_HTABLE	6	/* IMP host tables */
 #define	MT_ATABLE	7	/* address resolution tables */
 #define	MT_SONAME	8	/* socket name */
-#define	MT_ZOMBIE	9	/* zombie proc status */
 #define	MT_SOOPTS	10	/* socket options */
 #define	MT_FTABLE	11	/* fragment reassembly header */
 #define	MT_RIGHTS	12	/* access rights */
