@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.11 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,6 +41,7 @@
 #endif
 
 #ifdef ISO
+int tp_incoming();
 #include "../netiso/argo_debug.h"
 #include "../netiso/iso.h"
 #include "../netiso/iso_var.h"
@@ -48,6 +49,8 @@
 
 extern	struct ifnet loif;
 struct llinfo_x25 llinfo_x25 = {&llinfo_x25, &llinfo_x25};
+struct sockaddr *x25_dgram_sockmask;
+ 
 int x25_autoconnect = 0;
 
 #define senderr(x) {error = x; goto bad;}
@@ -116,6 +119,7 @@ register struct mbuf *m;
 		x25_connect_callback(lcp, 0);
 		return;
 	}
+	pk_flowcontrol(lcp, 0, 1); /* Generate RR */
 	ifp = m->m_pkthdr.rcvif;
 	ifp->if_lastchange = time;
 	switch (m->m_type) {
@@ -190,6 +194,40 @@ register struct mbuf *m;
 		return;
 	}
 }
+#define SA(p) ((struct sockaddr *)(p))
+#define RT(p) ((struct rtentry *)(p))
+
+x25_dgram_incoming(lcp, m0)
+register struct pklcd *lcp;
+struct mbuf *m0;
+{
+	register struct rtentry *rt, *nrt;
+	register struct mbuf *m = m0->m_next; /* m0 has calling sockaddr_x25 */
+	int x25_rtrequest();
+
+	rt = rtalloc1(SA(&lcp->lcd_faddr), 0);
+	if (rt == 0) {
+refuse: 	lcp->lcd_upper = 0;
+		pk_close(lcp);
+		return;
+	}
+	rt->rt_refcnt--;
+	if ((nrt = RT(rt->rt_llinfo)) == 0 || rt_mask(rt) != x25_dgram_sockmask)
+		goto refuse;
+	if ((nrt->rt_flags & RTF_UP) == 0) {
+		rt->rt_llinfo = (caddr_t)rtalloc1(rt->rt_gateway, 0);
+		rtfree(nrt);
+		if ((nrt = RT(rt->rt_llinfo)) == 0)
+			goto refuse;
+		nrt->rt_refcnt--;
+	}
+	if (nrt->rt_ifa == 0 || nrt->rt_ifa->ifa_rtrequest != x25_rtrequest)
+		goto refuse;
+	lcp->lcd_send(lcp); /* confirm call */
+	x25_rtattach(lcp, nrt);
+	m_freem(m);
+}
+
 /*
  * X.25 output routine.
  */
@@ -199,7 +237,7 @@ struct	mbuf *m0;
 struct	sockaddr *dst;
 register struct	rtentry *rt;
 {
-	register struct	mbuf *m;
+	register struct	mbuf *m = m0;
 	register struct	llinfo_x25 *lx;
 	struct pklcd *lcp;
 	int             s, error = 0;
@@ -293,15 +331,11 @@ x25_iftimeout(ifp)
 struct ifnet *ifp;
 {
 	register struct pkcb *pkcb = 0;
-	register struct ifaddr *ifa;
 	register struct pklcd **lcpp, *lcp;
 	int s = splimp();
 
-	for (ifa = ifp->if_addrlist; ifa && !pkcb; ifa = ifa->ifa_next) {
-		if (ifa->ifa_addr->sa_family == AF_CCITT)
-			pkcb = &((struct x25_ifaddr *)ifa)->ia_pkcb;
-	}
-	if (pkcb)
+	for (pkcb = pkcbhead; pkcb; pkcb = pkcb->pk_next)
+	    if (pkcb->pk_ia->ia_ifp == ifp)
 		for (lcpp = pkcb->pk_chan + pkcb->pk_maxlcn;
 		     --lcpp > pkcb->pk_chan;)
 			if ((lcp = *lcpp) &&
@@ -316,14 +350,13 @@ struct ifnet *ifp;
  * This routine gets called when validating additions of new routes
  * or deletions of old ones.
  */
-x25_ifrtchange(cmd, rt, dst)
+x25_rtrequest(cmd, rt, dst)
 register struct rtentry *rt;
 struct sockaddr *dst;
 {
 	register struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
 	register struct sockaddr_x25 *sa =(struct sockaddr_x25 *)rt->rt_gateway;
 	register struct pklcd *lcp;
-#define SA(p) ((struct sockaddr *)(p))
 
 	if (rt->rt_flags & RTF_GATEWAY) {
 		if (rt->rt_llinfo)
@@ -359,7 +392,7 @@ struct sockaddr *dst;
 	x25_rtinvert(RTM_ADD, rt->rt_gateway, rt);
 }
 
-int x25_dont_rtinvert = 1;
+int x25_dont_rtinvert = 0;
 
 x25_rtinvert(cmd, sa, rt)
 register struct sockaddr *sa;
@@ -371,15 +404,13 @@ register struct rtentry *rt;
 	 * family on the other end, so will be different
 	 * from general host route via X.25.
 	 */
-	if (x25_dont_rtinvert)
-		return;
-	if (rt->rt_ifp->if_type == IFT_X25DDN)
+	if (rt->rt_ifp->if_type == IFT_X25DDN || x25_dont_rtinvert)
 		return;
 	if (sa->sa_family != AF_CCITT)
 		return;
-	if (cmd == RTM_ADD) {
-		rtrequest(RTM_ADD, sa, rt_key(rt), SA(0),
-				RTF_HOST|RTF_PROTO1, &rt2);
+	if (cmd != RTM_DELETE) {
+		rtrequest(RTM_ADD, sa, rt_key(rt), x25_dgram_sockmask,
+				RTF_PROTO2, &rt2);
 		if (rt2) {
 			rt2->rt_llinfo = (caddr_t) rt;
 			rt->rt_refcnt++;
@@ -388,14 +419,14 @@ register struct rtentry *rt;
 	}
 	rt2 = rt;
 	if ((rt = rtalloc1(sa, 0)) == 0 ||
-	    (rt->rt_flags & RTF_PROTO1) == 0 ||
-	    rt->rt_llinfo != (caddr_t)rt) {
+	    (rt->rt_flags & RTF_PROTO2) == 0 ||
+	    rt->rt_llinfo != (caddr_t)rt2) {
 		printf("x25_rtchange: inverse route screwup\n");
 		return;
 	} else
 		rt2->rt_refcnt--;
-	rtrequest(RTM_DELETE, rt->rt_gateway, rt_key(rt),
-		SA(0), 0, (struct rtentry **) 0);
+	rtrequest(RTM_DELETE, sa, rt_key(rt2), x25_dgram_sockmask,
+				0, (struct rtentry **) 0);
 }
 
 static struct sockaddr_x25 blank_x25 = {sizeof blank_x25, AF_CCITT};
@@ -560,7 +591,19 @@ register struct x25_ifaddr *ia;
 	if (sa && (rt = rtalloc1(sa, 1)))
 		rt->rt_refcnt--;
 }
-
+#ifndef _offsetof
+#define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
+#endif
+struct sockaddr_x25 x25_dgmask = {
+ _offsetof(struct sockaddr_x25, x25_udata[1]),			/* _len */
+ 0,								/* _family */
+ 0,								/* _net */
+ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}, /* _addr */
+ {0},								/* opts */
+ -1,								/* _udlen */
+ {-1}								/* _udata */
+};
+int x25_startproto = 1;
 struct radix_tree_head *x25_rnhead;
 
 pk_init()
@@ -569,13 +612,57 @@ pk_init()
 	 * warning, sizeof (struct sockaddr_x25) > 32,
 	 * but contains no data of interest beyond 32
 	 */
+	struct radix_node *rn_addmask();
 	rn_inithead(&x25_rnhead, 32, AF_CCITT);
+	x25_dgram_sockmask =
+		SA(rn_addmask((caddr_t)&x25_dgmask, 0, 4)->rn_key);
+	if (x25_startproto) {
+		pk_protolisten(0xcc, 1, x25_dgram_incoming);
+		pk_protolisten(0x81, 1, x25_dgram_incoming);
+	}
 }
+
+struct x25_dgproto {
+	u_char spi;
+	u_char spilen;
+	int (*f)();
+} x25_dgprototab[] = {
+#if defined(ISO) && defined(TPCONS)
+{ 0x0, 0, tp_incoming},
+#endif
+{ 0xcc, 1, x25_dgram_incoming},
+{ 0xcd, 1, x25_dgram_incoming},
+{ 0x81, 1, x25_dgram_incoming},
+};
+
+pk_user_protolisten(info)
+register u_char *info;
+{
+	register struct x25_dgproto *dp = x25_dgprototab
+		    + ((sizeof x25_dgprototab) / (sizeof *dp));
+	register struct pklcd *lcp;
+	
+	while (dp > x25_dgprototab)
+		if ((--dp)->spi == info[0])
+			goto gotspi;
+	return ESRCH;
+
+gotspi:	if (info[1])
+		return pk_protolisten(dp->spi, dp->spilen, dp->f);
+	for (lcp = pk_listenhead; lcp; lcp = lcp->lcd_listen)
+		if (lcp->lcd_laddr.x25_udlen == dp->spilen &&
+		    Bcmp(&dp->spi, lcp->lcd_laddr.x25_udata, dp->spilen) == 0) {
+			pk_close(lcp);
+			return 0;
+		}
+	return ESRCH;
+}
+
 /*
- * This routine steals a virtual circuit from a socket,
- * and glues it to a routing entry.  It wouldn't be hard
- * to extend this to a routine that stole back the vc from
- * rtentry.
+ * This routine transfers an X.25 circuit to or from a routing entry.
+ * If the supplied circuit is * in DATA_TRANSFER state, it is added to the
+ * routing entry.  If freshly allocated, it glues back the vc from
+ * the rtentry to the socket.
  */
 pk_rtattach(so, m0)
 register struct socket *so;
@@ -590,7 +677,8 @@ struct mbuf *m0;
 #define ROUNDUP(a) \
 	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 #define transfer_sockbuf(s, f, l) \
-	while (m = (s)->sb_mb) {(s)->sb_mb = m->m_act; sbfree((s), m); f(l, m);}
+	while (m = (s)->sb_mb)\
+		{(s)->sb_mb = m->m_act; m->m_act = 0; sbfree((s), m); f(l, m);}
 
 	if (rt)
 		rt->rt_refcnt--;
@@ -603,12 +691,50 @@ struct mbuf *m0;
 	if (rt == 0 || (rt->rt_flags & RTF_GATEWAY) ||
 	    (lx = (struct llinfo_x25 *)rt->rt_llinfo) == 0)
 		return ESRCH;
-	if (lcp == 0 || lcp->lcd_state != DATA_TRANSFER)
+	if (lcp == 0)
 		return ENOTCONN;
+	switch (lcp->lcd_state) {
+	default:
+		return ENOTCONN;
+
+	case READY:
+		/* Detach VC from rtentry */
+		if (lx->lx_lcd == 0)
+			return ENOTCONN;
+		lcp->lcd_so = 0;
+		pk_close(lcp);
+		lcp = lx->lx_lcd;
+		if (lx->lx_next->lx_rt == rt)
+			x25_lxfree(lx);
+		lcp->lcd_so = so;
+		lcp->lcd_upper = 0;
+		lcp->lcd_upnext = 0;
+		transfer_sockbuf(&lcp->lcd_sb, sbappendrecord, &so->so_snd);
+		soisconnected(so);
+		return 0;
+
+	case DATA_TRANSFER:
+		/* Add VC to rtentry */
+		lcp->lcd_so = 0;
+		lcp->lcd_sb = so->so_snd; /* structure copy */
+		bzero((caddr_t)&so->so_snd, sizeof(so->so_snd)); /* XXXXXX */
+		so->so_pcb = 0;
+		x25_rtattach(lcp, rt);
+		transfer_sockbuf(&so->so_rcv, x25_ifinput, lcp);
+		soisdisconnected(so);
+	}
+	return 0;
+}
+x25_rtattach(lcp0, rt)
+register struct pklcd *lcp0;
+struct rtentry *rt;
+{
+	register struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
+	register struct pklcd *lcp;
+	register struct mbuf *m;
 	if (lcp = lx->lx_lcd) { /* adding an additional VC */
 		if (lcp->lcd_state == READY) {
-			transfer_sockbuf(&lcp->lcd_sb, pk_output,
-					 (struct pklcd *)so->so_pcb);
+			transfer_sockbuf(&lcp->lcd_sb, pk_output, lcp0);
 			lcp->lcd_upper = 0;
 			pk_close(lcp);
 		} else {
@@ -617,14 +743,7 @@ struct mbuf *m0;
 				return ENOBUFS;
 		}
 	}
-	lx->lx_lcd = lcp = (struct pklcd *)so->so_pcb;
-	lcp->lcd_so = 0;
-	lcp->lcd_sb = so->so_snd; /* structure copy */
+	lx->lx_lcd = lcp = lcp0;
 	lcp->lcd_upper = x25_ifinput;
 	lcp->lcd_upnext = (caddr_t)lx;
-	transfer_sockbuf(&so->so_rcv, x25_ifinput, lcp);
-	so->so_pcb = 0;
-	bzero((caddr_t)&so->so_snd, sizeof(so->so_snd)); /* XXXXXX */
-	soisdisconnected(so);
-	return (0);
 }
