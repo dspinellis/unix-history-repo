@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)get	4.13	%G%
+#	@(#)get	4.14	%G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -44,6 +44,7 @@ cp $DISTROOT/bin/echo bin; strip bin/echo
 cp $DISTROOT/bin/rm bin; strip bin/rm
 cp $DISTROOT/bin/cp bin; strip bin/cp
 cp $DISTROOT/bin/expr bin; strip bin/expr
+cp $DISTROOT/bin/[ bin; strip bin/[
 cp $DISTROOT/bin/awk bin; strip bin/awk
 cp $DISTROOT/bin/make bin; strip bin/make
 cp $DISTROOT/usr/mdec/* usr/mdec
