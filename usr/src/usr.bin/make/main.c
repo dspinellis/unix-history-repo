@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -181,9 +181,6 @@ MainParseArgs(argc, argv)
 					break;
 				case 'm':
 					debug |= DEBUG_MAKE;
-					break;
-				case 'p':
-					debug |= DEBUG_PARSE;
 					break;
 				case 's':
 					debug |= DEBUG_SUFF;
