@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	sys.c	1.3	87/04/02
+ *	sys.c	1.4	88/03/03
  *
  * from vax	@(#)sys.c	7.1 (Berkeley) 6/5/86
  */
@@ -672,20 +672,3 @@ _stop(s)
 	printf("%s\n", s);
 	_rtt();
 }
-
-#ifdef tahoe
-trap(ps)
-	int ps;
-{
-	printf("Trap %o\n", ps);
-	for (;;)
-		;
-}
-
-uncache (addr)
-	char *addr;
-{
-	/* Return *(addr-0x4000); DIRTY assumes this address is valid */
-	mtpr(PDCS, addr);
-}
-#endif
