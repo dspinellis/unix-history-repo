@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.17 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -509,6 +509,7 @@ dirbad(ip, offset, how)
 
 	printf("%s: bad dir ino %d at offset %d: %s\n",
 	    ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
+	panic("bad dir");
 }
 
 /*
