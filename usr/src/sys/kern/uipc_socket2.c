@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.18	82/01/19	*/
+/*	uipc_socket2.c	4.19	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,6 +53,8 @@ soisconnected(so)
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTED;
 	wakeup((caddr_t)&so->so_timeo);
+	sorwakeup(so);
+	sowwakeup(so);
 }
 
 soisdisconnecting(so)
@@ -115,21 +117,27 @@ soselect(so, rw)
 	register struct socket *so;
 	int rw;
 {
+	int s = splnet();
 
 	switch (rw) {
 
 	case FREAD:
-		if (soreadable(so))
+		if (soreadable(so)) {
+			splx(s);
 			return (1);
+		}
 		sbselqueue(&so->so_rcv);
 		break;
 
 	case FWRITE:
-		if (sowriteable(so))
+		if (sowriteable(so)) {
+			splx(s);
 			return (1);
+		}
 		sbselqueue(&so->so_snd);
 		break;
 	}
+	splx(s);
 	return (0);
 }
 
