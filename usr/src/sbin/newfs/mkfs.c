@@ -1,11 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkfs.c	2.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.16 (Berkeley) %G%";
 #endif
 
 /*
  * make file system for cylinder-group style file systems
  *
- * usage: mkfs special size [ nsect ntrak bsize fsize cpg minfree rps nbpi ]
+ * usage: mkfs -N special size [ nsect ntrak bsize fsize cpg minfree rps nbpi ]
  */
 
 /*
@@ -112,6 +112,7 @@ char	*fsys;
 time_t	utime;
 int	fsi;
 int	fso;
+int	Nflag;
 daddr_t	alloc();
 
 main(argc, argv)
@@ -122,17 +123,31 @@ main(argc, argv)
 
 #ifndef STANDALONE
 	argc--, argv++;
+	if (argv[0][0] == '-') {
+		switch (argv[0][1]) {
+		case 'N':
+			Nflag++;
+			break;
+		default:
+			printf("%s: unknown flag\n", &argv[0][1]);
+			argc = 1;	/* force usage message */
+			break;
+		}
+		argc--, argv++;
+	}
 	time(&utime);
 	if (argc < 2) {
-		printf("usage: mkfs special size [ nsect ntrak bsize fsize cpg minfree rps nbpi ]\n");
+		printf("usage: mkfs -N special size [ nsect ntrak bsize fsize cpg minfree rps nbpi ]\n");
 		exit(1);
 	}
 	fsys = argv[0];
 	fssize = atoi(argv[1]);
-	fso = creat(fsys, 0666);
-	if(fso < 0) {
-		printf("%s: cannot create\n", fsys);
-		exit(1);
+	if (!Nflag) {
+		fso = creat(fsys, 0666);
+		if(fso < 0) {
+			printf("%s: cannot create\n", fsys);
+			exit(1);
+		}
 	}
 	fsi = open(fsys, 0);
 	if(fsi < 0) {
@@ -488,6 +503,8 @@ next:
 		printf(" %d,", fsbtodb(&sblock, cgsblock(&sblock, cylno)));
 	}
 	printf("\n");
+	if (Nflag)
+		exit(0);
 	/*
 	 * Now construct the initial file system,
 	 * then write out the super-block.
@@ -568,10 +585,8 @@ initcg(cylno)
 		clrbit(acg.cg_iused, i);
 		i++;
 	}
-	lseek(fso, fsbtodb(&sblock, cgimin(&sblock, cylno)) * DEV_BSIZE, 0);
-	if (write(fso, (char *)zino, sblock.fs_ipg * sizeof (struct dinode)) !=
-	    sblock.fs_ipg * sizeof (struct dinode))
-		printf("write error %D\n", numfrags(&sblock, tell(fso)));
+	wtfs(fsbtodb(&sblock, cgimin(&sblock, cylno)),
+	    sblock.fs_ipg * sizeof (struct dinode), (char *)zino);
 	for (i = 0; i < MAXCPG; i++) {
 		acg.cg_btot[i] = 0;
 		for (j = 0; j < NRPOS; j++)
@@ -827,6 +842,8 @@ wtfs(bno, size, bf)
 {
 	int n;
 
+	if (Nflag)
+		return;
 	if (lseek(fso, bno * DEV_BSIZE, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("wtfs");
