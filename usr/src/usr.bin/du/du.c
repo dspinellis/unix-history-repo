@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,9 +34,6 @@ static char sccsid[] = "@(#)du.c	5.3 (Berkeley) %G%";
 #include <strings.h>
 #include <stdio.h>
 
-/* this macro uses ints, not longs */
-#define	kb(n)	(howmany(dbtob(n), 1024))
-
 typedef struct _ID {
 	dev_t	dev;
 	ino_t	inode;
@@ -44,7 +41,7 @@ typedef struct _ID {
 
 ID *files;
 dev_t device;
-int crossmounts, listdirs, listfiles, maxfiles, numfiles;
+int crossmounts, kvalue, listdirs, listfiles, maxfiles, numfiles;
 char path[MAXPATHLEN + 1];
 
 main(argc, argv)
@@ -56,10 +53,13 @@ main(argc, argv)
 	char *malloc(), top[MAXPATHLEN + 1];
 
 	listdirs = crossmounts = 1;
-	while ((ch = getopt(argc, argv, "asx")) != EOF)
+	while ((ch = getopt(argc, argv, "aksx")) != EOF)
 		switch(ch) {
 		case 'a':
 			listfiles = 1;
+			break;
+		case 'k':
+			kvalue = 1;
 			break;
 		case 's':
 			listfiles = listdirs = 0;
@@ -69,7 +69,8 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "usage: du [-asx] [name ...]\n");
+			(void)fprintf(stderr,
+			    "usage: du [-aksx] [name ...]\n");
 			exit(1);
 		}
 	argv += optind;
@@ -108,14 +109,16 @@ du(arg)
 		return;
 	}
 	if ((info.st_mode&S_IFMT) != S_IFDIR) {
-		(void)printf("%u\t%s\n", kb(info.st_blocks), arg);
+		(void)printf("%ld\t%s\n", kvalue ?
+		    howmany(info.st_blocks, 2) : info.st_blocks, arg);
 		return;
 	}
 	device = info.st_dev;
 	(void)strcpy(path, arg);
 	total = descend(path);
 	if (!listfiles && !listdirs)
-		(void)printf("%u\t%s\n", kb(total), path);
+		(void)printf("%lu\t%s\n",
+		    kvalue ? howmany(total, 2) : total, path);
 }
 
 u_long
@@ -146,7 +149,8 @@ descend(endp)
 		if (info.st_dev != device && !crossmounts)
 			return(0L);
 		if (chdir(endp) || !(dir = opendir("."))) {
-			fprintf(stderr, "du: %s: %s\n", path, strerror(errno));
+			(void)fprintf(stderr, "du: %s: %s\n",
+			    path, strerror(errno));
 			return(total);
 		} 
 		for (; *endp; ++endp);
@@ -166,14 +170,16 @@ descend(endp)
 		}
 		closedir(dir);
 		if (chdir("..")) {
-			fprintf(stderr, "du: ..: %s\n", strerror(errno));
+			(void)fprintf(stderr, "du: ..: %s\n", strerror(errno));
 			exit(1);
 		}
 		*--endp = '\0';
 		if (listdirs)
-			(void)printf("%u\t%s\n", kb(total), path);
+			(void)printf("%lu\t%s\n",
+			    kvalue ? howmany(total, 2) : total, path);
 	}
 	else if (listfiles)
-		(void)printf("%u\t%s\n", kb(total), path);
+		(void)printf("%lu\t%s\n",
+		    kvalue ? howmany(total, 2) : total, path);
 	return(total);
 }

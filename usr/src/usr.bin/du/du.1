@@ -1,4 +1,4 @@
-.\"	@(#)du.1	6.3 (Berkeley) %G%
+.\"	@(#)du.1	6.4 (Berkeley) %G%
 .\"
 .TH DU 1 ""
 .AT 3
@@ -7,32 +7,42 @@ du \- summarize disk usage
 .SH SYNOPSIS
 .B du
 [
-.B \-asx
+.B \-aksx
 ] [ name ... ]
 .SH DESCRIPTION
 .I Du
-gives the number of kilobytes contained in all files
-and, recursively, directories within each specified
-directory or file
+gives the number of 512-byte blocks contained in all files and,
+recursively, directories within each specified directory or file
 .IR name .
 If
 .I name
 is missing, the current directory is used.
-.PP
-The
-.B \-a
-option causes an entry to be generated for each file.
-The
-.B \-s
-option causes only the grand total to be given.
-Absence of either causes an entry to be generated for
-each directory only.
-.PP
-The
-.B \-x
-option keeps
+The options are as follows:
+.TP
+-a
+Generate an entry for each file.
+.TP
+-k
+By default,
 .I du
-from crossing any mount points.
+displays the number of blocks as returned by the
+.IR stat (2)
+system call, i.e. 512-byte blocks.
+If the
+.I -k
+flag is specified, the number displayed is the number of 1024-byte
+blocks with partial blocks rounded up.
+.TP
+-s
+Generate only the grand total.
+If neither
+.I -a
+or
+.I -s
+are specified, an entry is generated for each directory only.
+.TP
+-x
+Don't traverse any mount points.
 .PP
 A file which has multiple hard links to it is only counted
 (and displayed) once per
