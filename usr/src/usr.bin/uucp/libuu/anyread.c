@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)anyread.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)anyread.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <sys/stat.h>
+
+/*LINTLIBRARY*/
 
 /*
  *	anyread		check if anybody can read
