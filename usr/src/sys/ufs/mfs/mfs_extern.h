@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_extern.h	8.3 (Berkeley) %G%
+ *	@(#)mfs_extern.h	8.4 (Berkeley) %G%
  */
 
 struct buf;
@@ -14,6 +14,7 @@ struct proc;
 struct statfs;
 struct ucred;
 struct vnode;
+struct vfsconf;
 
 __BEGIN_DECLS
 int	mfs_badop __P((void));
@@ -22,7 +23,7 @@ int	mfs_close __P((struct vop_close_args *));
 void	mfs_doio __P((struct buf *bp, caddr_t base));
 int	mfs_inactive __P((struct vop_inactive_args *)); /* XXX */
 int	mfs_reclaim __P((struct vop_reclaim_args *));
-int	mfs_init __P((void));
+int	mfs_init __P((struct vfsconf *));
 int	mfs_ioctl __P((struct vop_ioctl_args *));
 int	mfs_mount __P((struct mount *mp,
 	    char *path, caddr_t data, struct nameidata *ndp, struct proc *p));
