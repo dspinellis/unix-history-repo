@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.25 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -503,20 +503,33 @@ restart:
 	 * we have to do the receive in sections, and thus risk returning
 	 * a short count if a timeout or signal occurs after we start.
 	 */
-	if (m == 0 || so->so_rcv.sb_cc < uio->uio_resid &&
+	while (m == 0 || so->so_rcv.sb_cc < uio->uio_resid &&
 	    (so->so_rcv.sb_cc < so->so_rcv.sb_lowat ||
-	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat))) {
+	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat)) &&
+	    m->m_nextpkt == 0) {
 #ifdef DIAGNOSTIC
 		if (m == 0 && so->so_rcv.sb_cc)
 			panic("receive 1");
 #endif
 		if (so->so_error) {
+			if (m)
+				break;
 			error = so->so_error;
-			so->so_error = 0;
+			if ((flags & MSG_PEEK) == 0)
+				so->so_error = 0;
 			goto release;
 		}
-		if (so->so_state & SS_CANTRCVMORE)
-			goto release;
+		if (so->so_state & SS_CANTRCVMORE) {
+			if (m)
+				break;
+			else
+				goto release;
+		}
+		for (; m; m = m->m_next)
+			if (m->m_type == MT_OOBDATA  || (m->m_flags & M_EOR)) {
+				m = so->so_rcv.sb_mb;
+				goto dontblock;
+			}
 		if ((so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) == 0 &&
 		    (so->so_proto->pr_flags & PR_CONNREQUIRED)) {
 			error = ENOTCONN;
@@ -535,6 +548,7 @@ restart:
 			return (error);
 		goto restart;
 	}
+dontblock:
 	u.u_ru.ru_msgrcv++;
 	nextrecord = m->m_nextpkt;
 	if (pr->pr_flags & PR_ADDR) {
@@ -675,6 +689,8 @@ restart:
 		 */
 		while (flags & MSG_WAITALL && m == 0 && uio->uio_resid > 0 &&
 		    !sosendallatonce(so)) {
+			if (so->so_error || so->so_state & SS_CANTRCVMORE)
+				break;
 			error = sbwait(&so->so_rcv);
 			if (error) {
 				sbunlock(&so->so_rcv);
@@ -683,9 +699,6 @@ restart:
 			}
 			if (m = so->so_rcv.sb_mb)
 				nextrecord = m->m_nextpkt;
-			if (so->so_error || so->so_state & SS_CANTRCVMORE)
-				break;
-			continue;
 		}
 	}
 	if ((flags & MSG_PEEK) == 0) {
