@@ -10,7 +10,7 @@ all: ${KEYMAPS}
 
 install:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${KEYMAPS} \
-			${DESTDIR}/${MAPSDIR}
+			${DESTDIR}${MAPSDIR}
 
 clean:
 	-rm -f ${KEYMAPS} ${KEYMAPS_MK} core *.o 
