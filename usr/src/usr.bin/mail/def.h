@@ -10,7 +10,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	2.7 %G%";
+ * Sccs Id = "@(#)def.h	2.8 %G%";
  */
 
 /*
@@ -50,7 +50,7 @@ struct message {
 	short	m_flag;			/* flags, see below */
 	short	m_block;		/* block number of this message */
 	short	m_offset;		/* offset in block of message */
-	unsigned	m_size;		/* Bytes in the message */
+	long	m_size;			/* Bytes in the message */
 	short	m_lines;		/* Lines in the message */
 };
 
@@ -243,6 +243,9 @@ struct ignore {
 #ifndef VMUNIX
 #define	vfork()	fork()
 #endif
+#ifndef	SIGRETRO
+#define	sigchild()
+#endif
 
 /*
  * Forward declarations of routine types to keep lint and cc happy.
@@ -303,4 +306,4 @@ struct	name	*put();
 struct	name	*usermap();
 struct	name	*verify();
 struct	var	*lookup();
-unsigned	int	msize();
+long	transmit();
