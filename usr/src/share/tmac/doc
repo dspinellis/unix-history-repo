@@ -3,9 +3,9 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc	5.1 (Berkeley) %G%
+.\"     @(#)doc	5.2 (Berkeley) %G%
 .\"
-.\" mdoc-parse - attempt to parse troff request arguments
+.\" .mdoc-parse - attempt to parse troff request arguments
 .\"     %beginstrip%
 .if t \{\
 .	so /usr/share/tmac/tmac.doc-ditroff
@@ -661,8 +661,18 @@
 .	\}
 .	el \{\
 .		ds mN Nm
-.		aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-.	\}
+.               ds A1 \\$1
+.               ds A2 \\$2
+.               ds A3 \\$3
+.               ds A4 \\$4
+.               ds A5 \\$5
+.               ds A6 \\$6
+.               ds A7 \\$7
+.               ds A8 \\$8
+.               ds A9 \\$9
+.               nr fV \\n(.$
+.               fV
+.       \}
 .\}
 .if \\n(aC>0 \{\
 .	ie \\n(aC==\\n(aP \{\
@@ -686,7 +696,9 @@
 .					el \{\
 .						if \\n(iS==0 \{\
 .							sw \\$1
-.							nr iS (\\n(sWu*\\n(fW)u
+.\" .							nr nW \w' '
+.\" .					nr iS (\\n(sWu+1*\\n(fW)u+\\n(nWu
+.					nr iS ((\\n(sWu+1)*\\n(fW)u
 .						\}
 .					\}
 .					in +\\n(iSu
@@ -1243,8 +1255,6 @@
 .	\}
 .\}
 ..
-.\" NS s0 macro - catch errors (spacing for non-existent class type 0)
-.\" NS s1 macro - set spacing for class type 1
 .\" NS s1 macro - set spacing for class type 1
 .\" NS s2 macro - set spacing for class type 2
 .\" NS s3 macro - set spacing for class type 3
@@ -1263,7 +1273,8 @@
 .\}
 .if \\n(\\*(A\\n(aC==2 \{\
 .	nr xX \\n(aC-1
-.	rm S\\n(xX
+.	ie "\\*(A\\n(aC"Nb" .ds S\\n(xX \\*(hV
+.	el .rm S\\n(xX
 .\}
 ..
 .de s2
@@ -1342,8 +1353,32 @@
 ..
 .de Ef
 .ds mN Ef
-.ie \\n(.$>0 .tm Usage .Ef (#\\n(.c)
+.ie \\n(.$>0 .tm Usage .Ef (does not take arguments) (#\\n(.c)
 .el \&\f\\n(bF\s\\n(bZ
+..
+.\" Ns Bk macro - Begin Keep
+.\" Ns Ek macro - End Keep
+.\" Ns kS string - keep type
+.de Bk
+.ds mN Bk
+.ie \\n(.$==0 \{\
+.tm Usage: .Bk [-lines | -words] (#\\n(.c)
+.\}
+.el \{\
+.	if !"\\*(kS"" .tm .Bk: nesting keeps not implemented yet. (#\\n(.c)
+.	if "\\$1"-lines" .tm .Bd -lines: Not implemented yet. (#\\n(.c)
+.	if "\\$1"-words" .Hv
+.	ds kS \\$1
+.\}
+..
+.de Ek
+.ds mN Ek
+.ie \\n(.$>0 .tm Usage .Ek (does not take arguments) (#\\n(.c)
+.el \{\
+.	if "\\*(kS"-lines" .tm .Bd -lines: Not implemented yet. (#\\n(.c)
+.	if "\\*(kS"-words" .Sv
+.	rm kS
+.\}
 ..
 .\" NS Bd macro - Begin Display display-type [offset string]
 .\" NS Ed macro - end Display
@@ -1767,7 +1802,7 @@
 .nr bb \\n(w\\n(lCu+\\n(lSu
 .ti -\\n(bbu
 .\" .ie \w'\\*(b1'u>=(\\n(w\\n(lCu) \&\\*(b1\\*(lS
-.ie \w'\\*(b1'u>=(\\n(w\\n(lCu) \&\\*(b1
+.ie \w\\*(b1u>=(\\n(w\\n(lCu) \&\\*(b1
 .el \&\\*(b1\h'|\\n(bbu'\c
 .nr oM-1
 .dZ+1
@@ -1822,7 +1857,7 @@
 .lX
 .nr bb \\n(w\\n(lCu+\\n(lSu
 .ti -\\n(bbu
-.ie \w'\\*(b1'u>=(\\n(w\\n(lCu) \&\\*(b1
+.ie \w\\*(b1u>=(\\n(w\\n(lCu) \&\\*(b1
 .\" .ie \w'\\*(b1'u>=(\\n(w\\n(lCu) \&\\*(b1\0
 .el \&\\*(b1\h'|\\n(bbu'\c
 .nr oM-1
@@ -1856,19 +1891,9 @@
 .de tL
 .if \\n(tW==0 .lW
 .lX
-.if "\\*(A1"Ql" .tm -mdoc limitation: Cannot create item of type `Ql'
-.\" .	nr bb \\n(w\\n(lCu+\\n(lSu+2n
-.\" .	ti -\\n(bbu
-.\" .	ie (\w'\\*(b1'u)>(\\n(w\\n(lCu) \{\\&\\*(sL\\*(b1\\*(sR
-.\" .		br
-.\" .	\}
-.\" .	el \&\\*(sL\\*(b1\\*(sR\h'|\\n(bbu'\c
-.\" .\}
-.\" .el \{\
-.\" 'nf
 .nr bb \\n(w\\n(lCu+\\n(lSu
 .ti -\\n(bbu
-.ie (\w'\\*(b1'u)>(\\n(w\\n(lCu) \{\&\\*(b1
+.ie (\w\\*(b1u)>(\\n(w\\n(lCu) \{\&\\*(b1
 .       br
 .\}
 .el \&\\*(b1\h'|\\n(bbu'\c
@@ -2058,19 +2083,19 @@
 .tY
 ..
 .de W1
-.ta \w'\\*(A1    'u
-.nr eW \w'\\*(A1    'u
+.ta \w\\*(A1    u
+.nr eW \w\\*(A1    u
 'in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
 ..
 .de W2
 .\" ARGS2 Here is offset == \\n(o\\n(lCu
-.ta \w'\\*(A1    'u +\w'\\*(A2    'u
-.nr eW \w'\\*(A1    'u+\w'\\*(A2    'u
+.ta \w\\*(A1    u +\w\\*(A2    u
+.nr eW \w\\*(A1    u+\w\\*(A2    u
 'in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
 ..
 .de W3
-.ta \w'\\*(A1    'u +\w'\\*(A2    'u +\w'\\*(A3    'u
-.nr eW \w'\\*(A1    'u+\w'\\*(A2    'u+\w'\\*(A3    'u
+.ta \w\\*(A1    u +\w\\*(A2    u +\w\\*(A3    u
+.nr eW \w\\*(A1    u+\w\\*(A2    u+\w\\*(A3    u
 'in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
 ..
 .de W4
@@ -2079,13 +2104,13 @@
 .\" A2==\\*(A2
 .\" A3==\\*(A3
 .\" A4==\\*(A4
-.ta \w'\\*(A1    'u +\w'\\*(A2    'u +\w'\\*(A3    'u +\w'\\*(A4    'u
-.nr eW \w'\\*(A1    'u+\w'\\*(A2    'u+\w'\\*(A3    'u +\w'\\*(A4    'u
+.ta \w\\*(A1    u +\w\\*(A2    u +\w\\*(A3    u +\w\\*(A4    u
+.nr eW \w\\*(A1    u+\w\\*(A2    u +\w\\*(A3    u +\w\\*(A4    u
 'in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
 ..
 .de W5
-.ta \w'\\*(A1    'u +\w'\\*(A2    'u +\w'\\*(A3    'u +\w'\\*(A4    'u +\w'\\*(A5    'u
-.nr eW \w'\\*(A1    'u +\w'\\*(A2    'u +\w'\\*(A3    'u +\w'\\*(A4    'u +\w'\\*(A5    'u
+.ta \w\\*(A1    u +\w\\*(A2    u +\w\\*(A3    u +\w\\*(A4    u +\w\\*(A5    u
+.nr eW \w\\*(A1    u +\w\\*(A2    u +\w\\*(A3    u +\w\\*(A4    u +\w\\*(A5    u
 '	in \\n(.iu+\\n(eWu+\\n(o\\n(lCu
 ..
 .\" NS cL macro - column items
@@ -2303,7 +2328,7 @@
 .		f\\n(C\\n(aP
 .	\}
 .	el \{\
-.		as b1 \\*(rp
+.		as b1 \|\\*(rp
 .		aZ
 .	\}
 .	if \\n(nS>0 .br
@@ -2355,7 +2380,7 @@
 .\" use of b1 buffer, then b1 contents copied to string of retrievable
 .\" naming convention), print out reference on .Re request and clean up.
 .\" Ordering very limited, no fancy citations, but can do articles, journals
-.\" and books - need to add several missing options (like date, city etc).
+.\" and books - need to add several missing options (like city etc).
 .\" should be able to grab a refer entry, massage it a wee bit (prefix
 .\" a `.' to the %[A-Z]) and not worry (ha!)
 .\"
@@ -2374,19 +2399,6 @@
 .rC
 .nr rS 0
 ..
-.\" NS Js macro - Journal Citation Start
-.\" .de Js
-.\" .ds rS
-.\" .if \\n(nA==1 .br
-.\" .rC
-.\" .nr jS 1
-.\" ..
-.\" .\" .\" NS Je macro - Journal Citation End
-.\" .de Je
-.\" .jZ
-.\" .rC
-.\" .nr jS 0
-.\" ..
 .\" NS rC macro - reference cleanup
 .de rC
 .nr uK 0
@@ -2397,15 +2409,14 @@
 .nr rK 0
 .nr tK 0
 .nr vK 0
+.nr dK 0
+.nr pK 0
 .ds rS
 .rm U1 U2 U3 U4 U5 U6 U7 U8
-.rm uK jK nK oK rK qK tK vK
+.rm uK jK nK oK rK qK tK vK dK pK
 ..
 .\" NS rZ macro - reference print
 .de rZ
-.tm here is Kl==\\n(Kl
-.tm Here is tK==\\n(tK %T \\*(tK
-.tm here is oK==\\n(oK %O \\*(oK
 .if \\n(uK \{\&\\*(U1,
 .	nr aK 1
 .	if (\\n(uK>1 \{\
@@ -2416,12 +2427,16 @@
 .if \\n(tK \{\
 .	nr Kl-1
 .	if \\n(Kl==0 \{\
-.		ie (\\n(jK:\\n(bK) \&\\*(tK.
-.		el \&\\*(eM\\*(tK\\*(nO.
+.		ie (\\n(jK==1):(\\n(bK==1) \{\&\\*q\\*(tK\\*q.
+.		\}
+.		el \{\&\\*(eM\\*(tK\\*(nO.
+.		\}
 .	\}
 .	if \\n(Kl>0 \{\
-.		ie (\\n(jK:\\n(bK) \&\\*(tK
-.		el \&\\*(eM\\*(tK\\*(nO,
+.		ie (\\n(jK==1):(\\n(bK==1) \{\&\\*q\\*(tK\\*q,
+.		\}
+.		el \{\&\\*(eM\\*(tK\\*(nO,
+.		\}
 .	\}
 .\}
 .if \\n(bK \{\
@@ -2449,6 +2464,21 @@
 .	if \\n(Kl==0 \&\\*(vK.
 .	if \\n(Kl>0 \&\\*(vK,
 .\}
+.if \\n(pK \{\
+.	nr Kl-1
+.	if \\n(Kl==0 \&\\*(pK.
+.	if \\n(Kl>0 \&\\*(pK,
+.\}
+.if \\n(qK \{\
+.	nr Kl-1
+.	if \\n(Kl==0 \&\\*(qK.
+.	if \\n(Kl>0 \&\\*(qK,
+.\}
+.if \\n(dK \{\
+.	nr Kl-1
+.	if \\n(Kl==0 \&\\*(dK.
+.	if \\n(Kl>0 \&\\*(dK,
+.\}
 .if \\n(oK \{\
 .	nr Kl-1
 .	if \\n(Kl==0 \&\\*(oK.
@@ -2460,6 +2490,7 @@
 .de aK
 .nr aK+1
 .ie (\\n(uK-\\n(aK)==0 \{\&and \\*(U\\n(aK,
+.\}
 .el \{\&\\*(U\\n(aK,
 .	aK
 .\}
@@ -2479,7 +2510,6 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(rA
 .	nr aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -2511,7 +2541,37 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(rA
+.	nr aP+1
+.       nr cF \\n(.f
+.	nr cZ \\n(.s
+.       rR
+.\}
+..
+.\" NS %D macro - [reference] Date
+.\" NS dK string - Date String
+.\" NS dK register - Date flag
+.de %D
+.if \\n(aC==0 \{\
+.       ie \\n(.$==0 .tm Usage: .%D Date (#\\n(.c)
+.       el \{\
+.		ds mN %D
+.		nr dK+1
+.		nr Kl+1
+.		ds rS dK
+.               ds A1 \\$1
+.               ds A2 \\$2
+.               ds A3 \\$3
+.               ds A4 \\$4
+.               ds A5 \\$5
+.               ds A6 \\$6
+.               ds A7 \\$7
+.               ds A8 \\$8
+.               ds A9 \\$9
+.		nr fV \\n(.$
+.		fV
+.	\}
+.\}
+.if \\n(aC>\\n(aP \{\
 .	nr aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -2543,7 +2603,6 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(eM
 .	nr aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -2565,7 +2624,6 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(rA
 .	nr aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -2597,7 +2655,37 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(rA
+.	nr aP+1
+.       nr cF \\n(.f
+.	nr cZ \\n(.s
+.       rR
+.\}
+..
+.\" NS %P macro - [reference] page numbers
+.\" NS pK register - [reference] page number flag
+.\" NS pK string - [reference] page number
+.de %P
+.if \\n(aC==0 \{\
+.       ie \\n(.$==0 .tm Usage: .%P page numbers ... \\*(Pu (#\\n(.c)
+.       el \{\
+.		ds mN %P
+.		nr pK+1
+.		nr Kl+1
+.		ds rS pK
+.               ds A1 \\$1
+.               ds A2 \\$2
+.               ds A3 \\$3
+.               ds A4 \\$4
+.               ds A5 \\$5
+.               ds A6 \\$6
+.               ds A7 \\$7
+.               ds A8 \\$8
+.               ds A9 \\$9
+.		nr fV \\n(.$
+.		fV
+.	\}
+.\}
+.if \\n(aC>\\n(aP \{\
 .	nr aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -2629,7 +2717,6 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(rA
 .	nr aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -2661,7 +2748,6 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(rA
 .	nr aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
@@ -2676,9 +2762,11 @@
 .       ie \\n(.$==0 .tm Usage: .%T (#\\n(.c)
 .       el \{\
 .		ds mN %T
-.		nr tK+1
-.		nr Kl+1
-.		ds rS tK
+.		if \\n(rS>0 \{\
+.			nr tK+1
+.			nr Kl+1
+.			ds rS tK
+.		\}
 .               ds A1 \\$1
 .               ds A2 \\$2
 .               ds A3 \\$3
@@ -2693,20 +2781,23 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	ie \\n(jS==1 \{\
-.		nr cF \\n(.f
-.		nr cZ \\n(.s
-.		ds qL \&\\*(Lq\\*(rA
-.		ds qR \&\\*(Rq\f\\n(cF\s\\n(cZ
-.		En \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-.	\}
-.	el \{\
-.		as b1 \\*(eM
+.\" .	ie \\n(jS==1 \{\
+.\" .		nr cF \\n(.f
+.\" .		nr cZ \\n(.s
+.\" .		ds qL \&\\*(Lq\\*(rA
+.\" .		ds qR \&\\*(Rq\f\\n(cF\s\\n(cZ
+.\" .		En \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.\" .	\}
+.\" .	el \{\
 .		nr aP+1
 .		nr cF \\n(.f
 .		nr cZ \\n(.s
-.		rR
-.	\}
+.		ie \\n(rS==0 \{\
+.			as b1 \&\\*(eM
+.			nR
+.		\}
+.		el .rR
+.\" .	\}
 .\}
 ..
 .\" NS %V macro - reference volume
@@ -2724,11 +2815,10 @@
 .	\}
 .\}
 .if \\n(aC>\\n(aP \{\
-.	as b1 \\*(rA
 .	nr aP+1
 .       nr cF \\n(.f
 .	nr cZ \\n(.s
-.       nR
+.       rR
 .\}
 ..
 .\" NS rR macro - reference recursion routine
@@ -2738,9 +2828,9 @@
 .hy 0
 .nr jM \\n(C\\n(aP
 .ie \\n(jM==1 \{\
-.	as b1 \&\f\\n(cF\s\\n(cZ
+.\" .	as b1 \&\f\\n(cF\s\\n(cZ
 .	ie "\\*(A\\n(aP"Tn" \{\
-.		.nN
+.		nN
 .	\}
 .	el \{\
 .		if \\n(aC>8 .tm Usage: \\*(mN - maximum 8 arguments (#\\n(.c)
@@ -2751,9 +2841,10 @@
 .el \{\
 .	nr jN \\n(aP
 .	ie \\n(jM==2 .as b1 \&\\*(A\\n(aP
-.	el .as b1 \&\f\\n(cF\s\\n(cZ\\*(A\\n(aP\fP\s0
+.	el .as b1 \&\\*(A\\n(aP
+.\" .	el .as b1 \&\f\\n(cF\s\\n(cZ\\*(A\\n(aP\fP\s0
 .	ie \\n(aC==\\n(aP \{\
-.		as b1 \&\f\\n(cF\s\\n(cZ
+.\" .		as b1 \&\f\\n(cF\s\\n(cZ
 .		rD
 .	\}
 .	el \{\
