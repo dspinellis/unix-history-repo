@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -44,8 +44,7 @@ static char sccsid[] = "@(#)sys_bsd.c	1.14 (Berkeley) %G%";
 int
 	tout,			/* Output file descriptor */
 	tin,			/* Input file descriptor */
-	net,
-	HaveInput;		/* There is input available to scan */
+	net;
 
 static struct	tchars otc = { 0 }, ntc = { 0 };
 static struct	ltchars oltc = { 0 }, nltc = { 0 };
@@ -286,7 +285,7 @@ register int f;
     ioctl(tout, FIONBIO, (char *)&onoff);
 #endif	/* (!defined(TN3270)) || ((!defined(NOT43)) || defined(PUTCHAR)) */
 #if	defined(TN3270)
-    if (noasynch == 0) {
+    if (noasynchtty == 0) {
 	ioctl(tin, FIOASYNC, (char *)&onoff);
     }
 #endif	/* defined(TN3270) */
@@ -392,7 +391,7 @@ sys_telnet_init()
     NetNonblockingIO(net, 1);
 
 #if	defined(TN3270)
-    if (noasynch == 0) {			/* DBX can't handle! */
+    if (noasynchnet == 0) {			/* DBX can't handle! */
 	NetSigIO(net, 1);
 	NetSetPgrp(net);
     }

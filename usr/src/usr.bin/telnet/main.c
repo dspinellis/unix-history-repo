@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	1.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -88,7 +88,12 @@ main(argc, argv)
 		    argc--;
 		}
 	    } else if (!strcmp(argv[1], "-noasynch")) {
-		noasynch = 1;
+		noasynchtty = 1;
+		noasynchnet = 1;
+	    } else if (!strcmp(argv[1], "-noasynchtty")) {
+		noasynchtty = 1;
+	    } else if (!strcmp(argv[1], "-noasynchnet")) {
+		noasynchnet = 1;
 	    } else
 #endif	/* defined(TN3270) && defined(unix) */
 	    if (argv[1][1] != '\0') {

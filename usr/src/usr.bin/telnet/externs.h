@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)externs.h	1.11 (Berkeley) %G%
+ *	@(#)externs.h	1.12 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -118,7 +118,9 @@ extern Ring
 
 extern int
     HaveInput,		/* Whether an asynchronous I/O indication came in */
-    noasynch,		/* Don't do signals on I/O (SIGURG, SIGIO) */
+    noasynchtty,	/* Don't do signals on I/O (SIGURG, SIGIO) */
+    noasynchnet,	/* Don't do signals on I/O (SIGURG, SIGIO) */
+    sigiocount,		/* Count of SIGIO receptions */
     shell_active;	/* Subshell is active */
 
 extern char
