@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.36 92/12/20$
  *
- *	@(#)autoconf.c	7.10 (Berkeley) %G%
+ *	@(#)autoconf.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -97,14 +97,6 @@ configure()
 		}
 #endif
 	}
-
-#include "cd.h"
-#if NCD > 0
-	/*
-	 * Now deal with concatenated disks
-	 */
-	find_cdevices();
-#endif
 
 #if GENERIC
 	if ((boothowto & RB_ASKNAME) == 0)
@@ -867,35 +859,6 @@ iounmap(kva, size)
 	ix = btoc(kva - extiobase) + 1;
 	rmfree(extiomap, btoc(size), ix);
 }
-
-#if NCD > 0
-#include <dev/cdvar.h>
-
-find_cdevices()
-{
-	register struct cddevice *cd;
-
-	for (cd = cddevice; cd->cd_unit >= 0; cd++) {
-		/*
-		 * XXX
-		 * Assign disk index first so that init routine
-		 * can use it (saves having the driver drag around
-		 * the cddevice pointer just to set up the dk_*
-		 * info in the open routine).
-		 */
-		if (dkn < DK_NDRIVE)
-			cd->cd_dk = dkn++;
-		else
-			cd->cd_dk = -1;
-		if (cdinit(cd))
-			printf("cd%d configured\n", cd->cd_unit);
-		else if (cd->cd_dk >= 0) {
-			cd->cd_dk = -1;
-			dkn--;
-		}
-	}
-}
-#endif
 
 isrinit()
 {
