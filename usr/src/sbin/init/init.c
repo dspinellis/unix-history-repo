@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)init.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.6 (Berkeley) 2/26/82";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
@@ -337,6 +337,8 @@ merge()
 	}
 }
 
+#include <sys/ioctl.h>
+
 dfork(p)
 struct tab *p;
 {
@@ -358,16 +360,23 @@ struct tab *p;
 	}
 	pid = fork();
 	if(pid == 0) {
+		int oerrno, f;
+		extern int errno;
+
+		signal(SIGTERM, SIG_DFL);
+		signal(SIGHUP, SIG_IGN);
 		if (dowait) {
-			int f = open("/dev/console", 1);
+			f = open("/dev/console", 1);
 			write(f, "init: ", 6);
 			write(f, tty, strlen(tty));
 			write(f, ": getty failing, sleeping\n\r", 27);
 			close(f);
 			sleep(30);
+			if ((f = open("/dev/tty", 2)) >= 0) {
+				ioctl(f, TIOCNOTTY, 0);
+				close(f);
+			}
 		}
-		signal(SIGTERM, SIG_DFL);
-		signal(SIGHUP, SIG_IGN);
 		strcpy(tty, dev);
 		strncat(tty, p->line, LINSIZ);
 		chown(tty, 0, 0);
@@ -375,12 +384,16 @@ struct tab *p;
 		if (open(tty, 2) < 0) {
 			int repcnt = 0;
 			do {
+				oerrno = errno;
 				if (repcnt % 10 == 0) {
-					int f = open("/dev/console", 1);
+					f = open("/dev/console", 1);
 					write(f, "init: ", 6);
-					write(f, tty, strlen(tty));
-					write(f, ": cannot open\n\r", 15);
+					errno = oerrno, perror(tty);
 					close(f);
+					if ((f = open("/dev/tty", 2)) >= 0) {
+						ioctl(f, TIOCNOTTY, 0);
+						close(f);
+					}
 				}
 				repcnt++;
 				sleep(60);
