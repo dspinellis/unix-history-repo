@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.26 (Berkeley) %G%
+.\"	@(#)2.t	6.27 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -665,6 +665,10 @@ requires much more disk space than SunOS does.
 It is currently difficult (though not completely impossible) to
 run \*(4B diskless.  These instructions assume you will have a local
 boot, swap, and root filesystem.
+.IP 6)
+Only port ttya can be used as the system console.
+Attempts to use port ttyb will fail when the kernel tries
+to print the boot up messages to the console.
 .NH 3
 The Procedure
 .PP
@@ -708,13 +712,14 @@ so that the SunOS boot program will work.
 Mount the new root, then copy the SunOS
 .Pn /boot
 into place and use the SunOS ``installboot'' program
-to enable disk-based booting:
+to enable disk-based booting.
+Note that the filesystem must be mounted when you do the ``installboot'':
 .DS
 .ft CW
 # mount /dev/sd3a /mnt
 # cp /boot /mnt/boot
-# umount /dev/sd3a
-# /usr/kvm/mdec/installboot /mnt/boot bootsd /dev/rsd3a
+# cd /usr/kvm/mdec
+# installboot /mnt/boot bootsd /dev/rsd3a
 .DE
 The SunOS
 .Pn /boot
@@ -723,16 +728,12 @@ bootstrap code on the distribution.  Note that the SunOS
 .Pn /boot
 does not handle the new \*(4B filesystem format.
 .IP 5)
-Mount the new root and restore its contents.
+Restore the contents of the \*(4B root filesystem.
 .DS
 .ft CW
-# mount /dev/sd3a /mnt
 # cd /mnt
 # rrestore xf tapehost:/dev/nrst0
 .DE
-If you have chosen to use the SunOS newfs to build
-.Pn /usr ,
-you may mount and restore it now and skip the next step.
 .IP 6)
 Boot the supplied kernel:
 .DS
