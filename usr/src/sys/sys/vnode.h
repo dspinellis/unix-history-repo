@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.47 (Berkeley) %G%
+ *	@(#)vnode.h	7.48 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -38,7 +38,7 @@ struct vnode {
 	short		v_usecount;		/* reference count of users */
 	short		v_writecount;		/* reference count of writers */
 	long		v_holdcnt;		/* page & buffer references */
-	off_t		v_lastr;		/* last read (read-ahead) */
+	daddr_t		v_lastr;		/* last read (read-ahead) */
 	u_long		v_id;			/* capability identifier */
 	struct mount	*v_mount;		/* ptr to vfs we are in */
 	struct vnodeops	*v_op;			/* vnode operations */
@@ -237,7 +237,7 @@ struct vnodeops {
 	void	(*vop_vfree) __P((struct vnode *pvp, ino_t ino, int mode));
 #define	VOP_TRUNCATE(v,l,f)	(*((v)->v_op->vop_truncate))(v,l,f)
 	int	(*vop_truncate)
-		    __P((struct vnode *vp, u_long length, int flags));
+		    __P((struct vnode *vp, off_t length, int flags));
 #define	VOP_UPDATE(v,ta,tm,w)	(*((v)->v_op->vop_update))(v,ta,tm,w)
 	int	(*vop_update) __P((struct vnode *vp,
 		    struct timeval *ta, struct timeval *tm, int waitfor));
