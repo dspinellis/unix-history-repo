@@ -3,13 +3,13 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.8 (Berkeley) %G%
+.\"	@(#)0.t	6.9 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
 Berkeley Software Architecture Manual
 .br
-4.3BSD Edition
+4.4BSD Edition
 .AU
 William Joy, Robert Fabry,
 .AU
@@ -22,14 +22,14 @@ Computer Science Division
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, CA  94720
-.EH 'PSD:5-%''4.3BSD Architecture Manual'
-.OH '4.3BSD Architecture Manual''PSD:5-%'
+.EH 'PSD:5-%''4.4BSD Architecture Manual'
+.OH '4.4BSD Architecture Manual''PSD:5-%'
 .AB
 .FS
 * UNIX is a trademark of Bell Laboratories.
 .FE
 This document summarizes the facilities
-provided by the 4.3BSD version of the UNIX\|* operating system.
+provided by the 4.4BSD version of the UNIX\|* operating system.
 It does not attempt to act as a tutorial for use of the system
 nor does it attempt to explain or justify the design of the
 system facilities.
