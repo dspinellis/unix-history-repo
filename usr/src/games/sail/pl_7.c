@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_7.c	2.4 83/12/09";
+static	char *sccsid = "@(#)pl_7.c	2.5 83/12/17";
 #endif
 
 #include "player.h"
@@ -144,7 +144,9 @@ char flag;
 	register c;
 
 	prompt(p, ship);
+	blockalarm();
 	(void) wrefresh(scroll_w);
+	unblockalarm();
 	while ((c = wgetch(scroll_w)) == EOF)
 		;
 	if (flag && c >= ' ' && c < 0x7f)
@@ -165,7 +167,9 @@ register n;
 	sc_buf = buf;
 	for (;;) {
 		*p = 0;
+		blockalarm();
 		(void) wrefresh(scroll_w);
+		unblockalarm();
 		while ((c = wgetch(scroll_w)) == EOF)
 			;
 		switch (c) {
