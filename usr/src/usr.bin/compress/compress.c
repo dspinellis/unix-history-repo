@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)compress.c	5.17 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <signal.h>
 #include <utime.h>
+#include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -530,7 +531,8 @@ long int out_count = 0;			/* # of codes output (for debugging) */
  * questions about this implementation to ames!jaw.
  */
 
-compress() {
+compress()
+{
     register long fcode;
     register code_int i = 0;
     register int c;
@@ -541,7 +543,8 @@ compress() {
 
 #ifndef COMPATIBLE
     if (nomagic == 0) {
-	putchar(magic_header[0]); putchar(magic_header[1]);
+	putchar(magic_header[0]);
+	putchar(magic_header[1]);
 	putchar((char)(maxbits | block_compress));
 	if(ferror(stdout))
 		writeerr();
@@ -642,9 +645,7 @@ nomatch:
     return;
 }
 
-/*****************************************************************
- * TAG( output )
- *
+/*-
  * Output the given code.
  * Inputs:
  * 	code:	A n_bits-bit integer.  If == -1, then EOF.  This assumes
@@ -686,15 +687,17 @@ code_int  code;
 		    (col+=6) >= 74 ? (col = 0, '\n') : ' ' );
 #endif /* DEBUG */
     if ( code >= 0 ) {
-#ifdef vax
-	/* VAX DEPENDENT!! Implementation on other machines is below.
+#if defined(vax) && !defined(__GNUC__)
+	/*
+	 * VAX and PCC DEPENDENT!! Implementation on other machines is
+	 * below.
 	 *
 	 * Translation: Insert BITS bits from the argument starting at
 	 * offset bits from the beginning of buf.
 	 */
 	0;	/* Work around for pcc -O bug with asm and if stmt */
 	asm( "insv	4(ap),r11,r10,(r9)" );
-#else /* not a vax */
+#else
 /* 
  * byte/bit numbering on the VAX is simulated by the following code
  */
@@ -726,9 +729,11 @@ code_int  code;
 	    bp = buf;
 	    bits = n_bits;
 	    bytes_out += bits;
-	    do
+	    do {
 		putchar(*bp++);
-	    while(--bits);
+		if (ferror(stdout))
+			writeerr();
+	    } while(--bits);
 	    offset = 0;
 	}
 
@@ -771,17 +776,20 @@ code_int  code;
 	/*
 	 * At EOF, write the rest of the buffer.
 	 */
-	if ( offset > 0 )
-	    fwrite( buf, 1, (offset + 7) / 8, stdout );
-	bytes_out += (offset + 7) / 8;
+	if ( offset > 0 ) {
+		offset = (offset + 7) / 8;
+		if( fwrite( buf, 1, offset, stdout ) != offset )
+			writeerr();
+		bytes_out += offset;
+	}
 	offset = 0;
-	fflush( stdout );
+	(void)fflush( stdout );
+	if( ferror( stdout ) )
+		writeerr();
 #ifdef DEBUG
 	if ( verbose )
 	    fprintf( stderr, "\n" );
-#endif /* DEBUG */
-	if( ferror( stdout ) )
-		writeerr();
+#endif
     }
 }
 
@@ -903,16 +911,13 @@ decompress() {
     } while ((n -= nwritten) > 0);
 }
 
-/*****************************************************************
- * TAG( getcode )
- *
+/*-
  * Read one code from the standard input.  If EOF, return -1.
  * Inputs:
  * 	stdin
  * Outputs:
  * 	code or -1 is returned.
  */
-
 code_int
 getcode() {
     /*
@@ -1101,9 +1106,9 @@ in_stack(c, stack_top)
 
 writeerr()
 {
-    perror ( ofname );
-    unlink ( ofname );
-    exit ( 1 );
+	(void)fprintf(stderr, "compress: %s: %s\n", ofname, strerror(errno));
+	(void)unlink(ofname);
+	exit(1);
 }
 
 copystat(ifname, ofname)
