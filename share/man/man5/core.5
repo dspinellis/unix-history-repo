@@ -46,11 +46,15 @@ to disk for later examination by one of the aviailable debuggers.
 (See
 .Xr sigaction 2 . )
 This memory image is written to a file named
-.Nm core
-in the working directory;
+.Nm progname.core
+in the working directory, where progname is replaced by the name of the program;
 provided the terminated process had write permission in the directory,
-and provided the abnormality did not caused
-a system crash.
+the filesystem on which the working directory is on was not mounted
+with the option 
+.Em nocore
+(See
+.Xr mount 8 ),
+and provided the abnormality did not cause a system crash.
 (In this event, the decision to save the core file is arbitrary, see
 .Xr savecore 8 . )
 .Pp
@@ -59,6 +63,9 @@ The maximum size of a
 file is limited by
 .Xr setrlimit 2 .
 Files which would be larger than the limit are not created.
+Also, the kernel tries hard to not overwrite an existing file unless
+it is in standard coredump format and was produced from the same
+program.
 .Pp
 The
 .Nm core
