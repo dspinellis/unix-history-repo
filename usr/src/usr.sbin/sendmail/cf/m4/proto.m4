@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.18 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.19 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -445,13 +445,16 @@ R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
 R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
 
 # short circuit local delivery so forwarded email works
-R$+ < @ $j . >		$: $1 < @ $j @ $H >		first try hub
+ifdef(`_LOCAL_NOT_STICKY_',
+`R$=L < @ $j . >		$#local $: @ $1			special local names
+R$+ < @ $j . >		$#local $: $1			dispose directly',
+`R$+ < @ $j . >		$: $1 < @ $j @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
 `R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 < $2 >	yep ....
 R$+ < $+ @ $+ >		$#smtp $@ $3 $: $1 < $2 >	yep ....
 R$+ < $+ @ >		$#local $: $1			nope, local address',
 `R$+ < $+ @ $+ >		$#local $: $1			yep ....
-R$+ < $+ @ >		$#local $: @ $1			nope, local address')
+R$+ < $+ @ >		$#local $: @ $1			nope, local address')')
 undivert(3)dnl
 undivert(4)dnl
 
