@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.59		%G%);
+SCCSID(@(#)headers.c	4.1		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.

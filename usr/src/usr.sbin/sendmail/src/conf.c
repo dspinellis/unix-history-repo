@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.71		%G%);
+SCCSID(@(#)conf.c	4.1		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.

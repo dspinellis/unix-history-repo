@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.61		%G%);
+SCCSID(@(#)collect.c	4.1		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)mailstats.c	3.5		%G%);
+SCCSID(@(#)mailstats.c	4.1		%G%);
 
 /*
 **  MAILSTATS -- print mail statistics.
