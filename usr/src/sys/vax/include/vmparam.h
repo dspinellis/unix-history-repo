@@ -113,3 +113,9 @@
  * swapping area is desirable.
  */
 #define	LOTSOFMEM	2
+
+/*
+ * BEWARE THIS DEFINITION WORKS ONLY WITH COUNT OF 1
+ */
+#define	mapin(pte, v, pfnum, count, prot) \
+	(*(int *)(pte) = (pfnum) | (prot), mtpr(TBIS, ptob(v)))
