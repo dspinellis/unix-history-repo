@@ -16,16 +16,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)login.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
 #include <utmp.h>
 #include <stdio.h>
-
-#define	UTMPFILE	"/etc/utmp"
-#define	WTMPFILE	"/usr/adm/wtmp"
 
 void
 login(ut)
@@ -36,12 +33,12 @@ login(ut)
 	off_t lseek();
 
 	tty = ttyslot();
-	if (tty > 0 && (fd = open(UTMPFILE, O_WRONLY, 0)) >= 0) {
+	if (tty > 0 && (fd = open(_PATH_UTMP, O_WRONLY, 0)) >= 0) {
 		(void)lseek(fd, (long)(tty * sizeof(struct utmp)), L_SET);
 		(void)write(fd, (char *)ut, sizeof(struct utmp));
 		(void)close(fd);
 	}
-	if ((fd = open(WTMPFILE, O_WRONLY|O_APPEND, 0)) >= 0) {
+	if ((fd = open(_PATH_WTMP, O_WRONLY|O_APPEND, 0)) >= 0) {
 		(void)write(fd, (char *)ut, sizeof(struct utmp));
 		(void)close(fd);
 	}
