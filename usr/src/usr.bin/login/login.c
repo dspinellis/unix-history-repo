@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c	4.20 82/12/21";
+static	char *sccsid = "@(#)login.c	4.21 83/03/31";
 /*
  * login [ name ]
  * login -r
@@ -105,28 +105,48 @@ char **argv;
 		hostf = pwd->pw_uid ? fopen("/etc/hosts.equiv", "r") : 0;
 	again:
 		if (hostf) {
-		  char ahost[32];
-		  while (fgets(ahost, sizeof (ahost), hostf)) {
-			char *user;
-			if (index(ahost, '\n'))
-				*index(ahost, '\n') = 0;
-			user = index(ahost, ' ');
-			if (user)
-				*user++ = 0;
-			if (!strcmp(rhost, ahost) &&
-			    !strcmp(rusername, user ? user : lusername)) {
-				fclose(hostf);
-				goto normal;
+			char ahost[32];
+
+		        while (fgets(ahost, sizeof (ahost), hostf)) {
+				char *user;
+
+				if (index(ahost, '\n'))
+					*index(ahost, '\n') = 0;
+				user = index(ahost, ' ');
+				if (user)
+					*user++ = 0;
+				if (!strcmp(rhost, ahost) &&
+				    !strcmp(rusername, user ?
+				    user : lusername)) {
+					fclose(hostf);
+					goto normal;
+				}
 			}
-		  }
-		  fclose(hostf);
+			fclose(hostf);
 		}
 		if (first == 1) {
+			char *rhosts = ".rhosts";
+			struct stat sbuf;
+
 			first = 0;
 			if (chdir(pwd->pw_dir) < 0)
 				goto again;
-			hostf = fopen(".rhosts", "r");
-			goto again;
+			if (lstat(rhosts, &sbuf) < 0)
+				goto again;
+			if ((sbuf.st_mode & S_IFMT) == S_IFLNK) {
+				printf("login: .rhosts is a soft link.\r\n");
+			        fclose(hostf);
+				goto abnormal;
+			}
+			hostf = fopen(rhosts, "r");
+			fstat(fileno(hostf), &sbuf);
+			if ((int) sbuf.st_uid != pwd->pw_uid &&
+			    (int) sbuf.st_uid != 0) {
+				printf("login: Bad .rhosts ownership.\r\n");
+			        fclose(hostf);
+				goto abnormal;
+			}
+		goto again;
 		}
 abnormal:
 		rhost = 0;
