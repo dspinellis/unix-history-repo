@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -37,8 +37,9 @@ static char sccsid[] = "@(#)rexecd.c	5.7 (Berkeley) %G%";
 #include <pwd.h>
 #include <signal.h>
 #include <netdb.h>
+#include "pathnames.h"
 
-extern	errno;
+extern	int errno;
 struct	passwd *getpwnam();
 char	*crypt(), *rindex(), *strncat();
 /*VARARGS1*/
@@ -72,7 +73,7 @@ char	username[20] = "USER=";
 char	homedir[64] = "HOME=";
 char	shell[64] = "SHELL=";
 char	*envinit[] =
-	    {homedir, shell, "PATH=:/usr/ucb:/bin:/usr/bin", username, 0};
+	    {homedir, shell, _PATH_DEFPATH, username, 0};
 char	**environ;
 
 struct	sockaddr_in asin = { AF_INET };
@@ -188,7 +189,7 @@ doit(f, fromp)
 		dup2(pv[1], 2);
 	}
 	if (*pwd->pw_shell == '\0')
-		pwd->pw_shell = "/bin/sh";
+		pwd->pw_shell = _PATH_BSHELL;
 	if (f > 2)
 		(void) close(f);
 	(void) setgid((gid_t)pwd->pw_gid);
