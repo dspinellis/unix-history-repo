@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+#include <sys/mount.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #include <fstab.h>
@@ -36,7 +37,7 @@ main(argc, argv)
 	int ch;
 	int ret, maxrun = 0;
 	extern int docheck(), checkfilesys();
-	extern char *optarg;
+	extern char *optarg, *blockcheck();
 	extern int optind;
 
 	sync();
@@ -94,7 +95,7 @@ main(argc, argv)
 		(void)signal(SIGQUIT, catchquit);
 	if (argc) {
 		while (argc-- > 0)
-			(void)checkfilesys(*argv++, (char *)0, 0L, 0);
+			(void)checkfilesys(blockcheck(*argv++), 0, 0L, 0);
 		exit(0);
 	}
 	ret = checkfstab(preen, maxrun, docheck, checkfilesys);
@@ -259,12 +260,31 @@ checkfilesys(filesys, mntpt, auxdata, child)
 	free((char *)lncntp);
 	if (!fsmodified)
 		return (0);
-	if (!preen) {
+	if (!preen)
 		printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
-		if (hotroot)
-			printf("\n***** REBOOT UNIX *****\n");
-	}
 	if (hotroot) {
+		struct statfs stfs_buf;
+		/*
+		 * We modified the root.  Do a mount update on
+		 * it, unless it is read-write, so we can continue.
+		 */
+		if (statfs("/", &stfs_buf) == 0) {
+			long flags = stfs_buf.f_flags;
+			struct ufs_args args;
+			int ret;
+
+			if (flags & MNT_RDONLY) {
+				args.fspec = 0;
+				args.exflags = 0;
+				args.exroot = 0;
+				flags |= MNT_UPDATE | MNT_RELOAD;
+				ret = mount(MOUNT_UFS, "/", flags, &args);
+				if (ret == 0)
+					return(0);
+			}
+		}
+		if (!preen)
+			printf("\n***** REBOOT NOW *****\n");
 		sync();
 		return (4);
 	}
