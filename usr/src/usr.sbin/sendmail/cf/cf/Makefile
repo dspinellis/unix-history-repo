@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -31,10 +31,8 @@ depend install:
 M4FILES=../domain/cs.exposed.m4 \
 	../domain/cs.hidden.m4 \
 	../domain/Berkeley.m4 \
-	../feature/no_wildcard_MX.m4 \
 	../feature/use_cw_file.m4 \
 	../hack/cssubdomain.m4 \
-	../m4/boilerplate.m4 \
 	../m4/cf.m4 \
 	../m4/proto.m4 \
 	../m4/version.m4 \
