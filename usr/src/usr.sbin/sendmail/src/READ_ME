@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.34 (Berkeley) %G%
+#	@(#)READ_ME	8.35 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -105,6 +105,7 @@ Makefile:
 
 SOLARIS		Define this if you are running Solaris 2.0 or higher.
 SOLARIS_2_3	Define this if you are running Solaris 2.3 or higher.
+SUNOS403	Define this if you are running SunOS 4.0.3.
 NeXT		Define this if you are on a NeXT box.  (This one may
 		be pre-defined for you.)  There are other hacks you
 		have to make -- see below.
@@ -643,4 +644,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.34, last update %G% 17:35:33)
+(Version 8.35, last update %G% 07:25:34)
