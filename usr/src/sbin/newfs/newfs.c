@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -26,7 +26,9 @@ static char copyright[] =
 #include <sys/mount.h>
 
 #include <ufs/ufs/dir.h>
+#include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
+#include <ufs/ufs/ufsmount.h>
 
 #include <ctype.h>
 #include <errno.h>
@@ -249,7 +251,7 @@ main(argc, argv)
 			break;
 		case 'o':
 			if (mfs)
-				getmntopts(optarg, mopts, &mntflags);
+				getmntopts(optarg, mopts, &mntflags, 0);
 			else {
 				if (strcmp(optarg, "space") == 0)
 					opt = FS_OPTSPACE;
@@ -350,7 +352,8 @@ main(argc, argv)
 			printf("%s: %s: not a character-special device\n",
 			    progname, special);
 		cp = strchr(argv[0], '\0') - 1;
-		if (cp == -1 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
+		if (cp == (char *)-1 ||
+		    (*cp < 'a' || *cp > 'h') && !isdigit(*cp))
 			fatal("%s: can't figure out file system partition",
 			    argv[0]);
 #ifdef COMPAT
@@ -493,7 +496,7 @@ main(argc, argv)
 			args.export.ex_flags = 0;
 		args.base = membase;
 		args.size = fssize * sectorsize;
-		if (mount(MOUNT_MFS, argv[1], mntflags, &args) < 0)
+		if (mount("mfs", argv[1], mntflags, &args) < 0)
 			fatal("%s: %s", argv[1], strerror(errno));
 	}
 #endif
