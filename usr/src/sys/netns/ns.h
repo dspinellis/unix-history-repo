@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns.h	7.7 (Berkeley) %G%
+ *	@(#)ns.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -114,11 +114,12 @@ union ns_net ns_zeronet;
 union ns_net ns_broadnet;
 u_short ns_cksum();
 #else
-#ifdef __STDC__
-extern struct ns_addr ns_addr(const char *);
-extern char *ns_ntoa(struct ns_addr);
-#else
-extern struct ns_addr ns_addr();
-extern char *ns_ntoa();
-#endif
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+extern struct ns_addr ns_addr __P((const char *));
+extern char *ns_ntoa __P((struct ns_addr));
+__END_DECLS
+
 #endif
