@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.10 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.11 %G%"; */
 
 #include <stdio.h>
 
@@ -37,7 +37,7 @@
 #define PXPFILE		"pmon.out"
 #define	BITSPERBYTE	8
 #define	BITSPERLONG	(BITSPERBYTE * sizeof(long))
-#define HZ		60
+#define HZ		100
 #define	MAXLVL		20
 #define NAMSIZ		76
 #define MAXFILES	32
