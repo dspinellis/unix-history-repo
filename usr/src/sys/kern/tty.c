@@ -1,4 +1,4 @@
-/*	tty.c	6.8	83/12/16	*/
+/*	tty.c	6.9	84/02/15	*/
 
 #include "../machine/reg.h"
 
@@ -158,7 +158,6 @@ ttyflush(tp, rw)
 	if (rw & FREAD) {
 		while (getc(&tp->t_rawq) >= 0)
 			;
-		tp->t_delct = 0;
 		tp->t_rocount = 0;
 		tp->t_rocol = 0;
 		tp->t_state &= ~TS_LOCAL;
@@ -183,7 +182,8 @@ ttyblock(tp)
 	 * Block further input iff:
 	 * Current input > threshold AND input is available to user program
 	 */
-	if (x >= TTYHOG/2 && (tp->t_delct>0 || (tp->t_flags&(RAW|CBREAK)))) {
+	if (x >= TTYHOG/2 && 
+	    ((tp->t_flags & (RAW|CBREAK)) || (tp->t_canq.c_cc > 0))) {
 		if (putc(tp->t_stopc, &tp->t_outq)==0) {
 			tp->t_state |= TS_TBLOCK;
 			ttstart(tp);
