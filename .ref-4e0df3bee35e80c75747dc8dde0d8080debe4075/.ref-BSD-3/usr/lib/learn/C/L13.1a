@@ -1,0 +1,40 @@
+#print
+Write a program which reads
+its input and counts the number of
+characters and the number of spaces
+(where a space is either a blank or
+a tab or a newline).  Print both numbers.
+Compile, test, and type "ready".
+#once #create Ref
+hoboken harrison newark roseville avenue grove street
+east orange brick church orange highland avenue
+mountain station south orange maplewood millburn short hills
+summit chatham madison convent station morristown
+new providence	murray hill berkeley heights
+gillette stirling millington lyons basking ridge
+bernardsville far hills peapack gladstone
+#user
+a.out <Ref >x1
+a.out <Ref >x2
+grep 348 x1 >/dev/null && grep 45 x2 >/dev/null
+#success
+One way:
+
+ #include <stdio.h>
+
+main() {
+	int nchar, nspace;
+	char c;
+
+	nchar = nspace = 0;
+	while ((c = getchar()) != EOF) {
+		nchar++;
+		if (c == ' ' || c == '\t' || c == '\n')
+			nspace++;
+	}
+	printf("spaces = %d, chars = %d\n", nspace, nchar);
+}
+#log
+#next
+14.1a 10
+14.2a 5

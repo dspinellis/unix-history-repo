@@ -1,0 +1,36 @@
+.TH ACCT 2 
+.SH NAME
+acct \- turn accounting on or off
+.SH SYNOPSIS
+.B acct(file)
+.br
+.B char *file;
+.SH DESCRIPTION
+The system is prepared to write a record
+in an accounting
+.I file
+for each process as it terminates.
+This
+call, with a null-terminated string naming an existing file
+as argument, turns on accounting;
+records for each terminating process are appended to
+.IR file .
+An argument of 0 causes accounting to be turned off.
+.PP
+The accounting file format is given in
+.IR acct (5).
+.SH "SEE ALSO"
+acct(5), sa(1)
+.SH DIAGNOSTICS
+On error \-1 is returned.
+The file must exist and the call may be exercised only by the super-user.
+It is erroneous to try to turn on accounting when it is already on.
+.SH BUGS
+No accounting is produced for programs running
+when a crash occurs.
+In particular nonterminating programs are never
+accounted for.
+.SH "ASSEMBLER (PDP-11)"
+(acct = 51.)
+.br
+.B sys acct; file

@@ -1,0 +1,41 @@
+.NH
+Photocomposition
+.PP
+Photocomposition techniques
+can be used to solve some of the problems of typesetting mathematics.
+A phototypesetter is a device which exposes
+a piece of photographic paper or film, placing characters
+wherever they are wanted.
+The Graphic Systems phototypesetter[2] on the
+.UC UNIX
+operating
+system[3] works by shining light through a character stencil.
+The character is made the right size by lenses,
+and the light beam directed by fiber optics
+to the desired place on a piece of photographic paper.
+The exposed paper is developed and typically used
+in some form of photo-offset reproduction.
+.PP
+On
+.UC UNIX ,
+the phototypesetter is driven by a formatting program called
+.UC TROFF
+[4].
+.UC TROFF
+was designed for setting running text.
+It also provides all of the facilities that one needs for
+doing mathematics, such as
+arbitrary horizontal and vertical motions,
+line-drawing, size changing,
+but the syntax for describing these special operations is
+difficult to learn,
+and difficult even for experienced users to type correctly.
+.PP
+For this reason we decided to use
+.UC TROFF
+as an ``assembly language,''
+by
+designing a language for describing mathematical
+expressions,
+and compiling it into
+.UC TROFF .

@@ -1,0 +1,6 @@
+Sat Oct 20 18:25:54 PDT 1979
+
+This directory contains source for pix, pxref and a header file needed
+by pi... you must have made pi first to be able to compile pxref here,
+so a binary for pxref is left here even after make clean to avoid
+circularity problems.

@@ -1,0 +1,24 @@
+.TH WHATIS 1 2/24/79
+.UC
+.SH NAME
+whatis \- describe what a command is
+.SH SYNOPSIS
+.B whatis
+name ...
+.SH DESCRIPTION
+.I Whatis
+looks up a given command and gives the header line from the manual
+section.
+You can then run the 
+.IR man (1)
+command to get more information.
+If the line starts `name(section) ...' you can do
+`man section name' to get the documentation for it.
+Try `whatis ed' and then you should do `man I ed' to get the manual.
+.SH FILES
+.DT
+/usr/lib/whatis	Data base
+.SH "SEE ALSO"
+apropos(1), makewhatis(1m)
+.SH AUTHOR
+William Joy

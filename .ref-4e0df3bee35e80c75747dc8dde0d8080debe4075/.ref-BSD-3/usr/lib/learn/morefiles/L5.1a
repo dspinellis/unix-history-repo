@@ -1,0 +1,23 @@
+#print
+If you think back over some of the exercises you've done
+so far in this course, they have involved collecting the
+output of one program (like "cat" or "grep" or "ls") in
+a file, then using that file as the input to another
+program, like "pr" or "wc" or "grep".
+For example, you could use "ls" and "wc" to _____count
+the number of files in a directory.  Do that now,
+then type "answer N", where N is the number of files.
+#create X2
+#create X1
+#create this
+#create stuff
+#create foo
+#copyin
+#user
+#uncopyin
+ls | %s/../lcount >X1
+tail -1 .copy >X2
+#cmp X1 X2
+#log
+#next
+5.1b 10

@@ -1,0 +1,32 @@
+#print
+In this directory there is a file "checks"
+which contains 3 errors.  Fix the spelling errors
+and rewrite the file.  Then type "ready".
+#create Ref
+   The establishment of credit all over the civilized world made it
+possible to develop new inventions, enlarge factories, produce more
+goods so that more people could earn wages to buy them.  Soon even
+the supply of paper money would have been too small to take care of
+the needs of business, had it not been for a new form of money.  This
+was the "check-book dollar."
+   There are now from 25 to 30 billion dollars in paper money
+circulating in the United States.  But that is only one tenth of
+what is needed to do business every year.  The other 90 per cent is
+in the form of check-book dollars.
+#create checks
+   The establishment of credit all over the civilized world made it
+possible to develop new inventions, enlarge factories, produce more
+goods so that more people could earn wages to buy them.  Soon even
+the supply of paper money would have been too smalp to take care of
+the needs of businees, had it not been for a new form of money.  This
+was the "check-book dollar."
+   There are now from 25 to 30 billion dollars in paper money
+circulating in txe United States.  But that is only one tenth of
+what is needed to do business every year.  The other 90 per cent is
+in the form of check-book dollars.
+#user
+#cmp checks Ref
+#log
+#next
+32.1a 10
+32.2a 5

@@ -1,0 +1,27 @@
+#print
+As an example more complicated than you will
+probably ever need, consider
+  ?[a-c]*
+which matches what?  Well the first character
+can be anything; the second must be a, b, or c; and
+nothing matters thereafter.    So it matches
+ aaa
+ abc
+ xa
+ 3c25
+but not
+ a
+ ghi
+and so forth.
+Will it match
+ %a25
+Try some experiments, then type yes or no.
+#create %a25
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+9.1a 10
+9.2a 4

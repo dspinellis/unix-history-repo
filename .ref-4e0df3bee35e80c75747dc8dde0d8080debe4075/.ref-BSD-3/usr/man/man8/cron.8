@@ -1,0 +1,56 @@
+.TH CRON 8 
+.SH NAME
+cron \- clock daemon
+.SH SYNOPSIS
+.B /etc/cron
+.SH DESCRIPTION
+.I Cron
+executes commands at specified dates and times
+according to the instructions in the file
+/usr/lib/crontab.
+Since
+.I cron
+never exits,
+it should only be executed once.
+This is best done by running
+.I cron
+from the initialization
+process through the file
+/etc/rc;
+see
+.IR init (8).
+.PP
+Crontab
+consists of lines of six fields each.
+The fields are separated by spaces or tabs.
+The first five are integer patterns to
+specify the
+minute (0-59),
+hour (0-23),
+day of the month (1-31),
+month of the year (1-12),
+and day of the week (1-7 with 1=monday).
+Each of these patterns may
+contain a number in the range above;
+two numbers separated by
+a minus
+meaning a range inclusive;
+a list of numbers separated by
+commas meaning any of the numbers;
+or an asterisk meaning all legal values.
+The sixth field is a string
+that is executed by the Shell at the
+specified times.
+A percent character
+in this field is translated to a new-line
+character.
+Only the first line (up to a % or end of line)
+of the command field is executed by the Shell.
+The other lines are made available to the
+command as standard input.
+.PP
+Crontab is examined by
+.I cron
+every minute.
+.SH FILES
+/usr/lib/crontab

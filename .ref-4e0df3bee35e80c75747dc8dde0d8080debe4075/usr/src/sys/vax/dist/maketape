@@ -1,0 +1,33 @@
+#! /bin/sh
+#	@(#)maketape	4.8	%G%
+#
+miniroot=hp1a
+#
+trap "rm -f /tmp/tape.$$; exit" 0 1 2 3 13 15
+mt rew
+date
+umount /dev/hp2g /dev/hp2h
+umount /dev/hp2a
+mount -r /dev/hp2a /nbsd
+mount -r /dev/hp2g /nbsd/usr
+mount -r /dev/hp2h /nbsd/a
+cd /nbsd/tp
+tp cmf /tmp/tape.$$ boot copy format
+cd /nbsd/sys/mdec
+echo "Build 1st level boot block file"
+cat tsboot htboot tmboot mtboot utboot noboot noboot /tmp/tape.$$ | \
+	dd of=/dev/rmt12 bs=512 conv=sync
+cd /nbsd
+sync
+echo "Add dump of mini-root file system"
+dd if=/dev/r${miniroot} of=/dev/rmt12 bs=20b count=205 conv=sync
+echo "Add full dump of real file system"
+/etc/dump 0uf /dev/rmt12 /nbsd
+echo "Add tar image of system sources"
+cd /nbsd/a/sys; tar cf /dev/rmt12 .
+echo "Add tar image of /usr"
+cd /nbsd/usr; tar c adm bill bin dict doc games \
+	hosts include ingres lib local man mdec msgs net new \
+	preserve pub spool tmp ucb
+mt rew
+echo "Done, rewind"

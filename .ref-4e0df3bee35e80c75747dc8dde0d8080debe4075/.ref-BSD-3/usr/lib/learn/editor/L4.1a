@@ -1,0 +1,23 @@
+#print
+You must recognize that the commands typed at the
+editor are distinct from the commands typed at the
+normal UNIX command interpreter.  In particular,
+neither program knows the commands recognized by the
+other one.  So you must always remember when you
+are talking to the normal command interpreter (the
+one that says $ to you) and when you are talking
+to the editor.  The commands 'w' and 'q' are recognized
+by the editor.  The commands 'ls', 'mv' and so forth
+are not.
+
+Can you expect the editor to recognize the command
+  cat george
+Type yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+4.1b 5
+5.1a 10

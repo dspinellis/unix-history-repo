@@ -1,0 +1,34 @@
+ I have added a few things to the trace package and gotten some of the old
+features to work.  There are still some loose ends to tie up however.
+
+ You can now say
+ (trace (append break))  which means that when append is called, first
+	the trace enter line is printed, then  you enter a break loop.
+	In this break loop you can test the value of the arguments to
+	the called function using (arg n) where n is the arg number
+	you want to test. of course you can also type in any lisp 
+	expression and it will be evaluated and its result printed.
+	To exit this break loop, type ^D . At that point, the function
+	will be evaluated and the trace exit line will be printed.
+	This should work if append is compiled or interpreted.
+
+You can also say
+ (trace (append if (equal '(a b c) (arg 1))))
+	will cause the trace enter and exit message to be printed only if
+	the predicate is true.
+
+You can also say
+ (trace (append ifnot (equal 2 (arg nil))))
+	which traces all calls to append which dont have two arguments.
+
+you can even say
+ (trace (append eval (print '"hi mom")))
+
+	you can even use combinations of if, ifnot, eval and break if
+	you dare but I havent quite fixed up their precedence.
+
+	BUGS: the tricky stuff doesnt work if you trace nlambdas, and
+	apply seems to fail on interpreted lambdas. trace should 
+	complain if you try to trace an already trace function.
+	All of these bugs are minor and should disappear soon.
+
