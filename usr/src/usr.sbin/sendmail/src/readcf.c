@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -761,6 +761,10 @@ setoption(opt, val, sticky)
 
 	  case 'i':		/* ignore dot lines in message */
 		IgnrDot = atobool(val);
+		break;
+
+	  case 'k':		/* checkpoint every N addresses */
+		CheckpointInterval = atoi(val);
 		break;
 
 	  case 'L':		/* log level */

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.31 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.32 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.31 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.32 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -147,7 +147,7 @@ queueup(e, queueall, announce)
 	/* output list of recipient addresses */
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
-		if (queueall ? !bitset(QDONTSEND, q->q_flags) :
+		if (queueall ? !bitset(QDONTSEND|QSENT, q->q_flags) :
 			       bitset(QQUEUEUP, q->q_flags))
 		{
 			char *ctluser, *getctluser();

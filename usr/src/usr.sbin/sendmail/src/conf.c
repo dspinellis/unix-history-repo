@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -144,6 +144,7 @@ setdefaults()
 	FileMode = 0644;
 	DefUid = 1;
 	DefGid = 1;
+	CheckpointInterval = 10;
 	setdefuser();
 }
 
