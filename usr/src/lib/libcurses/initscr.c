@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)initscr.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)initscr.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -25,44 +25,46 @@ initscr()
 #ifdef DEBUG
 	__TRACE("initscr\n");
 #endif
-	if (My_term) {
-		if (setterm(Def_term) == ERR)
-			return (NULL);
-	} else {
-		gettmode();
-		if ((sp = getenv("TERM")) == NULL)
-			sp = Def_term;
-		if (setterm(sp) == ERR)
-			return (NULL);
-#ifdef DEBUG
-		__TRACE("initscr: term = %s\n", sp);
-#endif
-	}
+	__echoit = 1;
+        __pfast = __rawmode = __noqch = 0;
+
+	if (gettmode() == ERR)
+		return (NULL);
+
+	/*
+	 * If My_term is set, or can't find a terminal in the environment,
+	 * use Def_term.
+	 */
+	if (My_term || (sp = getenv("TERM")) == NULL)
+		sp = Def_term;
+	if (setterm(sp) == ERR)
+		return (NULL);
+
 	/* Need either homing or cursor motion for refreshes */
 	if (!HO && !CM) 
-		return(NULL);
+		return (NULL);
+
 	tputs(TI, 0, __cputchar);
 	tputs(VS, 0, __cputchar);
-	(void)signal(SIGTSTP, tstp);
-	if (curscr != NULL) {
-#ifdef DEBUG
-		__TRACE("initscr: curscr = 0%o\n", curscr);
-#endif
+
+	if (curscr != NULL)
 		delwin(curscr);
-	}
-#ifdef DEBUG
-	__TRACE("initscr: LINES = %d, COLS = %d\n", LINES, COLS);
-#endif
 	if ((curscr = newwin(LINES, COLS, 0, 0)) == ERR)
 		return (NULL);
 	clearok(curscr, 1);
-	curscr->flags &= ~__FULLLINE;
-	if (stdscr != NULL) {
-#ifdef DEBUG
-		__TRACE("initscr: stdscr = 0%o\n", stdscr);
-#endif
+
+	if (stdscr != NULL)
 		delwin(stdscr);
+	if ((stdscr = newwin(LINES, COLS, 0, 0)) == ERR) {
+		delwin(curscr);
+		return (NULL);
 	}
-	return(stdscr = newwin(LINES, COLS, 0, 0));
+
+	(void)signal(SIGTSTP, tstp);
+
+#ifdef DEBUG
+	__TRACE("initscr: LINES = %d, COLS = %d\n", LINES, COLS);
+#endif
+	return (stdscr);
 }
 
