@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scanw.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)scanw.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -25,6 +25,7 @@ int	args; {
 
 	return _sscans(stdscr, fmt, &args);
 }
+
 /*
  *	This routine implements a scanf on the given window.
  */
@@ -35,27 +36,53 @@ int	args; {
 
 	return _sscans(win, fmt, &args);
 }
+
+/*
+ *	Internal routine to read from a string, and its data structure.
+ */
+struct strinfo {
+	char	*addr;		/* address */
+	int	len;		/* remaining bytes */
+};
+
+static int
+_winread(cookie, buf, n)
+char	*cookie, *buf;
+reg int	n; {
+
+	reg struct strinfo *s = (struct strinfo *)cookie;
+
+	if (n > s->len)
+		n = s->len;
+	bcopy(s->addr, buf, n);
+	s->len -= n;
+	s->addr += n;
+	return n;
+}
+
 /*
  *	This routine actually executes the scanf from the window.
- *
- *	This is really a modified version of "sscanf".  As such,
- * it assumes that sscanf interfaces with the other scanf functions
- * in a certain way.  If this is not how your system works, you
- * will have to modify this routine to use the interface that your
- * "sscanf" uses.
+ *	SHOULD IMPLEMENT VSSCANF
  */
 _sscans(win, fmt, args)
 WINDOW	*win;
 char	*fmt;
 int	*args; {
 
+	int	ret;
+	FILE	*f;
+	struct	strinfo s;
 	char	buf[100];
-	FILE	junk;
 
-	junk._flag = _IOREAD|_IOSTRG;
-	junk._base = junk._ptr = buf;
-	if (wgetstr(win, buf) == ERR)
+	if ((f = fropen((char *)&s, _winread)) == NULL)
 		return ERR;
-	junk._cnt = strlen(buf);
-	return _doscan(&junk, fmt, args);
+	if (wgetstr(win, buf) == ERR) {
+		(void) fclose(f);
+		return ERR;
+	}
+	s.addr = buf;
+	s.len = strlen(buf);
+	ret = __svfscanf(f, fmt, args);
+	(void) fclose(f);
+	return ret;
 }
