@@ -1,0 +1,3448 @@
+\input texinfo
+@c %**start of header
+@setfilename flex.info
+@settitle Flex - a scanner generator
+@c @finalout
+@c @setchapternewpage odd
+@c %**end of header
+
+@set EDITION 2.5
+@set UPDATED March 1995
+@set VERSION 2.5
+
+@c FIXME - Reread a printed copy with a red pen and patience.
+@c FIXME - Modify all "See ..." references and replace with @xref's.
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* Flex: (flex).         A fast scanner generator.
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@c Define new indices for commands, filenames, and options.
+@c @defcodeindex cm
+@c @defcodeindex fl
+@c @defcodeindex op
+
+@c Put everything in one index (arbitrarily chosen to be the concept index).
+@c @syncodeindex cm cp
+@c @syncodeindex fl cp
+@syncodeindex fn cp
+@syncodeindex ky cp
+@c @syncodeindex op cp
+@syncodeindex pg cp
+@syncodeindex vr cp
+
+@ifinfo
+This file documents Flex.
+
+Copyright (c) 1990 The Regents of the University of California.
+All rights reserved.
+
+This code is derived from software contributed to Berkeley by
+Vern Paxson.
+
+The United States Government has rights in this work pursuant
+to contract no. DE-AC03-76SF00098 between the United States
+Department of Energy and the University of California.
+
+Redistribution and use in source and binary forms are permitted
+provided that: (1) source distributions retain this entire
+copyright notice and comment, and (2) distributions including
+binaries display the following acknowledgement:  ``This product
+includes software developed by the University of California,
+Berkeley and its contributors'' in the documentation or other
+materials provided with the distribution and in all advertising
+materials mentioning features or use of this software.  Neither the
+name of the University nor the names of its contributors may be
+used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+@end ifinfo
+
+@titlepage
+@title Flex, version @value{VERSION}
+@subtitle A fast scanner generator
+@subtitle Edition @value{EDITION}, @value{UPDATED}
+@author Vern Paxson
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1990 The Regents of the University of California.
+All rights reserved.
+
+This code is derived from software contributed to Berkeley by
+Vern Paxson.
+
+The United States Government has rights in this work pursuant
+to contract no. DE-AC03-76SF00098 between the United States
+Department of Energy and the University of California.
+
+Redistribution and use in source and binary forms are permitted
+provided that: (1) source distributions retain this entire
+copyright notice and comment, and (2) distributions including
+binaries display the following acknowledgement:  ``This product
+includes software developed by the University of California,
+Berkeley and its contributors'' in the documentation or other
+materials provided with the distribution and in all advertising
+materials mentioning features or use of this software.  Neither the
+name of the University nor the names of its contributors may be
+used to endorse or promote products derived from this software
+without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE.
+@end titlepage
+
+@ifinfo
+
+@node Top, Name, (dir), (dir)
+@top flex
+
+@cindex scanner generator
+
+This manual documents @code{flex}.  It covers release @value{VERSION}.
+
+@menu
+* Name::                        Name
+* Synopsis::                    Synopsis
+* Overview::                    Overview
+* Description::                 Description
+* Examples::                    Some simple examples
+* Format::                      Format of the input file
+* Patterns::                    Patterns
+* Matching::                    How the input is matched
+* Actions::                     Actions
+* Generated scanner::           The generated scanner
+* Start conditions::            Start conditions
+* Multiple buffers::            Multiple input buffers
+* End-of-file rules::           End-of-file rules
+* Miscellaneous::               Miscellaneous macros
+* User variables::              Values available to the user
+* YACC interface::              Interfacing with @code{yacc}
+* Options::                     Options
+* Performance::                 Performance considerations
+* C++::                         Generating C++ scanners
+* Incompatibilities::           Incompatibilities with @code{lex} and POSIX
+* Diagnostics::                 Diagnostics
+* Files::                       Files
+* Deficiencies::                Deficiencies / Bugs
+* See also::                    See also
+* Author::                      Author
+@c * Index::                       Index
+@end menu
+
+@end ifinfo
+
+@node Name, Synopsis, Top, Top
+@section Name
+
+flex - fast lexical analyzer generator
+
+@node Synopsis, Overview, Name, Top
+@section Synopsis
+
+@example
+flex [-bcdfhilnpstvwBFILTV78+? -C[aefFmr] -ooutput -Pprefix -Sskeleton]
+[--help --version] [@var{filename} @dots{}]
+@end example
+
+@node Overview, Description, Synopsis, Top
+@section Overview
+
+This manual describes @code{flex}, a tool for generating programs
+that perform pattern-matching on text.  The manual
+includes both tutorial and reference sections:
+
+@table @asis
+@item Description
+a brief overview of the tool
+
+@item Some Simple Examples
+
+@item Format Of The Input File
+
+@item Patterns
+the extended regular expressions used by flex
+
+@item How The Input Is Matched
+the rules for determining what has been matched
+
+@item Actions
+how to specify what to do when a pattern is matched
+
+@item The Generated Scanner
+details regarding the scanner that flex produces;
+how to control the input source
+
+@item Start Conditions
+introducing context into your scanners, and
+managing "mini-scanners"
+
+@item Multiple Input Buffers
+how to manipulate multiple input sources; how to
+scan from strings instead of files
+
+@item End-of-file Rules
+special rules for matching the end of the input
+
+@item Miscellaneous Macros
+a summary of macros available to the actions
+
+@item Values Available To The User
+a summary of values available to the actions
+
+@item Interfacing With Yacc
+connecting flex scanners together with yacc parsers
+
+@item Options
+flex command-line options, and the "%option"
+directive
+
+@item Performance Considerations
+how to make your scanner go as fast as possible
+
+@item Generating C++ Scanners
+the (experimental) facility for generating C++
+scanner classes
+
+@item Incompatibilities With Lex And POSIX
+how flex differs from AT&T lex and the POSIX lex
+standard
+
+@item Diagnostics
+those error messages produced by flex (or scanners
+it generates) whose meanings might not be apparent
+
+@item Files
+files used by flex
+
+@item Deficiencies / Bugs
+known problems with flex
+
+@item See Also
+other documentation, related tools
+
+@item Author
+includes contact information
+@end table
+
+@node Description, Examples, Overview, Top
+@section Description
+
+@code{flex} is a tool for generating @dfn{scanners}: programs which
+recognized lexical patterns in text.  @code{flex} reads the given
+input files, or its standard input if no file names are
+given, for a description of a scanner to generate.  The
+description is in the form of pairs of regular expressions
+and C code, called @dfn{rules}. @code{flex} generates as output a C
+source file, @file{lex.yy.c}, which defines a routine @samp{yylex()}.
+This file is compiled and linked with the @samp{-lfl} library to
+produce an executable.  When the executable is run, it
+analyzes its input for occurrences of the regular
+expressions.  Whenever it finds one, it executes the
+corresponding C code.
+
+@node Examples, Format, Description, Top
+@section Some simple examples
+
+First some simple examples to get the flavor of how one
+uses @code{flex}.  The following @code{flex} input specifies a scanner
+which whenever it encounters the string "username" will
+replace it with the user's login name:
+
+@example
+%%
+username    printf( "%s", getlogin() );
+@end example
+
+By default, any text not matched by a @code{flex} scanner is
+copied to the output, so the net effect of this scanner is
+to copy its input file to its output with each occurrence
+of "username" expanded.  In this input, there is just one
+rule.  "username" is the @var{pattern} and the "printf" is the
+@var{action}.  The "%%" marks the beginning of the rules.
+
+Here's another simple example:
+
+@example
+        int num_lines = 0, num_chars = 0;
+
+%%
+\n      ++num_lines; ++num_chars;
+.       ++num_chars;
+
+%%
+main()
+        @{
+        yylex();
+        printf( "# of lines = %d, # of chars = %d\n",
+                num_lines, num_chars );
+        @}
+@end example
+
+This scanner counts the number of characters and the
+number of lines in its input (it produces no output other
+than the final report on the counts).  The first line
+declares two globals, "num_lines" and "num_chars", which
+are accessible both inside @samp{yylex()} and in the @samp{main()}
+routine declared after the second "%%".  There are two rules,
+one which matches a newline ("\n") and increments both the
+line count and the character count, and one which matches
+any character other than a newline (indicated by the "."
+regular expression).
+
+A somewhat more complicated example:
+
+@example
+/* scanner for a toy Pascal-like language */
+
+%@{
+/* need this for the call to atof() below */
+#include <math.h>
+%@}
+
+DIGIT    [0-9]
+ID       [a-z][a-z0-9]*
+
+%%
+
+@{DIGIT@}+    @{
+            printf( "An integer: %s (%d)\n", yytext,
+                    atoi( yytext ) );
+            @}
+
+@{DIGIT@}+"."@{DIGIT@}*        @{
+            printf( "A float: %s (%g)\n", yytext,
+                    atof( yytext ) );
+            @}
+
+if|then|begin|end|procedure|function        @{
+            printf( "A keyword: %s\n", yytext );
+            @}
+
+@{ID@}        printf( "An identifier: %s\n", yytext );
+
+"+"|"-"|"*"|"/"   printf( "An operator: %s\n", yytext );
+
+"@{"[^@}\n]*"@}"     /* eat up one-line comments */
+
+[ \t\n]+          /* eat up whitespace */
+
+.           printf( "Unrecognized character: %s\n", yytext );
+
+%%
+
+main( argc, argv )
+int argc;
+char **argv;
+    @{
+    ++argv, --argc;  /* skip over program name */
+    if ( argc > 0 )
+            yyin = fopen( argv[0], "r" );
+    else
+            yyin = stdin;
+
+    yylex();
+    @}
+@end example
+
+This is the beginnings of a simple scanner for a language
+like Pascal.  It identifies different types of @var{tokens} and
+reports on what it has seen.
+
+The details of this example will be explained in the
+following sections.
+
+@node Format, Patterns, Examples, Top
+@section Format of the input file
+
+The @code{flex} input file consists of three sections, separated
+by a line with just @samp{%%} in it:
+
+@example
+definitions
+%%
+rules
+%%
+user code
+@end example
+
+The @dfn{definitions} section contains declarations of simple
+@dfn{name} definitions to simplify the scanner specification,
+and declarations of @dfn{start conditions}, which are explained
+in a later section.
+Name definitions have the form:
+
+@example
+name definition
+@end example
+
+The "name" is a word beginning with a letter or an
+underscore ('_') followed by zero or more letters, digits, '_',
+or '-' (dash).  The definition is taken to begin at the
+first non-white-space character following the name and
+continuing to the end of the line.  The definition can
+subsequently be referred to using "@{name@}", which will
+expand to "(definition)".  For example,
+
+@example
+DIGIT    [0-9]
+ID       [a-z][a-z0-9]*
+@end example
+
+@noindent
+defines "DIGIT" to be a regular expression which matches a
+single digit, and "ID" to be a regular expression which
+matches a letter followed by zero-or-more
+letters-or-digits.  A subsequent reference to
+
+@example
+@{DIGIT@}+"."@{DIGIT@}*
+@end example
+
+@noindent
+is identical to
+
+@example
+([0-9])+"."([0-9])*
+@end example
+
+@noindent
+and matches one-or-more digits followed by a '.' followed
+by zero-or-more digits.
+
+The @var{rules} section of the @code{flex} input contains a series of
+rules of the form:
+
+@example
+pattern   action
+@end example
+
+@noindent
+where the pattern must be unindented and the action must
+begin on the same line.
+
+See below for a further description of patterns and
+actions.
+
+Finally, the user code section is simply copied to
+@file{lex.yy.c} verbatim.  It is used for companion routines
+which call or are called by the scanner.  The presence of
+this section is optional; if it is missing, the second @samp{%%}
+in the input file may be skipped, too.
+
+In the definitions and rules sections, any @emph{indented} text or
+text enclosed in @samp{%@{} and @samp{%@}} is copied verbatim to the
+output (with the @samp{%@{@}}'s removed).  The @samp{%@{@}}'s must
+appear unindented on lines by themselves.
+
+In the rules section, any indented or %@{@} text appearing
+before the first rule may be used to declare variables
+which are local to the scanning routine and (after the
+declarations) code which is to be executed whenever the
+scanning routine is entered.  Other indented or %@{@} text
+in the rule section is still copied to the output, but its
+meaning is not well-defined and it may well cause
+compile-time errors (this feature is present for @code{POSIX} compliance;
+see below for other such features).
+
+In the definitions section (but not in the rules section),
+an unindented comment (i.e., a line beginning with "/*")
+is also copied verbatim to the output up to the next "*/".
+
+@node Patterns, Matching, Format, Top
+@section Patterns
+
+The patterns in the input are written using an extended
+set of regular expressions.  These are:
+
+@table @samp
+@item x
+match the character @samp{x}
+@item .
+any character (byte) except newline
+@item [xyz]
+a "character class"; in this case, the pattern
+matches either an @samp{x}, a @samp{y}, or a @samp{z}
+@item [abj-oZ]
+a "character class" with a range in it; matches
+an @samp{a}, a @samp{b}, any letter from @samp{j} through @samp{o},
+or a @samp{Z}
+@item [^A-Z]
+a "negated character class", i.e., any character
+but those in the class.  In this case, any
+character EXCEPT an uppercase letter.
+@item [^A-Z\n]
+any character EXCEPT an uppercase letter or
+a newline
+@item @var{r}*
+zero or more @var{r}'s, where @var{r} is any regular expression
+@item @var{r}+
+one or more @var{r}'s
+@item @var{r}?
+zero or one @var{r}'s (that is, "an optional @var{r}")
+@item @var{r}@{2,5@}
+anywhere from two to five @var{r}'s
+@item @var{r}@{2,@}
+two or more @var{r}'s
+@item @var{r}@{4@}
+exactly 4 @var{r}'s
+@item @{@var{name}@}
+the expansion of the "@var{name}" definition
+(see above)
+@item "[xyz]\"foo"
+the literal string: @samp{[xyz]"foo}
+@item \@var{x}
+if @var{x} is an @samp{a}, @samp{b}, @samp{f}, @samp{n}, @samp{r}, @samp{t}, or @samp{v},
+then the ANSI-C interpretation of \@var{x}.
+Otherwise, a literal @samp{@var{x}} (used to escape
+operators such as @samp{*})
+@item \0
+a NUL character (ASCII code 0)
+@item \123
+the character with octal value 123
+@item \x2a
+the character with hexadecimal value @code{2a}
+@item (@var{r})
+match an @var{r}; parentheses are used to override
+precedence (see below)
+@item @var{r}@var{s}
+the regular expression @var{r} followed by the
+regular expression @var{s}; called "concatenation"
+@item @var{r}|@var{s}
+either an @var{r} or an @var{s}
+@item @var{r}/@var{s}
+an @var{r} but only if it is followed by an @var{s}.  The text
+matched by @var{s} is included when determining whether this rule is
+the @dfn{longest match}, but is then returned to the input before
+the action is executed.  So the action only sees the text matched
+by @var{r}.  This type of pattern is called @dfn{trailing context}.
+(There are some combinations of @samp{@var{r}/@var{s}} that @code{flex}
+cannot match correctly; see notes in the Deficiencies / Bugs section
+below regarding "dangerous trailing context".)
+@item ^@var{r}
+an @var{r}, but only at the beginning of a line (i.e.,
+which just starting to scan, or right after a
+newline has been scanned).
+@item @var{r}$
+an @var{r}, but only at the end of a line (i.e., just
+before a newline).  Equivalent to "@var{r}/\n".
+
+Note that flex's notion of "newline" is exactly
+whatever the C compiler used to compile flex
+interprets '\n' as; in particular, on some DOS
+systems you must either filter out \r's in the
+input yourself, or explicitly use @var{r}/\r\n for "r$".
+@item <@var{s}>@var{r}
+an @var{r}, but only in start condition @var{s} (see
+below for discussion of start conditions)
+<@var{s1},@var{s2},@var{s3}>@var{r}
+same, but in any of start conditions @var{s1},
+@var{s2}, or @var{s3}
+@item <*>@var{r}
+an @var{r} in any start condition, even an exclusive one.
+@item <<EOF>>
+an end-of-file
+<@var{s1},@var{s2}><<EOF>>
+an end-of-file when in start condition @var{s1} or @var{s2}
+@end table
+
+Note that inside of a character class, all regular
+expression operators lose their special meaning except escape
+('\') and the character class operators, '-', ']', and, at
+the beginning of the class, '^'.
+
+The regular expressions listed above are grouped according
+to precedence, from highest precedence at the top to
+lowest at the bottom.  Those grouped together have equal
+precedence.  For example,
+
+@example
+foo|bar*
+@end example
+
+@noindent
+is the same as
+
+@example
+(foo)|(ba(r*))
+@end example
+
+@noindent
+since the '*' operator has higher precedence than
+concatenation, and concatenation higher than alternation ('|').
+This pattern therefore matches @emph{either} the string "foo" @emph{or}
+the string "ba" followed by zero-or-more r's.  To match
+"foo" or zero-or-more "bar"'s, use:
+
+@example
+foo|(bar)*
+@end example
+
+@noindent
+and to match zero-or-more "foo"'s-or-"bar"'s:
+
+@example
+(foo|bar)*
+@end example
+
+In addition to characters and ranges of characters,
+character classes can also contain character class
+@dfn{expressions}.  These are expressions enclosed inside @samp{[}: and @samp{:}]
+delimiters (which themselves must appear between the '['
+and ']' of the character class; other elements may occur
+inside the character class, too).  The valid expressions
+are:
+
+@example
+[:alnum:] [:alpha:] [:blank:]
+[:cntrl:] [:digit:] [:graph:]
+[:lower:] [:print:] [:punct:]
+[:space:] [:upper:] [:xdigit:]
+@end example
+
+These expressions all designate a set of characters
+equivalent to the corresponding standard C @samp{isXXX} function.  For
+example, @samp{[:alnum:]} designates those characters for which
+@samp{isalnum()} returns true - i.e., any alphabetic or numeric.
+Some systems don't provide @samp{isblank()}, so flex defines
+@samp{[:blank:]} as a blank or a tab.
+
+For example, the following character classes are all
+equivalent:
+
+@example
+[[:alnum:]]
+[[:alpha:][:digit:]
+[[:alpha:]0-9]
+[a-zA-Z0-9]
+@end example
+
+If your scanner is case-insensitive (the @samp{-i} flag), then
+@samp{[:upper:]} and @samp{[:lower:]} are equivalent to @samp{[:alpha:]}.
+
+Some notes on patterns:
+
+@itemize -
+@item
+A negated character class such as the example
+"[^A-Z]" above @emph{will match a newline} unless "\n" (or an
+equivalent escape sequence) is one of the
+characters explicitly present in the negated character
+class (e.g., "[^A-Z\n]").  This is unlike how many
+other regular expression tools treat negated
+character classes, but unfortunately the inconsistency
+is historically entrenched.  Matching newlines
+means that a pattern like [^"]* can match the
+entire input unless there's another quote in the
+input.
+
+@item
+A rule can have at most one instance of trailing
+context (the '/' operator or the '$' operator).
+The start condition, '^', and "<<EOF>>" patterns
+can only occur at the beginning of a pattern, and,
+as well as with '/' and '$', cannot be grouped
+inside parentheses.  A '^' which does not occur at
+the beginning of a rule or a '$' which does not
+occur at the end of a rule loses its special
+properties and is treated as a normal character.
+
+The following are illegal:
+
+@example
+foo/bar$
+<sc1>foo<sc2>bar
+@end example
+
+Note that the first of these, can be written
+"foo/bar\n".
+
+The following will result in '$' or '^' being
+treated as a normal character:
+
+@example
+foo|(bar$)
+foo|^bar
+@end example
+
+If what's wanted is a "foo" or a
+bar-followed-by-a-newline, the following could be used (the special
+'|' action is explained below):
+
+@example
+foo      |
+bar$     /* action goes here */
+@end example
+
+A similar trick will work for matching a foo or a
+bar-at-the-beginning-of-a-line.
+@end itemize
+
+@node Matching, Actions, Patterns, Top
+@section How the input is matched
+
+When the generated scanner is run, it analyzes its input
+looking for strings which match any of its patterns.  If
+it finds more than one match, it takes the one matching
+the most text (for trailing context rules, this includes
+the length of the trailing part, even though it will then
+be returned to the input).  If it finds two or more
+matches of the same length, the rule listed first in the
+@code{flex} input file is chosen.
+
+Once the match is determined, the text corresponding to
+the match (called the @var{token}) is made available in the
+global character pointer @code{yytext}, and its length in the
+global integer @code{yyleng}.  The @var{action} corresponding to the
+matched pattern is then executed (a more detailed
+description of actions follows), and then the remaining input is
+scanned for another match.
+
+If no match is found, then the @dfn{default rule} is executed:
+the next character in the input is considered matched and
+copied to the standard output.  Thus, the simplest legal
+@code{flex} input is:
+
+@example
+%%
+@end example
+
+which generates a scanner that simply copies its input
+(one character at a time) to its output.
+
+Note that @code{yytext} can be defined in two different ways:
+either as a character @emph{pointer} or as a character @emph{array}.
+You can control which definition @code{flex} uses by including
+one of the special directives @samp{%pointer} or @samp{%array} in the
+first (definitions) section of your flex input.  The
+default is @samp{%pointer}, unless you use the @samp{-l} lex
+compatibility option, in which case @code{yytext} will be an array.  The
+advantage of using @samp{%pointer} is substantially faster
+scanning and no buffer overflow when matching very large
+tokens (unless you run out of dynamic memory).  The
+disadvantage is that you are restricted in how your actions can
+modify @code{yytext} (see the next section), and calls to the
+@samp{unput()} function destroys the present contents of @code{yytext},
+which can be a considerable porting headache when moving
+between different @code{lex} versions.
+
+The advantage of @samp{%array} is that you can then modify @code{yytext}
+to your heart's content, and calls to @samp{unput()} do not
+destroy @code{yytext} (see below).  Furthermore, existing @code{lex}
+programs sometimes access @code{yytext} externally using
+declarations of the form:
+@example
+extern char yytext[];
+@end example
+This definition is erroneous when used with @samp{%pointer}, but
+correct for @samp{%array}.
+
+@samp{%array} defines @code{yytext} to be an array of @code{YYLMAX} characters,
+which defaults to a fairly large value.  You can change
+the size by simply #define'ing @code{YYLMAX} to a different value
+in the first section of your @code{flex} input.  As mentioned
+above, with @samp{%pointer} yytext grows dynamically to
+accommodate large tokens.  While this means your @samp{%pointer} scanner
+can accommodate very large tokens (such as matching entire
+blocks of comments), bear in mind that each time the
+scanner must resize @code{yytext} it also must rescan the entire
+token from the beginning, so matching such tokens can
+prove slow.  @code{yytext} presently does @emph{not} dynamically grow if
+a call to @samp{unput()} results in too much text being pushed
+back; instead, a run-time error results.
+
+Also note that you cannot use @samp{%array} with C++ scanner
+classes (the @code{c++} option; see below).
+
+@node Actions, Generated scanner, Matching, Top
+@section Actions
+
+Each pattern in a rule has a corresponding action, which
+can be any arbitrary C statement.  The pattern ends at the
+first non-escaped whitespace character; the remainder of
+the line is its action.  If the action is empty, then when
+the pattern is matched the input token is simply
+discarded.  For example, here is the specification for a
+program which deletes all occurrences of "zap me" from its
+input:
+
+@example
+%%
+"zap me"
+@end example
+
+(It will copy all other characters in the input to the
+output since they will be matched by the default rule.)
+
+Here is a program which compresses multiple blanks and
+tabs down to a single blank, and throws away whitespace
+found at the end of a line:
+
+@example
+%%
+[ \t]+        putchar( ' ' );
+[ \t]+$       /* ignore this token */
+@end example
+
+If the action contains a '@{', then the action spans till
+the balancing '@}' is found, and the action may cross
+multiple lines.  @code{flex} knows about C strings and comments and
+won't be fooled by braces found within them, but also
+allows actions to begin with @samp{%@{} and will consider the
+action to be all the text up to the next @samp{%@}} (regardless of
+ordinary braces inside the action).
+
+An action consisting solely of a vertical bar ('|') means
+"same as the action for the next rule." See below for an
+illustration.
+
+Actions can include arbitrary C code, including @code{return}
+statements to return a value to whatever routine called
+@samp{yylex()}.  Each time @samp{yylex()} is called it continues
+processing tokens from where it last left off until it either
+reaches the end of the file or executes a return.
+
+Actions are free to modify @code{yytext} except for lengthening
+it (adding characters to its end--these will overwrite
+later characters in the input stream).  This however does
+not apply when using @samp{%array} (see above); in that case,
+@code{yytext} may be freely modified in any way.
+
+Actions are free to modify @code{yyleng} except they should not
+do so if the action also includes use of @samp{yymore()} (see
+below).
+
+There are a number of special directives which can be
+included within an action:
+
+@itemize -
+@item
+@samp{ECHO} copies yytext to the scanner's output.
+
+@item
+@code{BEGIN} followed by the name of a start condition
+places the scanner in the corresponding start
+condition (see below).
+
+@item
+@code{REJECT} directs the scanner to proceed on to the
+"second best" rule which matched the input (or a
+prefix of the input).  The rule is chosen as
+described above in "How the Input is Matched", and
+@code{yytext} and @code{yyleng} set up appropriately.  It may
+either be one which matched as much text as the
+originally chosen rule but came later in the @code{flex}
+input file, or one which matched less text.  For
+example, the following will both count the words in
+the input and call the routine special() whenever
+"frob" is seen:
+
+@example
+        int word_count = 0;
+%%
+
+frob        special(); REJECT;
+[^ \t\n]+   ++word_count;
+@end example
+
+Without the @code{REJECT}, any "frob"'s in the input would
+not be counted as words, since the scanner normally
+executes only one action per token.  Multiple
+@code{REJECT's} are allowed, each one finding the next
+best choice to the currently active rule.  For
+example, when the following scanner scans the token
+"abcd", it will write "abcdabcaba" to the output:
+
+@example
+%%
+a        |
+ab       |
+abc      |
+abcd     ECHO; REJECT;
+.|\n     /* eat up any unmatched character */
+@end example
+
+(The first three rules share the fourth's action
+since they use the special '|' action.)  @code{REJECT} is
+a particularly expensive feature in terms of
+scanner performance; if it is used in @emph{any} of the
+scanner's actions it will slow down @emph{all} of the
+scanner's matching.  Furthermore, @code{REJECT} cannot be used
+with the @samp{-Cf} or @samp{-CF} options (see below).
+
+Note also that unlike the other special actions,
+@code{REJECT} is a @emph{branch}; code immediately following it
+in the action will @emph{not} be executed.
+
+@item
+@samp{yymore()} tells the scanner that the next time it
+matches a rule, the corresponding token should be
+@emph{appended} onto the current value of @code{yytext} rather
+than replacing it.  For example, given the input
+"mega-kludge" the following will write
+"mega-mega-kludge" to the output:
+
+@example
+%%
+mega-    ECHO; yymore();
+kludge   ECHO;
+@end example
+
+First "mega-" is matched and echoed to the output.
+Then "kludge" is matched, but the previous "mega-"
+is still hanging around at the beginning of @code{yytext}
+so the @samp{ECHO} for the "kludge" rule will actually
+write "mega-kludge".
+@end itemize
+
+Two notes regarding use of @samp{yymore()}.  First, @samp{yymore()}
+depends on the value of @code{yyleng} correctly reflecting the
+size of the current token, so you must not modify @code{yyleng}
+if you are using @samp{yymore()}.  Second, the presence of
+@samp{yymore()} in the scanner's action entails a minor
+performance penalty in the scanner's matching speed.
+
+@itemize -
+@item
+@samp{yyless(n)} returns all but the first @var{n} characters of
+the current token back to the input stream, where
+they will be rescanned when the scanner looks for
+the next match.  @code{yytext} and @code{yyleng} are adjusted
+appropriately (e.g., @code{yyleng} will now be equal to @var{n}
+).  For example, on the input "foobar" the
+following will write out "foobarbar":
+
+@example
+%%
+foobar    ECHO; yyless(3);
+[a-z]+    ECHO;
+@end example
+
+An argument of 0 to @code{yyless} will cause the entire
+current input string to be scanned again.  Unless
+you've changed how the scanner will subsequently
+process its input (using @code{BEGIN}, for example), this
+will result in an endless loop.
+
+Note that @code{yyless} is a macro and can only be used in the
+flex input file, not from other source files.
+
+@item
+@samp{unput(c)} puts the character @code{c} back onto the input
+stream.  It will be the next character scanned.
+The following action will take the current token
+and cause it to be rescanned enclosed in
+parentheses.
+
+@example
+@{
+int i;
+/* Copy yytext because unput() trashes yytext */
+char *yycopy = strdup( yytext );
+unput( ')' );
+for ( i = yyleng - 1; i >= 0; --i )
+    unput( yycopy[i] );
+unput( '(' );
+free( yycopy );
+@}
+@end example
+
+Note that since each @samp{unput()} puts the given
+character back at the @emph{beginning} of the input stream,
+pushing back strings must be done back-to-front.
+An important potential problem when using @samp{unput()} is that
+if you are using @samp{%pointer} (the default), a call to @samp{unput()}
+@emph{destroys} the contents of @code{yytext}, starting with its
+rightmost character and devouring one character to the left
+with each call.  If you need the value of yytext preserved
+after a call to @samp{unput()} (as in the above example), you
+must either first copy it elsewhere, or build your scanner
+using @samp{%array} instead (see How The Input Is Matched).
+
+Finally, note that you cannot put back @code{EOF} to attempt to
+mark the input stream with an end-of-file.
+
+@item
+@samp{input()} reads the next character from the input
+stream.  For example, the following is one way to
+eat up C comments:
+
+@example
+%%
+"/*"        @{
+            register int c;
+
+            for ( ; ; )
+                @{
+                while ( (c = input()) != '*' &&
+                        c != EOF )
+                    ;    /* eat up text of comment */
+
+                if ( c == '*' )
+                    @{
+                    while ( (c = input()) == '*' )
+                        ;
+                    if ( c == '/' )
+                        break;    /* found the end */
+                    @}
+
+                if ( c == EOF )
+                    @{
+                    error( "EOF in comment" );
+                    break;
+                    @}
+                @}
+            @}
+@end example
+
+(Note that if the scanner is compiled using @samp{C++},
+then @samp{input()} is instead referred to as @samp{yyinput()},
+in order to avoid a name clash with the @samp{C++} stream
+by the name of @code{input}.)
+
+@item YY_FLUSH_BUFFER
+flushes the scanner's internal buffer so that the next time the scanner
+attempts to match a token, it will first refill the buffer using
+@code{YY_INPUT} (see The Generated Scanner, below).  This action is
+a special case of the more general @samp{yy_flush_buffer()} function,
+described below in the section Multiple Input Buffers.
+
+@item
+@samp{yyterminate()} can be used in lieu of a return
+statement in an action.  It terminates the scanner
+and returns a 0 to the scanner's caller, indicating
+"all done".  By default, @samp{yyterminate()} is also
+called when an end-of-file is encountered.  It is a
+macro and may be redefined.
+@end itemize
+
+@node Generated scanner, Start conditions, Actions, Top
+@section The generated scanner
+
+The output of @code{flex} is the file @file{lex.yy.c}, which contains
+the scanning routine @samp{yylex()}, a number of tables used by
+it for matching tokens, and a number of auxiliary routines
+and macros.  By default, @samp{yylex()} is declared as follows:
+
+@example
+int yylex()
+    @{
+    @dots{} various definitions and the actions in here @dots{}
+    @}
+@end example
+
+(If your environment supports function prototypes, then it
+will be "int yylex( void  )".)   This  definition  may  be
+changed by defining the "YY_DECL" macro.  For example, you
+could use:
+
+@example
+#define YY_DECL float lexscan( a, b ) float a, b;
+@end example
+
+to give the scanning routine the name @code{lexscan}, returning a
+float, and taking two floats as arguments.  Note that if
+you give arguments to the scanning routine using a
+K&R-style/non-prototyped function declaration, you must
+terminate the definition with a semi-colon (@samp{;}).
+
+Whenever @samp{yylex()} is called, it scans tokens from the
+global input file @code{yyin} (which defaults to stdin).  It
+continues until it either reaches an end-of-file (at which
+point it returns the value 0) or one of its actions
+executes a @code{return} statement.
+
+If the scanner reaches an end-of-file, subsequent calls are undefined
+unless either @code{yyin} is pointed at a new input file (in which case
+scanning continues from that file), or @samp{yyrestart()} is called.
+@samp{yyrestart()} takes one argument, a @samp{FILE *} pointer (which
+can be nil, if you've set up @code{YY_INPUT} to scan from a source
+other than @code{yyin}), and initializes @code{yyin} for scanning from
+that file.  Essentially there is no difference between just assigning
+@code{yyin} to a new input file or using @samp{yyrestart()} to do so;
+the latter is available for compatibility with previous versions of
+@code{flex}, and because it can be used to switch input files in the
+middle of scanning.  It can also be used to throw away the current
+input buffer, by calling it with an argument of @code{yyin}; but
+better is to use @code{YY_FLUSH_BUFFER} (see above).  Note that
+@samp{yyrestart()} does @emph{not} reset the start condition to
+@code{INITIAL} (see Start Conditions, below).
+
+
+If @samp{yylex()} stops scanning due to executing a @code{return}
+statement in one of the actions, the scanner may then be called
+again and it will resume scanning where it left off.
+
+By default (and for purposes of efficiency), the scanner
+uses block-reads rather than simple @samp{getc()} calls to read
+characters from @code{yyin}.  The nature of how it gets its input
+can be controlled by defining the @code{YY_INPUT} macro.
+YY_INPUT's calling sequence is
+"YY_INPUT(buf,result,max_size)".  Its action is to place
+up to @var{max_size} characters in the character array @var{buf} and
+return in the integer variable @var{result} either the number of
+characters read or the constant YY_NULL (0 on Unix
+systems) to indicate EOF.  The default YY_INPUT reads from
+the global file-pointer "yyin".
+
+A sample definition of YY_INPUT (in the definitions
+section of the input file):
+
+@example
+%@{
+#define YY_INPUT(buf,result,max_size) \
+    @{ \
+    int c = getchar(); \
+    result = (c == EOF) ? YY_NULL : (buf[0] = c, 1); \
+    @}
+%@}
+@end example
+
+This definition will change the input processing to occur
+one character at a time.
+
+When the scanner receives an end-of-file indication from
+YY_INPUT, it then checks the @samp{yywrap()} function.  If
+@samp{yywrap()} returns false (zero), then it is assumed that the
+function has gone ahead and set up @code{yyin} to point to
+another input file, and scanning continues.  If it returns
+true (non-zero), then the scanner terminates, returning 0
+to its caller.  Note that in either case, the start
+condition remains unchanged; it does @emph{not} revert to @code{INITIAL}.
+
+If you do not supply your own version of @samp{yywrap()}, then you
+must either use @samp{%option noyywrap} (in which case the scanner
+behaves as though @samp{yywrap()} returned 1), or you must link with
+@samp{-lfl} to obtain the default version of the routine, which always
+returns 1.
+
+Three routines are available for scanning from in-memory
+buffers rather than files: @samp{yy_scan_string()},
+@samp{yy_scan_bytes()}, and @samp{yy_scan_buffer()}.  See the discussion
+of them below in the section Multiple Input Buffers.
+
+The scanner writes its @samp{ECHO} output to the @code{yyout} global
+(default, stdout), which may be redefined by the user
+simply by assigning it to some other @code{FILE} pointer.
+
+@node Start conditions, Multiple buffers, Generated scanner, Top
+@section Start conditions
+
+@code{flex} provides a mechanism for conditionally activating
+rules.  Any rule whose pattern is prefixed with "<sc>"
+will only be active when the scanner is in the start
+condition named "sc".  For example,
+
+@example
+<STRING>[^"]*        @{ /* eat up the string body ... */
+            @dots{}
+            @}
+@end example
+
+@noindent
+will be active only when the scanner is in the "STRING"
+start condition, and
+
+@example
+<INITIAL,STRING,QUOTE>\.        @{ /* handle an escape ... */
+            @dots{}
+            @}
+@end example
+
+@noindent
+will be active only when the current start condition is
+either "INITIAL", "STRING", or "QUOTE".
+
+Start conditions are declared in the definitions (first)
+section of the input using unindented lines beginning with
+either @samp{%s} or @samp{%x} followed by a list of names.  The former
+declares @emph{inclusive} start conditions, the latter @emph{exclusive}
+start conditions.  A start condition is activated using
+the @code{BEGIN} action.  Until the next @code{BEGIN} action is
+executed, rules with the given start condition will be active
+and rules with other start conditions will be inactive.
+If the start condition is @emph{inclusive}, then rules with no
+start conditions at all will also be active.  If it is
+@emph{exclusive}, then @emph{only} rules qualified with the start
+condition will be active.  A set of rules contingent on the
+same exclusive start condition describe a scanner which is
+independent of any of the other rules in the @code{flex} input.
+Because of this, exclusive start conditions make it easy
+to specify "mini-scanners" which scan portions of the
+input that are syntactically different from the rest
+(e.g., comments).
+
+If the distinction between inclusive and exclusive start
+conditions is still a little vague, here's a simple
+example illustrating the connection between the two.  The set
+of rules:
+
+@example
+%s example
+%%
+
+<example>foo   do_something();
+
+bar            something_else();
+@end example
+
+@noindent
+is equivalent to
+
+@example
+%x example
+%%
+
+<example>foo   do_something();
+
+<INITIAL,example>bar    something_else();
+@end example
+
+Without the @samp{<INITIAL,example>} qualifier, the @samp{bar} pattern
+in the second example wouldn't be active (i.e., couldn't match) when
+in start condition @samp{example}.  If we just used @samp{<example>}
+to qualify @samp{bar}, though, then it would only be active in
+@samp{example} and not in @code{INITIAL}, while in the first example
+it's active in both, because in the first example the @samp{example}
+starting condition is an @emph{inclusive} (@samp{%s}) start condition.
+
+Also note that the special start-condition specifier @samp{<*>}
+matches every start condition.  Thus, the above example
+could also have been written;
+
+@example
+%x example
+%%
+
+<example>foo   do_something();
+
+<*>bar    something_else();
+@end example
+
+The default rule (to @samp{ECHO} any unmatched character) remains
+active in start conditions.  It is equivalent to:
+
+@example
+<*>.|\\n     ECHO;
+@end example
+
+@samp{BEGIN(0)} returns to the original state where only the
+rules with no start conditions are active.  This state can
+also be referred to as the start-condition "INITIAL", so
+@samp{BEGIN(INITIAL)} is equivalent to @samp{BEGIN(0)}.  (The
+parentheses around the start condition name are not required but
+are considered good style.)
+
+@code{BEGIN} actions can also be given as indented code at the
+beginning of the rules section.  For example, the
+following will cause the scanner to enter the "SPECIAL" start
+condition whenever @samp{yylex()} is called and the global
+variable @code{enter_special} is true:
+
+@example
+        int enter_special;
+
+%x SPECIAL
+%%
+        if ( enter_special )
+            BEGIN(SPECIAL);
+
+<SPECIAL>blahblahblah
+@dots{}more rules follow@dots{}
+@end example
+
+To illustrate the uses of start conditions, here is a
+scanner which provides two different interpretations of a
+string like "123.456".  By default it will treat it as as
+three tokens, the integer "123", a dot ('.'), and the
+integer "456".  But if the string is preceded earlier in
+the line by the string "expect-floats" it will treat it as
+a single token, the floating-point number 123.456:
+
+@example
+%@{
+#include <math.h>
+%@}
+%s expect
+
+%%
+expect-floats        BEGIN(expect);
+
+<expect>[0-9]+"."[0-9]+      @{
+            printf( "found a float, = %f\n",
+                    atof( yytext ) );
+            @}
+<expect>\n           @{
+            /* that's the end of the line, so
+             * we need another "expect-number"
+             * before we'll recognize any more
+             * numbers
+             */
+            BEGIN(INITIAL);
+            @}
+
+[0-9]+      @{
+
+Version 2.5               December 1994                        18
+
+            printf( "found an integer, = %d\n",
+                    atoi( yytext ) );
+            @}
+
+"."         printf( "found a dot\n" );
+@end example
+
+Here is a scanner which recognizes (and discards) C
+comments while maintaining a count of the current input line.
+
+@example
+%x comment
+%%
+        int line_num = 1;
+
+"/*"         BEGIN(comment);
+
+<comment>[^*\n]*        /* eat anything that's not a '*' */
+<comment>"*"+[^*/\n]*   /* eat up '*'s not followed by '/'s */
+<comment>\n             ++line_num;
+<comment>"*"+"/"        BEGIN(INITIAL);
+@end example
+
+This scanner goes to a bit of trouble to match as much
+text as possible with each rule.  In general, when
+attempting to write a high-speed scanner try to match as
+much possible in each rule, as it's a big win.
+
+Note that start-conditions names are really integer values
+and can be stored as such.  Thus, the above could be
+extended in the following fashion:
+
+@example
+%x comment foo
+%%
+        int line_num = 1;
+        int comment_caller;
+
+"/*"         @{
+             comment_caller = INITIAL;
+             BEGIN(comment);
+             @}
+
+@dots{}
+
+<foo>"/*"    @{
+             comment_caller = foo;
+             BEGIN(comment);
+             @}
+
+<comment>[^*\n]*        /* eat anything that's not a '*' */
+<comment>"*"+[^*/\n]*   /* eat up '*'s not followed by '/'s */
+<comment>\n             ++line_num;
+<comment>"*"+"/"        BEGIN(comment_caller);
+@end example
+
+Furthermore, you can access the current start condition
+using the integer-valued @code{YY_START} macro.  For example, the
+above assignments to @code{comment_caller} could instead be
+written
+
+@example
+comment_caller = YY_START;
+@end example
+
+Flex provides @code{YYSTATE} as an alias for @code{YY_START} (since that
+is what's used by AT&T @code{lex}).
+
+Note that start conditions do not have their own
+name-space; %s's and %x's declare names in the same fashion as
+#define's.
+
+Finally, here's an example of how to match C-style quoted
+strings using exclusive start conditions, including
+expanded escape sequences (but not including checking for
+a string that's too long):
+
+@example
+%x str
+
+%%
+        char string_buf[MAX_STR_CONST];
+        char *string_buf_ptr;
+
+\"      string_buf_ptr = string_buf; BEGIN(str);
+
+<str>\"        @{ /* saw closing quote - all done */
+        BEGIN(INITIAL);
+        *string_buf_ptr = '\0';
+        /* return string constant token type and
+         * value to parser
+         */
+        @}
+
+<str>\n        @{
+        /* error - unterminated string constant */
+        /* generate error message */
+        @}
+
+<str>\\[0-7]@{1,3@} @{
+        /* octal escape sequence */
+        int result;
+
+        (void) sscanf( yytext + 1, "%o", &result );
+
+        if ( result > 0xff )
+                /* error, constant is out-of-bounds */
+
+        *string_buf_ptr++ = result;
+        @}
+
+<str>\\[0-9]+ @{
+        /* generate error - bad escape sequence; something
+         * like '\48' or '\0777777'
+         */
+        @}
+
+<str>\\n  *string_buf_ptr++ = '\n';
+<str>\\t  *string_buf_ptr++ = '\t';
+<str>\\r  *string_buf_ptr++ = '\r';
+<str>\\b  *string_buf_ptr++ = '\b';
+<str>\\f  *string_buf_ptr++ = '\f';
+
+<str>\\(.|\n)  *string_buf_ptr++ = yytext[1];
+
+<str>[^\\\n\"]+        @{
+        char *yptr = yytext;
+
+        while ( *yptr )
+                *string_buf_ptr++ = *yptr++;
+        @}
+@end example
+
+Often, such as in some of the examples above, you wind up
+writing a whole bunch of rules all preceded by the same
+start condition(s).  Flex makes this a little easier and
+cleaner by introducing a notion of start condition @dfn{scope}.
+A start condition scope is begun with:
+
+@example
+<SCs>@{
+@end example
+
+@noindent
+where SCs is a list of one or more start conditions.
+Inside the start condition scope, every rule automatically
+has the prefix @samp{<SCs>} applied to it, until a @samp{@}} which
+matches the initial @samp{@{}.  So, for example,
+
+@example
+<ESC>@{
+    "\\n"   return '\n';
+    "\\r"   return '\r';
+    "\\f"   return '\f';
+    "\\0"   return '\0';
+@}
+@end example
+
+@noindent
+is equivalent to:
+
+@example
+<ESC>"\\n"  return '\n';
+<ESC>"\\r"  return '\r';
+<ESC>"\\f"  return '\f';
+<ESC>"\\0"  return '\0';
+@end example
+
+Start condition scopes may be nested.
+
+Three routines are available for manipulating stacks of
+start conditions:
+
+@table @samp
+@item void yy_push_state(int new_state)
+pushes the current start condition onto the top of
+the start condition stack and switches to @var{new_state}
+as though you had used @samp{BEGIN new_state} (recall that
+start condition names are also integers).
+
+@item void yy_pop_state()
+pops the top of the stack and switches to it via
+@code{BEGIN}.
+
+@item int yy_top_state()
+returns the top of the stack without altering the
+stack's contents.
+@end table
+
+The start condition stack grows dynamically and so has no
+built-in size limitation.  If memory is exhausted, program
+execution aborts.
+
+To use start condition stacks, your scanner must include a
+@samp{%option stack} directive (see Options below).
+
+@node Multiple buffers, End-of-file rules, Start conditions, Top
+@section Multiple input buffers
+
+Some scanners (such as those which support "include"
+files) require reading from several input streams.  As
+@code{flex} scanners do a large amount of buffering, one cannot
+control where the next input will be read from by simply
+writing a @code{YY_INPUT} which is sensitive to the scanning
+context.  @code{YY_INPUT} is only called when the scanner reaches
+the end of its buffer, which may be a long time after
+scanning a statement such as an "include" which requires
+switching the input source.
+
+To negotiate these sorts of problems, @code{flex} provides a
+mechanism for creating and switching between multiple
+input buffers.  An input buffer is created by using:
+
+@example
+YY_BUFFER_STATE yy_create_buffer( FILE *file, int size )
+@end example
+
+@noindent
+which takes a @code{FILE} pointer and a size and creates a buffer
+associated with the given file and large enough to hold
+@var{size} characters (when in doubt, use @code{YY_BUF_SIZE} for the
+size).  It returns a @code{YY_BUFFER_STATE} handle, which may
+then be passed to other routines (see below).  The
+@code{YY_BUFFER_STATE} type is a pointer to an opaque @code{struct}
+@code{yy_buffer_state} structure, so you may safely initialize
+YY_BUFFER_STATE variables to @samp{((YY_BUFFER_STATE) 0)} if you
+wish, and also refer to the opaque structure in order to
+correctly declare input buffers in source files other than
+that of your scanner.  Note that the @code{FILE} pointer in the
+call to @code{yy_create_buffer} is only used as the value of @code{yyin}
+seen by @code{YY_INPUT}; if you redefine @code{YY_INPUT} so it no longer
+uses @code{yyin}, then you can safely pass a nil @code{FILE} pointer to
+@code{yy_create_buffer}.  You select a particular buffer to scan
+from using:
+
+@example
+void yy_switch_to_buffer( YY_BUFFER_STATE new_buffer )
+@end example
+
+switches the scanner's input buffer so subsequent tokens
+will come from @var{new_buffer}.  Note that
+@samp{yy_switch_to_buffer()} may be used by @samp{yywrap()} to set
+things up for continued scanning, instead of opening a new
+file and pointing @code{yyin} at it.  Note also that switching
+input sources via either @samp{yy_switch_to_buffer()} or @samp{yywrap()}
+does @emph{not} change the start condition.
+
+@example
+void yy_delete_buffer( YY_BUFFER_STATE buffer )
+@end example
+
+@noindent
+is used to reclaim the storage associated with a buffer.
+You can also clear the current contents of a buffer using:
+
+@example
+void yy_flush_buffer( YY_BUFFER_STATE buffer )
+@end example
+
+This function discards the buffer's contents, so the next time the
+scanner attempts to match a token from the buffer, it will first fill
+the buffer anew using @code{YY_INPUT}.
+
+@samp{yy_new_buffer()} is an alias for @samp{yy_create_buffer()},
+provided for compatibility with the C++ use of @code{new} and @code{delete}
+for creating and destroying dynamic objects.
+
+Finally, the @code{YY_CURRENT_BUFFER} macro returns a
+@code{YY_BUFFER_STATE} handle to the current buffer.
+
+Here is an example of using these features for writing a
+scanner which expands include files (the @samp{<<EOF>>} feature
+is discussed below):
+
+@example
+/* the "incl" state is used for picking up the name
+ * of an include file
+ */
+%x incl
+
+%@{
+#define MAX_INCLUDE_DEPTH 10
+YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+int include_stack_ptr = 0;
+%@}
+
+%%
+include             BEGIN(incl);
+
+[a-z]+              ECHO;
+[^a-z\n]*\n?        ECHO;
+
+<incl>[ \t]*      /* eat the whitespace */
+<incl>[^ \t\n]+   @{ /* got the include file name */
+        if ( include_stack_ptr >= MAX_INCLUDE_DEPTH )
+            @{
+            fprintf( stderr, "Includes nested too deeply" );
+            exit( 1 );
+            @}
+
+        include_stack[include_stack_ptr++] =
+            YY_CURRENT_BUFFER;
+
+        yyin = fopen( yytext, "r" );
+
+        if ( ! yyin )
+            error( @dots{} );
+
+        yy_switch_to_buffer(
+            yy_create_buffer( yyin, YY_BUF_SIZE ) );
+
+        BEGIN(INITIAL);
+        @}
+
+<<EOF>> @{
+        if ( --include_stack_ptr < 0 )
+            @{
+            yyterminate();
+            @}
+
+        else
+            @{
+            yy_delete_buffer( YY_CURRENT_BUFFER );
+            yy_switch_to_buffer(
+                 include_stack[include_stack_ptr] );
+            @}
+        @}
+@end example
+
+Three routines are available for setting up input buffers
+for scanning in-memory strings instead of files.  All of
+them create a new input buffer for scanning the string,
+and return a corresponding @code{YY_BUFFER_STATE} handle (which
+you should delete with @samp{yy_delete_buffer()} when done with
+it).  They also switch to the new buffer using
+@samp{yy_switch_to_buffer()}, so the next call to @samp{yylex()} will
+start scanning the string.
+
+@table @samp
+@item yy_scan_string(const char *str)
+scans a NUL-terminated string.
+
+@item yy_scan_bytes(const char *bytes, int len)
+scans @code{len} bytes (including possibly NUL's) starting
+at location @var{bytes}.
+@end table
+
+Note that both of these functions create and scan a @emph{copy}
+of the string or bytes.  (This may be desirable, since
+@samp{yylex()} modifies the contents of the buffer it is
+scanning.) You can avoid the copy by using:
+
+@table @samp
+@item yy_scan_buffer(char *base, yy_size_t size)
+which scans in place the buffer starting at @var{base},
+consisting of @var{size} bytes, the last two bytes of
+which @emph{must} be @code{YY_END_OF_BUFFER_CHAR} (ASCII NUL).
+These last two bytes are not scanned; thus,
+scanning consists of @samp{base[0]} through @samp{base[size-2]},
+inclusive.
+
+If you fail to set up @var{base} in this manner (i.e.,
+forget the final two @code{YY_END_OF_BUFFER_CHAR} bytes),
+then @samp{yy_scan_buffer()} returns a nil pointer instead
+of creating a new input buffer.
+
+The type @code{yy_size_t} is an integral type to which you
+can cast an integer expression reflecting the size
+of the buffer.
+@end table
+
+@node End-of-file rules, Miscellaneous, Multiple buffers, Top
+@section End-of-file rules
+
+The special rule "<<EOF>>" indicates actions which are to
+be taken when an end-of-file is encountered and yywrap()
+returns non-zero (i.e., indicates no further files to
+process).  The action must finish by doing one of four
+things:
+
+@itemize -
+@item
+assigning @code{yyin} to a new input file (in previous
+versions of flex, after doing the assignment you
+had to call the special action @code{YY_NEW_FILE}; this is
+no longer necessary);
+
+@item
+executing a @code{return} statement;
+
+@item
+executing the special @samp{yyterminate()} action;
+
+@item
+or, switching to a new buffer using
+@samp{yy_switch_to_buffer()} as shown in the example
+above.
+@end itemize
+
+<<EOF>> rules may not be used with other patterns; they
+may only be qualified with a list of start conditions.  If
+an unqualified <<EOF>> rule is given, it applies to @emph{all}
+start conditions which do not already have <<EOF>>
+actions.  To specify an <<EOF>> rule for only the initial
+start condition, use
+
+@example
+<INITIAL><<EOF>>
+@end example
+
+These rules are useful for catching things like unclosed
+comments.  An example:
+
+@example
+%x quote
+%%
+
+@dots{}other rules for dealing with quotes@dots{}
+
+<quote><<EOF>>   @{
+         error( "unterminated quote" );
+         yyterminate();
+         @}
+<<EOF>>  @{
+         if ( *++filelist )
+             yyin = fopen( *filelist, "r" );
+         else
+            yyterminate();
+         @}
+@end example
+
+@node Miscellaneous, User variables, End-of-file rules, Top
+@section Miscellaneous macros
+
+The macro @code{YY_USER_ACTION} can be defined to provide an
+action which is always executed prior to the matched
+rule's action.  For example, it could be #define'd to call
+a routine to convert yytext to lower-case.  When
+@code{YY_USER_ACTION} is invoked, the variable @code{yy_act} gives the
+number of the matched rule (rules are numbered starting
+with 1).  Suppose you want to profile how often each of
+your rules is matched.  The following would do the trick:
+
+@example
+#define YY_USER_ACTION ++ctr[yy_act]
+@end example
+
+where @code{ctr} is an array to hold the counts for the different
+rules.  Note that the macro @code{YY_NUM_RULES} gives the total number
+of rules (including the default rule, even if you use @samp{-s}, so
+a correct declaration for @code{ctr} is:
+
+@example
+int ctr[YY_NUM_RULES];
+@end example
+
+The macro @code{YY_USER_INIT} may be defined to provide an action
+which is always executed before the first scan (and before
+the scanner's internal initializations are done).  For
+example, it could be used to call a routine to read in a
+data table or open a logging file.
+
+The macro @samp{yy_set_interactive(is_interactive)} can be used
+to control whether the current buffer is considered
+@emph{interactive}.  An interactive buffer is processed more slowly,
+but must be used when the scanner's input source is indeed
+interactive to avoid problems due to waiting to fill
+buffers (see the discussion of the @samp{-I} flag below).  A
+non-zero value in the macro invocation marks the buffer as
+interactive, a zero value as non-interactive.  Note that
+use of this macro overrides @samp{%option always-interactive} or
+@samp{%option never-interactive} (see Options below).
+@samp{yy_set_interactive()} must be invoked prior to beginning to
+scan the buffer that is (or is not) to be considered
+interactive.
+
+The macro @samp{yy_set_bol(at_bol)} can be used to control
+whether the current buffer's scanning context for the next
+token match is done as though at the beginning of a line.
+A non-zero macro argument makes rules anchored with
+
+The macro @samp{YY_AT_BOL()} returns true if the next token
+scanned from the current buffer will have '^' rules
+active, false otherwise.
+
+In the generated scanner, the actions are all gathered in
+one large switch statement and separated using @code{YY_BREAK},
+which may be redefined.  By default, it is simply a
+"break", to separate each rule's action from the following
+rule's.  Redefining @code{YY_BREAK} allows, for example, C++
+users to #define YY_BREAK to do nothing (while being very
+careful that every rule ends with a "break" or a
+"return"!) to avoid suffering from unreachable statement
+warnings where because a rule's action ends with "return",
+the @code{YY_BREAK} is inaccessible.
+
+@node User variables, YACC interface, Miscellaneous, Top
+@section Values available to the user
+
+This section summarizes the various values available to
+the user in the rule actions.
+
+@itemize -
+@item
+@samp{char *yytext} holds the text of the current token.
+It may be modified but not lengthened (you cannot
+append characters to the end).
+
+If the special directive @samp{%array} appears in the
+first section of the scanner description, then
+@code{yytext} is instead declared @samp{char yytext[YYLMAX]},
+where @code{YYLMAX} is a macro definition that you can
+redefine in the first section if you don't like the
+default value (generally 8KB).  Using @samp{%array}
+results in somewhat slower scanners, but the value
+of @code{yytext} becomes immune to calls to @samp{input()} and
+@samp{unput()}, which potentially destroy its value when
+@code{yytext} is a character pointer.  The opposite of
+@samp{%array} is @samp{%pointer}, which is the default.
+
+You cannot use @samp{%array} when generating C++ scanner
+classes (the @samp{-+} flag).
+
+@item
+@samp{int yyleng} holds the length of the current token.
+
+@item
+@samp{FILE *yyin} is the file which by default @code{flex} reads
+from.  It may be redefined but doing so only makes
+sense before scanning begins or after an EOF has
+been encountered.  Changing it in the midst of
+scanning will have unexpected results since @code{flex}
+buffers its input; use @samp{yyrestart()} instead.  Once
+scanning terminates because an end-of-file has been
+seen, you can assign @code{yyin} at the new input file and
+then call the scanner again to continue scanning.
+
+@item
+@samp{void yyrestart( FILE *new_file )} may be called to
+point @code{yyin} at the new input file.  The switch-over
+to the new file is immediate (any previously
+buffered-up input is lost).  Note that calling
+@samp{yyrestart()} with @code{yyin} as an argument thus throws
+away the current input buffer and continues
+scanning the same input file.
+
+@item
+@samp{FILE *yyout} is the file to which @samp{ECHO} actions are
+done.  It can be reassigned by the user.
+
+@item
+@code{YY_CURRENT_BUFFER} returns a @code{YY_BUFFER_STATE} handle
+to the current buffer.
+
+@item
+@code{YY_START} returns an integer value corresponding to
+the current start condition.  You can subsequently
+use this value with @code{BEGIN} to return to that start
+condition.
+@end itemize
+
+@node YACC interface, Options, User variables, Top
+@section Interfacing with @code{yacc}
+
+One of the main uses of @code{flex} is as a companion to the @code{yacc}
+parser-generator.  @code{yacc} parsers expect to call a routine
+named @samp{yylex()} to find the next input token.  The routine
+is supposed to return the type of the next token as well
+as putting any associated value in the global @code{yylval}.  To
+use @code{flex} with @code{yacc}, one specifies the @samp{-d} option to @code{yacc} to
+instruct it to generate the file @file{y.tab.h} containing
+definitions of all the @samp{%tokens} appearing in the @code{yacc} input.
+This file is then included in the @code{flex} scanner.  For
+example, if one of the tokens is "TOK_NUMBER", part of the
+scanner might look like:
+
+@example
+%@{
+#include "y.tab.h"
+%@}
+
+%%
+
+[0-9]+        yylval = atoi( yytext ); return TOK_NUMBER;
+@end example
+
+@node Options, Performance, YACC interface, Top
+@section Options
+@code{flex} has the following options:
+
+@table @samp
+@item -b
+Generate backing-up information to @file{lex.backup}.
+This is a list of scanner states which require
+backing up and the input characters on which they
+do so.  By adding rules one can remove backing-up
+states.  If @emph{all} backing-up states are eliminated
+and @samp{-Cf} or @samp{-CF} is used, the generated scanner will
+run faster (see the @samp{-p} flag).  Only users who wish
+to squeeze every last cycle out of their scanners
+need worry about this option.  (See the section on
+Performance Considerations below.)
+
+@item -c
+is a do-nothing, deprecated option included for
+POSIX compliance.
+
+@item -d
+makes the generated scanner run in @dfn{debug} mode.
+Whenever a pattern is recognized and the global
+@code{yy_flex_debug} is non-zero (which is the default),
+the scanner will write to @code{stderr} a line of the
+form:
+
+@example
+--accepting rule at line 53 ("the matched text")
+@end example
+
+The line number refers to the location of the rule
+in the file defining the scanner (i.e., the file
+that was fed to flex).  Messages are also generated
+when the scanner backs up, accepts the default
+rule, reaches the end of its input buffer (or
+encounters a NUL; at this point, the two look the
+same as far as the scanner's concerned), or reaches
+an end-of-file.
+
+@item -f
+specifies @dfn{fast scanner}.  No table compression is
+done and stdio is bypassed.  The result is large
+but fast.  This option is equivalent to @samp{-Cfr} (see
+below).
+
+@item -h
+generates a "help" summary of @code{flex's} options to
+@code{stdout} and then exits.  @samp{-?} and @samp{--help} are synonyms
+for @samp{-h}.
+
+@item -i
+instructs @code{flex} to generate a @emph{case-insensitive}
+scanner.  The case of letters given in the @code{flex} input
+patterns will be ignored, and tokens in the input
+will be matched regardless of case.  The matched
+text given in @code{yytext} will have the preserved case
+(i.e., it will not be folded).
+
+@item -l
+turns on maximum compatibility with the original
+AT&T @code{lex} implementation.  Note that this does not
+mean @emph{full} compatibility.  Use of this option costs
+a considerable amount of performance, and it cannot
+be used with the @samp{-+, -f, -F, -Cf}, or @samp{-CF} options.
+For details on the compatibilities it provides, see
+the section "Incompatibilities With Lex And POSIX"
+below.  This option also results in the name
+@code{YY_FLEX_LEX_COMPAT} being #define'd in the generated
+scanner.
+
+@item -n
+is another do-nothing, deprecated option included
+only for POSIX compliance.
+
+@item -p
+generates a performance report to stderr.  The
+report consists of comments regarding features of
+the @code{flex} input file which will cause a serious loss
+of performance in the resulting scanner.  If you
+give the flag twice, you will also get comments
+regarding features that lead to minor performance
+losses.
+
+Note that the use of @code{REJECT}, @samp{%option yylineno} and
+variable trailing context (see the Deficiencies / Bugs section below)
+entails a substantial performance penalty; use of @samp{yymore()},
+the @samp{^} operator, and the @samp{-I} flag entail minor performance
+penalties.
+
+@item -s
+causes the @dfn{default rule} (that unmatched scanner
+input is echoed to @code{stdout}) to be suppressed.  If
+the scanner encounters input that does not match
+any of its rules, it aborts with an error.  This
+option is useful for finding holes in a scanner's
+rule set.
+
+@item -t
+instructs @code{flex} to write the scanner it generates to
+standard output instead of @file{lex.yy.c}.
+
+@item -v
+specifies that @code{flex} should write to @code{stderr} a
+summary of statistics regarding the scanner it
+generates.  Most of the statistics are meaningless to
+the casual @code{flex} user, but the first line identifies
+the version of @code{flex} (same as reported by @samp{-V}), and
+the next line the flags used when generating the
+scanner, including those that are on by default.
+
+@item -w
+suppresses warning messages.
+
+@item -B
+instructs @code{flex} to generate a @emph{batch} scanner, the
+opposite of @emph{interactive} scanners generated by @samp{-I}
+(see below).  In general, you use @samp{-B} when you are
+@emph{certain} that your scanner will never be used
+interactively, and you want to squeeze a @emph{little} more
+performance out of it.  If your goal is instead to
+squeeze out a @emph{lot} more performance, you should be
+using the @samp{-Cf} or @samp{-CF} options (discussed below),
+which turn on @samp{-B} automatically anyway.
+
+@item -F
+specifies that the @dfn{fast} scanner table
+representation should be used (and stdio bypassed).  This
+representation is about as fast as the full table
+representation @samp{(-f)}, and for some sets of patterns
+will be considerably smaller (and for others,
+larger).  In general, if the pattern set contains
+both "keywords" and a catch-all, "identifier" rule,
+such as in the set:
+
+@example
+"case"    return TOK_CASE;
+"switch"  return TOK_SWITCH;
+...
+"default" return TOK_DEFAULT;
+[a-z]+    return TOK_ID;
+@end example
+
+@noindent
+then you're better off using the full table
+representation.  If only the "identifier" rule is
+present and you then use a hash table or some such to
+detect the keywords, you're better off using @samp{-F}.
+
+This option is equivalent to @samp{-CFr} (see below).  It
+cannot be used with @samp{-+}.
+
+@item -I
+instructs @code{flex} to generate an @emph{interactive} scanner.
+An interactive scanner is one that only looks ahead
+to decide what token has been matched if it
+absolutely must.  It turns out that always looking one
+extra character ahead, even if the scanner has
+already seen enough text to disambiguate the
+current token, is a bit faster than only looking ahead
+when necessary.  But scanners that always look
+ahead give dreadful interactive performance; for
+example, when a user types a newline, it is not
+recognized as a newline token until they enter
+@emph{another} token, which often means typing in another
+whole line.
+
+@code{Flex} scanners default to @emph{interactive} unless you use
+the @samp{-Cf} or @samp{-CF} table-compression options (see
+below).  That's because if you're looking for
+high-performance you should be using one of these
+options, so if you didn't, @code{flex} assumes you'd
+rather trade off a bit of run-time performance for
+intuitive interactive behavior.  Note also that you
+@emph{cannot} use @samp{-I} in conjunction with @samp{-Cf} or @samp{-CF}.
+Thus, this option is not really needed; it is on by
+default for all those cases in which it is allowed.
+
+You can force a scanner to @emph{not} be interactive by
+using @samp{-B} (see above).
+
+@item -L
+instructs @code{flex} not to generate @samp{#line} directives.
+Without this option, @code{flex} peppers the generated
+scanner with #line directives so error messages in
+the actions will be correctly located with respect
+to either the original @code{flex} input file (if the
+errors are due to code in the input file), or
+@file{lex.yy.c} (if the errors are @code{flex's} fault -- you
+should report these sorts of errors to the email
+address given below).
+
+@item -T
+makes @code{flex} run in @code{trace} mode.  It will generate a
+lot of messages to @code{stderr} concerning the form of
+the input and the resultant non-deterministic and
+deterministic finite automata.  This option is
+mostly for use in maintaining @code{flex}.
+
+@item -V
+prints the version number to @code{stdout} and exits.
+@samp{--version} is a synonym for @samp{-V}.
+
+@item -7
+instructs @code{flex} to generate a 7-bit scanner, i.e.,
+one which can only recognized 7-bit characters in
+its input.  The advantage of using @samp{-7} is that the
+scanner's tables can be up to half the size of
+those generated using the @samp{-8} option (see below).
+The disadvantage is that such scanners often hang
+or crash if their input contains an 8-bit
+character.
+
+Note, however, that unless you generate your
+scanner using the @samp{-Cf} or @samp{-CF} table compression options,
+use of @samp{-7} will save only a small amount of table
+space, and make your scanner considerably less
+portable.  @code{Flex's} default behavior is to generate
+an 8-bit scanner unless you use the @samp{-Cf} or @samp{-CF}, in
+which case @code{flex} defaults to generating 7-bit
+scanners unless your site was always configured to
+generate 8-bit scanners (as will often be the case
+with non-USA sites).  You can tell whether flex
+generated a 7-bit or an 8-bit scanner by inspecting
+the flag summary in the @samp{-v} output as described
+above.
+
+Note that if you use @samp{-Cfe} or @samp{-CFe} (those table
+compression options, but also using equivalence
+classes as discussed see below), flex still
+defaults to generating an 8-bit scanner, since
+usually with these compression options full 8-bit
+tables are not much more expensive than 7-bit
+tables.
+
+@item -8
+instructs @code{flex} to generate an 8-bit scanner, i.e.,
+one which can recognize 8-bit characters.  This
+flag is only needed for scanners generated using
+@samp{-Cf} or @samp{-CF}, as otherwise flex defaults to
+generating an 8-bit scanner anyway.
+
+See the discussion of @samp{-7} above for flex's default
+behavior and the tradeoffs between 7-bit and 8-bit
+scanners.
+
+@item -+
+specifies that you want flex to generate a C++
+scanner class.  See the section on Generating C++
+Scanners below for details.
+
+@item -C[aefFmr]
+controls the degree of table compression and, more
+generally, trade-offs between small scanners and
+fast scanners.
+
+@samp{-Ca} ("align") instructs flex to trade off larger
+tables in the generated scanner for faster
+performance because the elements of the tables are better
+aligned for memory access and computation.  On some
+RISC architectures, fetching and manipulating
+long-words is more efficient than with smaller-sized
+units such as shortwords.  This option can double
+the size of the tables used by your scanner.
+
+@samp{-Ce} directs @code{flex} to construct @dfn{equivalence classes},
+i.e., sets of characters which have identical
+lexical properties (for example, if the only appearance
+of digits in the @code{flex} input is in the character
+class "[0-9]" then the digits '0', '1', @dots{}, '9'
+will all be put in the same equivalence class).
+Equivalence classes usually give dramatic
+reductions in the final table/object file sizes
+(typically a factor of 2-5) and are pretty cheap
+performance-wise (one array look-up per character
+scanned).
+
+@samp{-Cf} specifies that the @emph{full} scanner tables should
+be generated - @code{flex} should not compress the tables
+by taking advantages of similar transition
+functions for different states.
+
+@samp{-CF} specifies that the alternate fast scanner
+representation (described above under the @samp{-F} flag)
+should be used.  This option cannot be used with
+@samp{-+}.
+
+@samp{-Cm} directs @code{flex} to construct @dfn{meta-equivalence
+classes}, which are sets of equivalence classes (or
+characters, if equivalence classes are not being
+used) that are commonly used together.
+Meta-equivalence classes are often a big win when using
+compressed tables, but they have a moderate
+performance impact (one or two "if" tests and one array
+look-up per character scanned).
+
+@samp{-Cr} causes the generated scanner to @emph{bypass} use of
+the standard I/O library (stdio) for input.
+Instead of calling @samp{fread()} or @samp{getc()}, the scanner
+will use the @samp{read()} system call, resulting in a
+performance gain which varies from system to
+system, but in general is probably negligible unless
+you are also using @samp{-Cf} or @samp{-CF}.  Using @samp{-Cr} can cause
+strange behavior if, for example, you read from
+@code{yyin} using stdio prior to calling the scanner
+(because the scanner will miss whatever text your
+previous reads left in the stdio input buffer).
+
+@samp{-Cr} has no effect if you define @code{YY_INPUT} (see The
+Generated Scanner above).
+
+A lone @samp{-C} specifies that the scanner tables should
+be compressed but neither equivalence classes nor
+meta-equivalence classes should be used.
+
+The options @samp{-Cf} or @samp{-CF} and @samp{-Cm} do not make sense
+together - there is no opportunity for
+meta-equivalence classes if the table is not being
+compressed.  Otherwise the options may be freely
+mixed, and are cumulative.
+
+The default setting is @samp{-Cem}, which specifies that
+@code{flex} should generate equivalence classes and
+meta-equivalence classes.  This setting provides the
+highest degree of table compression.  You can trade
+off faster-executing scanners at the cost of larger
+tables with the following generally being true:
+
+@example
+slowest & smallest
+      -Cem
+      -Cm
+      -Ce
+      -C
+      -C@{f,F@}e
+      -C@{f,F@}
+      -C@{f,F@}a
+fastest & largest
+@end example
+
+Note that scanners with the smallest tables are
+usually generated and compiled the quickest, so
+during development you will usually want to use the
+default, maximal compression.
+
+@samp{-Cfe} is often a good compromise between speed and
+size for production scanners.
+
+@item -ooutput
+directs flex to write the scanner to the file @samp{out-}
+@code{put} instead of @file{lex.yy.c}.  If you combine @samp{-o} with
+the @samp{-t} option, then the scanner is written to
+@code{stdout} but its @samp{#line} directives (see the @samp{-L} option
+above) refer to the file @code{output}.
+
+@item -Pprefix
+changes the default @samp{yy} prefix used by @code{flex} for all
+globally-visible variable and function names to
+instead be @var{prefix}.  For example, @samp{-Pfoo} changes the
+name of @code{yytext} to @file{footext}.  It also changes the
+name of the default output file from @file{lex.yy.c} to
+@file{lex.foo.c}.  Here are all of the names affected:
+
+@example
+yy_create_buffer
+yy_delete_buffer
+yy_flex_debug
+yy_init_buffer
+yy_flush_buffer
+yy_load_buffer_state
+yy_switch_to_buffer
+yyin
+yyleng
+yylex
+yylineno
+yyout
+yyrestart
+yytext
+yywrap
+@end example
+
+(If you are using a C++ scanner, then only @code{yywrap}
+and @code{yyFlexLexer} are affected.) Within your scanner
+itself, you can still refer to the global variables
+and functions using either version of their name;
+but externally, they have the modified name.
+
+This option lets you easily link together multiple
+@code{flex} programs into the same executable.  Note,
+though, that using this option also renames
+@samp{yywrap()}, so you now @emph{must} either provide your own
+(appropriately-named) version of the routine for
+your scanner, or use @samp{%option noyywrap}, as linking
+with @samp{-lfl} no longer provides one for you by
+default.
+
+@item -Sskeleton_file
+overrides the default skeleton file from which @code{flex}
+constructs its scanners.  You'll never need this
+option unless you are doing @code{flex} maintenance or
+development.
+@end table
+
+@code{flex} also provides a mechanism for controlling options
+within the scanner specification itself, rather than from
+the flex command-line.  This is done by including @samp{%option}
+directives in the first section of the scanner
+specification.  You can specify multiple options with a single
+@samp{%option} directive, and multiple directives in the first
+section of your flex input file.  Most options are given
+simply as names, optionally preceded by the word "no"
+(with no intervening whitespace) to negate their meaning.
+A number are equivalent to flex flags or their negation:
+
+@example
+7bit            -7 option
+8bit            -8 option
+align           -Ca option
+backup          -b option
+batch           -B option
+c++             -+ option
+
+caseful or
+case-sensitive  opposite of -i (default)
+
+case-insensitive or
+caseless        -i option
+
+debug           -d option
+default         opposite of -s option
+ecs             -Ce option
+fast            -F option
+full            -f option
+interactive     -I option
+lex-compat      -l option
+meta-ecs        -Cm option
+perf-report     -p option
+read            -Cr option
+stdout          -t option
+verbose         -v option
+warn            opposite of -w option
+                (use "%option nowarn" for -w)
+
+array           equivalent to "%array"
+pointer         equivalent to "%pointer" (default)
+@end example
+
+Some @samp{%option's} provide features otherwise not available:
+
+@table @samp
+@item always-interactive
+instructs flex to generate a scanner which always
+considers its input "interactive".  Normally, on
+each new input file the scanner calls @samp{isatty()} in
+an attempt to determine whether the scanner's input
+source is interactive and thus should be read a
+character at a time.  When this option is used,
+however, then no such call is made.
+
+@item main
+directs flex to provide a default @samp{main()} program
+for the scanner, which simply calls @samp{yylex()}.  This
+option implies @code{noyywrap} (see below).
+
+@item never-interactive
+instructs flex to generate a scanner which never
+considers its input "interactive" (again, no call
+made to @samp{isatty())}.  This is the opposite of @samp{always-}
+@emph{interactive}.
+
+@item stack
+enables the use of start condition stacks (see
+Start Conditions above).
+
+@item stdinit
+if unset (i.e., @samp{%option nostdinit}) initializes @code{yyin}
+and @code{yyout} to nil @code{FILE} pointers, instead of @code{stdin}
+and @code{stdout}.
+
+@item yylineno
+directs @code{flex} to generate a scanner that maintains the number
+of the current line read from its input in the global variable
+@code{yylineno}.  This option is implied by @samp{%option lex-compat}.
+
+@item yywrap
+if unset (i.e., @samp{%option noyywrap}), makes the
+scanner not call @samp{yywrap()} upon an end-of-file, but
+simply assume that there are no more files to scan
+(until the user points @code{yyin} at a new file and calls
+@samp{yylex()} again).
+@end table
+
+@code{flex} scans your rule actions to determine whether you use
+the @code{REJECT} or @samp{yymore()} features.  The @code{reject} and @code{yymore}
+options are available to override its decision as to
+whether you use the options, either by setting them (e.g.,
+@samp{%option reject}) to indicate the feature is indeed used, or
+unsetting them to indicate it actually is not used (e.g.,
+@samp{%option noyymore}).
+
+Three options take string-delimited values, offset with '=':
+
+@example
+%option outfile="ABC"
+@end example
+
+@noindent
+is equivalent to @samp{-oABC}, and
+
+@example
+%option prefix="XYZ"
+@end example
+
+@noindent
+is equivalent to @samp{-PXYZ}.
+
+Finally,
+
+@example
+%option yyclass="foo"
+@end example
+
+@noindent
+only applies when generating a C++ scanner (@samp{-+} option).  It
+informs @code{flex} that you have derived @samp{foo} as a subclass of
+@code{yyFlexLexer} so @code{flex} will place your actions in the member
+function @samp{foo::yylex()} instead of @samp{yyFlexLexer::yylex()}.
+It also generates a @samp{yyFlexLexer::yylex()} member function that
+emits a run-time error (by invoking @samp{yyFlexLexer::LexerError()})
+if called.  See Generating C++ Scanners, below, for additional
+information.
+
+A number of options are available for lint purists who
+want to suppress the appearance of unneeded routines in
+the generated scanner.  Each of the following, if unset,
+results in the corresponding routine not appearing in the
+generated scanner:
+
+@example
+input, unput
+yy_push_state, yy_pop_state, yy_top_state
+yy_scan_buffer, yy_scan_bytes, yy_scan_string
+@end example
+
+@noindent
+(though @samp{yy_push_state()} and friends won't appear anyway
+unless you use @samp{%option stack}).
+
+@node Performance, C++, Options, Top
+@section Performance considerations
+
+The main design goal of @code{flex} is that it generate
+high-performance scanners.  It has been optimized for dealing
+well with large sets of rules.  Aside from the effects on
+scanner speed of the table compression @samp{-C} options outlined
+above, there are a number of options/actions which degrade
+performance.  These are, from most expensive to least:
+
+@example
+REJECT
+%option yylineno
+arbitrary trailing context
+
+pattern sets that require backing up
+%array
+%option interactive
+%option always-interactive
+
+'^' beginning-of-line operator
+yymore()
+@end example
+
+with the first three all being quite expensive and the
+last two being quite cheap.  Note also that @samp{unput()} is
+implemented as a routine call that potentially does quite
+a bit of work, while @samp{yyless()} is a quite-cheap macro; so
+if just putting back some excess text you scanned, use
+@samp{yyless()}.
+
+@code{REJECT} should be avoided at all costs when performance is
+important.  It is a particularly expensive option.
+
+Getting rid of backing up is messy and often may be an
+enormous amount of work for a complicated scanner.  In
+principal, one begins by using the @samp{-b} flag to generate a
+@file{lex.backup} file.  For example, on the input
+
+@example
+%%
+foo        return TOK_KEYWORD;
+foobar     return TOK_KEYWORD;
+@end example
+
+@noindent
+the file looks like:
+
+@example
+State #6 is non-accepting -
+ associated rule line numbers:
+       2       3
+ out-transitions: [ o ]
+ jam-transitions: EOF [ \001-n  p-\177 ]
+
+State #8 is non-accepting -
+ associated rule line numbers:
+       3
+ out-transitions: [ a ]
+ jam-transitions: EOF [ \001-`  b-\177 ]
+
+State #9 is non-accepting -
+ associated rule line numbers:
+       3
+ out-transitions: [ r ]
+ jam-transitions: EOF [ \001-q  s-\177 ]
+
+Compressed tables always back up.
+@end example
+
+The first few lines tell us that there's a scanner state
+in which it can make a transition on an 'o' but not on any
+other character, and that in that state the currently
+scanned text does not match any rule.  The state occurs
+when trying to match the rules found at lines 2 and 3 in
+the input file.  If the scanner is in that state and then
+reads something other than an 'o', it will have to back up
+to find a rule which is matched.  With a bit of
+head-scratching one can see that this must be the state it's in
+when it has seen "fo".  When this has happened, if
+anything other than another 'o' is seen, the scanner will
+have to back up to simply match the 'f' (by the default
+rule).
+
+The comment regarding State #8 indicates there's a problem
+when "foob" has been scanned.  Indeed, on any character
+other than an 'a', the scanner will have to back up to
+accept "foo".  Similarly, the comment for State #9
+concerns when "fooba" has been scanned and an 'r' does not
+follow.
+
+The final comment reminds us that there's no point going
+to all the trouble of removing backing up from the rules
+unless we're using @samp{-Cf} or @samp{-CF}, since there's no
+performance gain doing so with compressed scanners.
+
+The way to remove the backing up is to add "error" rules:
+
+@example
+%%
+foo         return TOK_KEYWORD;
+foobar      return TOK_KEYWORD;
+
+fooba       |
+foob        |
+fo          @{
+            /* false alarm, not really a keyword */
+            return TOK_ID;
+            @}
+@end example
+
+Eliminating backing up among a list of keywords can also
+be done using a "catch-all" rule:
+
+@example
+%%
+foo         return TOK_KEYWORD;
+foobar      return TOK_KEYWORD;
+
+[a-z]+      return TOK_ID;
+@end example
+
+This is usually the best solution when appropriate.
+
+Backing up messages tend to cascade.  With a complicated
+set of rules it's not uncommon to get hundreds of
+messages.  If one can decipher them, though, it often only
+takes a dozen or so rules to eliminate the backing up
+(though it's easy to make a mistake and have an error rule
+accidentally match a valid token.  A possible future @code{flex}
+feature will be to automatically add rules to eliminate
+backing up).
+
+It's important to keep in mind that you gain the benefits
+of eliminating backing up only if you eliminate @emph{every}
+instance of backing up.  Leaving just one means you gain
+nothing.
+
+@var{Variable} trailing context (where both the leading and
+trailing parts do not have a fixed length) entails almost
+the same performance loss as @code{REJECT} (i.e., substantial).
+So when possible a rule like:
+
+@example
+%%
+mouse|rat/(cat|dog)   run();
+@end example
+
+@noindent
+is better written:
+
+@example
+%%
+mouse/cat|dog         run();
+rat/cat|dog           run();
+@end example
+
+@noindent
+or as
+
+@example
+%%
+mouse|rat/cat         run();
+mouse|rat/dog         run();
+@end example
+
+Note that here the special '|' action does @emph{not} provide any
+savings, and can even make things worse (see Deficiencies
+/ Bugs below).
+
+Another area where the user can increase a scanner's
+performance (and one that's easier to implement) arises from
+the fact that the longer the tokens matched, the faster
+the scanner will run.  This is because with long tokens
+the processing of most input characters takes place in the
+(short) inner scanning loop, and does not often have to go
+through the additional work of setting up the scanning
+environment (e.g., @code{yytext}) for the action.  Recall the
+scanner for C comments:
+
+@example
+%x comment
+%%
+        int line_num = 1;
+
+"/*"         BEGIN(comment);
+
+<comment>[^*\n]*
+<comment>"*"+[^*/\n]*
+<comment>\n             ++line_num;
+<comment>"*"+"/"        BEGIN(INITIAL);
+@end example
+
+This could be sped up by writing it as:
+
+@example
+%x comment
+%%
+        int line_num = 1;
+
+"/*"         BEGIN(comment);
+
+<comment>[^*\n]*
+<comment>[^*\n]*\n      ++line_num;
+<comment>"*"+[^*/\n]*
+<comment>"*"+[^*/\n]*\n ++line_num;
+<comment>"*"+"/"        BEGIN(INITIAL);
+@end example
+
+Now instead of each newline requiring the processing of
+another action, recognizing the newlines is "distributed"
+over the other rules to keep the matched text as long as
+possible.  Note that @emph{adding} rules does @emph{not} slow down the
+scanner!  The speed of the scanner is independent of the
+number of rules or (modulo the considerations given at the
+beginning of this section) how complicated the rules are
+with regard to operators such as '*' and '|'.
+
+A final example in speeding up a scanner: suppose you want
+to scan through a file containing identifiers and
+keywords, one per line and with no other extraneous
+characters, and recognize all the keywords.  A natural first
+approach is:
+
+@example
+%%
+asm      |
+auto     |
+break    |
+@dots{} etc @dots{}
+volatile |
+while    /* it's a keyword */
+
+.|\n     /* it's not a keyword */
+@end example
+
+To eliminate the back-tracking, introduce a catch-all
+rule:
+
+@example
+%%
+asm      |
+auto     |
+break    |
+... etc ...
+volatile |
+while    /* it's a keyword */
+
+[a-z]+   |
+.|\n     /* it's not a keyword */
+@end example
+
+Now, if it's guaranteed that there's exactly one word per
+line, then we can reduce the total number of matches by a
+half by merging in the recognition of newlines with that
+of the other tokens:
+
+@example
+%%
+asm\n    |
+auto\n   |
+break\n  |
+@dots{} etc @dots{}
+volatile\n |
+while\n  /* it's a keyword */
+
+[a-z]+\n |
+.|\n     /* it's not a keyword */
+@end example
+
+One has to be careful here, as we have now reintroduced
+backing up into the scanner.  In particular, while @emph{we} know
+that there will never be any characters in the input
+stream other than letters or newlines, @code{flex} can't figure
+this out, and it will plan for possibly needing to back up
+when it has scanned a token like "auto" and then the next
+character is something other than a newline or a letter.
+Previously it would then just match the "auto" rule and be
+done, but now it has no "auto" rule, only a "auto\n" rule.
+To eliminate the possibility of backing up, we could
+either duplicate all rules but without final newlines, or,
+since we never expect to encounter such an input and
+therefore don't how it's classified, we can introduce one
+more catch-all rule, this one which doesn't include a
+newline:
+
+@example
+%%
+asm\n    |
+auto\n   |
+break\n  |
+@dots{} etc @dots{}
+volatile\n |
+while\n  /* it's a keyword */
+
+[a-z]+\n |
+[a-z]+   |
+.|\n     /* it's not a keyword */
+@end example
+
+Compiled with @samp{-Cf}, this is about as fast as one can get a
+@code{flex} scanner to go for this particular problem.
+
+A final note: @code{flex} is slow when matching NUL's,
+particularly when a token contains multiple NUL's.  It's best to
+write rules which match @emph{short} amounts of text if it's
+anticipated that the text will often include NUL's.
+
+Another final note regarding performance: as mentioned
+above in the section How the Input is Matched, dynamically
+resizing @code{yytext} to accommodate huge tokens is a slow
+process because it presently requires that the (huge) token
+be rescanned from the beginning.  Thus if performance is
+vital, you should attempt to match "large" quantities of
+text but not "huge" quantities, where the cutoff between
+the two is at about 8K characters/token.
+
+@node C++, Incompatibilities, Performance, Top
+@section Generating C++ scanners
+
+@code{flex} provides two different ways to generate scanners for
+use with C++.  The first way is to simply compile a
+scanner generated by @code{flex} using a C++ compiler instead of a C
+compiler.  You should not encounter any compilations
+errors (please report any you find to the email address
+given in the Author section below).  You can then use C++
+code in your rule actions instead of C code.  Note that
+the default input source for your scanner remains @code{yyin},
+and default echoing is still done to @code{yyout}.  Both of these
+remain @samp{FILE *} variables and not C++ @code{streams}.
+
+You can also use @code{flex} to generate a C++ scanner class, using
+the @samp{-+} option, (or, equivalently, @samp{%option c++}), which
+is automatically specified if the name of the flex executable ends
+in a @samp{+}, such as @code{flex++}.  When using this option, flex
+defaults to generating the scanner to the file @file{lex.yy.cc} instead
+of @file{lex.yy.c}.  The generated scanner includes the header file
+@file{FlexLexer.h}, which defines the interface to two C++ classes.
+
+The first class, @code{FlexLexer}, provides an abstract base
+class defining the general scanner class interface.  It
+provides the following member functions:
+
+@table @samp
+@item const char* YYText()
+returns the text of the most recently matched
+token, the equivalent of @code{yytext}.
+
+@item int YYLeng()
+returns the length of the most recently matched
+token, the equivalent of @code{yyleng}.
+
+@item int lineno() const
+returns the current input line number (see @samp{%option yylineno}),
+or 1 if @samp{%option yylineno} was not used.
+
+@item void set_debug( int flag )
+sets the debugging flag for the scanner, equivalent to assigning to
+@code{yy_flex_debug} (see the Options section above).  Note that you
+must build the scanner using @samp{%option debug} to include debugging
+information in it.
+
+@item int debug() const
+returns the current setting of the debugging flag.
+@end table
+
+Also provided are member functions equivalent to
+@samp{yy_switch_to_buffer(), yy_create_buffer()} (though the
+first argument is an @samp{istream*} object pointer and not a
+@samp{FILE*}, @samp{yy_flush_buffer()}, @samp{yy_delete_buffer()},
+and @samp{yyrestart()} (again, the first argument is a @samp{istream*}
+object pointer).
+
+The second class defined in @file{FlexLexer.h} is @code{yyFlexLexer},
+which is derived from @code{FlexLexer}.  It defines the following
+additional member functions:
+
+@table @samp
+@item yyFlexLexer( istream* arg_yyin = 0, ostream* arg_yyout = 0 )
+constructs a @code{yyFlexLexer} object using the given
+streams for input and output.  If not specified,
+the streams default to @code{cin} and @code{cout}, respectively.
+
+@item virtual int yylex()
+performs the same role is @samp{yylex()} does for ordinary
+flex scanners: it scans the input stream, consuming
+tokens, until a rule's action returns a value.  If you derive a subclass
+@var{S}
+from @code{yyFlexLexer}
+and want to access the member functions and variables of
+@var{S}
+inside @samp{yylex()},
+then you need to use @samp{%option yyclass="@var{S}"}
+to inform @code{flex}
+that you will be using that subclass instead of @code{yyFlexLexer}.
+In this case, rather than generating @samp{yyFlexLexer::yylex()},
+@code{flex} generates @samp{@var{S}::yylex()}
+(and also generates a dummy @samp{yyFlexLexer::yylex()}
+that calls @samp{yyFlexLexer::LexerError()}
+if called).
+
+@item virtual void switch_streams(istream* new_in = 0, ostream* new_out = 0)
+reassigns @code{yyin} to @code{new_in}
+(if non-nil)
+and @code{yyout} to @code{new_out}
+(ditto), deleting the previous input buffer if @code{yyin}
+is reassigned.
+
+@item int yylex( istream* new_in = 0, ostream* new_out = 0 )
+first switches the input streams via @samp{switch_streams( new_in, new_out )}
+and then returns the value of @samp{yylex()}.
+@end table
+
+In addition, @code{yyFlexLexer} defines the following protected
+virtual functions which you can redefine in derived
+classes to tailor the scanner:
+
+@table @samp
+@item virtual int LexerInput( char* buf, int max_size )
+reads up to @samp{max_size} characters into @var{buf} and
+returns the number of characters read.  To indicate
+end-of-input, return 0 characters.  Note that
+"interactive" scanners (see the @samp{-B} and @samp{-I} flags)
+define the macro @code{YY_INTERACTIVE}.  If you redefine
+@code{LexerInput()} and need to take different actions
+depending on whether or not the scanner might be
+scanning an interactive input source, you can test
+for the presence of this name via @samp{#ifdef}.
+
+@item virtual void LexerOutput( const char* buf, int size )
+writes out @var{size} characters from the buffer @var{buf},
+which, while NUL-terminated, may also contain
+"internal" NUL's if the scanner's rules can match
+text with NUL's in them.
+
+@item virtual void LexerError( const char* msg )
+reports a fatal error message.  The default version
+of this function writes the message to the stream
+@code{cerr} and exits.
+@end table
+
+Note that a @code{yyFlexLexer} object contains its @emph{entire}
+scanning state.  Thus you can use such objects to create
+reentrant scanners.  You can instantiate multiple instances of
+the same @code{yyFlexLexer} class, and you can also combine
+multiple C++ scanner classes together in the same program
+using the @samp{-P} option discussed above.
+Finally, note that the @samp{%array} feature is not available to
+C++ scanner classes; you must use @samp{%pointer} (the default).
+
+Here is an example of a simple C++ scanner:
+
+@example
+    // An example of using the flex C++ scanner class.
+
+%@{
+int mylineno = 0;
+%@}
+
+string  \"[^\n"]+\"
+
+ws      [ \t]+
+
+alpha   [A-Za-z]
+dig     [0-9]
+name    (@{alpha@}|@{dig@}|\$)(@{alpha@}|@{dig@}|[_.\-/$])*
+num1    [-+]?@{dig@}+\.?([eE][-+]?@{dig@}+)?
+num2    [-+]?@{dig@}*\.@{dig@}+([eE][-+]?@{dig@}+)?
+number  @{num1@}|@{num2@}
+
+%%
+
+@{ws@}    /* skip blanks and tabs */
+
+"/*"    @{
+        int c;
+
+        while((c = yyinput()) != 0)
+            @{
+            if(c == '\n')
+                ++mylineno;
+
+            else if(c == '*')
+                @{
+                if((c = yyinput()) == '/')
+                    break;
+                else
+                    unput(c);
+                @}
+            @}
+        @}
+
+@{number@}  cout << "number " << YYText() << '\n';
+
+\n        mylineno++;
+
+@{name@}    cout << "name " << YYText() << '\n';
+
+@{string@}  cout << "string " << YYText() << '\n';
+
+%%
+
+Version 2.5               December 1994                        44
+
+int main( int /* argc */, char** /* argv */ )
+    @{
+    FlexLexer* lexer = new yyFlexLexer;
+    while(lexer->yylex() != 0)
+        ;
+    return 0;
+    @}
+@end example
+
+If you want to create multiple (different) lexer classes,
+you use the @samp{-P} flag (or the @samp{prefix=} option) to rename each
+@code{yyFlexLexer} to some other @code{xxFlexLexer}.  You then can
+include @samp{<FlexLexer.h>} in your other sources once per lexer
+class, first renaming @code{yyFlexLexer} as follows:
+
+@example
+#undef yyFlexLexer
+#define yyFlexLexer xxFlexLexer
+#include <FlexLexer.h>
+
+#undef yyFlexLexer
+#define yyFlexLexer zzFlexLexer
+#include <FlexLexer.h>
+@end example
+
+if, for example, you used @samp{%option prefix="xx"} for one of
+your scanners and @samp{%option prefix="zz"} for the other.
+
+IMPORTANT: the present form of the scanning class is
+@emph{experimental} and may change considerably between major
+releases.
+
+@node Incompatibilities, Diagnostics, C++, Top
+@section Incompatibilities with @code{lex} and POSIX
+
+@code{flex} is a rewrite of the AT&T Unix @code{lex} tool (the two
+implementations do not share any code, though), with some
+extensions and incompatibilities, both of which are of
+concern to those who wish to write scanners acceptable to
+either implementation.  Flex is fully compliant with the
+POSIX @code{lex} specification, except that when using @samp{%pointer}
+(the default), a call to @samp{unput()} destroys the contents of
+@code{yytext}, which is counter to the POSIX specification.
+
+In this section we discuss all of the known areas of
+incompatibility between flex, AT&T lex, and the POSIX
+specification.
+
+@code{flex's} @samp{-l} option turns on maximum compatibility with the
+original AT&T @code{lex} implementation, at the cost of a major
+loss in the generated scanner's performance.  We note
+below which incompatibilities can be overcome using the @samp{-l}
+option.
+
+@code{flex} is fully compatible with @code{lex} with the following
+exceptions:
+
+@itemize -
+@item
+The undocumented @code{lex} scanner internal variable @code{yylineno}
+is not supported unless @samp{-l} or @samp{%option yylineno} is used.
+@code{yylineno} should be maintained on a per-buffer basis, rather
+than a per-scanner (single global variable) basis.  @code{yylineno} is
+not part of the POSIX specification.
+
+@item
+The @samp{input()} routine is not redefinable, though it
+may be called to read characters following whatever
+has been matched by a rule.  If @samp{input()} encounters
+an end-of-file the normal @samp{yywrap()} processing is
+done.  A ``real'' end-of-file is returned by
+@samp{input()} as @code{EOF}.
+
+Input is instead controlled by defining the
+@code{YY_INPUT} macro.
+
+The @code{flex} restriction that @samp{input()} cannot be
+redefined is in accordance with the POSIX
+specification, which simply does not specify any way of
+controlling the scanner's input other than by making
+an initial assignment to @code{yyin}.
+
+@item
+The @samp{unput()} routine is not redefinable.  This
+restriction is in accordance with POSIX.
+
+@item
+@code{flex} scanners are not as reentrant as @code{lex} scanners.
+In particular, if you have an interactive scanner
+and an interrupt handler which long-jumps out of
+the scanner, and the scanner is subsequently called
+again, you may get the following message:
+
+@example
+fatal flex scanner internal error--end of buffer missed
+@end example
+
+To reenter the scanner, first use
+
+@example
+yyrestart( yyin );
+@end example
+
+Note that this call will throw away any buffered
+input; usually this isn't a problem with an
+interactive scanner.
+
+Also note that flex C++ scanner classes @emph{are}
+reentrant, so if using C++ is an option for you, you
+should use them instead.  See "Generating C++
+Scanners" above for details.
+
+@item
+@samp{output()} is not supported.  Output from the @samp{ECHO}
+macro is done to the file-pointer @code{yyout} (default
+@code{stdout}).
+
+@samp{output()} is not part of the POSIX specification.
+
+@item
+@code{lex} does not support exclusive start conditions
+(%x), though they are in the POSIX specification.
+
+@item
+When definitions are expanded, @code{flex} encloses them
+in parentheses.  With lex, the following:
+
+@example
+NAME    [A-Z][A-Z0-9]*
+%%
+foo@{NAME@}?      printf( "Found it\n" );
+%%
+@end example
+
+will not match the string "foo" because when the
+macro is expanded the rule is equivalent to
+"foo[A-Z][A-Z0-9]*?" and the precedence is such that the
+'?' is associated with "[A-Z0-9]*".  With @code{flex}, the
+rule will be expanded to "foo([A-Z][A-Z0-9]*)?" and
+so the string "foo" will match.
+
+Note that if the definition begins with @samp{^} or ends
+with @samp{$} then it is @emph{not} expanded with parentheses, to
+allow these operators to appear in definitions
+without losing their special meanings.  But the
+@samp{<s>, /}, and @samp{<<EOF>>} operators cannot be used in a
+@code{flex} definition.
+
+Using @samp{-l} results in the @code{lex} behavior of no
+parentheses around the definition.
+
+The POSIX specification is that the definition be enclosed in
+parentheses.
+
+@item
+Some implementations of @code{lex} allow a rule's action to begin on
+a separate line, if the rule's pattern has trailing whitespace:
+
+@example
+%%
+foo|bar<space here>
+  @{ foobar_action(); @}
+@end example
+
+@code{flex} does not support this feature.
+
+@item
+The @code{lex} @samp{%r} (generate a Ratfor scanner) option is
+not supported.  It is not part of the POSIX
+specification.
+
+@item
+After a call to @samp{unput()}, @code{yytext} is undefined until
+the next token is matched, unless the scanner was
+built using @samp{%array}.  This is not the case with @code{lex}
+or the POSIX specification.  The @samp{-l} option does
+away with this incompatibility.
+
+@item
+The precedence of the @samp{@{@}} (numeric range) operator
+is different.  @code{lex} interprets "abc@{1,3@}" as "match
+one, two, or three occurrences of 'abc'", whereas
+@code{flex} interprets it as "match 'ab' followed by one,
+two, or three occurrences of 'c'".  The latter is
+in agreement with the POSIX specification.
+
+@item
+The precedence of the @samp{^} operator is different.  @code{lex}
+interprets "^foo|bar" as "match either 'foo' at the
+beginning of a line, or 'bar' anywhere", whereas
+@code{flex} interprets it as "match either 'foo' or 'bar'
+if they come at the beginning of a line".  The
+latter is in agreement with the POSIX specification.
+
+@item
+The special table-size declarations such as @samp{%a}
+supported by @code{lex} are not required by @code{flex} scanners;
+@code{flex} ignores them.
+
+@item
+The name FLEX_SCANNER is #define'd so scanners may
+be written for use with either @code{flex} or @code{lex}.
+Scanners also include @code{YY_FLEX_MAJOR_VERSION} and
+@code{YY_FLEX_MINOR_VERSION} indicating which version of
+@code{flex} generated the scanner (for example, for the
+2.5 release, these defines would be 2 and 5
+respectively).
+@end itemize
+
+The following @code{flex} features are not included in @code{lex} or the
+POSIX specification:
+
+@example
+C++ scanners
+%option
+start condition scopes
+start condition stacks
+interactive/non-interactive scanners
+yy_scan_string() and friends
+yyterminate()
+yy_set_interactive()
+yy_set_bol()
+YY_AT_BOL()
+<<EOF>>
+<*>
+YY_DECL
+YY_START
+YY_USER_ACTION
+YY_USER_INIT
+#line directives
+%@{@}'s around actions
+multiple actions on a line
+@end example
+
+@noindent
+plus almost all of the flex flags.  The last feature in
+the list refers to the fact that with @code{flex} you can put
+multiple actions on the same line, separated with
+semicolons, while with @code{lex}, the following
+
+@example
+foo    handle_foo(); ++num_foos_seen;
+@end example
+
+@noindent
+is (rather surprisingly) truncated to
+
+@example
+foo    handle_foo();
+@end example
+
+@code{flex} does not truncate the action.  Actions that are not
+enclosed in braces are simply terminated at the end of the
+line.
+
+@node Diagnostics, Files, Incompatibilities, Top
+@section Diagnostics
+
+@table @samp
+@item warning, rule cannot be matched
+indicates that the given
+rule cannot be matched because it follows other rules that
+will always match the same text as it.  For example, in
+the following "foo" cannot be matched because it comes
+after an identifier "catch-all" rule:
+
+@example
+[a-z]+    got_identifier();
+foo       got_foo();
+@end example
+
+Using @code{REJECT} in a scanner suppresses this warning.
+
+@item warning, -s option given but default rule can be matched
+means that it is possible (perhaps only in a particular
+start condition) that the default rule (match any single
+character) is the only one that will match a particular
+input.  Since @samp{-s} was given, presumably this is not
+intended.
+
+@item reject_used_but_not_detected undefined
+@itemx yymore_used_but_not_detected undefined
+These errors can
+occur at compile time.  They indicate that the scanner
+uses @code{REJECT} or @samp{yymore()} but that @code{flex} failed to notice the
+fact, meaning that @code{flex} scanned the first two sections
+looking for occurrences of these actions and failed to
+find any, but somehow you snuck some in (via a #include
+file, for example).  Use @samp{%option reject} or @samp{%option yymore}
+to indicate to flex that you really do use these features.
+
+@item flex scanner jammed
+a scanner compiled with @samp{-s} has
+encountered an input string which wasn't matched by any of
+its rules.  This error can also occur due to internal
+problems.
+
+@item token too large, exceeds YYLMAX
+your scanner uses @samp{%array}
+and one of its rules matched a string longer than the @samp{YYL-}
+@code{MAX} constant (8K bytes by default).  You can increase the
+value by #define'ing @code{YYLMAX} in the definitions section of
+your @code{flex} input.
+
+@item scanner requires -8 flag to use the character '@var{x}'
+Your
+scanner specification includes recognizing the 8-bit
+character @var{x} and you did not specify the -8 flag, and your
+scanner defaulted to 7-bit because you used the @samp{-Cf} or @samp{-CF}
+table compression options.  See the discussion of the @samp{-7}
+flag for details.
+
+@item flex scanner push-back overflow
+you used @samp{unput()} to push
+back so much text that the scanner's buffer could not hold
+both the pushed-back text and the current token in @code{yytext}.
+Ideally the scanner should dynamically resize the buffer
+in this case, but at present it does not.
+
+@item input buffer overflow, can't enlarge buffer because scanner uses REJECT
+the scanner was working on matching an
+extremely large token and needed to expand the input
+buffer.  This doesn't work with scanners that use @code{REJECT}.
+
+@item fatal flex scanner internal error--end of buffer missed
+This can occur in an scanner which is reentered after a
+long-jump has jumped out (or over) the scanner's
+activation frame.  Before reentering the scanner, use:
+
+@example
+yyrestart( yyin );
+@end example
+
+@noindent
+or, as noted above, switch to using the C++ scanner class.
+
+@item too many start conditions in <> construct!
+you listed
+more start conditions in a <> construct than exist (so you
+must have listed at least one of them twice).
+@end table
+
+@node Files, Deficiencies, Diagnostics, Top
+@section Files
+
+@table @file
+@item -lfl
+library with which scanners must be linked.
+
+@item lex.yy.c
+generated scanner (called @file{lexyy.c} on some systems).
+
+@item lex.yy.cc
+generated C++ scanner class, when using @samp{-+}.
+
+@item <FlexLexer.h>
+header file defining the C++ scanner base class,
+@code{FlexLexer}, and its derived class, @code{yyFlexLexer}.
+
+@item flex.skl
+skeleton scanner.  This file is only used when
+building flex, not when flex executes.
+
+@item lex.backup
+backing-up information for @samp{-b} flag (called @file{lex.bck}
+on some systems).
+@end table
+
+@node Deficiencies, See also, Files, Top
+@section Deficiencies / Bugs
+
+Some trailing context patterns cannot be properly matched
+and generate warning messages ("dangerous trailing
+context").  These are patterns where the ending of the first
+part of the rule matches the beginning of the second part,
+such as "zx*/xy*", where the 'x*' matches the 'x' at the
+beginning of the trailing context.  (Note that the POSIX
+draft states that the text matched by such patterns is
+undefined.)
+
+For some trailing context rules, parts which are actually
+fixed-length are not recognized as such, leading to the
+abovementioned performance loss.  In particular, parts
+using '|' or @{n@} (such as "foo@{3@}") are always considered
+variable-length.
+
+Combining trailing context with the special '|' action can
+result in @emph{fixed} trailing context being turned into the
+more expensive @var{variable} trailing context.  For example, in
+the following:
+
+@example
+%%
+abc      |
+xyz/def
+@end example
+
+Use of @samp{unput()} invalidates yytext and yyleng, unless the
+@samp{%array} directive or the @samp{-l} option has been used.
+
+Pattern-matching of NUL's is substantially slower than
+matching other characters.
+
+Dynamic resizing of the input buffer is slow, as it
+entails rescanning all the text matched so far by the
+current (generally huge) token.
+
+Due to both buffering of input and read-ahead, you cannot
+intermix calls to <stdio.h> routines, such as, for
+example, @samp{getchar()}, with @code{flex} rules and expect it to work.
+Call @samp{input()} instead.
+
+The total table entries listed by the @samp{-v} flag excludes the
+number of table entries needed to determine what rule has
+been matched.  The number of entries is equal to the
+number of DFA states if the scanner does not use @code{REJECT}, and
+somewhat greater than the number of states if it does.
+
+@code{REJECT} cannot be used with the @samp{-f} or @samp{-F} options.
+
+The @code{flex} internal algorithms need documentation.
+
+@node See also, Author, Deficiencies, Top
+@section See also
+
+@code{lex}(1), @code{yacc}(1), @code{sed}(1), @code{awk}(1).
+
+John Levine, Tony Mason, and Doug Brown: Lex & Yacc;
+O'Reilly and Associates.  Be sure to get the 2nd edition.
+
+M. E. Lesk and E. Schmidt, LEX - Lexical Analyzer Generator.
+
+Alfred Aho, Ravi Sethi and Jeffrey Ullman: Compilers:
+Principles, Techniques and Tools; Addison-Wesley (1986).
+Describes the pattern-matching techniques used by @code{flex}
+(deterministic finite automata).
+
+@node Author,  , See also, Top
+@section Author
+
+Vern Paxson, with the help of many ideas and much inspiration from
+Van Jacobson.  Original version by Jef Poskanzer.  The fast table
+representation is a partial implementation of a design done by Van
+Jacobson.  The implementation was done by Kevin Gong and Vern Paxson.
+
+Thanks to the many @code{flex} beta-testers, feedbackers, and
+contributors, especially Francois Pinard, Casey Leedom, Stan
+Adermann, Terry Allen, David Barker-Plummer, John Basrai, Nelson
+H.F. Beebe, @samp{benson@@odi.com}, Karl Berry, Peter A. Bigot,
+Simon Blanchard, Keith Bostic, Frederic Brehm, Ian Brockbank, Kin
+Cho, Nick Christopher, Brian Clapper, J.T. Conklin, Jason Coughlin,
+Bill Cox, Nick Cropper, Dave Curtis, Scott David Daniels, Chris
+G. Demetriou, Theo Deraadt, Mike Donahue, Chuck Doucette, Tom Epperly,
+Leo Eskin, Chris Faylor, Chris Flatters, Jon Forrest, Joe Gayda, Kaveh
+R. Ghazi, Eric Goldman, Christopher M.  Gould, Ulrich Grepel, Peer
+Griebel, Jan Hajic, Charles Hemphill, NORO Hideo, Jarkko Hietaniemi,
+Scott Hofmann, Jeff Honig, Dana Hudes, Eric Hughes, John Interrante,
+Ceriel Jacobs, Michal Jaegermann, Sakari Jalovaara, Jeffrey R. Jones,
+Henry Juengst, Klaus Kaempf, Jonathan I. Kamens, Terrence O Kane,
+Amir Katz, @samp{ken@@ken.hilco.com}, Kevin B. Kenny, Steve Kirsch,
+Winfried Koenig, Marq Kole, Ronald Lamprecht, Greg Lee, Rohan Lenard,
+Craig Leres, John Levine, Steve Liddle, Mike Long, Mohamed el Lozy,
+Brian Madsen, Malte, Joe Marshall, Bengt Martensson, Chris Metcalf,
+Luke Mewburn, Jim Meyering, R.  Alexander Milowski, Erik Naggum,
+G.T. Nicol, Landon Noll, James Nordby, Marc Nozell, Richard Ohnemus,
+Karsten Pahnke, Sven Panne, Roland Pesch, Walter Pelissero, Gaumond
+Pierre, Esmond Pitt, Jef Poskanzer, Joe Rahmeh, Jarmo Raiha, Frederic
+Raimbault, Pat Rankin, Rick Richardson, Kevin Rodgers, Kai Uwe Rommel,
+Jim Roskind, Alberto Santini, Andreas Scherer, Darrell Schiebel, Raf
+Schietekat, Doug Schmidt, Philippe Schnoebelen, Andreas Schwab, Alex
+Siegel, Eckehard Stolz, Jan-Erik Strvmquist, Mike Stump, Paul Stuart,
+Dave Tallman, Ian Lance Taylor, Chris Thewalt, Richard M. Timoney,
+Jodi Tsai, Paul Tuinenga, Gary Weik, Frank Whaley, Gerhard Wilhelms,
+Kent Williams, Ken Yap, Ron Zellar, Nathan Zelle, David Zuhn, and
+those whose names have slipped my marginal mail-archiving skills but
+whose contributions are appreciated all the same.
+
+Thanks to Keith Bostic, Jon Forrest, Noah Friedman, John Gilmore,
+Craig Leres, John Levine, Bob Mulcahy, G.T.  Nicol, Francois Pinard,
+Rich Salz, and Richard Stallman for help with various distribution
+headaches.
+
+Thanks to Esmond Pitt and Earle Horton for 8-bit character support;
+to Benson Margulies and Fred Burke for C++ support; to Kent Williams
+and Tom Epperly for C++ class support; to Ove Ewerlid for support of
+NUL's; and to Eric Hughes for support of multiple buffers.
+
+This work was primarily done when I was with the Real Time Systems
+Group at the Lawrence Berkeley Laboratory in Berkeley, CA.  Many thanks
+to all there for the support I received.
+
+Send comments to @samp{vern@@ee.lbl.gov}.
+
+@c @node Index,  , Top, Top
+@c @unnumbered Index
+@c
+@c @printindex cp
+
+@contents
+@bye
+
+@c Local variables:
+@c texinfo-column-for-description: 32
+@c End:
