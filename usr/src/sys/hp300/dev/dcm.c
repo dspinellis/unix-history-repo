@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.17 89/10/01$
  *
- *	@(#)dcm.c	7.4 (Berkeley) %G%
+ *	@(#)dcm.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -488,10 +488,7 @@ dcmreadbuf(unit, dcm, tp)
 
 	dsp->rints++;
 #endif
-	/*
-	 * TS_WOPEN catches a race when switching to polling mode from dcmrint
-	 */
-	if ((tp->t_state & (TS_ISOPEN|TS_WOPEN)) == 0) {
+	if ((tp->t_state & TS_ISOPEN) == 0) {
 #ifdef KGDB
 		if (unit == UNIT(kgdb_dev) &&
 		    (head = pp->r_head & RX_MASK) != (pp->r_tail & RX_MASK) &&
@@ -860,8 +857,8 @@ again:
 	}
 #ifdef DEBUG
 	if (dcmdebug & DDB_INTR)
-		printf("dcmstart(%d): head %x tail %x outqcc %d ch %d\n",
-		       UNIT(tp->t_dev), head, tail, tp->t_outq.c_cc, tch);
+		printf("dcmstart(%d): head %x tail %x outqcc %d\n",
+		       UNIT(tp->t_dev), head, tail, tp->t_outq.c_cc);
 #endif
 out:
 #ifdef IOSTATS
