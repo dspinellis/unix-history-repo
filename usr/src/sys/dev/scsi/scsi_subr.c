@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi_subr.c	5.4 (Berkeley) %G%
+ *	@(#)scsi_subr.c	8.1 (Berkeley) %G%
  *
  * from: $Header: scsi_subr.c,v 1.10 93/02/01 19:21:58 torek Exp $ (LBL)
  */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1991 University of Utah.
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grfreg.h 1.6 92/01/31$
  *
- *	@(#)grfreg.h	7.1 (Berkeley) %G%
+ *	@(#)grfreg.h	8.1 (Berkeley) %G%
  */
 
 /* 300 bitmapped display hardware primary id */
