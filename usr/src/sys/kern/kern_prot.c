@@ -3,21 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.28 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.29 (Berkeley) %G%
  */
 
 /*
  * System calls related to processes and protection
  */
 
-#include "param.h"
-#include "systm.h"
-#include "dir.h"
-#include "ucred.h"
-#include "inode.h"
-#include "proc.h"
-#include "timeb.h"
-#include "times.h"
 
 struct args {
 	int	dummy;
