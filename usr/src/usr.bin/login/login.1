@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)login.1	4.1 (Berkeley) %G%
+.\"	@(#)login.1	5.1 (Berkeley) %G%
 .\"
-.TH LOGIN 1 4/1/81
+.TH LOGIN 1 "1 April 1983"
 .UC 4
 .SH NAME
 login \- sign on
@@ -53,7 +53,7 @@ a leading dash (\*(lq\-\*(rq) prepended.
 .PP
 Login also initializes the
 environment
-.IR environ (5)
+.IR environ (7)
 with information specifying home directory, command interpreter, terminal
 type (if available) and user name.
 .PP
@@ -87,7 +87,7 @@ and executed directly (without forking).
 .br
 /etc/securetty	lists ttys that root may log in on
 .SH "SEE ALSO"
-init(8), newgrp(1), getty(8), mail(1), passwd(1), passwd(5), environ(5),
+init(8), getty(8), mail(1), passwd(1), passwd(5), environ(7),
 shutdown(8)
 .SH DIAGNOSTICS
 \*(lqLogin incorrect,\*(rq
@@ -96,3 +96,11 @@ if the name or the password is bad.
 \*(lqNo Shell\*(rq, \*(lqcannot open password file\*(rq,
 \*(lqno directory\*(rq:
 consult a programming counselor.
+.SH BUGS
+An undocumented option,
+.B \-r
+is used by the remote login server,
+.IR rlogind (8C)
+to force
+.I login
+to enter into an initial connection protocol.
