@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -427,13 +427,13 @@ mkfs(pp, fsys, fi, fo)
 	if (sblock.fs_nrpos == 8 && sblock.fs_cpc <= 16) {
 		/* use old static table space */
 		sblock.fs_postbloff = (char *)(&sblock.fs_opostbl[0][0]) -
-		    (char *)(&sblock.fs_link);
+		    (char *)(&sblock.fs_firstfield);
 		sblock.fs_rotbloff = &sblock.fs_space[0] -
-		    (u_char *)(&sblock.fs_link);
+		    (u_char *)(&sblock.fs_firstfield);
 	} else {
 		/* use dynamic table space */
 		sblock.fs_postbloff = &sblock.fs_space[0] -
-		    (u_char *)(&sblock.fs_link);
+		    (u_char *)(&sblock.fs_firstfield);
 		sblock.fs_rotbloff = sblock.fs_postbloff + postblsize;
 		totalsbsize += postblsize;
 	}
@@ -646,7 +646,7 @@ initcg(cylno, utime)
 	acg.cg_ndblk = dmax - cbase;
 	if (sblock.fs_contigsumsize > 0)
 		acg.cg_nclusterblks = acg.cg_ndblk / sblock.fs_frag;
-	acg.cg_btotoff = &acg.cg_space[0] - (u_char *)(&acg.cg_link);
+	acg.cg_btotoff = &acg.cg_space[0] - (u_char *)(&acg.cg_firstfield);
 	acg.cg_boff = acg.cg_btotoff + sblock.fs_cpg * sizeof(long);
 	acg.cg_iusedoff = acg.cg_boff + 
 		sblock.fs_cpg * sblock.fs_nrpos * sizeof(short);
@@ -665,7 +665,7 @@ initcg(cylno, utime)
 		acg.cg_nextfreeoff = acg.cg_clusteroff + howmany
 		    (sblock.fs_cpg * sblock.fs_spc / NSPB(&sblock), NBBY);
 	}
-	if (acg.cg_nextfreeoff - (long)(&acg.cg_link) > sblock.fs_cgsize) {
+	if (acg.cg_nextfreeoff - (long)(&acg.cg_firstfield) > sblock.fs_cgsize) {
 		printf("Panic: cylinder group too big\n");
 		exit(37);
 	}
