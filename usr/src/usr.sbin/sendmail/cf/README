@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.26 (Berkeley) %G%
+		@(#)README	8.27 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -413,6 +413,20 @@ Complex sites will need more local configuration information, such as
 lists of UUCP hosts they speak with directly.  This can get a bit more
 tricky.  For an example of a "complex" site, see cf/ucbvax.mc.
 
+If your host is known by several different names, you need to augment
+the $=w class.  This is a list of names by which you are known, and
+anything sent to an address using a host name in this list will be
+treated as local mail.  You can do this in two ways: either create
+the file /etc/sendmail.cw containing a list of your aliases (one per
+line), and use ``FEATURE(use_cw_file)'' in the .mc file, or add the
+line:
+
+	Cw alias.host.name
+
+at the end of that file.  See the ``vangogh.mc'' file for an example.
+Be sure you use the fully-qualified name of the host, rather than a
+short name.
+
 The SITECONFIG macro allows you to indirectly reference site-dependent
 configuration information stored in the siteconfig subdirectory.  For
 example, the line
@@ -421,17 +435,25 @@ example, the line
 
 reads the file uucp.ucbvax for local connection information.  The
 second parameter is the local name (in this case just "ucbvax" since
-it is locally connected, and hence a UUCP hostname) and the name of
-the class in which to store the host information.  Another SITECONFIG
-line reads
+it is locally connected, and hence a UUCP hostname).  The third
+parameter is the name of both a macro to store the local name (in
+this case, $U) and the name of the class (e.g., $=U) in which to store
+the host information read from the file.  Another SITECONFIG line reads
 
 	SITECONFIG(uucp.ucbarpa, ucbarpa.Berkeley.EDU, W)
 
 This says that the file uucp.ucbarpa contains the list of UUCP sites
 connected to ucbarpa.Berkeley.EDU.  The $=W class will be used to
-store this list.  [The machine ucbarpa is gone now, but I've left
+store this list, and $W is defined to be ucbarpa.Berkeley.EDU, that
+is, the name of the relay to which the hosts listed in uucp.ucbarpa
+are connected.  [The machine ucbarpa is gone now, but I've left
 this out-of-date configuration file around to demonstrate how you
 might do this.]
+
+Note that the case of SITECONFIG with a third parameter of ``U'' is
+special; the second parameter is assumed to be the UUCP name of the
+local site, rather than the name of a remote site, and the UUCP name
+is entered into $=w (the list of local hostnames) as $U.UUCP.
 
 The siteconfig file (e.g., siteconfig/uucp.ucbvax.m4) contains nothing
 more than a sequence of SITE macros describing connectivity.  For
