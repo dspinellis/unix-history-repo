@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tth19.c	3.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)tth19.c	3.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -61,11 +61,6 @@ int h19_msp10c;
 #define ILPAD() PAD((NROW - tt.tt_row) * 10)	/* 1 ms per char */
 
 #define H19_SETINSERT(m) (esc(), (tt.tt_insert = (m)) ? pc('@') : pc('O'))
-
-h19_setinsert(new)
-{
-	H19_SETINSERT(new);
-}
 
 h19_setmodes(new)
 register new;
@@ -113,11 +108,9 @@ register char c;
 {
 	if (tt.tt_nmodes != tt.tt_modes)
 		(*tt.tt_setmodes)(tt.tt_nmodes);
-	if (tt.tt_ninsert != tt.tt_insert)
-		H19_SETINSERT(tt.tt_ninsert);
-	pc(c);
 	if (tt.tt_insert)
-		ICPAD();
+		H19_SETINSERT(0);
+	pc(c);
 	if (++tt.tt_col == NCOL)
 		tt.tt_col = NCOL - 1;
 }
@@ -128,18 +121,10 @@ register n;
 {
 	if (tt.tt_nmodes != tt.tt_modes)
 		(*tt.tt_setmodes)(tt.tt_nmodes);
-	if (tt.tt_ninsert != tt.tt_insert)
-		H19_SETINSERT(tt.tt_ninsert);
-	if (tt.tt_insert) {
-		while (--n >= 0) {
-			pc(*p++);
-			ICPAD();
-			tt.tt_col++;
-		}
-	} else {
-		tt.tt_col += n;
-		ttwrite(p, n);
-	}
+	if (tt.tt_insert)
+		H19_SETINSERT(0);
+	ttwrite(p, n);
+	tt.tt_col += n;
 	if (tt.tt_col == NCOL)
 		tt.tt_col = NCOL - 1;
 }
@@ -198,12 +183,14 @@ h19_start()
 	esc();
 	pc('E');
 	tt.tt_col = tt.tt_row = 0;
-	tt.tt_ninsert = tt.tt_insert = 0;
+	tt.tt_insert = 0;
 	tt.tt_nmodes = tt.tt_modes = 0;
 }
 
 h19_end()
 {
+	if (tt.tt_insert)
+		H19_SETINSERT(0);
 	if (gen_VE)
 		ttxputs(gen_VE);
 	esc();
@@ -226,6 +213,20 @@ h19_clear()
 {
 	esc();
 	pc('E');
+}
+
+h19_inschar(c)
+register char c;
+{
+	if (tt.tt_nmodes != tt.tt_modes)
+		(*tt.tt_setmodes)(tt.tt_nmodes);
+	if (!tt.tt_insert)
+		H19_SETINSERT(1);
+	pc(c);
+	if (tt.tt_insert)
+		ICPAD();
+	if (++tt.tt_col == NCOL)
+		tt.tt_col = NCOL - 1;
 }
 
 h19_delchar(n)
@@ -265,6 +266,7 @@ tt_h19()
 
 	tt.tt_insline = h19_insline;
 	tt.tt_delline = h19_delline;
+	tt.tt_inschar = h19_inschar;
 	tt.tt_delchar = h19_delchar;
 	tt.tt_clreol = h19_clreol;
 	tt.tt_clreos = h19_clreos;
@@ -274,7 +276,6 @@ tt_h19()
 	tt.tt_putc = h19_putc;
 	tt.tt_scroll_down = h19_scroll_down;
 	tt.tt_scroll_up = h19_scroll_up;
-	tt.tt_setinsert = h19_setinsert;
 	tt.tt_setmodes = h19_setmodes;
 
 	tt.tt_ncol = NCOL;

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)xxflush.c	3.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)xxflush.c	3.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -38,20 +38,15 @@ xxflush(intr)
 			xxflush_scroll(xp);
 			break;
 		case xc_inschar:
-			if (xp->arg1 + xp->arg2 >= tt.tt_ncol)
-				break;
 			(*tt.tt_move)(xp->arg0, xp->arg1);
-			if (tt.tt_setinsert) {
-				tt.tt_nmodes = xp->arg3;
-				tt.tt_ninsert = 1;
-				(*tt.tt_write)(xp->buf, xp->arg2);
-				tt.tt_ninsert = 0;
-			} else
-				(*tt.tt_inschar)(xp->arg2);
+			tt.tt_nmodes = xp->arg3;
+			(*tt.tt_inschar)(xp->arg2);
+			break;
+		case xc_insspace:
+			(*tt.tt_move)(xp->arg0, xp->arg1);
+			(*tt.tt_insspace)(xp->arg2);
 			break;
 		case xc_delchar:
-			if (xp->arg1 + xp->arg2 >= tt.tt_ncol)
-				break;
 			(*tt.tt_move)(xp->arg0, xp->arg1);
 			(*tt.tt_delchar)(xp->arg2);
 			break;

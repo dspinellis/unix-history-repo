@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwwrite.c	3.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwwrite.c	3.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -80,7 +80,7 @@ int n;
 					q = p + 10;
 				}
 				wwinschar(w, w->ww_cur.r, w->ww_cur.c,
-					*p++ | w->ww_modes << WWC_MSHIFT);
+					*p++, w->ww_modes);
 				goto right;
 			}
 

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)xx.c	3.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)xx.c	3.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -53,8 +53,6 @@ xxend()
 	if (tt.tt_scroll_top != 0 || tt.tt_scroll_bot != tt.tt_nrow - 1)
 		/* tt.tt_setscroll is known to be defined */
 		(*tt.tt_setscroll)(0, tt.tt_nrow - 1);
-	if (tt.tt_insert)
-		(*tt.tt_setinsert)(0);
 	if (tt.tt_modes)
 		(*tt.tt_setmodes)(0);
 	if (tt.tt_scroll_down)
@@ -121,28 +119,32 @@ xxscroll(dir, top, bot)
 	xp->arg2 = bot;
 }
 
-xxinschar(row, col, c)
+xxinschar(row, col, c, m)
 {
-	register struct xx *xp = xx_tail;
-	int m = c >> WWC_MSHIFT;
+	register struct xx *xp;
 
-	if (xxbufp >= xxbufe)
-		xxflush(0);
-	c &= WWC_CMASK;
-	if (xp != 0 && xp->cmd == xc_inschar &&
-	    xp->arg0 == row && xp->arg1 + xp->arg2 == col && xp->arg3 == m) {
-		xp->buf[xp->arg2++] = c;
-		xxbufp++;
-		return;
-	}
 	xp = xxalloc();
 	xp->cmd = xc_inschar;
 	xp->arg0 = row;
 	xp->arg1 = col;
-	xp->arg2 = 1;
+	xp->arg2 = c;
 	xp->arg3 = m;
-	xp->buf = xxbufp++;
-	*xp->buf = c;
+}
+
+xxinsspace(row, col)
+{
+	register struct xx *xp = xx_tail;
+
+	if (xp != 0 && xp->cmd == xc_insspace && xp->arg0 == row &&
+	    col >= xp->arg1 && col <= xp->arg1 + xp->arg2) {
+		xp->arg2++;
+		return;
+	}
+	xp = xxalloc();
+	xp->cmd = xc_insspace;
+	xp->arg0 = row;
+	xp->arg1 = col;
+	xp->arg2 = 1;
 }
 
 xxdelchar(row, col)
