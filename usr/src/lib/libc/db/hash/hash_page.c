@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -34,6 +34,7 @@ ROUTINES:
 #include <errno.h>
 #include <db.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "hash.h"
 #include "page.h"
 
@@ -505,7 +506,7 @@ int	is_bitmap;
 
     if ( is_bucket) page = BUCKET_TO_PAGE (bucket);
     else page = OADDR_TO_PAGE (bucket);
-    if ((lseek ( fd, page << hashp->BSHIFT, L_SET ) == -1) || 
+    if ((lseek ( fd, page << hashp->BSHIFT, SEEK_SET ) == -1) || 
 	((rsize = read ( fd, p, size )) == -1 )) {
 	return(-1);
     } 
@@ -577,7 +578,7 @@ int	is_bitmap;
     }
     if (is_bucket ) page = BUCKET_TO_PAGE (bucket);
     else page = OADDR_TO_PAGE ( bucket );
-    if ((lseek ( fd, page << hashp->BSHIFT, L_SET ) == -1) || 
+    if ((lseek ( fd, page << hashp->BSHIFT, SEEK_SET ) == -1) || 
 	((wsize = write ( fd, p, size )) == -1 )) {
 	/* Errno is set */
 	return(-1);
