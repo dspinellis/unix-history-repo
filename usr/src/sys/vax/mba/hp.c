@@ -1,4 +1,4 @@
-/*	hp.c	4.71	83/02/27	*/
+/*	hp.c	4.72	83/03/11	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -69,11 +69,7 @@ struct	size {
 	15884,	309,		/* D=cyl 309 thru 408 */
 	55936,	409,		/* E=cyl 409 thru 758 */
 	10144,	759,		/* F=cyl 759 thru 822 */
-#ifdef ARPA
-	81984,	310,		/* G=cyl 310 thru 822 */
-#else
 	82144,	309,		/* G=cyl 309 thru 822 */
-#endif
 	0,	0,
 }, rm05_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 26 */
