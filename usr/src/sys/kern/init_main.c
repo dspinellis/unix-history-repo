@@ -1,4 +1,4 @@
-/*	init_main.c	4.4	%G%	*/
+/*	init_main.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -144,7 +144,7 @@ main(firstaddr)
  */
 iinit()
 {
-	register struct buf *cp, *bp;
+	register struct buf *bp;
 	register struct filsys *fp;
 
 	(*bdevsw[major(rootdev)].d_open)(rootdev, 1);
@@ -206,14 +206,8 @@ binit()
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
 	}
-	for (bdp = bdevsw; bdp->d_open; bdp++) {
-		dp = bdp->d_tab;
-		if(dp) {
-			dp->b_forw = dp;
-			dp->b_back = dp;
-		}
+	for (bdp = bdevsw; bdp->d_open; bdp++)
 		nblkdev++;
-	}
 	/*
 	 * Count swap devices, and adjust total swap space available.
 	 * Some of this space will not be available until a vswapon()
