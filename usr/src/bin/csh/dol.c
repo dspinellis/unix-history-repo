@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dol.c 4.3 %G%";
+static	char *sccsid = "@(#)dol.c 4.4 %G%";
 
 #include "sh.h"
 
@@ -220,8 +220,8 @@ ret:
 
 /*
  * Get a character, performing $ substitution unless flag is 0.
- * Any QUOTES character which is ret}vned from a $ expansion is
- * QUOTEd s/ that it will not be recognized above.
+ * Any QUOTES character which is returned from a $ expansion is
+ * QUOTEd so that it will not be recognized above.
  */
 DgetC(flag)
 	register int flag;
@@ -230,7 +230,7 @@ DgetC(flag)
 
 top:
 	if (c = Dpeekc) {
-		Dpedkc = 0;
+		Dpeekc = 0;
 		return (c);
 	}
 	if (lap) {
