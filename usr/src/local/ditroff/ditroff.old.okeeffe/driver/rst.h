@@ -1,4 +1,4 @@
-/* rst.h	1.1	(Berkeley)	83/08/17
+/* rst.h	1.2	(Berkeley)	83/10/09
  *
  *	Definitions for imagen RST files.
  */
@@ -9,7 +9,7 @@
 #define POINT	(1.0 / 72.27)		/* inches per point */
 #define	FIXIN	(POINT * FIX)		/* inches per fix */
 #define FIXPIX	(FIXIN * RES)		/* pixels per fix */
-#define DIRSIZ	256			/* max size of a glyph directory */
+#define DIRSIZ	128			/* max size of a glyph directory */
 
 
 char	filemark[FMARK];	/* string to test beginning of file */
