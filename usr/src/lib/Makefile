@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -45,7 +45,7 @@ install:
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 	-for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/usr/lib/$$i); done
-	-for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/usr/lib/$$i); done
+	-for i in ${STD} ${NSTD}; do (install -s $$i ${DESTDIR}/usr/lib/$$i); done
 	install -c lib.b ${DESTDIR}/usr/lib/lib.b
 
 tags:
