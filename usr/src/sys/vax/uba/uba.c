@@ -1,4 +1,4 @@
-/*	uba.c	4.15	%G%	*/
+/*	uba.c	4.16	%G%	*/
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
 
@@ -209,8 +209,7 @@ ubarelse(uban, amr)
 	splx(s);		/* let interrupts in, we're safe for a while */
 	bdp = (mr >> 28) & 0x0f;
 	if (bdp) {
-		switch (cpu)
-		{
+		switch (cpu) {
 #if VAX780
 		case VAX_780:
 			uh->uh_uba->uba_dpr[bdp] |= UBA_BNE;
@@ -250,6 +249,26 @@ ubarelse(uban, amr)
 	}
 	while (uh->uh_actf && ubago(uh->uh_actf))
 		;
+}
+
+ubapurge(um)
+	register struct uba_minfo *um;
+{
+	register struct uba_hd *uh = um->um_hd;
+	register int bdp = (um->um_ubinfo >> 28) & 0x0f;
+
+	switch (cpu) {
+#if VAX780
+	case VAX_780:
+		uh->uh_uba->uba_dpr[bdp] |= UBA_BNE;
+		break;
+#endif
+#if VAX750
+	case VAX_750:
+		uh->uh_uba->uba_dpr[bdp] |= UBA_PURGE|UBA_NXM|UBA_UCE;
+		break;
+#endif
+	}
 }
 
 /*
@@ -295,6 +314,7 @@ ubareset(uban)
 	splx(s);
 }
 
+#if VAX780
 /*
  * Init a uba.  This is called with a pointer
  * rather than a virtual address since it is called
@@ -313,7 +333,6 @@ ubainit(uba)
 		;
 }
 
-#if VAX780
 /*
  * Check to make sure the UNIBUS adaptor is not hung,
  * with an interrupt in the register to be presented,
