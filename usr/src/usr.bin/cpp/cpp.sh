@@ -9,17 +9,17 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cpp.sh	6.3 (Berkeley) %G%
+#	@(#)cpp.sh	6.4 (Berkeley) %G%
 #
 # Transitional front end to CCCP to make it behave like (Reiser) CCP:
 #	specifies -traditional
 #	doesn't search gcc-include
 #
-cpp="eval exec /usr/libexec/cpp"
+cpp="eval /usr/libexec/cpp"
 ALST="-traditional -D__GNUC__ -$ "
 NSI=no
-ARGS=""
-INCS=""
+OPTS=""
+INCS="-nostdinc"
 
 for A
 do
@@ -35,16 +35,18 @@ do
 	-U__GNUC__)
 		ALST=`echo $ALST | sed -e 's/-D__GNUC__//'`
 		;;
+	-*)
+		OPTS="$OPTS '$A'"
+		;;
 	*)
-		ARGS="$ARGS '$A'"
+		if [ $NSI = "no" ]
+		then
+			INCS="$INCS -I/usr/include"
+			NSI=skip
+		fi
+		$cpp $ALST $INCS $LIBS $CSU $OPTS $A || exit $?
 		;;
 	esac
 done
 
-INCS="-nostdinc $INCS"
-if [ $NSI = "no" ]
-then
-	INCS="$INCS -I/usr/include"
-fi
-$cpp $ALST $INCS $LIBS $CSU $ARGS $GLIB $CLIB
-exit $?
+exit 0
