@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)maketape	4.12	%G%
+#	@(#)maketape	4.13	%G%
 #
 miniroot=hp0g
 #
@@ -37,7 +37,7 @@ echo "Mount second tape and hit return when ready"; read x
 echo "Add user source code"
 cd /nbsd/usr/src; tar cFFf /dev/rmt12 .
 echo "Add user contributed software"
-cd /usr/src/new; tar cFFf /dev/rmt12 .
+cd /nbsd/a/new; tar cFFf /dev/rmt12 .
 echo "Add ingres source"
 cd /nbsd/usr/ingres; tar cFFf /dev/rmt12 .
 echo "Done, rewinding second tape"
