@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n3.c	2.2 (CWI) 85/08/14";
+static char sccsid[] = "@(#)n3.c	2.3 (CWI) 86/11/27";
 #endif lint
 /*      @(#)n3.c	1.1     */
 /*
@@ -885,7 +885,7 @@ casepm()
 	kk = cnt = tcnt = 0;
 	tot = !skip();
 	for (i = 0; i < NM; i++) {
-		if (!(xx = contab[i].rq))
+		if ((xx = contab[i].rq) == 0 || contab[i].mx == 0)
 			continue;
 		tcnt++;
 		p = pmline;
