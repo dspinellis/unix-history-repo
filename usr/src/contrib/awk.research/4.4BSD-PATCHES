@@ -1,0 +1,590 @@
+From: Vern Paxson <vern@daffy.ee.lbl.gov>
+
+I've ported Research Awk to flex and tested it moderately.  Note that I
+didn't have time to support the nice error-message context stuff (where
+it points out exactly where on a line it thinks an error occurred), as
+the original code made a lot of assumptions regarding the internal
+buffering of a lex scanner that are no longer valid with flex.  Also, the
+sources had a function called "isnumber" which conflicted with a macro by
+the same name in <ctype.h>, so I changed its name to is_a_number.
+
+Let me know if you find more problems.
+
+		Vern
+
+diff -wc orig/awk.lx.l awk.lx.l
+*** orig/awk.lx.l	Fri Oct 29 10:39:54 1993
+--- awk.lx.l	Fri Oct 29 11:07:35 1993
+***************
+*** 25,37 ****
+  THIS SOFTWARE.
+  ****************************************************************/
+  
+- /* some of this depends on behavior of lex that
+-    may not be preserved in other implementations of lex.
+- */
+- 
+- #undef	input	/* defeat lex */
+- #undef	unput
+- 
+  #include <stdlib.h>
+  #include <string.h>
+  #include "awk.h"
+--- 25,30 ----
+***************
+*** 60,65 ****
+--- 53,70 ----
+  uchar	cbuf[CBUFLEN];
+  uchar	*s;
+  int	clen, cflag;
++ 
++ /* some of this depends on behavior of lex that
++    may not be preserved in other implementations of lex.
++ */
++ 
++ static	int	my_input( YY_CHAR *buf, int max_size );
++ 
++ #undef YY_INPUT
++ #define YY_INPUT(buf,result,max_size) result = my_input(buf, max_size);
++ 
++ #undef YY_USER_INIT
++ #define YY_USER_INIT init_input_source();
+  %}
+  
+  A	[a-zA-Z_]
+***************
+*** 70,76 ****
+  WS	[ \t]
+  
+  %%
+! 	switch (yybgin-yysvec-1) {	/* witchcraft */
+  	case 0:
+  		BEGIN A;
+  		break;
+--- 75,81 ----
+  WS	[ \t]
+  
+  %%
+! 	switch ((yy_start - 1) / 2) {	/* witchcraft */
+  	case 0:
+  		BEGIN A;
+  		break;
+***************
+*** 116,128 ****
+  
+  <A>"$"{D}+	{ yylval.cp = fieldadr(atoi(yytext+1)); RET(FIELD); }
+  <A>"$NF"	{ unputstr("(NF)"); return(INDIRECT); }
+! <A>"$"{A}{B}*	{ int c, n;
+! 		  c = input(); unput(c);
+! 		  if (c == '(' || c == '[' || infunc && (n=isarg(yytext+1)) >= 0) {
+! 			unputstr(yytext+1);
+  			return(INDIRECT);
+  		  } else {
+! 			yylval.cp = setsymtab(yytext+1,"",0.0,STR|NUM,symtab);
+  			RET(IVAR);
+  		  }
+  		}
+--- 121,139 ----
+  
+  <A>"$"{D}+	{ yylval.cp = fieldadr(atoi(yytext+1)); RET(FIELD); }
+  <A>"$NF"	{ unputstr("(NF)"); return(INDIRECT); }
+! <A>"$"{A}{B}*	{
+! 		  int c;
+! 		  char *yytext_copy = strdup(yytext);
+! 		  c = input(); unput(c);	/* look for '(' or '[' */
+! 		  if (c == '(' || c == '[' ||
+! 		      infunc && isarg(yytext_copy+1) >= 0) {
+! 			  unputstr(yytext_copy+1);
+! 			  free(yytext_copy);
+  			  return(INDIRECT);
+  		  } else {
+! 			  yylval.cp =
+! 				setsymtab(yytext_copy+1,"",0.0,STR|NUM,symtab);
+! 			  free(yytext_copy);
+  			  RET(IVAR);
+  		  }
+  		}
+***************
+*** 172,183 ****
+  <A>fflush	{ yylval.i = FFLUSH; RET(BLTIN); }
+  
+  <A>{A}{B}*	{ int n, c;
+  		  c = input(); unput(c);	/* look for '(' */
+! 		  if (c != '(' && infunc && (n=isarg(yytext)) >= 0) {
+  			yylval.i = n;
+  			RET(ARG);
+  		  } else {
+! 			yylval.cp = setsymtab(yytext,"",0.0,STR|NUM,symtab);
+  			if (c == '(') {
+  				RET(CALL);
+  			} else {
+--- 183,198 ----
+  <A>fflush	{ yylval.i = FFLUSH; RET(BLTIN); }
+  
+  <A>{A}{B}*	{ int n, c;
++ 		  char *yytext_copy = strdup(yytext);
+  		  c = input(); unput(c);	/* look for '(' */
+! 		  if (c != '(' && infunc && (n=isarg(yytext_copy)) >= 0) {
+  			yylval.i = n;
++ 			free(yytext_copy);
+  			RET(ARG);
+  		  } else {
+! 			yylval.cp =
+! 				setsymtab(yytext_copy,"",0.0,STR|NUM,symtab);
+! 			free(yytext_copy);
+  			if (c == '(') {
+  				RET(CALL);
+  			} else {
+***************
+*** 185,190 ****
+--- 200,206 ----
+  			}
+  		  }
+  		}
++ 
+  <A>\"		{ BEGIN str; clen = 0; }
+  
+  <A>"}"		{ if (--bracecnt < 0) ERROR "extra }" SYNTAX; BEGIN sc; RET(';'); }
+***************
+*** 235,280 ****
+  	clen = 0;
+  }
+  
+! /* input() and unput() are transcriptions of the standard lex
+!    macros for input and output with additions for error message
+!    printing.  God help us all if someone changes how lex works.
+! */
+! 
+! uchar	ebuf[300];
+! uchar	*ep = ebuf;
+! 
+! input(void)	/* get next lexical input character */
+  {
+- 	register int c;
+  	extern uchar *lexprog;
+  
+! 	if (yysptr > yysbuf)
+! 		c = U(*--yysptr);
+! 	else if (lexprog != NULL) {	/* awk '...' */
+! 		if (c = *lexprog)
+! 			lexprog++;
+! 	} else				/* awk -f ... */
+! 		c = pgetc();
+! 	if (c == '\n')
+! 		yylineno++;
+! 	else if (c == EOF)
+! 		c = 0;
+! 	if (ep >= ebuf + sizeof ebuf)
+! 		ep = ebuf;
+! 	return *ep++ = c;
+  }
+  
+! void unput(int c)	/* put lexical character back on input */
+! {
+! 	yytchar = c;
+! 	if (yytchar == '\n')
+! 		yylineno--;
+! 	*yysptr++ = yytchar;
+! 	if (--ep < ebuf)
+! 		ep = ebuf + sizeof(ebuf) - 1;
+  }
+  
+- 
+  void unputstr(char *s)	/* put a string back on input */
+  {
+  	int i;
+--- 251,281 ----
+  	clen = 0;
+  }
+  
+! static int my_input( YY_CHAR *buf, int max_size )
+  {
+  	extern uchar *lexprog;
+  
+! 	if ( lexprog ) {		/* awk '...' */
+! 		int num_chars = strlen( lexprog );
+! 		if ( num_chars > max_size )
+! 			{
+! 			num_chars = max_size;
+! 			strncpy( buf, lexprog, num_chars );
+  			}
++ 		else
++ 			strcpy( buf, lexprog );
++ 		lexprog += num_chars;
++ 		return num_chars;
+  
+! 	} else {			/* awk -f ... */
+! 		int c = pgetc();
+! 		if (c == EOF)
+! 			return 0;
+! 		buf[0] = c;
+! 		return 1;
+  	}
++ }
+  
+  void unputstr(char *s)	/* put a string back on input */
+  {
+  	int i;
+***************
+*** 281,284 ****
+--- 282,290 ----
+  
+  	for (i = strlen(s)-1; i >= 0; i--)
+  		unput(s[i]);
++ }
++ 
++ int lex_input()
++ {
++ 	return input();
+  }
+diff -wc orig/lib.c lib.c
+*** orig/lib.c	Fri Oct 29 10:39:55 1993
+--- lib.c	Fri Oct 29 11:22:33 1993
+***************
+*** 129,135 ****
+  					xfree(recloc->sval);
+  				recloc->sval = record;
+  				recloc->tval = REC | STR | DONTFREE;
+! 				if (isnumber(recloc->sval)) {
+  					recloc->fval = atof(recloc->sval);
+  					recloc->tval |= NUM;
+  				}
+--- 129,135 ----
+  					xfree(recloc->sval);
+  				recloc->sval = record;
+  				recloc->tval = REC | STR | DONTFREE;
+! 				if (is_a_number(recloc->sval)) {
+  					recloc->fval = atof(recloc->sval);
+  					recloc->tval |= NUM;
+  				}
+***************
+*** 202,208 ****
+  	p = qstring(p, '\0');
+  	q = setsymtab(s, p, 0.0, STR, symtab);
+  	setsval(q, p);
+! 	if (isnumber(q->sval)) {
+  		q->fval = atof(q->sval);
+  		q->tval |= NUM;
+  	}
+--- 202,208 ----
+  	p = qstring(p, '\0');
+  	q = setsymtab(s, p, 0.0, STR, symtab);
+  	setsval(q, p);
+! 	if (is_a_number(q->sval)) {
+  		q->fval = atof(q->sval);
+  		q->tval |= NUM;
+  	}
+***************
+*** 268,274 ****
+  	maxfld = i;
+  	donefld = 1;
+  	for (p = fldtab+1; p <= fldtab+maxfld; p++) {
+! 		if(isnumber(p->sval)) {
+  			p->fval = atof(p->sval);
+  			p->tval |= NUM;
+  		}
+--- 268,274 ----
+  	maxfld = i;
+  	donefld = 1;
+  	for (p = fldtab+1; p <= fldtab+maxfld; p++) {
+! 		if(is_a_number(p->sval)) {
+  			p->fval = atof(p->sval);
+  			p->tval |= NUM;
+  		}
+***************
+*** 410,416 ****
+  
+  	if (beenhere++)
+  		return;
+! 	while ((c = input()) != EOF && c != '\0')
+  		bclass(c);
+  	bcheck2(bracecnt, '{', '}');
+  	bcheck2(brackcnt, '[', ']');
+--- 410,416 ----
+  
+  	if (beenhere++)
+  		return;
+! 	while ((c = lex_input()) != EOF && c != '\0')
+  		bclass(c);
+  	bcheck2(bracecnt, '{', '}');
+  	bcheck2(brackcnt, '[', ']');
+***************
+*** 458,463 ****
+--- 458,464 ----
+  
+  void eprint(void)	/* try to print context around error */
+  {
++ #if 0
+  	uchar *p, *q;
+  	int c;
+  	static int been_here = 0;
+***************
+*** 490,495 ****
+--- 491,497 ----
+  		}
+  	putc('\n', stderr);
+  	ep = ebuf;
++ #endif
+  }
+  
+  void bclass(int c)
+***************
+*** 534,540 ****
+  
+  #define	MAXEXPON	38	/* maximum exponent for fp number. should be IEEE */
+  
+! isnumber(uchar *s)	/* probably should be done by a library function */
+  {
+  	register int d1, d2;
+  	int point;
+--- 536,542 ----
+  
+  #define	MAXEXPON	38	/* maximum exponent for fp number. should be IEEE */
+  
+! is_a_number(uchar *s)	/* probably should be done by a library function */
+  {
+  	register int d1, d2;
+  	int point;
+diff -wc orig/main.c main.c
+*** orig/main.c	Fri Oct 29 10:39:54 1993
+--- main.c	Fri Oct 29 10:43:31 1993
+***************
+*** 175,177 ****
+--- 175,189 ----
+  		curpfile++;
+  	}
+  }
++ 
++ void init_input_source(void)
++ {
++ 	if (yyin == NULL) {
++ 		if (pfile[curpfile] == 0)
++ 			return;
++ 		if (strcmp((char *) pfile[curpfile], "-") == 0)
++ 			yyin = stdin;
++ 		else if ((yyin = fopen((char *) pfile[curpfile], "r")) == NULL)
++ 			ERROR "can't open file %s", pfile[curpfile] FATAL;
++ 	}
++ }
+diff -wc orig/proto.h proto.h
+*** orig/proto.h	Fri Oct 29 10:39:52 1993
+--- proto.h	Fri Oct 29 11:22:28 1993
+***************
+*** 22,28 ****
+  THIS SOFTWARE.
+  ****************************************************************/
+  
+- extern	int	yywrap(void);
+  extern	void	setfname(Cell *);
+  extern	int	constnode(Node *);
+  extern	uchar	*strnode(Node *);
+--- 22,27 ----
+***************
+*** 31,42 ****
+  
+  extern	int	yylex(void);
+  extern	void	startreg(void);
+! extern	int	input(void);
+! extern	void	unput(int);
+  extern	void	unputstr(char *);
+- extern	int	yylook(void);
+- extern	int	yyback(int *, int);
+- extern	int	yyinput(void);
+  
+  extern	fa	*makedfa(uchar *, int);
+  extern	fa	*mkdfa(uchar *, int);
+--- 30,37 ----
+  
+  extern	int	yylex(void);
+  extern	void	startreg(void);
+! extern	int	lex_input(void);
+  extern	void	unputstr(char *);
+  
+  extern	fa	*makedfa(uchar *, int);
+  extern	fa	*mkdfa(uchar *, int);
+***************
+*** 66,71 ****
+--- 61,67 ----
+  
+  extern	int	main(int, uchar **);
+  extern	int	pgetc(void);
++ extern	void	init_input_source(void);
+  
+  extern	Node	*nodealloc(int);
+  extern	Node	*exptostat(Node *);
+***************
+*** 130,136 ****
+  extern	void	bclass(int);
+  extern	double	errcheck(double, uchar *);
+  extern	int	isclvar(uchar *);
+! extern	int	isnumber(uchar *);
+  
+  extern	void	run(Node *);
+  extern	Cell	*r_execute(Node *);
+--- 126,132 ----
+  extern	void	bclass(int);
+  extern	double	errcheck(double, uchar *);
+  extern	int	isclvar(uchar *);
+! extern	int	is_a_number(uchar *);
+  
+  extern	void	run(Node *);
+  extern	Cell	*r_execute(Node *);
+diff -wc orig/run.c run.c
+*** orig/run.c	Fri Oct 29 10:39:56 1993
+--- run.c	Fri Oct 29 11:22:39 1993
+***************
+*** 360,366 ****
+  			strcpy(record, buf);
+  			recloc->sval = record;
+  			recloc->tval = REC | STR | DONTFREE;
+! 			if (isnumber(recloc->sval)) {
+  				recloc->fval = atof(recloc->sval);
+  				recloc->tval |= NUM;
+  			}
+--- 360,366 ----
+  			strcpy(record, buf);
+  			recloc->sval = record;
+  			recloc->tval = REC | STR | DONTFREE;
+! 			if (is_a_number(recloc->sval)) {
+  				recloc->fval = atof(recloc->sval);
+  				recloc->tval |= NUM;
+  			}
+***************
+*** 618,624 ****
+  
+  	x = execute(a[0]);
+  	m = getfval(x);
+! 	if (m == 0 && !isnumber(s = getsval(x)))	/* suspicion! */
+  		ERROR "illegal field $(%s), name \"%s\"", s, x->nval FATAL;
+    /* can x->nval ever be null??? */
+  		/* ERROR "illegal field $(%s)", s FATAL; */
+--- 618,624 ----
+  
+  	x = execute(a[0]);
+  	m = getfval(x);
+! 	if (m == 0 && !is_a_number(s = getsval(x)))	/* suspicion! */
+  		ERROR "illegal field $(%s), name \"%s\"", s, x->nval FATAL;
+    /* can x->nval ever be null??? */
+  		/* ERROR "illegal field $(%s)", s FATAL; */
+***************
+*** 1097,1103 ****
+  				sprintf((char *)num, "%d", n);
+  				temp = *patbeg;
+  				*patbeg = '\0';
+! 				if (isnumber(s))
+  					setsymtab(num, s, atof((char *)s), STR|NUM, (Array *) ap->sval);
+  				else
+  					setsymtab(num, s, 0.0, STR, (Array *) ap->sval);
+--- 1097,1103 ----
+  				sprintf((char *)num, "%d", n);
+  				temp = *patbeg;
+  				*patbeg = '\0';
+! 				if (is_a_number(s))
+  					setsymtab(num, s, atof((char *)s), STR|NUM, (Array *) ap->sval);
+  				else
+  					setsymtab(num, s, 0.0, STR, (Array *) ap->sval);
+***************
+*** 1114,1120 ****
+  		}
+  		n++;
+  		sprintf((char *)num, "%d", n);
+! 		if (isnumber(s))
+  			setsymtab(num, s, atof((char *)s), STR|NUM, (Array *) ap->sval);
+  		else
+  			setsymtab(num, s, 0.0, STR, (Array *) ap->sval);
+--- 1114,1120 ----
+  		}
+  		n++;
+  		sprintf((char *)num, "%d", n);
+! 		if (is_a_number(s))
+  			setsymtab(num, s, atof((char *)s), STR|NUM, (Array *) ap->sval);
+  		else
+  			setsymtab(num, s, 0.0, STR, (Array *) ap->sval);
+***************
+*** 1134,1140 ****
+  			temp = *s;
+  			*s = '\0';
+  			sprintf((char *)num, "%d", n);
+! 			if (isnumber(t))
+  				setsymtab(num, t, atof((char *)t), STR|NUM, (Array *) ap->sval);
+  			else
+  				setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+--- 1134,1140 ----
+  			temp = *s;
+  			*s = '\0';
+  			sprintf((char *)num, "%d", n);
+! 			if (is_a_number(t))
+  				setsymtab(num, t, atof((char *)t), STR|NUM, (Array *) ap->sval);
+  			else
+  				setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+***************
+*** 1151,1157 ****
+  			temp = *s;
+  			*s = '\0';
+  			sprintf((char *)num, "%d", n);
+! 			if (isnumber(t))
+  				setsymtab(num, t, atof((char *)t), STR|NUM, (Array *) ap->sval);
+  			else
+  				setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+--- 1151,1157 ----
+  			temp = *s;
+  			*s = '\0';
+  			sprintf((char *)num, "%d", n);
+! 			if (is_a_number(t))
+  				setsymtab(num, t, atof((char *)t), STR|NUM, (Array *) ap->sval);
+  			else
+  				setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
+diff -wc orig/tran.c tran.c
+*** orig/tran.c	Fri Oct 29 10:39:57 1993
+--- tran.c	Fri Oct 29 11:22:43 1993
+***************
+*** 110,116 ****
+  	cp->sval = (uchar *) ARGVtab;
+  	for (i = 0; i < ac; i++) {
+  		sprintf((char *)temp, "%d", i);
+! 		if (isnumber(*av))
+  			setsymtab(temp, *av, atof(*av), STR|NUM, ARGVtab);
+  		else
+  			setsymtab(temp, *av, 0.0, STR, ARGVtab);
+--- 110,116 ----
+  	cp->sval = (uchar *) ARGVtab;
+  	for (i = 0; i < ac; i++) {
+  		sprintf((char *)temp, "%d", i);
+! 		if (is_a_number(*av))
+  			setsymtab(temp, *av, atof(*av), STR|NUM, ARGVtab);
+  		else
+  			setsymtab(temp, *av, 0.0, STR, ARGVtab);
+***************
+*** 130,136 ****
+  		if ((p = (uchar *) strchr((char *) *envp, '=')) == NULL)
+  			continue;
+  		*p++ = 0;	/* split into two strings at = */
+! 		if (isnumber(p))
+  			setsymtab(*envp, p, atof(p), STR|NUM, ENVtab);
+  		else
+  			setsymtab(*envp, p, 0.0, STR, ENVtab);
+--- 130,136 ----
+  		if ((p = (uchar *) strchr((char *) *envp, '=')) == NULL)
+  			continue;
+  		*p++ = 0;	/* split into two strings at = */
+! 		if (is_a_number(p))
+  			setsymtab(*envp, p, atof(p), STR|NUM, ENVtab);
+  		else
+  			setsymtab(*envp, p, 0.0, STR, ENVtab);
+***************
+*** 332,338 ****
+  		recbld();
+  	if (!isnum(vp)) {	/* not a number */
+  		vp->fval = atof(vp->sval);	/* best guess */
+! 		if (isnumber(vp->sval) && !(vp->tval&CON))
+  			vp->tval |= NUM;	/* make NUM only sparingly */
+  	}
+  	dprintf( ("getfval %o: %s = %g, t=%o\n", vp, vp->nval, vp->fval, vp->tval) );
+--- 332,338 ----
+  		recbld();
+  	if (!isnum(vp)) {	/* not a number */
+  		vp->fval = atof(vp->sval);	/* best guess */
+! 		if (is_a_number(vp->sval) && !(vp->tval&CON))
+  			vp->tval |= NUM;	/* make NUM only sparingly */
+  	}
+  	dprintf( ("getfval %o: %s = %g, t=%o\n", vp, vp->nval, vp->fval, vp->tval) );
