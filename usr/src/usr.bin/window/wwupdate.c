@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwupdate.c	3.5 83/08/16";
+static	char *sccsid = "@(#)wwupdate.c	3.6 83/08/17";
 #endif
 
 #include "ww.h"
@@ -16,6 +16,7 @@ wwupdate()
 	char *touched;
 	register didit;
 	char buf[512];			/* > wwncol */
+	union ww_char lastc;
 
 	wwnupdate++;
 	(*tt.tt_setinsert)(0);
@@ -50,13 +51,32 @@ wwupdate()
 				} else {
 					x = 5;
 					q = p;
+					lastc = *os;
 					*os++ = *ns++;
 				}
 				j++;
 			}
-			(*tt.tt_move)(i, c);
-			(*tt.tt_setmodes)(m);
-			(*tt.tt_write)(buf, q - 1);
+			if (wwwrap
+			    && i == wwnrow - 1 && q - buf + c == wwncol) {
+				if (tt.tt_setinsert != 0) {
+					(*tt.tt_move)(i, c);
+					(*tt.tt_setmodes)(m);
+					(*tt.tt_write)(buf + 1, q - 1);
+					(*tt.tt_move)(i, c);
+					(*tt.tt_setinsert)(1);
+					(*tt.tt_write)(buf, buf);
+					(*tt.tt_setinsert)(0);
+				} else {
+					os[-1] = lastc;
+					(*tt.tt_move)(i, c);
+					(*tt.tt_setmodes)(m);
+					(*tt.tt_write)(buf, q - 2);
+				}
+			} else {
+				(*tt.tt_move)(i, c);
+				(*tt.tt_setmodes)(m);
+				(*tt.tt_write)(buf, q - 1);
+			}
 			didit++;
 		}
 		if (!didit)
