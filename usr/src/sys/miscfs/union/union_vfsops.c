@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.5 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.6 (Berkeley) %G%
  */
 
 /*
@@ -45,6 +45,7 @@ union_mount(mp, path, data, ndp, p)
 	struct vnode *upperrootvp = NULLVP;
 	struct union_mount *um;
 	struct ucred *cred = 0;
+	struct ucred *scred;
 	struct vattr va;
 	char *cp;
 	int len;
@@ -105,10 +106,19 @@ union_mount(mp, path, data, ndp, p)
 	VREF(lowerrootvp);
 
 	/*
-	 * Find upper node
+	 * Find upper node.  Use the real process credentials,
+	 * not the effective ones since this will have come
+	 * through a setuid process (mount_union).  All this
+	 * messing around with permissions is entirely bogus
+	 * and should be removed by allowing any user straight
+	 * past the mount system call.
 	 */
+	scred = p->p_ucred;
+	p->p_ucred = cred;
 	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT,
 	       UIO_USERSPACE, args.target, p);
+	p->p_ucred = scred;
+
 	if (error = namei(ndp))
 		goto bad;
 
