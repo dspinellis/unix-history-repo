@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.14	81/12/03	*/
+/*	udp_usrreq.c	4.15	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -49,14 +49,16 @@ COUNT(UDP_INPUT);
 	}
 	ui = mtod(m, struct udpiphdr *);
 	if (ui->ui_len > sizeof (struct ip))
-		ip_stripoptions((struct ip *)ui, (char *)0);
+		ip_stripoptions((struct ip *)ui, (struct mbuf *)0);
 
 	/*
 	 * Make mbuf data length reflect udp length.
 	 * If not enough data to reflect udp length, drop.
 	 */
 	ulen = ntohs((u_short)ui->ui_ulen);
-	len = sizeof (struct udpiphdr) + ulen;
+	len = sizeof (struct udphdr) + ulen;
+printf("len %d, ulen %d, ((struct ip *)ui)->ip_len %d\n",
+    len, ulen, ((struct ip *)ui)->ip_len);
 	if (((struct ip *)ui)->ip_len != len) {
 		if (len > ((struct ip *)ui)->ip_len) {
 			udpstat.udps_badlen++;
@@ -72,8 +74,8 @@ COUNT(UDP_INPUT);
 	if (udpcksum) {
 		ui->ui_next = ui->ui_prev = 0;
 		ui->ui_x1 = 0;
-		ui->ui_len = htons((u_short)(sizeof (struct udpiphdr) + ulen));
-		if ((ui->ui_sum = in_cksum(m, len)) != 0xffff) {
+		ui->ui_len = htons((u_short)(sizeof (struct udphdr) + ulen));
+		if (ui->ui_sum = in_cksum(m, len)) {
 			udpstat.udps_badsum++;
 			printf("udp cksum %x\n", ui->ui_sum);
 			m_freem(m);
@@ -82,7 +84,6 @@ COUNT(UDP_INPUT);
 	}
 
 	/*
-	 * Convert addresses and ports to host format.
 	 * Locate pcb for datagram.
 	 */
 	inp = in_pcblookup(&udb,
@@ -98,6 +99,9 @@ COUNT(UDP_INPUT);
 	udp_in.sin_addr = ui->ui_src;
 	m->m_len -= sizeof (struct udpiphdr);
 	m->m_off += sizeof (struct udpiphdr);
+printf("sbappendaddr called with m %x m->m_len %d m->m_off %d\n",
+m, m->m_len, m->m_off);
+printf("*mtod(m, char *) %x\n", *mtod(m, char *));
 	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in, m) == 0)
 		goto bad;
 	sorwakeup(inp->inp_socket);
@@ -179,6 +183,7 @@ udp_usrreq(so, req, m, addr)
 COUNT(UDP_USRREQ);
 	if (inp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
+printf("udp_usrreq %d\n", req);
 	switch (req) {
 
 	case PRU_ATTACH:
@@ -220,15 +225,20 @@ COUNT(UDP_USRREQ);
 
 	case PRU_SEND:
 		if (addr) {
-			if (inp->inp_faddr.s_addr)
+			if (inp->inp_faddr.s_addr) {
+				printf("EISCONN\n");
 				return (EISCONN);
+			}
 			error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
-			if (error)
+			if (error) {
+				printf("pcbconnect error %d\n", error);
 				return (error);
+			}
 		} else {
 			if (inp->inp_faddr.s_addr == 0)
 				return (ENOTCONN);
 		}
+printf("to udp_output\n");
 		udp_output(inp, m);
 		if (addr)
 			in_pcbdisconnect(inp);
