@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)clock.c	7.2 (Berkeley) %G%
+ *	@(#)clock.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -131,7 +131,7 @@ vaxstd_clkread(base)
 	}
 
 	/*
-	 * Sneak to within 6 month of the time in the filesystem,
+	 * Sneak to within 6 months of the time in the filesystem,
 	 * by starting with the time of the year suggested by the TODR,
 	 * and advancing through succesive years.  Adding the number of
 	 * seconds in the current year takes us to the end of the current year

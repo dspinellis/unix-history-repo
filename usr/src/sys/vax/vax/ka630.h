@@ -1,6 +1,12 @@
 /*
- *	@(#)ka630.h	7.2 (Berkeley) %G%
+ * Copyright (c) 1986, 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)ka630.h	7.3 (Berkeley) %G%
+ */
+
+/*
  * Definitions specific to the ka630 uvax2 cpu card. Includes the tod
  * clock chip and the cpu registers.
  */
