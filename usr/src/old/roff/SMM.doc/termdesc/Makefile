@@ -1,10 +1,7 @@
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 
-DIR=	smm/20.termdesc
+DIR=	smm/18.termdesc
 SRCS=	termdesc.me
 MACROS=	-me
-
-paper.${PRINTER}: ${SRCS}
-	${ROFF} ${SRCS} > ${.TARGET}
 
 .include <bsd.doc.mk>
