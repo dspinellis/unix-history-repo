@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1985, 1989, 1993
+ * Copyright (c) 1985, 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
