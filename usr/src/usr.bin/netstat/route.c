@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.3 85/08/16";
+static char sccsid[] = "@(#)route.c	5.4 85/09/18";
 #endif
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/mbuf.h>
 
@@ -34,6 +34,7 @@ struct bits {
 	{ RTF_UP,	'U' },
 	{ RTF_GATEWAY,	'G' },
 	{ RTF_HOST,	'H' },
+	{ RTF_DYNAMIC,	'D' },
 	{ 0 }
 };
 
@@ -140,15 +141,30 @@ char *
 routename(in)
 	struct in_addr in;
 {
-	char *cp = 0;
+	register char *cp = 0;
 	static char line[50];
 	struct hostent *hp;
+	static char domain[MAXHOSTNAMELEN + 1];
+	static int first = 1;
+	char *index();
 
+	if (first) {
+		first = 0;
+		if (gethostname(domain, MAXHOSTNAMELEN) == 0 &&
+		    (cp = index(domain, '.')))
+			(void) strcpy(domain, cp + 1);
+		else
+			domain[0] = 0;
+	}
 	if (!nflag) {
 		hp = gethostbyaddr(&in, sizeof (struct in_addr),
 			AF_INET);
-		if (hp)
+		if (hp) {
+			if ((cp = index(hp->h_name, '.')) &&
+			    !strcmp(cp + 1, domain))
+				*cp = 0;
 			cp = hp->h_name;
+		}
 	}
 	if (cp)
 		strcpy(line, cp);
@@ -175,26 +191,34 @@ netname(in, mask)
 	struct netent *np = 0;
 	u_long net;
 	register i;
+	int subnetshift;
 
 	in.s_addr = ntohl(in.s_addr);
 	if (!nflag && in.s_addr) {
-		if (mask) {
-			net = in.s_addr & mask;
-			while ((mask & 1) == 0)
-				mask >>= 1, net >>= 1;
-			np = getnetbyaddr(net, AF_INET);
-		}
-		if (np == 0) {
+		if (mask == 0) {
+			if (IN_CLASSA(i)) {
+				mask = IN_CLASSA_NET;
+				subnetshift = 8;
+			} else if (IN_CLASSB(i)) {
+				mask = IN_CLASSB_NET;
+				subnetshift = 8;
+			} else {
+				mask = IN_CLASSC_NET;
+				subnetshift = 4;
+			}
 			/*
-			 * Try for subnet addresses.
+			 * If there are more bits than the standard mask
+			 * would suggest, subnets must be in use.
+			 * Guess at the subnet mask, assuming reasonable
+			 * width subnet fields.
 			 */
-			for (i = 0; ((0xf<<i) & in.s_addr) == 0; i += 4)
-				;
-			for ( ; i; i -= 4)
-			    if (np = getnetbyaddr((unsigned)in.s_addr >> i,
-				    AF_INET))
-					break;
+			while (in.s_addr &~ mask)
+				mask = (long)mask >> subnetshift;
 		}
+		net = in.s_addr & mask;
+		while ((mask & 1) == 0)
+			mask >>= 1, net >>= 1;
+		np = getnetbyaddr(net, AF_INET);
 		if (np)
 			cp = np->n_name;
 	}
@@ -212,6 +236,7 @@ netname(in, mask)
 			C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
 	return (line);
 }
+
 /*
  * Print routing statistics
  */
