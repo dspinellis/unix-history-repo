@@ -1,4 +1,4 @@
-/*	unpcb.h	5.1	82/08/01	*/
+/*	unpcb.h	5.2	82/08/02	*/
 
 /*
  * Protocol control block for an active
@@ -28,3 +28,5 @@ struct	unpcb {
 	struct	unpcb *unp_refs;	/* referencing socket linked list */
 	struct 	unpcb *unp_nextref;	/* link in unp_refs list */
 };
+
+#define	sotounpcb(so)	((struct unpcb *)((so)->so_pcb))
