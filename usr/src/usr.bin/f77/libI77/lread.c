@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.6";
+char id_lread[] = "@(#)lread.c	1.7";
  *
  * list directed read
  */
@@ -73,7 +73,7 @@ e_rsle()
 {
 	int ch;
 	if(curunit->uend) return(OK);
-	while(!endlinp(GETC(ch)));
+	while(GETC(ch) != '\n' && ch != EOF);
 	return(OK);
 }
 
@@ -302,7 +302,7 @@ l_L()
 		else	err(errflag,F_ERLIO,"logical not T or F");
 	}
 	ltype=TYLOGICAL;
-	while(!issep(GETC(ch)) && !isblnk(ch) && ch!='\n' && ch!=EOF);
+	while(!issep(GETC(ch)) && !isblnk(ch) && !endlinp(ch));
 	(*ungetn)(ch,cf);
 	return(OK);
 }
@@ -331,7 +331,7 @@ l_CHAR()
 	if(lchar==NULL) err(errflag,F_ERSPACE,lrd)
 	for(i=0;;)
 	{	while( ( (quote && GETC(ch)!=quote) ||
-			(!quote && !issep(GETC(ch)) && !isblnk(ch) ) )
+			(!quote && !issep(GETC(ch)) && !isblnk(ch) && !endlinp(ch)) )
 			&& ch!='\n' && ch!=EOF && ++i<size )
 				*p++ = ch;
 		if(i==size)
