@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)disktab	4.12 (Berkeley) %G%
+#	@(#)disktab	4.13 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -263,15 +263,15 @@ ra60|RA60|DEC RA60 Removable:\
 #	4.2 compatible use a-b-f-h where 4.2 g == f; 4.2 h == h
 #	UCB compatible use a-b-e where UCB h == e
 ra80|RA80|DEC RA80 Winchester:\
-	:ty=winchester:ns#31:nt#14:nc#559:so:\
+	:ty=winchester:ns#31:nt#14:nc#546:so:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#8192:fb#1024:tb=swap:\
-	:pc#242606:oc#0:bc#8192:fc#1024:\
-	:pe#193282:oe#49324:be#4096:fe#512:\
+	:pc#236964:oc#0:bc#8192:fc#1024:\
+	:pe#187640:oe#49324:be#4096:fe#512:\
 	:pf#82080:of#49324:bf#4096:ff#512:\
-	:pg#192696:og#49910:bg#4096:fg#1024:\
-	:ph#111202:oh#131404:bh#4096:fh#512:
+	:pg#187054:og#49910:bg#4096:fg#1024:\
+	:ph#105560:oh#131404:bh#4096:fh#512:
 #
 # RA81: standard use a-b-h-g or a-b-h-d-e-f
 #	When compiled as COMPAT_42 d-e-f are used for 4.2 compatible as:
