@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -53,6 +53,8 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	/*
 	 * Initialize header fields.
 	 */
+	if ((buf == NULL) || (buflen < sizeof(HEADER)))
+		return(-1);
 	bzero(buf, sizeof(HEADER));
 	hp = (HEADER *) buf;
 	hp->id = htons(++_res.id);
@@ -71,7 +73,8 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	 */
 	switch (op) {
 	case QUERY:
-		buflen -= QFIXEDSZ;
+		if ((buflen -= QFIXEDSZ) < 0)
+			return(-1);
 		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
