@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,11 +23,10 @@
 #include "kernel.h"
 #include "conf.h"
 #include "buf.h"
+#include "mount.h"
 #include "vnode.h"
 #include "../ufs/inode.h"
-#include "stat.h"
 #include "errno.h"
-#include "malloc.h"
 
 int	blk_lookup(),
 	blk_open(),
@@ -106,17 +105,20 @@ blk_open(vp, mode, cred)
 	dev_t dev = (dev_t)vp->v_rdev;
 	register int maj = major(dev);
 
+	if (vp->v_mount && (vp->v_mount->m_flag & M_NODEV))
+		return (ENXIO);
+
 	switch (vp->v_type) {
 
 	case VCHR:
 		if ((u_int)maj >= nchrdev)
 			return (ENXIO);
-		return ((*cdevsw[maj].d_open)(dev, mode, S_IFCHR));
+		return ((*cdevsw[maj].d_open)(dev, mode, IFCHR));
 
 	case VBLK:
 		if ((u_int)maj >= nblkdev)
 			return (ENXIO);
-		return ((*bdevsw[maj].d_open)(dev, mode, S_IFBLK));
+		return ((*bdevsw[maj].d_open)(dev, mode, IFBLK));
 	}
 	return (0);
 }
