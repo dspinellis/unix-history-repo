@@ -1,4 +1,4 @@
-#	@(#)Makefile.luna68k	7.1 (Berkeley) %G%
+#	@(#)Makefile.luna68k	7.2 (Berkeley) %G%
 #
 # From: hp300/conf/Makefile.luna68k	7.13 (Berkeley) 2/24/92
 #
@@ -73,10 +73,11 @@ SYSTEM_LD_HEAD=	rm -f $@
 #		then strip=-X; \
 #		else strip=-x; \
 #		fi; \
-#		echo ${LD} $$strip -n -o $@ -e start '$${SYSTEM_OBJ}' vers.o libquad.a; \
-#		${LD} $$strip -n -o $@ -e start ${SYSTEM_OBJ} vers.o libquad.a
+#		echo ${LD} $$strip -n -o $@ -e start '$${SYSTEM_OBJ}' vers.o ../../libkern/obj/libkern.a; \
+#		${LD} $$strip -n -o $@ -e start ${SYSTEM_OBJ} vers.o ../../libkern/obj/libkern.a
 SYSTEM_LD=	@strip=-x; \
-		${LD} $$strip -n -o $@ ${SYSTEM_OBJ} vers.o libquad.a
+		echo ${LD} $$strip -n -o $@ '$${SYSTEM_OBJ}' vers.o ../../libkern/obj/libkern.a; \
+		${LD} $$strip -n -o $@ ${SYSTEM_OBJ} vers.o ../../libkern/obj/libkern.a
 #SYSTEM_LD_TAIL= @echo rearranging symbols;\
 #		symorder symbols.sort $@;\
 SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
