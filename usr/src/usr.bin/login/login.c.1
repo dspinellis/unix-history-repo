@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)login.c.1	4.31 (Berkeley) 83/06/30";
+static	char *sccsid = "@(#)login.c.1	4.32 (Berkeley) 83/06/30";
 #endif
 
 /*
@@ -194,7 +194,7 @@ main(argc, argv)
 		if (invalid) {
 			printf("Login incorrect\n");
 			if (ttyn[sizeof("/dev/tty")-1] == 'd')
-				logerr("BADDIALUP %s %s\n",
+				logerr("BADDIALUP %s %s",
 				    ttyn+sizeof("/dev/")-1, utmp.ut_name);
 		}
 		if (*pwd->pw_shell == '\0')
@@ -289,7 +289,8 @@ main(argc, argv)
 	strcat(minusnam, namep);
 	umask(022);
 	if (ttyn[sizeof("/dev/tty")-1] == 'd')
-		logerr("DIALUP %s %s\n", ttyn+sizeof("/dev/")-1, pwd->pw_name);
+		logerr("DIALUP %s %s",
+		    ttyn+sizeof("/dev/")-1, pwd->pw_name);
 	if (!quietlog) {
 		showmotd();
 		strcat(maildir, pwd->pw_name);
@@ -539,7 +540,7 @@ logerr(fmt, a1, a2, a3)
 
 	if (cons != NULL) {
 		fprintf(cons, fmt, a1, a2, a3);
-		fputc('\r', cons);
+		fprintf(cons, "\n\r");
 		fclose(cons);
 	}
 #endif
