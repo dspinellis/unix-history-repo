@@ -10,6 +10,8 @@ CFLAGS+=        -I$(.CURDIR) -I$(.CURDIR)/../lib
 afterinstall:
 	install -c -o $(BINOWN) -g $(BINGRP) -m $(BINMODE) \
 		$(.CURDIR)/g++.script $(DESTDIR)/usr/bin/g++
+	install -c -o $(BINOWN) -g $(BINGRP) -m $(BINMODE) \
+		$(.CURDIR)/f77.script $(DESTDIR)/usr/bin/f77
 	rm -f $(DESTDIR)$(BINDIR)/cc
 	cd $(DESTDIR)$(BINDIR); ln -s gcc cc
 

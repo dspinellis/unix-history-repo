@@ -562,6 +562,32 @@ static struct compiler default_compilers[] =
    "%{!M:%{!MM:%{!E:%{!S:as %{R} %{j} %{J} %{h} %{d2} %a %Y\
                     %{c:%W{o*}%{!o*:-o %w%b.o}}%{!c:-o %d%w%u.o}\
 		    %{!pipe:%g.s} %A\n }}}}"},
+  {".f", "@fortran-f2c"},
+  {"@fortran-f2c",
+   "cat %i %{!pipe:%eGNU Fortran has to have -pipe option}|\n",
+   "f2c %{checksubscripts:-C} %{I2} %{onetrip} %{honorcase:-U} %{u} %{w}\
+        %{ANSIC:-A} %{a} %{C++}\
+        %{c} %{E} %{ec} %{ext} %{f} %{72} %{g} %{h} %{i2} %{kr}\
+        %{P} %{p} %{r} %{r8} %{s} %{w8} %{z}|\n",
+   "gcpp -lang-c %{nostdinc*} %{C} %{v} %{A*} %{I*} %{P} %I\
+	%{C:%{!E:%eGNU C does not support -C without using -E}}\
+	%{M} %{MM} %{MD:-MD %b.d} %{MMD:-MMD %b.d}\
+        -undef -D__GNUC__=2 %{ansi:-trigraphs -$ -D__STRICT_ANSI__}\
+	%{!undef:%{!ansi:%p} %P} %{trigraphs} \
+        %c %{O*:%{!O0:-D__OPTIMIZE__}} %{traditional} %{ftraditional:-traditional}\
+        %{traditional-cpp:-traditional}\
+	%{g*} %{W*} %{w} %{pedantic*} %{H} %{d*} %C %{D*} %{U*} %{i*}\
+        - %{!M:%{!MM:%{!E:%{!pipe:%g.i}}}}%{E:%W{o*}}%{M:%W{o*}}%{MM:%W{o*}} |\n",
+   "%{!M:%{!MM:%{!E:gcc1 %{!pipe:%g.i} %1 \
+		   %{!Q:-quiet} -dumpbase %b.c %{d*} %{m*} %{a}\
+		   %{g*} %{O*} %{W*} %{w} %{pedantic*} %{ansi} \
+		   %{traditional} %{v:-version} %{pg:-p} %{p} %{f*}\
+		   %{aux-info*}\
+		   %{pg:%{fomit-frame-pointer:%e-pg and -fomit-frame-pointer are incompatible}}\
+		   %{S:%W{o*}%{!o*:-o %b.s}}%{!S:-o %{|!pipe:%g.s}} |\n\
+              %{!S:as %{R} %{j} %{J} %{h} %{d2} %a %Y\
+		      %{c:%W{o*}%{!o*:-o %w%b.o}}%{!c:-o %d%w%u.o}\
+                      %{!pipe:%g.s} %A\n }}}}"},
   /* Mark end of table */
   {0, 0}
 };
