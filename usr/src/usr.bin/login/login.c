@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)login.c	4.35 (Berkeley) 84/12/17";
+static	char *sccsid = "@(#)login.c	4.35 (Berkeley) 85/01/08";
 #endif
 
 /*
@@ -241,7 +241,7 @@ main(argc, argv)
 		else if (errno == EPROCLIM)
 			printf("You have too many processes running.\n");
 		else
-			perror("setuid");
+			perror("quota (Q_SETUID)");
 		sleep(5);
 		exit(0);
 	}
@@ -291,7 +291,7 @@ main(argc, argv)
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
-	if (term[strlen("TERM=")] == 0)
+	if (term[sizeof("TERM=")-1] == 0)
 		strncat(term, stypeof(tty), sizeof(term)-6);
 	strncat(user, pwd->pw_name, sizeof(user)-6);
 	if ((namep = rindex(pwd->pw_shell, '/')) == NULL)
@@ -302,14 +302,12 @@ main(argc, argv)
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s %s", tty, pwd->pw_name);
 	if (!quietlog) {
+		struct stat st;
 		showmotd();
 		strcat(maildir, pwd->pw_name);
-		if (access(maildir, R_OK) == 0) {
-			struct stat statb;
-			stat(maildir, &statb);
-			if (statb.st_size)
-				printf("You have mail.\n");
-		}
+		if (stat(maildir, &st) == 0 && st.st_size != 0)
+			printf("You have %smail.\n",
+				(st.st_mtime > st.st_atime) ? "new" : "");
 	}
 	signal(SIGALRM, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
