@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -86,8 +86,9 @@ setup_tty(on)
 {
     static struct termios tchars;
 
+    (void) tcgetattr(SHIN, &tchars);
+
     if (on) {
-	(void) tcgetattr(SHIN, &tchars);
 	tchars.c_cc[VEOL] = ESC;
 	if (tchars.c_lflag & ICANON)
 	    on = TCSANOW;
@@ -95,12 +96,13 @@ setup_tty(on)
 	    on = TCSAFLUSH;
 	    tchars.c_lflag |= ICANON;
 	}
-        (void) tcsetattr(SHIN, on, &tchars);
     }
     else {
 	tchars.c_cc[VEOL] = _POSIX_VDISABLE;
-	(void) tcsetattr(SHIN, TCSANOW, &tchars);
+	on = TCSANOW;
     }
+
+    (void) tcsetattr(SHIN, TCSANOW, &tchars);
 }
 
 /*
