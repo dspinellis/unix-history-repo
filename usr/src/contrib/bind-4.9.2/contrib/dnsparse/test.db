@@ -1,0 +1,11 @@
+$ORIGIN ogc.edu
+cse	 IN	A	129.95.40.1
+	 IN	A	129.95.40.2
+	 IN	A	129.95.40.3
+ogccse	 IN	CNAME	cse
+ogcvax	 IN	CNAME	cse
+cse-2	 IN	A	129.95.40.2
+	 IN	A	129.95.40.2	; duplicate
+ogccse-2 IN	CNAME	cse-2
+cse-3	 IN	A	129.95.40.3
+ogccse-3 IN	CNAME	cse-3
